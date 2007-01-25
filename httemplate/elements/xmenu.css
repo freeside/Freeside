@@ -22,7 +22,6 @@
 	position:		absolute;
 	z-index:		100;
 	visibility:		hidden;
-	width:			154px;
 	border:			1px solid black;
 	padding:		1px;
 	background:		white;
@@ -43,12 +42,14 @@
 
 .webfx-menu a {
 	display:		block;
-	width:			expression(constExpression(ieBox ? "100%": "auto"));	/* should be ignored by mz and op */
-	height:			expression(constExpression("1px"));
+	/* width:			expression(constExpression(ieBox ? "100%": "auto")); /* should be ignored by mz and op */
+	width:			expression(constExpression(ie ? "98%": "auto")); /* should be ignored by mz and op */
 	overflow:		visible;	
-	padding:		2px 0px 2px 5px;
-	font-size:		11px;
-	font-family:		Tahoma, Verdan, Helvetica, Sans-Serif;
+	/* padding:		2px 0px 2px 5px; */
+	padding:		1px 0px 1px 5px;
+	font-size:		14px;
+/* 	font-family:		Verdana, Arial, Helvetica, sans-serif; */
+        font-weight:            bold;
 	text-decoration:	none;
 	vertical-align:		center;
 	color:			black;
@@ -94,9 +95,6 @@
 }
 
 .webfx-menu-bar {
-        /* i want a vertical bar */
-        display:                        block;
-
 	/* background:		rgb(120,172,255);/*rgb(255,128,0);*/
 	/* background:		 #a097ed; */
 	background:		 #000000;
@@ -106,9 +104,6 @@
 	color:				white;
 
 	padding:		2px;
-	
-	font-family:	Verdana, Helvetica, Sans-Serif;
-	/* font-size:		11px; */
 	
 	/* IE5.0 has the wierdest box model for inline elements */
 	padding:		expression(constExpression(ie50 ? "0px" : "2px"));
@@ -147,7 +142,7 @@
 	color:			white;
 	/* background:		rgb(120,172,255);	 */
 	/* background:		#BC79B8; */
-	background:		#7E0079;
+        background:		#7e0079;
 	/* border-left:	1px solid rgb(234,242,255);
 	border-right:	1px solid rgb(0,66,174);
 	border-top:		1px solid rgb(234,242,255);
@@ -155,8 +150,8 @@
 }
 
 .webfx-menu-bar a .arrow {
-	border:			0;
 	float:			right;
+	border:			0;
 /*	vertical-align:		top; */
 	width:			3px;
 	margin-right:	3px;
@@ -183,13 +178,16 @@
 	/* background:		#faf7fa; #f5ebf4; #efdfef; white; #BC79B8; */
 	background:		#7e0079;
 /*	border:			1px solid #7e0079; /*rgb(120,172,255);#ff8800;*/
-	padding:		3px 1px 3px 6px;
+	/* padding:		3px 1px 3px 6px; */
+	padding:		3px 1px 3px 5px;
 	display:		block;
-	font-size:		13px;
-	font-family:		Tahoma, Verdan, Helvetica, Sans-Serif;
+	font-size:		16px;
+        font-family:            Verdana, Arial, Helvetica, sans-serif;
+        font-weight:            bold;
 	text-decoration:	none;
 	color:			white;
 /*	border:			1px solid white; */
 	border-bottom:		1px solid white;
+        width:			expression(constExpression(ie ? "98%": "auto"));	/* should be ignored by mz and op */
 }	
 
