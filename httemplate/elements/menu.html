@@ -1,6 +1,17 @@
 <script type="text/javascript" src="<%$fsurl%>elements/cssexpr.js"></script>
-<script type="text/javascript" src="<%$fsurl%>elements/xmenu.js"></script>
-<link href="<%$fsurl%>elements/xmenu.css" type="text/css" rel="stylesheet">
+
+% if ( $opt{'position'} eq 'top' ) {
+
+  <script type="text/javascript" src="<%$fsurl%>elements/xmenu.top.js"></script>
+  <link href="<%$fsurl%>elements/xmenu.top.css" type="text/css" rel="stylesheet">
+
+% } else {  # elsif ( $opt{'position'} eq 'left' ) {
+
+  <script type="text/javascript" src="<%$fsurl%>elements/xmenu.js"></script>
+  <link href="<%$fsurl%>elements/xmenu.css" type="text/css" rel="stylesheet">
+
+% }
+
 <link href="<%$fsurl%>elements/freeside.css" type="text/css" rel="stylesheet">
 
 <SCRIPT TYPE="text/javascript">

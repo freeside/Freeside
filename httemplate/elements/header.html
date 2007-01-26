@@ -1,11 +1,3 @@
-%
-%  my($title, $menubar) = ( shift, shift );
-%  my $etc = @_ ? shift : ''; #$etc is for things like onLoad= etc.
-%  my $head = @_ ? shift : ''; #$head is for things that go in the <HEAD> section
-%  my $conf = new FS::Conf;
-%
-%
-
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <HTML>
   <HEAD>
@@ -16,7 +8,10 @@
     <META HTTP-Equiv="Pragma" Content="no-cache">
     <META HTTP-Equiv="Expires" Content="0"> 
 
-    <% include('menu.html', 'freeside_baseurl' => $fsurl ) %>
+    <% include('menu.html', 'freeside_baseurl' => $fsurl,
+                            'position'         => $menu_position,
+              )
+    %>
 
     <SCRIPT TYPE="text/javascript">
       function clearhint_search_cust (what) {
@@ -43,7 +38,7 @@
     <% $head %>
 
   </HEAD>
-  <BODY BACKGROUND="<%$fsurl%>images/background-cheat.png" <% $etc %> STYLE="margin-top:0; margin-bottom:0; margin-left:0; margin-right:0">
+  <BODY <% $menu_position eq 'left' ? qq( BACKGROUND="${fsurl}images/background-cheat.png" ) : ' BGCOLOR="#e8e8e8" ' %> <% $etc %> STYLE="margin-top:0; margin-bottom:0; margin-left:0; margin-right:0">
     <table width="100%" CELLPADDING=0 CELLSPACING=0 STYLE="padding-left:0; padding-right:4">
       <tr>
         <td rowspan=2 BGCOLOR="#ffffff"><IMG BORDER=0 ALT="freeside" SRC="<%$fsurl%>images/small-logo.png"></td>
@@ -121,6 +116,30 @@ input.fsblackbuttonselected {
         <TD COLSPAN=5 WIDTH="100%" STYLE="padding:0"><IMG BORDER=0 ALT="" SRC="<%$fsurl%>images/black-gradient.png" HEIGHT="13" WIDTH="100%"></TD>
       </TR>
 
+% if ( $menu_position eq 'top' ) {
+
+      <TR>
+
+        <TD COLSPAN="5" WIDTH="100%" STYLE="padding:0">
+          <SCRIPT TYPE="text/javascript">
+            document.write(myBar);
+          </SCRIPT>
+        </TD>
+
+      </TR>
+
+      <TR>
+        <TD COLSPAN="5" WIDTH="100%" HEIGHT="2px" STYLE="padding:0" BGCOLOR="#000000">
+        </TD>
+      </TR>
+      
+      <TR>
+        <TD COLSPAN="5" WIDTH="100%" HEIGHT="4px" STYLE="padding:0" BGCOLOR="#000000">
+        </TD>
+      </TR>
+
+% }
+
       <TR>
 
         <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right">
@@ -172,13 +191,26 @@ input.fsblackbuttonselected {
 
       </TR>
     </TABLE>
+
     <TABLE WIDTH="100%" HEIGHT="100%" CELLSPACING=0 CELLPADDING=4>
+
       <TR>
+
+% if ( $menu_position eq 'left' ) {
+
         <TD BGCOLOR="#000000" STYLE="padding:0" WIDTH="154"></TD>
         <TD STYLE="padding:0" WIDTH="13"><IMG BORDER=0 ALT="" SRC="<%$fsurl%>images/black-gray-corner.png"></TD>
-        <TD STYLE="padding:0"><IMG BORDER=0 ALT="" SRC="<%$fsurl%>images/black-gray-top.png" HEIGHT="13" WIDTH="100%"></TD>
+
+% }
+
+        <TD STYLE="padding:0" WIDTH="100%"><IMG BORDER=0 ALT="" SRC="<%$fsurl%>images/black-gray-top.png" HEIGHT="13" WIDTH="100%"></TD>
+
       </TR>
+
       <TR HEIGHT="100%">
+
+% if ( $menu_position eq 'left' ) {
+
         <TD BGCOLOR="#000000" ALIGN="left" HEIGHT="100%" WIDTH="154" VALIGN="top" ALIGN="right">
           <SCRIPT TYPE="text/javascript">
             document.write(myBar);
@@ -188,6 +220,9 @@ input.fsblackbuttonselected {
 
         </TD>
         <TD STYLE="padding:0" HEIGHT="100%" WIDTH=13 VALIGN="top"><IMG WIDTH="13" HEIGHT="100%" BORDER=0 ALT="" SRC="<%$fsurl%>images/black-gray-side.png"></TD>
+
+% }
+
         <TD BGCOLOR="#e8e8e8" HEIGHT="100%" VALIGN="top"> <!-- WIDTH="100%"> -->
 
           <FONT SIZE=6>
@@ -196,3 +231,14 @@ input.fsblackbuttonselected {
 
           <BR><BR>
           <% $menubar !~ /^\s*$/ ? "$menubar<BR><BR>" : '' %>
+<%init>
+
+my($title, $menubar) = ( shift, shift );
+my $etc = @_ ? shift : ''; #$etc is for things like onLoad= etc.
+my $head = @_ ? shift : ''; #$head is for things that go in the <HEAD> section
+my $conf = new FS::Conf;
+
+my $menu_position = $FS::CurrentUser::CurrentUser->option('menu_position')
+                    || 'left';
+
+</%init>

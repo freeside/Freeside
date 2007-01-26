@@ -6,10 +6,12 @@ use FS::UID;
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::m2m_Common;
+use FS::option_Common;
 use FS::access_usergroup;
 use FS::agent;
 
-@ISA = qw( FS::m2m_Common FS::Record );
+@ISA = qw( FS::m2m_Common FS::option_Common FS::Record );
+#@ISA = qw( FS::m2m_Common FS::option_Common );
 
 #kludge htpasswd for now (i hope this bootstraps okay)
 FS::UID->install_callback( sub {
@@ -73,6 +75,10 @@ points to.  You can ask the object for a copy with the I<hash> method.
 # the new method can be inherited from FS::Record, if a table method is defined
 
 sub table { 'access_user'; }
+
+sub _option_table    { 'access_user_pref'; }
+sub _option_namecol  { 'prefname'; }
+sub _option_valuecol { 'prefvalue'; }
 
 =item insert
 
@@ -177,7 +183,11 @@ returns the error, otherwise returns false.
 =cut
 
 sub replace {
-  my($new, $old) = ( shift, shift );
+  my $new = shift;
+
+  my $old = ( ref($_[0]) eq ref($new) )
+              ? shift
+              : $new->replace_old;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';

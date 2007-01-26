@@ -26,7 +26,7 @@ use Tie::IxHash;
 #export dbdef for now... everything else expects to find it here
 @EXPORT_OK = qw(dbh fields hfields qsearch qsearchs dbdef jsearch);
 
-$DEBUG = 0;
+$DEBUG = 3;
 $me = '[FS::Record]';
 
 $nowarn_identical = 0;
@@ -563,6 +563,17 @@ sub dbdef_table {
   dbdef->table($table);
 }
 
+=item primary_key
+
+Returns the primary key for the table.
+
+=cut
+
+sub primary_key {
+  my $self = shift;
+  my $pkey = $self->dbdef_table->primary_key;
+}
+
 =item get, getfield COLUMN
 
 Returns the value of the column/field/key COLUMN.
@@ -688,6 +699,8 @@ sub insert {
   my $self = shift;
   my $saved = {};
 
+  warn "$self -> insert" if $DEBUG;
+
   my $error = $self->check;
   return $error if $error;
 
@@ -784,8 +797,7 @@ sub insert {
         dbh->rollback if $FS::UID::AutoCommit;
         return dbh->errstr;
       };
-      #$i_sth->execute($oid) or do {
-      $i_sth->execute() or do {
+      $i_sth->execute() or do { #$i_sth->execute($oid)
         dbh->rollback if $FS::UID::AutoCommit;
         return $i_sth->errstr;
       };

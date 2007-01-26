@@ -95,9 +95,6 @@
 }
 
 .webfx-menu-bar {
-        /* i want a vertical bar */
-        display:                        block;
-
 	/* background:		rgb(120,172,255);/*rgb(255,128,0);*/
 	/* background:		 #a097ed; */
 	background:		 #000000;
@@ -115,12 +112,12 @@
 .webfx-menu-bar a,
 .webfx-menu-bar a:visited {
         /* i want a vertical bar */
-        display:                        block;
+        /* display:                        block; */
 
 	/* border:				1px solid black; /*rgb(0,0,0);/*rgb(255,128,0);*/
 	/* border: 1px solid black; /* #ffffff; */
 	/* border-bottom: 1px solid black; */
-	border-bottom: 1px solid white;
+	/* border-bottom: 1px solid white; */
 	/* border-bottom:	1px solid rgb(0,66,174);
 	/* border-bottom: 1px solid black;
 	border-bottom: 1px solid black;
@@ -134,6 +131,16 @@
 
 	/* IE5.0 Does not paint borders and padding on inline elements without a height/width */
 	height:		expression(constExpression(ie50 ? "17px" : "auto"));
+
+         background-color:#333333;
+	 border:1px solid;
+	 border-top-color:#cccccc;
+	 border-left-color:#cccccc;
+	 border-right-color:#aaaaaa;
+	 border-bottom-color:#aaaaaa;
+
+         margin-right: 4px
+
 }
 
 .webfx-menu-bar a:link {
@@ -150,15 +157,23 @@
 	border-right:	1px solid rgb(0,66,174);
 	border-top:		1px solid rgb(234,242,255);
 	border-bottom:	1px solid rgb(0,66,174); */
+
+	 border:1px solid;
+	 border-top-color:#cccccc;
+	 border-left-color:#cccccc;
+	 border-right-color:#aaaaaa;
+	 border-bottom-color:#aaaaaa;
+
 }
 
 .webfx-menu-bar a .arrow {
-	float:			right;
+	/* float:			right; */
 	border:			0;
 /*	vertical-align:		top; */
-	width:			3px;
-	margin-right:	3px;
-	margin-top:		4px;
+/*	width:			3px; */
+/*	margin-right:	3px; */
+	margin-bottom:		2px;
+
 }
 
 .webfx-menu-bar a:active, .webfx-menu-bar a:focus {

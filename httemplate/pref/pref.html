@@ -4,6 +4,8 @@
 
 <% include('/elements/error.html') %>
 
+
+Change password (leave blank for no change)
 <% ntable("#cccccc",2) %>
 
 <TR>
@@ -22,7 +24,31 @@
 </TR>
 
 </TABLE>
+<BR>
 
-<INPUT TYPE="submit" VALUE="Change password">
+Interface
+<% ntable("#cccccc",2) %>
+
+<TR>
+  <TD>Menu location: </TD>
+  <TD>
+    <INPUT TYPE="radio" NAME="menu_position" VALUE="left" onClick="document.images['menu_example'].src='../images/menu-left-example.png';" <% $menu_position eq 'left' ? ' CHECKED' : ''%>> Left<BR>
+    <INPUT TYPE="radio" NAME="menu_position" VALUE="top"onClick="document.images['menu_example'].src='../images/menu-top-example.png';" <% $menu_position eq 'top' ? ' CHECKED' : ''%>> Top <BR>
+  </TD>
+  <TD><IMG NAME="menu_example" SRC="../images/menu-<% $menu_position %>-example.png"></TD>
+</TR>
+
+</TABLE>
+<BR>
+
+<INPUT TYPE="submit" VALUE="Update preferences">
 
 <% include('/elements/footer.html') %>
+<%init>
+
+# XSS via your own preferences?  seems unlikely, but nice try anyway...
+( $FS::CurrentUser::CurrentUser->option('menu_position') || 'left' )
+  =~ /^(\w+)$/ or die "illegal menu_position";
+my $menu_position = $1;
+
+</%init>

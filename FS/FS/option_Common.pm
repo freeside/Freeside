@@ -6,7 +6,7 @@ use FS::Record qw( qsearch qsearchs dbh );
 
 @ISA = qw( FS::Record );
 
-$DEBUG = 0;
+$DEBUG = 3;
 
 =head1 NAME
 
@@ -17,6 +17,11 @@ FS::option_Common - Base class for option sub-classes
 use FS::option_Common;
 
 @ISA = qw( FS::option_Common );
+
+#optional for non-standard names
+sub _option_table    { 'table_name'; }  #defaults to ${table}_option
+sub _option_namecol  { 'column_name'; } #defaults to optionname
+sub _option_valuecol { 'column_name'; } #defaults to optionvalue
 
 =head1 DESCRIPTION
 
@@ -66,14 +71,17 @@ sub insert {
     return $error;
   }
 
-  my $pkey = $self->pkey;
+  my $pkey = $self->primary_key;
   my $option_table = $self->option_table;
+
+  my $namecol = $self->_option_namecol;
+  my $valuecol = $self->_option_valuecol;
 
   foreach my $optionname ( keys %{$options} ) {
     my $href = {
-      $pkey         => $self->get($pkey),
-      'optionname'  => $optionname,
-      'optionvalue' => $options->{$optionname},
+      $pkey     => $self->get($pkey),
+      $namecol  => $optionname,
+      $valuecol => $options->{$optionname},
     };
 
     #my $option_record = eval "new FS::$option_table \$href";
@@ -123,7 +131,7 @@ sub delete {
     return $error;
   }
   
-  my $pkey = $self->pkey;
+  my $pkey = $self->primary_key;
   #my $option_table = $self->option_table;
 
   foreach my $obj ( $self->option_objects ) {
@@ -140,7 +148,7 @@ sub delete {
 
 }
 
-=item replace OLD_RECORD [ HASHREF | OPTION => VALUE ... ]
+=item replace [ OLD_RECORD ] [ HASHREF | OPTION => VALUE ... ]
 
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
@@ -152,12 +160,16 @@ created or modified (see L<FS::part_export_option>).
 
 sub replace {
   my $self = shift;
-  my $old = shift;
+
+  my $old = ( ref($_[0]) eq ref($self) )
+              ? shift
+              : $self->replace_old;
+
   my $options = 
     ( ref($_[0]) eq 'HASH' )
       ? shift
       : { @_ };
-  warn "FS::option_Common::insert called on $self with options ".
+  warn "FS::option_Common::replace called on $self with options ".
        join(', ', map "$_ => ". $options->{$_}, keys %$options)
     if $DEBUG;
 
@@ -178,30 +190,44 @@ sub replace {
     return $error;
   }
 
-  my $pkey = $self->pkey;
+  my $pkey = $self->primary_key;
   my $option_table = $self->option_table;
 
+  my $namecol = $self->_option_namecol;
+  my $valuecol = $self->_option_valuecol;
+
   foreach my $optionname ( keys %{$options} ) {
-    my $old = qsearchs( $option_table, {
-        $pkey         => $self->get($pkey),
-        'optionname'  => $optionname,
+
+    warn "FS::option_Common::replace: inserting or replacing option: $optionname"
+      if $DEBUG > 1;
+
+    my $oldopt = qsearchs( $option_table, {
+        $pkey    => $self->get($pkey),
+        $namecol => $optionname,
     } );
 
     my $href = {
-        $pkey         => $self->get($pkey),
-        'optionname'  => $optionname,
-        'optionvalue' => $options->{$optionname},
+        $pkey     => $self->get($pkey),
+        $namecol  => $optionname,
+        $valuecol => $options->{$optionname},
     };
 
-    #my $new = eval "new FS::$option_table \$href";
+    #my $newopt = eval "new FS::$option_table \$href";
     #if ( $@ ) {
     #  $dbh->rollback if $oldAutoCommit;
     #  return $@;
     #}
-    my $new = "FS::$option_table"->new($href);
+    my $newopt = "FS::$option_table"->new($href);
 
-    $new->optionnum($old->optionnum) if $old;
-    my $error = $old ? $new->replace($old) : $new->insert;
+    my $opt_pkey = $newopt->primary_key;
+
+    $newopt->$opt_pkey($oldopt->$opt_pkey) if $oldopt;
+    warn $oldopt;
+    warn "FS::option_Common::replace: ".
+         ( $oldopt ? "$newopt -> replace($oldopt)" : "$newopt -> insert" )
+      if $DEBUG > 2;
+    my $error = $oldopt ? $newopt->replace($oldopt) : $newopt->insert;
+    warn $error;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error;
@@ -210,7 +236,7 @@ sub replace {
 
   #remove extraneous old options
   foreach my $opt (
-    grep { !exists $options->{$_->optionname} } $old->option_objects
+    grep { !exists $options->{$_->$namecol()} } $old->option_objects
   ) {
     my $error = $opt->delete;
     if ( $error ) {
@@ -233,7 +259,7 @@ Returns all options as FS::I<tablename>_option objects.
 
 sub option_objects {
   my $self = shift;
-  my $pkey = $self->pkey;
+  my $pkey = $self->primary_key;
   my $option_table = $self->option_table;
   qsearch($option_table, { $pkey => $self->get($pkey) } );
 }
@@ -246,7 +272,9 @@ Returns a list of option names and values suitable for assigning to a hash.
 
 sub options {
   my $self = shift;
-  map { $_->optionname => $_->optionvalue } $self->option_objects;
+  my $namecol = $self->_option_namecol;
+  my $valuecol = $self->_option_valuecol;
+  map { $_->$namecol() => $_->$valuecol() } $self->option_objects;
 }
 
 =item option OPTIONNAME
@@ -257,29 +285,34 @@ Returns the option value for the given name, or the empty string.
 
 sub option {
   my $self = shift;
-  my $pkey = $self->pkey;
+  my $pkey = $self->primary_key;
   my $option_table = $self->option_table;
-  my $obj =
-    qsearchs($option_table, {
-      $pkey      => $self->get($pkey),
-      optionname => shift,
-  } );
-  $obj ? $obj->optionvalue : '';
+  my $namecol = $self->_option_namecol;
+  my $valuecol = $self->_option_valuecol;
+  my $hashref = {
+      $pkey    => $self->get($pkey),
+      $namecol => shift,
+  };
+  warn "$self -> option: searching for ".
+         join(' / ', map { "$_ => ". $hashref->{$_} } keys %$hashref )
+    if $DEBUG;
+  my $obj = qsearchs($option_table, $hashref);
+  $obj ? $obj->$valuecol() : '';
 }
 
-
-sub pkey {
-  my $self = shift;
-  my $pkey = $self->dbdef_table->primary_key;
-}
 
 sub option_table {
   my $self = shift;
-  my $option_table = $self->table . '_option';
+  my $option_table = $self->_option_table;
   eval "use FS::$option_table";
   die $@ if $@;
   $option_table;
 }
+
+#defaults
+sub _option_table    { shift->table .'_option'; }
+sub _option_namecol  { 'optionname'; }
+sub _option_valuecol { 'optionvalue'; }
 
 =back
 
