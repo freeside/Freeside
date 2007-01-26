@@ -6,7 +6,7 @@ use FS::Record qw( qsearch qsearchs dbh );
 
 @ISA = qw( FS::Record );
 
-$DEBUG = 3;
+$DEBUG = 0;
 
 =head1 NAME
 

@@ -26,7 +26,7 @@ use Tie::IxHash;
 #export dbdef for now... everything else expects to find it here
 @EXPORT_OK = qw(dbh fields hfields qsearch qsearchs dbdef jsearch);
 
-$DEBUG = 3;
+$DEBUG = 0;
 $me = '[FS::Record]';
 
 $nowarn_identical = 0;
