@@ -200,10 +200,12 @@ sub replace {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $error = $new->htpasswd_kludge();
-  if ( $error ) {
-    $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
-    return $error;
+  if ( $new->_password ne $old->_password ) {
+    my $error = $new->htpasswd_kludge();
+    if ( $error ) {
+      $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+      return $error;
+    }
   }
 
   $error = $new->SUPER::replace($old, @_);
