@@ -208,7 +208,7 @@ sub replace {
     }
   }
 
-  $error = $new->SUPER::replace($old, @_);
+  my $error = $new->SUPER::replace($old, @_);
 
   if ( $error ) {
     $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
