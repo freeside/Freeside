@@ -59,26 +59,45 @@ Service #<% $svcnum %>
     return confirm("Remove all records and slave from " + document.SlaveForm.recdata.value + "?");
   }
 </SCRIPT>
+
 % my @records; if ( @records = $svc_domain->domain_record ) { 
 
-  <% ntable("",2) %>
-  <tr><th>Zone</th><th>Type</th><th>Data</th></tr>
+  <% include('/elements/table-grid.html') %>
+
+% my $bgcolor1 = '#eeeeee';
+%     my $bgcolor2 = '#ffffff';
+%     my $bgcolor = $bgcolor2;
+
+  <tr>
+    <th CLASS="grid" BGCOLOR="#cccccc">Zone</th>
+    <th CLASS="grid" BGCOLOR="#cccccc">Type</th>
+    <th CLASS="grid" BGCOLOR="#cccccc">Data</th>
+  </tr>
+
 % foreach my $domain_record ( @records ) {
 %       my $type = $domain_record->rectype eq '_mstr'
 %                    ? "(slave)"
 %                    : $domain_record->recaf. ' '. $domain_record->rectype;
-%  
 
 
-    <tr><td><% $domain_record->reczone %></td>
-    <td><% $type %></td>
-    <td><% $domain_record->recdata %>
+    <tr>
+      <td CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $domain_record->reczone %></td>
+      <td CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $type %></td>
+      <td CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $domain_record->recdata %>
+
 % unless ( $domain_record->rectype eq 'SOA' ) { 
-
       (<A HREF="javascript:areyousure('<%$p%>misc/delete-domain_record.cgi?<%$domain_record->recnum%>', 'Delete \'<% $domain_record->reczone %> <% $type %> <% $domain_record->recdata %>\' ?' )">delete</A>)
 % } 
+      </td>
+    </tr>
 
-    </td></tr>
+
+%   if ( $bgcolor eq $bgcolor1 ) {
+%      $bgcolor = $bgcolor2;
+%    } else {
+%      $bgcolor = $bgcolor1;
+%    }
+
 % } 
 
   </table>

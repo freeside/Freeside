@@ -400,8 +400,25 @@ sub domain_record {
     'PTR'   => 7,
   );
 
-  sort { $order{$a->rectype} <=> $order{$b->rectype} }
-    qsearch('domain_record', { svcnum => $self->svcnum } );
+  my %sort = (
+    #'SOA'   => sub { $_[0]->recdata cmp $_[1]->recdata }, #sure hope not though
+#    'SOA'   => sub { 0; },
+#    'NS'    => sub { 0; },
+    'MX'    => sub { my( $a_weight, $a_name ) = split(/\s+/, $_[0]->recdata);
+                     my( $b_weight, $b_name ) = split(/\s+/, $_[1]->recdata);
+                     $a_weight <=> $b_weight or $a_name cmp $b_name;
+                   },
+    'CNAME' => sub { $_[0]->reczone cmp $_[1]->reczone },
+    'A'     => sub { $_[0]->reczone cmp $_[1]->reczone },
+
+#    'TXT'   => sub { 0; },
+    'PTR'   => sub { $_[0]->reczone <=> $_[1]->reczone },
+  );
+
+  sort {    $order{$a->rectype} <=> $order{$b->rectype}
+         or &{ $sort{$a->rectype} || sub { 0; } }($a, $b)
+       }
+       qsearch('domain_record', { svcnum => $self->svcnum } );
 
 }
 
