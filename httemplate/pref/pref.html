@@ -1,6 +1,6 @@
 <% include('/elements/header.html', 'Preferences for '. getotaker ) %>
 
-<FORM METHOD="POST" ACTION="pref-process.html">
+<FORM METHOD="POST" NAME="pref_form" ACTION="pref-process.html">
 
 <% include('/elements/error.html') %>
 
@@ -40,6 +40,13 @@ Interface
 
 </TABLE>
 <BR>
+
+% foreach my $prop (qw( height width availHeight availWidth colorDepth )) {
+  <INPUT TYPE="hidden" NAME="<% $prop %>" VALUE="">
+  <SCRIPT TYPE="text/javascript">
+  document.pref_form.<% $prop %>.value = screen.<% $prop %>;
+  </script>
+% }
 
 <INPUT TYPE="submit" VALUE="Update preferences">
 

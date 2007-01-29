@@ -27,10 +27,13 @@
 %
 % }
 %
-% $error ||= $access_user->replace( { map { $_ => scalar($cgi->param($_)) }
-%                                         qw( menu_position ) #XXX autogen
-%                                   }
-%                                 );
+% $error ||= $access_user->replace( {
+%   map { $_ => scalar($cgi->param($_)) }
+%       #XXX autogen
+%       qw( menu_position
+%           height width availHeight availWidth colorDepth
+%         )
+% } );
 %
 % if ( $error ) {
 %   $cgi->param('error', $error);
