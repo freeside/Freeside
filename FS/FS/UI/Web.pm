@@ -224,7 +224,7 @@ sub cust_header {
     'Country'                  => 'country_full',
     'Day phone'                => 'daytime', # XXX should use msgcat, but how?
     'Night phone'              => 'night',   # XXX should use msgcat, but how?
-    'Invoicing email(s)'       => 'invoicing_list_emailonly',
+    'Invoicing email(s)'       => 'invoicing_list_emailonly_scalar',
   );
 
   my $cust_fields;

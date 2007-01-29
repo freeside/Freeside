@@ -61,7 +61,7 @@ $realtime_bop_decline_quiet = 0;
 # 1 is mostly method/subroutine entry and options
 # 2 traces progress of some operations
 # 3 is even more information including possibly sensitive data
-$DEBUG = 0;
+$DEBUG = 1;
 $me = '[FS::cust_main]';
 
 $import = 0;
@@ -3539,7 +3539,23 @@ destinations such as POST and FAX).
 
 sub invoicing_list_emailonly {
   my $self = shift;
+  warn "$me invoicing_list_emailonly called"
+    if $DEBUG;
   grep { $_ !~ /^([A-Z]+)$/ } $self->invoicing_list;
+}
+
+=item invoicing_list_emailonly_scalar
+
+Returns the list of email invoice recipients (invoicing_list without non-email
+destinations such as POST and FAX) as a comma-separated scalar.
+
+=cut
+
+sub invoicing_list_emailonly_scalar {
+  my $self = shift;
+  warn "$me invoicing_list_emailonly_scalar called"
+    if $DEBUG;
+  join(', ', $self->invoicing_list_emailonly);
 }
 
 =item referral_cust_main [ DEPTH [ EXCLUDE_HASHREF ] ]

@@ -1,7 +1,10 @@
 package FS::cust_main_Mixin;
 
 use strict;
+use vars qw( $DEBUG );
 use FS::cust_main;
+
+$DEBUG = 0;
 
 =head1 NAME
 
@@ -109,19 +112,50 @@ sub country_full {
 
 Given an object that contains fields from cust_main (say, from a JOINed
 search; see httemplate/search/ for examples), returns the equivalent of the
-FS::cust_main I<country_full> method, or "(unlinked)" if this object is not
-linked to a customer.
+FS::cust_main I<invoicing_list_emailonly> method, or "(unlinked)" if this
+object is not linked to a customer.
 
 =cut
 
 sub invoicing_list_emailonly {
   my $self = shift;
   warn "invoicing_list_email only called on $self, ".
-       "custnum ". $self->custnum. "\n";
+       "custnum ". $self->custnum. "\n"
+    if $DEBUG;
   $self->cust_linked
     ? FS::cust_main::invoicing_list_emailonly($self)
     : $self->cust_unlinked_msg;
 }
+
+=item invoicing_list_emailonly_scalar
+
+Given an object that contains fields from cust_main (say, from a JOINed
+search; see httemplate/search/ for examples), returns the equivalent of the
+FS::cust_main I<invoicing_list_emailonly_scalar> method, or "(unlinked)" if
+this object is not linked to a customer.
+
+=cut
+
+sub invoicing_list_emailonly_scalar {
+  my $self = shift;
+  warn "invoicing_list_email only called on $self, ".
+       "custnum ". $self->custnum. "\n"
+    if $DEBUG;
+  $self->cust_linked
+    ? FS::cust_main::invoicing_list_emailonly_scalar($self)
+    : $self->cust_unlinked_msg;
+}
+
+=item invoicing_list
+
+Given an object that contains fields from cust_main (say, from a JOINed
+search; see httemplate/search/ for examples), returns the equivalent of the
+FS::cust_main I<invoicing_list> method, or "(unlinked)" if this object is not
+linked to a customer.
+
+Note: this method is read-only.
+
+=cut
 
 #read-only
 sub invoicing_list {
