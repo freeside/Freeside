@@ -1,4 +1,3 @@
-<!-- mason kludge -->
 <% include("/elements/header.html",'Edit Configuration', menubar( 'Main Menu' => $p ) ) %>
 <SCRIPT>
 var gSafeOnload = new Array();
@@ -258,3 +257,7 @@ function SafeOnsubmit() {
 </form>
 
 </body></html>
+<%init>
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+</%init>

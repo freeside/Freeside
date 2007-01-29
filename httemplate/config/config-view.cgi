@@ -1,4 +1,3 @@
-<!-- mason kludge -->
 <% include("/elements/header.html",'View Configuration', menubar( 'Main Menu' => $p,
                                      'Edit Configuration' => 'config.cgi' ) ) %>
 % my $conf = new FS::Conf; my @config_items = $conf->config_items; 
@@ -90,3 +89,7 @@
 
 
 </body></html>
+<%init>
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+</%init>
