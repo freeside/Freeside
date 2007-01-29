@@ -222,12 +222,10 @@ sub replace {
     my $opt_pkey = $newopt->primary_key;
 
     $newopt->$opt_pkey($oldopt->$opt_pkey) if $oldopt;
-    warn $oldopt;
     warn "FS::option_Common::replace: ".
          ( $oldopt ? "$newopt -> replace($oldopt)" : "$newopt -> insert" )
       if $DEBUG > 2;
     my $error = $oldopt ? $newopt->replace($oldopt) : $newopt->insert;
-    warn $error;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error;
