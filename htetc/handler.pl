@@ -335,6 +335,8 @@ sub handler
       $ah->interp->set_escape( 'h' => sub { ${$_[0]}; } );
     }
 
+    $ah->interp->ignore_warnings_expr('.');
+
     my %session;
     my $status;
     eval { $status = $ah->handle_request($r); };
