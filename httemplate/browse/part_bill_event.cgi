@@ -1,16 +1,3 @@
-% 
-%my %search;
-%if ( $cgi->param('showdisabled') ) {
-%  %search = ();
-%} else {
-%  %search = ( 'disabled' => '' );
-%}
-%
-%my @part_bill_event = qsearch('part_bill_event', \%search );
-%my $total = scalar(@part_bill_event);
-%
-
-
 <% include("/elements/header.html",'Invoice Event Listing', menubar( 'Main Menu' => $p) ) %>
 
     Invoice events are actions taken on open invoices.<BR><BR>
@@ -118,3 +105,19 @@
 
 </BODY>
 </HTML>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my %search;
+if ( $cgi->param('showdisabled') ) {
+%search = ();
+} else {
+%search = ( 'disabled' => '' );
+}
+
+my @part_bill_event = qsearch('part_bill_event', \%search );
+my $total = scalar(@part_bill_event);
+
+</%init>

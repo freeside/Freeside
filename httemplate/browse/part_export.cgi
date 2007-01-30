@@ -1,4 +1,3 @@
-<!-- mason kludge -->
 <% include("/elements/header.html","Export Listing", menubar( 'Main Menu' => "$p#sysadmin" )) %>
 Provisioning services to external machines, databases and APIs.<BR><BR>
 <A HREF="<% $p %>edit/part_export.cgi"><I>Add a new export</I></A><BR><BR>
@@ -39,3 +38,7 @@ function part_export_areyousure(href) {
 </TABLE>
 </BODY>
 </HTML>
+<%init>
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+</%init>

@@ -1,14 +1,3 @@
-%
-%
-%  my %search;
-%  if ( $cgi->param('showdisabled') ) {
-%    %search = ();
-%  } else {
-%    %search = ( 'disabled' => '' );
-%  }
-%
-%
-
 <% include("/elements/header.html",'Payment gateways', menubar(
   'Main Menu' => $p,
   'Agents'    => $p. 'browse/agent.cgi',
@@ -75,4 +64,16 @@
 </TABLE>
 </BODY>
 </HTML>
+<%init>
 
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my %search;
+if ( $cgi->param('showdisabled') ) {
+  %search = ();
+} else {
+  %search = ( 'disabled' => '' );
+}
+
+</%init>

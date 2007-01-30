@@ -1,53 +1,3 @@
-%
-%
-%my $html_init = 
-%  "Internal access groups control access to the back-office interface.<BR><BR>".
-%  qq!<A HREF="${p}edit/access_group.html"><I>Add an internal access group</I></A><BR><BR>!;
-%
-%#false laziness w/access_user.html & agent_type.cgi
-%my $agents_sub = sub {
-%  my $access_group = shift;
-%
-%  [ map {
-%          my $access_groupagent = $_;
-%          my $agent = $access_groupagent->agent;
-%          [
-%            {
-%              'data'  => $agent->agent,
-%              'align' => 'left',
-%              'link'  => $p. 'edit/agent.cgi?'. $agent->agentnum,
-%            },
-%          ];
-%        }
-%    grep { $_->agent } #?
-%    $access_group->access_groupagent,
-%
-%  ];
-%  
-%};
-%
-%my $rights_sub = sub {
-%  my $access_group = shift;
-%
-%  [ map { my $access_right = $_;
-%          [
-%            { 
-%              'data'  => $access_right->rightname,
-%              'align' => 'left',
-%            },
-%          ];
-%        }
-%    $access_group->access_rights,
-%
-%  ];
-%
-%};
-%
-%my $count_query = 'SELECT COUNT(*) FROM access_group';
-%
-%my $link = [ $p.'edit/access_group.html?', 'groupnum' ];
-%
-%
 <% include( 'elements/browse.html',
                  'title'       => 'Internal Access Groups',
                  'menubar'     => [ # 'Main menu' => $p,
@@ -77,3 +27,56 @@
                                   ],
              )
 %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $html_init = 
+  "Internal access groups control access to the back-office interface.<BR><BR>".
+  qq!<A HREF="${p}edit/access_group.html"><I>Add an internal access group</I></A><BR><BR>!;
+
+#false laziness w/access_user.html & agent_type.cgi
+my $agents_sub = sub {
+  my $access_group = shift;
+
+  [ map {
+          my $access_groupagent = $_;
+          my $agent = $access_groupagent->agent;
+          [
+            {
+              'data'  => $agent->agent,
+              'align' => 'left',
+              'link'  => $p. 'edit/agent.cgi?'. $agent->agentnum,
+            },
+          ];
+        }
+    grep { $_->agent } #?
+    $access_group->access_groupagent,
+
+  ];
+  
+};
+
+my $rights_sub = sub {
+  my $access_group = shift;
+
+  [ map { my $access_right = $_;
+          [
+            { 
+              'data'  => $access_right->rightname,
+              'align' => 'left',
+            },
+          ];
+        }
+    $access_group->access_rights,
+
+  ];
+
+};
+
+my $count_query = 'SELECT COUNT(*) FROM access_group';
+
+my $link = [ $p.'edit/access_group.html?', 'groupnum' ];
+
+</%init>

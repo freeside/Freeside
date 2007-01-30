@@ -1,43 +1,3 @@
-% 
-%
-%#code duplication w/ edit/part_svc.cgi, should move this hash to part_svc.pm
-%my %flag = (
-%  ''  => '',
-%  'D' => 'Default',
-%  'F' => 'Fixed (unchangeable)',
-%  'S' => 'Selectable choice',
-%  #'M' => 'Manual selection from inventory',
-%  'M' => 'Manual selected from inventory',
-%  #'A' => 'Automatically fill in from inventory',
-%  'A' => 'Automatically filled in from inventory',
-%  'X' => 'Excluded',
-%);
-%
-%my %search;
-%if ( $cgi->param('showdisabled') ) {
-%  %search = ();
-%} else {
-%  %search = ( 'disabled' => '' );
-%}
-%
-%my @part_svc =
-%  sort { $a->getfield('svcpart') <=> $b->getfield('svcpart') }
-%    qsearch('part_svc', \%search );
-%my $total = scalar(@part_svc);
-%
-%my %num_active_cust_svc = map { $_->svcpart => $_->num_cust_svc } @part_svc;
-%
-%if ( $cgi->param('orderby') eq 'active' ) {
-%  @part_svc = sort { $num_active_cust_svc{$b->svcpart} <=>
-%                     $num_active_cust_svc{$a->svcpart}     } @part_svc;
-%} elsif ( $cgi->param('orderby') eq 'svc' ) { 
-%  @part_svc = sort { lc($a->svc) cmp lc($b->svc) } @part_svc;
-%}
-%
-%my %inventory_class = ();
-%
-%
-
 <% include("/elements/header.html",'Service Definition Listing', menubar( 'Main Menu' => $p) ) %>
 
 <SCRIPT>
@@ -208,3 +168,45 @@ function part_export_areyousure(href) {
 </TABLE>
 </BODY>
 </HTML>
+<%init>
+ 
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+#code duplication w/ edit/part_svc.cgi, should move this hash to part_svc.pm
+my %flag = (
+  ''  => '',
+  'D' => 'Default',
+  'F' => 'Fixed (unchangeable)',
+  'S' => 'Selectable choice',
+  #'M' => 'Manual selection from inventory',
+  'M' => 'Manual selected from inventory',
+  #'A' => 'Automatically fill in from inventory',
+  'A' => 'Automatically filled in from inventory',
+  'X' => 'Excluded',
+);
+
+my %search;
+if ( $cgi->param('showdisabled') ) {
+  %search = ();
+} else {
+  %search = ( 'disabled' => '' );
+}
+
+my @part_svc =
+  sort { $a->getfield('svcpart') <=> $b->getfield('svcpart') }
+    qsearch('part_svc', \%search );
+my $total = scalar(@part_svc);
+
+my %num_active_cust_svc = map { $_->svcpart => $_->num_cust_svc } @part_svc;
+
+if ( $cgi->param('orderby') eq 'active' ) {
+  @part_svc = sort { $num_active_cust_svc{$b->svcpart} <=>
+                     $num_active_cust_svc{$a->svcpart}     } @part_svc;
+} elsif ( $cgi->param('orderby') eq 'svc' ) { 
+  @part_svc = sort { lc($a->svc) cmp lc($b->svc) } @part_svc;
+}
+
+my %inventory_class = ();
+
+</%init>

@@ -1,14 +1,3 @@
-%
-%my $agent = '';
-%my $hashref = {};
-%if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
-%  $hashref->{agentnum} = $1;
-%  $agent = qsearchs('agent', { 'agentnum' => $1 } );
-%}
-%
-%my $count_query = 'SELECT COUNT(*) FROM prepay_credit';
-%$count_query .= ' WHERE agentnum = '. $agent->agentnum if $agent;
-%
 <% include( 'elements/search.html',
                  'title'       => 'Unused Prepaid Cards'.
                                   ($agent ? ' for '. $agent->agent : ''),
@@ -61,3 +50,19 @@
                  ],
       )
 %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $agent = '';
+my $hashref = {};
+if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
+$hashref->{agentnum} = $1;
+$agent = qsearchs('agent', { 'agentnum' => $1 } );
+}
+
+my $count_query = 'SELECT COUNT(*) FROM prepay_credit';
+$count_query .= ' WHERE agentnum = '. $agent->agentnum if $agent;
+
+</%init>

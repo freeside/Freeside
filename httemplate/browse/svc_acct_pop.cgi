@@ -1,10 +1,3 @@
-<!-- mason kludge -->
-%
-%  my $accounts_sth = dbh->prepare("SELECT COUNT(*) FROM svc_acct
-%                                     WHERE popnum = ?           ")
-%    or die dbh->errstr;
-%
-
 <% include("/elements/header.html",'Access Number Listing', menubar( 'Main Menu' => $p )) %>
 Points of Presence<BR><BR>
 <A HREF="<% $p %>edit/svc_acct_pop.cgi"><I>Add new Access Number</I></A><BR><BR>
@@ -68,4 +61,13 @@ Points of Presence<BR><BR>
     </TABLE>
   </BODY>
 </HTML>
+<%init>
 
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $accounts_sth = dbh->prepare("SELECT COUNT(*) FROM svc_acct
+                                   WHERE popnum = ?           ")
+  or die dbh->errstr;
+
+</%init>

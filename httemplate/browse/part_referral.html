@@ -139,3 +139,9 @@ Where a customer heard about your service. Tracked for informational purposes.
     </TABLE>
   </BODY>
 </HTML>
+<%init>
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration')
+      || $FS::CurrentUser::CurrentUser->access_right('Edit advertising sources')
+      || $FS::CurrentUser::CurrentUser->access_right('Edit global advertising sources');
+</%init>

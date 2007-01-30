@@ -1,37 +1,3 @@
-%
-%$cgi->param('class') =~ /^(\w)$/ or die "illegal class";
-%my $class = $1;
-%
-%my %classmap = ( 'C' => 'cancel',
-%                 'S' => 'suspend',
-%               );
-%
-%my $classname = $classmap{$class};
-%
-%my $html_init = ucfirst($classname) .
-%  " reasons explain why we $classname a package.<BR><BR>".
-%  qq!<A HREF="${p}edit/reason.html?class=$class">!.
-%  "<I>Add a $classname reason</I></A><BR><BR>";
-%
-%my $where_clause = "WHERE class='$class'";
-%$where_clause .= " AND (disabled = '' OR disabled IS NULL)"
-%  unless $cgi->param('showdisabled');
-
-%my $disabledurl = $cgi->param('showdisabled')
-%     ? do { $cgi->param('showdisabled', 0);
-%           '( <a href="'. $cgi->self_url. '">hide disabled reasons</a> )'; }
-%     : do { $cgi->param('showdisabled', 1);
-%           '( <a href="'. $cgi->self_url. '">show disabled reasons</a> )'; }
-%     ;
-%
-%$html_init .= $disabledurl;
-%
-%my $count_query = 'SELECT COUNT(*) FROM reason LEFT JOIN reason_type on ' .
-%                  'reason_type.typenum = reason.reason_type ' . $where_clause;
-%
-%my $link = [ $p."edit/reason.html?class=$class&reasonnum=", 'reasonnum' ];
-%
-%
 <% include( 'elements/browse.html',
                  'title'       => ucfirst($classname) . ' Reasons',
                  'menubar'     => [ # 'Main menu' => $p,
@@ -62,3 +28,41 @@
                                   ],
              )
 %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+$cgi->param('class') =~ /^(\w)$/ or die "illegal class";
+my $class = $1;
+
+my %classmap = ( 'C' => 'cancel',
+               'S' => 'suspend',
+             );
+
+my $classname = $classmap{$class};
+
+my $html_init = ucfirst($classname) .
+" reasons explain why we $classname a package.<BR><BR>".
+qq!<A HREF="${p}edit/reason.html?class=$class">!.
+"<I>Add a $classname reason</I></A><BR><BR>";
+
+my $where_clause = "WHERE class='$class'";
+$where_clause .= " AND (disabled = '' OR disabled IS NULL)"
+unless $cgi->param('showdisabled');
+
+my $disabledurl = $cgi->param('showdisabled')
+   ? do { $cgi->param('showdisabled', 0);
+         '( <a href="'. $cgi->self_url. '">hide disabled reasons</a> )'; }
+   : do { $cgi->param('showdisabled', 1);
+         '( <a href="'. $cgi->self_url. '">show disabled reasons</a> )'; }
+   ;
+
+$html_init .= $disabledurl;
+
+my $count_query = 'SELECT COUNT(*) FROM reason LEFT JOIN reason_type on ' .
+                'reason_type.typenum = reason.reason_type ' . $where_clause;
+
+my $link = [ $p."edit/reason.html?class=$class&reasonnum=", 'reasonnum' ];
+
+</%init>

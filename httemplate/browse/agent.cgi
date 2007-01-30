@@ -1,17 +1,3 @@
-%
-%
-%  my %search;
-%  if ( $cgi->param('showdisabled')
-%       || !dbdef->table('agent')->column('disabled') ) {
-%    %search = ();
-%  } else {
-%    %search = ( 'disabled' => '' );
-%  }
-%
-%  my $conf = new FS::Conf;
-%
-%
-
 <% include("/elements/header.html",'Agent Listing', menubar(
   'Main Menu'   => $p,
   'Agent Types' => $p. 'browse/agent_type.cgi',
@@ -370,3 +356,19 @@ Unused
     </TABLE>
   </BODY>
 </HTML>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my %search;
+if ( $cgi->param('showdisabled')
+     || !dbdef->table('agent')->column('disabled') ) {
+  %search = ();
+} else {
+  %search = ( 'disabled' => '' );
+}
+
+my $conf = new FS::Conf;
+
+</%init>
