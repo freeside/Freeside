@@ -1,0 +1,16 @@
+<HTML><HEAD><TITLE>Signup successful</TITLE></HEAD>
+<BODY BGCOLOR="#e8e8e8"><FONT SIZE=7>Signup successful</FONT><BR><BR>
+Thanks for signing up!
+<BR><BR>
+Signup information for <%= $email_name %>:
+<BR><BR>
+Username: <%= $username %><BR>
+Password: <%= $password %><BR>
+Access number: (<%= $ac %>) / <%= $exch %> - <%= $local %><BR>
+Package: <%= $pkg %><BR>
+Charge: <%= sprintf('$%.2f', $part_pkg->{'options'}->{'setup_fee'}) %><BR>
+In <%= $part_pkg->{'options'}->{'free_days'} %> days you will be charged
+        <%= sprintf('$%.2f', $part_pkg->{'options'}->{'recur_fee'}) %>
+and <%= $part_pkg->{'freq_pretty'} %> thereafter.<BR>
+
+</BODY></HTML>

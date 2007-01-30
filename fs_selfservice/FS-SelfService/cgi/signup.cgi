@@ -280,9 +280,10 @@ sub print_okay {
   }
 
   #global for template
-  my $pkg = ( grep { $_->{'pkgpart'} eq $param{'pkgpart'} }
-                   @{ $init_data->{'part_pkg'} }
-            )[0]->{'pkg'};
+  my $part_pkg = ( grep { $_->{'pkgpart'} eq $param{'pkgpart'} }
+                        @{ $init_data->{'part_pkg'} }
+                 )[0];
+  my $pkg =  $part_pkg->{'pkg'};
 
   if ( $ieak_template && $user_agent->windows && $user_agent->ie ) {
     #send an IEAK config
@@ -299,6 +300,7 @@ sub print_okay {
             exch       => $exch,
             loc        => $loc,
             pkg        => $pkg,
+            part_pkg   => \$part_pkg,
           });
   }
 }
