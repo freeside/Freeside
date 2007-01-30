@@ -455,7 +455,7 @@ sub insert {
 
     if (   $conf->exists('emailinvoiceautoalways')
         || $conf->exists('emailinvoiceauto')
-        && $cust_main->invoicing_list_emailonly
+        && ! $cust_main->invoicing_list_emailonly
        ) {
       my @invoicing_list = $cust_main->invoicing_list;
       push @invoicing_list, $self->email;
