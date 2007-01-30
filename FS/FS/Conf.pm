@@ -559,6 +559,13 @@ httemplate/docs/config.html
   },
 
   {
+    'key'         => 'emailinvoiceautoalways',
+    'section'     => 'billing',
+    'description' => 'Automatically adds new accounts to the email invoice list even when the list contains email addresses',
+    'type'       => 'checkbox',
+  },
+
+  {
     'key'         => 'exclude_ip_addr',
     'section'     => '',
     'description' => 'Exclude these from the list of available broadband service IP addresses. (One per line)',

@@ -453,7 +453,10 @@ sub insert {
   if ( $cust_pkg ) {
     my $cust_main = $cust_pkg->cust_main;
 
-    if ( $conf->exists('emailinvoiceauto') ) {
+    if (   $conf->exists('emailinvoiceautoalways')
+        || $conf->exists('emailinvoiceauto')
+        && $cust_main->invoicing_list_emailonly
+       ) {
       my @invoicing_list = $cust_main->invoicing_list;
       push @invoicing_list, $self->email;
       $cust_main->invoicing_list(\@invoicing_list);
