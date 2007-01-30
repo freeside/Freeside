@@ -2,6 +2,7 @@ package FS::option_Common;
 
 use strict;
 use vars qw( @ISA $DEBUG );
+use Scalar::Util qw( blessed );
 use FS::Record qw( qsearch qsearchs dbh );
 
 @ISA = qw( FS::Record );
@@ -161,7 +162,7 @@ created or modified (see L<FS::part_export_option>).
 sub replace {
   my $self = shift;
 
-  my $old = ( ref($_[0]) eq ref($self) )
+  my $old = ( blessed($_[0]) && $_[0]->isa('FS::Record') )
               ? shift
               : $self->replace_old;
 
@@ -169,6 +170,7 @@ sub replace {
     ( ref($_[0]) eq 'HASH' )
       ? shift
       : { @_ };
+
   warn "FS::option_Common::replace called on $self with options ".
        join(', ', map "$_ => ". $options->{$_}, keys %$options)
     if $DEBUG;
