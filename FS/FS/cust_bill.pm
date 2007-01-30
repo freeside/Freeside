@@ -576,11 +576,11 @@ sub generate_email {
 
     my $path = "$FS::UID::conf_dir/conf.$FS::UID::datasrc";
     my $file;
-    if ( defined($args{'_template'}) && length($args{'_template'})
-         && -e "$path/logo_". $args{'_template'}. ".png"
+    if ( defined($args{'template'}) && length($args{'template'})
+         && -e "$path/logo_". $args{'template'}. ".png"
        )
     {
-      $file = "$path/logo_". $args{'_template'}. ".png";
+      $file = "$path/logo_". $args{'template'}. ".png";
     } else {
       $file = "$path/logo.png";
     }
