@@ -99,12 +99,15 @@ Adds this payment to the database.
 
 For backwards-compatibility and convenience, if the additional field invnum
 is defined, an FS::cust_bill_pay record for the full amount of the payment
-will be created.  In this case, custnum is optional.
+will be created.  In this case, custnum is optional.  An hash of optional
+arguments may be passed.  Currently "manual" is supported.  If true, a
+payment receipt is sent instead of a statement when 'payment_receipt_email'
+configuration option is set.
 
 =cut
 
 sub insert {
-  my $self = shift;
+  my ($self, %options) = @_;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -117,8 +120,9 @@ sub insert {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
+  my $cust_bill;
   if ( $self->invnum ) {
-    my $cust_bill = qsearchs('cust_bill', { 'invnum' => $self->invnum } )
+    $cust_bill = qsearchs('cust_bill', { 'invnum' => $self->invnum } )
       or do {
         $dbh->rollback if $oldAutoCommit;
         return "Unknown cust_bill.invnum: ". $self->invnum;
@@ -188,28 +192,31 @@ sub insert {
   if ( $conf->exists('payment_receipt_email')
        && grep { $_ !~ /^(POST|FAX)$/ } $cust_main->invoicing_list
   ) {
+    my $error;
+    if ( exists($options{ 'manual' }) && $options{ 'manual' } ) {
 
-    my $receipt_template = new Text::Template (
-      TYPE   => 'ARRAY',
-      SOURCE => [ map "$_\n", $conf->config('payment_receipt_email') ],
-    ) or do {
-      warn "can't create payment receipt template: $Text::Template::ERROR";
-      return '';
-    };
+      my $receipt_template = new Text::Template (
+        TYPE   => 'ARRAY',
+        SOURCE => [ map "$_\n", $conf->config('payment_receipt_email') ],
+      ) or do {
+        warn "can't create payment receipt template: $Text::Template::ERROR";
+        return '';
+      };
 
-    my @invoicing_list = grep { $_ !~ /^(POST|FAX)$/ } $cust_main->invoicing_list;
+      my @invoicing_list = grep { $_ !~ /^(POST|FAX)$/ }
+                             $cust_main->invoicing_list;
 
-    my $payby = $self->payby;
-    my $payinfo = $self->payinfo;
-    $payby =~ s/^BILL$/Check/ if $payinfo;
-    $payinfo = $self->paymask if $payby eq 'CARD' || $payby eq 'CHEK';
-    $payby =~ s/^CHEK$/Electronic check/;
+      my $payby = $self->payby;
+      my $payinfo = $self->payinfo;
+      $payby =~ s/^BILL$/Check/ if $payinfo;
+      $payinfo = $self->paymask if $payby eq 'CARD' || $payby eq 'CHEK';
+      $payby =~ s/^CHEK$/Electronic check/;
 
-    my $error = send_email(
-      'from'    => $conf->config('invoice_from'), #??? well as good as any
-      'to'      => \@invoicing_list,
-      'subject' => 'Payment receipt',
-      'body'    => [ $receipt_template->fill_in( HASH => {
+      $error = send_email(
+        'from'    => $conf->config('invoice_from'), #??? well as good as any
+        'to'      => \@invoicing_list,
+        'subject' => 'Payment receipt',
+        'body'    => [ $receipt_template->fill_in( HASH => {
                        'date'    => time2str("%a %B %o, %Y", $self->_date),
                        'name'    => $cust_main->name,
                        'paynum'  => $self->paynum,
@@ -217,10 +224,25 @@ sub insert {
                        'payby'   => ucfirst(lc($payby)),
                        'payinfo' => $payinfo,
                        'balance' => $cust_main->balance,
-                   } ) ],
-    );
+                     } ) ],
+      );
+    }else{
+      unless($cust_bill){
+        $cust_bill = ($cust_main->cust_bill)[-1];
+      }
+      if ($cust_bill) {
+        my $queue = new FS::queue {
+           'paynum' => $self->paynum,
+           'job'    => 'FS::cust_bill::queueable_send',
+        };
+        $error = $queue->insert(
+          'invnum' => $cust_bill->invnum,
+          'template' => 'statement',
+        );
+      }
+    }
     if ( $error ) {
-      warn "can't send payment receipt: $error";
+      warn "can't send payment receipt/statement: $error";
     }
 
   }
@@ -428,7 +450,7 @@ sub batch_insert {
   my $errors = 0;
   
   my @errors = map {
-    my $error = $_->insert;
+    my $error = $_->insert( 'manual' => 1 );
     if ( $error ) { 
       $errors++;
     } else {

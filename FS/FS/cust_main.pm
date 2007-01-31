@@ -2739,10 +2739,12 @@ sub realtime_bop {
        'payinfo'  => $payinfo,
        'paybatch' => $paybatch,
     } );
-    my $error = $cust_pay->insert;
+    my $error = $cust_pay->insert($options{'manual'} ? ( 'manual' => 1 ) : () );
     if ( $error ) {
       $cust_pay->invnum(''); #try again with no specific invnum
-      my $error2 = $cust_pay->insert;
+      my $error2 = $cust_pay->insert( $options{'manual'} ?
+                                      ( 'manual' => 1 ) : ()
+                                    );
       if ( $error2 ) {
         # gah, even with transactions.
         my $e = 'WARNING: Card/ACH debited but database not updated - '.

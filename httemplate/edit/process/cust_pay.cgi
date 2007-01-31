@@ -20,7 +20,7 @@
 %  #} fields('cust_pay')
 %} );
 %
-%my $error = $new->insert;
+%my $error = $new->insert( 'manual' => 1 );
 %
 %if ($error) {
 %  $cgi->param('error', $error);

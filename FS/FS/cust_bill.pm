@@ -571,8 +571,9 @@ sub generate_email {
       'Disposition' => 'inline',
     );
 
-    $args{'from'} =~ /\@([\w\.\-]+)/ or $1 = 'example.com';
-    my $content_id = join('.', rand()*(2**32), $$, time). "\@$1";
+    $args{'from'} =~ /\@([\w\.\-]+)/;
+    my $from = $1 || 'example.com';
+    my $content_id = join('.', rand()*(2**32), $$, time). "\@$from";
 
     my $path = "$FS::UID::conf_dir/conf.$FS::UID::datasrc";
     my $file;
@@ -727,6 +728,17 @@ single agent) or an arrayref of agentnums.
 INVOICE_FROM, if specified, overrides the default email invoice From: address.
 
 =cut
+
+sub queueable_send {
+  my %opt = @_;
+
+  my $self = qsearchs('cust_bill', { 'invnum' => $opt{invnum} } )
+    or die "invalid invoice number: " . $opt{invnum};
+
+  my $error = $self->send($opt{template}, $opt{agentnum}, $opt{invoice_from});
+
+  die $error if $error;
+}
 
 sub send {
   my $self = shift;
