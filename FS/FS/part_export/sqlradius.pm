@@ -31,6 +31,10 @@ tie %options, 'Tie::IxHash',
     type  => 'checkbox',
     label => 'Show the Called-Station-ID on session reports',
   },
+  'keep_password' => {
+    type  => 'checkbox',
+    label => 'Do not change the password on suspend and unsuspend events',
+  },
   'groups_susp_reason' => { label =>
                              'Radius group mapping to reason (via template user)',
                             type  => 'textarea',
@@ -201,7 +205,8 @@ sub _export_replace {
 sub _export_suspend {
   my( $self, $svc_acct ) = (shift, shift);
 
-  my $new = $svc_acct->clone_suspended;
+  my $new = $self->option('keep_password') ? $svc_acct
+                            : $svc_acct->clone_suspended;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
