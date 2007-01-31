@@ -1,40 +1,38 @@
-%
-%  my $conf = new FS::Conf;
-%  my $selected_taxclass = scalar(@_) ? shift : '';
-%
 % if ( $conf->exists('enable_taxclasses') ) { 
 
-
     <SELECT NAME="taxclass">
-% if ( $conf->exists('require_taxclasses') ) { 
 
-
+%   if ( $conf->exists('require_taxclasses') ) { 
         <OPTION VALUE="(select)">Select tax class
-% } else { 
-
-
+%   } else { 
         <OPTION VALUE="">
-% } 
-%
-%        my $sth = dbh->prepare('SELECT DISTINCT taxclass FROM cust_main_county')
-%          or die dbh->errstr;
-%        $sth->execute or die $sth->errstr;
-%        my %taxclasses = map { $_->[0] => 1 } @{$sth->fetchall_arrayref};
-%        my @taxclasses = grep $_, keys %taxclasses;
-%      
-% foreach my $taxclass ( @taxclasses ) { 
+%   } 
 
-  
-          <OPTION VALUE="<% $taxclass %>"<% $taxclass eq $selected_taxclass ? ' SELECTED' : '' %>><% $taxclass %>
-% } 
-
+%   foreach my $taxclass ( @{ $opt{'taxclasses'} } ) { 
+        <OPTION VALUE="<% $taxclass %>"<% $taxclass eq $selected_taxclass ? ' SELECTED' : '' %>><% $taxclass %>
+%   } 
 
     </SELECT>
+
 % } else { 
 
-
   <INPUT TYPE="hidden" NAME="taxclass" VALUE="<% $selected_taxclass %>">
+
 % } 
 
-  
+<%init>
 
+my( $selected_taxclass, %opt ) = @_;
+my $conf = new FS::Conf;
+
+unless ( $opt{'taxclasses'} ) {
+
+  my $sth = dbh->prepare('SELECT DISTINCT taxclass FROM cust_main_county')
+     or die dbh->errstr;
+  $sth->execute or die $sth->errstr;
+  my %taxclasses = map { $_->[0] => 1 } @{$sth->fetchall_arrayref};
+  @{ $opt{'taxclasses'} } = grep $_, keys %taxclasses;
+
+}
+
+</%init>

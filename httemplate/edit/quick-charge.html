@@ -19,7 +19,7 @@ function enable_quick_charge () {
 }
 
 function enable_quick_charge_desc () {
-  if (  document.QuickChargeForm.amount.value ) {
+  if (  document.QuickChargeForm.amount.value && document.QuickChargeForm.pkg.value ) {
     document.QuickChargeForm.submit.disabled = false;
   } else {
     document.QuickChargeForm.submit.disabled = true;
@@ -27,7 +27,7 @@ function enable_quick_charge_desc () {
 }
 
 function enable_quick_charge_amount () {
-  if ( document.QuickChargeForm.pkg.value ) {
+  if ( document.QuickChargeForm.amount.value && document.QuickChargeForm.pkg.value ) {
     document.QuickChargeForm.submit.disabled = false;
   } else {
     document.QuickChargeForm.submit.disabled = true;
@@ -78,22 +78,25 @@ function validate_quick_charge () {
 <FORM ACTION="process/quick-charge.cgi" NAME="QuickChargeForm" METHOD="POST" onsubmit="document.QuickChargeForm.submit.disabled=true;return validate_quick_charge();">
 
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<% $cgi->param('custnum') %>">
-<TABLE ID="QuickChargeTable" BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>
+<TABLE ID="QuickChargeTable" BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0 STYLE="background-color: #cccccc">
 
 <TR>
-  <TD>Amount:</TD>
+  <TD ALIGN="right">Amount:</TD>
   <TD>
-    $<INPUT TYPE="text" NAME="amount" SIZE=6 VALUE="<% $cgi->param('amount') %>" onChange="enable_quick_charge()" on KeyPress="enable_quick_charge_amount()">
+    $<INPUT TYPE="text" NAME="amount" SIZE=6 VALUE="<% $cgi->param('amount') %>" onChange="enable_quick_charge()" onKeyPress="enable_quick_charge_amount()">
   </TD>
-  <TD>
-    <% include('/elements/select-taxclass.html') %>
-  </TD>
+<% include('/elements/tr-select-taxclass.html') %>
 </TR>
   <TD>Description:</TD>
   <TD>
     <INPUT TYPE="text" NAME="pkg" SIZE="60" MAXLENGTH="65" VALUE="<% $cgi->param('pkg') %>" onChange="enable_quick_charge()" onKeyPress="enable_quick_charge_desc()">
   </TD>
 </TR>
+<TR>
+  <TD></TD>
+  <TD><FONT SIZE="-1">Optional additional description: </FONT></TD>
+</TR>
+
 % my $row = 0;
 %   if ( $cgi->param('error') ) {
 %     my $param = $cgi->Vars;
@@ -113,7 +116,7 @@ function validate_quick_charge () {
 </TABLE>
 
 <BR>
-<INPUT TYPE="submit" NAME="submit" VALUE="Add one-time charge" DISABLED>
+<INPUT TYPE="submit" NAME="submit" VALUE="Add one-time charge" <% $cgi->param('error') ? '' :' DISABLED' %>>
 
 </FORM>
 

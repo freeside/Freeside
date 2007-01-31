@@ -1,0 +1,32 @@
+% if ( ! $conf->exists('enable_taxclasses')
+%      || scalar(@{ $opt{'taxclasses'} }) == 0
+% ) { 
+
+  <INPUT TYPE="hidden" NAME="taxclass" VALUE="<% $taxclass %>">
+
+% } else { 
+
+  <TR>
+    <TD ALIGN="right"><% $opt{'label'} || 'Tax class: ' %></TD>
+    <TD>
+      <% include( '/elements/select-taxclass.html', $taxclass, %opt ) %>
+    </TD>
+  </TR>
+
+% } 
+<%init>
+
+my( $taxclass, %opt ) = @_;
+my $conf = new FS::Conf;
+
+unless ( $opt{'taxclasses'} ) {
+
+  my $sth = dbh->prepare('SELECT DISTINCT taxclass FROM cust_main_county')
+     or die dbh->errstr;
+  $sth->execute or die $sth->errstr;
+  my %taxclasses = map { $_->[0] => 1 } @{$sth->fetchall_arrayref};
+  @{ $opt{'taxclasses'} } = grep $_, keys %taxclasses;
+
+}
+
+</%init>
