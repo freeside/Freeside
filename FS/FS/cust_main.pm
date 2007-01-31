@@ -2531,8 +2531,7 @@ sub realtime_bop {
     $payname =  "$payfirst $paylast";
   }
 
-  # invoicing_list_emailonly instead? push one?  which one?
-  my @invoicing_list = grep { $_ ne 'POST' } $self->invoicing_list;
+  my @invoicing_list = $self->invoicing_list_emailonly;
   if ( $conf->exists('emailinvoiceautoalways')
        || $conf->exists('emailinvoiceauto') && ! @invoicing_list
        || ( $conf->exists('emailinvoiceonly') && ! @invoicing_list ) ) {
@@ -3021,8 +3020,7 @@ sub realtime_refund_bop {
     $payname =  "$payfirst $paylast";
   }
 
-  # invoicing_list_emailonly instead? push one?  which one?
-  my @invoicing_list = grep { $_ ne 'POST' } $self->invoicing_list;
+  my @invoicing_list = $self->invoicing_list_emailonly;
   if ( $conf->exists('emailinvoiceautoalways')
        || $conf->exists('emailinvoiceauto') && ! @invoicing_list
        || ( $conf->exists('emailinvoiceonly') && ! @invoicing_list ) ) {
