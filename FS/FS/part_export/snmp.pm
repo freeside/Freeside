@@ -192,7 +192,8 @@ sub _prepare_args {
 }
 
 sub snmp_cmd {
-  require Net::SNMP;
+  eval "use Net::SNMP;";
+  die $@ if $@;
 
   my %args = ();
   my @varbindlist = ();
