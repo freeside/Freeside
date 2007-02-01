@@ -100,17 +100,20 @@ sub signup_info {
   if ( grep { $conf->exists($_) } @addl ) {
   
     $signup_info->{optional_packages} = [];
-    $signup_info->{optional_packages_options} = [];
 
     foreach my $addl ( @addl ) {
       my $classnum = $conf->config($addl) or next;
-      my @pkgs = map { $_->hashref }
+
+      my @pkgs = map { {
+                         'freq_pretty' => $_->freq_pretty,
+                         'options'     => { $_->options },
+                         %{ $_->hashref }
+                       };
+                     }
                      qsearch( 'part_pkg', { classnum => $classnum } );
+
       push @{$signup_info->{optional_packages}}, \@pkgs;
-      my @options = map { { $_->options,
-                            'freq_pretty' => $_->freq_pretty
-                        } } @pkgs;
-      push @{$signup_info->{options_packages_options}}, \@options
+
     }
 
   }
@@ -152,7 +155,8 @@ sub signup_info {
                 'freq_pretty' => $_->freq_pretty,
                 'options'     => { $_->options },
                 %{$_->hashref}
-            } }
+              };
+            }
           grep { $_->svcpart('svc_acct') }
           map { $_->part_pkg }
             qsearchs( 'reg_code', { 'code'     => $packet->{'reg_code'},
