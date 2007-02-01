@@ -1519,7 +1519,6 @@ sub _op_usage {
   my $action = $op2action{$op};
 
   if ( &{$op2condition{$op}}($self, $column, $amount) ) {
-    my $cust_pkg = $self->cust_svc->cust_pkg;
     foreach my $part_export ( $self->cust_svc->part_svc->part_export ) {
       if ($part_export->option('overlimit_groups')) {
         my ($new,$old);
