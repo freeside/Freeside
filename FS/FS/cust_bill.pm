@@ -2331,6 +2331,7 @@ sub print_html {
                        s/\\item /  <li>/;
                        s/\\end\{enumerate\}/<\/ol>/;
                        s/\\textbf\{(.*)\}/<b>$1<\/b>/;
+                       s/\\\\\*/ /;
                        $_;
                      } 
                      $conf->config_orbase('invoice_latexnotes', $template)
