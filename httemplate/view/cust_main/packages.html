@@ -350,7 +350,7 @@ Current packages
         <TD ALIGN="right" VALIGN="top" STYLE="padding-bottom:5px;padding-top:0px"><FONT SIZE="-2">
 
 %         if ( $curuser->access_right('Recharge customer service')
-%              && $cust_svc->svcdb eq 'svc_acct'
+%              && $part_svc->svcdb eq 'svc_acct'
 %              && (    $cust_svc->svc_x->seconds    ne ''
 %                   || $cust_svc->svc_x->upbytes    ne ''
 %                   || $cust_svc->svc_x->downbytes  ne ''
