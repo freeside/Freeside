@@ -1518,6 +1518,29 @@ sub _op_usage {
 
   my $action = $op2action{$op};
 
+  if ( &{$op2condition{$op}}($self, $column, $amount) ) {
+    my $cust_pkg = $self->cust_svc->cust_pkg;
+    foreach my $part_export ( $self->cust_svc->part_svc->part_export ) {
+      if ($part_export->option('overlimit_groups')) {
+        my ($new,$old);
+        my $other = new FS::svc_acct $self->hashref;
+        my $groups = &{ $self->_fieldhandlers->{'usergroup'} }
+                       ($self, $part_export->option('overlimit_groups'));
+        $other->usergroup( $groups );
+        if ($action eq 'suspend'){
+          $new = $other; $old = $self;
+        }else{
+          $new = $self; $old = $other;
+        }
+        my $error = $part_export->export_replace($new, $old);
+        if ( $error ) {
+          $dbh->rollback if $oldAutoCommit;
+          return "Error replacing radius groups in export, ${op}: $error";
+        }
+      }
+    }
+  }
+
   if ( $conf->exists("svc_acct-usage_$action")
        && &{$op2condition{$op}}($self, $column, $amount)    ) {
     #my $error = $self->$action();
