@@ -23,28 +23,21 @@ sub signup_info {
 
   my $conf = new FS::Conf;
 
-  use vars qw($signup_info); #cache for performance;
-  $signup_info ||= {
+  use vars qw($signup_info_cache); #cache for performance;
+  $signup_info_cache ||= {
     'cust_main_county' =>
       [ map { $_->hashref } qsearch('cust_main_county', {}) ],
 
     'agent' =>
       [
         map { $_->hashref }
-          qsearch('agent', dbdef->table('agent')->column('disabled')
-                             ? { 'disabled' => '' }
-                             : {}
-                 )
+          qsearch('agent', { 'disabled' => '' } )
       ],
 
     'part_referral' =>
       [
         map { $_->hashref }
-          qsearch('part_referral',
-                    dbdef->table('part_referral')->column('disabled')
-                      ? { 'disabled' => '' }
-                      : {}
-                 )
+          qsearch('part_referral', { 'disabled' => '' })
       ],
 
     'agentnum2part_pkg' =>
@@ -61,10 +54,7 @@ sub signup_info {
                 grep { $_->svcpart('svc_acct') && $href->{ $_->pkgpart } }
                   qsearch( 'part_pkg', { 'disabled' => '' } )
             ];
-        } qsearch('agent', dbdef->table('agent')->column('disabled')
-                             ? { 'disabled' => '' }
-                             : {}
-                 )
+        } qsearch('agent', { 'disabled' => '' })
       },
 
     'svc_acct_pop' => [ map { $_->hashref } qsearch('svc_acct_pop',{} ) ],
@@ -77,9 +67,9 @@ sub signup_info {
 
     'card_types' => card_types(),
 
-    'cvv_enabled' => defined dbdef->table('cust_main')->column('paycvv'),
+    'cvv_enabled' => defined dbdef->table('cust_main')->column('paycvv'), # 1,
 
-    'ship_enabled' => defined dbdef->table('cust_main')->column('ship_last'),
+    'ship_enabled' => defined dbdef->table('cust_main')->column('ship_last'),#1,
 
     'msgcat' => { map { $_=>gettext($_) } qw(
       passwords_dont_match invalid_card unknown_card_type not_a empty_password illegal_or_empty_text
@@ -94,6 +84,8 @@ sub signup_info {
     'default_pkgpart' => $conf->config('signup_server-default_pkgpart'),
 
   };
+
+  my $signup_info = { %$signup_info_cache };
 
   my @addl = qw( signup_server-classnum2 signup_server-classnum3 );
 
@@ -120,6 +112,8 @@ sub signup_info {
 
   my $agentnum = $packet->{'agentnum'}
                  || $conf->config('signup_server-default_agentnum');
+  $agentnum =~ /^(\d*)$/ or die "illegal agentnum";
+  $agentnum = $1;
 
   my $session = '';
   if ( exists $packet->{'session_id'} ) {
@@ -189,6 +183,19 @@ sub signup_info {
 
   if ( $agentnum && ! @{ $signup_info->{'part_pkg'} } ) {
     $signup_info->{'part_pkg'} = $signup_info->{'agentnum2part_pkg'}{$agentnum};
+
+    $signup_info->{'part_referral'} =
+      [
+        map { $_->hashref }
+          qsearch( {
+                     'table'     => 'part_referral',
+                     'hashref'   => { 'disabled' => '' },
+                     'extra_sql' => "AND (    agentnum = $agentnum  ".
+                                    "      OR agentnum IS NULL    ) ",
+                   },
+                 )
+      ];
+
   }
   # else {
   # delete $signup_info->{'part_pkg'};
