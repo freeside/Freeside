@@ -62,7 +62,8 @@ use FS::part_pkg;
 sub calc_setup {
   my($self, $cust_pkg, $sdate, $details ) = @_;
 
-  my ( $i, $count ) = ( 0, $self->option( 'additional_count' ) );
+  my $i = 0;
+  my $count = $self->option( 'additional_count', 'quiet' ) || 0;
   while ($i < $count) {
     push @$details, $self->option( 'additional_info' . $i++ );
   }
