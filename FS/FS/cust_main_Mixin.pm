@@ -5,7 +5,7 @@ use vars qw( $DEBUG );
 use FS::UID qw(dbh);
 use FS::cust_main;
 
-$DEBUG = 1;
+$DEBUG = 0;
 
 =head1 NAME
 
