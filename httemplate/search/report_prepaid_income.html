@@ -35,3 +35,9 @@
 <INPUT TYPE="submit" VALUE="Generate report">
 
 <% include('/elements/footer.html') %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+</%init>

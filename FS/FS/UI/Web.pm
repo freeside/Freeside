@@ -198,15 +198,16 @@ configuration value.
 
 =cut
 
-use vars qw( @cust_fields );
+use vars qw( @cust_fields @cust_colors @cust_styles @cust_aligns );
 
 sub cust_header {
 
-  warn "FS::svc_Common::cust_header called"
+  warn "FS::UI:Web::cust_header called"
     if $DEBUG;
 
   my %header2method = (
     'Customer'                 => 'name',
+    'Cust. Status'             => 'ucfirst_cust_status',
     'Cust#'                    => 'custnum',
     'Name'                     => 'contact',
     'Company'                  => 'company',
@@ -225,6 +226,16 @@ sub cust_header {
     'Day phone'                => 'daytime', # XXX should use msgcat, but how?
     'Night phone'              => 'night',   # XXX should use msgcat, but how?
     'Invoicing email(s)'       => 'invoicing_list_emailonly_scalar',
+  );
+
+  my %header2colormethod = (
+    'Cust. Status' => 'cust_statuscolor',
+  );
+  my %header2style = (
+    'Cust. Status' => 'b',
+  );
+  my %header2align = (
+    'Cust. Status' => 'c',
   );
 
   my $cust_fields;
@@ -247,15 +258,24 @@ sub cust_header {
         if $DEBUG;
       $cust_fields = $1;
     } else { 
-      warn "  no cust-fields configuration value found; using default 'Customer'"
+      warn "  no cust-fields configuration value found; using default 'Cust. Status | Customer'"
         if $DEBUG;
-      $cust_fields = 'Customer';
+      $cust_fields = 'Cust. Status | Customer';
     }
   
   }
 
   @cust_header = split(/ \| /, $cust_fields);
   @cust_fields = map { $header2method{$_} } @cust_header;
+  @cust_colors = map { exists $header2colormethod{$_}
+                         ? $header2colormethod{$_}
+                         : ''
+                     }
+                     @cust_header;
+  @cust_styles = map { exists $header2style{$_} ? $header2style{$_} : '' }
+                     @cust_header;
+  @cust_aligns = map { exists $header2align{$_} ? $header2align{$_} : 'l' }
+                     @cust_header;
 
   #my $svc_x = shift;
   @cust_header;
@@ -286,9 +306,9 @@ sub cust_sql_fields {
   map "cust_main.$_", @fields;
 }
 
-=item cust_fields SVC_OBJECT [ CUST_FIELDS_VALUE ]
+=item cust_fields OBJECT [ CUST_FIELDS_VALUE ]
 
-Given a svc_ object that contains fields from cust_main (say, from a
+Given an object that contains fields from cust_main (say, from a
 JOINed search.  See httemplate/search/svc_* for examples), returns an array
 of customer information, or "(unlinked)" if this service is not linked to a
 customer.
@@ -301,7 +321,7 @@ setting is supplied, the <B>cust-fields</B> configuration value.
 
 sub cust_fields {
   my $svc_x = shift;
-  warn "FS::svc_Common::cust_fields called for $svc_x ".
+  warn "FS::UI::Web::cust_fields called for $svc_x ".
        "(cust_fields: @cust_fields)"
     if $DEBUG > 1;
 
@@ -320,6 +340,67 @@ sub cust_fields {
       $seen_unlinked++ ? '' : '(unlinked)';
     }
   } @cust_fields;
+}
+
+=item cust_colors
+
+Returns an array of subroutine references (or empty strings) for returning
+customer information colors.
+
+As with L<the cust_header subroutine|/cust_header>, the fields returned are
+defined by the supplied customer fields setting, or if no customer fields
+setting is supplied, the <B>cust-fields</B> configuration value. 
+
+=cut
+
+sub cust_colors {
+  map { 
+    my $method = $_;
+    if ( $method ) {
+      sub { shift->$method(@_) };
+    } else {
+      '';
+    }
+  } @cust_colors;
+}
+
+=item cust_styles
+
+Returns an array of customer information styles.
+
+As with L<the cust_header subroutine|/cust_header>, the fields returned are
+defined by the supplied customer fields setting, or if no customer fields
+setting is supplied, the <B>cust-fields</B> configuration value. 
+
+=cut
+
+sub cust_styles {
+  map { 
+    if ( $_ ) {
+      $_;
+    } else {
+      '';
+    }
+  } @cust_styles;
+}
+
+=item cust_aligns
+
+Returns an array or scalar (depending on context) of customer information
+alignments.
+
+As with L<the cust_header subroutine|/cust_header>, the fields returned are
+defined by the supplied customer fields setting, or if no customer fields
+setting is supplied, the <B>cust-fields</B> configuration value. 
+
+=cut
+
+sub cust_aligns {
+  if ( wantarray ) {
+    @cust_aligns;
+  } else {
+    join('', @cust_aligns);
+  }
 }
 
 ###

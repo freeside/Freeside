@@ -1,4 +1,71 @@
+<% include( 'elements/search.html',
+                 'title'       => $title,
+                 'html_init'   => $html_init,
+                 'menubar'     => $menubar,
+                 'name'        => 'billing events',
+                 'query'       => $sql_query,
+                 'count_query' => $count_sql,
+                 'header'      => [ 'Event',
+                                    'Date',
+                                    'Status',
+                                    #'Inv #', 'Inv Date', 'Cust #',
+                                    'Invoice',
+                                    FS::UI::Web::cust_header(),
+                                  ],
+                 'fields' => [
+                               'event',
+                               sub { time2str("%b %d %Y %T", $_[0]->_date) },
+                               sub { 
+                                     #my $cust_bill_event = shift;
+                                     my $status = $_[0]->status;
+                                     $status .= ': '.$_[0]->statustext
+                                       if $_[0]->statustext;
+                                     $status;
+                                   },
+                               sub {
+                                     #my $cust_bill_event = shift;
+                                     'Invoice #'. $_[0]->invnum.
+                                     ' ('.
+                                       time2str("%D", $_[0]->cust_bill_date).
+                                     ')';
+                                   },
+                               \&FS::UI::Web::cust_fields,
+                             ],
+                'align' => 'lrlr'.FS::UI::Web::cust_aligns(),
+                'links' => [
+                              '',
+                              '',
+                              '',
+                              sub {
+                                my $part_bill_event = shift;
+                                my $template = $part_bill_event->templatename;
+                                $template .= '-' if $template;
+                                [ "${p}view/cust_bill.cgi?$template", 'invnum'];
+                              },
+                              ( map { $_ ne 'Cust. Status' ? $link_cust : '' }
+                                    FS::UI::Web::cust_header()
+                              ),
+                            ],
+                 'color' => [ 
+                              '',
+                              '',
+                              '',
+                              '',
+                              FS::UI::Web::cust_colors(),
+                            ],
+                 'style' => [ 
+                              '',
+                              '',
+                              '',
+                              '',
+                              FS::UI::Web::cust_styles(),
+                            ],
+             )
+%>
 <%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Billing event reports');
 
 my $title = $cgi->param('failed')
               ? 'Failed invoice events'
@@ -92,50 +159,3 @@ my $link_cust = sub {
 };
 
 </%init>
-<% include( 'elements/search.html',
-                 'title'       => $title,
-                 'html_init'   => $html_init,
-                 'menubar'     => $menubar,
-                 'name'        => 'billing events',
-                 'query'       => $sql_query,
-                 'count_query' => $count_sql,
-                 'header'      => [ 'Event',
-                                    'Date',
-                                    'Status',
-                                    #'Inv #', 'Inv Date', 'Cust #',
-                                    'Invoice',
-                                    FS::UI::Web::cust_header(),
-                                  ],
-                 'fields' => [
-                               'event',
-                               sub { time2str("%b %d %Y %T", $_[0]->_date) },
-                               sub { 
-                                     #my $cust_bill_event = shift;
-                                     my $status = $_[0]->status;
-                                     $status .= ': '.$_[0]->statustext
-                                       if $_[0]->statustext;
-                                     $status;
-                                   },
-                               sub {
-                                     #my $cust_bill_event = shift;
-                                     'Invoice #'. $_[0]->invnum.
-                                     ' ('.
-                                       time2str("%D", $_[0]->cust_bill_date).
-                                     ')';
-                                   },
-                               \&FS::UI::Web::cust_fields,
-                             ],
-                 'links' => [
-                              '',
-                              '',
-                              '',
-                              sub {
-                                my $part_bill_event = shift;
-                                my $template = $part_bill_event->templatename;
-                                $template .= '-' if $template;
-                                [ "${p}view/cust_bill.cgi?$template", 'invnum'];
-                              },
-                              ( map { $link_cust } FS::UI::Web::cust_header() ),
-                            ],
-             )
-%>

@@ -1,55 +1,3 @@
-%
-%   my $title = 'Credit Search Results';
-%   #my( $count_query, $sql_query );
-%
-%   my @search = ();
-%
-%   if ( $cgi->param('otaker') && $cgi->param('otaker') =~ /^([\w\.\-]+)$/ ) {
-%     push @search, "cust_credit.otaker = '$1'";
-%   }
-%
-%   if ( $cgi->param('agentnum') && $cgi->param('agentnum') =~ /^(\d+)$/ ) {
-%     push @search, "agentnum = $1";
-%     my $agent = qsearchs('agent', { 'agentnum' => $1 } );
-%     die "unknown agentnum $1" unless $agent;
-%     $title = $agent->agent. " $title";
-%   }
-%
-%   my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
-%   push @search, "_date >= $beginning ",
-%                 "_date <= $ending";
-%
-%   push @search, FS::UI::Web::parse_lt_gt($cgi, 'amount' );
-%
-%   #here is the agent virtualization
-%   push @search, $FS::CurrentUser::CurrentUser->agentnums_sql;
-%
-%   my $where = 'WHERE '. join(' AND ', @search);
-%
-%   my $count_query = 'SELECT COUNT(*), SUM(amount) '.
-%                     'FROM cust_credit LEFT JOIN cust_main USING ( custnum ) '.
-%                     $where;
-%
-%   my $sql_query   = {
-%     'table'     => 'cust_credit',
-%     'select'    => join(', ',
-%                      'cust_credit.*',
-%                      'cust_main.custnum as cust_main_custnum',
-%                      FS::UI::Web::cust_sql_fields(),
-%                    ),
-%     'hashref'   => {},
-%     'extra_sql' => $where,
-%     'addl_from' => 'LEFT JOIN cust_main USING ( custnum )',
-%   };
-%
-%     my $clink = sub {
-%       my $cust_bill = shift;
-%       $cust_bill->cust_main_custnum
-%         ? [ "${p}view/cust_main.cgi?", 'custnum' ]
-%         : '';
-%     };
-%
-%
 <% include( 'elements/search.html',
                  'title'       => $title,
                  'name'        => 'credits',
@@ -72,13 +20,85 @@
                    'reason',
                  ],
                  #'align' => 'rrrllll',
-                 'align' => 'rr',
+                 'align' => 'rr'.FS::UI::Web::cust_aligns().'ll',
                  'links' => [
                    '',
                    '',
-                   ( map { $clink } FS::UI::Web::cust_header() ),
+                   ( map { $_ ne 'Cust. Status' ? $clink : '' }
+                         FS::UI::Web::cust_header()
+                   ),
                    '',
                    '',
                  ],
+                 'color' => [ 
+                              '',
+                              '',
+                              FS::UI::Web::cust_colors(),
+                              '',
+                              '',
+                            ],
+                 'style' => [ 
+                              '',
+                              '',
+                              FS::UI::Web::cust_styles(),
+                              '',
+                              '',
+                            ],
       )
 %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+my $title = 'Credit Search Results';
+#my( $count_query, $sql_query );
+
+my @search = ();
+
+if ( $cgi->param('otaker') && $cgi->param('otaker') =~ /^([\w\.\-]+)$/ ) {
+  push @search, "cust_credit.otaker = '$1'";
+}
+
+if ( $cgi->param('agentnum') && $cgi->param('agentnum') =~ /^(\d+)$/ ) {
+  push @search, "agentnum = $1";
+  my $agent = qsearchs('agent', { 'agentnum' => $1 } );
+  die "unknown agentnum $1" unless $agent;
+  $title = $agent->agent. " $title";
+}
+
+my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
+push @search, "_date >= $beginning ",
+              "_date <= $ending";
+
+push @search, FS::UI::Web::parse_lt_gt($cgi, 'amount' );
+
+#here is the agent virtualization
+push @search, $FS::CurrentUser::CurrentUser->agentnums_sql;
+
+my $where = 'WHERE '. join(' AND ', @search);
+
+my $count_query = 'SELECT COUNT(*), SUM(amount) '.
+                  'FROM cust_credit LEFT JOIN cust_main USING ( custnum ) '.
+                  $where;
+
+my $sql_query   = {
+  'table'     => 'cust_credit',
+  'select'    => join(', ',
+                   'cust_credit.*',
+                   'cust_main.custnum as cust_main_custnum',
+                   FS::UI::Web::cust_sql_fields(),
+                 ),
+  'hashref'   => {},
+  'extra_sql' => $where,
+  'addl_from' => 'LEFT JOIN cust_main USING ( custnum )',
+};
+
+  my $clink = sub {
+    my $cust_bill = shift;
+    $cust_bill->cust_main_custnum
+      ? [ "${p}view/cust_main.cgi?", 'custnum' ]
+      : '';
+  };
+
+</%init>

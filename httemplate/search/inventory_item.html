@@ -1,54 +1,4 @@
-%
-%
-%my $classnum = $cgi->param('classnum');
-%$classnum =~ /^(\d+)$/ or eidiot "illegal classnum $classnum";
-%$classnum = $1;
-%
-%my $inventory_class = qsearchs( {
-%  'table'     => 'inventory_class',
-%  'hashref'   => { 'classnum' => $classnum },
-%} );
-%
-%my $title = $inventory_class->classname. ' Inventory';
-%
-%#little false laziness with SQL fragments in inventory_class.pm
-%my $extra_sql = '';
-%if ( $cgi->param('avail') ) {
-%  $extra_sql = 'AND ( svcnum IS NULL OR svcnum = 0 )';
-%  $title .= ' - Available';
-%} elsif ( $cgi->param('used') ) {
-%  $extra_sql = 'AND svcnum IS NOT NULL AND svcnum > 0';
-%  $title .= ' - In use';
-%}
-%
-%my $count_query =
-%  "SELECT COUNT(*) FROM inventory_item WHERE classnum = $classnum $extra_sql";
-%
-%my $link = sub {
-%  my $inventory_item = shift;
-%  if ( $inventory_item->svcnum ) {
-%    [ "${p}view/svc_acct.cgi?", 'svcnum' ];
-%  } else {
-%    '';
-%  }
-%};
-%my $link_cust = sub {
-%  my $inventory_item = shift;
-%  if ( $inventory_item->custnum ) {
-%    [ "${p}view/cust_main.cgi?", 'custnum' ];
-%  } else {
-%    '';
-%  }
-%};
-%
-%my $addl_from = ' LEFT JOIN cust_svc  USING ( svcnum  ) '.
-%                ' LEFT JOIN part_svc  USING ( svcpart ) '.
-%                ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
-%                ' LEFT JOIN cust_main USING ( custnum ) ';
-%
-%
 <% include( 'elements/search.html',
-
                  'title'       => $title,
 
                  #less lame to use Lingua:: something to pluralize
@@ -97,13 +47,79 @@
                    \&FS::UI::Web::cust_fields,
 
                  ],
-
+                 'align'       => 'rll'.FS::UI::Web::cust_aligns(),
                  'links'       => [
                    '',
                    '',
                    $link,
-                   ( map { $link_cust } FS::UI::Web::cust_header() ),
+                   ( map { $_ ne 'Cust. Status' ? $link_cust : '' }
+                         FS::UI::Web::cust_header()
+                   ),
                  ],
+                 'color' => [ 
+                              '',
+                              '',
+                              '',
+                              FS::UI::Web::cust_colors(),
+                            ],
+                 'style' => [ 
+                              '',
+                              '',
+                              '',
+                              FS::UI::Web::cust_styles(),
+                            ],
 
              )
 %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $classnum = $cgi->param('classnum');
+$classnum =~ /^(\d+)$/ or eidiot "illegal classnum $classnum";
+$classnum = $1;
+
+my $inventory_class = qsearchs( {
+  'table'     => 'inventory_class',
+  'hashref'   => { 'classnum' => $classnum },
+} );
+
+my $title = $inventory_class->classname. ' Inventory';
+
+#little false laziness with SQL fragments in inventory_class.pm
+my $extra_sql = '';
+if ( $cgi->param('avail') ) {
+  $extra_sql = 'AND ( svcnum IS NULL OR svcnum = 0 )';
+  $title .= ' - Available';
+} elsif ( $cgi->param('used') ) {
+  $extra_sql = 'AND svcnum IS NOT NULL AND svcnum > 0';
+  $title .= ' - In use';
+}
+
+my $count_query =
+  "SELECT COUNT(*) FROM inventory_item WHERE classnum = $classnum $extra_sql";
+
+my $link = sub {
+  my $inventory_item = shift;
+  if ( $inventory_item->svcnum ) {
+    [ "${p}view/svc_acct.cgi?", 'svcnum' ];
+  } else {
+    '';
+  }
+};
+my $link_cust = sub {
+  my $inventory_item = shift;
+  if ( $inventory_item->custnum ) {
+    [ "${p}view/cust_main.cgi?", 'custnum' ];
+  } else {
+    '';
+  }
+};
+
+my $addl_from = ' LEFT JOIN cust_svc  USING ( svcnum  ) '.
+                ' LEFT JOIN part_svc  USING ( svcpart ) '.
+                ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
+                ' LEFT JOIN cust_main USING ( custnum ) ';
+
+</%init>

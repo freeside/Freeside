@@ -3886,6 +3886,8 @@ sub country_full {
   code2country($self->country);
 }
 
+=item cust_status
+
 =item status
 
 Returns a status string for this customer, currently:
@@ -3906,15 +3908,33 @@ Returns a status string for this customer, currently:
 
 =cut
 
-sub status {
+sub status { shift->cust_status(@_); }
+
+sub cust_status {
   my $self = shift;
   for my $status (qw( prospect active inactive suspended cancelled )) {
     my $method = $status.'_sql';
     my $numnum = ( my $sql = $self->$method() ) =~ s/cust_main\.custnum/?/g;
     my $sth = dbh->prepare("SELECT $sql") or die dbh->errstr;
-    $sth->execute( ($self->custnum) x $numnum ) or die $sth->errstr;
+    $sth->execute( ($self->custnum) x $numnum )
+      or die "Error executing 'SELECT $sql': ". $sth->errstr;
     return $status if $sth->fetchrow_arrayref->[0];
   }
+}
+
+=item ucfirst_cust_status
+
+=item ucfirst_status
+
+Returns the status with the first character capitalized.
+
+=cut
+
+sub ucfirst_status { shift->ucfirst_cust_status(@_); }
+
+sub ucfirst_cust_status {
+  my $self = shift;
+  ucfirst($self->cust_status);
 }
 
 =item statuscolor
@@ -3932,9 +3952,11 @@ use vars qw(%statuscolor);
   'cancelled' => 'FF0000', #red
 );
 
-sub statuscolor {
+sub statuscolor { shift->cust_statuscolor(@_); }
+
+sub cust_statuscolor {
   my $self = shift;
-  $statuscolor{$self->status};
+  $statuscolor{$self->cust_status};
 }
 
 =back

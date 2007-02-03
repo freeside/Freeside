@@ -42,6 +42,9 @@
 
 <%init>
 
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
 my $sth = dbh->prepare("SELECT DISTINCT otaker FROM cust_credit")
   or die dbh->errstr;
 $sth->execute or die $sth->errstr;

@@ -160,7 +160,7 @@ assigned to users and/or groups.
 # report/listing rights...
 ###
   'List customers',
-  #'List zip codes',
+  'List zip codes',
   'List invoices',
   'List packages',
   'List services',
@@ -177,6 +177,11 @@ assigned to users and/or groups.
   'Reprocess batches', #
   'Import',            #
   'Export',            #
+
+###
+# misc misc rights
+###
+  'Raw SQL',
 
 ###
 # setup/config rights

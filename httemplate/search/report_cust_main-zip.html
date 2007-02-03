@@ -42,5 +42,11 @@
     </TABLE>
     <BR><INPUT TYPE="submit" VALUE="Get Report">
     </FORM>
-  </BODY>
-</HTML>
+
+<% include('/elements/footer.html') %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('List zip codes');
+
+</%init>

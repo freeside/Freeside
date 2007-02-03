@@ -9,4 +9,9 @@ Status: <SELECT NAME="freesidestatus">
 <INPUT TYPE="submit" VALUE="Search Call Detail Records">
 
 <% include('/elements/footer.html') %>
+<%init>
 
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('List rating data');
+
+</%init>

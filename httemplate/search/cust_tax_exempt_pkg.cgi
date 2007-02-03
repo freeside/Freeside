@@ -54,9 +54,29 @@
                    $ilink,
                    $ilink,
 
-                   ( map { $clink } FS::UI::Web::cust_header() ),
+                   ( map { $_ ne 'Cust. Status' ? $clink : '' }
+                         FS::UI::Web::cust_header()
+                   ),
                  ],
-                 'align' => 'rrrlrc', # 'rlrrrc',
+                 'align' => 'rrrlrc'.FS::UI::Web::cust_aligns(), # 'rlrrrc',
+                 'color' => [ 
+                              '',
+                              '',
+                              '',
+                              '',
+                              '',
+                              '',
+                              FS::UI::Web::cust_colors(),
+                            ],
+                 'style' => [ 
+                              '',
+                              '',
+                              '',
+                              '',
+                              '',
+                              '',
+                              FS::UI::Web::cust_styles(),
+                            ],
            )
 %>
 <%once>
@@ -79,6 +99,9 @@ my $join = "
 
 </%once>
 <%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('View customer tax exemptions');
 
 my @where = ();
 

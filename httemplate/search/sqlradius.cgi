@@ -84,8 +84,11 @@
 
 % } 
 
-
 <%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('List rating data');
+
 ###
 # parse cgi params
 ###

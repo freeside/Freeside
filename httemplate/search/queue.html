@@ -1,17 +1,3 @@
-%
-%
-%my $hashref = {};
-%
-%my $conf = new FS::Conf;
-%my $dangerous = $conf->exists('queue_dangerous_controls');
-%
-%my $noactions = 0;
-%
-%my $count_query = 'SELECT COUNT(*) FROM queue'; # + $hashref
-%
-%my $areboxes = 0;
-%
-%
 <% include( 'elements/search.html',
                  'title'       => 'Job Queue',
                  'menubar'     => [ 'Main menu' => $p, ],
@@ -134,3 +120,20 @@
              )
 
 %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Job queue');
+
+my $hashref = {};
+
+my $conf = new FS::Conf;
+my $dangerous = $conf->exists('queue_dangerous_controls');
+
+my $noactions = 0;
+
+my $count_query = 'SELECT COUNT(*) FROM queue'; # + $hashref
+
+my $areboxes = 0;
+
+</%init>

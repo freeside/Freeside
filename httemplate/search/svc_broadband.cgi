@@ -1,3 +1,6 @@
+%die "access denied"
+%  unless $FS::CurrentUser::CurrentUser->access_right('List services');
+%
 %my $conf = new FS::Conf;
 %
 %my @svc_broadband = ();

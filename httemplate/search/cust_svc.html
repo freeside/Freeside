@@ -21,13 +21,27 @@
 	      'links'       => [ $link,
 	                         $link,
 				 # package?
-				 ( map { $link_cust }
+				 ( map { $_ ne 'Cust. Status' ? $link_cust : '' }
                                        FS::UI::Web::cust_header()
                                  ),
 			       ],
+              'align' => 'rl'. FS::UI::Web::cust_aligns(),
+              'color' => [ 
+                           '',
+                           '',
+                           FS::UI::Web::cust_colors(),
+                         ],
+              'style' => [ 
+                           '',
+                           '',
+                           FS::UI::Web::cust_styles(),
+                         ],
           )
 %>
 <%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('List services');
 
 my $addl_from = ' LEFT JOIN part_svc  USING ( svcpart ) '.
                 ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.

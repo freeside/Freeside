@@ -2,9 +2,10 @@ package FS::cust_main_Mixin;
 
 use strict;
 use vars qw( $DEBUG );
+use FS::UID qw(dbh);
 use FS::cust_main;
 
-$DEBUG = 0;
+$DEBUG = 1;
 
 =head1 NAME
 
@@ -138,7 +139,7 @@ this object is not linked to a customer.
 
 sub invoicing_list_emailonly_scalar {
   my $self = shift;
-  warn "invoicing_list_email only called on $self, ".
+  warn "invoicing_list_emailonly called on $self, ".
        "custnum ". $self->custnum. "\n"
     if $DEBUG;
   $self->cust_linked
@@ -165,7 +166,94 @@ sub invoicing_list {
     : ();
 }
 
+=item status
+
+Given an object that contains fields from cust_main (say, from a JOINed
+search; see httemplate/search/ for examples), returns the equivalent of the
+FS::cust_main I<status> method, or "(unlinked)" if this object is not linked to
+a customer.
+
 =cut
+
+sub cust_status {
+  my $self = shift;
+  return $self->cust_unlinked_msg unless $self->cust_linked;
+
+  #FS::cust_main::status($self)
+  #false laziness w/actual cust_main::status
+  # (make sure FS::cust_main methods are called)
+  for my $status (qw( prospect active inactive suspended cancelled )) {
+    my $method = $status.'_sql';
+    my $sql = FS::cust_main->$method();;
+    my $numnum = ( $sql =~ s/cust_main\.custnum/?/g );
+    my $sth = dbh->prepare("SELECT $sql") or die dbh->errstr;
+    $sth->execute( ($self->custnum) x $numnum )
+      or die "Error executing 'SELECT $sql': ". $sth->errstr;
+    return $status if $sth->fetchrow_arrayref->[0];
+  }
+}
+
+=item ucfirst_cust_status
+
+Given an object that contains fields from cust_main (say, from a JOINed
+search; see httemplate/search/ for examples), returns the equivalent of the
+FS::cust_main I<ucfirst_status> method, or "(unlinked)" if this object is not
+linked to a customer.
+
+=cut
+
+sub ucfirst_cust_status {
+  my $self = shift;
+  $self->cust_linked
+    ? ucfirst( $self->cust_status(@_) ) 
+    : $self->cust_unlinked_msg;
+}
+
+=item cust_statuscolor
+
+Given an object that contains fields from cust_main (say, from a JOINed
+search; see httemplate/search/ for examples), returns the equivalent of the
+FS::cust_main I<statuscol> method, or "000000" if this object is not linked to
+a customer.
+
+=cut
+
+sub cust_statuscolor {
+  my $self = shift;
+
+  $self->cust_linked
+    ? FS::cust_main::cust_statuscolor($self)
+    : '000000';
+}
+
+=item prospect_sql
+
+=item active_sql
+
+=item inactive_sql
+
+=item suspended_sql
+
+=item cancelled_sql
+
+Given an object that contains fields from cust_main (say, from a JOINed
+search; see httemplate/search/ for examples), returns the equivalent of the
+corresponding FS::cust_main method, or "0" if this object is not linked to
+a customer.
+
+=cut
+
+foreach my $sub (qw( prospect active inactive suspended cancelled )) {
+  eval "
+    sub ${sub}_sql {
+      my \$self = shift;
+      \$self->cust_linked
+        ? FS::cust_main::${sub}_sql(\$self)
+        : '0';
+      }
+  ";
+  die $@ if $@;
+}
 
 =back
 

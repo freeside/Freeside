@@ -28,28 +28,28 @@ labels for customer fields values.
 # XXX should use msgcat for "Day phone" and "Night phone", but how?
 sub cust_fields_avail { (
 
-  'Customer' =>
-    'Last, First or Company (Last, First)',
-  'Cust# | Customer' =>
-    'custnum | Last, First or Company (Last, First)',
+  'Cust. Status | Customer' =>
+    'Status | Last, First or Company (Last, First)',
+  'Cust# | Cust. Status | Customer' =>
+    'custnum | Status | Last, First or Company (Last, First)',
 
-  'Name | Company' =>
-    'Last, First | Company',
-  'Cust# | Name | Company' =>
-    'custnum | Last, First | Company',
+  'Cust. Status | Name | Company' =>
+    'Status | Last, First | Company',
+  'Cust# | Cust. Status | Name | Company' =>
+    'custnum | Status | Last, First | Company',
 
-  '(bill) Customer | (service) Customer' =>
-    'Last, First or Company (Last, First) | (same for service contact if present)',
-  'Cust# | (bill) Customer | (service) Customer' =>
-    'custnum | Last, First or Company (Last, First) | (same for service contact if present)',
+  'Cust. Status | (bill) Customer | (service) Customer' =>
+    'Status | Last, First or Company (Last, First) | (same for service contact if present)',
+  'Cust# | Cust. Status | (bill) Customer | (service) Customer' =>
+    'custnum | Status | Last, First or Company (Last, First) | (same for service contact if present)',
 
-  '(bill) Name | (bill) Company | (service) Name | (service) Company' =>
-    'Last, First | Company | (same for service address if present)',
-  'Cust# | (bill) Name | (bill) Company | (service) Name | (service) Company' =>
-    'custnum | Last, First | Company | (same for service address if present)',
+  'Cust. Status | (bill) Name | (bill) Company | (service) Name | (service) Company' =>
+    'Status | Last, First | Company | (same for service address if present)',
+  'Cust# | Cust. Status | (bill) Name | (bill) Company | (service) Name | (service) Company' =>
+    'custnum | Status | Last, First | Company | (same for service address if present)',
 
-  'Cust# | Name | Company | Address 1 | Address 2 | City | State | Zip | Country | Day phone | Night phone | Invoicing email(s)' => 
-    'custnum | Last, First | Company | (all address fields ) | Day phone | Night phone | Invoicing email(s)',
+  'Cust# | Cust. Status | Name | Company | Address 1 | Address 2 | City | State | Zip | Country | Day phone | Night phone | Invoicing email(s)' => 
+    'custnum | Status | Last, First | Company | (all address fields ) | Day phone | Night phone | Invoicing email(s)',
 
 ); }
 

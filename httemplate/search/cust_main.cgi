@@ -1,3 +1,6 @@
+%die "access denied"
+%  unless $FS::CurrentUser::CurrentUser->access_right('List customers');
+%
 %my $conf = new FS::Conf;
 %my $maxrecords = $conf->config('maxsearchrecordsperpage');
 %
@@ -82,6 +85,8 @@
 %  }
 %
 %  if ( $cgi->param('otaker_on') ) {
+%    die "access denied"
+%      unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
 %    $cgi->param('otaker') =~ /^(\w{1,32})$/ or eidiot "Illegal otaker\n";
 %    $search{otaker} = $1;
 %  } elsif ( $cgi->param('agentnum_on') ) {
@@ -305,7 +310,8 @@
 %
 %  print "<BR><BR>". $pager. include('/elements/table-grid.html'). <<END;
 %      <TR>
-%        <TH CLASS="grid" BGCOLOR="#cccccc"></TH>
+%        <TH CLASS="grid" BGCOLOR="#cccccc">#</TH>
+%        <TH CLASS="grid" BGCOLOR="#cccccc">Status</TH>
 %        <TH CLASS="grid" BGCOLOR="#cccccc">(bill) name</TH>
 %        <TH CLASS="grid" BGCOLOR="#cccccc">company</TH>
 %END
@@ -369,10 +375,12 @@
 %      ? qq!<A HREF="$view"><FONT SIZE=-1>$company</FONT></A>!
 %      : '<FONT SIZE=-1>&nbsp;</FONT>';
 %    
-
+%    my $status = $cust_main->status;
+%    my $statuscol = $FS::cust_main::statuscolor{$status};
 
     <TR>
-      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ROWSPAN=<% $rowspan || 1 %>><A HREF="<% $view %>"><FONT SIZE=-1><% $custnum %></FONT></A></TD>
+      <TD CLASS="grid" ALIGN="right" BGCOLOR="<% $bgcolor %>" ROWSPAN=<% $rowspan || 1 %>><A HREF="<% $view %>"><FONT SIZE=-1><% $custnum %></FONT></A></TD>
+      <TD CLASS="grid" ALIGN="center" BGCOLOR="<% $bgcolor %>" ROWSPAN=<% $rowspan || 1 %>><FONT SIZE=-1 COLOR=<% $statuscol %>><B><% ucfirst($status) %></B></FONT></TD>
       <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ROWSPAN=<% $rowspan || 1 %>><A HREF="<% $view %>"><FONT SIZE=-1><% "$last, $first" %></FONT></A></TD>
       <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ROWSPAN=<% $rowspan || 1 %>><% $pcompany %></TD>
 %

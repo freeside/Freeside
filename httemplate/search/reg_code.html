@@ -1,13 +1,3 @@
-%
-%
-%my $agentnum = $cgi->param('agentnum');
-%$agentnum =~ /^(\d+)$/ or eidiot "illegal agentnum $agentnum";
-%$agentnum = $1;
-%my $agent = qsearchs('agent', { 'agentnum' => $agentnum } );
-%
-%my $count_query = "SELECT COUNT(*) FROM reg_code WHERE agentnum = $agentnum";
-%
-%
 <% include( 'elements/search.html',
                  'title'       => 'Unused Registration Codes for '.
                                   $agent->agent,
@@ -35,3 +25,16 @@
                  ],
       )
 %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $agentnum = $cgi->param('agentnum');
+$agentnum =~ /^(\d+)$/ or eidiot "illegal agentnum $agentnum";
+$agentnum = $1;
+my $agent = qsearchs('agent', { 'agentnum' => $agentnum } );
+
+my $count_query = "SELECT COUNT(*) FROM reg_code WHERE agentnum = $agentnum";
+
+<%init>
