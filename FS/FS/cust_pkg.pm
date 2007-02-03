@@ -2,6 +2,7 @@ package FS::cust_pkg;
 
 use strict;
 use vars qw(@ISA $disable_agentcheck $DEBUG);
+use List::Util qw(max);
 use Tie::IxHash;
 use FS::UID qw( getotaker dbh );
 use FS::Misc qw( send_email );
@@ -901,7 +902,8 @@ sub part_svc {
     my $part_svc = $pkg_svc->part_svc;
     my $num_cust_svc = $self->num_cust_svc($part_svc->svcpart);
     $part_svc->{'Hash'}{'num_cust_svc'} = $num_cust_svc; #more evil
-    $part_svc->{'Hash'}{'num_avail'}    = $pkg_svc->quantity - $num_cust_svc;
+    $part_svc->{'Hash'}{'num_avail'}    =
+      max( 0, $pkg_svc->quantity - $num_cust_svc );
     $part_svc->{'Hash'}{'cust_pkg_svc'} = [ $self->cust_svc($part_svc->svcpart) ];
     $part_svc;
   } $self->part_pkg->pkg_svc;
