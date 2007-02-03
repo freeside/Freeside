@@ -1,0 +1,69 @@
+#!/usr/bin/perl -w
+
+use strict;
+use vars qw($opt_p $opt_s $opt_r);
+use Getopt::Std;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch qsearchs);
+use FS::cust_svc;
+use FS::svc_Common;
+
+getopts('p:s:r');
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+die &usage
+  if ($opt_p && $opt_s);
+
+$FS::Record::nowarn_identical = 1;
+$FS::svc_Common::noexport_hack = 1
+  unless $opt_r;
+
+my @svc_x = ();
+if ( $opt_s ) {
+  $opt_s =~ /^(\d+)$/ or die "invalid svcnum";
+  my $cust_svc = qsearchs('cust_svc', { svcnum => $1 } )
+    or die "svcnum $opt_s not found\n";
+  push @svc_x, $cust_svc->svc_x;
+} elsif ( $opt_p ) {
+  $opt_p =~ /^(\d+)$/ or die "invalid svcpart";
+  push @svc_x, map { $_->svc_x } qsearch('cust_svc', { svcpart => $1 } );
+  die "no services with svcpart $opt_p found\n" unless @svc_x;
+} else {
+  push @svc_x, map { $_->svc_x } qsearch('cust_svc', {} );
+  die "no services found\n" unless @svc_x;
+}
+
+foreach my $svc_x ( @svc_x ) {
+  my $result = $svc_x->setfixed;
+  die $result unless ref($result);
+  my $error = $svc_x->replace
+    if $svc_x->modified;     
+  die $error if $error;
+}
+
+
+sub usage {
+  die "Usage:\n\n  freeside-reset-fixed user [ -s svcnum | -p svcpart ] [ -r ]\n";
+}
+
+=head1 NAME
+
+freeside-reset-fixed - Command line tool to set the fixed columns for existing services
+
+=head1 SYNOPSIS
+
+  freeside-reset-fixed user [ -s svcnum | -p svcpart ] [ -r ]
+
+=head1 DESCRIPTION
+
+  Resets the fixed columns for the specified service part or service number.
+  Re-exports the service if -r is specified.
+
+=head1 SEE ALSO
+
+L<freeside-reexport>, L<FS::part_svc>
+
+=cut
+
