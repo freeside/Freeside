@@ -58,9 +58,15 @@
 %>
 <%init>
 
+my $conf = new FS::Conf;
+
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Financial reports')
-      || $FS::CurrentUser::CurrentUser->access_right('Process batches');
+      || $FS::CurrentUser::CurrentUser->access_right('Process batches')
+      || ( $cgi->param('custnum') 
+           && $conf->exists('batch-enable')
+           #&& $FS::CurrentUser::CurrentUser->access_right('View customer batched payments')
+         );
 
 my( $count_query, $sql_query );
 my $hashref = {};
@@ -73,6 +79,14 @@ if ( $cgi->param('batchnum') && $cgi->param('batchnum') =~ /^(\d+)$/ ) {
   $pay_batch = qsearchs('pay_batch', { 'batchnum' => $1 } );
   die "Batch $1 not found!" unless $pay_batch;
   $batchnum = $pay_batch->batchnum;
+}
+
+if ( $cgi->param('custnum') && $cgi->param('custnum') =~ /^(\d+)$/ ) {
+  push @search, "custnum = $1";
+}
+
+if ( $cgi->param('status') && $cgi->param('status') =~ /^(\w)$/ ) {
+  push @search, "pay_batch.status = '$1'";
 }
 
 if ( $cgi->param('payby') ) {
@@ -111,7 +125,6 @@ $sql_query = "SELECT paybatchnum,invnum,custnum,cpb.last,cpb.first," .
 
 my $html_init = '';
 if ( $pay_batch ) {
-  my $conf = new FS::Conf;
   my $fixed = $conf->config('batch-fixed_format-'. $pay_batch->payby);
   if (
        $pay_batch->status eq 'O' 

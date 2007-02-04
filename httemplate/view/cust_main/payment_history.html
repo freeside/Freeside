@@ -49,6 +49,17 @@
   <BR>
 % } 
 
+% if ( $conf->exists('batch-enable')
+%      #&& $curuser->access_right('View customer tax exemptions')
+%    ) { 
+  View batched payments:
+%   foreach my $status (qw( Queued In-transit Complete All )) {
+      <A HREF="<% $p %>search/cust_pay_batch.cgi?status=<% $status{$status} %>;custnum=<% $custnum %>"><% $status %></A> 
+      <% $status ne 'All' ? '|' : '' %>
+%   }
+  <BR>
+% } 
+
 %#get payment history
 %my @history = ();
 %
@@ -583,5 +594,12 @@ my @payby = grep /\w/, $conf->config('payby');
 @payby = (qw( CARD DCRD CHEK DCHK LECB BILL CASH COMP ))
   unless @payby;
 my %payby = map { $_=>1 } @payby;
+
+my %status = (
+  'Queued'     => 'O', #Open
+  'In-transit' => 'I',
+  'Complete'   => 'R', #Resolved
+  'All'        => '',
+);
 
 </%init>
