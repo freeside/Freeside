@@ -277,7 +277,9 @@ sub new_customer {
   $cust_main->payinfo($cust_main->daytime)
     if $cust_main->payby eq 'LECB' && ! $cust_main->payinfo;
 
-  my @invoicing_list = split( /\s*\,\s*/, $packet->{'invoicing_list'} );
+  my @invoicing_list = $packet->{'invoicing_list'}
+                         ? split( /\s*\,\s*/, $packet->{'invoicing_list'} )
+                         : ();
 
   $packet->{'pkgpart'} =~ /^(\d+)$/ or '' =~ /^()$/;
   my $pkgpart = $1;
