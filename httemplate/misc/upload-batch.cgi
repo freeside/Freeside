@@ -26,12 +26,14 @@ unless ( $error ) {
   if ( ! $pay_batch ) {
     $error = "batchnum $batchnum not found";
   } elsif ( $pay_batch->status ne 'I' ) {
-    $error = "batch $paybatch is not in transit";
+    $error = "batch $batchnum is not in transit";
   } else {
     $error = $pay_batch->import_results(
                                          'filehandle' => $fh,
                                          'format'     => $cgi->param('format'),
                                        );
   }
+
+}
 
 </%init>
