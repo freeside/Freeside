@@ -34,4 +34,4 @@ unless ( $error ) {
                                        );
   }
 
-<%/init>
+</%init>
