@@ -178,7 +178,15 @@ sub apply_to_lineitems {
     # - apply based on weights...
 
     my $weight_col = $self->_app_part_pkg_weight_column;
-    my @openweight = map { [ $_, ($_->cust_pkg->part_pkg->$weight_col()||0) ] }
+    my @openweight = map { 
+                           my $open = $_;
+                           my $cust_pkg = $open->cust_pkg;
+                           my $weight =
+                             $cust_pkg
+                               ? ( $cust_pkg->part_pkg->$weight_col() || 0 )
+                               : 0; #default or per-tax weight?
+                           [ $open, $weight ]
+                         }
                          @open;
 
     my %saw = ();
