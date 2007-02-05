@@ -79,14 +79,7 @@ Sets an http header.
 sub http_header {
   my ( $header, $value ) = @_;
   if (exists $ENV{MOD_PERL}) {
-    if ( defined $main::Response
-         && $main::Response->isa('Apache::ASP::Response') ) {  #Apache::ASP
-      if ( $header =~ /^Content-Type$/ ) {
-        $main::Response->{ContentType} = $value;
-      } else {
-        $main::Response->AddHeader( $header => $value );
-      }
-    } elsif ( defined $HTML::Mason::Commands::r  ) { #Mason
+    if ( defined $HTML::Mason::Commands::r  ) { #Mason
       ## is this the correct pacakge for $r ???  for 1.0x and 1.1x ?
       if ( $header =~ /^Content-Type$/ ) {
         $HTML::Mason::Commands::r->content_type($value);
@@ -186,12 +179,7 @@ If running under mod_perl, calles Apache::exit, otherwise, calls exit.
 sub myexit {
   if (exists $ENV{MOD_PERL}) {
 
-    if ( defined $main::Response
-         && $main::Response->isa('Apache::ASP::Response') ) {  #Apache::ASP
-      $main::Response->End();
-      require Apache;
-      Apache::exit();
-    } elsif ( defined $HTML::Mason::Commands::m  ) { #Mason
+    if ( defined $HTML::Mason::Commands::m  ) { #Mason
       #$HTML::Mason::Commands::m->flush_buffer();
       $HTML::Mason::Commands::m->abort();
       die "shouldn't fall through to here (mason \$m->abort didn't)";
