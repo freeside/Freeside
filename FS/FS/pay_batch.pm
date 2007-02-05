@@ -152,7 +152,7 @@ I<format> - "csv-td_canada_trust-merchant_pc_batch", "csv-chase_canada-E-xactBat
 sub import_results {
   my $self = shift;
 
-  my $param = @_;
+  my $param = ref($_[0]) ? shift : { @_ };
   my $fh = $param->{'filehandle'};
   my $format = $param->{'format'};
 
