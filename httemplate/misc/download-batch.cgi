@@ -1,52 +1,3 @@
-%
-%
-%my $conf=new FS::Conf;
-%
-%#http_header('Content-Type' => 'text/comma-separated-values' ); #IE chokes
-%http_header('Content-Type' => 'text/plain' );
-%
-%my $batchnum;
-%if ( $cgi->param('batchnum') =~ /^(\d+)$/ ) {
-%  $batchnum = $1;
-%} else {
-%  die "No batch number (bad URL) \n";
-%}
-%
-%my $format;
-%if ( $cgi->param('format') =~ /^([\w\- ]+)$/ ) {
-%  $format = $1;
-%} else {
-%  $format = $conf->config('batch-default_format');
-%}
-%
-%my $oldAutoCommit = $FS::UID::AutoCommit;
-%local $FS::UID::AutoCommit = 0;
-%my $dbh = dbh;
-%
-%my $pay_batch = qsearchs('pay_batch', {'batchnum'=>$batchnum, 'status'=>'O'} );
-%unless ($pay_batch) {
-%  $pay_batch = qsearchs('pay_batch', {'batchnum'=>$batchnum, 'status'=>'I'} )
-%    if $FS::CurrentUser::CurrentUser->access_right('Reprocess batches');
-%}
-%die "No pending batch. \n" unless $pay_batch;
-%
-%my %batchhash = $pay_batch->hash;
-%$batchhash{'status'} = 'I';
-%$batchhash{'download'} = time unless $batchhash{'download'};
-%my $new = new FS::pay_batch \%batchhash;
-%my $error = $new->replace($pay_batch);
-%die "error updating batch status: $error\n" if $error;
-%
-%my $batchtotal=0;
-%my $batchcount=0;
-%
-%my (@date)=localtime($new->download);
-%my $jdate = sprintf("%03d", $date[5] % 100).sprintf("%03d", $date[7] + 1);
-%my $cdate = sprintf("%02d", $date[3]).sprintf("%02d", $date[4] + 1).
-%            sprintf("%02d", $date[5] % 100);
-%my $sdate = sprintf("%02d", $date[5] % 100).'/'.sprintf("%02d", $date[4] + 1).
-%            '/'.sprintf("%02d", $date[3]);
-%
 %if ($format eq "BoM") {
 %
 %  my($origid,$datacenter,$typecode,$shortname,$longname,$mybank,$myacct) =
@@ -56,15 +7,12 @@
         sprintf( "XD%03u%06u%-15s%-30s%09u%-12s   \n",$typecode,$jdate,$shortname,$longname,$mybank,$myacct )
   %>
 %
-%
 %}elsif ($format eq "PAP"){
 %
 %  my($origid,$datacenter,$typecode,$shortname,$longname,$mybank,$myacct) =
 %    $conf->config("batchconfig-$format");
 %  
-<% sprintf( "H%10sD%3s%06u%-15s%09u%-12s%04u%19s\n",$origid,$typecode,$cdate,$shortname,$mybank,$myacct,$pay_batch->batchnum,"")
-
-  %>
+<% sprintf( "H%10sD%3s%06u%-15s%09u%-12s%04u%19s\n",$origid,$typecode,$cdate,$shortname,$mybank,$myacct,$pay_batch->batchnum,"") %>
 %
 %
 %}elsif ($format eq "csv-td_canada_trust-merchant_pc_batch"){
@@ -95,6 +43,27 @@
 %  $mon = "0$mon" if $mon =~ /^\d$/;
 %  $y = "0$y" if $y =~ /^\d$/;
 %  my $exp = "$mon$y";
+%
+%  if ( $first_download ) {
+%    my $balance = $cust_pay_batch->cust_main->balance;
+%    if ( $balance <= 0 ) {
+%      my $error = $cust_pay_batch->delete;
+%      if ( $error ) {
+%        $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+%        die $error;
+%      }
+%      next;
+%    } elsif ( $balance < $cust_pay_batch->amount ) {
+%      $cust_pay_batch->amount($balance);
+%      my $error = $cust_pay_batch->replace;
+%      if ( $error ) {
+%        $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+%        die $error;
+%      }
+%    #} elsif ( $balance > $cust_pay_batch->amount ) {
+%    } 
+%  }
+%
 %  $batchcount++;
 %  $batchtotal += $cust_pay_batch->amount;
 %  
@@ -152,7 +121,51 @@
 %}
 %
 %$dbh->commit or die $dbh->errstr if $oldAutoCommit;
-%
-%
+<%init>
 
+my $conf=new FS::Conf;
 
+#http_header('Content-Type' => 'text/comma-separated-values' ); #IE chokes
+http_header('Content-Type' => 'text/plain' );
+
+my $batchnum;
+if ( $cgi->param('batchnum') =~ /^(\d+)$/ ) {
+  $batchnum = $1;
+} else {
+  die "No batch number (bad URL) \n";
+}
+
+my $format;
+if ( $cgi->param('format') =~ /^([\w\- ]+)$/ ) {
+  $format = $1;
+} else {
+  $format = $conf->config('batch-default_format');
+}
+
+my $oldAutoCommit = $FS::UID::AutoCommit;
+local $FS::UID::AutoCommit = 0;
+my $dbh = dbh;
+
+my $pay_batch = qsearchs('pay_batch', {'batchnum'=>$batchnum, 'status'=>'O'} );
+my $first_download = 1;
+unless ($pay_batch) {
+  $pay_batch = qsearchs('pay_batch', {'batchnum'=>$batchnum, 'status'=>'I'} )
+    if $FS::CurrentUser::CurrentUser->access_right('Reprocess batches');
+  $first_download = 0;
+}
+die "No pending batch. \n" unless $pay_batch;
+
+my $error = $pay_batch->set_status('I');
+die "error updating batch status: $error\n" if $error;
+
+my $batchtotal=0;
+my $batchcount=0;
+
+my (@date)=localtime($pay_batch->download);
+my $jdate = sprintf("%03d", $date[5] % 100).sprintf("%03d", $date[7] + 1);
+my $cdate = sprintf("%02d", $date[3]).sprintf("%02d", $date[4] + 1).
+            sprintf("%02d", $date[5] % 100);
+my $sdate = sprintf("%02d", $date[5] % 100).'/'.sprintf("%02d", $date[4] + 1).
+            '/'.sprintf("%02d", $date[3]);
+
+</%init>
