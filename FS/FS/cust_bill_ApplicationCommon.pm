@@ -8,7 +8,7 @@ use FS::Record qw( qsearch qsearchs dbh );
 
 @ISA = qw( FS::Record );
 
-$DEBUG = 0;
+$DEBUG = 1;
 $me = '[FS::cust_bill_ApplicationCommon]';
 
 =head1 NAME
@@ -126,7 +126,7 @@ sub apply_to_lineitems {
 
   my @open = $self->cust_bill->open_cust_bill_pkg; #FOR UPDATE...?
   warn "$me ". scalar(@open). " open line items for invoice ".
-       $self->cust_bill->invnum. "\n"
+       $self->cust_bill->invnum. ": ". join(', ', @open). "\n"
     if $DEBUG;
   my $total = 0;
   $total += $_->setup + $_->recur foreach @open;
