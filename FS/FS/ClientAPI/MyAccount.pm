@@ -610,7 +610,8 @@ sub list_svc_usage {
 
   my $freq   = $svc_acct->cust_svc->cust_pkg->part_pkg->freq;
   my $start  = $svc_acct->cust_svc->cust_pkg->setup;
-  my $end    = $svc_acct->cust_svc->cust_pkg->bill; # or time?
+  #my $end    = $svc_acct->cust_svc->cust_pkg->bill; # or time?
+  my $end    = time;
 
   unless($p->{beginning}){
     $p->{beginning} = $svc_acct->cust_svc->cust_pkg->last_bill;
