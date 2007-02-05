@@ -6,6 +6,7 @@ use Time::Local;
 use Text::CSV_XS;
 use FS::Record qw( dbh qsearch qsearchs );
 use FS::cust_pay;
+use FS::part_bill_event qw(due_events);
 
 @ISA = qw(FS::Record);
 

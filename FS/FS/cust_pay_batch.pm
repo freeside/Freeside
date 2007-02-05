@@ -4,7 +4,6 @@ use strict;
 use vars qw( @ISA $DEBUG );
 use FS::Record qw(dbh qsearch qsearchs);
 use FS::payinfo_Mixin;
-use FS::part_bill_event qw(due_events);
 use Business::CreditCard 0.28;
 
 @ISA = qw( FS::Record FS::payinfo_Mixin );
