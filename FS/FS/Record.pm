@@ -688,6 +688,24 @@ sub modified {
   $self->{'modified'};
 }
 
+=item select_for_update
+
+Selects this record with the SQL "FOR UPDATE" command.  This can be useful as
+a mutex.
+
+=cut
+
+sub select_for_update {
+  my $self = shift;
+  my $primary_key = $self->primary_key;
+  qsearchs( {
+    'select'    => '*',
+    'table'     => $self->table,
+    'hashref'   => { $primary_key => $self->$primary_key() },
+    'extra_sql' => 'FOR UPDATE',
+  } );
+}
+
 =item insert
 
 Inserts this record to the database.  If there is an error, returns the error,

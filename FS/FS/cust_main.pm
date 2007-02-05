@@ -3807,18 +3807,6 @@ sub cust_refund {
     qsearch( 'cust_refund', { 'custnum' => $self->custnum } )
 }
 
-=item select_for_update
-
-Selects this record with the SQL "FOR UPDATE" command.  This can be useful as
-a mutex.
-
-=cut
-
-sub select_for_update {
-  my $self = shift;
-  qsearch('cust_main', { 'custnum' => $self->custnum }, '*', 'FOR UPDATE' );
-}
-
 =item name
 
 Returns a name string for this customer, either "Company (Last, First)" or

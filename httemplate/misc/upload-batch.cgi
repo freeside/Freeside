@@ -1,32 +1,37 @@
-%
-%
-%  my $fh = $cgi->upload('batch_results');
-%  $cgi->param('batchnum') =~ /^(\d+)$/;
-%  my $paybatch = $1;
-%
-%  my $error = defined($fh)
-%    ? FS::cust_pay_batch::import_results( {
-%        'filehandle' => $fh,
-%        'format'     => $cgi->param('format'),
-%        'paybatch'   => $paybatch,
-%      } )
-%    : 'No file';
-%
 %  if ( $error ) {
-%    
 
     <!-- mason kludge -->
-%
+
 %    eidiot($error);
 %#    $cgi->param('error', $error);
 %#    print $cgi->redirect( "${p}cust_main-import.cgi
 %  } else {
-%    
 
-    <!-- mason kludge -->
     <% include("/elements/header.html",'Batch results upload successful') %> 
-%
+
 %  }
-%
+<%init>
 
+my $error;
 
+my $fh = $cgi->upload('batch_results');
+$error = 'No file uploaded' unless defined($fh);
+
+unless ( $error ) {
+
+  $cgi->param('batchnum') =~ /^(\d+)$/;
+  my $batchnum = $1;
+
+  my $pay_batch = qsearchs( 'pay_batch', { 'batchnum' => $batchnum } );
+  if ( ! $pay_batch ) {
+    $error = "batchnum $batchnum not found";
+  } elsif ( $pay_batch->status ne 'I' ) {
+    $error = "batch $paybatch is not in transit";
+  } else {
+    $error = $pay_batch->import_results(
+                                         'filehandle' => $fh,
+                                         'format'     => $cgi->param('format'),
+                                       );
+  }
+
+<%/init>
