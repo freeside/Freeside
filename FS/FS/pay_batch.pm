@@ -359,11 +359,6 @@ sub import_results {
   };
 
   my $error = $self->set_status('R');
-
-  my $newbatch = new FS::pay_batch { $self->hash };
-  $newbatch->status('R');   # Resolved
-  $newbatch->upload(time);
-  my $error = $newbatch->replace($self);
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error
