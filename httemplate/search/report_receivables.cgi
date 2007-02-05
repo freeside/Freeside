@@ -83,10 +83,7 @@
 
              )
 %>
-<%init>
-
-die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+<%once>
 
 sub owed {
   my($start, $end, %opt) = @_;
@@ -140,6 +137,12 @@ END
 
 }
 
+</%once>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
 my @ranges = (
   [  0, 30 ],
   [ 30, 60 ],
@@ -165,7 +168,13 @@ my $packages_cols = <<END;
      ( $select_count_pkgs AND $cancelled_sql ) AS cancelled_pkgs
 END
 
-my $where = "where ". owed(0, 0, 'cust'=>1, 'noas'=>1). " > 0";
+my $days = 0;
+if ( $cgi->param('days') =~ /^\s*(\d+)\s*$/ ) {
+  $days = $1;
+}
+
+#my $where = "where ". owed(0, 0, 'cust'=>1, 'noas'=>1). " > 0";
+my $where = "where ". owed($days, 0, 'cust'=>1, 'noas'=>1). " > 0";
 
 my $agentnum = '';
 if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
