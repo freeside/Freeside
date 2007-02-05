@@ -1,5 +1,3 @@
-%
-%
 %  # options example...
 %  #
 %  # 'table' => 'svc_something'
@@ -15,40 +13,6 @@
 %  #
 %  # # defaults to "edit/$table.cgi?", will have svcnum appended
 %  # 'edit_url' => 
-%
-%  my(%opt) = @_;
-%
-%  my $table = $opt{'table'};
-%
-%  my $fields = $opt{'fields'}
-%               #|| [ grep { $_ ne 'svcnum' } dbdef->table($table)->columns ];
-%               || [ grep { $_ ne 'svcnum' } fields($table) ];
-%
-%  my $svcnum;
-%  if ( $cgi->param('svcnum') ) {
-%    $cgi->param('svcnum') =~ /^(\d+)$/ or die "unparsable svcnum";
-%    $svcnum = $1;
-%  } else {
-%    my($query) = $cgi->keywords;
-%    $query =~ /^(\d+)$/ or die "no svcnum";
-%    $svcnum = $1;
-%  }
-%  my $svc_x = qsearchs( $opt{'table'}, { 'svcnum' => $svcnum } )
-%    or die "Unknown svcnum $svcnum in ". $opt{'table'}. " table\n";
-%
-%  my $cust_svc = $svc_x->cust_svc;
-%  my($label, $value, $svcdb) = $cust_svc->label;
-%
-%  my $pkgnum = $cust_svc->pkgnum;
-%
-%  my($cust_pkg, $custnum);
-%  if ($pkgnum) {
-%    $cust_pkg = $cust_svc->cust_pkg;
-%    $custnum = $cust_pkg->custnum;
-%  } else {
-%    $cust_pkg = '';
-%    $custnum = '';
-%  }
 %
 %
 % if ( $custnum ) { 
@@ -123,3 +87,51 @@ Service #<B><% $svcnum %></B>
 <% joblisting({'svcnum'=>$svcnum}, 1) %>
 
 <% include('/elements/footer.html') %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('View customer services')
+      || $FS::CurrentUser::CurrentUser->access_right('View customer'); #XXX remove me
+
+my(%opt) = @_;
+
+my $table = $opt{'table'};
+
+my $fields = $opt{'fields'}
+             #|| [ grep { $_ ne 'svcnum' } dbdef->table($table)->columns ];
+             || [ grep { $_ ne 'svcnum' } fields($table) ];
+
+my $svcnum;
+if ( $cgi->param('svcnum') ) {
+  $cgi->param('svcnum') =~ /^(\d+)$/ or die "unparsable svcnum";
+  $svcnum = $1;
+} else {
+  my($query) = $cgi->keywords;
+  $query =~ /^(\d+)$/ or die "no svcnum";
+  $svcnum = $1;
+}
+my $svc_x = qsearchs({
+  'select'    => $opt{'table'}.'.*',
+  'table'     => $opt{'table'},
+  'addl_from' => ' LEFT JOIN cust_svc  USING ( svcnum  ) '.
+                 ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
+                 ' LEFT JOIN cust_main USING ( custnum ) ',
+  'hashref'   => { 'svcnum' => $svcnum },
+  'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+}) or die "Unknown svcnum $svcnum in ". $opt{'table'}. " table\n";
+
+my $cust_svc = $svc_x->cust_svc;
+my($label, $value, $svcdb) = $cust_svc->label;
+
+my $pkgnum = $cust_svc->pkgnum;
+
+my($cust_pkg, $custnum);
+if ($pkgnum) {
+  $cust_pkg = $cust_svc->cust_pkg;
+  $custnum = $cust_pkg->custnum;
+} else {
+  $cust_pkg = '';
+  $custnum = '';
+}
+
+</%init>

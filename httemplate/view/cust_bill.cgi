@@ -1,40 +1,14 @@
-%
-%
-%#untaint invnum
-%my($query) = $cgi->keywords;
-%$query =~ /^((.+)-)?(\d+)$/;
-%my $templatename = $2;
-%my $invnum = $3;
-%
-%my $conf = new FS::Conf;
-%
-%my @payby =  grep /\w/, $conf->config('payby');
-%#@payby = (qw( CARD DCRD CHEK DCHK LECB BILL CASH WEST COMP ))
-%@payby = (qw( CARD DCRD CHEK DCHK LECB BILL CASH COMP ))
-%  unless @payby;
-%my %payby = map { $_=>1 } @payby;
-%
-%my $cust_bill = qsearchs('cust_bill',{'invnum'=>$invnum});
-%die "Invoice #$invnum not found!" unless $cust_bill;
-%my $custnum = $cust_bill->getfield('custnum');
-%
-%#my $printed = $cust_bill->printed;
-%
-%my $link = $templatename ? "$templatename-$invnum" : $invnum;
-%
-%
-
 <% include("/elements/header.html",'Invoice View', menubar(
   "Main Menu" => $p,
   "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
 )) %>
+
+
 % if ( $cust_bill->owed > 0
 %        && ( $payby{'BILL'} || $payby{'CASH'} || $payby{'WEST'} || $payby{'MCRD'} )
 %      )
 %   {
 %     my $s = 0;
-%
-
 
   Post 
 % if ( $payby{'BILL'} ) { 
@@ -151,5 +125,41 @@
   <PRE><% join('', $cust_bill->print_text('', $templatename) ) %></PRE>
 % } 
 
+<% include('/elements/footer.html') %>
+<%init>
 
-</BODY></HTML>
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('View invoices');
+
+#untaint invnum
+my($query) = $cgi->keywords;
+$query =~ /^((.+)-)?(\d+)$/;
+my $templatename = $2;
+my $invnum = $3;
+
+my $conf = new FS::Conf;
+
+my @payby =  grep /\w/, $conf->config('payby');
+#@payby = (qw( CARD DCRD CHEK DCHK LECB BILL CASH WEST COMP ))
+@payby = (qw( CARD DCRD CHEK DCHK LECB BILL CASH COMP ))
+  unless @payby;
+my %payby = map { $_=>1 } @payby;
+
+my $cust_bill = qsearchs({
+  'select'    => 'cust_bill.*',
+  'table'     => 'cust_bill',
+  'addl_from' => 'LEFT JOIN cust_main USING ( custnum )',
+  'hashref'   => { 'invnum' => $invnum },
+  'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+});
+die "Invoice #$invnum not found!" unless $cust_bill;
+
+my $custnum = $cust_bill->custnum;
+
+#my $printed = $cust_bill->printed;
+
+my $link = $templatename ? "$templatename-$invnum" : $invnum;
+
+</%init>
+
+

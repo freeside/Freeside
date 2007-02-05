@@ -1,26 +1,8 @@
-%
-%
-%my $conf = new FS::Conf;
-%
-%my $curuser = $FS::CurrentUser::CurrentUser;
-%
-%die "No customer specified (bad URL)!" unless $cgi->keywords;
-%my($query) = $cgi->keywords; # needs parens with my, ->keywords returns array
-%$query =~ /^(\d+)$/;
-%my $custnum = $1;
-%my $cust_main = qsearchs('cust_main',{'custnum'=>$custnum});
-%die "Customer not found!" unless $cust_main;
-%
-%
-
-
 <% include("/elements/header.html","Customer View: ". $cust_main->name ) %>
-% if ( $curuser->access_right('Edit customer') ) { 
 
+% if ( $curuser->access_right('Edit customer') ) { 
   <A HREF="<% $p %>edit/cust_main.cgi?<% $custnum %>">Edit this customer</A> | 
 % } 
-
-
 
 <SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/overlibmws.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/overlibmws_iframe.js"></SCRIPT>
@@ -155,11 +137,35 @@ Comments
 
 
 <BR><BR>
-<% include('cust_main/packages.html', $cust_main ) %>
-% if ( $conf->config('payby-default') ne 'HIDE' ) { 
 
+% #XXX enable me# if ( $curuser->access_right('View customer packages') { 
+<% include('cust_main/packages.html', $cust_main ) %>
+% #}
+
+% if ( $conf->config('payby-default') ne 'HIDE' ) { 
   <% include('cust_main/payment_history.html', $cust_main ) %>
 % } 
 
 
 <% include('/elements/footer.html') %>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right('View customer');
+
+my $conf = new FS::Conf;
+
+die "No customer specified (bad URL)!" unless $cgi->keywords;
+my($query) = $cgi->keywords; # needs parens with my, ->keywords returns array
+$query =~ /^(\d+)$/;
+my $custnum = $1;
+my $cust_main = qsearchs({
+  'table'     => 'cust_main',
+  'hashref'   => {'custnum'=>$custnum},
+  'extra_sql' => ' AND '. $curuser->agentnums_sql,
+});
+die "Customer not found!" unless $cust_main;
+
+</%init>

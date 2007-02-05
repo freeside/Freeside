@@ -1,38 +1,3 @@
-<!-- mason kludge -->
-%
-%
-%my($query) = $cgi->keywords;
-%$query =~ /^(\d+)$/;
-%my $svcnum = $1;
-%my $svc_domain = qsearchs('svc_domain',{'svcnum'=>$svcnum});
-%die "Unknown svcnum" unless $svc_domain;
-%
-%my $cust_svc = qsearchs('cust_svc',{'svcnum'=>$svcnum});
-%my $pkgnum = $cust_svc->getfield('pkgnum');
-%my($cust_pkg, $custnum);
-%if ($pkgnum) {
-%  $cust_pkg=qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
-%  $custnum=$cust_pkg->getfield('custnum');
-%} else {
-%  $cust_pkg = '';
-%  $custnum = '';
-%}
-%
-%my $part_svc = qsearchs('part_svc',{'svcpart'=> $cust_svc->svcpart } );
-%die "Unknown svcpart" unless $part_svc;
-%
-%my $email = '';
-%if ($svc_domain->catchall) {
-%  my $svc_acct = qsearchs('svc_acct',{'svcnum'=> $svc_domain->catchall } );
-%  die "Unknown svcpart" unless $svc_acct;
-%  $email = $svc_acct->email;
-%}
-%
-%my $domain = $svc_domain->domain;
-%
-%
-
-
 <% include("/elements/header.html",'Domain View', menubar(
   ( ( $pkgnum || $custnum )
     ? ( "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
@@ -132,4 +97,49 @@ Slave from nameserver IP
 <INPUT TYPE="text" NAME="recdata"> <INPUT TYPE="submit" VALUE="Slave domain" onClick="return slave_areyousure()">
 </FORM>
 <BR><BR><% joblisting({'svcnum'=>$svcnum}, 1) %>
-</BODY></HTML>
+
+<% include('/elements/footer.html') %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('View customer services')
+      || $FS::CurrentUser::CurrentUser->access_right('View customer'); #XXX remove me
+
+my($query) = $cgi->keywords;
+$query =~ /^(\d+)$/;
+my $svcnum = $1;
+my $svc_domain = qsearchs({
+  'select'    => 'svc_domain.*',
+  'table'     => 'svc_domain',
+  'addl_from' => ' LEFT JOIN cust_svc  USING ( svcnum  ) '.
+                 ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
+                 ' LEFT JOIN cust_main USING ( custnum ) ',
+  'hashref'   => {'svcnum'=>$svcnum},
+  'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+});
+die "Unknown svcnum" unless $svc_domain;
+
+my $cust_svc = qsearchs('cust_svc',{'svcnum'=>$svcnum});
+my $pkgnum = $cust_svc->getfield('pkgnum');
+my($cust_pkg, $custnum);
+if ($pkgnum) {
+  $cust_pkg=qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
+  $custnum=$cust_pkg->getfield('custnum');
+} else {
+  $cust_pkg = '';
+  $custnum = '';
+}
+
+my $part_svc = qsearchs('part_svc',{'svcpart'=> $cust_svc->svcpart } );
+die "Unknown svcpart" unless $part_svc;
+
+my $email = '';
+if ($svc_domain->catchall) {
+  my $svc_acct = qsearchs('svc_acct',{'svcnum'=> $svc_domain->catchall } );
+  die "Unknown svcpart" unless $svc_acct;
+  $email = $svc_acct->email;
+}
+
+my $domain = $svc_domain->domain;
+
+</%init>

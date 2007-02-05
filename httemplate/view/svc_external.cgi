@@ -1,30 +1,3 @@
-%
-%
-%my($query) = $cgi->keywords;
-%$query =~ /^(\d+)$/;
-%my $svcnum = $1;
-%my $svc_external = qsearchs( 'svc_external', { 'svcnum' => $svcnum } )
-%  or die "svc_external: Unknown svcnum $svcnum";
-%
-%my $conf = new FS::Conf;
-%
-%#false laziness w/all svc_*.cgi
-%my $cust_svc = qsearchs( 'cust_svc', { 'svcnum' => $svcnum } );
-%my $pkgnum = $cust_svc->getfield('pkgnum');
-%my($cust_pkg, $custnum);
-%if ($pkgnum) {
-%  $cust_pkg = qsearchs( 'cust_pkg', { 'pkgnum' => $pkgnum } );
-%  $custnum = $cust_pkg->custnum;
-%} else {
-%  $cust_pkg = '';
-%  $custnum = '';
-%}
-%#eofalse
-%
-%
-%
-
-
 <% include("/elements/header.html",'External Service View', menubar(
   ( ( $custnum )
     ? ( "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
@@ -52,4 +25,40 @@
 
 </TABLE></TD></TR></TABLE>
 <BR><% joblisting({'svcnum'=>$svcnum}, 1) %>
-</BODY></HTML>
+
+<% include('/elements/footer.html') %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('View customer services')
+      || $FS::CurrentUser::CurrentUser->access_right('View customer'); #XXX remove me
+
+my($query) = $cgi->keywords;
+$query =~ /^(\d+)$/;
+my $svcnum = $1;
+my $svc_external = qsearchs({
+  'select'    => 'svc_external.*',
+  'table'     => 'svc_external',
+  'addl_from' => ' LEFT JOIN cust_svc  USING ( svcnum  ) '.
+                 ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
+                 ' LEFT JOIN cust_main USING ( custnum ) ',
+  'hashref'   => { 'svcnum' => $svcnum },
+  'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+}) or die "svc_external: Unknown svcnum $svcnum";
+
+my $conf = new FS::Conf;
+
+#false laziness w/all svc_*.cgi
+my $cust_svc = qsearchs( 'cust_svc', { 'svcnum' => $svcnum } );
+my $pkgnum = $cust_svc->getfield('pkgnum');
+my($cust_pkg, $custnum);
+if ($pkgnum) {
+  $cust_pkg = qsearchs( 'cust_pkg', { 'pkgnum' => $pkgnum } );
+  $custnum = $cust_pkg->custnum;
+} else {
+  $cust_pkg = '';
+  $custnum = '';
+}
+#eofalse
+
+</%init>

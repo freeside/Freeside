@@ -1,49 +1,11 @@
-%
-%
-%my $conf = new FS::Conf;
-%
-%my($query) = $cgi->keywords;
-%$query =~ /^(\d+)$/;
-%my $svcnum = $1;
-%my $svc_acct = qsearchs('svc_acct',{'svcnum'=>$svcnum});
-%die "Unknown svcnum" unless $svc_acct;
-%
-%#false laziness w/all svc_*.cgi
-%my $cust_svc = qsearchs( 'cust_svc' , { 'svcnum' => $svcnum } );
-%my $pkgnum = $cust_svc->getfield('pkgnum');
-%my($cust_pkg, $custnum);
-%if ($pkgnum) {
-%  $cust_pkg = qsearchs( 'cust_pkg', { 'pkgnum' => $pkgnum } );
-%  $custnum = $cust_pkg->custnum;
-%} else {
-%  $cust_pkg = '';
-%  $custnum = '';
-%}
-%#eofalse
-%
-%my $part_svc = qsearchs('part_svc',{'svcpart'=> $cust_svc->svcpart } );
-%die "Unknown svcpart" unless $part_svc;
-%my $svc = $part_svc->svc;
-%
-%die 'Empty domsvc for svc_acct.svcnum '. $svc_acct->svcnum
-%  unless $svc_acct->domsvc;
-%my $svc_domain = qsearchs('svc_domain', { 'svcnum' => $svc_acct->domsvc } );
-%die 'Unknown domain (domsvc '. $svc_acct->domsvc.
-%    ' for svc_acct.svcnum '. $svc_acct->svcnum. ')'
-%  unless $svc_domain;
-%my $domain = $svc_domain->domain;
-%
-%
 % if ( $custnum ) { 
 
-
   <% include("/elements/header.html","View $svc account") %>
-
   <% include( '/elements/small_custview.html', $custnum, '', 1,
      "${p}view/cust_main.cgi") %>
   <BR>
-% } else { 
 
+% } else { 
 
   <SCRIPT>
   function areyousure(href) {
@@ -55,9 +17,10 @@
   <% include("/elements/header.html",'Account View', menubar(
     "Cancel this (unaudited) account" =>
             "javascript:areyousure(\'${p}misc/cancel-unaudited.cgi?$svcnum\')",
-    "Main menu" => $p,
   )) %>
+
 % } 
+
 % if ( $part_svc->part_export_usage ) {
 %
 %  my $last_bill;
@@ -350,5 +313,52 @@ Service #<B><% $svcnum %></B>
 
 <% joblisting({'svcnum'=>$svcnum}, 1) %>
 
-</BODY>
-</HTML>
+<% include('/elements/footer.html') %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('View customer services')
+      || $FS::CurrentUser::CurrentUser->access_right('View customer'); #XXX remove me
+
+my $conf = new FS::Conf;
+
+my($query) = $cgi->keywords;
+$query =~ /^(\d+)$/;
+my $svcnum = $1;
+my $svc_acct = qsearchs({
+  'select'    => 'svc_acct.*',
+  'table'     => 'svc_acct',
+  'addl_from' => ' LEFT JOIN cust_svc  USING ( svcnum  ) '.
+                 ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
+                 ' LEFT JOIN cust_main USING ( custnum ) ',
+  'hashref'   => {'svcnum'=>$svcnum},
+  'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+});
+die "Unknown svcnum" unless $svc_acct;
+
+#false laziness w/all svc_*.cgi
+my $cust_svc = qsearchs( 'cust_svc' , { 'svcnum' => $svcnum } );
+my $pkgnum = $cust_svc->getfield('pkgnum');
+my($cust_pkg, $custnum);
+if ($pkgnum) {
+  $cust_pkg = qsearchs( 'cust_pkg', { 'pkgnum' => $pkgnum } );
+  $custnum = $cust_pkg->custnum;
+} else {
+  $cust_pkg = '';
+  $custnum = '';
+}
+#eofalse
+
+my $part_svc = qsearchs('part_svc',{'svcpart'=> $cust_svc->svcpart } );
+die "Unknown svcpart" unless $part_svc;
+my $svc = $part_svc->svc;
+
+die 'Empty domsvc for svc_acct.svcnum '. $svc_acct->svcnum
+  unless $svc_acct->domsvc;
+my $svc_domain = qsearchs('svc_domain', { 'svcnum' => $svc_acct->domsvc } );
+die 'Unknown domain (domsvc '. $svc_acct->domsvc.
+    ' for svc_acct.svcnum '. $svc_acct->svcnum. ')'
+  unless $svc_domain;
+my $domain = $svc_domain->domain;
+
+</%init>

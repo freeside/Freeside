@@ -1,12 +1,21 @@
-<!-- mason kludge -->
-%
+% die "access denied"
+% unless $FS::CurrentUser::CurrentUser->access_right('View customer services')
+%     || $FS::CurrentUser::CurrentUser->access_right('View customer'); #XXX remove me
 %
 %my $conf = new FS::Conf;
 %
 %my($query) = $cgi->keywords;
 %$query =~ /^(\d+)$/;
 %my $svcnum = $1;
-%my $svc_forward = qsearchs('svc_forward',{'svcnum'=>$svcnum});
+%my $svc_forward = qsearchs({
+%  'select'    => 'svc_forward.*',
+%  'table'     => 'svc_forward',
+%  'addl_from' => ' LEFT JOIN cust_svc  USING ( svcnum  ) '.
+%                 ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
+%                 ' LEFT JOIN cust_main USING ( custnum ) ',
+%  'hashref'   => {'svcnum'=>$svcnum},
+%  'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+%});
 %die "Unknown svcnum" unless $svc_forward;
 %
 %my $cust_svc = qsearchs('cust_svc',{'svcnum'=>$svcnum});

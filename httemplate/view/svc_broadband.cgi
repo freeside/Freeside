@@ -1,64 +1,3 @@
-<!-- mason kludge -->
-%
-%
-%my($query) = $cgi->keywords;
-%$query =~ /^(\d+)$/;
-%my $svcnum = $1;
-%my $svc_broadband = qsearchs( 'svc_broadband', { 'svcnum' => $svcnum } )
-%  or die "svc_broadband: Unknown svcnum $svcnum";
-%
-%#false laziness w/all svc_*.cgi
-%my $cust_svc = qsearchs( 'cust_svc', { 'svcnum' => $svcnum } );
-%my $pkgnum = $cust_svc->getfield('pkgnum');
-%my($cust_pkg, $custnum);
-%if ($pkgnum) {
-%  $cust_pkg = qsearchs( 'cust_pkg', { 'pkgnum' => $pkgnum } );
-%  $custnum = $cust_pkg->custnum;
-%} else {
-%  $cust_pkg = '';
-%  $custnum = '';
-%}
-%#eofalse
-%
-%my $addr_block = $svc_broadband->addr_block;
-%my $router = $addr_block->router;
-%
-%if (not $router) { die "Could not lookup router for svc_broadband (svcnum $svcnum)" };
-%
-%my (
-%     $routername,
-%     $routernum,
-%     $speed_down,
-%     $speed_up,
-%     $ip_addr,
-%     $ip_gateway,
-%     $ip_netmask,
-%     $mac_addr,
-%     $latitude,
-%     $longitude,
-%     $altitude,
-%     $vlan_profile,
-%     $auth_key,
-%     $description,
-%   ) = (
-%     $router->getfield('routername'),
-%     $router->getfield('routernum'),
-%     $svc_broadband->getfield('speed_down'),
-%     $svc_broadband->getfield('speed_up'),
-%     $svc_broadband->getfield('ip_addr'),
-%     $addr_block->ip_gateway,
-%     $addr_block->NetAddr->mask,
-%     $svc_broadband->mac_addr,
-%     $svc_broadband->latitude,
-%     $svc_broadband->longitude,
-%     $svc_broadband->altitude,
-%     $svc_broadband->vlan_profile,
-%     $svc_broadband->auth_key,
-%     $svc_broadband->description,
-%   );
-%
-
-
 <%include("/elements/header.html",'Broadband Service View', menubar(
   ( ( $custnum )
     ? ( "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
@@ -200,6 +139,75 @@ Add router named
 
 <BR>
 <%joblisting({'svcnum'=>$svcnum}, 1)%>
-  </BODY>
-</HTML>
 
+<% include('/elements/footer.html') %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('View customer services')
+      || $FS::CurrentUser::CurrentUser->access_right('View customer'); #XXX remove me
+
+my($query) = $cgi->keywords;
+$query =~ /^(\d+)$/;
+my $svcnum = $1;
+my $svc_broadband = qsearchs({
+  'select'    => 'svc_broadband.*',
+  'table'     => 'svc_broadband',
+  'addl_from' => ' LEFT JOIN cust_svc  USING ( svcnum  ) '.
+                 ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
+                 ' LEFT JOIN cust_main USING ( custnum ) ',
+  'hashref'   => { 'svcnum' => $svcnum },
+  'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+}) or die "svc_broadband: Unknown svcnum $svcnum";
+
+#false laziness w/all svc_*.cgi
+my $cust_svc = qsearchs( 'cust_svc', { 'svcnum' => $svcnum } );
+my $pkgnum = $cust_svc->getfield('pkgnum');
+my($cust_pkg, $custnum);
+if ($pkgnum) {
+  $cust_pkg = qsearchs( 'cust_pkg', { 'pkgnum' => $pkgnum } );
+  $custnum = $cust_pkg->custnum;
+} else {
+  $cust_pkg = '';
+  $custnum = '';
+}
+#eofalse
+
+my $addr_block = $svc_broadband->addr_block;
+my $router = $addr_block->router;
+
+if (not $router) { die "Could not lookup router for svc_broadband (svcnum $svcnum)" };
+
+my (
+     $routername,
+     $routernum,
+     $speed_down,
+     $speed_up,
+     $ip_addr,
+     $ip_gateway,
+     $ip_netmask,
+     $mac_addr,
+     $latitude,
+     $longitude,
+     $altitude,
+     $vlan_profile,
+     $auth_key,
+     $description,
+   ) = (
+     $router->getfield('routername'),
+     $router->getfield('routernum'),
+     $svc_broadband->getfield('speed_down'),
+     $svc_broadband->getfield('speed_up'),
+     $svc_broadband->getfield('ip_addr'),
+     $addr_block->ip_gateway,
+     $addr_block->NetAddr->mask,
+     $svc_broadband->mac_addr,
+     $svc_broadband->latitude,
+     $svc_broadband->longitude,
+     $svc_broadband->altitude,
+     $svc_broadband->vlan_profile,
+     $svc_broadband->auth_key,
+     $svc_broadband->description,
+   );
+
+</%init>

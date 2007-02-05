@@ -1,11 +1,19 @@
-<!-- mason kludge -->
-%
+% die "access denied"
+% unless $FS::CurrentUser::CurrentUser->access_right('View customer services')
+%     || $FS::CurrentUser::CurrentUser->access_right('View customer'); #XXX remove me
 %
 %my($query) = $cgi->keywords;
 %$query =~ /^(\d+)$/;
 %my $svcnum = $1;
-%my $svc_www = qsearchs( 'svc_www', { 'svcnum' => $svcnum } )
-%  or die "svc_www: Unknown svcnum $svcnum";
+%my $svc_www = qsearchs({
+%  'select'    => 'svc_www.*',
+%  'table'     => 'svc_www',
+%  'addl_from' => ' LEFT JOIN cust_svc  USING ( svcnum  ) '.
+%                 ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
+%                 ' LEFT JOIN cust_main USING ( custnum ) ',
+%  'hashref'   => { 'svcnum' => $svcnum },
+%  'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+%}) or die "svc_www: Unknown svcnum $svcnum";
 %
 %#false laziness w/all svc_*.cgi
 %my $cust_svc = qsearchs( 'cust_svc', { 'svcnum' => $svcnum } );

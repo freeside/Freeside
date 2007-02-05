@@ -92,12 +92,13 @@ assigned to users and/or groups.
   'Cancel customer',
   'Complimentary customer', #aka users-allow_comp 
   'Delete customer', #aka. deletecustomers #Enable customer deletions. Be very careful! Deleting a customer will remove all traces that this customer ever existed! It should probably only be used when auditing a legacy database. Normally, you cancel all of a customers' packages if they cancel service.
-  'Add customer note',
-  'Edit customer note',
+  'Add customer note', #NEW
+  'Edit customer note', #NEW
 
 ###
 # customer package rights
 ###
+  'View customer packages', #NEW
   'Order customer package',
   'One-time charge',
   'Change customer package',
@@ -108,15 +109,16 @@ assigned to users and/or groups.
   'Unsuspend customer package',
   'Cancel customer package immediately',
   'Cancel customer package later',
-  'Add on-the-fly cancel reason',
-  'Add on-the-fly suspend reason',
+  'Add on-the-fly cancel reason', #NEW
+  'Add on-the-fly suspend reason', #NEW
 
 ###
 # customer service rights
 ###
-  'Edit usage',
+  'Edit usage', #NEW
+  'View customer services', #NEW
   'Provision customer service',
-  'Recharge customer service',
+  'Recharge customer service', #NEW
   'Unprovision customer service',
 
   'View/link unlinked services', #not agent-virtualizable without more work
@@ -126,6 +128,7 @@ assigned to users and/or groups.
 ###
   'View invoices',
   'View customer tax exemptions', #yow
+  'View customer batched payments', #NEW
 
 ###
 # customer payment rights
@@ -138,7 +141,7 @@ assigned to users and/or groups.
 
   'Delete payment', #aka. deletepayments - Enable deletion of unclosed payments. Be very careful! Only delete payments that were data-entry errors, not adjustments. Optionally specify one or more comma-separated email addresses to be notified when a payment is deleted.
 
-  'Delete refund',
+  'Delete refund', #NEW
 
 ###
 # customer credit rights
@@ -160,7 +163,7 @@ assigned to users and/or groups.
 # report/listing rights...
 ###
   'List customers',
-  'List zip codes',
+  'List zip codes', #NEW
   'List invoices',
   'List packages',
   'List services',
@@ -173,15 +176,15 @@ assigned to users and/or groups.
 # misc rights
 ###
   'Job queue',         # these are not currently agent-virtualized
-  'Process batches',   #
-  'Reprocess batches', #
+  'Process batches',   # NEW
+  'Reprocess batches', # NEW
   'Import',            #
   'Export',            #
 
 ###
 # misc misc rights
 ###
-  'Raw SQL',
+  'Raw SQL', #NEW
 
 ###
 # setup/config rights
