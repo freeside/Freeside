@@ -735,9 +735,13 @@ sub queueable_send {
   my $self = qsearchs('cust_bill', { 'invnum' => $opt{invnum} } )
     or die "invalid invoice number: " . $opt{invnum};
 
-  my $error = $self->send($opt{template}, $opt{agentnum}, $opt{invoice_from});
+  my @args = ( $opt{template}, $opt{agentnum} );
+  push @args, $opt{invoice_from}
+    if exists($opt{invoice_from}) && $opt{invoice_from};
 
+  my $error = $self->send( @args );
   die $error if $error;
+
 }
 
 sub send {
@@ -777,6 +781,21 @@ TEMPLATENAME, if specified, is the name of a suffix for alternate invoices.
 INVOICE_FROM, if specified, overrides the default email invoice From: address.
 
 =cut
+
+sub queueable_email {
+  my %opt = @_;
+
+  my $self = qsearchs('cust_bill', { 'invnum' => $opt{invnum} } )
+    or die "invalid invoice number: " . $opt{invnum};
+
+  my @args = ( $opt{template} );
+  push @args, $opt{invoice_from}
+    if exists($opt{invoice_from}) && $opt{invoice_from};
+
+  my $error = $self->email( @args );
+  die $error if $error;
+
+}
 
 sub email {
   my $self = shift;

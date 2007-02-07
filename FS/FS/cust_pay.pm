@@ -192,8 +192,14 @@ sub insert {
   if ( $conf->exists('payment_receipt_email')
        && grep { $_ !~ /^(POST|FAX)$/ } $cust_main->invoicing_list
   ) {
+
+    $cust_bill ||= ($cust_main->cust_bill)[-1]; #rather inefficient though?
+
     my $error;
-    if ( exists($options{ 'manual' }) && $options{ 'manual' } ) {
+    if (    ( exists($options{'manual'}) && $options{'manual'} )
+         || ! $conf->exists('invoice_html_statement')
+         || ! $cust_bill
+       ) {
 
       my $receipt_template = new Text::Template (
         TYPE   => 'ARRAY',
@@ -226,21 +232,20 @@ sub insert {
                        'balance' => $cust_main->balance,
                      } ) ],
       );
-    }else{
-      unless($cust_bill){
-        $cust_bill = ($cust_main->cust_bill)[-1];
-      }
-      if ($cust_bill) {
-        my $queue = new FS::queue {
-           'paynum' => $self->paynum,
-           'job'    => 'FS::cust_bill::queueable_send',
-        };
-        $error = $queue->insert(
-          'invnum' => $cust_bill->invnum,
-          'template' => 'statement',
-        );
-      }
+
+    } else {
+
+      my $queue = new FS::queue {
+         'paynum' => $self->paynum,
+         'job'    => 'FS::cust_bill::queueable_email',
+      };
+      $error = $queue->insert(
+        'invnum' => $cust_bill->invnum,
+        'template' => 'statement',
+      );
+
     }
+
     if ( $error ) {
       warn "can't send payment receipt/statement: $error";
     }
