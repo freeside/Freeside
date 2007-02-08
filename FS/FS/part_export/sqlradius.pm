@@ -33,7 +33,7 @@ tie %options, 'Tie::IxHash',
   },
   'overlimit_groups' => { label => 'Radius groups to assign to svc_acct which has exceeded its bandwidth or time limit', } ,
   'groups_susp_reason' => { label =>
-                             'Radius group mapping to reason (via template user)',
+                             'Radius group mapping to reason (via template user) (svcnum|username|username@domain  reasonnum|reason)',
                             type  => 'textarea',
                           },
 
