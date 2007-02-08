@@ -159,23 +159,23 @@ Line-item revenue recognition
 
 </TD><TD VALIGN="top">
 
-Reseller information
-<% ntable("#cccccc", 2) %>
-  <TR>
-    <TD ALIGN="right"><% 'Agent Types' %></TD>
-    <TD>
-      <% include( '/elements/select-table.html',
-                  'element_name' => 'agent_type',
-                  'table'        => 'agent_type',
-  		  'name_col'     => 'atype',
-  		  'value'        => \@agent_type,
-  		  'empty_label'  => '(none)',
-  		  'element_etc'  => 'multiple size="10"',
-                )
-      %>
-    </TD>
-  </TR>
-</TABLE>
+%#Reseller information      # after 1.7.2
+%#<% ntable("#cccccc", 2) %>
+%#  <TR>
+%#    <TD ALIGN="right"><% 'Agent Types' %></TD>
+%#    <TD>
+%#      <% include( '/elements/select-table.html',
+%#                  'element_name' => 'agent_type',
+%#                  'table'        => 'agent_type',
+%#  		  'name_col'     => 'atype',
+%#  		  'value'        => \@agent_type,
+%#  		  'empty_label'  => '(none)',
+%#  		  'element_etc'  => 'multiple size="10"',
+%#                )
+%#      %>
+%#    </TD>
+%#  </TR>
+%#</TABLE>
 </TD></TR></TABLE>
 %
 %
@@ -271,7 +271,9 @@ Reseller information
 %#} else {
 %#  push @fixups, 'taxclass'; #hidden
 %#}
-%my @form_elements = ( 'classnum', 'taxclass', 'agent_type' );
+%my @form_elements = ( 'classnum', 'taxclass' );
+%# copying non-existant elements is probably harmless, but after 1.7.2
+%#my @form_elements = ( 'classnum', 'taxclass', 'agent_type' );
 %
 %my @form_radio = ();
 %if ( dbdef->table('pkg_svc')->column('primary_svc') ) {
@@ -328,7 +330,7 @@ Reseller information
 %                 ( exists($plandata{$field})
 %                     ? $plandata{$field}
 %                     : $href->{$field}{'default'} ).
-%                 qq!">!;
+%                 qq!" onChange="fchanged(this)">!;  #after 1.7.2
 %      } elsif ( $href->{$field}{'type'} eq 'checkbox' ) {
 %        $html .= qq!<INPUT TYPE="checkbox" NAME="$field" VALUE=1 !.
 %                 ( exists($plandata{$field}) && $plandata{$field}
@@ -339,7 +341,7 @@ Reseller information
 %        $html .= '<SELECT';
 %        $html .= ' MULTIPLE'
 %          if $href->{$field}{'type'} eq 'select_multiple';
-%        $html .= qq! NAME="$field">!;
+%        $html .= qq! NAME="$field" onChange="fchanged(this)">!; # after 1.7.2
 %
 %        if ( $href->{$field}{'select_table'} ) {
 %          foreach my $record (
@@ -362,7 +364,7 @@ Reseller information
 %                         ? ' SELECTED'
 %                         : ''
 %                     ).
-%                     '>'. $value;
+%                     '">'. $value;
 %          }
 %
 %        } else {
@@ -383,7 +385,7 @@ Reseller information
 %             
 %    $html .= '<INPUT TYPE="submit" VALUE="'.
 %             ( $hashref->{pkgpart} ? "Apply changes" : "Add package" ).
-%             '">';
+%             '" onClick="fchanged(this)">'; #after 1.7.2
 %
 %    $html;
 %

@@ -119,7 +119,8 @@ sub handler
       use Chart::LinesPoints;
       use Chart::Mountain;
       use Color::Scheme;
-      use HTML::Widgets::SelectLayers 0.07;
+      use HTML::Widgets::SelectLayers 0.06;
+      #use HTML::Widgets::SelectLayers 0.07; # after 1.7.2
       use Locale::Country;
       use FS;
       use FS::UID qw(cgisuidsetup dbh getotaker datasrc driver_name);
