@@ -223,7 +223,7 @@ that field.
 %            '    } else if ( f == "D" || f == "F" || f =="S" ) { //enable, text box',
 %            "      what.form.${layer}__${field}.disabled = false;".
 %            "      what.form.${layer}__${field}.style.backgroundColor = '#ffffff';".
-%            '      if ( f == "S" ) {'.
+%            "      if ( f == 'S' || '${field}' == 'usergroup' ) {". # kludge
 %            "        what.form.${layer}__${field}.multiple = true;".
 %            "      } else {".
 %            "        what.form.${layer}__${field}.multiple = false;".

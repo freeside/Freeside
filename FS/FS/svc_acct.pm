@@ -272,6 +272,7 @@ sub table_info {
                          label => 'RADIUS groups',
                          type  => 'radius_usergroup_selector',
                          disable_inventory => 1,
+                         disable_select => 1,
                        },
         'seconds'   => { label => 'Seconds',
                          type  => 'text',
