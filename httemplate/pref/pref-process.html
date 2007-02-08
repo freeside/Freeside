@@ -5,7 +5,7 @@
 %           qw(_password new_password new_password2)
 %    ) {
 %
-%   my $access_user = qsearchs( 'access_user', {
+%   $access_user = qsearchs( 'access_user', {
 %     'username'  => getotaker,
 %     '_password' => $cgi->param('_password'),
 %   } );
