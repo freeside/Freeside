@@ -693,7 +693,7 @@ sub last_reason {
   my $cust_pkg_reason = qsearchs( {
                                     'table' => 'cust_pkg_reason',
 				    'hashref' => { 'pkgnum' => $self->pkgnum, },
-				    'extra_sql'=> 'ORDER BY date DESC',
+				    'extra_sql'=> 'ORDER BY date DESC LIMIT 1',
 				  } );
   qsearchs ( 'reason', { 'reasonnum' => $cust_pkg_reason->reasonnum } )
     if $cust_pkg_reason;
