@@ -14,10 +14,12 @@
 %my ($query) = $cgi->keywords;
 %
 %my $part_pkg = '';
+%my @agent_type = ();
 %if ( $cgi->param('error') ) {
 %  $part_pkg = new FS::part_pkg ( {
 %    map { $_, scalar($cgi->param($_)) } fields('part_pkg')
 %  } );
+%  (@agent_type) = $cgi->param('agent_type');
 %}
 %
 %my $action = '';
@@ -30,6 +32,8 @@
 %  $part_pkg ||= $clone_part_pkg->clone;
 %  $part_pkg->disabled('Y'); #isn't sticky on errors
 %} elsif ( $query && $query =~ /^(\d+)$/ ) {
+%  (@agent_type) = map {$_->typenum} qsearch('type_pkgs',{'pkgpart'=>$1})
+%    unless $part_pkg;
 %  $part_pkg ||= qsearchs('part_pkg',{'pkgpart'=>$1});
 %  $pkgpart = $part_pkg->pkgpart;
 %} else {
@@ -153,6 +157,25 @@ Line-item revenue recognition
 % }
 </TABLE>
 
+</TD><TD VALIGN="top">
+
+Reseller information
+<% ntable("#cccccc", 2) %>
+  <TR>
+    <TD ALIGN="right"><% 'Agent Types' %></TD>
+    <TD>
+      <% include( '/elements/select-table.html',
+                  'element_name' => 'agent_type',
+                  'table'        => 'agent_type',
+  		  'name_col'     => 'atype',
+  		  'value'        => \@agent_type,
+  		  'empty_label'  => '(none)',
+  		  'element_etc'  => 'multiple size="10"',
+                )
+      %>
+    </TD>
+  </TR>
+</TABLE>
 </TD></TR></TABLE>
 %
 %
@@ -248,7 +271,7 @@ Line-item revenue recognition
 %#} else {
 %#  push @fixups, 'taxclass'; #hidden
 %#}
-%my @form_elements = ( 'classnum', 'taxclass' );
+%my @form_elements = ( 'classnum', 'taxclass', 'agent_type' );
 %
 %my @form_radio = ();
 %if ( dbdef->table('pkg_svc')->column('primary_svc') ) {
@@ -267,7 +290,7 @@ Line-item revenue recognition
 %  'form_action'    => 'process/part_pkg.cgi',
 %  'form_elements'  => \@form_elements,
 %  'form_text'      => [ qw(pkg comment promo_code clone pkgnum pkgpart),
-%                        qw(pay_weight credit_weight), #keys(%weight),
+%                        qw(pay_weight credit_weight),
 %                        @fixups,
 %                      ],
 %  'form_checkbox'  => [ qw(setuptax recurtax disabled) ],
@@ -305,7 +328,7 @@ Line-item revenue recognition
 %                 ( exists($plandata{$field})
 %                     ? $plandata{$field}
 %                     : $href->{$field}{'default'} ).
-%                 qq!" onChange="fchanged(this)">!;
+%                 qq!">!;
 %      } elsif ( $href->{$field}{'type'} eq 'checkbox' ) {
 %        $html .= qq!<INPUT TYPE="checkbox" NAME="$field" VALUE=1 !.
 %                 ( exists($plandata{$field}) && $plandata{$field}
@@ -316,7 +339,7 @@ Line-item revenue recognition
 %        $html .= '<SELECT';
 %        $html .= ' MULTIPLE'
 %          if $href->{$field}{'type'} eq 'select_multiple';
-%        $html .= qq! NAME="$field" onChange="fchanged(this)">!;
+%        $html .= qq! NAME="$field">!;
 %
 %        if ( $href->{$field}{'select_table'} ) {
 %          foreach my $record (
@@ -360,7 +383,7 @@ Line-item revenue recognition
 %             
 %    $html .= '<INPUT TYPE="submit" VALUE="'.
 %             ( $hashref->{pkgpart} ? "Apply changes" : "Add package" ).
-%             '" onClick="fchanged(this)">';
+%             '">';
 %
 %    $html;
 %

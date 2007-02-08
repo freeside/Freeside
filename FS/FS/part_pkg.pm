@@ -14,7 +14,7 @@ use FS::type_pkgs;
 use FS::part_pkg_option;
 use FS::pkg_class;
 
-@ISA = qw( FS::Record ); # FS::option_Common ); # this can use option_Common
+@ISA = qw( FS::m2m_Common FS::Record ); # FS::option_Common ); # this can use option_Common
                                                 # when all the plandata bs is
                                                 # gone
 

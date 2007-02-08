@@ -17,6 +17,12 @@
 %  $cgi->param($_, '') unless defined $cgi->param($_);
 %}
 %
+%my @agents;
+%foreach ($cgi->param('agent_type')) {
+%  /^(\d+)$/;
+%  push @agents, $1 if $1;
+%}
+%
 %my $new = new FS::part_pkg ( {
 %  map {
 %    $_ => scalar($cgi->param($_));
@@ -49,6 +55,13 @@
 %  $pkgpart = $new->pkgpart;
 %}
 %
+%unless ($error) {
+%  my $error = $new->process_m2m(
+%    'link_table'   => 'type_pkgs',
+%    'target_table' => 'agent_type',
+%    'params'       => \@agents,
+%  );
+%}
 %if ( $error ) {
 %  $cgi->param('error', $error );
 %  print $cgi->redirect(popurl(2). "part_pkg.cgi?". $cgi->query_string );

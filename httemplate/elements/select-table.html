@@ -9,8 +9,11 @@
   <OPTION VALUE=""><% $opt{'empty_label'} || 'all' %>
 
 % foreach my $record ( sort { $a->$name_col() cmp $b->$name_col() } @records ) {
+%   my $matches = 0;
+%   ref($opt{'value'}) ? (exists($opt{'value'}->{$record->$key()}) and $matches=1)
+%                      : ($opt{'value'} == $record->$key() and $matches=1);
 
-    <OPTION VALUE="<% $record->$key() %>"<% $opt{'value'} == $record->$key() ? ' SELECTED' : '' %>><% $record->$name_col() %>
+    <OPTION VALUE="<% $record->$key() %>"<% $matches ? ' SELECTED' : '' %>><% $record->$name_col() %>
 
 % } 
 
@@ -59,6 +62,7 @@ if ( $opt{records} ) {
 }
 
 unless (    ! $opt{value}
+         or ref($opt{value})
          or ! exists( $opt{hashref}->{disabled} ) #??
          or grep { $opt{value} == $_->$key() } @records
        ) {
@@ -70,6 +74,10 @@ unless (    ! $opt{value}
     'extra_sql' => ( $opt{extra_sql} || '' ),
   });
   push @records, $record if $record;
+}
+
+if ( ref( $opt{value} ) eq 'ARRAY' ) {
+  $opt{value} = { map { $_ => 1 } @{$opt{value}} };
 }
 
 my @pre_options = $opt{pre_options} ? @{ $opt{pre_options} } : ();
