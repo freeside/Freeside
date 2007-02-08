@@ -364,7 +364,7 @@ Line-item revenue recognition
 %                         ? ' SELECTED'
 %                         : ''
 %                     ).
-%                     '">'. $value;
+%                     '>'. $value;
 %          }
 %
 %        } else {
