@@ -1,0 +1,30 @@
+#!/usr/bin/perl
+#
+# import-county-tax-rates username state country <filename.csv
+# example: import-county-tax-rates ivan CA US <taxes.csv
+#
+# rates.csv: taxrate,county
+
+use FS::UID qw(adminsuidsetup);
+use FS::cust_main_county;
+
+my $user = shift;
+adminsuidsetup $user;
+
+my($state, $country) = (shift, shift);
+
+while (<>) {
+  my($tax, $county) = split(','); #half-ass CSV parser
+
+  my $cust_main_county = new FS::cust_main_county {
+    'county'  => $county,
+    'state'   => $state,
+    'country' => $country,
+    'tax'     => $tax,
+  };
+
+  my $error = $cust_main_county->insert;
+  #my $error = $cust_main_county->check;
+  die $error if $error;
+
+}
