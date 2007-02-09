@@ -9,9 +9,9 @@
                       "${p}view/cust_main.cgi")
 %>
 
-<FORM ACTION="${p}edit/process/cust_pkg.cgi" METHOD=POST>
-<INPUT TYPE="hidden" NAME="custnum" VALUE="$custnum">
-<INPUT TYPE="hidden" NAME="remove_pkg" VALUE="$pkgnum">
+<FORM ACTION="<% $p %>edit/process/cust_pkg.cgi" METHOD=POST>
+<INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
+<INPUT TYPE="hidden" NAME="remove_pkg" VALUE="<% $pkgnum %>">
 
 <BR>
 Current package: <% $part_pkg->pkg %> - <% $part_pkg->comment %>
