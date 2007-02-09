@@ -1,0 +1,27 @@
+
+                                 Statement
+                                 { substr("Page $page of $total_pages          ", 0, 19); } { use Date::Format; time2str("%x", $date); }  FS-{ $invnum; }
+
+
+Ivan Kohler
+12345 Test Lane
+Truckee, CA  96161
+
+
+{ $address[0]; }
+{ $address[1]; }
+{ $address[2]; }
+{ $address[3]; }
+{ $address[4]; }
+{ $address[5]; }
+
+{
+  join("\n",
+    map {
+      my ( $desc, $price ) = @{$_};
+      "  ". substr( $desc. " "x65, 0, 65). " ". substr( $price. " "x11, 0, 11);
+    } invoice_lines(31)
+  );
+}
+
+ -=> Freeside - open-source billing for ISPs - http://www.sisd.com/freeside <=-
