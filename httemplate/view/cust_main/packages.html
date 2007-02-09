@@ -219,7 +219,7 @@ Current packages
 
             (&nbsp;<% pkg_unsuspend_link($cust_pkg) %>&nbsp;)
 % } 
-% if ( $curuser->access_right('Cancel customer package') ) { 
+% if ( $curuser->access_right('Cancel customer package immediately') ) { 
 
             (&nbsp;<% pkg_cancel_link($cust_pkg) %>&nbsp;)
 % } 
