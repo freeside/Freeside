@@ -25,7 +25,7 @@ New package: <SELECT NAME="new_pkgpart"><OPTION VALUE=0></OPTION>
 %) {
 %  my $pkgpart = $part_pkg->pkgpart;
 
-  <OPTION VALUE="$pkgpart" <% ( $cgi->param('error') && $cgi->param('new_pkgpart') == $pkgpart ) ? ' SELECTED' : '' %>>
+  <OPTION VALUE="<% $pkgpart %>" <% ( $cgi->param('error') && $cgi->param('new_pkgpart') == $pkgpart ) ? ' SELECTED' : '' %>>
     <% $pkgpart %>: <% $part_pkg->pkg %> - <% $part_pkg->comment %>
   </OPTION>
 
