@@ -280,7 +280,9 @@ that field.
 %
 %        } elsif ( $def->{type} eq 'select' ) {
 %
-%          $html .= qq!<SELECT NAME="${layer}__${field}" $disabled>!;
+%          $html .= qq!<SELECT NAME="${layer}__${field}" $disabled!;
+%          $html .= ' MULTIPLE' if $flag eq 'S';
+%          $html .= '>';
 %          $html .= '<OPTION> </OPTION>' unless $value;
 %          if ( $def->{select_table} ) {
 %            foreach my $record ( qsearch( $def->{select_table}, {} ) ) {

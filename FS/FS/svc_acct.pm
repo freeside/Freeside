@@ -8,7 +8,8 @@ use vars qw( @ISA $DEBUG $me $conf $skip_fuzzyfiles
              $username_noperiod $username_nounderscore $username_nodash
              $username_uppercase $username_percent
              $password_noampersand $password_noexclamation
-             $welcome_template $welcome_from $welcome_subject $welcome_mimetype
+             $welcome_template $welcome_from
+             $welcome_subject $welcome_subject_template $welcome_mimetype
              $warning_template $warning_from $warning_subject $warning_mimetype
              $warning_cc
              $smtpmachine
@@ -71,6 +72,10 @@ $FS::UID::callback{'FS::svc_acct'} = sub {
     ) or warn "can't create welcome email template: $Text::Template::ERROR";
     $welcome_from = $conf->config('welcome_email-from'); # || 'your-isp-is-dum'
     $welcome_subject = $conf->config('welcome_email-subject') || 'Welcome';
+    $welcome_subject_template = new Text::Template (
+      TYPE   => 'STRING',
+      SOURCE => $welcome_subject,
+    ) or warn "can't create welcome email subject template: $Text::Template::ERROR";
     $welcome_mimetype = $conf->config('welcome_email-mimetype') || 'text/plain';
   } else {
     $welcome_template = '';
@@ -232,17 +237,20 @@ sub table_info {
                          select_table => 'svc_acct_pop',
                          select_key   => 'popnum',
                          select_label => 'city',
+                         disable_select => 1,
                        },
         'username'  => {
                          label => 'Username',
                          type => 'text',
                          disable_default => 1,
                          disable_fixed => 1,
+                         disable_select => 1,
                        },
         'quota'     => { 
                          label => 'Quota',
                          type => 'text',
                          disable_inventory => 1,
+                         disable_select => 1,
                        },
         '_password' => 'Password',
         'gid'       => {
@@ -257,16 +265,18 @@ sub table_info {
                          type     =>'select',
                          select_list => [ $conf->config('shells') ],
                          disable_inventory => 1,
+                         disable_select => 1,
                        },
         'finger'    => 'Real name (GECOS)',
         'domsvc'    => {
                          label     => 'Domain',
-                         def_label => 'svcnum from svc_domain',
+                         #def_label => 'svcnum from svc_domain',
                          type      => 'select',
                          select_table => 'svc_domain',
                          select_key   => 'svcnum',
                          select_label => 'domain',
                          disable_inventory => 1,
+
                        },
         'usergroup' => {
                          label => 'RADIUS groups',
@@ -277,6 +287,7 @@ sub table_info {
         'seconds'   => { label => 'Seconds',
                          type  => 'text',
                          disable_inventory => 1,
+                         disable_select => 1,
                        },
     },
   };
@@ -468,6 +479,15 @@ sub insert {
     if ( $welcome_template && $cust_pkg ) {
       my $to = join(', ', grep { $_ !~ /^(POST|FAX)$/ } $cust_main->invoicing_list );
       if ( $to ) {
+
+        my %hash = (
+                     'custnum'  => $self->custnum,
+                     'username' => $self->username,
+                     'password' => $self->_password,
+                     'first'    => $cust_main->first,
+                     'last'     => $cust_main->getfield('last'),
+                     'pkg'      => $cust_pkg->part_pkg->pkg,
+                   );
         my $wqueue = new FS::queue {
           'svcnum' => $self->svcnum,
           'job'    => 'FS::svc_acct::send_email'
@@ -475,16 +495,9 @@ sub insert {
         my $error = $wqueue->insert(
           'to'       => $to,
           'from'     => $welcome_from,
-          'subject'  => $welcome_subject,
+          'subject'  => $welcome_subject_template->fill_in( HASH => \%hash, ),
           'mimetype' => $welcome_mimetype,
-          'body'     => $welcome_template->fill_in( HASH => {
-                          'custnum'  => $self->custnum,
-                          'username' => $self->username,
-                          'password' => $self->_password,
-                          'first'    => $cust_main->first,
-                          'last'     => $cust_main->getfield('last'),
-                          'pkg'      => $cust_pkg->part_pkg->pkg,
-                        } ),
+          'body'     => $welcome_template->fill_in( HASH => \%hash, ),
         );
         if ( $error ) {
           $dbh->rollback if $oldAutoCommit;

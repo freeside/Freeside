@@ -74,11 +74,13 @@ sub table_info {
         'countrycode' => { label => 'Country code',
                            type  => 'text',
                            disable_inventory => 1,
+                           disable_select => 1,
                          },
         'phonenum'    => 'Phone number',
         'pin'         => { label => 'Personal Identification Number',
                            type  => 'text',
                            disable_inventory => 1,
+                           disable_select => 1,
                          },
     },
   };
