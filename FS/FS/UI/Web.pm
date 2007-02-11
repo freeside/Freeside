@@ -251,7 +251,7 @@ sub cust_header {
 
     my $conf = new FS::Conf;
     if (    $conf->exists('cust-fields')
-         && $conf->config('cust-fields') =~ /^([\w \|\#\(\)]+):?/
+         && $conf->config('cust-fields') =~ /^([\w\. \|\#\(\)]+):?/
        )
     {
       warn "  found cust-fields configuration value"
