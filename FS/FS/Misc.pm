@@ -431,7 +431,7 @@ sub state_label {
 
 Returns a hash reference of the accepted credit card types.  Keys are shorter
 identifiers and values are the longer strings used by the system (see
-L<Business::CreditCard).
+L<Business::CreditCard>).
 
 =cut
 
