@@ -23,7 +23,8 @@ function enable_order_pkg () {
 %  qsearch( 'part_pkg', { 'disabled' => '' }, '',
 %           ' AND 0 < ( SELECT COUNT(*) FROM type_pkgs '.
 %           '             WHERE typenum = '. $cust_main->agent->typenum.
-%           '             AND type_pkgs.pkgpart = part_pkg.pkgpart )'
+%           '             AND type_pkgs.pkgpart = part_pkg.pkgpart )'.
+%           ' ORDER BY pkg'   # case ?
 %         )
 %) {
 %

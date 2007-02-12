@@ -201,6 +201,10 @@ sub signup_info {
   # delete $signup_info->{'part_pkg'};
   #}
 
+  $signup_info->{'part_pkg'} = [ sort { $a->{pkg} cmp $b->{pkg} }  # case?
+                                      @{ $signup_info->{'part_pkg'} }
+                               ];
+
   if ( exists $packet->{'session_id'} ) {
     my $agent_signup_info = { %$signup_info };
     delete $agent_signup_info->{agentnum2part_pkg};
