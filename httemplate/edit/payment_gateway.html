@@ -119,7 +119,7 @@ Gateway #<% $payment_gateway->gatewaynum || "(NEW)" %>
 </TR>
 
 <TR>
-  <TH ALIGN="right">Options: </TH>
+  <TH ALIGN="right">Options: (Name/Value pairs, one element per line)</TH>
   <TD>
     <TEXTAREA ROWS="5" NAME="gateway_options"><% join("\r", $payment_gateway->options ) %></TEXTAREA>
   </TD>
