@@ -427,7 +427,7 @@ function copyelement(from, to) {
 %  #eslaf
 %
 %  my @part_pkg = grep { $_->svcpart('svc_acct') && $pkgpart->{ $_->pkgpart } }
-%    qsearch( 'part_pkg', { 'disabled' => '' } );
+%    qsearch( 'part_pkg', { 'disabled' => '' },'','ORDER BY pkg' ); # case?
 %
 %  if ( @part_pkg ) {
 %
