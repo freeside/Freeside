@@ -712,7 +712,7 @@ sub order_pkg {
     $svcpart ||= $cust_pkg->part_pkg->svcpart($svcdb);
 
     my %fields = (
-      'svc_acct'     => [ qw( username _password sec_phrase popnum ) ],
+      'svc_acct'     => [ qw( username domsvc _password sec_phrase popnum ) ],
       'svc_domain'   => [ qw( domain ) ],
       'svc_external' => [ qw( id title ) ],
     );
