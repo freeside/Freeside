@@ -1,0 +1,31 @@
+#!/usr/bin/perl -Tw
+
+use strict;
+use vars qw( $user $block @blocks );
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch);
+use FS::addr_block;
+use FS::svc_broadband;
+
+$user = shift or die &usage;
+&adminsuidsetup( $user );
+
+@blocks = qsearch('addr_block', {} );
+die "No address blocks" unless (scalar(@blocks) > 0);
+
+foreach $block (@blocks) {
+  my @devices = qsearch('svc_broadband', { 'blocknum' => $block->blocknum } );
+  if (@devices) {
+    print "Skipping block " . $block->ip_gateway . " / " . $block->ip_netmask;
+    print "\n";
+  }else{
+    print "Deleting block " . $block->ip_gateway . " / " . $block->ip_netmask;
+    print "\n";
+    $block->delete;
+  }
+}
+
+
+sub usage {
+  "Usage:\n  freeside-delete-addr_blocks user \n";
+}
