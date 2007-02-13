@@ -114,12 +114,16 @@
 %
 %    #$error ||= $cust_svc->check;
 %
-%    $svc_acct = new FS::svc_acct ( {
-%                                     'svcpart'   => $svcpart,
-%                                     'username'  => $cgi->param('username'),
-%                                     '_password' => $cgi->param('_password'),
-%                                     'popnum'    => $cgi->param('popnum'),
-%                                   } );
+%    my %svc_acct = (
+%                     'svcpart'   => $svcpart,
+%                     'username'  => $cgi->param('username'),
+%                     '_password' => $cgi->param('_password'),
+%                     'popnum'    => $cgi->param('popnum'),
+%                   );
+%    $svc_acct{'domsvc'} = $cgi->param('domsvc')
+%      if $cgi->param('domsvc');
+%
+%    $svc_acct = new FS::svc_acct \%svc_acct;
 %
 %    #and just in case you were silly
 %    $svc_acct->svcpart($svcpart);
