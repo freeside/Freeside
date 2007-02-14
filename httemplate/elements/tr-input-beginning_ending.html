@@ -3,29 +3,33 @@
 <SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/calendar-en.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/calendar-setup.js"></SCRIPT>
 
-
 <TR>
   <TD ALIGN="right">From date: </TD>
-  <TD><INPUT TYPE="text" NAME="beginning" ID="beginning_text" VALUE="" SIZE=<%$size%> MAXLENGTH=<%$maxlength%>> <IMG SRC="<%$fsurl%>images/calendar.png" ID="beginning_button" STYLE="cursor: pointer" TITLE="Select date"><BR><i>m/d/y<% $time_hint %></i></TD>
+  <TD><INPUT TYPE="text" NAME="<% $opt{prefix} %>beginning" ID="<% $opt{prefix} %>beginning_text" VALUE="" SIZE=<%$size%> MAXLENGTH=<%$maxlength%>> <IMG SRC="<%$fsurl%>images/calendar.png" ID="<% $opt{prefix} %>beginning_button" STYLE="cursor: pointer" TITLE="Select date"><IMG SRC="<%$fsurl%>images/calendar-disabled.png" ID="<% $opt{prefix} %>beginning_disabled" STYLE="display:none"><BR><i>m/d/y<% $time_hint %></i></TD>
 <SCRIPT TYPE="text/javascript">
   Calendar.setup({
-    inputField: "beginning_text",
+    inputField: "<% $opt{prefix} %>beginning_text",
     ifFormat:   "%m/%d/%Y<% $time_format %>",
-    button:     "beginning_button",
+    button:     "<% $opt{prefix} %>beginning_button",
     align:      "BR"
     <% $input_time %>
   });
 </SCRIPT>
-</TR>
 
+% unless ( $opt{layout} =~ /^h/i ) { #horizontal
+
+</TR>
 <TR>
+
+% }
+
   <TD ALIGN="right">To date: </TD>
-  <TD><INPUT TYPE="text" NAME="ending" ID="ending_text" VALUE="" SIZE=<%$size%> MAXLENGTH=<%$maxlength%>> <IMG SRC="<%$fsurl%>images/calendar.png" ID="ending_button" STYLE="cursor: pointer" TITLE="Select date"><BR><i>m/d/y<% $time_hint %></i></TD>
+  <TD><INPUT TYPE="text" NAME="<% $opt{prefix} %>ending" ID="<% $opt{prefix} %>ending_text" VALUE="" SIZE=<%$size%> MAXLENGTH=<%$maxlength%>> <IMG SRC="<%$fsurl%>images/calendar.png" ID="<% $opt{prefix} %>ending_button" STYLE="cursor: pointer" TITLE="Select date"><IMG SRC="<%$fsurl%>images/calendar-disabled.png" ID="<% $opt{prefix} %>ending_disabled" STYLE="display:none"><BR><i>m/d/y<% $time_hint %></i></TD>
 <SCRIPT TYPE="text/javascript">
   Calendar.setup({
-    inputField: "ending_text",
+    inputField: "<% $opt{prefix} %>ending_text",
     ifFormat:   "%m/%d/%Y<% $time_format %>",
-    button:     "ending_button",
+    button:     "<% $opt{prefix} %>ending_button",
     align:      "BR"
     <% $input_time %>
   });
@@ -34,13 +38,18 @@
 
 <TR>
   <TD></TD>
-  <TD>
+  <TD COLSPAN=<% $opt{layout} =~ /^h/i ? 3 : 1 %>>
     <FONT SIZE="-1">(leave one or both dates blank for an open-ended search)</FONT>
   </TD>
 </TR>
 
 <%init>
+
 my %opt = @_;
+
+$opt{prefix} = '' unless defined $opt{prefix};
+$opt{prefix} .= '_' if $opt{prefix};
+
 my( $input_time, $time_format, $time_hint ) = ( '', '', '' );
 my( $size, $maxlength ) = ( 11, 10 );
 if ( $opt{'input_time'} ) {
@@ -50,4 +59,5 @@ if ( $opt{'input_time'} ) {
   $size = 21;
   $maxlength = 27;
 }
+
 </%init>

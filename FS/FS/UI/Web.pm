@@ -18,19 +18,20 @@ $me = '[FS::UID::Web]';
 
 use Date::Parse;
 sub parse_beginning_ending {
-  my($cgi) = @_;
+  my($cgi, $prefix) = @_;
+  $prefix .= '_' if $prefix;
 
   my $beginning = 0;
-  if ( $cgi->param('begin') =~ /^(\d+)$/ ) {
+  if ( $cgi->param($prefix.'begin') =~ /^(\d+)$/ ) {
     $beginning = $1;
-  } elsif ( $cgi->param('beginning') =~ /^([ 0-9\-\/]{1,64})$/ ) {
+  } elsif ( $cgi->param($prefix.'beginning') =~ /^([ 0-9\-\/]{1,64})$/ ) {
     $beginning = str2time($1) || 0;
   }
 
   my $ending = 4294967295; #2^32-1
-  if ( $cgi->param('end') =~ /^(\d+)$/ ) {
+  if ( $cgi->param($prefix.'end') =~ /^(\d+)$/ ) {
     $ending = $1 - 1;
-  } elsif ( $cgi->param('ending') =~ /^([ 0-9\-\/]{1,64})$/ ) {
+  } elsif ( $cgi->param($prefix.'ending') =~ /^([ 0-9\-\/]{1,64})$/ ) {
     #probably need an option to turn off the + 86399
     $ending = str2time($1) + 86399;
   }

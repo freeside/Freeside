@@ -202,55 +202,70 @@ my $pkgpart = join (' OR pkgpart=',
 push @where,  '(pkgpart=' . $pkgpart . ')' if $pkgpart;
 
 ###
+# parse dates
+###
+
+my $orderby = '';
+
+#false laziness w/report_cust_pkg.html
+my %disable = (
+  'all'             => {},
+  'one-time charge' => { 'last_bill'=>1, 'bill'=>1, 'susp'=>1, 'expire'=>1, 'cancel'=>1, },
+  'active'          => { 'susp'=>1, 'cancel'=>1 },
+  'suspended'       => { 'cancel' => 1 },
+  'cancelled'       => {},
+  ''                => {},
+);
+
+foreach my $field (qw( setup last_bill bill susp expire cancel )) {
+
+  my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi, $field);
+
+  next if $beginning == 0 && $ending == 4294967295
+       or $disable{$cgi->param('status')}->{$field};
+
+  push @where,
+    "$field IS NOT NULL",
+    "$field >= $beginning",
+    "$field <= $ending";
+
+  $orderby ||= "ORDER BY $field";
+
+}
+
+$orderby ||= 'ORDER BY bill';
+
+###
 # parse magic, legacy, etc.
 ###
 
-my $orderby;
-if ( $cgi->param('magic') && $cgi->param('magic') eq 'bill' ) {
-  $orderby = 'ORDER BY bill';
+if ( $cgi->param('magic') &&
+     $cgi->param('magic') =~ /^(active|inactive|suspended|cancell?ed)$/
+) {
 
-  my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
-  push @where,
-    #"bill >= $beginning ",
-    #"bill <= $ending",
-    "CASE WHEN bill IS NULL THEN 0 ELSE bill END >= $beginning ",
-    "CASE WHEN bill IS NULL THEN 0 ELSE bill END <= $ending",
-    #'( cancel IS NULL OR cancel = 0 )'
-  ;
+  $orderby = 'ORDER BY pkgnum';
 
-} else {
-
-  if ( $cgi->param('magic') &&
-       $cgi->param('magic') =~ /^(active|inactive|suspended|cancell?ed)$/
-  ) {
-
-    $orderby = 'ORDER BY pkgnum';
-
-    if ( $cgi->param('pkgpart') =~ /^(\d+)$/ ) {
-      push @where, "pkgpart = $1";
-    }
-
-  } elsif ( $query eq 'pkgnum' ) {
-
-    $orderby = 'ORDER BY pkgnum';
-
-  } elsif ( $query eq 'APKG_pkgnum' ) {
-  
-    $orderby = 'ORDER BY pkgnum';
-  
-    push @where, '0 < (
-      SELECT count(*) FROM pkg_svc
-       WHERE pkg_svc.pkgpart =  cust_pkg.pkgpart
-         AND pkg_svc.quantity > ( SELECT count(*) FROM cust_svc
-                                   WHERE cust_svc.pkgnum  = cust_pkg.pkgnum
-                                     AND cust_svc.svcpart = pkg_svc.svcpart
-                                )
-    )';
-    
-  } else {
-    die "Empty or unknown QUERY_STRING!";
+  if ( $cgi->param('pkgpart') =~ /^(\d+)$/ ) {
+    push @where, "pkgpart = $1";
   }
 
+} elsif ( $query eq 'pkgnum' ) {
+
+  $orderby = 'ORDER BY pkgnum';
+
+} elsif ( $query eq 'APKG_pkgnum' ) {
+
+  $orderby = 'ORDER BY pkgnum';
+
+  push @where, '0 < (
+    SELECT count(*) FROM pkg_svc
+     WHERE pkg_svc.pkgpart =  cust_pkg.pkgpart
+       AND pkg_svc.quantity > ( SELECT count(*) FROM cust_svc
+                                 WHERE cust_svc.pkgnum  = cust_pkg.pkgnum
+                                   AND cust_svc.svcpart = pkg_svc.svcpart
+                              )
+  )';
+  
 }
 
 ##

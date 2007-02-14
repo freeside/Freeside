@@ -12,23 +12,77 @@
                    $cgi->param('agentnum'),
                )
     %>
-    <% include( '/elements/tr-select-cust_pkg-status.html' ) %>
+
+    <% include( '/elements/tr-select-cust_pkg-status.html', '',
+                  'onchange' => 'status_changed(this);',
+              )
+    %>
+
+    <SCRIPT TYPE="text/javascript">
+  
+      function status_changed(what) {
+
+%       foreach my $status ( '', FS::cust_pkg->statuses() ) {
+
+          if ( what.options[what.selectedIndex].value == '<% $status %>' ) {
+
+%           foreach my $field (qw( setup last_bill bill susp expire cancel )) {
+%             if ( $disable{$status}->{$field} ) {
+
+                what.form.<% $field %>_beginning_text.disabled = true;
+                what.form.<% $field %>_ending_text.disabled = true;
+
+                what.form.<% $field %>_beginning_button.style.display = 'none';
+                what.form.<% $field %>_ending_button.style.display = 'none';
+                what.form.<% $field %>_beginning_disabled.style.display = '';
+                what.form.<% $field %>_ending_disabled.style.display = '';
+
+%             } else {
+
+                what.form.<% $field %>_beginning_text.disabled = false;
+                what.form.<% $field %>_ending_text.disabled = false;
+
+                what.form.<% $field %>_beginning_button.style.display = '';
+                what.form.<% $field %>_ending_button.style.display = '';
+                what.form.<% $field %>_beginning_disabled.style.display = 'none';
+                what.form.<% $field %>_ending_disabled.style.display = 'none';
+
+%             }
+%           }
+
+          }
+
+%       }
+
+      }
+
+    </SCRIPT>
+
     <% include( '/elements/tr-select-pkg_class.html', '',
                    'pre_options' => [ '0' => 'all' ],
                    'empty_label' => '(empty class)',
                )
     %>
+
+%   foreach my $field (qw( setup last_bill bill susp expire cancel )) {
+
+      <TR>
+        <TD ALIGN="right" VALIGN="center"><% $label{$field} %></TD>
+        <TD>
+          <TABLE>
+            <% include( '/elements/tr-input-beginning_ending.html',
+                          prefix   => $field,
+                          layout   => 'horiz',
+                      )
+            %>
+          </TABLE>
+        </TD>
+      </TR>
+
+%   }
+    
     <% include( '/elements/tr-selectmultiple-part_pkg.html' ) %> 
 
-    <TR>
-      <TD ALIGN="right" VALIGN="center">Next bill date</TD>
-      <TD>
-        <TABLE>
-          <% include( '/elements/tr-input-beginning_ending.html' ) %>
-        </TABLE>
-      </TD>
-    </TR>
-    
     <TR>
       <TH BGCOLOR="#e8e8e8" COLSPAN=2>&nbsp;</TH>
     </TR>
@@ -52,3 +106,35 @@ die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('List packages');
 
 </%init>
+<%once>
+
+my %label = (
+  'setup'     => 'Setup',
+  'last_bill' => 'Last bill',
+  'bill'      => 'Next bill',
+  'susp'      => 'Suspended',
+  'expire'    => 'Expires',
+  'cancel'    => 'Cancelled',
+);
+
+#false laziness w/cust_pkg.cgi
+my %disable = (
+  'all'             => {},
+  'one-time charge' => { 'last_bill'=>1, 'bill'=>1, 'susp'=>1, 'expire'=>1, 'cancel'=>1, },
+  'active'          => { 'susp'=>1, 'cancel'=>1 },
+  'suspended'       => { 'cancel' => 1 },
+  'cancelled'       => {},
+  ''                => {},
+);
+
+#hmm?
+my %checkbox = (
+  'setup'     => 0,
+  'last_bill' => 0,
+  'bill'      => 0,
+  'susp'      => 1,
+  'expire'    => 1,
+  'cancel'    => 1,
+);
+
+</%once>
