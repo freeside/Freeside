@@ -15,7 +15,7 @@
 %#get record
 %
 %my $error = '';
-%my($custnum, $username, $password, $popnum, $cust_main, $saved_pkgpart);
+%my($custnum, $username, $password, $popnum, $cust_main, $saved_pkgpart, $saved_domsvc);
 %my(@invoicing_list);
 %my $payinfo;
 %my $same = '';
@@ -25,6 +25,12 @@
 %    map { $_, scalar($cgi->param($_)) } fields('cust_main')
 %  } );
 %  $custnum = $cust_main->custnum;
+%  $saved_domsvc = $cgi->param('domsvc') || '';
+%  if ( $saved_domsvc =~ /^(\d+)$/ ) {
+%    $saved_domsvc = $1;
+%  } else {
+%    $saved_domsvc = '';
+%  }
 %  $saved_pkgpart = $cgi->param('pkgpart_svcpart') || '';
 %  if ( $saved_pkgpart =~ /^(\d+)_/ ) {
 %    $saved_pkgpart = $1;
@@ -50,6 +56,7 @@
 %    $cust_main->paycvv($paycvv);
 %  }
 %  $saved_pkgpart = 0;
+%  $saved_domsvc = 0;
 %  $username = '';
 %  $password = '';
 %  $popnum = 0;
@@ -61,6 +68,7 @@
 %  $cust_main->otaker( &getotaker );
 %  $cust_main->referral_custnum( $cgi->param('referral_custnum') );
 %  $saved_pkgpart = 0;
+%  $saved_domsvc = 0;
 %  $username = '';
 %  $password = '';
 %  $popnum = 0;
@@ -427,7 +435,7 @@ function copyelement(from, to) {
 %  #eslaf
 %
 %  my @part_pkg = grep { $_->svcpart('svc_acct') && $pkgpart->{ $_->pkgpart } }
-%    qsearch( 'part_pkg', { 'disabled' => '' },'','ORDER BY pkg' ); # case?
+%    qsearch( 'part_pkg', { 'disabled' => '' }, '', 'ORDER BY pkg' ); # case?
 %
 %  if ( @part_pkg ) {
 %
@@ -441,15 +449,12 @@ function copyelement(from, to) {
     
       <TR>
         <TD COLSPAN=2>
-          <SELECT NAME="pkgpart_svcpart">
-            <OPTION VALUE="">(none)
-% foreach my $part_pkg ( @part_pkg ) { 
-
-    
-              <OPTION VALUE="<% $part_pkg->pkgpart. "_". $part_pkg->svcpart('svc_acct') %>"<% ( $saved_pkgpart && $part_pkg->pkgpart == $saved_pkgpart ) ? ' SELECTED' : '' %>><% $part_pkg->pkg. " - ". $part_pkg->comment %>
-% } 
-
-          </SELECT>
+          <% include('cust_main/select-domain.html',
+                       'pkgparts'      => \@part_pkg,
+                       'saved_pkgpart' => $saved_pkgpart,
+                       'saved_domsvc' => $saved_domsvc,
+                    )
+          %>
         </TD>
       </TR>
 % 
@@ -466,6 +471,15 @@ function copyelement(from, to) {
         <TD ALIGN="right">Username</TD>
         <TD>
           <INPUT TYPE="text" NAME="username" VALUE="<% $username %>" SIZE=<% $ulen2 %> MAXLENGTH=<% $ulen %>>
+        </TD>
+      </TR>
+    
+      <TR>
+        <TD ALIGN="right">Domain</TD>
+        <TD>
+          <SELECT NAME="domsvc">
+            <OPTION>(none)</OPTION>
+          </SELECT>
         </TD>
       </TR>
     
