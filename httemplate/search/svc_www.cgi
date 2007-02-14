@@ -84,7 +84,7 @@ my $extra_sql =
     : '';
 
 
-my $count_query = 'SELECT COUNT(*) FROM svc_www';
+my $count_query = "SELECT COUNT(*) FROM svc_www $addl_from $extra_sql";
 my $sql_query = {
   'table'     => 'svc_www',
   'hashref'   => {},
@@ -94,7 +94,7 @@ my $sql_query = {
                    'cust_main.custnum',
                    FS::UI::Web::cust_sql_fields(),
                  ),
-  'extra_sql' => $orderby,
+  'extra_sql' => "$extra_sql $orderby",
   'addl_from' => $addl_from,
 };
 
