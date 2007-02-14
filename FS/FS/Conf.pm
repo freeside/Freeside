@@ -2040,7 +2040,8 @@ httemplate/docs/config.html
   {
     'key'         => 'impending_recur_template',
     'section'     => 'billing',
-    'description' => 'Template file for alerts about looming first time recurrant billing.  See the <a href="../docs/billing.html#invoice_template">billing documentation</a> for details.  Also see packages with a <a href="../browse/part_pkg.cgi">flat price plan</a>',
+    'description' => 'Template file for alerts about looming first time recurrant billing.  See the <a href="http://search.cpan.org/~mjd/Text-Template.pm">Text::Template</a> documentation for details on the template substitition language.  Also see packages with a <a href="../browse/part_pkg.cgi">flat price plan</a>  The following variables are available<ul><li><code>$packages</code> allowing <code>$packages->[0]</code> thru <code>$packages->[n]</code> <li><code>$recurdates</code> allowing <code>$recurdates->[0]</code> thru <code>$recurdates->[n]</code> <li><code>$first</code> <li><code>$last</code></ul>',
+# <li><code>$payby</code> <li><code>$expdate</code> most likely only confuse
     'type'        => 'textarea',
   },
 
