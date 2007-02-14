@@ -92,6 +92,8 @@ END
       $cust_main->notify( 'impending_recur_template',
                           'extra_fields' => { 'packages'   => \@packages,
                                               'recurdates' => \@recurdates,
+                                              'package'    => $packages[0],
+                                              'recurdate'  => $recurdates[0],
                                             },
                         );
     warn "Error notifying, custnum ". $cust_main->custnum. ": $error" if $error;
