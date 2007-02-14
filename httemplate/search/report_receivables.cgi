@@ -61,7 +61,7 @@
                                     '',
                                   ],
                  #'align'       => 'rlccrrrrr',
-                 'align'       => $align,
+                 'align'       => FS::UI::Web::cust_aligns(). 'rrrrr',
                  #'size'        => [ '', '', '-1', '-1', '', '', '', '',  '', ],
                  #'style'       => [ '', '',  'b',  'b', '', '', '', '', 'b', ],
                  'size'        => [ ( map '', FS::UI::Web::cust_header() ),
@@ -203,11 +203,6 @@ my $row = $total_sth->fetchrow_hashref();
 
 my $conf = new FS::Conf;
 my $money_char = $conf->config('money_char') || '$';
-
-#my $align = join('', map { /#/ ? 'r' : 'l' } FS::UI::Web::cust_header() ).
-#           'crrrrr';
-my $align = FS::UI::Web::cust_aligns().
-           'rrrrr';
 
 my $clink = [ "${p}view/cust_main.cgi?", 'custnum' ];
 
