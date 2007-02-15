@@ -116,13 +116,6 @@
   </table>
   <br><br>
 
-<!--  <p><b><font size="+1">N</font><font size="+0">OTES</font></b>
-
-  <ol>
-    <li>Please make your check payable to <b>Ivan Kohler</b>
-    <li>If you have any questions please email or telephone.
-  </ol>
--->
 <%= $notes %>
 
   <hr NOSHADE SIZE=2 COLOR="#000000">
