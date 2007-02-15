@@ -250,6 +250,12 @@ Invoice Event #<% $hashref->{eventpart} ? $hashref->{eventpart} : "(NEW)" %>
 %    'weight' => 50,
 %  },
 %
+%  'send_email' => {
+%    'name' => 'Send invoice (email only)',
+%    'code' => '$cust_bill->email();',
+%    'weight' => 50,
+%  },
+%
 %  'send_alternate' => {
 %    'name' => 'Send invoice (email/print/fax) with alternate template',
 %    'code' => '$cust_bill->send(\'%%%templatename%%%\');',
