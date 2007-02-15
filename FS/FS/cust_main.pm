@@ -4713,7 +4713,7 @@ sub batch_charge {
 
 =item notify CUSTOMER_OBJECT TEMPLATE_NAME OPTIONS
 
-Sends a templated email notification to the customer (see L<Text::Template).
+Sends a templated email notification to the customer (see L<Text::Template>).
 
 OPTIONS is a hash and may include
 
