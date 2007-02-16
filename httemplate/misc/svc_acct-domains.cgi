@@ -16,10 +16,16 @@
 %    push @svc_domain, [ $_ => $svc_domain->domain ];
 %    $seen{$_}++;
 %  }
-%  if ($part_svc_column->columnflag eq 'D' || $part_svc_column->columnflag eq '') {
+%  if ($conf->exists('svc_acct-alldomains')
+%       && ( $part_svc_column->columnflag eq 'D'
+%         || $part_svc_column->columnflag eq '' )
+%     ) {
 %    foreach (grep { $_->svcnum ne $output[0] } qsearch('svc_domain', {}) ){
 %      push @svc_domain, [ $_->svcnum => $_->domain ];
 %    }
 %  }
 %
 [ <% join(', ', map { qq("$_->[0]", "$_->[1]") } @svc_domain) %> ]
+<%init>
+my $conf = new FS::Conf;
+</%init>
