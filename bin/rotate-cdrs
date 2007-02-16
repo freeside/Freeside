@@ -1,0 +1,38 @@
+#!/usr/bin/perl -w
+
+use strict;
+use Fcntl qw(:flock);
+use IO::File;
+
+my $dir = '/usr/local/etc/freeside/export/cdr';
+#chdir $dir;
+
+#XXX glob might not handle lots of args at some point...
+foreach my $file ( glob("$dir/*/CDR*-spool.CSV") ) {
+
+  $file =~ m{(\d+)/CDR(\d+)-spool.CSV$}
+    or die "guru meditation #54: can't parse filename: $file\n";
+  my($custnum, $date) = ($1, $2);
+
+
+  my $alpha = 'A';
+  while ( -e "$dir/$custnum/CDR$date$alpha.CSV" ) {
+    $alpha++; # A -> Z -> AA etc.
+  }
+  my $newfile = "$dir/$custnum/CDR$date$alpha.CSV";
+
+  rename $file, $newfile
+    or die "$! moving $file to $newfile\n";
+
+  use IO::File;
+  my $lock = new IO::File ">>$newfile"
+    or die "can't open $newfile: $!\n";
+  sleep 1; #just in case.  i guess there's still a *remotely* possible
+           #race condition, but i'm not losing any sleep over it...  (rimshot)
+  flock($lock, LOCK_EX)
+    or die "can't lock $newfile: $!\n";
+  #okay we've got the lock, any pending write should be done...
+
+  print "$custnum: $newfile\n";
+
+}
