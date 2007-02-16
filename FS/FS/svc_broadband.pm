@@ -200,9 +200,9 @@ sub check {
     || $self->ut_ipn('ip_addr')
     || $self->ut_hexn('mac_addr')
     || $self->ut_hexn('auth_key')
-    || $self->ut_floatn('latitude')
-    || $self->ut_floatn('longitude')
-    || $self->ut_floatn('altitude')
+    || $self->ut_sfloatn('latitude')
+    || $self->ut_sfloatn('longitude')
+    || $self->ut_sfloatn('altitude')
     || $self->ut_textn('vlan_profile')
   ;
   return $error if $error;

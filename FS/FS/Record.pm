@@ -1338,6 +1338,41 @@ sub ut_floatn {
   }
 }
 
+=item ut_sfloat COLUMN
+
+Check/untaint signed floating point numeric data: 1.1, 1, 1.1e10, 1e10.
+May not be null.  If there is an error, returns the error, otherwise returns
+false.
+
+=cut
+
+sub ut_sfloat {
+  my($self,$field)=@_ ;
+  ($self->getfield($field) =~ /^(-?\d+\.\d+)$/ ||
+   $self->getfield($field) =~ /^(-?\d+)$/ ||
+   $self->getfield($field) =~ /^(-?\d+\.\d+[eE]-?\d+)$/ ||
+   $self->getfield($field) =~ /^(-?\d+[eE]-?\d+)$/)
+    or return "Illegal or empty (float) $field: ". $self->getfield($field);
+  $self->setfield($field,$1);
+  '';
+}
+=item ut_sfloatn COLUMN
+
+Check/untaint signed floating point numeric data: 1.1, 1, 1.1e10, 1e10.  May be
+null.  If there is an error, returns the error, otherwise returns false.
+
+=cut
+
+sub ut_sfloatn {
+  my( $self, $field ) = @_;
+  if ( $self->getfield($field) =~ /^()$/ ) {
+    $self->setfield($field,'');
+    '';
+  } else {
+    $self->ut_sfloat($field);
+  }
+}
+
 =item ut_snumber COLUMN
 
 Check/untaint signed numeric data (whole numbers).  If there is an error,
