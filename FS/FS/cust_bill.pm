@@ -432,12 +432,16 @@ sub apply_payments_and_credits {
       my @open_lineitems = $self->open_cust_bill_pkg;
 
       my $max_pay_weight =
-        max( map { $_->cust_pkg->part_pkg->pay_weight || 0 }
-	         @open_lineitems
+        max( map  { $_->part_pkg->pay_weight || 0 }
+             grep { $_ }
+             map  { $_->cust_pkg }
+	          @open_lineitems
 	   );
       my $max_credit_weight =
-        max( map { $_->cust_pkg->part_pkg->credit_weight || 0 }
-	         @open_lineitems
+        max( map  { $_->part_pkg->credit_weight || 0 }
+	     grep { $_ } 
+             map  { $_->cust_pkg }
+                  @open_lineitems
            );
 
       #if both are the same... payments first?  it has to be something
