@@ -43,7 +43,7 @@ sub _export_insert {
 
   my $cust_main = $svc->cust_svc->cust_pkg->cust_main;
 
-  my $err_or_som = $self->prizm_command(CustomerIfService, 'getCustomers',
+  my $err_or_som = $self->prizm_command('CustomerIfService', 'getCustomers',
                                         ['import_id'],
                                         [$cust_main->custnum],
                                         ['='],
@@ -118,7 +118,7 @@ sub _export_insert {
   $err_or_som = $self->prizm_command('NetworkIfService', 'addProvisionedElement',
                                       $networkid,
                                       $svc->mac_addr,
-                                      $name . " " . $svc->description,
+                                      $name, # we fix this below (bug in prizm?)
                                       $location,
                                       $contact,
                                       sprintf("%032X", $svc->authkey),
@@ -141,7 +141,7 @@ sub _export_insert {
                   $svc->latitude,
                   $svc->longitude,
                   $svc->altitude,
-                  $name,
+                  $name . " " . $svc->description,
                   $location,
                   $contact,
                   );
