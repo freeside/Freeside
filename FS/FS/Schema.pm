@@ -842,8 +842,9 @@ sub tables_hashref {
     'svc_acct' => {
       'columns' => [
         'svcnum',    'int',    '',   '', '', '', 
-        'username',  'varchar',   '',   $username_len, '', '', #unique (& remove dup code)
-        '_password', 'varchar',   '',   72, '', '', #13 for encryped pw's plus ' *SUSPENDED* (md5 passwords can be 34, blowfish 60)
+        'username',  'varchar',   '',   $username_len, '', '',
+        '_password', 'varchar',   '',  512, '', '',
+        '_password_encoding', 'varchar', 'NULL', $char_d, '', '',
         'sec_phrase', 'varchar',  'NULL',   $char_d, '', '', 
         'popnum',    'int',    'NULL',   '', '', '', 
         'uid',       'int', 'NULL',   '', '', '', 

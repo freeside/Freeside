@@ -157,12 +157,13 @@ old_ for replace operations):
   <LI><code>$username</code>
   <LI><code>$_password</code>
   <LI><code>$quoted_password</code> - unencrypted password, already quoted for the shell (do not add additional quotes).
-  <LI><code>$crypt_password</code> - encrypted password.  When used on the command line (rather than STDIN), it will be already quoted for the shell (do not add additional quotes).
+  <LI><code>$crypt_password</code> - encrypted password.  When used on the command line (rather than STDIN), it will be quoted for the shell already (do not add additional quotes).
+  <LI><code>$ldap_password</code> - Password in LDAP/RFC2307 format (for example, "{PLAIN}himom", "{CRYPT}94pAVyK/4oIBk" or "{MD5}5426824942db4253f87a1009fd5d2d4").  When used on the command line (rather than STDIN), it will be quoted for the shell already (do not add additional quotes).
   <LI><code>$uid</code>
   <LI><code>$gid</code>
-  <LI><code>$finger</code> - GECOS.  When used on the command line (rather than STDIN), it will be already quoted for the shell (do not add additional quotes).
-  <LI><code>$first</code> - First name of GECOS.  When used on the command line (rather than STDIN), it will be already quoted for the shell (do not add additional quotes).
-  <LI><code>$last</code> - Last name of GECOS.  When used on the command line (rather than STDIN), it will be already quoted for the shell (do not add additional quotes).
+  <LI><code>$finger</code> - GECOS.  When used on the command line (rather than STDIN), it will be quoted for the shell already (do not add additional quotes).
+  <LI><code>$first</code> - First name of GECOS.  When used on the command line (rather than STDIN), it will be quoted for the shell already (do not add additional quotes).
+  <LI><code>$last</code> - Last name of GECOS.  When used on the command line (rather than STDIN), it will be quoted for the shell already (do not add additional quotes).
   <LI><code>$dir</code> - home directory
   <LI><code>$shell</code>
   <LI><code>$quota</code>
@@ -249,6 +250,7 @@ sub _export_command {
   $quoted_password = shell_quote $_password;
 
   $crypt_password = $svc_acct->crypt_password( $self->option('crypt') );
+  $ldap_password  = $svc_acct->ldap_password(  $self->option('crypt') );
 
   @radius_groups = $svc_acct->radius_groups;
 
@@ -291,6 +293,7 @@ sub _export_command {
   $last = shell_quote $last;
   $finger = shell_quote $finger;
   $crypt_password = shell_quote $crypt_password;
+  $ldap_password  = shell_quote $ldap_password;
 
   my $command_string = eval(qq("$command"));
 
@@ -320,6 +323,7 @@ sub _export_replace {
   $new_domain = $new->domain;
 
   $new_crypt_password = $new->crypt_password( $self->option('crypt') );
+  $new_ldap_password  = $new->ldap_password(  $self->option('crypt') );
 
   @old_radius_groups = $old->radius_groups;
   @new_radius_groups = $new->radius_groups;
@@ -357,6 +361,7 @@ sub _export_replace {
   $new_last = shell_quote $new_last;
   $new_finger = shell_quote $new_finger;
   $new_crypt_password = shell_quote $new_crypt_password;
+  $new_ldap_password  = shell_quote $new_ldap_password;
 
   my $command_string = eval(qq("$command"));
 

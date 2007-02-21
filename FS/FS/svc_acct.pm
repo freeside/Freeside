@@ -21,6 +21,7 @@ use Fcntl qw(:flock);
 use Date::Format;
 use Crypt::PasswdMD5 1.2;
 use Data::Dumper;
+use Authen::Passphrase;
 use FS::UID qw( datasrc );
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs fields dbh dbdef );
@@ -170,6 +171,8 @@ FS::svc_Common.  The following fields are currently supported:
 =item username
 
 =item _password - generated if blank
+
+=item _password_encoding - plain, crypt, ldap (or empty for autodetection)
 
 =item sec_phrase - security phrase
 
@@ -883,6 +886,9 @@ sub check {
               || $self->ut_snumbern('upbytes')
               || $self->ut_snumbern('downbytes')
               || $self->ut_snumbern('totalbytes')
+              || $self->ut_enum( '_password_encoding',
+                                 [ '', qw( plain crypt ldap ) ]
+                               )
   ;
   return $error if $error;
 
@@ -913,12 +919,6 @@ sub check {
   }
   unless ( $username_ampersand ) {
     $recref->{username} =~ /\&/ and return gettext('illegal_username');
-  }
-  if ( $password_noampersand ) {
-    $recref->{_password} =~ /\&/ and return gettext('illegal_password');
-  }
-  if ( $password_noexclamation ) {
-    $recref->{_password} =~ /\!/ and return gettext('illegal_password');
   }
   unless ( $username_percent ) {
     $recref->{username} =~ /\%/ and return gettext('illegal_username');
@@ -1027,36 +1027,92 @@ sub check {
     $self->ut_textn($_);
   }
 
-  #generate a password if it is blank
-  $recref->{_password} = join('',map($pw_set[ int(rand $#pw_set) ], (0..7) ) )
-    unless ( $recref->{_password} );
+  if ( $recref->{_password_encoding} eq 'ldap' ) {
 
-  #if ( $recref->{_password} =~ /^((\*SUSPENDED\* )?)([^\t\n]{4,16})$/ ) {
-  if ( $recref->{_password} =~ /^((\*SUSPENDED\* |!!?)?)([^\t\n]{$passwordmin,$passwordmax})$/ ) {
-    $recref->{_password} = $1.$3;
-    #uncomment this to encrypt password immediately upon entry, or run
-    #bin/crypt_pw in cron to give new users a window during which their
-    #password is available to techs, for faxing, etc.  (also be aware of 
-    #radius issues!)
-    #$recref->{password} = $1.
-    #  crypt($3,$saltset[int(rand(64))].$saltset[int(rand(64))]
-    #;
-  } elsif ( $recref->{_password} =~ /^((\*SUSPENDED\* |!!?)?)([\w\.\/\$\;\+]{13,64})$/ ) {
-    $recref->{_password} = $1.$3;
-  } elsif ( $recref->{_password} eq '*' ) {
-    $recref->{_password} = '*';
-  } elsif ( $recref->{_password} eq '!' ) {
-    $recref->{_password} = '!';
-  } elsif ( $recref->{_password} eq '!!' ) {
-    $recref->{_password} = '!!';
+    if ( $recref->{_password} =~ /^(\{[\w\-]+\})(!?.{0,64})$/ ) {
+      $recref->{_password} = uc($1).$2;
+    } else {
+      return 'Illegal (ldap-encoded) password: '. $recref->{_password};
+    }
+
+  } elsif ( $recref->{_password_encoding} eq 'crypt' ) {
+
+    if ( $recref->{_password} =~
+           #/^(\$\w+\$.*|[\w\+\/]{13}|_[\w\+\/]{19}|\*)$/
+           /^(!!?)?(\$\w+\$.*|[\w\+\/]{13}|_[\w\+\/]{19}|\*)$/
+       ) {
+
+      $recref->{_password} = $1.$2;
+
+    } else {
+      return 'Illegal (crypt-encoded) password';
+    }
+
+  } elsif ( $recref->{_password_encoding} eq 'plain' ) { 
+
+    #generate a password if it is blank
+    $recref->{_password} = join('',map($pw_set[ int(rand $#pw_set) ], (0..7) ) )
+      unless length( $recref->{_password} );
+
+    if ( $recref->{_password} =~ /^([^\t\n]{$passwordmin,$passwordmax})$/ ) {
+      $recref->{_password} = $1;
+    } else {
+      return gettext('illegal_password'). " $passwordmin-$passwordmax ".
+             FS::Msgcat::_gettext('illegal_password_characters').
+             ": ". $recref->{_password};
+    }
+
+    if ( $password_noampersand ) {
+      $recref->{_password} =~ /\&/ and return gettext('illegal_password');
+    }
+    if ( $password_noexclamation ) {
+      $recref->{_password} =~ /\!/ and return gettext('illegal_password');
+    }
+
   } else {
-    #return "Illegal password";
-    return gettext('illegal_password'). " $passwordmin-$passwordmax ".
-           FS::Msgcat::_gettext('illegal_password_characters').
-           ": ". $recref->{_password};
+
+    #carp "warning: _password_encoding unspecified\n";
+
+    #generate a password if it is blank
+    unless ( length( $recref->{_password} ) ) {
+
+      $recref->{_password} =
+        join('',map($pw_set[ int(rand $#pw_set) ], (0..7) ) );
+      $recref->{_password_encoding} = 'plain';
+
+    } else {
+  
+      #if ( $recref->{_password} =~ /^((\*SUSPENDED\* )?)([^\t\n]{4,16})$/ ) {
+      if ( $recref->{_password} =~ /^((\*SUSPENDED\* |!!?)?)([^\t\n]{$passwordmin,$passwordmax})$/ ) {
+        $recref->{_password} = $1.$3;
+        $recref->{_password_encoding} = 'plain';
+      } elsif ( $recref->{_password} =~
+                  /^((\*SUSPENDED\* |!!?)?)([\w\.\/\$\;\+]{13,64})$/
+              ) {
+        $recref->{_password} = $1.$3;
+        $recref->{_password_encoding} = 'crypt';
+      } elsif ( $recref->{_password} eq '*' ) {
+        $recref->{_password} = '*';
+        $recref->{_password_encoding} = 'crypt';
+      } elsif ( $recref->{_password} eq '!' ) {
+        $recref->{_password_encoding} = 'crypt';
+        $recref->{_password} = '!';
+      } elsif ( $recref->{_password} eq '!!' ) {
+        $recref->{_password} = '!!';
+        $recref->{_password_encoding} = 'crypt';
+      } else {
+        #return "Illegal password";
+        return gettext('illegal_password'). " $passwordmin-$passwordmax ".
+               FS::Msgcat::_gettext('illegal_password_characters').
+               ": ". $recref->{_password};
+      }
+
+    }
+
   }
 
   $self->SUPER::check;
+
 }
 
 =item _check_system
@@ -1888,23 +1944,42 @@ sub check_password {
   #self-service and pay up
   ( my $password = $self->_password ) =~ s/^\*SUSPENDED\* //;
 
-  #eventually should check a "password-encoding" field
-  if ( $password =~ /^(\*|!!?)$/ ) { #no self-service login
-    return 0;
-  } elsif ( length($password) < 13 ) { #plaintext
-    $check_password eq $password;
-  } elsif ( length($password) == 13 ) { #traditional DES crypt
-    crypt($check_password, $password) eq $password;
-  } elsif ( $password =~ /^\$1\$/ ) { #MD5 crypt
-    unix_md5_crypt($check_password, $password) eq $password;
-  } elsif ( $password =~ /^\$2a?\$/ ) { #Blowfish
-    warn "Can't check password: Blowfish encryption not yet supported, svcnum".
-         $self->svcnum. "\n";
-    0;
+  if ( $self->_password_encoding eq 'ldap' ) {
+
+    my $auth = from_rfc2307 Authen::Passphrase $self->_password;
+    return $auth->match($check_password);
+
+  } elsif ( $self->_password_encoding eq 'crypt' ) {
+
+    my $auth = from_crypt Authen::Passphrase $self->_password;
+    return $auth->match($check_password);
+
+  } elsif ( $self->_password_encoding eq 'plain' ) {
+
+    return $check_password eq $password;
+
   } else {
-    warn "Can't check password: Unrecognized encryption for svcnum ".
-         $self->svcnum. "\n";
-    0;
+
+    #XXX this could be replaced with Authen::Passphrase stuff
+
+    if ( $password =~ /^(\*|!!?)$/ ) { #no self-service login
+      return 0;
+    } elsif ( length($password) < 13 ) { #plaintext
+      $check_password eq $password;
+    } elsif ( length($password) == 13 ) { #traditional DES crypt
+      crypt($check_password, $password) eq $password;
+    } elsif ( $password =~ /^\$1\$/ ) { #MD5 crypt
+      unix_md5_crypt($check_password, $password) eq $password;
+    } elsif ( $password =~ /^\$2a?\$/ ) { #Blowfish
+      warn "Can't check password: Blowfish encryption not yet supported, ".
+           "svcnum ".  $self->svcnum. "\n";
+      0;
+    } else {
+      warn "Can't check password: Unrecognized encryption for svcnum ".
+           $self->svcnum. "\n";
+      0;
+    }
+
   }
 
 }
@@ -1925,14 +2000,40 @@ database.
 
 sub crypt_password {
   my $self = shift;
-  #eventually should check a "password-encoding" field
-  if ( length($self->_password) == 13
-       || $self->_password =~ /^\$(1|2a?)\$/
-       || $self->_password =~ /^(\*|NP|\*LK\*|!!?)$/
-     )
-  {
-    $self->_password;
-  } else {
+
+  if ( $self->_password_encoding eq 'ldap' ) {
+
+    if ( $self->_password =~ /^\{(PLAIN|CLEARTEXT)\}(.+)$/ ) {
+      my $plain = $2;
+
+      #XXX this could be replaced with Authen::Passphrase stuff
+
+      my $encryption = ( scalar(@_) && $_[0] ) ? shift : 'crypt';
+      if ( $encryption eq 'crypt' ) {
+        crypt(
+          $self->_password,
+          $saltset[int(rand(64))].$saltset[int(rand(64))]
+        );
+      } elsif ( $encryption eq 'md5' ) {
+        unix_md5_crypt( $self->_password );
+      } elsif ( $encryption eq 'blowfish' ) {
+        croak "unknown encryption method $encryption";
+      } else {
+        croak "unknown encryption method $encryption";
+      }
+
+    } elsif ( $self->_password =~ /^\{CRYPT\}(.+)$/ ) {
+      $1;
+    }
+
+  } elsif ( $self->_password_encoding eq 'crypt' ) {
+
+    return $self->_password;
+
+  } elsif ( $self->_password_encoding eq 'plain' ) {
+
+    #XXX this could be replaced with Authen::Passphrase stuff
+
     my $encryption = ( scalar(@_) && $_[0] ) ? shift : 'crypt';
     if ( $encryption eq 'crypt' ) {
       crypt(
@@ -1946,14 +2047,44 @@ sub crypt_password {
     } else {
       croak "unknown encryption method $encryption";
     }
+
+  } else {
+
+    if ( length($self->_password) == 13
+         || $self->_password =~ /^\$(1|2a?)\$/
+         || $self->_password =~ /^(\*|NP|\*LK\*|!!?)$/
+       )
+    {
+      $self->_password;
+    } else {
+    
+      #XXX this could be replaced with Authen::Passphrase stuff
+
+      my $encryption = ( scalar(@_) && $_[0] ) ? shift : 'crypt';
+      if ( $encryption eq 'crypt' ) {
+        crypt(
+          $self->_password,
+          $saltset[int(rand(64))].$saltset[int(rand(64))]
+        );
+      } elsif ( $encryption eq 'md5' ) {
+        unix_md5_crypt( $self->_password );
+      } elsif ( $encryption eq 'blowfish' ) {
+        croak "unknown encryption method $encryption";
+      } else {
+        croak "unknown encryption method $encryption";
+      }
+
+    }
+
   }
+
 }
 
 =item ldap_password [ DEFAULT_ENCRYPTION_TYPE ]
 
 Returns an encrypted password in "LDAP" format, with a curly-bracked prefix
-describing the format, for example, "{CRYPT}94pAVyK/4oIBk" or
-"{PLAIN-MD5}5426824942db4253f87a1009fd5d2d4f".
+describing the format, for example, "{PLAIN}himom", "{CRYPT}94pAVyK/4oIBk" or
+"{MD5}5426824942db4253f87a1009fd5d2d4".
 
 The optional DEFAULT_ENCRYPTION_TYPE is not yet used, but the idea is for it
 to work the same as the B</crypt_password> method.
@@ -1963,33 +2094,71 @@ to work the same as the B</crypt_password> method.
 sub ldap_password {
   my $self = shift;
   #eventually should check a "password-encoding" field
-  if ( length($self->_password) == 13 ) { #crypt
-    return '{CRYPT}'. $self->_password;
-  } elsif ( $self->_password =~ /^\$1\$(.*)$/ && length($1) == 31 ) { #passwdMD5
-    return '{MD5}'. $1;
-  } elsif ( $self->_password =~ /^\$2a?\$(.*)$/ ) { #Blowfish
-    die "Blowfish encryption not supported in this context, svcnum ".
-        $self->svcnum. "\n";
-  } elsif ( $self->_password =~ /^(\w{48})$/ ) { #LDAP SSHA
-    return '{SSHA}'. $1;
-  } elsif ( $self->_password =~ /^(\w{64})$/ ) { #LDAP NS-MTA-MD5
-    return '{NS-MTA-MD5}'. $1;
-  } else { #plaintext
+
+  if ( $self->_password_encoding eq 'ldap' ) {
+
+    return $self->_password;
+
+  } elsif ( $self->_password_encoding eq 'crypt' ) {
+
+    if ( length($self->_password) == 13 ) { #crypt
+      return '{CRYPT}'. $self->_password;
+    } elsif ( $self->_password =~ /^\$1\$(.*)$/ && length($1) == 31 ) { #passwdMD5
+      return '{MD5}'. $1;
+    #} elsif ( $self->_password =~ /^\$2a?\$(.*)$/ ) { #Blowfish
+    #  die "Blowfish encryption not supported in this context, svcnum ".
+    #      $self->svcnum. "\n";
+    } else {
+      warn "encryption method not (yet?) supported in LDAP context";
+      return '{CRYPT}*'; #unsupported, should not auth
+    }
+
+  } elsif ( $self->_password_encoding eq 'plain' ) {
+
     return '{PLAIN}'. $self->_password;
-    #my $encryption = ( scalar(@_) && $_[0] ) ? shift : 'crypt';
-    #if ( $encryption eq 'crypt' ) {
-    #  return '{CRYPT}'. crypt(
-    #    $self->_password,
-    #    $saltset[int(rand(64))].$saltset[int(rand(64))]
-    #  );
-    #} elsif ( $encryption eq 'md5' ) {
-    #  unix_md5_crypt( $self->_password );
-    #} elsif ( $encryption eq 'blowfish' ) {
-    #  croak "unknown encryption method $encryption";
-    #} else {
-    #  croak "unknown encryption method $encryption";
-    #}
+
+    #return '{CLEARTEXT}'. $self->_password; #?
+
+  } else {
+
+    if ( length($self->_password) == 13 ) { #crypt
+      return '{CRYPT}'. $self->_password;
+    } elsif ( $self->_password =~ /^\$1\$(.*)$/ && length($1) == 31 ) { #passwdMD5
+      return '{MD5}'. $1;
+    } elsif ( $self->_password =~ /^\$2a?\$(.*)$/ ) { #Blowfish
+      warn "Blowfish encryption not supported in this context, svcnum ".
+          $self->svcnum. "\n";
+      return '{CRYPT}*';
+
+    #are these two necessary anymore?
+    } elsif ( $self->_password =~ /^(\w{48})$/ ) { #LDAP SSHA
+      return '{SSHA}'. $1;
+    } elsif ( $self->_password =~ /^(\w{64})$/ ) { #LDAP NS-MTA-MD5
+      return '{NS-MTA-MD5}'. $1;
+
+    } else { #plaintext
+      return '{PLAIN}'. $self->_password;
+
+      #return '{CLEARTEXT}'. $self->_password; #?
+      
+      #XXX this could be replaced with Authen::Passphrase stuff if it gets used
+      #my $encryption = ( scalar(@_) && $_[0] ) ? shift : 'crypt';
+      #if ( $encryption eq 'crypt' ) {
+      #  return '{CRYPT}'. crypt(
+      #    $self->_password,
+      #    $saltset[int(rand(64))].$saltset[int(rand(64))]
+      #  );
+      #} elsif ( $encryption eq 'md5' ) {
+      #  unix_md5_crypt( $self->_password );
+      #} elsif ( $encryption eq 'blowfish' ) {
+      #  croak "unknown encryption method $encryption";
+      #} else {
+      #  croak "unknown encryption method $encryption";
+      #}
+    }
+
   }
+
 }
 
 =item domain_slash_username
