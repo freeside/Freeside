@@ -94,7 +94,8 @@ END
            }
            $cust_main->ncancelled_pkgs
     ) {
-      my $error = $cust_pkg->suspend;
+      my $action = $cust_pkg->part_pkg->option('recur_action') || 'suspend';
+      my $error = $cust_pkg->$action();
       warn "Error suspending package ". $cust_pkg->pkgnum.
            " for custnum ". $cust_main->custnum.
            ": $error"
