@@ -16,8 +16,7 @@ use FS::UID qw(adminsuidsetup forksuidsetup);
 use FS::ClientAPI;
 
 use FS::Conf;
-use FS::cust_bill;
-use FS::cust_pkg;
+use FS::cust_svc;
 
 $FREESIDE_LOG = "%%%FREESIDE_LOG%%%";
 $FREESIDE_LOCK = "%%%FREESIDE_LOCK%%%";
@@ -58,6 +57,10 @@ logfile("$FREESIDE_LOG/selfservice.$machine.log");
 daemonize2();
 
 my $conf = new FS::Conf;
+if ( $conf->exists('selfservice-ignore_quantity') ) {
+  $FS::cust_svc::ignore_quantity = 1;
+  $FS::cust_svc::ignore_quantity = 1; #now it is used twice.
+}
 
 my $clientd = "/usr/local/sbin/freeside-selfservice-clientd"; #better name?
 

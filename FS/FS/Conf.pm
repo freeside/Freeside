@@ -2045,6 +2045,13 @@ httemplate/docs/config.html
     'type'        => 'textarea',
   },
 
+  {
+    'key'         => 'selfservice-ignore_quantity',
+    'section'     => '',
+    'description' => 'Ignores service quantity restrictions in self-service context.  Strongly not recommended - just set your quantities correctly in the first place.',
+    'type'        => 'checkbox',
+  },
+
 );
 
 1;
