@@ -55,7 +55,7 @@
 %  $pkgpart = $new->pkgpart;
 %}
 %
-%unless (1 || $error) { # after 1.7.2
+%unless ($error) {
 %  my $error = $new->process_m2m(
 %    'link_table'   => 'type_pkgs',
 %    'target_table' => 'agent_type',
