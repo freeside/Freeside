@@ -27,7 +27,7 @@ $config_dir = $1;
 getsecrets($opt_u);
 
 #needs to match FS::Record
-my($dbdef_file) = "/usr/local/etc/newtest/dbdef.". datasrc;
+my($dbdef_file) = "%%%FREESIDE_CONF%%%/dbdef.". datasrc;
 
 ###
 
