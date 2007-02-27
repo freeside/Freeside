@@ -371,3 +371,5 @@ FS/reason_type.pm
 t/reason_type.t
 FS/cust_pkg_option.pm
 t/cust_pkg_option.t
+FS/conf.pm
+t/conf.t

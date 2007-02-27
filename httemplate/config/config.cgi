@@ -21,7 +21,7 @@ function SafeOnsubmit() {
 % my $conf = new FS::Conf; my @config_items = $conf->config_items; 
 
 
-<form name="OneTrueForm" action="config-process.cgi" METHOD="POST" onSubmit="SafeOnsubmit()">
+<form name="OneTrueForm" action="config-process.cgi" METHOD="POST" enctype="multipart/form-data" onSubmit="SafeOnsubmit()">
 % foreach my $section ( qw(required billing username password UI session
 %                            shell BIND
 %                           ),
@@ -61,6 +61,10 @@ function SafeOnsubmit() {
 
 
                <font color="#ff0000">no type</font>
+% } elsif ( $type eq 'binary' ) { 
+
+
+               Filename <input type="file" name="<% $i->key. $n %>">
 % } elsif ( $type eq 'textarea' ) { 
 
 

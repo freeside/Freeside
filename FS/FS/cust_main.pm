@@ -417,7 +417,7 @@ sub start_copy_skel {
   #'mg_watchlist_header.watchlist_header_id' => { 'mg_watchlist_details.watchlist_details_id' },
   #'mg_user_grid_header.grid_header_id' => { 'mg_user_grid_details.user_grid_details_id' },
   #'mg_portfolio_header.portfolio_header_id' => { 'mg_portfolio_trades.portfolio_trades_id' => { 'mg_portfolio_trades_positions.portfolio_trades_positions_id' } },
-  my @tables = eval($conf->config_binary('cust_main-skeleton_tables'));
+  my @tables = eval(join('\n',$conf->config('cust_main-skeleton_tables')));
   die $@ if $@;
 
   _copy_skel( 'cust_main',                                 #tablename

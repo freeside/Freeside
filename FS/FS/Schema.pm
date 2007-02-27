@@ -1687,6 +1687,18 @@ sub tables_hashref {
       'index' => [],
     },
 
+    'conf' => {
+      'columns' => [
+        'confnum',  'serial',  '', '', '', '', 
+        'agentnum', 'int',  'NULL', '', '', '', 
+        'name',     'varchar', '', $char_d, '', '', 
+        'value',    'varchar', 'NULL', '', '', '',       # Pg specific
+      ],
+      'primary_key' => 'confnum',
+      'unique' => [ [ 'agentnum', 'name' ]],
+      'index' => [],
+    },
+
     # name type nullability length default local
 
     #'new_table' => {

@@ -46,6 +46,12 @@ dbdef_create($dbh, $dbdef_file);
 
 $dbh->disconnect or die $dbh->errstr;
 
+unless ( $DRY_RUN ) {
+  my $init_config = "freeside-init-config -u $user ";
+  $init_config .= "%%%FREESIDE_CONF%%%/conf.". datasrc;
+  system "$init_config" ;
+}
+
 ###
 
 sub dbdef_create { # reverse engineer the schema from the DB and save to file
@@ -64,7 +70,7 @@ freeside-upgrade - Upgrades database schema for new freeside verisons.
 
 =head1 SYNOPSIS
 
-  freeside-adduser [ -d ] [ -q | -v ]
+  freeside-upgrade [ -d ] [ -q | -v ]
 
 =head1 DESCRIPTION
 

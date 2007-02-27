@@ -42,6 +42,14 @@
             <tr>
               <td><font color="#ff0000">no type</font></td>
             </tr>
+% } elsif (   $type eq 'binary' ) {
+
+            <tr>
+              <% $conf->exists($i->key)
+                   ? qq!<a href="config-download.cgi?!. $i->key. qq!">download</a>!
+                   : 'empty'
+              %>
+            </tr>
 % } elsif (   $type eq 'textarea'
 %                      || $type eq 'editlist'
 %                      || $type eq 'selectmultiple' ) { 

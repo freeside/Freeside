@@ -8,8 +8,6 @@ use vars qw( @ISA $DEBUG $me $conf $skip_fuzzyfiles
              $username_noperiod $username_nounderscore $username_nodash
              $username_uppercase $username_percent
              $password_noampersand $password_noexclamation
-             $welcome_template $welcome_from
-             $welcome_subject $welcome_subject_template $welcome_mimetype
              $warning_template $warning_from $warning_subject $warning_mimetype
              $warning_cc
              $smtpmachine
@@ -66,24 +64,6 @@ $FS::UID::callback{'FS::svc_acct'} = sub {
   $password_noampersand = $conf->exists('password-noexclamation');
   $password_noexclamation = $conf->exists('password-noexclamation');
   $dirhash = $conf->config('dirhash') || 0;
-  if ( $conf->exists('welcome_email') ) {
-    $welcome_template = new Text::Template (
-      TYPE   => 'ARRAY',
-      SOURCE => [ map "$_\n", $conf->config('welcome_email') ]
-    ) or warn "can't create welcome email template: $Text::Template::ERROR";
-    $welcome_from = $conf->config('welcome_email-from'); # || 'your-isp-is-dum'
-    $welcome_subject = $conf->config('welcome_email-subject') || 'Welcome';
-    $welcome_subject_template = new Text::Template (
-      TYPE   => 'STRING',
-      SOURCE => $welcome_subject,
-    ) or warn "can't create welcome email subject template: $Text::Template::ERROR";
-    $welcome_mimetype = $conf->config('welcome_email-mimetype') || 'text/plain';
-  } else {
-    $welcome_template = '';
-    $welcome_from = '';
-    $welcome_subject = '';
-    $welcome_mimetype = '';
-  }
   if ( $conf->exists('warning_email') ) {
     $warning_template = new Text::Template (
       TYPE   => 'ARRAY',
@@ -467,6 +447,7 @@ sub insert {
 
   if ( $cust_pkg ) {
     my $cust_main = $cust_pkg->cust_main;
+    my $agentnum = $cust_main->agentnum;
 
     if (   $conf->exists('emailinvoiceautoalways')
         || $conf->exists('emailinvoiceauto')
@@ -478,7 +459,25 @@ sub insert {
     }
 
     #welcome email
-    my $to = '';
+    my ($to,$welcome_template,$welcome_from,$welcome_subject,$welcome_subject_template,$welcome_mimetype)
+      = ('','','','','','');
+
+    if ( $conf->exists('welcome_email', $agentnum) ) {
+      $welcome_template = new Text::Template (
+        TYPE   => 'ARRAY',
+        SOURCE => [ map "$_\n", $conf->config('welcome_email', $agentnum) ]
+      ) or warn "can't create welcome email template: $Text::Template::ERROR";
+      $welcome_from = $conf->config('welcome_email-from', $agentnum);
+        # || 'your-isp-is-dum'
+      $welcome_subject = $conf->config('welcome_email-subject', $agentnum)
+        || 'Welcome';
+      $welcome_subject_template = new Text::Template (
+        TYPE   => 'STRING',
+        SOURCE => $welcome_subject,
+      ) or warn "can't create welcome email subject template: $Text::Template::ERROR";
+      $welcome_mimetype = $conf->config('welcome_email-mimetype', $agentnum)
+        || 'text/plain';
+    }
     if ( $welcome_template && $cust_pkg ) {
       my $to = join(', ', grep { $_ !~ /^(POST|FAX)$/ } $cust_main->invoicing_list );
       if ( $to ) {
@@ -949,7 +948,7 @@ sub check {
         $recref->{shell} = (grep $_ eq $recref->{shell}, @shells)[0];
       } else {
         return "Illegal shell \`". $self->shell. "\'; ".
-               $conf->dir. "/shells contains: @shells";
+               "shells configuration value contains: @shells";
       }
     } else {
       $recref->{shell} = '/bin/sync';

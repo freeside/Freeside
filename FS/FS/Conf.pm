@@ -1,13 +1,14 @@
 package FS::Conf;
 
-use vars qw($default_dir $base_dir @config_items @card_types $DEBUG );
-use IO::File;
-use File::Basename;
+use vars qw($base_dir @config_items @card_types $DEBUG );
+use MIME::Base64;
 use FS::ConfItem;
 use FS::ConfDefaults;
+use FS::conf;
+use FS::Record qw(qsearch qsearchs);
+use FS::UID qw(dbh);
 
 $base_dir = '%%%FREESIDE_CONF%%%';
-$default_dir = '%%%FREESIDE_CONF%%%';
 
 
 $DEBUG = 0;
@@ -20,12 +21,7 @@ FS::Conf - Freeside configuration values
 
   use FS::Conf;
 
-  $conf = new FS::Conf "/config/directory";
-
-  $FS::Conf::default_dir = "/config/directory";
   $conf = new FS::Conf;
-
-  $dir = $conf->dir;
 
   $value = $conf->config('key');
   @list  = $conf->config('key');
@@ -46,37 +42,17 @@ but this may change in the future.
 
 =over 4
 
-=item new [ DIRECTORY ]
+=item new
 
-Create a new configuration object.  A directory arguement is required if
-$FS::Conf::default_dir has not been set.
+Create a new configuration object.
 
 =cut
 
 sub new {
-  my($proto,$dir) = @_;
+  my($proto) = @_;
   my($class) = ref($proto) || $proto;
-  my($self) = { 'dir'      => $dir || $default_dir,
-                'base_dir' => $base_dir,
-              };
+  my($self) = { 'base_dir' => $base_dir };
   bless ($self, $class);
-}
-
-=item dir
-
-Returns the conf directory.
-
-=cut
-
-sub dir {
-  my($self) = @_;
-  my $dir = $self->{dir};
-  -e $dir or die "FATAL: $dir doesn't exist!";
-  -d $dir or die "FATAL: $dir isn't a directory!";
-  -r $dir or die "FATAL: Can't read $dir!";
-  -x $dir or die "FATAL: $dir not searchable (executable)!";
-  $dir =~ /^(.*)$/;
-  $1;
 }
 
 =item base_dir
@@ -102,20 +78,29 @@ Returns the configuration value or values (depending on context) for key.
 
 =cut
 
+sub _config {
+  my($self,$name,$agent)=@_;
+  my $hashref = { 'name' => $name };
+  if (defined($agent) && $agent) {
+    $hashref->{agent} = $agent;
+  }
+  local $FS::Record::conf = undef;  # XXX evil hack prevents recursion
+  my $cv = FS::Record::qsearchs('conf', $hashref);
+  if (!$cv && exists($hashref->{agent})) {
+    delete($hashref->{agent});
+    $cv = FS::Record::qsearchs('conf', $hashref);
+  }
+  return $cv;
+}
+
 sub config {
-  my($self,$file)=@_;
-  my($dir)=$self->dir;
-  my $fh = new IO::File "<$dir/$file" or return;
+  my($self,$name,$agent)=@_;
+  my $cv = $self->_config($name, $agent) or return;
+
   if ( wantarray ) {
-    map {
-      /^(.*)$/
-        or die "Illegal line (array context) in $dir/$file:\n$_\n";
-      $1;
-    } <$fh>;
+    split "\n", $cv->value;
   } else {
-    <$fh> =~ /^(.*)$/
-      or die "Illegal line (scalar context) in $dir/$file:\n$_\n";
-    $1;
+    (split("\n", $cv->value))[0];
   }
 }
 
@@ -126,12 +111,9 @@ Returns the exact scalar value for key.
 =cut
 
 sub config_binary {
-  my($self,$file)=@_;
-  my($dir)=$self->dir;
-  my $fh = new IO::File "<$dir/$file" or return;
-  local $/;
-  my $content = <$fh>;
-  $content;
+  my($self,$name,$agent)=@_;
+  my $cv = $self->_config($name, $agent) or return;
+  decode_base64($cv->value);
 }
 
 =item exists KEY
@@ -142,9 +124,8 @@ is undefined.
 =cut
 
 sub exists {
-  my($self,$file)=@_;
-  my($dir) = $self->dir;
-  -e "$dir/$file";
+  my($self,$name,$agent)=@_;
+  defined($self->_config($name, $agent));
 }
 
 =item config_orbase KEY SUFFIX
@@ -155,11 +136,11 @@ KEY_SUFFIX, if it exists, otherwise for KEY
 =cut
 
 sub config_orbase {
-  my( $self, $file, $suffix ) = @_;
-  if ( $self->exists("${file}_$suffix") ) {
-    $self->config("${file}_$suffix");
+  my( $self, $name, $suffix ) = @_;
+  if ( $self->exists("${name}_$suffix") ) {
+    $self->config("${name}_$suffix");
   } else {
-    $self->config($file);
+    $self->config($name);
   }
 }
 
@@ -170,12 +151,8 @@ Creates the specified configuration key if it does not exist.
 =cut
 
 sub touch {
-  my($self, $file) = @_;
-  my $dir = $self->dir;
-  unless ( $self->exists($file) ) {
-    warn "[FS::Conf] TOUCH $file\n" if $DEBUG;
-    system('touch', "$dir/$file");
-  }
+  my($self, $name, $agent) = @_;
+  $self->set($name, '', $agent);
 }
 
 =item set KEY VALUE
@@ -185,23 +162,49 @@ Sets the specified configuration key to the given value.
 =cut
 
 sub set {
-  my($self, $file, $value) = @_;
-  my $dir = $self->dir;
+  my($self, $name, $value, $agent) = @_;
   $value =~ /^(.*)$/s;
   $value = $1;
-  unless ( join("\n", @{[ $self->config($file) ]}) eq $value ) {
-    warn "[FS::Conf] SET $file\n" if $DEBUG;
-#    warn "$dir" if is_tainted($dir);
-#    warn "$dir" if is_tainted($file);
-    chmod 0644, "$dir/$file";
-    my $fh = new IO::File ">$dir/$file" or return;
-    chmod 0644, "$dir/$file";
-    print $fh "$value\n";
+
+  warn "[FS::Conf] SET $file\n" if $DEBUG;
+
+  my $old = FS::Record::qsearchs('conf', {name => $name, agent => $agent});
+  my $new = new FS::conf { $old ? $old->hash 
+                                : ('name' => $name, 'agent' => $agent)
+                         };
+  $new->value($value);
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error;
+  if ($old) {
+    $error = $new->replace($old);
+  }else{
+    $error = $new->insert;
   }
+
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    die "error setting configuration value: $error \n"
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
 }
-#sub is_tainted {
-#             return ! eval { join('',@_), kill 0; 1; };
-#         }
+
+=item set_binary KEY VALUE
+
+Sets the specified configuration key to an exact scalar value which
+can be retrieved with config_binary.
+
+=cut
+
+sub set_binary {
+  my($self,$name, $value, $agent)=@_;
+  $self->set($name, encode_base64($value), $agent);
+}
 
 =item delete KEY
 
@@ -210,11 +213,23 @@ Deletes the specified configuration key.
 =cut
 
 sub delete {
-  my($self, $file) = @_;
-  my $dir = $self->dir;
-  if ( $self->exists($file) ) {
+  my($self, $name, $agent) = @_;
+  if ( my $cv = FS::Record::qsearchs('conf', {name => $name, agent => $agent}) ) {
     warn "[FS::Conf] DELETE $file\n";
-    unlink "$dir/$file";
+
+    my $oldAutoCommit = $FS::UID::AutoCommit;
+    local $FS::UID::AutoCommit = 0;
+    my $dbh = dbh;
+
+    my $error = $cv->delete;
+
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      die "error setting configuration value: $error \n"
+    }
+
+    $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
   }
 }
 
@@ -230,65 +245,68 @@ sub config_items {
   #quelle kludge
   @config_items,
   ( map { 
-        my $basename = basename($_);
-        $basename =~ /^(.*)$/;
-        $basename = $1;
         new FS::ConfItem {
-                           'key'         => $basename,
+                           'key'         => $_->name,
                            'section'     => 'billing',
                            'description' => 'Alternate template file for invoices.  See the <a href="../docs/billing.html">billing documentation</a> for details.',
                            'type'        => 'textarea',
                          }
-      } glob($self->dir. '/invoice_template_*')
+      } FS::Record::qsearch('conf', {}, '', "WHERE name LIKE 'invoice!_template!_%' ESCAPE '!'")
   ),
   ( map { 
-        my $basename = basename($_);
-        $basename =~ /^(.*)$/;
-        $basename = $1;
         new FS::ConfItem {
-                           'key'         => $basename,
+                           'key'         => '$_->name',
+                           'section'     => 'billing',  #? 
+                           'description' => 'An image to include in some types of invoices',
+                           'type'        => 'binary',
+                         }
+      } FS::Record::qsearch('conf', {}, '', "WHERE name LIKE 'logo!_%.png' ESCAPE '!'")
+  ),
+  ( map { 
+        new FS::ConfItem {
+                           'key'         => $_->name,
                            'section'     => 'billing',
                            'description' => 'Alternate HTML template for invoices.  See the <a href="../docs/billing.html">billing documentation</a> for details.',
                            'type'        => 'textarea',
                          }
-      } glob($self->dir. '/invoice_html_*')
+      } FS::Record::qsearch('conf', {}, '', "WHERE name LIKE 'invoice!_html!_%' ESCAPE '!'")
   ),
   ( map { 
-        my $basename = basename($_);
-        $basename =~ /^(.*)$/;
-        $basename = $1;
-        ($latexname = $basename ) =~ s/latex/html/;
+        ($latexname = $_->name ) =~ s/latex/html/;
         new FS::ConfItem {
-                           'key'         => $basename,
+                           'key'         => $_->name,
                            'section'     => 'billing',
                            'description' => "Alternate Notes section for HTML invoices.  Defaults to the same data in $latexname if not specified.",
                            'type'        => 'textarea',
                          }
-      } glob($self->dir. '/invoice_htmlnotes_*')
+      } FS::Record::qsearch('conf', {}, '', "WHERE name LIKE 'invoice!_htmlnotes!_%' ESCAPE '!'")
   ),
   ( map { 
-        my $basename = basename($_);
-        $basename =~ /^(.*)$/;
-        $basename = $1;
         new FS::ConfItem {
-                           'key'         => $basename,
+                           'key'         => $_->name,
                            'section'     => 'billing',
                            'description' => 'Alternate LaTeX template for invoices.  See the <a href="../docs/billing.html">billing documentation</a> for details.',
                            'type'        => 'textarea',
                          }
-      } glob($self->dir. '/invoice_latex_*')
+      } FS::Record::qsearch('conf', {}, '', "WHERE name LIKE 'invoice!_latex!_%' ESCAPE '!'")
   ),
   ( map { 
-        my $basename = basename($_);
-        $basename =~ /^(.*)$/;
-        $basename = $1;
         new FS::ConfItem {
-                           'key'         => $basename,
+                           'key'         => '$_->name',
+                           'section'     => 'billing',  #? 
+                           'description' => 'An image to include in some types of invoices',
+                           'type'        => 'binary',
+                         }
+      } FS::Record::qsearch('conf', {}, '', "WHERE name LIKE 'logo!_%.eps' ESCAPE '!'")
+  ),
+  ( map { 
+        new FS::ConfItem {
+                           'key'         => $_->name,
                            'section'     => 'billing',
                            'description' => 'Alternate Notes section for LaTeX typeset PostScript invoices.  See the <a href="../docs/billing.html">billing documentation</a> for details.',
                            'type'        => 'textarea',
                          }
-      } glob($self->dir. '/invoice_latexnotes_*')
+      } FS::Record::qsearch('conf', {}, '', "WHERE name LIKE 'invoice!_latexnotes!_%' ESCAPE '!'")
   );
 }
 
@@ -2043,6 +2061,20 @@ httemplate/docs/config.html
     'description' => 'Template file for alerts about looming first time recurrant billing.  See the <a href="http://search.cpan.org/~mjd/Text-Template.pm">Text::Template</a> documentation for details on the template substitition language.  Also see packages with a <a href="../browse/part_pkg.cgi">flat price plan</a>  The following variables are available<ul><li><code>$packages</code> allowing <code>$packages->[0]</code> thru <code>$packages->[n]</code> <li><code>$package</code> the first package, same as <code>$packages->[0]</code> <li><code>$recurdates</code> allowing <code>$recurdates->[0]</code> thru <code>$recurdates->[n]</code> <li><code>$recurdate</code> the first recurdate, same as <code>$recurdate->[0]</code> <li><code>$first</code> <li><code>$last</code></ul>',
 # <li><code>$payby</code> <li><code>$expdate</code> most likely only confuse
     'type'        => 'textarea',
+  },
+
+  {
+    'key'         => 'logo.png',
+    'section'     => 'billing',  #? 
+    'description' => 'An image to include in some types of invoices',
+    'type'        => 'binary',
+  },
+
+  {
+    'key'         => 'logo.eps',
+    'section'     => 'billing',  #? 
+    'description' => 'An image to include in some types of invoices',
+    'type'        => 'binary',
   },
 
   {

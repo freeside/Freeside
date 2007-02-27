@@ -1827,7 +1827,8 @@ sub print_text {
 =item print_latex [ TIME [ , TEMPLATE ] ]
 
 Internal method - returns a filename of a filled-in LaTeX template for this
-invoice (Note: add ".tex" to get the actual filename).
+invoice (Note: add ".tex" to get the actual filename), and a filename of
+an associated logo (with the .eps extension included).
 
 See print_ps and print_pdf for methods that return PostScript and PDF output.
 
@@ -1909,6 +1910,7 @@ sub print_latex {
     'quantity'     => 1,
     'terms'        => $conf->config('invoice_default_terms') || 'Payable upon receipt',
     #'notes'        => join("\n", $conf->config('invoice_latexnotes') ),
+    # better hang on to conf_dir for a while
     'conf_dir'     => "$FS::UID::conf_dir/conf.$FS::UID::datasrc",
   );
 
@@ -2134,6 +2136,22 @@ sub print_latex {
   }
 
   my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
+  my $lh = new File::Temp( TEMPLATE => 'invoice.'. $self->invnum. '.XXXXXXXX',
+                           DIR      => $dir,
+                           SUFFIX   => '.eps',
+                           UNLINK   => 0,
+                         ) or die "can't open temp file: $!\n";
+
+  if ($template && $conf->exists("logo_${template}.eps")) {
+    print $lh $conf->config_binary("logo_${template}.eps")
+      or die "can't write temp file: $!\n";
+  }else{
+    print $lh $conf->config_binary('logo.eps')
+      or die "can't write temp file: $!\n";
+  }
+  close $lh;
+  $invoice_data{'logo_file'} = $lh->filename;
+
   my $fh = new File::Temp( TEMPLATE => 'invoice.'. $self->invnum. '.XXXXXXXX',
                            DIR      => $dir,
                            SUFFIX   => '.tex',
@@ -2149,7 +2167,7 @@ sub print_latex {
   close $fh;
 
   $fh->filename =~ /^(.*).tex$/ or die "unparsable filename: ". $fh->filename;
-  return $1;
+  return ($1, $invoice_data{'logo_file'});
 
 }
 
@@ -2167,7 +2185,7 @@ L<Time::Local> and L<Date::Parse> for conversion functions.
 sub print_ps {
   my $self = shift;
 
-  my $file = $self->print_latex(@_);
+  my ($file, $lfile) = $self->print_latex(@_);
 
   my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
   chdir($dir);
@@ -2186,6 +2204,7 @@ sub print_ps {
     or die "can't open $file.ps: $! (error in LaTeX template?)\n";
 
   unlink("$file.dvi", "$file.log", "$file.aux", "$file.ps", "$file.tex");
+  unlink("$lfile");
 
   my $ps = '';
   while (<POSTSCRIPT>) {
@@ -2212,7 +2231,7 @@ L<Time::Local> and L<Date::Parse> for conversion functions.
 sub print_pdf {
   my $self = shift;
 
-  my $file = $self->print_latex(@_);
+  my ($file, $lfile) = $self->print_latex(@_);
 
   my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
   chdir($dir);
@@ -2240,6 +2259,7 @@ sub print_pdf {
     or die "can't open $file.pdf: $! (error in LaTeX template?)\n";
 
   unlink("$file.dvi", "$file.log", "$file.aux", "$file.pdf", "$file.tex");
+  unlink("$lfile");
 
   my $pdf = '';
   while (<PDF>) {

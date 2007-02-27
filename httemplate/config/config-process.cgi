@@ -1,5 +1,4 @@
 <%init>
-
 die "access denied\n"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
 
@@ -27,6 +26,16 @@ foreach my $i ( @config_items ) {
         $conf->set($i->key, $value);
       } else {
         $conf->delete($i->key);
+      }
+    } elsif ( $type eq 'binary' ) {
+      if ( defined($cgi->param($i->key. $n)) && $cgi->param($i->key. $n) ) {
+        my $fh = $cgi->upload($i->key. $n);
+        if (defined($fh)) {
+          local $/;
+          $conf->set_binary($i->key, <$fh>);
+        }
+      }else{
+        warn "Condition failed for " . $i->key;
       }
     } elsif ( $type eq 'checkbox' ) {
 #        if ( defined($cgi->param($i->key. $n)) && $cgi->param($i->key. $n) ) {
@@ -57,6 +66,5 @@ foreach my $i ( @config_items ) {
   $conf->touch($_) foreach @touch;
   $conf->delete($_) foreach @delete;
 }
-
 </%init>
 <% $cgi->redirect("config-view.cgi") %>

@@ -4,7 +4,7 @@ use strict;
 use vars qw(
   @ISA @EXPORT_OK $cgi $dbh $freeside_uid $user 
   $conf_dir $secrets $datasrc $db_user $db_pass %callback @callback
-  $driver_name $AutoCommit
+  $driver_name $AutoCommit $callback_hack
 );
 use subs qw(
   getsecrets cgisetotaker
@@ -12,7 +12,7 @@ use subs qw(
 use Exporter;
 use Carp qw(carp croak cluck confess);
 use DBI;
-use FS::Conf;
+use IO::File;
 use FS::CurrentUser;
 
 @ISA = qw(Exporter);
@@ -24,6 +24,7 @@ $freeside_uid = scalar(getpwnam('freeside'));
 $conf_dir = "%%%FREESIDE_CONF%%%/";
 
 $AutoCommit = 1; #ours, not DBI
+$callback_hack = 0;
 
 =head1 NAME
 
@@ -104,12 +105,14 @@ sub forksuidsetup {
 
   FS::CurrentUser->load_user($user);
 
-  foreach ( keys %callback ) {
-    &{$callback{$_}};
-    # breaks multi-database installs # delete $callback{$_}; #run once
-  }
+  unless($callback_hack) {
+    foreach ( keys %callback ) {
+      &{$callback{$_}};
+      # breaks multi-database installs # delete $callback{$_}; #run once
+    }
 
-  &{$_} foreach @callback;
+    &{$_} foreach @callback;
+  }
 
   $dbh;
 }
@@ -275,11 +278,11 @@ the `/usr/local/etc/freeside/mapsecrets' file.
 sub getsecrets {
   my($setuser) = shift;
   $user = $setuser if $setuser;
-  my($conf) = new FS::Conf $conf_dir;
 
-  if ( $conf->exists('mapsecrets') ) {
+  if ( -e "$conf_dir/mapsecrets" ) {
     die "No user!" unless $user;
-    my($line) = grep /^\s*($user|\*)\s/, $conf->config('mapsecrets');
+    my($line) = grep /^\s*($user|\*)\s/,
+      map { /^(.*)$/; $1 } readline(new IO::File "$conf_dir/mapsecrets");
     confess "User $user not found in mapsecrets!" unless $line;
     $line =~ /^\s*($user|\*)\s+(.*)$/;
     $secrets = $2;
@@ -289,9 +292,9 @@ sub getsecrets {
     $secrets = 'secrets';
   }
 
-  ($datasrc, $db_user, $db_pass) = $conf->config($secrets)
-    or die "Can't get secrets: $secrets: $!\n";
-  $FS::Conf::default_dir = $conf_dir. "/conf.$datasrc";
+  ($datasrc, $db_user, $db_pass) = 
+    map { /^(.*)$/; $1 } readline(new IO::File "$conf_dir/$secrets")
+      or die "Can't get secrets: $secrets: $!\n";
   undef $driver_name;
   ($datasrc, $db_user, $db_pass);
 }

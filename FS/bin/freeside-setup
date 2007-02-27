@@ -19,12 +19,15 @@ die "Not running uid freeside!" unless checkeuid();
 #  map { lc($FS::raddb::attrib{$_}) => $_ } keys %FS::raddb::attrib;
 
 getopts("u:vd:");
-#my $user = shift or die &usage;
+my $config_dir = shift || 'conf' ;
+$config_dir =~ /^([\w.:=]+)$/
+  or die "unacceptable configuration directory name";
+$config_dir = $1;
 
-getsecrets($opt_u); #$user);
+getsecrets($opt_u);
 
 #needs to match FS::Record
-my($dbdef_file) = "%%%FREESIDE_CONF%%%/dbdef.". datasrc;
+my($dbdef_file) = "/usr/local/etc/newtest/dbdef.". datasrc;
 
 ###
 
@@ -88,7 +91,9 @@ $dbdef->save($dbdef_file);
 ###
 
 $FS::CurrentUser::upgrade_hack = 1;
+$FS::UID::callback_hack = 1;
 my $dbh = adminsuidsetup $opt_u; #$user;
+$FS::UID::callback_hack = 0;
 
 #create tables
 $|=1;
@@ -105,6 +110,20 @@ dbdef_create($dbh, $dbdef_file);
 delete $FS::Schema::dbdef_cache{$dbdef_file}; #force an actual reload
 reload_dbdef($dbdef_file);
 
+warn "Freeside schema initialized - commiting transaction\n" if $opt_v;
+
+$dbh->commit or die $dbh->errstr;
+$dbh->disconnect or die $dbh->errstr;
+
+warn "Database schema committed successfully\n" if $opt_v;
+
+my $init_config = "freeside-init-config";
+$init_config .= " -v" if $opt_v;
+$init_config .= " -u $opt_u" if $opt_u;
+$init_config .= " $config_dir";
+system "$init_config" ;
+
+$dbh = adminsuidsetup $opt_u;
 create_initial_data('domain' => $opt_d);
 
 warn "Freeside database initialized - commiting transaction\n" if $opt_v;
@@ -121,7 +140,7 @@ sub dbdef_create { # reverse engineer the schema from the DB and save to file
 }
 
 sub usage {
-  die "Usage:\n  freeside-setup -d domain.name [ -v ]\n"
+  die "Usage:\n  freeside-setup -d domain.name [ -v ] [ config/dir ]\n"
   # [ -u user ] for devel/multi-db installs
 }
 
