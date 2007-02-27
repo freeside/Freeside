@@ -12,3 +12,7 @@
 %
 %http_header('Content-Disposition' => "attachment; filename=$name" );
 % print $conf->config_binary($name);
+<%init>
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+</%init>
