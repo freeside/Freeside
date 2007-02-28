@@ -3,9 +3,10 @@
 %  my $pkgpart_svcpart = $cgi->param('arg');
 %  $pkgpart_svcpart =~ /^\d+_(\d+)$/;
 %  my $part_svc = qsearchs('part_svc', { 'svcpart' => $1 }) if $1;
-%  my $part_svc_column = $part_svc->part_svc_column('domsvc');
+%  my $part_svc_column = $part_svc->part_svc_column('domsvc') if $part_svc;
 %
-%  my @output = split /,/, $part_svc_column->columnvalue;
+%  my @output = split /,/, $part_svc_column->columnvalue if $part_svc_column;
+%  my $columnflag = $part_svc_column->columnflag if $part_svc_column;
 %  my @svc_domain = ();
 %  my %seen = ();
 %  
@@ -17,8 +18,7 @@
 %    $seen{$_}++;
 %  }
 %  if ($conf->exists('svc_acct-alldomains')
-%       && ( $part_svc_column->columnflag eq 'D'
-%         || $part_svc_column->columnflag eq '' )
+%       && ( $columnflag eq 'D' || $columnflag eq '' )
 %     ) {
 %    foreach (grep { $_->svcnum ne $output[0] } qsearch('svc_domain', {}) ){
 %      push @svc_domain, [ $_->svcnum => $_->domain ];

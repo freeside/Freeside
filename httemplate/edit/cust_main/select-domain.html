@@ -42,6 +42,7 @@
 </SCRIPT>
 
 <SELECT NAME="<% $opt{'prefix'} %>pkgpart_svcpart" onchange="<% $opt{'prefix'} %>pkgpart_svcpart_changed(this,0);" >
+  <OPTION VALUE="">(none)
 
 % foreach my $part_pkg ( @part_pkg ) {
 
