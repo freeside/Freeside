@@ -8,7 +8,7 @@ use FS::Record qw( qsearch qsearchs dbh );
 
 @ISA = qw( FS::Record );
 
-$DEBUG = 1;
+$DEBUG = 0;
 $me = '[FS::cust_bill_ApplicationCommon]';
 
 =head1 NAME
