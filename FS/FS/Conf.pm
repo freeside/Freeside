@@ -174,23 +174,15 @@ sub set {
                          };
   $new->value($value);
 
-  my $oldAutoCommit = $FS::UID::AutoCommit;
-  local $FS::UID::AutoCommit = 0;
-  my $dbh = dbh;
-
   my $error;
   if ($old) {
     $error = $new->replace($old);
-  }else{
+  } else {
     $error = $new->insert;
   }
 
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    die "error setting configuration value: $error \n"
-  }
-
-  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  die "error setting configuration value: $error \n"
+    if $error;
 
 }
 
