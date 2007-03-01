@@ -130,7 +130,7 @@ sub calc_recur {
         ###
 
         my( $to_or_from, $number );
-        if ( $cdr->dst =~ /^(\+?1)?8[02-8]{2}/ ) { #tollfree call
+        if ( $cdr->dst =~ /^(\+?1)?8([02-8])\1/ ) { #tollfree call
           $to_or_from = 'from';
           $number = $cdr->src;
         } else { #regular call
