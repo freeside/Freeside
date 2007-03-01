@@ -1,0 +1,63 @@
+#!/usr/bin/perl -w
+
+use strict;
+use vars qw($opt_d $opt_q $opt_v);  # $opt_n instead of $opt_d?
+use vars qw($DEBUG $DRY_RUN);
+use Getopt::Std;
+use FS::UID qw(adminsuidsetup checkeuid);
+use FS::Misc qw(prune_applications);
+
+die "Not running uid freeside!" unless checkeuid();
+
+getopts("dq");
+
+$DEBUG = !$opt_q;
+#$DEBUG = $opt_v;
+
+$DRY_RUN = $opt_d;
+
+my $user = shift or die &usage;
+my $dbh = adminsuidsetup($user);
+
+my $hashref = {};
+
+$hashref->{dry_run} = 1 if $DRY_RUN;
+$hashref->{debug} = 1 if $DEBUG;
+
+print join "\n", prune_applications($hashref);
+print "\n" if $DRY_RUN;
+
+$dbh->commit or die $dbh->errstr;
+
+###
+
+sub usage {
+  die "Usage:\n  freeside-prune-applications [ -d ] [ -q | -v ] user\n"; 
+}
+
+=head1 NAME
+
+freeside-prune-applications - Removes stray applications of credit, payment to
+                              bills, refunds, etc.
+
+=head1 SYNOPSIS
+
+  freeside-prune-applications [ -d ] [ -q | -v ]
+
+=head1 DESCRIPTION
+
+Reads your existing database schema and updates it to match the current schema,
+adding any columns or tables necessary.
+
+  [ -d ]: Dry run; display affected records (to STDOUT) only, but do not
+          remove them.
+
+  [ -q ]: Run quietly.  This may become the default at some point.
+
+  [ -v ]: Run verbosely, sending debugging information to STDERR.  This is the
+          current default.
+
+=head1 SEE ALSO
+
+=cut
+

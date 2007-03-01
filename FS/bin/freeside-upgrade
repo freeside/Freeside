@@ -8,6 +8,7 @@ use DBIx::DBSchema 0.31;
 use FS::UID qw(adminsuidsetup checkeuid datasrc );  #getsecrets);
 use FS::CurrentUser;
 use FS::Schema qw( dbdef dbdef_dist reload_dbdef );
+use FS::Misc qw(prune_applications);
 
 die "Not running uid freeside!" unless checkeuid();
 
@@ -39,6 +40,13 @@ if ( $DRY_RUN ) {
 } else {
   dbdef->update_schema( dbdef_dist, $dbh );
 }
+
+my $hashref = {};
+$hashref->{dry_run} = 1 if $DRY_RUN;
+$hashref->{debug} = 1 if $DEBUG;
+print join "\n", prune_applications($hashref);
+print "\n" if $DRY_RUN;
+
 
 $dbh->commit or die $dbh->errstr;
 
