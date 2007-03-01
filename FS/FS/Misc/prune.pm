@@ -10,7 +10,7 @@ use FS::cust_credit_refund;
 #use FS::cust_pay_refund;
 
 @ISA = qw( Exporter );
-@EXPORT_OK = qw( prune applications );
+@EXPORT_OK = qw( prune_applications );
 
 =head1 NAME
 
