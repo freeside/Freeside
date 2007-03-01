@@ -164,6 +164,14 @@ sub delete {
     }
   }
 
+  foreach my $cust_credit_refund ( $self->cust_credit_refund ) {
+    my $error = $cust_credit_refund->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
   my $error = $self->SUPER::delete(@_);
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
