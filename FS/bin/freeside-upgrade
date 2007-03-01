@@ -8,7 +8,7 @@ use DBIx::DBSchema 0.31;
 use FS::UID qw(adminsuidsetup checkeuid datasrc );  #getsecrets);
 use FS::CurrentUser;
 use FS::Schema qw( dbdef dbdef_dist reload_dbdef );
-use FS::Misc qw(prune_applications);
+use FS::Misc::prune qw(prune_applications);
 
 die "Not running uid freeside!" unless checkeuid();
 

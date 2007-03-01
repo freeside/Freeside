@@ -5,7 +5,7 @@ use vars qw($opt_d $opt_q $opt_v);  # $opt_n instead of $opt_d?
 use vars qw($DEBUG $DRY_RUN);
 use Getopt::Std;
 use FS::UID qw(adminsuidsetup checkeuid);
-use FS::Misc qw(prune_applications);
+use FS::Misc::prune qw(prune_applications);
 
 die "Not running uid freeside!" unless checkeuid();
 
