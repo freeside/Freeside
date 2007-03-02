@@ -1,13 +1,16 @@
 package FS::TicketSystem::RT_External;
 
 use strict;
-use vars qw( $conf $default_queueid
+use vars qw( $DEBUG $me $conf $dbh $default_queueid $external_url
              $priority_field $priority_field_queue $field
-	     $dbh $external_url );
+	   );
 use URI::Escape;
 use FS::UID qw(dbh);
 use FS::Record qw(qsearchs);
 use FS::cust_main;
+
+$me = '[FS::TicketSystem::RT_External]';
+$DEBUG = 0;
 
 FS::UID->install_callback( sub { 
   $conf = new FS::Conf;
@@ -17,6 +20,7 @@ FS::UID->install_callback( sub {
   if ( $priority_field ) {
     $priority_field_queue =
       $conf->config('ticket_system-custom_priority_field_queue');
+
     $field = $priority_field_queue
                   ? $priority_field_queue. '.%7B'. $priority_field. '%7D'
                   : $priority_field;
@@ -35,6 +39,17 @@ FS::UID->install_callback( sub {
     $external_url = $conf->config('ticket_system-rt_external_url');
   }
 
+  #kludge... should *use* the id... but good enough for now
+  if ( $priority_field_queue =~ /^(\d+)$/ ) {
+    my $id = $1;
+    my $sql = 'SELECT Name FROM Queues WHERE Id = ?';
+    my $sth = $dbh->prepare($sql) or die $dbh->errstr. " preparing $sql";
+    $sth->execute($id)            or die $sth->errstr. " executing $sql";
+
+    $priority_field_queue = $sth->fetchrow_arrayref->[0];
+
+  }
+
 } );
 
 sub num_customer_tickets {
@@ -43,6 +58,7 @@ sub num_customer_tickets {
   my( $from_sql, @param) = $self->_from_customer( $custnum, $priority );
 
   my $sql = "SELECT COUNT(*) $from_sql";
+  warn "$me $sql (@param)" if $DEBUG;
   my $sth = $dbh->prepare($sql) or die $dbh->errstr. " preparing $sql";
   $sth->execute(@param)         or die $sth->errstr. " executing $sql";
 
@@ -60,6 +76,7 @@ sub customer_tickets {
 	  " AS svalue " .
           ( length($priority) ? ", objectcustomfieldvalues.content" : '' ).
           " $from_sql ORDER BY svalue, priority DESC, id DESC LIMIT $limit";
+  warn "$me $sql (@param)" if $DEBUG;
   my $sth = $dbh->prepare($sql) or die $dbh->errstr. "preparing $sql";
   $sth->execute(@param)         or die $sth->errstr. "executing $sql";
 
