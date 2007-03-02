@@ -2898,7 +2898,7 @@ sub realtime_refund_bop {
       or return "Unknown paynum $options{'paynum'}";
     $amount ||= $cust_pay->paid;
 
-    $cust_pay->paybatch =~ /^((\d+)\-)?(\w+):\s*([\w\-]*)(:([\w\-]+))?$/
+    $cust_pay->paybatch =~ /^((\d+)\-)?(\w+):\s*([\w\-\/ ]*)(:([\w\-]+))?$/
       or return "Can't parse paybatch for paynum $options{'paynum'}: ".
                 $cust_pay->paybatch;
     my $gatewaynum = '';
