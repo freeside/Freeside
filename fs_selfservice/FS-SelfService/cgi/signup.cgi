@@ -182,22 +182,24 @@ if (    ( defined($cgi->param('magic')) && $cgi->param('magic') eq 'process' )
 
     unless ( $error ) {
       my $rv = new_customer( {
-        map { $_ => scalar($cgi->param($_)) }
-          qw( last first ss company
-              address1 address2 city county state zip country
-              daytime night fax
+        ( map { $_ => scalar($cgi->param($_)) }
+            qw( last first ss company
+                address1 address2 city county state zip country
+                daytime night fax
 
-              ship_last ship_first ship_company
-              ship_address1 ship_address2 ship_city ship_county ship_state
-                ship_zip ship_country
-              ship_daytime ship_night ship_fax
+                ship_last ship_first ship_company
+                ship_address1 ship_address2 ship_city ship_county ship_state
+                  ship_zip ship_country
+                ship_daytime ship_night ship_fax
 
-              payby payinfo paycvv paydate payname invoicing_list
-              referral_custnum promo_code reg_code
-              pkgpart username sec_phrase _password popnum refnum
-              agentnum
-            ),
-          grep { /^snarf_/ } $cgi->param
+                payby payinfo paycvv paydate payname invoicing_list
+                referral_custnum promo_code reg_code
+                pkgpart username sec_phrase _password popnum refnum
+                agentnum
+              ),
+            grep { /^snarf_/ } $cgi->param
+        ),
+        'payip' => $cgi->remote_host(),
       } );
       $error = $rv->{'error'};
     }
