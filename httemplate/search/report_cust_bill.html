@@ -5,7 +5,7 @@
 
 <TABLE>
   <% include( '/elements/tr-select-agent.html',
-                 $cgi->param('agentnum'),
+                 $cgi->param('agentnum') ? $cgi->param('agentnum') : '',
                  'label' => 'Invoices for agent: ',
              )
   %>
