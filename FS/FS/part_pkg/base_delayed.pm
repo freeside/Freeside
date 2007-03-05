@@ -1,4 +1,4 @@
-package FS::part_pkg::flat_delayed;
+package FS::part_pkg::base_delayed;
 
 use strict;
 use vars qw(@ISA %info);
