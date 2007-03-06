@@ -1,35 +1,56 @@
 #!/usr/bin/perl
 #
-# hack to update/add read-only permissions for a user on the db
-#
-# usage: pg-readonly freesideuser readonlyuser
+# slony replication setup
+# 
+# usage: slony-setup freesideuser
 
 use strict;
 use DBI;
 use FS::UID qw(adminsuidsetup);
 use FS::Record qw(dbdef);
 
-my $user = shift or die &usage;
+my $user = shift or die "usage: slony-setup username\n";
 adminsuidsetup($user);
 
 #---
 
-#su postgres -c 'createlang plpgsql freeside'
-
-#---
-
-my $MASTERHOST = '172.21.0.204';
-my $SLAVEHOST = '172.21.0.205';
+my $MASTERHOST = '192.168.20.10';
+my $SLAVEHOST = '192.168.20.50';
 #my $REPLICATIONUSER='pgsql';
 my $REPLICATIONUSER='postgres';
+
+#--------
+
+print <<END;
+
+#on slave:
+useradd freeside
+cp -pr /etc/skel /home/freeside
+chown -R freeside /home/freeside
+
+su postgres -c 'createuser freeside' #n y n
+su freeside -c 'createdb freeside'
+
+#on master:
+su postgres -c 'createlang plpgsql freeside'
+
+pg_dump -s -U $REPLICATIONUSER -h $MASTERHOST freeside | psql -U $REPLICATIONUSER -h $SLAVEHOST freeside
+
+END
+
+#--------
 
 #drop set ( id = 1, origin = 1);
 
 print <<END;
+#on master:
+slonik <<_EOF_
+
 cluster name = freeside;
 node 1 admin conninfo = 'dbname=freeside host=$MASTERHOST user=$REPLICATIONUSER';
 node 2 admin conninfo = 'dbname=freeside host=$SLAVEHOST user=$REPLICATIONUSER';
 init cluster ( id=1, comment = 'Master Node');
+
 create set (id=1, origin=1, comment='All freeside tables');
 
 END
@@ -43,11 +64,46 @@ foreach my $table ( dbdef->tables ) {
 }
 
 print <<END;
+
 store node (id=2, comment = 'Slave node');
 store path (server = 1, client = 2, conninfo='dbname=freeside host=$MASTERHOST user=$REPLICATIONUSER');
 store path (server = 2, client = 1, conninfo='dbname=freeside host=$SLAVEHOST user=$REPLICATIONUSER');
 store listen (origin=1, provider = 1, receiver =2);
 store listen (origin=2, provider = 2, receiver =1);
+
+_EOF_
 END
 
+print <<END;
+
+### start slon processes (both machines) (this is debian-specific)
+mkdir /etc/slony1/freeside
+
+cat >/etc/slony1/freeside/slon.conf <<_EOF_
+# Set the cluster name that this instance of slon is running against
+# default is to read it off the command line
+cluster_name='freeside'
+
+# Set slon's connection info, default is to read it off the command line
+conn_info='host=localhost port=5432 dbname=freeside user=postgres'
+_EOF_
+
+/etc/init.d/slony1 start
+
+END
+
+
+print <<END;
+#on master:
+slonik <<_EOF_
+
+cluster name = freeside;
+
+node 1 admin conninfo = 'dbname=freeside host=$MASTERHOST user=$REPLICATIONUSER';
+node 2 admin conninfo = 'dbname=freeside host=$SLAVEHOST user=$REPLICATIONUSER';
+
+subscribe set ( id = 1, provider = 1, receiver = 2, forward = no);
+
+_EOF_
+END
 
