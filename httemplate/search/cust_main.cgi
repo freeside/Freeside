@@ -380,7 +380,7 @@
 
     <TR>
       <TD CLASS="grid" ALIGN="right" BGCOLOR="<% $bgcolor %>" ROWSPAN=<% $rowspan || 1 %>><A HREF="<% $view %>"><FONT SIZE=-1><% $custnum %></FONT></A></TD>
-      <TD CLASS="grid" ALIGN="center" BGCOLOR="<% $bgcolor %>" ROWSPAN=<% $rowspan || 1 %>><FONT SIZE=-1 COLOR=<% $statuscol %>><B><% ucfirst($status) %></B></FONT></TD>
+      <TD CLASS="grid" ALIGN="center" BGCOLOR="<% $bgcolor %>" ROWSPAN=<% $rowspan || 1 %>><FONT SIZE="-1" COLOR="#<% $statuscol %>"><B><% ucfirst($status) %></B></FONT></TD>
       <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ROWSPAN=<% $rowspan || 1 %>><A HREF="<% $view %>"><FONT SIZE=-1><% "$last, $first" %></FONT></A></TD>
       <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ROWSPAN=<% $rowspan || 1 %>><% $pcompany %></TD>
 %
