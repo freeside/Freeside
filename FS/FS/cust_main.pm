@@ -1902,7 +1902,14 @@ sub bill {
     ###
 
     my $setup = 0;
-    if ( !$cust_pkg->setup || $options{'resetup'} ) {
+    if ( ! $cust_pkg->setup &&
+         (
+           ( $conf->exists('disable_setup_suspended_pkgs') &&
+            ! $cust_pkg->getfield('susp')
+          ) || ! $conf->exists('disable_setup_suspended_pkgs')
+         )
+      || $options{'resetup'}
+    ) {
     
       warn "    bill setup\n" if $DEBUG > 1;
 
