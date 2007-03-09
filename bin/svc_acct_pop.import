@@ -1,0 +1,59 @@
+#!/usr/bin/perl
+
+use strict;
+use Text::CSV_XS;
+use FS::UID qw(adminsuidsetup);
+use FS::svc_acct_pop;
+
+my @fields = qw( ac loc state city exch );
+my $fixup = sub {
+                  my $hash = shift;
+                  $hash->{ac} =~ /^\s*(\d{3})\s*$/;
+                  $hash->{ac} = $1;
+                  $hash->{loc} =~ /^\s*(\d{3})(\d{4})\s*$/;
+                  $hash->{exch} = $1;
+                  $hash->{loc} = $2;
+                  $hash->{state} =~ /^\s*(\S{0,2})\s*$/;
+                  $hash->{state} = $1;
+                  $hash->{city} =~ /^\s*(.*?)\s*$/;
+                  $hash->{city} = $1;
+
+                };
+
+my $user = shift or usage();
+adminsuidsetup $user;
+
+my $file = shift or usage();
+my $csv = new Text::CSV_XS;
+
+open(FH, $file) or die "cannot open $file: $!";
+
+sub usage {
+  die "Usage:\n\n  svc_acct_pop.import user popfile.csv\n\n";
+}
+
+###
+
+my $line;
+while ( defined($line=<FH>) ) {
+  chomp $line;
+
+  $line &= "\177" x length($line); # i hope this isn't really necessary
+  $csv->parse($line)
+    or die "cannot parse: " . $csv->error_input();
+
+  my @values = $csv->fields();
+  my %hash;
+  foreach my $field (@fields) {
+    $hash{$field} = shift @values;
+  }
+    
+  &{$fixup}(\%hash);
+
+  my $svc_acct_pop = new FS::svc_acct_pop { %hash };
+
+  #my $error = $svc_acct_pop->check;
+  my $error = $svc_acct_pop->insert;
+  die $error if $error;
+
+}
