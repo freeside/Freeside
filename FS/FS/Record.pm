@@ -1612,6 +1612,92 @@ sub ut_ipn {
   }
 }
 
+=item ut_coord COLUMN [ LOWER [ UPPER ] ]
+
+Check/untaint coordinates.
+Accepts the following forms:
+DDD.DDDDD
+-DDD.DDDDD
+DDD MM.MMM
+-DDD MM.MMM
+DDD MM SS
+-DDD MM SS
+DDD MM MMM
+-DDD MM MMM
+
+The "DDD MM SS" and "DDD MM MMM" are potentially ambiguous.
+The latter form (that is, the MMM are thousands of minutes) is
+assumed if the "MMM" is exactly three digits or two digits > 59.
+
+To be safe, just use the DDD.DDDDD form.
+
+If LOWER or UPPER are specified, then the coordinate is checked
+for lower and upper bounds, respectively.
+
+=cut
+
+sub ut_coord {
+
+  my ($self, $field) = (shift, shift);
+
+  my $lower = shift if scalar(@_);
+  my $upper = shift if scalar(@_);
+  my $coord = $self->getfield($field);
+  my $neg = $coord =~ s/^(-)//;
+
+  my ($d, $m, $s) = (0, 0, 0);
+
+  if (
+    (($d) = ($coord =~ /^(\s*\d{1,3}(?:\.\d+)?)\s*$/)) ||
+    (($d, $m) = ($coord =~ /^(\s*\d{1,3})\s+(\d{1,2}(?:\.\d+))\s*$/)) ||
+    (($d, $m, $s) = ($coord =~ /^(\s*\d{1,3})\s+(\d{1,2})\s+(\d{1,3})\s*$/))
+  ) {
+    $s = (((($s =~ /^\d{3}$/) or $s > 59) ? ($s / 1000) : ($s / 60)) / 60);
+    $m = $m / 60;
+    if ($m > 59) {
+      return "Invalid (coordinate with minutes > 59) $field: "
+             . $self->getfield($field);
+    }
+
+    $coord = ($neg ? -1 : 1) * sprintf('%.8f', $d + $m + $s);
+
+    if (defined($lower) and ($coord < $lower)) {
+      return "Invalid (coordinate < $lower) $field: "
+             . $self->getfield($field);;
+    }
+
+    if (defined($upper) and ($coord > $upper)) {
+      return "Invalid (coordinate > $upper) $field: "
+             . $self->getfield($field);;
+    }
+
+    $self->setfield($field, $coord);
+    return '';
+  }
+
+  return "Invalid (coordinate) $field: " . $self->getfield($field);
+
+}
+
+=item ut_coordn COLUMN [ LOWER [ UPPER ] ]
+
+Same as ut_coord, except optionally null.
+
+=cut
+
+sub ut_coordn {
+
+  my ($self, $field) = (shift, shift);
+
+  if ($self->getfield($field) =~ /^$/) {
+    return '';
+  } else {
+    return $self->ut_coord($field, @_);
+  }
+
+}
+
+
 =item ut_domain COLUMN
 
 Check/untaint host and domain names.

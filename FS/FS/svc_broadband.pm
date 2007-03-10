@@ -200,8 +200,8 @@ sub check {
     || $self->ut_ipn('ip_addr')
     || $self->ut_hexn('mac_addr')
     || $self->ut_hexn('auth_key')
-    || $self->ut_sfloatn('latitude')
-    || $self->ut_sfloatn('longitude')
+    || $self->ut_coordn('latitude', -90, 90)
+    || $self->ut_coordn('longitude', -180, 180)
     || $self->ut_sfloatn('altitude')
     || $self->ut_textn('vlan_profile')
   ;
@@ -209,13 +209,6 @@ sub check {
 
   if($self->speed_up < 0) { return 'speed_up must be positive'; }
   if($self->speed_down < 0) { return 'speed_down must be positive'; }
-
-  if($self->latitude < -90 || $self->latitude > 90) {
-    return 'latitude must be between -90 and 90';
-  }
-  if($self->longitude < -180 || $self->longitude > 180) {
-    return 'longitude must be between -180 and 180';
-  }
 
   if (not($self->ip_addr) or $self->ip_addr eq '0.0.0.0') {
     my $next_addr = $self->addr_block->next_free_addr;
