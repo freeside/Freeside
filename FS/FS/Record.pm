@@ -3,7 +3,7 @@ package FS::Record;
 use strict;
 use vars qw( $AUTOLOAD @ISA @EXPORT_OK $DEBUG
              $conf $me
-             %virtual_fields_cache $nowarn_identical );
+             %virtual_fields_cache $nowarn_identical $no_update_diff );
 use Exporter;
 use Carp qw(carp cluck croak confess);
 use File::CounterFile;
@@ -30,6 +30,7 @@ $DEBUG = 0;
 $me = '[FS::Record]';
 
 $nowarn_identical = 0;
+$no_update_diff = 0;
 
 my $rsa_module;
 my $rsa_loaded;
@@ -1041,7 +1042,7 @@ sub replace {
   my %diff = map { ($new->getfield($_) ne $old->getfield($_))
                    ? ($_, $new->getfield($_)) : () } $old->fields;
                    
-  unless ( keys(%diff) ) {
+  unless (keys(%diff) || $no_update_diff ) {
     carp "[warning]$me $new -> replace $old: records identical"
       unless $nowarn_identical;
     return '';
