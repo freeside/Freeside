@@ -1529,9 +1529,7 @@ sub order {
 sub insert_reason {
   my ($self, %options) = @_;
 
-  my $otaker = $FS::CurrentUser::CurrentUser->name;
-  $otaker = $FS::CurrentUser::CurrentUser->username
-    if (($otaker) eq "User, Legacy");
+  my $otaker = $FS::CurrentUser::CurrentUser->username;
 
   my $cust_pkg_reason =
     new FS::cust_pkg_reason({ 'pkgnum'    => $self->pkgnum,
