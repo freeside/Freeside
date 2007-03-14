@@ -41,7 +41,7 @@ use FS::cdr;
 
 @ISA = qw( FS::svc_Common );
 
-$DEBUG = 1;
+$DEBUG = 0;
 $me = '[FS::svc_acct]';
 
 #ask FS::UID to run this stuff for us later
