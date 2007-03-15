@@ -21,17 +21,41 @@ It requires the following custom router fields:
 
 =item admin_prompt - A regular expression matching the router's prompt.  See Net::Telnet for details.  Only applies to the 'telnet' protocol.
 
-=item admin_cmd_insert - Insert export command.  See below.
+=item admin_cmd_insert - Insert export command.
 
-=item admin_cmd_delete - Delete export command.  See below.
+=item admin_cmd_insert_error - Insert export command error pattern.
 
-=item admin_cmd_replace - Replace export command.  See below.
+=item admin_cmd_delete - Delete export command.
 
-=item admin_cmd_suspend - Suspend export command.  See below.
+=item admin_cmd_delete_error - Delete export command error pattern.
 
-=item admin_cmd_unsuspend - Unsuspend export command.  See below.
+=item admin_cmd_replace - Replace export command.
 
-The admin_cmd_* virtual fields, if set, will be double quoted, eval'd, and executed on the router specified.
+=item admin_cmd_replace_error - Replace export command error pattern.
+
+=item admin_cmd_suspend - Suspend export command.
+
+=item admin_cmd_suspend_error - Support export command error pattern.
+
+=item admin_cmd_unsuspend - Unsuspend export command.
+
+=item admin_cmd_unsuspend_error - Unsuspend export command error pattern.
+
+The admin_cmd_* virtual fields, if set, will be processed in one of two ways.  After being expanded, they will be run on the router specified by admin_address using the protocol specified by admin_protocol.
+
+=over 4
+
+=item Text::Template
+
+If the export command contains the string [@--, then it will be processed with Text::Template using [@-- and --@] as delimeters.
+
+=item eval
+
+If the export command does not contain [@--, it will be double quoted and eval'd.
+
+=back
+
+The admin_cmd_*_error virtual fields, if set, define a regular expression that will be matched against the output of the command being run.  If the pattern matches, an error will be raised using the output as the error.
 
 If any of the required router virtual fields are not defined, then the export silently declines.
 
@@ -44,7 +68,8 @@ The export itself takes no options.
 use strict;
 use vars qw(@ISA %info $me $DEBUG);
 use Tie::IxHash;
-use String::ShellQuote;
+use Text::Template;
+
 use FS::Record qw(qsearchs);
 use FS::part_export;
 
@@ -62,7 +87,7 @@ tie my %options, 'Tie::IxHash',
   'svc'     => 'svc_broadband',
   'desc'    => 'Send a command to a router.',
   'options' => \%options,
-  'notes'   => 'Installation of Net::Telnet from CPAN is required for telnet connections.  This export will execute if the following virtual fields are set on the router: admin_user, admin_password, admin_address, admin_timeout, admin_prompt.  Option virtual fields are: admin_cmd_insert, admin_cmd_replace, admin_cmd_delete, admin_cmd_suspend, admin_cmd_unsuspend.',
+  'notes'   => 'Installation of Net::Telnet from CPAN is required for telnet connections.  This export will execute if the following virtual fields are set on the router: admin_user, admin_password, admin_address, admin_timeout, admin_prompt.  Option virtual fields are: admin_cmd_insert, admin_cmd_replace, admin_cmd_delete, admin_cmd_suspend, admin_cmd_unsuspend.  See the module documentation for a full list of required/supported router virtual fields.',
 );
 
 $me = '[' . __PACKAGE__ . ']';
@@ -123,7 +148,8 @@ sub _export_command {
 
   unless ($self->_check_router_fields($router)) {
     # Virtual fields aren't defined.  Exit silently.
-    warn "[debug]$me Required router virtual fields not defined.  Returning...";
+    warn "[debug]$me Required router virtual fields not defined.  Returning..."
+      if $DEBUG;
     return '';
   }
 
@@ -141,7 +167,7 @@ sub _export_command {
     return $error;
   } elsif (not defined $args) {
     # Silently decline.
-    warn "[debug]$me Declining '$action' export";
+    warn "[debug]$me Declining '$action' export" if $DEBUG;
     return '';
   } # else ... queue the export.
 
@@ -161,6 +187,7 @@ sub _prepare_args {
 
   my ($self, $action, $router, $svc_broadband) = (shift, shift, shift, shift);
   my $old = shift if ($action eq 'replace');
+  my $error = '';
 
   my $field_prefix = $self->_field_prefix;
   my $command = $router->getfield("${field_prefix}_cmd_${action}");
@@ -170,7 +197,43 @@ sub _prepare_args {
     return '';
   }
 
-  {
+  if ($command =~ /\[\@--/) { # Use Text::Template
+
+    my $template_data = {};
+
+    if ($action eq 'replace') {
+      $template_data->{"old_$_"} = $old->getfield($_) foreach $old->fields;
+      $template_data->{"new_$_"} = $svc_broadband->getfield($_)
+        foreach $svc_broadband->fields;
+    } else {
+      $template_data->{$_} = $svc_broadband->getfield($_)
+        foreach $svc_broadband->fields;
+    }
+
+    my $template = new Text::Template (
+      TYPE => 'STRING',
+      SOURCE => $command,
+      DELIMITERS => [ '[@--', '--@]' ],
+    ) or return "Unable to construct template for router command: "
+                . $Text::Template::ERROR;
+
+    $command = $template->fill_in(
+      HASH => $template_data,
+      BROKEN_ARG => \$error,
+      BROKEN => sub {
+        my %bargs = @_;
+        my $err = $bargs{'arg'};
+        $$err = $bargs{'error'};
+        return undef;
+      },
+    );
+
+    if (not defined $command or $error) {
+      $error ||= $Text::Template::ERROR;
+      return "Unable to fill-in template for router command: $error";
+    }
+
+  } else { # Use eval
     no strict 'vars';
     no strict 'refs';
 
@@ -193,6 +256,9 @@ sub _prepare_args {
     'Prompt' => $router->getfield($field_prefix . '_prompt'),
     'command' => $command,
   ];
+
+  my $error_check = $router->getfield("${field_prefix}_cmd_${action}_error");
+  push(@$args, ('error_check' => $error_check)) if ($error_check);
 
   return('', $args);
 
@@ -217,7 +283,7 @@ sub _check_router_fields {
 
   foreach (@check_fields) {
     if ($router->getfield($_) eq '') {
-      warn "[debug]$me Required field '$_' is unset";
+      warn "[debug]$me Required field '$_' is unset" if $DEBUG;
       return 0;
     } else {
       return 1;
@@ -227,7 +293,6 @@ sub _check_router_fields {
 }
 
 sub _queue {
-  #warn join ':', @_;
   my( $self, $svcnum, $cmd_sub ) = (shift, shift, shift);
   my $queue = new FS::queue {
     'svcnum' => $svcnum,
@@ -253,24 +318,58 @@ sub _get_router {
 
 # Subroutines
 sub ssh_cmd {
-  use Net::SSH '0.08';
-  &Net::SSH::ssh_cmd( { @_ } );
+  my %arg = @_;
+
+  eval 'use Net::SSH \'0.08\'';
+  die $@ if $@;
+
+  my @out = &Net::SSH::ssh_cmd( { @_ } );
+  my $error = &_cmd_error_check(\%arg, \@out);
+
+  die ("Error while processing ssh command: $error") if $error;
+
+  return '';
+
 }
 
 sub telnet_cmd {
-  eval 'use Net::Telnet;';
-  die $@ if $@;
-
-  warn join(', ', @_);
-
   my %arg = @_;
 
-  my $t = new Net::Telnet (Timeout => $arg{Timeout},
-                           Prompt  => $arg{Prompt});
-  $t->open($arg{host});
-  $t->login($arg{user}, $arg{password});
-  my @error = $t->cmd($arg{command});
-  die @error if (grep /^ERROR/, @error);
+  eval 'use Net::Telnet';
+  die $@ if $@;
+
+  my $t = new Net::Telnet (Timeout => $arg{'Timeout'},
+                           Prompt  => $arg{'Prompt'});
+  $t->open($arg{'host'});
+  $t->login($arg{'user'}, $arg{'password'});
+  my @out  = $t->cmd($arg{'command'});
+  my $error = &_cmd_error_check(\%arg, \@out);
+
+  die ("Error while processing telnet command: $error") if $error;
+
+  return '';
+
+}
+
+sub _cmd_error_check {
+  my ($arg, $out) = (shift, shift);
+
+  die "_cmd_error_check called without proper arguments"
+    unless (ref($arg) eq 'HASH' and ref($out) eq 'ARRAY');
+
+  unless (exists($arg->{'error_check'}) and $arg->{'error_check'} ne '') {
+    #Preserve default behaviour and return output if a check isn't defined.
+    warn "Output from router command: " . join('', @$out) if $DEBUG;
+    return '';
+  }
+
+  my $error_check = $arg->{'error_check'};
+  foreach (@$out) {
+    return $_ if /$error_check/;
+  }
+
+  return '';
+
 }
 
 1;
