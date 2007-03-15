@@ -600,6 +600,7 @@ sub freqs_href {
     '3'   => 'quarterly (every 3 months)',
     '6'   => 'semiannually (every 6 months)',
     '12'  => 'annually',
+    '13'  => 'every 13 months (annually +1 month)',
     '24'  => 'biannually (every 2 years)',
     '36'  => 'triannually (every 3 years)',
     '48'  => '(every 4 years)',
