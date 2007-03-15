@@ -42,7 +42,7 @@ Field #<B><%$vfieldpart or "(NEW)"%></B><BR><BR>
 <%ntable("#cccccc",2)%>
   <TR>
     <TD ALIGN="right">Name</TD>
-    <TD><INPUT TYPE="text" NAME="name" MAXLENGTH=15 VALUE="<%
+    <TD><INPUT TYPE="text" NAME="name" MAXLENGTH=32 VALUE="<%
     $part_virtual_field->name%>"></TD>
   </TR>
   <TR>
@@ -54,7 +54,7 @@ Field #<B><%$vfieldpart or "(NEW)"%></B><BR><BR>
 %
 %        my $dbdef = dbdef;  # ick
 %        #foreach my $dbtable (sort { $a cmp $b } $dbdef->tables) {
-%        foreach my $dbtable (qw( svc_broadband )) {
+%        foreach my $dbtable (qw( svc_broadband router )) {
 %          if ($dbtable !~ /^h_/
 %          and $dbdef->table($dbtable)->primary_key) { 
 
@@ -74,7 +74,7 @@ Field #<B><%$vfieldpart or "(NEW)"%></B><BR><BR>
     </TD>
   <TR>
     <TD ALIGN="right">Label</TD>
-    <TD><INPUT TYPE="text" NAME="label" MAXLENGTH="20" VALUE="<%
+    <TD><INPUT TYPE="text" NAME="label" MAXLENGTH="80" VALUE="<%
     $part_virtual_field->label%>"></TD>
   </TR>
   <TR>
