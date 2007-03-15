@@ -1195,7 +1195,7 @@ sub tables_hashref {
 
     'part_virtual_field' => {
       'columns' => [
-        'vfieldpart', 'int', '', '', '', '', 
+        'vfieldpart', 'serial', '', '', '', '', 
         'dbtable', 'varchar', '', 32, '', '', 
         'name', 'varchar', '', 32, '', '', 
         'check_block', 'text', 'NULL', '', '', '', 
