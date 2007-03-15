@@ -4,6 +4,7 @@ use strict;
 use vars qw( @ISA );
 use FS::Record qw( qsearchs qsearch );
 use FS::Schema qw( dbdef );
+use CGI qw(escapeHTML);
 
 @ISA = qw( FS::Record );
 
@@ -244,7 +245,7 @@ sub widget {
         }
       } else {
         $text .= q!<INPUT NAME="! . $self->name .
-                q!" VALUE="! . $value . q!"!;
+                q!" VALUE="! . escapeHTML($value) . q!"!;
         if ($self->length) {
           $text .= q! SIZE="! . $self->length . q!"!;
         }
