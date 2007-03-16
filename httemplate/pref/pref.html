@@ -8,38 +8,62 @@
 Change password (leave blank for no change)
 <% ntable("#cccccc",2) %>
 
-<TR>
-  <TD ALIGN="right">Current password: </TD>
-  <TD><INPUT TYPE="password" NAME="_password"></TD>
-</TR>
+  <TR>
+    <TH ALIGN="right">Current password: </TH>
+    <TD><INPUT TYPE="password" NAME="_password"></TD>
+  </TR>
 
-<TR>
-  <TD ALIGN="right">New password: </TD>
-  <TD><INPUT TYPE="password" NAME="new_password"></TD>
-</TR>
+  <TR>
+    <TH ALIGN="right">New password: </TH>
+    <TD><INPUT TYPE="password" NAME="new_password"></TD>
+  </TR>
 
-<TR>
-  <TD ALIGN="right">Re-enter new password: </TD>
-  <TD><INPUT TYPE="password" NAME="new_password2"></TD>
-</TR>
+  <TR>
+   <TH ALIGN="right">Re-enter new password: </TH>
+   <TD><INPUT TYPE="password" NAME="new_password2"></TD>
+  </TR>
 
 </TABLE>
 <BR>
+
 
 Interface
 <% ntable("#cccccc",2) %>
 
-<TR>
-  <TD>Menu location: </TD>
-  <TD>
-    <INPUT TYPE="radio" NAME="menu_position" VALUE="left" onClick="document.images['menu_example'].src='../images/menu-left-example.png';" <% $menu_position eq 'left' ? ' CHECKED' : ''%>> Left<BR>
-    <INPUT TYPE="radio" NAME="menu_position" VALUE="top"onClick="document.images['menu_example'].src='../images/menu-top-example.png';" <% $menu_position eq 'top' ? ' CHECKED' : ''%>> Top <BR>
-  </TD>
-  <TD><IMG NAME="menu_example" SRC="../images/menu-<% $menu_position %>-example.png"></TD>
-</TR>
+  <TR>
+    <TH>Menu location: </TH>
+    <TD>
+      <INPUT TYPE="radio" NAME="menu_position" VALUE="left" onClick="document.images['menu_example'].src='../images/menu-left-example.png';" <% $menu_position eq 'left' ? ' CHECKED' : ''%>> Left<BR>
+      <INPUT TYPE="radio" NAME="menu_position" VALUE="top"onClick="document.images['menu_example'].src='../images/menu-top-example.png';" <% $menu_position eq 'top' ? ' CHECKED' : ''%>> Top <BR>
+    </TD>
+    <TD><IMG NAME="menu_example" SRC="../images/menu-<% $menu_position %>-example.png"></TD>
+  </TR>
 
 </TABLE>
 <BR>
+
+
+Vonage integration (see <a href="https://secure.click2callu.com/">Click2Call</a>)
+<% ntable("#cccccc",2) %>
+
+  <TR>
+    <TH ALIGN="right">Vonage phone number</TH>
+    <TD><INPUT TYPE="text" NAME="vonage-fromnumber"></TD>
+  </TR>
+
+  <TR>
+    <TH ALIGN="right">Vonage username</TH>
+    <TD><INPUT TYPE="text" NAME="vonage-username"></TD>
+  </TR>
+
+  <TR>
+    <TH ALIGN="right">Vonage password</TH>
+    <TD><INPUT TYPE="password" NAME="vonage-password"></TD>
+  </TR>
+
+</TABLE>
+<BR>
+
 
 % foreach my $prop (qw( height width availHeight availWidth colorDepth )) {
   <INPUT TYPE="hidden" NAME="<% $prop %>" VALUE="">

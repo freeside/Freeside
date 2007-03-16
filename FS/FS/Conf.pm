@@ -1852,26 +1852,6 @@ httemplate/docs/config.html
     'type'        => 'checkbox',
   },
 
-  #these should become per-user...
-  {
-    'key'         => 'vonage-username',
-    'section'     => '',
-    'description' => 'Vonage Click2Call username (see <a href="https://secure.click2callu.com/">https://secure.click2callu.com/</a>)',
-    'type'        => 'text',
-  },
-  {
-    'key'         => 'vonage-password',
-    'section'     => '',
-    'description' => 'Vonage Click2Call username (see <a href="https://secure.click2callu.com/">https://secure.click2callu.com/</a>)',
-    'type'        => 'text',
-  },
-  {
-    'key'         => 'vonage-fromnumber',
-    'section'     => '',
-    'description' => 'Vonage Click2Call number (see <a href="https://secure.click2callu.com/">https://secure.click2callu.com/</a>)',
-    'type'        => 'text',
-  },
-
   {
     'key'         => 'echeck-nonus',
     'section'     => 'billing',
