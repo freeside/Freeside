@@ -1,0 +1,32 @@
+<% include("/elements/header.html",'Batch Customer Note Import') %>
+
+<FORM ACTION="cust_main_note-import.cgi" METHOD="post" ENCTYPE="multipart/form-data">
+
+Import a CSV file containing customer notes records.
+<BR><BR>
+
+File format is CSV, with the following field order: <i>[custnum], last, first, notefield1, notefield2, notefield3...</i>
+<BR>
+The optional custnum field is identified by being numeric.
+Anything after the character sequence #! is ignored.
+<BR><BR>
+
+<% &ntable("#cccccc") %>
+
+<TR>
+  <TH ALIGN="right">CSV filename</TH>
+  <TD><INPUT TYPE="file" NAME="csvfile"></TD>
+</TR>
+<TR>
+  <TH ALIGN="right">Include additional possibilites when exact match is found</TH>
+  <TD><INPUT TYPE="checkbox" NAME="fuzzies"></TD>
+</TR>
+
+</TABLE>
+<BR><BR>
+
+<INPUT TYPE="submit" VALUE="Load and match">
+</FORM>
+
+<% include('/elements/footer.html') %>
+

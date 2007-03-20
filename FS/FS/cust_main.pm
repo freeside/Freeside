@@ -4115,7 +4115,8 @@ sub fuzzy_search {
 Accepts the following options: I<search>, the string to search for.  The string
 will be searched for as a customer number, phone number, name or company name,
 as an exact, or, in some cases, a substring or fuzzy match (see the source code
-for the exact heuristics used).
+for the exact heuristics used); I<no_fuzzy_on_exact>, causes smart_search to
+skip fuzzy matching when an exact match is found.
 
 Any additional options are treated as an additional qualifier on the search
 (i.e. I<agentnum>).
@@ -4132,6 +4133,7 @@ sub smart_search {
 
   my @cust_main = ();
 
+  my $skip_fuzzy = delete $options{'no_fuzzy_on_exact'};
   my $search = delete $options{'search'};
   ( my $alphanum_search = $search ) =~ s/\W//g;
   
@@ -4269,7 +4271,7 @@ sub smart_search {
 
     #always do substring & fuzzy,
     #getting complains searches are not returning enough
-    #unless ( @cust_main ) {  #no exact match, trying substring/fuzzy
+    unless ( @cust_main && $skip_fuzzy ) {  #no exact match, trying substring/fuzzy
 
       #still some false laziness w/ search/cust_main.cgi
 
@@ -4330,7 +4332,7 @@ sub smart_search {
           FS::cust_main->fuzzy_search( { $field => $value }, @fuzopts );
       }
 
-    #}
+    }
 
     #eliminate duplicates
     my %saw = ();
