@@ -181,8 +181,9 @@ sub signup_info {
       unless @{ $signup_info->{'part_pkg'} };
   }
 
-  if ( $agentnum && ! @{ $signup_info->{'part_pkg'} } ) {
-    $signup_info->{'part_pkg'} = $signup_info->{'agentnum2part_pkg'}{$agentnum};
+  if ( $agentnum ) {
+    $signup_info->{'part_pkg'} = $signup_info->{'agentnum2part_pkg'}{$agentnum}
+      unless @{ $signup_info->{'part_pkg'} };
 
     $signup_info->{'part_referral'} =
       [
