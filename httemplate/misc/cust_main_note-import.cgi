@@ -198,3 +198,10 @@
 </FORM>
 </BODY>
 </HTML>
+
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Import');
+
+</%init>
