@@ -187,6 +187,7 @@ $report_menu{'Financial'}  = [ \%report_financial, 'Financial reports' ]
 
 tie my %tools_importing, 'Tie::IxHash',
   'Import customers from CSV file' => [ $fsurl.'misc/cust_main-import.cgi', '' ],
+  'Import customer notes from CSV file' => [ $fsurl.'misc/cust_main_note-import.html', '' ],
   'Import one-time charges from CSV file' => [ $fsurl.'misc/cust_main-import_charges.cgi', '' ],
   'Import Call Detail Records (CDRs) from CSV file' => [ $fsurl.'misc/cdr-import.html', '' ],
 ;
