@@ -23,6 +23,8 @@
 <% sprintf( '$$E-xactBatchFileV1.0$$%s:%03u$$%s',$sdate,$pay_batch->batchnum, $origid)
   %>
 %
+%}elsif ($format eq "ach-spiritone"){
+%#  1;
 %}else{
 %  die "Unknown format for batch in batchconfig. \n";
 %}
@@ -93,6 +95,16 @@
 <% $cust_pay_batch->paybatchnum %>,<% $cust_pay_batch->custnum %>,<% $cust_pay_batch->invnum %>,"<% $payname %>",00,<% $cust_pay_batch->payinfo %>,<% $cust_pay_batch->amount %>,<% $exp %>,,
 %
 %
+%  }elsif ($format eq "ach-spiritone"){
+%
+%  my( $account, $aba ) = split( '@', $cust_pay_batch->payinfo );
+%  my $payname=$cust_pay_batch->payname; $payname =~ tr/",/  /; #payinfo too?
+%  my $batchline = qq!"$payname","!.$cust_pay_batch->paybatchnum.
+%                  qq!","$aba","$account","27","!.$cust_pay_batch->amount.
+%                  qq!","27","0.00"!;
+%  push @batchlines, $batchline;
+<% $batchline %>
+%
 %  } else {
 %    die "I'm already dead, but you did not know that.\n";
 %  }
@@ -116,11 +128,12 @@
 %  #1;
 %} elsif ($format eq "csv-chase_canada-E-xactBatch"){
 %  #1;
+%} elsif ($format eq "ach-spiritone"){
+%  #1;
 %} else {
 %  die "I'm already dead (again), but you did not know that.\n";
 %}
 %
-%$dbh->commit or die $dbh->errstr if $oldAutoCommit;
 <%init>
 
 my $conf=new FS::Conf;
@@ -140,6 +153,13 @@ if ( $cgi->param('format') =~ /^([\w\- ]+)$/ ) {
   $format = $1;
 } else {
   $format = $conf->config('batch-default_format');
+}
+
+my $autopost;
+if ( $format eq 'ach-spiritone' ) {
+  $autopost = 1;
+}else{
+  $autopost = 0;
 }
 
 my $oldAutoCommit = $FS::UID::AutoCommit;
@@ -168,4 +188,25 @@ my $cdate = sprintf("%02d", $date[3]).sprintf("%02d", $date[4] + 1).
 my $sdate = sprintf("%02d", $date[5] % 100).'/'.sprintf("%02d", $date[4] + 1).
             '/'.sprintf("%02d", $date[3]);
 
+my @batchlines = ();
 </%init>
+<%cleanup>
+if ($autopost) {
+  my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
+  my $fh = new File::Temp(
+    TEMPLATE => 'paybatch.'. $batchnum .'.XXXXXXXX',
+    DIR      => $dir,
+  ) or die "can't open temp file: $!\n";
+
+  print $fh map{ "$_\n" } @batchlines;
+  seek $fh, 0, 0;
+
+  $error = $pay_batch->import_results( 'filehandle' => $fh,
+                                       'format'     => $format,
+                                     );
+  die $error if $error;
+}
+
+$dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+</%cleanup>

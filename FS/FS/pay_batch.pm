@@ -146,7 +146,7 @@ Options are:
 
 I<filehandle> - open filehandle of results file.
 
-I<format> - "csv-td_canada_trust-merchant_pc_batch", "csv-chase_canada-E-xactBatch" or "PAP"
+I<format> - "csv-td_canada_trust-merchant_pc_batch", "csv-chase_canada-E-xactBatch", "ach-spiritone", or "PAP"
 
 =cut
 
@@ -324,6 +324,40 @@ sub import_results {
       $tmpdate += 86400*(substr($hash->{'_date'}, 3, 3)-1) ;
       $hash->{'_date'} = $tmpdate;
       $hash->{'payinfo'} = $hash->{'payinfo'} . '@' . $hash->{'bank'};
+    };
+
+    $approved_condition = sub {
+      1;
+    };
+
+    $declined_condition = sub {
+      0;
+    };
+
+  }elsif ( $format eq 'ach-spiritone' ) {
+
+    $filetype = "CSV";
+
+    @fields = (
+      '',            # Name
+      'paybatchnum', # ID:  Invoice number of the transaction
+      'aba',         # ABA Number for the transaction
+      'payinfo',     # Bank Account Number for the transaction
+      '',            # Transaction Type:  27 - debit
+      'paid',        # Amount:  Amount of the transaction.  Dollars and cents
+                     #          with decimal entered.
+      '',            # Default Transaction Type
+      '',            # Default Amount:  Dollars and cents with decimal entered.
+    );
+
+    $end_condition = sub {
+      '';
+    };
+
+    $hook = sub {
+      my $hash = shift;
+      $hash->{'_date'} = time;  # got a better one?
+      $hash->{'payinfo'} = $hash->{'payinfo'} . '@' . $hash->{'aba'};
     };
 
     $approved_condition = sub {
