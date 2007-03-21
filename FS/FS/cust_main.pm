@@ -21,6 +21,7 @@ use Date::Parse;
 use String::Approx qw(amatch);
 use Business::CreditCard 0.28;
 use Locale::Country;
+use Data::Dumper;
 use FS::UID qw( getotaker dbh );
 use FS::Record qw( qsearchs qsearch dbdef );
 use FS::Misc qw( send_email );
@@ -2766,6 +2767,42 @@ sub realtime_bop {
   } else {
 
     my $perror = "$processor error: ". $transaction->error_message;
+
+    unless ( $transaction->error_message ) {
+
+      my $t_response;
+      #this should be normalized :/
+      #
+      # bad, ad-hoc B:OP:PayflowPro "transaction_response" BS
+      if ( $transaction->can('param')
+           && $transaction->param('transaction_response') ) {
+        $t_response = $transaction->param('transaction_response')
+
+      # slightly better, ad-hoc B:OP:TransactionCentral without "param"
+      } elsif ( $transaction->can('response_page') ) {
+        $t_response = {
+                        'page'    => ( $transaction->can('response_page')
+                                         ? $transaction->response_page
+                                         : ''
+                                     ),
+                        'code'    => ( $transaction->can('response_code')
+                                         ? $transaction->response_code
+                                         : ''
+                                     ),
+                        'headers' => ( $transaction->can('response_headers')
+                                         ? $transaction->response_headers
+                                         : ''
+                                     ),
+                      };
+      } else {
+        $t_response .=
+          "No additional debugging information available for $processor";
+      }
+
+      $perror .= "No error_message returned from $processor -- ";
+                 ( ref($t_response) ? Dumper($t_response) : $t_response );
+
+    }
 
     if ( !$options{'quiet'} && !$realtime_bop_decline_quiet
          && $conf->exists('emaildecline')
