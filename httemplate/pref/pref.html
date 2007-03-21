@@ -43,6 +43,20 @@ Interface
 <BR>
 
 
+Email Address
+<% ntable("#cccccc",2) %>
+
+  <TR>
+    <TH>Email Address(es) (comma separated) </TH>
+    <TD>
+   <TD><INPUT TYPE="text" NAME="email_address" VALUE="<% $email_address %>">
+    </TD>
+  </TR>
+
+</TABLE>
+<BR>
+
+
 Vonage integration (see <a href="https://secure.click2callu.com/">Click2Call</a>)
 <% ntable("#cccccc",2) %>
 
@@ -81,5 +95,8 @@ Vonage integration (see <a href="https://secure.click2callu.com/">Click2Call</a>
 ( $FS::CurrentUser::CurrentUser->option('menu_position') || 'left' )
   =~ /^(\w+)$/ or die "illegal menu_position";
 my $menu_position = $1;
+( $FS::CurrentUser::CurrentUser->option('email_address') )
+  =~ /^([,\w\@.]*)$/ or die "illegal email_address";  #too late
+my $email_address = $1;
 
 </%init>

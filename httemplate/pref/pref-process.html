@@ -27,12 +27,19 @@
 %
 % }
 %
+% #XXX autogen
+% my @paramlist = qw( menu_position email_address
+%                     height width availHeight availWidth colorDepth
+%                   );
+%
+% foreach (@paramlist) {
+%   scalar($cgi->param($_)) =~ /^[,.\@\w]*$/ && next;
+%   $error ||= "Illegal value for parameter $_";
+%   last;
+% }
+%
 % $error ||= $access_user->replace( {
-%   map { $_ => scalar($cgi->param($_)) }
-%       #XXX autogen
-%       qw( menu_position
-%           height width availHeight availWidth colorDepth
-%         )
+%   map { $_ => scalar($cgi->param($_)) } @paramlist,
 % } );
 %
 % if ( $error ) {

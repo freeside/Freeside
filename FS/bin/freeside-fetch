@@ -1,0 +1,89 @@
+#!/usr/bin/perl -Tw
+
+use strict;
+use LWP::UserAgent;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearchs);
+use FS::Misc qw(send_email);
+
+my $user = shift or die &usage;
+my $employeelist = shift or die &usage;
+my $url = shift or die &usage;
+adminsuidsetup $user;
+
+my @employees = split ',', $employeelist;
+
+foreach my $employee (@employees) {
+
+  $employee =~ /^(\w+)$/;
+
+  my $access_user = qsearchs( 'access_user', { 'username' => $1 } );
+  unless ($access_user) {
+    warn "Can't find employee $employee... skipping";
+    next;
+  }
+
+  my $email_address = $access_user->option('email_address');
+  unless ($email_address) {
+    warn "No email address for $employee... skipping";
+    next;
+  }
+
+  no warnings 'redefine';
+  local *LWP::UserAgent::get_basic_credentials = sub {
+    return ($access_user->username, $access_user->_password);
+  };
+
+  my $ua = new LWP::UserAgent;
+  $ua->agent("FreesideFetcher/0.1 " . $ua->agent);
+
+  my $req = new HTTP::Request GET => $url;
+  my $res = $ua->request($req);
+
+  my %options = ( 'from'             => $email_address,
+                  'to'               => $email_address,
+                  'subject'          => 'subject',
+                  'body'             => $res->content,
+                );
+
+  $options{'content-type'} = $res->content_type
+    if $res->content_type;
+  $options{'content-encoding'} = $res->content_encoding
+    if $res->content_encoding;
+
+  if ($res->is_success) {
+    send_email %options;
+  }else{
+    warn "fetching $url failed for $employee: " . $res->status_line;
+  }
+}
+
+sub usage {
+  die "Usage:\n\n  freeside-fetch user employee[,employee ...] url\n\n";
+}
+
+=head1 NAME
+
+freeside-fetch - Send a freeside page to a list of employees.
+
+=head1 SYNOPSIS
+
+  freeside-fetch user employee[,employee ...] url
+
+=head1 DESCRIPTION
+
+  Fetches a web page specified by url as if employee and emails it to
+  employee.  Useful when run out of cron to send freeside web pages.
+
+  user: From the mapsecrets file - a user with access to the freeside database
+
+  employee: the username of an employee to receive the emailed page.  May be a comma separated list
+
+  url: the web page to be received
+
+=head1 BUGS
+
+  Can leak employee usernames and passwords if requested to access inappropriate urls.
+
+=cut
+
