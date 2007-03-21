@@ -2799,7 +2799,7 @@ sub realtime_bop {
           "No additional debugging information available for $processor";
       }
 
-      $perror .= "No error_message returned from $processor -- ";
+      $perror .= "No error_message returned from $processor -- ".
                  ( ref($t_response) ? Dumper($t_response) : $t_response );
 
     }
