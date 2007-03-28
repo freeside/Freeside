@@ -608,6 +608,12 @@ sub delete {
     }
   }
 
+  my $error = $self->SUPER::delete;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
   foreach my $radius_usergroup (
     qsearch('radius_usergroup', { 'svcnum' => $self->svcnum } )
   ) {
@@ -616,12 +622,6 @@ sub delete {
       $dbh->rollback if $oldAutoCommit;
       return $error;
     }
-  }
-
-  my $error = $self->SUPER::delete;
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $error;
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
