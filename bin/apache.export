@@ -36,9 +36,12 @@ foreach my $export ( @exports ) {
   my @svc_www = $export->svc_x;
 
   foreach my $svc_www ( @svc_www ) {
-    use vars qw($zone $username);
+    use vars qw($zone $username $dir $email $config);
     $zone = $svc_www->domain_record->zone;
     $username = $svc_www->svc_acct->username;
+    $dir = $svc_www->svc_acct->dir;
+    $email = $svc_www->svc_acct->email;
+    $config = $svc_www->config;
     print HTTPD_CONF eval(qq("$template")). "\n\n";
   }
 

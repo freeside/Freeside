@@ -73,6 +73,8 @@
 %
 %  print '</TD></TR>';
 %}
+    <% qq!<TR><TD ALIGN="right">Config lines</TD>! %>
+    <% qq!<TD BGCOLOR="#ffffff"><pre>!.$cgi->escapeHTML(join("\n",$svc_www->config))."</pre></TD></TR>" %>
 %
 %foreach (sort { $a cmp $b } $svc_www->virtual_fields) {
 %  print $svc_www->pvf($_)->widget('HTML', 'view', $svc_www->getfield($_)),

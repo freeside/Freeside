@@ -1,6 +1,6 @@
 %my $conf = new FS::Conf;
 %
-%my( $svcnum,  $pkgnum, $svcpart, $part_svc, $svc_www );
+%my( $svcnum,  $pkgnum, $svcpart, $part_svc, $svc_www, $config );
 %
 %if ( $cgi->param('error') ) {
 %
@@ -10,6 +10,7 @@
 %  $svcnum = $svc_www->svcnum;
 %  $pkgnum = $cgi->param('pkgnum');
 %  $svcpart = $cgi->param('svcpart');
+%  $config = $cgi->param('config');
 %  $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
 %  die "No part_svc entry!" unless $part_svc;
 %
@@ -42,6 +43,7 @@
 %
 %  $pkgnum=$cust_svc->pkgnum;
 %  $svcpart=$cust_svc->svcpart;
+%  $config=$svc_www->config;
 %  
 %  $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
 %  die "No part_svc entry!" unless $part_svc;
@@ -198,6 +200,14 @@
 %          qq! VALUE="$_">$svc_acct{$_}!;
 %  }
 %  print "</SELECT></TD></TR>";
+%}
+%
+%if ( $part_svc->part_svc_column('config')->columnflag ne 'F' &&
+%     $FS::CurrentUser::CurrentUser->access_right('Edit www config') ) {
+%  print '<TR><TD ALIGN="right">Config lines</TD><TD>';
+%  print qq!<TEXTAREA NAME="config" rows="15" cols="80">$config</TEXTAREA></TD></TR>!
+%}else{
+%  print qq!<INPUT TYPE="hidden" NAME="config" VALUE="$config">!;
 %}
 %
 %foreach my $field ($svc_www->virtual_fields) {

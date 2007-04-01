@@ -116,6 +116,7 @@ assigned to users and/or groups.
 # customer service rights
 ###
   'Edit usage', #NEW
+  'Edit www config', #NEW
   'View customer services', #NEW
   'Provision customer service',
   'Recharge customer service', #NEW
