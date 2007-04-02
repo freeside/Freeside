@@ -408,6 +408,8 @@ sub tables_hashref {
 #        'middle',   'varchar', 'NULL', $char_d, '', '', 
         'first',    'varchar', '',     $char_d, '', '', 
         'ss',       'varchar', 'NULL', 11, '', '', 
+        'stateid', 'varchar', 'NULL', $char_d, '', '', 
+        'stateid_state', 'varchar', 'NULL', $char_d, '', '', 
         'birthdate' ,@date_type, '', '', 
         'signupdate',@date_type, '', '', 
         'company',  'varchar', 'NULL', $char_d, '', '', 

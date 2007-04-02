@@ -9,10 +9,10 @@
 % if ( $conf->exists('show_ss') && !$pre ) { 
 
   <TD ALIGN="right">SS#</TD>
-  <TD><INPUT TYPE="text" NAME="ss" VALUE="<% $cust_main->ss %>" SIZE=11></TD>
+  <TD><INPUT TYPE="text" NAME="ss" VALUE="<% $opt{ss} %>" SIZE=11></TD>
 % } elsif ( !$pre ) { 
 
-  <TD><INPUT TYPE="hidden" NAME="ss" VALUE="<% $cust_main->ss %>"></TD>
+  <TD><INPUT TYPE="hidden" NAME="ss" VALUE="<% $opt{ss} %>"></TD>
 % } 
 
 
@@ -84,13 +84,35 @@
   </TD>
 </TR>
 
+% if ( $conf->exists('show_stateid') && !$pre ) { 
+
+<TR>
+  <TD ALIGN="right"><% $stateid_label %></TD>
+  <TD><INPUT TYPE="text" NAME="stateid" VALUE="<% $opt{stateid} %>" SIZE=12 onChange="<% $onchange %>" <%$disabled%>></TD>
+  <TD ALIGN="right"><% $stateid_state_label %></TD>
+  <TD><% include('select-state.html', 'state' => $cust_main->stateid_state,
+                                      'country' => $cust_main->country,
+                                      'prefix'  => 'stateid_',
+                                      'onchange' => $onchange,
+                                      'disabled' => $disabled) %></TD>
+</TR>
+% } elsif ( !$pre ) { 
+
+  <TD><INPUT TYPE="hidden" NAME="stateid" VALUE="<% $opt{stateid} %>"></TD>
+  <TD><INPUT TYPE="hidden" NAME="stateid_state" VALUE="<% $cust_main->stateid_state %>"></TD>
+% } 
+
 </TABLE>
 <%$r%>required fields<BR>
 
 <%init>
 
-my( $cust_main, $pre, $onchange, $disabled ) = @_;
+my( $cust_main, $pre, $onchange, $disabled, %opt ) = @_;
 my $conf = new FS::Conf;
+
+foreach (qw(ss stateid)) {
+  $opt{$_} = $cust_main->masked($_) unless exists $opt{$_};
+}
 
 #false laziness with ship state
 my $countrydefault = $conf->config('countrydefault') || 'US';
@@ -102,6 +124,9 @@ my $statedefault = $conf->config('statedefault')
 $cust_main->set($pre.'state', $statedefault )
   unless $cust_main->get($pre.'state')
          || $cust_main->get($pre.'country') ne $countrydefault;
+
+$cust_main->set('stateid_state', $cust_main->state )
+  unless $pre || $cust_main->get('stateid_state');
 
 #my($county_html, $state_html, $country_html) =
 #  FS::cust_main_county::regionselector( $cust_main->get($pre.'county'),
@@ -128,6 +153,8 @@ my $county_style = scalar(@counties) > 1 ? '' : 'STYLE="visibility:hidden"';
 
 my $daytime_label = FS::Msgcat::_gettext('daytime') || 'Day Phone';
 my $night_label = FS::Msgcat::_gettext('night') || 'Night Phone';
+my $stateid_label = FS::Msgcat::_gettext('stateid') || 'Driver&rsquo;s License';
+my $stateid_state_label = FS::Msgcat::_gettext('stateid_state') || 'Driver&rsquo;s License State';
 
 my $r = qq!<font color="#ff0000">*</font>&nbsp;!;
 

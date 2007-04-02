@@ -161,6 +161,12 @@
 %       && $new->paycvv =~ /^\s*\*+\s*$/ ) {
 %    $new->paycvv($old->paycvv);
 %  }
+%  if ($new->ss =~ /xx/) {
+%    $new->ss($old->ss);
+%  }
+%  if ($new->stateid =~ /^xxx/) {
+%    $new->stateid($old->stateid);
+%  }
 %  if ($new->payby =~ /^(CARD|DCRD|CHEK|DCHK)$/ && $new->payinfo =~ /xx/) {
 %    $new->payinfo($old->payinfo);
 %  }

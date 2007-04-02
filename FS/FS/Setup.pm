@@ -475,6 +475,14 @@ sub msgcat_messages {
       'en_US' => 'Title',
     },
 
+    'stateid' => {
+      'en_US' => 'Driver\'s License',
+    },
+
+    'stateid_state' => {
+      'en_US' => 'Driver\'s License State',
+    },
+
   );
 }
 

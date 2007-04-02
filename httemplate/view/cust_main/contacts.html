@@ -14,7 +14,7 @@
   </TD>
 % if ( $which eq '' && $conf->exists('show_ss') ) { 
     <TD ALIGN="right">SS#</TD>
-    <TD BGCOLOR="#ffffff"><% $cust_main->ss || '&nbsp' %></TD>
+    <TD BGCOLOR="#ffffff"><% $cust_main->masked('ss') || '&nbsp' %></TD>
 % } 
 </TR>
 <TR>
@@ -75,6 +75,14 @@
     <% $cust_main->get("${pre}fax") || '&nbsp' %>
   </TD>
 </TR>
+% if ( $which eq '' && $conf->exists('show_stateid') ) { 
+  <TR>
+    <TD ALIGN="right"><% $stateid_label %></TD>
+    <TD BGCOLOR="#ffffff"><% $cust_main->masked('stateid') || '&nbsp' %></TD>
+    <TD ALIGN="right"><% $stateid_state_label %></TD>
+    <TD BGCOLOR="#ffffff"><% $cust_main->stateid_state || '&nbsp' %></TD>
+  </TR>
+% } 
 </TABLE></TD></TR></TABLE>
 % if ( $which ne 'ship_' ) {
 <BR>
@@ -89,6 +97,12 @@ my $daytime_label = FS::Msgcat::_gettext('daytime') =~ /^(daytime)?$/
 my $night_label = FS::Msgcat::_gettext('night') =~ /^(night)?$/
                       ? 'Night&nbsp;Phone'
                       : FS::Msgcat::_gettext('night');
+my $stateid_label = FS::Msgcat::_gettext('stateid') =~ /^(stateid)?$/
+                      ? 'Driver&rsquo;s&nbsp;License'
+                      : FS::Msgcat::_gettext('stateid');
+my $stateid_state_label = FS::Msgcat::_gettext('stateid_state') =~ /^(stateid_state)?$/
+                      ? 'Driver&rsquo;s&nbsp;License State'
+                      : FS::Msgcat::_gettext('stateid_state');
 
 </%once>
 <%init>

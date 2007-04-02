@@ -1219,6 +1219,8 @@ sub check {
     || $self->ut_country('country')
     || $self->ut_anything('comments')
     || $self->ut_numbern('referral_custnum')
+    || $self->ut_textn('stateid')
+    || $self->ut_textn('stateid_state')
   ;
   #barf.  need message catalogs.  i18n.  etc.
   $error .= "Please select an advertising source."
@@ -4138,6 +4140,22 @@ sub fuzzy_search {
   @cust_main = grep { ++$saw{$_->custnum} == scalar(keys %$fuzzy) } @cust_main;
 
   @cust_main;
+
+}
+
+=item masked FIELD
+
+Returns a masked version of the named field
+
+=cut
+
+sub masked {
+my ($self,$field) = @_;
+
+# Show last four
+
+'x'x(length($self->getfield($field))-4).
+  substr($self->getfield($field), (length($self->getfield($field))-4));
 
 }
 

@@ -1181,6 +1181,13 @@ httemplate/docs/config.html
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'show_stateid',
+    'section'     => 'UI',
+    'description' => 'Turns on display/collection of state issued id numbers in the web interface.',
+    'type'        => 'checkbox',
+  },
+
   { 
     'key'         => 'agent_defaultpkg',
     'section'     => 'UI',
