@@ -1,0 +1,323 @@
+#!/usr/bin/perl -w
+
+use strict;
+use Time::Local;
+use Date::Format;
+use Time::Duration;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw( qsearch dbh );
+use FS::cust_tax_exempt;
+#use FS::cust_bill;
+use FS::h_cust_bill;
+use FS::h_cust_tax_exempt;
+use FS::cust_bill_pkg;
+use FS::cust_tax_exempt_pkg;
+#use Data::Dumper;
+
+my $start = time;
+
+adminsuidsetup shift;
+
+my $fuz = 7; #seconds
+
+ #site-specific rewrites
+my %rewrite = (
+  #cust_tax_exempt.exemptnum => { 'field' => 'newvalue', ... },
+    '23' => { month=>10, year=>2005, invnum=>1640 },
+
+    #etc.
+);
+
+my @cust_tax_exempt = qsearch('cust_tax_exempt', {} );
+my $num_cust_tax_exempt = scalar(@cust_tax_exempt);
+my $num_cust_tax_exempt_migrated = 0;
+my $total_cust_tax_exempt_migrated = 0;
+my $num_cust_tax_exempt_pkg_migrated = 0;
+my $total_cust_tax_exempt_pkg_migrated = 0;
+
+$FS::UID::AutoCommit = 0;
+
+foreach my $cust_tax_exempt ( @cust_tax_exempt ) {
+
+  if ( exists $rewrite{ $cust_tax_exempt->exemptnum } ) {
+    my $hashref = $rewrite{ $cust_tax_exempt->exemptnum };
+    $cust_tax_exempt->setfield($_, $hashref->{$_})
+      foreach keys %$hashref;
+  }
+
+  if ( $cust_tax_exempt->year < 1990 ) {
+    warn "exemption year is ". $cust_tax_exempt->year.
+         "; not migrating exemption ". $cust_tax_exempt->exemptnum. 
+         ' for custnum '. $cust_tax_exempt->custnum. "\n\n";
+    next;
+  }
+
+  # also make sure cust_bill_pkg record dates contain the month/year
+#  my $mon  = $cust_tax_exempt->month;
+#  my $year = $cust_tax_exempt->year;
+#  $mon--;
+#  my $edate_after = timelocal(0,0,0,1,$mon,$year);
+#  $mon++;
+#  if ( $mon >= 12 ) { $mon-=12; $year++ };
+#  my $sdate_before = timelocal(0,0,0,1,$mon,$year);
+
+  my $mon  = $cust_tax_exempt->month;
+  my $year = $cust_tax_exempt->year;
+  if ( $mon >= 12 ) { $mon-=12; $year++ };
+  my $sdate_before = timelocal(0,0,0,1,$mon,$year);
+  #$mon++;
+  #if ( $mon >= 12 ) { $mon-=12; $year++ };
+  my $edate_after = timelocal(0,0,0,1,$mon,$year);
+
+  # !! start a transaction?  (yes, its started)
+
+  my @h_cust_tax_exempt = qsearch({
+    'table'     => 'h_cust_tax_exempt',
+    'hashref'   => { 'exemptnum' => $cust_tax_exempt->exemptnum },
+    'extra_sql' => " AND (    history_action = 'insert'
+                           OR history_action = 'replace_new' )
+                     ORDER BY history_date ASC
+                   ",
+  });
+
+  my $amount_so_far = 0;
+  my $num_cust_tax_exempt_pkg = 0;
+  my $total_cust_tax_exempt_pkg = 0;
+  H_CUST_TAX_EXEMPT: foreach my $h_cust_tax_exempt ( @h_cust_tax_exempt ) {
+
+    my $amount = sprintf('%.2f', $h_cust_tax_exempt->amount - $amount_so_far );
+    $amount_so_far += $amount;
+
+#    print Dumper($h_cust_tax_exempt), "\n";
+
+    #find a matching cust_bill record
+    # (print time differences and choose a meaningful threshold, should work)
+
+    my @h_cust_bill = ();
+    if ( $cust_tax_exempt->invnum ) {
+      #warn "following invnum ". $cust_tax_exempt->invnum.
+      #     " kludge for cust_tax_exempt ". $cust_tax_exempt->exemptnum. "\n";
+
+      @h_cust_bill = qsearch({
+        #'table'     => 'cust_bill',
+        'table'     => 'h_cust_bill',
+        'hashref'   => { 'custnum'        => $h_cust_tax_exempt->custnum,
+                         'invnum'         => $cust_tax_exempt->invnum,
+                         'history_action' => 'insert',
+                       },
+        #'extra_sql' =>
+        #  ' AND history_date <= '. ( $h_cust_tax_exempt->history_date + $fuz ).
+        #  ' AND history_date >  '. ( $h_cust_tax_exempt->history_date - $fuz ),
+      });
+
+    } else {
+
+      @h_cust_bill = qsearch({
+        #'table'     => 'cust_bill',
+        'table'     => 'h_cust_bill',
+        'hashref'   => { 'custnum'        => $h_cust_tax_exempt->custnum,
+                         'history_action' => 'insert',
+                       },
+        'extra_sql' =>
+          ' AND history_date <= '. ( $h_cust_tax_exempt->history_date + $fuz ).
+          ' AND history_date >  '. ( $h_cust_tax_exempt->history_date - $fuz ),
+      });
+
+    }
+
+    if ( scalar(@h_cust_bill) != 1 ) {
+      warn '  '. scalar(@h_cust_bill). ' h_cust_bill records matching '.
+           'h_cust_tax_exempt.historynum '. $h_cust_tax_exempt->historynum.
+           "; not migrating (adjust fuz factor?)\n";
+      next;
+    }
+
+    my $h_cust_bill = $h_cust_bill[0];
+
+#    print Dumper(@cust_bill), "\n\n";
+
+    # then find a matching cust_bill_pkg record with part_pkg.taxclass record
+    # that matches the one pointed to by cust_tax_exempt.taxnum
+    # (hopefully just one, see how many we can match automatically)
+
+    my $cust_main_county = $cust_tax_exempt->cust_main_county;
+    my $taxclass = $cust_main_county->taxclass;
+
+    my $hashref = { 
+                    'custnum' => $cust_tax_exempt->custnum,
+                    'invnum'  => $h_cust_bill->invnum,
+                    'pkgnum'  => { op=>'>', value=>0, },
+                  };
+    unless ( $cust_tax_exempt->invnum ) {
+      # also make sure cust_bill_pkg record dates contain the month/year
+
+      #$hashref->{'sdate'} = { op=>'<', value=>$sdate_before };
+      $hashref->{'sdate'} = { op=>'<=', value=>$sdate_before };
+
+      #$hashref->{'edate'} = { op=>'>', value=>$edate_after };
+      $hashref->{'edate'} = { op=>'>=', value=>$edate_after };
+    }
+
+    if ( $cust_tax_exempt->billpkgnum ) {
+      $hashref->{'billpkgnum'} = $cust_tax_exempt->billpkgnum;
+    }
+
+    my $extra_sql = 'ORDER BY billpkgnum';
+
+    $extra_sql = "AND taxclass = '$taxclass' $extra_sql"
+      unless $cust_tax_exempt->ignore_current_taxclass;
+
+    my @cust_bill_pkg = qsearch({
+      'select'    => 'cust_bill_pkg.*, part_pkg.freq',
+      'table'     => 'cust_bill_pkg',
+      'addl_from' => 'LEFT JOIN cust_pkg using ( pkgnum  ) '.
+                     'LEFT JOIN part_pkg using ( pkgpart ) ',
+      'hashref'   => $hashref,
+      'extra_sql' => $extra_sql,
+    });
+
+    foreach my $cust_bill_pkg ( @cust_bill_pkg ) {
+      $cust_bill_pkg->exemptable_per_month(
+        sprintf('%.2f',
+          ( $cust_bill_pkg->setup + $cust_bill_pkg->recur )
+          /
+          ( $cust_bill_pkg[0]->freq || 1 )
+        )
+      );
+    }
+
+    my(@cust_tax_exempt_pkg) = ();
+    if ( scalar(@cust_bill_pkg) == 1
+         && $cust_bill_pkg[0]->exemptable_per_month >= $amount
+       )
+    {
+
+      my $cust_bill_pkg = $cust_bill_pkg[0];
+
+      # finally, create an appropriate cust_tax_exempt_pkg record
+
+      push @cust_tax_exempt_pkg, new FS::cust_tax_exempt_pkg {
+        'billpkgnum' => $cust_bill_pkg->billpkgnum,
+        'taxnum'     => $cust_tax_exempt->taxnum,
+        'year'       => $cust_tax_exempt->year,
+        'month'      => $cust_tax_exempt->month,
+        'amount'     => $amount,
+      };
+
+    } else {
+
+#      warn '  '. scalar(@cust_bill_pkg). ' cust_bill_pkg records for invoice '.
+#           $h_cust_bill->invnum.
+#           "; not migrating h_cust_tax_exempt historynum ".
+#           $h_cust_tax_exempt->historynum. " for \$$amount\n";
+#      warn "    *** DIFFERENT DATES ***\n"
+#        if grep {    $_->sdate != $cust_bill_pkg[0]->sdate
+#                  || $_->edate != $cust_bill_pkg[0]->edate
+#                } @cust_bill_pkg;
+#      foreach ( @cust_bill_pkg ) {
+#        warn '    '. $_->billpkgnum. ': '. $_->setup. 's/'. $_->recur.'r'.
+#             '  '. time2str('%D', $_->sdate). '-'. time2str('%D', $_->edate).
+#             "\n";
+#      }
+#      
+#      next;
+
+      my $remaining = $amount;
+      foreach my $cust_bill_pkg ( @cust_bill_pkg ) {
+        last unless $remaining;
+        my $this_amount =sprintf('%.2f',
+          $remaining <= $cust_bill_pkg->exemptable_per_month
+            ? $remaining
+            : $cust_bill_pkg->exemptable_per_month
+        );;
+
+        push @cust_tax_exempt_pkg, new FS::cust_tax_exempt_pkg {
+          'billpkgnum' => $cust_bill_pkg->billpkgnum,
+          'taxnum'     => $cust_tax_exempt->taxnum,
+          'year'       => $cust_tax_exempt->year,
+          'month'      => $cust_tax_exempt->month,
+          'amount'     => $this_amount,
+        };
+
+        $remaining -= $this_amount;
+
+      }
+
+    }
+
+    foreach my $cust_tax_exempt_pkg ( @cust_tax_exempt_pkg ) {
+      my $error = $cust_tax_exempt_pkg->insert;
+      #my $error = $cust_tax_exempt_pkg->check;
+      if ( $error ) {
+        warn "*** error inserting cust_tax_exempt_pkg record: $error\n";
+        next; #not necessary.. H_CUST_TAX_EXEMPT;
+
+        #not necessary, incorrect $total_cust_tax_exempt_pkg will error it out
+        # roll back at least the entire cust_tax_exempt transaction
+        # next CUST_TAX_EXEMPT;
+      }
+
+      $num_cust_tax_exempt_pkg++;
+    
+      $total_cust_tax_exempt_pkg += $cust_tax_exempt_pkg->amount;
+
+    }
+
+  }
+
+  $total_cust_tax_exempt_pkg = sprintf('%.2f', $total_cust_tax_exempt_pkg );
+
+  unless ( $total_cust_tax_exempt_pkg == $cust_tax_exempt->amount ) {
+    warn "total h_ amount $total_cust_tax_exempt_pkg != cust_tax_exempt.amount ".
+         $cust_tax_exempt->amount.
+         ";\n not migrating exemption ". $cust_tax_exempt->exemptnum. " for ".
+         $cust_tax_exempt->month. '/'. $cust_tax_exempt->year.
+         ' (custnum '. $cust_tax_exempt->custnum. ") ".
+         #"\n  (sdate < ". time2str('%D', $sdate_before ).
+         "\n  (sdate <= ". time2str('%D', $sdate_before ). " [$sdate_before]".
+           #' / edate > '. time2str('%D', $edate_after  ). ')'.
+           ' / edate >= '. time2str('%D', $edate_after  ). " [$edate_after])".
+         "\n\n";
+
+    # roll back at least the entire cust_tax_exempt transaction
+    dbh->rollback;
+
+    # next CUST_TAX_EXEMPT;
+    next;
+  }
+
+  # remove the cust_tax_exempt record
+  my $error = $cust_tax_exempt->delete;
+  if ( $error ) {
+    #roll back at least the entire cust_tax_exempt transaction
+    dbh->rollback;
+
+    #next CUST_TAX_EXEMPT;
+    next;
+  }
+
+  $num_cust_tax_exempt_migrated++;
+  $total_cust_tax_exempt_migrated += $cust_tax_exempt->amount;
+
+  $num_cust_tax_exempt_pkg_migrated += $num_cust_tax_exempt_pkg;
+  $total_cust_tax_exempt_pkg_migrated += $total_cust_tax_exempt_pkg;
+
+  # commit the transaction
+  dbh->commit;
+
+}
+
+$total_cust_tax_exempt_migrated = 
+  sprintf('%.2f', $total_cust_tax_exempt_migrated );
+$total_cust_tax_exempt_pkg_migrated = 
+  sprintf('%.2f', $total_cust_tax_exempt_pkg_migrated );
+
+warn
+  "$num_cust_tax_exempt_migrated / $num_cust_tax_exempt (".
+  sprintf('%.2f', 100 * $num_cust_tax_exempt_migrated / $num_cust_tax_exempt).
+  '%) cust_tax_exempt records migrated ($'. $total_cust_tax_exempt_migrated.
+  ")\n to $num_cust_tax_exempt_pkg_migrated cust_tax_exempt_pkg records".
+  ' ($'. $total_cust_tax_exempt_pkg_migrated. ')'.
+  "\n in ". duration(time-$start). "\n"
+;
+
