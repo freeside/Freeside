@@ -122,7 +122,7 @@
 %    my $line;
 %    my $row = 0;
 %    while ( defined($line=<$fh>) ) {
-%      chomp $line;
+%      $line =~ s/(\S*)\s*$/$1/;
 %      $line =~ s/^(.*)(#!).*/$1/;
 %
 %      $csv->parse($line) or die "can't parse line: " . $csv->error_input();
