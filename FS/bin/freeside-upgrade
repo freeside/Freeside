@@ -21,7 +21,9 @@ $DRY_RUN = $opt_d;
 
 my $user = shift or die &usage;
 $FS::CurrentUser::upgrade_hack = 1;
+$FS::UID::callback_hack = 1;
 my $dbh = adminsuidsetup($user);
+$FS::UID::callback_hack = 0;
 
 #needs to match FS::Schema...
 my $dbdef_file = "%%%FREESIDE_CONF%%%/dbdef.". datasrc;
