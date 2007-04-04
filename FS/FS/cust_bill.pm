@@ -524,7 +524,7 @@ sub generate_email {
     'subject'   => (($args{'subject'}) ? $args{'subject'} : 'Invoice'),
   );
 
-  if (ref($args{'to'} eq 'ARRAY')) {
+  if (ref($args{'to'}) eq 'ARRAY') {
     $return{'to'} = $args{'to'};
   } else {
     $return{'to'} = [ grep { $_ !~ /^(POST|FAX)$/ }
