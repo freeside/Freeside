@@ -85,7 +85,7 @@ sub insert_config_item {
 }
 
 sub usage {
-  die "Usage:\n  freeside-init-config directory [ -v ] [ -f ]\n"
+  die "Usage:\n  freeside-init-config [ -v ] [ -f ] directory\n"
   # [ -u user ] for devel/multi-db installs
 }
 
