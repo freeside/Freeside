@@ -28,12 +28,14 @@
 % }
 %
 % #XXX autogen
-% my @paramlist = qw( menu_position email_address
+% my @paramlist = qw( menu_position
+%                     email_address
+%                     vonage-fromnumber vonage-username vonage-password
 %                     height width availHeight availWidth colorDepth
 %                   );
 %
 % foreach (@paramlist) {
-%   scalar($cgi->param($_)) =~ /^[,.\@\w]*$/ && next;
+%   scalar($cgi->param($_)) =~ /^[,.\-\@\w]*$/ && next;
 %   $error ||= "Illegal value for parameter $_";
 %   last;
 % }
