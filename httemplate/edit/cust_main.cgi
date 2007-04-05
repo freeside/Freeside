@@ -313,6 +313,7 @@ function bottomfixup(what) {
   var billing_bottomvars = new Array(
     'tax',
     'invoicing_list', 'invoicing_list_POST', 'invoicing_list_FAX',
+    'invoice_terms',
     'spool_cdr'
   );
 
@@ -392,6 +393,7 @@ function copyelement(from, to) {
 %     
 %     'tax',
 %     'invoicing_list', 'invoicing_list_POST', 'invoicing_list_FAX',
+%     'invoice_terms',
 %     'spool_cdr'
 %   ) {
 %

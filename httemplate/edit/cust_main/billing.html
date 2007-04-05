@@ -408,8 +408,22 @@
       <TD ALIGN="right" WIDTH="200">Email invoice </TD>
       <TD WIDTH="408"><INPUT TYPE="text" NAME="invoicing_list" VALUE="<% join(', ', grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list ) %>"></TD>
     </TR>
-% if ( $conf->exists('voip-cust_cdr_spools') ) { 
 
+    <TR>
+      <TD ALIGN="right" WIDTH="200">Invoice terms </TD>
+      <TD WIDTH="408">
+        <SELECT NAME="invoice_terms">
+          <OPTION VALUE="">Default (<% $conf->config('invoice_default_terms') || 'Payable upon receipt' %>)
+%         foreach my $term ( 'Payable upon receipt',
+%                            ( map "Net $_", 0, 10, 15, 30, 45, 60 ),
+%                          ) {
+            <OPTION VALUE="<% $term %>" <% $cust_main->invoice_terms eq $term ? ' SELECTED' : '' %>><% $term %>
+%         }
+        </SELECT>
+      </TD>
+    </TR>
+
+% if ( $conf->exists('voip-cust_cdr_spools') ) { 
       <TR>
        <TD COLSPAN="2"><INPUT TYPE="checkbox" NAME="spool_cdr" VALUE="Y" <% $cust_main->spool_cdr eq "Y" ? 'CHECKED' : '' %>> Spool CDRs</TD>
       </TR>
@@ -417,7 +431,6 @@
 
       <INPUT TYPE="hidden" NAME="spool_cdr" VALUE="<% $cust_main->spool_cdr %>">
 % } 
-
 
   </TABLE>
 

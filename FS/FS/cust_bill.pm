@@ -1193,11 +1193,7 @@ sub print_csv {
     my $taxtotal = 0;
     $taxtotal += $_->{'amount'} foreach $self->_items_tax;
 
-    my $duedate = '';
-    if (    $conf->exists('invoice_default_terms') 
-         && $conf->config('invoice_default_terms')=~ /^\s*Net\s*(\d+)\s*$/ ) {
-      $duedate = time2str("%m/%d/%Y", $self->_date + ($1*86400) );
-    }
+    my $duedate = $self->due_date2str('%m/%d/%Y'); #date_format?
 
     my( $previous_balance, @unused ) = $self->previous; #previous balance
 
@@ -1908,7 +1904,7 @@ sub print_latex {
     'smallfooter'  => join("\n", $conf->config_orbase('invoice_latexsmallfooter', $template) ),
     'returnaddress' => $returnaddress,
     'quantity'     => 1,
-    'terms'        => $conf->config('invoice_default_terms') || 'Payable upon receipt',
+    'terms'        => $self->terms,
     #'notes'        => join("\n", $conf->config('invoice_latexnotes') ),
     # better hang on to conf_dir for a while
     'conf_dir'     => "$FS::UID::conf_dir/conf.$FS::UID::datasrc",
@@ -2324,8 +2320,7 @@ sub print_html {
     'city'         => encode_entities($cust_main->city),
     'state'        => encode_entities($cust_main->state),
     'zip'          => encode_entities($cust_main->zip),
-    'terms'        => $conf->config('invoice_default_terms')
-                      || 'Payable upon receipt',
+    'terms'        => $self->terms,
     'cid'          => $cid,
     'template'     => $template,
 #    'conf_dir'     => "$FS::UID::conf_dir/conf.$FS::UID::datasrc",
@@ -2501,14 +2496,41 @@ sub _latex_escape {
 
 #utility methods for print_*
 
+sub terms {
+  my $self = shift;
+
+  #check for an invoice- specific override (eventually)
+  
+  #check for a customer- specific override
+  return $self->cust_main->invoice_terms
+    if $self->cust_main->invoice_terms;
+
+  #use configured default or default default
+  $conf->config('invoice_default_terms') || 'Payable upon receipt';
+}
+
+sub due_date {
+  my $self = shift;
+  my $duedate = '';
+  if ( $self->terms =~ /^\s*Net\s*(\d+)\s*$/ ) {
+    $duedate = $self->_date() + ( $1 * 86400 );
+  }
+  $duedate;
+}
+
+sub due_date2str {
+  my $self = shift;
+  $self->due_date ? time2str(shift, $self->due_date) : '';
+}
+
 sub balance_due_msg {
   my $self = shift;
   my $msg = 'Balance Due';
-  return $msg unless $conf->exists('invoice_default_terms');
-  if ( $conf->config('invoice_default_terms') =~ /^\s*Net\s*(\d+)\s*$/ ) {
-    $msg .= ' - Please pay by '. time2str("%x", $self->_date + ($1*86400) );
-  } elsif ( $conf->config('invoice_default_terms') ) {
-    $msg .= ' - '. $conf->config('invoice_default_terms');
+  return $msg unless $self->terms;
+  if ( $self->due_date ) {
+    $msg .= ' - Please pay by '. $self->due_date2str('%x');
+  } elsif ( $self->terms ) {
+    $msg .= ' - '. $self->terms;
   }
   $msg;
 }

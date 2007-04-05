@@ -1221,6 +1221,7 @@ sub check {
     || $self->ut_numbern('referral_custnum')
     || $self->ut_textn('stateid')
     || $self->ut_textn('stateid_state')
+    || $self->ut_textn('invoice_terms')
   ;
   #barf.  need message catalogs.  i18n.  etc.
   $error .= "Please select an advertising source."
@@ -2773,15 +2774,7 @@ sub realtime_bop {
     unless ( $transaction->error_message ) {
 
       my $t_response;
-      #this should be normalized :/
-      #
-      # bad, ad-hoc B:OP:PayflowPro "transaction_response" BS
-      if ( $transaction->can('param')
-           && $transaction->param('transaction_response') ) {
-        $t_response = $transaction->param('transaction_response')
-
-      # slightly better, ad-hoc B:OP:TransactionCentral without "param"
-      } elsif ( $transaction->can('response_page') ) {
+      if ( $transaction->can('response_page') ) {
         $t_response = {
                         'page'    => ( $transaction->can('response_page')
                                          ? $transaction->response_page
