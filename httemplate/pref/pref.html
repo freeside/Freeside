@@ -62,17 +62,17 @@ Vonage integration (see <a href="https://secure.click2callu.com/">Click2Call</a>
 
   <TR>
     <TH ALIGN="right">Vonage phone number</TH>
-    <TD><INPUT TYPE="text" NAME="vonage-fromnumber"></TD>
+    <TD><INPUT TYPE="text" NAME="vonage-fromnumber" VALUE="<% $FS::CurrentUser::CurrentUser->option('vonage-fromnumber') %>"></TD>
   </TR>
 
   <TR>
     <TH ALIGN="right">Vonage username</TH>
-    <TD><INPUT TYPE="text" NAME="vonage-username"></TD>
+    <TD><INPUT TYPE="text" NAME="vonage-username" VALUE="<% $FS::CurrentUser::CurrentUser->option('vonage-username') %>"></TD>
   </TR>
 
   <TR>
     <TH ALIGN="right">Vonage password</TH>
-    <TD><INPUT TYPE="password" NAME="vonage-password"></TD>
+    <TD><INPUT TYPE="password" NAME="vonage-password" VALUE="<% $FS::CurrentUser::CurrentUser->option('vonage-password') %>"></TD>
   </TR>
 
 </TABLE>
