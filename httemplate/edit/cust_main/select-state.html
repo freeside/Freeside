@@ -1,5 +1,9 @@
 <SELECT NAME="<% $opt{'prefix'} %>state" onChange="<% $opt{'prefix'} %>state_changed(this); <% $opt{'onchange'} %>" <% $opt{'disabled'} %>>
 
+% if ($opt{empty}) {
+  <OPTION VALUE=""<% $opt{state} eq '' ? ' SELECTED' : '' %>><% $opt{empty} %>
+% }
+
 % foreach my $state ( keys %states ) { 
 
   <OPTION VALUE="<% $state %>"<% $state eq $opt{'state'} ? ' SELECTED' : '' %>><% $states{$state} || '(n/a)' %>
@@ -11,7 +15,7 @@
 
 <%init>
 my %opt = @_;
-foreach my $opt (qw( county state country prefix onchange disabled )) {
+foreach my $opt (qw( county state country prefix onchange disabled empty )) {
   $opt{$_} = '' unless exists($opt{$_}) && defined($opt{$_});
 }
 

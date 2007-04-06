@@ -447,6 +447,8 @@ sub tables_hashref {
         'paystart_year',  'int', 'NULL', '', '', '', 
         'payissue', 'varchar', 'NULL', 2, '', '', 
         'payname',  'varchar', 'NULL', $char_d, '', '', 
+        'paystate', 'varchar', 'NULL', $char_d, '', '', 
+        'paytype',  'varchar', 'NULL', $char_d, '', '', 
         'payip',    'varchar', 'NULL', 15, '', '', 
         'tax',      'char', 'NULL', 1, '', '', 
         'otaker',   'varchar', '',    32, '', '', 

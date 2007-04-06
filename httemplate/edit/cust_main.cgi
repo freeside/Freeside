@@ -17,7 +17,7 @@
 %my $error = '';
 %my($custnum, $username, $password, $popnum, $cust_main, $saved_pkgpart, $saved_domsvc);
 %my(@invoicing_list);
-%my $payinfo;
+%my ($ss,$stateid,$payinfo);
 %my $same = '';
 %if ( $cgi->param('error') ) {
 %  $error = $cgi->param('error');
@@ -43,6 +43,8 @@
 %  @invoicing_list = split( /\s*,\s*/, $cgi->param('invoicing_list') );
 %  $same = $cgi->param('same');
 %  $cust_main->setfield('paid' => $cgi->param('paid')) if $cgi->param('paid');
+%  $ss = $cust_main->ss;           # don't mask an entered value on errors
+%  $stateid = $cust_main->stateid; # don't mask an entered value on errors
 %  $payinfo = $cust_main->payinfo; # don't mask an entered value on errors
 %} elsif ( $cgi->keywords ) { #editing
 %  my( $query ) = $cgi->keywords;
@@ -61,6 +63,8 @@
 %  $password = '';
 %  $popnum = 0;
 %  @invoicing_list = $cust_main->invoicing_list;
+%  $ss = $cust_main->masked('ss');
+%  $stateid = $cust_main->masked('stateid');
 %  $payinfo = $cust_main->paymask;
 %} else {
 %  $custnum='';
@@ -75,6 +79,8 @@
 %  @invoicing_list = ();
 %  push @invoicing_list, 'POST'
 %    unless $conf->exists('disablepostalinvoicedefault');
+%  $ss = '';
+%  $stateid = '';
 %  $payinfo = '';
 %}
 %$cgi->delete_all();
@@ -198,7 +204,7 @@
 
 <BR><BR>
 Billing address
-<% include('cust_main/contact.html', $cust_main, '', 'bill_changed(this)', '' ) %>
+<% include('cust_main/contact.html', $cust_main, '', 'bill_changed(this)', '', 'ss' => $ss, 'stateid' => $stateid ) %>
 
 <!-- service address -->
 % if ( defined $cust_main->dbdef_table->column('ship_last') ) { 
@@ -290,6 +296,7 @@ function bottomfixup(what) {
     'address1', 'address2', 'city',
     'county', 'state', 'zip', 'country',
     'daytime', 'night', 'fax',
+    'stateid', 'stateid_state',
 
     'same',
 
@@ -303,8 +310,8 @@ function bottomfixup(what) {
 
   var layervars = new Array(
     'payauto',
-    'payinfo', 'payinfo1', 'payinfo2',
-    'payname', 'exp_month', 'exp_year', 'paycvv',
+    'payinfo', 'payinfo1', 'payinfo2', 'paytype',
+    'payname', 'paystate', 'exp_month', 'exp_year', 'paycvv',
     'paystart_month', 'paystart_year', 'payissue',
     'payip',
     'paid'
@@ -374,6 +381,7 @@ function copyelement(from, to) {
 %     'address1', 'address2', 'city',
 %     'county', 'state', 'zip', 'country',
 %     'daytime', 'night', 'fax',
+%     'stateid', 'stateid_state',
 %     
 %     'same',
 %     
@@ -385,8 +393,8 @@ function copyelement(from, to) {
 %     'select', #XXX key
 %
 %     'payauto',
-%     'payinfo', 'payinfo1', 'payinfo2',
-%     'payname', 'exp_month', 'exp_year', 'paycvv',
+%     'payinfo', 'payinfo1', 'payinfo2', 'paytype',
+%     'payname', 'paystate', 'exp_month', 'exp_year', 'paycvv',
 %     'paystart_month', 'paystart_year', 'payissue',
 %     'payip',
 %     'paid',

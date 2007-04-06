@@ -10,7 +10,7 @@
 
     <INPUT TYPE="hidden" NAME="payinfo" VALUE="<% $cust_main->paymask %>">
 
-% foreach my $field (qw( payname paycvv paystart_month paystart_year payissue payip )) { 
+% foreach my $field (qw( payname paycvv paystart_month paystart_year payissue payip paytype paystate )) { 
 
     <INPUT TYPE="hidden" NAME="<% $field %>" VALUE="<% $cust_main->getfield($field) %>">
 
@@ -119,6 +119,7 @@
   </SCRIPT>
 
 %  my $payby = $cust_main->payby;
+%  my $paytype = $cust_main->paytype;
 %  my( $account, $aba ) = split('@', $payinfo);
 %
 %  my $disabled = 'DISABLED style="background-color: #dddddd"';
@@ -189,10 +190,13 @@
 %      '<TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0 HEIGHT=192>'.
 %
 %        qq!<TR><TD ALIGN="right" WIDTH="200">${r}Account number </TD>!.
-%          qq!<TD WIDTH="408"><INPUT TYPE="text" SIZE=12 NAME="payinfo1" VALUE="!. ( $payby =~ /^(CHEK|DCHK)$/ ? $account : '' ). '"></TD></TR>'.
+%          qq!<TD><INPUT TYPE="text" SIZE=12 NAME="payinfo1" VALUE="!. ( $payby =~ /^(CHEK|DCHK)$/ ? $account : '' ). '"></TD>'.
+%          qq!<TD ALIGN="right">Type</TD><TD><SELECT="text" NAME="paytype">!.
+%            join('', map { qq!<OPTION VALUE="$_" !.($paytype eq $_ ? 'SELECTED' : '').">$_</OPTION>" } @FS::cust_main::paytypes).
+%          qq!</SELECT></TD></TR>!.
 %
 %        qq!<TR><TD ALIGN="right" WIDTH="200">${r}ABA/Routing number </TD>!.
-%          qq!<TD WIDTH="408"><INPUT TYPE="text" SIZE=10 MAXLENGTH=9 NAME="payinfo2" VALUE="!. ( $payby =~ /^(CHEK|DCHK)$/ ? $aba : '' ). qq!" SIZE=10 MAXLENGTH=9> !.
+%          qq!<TD COLSPAN="3" WIDTH="408"><INPUT TYPE="text" SIZE=10 MAXLENGTH=9 NAME="payinfo2" VALUE="!. ( $payby =~ /^(CHEK|DCHK)$/ ? $aba : '' ). qq!" SIZE=10 MAXLENGTH=9> !.
 %          qq!(<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('../docs/ach.html', 380, 240, 'ach_popup' ), CAPTION, 'ACH Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;">help</A>)!.
 %          qq!</TD></TR>!.
 %
@@ -200,9 +204,18 @@
 %        qq!<INPUT TYPE="hidden" NAME="exp_year" VALUE="2037">!.
 %
 %        qq!<TR><TD ALIGN="right" WIDTH="200">${r}Bank name </TD>!.
-%          qq!<TD WIDTH="408"><INPUT TYPE="text" NAME="payname" VALUE="!. ( $payby =~ /^(CHEK|DCHK)$/ ? $cust_main->payname : '' ). qq!"></TD></TR>!.
+%          qq!<TD COLSPAN="3" WIDTH="408"><INPUT TYPE="text" NAME="payname" VALUE="!. ( $payby =~ /^(CHEK|DCHK)$/ ? $cust_main->payname : '' ). qq!"></TD></TR>!.
+%          qq!<TR><TD ALIGN="right" WIDTH="200">$paystate_label</TD>!.
+%          qq!<TD COLSPAN="3" WIDTH="408">!.
+%          include('select-state.html',
+%                    'empty'   => '(choose)',
+%                    'state'   => $cust_main->paystate,
+%                    'country' => $cust_main->country,
+%                    'prefix' => 'pay',
+%                 ). "</TD></TR>".
 %
-%        qq!<TR><TD COLSPAN=2 WIDTH="608"><INPUT TYPE="checkbox" NAME="payauto" !. ( $payby eq 'DCHK' ? '' : 'CHECKED' ). '> Charge future payments to this electronic check automatically</TD></TR>'.
+%
+%        qq!<TR><TD COLSPAN=4 WIDTH="608"><INPUT TYPE="checkbox" NAME="payauto" !. ( $payby eq 'DCHK' ? '' : 'CHECKED' ). '> Charge future payments to this electronic check automatically</TD></TR>'.
 %
 %        '<TR><TD>&nbsp;</TD></TR>'.
 %        '<TR><TD>&nbsp;</TD></TR>'.
@@ -439,6 +452,12 @@
   <% $r %> required fields
 % } 
 
+<%once>
+
+my $paystate_label = FS::Msgcat::_gettext('paystate');
+$paystate_label = 'Bank state' if $paystate_label =~/^paystate$/;
+
+</%once>
 <%init>
 
 my( $cust_main, %options ) = @_;

@@ -2,7 +2,7 @@ package FS::cust_main;
 
 use strict;
 use vars qw( @ISA @EXPORT_OK $DEBUG $me $conf @encrypted_fields
-             $import $skip_fuzzyfiles $ignore_expired_card );
+             $import $skip_fuzzyfiles $ignore_expired_card @paytypes);
 use vars qw( $realtime_bop_decline_quiet ); #ugh
 use Safe;
 use Carp;
@@ -70,6 +70,7 @@ $skip_fuzzyfiles = 0;
 $ignore_expired_card = 0;
 
 @encrypted_fields = ('payinfo', 'paycvv');
+@paytypes = ('Personal checking', 'Personal savings', 'Business checking', 'Business savings');
 
 #ask FS::UID to run this stuff for us later
 #$FS::UID::callback{'FS::cust_main'} = sub { 
@@ -1336,6 +1337,7 @@ sub check {
   $error =    $self->ut_numbern('paystart_month')
            || $self->ut_numbern('paystart_year')
            || $self->ut_numbern('payissue')
+           || $self->ut_textn('paytype')
   ;
   return $error if $error;
 
