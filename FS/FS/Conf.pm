@@ -1177,14 +1177,14 @@ httemplate/docs/config.html
   {
     'key'         => 'show_ss',
     'section'     => 'UI',
-    'description' => 'Turns on display/collection of SS# in the web interface.',
+    'description' => 'Turns on display/collection of social security numbers in the web interface.  Sometimes required by electronic check (ACH) processors.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'show_stateid',
     'section'     => 'UI',
-    'description' => 'Turns on display/collection of state issued id numbers in the web interface.',
+    'description' => "Turns on display/collection of driver's license/state issued id numbers in the web interface.  Sometimes required by electronic check (ACH) processors.",
     'type'        => 'checkbox',
   },
 
