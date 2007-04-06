@@ -45,7 +45,7 @@ use Data::Dumper qw(Dumper);
 
 @ISA = qw(FS::part_export);
 $me = '[' . __PACKAGE__ . ']';
-$DEBUG = 1;
+$DEBUG = 0;
 
 %info = (
   'svc'     => 'svc_broadband',
@@ -189,7 +189,7 @@ sub _export_command {
   }
 
   warn "[debug]$me Dispatching child exports... "
-    . &Dumper($queue_child_exports);
+    . &Dumper($queue_child_exports) if $DEBUG;
 
   # Actually call the child exports now, with their preset action and arguments.
   foreach my $_action (keys(%$queue_child_exports)) {
@@ -199,6 +199,7 @@ sub _export_command {
         $_child_export,
         $_action,
         @{$_child_export->{'args'}},
+        @_,
       );
 
       # Bail if there's an error queueing one of the exports.
