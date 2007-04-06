@@ -70,7 +70,7 @@ $skip_fuzzyfiles = 0;
 $ignore_expired_card = 0;
 
 @encrypted_fields = ('payinfo', 'paycvv');
-@paytypes = ('Personal checking', 'Personal savings', 'Business checking', 'Business savings');
+@paytypes = ('', 'Personal checking', 'Personal savings', 'Business checking', 'Business savings');
 
 #ask FS::UID to run this stuff for us later
 #$FS::UID::callback{'FS::cust_main'} = sub { 
@@ -2612,9 +2612,12 @@ sub realtime_bop {
     ( $content{account_number}, $content{routing_code} ) =
       split('@', $payinfo);
     $content{bank_name} = $o_payname;
-    $content{account_type} = 'CHECKING';
+    $content{bank_state} = $self->getfield('paystate');
+    $content{account_type} = uc($self->getfield('paytype')) || 'CHECKING';
     $content{account_name} = $payname;
     $content{customer_org} = $self->company ? 'B' : 'I';
+    $content{state_id}       = $self->getfield('stateid');
+    $content{state_id_state} = $self->getfield('stateid_state');
     $content{customer_ssn} = exists($options{'ss'})
                                ? $options{'ss'}
                                : $self->ss;

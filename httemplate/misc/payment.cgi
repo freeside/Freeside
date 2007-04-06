@@ -151,13 +151,19 @@ function OLiframeContent(src, width, height, name) {
     </TD>
   </TR>
 % } elsif ( $payby eq 'CHEK' ) {
-%     my( $payinfo1, $payinfo2, $payname, $ss ) = ( '', '', '', '' );
+%     my( $payinfo1, $payinfo2, $payname, $ss, $paytype, $paystate,
+%         $stateid, $stateid_state )
+%       = ( '', '', '', '', '', '', '', '' );
 %     if ( $cust_main->payby =~ /^(CHEK|DCHK)$/ ) {
 %       $cust_main->paymask =~ /^([\dx]+)\@([\dx]+)$/i
 %         or die "unparsable payinfo ". $cust_main->payinfo;
 %       ($payinfo1, $payinfo2) = ($1, $2);
 %       $payname = $cust_main->payname;
 %       $ss = $cust_main->ss;
+%       $paytype = $cust_main->getfield('paytype');
+%       $paystate = $cust_main->getfield('paystate');
+%       $stateid = $cust_main->getfield('stateid');
+%       $stateid_state = $cust_main->getfield('stateid_state');
 %     }
 %
 
@@ -166,6 +172,8 @@ function OLiframeContent(src, width, height, name) {
   <TR>
     <TD ALIGN="right">Account&nbsp;number</TD>
     <TD><INPUT TYPE="text" SIZE=10 NAME="payinfo1" VALUE="<%$payinfo1%>"></TD>
+    <TD ALIGN="right">Type</TD>
+    <TD><SELECT NAME="paytype"><% join('', map { qq!<OPTION VALUE="$_" !.($paytype eq $_ ? 'SELECTED' : '').">$_</OPTION>" } @FS::cust_main::paytypes) %></SELECT></TD>
   </TR>
   <TR>
     <TD ALIGN="right">ABA/Routing&nbsp;number</TD>
@@ -179,11 +187,34 @@ function OLiframeContent(src, width, height, name) {
     <TD><INPUT TYPE="text" NAME="payname" VALUE="<%$payname%>"></TD>
   </TR>
   <TR>
+    <TD ALIGN="right">Bank&nbsp;state</TD>
+    <TD><% include('../edit/cust_main/select-state.html', #meh 
+                   'empty'   => '(choose)',
+                   'state'   => $paystate,
+                   'country' => $cust_main->country,
+                   'prefix'  => 'pay',
+                  ) %></TD>
+  </TR>
+  <TR>
     <TD ALIGN="right">
       Account&nbsp;holder<BR>
       Social&nbsp;security&nbsp;or&nbsp;tax&nbsp;ID&nbsp;#
     </TD>
     <TD><INPUT TYPE="text" NAME="ss" VALUE="<%$ss%>"></TD>
+  </TR>
+  <TR>
+    <TD ALIGN="right">
+      Account&nbsp;holder<BR>
+      Driver&rsquo;s&nbsp;license&nbsp;or&nbsp;state&nbsp;ID&nbsp;#
+    </TD>
+    <TD><INPUT TYPE="text" NAME="stateid" VALUE="<%$stateid%>"></TD>
+    <TD ALIGN="right">State</TD>
+    <TD><% include('../edit/cust_main/select-state.html', #meh 
+                   'empty'   => '(choose)',
+                   'state'   => $stateid_state,
+                   'country' => $cust_main->country,
+                   'prefix'  => 'stateid_',
+                  ) %></TD>
   </TR>
 % } 
 

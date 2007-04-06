@@ -26,7 +26,7 @@
 %my $payby = $1;
 %my %payby2fields = (
 %  'CARD' => [ qw( address1 address2 city state zip ) ],
-%  'CHEK' => [ qw( ss ) ],
+%  'CHEK' => [ qw( ss paytype paystate stateid stateid_state ) ],
 %);
 %my %type = ( 'CARD' => 'credit card',
 %             'CHEK' => 'electronic check (ACH)',
