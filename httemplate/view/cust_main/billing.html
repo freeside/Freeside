@@ -81,10 +81,14 @@ Billing information
 <TR>
   <TD ALIGN="right">Account number</TD>
   <TD BGCOLOR="#ffffff"><% 'x'x(length($account)-2). substr($account,(length($account)-2)) %></TD>
+  <TD ALIGN="right">Account type</TD>
+  <TD BGCOLOR="#ffffff"><% $cust_main->paytype %></TD>
 </TR>
 <TR>
   <TD ALIGN="right">Bank name</TD>
   <TD BGCOLOR="#ffffff"><% $cust_main->payname %></TD>
+  <TD ALIGN="right"><% $paystate_label %></TD>
+  <TD BGCOLOR="#ffffff"><% $cust_main->paystate || '&nbsp;&nbsp;&nbsp;' %></TD>
 </TR>
 % } elsif ( $cust_main->payby eq 'LECB' ) {
 %     $cust_main->payinfo =~ /^(\d{3})(\d{3})(\d{4})$/;
@@ -186,11 +190,15 @@ Billing information
 % } 
 
 </TABLE></TD></TR></TABLE>
-<%init>
+<%once>
 
+my $paystate_label = FS::Msgcat::_gettext('paystate');
+$paystate_label = 'Bank state' if $paystate_label =~/^paystate$/;
+
+</%once>
+<%init>
 my( $cust_main ) = @_;
 my @invoicing_list = $cust_main->invoicing_list;
 my $conf = new FS::Conf;
 my $money_char = $conf->config('money_char') || '$';
-
 </%init>
