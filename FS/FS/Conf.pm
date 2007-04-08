@@ -2074,6 +2074,13 @@ httemplate/docs/config.html
     'type'       => 'checkbox',
   },
 
+  {
+    'key' => 'password-generated-allcaps',
+    'section' => 'password',
+    'description' => 'Causes passwords automatically generated to consist entirely of capital letters',
+    'type' => 'checkbox',
+  },
+
 );
 
 1;
