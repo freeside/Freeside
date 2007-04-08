@@ -2406,7 +2406,6 @@ sub reached_threshold {
 
       my $to = join(', ', grep { $_ !~ /^(POST|FAX)$/ } 
                                $cust_main->invoicing_list,
-                               $svc_acct->email,
                                ($opt{'to'} ? $opt{'to'} : ())
                    );
 
