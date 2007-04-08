@@ -400,6 +400,10 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
     <TD ALIGN="right"><% $label{$uf} %> remaining</TD>
     <TD><INPUT TYPE="text" NAME="<% $uf %>" VALUE="<% $svc_acct->$uf %>"></TD>
   </TR>
+  <TR>
+    <TD ALIGN="right"><% $label{$uf} %> threshold</TD>
+    <TD><INPUT TYPE="text" NAME="<% $tf %>" VALUE="<% $svc_acct->$tf %>">(blank or zero disables <% lc($label{$uf}) %> remaining)</TD>
+  </TR>
 %     } 
 %   } 
 % } 
