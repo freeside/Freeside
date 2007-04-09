@@ -9,6 +9,11 @@
 %my $prepaid = $cgi->param('prepaid');
 %$prepaid =~ /^(\w*)$/;
 %$prepaid = $1;
+
+%#untaint payby
+%my $payby = $cgi->param('payby');
+%$payby =~ /^([A-Z]*)$/;
+%$payby = $1;
 %
 %my $error = '';
 %my $svc_acct = qsearchs( 'svc_acct', {'svcnum'=>$svcnum} );
@@ -24,12 +29,43 @@
 %unless ($error) {
 %
 %my ($amount, $seconds, $up, $down, $total) = (0, 0, 0, 0, 0);
-%$error = $cust_main->get_prepay($prepaid, \$amount, \$seconds, \$up, \$down, \$total)
-%      || $svc_acct->increment_seconds($seconds)
-%      || $svc_acct->increment_upbytes($up)
-%      || $svc_acct->increment_downbytes($down)
-%      || $svc_acct->increment_totalbytes($total)
-%      || $cust_main->insert_cust_pay_prepay( $amount, $prepaid );
+%  if ($payby eq 'PREP') {
+%    $error = $cust_main->get_prepay($prepaid, \$amount, \$seconds, \$up, \$down, \$total)
+%          || $svc_acct->increment_seconds($seconds)
+%          || $svc_acct->increment_upbytes($up)
+%          || $svc_acct->increment_downbytes($down)
+%          || $svc_acct->increment_totalbytes($total)
+%          || $cust_main->insert_cust_pay_prepay( $amount, $prepaid );
+%  }elsif ($payby =~ /^(CARD|DCRD|CHEK|DCHK|LECB|BILL|COMP)$/) {
+%    my $part_pkg = $svc_acct->cust_svc->cust_pkg->part_pkg;
+%    $amount = $part_pkg->option('recharge_amount', 1);
+%    my %rhash = map { $_ =~ /^recharge_(.*)$/; $1, $part_pkg->option($_, 1) }
+%      qw ( recharge_seconds recharge_upbytes recharge_downbytes
+%           recharge_totalbytes );
+%
+%    my $description = "Recharge";
+%    $description .= " $rhash{seconds}s" if $rhash{seconds};
+%    $description .= " $rhash{upbytes} up" if $rhash{upbytes};
+%    $description .= " $rhash{downbytes} down" if $rhash{downbytes};
+%    $description .= " $rhash{totalbytes} total" if $rhash{totalbytes};
+%
+%    $error = $cust_main->charge($amount, "Recharge " . $svc_acct->label,
+%                                $description, $part_pkg->taxclass);
+%
+%    $error ||= $svc_acct->recharge(\%rhash);
+%
+%    if ($conf->exists('backend-realtime')) {
+%      my $old_balance = $cust_main->balance;
+%      $error ||= $cust_main->bill;
+%      $cust_main->apply_payments_and_credits unless $error;
+%      my $bill_error = $cust_main->collect('realtime' => 1) unless $error;
+%      $error ||= "Failed to collect - $bill_error"
+%        if ($cust_main->balance > $old_balance && $cust_main->balance > 0
+%            && $payby ne 'BILL');
+%    }
+%  }else{
+$    $error "fatal error - unknown payby: $payby";
+%  }
 %}
 %
 %if ($error) {
@@ -37,10 +73,13 @@
 %  $dbh->rollback if $oldAutoCommit;
 %  print $cgi->redirect(popurl(2). "recharge_svc.html?". $cgi->query_string );
 %}
+%$dbh->commit or die $dbh->errstr if $oldAutoCommit;
 %
 <% header("Package recharged") %>
   <SCRIPT TYPE="text/javascript">
     window.top.location.reload();
   </SCRIPT>
   </BODY></HTML>
-
+<%init>
+my $conf = new FS::Conf;
+</%init>

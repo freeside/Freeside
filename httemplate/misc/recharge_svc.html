@@ -12,9 +12,26 @@
 <% "Recharge $svcnum: $label  -  $value" %>
 <% ntable("#cccccc", 2) %>
 
+<SCRIPT>
+  function toggle_prep(what) {
+    if (what.value == "PREP"){
+      what.form.prepaid.disabled = false;
+    }else{
+      what.form.prepaid.disabled = true;
+    }
+  }
+</SCRIPT>
+<TR>
+  <TD><INPUT TYPE="radio" NAME="payby" onchange="toggle_prep(this)" VALUE="PREP" <% $payby eq "PREP" ? 'checked' : '' %> <% $recharge_label ? '' : 'disabled' %>></TD>
+  <TD>Prepaid Card</TD>
+% if ($recharge_label) {
+  <TD><INPUT TYPE="radio" NAME="payby" onchange="toggle_prep(this)" VALUE="<% $cust_svc->cust_pkg->cust_main->payby %>" <% $payby eq "PREP" ? '' : 'checked' %>></TD>
+  <TD><% $recharge_label %></TD>
+% }
+</TR>
 <TR>
   <TD>Enter prepaid card: </TD>
-  <TD><INPUT TYPE="text" NAME="prepaid" VALUE="<% $prepaid %>"></TD>
+  <TD><INPUT TYPE="text" NAME="prepaid" VALUE="<% $prepaid %>" <% $payby eq "PREP" ? '' : 'disabled' %>></TD>
 </TR>
 
 </TABLE>
@@ -26,11 +43,16 @@
 </BODY>
 </HTML>
 
+<%once>
+my $conf = new FS::Conf;
+my $money_char = $conf->config('money_char') || '$';
+</%once>
 <%init>
-my($svcnum, $cust_svc, $label, $value, $prepaid); 
+my($svcnum, $cust_svc, $part_pkg, $label, $value, $prepaid, $amount, $payby); 
 if ( $cgi->param('error') ) {
   $svcnum        = $cgi->param('svcnum');
   $prepaid       = $cgi->param('prepaid');
+  $payby         = $cgi->param('payby');
 } elsif ( $cgi->param('svcnum') =~ /^(\d+)$/ ) {
   $svcnum  = $1;
 } else {
@@ -43,6 +65,21 @@ $cust_svc = qsearchs('cust_svc', {'svcnum' => $svcnum});
 die "No such service: $svcnum" unless $cust_svc;
 
 ($label, $value) = $cust_svc->label;
+
+$payby = $cust_svc->cust_pkg->cust_main->payby unless $payby;
+$part_pkg = $cust_svc->cust_pkg->part_pkg;
+$amount = $part_pkg->option('recharge_amount', 1) || 0;
+my $recharge_label = "Charge $money_char$amount for ";
+$recharge_label .= $part_pkg->option('recharge_seconds', 1) . 's '
+  if $part_pkg->option('recharge_seconds', 1);
+$recharge_label .= $part_pkg->option('recharge_upbytes', 1) . ' up '
+  if $part_pkg->option('recharge_upbytes', 1);
+$recharge_label .= $part_pkg->option('recharge_downbytes', 1) . ' down '
+  if $part_pkg->option('recharge_downbytes', 1);
+$recharge_label .= $part_pkg->option('recharge_totalbytes', 1) . ' total '
+  if $part_pkg->option('recharge_totalbytes', 1);
+$recharge_label = ''
+  unless ($recharge_label ne "Charge $money_char$amount for ");
 
 </%init>
 
