@@ -348,45 +348,10 @@ httemplate/docs/config.html
   },
 
   {
-    'key'         => 'apacheroot',
-    'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, add a <i>www_shellcommands</i> <a href="../browse/part_export.cgi">export</a> instead.  The directory containing Apache virtual hosts',
-    'type'        => 'text',
-  },
-
-  {
     'key'         => 'apacheip',
     'section'     => 'deprecated',
     'description' => '<b>DEPRECATED</b>, add an <i>apache</i> <a href="../browse/part_export.cgi">export</a> instead.  Used to be the current IP address to assign to new virtual hosts',
     'type'        => 'text',
-  },
-
-  {
-    'key'         => 'apachemachine',
-    'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, add a <i>www_shellcommands</i> <a href="../browse/part_export.cgi">export</a> instead.  A machine with the apacheroot directory and user home directories.  The existance of this file enables setup of virtual host directories, and, in conjunction with the `home\' configuration file, symlinks into user home directories.',
-    'type'        => 'text',
-  },
-
-  {
-    'key'         => 'apachemachines',
-    'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, add an <i>apache</i> <a href="../browse/part_export.cgi">export</a> instead.  Used to be Apache machines, one per line.  This enables export of `/etc/apache/vhosts.conf\', which can be included in your Apache configuration via the <a href="http://www.apache.org/docs/mod/core.html#include">Include</a> directive.',
-    'type'        => 'textarea',
-  },
-
-  {
-    'key'         => 'bindprimary',
-    'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, add a <i>bind</i> <a href="../browse/part_export.cgi">export</a> instead.  Your BIND primary nameserver.  This enables export of /var/named/named.conf and zone files into /var/named',
-    'type'        => 'text',
-  },
-
-  {
-    'key'         => 'bindsecondaries',
-    'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, add a <i>bind_slave</i> <a href="../browse/part_export.cgi">export</a> instead.  Your BIND secondary nameservers, one per line.  This enables export of /var/named/named.conf',
-    'type'        => 'textarea',
   },
 
   {
@@ -446,13 +411,6 @@ httemplate/docs/config.html
   },
 
   {
-    'key'         => 'bsdshellmachines',
-    'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, add a <i>bsdshell</i> <a href="../browse/part_export.cgi">export</a> instead.  Your BSD flavored shell (and mail) machines, one per line.  This enables export of `/etc/passwd\' and `/etc/master.passwd\'.',
-    'type'        => 'textarea',
-  },
-
-  {
     'key'         => 'countrydefault',
     'section'     => 'UI',
     'description' => 'Default two-letter country code (if not supplied, the default is `US\')',
@@ -468,20 +426,6 @@ httemplate/docs/config.html
                        '%m/%d/%Y' => 'MM/DD/YYYY',
 		       '%Y/%m/%d' => 'YYYY/MM/DD',
                      ],
-  },
-
-  {
-    'key'         => 'cyrus',
-    'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, add a <i>cyrus</i> <a href="../browse/part_export.cgi">export</a> instead.  This option used to integrate with <a href="http://asg.web.cmu.edu/cyrus/imapd/">Cyrus IMAP Server</a>, three lines: IMAP server, admin username, and admin password.  Cyrus::IMAP::Admin should be installed locally and the connection to the server secured.',
-    'type'        => 'textarea',
-  },
-
-  {
-    'key'         => 'cp_app',
-    'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, add a <i>cp</i> <a href="../browse/part_export.cgi">export</a> instead.  This option used to integrate with <a href="http://www.cp.net/">Critial Path Account Provisioning Protocol</a>, four lines: "host:port", username, password, and workgroup (for new users).',
-    'type'        => 'textarea',
   },
 
   {
@@ -509,20 +453,6 @@ httemplate/docs/config.html
     'key'         => 'deleterefunds',
     'section'     => 'billing',
     'description' => 'Enable deletion of unclosed refunds.  Be very careful!  Only delete refunds that were data-entry errors, not adjustments.',
-    'type'        => 'checkbox',
-  },
-
-  {
-    'key'         => 'unapplypayments',
-    'section'     => 'deprecated',
-    'description' => '<B>DEPRECATED</B>, now controlled by ACLs.  Used to enable "unapplication" of unclosed payments.',
-    'type'        => 'checkbox',
-  },
-
-  {
-    'key'         => 'unapplycredits',
-    'section'     => 'deprecated',
-    'description' => '<B>DEPRECATED</B>, now controlled by ACLs.  Used to nable "unapplication" of unclosed credits.',
     'type'        => 'checkbox',
   },
 
@@ -583,13 +513,6 @@ httemplate/docs/config.html
   },
   
   {
-    'key'         => 'erpcdmachines',
-    'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, ERPCD is no longer supported.  Used to be ERPCD authentication machines, one per line.  This enables export of `/usr/annex/acp_passwd\' and `/usr/annex/acp_dialup\'',
-    'type'        => 'textarea',
-  },
-
-  {
     'key'         => 'hidecancelledpackages',
     'section'     => 'UI',
     'description' => 'Prevent cancelled packages from showing up in listings (though they will still be in the database)',
@@ -608,34 +531,6 @@ httemplate/docs/config.html
     'section'     => 'required',
     'description' => 'For new users, prefixed to username to create a directory name.  Should have a leading but not a trailing slash.',
     'type'        => 'text',
-  },
-
-  {
-    'key'         => 'icradiusmachines',
-    'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, add an <i>sqlradius</i> <a href="../browse/part_export.cgi">export</a> instead.  This option used to enable radcheck and radreply table population - by default in the Freeside database, or in the database specified by the <a href="http://rootwood.haze.st/aspside/config/config-view.cgi#icradius_secrets">icradius_secrets</a> config option (the radcheck and radreply tables needs to be created manually).  You do not need to use MySQL for your Freeside database to export to an ICRADIUS/FreeRADIUS MySQL database with this option.  <blockquote><b>ADDITIONAL DEPRECATED FUNCTIONALITY</b> (instead use <a href="http://www.mysql.com/documentation/mysql/bychapter/manual_MySQL_Database_Administration.html#Replication">MySQL replication</a> or point icradius_secrets to the external database) - your <a href="ftp://ftp.cheapnet.net/pub/icradius">ICRADIUS</a> machines or <a href="http://www.freeradius.org/">FreeRADIUS</a> (with MySQL authentication) machines, one per line.  Machines listed in this file will have the radcheck table exported to them.  Each line should contain four items, separted by whitespace: machine name, MySQL database name, MySQL username, and MySQL password.  For example: <CODE>"radius.isp.tld&nbsp;radius_db&nbsp;radius_user&nbsp;passw0rd"</CODE></blockquote>',
-    'type'        => [qw( checkbox textarea )],
-  },
-
-  {
-    'key'         => 'icradius_mysqldest',
-    'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, add an <i>sqlradius</i> <a href="../browse/part_export.cgi">export</a> instead.  Used to be the destination directory for the MySQL databases, on the ICRADIUS/FreeRADIUS machines.  Defaults to "/usr/local/var/".',
-    'type'        => 'text',
-  },
-
-  {
-    'key'         => 'icradius_mysqlsource',
-    'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, add an <i>sqlradius</i> <a href="../browse/part_export.cgi">export</a> instead.  Used to be the source directory for for the MySQL radcheck table files, on the Freeside machine.  Defaults to "/usr/local/var/freeside".',
-    'type'        => 'text',
-  },
-
-  {
-    'key'         => 'icradius_secrets',
-    'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, add an <i>sqlradius</i> <a href="../browse/part_export.cgi">export</a> instead.  This option used to specify a database for ICRADIUS/FreeRADIUS export.  Three lines: DBI data source, username and password.',
-    'type'        => 'textarea',
   },
 
   {
@@ -740,13 +635,6 @@ httemplate/docs/config.html
   },
 
   {
-    'key'         => 'invoice_send_receipts',
-    'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, this used to send an invoice copy on payments and credits.  See the payment_receipt_email and XXXX instead.',
-    'type'        => 'checkbox',
-  },
-
-  {
     'key'         => 'payment_receipt_email',
     'section'     => 'billing',
     'description' => 'Template file for payment receipts.  Payment receipts are sent to the customer email invoice destination(s) when a payment is received.  See the <a href="http://search.cpan.org/~mjd/Text-Template/lib/Text/Template.pm">Text::Template</a> documentation for details on the template substitution language.  The following variables are available: <ul><li><code>$date</code> <li><code>$name</code> <li><code>$paynum</code> - Freeside payment number <li><code>$paid</code> - Amount of payment <li><code>$payby</code> - Payment type (Card, Check, Electronic check, etc.) <li><code>$payinfo</code> - Masked credit card number or check number <li><code>$balance</code> - New balance</ul>',
@@ -761,31 +649,10 @@ httemplate/docs/config.html
   },
 
   {
-    'key'         => 'maildisablecatchall',
-    'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, now the default.  Turning this option on used to disable the requirement that each virtual domain have a catch-all mailbox.',
-    'type'        => 'checkbox',
-  },
-
-  {
     'key'         => 'money_char',
     'section'     => '',
     'description' => 'Currency symbol - defaults to `$\'',
     'type'        => 'text',
-  },
-
-  {
-    'key'         => 'mxmachines',
-    'section'     => 'deprecated',
-    'description' => 'MX entries for new domains, weight and machine, one per line, with trailing `.\'',
-    'type'        => 'textarea',
-  },
-
-  {
-    'key'         => 'nsmachines',
-    'section'     => 'deprecated',
-    'description' => 'NS nameservers for new domains, one per line, with trailing `.\'',
-    'type'        => 'textarea',
   },
 
   {
@@ -798,27 +665,6 @@ httemplate/docs/config.html
                           { type=>'select',
                             select_enum=>{ map { $_=>$_ } qw(A CNAME MX NS TXT)} },
                           { type=> 'text' }, ],
-  },
-
-  {
-    'key'         => 'arecords',
-    'section'     => 'deprecated',
-    'description' => 'A list of tab seperated CNAME records to add automatically when creating a domain',
-    'type'        => 'textarea',
-  },
-
-  {
-    'key'         => 'cnamerecords',
-    'section'     => 'deprecated',
-    'description' => 'A list of tab seperated CNAME records to add automatically when creating a domain',
-    'type'        => 'textarea',
-  },
-
-  {
-    'key'         => 'nismachines',
-    'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>.  Your NIS master (not slave master) machines, one per line.  This enables export of `/etc/global/passwd\' and `/etc/global/shadow\'.',
-    'type'        => 'textarea',
   },
 
   {
@@ -850,20 +696,6 @@ httemplate/docs/config.html
   },
 
   {
-    'key'         => 'qmailmachines',
-    'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, add <i>qmail</i> and <i>shellcommands</i> <a href="../browse/part_export.cgi">exports</a> instead.  This option used to export `/var/qmail/control/virtualdomains\', `/var/qmail/control/recipientmap\', and `/var/qmail/control/rcpthosts\'.  Setting this option (even if empty) also turns on user `.qmail-extension\' file maintenance in conjunction with the <b>shellmachine</b> option.',
-    'type'        => [qw( checkbox textarea )],
-  },
-
-  {
-    'key'         => 'radiusmachines',
-    'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, add an <i>sqlradius</i> <a href="../browse/part_export.cgi">export</a> instead.  This option used to export to be: your RADIUS authentication machines, one per line.  This enables export of `/etc/raddb/users\'.',
-    'type'        => 'textarea',
-  },
-
-  {
     'key'         => 'referraldefault',
     'section'     => 'UI',
     'description' => 'Default referral, specified by refnum',
@@ -877,38 +709,9 @@ httemplate/docs/config.html
 #  },
 
   {
-    'key'         => 'report_template',
-    'section'     => 'deprecated',
-    'description' => 'Deprecated template file for reports.',
-    'type'        => 'textarea',
-  },
-
-
-  {
     'key'         => 'maxsearchrecordsperpage',
     'section'     => 'UI',
     'description' => 'If set, number of search records to return per page.',
-    'type'        => 'text',
-  },
-
-  {
-    'key'         => 'sendmailconfigpath',
-    'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, add a <i>sendmail</i> <a href="../browse/part_export.cgi">export</a> instead.  Used to be sendmail configuration file path.  Defaults to `/etc\'.  Many newer distributions use `/etc/mail\'.',
-    'type'        => 'text',
-  },
-
-  {
-    'key'         => 'sendmailmachines',
-    'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, add a <i>sendmail</i> <a href="../browse/part_export.cgi">export</a> instead.  Used to be sendmail machines, one per line.  This enables export of `/etc/virtusertable\' and `/etc/sendmail.cw\'.',
-    'type'        => 'textarea',
-  },
-
-  {
-    'key'         => 'sendmailrestart',
-    'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, add a <i>sendmail</i> <a href="../browse/part_export.cgi">export</a> instead.  Used to define the command which is run on sendmail machines after files are copied.',
     'type'        => 'text',
   },
 
@@ -925,42 +728,6 @@ httemplate/docs/config.html
     'description' => 'If defined, the command which is executed on the Freeside machine when a session ends.  The contents of the file are treated as a double-quoted perl string, with the following variables available: <code>$ip</code>, <code>$nasip</code> and <code>$nasfqdn</code>, which are the IP address of the starting session, and the IP address and fully-qualified domain name of the NAS this session is on.',
     'type'        => 'text',
   },
-
-  {
-    'key'         => 'shellmachine',
-    'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, add a <i>shellcommands</i> <a href="../browse/part_export.cgi">export</a> instead.  This option used to contain a single machine with user home directories mounted.  This enables home directory creation, renaming and archiving/deletion.  In conjunction with `qmailmachines\', it also enables `.qmail-extension\' file maintenance.',
-    'type'        => 'text',
-  },
-
-  {
-    'key'         => 'shellmachine-useradd',
-    'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, add a <i>shellcommands</i> <a href="../browse/part_export.cgi">export</a> instead.  This option used to contain command(s) to run on shellmachine when an account is created.  If the <b>shellmachine</b> option is set but this option is not, <code>useradd -d $dir -m -s $shell -u $uid $username</code> is the default.  If this option is set but empty, <code>cp -pr /etc/skel $dir; chown -R $uid.$gid $dir</code> is the default instead.  Otherwise the value is evaluated as a double-quoted perl string, with the following variables available: <code>$username</code>, <code>$uid</code>, <code>$gid</code>, <code>$dir</code>, and <code>$shell</code>.',
-    'type'        => [qw( checkbox text )],
-  },
-
-  {
-    'key'         => 'shellmachine-userdel',
-    'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, add a <i>shellcommands</i> <a href="../browse/part_export.cgi">export</a> instead.  This option used to contain command(s) to run on shellmachine when an account is deleted.  If the <b>shellmachine</b> option is set but this option is not, <code>userdel $username</code> is the default.  If this option is set but empty, <code>rm -rf $dir</code> is the default instead.  Otherwise the value is evaluated as a double-quoted perl string, with the following variables available: <code>$username</code> and <code>$dir</code>.',
-    'type'        => [qw( checkbox text )],
-  },
-
-  {
-    'key'         => 'shellmachine-usermod',
-    'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, add a <i>shellcommands</i> <a href="../browse/part_export.cgi">export</a> instead.  This option used to contain command(s) to run on shellmachine when an account is modified.  If the <b>shellmachine</b> option is set but this option is empty, <code>[ -d $old_dir ] &amp;&amp; mv $old_dir $new_dir || ( chmod u+t $old_dir; mkdir $new_dir; cd $old_dir; find . -depth -print | cpio -pdm $new_dir; chmod u-t $new_dir; chown -R $uid.$gid $new_dir; rm -rf $old_dir )</code> is the default.  Otherwise the contents of the file are treated as a double-quoted perl string, with the following variables available: <code>$old_dir</code>, <code>$new_dir</code>, <code>$uid</code> and <code>$gid</code>.',
-    #'type'        => [qw( checkbox text )],
-    'type'        => 'text',
-  },
-
-  {
-    'key'         => 'shellmachines',
-    'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, add a <i>sysvshell</i> <a href="../browse/part_export.cgi">export</a> instead.  Your Linux and System V flavored shell (and mail) machines, one per line.  This enables export of `/etc/passwd\' and `/etc/shadow\' files.',
-     'type'        => 'textarea',
- },
 
   {
     'key'         => 'shells',
@@ -1036,20 +803,6 @@ httemplate/docs/config.html
     'key'         => 'statedefault',
     'section'     => 'UI',
     'description' => 'Default state or province (if not supplied, the default is `CA\')',
-    'type'        => 'text',
-  },
-
-  {
-    'key'         => 'radiusprepend',
-    'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, real-time text radius now edits an existing file in place - just (turn off freeside-queued and) edit your RADIUS users file directly.  The contents used to be be prepended to the top of the RADIUS users file (text exports only).',
-    'type'        => 'textarea',
-  },
-
-  {
-    'key'         => 'textradiusprepend',
-    'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, use RADIUS check attributes instead.  The contents used to be prepended to the first line of a user\'s RADIUS entry in text exports.',
     'type'        => 'text',
   },
 
@@ -1138,36 +891,6 @@ httemplate/docs/config.html
   },
 
   {
-    'key'         => 'username_policy',
-    'section'     => 'deprecated',
-    'description' => 'This file controls the mechanism for preventing duplicate usernames in passwd/radius files exported from svc_accts.  This should be one of \'prepend domsvc\' \'append domsvc\' \'append domain\' or \'append @domain\'',
-    'type'        => 'select',
-    'select_enum' => [ 'prepend domsvc', 'append domsvc', 'append domain', 'append @domain' ],
-    #'type'        => 'text',
-  },
-
-  {
-    'key'         => 'vpopmailmachines',
-    'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, add a <i>vpopmail</i> <a href="../browse/part_export.cgi">export</a> instead.  This option used to contain your vpopmail pop toasters, one per line.  Each line is of the form "machinename vpopdir vpopuid vpopgid".  For example: <code>poptoaster.domain.tld /home/vpopmail 508 508</code>  Note: vpopuid and vpopgid are values taken from the vpopmail machine\'s /etc/passwd',
-    'type'        => 'textarea',
-  },
-
-  {
-    'key'         => 'vpopmailrestart',
-    'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, add a <i>vpopmail</i> <a href="../browse/part_export.cgi">export</a> instead.  This option used to define the shell commands to run on vpopmail machines after files are copied.  An example can be found in eg/vpopmailrestart of the source distribution.',
-    'type'        => 'textarea',
-  },
-
-  {
-    'key'         => 'safe-part_pkg',
-    'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, obsolete.  Used to validate package definition setup and recur expressions against a preset list.  Useful for webdemos, annoying to powerusers.',
-    'type'        => 'checkbox',
-  },
-
-  {
     'key'         => 'safe-part_bill_event',
     'section'     => 'UI',
     'description' => 'Validates invoice event expressions against a preset list.  Useful for webdemos, annoying to powerusers.',
@@ -1232,32 +955,11 @@ httemplate/docs/config.html
   },
 
   {
-    'key'         => 'selfservice_server-quiet',
-    'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, the self-service server no longer sends superfluous decline and cancel emails.  Used to disable decline and cancel emails generated by transactions initiated by the selfservice server.',
-    'type'        => 'checkbox',
-  },
-
-  {
-    'key'         => 'signup_server-quiet',
-    'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, the signup server is now part of the self-service server and no longer sends superfluous decline and cancel emails.  Used to disable decline and cancel emails generated by transactions initiated by the signup server.  Does not disable welcome emails.',
-    'type'        => 'checkbox',
-  },
-
-  {
     'key'         => 'signup_server-payby',
     'section'     => '',
     'description' => 'Acceptable payment types for the signup server',
     'type'        => 'selectmultiple',
     'select_enum' => [ qw(CARD DCRD CHEK DCHK LECB PREPAY BILL COMP) ],
-  },
-
-  {
-    'key'         => 'signup_server-email',
-    'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, this feature is no longer available.  See the ***fill me in*** report instead.  Used to contain a comma-separated list of email addresses to receive notification of signups via the signup server.',
-    'type'        => 'text',
   },
 
   {
@@ -1569,13 +1271,6 @@ httemplate/docs/config.html
   },
 
   {
-    'key'         => 'users-allow_comp',
-    'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, enable the <i>Complimentary customer</i> access right instead.  Was: Usernames (Freeside users, created with <a href="../docs/man/bin/freeside-adduser.html">freeside-adduser</a>) which can create complimentary customers, one per line.  If no usernames are entered, all users can create complimentary accounts.',
-    'type'        => 'textarea',
-  },
-
-  {
     'key'         => 'cvv-save',
     'section'     => 'billing',
     'description' => 'Save CVV2 information after the initial transaction for the selected credit card types.  Enabling this option may be in violation of your merchant agreement(s), so please check them carefully before enabling this option for any credit card types.',
@@ -1752,27 +1447,6 @@ httemplate/docs/config.html
     'section'     => 'required',
     'description' => 'Your company name',
     'type'        => 'text',
-  },
-
-  {
-    'key'         => 'echeck-void',
-    'section'     => 'deprecated',
-    'description' => '<B>DEPRECATED</B>, now controlled by ACLs.  Used to enable local-only voiding of echeck payments in addition to refunds against the payment gateway',
-    'type'        => 'checkbox',
-  },
-
-  {
-    'key'         => 'cc-void',
-    'section'     => 'deprecated',
-    'description' => '<B>DEPRECATED</B>, now controlled by ACLs.  Used to enable local-only voiding of credit card payments in addition to refunds against the payment gateway',
-    'type'        => 'checkbox',
-  },
-
-  {
-    'key'         => 'unvoid',
-    'section'     => 'deprecated',
-    'description' => '<B>DEPRECATED</B>, now controlled by ACLs.  Used to enable unvoiding of voided payments',
-    'type'        => 'checkbox',
   },
 
   {
