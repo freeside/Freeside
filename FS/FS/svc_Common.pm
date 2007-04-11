@@ -735,6 +735,17 @@ sub export {
 
 }
 
+=item overlimit
+
+Sets or retrieves overlimit date.
+
+=cut
+
+sub overlimit {
+  my $self = shift;
+  $self->cust_svc->overlimit(@_);
+}
+
 =item cancel
 
 Stub - returns false (no error) so derived classes don't need to define this

@@ -799,6 +799,19 @@ sub cust_svc {
 
 }
 
+=item overlimit [ SVCPART ]
+
+Returns the services for this package which have exceeded their
+usage limit as FS::cust_svc objects (see L<FS::cust_svc>).  If a svcpart
+is specified, return only the matching services.
+
+=cut
+
+sub overlimit {
+  my $self = shift;
+  grep { $_->overlimit } $self->cust_svc;
+}
+
 =item h_cust_svc END_TIMESTAMP [ START_TIMESTAMP ] 
 
 Returns historical services for this package created before END TIMESTAMP and

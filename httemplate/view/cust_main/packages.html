@@ -270,12 +270,15 @@ Current packages
           <% pkg_datestr($cust_pkg, 'setup', $conf) %>
         </TR>
 % } else { 
-
-
+% if (scalar($cust_pkg->overlimit)) {
+        <TR>
+          <TD COLSPAN=<%$colspan%>><FONT COLOR="#FFD000"><B>Overlimit</B></FONT>,&nbsp;<% $billed_or_prepaid %>&nbsp;<% myfreq($part_pkg) %></TD>
+        </TR>
+%}else{
         <TR>
           <TD COLSPAN=<%$colspan%>><FONT COLOR="#00CC00"><B>Active</B></FONT>,&nbsp;<% $billed_or_prepaid %>&nbsp;<% myfreq($part_pkg) %></TD>
         </TR>
-
+% } 
         <TR>
           <TD WIDTH="<%$width%>" ALIGN="right">Setup&nbsp;</TD>
           <% pkg_datestr($cust_pkg, 'setup', $conf) %>
@@ -344,6 +347,13 @@ Current packages
       <TR>
         <TD ALIGN="right" VALIGN="top"><% FS::UI::Web::svc_link($m, $part_svc, $cust_svc) %></TD>
         <TD STYLE="padding-bottom:0px"><B><% FS::UI::Web::svc_label_link($m, $part_svc, $cust_svc) %></B></TD>
+      </TR>
+
+      <TR>
+        <TD ALIGN="right" COLSPAN="2" VALIGN="top" STYLE="padding-bottom:1px;padding-top:0px"><FONT SIZE="-2" COLOR="#FFD000">
+
+            <% $cust_svc->overlimit ? "Overlimit: ". time2str('%b %o %Y' . ($conf->exists('cust_pkg-display_times') ? ' %l:%M %P' : ''), $cust_svc->overlimit) : '' %>
+          </FONT></TD>
       </TR>
 
       <TR>

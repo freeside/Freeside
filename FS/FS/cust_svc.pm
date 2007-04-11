@@ -68,6 +68,8 @@ The following fields are currently supported:
 
 =item svcpart - Service definition (see L<FS::part_svc>)
 
+=item overlimit - date the service exceeded its usage limit
+
 =back
 
 =head1 METHODS
@@ -154,6 +156,54 @@ sub cancel {
 
 }
 
+=item overlimit [ ACTION ]
+
+Retrieves or sets the overlimit date.  If ACTION is absent, return
+the present value of overlimit.  If ACTION is present, it can
+have the value 'suspend' or 'unsuspend'.  In the case of 'suspend' overlimit
+is set to the current time if it is not already set.  The 'unsuspend' value
+causes the time to be cleared.  
+
+If there is an error on setting, returns the error, otherwise returns false.
+
+=cut
+
+sub overlimit {
+  my $self = shift;
+  my $action = shift or return $self->getfield('overlimit');
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE'; 
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  if ( $action eq 'suspend' ) {
+    $self->setfield('overlimit', time) unless $self->getfield('overlimit');
+  }elsif ( $action eq 'unsuspend' ) {
+    $self->setfield('overlimit', '');
+  }else{
+    die "unexpected action value: $action";
+  }
+
+  local $ignore_quantity = 1;
+  my $error = $self->replace;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return "Error setting overlimit: $error";
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  ''; #no errors
+
+}
+
 =item replace OLD_RECORD
 
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
@@ -175,6 +225,8 @@ sub replace {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
+  $old = $new->replace_old unless defined($old);
+  
   if ( $new->svcpart != $old->svcpart ) {
     my $svc_x = $new->svc_x;
     my $new_svc_x = ref($svc_x)->new({$svc_x->hash, svcpart=>$new->svcpart });
@@ -212,6 +264,7 @@ sub check {
     $self->ut_numbern('svcnum')
     || $self->ut_numbern('pkgnum')
     || $self->ut_number('svcpart')
+    || $self->ut_numbern('overlimit')
   ;
   return $error if $error;
 
