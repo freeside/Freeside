@@ -128,7 +128,7 @@ sub virtual_fields {
     my %flags = map { $_->columnname, $_->columnflag } (
         qsearch ('part_svc_column', { svcpart => $svcpart } )
       );
-    return grep { not ($flags{$_} eq 'X') } @vfields;
+    return grep { not ( defined($flags{$_}) && $flags{$_} eq 'X') } @vfields;
   } else { # Case 3
     return @vfields;
   } 
