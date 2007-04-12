@@ -245,17 +245,19 @@ Service #<B><% $svcnum %></B>
     </TD>
   </TR>
 % } 
-% my %ulabel = ( seconds    => 'Seconds',
+% my %ulabel = ( seconds    => 'Time',
 %                upbytes    => 'Upload bytes',
 %                downbytes  => 'Download bytes',
 %                totalbytes => 'Total bytes',
 %              );
 % foreach my $uf ( keys %ulabel ) {
 %   my $tf = $uf . "_threshold";
-%   if ( $svc_acct->$tf ne '' ) {
+%   if ( $svc_acct->$uf ne '' ) {
+%   my $v = $uf eq 'seconds' ? duration_exact($svc_acct->$uf)
+%                            : FS::UI::Web::display_bytecount($svc_acct->$uf);
     <TR>
       <TD ALIGN="right"><% $ulabel{$uf} %> remaining</TD>
-      <TD BGCOLOR="#ffffff"><% $svc_acct->$uf %></TD>
+      <TD BGCOLOR="#ffffff"><% $v %></TD>
     </TR>
 
 %   }
@@ -286,13 +288,6 @@ Service #<B><% $svcnum %></B>
   <TD ALIGN="right">RADIUS groups</TD>
   <TD BGCOLOR="#ffffff"><% join('<BR>', $svc_acct->radius_groups) %></TD>
 </TR>
-% if ( $svc_acct->seconds =~ /^\d+$/ ) { 
-
-  <TR>
-    <TD ALIGN="right">Prepaid time</TD>
-    <TD BGCOLOR="#ffffff"><% duration_exact($svc_acct->seconds) %></TD>
-  </TR>
-% } 
 %
 %# Can this be abstracted further?  Maybe a library function like
 %# widget('HTML', 'view', $svc_acct) ?  It would definitely make UI 

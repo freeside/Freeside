@@ -189,7 +189,7 @@ push @fields, sub { shift->plan || '(legacy)' },
                                 { 'data'  => $1,
                                   'align' => 'right',
                                 },
-                                { 'data'  => $2,
+                                { 'data'  => $part_pkg->format($1,$2),
                                   'align' => 'left',
                                 },
                               ];

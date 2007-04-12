@@ -145,9 +145,11 @@ sub insert {
     my $flag = $self->getfield($svcdb.'__'.$field.'_flag');
     #if ( uc($flag) =~ /^([DFMAX])$/ ) {
     if ( uc($flag) =~ /^([A-Z])$/ ) { #part_svc_column will test it
+      my $parser = FS::part_svc->svc_table_fields($svcdb)->{$field}->{parse}
+                   || sub { shift };
       $part_svc_column->setfield('columnflag', $1);
       $part_svc_column->setfield('columnvalue',
-        $self->getfield($svcdb.'__'.$field)
+        &$parser($self->getfield($svcdb.'__'.$field))
       );
       if ( $previous ) {
         $error = $part_svc_column->replace($previous);
@@ -264,9 +266,11 @@ sub replace {
       my $flag = $new->getfield($svcdb.'__'.$field.'_flag');
       #if ( uc($flag) =~ /^([DFMAX])$/ ) {
       if ( uc($flag) =~ /^([A-Z])$/ ) { #part_svc_column will test it
+        my $parser = FS::part_svc->svc_table_fields($svcdb)->{$field}->{parse}
+                     || sub { shift };
         $part_svc_column->setfield('columnflag', $1);
         $part_svc_column->setfield('columnvalue',
-          $new->getfield($svcdb.'__'.$field)
+          &$parser($new->getfield($svcdb.'__'.$field))
         );
         if ( $previous ) {
           $error = $part_svc_column->replace($previous);

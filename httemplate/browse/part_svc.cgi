@@ -135,6 +135,9 @@ function part_export_areyousure(href) {
 %   
 %     my($n1)='';
 %     foreach my $field ( @fields ) {
+%       my $formatter =
+%            FS::part_svc->svc_table_fields($svcdb)->{$field}->{format}
+%            || sub { shift };
 %       my $flag = $part_svc->part_svc_column($field)->columnflag;
 %
 
@@ -143,7 +146,7 @@ function part_export_areyousure(href) {
      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $flag{$flag} %></TD>
 
      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
-% my $value = $part_svc->part_svc_column($field)->columnvalue;
+% my $value = &$formatter($part_svc->part_svc_column($field)->columnvalue);
 %          if ( $flag =~ /^[MA]$/ ) { 
 %            $inventory_class{$value}
 %              ||= qsearchs('inventory_class', { 'classnum' => $value } );

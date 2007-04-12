@@ -1755,6 +1755,20 @@ httemplate/docs/config.html
     'type' => 'checkbox',
   },
 
+  {
+    'key'         => 'datavolume-forcemegabytes',
+    'section'     => 'UI',
+    'description' => 'All data volumes are expressed in megabytes',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'datavolume-significantdigits',
+    'section'     => 'UI',
+    'description' => 'number of significant digits to use to represent data volumes',
+    'type'        => 'text',
+  },
+
 );
 
 1;

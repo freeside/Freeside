@@ -323,10 +323,12 @@ Reseller information
 %
 %      $html .= '<TR><TD ALIGN="right">'. $href->{$field}{'name'}. '</TD><TD>';
 %
+%      my $format = sub { shift };
+%      $format = $href->{$field}{'format'} if exists($href->{$field}{'format'});
 %      if ( ! exists($href->{$field}{'type'}) ) {
 %        $html .= qq!<INPUT TYPE="text" NAME="$field" VALUE="!.
 %                 ( exists($plandata{$field})
-%                     ? $plandata{$field}
+%                     ? &$format($plandata{$field})
 %                     : $href->{$field}{'default'} ).
 %                 qq!">!;
 %      } elsif ( $href->{$field}{'type'} eq 'checkbox' ) {

@@ -817,6 +817,39 @@ sub plan_info {
   \%plans;
 }
 
+=item format OPTION DATA
+
+Returns data formatted according to the function 'format' described
+in the plan info.  Returns DATA if no such function exists.
+
+=cut
+
+sub format {
+  my ($self, $option, $data) = (shift, shift, shift);
+  if (exists($plans{$self->plan}->{fields}->{$option}{format})) {
+    &{$plans{$self->plan}->{fields}->{$option}{format}}($data);
+  }else{
+    $data;
+  }
+}
+
+=item prase OPTION DATA
+
+Returns data parsed according to the function 'parse' described
+in the plan info.  Returns DATA if no such function exists.
+
+=cut
+
+sub parse {
+  my ($self, $option, $data) = (shift, shift, shift);
+  if (exists($plans{$self->plan}->{fields}->{$option}{parse})) {
+    &{$plans{$self->plan}->{fields}->{$option}{parse}}($data);
+  }else{
+    $data;
+  }
+}
+
+
 =back
 
 =head1 NEW PLAN CLASSES

@@ -6,11 +6,17 @@
 %
 %my $old = qsearchs('part_pkg',{'pkgpart'=>$pkgpart}) if $pkgpart;
 %
+%tie my %plans, 'Tie::IxHash', %{ FS::part_pkg::plan_info() };
+%my $href = $plans{$cgi->param('plan')}->{'fields'};
+%
 %#fixup plandata
 %my $plandata = $cgi->param('plandata');
 %my @plandata = split(',', $plandata);
 %$cgi->param('plandata', 
-%  join('', map { "$_=". join(', ', $cgi->param($_)). "\n" } @plandata )
+%  join('', map { my $parser = sub { shift };
+%                 $parser = $href->{$_}{parse} if exists($href->{$_}{parse});
+%                 "$_=". join(', ', &$parser($cgi->param($_))). "\n"
+%               } @plandata )
 %);
 %
 %foreach (qw( setuptax recurtax disabled )) {

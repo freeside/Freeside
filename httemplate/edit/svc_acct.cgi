@@ -386,27 +386,27 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
   </TR>
 % } 
 %
-% if ( $curuser->access_right('Edit usage') ) { 
-%   my %label = ( seconds => 'Seconds',
-%                 upbytes => 'Upload bytes',
-%                 downbytes => 'Download bytes',
-%                 totalbytes => 'Total bytes',
-%               );
-%   foreach my $uf (keys %label) {
-%     my $tf = $uf . "_threshold";
-%     if ( $svc_acct->$tf ne '' ) { 
-
+% my %label = ( seconds => 'Time',
+%               upbytes => 'Upload bytes',
+%               downbytes => 'Download bytes',
+%               totalbytes => 'Total bytes',
+%             );
+% foreach my $uf (keys %label) {
+%   my $tf = $uf . "_threshold";
+%   if ( $curuser->access_right('Edit usage') ) { 
   <TR>
     <TD ALIGN="right"><% $label{$uf} %> remaining</TD>
-    <TD><INPUT TYPE="text" NAME="<% $uf %>" VALUE="<% $svc_acct->$uf %>"></TD>
+    <TD><INPUT TYPE="text" NAME="<% $uf %>" VALUE="<% $svc_acct->$uf %>">(blank disables)</TD>
   </TR>
   <TR>
     <TD ALIGN="right"><% $label{$uf} %> threshold</TD>
-    <TD><INPUT TYPE="text" NAME="<% $tf %>" VALUE="<% $svc_acct->$tf %>">(blank or zero disables <% lc($label{$uf}) %> remaining)</TD>
+    <TD><INPUT TYPE="text" NAME="<% $tf %>" VALUE="<% $svc_acct->$tf %>">(blank disables)</TD>
   </TR>
-%     } 
+%   }else{
+      <INPUT TYPE="hidden" NAME="<% $uf %>" VALUE="<% $svc_acct->$uf %>">
+      <INPUT TYPE="hidden" NAME="<% $tf %>" VALUE="<% $svc_acct->$tf %>">
 %   } 
-% } 
+% }
 %
 %foreach my $r ( grep { /^r(adius|[cr])_/ } fields('svc_acct') ) {
 %  $r =~ /^^r(adius|[cr])_(.+)$/ or next; #?

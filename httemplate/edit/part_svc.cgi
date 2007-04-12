@@ -166,12 +166,13 @@ that field.
 %
 %      foreach my $field (@fields) {
 %
-%        my $part_svc_column = $part_svc->part_svc_column($field);
-%        my $value = $part_svc_column->columnvalue;
-%        my $flag = $part_svc_column->columnflag;
 %        #my $def = $defs{$layer}{$field};
 %        my $def = FS::part_svc->svc_table_fields($layer)->{$field};
 %        my $label = $def->{'def_label'} || $def->{'label'};
+%        my $formatter = $def->{'format'} || sub { shift };
+%        my $part_svc_column = $part_svc->part_svc_column($field);
+%        my $value = &$formatter($part_svc_column->columnvalue);
+%        my $flag = $part_svc_column->columnflag;
 %
 %        if ( $bgcolor eq $bgcolor1 ) {
 %          $bgcolor = $bgcolor2;
