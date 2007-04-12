@@ -28,7 +28,8 @@
 %
 %unless ($error) {
 %
-%my ($amount, $seconds, $up, $down, $total) = (0, 0, 0, 0, 0);
+%  my ($amount, $seconds, $up, $down, $total) = (0, 0, 0, 0, 0);
+%  #should probably use payby.pm but whatever
 %  if ($payby eq 'PREP') {
 %    $error = $cust_main->get_prepay($prepaid, \$amount, \$seconds, \$up, \$down, \$total)
 %          || $svc_acct->increment_seconds($seconds)
@@ -36,7 +37,7 @@
 %          || $svc_acct->increment_downbytes($down)
 %          || $svc_acct->increment_totalbytes($total)
 %          || $cust_main->insert_cust_pay_prepay( $amount, $prepaid );
-%  }elsif ($payby =~ /^(CARD|DCRD|CHEK|DCHK|LECB|BILL|COMP)$/) {
+%  } elsif ( $payby =~ /^(CARD|DCRD|CHEK|DCHK|LECB|BILL|COMP)$/ ) {
 %    my $part_pkg = $svc_acct->cust_svc->cust_pkg->part_pkg;
 %    $amount = $part_pkg->option('recharge_amount', 1);
 %    my %rhash = map { $_ =~ /^recharge_(.*)$/; $1, $part_pkg->option($_, 1) }
@@ -54,17 +55,16 @@
 %
 %    $error ||= $svc_acct->recharge(\%rhash);
 %
-%    if ($conf->exists('backend-realtime')) {
-%      my $old_balance = $cust_main->balance;
-%      $error ||= $cust_main->bill;
-%      $cust_main->apply_payments_and_credits unless $error;
-%      my $bill_error = $cust_main->collect('realtime' => 1) unless $error;
-%      $error ||= "Failed to collect - $bill_error"
-%        if ($cust_main->balance > $old_balance && $cust_main->balance > 0
-%            && $payby ne 'BILL');
-%    }
-%  }else{
-$    $error "fatal error - unknown payby: $payby";
+%    my $old_balance = $cust_main->balance;
+%    $error ||= $cust_main->bill;
+%    $cust_main->apply_payments_and_credits unless $error;
+%    my $bill_error = $cust_main->collect('realtime' => 1) unless $error;
+%    $error ||= "Failed to collect - $bill_error"
+%      if $cust_main->balance > $old_balance && $cust_main->balance > 0
+%          && $payby ne 'BILL';
+%
+%  } else {
+%    $error = "fatal error - unknown payby: $payby";
 %  }
 %}
 %
