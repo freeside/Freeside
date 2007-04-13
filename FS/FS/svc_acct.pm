@@ -1637,7 +1637,7 @@ sub _op_usage {
 
   if ( &{$op2condition{$op}}($self, $column, $amount) ) {
     foreach my $part_export ( $self->cust_svc->part_svc->part_export ) {
-      if ($part_export->option('overlimit_groups'), 1) {
+      if ($part_export->option('overlimit_groups')) {
         my ($new,$old);
         my $other = new FS::svc_acct $self->hashref;
         my $groups = &{ $self->_fieldhandlers->{'usergroup'} }
@@ -1760,7 +1760,7 @@ sub set_usage {
     my $error = $self->overlimit('unsuspend');
 
     foreach my $part_export ( $self->cust_svc->part_svc->part_export ) {
-      if ($part_export->option('overlimit_groups'), 1) {
+      if ($part_export->option('overlimit_groups')) {
         my $old = new FS::svc_acct $self->hashref;
         my $groups = &{ $self->_fieldhandlers->{'usergroup'} }
                        ($self, $part_export->option('overlimit_groups'));
