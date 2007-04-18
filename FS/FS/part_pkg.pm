@@ -833,7 +833,7 @@ sub format {
   }
 }
 
-=item prase OPTION DATA
+=item parse OPTION DATA
 
 Returns data parsed according to the function 'parse' described
 in the plan info.  Returns DATA if no such function exists.
