@@ -3,6 +3,7 @@ package FS::part_pkg::flat;
 use strict;
 use vars qw(@ISA %info);
 #use FS::Record qw(qsearch);
+use FS::UI::Web;
 use FS::part_pkg;
 
 @ISA = qw(FS::part_pkg);

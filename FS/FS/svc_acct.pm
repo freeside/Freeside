@@ -24,6 +24,7 @@ use FS::UID qw( datasrc );
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs fields dbh dbdef );
 use FS::Msgcat qw(gettext);
+use FS::UI::Web; #for {display,parse}_bytecount... perhaps not the best place?
 use FS::svc_Common;
 use FS::cust_svc;
 use FS::part_svc;
