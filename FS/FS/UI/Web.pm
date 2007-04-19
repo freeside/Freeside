@@ -1,14 +1,18 @@
 package FS::UI::Web;
 
 use strict;
-use vars qw($DEBUG $me);
+use vars qw($DEBUG @ISA @EXPORT_OK $me);
+use Exporter;
+use Number::Format;
 use FS::Conf;
 use FS::Record qw(dbdef);
-use Number::Format;
 
 #use vars qw(@ISA);
 #use FS::UI
 #@ISA = qw( FS::UI );
+@ISA = qw( Exporter );
+
+@EXPORT_OK = qw( svc_url );
 
 $DEBUG = 0;
 $me = '[FS::UID::Web]';
@@ -114,6 +118,7 @@ sub svc_url {
     $url .= 'svcnum=' if $query =~ /^\d+(;|$)/ or $query eq '';
   }
 
+  import FS::CGI 'rooturl'; #WTF!  why is this necessary
   my $return = rooturl(). "$opt{action}/$url$query";
 
   $return = qq!<A HREF="$return">! if $opt{ahref};

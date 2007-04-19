@@ -100,7 +100,7 @@ function part_export_areyousure(href) {
       <% $svcdb %></TD>
 
     <TD ROWSPAN=<% $rowspan %> CLASS="grid" BGCOLOR="<% $bgcolor %>">
-      <FONT COLOR="#00CC00"><B><% $num_active_cust_svc{$part_svc->svcpart} %></B></FONT>&nbsp;<% $num_active_cust_svc{$part_svc->svcpart} ? FS::UI::Web::svc_url( 'ahref' => 1, 'm' => $m, 'action' => 'search', 'part_svc' => $part_svc, 'query' => "svcpart=". $part_svc->svcpart ) : '<A NAME="zero">' %>active</A>
+      <FONT COLOR="#00CC00"><B><% $num_active_cust_svc{$part_svc->svcpart} %></B></FONT>&nbsp;<% $num_active_cust_svc{$part_svc->svcpart} ? svc_url( 'ahref' => 1, 'm' => $m, 'action' => 'search', 'part_svc' => $part_svc, 'query' => "svcpart=". $part_svc->svcpart ) : '<A NAME="zero">' %>active</A>
 
 % if ( $num_active_cust_svc{$part_svc->svcpart} ) { 
         <BR><FONT SIZE="-1">[ <A HREF="<%$p%>edit/bulk-cust_svc.html?svcpart=<% $part_svc->svcpart %>">change</A> ]</FONT>

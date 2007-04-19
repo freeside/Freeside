@@ -127,7 +127,7 @@ sub handler
       use FS::Conf;
       use FS::CGI qw(header menubar popurl rooturl table itable ntable idiot
                      eidiot small_custview myexit http_header);
-      use FS::UI::Web;
+      use FS::UI::Web qw(svc_url);
       use FS::Msgcat qw(gettext geterror);
       use FS::Misc qw( send_email send_fax states_hash counties state_label );
       use FS::Report::Table::Monthly;

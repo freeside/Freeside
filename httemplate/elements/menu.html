@@ -120,14 +120,14 @@ foreach my $svcdb ( FS::part_svc->svc_tables() ) {
       if scalar(@$sorts) > 1;
 
     $report_svc{$title} =
-      [ FS::UI::Web::svc_url( %svc_url, 'query' => "magic=all;sortby=$sort" ),
+      [ svc_url( %svc_url, 'query' => "magic=all;sortby=$sort" ),
         '',
       ];
   }
 
   if ( $curuser->access_right('View/link unlinked services') ) {
     $report_svc{"Unlinked $lcname"} = 
-      [ FS::UI::Web::svc_url( %svc_url, 'query' => "magic=unlinked;sortby=". $sorts->[0] ),
+      [ svc_url( %svc_url, 'query' => "magic=unlinked;sortby=". $sorts->[0] ),
         "Pre-Freeside $lcname without a customer record",
       ];
   }

@@ -115,7 +115,7 @@ my $count_query = "SELECT COUNT(*) FROM cust_svc $addl_from $extra_sql";
 
 my $link = sub {
   my $cust_svc = shift;
-  my $url = FS::UI::Web::svc_url(
+  my $url = svc_url(
     'm'        => $m,
     'action'   => 'view',
     #'part_svc' => $cust_svc->part_svc,

@@ -440,12 +440,12 @@ Current packages
 %  ) {
 %    $url = "${p}edit/process/". $part_svc->svcdb. ".cgi?$pkgnum_svcpart";
 %  } else {
-%    $url = FS::UI::Web::svc_url(
-%                                 'm'        => $m,
-%                                 'action'   => 'edit',
-%                                 'part_svc' => $part_svc, 
-%                                 'query'    => $pkgnum_svcpart,
-%                               );
+%    $url = svc_url(
+%                    'm'        => $m,
+%                    'action'   => 'edit',
+%                    'part_svc' => $part_svc, 
+%                    'query'    => $pkgnum_svcpart,
+%                  );
 %    #$url = "${p}edit/$svcpart->{svcdb}.cgi?$pkgnum_svcpart";
 %  }
 %
@@ -522,7 +522,7 @@ Current packages
 %sub pkg_link {
 %  my($action, $label, $cust_pkg) = @_;
 %  return '' unless $cust_pkg;
-%  qq!<a href="${p}$action.cgi?!. $cust_pkg->pkgnum. qq!">$label</a>!;
+%  qq!<a href="$p$action.cgi?!. $cust_pkg->pkgnum. qq!">$label</a>!;
 %}
 %
 %sub pkg_popup_link {
