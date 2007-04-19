@@ -294,7 +294,7 @@ sub getsecrets {
 
   ($datasrc, $db_user, $db_pass) = 
     map { /^(.*)$/; $1 } readline(new IO::File "$conf_dir/$secrets")
-      or die "Can't get secrets: $secrets: $!\n";
+      or die "Can't get secrets: $conf_dir/$secrets: $!\n";
   undef $driver_name;
   ($datasrc, $db_user, $db_pass);
 }
