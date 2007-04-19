@@ -3,7 +3,6 @@ package FS::UI::Web;
 use strict;
 use vars qw($DEBUG @ISA @EXPORT_OK $me);
 use Exporter;
-use Number::Format;
 use FS::Conf;
 use FS::Record qw(dbdef);
 
