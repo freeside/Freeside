@@ -20,17 +20,17 @@
                        },
                    sub { my $c = shift;
                          $c->upbytes 
-                           ? FS::UI::Web::bytecount_unexact($c->upbytes)
+                           ? FS::UI::bytecount::bytecount_unexact($c->upbytes)
                            : ''
                        },
                    sub { my $c = shift;
                          $c->downbytes
-                           ? FS::UI::Web::bytecount_unexact($c->downbytes)
+                           ? FS::UI::bytecount::bytecount_unexact($c->downbytes)
                            : ''
                        },
                    sub { my $c = shift;
                          $c->totalbytes
-                           ? FS::UI::Web::bytecount_unexact($c->totalbytes)
+                           ? FS::UI::bytecount::bytecount_unexact($c->totalbytes)
                            : ''
                        },
                    sub { my $agent = shift->agent;

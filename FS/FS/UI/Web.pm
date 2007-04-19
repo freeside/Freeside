@@ -181,42 +181,6 @@ sub parse_lt_gt {
 
 }
 
-sub bytecount_unexact {
-  my $bc = shift;
-  return("$bc bytes")
-    if ($bc < 1000);
-  return(sprintf("%.2f Kbytes", $bc/1000))
-    if ($bc < 1000000);
-  return(sprintf("%.2f Mbytes", $bc/1000000))
-    if ($bc < 1000000000);
-  return(sprintf("%.2f Gbytes", $bc/1000000000));
-}
-
-sub parse_bytecount {
-  my $bc = shift;
-  return $bc if (($bc =~ tr/.//) > 1);
-  $bc =~ /^\s*([\d.]*)\s*([kKmMgGtT]?)[bB]?\s*$/ or return $bc;
-  my $base = $1;
-  return $bc unless length $base;
-  my $exponent = index ' kmgt', lc($2);
-  return $bc if ($exponent < 0 && $2);
-  $exponent = 0 if ($exponent < 0);
-  return $base * 1024 ** $exponent;
-}
-
-sub display_bytecount {
-  my $bc = shift;
-  return $bc unless ($bc =~ /^(\d+)$/);
-  my $conf = new FS::Conf;
-  my $f = new Number::Format;
-  my $precision = $conf->exists('datavolume-significantdigits')
-                ? $conf->config('datavolume-significantdigits')
-                : 3;
-  my $unit = $conf->exists('datavolume-forcemegabytes') ? 'M' : 'A';
-
-  return $f->format_bytes($bc, precision => $precision, unit => $unit);
-}
-
 ###
 # cust_main report subroutines
 ###

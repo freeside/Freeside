@@ -25,7 +25,7 @@
 %
 %#unmunge bytecounts
 %foreach (map { $_,$_."_threshold" } qw( upbytes downbytes totalbytes )) {
-%  $cgi->param($_, FS::UI::Web::parse_bytecount($cgi->param($_)) );
+%  $cgi->param($_, FS::UI::bytecount::parse_bytecount($cgi->param($_)) );
 %}
 %
 %my %hash = $svcnum ? $old->hash : ();

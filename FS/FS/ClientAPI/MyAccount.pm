@@ -9,6 +9,7 @@ use Business::CreditCard;
 use Time::Duration;
 use FS::CGI qw(small_custview); #doh
 use FS::UI::Web;
+use FS::UI::bytecount;
 use FS::Conf;
 use FS::Record qw(qsearch qsearchs);
 use FS::Msgcat qw(gettext);
@@ -402,11 +403,11 @@ sub process_prepay {
            'seconds'   => $seconds,
            'duration'  => duration_exact($seconds),
            'upbytes'   => $upbytes,
-           'upload'    => FS::UI::Web::bytecount_unexact($upbytes),
+           'upload'    => FS::UI::bytecount::bytecount_unexact($upbytes),
            'downbytes' => $downbytes,
-           'download'  => FS::UI::Web::bytecount_unexact($downbytes),
+           'download'  => FS::UI::bytecount::bytecount_unexact($downbytes),
            'totalbytes'=> $totalbytes,
-           'totalload' => FS::UI::Web::bytecount_unexact($totalbytes),
+           'totalload' => FS::UI::bytecount::bytecount_unexact($totalbytes),
          };
 
 }
