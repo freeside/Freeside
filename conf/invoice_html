@@ -26,13 +26,19 @@
             <td>
             </td>
             <td align="left">
-              Invoice&nbsp;number<BR>
+              Invoice&nbsp;#<BR>
               <B><%= $invnum %></B>
+            </td>
+            <td>
+            </td>
+            <td align="center">
+              Customer #<BR>
+              <B><%= $custnum %></B>
             </td>
           </tr>
           <tr>
             <th>&nbsp;</th>
-            <th colspan=1 align="center">
+            <th colspan=3 align="center">
               <FONT SIZE="+3">I</FONT><FONT SIZE="+2">NVOICE</FONT>
             </th>
             <th>&nbsp;</th>

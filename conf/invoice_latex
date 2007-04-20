@@ -101,10 +101,10 @@
 \fancyhead[R]{
   \ifthenelse{\equal{\thepage}{1}}
   { % First page
-    \begin{tabular}{rcl}
-    Invoice date & & Invoice number \\
+    \begin{tabular}{ccc}
+    Invoice date & Invoice \#& Customer\#\\
     \vspace{0.2cm}
-    \textbf{[@-- $date --@]} & & \textbf{[@-- $invnum --@]} \\\hline
+    \textbf{[@-- $date --@]} & \textbf{[@-- $invnum --@]} & \textbf{[@-- $custnum --@]} \\\hline
     \rule{0pt}{5ex} &~~ \huge{\textsc{Invoice}} & \\
     \vspace{-0.2cm}
      & & \\\hline
@@ -112,9 +112,9 @@
   }
   { % ... pages
     \small{
-      \begin{tabular}{ll}
-      Invoice date & Invoice number\\
-      \textbf{[@-- $date --@]} & \textbf{[@-- $invnum --@]}\\
+      \begin{tabular}{lll}
+      Invoice date & Invoice \#& Customer\#\\
+      \textbf{[@-- $date --@]} & \textbf{[@-- $invnum --@]} & \textbf{[@-- $custnum --@]}\\
       \end{tabular}
     }
   }
