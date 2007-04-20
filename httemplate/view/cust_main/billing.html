@@ -81,12 +81,16 @@ Billing information
 <TR>
   <TD ALIGN="right">Account number</TD>
   <TD BGCOLOR="#ffffff"><% 'x'x(length($account)-2). substr($account,(length($account)-2)) %></TD>
+</TR>
+<TR>
   <TD ALIGN="right">Account type</TD>
   <TD BGCOLOR="#ffffff"><% $cust_main->paytype %></TD>
 </TR>
 <TR>
   <TD ALIGN="right">Bank name</TD>
   <TD BGCOLOR="#ffffff"><% $cust_main->payname %></TD>
+</TR>
+<TR>
   <TD ALIGN="right"><% $paystate_label %></TD>
   <TD BGCOLOR="#ffffff"><% $cust_main->paystate || '&nbsp;&nbsp;&nbsp;' %></TD>
 </TR>
