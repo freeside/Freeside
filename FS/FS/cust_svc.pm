@@ -603,8 +603,7 @@ sub get_session_history {
 Returns (and SELECTs "FOR UPDATE") all unprocessed (freesidestatus NULL) CDR
 objects (see L<FS::cdr>) associated with this service.
 
-Currently CDRs are associated with svc_acct services via a DID in the
-username.  This part is rather tenative and still subject to change...
+CDRs are associated with svc_phone services via svc_phone.phonenum
 
 =cut
 
