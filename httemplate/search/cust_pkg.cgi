@@ -225,11 +225,11 @@ foreach my $field (qw( setup last_bill bill susp expire cancel )) {
        or $disable{$cgi->param('status')}->{$field};
 
   push @where,
-    "$field IS NOT NULL",
-    "$field >= $beginning",
-    "$field <= $ending";
+    "cust_pkg.$field IS NOT NULL",
+    "cust_pkg.$field >= $beginning",
+    "cust_pkg.$field <= $ending";
 
-  $orderby ||= "ORDER BY $field";
+  $orderby ||= "ORDER BY cust_pkg.$field";
 
 }
 
