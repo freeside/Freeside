@@ -225,6 +225,16 @@ function OLiframeContent(src, width, height, name) {
     Remember this information
   </TD>
 </TR><TR>
+% if ($conf->exists("batch-enable")) {
+  <TD COLSPAN=2>
+    <INPUT TYPE="checkbox" <% ( $conf->exists("paymentforcedtobatch") && $payby eq 'CHEK' ) ? 'CHECKED DISABLED' : '' %> NAME="batch" VALUE="1">
+    Add to current batch
+% if ($conf->exists("paymentforcedtobatch") && $payby eq 'CHEK' ) {
+    <INPUT TYPE="hidden" NAME="batch" VALUE="1">
+% }
+  </TD>
+</TR><TR>
+% }
   <TD COLSPAN=2>
     <INPUT TYPE="checkbox"<% ( ( $payby eq 'CARD' && $cust_main->payby ne 'DCRD' ) || ( $payby eq 'CHEK' && $cust_main->payby eq 'CHEK' ) ) ? ' CHECKED' : '' %> NAME="auto" VALUE="1" onClick="if (this.checked) { document.OneTrueForm.save.checked=true; }">
     Charge future payments to this <% $type{$payby} %> automatically

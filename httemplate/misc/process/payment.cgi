@@ -89,19 +89,33 @@
 %  die "unknown payby $payby";
 %}
 %
-%my $error = $cust_main->realtime_bop( $FS::payby::payby2bop{$payby}, $amount,
-%  'quiet'    => 1,
-%  'manual'   => 1,
-%  'payinfo'  => $payinfo,
-%  'paydate'  => "$year-$month-01",
-%  'payname'  => $payname,
-%  'paybatch' => $paybatch,
-%  'paycvv'   => $paycvv,
-%  map { $_ => $cgi->param($_) } @{$payby2fields{$payby}}
-%);
-%eidiot($error) if $error;
+%my $error = '';
+%if ($cgi->param('batch')) {
+%  $error = $cust_main->batch_card(
+%                                   'payby'    => $payby,
+%                                   'amount'   => $amount,
+%                                   'payinfo'  => $payinfo,
+%                                   'paydate'  => "$year-$month-01",
+%                                   'payname'  => $payname,
+%                                   map { $_ => $cgi->param($_) } 
+%                                     @{$payby2fields{$payby}}
+%                                 );
+%  eidiot($error) if $error;
+%}else{
+%  $error = $cust_main->realtime_bop( $FS::payby::payby2bop{$payby}, $amount,
+%    'quiet'    => 1,
+%    'manual'   => 1,
+%    'payinfo'  => $payinfo,
+%    'paydate'  => "$year-$month-01",
+%    'payname'  => $payname,
+%    'paybatch' => $paybatch,
+%    'paycvv'   => $paycvv,
+%    map { $_ => $cgi->param($_) } @{$payby2fields{$payby}}
+%  );
+%  eidiot($error) if $error;
 %
-%$cust_main->apply_payments;
+%  $cust_main->apply_payments;
+%}
 %
 %if ( $cgi->param('save') ) {
 %  my $new = new FS::cust_main { $cust_main->hash };

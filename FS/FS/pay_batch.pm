@@ -138,7 +138,7 @@ sub set_status {
   $self->replace();
 }
 
-=item import results OPTION => VALUE, ...
+=item import_results OPTION => VALUE, ...
 
 Import batch results.
 
@@ -162,6 +162,7 @@ sub import_results {
   my $formatre;      # for Fixed.+
   my @values;
   my $begin_condition;
+  my $pre_hook;
   my $end_condition;
   my $end_hook;
   my $hook;
@@ -340,7 +341,7 @@ sub import_results {
 
     @fields = (
       '',            # Name
-      'paybatchnum', # ID:  Invoice number of the transaction
+      'custnum'    , # ID:  Customer number of the transaction
       'aba',         # ABA Number for the transaction
       'payinfo',     # Bank Account Number for the transaction
       '',            # Transaction Type:  27 - debit
@@ -351,6 +352,20 @@ sub import_results {
     );
 
     $end_condition = sub {
+      '';
+    };
+
+    $pre_hook = sub {
+      my $hash = shift;
+      my @cust_pay_batch =    # this is dodgy, it works due to autoposting
+        qsearch('cust_pay_batch', { 'custnum' => $hash->{'custnum'}+0, 
+                                    'status'  => ''
+                                  } );
+      if ( scalar(@cust_pay_batch) == 1 ) {
+        $hash->{'paybatchnum'} = $cust_pay_batch[0]->paybatchnum;
+      }else{
+        return "can't find batch payment for customer number " .$hash->{custnum};
+      }
       '';
     };
 
@@ -427,6 +442,14 @@ sub import_results {
       my $value = shift @values;
       next unless $field;
       $hash{$field} = $value;
+    }
+
+    if ( defined($pre_hook) ) {
+      my $error = &{$pre_hook}(\%hash);
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
     }
 
     if ( &{$end_condition}(\%hash) ) {

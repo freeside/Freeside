@@ -3177,6 +3177,132 @@ sub realtime_refund_bop {
 
 }
 
+=item batch_card OPTION => VALUE...
+
+Adds a payment for this invoice to the pending credit card batch (see
+L<FS::cust_pay_batch>), or, if the B<realtime> option is set to a true value,
+runs the payment using a realtime gateway.
+
+=cut
+
+sub batch_card {
+  my ($self, %options) = @_;
+
+  my $amount;
+  if (exists($options{amount})) {
+    $amount = $options{amount};
+  }else{
+    $amount = sprintf("%.2f", $self->balance - $self->in_transit_payments);
+  }
+  return '' unless $amount > 0;
+  
+  my $invnum = delete $options{invnum};
+  my $payby = $options{invnum} || $self->payby;  #dubious
+
+  if ($options{'realtime'}) {
+    return $self->realtime_bop( FS::payby->payby2bop($self->payby),
+                                $amount,
+                                %options,
+                              );
+  }
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  $dbh->do("LOCK TABLE pay_batch IN SHARE ROW EXCLUSIVE MODE")
+    or return "Cannot lock pay_batch: " . $dbh->errstr;
+
+  my %pay_batch = (
+    'status' => 'O',
+    'payby'  => FS::payby->payby2payment($payby),
+  );
+
+  my $pay_batch = qsearchs( 'pay_batch', \%pay_batch );
+
+  unless ( $pay_batch ) {
+    $pay_batch = new FS::pay_batch \%pay_batch;
+    my $error = $pay_batch->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      die "error creating new batch: $error\n";
+    }
+  }
+
+  my $old_cust_pay_batch = qsearchs('cust_pay_batch', {
+      'batchnum' => $pay_batch->batchnum,
+      'custnum'  => $self->custnum,
+  } );
+
+  foreach (qw( address1 address2 city state zip country payby payinfo paydate
+               payname )) {
+    $options{$_} = '' unless exists($options{$_});
+  }
+
+  my $cust_pay_batch = new FS::cust_pay_batch ( {
+    'batchnum' => $pay_batch->batchnum,
+    'invnum'   => $invnum || 0,                    # is there a better value?
+                                                   # this field should be
+                                                   # removed...
+                                                   # cust_bill_pay_batch now
+    'custnum'  => $self->custnum,
+    'last'     => $self->getfield('last'),
+    'first'    => $self->getfield('first'),
+    'address1' => $options{address1} || $self->address1,
+    'address2' => $options{address2} || $self->address2,
+    'city'     => $options{city}     || $self->city,
+    'state'    => $options{state}    || $self->state,
+    'zip'      => $options{zip}      || $self->zip,
+    'country'  => $options{country}  || $self->country,
+    'payby'    => $options{payby}    || $self->payby,
+    'payinfo'  => $options{payinfo}  || $self->payinfo,
+    'exp'      => $options{paydate}  || $self->paydate,
+    'payname'  => $options{payname}  || $self->payname,
+    'amount'   => $amount,                         # consolidating
+  } );
+  
+  $cust_pay_batch->paybatchnum($old_cust_pay_batch->paybatchnum)
+    if $old_cust_pay_batch;
+
+  my $error;
+  if ($old_cust_pay_batch) {
+    $error = $cust_pay_batch->replace($old_cust_pay_batch)
+  } else {
+    $error = $cust_pay_batch->insert;
+  }
+
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    die $error;
+  }
+
+  my $unapplied = $self->total_credited + $self->total_unapplied_payments + $self->in_transit_payments;
+  foreach my $cust_bill ($self->open_cust_bill) {
+    #$dbh->commit or die $dbh->errstr if $oldAutoCommit;
+    my $cust_bill_pay_batch = new FS::cust_bill_pay_batch {
+      'invnum' => $cust_bill->invnum,
+      'paybatchnum' => $cust_pay_batch->paybatchnum,
+      'amount' => $cust_bill->owed,
+      '_date' => time,
+    };
+    if ($unapplied >= $cust_bill_pay_batch->amount){
+      $unapplied -= $cust_bill_pay_batch->amount;
+      next;
+    }else{
+      $cust_bill_pay_batch->amount(sprintf ( "%.2f", 
+                                   $cust_bill_pay_batch->amount - $unapplied ));      $unapplied = 0;
+    }
+    $error = $cust_bill_pay_batch->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      die $error;
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+}
+
 =item total_owed
 
 Returns the total owed for this customer on all invoices
@@ -4881,6 +5007,9 @@ No multiple currency support (probably a larger project than just this module).
 payinfo_masked false laziness with cust_pay.pm and cust_refund.pm
 
 Birthdates rely on negative epoch values.
+
+The payby for card/check batches is broken.  With mixed batching, bad
+things will happen.
 
 =head1 SEE ALSO
 
