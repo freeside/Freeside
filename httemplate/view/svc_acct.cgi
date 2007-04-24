@@ -254,7 +254,7 @@ Service #<B><% $svcnum %></B>
 %   my $tf = $uf . "_threshold";
 %   if ( $svc_acct->$uf ne '' ) {
 %   my $v = $uf eq 'seconds' ? duration_exact($svc_acct->$uf)
-%                            : FS::UI::Web::display_bytecount($svc_acct->$uf);
+%                            : FS::UI::bytecount::display_bytecount($svc_acct->$uf);
     <TR>
       <TD ALIGN="right"><% $ulabel{$uf} %> remaining</TD>
       <TD BGCOLOR="#ffffff"><% $v %></TD>
