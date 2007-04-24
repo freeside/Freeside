@@ -230,6 +230,7 @@ sub check {
     $self->ut_numbern('svcnum')
 #    || $self->ut_number('recnum')
     || $self->ut_numbern('usersvc')
+    || $self->ut_anything('config')
   ;
   return $error if $error;
 
