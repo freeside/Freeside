@@ -2105,8 +2105,19 @@ sub print_ps {
   unlink("$lfile");
 
   my $ps = '';
+  
+  if ( $conf->exists('lpr-postscript_prefix') ) {
+    my $prefix = $conf->config('lpr-postscript_prefix');
+    $ps .= eval qq("$prefix");
+  }
+
   while (<POSTSCRIPT>) {
     $ps .= $_;
+  }
+
+  if ( $conf->exists('lpr-postscript_suffix') ) {
+    my $suffix = $conf->config('lpr-postscript_suffix');
+    $ps .= eval qq("$suffix");
   }
 
   close POSTSCRIPT;

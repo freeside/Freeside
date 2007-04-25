@@ -649,6 +649,20 @@ httemplate/docs/config.html
   },
 
   {
+    'key'         => 'lpr-postscript_prefix',
+    'section'     => 'billing',
+    'description' => 'Raw printer commands prepended to the beginning of postscript print jobs (evaluated as a double-quoted perl string - backslash escapes are available)',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'lpr-postscript_suffix',
+    'section'     => 'billing',
+    'description' => 'Raw printer commands added to the end of postscript print jobs (evaluated as a double-quoted perl string - backslash escapes are available)',
+    'type'        => 'text',
+  },
+
+  {
     'key'         => 'money_char',
     'section'     => '',
     'description' => 'Currency symbol - defaults to `$\'',
