@@ -70,7 +70,8 @@ sub display_bytecount {
   return $bc unless ($bc =~ /^(\d+)$/);
   my $conf = new FS::Conf;
   my $f = new Number::Format;
-  my $precision = $conf->exists('datavolume-significantdigits')
+  my $precision = ( $conf->exists('datavolume-significantdigits') &&
+                    $conf->config('datavolume-significantdigits') =~ /^\s*\d+\s*$/ )
                 ? $conf->config('datavolume-significantdigits')
                 : 3;
   my $unit = $conf->exists('datavolume-forcemegabytes') ? 'M' : 'A';
