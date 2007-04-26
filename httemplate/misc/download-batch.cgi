@@ -99,7 +99,7 @@
 %
 %  my( $account, $aba ) = split( '@', $cust_pay_batch->payinfo );
 %  my $payname=$cust_pay_batch->payname; $payname =~ tr/",/  /; #payinfo too?
-%  my $batchline = qq!"$payname","!.$cust_pay_batch->custnum.   #dodgy, works for autoapply
+%  my $batchline = qq!"$payname","!.$cust_pay_batch->paybatchnum.
 %                  qq!","$aba","$account","27","!.$cust_pay_batch->amount.
 %                  qq!","27","0.00"!;
 %  push @batchlines, $batchline;
