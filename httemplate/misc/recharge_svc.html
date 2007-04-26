@@ -69,15 +69,31 @@ die "No such service: $svcnum" unless $cust_svc;
 $payby = $cust_svc->cust_pkg->cust_main->payby unless $payby;
 $part_pkg = $cust_svc->cust_pkg->part_pkg;
 $amount = $part_pkg->option('recharge_amount', 1) || 0;
+
 my $recharge_label = "Charge $money_char$amount for ";
+
 $recharge_label .= $part_pkg->option('recharge_seconds', 1) . 's '
   if $part_pkg->option('recharge_seconds', 1);
-$recharge_label .= $part_pkg->option('recharge_upbytes', 1) . ' up '
+
+
+$recharge_label .= FS::UI::bytecount::display_bytecount(
+                     $part_pkg->option('recharge_upbytes', 1) )
+                . ' up '
   if $part_pkg->option('recharge_upbytes', 1);
-$recharge_label .= $part_pkg->option('recharge_downbytes', 1) . ' down '
+
+
+$recharge_label .= FS::UI::bytecount::display_bytecount(
+                     $part_pkg->option('recharge_downbytes', 1) )
+                . ' down '
   if $part_pkg->option('recharge_downbytes', 1);
-$recharge_label .= $part_pkg->option('recharge_totalbytes', 1) . ' total '
+
+
+$recharge_label .= FS::UI::bytecount::display_bytecount(
+                     $part_pkg->option('recharge_totalbytes', 1) )
+                . ' total '
   if $part_pkg->option('recharge_totalbytes', 1);
+
+
 $recharge_label = ''
   unless ($recharge_label ne "Charge $money_char$amount for ");
 

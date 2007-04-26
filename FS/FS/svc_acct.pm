@@ -2485,8 +2485,12 @@ sub reached_threshold {
                         'last'      => $cust_main->getfield('last'),
                         'pkg'       => $cust_pkg->part_pkg->pkg,
                         'column'    => $opt{'column'},
-                        'amount'    => $svc_acct->getfield($opt{'column'}),
-                        'threshold' => $threshold,
+                        'amount'    => $opt{'column'} =~/bytes/
+                                       ? FS::UI::bytecount::display_bytecount($svc_acct->getfield($opt{'column'}))
+                                       : $svc_acct->getfield($opt{'column'}),
+                        'threshold' => $opt{'column'} =~/bytes/
+                                       ? FS::UI::bytecount::display_bytecount($threshold)
+                                       : $threshold,
                       } );
 
 

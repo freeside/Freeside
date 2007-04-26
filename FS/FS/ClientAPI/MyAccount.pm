@@ -580,14 +580,14 @@ sub list_svcs {
                             'username'  => $svc_x->username,
                             'email'     => $svc_x->email,
                             'seconds'   => $svc_x->seconds,
-                            'upbytes'   => $svc_x->upbytes,
-                            'downbytes' => $svc_x->downbytes,
-                            'totalbytes'=> $svc_x->totalbytes,
+                            'upbytes'   => FS::UI::bytecount::display_bytecount($svc_x->upbytes),
+                            'downbytes' => FS::UI::bytecount::display_bytecount($svc_x->downbytes),
+                            'totalbytes'=> FS::UI::bytecount::display_bytecount($svc_x->totalbytes),
                             'recharge_amount' => $part_pkg->option('recharge_amount', 1),
                             'recharge_seconds' => $part_pkg->option('recharge_seconds', 1),
-                            'recharge_upbytes' => $part_pkg->option('recharge_upbytes', 1),
-                            'recharge_downbytes' => $part_pkg->option('recharge_downbytes', 1),
-                            'recharge_totalbytes' => $part_pkg->option('recharge_totalbytes', 1),
+                            'recharge_upbytes' => FS::UI::bytecount::display_bytecount($part_pkg->option('recharge_upbytes', 1)),
+                            'recharge_downbytes' => FS::UI::bytecount::display_bytecount($part_pkg->option('recharge_downbytes', 1)),
+                            'recharge_totalbytes' => FS::UI::bytecount::display_bytecount($part_pkg->option('recharge_totalbytes', 1)),
                             # more...
                           };
                         }
