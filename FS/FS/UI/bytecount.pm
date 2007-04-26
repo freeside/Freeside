@@ -3,7 +3,7 @@ package FS::UI::bytecount;
 use strict;
 use vars qw($DEBUG $me);
 use FS::Conf;
-use Number::Format;
+use Number::Format 1.50;
 
 $DEBUG = 0;
 $me = '[FS::UID::bytecount]';
