@@ -191,7 +191,7 @@
 %
 %        qq!<TR><TD ALIGN="right" WIDTH="200">${r}Account number </TD>!.
 %          qq!<TD><INPUT TYPE="text" SIZE=12 NAME="payinfo1" VALUE="!. ( $payby =~ /^(CHEK|DCHK)$/ ? $account : '' ). '"></TD>'.
-%          qq!<TD ALIGN="right">Type</TD><TD><SELECT="text" NAME="paytype">!.
+%          qq!<TD ALIGN="right">Type</TD><TD><SELECT NAME="paytype">!.
 %            join('', map { qq!<OPTION VALUE="$_" !.($paytype eq $_ ? 'SELECTED' : '').">$_</OPTION>" } @FS::cust_main::paytypes).
 %          qq!</SELECT></TD></TR>!.
 %
@@ -205,6 +205,7 @@
 %
 %        qq!<TR><TD ALIGN="right" WIDTH="200">${r}Bank name </TD>!.
 %          qq!<TD COLSPAN="3" WIDTH="408"><INPUT TYPE="text" NAME="payname" VALUE="!. ( $payby =~ /^(CHEK|DCHK)$/ ? $cust_main->payname : '' ). qq!"></TD></TR>!.
+%      ( $conf->exists('show_bankstate') ?
 %          qq!<TR><TD ALIGN="right" WIDTH="200">$paystate_label</TD>!.
 %          qq!<TD COLSPAN="3" WIDTH="408">!.
 %          include('select-state.html',
@@ -212,7 +213,10 @@
 %                    'state'   => $cust_main->paystate,
 %                    'country' => $cust_main->country,
 %                    'prefix' => 'pay',
-%                 ). "</TD></TR>".
+%                 ). "</TD></TR>"
+%         : '<INPUT TYPE="hidden" NAME="paystate" VALUE="'.
+%            $cust_main->paystate. '">'
+%       ).
 %
 %
 %        qq!<TR><TD COLSPAN=4 WIDTH="608"><INPUT TYPE="checkbox" NAME="payauto" !. ( $payby eq 'DCHK' ? '' : 'CHECKED' ). '> Charge future payments to this electronic check automatically</TD></TR>'.
