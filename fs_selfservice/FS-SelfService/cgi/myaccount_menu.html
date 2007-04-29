@@ -21,6 +21,8 @@ if ( 1 ) { #XXXFIXME "enable selfservice prepay features" flag or something, eve
   push @menu, (
     { title=>'Recharge my account with a credit card',
       url=>'make_payment', indent=>2 },
+    { title=>'Recharge my account with a check',
+      url=>'make_ach_payment', indent=>2 },
     { title=>'Recharge my account with a prepaid card',
       url=>'recharge_prepay', indent=>2 },
   );

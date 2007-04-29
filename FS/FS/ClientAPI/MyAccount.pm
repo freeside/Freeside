@@ -23,6 +23,7 @@ use FS::cust_main;
 use FS::cust_bill;
 use FS::cust_main_county;
 use FS::cust_pkg;
+use FS::payby;
 use HTML::Entities;
 
 #false laziness with FS::cust_main
@@ -237,6 +238,14 @@ sub payment_info {
 
       'card_types' => card_types(),
 
+      'paytypes' => [ @FS::cust_main::paytypes ],
+
+      'stateid_label' => FS::Msgcat::_gettext('stateid'),
+      'stateid_state_label' => FS::Msgcat::_gettext('stateid_state'),
+
+      'show_ss'  => $conf->exists('show_ss'),
+      'show_stateid' => $conf->exists('show_stateid'),
+      'show_paystate' => $conf->exists('show_bankstate'),
     };
 
   }
@@ -260,12 +269,22 @@ sub payment_info {
   $return{$_} = $cust_main->get($_) for qw(address1 address2 city state zip);
 
   $return{payby} = $cust_main->payby;
+  $return{stateid_state} = $cust_main->stateid_state;
 
   if ( $cust_main->payby =~ /^(CARD|DCRD)$/ ) {
     $return{card_type} = cardtype($cust_main->payinfo);
     $return{payinfo} = $cust_main->payinfo;
 
     @return{'month', 'year'} = $cust_main->paydate_monthyear;
+
+  }
+
+  if ( $cust_main->payby =~ /^(CHEK|DCHK)$/ ) {
+    my ($payinfo1, $payinfo2) = split '@', $cust_main->payinfo;
+    $return{payinfo1} = $payinfo1;
+    $return{payinfo2} = $payinfo2;
+    $return{paytype}  = $cust_main->paytype;
+    $return{paystate} = $cust_main->paystate;
 
   }
 
@@ -303,19 +322,23 @@ sub process_payment {
     or return { 'error' => gettext('illegal_text'). " paybatch: ". $p->{'paybatch'} };
   my $paybatch = $1;
 
+  $p->{'payby'} =~ /^([A-Z]{4})$/
+    or return { 'error' => "illegal_payby " . $p->{'payby'} };
+  my $payby = $1;
+
   my $payinfo;
   my $paycvv = '';
-  #if ( $payby eq 'CHEK' ) {
-  #
-  #  $p->{'payinfo1'} =~ /^(\d+)$/
-  #    or return { 'error' => "illegal account number ". $p->{'payinfo1'} };
-  #  my $payinfo1 = $1;
-  #   $p->{'payinfo2'} =~ /^(\d+)$/
-  #    or return { 'error' => "illegal ABA/routing number ". $p->{'payinfo2'} };
-  #  my $payinfo2 = $1;
-  #  $payinfo = $payinfo1. '@'. $payinfo2;
-  # 
-  #} elsif ( $payby eq 'CARD' ) {
+  if ( $payby eq 'CHEK' || $payby eq 'DCHK' ) {
+  
+    $p->{'payinfo1'} =~ /^(\d+)$/
+      or return { 'error' => "illegal account number ". $p->{'payinfo1'} };
+    my $payinfo1 = $1;
+     $p->{'payinfo2'} =~ /^(\d+)$/
+      or return { 'error' => "illegal ABA/routing number ". $p->{'payinfo2'} };
+    my $payinfo2 = $1;
+    $payinfo = $payinfo1. '@'. $payinfo2;
+   
+  } elsif ( $payby eq 'CARD' || $payby eq 'DCRD' ) {
    
     $payinfo = $p->{'payinfo'};
     $payinfo =~ s/\D//g;
@@ -339,19 +362,23 @@ sub process_payment {
       }
     }
   
-  #} else {
-  #  die "unknown payby $payby";
-  #}
+  } else {
+    die "unknown payby $payby";
+  }
 
-  my $error = $cust_main->realtime_bop( 'CC', $p->{'amount'},
+  my %payby2fields = (
+    'CARD' => [ qw( paystart_month paystart_year payissue address1 address2 city state zip payip ) ],
+    'CHEK' => [ qw( ss paytype paystate stateid stateid_state payip ) ],
+  );
+
+  my $error = $cust_main->realtime_bop( $FS::payby::payby2bop{$payby}, $p->{'amount'},
     'quiet'    => 1,
     'payinfo'  => $payinfo,
     'paydate'  => $p->{'year'}. '-'. $p->{'month'}. '-01',
     'payname'  => $payname,
     'paybatch' => $paybatch,
     'paycvv'   => $paycvv,
-    map { $_ => $p->{$_} } qw( paystart_month paystart_year payissue payip
-                               address1 address2 city state zip )
+    map { $_ => $p->{$_} } @{ $payby2fields{$payby} }
   );
   return { 'error' => $error } if $error;
 
@@ -359,11 +386,19 @@ sub process_payment {
 
   if ( $p->{'save'} ) {
     my $new = new FS::cust_main { $cust_main->hash };
-    $new->set( $_ => $p->{$_} )
-      foreach qw( payname paystart_month paystart_year payissue payip
-                  address1 address2 city state zip payinfo );
+    if ($payby eq 'CARD' || $payby eq 'DCRD') {
+      $new->set( $_ => $p->{$_} )
+        foreach qw( payname paystart_month paystart_year payissue payip
+                    address1 address2 city state zip payinfo );
+      $new->set( 'payby' => $p->{'auto'} ? 'CARD' : 'DCRD' );
+    } elsif ($payby eq 'CHEK' || $payby eq 'DCHK') {
+      $new->set( $_ => $p->{$_} )
+        foreach qw( payname payip paytype paystate
+                    stateid stateid_state );
+      $new->set( 'payinfo' => $payinfo );
+      $new->set( 'payby' => $p->{'auto'} ? 'CHEK' : 'DCHK' );
+    }
     $new->set( 'paydate' => $p->{'year'}. '-'. $p->{'month'}. '-01' );
-    $new->set( 'payby' => $p->{'auto'} ? 'CARD' : 'DCRD' );
     my $error = $new->replace($cust_main);
     return { 'error' => $error } if $error;
     $cust_main = $new;

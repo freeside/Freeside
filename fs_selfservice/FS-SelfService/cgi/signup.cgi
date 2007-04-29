@@ -149,6 +149,14 @@ if (    ( defined($cgi->param('magic')) && $cgi->param('magic') eq 'process' )
                               ? $cgi->param( $payby. '_paycvv' )
                               : ''
                );
+    $cgi->param('paytype' => defined $cgi->param( $payby. '_paytype' )
+                              ? $cgi->param( $payby. '_paytype' )
+                              : ''
+               );
+    $cgi->param('paystate' => defined $cgi->param( $payby. '_paystate' )
+                              ? $cgi->param( $payby. '_paystate' )
+                              : ''
+               );
 
     if ( $cgi->param('invoicing_list') ) {
       $cgi->param('invoicing_list' => $cgi->param('invoicing_list'). ', POST')
@@ -185,15 +193,15 @@ if (    ( defined($cgi->param('magic')) && $cgi->param('magic') eq 'process' )
         ( map { $_ => scalar($cgi->param($_)) }
             qw( last first ss company
                 address1 address2 city county state zip country
-                daytime night fax
+                daytime night fax stateid stateid_state
 
                 ship_last ship_first ship_company
                 ship_address1 ship_address2 ship_city ship_county ship_state
                   ship_zip ship_country
                 ship_daytime ship_night ship_fax
 
-                payby payinfo paycvv paydate payname invoicing_list
-                referral_custnum promo_code reg_code
+                payby payinfo paycvv paydate payname paystate paytype
+                invoicing_list referral_custnum promo_code reg_code
                 pkgpart username sec_phrase _password popnum refnum
                 agentnum
               ),

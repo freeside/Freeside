@@ -21,7 +21,7 @@
 <INPUT TYPE="hidden" NAME="ss" VALUE="">
 <input type="hidden" name="payby" />
 <%=
-  $OUT = join("\n",map { my $method = $_ ; map { qq|<input type="hidden" name="${method}_$_" />| } qw / payinfo payinfo1 payinfo2 payname paycvv month year type  /  } @payby);
+  $OUT = join("\n",map { my $method = $_ ; map { qq|<input type="hidden" name="${method}_$_" />| } qw / payinfo payinfo1 payinfo2 payname paystate paytype paycvv month year type  /  } @payby);
 %>
 
 <%=
@@ -94,6 +94,22 @@ Contact Information
   <TD ALIGN="right">Fax</TD>
   <TD COLSPAN=5><INPUT TYPE="text" NAME="fax" VALUE="<%= $fax %>" SIZE=12></TD>
 </TR>
+<%=
+  $OUT = '';
+  if ( $stateid_enabled ) {
+    my ($county_html, $state_html, $country_html) =
+      regionselector( {
+        prefix           => 'stateid_',
+        default_state    => $statedefault,
+        default_country  => $countrydefault,
+        locales          => \@cust_main_county,
+      } );
+    $OUT .= qq!<TR><TD ALIGN="right">!. $label{stateid}.'</TD>';
+    $OUT .= qq!<TD><INPUT TYPE="text" NAME="stateid" VALUE="$stateid" SIZE=12></TD>!;
+    $OUT .= qq!<TD ALIGN="right">!. $label{stateid_state} .'</TD>';
+    $OUT .="<TD COLSPAN=3>$county_html $state_html</TD></TR>";
+  }
+%>
 </TABLE><font color="#ff0000">*</font> required fields<BR>
 <BR>Billing information<TABLE BGCOLOR="#c0c0c0" BORDER=0 CELLSPACING=0 WIDTH="100%">
 <TR><TD>
@@ -129,8 +145,8 @@ Contact Information
     my %payby = (
       'CARD' => qq!Credit card<BR><font color="#ff0000">*</font>$cardselect<INPUT TYPE="text" NAME="CARD_payinfo" VALUE="" MAXLENGTH=19><BR><font color="#ff0000">*</font>Exp !. expselect("CARD"). qq!<BR><font color="#ff0000">*</font>Name on card<BR><INPUT TYPE="text" NAME="CARD_payname" VALUE="">!,
       'DCRD' => qq!Credit card<BR><font color="#ff0000">*</font>$cardselect<INPUT TYPE="text" NAME="DCRD_payinfo" VALUE="" MAXLENGTH=19><BR><font color="#ff0000">*</font>Exp !. expselect("DCRD"). qq!<BR><font color="#ff0000">*</font>Name on card<BR><INPUT TYPE="text" NAME="DCRD_payname" VALUE="">!,
-      'CHEK' => qq!Electronic check<BR>${r}Account number <INPUT TYPE="text" NAME="CHEK_payinfo1" VALUE="" MAXLENGTH=10><BR>${r}ABA/Routing code <INPUT TYPE="text" NAME="CHEK_payinfo2" VALUE="" SIZE=10 MAXLENGTH=9><INPUT TYPE="hidden" NAME="CHEK_month" VALUE="12"><INPUT TYPE="hidden" NAME="CHEK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="CHEK_payname" VALUE="">!,
-      'DCHK' => qq!Electronic check<BR>${r}Account number <INPUT TYPE="text" NAME="DCHK_payinfo1" VALUE="" MAXLENGTH=10><BR>${r}ABA/Routing code <INPUT TYPE="text" NAME="DCHK_payinfo2" VALUE="" SIZE=10 MAXLENGTH=9><INPUT TYPE="hidden" NAME="DCHK_month" VALUE="12"><INPUT TYPE="hidden" NAME="DCHK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="DCHK_payname" VALUE="">!,
+      'CHEK' => qq!Electronic check<BR>${r}Account number <INPUT TYPE="text" NAME="CHEK_payinfo1" VALUE="" MAXLENGTH=10><BR>${r}ABA/Routing code <INPUT TYPE="text" NAME="CHEK_payinfo2" VALUE="" SIZE=10 MAXLENGTH=9> Type <SELECT NAME="CHEK_paytype">!. join('', map {qq!<OPTION VALUE="$_">$_</OPTION>!} @paytypes). qq!</SELECT><BR>{$r}Bank State <INPUT TYPE="text" NAME="CHEK_paystate" VALUE="" SIZE=5 MAXLENGTH=4><INPUT TYPE="hidden" NAME="CHEK_month" VALUE="12"><INPUT TYPE="hidden" NAME="CHEK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="CHEK_payname" VALUE="">!,
+      'DCHK' => qq!Electronic check<BR>${r}Account number <INPUT TYPE="text" NAME="DCHK_payinfo1" VALUE="" MAXLENGTH=10> Type <SELECT NAME="DCHK_paytype">!. join('', map {qq!<OPTION VALUE="$_">$_</OPTION>!} @paytypes). qq!</SELECT><BR>${r}ABA/Routing code <INPUT TYPE="text" NAME="DCHK_payinfo2" VALUE="" SIZE=10 MAXLENGTH=9><BR>{$r}Bank State <INPUT TYPE="text" NAME="DCHK_paystate" VALUE="" SIZE=5 MAXLENGTH=4><INPUT TYPE="hidden" NAME="DCHK_month" VALUE="12"><INPUT TYPE="hidden" NAME="DCHK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="DCHK_payname" VALUE="">!,
       'LECB' => qq!Phone bill billing<BR>${r}Phone number <INPUT TYPE="text" NAME="LECB_payinfo" VALUE="" MAXLENGTH=15 SIZE=16><INPUT TYPE="hidden" NAME="LECB_month" VALUE="12"><INPUT TYPE="hidden" NAME="LECB_year" VALUE="2037"><INPUT TYPE="hidden" NAME="LECB_payname" VALUE="">!,
       'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" NAME="BILL_payinfo" VALUE=""><BR><font color="#ff0000">*</font>Exp !. expselect("BILL", "12-2037"). qq!<BR><font color="#ff0000">*</font>Attention<BR><INPUT TYPE="text" NAME="BILL_payname" VALUE="Accounts Payable">!,
       'COMP' => qq!Complimentary<BR><font color="#ff0000">*</font>Approved by<INPUT TYPE="text" NAME="COMP_payinfo" VALUE=""><BR><font color="#ff0000">*</font>Exp !. expselect("COMP"),
@@ -142,13 +158,25 @@ Contact Information
         $payby{$payby} .= qq!<TR><TD ALIGN="right">CVV2&nbsp;(<A HREF="javascript:myopen('cvv2.html','cvv2','toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=yes,copyhistory=no,width=480,height=288')">help</A>)</TD><TD><INPUT TYPE="text" NAME=${payby}_paycvv VALUE="" SIZE=4 MAXLENGTH=4></TD></TR>!;
       }
     }
+    if ( $paystate_enabled ) {
+      foreach my $payby ( grep { exists $payby{$_} } qw(CHEK DCHK) ) { 
+        my ($county_html, $state_html, $country_html) =
+          regionselector( {
+            prefix           => "${payby}_pay",
+            default_state    => $statedefault,
+            default_country  => $countrydefault,
+            locales          => \@cust_main_county,
+          } );
+        $payby{$payby} .= "<BR>${r}Bank state $county_html $state_html";
+      }
+    }
 
     my( $account, $aba ) = split('@', $payinfo);
     my %paybychecked = (
       'CARD' => qq!<TABLE BGCOLOR="#c0c0c0" BORDER=0 CELLSPACING=0 WIDTH="100%"><TR><TD ALIGN="right"><font color="#ff0000">*</font> Card type</TD><TD>$cardselect</TD></TR><TR><TD ALIGN="right"><font color="#ff0000">*</font> Card number</TD><TD><INPUT TYPE="text" NAME="CARD_payinfo" VALUE="$payinfo" MAXLENGTH=19></TD></TR><TR><TD ALIGN="right"><font color="#ff0000">*</font> Expration</TD><TD>!. expselect("CARD", $paydate). qq!</TD></TR><TR><TD ALIGN="right"><font color="#ff0000">*</font> Name on card</TD><TD><INPUT TYPE="text" NAME="CARD_payname" VALUE="$payname"></TD></TR>!,
       'DCRD' => qq!Credit card<BR><font color="#ff0000">*</font>$cardselect<INPUT TYPE="text" NAME="DCRD_payinfo" VALUE="$payinfo" MAXLENGTH=19><BR><font color="#ff0000">*</font>Exp !. expselect("DCRD", $paydate). qq!<BR><font color="#ff0000">*</font>Name on card<BR><INPUT TYPE="text" NAME="DCRD_payname" VALUE="$payname">!,
-      'CHEK' => qq!Electronic check<BR>${r}Account number <INPUT TYPE="text" NAME="CHEK_payinfo1" VALUE="$account" MAXLENGTH=10><BR>${r}ABA/Routing code <INPUT TYPE="text" NAME="CHEK_payinfo2" VALUE="$aba" SIZE=10 MAXLENGTH=9><INPUT TYPE="hidden" NAME="CHEK_month" VALUE="12"><INPUT TYPE="hidden" NAME="CHEK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="CHEK_payname" VALUE="$payname">!,
-      'DCHK' => qq!Electronic check<BR>${r}Account number <INPUT TYPE="text" NAME="DCHK_payinfo1" VALUE="$account" MAXLENGTH=10><BR>${r}ABA/Routing code <INPUT TYPE="text" NAME="DCHK_payinfo2" VALUE="$aba" SIZE=10 MAXLENGTH=9><INPUT TYPE="hidden" NAME="DCHK_month" VALUE="12"><INPUT TYPE="hidden" NAME="DCHK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="DCHK_payname" VALUE="$payname">!,
+      'CHEK' => qq!Electronic check<BR>${r}Account number <INPUT TYPE="text" NAME="CHEK_payinfo1" VALUE="$account" MAXLENGTH=10> Type <SELECT NAME="CHEK_paytype">!. join('', map {qq!<OPTION VALUE="$_"!.($paytype eq $_ ? 'SELECTED' : '').">$_</OPTION>"} @paytypes). qq!</SELECT><BR>${r}ABA/Routing code <INPUT TYPE="text" NAME="CHEK_payinfo2" VALUE="$aba" SIZE=10 MAXLENGTH=9><INPUT TYPE="hidden" NAME="CHEK_month" VALUE="12"><INPUT TYPE="hidden" NAME="CHEK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="CHEK_payname" VALUE="$payname">!,
+      'DCHK' => qq!Electronic check<BR>${r}Account number <INPUT TYPE="text" NAME="DCHK_payinfo1" VALUE="$account" MAXLENGTH=10> Type <SELECT NAME="DCHK_paytype">!. join('', map {qq!<OPTION VALUE="$_"!.($paytype eq $_ ? 'SELECTED' : '').">$_</OPTION>"} @paytypes). qq!</SELECT><BR>${r}ABA/Routing code <INPUT TYPE="text" NAME="DCHK_payinfo2" VALUE="$aba" SIZE=10 MAXLENGTH=9><INPUT TYPE="hidden" NAME="DCHK_month" VALUE="12"><INPUT TYPE="hidden" NAME="DCHK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="DCHK_payname" VALUE="">!,
       'LECB' => qq!Phone bill billing<BR>${r}Phone number <INPUT TYPE="text" BANE="LECB_payinfo" VALUE="$payinfo" MAXLENGTH=15 SIZE=16><INPUT TYPE="hidden" NAME="LECB_month" VALUE="12"><INPUT TYPE="hidden" NAME="LECB_year" VALUE="2037"><INPUT TYPE="hidden" NAME="LECB_payname" VALUE="">!,
       'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" NAME="BILL_payinfo" VALUE="$payinfo"><BR><font color="#ff0000">*</font>Exp !. expselect("BILL", $paydate). qq!<BR><font color="#ff0000">*</font>Attention<BR><INPUT TYPE="text" NAME="BILL_payname" VALUE="$payname">!,
       'COMP' => qq!Complimentary<BR><font color="#ff0000">*</font>Approved by<INPUT TYPE="text" NAME="COMP_payinfo" VALUE="$payinfo"><BR><font color="#ff0000">*</font>Exp !. expselect("COMP", $paydate),
@@ -160,6 +188,22 @@ Contact Information
         $paybychecked{$payby} .= qq!<TR><TD ALIGN="right">CVV2&nbsp;(<A HREF="javascript:myopen('cvv2.html','cvv2','toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=yes,copyhistory=no,width=480,height=288')">help</A>)</TD><TD><INPUT TYPE="text" NAME=${payby}_paycvv VALUE="$paycvv" SIZE=4 MAXLENGTH=4></TD></TR>!;
       }
     }
+    if ( $paystate_enabled ) {
+      foreach my $payby ( grep { exists $payby{$_} } qw(CHEK DCHK) ) { 
+        my ($county_html, $state_html, $country_html) =
+          regionselector( {
+            prefix           => "${payby}_pay",
+            selected_county  => $county,
+            selected_state   => $state,
+            selected_country => $country,
+            default_state    => $statedefault,
+            default_country  => $countrydefault,
+            locales          => \@cust_main_county,
+          } );
+        $paybychecked{$payby} .= "<BR>${r}Bank state $county_html $state_html";
+      }
+    }
+
 use Tie::IxHash;
 use HTML::Widgets::SelectLayers;
 
@@ -282,7 +326,7 @@ function fixup_form() {
     
     // copy payment method data up to OneTrueForm
     
-    var payment_method_elements = new Array( 'payinfo', 'payinfo1', 'payinfo2', 'payname', 'paycvv' , 'month', 'year','type' );
+    var payment_method_elements = new Array( 'payinfo', 'payinfo1', 'payinfo2', 'payname', 'paycvv' , 'paystate', 'paytype', 'month', 'year','type' );
     var payment_method_form_name = document.OneTrueForm.select.options[document.OneTrueForm.select.selectedIndex].value;
     document.OneTrueForm.elements['payby'].value = payment_method_form_name;
     var payment_method_form = document.forms[payment_method_form_name];

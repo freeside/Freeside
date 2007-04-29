@@ -67,12 +67,22 @@ sub signup_info {
 
     'card_types' => card_types(),
 
+    'paytypes' => [ @FS::cust_main::paytypes ],
+
     'cvv_enabled' => defined dbdef->table('cust_main')->column('paycvv'), # 1,
+
+    'stateid_enabled' => $conf->exists('show_stateid'),
+
+    'paystate_enabled' => $conf->exists('show_bankstate'),
 
     'ship_enabled' => defined dbdef->table('cust_main')->column('ship_last'),#1,
 
     'msgcat' => { map { $_=>gettext($_) } qw(
       passwords_dont_match invalid_card unknown_card_type not_a empty_password illegal_or_empty_text
+    ) },
+
+    'label' => { map { $_ => FS::Msgcat::_gettext($_) } qw(
+      stateid stateid_state
     ) },
 
     'statedefault' => $conf->config('statedefault') || 'CA',
@@ -259,14 +269,14 @@ sub new_customer {
 
       last first ss company address1 address2
       city county state zip country
-      daytime night fax
+      daytime night fax stateid stateid_state
 
       ship_last ship_first ship_ss ship_company ship_address1 ship_address2
       ship_city ship_county ship_state ship_zip ship_country
       ship_daytime ship_night ship_fax
 
       payby
-      payinfo paycvv paydate payname
+      payinfo paycvv paydate payname paystate paytype
       paystart_month paystart_year payissue
       payip
 

@@ -925,6 +925,13 @@ httemplate/docs/config.html
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'show_bankstate',
+    'section'     => 'UI',
+    'description' => "Turns on display/collection of state for bank accounts in the web interface.  Sometimes required by electronic check (ACH) processors.",
+    'type'        => 'checkbox',
+  },
+
   { 
     'key'         => 'agent_defaultpkg',
     'section'     => 'UI',

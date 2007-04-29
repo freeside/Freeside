@@ -66,7 +66,7 @@ $session_id = $cgi->param('session');
 
 #order|pw_list XXX ???
 $cgi->param('action') =~
-    /^(myaccount|view_invoice|make_payment|payment_results|recharge_prepay|recharge_results|logout|change_bill|change_ship|customer_order_pkg|process_order_pkg|customer_change_pkg|process_change_pkg|process_order_recharge|provision|provision_svc|process_svc_acct|process_svc_external|delete_svc|view_usage|view_usage_details|change_password|process_change_password)$/
+    /^(myaccount|view_invoice|make_payment|make_ach_payment|payment_results|ach_payment_results|recharge_prepay|recharge_results|logout|change_bill|change_ship|customer_order_pkg|process_order_pkg|customer_change_pkg|process_change_pkg|process_order_recharge|provision|provision_svc|process_svc_acct|process_svc_external|delete_svc|view_usage|view_usage_details|change_password|process_change_password)$/
   or die "unknown action ". $cgi->param('action');
 my $action = $1;
 
@@ -299,6 +299,7 @@ sub payment_results {
 
   process_payment(
     'session_id' => $session_id,
+    'payby'      => 'CARD',
     'amount'     => $amount,
     'payinfo'    => $payinfo,
     'paycvv'     => $paycvv,
@@ -310,6 +311,78 @@ sub payment_results {
     'city'       => $city,
     'state'      => $state,
     'zip'        => $zip,
+    'save'       => $save,
+    'auto'       => $auto,
+    'paybatch'   => $paybatch,
+  );
+
+}
+
+sub make_ach_payment {
+  payment_info( 'session_id' => $session_id );
+}
+
+sub ach_payment_results {
+
+  #we should only do basic checking here for DoS attacks and things
+  #that couldn't be constructed by the web form...  let process_payment() do
+  #the rest, it gives better error messages
+
+  $cgi->param('amount') =~ /^\s*(\d+(\.\d{2})?)\s*$/
+    or die "illegal amount"; #!!!
+  my $amount = $1;
+
+  my $payinfo1 = $cgi->param('payinfo1');
+  $payinfo1=~ /^(\d+)$/
+    or die "illegal account"; #!!!
+  $payinfo1= $1;
+
+  my $payinfo2 = $cgi->param('payinfo2');
+  $payinfo2=~ /^(\d+)$/
+    or die "illegal ABA/routing code"; #!!!
+  $payinfo2= $1;
+
+  $cgi->param('payname') =~ /^(.{0,80})$/ or die "illegal payname";
+  my $payname = $1;
+
+  $cgi->param('paystate') =~ /^(.{0,2})$/ or die "illegal paystate";
+  my $paystate = $1;
+
+  $cgi->param('paytype') =~ /^(.{0,80})$/ or die "illegal paytype";
+  my $paytype = $1;
+
+  $cgi->param('ss') =~ /^(.{0,80})$/ or die "illegal ss";
+  my $ss = $1;
+
+  $cgi->param('stateid') =~ /^(.{0,80})$/ or die "illegal stateid";
+  my $stateid = $1;
+
+  $cgi->param('stateid_state') =~ /^(.{0,2})$/ or die "illegal stateid_state";
+  my $stateid_state = $1;
+
+  my $save = 0;
+  $save = 1 if $cgi->param('save');
+
+  my $auto = 0;
+  $auto = 1 if $cgi->param('auto');
+
+  $cgi->param('paybatch') =~ /^([\w\-\.]+)$/ or die "illegal paybatch";
+  my $paybatch = $1;
+
+  process_payment(
+    'session_id' => $session_id,
+    'payby'      => 'CHEK',
+    'amount'     => $amount,
+    'payinfo1'   => $payinfo1,
+    'payinfo2'   => $payinfo2,
+    'month'      => '12',
+    'year'       => '2037',
+    'payname'    => $payname,
+    'paytype'    => $paytype,
+    'paystate'   => $paystate,
+    'ss'         => $ss,
+    'stateid'    => $stateid,
+    'stateid_state' => $stateid_state,
     'save'       => $save,
     'auto'       => $auto,
     'paybatch'   => $paybatch,

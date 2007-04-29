@@ -90,10 +90,12 @@ Billing information
   <TD ALIGN="right">Bank name</TD>
   <TD BGCOLOR="#ffffff"><% $cust_main->payname %></TD>
 </TR>
+% if ( $conf->exists('show_bankstate') ) {
 <TR>
   <TD ALIGN="right"><% $paystate_label %></TD>
   <TD BGCOLOR="#ffffff"><% $cust_main->paystate || '&nbsp;&nbsp;&nbsp;' %></TD>
 </TR>
+% }
 % } elsif ( $cust_main->payby eq 'LECB' ) {
 %     $cust_main->payinfo =~ /^(\d{3})(\d{3})(\d{4})$/;
 %     my $payinfo = "$1-$2-$3";
