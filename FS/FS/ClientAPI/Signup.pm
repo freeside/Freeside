@@ -1,6 +1,8 @@
 package FS::ClientAPI::Signup;
 
 use strict;
+use vars qw($DEBUG $me);
+use Data::Dumper;
 use Tie::RefHash;
 use FS::Conf;
 use FS::Record qw(qsearch qsearchs dbdef);
@@ -18,29 +20,30 @@ use FS::acct_snarf;
 use FS::queue;
 use FS::reg_code;
 
+$DEBUG = 2;
+$me = '[FS::ClientAPI::Signup]';
+
 sub signup_info {
   my $packet = shift;
 
+  warn "$me signup_info called on $packet\n" if $DEBUG;
+
   my $conf = new FS::Conf;
 
-  use vars qw($signup_info_cache); #cache for performance;
-  $signup_info_cache ||= {
-    'cust_main_county' =>
-      [ map { $_->hashref } qsearch('cust_main_county', {}) ],
+  my $cache = new FS::ClientAPI_SessionCache( {
+    'namespace' => 'FS::ClientAPI::Signup',
+  } );
+  my $signup_info_cache = $cache->get('signup_info_cache');
 
-    'agent' =>
-      [
-        map { $_->hashref }
-          qsearch('agent', { 'disabled' => '' } )
-      ],
+  if ( $signup_info_cache ) {
 
-    'part_referral' =>
-      [
-        map { $_->hashref }
-          qsearch('part_referral', { 'disabled' => '' })
-      ],
+    warn "$me loading cached signup info\n" if $DEBUG > 1;
 
-    'agentnum2part_pkg' =>
+  } else {
+
+    warn "$me populating signup info cache\n" if $DEBUG > 1;
+
+    my $agentnum2part_pkg = 
       {
         map {
           my $href = $_->pkgpart_hashref;
@@ -55,47 +58,75 @@ sub signup_info {
                   qsearch( 'part_pkg', { 'disabled' => '' } )
             ];
         } qsearch('agent', { 'disabled' => '' })
-      },
+      };
 
-    'svc_acct_pop' => [ map { $_->hashref } qsearch('svc_acct_pop',{} ) ],
+    my $msgcat = { map { $_=>gettext($_) }
+                       qw( passwords_dont_match invalid_card unknown_card_type
+                           not_a empty_password illegal_or_empty_text )
+                 };
+    warn "msgcat: ". Dumper($msgcat). "\n" if $DEBUG > 2;
 
-    'emailinvoiceonly' => $conf->exists('emailinvoiceonly'),
+    my $label = { map { $_ => FS::Msgcat::_gettext($_) }
+                      qw( stateid stateid_state )
+                };
+    warn "label: ". Dumper($label). "\n" if $DEBUG > 2;
 
-    'security_phrase' => $conf->exists('security_phrase'),
+    $signup_info_cache = {
+      'cust_main_county' => [ map $_->hashref,
+                                  qsearch('cust_main_county', {} )
+                            ],
 
-    'payby' => [ $conf->config('signup_server-payby') ],
+      'agent' => [ map $_->hashref,
+                       qsearch('agent', { 'disabled' => '' } )
+                 ],
 
-    'card_types' => card_types(),
+      'part_referral' => [ map $_->hashref,
+                               qsearch('part_referral', { 'disabled' => '' } )
+                         ],
 
-    'paytypes' => [ @FS::cust_main::paytypes ],
+      'agentnum2part_pkg' => $agentnum2part_pkg,
 
-    'cvv_enabled' => defined dbdef->table('cust_main')->column('paycvv'), # 1,
+      'svc_acct_pop' => [ map $_->hashref, qsearch('svc_acct_pop',{} ) ],
 
-    'stateid_enabled' => $conf->exists('show_stateid'),
+      'emailinvoiceonly' => $conf->exists('emailinvoiceonly'),
 
-    'paystate_enabled' => $conf->exists('show_bankstate'),
+      'security_phrase' => $conf->exists('security_phrase'),
 
-    'ship_enabled' => defined dbdef->table('cust_main')->column('ship_last'),#1,
+      'payby' => [ $conf->config('signup_server-payby') ],
 
-    'msgcat' => { map { $_=>gettext($_) } qw(
-      passwords_dont_match invalid_card unknown_card_type not_a empty_password illegal_or_empty_text
-    ) },
+      'card_types' => card_types(),
 
-    'label' => { map { $_ => FS::Msgcat::_gettext($_) } qw(
-      stateid stateid_state
-    ) },
+      'paytypes' => [ @FS::cust_main::paytypes ],
 
-    'statedefault' => $conf->config('statedefault') || 'CA',
+      'cvv_enabled' => 1,
 
-    'countrydefault' => $conf->config('countrydefault') || 'US',
+      'stateid_enabled' => $conf->exists('show_stateid'),
 
-    'refnum' => $conf->config('signup_server-default_refnum'),
+      'paystate_enabled' => $conf->exists('show_bankstate'),
 
-    'default_pkgpart' => $conf->config('signup_server-default_pkgpart'),
+      'ship_enabled' => 1,
 
-  };
+      'msgcat' => $msgcat,
+
+      'label' => $label,
+
+      'statedefault' => scalar($conf->config('statedefault')) || 'CA',
+
+      'countrydefault' => scalar($conf->config('countrydefault')) || 'US',
+
+      'refnum' => scalar($conf->config('signup_server-default_refnum')),
+
+      'default_pkgpart' => scalar($conf->config('signup_server-default_pkgpart')),
+
+    };
+
+    $cache->set('signup_info_cache', $signup_info_cache);
+
+  }
 
   my $signup_info = { %$signup_info_cache };
+  warn "$me signup info loaded\n" if $DEBUG > 1;
+  warn Dumper($signup_info). "\n" if $DEBUG > 2;
 
   my @addl = qw( signup_server-classnum2 signup_server-classnum3 );
 
@@ -104,6 +135,9 @@ sub signup_info {
     $signup_info->{optional_packages} = [];
 
     foreach my $addl ( @addl ) {
+
+      warn "$me adding optional package info\n" if $DEBUG > 1;
+
       my $classnum = $conf->config($addl) or next;
 
       my @pkgs = map { {
@@ -116,6 +150,8 @@ sub signup_info {
 
       push @{$signup_info->{optional_packages}}, \@pkgs;
 
+      warn "$me done adding opt. package info for $classnum\n" if $DEBUG > 1;
+
     }
 
   }
@@ -127,6 +163,8 @@ sub signup_info {
 
   my $session = '';
   if ( exists $packet->{'session_id'} ) {
+
+    warn "$me loading agent session\n" if $DEBUG > 1;
     my $cache = new FS::ClientAPI_SessionCache( {
       'namespace' => 'FS::ClientAPI::Agent',
     } );
@@ -136,7 +174,11 @@ sub signup_info {
     } else {
       return { 'error' => "Can't resume session" }; #better error message
     }
-  }elsif( exists $packet->{'customer_session_id'} ) {
+    warn "$me done loading agent session\n" if $DEBUG > 1;
+
+  } elsif ( exists $packet->{'customer_session_id'} ) {
+
+    warn "$me loading customer session\n" if $DEBUG > 1;
     my $cache = new FS::ClientAPI_SessionCache( {
       'namespace' => 'FS::ClientAPI::MyAccount',
     } );
@@ -149,11 +191,16 @@ sub signup_info {
     } else {
       return { 'error' => "Can't resume session" }; #better error message
     }
+    warn "$me done loading customer session\n" if $DEBUG > 1;
+
   }
 
   $signup_info->{'part_pkg'} = [];
 
   if ( $packet->{'reg_code'} ) {
+
+    warn "$me setting package list via reg_code\n" if $DEBUG > 1;
+
     $signup_info->{'part_pkg'} = 
       [ map { { 'payby'       => [ $_->payby ],
                 'freq_pretty' => $_->freq_pretty,
@@ -171,7 +218,11 @@ sub signup_info {
     $signup_info->{'error'} = 'Unknown registration code'
       unless @{ $signup_info->{'part_pkg'} };
 
+    warn "$me done setting package list via reg_code\n" if $DEBUG > 1;
+
   } elsif ( $packet->{'promo_code'} ) {
+
+    warn "$me setting package list via promo_code\n" if $DEBUG > 1;
 
     $signup_info->{'part_pkg'} =
       [ map { { 'payby'   => [ $_->payby ],
@@ -189,12 +240,18 @@ sub signup_info {
 
     $signup_info->{'error'} = 'Unknown promotional code'
       unless @{ $signup_info->{'part_pkg'} };
+
+    warn "$me done setting package list via promo_code\n" if $DEBUG > 1;
   }
 
   if ( $agentnum ) {
+
+    warn "$me setting agent-specific package list\n" if $DEBUG > 1;
     $signup_info->{'part_pkg'} = $signup_info->{'agentnum2part_pkg'}{$agentnum}
       unless @{ $signup_info->{'part_pkg'} };
+    warn "$me done setting agent-specific package list\n" if $DEBUG > 1;
 
+    warn "$me setting agent-specific adv. source list\n" if $DEBUG > 1;
     $signup_info->{'part_referral'} =
       [
         map { $_->hashref }
@@ -206,15 +263,18 @@ sub signup_info {
                    },
                  )
       ];
+    warn "$me done setting agent-specific adv. source list\n" if $DEBUG > 1;
 
   }
   # else {
   # delete $signup_info->{'part_pkg'};
   #}
 
+  warn "$me sorting package list\n" if $DEBUG > 1;
   $signup_info->{'part_pkg'} = [ sort { $a->{pkg} cmp $b->{pkg} }  # case?
                                       @{ $signup_info->{'part_pkg'} }
                                ];
+  warn "$me done sorting package list\n" if $DEBUG > 1;
 
   if ( exists $packet->{'session_id'} ) {
     my $agent_signup_info = { %$signup_info };
