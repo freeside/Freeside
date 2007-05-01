@@ -20,7 +20,7 @@ use FS::acct_snarf;
 use FS::queue;
 use FS::reg_code;
 
-$DEBUG = 2;
+$DEBUG = 0;
 $me = '[FS::ClientAPI::Signup]';
 
 sub signup_info {
