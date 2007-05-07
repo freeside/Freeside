@@ -1,0 +1,82 @@
+#!/usr/bin/perl -w
+
+use strict;
+use vars qw( %seen @dups );
+use Getopt::Std;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch qsearchs);
+use FS::part_export;
+
+my %allowed_types = map { $_ => 1 } qw ( sqlradius sqlradius_withdomain );
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+my $export_x = shift;
+my @part_export;
+if ( !defined($export_x) ) {
+  @part_export = qsearch('part_export', {} );
+} elsif ( $export_x =~ /^(\d+)$/ ) {
+  @part_export = qsearchs('part_export', { exportnum=>$1 } )
+    or die "exportnum $export_x not found\n";
+} else {
+  @part_export = qsearch('part_export', { exporttype=>$export_x } )
+    or die "no exports of type $export_x found\n";
+}
+
+@part_export = grep { $allowed_types{$_->exporttype} } @part_export
+  or die "No sqlradius exports specified.";
+
+foreach my $part_export ( @part_export ) {
+  my $dbh = DBI->connect( map $part_export->option($_),
+                           qw ( datasrc username password ) );
+
+  my $sth = $dbh->prepare("SELECT id,username,groupname
+                           FROM usergroup ORDER By username,groupname,id")
+    or die $dbh->errstr;
+  $sth->execute() or die $sth->errstr;
+
+  @dups = (); %seen = ();
+  while (my $row = $sth->fetchrow_arrayref ) {
+    my ($userid, $username, $groupname) = @$row;
+    unless ( exists($seen{$username}{$groupname}) ) {
+      $seen{$username}{$groupname} = $userid;
+      next;
+    }
+    push @dups, $userid;
+  }
+
+  $sth = $dbh->prepare("DELETE FROM usergroup WHERE id = ?")
+    or die $dbh->errstr;
+
+  foreach (@dups) {
+    $sth->execute($_) or die $sth->errstr;
+  }
+
+}
+
+
+sub usage {
+  die "Usage:\n\n  freeside-sqlradius-dedup-group user [ exportnum|exporttype ]\n";
+}
+
+=head1 NAME
+
+freeside-sqlradius-dedup-group - Command line tool to eliminate duplicate usergroup entries from radius tables
+
+=head1 SYNOPSIS
+
+  freeside-sqlradius-dedup-group user [ exportnum|exporttype ]
+
+=head1 DESCRIPTION
+
+  Removes all but one username groupname pair when duplicate entries exist
+  for the specified export (selected by exportnum or exporttype) or all
+  exports if none are specified.
+
+=head1 SEE ALSO
+
+L<freeside-reexport>, L<freeside-sqlradius-reset>, L<FS::part_export> 
+
+=cut
+

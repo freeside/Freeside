@@ -39,6 +39,7 @@ foreach my $export ( @exports ) {
 foreach my $export ( @exports ) {
 
   #my @svcparts = map { $_->svcpart } $export->export_svc;
+  my $overlimit_groups = $export->option('overlimit_groups');
 
   my @svc_acct =
     map { qsearchs('svc_acct', { 'svcnum' => $_->svcnum } ) }
@@ -50,6 +51,12 @@ foreach my $export ( @exports ) {
 
     $svc_acct->check; #set any fixed usergroup so it'll export even if all
                       #svc_acct records don't have the group yet
+
+    if ($overlimit_groups && $svc_acct->overlimit) {
+      $svc_acct->usergroup( &{ $svc_acct->_fieldhandlers->{'usergroup'} }
+                            ($svc_acct, $overlimit_groups)
+                          );
+    }
 
     #false laziness with FS::svc_acct::insert (like it matters)
     my $error = $export->export_insert($svc_acct);
