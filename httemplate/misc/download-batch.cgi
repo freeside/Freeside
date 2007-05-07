@@ -98,7 +98,8 @@
 %  }elsif ($format eq "ach-spiritone"){
 %
 %  my( $account, $aba ) = split( '@', $cust_pay_batch->payinfo );
-%  my $payname=$cust_pay_batch->payname; $payname =~ tr/",/  /; #payinfo too?
+%  my $payname=$cust_pay_batch->first. " ". $cust_pay_batch->last;
+%  $payname =~ tr/",/  /;                                        #payinfo too?
 %  my $batchline = qq!"$payname","!.$cust_pay_batch->paybatchnum.
 %                  qq!","$aba","$account","27","!.$cust_pay_batch->amount.
 %                  qq!","27","0.00"!;
