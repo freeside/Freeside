@@ -52,11 +52,9 @@
 %if ( $old->pkgnum && ! $conf->exists('legacy_link-steal') ) {
 %  $error = "svcnum $svcnum already linked to package ". $old->pkgnum;
 %} else {
-%  $new = new FS::cust_svc ({
-%    'svcnum' => $svcnum,
-%    'pkgnum' => $pkgnum,
-%    'svcpart' => $svcpart,
-%  });
+%  $new = new FS::cust_svc { $old->hash };
+%  $new->pkgnum($pkgnum);
+%  $new->svcpart($svcpart);
 %
 %  $error = $new->replace($old);
 %}

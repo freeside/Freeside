@@ -1267,11 +1267,8 @@ sub transfer {
   foreach my $cust_svc ($self->cust_svc) {
     if($target{$cust_svc->svcpart} > 0) {
       $target{$cust_svc->svcpart}--;
-      my $new = new FS::cust_svc {
-        svcnum  => $cust_svc->svcnum,
-        svcpart => $cust_svc->svcpart,
-        pkgnum  => $dest_pkgnum,
-      };
+      my $new = new FS::cust_svc { $cust_svc->hash };
+      $new->pkgnum($dest_pkgnum);
       my $error = $new->replace($cust_svc);
       return $error if $error;
     } elsif ( exists $opt{'change_svcpart'} && $opt{'change_svcpart'} ) {
@@ -1290,11 +1287,9 @@ sub transfer {
         warn "alternate(s) found\n" if $DEBUG;
         my $change_svcpart = $alternate[0];
         $target{$change_svcpart}--;
-        my $new = new FS::cust_svc {
-          svcnum  => $cust_svc->svcnum,
-          svcpart => $change_svcpart,
-          pkgnum  => $dest_pkgnum,
-        };
+        my $new = new FS::cust_svc { $cust_svc->hash };
+        $new->svcpart($change_svcpart);
+        $new->pkgnum($dest_pkgnum);
         my $error = $new->replace($cust_svc);
         return $error if $error;
       } else {
