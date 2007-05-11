@@ -170,7 +170,7 @@ sub communigate_pro_command { #subroutine, not method
 
   $cli->$method(@args) or die "CGPro error: ". $cli->getErrMessage;
 
-  $cli->Logout or die "Can't logout of CGPro: $CGP::ERR_STRING\n";
+  $cli->Logout; # or die "Can't logout of CGPro: $CGP::ERR_STRING\n";
 
 }
 
