@@ -182,9 +182,9 @@ input.fsblackbuttonselected {
         </TD>
 
         <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right" STYLE="padding-right:4px">
-          <FORM ACTION="<%$fsurl%>rt/index.html" METHOD="GET" STYLE="margin:0">
+          <FORM ACTION="<% FS::TicketSystem->baseurl %>index.html" METHOD="GET" STYLE="margin:0">
             <INPUT NAME="q" TYPE="text" VALUE="(ticket # or subject string)" onFocus="clearhint_search_ticket(this);" onClick="clearhint_search_ticket(this);" STYLE="vertical-align:bottom;text-align:right"><BR>
-            <A HREF="<%$fsurl%>rt/Search/Build.html" STYLE="color: #ffffff; font-size: 70%">Advanced</A>
+            <A HREF="<% FS::TicketSystem->baseurl %>Search/Build.html" STYLE="color: #ffffff; font-size: 70%">Advanced</A>
             <INPUT TYPE="submit" VALUE="Search tickets" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:70%;padding-left:2px;padding-right:2px">
           </FORM>
         </TD>
