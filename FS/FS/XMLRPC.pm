@@ -11,9 +11,11 @@ use FS::Conf;
 use FS::Record;
 use FS::cust_main;
 
+use Data::Dumper;
+
 @ISA = qw( );
 
-$DEBUG = 1;
+$DEBUG = 0;
 
 =head1 NAME
 
@@ -84,7 +86,6 @@ sub _serve { #Subroutine, not method
 
   my ($method_name, $params) = (shift, shift);
 
-  use Data::Dumper;
 
   #die 'Called _serve without parameters' unless ref($params) eq 'ARRAY';
   $params = [] unless (ref($params) eq 'ARRAY');
@@ -130,7 +131,7 @@ sub _serve { #Subroutine, not method
 
     }
 
-    warn Dumper(@result);
+    warn Dumper(@result) if $DEBUG;
 
     if (grep { UNIVERSAL::can($_, 'hashref') ? 0 : 1 } @result) {
       #warn "FS::XMLRPC: One or more objects returned from '${fssub}' doesn't " .
