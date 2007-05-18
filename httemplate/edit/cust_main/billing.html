@@ -396,6 +396,8 @@
       <TD WIDTH="608" COLSPAN="2"><INPUT TYPE="checkbox" NAME="tax" VALUE="Y" <% $cust_main->tax eq "Y" ? 'CHECKED' : '' %>> Tax Exempt</TD>
     </TR>
 
+% unless ( $conf->exists('emailinvoiceonly') ) {
+
     <TR>
       <TD WIDTH="608" COLSPAN="2"><INPUT TYPE="checkbox" NAME="invoicing_list_POST" VALUE="POST" <%
 
@@ -420,6 +422,8 @@
 
       </TD>
     </TR>
+
+% }
 
     <TR>
       <TD ALIGN="right" WIDTH="200">Email invoice </TD>
