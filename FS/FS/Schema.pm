@@ -1007,18 +1007,18 @@ sub tables_hashref {
       'index'       => [ [ 'last' ] ],
     },
 
-    'session' => {
-      'columns' => [
-        'sessionnum', 'serial',       '',   '', '', '', 
-        'portnum',    'int',       '',   '', '', '', 
-        'svcnum',     'int',       '',   '', '', '', 
-        'login',      @date_type, '', '', 
-        'logout',     @date_type, '', '', 
-      ],
-      'primary_key' => 'sessionnum',
-      'unique'      => [],
-      'index'       => [ [ 'portnum' ] ],
-    },
+#    'session' => {
+#      'columns' => [
+#        'sessionnum', 'serial',       '',   '', '', '', 
+#        'portnum',    'int',       '',   '', '', '', 
+#        'svcnum',     'int',       '',   '', '', '', 
+#        'login',      @date_type, '', '', 
+#        'logout',     @date_type, '', '', 
+#      ],
+#      'primary_key' => 'sessionnum',
+#      'unique'      => [],
+#      'index'       => [ [ 'portnum' ] ],
+#    },
 
     'queue' => {
       'columns' => [
