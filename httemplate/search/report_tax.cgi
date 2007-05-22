@@ -304,10 +304,33 @@ foreach my $r (qsearch('cust_main_county', {}, '', $gotcust) ) {
   my $mywhere = $where;
 
   if ( $r->taxclass ) {
+
     $mywhere .= " AND taxclass = ? ";
     push @param, 'taxclass';
     $regions{$label}->{'url_param'} .= ';taxclass='. $r->taxclass
       if $cgi->param('show_taxclasses');
+
+  } else {
+
+    my $same_query = "SELECT COUNT(*) FROM cust_main_county WHERE country = ?";
+    my @same_param = ( 'country' );
+    foreach my $opt_field (qw( state county )) {
+      if ( $r->$opt_field() ) {
+        $same_query .= " AND $opt_field = ?";
+        push @same_param, $opt_field;
+      } else {
+        $same_query .= " AND $opt_field IS NULL";
+      }
+    }
+
+    my $num_same_region = scalar_sql( $r, \@same_param, $same_query );
+
+    if ( $num_same_region > 1 ) {
+
+      $mywhere .= " AND taxclass IS NULL";
+
+    }
+  
   }
 
   my $fromwhere = $from_join_cust. $join_pkg. $mywhere. " AND payby != 'COMP' ";
@@ -421,7 +444,7 @@ my %base_regions = ();
 foreach my $r (
   qsearch( 'cust_main_county',
            {},
-           'DISTINCT ON (country, state, county, taxname) *',
+           "DISTINCT ON ( country, state, county, CASE WHEN taxname IS NULL THEN '' ELSE taxname END ) *",
            $gotcust
          )
 ) {
@@ -438,10 +461,11 @@ foreach my $r (
     $r->taxname
       ? 'AND itemdesc = '. dbh->quote($r->taxname)
       : "AND ( itemdesc IS NULL OR itemdesc = '' OR itemdesc = 'Tax' )";
-  my $x = scalar_sql($r, \@taxparam,
-    "SELECT SUM(cust_bill_pkg.setup+cust_bill_pkg.recur) $taxwhere ".
-    "AND pkgnum = 0 $named_tax",
-  );
+
+  my $sql = "SELECT SUM(cust_bill_pkg.setup+cust_bill_pkg.recur) ".
+            " $taxwhere AND pkgnum = 0 $named_tax";
+
+  my $x = scalar_sql($r, \@taxparam, $sql );
   $tax += $x;
   $regions{$label}->{'tax'} += $x;
 
