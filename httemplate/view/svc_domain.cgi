@@ -51,7 +51,8 @@ Service #<% $svcnum %>
       <td CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $domain_record->recdata %>
 
 % unless ( $domain_record->rectype eq 'SOA' ) { 
-      (<A HREF="javascript:areyousure('<%$p%>misc/delete-domain_record.cgi?<%$domain_record->recnum%>', 'Delete \'<% $domain_record->reczone %> <% $type %> <% $domain_record->recdata %>\' ?' )">delete</A>)
+%   ( my $recdata = $domain_record->recdata ) =~ s/"/\\'\\'/g;
+      (<A HREF="javascript:areyousure('<%$p%>misc/delete-domain_record.cgi?<%$domain_record->recnum%>', 'Delete \'<% $domain_record->reczone %> <% $type %> <% $recdata %>\' ?' )">delete</A>)
 % } 
       </td>
     </tr>
