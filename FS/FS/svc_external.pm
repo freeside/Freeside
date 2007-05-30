@@ -79,7 +79,9 @@ sub table { 'svc_external'; }
 sub label {
   my $self = shift;
   my $conf = new FS::Conf;
-  if ( $conf->config('svc_external-display_type') eq 'artera_turbo' ) {
+  if (    $conf->exists('svc_external-display_type')
+       && $conf->config('svc_external-display_type') eq 'artera_turbo' )
+  {
     sprintf('%010d', $self->id). '-'.
       substr('0000000000'.uc($self->title), -10);
   } else {
