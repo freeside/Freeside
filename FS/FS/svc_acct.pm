@@ -1753,7 +1753,7 @@ sub set_usage {
   if (scalar(keys %handyhash)) {
     my $sth = $dbh->prepare( $sql )
       or die "Error preparing $sql: ". $dbh->errstr;
-    my $rv = $sth->execute((grep{$_} values %handyhash), $self->svcnum);
+    my $rv = $sth->execute((values %handyhash), $self->svcnum);
     die "Error executing $sql: ". $sth->errstr
       unless defined($rv);
     die "Can't update usage for svcnum ". $self->svcnum
