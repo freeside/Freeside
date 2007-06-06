@@ -1797,6 +1797,13 @@ httemplate/docs/config.html
     'type'        => 'text',
   },
 
+  {
+    'key'         => 'disable_void_after',
+    'section'     => 'billing',
+    'description' => 'Number of seconds after which freeside won\'t attempt to VOID a payment first when performing a refund.',
+    'type'        => 'text',
+  },
+
 );
 
 1;

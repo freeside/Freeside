@@ -3025,8 +3025,19 @@ sub realtime_refund_bop {
     if length($auth); #echeck/ACH transactions have an order # but no auth
                       #(at least with authorize.net)
 
+  my $disable_void_after;
+  if ($conf->exists('disable_void_after')
+      && $conf->config('disable_void_after') =~ /^(\d+)$/) {
+    $disable_void_after = $1;
+  }
+
   #first try void if applicable
-  if ( $cust_pay && $cust_pay->paid == $amount ) { #and check dates?
+  if ( $cust_pay && $cust_pay->paid == $amount
+    && (
+      ( not defined($disable_void_after) )
+      || ( time < ($cust_pay->_date + $disable_void_after ) )
+    )
+  ) {
     warn "  attempting void\n" if $DEBUG > 1;
     my $void = new Business::OnlinePayment( $processor, @bop_options );
     $void->content( 'action' => 'void', %content );
