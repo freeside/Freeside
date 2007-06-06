@@ -1804,7 +1804,13 @@ httemplate/docs/config.html
     'type'        => 'text',
   },
 
+  {
+    'key'         => 'disable_line_item_date_ranges',
+    'section'     => 'billing',
+    'description' => 'Prevent freeside from automatically generating date ranges on invoice line items.',
+    'type'        => 'checkbox',
+  },
+
 );
 
 1;
-
