@@ -2534,15 +2534,6 @@ sub _items_cust_bill_pkg {
       }
 
       if ( $cust_bill_pkg->recur != 0 ) {
-        push @buf, [
-          $desc .
-            ( $conf->exists('disable_line_item_date_ranges')
-              ? ''
-              : " (" . time2str("%x", $cust_bill_pkg->sdate) . " - " .
-                       time2str("%x", $cust_bill_pkg->edate) . ")"
-            ),
-          $money_char. sprintf("%10.2f", $cust_bill_pkg->recur)
-        ];
         push @b, {
           description     => $desc .
                              ( $conf->exists('disable_line_item_date_ranges')
