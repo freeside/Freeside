@@ -200,42 +200,7 @@ sub _export_insert {
 
 sub _export_delete {
   my( $self, $svc ) = ( shift, shift );
-
-  my $custnum = $svc->cust_svc->cust_pkg->cust_main->custnum;
-
-  my $err_or_som = $self->prizm_command('NetworkIfService', 'getPrizmElements',
-                                        ['MAC Address'],
-                                        [$svc->mac_addr],
-                                        ['='],
-                                       );
-  return $err_or_som
-    unless ref($err_or_som);
-
-  return "Can't find prizm element for " . $svc->mac_addr
-    unless $err_or_som->result->[0];
-
-  $err_or_som = $self->prizm_command('NetworkIfService',
-                                     'suspendNetworkElements',
-                                     [$err_or_som->result->[0]->elementId],
-                                     1,
-                                     1,
-                                    );
-
-  return $err_or_som
-    unless ref($err_or_som);
-
-  $err_or_som = $self->prizm_command('CustomerIfService',
-                                     'removeElementFromCustomer',
-                                     0,
-                                     $custnum,
-                                     0,
-                                     $svc->mac_addr,
-                                    );
-
-  return $err_or_som
-    unless ref($err_or_som);
-
-  '';
+  $self->queue_statuschange('deleteElement', $svc);
 }
 
 sub _export_replace {
@@ -304,54 +269,62 @@ sub _export_replace {
 
 sub _export_suspend {
   my( $self, $svc ) = ( shift, shift );
-
-  my $err_or_som = $self->prizm_command('NetworkIfService', 'getPrizmElements',
-                                        [ 'MAC Address' ],
-                                        [ $svc->mac_addr ],
-                                        [ '=' ],
-                                       );
-  return $err_or_som
-    unless ref($err_or_som);
-
-  return "Can't find prizm element for " . $svc->mac_addr
-    unless $err_or_som->result->[0];
-
-  $err_or_som = $self->prizm_command('NetworkIfService',
-                                     'suspendNetworkElements',
-                                     [ $err_or_som->result->[0]->elementId ],
-                                     1,
-                                     1,
-                                    );
-
-  return $err_or_som
-    unless ref($err_or_som);
-
-  '';
-
+  $self->queue_statuschange('suspendNetworkElements', $svc);
 }
 
 sub _export_unsuspend {
   my( $self, $svc ) = ( shift, shift );
+  $self->queue_statuschange('activateNetworkElements', $svc);
+}
 
-  my $err_or_som = $self->prizm_command('NetworkIfService', 'getPrizmElements',
-                                        [ 'MAC Address' ],
-                                        [ $svc->mac_addr ],
-                                        [ '=' ],
-                                       );
-  return $err_or_som
+sub queue_statuschange {
+  my( $self, $method, $svc ) = @_;
+
+  my $queue = new FS::queue {
+    'svcnum' => $svc->svcnum,
+    'job'    => 'FS::part_export::prizm::statuschange',
+  };
+  $queue->insert(
+    ( map { $self->option($_) }
+          qw( url user password ) ),
+    $method,
+    $svc->mac_addr,
+  );
+}
+
+sub statuschange {  # subroutine
+  my( $url, $user, $password, $method, $mac_addr ) = @_;
+
+  eval "use Net::Prizm qw(CustomerInfo PrizmElement);";
+  die $@ if $@;
+
+  my $prizm = new Net::Prizm (
+    namespace => 'NetworkIfService',
+    url => $url,
+    user => $user,
+    password => $password,
+  );
+  
+  my $err_or_som = $prizm->getPrizmElements( [ 'MAC Address' ],
+                                             [ $mac_addr ],
+                                             [ '=' ],
+                                           );
+  die $err_or_som
     unless ref($err_or_som);
 
-  return "Can't find prizm element for " . $svc->mac_addr
+  die "Can't find prizm element for " . $mac_addr
     unless $err_or_som->result->[0];
 
-  $err_or_som = $self->prizm_command('NetworkIfService',
-                                     'activateNetworkElements',
-                                     [ $err_or_som->result->[0]->elementId ],
-                                     1,
-                                     1,
-                                    );
+  my @args;
+  # yuck! should pass args in when we know 'em
+  if ($method =~ /suspendNetworkElements/ || $method =~ /activateNetworkElements/) {
+    @args = ( [ $err_or_som->result->[0]->elementId ], 1, 1);
+  }else{
+    @args = ( $err_or_som->result->[0]->elementId, 1);
+  }
+  $err_or_som = $prizm->$method( @args );
 
-  return $err_or_som
+  die $err_or_som
     unless ref($err_or_som);
 
   '';
