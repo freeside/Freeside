@@ -374,10 +374,17 @@ sub sqlradius_usergroup_insert { #subroutine, not method
   my $dbh = sqlradius_connect(shift, shift, shift);
   my( $username, @groups ) = @_;
 
+  my $s_sth = $dbh->prepare(
+    "SELECT COUNT(*) FROM usergroup WHERE UserName = ? AND GroupName = ?"
+  ) or die $dbh->errstr;
+
   my $sth = $dbh->prepare( 
     "INSERT INTO usergroup ( UserName, GroupName ) VALUES ( ?, ? )"
   ) or die $dbh->errstr;
+
   foreach my $group ( @groups ) {
+    $s_sth->execute( $username, $group ) or die $s_sth->errstr;
+    next if $s_sth->fetchrow_arrayref->[0];
     $sth->execute( $username, $group )
       or die "can't insert into groupname table: ". $sth->errstr;
   }
