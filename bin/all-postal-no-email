@@ -1,0 +1,22 @@
+#!/usr/bin/perl -w
+
+use strict;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch);
+use FS::cust_main;
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+foreach my $cust_main ( qsearch( 'cust_main', {} ) ) {
+
+  print $cust_main->custnum. "\n";
+
+  $cust_main->invoicing_list( [ 'POST' ] );
+
+}
+
+sub usage {
+  die "Usage:\n\n  all-postal-no-email user\n";
+}
+
