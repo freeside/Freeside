@@ -1815,22 +1815,23 @@ sub agent {
 Generates invoices (see L<FS::cust_bill>) for this customer.  Usually used in
 conjunction with the collect method.
 
-Options are passed as name-value pairs.
+If there is an error, returns the error, otherwise returns false.
 
-Currently available options are:
+Options are passed as name-value pairs.  Currently available options are:
 
-resetup - if set true, re-charges setup fees.
+=over 4
 
-time - bills the customer as if it were that time.  Specified as a UNIX
-timestamp; see L<perlfunc/"time">).  Also see L<Time::Local> and
-L<Date::Parse> for conversion functions.  For example:
+=item resetup - if set true, re-charges setup fees.
+
+=item time - bills the customer as if it were that time.  Specified as a UNIX timestamp; see L<perlfunc/"time">).  Also see L<Time::Local> and L<Date::Parse> for conversion functions.  For example:
 
  use Date::Parse;
  ...
  $cust_main->bill( 'time' => str2time('April 20th, 2001') );
 
+=item invoice_time - used in conjunction with the I<time> option, this option specifies the date of for the generated invoices.  Other calculations, such as whether or not to generate the invoice in the first place, are not affected.
 
-If there is an error, returns the error, otherwise returns false.
+=back
 
 =cut
 
@@ -1863,7 +1864,7 @@ sub bill {
   # no line items] and we're inside a transaciton so nothing else will see it)
   my $cust_bill = new FS::cust_bill ( {
     'custnum' => $self->custnum,
-    '_date'   => $time,
+    '_date'   => ( $options{'invoice_time'} || $time ),
     #'charged' => $charged,
     'charged' => 0,
   } );

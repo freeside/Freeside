@@ -5,9 +5,8 @@ use Getopt::Std;
 use FS::UID qw(adminsuidsetup);
 
 &untaint_argv;	#what it sounds like  (eww)
-#use vars qw($opt_d $opt_v $opt_p $opt_a $opt_s $opt_y);
 use vars qw(%opt);
-getopts("p:a:d:vsy:", \%opt);
+getopts("p:a:d:vsy:n", \%opt);
 
 my $user = shift or die &usage;
 adminsuidsetup $user;
@@ -68,6 +67,10 @@ the bill and collect methods of a cust_main object.  See L<FS::cust_main>.
       specifies an offset, in days.  For example, "-y 15" would increment the
       "pretend date" 15 days from whatever was specified by the -d switch
       (or now, if no -d switch was given).
+
+  -n: When used with "-d" and/or "-y", specifies that invoices should be dated
+      with today's date, irregardless of the pretend date used to pre-generate
+      the invoices.
 
   -p: Only process customers with the specified payby (I<CARD>, I<DCRD>, I<CHEK>, I<DCHK>, I<BILL>, I<COMP>, I<LECB>)
 

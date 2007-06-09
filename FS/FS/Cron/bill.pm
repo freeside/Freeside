@@ -24,6 +24,8 @@ sub bill {
   my($time)= $opt{'d'} ? str2time($opt{'d'}) : $^T;
   $time += $opt{'y'} * 86400 if $opt{'y'};
 
+  my $invoice_time = $opt{'n'} ? $^T : $time;
+
   # select * from cust_main where
   my $where_pkg = <<"END";
     0 < ( select count(*) from cust_pkg
@@ -102,8 +104,9 @@ END
         if $error;
     }
   
-    my $error = $cust_main->bill( 'time'    => $time,
-                                  'resetup' => $opt{'s'},
+    my $error = $cust_main->bill( 'time'         => $time,
+                                  'invoice_time' => $invoice_time,
+                                  'resetup'      => $opt{'s'},
                                 );
     warn "Error billing, custnum ". $cust_main->custnum. ": $error" if $error;
   
