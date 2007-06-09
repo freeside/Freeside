@@ -1,0 +1,5 @@
+#!/bin/sh
+
+year=`date +%Y`
+nextyear=`expr $year + 1`
+/usr/local/bin/freeside-daily -d 1/1/$nextyear -n fs_daily
