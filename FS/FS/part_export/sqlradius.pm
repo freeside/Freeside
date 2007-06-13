@@ -6,6 +6,7 @@ use FS::Record qw( dbh qsearch qsearchs );
 use FS::part_export;
 use FS::svc_acct;
 use FS::export_svc;
+use Carp qw( cluck );
 
 @ISA = qw(FS::part_export);
 
@@ -106,6 +107,9 @@ sub _export_insert {
   }
   my @groups = $svc_acct->radius_groups;
   if ( @groups ) {
+    cluck localtime(). ": queuing usergroup_insert for ". $svc_acct->svcnum.
+          " (". $self->export_username($svc_acct). " with ". join(", ", @groups)
+      if $DEBUG;
     my $err_or_queue = $self->sqlradius_queue(
       $svc_acct->svcnum, 'usergroup_insert',
       $self->export_username($svc_acct), @groups );
@@ -384,7 +388,12 @@ sub sqlradius_usergroup_insert { #subroutine, not method
 
   foreach my $group ( @groups ) {
     $s_sth->execute( $username, $group ) or die $s_sth->errstr;
-    next if $s_sth->fetchrow_arrayref->[0];
+    if ($s_sth->fetchrow_arrayref->[0]) {
+      warn localtime() . ": sqlradius_usergroup_insert attempted to reinsert " .
+           "$group for $username\n"
+        if $DEBUG;
+      next;
+    }
     $sth->execute( $username, $group )
       or die "can't insert into groupname table: ". $sth->errstr;
   }
@@ -476,6 +485,9 @@ sub sqlreplace_usergroups {
   }
 
   if ( @newgroups ) {
+    cluck localtime(). ": queuing usergroup_insert for $svcnum ($username) ".
+          "with ".  join(", ", @newgroups)
+      if $DEBUG;
     my $err_or_queue = $self->sqlradius_queue( $svcnum, 'usergroup_insert',
       $username, @newgroups );
     return $err_or_queue
