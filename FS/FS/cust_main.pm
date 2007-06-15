@@ -2891,7 +2891,7 @@ L<http://420.am/business-onlinepayment> for supported gateways.
 
 Available methods are: I<CC>, I<ECHECK> and I<LEC>
 
-Available options are: I<amount>, I<reason>, I<paynum>
+Available options are: I<amount>, I<reason>, I<paynum>, I<paydate>
 
 Most gateways require a reference to an original payment transaction to refund,
 so you probably need to specify a I<paynum>.
@@ -2899,6 +2899,9 @@ so you probably need to specify a I<paynum>.
 I<amount> defaults to the original amount of the payment if not specified.
 
 I<reason> specifies a reason for the refund.
+
+I<paydate> specifies the expiration date for a credit card overriding the
+value from the customer record or the payment record. Specified as yyyy-mm-dd
 
 Implementation note: If I<amount> is unspecified or equal to the amount of the
 orignal payment, first an attempt is made to "void" the transaction via
@@ -3100,11 +3103,13 @@ sub realtime_refund_bop {
 
     if ( $cust_pay ) {
       $content{card_number} = $payinfo = $cust_pay->payinfo;
-      $cust_pay->paydate =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/ &&
-      ($content{expiration} = "$2/$1");  # where available
+      (exists($options{'paydate'}) ? $options{'paydate'} : $cust_pay->paydate)
+        =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/ &&
+        ($content{expiration} = "$2/$1");  # where available
     } else {
       $content{card_number} = $payinfo = $self->payinfo;
-      $self->paydate =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
+      (exists($options{'paydate'}) ? $options{'paydate'} : $self->paydate)
+        =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
       $content{expiration} = "$2/$1";
     }
 

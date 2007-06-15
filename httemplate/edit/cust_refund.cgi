@@ -53,6 +53,11 @@
 %  #false laziness w/FS/FS/cust_pay.pm
 %  my $payby = $cust_pay->payby;
 %  my $paymask = $cust_pay->paymask;
+%  my $paydate = $cust_pay->paydate;
+%  if ( $cgi->param('error') ) { 
+%    $paydate = $cgi->param('exp_year'). '-'. $cgi->param('exp_month'). '-01';
+%    $paydate = '' unless ($paydate =~ /^\d{2,4}-\d{1,2}-01$'/);
+%  }
 %  $payby =~ s/^BILL$/Check/ if $paymask;
 %  $payby =~ s/^CHEK$/Electronic check/;
 %
@@ -73,6 +78,19 @@
   <TR>
     <TD ALIGN="right">Method</TD><TD BGCOLOR="#ffffff"><% ucfirst(lc($payby)) %> # <% $paymask %></TD>
   </TR>
+
+% unless ( $paydate ) {  # possibly other reasons: i.e. card has since expired
+  <TR>
+    <TD ALIGN="right">Expiration</TD><TD BGCOLOR="#ffffff">
+      <% include( '/elements/select-month_year.html',
+                  'prefix' => 'exp',
+                  'selected_date' => $paydate,
+                  'empty_option' => !$paydate,
+                ) %>
+    </TD>
+  </TR>
+% } 
+
 %
 %  #false laziness w/FS/FS/cust_main::realtime_refund_bop
 %  if ( $cust_pay->paybatch =~ /^(\w+):(\w+)(:(\w+))?$/ ) {
