@@ -2567,10 +2567,11 @@ sub realtime_bop {
   $content{invoice_number} = $options{'invnum'}
     if exists($options{'invnum'}) && length($options{'invnum'});
 
+  my $paydate = '';
   if ( $method eq 'CC' ) { 
 
     $content{card_number} = $payinfo;
-    my $paydate = exists($options{'paydate'})
+    $paydate = exists($options{'paydate'})
                     ? $options{'paydate'}
                     : $self->paydate;
     $paydate =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
@@ -2754,6 +2755,7 @@ sub realtime_bop {
        'payby'    => $method2payby{$method},
        'payinfo'  => $payinfo,
        'paybatch' => $paybatch,
+       'paydate'  => $paydate,
     } );
     my $error = $cust_pay->insert($options{'manual'} ? ( 'manual' => 1 ) : () );
     if ( $error ) {
@@ -3098,8 +3100,8 @@ sub realtime_refund_bop {
 
     if ( $cust_pay ) {
       $content{card_number} = $payinfo = $cust_pay->payinfo;
-      #$self->paydate =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
-      #$content{expiration} = "$2/$1";
+      $cust_pay->paydate =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/ &&
+      ($content{expiration} = "$2/$1");  # where available
     } else {
       $content{card_number} = $payinfo = $self->payinfo;
       $self->paydate =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;

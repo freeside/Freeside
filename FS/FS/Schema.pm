@@ -527,6 +527,7 @@ sub tables_hashref {
                                                  # eventually
         'payinfo',  'varchar',   'NULL', 512, '', '', #see cust_main above
 	'paymask', 'varchar', 'NULL', $char_d, '', '', 
+        'paydate',  'varchar', 'NULL', 10, '', '', 
         'paybatch', 'varchar',   'NULL', $char_d, '', '', #for auditing purposes.
         'closed',    'char', 'NULL', 1, '', '', 
       ],
