@@ -44,12 +44,12 @@
 %# 
 %# END BPS TAGGED BLOCK }}}
 <& /Elements/TitleBoxStart, title => loc('Quick ticket creation') &>
-<form method="post" action="<%$RT::WebPath%>/index.html">
+<form method="post" action="<%$RT::WebPath%>/<% $RT::QuickCreateLong ? 'Ticket/Create.html' : 'index.html' %>">
 <input type="hidden" name="QuickCreate" value="1">
 <table>
 <tr>
 <td>
-<font size="-2"><&|/l&>Subject</&>:<br><input size="15" name="Subject"></font>
+<font size="-2"><&|/l&>Subject</&>:<br><input size="30" name="Subject"></font>
 </td>
 <td>
 <font size="-2"><&|/l&>Queue</&>:<br><& /Elements/SelectQueue, Name => 'Queue', ShowNullOption => 0 &></font>

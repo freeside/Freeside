@@ -16,6 +16,10 @@
 
 #Set( $rtname, 'example.com');
 
+# These settings should have been inserted by the initial Freeside install.
+# Somtimes you may want to change domain, timezone, or freeside::URL later,
+# everything else should probably stay untouched.
+
 $RT::rtname = '%%%RT_DOMAIN%%%';
 $RT::Organization = '%%%RT_DOMAIN%%%';
 
@@ -28,15 +32,16 @@ $RT::WebExternalAuth = 1;
 $RT::WebFallbackToInternal = 1; #no
 $RT::WebExternalAuto = 1;
 
-$RT::MyTicketsLength = 10;
-
 $RT::URI::freeside::IntegrationType = 'Internal';
 $RT::URI::freeside::URL = '%%%FREESIDE_URL%%%';
 
 Set($DatabaseHost   , '');
 
-#perl 5.8.0 - 5.8.2 experiment
-#@EmailInputEncodings = qw(iso-8859-1 us-ascii utf-8); # unless (@EmailInputEncodings);
-#Set($EmailOutputEncoding , 'iso-8859-1');
+# These settings are user-editable.
+
+$RT::MyTicketsLength = 10;
+$RT::QuickCreateLong = 0; #set to true to cause quick ticket creation to
+                          #redirect to the "long" ticket creation screen
+                          #instead of just creating a ticket with the subject.
 
 1;
