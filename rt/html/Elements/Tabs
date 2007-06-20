@@ -78,7 +78,7 @@ my $basetabs = {
                            title => 'Ticketing Main',
                            path => '',
                          },
-                    B => { title => loc('Tickets'),
+                    B => { title => loc('Search Tickets'),
                         path => 'Search/Build.html'
                       },
                     C => { title => loc('Tools'),
