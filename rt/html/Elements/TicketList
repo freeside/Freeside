@@ -62,8 +62,10 @@
 %   my $i;
 %   while (my $record = $Collection->Next) {
 %   $i++;
-% # Every ten rows, flush the buffer and put something on the page.
-% $m->flush_buffer() unless ($i % 10);
+% # Every $RT::MyTicketsLength or ten rows, flush the buffer and put something
+% # on the page.
+% my $flushrows = $RT::MyTicketsLength || 10;
+% $m->flush_buffer() unless ($i % $flushrows);
 <&   /Elements/CollectionAsTable/Row, Format => \@Format, i => $i, record => $record, maxitems => $maxitems &>
 %   }
 
