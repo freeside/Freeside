@@ -1,0 +1,13 @@
+<& LimitReport, %ARGS &>
+% if ($show_print_link) {
+<div align="right">
+% my %printable_args = %ARGS;
+% delete $printable_args{$_} for (qw/path title mode/);
+% $printable_args{'mode'} = 'print';
+% my $url = $ARGS{'path'} .'?'. join(';', map { $_."=".$printable_args{$_} } keys %printable_args);
+<a href="<%$RT::WebPath|n%>/<%$url|n%>"><&|/l&>Printable version</&></a>
+</div>
+% }
+<%args>
+$show_print_link => 1
+</%args>

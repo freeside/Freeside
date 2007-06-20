@@ -1,0 +1,13 @@
+%# The day after tomorrow is the third day of the rest of your life.
+<%INIT>
+if ($session{'CurrentUser'}->UserObj->HasRight(
+    Right => 'SuperUser',
+    Object => $RT::System,
+)) {
+    $toptabs->{'ZZ-RT-WebCronTool'} = { title =>loc("Web CronTool"),
+                          path  => "Developer/CronTool/index.html" };
+}
+</%init>
+<%args>
+$toptabs =>undef
+</%args>

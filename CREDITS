@@ -121,8 +121,16 @@ Latex invoice template based on a template from eBills
 <http://ebills.sourceforge.net/> by Mark Asplen-Taylor <mark@asplen.co.uk>,
 licensed under the terms fo the GNU GPL.
 
-Contains "Request Tracker" <http://www.bestpractical.com/rt/> by Jesse
-Vincent <jesse@bestpractical.com> licensed under the terms of the GNU GPL.
+Contains "Request Tracker" <http://www.bestpractical.com/rt/> and 
+"RTx::Extension::ActivityReports" from Best Practical Solutions, licensed under
+the terms of the GNU GPL.
+
+Contains "RTx::Statistics Package"
+<http://wiki.bestpractical.com/view/RT3StatisticsPackage> from Kelly Hickel
+<kfh@mqsoftware.com>, licensed under the same terms as Perl (GPL/Artistic).
+
+Contains "RTx::WebCronTool" <http://search.cpan.org/dist/RTx-WebCronTool/> from
+Audrey Tang, licensed under the same terms as Perl (GPL/Artistic).
 
 #not yet used...
 # Contains "SQL Ledger" <http://www.sql-ledger.com/> by DWS Systems Inc. and

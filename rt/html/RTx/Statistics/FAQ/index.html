@@ -1,0 +1,23 @@
+<& /Elements/Header, Title => 'FAQ and known issues' &>
+<& /RTx/Statistics/Elements/Tabs, Title => loc("FAQ and Known Issues") &>
+<hr noshade size="1">
+<p>This page will be used to contain known issues and FAQ`s for the Statistics
+package<br />
+This will also be used to clarify limitations of the package as they stand.</p>
+
+<p><strong>What Version of the Statistics package is this?</strong></p>
+<p>0.1.8</p>
+
+<p><strong>What time zone are the charts set to?</strong></p>
+<p>Because of the new programming method of the date functions, the charts are currently built in GMT(UTC). This may once again be
+customisable in a future release.</p>
+
+<p><strong>What is the default date period and queue?</strong></p>
+<p>The default date period is the previous 10 days, except where the chart is over a fixed 7 day period. The default queue is either
+General, or another queue set in your local configuration.</p>
+
+<p><strong>What are the limitations of the date function?</strong></p>
+<p>It has few, but it will not let you chose less than one day. you cannot select an end date before the start date and it is not
+recommended to select a date in the future or an illegal date, such at 30th February. Code has been put in place to trap these, but it may
+not be fool proof.</p>
+<hr size="1" noshade>

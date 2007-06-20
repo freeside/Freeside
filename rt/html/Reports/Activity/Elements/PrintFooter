@@ -1,0 +1,7 @@
+<hr/>
+<div style="text-align: center;">
+<%$RT::ReportFooterMessage || 'Proprietary and Confidential' %>
+</div>
+</body>
+</html>
+%$m->abort();

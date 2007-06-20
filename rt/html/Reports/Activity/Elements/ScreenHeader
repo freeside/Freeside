@@ -1,0 +1,8 @@
+<%args>
+$title => undef
+$path => undef
+</%args>
+<& /Elements/Header, Title => $title &>
+<& Tabs,
+    current_subtab => $path,
+    Title => $title &> 

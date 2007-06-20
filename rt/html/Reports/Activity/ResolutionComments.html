@@ -1,0 +1,62 @@
+<&|Elements/Wrapper, %ARGS, title => loc("Resolution Comments"), 
+    path => "Reports/Activity/ResolutionComments.html",
+    &>
+
+<table style="width: 100%">
+<tr>
+<th>Queue</th><th>Ticket #</th><th>Created</th><th>Resolved</th><th>Time to resolve</th>
+</tr>
+<tr>
+<th colspan="5">Resolution comments</th>
+</tr>
+% for my $item (@items) {
+<tr class="titlerow">
+<td><% $item->{queue} %></td>
+<td><% $item->{id} %></td>
+<td><% $item->{created} %></td>
+<td><% $item->{resolved} %></td>
+<td><% $item->{duration} %></td>
+</tr>
+<tr>
+<td colspan="5"><% $item->{whiteboard} %></td>
+</tr>
+% }
+</table>
+</&>
+
+<%args>
+$query => 'id > 0'
+$start => "2005/01/01"
+$end   => "2006/01/01"
+</%args>
+<%init>
+
+use Time::Duration;
+
+my $summary_tickets = RT::Tickets->new( $session{'CurrentUser'} );
+$summary_tickets->FromSQL(
+    $query . " AND (Status = 'resolved') AND ( Updated >= '$start' AND Updated <= '$end')" );
+
+my @items;
+while ( my $ticket = $summary_tickets->Next ) {
+    push @items, {
+        queue    => $ticket->QueueObj->Name,
+        id       => $ticket->id,
+        created  => $ticket->CreatedObj->AsString,
+        resolved => $ticket->ResolvedObj->AsString,
+        duration => Time::Duration::concise(
+            Time::Duration::duration(
+                $ticket->ResolvedObj->Unix - $ticket->CreatedObj->Unix
+            )
+        ),
+        whiteboard => $ticket->FirstCustomFieldValue('Whiteboard')
+    };
+}
+
+@items = sort { $a->{queue} cmp $b->{queue} || $a->{id} <=> $b->{id} } @items;
+
+
+
+
+
+</%init>

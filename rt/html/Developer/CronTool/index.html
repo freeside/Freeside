@@ -1,0 +1,116 @@
+% if ($@) {
+<P><FONT Color="red"><% $@ %></FONT></P>
+% }
+% if (!$NoUI) {
+<HR>
+<FORM Action="index.html" Method="POST">
+<TABLE>
+% foreach my $class (qw( Search Condition Action )) {
+<TR><TH>
+<% loc($class) %>
+</TH><TD>
+<SELECT NAME="<% $class %>">
+%  require File::Find;
+%  my @modules;
+%  File::Find::find(sub {
+%    push @modules, $1 if /^(?!Generic|UserDefined)(\w+)\.pm$/i;
+%  }, grep -d, map "$_/RT/$class", @INC);
+<OPTION <% $ARGS{$class} ? '' : 'SELECTED' %>></OPTION>
+%  foreach my $module (sort @modules) {
+%    my $fullname = "RT::$class\::$module";
+    <OPTION VALUE="<% $fullname %>" <% ($fullname eq $ARGS{$class}) ? 'SELECTED' : '' %>><% $module %></OPTION>
+%  }
+</SELECT>
+</TD><TH>
+<&|/l&>Parameter</&>
+</TH><TD>
+<INPUT NAME="<% $class %>Arg" VALUE="<% $ARGS{$class.'Arg'} %>">
+</TD></TR>
+% }
+<TR>
+<TD COLSPAN="4" ALIGN="Right">
+<LABEL>
+<INPUT TYPE="CheckBox" NAME="Verbose" <% $Verbose ? 'CHECKED' : '' %>><&|/l&>Verbose</&>
+</LABEL>
+<INPUT TYPE="Submit" VALUE="<&|/l&>Run</&>">
+</TD>
+</TABLE>
+</FORM>
+<HR>
+% }
+<%INIT>
+$m->print("<H1>", loc("Web CronTool"), "</H1>");
+if ($Search) {
+    my $load_module = sub {
+	my $modname = $_[0];
+	$modname =~ s{::}{/}g;
+	require "$modname.pm" or die (
+	    loc( "Failed to load module [_1]. ([_2])", $_[0], $@ ) . "\n"
+	);
+    };
+    $m->print(loc("Starting..."), "<UL>");
+    eval {
+	$load_module->($Search);
+	$load_module->($Action) if $Action;
+	$load_module->($Condition) if $Condition;
+
+	if ($TemplateId and !$TemplateObj) {
+	    $TemplateObj = RT::Template->new($RT::Nobody);
+	    $TemplateObj->LoadById($TemplateId);
+	}
+
+	my $tickets = RT::Tickets->new($RT::SystemUser);
+	my $search  = $Search->new( TicketsObj => $tickets, Argument => $SearchArg );
+	$search->Prepare;
+	my $tickets_found = $search->TicketsObj;
+
+	#for each ticket we've found
+	while ( my $ticket = $tickets_found->Next ) {
+	    $m->print("<LI>" . $ticket->Id . ": ") if $Verbose;
+	    $m->print(loc("Checking...")) if $Verbose;
+
+	    # perform some more advanced check
+	    if ($Condition) {
+		my $ConditionObj = $Condition->new(
+		    TicketObj => $ticket,
+		    Argument  => $ConditionArg
+		);
+
+		# if the condition doesn't apply, get out of here
+		next unless ( $ConditionObj->IsApplicable );
+		$m->print(loc("Condition matches...")) if $Verbose;
+	    }
+
+	    if ($Action) {
+		#prepare our action
+		my $ActionObj = $Action->new(
+		    TicketObj => $ticket,
+		    TemplateObj => $TemplateObj,
+		    Argument  => $ActionArg
+		);
+
+		#if our preparation, move onto the next ticket
+		next unless ( $ActionObj->Prepare );
+		$m->print(loc("Action prepared...")) if $Verbose;
+
+		#commit our action.
+		next unless ( $ActionObj->Commit );
+		$m->print(loc("Action committed.")) if $Verbose;
+	    }
+	}
+    };
+    $m->print('</UL>', loc("Finished."));
+}
+</%INIT>
+<%ARGS>
+$Search => undef
+$SearchArg => undef
+$Condition => undef
+$ConditionArg => undef
+$Action => undef
+$ActionArg => undef
+$TemplateId => undef
+$TemplateObj => undef
+$Verbose => 1
+$NoUI => 0
+</%ARGS>

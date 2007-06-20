@@ -1,0 +1,16 @@
+<%args>
+$mode => 'screen'
+</%args>
+
+% if ($mode eq 'print') {
+<& PrintHeader, %ARGS &>
+%} else {
+<& ScreenHeader, %ARGS &>
+% }
+<%$m->content |n%>
+% if ($mode eq 'print') {
+<& PrintFooter, %ARGS &>
+%} else {
+<& ScreenFooter, %ARGS &>
+% }
+

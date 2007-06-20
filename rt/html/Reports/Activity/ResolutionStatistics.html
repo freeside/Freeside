@@ -1,0 +1,95 @@
+<&|Elements/Wrapper, %ARGS, title => loc("Resolution statistics"),
+    path => "Reports/Activity/ResolutionStatistics.html",
+    &>
+
+<& Elements/MiniPlot,
+   data => \%plot,
+   major => ['Date range','Last 30 days','Last 60 days','Last 90 days','Ever'],
+   minor => [(sort keys %queues), "Average"]
+ &>
+
+<table style="width: 100%">
+<tr>
+<td></td><th colspan="4">Number of tickets closed / Average resolution time per ticket</th>
+</tr>
+<tr class="titlerow">
+<th>Queue</th>
+<th>Date range</th>
+<th>Last 30 days</th>
+<th>Last 60 days</th>
+<th>Last 90 days</th>
+<th>Ever</th>
+</tr>
+% for my $queue (sort keys %queues) {
+<tr>
+<th><% $queue %></th>
+% for my $period ('Date range','Last 30 days','Last 60 days','Last 90 days','Ever') {
+<td><% scalar @{$closed{$period}{$queue}} %> / <% $average_resolve_times{$period}{$queue} %></td>
+% }
+</tr>
+% }
+<tr class="grandtotal">
+<th>Ticket average</th>
+% for my $period ('Date range','Last 30 days','Last 60 days','Last 90 days','Ever') {
+<td><% $average_resolve_times{$period}{_all_count} %> / <% $average_resolve_times{$period}{_all} %></td>
+% }
+</tr>
+</table>
+
+</&>
+<%args>
+$query => 'id > 0'
+$start => "2005/01/01"
+$end   => "2006/01/01"
+</%args>
+<%init>
+
+my $in_30_days = RT::Date->new($session{'CurrentUser'});
+$in_30_days->Set(Format => 'Unix', Value => ( time - (86400*30)));
+my $in_60_days = RT::Date->new($session{'CurrentUser'});
+$in_60_days->Set(Format => 'Unix', Value => ( time - (86400*60)));
+my $in_90_days = RT::Date->new($session{'CurrentUser'});
+$in_90_days->Set(Format => 'Unix', Value => ( time - (86400*90)));
+
+my %queries;
+$queries{'Date range'}   = "(Resolved >= '$start' AND Resolved <= '$end')";
+$queries{'Last 30 days'} = "(Resolved >= '".$in_30_days->ISO."')";
+$queries{'Last 60 days'} = "(Resolved >= '".$in_60_days->ISO."')";
+$queries{'Last 90 days'} = "(Resolved >= '".$in_90_days->ISO."')";
+$queries{'Ever'}         = "(Status = 'resolved' OR Status = 'rejected')";
+
+
+my %closed;
+my %queues;
+foreach my $period (keys %queries) {
+    my $tix = RT::Tickets->new($session{'CurrentUser'});
+    $tix->FromSQL($query . " AND " .$queries{$period});
+
+    while (my $ticket = $tix->Next) {
+        push @{ $closed{$period}{$ticket->QueueObj->Name}}, $ticket;
+        $queues{$ticket->QueueObj->Name}++;
+    }
+}
+
+my %restimes;
+my %average_resolve_times;
+my %plot;
+use Time::Duration;
+foreach my $period ( keys %closed ) {
+    foreach my $queue ( keys %{$closed{$period}} ) {
+        foreach my $ticket (@{$closed{$period}{$queue}} ) {
+            push @{$restimes{$period}{$queue}}, ( $ticket->ResolvedObj->Unix - $ticket->CreatedObj->Unix);
+        }
+
+        my $total_time = 0;
+        $total_time+= $_ for @{$restimes{$period}{$queue}};
+        $average_resolve_times{$period}{'_all_time'} += $total_time;
+        $average_resolve_times{$period}{'_all_count'} += @{$restimes{$period}{$queue}};
+        $plot{$period}{$queue} = $total_time / @{$restimes{$period}{$queue}};
+        $average_resolve_times{$period}{$queue} = Time::Duration::concise(Time::Duration::duration($plot{$period}{$queue}));
+    }
+    $plot{$period}{Average} = $average_resolve_times{$period}{'_all_time'} / $average_resolve_times{$period}{'_all_count'};
+    $average_resolve_times{$period}{'_all'}  = Time::Duration::concise(Time::Duration::duration($plot{$period}{Average}));
+}
+
+</%init>

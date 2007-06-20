@@ -1,0 +1,71 @@
+table.miniplot {
+    width: 100%;
+    border-collapse: collapse;
+}
+table.miniplot td {
+    margin: 0;
+    padding: 0;
+    border-bottom: 1px solid black;
+}
+table.miniplot .graph {
+    margin-left: auto;
+    margin-right: auto;
+    position: relative;
+    width: 60px;
+}
+table.miniplot .graph ul { 
+    height: 100px; 
+    margin: 0;
+    padding: 0;
+}
+table.miniplot .graph ul li {  
+    list-style: none;
+    position: absolute; 
+    bottom: 0px; 
+    padding: 0 !important; 
+    margin: 0 !important; 
+    border-bottom: none;
+}
+table.miniplot .graph ul li .data {
+    display: none;
+}
+
+.miniplot .demoblock { margin: 0 10px; padding: 0 30px; }
+
+.miniplot .c1 { border: 2px solid #990000; background: #ff0000; }
+.miniplot .c2 { border: 2px solid #996600; background: #ff9900; }
+.miniplot .c3 { border: 2px solid #009900; background: #00ff00; }
+.miniplot .c4 { border: 2px solid #009999; background: #00ffff; }
+.miniplot .c5 { border: 2px solid #000099; background: #0000ff; }
+.miniplot .c6 { border: 2px solid #990099; background: #ff00ff; }
+graph .c5 { border: 2px solid #000099; background: #0000ff; }
+.graph .c6 { border: 2px solid #990099; background: #ff00ff; }
+
+tr.titlerow  th { 
+
+  border-bottom: solid black 1px;
+  margin: 0;
+ font-size:80%;
+  text-wrap:  none;
+
+}
+
+tr.grandtotal td{
+    border-top: 1px solid black;
+}
+
+tr.grandtotal th{
+    border-top: 1px solid black;
+}
+
+th.label { 
+ align: left;
+
+}
+
+table.miniplot th.legend {
+ font-style: normal;
+ font-size: 80%;
+
+}
+

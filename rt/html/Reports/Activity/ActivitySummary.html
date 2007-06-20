@@ -1,0 +1,61 @@
+<&|Elements/Wrapper, %ARGS, title => loc("Activity summary"),
+    path => "Reports/Activity/ActivitySummary.html",
+    &>
+
+<& Elements/MiniPlot, data => \%queues &>
+
+<table style="width: 100%">
+<tr class="titlerow">
+<th>Queue</th>
+% for my $status (sort keys %status) {
+<th><% $status %></th>
+% }
+<th>Total</th>
+</tr>
+% for my $queue (sort keys %queues) {
+<th class="label"><% $queue %></th>
+% for my $status (sort keys %status) {
+<td><% $queues{$queue}{$status} || 0 %>
+% }
+<td><% $total{$queue} %></td>
+</tr>
+% }
+<tr class="grandtotal">
+<th class="label" >Grand Total</th>
+% for my $status (sort keys %status) {
+<td><% $status{$status} %></td>
+% }
+<td><% $total %></td>
+</table>
+</&>
+<%args>
+$query => 'id > 0'
+$start => "2005/01/01"
+$end   => "2006/01/01"
+</%args>
+<%init>
+
+my $tickets = RT::Tickets->new($session{'CurrentUser'});
+$tickets->FromSQL($query . " AND ( Updated >= '$start' AND Updated <= '$end')");
+
+my %queues;
+my %status;
+my %total;
+my $total;
+while (my $ticket = $tickets->Next) {
+    my $txns = $ticket->Transactions;
+    $txns->Limit(FIELD => 'Created', OPERATOR => '>=', VALUE => $start);
+    $txns->Limit(FIELD => 'Created', OPERATOR => '<=', VALUE => $end);
+    $txns->Limit(FIELD => 'Type', VALUE => 'Status', ENTRYAGGREGATOR => 'OR');
+    $txns->Limit(FIELD => 'Type', VALUE => 'Create');
+
+    while (my $txn = $txns->Next) {
+        $queues{$txn->TicketObj->QueueObj->Name}{$txn->NewValue || 'new'}++;   
+        $status{$txn->NewValue || 'new'}++;
+        $total{$txn->TicketObj->QueueObj->Name}++;
+        $total++;
+    }
+}
+
+
+</%init>

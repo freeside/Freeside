@@ -1,0 +1,173 @@
+%# BEGIN BPS TAGGED BLOCK {{{
+%# 
+%# COPYRIGHT:
+%#  
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+%#                                          <jesse@bestpractical.com>
+%# 
+%# (Except where explicitly superseded by other copyright notices)
+%# 
+%# 
+%# LICENSE:
+%# 
+%# This work is made available to you under the terms of Version 2 of
+%# the GNU General Public License. A copy of that license should have
+%# been provided with this software, but in any event can be snarfed
+%# from www.gnu.org.
+%# 
+%# This work is distributed in the hope that it will be useful, but
+%# WITHOUT ANY WARRANTY; without even the implied warranty of
+%# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%# General Public License for more details.
+%# 
+%# You should have received a copy of the GNU General Public License
+%# along with this program; if not, write to the Free Software
+%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+%# 
+%# 
+%# CONTRIBUTION SUBMISSION POLICY:
+%# 
+%# (The following paragraph is not intended to limit the rights granted
+%# to you to modify and distribute this software under the terms of
+%# the GNU General Public License and is only of importance to you if
+%# you choose to contribute your changes and enhancements to the
+%# community by submitting them to Best Practical Solutions, LLC.)
+%# 
+%# By intentionally submitting any modifications, corrections or
+%# derivatives to this work, or any other work intended for use with
+%# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+%# you are the copyright holder for those contributions and you grant
+%# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+%# royalty-free, perpetual, license to use, copy, create derivative
+%# works based on those contributions, and sublicense and distribute
+%# those contributions and any derivatives thereof.
+%# 
+%# END BPS TAGGED BLOCK }}}
+<%ARGS>
+$Name => undef
+$Attr => undef
+</%ARGS>
+
+
+<%ONCE>
+our ( $STAT_COLUMN_MAP );
+
+sub StatColumnMap {
+    my $name = shift;
+    my $attr = shift;
+
+    # First deal with the simple things from the map
+    if ( $STAT_COLUMN_MAP->{$name} ) {
+        return ( $STAT_COLUMN_MAP->{$name}->{$attr} );
+    }
+
+    # now, let's deal with harder things, like Custom Fields
+
+    elsif ( $name =~ /^(?:CF|CustomField)\.\{(.+)\}$/ ) {
+        my $field = $1;
+
+        if ( $attr eq 'attribute' ) {
+            return (undef);
+        }
+        elsif ( $attr eq 'title' ) {
+            return ( $field );
+        }
+        elsif ( $attr eq 'value' ) {
+	    # Display custom field contents, separated by newlines.
+            # For Image custom fields we also show a thumbnail here.
+            return sub {
+                my $values = $_[0]->CustomFieldValues($field);
+                return map {
+                    (
+                        ($_->CustomFieldObj->Type eq 'Image')
+                            ? \($m->scomp( '/Elements/ShowCustomFieldImage', Object => $_ ))
+                            : $_->Content
+                    ),
+                    \'<br>',
+                } @{ $values->ItemsArrayRef }
+	    };
+        }
+    }
+}
+
+sub LinkCallback {
+    my $method = shift;
+
+    my $mode            = $RT::Ticket::LINKTYPEMAP{$method}{Mode};
+    my $type            = $RT::Ticket::LINKTYPEMAP{$method}{Type};
+    my $mode_uri        = $mode.'URI';
+    my $local_type      = 'Local'.$mode;
+
+    return sub {
+        map {
+            \'<A HREF="',
+            $_->$mode_uri->Resolver->HREF,
+            \'">',
+            ( $_->$mode_uri->IsLocal ? $_->$local_type : $_->$mode ),
+            \'</A><BR>',
+        } @{ $_[0]->Links($mode,$type)->ItemsArrayRef }
+    }
+}
+
+$STAT_COLUMN_MAP = {
+    LastUpdated => {
+        attribute => 'LastUpdated',
+        title     => 'Last Updated',
+        value     => sub { return $_[0]->LastUpdatedObj->AsString }
+    },
+
+    Statistics_Date => {
+	title => 'Date',
+	value => sub { return $_[0]{values}{Statistics_Date} }
+    },
+
+    Statistics_Created_Count => {
+	title => 'Created',
+	value => sub { return $_[0]{values}{Statistics_Created_Count} }
+    },
+
+    Statistics_Resolved_Count => {
+	title => 'Resolved',
+	value => sub { return $_[0]{values}{Statistics_Resolved_Count} }
+    },
+
+    Statistics_Deleted_Count => {
+	title => 'Deleted',
+	value => sub { return $_[0]{values}{Statistics_Deleted_Count} }
+    },
+
+    Statistics_Totals => {
+	title => 'Totals',
+	value => sub { return $_[0]{values}{Statistics_Totals} }
+    },
+
+    Statistics_Status => {
+	title => 'Status',
+	value => sub { return $_[0]{values}{Statistics_Status} }
+    },
+
+    Statistics_Dynamic => {
+	# Depends on having a KEY as second param
+	value => sub { 
+	    my $record = shift;
+	    my $line = shift;
+	    my $key = shift;
+	    return $$record{values}{$key} 
+	}
+    },
+
+    # Everything from LINKTYPEMAP
+    (map {
+        $_ => { value => LinkCallback( $_ ) }
+    } keys %RT::Ticket::LINKTYPEMAP),
+
+    '_CLASS' => {
+        value => sub { return $_[1] % 2 ? 'oddline' : 'evenline' }
+    },
+
+};
+</%ONCE>
+<%init>
+$m->comp( '/Elements/Callback', STAT_COLUMN_MAP    => $STAT_COLUMN_MAP, _CallbackName => 'StatColumnMap');
+return StatColumnMap($Name, $Attr);
+</%init>

@@ -1,0 +1,32 @@
+<%args>
+$title => undef
+$path => undef
+$query => undef
+</%args>
+<HTML>
+<HEAD>
+<TITLE><%$title%></TITLE>
+<link rel="shortcut icon" href="<%$RT::WebImagesURL%>/favicon.png" type="image/png" />
+<link media="all" rel="stylesheet" href="<%$RT::WebPath%>/NoAuth/webrt.css" type="text/css" />
+<link media="print" rel="stylesheet" href="<%$RT::WebPath%>/NoAuth/printrt.css" type="text/css" />
+%# XXX TODO THIS SHOULD NOT BE A TABLE
+<body>
+<table width="100%">
+<tr>
+<td align="left">
+<div id="username">User: <%$session{'CurrentUser'}->Name%></div>
+<div id="reportdate">
+%my $d= RT::Date->new($session{'CurrentUser'}); $d->SetToNow; 
+<%$d->AsString%></div>
+</td>
+<td align="center">
+<h1><%$title%></h1>
+</td>
+<td align="right">
+<img src="<%$RT::LogoURL%>" alt="RT Logo"/>
+</td>
+</tr>
+</table>
+<hr/>
+<&|/l&>Report criteria:</&> <%$query%>
+<hr />

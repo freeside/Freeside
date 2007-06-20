@@ -1,0 +1,7 @@
+<%init>
+if ($ARGS{current_toptab} eq "Tools/Offline.html") {
+    $ARGS{tabs}{r} ||= { path  => 'Reports/Activity/index.html',
+                         title => 'Reports',
+                       };
+}
+</%init>

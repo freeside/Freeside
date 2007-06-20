@@ -1,0 +1,7 @@
+<a href="<% $RT::WebPath %>/Reports/Activity/index.html?<% $QueryString %>">Generate reports</a>
+<%init>
+use YAML;
+my %args = $m->caller_args(2);
+
+my $QueryString = $m->comp('/Elements/QueryString', query => $args{Query});
+</%init>

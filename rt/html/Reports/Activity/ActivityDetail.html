@@ -1,0 +1,83 @@
+<&|Elements/Wrapper, %ARGS, title => loc("Activity detail"),
+    path => "Reports/Activity/ActivityDetail.html",
+    &>
+
+<& Elements/MiniPlot, data => \%counts &>
+
+<table style="width: 100%">
+<tr class="titlerow">
+<th>Queue</th><th>Activity</th><th>Date</th><th>Time</th><th>Ticket #</th><th>User</th><th>Short description</th>
+</tr>
+% for my $item (@items) {
+<tr>
+<td><% $item->{queue} %></td>
+<td><% $item->{status} %></td>
+<td><% $item->{date} %></td>
+<td><% $item->{time} %></td>
+<td><% $item->{id} %></td>
+<td><% $item->{actor} %></td>
+<td><% $item->{notes} %></td>
+</tr>
+% }
+</table>
+
+</&>
+<%args>
+$query => 'id > 0'
+$start => "2005/01/01"
+$end   => "2006/01/01"
+</%args>
+<%init>
+
+
+my $summary_tickets = RT::Tickets->new($session{'CurrentUser'});
+$summary_tickets->FromSQL($query . " AND ( Updated >= '$start' AND Updated <= '$end')");
+my %counts;
+while (my $ticket = $summary_tickets->Next) {
+    my $txns = $ticket->Transactions;
+    $txns->Limit(FIELD => 'Created', OPERATOR => '>=', VALUE => $start);
+    $txns->Limit(FIELD => 'Created', OPERATOR => '<=', VALUE => $end);
+    # I think they really don't just want status changes
+    $txns->Limit(FIELD => 'Type', VALUE => 'Status', ENTRYAGGREGATOR => 'OR');
+    $txns->Limit(FIELD => 'Type', VALUE => 'Create');
+
+    while (my $txn = $txns->Next){
+        my $date = substr($txn->Created, 0, 10);
+        # we don't have data on the status of a new ticket, default to 'new'
+        $counts{$date}{$txn->NewValue || 'new'}++;
+    }
+}
+
+
+my $tickets = RT::Tickets->new($session{'CurrentUser'});
+$tickets->FromSQL($query);
+my @items;
+while (my $ticket = $tickets->Next) {
+    my $txns = $ticket->Transactions;
+    $txns->Limit(FIELD => 'Created', OPERATOR => '>=', VALUE => $start);
+    $txns->Limit(FIELD => 'Created', OPERATOR => '<=', VALUE => $end);
+    # I think they really don't just want status changes
+    $txns->Limit(FIELD => 'Type', VALUE => 'Status', ENTRYAGGREGATOR => 'OR');
+    $txns->Limit(FIELD => 'Type', VALUE => 'Create');
+
+    while (my $txn = $txns->Next) {
+        push @items, { queue => $txn->TicketObj->QueueObj->Name,
+                       id => $txn->TicketObj->id,
+                       date => (split ' ', $txn->CreatedObj->ISO)[0],
+                       time => (split ' ', $txn->CreatedObj->ISO)[1],
+                       status => $txn->NewValue || 'new',
+                       actor => $txn->CreatorObj->Name,
+                       notes => ($txn->Content ne 'This transaction appears to have no content' ? substr($txn->Content, 0, 60) :  $txn->BriefDescription)
+                     };
+    }
+}
+
+@items = sort {
+           $a->{queue}    cmp $b->{'queue'}
+        || $a->{'status'} cmp $b->{'status'}
+        || $a->{'id'}     <=> $b->{'id'}
+        || $a->{'actor'}  cmp $b->{'actor'}
+        || $a->{'notes'}  <=> $b->{'notes'}
+} @items;
+
+</%init>

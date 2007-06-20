@@ -1,0 +1,52 @@
+<& /Elements/Tabs, 
+    tabs => $tabs,
+    subtabs => $subtabs,
+    current_toptab => 'Tools/Offline.html', 
+    current_tab => 'Reports/Activity/index.html'.$args, 
+    Title => $Title &>
+
+<%INIT>
+my $subtabs = {};
+
+my $top = $m->caller_args(-1);
+my $args = "?" . $m->comp( '/Elements/QueryString',
+                           query => $top->{query},
+                           start => $top->{start},
+                           end   => $top->{end});
+if ($m->caller_args(-1)->{'query'}) {
+    $current_subtab .= $args;
+    $subtabs = {
+                a => { title => 'Activity detail',
+                       path  => 'Reports/Activity/ActivityDetail.html'.$args,
+                     },
+                b => { title => 'Activity summary',
+                       path  => 'Reports/Activity/ActivitySummary.html'.$args,
+                     },
+                c => { title => 'Resolution comments',
+                       path  => 'Reports/Activity/ResolutionComments.html'.$args,
+                     },
+                d => { title => 'Resolution statistics',
+                       path  => 'Reports/Activity/ResolutionStatistics.html'.$args,
+                     },
+               };
+}
+
+my $tabs = {
+            a => { title => loc('Offline'),
+                   path  => 'Tools/Offline.html',
+                 },
+            r => { title => loc('Reports'),
+                   path  => 'Reports/Activity/index.html'.$args,
+                   subtabs => $subtabs,
+                   current_subtab => $current_subtab,
+                 }
+             };
+
+</%INIT>
+
+
+<%ARGS>
+$current_tab => undef
+$current_subtab => undef
+$Title => undef
+</%ARGS>

@@ -1,0 +1,55 @@
+    <td class="collection-as-table" style="text-align:left;"><% $Label %></td>
+    <td class="collection-as-table" style="text-align:left;">
+      <select name=<% $nameMonth %> >
+% for ($n=0;$n<=$#Statistics::months;$n++){ 
+% 	if ($$refMonth eq $n){	
+% 		$selected ="selected";
+% 	}else {
+% 		$selected ="";
+%	}
+	  <option  value=<% $n %> <% $selected %> ><% $Statistics::months[$n] %></option>
+%}
+      </select>
+    </td>
+    <td class="collection-as-table" style="text-align:left;">
+      <select name=<% $nameDay %> >
+% for ($n=1;$n<=31;$n++){
+% 	if ($$refDay == $n ){
+% 		$selected ="selected";
+% 	}else {
+% 		$selected ="";
+%	}
+	    <option  value=<% $n %> <% $selected %> ><% $n  %></option>
+% }
+      </select>
+    </td>
+    <td class="collection-as-table" style="text-align:left;">
+	  <select name=<% $nameYear %> >
+% 
+% for ($n=0;$n <= scalar @Statistics::years-1;$n++){
+%	if ($Statistics::years[$n] == $$refYear){
+% 		$selected ="selected";
+%	}else{
+% 		$selected ="";
+%	}
+	  <option value=<% $Statistics::years[$n] %> <% $selected %> ><% $Statistics::years[$n] %></option>
+% }	  
+	  </select>
+    </td>
+
+
+<%args>
+$Label => undef
+$refMonth => undef
+$nameMonth => undef
+$refDay => undef
+$nameDay => undef
+$refYear => undef
+$nameYear => undef
+</%args>
+<%init>
+use RTx::Statistics;
+my $n;
+my $selected;
+
+</%init>

@@ -1,0 +1,26 @@
+% $r->content_type("image/$format");
+% $m->print($graph->plot(\@data)->$format());
+% $m->abort();
+<&|/l, $#data+1&>[_1] Elements</&>:<p>
+% for (0..$#data) {
+<% $data[$_] %><p>
+% }
+<%INIT>
+use GD::Graph::bars;
+
+my @data;
+my $graph = GD::Graph::bars->new($Statistics::GraphWidth,$Statistics::GraphHeight);
+$graph->set(export_format => "png",
+             x_label      => 'Day of Week',
+             y_label      => 'Ticket actions per Day by type');
+$graph->set_legend(split /,/ , $ARGS{set_legend});
+push @data, [split /,/ , $ARGS{x_labels}];
+push @data, [split /,/ , $ARGS{data1}];
+push @data, [split /,/ , $ARGS{data2}];
+push @data, [split /,/ , $ARGS{data3}];
+
+my $format = $graph->export_format;
+$r->content_type("image/$format");
+</%INIT>
+<%ARGS>
+</%ARGS>
