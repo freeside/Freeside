@@ -5,7 +5,6 @@ use vars qw( @ISA $DEBUG $me $conf $money_char );
 use vars qw( $invoice_lines @buf ); #yuck
 use Fcntl qw(:flock); #for spool_csv
 use List::Util qw(min max);
-use IPC::Run3;
 use Date::Format;
 use Text::Template 1.20;
 use File::Temp 0.14;
@@ -13,7 +12,7 @@ use String::ShellQuote;
 use HTML::Entities;
 use Locale::Country;
 use FS::UID qw( datasrc );
-use FS::Misc qw( send_email send_fax );
+use FS::Misc qw( send_email send_fax generate_ps do_print );
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::cust_main_Mixin;
 use FS::cust_main;
@@ -854,15 +853,7 @@ sub print {
   my $self = shift;
   my $template = scalar(@_) ? shift : '';
 
-  my $lpr = $conf->config('lpr');
-
-  my $outerr = '';
-  run3 $lpr, $self->lpr_data($template), \$outerr, \$outerr;
-  if ( $? ) {
-    $outerr = ": $outerr" if length($outerr);
-    die "Error from $lpr (exit status ". ($?>>8). ")$outerr\n";
-  }
-
+  do_print $self->lpr_data($template);
 }
 
 =item fax [ TEMPLATENAME ] 
@@ -1441,43 +1432,12 @@ sub batch_card {
 
 sub _agent_template {
   my $self = shift;
-  $self->_agent_plandata('agent_templatename');
+  $self->cust_main->agent_template;
 }
 
 sub _agent_invoice_from {
   my $self = shift;
-  $self->_agent_plandata('agent_invoice_from');
-}
-
-sub _agent_plandata {
-  my( $self, $option ) = @_;
-
-  my $part_bill_event = qsearchs( 'part_bill_event',
-    {
-      'payby'     => $self->cust_main->payby,
-      'plan'      => 'send_agent',
-      'plandata'  => { 'op'    => '~',
-                       'value' => "(^|\n)agentnum ".
-                                   '([0-9]*, )*'.
-                                  $self->cust_main->agentnum.
-                                   '(, [0-9]*)*'.
-                                  "(\n|\$)",
-                     },
-    },
-    '',
-    'ORDER BY seconds LIMIT 1'
-  );
-
-  return '' unless $part_bill_event;
-
-  if ( $part_bill_event->plandata =~ /^$option (.*)$/m ) {
-    return $1;
-  } else {
-    warn "can't parse part_bill_event eventpart#". $part_bill_event->eventpart.
-         " plandata for $option";
-    return '';
-  }
-
+  $self->cust_main->agent_invoice_from;
 }
 
 =item print_text [ TIME [ , TEMPLATE ] ]
@@ -2088,45 +2048,9 @@ sub print_ps {
   my $self = shift;
 
   my ($file, $lfile) = $self->print_latex(@_);
-
-  my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
-  chdir($dir);
-
-  my $sfile = shell_quote $file;
-
-  system("pslatex $sfile.tex >/dev/null 2>&1") == 0
-    or die "pslatex $file.tex failed; see $file.log for details?\n";
-  system("pslatex $sfile.tex >/dev/null 2>&1") == 0
-    or die "pslatex $file.tex failed; see $file.log for details?\n";
-
-  system('dvips', '-q', '-t', 'letter', "$file.dvi", '-o', "$file.ps" ) == 0
-    or die "dvips failed";
-
-  open(POSTSCRIPT, "<$file.ps")
-    or die "can't open $file.ps: $! (error in LaTeX template?)\n";
-
-  unlink("$file.dvi", "$file.log", "$file.aux", "$file.ps", "$file.tex");
-  unlink("$lfile");
-
-  my $ps = '';
-  
-  if ( $conf->exists('lpr-postscript_prefix') ) {
-    my $prefix = $conf->config('lpr-postscript_prefix');
-    $ps .= eval qq("$prefix");
-  }
-
-  while (<POSTSCRIPT>) {
-    $ps .= $_;
-  }
-
-  if ( $conf->exists('lpr-postscript_suffix') ) {
-    my $suffix = $conf->config('lpr-postscript_suffix');
-    $ps .= eval qq("$suffix");
-  }
-
-  close POSTSCRIPT;
-
-  return $ps;
+  my $ps = generate_ps($file);
+  unlink($lfile);
+  $ps;
 
 }
 

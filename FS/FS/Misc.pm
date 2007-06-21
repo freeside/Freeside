@@ -13,6 +13,7 @@ use Data::Dumper;
 @EXPORT_OK = qw( send_email send_fax
                  states_hash counties state_label
                  card_types
+                 generate_ps do_print
                );
 
 $DEBUG = 0;
@@ -469,6 +470,80 @@ sub card_types {
   }
 
   \%card_types;
+}
+
+=item generate_ps FILENAME
+
+Returns an postscript rendition of the LaTex file, as a scalar.
+FILENAME does not contain the .tex suffix and is unlinked by this function.
+
+=cut
+
+use String::ShellQuote;
+
+sub generate_ps {
+  my $file = shift;
+
+  my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
+  chdir($dir);
+
+  my $sfile = shell_quote $file;
+
+  system("pslatex $sfile.tex >/dev/null 2>&1") == 0
+    or die "pslatex $file.tex failed; see $file.log for details?\n";
+  system("pslatex $sfile.tex >/dev/null 2>&1") == 0
+    or die "pslatex $file.tex failed; see $file.log for details?\n";
+
+  system('dvips', '-q', '-t', 'letter', "$file.dvi", '-o', "$file.ps" ) == 0
+    or die "dvips failed";
+
+  open(POSTSCRIPT, "<$file.ps")
+    or die "can't open $file.ps: $! (error in LaTeX template?)\n";
+
+  unlink("$file.dvi", "$file.log", "$file.aux", "$file.ps", "$file.tex");
+
+  my $ps = '';
+
+  if ( $conf->exists('lpr-postscript_prefix') ) {
+    my $prefix = $conf->config('lpr-postscript_prefix');
+    $ps .= eval qq("$prefix");
+  }
+
+  while (<POSTSCRIPT>) {
+    $ps .= $_;
+  }
+
+  close POSTSCRIPT;
+
+  if ( $conf->exists('lpr-postscript_suffix') ) {
+    my $suffix = $conf->config('lpr-postscript_suffix');
+    $ps .= eval qq("$suffix");
+  }
+
+  return $ps;
+
+}
+
+=item print ARRAYREF
+
+Sends the lines in ARRAYREF to the printer.
+
+=cut
+
+use IPC::Run3;
+
+sub do_print {
+  my $data = shift;
+
+  my $lpr = $conf->config('lpr');
+
+  my $outerr = '';
+  run3 $lpr, $data, \$outerr, \$outerr;
+  if ( $? ) {
+    $outerr = ": $outerr" if length($outerr);
+    die "Error from $lpr (exit status ". ($?>>8). ")$outerr\n";
+  }
+
 }
 
 =back

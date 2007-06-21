@@ -24,7 +24,7 @@ use Locale::Country;
 use Data::Dumper;
 use FS::UID qw( getotaker dbh );
 use FS::Record qw( qsearchs qsearch dbdef );
-use FS::Misc qw( send_email );
+use FS::Misc qw( send_email generate_ps do_print );
 use FS::Msgcat qw(gettext);
 use FS::cust_pkg;
 use FS::cust_svc;
@@ -5003,6 +5003,166 @@ sub notify {
              body => $notify_template->fill_in( PACKAGE =>
                                                 'FS::notify_template::_template'                                              ),
             );
+
+}
+
+=item generate_letter CUSTOMER_OBJECT TEMPLATE_NAME OPTIONS
+
+Generates a templated notification to the customer (see L<Text::Template>).
+
+OPTIONS is a hash and may include
+
+I<extra_fields> - a hashref of name/value pairs which will be substituted
+   into the template.  These values may override values mentioned below
+   and those from the customer record.
+
+The following variables are available in the template instead of or in addition
+to the fields of the customer record.
+
+I<$payby> - a description of the method of payment for the customer
+            # would be nice to use FS::payby::shortname
+I<$payinfo> - the masked account information used to collect for this customer
+I<$expdate> - the expiration of the customer payment method in seconds from epoch
+I<$returnaddress> - the return address defaults to invoice_latexreturnaddress
+
+=cut
+
+sub generate_letter {
+  my ($self, $template, %options) = @_;
+
+  return unless $conf->exists($template);
+
+  my $letter_template = new Text::Template
+                        ( TYPE       => 'ARRAY',
+                          SOURCE     => [ map "$_\n", $conf->config($template)],
+                          DELIMITERS => [ '[@--', '--@]' ],
+                        )
+    or die "can't create new Text::Template object: Text::Template::ERROR";
+
+  $letter_template->compile()
+    or die "can't compile template: Text::Template::ERROR";
+
+  my %letter_data = map { $_ => $self->$_ } $self->fields;
+  $letter_data{payinfo} = $self->mask_payinfo;
+
+  my $paydate = $self->paydate;
+  my $payby = $self->payby;
+  my ($payyear,$paymonth,$payday) = split (/-/,$paydate);
+  my $expire_time = timelocal(0,0,0,$payday,--$paymonth,$payyear);
+
+  #credit cards expire at the end of the month/year of their exp date
+  if ($payby eq 'CARD' || $payby eq 'DCRD') {
+    $letter_data{payby} = 'credit card';
+    ($paymonth < 11) ? $paymonth++ : ($paymonth=0, $payyear++);
+    $expire_time = timelocal(0,0,0,$payday,$paymonth,$payyear);
+    $expire_time--;
+  }elsif ($payby eq 'COMP') {
+    $letter_data{payby} = 'complimentary account';
+  }else{
+    $letter_data{payby} = 'current method';
+  }
+  $letter_data{expdate} = $expire_time;
+
+  for (keys %{$options{extra_fields}}){
+    $letter_data{$_} = $options{extra_fields}->{$_};
+  }
+
+  unless(exists($letter_data{returnaddress})){
+    my $retadd = join("\n", $conf->config_orbase( 'invoice_latexreturnaddress',
+                                                  $self->_agent_template)
+                     );
+
+    $letter_data{returnaddress} = length($retadd) ? $retadd : '~';
+  }
+
+  $letter_data{conf_dir} = "$FS::UID::conf_dir/conf.$FS::UID::datasrc";
+
+  my $dir = $FS::UID::conf_dir."cache.". $FS::UID::datasrc;
+  my $fh = new File::Temp( TEMPLATE => 'letter.'. $self->custnum. '.XXXXXXXX',
+                           DIR      => $dir,
+                           SUFFIX   => '.tex',
+                           UNLINK   => 0,
+                         ) or die "can't open temp file: $!\n";
+
+  $letter_template->fill_in( OUTPUT => $fh, HASH => \%letter_data );
+  close $fh;
+  $fh->filename =~ /^(.*).tex$/ or die "unparsable filename: ". $fh->filename;
+  return $1;
+}
+
+=item print_ps TEMPLATE 
+
+Returns an postscript letter filled in from TEMPLATE, as a scalar.
+
+=cut
+
+sub print_ps {
+  my $self = shift;
+  my $file = $self->generate_letter(@_);
+  FS::Misc::generate_ps($file);
+}
+
+=item print TEMPLATE
+
+Prints the filled in template.
+
+TEMPLATE is the name of a L<Text::Template> to fill in and print.
+
+=cut
+
+sub queueable_print {
+  my %opt = @_;
+
+  my $self = qsearchs('cust_main', { 'custnum' => $opt{custnum} } )
+    or die "invalid customer number: " . $opt{custvnum};
+
+  my $error = $self->print( $opt{template} );
+  die $error if $error;
+}
+
+sub print {
+  my ($self, $template) = (shift, shift);
+  do_print [ $self->print_ps($template) ];
+}
+
+sub agent_template {
+  my $self = shift;
+  $self->_agent_plandata('agent_templatename');
+}
+
+sub agent_invoice_from {
+  my $self = shift;
+  $self->_agent_plandata('agent_invoice_from');
+}
+
+sub _agent_plandata {
+  my( $self, $option ) = @_;
+
+  my $part_bill_event = qsearchs( 'part_bill_event',
+    {
+      'payby'     => $self->payby,
+      'plan'      => 'send_agent',
+      'plandata'  => { 'op'    => '~',
+                       'value' => "(^|\n)agentnum ".
+                                   '([0-9]*, )*'.
+                                  $self->agentnum.
+                                   '(, [0-9]*)*'.
+                                  "(\n|\$)",
+                     },
+    },
+    '',
+    'ORDER BY seconds LIMIT 1'
+  );
+
+  return '' unless $part_bill_event;
+
+  if ( $part_bill_event->plandata =~ /^$option (.*)$/m ) {
+    return $1;
+  } else {
+    warn "can't parse part_bill_event eventpart#". $part_bill_event->eventpart.
+         " plandata for $option";
+    return '';
+  }
 
 }
 

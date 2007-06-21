@@ -226,6 +226,21 @@ sub insert {
     }
   }
 
+  if ($conf->config('welcome_letter') && $self->cust_main->num_pkgs == 1) {
+    my $queue = new FS::queue {
+      'job'     => 'FS::cust_main::queueable_print',
+    };
+    $error = $queue->insert(
+      'custnum'  => $self->custnum,
+      'template' => 'welcome_letter',
+    );
+
+    if ($error) {
+      warn "can't send welcome letter: $error";
+    }
+
+  }
+
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
 
