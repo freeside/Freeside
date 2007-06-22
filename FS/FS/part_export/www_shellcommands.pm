@@ -57,6 +57,7 @@ The following variables are available for interpolation (prefixed with
   <LI><code>$bare_zone</code> - just the zone of this virtual host, without the domain portion
   <LI><code>$domain</code> - base domain
   <LI><code>$username</code>
+  <LI><code>$_password</code>
   <LI><code>$homedir</code>
   <LI>All other fields in <a href="../docs/schema.html#svc_www">svc_www</a>
     are also available.
