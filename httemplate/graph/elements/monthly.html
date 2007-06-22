@@ -29,6 +29,8 @@
 %    }
 %  }
 %
+%  my @mon = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
+%
 %  my $report = new FS::Report::Table::Monthly (
 %
 %    #'items'       => $opt{'items'},
@@ -51,7 +53,101 @@
 %  );
 %  my $data = $report->data;
 %
-%  if ( $cgi->param('_type') =~ /^(png)$/ ) {
+%  if ( $cgi->param('_type') =~ /^(csv)$/ ) {
+%
+%    #http_header('Content-Type' => 'text/comma-separated-values' ); #IE chokes
+%    http_header('Content-Type' => 'text/plain' );
+%
+%    my $csv = new Text::CSV_XS { 'always_quote' => 1,
+%                                 'eol'          => "\n", #"\015\012", #"\012"
+%                               };
+%
+%    $csv->combine(map { my $m=$_; $m =~ s/^(\d+)\//$mon[$1-1] /; $m; }
+%                      ('', @{$data->{label}}, $opt{'nototal'} ? () : 'Total')
+%                 );
+%    
+<% $csv->string %>
+
+%    my @bottom_total = ();
+%    foreach ( @{ $data->{'items'} } ) {
+%
+%      my $col = 0;
+%      my $total = 0;
+%      $csv->combine(
+%        shift( @{ $data->{'item_labels'} } ),
+%        map { $total += $_; $bottom_total[$col++] += $_; sprintf("%.2f", $_); }
+%          ( @{ shift( @{$data->{data}} ) } ),
+%        ( $opt{'nototal'} ? () : sprintf("%.2f", $total) ),
+%      );
+%      unless ( $opt{'nototal'} ) { 
+%        $bottom_total[$col++] += $total; 
+%      } 
+%
+<% $csv->string %>
+
+%    }
+% 
+%    if ( $opt{'bottom_total'} ) {
+%      $csv->combine(
+%        'Total',
+%        map { sprintf("%.2f", $_) } @bottom_total,
+%      );
+%
+<% $csv->string %>
+
+%    } 
+%    
+%  } elsif ( $cgi->param('_type') =~ /(\.xls)$/ ) {
+%
+%    #http_header('Content-Type' => 'application/excel' ); #eww
+%    http_header('Content-Type' => 'application/vnd.ms-excel' );
+%    #http_header('Content-Type' => 'application/msexcel' ); #alas
+%
+%    my $output = '';
+%    my $XLS = new IO::Scalar \$output;
+%    my $workbook = Spreadsheet::WriteExcel->new($XLS)
+%      or die "Error opening .xls file: $!";
+%
+%    my $worksheet = $workbook->add_worksheet(substr($opt{'title'},0,31));
+%
+%    my($r,$c) = (0,0);
+%
+%    foreach ('', @{$data->{label}}, ($opt{'nototal'} ? () : 'Total') ) {
+%      my $header = $_;
+%      $header =~ s/^(\d+)\//$mon[$1-1] /;
+%      $worksheet->write($r, $c++, $header)
+%    }
+%
+%    my @bottom_total = ();
+%    foreach ( @{ $data->{'items'} } ) {
+%      $r++;
+%      $c = 0;
+%      my $total = 0;
+%      $worksheet->write( $r, $c++, shift( @{ $data->{'item_labels'} } ) );
+%      foreach ( @{ shift( @{$data->{data}} ) } ) {
+%        $total += $_;
+%        $bottom_total[$c] += $_;
+%        $worksheet->write($r, $c++,  sprintf("%.2f", $_) );
+%      }
+%      unless ( $opt{'nototal'} ) { 
+%        $bottom_total[$c] += $total; 
+%        $worksheet->write($r, $c++,  sprintf("%.2f", $total) );
+%      } 
+%    }
+% 
+%    $c = 0;
+%    if ( $opt{'bottom_total'} ) {
+%      $r++;
+%      $worksheet->write($r, $c++, 'Total');
+%      $worksheet->write($r, $c++, sprintf("%.2f", $_)) foreach @bottom_total;
+%    } 
+%    
+%    $workbook->close();# or die "Error creating .xls file: $!";
+%
+%    http_header('Content-Length' => length($output) );
+%    
+<% $output %>
+%  } elsif ( $cgi->param('_type') =~ /^(png)$/ ) {
 %
 %    #my $chart = Chart::LinesPoints->new(1024,480);
 %    #my $chart = Chart::LinesPoints->new(768,480);
@@ -100,16 +196,23 @@
 %
 %  } else {
 %
-%    my @mon = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
-%
-%
 <% include('/elements/header.html', $opt{'title'} ) %>
 % $cgi->param('_type', 'png'); 
 
 <IMG SRC="<% $cgi->self_url %>" WIDTH="976" HEIGHT="384">
-<BR>
+<P ALIGN="right">
 
-<% table('e8e8e8') %>
+% unless ( $opt{'disable_download'} ) { 
+%   $cgi->param('_type', "monthly.xls" ); 
+            Download full results
+            as <A HREF="<% $cgi->self_url %>">Excel spreadsheet</A>
+%   $cgi->param('_type', 'csv'); 
+            as <A HREF="<% $cgi->self_url %>">CSV file</A></P>
+%   $cgi->param('_type', "html" ); 
+% } 
+%
+</P>
+<% include('/elements/table.html', 'e8e8e8') %>
 
 <TR>
 
