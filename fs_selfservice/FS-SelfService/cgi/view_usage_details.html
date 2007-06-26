@@ -4,7 +4,10 @@
 <%= include('myaccount_menu') %>
 <TD VALIGN="top">
 
-<FONT SIZE=4>Service usage details</FONT><BR><BR>
+<FONT SIZE=4>Service usage details for
+<%= Date::Format::time2str('%b&nbsp;%o&nbsp;%Y', $beginning) %> -
+<%= Date::Format::time2str('%b&nbsp;%o&nbsp;%Y', $ending) %>
+</FONT><BR><BR>
 
 <%= if ( $error ) {
   $OUT .= qq!<FONT SIZE="+1" COLOR="#ff0000">$error</FONT><BR><BR>!;
