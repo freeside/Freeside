@@ -299,6 +299,13 @@ Current packages
         <% pkg_datestr($cust_pkg, 'bill', $conf) %>
       </TR>
 % } 
+% if ( $cust_pkg->get('adjourn') ) { 
+
+      <TR>
+        <TD WIDTH="<%$width%>" ALIGN="right">Adjourns&nbsp;</TD>
+        <% pkg_datestr($cust_pkg, 'adjourn', $conf) %>
+      </TR>
+% } 
 % if ( $cust_pkg->get('expire') ) { 
 
       <TR>
@@ -314,6 +321,10 @@ Current packages
 % if ( $curuser->access_right('Suspend customer package') ) { 
 
               (&nbsp;<% pkg_suspend_link($cust_pkg) %>&nbsp;)
+% } 
+% if ( $curuser->access_right('Suspend customer package later') ) { 
+
+              (&nbsp;<% pkg_adjourn_link($cust_pkg) %>&nbsp;)
 % } 
 % if ( $curuser->access_right('Cancel customer package immediately') ) { 
 
@@ -489,7 +500,7 @@ Current packages
 %sub pkg_change_link    { pkg_link('misc/change_pkg',    'Change&nbsp;package', @_ ); }
 %
 %sub pkg_suspend_link   { pkg_popup_link( 'misc/cancel_pkg.html?method=suspend',
-%                                         'Suspend',
+%                                         'Suspend&nbsp;now',
 %                                         'Suspend',
 %                                         @_
 %                                       );
@@ -505,6 +516,13 @@ Current packages
 %                                         @_
 %                                       );
 %                       }
+%sub pkg_adjourn_link   { pkg_popup_link( 'misc/cancel_pkg.html?method=adjourn',
+%                                         'Suspend&nbsp;later',
+%                                         'Adjourn',
+%                                         @_
+%                                       );
+%                       }
+%
 %sub pkg_expire_link    { pkg_popup_link( 'misc/cancel_pkg.html?method=expire',
 %                                         'Cancel&nbsp;later',
 %                                         'Expire', #"Cancel package $num later"

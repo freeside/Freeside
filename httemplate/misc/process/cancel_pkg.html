@@ -1,7 +1,7 @@
 <%init>
 #untaint method
 my $method = $cgi->param('method');
-$method =~ /^(cancel|expire|suspend)$/ || die "Illegal method";
+$method =~ /^(cancel|expire|suspend|adjourn)$/ || die "Illegal method";
 $method = $1;
 
 #untaint pkgnum
@@ -15,7 +15,7 @@ $reasonnum =~ /^(-?\d+)$/ || die "Illegal reasonnum";
 $reasonnum = $1;
 
 my $date = time;
-if ($method eq 'expire'){
+if ($method eq 'expire' || $method eq 'adjourn'){
   #untaint date
   $date = $cgi->param('date');
   str2time($cgi->param('date')) =~ /^(\d+)$/ || die "Illegal date";
@@ -47,9 +47,9 @@ if ($reasonnum == -1) {
 }
 
 unless ($error) {
-  if ($method eq 'expire'){
+  if ($method eq 'expire' || $method eq 'adjourn'){
     my %hash = $cust_pkg->hash;
-    $hash{'expire'}=$date;
+    $hash{$method}=$date;
     my $new = new FS::cust_pkg (\%hash);
     $error = $new->replace($cust_pkg, 'reason' => $reasonnum);
   }else{
@@ -68,6 +68,7 @@ $dbh->commit or die $dbh->errstr if $oldAutoCommit;
  my %past = ( 'cancel'  => 'cancelled',
               'expire'  => 'expired',
               'suspend' => 'suspended',
+              'adjourn' => 'adjourned',
             );
 </%init>
 <% header("Package $past{$method}") %>

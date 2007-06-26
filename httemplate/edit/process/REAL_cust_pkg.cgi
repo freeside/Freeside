@@ -7,6 +7,7 @@
 %$hash{'bill'} = $cgi->param('bill') ? str2time($cgi->param('bill')) : '';
 %$hash{'last_bill'} =
 %  $cgi->param('last_bill') ? str2time($cgi->param('last_bill')) : '';
+%$hash{'adjourn'} = $cgi->param('adjourn') ? str2time($cgi->param('adjourn')) : '';
 %$hash{'expire'} = $cgi->param('expire') ? str2time($cgi->param('expire')) : '';
 %
 %my $new;

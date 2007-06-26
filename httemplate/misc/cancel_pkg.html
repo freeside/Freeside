@@ -23,9 +23,9 @@
 <% ucfirst($method) . " $pkgnum: " .$part_pkg->pkg. ' - ' .$part_pkg->comment %>
 <% ntable("#cccccc", 2) %>
 
-% if ($method eq 'expire') {
+% if ($method eq 'expire' || $method eq 'adjourn') {
 <TR>
-  <TD>Cancel package on </TD>
+  <TD><% $submit =~ /^(\w*)\s/ %> package on </TD>
     <TD><INPUT TYPE="text" NAME="date" ID="expire_date" VALUE="<% $date %>">
         <IMG SRC="<% $p %>images/calendar.png" ID="expire_button" STYLE="cursor:pointer" TITLE="Select date">
         <BR><I>m/d/y</I>
@@ -77,7 +77,10 @@ if ($method eq 'cancel') {
   $submit    = "Cancel Later";
 }elsif ($method eq 'suspend') {
   $class = 'S';
-  $submit    = "Suspend";
+  $submit    = "Suspend Now";
+}elsif ($method eq 'adjourn') {
+  $class = 'S';
+  $submit    = "Suspend Later";
 }else{
   die "illegal query ". $cgi->keywords;
 }

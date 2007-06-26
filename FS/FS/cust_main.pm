@@ -4725,7 +4725,7 @@ sub batch_import {
     my %svc_acct = ();
     foreach my $field ( @fields ) {
 
-      if ( $field =~ /^cust_pkg\.(pkgpart|setup|bill|susp|expire|cancel)$/ ) {
+      if ( $field =~ /^cust_pkg\.(pkgpart|setup|bill|susp|adjourn|expire|cancel)$/ ) {
 
         #$cust_pkg{$1} = str2time( shift @$columns );
         if ( $1 eq 'pkgpart' ) {

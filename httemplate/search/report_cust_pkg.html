@@ -26,7 +26,7 @@
 
           if ( what.options[what.selectedIndex].value == '<% $status %>' ) {
 
-%           foreach my $field (qw( setup last_bill bill susp expire cancel )) {
+%           foreach my $field (qw( setup last_bill bill adjourn susp expire cancel )) {
 %             if ( $disable{$status}->{$field} ) {
 
                 what.form.<% $field %>_beginning_text.disabled = true;
@@ -68,7 +68,7 @@
                )
     %>
 
-%   foreach my $field (qw( setup last_bill bill susp expire cancel )) {
+%   foreach my $field (qw( setup last_bill bill adjourn susp expire cancel )) {
 
       <TR>
         <TD ALIGN="right" VALIGN="center"><% $label{$field} %></TD>
@@ -116,6 +116,7 @@ my %label = (
   'setup'     => 'Setup',
   'last_bill' => 'Last bill',
   'bill'      => 'Next bill',
+  'adjourn'   => 'Adjourns',
   'susp'      => 'Suspended',
   'expire'    => 'Expires',
   'cancel'    => 'Cancelled',
@@ -124,7 +125,7 @@ my %label = (
 #false laziness w/cust_pkg.cgi
 my %disable = (
   'all'             => {},
-  'one-time charge' => { 'last_bill'=>1, 'bill'=>1, 'susp'=>1, 'expire'=>1, 'cancel'=>1, },
+  'one-time charge' => { 'last_bill'=>1, 'bill'=>1, 'adjourn'=>1, 'susp'=>1, 'expire'=>1, 'cancel'=>1, },
   'active'          => { 'susp'=>1, 'cancel'=>1 },
   'suspended'       => { 'cancel' => 1 },
   'cancelled'       => {},

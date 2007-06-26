@@ -34,6 +34,7 @@ sub bill {
               and (    setup is null or setup =  0
                     or bill  is null or bill  <= $time 
                     or ( expire is not null and expire <= $^T )
+                    or ( adjourn is not null and adjourn <= $^T )
                   )
         )
 END
@@ -91,8 +92,10 @@ END
     }
     # $^T not $time because -d is for pre-printing invoices
     foreach my $cust_pkg (
-      grep { $_->part_pkg->is_prepaid
-             && $_->bill && $_->bill < $^T && ! $_->susp
+      grep { (    $_->part_pkg->is_prepaid && $_->bill && $_->bill < $^T
+               || $_->adjourn && $_->adjourn <= $^T
+             )
+             && ! $_->susp
            }
            $cust_main->ncancelled_pkgs
     ) {

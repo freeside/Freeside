@@ -106,6 +106,7 @@ assigned to users and/or groups.
   'Edit customer package dates',
   'Customize customer package',
   'Suspend customer package',
+  'Suspend customer package later',
   'Unsuspend customer package',
   'Cancel customer package immediately',
   'Cancel customer package later',

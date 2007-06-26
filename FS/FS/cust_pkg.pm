@@ -111,6 +111,8 @@ inherits from FS::Record.  The following fields are currently supported:
 
 =item last_bill - last bill date
 
+=item adjourn - date
+
 =item susp - date
 
 =item expire - date
@@ -124,7 +126,7 @@ unsuspension of this package when using the B<unsuspendauto> config file.
 
 =back
 
-Note: setup, bill, susp, expire and cancel are specified as UNIX timestamps;
+Note: setup, bill, adjourn, susp, expire and cancel are specified as UNIX timestamps;
 see L<perlfunc/"time">.  Also see L<Time::Local> and L<Date::Parse> for
 conversion functions.
 
@@ -264,7 +266,7 @@ the customer ever purchased the item.  Instead, see the cancel method.
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
 
-Currently, custnum, setup, bill, susp, expire, and cancel may be changed.
+Currently, custnum, setup, bill, adjourn, susp, expire, and cancel may be changed.
 
 Changing pkgpart may have disasterous effects.  See the order subroutine.
 
@@ -310,13 +312,15 @@ sub replace {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  if ($options{'reason'} && $new->expire && $old->expire ne $new->expire) {
-    my $error = $new->insert_reason( 'reason' => $options{'reason'},
-                                     'date'      => $new->expire,
-		                    );
-    if ( $error ) {
-      dbh->rollback if $oldAutoCommit;
-      return "Error inserting cust_pkg_reason: $error";
+  foreach my $method ( qw(adjourn expire) ) {  # How many reasons?
+    if ($options{'reason'} && $new->$method && $old->$method ne $new->$method) {
+      my $error = $new->insert_reason( 'reason' => $options{'reason'},
+                                       'date'      => $new->$method,
+                                     );
+      if ( $error ) {
+        dbh->rollback if $oldAutoCommit;
+        return "Error inserting cust_pkg_reason: $error";
+      }
     }
   }
 
@@ -377,6 +381,8 @@ sub check {
     || $self->ut_numbern('bill')
     || $self->ut_numbern('susp')
     || $self->ut_numbern('cancel')
+    || $self->ut_numbern('adjourn')
+    || $self->ut_numbern('expire')
   ;
   return $error if $error;
 
@@ -601,7 +607,8 @@ sub suspend {
 =item unsuspend [ OPTION => VALUE ... ]
 
 Unsuspends all services (see L<FS::cust_svc> and L<FS::part_svc>) in this
-package, then unsuspends the package itself (clears the susp field).
+package, then unsuspends the package itself (clears the susp field and the
+adjourn field if it is in the past).
 
 Available options are: I<adjust_next_bill>.
 
@@ -666,6 +673,7 @@ sub unsuspend {
       && $inactive > 0 && ( $hash{'bill'} || $hash{'setup'} );
 
     $hash{'susp'} = '';
+    $hash{'adjourn'} = '' if $hash{'adjourn'} < time;
     my $new = new FS::cust_pkg ( \%hash );
     $error = $new->replace( $self, options => { $self->options } );
     if ( $error ) {

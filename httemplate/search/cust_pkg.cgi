@@ -12,6 +12,7 @@
                                      'Setup',
                                      'Last bill',
                                      'Next bill',
+                                     'Adjourn',
                                      'Susp.',
                                      'Expire',
                                      'Cancel',
@@ -43,7 +44,7 @@
                     #sub { time2str('%b %d %Y', shift->expire); },
                     #sub { time2str('%b %d %Y', shift->get('cancel')); },
                     ( map { time_or_blank($_) }
-                          qw( setup last_bill bill susp expire cancel ) ),
+                          qw( setup last_bill bill adjourn susp expire cancel ) ),
 
                     \&FS::UI::Web::cust_fields,
                     #sub { '<table border=0 cellspacing=0 cellpadding=0 STYLE="border:none">'.
@@ -210,14 +211,14 @@ my $orderby = '';
 #false laziness w/report_cust_pkg.html
 my %disable = (
   'all'             => {},
-  'one-time charge' => { 'last_bill'=>1, 'bill'=>1, 'susp'=>1, 'expire'=>1, 'cancel'=>1, },
+  'one-time charge' => { 'last_bill'=>1, 'bill'=>1, 'adjourn'=>1, 'susp'=>1, 'expire'=>1, 'cancel'=>1, },
   'active'          => { 'susp'=>1, 'cancel'=>1 },
   'suspended'       => { 'cancel' => 1 },
   'cancelled'       => {},
   ''                => {},
 );
 
-foreach my $field (qw( setup last_bill bill susp expire cancel )) {
+foreach my $field (qw( setup last_bill bill adjourn susp expire cancel )) {
 
   my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi, $field);
 

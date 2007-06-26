@@ -50,8 +50,9 @@
 %
 %
 %#print info
-%my($susp,$cancel,$expire)=(
+%my($susp,$adjourn,$cancel,$expire)=(
 %  $cust_pkg->getfield('susp'),
+%  $cust_pkg->getfield('adjourn'),
 %  $cust_pkg->getfield('cancel'),
 %  $cust_pkg->getfield('expire'),
 %);
@@ -132,6 +133,14 @@
     <TD>
       <INPUT TYPE="text" NAME="bill" SIZE=32 ID="bill_text" VALUE="<% ( $bill ? time2str($format, $bill) : "" ) %>">
       <IMG SRC="../images/calendar.png" ID="bill_button" STYLE="cursor: pointer" TITLE="Select date">
+    </TD>
+  </TR>
+  <TR>
+    <TD ALIGN="right">Adjournment date</TD>
+    <TD>
+      <INPUT TYPE="text" NAME="adjourn" SIZE=32 ID="adjourn_text" VALUE="<% ( $adjourn ? time2str($format, $adjourn) : "" ) %>">
+      <IMG SRC="../images/calendar.png" ID="adjourn_button" STYLE="cursor: pointer" TITLE="Select date">
+      <BR><FONT SIZE=-1>(will <b>suspend</b> this package when the date is reached)</FONT>
     </TD>
   </TR>
 % if ( $susp ) { 
