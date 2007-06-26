@@ -65,7 +65,7 @@
   my $m = sprintf("%02d", int(($total % 3600) / 60));
   my $s = sprintf("%02d", $total % 60);
   $OUT .=  qq!<TR><TD></TD><TD></TD>!;
-  $OUT .=  qq!<TD ALIGN="right">========</TD>! x 3;
+  $OUT .=  qq!<TD ALIGN="right"><HR></TD>! x 3;
   $OUT .=  qq!</TR>!;
   $OUT .=  qq!<TR><TD></TD><TD></TD><TD ALIGN="right">$h:$m:$s</TD>!;
   $OUT .=  qq!<TD ALIGN="right">!;
