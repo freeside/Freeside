@@ -154,6 +154,12 @@ if ( $cgi->param('magic') ) {
       }
     }
 
+    if ( $cgi->param('payinfo') ) {
+      $cgi->param('payinfo') =~ /^\s*(\d+)\s*$/
+        or die "illegal payinfo ". $cgi->param('payinfo');
+      push @search, "cust_pay.payinfo = '$1'";
+    }
+
     my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
     push @search, "_date >= $beginning ",
                   "_date <= $ending";
@@ -197,6 +203,8 @@ if ( $cgi->param('magic') ) {
   };
 
 } else {
+
+  #hmm... is this still used?
 
   $cgi->param('payinfo') =~ /^\s*(\d+)\s*$/ or die "illegal payinfo";
   my $payinfo = $1;
