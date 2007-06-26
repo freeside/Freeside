@@ -8,7 +8,7 @@ use CGI::Carp qw(fatalsToBrowser);
 use Text::Template;
 use HTML::Entities;
 use Date::Format;
-use Number::Format;
+use Number::Format 1.50;
 use FS::SelfService qw( login customer_info invoice
                         payment_info process_payment 
                         process_prepay
