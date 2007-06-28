@@ -1,0 +1,5 @@
+#!/bin/sh
+
+month=`date +%m`
+nextmonth=`expr $month + 1`
+/usr/local/bin/freeside-daily -d $nextmonth/1/`date +%Y` fs_daily
