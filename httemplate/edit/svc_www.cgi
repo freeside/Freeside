@@ -156,8 +156,9 @@
 %
 %
 %my $p1 = popurl(1);
-%print header("Web Hosting $action", '');
-%
+
+<% include("/elements/header.html", "Web Hosting $action", '') %>
+
 %print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
 %      "</FONT>"
 %  if $cgi->param('error');
@@ -192,7 +193,7 @@
 %print "</SELECT></TD></TR>";
 %
 %if ( $part_svc->part_svc_column('usersvc')->columnflag ne 'F'
-%     || $part_svc->part_svc_column('usersvc')->columnvalue !~ /^\s*$/) {
+%     || $part_svc->part_svc_column('usersvc')->columnvalue =~ /^\s*$/) {
 %  print '<TR><TD ALIGN="right">Username</TD><TD><SELECT NAME="usersvc" SIZE=1>';
 %  print '<OPTION VALUE="">(none)';
 %  foreach $_ (keys %svc_acct) {
@@ -220,11 +221,7 @@
 %
 %print '</TABLE><BR><INPUT TYPE="submit" VALUE="Submit">';
 %
-%print <<END;
-%
-%    </FORM>
-%  </BODY>
-%</HTML>
-%END
-%
 
+</FORM>
+
+<% include('/elements/footer.html') %>

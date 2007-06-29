@@ -44,17 +44,18 @@
 %  or die "svc_www: Unknown recnum ". $svc_www->recnum;
 %
 %my $www = $domain_record->zone;
-%
-%print header('Website View', menubar(
-%  ( ( $custnum )
-%    ? ( "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
-%      )                                                                       
-%    : ( "Cancel this (unaudited) website" =>
-%          "${p}misc/cancel-unaudited.cgi?$svcnum" )
-%  ),
-%  "Main menu" => $p,
-%)).
-%      qq!<A HREF="${p}edit/svc_www.cgi?$svcnum">Edit this information</A><BR>!.
+
+<% include("/elements/header.html", "Website View", menubar(
+    ( ( $custnum )
+      ? ( "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
+        )                                                                       
+      : ( "Cancel this (unaudited) website" =>
+            "${p}misc/cancel-unaudited.cgi?$svcnum" )
+    ),
+  ))
+%>
+
+%print qq!<A HREF="${p}edit/svc_www.cgi?$svcnum">Edit this information</A><BR>!.
 %      ntable("#cccccc"). '<TR><TD>'. ntable("#cccccc",2).
 %      qq!<TR><TD ALIGN="right">Service number</TD>!.
 %        qq!<TD BGCOLOR="#ffffff">$svcnum</TD></TR>!.
@@ -83,8 +84,6 @@
 %
 %
 %print '</TABLE></TD></TR></TABLE>'.
-%      '<BR>'. joblisting({'svcnum'=>$svcnum}, 1).
-%      '</BODY></HTML>'
-%;
-%
+%      '<BR>'. joblisting({'svcnum'=>$svcnum}, 1);
 
+<% include('/elements/footer.html') %>
