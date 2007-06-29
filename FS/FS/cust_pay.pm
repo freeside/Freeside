@@ -420,7 +420,7 @@ sub check {
   # UNIQUE index should catch this too, without race conditions, but this
   # should give a better error message the other 99.9% of the time...
   if ( length($self->payunique)
-       && qsearchs('cust_pay', { 'payunique' => $self->payunique } ) {
+       && qsearchs('cust_pay', { 'payunique' => $self->payunique } ) ) {
     return "duplicate transaction"; #well, it *could* be a better error message
   }
 
