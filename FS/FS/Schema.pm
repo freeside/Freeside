@@ -3,11 +3,10 @@ package FS::Schema;
 use vars qw(@ISA @EXPORT_OK $DEBUG $setup_hack %dbdef_cache);
 use subs qw(reload_dbdef);
 use Exporter;
-use DBIx::DBSchema 0.30;
+use DBIx::DBSchema 0.33;
 use DBIx::DBSchema::Table;
 use DBIx::DBSchema::Column 0.06;
-use DBIx::DBSchema::ColGroup::Unique;
-use DBIx::DBSchema::ColGroup::Index;
+use DBIx::DBSchema::Index;
 use FS::UID qw(datasrc);
 
 @ISA = qw(Exporter);
@@ -81,44 +80,64 @@ sub dbdef_dist {
 
   my $tables_hashref = tables_hashref();
 
+
   #turn it into objects
   my $dbdef = new DBIx::DBSchema map {  
+
+    my $tablename = $_;
+    my $indexnum = 1;
+
     my @columns;
-    while (@{$tables_hashref->{$_}{'columns'}}) {
+    while (@{$tables_hashref->{$tablename}{'columns'}}) {
       #my($name, $type, $null, $length, $default, $local) =
       my @coldef = 
-        splice @{$tables_hashref->{$_}{'columns'}}, 0, 6;
+        splice @{$tables_hashref->{$tablename}{'columns'}}, 0, 6;
       my %hash = map { $_ => shift @coldef }
                      qw( name type null length default local );
 
       unless ( defined $hash{'default'} ) {
-        warn "$_:\n".
+        warn "$tablename:\n".
              join('', map "$_ => $hash{$_}\n", keys %hash) ;# $stop = <STDIN>;
       }
 
       push @columns, new DBIx::DBSchema::Column ( \%hash );
     }
-    DBIx::DBSchema::Table->new(
-      $_,
-      $tables_hashref->{$_}{'primary_key'},
-      DBIx::DBSchema::ColGroup::Unique->new($tables_hashref->{$_}{'unique'}),
-      DBIx::DBSchema::ColGroup::Index->new($tables_hashref->{$_}{'index'}),
-      @columns,
-    );
+
+    #false laziness w/sub indices in DBIx::DBSchema::DBD (well, sorta)
+    #and sub sql_create_table in DBIx::DBSchema::Table (slighty more?)
+    my $unique = $tables_hashref->{$tablename}{'unique'};
+    my $index  = $tables_hashref->{$tablename}{'index'};
+    my @indices = ();
+    push @indices, map {
+                         DBIx::DBSchema::Index->new({
+                           'name'    => $tablename. $indexnum++,
+                           'unique'  => 1,
+                           'columns' => $_,
+                         });
+                       }
+                       @$unique;
+    push @indices, map {
+                         DBIx::DBSchema::Index->new({
+                           'name'    => $tablename. $indexnum++,
+                           'unique'  => 0,
+                           'columns' => $_,
+                         });
+                       }
+                       @$index;
+
+    DBIx::DBSchema::Table->new({
+      'name'        => $tablename,
+      'primary_key' => $tables_hashref->{$tablename}{'primary_key'},
+      'columns'     => \@columns,
+      'indices'     => \@indices,
+    });
+
   } keys %$tables_hashref;
 
   if ( $DEBUG ) {
     warn "[debug]$me initial dbdef_dist created ($dbdef) with tables:\n";
     warn "[debug]$me   $_\n" foreach $dbdef->tables;
   }
-  
-  my $cust_main = $dbdef->table('cust_main');
-  #unless ($ship) { #remove ship_ from cust_main
-  #  $cust_main->delcolumn($_) foreach ( grep /^ship_/, $cust_main->columns );
-  #} else { #add indices
-    push @{$cust_main->index->lol_ref},
-      map { [ "ship_$_" ] } qw( last company daytime night fax );
-  #}
   
   #add radius attributes to svc_acct
   #
@@ -151,72 +170,76 @@ sub dbdef_dist {
   ) {
     my $tableobj = $dbdef->table($table)
       or die "unknown table $table";
-  
-    die "unique->lol_ref undefined for $table"
-      unless defined $tableobj->unique->lol_ref;
-    die "index->lol_ref undefined for $table"
-      unless defined $tableobj->index->lol_ref;
-  
+
+    my %indices = $tableobj->indices;
+    
+    my %h_indices = map { 
+                          ( "h_$_" =>
+                              DBIx::DBSchema::Index->new({
+                                'name'    => 'h_'. $indices{$_}->name,
+                                'unique'  => 0,
+                                'columns' => [ @{$indices{$_}->columns} ],
+                              })
+                          );
+                        }
+                        keys %indices;
+
     my $h_tableobj = DBIx::DBSchema::Table->new( {
-      name        => "h_$table",
-      primary_key => 'historynum',
-      unique      => DBIx::DBSchema::ColGroup::Unique->new( [] ),
-      'index'     => DBIx::DBSchema::ColGroup::Index->new( [
-                       @{$tableobj->unique->lol_ref},
-                       @{$tableobj->index->lol_ref}
-                     ] ),
-      columns     => [
-                       DBIx::DBSchema::Column->new( {
-                         'name'    => 'historynum',
-                         'type'    => 'serial',
-                         'null'    => 'NOT NULL',
-                         'length'  => '',
-                         'default' => '',
-                         'local'   => '',
-                       } ),
-                       DBIx::DBSchema::Column->new( {
-                         'name'    => 'history_date',
-                         'type'    => 'int',
-                         'null'    => 'NULL',
-                         'length'  => '',
-                         'default' => '',
-                         'local'   => '',
-                       } ),
-                       DBIx::DBSchema::Column->new( {
-                         'name'    => 'history_user',
-                         'type'    => 'varchar',
-                         'null'    => 'NOT NULL',
-                         'length'  => '80',
-                         'default' => '',
-                         'local'   => '',
-                       } ),
-                       DBIx::DBSchema::Column->new( {
-                         'name'    => 'history_action',
-                         'type'    => 'varchar',
-                         'null'    => 'NOT NULL',
-                         'length'  => '80',
-                         'default' => '',
-                         'local'   => '',
-                       } ),
-                       map {
-                         my $column = $tableobj->column($_);
-  
-                         #clone so as to not disturb the original
-                         $column = DBIx::DBSchema::Column->new( {
-                           map { $_ => $column->$_() }
-                             qw( name type null length default local )
-                         } );
-  
-                         if ( $column->type eq 'serial' ) {
-                           $column->type('int');
-                           $column->null('NULL');
-                         }
-                         #$column->default('')
-                         #  if $column->default =~ /^nextval\(/i;
-                         #( my $local = $column->local ) =~ s/AUTO_INCREMENT//i;
-                         #$column->local($local);
-                         $column;
-                       } $tableobj->columns
+      'name'        => "h_$table",
+      'primary_key' => 'historynum',
+      'indices'     => \%h_indices,
+      'columns'     => [
+                         DBIx::DBSchema::Column->new( {
+                           'name'    => 'historynum',
+                           'type'    => 'serial',
+                           'null'    => 'NOT NULL',
+                           'length'  => '',
+                           'default' => '',
+                           'local'   => '',
+                         } ),
+                         DBIx::DBSchema::Column->new( {
+                           'name'    => 'history_date',
+                           'type'    => 'int',
+                           'null'    => 'NULL',
+                           'length'  => '',
+                           'default' => '',
+                           'local'   => '',
+                         } ),
+                         DBIx::DBSchema::Column->new( {
+                           'name'    => 'history_user',
+                           'type'    => 'varchar',
+                           'null'    => 'NOT NULL',
+                           'length'  => '80',
+                           'default' => '',
+                           'local'   => '',
+                         } ),
+                         DBIx::DBSchema::Column->new( {
+                           'name'    => 'history_action',
+                           'type'    => 'varchar',
+                           'null'    => 'NOT NULL',
+                           'length'  => '80',
+                           'default' => '',
+                           'local'   => '',
+                         } ),
+                         map {
+                           my $column = $tableobj->column($_);
+    
+                           #clone so as to not disturb the original
+                           $column = DBIx::DBSchema::Column->new( {
+                             map { $_ => $column->$_() }
+                               qw( name type null length default local )
+                           } );
+    
+                           if ( $column->type eq 'serial' ) {
+                             $column->type('int');
+                             $column->null('NULL');
+                           }
+                           #$column->default('')
+                           #  if $column->default =~ /^nextval\(/i;
+                           #( my $local = $column->local ) =~ s/AUTO_INCREMENT//i;
+                           #$column->local($local);
+                           $column;
+                         } $tableobj->columns
                      ],
     } );
     $dbdef->addtable($h_tableobj);
