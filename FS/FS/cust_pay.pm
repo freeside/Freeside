@@ -403,6 +403,7 @@ sub check {
     || $self->ut_money('paid')
     || $self->ut_numbern('_date')
     || $self->ut_textn('paybatch')
+    || $self->ut_textn('payunique')
     || $self->ut_enum('closed', [ '', 'Y' ])
     || $self->payinfo_check()
   ;
@@ -415,6 +416,13 @@ sub check {
            || qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
 
   $self->_date(time) unless $self->_date;
+
+  # UNIQUE index should catch this too, without race conditions, but this
+  # should give a better error message the other 99.9% of the time...
+  if ( length($self->payunique)
+       && qsearchs('cust_pay', { 'payunique' => $self->payunique } ) {
+    return "duplicate transaction"; #well, it *could* be a better error message
+  }
 
   $self->SUPER::check;
 }

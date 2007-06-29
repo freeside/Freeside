@@ -552,10 +552,11 @@ sub tables_hashref {
 	'paymask', 'varchar', 'NULL', $char_d, '', '', 
         'paydate',  'varchar', 'NULL', 10, '', '', 
         'paybatch', 'varchar',   'NULL', $char_d, '', '', #for auditing purposes.
+        'payunique', 'varchar', 'NULL', $char_d, '', '', #separate paybatch "unique" functions from current usage
         'closed',    'char', 'NULL', 1, '', '', 
       ],
       'primary_key' => 'paynum',
-      'unique' => [],
+      'unique' => [ [ 'payunique' ] ],
       'index' => [ [ 'custnum' ], [ 'paybatch' ], [ 'payby' ], [ '_date' ] ],
     },
 
