@@ -1,0 +1,20 @@
+#!/usr/bin/perl -w
+
+# Author: Andy Turner <andrew.turner@acadia.net>
+ 
+use strict;
+
+# The first line has some binary magic for file identification
+# purposes.  GhostScript doesn't like it.  Strip it.
+scalar <>;
+
+# Add a header so that we can use magic to determine the file type.
+print "%!PS-Adobe-3.0 EPSF-3.0\n";
+
+while (<>) {
+    print;  
+
+    # Illustrator Version 7 format EPS files have a bunch of binary gook
+    # after the "%%EOF" line.  (% is a comment in PostScript, right?)
+    last if /^%%EOF/;                                                
+}
