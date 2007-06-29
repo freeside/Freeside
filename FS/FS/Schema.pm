@@ -488,8 +488,8 @@ sub tables_hashref {
                    [ 'daytime' ], [ 'night' ], [ 'fax' ], [ 'refnum' ],
                    [ 'county' ], [ 'state' ], [ 'country' ], [ 'zip' ],
                    [ 'ship_last' ], [ 'ship_company' ],
+                   [ 'ship_daytime' ], [ 'ship_night' ], [ 'ship_fax' ],
                    [ 'payby' ], [ 'paydate' ],
-
                  ],
     },
 
