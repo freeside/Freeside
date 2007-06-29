@@ -9,7 +9,7 @@ use Carp qw(carp cluck croak confess);
 use File::CounterFile;
 use Locale::Country;
 use DBI qw(:sql_types);
-use DBIx::DBSchema 0.25;
+use DBIx::DBSchema 0.33;
 use FS::UID qw(dbh getotaker datasrc driver_name);
 use FS::CurrentUser;
 use FS::Schema qw(dbdef);
@@ -725,7 +725,7 @@ sub insert {
 
   #single-field unique keys are given a value if false
   #(like MySQL's AUTO_INCREMENT or Pg SERIAL)
-  foreach ( $self->dbdef_table->unique->singles ) {
+  foreach ( $self->dbdef_table->unique_singles ) {
     $self->unique($_) unless $self->getfield($_);
   }
 
