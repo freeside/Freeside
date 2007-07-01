@@ -104,10 +104,6 @@ sub AUTOLOAD {
 
 =back
 
-=head1 VERSION
-
-$Id: SessionClient.pm,v 1.3 2000-12-03 20:25:20 ivan Exp $
-
 =head1 BUGS
 
 =head1 SEE ALSO

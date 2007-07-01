@@ -525,10 +525,6 @@ sub new_customer {
 
 =back
 
-=head1 VERSION
-
-$Id: MailAdminClient.pm,v 1.1 2001-10-18 15:04:54 jeff Exp $
-
 =head1 BUGS
 
 =head1 SEE ALSO
