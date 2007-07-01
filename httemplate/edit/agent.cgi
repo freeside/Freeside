@@ -94,14 +94,14 @@ Agent #<% $hashref->{agentnum} ? $hashref->{agentnum} : "(NEW)" %>
 
   
   <TR>
-    <TD ALIGN="right">Agent interface username</TD>
+    <TD ALIGN="right">(DEPRECATED) Agent interface username</TD>
     <TD>
       <INPUT TYPE="text" NAME="username" VALUE="<% $hashref->{username} %>">
     </TD>
   </TR>
   
   <TR>
-    <TD ALIGN="right">Agent interface password</TD>
+    <TD ALIGN="right">(DEPRECATED) Agent interface password</TD>
     <TD>
       <INPUT TYPE="text" NAME="_password" VALUE="<% $hashref->{_password} %>">
     </TD>
