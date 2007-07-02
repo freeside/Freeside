@@ -908,7 +908,7 @@ sub available_part_svc {
       $self->part_pkg->pkg_svc;
 }
 
-=item 
+=item part_svc
 
 Returns a list of FS::part_svc objects representing provisioned and available
 services included in this package.  Each FS::part_svc object also has the
