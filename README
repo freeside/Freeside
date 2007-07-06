@@ -1,16 +1,15 @@
 Freeside
 
-Copyright (C) 2005 Freeside Internet Services, Inc.
+Copyright (C) 2005-2007 Freeside Internet Services, Inc.
 Copyright (C) 2000-2005 Ivan Kohler
 Copyright (C) 1999 Silicon Interactive Software Design
+Additional copyright holders may be found in the CREDITS file.
 All rights reserved
 
     This program is free software; you can redistribute it and/or modify
-    it under the terms of:
-
-        a) the GNU General Public License as published by the Free
-        Software Foundation; either version 2, or (at your option) any
-        later version
+    it under the terms of the GNU General Public License as published by the
+    Free Software Foundation, either version 3 of the License, or (at your
+    option) any later version.
 
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -19,8 +18,7 @@ All rights reserved
   
     You should have received a copy of the GNU General Public
     License along with this program, in the file `GPL'; if not,
-    write to the Free Software Foundation, Inc., 59 Temple Place - Suite
-    330, Boston, MA 02111-1307, USA.
+    see <http://www.gnu.org/licenses/>.
 
 Freeside is a billing and administration package for Internet Service 
 Providers.
