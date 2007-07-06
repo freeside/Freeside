@@ -38,7 +38,15 @@
 %
 %my $error;
 %if ( $svcnum ) {
-%  $error = $new->replace($old);
+%  foreach (grep { $old->$_ != $new->$_ } qw( seconds upbytes downbytes totalbytes )) {
+%    my %hash = map { $_ => $new->$_ } 
+%               grep { $new->$_ }
+%               qw( seconds upbytes downbytes totalbytes );
+%
+%    $error = $new->set_usage(\%hash);  #unoverlimit and trigger radius changes
+%    last;                              #once is enough
+%  }
+%  $error ||= $new->replace($old);
 %} else {
 %  $error = $new->insert;
 %  $svcnum = $new->svcnum;
