@@ -2614,12 +2614,20 @@ sub realtime_bop {
     ( $content{account_number}, $content{routing_code} ) =
       split('@', $payinfo);
     $content{bank_name} = $o_payname;
-    $content{bank_state} = $self->getfield('paystate');
-    $content{account_type} = uc($self->getfield('paytype')) || 'CHECKING';
+    $content{bank_state} = exists($options{'paystate'})
+                             ? $options{'paystate'}
+                             : $self->getfield('paystate');
+    $content{account_type} = exists($options{'paytype'})
+                               ? uc($options{'paytype'}) || 'CHECKING'
+                               : uc($self->getfield('paytype')) || 'CHECKING';
     $content{account_name} = $payname;
     $content{customer_org} = $self->company ? 'B' : 'I';
-    $content{state_id}       = $self->getfield('stateid');
-    $content{state_id_state} = $self->getfield('stateid_state');
+    $content{state_id}       = exists($options{'stateid'})
+                                 ? $options{'stateid'}
+                                 : $self->getfield('stateid');
+    $content{state_id_state} = exists($options{'stateid_state'})
+                                 ? $options{'stateid_state'}
+                                 : $self->getfield('stateid_state');
     $content{customer_ssn} = exists($options{'ss'})
                                ? $options{'ss'}
                                : $self->ss;
