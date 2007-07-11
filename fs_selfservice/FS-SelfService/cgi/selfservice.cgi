@@ -244,7 +244,7 @@ sub payment_results {
   #the rest, it gives better error messages
 
   $cgi->param('amount') =~ /^\s*(\d+(\.\d{2})?)\s*$/
-    or die "illegal amount"; #!!!
+    or die "Illegal amount: ". $cgi->param('amount'); #!!!
   my $amount = $1;
 
   my $payinfo = $cgi->param('payinfo');
