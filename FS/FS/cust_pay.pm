@@ -69,7 +69,9 @@ L<Time::Local> and L<Date::Parse> for conversion functions.
 
 =item paymask - Masked payinfo (See L<FS::payinfo_Mixin> for how this works)
 
-=item paybatch - text field for tracking card processing
+=item paybatch - text field for tracking card processing or other batch grouping
+
+=item payunique - Optional unique identifer to prevent duplicate transactions.
 
 =item closed - books closed flag, empty or `Y'
 
@@ -159,17 +161,6 @@ sub insert {
         $dbh->rollback if $oldAutoCommit;
         return "error inserting $cust_bill_pay: $error";
       }
-    }
-  }
-
-  if ( $self->paybatch =~ /^webui-/ ) {
-    my @cust_pay = qsearch('cust_pay', {
-      'custnum' => $self->custnum,
-      'paybatch' => $self->paybatch,
-    } );
-    if ( scalar(@cust_pay) > 1 ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "a payment with webui token ". $self->paybatch. " already exists";
     }
   }
 
@@ -421,7 +412,10 @@ sub check {
   # should give a better error message the other 99.9% of the time...
   if ( length($self->payunique)
        && qsearchs('cust_pay', { 'payunique' => $self->payunique } ) ) {
-    return "duplicate transaction"; #well, it *could* be a better error message
+    #well, it *could* be a better error message
+    return "duplicate transaction".
+           " - a payment with unique identifer ". $self->payunique.
+           " already exists";
   }
 
   $self->SUPER::check;

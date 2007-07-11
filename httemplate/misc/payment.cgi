@@ -1,41 +1,9 @@
-%
-%   my %type = ( 'CARD' => 'credit card',
-%                'CHEK' => 'electronic check (ACH)',
-%              );
-%
-%   $cgi->param('payby') =~ /^(CARD|CHEK)$/
-%     or die "unknown payby ". $cgi->param('payby');
-%   my $payby = $1;
-%
-%   $cgi->param('custnum') =~ /^(\d+)$/
-%     or die "illegal custnum ". $cgi->param('custnum');
-%   my $custnum = $1;
-%
-%   my $cust_main = qsearchs( 'cust_main', { 'custnum'=>$custnum } );
-%   die "unknown custnum $custnum" unless $cust_main;
-%
-%   my $balance = $cust_main->balance;
-%
-%   my $payinfo = '';
-%
-%   #false laziness w/selfservice make_payment.html shortcut for one-country
-%   my $conf = new FS::Conf;
-%   my %states = map { $_->state => 1 }
-%                  qsearch('cust_main_county', {
-%                    'country' => $conf->config('countrydefault') || 'US'
-%                  } );
-%   my @states = sort { $a cmp $b } keys %states;
-%
-%   my $paybatch = "webui-payment-". time. "-$$-". rand() * 2**32;
-%
-%
-
 <% include( '/elements/header.html', "Process $type{$payby} payment" ) %>
 <% include( '/elements/small_custview.html', $cust_main, '', '', popurl(2) . "view/cust_main.cgi" ) %>
 <FORM NAME="OneTrueForm" ACTION="process/payment.cgi" METHOD="POST" onSubmit="document.OneTrueForm.process.disabled=true">
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
 <INPUT TYPE="hidden" NAME="payby" VALUE="<% $payby %>">
-<INPUT TYPE="hidden" NAME="paybatch" VALUE="<% $paybatch %>">
+<INPUT TYPE="hidden" NAME="payunique" VALUE="<% $payunique %>">
 
 <SCRIPT TYPE="text/javascript" SRC="../elements/overlibmws.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript" SRC="../elements/overlibmws_iframe.js"></SCRIPT>
@@ -246,3 +214,37 @@ function OLiframeContent(src, width, height, name) {
 </FORM>
 
 <% include('/elements/footer.html') %>
+<%init>
+
+my %type = ( 'CARD' => 'credit card',
+             'CHEK' => 'electronic check (ACH)',
+           );
+
+$cgi->param('payby') =~ /^(CARD|CHEK)$/
+  or die "unknown payby ". $cgi->param('payby');
+my $payby = $1;
+
+$cgi->param('custnum') =~ /^(\d+)$/
+  or die "illegal custnum ". $cgi->param('custnum');
+my $custnum = $1;
+
+my $cust_main = qsearchs( 'cust_main', { 'custnum'=>$custnum } );
+die "unknown custnum $custnum" unless $cust_main;
+
+my $balance = $cust_main->balance;
+
+my $payinfo = '';
+
+#false laziness w/selfservice make_payment.html shortcut for one-country
+my $conf = new FS::Conf;
+my %states = map { $_->state => 1 }
+               qsearch('cust_main_county', {
+                 'country' => $conf->config('countrydefault') || 'US'
+               } );
+my @states = sort { $a cmp $b } keys %states;
+
+my $payunique = "webui-payment-". time. "-$$-". rand() * 2**32;
+
+</%init>
+
+
