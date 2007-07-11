@@ -2765,7 +2765,10 @@ sub realtime_bop {
        'paybatch' => $paybatch,
        'paydate'  => $paydate,
     } );
+    $cust_pay->payunique( $options{payunique} ) if length($options{payunique});
+
     my $error = $cust_pay->insert($options{'manual'} ? ( 'manual' => 1 ) : () );
+
     if ( $error ) {
       $cust_pay->invnum(''); #try again with no specific invnum
       my $error2 = $cust_pay->insert( $options{'manual'} ?
@@ -3122,8 +3125,13 @@ sub realtime_refund_bop {
     }
 
   } elsif ( $method eq 'ECHECK' ) {
-    ( $content{account_number}, $content{routing_code} ) =
-      split('@', $payinfo = $self->payinfo);
+
+    if ( $cust_pay ) {
+      $payinfo = $cust_pay->payinfo;
+    } else {
+      $payinfo = $self->payinfo;
+    } 
+    ( $content{account_number}, $content{routing_code} )= split('@', $payinfo );
     $content{bank_name} = $self->payname;
     $content{account_type} = 'CHECKING';
     $content{account_name} = $payname;
