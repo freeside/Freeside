@@ -115,7 +115,7 @@ sub forksuidsetup {
     if ($confcount) {
       $use_confcompat = 0;
     }else{
-      warn "NO CONFIGURATION RECORDS FOUND" unless $confcount;
+      warn "NO CONFIGURATION RECORDS FOUND";
     }
   }
 
