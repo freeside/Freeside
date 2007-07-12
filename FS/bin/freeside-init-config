@@ -3,10 +3,10 @@
 use strict;
 use vars qw($opt_u $opt_f $opt_v);
 use Getopt::Std;
-use IO::File;
 use FS::UID qw(adminsuidsetup checkeuid dbh);
 use FS::CurrentUser;
 use FS::Record qw(qsearch);
+use FS::Conf;
 
 
 die "Not running uid freeside!" unless checkeuid();
@@ -15,51 +15,19 @@ getopts("u:vf");
 my $dir = shift or die &usage;
 
 $FS::CurrentUser::upgrade_hack = 1;
+$FS::UID::AutoCommit = 0;
+$FS::UID::callback_hack = 1;
 adminsuidsetup $opt_u; #$user;
 
 $|=1;
 
-my $conf = new FS::Conf;
 if (!scalar(qsearch('conf', {})) || $opt_f) {
-
-  foreach my $item ( $conf->config_items() ) {
-    insert_config_item($item,$dir);
+  my $error = FS::Conf::init_config($dir);
+  if ($error) {
+    warn "CONFIGURATION INITIALIZATION FAILED\n";
+    dbh->rollback or die dbh->errstr;
+    die $error if $error;
   }
-
-  # ugly pseudo false laziness with Conf.pm 
-  foreach my $item ( map { my $basename = basename($_);
-                           $basename =~ /^(.*)$/;
-                           $basename = $1;
-                           new FS::ConfItem {
-                             'key'         => $basename,
-                             'type'        => '',
-                           }
-                         } glob($dir. '/invoice_template_*'),
-                           glob($dir. '/invoice_html_*'),
-                           glob($dir. '/invoice_htmlnotes_*'),
-                           glob($dir. '/invoice_latex_*'),
-                           glob($dir. '/invoice_latexnotes_*')
-                   ) {
-
-    insert_config_item($item,$dir);
-
-  }
-
-  foreach my $item ( map { my $basename = basename($_);
-                           $basename =~ /^(.*)$/;
-                           $basename = $1;
-                           new FS::ConfItem {
-                             'key'         => $basename,
-                             'type'        => 'binary',
-                           }
-                         } glob($dir. '/logo_*.png'),
-                           glob($dir. '/logo_*.eps')
-                   ) {
-
-    insert_config_item($item,$dir);
-
-  }
-
 }
 
 warn "Freeside database initialized - committing transaction\n" if $opt_v;
@@ -68,21 +36,6 @@ dbh->commit or die dbh->errstr;
 dbh->disconnect or die dbh->errstr;
 
 warn "Configuration initialization committed successfully\n" if $opt_v;
-
-sub insert_config_item {
-  local $/;
-  my ($item,$dir) = @_;
-  my $key = $item->key;
-  if (-e "$dir/$key") {
-    warn "Inserting $key\n" if $opt_v;
-    my $value = readline(new IO::File "$dir/$key");
-    if ($item->type eq 'binary'){
-      $conf->set_binary($key, $value);
-    }else{
-      $conf->set($key, $value);
-    }
-  }
-}
 
 sub usage {
   die "Usage:\n  freeside-init-config [ -v ] [ -f ] directory\n"

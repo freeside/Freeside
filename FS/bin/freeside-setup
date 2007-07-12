@@ -9,9 +9,10 @@ use Getopt::Std;
 use FS::UID qw(adminsuidsetup datasrc checkeuid getsecrets);
 use FS::CurrentUser;
 use FS::Schema qw( dbdef_dist reload_dbdef );
-use FS::Record;
+use FS::Record qw( qsearch );
 #use FS::raddb;
 use FS::Setup qw(create_initial_data);
+use FS::Conf;
 
 die "Not running uid freeside!" unless checkeuid();
 
@@ -117,11 +118,24 @@ $dbh->disconnect or die $dbh->errstr;
 
 warn "Database schema committed successfully\n" if $opt_v;
 
-my $init_config = "freeside-init-config";
-$init_config .= " -v" if $opt_v;
-$init_config .= " -u $opt_u" if $opt_u;
-$init_config .= " $config_dir";
-system "$init_config" ;
+warn "Initializing freeside configuration\n" if $opt_v;
+$FS::UID::callback_hack = 1;
+$dbh = adminsuidsetup $opt_u;
+$FS::UID::callback_hack = 0;
+if (!scalar(qsearch('conf', {}))) {
+  my $error = FS::Conf::init_config($config_dir);
+  if ($error) {
+    dbh->rollback or die dbh->errstr;
+    die $error;
+  }
+}
+
+warn "Freeside configuration initialized - commiting transaction\n" if $opt_v;
+
+$dbh->commit or die $dbh->errstr;
+$dbh->disconnect or die $dbh->errstr;
+
+warn "Freeside configuration committed successfully\n" if $opt_v;
 
 $dbh = adminsuidsetup $opt_u;
 create_initial_data('domain' => $opt_d);

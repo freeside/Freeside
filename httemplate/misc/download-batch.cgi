@@ -193,7 +193,7 @@ my @batchlines = ();
 </%init>
 <%cleanup>
 if ($autopost) {
-  my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
+  my $dir = $FS::UID::conf_dir. "/cache.". $FS::UID::datasrc;
   my $fh = new File::Temp(
     TEMPLATE => 'paybatch.'. $batchnum .'.XXXXXXXX',
     DIR      => $dir,

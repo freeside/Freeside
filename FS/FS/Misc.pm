@@ -308,7 +308,7 @@ sub send_fax {
     unless exists($options{'dialstring'});
 
   if (exists($options{'docdata'}) and ref($options{'docdata'}) eq 'ARRAY') {
-      my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
+      my $dir = $FS::UID::conf_dir. "/cache.". $FS::UID::datasrc;
       my $fh = new File::Temp(
         TEMPLATE => 'faxdoc.'. $options{'dialstring'} . '.XXXXXXXX',
         DIR      => $dir,
@@ -484,7 +484,7 @@ use String::ShellQuote;
 sub generate_ps {
   my $file = shift;
 
-  my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
+  my $dir = $FS::UID::conf_dir. "/cache.". $FS::UID::datasrc;
   chdir($dir);
 
   my $sfile = shell_quote $file;

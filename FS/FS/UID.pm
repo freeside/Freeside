@@ -4,7 +4,7 @@ use strict;
 use vars qw(
   @ISA @EXPORT_OK $cgi $dbh $freeside_uid $user 
   $conf_dir $secrets $datasrc $db_user $db_pass %callback @callback
-  $driver_name $AutoCommit $callback_hack
+  $driver_name $AutoCommit $callback_hack $use_confcompat
 );
 use subs qw(
   getsecrets cgisetotaker
@@ -17,13 +17,15 @@ use FS::CurrentUser;
 
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(checkeuid checkruid cgisuidsetup adminsuidsetup forksuidsetup
-                getotaker dbh datasrc getsecrets driver_name myconnect );
+                getotaker dbh datasrc getsecrets driver_name myconnect
+                use_confcompat);
 
 $freeside_uid = scalar(getpwnam('freeside'));
 
-$conf_dir = "%%%FREESIDE_CONF%%%/";
+$conf_dir = "%%%FREESIDE_CONF%%%";
 
 $AutoCommit = 1; #ours, not DBI
+$use_confcompat = 1;
 $callback_hack = 0;
 
 =head1 NAME
@@ -104,6 +106,18 @@ sub forksuidsetup {
     unless $FS::Schema::setup_hack;
 
   FS::CurrentUser->load_user($user);
+
+  if ($dbh && ! $callback_hack) {
+    my $sth = $dbh->prepare("SELECT COUNT(*) FROM conf") or die $dbh->errstr;
+    $sth->execute or die $sth->errstr;
+    my $confcount = $sth->fetchrow_arrayref->[0];
+
+    if ($confcount) {
+      $use_confcompat = 0;
+    }else{
+      warn "NO CONFIGURATION RECORDS FOUND" unless $confcount;
+    }
+  }
 
   unless($callback_hack) {
     foreach ( keys %callback ) {
@@ -297,6 +311,16 @@ sub getsecrets {
       or die "Can't get secrets: $conf_dir/$secrets: $!\n";
   undef $driver_name;
   ($datasrc, $db_user, $db_pass);
+}
+
+=item use_confcompat
+
+Returns true whenever we should use 1.7 configuration compatibility.
+
+=cut
+
+sub use_confcompat {
+  $use_confcompat;
 }
 
 =back

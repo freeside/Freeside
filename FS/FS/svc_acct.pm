@@ -2310,7 +2310,7 @@ sub send_email {
 =cut
 
 sub check_and_rebuild_fuzzyfiles {
-  my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
+  my $dir = $FS::UID::conf_dir. "/cache.". $FS::UID::datasrc;
   -e "$dir/svc_acct.username"
     or &rebuild_fuzzyfiles;
 }
@@ -2323,7 +2323,7 @@ sub rebuild_fuzzyfiles {
 
   use Fcntl qw(:flock);
 
-  my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
+  my $dir = $FS::UID::conf_dir. "/cache.". $FS::UID::datasrc;
 
   #username
 
@@ -2349,7 +2349,7 @@ sub rebuild_fuzzyfiles {
 =cut
 
 sub all_username {
-  my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
+  my $dir = $FS::UID::conf_dir. "/cache.". $FS::UID::datasrc;
   open(USERNAMECACHE,"<$dir/svc_acct.username")
     or die "can't open $dir/svc_acct.username: $!";
   my @array = map { chomp; $_; } <USERNAMECACHE>;
@@ -2368,7 +2368,7 @@ sub append_fuzzyfiles {
 
   use Fcntl qw(:flock);
 
-  my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
+  my $dir = $FS::UID::conf_dir. "/cache.". $FS::UID::datasrc;
 
   open(USERNAME,">>$dir/svc_acct.username")
     or die "can't open $dir/svc_acct.username: $!";

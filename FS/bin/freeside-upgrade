@@ -9,6 +9,8 @@ use FS::UID qw(adminsuidsetup checkeuid datasrc );  #getsecrets);
 use FS::CurrentUser;
 use FS::Schema qw( dbdef dbdef_dist reload_dbdef );
 use FS::Misc::prune qw(prune_applications);
+use FS::Conf;
+use FS::Record qw(qsearch);
 
 die "Not running uid freeside!" unless checkeuid();
 
@@ -56,11 +58,24 @@ dbdef_create($dbh, $dbdef_file);
 
 $dbh->disconnect or die $dbh->errstr;
 
+delete $FS::Schema::dbdef_cache{$dbdef_file}; #force an actual reload
+$FS::UID::AutoCommit = 1;
+$FS::UID::callback_hack = 1;
+$dbh = adminsuidsetup($user);
+$FS::UID::callback_hack = 0;
 unless ( $DRY_RUN ) {
-  my $init_config = "freeside-init-config -u $user ";
-  $init_config .= "%%%FREESIDE_CONF%%%/conf.". datasrc;
-  system "$init_config" ;
+  my $dir = "%%%FREESIDE_CONF%%%/conf.". datasrc;
+  if (!scalar(qsearch('conf', {}))) {
+    my $error = FS::Conf::init_config($dir);
+    if ($error) {
+      warn "CONFIGURATION UPGRADE FAILED\n";
+      $dbh->rollback or die $dbh->errstr;
+      die $error;
+    }
+  }
 }
+$dbh->commit or die $dbh->errstr;
+$dbh->disconnect or die $dbh->errstr;
 
 ###
 

@@ -757,6 +757,7 @@ sub insert {
 
   
   # Encrypt before the database
+  my $conf = new FS::Conf;
   if ($conf->exists('encryption') && defined(eval '@FS::'. $table . '::encrypted_fields')) {
     foreach my $field (eval '@FS::'. $table . '::encrypted_fields') {
       $self->{'saved'} = $self->getfield($field);
@@ -1254,6 +1255,7 @@ sub _h_statement {
 
   # If we're encrypting then don't ever store the payinfo or CVV2 in the history....
   # You can see if it changed by the paymask...
+  my $conf = new FS::Conf;
   if ($conf->exists('encryption') ) {
     @fields = grep  $_ ne 'payinfo' && $_ ne 'cvv2', @fields;
   }

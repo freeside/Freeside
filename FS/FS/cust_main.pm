@@ -4566,7 +4566,7 @@ use vars qw(@fuzzyfields);
 @fuzzyfields = ( 'last', 'first', 'company' );
 
 sub check_and_rebuild_fuzzyfiles {
-  my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
+  my $dir = $FS::UID::conf_dir. "/cache.". $FS::UID::datasrc;
   rebuild_fuzzyfiles() if grep { ! -e "$dir/cust_main.$_" } @fuzzyfields
 }
 
@@ -4578,7 +4578,7 @@ sub rebuild_fuzzyfiles {
 
   use Fcntl qw(:flock);
 
-  my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
+  my $dir = $FS::UID::conf_dir. "/cache.". $FS::UID::datasrc;
   mkdir $dir, 0700 unless -d $dir;
 
   foreach my $fuzzy ( @fuzzyfields ) {
@@ -4616,7 +4616,7 @@ sub rebuild_fuzzyfiles {
 
 sub all_X {
   my( $self, $field ) = @_;
-  my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
+  my $dir = $FS::UID::conf_dir. "/cache.". $FS::UID::datasrc;
   open(CACHE,"<$dir/cust_main.$field")
     or die "can't open $dir/cust_main.$field: $!";
   my @array = map { chomp; $_; } <CACHE>;
@@ -4635,7 +4635,7 @@ sub append_fuzzyfiles {
 
   use Fcntl qw(:flock);
 
-  my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
+  my $dir = $FS::UID::conf_dir. "/cache.". $FS::UID::datasrc;
 
   foreach my $field (qw( first last company )) {
     my $value = shift;

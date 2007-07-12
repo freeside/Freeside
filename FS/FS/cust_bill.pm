@@ -1997,7 +1997,7 @@ sub print_latex {
     die "guru meditation #54";
   }
 
-  my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
+  my $dir = $FS::UID::conf_dir. "/cache.". $FS::UID::datasrc;
   my $lh = new File::Temp( TEMPLATE => 'invoice.'. $self->invnum. '.XXXXXXXX',
                            DIR      => $dir,
                            SUFFIX   => '.eps',
@@ -2070,7 +2070,7 @@ sub print_pdf {
 
   my ($file, $lfile) = $self->print_latex(@_);
 
-  my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
+  my $dir = $FS::UID::conf_dir. "/cache.". $FS::UID::datasrc;
   chdir($dir);
 
   #system('pdflatex', "$file.tex");
