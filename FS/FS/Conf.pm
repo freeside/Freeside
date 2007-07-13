@@ -179,7 +179,9 @@ sub touch {
   return $self->_usecompat('touch', @_) if use_confcompat;
 
   my($name, $agent) = @_;
-  $self->set($name, '', $agent);
+  unless ( $self->exists($name, $agent) ) {
+    $self->set($name, '', $agent);
+  }
 }
 
 =item set KEY VALUE
