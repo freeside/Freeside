@@ -1,0 +1,27 @@
+#!/usr/bin/perl -w
+
+use strict;
+use Data::Dumper;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch);
+use FS::cust_credit;
+use FS::cust_pay;
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+my @credits  = grep { $_->credited  < 0 } qsearch('cust_credit', {});
+my @payments = grep { $_->unapplied < 0 } qsearch('cust_pay',    {});
+
+if ( @credits ) {
+  print scalar(@credits). " overapplied credits:\n". Dumper(@credits). "\n";
+}
+
+if ( @payments ) {
+  print scalar(@payments). " overapplied credits:\n". Dumper(@payments). "\n";
+}
+
+sub usage {
+  die "Usage:\n\n  find-overapplied user\n";
+}
+
