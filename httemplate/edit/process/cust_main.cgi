@@ -145,9 +145,9 @@
 %  my $conf = new FS::Conf;
 %  if ( $conf->exists('backend-realtime') && ! $error ) {
 %
-%    my $berror = $new->bill;
-%    $new->apply_payments_and_credits;
-%    $berror ||= $new->collect( 'realtime' => 1 );
+%    my $berror =    $new->bill
+%                 || $new->apply_payments_and_credits
+%                 || $new->collect( 'realtime' => 1 );
 %    warn "Warning, error billing during backend-realtime: $berror" if $berror;
 %
 %  }

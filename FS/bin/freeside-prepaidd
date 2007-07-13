@@ -52,9 +52,11 @@ while (1) {
         warn "Error billing customer #". $cust_main->custnum;
 	next;
       }
-      #$b_error = $cust_main->apply_payments_and_credits;
-      $b_error = $cust_main->apply_payments;
-      $b_error = $cust_main->apply_credits;
+      $b_error = $cust_main->apply_payments_and_credits;
+      if ( $b_error ) {
+        warn "Error applying payments&credits, customer #". $cust_main->custnum;
+	next;
+      }
 
       $work_cust_pkg = qsearchs('cust_pkg', { 'pkgnum' => $work_cust_pkg->pkgnum } );
 

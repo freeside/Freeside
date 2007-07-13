@@ -80,14 +80,16 @@ END
   
   my($cust_main,%saw);
   foreach $cust_main ( @cust_main ) {
+
+    my $custnum = $cust_main->custnum;
   
     # $^T not $time because -d is for pre-printing invoices
     foreach my $cust_pkg (
       grep { $_->expire && $_->expire <= $^T } $cust_main->ncancelled_pkgs
     ) {
       my $error = $cust_pkg->cancel;
-      warn "Error cancelling expired pkg ". $cust_pkg->pkgnum. " for custnum ".
-           $cust_main->custnum. ": $error"
+      warn "Error cancelling expired pkg ". $cust_pkg->pkgnum.
+           " for custnum $custnum: $error"
         if $error;
     }
     # $^T not $time because -d is for pre-printing invoices
@@ -102,8 +104,7 @@ END
       my $action = $cust_pkg->part_pkg->option('recur_action') || 'suspend';
       my $error = $cust_pkg->$action();
       warn "Error suspending package ". $cust_pkg->pkgnum.
-           " for custnum ". $cust_main->custnum.
-           ": $error"
+           " for custnum $custnum: $error"
         if $error;
     }
   
@@ -111,14 +112,16 @@ END
                                   'invoice_time' => $invoice_time,
                                   'resetup'      => $opt{'s'},
                                 );
-    warn "Error billing, custnum ". $cust_main->custnum. ": $error" if $error;
+    warn "Error billing, custnum $custnum: $error" if $error;
   
-    $cust_main->apply_payments_and_credits;
+    $error = $cust_main->apply_payments_and_credits;
+    warn "Error applying payments and credits, custnum $custnum: $error"
+      if $error;
   
     $error = $cust_main->collect( 'invoice_time' => $time,
                                   'freq'         => $opt{'freq'},
                                 );
-    warn "Error collecting, custnum". $cust_main->custnum. ": $error" if $error;
+    warn "Error collecting, custnum $custnum: $error" if $error;
   
   }
 

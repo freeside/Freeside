@@ -418,6 +418,19 @@ sub owed {
 sub apply_payments_and_credits {
   my $self = shift;
 
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  $self->select_for_update; #mutex
+
   my @payments = grep { $_->unapplied > 0 } $self->cust_main->cust_pay;
   my @credits  = grep { $_->credited > 0 } $self->cust_main->cust_credit;
 
@@ -483,9 +496,16 @@ sub apply_payments_and_credits {
     $app->invnum( $self->invnum );
 
     my $error = $app->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Error inserting ". $app->table. " record: $error";
+    }
     die $error if $error;
 
   }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  ''; #no error
 
 }
 

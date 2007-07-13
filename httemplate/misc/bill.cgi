@@ -14,17 +14,24 @@
 %#&eidiot($error) if $error;
 %
 %unless ( $error ) {
-%  $cust_main->apply_payments_and_credits;
+%  $error = $cust_main->apply_payments_and_credits
+%           || $cust_main->collect(
+%                                  #'invoice-time'=>$time,
+%                                  #'batch_card'=> 'yes',
+%                                  #'batch_card'=> 'no',
+%                                  #'report_badcard'=> 'yes',
+%                                  #'retry_card' => 'yes',
 %
-%  $error = $cust_main->collect(
-%  #                             'invoice-time'=>$time,
-%                               #'batch_card'=> 'yes',
-%                               #'batch_card'=> 'no',
-%                               #'report_badcard'=> 'yes',
-%                               #'retry_card' => 'yes',
-%                               'retry' => 'yes',
-%                               'realtime' => $conf->exists('realtime-backend'),
-%                              );
+%                                  'retry' => 'yes',
+%                                   
+%                                  #this is used only by cust_main::batch_card
+%                                  #need to pick & create an actual config
+%                                  #value if we're going to turn this on
+%                                  #("realtime-backend" doesn't exist,
+%                                  # "backend-realtime" is for something
+%                                  #  entirely different)
+%                                  #'realtime' => $conf->exists('realtime-backend'),
+%                                 );
 %}
 %#&eidiot($error) if $error;
 %
@@ -38,4 +45,3 @@
 %  print $cgi->redirect(popurl(2). "view/cust_main.cgi?$custnum");
 %}
 %
-

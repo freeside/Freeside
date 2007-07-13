@@ -3378,14 +3378,36 @@ Applies unapplied payments and credits.
 In most cases, this new method should be used in place of sequential
 apply_payments and apply_credits methods.
 
+If there is an error, returns the error, otherwise returns false.
+
 =cut
 
 sub apply_payments_and_credits {
   my $self = shift;
 
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  $self->select_for_update; #mutex
+
   foreach my $cust_bill ( $self->open_cust_bill ) {
-    $cust_bill->apply_payments_and_credits;
+    my $error = $cust_bill->apply_payments_and_credits;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Error applying: $error";
+    }
   }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  ''; #no error
 
 }
 
@@ -3397,13 +3419,31 @@ chronological order if the I<order> option is set to B<newest>) and returns the
 value of any remaining unapplied credits available for refund (see
 L<FS::cust_refund>).
 
+Dies if there is an error.
+
 =cut
 
 sub apply_credits {
   my $self = shift;
   my %opt = @_;
 
-  return 0 unless $self->total_credited;
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  $self->select_for_update; #mutex
+
+  unless ( $self->total_credited ) {
+    $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+    return 0;
+  }
 
   my @credits = sort { $b->_date <=> $a->_date} (grep { $_->credited > 0 }
       qsearch('cust_credit', { 'custnum' => $self->custnum } ) );
@@ -3432,13 +3472,20 @@ sub apply_credits {
       'amount'  => $amount,
     } );
     my $error = $cust_credit_bill->insert;
-    die $error if $error;
+    if ( $error ) {
+      $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+      die $error;
+    }
     
     redo if ($cust_bill->owed > 0);
 
   }
 
-  return $self->total_credited;
+  my $total_credited = $self->total_credited;
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  return $total_credited;
 }
 
 =item apply_payments
@@ -3448,10 +3495,25 @@ to outstanding invoice balances in chronological order.
 
  #and returns the value of any remaining unapplied payments.
 
+Dies if there is an error.
+
 =cut
 
 sub apply_payments {
   my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  $self->select_for_update; #mutex
 
   #return 0 unless
 
@@ -3482,13 +3544,20 @@ sub apply_payments {
       'amount' => $amount,
     } );
     my $error = $cust_bill_pay->insert;
-    die $error if $error;
+    if ( $error ) {
+      $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+      die $error;
+    }
 
     redo if ( $cust_bill->owed > 0);
 
   }
 
-  return $self->total_unapplied_payments;
+  my $total_unapplied_payments = $self->total_unapplied_payments;
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  return $total_unapplied_payments;
 }
 
 =item total_credited
@@ -4830,8 +4899,12 @@ sub batch_import {
         return "can't bill customer for $line: $error";
       }
   
-      $cust_main->apply_payments_and_credits;
-  
+      $error = $cust_main->apply_payments_and_credits;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "can't bill customer for $line: $error";
+      }
+
       $error = $cust_main->collect();
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;

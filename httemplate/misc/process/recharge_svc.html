@@ -57,7 +57,7 @@
 %
 %    my $old_balance = $cust_main->balance;
 %    $error ||= $cust_main->bill;
-%    $cust_main->apply_payments_and_credits unless $error;
+%    $error ||= $cust_main->apply_payments_and_credits;
 %    my $bill_error = $cust_main->collect('realtime' => 1) unless $error;
 %    $error ||= "Failed to collect - $bill_error"
 %      if $cust_main->balance > $old_balance && $cust_main->balance > 0
