@@ -18,7 +18,7 @@ if ( @credits ) {
 }
 
 if ( @payments ) {
-  print scalar(@payments). " overapplied credits:\n". Dumper(@payments). "\n";
+  print scalar(@payments). " overapplied payments:\n". Dumper(@payments). "\n";
 }
 
 sub usage {
