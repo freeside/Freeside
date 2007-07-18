@@ -7,7 +7,6 @@ use DBIx::DBSchema 0.33;
 use DBIx::DBSchema::Table;
 use DBIx::DBSchema::Column 0.06;
 use DBIx::DBSchema::Index;
-use FS::UID qw(datasrc);
 
 @ISA = qw(Exporter);
 @EXPORT_OK = qw( dbdef dbdef_dist reload_dbdef );
