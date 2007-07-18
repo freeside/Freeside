@@ -326,10 +326,22 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
     </TD>
   </TR>
 % } 
-
+%
+%#dir
+%if ( $part_svc->part_svc_column('dir')->columnflag eq 'F'
+%     || !$curuser->access_right('Edit home dir')
+%   ) { 
 
 
 <INPUT TYPE="hidden" NAME="dir" VALUE="<% $svc_acct->dir %>">
+% } else {
+
+
+  <TR>
+    <TD ALIGN="right">Home directory</TD>
+    <TD><INPUT TYPE="text" NAME="dir" VALUE="<% $svc_acct->dir %>"></TD>
+  </TR>
+% } 
 %
 %#shell
 %my $shell = $svc_acct->shell;
