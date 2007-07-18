@@ -38,6 +38,7 @@ full offerings (via their type).<BR><BR>
 % } 
 
   <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>Payment Gateway Overrides</FONT></TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>Configuration Overrides</FONT></TH>
   <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>Freq.</FONT></TH>
   <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>Prog.</FONT></TH>
 </TR>
@@ -340,6 +341,27 @@ Unused
 
             <TR>
               <TD><FONT SIZE=-1><A HREF="<%$p%>edit/agent_payment_gateway.html?agentnum=<% $agent->agentnum %>">(add override)</A></FONT></TD>
+            </TR>
+          </TABLE>
+        </TD>
+
+        <TD CLASS="inv" BGCOLOR="<% $bgcolor %>">
+          <TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0>
+% foreach my $override (
+%                 qsearch('conf', { 'agentnum' => $agent->agentnum } )
+%               ) {
+%            
+
+              <TR>
+                <TD> 
+                  <% $override->name %>
+                  <FONT SIZE=-1><A HREF="<%$p%>config/config-delete.cgi?<% $override->confnum %>">(delete)</A></FONT>
+                </TD>
+              </TR>
+% } 
+
+            <TR>
+              <TD><FONT SIZE=-1><A HREF="<%$p%>config/config-view.cgi?agentnum=<% $agent->agentnum %>">(add override)</A></FONT></TD>
             </TR>
           </TABLE>
         </TD>

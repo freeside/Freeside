@@ -1,6 +1,22 @@
-<% include("/elements/header.html",'View Configuration', menubar( 'Main Menu' => $p,
-                                     'Edit Configuration' => 'config.cgi' ) ) %>
-% my $conf = new FS::Conf; my @config_items = $conf->config_items; 
+<% include("/elements/header.html",
+     $title,
+     menubar(
+       'Main Menu' => $p,
+       'View all agents' => $p.'browse/agent.cgi',
+     )
+   )
+%>
+
+<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/overlibmws.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/overlibmws_iframe.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/overlibmws_draggable.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/iframecontentmws.js"></SCRIPT>
+
+% if ($FS::UID::use_confcompat) {
+
+  <FONT SIZE="+1" COLOR="#ff0000">CONFIGURATION NOT STORED IN DATABASE -- USING COMPATIBILITY MODE</FONT><BR><BR>
+%}
+%
 % foreach my $section ( qw(required billing username password UI session
 %                            shell BIND
 %                           ),
@@ -31,7 +47,7 @@
 % foreach my $i (grep $_->section eq $section, @config_items) { 
 
     <tr>
-      <td><a name="<% $i->key %>">
+      <td><a href="javascript:void(0);" onClick="overlib( OLiframeContent('config.cgi?key=<% $i->key %>;agentnum=<% $agentnum %>', 522, 336, 'config_popup' ), CAPTION, 'Enter configuration value', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;" name="<% $i->key %>">
         <b><% $i->key %></b>&nbsp;-&nbsp;<% $i->description %>
       </a></td>
       <td><table border=0>
@@ -45,8 +61,8 @@
 % } elsif (   $type eq 'binary' ) {
 
             <tr>
-              <% $conf->exists($i->key)
-                   ? qq!<a href="config-download.cgi?!. $i->key. qq!">download</a>!
+              <% $conf->exists($i->key, $agentnum)
+                   ? qq!<a href="config-download.cgi?key=!. $i->key. ';agentnum='. $agentnum. qq!">download</a>!
                    : 'empty'
               %>
             </tr>
@@ -57,27 +73,27 @@
             <tr>
               <td bgcolor="#ffffff">
 <pre>
-<% encode_entities(join("\n", $conf->config($i->key) ) ) %>
+<% encode_entities(join("\n", $conf->config($i->key, $agentnum) ) ) %>
 </pre>
               </td>
             </tr>
 % } elsif ( $type eq 'checkbox' ) { 
 
             <tr>
-              <td bgcolor="#<% $conf->exists($i->key) ? '00ff00">YES' : 'ff0000">NO' %></td>
+              <td bgcolor="#<% $conf->exists($i->key, $agentnum) ? '00ff00">YES' : 'ff0000">NO' %></td>
             </tr>
 % } elsif ( $type eq 'text' || $type eq 'select' )  { 
 
             <tr>
               <td bgcolor="#ffffff">
-                <% $conf->exists($i->key) ? $conf->config($i->key) : '' %>
+                <% $conf->exists($i->key, $agentnum) ? $conf->config($i->key, $agentnum) : '' %>
               </td></tr>
 % } elsif ( $type eq 'select-sub' ) { 
 
             <tr>
               <td bgcolor="#ffffff">
-                <% $conf->config($i->key) %>: 
-                <% &{ $i->option_sub }( $conf->config($i->key) ) %>
+                <% $conf->config($i->key, $agentnum) %>: 
+                <% &{ $i->option_sub }( $conf->config($i->key, $agentnum) ) %>
               </td>
             </tr>
 % } else { 
@@ -100,4 +116,23 @@
 <%init>
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my ($conf, $title, @config_items, $agentnum);
+
+if ($cgi->param('agentnum') =~ /^(\d+)$/) {
+  $agentnum = $1;
+}
+
+if ($agentnum) {
+  my $agent = qsearchs('agent', { 'agentnum' => $agentnum } );
+  die "Agent $agentnum not found!" unless $agent;
+
+  $title = "Configuration for ". $agent->agent;
+} else {
+  $title = 'Global Configuration';
+}
+
+$conf = new FS::Conf;
+@config_items = grep { $agentnum ? $_->per_agent : 1 } $conf->config_items; 
+
 </%init>

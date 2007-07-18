@@ -1,4 +1,5 @@
-<% include("/elements/header.html",'Edit Configuration', menubar( 'Main Menu' => $p ) ) %>
+<% include("/elements/header-popup.html", $title) %>
+
 <SCRIPT>
 var gSafeOnload = new Array();
 var gSafeOnsubmit = new Array();
@@ -18,250 +19,286 @@ function SafeOnsubmit() {
     gSafeOnsubmit[i]();
 }
 </SCRIPT>
-% my $conf = new FS::Conf; my @config_items = $conf->config_items; 
 
-
-<form name="OneTrueForm" action="config-process.cgi" METHOD="POST" enctype="multipart/form-data" onSubmit="SafeOnsubmit()">
-% foreach my $section ( qw(required billing username password UI session
-%                            shell BIND
-%                           ),
-%                         '', 'deprecated') { 
-
-  <A NAME="<% $section || 'unclassified' %>"></A>
-  <FONT SIZE="-2">
-% foreach my $nav_section ( qw(required billing username password UI session
-%                                  shell BIND
-%                                 ),
-%                               '', 'deprecated') { 
-% if ( $section eq $nav_section ) { 
-
-      [<A NAME="not<% $nav_section || 'unclassified' %>" style="background-color: #cccccc"><% ucfirst($nav_section || 'unclassified') %></A>]
-% } else { 
-
-      [<A HREF="#<% $nav_section || 'unclassified' %>"><% ucfirst($nav_section || 'unclassified') %></A>]
-% } 
+% if ( $cgi->param('error') ) { 
+  <FONT SIZE="+1" COLOR="#ff0000">Error: <% $cgi->param('error') %></FONT>
+  <BR><BR>
 % } 
 
-  </FONT><BR>
-  <% table("#cccccc", 2) %>
-  <tr>
-    <th colspan="2" bgcolor="#dcdcdc">
-      <% ucfirst($section || 'unclassified') %> configuration options
-    </th>
-  </tr>
-% foreach my $i (grep $_->section eq $section, @config_items) { 
+<FORM NAME="OneTrueForm" ACTION="config-process.cgi" METHOD="POST" enctype="multipart/form-data" onSubmit="SafeOnsubmit()">
+<INPUT TYPE="hidden" NAME="agentnum" VALUE="<% $agentnum %>">
+<INPUT TYPE="hidden" NAME="key" VALUE="<% $key %>">
 
-    <tr>
-      <td>
+Setting <% $key %>
+
+<table><tr><td>
+
 % my $n = 0;
-%           foreach my $type ( ref($i->type) ? @{$i->type} : $i->type ) {
-%             #warn $i->key unless defined($type);
-%        
-% if ( $type eq '' ) { 
+% foreach my $type ( ref($config_item->type) ? @{$config_item->type} : $config_item->type ) {
+%   if ( $type eq '' ) {
 
+  <font color="#ff0000">no type</font>
 
-               <font color="#ff0000">no type</font>
-% } elsif ( $type eq 'binary' ) { 
+%   } elsif ( $type eq 'binary' ) { 
 
+  Filename <input type="file" name="<% "$key$n" %>">
 
-               Filename <input type="file" name="<% $i->key. $n %>">
-% } elsif ( $type eq 'textarea' ) { 
+%   } elsif ( $type eq 'textarea' ) { 
 
+  <textarea name="<% "$key$n" %>" rows=5><% join("\n", $conf->config($key, $agentnum)) %></textarea>
 
-               <textarea name="<% $i->key. $n %>" rows=5><% "\n". join("\n", $conf->config($i->key) ) %></textarea>
-% } elsif ( $type eq 'checkbox' ) { 
+%   } elsif ( $type eq 'checkbox' ) { 
 
+  <input name="<% "$key$n" %>" type="checkbox" value="1"
+    <% $conf->exists($key, $agentnum) ? 'CHECKED' : '' %> >
 
-               <input name="<% $i->key. $n %>" type="checkbox" value="1"<% $conf->exists($i->key) ? ' CHECKED' : '' %>>
-% } elsif ( $type eq 'text' )  { 
+%   } elsif ( $type eq 'text' )  { 
 
+  <input name="<% "$key$n" %>" type="text" value="<% $conf->exists($key, $agentnum) ? $conf->config($key, $agentnum) : '' %>">
 
-               <input name="<% $i->key. $n %>" type="<% $type %>" value="<% $conf->exists($i->key) ? $conf->config($i->key) : '' %>">
-% } elsif ( $type eq 'select' || $type eq 'selectmultiple' )  { 
+%   } elsif ( $type eq 'select' || $type eq 'selectmultiple' )  { 
 
-          
-               <select name="<% $i->key. $n %>" <% $type eq 'selectmultiple' ? 'MULTIPLE' : '' %>>
-% 
-%                  my %hash = ();
-%                  if ( $i->select_enum ) {
-%                    tie %hash, 'Tie::IxHash',
-%                      '' => '', map { $_ => $_ } @{ $i->select_enum };
-%                  } elsif ( $i->select_hash ) {
-%                    if ( ref($i->select_hash) eq 'ARRAY' ) {
-%                      tie %hash, 'Tie::IxHash',
-%                        '' => '', @{ $i->select_hash };
-%                    } else {
-%                      tie %hash, 'Tie::IxHash',
-%                        '' => '', %{ $i->select_hash };
-%                    }
-%                  } else {
-%                    %hash = ( '' => 'WARNING: neither select_enum nor select_hash specified in Conf.pm for configuration option "'. $i->key. '"' );
-%                  }
+  <select name="<% "$key$n" %>" <% $type eq 'selectmultiple' ? 'MULTIPLE' : '' %>>
+
 %
-%                  my %saw = ();
-%                  foreach my $value ( keys %hash ) {
-%                    local($^W)=0; next if $saw{$value}++;
-%                    my $label = $hash{$value};
-%               
+%     my %hash = ();
+%     if ( $config_item->select_enum ) {
+%       tie %hash, 'Tie::IxHash',
+%         '' => '', map { $_ => $_ } @{ $config_item->select_enum };
+%     } elsif ( $config_item->select_hash ) {
+%       if ( ref($config_item->select_hash) eq 'ARRAY' ) {
+%         tie %hash, 'Tie::IxHash',
+%           '' => '', @{ $config_item->select_hash };
+%       } else {
+%         tie %hash, 'Tie::IxHash',
+%           '' => '', %{ $config_item->select_hash };
+%       }
+%     } else {
+%       %hash = ( '' => 'WARNING: neither select_enum nor select_hash specified in Conf.pm for configuration option "'. $key. '"' );
+%     }
+%
+%     my %saw = ();
+%     foreach my $value ( keys %hash ) {
+%       local($^W)=0; next if $saw{$value}++;
+%       my $label = $hash{$value};
+%        
 
+    <option value="<% $value %>"
 
-                    <option value="<% $value %>"<% $value eq $conf->config($i->key) || ( $type eq 'selectmultiple' && grep { $_ eq $value } $conf->config($i->key) ) ? ' SELECTED' : '' %>><% $label %>
-% } 
-% my $curvalue = $conf->config($i->key);
-%                 if ( $conf->exists($i->key) && $curvalue
-%                      && ! $hash{$curvalue}
-%                    ) {
-%              
+%       if ( $value eq $conf->config($key, $agentnum)
+%            || ( $type eq 'selectmultiple'
+%                 && grep { $_ eq $value } $conf->config($key, $agentnum) ) ) {
 
-              
-                   <option value="<% $conf->config($i->key) %>" SELECTED><% exists( $hash{ $conf->config($i->key) } ) ? $hash{ $conf->config($i->key) } : $conf->config($i->key) %>
-% } 
+      SELECTED
 
+%       }
 
-            </select>
-% } elsif ( $type eq 'select-sub' ) { 
+    ><% $label %>
 
+%     } 
+%     my $curvalue = $conf->config($key, $agentnum);
+%     if ( $conf->exists($key, $agentnum) && $curvalue && ! $hash{$curvalue} ) {
 
-            <select name="<% $i->key. $n %>">
-              <option value="">
-% my %options = &{$i->options_sub};
-%                 my @options = sort { $a <=> $b } keys %options;
-%                 my %saw;
-%                 foreach my $value ( @options ) {
-%                    local($^W)=0; next if $saw{$value}++;
-%              
+    <option value="<% $curvalue %>" SELECTED>
 
-                <option value="<% $value %>"<% $value eq $conf->config($i->key) ? ' SELECTED' : '' %>><% $value %>: <% $options{$value} %>
-% } 
-% if ( $conf->exists($i->key) && $conf->config($i->key) && ! exists $options{$conf->config($i->key)} ) { 
+%       if ( exists( $hash{ $conf->config($key, $agentnum) } ) ) {
 
-                <option value=<% $conf->config($i->key) %> SELECTED><% $conf->config($i->key) %>: <% &{ $i->option_sub }( $conf->config($i->key) ) %>
-% } 
+      <% $hash{ $conf->config($key, $agentnum) } %>
 
-            </select>
-% } elsif ( $type eq 'editlist' ) { 
+%       }else{
 
+      <% $curvalue %>
 
-            <script>
-              function doremove<% $i->key. $n %>() {
-                fromObject = document.OneTrueForm.<% $i->key. $n %>;
-                for (var i=fromObject.options.length-1;i>-1;i--) {
-                  if (fromObject.options[i].selected)
-                    deleteOption<% $i->key. $n %>(fromObject,i);
-                }
-              }
-              function deleteOption<% $i->key. $n %>(object,index) {
-                object.options[index] = null;
-              }
-              function selectall<% $i->key. $n %>() {
-                fromObject = document.OneTrueForm.<% $i->key. $n %>;
-                for (var i=fromObject.options.length-1;i>-1;i--) {
-                  fromObject.options[i].selected = true;
-                }
-              }
-              function doadd<% $i->key. $n %>(object) {
-                var myvalue = "";
-% if ( defined($i->editlist_parts) ) { 
-% foreach my $pnum ( 0 .. scalar(@{$i->editlist_parts})-1 ) { 
+%       }
+%     } 
 
+  </select>
 
-                    if ( myvalue != "" ) { myvalue = myvalue + " "; }
-% if ( $i->editlist_parts->[$pnum]{type} eq 'select' ) { 
+%   } elsif ( $type eq 'select-sub' ) { 
 
-                      myvalue = myvalue + object.add<% $i->key. $n . "_$pnum" %>.options[object.add<% $i->key. $n . "_$pnum" %>.selectedIndex].value;
-                      <!-- #RESET SELECT??  maybe not... -->
-% } elsif ( $i->editlist_parts->[$pnum]{type} eq 'immutable' ) { 
+  <select name="<% "$key$n" %>"><option value="">
 
-                      myvalue = myvalue + object.add<% $i->key. $n . "_$pnum" %>.value;
-% } else { 
+%     my %options = &{$config_item->options_sub};
+%     my @options = sort { $a <=> $b } keys %options;
+%     my %saw;
+%     foreach my $value ( @options ) {
+%       local($^W)=0; next if $saw{$value}++;
 
-                      myvalue = myvalue + object.add<% $i->key. $n . "_$pnum" %>.value;
-                      object.add<% $i->key. $n. "_$pnum" %>.value = "";
-% } 
-% } 
-% } else { 
+    <option value="<% $value %>" <% $value eq $conf->config($key, $agentnum) ? 'SELECTED' : '' %>><% $value %>: <% $options{$value} %>
 
-                  myvalue = object.add<% $i->key. $n. "_1" %>.value;
-% } 
+%     } 
+%     my $curvalue = $conf->config($key, $agentnum);
+%     if ( $conf->exists($key, $agentnum) && $curvalue && ! $options{$curvalue} ) {
 
-                var optionName = new Option(myvalue, myvalue);
-                var length = object.<% $i->key. $n %>.length;
-                object.<% $i->key. $n %>.options[length] = optionName;
-              }
-            </script>
-            <select multiple size=5 name="<% $i->key. $n %>">
-            <option selected>----------------------------------------------------------------</option>
-% foreach my $line ( $conf->config($i->key) ) { 
+    <option value="<% $curvalue %>" SELECTED> <% $curvalue %>: <% &{ $config_item->option_sub }( $curvalue ) %> 
 
-              <option value="<% $line %>"><% $line %></option>
-% } 
+%     } 
 
-            </select><br>
-            <input type="button" value="remove selected" onClick="doremove<% $i->key. $n %>()">
-            <script>SafeAddOnLoad(doremove<% $i->key. $n %>);
-                    SafeAddOnSubmit(selectall<% $i->key. $n %>);</script>
-            <br>
-            <% itable() %><tr>
-% if ( defined $i->editlist_parts ) { 
-% my $pnum=0; foreach my $part ( @{$i->editlist_parts} ) { 
+  </select>
 
-                <td>
-% if ( $part->{type} eq 'text' ) { 
+%   } elsif ( $type eq 'editlist' ) { 
+%
+  <script>
+    function doremove<% "$key$n" %>() {
+      fromObject = document.OneTrueForm.<% "$key$n" %>;
+      for (var i=fromObject.options.length-1;i>-1;i--) {
+        if (fromObject.options[i].selected)
+          deleteOption<% "$key$n" %>(fromObject,i);
+      }
+    }
+    function deleteOption<% "$key$n" %>(object,index) {
+      object.options[index] = null;
+    }
+    function selectall<% "$key$n" %>() {
+      fromObject = document.OneTrueForm.<% "$key$n" %>;
+      for (var i=fromObject.options.length-1;i>-1;i--) {
+        fromObject.options[i].selected = true;
+      }
+    }
+    function doadd<% "$key$n" %>(object) {
+      var myvalue = "";
 
-                  <input type="text" name="add<% $i->key. $n."_$pnum" %>">
-% } elsif ( $part->{type} eq 'immutable' ) { 
+%     if ( defined($config_item->editlist_parts) ) { 
+%       foreach my $pnum ( 0 .. scalar(@{$config_item->editlist_parts})-1 ) { 
 
-                  <% $part->{value} %><input type="hidden" name="add<% $i->key. $n. "_$pnum" %>" value="<% $part->{value} %>">
-% } elsif ( $part->{type} eq 'select' ) { 
+      if ( myvalue != "" ) { myvalue = myvalue + " "; }
 
-                  <select name="add<% $i->key. $n. "_$pnum" %>">
-% foreach my $key ( keys %{$part->{select_enum}} ) { 
+%         if ( $config_item->editlist_parts->[$pnum]{type} eq 'select' ) { 
 
-                    <option value="<% $key %>"><% $part->{select_enum}{$key} %></option>
-% } 
+      myvalue = myvalue + object.add<% "$key${n}_$pnum" %>.options[object.add<% "$key${n}_$pnum" %>.selectedIndex].value
+      <!-- #RESET SELECT??  maybe not... -->
 
-                  </select>
-% } else { 
+%         } elsif ( $config_item->editlist_parts->[$pnum]{type} eq 'immutable' ) { 
 
-                  <font color="#ff0000">unknown type <% $part->type %></font>
-% } 
+      myvalue = myvalue + object.add<% "$key${n}_$pnum" %>.value
 
-                </td>
-% $pnum++; } 
-% } else { 
+%         } else { 
 
-              <td><input type="text" name="add<% $i->key. $n %>_0"></td>
-% } 
+      myvalue = myvalue + object.add<% "$key${n}_$pnum" %>.value
+      object.add<% "$key${n}_$pnum" %>.value = ""
 
-            <td><input type="button" value="add" onClick="doadd<% $i->key. $n %>(this.form)"></td>
-            </tr></table>
-% } else { 
+%         } 
+%       } 
+%     } else { 
 
+      myvalue = object.add<% "$key${n}_1" %>.value
 
-            <font color="#ff0000">unknown type <% $type %></font>
-% } 
-% $n++; } 
+%     } 
 
-      </td>
-      <td><a name="<% $i->key %>">
-        <b><% $i->key %></b> - <% $i->description %>
-      </a></td>
-    </tr>
-% } 
+      var optionName = new Option(myvalue, myvalue);
+      var length = object.<% "$key$n" %>.length;
+      object.<% "$key$n" %>.options[length] = optionName;
+    }
+  </script>
+  <select multiple size=5 name="<% "$key$n" %>">
+    <option selected>----------------------------------------------------------------</option>
 
-  </table><br>
+%     foreach my $line ( $conf->config($key, $agentnum) ) { 
 
-  You may need to restart Apache and/or freeside-queued for configuration
-  changes to take effect.<br>
+    <option value="<% $line %>"><% $line %></option>
 
-  <input type="submit" value="Apply changes"><br><br>
-% } 
+%     } 
 
+  </select><br>
+  <input type="button" value="remove selected" onClick="doremove<% "$key$n" %>()">
+  <script>SafeAddOnLoad(doremove<% "$key$n" %>);
+    SafeAddOnSubmit(selectall<% "$key$n" %>);
+  </script>
+  <br><% itable() %><tr>
 
-</form>
+%     if ( defined $config_item->editlist_parts ) { 
+%       my $pnum=0;
+%       foreach my $part ( @{$config_item->editlist_parts} ) { 
 
-</body></html>
+    <td>
+
+%         if ( $part->{type} eq 'text' ) { 
+
+      <input type="text" name="add<% "$key${n}_$pnum" %>">
+
+%         } elsif ( $part->{type} eq 'immutable' ) { 
+
+      <% $part->{value} %>
+      <input type="hidden" name="add<% "$key${n}_$pnum" %>" value="<% $part->{value} %>">
+
+%         } elsif ( $part->{type} eq 'select' ) { 
+
+      <select name="add<% qq!$key${n}_$pnum! %>">
+
+%           foreach my $key ( keys %{$part->{select_enum}} ) { 
+
+        <option value="<% $key %>"><% $part->{select_enum}{$key} %></option>
+
+%           } 
+
+      </select>
+
+%         } else { 
+
+      <font color="#ff0000">unknown type <% $part->type %> </font>
+
+%         } 
+
+    </td>
+
+%         $pnum++;
+%       } 
+%     } else { 
+
+    <td><input type="text" name="add<% "$key${n}_0" %>></td>
+
+%     } 
+
+    <td><input type="button" value="add" onClick="doadd<% "$key$n" %>(this.form)"></td>
+  </tr></table>
+
+%   } else {
+
+  <font color="#ff0000">unknown type $type</font>
+
+%   }
+% $n++;
+% }
+
+  </td><td><% $description %></td></tr></table>
+<INPUT TYPE="submit" VALUE="<% $title %>">
+</FORM>
+
+</BODY>
+</HTML>
+<%once>
+my $conf = new FS::Conf;
+my %confitems = map { $_->key => $_ } $conf->config_items;
+</%once>
+
 <%init>
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my($agentnum, $agent, $title, $action, $key, $value, $config_item,
+   $description, $type);
+
+$action = 'Set';
+
+if ($cgi->param('agentnum') =~ /(\d+)$/) {
+  $agentnum=$1;
+}
+
+if ($agentnum) {
+  $agent = qsearchs('agent', { 'agentnum' => $1 } );
+  die "Agent $agentnum not found!" unless $agent;
+
+  $title = "$action configuration override for ". $agent->agent;
+} else {
+  $title = "$action global configuration";
+}
+
+$cgi->param('key') =~ /^([-.\w]+)$/ or die "illegal configuration item";
+$key=$1;
+$value = $conf->config($key);
+$config_item = $confitems{$key};
+
+$description = $config_item->description;
+$type = $config_item->type;
+
 </%init>

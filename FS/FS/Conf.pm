@@ -74,9 +74,11 @@ sub base_dir {
   $1;
 }
 
-=item config KEY
+=item config KEY [ AGENTNUM ]
 
 Returns the configuration value or values (depending on context) for key.
+The optional agent number selects an agent specific value instead of the
+global default if one is present.
 
 =cut
 
@@ -89,15 +91,13 @@ sub _usecompat {
 }
 
 sub _config {
-  my($self,$name,$agent)=@_;
+  my($self,$name,$agentnum)=@_;
   my $hashref = { 'name' => $name };
-  if (defined($agent) && $agent) {
-    $hashref->{agent} = $agent;
-  }
+  $hashref->{agentnum} = $agentnum;
   local $FS::Record::conf = undef;  # XXX evil hack prevents recursion
   my $cv = FS::Record::qsearchs('conf', $hashref);
-  if (!$cv && exists($hashref->{agent})) {
-    delete($hashref->{agent});
+  if (!$cv && defined($agentnum)) {
+    $hashref->{agentnum} = '';
     $cv = FS::Record::qsearchs('conf', $hashref);
   }
   return $cv;
@@ -107,8 +107,8 @@ sub config {
   my $self = shift;
   return $self->_usecompat('config', @_) if use_confcompat;
 
-  my($name,$agent)=@_;
-  my $cv = $self->_config($name, $agent) or return;
+  my($name,$agentnum)=@_;
+  my $cv = $self->_config($name, $agentnum) or return;
 
   if ( wantarray ) {
     my $v = $cv->value;
@@ -119,7 +119,7 @@ sub config {
   }
 }
 
-=item config_binary KEY
+=item config_binary KEY [ AGENTNUM ]
 
 Returns the exact scalar value for key.
 
@@ -129,12 +129,12 @@ sub config_binary {
   my $self = shift;
   return $self->_usecompat('config_binary', @_) if use_confcompat;
 
-  my($name,$agent)=@_;
-  my $cv = $self->_config($name, $agent) or return;
+  my($name,$agentnum)=@_;
+  my $cv = $self->_config($name, $agentnum) or return;
   decode_base64($cv->value);
 }
 
-=item exists KEY
+=item exists KEY [ AGENTNUM ]
 
 Returns true if the specified key exists, even if the corresponding value
 is undefined.
@@ -145,17 +145,18 @@ sub exists {
   my $self = shift;
   return $self->_usecompat('exists', @_) if use_confcompat;
 
-  my($name,$agent)=@_;
-  defined($self->_config($name, $agent));
+  my($name,$agentnum)=@_;
+  defined($self->_config($name, $agentnum));
 }
 
-=item config_orbase KEY SUFFIX
+#=item config_orbase KEY SUFFIX
+#
+#Returns the configuration value or values (depending on context) for 
+#KEY_SUFFIX, if it exists, otherwise for KEY
+#
+#=cut
 
-Returns the configuration value or values (depending on context) for 
-KEY_SUFFIX, if it exists, otherwise for KEY
-
-=cut
-
+# outmoded as soon as we shift to agentnum based config values
 sub config_orbase {
   my $self = shift;
   return $self->_usecompat('config_orbase', @_) if use_confcompat;
@@ -168,7 +169,7 @@ sub config_orbase {
   }
 }
 
-=item touch KEY
+=item touch KEY [ AGENT ];
 
 Creates the specified configuration key if it does not exist.
 
@@ -178,13 +179,13 @@ sub touch {
   my $self = shift;
   return $self->_usecompat('touch', @_) if use_confcompat;
 
-  my($name, $agent) = @_;
-  unless ( $self->exists($name, $agent) ) {
-    $self->set($name, '', $agent);
+  my($name, $agentnum) = @_;
+  unless ( $self->exists($name, $agentnum) ) {
+    $self->set($name, '', $agentnum);
   }
 }
 
-=item set KEY VALUE
+=item set KEY VALUE [ AGENTNUM ];
 
 Sets the specified configuration key to the given value.
 
@@ -194,15 +195,15 @@ sub set {
   my $self = shift;
   return $self->_usecompat('set', @_) if use_confcompat;
 
-  my($name, $value, $agent) = @_;
+  my($name, $value, $agentnum) = @_;
   $value =~ /^(.*)$/s;
   $value = $1;
 
   warn "[FS::Conf] SET $name\n" if $DEBUG;
 
-  my $old = FS::Record::qsearchs('conf', {name => $name, agent => $agent});
+  my $old = FS::Record::qsearchs('conf', {name => $name, agentnum => $agentnum});
   my $new = new FS::conf { $old ? $old->hash 
-                                : ('name' => $name, 'agent' => $agent)
+                                : ('name' => $name, 'agentnum' => $agentnum)
                          };
   $new->value($value);
 
@@ -218,7 +219,7 @@ sub set {
 
 }
 
-=item set_binary KEY VALUE
+=item set_binary KEY VALUE [ AGENTNUM ]
 
 Sets the specified configuration key to an exact scalar value which
 can be retrieved with config_binary.
@@ -229,11 +230,11 @@ sub set_binary {
   my $self  = shift;
   return if use_confcompat;
 
-  my($name, $value, $agent)=@_;
-  $self->set($name, encode_base64($value), $agent);
+  my($name, $value, $agentnum)=@_;
+  $self->set($name, encode_base64($value), $agentnum);
 }
 
-=item delete KEY
+=item delete KEY [ AGENTNUM ];
 
 Deletes the specified configuration key.
 
@@ -243,9 +244,9 @@ sub delete {
   my $self = shift;
   return $self->_usecompat('delete', @_) if use_confcompat;
 
-  my($name, $agent) = @_;
-  if ( my $cv = FS::Record::qsearchs('conf', {name => $name, agent => $agent}) ) {
-    warn "[FS::Conf] DELETE $file\n";
+  my($name, $agentnum) = @_;
+  if ( my $cv = FS::Record::qsearchs('conf', {name => $name, agentnum => $agentnum}) ) {
+    warn "[FS::Conf] DELETE $name\n";
 
     my $oldAutoCommit = $FS::UID::AutoCommit;
     local $FS::UID::AutoCommit = 0;
@@ -1335,6 +1336,7 @@ httemplate/docs/config.html
     'section'     => '',
     'description' => 'Template file for welcome email.  Welcome emails are sent to the customer email invoice destination(s) each time a svc_acct record is created.  See the <a href="http://search.cpan.org/~mjd/Text-Template/lib/Text/Template.pm">Text::Template</a> documentation for details on the template substitution language.  The following variables are available<ul><li><code>$username</code> <li><code>$password</code> <li><code>$first</code> <li><code>$last</code> <li><code>$pkg</code></ul>',
     'type'        => 'textarea',
+    'per_agent'   => 1,
   },
 
   {
@@ -1342,6 +1344,7 @@ httemplate/docs/config.html
     'section'     => '',
     'description' => 'From: address header for welcome email',
     'type'        => 'text',
+    'per_agent'   => 1,
   },
 
   {
@@ -1349,6 +1352,7 @@ httemplate/docs/config.html
     'section'     => '',
     'description' => 'Subject: header for welcome email',
     'type'        => 'text',
+    'per_agent'   => 1,
   },
   
   {
@@ -1357,6 +1361,7 @@ httemplate/docs/config.html
     'description' => 'MIME type for welcome email',
     'type'        => 'select',
     'select_enum' => [ 'text/plain', 'text/html' ],
+    'per_agent'   => 1,
   },
 
   {
