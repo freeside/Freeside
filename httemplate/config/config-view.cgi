@@ -48,8 +48,8 @@
 
     <tr>
       <td><a href="javascript:void(0);" onClick="overlib( OLiframeContent('config.cgi?key=<% $i->key %>;agentnum=<% $agentnum %>', 522, 336, 'config_popup' ), CAPTION, 'Enter configuration value', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;" name="<% $i->key %>">
-        <b><% $i->key %></b>&nbsp;-&nbsp;<% $i->description %>
-      </a></td>
+        <b><% $i->key %></b></a>&nbsp;-&nbsp;<% $i->description %>
+      </td>
       <td><table border=0>
 % foreach my $type ( ref($i->type) ? @{$i->type} : $i->type ) {
 %             my $n = 0; 
