@@ -45,10 +45,16 @@ foreach my $export ( @exports ) {
   foreach my $svc_www ( @svc_www ) {
     use vars qw($zone $username $dir $email $config);
     $zone = $svc_www->domain_record->zone;
-    $username = $svc_www->svc_acct->username;
-    $dir = $svc_www->svc_acct->dir;
-    $email = $svc_www->svc_acct->email;
     $config = $svc_www->config;
+    if ( $svc_www->svc_acct ) {
+      $username = $svc_www->svc_acct->username;
+      $dir = $svc_www->svc_acct->dir;
+      $email = $svc_www->svc_acct->email;
+    } else {
+      $username = '';
+      $dir      = '';
+      $email    = '';
+    }
 
     warn "  adding configuration section for $zone\n"
       if $opt{d};
