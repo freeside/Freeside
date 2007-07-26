@@ -728,7 +728,7 @@ sub tables_hashref {
       ],
       'primary_key' => 'refundnum',
       'unique' => [],
-      'index' => [],
+      'index' => [ [ 'custnum' ] ],
     },
 
     'cust_credit_refund' => {
