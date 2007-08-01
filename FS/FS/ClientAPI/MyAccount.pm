@@ -910,10 +910,9 @@ sub _do_bop_realtime {
 
     my $old_balance = $cust_main->balance;
 
-    my $bill_error = $cust_main->bill;
-
-    $cust_main->apply_payments_and_credits;
-    $bill_error = $cust_main->collect('realtime' => 1);
+    my $bill_error =    $cust_main->bill
+                     || $cust_main->apply_payments_and_credits
+                     || $cust_main->collect('realtime' => 1);
 
     if (    $cust_main->balance > $old_balance
          && $cust_main->balance > 0
