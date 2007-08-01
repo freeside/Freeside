@@ -17,7 +17,7 @@ use RT::Config;
 
 # {{{ Base Configuration
 
-# $rtname the string that RT will look for in mail messages to
+# $rtname is the string that RT will look for in mail messages to
 # figure out what ticket a new piece of mail belongs to
 
 # Your domain name is recommended, so as not to pollute the namespace.
@@ -25,6 +25,28 @@ use RT::Config;
 # (otherwise, mail for existing tickets won't get put in the right place
 
 Set($rtname , "example.com");
+
+
+# This regexp controls what subject tags RT recognizes as its own.
+# If you're not dealing with historical $rtname values, you'll likely
+# never have to enable this feature.
+#
+# Be VERY CAREFUL with it. Note that it overrides $rtname for subject
+# token matching and that you should use only "non-capturing" parenthesis
+# grouping. For example:
+#
+# 	Set($EmailSubjectTagRegex, qr/(?:example.com|example.org)/i );
+#
+# and NOT
+# 
+# 	Set($EmailSubjectTagRegex, qr/(example.com|example.org)/i );
+#
+# This setting would make RT behave exactly as it does without the 
+# setting enabled.
+#
+# Set($EmailSubjectTagRegex, qr/\Q$rtname\E/i );
+
+
 
 # You should set this to your organization's DNS domain. For example,
 # fsck.com or asylum.arkham.ma.us. It's used by the linking interface to
@@ -42,14 +64,12 @@ Set($Timezone , 'US/Eastern');
 
 # }}}
 
-# }}}
-
 # {{{ Database Configuration
 
 # Database driver beeing used. Case matters
 # Valid types are "mysql", "Oracle" and "Pg"
 
-Set($DatabaseType , 'mysql');
+Set($DatabaseType , 'Pg');
 
 # The domain name of your database server
 # If you're running mysql and it's on localhost,
@@ -62,13 +82,13 @@ Set($DatabaseRTHost , 'localhost');
 Set($DatabasePort , '');
 
 #The name of the database user (inside the database)
-Set($DatabaseUser , 'rt_user');
+Set($DatabaseUser , 'freeside');
 
 # Password the DatabaseUser should use to access the database
-Set($DatabasePassword , 'rt_pass');
+Set($DatabasePassword , '');
 
 # The name of the RT's database on your database server
-Set($DatabaseName , 'rt3');
+Set($DatabaseName , 'freeside');
 
 # If you're using Postgres and have compiled in SSL support,
 # set DatabaseRequireSSL to 1 to turn on SSL communication
@@ -89,7 +109,7 @@ Set($OwnerEmail , 'root');
 
 Set($LoopsToRTOwner , 1);
 
-# If $StoreLoopss is defined, RT will record messages that it believes
+# If $StoreLoops is defined, RT will record messages that it believes
 # to be part of mail loops.
 # As it does this, it will try to be careful not to send mail to the
 # sender of these messages
@@ -106,12 +126,12 @@ Set($StoreLoops , undef);
 Set($MaxAttachmentSize , 10000000);
 
 # $TruncateLongAttachments: if this is set to a non-undef value,
-# RT will truncate attachments longer than MaxAttachmentLength.
+# RT will truncate attachments longer than MaxAttachmentSize.
 
 Set($TruncateLongAttachments , undef);
 
 # $DropLongAttachments: if this is set to a non-undef value,
-# RT will silently drop attachments longer than MaxAttachmentLength.
+# RT will silently drop attachments longer than MaxAttachmentSize.
 
 Set($DropLongAttachments , undef);
 
@@ -135,8 +155,12 @@ Set($RTAddressRegexp , '^rt\@example.com$');
 # (These values are passed to the CanonicalizeEmailAddress subroutine in RT/User.pm)
 # By default, that routine performs a s/$Match/$Replace/gi on any address passed to it
 
-Set($CanonicalizeEmailAddressMatch   , 'subdomain.example.com$');
-Set($CanonicalizeEmailAddressReplace , 'example.com');
+#Set($CanonicalizeEmailAddressMatch , '@subdomain\.example\.com$');
+#Set($CanonicalizeEmailAddressReplace , '@example.com');
+
+# set this to true and the create new user page will use the values that you
+# enter in the form but use the function CanonicalizeUserInfo in User_Local.pm
+Set($CanonicalizeOnCreate , 0);
 
 # If $SenderMustExistInExternalDatabase is true, RT will refuse to
 # create non-privileged accounts for unknown users if you are using
@@ -175,7 +199,7 @@ Set($CommentAddress , 'RT_CommentAddressNotSet');
 # If 'sendmailpipe' doesn't work well for you, try 'sendmail'
 #
 # Note that you should remove the '-t' from $SendmailArguments
-# if you use 'sendmail rather than 'sendmailpipe'
+# if you use 'sendmail' rather than 'sendmailpipe'
 
 Set($MailCommand , 'sendmailpipe');
 
@@ -185,6 +209,11 @@ Set($MailCommand , 'sendmailpipe');
 
 # These options are good for most sendmail wrappers and workalikes
 Set($SendmailArguments , "-oi -t");
+
+# $SendmailBounceArguments defines what flags to pass to $Sendmail
+# assuming RT needs to send an error (ie. bounce).
+
+Set($SendmailBounceArguments , '-f "<>"');
 
 # These arguments are good for sendmail brand sendmail 8 and newer
 #Set($SendmailArguments,"-oi -t -ODeliveryMode=b -OErrorMode=m");
@@ -216,12 +245,15 @@ Set($UseFriendlyToLine , 0);
 # are WatcherType and TicketId.
 Set($FriendlyToLineFormat, "\"%s of $RT::rtname Ticket #%s\":;");
 
-# By default RT doesn't notify the person who performs an update, as they
+# By default, RT doesn't notify the person who performs an update, as they
 # already know what they've done. If you'd like to change this behaviour,
 # Set $NotifyActor to 1
 
 Set($NotifyActor, 0);
 
+# By default, RT records each message it sends out to its own internal database.# To change this behaviour, set $RecordOutgoingEmail to 0 
+
+Set($RecordOutgoingEmail, 1);
 
 # }}}
 
@@ -247,6 +279,14 @@ Set($LogToFile      , undef);
 Set($LogDir, '/opt/rt3/var/log');
 Set($LogToFileNamed , "rt.log");    #log to rt.log
 
+# On Solaris or UnixWare, set to ( socket => 'inet' ).  Options here
+# override any other options RT passes to Log::Dispatch::Syslog.
+# Other interesting flags include facility and logopt.  (See the
+# Log::Dispatch::Syslog documentation for more information.)  (Maybe
+# ident too, if you have multiple RT installations.)
+
+@LogToSyslogConf = () unless (@LogToSyslogConf);
+
 # }}}
 
 # {{{ Web interface configuration
@@ -263,17 +303,22 @@ Set($WebPath , "");
 # This is the Scheme, server and port for constructing urls to webrt
 # $WebBaseURL doesn't need a trailing /
 
-Set($WebBaseURL , "http://RT::WebBaseURL.not.configured:80");
+Set($WebBaseURL , "http://localhost");
 
 Set($WebURL , $WebBaseURL . $WebPath . "/");
 
 # $WebImagesURL points to the base URL where RT can find its images.
 
-Set($WebImagesURL , $WebURL . "NoAuth/images/");
+Set($WebImagesURL , $WebPath . "/NoAuth/images/");
 
-# $RTLogoURL points to the URL of the RT logo displayed in the web UI
+# $LogoURL points to the URL of the RT logo displayed in the web UI
 
-Set($LogoURL , $WebImagesURL . "rt.jpg");
+Set($LogoURL , $WebImagesURL . "bplogo.gif");
+
+# WebNoAuthRegex - What portion of RT's URLspace should not require
+# authentication.
+Set($WebNoAuthRegex, qr!^(?:/+NoAuth/|
+                            /+REST/\d+\.\d+/NoAuth/)!x );
 
 # For message boxes, set the entry box width and what type of wrapping
 # to use.
@@ -288,6 +333,20 @@ Set($MessageBoxWrap, "HARD");
 # as text. This prevents malicious HTML and javascript from being
 # sent in a request (although there is probably more to it than that)
 Set($TrustHTMLAttachments , undef);
+
+# Should RT redistribute correspondence that it identifies as
+# machine generated? A true value (the default) will do so, setting
+# this to '0' will cause no such messages to be redistributed.
+# You can also use 'privileged', which will redistribute only to
+# privileged users. This is seful if you get malformed bounces caused by
+# autocreated requestors with bogus addresses.
+Set($RedistributeAutoGeneratedMessages, 1);
+
+# If PreferRichText is set to a true value, RT will show HTML/Rich text
+# messages in preference to their plaintext alternatives. RT "scrubs" the 
+# html to show only a minimal subset of HTML to avoid possible contamination
+# by cross-site-scripting attacks.
+Set($PreferRichText, undef);
 
 # If $WebExternalAuth is defined, RT will defer to the environment's
 # REMOTE_USER variable.
@@ -316,32 +375,66 @@ Set($WebExternalAuto , undef);
 
 # Set($WebSessionClass , 'Apache::Session::File');
 
+# By default, RT clears its database cache after every page view.
+# This ensures that you've always got the most current information 
+# when working in a multi-process (mod_perl or FastCGI) Environment
+# Setting $WebFlushDbCacheEveryRequest to '0' will turn this off,
+# which will speed RT up a bit, at the expense of a tiny bit of data 
+# accuracy
+
+Set($WebFlushDbCacheEveryRequest, '1');
+
+
 # $MaxInlineBody is the maximum attachment size that we want to see
 # inline when viewing a transaction. 13456 is a random sane-sounding
 # default.
 
 Set($MaxInlineBody, 13456);
 
-# $MyTicketsLength is the length of the table on the front page.
-# For some people, the default of 10 isn't big enough to get a feel for
-# how much work needs to be done before you get some time off.
+# $MyTicketsLength is the length of the owned tickets table on the
+# front page. For some people, the default of 10 isn't big enough
+# to get a feel for how much work needs to be done before you get
+# some time off.
 
 Set($MyTicketsLength, 10);
 
+# $MyRequestsLength is the length of the requested tickets table
+# on the front page.
+
+Set($MyRequestsLength, 10);
+
 # @MasonParameters is the list of parameters for the constructor of
 # HTML::Mason's Apache or CGI Handler.  This is normally only useful
-# for debugging, eg. profiling individual components with
-#     (preamble => 'my $p = MasonX::Profiler->new($m, $r);');
+# for debugging, eg. profiling individual components with:
+#     use MasonX::Profiler; # available on CPAN
+#     @MasonParameters = (preamble => 'my $p = MasonX::Profiler->new($m, $r);');
 
 @MasonParameters = () unless (@MasonParameters);
+
+# $DefaultSearchResultFormat is the default format for RT search results
+Set ($DefaultSearchResultFormat, qq{
+   '<B><A HREF="$RT::WebPath/Ticket/Display.html?id=__id__">__id__</a></B>/TITLE:#',
+   '<B><A HREF="$RT::WebPath/Ticket/Display.html?id=__id__">__Subject__</a></B>/TITLE:Subject',
+   Status,
+   QueueName, 
+   OwnerName, 
+   Priority, 
+   '__NEWLINE__',
+   '', 
+   '<small>__Requestors__</small>',
+   '<small>__CreatedRelative__</small>',
+   '<small>__ToldRelative__</small>',
+   '<small>__LastUpdatedRelative__</small>',
+   '<small>__TimeLeft__</small>'});
+
 
 # }}}
 
 # {{{ RT UTF-8 Settings
 
 # An array that contains languages supported by RT's internationalization
-# interface.  Defaults to all *.po lexicons; set it to qw(en ja) will make
-# RT bilingual instead of multilingual, but will save same memory.
+# interface.  Defaults to all *.po lexicons; setting it to qw(en ja) will make
+# RT bilingual instead of multilingual, but will save some memory.
 
 @LexiconLanguages = qw(*) unless (@LexiconLanguages);
 
@@ -370,5 +463,41 @@ Set($DateDayBeforeMonth , 1);
 Set($AmbiguousDayInPast , 1);
 
 # }}}
+
+# {{{ Miscellaneous RT Settings
+
+# You can define new statuses and even reorder existing statuses here.
+# WARNING. DO NOT DELETE ANY OF THE DEFAULT STATUSES. If you do, RT
+# will break horribly.
+
+@ActiveStatus = qw(new open stalled) unless @ActiveStatus;
+@InactiveStatus = qw(resolved rejected deleted) unless @InactiveStatus;
+
+# Backward compatability setting. Add/Delete Link used to record one
+# transaction and run one scrip. Set this value to 0 if you want
+# both link transactions to have a scrip run.
+Set($LinkTransactionsRun1Scrip , 1);
+
+# }}}
+
+
+# {{{ Development Mode
+#
+# RT comes with a "Development mode" setting. 
+# This setting, as a convenience for developers, turns on 
+# all sorts of development options that you most likely don't want in 
+# production:
+#
+# * Turns off Mason's 'static_source' directive. By default, you can't 
+#   edit RT's web ui components on the fly and have RT magically pick up
+#   your changes. (It's a big performance hit)
+#
+#  * More to come
+#
+
+Set($DevelMode, '0');
+
+# }}}
+
 
 1;
