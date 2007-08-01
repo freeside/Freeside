@@ -37,6 +37,7 @@ reload_dbdef($dbdef_file);
 
 $DBIx::DBSchema::DEBUG = $DEBUG;
 $DBIx::DBSchema::Table::DEBUG = $DEBUG;
+$DBIx::DBSchema::Index::DEBUG = $DEBUG;
 
 if ( $DRY_RUN ) {
   print join(";\n", dbdef->sql_update_schema( dbdef_dist, $dbh ) ). ";\n";
@@ -101,6 +102,16 @@ freeside-upgrade - Upgrades database schema for new freeside verisons.
 
 Reads your existing database schema and updates it to match the current schema,
 adding any columns or tables necessary.
+
+Also performs other upgrade functions:
+
+=over 4
+
+=item Calls FS:: Misc::prune::prune_applications (probably unnecessary every upgrade, but simply won't find any records to change)
+
+=item If necessary, moves your configuration information from the filesystem in /usr/local/etc/freeside/conf.<datasrc> to the database.
+
+=back
 
   [ -d ]: Dry run; output SQL statements (to STDOUT) only, but do not execute
           them.
