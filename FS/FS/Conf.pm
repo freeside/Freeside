@@ -157,6 +157,8 @@ sub exists {
 #=cut
 
 # outmoded as soon as we shift to agentnum based config values
+# well, mostly.  still useful for e.g. late notices, etc. in that we want
+# these to fall back to standard values
 sub config_orbase {
   my $self = shift;
   return $self->_usecompat('config_orbase', @_) if use_confcompat;
@@ -1306,7 +1308,7 @@ httemplate/docs/config.html
   {
     'key'         => 'emailcancel',
     'section'     => 'billing',
-    'description' => 'Enable emailing of cancellation notices.',
+    'description' => 'Enable emailing of cancellation notices.  Make sure to fill in the cancelmessage and cancelsubject configuration values as well.',
     'type'        => 'checkbox',
   },
 
