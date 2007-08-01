@@ -1,17 +1,3 @@
-%
-%  my ( %opt ) = @_;
-%
-%  my $url = $opt{'url'};
-%  my $method = exists($opt{'method'}) ? $opt{'method'} : 'GET';
-%  #my @subs = @{ $opt{'subs'};
-%  my $key = exists($opt{'key'}) ? $opt{'key'} : '';
-%
-%  $url .= ( ($url =~ /\?/) ? '&' : '?' )
-%    if $method eq 'GET';
-%
-%
-
-
 <SCRIPT TYPE="text/javascript">
 
   function rs_init_object() {
@@ -109,3 +95,15 @@
 
 
 </SCRIPT>
+<%init>
+my ( %opt ) = @_;
+
+my $url = $opt{'url'};
+my $method = exists($opt{'method'}) ? $opt{'method'} : 'GET';
+#my @subs = @{ $opt{'subs'};
+my $key = exists($opt{'key'}) ? $opt{'key'} : '';
+
+$url .= ( ($url =~ /\?/) ? '&' : '?' )
+  if $method eq 'GET';
+
+</%init>
