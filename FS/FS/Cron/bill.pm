@@ -6,6 +6,8 @@ use Exporter;
 use Date::Parse;
 use FS::Record qw(qsearch qsearchs);
 use FS::cust_main;
+use FS::part_event;
+use FS::part_event_condition;
 
 @ISA = qw( Exporter );
 @EXPORT_OK = qw ( bill );
@@ -14,7 +16,11 @@ sub bill {
 
   my %opt = @_;
 
+  my $check_freq = $opt{'check_freq'} || '1d';
+
   $FS::cust_main::DEBUG = 1 if $opt{'v'};
+  $FS::cust_main::DEBUG = $opt{'l'} if $opt{'l'};
+  #$FS::cust_event::DEBUG = $opt{'l'} if $opt{'l'};
   
   my %search = ();
   $search{'payby'}    = $opt{'p'} if $opt{'p'};
@@ -38,91 +44,76 @@ sub bill {
                   )
         )
 END
-  
-  # or
-  my $where_bill_event = <<"END";
-    0 < ( select count(*) from cust_bill
-            where cust_main.custnum = cust_bill.custnum
-              and 0 < charged
-                      - coalesce(
-                                  ( select sum(amount) from cust_bill_pay
-                                      where cust_bill.invnum = cust_bill_pay.invnum )
-                                  ,0
-                                )
-                      - coalesce(
-                                  ( select sum(amount) from cust_credit_bill
-                                      where cust_bill.invnum = cust_credit_bill.invnum )
-                                  ,0
-                                )
-              and 0 < ( select count(*) from part_bill_event
-                          where payby = cust_main.payby
-                            and ( disabled is null or disabled = '' )
-                            and seconds <= $time - cust_bill._date
-                            and 0 = ( select count(*) from cust_bill_event
-                                       where cust_bill.invnum = cust_bill_event.invnum
-                                         and part_bill_event.eventpart = cust_bill_event.eventpart
-                                         and status = 'done'
-                                    )
-  
-                      )
-        )
-END
-  
-  my $extra_sql = ( scalar(%search) ? ' AND ' : ' WHERE ' ). "( $where_pkg OR $where_bill_event )";
-  
+
+  my $where_event = join(' OR ', map {
+    my $eventtable = $_;
+
+    my $join  = FS::part_event_condition->join_conditions_sql(  $eventtable );
+    my $where = FS::part_event_condition->where_conditions_sql( $eventtable,
+                                                                'time'=>$time,
+                                                              );
+
+    my $are_part_event = 
+      "0 < ( SELECT COUNT(*) FROM part_event $join
+               WHERE check_freq = '$check_freq'
+                 AND eventtable = '$eventtable'
+                 AND ( disabled = '' OR disabled IS NULL )
+                 AND $where
+           )
+      ";
+
+    if ( $eventtable eq 'cust_main' ) { 
+      $are_part_event;
+    } else {
+      "0 < ( SELECT COUNT(*) FROM $eventtable
+               WHERE cust_main.custnum = $eventtable.custnum
+                 AND $are_part_event
+           )
+      ";
+    }
+
+  } FS::part_event->eventtables);
+
+  my $extra_sql = ( scalar(%search) ? ' AND ' : ' WHERE ' ).
+                  "( $where_pkg OR $where_event )";
+
   my @cust_main;
   if ( @ARGV ) {
     @cust_main = map { qsearchs('cust_main', { custnum => $_, %search } ) } @ARGV
   } else {
-    @cust_main = qsearch('cust_main', \%search, '', $extra_sql );
+
+    warn "searching for customers:\n".
+         join("\n", map "  $_ => ".$search{$_}, keys %search). "\n".
+         "  $extra_sql\n"
+      if $opt{'v'} || $opt{'l'};
+
+    @cust_main = qsearch({
+      'table'     => 'cust_main',
+      'hashref'   => \%search,
+      'extra_sql' => $extra_sql,
+    });
+
   }
-  ;
   
   my($cust_main,%saw);
   foreach $cust_main ( @cust_main ) {
 
-    my $custnum = $cust_main->custnum;
-  
-    # $^T not $time because -d is for pre-printing invoices
-    foreach my $cust_pkg (
-      grep { $_->expire && $_->expire <= $^T } $cust_main->ncancelled_pkgs
-    ) {
-      my $error = $cust_pkg->cancel;
-      warn "Error cancelling expired pkg ". $cust_pkg->pkgnum.
-           " for custnum $custnum: $error"
-        if $error;
+    if ( $opt{'m'} ) {
+
+      die "XXX multi-process mode not yet completed";
+      #add job to queue that calls bill_and_collect with options
+
+    } else {
+
+      $cust_main->bill_and_collect(
+        'time'         => $time,
+        'invoice_time' => $invoice_time,
+        'check_freq'   => $check_freq,
+        'resetup'      => $opt{'s'},
+      );
+
     }
-    # $^T not $time because -d is for pre-printing invoices
-    foreach my $cust_pkg (
-      grep { (    $_->part_pkg->is_prepaid && $_->bill && $_->bill < $^T
-               || $_->adjourn && $_->adjourn <= $^T
-             )
-             && ! $_->susp
-           }
-           $cust_main->ncancelled_pkgs
-    ) {
-      my $action = $cust_pkg->part_pkg->option('recur_action') || 'suspend';
-      my $error = $cust_pkg->$action();
-      warn "Error suspending package ". $cust_pkg->pkgnum.
-           " for custnum $custnum: $error"
-        if $error;
-    }
-  
-    my $error = $cust_main->bill( 'time'         => $time,
-                                  'invoice_time' => $invoice_time,
-                                  'resetup'      => $opt{'s'},
-                                );
-    warn "Error billing, custnum $custnum: $error" if $error;
-  
-    $error = $cust_main->apply_payments_and_credits;
-    warn "Error applying payments and credits, custnum $custnum: $error"
-      if $error;
-  
-    $error = $cust_main->collect( 'invoice_time' => $time,
-                                  'freq'         => $opt{'freq'},
-                                );
-    warn "Error collecting, custnum $custnum: $error" if $error;
-  
+
   }
 
 }

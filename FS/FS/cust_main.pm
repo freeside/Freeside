@@ -1,5 +1,6 @@
 package FS::cust_main;
 
+require 5.006;
 use strict;
 use vars qw( @ISA @EXPORT_OK $DEBUG $me $conf @encrypted_fields
              $import $skip_fuzzyfiles $ignore_expired_card @paytypes);
@@ -7,13 +8,9 @@ use vars qw( $realtime_bop_decline_quiet ); #ugh
 use Safe;
 use Carp;
 use Exporter;
-BEGIN {
-  eval "use Time::Local;";
-  die "Time::Local minimum version 1.05 required with Perl versions before 5.6"
-    if $] < 5.006 && !defined($Time::Local::VERSION);
-  #eval "use Time::Local qw(timelocal timelocal_nocheck);";
-  eval "use Time::Local qw(timelocal_nocheck);";
-}
+use Time::Local qw(timelocal_nocheck);
+use Data::Dumper;
+use Tie::IxHash;
 use Digest::MD5 qw(md5_base64);
 use Date::Format;
 use Date::Parse;
@@ -32,6 +29,7 @@ use FS::cust_bill;
 use FS::cust_bill_pkg;
 use FS::cust_pay;
 use FS::cust_pay_void;
+use FS::cust_pay_batch;
 use FS::cust_credit;
 use FS::cust_refund;
 use FS::part_referral;
@@ -43,8 +41,9 @@ use FS::cust_bill_pay;
 use FS::prepay_credit;
 use FS::queue;
 use FS::part_pkg;
-use FS::part_bill_event qw(due_events);
-use FS::cust_bill_event;
+use FS::part_event;
+use FS::part_event_condition;
+#use FS::cust_event;
 use FS::cust_tax_exempt;
 use FS::cust_tax_exempt_pkg;
 use FS::type_pkgs;
@@ -1423,11 +1422,10 @@ sub check {
     $payinfo =~ s/[^\d\@]//g;
     if ( $conf->exists('echeck-nonus') ) {
       $payinfo =~ /^(\d+)\@(\d+)$/ or return 'invalid echeck account@aba';
-      $payinfo = "$1\@$2";
     } else {
       $payinfo =~ /^(\d+)\@(\d{9})$/ or return 'invalid echeck account@aba';
-      $payinfo = "$1\@$2";
     }
+    $payinfo = "$1\@$2";
     $self->payinfo($payinfo);
     $self->paycvv('');
 
@@ -1547,6 +1545,16 @@ sub all_pkgs {
   sort sort_packages @cust_pkg;
 }
 
+=item cust_pkg
+
+Synonym for B<all_pkgs>.
+
+=cut
+
+sub cust_pkg {
+  shift->all_pkgs(@_);
+}
+
 =item ncancelled_pkgs
 
 Returns all non-cancelled packages (see L<FS::cust_pkg>) for this customer.
@@ -1561,10 +1569,17 @@ sub ncancelled_pkgs {
   my @cust_pkg = ();
   if ( $self->{'_pkgnum'} ) {
 
+    warn "$me ncancelled_pkgs: returning cached objects"
+      if $DEBUG > 1;
+
     @cust_pkg = grep { ! $_->getfield('cancel') }
                 values %{ $self->{'_pkgnum'}->cache };
 
   } else {
+
+    warn "$me ncancelled_pkgs: searching for packages for custnum ".
+         $self->custnum
+      if $DEBUG > 1;
 
     @cust_pkg =
       qsearch( 'cust_pkg', {
@@ -1683,10 +1698,20 @@ sub suspend {
   grep { $_->suspend(@_) } $self->unsuspended_pkgs;
 }
 
-=item suspend_if_pkgpart PKGPART [ , PKGPART ... ]
+=item suspend_if_pkgpart HASHREF | PKGPART [ , PKGPART ... ]
 
 Suspends all unsuspended packages (see L<FS::cust_pkg>) matching the listed
-PKGPARTs (see L<FS::part_pkg>).
+PKGPARTs (see L<FS::part_pkg>).  Preferred usage is to pass a hashref instead
+of a list of pkgparts; the hashref has the following keys:
+
+=over 4
+
+=item pkgparts - listref of pkgparts
+
+=item (other options are passed to the suspend method)
+
+=back
+
 
 Returns a list: an empty list on success or a list of errors.
 
@@ -1706,10 +1731,19 @@ sub suspend_if_pkgpart {
       $self->unsuspended_pkgs;
 }
 
-=item suspend_unless_pkgpart PKGPART [ , PKGPART ... ]
+=item suspend_unless_pkgpart HASHREF | PKGPART [ , PKGPART ... ]
 
 Suspends all unsuspended packages (see L<FS::cust_pkg>) unless they match the
-listed PKGPARTs (see L<FS::part_pkg>).
+given PKGPARTs (see L<FS::part_pkg>).  Preferred usage is to pass a hashref
+instead of a list of pkgparts; the hashref has the following keys:
+
+=over 4
+
+=item pkgparts - listref of pkgparts
+
+=item (other options are passed to the suspend method)
+
+=back
 
 Returns a list: an empty list on success or a list of errors.
 
@@ -1733,22 +1767,31 @@ sub suspend_unless_pkgpart {
 
 Cancels all uncancelled packages (see L<FS::cust_pkg>) for this customer.
 
-Available options are: I<quiet>, I<reasonnum>, and I<ban>
+Available options are:
 
-I<quiet> can be set true to supress email cancellation notices.
+=over 4
 
-# I<reasonnum> can be set to a cancellation reason (see L<FS::cancel_reason>)
+=item quiet - can be set true to supress email cancellation notices.
 
-I<ban> can be set true to ban this customer's credit card or ACH information,
-if present.
+=item reason - can be set to a cancellation reason (see L<FS:reason>), either a reasonnum of an existing reason, or passing a hashref will create a new reason.  The hashref should have the following keys: typenum - Reason type (see L<FS::reason_type>, reason - Text of the new reason.
+
+=item ban - can be set true to ban this customer's credit card or ACH information, if present.
+
+=back
 
 Always returns a list: an empty list on success or a list of errors.
 
 =cut
 
 sub cancel {
-  my $self = shift;
-  my %opt = @_;
+  my( $self, %opt ) = @_;
+
+  warn "$me cancel called on customer ". $self->custnum. " with options ".
+       join(', ', map { "$_: $opt{$_}" } keys %opt ). "\n"
+    if $DEBUG;
+
+  return ( 'access denied' )
+    unless $FS::CurrentUser::CurrentUser->access_right('Cancel customer');
 
   if ( $opt{'ban'} && $self->payby =~ /^(CARD|DCRD|CHEK|DCHK)$/ ) {
 
@@ -1763,7 +1806,13 @@ sub cancel {
 
   }
 
-  grep { $_ } map { $_->cancel(@_) } $self->ncancelled_pkgs;
+  my @pkgs = $self->ncancelled_pkgs;
+
+  warn "$me cancelling ". scalar($self->ncancelled_pkgs). "/".
+       scalar(@pkgs). " packages for customer ". $self->custnum. "\n"
+    if $DEBUG;
+
+  grep { $_ } map { $_->cancel(%opt) } $self->ncancelled_pkgs;
 }
 
 sub _banned_pay_hashref {
@@ -1810,10 +1859,87 @@ sub agent {
   qsearchs( 'agent', { 'agentnum' => $self->agentnum } );
 }
 
+=item bill_and_collect 
+
+Cancels and suspends any packages due, generates bills, applies payments and
+cred
+
+Warns on errors (Does not currently: If there is an error, returns the error, otherwise returns false.)
+
+Options are passed as name-value pairs.  Currently available options are:
+
+=over 4
+
+=item time - bills the customer as if it were that time.  Specified as a UNIX timestamp; see L<perlfunc/"time">).  Also see L<Time::Local> and L<Date::Parse> for conversion functions.  For example:
+
+ use Date::Parse;
+ ...
+ $cust_main->bill( 'time' => str2time('April 20th, 2001') );
+
+=item invoice_time - used in conjunction with the I<time> option, this option specifies the date of for the generated invoices.  Other calculations, such as whether or not to generate the invoice in the first place, are not affected.
+
+=item check_freq - "1d" for the traditional, daily events (the default), or "1m" for the new monthly events (part_event.check_freq)
+
+=item resetup - if set true, re-charges setup fees.
+
+=back
+
+=cut
+
+sub bill_and_collect {
+  my( $self, %options ) = @_;
+
+  ###
+  # cancel packages
+  ###
+
+  #$^T not $options{time} because freeside-daily -d is for pre-printing invoices
+  foreach my $cust_pkg (
+    grep { $_->expire && $_->expire <= $^T } $self->ncancelled_pkgs
+  ) {
+    my $error = $cust_pkg->cancel;
+    warn "Error cancelling expired pkg ". $cust_pkg->pkgnum.
+         " for custnum ". $self->custnum. ": $error"
+      if $error;
+  }
+
+  ###
+  # suspend packages
+  ###
+
+  #$^T not $options{time} because freeside-daily -d is for pre-printing invoices
+  foreach my $cust_pkg (
+    grep { (    $_->part_pkg->is_prepaid && $_->bill && $_->bill < $^T
+             || $_->adjourn && $_->adjourn <= $^T
+           )
+           && ! $_->susp
+         }
+         $self->ncancelled_pkgs
+  ) {
+    my $error = $cust_pkg->suspend;
+    warn "Error suspending package ". $cust_pkg->pkgnum.
+         " for custnum ". $self->custnum. ": $error"
+      if $error;
+  }
+
+  ###
+  # bill and collect
+  ###
+
+  my $error = $self->bill( %options );
+  warn "Error billing, custnum ". $self->custnum. ": $error" if $error;
+
+  $self->apply_payments_and_credits;
+
+  $error = $self->collect( %options );
+  warn "Error collecting, custnum". $self->custnum. ": $error" if $error;
+
+}
+
 =item bill OPTIONS
 
 Generates invoices (see L<FS::cust_bill>) for this customer.  Usually used in
-conjunction with the collect method.
+conjunction with the collect method by calling B<bill_and_collect>.
 
 If there is an error, returns the error, otherwise returns false.
 
@@ -1828,6 +1954,10 @@ Options are passed as name-value pairs.  Currently available options are:
  use Date::Parse;
  ...
  $cust_main->bill( 'time' => str2time('April 20th, 2001') );
+
+=item pkg_list - An array ref of specific packages (objects) to attempt billing, instead trying all of them.
+
+ $cust_main->bill( pkg_list => [$pkg1, $pkg2] );
 
 =item invoice_time - used in conjunction with the I<time> option, this option specifies the date of for the generated invoices.  Other calculations, such as whether or not to generate the invoice in the first place, are not affected.
 
@@ -1939,6 +2069,13 @@ sub bill {
          ! $cust_pkg->getfield('susp') &&
          ( $cust_pkg->getfield('bill') || 0 ) <= $time
     ) {
+
+      # XXX should this be a package event?  probably.  events are called
+      # at collection time at the moment, though...
+      if ( $part_pkg->can('reset_usage') ) {
+        warn "    resetting usage counters" if $DEBUG > 1;
+        $part_pkg->reset_usage($cust_pkg);
+      }
 
       warn "    bill recur\n" if $DEBUG > 1;
 
@@ -2190,6 +2327,18 @@ sub bill {
 
   unless ( $cust_bill->cust_bill_pkg ) {
     $cust_bill->delete; #don't create an invoice w/o line items
+
+   # XXX this seems to be broken
+   #( DBD::Pg::st execute failed: ERROR:  syntax error at or near "hcb" )
+#   # get rid of our fake history too, waste of unecessary space
+#    my $h_cleanup_query = q{
+#      DELETE FROM h_cust_bill hcb
+#       WHERE hcb.invnum = ?
+#      AND NOT EXISTS ( SELECT 1 FROM cust_bill cb where cb.invnum = hcb.invnum )
+#    };
+#    my $h_sth = $dbh->prepare($h_cleanup_query);
+#    $h_sth->execute($invnum);
+
     $dbh->commit or die $dbh->errstr if $oldAutoCommit;
     return '';
   }
@@ -2244,12 +2393,9 @@ sub bill {
 (Attempt to) collect money for this customer's outstanding invoices (see
 L<FS::cust_bill>).  Usually used after the bill method.
 
-Depending on the value of `payby', this may print or email an invoice (I<BILL>,
-I<DCRD>, or I<DCHK>), charge a credit card (I<CARD>), charge via electronic
-check/ACH (I<CHEK>), or just add any necessary (pseudo-)payment (I<COMP>).
-
-Most actions are now triggered by invoice events; see L<FS::part_bill_event>
-and the invoice events web interface.
+Actions are now triggered by billing events; see L<FS::part_event> and the
+billing events web interface.  Old-style invoice events (see
+L<FS::part_bill_event>) have been deprecated.
 
 If there is an error, returns the error, otherwise returns false.
 
@@ -2257,19 +2403,17 @@ Options are passed as name-value pairs.
 
 Currently available options are:
 
-invoice_time - Use this time when deciding when to print invoices and
-late notices on those invoices.  The default is now.  It is specified as a UNIX timestamp; see L<perlfunc/"time">).  Also see L<Time::Local> and L<Date::Parse>
-for conversion functions.
+=over 4
 
-retry - Retry card/echeck/LEC transactions even when not scheduled by invoice
-events.
+=item invoice_time - Use this time when deciding when to print invoices and late notices on those invoices.  The default is now.  It is specified as a UNIX timestamp; see L<perlfunc/"time">).  Also see L<Time::Local> and L<Date::Parse> for conversion functions.
 
-quiet - set true to surpress email card/ACH decline notices.
+=item retry - Retry card/echeck/LEC transactions even when not scheduled by invoice events.
 
-freq - "1d" for the traditional, daily events (the default), or "1m" for the
-new monthly events
+=item quiet - set true to surpress email card/ACH decline notices.
 
-payby - allows for one time override of normal customer billing method
+=item check_freq - "1d" for the traditional, daily events (the default), or "1m" for the new monthly events (part_event.check_freq)
+
+=item payby - allows for one time override of normal customer billing method
 
 =cut
 
@@ -2291,12 +2435,9 @@ sub collect {
 
   $self->select_for_update; #mutex
 
-  my $balance = $self->balance;
-  warn "$me collect customer ". $self->custnum. ": balance $balance\n"
-    if $DEBUG;
-  unless ( $balance > 0 ) { #redundant?????
-    $dbh->rollback if $oldAutoCommit; #hmm
-    return '';
+  if ( $DEBUG ) {
+    my $balance = $self->balance;
+    warn "$me collect customer ". $self->custnum. ": balance $balance\n"
   }
 
   if ( exists($options{'retry_card'}) ) {
@@ -2311,51 +2452,233 @@ sub collect {
     }
   }
 
-  my $extra_sql = '';
-  if ( defined $options{'freq'} && $options{'freq'} eq '1m' ) {
-    $extra_sql = " AND freq = '1m' ";
-  } else {
-    $extra_sql = " AND ( freq = '1d' OR freq IS NULL OR freq = '' ) ";
+  # false laziness w/pay_batch::import_results
+
+  my $due_cust_event = $self->due_cust_event(
+    'time'       => $invoice_time,
+    'check_freq' => $options{'check_freq'},
+  );
+  unless( ref($due_cust_event) ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $due_cust_event;
   }
 
-  foreach my $cust_bill ( $self->open_cust_bill ) {
+  foreach my $cust_event ( @$due_cust_event ) {
 
-    # don't try to charge for the same invoice if it's already in a batch
-    #next if qsearchs( 'cust_pay_batch', { 'invnum' => $cust_bill->invnum } );
+    #XXX lock event
+    
+    #re-eval event conditions (a previous event could have changed things)
+    next unless $cust_event->test_conditions( 'time' => $invoice_time );
 
-    last if $self->balance <= 0;
+    {
+      local $realtime_bop_decline_quiet = 1 if $options{'quiet'};
+      warn "  running cust_event ". $cust_event->eventnum. "\n"
+        if $DEBUG > 1;
 
-    warn "  invnum ". $cust_bill->invnum. " (owed ". $cust_bill->owed. ")\n"
-      if $DEBUG > 1;
-
-    foreach my $part_bill_event ( due_events ( $cust_bill,
-                                               exists($options{'payby'}) 
-					         ? $options{'payby'}
-						 : $self->payby,
-					       $invoice_time,
-					       $extra_sql ) ) {
-
-      last if $cust_bill->owed <= 0  # don't run subsequent events if owed<=0
-           || $self->balance   <= 0; # or if balance<=0
-
-      {
-        local $realtime_bop_decline_quiet = 1 if $options{'quiet'};
-        warn "  do_event " .  $cust_bill . " ". (%options) .  "\n"
-          if $DEBUG > 1;
-
-        if (my $error = $part_bill_event->do_event($cust_bill, %options)) {
+      
+      #if ( my $error = $cust_event->do_event(%options) ) { #XXX %options?
+      if ( my $error = $cust_event->do_event() ) {
+        #XXX wtf is this?  figure out a proper dealio with return value
+        #from do_event
 	  # gah, even with transactions.
 	  $dbh->commit if $oldAutoCommit; #well.
 	  return $error;
 	}
-      }
-
     }
 
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
+
+}
+
+=item due_cust_event [ HASHREF | OPTION => VALUE ... ]
+
+Inserts database records for and returns an ordered listref of new events due
+for this customer, as FS::cust_event objects (see L<FS::cust_event>).  If no
+events are due, an empty listref is returned.  If there is an error, returns a
+scalar error message.
+
+To actually run the events, call each event's test_condition method, and if
+still true, call the event's do_event method.
+
+Options are passed as a hashref or as a list of name-value pairs.  Available
+options are:
+
+=over 4
+
+=item check_freq - Search only for events of this check frequency (how often events of this type are checked); currently "1d" (daily, the default) and "1m" (monthly) are recognized.
+
+=item time - "Current time" for the events.
+
+=item debug - Debugging level.  Default is 0 (no debugging), or can be set to 1 (passed-in options), 2 (traces progress), or 3 (more information)
+
+=item eventtable - Only return events for the specified eventtable (by default, events of all eventtables are returned)
+
+=item objects - Explicitly pass the objects to be tested (typically used with eventtable).
+
+=back
+
+=cut
+
+sub due_cust_event {
+  my $self = shift;
+  my %opt = ref($_[0]) ? %{ $_[0] } : @_;
+
+  #???
+  #my $DEBUG = $opt{'debug'}
+  local($DEBUG) = $opt{'debug'}
+    if defined($opt{'debug'}) && $opt{'debug'} > $DEBUG;
+
+  warn "$me due_cust_event called with options ".
+       join(', ', map { "$_: $opt{$_}" } keys %opt). "\n"
+    if $DEBUG;
+
+  $opt{'time'} ||= time;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  $self->select_for_update; #mutex
+
+  ###
+  # 1: find possible events (initial search)
+  ###
+  
+  my @cust_event = ();
+
+  my @eventtable = $opt{'eventtable'}
+                     ? ( $opt{'eventtable'} )
+                     : FS::part_event->eventtables_runorder;
+
+  foreach my $eventtable ( @eventtable ) {
+
+    my @objects;
+    if ( $opt{'objects'} ) {
+
+      @objects = @{ $opt{'objects'} };
+
+    } else {
+
+      #my @objects = $self->eventtable(); # sub cust_main { @{ [ $self ] }; }
+      @objects = ( $eventtable eq 'cust_main' )
+                   ? ( $self )
+                   : ( $self->$eventtable() );
+
+    }
+
+    my @e_cust_event = ();
+
+    my $cross = "CROSS JOIN $eventtable";
+    $cross .= ' LEFT JOIN cust_main USING ( custnum )'
+      unless $eventtable eq 'cust_main';
+
+    foreach my $object ( @objects ) {
+
+      #this first search uses the condition_sql magic for optimization.
+      #the more possible events we can eliminate in this step the better
+
+      my $cross_where = '';
+      my $pkey = $object->primary_key;
+      $cross_where = "$eventtable.$pkey = ". $object->$pkey();
+
+      my $join = FS::part_event_condition->join_conditions_sql( $eventtable );
+      my $extra_sql =
+        FS::part_event_condition->where_conditions_sql( $eventtable,
+                                                        'time'=>$opt{'time'}
+                                                      );
+      my $order = FS::part_event_condition->order_conditions_sql( $eventtable );
+
+      $extra_sql = "AND $extra_sql" if $extra_sql;
+
+      #here is the agent virtualization
+      $extra_sql .= " AND (    part_event.agentnum IS NULL
+                            OR part_event.agentnum = ". $self->agentnum. ' )';
+
+      $extra_sql .= " $order";
+
+      my @part_event = qsearch( {
+        'select'    => 'part_event.*',
+        'table'     => 'part_event',
+        'addl_from' => "$cross $join",
+        'hashref'   => { 'check_freq' => ( $opt{'check_freq'} || '1d' ),
+                         'eventtable' => $eventtable,
+                         'disabled'   => '',
+                       },
+        'extra_sql' => "AND $cross_where $extra_sql",
+      } );
+
+      if ( $DEBUG > 2 ) {
+        my $pkey = $object->primary_key;
+        warn "      ". scalar(@part_event).
+             " possible events found for $eventtable ". $object->$pkey(). "\n";
+      }
+
+      push @e_cust_event, map { $_->new_cust_event($object) } @part_event;
+
+    }
+
+    warn "    ". scalar(@e_cust_event).
+         " subtotal possible cust events found for $eventtable"
+      if $DEBUG > 1;
+
+    push @cust_event, @e_cust_event;
+
+  }
+
+  warn "  ". scalar(@cust_event).
+       " total possible cust events found in initial search\n"
+    if $DEBUG; # > 1;
+
+  ##
+  # 2: test conditions
+  ##
+  
+  my %unsat = ();
+
+  @cust_event = grep $_->test_conditions( 'time'          => $opt{'time'},
+                                          'stats_hashref' => \%unsat ),
+                     @cust_event;
+
+  warn "  ". scalar(@cust_event). " cust events left satisfying conditions\n"
+    if $DEBUG; # > 1;
+
+  warn "    invalid conditions not eliminated with condition_sql:\n".
+       join('', map "      $_: ".$unsat{$_}."\n", keys %unsat );
+
+  ##
+  # 3: insert
+  ##
+
+  foreach my $cust_event ( @cust_event ) {
+
+    my $error = $cust_event->insert();
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+                                       
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  ##
+  # 4: return
+  ##
+
+  warn "  returning events: ". Dumper(@cust_event). "\n"
+    if $DEBUG > 2;
+
+  \@cust_event;
 
 }
 
@@ -2366,9 +2689,9 @@ events for for retry.  Useful if card information has changed or manual
 retry is desired.  The 'collect' method must be called to actually retry
 the transaction.
 
-Implementation details: For each of this customer's open invoices, changes
-the status of the first "done" (with statustext error) realtime processing
-event to "failed".
+Implementation details: For either this customer, or for each of this
+customer's open invoices, changes the status of the first "done" (with
+statustext error) realtime processing event to "failed".
 
 =cut
 
@@ -2386,25 +2709,52 @@ sub retry_realtime {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  foreach my $cust_bill (
-    grep { $_->cust_bill_event }
-      $self->open_cust_bill
-  ) {
-    my @cust_bill_event =
-      sort { $a->part_bill_event->seconds <=> $b->part_bill_event->seconds }
-        grep {
-               #$_->part_bill_event->plan eq 'realtime-card'
-               $_->part_bill_event->eventcode =~
-                   /\$cust_bill\->(batch|realtime)_(card|ach|lec)/
-                 && $_->status eq 'done'
-                 && $_->statustext
-             }
-          $cust_bill->cust_bill_event;
-    next unless @cust_bill_event;
-    my $error = $cust_bill_event[0]->retry;
+  #a little false laziness w/due_cust_event (not too bad, really)
+
+  my $join = FS::part_event_condition->join_conditions_sql;
+  my $order = FS::part_event_condition->order_conditions_sql;
+
+  #here is the agent virtualization
+  my $agent_virt = " (    part_event.agentnum IS NULL
+                       OR part_event.agentnum = ". $self->agentnum. ' )';
+
+  #XXX this shouldn't be hardcoded, actions should declare it...
+  my @realtime_events = qw(
+    cust_bill_realtime_card
+    cust_bill_realtime_check
+    cust_bill_realtime_lec
+    cust_bill_batch
+  );
+
+  my $is_realtime_event = ' ( '. join(' OR ', map "part_event.action = '$_'",
+                                                  @realtime_events
+                                     ).
+                          ' ) ';
+
+  my @cust_event = qsearchs({
+    'table'     => 'cust_event',
+    'addl_from' => "LEFT JOIN part_event USING ( eventpart ) $join",
+    'hashref'   => { 'status' => 'done' },
+    'extra_sql' => " AND statustext IS NOT NULL AND statustext != '' ".
+                   " AND $is_realtime_event AND $agent_virt $order" # LIMIT 1"
+  });
+
+  my %seen_invnum = ();
+  foreach my $cust_event (@cust_event) {
+
+    #max one for the customer, one for each open invoice
+    my $cust_X = $cust_event->cust_X;
+    next if $seen_invnum{ $cust_event->part_event->eventtable eq 'cust_bill'
+                          ? $cust_X->invnum
+                          : 0
+                        }++
+         or $cust_event->part_event->eventtable eq 'cust_bill'
+            && ! $cust_X->owed;
+
+    my $error = $cust_event->retry;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
-      return "error scheduling invoice event for retry: $error";
+      return "error scheduling event for retry: $error";
     }
 
   }
@@ -2456,6 +2806,22 @@ sub realtime_bop {
   my $payinfo = exists($options{'payinfo'})
                   ? $options{'payinfo'}
                   : $self->payinfo;
+
+  my %method2payby = (
+    'CC'     => 'CARD',
+    'ECHECK' => 'CHEK',
+    'LEC'    => 'LECB',
+  );
+
+  ###
+  # check for banned credit card/ACH
+  ###
+
+  my $ban = qsearchs('banned_pay', {
+    'payby'   => $method2payby{$method},
+    'payinfo' => md5_base64($payinfo),
+  } );
+  return "Banned credit card" if $ban;
 
   ###
   # select a gateway
@@ -3596,17 +3962,38 @@ sub total_unapplied_payments {
   sprintf( "%.2f", $total_unapplied );
 }
 
+=item total_unapplied_refunds
+
+Returns the total unrefunded refunds (see L<FS::cust_refund>) for this
+customer.  See L<FS::cust_refund/unapplied>.
+
+=cut
+
+sub total_unapplied_refunds {
+  my $self = shift;
+  my $total_unapplied = 0;
+  foreach my $cust_refund ( qsearch('cust_refund', {
+    'custnum' => $self->custnum,
+  } ) ) {
+    $total_unapplied += $cust_refund->unapplied;
+  }
+  sprintf( "%.2f", $total_unapplied );
+}
+
 =item balance
 
-Returns the balance for this customer (total_owed minus total_credited
-minus total_unapplied_payments).
+Returns the balance for this customer (total_owed plus total_unrefunded, minus
+total_credited minus total_unapplied_payments).
 
 =cut
 
 sub balance {
   my $self = shift;
   sprintf( "%.2f",
-    $self->total_owed - $self->total_credited - $self->total_unapplied_payments
+      $self->total_owed
+    + $self->total_unapplied_refunds
+    - $self->total_credited
+    - $self->total_unapplied_payments
   );
 }
 
@@ -3624,7 +4011,8 @@ sub balance_date {
   my $self = shift;
   my $time = shift;
   sprintf( "%.2f",
-    $self->total_owed_date($time)
+        $self->total_owed_date($time)
+      + $self->total_unapplied_refunds
       - $self->total_credited
       - $self->total_unapplied_payments
   );
@@ -4068,6 +4456,17 @@ sub cust_pay_void {
     qsearch( 'cust_pay_void', { 'custnum' => $self->custnum } )
 }
 
+=item cust_pay_batch
+
+Returns all batched payments (see L<FS::cust_pay_void>) for this customer.
+
+=cut
+
+sub cust_pay_batch {
+  my $self = shift;
+  sort { $a->_date <=> $b->_date }
+    qsearch( 'cust_pay_batch', { 'custnum' => $self->custnum } )
+}
 
 =item cust_refund
 
@@ -4206,13 +4605,13 @@ Returns a hex triplet color string for this customer's status.
 =cut
 
 use vars qw(%statuscolor);
-%statuscolor = (
+tie my %statuscolor, 'Tie::IxHash',
   'prospect'  => '7e0079', #'000000', #black?  naw, purple
   'active'    => '00CC00', #green
   'inactive'  => '0000CC', #blue
   'suspended' => 'FF9900', #yellow
   'cancelled' => 'FF0000', #red
-);
+;
 
 sub statuscolor { shift->cust_statuscolor(@_); }
 
@@ -4226,6 +4625,20 @@ sub cust_statuscolor {
 =head1 CLASS METHODS
 
 =over 4
+
+=item statuses
+
+Class method that returns the list of possible status strings for customers
+(see L<the status method|/status>).  For example:
+
+  @statuses = FS::cust_main->statuses();
+
+=cut
+
+sub statuses {
+  #my $self = shift; #could be class...
+  keys %statuscolor;
+}
 
 =item prospect_sql
 
@@ -4328,6 +4741,65 @@ sub uncancel_sql { "
     OR 0 = ( $select_count_pkgs )
   )
 "; }
+
+=item balance_sql
+
+Returns an SQL fragment to retreive the balance.
+
+=cut
+
+sub balance_sql { "
+    COALESCE( ( SELECT SUM(charged) FROM cust_bill
+                  WHERE cust_bill.custnum   = cust_main.custnum ), 0)
+  - COALESCE( ( SELECT SUM(paid)    FROM cust_pay
+                  WHERE cust_pay.custnum    = cust_main.custnum ), 0)
+  - COALESCE( ( SELECT SUM(amount)  FROM cust_credit
+                  WHERE cust_credit.custnum = cust_main.custnum ), 0)
+  + COALESCE( ( SELECT SUM(refund)  FROM cust_refund
+                   WHERE cust_refund.custnum = cust_main.custnum ), 0)
+"; }
+
+=item balance_date_sql TIME
+
+Returns an SQL fragment to retreive the balance for this customer, only
+considering invoices with date earlier than TIME. (total_owed_date minus total_credited minus
+total_unapplied_payments).  TIME is specified as an SQL fragment or a numeric
+UNIX timestamp; see L<perlfunc/"time">).  Also see L<Time::Local> and
+L<Date::Parse> for conversion functions.
+
+=cut
+
+sub balance_date_sql {
+  my( $class, $time ) = @_;
+
+  my $owed_sql         = FS::cust_bill->owed_sql;
+  my $unapp_refund_sql = FS::cust_refund->unapplied_sql;
+  #my $unapp_credit_sql = FS::cust_credit->unapplied_sql;
+  my $unapp_credit_sql = FS::cust_credit->credited_sql;
+  my $unapp_pay_sql    = FS::cust_pay->unapplied_sql;
+
+  "
+      COALESCE( ( SELECT SUM($owed_sql) FROM cust_bill
+                    WHERE cust_bill.custnum   = cust_main.custnum
+                      AND cust_bill._date    <= $time             )
+                ,0
+              )
+    + COALESCE( ( SELECT SUM($unapp_refund_sql) FROM cust_refund
+                    WHERE cust_refund.custnum = cust_main.custnum )
+                ,0
+              )
+    - COALESCE( ( SELECT SUM($unapp_credit_sql) FROM cust_credit
+                    WHERE cust_credit.custnum = cust_main.custnum )
+                ,0
+              )
+    - COALESCE( ( SELECT SUM($unapp_pay_sql) FROM cust_pay
+                    WHERE cust_pay.custnum = cust_main.custnum )
+                ,0
+              )
+
+  ";
+
+}
 
 =item fuzzy_search FUZZY_HASHREF [ HASHREF, SELECT, EXTRA_SQL, CACHE_OBJ ]
 
@@ -4552,9 +5024,10 @@ sub smart_search {
       'extra_sql' => "$sql AND $agentnums_sql", #agent virtualization
     } );
 
-    #always do substring & fuzzy,
-    #getting complains searches are not returning enough
-    unless ( @cust_main && $skip_fuzzy ) {  #no exact match, trying substring/fuzzy
+    #no exact match, trying substring/fuzzy
+    #always do substring & fuzzy (unless they're explicity config'ed off)
+    #getting complaints searches are not returning enough
+    unless ( @cust_main  && $skip_fuzzy || $conf->exists('disable-fuzzy') ) {
 
       #still some false laziness w/ search/cust_main.cgi
 
@@ -5158,7 +5631,7 @@ sub generate_letter {
 
   unless(exists($letter_data{returnaddress})){
     my $retadd = join("\n", $conf->config_orbase( 'invoice_latexreturnaddress',
-                                                  $self->_agent_template)
+                                                  $self->agent_template)
                      );
 
     $letter_data{returnaddress} = length($retadd) ? $retadd : '~';
@@ -5227,31 +5700,52 @@ sub agent_invoice_from {
 sub _agent_plandata {
   my( $self, $option ) = @_;
 
-  my $part_bill_event = qsearchs( 'part_bill_event',
-    {
-      'payby'     => $self->payby,
-      'plan'      => 'send_agent',
-      'plandata'  => { 'op'    => '~',
-                       'value' => "(^|\n)agentnum ".
-                                   '([0-9]*, )*'.
-                                  $self->agentnum.
-                                   '(, [0-9]*)*'.
-                                  "(\n|\$)",
-                     },
-    },
-    '',
-    'ORDER BY seconds LIMIT 1'
-  );
+  #yuck.  this whole thing needs to be reconciled better with 1.9's idea of
+  #agent-specific Conf
+  
+  my $agentnum = $self->agentnum;
 
-  return '' unless $part_bill_event;
-
-  if ( $part_bill_event->plandata =~ /^$option (.*)$/m ) {
-    return $1;
-  } else {
-    warn "can't parse part_bill_event eventpart#". $part_bill_event->eventpart.
-         " plandata for $option";
+  my $part_event_option =
+    qsearchs({
+      'table'     => 'part_event_option',
+      'addl_from' => q{
+        LEFT JOIN part_event USING ( eventpart )
+        LEFT JOIN part_event_option AS peo_agentnum
+          ON ( part_event.eventpart = peo_agentnum.eventpart
+               AND peo_agentnum.optionname = 'agentnum'
+               AND peo_agentnum.optionvalue ~ '(^|,)agentnum(,|$)'
+             )
+        LEFT JOIN part_event_option AS peo_cust_bill_age
+          ON ( part_event.eventpart = peo_cust_bill_age.eventpart
+               AND peo_cust_bill_age.optionname = 'cust_bill_age'
+             )
+      },
+      #'hashref'   => { 'optionname' => $option },
+      'hashref'   => { 'part_event_option.optionname' => $option },
+      'extra_sql' => " AND event = 'cust_bill_send_agent' ".
+                     " AND peo_agentnum.optionname = 'agentnum' ".
+                     " AND agentnum IS NULL OR agentnum = $agentnum ".
+                     " ORDER BY
+                        CASE WHEN peo_cust_bill_age.optionname != 'cust_bill_age'
+                        THEN -1
+                        ELSE EXTRACT( EPOCH FROM
+                                        REPLACE( peo_cust_bill_age.optionvalue,
+                                                 'm',
+                                                 'mon'
+                                               )::interval
+                                    )
+                       END
+                       , part_event.weight".
+                     " LIMIT 1"
+    });
+    
+  unless ( $part_event_option ) {
+    return $self->agent->invoice_template || ''
+      if $option eq '$agent_templatename';
     return '';
   }
+
+  $part_event_option->optionvalue;
 
 }
 
@@ -5278,6 +5772,8 @@ Birthdates rely on negative epoch values.
 
 The payby for card/check batches is broken.  With mixed batching, bad
 things will happen.
+
+B<collect> I<invoice_time> should be renamed I<time>, like B<bill>.
 
 =head1 SEE ALSO
 

@@ -64,8 +64,12 @@
 %>
 <%init>
 
+my $curuser = $FS::CurrentUser::CurrentUser;
+
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Billing event reports');
+  unless $curuser->access_right('Billing event reports')
+      or $curuser->access_right('View customer billing events')
+         && $cgi->param('invnum') =~ /^(\d+)$/;
 
 my $title = $cgi->param('failed')
               ? 'Failed invoice events'
@@ -91,6 +95,10 @@ if ( $cgi->param('failed') ) {
 
 if ( $cgi->param('part_bill_event.payby') =~ /^(\w+)$/ ) {
   push @search, "part_bill_event.payby = '$1'";
+}
+
+if ( $cgi->param('invnum') =~ /^(\d+)$/ ) {
+  push @search, "cust_bill_event.invnum = '$1'";
 }
 
 #here is the agent virtualization
@@ -123,7 +131,11 @@ my $conf = new FS::Conf;
 
 my $failed = $cgi->param('failed');
 
-my $html_init = join("\n", map {
+my $html_init = '
+    <FONT SIZE="+1">Invoice events are the deprecated, old-style actions taken o
+n open invoices.  See Reports-&gt;Billing events-&gt;Billing events for current event reports.</FONT><BR><BR>';
+
+$html_init .= join("\n", map {
   ( my $action = $_ ) =~ s/_$//;
   include('/elements/progress-init.html',
             $_.'form',

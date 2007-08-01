@@ -5,54 +5,11 @@ Where a customer heard about your service. Tracked for informational purposes.
 
 <A HREF="<% $p %>edit/part_referral.html"><I>Add a new advertising source</I></A>
 <BR><BR>
-%
-%  my $today = timelocal(0, 0, 0, (localtime(time))[3..5] );
-%  my %after;
-%  tie %after, 'Tie::IxHash',
-%    'Today'         =>        0,
-%    'Yesterday'     =>    86400, # 60sec * 60min * 24hrs
-%    'Past week'     =>   518400, # 60sec * 60min * 24hrs * 6days
-%    'Past 30 days'  =>  2505600, # 60sec * 60min * 24hrs * 29days 
-%    'Past 60 days'  =>  5097600, # 60sec * 60min * 24hrs * 59days 
-%    'Past 90 days'  =>  7689600, # 60sec * 60min * 24hrs * 89days 
-%    'Past 6 months' => 15724800, # 60sec * 60min * 24hrs * 182days 
-%    'Past year'     => 31486000, # 60sec * 60min * 24hrs * 364days 
-%    'Total'         => $today,
-%  ;
-%  my %before = (
-%    'Today'         =>   86400, # 60sec * 60min * 24hrs
-%    'Yesterday'     =>       0,
-%    'Past week'     =>   86400, # 60sec * 60min * 24hrs
-%    'Past 30 days'  =>   86400, # 60sec * 60min * 24hrs
-%    'Past 60 days'  =>   86400, # 60sec * 60min * 24hrs
-%    'Past 90 days'  =>   86400, # 60sec * 60min * 24hrs
-%    'Past 6 months' =>   86400, # 60sec * 60min * 24hrs
-%    'Past year'     =>   86400, # 60sec * 60min * 24hrs
-%    'Total'         =>   86400, # 60sec * 60min * 24hrs
-%  );
-%
-%  my $curuser = $FS::CurrentUser::CurrentUser;
-%
-%  my $statement = "SELECT COUNT(*) FROM h_cust_main
-%                    WHERE history_action = 'insert'
-%                      AND refnum = ?
-%                      AND history_date >= ?
-%		      AND history_date < ?
-%		      AND ". $curuser->agentnums_sql;
-%  my $sth = dbh->prepare($statement)
-%    or die dbh->errstr;
-%
-%  my $show_agentnums = scalar($curuser->agentnums);
-%
-%
-
 
 <% include('/elements/table-grid.html') %>
 % my $bgcolor1 = '#eeeeee';
 %   my $bgcolor2 = '#ffffff';
 %   my $bgcolor = '';
-%
-
 
 <TR>
   <TH CLASS="grid" BGCOLOR="#cccccc" COLSPAN=2 ROWSPAN=2>Advertising source</TH>
@@ -61,7 +18,7 @@ Where a customer heard about your service. Tracked for informational purposes.
     <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2>Agent</TH>
 % } 
 
-  <TH CLASS="grid" BGCOLOR="#cccccc" COLSPAN=<% scalar(keys %after) %>>Customers</TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc" COLSPAN=<% scalar(keys %after) %>>Customers and Packages</TH>
 </TR>
 % for my $period ( keys %after ) { 
 
@@ -69,7 +26,7 @@ Where a customer heard about your service. Tracked for informational purposes.
 % } 
 
 </TR>
-%
+
 %foreach my $part_referral ( FS::part_referral->all_part_referral(1) ) {
 %
 %  if ( $bgcolor eq $bgcolor1 ) {
@@ -79,8 +36,6 @@ Where a customer heard about your service. Tracked for informational purposes.
 %  }
 %
 %  $a = 0;
-%
-%
 
       <TR>
 
@@ -105,34 +60,63 @@ Where a customer heard about your service. Tracked for informational purposes.
           <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $part_referral->agentnum ? $part_referral->agent->agent : '(global)' %></TD>
 % } 
 % for my $period ( keys %after ) {
-%          $sth->execute( $part_referral->refnum,
-%                         $today-$after{$period},
-%                         $today+$before{$period},
-%          ) or die $sth->errstr;
-%          my $number = $sth->fetchrow_arrayref->[0];
-%        
+%          my @param = ( $part_referral->refnum,
+%                        $today-$after{$period},
+%                        $today+$before{$period},
+%                      );
+%          $cust_sth->execute(@param) or die $cust_sth->errstr;
+%          my $num_cust = $cust_sth->fetchrow_arrayref->[0];
+%          $pkg_sth->execute(@param) or die $pkg_sth->errstr;
+%          my $num_pkg = $pkg_sth->fetchrow_arrayref->[0];
 
-          <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ALIGN="right"><% $number %></TD>
+          <TD CLASS="inv" BGCOLOR="<% $bgcolor %>" ALIGN="right">
+            <TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0>
+              <TR>
+                <TD ALIGN="right"><B><% $num_cust %></B></TD>
+                <TD ALIGN="left">customers</TD>
+              </TR>
+              <TR>
+                <TD ALIGN="right"><B><% $num_pkg %></B></TD>
+                <TD ALIGN="left">packages</TD>
+              </TR>
+            </TABLE>
+          </TD>
 % } 
 
       </TR>
 % } 
 %
-%  $statement =~ s/AND refnum = \?//;
-%  $sth = dbh->prepare($statement)
+%  $cust_statement =~ s/AND refnum = \?//;
+%  $cust_sth = dbh->prepare($cust_statement)
 %    or die dbh->errstr;
-%
+%  $pkg_statement =~ s/AND h_pkg_referral\.refnum = \?//;
+%  $pkg_sth = dbh->prepare($pkg_statement)
+%    or die dbh->errstr;
 
       <TR>
         <TD BGCOLOR="#dddddd" ALIGN="center" COLSPAN=3><B>Total</B></TD>
 % for my $period ( keys %after ) {
-%          $sth->execute( $today-$after{$period},
-%                         $today+$before{$period},
-%          ) or die $sth->errstr;
-%          my $number = $sth->fetchrow_arrayref->[0];
-%        
+%          my @param = ( $today-$after{$period},
+%                        $today+$before{$period},
+%                      );
+%          $cust_sth->execute( @param ) or die $cust_sth->errstr;
+%          my $num_cust = $cust_sth->fetchrow_arrayref->[0];
+%          $pkg_sth->execute(@param) or die $pkg_sth->errstr;
+%          my $num_pkg = $pkg_sth->fetchrow_arrayref->[0];
 
-          <TD BGCOLOR="#dddddd" ALIGN="right"><B><% $number %><B></TD>
+          <TD CLASS="inv" BGCOLOR="#dddddd" ALIGN="right">
+            <TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0>
+              <TR>
+                <TD ALIGN="right"><B><% $num_cust %></B></TD>
+                <TD ALIGN="left">customers</TD>
+              </TR>
+              <TR>
+                <TD ALIGN="right"><B><% $num_pkg %></B></TD>
+                <TD ALIGN="left">packages</TD>
+              </TR>
+            </TABLE>
+          </TD>
+
 % } 
 
       </TR>
@@ -140,8 +124,59 @@ Where a customer heard about your service. Tracked for informational purposes.
   </BODY>
 </HTML>
 <%init>
+
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration')
       || $FS::CurrentUser::CurrentUser->access_right('Edit advertising sources')
       || $FS::CurrentUser::CurrentUser->access_right('Edit global advertising sources');
+
+my $today = timelocal(0, 0, 0, (localtime(time))[3..5] );
+
+tie my %after, 'Tie::IxHash',
+  'Today'         =>        0,
+  'Yesterday'     =>    86400, # 60sec * 60min * 24hrs
+  'Past week'     =>   518400, # 60sec * 60min * 24hrs * 6days
+  'Past 30 days'  =>  2505600, # 60sec * 60min * 24hrs * 29days 
+  'Past 60 days'  =>  5097600, # 60sec * 60min * 24hrs * 59days 
+  'Past 90 days'  =>  7689600, # 60sec * 60min * 24hrs * 89days 
+  'Past 6 months' => 15724800, # 60sec * 60min * 24hrs * 182days 
+  'Past year'     => 31486000, # 60sec * 60min * 24hrs * 364days 
+  'Total'         => $today,
+;
+my %before = (
+  'Today'         =>   86400, # 60sec * 60min * 24hrs
+  'Yesterday'     =>       0,
+  'Past week'     =>   86400, # 60sec * 60min * 24hrs
+  'Past 30 days'  =>   86400, # 60sec * 60min * 24hrs
+  'Past 60 days'  =>   86400, # 60sec * 60min * 24hrs
+  'Past 90 days'  =>   86400, # 60sec * 60min * 24hrs
+  'Past 6 months' =>   86400, # 60sec * 60min * 24hrs
+  'Past year'     =>   86400, # 60sec * 60min * 24hrs
+  'Total'         =>   86400, # 60sec * 60min * 24hrs
+);
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+my $show_agentnums = ( scalar($curuser->agentnums) > 1 );
+
+my $cust_statement = "SELECT COUNT(*) FROM h_cust_main
+                       WHERE history_action = 'insert'
+                         AND refnum = ?
+                         AND history_date >= ?
+                         AND history_date < ?
+                         AND ". $curuser->agentnums_sql;
+my $cust_sth = dbh->prepare($cust_statement)
+  or die dbh->errstr;
+
+my $pkg_statement = "SELECT COUNT(*) FROM h_pkg_referral
+                       LEFT JOIN cust_pkg  USING ( pkgnum )
+                       LEFT JOIN cust_main USING ( custnum )
+                       WHERE history_action = 'insert'
+                         AND h_pkg_referral.refnum = ?
+                         AND history_date >= ?
+                         AND history_date < ?
+                         AND ". $curuser->agentnums_sql;
+my $pkg_sth = dbh->prepare($pkg_statement)
+  or die dbh->errstr;
+
 </%init>

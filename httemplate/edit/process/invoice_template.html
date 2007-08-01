@@ -1,0 +1,15 @@
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $conf = new FS::Conf;
+
+my $confname = $cgi->param('confname');
+my $value = $cgi->param('value');
+
+$conf->set($confname, $value);
+
+$cgi->redirect(popurl(3). 'browse/invoice_template.html');
+
+</%init> 

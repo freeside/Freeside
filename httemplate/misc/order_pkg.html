@@ -1,0 +1,67 @@
+<% include('/elements/header-popup.html', 'Order new package' ) %>
+
+<SCRIPT TYPE="text/javascript">
+function enable_order_pkg () {
+  if ( document.OrderPkgForm.pkgpart.selectedIndex > 0 ) {
+    document.OrderPkgForm.submit.disabled = false;
+  } else {
+    document.OrderPkgForm.submit.disabled = true;
+  }
+}
+</SCRIPT>
+
+<FORM NAME="OrderPkgForm" ACTION="<% $p %>edit/process/quick-cust_pkg.cgi" METHOD="POST">
+
+<INPUT TYPE="hidden" NAME="custnum" VALUE="<% $cust_main->custnum %>">
+
+<% ntable("#cccccc", 2) %>
+<TR>
+  <TH ALIGN="right">Package</TH>
+  <TD>
+    <SELECT NAME="pkgpart" onChange="enable_order_pkg()"><OPTION>Select package
+
+%foreach my $part_pkg (
+%  qsearch( 'part_pkg', { 'disabled' => '' }, '',
+%           ' AND 0 < ( SELECT COUNT(*) FROM type_pkgs '.
+%           '             WHERE typenum = '. $cust_main->agent->typenum.
+%           '             AND type_pkgs.pkgpart = part_pkg.pkgpart )'
+%         )
+%) {
+
+      <OPTION VALUE="<% $part_pkg->pkgpart %>"><% $part_pkg->pkg %> - <% $part_pkg->comment %>
+
+% } 
+
+    </SELECT>
+  </TD>
+</TR>
+
+% if ( $conf->exists('pkg_referral') ) {
+  <% include('/elements/tr-select-part_referral.html',
+               'curr_value'    => scalar( $cgi->param('refnum') ), #get rid of empty_label first# || $cust_main->refnum,
+               'disable_empty' => 1,
+               'multiple'      => $conf->exists('pkg_referral-multiple'),
+            )
+  %>
+% }
+
+</TABLE>
+
+<BR>
+<INPUT NAME="submit" TYPE="submit" VALUE="Order Package" disabled>
+
+</FORM>
+<%init>
+
+my $conf = new FS::Conf;
+
+my($query) = $cgi->keywords;
+$query =~ /^(\d+)$/;
+my $custnum = $1;
+my $cust_main = qsearchs({
+  'table'     => 'cust_main',
+  'hashref'   => { 'custnum' => $custnum },
+  'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+});
+
+</%init>

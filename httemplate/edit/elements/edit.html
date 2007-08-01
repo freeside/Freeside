@@ -1,214 +1,406 @@
-%
-%
-%  # options example...
-%  #
-%  # 'name'  =>
-%  # 'table' =>
-%  # #? 'primary_key' => #required when the dbdef doesn't know...???
-%  # 'labels' => {
-%  #               'column' => 'Label',
-%  #             }
-%  #
-%  # listref - each item is a literal column name (or method) or hashref
-%  #                                                          or (notyet) coderef
-%  # if not specified all columns (except for the primary key) will be editable
-%  # 'fields' => [
-%  #               'columname',
-%  #               { 'field' => 'another_columname',
-%  #                 'type'  => 'text', #text
-%  #                                    #checkbox
-%  #                                    #select
-%  #                                    #hidden - hidden value from object
-%  #                                    #fixed - display fixed value from here
-%  #                                    #fixedhidden - hidden value from here
-%  #                 'value' => 'Y', #for checkbox, fixed, fixedhidden
-%  #               },
-%  #             ]
-%  #
-%  # 'menubar'     => '', #menubar arrayref
-%  #
-%  # #run when re-displaying with an error
-%  # 'error_callback' => sub { my( $cgi, $object ) = @_; },
-%  #
-%  # #run when editing
-%  # 'edit_callback' => sub { my( $cgi, $object ) = @_; },
-%  #
-%  # # returns a hashref for the new object
-%  # 'new_hashref_callback'
-%  #
-%  # #run when adding
-%  # 'new_callback' => sub { my( $cgi, $object ) = @_; },
-%  #
-%  # #XXX describe
-%  # 'field_callback' => sub { },
-%  #
-%  # #string or coderef of additional HTML to add before </TABLE>
-%  # 'html_table_bottom' => '',
-%  #
-%  # 'viewall_dir' => '', #'search' or 'browse', defaults to 'search'
-%  #
-%  # 'html_bottom' => '', #string
-%  # 'html_bottom' => sub {
-%  #                        my $object = shift;
-%  #                        # ...
-%  #                        "html_string";
-%  #                      },
-%  #
-%  # # overrides default popurl(1)."process/$table.html"
-%  # 'post_url' => popurl(1).'process/something', 
-%
-%  my(%opt) = @_;
-%
-%  #false laziness w/process.html
-%  my $table = $opt{'table'};
-%  my $class = "FS::$table";
-%  my $pkey = dbdef->table($table)->primary_key; #? $opt{'primary_key'} || 
-%  my $fields = $opt{'fields'}
-%               #|| [ grep { $_ ne $pkey } dbdef->table($table)->columns ];
-%               || [ grep { $_ ne $pkey } fields($table) ];
-%  #my @actualfields = map { ref($_) ? $_->{'field'} : $_ } @$fields;
-%
-%  my $object;
-%  if ( $cgi->param('error') ) {
-%
-%    $object = $class->new( {
-%      map { $_ => scalar($cgi->param($_)) } fields($table)
-%    });
-%
-%    &{$opt{'error_callback'}}($cgi, $object)
-%      if $opt{'error_callback'};
-%
-%  } elsif ( $cgi->keywords || $cgi->param($pkey) ) { #editing
-%
-%    my $value;
-%    if ( $cgi->param($pkey) ) {
-%      $value = $cgi->param($pkey)
-%    } else { 
-%      my( $query ) = $cgi->keywords;
-%      $value = $query;
-%    }
-%    $value =~ /^(\d+)$/ or die "unparsable $pkey";
-%    $object = qsearchs( $table, { $pkey => $1 } );
-%    warn "$table $pkey => $1"
-%      if $opt{'debug'};
-%
-%    &{$opt{'edit_callback'}}($cgi, $object)
-%      if $opt{'edit_callback'};
-%
-%  } else { #adding
-%
-%    my $hashref = $opt{'new_hashref_callback'}
-%                    ? &{$opt{'new_hashref_callback'}}
-%                    : {};
-%
-%    $object = $class->new( $hashref );
-%
-%    &{$opt{'new_callback'}}($cgi, $object)
-%      if $opt{'new_callback'};
-%
-%  }
-%
-%  my $action = $object->$pkey() ? 'Edit' : 'Add';
-%
-%  my $title = "$action $opt{'name'}";
-%
-%  my $viewall_url = $p . ( $opt{'viewall_dir'} || 'search' ) . "/$table.html";
-%  $viewall_url = $opt{'viewall_url'} if $opt{'viewall_url'};  
-%
-%  my @menubar = ();
-%  if ( $opt{'menubar'} ) {
-%    @menubar = @{ $opt{'menubar'} };
-%  } else {
-%    @menubar = (
-%      'Main menu' => $p, #eventually get rid of this when the ACL/UI update is done
-%      #eventually use Lingua::bs to pluralize
-%      "View all $opt{'name'}s" => $viewall_url,
-%    );
-%  }
-%
-%
+<%doc>
+
+Example:
+
+  include( 'elements/edit.html',  
+    'name'  =>
+    'table' =>
+    #? 'primary_key' => #required when the dbdef doesn't know...???
+    'labels' => {
+                  'column' => 'Label',
+                }
+   
+    listref - each item is a literal column name (or method) or hashref
+                                                             or (notyet) coderef
+    if not specified all columns (except for the primary key) will be editable
+    'fields' => [
+                  'columname',
+                  { 'field' => 'another_columname',
+                    'type'  => 'text', #text
+                                       #money
+                                       #checkbox
+                                       #select
+                                       #selectlayers
+                                       #title
+                                       #hidden - hidden value from object
+                                       #fixed - display fixed value from here
+                                       #fixedhidden - hidden value from here
+                    'value' => 'Y', #for checkbox, title, fixed, fixedhidden
+                    'disabled' => 0,
+                    'onchange' => 'javascript_function',
+                    'm2name_table'   => 'table_name',   #only tested w/
+                                                        # selectlayers so far
+                                                        # might work w/select
+                                                        # dunno others
+                    'm2name_namecol' => 'name_column',  # 
+                    'm2name_label'   => 'Label',        #
+                    'm2name_new_default' => \@table_name_objects, #default
+                                                                  #m2name
+                                                                  #objects for
+                                                                  #new records
+                    'm2name_error_callback' => sub { my($cgi, $object) = @_; },
+                    'm2name_remove_warnings' => \%warnings, #hashref of warning
+                                                            #messages for
+                                                            #m2name removal
+                    'm2name_new_js' => 'function_name', #javascript function
+                                                        #called on spawned rows
+                                                        #(one arg: new_element)
+                    'm2name_remove_js' => 'function_name', #js function called
+                                                           #when a row is
+                                                           #deleted
+                                                           #(three args:
+                                                           # value, text,
+                                                           #  'no_match')
+                    #layer_fields & layer_values_callback only for selectlayer
+                    'layer_fields' => [
+                                        'fieldname'     => 'Label',
+                                        'another_field' => {
+                                          label=>'Label',
+                                          type =>'text', #text, money
+                                        },
+                                      ],
+                    'layer_values_callback' =>
+                      sub {
+                            my( $cgi, $object ) = @_;
+                            { 'layer'  => { 'fieldname'  => 'current_value',
+                                            'fieldname2' => 'field2value',
+                                            ...
+                                          },
+                              'layer2' => { 'l2fieldname' => 'l2value',
+                                            ...
+                                          },
+                              ...
+                            };
+                          },
+                  },
+                ]
+   
+    'menubar'     => '', #menubar arrayref
+
+    #agent virtualization
+    'agent_virt'       => 1,
+    'agent_null_right' => 'Access Right Name',
+   
+    #run when re-displaying with an error
+    'error_callback' => sub { my( $cgi, $object, $fields_listref ) = @_; },
+   
+    #run when editing
+    'edit_callback' => sub { my( $cgi, $object, $fields_listref ) = @_; },
+   
+    # returns a hashref for the new object
+    'new_hashref_callback'
+   
+    #run when adding
+    'new_callback' => sub { my( $cgi, $object, $fields_listref ) = @_; },
+   
+    #XXX describe
+    'field_callback' => sub { },
+   
+    #string or coderef of additional HTML to add before </TABLE>
+    'html_table_bottom' => '',
+   
+    'viewall_dir' => '', #'search' or 'browse', defaults to 'search'
+   
+    'html_bottom' => '', #string
+    'html_bottom' => sub {
+                           my $object = shift;
+                           # ...
+                           "html_string";
+                         },
+   
+    # overrides default popurl(1)."process/$table.html"
+    'post_url' => popurl(1).'process/something', 
+  );
+
+</%doc>
+
 <% include("/elements/header.html", $title,
               include( '/elements/menubar.html', @menubar )
            )
 %>
-% if ( $cgi->param('error') ) { 
 
+% if ( $cgi->param('error') ) { 
   <FONT SIZE="+1" COLOR="#ff0000">Error: <% $cgi->param('error') %></FONT>
   <BR><BR>
 % } 
 
 % my $url = $opt{'post_url'} || popurl(1)."process/$table.html";
 
-<FORM ACTION="<% $url %>" METHOD=POST>
+<FORM ACTION="<% $url %>" METHOD=POST NAME="edit_topform">
+
 <INPUT TYPE="hidden" NAME="svcdb" VALUE="<% $table %>">
 <INPUT TYPE="hidden" NAME="<% $pkey %>" VALUE="<% $object->$pkey() %>">
+
 <% ( $opt{labels} && exists $opt{labels}->{$pkey} )
       ? $opt{labels}->{$pkey}
       : $pkey
 %>
 #<% $object->$pkey() || "(NEW)" %>
 
-<% ntable("#cccccc",2) %>
+%# <% ntable("#cccccc",0) %>
+<TABLE ID="OneTrueTable" BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>
+
+% my $g_row = 0;
 % foreach my $f ( map { ref($_) ? $_ : {'field'=>$_} }
 %                       @$fields
 %                 ) {
 %
-%    &{ $opt{'field_callback'} }( $f )
-%      if $opt{'field_callback'};
+%   &{ $opt{'field_callback'} }( $f )
+%     if $opt{'field_callback'};
 %
-%    my $field = $f->{'field'};
-%    my $type = $f->{'type'} ||= 'text';
+%   my $field = $f->{'field'};
+%   my $type = $f->{'type'} ||= 'text';
 %
+%   my $label = ( $opt{labels} && exists $opt{labels}->{$field} )
+%                   ? $opt{labels}->{$field}
+%                   : $field;
 %
-
-
-  <TR>
-
-    <TD ALIGN="right">
-      <% ( $opt{labels} && exists $opt{labels}->{$field} )
-              ? $opt{labels}->{$field}
-              : $field
-      %>
-    </TD>
-
-% if ( $type eq 'fixed' ) { 
-
-      <TD BGCOLOR="#dddddd"><% $f->{'value'} %></TD>
-      <INPUT TYPE="hidden" NAME="<% $field %>" VALUE="<% $f->{'value'} %>">
-
-% } elsif ( $type eq 'fixedhidden' ) {
-
-      <INPUT TYPE="hidden" NAME="<% $field %>" VALUE="<% $f->{'value'} %>">
-
-% } elsif ( $type eq 'checkbox' ) { 
-
-      <TD>
-        <INPUT TYPE="checkbox" NAME="<% $field %>" VALUE="<% $f->{'value'} %>" <% $object->$field() eq $f->{'value'} ? ' CHECKED' : '' %>>
-      </TD>
-
-% } elsif ( $type eq 'select' ) { 
-
-      <TD>
-        <SELECT NAME="<% $field %>" 
-%     my $aref = $f->{'value'}{'values'};
-%     my $vkey = $f->{'value'}{'vcolumn'};
-%     my $ckey = $f->{'value'}{'ccolumn'};
-%     foreach my $v (@$aref) {
-	  <OPTION <% ($object->$field() eq $v->$vkey) ? 'SELECTED' : '' %>
-	    VALUE="<% $v->$vkey %>"><% $v->$ckey %></OPTION>
+%   my $onchange = $f->{'onchange'};
+%
+%   my $layer_values = {};
+%   if ( $f->{'layer_values_callback'} && ! $f->{'m2name_table'} ) {
+%     $layer_values = &{ $f->{'layer_values_callback'} }( $cgi, $object );
+%   }
+%   warn "layer values: ". Dumper($layer_values)
+%     if $opt{'debug'};
+%
+%   my %include_common = (
+%     #checkbox, title
+%     #& deprecated weird value hashref used only by reason.html
+%     'value'         => $f->{'value'},
+%
+%     #select(-*)
+%     'options'       => $f->{'options'},
+%     'labels'        => $f->{'labels'},
+%     'multiple'      => $f->{'multiple'},
+%     'disable_empty' => $f->{'disable_empty'},
+%     #select-reason
+%     'reason_class'  => $f->{'reason_class'},
+%
+%     #selectlayers
+%     'layer_fields'  => $f->{'layer_fields'},
+%     'layer_values'  => $layer_values,
+%     'html_between'  => $f->{'html_between'},
+%   );
+%
+%   my $layer_prefix_on = '';
+%
+%   my $include_sub = sub {
+%     my %opt = @_;
+%
+%     my $fieldnum   = delete $opt{'fieldnum'};
+%
+%     my $include = $type;
+%     $include = "input-$include" if $include =~ /^(text|money)$/;
+%     $include = "tr-$include" unless $include eq 'hidden';
+%
+%     $include_common{'layer_prefix'} = "$field$fieldnum."
+%       if $layer_prefix_on;
+%
+%     my @include = 
+%     ( "/elements/$include.html",
+%         'field'      => "$field$fieldnum",
+%         'id'         => "$field$fieldnum", #separate?
+%         'label_id'   => $field."_label$fieldnum", #don't want field0_label0...
+%         %include_common,
+%         %opt,
+%     );
+%     @include;
+%   };
+%
+%   $g_row++;
+%   $g_row++ if $type eq 'title';
+%
+%   my $fieldnum = '';
+%   my $curr_value = '';
+%   if ( $f->{'m2name_table'} ) { #XXX test this for all types of fields
+%     my $table = $f->{'m2name_table'};
+%     my $col   = $f->{'m2name_namecol'};
+%     $fieldnum = 0;
+%     $layer_prefix_on = 1;
+%     #print out the fields for the existing m2names
+%     my @existing = ();
+%     if ( $mode eq 'error' ) {
+%       @existing = &{ $f->{'m2name_error_callback'} }( $cgi, $object );
+%     } elsif ( $object->$pkey() ) { # $mode eq 'edit'
+%       @existing = $object->$table();
+%     } elsif ( $f->{'m2name_new_default'} ) { # && $mode eq 'new'
+%       @existing = @{ $f->{'m2name_new_default'} };
 %     }
-	</SELECT>
-      </TD>
+%     foreach my $name_obj ( @existing ) {
+%
+%       my $ex_label = '<INPUT TYPE="button" VALUE="X" TITLE="Remove this '.
+%                      lc($f->{'m2name_label'}).
+%                      qq(" onClick="remove_$field($fieldnum);").
+%                      ' STYLE="color:#ff0000;font-weight:bold;'.
+%                              'padding-left:2px;padding-right:2px"'.
+%                      '>&nbsp;'. ($f->{'m2name_label'} || $field ). ' ';
+%       
+%       if ( $f->{'layer_values_callback'} ) {
+%         my %switches = ( 'mode' => $mode );
+%         $layer_values =
+%           &{ $f->{'layer_values_callback'} }( $cgi, $name_obj, \%switches );
+%       }
+%       warn "layer values: ". Dumper($layer_values)
+%         if $opt{'debug'};
+%
+%       my @existing = &{ $include_sub }(
+%         'label'        => $ex_label,
+%         'fieldnum'     => $fieldnum,
+%         'curr_value'   => $name_obj->$col(),
+%         'onchange'     => $onchange,
+%         'layer_values' => $layer_values,
+%         'cell_style'   => ( $fieldnum ? 'border-top:1px solid black' : '' ),
+%       );
 
-% } else { 
+        <% include( @existing ) %>
 
-      <TD>
-        <INPUT TYPE="<% $type %>" NAME="<% $field %>" VALUE="<% $object->$field() %>">
-      <TD>
+%       $fieldnum++;
+%       $g_row++;
+%     }
+%     #$field .= $fieldnum;
+%     $onchange .= "\nspawn_$field(what);";
+%   } else {
+%     $curr_value = $object->$field();
+%   }
+%
+%   my @include = &{ $include_sub }(
+%     'label'      => $label,
+%     'fieldnum'   => $fieldnum,
+%     'curr_value' => $curr_value,
+%     'onchange'   => $onchange,
+%     'cell_style'   => ( $fieldnum ? 'border-top:1px solid black' : '' ),
+%   );
 
-% } 
+    <% include( @include ) %>
 
-  </TR>
+%   if ( $f->{'m2name_table'} ) {
+
+      <SCRIPT TYPE="text/javascript">
+
+        var rownum = <% $g_row %>;
+        var fieldnum = <% $fieldnum %>;
+
+        function spawn_<%$field%>(what) {
+
+          // only spawn if we're the last element... return if not
+
+          var field_regex = /(\d+)$/;
+          var match = field_regex.exec(what.name);
+          if ( !match ) {
+            alert(what.name + " didn't match?!");
+            return;
+          }
+          if ( match[1] != fieldnum ) {
+            return;
+          }
+
+          // change the label on the last entry & add a remove button
+          var prev_label = document.getElementById('<% $field %>_label' + fieldnum );
+          prev_label.innerHTML = '<INPUT TYPE="button" VALUE="X" TITLE="Remove this <% lc($f->{'m2name_label'}) %>" onClick="remove_<% $field %>(' + fieldnum + ');" STYLE="color:#ff0000;font-weight:bold;padding-left:2px;padding-right:2px" >&nbsp;<% $f->{'m2name_label'} || $field %>';
+
+          fieldnum++;
+
+          //get the new widget
+
+%         $include[0] =~ s(^/elements/tr-)(/elements/);
+%         my @layer_opt = ( @include,
+%                           'field'        => $field."MAGIC_NUMBER",
+%                           'layer_prefix' => $field."MAGIC_NUMBER.",
+%                         );
+
+          var newrow =  <% include(@layer_opt, html_only=>1) |js_string %>;
+
+%         if ( $type eq 'selectlayers' ) { #until the rest have html/js_only
+            var newfunc = <% include(@layer_opt, js_only  =>1) |js_string %>;
+%         } else {
+            var newfunc = '';
+%         }
+
+          // substitute in the new field name
+          var magic_regex = /MAGIC_NUMBER/g;
+          newrow  = newrow.replace(  magic_regex, fieldnum );
+          newfunc = newfunc.replace( magic_regex, fieldnum );
+
+          // evaluate new_func
+          if (window.ActiveXObject) {
+            window.execScript(newfunc);
+          } else { /* (window.XMLHttpRequest) */
+            //window.eval(newfunc);
+            setTimeout(newfunc, 0);
+          }
+
+          // add new row
+
+          var table = document.getElementById('OneTrueTable');
+
+          var row = table.insertRow(rownum++);
+
+          var label_cell = document.createElement('TD');
+
+          label_cell.id = '<% $field %>_label' + fieldnum;
+
+          label_cell.style.textAlign = "right";
+          label_cell.style.verticalAlign = "top";
+          label_cell.style.borderTop = "1px solid black";
+          label_cell.style.paddingTop = "5px";
+
+          label_cell.innerHTML = '<% $label %>';
+
+          row.appendChild(label_cell);
+          
+          var widget_cell = document.createElement('TD');
+
+          widget_cell.style.borderTop = "1px solid black";
+          widget_cell.style.paddingTop = "3px";
+
+          widget_cell.innerHTML = newrow;
+
+          row.appendChild(widget_cell);
+
+%         if ( $f->{'m2name_new_js'} ) {
+            // take out items selected in previous dropdowns
+            var new_element = document.getElementById("<%$field%>" + fieldnum );
+            <% $f->{'m2name_new_js'} %>(new_element);
+
+            if ( new_element.length < 2 ) {
+              //just the ** Select new **, so don't display the row
+              row.style.display = 'none';
+            }
+%         }
+
+        }
+
+        function remove_<%$field%>(remove_fieldnum) {
+          //alert("remove <%$field%> " + remove_fieldnum);
+          var select = document.getElementById('<%$field%>' + remove_fieldnum);
+
+%         my $warnings = $f->{'m2name_remove_warnings'};
+%         if ( $warnings ) {
+            var sel_value = select.options[select.selectedIndex].value;
+%           foreach my $value ( keys %$warnings ) {
+              if ( sel_value == '<% $value %>' ) {
+                if ( ! confirm( <% $warnings->{$value} |js_string %> ) ) {
+                  return;
+                }
+              }
+%           }
+%         }
+
+          select.disabled = 'disabled'; // this seems to prevent it from being submitted on tested browsers so far (IE, moz, konq at least)
+          var label_td = document.getElementById('<%$field%>_label' + remove_fieldnum );
+          label_td.parentNode.style.display = 'none';
+
+%         if ( $f->{m2name_remove_js} ) {
+            var opt = select.options[select.selectedIndex];
+            <% $f->{m2name_remove_js} %>( opt.value, opt.text, 'no_match');
+%         }
+
+        }
+
+      </SCRIPT>
+
+%   }
 
 % } 
 
@@ -226,9 +418,105 @@
 
 <BR>
 
-<INPUT TYPE="submit" VALUE="<% $object->$pkey() ? "Apply changes" : "Add $opt{'name'}" %>">
+<INPUT TYPE="submit" ID="submit" VALUE="<% $object->$pkey() ? "Apply changes" : "Add $opt{'name'}" %>">
 
 </FORM>
 
 <% include("/elements/footer.html") %>
+<%init>
 
+my(%opt) = @_;
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+#false laziness w/process.html
+my $table = $opt{'table'};
+my $class = "FS::$table";
+my $pkey = dbdef->table($table)->primary_key; #? $opt{'primary_key'} || 
+my $fields = $opt{'fields'}
+             #|| [ grep { $_ ne $pkey } dbdef->table($table)->columns ];
+             || [ grep { $_ ne $pkey } fields($table) ];
+#my @actualfields = map { ref($_) ? $_->{'field'} : $_ } @$fields;
+
+if ( $cgi->param('redirect') ) {
+  my $session = $cgi->param('redirect');
+  my $pref = $curuser->option("redirect$session");
+  die "unknown redirect session $session\n" unless length($pref);
+  $cgi = new CGI($pref);
+}
+
+my $object;
+my $mode;
+if ( $cgi->param('error') ) {
+
+  $mode = 'error';
+
+
+  $object = $class->new( {
+    map { $_ => scalar($cgi->param($_)) } fields($table)
+  });
+
+  &{$opt{'error_callback'}}($cgi, $object, $fields)
+    if $opt{'error_callback'};
+
+} elsif ( $cgi->keywords || $cgi->param($pkey) ) { #editing
+
+  $mode = 'edit';
+
+  my $value;
+  if ( $cgi->param($pkey) ) {
+    $value = $cgi->param($pkey)
+  } else { 
+    my( $query ) = $cgi->keywords;
+    $value = $query;
+  }
+  $value =~ /^(\d+)$/ or die "unparsable $pkey";
+  $object = qsearchs({
+    'table'     => $table,
+    'hashref'   => { $pkey => $1 },
+    'extra_sql' => ( $opt{'agent_virt'}
+                       ? ' AND '. $curuser->agentnums_sql(
+                                    'null_right' => $opt{'agent_null_right'}
+                                  )
+                       : ''
+                   ),
+  });
+  warn "$table $pkey => $1"
+    if $opt{'debug'};
+
+  &{$opt{'edit_callback'}}($cgi, $object, $fields)
+    if $opt{'edit_callback'};
+
+} else { #adding
+
+  $mode = 'new';
+
+  my $hashref = $opt{'new_hashref_callback'}
+                  ? &{$opt{'new_hashref_callback'}}
+                  : {};
+
+  $object = $class->new( $hashref );
+
+  &{$opt{'new_callback'}}($cgi, $object, $fields)
+    if $opt{'new_callback'};
+
+}
+
+my $action = $object->$pkey() ? 'Edit' : 'Add';
+
+my $title = "$action $opt{'name'}";
+
+my $viewall_url = $p . ( $opt{'viewall_dir'} || 'search' ) . "/$table.html";
+$viewall_url = $opt{'viewall_url'} if $opt{'viewall_url'};  
+
+my @menubar = ();
+if ( $opt{'menubar'} ) {
+  @menubar = @{ $opt{'menubar'} };
+} else {
+  @menubar = (
+    #eventually use Lingua::bs to pluralize
+    "View all $opt{'name'}s" => $viewall_url,
+  );
+}
+
+</%init>

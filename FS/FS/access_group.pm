@@ -140,7 +140,7 @@ test if this group has the given RIGHTNAME.
 =cut
 
 sub access_right {
-  my( $self, $name ) = shift;
+  my( $self, $name ) = @_;
   qsearchs('access_right', { 'righttype'   => 'FS::access_group',
                              'rightobjnum' => $self->groupnum,
                              'rightname'   => $name,

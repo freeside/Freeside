@@ -2,11 +2,14 @@ package FS::cust_pay_batch;
 
 use strict;
 use vars qw( @ISA $DEBUG );
+use Carp qw( confess );
+use Business::CreditCard 0.28;
 use FS::Record qw(dbh qsearch qsearchs);
 use FS::payinfo_Mixin;
-use Business::CreditCard 0.28;
+use FS::cust_main;
+use FS::cust_bill;
 
-@ISA = qw( FS::Record FS::payinfo_Mixin );
+@ISA = qw( FS::payinfo_Mixin FS::Record );
 
 # 1 is mostly method/subroutine entry and options
 # 2 traces progress of some operations
@@ -32,7 +35,7 @@ FS::cust_pay_batch - Object methods for batch cards
 
   $error = $record->check;
 
-  $error = $record->retriable;
+  #deprecated# $error = $record->retriable;
 
 =head1 DESCRIPTION
 
@@ -201,19 +204,27 @@ sub cust_main {
   qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
 }
 
-=item retriable
-
-Marks the corresponding event (see L<FS::cust_bill_event>) for this batched
-credit card payment as retriable.  Useful if the corresponding financial
-institution account was declined for temporary reasons and/or a manual 
-retry is desired.
-
-Implementation details: For the named customer's invoice, changes the
-statustext of the 'done' (without statustext) event to 'retriable.'
-
-=cut
+#you know what, screw this in the new world of events.  we should be able to
+#get the event defs to retry (remove once.pm condition, add every.pm) without
+#mucking about with statuses of previous cust_event records.  right?
+#
+#=item retriable
+#
+#Marks the corresponding event (see L<FS::cust_bill_event>) for this batched
+#credit card payment as retriable.  Useful if the corresponding financial
+#institution account was declined for temporary reasons and/or a manual 
+#retry is desired.
+#
+#Implementation details: For the named customer's invoice, changes the
+#statustext of the 'done' (without statustext) event to 'retriable.'
+#
+#=cut
 
 sub retriable {
+
+  confess "deprecated method cust_pay_batch->retriable called; try removing ".
+          "the once condition and adding an every condition?";
+
   my $self = shift;
 
   local $SIG{HUP} = 'IGNORE';        #Hmm

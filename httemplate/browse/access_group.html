@@ -27,10 +27,7 @@
                                   ],
              )
 %>
-<%init>
-
-die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+<%once>
 
 my $html_init = 
   "Internal access groups control access to the back-office interface.<BR><BR>".
@@ -58,25 +55,56 @@ my $agents_sub = sub {
   
 };
 
+tie my %rights, 'Tie::IxHash', FS::AccessRight->rights_info;
+
 my $rights_sub = sub {
   my $access_group = shift;
 
-  [ map { my $access_right = $_;
-          [
-            { 
-              'data'  => $access_right->rightname,
-              'align' => 'left',
-            },
-          ];
-        }
-    $access_group->access_rights,
+  #[ map { my $access_right = $_;
+  #        [
+  #          { 
+  #            'data'  => $access_right->rightname,
+  #            'align' => 'left',
+  #          },
+  #        ];
+  #      }
+  #  $access_group->access_rights,
+  #];
 
-  ];
+  #some false laziness w/edit/access_group.html
+  my $columns = 3;
+  my $count = 0;
+
+  #include('/elements/table-grid.html', bgcolor=>'#cccccc' ).
+  '<TABLE>'.
+  '<TR>'. join( '', map {
+    
+    '<TD CLASS="inv" VALIGN="top"><TABLE WIDTH=100%>'.
+    '<TR><TH BGCOLOR="#dcdcdc">'. $_. '</TH></TR>'.
+    '<TR><TD>'.
+
+     join('<BR>', grep { warn "$access_group->access_right($_): ".
+                              $access_group->access_right($_). "\n";
+                         $access_group->access_right($_); }
+                   map { ref($_) ? $_->{'rightname'} : $_; }
+                       @{ $rights{$_} }
+         ).
+
+    '</TD></TR></TABLE></TD>'.
+    ( ++$count % $columns ? '' : '</TR><TR>')
+  
+  } keys %rights ). '</TR></TABLE>';
 
 };
 
 my $count_query = 'SELECT COUNT(*) FROM access_group';
 
 my $link = [ $p.'edit/access_group.html?', 'groupnum' ];
+
+</%once>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
 
 </%init>

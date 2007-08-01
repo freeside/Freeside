@@ -221,7 +221,8 @@ Currently unimplemented (accounting reasons).
 =cut
 
 sub replace {
-   return "Can't (yet?) modify cust_refund records!";
+  my $self = shift;
+  $self->SUPER::replace(@_);
 }
 
 =item check
@@ -303,6 +304,36 @@ sub unapplied {
   $amount -= $_->amount foreach ( $self->cust_credit_refund );
   $amount -= $_->amount foreach ( $self->cust_pay_refund );
   sprintf("%.2f", $amount );
+}
+
+=back
+
+=head1 CLASS METHODS
+
+=over 4
+
+=item unapplied_sql
+
+Returns an SQL fragment to retreive the unapplied amount.
+
+=cut 
+
+sub unapplied_sql {
+  #my $class = shift;
+
+  "refund
+    - COALESCE( 
+                ( SELECT SUM(amount) FROM cust_credit_refund
+                    WHERE cust_refund.refundnum = cust_credit_refund.refundnum )
+                ,0
+              )
+    - COALESCE(
+                ( SELECT SUM(amount) FROM cust_pay_refund
+                    WHERE cust_refund.refundnum = cust_pay_refund.refundnum )
+                ,0
+              )
+  ";
+
 }
 
 =back

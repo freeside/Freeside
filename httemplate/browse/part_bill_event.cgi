@@ -1,6 +1,6 @@
 <% include("/elements/header.html",'Invoice Event Listing', menubar( 'Main Menu' => $p) ) %>
 
-    Invoice events are actions taken on open invoices.<BR><BR>
+    <FONT SIZE="+1">Invoice events are the deprecated, old-style actions taken on open invoices.  Any events still listed here should be migrated to new-style events.</FONT><BR><BR>
 
 <A HREF="<% $p %>edit/part_bill_event.cgi"><I>Add a new invoice event</I></A>
 <BR><BR>

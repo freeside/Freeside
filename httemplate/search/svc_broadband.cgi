@@ -5,9 +5,18 @@
 %
 %my @svc_broadband = ();
 %my $sortby=\*svcnum_sort;
+%#XXX agent-virtualization needs to be finished :/
+%my $agentnums_sql = $FS::CurrentUser::CurrentUser->agentnums_sql( 
+%                      'null_right' => 'View/link unlinked services'
+%                    );
+%
 %if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
 %
-%  @svc_broadband=qsearch('svc_broadband',{});
+%  @svc_broadband = qsearch(
+%    'table'     => 'svc_broadband',
+%    'hashref'   => {},
+%    #needs the join first 'extra_sql' => "WHERE $agentnums_sql",
+%  );
 %
 %  if ( $cgi->param('magic') eq 'unlinked' ) {
 %    @svc_broadband = grep { qsearchs('cust_svc', {
@@ -17,7 +26,7 @@
 %                                    )
 %                          }
 %		      @svc_broadband;
-%  }
+%  } else {
 %
 %  if ( $cgi->param('sortby') =~ /^(\w+)$/ ) {
 %    my $sortby = $1;

@@ -1,22 +1,17 @@
-%  my( $cust_main ) = @_;
-%  my $conf = new FS::Conf;
-%
-%  my $curuser = $FS::CurrentUser::CurrentUser;
-%
-%  my $packages = get_packages($cust_main, $conf);
+<A NAME="cust_pkg"><FONT SIZE="+2">Packages</FONT></A><BR>
 
-
-<A NAME="cust_pkg"><FONT SIZE="+2">Packages</FONT></A>
+% my $s = 0;
 % if ( $curuser->access_right('Order customer package') ) { 
-
-  <% include('order_pkg.html', $cust_main ) %>
+  <% $s++ ? ' | ' : '' %>
+  <% order_pkg_link($cust_main) %>
 % } 
+
 % if ( $curuser->access_right('One-time charge')
 %        && $conf->config('payby-default') ne 'HIDE'
 %      ) {
 %
 
-  <% popup_link('edit/quick-charge.html?custnum='. $cust_main->custnum, 'One-time charge', 'One-time charge', 545) %>
+  <% popup_link('edit/quick-charge.html?custnum='. $cust_main->custnum, 'One-time charge', 'One-time charge', '#333399', 545) %>
   <BR>
 % } 
 % if ( $curuser->access_right('Bulk change customer packages') ) { 
@@ -77,27 +72,43 @@ Current packages
 
 <!--pkgnum: <% $cust_pkg->pkgnum %>-->
 <TR>
+
   <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
-    <A NAME="cust_pkg<% $cust_pkg->pkgnum %>"><% $cust_pkg->pkgnum %></A>:
-    <% $part_pkg->pkg %> - <% $part_pkg->comment %><BR>
+
+    <A NAME="cust_pkg<% $cust_pkg->pkgnum %>" ID="cust_pkg<% $cust_pkg->pkgnum %>"><% $cust_pkg->pkgnum %></A>:
+    <% $part_pkg->pkg %> - <% $part_pkg->comment %>
+    <BR>
+
     <FONT SIZE=-1>
 % unless ( $cust_pkg->get('cancel') ) { 
-% if ( $curuser->access_right('Change customer package') ) { 
+%   my $br = 0;
+%   if ( $curuser->access_right('Change customer package') ) { $br=1;
 
             (&nbsp;<%pkg_change_link($cust_pkg)%>&nbsp;)
-% } 
-% if ( $curuser->access_right('Edit customer package dates') ) { 
+%   } 
+%   if ( $curuser->access_right('Edit customer package dates') ) { $br=1;
 
             (&nbsp;<%pkg_dates_link($cust_pkg)%>&nbsp;)
-% } 
-% if ( $curuser->access_right('Customize customer package') ) { 
+%   } 
+%   if ( $curuser->access_right('Customize customer package') ) { $br=1;
 
             (&nbsp;<%pkg_customize_link($cust_pkg,$cust_main->custnum)%>&nbsp;)
-% } 
+%   } 
+    <% $br ? '<BR>' : '' %>
 % } 
 
+% if ( $cust_pkg->num_cust_event
+%      && (    $curuser->access_right('Billing event reports')
+%           || $curuser->access_right('View customer billing events')
+%         )
+%    ) {
+    (&nbsp;<%pkg_event_link($cust_pkg)%>&nbsp;)
+% }
+
     </FONT>
+
   </TD>
+
   <TD CLASS="inv" BGCOLOR="<% $bgcolor %>">
     <TABLE CLASS="inv" BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="100%">
 %
@@ -417,157 +428,207 @@ Current packages
 
 <BR>
 % } 
-%
-%#subroutines
-%
-%sub get_packages {
-%  my $cust_main = shift or return undef;
-%  my $conf = shift;
-%  
-%  my @packages = ();
-%  my $method;
-%  if (  $cgi->param('showcancelledpackages') eq '0' #see if it was set by me
-%     || ( $conf->exists('hidecancelledpackages')
-%           && ! $cgi->param('showcancelledpackages') )
-%     )
-%  {
-%    $method = 'ncancelled_pkgs';
-%  } else {
-%    $method = 'all_pkgs';
-%  }
-%
-%  [ $cust_main->$method() ];
-%}
-%  
-%sub svc_provision_link {
-%  my ($cust_pkg, $part_svc, $conf, $curuser) = @_;
-%  ( my $svc_nbsp = $part_svc->svc ) =~ s/\s+/&nbsp;/g;
-%  my $num_avail = $part_svc->num_avail;
-%  my $pkgnum_svcpart = "pkgnum=". $cust_pkg->pkgnum. ';'.
-%                       "svcpart=". $part_svc->svcpart;
-%  my $url;
-%  if ( $part_svc->svcdb eq 'svc_external' #could be generalized
-%       && $conf->exists('svc_external-skip_manual')
-%  ) {
-%    $url = "${p}edit/process/". $part_svc->svcdb. ".cgi?$pkgnum_svcpart";
-%  } else {
-%    $url = svc_url(
-%                    'm'        => $m,
-%                    'action'   => 'edit',
-%                    'part_svc' => $part_svc, 
-%                    'query'    => $pkgnum_svcpart,
-%                  );
-%    #$url = "${p}edit/$svcpart->{svcdb}.cgi?$pkgnum_svcpart";
-%  }
-%
-%  my $link = qq!<A CLASS="provision" HREF="$url">!.
-%             "Provision&nbsp;$svc_nbsp&nbsp;($num_avail)</A>";
-%  if ( $conf->exists('legacy_link')
-%       && $curuser->access_right('View/link unlinked services')
-%     )
-%  {
-%    $link .= '<BR>'.
-%             qq!<A CLASS="provision" HREF="${p}misc/link.cgi?!.
-%             qq!$pkgnum_svcpart">!.
-%            "Link&nbsp;to&nbsp;legacy&nbsp;$svc_nbsp&nbsp;($num_avail)</A>";
-%  }
-%  $link;
-%}
-%
-%sub svc_unprovision_link {
-%  my $cust_svc = shift or return '';
-%  qq!<A HREF="javascript:areyousure('${p}misc/unprovision.cgi?!. $cust_svc->svcnum.
-%  qq!', 'Permanently unprovision and delete this service?')">Unprovision</A>!;
-%}
-%
-%sub pkg_datestr {
-%  my($cust_pkg, $field, $conf) = @_ or return '';
-%  return '&nbsp;' unless $cust_pkg->get($field);
-%  my $format = '<TD align="left"><B>%b</B></TD>'.
-%               '<TD align="right"><B>&nbsp;%o,</B></TD>'.
-%               '<TD align="right"><B>&nbsp;%Y</B></TD>';
-%  #$format .= '&nbsp;<FONT SIZE=-3>%l:%M:%S%P&nbsp;%z</FONT>'
-%  $format .= '<TD ALIGN="right"><B>&nbsp;%l</TD>'.
-%             '<TD ALIGN="center"><B>:</B></TD>'.
-%             '<TD ALIGN="left"><B>%M</B></TD>'.
-%             '<TD ALIGN="left"><B>&nbsp;%P</B></TD>'
-%    if $conf->exists('cust_pkg-display_times');
-%  my $strip = time2str($format, $cust_pkg->get($field) );
-%  $strip =~ s/ (\d)/$1/g;
-%  $strip;
-%}
-%
-%sub pkg_change_link    { pkg_link('misc/change_pkg',    'Change&nbsp;package', @_ ); }
-%
-%sub pkg_suspend_link   { pkg_popup_link( 'misc/cancel_pkg.html?method=suspend',
-%                                         'Suspend&nbsp;now',
-%                                         'Suspend',
-%                                         @_
-%                                       );
-%                       }
-%
-%sub pkg_unsuspend_link { pkg_link('misc/unsusp_pkg',    'Unsuspend',           @_ ); }
-%sub pkg_expire_link    { pkg_link('misc/expire_pkg',    'Cancel&nbsp;later',   @_ ); }
-%sub pkg_dates_link     { pkg_link('edit/REAL_cust_pkg', 'Edit&nbsp;dates',     @_ ); }
-%
-%sub pkg_cancel_link    { pkg_popup_link( 'misc/cancel_pkg.html?method=cancel',
-%                                         'Cancel&nbsp;now',
-%                                         'Cancel',
-%                                         @_
-%                                       );
-%                       }
-%sub pkg_adjourn_link   { pkg_popup_link( 'misc/cancel_pkg.html?method=adjourn',
-%                                         'Suspend&nbsp;later',
-%                                         'Adjourn',
-%                                         @_
-%                                       );
-%                       }
-%
-%sub pkg_expire_link    { pkg_popup_link( 'misc/cancel_pkg.html?method=expire',
-%                                         'Cancel&nbsp;later',
-%                                         'Expire', #"Cancel package $num later"
-%                                         @_
-%                                       );
-%                       }
-%
-%sub svc_recharge_link  { svc_popup_link( 'misc/recharge_svc.html',
-%                                         'Recharge',
-%                                         'Recharge',
-%                                         @_
-%                                       );
-%                       }
-%
-%sub pkg_link {
-%  my($action, $label, $cust_pkg) = @_;
-%  return '' unless $cust_pkg;
-%  qq!<a href="$p$action.cgi?!. $cust_pkg->pkgnum. qq!">$label</a>!;
-%}
-%
-%sub pkg_popup_link {
-%  my($action, $label, $actionlabel, $cust_pkg) = @_;
-%  $action .= '&pkgnum='. $cust_pkg->pkgnum;
-%  $actionlabel .= ' package '. $cust_pkg->pkgnum;
-%  popup_link($action, $label, $actionlabel, 392);
-%}
-%
-%sub svc_popup_link {
-%  my($action, $label, $actionlabel, $cust_svc) = @_;
-%  $action .= '?svcnum='. $cust_svc->svcnum;
-%  $actionlabel .= ' service '. $cust_svc->svcnum;
-%  popup_link($action, $label, $actionlabel, 392);
-%}
-%
-%sub popup_link {
-%  my($action, $label, $actionlabel, $width) = @_;
-%  qq!<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('$p$action', $width, 336, 'pkg_or_svc_action_popup' ), CAPTION, '$actionlabel', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">$label</A>!;
-%}
-%
-%sub pkg_customize_link {
-%  my $cust_pkg = shift or return '';
-%  my $custnum = $cust_pkg->custnum;
-%  qq!<A HREF="${p}edit/part_pkg.cgi?!.
-%    "keywords=$custnum;".
-%    "clone=". $cust_pkg->part_pkg->pkgpart. ';'.
-%    "pkgnum=". $cust_pkg->pkgnum.
-%    qq!">Customize</A>!;
-%}
+% if ( $cgi->param('fragment') =~ /^cust_pkg(\d+)$/ ) {
+  <SCRIPT>
+    // IE-specific hack.  other browsers listen to #fragments
+    // is this even working?  or is the #target redirection just working cause
+    // we set the URL params differently?
+    var el = document.getElementById( 'cust_pkg<% $1 %>' );
+    if ( el ) el.scrollIntoView(true);
+  </SCRIPT>
+% }
+<%init>
+
+my( $cust_main ) = @_;
+my $conf = new FS::Conf;
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+my $packages = get_packages($cust_main, $conf);
+</%init>
+<%once>
+
+#subroutines
+
+sub get_packages {
+  my $cust_main = shift or return undef;
+  my $conf = shift;
+  
+  my @packages = ();
+  my $method;
+  if (  $cgi->param('showcancelledpackages') eq '0' #see if it was set by me
+     || ( $conf->exists('hidecancelledpackages')
+           && ! $cgi->param('showcancelledpackages') )
+     )
+  {
+    $method = 'ncancelled_pkgs';
+  } else {
+    $method = 'all_pkgs';
+  }
+
+  [ $cust_main->$method() ];
+}
+  
+sub svc_provision_link {
+  my ($cust_pkg, $part_svc, $conf, $curuser) = @_;
+  ( my $svc_nbsp = $part_svc->svc ) =~ s/\s+/&nbsp;/g;
+  my $num_avail = $part_svc->num_avail;
+  my $pkgnum_svcpart = "pkgnum=". $cust_pkg->pkgnum. ';'.
+                       "svcpart=". $part_svc->svcpart;
+  my $url;
+  if ( $part_svc->svcdb eq 'svc_external' #could be generalized
+       && $conf->exists('svc_external-skip_manual')
+  ) {
+    $url = "${p}edit/process/". $part_svc->svcdb. ".cgi?$pkgnum_svcpart";
+  } else {
+    $url = svc_url(
+                    'm'        => $m,
+                    'action'   => 'edit',
+                    'part_svc' => $part_svc, 
+                    'query'    => $pkgnum_svcpart,
+                  );
+    #$url = "${p}edit/$svcpart->{svcdb}.cgi?$pkgnum_svcpart";
+  }
+
+  my $link = qq!<A CLASS="provision" HREF="$url">!.
+             "Provision&nbsp;$svc_nbsp&nbsp;($num_avail)</A>";
+  if ( $conf->exists('legacy_link')
+       && $curuser->access_right('View/link unlinked services')
+     )
+  {
+    $link .= '<BR>'.
+             qq!<A CLASS="provision" HREF="${p}misc/link.cgi?!.
+             qq!$pkgnum_svcpart">!.
+            "Link&nbsp;to&nbsp;legacy&nbsp;$svc_nbsp&nbsp;($num_avail)</A>";
+  }
+  $link;
+}
+
+sub svc_unprovision_link {
+  my $cust_svc = shift or return '';
+  qq!<A HREF="javascript:areyousure('${p}misc/unprovision.cgi?!. $cust_svc->svcnum.
+  qq!', 'Permanently unprovision and delete this service?')">Unprovision</A>!;
+}
+
+sub pkg_datestr {
+  my($cust_pkg, $field, $conf) = @_ or return '';
+  return '&nbsp;' unless $cust_pkg->get($field);
+  my $format = '<TD align="left"><B>%b</B></TD>'.
+               '<TD align="right"><B>&nbsp;%o,</B></TD>'.
+               '<TD align="right"><B>&nbsp;%Y</B></TD>';
+  #$format .= '&nbsp;<FONT SIZE=-3>%l:%M:%S%P&nbsp;%z</FONT>'
+  $format .= '<TD ALIGN="right"><B>&nbsp;%l</TD>'.
+             '<TD ALIGN="center"><B>:</B></TD>'.
+             '<TD ALIGN="left"><B>%M</B></TD>'.
+             '<TD ALIGN="left"><B>&nbsp;%P</B></TD>'
+    if $conf->exists('cust_pkg-display_times');
+  my $strip = time2str($format, $cust_pkg->get($field) );
+  $strip =~ s/ (\d)/$1/g;
+  $strip;
+}
+
+sub pkg_change_link    { pkg_link('misc/change_pkg',    'Change&nbsp;package', @_ ); }
+
+sub pkg_suspend_link   { pkg_popup_link( 'misc/cancel_pkg.html?method=suspend',
+                                         'Suspend&nbsp;now',
+                                         'Suspend',
+                                         '#FF9900',
+                                         @_
+                                       );
+                       }
+
+sub pkg_adjourn_link   { pkg_popup_link( 'misc/cancel_pkg.html?method=adjourn',
+                                         'Suspend&nbsp;later',
+                                         'Adjourn',
+                                         '#CC6600',
+                                         @_
+                                       );
+                       }
+
+sub pkg_unsuspend_link { pkg_link('misc/unsusp_pkg',    'Unsuspend',           @_ ); }
+sub pkg_expire_link    { pkg_link('misc/expire_pkg',    'Cancel&nbsp;later',   @_ ); }
+sub pkg_dates_link     { pkg_link('edit/REAL_cust_pkg', 'Edit&nbsp;dates',     @_ ); }
+
+sub pkg_cancel_link    { pkg_popup_link( 'misc/cancel_pkg.html?method=cancel',
+                                         'Cancel&nbsp;now',
+                                         'Cancel',
+                                         '#ff0000',
+                                         @_
+                                       );
+                       }
+
+sub pkg_expire_link    { pkg_popup_link( 'misc/cancel_pkg.html?method=expire',
+                                         'Cancel&nbsp;later',
+                                         'Expire', #"Cancel package $num later"
+                                         '#CC0000',
+                                         @_
+                                       );
+                       }
+
+sub svc_recharge_link  { svc_popup_link( 'misc/recharge_svc.html',
+                                         'Recharge',
+                                         'Recharge',
+                                         '#333399',
+                                         @_
+                                       );
+                       }
+
+sub order_pkg_link { cust_popup_link( 'misc/order_pkg.html',
+                                      'Order&nbsp;new&nbsp;package',
+                                      'Order new package',
+                                      '#333399',
+                                      @_
+                                    );
+                   }
+
+sub pkg_event_link {
+  my($cust_pkg) = @_;
+  qq!<a href="${p}search/cust_event.html?pkgnum=!. $cust_pkg->pkgnum. qq!">!.
+  'View package events'.
+  '</a>';
+}
+
+sub pkg_link {
+  my($action, $label, $cust_pkg) = @_;
+  return '' unless $cust_pkg;
+  qq!<a href="$p$action.cgi?!. $cust_pkg->pkgnum. qq!">$label</a>!;
+}
+
+sub pkg_popup_link {
+  my($action, $label, $actionlabel, $color, $cust_pkg) = @_;
+  $action .= '&pkgnum='. $cust_pkg->pkgnum;
+  $actionlabel .= ' package '. $cust_pkg->pkgnum;
+  popup_link($action, $label, $actionlabel, $color);
+}
+
+sub svc_popup_link {
+  my($action, $label, $actionlabel, $color, $cust_svc) = @_;
+  $action .= '?svcnum='. $cust_svc->svcnum;
+  $actionlabel .= ' service '. $cust_svc->svcnum;
+  popup_link($action, $label, $actionlabel, $color);
+}
+
+sub cust_popup_link {
+  my($action, $label, $actionlabel, $color, $cust_main) = @_;
+  $action .= '?'. $cust_main->custnum;
+  popup_link($action, $label, $actionlabel, $color);
+}
+
+sub popup_link {
+  my($action, $label, $actionlabel, $color, $width) = @_;
+  $color ||= '#333399';
+  $width ||= 540;
+  qq!<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('$p$action', $width, 336, 'pkg_or_svc_action_popup' ), CAPTION, '$actionlabel', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '$color', CGCOLOR, '$color' ); return false;">$label</A>!;
+}
+
+sub pkg_customize_link {
+  my $cust_pkg = shift or return '';
+  my $custnum = $cust_pkg->custnum;
+  qq!<A HREF="${p}edit/part_pkg.cgi?!.
+    "keywords=$custnum;".
+    "clone=". $cust_pkg->part_pkg->pkgpart. ';'.
+    "pkgnum=". $cust_pkg->pkgnum.
+    qq!">Customize</A>!;
+}
+
+</%once>

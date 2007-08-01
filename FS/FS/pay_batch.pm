@@ -6,7 +6,6 @@ use Time::Local;
 use Text::CSV_XS;
 use FS::Record qw( dbh qsearch qsearchs );
 use FS::cust_pay;
-use FS::part_bill_event qw(due_events);
 
 @ISA = qw(FS::Record);
 
@@ -454,6 +453,20 @@ sub import_results {
 
       $new_cust_pay_batch->status('Approved');
 
+    } elsif ( &{$declined_condition}(\%hash) ) {
+
+      $new_cust_pay_batch->status('Declined');
+
+    }
+
+    my $error = $new_cust_pay_batch->replace($cust_pay_batch);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "error updating status of paybatchnum $hash{'paybatchnum'}: $error\n";
+    }
+
+    if ( $new_cust_pay_batch->status =~ /Approved/i ) {
+
       my $cust_pay = new FS::cust_pay ( {
         'custnum'  => $custnum,
 	'payby'    => $payby,
@@ -469,33 +482,38 @@ sub import_results {
   
       $cust_pay->cust_main->apply_payments;
 
-    } elsif ( &{$declined_condition}(\%hash) ) {
+    } elsif ( $new_cust_pay_batch->status =~ /Declined/i ) {
 
-      $new_cust_pay_batch->status('Declined');
+      #false laziness w/cust_main::collect
 
-      foreach my $part_bill_event ( due_events ( $new_cust_pay_batch,
-                                                 'DCLN',
-						 '',
-						 '') ) {
+      my $due_cust_event = $new_cust_pay_batch->cust_main->due_cust_event(
+        #'check_freq' => '1d', #?
+        'eventtable' => 'cust_pay_batch',
+        'objects'    => [ $new_cust_pay_batch ],
+      );
+      unless( ref($due_cust_event) ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $due_cust_event;
+      }
 
-        # don't run subsequent events if balance<=0
-        last if $cust_pay_batch->cust_main->balance <= 0;
+      foreach my $cust_event ( @$due_cust_event ) {
+        
+        #XXX lock event
+    
+        #re-eval event conditions (a previous event could have changed things)
+        next unless $cust_event->test_conditions;
 
-	if (my $error = $part_bill_event->do_event($new_cust_pay_batch)) {
+	if ( my $error = $cust_event->do_event() ) {
 	  # gah, even with transactions.
-	  $dbh->commit if $oldAutoCommit; #well.
-	  return $error;
+	  #$dbh->commit if $oldAutoCommit; #well.
+	  $dbh->rollback if $oldAutoCommit;
+          return $error;
 	}
 
       }
 
     }
 
-    my $error = $new_cust_pay_batch->replace($cust_pay_batch);
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "error updating status of paybatchnum $hash{'paybatchnum'}: $error\n";
-    }
 
   }
   

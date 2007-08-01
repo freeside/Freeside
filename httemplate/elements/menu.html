@@ -152,8 +152,10 @@ tie my %report_rating, 'Tie::IxHash',
 ;
 
 tie my %report_bill_event, 'Tie::IxHash',
-  'All billing events' => [ $fsurl.'search/cust_bill_event.html', 'All billing events for a date range' ],
-  'Invoice event errors' => [ $fsurl.'search/cust_bill_event.html?failed=1', 'failed credit cards, processor or printer problems, etc.' ],
+  'All billing events' => [ $fsurl.'search/report_cust_event.html', 'All billing events for a date range' ],
+  'Billing event errors' => [ $fsurl.'search/report_cust_event.html?failed=1', 'Failed credit cards, processor or printer problems, etc.' ],
+  'All invoice events' => [ $fsurl.'search/cust_bill_event.html', 'Reports on deprecated, old-style invoice events for a date range' ],
+  'Invoice event errors' => [ $fsurl.'search/cust_bill_event.html?failed=1', 'Reports on deprecated, old-style events for failed credit cards, processor or printer problems, etc.' ],
 ;
 
 tie my %report_financial, 'Tie::IxHash', 
@@ -235,12 +237,18 @@ tie my %config_agent, 'Tie::IxHash',
 ;
 
 tie my %config_billing, 'Tie::IxHash',
-  'View/Edit payment gateways'         => [ $fsurl.'browse/payment_gateway.html', 'Credit card and electronic check processors' ],
-  'View/Edit invoice events'           => [ $fsurl.'browse/part_bill_event.cgi', 'Actions for overdue invoices' ],
-  'View/Edit prepaid cards'            => [ $fsurl.'search/prepay_credit.html', 'View outstanding cards, generate new cards' ],
-  'View/Edit call rates and regions'   => [ $fsurl.'browse/rate.cgi', 'Manage rate plans, regions and prefixes for VoIP and call billing' ],
-  'View/Edit locales and tax rates'    => [ $fsurl.'browse/cust_main_county.cgi', 'Change tax rates, or break down a country into states, or a state into counties and assign different tax rates to each' ],
-;
+  'View/Edit payment gateways'         => [ $fsurl.'browse/payment_gateway.html', 'Credit card and electronic check processors' ];
+$config_billing{'View/Edit billing events'} = [ $fsurl.'browse/part_event.html', 'Billing actions for customers, invoices and packages' ]
+    if $curuser->access_right('Configuration')
+    || $curuser->access_right('Edit billing events')
+    || $curuser->access_right('Edit global billing events');
+if ( $curuser->access_right('Configuration') ) {
+  $config_billing{'View/Edit invoice events'}         = [ $fsurl.'browse/part_bill_event.cgi', 'Deprecated, old-style actions for overdue invoices' ];
+  $config_billing{'View/Edit invoice templates'}      = [ $fsurl.'browse/invoice_template.html', 'Edit templates for HTML, plaintext and typeset invoices' ];
+  $config_billing{'View/Edit prepaid cards'}          = [ $fsurl.'search/prepay_credit.html', 'View outstanding cards, generate new cards' ];
+  $config_billing{'View/Edit call rates and regions'} = [ $fsurl.'browse/rate.cgi', 'Manage rate plans, regions and prefixes for VoIP and call billing' ];
+  $config_billing{'View/Edit locales and tax rates'}  = [ $fsurl.'browse/cust_main_county.cgi', 'Change tax rates, or break down a country into states, or a state into counties and assign different tax rates to each' ];
+}
 
 tie my %config_dialup, 'Tie::IxHash',
   'View/Edit access numbers' => [ $fsurl.'browse/svc_acct_pop.cgi', 'Points of Presence' ],
@@ -271,11 +279,16 @@ if ( $curuser->access_right('Configuration' ) ) {
     'Provisioning, services and packages'
                     => [ \%config_export_svc_pkg, ''    ],
     'Resellers'     => [ \%config_agent, ''    ],
-    'Billing'       => [ \%config_billing, ''    ],
-    'Dialup'        => [ \%config_dialup, ''    ],
-    'Fixed (username-less) broadband'
-                    => [ \%config_broadband, ''    ],
   );
+}
+$config_menu{'Billing'} = [ \%config_billing, ''    ]
+  if $curuser->access_right('Configuration')
+  || $curuser->access_right('Edit billing events')
+  || $curuser->access_right('Edit global billing events');
+if ( $curuser->access_right('Configuration') ) {
+  $config_menu{'Dialup'}  = [ \%config_dialup, ''    ];
+  $config_menu{'Fixed (username-less) broadband'} = 
+                            [ \%config_broadband, ''    ];
 }
 $config_menu{'Miscellaneous'} = [ \%config_misc, ''    ]
   if $curuser->access_right('Configuration')

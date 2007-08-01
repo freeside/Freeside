@@ -1,31 +1,30 @@
-
 <SCRIPT TYPE="text/javascript">
-  function sh_add<% $name %>()
+  function sh_add<% $func_suffix %>()
   {
 
-    if (document.getElementById('<% $name %>').selectedIndex == 0){
+    if (document.getElementById('<% $id %>').selectedIndex == 0){
       <% $controlledbutton ? $controlledbutton.'.disabled = true;' : ';' %>
     }else{
       <% $controlledbutton ? $controlledbutton.'.disabled = false;' : ';' %>
     }
 
-%if ($curuser->access_right($access_right)){
+%if ($curuser->access_right($add_access_right)){
 
-    if (document.getElementById('<% $name %>').selectedIndex == 
-         (document.getElementById('<% $name %>').length - 1)) {
-      document.getElementById('new<% $name %>').disabled = false;
-      document.getElementById('new<% $name %>').style.display = 'inline';
-      document.getElementById('new<% $name %>Label').style.display = 'inline';
-      document.getElementById('new<% $name %>T').disabled = false;
-      document.getElementById('new<% $name %>T').style.display = 'inline';
-      document.getElementById('new<% $name %>TLabel').style.display = 'inline';
-    }else{
-      document.getElementById('new<% $name %>').disabled = true;
-      document.getElementById('new<% $name %>').style.display = 'none';
-      document.getElementById('new<% $name %>Label').style.display = 'none';
-      document.getElementById('new<% $name %>T').disabled = true;
-      document.getElementById('new<% $name %>T').style.display = 'none';
-      document.getElementById('new<% $name %>TLabel').style.display = 'none';
+    if (document.getElementById('<% $id %>').selectedIndex == 
+         (document.getElementById('<% $id %>').length - 1)) {
+      document.getElementById('new<% $id %>').disabled = false;
+      document.getElementById('new<% $id %>').style.display = 'inline';
+      document.getElementById('new<% $id %>Label').style.display = 'inline';
+      document.getElementById('new<% $id %>T').disabled = false;
+      document.getElementById('new<% $id %>T').style.display = 'inline';
+      document.getElementById('new<% $id %>TLabel').style.display = 'inline';
+    } else {
+      document.getElementById('new<% $id %>').disabled = true;
+      document.getElementById('new<% $id %>').style.display = 'none';
+      document.getElementById('new<% $id %>Label').style.display = 'none';
+      document.getElementById('new<% $id %>T').disabled = true;
+      document.getElementById('new<% $id %>T').style.display = 'none';
+      document.getElementById('new<% $id %>TLabel').style.display = 'none';
     }
 
 %}
@@ -36,7 +35,7 @@
 <TR>
   <TD ALIGN="right">Reason</TD>
   <TD>
-    <SELECT id="<% $name %>" name="<% $name %>" onFocus="sh_add<% $name %>()" onChange="sh_add<% $name %>()">
+    <SELECT id="<% $id %>" name="<% $name %>" onFocus="sh_add<% $func_suffix %>()" onChange="sh_add<% $func_suffix %>()">
 %    my @reasons = qsearch( { table =>'reason', 
 %                             hashref => {},
 %                             extra_sql => $extra_sql,
@@ -44,9 +43,9 @@
 %			     });
       <OPTION VALUE="" <% ($init_reason eq "") ? 'SELECTED' : '' %>>Select Reason...</OPTION>
 %    foreach my $reason (@reasons) {
-      <OPTION VALUE="<% $reason->reasonnum %>" <% ($init_reason == $reason->reasonnum) ? 'SELECTED' : '' %>><% $reason->reason %></OPTION>
+      <OPTION VALUE="<% $reason->reasonnum %>" <% ($init_reason == $reason->reasonnum) ? 'SELECTED' : '' %>><% $reason->reasontype->type %> : <% $reason->reason %></OPTION>
 %    }
-%    if ($curuser->access_right($access_right)) {
+%    if ($curuser->access_right($add_access_right)) {
       <OPTION VALUE="-1" <% ($init_reason == -1) ? 'SELECTED' : '' %>>Add new reason</OPTION>
 %    }
 %
@@ -56,10 +55,10 @@
 
 <TR>
   <TD ALIGN="right">
-    <P id="new<% $name %>TLabel" style="display:<% $display %>">Reason Type</P>
+    <P id="new<% $id %>TLabel" style="display:<% $display %>">Reason Type</P>
   </TD>
   <TD>
-    <SELECT id="new<% $name %>T" name="new<% $name %>T" disabled="<% $disabled %>" style="display:<% $display %>">
+    <SELECT id="new<% $id %>T" name="new<% $name %>T" "<% $disabled %>" style="display:<% $display %>">
 %     for my $type (qsearch( 'reason_type', { 'class' => $class } )){
         <OPTION VALUE="<% $type->typenum %>" <% ($init_type == $type->typenum) ? 'SELECTED' : '' %>><% $type->type %></OPTION>
 %     }
@@ -69,33 +68,52 @@
 
 <TR>
   <TD ALIGN="right">
-    <P id="new<% $name %>Label" style="display:<% $display %>">New Reason</P>
+    <P id="new<% $id %>Label" style="display:<% $display %>">New Reason</P>
   </TD>
-  <TD><INPUT id="new<% $name %>" name="new<% $name %>" type="text" value="<% $init_newreason %>" disabled="<% $disabled %>" style="display:<% $display %>"></TD>
+  <TD><INPUT id="new<% $id %>" name="new<% $name %>" type="text" value="<% $init_newreason %>" "<% $disabled %>" style="display:<% $display %>"></TD>
 </TR>
 
 <%init>
-my($name, $class, $init_reason, $init_type, $init_newreason, $controlledbutton) = @_;
-my($extra_sql, $curuser, $access_right, $display, $disabled); 
 
+my %opt = @_;
+
+my $name = $opt{'field'};
+my $class = $opt{'reason_class'};
+my $init_reason = $opt{'curr_value'};
+
+my $controlledbutton = $opt{'control_button'};
+
+( my $func_suffix = $name ) =~ s/\./_/g;
+
+my $id = $opt{'id'} || $func_suffix;
+
+my( $add_access_right, $access_right ); 
 if ($class eq 'C') {
-  $access_right='Add on-the-fly cancel reason';
-}elsif ($class eq 'S') {
-  $access_right='Add on-the-fly suspend reason';
-}else{
-  print "illegal class: $class";
+  $access_right = 'Cancel customer';
+  $add_access_right = 'Add on-the-fly cancel reason';
+} elsif ($class eq 'S') {
+  $access_right = 'Suspend customer package';
+  $add_access_right = 'Add on-the-fly suspend reason';
+} else {
+  die "illegal class: $class";
 }
 
-if ($init_reason == -1){
+my( $display, $disabled ) = ( 'none', 'DISABLED' );
+my( $init_type, $init_newreason ) = ( '', '' );
+if ($init_reason == -1 || ref($init_reason) ) {
+
   $display = 'inline';
-  $disabled = 'false';
-}else{
-  $display = 'none';
-  $disabled = 'true';
+  $disabled = '';
+
+  if ( ref($init_reason) ) {
+    $init_type      = $init_reason->{'typenum'};
+    $init_newreason = $init_reason->{'reason'};
+    $init_reason = -1;
+  }
+
 }
 
-$extra_sql = "WHERE class = '$class' ORDER BY reason_type";
-$curuser = $FS::CurrentUser::CurrentUser;
+my $extra_sql = "WHERE class = '$class' ORDER BY reason_type";
+my $curuser = $FS::CurrentUser::CurrentUser;
 
 </%init>
-

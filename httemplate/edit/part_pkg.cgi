@@ -89,7 +89,10 @@ Package information
       <INPUT TYPE="text" NAME="comment" SIZE=32 VALUE="<%$part_pkg->comment%>">
     </TD>
   </TR>
-  <% include( '/elements/tr-select-pkg_class.html', $part_pkg->classnum ) %>
+  <% include( '/elements/tr-select-pkg_class.html',
+                'curr_value' => $part_pkg->classnum,
+            )
+  %>
   <TR>
     <TD ALIGN="right">Promotional code</TD>
     <TD>
@@ -290,7 +293,7 @@ Reseller information
 %  'form_action'    => 'process/part_pkg.cgi',
 %  'form_elements'  => \@form_elements,
 %  'form_text'      => [ qw(pkg comment promo_code clone pkgnum pkgpart),
-%                        qw(pay_weight credit_weight),
+%                        qw(pay_weight credit_weight), #keys(%weight),
 %                        @fixups,
 %                      ],
 %  'form_checkbox'  => [ qw(setuptax recurtax disabled) ],

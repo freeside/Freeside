@@ -1,46 +1,80 @@
 <% include( 'elements/edit.html',
-                 'name'   => 'Internal Access Group',
-                 'table'  => 'access_group',
-                 'labels' => { 
-                               'groupnum'   => 'Group number',
-                               'groupname'  => 'Group name',
-                             },
+              'name'   => 'Internal Access Group',
+              'table'  => 'access_group',
+              'labels' => { 
+                            'groupnum'   => 'Group number',
+                            'groupname'  => 'Group name',
+                          },
 
-                 'viewall_dir' => 'browse',
+              'viewall_dir' => 'browse',
 
-                 'html_bottom' =>
-                   sub {
-                     my $access_group = shift;
-
-                     "<BR>Group virtualized to customers of agents:<BR>".
-                     ntable("#cccccc",2).
-                     '<TR><TD>'.
-                     include( '/elements/checkboxes-table.html',
-                                'source_obj'   => $access_group,
-                                'link_table'   => 'access_groupagent',
-                                'target_table' => 'agent',
-                                'name_col'     => 'agent',
-                                'target_link'  => $p.'edit/agent.cgi?',
-                                'disable-able' => 1,
-                            ).
-                     '</TR></TD></TABLE>'.
-
-                     "<BR>Group rights:<BR>".
-                     ntable("#cccccc",2).
-                     '<TR><TD>'.
-                     include( '/elements/checkboxes-table-name.html',
-                                'source_obj'   => $access_group,
-                                'link_table'   => 'access_right',
-                                'link_static'  => { 'righttype' =>
-                                                      'FS::access_group',
-                                                  },
-                                'num_col'      => 'rightobjnum',
-                                'name_col'     => 'rightname',
-                                'names_list'   => [ FS::AccessRight->rights() ],
-                            ).
-                     '</TR></TD></TABLE>'
-
-                     ;
-                   },
-           )
+              'html_bottom' => $html_bottom_sub,
+          )
 %>
+<%once>
+
+tie my %rights, 'Tie::IxHash', FS::AccessRight->rights_info;
+
+</%once>
+<%init>
+
+my $html_bottom_sub = sub {
+  my $access_group = shift;
+
+  #some false laziness w/browse/access_group.html
+  my $columns = 3;
+  my $count = 0;
+
+  '<BR>'.
+  '<FONT SIZE="+1">Group limited to these agent(s)</FONT><BR>'.
+  'Employees in this group will only see customers of the selected agents in the system and reports.<BR>'.
+  ntable("#cccccc",2).
+  '<TR><TD>'.
+  include( '/elements/checkboxes-table.html',
+             'source_obj'   => $access_group,
+             'link_table'   => 'access_groupagent',
+             'target_table' => 'agent',
+             'name_col'     => 'agent',
+             'target_link'  => $p.'edit/agent.cgi?',
+             'disable-able' => 1,
+         ).
+  '</TD></TR></TABLE>'.
+
+  '<BR><FONT SIZE="+1">Group access rights</FONT><BR>'.
+  include('/elements/table-grid.html', bgcolor=>'#cccccc' ).
+  '<TR>'. join( '', map {
+    '<TD CLASS="inv" VALIGN="top"><TABLE BGCOLOR="#cccccc" WIDTH=100%>'.
+    '<TR><TH BGCOLOR="#dcdcdc">'. $_. '</TH></TR>'.
+    '<TR><TD>'.
+    include( '/elements/checkboxes-table-name.html',
+               'source_obj'   => $access_group,
+               'link_table'   => 'access_right',
+               'link_static'  => { 'righttype' =>
+                                     'FS::access_group',
+                                 },
+               'num_col'      => 'rightobjnum',
+               'name_col'     => 'rightname',
+               'names_list'   => [ map { 
+                                         my $rn =
+                                           ref($_) ? $_->{'rightname'} : $_;
+                                         my %hash = ();
+                                         $hash{'note'} = '&nbsp;*'
+                                           if ref($_) && $_->{'global'};
+                                         $hash{'desc'} = $_->{'desc'}
+                                           if ref($_) &&  $_->{'desc'};
+                                         [ $rn => \%hash ];
+                                       }
+                                       @{ $rights{$_} }
+                                 ],
+           ).
+    '<BR>'.
+    '</TD></TR></TABLE></TD>'.
+    ( ++$count % $columns ? '' : '</TR><TR>')
+  
+  } keys %rights ). '</TR></TABLE>'.
+  
+  '* Global rights.  These rights provide access to global data which is shared among all agents.  Their use is not recommended for groups which are limited to a subset of agents.<BR>';
+
+};
+
+</%init>

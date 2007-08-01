@@ -27,6 +27,8 @@
 %
 % }
 %
+% my %param = $access_user->options;
+%
 % #XXX autogen
 % my @paramlist = qw( menu_position
 %                     email_address
@@ -40,9 +42,11 @@
 %   last;
 % }
 %
-% $error ||= $access_user->replace( {
-%   map { $_ => scalar($cgi->param($_)) } @paramlist,
-% } );
+% foreach (@paramlist) {
+%   $param{$_} = scalar($cgi->param($_));
+% }
+%
+% $error ||= $access_user->replace( \%param );
 %
 % if ( $error ) {
 %   $cgi->param('error', $error);

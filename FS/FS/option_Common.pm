@@ -79,10 +79,13 @@ sub insert {
   my $valuecol = $self->_option_valuecol;
 
   foreach my $optionname ( keys %{$options} ) {
+
+    my $optionvalue = $options->{$optionname};
+
     my $href = {
       $pkey     => $self->get($pkey),
       $namecol  => $optionname,
-      $valuecol => $options->{$optionname},
+      $valuecol => ( ref($optionvalue) || $optionvalue ),
     };
 
     #my $option_record = eval "new FS::$option_table \$href";
@@ -92,11 +95,15 @@ sub insert {
     #}
     my $option_record = "FS::$option_table"->new($href);
 
-    $error = $option_record->insert;
+    my @args = ();
+    push @args, $optionvalue if ref($optionvalue); #only hashes supported so far
+
+    $error = $option_record->insert(@args);
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error;
     }
+
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
@@ -154,8 +161,8 @@ sub delete {
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
 
-If a list hash reference of options is supplied, part_export_option records are
-created or modified (see L<FS::part_export_option>).
+If a list hash reference of options is supplied, option records are created or
+modified.
 
 =cut
 
@@ -208,10 +215,15 @@ sub replace {
         $namecol => $optionname,
     } );
 
+    my $optionvalue = $options->{$optionname};
+
+    my %oldhash = $oldopt ? $oldopt->hash : ();
+
     my $href = {
+        %oldhash,
         $pkey     => $self->get($pkey),
         $namecol  => $optionname,
-        $valuecol => $options->{$optionname},
+        $valuecol => ( ref($optionvalue) || $optionvalue ),
     };
 
     #my $newopt = eval "new FS::$option_table \$href";
@@ -224,10 +236,15 @@ sub replace {
     my $opt_pkey = $newopt->primary_key;
 
     $newopt->$opt_pkey($oldopt->$opt_pkey) if $oldopt;
+
+    my @args = ();
+    push @args, $optionvalue if ref($optionvalue); #only hashes supported so far
+
     warn "FS::option_Common::replace: ".
          ( $oldopt ? "$newopt -> replace($oldopt)" : "$newopt -> insert" )
       if $DEBUG > 2;
-    my $error = $oldopt ? $newopt->replace($oldopt) : $newopt->insert;
+    my $error = $oldopt ? $newopt->replace($oldopt, @args)
+                        : $newopt->insert( @args);
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error;

@@ -122,7 +122,8 @@
 
 <!-- agent -->
 
-<% include('/elements/tr-select-agent.html', $cust_main->agentnum,
+<% include('/elements/tr-select-agent.html', 
+              'curr_value'  => $cust_main->agentnum,
               'label'       => "<B>${r}Agent</B>",
               'empty_label' => 'Select agent',
            )

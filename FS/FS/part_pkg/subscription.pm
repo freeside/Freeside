@@ -89,8 +89,6 @@ sub calc_recur {
 
   $$sdate = timelocal(0,0,0,$cutoff_day,$mon,$year);
 
-  $self->reset_usage($cust_pkg);
-
   $self->option('recur_fee');
 }
 

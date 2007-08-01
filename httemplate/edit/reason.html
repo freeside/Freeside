@@ -25,6 +25,8 @@
 		 'fields' => [
 			       { 'field' => 'reason_type',
 			         'type'  => 'select',
+                                 #XXX use something more sane than a hashref
+                                 #then fix tr-select.html
 				 'value' => { 'vcolumn' => 'typenum',
 				              'ccolumn' => 'type',
 					      'values'  => \@types,
@@ -32,7 +34,7 @@
 			       },
 			       'reason',
 			       { 'field' => 'class',
-			         'type'  => 'fixedhidden',
+			         'type'  => 'hidden',
 				 'value' => $class,
 			       },
 			       { 'field' => 'disabled',

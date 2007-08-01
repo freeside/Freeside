@@ -1,9 +1,12 @@
 <% include( 'elements/edit.html',
                 'name'        => 'Advertising source',
                 'table'       => 'part_referral',
-                'fields'      => [ 'referral' ],
-                'labels'      => { 'referral' => 'Advertising source' },
+                'fields'      => [ 'referral',
+                                   { field=>'agentnum', type=>'select-agent', },
+                                 ],
+                'labels'      => { 'referral' => 'Advertising source',
+                                   'agentnum' => 'Agent',
+                                 },
                 'viewall_dir' => 'browse',
-                'html_table_bottom' => include('/elements/tr-select-agent.html'),
            )
 %>

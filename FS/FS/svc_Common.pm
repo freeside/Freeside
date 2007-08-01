@@ -187,6 +187,9 @@ If I<depend_jobnum> is set (to a scalar jobnum or an array reference of
 jobnums), all provisioning jobs will have a dependancy on the supplied
 jobnum(s) (they will not run until the specific job(s) complete(s)).
 
+If I<export_args> is set to an array reference, the referenced list will be
+passed to export commands.
+
 =cut
 
 sub insert {
@@ -279,8 +282,10 @@ sub insert {
     warn "[$me] insert: \$FS::queue::jobnums is $FS::queue::jobnums\n"
       if $DEBUG;
 
+    my $export_args = $options{'export_args'} || [];
+
     foreach my $part_export ( $self->cust_svc->part_svc->part_export ) {
-      my $error = $part_export->export_insert($self);
+      my $error = $part_export->export_insert($self, @$export_args);
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
         return "exporting to ". $part_export->exporttype.
@@ -314,7 +319,7 @@ sub insert {
   '';
 }
 
-=item delete
+=item delete [ , OPTION => VALUE ... ]
 
 Deletes this account from the database.  If there is an error, returns the
 error, otherwise returns false.
@@ -325,7 +330,8 @@ The corresponding FS::cust_svc record will be deleted as well.
 
 sub delete {
   my $self = shift;
-  my $error;
+  my %options = @_;
+  my $export_args = $options{'export_args'} || [];
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -338,10 +344,10 @@ sub delete {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  $error =    $self->SUPER::delete
-           || $self->export('delete')
-	   || $self->return_inventory
-	   || $self->cust_svc->delete
+  my $error =    $self->SUPER::delete
+              || $self->export('delete', @$export_args)
+	      || $self->return_inventory
+	      || $self->cust_svc->delete
   ;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
@@ -362,6 +368,7 @@ otherwise returns false.
 
 sub replace {
   my ($new, $old) = (shift, shift);
+  my %options = @_;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -392,6 +399,8 @@ sub replace {
   #new-style exports!
   unless ( $noexport_hack ) {
 
+    my $export_args = $options{'export_args'} || [];
+
     #not quite false laziness, but same pattern as FS::svc_acct::replace and
     #FS::part_export::sqlradius::_export_replace.  List::Compare or something
     #would be useful but too much of a pain in the ass to deploy
@@ -407,7 +416,7 @@ sub replace {
     foreach my $delete_part_export (
       grep { ! $new_exportnum{$_->exportnum} } @old_part_export
     ) {
-      my $error = $delete_part_export->export_delete($old);
+      my $error = $delete_part_export->export_delete($old, @$export_args);
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
         return "error deleting, export to ". $delete_part_export->exporttype.
@@ -418,7 +427,8 @@ sub replace {
     foreach my $replace_part_export (
       grep { $old_exportnum{$_->exportnum} } @new_part_export
     ) {
-      my $error = $replace_part_export->export_replace($new,$old);
+      my $error =
+        $replace_part_export->export_replace( $new, $old, @$export_args);
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
         return "error exporting to ". $replace_part_export->exporttype.
@@ -429,7 +439,7 @@ sub replace {
     foreach my $insert_part_export (
       grep { ! $old_exportnum{$_->exportnum} } @new_part_export
     ) {
-      my $error = $insert_part_export->export_insert($new);
+      my $error = $insert_part_export->export_insert($new, @$export_args );
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
         return "error inserting export to ". $insert_part_export->exporttype.
@@ -442,7 +452,6 @@ sub replace {
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
 }
-
 
 =item setfixed
 
@@ -681,7 +690,9 @@ Runs export_suspend callbacks.
 
 sub suspend {
   my $self = shift;
-  $self->export('suspend');
+  my %options = @_;
+  my $export_args = $options{'export_args'} || [];
+  $self->export('suspend', @$export_args);
 }
 
 =item unsuspend
@@ -692,7 +703,9 @@ Runs export_unsuspend callbacks.
 
 sub unsuspend {
   my $self = shift;
-  $self->export('unsuspend');
+  my %options = @_;
+  my $export_args = $options{'export_args'} || [];
+  $self->export('unsuspend', @$export_args);
 }
 
 =item export HOOK [ EXPORT_ARGS ]

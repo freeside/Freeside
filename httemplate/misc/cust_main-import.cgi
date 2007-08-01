@@ -24,7 +24,8 @@ target table.
 
 <% &ntable("#cccccc") %>
 
-<% include('/elements/tr-select-agent.html', '', #$agentnum,
+<% include('/elements/tr-select-agent.html',
+              #'curr_value' => '', #$agentnum,
               'label'       => "<B>Agent</B>",
               'empty_label' => 'Select agent',
            )

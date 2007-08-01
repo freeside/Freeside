@@ -271,7 +271,7 @@ sub delete {
     }
   }
 
-  my $error = $self->SUPER::delete;
+  my $error = $self->SUPER::delete(@_);
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
@@ -298,7 +298,7 @@ sub replace {
 
   # Better to do it here than to force the caller to remember that svc_domain is weird.
   $new->setfield(action => 'M');
-  my $error = $new->SUPER::replace($old);
+  my $error = $new->SUPER::replace($old, @_);
   return $error if $error;
 }
 

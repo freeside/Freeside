@@ -333,9 +333,42 @@ sub cust_main {
 
 =back
 
+=head1 CLASS METHODS
+
+=over 4
+
+=item credited_sql
+
+Returns an SQL fragment to retreive the unapplied amount.
+
+=cut
+
+sub credited_sql {
+  #my $class = shift;
+
+  "amount
+        - COALESCE(
+                    ( SELECT SUM(amount) FROM cust_credit_refund
+                        WHERE cust_credit.crednum = cust_credit_refund.crednum )
+                    ,0
+                  )
+        - COALESCE(
+                    ( SELECT SUM(amount) FROM cust_credit_bill
+                        WHERE cust_credit.crednum = cust_credit_bill.crednum )
+                    ,0
+                  )
+  ";
+
+}
+
+=back
+
 =head1 BUGS
 
 The delete method.  The replace method.
+
+B<credited> and B<credited_sql> should probably be called B<unapplied> and
+B<unapplied_sql>.
 
 =head1 SEE ALSO
 

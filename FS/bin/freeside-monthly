@@ -13,7 +13,7 @@ my $user = shift or die &usage;
 adminsuidsetup $user;
 
 use FS::Cron::bill qw(bill);
-bill(%opt, 'freq'=>'1m' );
+bill(%opt, 'check_freq'=>'1m' );
 
 ###
 # subroutines

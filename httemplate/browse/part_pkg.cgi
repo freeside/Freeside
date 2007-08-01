@@ -1,34 +1,26 @@
 <% include( 'elements/browse.html',
-                 'title'          => 'Package Definitions',
-                 'menubar'        => [ 'Main Menu' => $p ],
-                 'html_init'      => $html_init,
-                 'html_posttotal' => $posttotal,
-                 'name'           => 'package definitions',
-                 'query'          => { 'select'    => $select,
-                                       'table'     => 'part_pkg',
-                                       'hashref'   => \%search,
-                                       'extra_sql' => "ORDER BY $orderby",
-                                     },
-                 'count_query'    => $count_query,
-                 'header'         => \@header,
-                 'fields'         => \@fields,
-                 'links'          => \@links,
-                 'align'          => $align,
-                 'style'          => \@style,
+                 'title'              => 'Package Definitions',
+                 'menubar'            => [ 'Main Menu' => $p ],
+                 'html_init'          => $html_init,
+                 'name'               => 'package definitions',
+                 'disableable'        => 1,
+                 'disabled_statuspos' => 3,
+                 'query'              => { 'select'    => $select,
+                                           'table'     => 'part_pkg',
+                                           'hashref'   => {},
+                                           'extra_sql' => "ORDER BY $orderby",
+                                         },
+                 'count_query'        => $count_query,
+                 'header'             => \@header,
+                 'fields'             => \@fields,
+                 'links'              => \@links,
+                 'align'              => $align,
              )
 %>
 <%init>
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
-
-#false laziness w/access_user.html
-my %search = ();
-my $search = '';
-unless ( $cgi->param('showdisabled') ) {
-  %search = ( 'disabled' => '' );
-  $search = "( disabled = '' OR disabled IS NULL )";
-}
 
 my $select = '*';
 my $orderby = 'pkgpart';
@@ -72,18 +64,6 @@ my $html_init;
   !;
 #}
 
-my $posttotal;
-if ( $cgi->param('showdisabled') ) {
-  $cgi->param('showdisabled', 0);
-  $posttotal = '( <a href="'. $cgi->self_url. '">hide disabled packages</a> )';
-  $cgi->param('showdisabled', 1);
-} else {
-  $cgi->param('showdisabled', 1);
-  $posttotal = '( <a href="'. $cgi->self_url. '">show disabled packages</a> )';
-  $cgi->param('showdisabled', 0);
-}
-
-
 # ------
 
 my $link = [ $p.'edit/part_pkg.cgi?', 'pkgpart' ];
@@ -92,20 +72,6 @@ my @header = ( '#', 'Package', 'Comment' );
 my @fields = ( 'pkgpart', 'pkg', 'comment' );
 my $align = 'rll';
 my @links = ( $link, $link, '' );
-my @style = ( '', '', '' );
-
-#false laziness w/access_user.html
-#unless ( $cgi->param('showdisabled') ) { #its been reversed already
-if ( $cgi->param('showdisabled') ) { #its been reversed already
-  push @header, 'Status';
-  push @fields, sub { shift->disabled
-                        ? '<FONT COLOR="#FF0000">DISABLED</FONT>'
-                        : '<FONT COLOR="#00CC00">Active</FONT>'
-                    };
-  push @links, '';
-  $align .= 'c';
-  push @style, 'b';
-}
 
 unless ( 0 ) { #already showing only one class or something?
   push @header, 'Class';
@@ -255,7 +221,5 @@ $align .= 'lrl'; #rr';
 # --------
 
 my $count_query = 'SELECT COUNT(*) FROM part_pkg';
-$count_query .= " WHERE $search"
-  if $search;
 
 </%init>

@@ -1,0 +1,21 @@
+<% include( '/elements/select-table.html',
+                 'table'       => 'agent_type',
+                 'name_col'    => 'atype',
+                 'value'       => $typenum || '',
+                 'empty_label' => 'all',
+                 'hashref'     => { 'disabled' => '' },
+                 #'extra_sql'   => ' AND '.
+                 #                 $FS::CurrentUser::CurrentUser->agentnums_sql.
+                 #                 ' ORDER BY agent',
+                 %opt,
+             )
+%>
+<%init>
+
+my %opt = @_;
+my $typenum = $opt{'curr_value'} || $opt{'value'};
+
+$opt{'records'} = delete $opt{'agent_types'}
+  if $opt{'agent_types'};
+
+</%init>

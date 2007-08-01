@@ -1,0 +1,40 @@
+<% include('tr-td-label.html', @_ ) %>
+
+  <TD <% $style %>>
+
+%   foreach my $option ( @{ $opt{options} } ) { #just arrayref for now
+
+      <INPUT TYPE  = "checkbox"
+             NAME  = "<% $opt{field} %>"
+             ID    = "<% $opt{id}.'_'.$option %>"
+             VALUE = "<% $option %>"
+             <% ref($value) && $value->{$option} || $value eq $option
+                  ? ' CHECKED' : ''
+             %>
+             <% $onchange %>
+
+      >&nbsp;<% $labels->{$option} %>
+
+      <BR>
+
+%   }
+
+  </TD>
+
+</TR>
+
+<%init>
+
+my %opt = @_;
+
+my $onchange = $opt{'onchange'}
+                 ? 'onChange="'. $opt{'onchange'}. '(this)"'
+                 : '';
+
+my $value = $opt{'curr_value'} || $opt{'value'};
+
+my $labels = $opt{'option_labels'} || $opt{'labels'};
+
+my $style = $opt{'cell_style'} ? 'STYLE="'. $opt{'cell_style'}. '"' : '';
+
+</%init>

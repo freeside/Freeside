@@ -1,0 +1,124 @@
+<% include("/elements/header.html", 'Invoice templates') %>
+
+<% include('/elements/table-grid.html') %>
+% my $bgcolor1 = '#eeeeee';
+%   my $bgcolor2 = '#ffffff';
+%   my $bgcolor = '';
+
+<TR>
+  <TH CLASS="grid" BGCOLOR="#cccccc">Template</TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc">HTML</TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc">Print/PDF (typeset)</TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc">Plaintext</TH>
+</TR>
+
+% foreach my $templatename ( '', @templatenames ) {
+%   my $tname = length($templatename) ? "_$templatename" : '';
+%
+%   if ( $bgcolor eq $bgcolor1 ) {
+%     $bgcolor = $bgcolor2;
+%   } else {
+%     $bgcolor = $bgcolor1;
+%   }
+%
+%   my $display = length($templatename) ? $templatename : '<i>(Default)</i>';
+
+    <TR>
+
+      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+        <% $display %>
+      </TD>
+
+      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+
+%       my( $logo_label, $logo_link_label)= length( $templatename )
+%                                             ? labels("logo_$templatename.png")
+%                                             : ( '', 'edit' );
+        <% $logo_label %> Logo
+        (<A HREF="<% $p %>edit/invoice_logo.html?type=png;name=<% $templatename %>"><% $logo_link_label %></A>)
+        <BR>
+
+%       foreach my $suffix (qw( returnaddress notes footer), '' ) {
+%         my $file = "invoice_html$suffix$tname";
+%         my($label, $link_label) = length($templatename)
+%                                     ? labels($file)
+%                                     : ( '', 'edit' );
+
+          <% $label %> <% $suffix2name{$suffix} %>
+          (<A HREF="<% $p %>edit/invoice_template.html?type=html;suffix=<% $suffix %>;name=<% $templatename %>"><% $link_label %></A>)
+          <BR>
+
+%       }
+
+      </TD>
+
+      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+
+%       my( $logo_label, $logo_link_label)= length( $templatename )
+%                                             ? labels("logo_$templatename.eps")
+%                                             : ( '', 'edit' );
+        <% $logo_label %> Logo
+        (<A HREF="<% $p %>edit/invoice_logo.html?type=eps;name=<% $templatename %>"><% $logo_link_label %></A>)
+        <BR>
+
+%       foreach my $suffix (qw( returnaddress notes footer smallfooter), '' ) {
+%         my $file = "invoice_latex$suffix$tname";
+%         my($label, $link_label) = length($templatename)
+%                                     ? labels($file)
+%                                     : ( '', 'edit' );
+
+          <% $label %> <% $suffix2name{$suffix} %>
+          (<A HREF="<% $p %>edit/invoice_template.html?type=latex;suffix=<% $suffix %>;name=<% $templatename %>"><% $link_label %></A>)
+          <BR>
+
+%       }
+
+      </TD>
+
+      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+
+%       my( $txt_label, $txtlink_label)=
+%         length( $templatename )
+%           ? labels("invoice_template_$templatename.png")
+%           : ( 'Main template', 'edit' );
+        <% $txt_label %> 
+        (<A HREF="<% $p %>edit/invoice_template.html?type=text;name=<% $templatename %>"><% $txtlink_label %></A>)
+
+      </TD>
+
+    </TR>
+
+% }
+
+<% include("/elements/footer.html") %>
+
+<%once>
+
+my %suffix2name = (
+  'returnaddress' => 'Return address',
+  'notes'         => 'Notes',
+  'footer'        => 'Footer',
+  'smallfooter'   => 'Small footer',
+  ''              => 'Main template',
+);
+
+my $conf = new FS::Conf;
+
+sub labels {
+  my $filename = shift;
+  if ( $conf->exists($filename) ) {
+    ( 'Custom', 'edit' );
+  } else {
+    ( 'Standard', 'customize' );
+  }
+}
+
+</%once>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my @templatenames = $conf->invoice_templatenames;
+
+</%init>

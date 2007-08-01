@@ -1,30 +1,35 @@
-%
-%  my( $refnum, %opt ) = @_;
-%
-%  $opt{'part_referrals'} ||=
-%    [ FS::part_referral->all_part_referral( 1 ) ]; #1: include global
-%
-%  my $r = qq!<font color="#ff0000">*</font>&nbsp;!;
-%
-%
 % if ( scalar( @{$opt{'part_referrals'}} ) == 0 ) {
 %     eidiot "You have not created any advertising sources.  You must create at least one advertising source before adding a customer.  Go to ". popurl(2). "browse/part_referral.html and create one or more advertising sources.";
 %   } elsif ( scalar( @{$opt{'part_referrals'}} ) == 1 ) {
-%
 
+     <INPUT TYPE="hidden" NAME="<% $opt{'element_name'} || $opt{'field'} || 'refnum' %>" VALUE="<% $opt{'part_referrals'}->[0]->refnum %>">
 
-     <INPUT TYPE="hidden" NAME="refnum" VALUE="<% $opt{'part_referrals'}->[0]->refnum %>">
 % } else { 
 
-
      <TR>
-       <TH ALIGN="right"><%$r%>Advertising source</TH>
+%      if ( $opt{'label'} ) {
+         <TD ALIGN="right"><% $opt{'label'} %></TD>
+%      } else {
+         <TH ALIGN="right"><%$r%>Advertising source</TH>
+%      }
        <TD>
-         <% include( '/elements/select-part_referral.html', $refnum,
-                        'part_referrals' => $opt{'part_referrals'},
-                    )
+         <% include( '/elements/select-part_referral.html',
+                       'curr_value' => $refnum,
+                       %opt
+                   )
          %>
        </TD>
      </TR>
-% } 
 
+% } 
+<%init>
+
+my %opt = @_;
+my $refnum = $opt{'curr_value'} || $opt{'value'};
+
+$opt{'part_referrals'} ||=
+  [ FS::part_referral->all_part_referral( 1 ) ]; #1: include global
+
+my $r = qq!<font color="#ff0000">*</font>&nbsp;!;
+
+</%init>

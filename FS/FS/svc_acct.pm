@@ -779,7 +779,7 @@ sub replace {
     }
   }
 
-  $error = $new->SUPER::replace($old);
+  $error = $new->SUPER::replace($old, @_);
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error if $error;
@@ -845,7 +845,7 @@ Called by the suspend method of FS::cust_pkg (see L<FS::cust_pkg>).
 sub suspend {
   my $self = shift;
   return "can't suspend system account" if $self->_check_system;
-  $self->SUPER::suspend;
+  $self->SUPER::suspend(@_);
 }
 
 =item unsuspend
@@ -867,7 +867,7 @@ sub unsuspend {
     return $error if $error;
   }
 
-  $self->SUPER::unsuspend;
+  $self->SUPER::unsuspend(@_);
 }
 
 =item cancel
@@ -898,7 +898,7 @@ sub cancel {
     }
   }
 
-  $self->SUPER::cancel;
+  $self->SUPER::cancel(@_);
 }
 
 

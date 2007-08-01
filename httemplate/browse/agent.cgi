@@ -27,10 +27,11 @@ full offerings (via their type).<BR><BR>
 <TR>
   <TH CLASS="grid" BGCOLOR="#cccccc" COLSPAN=<% ( $cgi->param('showdisabled') || !dbdef->table('agent')->column('disabled') ) ? 2 : 3 %>>Agent</TH>
   <TH CLASS="grid" BGCOLOR="#cccccc">Type</TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>Invoice<BR>Template</FONT></TH>
   <TH CLASS="grid" BGCOLOR="#cccccc">Customers</TH>
   <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>Customer<BR>packages</FONT></TH>
   <TH CLASS="grid" BGCOLOR="#cccccc">Reports</TH>
-  <TH CLASS="grid" BGCOLOR="#cccccc">Registration codes</TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>Registration<BR>codes</FONT></TH>
   <TH CLASS="grid" BGCOLOR="#cccccc">Prepaid cards</TH>
 % if ( $conf->config('ticket_system') ) { 
 
@@ -39,8 +40,6 @@ full offerings (via their type).<BR><BR>
 
   <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>Payment Gateway Overrides</FONT></TH>
   <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>Configuration Overrides</FONT></TH>
-  <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>Freq.</FONT></TH>
-  <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>Prog.</FONT></TH>
 </TR>
 % 
 %#        <TH><FONT SIZE=-1>Agent #</FONT></TH>
@@ -66,18 +65,29 @@ full offerings (via their type).<BR><BR>
 
 
       <TR>
-        <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><A HREF="<%$p%>edit/agent.cgi?<% $agent->agentnum %>">
-          <% $agent->agentnum %></A></TD>
-% if ( dbdef->table('agent')->column('disabled')
-%        && !$cgi->param('showdisabled')           ) { 
 
-        <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $agent->disabled ? 'DISABLED' : '' %></TD>
-% } 
+        <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+          <A HREF="<%$p%>edit/agent.cgi?<% $agent->agentnum %>"><% $agent->agentnum %></A>
+        </TD>
 
+%       if ( dbdef->table('agent')->column('disabled')
+%            && !$cgi->param('showdisabled')           ) { 
+          <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+            <% $agent->disabled ? 'DISABLED' : '' %>
+          </TD>
+%       } 
 
-        <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><A HREF="<%$p%>edit/agent.cgi?<% $agent->agentnum %>">
-          <% $agent->agent %></A></TD>
-        <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><A HREF="<%$p%>edit/agent_type.cgi?<% $agent->typenum %>"><% $agent->agent_type->atype %></A></TD>
+        <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+          <A HREF="<%$p%>edit/agent.cgi?<% $agent->agentnum %>"><% $agent->agent %></A>
+        </TD>
+
+        <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+          <A HREF="<%$p%>edit/agent_type.cgi?<% $agent->typenum %>"><% $agent->agent_type->atype %></A>
+        </TD>
+
+        <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+          <% $agent->invoice_template || '(Default)' %>
+        </TD>
 
         <TD CLASS="inv" BGCOLOR="<% $bgcolor %>">
           <TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0>
@@ -365,11 +375,6 @@ Unused
             </TR>
           </TABLE>
         </TD>
-
-<!--
-        <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $agent->freq %></TD>
-        <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $agent->prog %></TD>
--->
 
       </TR>
 % } 

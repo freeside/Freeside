@@ -34,7 +34,7 @@
 %  #                    'select'    => '*',
 %  #                    'addl_from' => '', #'LEFT JOIN othertable USING ( key )',
 %  #                    'extra_sql' => '', #'AND otherstuff', #'WHERE onlystuff',
-%  #                    
+%  #                    'order_by'  => 'ORDER BY something',
 %  #
 %  #                  },
 %  #                  # "select * from tablename";
@@ -53,6 +53,20 @@
 %  # 'disable_download' => '', # set true to hide the CSV/Excel download links
 %  # 'disable_nonefound' => '', # set true to disable the "No matching Xs found"
 %  #                            # message
+%  #
+%  # 'disableable' => 1,  # set true if this table has a "disabled" field, to
+%  #                      # hide disabled records & have "show disabled" links
+%  # 'disabled_statuspos' => 3, #optional position (starting from 0) to insert
+%  #                            #a Status column when showing disabled records
+%  #                            #(query needs to be a qsearch hashref and
+%  #                            # header & fields need to be defined)
+
+%  # 'agent_virt' => 1, # set true if this search should be agent-virtualized
+%  # 'agent_null_right' => 'Access Right', #opt. right to view global records
+%  # 'agent_pos' => 3, #optional position (starting from 0) to insert
+%  #                   #an Agent column 
+%  #                   #(query needs to be a qsearch hashref and
+%  #                   # header & fields need to be defined)
 %  #
 %  # #listref - each item is a literal column name (or method) or coderef
 %  # #if not specified all columns will be shown
@@ -88,10 +102,10 @@
 %  # #(can't be used with a literal query)
 %  # 'disableable' => 1,
 %
-%  my $DEBUG = 0;
-%
 %  my(%opt) = @_;
 %  #warn join(' / ', map { "$_ => $opt{$_}" } keys %opt ). "\n";
+%
+%  my $curuser = $FS::CurrentUser::CurrentUser;
 %
 %  my %align = (
 %    'l' => 'left',
@@ -102,6 +116,90 @@
 %  );
 %  $opt{align} = [ map $align{$_}, split(//, $opt{align}) ],
 %    unless !$opt{align} || ref($opt{align});
+%
+%  if ( $opt{'agent_virt'} ) {
+%
+%    my $agentnums_sql = $curuser->agentnums_sql(
+%                          'null_right' => $opt{'agent_null_right'}
+%                        );
+%
+%    $opt{'query'}{'extra_sql'} .=
+%      ( $opt{'query'}       =~ /WHERE/i ? ' AND ' : ' WHERE ' ).
+%      $agentnums_sql;
+%    $opt{'count_query'} .=
+%      ( $opt{'count_query'} =~ /WHERE/i ? ' AND ' : ' WHERE ' ).
+%      $agentnums_sql;
+%
+%    if ( $opt{'agent_pos'} || $opt{'agent_pos'} eq '0'
+%         and scalar($curuser->agentnums) > 1           ) {
+%      #false laziness w/statuspos above
+%      my $pos = $opt{'agent_pos'};
+%
+%      foreach my $att (qw( align style color size )) {
+%        $opt{$att} ||= [ map '', @{ $opt{'fields'} } ];
+%      }
+%
+%      splice @{ $opt{'header'} }, $pos, 0, 'Agent'; 
+%      splice @{ $opt{'align'}  }, $pos, 0, 'c'; 
+%      splice @{ $opt{'style'}  }, $pos, 0, ''; 
+%      splice @{ $opt{'size'}   }, $pos, 0, ''; 
+%      splice @{ $opt{'fields'} }, $pos, 0,
+%        sub { $_[0]->agentnum ? $_[0]->agent->agent : '(global)'; };
+%      splice @{ $opt{'color'}  }, $pos, 0, '';
+%      splice @{ $opt{'links'}  }, $pos, 0, '' #[ 'agent link?', 'agentnum' ]
+%        if $opt{'links'};
+%
+%    }
+%
+%  }
+%
+%  if ( $opt{'disableable'} ) {
+%  
+%    unless ( $cgi->param('showdisabled') ) { #modify searches
+%  
+%      $opt{'query'}{'hashref'}{'disabled'} = '';
+%      $opt{'query'}{'extra_sql'} =~ s/^\s*WHERE/ AND/i;
+%  
+%      $opt{'count_query'} .=
+%        ( $opt{'count_query'} =~ /WHERE/i ? ' AND ' : ' WHERE ' ).
+%        "( disabled = '' OR disabled IS NULL )";
+%
+%    } elsif (    $opt{'disabled_statuspos'}
+%              || $opt{'disabled_statuspos'} eq '0' ) { #add status column
+%
+%      my $pos = $opt{'disabled_statuspos'};
+%
+%      foreach my $att (qw( align style color size )) {
+%        $opt{$att} ||= [ map '', @{ $opt{'fields'} } ];
+%      }
+%
+%      splice @{ $opt{'header'} }, $pos, 0, 'Status'; 
+%      splice @{ $opt{'align'}  }, $pos, 0, 'c'; 
+%      splice @{ $opt{'style'}  }, $pos, 0, 'b'; 
+%      splice @{ $opt{'size'}   }, $pos, 0, ''; 
+%      splice @{ $opt{'fields'} }, $pos, 0,
+%        sub { shift->disabled ? 'DISABLED' : 'Active'; };
+%      splice @{ $opt{'color'}  }, $pos, 0,
+%        sub { shift->disabled ? 'FF0000'   : '00CC00'; };
+%      splice @{ $opt{'links'}  }, $pos, 0, ''
+%        if $opt{'links'};
+%    }
+%  
+%    #add show/hide disabled links
+%    my $items = $opt{'name'} || PL($opt{'name_singular'});
+%    if ( $cgi->param('showdisabled') ) {
+%      $cgi->param('showdisabled', 0);
+%      $opt{'html_posttotal'} .=
+%        '( <a href="'. $cgi->self_url. qq!">hide disabled $items</a> )!;
+%      $cgi->param('showdisabled', 1);
+%    } else {
+%      $cgi->param('showdisabled', 1);
+%      $opt{'html_posttotal'} .=
+%        '( <a href="'. $cgi->self_url. qq!">show disabled $items</a> )!;
+%      $cgi->param('showdisabled', 0);
+%    }
+%  
+%  }
 %
 %  my $type = '';
 %  my $limit = '';
@@ -146,61 +244,6 @@
 %
 %  }
 %
-%  #disableable handling
-%  my $posttotal = '';
-%  if ( $opt{disableable} ) {
-%
-%    my $name= $opt{'name_singular'} ? PL($opt{'name_singular'}) : $opt{'name'};
-%
-%    if ( $cgi->param('showdisabled') ) {
-%      $cgi->param('showdisabled', 0);
-%      $posttotal= '( <a href="'. $cgi->self_url. '">'.
-%                  "hide disabled $name</a> )";
-%      $cgi->param('showdisabled', 1);
-%    } else {
-%      $cgi->param('showdisabled', 1);
-%      $posttotal= '( <a href="'. $cgi->self_url. '">'.
-%                  "show disabled $name</a> )";
-%      $cgi->param('showdisabled', 0);
-%    }
-%
-%    if ( $cgi->param('showdisabled') ) {
-%
-%      my $offset = $opt{disableable};
-%
-%      splice @{ $opt{header} }, $offset, 0, 'Status';
-%
-%      splice @{ $opt{fields} }, $offset, 0,
-%        sub { shift->disabled ? 'DISABLED' : 'Active' };
-%
-%      if ( $opt{links} && scalar( @{ $opt{links} } ) ) {
-%        splice @{ $opt{links} }, $offset, 0, '';
-%      }
-%
-%      if ( $opt{align} && scalar( @{ $opt{align} } ) ) {
-%        splice @{ $opt{align} }, $offset, 0, 'center';
-%      }
-%
-%      unless ( $opt{color} && scalar( @{ $opt{color} } ) ) {
-%        #$opt{color} = [ map { '000000'; } @{$opt{header}} ];
-%        $opt{color} = [ map { ''; } @{$opt{header}} ];
-%      }
-%      splice @{ $opt{color} }, $offset, 0,
-%        sub { shift->disabled ? 'FF0000' : '00CC00'; };
-%
-%      if ( $opt{size} && scalar( @{ $opt{size} } ) ) {
-%        splice @{ $opt{size} }, $offset, 0, '';
-%      }
-%
-%      unless ( $opt{style} && scalar( @{ $opt{style} } ) ) {
-%        $opt{style} = [ map { ''; } @{$opt{header}} ];
-%      }
-%      splice @{ $opt{style} }, $offset, 0, 'b';
-%
-%    }
-%
-%  }
-%
 %  # run the query
 %
 %  my $header = $opt{header};
@@ -214,17 +257,15 @@
 %    }
 %
 %    #eval "use FS::$opt{'query'};";
-%    $rows = [ qsearch(
-%      $opt{'query'}->{'table'}, 
-%      $opt{'query'}->{'hashref'} || {}, 
-%      $opt{'query'}->{'select'},
-%      $opt{'query'}->{'extra_sql'}. " $limit",
-%      '',
-%      (exists($opt{'query'}->{'addl_from'}) ? $opt{'query'}->{'addl_from'} : '')
-%    ) ];
-%
+%    $rows = [ qsearch({
+%      'select'    => $opt{'query'}->{'select'},
+%      'table'     => $opt{'query'}->{'table'}, 
+%      'addl_from' => (exists($opt{'query'}->{'addl_from'}) ? $opt{'query'}->{'addl_from'} : ''),
+%      'hashref'   => $opt{'query'}->{'hashref'} || {}, 
+%      'extra_sql' => $opt{'query'}->{'extra_sql'},
+%      'order_by'  => $opt{'query'}->{'order_by'}. " $limit",
+%    }) ];
 %  } else {
-%
 %    my $sth = dbh->prepare("$opt{'query'} $limit")
 %      or die "Error preparing $opt{'query'}: ". dbh->errstr;
 %    $sth->execute
@@ -234,14 +275,7 @@
 %    $rows = $sth->fetchall_arrayref;
 %
 %    $header ||= $sth->{NAME};
-%
 %  }
-%
-%  warn scalar(@$rows). ' rows returned from '.
-%       ( ref($opt{'query'}) ? 'qsearch query' : 'literal SQL query' )
-%    if $DEBUG || $opt{'debug'};
-%
-%  # display the results - csv, xls or html
 %
 %  if ( $type eq 'csv' ) {
 %
@@ -430,8 +464,6 @@
 %           $cgi->param('maxrecords', $maxrecords);
 %         }
 
-          <% $posttotal %>
-
           <% defined($opt{'html_posttotal'}) 
                 ? ( ref($opt{'html_posttotal'})
                       ? &{$opt{'html_posttotal'}}()
@@ -522,7 +554,7 @@
 %
 %                                  my $tableref = $_;
 %
-%                                  '<TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0>'.
+%                                  '<TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 WIDTH="100%">'.
 %
 %                                  join('', map {
 %
@@ -532,22 +564,37 @@
 %
 %                                    join('', map {
 %
-%                                      my $element = $_;
+%                                      my $e = $_;
 %
-%                                      '<TD'.
-%                                      ( $element->{'align'}
-%                                          ? ' ALIGN="'. $element->{'align'}. '"'
-%                                          : ''
-%                                      ). '>'.
-%                                      ( $element->{'link'}
-%                                          ? '<A HREF="'. $element->{'link'}.'">'
+%                                      '<TD '.
+%                                        join(' ', map {
+%                                          uc($_).'="'. $e->{$_}. '"';
+%                                        }
+%                                        grep exists($e->{$_}),
+%                                             qw( align bgcolor colspan rowspan
+%                                                 style valign width )
+%                                        ).
+%                                      '>'.
+%
+%                                      ( $e->{'link'}
+%                                          ? '<A HREF="'. $e->{'link'}. '">'
 %                                          : ''
 %                                      ).
-%                                      $element->{'data'}.
-%                                      ( $element->{'link'}
-%                                          ? '</A>'
+%                                      ( $e->{'size'}
+%                                         ? '<FONT SIZE="'.uc($e->{'size'}).'">'
+%                                         : ''
+%                                      ).
+%                                      ( $e->{'data_style'}
+%                                          ? '<'. uc($e->{'data_style'}). '>'
 %                                          : ''
 %                                      ).
+%                                      $e->{'data'}.
+%                                      ( $e->{'data_style'}
+%                                          ? '</'. uc($e->{'data_style'}). '>'
+%                                          : ''
+%                                      ).
+%                                      ( $e->{'size'} ? '</FONT>' : '' ).
+%                                      ( $e->{'link'} ? '</A>'    : '' ).
 %                                      '</td>';
 %
 %                                    } @$rowref ).
@@ -620,7 +667,7 @@
 % } else { 
 % foreach ( @$row ) { 
 
-                          <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $_ %></TD>
+                          <TD CLASS="grid" BGCOLOR="$bgcolor"><% $_ %></TD>
 % } 
 % } 
 

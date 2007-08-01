@@ -267,11 +267,15 @@ Setting <% $key %>
 </BODY>
 </HTML>
 <%once>
-my $conf = new FS::Conf;
-my %confitems = map { $_->key => $_ } $conf->config_items;
-</%once>
 
+my $conf = new FS::Conf;
+my @config_items = grep { $_->key != ~/^invoice_(html|latex|template)/ }
+                        $conf->config_items; 
+my %confitems = map { $_->key => $_ } @config_items;
+
+</%once>
 <%init>
+
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
 

@@ -1,8 +1,3 @@
-%
-%  my( %opt ) = @_;
-%
-
-
 <TR>
   <TD ALIGN="right"><% $opt{'label'} || 'Packages' %></TD>
   <TD>
@@ -17,3 +12,9 @@
     %>
   </TD>
 </TR>
+
+<%init>
+
+my %opt = @_;
+
+</%init>

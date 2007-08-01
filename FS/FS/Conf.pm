@@ -171,6 +171,30 @@ sub config_orbase {
   }
 }
 
+=item invoice_templatenames
+
+Returns all possible invoice template names.
+
+=cut
+
+sub invoice_templatenames {
+  my( $self ) = @_;
+
+  my %templatenames = ();
+  foreach my $item ( $self->config_items ) {
+    foreach my $base ( @base_items ) {
+      my( $main, $ext) = split(/\./, $base);
+      $ext = ".$ext" if $ext;
+      if ( $item->key =~ /^${main}_(.+)$ext$/ ) {
+      $templatenames{$1}++;
+      }
+    }
+  }
+  
+  sort keys %templatenames;
+
+}
+
 =item touch KEY [ AGENT ];
 
 Creates the specified configuration key if it does not exist.
@@ -482,6 +506,21 @@ httemplate/docs/config.html
   "Switch",
   "Solo",
 );
+
+@base_items = qw (
+                   invoice_template
+                   invoice_latex
+                   invoice_latexreturnaddress
+                   invoice_latexfooter
+                   invoice_latexsmallfooter
+                   invoice_latexnotes
+                   invoice_html
+                   invoice_htmlreturnaddress
+                   invoice_htmlfooter
+                   invoice_htmlnotes
+                   logo.png
+                   logo.eps
+                 );
 
 @base_items = qw (
                    invoice_template
@@ -1909,6 +1948,25 @@ httemplate/docs/config.html
     'description' => 'Select one or more card types to enable only those card types.  If no card types are selected, all card types are available.',
     'type'        => 'selectmultiple',
     'select_enum' => \@card_types,
+  },
+
+  {
+    'key'         => 'disable-fuzzy',
+    'section'     => 'UI',
+    'description' => 'Disable fuzzy searching.  Speeds up searching for large sites, but only shows exact matches.',
+    'type'        => 'checkbox',
+  },
+
+  { 'key'         => 'pkg_referral',
+    'section'     => '',
+    'description' => 'Enable package-specific advertising sources.',
+    'type'        => 'checkbox',
+  },
+
+  { 'key'         => 'pkg_referral-multiple',
+    'section'     => '',
+    'description' => 'In addition, allow multiple advertising sources to be associated with a single package.',
+    'type'        => 'checkbox',
   },
 
   {

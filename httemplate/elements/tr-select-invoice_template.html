@@ -1,0 +1,39 @@
+<% include('tr-td-label.html', @_) %>
+
+  <TD <% $style %>>
+
+    <SELECT NAME = "<% $opt{'field'} || 'templatename' %>"
+            ID   = "<% $opt{'id'} %>"
+    >
+
+%     foreach my $templatename ( '', @templatenames ) {
+            
+        <OPTION VALUE="<% $templatename %>"
+                <% $templatename eq $curr_value ? 'SELECTED' : '' %>
+        ><% $templatename || '(Default)' %>
+
+%     }
+
+    </SELECT>
+
+  </TD>
+
+</TR>
+
+<%init>
+
+my %opt = @_;
+
+my $onchange = $opt{'onchange'}
+                 ? 'onChange="'. $opt{'onchange'}. '(this)"'
+                 : '';
+
+my $style = $opt{'cell_style'} ? 'STYLE="'. $opt{'cell_style'}. '"' : '';
+
+my $curr_value = $opt{'curr_value'} || $opt{'value'};
+
+my $conf = new FS::Conf;
+
+my @templatenames = $conf->invoice_templatenames;
+
+</%init>

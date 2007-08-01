@@ -7,10 +7,12 @@
                                   ],
                  'html_init'   => $html_init,
                  'name'        => $classname . ' reasons',
+                 'disableable' => 1,
+                 'disabled_statuspos' => 3,
                  'query'       => { 'table'     => 'reason',
                                     'hashref'   => {},
-                                    'extra_sql' => $where_clause . 
-				                   'ORDER BY reason_type', 
+                                    'extra_sql' => $where_clause. 
+				                   ' ORDER BY reason_type', 
                                     'addl_from' => 'LEFT JOIN reason_type ON reason_type.typenum = reason.reason_type', 
                                   },
                  'count_query' => $count_query,
@@ -47,18 +49,7 @@ my $html_init = ucfirst($classname) .
 qq!<A HREF="${p}edit/reason.html?class=$class">!.
 "<I>Add a $classname reason</I></A><BR><BR>";
 
-my $where_clause = "WHERE class='$class'";
-$where_clause .= " AND (disabled = '' OR disabled IS NULL)"
-unless $cgi->param('showdisabled');
-
-my $disabledurl = $cgi->param('showdisabled')
-   ? do { $cgi->param('showdisabled', 0);
-         '( <a href="'. $cgi->self_url. '">hide disabled reasons</a> )'; }
-   : do { $cgi->param('showdisabled', 1);
-         '( <a href="'. $cgi->self_url. '">show disabled reasons</a> )'; }
-   ;
-
-$html_init .= $disabledurl;
+my $where_clause = " WHERE class='$class' ";
 
 my $count_query = 'SELECT COUNT(*) FROM reason LEFT JOIN reason_type on ' .
                 'reason_type.typenum = reason.reason_type ' . $where_clause;

@@ -6,7 +6,7 @@ use FS::UID qw(adminsuidsetup);
 
 &untaint_argv;	#what it sounds like  (eww)
 use vars qw(%opt);
-getopts("p:a:d:vsy:n", \%opt);
+getopts("p:a:d:vl:sy:n", \%opt);
 
 my $user = shift or die &usage;
 adminsuidsetup $user;
@@ -14,8 +14,13 @@ adminsuidsetup $user;
 use FS::Cron::bill qw(bill);
 bill(%opt);
 
+#what to do about the below when using -m?  that is the question.
+
 use FS::Cron::notify qw(notify_flat_delay);
 notify_flat_delay(%opt);
+
+use FS::Cron::expire_user_pref qw(expire_user_pref);
+expire_user_pref();
 
 use FS::Cron::vacuum qw(vacuum);
 vacuum();
@@ -50,7 +55,7 @@ freeside-daily - Run daily billing and invoice collection events.
 
 =head1 SYNOPSIS
 
-  freeside-daily [ -d 'date' ] [ -y days ] [ -p 'payby' ] [ -a agentnum ] [ -s ] [ -v ] user [ custnum custnum ... ]
+  freeside-daily [ -d 'date' ] [ -y days ] [ -p 'payby' ] [ -a agentnum ] [ -s ] [ -v ] [ -l level ] user [ custnum custnum ... ]
 
 =head1 DESCRIPTION
 
@@ -79,6 +84,10 @@ the bill and collect methods of a cust_main object.  See L<FS::cust_main>.
   -s: re-charge setup fees
 
   -v: enable debugging
+
+  -l: debugging level
+
+  -m: Experimental multi-process mode uses the job queue for multi-process and/or multi-machine billing.
 
 user: From the mapsecrets file - see config.html from the base documentation
 

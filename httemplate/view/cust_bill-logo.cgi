@@ -2,7 +2,8 @@
 <%init>
 
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('View invoices');
+  unless $FS::CurrentUser::CurrentUser->access_right('View invoices')
+      or $FS::CurrentUser::CurrentUser->access_right('Configuration');
 
 my $conf = new FS::Conf;
 

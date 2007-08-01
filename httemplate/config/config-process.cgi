@@ -4,7 +4,8 @@ die "access denied\n"
 
 my $conf = new FS::Conf;
 $FS::Conf::DEBUG = 1;
-my @config_items = $conf->config_items;
+my @config_items = grep { $_->key != ~/^invoice_(html|latex|template)/ }
+                        $conf->config_items;
 my %confitems = map { $_->key => $_ } $conf->config_items;
 
 my $agentnum = $cgi->param('agentnum');

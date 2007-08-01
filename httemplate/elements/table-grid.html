@@ -1,10 +1,3 @@
-%
-%  my %opt = @_;
-%  $opt{cellspacing} ||= 0;
-%  $opt{cellpadding} ||= 0;
-%
-%
-
 <STYLE TYPE="text/css">
 
 .grid table { border: solid; empty-cells: show }
@@ -17,5 +10,16 @@
 
 </STYLE>
 
-<TABLE CLASS="grid" CELLSPACING=<% $opt{cellspacing} %> CELLPADDING=<% $opt{cellpadding} %> BORDER=1 BORDERCOLOR="#000000" STYLE="border: solid 1px black; empty-cells: show">
+<TABLE CLASS="grid" CELLSPACING=<% $opt{cellspacing} %> CELLPADDING=<% $opt{cellpadding} %> BORDER=1 BORDERCOLOR="#000000" <% $opt{bgcolor} %> STYLE="border: solid 1px black; empty-cells: show">
+
+<%init>
+
+my %opt = @_;
+$opt{cellspacing} ||= 0;
+$opt{cellpadding} ||= 0;
+
+$opt{bgcolor} =~ s/^#//;
+$opt{bgcolor} = 'BGCOLOR="#'. $opt{bgcolor}. '"' if length($opt{bgcolor});
+
+</%init>
 

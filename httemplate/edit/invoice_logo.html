@@ -1,0 +1,136 @@
+<% include("/elements/header.html", "Edit $type2desc{$type} invoice logo",
+             menubar(
+               'View all invoice templates' => $p.'browse/invoice_template.html'
+             )
+          )
+%>
+
+% if ( $error ) { 
+  <FONT SIZE="+1" COLOR="#ff0000">Error: <% $error %></FONT>
+  <BR><BR>
+% } 
+
+% if ( $cgi->param('msg') ) { 
+  <FONT SIZE="+1"><B><% $cgi->param('msg') |h %></B></FONT>
+  <BR><BR>
+% } 
+
+% if ( $mode eq 'upload' ) {
+  <FORM ACTION="invoice_logo.html" METHOD="POST" ENCTYPE="multipart/form-data">
+  <INPUT TYPE="hidden" NAME="mode" VALUE="preview">
+% } elsif ( $mode eq 'preview' ) {
+  <FORM ACTION="process/invoice_logo.html" METHOD="POST">
+  <INPUT TYPE="hidden" NAME="preview_session" VALUE="<% $session %>">
+% }
+
+<INPUT TYPE="hidden" NAME="type" VALUE="<% $type %>">
+<INPUT TYPE="hidden" NAME="name" VALUE="<% $name %>">
+
+<% include('/elements/table-grid.html') %>
+
+<TR>
+  <TH CLASS="grid" BGCOLOR="#cccccc">Current logo</TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc">New logo preview</TH>
+</TR>
+
+<TR>
+
+  <TD CLASS="grid" BGCOLOR="#ffffff">
+
+%   if ( $type eq 'png' ) {
+
+      <IMG SRC="<% $p %>view/logo.cgi?type=png;name=<% $name %>">
+
+%   } elsif ( $type eq 'eps' ) {
+
+     <i>EPS preview not yet supported</i>
+
+%   }
+
+  </TD>
+
+  <TD CLASS="grid" BGCOLOR="#ffffff">
+
+% if ( $mode eq 'upload' ) {
+
+    Upload new logo (PNG format): <INPUT TYPE="file" NAME="new_logo">
+    <BR><INPUT TYPE="submit" NAME="submit" VALUE="Upload">
+
+% } elsif ( $mode eq 'preview' ) {
+
+    <IMG SRC="<% $p %>view/logo.cgi?type=png;preview_session=<% $session %>">
+
+% }
+
+  </TD>
+
+
+</TR>
+
+</TABLE>
+
+% if ( $mode eq 'preview' ) {
+  <BR>
+  <INPUT TYPE="submit" NAME="submit" VALUE="Change logo">
+% }
+
+</FORM>
+
+<% include("/elements/footer.html") %>
+
+<%once>
+
+my %type2desc = (
+  'png'  => 'online',
+  'eps'  => 'Print/PDF (typeset)',
+);
+
+</%once>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $conf = new FS::Conf;
+
+my $type = $cgi->param('type');
+
+$cgi->param('name') =~ /^([^\.\/]*)$/ or die "illegal name";
+my $name = $1;
+
+$cgi->param('mode') =~ /^(\w*)$/ or die "illegal mode";
+my $mode = $1 || 'upload';
+
+my $error = '';
+my $session = '';
+if ( $mode eq 'preview' ) {
+
+  my $fh = $cgi->upload('new_logo');
+
+  if ( defined $fh ) {
+
+    local $/;
+    my $logo_data = <$fh>;
+
+    $session = int(rand(4294967296)); #XXX
+    my $pref = new FS::access_user_pref({
+      'usernum'    => $FS::CurrentUser::CurrentUser->usernum,
+      'prefname'   => "logo_preview$session",
+      'prefvalue'  => encode_base64($logo_data),
+      'expiration' => time + 3600, #1h?  1m?
+    });
+    my $pref_error = $pref->insert;
+    if ( $pref_error ) {
+      die "FATAL: couldn't set preview cookie: $pref_error\n";
+    }
+
+  } else {
+
+    $mode = 'upload';
+    $error = 'No file uploaded';
+
+  }
+
+}
+
+</%init>

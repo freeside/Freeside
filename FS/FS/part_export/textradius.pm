@@ -30,7 +30,7 @@ operation</a>.
 END
 );
 
-$prefix = "/usr/local/etc/freeside/export.";
+$prefix = "%%%FREESIDE_CONF%%%/export.";
 
 sub rebless { shift; }
 

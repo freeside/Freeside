@@ -1,0 +1,75 @@
+<% include('/elements/header-popup.html', 'Cancel customer' ) %>
+
+% if ( $cgi->param('error') ) { 
+  <FONT SIZE="+1" COLOR="#ff0000">Error: <% $cgi->param('error') %></FONT>
+  <BR><BR>
+% } 
+
+<FORM NAME="cust_cancel_popup" ACTION="<% popurl(1) %>cust_main-cancel.cgi" METHOD=POST>
+<INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
+
+
+ <P ALIGN="center"><B>Permanently delete all services and cancel this customer?</B>
+
+ <% $ban %>
+ 
+<BR><BR>
+
+<% ntable("#cccccc", 2) %>
+
+<% include('/elements/tr-select-reason.html',
+             'field'          => 'reasonnum',
+             'reason_class'   => 'C',
+             #XXX these need to be sticky on errors too...
+             #'curr_value'     => '',
+             'control_button' => 'document.cust_cancel_popup.submit',
+          )
+%>
+
+</TABLE>
+
+<BR>
+<P ALIGN="CENTER">
+<INPUT TYPE="submit" NAME="submit" VALUE="Cancel customer" disabled='true'> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<INPUT TYPE="BUTTON" VALUE="Don't cancel" onClick="parent.cClick();"> 
+
+</FORM>
+</BODY>
+</HTML>
+
+<%init>
+
+my($custnum, $reasonnum, $submit, $cust_main, $curuser, $class); 
+if ( $cgi->param('error') ) {
+  $custnum        = $cgi->param('custnum');
+  $reasonnum     = $cgi->param('reasonnum');
+} else {
+  my( $query ) = $cgi->keywords;
+  if ( $query =~ /^(\d+)$/ ) {
+    $custnum  = $1;
+  } else {
+    die "illegal query ". $cgi->keywords;
+  }
+}
+
+$curuser = $FS::CurrentUser::CurrentUser;
+
+$cust_main = qsearchs( {
+  'table'     => 'cust_main',
+  'hashref'   => { 'custnum' => $custnum },
+  'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+} );
+die "No customer # $custnum" unless $cust_main;
+
+my $ban = '';
+if ( $cust_main->payby =~ /^(CARD|DCRD|CHEK|DCHK)$/ ) {
+  $ban = '<BR><P ALIGN="center">'.
+         '<INPUT TYPE="checkbox" NAME="ban" VALUE="1"> Ban this customer\'s ';
+  if ( $cust_main->payby =~ /^(CARD|DCRD)$/ ) {
+    $ban .= 'credit card';
+  } elsif (  $cust_main->payby =~ /^(CHEK|DCHK)$/ ) {
+    $ban .= 'ACH account';
+  }
+}
+
+</%init>
+

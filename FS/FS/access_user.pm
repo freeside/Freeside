@@ -308,22 +308,34 @@ Returns a hashref of agentnums this user can view.
 
 sub agentnums_href {
   my $self = shift;
-  { map { $_ => 1 } $self->agentnums };
+  scalar( { map { $_ => 1 } $self->agentnums } );
 }
 
-=item agentnums_sql
+=item agentnums_sql [ HASHREF | OPTION => VALUE ... ]
 
 Returns an sql fragement to select only agentnums this user can view.
+
+Options are passed as a hashref or a list.  Available options are:
+
+=over 4
+
+=item null - The frament will also allow the selection of null agentnums.
+
+=item null_right - The fragment will also allow the selection of null agentnums if the current user has the provided access right
+
+=back
 
 =cut
 
 sub agentnums_sql {
-  my $self = shift;
+  my( $self ) = shift;
+  my %opt = ref($_[0]) ? %{$_[0]} : @_;
 
   my @agentnums = map { "agentnum = $_" } $self->agentnums;
 
   push @agentnums, 'agentnum IS NULL'
-    if $self->access_right('View/link unlinked services');
+    if $opt{'null'}
+    || ( $opt{'null_right'} && $self->access_right($opt{'null_right'}) );
 
   return ' 1 = 0 ' unless scalar(@agentnums);
   '( '. join( ' OR ', @agentnums ). ' )';

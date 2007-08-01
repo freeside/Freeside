@@ -1,0 +1,157 @@
+<% include( 'elements/browse.html',
+                'title'              => 'Billing Event Definitions',
+                'html_init'          => $html_init,
+                'name'               => 'billing event definitions',
+                'disableable'        => 1,
+                'disabled_statuspos' => 2,
+                'agent_virt'         => 1,
+                'agent_null_right'   => 'Edit global billing events',
+                'agent_pos'          => 3,
+                'query'              => { 'select'    => 'part_event.*',
+                                          'table'     => 'part_event',
+                                          'addl_from' => $join_conditions,
+                                          'hashref'   => {},
+                                          'order_by'  => $order_conditions,
+                                        },
+                'count_query'        => $count_query,
+                'header'             => [ '#',
+                                          'Event',
+                                          'Type',
+                                          'Check freq.',
+                                          'Conditions',
+                                          'Action',
+                                        ],
+                'fields'             => [ 'eventpart',
+                                          'event',
+                                          $eventtable_sub,
+                                          $check_freq_sub,
+                                          $conditions_sub,
+                                          $action_sub,
+                                        ],
+                'links'              => [ $link,
+                                          $link,
+                                          '',
+                                          '',
+                                          '',
+                                          '',
+                                        ],
+                'align'              => 'rllccc',
+          )
+%>
+<%once>
+
+my $eventtable_labels = FS::part_event->eventtable_labels;
+my $eventtable_sub = sub { $eventtable_labels->{ shift->eventtable }; };
+
+my $check_freq_labels = FS::part_event->check_freq_labels;
+my $check_freq_sub = sub { $check_freq_labels->{ shift->check_freq }; };
+
+my $conditions_sub = sub {
+  my $part_event = shift;
+  my $addl = 0;
+
+  [
+    map {
+           my $part_event_condition = $_;
+           my %options = $part_event_condition->options;
+
+           [
+             {
+               'data'       => $part_event_condition->description,
+               'width'      => '100%',
+               'align'      => 'center',
+               'colspan'    => 2,
+               'style'      => ( $addl++ ? 'border-top: 1px solid gray' : '' ), 
+             },
+           ],
+
+           map {
+
+             my $data = $options{$_};
+             if ( ref($data) ) {
+               $data = join('<BR>', keys %$data); #XXX display hash values too?
+             }
+
+             [
+               {
+                 'data'   => $part_event_condition->option_label($_). ':',
+                 'align'  => 'right',
+                 'valign' => 'top',
+                 'size'   => '-1',
+               },
+               {
+                 'data'  => $data,
+                 'align' => 'left',
+                 'size'  => '-1',
+               },
+             ];
+
+           } keys %options
+
+        }
+        $part_event->part_event_condition
+
+  ];
+
+};
+
+my $action_sub = sub {
+  my $part_event = shift;
+
+  my %options = $part_event->options;
+  
+  [
+
+    [
+      {
+        'data'       => $part_event->description,
+        'width'      => '100%',
+        'align'      => 'center',
+        'colspan'    => 2,
+      },
+    ],
+
+    map {
+          [
+            {
+              'data'  => $part_event->option_label($_). ':',
+              'align' => 'right',
+              'size'  => '-1',
+            },
+            {
+             'data'  => $options{$_},
+             'align' => 'left',
+              'size'  => '-1',
+            },
+          ];
+        }
+
+        keys %options
+  ];
+
+};
+
+my $link = [ $p.'edit/part_event.html?', 'eventpart' ];
+
+</%once>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Edit billing events')
+      || $FS::CurrentUser::CurrentUser->access_right('Edit global billing events');
+
+my $html_init =
+  #XXX better description
+  'Events are billing, collection or other actions triggered when certain '.
+  'customer, invoice, package or other conditions are met.<BR><BR>'.
+  qq!<A HREF="${p}edit/part_event.html"><I>Add a new event</I></A><BR><BR>!;
+     
+my $count_query = 'SELECT COUNT(*) FROM part_event WHERE '.
+                  $FS::CurrentUser::CurrentUser->agentnums_sql(
+                    'null_right' => 'Edit global billing events',
+                  );
+
+my $join_conditions  = FS::part_event_condition->join_conditions_sql;
+my $order_conditions = FS::part_event_condition->order_conditions_sql;
+
+</%init>

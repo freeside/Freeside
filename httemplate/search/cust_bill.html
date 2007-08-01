@@ -199,18 +199,41 @@ my $html_init = join("\n", map {
  qq!<INPUT TYPE="hidden" NAME="open"      VALUE="$open">!,
  qq!<INPUT TYPE="hidden" NAME="days"      VALUE="$days">!,
  qq!</FORM>!
-} qw( print_ email_ fax_ ) );
+} qw( print_ email_ fax_ ) ). 
+
+'<SCRIPT TYPE="text/javascript">
+
+function confirm_print_process() {
+  if ( ! confirm("Are you sure you want to reprint these invoices?") ) {
+    return;
+  }
+  print_process();
+}
+function confirm_email_process() {
+  if ( ! confirm("Are you sure you want to re-email these invoices?") ) {
+    return;
+  }
+  email_process();
+}
+function confirm_fax_process() {
+  if ( ! confirm("Are you sure you want to re-fax these invoices?") ) {
+    return;
+  }
+  fax_process();
+}
+
+</SCRIPT>';
 
 my $menubar =  [
                 'Main menu' => $p,
                 'Print these invoices' =>
-                  "javascript:print_process()",
+                  "javascript:confirm_print_process()",
                 'Email these invoices' =>
-                  "javascript:email_process()",
+                  "javascript:confirm_email_process()",
               ];
 
 push @$menubar, 'Fax these invoices' =>
-                 "javascript:fax_process()"
+                 "javascript:confirm_fax_process()"
  if $conf->exists('hylafax');
 
 </%init>

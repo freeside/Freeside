@@ -112,16 +112,6 @@ tie %hash, 'Tie::IxHash',
     longname  => 'Chargeback',
     cust_main => '', # not a customer type
   },
-  'DCLN' => {  # This is only an event.
-    tinyname  => 'declined',
-    shortname => 'Batch declined payment',
-    longname  => 'Batch declined payment',
-
-    #its neither of these..
-    cust_main => '',
-    cust_pay  => '',
-
-  },
 ;
 
 sub payby {

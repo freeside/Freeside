@@ -46,7 +46,6 @@
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('List services');
 
-
 my $conf = new FS::Conf;
 
 my $orderby = 'ORDER BY svcnum';
@@ -71,7 +70,9 @@ my $addl_from = ' LEFT JOIN cust_svc  USING ( svcnum  ) '.
                 ' LEFT JOIN cust_main USING ( custnum ) ';
 
 #here is the agent virtualization
-push @extra_sql, $FS::CurrentUser::CurrentUser->agentnums_sql;
+push @extra_sql, $FS::CurrentUser::CurrentUser->agentnums_sql( 
+                   'null_right' => 'View/link unlinked services'
+                 );
 
 my $extra_sql = 
   scalar(@extra_sql)

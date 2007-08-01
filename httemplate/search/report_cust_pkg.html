@@ -9,11 +9,11 @@
       <TH BGCOLOR="#e8e8e8" COLSPAN=2 ALIGN="left"><FONT SIZE="+1">Search options</FONT></TH>
     </TR>
     <% include( '/elements/tr-select-agent.html',
-                   ($cgi->param('agentnum') || ''),
+                   'curr_value' => scalar( $cgi->param('agentnum') ),
                )
     %>
 
-    <% include( '/elements/tr-select-cust_pkg-status.html', '',
+    <% include( '/elements/tr-select-cust_pkg-status.html',
                   'onchange' => 'status_changed(this);',
               )
     %>
@@ -62,7 +62,7 @@
 
     </SCRIPT>
 
-    <% include( '/elements/tr-select-pkg_class.html', '',
+    <% include( '/elements/tr-select-pkg_class.html',
                    'pre_options' => [ '0' => 'all' ],
                    'empty_label' => '(empty class)',
                )

@@ -38,7 +38,7 @@
 % } 
 
   </FONT><BR>
-  <% table("#cccccc", 2) %>
+  <% include('/elements/table.html', '#cccccc' ) %>
   <tr>
     <th colspan="2" bgcolor="#dcdcdc">
       <% ucfirst($section || 'unclassified') %> configuration options
@@ -114,15 +114,16 @@
 
 </body></html>
 <%init>
+
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
 
-my ($conf, $title, @config_items, $agentnum);
-
+my $agentnum = '';
 if ($cgi->param('agentnum') =~ /^(\d+)$/) {
   $agentnum = $1;
 }
 
+my $title;
 if ($agentnum) {
   my $agent = qsearchs('agent', { 'agentnum' => $agentnum } );
   die "Agent $agentnum not found!" unless $agent;
@@ -132,7 +133,10 @@ if ($agentnum) {
   $title = 'Global Configuration';
 }
 
-$conf = new FS::Conf;
-@config_items = grep { $agentnum ? $_->per_agent : 1 } $conf->config_items; 
-
+my $conf = new FS::Conf;
+ 
+my @config_items = grep { $agentnum ? $_->per_agent : 1 }
+                   grep { $_->key != ~/^invoice_(html|latex|template)/ }
+                        $conf->config_items; 
+ 
 </%init>

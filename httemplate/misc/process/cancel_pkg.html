@@ -1,4 +1,20 @@
+<% header("Package $past{$method}") %>
+  <SCRIPT TYPE="text/javascript">
+    window.top.location.reload();
+  </SCRIPT>
+  </BODY>
+</HTML>
+<%once>
+
+my %past = ( 'cancel'  => 'cancelled',
+             'expire'  => 'expired',
+             'suspend' => 'suspended',
+             'adjourn' => 'adjourned',
+           );
+
+</%once>
 <%init>
+
 #untaint method
 my $method = $cgi->param('method');
 $method =~ /^(cancel|expire|suspend|adjourn)$/ || die "Illegal method";
@@ -24,56 +40,30 @@ if ($method eq 'expire' || $method eq 'adjourn'){
 
 my $cust_pkg = qsearchs( 'cust_pkg', {'pkgnum'=>$pkgnum} );
 
-my $oldAutoCommit = $FS::UID::AutoCommit;
-local $FS::UID::AutoCommit = 0;
-my $dbh = dbh;
-
 #my $otaker = $FS::CurrentUser::CurrentUser->name;
 #$otaker = $FS::CurrentUser::CurrentUser->username
 #  if ($otaker eq "User, Legacy");
 
-my $error = '';
 if ($reasonnum == -1) {
-
-  $error = 'Enter a new reason (or select an existing one)'
-    unless $cgi->param('newreasonnum') !~ /^\s*$/;
-
-  my $reason = new FS::reason({ 'reason_type' => $cgi->param('newreasonnumT'),
-                                'reason'      => $cgi->param('newreasonnum'),
-                              });
-  $error ||= $reason->insert;
-  $reasonnum = $reason->reasonnum
-    unless $error;
+  $reasonnum = {
+    'typenum' => scalar( $cgi->param('newreasonnumT') ),
+    'reason'  => scalar( $cgi->param('newreasonnum' ) ),
+  };
 }
 
-unless ($error) {
-  if ($method eq 'expire' || $method eq 'adjourn'){
-    my %hash = $cust_pkg->hash;
-    $hash{$method}=$date;
-    my $new = new FS::cust_pkg (\%hash);
-    $error = $new->replace($cust_pkg, 'reason' => $reasonnum);
-  }else{
-    $error = $cust_pkg->$method( 'reason' => $reasonnum );
-  }
+my $error;
+if ($method eq 'expire' || $method eq 'adjourn'){
+  my %hash = $cust_pkg->hash;
+  $hash{$method} = $date;
+  my $new = new FS::cust_pkg \%hash;
+  $error = $new->replace($cust_pkg, 'reason' => $reasonnum);
+} else {
+  $error = $cust_pkg->$method( 'reason' => $reasonnum );
 }
 
 if ($error) {
   $cgi->param('error', $error);
-  $dbh->rollback if $oldAutoCommit;
   print $cgi->redirect(popurl(2). "cancel_pkg.html?". $cgi->query_string );
 }
 
-$dbh->commit or die $dbh->errstr if $oldAutoCommit;
-
- my %past = ( 'cancel'  => 'cancelled',
-              'expire'  => 'expired',
-              'suspend' => 'suspended',
-              'adjourn' => 'adjourned',
-            );
 </%init>
-<% header("Package $past{$method}") %>
-  <SCRIPT TYPE="text/javascript">
-    window.top.location.reload();
-  </SCRIPT>
-  </BODY></HTML>
-

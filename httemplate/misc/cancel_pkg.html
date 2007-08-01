@@ -42,7 +42,14 @@
 %}
 %
 
-<% include('/elements/tr-select-reason.html', 'reasonnum', $class, '', '', '', 'document.sc_popup.submit' ) %>
+<% include('/elements/tr-select-reason.html',
+             'field'          => 'reasonnum',
+             'reason_class'   => $class,
+             #XXX these need to be sticky on errors too...
+             #'curr_value'     => '',
+             'control_button' => 'document.sc_popup.submit',
+          )
+%>
 
 </TABLE>
 

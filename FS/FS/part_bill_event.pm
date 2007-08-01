@@ -2,6 +2,7 @@ package FS::part_bill_event;
 
 use strict;
 use vars qw( @ISA $DEBUG @EXPORT_OK );
+use Carp qw(cluck confess);
 use FS::Record qw( dbh qsearch qsearchs );
 use FS::Conf;
 
@@ -37,10 +38,10 @@ FS::part_bill_event - Object methods for part_bill_event records
 
 =head1 DESCRIPTION
 
-An FS::part_bill_event object represents an invoice event definition -
-a callback which is triggered when an invoice is a certain amount of time
-overdue.  FS::part_bill_event inherits from
-FS::Record.  The following fields are currently supported:
+An FS::part_bill_event object represents a deprecated, old-style invoice event
+definition - a callback which is triggered when an invoice is a certain amount
+of time overdue.  FS::part_bill_event inherits from FS::Record.  The following
+fields are currently supported:
 
 =over 4
 
@@ -65,6 +66,11 @@ FS::Record.  The following fields are currently supported:
 =item disabled - Disabled flag, empty or `Y'
 
 =back
+
+=head1 NOTE
+
+Old-style invoice events are only useful for legacy migrations - if you are
+looking for current events see L<FS::part_event>.
 
 =head1 METHODS
 
@@ -226,6 +232,10 @@ Requires record and payby, but event_time and extra_sql are optional.
 
 sub due_events {
   my ($record, $payby, $event_time, $extra_sql) = @_;
+
+  #cluck "DEPRECATED: FS::part_bill_event::due_events called on $record";
+  confess "DEPRECATED: FS::part_bill_event::due_events called on $record";
+
   my $interval = 0;
   if ($record->_date){ 
     $event_time = time unless $event_time;
@@ -261,6 +271,10 @@ Should only be performed inside a transaction.
 
 sub do_event {
   my ($self, $object, %options) = @_;
+
+  #cluck "DEPRECATED: FS::part_bill_event::do_event called on $self";
+  confess "DEPRECATED: FS::part_bill_event::do_event called on $self";
+
   warn " calling event (". $self->eventcode. ") for " . $object->table . " " ,
     $object->get($object->dbdef_table->primary_key) . "\n" if $DEBUG > 1;
   my $oldAutoCommit = $FS::UID::AutoCommit;

@@ -1,0 +1,29 @@
+<% include ('tr-td-label.html', @_ ) %>
+
+  <TD <% $style %>>
+
+    <% include( '/elements/select-cust_main-status.html', 
+                  'curr_value' => $curr_value,
+                  %opt
+              )
+    %>
+
+  </TD>
+
+</TR>
+
+<%init>
+
+my %opt = @_;
+
+#my $onchange = $opt{'onchange'}
+#                 ? 'onChange="'. $opt{'onchange'}. '(this)"'
+#                 : '';
+
+my $style = $opt{'cell_style'} ? 'STYLE="'. $opt{'cell_style'}. '"' : '';
+
+$opt{'statuses'} ||= [ FS::cust_main->statuses() ]; # { disabled=>'' } )
+
+my $curr_value = $opt{'curr_value'} || $opt{'value'};
+
+</%init>

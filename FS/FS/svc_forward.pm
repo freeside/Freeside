@@ -195,7 +195,7 @@ sub delete {
   local $FS::UID::Autocommit = 0;
   my $dbh = dbh;
 
-  my $error = $self->SUPER::delete;
+  my $error = $self->SUPER::delete(@_);
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
@@ -235,7 +235,7 @@ sub replace {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $error = $new->SUPER::replace($old);
+  my $error = $new->SUPER::replace($old, @_);
   if ($error) {
     $dbh->rollback if $oldAutoCommit;
     return $error;

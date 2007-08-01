@@ -265,15 +265,17 @@ sub tables_hashref {
 
     'agent' => {
       'columns' => [
-        'agentnum', 'serial',            '',     '', '', '', 
-        'agent',    'varchar',           '',     $char_d, '', '', 
-        'typenum',  'int',            '',     '', '', '', 
-        'freq',     'int',       'NULL', '', '', '', 
-        'prog',     @perl_type, '', '', 
-        'disabled',     'char', 'NULL', 1, '', '', 
-        'username', 'varchar',       'NULL',     $char_d, '', '', 
-        '_password','varchar',       'NULL',     $char_d, '', '', 
-        'ticketing_queueid', 'int', 'NULL', '', '', '', 
+        'agentnum',          'serial',    '',       '', '', '', 
+        'agent',            'varchar',    '',  $char_d, '', '', 
+        'typenum',              'int',    '',       '', '', '', 
+        'disabled',            'char', 'NULL',       1, '', '', 
+        'ticketing_queueid',    'int', 'NULL',      '', '', '', 
+        'invoice_template', 'varchar', 'NULL', $char_d, '', '',
+        'username',         'varchar', 'NULL', $char_d, '', '', #deprecated
+        '_password',        'varchar', 'NULL', $char_d, '', '', #deprecated
+        'freq',              'int', 'NULL', '', '', '', #deprecated (never used)
+        'prog',                     @perl_type, '', '', #deprecated (never used)
+
       ],
       'primary_key' => 'agentnum',
       'unique' => [],
@@ -347,6 +349,84 @@ sub tables_hashref {
       'primary_key' => 'eventpart',
       'unique' => [],
       'index' => [ ['payby'], ['disabled'], ],
+    },
+
+    'part_event' => {
+      'columns' => [
+        'eventpart',   'serial',      '',      '', '', '', 
+        'agentnum',    'int',     'NULL',      '', '', '', 
+        'event',       'varchar',     '', $char_d, '', '', 
+        'eventtable',  'varchar',     '', $char_d, '', '',
+        'check_freq',  'varchar', 'NULL', $char_d, '', '', 
+        'weight',      'int',         '',      '', '', '', 
+        'action',      'varchar',     '', $char_d, '', '',
+        'disabled',     'char',   'NULL',       1, '', '', 
+      ],
+      'primary_key' => 'eventpart',
+      'unique' => [],
+      'index' => [ ['agentnum'], ['eventtable'], ['check_freq'], ['disabled'], ],
+    },
+
+    'part_event_option' => {
+      'columns' => [
+        'optionnum', 'serial', '', '', '', '', 
+        'eventpart', 'int', '', '', '', '', 
+        'optionname', 'varchar', '', $char_d, '', '', 
+        'optionvalue', 'text', 'NULL', '', '', '', 
+      ],
+      'primary_key' => 'optionnum',
+      'unique'      => [],
+      'index'       => [ [ 'eventpart' ], [ 'optionname' ] ],
+    },
+
+    'part_event_condition' => {
+      'columns' => [
+        'eventconditionnum', 'serial', '', '', '', '', 
+        'eventpart', 'int', '', '', '', '', 
+        'conditionname', 'varchar', '', $char_d, '', '', 
+      ],
+      'primary_key' => 'eventconditionnum',
+      'unique'      => [],
+      'index'       => [ [ 'eventpart' ], [ 'conditionname' ] ],
+    },
+
+    'part_event_condition_option' => {
+      'columns' => [
+        'optionnum', 'serial', '', '', '', '', 
+        'eventconditionnum', 'int', '', '', '', '', 
+        'optionname', 'varchar', '', $char_d, '', '', 
+        'optionvalue', 'text', 'NULL', '', '', '', 
+      ],
+      'primary_key' => 'optionnum',
+      'unique'      => [],
+      'index'       => [ [ 'eventconditionnum' ], [ 'optionname' ] ],
+    },
+
+    'part_event_condition_option_option' => {
+      'columns' => [
+        'optionoptionnum', 'serial', '', '', '', '', 
+        'optionnum', 'int', '', '', '', '', 
+        'optionname', 'varchar', '', $char_d, '', '', 
+        'optionvalue', 'text', 'NULL', '', '', '', 
+      ],
+      'primary_key' => 'optionoptionnum',
+      'unique'      => [],
+      'index'       => [ [ 'optionnum' ], [ 'optionname' ] ],
+    },
+
+    'cust_event' => {
+      'columns' => [
+        'eventnum',    'serial',  '', '', '', '', 
+        'eventpart',   'int',  '', '', '', '', 
+        'tablenum',   'int',  '', '', '', '', 
+        '_date',     @date_type, '', '', 
+        'status', 'varchar', '', $char_d, '', '', 
+        'statustext', 'text', 'NULL', '', '', '', 
+      ],
+      'primary_key' => 'eventnum',
+      #no... there are retries now #'unique' => [ [ 'eventpart', 'invnum' ] ],
+      'unique' => [],
+      'index' => [ ['eventpart'], ['tablenum'], ['status'] ],
     },
 
     'cust_bill_pkg' => {
@@ -681,7 +761,10 @@ sub tables_hashref {
       ],
       'primary_key' => 'pkgnum',
       'unique' => [],
-      'index' => [ ['custnum'], ['pkgpart'] ],
+      'index' => [ ['custnum'], ['pkgpart'],
+                   ['setup'], ['last_bill'], ['bill'], ['susp'], ['adjourn'],
+                   ['expire'], ['cancel']
+                 ],
     },
 
     'cust_pkg_option' => {
@@ -1731,6 +1814,16 @@ sub tables_hashref {
       'index' => [],
     },
 
+    'pkg_referral' => {
+      'columns' => [
+        'pkgrefnum',     'serial', '', '', '', '',
+        'pkgnum',        'int',    '', '', '', '',
+        'refnum',        'int',    '', '', '', '',
+      ],
+      'primary_key' => 'pkgrefnum',
+      'unique'      => [ [ 'pkgnum', 'refnum' ] ],
+      'index'       => [ [ 'pkgnum' ], [ 'refnum' ] ],
+    },
     # name type nullability length default local
 
     #'new_table' => {

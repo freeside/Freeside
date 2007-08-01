@@ -1,0 +1,54 @@
+<% include('tr-td-label.html', @_) %>
+
+  <TD <% $style %>>
+
+    <INPUT TYPE  = "text"
+           SIZE  = "<% $opt{'size'} || 4 %>"
+           NAME  = "<% $opt{'field'} || 'freq' %>"
+           ID    = "<% $opt{'id'} %>"
+           VALUE = "<% $curr_value %>"
+    >
+
+    <SELECT NAME = "<% $opt{'field'} || 'freq' %>_units">
+%     foreach my $freq ( keys %freq ) {
+        <OPTION VALUE="<% $freq %>"
+                <% $freq eq $units ? 'SELECTED' : '' %>
+        ><% $freq{$freq} %>
+%     }
+    </SELECT>
+
+  </TD>
+
+</TR>
+
+<%once>
+
+  tie my %freq, 'Tie::IxHash',
+    #'y' => 'years',
+    'm' => 'months',
+    'w' => 'weeks',
+    'd' => 'days',
+    'h' => 'hours',
+  ;
+
+</%once>
+<%init>
+
+my %opt = @_;
+
+my $onchange = $opt{'onchange'}
+                 ? 'onChange="'. $opt{'onchange'}. '(this)"'
+                 : '';
+
+my $style = $opt{'cell_style'} ? 'STYLE="'. $opt{'cell_style'}. '"' : '';
+
+my $curr_value = $opt{'curr_value'} || $opt{'value'};
+my $units = 'm';
+
+if ( $curr_value =~ /^(\d*)([mwdh])$/i ) {
+  $curr_value = $1;
+  $units = lc($2);
+}
+
+</%init>
+

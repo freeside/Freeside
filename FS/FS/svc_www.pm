@@ -176,7 +176,7 @@ sub delete {
   my $self = shift;
   my $error;
 
-  $error = $self->SUPER::delete;
+  $error = $self->SUPER::delete(@_);
   return $error if $error;
 
   '';
@@ -193,7 +193,7 @@ sub replace {
   my ( $new, $old ) = ( shift, shift );
   my $error;
 
-  $error = $new->SUPER::replace($old);
+  $error = $new->SUPER::replace($old, @_);
   return $error if $error;
 
   '';

@@ -1,0 +1,29 @@
+% if ( scalar(@{ $opt{'part_pkg'} }) == 0 ) { 
+
+  <INPUT TYPE="hidden" NAME="<% $opt{'field'} || 'pkgpart' %>" VALUE="">
+
+% } else { 
+
+  <TR>
+    <TD ALIGN="right"><% $opt{'label'} || 'Package definition' %></TD>
+    <TD>
+      <% include( '/elements/select-table.html',
+                    'table'     => 'part_pkg',
+                    'name_col'  => 'pkg',
+                    'multiple'  => 1,
+                    #N/A 'empty_label' => '(none)',
+                    %opt,
+                )
+      %>
+    </TD>
+  </TR>
+
+% } 
+
+<%init>
+
+my( %opt ) = @_;
+
+$opt{'part_pkg'} ||= [ qsearch( 'part_pkg', {} ) ]; # { disabled=>'' } )
+
+</%init>

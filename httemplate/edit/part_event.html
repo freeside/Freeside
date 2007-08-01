@@ -1,0 +1,642 @@
+<% include( 'elements/edit.html',
+              'name'   => 'Billing event definition',
+              'table'  => 'part_event',
+              'fields' => [
+                            'event',
+                            { field   => 'eventtable',
+                              type    => 'select',
+                              options => [ FS::part_event->eventtables ],
+                              labels  => $eventtable_labels,
+                              onchange => 'eventtable_changed',
+                            },
+                            { field   => 'agentnum',
+                              type    => 'select-agent',
+                              disable_empty => $disable_empty_agent,
+                            },
+                            { field   => 'check_freq',
+                              type    => 'select',
+                              options => [ '1d', '1m' ],
+                              labels  => $check_freq_labels,
+                            },
+                            { field   => 'disabled',
+                              type    => 'checkbox',
+                              value   => 'Y',
+                            },
+                            { type    => 'title',
+                              value   => 'Event Conditions',
+                            },
+                            { field   => 'conditionname',
+                              type    => 'selectlayers',
+                              options => [ keys %all_conditions ],
+                              labels  => \%condition_labels,
+                              onchange => 'condition_changed(what);',
+                              layer_fields => \%condition_fields,
+                              layer_values_callback => $condition_layer_values,
+                              html_between       => n_a('action'),
+                              m2name_table       => 'part_event_condition',
+                              m2name_namecol     => 'conditionname',
+                              m2name_label       => 'Condition',
+                              m2name_new_default => \@implicit_condition_objs,
+                              m2name_error_callback  =>
+                                $condition_error_callback,
+                              m2name_remove_warnings =>
+                                \%condition_remove_warnings,
+                              m2name_new_js      => 'condition_repop',
+                              m2name_remove_js   => 'condition_add',
+                            },
+                            { type    => 'title',
+                              value   => 'Event Action',
+                            },
+                            { field   => 'action',
+                              type     => 'selectlayers',
+                              options  => [ keys %all_actions ],
+                              labels   => \%action_labels,
+                              onchange => 'action_changed(what);',
+                              layer_fields => \%action_fields,
+                              layer_values_callback => $action_layer_values,
+                              html_between => n_a('action'),
+                            },
+
+                          ],
+              'labels' => {
+                            'eventpart'  => 'Event',
+                            'event'      => 'Event name',
+                            'eventtable' => 'Type',
+                            'agentnum'   => 'Agent',
+                            'check_freq' => 'Check frequency',
+                            'disabled'   => 'Disable event',
+
+                            'conditionname' => 'Add&nbsp;new&nbsp;condition',
+                            #'weight',
+                            'action'     => 'Action',
+                          },
+              'viewall_dir' => 'browse',
+              'new_callback' => sub { #start empty for new events only
+                my( $cgi, $object, $fields_listref ) = @_; 
+                unshift @{ $fields_listref->[1]{'options'} }, '';
+              },
+              'error_callback' => $error_callback,
+
+              'agent_virt'       => 1,
+              'agent_null_right' => 'Edit global billing events',
+          )
+%>
+<SCRIPT TYPE="text/javascript">
+
+  window.onload = function () { eventtable_changed(document.getElementById('eventtable')) };
+  var notonload = 0;
+
+  function eventtable_changed(what) {
+
+%   if ( $JS_DEBUG ) {
+      alert('eventtable_changed called on ' + what );
+%   }
+
+    var eventtable = what.options[what.selectedIndex].value;
+    var eventdesc  = what.options[what.selectedIndex].text;
+
+    //remove the ** Select type **
+    if ( what.options[0].value == '' && notonload++ > 0 ) {
+      what.options[0] = null;
+    }
+
+    ////
+    // XXX gray out conditions that can't apply?
+    ////
+
+    ////
+    // update condition selects
+    ////
+
+    for ( var cnum=0; document.getElementById('conditionname'+cnum); cnum++ ) {
+      var cond_id = 'conditionname' + cnum;
+      var cond_select = document.getElementById(cond_id);
+
+%     if ( $JS_DEBUG ) {
+        alert('updating ' + cond_id);
+%     }
+
+      // save off the current value
+      var conditionname = cond_select.options[cond_select.selectedIndex].value;
+      var cond_desc     = cond_select.options[cond_select.selectedIndex].text;
+
+      var seen_condition = condition_repop(cond_select);
+
+      var warning = document.getElementById(cond_id + '_warning');
+%     if ( $JS_DEBUG ) {
+        alert('turning off warning; setting style.display of '+ cond_id +
+              '_warning (' + warning + ') to none');
+%     }
+      warning.style.display = 'none';
+
+      if ( ! seen_condition && conditionname != '') {
+        // add the current (not valid) condition back
+        opt(cond_select, conditionname, cond_desc, true );
+        if ( true <% @implicit_conditions
+                       ? ( ' && '. join(' && ', map { "conditionname != '$_'" }
+                                                    @implicit_conditions
+                                       )
+                         )
+                       : ''
+                  %> ) {
+          // turn on a warning and gray out the condition row
+%         if ( $JS_DEBUG ) {
+            alert('turning on warning; setting style.display of '+ cond_id +
+                  '_warning (' + warning + ') to none');
+%         }
+          warning.innerHTML = 'Not applicable to ' + eventdesc + ' events';
+          warning.style.display = '';
+        }
+      }
+
+    }
+
+
+    ////
+    // update action select
+    ////
+
+    // save off the current value first!!
+    var action = what.form.action.options[what.form.action.selectedIndex].value;
+    var a_desc = what.form.action.options[what.form.action.selectedIndex].text;
+    var seen_action = false;
+
+    // blank the current action select
+    for ( var i = what.form.action.length; i >= 0; i-- )
+      what.form.action.options[i] = null;
+
+    if ( action == '' ) {
+      opt(what.form.action, action, a_desc, true );
+    }
+
+    // repopulate it
+%   foreach my $eventtable ( FS::part_event->eventtables ) {
+%     tie my %actions, 'Tie::IxHash', FS::part_event->actions($eventtable);
+%     #use Data::Dumper; warn Dumper(%actions);
+
+      if ( eventtable == '<% $eventtable %>' ) {
+
+%       foreach my $action ( keys %actions ) {
+%         ( my $description = $actions{$action}->{'description'} ) =~ s/'/\\'/g;
+
+          var sel = false;
+          if ( action == '<% $action %>' ) {
+            seen_action = true;
+            sel = true;
+          }
+          opt( what.form.action, '<% $action %>', '<% $description %>', sel );
+%       }
+
+      }
+
+%   }
+
+    // by default, turn off warnings and enable the submit button
+    var warning = document.getElementById('action_warning');
+    warning.style.display = 'none';
+    var submit_button = document.getElementById('submit');
+    submit_button.disabled = '';
+
+    if ( ! seen_action && action != '' ) {
+      // add the current (not valid) action back
+      opt( what.form.action, action, a_desc, true );
+      // turn on a warning and disable the submit button
+      //warning.innerHTML = a_desc + ' event not available as a ' +
+      warning.innerHTML = 'Not available as a ' + eventdesc + ' action';
+      warning.style.display = '';
+      submit_button.disabled = 'disabled';
+    }
+
+  }
+
+  function opt(what,value,text,selected) {
+    var optionName = new Option(text, value, false, selected);
+    var length = what.length;
+    what.options[length] = optionName;
+  }
+
+  function action_changed(what) {
+    // remove '** Select new **'
+    if ( what.options[0].value == '' ) {
+       what.options[0] = null;
+    }
+    // remove the warning, remove the invalid action, enable the submit button
+    var warning = document.getElementById('action_warning');
+    if ( warning.style.display == '' ) {
+      warning.style.display = 'none';
+      what.options[what.length-1] = null;
+      document.getElementById('submit').disabled = '';
+    }
+  }
+
+  function condition_changed(what) {
+    // remove '** Select new **'
+    if ( what.options[0].value == '' ) {
+       what.options[0] = null;
+    }
+
+    var previousValue = what.getAttribute('previousValue');
+    var previousText = what.getAttribute('previousText');
+    var value = what.options[what.selectedIndex].value;
+    var text = what.options[what.selectedIndex].text;
+
+%   foreach my $value ( keys %condition_remove_warnings ) {
+      if ( previousValue == '<% $value %>' ) {
+        if ( !confirm( <% $condition_remove_warnings{$value} |js_string %> ) ) {
+          for ( var i=0; i < what.length; i++ ) {
+            if ( what.options[i].value == previousValue ) {
+              what.selectedIndex = i;
+            }
+          }
+          return false;
+        }
+      }
+%   }
+
+    //alert(previous + ' changed to ' + value);
+
+    var field_regex = /(\d+)$/;
+    var match = field_regex.exec(what.name);
+    if ( !match ) {
+      alert(what.name + " didn't match?!");
+      return;
+    }
+
+    //add the previous condition *back* to all the other selects...
+    condition_add(previousValue, previousText, match[1]);
+
+    what.setAttribute('previousValue', value);
+    what.setAttribute('previousText', text);
+
+    // remove the new condition from all other selects
+    condition_remove(value, match[1]);
+
+  }
+
+  function condition_avail(check_cond, curnum) {
+    for ( var cnum=0; document.getElementById('conditionname'+cnum); cnum++ ) {
+      if ( cnum == curnum ) continue;
+
+      var cond_id = 'conditionname' + cnum;
+      var cond_select = document.getElementById(cond_id);
+
+      //alert("checking " + cond_id + " (" + cond_select.disabled + ")");
+
+      if ( cond_select.disabled ) continue;
+
+      // the current value
+      var conditionname = cond_select.options[cond_select.selectedIndex].value;
+
+      if ( check_cond == conditionname ) return false;
+
+    }
+
+    return true;
+
+  }
+
+  function condition_remove(remove_cond, curnum) {
+
+    if ( remove_cond.length == 0 ) return;
+
+    for ( var cnum=0; document.getElementById('conditionname'+cnum); cnum++ ) {
+      if ( cnum == curnum ) continue;
+
+      var cond_id = 'conditionname' + cnum;
+      var cond_select = document.getElementById(cond_id);
+
+      //for ( var i = cond_select.length; i >= 0; i-- ) {
+      for ( var i=0; i < cond_select.length; i++ ) {
+        if ( cond_select.options[i].value == remove_cond ) {
+          cond_select.options[i] = null;
+        }
+      }
+
+    }
+
+  }
+
+  function condition_add(add_condname, add_conddesc, curnum) {
+
+    if ( add_condname.length == 0 ) return;
+
+    var eventtable_el = document.getElementById('eventtable');
+    var eventtable = eventtable_el.options[eventtable_el.selectedIndex].value;
+
+    var in_eventtable = false;
+
+%   foreach my $eventtable ( FS::part_event->eventtables ) {
+%     tie my %conditions, 'Tie::IxHash',
+%       FS::part_event_condition->conditions($eventtable);
+
+      if ( eventtable == '<% $eventtable %>' ) {
+
+%       foreach my $conditionname ( keys %conditions ) {
+%         my $description = $conditions{$conditionname}->{'description'};
+%         $description =~ s/'/\\'/g;
+
+          if ( add_condname == '<% $conditionname %>' ) {
+            in_eventtable = true;
+          }
+
+%       }
+
+      }
+
+%   }
+
+    if ( ! in_eventtable ) return;
+
+    for ( var cnum=0; document.getElementById('conditionname'+cnum); cnum++ ) {
+      if ( cnum == curnum ) continue;
+
+      var cond_id = 'conditionname' + cnum;
+      var cond_select = document.getElementById(cond_id);
+
+      if ( cond_select.disabled ) continue;
+
+      //alert("adding " + add_condname + " to " + cond_id);
+
+      opt(cond_select, add_condname, add_conddesc, false );
+
+      cond_select.parentNode.parentNode.style.display = '';
+
+    }
+
+  }
+
+  function condition_repop(cond_select) {
+
+    var eventtable_el = document.getElementById('eventtable');
+    var eventtable = eventtable_el.options[eventtable_el.selectedIndex].value;
+
+    // save off the current value
+    var conditionname = cond_select.options[cond_select.selectedIndex].value;
+    var cond_desc     = cond_select.options[cond_select.selectedIndex].text;
+    var seen_condition = false;
+
+    if ( cond_select.disabled ) return false; //skip deleted conditions
+
+    var field_regex = /(\d+)$/;
+    var match = field_regex.exec(cond_select.name);
+    if ( !match ) {
+      alert(what.name + " didn't match?!");
+      return;
+    }
+    var cnum = match[1];
+
+    // blank the current condition select
+    for ( var i = cond_select.length; i >= 0; i-- )
+      cond_select.options[i] = null;
+
+    if ( conditionname == '' ) {
+      opt(cond_select, conditionname, cond_desc, true );
+    }
+
+    // repopulate it
+%   foreach my $eventtable ( FS::part_event->eventtables ) {
+%     tie my %conditions, 'Tie::IxHash',
+%       FS::part_event_condition->conditions($eventtable);
+
+      if ( eventtable == '<% $eventtable %>' ) {
+
+%       foreach my $conditionname ( keys %conditions ) {
+%         my $description = $conditions{$conditionname}->{'description'};
+%         $description =~ s/'/\\'/g;
+
+          var sel = false;
+          if ( conditionname == '<% $conditionname %>' ) {
+            seen_condition = true;
+            sel = true;
+          }
+
+          if ( condition_avail("<% $conditionname %>", cnum) ) {
+            opt(cond_select, '<% $conditionname %>', '<% $description %>', sel);
+          }
+
+%       }
+
+      }
+        
+%   }
+
+    if ( cond_select.length > 1 || cond_select.length == 1 && cond_select.options[0].value.length > 0 ) {
+       
+      cond_select.parentNode.parentNode.style.display = '';
+
+    } else {
+      cond_select.parentNode.parentNode.style.display = 'none';
+    }
+
+    return seen_condition;
+
+  }
+
+</SCRIPT>
+<%once>
+
+#misc (eventtable, check_freq)
+
+my $eventtable_labels = FS::part_event->eventtable_labels;
+$eventtable_labels->{''} = '** Select type **';
+
+my $check_freq_labels = FS::part_event->check_freq_labels;
+
+#conditions
+
+tie my %all_conditions, 'Tie::IxHash', 
+  '' => { 'description' => '*** Select new condition ***', },
+  FS::part_event_condition->conditions();
+
+my %condition_labels = map { $_ => $all_conditions{$_}->{'description'} }
+                           keys %all_conditions;
+
+#my %condition_fields = map { $_ => $all_conditions{$_}->{option_fields} } 
+#                           keys %all_conditions;
+my %condition_fields = map { my $c = $_;
+                             tie my %opts, 'Tie::IxHash',
+                               @{ $all_conditions{$c}->{'option_fields'} || []};
+                             %opts = ( map { ( "$c.$_" => $opts{$_} ); }
+                                           keys %opts
+                                     );
+                             ( $c => [ %opts ] );
+                           } 
+                           keys %all_conditions;
+
+my @implicit_conditions = sort { $all_conditions{$a}->{'implicit_flag'} <=>
+                                 $all_conditions{$b}->{'implicit_flag'}
+                               }
+                          grep { $all_conditions{$_}->{'implicit_flag'} }
+                          keys %all_conditions;
+
+my @implicit_condition_objs = map {
+                                    new FS::part_event_condition {
+                                      'conditionname' => $_,
+                                    };
+                                  }
+                                  @implicit_conditions;
+
+my %condition_remove_warnings =
+  map  { ( $_ => $all_conditions{$_}->{'remove_warning'} ); }
+  grep { $all_conditions{$_}->{'remove_warning'} }
+  keys %all_conditions;
+
+#actions
+
+tie my %all_actions, 'Tie::IxHash', 
+  '' => { 'description' => '*** Select event action ***', },
+  FS::part_event->actions();
+
+my %action_labels = map { $_ => $all_actions{$_}->{'description'} }
+                        keys %all_actions;
+
+#my %action_fields = map { $_ => $all_actions{$_}->{option_fields} }
+#                        keys %all_actions;
+my %action_fields = map { my $action = $_;
+                          tie my %opts, 'Tie::IxHash',
+                            @{ $all_actions{$action}->{option_fields} || [] };
+                          %opts = ( map { ( "$action.$_" => $opts{$_} ); }
+                                        keys %opts
+                                  );
+                          ( $action => [ %opts ] );
+                        }
+                        keys %all_actions;
+
+#subs
+
+sub n_a {
+  my $t = shift;
+
+  return sub {
+    my $field = shift;
+    qq( <FONT ID="${field}_warning" STYLE="display:none" COLOR="#FF0000">).
+      "Party Party Join us Join us".
+      '</FONT>';
+  };
+}
+
+my $action_layer_values = sub {
+  my( $cgi, $part_event ) = @_;
+  my $action = $cgi->param('action') || $part_event->action;
+  return {} unless $action;
+  scalar( #force hashref
+    {
+      #map { $_ => { $part_event->options } }
+      #    keys %action_fields
+      map { my $action = $_;
+            my %fields = @{ $action_fields{$action} };
+            my %obj_opts = $part_event->options;
+            %obj_opts = map { ( "$action.$_" => $obj_opts{$_} ); }
+                            keys %obj_opts;
+            my %opts =
+              map { #false laziness w/process/part_event.html
+                    my $option = $_;
+                    my $value = scalar($cgi->param($_)) || $obj_opts{$_};
+
+                    if ( $option =~ /^(.*)\.reasonnum$/ && $value == -1 ) {
+                      $value = {
+                        'typenum' => scalar( $cgi->param( "new${option}T" ) ),
+                        'reason'  => scalar( $cgi->param( "new${option}"  ) ),
+                      };
+                    }
+
+                    ( $option => $value );
+
+                  }
+                  keys %fields;
+            ( $action => \%opts );
+          }
+          keys %action_fields
+    }
+  );
+};
+
+tie my %cgi_conditions, 'Tie::IxHash';
+
+my $error_callback = sub {
+  my( $cgi, $object, $fields_listref ) = @_;
+
+  my @cond_params = grep /^conditionname\d+$/, $cgi->param;
+
+  %cgi_conditions = map {
+    my $param = $_;
+    my $conditionname = $cgi->param($param);
+    $conditionname => {
+      map { 
+
+        my $cgi_key = $_;
+        $cgi_key =~ /^$param\.$conditionname\.(.*)$/ or die 'wtf!';
+        my $key = $1;
+        #my $value = $cgi->param($_);
+
+        #my $info = $all_conditions->{$conditionname}
+        my %cond_opts =
+          @{ $all_conditions{$conditionname}->{'option_fields'} || []};
+        my $info = $cond_opts{$key};
+
+        my $value;
+        #false laziness w/process/part_event.html
+        if (      $info->{'type'} =~ /^(select|checkbox)-?multiple$/
+               or $info->{'type'} =~ /^select/ && $info->{'multiple'} ) {
+          $value = { map { $_ => 1 } $cgi->param($cgi_key) };
+        } elsif ( $info->{'type'} eq 'freq' ) {
+          $value = $cgi->param($cgi_key). $cgi->param($cgi_key.'_units');
+        } else {
+          $value = $cgi->param($cgi_key);
+        }
+
+        $key => $value;
+
+      } grep /^$param\.$conditionname\./, $cgi->param
+    };
+  } grep $cgi->param($_), grep /^conditionname\d+$/, $cgi->param;
+
+};
+
+my $condition_error_callback = sub {
+  map {
+    new FS::part_event_condition { 'conditionname' => $_, };
+  } keys %cgi_conditions;
+};
+
+my $condition_layer_values = sub {
+  #m2name_table option causes this to be
+  # part_event_condition instead of part_event
+  my ( $cgi, $part_event_condition, $switches ) = @_;
+  scalar( #force hashref
+    {
+      #map { $_ => { $part_event_condition->options } }
+      #    keys %condition_fields
+      map { my $conditionname = $_;
+            my %opts = $switches->{'mode'} eq 'error'
+                       ? %{ $cgi_conditions{$conditionname} || {} }
+                       : $part_event_condition->options;
+            %opts = (
+              map { ( "$conditionname.$_" => $opts{$_} ); }
+                  keys %opts
+            );
+            ( $conditionname => \%opts );
+          }
+          keys %condition_fields
+    }
+  );
+};
+
+
+</%once>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right('Edit billing events')
+      || $curuser->access_right('Edit global billing events');
+
+my $disable_empty_agent= ! $curuser->access_right('Edit global billing events');
+
+%cgi_conditions = ();
+my $use_cgi_conditions = 0;
+
+my $JS_DEBUG = 0;
+
+</%init>

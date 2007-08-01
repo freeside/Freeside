@@ -1,0 +1,30 @@
+<SELECT NAME="<% $opt{'field'} || 'status' %>"
+        <% $opt{'multiple'} ? 'MULTIPLE' : '' %>
+        <% $onchange %>
+>
+
+  <OPTION VALUE="">all
+
+% foreach my $option ( @{ $opt{'statuses'} } ) { 
+
+    <OPTION VALUE="<% $option %>"
+            <% $option eq $curr_value ? 'SELECTED' : '' %>
+    ><% $option %>
+
+% } 
+
+</SELECT>
+
+<%init>
+
+my %opt = @_;
+
+$opt{'statuses'} ||= [ FS::cust_main->statuses() ]; # { disabled=>'' } )
+
+my $onchange = $opt{'onchange'}
+                 ? 'onChange="'. $opt{'onchange'}. '(this)"'
+                 : '';
+
+my $curr_value = $opt{'curr_value'} || $opt{'value'};
+
+</%init>

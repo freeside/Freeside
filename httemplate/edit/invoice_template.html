@@ -1,0 +1,80 @@
+<% include("/elements/header.html", "Edit $type2desc{$type} invoice template",
+             menubar(
+               'View all invoice templates' => $p.'browse/invoice_template.html'
+             )
+          )
+%>
+
+<FORM ACTION="process/invoice_template.html" METHOD="POST">
+<INPUT TYPE="hidden" NAME="confname" VALUE="<% $confname %>">
+
+% if ( $type eq 'html' ) {
+
+% #init
+  <SCRIPT TYPE="text/javascript" src="<% $p %>elements/fckeditor/fckeditor.js">
+  </SCRIPT>
+
+% #editor
+  <SCRIPT TYPE="text/javascript">
+    var oFCKeditor = new FCKeditor('value');
+    oFCKeditor.Value = <% $value |js_string %>;
+
+    oFCKeditor.BasePath = '<% $p %>elements/fckeditor/';
+    oFCKeditor.Config['SkinPath'] = '<% $p %>elements/fckeditor/editor/skins/silver/';
+    oFCKeditor.Height = '800';
+    oFCKeditor.Config['StartupFocus'] = true;
+
+    oFCKeditor.Create();
+
+  </SCRIPT>
+
+% } else {
+
+  <TEXTAREA NAME="value" ROWS=30 COLS=80 WRAP="off"><%$value |h %></TEXTAREA>
+
+% }
+
+<BR><BR>
+<INPUT TYPE="submit" VALUE="Change template">
+
+</FORM>
+
+<% include("/elements/footer.html") %>
+
+<%once>
+
+my %type2desc = (
+  'html'  => 'HTML',
+  'latex' => 'Print/PDF (typeset)',
+  'text'  => 'Plaintext',
+);
+
+my %type2base = (
+  'html'  => 'invoice_html',
+  'latex' => 'invoice_latex',
+  'text'  => 'invoice_template',
+);
+
+</%once>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $type = $cgi->param('type');
+my $name = $cgi->param('name');
+my $suffix = $cgi->param('suffix');
+
+#XXX type handling, just testing this out for now
+
+my $conf = new FS::Conf;
+
+my $value = length($name)
+              ? join("\n", $conf->config_orbase($type2base{$type}.$suffix, $name) )
+              : join("\n", $conf->config($type2base{$type}.$suffix) );
+
+my $confname = length($name)
+                 ? $type2base{$type}.$suffix. '_'. $name
+                 : $type2base{$type}.$suffix;
+
+</%init>

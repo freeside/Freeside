@@ -21,7 +21,7 @@ use FS::part_pkg::flat;
                                    ' of service at cancellation',
                          'type' => 'checkbox',
                        },
-    'cutoff_day' => { 'name' => 'billing day',
+    'cutoff_day' => { 'name' => 'Billing_Day (1 - 28)',
 			 'default' => 1,
 					    },
     'seconds'       => { 'name' => 'Time limit for this package',

@@ -73,11 +73,21 @@
 %  my $link = $curuser->access_right('View invoices')
 %               ? qq!<A HREF="${p}view/cust_bill.cgi?$invnum">!
 %               : '';
+%  my $events = '';
+%  if ( $cust_bill->num_cust_event
+%       && (    $curuser->access_right('Billing event reports')
+%            || $curuser->access_right('View customer billing events')
+%          )
+%     ) {
+%    $events =
+%      qq!<BR><FONT SIZE="-1"><A HREF="${p}search/cust_event.html?invnum=!.
+%      $cust_bill->invnum. '">(&nbsp;View invoice events&nbsp;)</A></FONT>';
+%  }
 %  push @history, {
 %    'date'   => $cust_bill->_date,
 %    'desc'   => $link. $pre.
 %                "Invoice #$invnum (Balance \$". $cust_bill->owed. ')'.
-%                $post. ( $link ? '</A>' : '' ),
+%                $post. ( $link ? '</A>' : '' ). $events,
 %    'charge' => $cust_bill->charged,
 %  };
 %}

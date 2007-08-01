@@ -7,7 +7,7 @@
 package HTML::Mason;
 
 # Bring in main Mason package.
-use HTML::Mason 1.1;
+use HTML::Mason 1.27; #http://www.masonhq.com/?ApacheModPerl2Redirect
 
 # Bring in ApacheHandler, necessary for mod_perl integration.
 # Uncomment the second line (and comment the first) to use
@@ -92,7 +92,9 @@ sub handler
       use vars qw( %session );
       use CGI 2.47 qw(-private_tempfiles);
       #use CGI::Carp qw(fatalsToBrowser);
+      use CGI::Cookie;
       use List::Util qw( max min );
+      use Data::Dumper;
       use Date::Format;
       use Date::Parse;
       use Time::Local;
@@ -104,9 +106,11 @@ sub handler
       use URI::Escape;
       use HTML::Entities;
       use JSON;
+      use MIME::Base64;
       use IO::Handle;
       use IO::File;
       use IO::Scalar;
+      #not actually using this yet anyway...# use IPC::Run3 0.036;
       use Net::Whois::Raw qw(whois);
       if ( $] < 5.006 ) {
         eval "use Net::Whois::Raw 0.32 qw(whois)";
@@ -150,6 +154,8 @@ sub handler
       use FS::cust_svc;
       use FS::nas;
       use FS::part_bill_event;
+      use FS::part_event;
+      use FS::part_event_condition;
       use FS::part_pkg;
       use FS::part_referral;
       use FS::part_svc;
@@ -187,6 +193,7 @@ sub handler
       use FS::inventory_item;
       use FS::pkg_class;
       use FS::access_user;
+      use FS::access_user_pref;
       use FS::access_group;
       use FS::access_usergroup;
       use FS::access_groupagent;
@@ -217,7 +224,6 @@ sub handler
           use RT::Interface::Web;
           use MIME::Entity;
           use Text::Wrapper;
-          use CGI::Cookie;
           use Time::ParseDate;
           use HTML::Scrubber;
           use Text::Quoted;
@@ -226,7 +232,14 @@ sub handler
       }
 
       *CGI::redirect = sub {
-        my( $self, $location ) = @_;
+        my $self = shift;
+        my $cookie = '';
+        if ( $_[0] eq '-cookie' ) { #this isn't actually used at the moment
+          (my $x, $cookie) = (shift, shift);
+          $HTML::Mason::r->err_headers_out->add( 'Set-cookie' => $cookie );
+        }
+        my $location = shift;
+
         use vars qw($m);
 
         # false laziness w/below
@@ -333,7 +346,15 @@ sub handler
       return -1 if defined( $r->content_type ) && $r->content_type !~ m!(^text/|\bxml\b)!io;
 
     } else {
-      $ah->interp->set_escape( 'h' => sub { ${$_[0]}; } );
+      #$ah->interp->set_escape( 'h' => sub { ${$_[0]}; } );
+      $ah->interp->set_escape( 'h' => sub {} );
+
+      $ah->interp->set_escape( 'js_string' => sub {
+        #${$_[0]} =~ s/(['\\\n])/'\\'.($1 eq "\n" ? 'n' : $1)/ge;
+        ${$_[0]} =~ s/(['\\])/\\$1/g;
+        ${$_[0]} =~ s/\n/\\n/g;
+        ${$_[0]} = "'". ${$_[0]}. "'";
+      } );
     }
 
     $ah->interp->ignore_warnings_expr('.');

@@ -1,0 +1,86 @@
+<% include( 'elements/process.html',
+    #'debug'          => 1,
+    'table'          => 'part_event',
+    'viewall_dir'    => 'browse',
+    'process_m2name' =>
+      {
+        'link_table'    => 'part_event_condition',
+        'num_col'       => 'eventpart',
+        'name_col'      => 'conditionname',
+        'names_list'    => [ FS::part_event_condition->all_conditionnames() ],
+        'param_style'   => 'name_colN values',
+        'args_callback' => sub { # FS/FS/m2name_Common.pm
+          my( $object, $prefix, $params, $listref ) = @_;
+          #warn "$object $prefix $params $listref\n";
+
+          my $cond = $object->conditionname;
+
+          my %option_fields = $object->option_fields;
+
+          push @$listref, map {
+                                my $field = $_;
+
+                                my $cgi_field = "$prefix$cond.$field";
+
+                                my $value = $params->{$cgi_field};
+
+                                my $info = $option_fields{$_};
+                                $info = { label=>$info, type=>'text' }
+                                  unless ref($info);
+
+                                if ( $info->{'type'} =~
+                                       /^(select|checkbox)-?multiple$/
+                                     or $info->{'type'} =~ /^select/
+                                        && $info->{'multiple'}
+                                   )
+                                {
+                                  #special processing for compound fields
+                                  $value = { map { $_ => 1 }
+                                                 split(/\0/, $value)
+                                           };
+                                } elsif ( $info->{'type'} eq 'freq' ) {
+                                  $value .= $params->{$cgi_field.'_units'};
+                                }
+
+                                #warn "value of $cgi_field is $value\n";
+
+                                ( $field => $value );
+                              }
+                              keys %option_fields;
+        },
+      },
+
+    'args_callback' => sub {
+
+      my( $cgi, $object ) = @_;
+
+      my $prefix = $object->action.'.';
+
+      map { my $option = $_;
+            #my $value = scalar( $cgi->param( "$prefix$option" ) );
+            my $value = join(',', $cgi->param( "$prefix$option" ) );
+
+            if ( $option eq 'reasonnum' && $value == -1 ) {
+              $value = {
+                'typenum' => scalar( $cgi->param( "new$prefix${option}T" ) ),
+                'reason'  => scalar( $cgi->param( "new$prefix${option}"  ) ),
+              };
+            }
+
+            ( $option => $value );
+          }
+          @{ $object->option_fields_listref };
+
+    },
+
+    'agent_virt'       => 1,
+    'agent_null_right' => 'Edit global billing events',
+)
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Edit billing events')
+      || $FS::CurrentUser::CurrentUser->access_right('Edit global billing events');
+
+</%init>

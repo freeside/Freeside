@@ -1,0 +1,15 @@
+<% include('tr-td-label.html', @_ ) %>
+
+  <TD BGCOLOR="#dddddd" <% $style %>><% $opt{'value'} %></TD>
+
+</TR>
+
+<% include('hidden.html', %opt ) %>
+
+<%init>
+
+my %opt = @_;
+
+my $style = $opt{'cell_style'} ? 'STYLE="'. $opt{'cell_style'}. '"' : '';
+
+</%init>

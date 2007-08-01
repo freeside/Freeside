@@ -7,6 +7,7 @@ use Tie::IxHash;
 use FS::UID qw( getotaker dbh );
 use FS::Misc qw( send_email );
 use FS::Record qw( qsearch qsearchs );
+use FS::m2m_Common;
 use FS::cust_main_Mixin;
 use FS::cust_svc;
 use FS::part_pkg;
@@ -14,6 +15,7 @@ use FS::cust_main;
 use FS::type_pkgs;
 use FS::pkg_svc;
 use FS::cust_bill_pkg;
+use FS::cust_event;
 use FS::h_cust_svc;
 use FS::reg_code;
 use FS::part_svc;
@@ -31,7 +33,7 @@ use FS::svc_forward;
 # for sending cancel emails in sub cancel
 use FS::Conf;
 
-@ISA = qw( FS::cust_main_Mixin FS::option_Common FS::Record );
+@ISA = qw( FS::m2m_Common FS::cust_main_Mixin FS::option_Common FS::Record );
 
 $DEBUG = 0;
 
@@ -157,6 +159,12 @@ If the additional field I<promo_code> is defined instead of I<pkgpart>, it
 will be used to look up the package definition and agent restrictions will be
 ignored.
 
+If the additional field I<refnum> is defined, an FS::pkg_referral record will
+be created and inserted.  Multiple FS::pkg_referral records can be created by
+setting I<refnum> to an array reference of refnums or a hash reference with
+refnums as keys.  If no I<refnum> is defined, a default FS::pkg_referral
+record will be created corresponding to cust_main.refnum.
+
 The following options are available: I<change>
 
 I<change>, if set true, supresses any referral credit to a referring customer.
@@ -182,6 +190,13 @@ sub insert {
     $dbh->rollback if $oldAutoCommit;
     return $error;
   }
+
+  $self->refnum($self->cust_main->refnum) unless $self->refnum;
+  $self->refnum( [ $self->refnum ] ) unless ref($self->refnum);
+  $self->process_m2m( 'link_table'   => 'pkg_referral',
+                      'target_table' => 'part_referral',
+                      'params'       => $self->refnum,
+                    );
 
   #if ( $self->reg_code ) {
   #  my $reg_code = qsearchs('reg_code', { 'code' => $self->reg_code } );
@@ -315,7 +330,7 @@ sub replace {
   foreach my $method ( qw(adjourn expire) ) {  # How many reasons?
     if ($options{'reason'} && $new->$method && $old->$method ne $new->$method) {
       my $error = $new->insert_reason( 'reason' => $options{'reason'},
-                                       'date'      => $new->$method,
+                                       'date'   => $new->$method,
                                      );
       if ( $error ) {
         dbh->rollback if $oldAutoCommit;
@@ -441,9 +456,17 @@ Cancels and removes all services (see L<FS::cust_svc> and L<FS::part_svc>)
 in this package, then cancels the package itself (sets the cancel field to
 now).
 
-Available options are: I<quiet>
+Available options are:
 
-I<quiet> can be set true to supress email cancellation notices.
+=over 4
+
+=item quiet - can be set true to supress email cancellation notices.
+
+=item time -  can be set to cancel the package based on a specific future or historical date.  Using time ensures that the remaining amount is calculated correctly.  Note however that this is an immediate cancel and just changes the date.  You are PROBABLY looking to expire the account instead of using this.
+
+=item reason - can be set to a cancellation reason (see L<FS:reason>), either a reasonnum of an existing reason, or passing a hashref will create a new reason.  The hashref should have the following keys: typenum - Reason type (see L<FS::reason_type>, reason - Text of the new reason.
+
+=back
 
 If there is an error, returns the error, otherwise returns false.
 
@@ -451,7 +474,10 @@ If there is an error, returns the error, otherwise returns false.
 
 sub cancel {
   my( $self, %options ) = @_;
-  my $error;
+
+  warn "cust_pkg::cancel called with options".
+       join(', ', map { "$_: $options{$_}" } keys %options ). "\n"
+    if $DEBUG;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -463,8 +489,12 @@ sub cancel {
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
+  
+  my $cancel_time = $options{'time'} || time;
 
-  if ($options{'reason'}) {
+  my $error;
+
+  if ( $options{'reason'} ) {
     $error = $self->insert_reason( 'reason' => $options{'reason'} );
     if ( $error ) {
       dbh->rollback if $oldAutoCommit;
@@ -489,23 +519,22 @@ sub cancel {
     }
   }
 
-  # Add a credit for remaining service
-  my $remaining_value = $self->calc_remain();
-  if ( $remaining_value > 0 ) {
-    my $error = $self->cust_main->credit(
-      $remaining_value,
-      'Credit for unused time on '. $self->part_pkg->pkg,
-    );
-    if ($error) {
-      $dbh->rollback if $oldAutoCommit;
-      return "Error crediting customer \$$remaining_value for unused time on".
-             $self->part_pkg->pkg. ": $error";
-    }                                                                          
-  }                                                                            
-
   unless ( $self->getfield('cancel') ) {
+    # Add a credit for remaining service
+    my $remaining_value = $self->calc_remain(time=>$cancel_time);
+    if ( $remaining_value > 0 && !$options{'no_credit'} ) {
+      my $error = $self->cust_main->credit(
+                                           $remaining_value,
+                                           'Credit for unused time on '. $self->part_pkg->pkg,
+                                           );
+      if ($error) {
+        $dbh->rollback if $oldAutoCommit;
+        return "Error crediting customer \$$remaining_value for unused time on".
+          $self->part_pkg->pkg. ": $error";
+      }                                                                          
+    }                                                                            
     my %hash = $self->hash;
-    $hash{'cancel'} = time;
+    $hash{'cancel'} = $cancel_time;
     my $new = new FS::cust_pkg ( \%hash );
     $error = $new->replace( $self, options => { $self->options } );
     if ( $error ) {
@@ -533,10 +562,36 @@ sub cancel {
 
 }
 
-=item suspend
+=item cancel_if_expired [ NOW_TIMESTAMP ]
+
+Cancels this package if its expire date has been reached.
+
+=cut
+
+sub cancel_if_expired {
+  my $self = shift;
+  my $time = shift || time;
+  return '' unless $self->expire && $self->expire <= $time;
+  my $error = $self->cancel;
+  if ( $error ) {
+    return "Error cancelling expired pkg ". $self->pkgnum. " for custnum ".
+           $self->custnum. ": $error";
+  }
+  '';
+}
+
+=item suspend  [ OPTION => VALUE ... ]
 
 Suspends all services (see L<FS::cust_svc> and L<FS::part_svc>) in this
 package, then suspends the package itself (sets the susp field to now).
+
+Available options are:
+
+=over 4
+
+=item reason - can be set to a cancellation reason (see L<FS:reason>), either a reasonnum of an existing reason, or passing a hashref will create a new reason.  The hashref should have the following keys: typenum - Reason type (see L<FS::reason_type>, reason - Text of the new reason.
+
+=back
 
 If there is an error, returns the error, otherwise returns false.
 
@@ -544,7 +599,6 @@ If there is an error, returns the error, otherwise returns false.
 
 sub suspend {
   my( $self, %options ) = @_;
-  my $error ;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -557,7 +611,9 @@ sub suspend {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  if ($options{'reason'}) {
+  my $error;
+
+  if ( $options{'reason'} ) {
     $error = $self->insert_reason( 'reason' => $options{'reason'} );
     if ( $error ) {
       dbh->rollback if $oldAutoCommit;
@@ -796,6 +852,40 @@ sub cust_bill_pkg {
   qsearch( 'cust_bill_pkg', { 'pkgnum' => $self->pkgnum } );
 }
 
+=item cust_event
+
+Returns the new-style customer billing events (see L<FS::cust_event>) for this invoice.
+
+=cut
+
+#false laziness w/cust_bill.pm
+sub cust_event {
+  my $self = shift;
+  qsearch({
+    'table'     => 'cust_event',
+    'addl_from' => 'JOIN part_event USING ( eventpart )',
+    'hashref'   => { 'tablenum' => $self->pkgnum },
+    'extra_sql' => " AND eventtable = 'cust_pkg' ",
+  });
+}
+
+=item num_cust_event
+
+Returns the number of new-style customer billing events (see L<FS::cust_event>) for this invoice.
+
+=cut
+
+#false laziness w/cust_bill.pm
+sub num_cust_event {
+  my $self = shift;
+  my $sql =
+    "SELECT COUNT(*) FROM cust_event JOIN part_event USING ( eventpart ) ".
+    "  WHERE tablenum = ? AND eventtable = 'cust_pkg'";
+  my $sth = dbh->prepare($sql) or die  dbh->errstr. " preparing $sql"; 
+  $sth->execute($self->pkgnum) or die $sth->errstr. " executing $sql";
+  $sth->fetchrow_arrayref->[0];
+}
+
 =item cust_svc [ SVCPART ]
 
 Returns the services for this package, as FS::cust_svc objects (see
@@ -1023,7 +1113,7 @@ sub status {
 
 =item statuses
 
-Class method that returns the list of possible status strings for pacakges
+Class method that returns the list of possible status strings for packages
 (see L<the status method|/status>).  For example:
 
   @statuses = FS::cust_pkg->statuses();
@@ -1449,7 +1539,7 @@ sub cancel_sql {
 
 =over 4
 
-=item order CUSTNUM, PKGPARTS_ARYREF, [ REMOVE_PKGNUMS_ARYREF [ RETURN_CUST_PKG_ARRAYREF ] ]
+=item order CUSTNUM, PKGPARTS_ARYREF, [ REMOVE_PKGNUMS_ARYREF [ RETURN_CUST_PKG_ARRAYREF [ REFNUM ] ] ]
 
 CUSTNUM is a customer (see L<FS::cust_main>)
 
@@ -1466,10 +1556,16 @@ parameter.
 RETURN_CUST_PKG_ARRAYREF, if specified, will be filled in with the
 newly-created cust_pkg objects.
 
+REFNUM, if specified, will specify the FS::pkg_referral record to be created
+and inserted.  Multiple FS::pkg_referral records can be created by
+setting I<refnum> to an array reference of refnums or a hash reference with
+refnums as keys.  If no I<refnum> is defined, a default FS::pkg_referral
+record will be created corresponding to cust_main.refnum.
+
 =cut
 
 sub order {
-  my ($custnum, $pkgparts, $remove_pkgnum, $return_cust_pkg) = @_;
+  my ($custnum, $pkgparts, $remove_pkgnum, $return_cust_pkg, $refnum) = @_;
 
   my $conf = new FS::Conf;
 
@@ -1504,6 +1600,7 @@ sub order {
   foreach my $pkgpart (@$pkgparts) {
     my $cust_pkg = new FS::cust_pkg { custnum => $custnum,
                                       pkgpart => $pkgpart,
+                                      refnum  => $refnum,
                                       %hash,
                                     };
     $error = $cust_pkg->insert( 'change' => $change );
@@ -1557,10 +1654,53 @@ sub order {
   '';
 }
 
+=item insert_reason
+
+Associates this package with a (suspension or cancellation) reason (see
+L<FS::cust_pkg_reason>, possibly inserting a new reason on the fly (see
+L<FS::reason>).
+
+Available options are:
+
+=over 4
+
+=item reason - can be set to a cancellation reason (see L<FS:reason>), either a reasonnum of an existing reason, or passing a hashref will create a new reason.  The hashref should have the following keys: typenum - Reason type (see L<FS::reason_type>, reason - Text of the new reason.
+
+=item date
+
+=back
+
+If there is an error, returns the error, otherwise returns false.
+
+=cut
+
 sub insert_reason {
   my ($self, %options) = @_;
 
   my $otaker = $FS::CurrentUser::CurrentUser->username;
+
+  my $reasonnum;
+  if ( $options{'reason'} =~ /^(\d+)$/ ) {
+
+    $reasonnum = $1;
+
+  } elsif ( ref($options{'reason'}) ) {
+  
+    return 'Enter a new reason (or select an existing one)'
+      unless $options{'reason'}->{'reason'} !~ /^\s*$/;
+
+    my $reason = new FS::reason({
+      'reason_type' => $options{'reason'}->{'typenum'},
+      'reason'      => $options{'reason'}->{'reason'},
+    });
+    my $error = $reason->insert;
+    return $error if $error;
+
+    $reasonnum = $reason->reasonnum;
+
+  } else {
+    return "Unparsable reason: ". $options{'reason'};
+  }
 
   my $cust_pkg_reason =
     new FS::cust_pkg_reason({ 'pkgnum'    => $self->pkgnum,
@@ -1570,7 +1710,8 @@ sub insert_reason {
 			                       ? $options{'date'}
 					       : time,
 	                    });
-  return $cust_pkg_reason->insert;
+
+  $cust_pkg_reason->insert;
 }
 
 =item set_usage USAGE_VALUE_HASHREF 

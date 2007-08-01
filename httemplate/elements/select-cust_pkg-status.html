@@ -1,21 +1,30 @@
-<SELECT NAME="status" <% $opt{'onchange'} %>>
+<SELECT NAME="<% $opt{'field'} || 'status' %>"
+        <% $opt{'multiple'} ? 'MULTIPLE' : '' %>
+        <% $onchange %>
+>
 
   <OPTION VALUE="">all
 
 % foreach my $option ( @{ $opt{'statuses'} } ) { 
-       <OPTION VALUE="<% $option %>" <% $option eq $status ? 'SELECTED' : '' %>><% $option %>
+
+    <OPTION VALUE="<% $option %>"
+            <% $option eq $curr_value ? 'SELECTED' : '' %>
+    ><% $option %>
+
 % } 
 
 </SELECT>
+
 <%init>
-  my( $status, %opt ) = @_;
 
-  $opt{'statuses'} ||= [ FS::cust_pkg->statuses() ]; # { disabled=>'' } )
+my %opt = @_;
 
-  if ( exists $opt{'onchange'} && $opt{'onchange'} ) {
-    $opt{'onchange'} = ' onChange="' . $opt{'onchange'}. '"';
-  } else {
-    $opt{'onchange'} = '';
-  }
+$opt{'statuses'} ||= [ FS::cust_pkg->statuses() ]; # { disabled=>'' } )
+
+my $onchange = $opt{'onchange'}
+                 ? 'onChange="'. $opt{'onchange'}. '(this)"'
+                 : '';
+
+my $curr_value = $opt{'curr_value'} || $opt{'value'};
 
 </%init>

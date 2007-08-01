@@ -504,7 +504,14 @@ Invoice Event #<% $hashref->{eventpart} ? $hashref->{eventpart} : "(NEW)" %>
 <TABLE BGCOLOR="#cccccc" BORDER=0 WIDTH="100%">
 <TR><TD>
 <TABLE BORDER=0 id="Ctable" style="display:<% $currentreasonclass eq 'C' ? 'inline' : 'none' %>">
-<% include('/elements/tr-select-reason.html', 'creason', 'C', $creason, $newcreasonT, $newcreason) %>
+<% include('/elements/tr-select-reason.html',
+             'field'          => 'creason',
+             'reason_class'   => 'C',
+             'curr_value'     => $creason,
+             'init_type'      => $newcreasonT,
+             'init_newreason' => $newcreason
+          )
+%>
 </TABLE>
 </TR></TD>
 </TABLE>
@@ -512,7 +519,14 @@ Invoice Event #<% $hashref->{eventpart} ? $hashref->{eventpart} : "(NEW)" %>
 <TABLE BGCOLOR="#cccccc" BORDER=0 WIDTH="100%">
 <TR><TD>
 <TABLE BORDER=0 id="Stable" style="display:<% $currentreasonclass eq 'S' ? 'inline' : 'none' %>">
-<% include('/elements/tr-select-reason.html', 'sreason', 'S', $sreason, $newsreasonT, $newsreason) %>
+<% include('/elements/tr-select-reason.html',
+             'field'          => 'sreason',
+             'reason_class'   => 'S',
+             'curr_value'     => $sreason,
+             'init_type'      => $newsreasonT,
+             'init_newreason' => $newsreason
+          )
+%>
 </TABLE>
 </TR></TD>
 </TABLE>

@@ -117,6 +117,7 @@ sub check {
       || $self->ut_number('typenum')
       || $self->ut_numbern('freq')
       || $self->ut_textn('prog')
+      || $self->ut_textn('invoice_template')
   ;
   return $error if $error;
 

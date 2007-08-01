@@ -1,0 +1,17 @@
+<TR>
+
+  <TD ALIGN="right" VALIGN="top" STYLE="<% $style %>" ID="<% $opt{label_id} || $opt{id}. '_label0' %>">
+
+    <% $opt{label} %>
+
+  </TD>
+
+<%init>
+
+my %opt = @_;
+
+my $style = 'padding-top: 3px';
+$style .= '; '. $opt{'cell_style'}
+  if $opt{'cell_style'};
+
+</%init>

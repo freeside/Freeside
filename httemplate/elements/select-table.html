@@ -1,73 +1,89 @@
-<SELECT NAME="<% $opt{'element_name'} || $key %>" <% $opt{'element_etc'} %>>
+<%doc>
+
+Example:
+
+  include( '/elements/select-table.html',
+
+    #required
+    'table'    => 'table_name',
+    'name_col' => 'name_column',
+   
+    #strongly recommended (you want your forms to be "sticky" on errors, right?)
+    'value'    => 'current_value',
+   
+    #opt
+    'empty_label'   => '', #better specify it though, the default might change
+    'hashref'       => {},
+    'extra_sql'     => '',
+    'records'       => \@records, #instead of hashref
+    'pre_options'   => [ 'value' => 'option' ], #before normal options
+    'element_name ' => '', #HTML element name, defaults to the name of
+                           # the primary key column
+    'field'         => '', #synonym for element_name
+    'element_etc'   => '', #additional attributes (i.e. "DISABLED") for the
+                           #<SELECT> element
+    'multiple'      => 0, # bool
+    'disable_empty' => 0, # bool (implied by multiple)
+    'debug'         => 0, #set true to enable
+
+  )
+
+</%doc>
+
+<SELECT <% $opt{'multiple'} ? 'MULTIPLE' : '' %> NAME="<% $opt{'element_name'} || $opt{'field'} || $key %>" <% $opt{'element_etc'} %>>
 
 % while ( @pre_options ) { 
-
     <OPTION VALUE="<% shift(@pre_options) %>"><% shift(@pre_options) %>
 
 % } 
 
-  <OPTION VALUE=""><% $opt{'empty_label'} || 'all' %>
+% unless ( $opt{'multiple'} || $opt{'disable_empty'} ) {
+    <OPTION VALUE=""><% $opt{'empty_label'} || 'all' %>
+% }
 
 % foreach my $record ( sort { $a->$name_col() cmp $b->$name_col() } @records ) {
-%   my $matches = 0;
-%   ref($opt{'value'}) ? (exists($opt{'value'}->{$record->$key()}) and $matches=1)
-%                      : ($opt{'value'} == $record->$key() and $matches=1);
-
-    <OPTION VALUE="<% $record->$key() %>"<% $matches ? ' SELECTED' : '' %>><% $record->$name_col() %>
-
+%   my $recvalue = $record->$key();
+    <OPTION VALUE="<% $recvalue %>"
+            <% ref($value) && $value->{$recvalue} || $value == $recvalue
+               ? ' SELECTED' : ''
+            %>
+    ><% $record->$name_col() %>
 % } 
 
 </SELECT>
-<%init>
 
-##required
-# 'table'    => 'table_name',
-# 'name_col' => 'name_column',
-#
-##strongly recommended (you want your forms to be "sticky" on errors, right?)
-# 'value'    => 'current_value',
-#
-##opt
-# 'empty_label'  => '', #better specify it though, the default might change
-# 'hashref'      => {},
-# 'extra_sql'    => '',
-# 'records'      => \@records, #instead of hashref
-# 'pre_options'  => [ 'value' => 'option' ], #before normal options
-# 'element_name' => '', #HTML element name, defaults to the name of
-#                       # the primary key column
-# 'element_etc'  => '', #additional attributes (i.e. "DISABLED") for the
-#                       #<SELECT> element
-# 'debug'        => 0, #set true to enable
+<%init>
 
 my( %opt ) = @_;
 
 warn "elements/select-table.html: \n". Dumper(%opt)
   if exists $opt{debug} && $opt{debug};
 
-my $key = dbdef->table($opt{table})->primary_key; #? $opt{primary_key} ||
+my $key = dbdef->table($opt{'table'})->primary_key; #? $opt{'primary_key'} ||
 
-my $name_col = $opt{name_col};
+my $name_col = $opt{'name_col'};
 
-$opt{hashref} ||= {};
+my $value = $opt{'curr_value'} || $opt{'value'};
+$value = [ split(/\s*,\s*/, $value) ] if $opt{'multiple'} && $value =~ /,/;
 
 my @records = ();
-if ( $opt{records} ) {
-  @records = @{ $opt{records} };
+if ( $opt{'records'} ) {
+  @records = @{ $opt{'records'} };
 } else {
   @records = qsearch( {
-    'table'     => $opt{table},
-    'hashref'   => $opt{hashref},
-    'extra_sql' => ( $opt{extra_sql} || '' ),
+    'table'     => $opt{'table'},
+    'hashref'   => ( $opt{'hashref'} || {} ),
+    'extra_sql' => ( $opt{'extra_sql'} || '' ),
   });
 }
 
-unless (    ! $opt{value}
-         or ref($opt{value})
+unless (    ! $value
+         or ref($value)
          or ! exists( $opt{hashref}->{disabled} ) #??
-         or grep { $opt{value} == $_->$key() } @records
+         or grep { $value == $_->$key() } @records
        ) {
   delete $opt{hashref}->{disabled};
-  $opt{hashref}->{$key} = $opt{value};
+  $opt{hashref}->{$key} = $value;
   my $record = qsearchs( {
     'table'     => $opt{table},
     'hashref'   => $opt{hashref},
@@ -76,8 +92,8 @@ unless (    ! $opt{value}
   push @records, $record if $record;
 }
 
-if ( ref( $opt{value} ) eq 'ARRAY' ) {
-  $opt{value} = { map { $_ => 1 } @{$opt{value}} };
+if ( ref( $value ) eq 'ARRAY' ) {
+  $value = { map { $_ => 1 } @$value };
 }
 
 my @pre_options = $opt{pre_options} ? @{ $opt{pre_options} } : ();

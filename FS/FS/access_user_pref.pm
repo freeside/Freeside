@@ -27,19 +27,22 @@ FS::access_user_pref - Object methods for access_user_pref records
 
 =head1 DESCRIPTION
 
-An FS::access_user_pref object represents an example.  FS::access_user_pref inherits from
-FS::Record.  The following fields are currently supported:
+An FS::access_user_pref object represents an per-user preference.  Preferenaces
+are also used to store transient state information (server-side "cookies").
+FS::access_user_pref inherits from FS::Record.  The following fields are
+currently supported:
 
 =over 4
 
 =item prefnum - primary key
 
-=item usernum - 
+=item usernum - Internal access user (see L<FS::access_user>)
 
 =item prefname - 
 
 =item prefvalue - 
 
+=item expiration - 
 
 =back
 
@@ -49,7 +52,7 @@ FS::Record.  The following fields are currently supported:
 
 =item new HASHREF
 
-Creates a new example.  To add the example to the database, see L<"insert">.
+Creates a new preference.  To add the example to the database, see L<"insert">.
 
 Note that this stores the hash reference, not a distinct copy of the hash it
 points to.  You can ask the object for a copy with the I<hash> method.
@@ -88,7 +91,7 @@ returns the error, otherwise returns false.
 
 =item check
 
-Checks all fields to make sure this is a valid example.  If there is
+Checks all fields to make sure this is a valid preference.  If there is
 an error, returns the error, otherwise returns false.  Called by the insert
 and replace methods.
 
@@ -104,7 +107,8 @@ sub check {
     $self->ut_numbern('prefnum')
     || $self->ut_number('usernum')
     || $self->ut_text('prefname')
-    || $self->ut_textn('prefvalue')
+    #|| $self->ut_textn('prefvalue')
+    || $self->ut_anything('prefvalue')
   ;
   return $error if $error;
 
@@ -115,11 +119,9 @@ sub check {
 
 =head1 BUGS
 
-The author forgot to customize this manpage.
-
 =head1 SEE ALSO
 
-L<FS::Record>, schema.html from the base documentation.
+L<FS::access_user>, L<FS::Record>, schema.html from the base documentation.
 
 =cut
 

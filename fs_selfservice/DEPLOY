@@ -25,3 +25,5 @@ cd ..
 	#chmod 755 /var/www/signup/signup.cgi
 	#ln -s /var/www/signup/signup.cgi /var/www/signup/index.cgi || true
 
+
+chmod 755 /var/www/selfservice/*.cgi

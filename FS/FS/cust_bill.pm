@@ -24,6 +24,7 @@ use FS::cust_credit_bill;
 use FS::pay_batch;
 use FS::cust_pay_batch;
 use FS::cust_bill_event;
+use FS::cust_event;
 use FS::part_pkg;
 use FS::cust_bill_pay;
 use FS::cust_bill_pay_batch;
@@ -271,8 +272,7 @@ sub open_cust_bill_pkg {
 
 =item cust_bill_event
 
-Returns the completed invoice events (see L<FS::cust_bill_event>) for this
-invoice.
+Returns the completed invoice events (deprecated, old-style events - see L<FS::cust_bill_event>) for this invoice.
 
 =cut
 
@@ -281,6 +281,54 @@ sub cust_bill_event {
   qsearch( 'cust_bill_event', { 'invnum' => $self->invnum } );
 }
 
+=item num_cust_bill_event
+
+Returns the number of completed invoice events (deprecated, old-style events - see L<FS::cust_bill_event>) for this invoice.
+
+=cut
+
+sub num_cust_bill_event {
+  my $self = shift;
+  my $sql =
+    "SELECT COUNT(*) FROM cust_bill_event WHERE invnum = ?";
+  my $sth = dbh->prepare($sql) or die  dbh->errstr. " preparing $sql"; 
+  $sth->execute($self->invnum) or die $sth->errstr. " executing $sql";
+  $sth->fetchrow_arrayref->[0];
+}
+
+=item cust_event
+
+Returns the new-style customer billing events (see L<FS::cust_event>) for this invoice.
+
+=cut
+
+#false laziness w/cust_pkg.pm
+sub cust_event {
+  my $self = shift;
+  qsearch({
+    'table'     => 'cust_event',
+    'addl_from' => 'JOIN part_event USING ( eventpart )',
+    'hashref'   => { 'tablenum' => $self->invnum },
+    'extra_sql' => " AND eventtable = 'cust_bill' ",
+  });
+}
+
+=item num_cust_event
+
+Returns the number of new-style customer billing events (see L<FS::cust_event>) for this invoice.
+
+=cut
+
+#false laziness w/cust_pkg.pm
+sub num_cust_event {
+  my $self = shift;
+  my $sql =
+    "SELECT COUNT(*) FROM cust_event JOIN part_event USING ( eventpart ) ".
+    "  WHERE tablenum = ? AND eventtable = 'cust_bill'";
+  my $sth = dbh->prepare($sql) or die  dbh->errstr. " preparing $sql"; 
+  $sth->execute($self->invnum) or die $sth->errstr. " executing $sql";
+  $sth->fetchrow_arrayref->[0];
+}
 
 =item cust_main
 
@@ -2577,6 +2625,8 @@ sub _items_payments {
 
 =back
 
+
+
 =head1 SUBROUTINES
 
 =over 4
@@ -2697,6 +2747,34 @@ sub re_X {
 }
 
 =back
+
+=head1 CLASS METHODS
+
+=over 4
+
+=item owed_sql
+
+Returns an SQL fragment to retreived the amount owed.
+
+=cut
+
+sub owed_sql {
+  #my $class = shift;
+
+  "charged
+           - COALESCE(
+                       ( SELECT SUM(amount) FROM cust_bill_pay
+                           WHERE cust_bill.invnum = cust_bill_pay.invnum )
+                       ,0
+                     )
+           - COALESCE(
+                       ( SELECT SUM(amount) FROM cust_credit_bill
+                           WHERE cust_bill.invnum = cust_credit_bill.invnum )
+                       ,0
+                     )
+  ";
+
+}
 
 =head1 BUGS
 
