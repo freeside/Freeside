@@ -1,0 +1,11 @@
+<%init>
+use RTx::Statistics;
+if (($Statistics::RestrictAccess == 0) || ($session{'CurrentUser'}->HasRight( Right => 'ShowConfigTab', 
+				       Object => $RT::System ))) {
+     $toptabs->{'ZZ-RTx-STATS'} = { title => 'RTx-Statistics',
+                        	        path  => "RTx/Statistics/index.html" };
+}
+</%init>
+<%args>
+ $toptabs =>undef
+</%args>
