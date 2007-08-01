@@ -2,8 +2,8 @@ package FS::reason;
 
 use strict;
 use vars qw( @ISA );
-use FS::reason_type;
 use FS::Record qw( qsearch qsearchs );
+use FS::reason_type;
 
 @ISA = qw(FS::Record);
 
