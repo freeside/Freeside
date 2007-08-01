@@ -1051,10 +1051,10 @@ sub tables_hashref {
 
     'svc_www' => {
       'columns' => [
-        'svcnum',   'int',    '',  '', '', '', 
-        'recnum',   'int',    '',  '', '', '', 
-        'usersvc',  'int',    '',  '', '', '', 
-        'config',   'text',   'NULL',  '', '', '', 
+        'svcnum',   'int',      '',  '', '', '', 
+        'recnum',   'int',      '',  '', '', '', 
+        'usersvc',  'int',  'NULL',  '', '', '', 
+        'config',   'text', 'NULL',  '', '', '', 
       ],
       'primary_key' => 'svcnum',
       'unique'      => [],
