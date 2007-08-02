@@ -603,7 +603,7 @@ sub pkg_popup_link {
   my($action, $label, $actionlabel, $color, $cust_pkg) = @_;
   $action .= '&pkgnum='. $cust_pkg->pkgnum;
   $actionlabel .= ' package '. $cust_pkg->pkgnum;
-  popup_link($action, $label, $actionlabel, $color);
+  popup_link($action, $label, $actionlabel, $color, 768);
 }
 
 sub svc_popup_link {
