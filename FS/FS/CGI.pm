@@ -325,7 +325,7 @@ sub small_custview {
     if $url;
 
   $html .= 'Customer #<B>'. $cust_main->custnum. '</B></A>'.
-    ' - <B><FONT COLOR="'. $cust_main->statuscolor. '">'.
+    ' - <B><FONT COLOR="#'. $cust_main->statuscolor. '">'.
     ucfirst($cust_main->status). '</FONT></B>'.
     ntable('#e8e8e8'). '<TR><TD VALIGN="top">'. ntable("#cccccc",2).
     '<TR><TD ALIGN="right" VALIGN="top">Billing<BR>Address</TD><TD BGCOLOR="#ffffff">'.
