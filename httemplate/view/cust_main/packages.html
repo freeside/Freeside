@@ -526,7 +526,13 @@ sub pkg_datestr {
   $strip;
 }
 
-sub pkg_change_link    { pkg_link('misc/change_pkg',    'Change&nbsp;package', @_ ); }
+sub pkg_change_link    { pkg_popup_link('misc/change_pkg.cgi?dummy=value',
+                                          'Change&nbsp;package',
+                                          'Change',
+                                          '',
+                                          @_
+                                       );
+                       }
 
 sub pkg_suspend_link   { pkg_popup_link( 'misc/cancel_pkg.html?method=suspend',
                                          'Suspend&nbsp;now',

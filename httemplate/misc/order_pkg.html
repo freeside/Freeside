@@ -18,21 +18,11 @@ function enable_order_pkg () {
 <TR>
   <TH ALIGN="right">Package</TH>
   <TD>
-    <SELECT NAME="pkgpart" onChange="enable_order_pkg()"><OPTION>Select package
-
-%foreach my $part_pkg (
-%  qsearch( 'part_pkg', { 'disabled' => '' }, '',
-%           ' AND 0 < ( SELECT COUNT(*) FROM type_pkgs '.
-%           '             WHERE typenum = '. $cust_main->agent->typenum.
-%           '             AND type_pkgs.pkgpart = part_pkg.pkgpart )'
-%         )
-%) {
-
-      <OPTION VALUE="<% $part_pkg->pkgpart %>"><% $part_pkg->pkg %> - <% $part_pkg->comment %>
-
-% } 
-
-    </SELECT>
+    <% include('/elements/select-cust-part_pkg.html',
+                 'cust_main' => $cust_main,
+                 'onchange'  => 'enable_order_pkg',
+              )
+    %>
   </TD>
 </TR>
 
