@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+%# 02110-1301 or visit their web page on the internet at
+%# http://www.gnu.org/copyleft/gpl.html.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -43,44 +45,65 @@
 %# those contributions and any derivatives thereof.
 %# 
 %# END BPS TAGGED BLOCK }}}
-<TABLE>
-  <TR>
+<table>
+  <tr>
       <td class="label"><&|/l&>Subject</&>:</td>
-      <td class="value"><input name=Subject value="<%$TicketObj->Subject|h%>" SIZE=50></td>
-    </TR>
+      <td class="value"><input name="Subject" value="<%$TicketObj->Subject|h%>" size="50" /></td>
+    </tr>
 
-  <TR>
+  <tr>
       <td class="label"><&|/l&>Status</&>:</td>
       <td class="value"><%$SelectStatus|n%></td>
-    </TR>
-  <TR>
+    </tr>
+  <tr>
       <td class="label"><&|/l&>Queue</&>:</td>
       <td class="value"><%$SelectQueue|n%></td>
-    </TR>
-  <TR>
+    </tr>
+  <tr>
+      <td class="label"><&|/l&>Owner</&>:</td>
+      <td class="value"><& /Elements/SelectOwner,
+          Name         => 'Owner',
+          QueueObj     => $TicketObj->QueueObj,
+          TicketObj    => $TicketObj,
+          Default      => $TicketObj->OwnerObj->Id,
+          DefaultValue => 0,
+      &></td>
+    </tr>
+
+  <tr>
       <td class="label"><&|/l&>Time Estimated</&>:</td>
-      <td class="value"><input name=TimeEstimated value="<%$TicketObj->TimeEstimated|h%>" SIZE="5"></td>
-    </TR>
-  <TR>
+      <td class="value"><input name="TimeEstimated" value="<%$TicketObj->TimeEstimated|h%>" size="5" />
+    <& /Elements/SelectTimeUnits, Name =>'TimeEstimated' &>
+</td>
+    </tr>
+  <tr>
       <td class="label"><&|/l&>Time Worked</&>:</td>
-      <td class="value"><input name=TimeWorked value="<%$TicketObj->TimeWorked|h%>" SIZE="5"></td>
-    </TR>
-  <TR>
+      <td class="value"><input name="TimeWorked" value="<%$TicketObj->TimeWorked|h%>" size="5" />
+    <& /Elements/SelectTimeUnits, Name =>'TimeWorked' &>
+</td>
+
+    </tr>
+  <tr>
       <td class="label"><&|/l&>Time Left</&>:</td>
-      <td class="value"><input name=TimeLeft value="<%$TicketObj->TimeLeft|h%>" SIZE="5"></td>
-    </TR>
+      <td class="value"><input name="TimeLeft" value="<%$TicketObj->TimeLeft|h%>" size="5" />
+    <& /Elements/SelectTimeUnits, Name =>'TimeLeft' &>
+    </td>
+    </tr>
 
-  <TR>
+  <tr>
       <td class="label"><&|/l&>Priority</&>:</td>
-      <td class="value"><input name=Priority value="<%$TicketObj->Priority|h%>" SIZE="5"></td>
-    </TR>
+      <td class="value"><input name="Priority" value="<%$TicketObj->Priority|h%>" size="5" /></td>
+    </tr>
 
-  <TR>
+  <tr>
       <td class="label"><&|/l&>Final Priority</&>:</td>
-      <td class="value"><input name=FinalPriority value="<%$TicketObj->FinalPriority|h%>" SIZE="5"></td>
-    </TR>
+      <td class="value"><input name="FinalPriority" value="<%$TicketObj->FinalPriority|h%>" size="5" /></td>
+    </tr>
+
+
+
 <& /Elements/Callback, _CallbackName => 'EndOfList', TicketObj => $TicketObj, %ARGS &>
-</TABLE>
+</table>
 
 <%INIT>
 #It's hard to do this inline, so we'll preload the html of the selectstatus in here.

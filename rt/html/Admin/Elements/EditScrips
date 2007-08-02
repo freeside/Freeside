@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+%# 02110-1301 or visit their web page on the internet at
+%# http://www.gnu.org/copyleft/gpl.html.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -46,34 +48,35 @@
 <& /Elements/ListActions, actions => \@actions &>
 
 <form action="Scrips.html" method="post">
-<input type="hidden" name="id" value="<%$id%>">
+<input type="hidden" class="hidden" name="id" value="<%$id%>" />
 
 <h2><&|/l&>Current Scrips</&></h2>
 % if ($Scrips->Count == 0 ) {
-<P><i><&|/l&>(No scrips)</&></i></P>
+<p><i><&|/l&>(No scrips)</&></i></p>
 % } else {
-<TABLE>
-<P><i><&|/l&>(Check box to delete)</&></i></P>
+<table>
+<p><i><&|/l&>(Check box to delete)</&></i></p>
 
 %   while (my $scrip = $Scrips->Next ) {
-<TR>
-<TD>
-<input type="checkbox" name="DeleteScrip-<%$scrip->Id%>" value="1">
-</TD>
-<TD>
-<a href="Scrip.html?id=<%$scrip->Id%>&Queue=<%$id%>"><% $scrip->Description || "<i>(".loc('no value').")</i>" |n %></a><br>
+<tr>
+<td>
+<input type="checkbox" class="checkbox" name="DeleteScrip-<%$scrip->Id%>" value="1" />
+</td>
+<td>
+<a href="Scrip.html?id=<%$scrip->Id%>&Queue=<%$id%>"><% $scrip->Description || "<i>(".loc('no value').")</i>" |n %></a><br />
 <small><&|/l, loc($scrip->ConditionObj->Name), loc($scrip->ActionObj->Name), loc($scrip->TemplateObj->Name) &>[_1] [_2] with template [_3]</&></small>
-</TD>
-</TR>
+</td>
+</tr>
 %   }
 
-</TABLE>
+</table>
 
 % }
 <& /Elements/Submit, 
 	Caption => loc("Delete selected scrips"), 
 	Label => loc("Delete") &>
 </form>
+
 <%init>
 my (@actions);
 
@@ -92,6 +95,7 @@ else {
         $Scrips->LimitToGlobal();
 }                                           
 
+$Scrips->OrderBy( FIELD => 'description' );
 
 
 

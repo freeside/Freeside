@@ -2,7 +2,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/copyleft/gpl.html.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -151,6 +153,7 @@ use RT::Date;
 use RT::CustomFields;
 use RT::Tickets;
 use RT::Transactions;
+use RT::Reminders;
 use RT::URI::fsck_com_rt;
 use RT::URI;
 use MIME::Entity;
@@ -240,7 +243,7 @@ sub Load {
 
 
     #If it's a local URI, turn it into a ticket id
-    if ( $id =~ /^$RT::TicketBaseURI(\d+)$/ ) {
+    if ( $RT::TicketBaseURI && $id =~ /^$RT::TicketBaseURI(\d+)$/ ) {
         $id = $1;
     }
 
@@ -327,9 +330,19 @@ Arguments: ARGS is a hash of named parameters.  Valid parameters are:
   MIMEObj -- a MIME::Entity object with the content of the initial ticket request.
   CustomField-<n> -- a scalar or array of values for the customfield with the id <n>
 
+Ticket links can be set up during create by passing the link type as a hask key and
+the ticket id to be linked to as a value (or a URI when linking to other objects).
+Multiple links of the same type can be created by passing an array ref. For example:
+
+  Parent => 45,
+  DependsOn => [ 15, 22 ],
+  RefersTo => 'http://www.bestpractical.com',
+
+Supported link types are C<MemberOf>, C<HasMember>, C<RefersTo>, C<ReferredToBy>,
+C<DependsOn> and C<DependedOnBy>. Also, C<Parents> is alias for C<MemberOf> and
+C<Members> and C<Children> are aliases for C<HasMember>.
 
 Returns: TICKETID, Transaction Object, Error Message
-
 
 =begin testing
 
@@ -440,9 +453,9 @@ sub Create {
     if ( $args{'Due'} ) {
         $Due->Set( Format => 'ISO', Value => $args{'Due'} );
     }
-    elsif ( $QueueObj->DefaultDueIn ) {
+    elsif ( my $due_in = $QueueObj->DefaultDueIn ) {
         $Due->SetToNow;
-        $Due->AddDays( $QueueObj->DefaultDueIn );
+        $Due->AddDays( $due_in );
     }
 
     my $Starts = new RT::Date( $self->CurrentUser );
@@ -463,10 +476,9 @@ sub Create {
     #If the status is an inactive status, set the resolved date
     if ( $QueueObj->IsInactiveStatus( $args{'Status'} ) && !$args{'Resolved'} )
     {
-        $RT::Logger->debug( "Got a "
-              . $args{'Status'}
-              . "ticket with a resolved of "
-              . $args{'Resolved'} );
+        $RT::Logger->debug( "Got a ". $args{'Status'}
+            ." ticket with undefined resolved date. Setting to now."
+        );
         $Resolved->SetToNow;
     }
 
@@ -678,6 +690,20 @@ sub Create {
         foreach my $link (
             ref( $args{$type} ) ? @{ $args{$type} } : ( $args{$type} ) )
         {
+            # Check rights on the other end of the link if we must
+            # then run _AddLink that doesn't check for ACLs
+            if ( $RT::StrictLinkACL ) {
+                my ($val, $msg, $obj) = $self->__GetTicketFromURI( URI => $link );
+                unless ( $val ) {
+                    push @non_fatal_errors, $msg;
+                    next;
+                }
+                if ( $obj && !$obj->CurrentUserHasRight('ModifyTicket') ) {
+                    push @non_fatal_errors, $self->loc('Linking. Permission denied');
+                    next;
+                }
+            }
+            
             my ( $wval, $wmsg ) = $self->_AddLink(
                 Type                          => $LINKTYPEMAP{$type}->{'Type'},
                 $LINKTYPEMAP{$type}->{'Mode'} => $link,
@@ -1315,9 +1341,16 @@ sub AddWatcher {
         @_
     );
 
+    # XXX, FIXME, BUG: if only email is provided then we only check
+    # for ModifyTicket right, but must try to get PrincipalId and
+    # check Watch* rights too if user exist
+
     # {{{ Check ACLS
     #If the watcher we're trying to add is for the current user
-    if ( $self->CurrentUser->PrincipalId  eq $args{'PrincipalId'}) {
+    if ( $self->CurrentUser->PrincipalId == ($args{'PrincipalId'} || 0)
+       or    lc( $self->CurrentUser->UserObj->EmailAddress )
+          eq lc( RT::User::CanonicalizeEmailAddress(undef, $args{'Email'}) || '' ) )
+    {
         #  If it's an AdminCc and they don't have 
         #   'WatchAsAdminCc' or 'ModifyTicket', bail
         if ( $args{'Type'} eq 'AdminCc' ) {
@@ -1481,7 +1514,7 @@ sub DeleteWatcher {
 
     # {{{ Check ACLS
     #If the watcher we're trying to add is for the current user
-    if ( $self->CurrentUser->PrincipalId eq $args{'PrincipalId'} ) {
+    if ( $self->CurrentUser->PrincipalId == $principal->id ) {
 
         #  If it's an AdminCc and they don't have
         #   'WatchAsAdminCc' or 'ModifyTicket', bail
@@ -1979,11 +2012,16 @@ sub SetQueue {
         )
       )
     {
-        $self->Untake();
+        my $clone = RT::Ticket->new( $RT::SystemUser );
+        $clone->Load( $self->Id );
+        unless ( $clone->Id ) {
+            return ( 0, $self->loc("Couldn't load copy of ticket #[_1].", $self->Id) );
+        }
+        my ($status, $msg) = $clone->SetOwner( $RT::Nobody->Id, 'Force' );
+        $RT::Logger->error("Couldn't set owner on queue change: $msg") unless $status;
     }
 
     return ( $self->_Set( Field => 'Queue', Value => $NewQueueObj->Id() ) );
-
 }
 
 # }}}
@@ -2087,12 +2125,12 @@ sub SetStarted {
     my $time = shift || 0;
 
     unless ( $self->CurrentUserHasRight('ModifyTicket') ) {
-        return ( 0, self->loc("Permission Denied") );
+        return ( 0, $self->loc("Permission Denied") );
     }
 
     #We create a date object to catch date weirdness
     my $time_obj = new RT::Date( $self->CurrentUser() );
-    if ( $time != 0 ) {
+    if ( $time ) {
         $time_obj->Set( Format => 'ISO', Value => $time );
     }
     else {
@@ -2385,8 +2423,9 @@ sub _RecordNote {
     # If this is from an external source, we need to come up with its
     # internal Message-ID now, so all emails sent because of this
     # message have a common Message-ID
-    unless ($args{'MIMEObj'}->head->get('Message-ID')
-            =~ /<(rt-.*?-\d+-\d+)\.(\d+-0-0)\@$RT::Organization>/) {
+    unless ( ($args{'MIMEObj'}->head->get('Message-ID') || '')
+            =~ /<(rt-.*?-\d+-\d+)\.(\d+-0-0)\@\Q$RT::Organization>/ )
+    {
         $args{'MIMEObj'}->head->set( 'RT-Message-ID',
             "<rt-"
             . $RT::VERSION . "-"
@@ -2476,11 +2515,29 @@ sub DeleteLink {
         @_
     );
 
-    #check acls
-    unless ( $self->CurrentUserHasRight('ModifyTicket') ) {
-        $RT::Logger->debug("No permission to delete links\n");
-        return ( 0, $self->loc('Permission Denied'))
+    unless ( $args{'Target'} || $args{'Base'} ) {
+        $RT::Logger->error("Base or Target must be specified\n");
+        return ( 0, $self->loc('Either base or target must be specified') );
+    }
 
+    #check acls
+    my $right = 0;
+    $right++ if $self->CurrentUserHasRight('ModifyTicket');
+    if ( !$right && $RT::StrictLinkACL ) {
+        return ( 0, $self->loc("Permission Denied") );
+    }
+
+    # If the other URI is an RT::Ticket, we want to make sure the user
+    # can modify it too...
+    my ($status, $msg, $other_ticket) = $self->__GetTicketFromURI( URI => $args{'Target'} || $args{'Base'} );
+    return (0, $msg) unless $status;
+    if ( !$other_ticket || $other_ticket->CurrentUserHasRight('ModifyTicket') ) {
+        $right++;
+    }
+    if ( ( !$RT::StrictLinkACL && $right == 0 ) ||
+         ( $RT::StrictLinkACL && $right < 2 ) )
+    {
+        return ( 0, $self->loc("Permission Denied") );
     }
 
     my ($val, $Msg) = $self->SUPER::_DeleteLink(%args);
@@ -2548,13 +2605,52 @@ sub AddLink {
                  Silent => undef,
                  @_ );
 
+    unless ( $args{'Target'} || $args{'Base'} ) {
+        $RT::Logger->error("Base or Target must be specified\n");
+        return ( 0, $self->loc('Either base or target must be specified') );
+    }
 
-    unless ( $self->CurrentUserHasRight('ModifyTicket') ) {
+    my $right = 0;
+    $right++ if $self->CurrentUserHasRight('ModifyTicket');
+    if ( !$right && $RT::StrictLinkACL ) {
         return ( 0, $self->loc("Permission Denied") );
     }
 
+    # If the other URI is an RT::Ticket, we want to make sure the user
+    # can modify it too...
+    my ($status, $msg, $other_ticket) = $self->__GetTicketFromURI( URI => $args{'Target'} || $args{'Base'} );
+    return (0, $msg) unless $status;
+    if ( !$other_ticket || $other_ticket->CurrentUserHasRight('ModifyTicket') ) {
+        $right++;
+    }
+    if ( ( !$RT::StrictLinkACL && $right == 0 ) ||
+         ( $RT::StrictLinkACL && $right < 2 ) )
+    {
+        return ( 0, $self->loc("Permission Denied") );
+    }
 
-    $self->_AddLink(%args);
+    return $self->_AddLink(%args);
+}
+
+sub __GetTicketFromURI {
+    my $self = shift;
+    my %args = ( URI => '', @_ );
+
+    # If the other URI is an RT::Ticket, we want to make sure the user
+    # can modify it too...
+    my $uri_obj = RT::URI->new( $self->CurrentUser );
+    $uri_obj->FromURI( $args{'URI'} );
+
+    unless ( $uri_obj->Resolver && $uri_obj->Scheme ) {
+	    my $msg = $self->loc( "Couldn't resolve '[_1]' into a URI.", $args{'URI'} );
+        $RT::Logger->warning( "$msg\n" );
+        return( 0, $msg );
+    }
+    my $obj = $uri_obj->Resolver->Object;
+    unless ( UNIVERSAL::isa($obj, 'RT::Ticket') && $obj->id ) {
+        return (1, 'Found not a ticket', undef);
+    }
+    return (1, 'Found ticket', $obj);
 }
 
 =head2 _AddLink  
@@ -2571,45 +2667,8 @@ sub _AddLink {
                  Silent => undef,
                  @_ );
 
-    # {{{ If the other URI is an RT::Ticket, we want to make sure the user
-    # can modify it too...
-    my $other_ticket_uri = RT::URI->new($self->CurrentUser);
-
-    if ( $args{'Target'} ) {
-        $other_ticket_uri->FromURI( $args{'Target'} );
-
-    }
-    elsif ( $args{'Base'} ) {
-        $other_ticket_uri->FromURI( $args{'Base'} );
-    }
-
-    unless ( $other_ticket_uri->Resolver && $other_ticket_uri->Scheme ) {
-	my $msg = $args{'Target'} ? $self->loc("Couldn't resolve target '[_1]' into a URI.", $args{'Target'})
-          : $self->loc("Couldn't resolve base '[_1]' into a URI.", $args{'Base'});
-        $RT::Logger->warning( "$self $msg\n" );
-
-        return( 0, $msg );
-    }
-
-    if ( $other_ticket_uri->Resolver->Scheme eq 'fsck.com-rt') {
-        my $object = $other_ticket_uri->Resolver->Object;
-
-        if (   UNIVERSAL::isa( $object, 'RT::Ticket' )
-            && $object->id
-            && !$object->CurrentUserHasRight('ModifyTicket') )
-        {
-            return ( 0, $self->loc("Permission Denied") );
-        }
-
-    }
-
-    # }}}
-
-    my ($val, $Msg) = $self->SUPER::_AddLink(%args);
-
-    if (!$val) {
-	return ($val, $Msg);
-    }
+    my ($val, $msg, $exist) = $self->SUPER::_AddLink(%args);
+    return ($val, $msg) if !$val || $exist;
 
     my ($direction, $remote_link);
     if ( $args{'Target'} ) {
@@ -2622,10 +2681,10 @@ sub _AddLink {
 
     # Don't write the transaction if we're doing this on create
     if ( $args{'Silent'} ) {
-        return ( $val, $Msg );
+        return ( $val, $msg );
     }
     else {
-	my $remote_uri = RT::URI->new( $self->CurrentUser );
+        my $remote_uri = RT::URI->new( $self->CurrentUser );
     	$remote_uri->FromURI( $remote_link );
 
         #Write the transaction
@@ -2723,14 +2782,23 @@ sub MergeInto {
         return ( 0, $self->loc("Merge failed. Couldn't set EffectiveId") );
     }
 
-    my ( $status_val, $status_msg ) = $self->__Set( Field => 'Status', Value => 'resolved');
 
-    unless ($status_val) {
-        $RT::Handle->Rollback();
-        $RT::Logger->error( $self->loc("[_1] couldn't set status to resolved. RT's Database may be inconsistent.", $self) );
-        return ( 0, $self->loc("Merge failed. Couldn't set Status") );
+    if ( $self->__Value('Status') ne 'resolved' ) {
+
+        my ( $status_val, $status_msg )
+            = $self->__Set( Field => 'Status', Value => 'resolved' );
+
+        unless ($status_val) {
+            $RT::Handle->Rollback();
+            $RT::Logger->error(
+                $self->loc(
+                    "[_1] couldn't set status to resolved. RT's Database may be inconsistent.",
+                    $self
+                )
+            );
+            return ( 0, $self->loc("Merge failed. Couldn't set Status") );
+        }
     }
-
 
     # update all the links that point to that old ticket
     my $old_links_to = RT::Links->new($self->CurrentUser);
@@ -2907,6 +2975,8 @@ my $txns = RT::Transactions->new($RT::SystemUser);
 $txns->OrderBy(FIELD => 'id', ORDER => 'DESC');
 $txns->Limit(FIELD => 'ObjectId', VALUE => '1');
 $txns->Limit(FIELD => 'ObjectType', VALUE => 'RT::Ticket');
+$txns->Limit(FIELD => 'Type', OPERATOR => '!=',  VALUE => 'EmailRecord');
+
 my $steal  = $txns->First;
 ok($steal->OldValue == $root->Id , "Stolen from root");
 ok($steal->NewValue == $RT::SystemUser->Id , "Stolen by the systemuser");
@@ -2920,67 +2990,76 @@ sub SetOwner {
     my $NewOwner = shift;
     my $Type     = shift || "Give";
 
+    $RT::Handle->BeginTransaction();
+
+    $self->_SetLastUpdated(); # lock the ticket
+    $self->Load( $self->id ); # in case $self changed while waiting for lock
+
+    my $OldOwnerObj = $self->OwnerObj;
+
+    my $NewOwnerObj = RT::User->new( $self->CurrentUser );
+    $NewOwnerObj->Load( $NewOwner );
+    unless ( $NewOwnerObj->Id ) {
+        $RT::Handle->Rollback();
+        return ( 0, $self->loc("That user does not exist") );
+    }
+
+
     # must have ModifyTicket rights
     # or TakeTicket/StealTicket and $NewOwner is self
     # see if it's a take
-    if ( $self->OwnerObj->Id == $RT::Nobody->Id ) {
+    if ( $OldOwnerObj->Id == $RT::Nobody->Id ) {
         unless (    $self->CurrentUserHasRight('ModifyTicket')
                  || $self->CurrentUserHasRight('TakeTicket') ) {
+            $RT::Handle->Rollback();
             return ( 0, $self->loc("Permission Denied") );
         }
     }
 
     # see if it's a steal
-    elsif (    $self->OwnerObj->Id != $RT::Nobody->Id
-            && $self->OwnerObj->Id != $self->CurrentUser->id ) {
+    elsif (    $OldOwnerObj->Id != $RT::Nobody->Id
+            && $OldOwnerObj->Id != $self->CurrentUser->id ) {
 
         unless (    $self->CurrentUserHasRight('ModifyTicket')
                  || $self->CurrentUserHasRight('StealTicket') ) {
+            $RT::Handle->Rollback();
             return ( 0, $self->loc("Permission Denied") );
         }
     }
     else {
         unless ( $self->CurrentUserHasRight('ModifyTicket') ) {
+            $RT::Handle->Rollback();
             return ( 0, $self->loc("Permission Denied") );
         }
     }
-    my $NewOwnerObj = RT::User->new( $self->CurrentUser );
-    my $OldOwnerObj = $self->OwnerObj;
 
-    $NewOwnerObj->Load($NewOwner);
-    if ( !$NewOwnerObj->Id ) {
-        return ( 0, $self->loc("That user does not exist") );
-    }
-
-    #If thie ticket has an owner and it's not the current user
-
-    if (    ( $Type ne 'Steal' )
-        and ( $Type ne 'Force' )
-        and    #If we're not stealing
-        ( $self->OwnerObj->Id != $RT::Nobody->Id ) and    #and the owner is set
-        ( $self->CurrentUser->Id ne $self->OwnerObj->Id() )
-      ) {                                                 #and it's not us
-        return ( 0,
-                 $self->loc(
-"You can only reassign tickets that you own or that are unowned" ) );
+    # If we're not stealing and the ticket has an owner and it's not
+    # the current user
+    if ( $Type ne 'Steal' and $Type ne 'Force'
+         and $OldOwnerObj->Id != $RT::Nobody->Id
+         and $OldOwnerObj->Id != $self->CurrentUser->Id )
+    {
+        $RT::Handle->Rollback();
+        return ( 0, $self->loc("You can only take tickets that are unowned") )
+            if $NewOwnerObj->id == $self->CurrentUser->id;
+        return (
+            0,
+            $self->loc("You can only reassign tickets that you own or that are unowned" )
+        );
     }
 
     #If we've specified a new owner and that user can't modify the ticket
-    elsif ( ( $NewOwnerObj->Id )
-            and ( !$NewOwnerObj->HasRight( Right  => 'OwnTicket',
-                                           Object => $self ) )
-      ) {
+    elsif ( !$NewOwnerObj->HasRight( Right => 'OwnTicket', Object => $self ) ) {
+        $RT::Handle->Rollback();
         return ( 0, $self->loc("That user may not own tickets in that queue") );
     }
 
-    #If the ticket has an owner and it's the new owner, we don't need
-    #To do anything
-    elsif (     ( $self->OwnerObj )
-            and ( $NewOwnerObj->Id eq $self->OwnerObj->Id ) ) {
+    # If the ticket has an owner and it's the new owner, we don't need
+    # To do anything
+    elsif ( $NewOwnerObj->Id == $OldOwnerObj->Id ) {
+        $RT::Handle->Rollback();
         return ( 0, $self->loc("That user already owns that ticket") );
     }
-
-    $RT::Handle->BeginTransaction();
 
     # Delete the owner in the owner group, then add a new one
     # TODO: is this safe? it's not how we really want the API to work
@@ -3016,23 +3095,26 @@ sub SetOwner {
         return ( 0, $self->loc("Could not change owner. ") . $msg );
     }
 
-    $RT::Handle->Commit();
+    ($val, $msg) = $self->_NewTransaction(
+        Type      => $Type,
+        Field     => 'Owner',
+        NewValue  => $NewOwnerObj->Id,
+        OldValue  => $OldOwnerObj->Id,
+        TimeTaken => 0,
+    );
 
-    my ( $trans, $msg, undef ) = $self->_NewTransaction(
-                                                   Type     => $Type,
-                                                   Field    => 'Owner',
-                                                   NewValue => $NewOwnerObj->Id,
-                                                   OldValue => $OldOwnerObj->Id,
-                                                   TimeTaken => 0 );
-
-    if ($trans) {
+    if ( $val ) {
         $msg = $self->loc( "Owner changed from [_1] to [_2]",
                            $OldOwnerObj->Name, $NewOwnerObj->Name );
-
-        # TODO: make sure the trans committed properly
     }
-    return ( $trans, $msg );
+    else {
+        $RT::Handle->Rollback();
+        return ( 0, $msg );
+    }
 
+    $RT::Handle->Commit();
+
+    return ( $val, $msg );
 }
 
 # }}}
@@ -3376,6 +3458,8 @@ sub DESTROY {
     return if $self->{_Destroyed}++;
 
     my $batch = $self->TransactionBatch or return;
+    return unless @$batch;
+
     require RT::Scrips;
     RT::Scrips->new($RT::SystemUser)->Apply(
 	Stage		=> 'TransactionBatch',
@@ -3608,6 +3692,26 @@ sub HasRight {
 
 # }}}
 
+=head2 Reminders
+
+Return the Reminders object for this ticket. (It's an RT::Reminders object.)
+It isn't acutally a searchbuilder collection itself.
+
+=cut
+
+sub Reminders {
+    my $self = shift;
+    
+    unless ($self->{'__reminders'}) {
+        $self->{'__reminders'} = RT::Reminders->new($self->CurrentUser);
+        $self->{'__reminders'}->Ticket($self->id);
+    }
+    return $self->{'__reminders'};
+
+}
+
+
+
 # {{{ sub Transactions 
 
 =head2 Transactions
@@ -3652,7 +3756,7 @@ sub Transactions {
 
 =head2 TransactionCustomFields
 
-    Returns the custom fields that transactions on tickets will ahve.
+    Returns the custom fields that transactions on tickets will have.
 
 =cut
 
@@ -3679,14 +3783,13 @@ sub CustomFieldValues {
     my $field = shift;
     if ( $field and $field !~ /^\d+$/ ) {
         my $cf = RT::CustomField->new( $self->CurrentUser );
-        $cf->LoadByNameAndQueue( Name => $field, Queue => $self->QueueObj->Id );
+        $cf->LoadByNameAndQueue( Name => $field, Queue => $self->Queue );
         unless ( $cf->id ) {
-            $cf->LoadByNameAndQueue( Name => $field, Queue => '0' );
+            $cf->LoadByNameAndQueue( Name => $field, Queue => 0 );
         }
-        $field = $cf->id;
-        unless ( $field =~ /^\d+$/ ) {
-          # If we didn't find a valid cfid, give up.
-          return RT::CustomFieldValues->new($self->CurrentUser);
+        unless ( $cf->id ) {
+            # If we didn't find a valid cfid, give up.
+            return RT::CustomFieldValues->new($self->CurrentUser);
         }
     }
     return $self->SUPER::CustomFieldValues($field);

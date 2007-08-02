@@ -2,7 +2,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/copyleft/gpl.html.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -43,7 +45,6 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
-
 =head1 NAME
 
   RT::Transaction - RT\'s transaction object
@@ -81,6 +82,10 @@ use vars qw( %_BriefDescriptions );
 
 use RT::Attachments;
 use RT::Scrips;
+
+use HTML::FormatText;
+use HTML::TreeBuilder;
+
 
 # {{{ sub Create 
 
@@ -149,7 +154,13 @@ sub Create {
  
     my $id = $self->SUPER::Create(%params);
     $self->Load($id);
-    $self->_Attach( $args{'MIMEObj'} ) if defined $args{'MIMEObj'};
+    if ( defined $args{'MIMEObj'} ) {
+        my ($id, $msg) = $self->_Attach( $args{'MIMEObj'} );
+        unless ( $id ) {
+            $RT::Logger->error("Couldn't add attachment: $msg");
+            return ( 0, $self->loc("Couldn't add attachment") );
+        }
+    }
 
 
     #Provide a way to turn off scrips if we need to
@@ -278,9 +289,13 @@ sub Content {
     );
 
     my $content;
-    my $content_obj = $self->ContentObj;
-    if ($content_obj) {
+    if (my $content_obj = $self->ContentObj) {
         $content = $content_obj->Content;
+
+	if ($content_obj->ContentType =~ m{^text/html$}i) {
+        $content = HTML::FormatText->new(leftmargin => 0, rightmargin => 78)->format(  HTML::TreeBuilder->new_from_content( $content));
+
+	}
     }
 
     # If all else fails, return a message that we couldn't find any content
@@ -309,11 +324,9 @@ sub Content {
             $content = $wrapper->wrap($content);
         }
 
-        $content = '['
-          . $self->CreatorObj->Name() . ' - '
-          . $self->CreatedAsString() . "]:\n\n" . $content . "\n\n";
         $content =~ s/^/> /gm;
-
+        $content = $self->loc("On [_1], [_2] wrote:", $self->CreatedAsString(), $self->CreatorObj->Name())
+          . "\n$content\n\n";
     }
 
     return ($content);
@@ -330,7 +343,6 @@ Returns the RT::Attachment object which contains the content for this Transactio
 =cut
 
 
-
 sub ContentObj {
 
     my $self = shift;
@@ -345,7 +357,7 @@ sub ContentObj {
 
     # If it's a message or a plain part, just return the
     # body.
-    if ( $Attachment->ContentType() =~ '^(text/plain$|message/)' ) {
+    if ( $Attachment->ContentType() =~ '^(?:text/plain$|text/html|message/)' ) {
         return ($Attachment);
     }
 
@@ -361,11 +373,12 @@ sub ContentObj {
             return ( $plain_parts->First );
         }
 
+
         # If that fails, return the  first text/plain or message/ part
         # which has some content.
 
         else {
-            my $all_parts = $self->Attachments;
+            my $all_parts = $self->Attachments();
             while ( my $part = $all_parts->Next ) {
                 if (( $part->ContentType() =~ '^(text/plain$|message/)' ) &&  $part->Content()  ) {
                     return ($part);
@@ -471,11 +484,11 @@ sub _Attach {
     }
 
     my $Attachment = new RT::Attachment( $self->CurrentUser );
-    $Attachment->Create(
+    my ($id, $msg) = $Attachment->Create(
         TransactionId => $self->Id,
         Attachment    => $MIMEObject
     );
-    return ( $Attachment, $self->loc("Attachment created") );
+    return ( $Attachment, $msg || $self->loc("Attachment created") );
 
 }
 
@@ -793,6 +806,27 @@ sub BriefDescription {
         my $self = shift;
         return $self->loc("Transaction [_1] purged", $self->Data);
     },
+    AddReminder => sub {
+        my $self = shift;
+        my $ticket = RT::Ticket->new($self->CurrentUser);
+        $ticket->Load($self->NewValue);
+        return $self->loc("Reminder '[_1]' added", $ticket->Subject);
+    },
+    OpenReminder => sub {
+        my $self = shift;
+        my $ticket = RT::Ticket->new($self->CurrentUser);
+        $ticket->Load($self->NewValue);
+        return $self->loc("Reminder '[_1]' reopened", $ticket->Subject);
+    
+    },
+    ResolveReminder => sub {
+        my $self = shift;
+        my $ticket = RT::Ticket->new($self->CurrentUser);
+        $ticket->Load($self->NewValue);
+        return $self->loc("Reminder '[_1]' completed", $ticket->Subject);
+    
+    
+    }
 );
 
 # }}}
@@ -934,25 +968,29 @@ sub TicketObj {
 
 sub OldValue {
     my $self = shift;
-    if (my $type = $self->__Value('ReferenceType')) {
-	my $Object = $type->new($self->CurrentUser);
-	$Object->Load($self->__Value('OldReference'));
-	return $Object->Content;
+    if ( my $type = $self->__Value('ReferenceType')
+         and my $id = $self->__Value('OldReference') )
+    {
+        my $Object = $type->new($self->CurrentUser);
+        $Object->Load( $id );
+        return $Object->Content;
     }
     else {
-	return $self->__Value('OldValue');
+        return $self->__Value('OldValue');
     }
 }
 
 sub NewValue {
     my $self = shift;
-    if (my $type = $self->__Value('ReferenceType')) {
-	my $Object = $type->new($self->CurrentUser);
-	$Object->Load($self->__Value('NewReference'));
-	return $Object->Content;
+    if ( my $type = $self->__Value('ReferenceType')
+         and my $id = $self->__Value('NewReference') )
+    {
+        my $Object = $type->new($self->CurrentUser);
+        $Object->Load( $id );
+        return $Object->Content;
     }
     else {
-	return $self->__Value('NewValue');
+        return $self->__Value('NewValue');
     }
 }
 

@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+%# 02110-1301 or visit their web page on the internet at
+%# http://www.gnu.org/copyleft/gpl.html.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -43,9 +45,9 @@
 %# those contributions and any derivatives thereof.
 %# 
 %# END BPS TAGGED BLOCK }}}
-<TABLE width=100%>
-  <TR>
-    <TD VALIGN=TOP WIDTH=50%>
+<table width="100%">
+  <tr>
+    <td valign="top" width="50%">
       <h3><&|/l&>Current Links</&></h3>
 
 <table>
@@ -57,8 +59,8 @@
     <td class="labeltop"><&|/l&>Depends on</&>:</td>
     <td class="value">
 % while (my $link = $Object->DependsOn->Next) {
-      <INPUT TYPE=CHECKBOX NAME="DeleteLink--<%$link->Type%>-<%$link->Target%>" value="1">
-        <& ShowLink, URI => $link->TargetURI &><br>
+      <input type="checkbox" class="checkbox" name="DeleteLink--<%$link->Type%>-<%$link->Target%>" value="1" />
+        <& ShowLink, URI => $link->TargetURI &><br />
 % }
     </td>
   </tr>
@@ -67,8 +69,8 @@
     <td class="value">
 % while (my $link = $Object->DependedOnBy->Next) {
 % my $member = $link->BaseObj;
-      <INPUT TYPE=CHECKBOX NAME="DeleteLink-<%$link->Base%>-<%$link->Type%>-" value="1">
-        <& ShowLink, URI => $link->BaseURI &><br>
+      <input type="checkbox" class="checkbox" name="DeleteLink-<%$link->Base%>-<%$link->Type%>-" value="1" />
+        <& ShowLink, URI => $link->BaseURI &><br />
 % }
     </td>
   </tr>
@@ -76,8 +78,8 @@
     <td class="labeltop"><&|/l&>Parents</&>:</td>
     <td class="value">
 % while (my $link = $Object->MemberOf->Next) {
-      <INPUT TYPE=CHECKBOX NAME="DeleteLink--<%$link->Type%>-<%$link->Target%>" value="1">
-        <& ShowLink, URI => $link->TargetURI &><br>
+      <input type="checkbox" class="checkbox" name="DeleteLink--<%$link->Type%>-<%$link->Target%>" value="1" />
+        <& ShowLink, URI => $link->TargetURI &><br />
 % }
     </td>
   </tr>
@@ -85,8 +87,8 @@
     <td class="labeltop"><&|/l&>Children</&>:</td>
     <td class="value">
 % while (my $link = $Object->Members->Next) {
-      <INPUT TYPE=CHECKBOX NAME="DeleteLink-<%$link->Base%>-<%$link->Type%>-" value="1">
-        <& ShowLink, URI => $link->BaseURI &><br>
+      <input type="checkbox" class="checkbox" name="DeleteLink-<%$link->Base%>-<%$link->Type%>-" value="1" />
+        <& ShowLink, URI => $link->BaseURI &><br />
 % }
     </td>
   </tr>
@@ -94,8 +96,8 @@
     <td class="labeltop"><&|/l&>Refers to</&>:</td>
     <td class="value">
 % while (my $link = $Object->RefersTo->Next) {
-      <INPUT TYPE=CHECKBOX NAME="DeleteLink--<%$link->Type%>-<%$link->Target%>" value="1">
-        <& ShowLink, URI => $link->TargetURI &><br>
+      <input type="checkbox" class="checkbox" name="DeleteLink--<%$link->Type%>-<%$link->Target%>" value="1" />
+        <& ShowLink, URI => $link->TargetURI &><br />
 %}
     </td>
   </tr>
@@ -103,61 +105,63 @@
     <td class="labeltop"><&|/l&>Referred to by</&>:</td>
     <td class="value">
 % while (my $link = $Object->ReferredToBy->Next) {
-      <INPUT TYPE=CHECKBOX NAME="DeleteLink-<%$link->Base%>-<%$link->Type%>-" value="1">
-        <& ShowLink, URI => $link->BaseURI &><br>
+% # Skip reminders
+% next if (UNIVERSAL::isa($link->BaseObj, 'RT::Ticket')  && $link->BaseObj->Type eq 'reminder');
+      <input type="checkbox" class="checkbox" name="DeleteLink-<%$link->Base%>-<%$link->Type%>-" value="1" />
+        <& ShowLink, URI => $link->BaseURI &><br />
 % }
     </td>
   </tr>
 </table>
 			    
-</TD>
-<TD VALIGN=TOP>
+</td>
+<td valign="top">
 <h3><&|/l&>New Links</&></h3>
 % if (ref($Object) eq 'RT::Ticket') {
 <i><&|/l&>Enter tickets or URIs to link tickets to. Separate multiple entries with spaces.</&>
 <& /Elements/Callback, _CallbackName => 'ExtraLinkInstructions' &>
-</i><br>
+</i><br />
 % } elsif (ref($Object) eq 'RT::Queue') {
 <i><&|/l&>Enter queues or URIs to link queues to. Separate multiple entries with spaces.</&>
-</i><br>
+</i><br />
 % } else {
-<i><&|/l&>Enter objects or URIs to link objects to. Separate multiple entries with spaces.</&></i><br>
+<i><&|/l&>Enter objects or URIs to link objects to. Separate multiple entries with spaces.</&></i><br />
 % }
-<TABLE>
+<table>
 % if ($Merge) {
-  <TR>
-    <TD class="label"><&|/l&>Merge into</&>:</TD>
-    <TD class="entry"><input name="<%$id%>-MergeInto"> <i><&|/l&>(only one ticket)</&></i></TD>
-  </TR>
+  <tr>
+    <td class="label"><&|/l&>Merge into</&>:</td>
+    <td class="entry"><input name="<%$id%>-MergeInto" /> <i><&|/l&>(only one ticket)</&></i></td>
+  </tr>
 % }
-  <TR>
-    <TD class="label"><&|/l&>Depends on</&>:</TD>
-    <TD class="entry"><input name="<%$id%>-DependsOn"></TD>
-  </TR>
-  <TR>
-    <TD class="label"><&|/l&>Depended on by</&>:</TD>
-    <TD class="entry"><input name="DependsOn-<%$id%>"></TD>
-  </TR>
-  <TR>
-    <TD class="label"><&|/l&>Parents</&>:</TD>
-    <TD class="entry"><input name="<%$id%>-MemberOf"></TD>
-  </TR>
-  <TR>
-    <TD class="label"><&|/l&>Children</&>:</TD>
-    <TD class="entry"> <input name="MemberOf-<%$id%>"></TD>
-  </TR>
-  <TR>
-    <TD class="label"><&|/l&>Refers to</&>:</TD>
-    <TD class="entry"><input name="<%$id%>-RefersTo"></TD>
-  </TR>
-  <TR>
-    <TD class="label"><&|/l&>Referred to by</&>:</TD>
-    <TD class="entry"> <input name="RefersTo-<%$id%>"></TD>
-  </TR>
-</TABLE>
-</TD>
-</TR>
-</TABLE>
+  <tr>
+    <td class="label"><&|/l&>Depends on</&>:</td>
+    <td class="entry"><input name="<%$id%>-DependsOn" /></td>
+  </tr>
+  <tr>
+    <td class="label"><&|/l&>Depended on by</&>:</td>
+    <td class="entry"><input name="DependsOn-<%$id%>" /></td>
+  </tr>
+  <tr>
+    <td class="label"><&|/l&>Parents</&>:</td>
+    <td class="entry"><input name="<%$id%>-MemberOf" /></td>
+  </tr>
+  <tr>
+    <td class="label"><&|/l&>Children</&>:</td>
+    <td class="entry"> <input name="MemberOf-<%$id%>" /></td>
+  </tr>
+  <tr>
+    <td class="label"><&|/l&>Refers to</&>:</td>
+    <td class="entry"><input name="<%$id%>-RefersTo" /></td>
+  </tr>
+  <tr>
+    <td class="label"><&|/l&>Referred to by</&>:</td>
+    <td class="entry"> <input name="RefersTo-<%$id%>" /></td>
+  </tr>
+</table>
+</td>
+</tr>
+</table>
 
 <%INIT>
 my $id;

@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+%# 02110-1301 or visit their web page on the internet at
+%# http://www.gnu.org/copyleft/gpl.html.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -49,11 +51,11 @@
 </td><td>
 <& /Elements/SelectEqualityOperator, Name => "idOp" &>
 </td><td>
-<INPUT Name="ValueOfid" SIZE=5>
+<input name="ValueOfid" size="5" />
 </td>
 </tr>
 
-<tr><td align=right>
+<tr><td>
 <& /Elements/SelectAttachmentField, Name => 'AttachmentField' &>
 </td><td>
 <& /Elements/SelectBoolean, Name => "AttachmentOp", 
@@ -63,7 +65,7 @@
 			    FalseVal => 'NOT LIKE' 
 &> 
 </td><td>
-<Input Name="ValueOfAttachment" Size=20>
+<input name="ValueOfAttachment" size="20" />
 </td>
 </tr>
 <tr>
@@ -97,11 +99,11 @@
 </td>
 </tr>
 <tr><td class="label">
-<SELECT NAME="ActorField">
-<OPTION VALUE="Owner"><&|/l&>Owner</&></OPTION>
-<OPTION VALUE="Creator"><&|/l&>Creator</&></OPTION>
-<OPTION VALUE="LastUpdatedBy"><&|/l&>LastUpdatedBy</&></OPTION>
-</SELECT>
+<select name="ActorField">
+<option value="Owner"><&|/l&>Owner</&></option>
+<option value="Creator"><&|/l&>Creator</&></option>
+<option value="LastUpdatedBy"><&|/l&>LastUpdatedBy</&></option>
+</select>
 </td><td>
 <& /Elements/SelectBoolean, Name => "ActorOp", 
 					  TrueVal=> '=', 
@@ -117,21 +119,7 @@
 </td><td>
 <& /Elements/SelectMatch, Name => "WatcherOp" &>
 </td><td>
-<Input Name="ValueOfWatcher" Size=20>
-</tr>
-<tr>
-<td class="label">
-<& SelectPersonType, Name => 'WatcherGroupField', Default => 'RequestorGroup', Suffix => 'Group' &>
-</td><td>
-<& /Elements/SelectBoolean, Name => "WatcherGroupOp", 
-					  True=> loc('belongs to'), 
-					  False=> loc('does not belong to'), 
-					  TrueVal=> '=', 
-					  FalseVal => '!='
-&>
-</td><td>
-<& SelectGroup, Name => 'ValueOfWatcherGroup' &>
-</td> 
+<input name="ValueOfWatcher" size="20" />
 </tr>
 <tr>
 <td class="label">
@@ -143,28 +131,29 @@
 </td></tr>
 <tr>
 <td class="label">
-<SELECT NAME="TimeField">
-<OPTION VALUE="TimeWorked"><&|/l&>Time Worked</&></OPTION>
-<OPTION VALUE="TimeEstimated"><&|/l&>Time Estimated</&></OPTION>
-<OPTION VALUE="TimeLeft"><&|/l&>Time Left</&></OPTION>
-</SELECT>
+<select name="TimeField">
+<option value="TimeWorked"><&|/l&>Time Worked</&></option>
+<option value="TimeEstimated"><&|/l&>Time Estimated</&></option>
+<option value="TimeLeft"><&|/l&>Time Left</&></option>
+</select>
 </td><td>
 <& /Elements/SelectEqualityOperator, Name => "TimeOp" &>
 </td><td>
-<INPUT Name="ValueOfTime" SIZE=5>
+<input name="ValueOfTime" size="5" />
+<& /Elements/SelectTimeUnits, Name =>'ValueOfTime' &>
 </td>
 </tr>
 <tr>
 <td class="label">
-<SELECT NAME="PriorityField">
-<OPTION VALUE="Priority"><&|/l&>Priority</&></OPTION>
-<OPTION VALUE="InitialPriority"><&|/l&>Initial Priority</&></OPTION>
-<OPTION VALUE="FinalPriority"><&|/l&>Final Priority</&></OPTION>
-</SELECT>
+<select name="PriorityField">
+<option value="Priority"><&|/l&>Priority</&></option>
+<option value="InitialPriority"><&|/l&>Initial Priority</&></option>
+<option value="FinalPriority"><&|/l&>Final Priority</&></option>
+</select>
 </td><td>
 <& /Elements/SelectEqualityOperator, Name => "PriorityOp" &>
 </td><td>
-<INPUT Name="ValueOfPriority" SIZE=5>
+<input name="ValueOfPriority" size="5" />
 </td>
 </tr>
 <tr>
@@ -177,7 +166,7 @@
 			    TrueVal=> '=', 
 			    FalseVal => '!=' &>  
 </td><td>
-<INPUT Name="ValueOfLinks" value="" SIZE=5>
+<input name="ValueOfLinks" value="" size="5" />
 </td></tr>
 <%INIT>
 my @people = ('Actor',

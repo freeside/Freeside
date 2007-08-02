@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+%# 02110-1301 or visit their web page on the internet at
+%# http://www.gnu.org/copyleft/gpl.html.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -43,33 +45,33 @@
 %# those contributions and any derivatives thereof.
 %# 
 %# END BPS TAGGED BLOCK }}}
-<TABLE>
-<TR>
-<TD ALIGN=RIGHT>
+<table>
+<tr>
+<td align="right">
 <&|/l&>Name</&>:
-</TD>
-<TD>
-<input name="Name" VALUE="<%$Name%>" SIZE=20><BR>
-</TD>
-</TR>
-<TR>
-<TD ALIGN=RIGHT>
+</td>
+<td>
+<input name="Name" value="<%$Name%>" size="20" /><br />
+</td>
+</tr>
+<tr>
+<td align="right">
 <&|/l&>Description</&>: 
-</TD>
-<TD>
-<input name="Description" VALUE="<%$Description%>" SIZE=80><BR>
-</TD>
-</TR>
-<TR>
-<TD ALIGN=RIGHT VALIGN=TOP>
-<&|/l&>Content</&>:<BR>
-</TD>
-<TD>
-<TEXTAREA NAME=Content ROWS=25 COLS=80 WRAP=SOFT>
-<%$Content%></TEXTAREA>
-</TD>
-</TR>
-</TABLE>
+</td>
+<td>
+<input name="Description" value="<%$Description%>" size="80" /><br />
+</td>
+</tr>
+<tr>
+<td align="right" valign="top">
+<&|/l&>Content</&>:<br />
+</td>
+<td>
+<textarea name="Content" rows="25" cols="80" wrap="soft">
+<%$Content%></textarea>
+</td>
+</tr>
+</table>
 
 <%INIT>
 
