@@ -2,7 +2,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/copyleft/gpl.html.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -43,7 +45,6 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
-
 =head1 SYNOPSIS
 
   use RT::ACE;
@@ -916,9 +917,8 @@ sub _CanonicalizePrincipal {
         my $equiv_group = RT::Group->new( $self->CurrentUser );
         $equiv_group->LoadACLEquivalenceGroup($princ_obj);
         unless ( $equiv_group->Id ) {
-            $RT::Logger->crit(
-                 "No ACL equiv group for princ " . $self->__Value('ObjectId') );
-            return ( 0, $self->loc('System error. Right not granted.') );
+            $RT::Logger->crit( "No ACL equiv group for princ " . $princ_obj->id );
+            return ( RT::Principal->new($RT::SystemUser), undef );
         }
         $princ_obj  = $equiv_group->PrincipalObj();
         $princ_type = 'Group';

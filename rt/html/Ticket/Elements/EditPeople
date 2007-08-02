@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+%# 02110-1301 or visit their web page on the internet at
+%# http://www.gnu.org/copyleft/gpl.html.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -43,28 +45,28 @@
 %# those contributions and any derivatives thereof.
 %# 
 %# END BPS TAGGED BLOCK }}}
-<TABLE>
-<TR>
-<TD VALIGN=TOP>
+<table width="100%">
+<tr>
+<td valign="top">
 
 <h3><&|/l&>New watchers</&></h3>
-<&|/l&>Find people whose</&><BR>
+<&|/l&>Find people whose</&><br />
 <& /Elements/SelectUsers &>
-<input type=submit name="OnlySearchForPeople" value="<&|/l&>Go!</&>">
-<BR>
-<&|/l&>Find groups whose</&><BR>
+<input type="submit" class="button" name="OnlySearchForPeople" value="<&|/l&>Go!</&>" />
+<br />
+<&|/l&>Find groups whose</&><br />
 <& /Elements/SelectGroups &>
-<input type=submit name="OnlySearchForGroup" value="<&|/l&>Go!</&>">
+<input type="submit" class="button" name="OnlySearchForGroup" value="<&|/l&>Go!</&>" />
 
 <& AddWatchers, Ticket => $Ticket, UserString => $UserString,
         UserOp => $UserOp, UserField => $UserField,
 	GroupString => $GroupString, GroupOp => $GroupOp,
 	GroupField => $GroupField, PrivilegedOnly => $PrivilegedOnly &> 
-</TD><TD VALIGN=TOP>
+</td><td valign="top">
 <h3><&|/l&>Owner</&></h3>
 <&|/l&>Owner</&>: <& /Elements/SelectOwner, Name => 'Owner', QueueObj => $Ticket->QueueObj, TicketObj => $Ticket, Default => $Ticket->OwnerObj->Id, DefaultValue => 0&>
 <h3><&|/l&>Current watchers</&></h3>
-<&|/l&>(Check box to delete)</&><br>
+<&|/l&>(Check box to delete)</&><br />
 
 <&|/l&>Requestors</&>:
 <& EditWatchers, TicketObj => $Ticket, Watchers => $Ticket->Requestors &>
@@ -75,9 +77,9 @@
 <&|/l&>Administrative Cc</&>:
 <& EditWatchers, TicketObj => $Ticket, Watchers => $Ticket->AdminCc &>
 
-</TD>
-</TR>
-</TABLE>
+</td>
+</tr>
+</table>
 
 <%ARGS>
 $UserField => undef

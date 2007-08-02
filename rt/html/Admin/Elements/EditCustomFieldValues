@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+%# 02110-1301 or visit their web page on the internet at
+%# http://www.gnu.org/copyleft/gpl.html.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -54,23 +56,33 @@
 <td><&|/l&>Sort</&></td>
 <td><&|/l&>Name</&></td>
 <td><&|/l&>Description</&></td>
+% if ($CustomField->Type ne 'Combobox') {
+<td><&|/l&>Category</&></td>
+% }
 </tr>
 % while (my $value = $values->Next) {
 <tr>
 <td>
-<input type="checkbox" name="Delete-CustomField-<%$CustomField->Id%>-Value-<%$value->Id%>">
+<input type="checkbox" class="checkbox" name="Delete-CustomField-<%$CustomField->Id%>-Value-<%$value->Id%>" />
 </td>
 <td>
-<input size=3 name="CustomField-<%$CustomField->Id%>-Value-<%$value->Id%>-SortOrder" value="<%$value->SortOrder%>">
+<input size="3" name="CustomField-<%$CustomField->Id%>-Value-<%$value->Id%>-SortOrder" value="<%$value->SortOrder%>" />
 </td>
 <td>
-<input type="text" size=30 name="CustomField-<%$CustomField->Id%>-Value-<%$value->Id%>-Name" value="<%$value->Name%>">
+<input type="text" size="30" name="CustomField-<%$CustomField->Id%>-Value-<%$value->Id%>-Name" value="<%$value->Name%>" />
 </td>
 <td>
 <font size="-1">
-<input type="text" size=50 name="CustomField-<%$CustomField->Id%>-Value-<%$value->Id%>-Description" value="<%$value->Description%>">
+<input type="text" size="50" name="CustomField-<%$CustomField->Id%>-Value-<%$value->Id%>-Description" value="<%$value->Description%>" />
 </font>
 </td>
+% if ($CustomField->Type ne 'Combobox') {
+<td>
+<font size="-1">
+<input type="text" size="10" name="CustomField-<%$CustomField->Id%>-Value-<%$value->Id%>-Category" value="<%$value->Category%>" />
+</font>
+</td>
+% }
 </tr>
 % }
 </table>

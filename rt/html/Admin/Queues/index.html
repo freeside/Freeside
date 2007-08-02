@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+%# 02110-1301 or visit their web page on the internet at
+%# http://www.gnu.org/copyleft/gpl.html.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -52,19 +54,19 @@
 
 <h1><%$caption%></h1>
 <p><&|/l&>Select a queue</&>:</p>
-<UL>
+<ul>
 %if ($queues->Count == 0) {
-<li><i><&|/l&>No queues matching search criteria found.</&></i></li>
+<li><em><&|/l&>No queues matching search criteria found.</&></em></li>
 % }
 %while ( $queue = $queues->Next) {
-<li><A HREF="Modify.html?id=<%$queue->id%>"><%$queue->Name%></a></li>
+<li><a href="Modify.html?id=<%$queue->id%>"><%$queue->Name%></a></li>
 %}
-</UL>
-<BR>
-<FORM METHOD=POST ACTION="<% $RT::WebPath %>/Admin/Queues/index.html">
-<input type="checkbox" name="FindDisabledQueues" value="1"> <&|/l&>Include disabled queues in listing.</&>
-<div align=right><input type=submit value="<&|/l&>Go!</&>"></div> 
-</FORM>
+</ul>
+<br />
+<form method="post" action="<% $RT::WebPath %>/Admin/Queues/index.html">
+<input type="checkbox" class="checkbox" name="FindDisabledQueues" value="1" /> <&|/l&>Include disabled queues in listing.</&>
+<div align="right"><input type="submit" class="button" value="<&|/l&>Go!</&>" /></div> 
+</form>
 
 <%INIT>
 my ($queue, $caption);

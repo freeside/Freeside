@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+%# 02110-1301 or visit their web page on the internet at
+%# http://www.gnu.org/copyleft/gpl.html.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -43,17 +45,20 @@
 %# those contributions and any derivatives thereof.
 %# 
 %# END BPS TAGGED BLOCK }}}
+% my $name = $NamePrefix . $CustomField->Id . '-Value';
 % if ($Multiple) {
-<textarea cols=<%$Cols%> rows=<%$Rows%> name="<%$NamePrefix%><%$CustomField->Id%>-Values"><%$Default%></textarea>
+<textarea cols="<%$Cols%>" rows="<%$Rows%>" name="<%$name%>s" id="<%$name%>s" ><%$Default%></textarea>
 % } else {
-<input name="<%$NamePrefix%><%$CustomField->Id%>-Value" size="<%$Cols%>" value="<%$Default ? $Default : ''%>">
+<input name="<%$name%>" id="<%$name%>" size="<%$Cols%>" value="<%$Default ? $Default : ''%>" />
 % }
 <%INIT>
 if ($Multiple and $Values) {
-    $Default = '';
-    while (my $value = $Values->Next ) {
-	$Default .= $value->Content."\n";
-    }
+  $Default = '';
+  while (my $value = $Values->Next ) {
+    $Default .= $value->Content."\n";
+  }
+} else {
+  $Default =~ s/\s*\n\s*/ /g if $Default;
 }
 </%INIT>
 <%ARGS>

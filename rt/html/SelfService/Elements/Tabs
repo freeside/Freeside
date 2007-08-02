@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+%# 02110-1301 or visit their web page on the internet at
+%# http://www.gnu.org/copyleft/gpl.html.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -52,6 +54,18 @@
 &>
 <a name="skipnav" id="skipnav" accesskey="8"></a>
 <%INIT>
+my $queues = RT::Queues->new($session{'CurrentUser'});
+$queues->UnLimit;
+
+my $queue_count = 0;
+my $queue_id = 1;
+
+while (my $queue = $queues->Next) {
+  next unless $queue->CurrentUserHasRight('CreateTicket');
+  $queue_id = $queue->id;
+  $queue_count++;
+  last if ($queue_count > 1);
+}
 
 if ($Title) {
 $Title = loc ("RT Self Service") . " / " . $Title;
@@ -65,11 +79,19 @@ my $tabs = { A  => { title => loc('Open tickets'),
                       },
              B => { title => loc('Closed tickets'),
                          path => 'SelfService/Closed.html',
-                       },
-             C => { title => loc('New ticket'),
-                    path => 'SelfService/CreateTicketInQueue.html'
-                    }
+                       }
            };
+
+if ($queue_count > 1) {
+        $tabs->{C} = { title => loc('New ticket'),
+                       path => 'SelfService/CreateTicketInQueue.html'
+                       };
+} else {
+        $tabs->{C} = { title => loc('New ticket'),
+                       path => 'SelfService/Create.html?Queue=' . $queue_id
+                       };
+}
+
 if ($session{'CurrentUser'}->HasRight( Right => 'ModifySelf',
 				       Object => $RT::System )) {
 	$tabs->{Z} = { title => loc('Preferences'),

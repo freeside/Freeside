@@ -2,7 +2,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/copyleft/gpl.html.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -166,9 +168,95 @@ sub Content {
 }
 
 
+=head2 Object
+
+Returns the object this value applies to
+
+=cut
+
+sub Object {
+    my $self  = shift;
+    my $Object = $self->__Value('ObjectType')->new($self->CurrentUser);
+    $Object->Load($self->__Value('ObjectId'));
+    return($Object);
+}
+
+
+=head2 Delete
+
+Disable this value. Used to remove "current" values from records while leaving them in the history.
+
+=cut
+
+
 sub Delete {
     my $self = shift;
     $self->SetDisabled(1);
 }
+
+=head2 _FillInTemplateURL URL
+
+Takes a URL containing placeholders and returns the URL as filled in for this 
+ObjectCustomFieldValue.
+
+Available placeholders:
+
+=over
+
+=item __id__
+
+The id of the object in question.
+
+=item __CustomField__
+
+The value of this custom field for the object in question.
+
+=back
+
+=cut
+
+sub _FillInTemplateURL {
+
+    my $self = shift;
+
+    my $url = shift;
+
+    $url =~ s/__id__/@{[$self->ObjectId]}/g;
+    $url =~ s/__CustomField__/@{[$self->Content]}/g;
+
+    return $url;
+}
+
+
+=head2 ValueLinkURL
+
+Returns a filled in URL template for this ObjectCustomFieldValue, suitable for 
+constructing a hyperlink in RT's webui. Returns undef if this custom field doesn't have
+a LinkValueTo
+
+=cut
+
+sub LinkValueTo {
+    my $self = shift;
+    return $self->_FillInTemplateURL($self->CustomFieldObj->LinkValueTo);
+}
+
+
+
+=head2 ValueIncludeURL
+
+Returns a filled in URL template for this ObjectCustomFieldValue, suitable for 
+constructing a hyperlink in RT's webui. Returns undef if this custom field doesn't have
+a IncludeContentForValue
+
+=cut
+
+sub IncludeContentForValue {
+    my $self = shift;
+    return $self->_FillInTemplateURL($self->CustomFieldObj->IncludeContentForValue);
+}
+
+
+
 
 1;

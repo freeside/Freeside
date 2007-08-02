@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+%# 02110-1301 or visit their web page on the internet at
+%# http://www.gnu.org/copyleft/gpl.html.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -44,10 +46,10 @@
 %# 
 %# END BPS TAGGED BLOCK }}}
 % while ($Values and my $value = $Values->Next ) {
-<textarea cols=<%$Cols%> rows=<%$Rows%> name="<%$NamePrefix%><%$CustomField->Id%>-Values"><% $value->Content %></textarea><br>
+<textarea cols="<%$Cols%>" rows="<%$Rows%>" name="<%$NamePrefix%><%$CustomField->Id%>-Values"><% $value->Content %></textarea><br />
 % }
 % if (!$MaxValues or !$Values or $Values->Count < $MaxValues) {
-<textarea cols=<%$Cols%> rows=<%$Rows%> name="<%$NamePrefix%><%$CustomField->Id%>-Values"><% $Default %></textarea>
+<textarea cols="<%$Cols%>" rows="<%$Rows%>" name="<%$NamePrefix%><%$CustomField->Id%>-Values"><% $Default %></textarea>
 % }
 <%INIT>
 # XXX - MultiValue textarea is for now outlawed.

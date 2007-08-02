@@ -2,7 +2,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/copyleft/gpl.html.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -43,7 +45,6 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
-
 =head1 NAME
 
   RT::Date - a simple Object Oriented date.
@@ -226,23 +227,28 @@ sub Set {
 
 # {{{ sub SetToMidnight 
 
-=head2 SetToMidnight
+=head2 SetToMidnight [Timezone => 'utc']
 
-Sets the date to midnight (at the beginning of the day) GMT
+Sets the date to midnight (at the beginning of the day).
 Returns the unixtime at midnight.
+
+Arguments:
+
+=over 4
+
+=item Timezone - Timezone context C<server> or C<UTC>
 
 =cut
 
 sub SetToMidnight {
     my $self = shift;
-    
-    use Time::Local;
-    my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday) = gmtime($self->Unix);
-    $self->Unix(timegm (0,0,0,$mday,$mon,$year,$wday,$yday));
-    
+    my %args = ( Timezone => 'UTC', @_ );
+    if ( lc $args{'Timezone'} eq 'server' ) {
+        $self->Unix( Time::Local::timelocal( 0,0,0,(localtime $self->Unix)[3..7] ) );
+    } else {
+        $self->Unix( Time::Local::timegm( 0,0,0,(gmtime $self->Unix)[3..7] ) );
+    }
     return ($self->Unix);
-    
-    
 }
 
 
@@ -554,6 +560,44 @@ sub ISO {
 }
 
 # }}}
+
+# {{{ sub Date
+
+=head2 Date
+
+Takes nothing
+
+Returns the object's date in yyyy-mm-dd format; this is the same as
+the ISO format without the time
+
+=cut
+
+sub Date {
+    my $self = shift;
+    my ($date, $time) = split ' ', $self->ISO;
+    return $date;
+}
+
+# }}}}
+
+# {{{ sub Time
+
+=head2 Time
+
+Takes nothing
+
+Returns the object's time in hh:mm:ss format; this is the same as
+the ISO format without the date
+
+=cut
+
+sub Time {
+    my $self = shift;
+    my ($date, $time) = split ' ', $self->ISO;
+    return $time;
+}
+
+# }}}}
 
 # {{{ sub W3CDTF
 

@@ -2,7 +2,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/copyleft/gpl.html.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -43,7 +45,6 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
-
 =head1 NAME
 
   RT::Links - A collection of Link objects
@@ -154,19 +155,17 @@ sub Next {
     my $self = shift;
  	
     my $Link = $self->SUPER::Next();
-    if ((defined($Link)) and (ref($Link))) {
-        # Skip links to local objects thast are deleted
-        if      ($Link->TargetURI->IsLocal and UNIVERSAL::isa($Link->TargetObj,"RT::Ticket")
-                 and $Link->TargetObj->__Value('status') eq "deleted") {
-            return $self->Next;
-        } elsif ($Link->BaseURI->IsLocal   and UNIVERSAL::isa($Link->BaseObj,"RT::Ticket")
-                 and $Link->BaseObj->__Value('status') eq "deleted") {
-            return $self->Next;
-        } else {
-            return $Link;
-        }
+    return $Link unless $Link && ref $Link;
+
+    # Skip links to local objects thast are deleted
+    if ( $Link->TargetURI->IsLocal and UNIVERSAL::isa($Link->TargetObj,"RT::Ticket")
+             and $Link->TargetObj->__Value('status') eq "deleted") {
+        return $self->Next;
+    } elsif ($Link->BaseURI->IsLocal   and UNIVERSAL::isa($Link->BaseObj,"RT::Ticket")
+             and $Link->BaseObj->__Value('status') eq "deleted") {
+        return $self->Next;
     } else {
-        return undef;
+        return $Link;
     }
 }
 

@@ -2,7 +2,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/copyleft/gpl.html.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -43,7 +45,6 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
-
 =head1 NAME
 
 RT::I18N - a base class for localization of RT
@@ -53,23 +54,19 @@ RT::I18N - a base class for localization of RT
 package RT::I18N;
 
 use strict;
+use warnings;
+
 use Locale::Maketext 1.04;
 use Locale::Maketext::Lexicon 0.25;
 use base ('Locale::Maketext::Fuzzy');
-use vars qw( %Lexicon );
 
-#If we're running on 5.6, we desperately need Encode::compat. But if we're on 5.8, we don't really need it.
-BEGIN { if ($] < 5.007001) {
-require Encode::compat;
-} }
 use Encode;
-
 use MIME::Entity;
 use MIME::Head;
 
 # I decree that this project's first language is English.
 
-%Lexicon = (
+our %Lexicon = (
    'TEST_STRING' => 'Concrete Mixer',
 
     '__Content-Type' => 'text/plain; charset=utf-8',
@@ -183,10 +180,8 @@ This method doesn't return anything meaningful.
 sub SetMIMEEntityToEncoding {
     my ( $entity, $enc, $preserve_words ) = ( shift, shift, shift );
 
-    #if ( $entity->is_multipart ) {
-    #$RT::Logger->crit("This entity is a multipart " . $entity->head->as_string);
-	SetMIMEEntityToEncoding( $_, $enc, $preserve_words ) foreach $entity->parts;
-    #}
+    # do the same for parts first of all
+    SetMIMEEntityToEncoding( $_, $enc, $preserve_words ) foreach $entity->parts;
 
     my $charset = _FindOrGuessCharset($entity) or return;
     # one and only normalization
@@ -289,28 +284,30 @@ sub DecodeMIMEWordsToEncoding {
     my $str = shift;
     my $enc = shift;
 
-   
-    @_ = $str =~ m/([^=]*)=\?([^?]+)\?([QqBb])\?([^?]+)\?=([^=]*)/g;
-
+    @_ = $str =~ m/(.*?)=\?([^?]+)\?([QqBb])\?([^?]+)\?=([^=]*)/gc;
     return ($str) unless (@_);
+
+    # add everything that hasn't matched to the end of the latest
+    # string in array this happen when we have 'key="=?encoded?="; key="plain"'
+    $_[-1] .= substr($str, pos $str);
 
     $str = "";
     while (@_) {
 	my ($prefix, $charset, $encoding, $enc_str, $trailing) =
-	    (shift, shift, shift, shift, shift);
+	    (shift, shift, lc shift, shift, shift);
 
         $trailing =~ s/\s?\t?$//;               # Observed from Outlook Express
 
-	if ($encoding eq 'Q' or $encoding eq 'q') {
+	if ( $encoding eq 'q' ) {
 	    use MIME::QuotedPrint;
 	    $enc_str =~ tr/_/ /;		# Observed from Outlook Express
 	    $enc_str = decode_qp($enc_str);
-	} elsif ($encoding eq 'B' or $encoding eq 'b') {
+	} elsif ( $encoding eq 'b' ) {
 	    use MIME::Base64;
 	    $enc_str = decode_base64($enc_str);
 	} else {
-	    $RT::Logger->warning("RT::I18N::DecodeMIMEWordsToCharset got a " .
-			      "strange encoding: $encoding.");
+	    $RT::Logger->warning("Incorrect encoding '$encoding' in '$str', "
+            ."only Q(uoted-printable) and B(ase64) are supported");
 	}
 
 	# now we have got a decoded subject, try to convert into the encoding
@@ -339,6 +336,10 @@ sub DecodeMIMEWordsToEncoding {
 	$str .= $prefix . $enc_str . $trailing;
     }
 
+    # We might have \n without trailing whitespace, which will result in
+    # invalid headers.
+    $str =~ s/\n//g;
+
     return ($str)
 }
 
@@ -359,8 +360,8 @@ sub _FindOrGuessCharset {
     my $head_only = shift;
     my $head = $entity->head;
 
-    if ($head->mime_attr("content-type.charset")) {
-	return $head->mime_attr("content-type.charset");
+    if ( my $charset = $head->mime_attr("content-type.charset") ) {
+        return $charset;
     }
 
     if ( !$head_only and $head->mime_type =~ m{^text/}) {

@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+%# 02110-1301 or visit their web page on the internet at
+%# http://www.gnu.org/copyleft/gpl.html.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -52,26 +54,31 @@ $action => "correspond"
 $ticket => undef
 </%ARGS>
 <%init>
-use RT::Interface::Email; 
+$m->comp('/Elements/Callback', _CallbackName => 'Pre', %ARGS);
+use RT::Interface::Email ();    # It's an exporter, but we don't care
 $r->content_type('text/plain; charset=utf-8');
 $m->error_format('text');
-my ( $status, $error, $Ticket ) = RT::Interface::Email::Gateway(\%ARGS);
- if ($status == -75 ) {
-$m->out("temporary failure - ". $error);
- }
-    elsif ($status == 1) {
-$m->out('ok');
-        if ( $Ticket->Id ) {
-$m->out('Ticket: '. $Ticket->Id);
-$m->out('Queue: '. $Ticket->QueueObj->Name );
-$m->out('Owner: '. $Ticket->OwnerObj->Name);
-$m->out('Status: '. $Ticket->Status );
-$m->out('Subject: '. $Ticket->Subject );
-$m->out('Requestor: '. $Ticket->Requestors->MemberEmailAddressesAsString );
-        }
- }   else { 
-$m->out('not ok - '.$error);
- }
-
+my ( $status, $error, $Ticket ) = RT::Interface::Email::Gateway( \%ARGS );
+if ( $status == 1 ) {
+  $m->out('ok');
+  if ( $Ticket->Id ) {
+    $m->out( 'Ticket: '  . ($Ticket->Id             || '') );
+    $m->out( 'Queue: '   . ($Ticket->QueueObj->Name || '') );
+    $m->out( 'Owner: '   . ($Ticket->OwnerObj->Name || '') );
+    $m->out( 'Status: '  . ($Ticket->Status         || '') );
+    $m->out( 'Subject: ' . ($Ticket->Subject        || '') );
+    $m->out(
+      'Requestor: ' . ($Ticket->Requestors->MemberEmailAddressesAsString || '') );
+  }
+}
+else {
+  $RT::Logger->error( "Could not record email: " . $error );
+  if ( $status == -75 ) {
+    $m->out( "temporary failure - " . $error );
+  }
+  else {
+    $m->out( 'not ok - ' . $error );
+  }
+}
 $m->abort();
 </%init>

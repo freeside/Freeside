@@ -2,7 +2,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/copyleft/gpl.html.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -56,6 +58,7 @@ use MIME::Words qw(encode_mimeword);
 
 use RT::EmailParser;
 use Mail::Address;
+use Date::Format qw(strftime);
 
 =head1 NAME
 
@@ -99,7 +102,12 @@ perl(1).
 sub Commit {
     my $self = shift;
 
-    return($self->SendMessage($self->TemplateObj->MIMEObj));
+    my ($ret) = $self->SendMessage( $self->TemplateObj->MIMEObj );
+    if ( $ret > 0 ) {
+        $self->RecordOutgoingMailTransaction( $self->TemplateObj->MIMEObj )
+            if ($RT::RecordOutgoingEmail);
+    }
+    return (abs $ret);
 }
 
 # }}}
@@ -247,18 +255,78 @@ sub SendMessage {
         || $MIMEObj->head->get('Bcc') )
     {
         $RT::Logger->info( $msgid . " No recipients found. Not sending.\n" );
-        return (1);
+        return (-1);
+    }
+
+    unless ($MIMEObj->head->get('Date')) {
+        # We coerce localtime into an array since strftime has a flawed prototype that only accepts
+        # a list
+      $MIMEObj->head->replace(Date => strftime('%a, %d %b %Y %H:%M:%S %z', @{[localtime()]}));
+    }
+
+    return (0) unless ($self->OutputMIMEObject($MIMEObj));
+
+    my $success = $msgid . " sent ";
+    foreach( qw(To Cc Bcc) ) {
+        my $recipients = $MIMEObj->head->get($_);
+        $success .= " $_: ". $recipients if $recipients;
+    }
+    $success =~ s/\n//g;
+
+    $RT::Logger->info($success);
+
+    return (1);
+}
+
+
+=head2 OutputMIMEObject MIME::Entity
+
+Sends C<MIME::Entity> as an email message according to RT's mailer configuration.
+
+=cut 
+
+
+
+sub OutputMIMEObject {
+    my $self = shift;
+    my $MIMEObj = shift;
+    
+    my $msgid = $MIMEObj->head->get('Message-ID');
+    chomp $msgid;
+    
+    my $SendmailArguments = $RT::SendmailArguments;
+    if (defined $RT::VERPPrefix && defined $RT::VERPDomain) {
+      my $EnvelopeFrom = $self->TransactionObj->CreatorObj->EmailAddress;
+      $EnvelopeFrom =~ s/@/=/g;
+      $EnvelopeFrom =~ s/\s//g;
+      $SendmailArguments .= " -f ${RT::VERPPrefix}${EnvelopeFrom}\@${RT::VERPDomain}";
     }
 
 
     if ( $RT::MailCommand eq 'sendmailpipe' ) {
         eval {
-            open( my $mail, "|$RT::SendmailPath $RT::SendmailArguments" ) || die $!;
+            # don't ignore CHLD signal to get proper exit code
+            local $SIG{'CHLD'} = 'DEFAULT';
+
+            my $mail;
+            unless( open $mail, "|$RT::SendmailPath $SendmailArguments" ) {
+                die "Couldn't run $RT::SendmailPath: $!";
+            }
+
+            # if something wrong with $mail->print we will get PIPE signal, handle it
+            local $SIG{'PIPE'} = sub { die "$RT::SendmailPath closed pipe" };
             $MIMEObj->print($mail);
-            close($mail);
+
+            unless ( close $mail ) {
+                die "Close failed: $!" if $!; # system error
+                # sendmail exit statuses mostly errors with data not software
+                # TODO: status parsing: core dump, exit on signal or EX_*
+                $RT::Logger->warning( "$RT::SendmailPath exitted with status $?" );
+            }
         };
         if ($@) {
-            $RT::Logger->crit( $msgid . "Could not send mail. -" . $@ );
+            $RT::Logger->crit( $msgid . "Could not send mail: " . $@ );
+            return 0;
         }
     }
     else {
@@ -267,7 +335,7 @@ sub SendMessage {
         local $ENV{MAILADDRESS};
 
         if ( $RT::MailCommand eq 'sendmail' ) {
-            push @mailer_args, split(/\s+/, $RT::SendmailArguments);
+            push @mailer_args, split(/\s+/, $SendmailArguments);
         }
         elsif ( $RT::MailCommand eq 'smtp' ) {
             $ENV{MAILADDRESS} = $RT::SMTPFrom || $MIMEObj->head->get('From');
@@ -283,20 +351,7 @@ sub SendMessage {
             return (0);
         }
     }
-
-    my $success =
-      ( $msgid
-      . " sent To: "
-      . $MIMEObj->head->get('To') . " Cc: "
-      . $MIMEObj->head->get('Cc') . " Bcc: "
-      . $MIMEObj->head->get('Bcc') );
-    $success =~ s/\n//gi;
-
-    $self->RecordOutgoingMailTransaction($MIMEObj) if ($RT::RecordOutgoingEmail);
-
-    $RT::Logger->info($success);
-
-    return (1);
+    return 1;
 }
 
 # }}}
@@ -497,6 +552,10 @@ Remove addresses that are RT addresses or that are on this transaction's blackli
 sub RemoveInappropriateRecipients {
     my $self = shift;
 
+    my $msgid = $self->TemplateObj->MIMEObj->head->get  ('Message-Id');
+
+
+
     my @blacklist;
 
     my @types = qw/To Cc Bcc/;
@@ -528,6 +587,7 @@ sub RemoveInappropriateRecipients {
                 @{ $self->{'Cc'} }  = ();
                 @{ $self->{'Bcc'} } = ();
 
+                $RT::Logger->info( $msgid . " The incoming message was autogenerated. Not redistributing this message based on site configuration.\n");
             }
             elsif ( $RT::RedistributeAutoGeneratedMessages eq 'privileged' ) {
 
@@ -545,6 +605,7 @@ sub RemoveInappropriateRecipients {
 
                     }
                 }
+                $RT::Logger->info( $msgid . " The incoming message was autogenerated. Not redistributing this message to unprivileged users based on site configuration.\n");
 
             }
 
@@ -609,7 +670,8 @@ sub SetReturnAddress {
 
     unless ( $self->TemplateObj->MIMEObj->head->get('From') ) {
         if ($RT::UseFriendlyFromLine) {
-            my $friendly_name = $self->TransactionObj->CreatorObj->RealName;
+            my $friendly_name = $self->TransactionObj->CreatorObj->RealName
+                || $self->TransactionObj->CreatorObj->Name;
             if ( $friendly_name =~ /^"(.*)"$/ ) {    # a quoted string
                 $friendly_name = $1;
             }
@@ -716,13 +778,18 @@ This routine fixes the RT tag in the subject. It's unlikely that you want to ove
 
 sub SetSubjectToken {
     my $self = shift;
-    my $tag  = "[$RT::rtname #" . $self->TicketObj->id . "]";
     my $sub  = $self->TemplateObj->MIMEObj->head->get('Subject');
-    unless ( $sub =~ /\Q$tag\E/ ) {
-        $sub =~ s/(\r\n|\n|\s)/ /gi;
-        chomp $sub;
-        $self->TemplateObj->MIMEObj->head->replace( 'Subject', "$tag $sub" );
-    }
+    my $id   = $self->TicketObj->id;
+
+    my $token_re = $RT::EmailSubjectTagRegex;
+    $token_re = qr/\Q$RT::rtname\E/o unless $token_re;
+    return if $sub =~ /\[$token_re\s+#$id\]/;
+
+    $sub =~ s/(\r\n|\n|\s)/ /gi;
+    chomp $sub;
+    $self->TemplateObj->MIMEObj->head->replace(
+        Subject => "[$RT::rtname #$id] $sub",
+    );
 }
 
 # }}}
