@@ -10,12 +10,11 @@
 %        && $conf->config('payby-default') ne 'HIDE'
 %      ) {
 %
-
+  <% $s++ ? ' | ' : '' %>
   <% popup_link('edit/quick-charge.html?custnum='. $cust_main->custnum, 'One-time charge', 'One-time charge', '#333399', 545) %>
-  <BR>
 % } 
 % if ( $curuser->access_right('Bulk change customer packages') ) { 
-
+  <% $s++ ? ' | ' : '' %>
   <A HREF="<% $p %>edit/cust_pkg.cgi?<% $cust_main->custnum %>">Bulk order and cancel packages</A> (preserves services)
 % } 
 
