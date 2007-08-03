@@ -24,6 +24,8 @@ html/Ticket/ModifyCustomers.html
 html/NoAuth/images/small-logo.png
  html/NoAuth/webrt.css
 
+html/Widgets/TitleBoxStart
+
 html/Elements/FreesideNewCust
 html/Elements/FreesideSearch
 html/Elements/FreesideSvcSearch
