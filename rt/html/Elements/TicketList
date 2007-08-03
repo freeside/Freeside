@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+%# 02110-1301 or visit their web page on the internet at
+%# http://www.gnu.org/copyleft/gpl.html.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -43,7 +45,7 @@
 %# those contributions and any derivatives thereof.
 %# 
 %# END BPS TAGGED BLOCK }}}
-<TABLE BORDER=0 cellspacing=0 cellpadding=1 WIDTH=100%>
+<table border="0" cellspacing="0" cellpadding="1" width="100%">
 
 % if ($ShowHeader) {
 <& /Elements/CollectionAsTable/Header, 
@@ -69,7 +71,7 @@
 <&   /Elements/CollectionAsTable/Row, Format => \@Format, i => $i, record => $record, maxitems => $maxitems &>
 %   }
 
-</TABLE>
+</table>
 
 % if ($Rows && $ShowNavigation) {
 <hr>
@@ -77,7 +79,9 @@
 % if (($TotalFound % $Rows) == 0) {
 % $oddRows = 0;
 % } else { $oddRows = 1; }
-<&|/l, $Page, int($TotalFound/$Rows)+$oddRows&>Page [_1] of [_2]</&>
+% my $pages = int($TotalFound/$Rows)+$oddRows;
+% $pages = 1 if $pages < 1;
+<&|/l, $Page, $pages &>Page [_1] of [_2]</&>
 
 <%perl>
 my $prev = $m->comp(
@@ -100,18 +104,27 @@ my $next = $m->comp(
 );
 </%perl>
 % if ($Page > 1) {
-<A href="<%$BaseURL%><%$prev%>"><&|/l&>Previous Page</&></a>
+<a href="<%$BaseURL%><%$prev%>"><&|/l&>Previous Page</&></a>
 % }
 % if (($Page * $Rows) < $TotalFound) {
-<A href="<%$BaseURL%><%$next%>"><&|/l&>Next Page</&></a>
+<a href="<%$BaseURL%><%$next%>"><&|/l&>Next Page</&></a>
 % }
 % }
 <%INIT>
 my $maxitems = 0;
 
 $Format ||= $RT::DefaultSearchResultFormat;
+
+# DisplayFormat lets us use a "temporary" format for display, while 
+# still using our original format for next/prev page links.
+# bulk update uses this feature to add checkboxes
+
+
+$DisplayFormat ||= $Format;
+
 # Scrub the html of the format string to remove any potential nasties.
 $Format = $m->comp('/Elements/ScrubHTML', Content => $Format);
+$DisplayFormat = $m->comp('/Elements/ScrubHTML', Content => $DisplayFormat);
 
 
 unless ($Collection) {
@@ -119,13 +132,13 @@ unless ($Collection) {
         $Collection->FromSQL($Query);
 }
 
-my (@Format) = $m->comp('/Elements/CollectionAsTable/ParseFormat', Format => $Format);
+my (@Format) = $m->comp('/Elements/CollectionAsTable/ParseFormat', Format => $DisplayFormat);
 
 # Find the maximum number of items in any row, so we can pad the table.
 my $item = 0;
 foreach my $col (@Format) {
     $item++;
-    if ( $col->{title} eq 'NEWLINE' ) {
+    if ( $col->{title} && ($col->{title} eq 'NEWLINE') ) {
         $item = 0;
     }
     else {
@@ -133,10 +146,20 @@ foreach my $col (@Format) {
     }
 }
 
+if ($OrderBy =~ /\|/) {
+    # Multiple Sorts
+    my @OrderBy = split /\|/,$OrderBy;
+    my @Order = split /\|/,$Order;
+    $Collection->OrderByCols(
+        map { { FIELD => $OrderBy[$_], ORDER => $Order[$_] } } ( 0
+        .. $#OrderBy ) );; 
+} else {
+    $Collection->OrderBy(FIELD => $OrderBy, ORDER => $Order); 
+}
 
-$Collection->OrderBy(FIELD => $OrderBy, ORDER => $Order); 
 $Collection->RowsPerPage($Rows) if ($Rows);
-$Collection->GotoPage($Page-1); # SB uses page 0 as the first page
+$Page = 1 unless $Page > 0; # workaround problems with Page = '' or undef
+$Collection->GotoPage( $Page - 1 ); # SB uses page 0 as the first page
 my $TotalFound =  $Collection->CountAll();
 
 </%INIT>
@@ -151,6 +174,7 @@ $Order => undef
 $OrderBy => undef
 $BaseURL => undef
 $Format => $RT::DefaultSearchResultFormat
+$DisplayFormat => undef
 $ShowNavigation => 1
 $ShowHeader => 1
 </%ARGS>

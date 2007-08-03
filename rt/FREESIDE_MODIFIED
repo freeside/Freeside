@@ -10,6 +10,7 @@ lib/RT/URI/freeside/XMLRPC.pm
  html/Elements/Header
  html/Elements/Menu
  html/Elements/PageLayout
+ html/Elements/QuickCreate
  html/Elements/SimpleSearch
  html/Elements/Tabs
  html/Elements/Footer
@@ -22,9 +23,6 @@ html/Ticket/Elements/ShowCustomers
 html/Ticket/ModifyCustomers.html
 html/NoAuth/images/small-logo.png
  html/NoAuth/webrt.css
-
-html/Elements/TitleBoxStart
-html/Search/Bulk.html
 
 html/Elements/FreesideNewCust
 html/Elements/FreesideSearch

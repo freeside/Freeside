@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+%# 02110-1301 or visit their web page on the internet at
+%# http://www.gnu.org/copyleft/gpl.html.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -43,67 +45,71 @@
 %# those contributions and any derivatives thereof.
 %# 
 %# END BPS TAGGED BLOCK }}}
-      <TABLE WIDTH="100%" class="ticketsummary" >
-      <TR>
-	<TD VALIGN=TOP WIDTH="50%" class="boxcontainer">
-	  <& /Elements/TitleBoxStart, title => loc('The Basics'), 
+      <table width="100%" class="ticket-summary">
+      <tr>
+	<td valign="top" width="50%" class="boxcontainer">
+	  <&| /Widgets/TitleBox, title => loc('The Basics'), 
 		title_href =>"$RT::WebPath/Ticket/Modify.html?id=".$Ticket->Id, 
-		title_class=> 'inverse',  
-		color => "#993333" &>
+		class => 'ticket-info-basics' &>
 	        <& /Ticket/Elements/ShowBasics, Ticket => $Ticket &>
-	  <& /Elements/TitleBoxEnd &>
-          <br>
+	  </&>
+
 % if ($Ticket->QueueObj->TicketCustomFields->First) {
-	  <& /Elements/TitleBoxStart, title => loc('Custom Fields'), 
+	  <&| /Widgets/TitleBox, title => loc('Custom Fields'), 
 		title_href =>"$RT::WebPath/Ticket/Modify.html?id=".$Ticket->Id, 
-		title_class=> 'inverse',  
-		color => "#993333" &>
+		class => 'ticket-info-cfs'  &> 
 	        <& /Ticket/Elements/ShowCustomFields, Ticket => $Ticket &>
-	  <& /Elements/TitleBoxEnd &>
-
-<br>
+	  </&>
 % }
-	  <& /Elements/TitleBoxStart, title => loc('People'), 
+	  <&| /Widgets/TitleBox, title => loc('People'), 
 		title_href =>"$RT::WebPath/Ticket/ModifyPeople.html?id=".$Ticket->Id, 
-		title_class=> 'inverse',  
-		color => "#333399" &>
-	  <& /Ticket/Elements/ShowPeople, Ticket => $Ticket &>
-	  <& /Elements/TitleBoxEnd &>
-	  <br>
+		class => 'ticket-info-people' &>
+            <& /Ticket/Elements/ShowPeople, Ticket => $Ticket &>
+	  </&>
 
-	  <& /Elements/TitleBoxStart, title => loc('Customers'),
+	  <& /Widgets/TitleBoxStart, title => loc('Customers'),
 	        title_href =>"$RT::WebPath/Ticket/ModifyCustomers.html?id=".$Ticket->Id,
-	        title_class=> 'inverse',
-	        color => "#7f007b" &>
+	        class=> 'ticket-info-customers' &>
           <& /Ticket/Elements/ShowCustomers, Ticket => $Ticket &>
-          <& /Elements/TitleBoxEnd &>
+          </&>
 
-	<BR>
-	</TD>
-	<TD VALIGN=TOP WIDTH="50%" class="boxcontainer">
-
-	  <& /Elements/TitleBoxStart, title => loc("Dates"),
-		title_href =>"$RT::WebPath/Ticket/ModifyDates.html?id=".$Ticket->Id, 
-		title_class=> 'inverse',  
-		 color => "#663366" &>
-	  <& /Ticket/Elements/ShowDates, Ticket => $Ticket &>
-	  <& /Elements/TitleBoxEnd &>
-	<BR>  
-	  <& /Elements/TitleBoxStart, title => loc('Links'), 
-		title_href => "$RT::WebPath/Ticket/ModifyLinks.html?id=".$Ticket->Id, 
-		title_class=> 'inverse',  
-		titleright => '', color=> "#336633" &>
-	        <& /Elements/ShowLinks, Ticket => $Ticket &>
-	<& /Elements/TitleBoxEnd &>
-        <BR>
-	  <& /Ticket/Elements/ShowAttachments, Ticket => $Ticket, Attachments => $Attachments &>
-
+      <& /Ticket/Elements/ShowAttachments, Ticket => $Ticket, Attachments => $Attachments &>
+        <br />
 	  <& /Ticket/Elements/ShowRequestor, Ticket => $Ticket &>
 
+      <& /Elements/Callback, %ARGS, _CallbackName => 'LeftColumn' &>
+	</td>
+	<td valign="top" width="50%" class="boxcontainer">
+	  <&|/Widgets/TitleBox, title => loc("Reminders"),
+		title_href =>"$RT::WebPath/Ticket/Reminders.html?id=".$Ticket->Id, 
+		class => 'ticket-info-reminders' &>
+        <table>
+        <tr>
+        <td>
+            <form action="<%$RT::WebPath%>/Ticket/Display.html" method="post">
+	      <& /Ticket/Elements/Reminders, Ticket => $Ticket, ShowCompleted => 0 &>
+              <div align="right"><input type="submit" class="button" value="Save" /></div>
+            </form>
+            </td>
+            </tr>
+            </table>
+	  </&>
+	  <&| /Widgets/TitleBox, title => loc("Dates"),
+		title_href =>"$RT::WebPath/Ticket/ModifyDates.html?id=".$Ticket->Id, 
+		class => 'ticket-info-dates' &>
+	  <& /Ticket/Elements/ShowDates, Ticket => $Ticket &>
+	  </&>
 
-	</TD>
-      </TR>
-    </TABLE>
+	  <&| /Widgets/TitleBox, title => loc('Links'), 
+		title_href => "$RT::WebPath/Ticket/ModifyLinks.html?id=".$Ticket->Id, 
+		class => 'ticket-info-links' &>
+	        <& /Elements/ShowLinks, Ticket => $Ticket &>
+          </&>
+    <& /Elements/Callback, %ARGS, _CallbackName => 'RightColumn' &>
+
+	</td>
+      </tr>
+    </table>
 <%ARGS>
 $Ticket => undef
 $Attachments => undef

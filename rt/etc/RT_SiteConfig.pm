@@ -17,7 +17,7 @@
 #Set( $rtname, 'example.com');
 
 # These settings should have been inserted by the initial Freeside install.
-# Somtimes you may want to change domain, timezone, or freeside::URL later,
+# Sometimes you may want to change domain, timezone, or freeside::URL later,
 # everything else should probably stay untouched.
 
 $RT::rtname = '%%%RT_DOMAIN%%%';
