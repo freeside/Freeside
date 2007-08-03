@@ -357,7 +357,7 @@ Set($LogoURL , $WebImagesURL . "bplogo.gif");
 
 # WebNoAuthRegex - What portion of RT's URLspace should not require
 # authentication.
-Set($WebNoAuthRegex, qr!^(?:/+NoAuth/|
+Set($WebNoAuthRegex, qr!^/rt(?:/+NoAuth/|
                             /+REST/\d+\.\d+/NoAuth/)!x );
 
 # For message boxes, set the entry box width and what type of wrapping
