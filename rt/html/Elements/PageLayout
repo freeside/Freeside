@@ -45,13 +45,26 @@
 %# those contributions and any derivatives thereof.
 %# 
 %# END BPS TAGGED BLOCK }}}
+
+<table class="black" border=0 cellspacing=0 cellpadding=0 width="100%">
+<tr>
+  <TD colspan=5 WIDTH="100%" STYLE="padding:0"><IMG BORDER=0 ALT="" SRC="<% $RT:
+:URI::freeside::URL %>/images/black-gradient.png" HEIGHT="13" WIDTH="100%"></TD>
+</tr>
+<tr>
+
   <div id="topactions">
-% foreach my $action (reverse sort keys %{$topactions}) {
+%  my $notfirst = 0; foreach my $action (sort keys %{$topactions}) {
     <span class="topaction">
+    <td class="blackright" ALIGN="right" VALIGN="center">
 % $m->out($topactions->{"$action"}->{'html'});
+    </td>
     </span>
 % }
   </div>
+
+</tr>
+</table>
 
 %# End of div#quickbar from /Elements/Header
 </div>
