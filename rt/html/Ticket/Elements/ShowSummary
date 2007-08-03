@@ -67,7 +67,7 @@
             <& /Ticket/Elements/ShowPeople, Ticket => $Ticket &>
 	  </&>
 
-	  <& /Widgets/TitleBoxStart, title => loc('Customers'),
+	  <&| /Widgets/TitleBox, title => loc('Customers'),
 	        title_href =>"$RT::WebPath/Ticket/ModifyCustomers.html?id=".$Ticket->Id,
 	        class=> 'ticket-info-customers' &>
           <& /Ticket/Elements/ShowCustomers, Ticket => $Ticket &>
