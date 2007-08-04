@@ -22,11 +22,13 @@ html/Ticket/Elements/ShowCustomers
  html/Ticket/Elements/Tabs
 html/Ticket/ModifyCustomers.html
 html/NoAuth/images/small-logo.png
- html/NoAuth/webrt.css
+ html/NoAuth/css/3.5-default/main.css
+html/NoAuth/css/3.5-default/freeside.css
 
 html/Widgets/TitleBoxStart
 
 html/Elements/FreesideNewCust
 html/Elements/FreesideSearch
 html/Elements/FreesideSvcSearch
+
 

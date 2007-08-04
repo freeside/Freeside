@@ -2,7 +2,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/copyleft/gpl.html.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -57,8 +59,8 @@ SITE_CONFIG_FILE		= 	$(CONFIG_FILE_PATH)/RT_SiteConfig.pm
 
 
 RT_VERSION_MAJOR	=	3
-RT_VERSION_MINOR	=	4
-RT_VERSION_PATCH	=	5
+RT_VERSION_MINOR	=	6
+RT_VERSION_PATCH	=	4
 
 RT_VERSION =	$(RT_VERSION_MAJOR).$(RT_VERSION_MINOR).$(RT_VERSION_PATCH)
 TAG 	   =	rt-$(RT_VERSION_MAJOR)-$(RT_VERSION_MINOR)-$(RT_VERSION_PATCH)
@@ -482,7 +484,7 @@ reconfigure:
 	./configure
 
 start-httpd:
-	$(PERL) bin/standalone_httpd 80 &
+	$(PERL) bin/standalone_httpd &
 
 apachectl:
 	$(APACHECTL) stop

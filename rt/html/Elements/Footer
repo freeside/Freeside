@@ -47,6 +47,10 @@
 %# END BPS TAGGED BLOCK }}}
 %# End of div#body from /Elements/PageLayout
 </div>
+</td>
+</tr>
+<tr>
+<td>
 <& /Elements/Callback, %ARGS &>
 <div id="footer">
   <p id="time">
@@ -75,6 +79,10 @@
 <%$d->Dump() %>
 </pre>
 % }
+
+</TD>
+</TR>
+</TABLE>
 
   </body>
 </html>

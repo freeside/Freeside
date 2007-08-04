@@ -81,7 +81,7 @@
 <& /Elements/Callback, _CallbackName => 'Head', %ARGS &>
 
 </head>
-  <body BACKGROUND="<% $RT::URI::freeside::URL %>/images/background-cheat.png"
+  <body NOTBACKGROUND="<% $RT::URI::freeside::URL %>/images/background-cheat.png"
         STYLE="margin-top:0; margin-bottom:0; margin-left:0; margin-right:0"
         <% $id && qq[ id="comp-$id"] |n %>
   >
