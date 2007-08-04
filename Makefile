@@ -337,13 +337,13 @@ create-rt: configure-rt
 	rt/sbin/rt-setup-database --action insert_initial \
 	&& rt/sbin/rt-setup-database --action insert --datafile ${RT_PATH}/etc/initialdata \
 	|| true
+
+install-rt:
 	perl -p -i -e "\
 	  s'%%%RT_DOMAIN%%%'${RT_DOMAIN}'g;\
 	  s'%%%RT_TIMEZONE%%%'${RT_TIMEZONE}'g;\
 	  s'%%%FREESIDE_URL%%%'${FREESIDE_URL}'g;\
 	" ${RT_PATH}/etc/RT_SiteConfig.pm
-
-install-rt:
 	[ ${RT_ENABLED} -eq 1 ] && ( cd rt; make install ) || true
 
 clean:
