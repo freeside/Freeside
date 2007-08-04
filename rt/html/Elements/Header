@@ -124,7 +124,7 @@
           <td align=right>
             <FONT SIZE="-3">
               <A HREF="http://www.sisd.com/freeside">Freeside</A>&nbsp;v<% &RT::URI::freeside::FreesideVersion() %><BR>
-             <A HREF="<% FS::Conf->new->config('support-key') ? "http://www.sisd.com/mediawiki/index.php/Supported:Documentation" : "http://www.sisd.com/mediawiki/index.php/Freeside:1.7:Documentation" %>">Documentation</A><BR>
+             <A HREF="<% FS::Conf->new->config('support-key') ? "http://www.sisd.com/mediawiki/index.php/Supported:Documentation" : "http://www.sisd.com/mediawiki/index.php/Freeside:1.9:Documentation" %>">Documentation</A><BR>
             </FONT>
           </td>
           <td bgcolor=#000000></td>
