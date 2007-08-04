@@ -71,7 +71,7 @@ body {
     font-size: 1.5em;
 }
 
-.evenline { background-color: #fe00f8; }
+.evenline { background-color: white; }
 .oddline { background-color: #ddd; }
 
 td {

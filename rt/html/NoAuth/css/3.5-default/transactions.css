@@ -57,6 +57,10 @@
 .ticket-transaction.even {
     background: #eee;
 }
+.ticket-transaction.odd {
+    background: #fff;
+}
+
 
 .ticket-transaction .date {
     font-size: 0.9em;
