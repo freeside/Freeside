@@ -25,15 +25,16 @@ $RT::Organization = '%%%RT_DOMAIN%%%';
 
 $RT::Timezone = '%%%RT_TIMEZONE%%%';
 
-$RT::WebBaseURL = '';
-$RT::WebPath = '/freeside/rt';
-
 $RT::WebExternalAuth = 1;
 $RT::WebFallbackToInternal = 1; #no
 $RT::WebExternalAuto = 1;
 
 $RT::URI::freeside::IntegrationType = 'Internal';
 $RT::URI::freeside::URL = '%%%FREESIDE_URL%%%';
+
+$RT::URI::freeside::URL =~ m(^(https?://[^/]+)(/.*)$)i;
+$RT::WebBaseURL = $1;
+$RT::WebPath = "$2/rt";
 
 Set($DatabaseHost   , '');
 
