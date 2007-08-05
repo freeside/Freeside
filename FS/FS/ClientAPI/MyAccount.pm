@@ -888,7 +888,7 @@ sub order_recharge {
 
     $bill_error = _do_bop_realtime( $cust_main );
 
-    if ('bill_error') {
+    if ($bill_error) {
       return $bill_error;
     } else {
       my $error = $svc_x->recharge (\%vhash);
