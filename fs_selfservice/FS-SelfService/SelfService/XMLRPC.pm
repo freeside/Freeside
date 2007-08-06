@@ -10,14 +10,15 @@ FS::SelfService::XMLRPC - Freeside XMLRPC accessible self-service API
 
 Use this API to implement your own client "self-service" module vi XMLRPC.
 
-Each routine described in L<FS::SelfService> is available vi XMLRPC.  All
-values are passed to the selfservice-server in a struct of strings.  The
-return values are in a struct as strings, arrays, or structs as appropriate
-for the values described in L<FS::SelfService>.
+Each routine described in L<FS::SelfService> is available vi XMLRPC as the
+method FS.SelfService.XMLRPC.B<method>.  All values are passed to the
+selfservice-server in a struct of strings.  The return values are in a
+struct as strings, arrays, or structs as appropriate for the values
+described in L<FS::SelfService>.
 
 =head1 BUGS
 
--head1 SEE ALSO
+=head1 SEE ALSO
 
 L<freeside-selfservice-clientd>, L<freeside-selfservice-server>,L<FS::SelfService>
 
