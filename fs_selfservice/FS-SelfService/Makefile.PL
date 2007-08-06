@@ -5,7 +5,7 @@ WriteMakefile(
     'NAME'		=> 'FS::SelfService',
     'VERSION_FROM'	=> 'SelfService.pm', # finds $VERSION
     'EXE_FILES'         => [ 'freeside-selfservice-clientd',
-                             #'freeside-selfservice-xmlrpc-server',
+                             'freeside-selfservice-xmlrpc-server',
                            ],
     'INSTALLSCRIPT'     => '/usr/local/sbin',
     'INSTALLSITEBIN'    => '/usr/local/sbin',

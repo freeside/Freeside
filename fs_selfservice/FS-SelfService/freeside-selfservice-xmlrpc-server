@@ -1,0 +1,59 @@
+#!/usr/bin/perl -w
+#
+# freeside-selfservice-xmlrpc-server
+#
+
+use strict;
+use Fcntl qw(:flock);
+use POSIX;
+use Getopt::Std;
+use XMLRPC::Transport::HTTP;
+use XMLRPC::Lite; # for XMLRPC::Serializer;
+use FS::SelfService::XMLRPC;
+
+use vars qw( $opt_p $opt_d );
+use vars qw( $DEBUG );
+
+getopts("p:d");
+$DEBUG = $opt_d;
+my $tag = $opt_p ? ':'.$opt_p : '';
+
+my %typelookup = (
+  base64 => [10, sub {$_[0] =~ /[^\x09\x0a\x0d\x20-\x7f]/}, 'as_base64'],
+  dateTime => [35, sub {$_[0] =~ /^\d{8}T\d\d:\d\d:\d\d$/}, 'as_dateTime'],
+  string => [40, sub {1}, 'as_string'],
+);
+my $serializer = new XMLRPC::Serializer(typelookup => \%typelookup);
+
+my $log_file = "/usr/local/freeside/selfservice.xmlrpc$tag.log";
+
+my $pid = fork;
+defined($pid) or die "Can't fork to start: $!";
+print "Started daemon with pid $pid\n" if $pid;
+exit if $pid;
+
+POSIX::setsid();
+open STDIN, "/dev/null" or die "Can't get rid of STDIN";
+open STDOUT, ">/dev/null" or die "Can't get rid of STDOUT";
+open STDERR, ">&STDOUT" or die "Can't get rid of STDERR";
+
+$SIG{__WARN__} = \&_logmsg;
+$SIG{__DIE__} = sub { &_logmsg(@_); exit };
+
+my $daemon = XMLRPC::Transport::HTTP::Daemon
+  ->new(LocalPort => $opt_p ? $opt_p : 8080)
+  ->dispatch_to('FS::SelfService::XMLRPC')
+  ->serializer($serializer);
+
+warn "Handling request at ", $daemon->url, "\n";
+$daemon->handle;
+
+sub _logmsg {
+  chomp( my $msg = shift );
+  my $log = new IO::File ">>$log_file";
+  flock($log, LOCK_EX);
+  seek($log, 0, 2);
+  print $log "[". scalar(localtime). "] [$$] $msg\n";
+  flock($log, LOCK_UN);
+  close $log;
+}
