@@ -5,3 +5,4 @@ SelfService.pm
 SelfService/XMLRPC.pm
 test.pl
 freeside-selfservice-clientd
+freeside-selfservice-xmlrpc-server
