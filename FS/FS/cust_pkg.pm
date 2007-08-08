@@ -437,7 +437,7 @@ sub check {
   }
 
   $self->otaker(getotaker) unless $self->otaker;
-  $self->otaker =~ /^([\w\.\-]{0,16})$/ or return "Illegal otaker";
+  $self->otaker =~ /^(\w{1,32})$/ or return "Illegal otaker";
   $self->otaker($1);
 
   if ( $self->dbdef_table->column('manual_flag') ) {
