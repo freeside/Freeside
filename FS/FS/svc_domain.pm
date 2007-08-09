@@ -8,6 +8,7 @@ use vars qw( @ISA $whois_hack $conf
 use Carp;
 use Date::Format;
 #use Net::Whois::Raw;
+use Net::Domain::TLD;
 use FS::Record qw(fields qsearch qsearchs dbh);
 use FS::Conf;
 use FS::svc_Common;
@@ -361,11 +362,18 @@ sub check {
   } elsif ( $whois_hack && $recref->{domain} =~ /^([\w\-\.]+)\.(\w+)$/ ) {
     $recref->{domain} = "$1.$2";
     # need to match a list of suffixes - no guarantee they're top-level..
+    # http://wiki.mozilla.org/TLD_List
+    # but this will have to do for now...
+    $recref->{suffix} || $2;
   } else {
     return "Illegal domain ". $recref->{domain}.
            " (or unknown registry - try \$whois_hack)";
   }
 
+  $self->suffix =~ /(^|\.)(\w+)$/
+    or return "can't parse suffix for TLD: ". $self->suffix;
+  my $tld = $2;
+  return "No such TLD: .$tld" unless tld_exists($tld);
 
   if ( $recref->{catchall} ne '' ) {
     my $svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $recref->{catchall} } );
@@ -443,27 +451,6 @@ sub catchall_svc_acct {
 sub whois {
   #$whois_hack or new Net::Whois::Domain $_[0]->domain;
   #$whois_hack or die "whois_hack not set...\n";
-}
-
-=item _whois
-
-Depriciated.
-
-=cut
-
-sub _whois {
-  die "_whois depriciated";
-}
-
-=item submit_internic
-
-Submits a registration email for this domain.
-
-=cut
-
-sub submit_internic {
-  #my $self = shift;
-  carp "submit_internic depreciated";
 }
 
 =back
