@@ -793,6 +793,18 @@ sub part_pkg {
     : qsearchs( 'part_pkg', { 'pkgpart' => $self->pkgpart } );
 }
 
+=item old_cust_pkg
+
+Returns the cancelled package this package was changed from, if any.
+
+=cut
+
+sub old_cust_pkg {
+  my $self = shift;
+  return '' unless $self->change_pkgnum;
+  qsearchs('cust_pkg', { 'pkgnum' => $self->change_pkgnum } );
+}
+
 =item calc_setup
 
 Calls the I<calc_setup> of the FS::part_pkg object associated with this billing
@@ -1591,9 +1603,17 @@ sub order {
   my $change = scalar(@old_cust_pkg) != 0;
 
   my %hash = (); 
-  if ( scalar(@old_cust_pkg) == 1 ) {
+  if ( scalar(@old_cust_pkg) == 1 && scalar(@$pkgparts) == 1 ) {
+
+    my $time = time;
+
     #$hash{$_} = $old_cust_pkg[0]->$_() foreach qw( last_bill bill );
-    $hash{'setup'} = time;
+    
+    #$hash{$_} = $old_cust_pkg[0]->$_() foreach qw( setup );
+    $hash{'setup'} = $time if $old_cust_pkg[0]->setup;
+
+    $hash{'change_date'} = $time;
+    $hash{"change_$_"}  = $old_cust_pkg[0]->$_() foreach qw( pkgnum pkgpart );
   }
 
   # Create the new packages.
