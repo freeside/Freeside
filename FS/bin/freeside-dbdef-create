@@ -25,3 +25,23 @@ $dbdef->save($dbdef_file);
 sub usage {
   die "Usage:\n  dbdef-create user\n";
 }
+
+=head1 NAME
+
+freeside-dbdef-create - Recreate database schema cache
+
+=head1 SYNOPSIS
+
+  freeside-dbdef-create user
+
+=head1 DESCRIPTION
+
+Reverse engineers the database schema and recreates the dbdef cache file.
+
+=head1 SEE ALSO
+
+L<DBIx::DBSchema>
+
+=cut
+
+1;
