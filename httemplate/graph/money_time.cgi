@@ -6,10 +6,6 @@
                 'graph_labels' => \%graph_label,
                 'colors'       => \%color,
                 'links'        => \%link,
-                'start_month'  => $smonth,
-                'start_year'   => $syear,
-                'end_month'    => $emonth,
-                'end_year'     => $eyear,
                 'agentnum'     => $agentnum,
                 'nototal'      => scalar($cgi->param('12mo')),
              )
@@ -18,14 +14,6 @@
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
-
-#find first month
-my $syear = $cgi->param('start_year'); # || 1899+$curyear;
-my $smonth = $cgi->param('start_month'); # || $curmon+1;
-
-#find last month
-my $eyear = $cgi->param('end_year'); # || 1900+$curyear;
-my $emonth = $cgi->param('end_month'); # || $curmon+1;
 
 #XXX or virtual
 my( $agentnum, $agent ) = ('', '');

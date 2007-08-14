@@ -147,7 +147,11 @@ sub netsales { #net sales
       FROM cust_credit_bill
         LEFT JOIN cust_bill USING ( invnum  )
         LEFT JOIN cust_main USING ( custnum )
-    WHERE ".  $self->in_time_period_and_agent($speriod, $eperiod, $agentnum, 'cust_bill')
+    WHERE ".  $self->in_time_period_and_agent( $speriod,
+                                               $eperiod,
+                                               $agentnum,
+                                               'cust_bill._date'
+                                             )
   );
 
   #horrible local kludge
@@ -158,7 +162,11 @@ sub netsales { #net sales
         LEFT JOIN cust_main USING ( custnum )
         LEFT JOIN cust_pkg  USING ( pkgnum  )
         LEFT JOIN part_pkg  USING ( pkgpart )
-      WHERE ". $self->in_time_period_and_agent($speriod, $eperiod, $agentnum, 'cust_bill'). "
+      WHERE ". $self->in_time_period_and_agent( $speriod,
+                                                $eperiod,
+                                                $agentnum,
+                                                'cust_bill._date'
+                                              ). "
         AND LOWER(part_pkg.pkg) LIKE 'expense _%'
   ");
 
@@ -183,7 +191,11 @@ sub receipts { #cashflow
       FROM cust_bill_pay
         LEFT JOIN cust_bill USING ( invnum  )
         LEFT JOIN cust_main USING ( custnum )
-    WHERE ". $self->in_time_period_and_agent($speriod, $eperiod, $agentnum, 'cust_bill_pay'). "
+    WHERE ". $self->in_time_period_and_agent( $speriod,
+                                              $eperiod,
+                                              $agentnum,
+                                              'cust_bill_pay._date'
+                                            ). "
     AND 0 < ( SELECT COUNT(*) from cust_bill_pkg, cust_pkg, part_pkg
               WHERE cust_bill.invnum = cust_bill_pkg.invnum
               AND cust_pkg.pkgnum = cust_bill_pkg.pkgnum
@@ -285,54 +297,38 @@ sub cust_bill_pkg {
   
 }
 
-# NEEDS TO BE AGENTNUM-capable
-sub canceled { #active
-  my( $self, $speriod, $eperiod, $agentnum ) = @_;
+sub setup_pkg  { shift->pkg_field( @_, 'setup' ); }
+sub susp_pkg   { shift->pkg_field( @_, 'susp'  ); }
+sub cancel_pkg { shift->pkg_field( @_, 'cancel'); }
+ 
+sub pkg_field {
+  my( $self, $speriod, $eperiod, $agentnum, $field ) = @_;
   $self->scalar_sql("
-    SELECT COUNT(*)
-      FROM cust_pkg
+    SELECT COUNT(*) FROM cust_pkg
         LEFT JOIN cust_main USING ( custnum )
-      WHERE 0 = ( SELECT COUNT(*)
-                    FROM cust_pkg
-                    WHERE cust_pkg.custnum = cust_main.custnum
-                      AND ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
-                )
-        AND cust_pkg.cancel > $speriod AND cust_pkg.cancel < $eperiod
-  ");
+      WHERE ". $self->in_time_period_and_agent( $speriod,
+                                                $eperiod,
+                                                $agentnum,
+                                                "cust_pkg.$field",
+                                              )
+  );
+
 }
- 
-# NEEDS TO BE AGENTNUM-capable
-sub newaccount { #newaccount
-  my( $self, $speriod, $eperiod, $agentnum ) = @_;
-  $self->scalar_sql("
-     SELECT COUNT(*) FROM cust_pkg
-     WHERE cust_pkg.custnum = cust_main.custnum
-     AND ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
-     AND ( cust_pkg.susp IS NULL OR cust_pkg.susp = 0 )
-     AND cust_pkg.setup > $speriod AND cust_pkg.setup < $eperiod
-  ");
-}
- 
-# NEEDS TO BE AGENTNUM-capable
-sub suspended { #suspended
-  my( $self, $speriod, $eperiod, $agentnum ) = @_;
-  $self->scalar_sql("
-     SELECT COUNT(*) FROM cust_pkg
-     WHERE cust_pkg.custnum = cust_main.custnum
-     AND ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
-     AND 0 = ( SELECT COUNT(*) FROM cust_pkg
-               WHERE cust_pkg.custnum = cust_main.custnum
-               AND ( cust_pkg.susp IS NULL OR cust_pkg.susp = 0 )
-             )
-     AND cust_pkg.susp > $speriod AND cust_pkg.susp < $eperiod
-  ");
-}
+
+#this is going to be harder..
+#sub unsusp_pkg {
+#  my( $self, $speriod, $eperiod, $agentnum ) = @_;
+#  $self->scalar_sql("
+#    SELECT COUNT(*) FROM h_cust_pkg
+#      WHERE 
+#
+#}
 
 sub in_time_period_and_agent {
   my( $self, $speriod, $eperiod, $agentnum ) = splice(@_, 0, 4);
-  my $table = @_ ? shift().'.' : '';
+  my $col = @_ ? shift() : '_date';
 
-  my $sql = "${table}_date >= $speriod AND ${table}_date < $eperiod";
+  my $sql = "$col >= $speriod AND $col < $eperiod";
 
   #agent selection
   $sql .= " AND agentnum = $agentnum"

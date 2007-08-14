@@ -141,6 +141,10 @@ if ( $curuser->access_right('Configuration') ) {
   $report_packages{'Package definitions'} =  [ $fsurl.'browse/part_pkg.cgi?active=1', 'Package definitions by number of active packages' ];
   $report_packages{'separator'} =  '';
 }
+if ( $curuser->access_right('Financial reports') ) {
+  $report_packages{'Package churn'} =  [ $fsurl.'graph/report_cust_pkg.html', 'Orders, suspensions and cancellations summary graph' ];
+  $report_packages{'separator2'} =  '';
+}
 $report_packages{'All customer packages'} =  [ $fsurl.'search/cust_pkg.cgi?pkgnum', 'List all customer packages', ];
 $report_packages{'Suspended customer packages'} =  [ $fsurl.'search/cust_pkg.cgi?magic=suspended', 'List suspended packages' ];
 $report_packages{'Customer packages with unconfigured services'} =  [ $fsurl.'search/cust_pkg.cgi?APKG_pkgnum', 'List packages which have provisionable services' ];
