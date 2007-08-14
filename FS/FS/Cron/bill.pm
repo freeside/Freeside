@@ -95,8 +95,7 @@ END
 
   }
   
-  my($cust_main,%saw);
-  foreach $cust_main ( @cust_main ) {
+  foreach my $cust_main ( @cust_main ) {
 
     if ( $opt{'m'} ) {
 
