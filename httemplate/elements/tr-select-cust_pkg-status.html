@@ -1,9 +1,9 @@
-<% include ('tr-td-label.html', @_ ) %>
+<% include ('tr-td-label.html', 'label' => 'Status', @_ ) %>
 
   <TD <% $style %>>
 
     <% include( '/elements/select-cust_pkg-status.html', 
-                  'curr_value' => $curr_value,
+                  'curr_value'  => $curr_value,
                   %opt
               )
     %>
