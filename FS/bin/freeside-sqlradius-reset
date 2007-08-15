@@ -1,11 +1,15 @@
 #!/usr/bin/perl -w
 
 use strict;
+use vars qw( $opt_n );
+use Getopt::Std;
 use FS::UID qw(adminsuidsetup);
 use FS::Record qw(qsearch qsearchs);
 use FS::part_export;
 use FS::svc_acct;
 use FS::cust_svc;
+
+getopts("n");
 
 my $user = shift or die &usage;
 adminsuidsetup $user;
@@ -25,15 +29,17 @@ if ( @ARGV ) {
   push @exports, qsearch('part_export', { exporttype=>'sqlradius_withdomain' } );
 }
 
-foreach my $export ( @exports ) {
-  my $icradius_dbh = DBI->connect(
-    map { $export->option($_) } qw( datasrc username password )
-  ) or die $DBI::errstr;
-  for my $table (qw( radcheck radreply usergroup )) {
-    my $sth = $icradius_dbh->prepare("DELETE FROM $table");
-    $sth->execute or die "Can't reset $table table: ". $sth->errstr;
+unless ( $opt_n ) {
+  foreach my $export ( @exports ) {
+    my $icradius_dbh = DBI->connect(
+      map { $export->option($_) } qw( datasrc username password )
+    ) or die $DBI::errstr;
+    for my $table (qw( radcheck radreply usergroup )) {
+      my $sth = $icradius_dbh->prepare("DELETE FROM $table");
+      $sth->execute or die "Can't reset $table table: ". $sth->errstr;
+    }
+    $icradius_dbh->disconnect;
   }
-  $icradius_dbh->disconnect;
 }
 
 foreach my $export ( @exports ) {
@@ -75,7 +81,7 @@ freeside-sqlradius-reset - Command line interface to reset and recreate RADIUS S
 
 =head1 SYNOPSIS
 
-  freeside-sqlradius-reset username [ EXPORTNUM, ... ]
+  freeside-sqlradius-reset [ -n ] username [ EXPORTNUM, ... ]
 
 =head1 DESCRIPTION
 
@@ -84,6 +90,9 @@ the Freeside database, for the specified exports, or, if no exports are
 specified, for all sqlradius and sqlradius_withdomain exports.
 
 B<username> is a username added by freeside-adduser.
+
+The B<-n> option, if supplied, supresses the deletion of the existing data in
+the tables.
 
 =head1 SEE ALSO
 
