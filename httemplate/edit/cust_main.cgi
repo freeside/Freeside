@@ -111,7 +111,7 @@
 % if ( $custnum ) { 
 
   Customer #<B><% $custnum %></B> - 
-  <B><FONT COLOR="<% $cust_main->statuscolor %>">
+  <B><FONT COLOR="#<% $cust_main->statuscolor %>">
     <% ucfirst($cust_main->status) %>
   </FONT></B>
   <BR><BR>
