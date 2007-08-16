@@ -121,10 +121,6 @@ sub customer_info {
     $return{balance} = $cust_main->balance;
 
     $return{tickets} = [ ($cust_main->tickets) ];
-    use Data::Dumper;
-    open(MYFILE, ">>/tmp/debugger");
-    print MYFILE Dumper($return{tickets});
-    close MYFILE;
 
     my @open = map {
                      {
