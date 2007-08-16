@@ -5607,7 +5607,7 @@ sub generate_letter {
   my %letter_data = map { $_ => $self->$_ } $self->fields;
   $letter_data{payinfo} = $self->mask_payinfo;
 
-  my $paydate = $self->paydate;
+  my $paydate = $self->paydate || '2037-12';
   my $payby = $self->payby;
   my ($payyear,$paymonth,$payday) = split (/-/,$paydate);
   my $expire_time = timelocal(0,0,0,$payday,--$paymonth,$payyear);
