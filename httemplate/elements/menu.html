@@ -214,6 +214,8 @@ $tools_menu{'Process payment batches'} = [ $fsurl.'search/pay_batch.cgi?magic=_d
   if $conf->exists('batch-enable') && $curuser->access_right('Process batches');
 $tools_menu{'Job Queue'} =  [ $fsurl.'search/queue.html', 'View pending job queue' ]
   if $curuser->access_right('Job queue');
+$tools_menu{'Time Queue'} =  [ $fsurl.'search/timeworked.html', 'View pending support time' ]
+  if $curuser->access_right('Time queue');
 $tools_menu{'Importing'} =  [ \%tools_importing, 'Import tools' ]
   if $curuser->access_right('Import');
 $tools_menu{'Exporting'} =  [ \%tools_exporting, 'Export tools' ]

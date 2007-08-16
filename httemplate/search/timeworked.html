@@ -1,0 +1,74 @@
+<% include( 'elements/search.html',
+                 'title'       => 'Time Worked',
+                 'menubar'     => [ 'Main menu' => $p, ],
+                 'name'        => 'time',
+		 'html_form'   => qq!<FORM NAME="timeForm" ACTION="${p}misc/timeworked.html" METHOD="POST">!,
+                 'query'       => $query,
+                 'count_query' => $count_query,
+                 'header' => [ '#',
+                               'Ticket',
+                               'Date',
+                               'Time',
+                               '', # checkbox column
+                             ],
+                 'fields' => [ sub { shift->[0] },
+                               sub { shift->[1] },
+                               sub { shift->[2] },
+                               sub { my $seconds = shift->[3];
+                                     (($seconds < 0) ? '-' : '') .
+                                     concise(duration($seconds));
+                                   },
+                               sub {
+                                 my $row = shift;
+                                 my $seconds = $row->[3];
+                                 my $id = $row->[4];
+                                 qq!<INPUT NAME="transactionid$id" TYPE="checkbox" VALUE="1">!.
+                                 qq!<INPUT NAME="seconds$id" TYPE="hidden" VALUE="$seconds">!;
+                               },
+                             ],
+                 'html_foot' => sub {
+                                  '<BR><INPUT TYPE="button" VALUE="select all" onClick="setAll(true)">'.
+                                  '<INPUT TYPE="button" VALUE="unselect all" onClick="setAll(false)">'.
+                                  '<BR><INPUT TYPE="submit" NAME="action" VALUE="Assign to accounts"><BR>'.
+                                  '<SCRIPT TYPE="text/javascript">'.
+                                  '  function setAll(setTo) { '.
+                                  '    theForm = document.timeForm;'.
+                                  '    for (i=0,n=theForm.elements.length;i<n;i++)'.
+                                  '      if (theForm.elements[i].name.indexOf("transactionid") != -1)'.
+                                  '        theForm.elements[i].checked = setTo;'.
+                                  '  }'.
+                                  '</SCRIPT>';
+                                },
+             )
+
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Time queue');
+
+my @groupby = ();
+
+my $transactiontime = "CASE transactions.type when 'Set' THEN (to_number(newvalue,'999999')-to_number(oldvalue, '999999')) * 60 ELSE timetaken*60 END";
+push @groupby, "transactions.type";
+push @groupby, "newvalue";
+push @groupby, "oldvalue";
+push @groupby, "timetaken";
+
+my $appliedtimeclause = "coalesce (sum(svc_acct_rt_transaction.seconds), 0)";
+
+my $appliedtimeselect = "SELECT sum(seconds) FROM svc_acct_rt_transaction where transaction_id = transactions.id";
+push @groupby, "transactions.id";
+
+my $wheretimeleft = "($transactiontime != ($appliedtimeselect) OR ($appliedtimeselect) is NULL)";
+
+push @groupby, "tickets.id";
+push @groupby, "tickets.subject";
+push @groupby, "transactions.created";
+
+my $groupby = join(',', @groupby);
+
+my $query = "SELECT tickets.id,tickets.subject,to_char(transactions.created, 'Dy Mon DD HH24:MI:SS YYYY'),$transactiontime-$appliedtimeclause,transactions.id FROM transactions JOIN tickets ON transactions.objectid = tickets.id LEFT JOIN svc_acct_rt_transaction on transactions.id = svc_acct_rt_transaction.transaction_id WHERE objecttype='RT::Ticket' AND ((transactions.type='Set' AND field='TimeWorked') OR transactions.type='Comment' OR transactions.type='Correspond') AND ($wheretimeleft) GROUP BY $groupby ORDER BY transactions.created";
+my $count_query = "SELECT count(*) FROM transactions WHERE objecttype='RT::Ticket' AND ((transactions.type='Set' AND field='TimeWorked') OR transactions.type='Comment' OR transactions.type='Correspond') AND ($wheretimeleft)";
+
+</%init>

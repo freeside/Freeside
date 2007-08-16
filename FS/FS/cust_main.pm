@@ -4620,6 +4620,52 @@ sub cust_statuscolor {
   $statuscolor{$self->cust_status};
 }
 
+=item tickets
+
+Returns an array of hashes representing the customer's RT tickets.
+
+=cut
+
+sub tickets {
+  my $self = shift;
+
+  my $num = $conf->config('cust_main-max_tickets') || 10;
+  my @tickets = ();
+
+  unless ( $conf->config('ticket_system-custom_priority_field') ) {
+
+    @tickets = @{ FS::TicketSystem->customer_tickets($self->custnum, $num) };
+
+  } else {
+
+    foreach my $priority (
+      $conf->config('ticket_system-custom_priority_field-values'), ''
+    ) {
+      last if scalar(@tickets) >= $num;
+      push @tickets, 
+        @{ FS::TicketSystem->customer_tickets( $self->custnum,
+                                               $num - scalar(@tickets),
+                                               $priority,
+                                             )
+         };
+    }
+  }
+  (@tickets);
+}
+
+# Return services representing svc_accts in customer support packages
+sub support_services {
+  my $self = shift;
+  my %packages = map { $_ => 1 } $conf->config('support_packages');
+
+  grep { $_->pkg_svc && $_->pkg_svc->primary_svc eq 'Y' }
+    grep { $_->part_svc->svcdb eq 'svc_acct' }
+    map { $_->cust_svc }
+    grep { exists $packages{ $_->pkgpart } }
+    $self->ncancelled_pkgs;
+
+}
+
 =back
 
 =head1 CLASS METHODS

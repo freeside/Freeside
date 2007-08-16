@@ -988,6 +988,19 @@ sub tables_hashref {
       'index' => [ ['username'], ['domsvc'] ],
     },
 
+    'svc_acct_rt_transaction' => {
+      'columns' => [
+        'svcrtid',   'int',    '',   '', '', '', 
+        'svcnum',    'int',    '',   '', '', '', 
+        'transaction_id',       'int', '',   '', '', '', 
+        '_date',   @date_type, '', '',
+        'seconds',   'int', '',   '', '', '', #uhhhh
+      ],
+      'primary_key' => 'svcrtid',
+      'unique' => [],
+      'index' => [ ['svcnum', 'transaction_id'] ],
+    },
+
     #'svc_charge' => {
     #  'columns' => [
     #    'svcnum',    'int',    '',   '',

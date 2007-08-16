@@ -1,0 +1,387 @@
+%  # options example...  
+%  #
+%  # #listrefs...
+%  # 'header'      => [ '#', 'Item' ],
+%  # 'fields'      => [
+%  #                    'column',
+%  #                    sub { my ($row,$param) = @_; $param->{"column$row"}; },
+%  #                  ],
+%  # 'sizes'       => [],                         # sizes ignored for immutable
+%  # 'types'       => ['immutable', ''],          # immutable or ''/text
+%  # 'param'       => { column0 => 1 },           # preset column of row 0 to 1
+%  # 
+
+<SCRIPT TYPE="text/javascript">
+
+  function clearhint_custnum() {
+
+    if ( this.value == 'Not found' || this.value == 'Multiple' ) {
+      this.value = '';
+      this.style.color = '#000000';
+    }
+
+  }
+
+  function clearhint_customer() {
+
+    this.style.color = '#000000';
+
+    if ( this.value == '(last name or company)' || this.value == 'Not found' )
+      this.value = '';
+
+  }
+
+  function <% $opt{prefix} %>search_custnum() {
+
+    this.style.color = '#000000'
+
+    var custnum_obj = this;
+    var searchrow = this.getAttribute('rownum');
+    var custnum = this.value;
+
+    if ( custnum == 'searching...' || custnum == 'Not found' || custnum == '' )
+      return;
+
+    if ( this.getAttribute('magic') == 'nosearch' ) {
+      this.setAttribute('magic', '');
+      return;
+    }
+
+    if ( ( <% $opt{prefix} %>rownum - searchrow ) == 1 ) {
+      <% $opt{prefix} %>addRow();
+    }
+    var customer = document.getElementById('customer'+searchrow);
+    customer.value = 'searching...';
+    customer.disabled = true;
+    customer.style.color = '#000000';
+    customer.style.backgroundColor = '#dddddd';
+
+    var customer_select = document.getElementById('cust_select'+searchrow);
+
+    customer.style.display = '';
+    customer_select.style.display = 'none';
+
+    function search_custnum_update(name) {
+
+      var name = eval('(' + name + ')' );
+
+      customer.disabled = false;
+      customer.style.backgroundColor = '#ffffff';
+
+      if ( name.length > 0 ) {
+        customer.value = name;
+        customer.setAttribute('magic', 'nosearch');
+      } else {
+        customer.value = 'Not found';
+        customer.style.color = '#ff0000';
+        custnum_obj.style.color = '#ff0000';
+
+      }
+
+    }
+
+    custnum_search( custnum, search_custnum_update );
+
+  }
+
+  function <% $opt{prefix} %>search_customer() {
+
+    var customer_obj = this;
+    var searchrow = this.getAttribute('rownum');
+    var customer = this.value;
+
+    if ( customer == 'searching...' || customer == 'Not found' || customer == '' )
+      return;
+
+    if ( this.getAttribute('magic') == 'nosearch' ) {
+      this.setAttribute('magic', '');
+      return;
+    }
+
+    if ( ( <% $opt{prefix} %>rownum - searchrow ) == 1 ) {
+      <% $opt{prefix} %>addRow();
+    }
+
+    var custnum_obj = document.getElementById('custnum'+searchrow);
+    custnum_obj.value = 'searching...';
+    custnum_obj.disabled = true;
+    custnum_obj.style.color = '#000000';
+    custnum_obj.style.backgroundColor = '#dddddd';
+
+    var customer_select = document.getElementById('cust_select'+searchrow);
+
+    function search_customer_update(customers) {
+
+      var customerArray = eval('(' + customers + ')');
+
+      custnum_obj.disabled = false;
+      custnum_obj.style.backgroundColor = '#ffffff';
+
+      if ( customerArray.length == 0 ) {
+
+        custnum_obj.value = 'Not found';
+        custnum_obj.style.color = '#ff0000';
+        customer_obj.style.color = '#ff0000';
+
+        customer_obj.style.display = '';
+        customer_select.style.display = 'none';
+
+
+      } else if ( customerArray.length == 1 ) {
+
+        custnum_obj.value = customerArray[0][0];
+        customer_obj.value = customerArray[0][1];
+
+        customer_obj.style.display = '';
+        customer_select.style.display = 'none';
+
+
+      } else {
+
+        custnum_obj.value = 'Multiple'; // or something
+        custnum_obj.style.color = '#ff0000';
+
+        //blank the current list
+        for ( var i = customer_select.length; i >= 0; i-- )
+          customer_select.options[i] = null;
+
+        opt(customer_select, '', 'Multiple customers match "' + customer + '" - select one', '#ff0000');
+
+        //add the multiple customers
+        for ( var s = 0; s < customerArray.length; s++ )
+          opt(customer_select, customerArray[s][0], customerArray[s][1], '#000000');
+
+        opt(customer_select, 'cancel', '(Edit search string)', '#000000');
+
+        customer_obj.style.display = 'none';
+
+        customer_select.style.display = '';
+
+      }
+
+    }
+
+    smart_search( customer, search_customer_update );
+
+  }
+
+  function select_customer() {
+
+    var custnum = this.options[this.selectedIndex].value;
+    var customer = this.options[this.selectedIndex].text;
+
+    var searchrow = this.getAttribute('rownum');
+    var custnum_obj = document.getElementById('custnum'+searchrow);
+    var customer_obj = document.getElementById('customer'+searchrow);
+
+    if ( custnum == '' ) {
+
+    } else if ( custnum == 'cancel' ) {
+
+      custnum_obj.value = '';
+      custnum_obj.style.color = '#000000';
+
+      this.style.display = 'none';
+      customer_obj.style.display = '';
+      customer_obj.focus();
+
+    } else {
+
+      custnum_obj.value = custnum;
+      custnum_obj.style.color = '#000000';
+
+      customer_obj.value = customer;
+      customer_obj.style.color = '#000000';
+
+      this.style.display = 'none';
+      customer_obj.style.display = '';
+
+    }
+
+  }
+
+  function opt(what,value,text,color) {
+    var optionName = new Option(text, value, false, false);
+    optionName.style.color = color;
+    var length = what.length;
+    what.options[length] = optionName;
+  }
+
+</SCRIPT>
+
+<TABLE ID="<% $opt{prefix} %>OneTrueTable" BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>
+
+<TR>
+  <TH>Cust #</TH>
+  <TH>Customer</TH>
+% foreach my $header ( @{$opt{header}} ) {
+    <TH><% $header %></TH>
+% }
+</TR>
+% my $row = 0;
+% for ( $row = 0; exists($param->{"custnum$row"}); $row++ ) { 
+
+    <TR>
+
+      <TD>
+        <INPUT TYPE="text" NAME="custnum<% $row %>" ID="custnum<% $row %>" SIZE=8 MAXLENGTH=12 VALUE="<% $param->{"custnum$row"} %>" rownum="<% $row %>">
+          <SCRIPT TYPE="text/javascript">
+            var custnum_input<% $row %> = document.getElementById("custnum<% $row %>");
+            custnum_input<% $row %>.onfocus = clearhint_custnum;
+            custnum_input<% $row %>.onchange = <% $opt{prefix} %>search_custnum;
+          </SCRIPT>
+      </TD>
+
+      <TD>
+        <INPUT TYPE="text" NAME="customer<% $row %>" ID="customer<% $row %>" SIZE=64 VALUE="<% $param->{"customer$row"} %>" rownum="<% $row %>">
+          <SCRIPT TYPE="text/javascript">
+            var customer_input<% $row %> = document.getElementById("customer<% $row %>");
+            customer_input<% $row %>.onfocus = clearhint_customer;
+            customer_input<% $row %>.onclick = clearhint_customer;
+            customer_input<% $row %>.onchange = <% $opt{prefix} %>search_customer;
+          </SCRIPT>
+        <SELECT NAME="cust_select<% $row %>" ID="cust_select<% $row %>" rownum="<% $row %>" STYLE="color:#ff0000; display:none">
+        </SELECT>
+          <SCRIPT TYPE="text/javascript">
+            var customer_select<% $row %> = document.getElementById("cust_select<% $row %>");
+            customer_select<% $row %>.onchange = select_customer;
+          </SCRIPT>
+      </TD>
+
+%   my $col = 0;
+%   foreach my $field ( @{$opt{fields}} ) {
+%     my $value;
+%     if ( ref($field) eq 'CODE' ) {
+%       $value = &{$field}($row,$param);
+%     } else {
+%       $value = $param->{"$field$row"}; 
+%     }
+%     my $name = (ref($field) eq 'CODE') ? "column${col}_$row" : "$field$row";
+%     my $size = $sizes->[$col] || 10;
+      <TD>
+%     if (! $types->[$col] || $types->[$col] eq 'text') {
+        <INPUT TYPE="text" NAME="<% $name %>" SIZE="<% $size %>" VALUE="<% $value %>" >
+%     } elsif ($types->[$col] eq 'immutable') {
+        <% $value %>
+        <INPUT TYPE="hidden" NAME="<% $name %>" VALUE="<% $value %>" >
+%     } else {
+        Cannot represent unknown type: <% $types->[$col] %>
+%     }
+      </TD>
+%     $col++;
+%   }
+
+    </TR>
+% } 
+
+
+</TABLE>
+
+<% include('/elements/xmlhttp.html',
+              'url'  => $p. 'misc/xmlhttp-cust_main-search.cgi',
+              'subs' => [qw( custnum_search smart_search )],
+           )
+%>
+
+<SCRIPT TYPE="text/javascript">
+
+  var <% $opt{prefix} %>rownum = <% $row %>;
+
+  function <% $opt{prefix} %>addRow() {
+
+    var table = document.getElementById('<% $opt{prefix} %>OneTrueTable');
+    var tablebody = table.getElementsByTagName('tbody').item(0);
+
+    var row = document.createElement('TR');
+
+    var custnum_cell = document.createElement('TD');
+
+      var custnum_input = document.createElement('INPUT');
+      custnum_input.setAttribute('name', 'custnum'+<% $opt{prefix} %>rownum);
+      custnum_input.setAttribute('id',   'custnum'+<% $opt{prefix} %>rownum);
+      custnum_input.setAttribute('size', 8);
+      custnum_input.setAttribute('maxlength', 12);
+      custnum_input.setAttribute('rownum', <% $opt{prefix} %>rownum);
+      custnum_input.onfocus = clearhint_custnum;
+      custnum_input.onchange = <% $opt{prefix} %>search_custnum;
+      custnum_cell.appendChild(custnum_input);
+
+    row.appendChild(custnum_cell);
+
+    var customer_cell = document.createElement('TD');
+
+      var customer_input = document.createElement('INPUT');
+      customer_input.setAttribute('name', 'customer'+<% $opt{prefix} %>rownum);
+      customer_input.setAttribute('id',   'customer'+<% $opt{prefix} %>rownum);
+      customer_input.setAttribute('size', 64);
+      customer_input.setAttribute('value', '(last name or company)' );
+      customer_input.setAttribute('rownum', <% $opt{prefix} %>rownum);
+      customer_input.onfocus = clearhint_customer;
+      customer_input.onclick = clearhint_customer;
+      customer_input.onchange = <% $opt{prefix} %>search_customer;
+      customer_cell.appendChild(customer_input);
+
+      var customer_select = document.createElement('SELECT');
+      customer_select.setAttribute('name', 'cust_select'+<% $opt{prefix} %>rownum);
+      customer_select.setAttribute('id',   'cust_select'+<% $opt{prefix} %>rownum);
+      customer_select.setAttribute('rownum', <% $opt{prefix} %>rownum);
+      customer_select.style.color = '#ff0000';
+      customer_select.style.display = 'none';
+      customer_select.onchange = select_customer;
+      customer_cell.appendChild(customer_select);
+
+    row.appendChild(customer_cell);
+
+%   my $col = 0;
+%   foreach my $field ( @{$opt{fields}} ) {
+    var my_cell = document.createElement('TD');
+
+%     if ($types->[$col] eq 'immutable') {
+%       my $value;
+%       if ( ref($field) eq 'CODE' ) {
+%         $value = &{$field}($row,$param);
+%       } else {
+%         $value = $param->{"$field$row"}; 
+%       }
+        var my_text = document.createTextNode('<% $value %>');
+        my_cell.appendChild(my_text);
+%     }
+
+      var my_input = document.createElement('INPUT');
+      my_input.setAttribute('name', '<% $field %>'+<% $opt{prefix} %>rownum);
+      my_input.setAttribute('size', <% $sizes->[$col] || 10 %>);
+%     if ($types->[$col] eq 'immutable') {
+        my_input.setAttribute('type', 'hidden');
+%     }
+      my_cell.appendChild(my_input);
+
+    row.appendChild(my_cell);
+
+%     $col++;
+%   }
+
+    tablebody.appendChild(row);
+
+    <% $opt{prefix} %>rownum++;
+
+  }
+
+% unless ($cgi->param('error')) {
+  <% $opt{prefix} %>addRow();
+% }
+</SCRIPT>
+
+<%init>
+
+my(%opt) = @_;
+
+$opt{prefix} = '' unless defined $opt{prefix};
+$opt{prefix} .= '_' if $opt{prefix};
+
+my $types = $opt{'types'} ? [ @{$opt{'types'}} ] : [];
+my $sizes = $opt{'sizes'} ? [ @{$opt{'sizes'}} ] : [];
+
+my $param = $opt{param};
+$param = $cgi->Vars if $cgi->param('error');
+
+</%init>

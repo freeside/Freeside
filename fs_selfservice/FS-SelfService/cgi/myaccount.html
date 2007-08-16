@@ -36,6 +36,41 @@ Hello <%= $name %>!<BR><BR>
   }
 %>
 
+<%=
+  if ( defined($support_time) ) {
+    $OUT .= '<TABLE BORDER=0 CELLSPACING=0 CELLPADDING=2 BGCOLOR="#eeeeee">'.
+            '<TR><TH BGCOLOR="#ff6666">Support Time Remaining</TH></TR>'.
+            "<TR><TD>$support_time</TD></TR><BR><BR>";
+  }
+%>
+
+<%=
+  if ( @tickets ) {
+    $OUT .= '<TABLE BORDER=0 CELLSPACING=0 CELLPADDING=2 BGCOLOR="#eeeeee">'.
+            '<TR><TH BGCOLOR="#ff6666" COLSPAN=5>Open Tickets</TH></TR>'.
+            '<TR><TH>#</TH><TH>Subject</TH><TH>Priority</TH><TH>Queue</TH>'.
+            '<TH>Status</TH></TR>';
+    my $col1 = "ffffff";
+    my $col2 = "dddddd";
+    my $col = $col1;
+
+    foreach my $ticket ( @tickets ) {
+      my $td = qq!<TD BGCOLOR="#$col">!;
+      $OUT .=
+        "<TR>$td". $ticket->{'id'}. "</TD>".
+        $td. $ticket->{'subject'}. "</TD>".
+        $td. $ticket->{'priority'}. "</TD>".
+        $td. $ticket->{'name'}. "</TD>".
+        $td. $ticket->{'status'}. "</TD>".
+        '</TR>';
+      $col = $col eq $col1 ? $col2 : $col1;
+    }
+    $OUT .= '</TABLE>';
+  } else {
+    $OUT .= '';
+  }
+%>
+
 </TD></TR></TABLE>
 <HR>
 <FONT SIZE="-2">powered by <a href="http://www.sisd.com/freeside">freeside</a></FONT>

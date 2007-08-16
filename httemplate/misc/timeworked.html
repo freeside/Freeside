@@ -1,0 +1,77 @@
+<% include('/elements/header.html', $title, '' ) %>
+
+% if ( $cgi->param('error') ) { 
+  <FONT SIZE="+1" COLOR="#ff0000">Error: <% $cgi->param('error') %></FONT>
+  <BR><BR>
+% } 
+
+<FORM NAME="timeworked_form" ACTION="<% popurl(1) %>process/timeworked.html" METHOD=POST>
+
+<BR><BR>
+<% include("elements/customer-table.html", header => [ 'Multiplier' ],
+                                           fields => [ 'multiplier' ],
+                                           param  => { %param },
+          ) %>
+
+<BR>
+<INPUT TYPE="submit" NAME="submit" VALUE="<% $title %>">
+<BR>
+<BR>
+
+for transactions/tickets:
+<TABLE>
+
+%  foreach ( sort { $a <=> $b } keys %ticket ) {
+
+  <TR><TD><% $_ %></TD><TD><% $ticket{$_} %></TD></TR>
+  <INPUT TYPE="hidden" NAME="transactionid<% $_ %>" VALUE="1" >
+  <INPUT TYPE="hidden" NAME="seconds<% $_ %>" VALUE="<% $cgi->param("seconds$_") %>" >
+
+%  }
+
+</TABLE>
+</FORM>
+</BODY>
+</HTML>
+
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Time queue');
+
+my($svcnum, %ticket, %customers, %param); 
+my $title = 'Assign Time Worked';
+
+RT::Init();
+
+my $CurrentUser = RT::CurrentUser->new();
+$CurrentUser->LoadByName($FS::CurrentUser::CurrentUser->username);
+
+foreach my $id ( map { /^transactionid(\d+)$/; $1; }
+                     grep /^transactionid\d+$/, $cgi->param) {
+  my $transaction = new RT::Transaction($CurrentUser); 
+  $transaction->Load($id);
+  my $ticket = new RT::Ticket($CurrentUser);
+  $ticket->Load($transaction->ObjectId);
+  $ticket{$id} = $ticket->Subject;
+  foreach my $customerURI (
+                       grep { $_->Resolver->{'fstable'} eq 'cust_main' } 
+                       grep { $_->Scheme eq 'freeside' } 
+                        map { $_->TargetURI } 
+                            @{ $ticket->_Links('Base')->ItemsArrayRef } 
+                          ) {
+    $customers{$customerURI->Resolver->AsString} = 1;
+  }
+}
+
+my $row = 0;
+foreach ( keys %customers ) {
+  my ($number, $name) = split(':', $_, 2);
+  $param{"custnum$row"} = $number;
+  $param{"customer$row"} = $name;
+  $param{"multiplier$row"} = sprintf("%.2f", 1/scalar(keys(%customers)));
+  $row++;
+}
+
+</%init>
+

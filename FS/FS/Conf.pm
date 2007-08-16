@@ -2047,6 +2047,13 @@ httemplate/docs/config.html
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'support_packages',
+    'section'     => '',
+    'description' => 'A list of packages eligible for RT ticket time transfer',
+    'type'        => 'textarea',
+  },
+
 );
 
 1;

@@ -120,6 +120,12 @@ sub customer_info {
 
     $return{balance} = $cust_main->balance;
 
+    $return{tickets} = [ ($cust_main->tickets) ];
+    use Data::Dumper;
+    open(MYFILE, ">>/tmp/debugger");
+    print MYFILE Dumper($return{tickets});
+    close MYFILE;
+
     my @open = map {
                      {
                        invnum => $_->invnum,
@@ -148,6 +154,14 @@ sub customer_info {
       join(', ', grep { $_ !~ /^(POST|FAX)$/ } $cust_main->invoicing_list );
     $return{'postal_invoicing'} =
       0 < ( grep { $_ eq 'POST' } $cust_main->invoicing_list );
+
+    if (scalar($conf->config('support_packages'))) {
+      my $support = 0;
+      foreach ($cust_main->support_services) {
+        $support += $_->svc_x->seconds;
+      }
+      $return{support_time} = (($support < 0) ? '-' : '' ). int(abs($support)/3600)."h".sprintf("%02d",(abs($support)%3600)/60)."m";
+    }
 
   } elsif ( $session->{'svcnum'} ) { #no customer record
 
