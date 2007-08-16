@@ -39,10 +39,27 @@ $DBIx::DBSchema::DEBUG = $DEBUG;
 $DBIx::DBSchema::Table::DEBUG = $DEBUG;
 $DBIx::DBSchema::Index::DEBUG = $DEBUG;
 
+my @bugfix = ();
+
+if (dbdef->table('cust_main')->column('agent_custid')) { 
+  push @bugfix,
+    "UPDATE cust_main SET agent_custid = NULL where agent_custid = ''";
+
+  push @bugfix,
+    "UPDATE h_cust_main SET agent_custid = NULL where agent_custid = ''"
+      if (dbdef->table('h_cust_main')); 
+}
+
 if ( $DRY_RUN ) {
-  print join(";\n", dbdef->sql_update_schema( dbdef_dist, $dbh ) ). ";\n";
+  print
+    join(";\n", @bugfix, dbdef->sql_update_schema( dbdef_dist, $dbh ) ). ";\n";
   exit;
 } else {
+  foreach my $statement ( @bugfix ) {
+    $dbh->do( $statement )
+      or die "Error: ". $dbh->errstr. "\n executing: $statement";
+  }
+
   dbdef->update_schema( dbdef_dist, $dbh );
 }
 
