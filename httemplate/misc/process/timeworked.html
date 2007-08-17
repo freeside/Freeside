@@ -5,6 +5,9 @@
 % }
 <%init>
 
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Time queue');
+
 my %multipliers = map { /^custnum(\d+)$/; ($cgi->param("custnum$1") => $cgi->param("multiplier$1")); }
                       grep /^custnum\d+$/, $cgi->param;
 
