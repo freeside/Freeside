@@ -51,6 +51,7 @@ use FS::payment_gateway;
 use FS::agent_payment_gateway;
 use FS::banned_pay;
 use FS::payinfo_Mixin;
+use FS::TicketSystem;
 
 @ISA = qw( FS::Record FS::payinfo_Mixin );
 
