@@ -626,6 +626,8 @@ sub usage_sessions {
 sub update_svc_acct {
   my $self = shift;
 
+  my $conf = new FS::Conf;
+
   my $dbh = sqlradius_connect( map $self->option($_),
                                    qw( datasrc username password ) );
 
@@ -650,7 +652,10 @@ sub update_svc_acct {
          "$RadAcctId ($UserName\@$Realm for ${AcctSessionTime}s"
       if $DEBUG;
 
+    $UserName = lc($UserName) unless $conf->exists('username-uppercase');
+
     my %search = ( 'username' => $UserName );
+
     my $extra_sql = '';
     if ( ref($self) =~ /withdomain/ ) { #well...
       $extra_sql = " AND '$Realm' = ( SELECT domain FROM svc_domain
