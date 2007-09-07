@@ -90,7 +90,7 @@ sub rebless { shift; }
 
 sub export_username {
   my($self, $svc_acct) = (shift, shift);
-  warn "export_username called on $self with arg $svc_acct" if $DEBUG;
+  warn "export_username called on $self with arg $svc_acct" if $DEBUG > 1;
   $svc_acct->username;
 }
 
