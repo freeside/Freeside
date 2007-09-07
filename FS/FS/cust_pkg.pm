@@ -552,7 +552,7 @@ sub cancel {
     my $error = send_email(
       'from'    => $conf->config('invoice_from'),
       'to'      => \@invoicing_list,
-      'subject' => $conf->config('cancelsubject'),
+      'subject' => ( $conf->config('cancelsubject') || 'Cancellation Notice' ),
       'body'    => [ map "$_\n", $conf->config('cancelmessage') ],
     );
     #should this do something on errors?
