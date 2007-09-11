@@ -350,7 +350,8 @@ sub insert {
     $error = $self->check_invoicing_list( $invoicing_list );
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
-      return "checking invoicing_list (transaction rolled back): $error";
+      #return "checking invoicing_list (transaction rolled back): $error";
+      return $error;
     }
     $self->invoicing_list( $invoicing_list );
   }
@@ -1273,6 +1274,21 @@ sub check {
     || $self->ut_zip('zip', $self->country)
   ;
   return $error if $error;
+
+  if ( $conf->exists('cust_main-require_phone')
+       && ! length($self->daytime) && ! length($self->night)
+     ) {
+
+    my $daytime_label = FS::Msgcat::_gettext('daytime') =~ /^(daytime)?$/
+                          ? 'Day Phone'
+                          : FS::Msgcat::_gettext('daytime');
+    my $night_label = FS::Msgcat::_gettext('night') =~ /^(night)?$/
+                        ? 'Night Phone'
+                        : FS::Msgcat::_gettext('night');
+  
+    return "$daytime_label or $night_label is required"
+  
+  }
 
   my @addfields = qw(
     last first company address1 address2 city county state zip
@@ -4131,7 +4147,8 @@ is an error, returns the error, otherwise returns false.
 
 sub check_invoicing_list {
   my( $self, $arrayref ) = @_;
-  foreach my $address ( @{$arrayref} ) {
+
+  foreach my $address ( @$arrayref ) {
 
     if ($address eq 'FAX' and $self->getfield('fax') eq '') {
       return 'Can\'t add FAX invoice destination with a blank FAX number.';
@@ -4146,7 +4163,13 @@ sub check_invoicing_list {
                 : $cust_main_invoice->checkdest
     ;
     return $error if $error;
+
   }
+
+  return "Email address required"
+    if $conf->exists('cust_main-require_invoicing_list_email')
+    && ! grep { $_ !~ /^([A-Z]+)$/ } @$arrayref;
+
   '';
 }
 

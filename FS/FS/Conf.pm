@@ -2054,6 +2054,20 @@ httemplate/docs/config.html
     'type'        => 'textarea',
   },
 
+  {
+    'key'         => 'cust_main-require_phone',
+    'section'     => '',
+    'description' => 'Require daytime or night for all customer records.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'cust_main-require_invoicing_list_email',
+    'section'     => '',
+    'description' => 'Require at least one invoicing email address for all customer records.',
+    'type'        => 'checkbox',
+  },
+
 );
 
 1;
