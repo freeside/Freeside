@@ -103,7 +103,7 @@ foreach my $part_bill_event (
       'eventpart'     => $part_event->eventpart,
       'conditionname' => 'cust_bill_age'
     };
-    $error = $payby->insert( 'age' => ($part_bill_event->seconds/86400 ).'d' );
+    $error = $age->insert( 'age' => ($part_bill_event->seconds/86400 ).'d' );
     die $error if $error;
 
   }
@@ -127,7 +127,8 @@ foreach my $part_bill_event (
     };
 
     my $cerror = $cust_event->insert;
-    die "error inserting cust_event: $cerror\n" if $cerror;
+    #die "error inserting cust_event: $cerror\n" if $cerror;
+    warn "error inserting cust_event: $cerror\n" if $cerror;
   
     #my $dcerror = $cust_bill_event->delete;
     #die "error removing cust_bill_event: $dcerror\n" if $dcerror;
