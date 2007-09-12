@@ -270,7 +270,8 @@ sub queue {
   my $sth = $dbh->prepare($sql) or die $dbh->errstr. " preparing $sql";
   $sth->execute($queueid)       or die $sth->errstr. " executing $sql";
 
-  $sth->fetchrow_arrayref->[0];
+  my $rows = $sth->fetchrow_arrayref;
+  $rows ? $rows->[0] : '';
 
 }
 
