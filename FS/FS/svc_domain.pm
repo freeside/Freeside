@@ -364,7 +364,7 @@ sub check {
     # need to match a list of suffixes - no guarantee they're top-level..
     # http://wiki.mozilla.org/TLD_List
     # but this will have to do for now...
-    $recref->{suffix} || $2;
+    $recref->{suffix} ||= $2;
   } else {
     return "Illegal domain ". $recref->{domain}.
            " (or unknown registry - try \$whois_hack)";
