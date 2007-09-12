@@ -140,7 +140,7 @@ sub check {
                             )
     || $self->ut_number('_date')
     || $self->ut_enum('status', [qw( new locked done failed )])
-    || $self->ut_textn('statustext')
+    || $self->ut_anything('statustext')
   ;
   return $error if $error;
 
