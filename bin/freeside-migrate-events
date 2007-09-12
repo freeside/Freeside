@@ -40,7 +40,6 @@ my %plan2action = (
   'collect'                => 'collect',
 );
 
-#XXX may need to fudge some plandata2option names!!!
 
 foreach my $part_bill_event (
   qsearch({
@@ -62,6 +61,11 @@ foreach my $part_bill_event (
     next;
   }
 
+  my %plandata = map { /^(\w+) (.*)$/; ($1, $2); }
+                     split(/\n/, $part_bill_event->plandata);
+
+  #XXX may need to fudge some plandata2option names!!!
+
   my $part_event = new FS::part_event {
     'event'      => $part_bill_event->event,
     'eventtable' => 'cust_bill',
@@ -71,7 +75,7 @@ foreach my $part_bill_event (
     'disabled'   => $part_bill_event->disabled,
   };
 
-  my $error = $part_event->insert;
+  my $error = $part_event->insert(\%plandata);
   die "error inserting part_event: $error\n" if $error;
 
   print ' '. $part_event->eventpart;
