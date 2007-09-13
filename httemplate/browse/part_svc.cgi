@@ -33,7 +33,7 @@ function part_export_areyousure(href) {
 % $cgi->param('showdisabled', ( 1 ^ $cgi->param('showdisabled') ) ); 
 
 <% include('/elements/table-grid.html') %>
-% my $bgcolor1 = '#eeeeee';
+%   my $bgcolor1 = '#eeeeee';
 %   my $bgcolor2 = '#ffffff';
 %   my $bgcolor = '';
 
