@@ -1,4 +1,4 @@
-package FS::svc_acct_rt_transaction;
+package FS::acct_rt_transaction;
 
 use strict;
 use vars qw( @ISA );
@@ -8,14 +8,14 @@ use FS::Record qw( qsearch qsearchs dbh );
 
 =head1 NAME
 
-FS::svc_acct_rt_transaction - Object methods for svc_acct_rt_transaction records
+FS::acct_rt_transaction - Object methods for acct_rt_transaction records
 
 =head1 SYNOPSIS
 
-  use FS::svc_acct_rt_transaction;
+  use FS::acct_rt_transaction;
 
-  $record = new FS::svc_acct_rt_transaction \%hash;
-  $record = new FS::svc_acct_rt_transaction { 'column' => 'value' };
+  $record = new FS::acct_rt_transaction \%hash;
+  $record = new FS::acct_rt_transaction { 'column' => 'value' };
 
   $error = $record->insert;
 
@@ -27,8 +27,8 @@ FS::svc_acct_rt_transaction - Object methods for svc_acct_rt_transaction records
 
 =head1 DESCRIPTION
 
-An FS::svc_acct_rt_transaction object represents an application of time
-from a rt transaction to a svc_acct.  FS::svc_acct_rt_transaction inherits from
+An FS::acct_rt_transaction object represents an application of time
+from a rt transaction to a svc_acct.  FS::acct_rt_transaction inherits from
 FS::Record.  The following fields are currently supported:
 
 =over 4
@@ -50,14 +50,14 @@ FS::Record.  The following fields are currently supported:
 
 =item new HASHREF
 
-Creates a new svc_acct_rt_transaction.  To add the example to the database, see L<"insert">.
+Creates a new acct_rt_transaction.  To add the example to the database, see L<"insert">.
 
 Note that this stores the hash reference, not a distinct copy of the hash it
 points to.  You can ask the object for a copy with the I<hash> method.
 
 =cut
 
-sub table { 'svc_acct_rt_transaction'; }
+sub table { 'acct_rt_transaction'; }
 
 =item insert
 
@@ -156,7 +156,7 @@ returns the error, otherwise returns false.
 
 =item check
 
-Checks all fields to make sure this is a valid svc_acct_rt_transaction.  If there is
+Checks all fields to make sure this is a valid acct_rt_transaction.  If there is
 an error, returns the error, otherwise returns false.  Called by the insert
 and replace methods.
 
@@ -199,13 +199,13 @@ sub check {
 =item batch_insert SVC_ACCT_RT_TRANSACTION_OBJECT, ...
 
 Class method which inserts multiple time applications.  Takes a list of
-FS::svc_acct_rt_transaction objects.  If there is an error inserting any
+FS::acct_rt_transaction objects.  If there is an error inserting any
 application, the entire transaction is rolled back, i.e. all time is applied
 or none is.
 
 For example:
 
-  my $errors = FS::svc_acct_rt_transaction->batch_insert(@transactions);
+  my $errors = FS::acct_rt_transaction->batch_insert(@transactions);
   if ( $error ) {
     #success; all payments were inserted
   } else {

@@ -55,9 +55,9 @@ push @groupby, "newvalue";
 push @groupby, "oldvalue";
 push @groupby, "timetaken";
 
-my $appliedtimeclause = "coalesce (sum(svc_acct_rt_transaction.seconds), 0)";
+my $appliedtimeclause = "coalesce (sum(acct_rt_transaction.seconds), 0)";
 
-my $appliedtimeselect = "SELECT sum(seconds) FROM svc_acct_rt_transaction where transaction_id = transactions.id";
+my $appliedtimeselect = "SELECT sum(seconds) FROM acct_rt_transaction where transaction_id = transactions.id";
 push @groupby, "transactions.id";
 
 my $wheretimeleft = "($transactiontime != ($appliedtimeselect) OR ($appliedtimeselect) is NULL)";
@@ -68,7 +68,7 @@ push @groupby, "transactions.created";
 
 my $groupby = join(',', @groupby);
 
-my $query = "SELECT tickets.id,tickets.subject,to_char(transactions.created, 'Dy Mon DD HH24:MI:SS YYYY'),$transactiontime-$appliedtimeclause,transactions.id FROM transactions JOIN tickets ON transactions.objectid = tickets.id LEFT JOIN svc_acct_rt_transaction on transactions.id = svc_acct_rt_transaction.transaction_id WHERE objecttype='RT::Ticket' AND ((transactions.type='Set' AND field='TimeWorked') OR transactions.type='Comment' OR transactions.type='Correspond') AND ($wheretimeleft) GROUP BY $groupby ORDER BY transactions.created";
+my $query = "SELECT tickets.id,tickets.subject,to_char(transactions.created, 'Dy Mon DD HH24:MI:SS YYYY'),$transactiontime-$appliedtimeclause,transactions.id FROM transactions JOIN tickets ON transactions.objectid = tickets.id LEFT JOIN acct_rt_transaction on transactions.id = acct_rt_transaction.transaction_id WHERE objecttype='RT::Ticket' AND ((transactions.type='Set' AND field='TimeWorked') OR transactions.type='Comment' OR transactions.type='Correspond') AND ($wheretimeleft) GROUP BY $groupby ORDER BY transactions.created";
 my $count_query = "SELECT count(*) FROM transactions WHERE objecttype='RT::Ticket' AND ((transactions.type='Set' AND field='TimeWorked') OR transactions.type='Comment' OR transactions.type='Correspond') AND ($wheretimeleft)";
 
 </%init>

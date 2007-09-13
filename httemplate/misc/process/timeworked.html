@@ -11,7 +11,7 @@ die "access denied"
 my %multipliers = map { /^custnum(\d+)$/; ($cgi->param("custnum$1") => $cgi->param("multiplier$1")); }
                       grep /^custnum\d+$/, $cgi->param;
 
-my @svc_acct_rt_transaction;
+my @acct_rt_transaction;
 foreach my $transaction (
   map { /^transactionid(\d+)$/; $1; } grep /^transactionid\d+$/, $cgi->param
 ) {
@@ -35,7 +35,7 @@ foreach my $transaction (
   }
 
   foreach my $customer ( grep {$seconds{$_}} keys %seconds ) {
-    push @svc_acct_rt_transaction, new FS::svc_acct_rt_transaction {
+    push @acct_rt_transaction, new FS::acct_rt_transaction {
       'custnum'        => $customer,
       'transaction_id' => $transaction,
       'seconds'        => $seconds{$customer},
@@ -44,7 +44,7 @@ foreach my $transaction (
 
 }
 
-my $error = FS::svc_acct_rt_transaction->batch_insert(@svc_acct_rt_transaction);
+my $error = FS::acct_rt_transaction->batch_insert(@acct_rt_transaction);
 $cgi->param('error', $error) if $error;
 
 </%init>

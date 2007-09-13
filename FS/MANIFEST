@@ -388,5 +388,5 @@ FS/cust_pkg_option.pm
 t/cust_pkg_option.t
 FS/conf.pm
 t/conf.t
-FS/svc_acct_rt_transaction.pm
-t/svc_acct_rt_transaction.t
+FS/acct_rt_transaction.pm
+t/acct_rt_transaction.t

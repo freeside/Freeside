@@ -988,7 +988,7 @@ sub tables_hashref {
       'index' => [ ['username'], ['domsvc'] ],
     },
 
-    'svc_acct_rt_transaction' => {
+    'acct_rt_transaction' => {
       'columns' => [
         'svcrtid',   'int',    '',   '', '', '', 
         'svcnum',    'int',    '',   '', '', '', 

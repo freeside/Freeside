@@ -169,7 +169,7 @@ sub handler
       use FS::session;
       use FS::svc_acct;
       use FS::svc_acct_pop qw(popselector);
-      use FS::svc_acct_rt_transaction;
+      use FS::acct_rt_transaction;
       use FS::svc_domain;
       use FS::svc_forward;
       use FS::svc_www;
