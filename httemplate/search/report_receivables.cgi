@@ -5,8 +5,6 @@
                  'count_query' => $count_sql,
                  'header'      => [
                                     FS::UI::Web::cust_header(),
-                                    #'Status', # (me)',
-                                    #'Status', # (cust_main)',
                                     '0-30',
                                     '30-60',
                                     '60-90',
@@ -20,8 +18,6 @@
                                             scalar(FS::UI::Web::cust_header()-1)
                                           )
                                     ),
-                                    #'',
-                                    #'',
                                     sprintf( $money_char.'%.2f',
                                              $row->{'owed_0_30'} ),
                                     sprintf( $money_char.'%.2f',
@@ -35,8 +31,6 @@
                                   ],
                  'fields'      => [
                                     \&FS::UI::Web::cust_fields,
-                                    #sub { ( &{$status_statuscol}(shift) )[0] },
-                                    #sub { ucfirst(shift->status) },
                                     sub { sprintf( $money_char.'%.2f',
                                                    shift->get('owed_0_30') ) },
                                     sub { sprintf( $money_char.'%.2f',
@@ -52,8 +46,6 @@
                                     ( map { $_ ne 'Cust. Status' ? $clink : '' }
                                           FS::UI::Web::cust_header()
                                     ),
-                                    #'',
-                                    #'',
                                     '',
                                     '',
                                     '',
@@ -72,8 +64,6 @@
                                     '', '', '', '', 'b', ],
                  'color'       => [
                                     FS::UI::Web::cust_colors(),
-                                    #sub { ( &{$status_statuscol}(shift) )[1] },
-                                    #sub { shift->statuscolor; },
                                     '',
                                     '',
                                     '',
@@ -205,25 +195,5 @@ my $conf = new FS::Conf;
 my $money_char = $conf->config('money_char') || '$';
 
 my $clink = [ "${p}view/cust_main.cgi?", 'custnum' ];
-
-my $status_statuscol = sub {
-  #conceptual false laziness with cust_main::status...
-  my $row = shift;
-
-  my $status = 'unknown';
-  if ( $row->num_pkgs_sql == 0 ) {
-    $status = 'prospect';
-  } elsif ( $row->active_pkgs    > 0 ) {
-    $status = 'active';
-  } elsif ( $row->inactive_pkgs  > 0 ) {
-    $status = 'inactive';
-  } elsif ( $row->suspended_pkgs > 0 ) {
-    $status = 'suspended';
-  } elsif ( $row->cancelled_pkgs > 0 ) {
-    $status = 'cancelled'
-  }
-
-  ( ucfirst($status), $FS::cust_main::statuscolor{$status} );
-};
 
 </%init>
