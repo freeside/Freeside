@@ -376,7 +376,7 @@
 %      : '<FONT SIZE=-1>&nbsp;</FONT>';
 %    
 %    my $status = $cust_main->status;
-%    my $statuscol = $FS::cust_main::statuscolor{$status};
+%    my $statuscol = $cust_main->statuscolor;
 
     <TR>
       <TD CLASS="grid" ALIGN="right" BGCOLOR="<% $bgcolor %>" ROWSPAN=<% $rowspan || 1 %>><A HREF="<% $view %>"><FONT SIZE=-1><% $custnum %></FONT></A></TD>
