@@ -50,6 +50,10 @@ if (dbdef->table('cust_main')->column('agent_custid')) {
       if (dbdef->table('h_cust_main')); 
 }
 
+#you should have run fs-migrate-part_svc ages ago, when you upgraded
+#from 1.3 to 1.4... if not, it needs to be hooked into -upgrade here or
+#you'll lose all the part_svc settings it migrates to part_svc_column
+
 if ( $DRY_RUN ) {
   print
     join(";\n", @bugfix, dbdef->sql_update_schema( dbdef_dist, $dbh ) ). ";\n";
