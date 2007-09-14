@@ -64,10 +64,9 @@
 %   my $i;
 %   while (my $record = $Collection->Next) {
 %   $i++;
-% # Every $RT::MyTicketsLength or ten rows, flush the buffer and put something
-% # on the page.
-% my $flushrows = $RT::MyTicketsLength || 10;
-% $m->flush_buffer() unless ($i % $flushrows);
+% # Every ten rows, flush the buffer and put something on the page.
+% # hun, this flushes things out out-of-order for me on "RT at a glance"...?
+% # $m->flush_buffer() unless ($i % 10);
 <&   /Elements/CollectionAsTable/Row, Format => \@Format, i => $i, record => $record, maxitems => $maxitems &>
 %   }
 
