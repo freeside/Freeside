@@ -24,17 +24,17 @@
 %    my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
 %      or $error .= "Unknown customer number $custnum.  ";
 %
-%    $error ||= $cust_main->charge({ 'amount'   => $amount,
-%                                   'pkg'      => $cgi->param('pkg'),
-%                                   'taxclass' => $cgi->param('taxclass'),
-%                                   'additional' => \@description,
-%                                 }
-%                               );
+%    $error ||= $cust_main->charge( {
+%      'amount'     => $amount,
+%      'pkg'        => scalar($cgi->param('pkg')),
+%      'taxclass'   => scalar($cgi->param('taxclass')),
+%      'additional' => \@description,
+%    } );
 %  }
 %
 %  if ( $error ) {
 %
-%    $cgi->param('error', "$error" );
+%    $cgi->param('error', $error );
 %    
 <% $cgi->redirect($p.'quick-charge.html?'. $cgi->query_string) %>
 %
@@ -44,4 +44,3 @@
     window.top.location.reload();
   </SCRIPT>
   </BODY></HTML>
-
