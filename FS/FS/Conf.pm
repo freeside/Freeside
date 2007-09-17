@@ -2050,7 +2050,7 @@ httemplate/docs/config.html
   {
     'key'         => 'support_packages',
     'section'     => '',
-    'description' => 'A list of packages eligible for RT ticket time transfer',
+    'description' => 'A list of packages eligible for RT ticket time transfer, one pkgpart per line.', #this should really be a select multiple, or specified in the packages themselves...
     'type'        => 'textarea',
   },
 
