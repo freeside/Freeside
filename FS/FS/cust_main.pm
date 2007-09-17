@@ -1439,10 +1439,11 @@ sub check {
     $payinfo =~ s/[^\d\@]//g;
     if ( $conf->exists('echeck-nonus') ) {
       $payinfo =~ /^(\d+)\@(\d+)$/ or return 'invalid echeck account@aba';
+      $payinfo = "$1\@$2";
     } else {
       $payinfo =~ /^(\d+)\@(\d{9})$/ or return 'invalid echeck account@aba';
+      $payinfo = "$1\@$2";
     }
-    $payinfo = "$1\@$2";
     $self->payinfo($payinfo);
     $self->paycvv('');
 
