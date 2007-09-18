@@ -37,11 +37,12 @@
 %
 %} elsif ( $cgi->param('svcpart') =~ /^(\d+)$/ ) {
 %
-%  @svc_broadband =
-%    qsearch( 'svc_broadband', {}, '',
-%               " WHERE $1 = ( SELECT svcpart FROM cust_svc ".
-%               "              WHERE cust_svc.svcnum = svc_external.svcnum ) "
-%    );
+%  @svc_broadband = qsearch( {
+%                              'table'     => 'svc_broadband',
+%                              'addl_from' => 'LEFT JOIN cust_svc USING svcnum',
+%                              'extra_sql' => "WHERE svcpart = $1",
+%                            }
+%                          );
 %
 %} elsif ( $cgi->param('ip_addr') =~ /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/ ) {
 %  my $ip_addr = $1;
@@ -63,14 +64,14 @@
 
 <!-- mason kludge -->
 %
-%  eidiot "No matching ip address found!\n";
+%  eidiot "No matching broadband services found!\n";
 %} else {
 %
 
 <!-- mason kludge -->
 %
 %  my($total)=scalar(@svc_broadband);
-%  print header("IP Address Search Results",''), <<END;
+%  print header("Broadband Search Results",''), <<END;
 %
 %    $total matching broadband services found
 %    <TABLE BORDER=4 CELLSPACING=0 CELLPADDING=0>
