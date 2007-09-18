@@ -57,6 +57,10 @@ use FS::part_pkg::flat;
 			 'format' => \&FS::UI::bytecount::display_bytecount,
 			 'parse' => \&FS::UI::bytecount::parse_bytecount,
                        },
+    'usage_rollover' => { 'name' => 'Allow usage from previous period to roll '.
+			            'over into current period',
+			  'type' => 'checkbox',
+                        },
     #it would be better if this had to be turned on, its confusing
     'externalid' => { 'name'   => 'Optional External ID',
                       'default' => '',
@@ -71,6 +75,7 @@ use FS::part_pkg::flat;
                     'upbytes', 'downbytes', 'totalbytes',
                     'recharge_amount', 'recharge_seconds', 'recharge_upbytes',
                     'recharge_downbytes', 'recharge_totalbytes',
+                    'usage_rollover',
                    ],
   'freq' => 'm',
   'weight' => 30,

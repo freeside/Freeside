@@ -1754,6 +1754,26 @@ sub set_usage {
   }
 }
 
+=item recharge USAGE_VALUE_HASHREF 
+
+USAGE_VALUE_HASHREF is a hashref of svc_acct usage columns and the amounts
+to which they should be set (see L<FS::svc_acct>).  Currently seconds,
+upbytes, downbytes, and totalbytes are appropriate keys.
+
+All svc_accts which are part of this package have their values incremented.
+
+=cut
+
+sub recharge {
+  my ($self, $valueref) = @_;
+
+  foreach my $cust_svc ($self->cust_svc){
+    my $svc_x = $cust_svc->svc_x;
+    $svc_x->recharge($valueref)
+      if $svc_x->can("recharge");
+  }
+}
+
 =back
 
 =head1 BUGS

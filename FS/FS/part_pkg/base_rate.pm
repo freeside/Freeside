@@ -43,7 +43,6 @@ sub calc_setup {
 
 sub calc_recur {
   my($self, $cust_pkg) = @_;
-  $self->reset_usage($cust_pkg);
   $self->base_recur($cust_pkg);
 }
 
@@ -89,14 +88,6 @@ sub is_free_options {
 
 sub is_prepaid {
   0; #no, we're postpaid
-}
-
-sub reset_usage {
-  my($self, $cust_pkg) = @_;
-  my %values = map { $_, $self->option($_) } 
-    grep { $self->option($_, 'hush') } 
-    qw(seconds upbytes downbytes totalbytes);
-  $cust_pkg->set_usage(\%values);
 }
 
 1;

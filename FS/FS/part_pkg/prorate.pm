@@ -61,6 +61,10 @@ use FS::part_pkg::flat;
 			 'format' => \&FS::UI::bytecount::display_bytecount,
 			 'parse' => \&FS::UI::bytecount::parse_bytecount,
                        },
+    'usage_rollover' => { 'name' => 'Allow usage from previous period to roll '.
+			            'over into current period',
+			  'type' => 'checkbox',
+                        },
     #it would be better if this had to be turned on, its confusing
     'externalid' => { 'name'   => 'Optional External ID',
                       'default' => '',
@@ -70,7 +74,7 @@ use FS::part_pkg::flat;
                     'seconds', 'upbyte', 'downbytes', 'totalbytes',
                     'recharge_amount', 'recharge_seconds', 'recharge_upbytes',
                     'recharge_downbytes', 'recharge_totalbytes',
-                    'externalid', ],
+                    'usage_rollover', 'externalid', ],
   'freq' => 'm',
   'weight' => 20,
 );
@@ -83,8 +87,6 @@ sub calc_recur {
   my $mend;
   my $mstart;
   
-  $self->reset_usage($cust_pkg);
-
   if ( $mday >= $cutoff_day ) {
     $mend =
       timelocal(0,0,0,$cutoff_day, $mon == 11 ? 0 : $mon+1, $year+($mon==11));
