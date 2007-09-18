@@ -140,7 +140,10 @@
 % } else { 
 
 
-   <% include('/elements/tr-select-part_referral.html', $refnum ) %>
+   <% include('/elements/tr-select-part_referral.html',
+                'curr_value' => $refnum
+             )
+   %>
 % } 
 
 
