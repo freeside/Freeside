@@ -37,12 +37,13 @@
 %
 %} elsif ( $cgi->param('svcpart') =~ /^(\d+)$/ ) {
 %
-%  @svc_broadband = qsearch( {
-%                              'table'     => 'svc_broadband',
-%                              'addl_from' => 'LEFT JOIN cust_svc USING svcnum',
-%                              'extra_sql' => "WHERE svcpart = $1",
-%                            }
-%                          );
+%  @svc_broadband =
+%    qsearch( {
+%               'table'     => 'svc_broadband',
+%               'addl_from' => 'LEFT JOIN cust_svc USING ( svcnum )',
+%               'extra_sql' => "WHERE svcpart = $1",
+%             }
+%           );
 %
 %} elsif ( $cgi->param('ip_addr') =~ /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/ ) {
 %  my $ip_addr = $1;
