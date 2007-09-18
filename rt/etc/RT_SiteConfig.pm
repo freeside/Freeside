@@ -40,7 +40,11 @@ Set($DatabaseHost   , '');
 
 # These settings are user-editable.
 
-$RT::MyTicketsLength = 10;
+#old, RT 3.4 style (deprecated, useless):
+#$RT::MyTicketsLength = 10;
+#NEW, RT 3.6 style (uncomment to use):
+#Set($DefaultSummaryRows, 10);
+
 $RT::QuickCreateLong = 0; #set to true to cause quick ticket creation to
                           #redirect to the "long" ticket creation screen
                           #instead of just creating a ticket with the subject.
