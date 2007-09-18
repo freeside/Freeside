@@ -12,6 +12,9 @@ sub expire_user_pref {
                                           " AND expiration < ?";
   my $sth = dbh->prepare($sql) or die dbh->errstr;
   $sth->execute(time) or die $sth->errstr;
+
+  dbh->commit or die dbh->errstr if $FS::UID::AutoCommit
+
 }
 
 1;
