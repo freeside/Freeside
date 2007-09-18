@@ -1734,6 +1734,7 @@ sub tables_hashref {
         'usernum',     'int',       '', '', '', '',
         'prefname', 'varchar', '', $char_d, '', '', 
         'prefvalue', 'text', 'NULL', '', '', '', 
+        'expiration', @date_type, '', '',
       ],
       'primary_key' => 'prefnum',
       'unique' => [],
