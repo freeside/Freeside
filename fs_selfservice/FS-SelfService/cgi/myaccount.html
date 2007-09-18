@@ -30,7 +30,7 @@ Hello <%= $name %>!<BR><BR>
         '</TR>';
       $col = $col eq $col1 ? $col2 : $col1;
     }
-    $OUT .= '</TABLE>';
+    $OUT .= '</TABLE><BR>';
   } else {
     $OUT .= 'You have no outstanding invoices.<BR><BR>';
   }
@@ -40,7 +40,7 @@ Hello <%= $name %>!<BR><BR>
   if ( defined($support_time) ) {
     $OUT .= '<TABLE BORDER=0 CELLSPACING=0 CELLPADDING=2 BGCOLOR="#eeeeee">'.
             '<TR><TH BGCOLOR="#ff6666">Support Time Remaining</TH></TR>'.
-            "<TR><TD>$support_time</TD></TR><BR><BR>";
+            "<TR><TD>$support_time</TD></TR></TABLE><BR>";
   }
 %>
 
