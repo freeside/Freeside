@@ -2693,6 +2693,12 @@ sub re_X {
   if ( $param{'end'} =~ /^(\d+)$/ ) {
     push @where, "cust_bill._date < $1";
   }
+  if ( $param{'invnum_min'} =~ /^(\d+)$/ ) {
+    push @where, "cust_bill.invnum >= $1";
+  }
+  if ( $param{'invnum_max'} =~ /^(\d+)$/ ) {
+    push @where, "cust_bill.invnum <= $1";
+  }
   if ( $param{'agentnum'} =~ /^(\d+)$/ ) {
     push @where, "cust_main.agentnum = $1";
   }
@@ -2716,7 +2722,6 @@ sub re_X {
   if ( $param{'newest_percust'} ) {
     $distinct = 'DISTINCT ON ( cust_bill.custnum )';
     $orderby = 'ORDER BY cust_bill.custnum ASC, cust_bill._date DESC';
-    #$count_query = "SELECT COUNT(DISTINCT cust_bill.custnum), 'N/A', 'N/A'";
   }
      
   my @cust_bill = qsearch( 'cust_bill',

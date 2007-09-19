@@ -58,11 +58,13 @@ my $join_cust_main = 'LEFT JOIN cust_main USING ( custnum )';
 my $agentnums_sql = $FS::CurrentUser::CurrentUser->agentnums_sql;
 
 my( $count_query, $sql_query );
-my( $count_addl ) = ( '' );
-my( $distinct ) = ( '' );
+my $count_addl = '';
+my $distinct = '';
 my($begin, $end) = ( '', '' );
-my($agentnum) = ( '' );
+my $agentnum = '';
 my($open, $days) = ( '', '' );
+my($invnum_min, $invnum_max) = ( '', '' );
+my $newest_percust = '';
 if ( $cgi->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/ ) {
   $count_query =
     "SELECT COUNT(*) FROM cust_bill $join_cust_main".
@@ -106,9 +108,11 @@ if ( $cgi->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/ ) {
   }
 
   if ( $cgi->param('invnum_min') =~ /^\s*(\d+)\s*$/ ) {
+    $invnum_min = $1;
     push @where, "cust_bill.invnum >= $1";
   }
   if ( $cgi->param('invnum_max') =~ /^\s*(\d+)\s*$/ ) {
+    $invnum_max = $1;
     push @where, "cust_bill.invnum <= $1";
   }
 
@@ -142,6 +146,7 @@ if ( $cgi->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/ ) {
   my $extra_sql = scalar(@where) ? 'WHERE '. join(' AND ', @where) : '';
 
   if ( $cgi->param('newest_percust') ) {
+    $newest_percust = 1;
     $distinct = 'DISTINCT ON ( cust_bill.custnum )';
     $orderby = 'ORDER BY cust_bill.custnum ASC, cust_bill._date DESC';
     #$count_query = "SELECT 'N/A', 'N/A', 'N/A'"; #XXXXXXX fix
@@ -187,17 +192,22 @@ my $html_init = join("\n", map {
  ( my $action = $_ ) =~ s/_$//;
  include('/elements/progress-init.html',
            $_.'form',
-           [ 'begin', 'end', 'agentnum', 'open', 'days', 'newest_percust' ],
+           [ 'begin', 'end', 'agentnum', 'open', 'days',
+             'invnum_min', 'invnum_max', 'newest_percust',
+           ],
            "../misc/${_}invoices.cgi",
            { 'message' => "Invoices re-${action}ed" }, #would be nice to show the number of them, but...
            $_, #key
         ),
  qq!<FORM NAME="${_}form">!,
- qq!<INPUT TYPE="hidden" NAME="begin"     VALUE="$begin">!,
- qq!<INPUT TYPE="hidden" NAME="end"       VALUE="$end">!,
- qq!<INPUT TYPE="hidden" NAME="agentnum"  VALUE="$agentnum">!,
- qq!<INPUT TYPE="hidden" NAME="open"      VALUE="$open">!,
- qq!<INPUT TYPE="hidden" NAME="days"      VALUE="$days">!,
+ qq!<INPUT TYPE="hidden" NAME="begin"           VALUE="$begin">!,
+ qq!<INPUT TYPE="hidden" NAME="end"             VALUE="$end">!,
+ qq!<INPUT TYPE="hidden" NAME="agentnum"        VALUE="$agentnum">!,
+ qq!<INPUT TYPE="hidden" NAME="open"            VALUE="$open">!,
+ qq!<INPUT TYPE="hidden" NAME="days"            VALUE="$days">!,
+ qq!<INPUT TYPE="hidden" NAME="invnum_min"      VALUE="$invnum_min">!,
+ qq!<INPUT TYPE="hidden" NAME="invnum_max"      VALUE="$invnum_max">!,
+ qq!<INPUT TYPE="hidden" NAME="newest_percust"  VALUE="$newest_percust">!,
  qq!</FORM>!
 } qw( print_ email_ fax_ ) ). 
 
