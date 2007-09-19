@@ -59,7 +59,7 @@ Hello <%= $name %>!<BR><BR>
       $OUT .=
         "<TR>$td". $ticket->{'id'}. "</TD>".
         $td. $ticket->{'subject'}. "</TD>".
-        $td. $ticket->{'priority'}. "</TD>".
+        $td. ($ticket->{'content'} || $ticket->{'priority'}). "</TD>".
         $td. $ticket->{'name'}. "</TD>".
         $td. $ticket->{'status'}. "</TD>".
         '</TR>';
