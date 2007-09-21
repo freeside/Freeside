@@ -12,7 +12,7 @@
                                '', # checkbox column
                              ],
                  'fields' => [ sub { shift->[0] },
-                               sub { shift->[1] },
+                               sub { encode_entities(shift->[1]) },
                                sub { shift->[2] },
                                sub { my $seconds = shift->[3];
                                      (($seconds < 0) ? '-' : '') .
@@ -26,6 +26,13 @@
                                  qq!<INPUT NAME="seconds$id" TYPE="hidden" VALUE="$seconds">!;
                                },
                              ],
+                 'links' => [
+                   $link,
+                   $link,
+                   '',
+                   '',
+                   '',
+                 ],
                  'html_foot' => sub {
                                   '<BR><INPUT TYPE="button" VALUE="select all" onClick="setAll(true)">'.
                                   '<INPUT TYPE="button" VALUE="unselect all" onClick="setAll(false)">'.
@@ -49,18 +56,29 @@ die "access denied"
 
 my @groupby = ();
 
-my $transactiontime = "CASE transactions.type when 'Set' THEN (to_number(newvalue,'999999')-to_number(oldvalue, '999999')) * 60 ELSE timetaken*60 END";
-push @groupby, "transactions.type";
-push @groupby, "newvalue";
-push @groupby, "oldvalue";
-push @groupby, "timetaken";
+my $transactiontime = "
+  CASE transactions.type when 'Set'
+    THEN (to_number(newvalue,'999999')-to_number(oldvalue, '999999')) * 60
+    ELSE timetaken*60
+  END
+";
+
+push @groupby, qw( transactions.type newvalue oldvalue timetaken );
 
 my $appliedtimeclause = "coalesce (sum(acct_rt_transaction.seconds), 0)";
 
-my $appliedtimeselect = "SELECT sum(seconds) FROM acct_rt_transaction where transaction_id = transactions.id";
+my $appliedtimeselect = "
+  coalesce(
+            ( SELECT sum(seconds) FROM acct_rt_transaction
+                WHERE transaction_id = transactions.id
+            ),
+            0
+          )
+";
+
 push @groupby, "transactions.id";
 
-my $wheretimeleft = "($transactiontime != ($appliedtimeselect) OR ($appliedtimeselect) is NULL)";
+my $wheretimeleft = "$transactiontime != $appliedtimeselect";
 
 push @groupby, "tickets.id";
 push @groupby, "tickets.subject";
@@ -68,7 +86,32 @@ push @groupby, "transactions.created";
 
 my $groupby = join(',', @groupby);
 
-my $query = "SELECT tickets.id,tickets.subject,to_char(transactions.created, 'Dy Mon DD HH24:MI:SS YYYY'),$transactiontime-$appliedtimeclause,transactions.id FROM transactions JOIN tickets ON transactions.objectid = tickets.id LEFT JOIN acct_rt_transaction on transactions.id = acct_rt_transaction.transaction_id WHERE objecttype='RT::Ticket' AND ((transactions.type='Set' AND field='TimeWorked') OR transactions.type='Comment' OR transactions.type='Correspond') AND ($wheretimeleft) GROUP BY $groupby ORDER BY transactions.created";
-my $count_query = "SELECT count(*) FROM transactions WHERE objecttype='RT::Ticket' AND ((transactions.type='Set' AND field='TimeWorked') OR transactions.type='Comment' OR transactions.type='Correspond') AND ($wheretimeleft)";
+my $where = "
+  WHERE objecttype='RT::Ticket'
+    AND ( ( transactions.type='Set' AND field='TimeWorked' )
+          OR transactions.type='Comment'
+          OR transactions.type='Correspond'
+        )
+    AND $wheretimeleft
+";
+    #AND $wheretimeleft
+
+my $query = "
+  SELECT tickets.id, tickets.subject,
+         to_char(transactions.created, 'Dy Mon DD HH24:MI:SS YYYY'),
+         $transactiontime-$appliedtimeclause,
+         transactions.id
+    FROM transactions
+      JOIN tickets ON transactions.objectid = tickets.id
+      LEFT JOIN acct_rt_transaction
+        ON transactions.id = acct_rt_transaction.transaction_id
+    $where
+    GROUP BY $groupby
+    ORDER BY transactions.created
+";
+
+my $count_query = "SELECT COUNT(*) FROM transactions $where";
+
+my $link = [ "${p}rt/Ticket/Display.html?id=", sub { shift->[0]; } ];
 
 </%init>
