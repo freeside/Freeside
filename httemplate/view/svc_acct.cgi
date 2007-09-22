@@ -303,6 +303,22 @@ Service #<B><% $svcnum %></B>
 </FORM>
 <BR><BR>
 
+% if ( @svc_www ) {
+  Hosting
+  <% &ntable("#cccccc") %><TR><TD><% &ntable("#cccccc",2) %>
+%   foreach my $svc_www (@svc_www) {
+%     my($label, $value) = $svc_www->cust_svc->label;
+%     my $link = $p. 'view/svc_www.cgi?'. $svc_www->svcnum;
+      <TR>
+        <TD>
+          <A HREF="<% $link %>"><% "$label: $value" %></A>
+        </TD>
+      </TR>
+%   }
+  </TABLE></TD></TR></TABLE>
+  <BR><BR>
+% }
+
 <% join("<BR>", $conf->config('svc_acct-notes') ) %>
 <BR><BR>
 
@@ -317,16 +333,18 @@ die "access denied"
 
 my $conf = new FS::Conf;
 
+my $addl_from = ' LEFT JOIN cust_svc  USING ( svcnum  ) '.
+                ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
+                ' LEFT JOIN cust_main USING ( custnum ) ';
+
 my($query) = $cgi->keywords;
 $query =~ /^(\d+)$/;
 my $svcnum = $1;
 my $svc_acct = qsearchs({
   'select'    => 'svc_acct.*',
   'table'     => 'svc_acct',
-  'addl_from' => ' LEFT JOIN cust_svc  USING ( svcnum  ) '.
-                 ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
-                 ' LEFT JOIN cust_main USING ( custnum ) ',
-  'hashref'   => {'svcnum'=>$svcnum},
+  'addl_from' => $addl_from,
+  'hashref'   => { 'svcnum' => $svcnum },
   'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
 });
 die "Unknown svcnum" unless $svc_acct;
@@ -355,5 +373,16 @@ die 'Unknown domain (domsvc '. $svc_acct->domsvc.
     ' for svc_acct.svcnum '. $svc_acct->svcnum. ')'
   unless $svc_domain;
 my $domain = $svc_domain->domain;
+
+my @svc_www = qsearch({
+  'select'    => 'svc_www.*',
+  'table'     => 'svc_www',
+  'addl_from' => $addl_from,
+  'hashref'   => { 'usersvc' => $svcnum },
+  #XXX shit outta luck if you somehow got them linked across agents
+  # maybe we should show but not link to them?  kinda makes sense...
+  # (maybe a specific ACL for this situation???)
+  'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+});
 
 </%init>
