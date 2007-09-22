@@ -310,7 +310,7 @@ Service #<B><% $svcnum %></B>
 %     my($label, $value) = $svc_www->cust_svc->label;
 %     my $link = $p. 'view/svc_www.cgi?'. $svc_www->svcnum;
       <TR>
-        <TD>
+        <TD BGCOLOR="#ffffff">
           <A HREF="<% $link %>"><% "$label: $value" %></A>
         </TD>
       </TR>
@@ -382,7 +382,9 @@ my @svc_www = qsearch({
   #XXX shit outta luck if you somehow got them linked across agents
   # maybe we should show but not link to them?  kinda makes sense...
   # (maybe a specific ACL for this situation???)
-  'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+  'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql(
+                            'null_right' => 'View/link unlinked services'
+                          ),
 });
 
 </%init>
