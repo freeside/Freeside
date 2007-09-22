@@ -8,7 +8,7 @@ use vars qw( @ISA $whois_hack $conf
 use Carp;
 use Date::Format;
 #use Net::Whois::Raw;
-use Net::Domain::TLD;
+use Net::Domain::TLD qw(tld_exists);
 use FS::Record qw(fields qsearch qsearchs dbh);
 use FS::Conf;
 use FS::svc_Common;
