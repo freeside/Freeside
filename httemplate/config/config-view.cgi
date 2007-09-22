@@ -1,11 +1,13 @@
 <% include("/elements/header.html",
      $title,
      menubar(
-       'Main Menu' => $p,
        'View all agents' => $p.'browse/agent.cgi',
      )
    )
 %>
+
+Click on a configuration value to change it.
+<BR><BR>
 
 <SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/overlibmws.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/overlibmws_iframe.js"></SCRIPT>
@@ -38,20 +40,31 @@
 % } 
 
   </FONT><BR>
-  <% include('/elements/table.html', '#cccccc' ) %>
+  <TABLE BGCOLOR="#cccccc" BORDER=1 CELLSPACING=0 CELLPADDING=0 BORDERCOLOR="#999999">
   <tr>
     <th colspan="2" bgcolor="#dcdcdc">
       <% ucfirst($section || 'unclassified') %> configuration options
     </th>
   </tr>
 % foreach my $i (grep $_->section eq $section, @config_items) { 
+%   my @types = ref($i->type) ? @{$i->type} : ($i->type);
+%   my( $width, $height ) = ( 522, 336 );
+%   if ( grep $_ eq 'textarea', @types ) {
+%     #800x600
+%     $width = 763;
+%     $height = 408;
+%     #1024x768
+%     #$width =
+%     #$height = 
+%   }
 
     <tr>
-      <td><a href="javascript:void(0);" onClick="overlib( OLiframeContent('config.cgi?key=<% $i->key %>;agentnum=<% $agentnum %>', 522, 336, 'config_popup' ), CAPTION, 'Enter configuration value', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;" name="<% $i->key %>">
-        <b><% $i->key %></b></a>&nbsp;-&nbsp;<% $i->description %>
+      <td><a href="javascript:void(0);" onClick="overlib( OLiframeContent('config.cgi?key=<% $i->key %>;agentnum=<% $agentnum %>', <% $width %>, <% $height %>, 'config_popup' ), CAPTION, 'Enter configuration value', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;" name="<% $i->key %>">
+%#        <b><% $i->key %></b></a>&nbsp;-&nbsp;<% $i->description %>
+        <b><% $i->key %></b></a>: <% $i->description %>
       </td>
       <td><table border=0>
-% foreach my $type ( ref($i->type) ? @{$i->type} : $i->type ) {
+% foreach my $type (@types) {
 %             my $n = 0; 
 % if ( $type eq '' ) { 
 
@@ -72,9 +85,13 @@
 
             <tr>
               <td bgcolor="#ffffff">
-<pre>
-<% encode_entities(join("\n", $conf->config($i->key, $agentnum) ) ) %>
-</pre>
+<font size="-2"><pre>
+<% encode_entities(join("\n",
+     map { length($_) > 88 ? substr($_,0,88).'...' : $_ }
+         $conf->config($i->key, $agentnum)
+   ) )
+%>
+</pre></font>
               </td>
             </tr>
 % } elsif ( $type eq 'checkbox' ) { 

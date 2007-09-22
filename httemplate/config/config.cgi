@@ -29,12 +29,20 @@ function SafeOnsubmit() {
 <INPUT TYPE="hidden" NAME="agentnum" VALUE="<% $agentnum %>">
 <INPUT TYPE="hidden" NAME="key" VALUE="<% $key %>">
 
-Setting <% $key %>
+Setting <b><% $key %></b>
+
+% my $description_printed = 0;
+% if ( grep $_ eq 'textarea', @types ) {
+%   $description_printed = 1;
+
+    - <% $description %>
+
+% }
 
 <table><tr><td>
 
 % my $n = 0;
-% foreach my $type ( ref($config_item->type) ? @{$config_item->type} : $config_item->type ) {
+% foreach my $type (@types) {
 %   if ( $type eq '' ) {
 
   <font color="#ff0000">no type</font>
@@ -45,7 +53,7 @@ Setting <% $key %>
 
 %   } elsif ( $type eq 'textarea' ) { 
 
-  <textarea name="<% "$key$n" %>" rows=5><% join("\n", $conf->config($key, $agentnum)) %></textarea>
+  <textarea name="<% "$key$n" %>" rows=18 cols=88 wrap="off"><% join("\n", $conf->config($key, $agentnum)) %></textarea>
 
 %   } elsif ( $type eq 'checkbox' ) { 
 
@@ -260,7 +268,12 @@ Setting <% $key %>
 % $n++;
 % }
 
-  </td><td><% $description %></td></tr></table>
+  </td>
+% unless ( $description_printed ) {
+    <td><% $description %></td>
+% }
+</tr>
+</table>
 <INPUT TYPE="submit" VALUE="<% $title %>">
 </FORM>
 
@@ -279,15 +292,15 @@ my %confitems = map { $_->key => $_ } @config_items;
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
 
-my($agentnum, $agent, $title, $action, $key, $value, $config_item,
-   $description, $type);
+my $action = 'Set';
 
-$action = 'Set';
-
+my $agentnum = '';
 if ($cgi->param('agentnum') =~ /(\d+)$/) {
   $agentnum=$1;
 }
 
+my $agent = '';
+my $title;
 if ($agentnum) {
   $agent = qsearchs('agent', { 'agentnum' => $1 } );
   die "Agent $agentnum not found!" unless $agent;
@@ -298,11 +311,12 @@ if ($agentnum) {
 }
 
 $cgi->param('key') =~ /^([-.\w]+)$/ or die "illegal configuration item";
-$key=$1;
-$value = $conf->config($key);
-$config_item = $confitems{$key};
+my $key = $1;
+my $value = $conf->config($key);
+my $config_item = $confitems{$key};
 
-$description = $config_item->description;
-$type = $config_item->type;
+my $description = $config_item->description;
+my $config_type = $config_item->type;
+my @types = ref($config_type) ? @$config_type : ($config_type);
 
 </%init>
