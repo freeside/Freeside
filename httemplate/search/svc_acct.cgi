@@ -12,6 +12,15 @@
                  'style'       => \@style,
              )
 %>
+<%once>
+
+#false laziness w/ClientAPI/MyAccount.pm
+sub format_time { 
+  my $support = shift;
+  (($support < 0) ? '-' : '' ). int(abs($support)/3600)."h".sprintf("%02d",(abs($support)%3600)/60)."m";
+}
+
+</%once>
 <%init>
 
 die "access denied"
@@ -65,12 +74,37 @@ if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
   }
 
   if ( $sortby eq 'seconds' ) {
-    push @header, 'Time remaining';
-    push @fields, sub { my $svc_acct = shift; $svc_acct->seconds };
+    #push @header, 'Time remaining';
+    push @header, 'Time';
+    push @fields, sub { my $svc_acct = shift; format_time($svc_acct->seconds) };
     push @links, '';
-    $align .= 'r',
+    $align .= 'r';
     push @color, '';
     push @style, '';
+
+    my $conf = new FS::Conf;
+    if ( $conf->exists('svc_acct-display_paid_time_remaining') ) {
+      push @header, 'Paid time';
+      push @fields, sub {
+        my $svc_acct = shift;
+        my $seconds = $svc_acct->seconds;
+        my $cust_pkg = $svc_acct->cust_svc->cust_pkg;
+        my $part_pkg = $cust_pkg->part_pkg;
+        my $timepermonth = $part_pkg->option('seconds');
+        return format_time($seconds) unless $timepermonth;
+        #my $recur = $part_pkg->calc_recur($cust_pkg);
+        my $recur = $part_pkg->base_recur($cust_pkg);
+        my $balance = $cust_pkg->cust_main->balance;
+        my $months_unpaid = $balance / $recur;
+        my $time_unpaid = $months_unpaid * $timepermonth;
+        format_time($seconds-$time_unpaid);
+      };
+      push @links, '';
+      $align .= 'r';
+      push @color, '';
+      push @style, '';
+    }
+
   }
 
 } elsif ( $cgi->param('popnum') =~ /^(\d+)$/ ) {

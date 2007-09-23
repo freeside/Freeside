@@ -2068,6 +2068,13 @@ httemplate/docs/config.html
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'svc_acct-display_paid_time_remaining',
+    'section'     => '',
+    'description' => 'Show paid time remaining in addition to time remaining.',
+    'type'        => 'checkbox',
+  },
+
 );
 
 1;
