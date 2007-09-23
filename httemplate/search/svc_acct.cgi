@@ -4,41 +4,12 @@
                  'query'       => $sql_query,
                  'count_query' => $count_query,
                  'redirect'    => $link,
-                 'header'      => [ '#',
-                                    'Service',
-                                    'Account',
-                                    'UID',
-                                    FS::UI::Web::cust_header(),
-                                  ],
-                 'fields'      => [ 'svcnum',
-                                    'svc',
-                                    'email',
-                                    'uid',
-                                    \&FS::UI::Web::cust_fields,
-                                  ],
-                 'links'       => [ $link,
-                                    $link,
-                                    $link,
-                                    $link,
-                                    ( map { $_ ne 'Cust. Status' ? $link_cust : '' }
-                                          FS::UI::Web::cust_header()
-                                    ),
-                                  ],
-                 'align' => 'rlll'. FS::UI::Web::cust_aligns(),
-                 'color' => [ 
-                              '',
-                              '',
-                              '',
-                              '',
-                              FS::UI::Web::cust_colors(),
-                            ],
-                 'style' => [ 
-                              '',
-                              '',
-                              '',
-                              '',
-                              FS::UI::Web::cust_styles(),
-                            ],
+                 'header'      => \@header,
+                 'fields'      => \@fields,
+                 'links'       => \@links,
+                 'align'       => $align,
+                 'color'       => \@color,
+                 'style'       => \@style,
              )
 %>
 <%init>
@@ -46,19 +17,36 @@
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('List services');
 
+my $link      = [ "${p}view/svc_acct.cgi?",   'svcnum'  ];
+my $link_cust = sub {
+  my $svc_acct = shift;
+  if ( $svc_acct->custnum ) {
+    [ "${p}view/cust_main.cgi?", 'custnum' ];
+  } else {
+    '';
+  }
+};
+
 my @extra_sql = ();
 
- if ( $cgi->param('domain') ) { 
-   my $svc_domain =
-     qsearchs('svc_domain', { 'domain' => $cgi->param('domain') } );
-   unless ( $svc_domain ) {
-     #it would be nice if this looked more like the other "not found"
-     #errors, but this will do for now.
-     eidiot "Domain ". $cgi->param('domain'). " not found at all";
-   } else {
-     push @extra_sql, 'domsvc = '. $svc_domain->svcnum;
-   }
- }
+my @header = ( '#', 'Service', 'Account', 'UID' );
+my @fields = ( 'svcnum', 'svc', 'email', 'uid' );
+my @links = ( $link, $link, $link, $link );
+my $align = 'rlll';
+my @color = ( '', '', '', '' );
+my @style = ( '', '', '', '' );
+
+if ( $cgi->param('domain') ) { 
+  my $svc_domain =
+    qsearchs('svc_domain', { 'domain' => $cgi->param('domain') } );
+  unless ( $svc_domain ) {
+    #it would be nice if this looked more like the other "not found"
+    #errors, but this will do for now.
+    eidiot "Domain ". $cgi->param('domain'). " not found at all";
+  } else {
+    push @extra_sql, 'domsvc = '. $svc_domain->svcnum;
+  }
+}
 
 my $orderby = 'ORDER BY svcnum';
 if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
@@ -66,6 +54,7 @@ if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
   push @extra_sql, 'pkgnum IS NULL'
     if $cgi->param('magic') eq 'unlinked';
 
+  my $sortby = '';
   if ( $cgi->param('sortby') =~ /^(\w+)$/ ) {
     my $sortby = $1;
     $sortby = "LOWER($sortby)"
@@ -73,6 +62,15 @@ if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
     push @extra_sql, "$sortby IS NOT NULL"
       if $sortby eq 'uid' || $sortby eq 'seconds';
     $orderby = "ORDER BY $sortby";
+  }
+
+  if ( $sortby eq 'seconds' ) {
+    push @header, 'Time remaining';
+    push @fields, sub { my $svc_acct = shift; $svc_acct->seconds };
+    push @links, '';
+    $align .= 'r',
+    push @color, '';
+    push @style, '';
   }
 
 } elsif ( $cgi->param('popnum') =~ /^(\d+)$/ ) {
@@ -126,6 +124,14 @@ if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
 
 }
 
+push @header, FS::UI::Web::cust_header();
+push @fields, \&FS::UI::Web::cust_fields,
+push @links, map { $_ ne 'Cust. Status' ? $link_cust : '' }
+                 FS::UI::Web::cust_header();
+$align .= FS::UI::Web::cust_aligns();
+push @color, FS::UI::Web::cust_colors();
+push @style, FS::UI::Web::cust_styles();
+
 my $addl_from = ' LEFT JOIN cust_svc  USING ( svcnum  ) '.
                 ' LEFT JOIN part_svc  USING ( svcpart ) '.
                 ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
@@ -162,15 +168,4 @@ my $sql_query = {
   'addl_from' => $addl_from,
 };
 
-my $link      = [ "${p}view/svc_acct.cgi?",   'svcnum'  ];
-my $link_cust = sub {
-  my $svc_acct = shift;
-  if ( $svc_acct->custnum ) {
-    [ "${p}view/cust_main.cgi?", 'custnum' ];
-  } else {
-    '';
-  }
-};
-
 </%init>
-
