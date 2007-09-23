@@ -56,7 +56,7 @@ if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
 
   my $sortby = '';
   if ( $cgi->param('sortby') =~ /^(\w+)$/ ) {
-    my $sortby = $1;
+    $sortby = $1;
     $sortby = "LOWER($sortby)"
       if $sortby eq 'username';
     push @extra_sql, "$sortby IS NOT NULL"
