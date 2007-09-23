@@ -193,7 +193,7 @@
 %print "</SELECT></TD></TR>";
 %
 %if ( $part_svc->part_svc_column('usersvc')->columnflag ne 'F'
-%     || $part_svc->part_svc_column('usersvc')->columnvalue =~ /^\s*$/) {
+%     || $part_svc->part_svc_column('usersvc')->columnvalue !~ /^\s*$/) {
 %  print '<TR><TD ALIGN="right">Username</TD><TD><SELECT NAME="usersvc" SIZE=1>';
 %  print '<OPTION VALUE="">(none)';
 %  foreach $_ (keys %svc_acct) {
