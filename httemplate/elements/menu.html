@@ -115,8 +115,11 @@ foreach my $svcdb ( FS::part_svc->svc_tables() ) {
 
   foreach my $sort ( @$sorts ) {
 
+    my $field_info = FS::part_svc->svc_table_fields($svcdb)->{$sort};
+    my $label = $field_info->{'label_sort'} || 'by '.$field_info->{'label'};
+
     my $title = "All $lcname";
-    $title .= " by ". FS::part_svc->svc_table_fields($svcdb)->{$sort}->{'label'}
+    $title .= " $label"
       if scalar(@$sorts) > 1;
 
     $report_svc{$title} =

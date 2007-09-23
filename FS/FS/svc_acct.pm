@@ -204,7 +204,7 @@ sub table_info {
   {
     'name'   => 'Account',
     'longname_plural' => 'Access accounts and mailboxes',
-    'sorts' => [ 'username', 'uid', ],
+    'sorts' => [ 'username', 'uid', 'seconds' ],
     'display_weight' => 10,
     'cancel_weight'  => 50, 
     'fields' => {
@@ -270,6 +270,7 @@ sub table_info {
                          disable_select => 1,
                        },
         'seconds'   => { label => 'Seconds',
+                         label_sort => 'with Time Remaining',
                          type  => 'text',
                          disable_inventory => 1,
                          disable_select => 1,

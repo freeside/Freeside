@@ -71,7 +71,7 @@ if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
     $sortby = "LOWER($sortby)"
       if $sortby eq 'username';
     push @extra_sql, "$sortby IS NOT NULL"
-      if $sortby eq 'uid';
+      if $sortby eq 'uid' || $sortby eq 'seconds';
     $orderby = "ORDER BY $sortby";
   }
 
