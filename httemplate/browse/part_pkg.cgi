@@ -5,6 +5,9 @@
                  'name'               => 'package definitions',
                  'disableable'        => 1,
                  'disabled_statuspos' => 3,
+                 'agent_virt'         => 1,
+                 'agent_null_right'   => 'Edit global package definitions',
+                 'agent_pos'          => 4,
                  'query'              => { 'select'    => $select,
                                            'table'     => 'part_pkg',
                                            'hashref'   => {},
@@ -20,7 +23,8 @@
 <%init>
 
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+  unless $FS::CurrentUser::CurrentUser->access_right('Edit package definitions')
+      || $FS::CurrentUser::CurrentUser->access_right('Edit global package definitions');
 
 my $select = '*';
 my $orderby = 'pkgpart';
@@ -220,6 +224,9 @@ $align .= 'lrl'; #rr';
 
 # --------
 
-my $count_query = 'SELECT COUNT(*) FROM part_pkg';
+my $count_query = 'SELECT COUNT(*) FROM part_pkg WHERE '.
+                    $FS::CurrentUser::CurrentUser->agentnums_sql(
+                      'null_right' => 'Edit global package definitions',
+                    );
 
 </%init>

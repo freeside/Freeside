@@ -13,6 +13,7 @@ use FS::agent_type;
 use FS::type_pkgs;
 use FS::part_pkg_option;
 use FS::pkg_class;
+use FS::agent;
 
 @ISA = qw( FS::m2m_Common FS::Record ); # FS::option_Common ); # this can use option_Common
                                                 # when all the plandata bs is
@@ -84,6 +85,8 @@ inherits from FS::Record.  The following fields are currently supported:
 =item pay_weight - Weight (relative to credit_weight and other package definitions) that controls payment application to specific line items.
 
 =item credit_weight - Weight (relative to other package definitions) that controls credit application to specific line items.
+
+=item agentnum - Optional agentnum (see L<FS::agent>)
 
 =back
 
@@ -449,6 +452,7 @@ sub check {
     || $self->ut_enum('disabled', [ '', 'Y' ] )
     || $self->ut_floatn('pay_weight')
     || $self->ut_floatn('credit_weight')
+    || $self->ut_agentnum_acl('agentnum', 'Edit global package definitions')
     || $self->SUPER::check
   ;
   return $error if $error;
@@ -499,6 +503,17 @@ sub classname {
   $pkg_class
     ? $pkg_class->classname
     : '';
+}
+
+=item agent 
+
+Returns the associated agent for this event, if any, as an FS::agent object.
+
+=cut
+
+sub agent {
+  my $self = shift;
+  qsearchs('agent', { 'agentnum' => $self->agentnum } );
 }
 
 =item pkg_svc

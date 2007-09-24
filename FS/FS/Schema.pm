@@ -862,10 +862,12 @@ sub tables_hashref {
         'classnum',      'int',     'NULL', '', '', '', 
         'pay_weight',    'real',    'NULL', '', '', '',
         'credit_weight', 'real',    'NULL', '', '', '',
+        'agentnum',      'int',     'NULL', '', '', '', 
+
       ],
       'primary_key' => 'pkgpart',
       'unique' => [],
-      'index' => [ [ 'promo_code' ], [ 'disabled' ] ],
+      'index' => [ [ 'promo_code' ], [ 'disabled' ], [ 'agentnum' ], ],
     },
 
 #    'part_title' => {
@@ -900,7 +902,7 @@ sub tables_hashref {
       ],
       'primary_key' => 'refnum',
       'unique' => [],
-      'index' => [ ['disabled'] ],
+      'index' => [ ['disabled'], ['agentnum'], ],
     },
 
     'part_svc' => {

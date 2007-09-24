@@ -138,6 +138,7 @@ sub check {
     || $self->ut_number('weight')
     || $self->ut_alpha('action')
     || $self->ut_enum('disabled', [ '', 'Y' ] )
+    || $self->ut_agentnum_acl('agentnum', 'Edit global billing events')
   ;
   return $error if $error;
 

@@ -223,6 +223,9 @@ tie my %rights, 'Tie::IxHash',
   'Configuration rights' => [
     'Edit advertising sources',
     { rightname=>'Edit global advertising sources', global=>1 },
+
+    'Edit package definitions',
+    { rightname=>'Edit global package definitions', global=>1 },
   
     'Edit billing events',
     { rightname=>'Edit global billing events', global=>1 },
