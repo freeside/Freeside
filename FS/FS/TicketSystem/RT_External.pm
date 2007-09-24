@@ -280,5 +280,53 @@ sub baseurl {
   $external_url;
 }
 
+sub _retrieve_single_value {
+  my( $self, $sql ) = @_;
+
+  warn "$me $sql" if $DEBUG;
+  my $sth = $dbh->prepare($sql) or die $dbh->errstr. "preparing $sql";
+  $sth->execute                 or die $sth->errstr. "executing $sql";
+
+  my $arrayref = $sth->fetchrow_arrayref;
+  $arrayref ? $arrayref->[0] : $arrayref;
+}
+
+sub transaction_creator {
+  my( $self, $transaction_id ) = @_;
+
+  my $sql = "SELECT name from transactions JOIN users ON ".
+            "transactions.creator=users.id WHERE transactions.id = ".
+            $transaction_id;
+
+  $self->_retrieve_single_value($sql);
+}
+
+sub transaction_ticketid {
+  my( $self, $transaction_id ) = @_;
+
+  my $sql = "SELECT objectid from transactions WHERE transactions.id = ".
+            $transaction_id;
+  
+  $self->_retrieve_single_value($sql);
+}
+
+sub transaction_subject {
+  my( $self, $transaction_id ) = @_;
+
+  my $sql = "SELECT subject from transactions JOIN tickets ON objectid=".
+            "tickets.id WHERE transactions.id = ".  $transaction_id;
+  
+  $self->_retrieve_single_value($sql);
+}
+
+sub transaction_status {
+  my( $self, $transaction_id ) = @_;
+
+  my $sql = "SELECT status from transactions JOIN tickets ON objectid=".
+            "tickets.id WHERE transactions.id = ".  $transaction_id;
+  
+  $self->_retrieve_single_value($sql);
+}
+
 1;
 

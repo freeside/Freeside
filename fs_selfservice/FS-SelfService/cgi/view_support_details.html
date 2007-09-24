@@ -1,0 +1,80 @@
+<HTML><HEAD><TITLE>MyAccount</TITLE></HEAD>
+<BODY BGCOLOR="#eeeeee"><FONT SIZE=5>MyAccount</FONT><BR><BR>
+<%= $url = "$selfurl?session=$session_id;action="; ''; %>
+<%= include('myaccount_menu') %>
+<TD VALIGN="top">
+
+<FONT SIZE=4>Support usage details for
+<%= Date::Format::time2str('%b&nbsp;%o&nbsp;%Y', $beginning) %> -
+<%= Date::Format::time2str('%b&nbsp;%o&nbsp;%Y', $ending) %>
+</FONT><BR><BR>
+
+<%= if ( $error ) {
+  $OUT .= qq!<FONT SIZE="+1" COLOR="#ff0000">$error</FONT><BR><BR>!;
+} ''; %>
+ 
+<TABLE WIDTH="100%">
+  <TR>
+    <TD WIDTH="50%">
+<%= if ($previous < $beginning) {
+    $OUT .= qq!<A HREF="${url}view_support_details;svcnum=$svcnum;beginning=!;
+    $OUT .= qq!$previous;ending=$beginning">Previous period</A>!;
+    }else{
+      '';
+    } %>
+    </TD>
+    <TD  WIDTH="50%" ALIGN="right">
+<%= if ($next > $ending) {
+    $OUT .= qq!<A HREF="${url}view_support_details;svcnum=$svcnum;beginning=!;
+    $OUT .= qq!$ending;ending=$next">Next period</A>!;
+    }else{
+      '';
+    }%>
+    </TD>
+  </TR>
+</TABLE>
+<TABLE BGCOLOR="#cccccc">
+  <TR>
+    <TH ALIGN="left">Ticket</TH>
+    <TH ALIGN="right">Subject</TH>
+    <TH ALIGN="right">Staff</TH>
+    <TH ALIGN="left">Date</TH>
+    <TH ALIGN="right">Status</TH>
+    <TH ALIGN="right">Time</TH>
+  </TR>
+<%= my $total = 0;
+    foreach my $usage ( @usage ) {
+  $OUT .= '<TR><TD ALIGN="left">';
+    $OUT .= $usage->{'ticketid'};
+    $OUT .= '</TD><TD ALIGN="right">';
+    $OUT .= $usage->{'subject'};
+    $OUT .= '</TD><TD ALIGN="right">';
+    $OUT .= $usage->{'creator'};
+    $OUT .= '</TD><TD ALIGN="left">';
+    $OUT .= Date::Format::time2str('%T%P %a&nbsp;%b&nbsp;%o&nbsp;%Y', $usage->{'_date'});
+    $OUT .= '</TD><TD ALIGN="right">';
+    $OUT .= $usage->{'status'};
+    $OUT .= '</TD><TD ALIGN="right">';
+    my $duration =  $usage->{'support'};
+    $total += $usage->{'support'};
+    my $h = int($duration/3600);
+    my $m = sprintf("%02d", int(($duration % 3600) / 60));
+    my $s = sprintf("%02d", $duration % 60);
+    $OUT .=  $usage->{'support'} < 0 ? '-' : '';
+    $OUT .=  "$h:$m:$s";
+  $OUT .= '</TD></TR>';
+  }
+  my $h = int($total/3600);
+  my $m = sprintf("%02d", int(($total % 3600) / 60));
+  my $s = sprintf("%02d", $total % 60);
+  $OUT .=  qq!<TR><TD COLSPAN="5"></TD><TD ALIGN="right"><HR></TD></TR>!;
+  $OUT .=  qq!<TR><TD COLSPAN="5"></TD><TD ALIGN="right">$h:$m:$s</TD></TR>!;
+  %>
+
+</TABLE>
+<BR>
+
+</TD></TR></TABLE>
+<HR>
+<FONT SIZE="-2">powered by <a href="http://www.sisd.com/freeside">freeside</a></FONT>
+</BODY></HTML>

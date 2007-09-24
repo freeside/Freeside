@@ -39,7 +39,9 @@ FS::Record.  The following fields are currently supported:
 
 =item transaction_id -  the id of the rt transtaction from which the time applies
 
-=item seconds - the amount of time which applies
+=item seconds - the amount of time applied from tickets
+
+=item support - the amount of time applied to support services
 
 
 =back
@@ -92,7 +94,7 @@ sub insert {
     return "Can't find svc_acct " . $self->svcnum;
   }
 
-  my $error = $svc_acct->decrement_seconds($self->seconds);
+  $error = $svc_acct->decrement_seconds($self->support);
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return "Error incrementing service seconds: $error";
@@ -136,7 +138,7 @@ sub delete {
     return "Can't find svc_acct " . $self->svcnum;
   }
 
-  my $error = $svc_acct->increment_seconds($self->seconds);
+  $error = $svc_acct->increment_seconds($self->support);
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return "Error incrementing service seconds: $error";
@@ -173,6 +175,7 @@ sub check {
     || $self->ut_number('transaction_id')
     || $self->ut_numbern('_date')
     || $self->ut_snumber('seconds')
+    || $self->ut_snumber('support')
   ;
   return $error if $error;
 
@@ -194,6 +197,50 @@ sub check {
   }
 
   $self->SUPER::check;
+}
+
+=item creator
+
+Returns the creator of the RT transaction associated with this object.
+
+=cut
+
+sub creator {
+  my $self = shift;
+  FS::TicketSystem->transaction_creator($self->transaction_id);
+}
+
+=item ticketid
+
+Returns the number of the RT ticket associated with this object.
+
+=cut
+
+sub ticketid {
+  my $self = shift;
+  FS::TicketSystem->transaction_ticketid($self->transaction_id);
+}
+
+=item subject
+
+Returns the subject of the RT ticket associated with this object.
+
+=cut
+
+sub subject {
+  my $self = shift;
+  FS::TicketSystem->transaction_subject($self->transaction_id);
+}
+
+=item status
+
+Returns the status of the RT ticket associated with this object.
+
+=cut
+
+sub status {
+  my $self = shift;
+  FS::TicketSystem->transaction_status($self->transaction_id);
 }
 
 =item batch_insert SVC_ACCT_RT_TRANSACTION_OBJECT, ...

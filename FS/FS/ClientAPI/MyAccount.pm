@@ -24,6 +24,7 @@ use FS::cust_bill;
 use FS::cust_main_county;
 use FS::cust_pkg;
 use FS::payby;
+use FS::acct_rt_transaction;
 use HTML::Entities;
 
 #false laziness with FS::cust_main
@@ -152,11 +153,24 @@ sub customer_info {
       0 < ( grep { $_ eq 'POST' } $cust_main->invoicing_list );
 
     if (scalar($conf->config('support_packages'))) {
-      my $support = 0;
+      my @support_services = ();
       foreach ($cust_main->support_services) {
-        $support += $_->svc_x->seconds;
+        my $seconds = $_->svc_x->seconds;
+        my $time_remaining = (($seconds < 0) ? '-' : '' ).
+                             int(abs($seconds)/3600)."h".
+                             sprintf("%02d",(abs($seconds)%3600)/60)."m";
+        my $cust_pkg = $_->cust_pkg;
+        my $pkgnum = '';
+        my $pkg = '';
+        $pkgnum = $cust_pkg->pkgnum if $cust_pkg;
+        $pkg = $cust_pkg->part_pkg->pkg if $cust_pkg;
+        push @support_services, { svcnum => $_->svcnum,
+                                  time => $time_remaining,
+                                  pkgnum => $pkgnum,
+                                  pkg => $pkg,
+                                };
       }
-      $return{support_time} = (($support < 0) ? '-' : '' ). int(abs($support)/3600)."h".sprintf("%02d",(abs($support)%3600)/60)."m";
+      $return{support_services} = \@support_services;
     }
 
   } elsif ( $session->{'svcnum'} ) { #no customer record
@@ -642,8 +656,48 @@ sub list_svcs {
 
 }
 
+sub _list_svc_usage {
+  my($svc_acct, $begin, $end) = @_;
+  my @usage = ();
+  foreach my $part_export ( 
+    map { qsearch ( 'part_export', { 'exporttype' => $_ } ) }
+    qw (sqlradius sqlradius_withdomain')
+  ) {
+
+    push @usage, @ { $part_export->usage_sessions($begin, $end, $svc_acct) };
+  }
+  (@usage);
+}
+
 sub list_svc_usage {
-  my $p = shift;
+  _usage_details(\&_list_svc_usage, @_);
+}
+
+sub _list_support_usage {
+  my($svc_acct, $begin, $end) = @_;
+  my @usage = ();
+  foreach ( grep { $begin <= $_->_date && $_->_date <= $end }
+            qsearch('acct_rt_transaction', { 'svcnum' => $svc_acct->svcnum })
+          ) {
+    push @usage, { 'seconds'  => $_->seconds,
+                   'support'  => $_->support,
+                   '_date'    => $_->_date,
+                   'id'       => $_->transaction_id,
+                   'creator'  => $_->creator,
+                   'subject'  => $_->subject,
+                   'status'   => $_->status,
+                   'ticketid' => $_->ticketid,
+                 };
+  }
+  (@usage);
+}
+
+sub list_support_usage {
+  _usage_details(\&_list_support_usage, @_);
+}
+
+sub _usage_details {
+  my ($callback, $p) = (shift,shift);
 
   my($context, $session, $custnum) = _custoragent_session_custnum($p);
   return { 'error' => $session } if $context eq 'error';
@@ -663,18 +717,8 @@ sub list_svc_usage {
     $p->{beginning} = $svc_acct->cust_svc->cust_pkg->last_bill;
     $p->{ending} = $end;
   }
-  my @usage = ();
 
-  foreach my $part_export ( 
-    map { qsearch ( 'part_export', { 'exporttype' => $_ } ) }
-    qw (sqlradius sqlradius_withdomain')
-  ) {
-
-    push @usage, @ { $part_export->usage_sessions($p->{beginning},
-                                                  $p->{ending},
-                                                  $svc_acct)
-                   };
-  }
+  my (@usage) = &$callback($svc_acct,$p->{beginning},$p->{ending});
 
   #kinda false laziness with FS::cust_main::bill, but perhaps
   #we should really change this bit to DateTime and DateTime::Duration
@@ -709,7 +753,6 @@ sub list_svc_usage {
   
   my $previous  = timelocal_nocheck($psec,$pmin,$phour,$pmday,$pmon,$pyear);
   my $next      = timelocal_nocheck($nsec,$nmin,$nhour,$nmday,$nmon,$nyear);
-
 
   { 
     'error'     => '',

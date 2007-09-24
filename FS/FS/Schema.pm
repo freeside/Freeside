@@ -997,6 +997,7 @@ sub tables_hashref {
         'transaction_id',       'int', '',   '', '', '', 
         '_date',   @date_type, '', '',
         'seconds',   'int', '',   '', '', '', #uhhhh
+        'support',   'int', '',   '', '', '',
       ],
       'primary_key' => 'svcrtid',
       'unique' => [],

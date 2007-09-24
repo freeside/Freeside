@@ -38,6 +38,7 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'list_pkgs'            => 'MyAccount/list_pkgs',     #add to ss cgi (added?)
   'list_svcs'            => 'MyAccount/list_svcs',     #add to ss cgi (added?)
   'list_svc_usage'       => 'MyAccount/list_svc_usage',   
+  'list_support_usage'   => 'MyAccount/list_support_usage',   
   'order_pkg'            => 'MyAccount/order_pkg',     #add to ss cgi!
   'change_pkg'           => 'MyAccount/change_pkg', 
   'order_recharge'       => 'MyAccount/order_recharge',
