@@ -11,7 +11,7 @@
                  'query'              => { 'select'    => $select,
                                            'table'     => 'part_pkg',
                                            'hashref'   => {},
-                                           'extra_sql' => "ORDER BY $orderby",
+                                           'order_by ' => "ORDER BY $orderby",
                                          },
                  'count_query'        => $count_query,
                  'header'             => \@header,
