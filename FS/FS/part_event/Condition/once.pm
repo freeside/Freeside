@@ -24,7 +24,7 @@ sub condition {
   my @existing = qsearch( 'cust_event', {
     'eventpart' => $self->eventpart,
     'tablenum'  => $tablenum,
-    'status'    => { op=>'!=', value=>'failed' },
+    'status'    => { op=>'NOT IN', value=>"('failed','new')" },
   } );
 
   ! scalar(@existing);
