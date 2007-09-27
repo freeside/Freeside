@@ -161,6 +161,7 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
   </TD>
 </TR>
 
+%if ( $part_svc->part_svc_column('_password')->columnflag ne 'F' ) {
 <TR>
   <TD ALIGN="right">Password</TD>
   <TD>
@@ -168,9 +169,13 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
     (blank to generate)
   </TD>
 </TR>
+%}else{
+    <INPUT TYPE="hidden" NAME="_password" VALUE="<% $password %>">
+%}
 %
 %my $sec_phrase = $svc_acct->sec_phrase;
-%if ( $conf->exists('security_phrase') ) {
+%if ( $conf->exists('security_phrase') 
+%  && $part_svc->part_svc_column('sec_phrase')->columnflag ne 'F' ) {
 %
 
 
