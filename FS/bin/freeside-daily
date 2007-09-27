@@ -6,7 +6,7 @@ use FS::UID qw(adminsuidsetup);
 
 &untaint_argv;	#what it sounds like  (eww)
 use vars qw(%opt);
-getopts("p:a:d:vl:sy:n", \%opt);
+getopts("p:a:d:vl:sy:nm", \%opt);
 
 my $user = shift or die &usage;
 adminsuidsetup $user;
@@ -55,7 +55,7 @@ freeside-daily - Run daily billing and invoice collection events.
 
 =head1 SYNOPSIS
 
-  freeside-daily [ -d 'date' ] [ -y days ] [ -p 'payby' ] [ -a agentnum ] [ -s ] [ -v ] [ -l level ] user [ custnum custnum ... ]
+  freeside-daily [ -d 'date' ] [ -y days ] [ -p 'payby' ] [ -a agentnum ] [ -s ] [ -v ] [ -l level ] [ -m ]user [ custnum custnum ... ]
 
 =head1 DESCRIPTION
 

@@ -5822,6 +5822,16 @@ sub _agent_plandata {
 
 }
 
+sub queued_bill {
+  ## actual sub, not a method, designed to be called from the queue.
+  ## sets up the customer, and calls the bill_and_collect
+  my (%args) = @_; #, ($time, $invoice_time, $check_freq, $resetup) = @_;
+  my $cust_main = qsearchs( 'cust_main', { custnum => $args{'custnum'} } );
+      $cust_main->bill_and_collect(
+        %args,
+      );
+}
+
 =back
 
 =head1 BUGS

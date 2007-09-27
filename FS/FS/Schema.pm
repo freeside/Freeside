@@ -1156,6 +1156,7 @@ sub tables_hashref {
         'status', 'varchar', '', $char_d, '', '', 
         'statustext', 'text', 'NULL', '', '', '', 
         'svcnum', 'int', 'NULL', '', '', '', 
+        'secure',  'char', 'NULL', 1, '', '', # Y = recur tax exempt
       ],
       'primary_key' => 'jobnum',
       'unique'      => [],

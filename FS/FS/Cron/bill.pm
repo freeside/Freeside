@@ -44,7 +44,7 @@ sub bill {
                   )
         )
 END
-
+  
   my $where_event = join(' OR ', map {
     my $eventtable = $_;
 
@@ -76,7 +76,7 @@ END
 
   my $extra_sql = ( scalar(%search) ? ' AND ' : ' WHERE ' ).
                   "( $where_pkg OR $where_event )";
-
+  
   my @cust_main;
   if ( @ARGV ) {
     @cust_main = map { qsearchs('cust_main', { custnum => $_, %search } ) } @ARGV
@@ -95,12 +95,23 @@ END
 
   }
   
-  foreach my $cust_main ( @cust_main ) {
+  my($cust_main,%saw);
+  foreach $cust_main ( @cust_main ) {
 
     if ( $opt{'m'} ) {
 
-      die "XXX multi-process mode not yet completed";
       #add job to queue that calls bill_and_collect with options
+        my $queue = new FS::queue {
+          'job'    => 'FS::cust_main::queued_bill',
+          'secure' => 'Y',
+        };
+        my $error = $queue->insert(
+        'custnum'      =>  $cust_main->custnum,
+        'time'         => $time,
+        'invoice_time' => $invoice_time,
+        'check_freq'   => $check_freq,
+        'resetup'      => $opt{'s'} ? $opt{'s'} : 0,
+      );
 
     } else {
 
@@ -112,7 +123,7 @@ END
       );
 
     }
-
+  
   }
 
 }
