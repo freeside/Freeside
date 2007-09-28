@@ -2731,6 +2731,13 @@ sub retry_realtime {
 
   my $join = FS::part_event_condition->join_conditions_sql;
   my $order = FS::part_event_condition->order_conditions_sql;
+  my $mine = 
+  '( '
+   . join ( ' OR ' , map { 
+    "( part_event.eventtable = " . dbh->quote($_) 
+    . " AND tablenum IN( SELECT " . dbdef->table($_)->primary_key . " from $_ where custnum = " . dbh->quote( $self->custnum ) . "))" ;
+   } FS::part_event->eventtables)
+   . ') ';
 
   #here is the agent virtualization
   my $agent_virt = " (    part_event.agentnum IS NULL
@@ -2754,7 +2761,7 @@ sub retry_realtime {
     'addl_from' => "LEFT JOIN part_event USING ( eventpart ) $join",
     'hashref'   => { 'status' => 'done' },
     'extra_sql' => " AND statustext IS NOT NULL AND statustext != '' ".
-                   " AND $is_realtime_event AND $agent_virt $order" # LIMIT 1"
+                   " AND $mine AND $is_realtime_event AND $agent_virt $order" # LIMIT 1"
   });
 
   my %seen_invnum = ();
