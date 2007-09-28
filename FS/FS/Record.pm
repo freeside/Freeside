@@ -274,91 +274,9 @@ sub qsearch {
   $statement .= " $addl_from" if $addl_from;
   if ( @real_fields or @virtual_fields ) {
     $statement .= ' WHERE '. join(' AND ',
-      ( map {
-
-      my $op = '=';
-      my $column = $_;
-      if ( ref($record->{$_}) ) {
-        $op = $record->{$_}{'op'} if $record->{$_}{'op'};
-        #$op = 'LIKE' if $op =~ /^ILIKE$/i && driver_name ne 'Pg';
-        if ( uc($op) eq 'ILIKE' ) {
-          $op = 'LIKE';
-          $record->{$_}{'value'} = lc($record->{$_}{'value'});
-          $column = "LOWER($_)";
-        }
-        $record->{$_} = $record->{$_}{'value'}
-      }
-
-      if ( ! defined( $record->{$_} ) || $record->{$_} eq '' ) {
-        if ( $op eq '=' ) {
-          if ( driver_name eq 'Pg' ) {
-            my $type = dbdef->table($table)->column($column)->type;
-            if ( $type =~ /(int|(big)?serial)/i ) {
-              qq-( $column IS NULL )-;
-            } else {
-              qq-( $column IS NULL OR $column = '' )-;
-            }
-          } else {
-            qq-( $column IS NULL OR $column = "" )-;
-          }
-        } elsif ( $op eq '!=' ) {
-          if ( driver_name eq 'Pg' ) {
-            my $type = dbdef->table($table)->column($column)->type;
-            if ( $type =~ /(int|(big)?serial)/i ) {
-              qq-( $column IS NOT NULL )-;
-            } else {
-              qq-( $column IS NOT NULL AND $column != '' )-;
-            }
-          } else {
-            qq-( $column IS NOT NULL AND $column != "" )-;
-          }
-        } else {
-          if ( driver_name eq 'Pg' ) {
-            qq-( $column $op '' )-;
-          } else {
-            qq-( $column $op "" )-;
-          }
-        }
-      } else {
-        "$column $op ?";
-      }
-    } @real_fields ), 
-    ( map {
-      my $op = '=';
-      my $column = $_;
-      if ( ref($record->{$_}) ) {
-        $op = $record->{$_}{'op'} if $record->{$_}{'op'};
-	if ( uc($op) eq 'ILIKE' ) {
-	  $op = 'LIKE';
-	  $record->{$_}{'value'} = lc($record->{$_}{'value'});
-	  $column = "LOWER($_)";
-	}
-	$record->{$_} = $record->{$_}{'value'};
-      }
-
-      # ... EXISTS ( SELECT name, value FROM part_virtual_field
-      #              JOIN virtual_field
-      #              ON part_virtual_field.vfieldpart = virtual_field.vfieldpart
-      #              WHERE recnum = svc_acct.svcnum
-      #              AND (name, value) = ('egad', 'brain') )
-
-      my $value = $record->{$_};
-
-      my $subq;
-
-      $subq = ($value ? 'EXISTS ' : 'NOT EXISTS ') .
-      "( SELECT part_virtual_field.name, virtual_field.value ".
-      "FROM part_virtual_field JOIN virtual_field ".
-      "ON part_virtual_field.vfieldpart = virtual_field.vfieldpart ".
-      "WHERE virtual_field.recnum = ${table}.${pkey} ".
-      "AND part_virtual_field.name = '${column}'".
-      ($value ? 
-        " AND virtual_field.value ${op} '${value}'"
-      : "") . ")";
-      $subq;
-
-    } @virtual_fields ) );
-
+      get_real_fields($table, $record, \@real_fields) ,
+      get_virtual_fields($table, $pkey, $record, \@virtual_fields),
+      );
   }
 
   $statement .= " $extra_sql" if defined($extra_sql);
@@ -469,6 +387,110 @@ sub qsearch {
     } values(%result);
   }
   return @return;
+}
+
+## makes this easier to read
+
+sub get_virtual_fields {
+   my $table = shift;
+   my $pkey = shift;
+   my $record = shift;
+   my $virtual_fields = shift;
+   
+   return
+    ( map {
+      my $op = '=';
+      my $column = $_;
+      if ( ref($record->{$_}) ) {
+        $op = $record->{$_}{'op'} if $record->{$_}{'op'};
+	if ( uc($op) eq 'ILIKE' ) {
+	  $op = 'LIKE';
+	  $record->{$_}{'value'} = lc($record->{$_}{'value'});
+	  $column = "LOWER($_)";
+	}
+	$record->{$_} = $record->{$_}{'value'};
+      }
+
+      # ... EXISTS ( SELECT name, value FROM part_virtual_field
+      #              JOIN virtual_field
+      #              ON part_virtual_field.vfieldpart = virtual_field.vfieldpart
+      #              WHERE recnum = svc_acct.svcnum
+      #              AND (name, value) = ('egad', 'brain') )
+
+      my $value = $record->{$_};
+
+      my $subq;
+
+      $subq = ($value ? 'EXISTS ' : 'NOT EXISTS ') .
+      "( SELECT part_virtual_field.name, virtual_field.value ".
+      "FROM part_virtual_field JOIN virtual_field ".
+      "ON part_virtual_field.vfieldpart = virtual_field.vfieldpart ".
+      "WHERE virtual_field.recnum = ${table}.${pkey} ".
+      "AND part_virtual_field.name = '${column}'".
+      ($value ? 
+        " AND virtual_field.value ${op} '${value}'"
+      : "") . ")";
+      $subq;
+
+    } @{ $virtual_fields } ) ;
+}
+
+sub get_real_fields {
+  my $table = shift;
+  my $record = shift;
+  my $real_fields = shift;
+
+   ## this huge map was previously inline, just broke it out to help read the qsearch method, should be optimized for readability
+      return ( 
+      map {
+
+      my $op = '=';
+      my $column = $_;
+      if ( ref($record->{$_}) ) {
+        $op = $record->{$_}{'op'} if $record->{$_}{'op'};
+        #$op = 'LIKE' if $op =~ /^ILIKE$/i && driver_name ne 'Pg';
+        if ( uc($op) eq 'ILIKE' ) {
+          $op = 'LIKE';
+          $record->{$_}{'value'} = lc($record->{$_}{'value'});
+          $column = "LOWER($_)";
+        }
+        $record->{$_} = $record->{$_}{'value'}
+      }
+
+      if ( ! defined( $record->{$_} ) || $record->{$_} eq '' ) {
+        if ( $op eq '=' ) {
+          if ( driver_name eq 'Pg' ) {
+            my $type = dbdef->table($table)->column($column)->type;
+            if ( $type =~ /(int|(big)?serial)/i ) {
+              qq-( $column IS NULL )-;
+            } else {
+              qq-( $column IS NULL OR $column = '' )-;
+            }
+          } else {
+            qq-( $column IS NULL OR $column = "" )-;
+          }
+        } elsif ( $op eq '!=' ) {
+          if ( driver_name eq 'Pg' ) {
+            my $type = dbdef->table($table)->column($column)->type;
+            if ( $type =~ /(int|(big)?serial)/i ) {
+              qq-( $column IS NOT NULL )-;
+            } else {
+              qq-( $column IS NOT NULL AND $column != '' )-;
+            }
+          } else {
+            qq-( $column IS NOT NULL AND $column != "" )-;
+          }
+        } else {
+          if ( driver_name eq 'Pg' ) {
+            qq-( $column $op '' )-;
+          } else {
+            qq-( $column $op "" )-;
+          }
+        }
+      } else {
+        "$column $op ?";
+      }
+    } @{ $real_fields } );  
 }
 
 =item by_key PRIMARY_KEY_VALUE
