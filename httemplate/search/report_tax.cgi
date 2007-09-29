@@ -226,7 +226,7 @@ if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
   my $agent = qsearchs('agent', { 'agentnum' => $1 } );
   die "agent not found" unless $agent;
   $agentname = $agent->agent;
-  $where .= ' AND agentnum = '. $agent->agentnum;
+  $where .= ' AND cust_main.agentnum = '. $agent->agentnum;
 }
 
 my $gotcust = "

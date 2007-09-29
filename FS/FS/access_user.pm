@@ -323,6 +323,8 @@ Options are passed as a hashref or a list.  Available options are:
 
 =item null_right - The fragment will also allow the selection of null agentnums if the current user has the provided access right
 
+=item table - Optional table name in which agentnum is being checked.  Sometimes required to resolve 'column reference "agentnum" is ambiguous' errors.
+
 =back
 
 =cut
@@ -331,9 +333,11 @@ sub agentnums_sql {
   my( $self ) = shift;
   my %opt = ref($_[0]) ? %{$_[0]} : @_;
 
-  my @agentnums = map { "agentnum = $_" } $self->agentnums;
+  my $agentnum = $opt{'table'} ? $opt{'table'}.'.agentnum' : 'agentnum';
 
-  push @agentnums, 'agentnum IS NULL'
+  my @agentnums = map { "$agentnum = $_" } $self->agentnums;
+
+  push @agentnums, "$agentnum IS NULL"
     if $opt{'null'}
     || ( $opt{'null_right'} && $self->access_right($opt{'null_right'}) );
 
