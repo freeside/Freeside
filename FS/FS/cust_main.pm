@@ -5793,7 +5793,7 @@ sub _agent_plandata {
         LEFT JOIN part_event_option AS peo_agentnum
           ON ( part_event.eventpart = peo_agentnum.eventpart
                AND peo_agentnum.optionname = 'agentnum'
-               AND peo_agentnum.optionvalue ~ '(^|,)agentnum(,|$)'
+               AND peo_agentnum.optionvalue ~ '(^|,)}. $agentnum. q{agentnum(,|$)'
              )
         LEFT JOIN part_event_option AS peo_cust_bill_age
           ON ( part_event.eventpart = peo_cust_bill_age.eventpart
@@ -5803,6 +5803,7 @@ sub _agent_plandata {
       #'hashref'   => { 'optionname' => $option },
       'hashref'   => { 'part_event_option.optionname' => $option },
       'extra_sql' => " AND event = 'cust_bill_send_agent' ".
+                     " AND disabled != 'Y' ".
                      " AND peo_agentnum.optionname = 'agentnum' ".
                      " AND agentnum IS NULL OR agentnum = $agentnum ".
                      " ORDER BY
