@@ -1,11 +1,38 @@
 <% include('/elements/header.html', 'Call Detail Record Search' ) %>
 
 <FORM ACTION="cdr.html" METHOD="GET">
-Status: <SELECT NAME="freesidestatus">
-  <OPTION VALUE="">(all)
-  <OPTION VALUE="NULL">unprocessed
-  <OPTION VALUE="done">processed
-</SELECT><BR>
+
+<TABLE>
+  <TR>
+    <TD ALIGN="right">Status: </TD>
+    <TD>
+      <SELECT NAME="freesidestatus">
+        <OPTION VALUE="">(all)
+        <OPTION VALUE="NULL">unprocessed
+        <OPTION VALUE="done">processed
+      </SELECT>
+    </TD>
+  </TR>
+
+  <% include ( '/elements/tr-input-beginning_ending.html' ) %>
+
+  <TR>
+    <TD ALIGN="right">Source #: </TD>
+    <TD>
+      <INPUT TYPE="text" NAME="src">
+    </TD>
+  </TR>
+
+  <TR>
+    <TD ALIGN="right">Destination #: </TD>
+    <TD>
+      <INPUT TYPE="text" NAME="dst">
+    </TD>
+  </TR>
+
+</TABLE>
+
+<BR>
 <INPUT TYPE="submit" VALUE="Search Call Detail Records">
 
 <% include('/elements/footer.html') %>

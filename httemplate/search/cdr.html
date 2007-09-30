@@ -1,8 +1,10 @@
 <% include( 'elements/search.html',
                'title' => $title,
                'name'  => 'call detail records',
-               'query' => { 'table'   => 'cdr',
-                            'hashref' => $hashref
+               'query' => { 'table'     => 'cdr',
+                            'hashref'   => $hashref,
+			    'extra_sql' => $qsearch,
+			    'order_by'  => 'ORDER BY calldate',
                           },
                'count_query' => $count_query,
                'header' => [ fields('cdr') ], #XXX fill in some nice names
@@ -17,25 +19,71 @@ die "access denied"
 
 my $title = 'Call Detail Records';
 my $hashref = {};
-my $count_query = 'SELECT COUNT(*) FROM cdr';
 
 #process params for CDR search, populate $hashref...
 # and fixup $count_query
+
+my @search = ();
+my @qsearch = ();
+
+###
+# freesidestatus
+###
 
 if ( $cgi->param('freesidestatus') eq 'NULL' ) {
 
   my $title = "Unprocessed $title";
   $hashref->{'freesidestatus'} = ''; # Record.pm will take care of it
-  #$count_query .= " AND ( freesidestatus IS NULL OR freesidestatus = '' )";
-  $count_query .= " WHERE ( freesidestatus IS NULL OR freesidestatus = '' )";
+  push @search, "( freesidestatus IS NULL OR freesidestatus = '' )";
 
 } elsif ( $cgi->param('freesidestatus') =~ /^([\w ]+)$/ ) {
 
   my $title = "Processed $title";
   $hashref->{'freesidestatus'} = $1;
-  #$count_query .= " AND freesidestatus = '$1'";
-  $count_query .= " WHERE freesidestatus = '$1'";
+  push @search, "freesidestatus = '$1'";
 
 }
+
+###
+# dates
+###
+
+my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
+push @search,
+my @dsearch = ( "extract(epoch from calldate) >= $beginning ",
+                "extract(epoch from calldate) <= $ending"
+	      );
+push @search, @dsearch;
+push @qsearch, @search;
+
+
+###
+# src/dest
+###
+
+if ( $cgi->param('src') =~ /^\s*([\d\-\+\ ]+)\s*$/ ) {
+  ( my $src = $1 ) =~ s/\D//g;
+  $hashref->{'src'} = $src;
+  push @search, "src = '$src'";
+}
+
+if ( $cgi->param('dst') =~ /^\s*([\d\-\+ ]+)\s*$/ ) {
+  ( my $dst = $1 ) =~ s/\D//g;
+  $hashref->{'dst'} = $dst;
+  push @search, "dst = '$dst'";
+}
+
+###
+# finish it up
+###
+
+my $search = join(' AND ', @search);
+$search = "WHERE $search" if $search;
+
+my $count_query = "SELECT COUNT(*) FROM cdr $search";
+
+my $qsearch = join(' AND ', @qsearch);
+$qsearch = ( scalar(keys %$hashref) ? ' AND ' : ' WHERE ' ) . $qsearch
+  if $qsearch;
 
 </%init>
