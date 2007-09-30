@@ -1,0 +1,72 @@
+#!/bin/bash
+
+# based on example code from
+# http://blog.larik.nl:80/articles/2006/03/13/upgrade-your-postgresql-databases-to-unicode
+# by frodo larik / blog.larik.nl
+
+db=freeside
+
+# This script updates all dbs to use unicode
+
+dbhost='localhost'
+username='freeside'
+#odir=${HOME}/freeside_unicode_upgrade
+odir=/home/ivan/FREESIDE_unicode_upgrade
+
+if [ "${db}X" == "X" ]
+then
+   echo "I need a db for host ${dbhost} and username ${username} $db" 
+   exit
+fi
+
+if [ ! -d $odir ]
+then
+   mkdir $odir || exit "Exit at mkdir" 
+fi
+
+#echo -n "Enter a comma-separated list of country codes to keep [US,CA]:"
+#countries=`line`
+#if [ "${countries}X" == "X" ]
+#then
+#  countries='US,CA'
+#fi
+
+echo "delete from cust_main_county where 0 = ( select count(*) from cust_main where cust_main_county.country = cust_main.country );" | su freeside -c 'psql freeside'
+
+dump_sql=${odir}/${db}_out.sql
+conv_sql=${odir}/${db}_conv.sql
+result_sql=${odir}/${db}_result.txt
+sql_diff=${odir}/${db}.diff
+
+# 0. stop
+
+/etc/init.d/freeside stop || die "can't stop freeside"
+/etc/init.d/apache stop || die "can't stop apache"
+/etc/init.d/apache2 stop || die "can't stop apache"
+
+echo "Dumping $db database to $dump_sql"
+
+su $username -c "pg_dump --host=$dbhost --username=$username -D --format=p $db" >$dump_sql || exit "exit at pg_dump"
+
+echo "Removing invalid characters from the dump"
+
+iconv -c -f UTF-8 -t UTF-8 ${dump_sql} > ${conv_sql}  || exit "exit at iconv"
+
+echo "*** Making a diff from the dump: check $sql_diff ***"
+
+diff $dump_sql $conv_sql > $sql_diff
+
+echo "Removing current database"
+
+su $freeside -c "dropdb --host=$dbhost --username=$username $db" || exit "exit at dropdb"
+
+echo "Creating a new databse"
+
+su freeside -c "createdb --encoding='unicode' --host=$dbhost --username=$username $db" || exit "exit at createdb"
+
+echo "Loading data into new database"
+su freeside -c "psql -f $conv_sql -o $result_sql -h $dbhost -U $username $db" || exit "exit at psql ${extra_string}" 
+
+# 99. 
+/etc/init.d/freeside start || die "oh no, can't start freeside"
+/etc/init.d/apache start || die "oh no, can't start apache"
