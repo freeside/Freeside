@@ -2,6 +2,10 @@
 %
 %my $error ='';
 %my $pkgnum = '';
+%my($susp,$adjourn,$cancel,$expire, $pkg, $comment, $setup, $bill, $otaker);
+%
+%my( $cust_pkg, $part_pkg );
+%
 %if ( $cgi->param('error') ) {
 %  $error = $cgi->param('error');
 %  $pkgnum = $cgi->param('pkgnum');
@@ -12,16 +16,42 @@
 %              from $bill until now.  Are you sure you want to do this? ".
 %           '<INPUT TYPE="checkbox" NAME="bill_areyousure" VALUE="1">';
 %  }
+%
+%  $susp    = $cgi->param('susp');
+%  $adjourn = $cgi->param('adjourn');
+%  $cancel  = $cgi->param('cancel');
+%  $expire  = $cgi->param('expire');
+%  $pkg     = $cgi->param('pkg');
+%  $comment = $cgi->param('comment');
+%  $setup   = $cgi->param('setup');
+%  $bill    = $cgi->param('bill');
+%  $otaker  = $cgi->param('otaker');
+%
+%  #get package record
+%  $cust_pkg = qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
+%  die "No package!" unless $cust_pkg;
+%  $part_pkg = qsearchs('part_pkg',{'pkgpart'=>$cust_pkg->getfield('pkgpart')});
+%
 %} else {
 %  my($query) = $cgi->keywords;
 %  $query =~ /^(\d+)$/ or die "no pkgnum";
 %  $pkgnum = $1;
-%}
 %
-%#get package record
-%my $cust_pkg = qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
-%die "No package!" unless $cust_pkg;
-%my $part_pkg = qsearchs('part_pkg',{'pkgpart'=>$cust_pkg->getfield('pkgpart')});
+%  #get package record
+%  $cust_pkg = qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
+%  die "No package!" unless $cust_pkg;
+%  $part_pkg = qsearchs('part_pkg',{'pkgpart'=>$cust_pkg->getfield('pkgpart')});
+%
+%  ($susp,$adjourn,$cancel,$expire)=(
+%    $cust_pkg->getfield('susp'),
+%    $cust_pkg->getfield('adjourn'),
+%    $cust_pkg->getfield('cancel'),
+%    $cust_pkg->getfield('expire'),
+%  );
+%  ($pkg,$comment)=($part_pkg->getfield('pkg'),$part_pkg->getfield('comment'));
+%  ($setup,$bill)=($cust_pkg->getfield('setup'),$cust_pkg->getfield('bill'));
+%  $otaker = $cust_pkg->getfield('otaker');
+%}
 %
 %if ( $error ) {
 %  #$cust_pkg->$_(str2time($cgi->param($_)) foreach qw(setup bill);
@@ -47,21 +77,6 @@
 <SCRIPT TYPE="text/javascript" SRC="../elements/calendar_stripped.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript" SRC="../elements/calendar-en.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript" SRC="../elements/calendar-setup.js"></SCRIPT>
-%
-%
-%#print info
-%my($susp,$adjourn,$cancel,$expire)=(
-%  $cust_pkg->getfield('susp'),
-%  $cust_pkg->getfield('adjourn'),
-%  $cust_pkg->getfield('cancel'),
-%  $cust_pkg->getfield('expire'),
-%);
-%my($pkg,$comment)=($part_pkg->getfield('pkg'),$part_pkg->getfield('comment'));
-%my($setup,$bill)=($cust_pkg->getfield('setup'),$cust_pkg->getfield('bill'));
-%my $otaker = $cust_pkg->getfield('otaker');
-%
-%
-
 
 <FORM NAME="formname" ACTION="process/REAL_cust_pkg.cgi" METHOD="POST">
 <INPUT TYPE="hidden" NAME="pkgnum" VALUE="<% $pkgnum %>">
