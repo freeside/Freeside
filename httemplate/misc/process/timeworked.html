@@ -10,14 +10,17 @@ die "access denied"
 
 my %multipliers = map { /^custnum(\d+)$/; ($cgi->param("custnum$1") => $cgi->param("multiplier$1")); }
                       grep /^custnum\d+$/, $cgi->param;
+my $msum = 0;
+foreach(values %multipliers) {$msum += $_};
 
 my @acct_rt_transaction;
 foreach my $transaction (
   map { /^transactionid(\d+)$/; $1; } grep /^transactionid\d+$/, $cgi->param
 ) {
   my $seconds = $cgi->param("seconds$transaction");
-  my %seconds = map { $_ => sprintf("%.0f", $seconds * $multipliers{$_}) } 
-                (keys %multipliers);
+  my %seconds = 
+       map { $_ => sprintf("%.0f", $seconds * $multipliers{$_} / $msum) } 
+         (keys %multipliers);
   my $sum = 0;
   my $count = 0;
   foreach (values %seconds) {
@@ -39,6 +42,7 @@ foreach my $transaction (
       'custnum'        => $customer,
       'transaction_id' => $transaction,
       'seconds'        => $seconds{$customer},
+      'support'        => $seconds{$customer} * $msum,
     };
   }
 
