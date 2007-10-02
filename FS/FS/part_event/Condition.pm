@@ -125,6 +125,8 @@ Available additional arguments:
 
   $time = $opt{'time'}; #use this instead of time or $^T
 
+  $cust_event = $opt{'cust_event'}; #to retreive the cust_event object being tested
+
 Return a true value if the condition has been met, and a false value if it has
 not.
 

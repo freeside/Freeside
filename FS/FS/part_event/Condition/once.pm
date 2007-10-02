@@ -16,7 +16,7 @@ sub remove_warning {
 }
 
 sub condition {
-  my($self, $object) = @_;
+  my($self, $object, %opt) = @_;
 
   my $obj_pkey = $object->primary_key;
   my $tablenum = $object->$obj_pkey();
@@ -24,7 +24,12 @@ sub condition {
   my @existing = qsearch( 'cust_event', {
     'eventpart' => $self->eventpart,
     'tablenum'  => $tablenum,
-    'status'    => { op=>'NOT IN', value=>"('failed','new')" },
+    #'status'    => { op=>'NOT IN', value=>"('failed','new')" },
+    'status'    => { op=>'!=', value=>'failed' },
+    'addl_sql'  => ( $opt{'cust_event'}->eventnum =~ /^(\d+)$/
+                       ? " AND eventnum != $1 "
+                       : ''
+                   ),
   } );
 
   ! scalar(@existing);
