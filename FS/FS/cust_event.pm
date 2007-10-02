@@ -190,7 +190,7 @@ sub test_conditions {
   my $part_event = $self->part_event;
   my $object = $self->cust_X;
   my @conditions = $part_event->part_event_condition;
-  %opt{'cust_event'} = $self;
+  $opt{'cust_event'} = $self;
 
   #no unsatisfied conditions
   #! grep ! $_->condition( $object, %opt ), @conditions;
