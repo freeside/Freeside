@@ -55,7 +55,7 @@ freeside-daily - Run daily billing and invoice collection events.
 
 =head1 SYNOPSIS
 
-  freeside-daily [ -d 'date' ] [ -y days ] [ -p 'payby' ] [ -a agentnum ] [ -s ] [ -v ] [ -l level ] [ -m ]user [ custnum custnum ... ]
+  freeside-daily [ -d 'date' ] [ -y days ] [ -p 'payby' ] [ -a agentnum ] [ -s ] [ -v ] [ -l level ] [ -m ] user [ custnum custnum ... ]
 
 =head1 DESCRIPTION
 
