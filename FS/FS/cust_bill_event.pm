@@ -189,6 +189,62 @@ sub retriable {
   $self->replace($old);
 }
 
+=item search_sql HREF
+
+Class method which returns an SQL WHERE fragment to search for parameters
+specified in HREF.  Valid parameters are
+
+=over 4
+=item agentnum
+=item beginning - an epoch date setting a lower bound for _date values
+=item ending - an epoch date setting a upper bound for _date values
+=item failed - limits the search to failed events if true
+=item payby - requires that the search be JOIN'd to part_bill_event # Bug?
+=item invnum 
+=item currentuser - specifies the user for agent virtualization
+=back
+
+=cut
+
+sub search_sql {
+  my ($class, $params) = @_;
+  my @search = ();
+
+  push @search, "agentnum = ". $params->{agentnum} if $params->{agentnum};
+
+  push @search, "cust_bill_event._date >= ". $params->{beginning}
+    if $params->{beginning};
+  push @search, "cust_bill_event._date <= ". $params->{ending}
+    if $params->{ending};
+
+  push @search, "statustext != ''",
+                "statustext IS NOT NULL",
+                "statustext != 'N/A'"
+    if $params->{failed};
+
+  push @search, "part_bill_event.payby = '". $params->{payby}. "'"
+    if $params->{payby};
+
+  push @search, "cust_bill_event.invnum = '". $params->{invnum}. "'"
+    if $params->{invnum};
+
+  if ($params->{CurrentUser}) {
+    my $access_user = qsearchs('access_user',
+                              {username => $params->{CurrentUser} }
+                             );
+    if ($access_user) {
+      push @search, $access_user->agentnums_sql;
+    }else{
+      push @search, "1=0";
+    }
+  }else{
+    push @search, $FS::CurrentUser::CurrentUser->agentnums_sql;
+  }
+
+  join(' AND ', @search );
+
+}
+
 =back
 
 =head1 SUBROUTINES
@@ -230,24 +286,21 @@ sub process_re_X {
 
   re_X(
     $method,
-    $param->{'beginning'},
-    $param->{'ending'},
-    $param->{'failed'},
+    $param,
     $job,
   );
 
 }
 
 sub re_X {
-  my($method, $beginning, $ending, $failed, $job) = @_;
+  my($method, $param, $job) = @_;
 
-  my $where = " WHERE plan LIKE 'send%'".
-              "   AND cust_bill_event._date >= $beginning".
-              "   AND cust_bill_event._date <= $ending";
-  $where .= " AND statustext != '' AND statustext IS NOT NULL"
-    if $failed;
+  my $where = FS::cust_bill_event->search_sql($param);
+  $where = " WHERE plan LIKE 'send%'". ( $where ? " AND $where" : "" );
 
-  my $from = 'LEFT JOIN part_bill_event USING ( eventpart )';
+  my $from = 'LEFT JOIN part_bill_event USING ( eventpart )'.
+             'LEFT JOIN cust_bill       USING ( invnum )'.
+             'LEFT JOIN cust_main       USING ( custnum )';
 
   my @cust_bill_event = qsearch( 'cust_bill_event', {}, '', $where, '', $from );
 

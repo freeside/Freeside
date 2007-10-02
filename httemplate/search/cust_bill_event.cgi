@@ -75,36 +75,28 @@ my $title = $cgi->param('failed')
               ? 'Failed invoice events'
               : 'Invoice events';
 
-my @search = ();
+my %search = ();
 
 if ( $cgi->param('agentnum') && $cgi->param('agentnum') =~ /^(\d+)$/ ) {
-  push @search, "agentnum = $1";
-  #my $agent = qsearchs('agent', { 'agentnum' => $1 } );
-  #die "unknown agentnum $1" unless $agent;
+  $search{agentnum} = $1;
 }
 
-my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
-push @search, "cust_bill_event._date >= $beginning",
-              "cust_bill_event._date <= $ending";
+($search{beginning}, $search{ending})
+  = FS::UI::Web::parse_beginning_ending($cgi);
 
 if ( $cgi->param('failed') ) {
-  push @search, "statustext != ''",
-                "statustext IS NOT NULL",
-                "statustext != 'N/A'";
+  push $search{failed} = '1';
 }
 
 if ( $cgi->param('part_bill_event.payby') =~ /^(\w+)$/ ) {
-  push @search, "part_bill_event.payby = '$1'";
+  $search{payby} = $1;
 }
 
 if ( $cgi->param('invnum') =~ /^(\d+)$/ ) {
-  push @search, "cust_bill_event.invnum = '$1'";
+  $search{invnum} = $1;
 }
 
-#here is the agent virtualization
-push @search, $FS::CurrentUser::CurrentUser->agentnums_sql;
-
-my $where = 'WHERE '. join(' AND ', @search );
+my $where = 'WHERE '. FS::cust_bill_event->search_sql( \%search );
 
 my $join = 'LEFT JOIN part_bill_event USING ( eventpart ) '.
            'LEFT JOIN cust_bill       USING ( invnum    ) '.
@@ -139,16 +131,14 @@ $html_init .= join("\n", map {
   ( my $action = $_ ) =~ s/_$//;
   include('/elements/progress-init.html',
             $_.'form',
-            [ 'action', 'beginning', 'ending', 'failed' ],
+            [ keys(%search) ],
             "../misc/${_}invoice_events.cgi",
             { 'message' => "Invoices re-${action}ed" }, #would be nice to show the number of them, but...
             $_, #key
          ),
   qq!<FORM NAME="${_}form">!,
   qq!<INPUT TYPE="hidden" NAME="action" VALUE="$_">!, #not used though
-  qq!<INPUT TYPE="hidden" NAME="beginning" VALUE="$beginning">!,
-  qq!<INPUT TYPE="hidden" NAME="ending"    VALUE="$ending">!,
-  qq!<INPUT TYPE="hidden" NAME="failed"    VALUE="$failed">!,
+  (map {qq!<INPUT TYPE="hidden" NAME="$_" VALUE="$search{$_}">!} keys(%search)),
   qq!</FORM>!
 } qw( print_ email_ fax_ ) );
 

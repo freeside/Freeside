@@ -410,7 +410,7 @@ use Carp;
 use Storable qw(nfreeze);
 use MIME::Base64;
 use JSON;
-use FS::UID;
+use FS::UID qw(getotaker);
 use FS::Record qw(qsearchs);
 use FS::queue;
 
@@ -483,6 +483,7 @@ sub start_job {
       push @{$param{$field}}, $value;
     }
   }
+  $param{CurrentUser} = getotaker();
   warn "FS::UI::Web::start_job\n".
        join('', map {
                       if ( ref($param{$_}) ) {
