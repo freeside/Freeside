@@ -126,8 +126,7 @@ Where a customer heard about your service. Tracked for informational purposes.
 <%init>
 
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Configuration')
-      || $FS::CurrentUser::CurrentUser->access_right('Edit advertising sources')
+  unless $FS::CurrentUser::CurrentUser->access_right('Edit advertising sources')
       || $FS::CurrentUser::CurrentUser->access_right('Edit global advertising sources');
 
 my $today = timelocal(0, 0, 0, (localtime(time))[3..5] );

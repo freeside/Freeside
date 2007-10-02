@@ -251,8 +251,7 @@ tie my %config_agent, 'Tie::IxHash',
 tie my %config_billing, 'Tie::IxHash',
   'View/Edit payment gateways'         => [ $fsurl.'browse/payment_gateway.html', 'Credit card and electronic check processors' ];
 $config_billing{'View/Edit billing events'} = [ $fsurl.'browse/part_event.html', 'Billing actions for customers, invoices and packages' ]
-    if $curuser->access_right('Configuration')
-    || $curuser->access_right('Edit billing events')
+    if $curuser->access_right('Edit billing events')
     || $curuser->access_right('Edit global billing events');
 if ( $curuser->access_right('Configuration') ) {
   $config_billing{'View/Edit invoice events'}         = [ $fsurl.'browse/part_bill_event.cgi', 'Deprecated, old-style actions for overdue invoices' ];
@@ -273,8 +272,7 @@ tie my %config_broadband, 'Tie::IxHash',
 
 tie my %config_misc, 'Tie::IxHash';
 $config_misc{'View/Edit advertising sources'} = [ $fsurl.'browse/part_referral.html', 'Where a customer heard about your service.  Tracked for informational purposes' ]
-  if $curuser->access_right('Configuration')
-  || $curuser->access_right('Edit advertising sources')
+  if $curuser->access_right('Edit advertising sources')
   || $curuser->access_right('Edit global advertising sources');
 if ( $curuser->access_right('Configuration') ) {
   $config_misc{'View/Edit virtual fields'} = [ $fsurl.'browse/part_virtual_field.cgi', 'Locally defined fields', ];
@@ -294,8 +292,7 @@ if ( $curuser->access_right('Configuration' ) ) {
   );
 }
 $config_menu{'Billing'} = [ \%config_billing, ''    ]
-  if $curuser->access_right('Configuration')
-  || $curuser->access_right('Edit billing events')
+  if $curuser->access_right('Edit billing events')
   || $curuser->access_right('Edit global billing events');
 if ( $curuser->access_right('Configuration') ) {
   $config_menu{'Dialup'}  = [ \%config_dialup, ''    ];
@@ -303,8 +300,7 @@ if ( $curuser->access_right('Configuration') ) {
                             [ \%config_broadband, ''    ];
 }
 $config_menu{'Miscellaneous'} = [ \%config_misc, ''    ]
-  if $curuser->access_right('Configuration')
-  || $curuser->access_right('Edit advertising sources')
+  if $curuser->access_right('Edit advertising sources')
   || $curuser->access_right('Edit global advertising sources');
 
 tie my %menu, 'Tie::IxHash',
@@ -325,8 +321,7 @@ $menu{'Reports'} = [ \%report_menu, 'Lists, reporting and graphing' ]
 $menu{'Tools'} = [ \%tools_menu, 'Tools' ]
   if keys %tools_menu;
 $menu{'Configuration'} = [ \%config_menu, 'Configuraiton and setup' ]
-  if $curuser->access_right('Configuration')
-  || $curuser->access_right('Edit advertising sources')
+  if $curuser->access_right('Edit advertising sources')
   || $curuser->access_right('Edit global advertising sources');
 
 use vars qw($gmenunum);
