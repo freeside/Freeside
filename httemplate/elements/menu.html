@@ -140,7 +140,10 @@ foreach my $svcdb ( FS::part_svc->svc_tables() ) {
 }
 
 tie my %report_packages, 'Tie::IxHash';
-if ( $curuser->access_right('Configuration') ) {
+if (    $curuser->access_right('Edit package definitions')
+     || $curuser->access_right('Edit global package definitions')
+   )
+{
   $report_packages{'Package definitions'} =  [ $fsurl.'browse/part_pkg.cgi?active=1', 'Package definitions by number of active packages' ];
   $report_packages{'separator'} =  '';
 }
