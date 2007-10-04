@@ -5789,6 +5789,7 @@ sub _agent_plandata {
 
   my $part_event_option =
     qsearchs({
+      'select'    => 'part_event_option.*',
       'table'     => 'part_event_option',
       'addl_from' => q{
         LEFT JOIN part_event USING ( eventpart )
@@ -5826,7 +5827,7 @@ sub _agent_plandata {
     
   unless ( $part_event_option ) {
     return $self->agent->invoice_template || ''
-      if $option eq '$agent_templatename';
+      if $option eq 'agent_templatename';
     return '';
   }
 
