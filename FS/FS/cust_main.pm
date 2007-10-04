@@ -2511,7 +2511,7 @@ sub collect {
   # false laziness w/pay_batch::import_results
 
   my $due_cust_event = $self->due_cust_event(
-    'debug'      => ( $opt{'debug'} || 0 ),
+    'debug'      => ( $options{'debug'} || 0 ),
     'time'       => $invoice_time,
     'check_freq' => $options{'check_freq'},
   );
