@@ -26,7 +26,7 @@ sub usage {
 
 =head1 NAME
 
-freeside-sqlradius-seconds - Real-time radacct import daemon
+freeside-sqlradius-seconds - Command line time-online tool
 
 =head1 SYNOPSIS
 
