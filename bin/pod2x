@@ -1,19 +1,51 @@
-#!/usr/bin/perl
+#!/usr/bin/perl -w
 
-#use Pod::Text;
-#$Pod::Text::termcap=1;
+use strict;
+use WWW::Mediawiki::Client;
+#sub WWW::Mediawiki::Client::pagename_to_url {
+#    my ($self, $name, $action) = @_;
+#    WWW::Mediawiki::Client::URLConstructionException->throw(
+#            error => 'No action supplied.',
+#        ) unless $action;
+#    WWW::Mediawiki::Client::URLConstructionException->throw(
+#            error => "Page name $name ends with '.wiki'.",
+#        ) if $name =~ /.wiki$/;
+#    my $char = $self->space_substitute;
+#    $name =~ s/ /$char/;
+#    my $lang = $self->language_code;
+#    my $host = $self->host;
+#    $host =~ s/__LANG__/$lang/g;
+#    my $wiki_path = $self->wiki_path;
+#    $wiki_path =~ s/__LANG__/$lang/g;
+#    my $protocol = $self->protocol;
+#    return "$protocol://$host/$wiki_path?" . ACTION . "=$action&" . TITLE . "=$name" . '&wpRecreate=1';
+#}
+
+my $mw_username = 'ivan';
+chomp( my $mw_password = `cat .mw-password` );
 
 my $site_perl = "./FS";
-#my $catman = "./catman";
-#my $catman = "./htdocs/docs/man";
-#my $html = "./htdocs/docs/man";
-my $html = "./httemplate/docs/man";
+#my $html = "Freeside:1.7:Documentation:Developer";
+my $html = "Freeside:1.9:Documentation:Developer";
+
+foreach my $dir (
+  $html,
+  map "$html/$_", qw( bin FS FS/UI FS/part_export FS/part_pkg
+                      FS/part_event FS/part_event/Condition FS/part_event/Action
+                      FS/ClientAPI FS/Cron FS/Misc FS/Report FS/Report/Table
+                      FS/TicketSystem FS/UI
+                    )
+) {
+  -d $dir or mkdir $dir;
+}
 
 $|=1;
 
 die "Can't find $site_perl" unless -d $site_perl;
 #die "Can't find $catman" unless -d $catman;
-die "Can't find $html" unless -d $html;
+-d $html or mkdir $html;
+
+my $count = 0;
 
 #make some useless links
 foreach my $file (
@@ -21,20 +53,31 @@ foreach my $file (
 ) {
   next if $file =~ /\.pod$/;
   #symlink $file, "$file.pod"; # or die "link $file to $file.pod: $!";
-  system("cp $file $file.pod");
+  #system("cp $file $file.pod");
+  -e "$file.pod" or system("cp $file $file.pod");
 }
+
+my $mvs = WWW::Mediawiki::Client->new(
+            'host'           => 'www.sisd.com',
+            'wiki_path'      => 'mediawiki/index.php',
+            'username'       => $mw_username,
+            'password'       => $mw_password,
+            #'commit_message' => 'import from POD'
+          );
+
+$mvs->do_login;
 
 foreach my $file (
   glob("$site_perl/*.pm"),
   glob("$site_perl/*/*.pm"),
   glob("$site_perl/*/*/*.pm"),
+  glob("$site_perl/*/*/*/*.pm"),
   glob("$site_perl/bin/*.pod"),
-  glob("./fs_sesmon/FS-SessionClient/*.pm"),
-  #glob("./fs_signup/FS-SignupClient/*.pm"),
   glob("./fs_selfservice/FS-SelfService/*.pm"),
-  glob("./fs_selfadmin/FS-MailAdminServer/*.pm"),
+  glob("./fs_selfservice/FS-SelfService/*/*.pm"),
 ) {
   next if $file =~ /(^|\/)blib\//;
+  next if $file =~ /(^|\/)CVS\//;
   #$file =~ /\/([\w\-]+)\.pm$/ or die "oops file $file";
   my $name;
   if ( $file =~ /fs_\w+\/FS\-\w+\/(.*)\.pm$/ ) {
@@ -44,13 +87,52 @@ foreach my $file (
   } else {
     die "oops file $file";
   }
-  print "$name\n";
+
+  #exit if $count++ == 10;
+
   my $htmlroot = join('/', map '..',1..(scalar($file =~ tr/\///)-2)) || '.';
-#  system "pod2text $file >$catman/$name.txt"; 
-  system "pod2html --podroot=$site_perl --podpath=./FS:./FS/UI:.:./bin --norecurse --htmlroot=$htmlroot $file >$html/$name.html";
-  #system "pod2html --podroot=$site_perl --htmlroot=$htmlroot $file >$html/$name.html";
-#  system "pod2html $file >$html/$name.html";
+
+  system "pod2wiki  --style mediawiki $file >$html/$name.rawwiki";
+
+  if ( -e "$html/$name.rawwiki" ) {
+    print "processing $name\n";
+  } else {
+    print "skipping $name\n";
+    next;
+  };
+
+  $mvs->do_update("$html/$name.wiki");
+
+  open(RAW, "<$html/$name.rawwiki") or die $!;
+  open(WIKI,">$html/$name.wiki"   ) or die $!;
+  while (<RAW>) {
+    s/\[\[([^#][^\]]*)\]\]/"[[$html\/". w_e($1). "|$1]]"/ge;
+    print WIKI $_;
+  }
+  close RAW;
+  close WIKI;
+
+  print "  uploading to ". $mvs->filename_to_pagename("$html/$name.wiki"). "\n";
+  $mvs->commit_message( 'import from POD' );
+  $mvs->do_commit("$html/$name.wiki");
+
 }
+
+sub w_e {
+  my $s = shift;
+  $s =~ s/_/ /g;
+  $s =~ s/::/\//g;
+  $s =~ s/^freeside-/bin\/freeside-/g;
+  $s;
+}
+
+
+##  system "pod2text $file >$catman/$name.txt"; 
+##
+#  system "pod2html --podroot=$site_perl --podpath=./FS:./FS/UI:.:./bin --norecurse --htmlroot=$htmlroot $file >$html/$name.html";
+#  #system "pod2html --podroot=$site_perl --htmlroot=$htmlroot $file >$html/$name.html";
+##  system "pod2html $file >$html/$name.html";
+##
 
 #remove the useless links
 unlink glob("$site_perl/bin/*.pod");

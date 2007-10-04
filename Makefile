@@ -130,14 +130,13 @@ help:
 	@echo "                   dev dev-docs dev-perl-modules"
 	@echo
 	@echo "                   masondocs alldocs docs"
-	@echo "                   htmlman forcehtmlman"
+	@echo "                   wikiman"
 	@echo "                   perl-modules"
 	#@echo
 	#@echo "                   upload-docs release update-webdemo"
 
 
-#masondocs: htmlman httemplate/* httemplate/*/* httemplate/*/*/* httemplate/*/*/*/* httemplate/*/*/*/*/*
-masondocs: htmlman httemplate/* httemplate/*/* httemplate/*/*/* httemplate/*/*/*/*
+masondocs: httemplate/* httemplate/*/* httemplate/*/*/* httemplate/*/*/*/*
 	rm -rf masondocs
 	cp -pr httemplate masondocs
 	touch masondocs
@@ -147,22 +146,9 @@ alldocs: masondocs
 docs:
 	make ${TEMPLATE}docs
 
-htmlman:
-	[ -e ./httemplate/docs/man ] || mkdir httemplate/docs/man
-	[ -e ./httemplate/docs/man/bin ] || mkdir httemplate/docs/man/bin
-	[ -e ./httemplate/docs/man/FS ] || mkdir httemplate/docs/man/FS
-	[ -e ./httemplate/docs/man/FS/UI ] || mkdir httemplate/docs/man/FS/UI
-	[ -e ./httemplate/docs/man/FS/part_export ] || mkdir httemplate/docs/man/FS/part_export
-	chmod a+rx bin/pod2x
-	[ -e DONT_REBUILD_DOCS ] || bin/pod2x
-
-forcehtmlman:
-	[ -e ./httemplate/docs/man ] || mkdir httemplate/docs/man
-	[ -e ./httemplate/docs/man/bin ] || mkdir httemplate/docs/man/bin
-	[ -e ./httemplate/docs/man/FS ] || mkdir httemplate/docs/man/FS
-	[ -e ./httemplate/docs/man/FS/UI ] || mkdir httemplate/docs/man/FS/UI
-	[ -e ./httemplate/docs/man/FS/part_export ] || mkdir httemplate/docs/man/FS/part_export
-	bin/pod2x
+wikiman:
+	chmod a+rx ./bin/pod2x
+	./bin/pod2x
 
 install-docs: docs
 	[ -e ${FREESIDE_DOCUMENT_ROOT} ] && mv ${FREESIDE_DOCUMENT_ROOT} ${FREESIDE_DOCUMENT_ROOT}.`date +%Y%m%d%H%M%S` || true
@@ -356,10 +342,6 @@ clean:
 	make clean
 
 #these are probably only useful if you're me...
-
-upload-docs: forcehtmlman
-	ssh 420.am rm -rf /var/www/www.sisd.com/freeside/docs
-	scp -pr httemplate/docs 420.am:/var/www/www.sisd.com/freeside/docs
 
 #release: upload-docs
 release:
