@@ -1595,8 +1595,8 @@ sub ncancelled_pkgs {
 
   } else {
 
-    warn "$me ncancelled_pkgs: searching for packages for custnum ".
-         $self->custnum
+    warn "$me ncancelled_pkgs: searching for packages with custnum ".
+         $self->custnum. "\n"
       if $DEBUG > 1;
 
     @cust_pkg =
@@ -2627,6 +2627,7 @@ sub due_cust_event {
       $extra_sql .= " $order";
 
       my @part_event = qsearch( {
+        'debug'     => ( $opt{'debug'} > 3 ? 1 : 0 ),
         'select'    => 'part_event.*',
         'table'     => 'part_event',
         'addl_from' => "$cross $join",
@@ -2648,7 +2649,7 @@ sub due_cust_event {
     }
 
     warn "    ". scalar(@e_cust_event).
-         " subtotal possible cust events found for $eventtable"
+         " subtotal possible cust events found for $eventtable\n"
       if $DEBUG > 1;
 
     push @cust_event, @e_cust_event;
