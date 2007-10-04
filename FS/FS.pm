@@ -41,21 +41,21 @@ L<FS::Msgcat> - Message catalog
 
 L<FS::SearchCache> - Search cache
 
-L<FS::raddb> - RADIUS dictionary
-
 L<FS::AccessRight> - Access control rights.
 
 L<FS::Report> - Report data objects
 
 L<FS::Report::Table> - Report data objects
 
-L<FS::Report::Monthly> - Report data objects
+L<FS::Report::Table::Monthly> - Report data objects
 
 L<FS::XMLRPC> - Backend XML::RPC server
 
 L<FS::Misc> - Miscellaneous subroutines
 
 L<FS::payby> - Payment types
+
+L<FS::ClientAPI_SessionCache> - ClientAPI session cache
 
 L<FS::Pony> - A pony
 
@@ -314,29 +314,11 @@ L<FS::h_svc_phone> - Historical phone number objects
 
 L<FS::h_svc_www> - Historical web virtual host objects
 
-=head2 Client API
-
-L<FS::ClientAPI>
-
-L<FS::ClientAPI_SessionCache>
-
-L<FS::ClientAPI::Signup>
-
-L<FS::ClientAPI::passwd>
-
-L<FS::ClientAPI::MyAccount>
-
-L<FS::ClientAPI::Agent>
-
 =head2 Remote API modules
 
-L<FS::SelfService>
+L<FS::SelfService> - Self-service API
 
-L<FS::SignupClient>
-
-L<FS::SessionClient>
-
-L<FS::MailAdminServer> (deprecated in favor of the self-service server)
+L<FS::SelfService::XMLRPC> - Self-service XML-RPC API
 
 =head2 User Interface classes
 
@@ -346,27 +328,43 @@ L<FS::UI::bytecount> - Byte counter user-interface class
 
 =head2 Command-line utilities
 
-L<freeside-adduser>
+L<freeside-adduser> - Command line interface to add (freeside) users.
 
-L<freeside-queued>
+L<freeside-daily> - Run daily billing and collection events.
 
-L<freeside-daily>
+L<freeside-monthly> - Run monthly billing and invoice collection events.
 
-L<freeside-expiration-alerter>
+L<freeside-dbdef-create> - Recreate database schema cache
 
-L<freeside-email>
+L<freeside-deluser> - Command line interface to delete (freeside) users.
 
-L<freeside-cc-receipts-report>
+L<freeside-expiration-alerter> - Emails notifications of credit card expirations.
 
-L<freeside-credit-report>
+L<freeside-email> -  Prints email addresses of all users on STDOUT
 
-L<freeside-receivables-report>
+L<freeside-fetch> - Send a freeside page to a list of employees.
 
-L<freeside-tax-report>
+L<freeside-prepaidd> - Real-time daemon for prepaid packages
 
-L<freeside-bill>
+L<freeside-prune-applications> - Removes stray applications of credit, payment to bills, refunds, etc.
 
-L<freeside-overdue>
+L<freeside-queued> - Job queue daemon
+
+L<freeside-radgroup> - Command line utility to manipulate radius groups
+
+L<freeside-reexport> - Command line tool to re-trigger export jobs for existing services
+
+L<freeside-reset-fixed> - Command line tool to set the fixed columns for existing services
+
+L<freeside-sqlradius-dedup-group> - Command line tool to eliminate duplicate usergroup entries from radius tables
+
+L<freeside-sqlradius-radacctd> - Real-time radacct import daemon
+
+L<freeside-sqlradius-reset> - Command line interface to reset and recreate RADIUS SQL tables
+
+L<freeside-sqlradius-seconds> - Command line time-online tool
+
+L<freeside-upgrade> - Upgrades database schema for new freeside verisons.
 
 =head1 Notes
 
