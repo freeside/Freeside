@@ -1888,17 +1888,30 @@ Options are passed as name-value pairs.  Currently available options are:
 
 =over 4
 
-=item time - bills the customer as if it were that time.  Specified as a UNIX timestamp; see L<perlfunc/"time">).  Also see L<Time::Local> and L<Date::Parse> for conversion functions.  For example:
+=item time
+
+Bills the customer as if it were that time.  Specified as a UNIX timestamp; see L<perlfunc/"time">).  Also see L<Time::Local> and L<Date::Parse> for conversion functions.  For example:
 
  use Date::Parse;
  ...
  $cust_main->bill( 'time' => str2time('April 20th, 2001') );
 
-=item invoice_time - used in conjunction with the I<time> option, this option specifies the date of for the generated invoices.  Other calculations, such as whether or not to generate the invoice in the first place, are not affected.
+=item invoice_time
 
-=item check_freq - "1d" for the traditional, daily events (the default), or "1m" for the new monthly events (part_event.check_freq)
+Used in conjunction with the I<time> option, this option specifies the date of for the generated invoices.  Other calculations, such as whether or not to generate the invoice in the first place, are not affected.
 
-=item resetup - if set true, re-charges setup fees.
+=item check_freq
+
+"1d" for the traditional, daily events (the default), or "1m" for the new monthly events (part_event.check_freq)
+
+=item resetup
+
+If set true, re-charges setup fees.
+
+=item debug
+
+Debugging level.  Default is 0 (no debugging), or can be set to 1 (passed-in options), 2 (traces progress), 3 (more information), or 4 (include full search queries)
+
 
 =back
 
@@ -1965,19 +1978,27 @@ Options are passed as name-value pairs.  Currently available options are:
 
 =over 4
 
-=item resetup - if set true, re-charges setup fees.
+=item resetup
 
-=item time - bills the customer as if it were that time.  Specified as a UNIX timestamp; see L<perlfunc/"time">).  Also see L<Time::Local> and L<Date::Parse> for conversion functions.  For example:
+if set true, re-charges setup fees.
+
+=item time
+
+bills the customer as if it were that time.  Specified as a UNIX timestamp; see L<perlfunc/"time">).  Also see L<Time::Local> and L<Date::Parse> for conversion functions.  For example:
 
  use Date::Parse;
  ...
  $cust_main->bill( 'time' => str2time('April 20th, 2001') );
 
-=item pkg_list - An array ref of specific packages (objects) to attempt billing, instead trying all of them.
+=item pkg_list
+
+An array ref of specific packages (objects) to attempt billing, instead trying all of them.
 
  $cust_main->bill( pkg_list => [$pkg1, $pkg2] );
 
-=item invoice_time - used in conjunction with the I<time> option, this option specifies the date of for the generated invoices.  Other calculations, such as whether or not to generate the invoice in the first place, are not affected.
+=item invoice_time
+
+used in conjunction with the I<time> option, this option specifies the date of for the generated invoices.  Other calculations, such as whether or not to generate the invoice in the first place, are not affected.
 
 =back
 
@@ -2423,15 +2444,30 @@ Currently available options are:
 
 =over 4
 
-=item invoice_time - Use this time when deciding when to print invoices and late notices on those invoices.  The default is now.  It is specified as a UNIX timestamp; see L<perlfunc/"time">).  Also see L<Time::Local> and L<Date::Parse> for conversion functions.
+=item invoice_time
 
-=item retry - Retry card/echeck/LEC transactions even when not scheduled by invoice events.
+Use this time when deciding when to print invoices and late notices on those invoices.  The default is now.  It is specified as a UNIX timestamp; see L<perlfunc/"time">).  Also see L<Time::Local> and L<Date::Parse> for conversion functions.
 
-=item quiet - set true to surpress email card/ACH decline notices.
+=item retry
 
-=item check_freq - "1d" for the traditional, daily events (the default), or "1m" for the new monthly events (part_event.check_freq)
+Retry card/echeck/LEC transactions even when not scheduled by invoice events.
 
-=item payby - allows for one time override of normal customer billing method
+=item quiet
+
+set true to surpress email card/ACH decline notices.
+
+=item check_freq
+
+"1d" for the traditional, daily events (the default), or "1m" for the new monthly events (part_event.check_freq)
+
+=item payby
+
+allows for one time override of normal customer billing method
+
+=item debug
+
+Debugging level.  Default is 0 (no debugging), or can be set to 1 (passed-in options), 2 (traces progress), 3 (more information), or 4 (include full search queries)
+
 
 =back
 
@@ -2475,6 +2511,7 @@ sub collect {
   # false laziness w/pay_batch::import_results
 
   my $due_cust_event = $self->due_cust_event(
+    'debug'      => ( $opt{'debug'} || 0 ),
     'time'       => $invoice_time,
     'check_freq' => $options{'check_freq'},
   );
@@ -2528,15 +2565,25 @@ options are:
 
 =over 4
 
-=item check_freq - Search only for events of this check frequency (how often events of this type are checked); currently "1d" (daily, the default) and "1m" (monthly) are recognized.
+=item check_freq
 
-=item time - "Current time" for the events.
+Search only for events of this check frequency (how often events of this type are checked); currently "1d" (daily, the default) and "1m" (monthly) are recognized.
 
-=item debug - Debugging level.  Default is 0 (no debugging), or can be set to 1 (passed-in options), 2 (traces progress), or 3 (more information)
+=item time
 
-=item eventtable - Only return events for the specified eventtable (by default, events of all eventtables are returned)
+"Current time" for the events.
 
-=item objects - Explicitly pass the objects to be tested (typically used with eventtable).
+=item debug
+
+Debugging level.  Default is 0 (no debugging), or can be set to 1 (passed-in options), 2 (traces progress), 3 (more information), or 4 (include full search queries)
+
+=item eventtable
+
+nly return events for the specified eventtable (by default, events of all eventtables are returned)
+
+=item objects
+
+xplicitly pass the objects to be tested (typically used with eventtable).
 
 =back
 
