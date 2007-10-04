@@ -1,7 +1,7 @@
 package FS::part_event_condition;
 
 use strict;
-use vars qw( @ISA $DEBUG );
+use vars qw( @ISA $DEBUG @SKIP_CONDITION_SQL );
 use FS::UID qw(dbh);
 use FS::Record qw( qsearch qsearchs );
 use FS::option_Common;
@@ -9,6 +9,8 @@ use FS::part_event; #for order_conditions_sql...
 
 @ISA = qw( FS::option_Common ); # FS::Record );
 $DEBUG = 0;
+
+@SKIP_CONDITION_SQL = ();
 
 =head1 NAME
 
@@ -283,7 +285,10 @@ sub where_conditions_sql {
           die "$coderef is not a CODEREF" unless ref($coderef) eq 'CODE';
           "( cond_$conditionname.conditionname IS NULL OR $sql )";
         }
-        keys %conditions
+        grep { my $cond = $_;
+               ! grep { $_ eq $cond } @SKIP_CONDITION_SQL
+             }
+             keys %conditions
   );
 
   $where;
