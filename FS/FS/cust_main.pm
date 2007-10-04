@@ -2433,6 +2433,8 @@ Currently available options are:
 
 =item payby - allows for one time override of normal customer billing method
 
+=back
+
 =cut
 
 sub collect {
