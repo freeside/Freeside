@@ -5795,7 +5795,7 @@ sub _agent_plandata {
         LEFT JOIN part_event_option AS peo_agentnum
           ON ( part_event.eventpart = peo_agentnum.eventpart
                AND peo_agentnum.optionname = 'agentnum'
-               AND peo_agentnum.optionvalue ~ '(^|,)}. $agentnum. q{agentnum(,|$)'
+               AND peo_agentnum.optionvalue ~ '(^|,)}. $agentnum. q{(,|$)'
              )
         LEFT JOIN part_event_option AS peo_cust_bill_age
           ON ( part_event.eventpart = peo_cust_bill_age.eventpart
