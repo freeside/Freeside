@@ -68,15 +68,22 @@ my $mvs = WWW::Mediawiki::Client->new(
 
 $mvs->do_login;
 
-foreach my $file (
-  glob("$site_perl/*.pm"),
-  glob("$site_perl/*/*.pm"),
-  glob("$site_perl/*/*/*.pm"),
-  glob("$site_perl/*/*/*/*.pm"),
-  glob("$site_perl/bin/*.pod"),
-  glob("./fs_selfservice/FS-SelfService/*.pm"),
-  glob("./fs_selfservice/FS-SelfService/*/*.pm"),
-) {
+my @files;
+if ( @ARGV ) {
+  @files = @ARGV;
+} else {
+  @files =
+    glob("$site_perl/*.pm"),
+    glob("$site_perl/*/*.pm"),
+    glob("$site_perl/*/*/*.pm"),
+    glob("$site_perl/*/*/*/*.pm"),
+    glob("$site_perl/bin/*.pod"),
+    glob("./fs_selfservice/FS-SelfService/*.pm"),
+    glob("./fs_selfservice/FS-SelfService/*/*.pm"),
+  ;
+}
+
+foreach my $file (@files) {
   next if $file =~ /(^|\/)blib\//;
   next if $file =~ /(^|\/)CVS\//;
   #$file =~ /\/([\w\-]+)\.pm$/ or die "oops file $file";
