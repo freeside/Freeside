@@ -1912,7 +1912,6 @@ If set true, re-charges setup fees.
 
 Debugging level.  Default is 0 (no debugging), or can be set to 1 (passed-in options), 2 (traces progress), 3 (more information), or 4 (include full search queries)
 
-
 =back
 
 =cut
@@ -1980,11 +1979,11 @@ Options are passed as name-value pairs.  Currently available options are:
 
 =item resetup
 
-if set true, re-charges setup fees.
+If set true, re-charges setup fees.
 
 =item time
 
-bills the customer as if it were that time.  Specified as a UNIX timestamp; see L<perlfunc/"time">).  Also see L<Time::Local> and L<Date::Parse> for conversion functions.  For example:
+Bills the customer as if it were that time.  Specified as a UNIX timestamp; see L<perlfunc/"time">).  Also see L<Time::Local> and L<Date::Parse> for conversion functions.  For example:
 
  use Date::Parse;
  ...
@@ -1998,7 +1997,7 @@ An array ref of specific packages (objects) to attempt billing, instead trying a
 
 =item invoice_time
 
-used in conjunction with the I<time> option, this option specifies the date of for the generated invoices.  Other calculations, such as whether or not to generate the invoice in the first place, are not affected.
+Used in conjunction with the I<time> option, this option specifies the date of for the generated invoices.  Other calculations, such as whether or not to generate the invoice in the first place, are not affected.
 
 =back
 
@@ -2525,7 +2524,16 @@ sub collect {
     #XXX lock event
     
     #re-eval event conditions (a previous event could have changed things)
-    next unless $cust_event->test_conditions( 'time' => $invoice_time );
+    unless ( $cust_event->test_conditions( 'time' => $invoice_time ) ) {
+      #don't leave stray "new/locked" records around
+      my $error = $cust_event->delete;
+      if ( $error ) {
+        #gah, even with transactions
+        $dbh->commit if $oldAutoCommit; #well.
+        return $error;
+      }
+      next;
+    }
 
     {
       local $realtime_bop_decline_quiet = 1 if $options{'quiet'};
@@ -2579,11 +2587,11 @@ Debugging level.  Default is 0 (no debugging), or can be set to 1 (passed-in opt
 
 =item eventtable
 
-nly return events for the specified eventtable (by default, events of all eventtables are returned)
+Only return events for the specified eventtable (by default, events of all eventtables are returned)
 
 =item objects
 
-xplicitly pass the objects to be tested (typically used with eventtable).
+Explicitly pass the objects to be tested (typically used with eventtable).
 
 =back
 
@@ -2673,6 +2681,8 @@ sub due_cust_event {
 
       $extra_sql .= " $order";
 
+      warn "searching for events for $eventtable ". $object->$pkey. "\n"
+        if $opt{'debug'} > 2;
       my @part_event = qsearch( {
         'debug'     => ( $opt{'debug'} > 3 ? 1 : 0 ),
         'select'    => 'part_event.*',
