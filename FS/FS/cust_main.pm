@@ -5806,7 +5806,7 @@ sub _agent_plandata {
       #'hashref'   => { 'part_event_option.optionname' => $option },
       'extra_sql' =>
         " WHERE part_event_option.optionname = ". dbh->quote($option).
-        " AND action = 'cust_bill_send_agent' "
+        " AND action = 'cust_bill_send_agent' ".
         " AND ( disabled IS NULL OR disabled != 'Y' ) ".
         " AND peo_agentnum.optionname = 'agentnum' ".
         " AND agentnum IS NULL OR agentnum = $agentnum ".
