@@ -18,10 +18,13 @@ sub bill {
 
   my $check_freq = $opt{'check_freq'} || '1d';
 
-  $FS::cust_main::DEBUG = 1 if $opt{'v'};
-  $FS::cust_main::DEBUG = $opt{'l'} if $opt{'l'};
+  my $debug = 0;
+  $debug = 1 if $opt{'v'};
+  $debug = $opt{'l'} if $opt{'l'};
+ 
+  $FS::cust_main::DEBUG = $debug;
   #$FS::cust_event::DEBUG = $opt{'l'} if $opt{'l'};
-  
+
   my %search = ();
   $search{'payby'}    = $opt{'p'} if $opt{'p'};
   $search{'agentnum'} = $opt{'a'} if $opt{'a'};
@@ -119,6 +122,7 @@ END
         'invoice_time' => $invoice_time,
         'check_freq'   => $check_freq,
         'resetup'      => $opt{'s'},
+        'debug'        => $debug,
       );
 
     }
