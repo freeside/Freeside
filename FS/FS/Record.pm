@@ -214,6 +214,7 @@ The preferred usage is to pass a hash reference of named parameters:
                            'order_by'  => 'ORDER BY something',
                            #'cache_obj' => '', #optional
                            'addl_from' => 'LEFT JOIN othtable USING ( field )',
+                           'debug'     => 1,
                          }
                        );
 
@@ -235,6 +236,7 @@ fine in the common case where there are only two parameters:
 
 sub qsearch {
   my($stable, $record, $select, $extra_sql, $order_by, $cache, $addl_from );
+  my $debug = '';
   if ( ref($_[0]) ) { #hashref for now, eventually maybe accept a list too
     my $opt = shift;
     $stable    = $opt->{'table'}     or die "table name is required";
@@ -244,6 +246,7 @@ sub qsearch {
     $order_by  = $opt->{'order_by'}  || '';
     $cache     = $opt->{'cache_obj'} || '';
     $addl_from = $opt->{'addl_from'} || '';
+    $debug     = $opt->{'debug'}     || '';
   } else {
     ($stable, $record, $select, $extra_sql, $cache, $addl_from ) = @_;
     $select ||= '*';
@@ -282,7 +285,7 @@ sub qsearch {
   $statement .= " $extra_sql" if defined($extra_sql);
   $statement .= " $order_by"  if defined($order_by);
 
-  warn "[debug]$me $statement\n" if $DEBUG > 1;
+  warn "[debug]$me $statement\n" if $DEBUG > 1 || $debug;
   my $sth = $dbh->prepare($statement)
     or croak "$dbh->errstr doing $statement";
 
