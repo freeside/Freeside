@@ -21,15 +21,18 @@ sub condition {
   my $obj_pkey = $object->primary_key;
   my $tablenum = $object->$obj_pkey();
   
-  my @existing = qsearch( 'cust_event', {
-    'eventpart' => $self->eventpart,
-    'tablenum'  => $tablenum,
-    #'status'    => { op=>'NOT IN', value=>"('failed','new')" },
-    'status'    => { op=>'!=', value=>'failed' },
-    'addl_sql'  => ( $opt{'cust_event'}->eventnum =~ /^(\d+)$/
-                       ? " AND eventnum != $1 "
-                       : ''
-                   ),
+  my @existing = qsearch( {
+    'table'    => 'cust_event',
+    'hashref'  => {
+                    'eventpart' => $self->eventpart,
+                    'tablenum'  => $tablenum,
+                    #'status'    => { op=>'NOT IN', value=>"('failed','new')" },
+                    'status'    => { op=>'!=', value=>'failed' },
+                  },
+    'addl_sql' => ( $opt{'cust_event'}->eventnum =~ /^(\d+)$/
+                      ? " AND eventnum != $1 "
+                      : ''
+                  ),
   } );
 
   ! scalar(@existing);
