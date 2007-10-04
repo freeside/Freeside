@@ -69,7 +69,7 @@ L<FS::m2name_Common> - Base class for tables with a related table listing names
 
 L<FS::option_Common> - Base class for option sub-classes
 
-L<FS::pkg_class> - Package class class
+L<FS::conf> - Configuration value class
 
 L<FS::payinfo_Mixin>  - Mixin class for records in tables that contain payinfo.
 
@@ -92,6 +92,8 @@ L<FS::part_pop_local> - Local calling area class
 
 L<FS::part_referral> - Referral class
 
+L<FS::pkg_referral> - Package referral class
+
 L<FS::cust_main_county> - Locale (tax rate) class
 
 L<FS::cust_tax_exempt> - Tax exemption record class
@@ -105,6 +107,8 @@ L<FS::svc_Parent_Mixin> - Mixin class for svc_ classes with a parent_svcnum fiel
 L<FS::svc_acct> - Account (shell, RADIUS, POP3) class
 
 L<FS::acct_snarf> - External mail account class
+
+L<FS::acct_rt_transaction> - Time worked application to account class
 
 L<FS::radius_usergroup> - RADIUS groups
 
@@ -216,9 +220,25 @@ L<FS::cust_bill_pkg> - Invoice line item class
 
 L<FS::cust_bill_pkg_detail> - Invoice line item detail class
 
-L<FS::part_bill_event> - Invoice event definition class
+L<FS::part_bill_event> - (Old) Invoice event definition class
 
-L<FS::cust_bill_event> - Completed invoice event class
+L<FS::cust_bill_event> - (Old) Completed invoice event class
+
+L<FS::part_event> - (New) Billing event definition class
+
+L<FS::part_event_option> - (New) Billing event option class
+
+L<FS::part_event::Condition> - (New) Billing event condition base class
+
+L<FS::part_event::Action> - (New) Billing event action base class
+
+L<FS::part_event_condition> - (New) Billing event condition class
+
+L<FS::part_event_condition_option> - (New) Billing event condition option class
+
+L<FS::part_event_condition_option_option> - (New) Billing event condition compound option class
+
+L<FS::cust_event> - (New) Customer event class
 
 L<FS::cust_bill_ApplicationCommon> - Base class for bill application classes
 
