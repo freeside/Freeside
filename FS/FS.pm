@@ -124,6 +124,8 @@ L<FS::addr_block> - Address block class
 
 L<FS::router> - Router class
 
+L<FS::part_virtual_field> - Broadband virtual field class
+
 L<FS::svc_phone> - Phone service class
 
 L<FS::cdr> - Call Detail Record class
