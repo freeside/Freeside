@@ -5803,23 +5803,25 @@ sub _agent_plandata {
              )
       },
       #'hashref'   => { 'optionname' => $option },
-      'hashref'   => { 'part_event_option.optionname' => $option },
-      'extra_sql' => " AND event = 'cust_bill_send_agent' ".
-                     " AND disabled != 'Y' ".
-                     " AND peo_agentnum.optionname = 'agentnum' ".
-                     " AND agentnum IS NULL OR agentnum = $agentnum ".
-                     " ORDER BY
-                        CASE WHEN peo_cust_bill_age.optionname != 'cust_bill_age'
-                        THEN -1
-                        ELSE EXTRACT( EPOCH FROM
-                                        REPLACE( peo_cust_bill_age.optionvalue,
-                                                 'm',
-                                                 'mon'
-                                               )::interval
-                                    )
-                       END
-                       , part_event.weight".
-                     " LIMIT 1"
+      #'hashref'   => { 'part_event_option.optionname' => $option },
+      'extra_sql' =>
+        " WHERE part_event_option.optionname = ". dbh->quote($option).
+        " AND action = 'cust_bill_send_agent' "
+        " AND ( disabled IS NULL OR disabled != 'Y' ) ".
+        " AND peo_agentnum.optionname = 'agentnum' ".
+        " AND agentnum IS NULL OR agentnum = $agentnum ".
+        " ORDER BY
+           CASE WHEN peo_cust_bill_age.optionname != 'cust_bill_age'
+           THEN -1
+           ELSE EXTRACT( EPOCH FROM
+                           REPLACE( peo_cust_bill_age.optionvalue,
+                                    'm',
+                                    'mon'
+                                  )::interval
+                       )
+          END
+          , part_event.weight".
+        " LIMIT 1"
     });
     
   unless ( $part_event_option ) {
