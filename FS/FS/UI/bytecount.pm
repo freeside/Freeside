@@ -42,20 +42,21 @@ sub bytecount_unexact {
 
 Accepts a number (digits and a decimal point) possibly followed by k, m, g, or
 t (and an optional 'b') in either case.  Returns a pure number representing
-the input or the input itself if unparsable.
+the input or the input itself if unparsable.  Discards commas as noise.
 
 =cut
 
 sub parse_bytecount {
   my $bc = shift;
   return $bc if (($bc =~ tr/.//) > 1);
-  $bc =~ /^\s*([\d.]*)\s*([kKmMgGtT]?)[bB]?\s*$/ or return $bc;
+  $bc =~ /^\s*([,\d.]*)\s*([kKmMgGtT]?)[bB]?\s*$/ or return $bc;
   my $base = $1;
+  $base =~ tr/,//d;
   return $bc unless length $base;
   my $exponent = index ' kmgt', lc($2);
   return $bc if ($exponent < 0 && $2);
   $exponent = 0 if ($exponent < 0);
-  return $base * 1024 ** $exponent;
+  return int($base * 1024 ** $exponent);  #bytecounts are integer values
 }
 
 =item display_bytecount AMOUNT

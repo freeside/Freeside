@@ -10,12 +10,19 @@
 %my $href = $plans{$cgi->param('plan')}->{'fields'};
 %
 %#fixup plandata
+%my $error;
 %my $plandata = $cgi->param('plandata');
 %my @plandata = split(',', $plandata);
 %$cgi->param('plandata', 
 %  join('', map { my $parser = sub { shift };
 %                 $parser = $href->{$_}{parse} if exists($href->{$_}{parse});
-%                 "$_=". join(', ', &$parser($cgi->param($_))). "\n"
+%                 my $value = join(', ', &$parser($cgi->param($_)));
+%                 my $check = $href->{$_}{check};
+%                 if ( $check && ! &$check($value) ) {
+%                   $value = join(', ', $cgi->param($_));
+%                   $error ||= "Illegal ". ($href->{$_}{name}||$_). ": $value";
+%                 }
+%                 "$_=$value\n";
 %               } @plandata )
 %);
 %
@@ -39,9 +46,12 @@
 %              map { $_->svcpart }
 %              qsearch('part_svc', {} );
 %
-%my $error;
 %my $custnum = '';
-%if ( $cgi->param('taxclass') eq '(select)' ) {
+%if ( $error ) {
+%
+% # fall through
+%
+%} elsif ( $cgi->param('taxclass') eq '(select)' ) {
 %
 %  $error = 'Must select a tax class';
 %
