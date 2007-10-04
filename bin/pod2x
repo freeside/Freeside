@@ -34,6 +34,7 @@ foreach my $dir (
                       FS/part_event FS/part_event/Condition FS/part_event/Action
                       FS/ClientAPI FS/Cron FS/Misc FS/Report FS/Report/Table
                       FS/TicketSystem FS/UI
+                      FS/SelfService
                     )
 ) {
   -d $dir or mkdir $dir;
