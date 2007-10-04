@@ -29,8 +29,9 @@ FS::access_usergroup - Object methods for access_usergroup records
 
 =head1 DESCRIPTION
 
-An FS::access_usergroup object represents an example.  FS::access_usergroup inherits from
-FS::Record.  The following fields are currently supported:
+An FS::access_usergroup object represents an internal access user's membership
+in a group.  FS::access_usergroup inherits from FS::Record.  The following
+fields are currently supported:
 
 =over 4
 
@@ -49,7 +50,7 @@ FS::Record.  The following fields are currently supported:
 
 =item new HASHREF
 
-Creates a new example.  To add the example to the database, see L<"insert">.
+Creates a new record.  To add the record to the database, see L<"insert">.
 
 Note that this stores the hash reference, not a distinct copy of the hash it
 points to.  You can ask the object for a copy with the I<hash> method.
@@ -88,7 +89,7 @@ returns the error, otherwise returns false.
 
 =item check
 
-Checks all fields to make sure this is a valid example.  If there is
+Checks all fields to make sure this is a valid record.  If there is
 an error, returns the error, otherwise returns false.  Called by the insert
 and replace methods.
 
