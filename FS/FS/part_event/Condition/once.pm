@@ -20,7 +20,7 @@ sub condition {
 
   my $obj_pkey = $object->primary_key;
   my $tablenum = $object->$obj_pkey();
-  
+ 
   my @existing = qsearch( {
     'table'     => 'cust_event',
     'hashref'   => {
