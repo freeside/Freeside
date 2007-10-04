@@ -85,7 +85,7 @@ if ( $cgi->param('agentnum') && $cgi->param('agentnum') =~ /^(\d+)$/ ) {
   = FS::UI::Web::parse_beginning_ending($cgi);
 
 if ( $cgi->param('failed') ) {
-  push $search{failed} = '1';
+  $search{failed} = '1';
 }
 
 if ( $cgi->param('part_bill_event.payby') =~ /^(\w+)$/ ) {
