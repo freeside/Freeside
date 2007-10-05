@@ -152,6 +152,17 @@ sub condition_sql {
   'true';
 }
 
+=item disabled
+
+Condition classes may optionally define a disabled method.  Returning a true
+value disbles the condition entirely.
+
+=cut
+
+sub disabled {
+  0;
+}
+
 =item implicit_flag
 
 This is used internally by the I<once> and I<balance> conditions.  You probably

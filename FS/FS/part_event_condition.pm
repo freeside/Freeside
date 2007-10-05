@@ -191,6 +191,10 @@ foreach my $INC ( @INC ) {
       #warn "error using $fullmod (skipping): $@\n" if $@;
       #next;
     }
+    if ( $fullmod->disabled ) {
+      warn "$fullmod is disabled; skipping\n";
+      next;
+    }
     #my $full_condition_sql = $fullmod. '::condition_sql';
     my $condition_sql_coderef = sub { $fullmod->condition_sql(@_) };
     my $order_sql_coderef = $fullmod->can('order_sql')

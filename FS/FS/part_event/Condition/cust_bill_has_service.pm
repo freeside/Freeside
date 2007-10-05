@@ -16,6 +16,9 @@ sub eventtable_hashref {
     };
 }
 
+# could not find component for path '/elements/tr-select-part_svc.html'
+sub disabled { 1; }
+
 sub option_fields {
   (
     'has_service' => { 'label'      => 'Has service',
