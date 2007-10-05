@@ -1,0 +1,29 @@
+% if ( scalar(@{ $opt{'part_svc'} }) == 0 ) { 
+
+  <INPUT TYPE="hidden" NAME="<% $opt{'field'} || 'svcpart' %>" VALUE="">
+
+% } else { 
+
+  <TR>
+    <TD ALIGN="right"><% $opt{'label'} || 'Package definition' %></TD>
+    <TD>
+      <% include( '/elements/select-table.html',
+                    'table'     => 'part_svc',
+                    'name_col'  => 'svc',
+                    'multiple'  => 1,
+                    #N/A 'empty_label' => '(none)',
+                    %opt,
+                )
+      %>
+    </TD>
+  </TR>
+
+% } 
+
+<%init>
+
+my( %opt ) = @_;
+
+$opt{'part_svc'} ||= [ qsearch( 'part_svc', {} ) ]; # { disabled=>'' } )
+
+</%init>
