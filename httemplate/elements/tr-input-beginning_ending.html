@@ -1,7 +1,9 @@
-<LINK REL="stylesheet" TYPE="text/css" HREF="<%$fsurl%>elements/calendar-win2k-2.css" TITLE="win2k-2">
-<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/calendar_stripped.js"></SCRIPT>
-<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/calendar-en.js"></SCRIPT>
-<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/calendar-setup.js"></SCRIPT>
+% unless ( $m->count == $previous_request_count ) {
+  <LINK REL="stylesheet" TYPE="text/css" HREF="<%$fsurl%>elements/calendar-win2k-2.css" TITLE="win2k-2">
+  <SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/calendar_stripped.js"></SCRIPT>
+  <SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/calendar-en.js"></SCRIPT>
+  <SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/calendar-setup.js"></SCRIPT>
+% }
 
 <TR>
   <TD ALIGN="right">From date: </TD>
@@ -43,6 +45,11 @@
   </TD>
 </TR>
 
+<%once>
+
+my $previous_request_count = '';
+
+</%once>
 <%init>
 
 my %opt = @_;
@@ -61,3 +68,8 @@ if ( $opt{'input_time'} ) {
 }
 
 </%init>
+<%cleanup>
+
+$previous_request_count = $m->count;
+
+</%cleanup>
