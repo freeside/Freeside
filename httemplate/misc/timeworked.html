@@ -7,29 +7,66 @@
 
 <FORM NAME="timeworked_form" ACTION="<% popurl(1) %>process/timeworked.html" METHOD=POST>
 
-<BR><BR>
-<% include("elements/customer-table.html", header => [ 'Multiplier' ],
-                                           fields => [ 'multiplier' ],
-                                           param  => { %param },
-          ) %>
+<TABLE CELLSPACING="2" CELLPADDING="2" RULES="groups" FRAME="hsides">
 
-<BR>
-<INPUT TYPE="submit" NAME="submit" VALUE="<% $title %>">
-<BR>
-<BR>
+<THEAD>
+  <TR>
+    <TH>Trans</TH>
+    <TH COLSPAN="2">Ticket</TH>
+    <TH>Time</TH>
+    <TH COLSPAN="2">Customer</TH>
+    <TH>Multiplier</TH>
+  </TR>
 
-for transactions/tickets:
-<TABLE>
+  <TR>
+    <TH>#</TH>
+    <TH>#</TH>
+    <TH>Subject</TH>
+    <TH>hours</TH>
+    <TH>#</TH>
+    <TH>Name</TH>
+    <TH></TH>
+  </TR>
+</THEAD>
 
-%  foreach ( sort { $a <=> $b } keys %ticket ) {
+%  foreach ( keys %ticketmap ) {
+%    my (@customers) = @{$customers{$ticketmap{$_}}};
+%    next unless @customers;
+%    my $multiplier = sprintf("%.2f", 1/@customers);
+%    my ($custnum, $name) = split(':', pop @customers, 2);
 
-  <TR><TD><% $_ %></TD><TD><% $ticket{$_} %></TD></TR>
-  <INPUT TYPE="hidden" NAME="transactionid<% $_ %>" VALUE="1" >
-  <INPUT TYPE="hidden" NAME="seconds<% $_ %>" VALUE="<% $cgi->param("seconds$_") %>" >
+<TBODY>
+  <TR>
+  <TD><% $_ %></TD>
+  <TD><% $ticketmap{$_} %></TD>
+  <TD><% $ticket{$_} %></TD>
+  <TD><% sprintf("%0.2f", $cgi->param("seconds$_")/3600) %></TD>
+  <TD ALIGN="right"><% $custnum %></TD>
+  <TD ALIGN="right"><% $name %></TD>
+  <TD>
+    <INPUT TYPE="hidden" NAME="transactionid<% $_ %>" VALUE="1" >
+    <INPUT TYPE="hidden" NAME="seconds<% $_ %>" VALUE="<% $cgi->param("seconds$_") %>" >
+    <INPUT TYPE="text" NAME="multiplier<% $_ %>_<% $custnum %>" SIZE="5" VALUE="<% $cgi->param("multiplier${_}_$custnum") ? $cgi->param("multiplier${_}_$custnum") : $multiplier %>" >
+  </TR>
 
+%    my $tr_id = $_;
+%    foreach ( @customers ) {
+%      ($custnum, $name) = split(':', $_, 2);
+
+  <TR>
+  <TD ALIGN="right" COLSPAN="5" ><% $custnum %></TD>
+  <TD ALIGN="right"><% $name %></TD>
+  <TD>
+    <INPUT TYPE="text" NAME="multiplier<% $tr_id %>_<% $custnum %>" SIZE="5" VALUE="<% $cgi->param("multiplier${tr_id}_$custnum") ? $cgi->param("multiplier${tr_id}_$custnum") : $multiplier %>" >
+  </TR>
+</TBODY>
+
+%    }
 %  }
 
 </TABLE>
+<BR>
+<INPUT TYPE="submit" NAME="submit" VALUE="<% $title %>">
 </FORM>
 </BODY>
 </HTML>
@@ -39,7 +76,7 @@ for transactions/tickets:
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Time queue');
 
-my($svcnum, %ticket, %customers, %param); 
+my(%ticketmap, %ticket, %customers); 
 my $title = 'Assign Time Worked';
 
 RT::Init();
@@ -51,26 +88,20 @@ foreach my $id ( map { /^transactionid(\d+)$/; $1; }
                      grep /^transactionid\d+$/, $cgi->param) {
   my $transaction = new RT::Transaction($CurrentUser); 
   $transaction->Load($id);
-  my $ticket = new RT::Ticket($CurrentUser);
-  $ticket->Load($transaction->ObjectId);
-  $ticket{$id} = $ticket->Subject;
-  foreach my $customerURI (
-                       grep { $_->Resolver->{'fstable'} eq 'cust_main' } 
-                       grep { $_->Scheme eq 'freeside' } 
-                        map { $_->TargetURI } 
-                            @{ $ticket->_Links('Base')->ItemsArrayRef } 
-                          ) {
-    $customers{$customerURI->Resolver->AsString} = 1;
+  $ticketmap{$id} = $transaction->ObjectId;
+  unless(exists($ticket{$ticketmap{$id}})) {
+    my $ticket = new RT::Ticket($CurrentUser);
+    $ticket->Load($ticketmap{$id});
+    $ticket{$ticketmap{$id}} = $ticket->Subject;
+    $customers{$ticketmap{$id}} =
+                            [ map  { $_->Resolver->AsString }
+                              grep { $_->Resolver->{'fstable'} eq 'cust_main' }
+                              grep { $_->Scheme eq 'freeside' } 
+                              map  { $_->TargetURI } 
+                                @{ $ticket->_Links('Base')->ItemsArrayRef } 
+                            ];
+                            
   }
-}
-
-my $row = 0;
-foreach ( keys %customers ) {
-  my ($number, $name) = split(':', $_, 2);
-  $param{"custnum$row"} = $number;
-  $param{"customer$row"} = $name;
-  $param{"multiplier$row"} = sprintf("%.2f", 1/scalar(keys(%customers)));
-  $row++;
 }
 
 </%init>

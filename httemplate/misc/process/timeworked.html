@@ -8,15 +8,16 @@
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Time queue');
 
-my %multipliers = map { /^custnum(\d+)$/; ($cgi->param("custnum$1") => $cgi->param("multiplier$1")); }
-                      grep /^custnum\d+$/, $cgi->param;
-my $msum = 0;
-foreach(values %multipliers) {$msum += $_};
-
 my @acct_rt_transaction;
 foreach my $transaction (
   map { /^transactionid(\d+)$/; $1; } grep /^transactionid\d+$/, $cgi->param
 ) {
+  my $s = "multiplier${transaction}_";
+  my %multipliers = map { /^$s(\d+)$/; $1 => $cgi->param("$s$1"); }
+                      grep /^$s\d+$/, $cgi->param;
+  my $msum = 0;
+  foreach(values %multipliers) {$msum += $_};
+
   my $seconds = $cgi->param("seconds$transaction");
   my %seconds = 
        map { $_ => sprintf("%.0f", $seconds * $multipliers{$_} / $msum) } 
@@ -35,6 +36,8 @@ foreach my $transaction (
       $seconds{$_} += $adjustment;
       last;
     }
+  } else {
+    die "unexpectedly cannot apportion time";
   }
 
   foreach my $customer ( grep {$seconds{$_}} keys %seconds ) {
