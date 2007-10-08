@@ -162,6 +162,9 @@ Line-item revenue recognition
 
 </TD><TD VALIGN="top">
 
+%if ( $cgi->param('clone') ) {
+  <INPUT TYPE="hidden" NAME="agent_type" VALUE="">
+%}else{
 Reseller information 
 <% ntable("#cccccc", 2) %>
   <TR>
