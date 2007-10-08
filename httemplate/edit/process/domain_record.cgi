@@ -26,7 +26,7 @@
 
 <!-- mason kludge -->
 %
-%  eidiot($error);
+%  errorpage($error);
 %} else { 
 %  my $svcnum = $new->svcnum;
 %  print $cgi->redirect(popurl(3). "view/svc_domain.cgi?$svcnum");

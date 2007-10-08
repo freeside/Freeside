@@ -10,6 +10,6 @@
 % });
 %
 % my $error = $agent_payment_gateway->delete;
-% eidiot($error) if $error;
+% errorpage($error) if $error;
 %
 % print $cgi->redirect($p. "browse/agent.cgi");

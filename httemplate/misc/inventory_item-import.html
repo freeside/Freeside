@@ -1,7 +1,7 @@
 %
 %
 %my $classnum = $cgi->param('classnum');
-%$classnum =~ /^(\d+)$/ or eidiot "illegal classnum $classnum";
+%$classnum =~ /^(\d+)$/ or errorpage("illegal classnum $classnum");
 %$classnum = $1;
 %my $inventory_class = qsearchs('inventory_class', { 'classnum' => $classnum } );
 %

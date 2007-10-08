@@ -21,7 +21,7 @@
 %if ( $error ) {
 %  #$cgi->param('error', $error);
 %  #print $cgi->redirect(popurl(2). "cust_svc.cgi?". $cgi->query_string );
-%  eidiot($error);
+%  errorpage($error);
 %} else { 
 %  my $svcdb = $new->part_svc->svcdb;
 %  print $cgi->redirect(popurl(3). "view/$svcdb.cgi?$svcnum");

@@ -9,7 +9,7 @@
 %my $custnum = $cust_pay_void->custnum;
 %
 %my $error = $cust_pay_void->unvoid;
-%eidiot($error) if $error;
+%errorpage($error) if $error;
 %
 %print $cgi->redirect($p. "view/cust_main.cgi?". $custnum);
 %

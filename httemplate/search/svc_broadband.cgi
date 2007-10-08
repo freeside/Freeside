@@ -65,7 +65,7 @@
 
 <!-- mason kludge -->
 %
-%  eidiot "No matching broadband services found!\n";
+% errorpage("No matching broadband services found!");
 %} else {
 %
 

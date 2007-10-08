@@ -18,20 +18,20 @@ my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } );
 die "unknown custnum $custnum" unless $cust_main;
 
 $cgi->param('amount') =~ /^\s*(\d*(\.\d\d)?)\s*$/
-  or eidiot "illegal amount ". $cgi->param('amount');
+  or errorpage("illegal amount ". $cgi->param('amount'));
 my $amount = $1;
-eidiot "amount <= 0" unless $amount > 0;
+errorpage("amount <= 0") unless $amount > 0;
 
 $cgi->param('year') =~ /^(\d+)$/
-  or die "illegal year ". $cgi->param('year');
+  or errorpage("illegal year ". $cgi->param('year'));
 my $year = $1;
 
 $cgi->param('month') =~ /^(\d+)$/
-  or die "illegal month ". $cgi->param('month');
+  or errorpage("illegal month ". $cgi->param('month'));
 my $month = $1;
 
 $cgi->param('payby') =~ /^(CARD|CHEK)$/
-  or die "illegal payby ". $cgi->param('payby');
+  or errorpage("illegal payby ". $cgi->param('payby'));
 my $payby = $1;
 my %payby2fields = (
   'CARD' => [ qw( address1 address2 city state zip ) ],
@@ -42,11 +42,11 @@ my %type = ( 'CARD' => 'credit card',
            );
 
 $cgi->param('payname') =~ /^([\w \,\.\-\']+)$/
-  or eidiot gettext('illegal_name'). " payname: ". $cgi->param('payname');
+  or errorpage(gettext('illegal_name'). " payname: ". $cgi->param('payname'));
 my $payname = $1;
 
 $cgi->param('payunique') =~ /^([\w \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\=]*)$/
-  or eidiot gettext('illegal_text'). " payunique: ". $cgi->param('payunique');
+  or errorpage(gettext('illegal_text'). " payunique: ". $cgi->param('payunique'));
 my $payunique = $1;
 
 my $payinfo;
@@ -57,10 +57,10 @@ if ( $payby eq 'CHEK' ) {
     $payinfo = $cust_main->payinfo;
   } else {
     $cgi->param('payinfo1') =~ /^(\d+)$/
-      or eidiot "illegal account number ". $cgi->param('payinfo1');
+      or errorpage("illegal account number ". $cgi->param('payinfo1'));
     my $payinfo1 = $1;
     $cgi->param('payinfo2') =~ /^(\d+)$/
-      or eidiot "illegal ABA/routing number ". $cgi->param('payinfo2');
+      or errorpage("illegal ABA/routing number ". $cgi->param('payinfo2'));
     my $payinfo2 = $1;
     $payinfo = $payinfo1. '@'. $payinfo2;
   }
@@ -73,22 +73,22 @@ if ( $payby eq 'CHEK' ) {
   }
   $payinfo =~ s/\D//g;
   $payinfo =~ /^(\d{13,16})$/
-    or eidiot gettext('invalid_card'); # . ": ". $self->payinfo;
+    or errorpage(gettext('invalid_card')); # . ": ". $self->payinfo;
   $payinfo = $1;
   validate($payinfo)
-    or eidiot gettext('invalid_card'); # . ": ". $self->payinfo;
-  eidiot gettext('unknown_card_type')
+    or errorpage(gettext('invalid_card')); # . ": ". $self->payinfo;
+  errorpage(gettext('unknown_card_type'))
     if cardtype($payinfo) eq "Unknown";
 
   if ( defined $cust_main->dbdef_table->column('paycvv') ) {
     if ( length($cgi->param('paycvv') ) ) {
       if ( cardtype($payinfo) eq 'American Express card' ) {
         $cgi->param('paycvv') =~ /^(\d{4})$/
-          or eidiot "CVV2 (CID) for American Express cards is four digits.";
+          or errorpage("CVV2 (CID) for American Express cards is four digits.");
         $paycvv = $1;
       } else {
         $cgi->param('paycvv') =~ /^(\d{3})$/
-          or eidiot "CVV2 (CVC2/CID) is three digits.";
+          or errorpage("CVV2 (CVC2/CID) is three digits.");
         $paycvv = $1;
       }
     }
@@ -110,7 +110,7 @@ if ( $cgi->param('batch') ) {
                                    map { $_ => $cgi->param($_) } 
                                      @{$payby2fields{$payby}}
                                  );
-  eidiot($error) if $error;
+  errotpage($error) if $error;
 
 } else {
 
@@ -124,7 +124,7 @@ if ( $cgi->param('batch') ) {
     'paycvv'    => $paycvv,
     map { $_ => $cgi->param($_) } @{$payby2fields{$payby}}
   );
-  eidiot($error) if $error;
+  errorpage($error) if $error;
 
   $cust_main->apply_payments;
 
@@ -156,7 +156,7 @@ if ( $cgi->param('save') ) {
   $new->set( $_ => $cgi->param($_) ) foreach @{$payby2fields{$payby}};
 
   my $error = $new->replace($cust_main);
-  eidiot "payment processed successfully, but error saving info: $error"
+  errorpage("payment processed successfully, but error saving info: $error")
     if $error;
   $cust_main = $new;
 }

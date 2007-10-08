@@ -11,7 +11,6 @@
 %my $error = $cust_main->bill(
 %#                          'time'=>$time
 %                         );
-%#&eidiot($error) if $error;
 %
 %unless ( $error ) {
 %  $error = $cust_main->apply_payments_and_credits
@@ -33,14 +32,13 @@
 %                                  #'realtime' => $conf->exists('realtime-backend'),
 %                                 );
 %}
-%#&eidiot($error) if $error;
 %
 %if ( $error ) {
 %
 
 <!-- mason kludge -->
 %
-%  &idiot($error);
+%  errorpage($error);
 %} else {
 %  print $cgi->redirect(popurl(2). "view/cust_main.cgi?$custnum");
 %}

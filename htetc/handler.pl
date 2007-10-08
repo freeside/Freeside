@@ -281,6 +281,11 @@ sub handler
         $m->scomp(@_);
       }
 
+      sub errorpage {
+        use vars qw($m);
+        $m->comp('/elements/errorpage.html', @_);
+      }
+
       sub redirect {
         my( $location ) = @_;
         use vars qw($m);

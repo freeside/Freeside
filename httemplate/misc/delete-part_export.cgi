@@ -8,7 +8,7 @@
 %my $part_export = qsearchs('part_export',{'exportnum'=>$exportnum});
 %
 %my $error = $part_export->delete;
-%eidiot($error) if $error;
+%errorpage($error) if $error;
 %
 %print $cgi->redirect($p. "browse/part_export.cgi");
 %

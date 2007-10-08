@@ -9,7 +9,7 @@
 %my $custnum = $cust_credit->custnum;
 %
 %my $error = $cust_credit->delete;
-%eidiot($error) if $error;
+%errorpage($error) if $error;
 %
 %print $cgi->redirect($p. "view/cust_main.cgi?". $custnum);
 %

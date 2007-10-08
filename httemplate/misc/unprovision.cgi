@@ -22,7 +22,7 @@
 
 <!-- mason kludge -->
 %
-%  &eidiot($error);
+%  errorpage($error);
 %} else {
 %  print $cgi->redirect(popurl(2)."view/cust_main.cgi?$custnum");
 %}

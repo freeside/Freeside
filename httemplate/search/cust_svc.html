@@ -90,7 +90,7 @@ if ( length( $cgi->param('search_svc') ) ) {
   push @extra_sql, "svcpart = $1";
 
 } else {
-  eidiot("No search term specified");
+  errorpage("No search term specified");
 }
 
 #here is the agent virtualization

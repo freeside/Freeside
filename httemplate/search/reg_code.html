@@ -31,10 +31,10 @@ die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
 
 my $agentnum = $cgi->param('agentnum');
-$agentnum =~ /^(\d+)$/ or eidiot "illegal agentnum $agentnum";
+$agentnum =~ /^(\d+)$/ or errorpage("illegal agentnum $agentnum");
 $agentnum = $1;
 my $agent = qsearchs('agent', { 'agentnum' => $agentnum } );
 
 my $count_query = "SELECT COUNT(*) FROM reg_code WHERE agentnum = $agentnum";
 
-<%init>
+</%init>

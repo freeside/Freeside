@@ -27,7 +27,7 @@
 %if ( @rate_prefix ) {
 %  $countrycode = $rate_prefix[0]->countrycode;
 %  foreach my $rate_prefix ( @rate_prefix ) {
-%    eidiot 'multiple country codes per region not yet supported by web UI'
+%    errorpage('multiple country codes per region not yet supported by web UI')
 %      unless $rate_prefix->countrycode eq $countrycode;
 %  }
 %}

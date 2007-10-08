@@ -39,7 +39,7 @@
 %
 %  my $svc_x = $svc_x[0];
 %
-%  eidiot("$link_field not found!") unless $svc_x;
+%  errorpage("$link_field not found!") unless $svc_x;
 %
 %  $svcnum = $svc_x->svcnum;
 %
@@ -69,7 +69,7 @@
 
 <!-- mason kludge -->
 %
-%  idiot($error);
+% errorpage($error);
 %}
 %
 %

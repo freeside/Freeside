@@ -87,10 +87,10 @@
 %  if ( $cgi->param('otaker_on') ) {
 %    die "access denied"
 %      unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
-%    $cgi->param('otaker') =~ /^(\w{1,32})$/ or eidiot "Illegal otaker\n";
+%    $cgi->param('otaker') =~ /^(\w{1,32})$/ or errorpage("Illegal otaker");
 %    $search{otaker} = $1;
 %  } elsif ( $cgi->param('agentnum_on') ) {
-%    $cgi->param('agentnum') =~ /^(\d+)$/ or eidiot "Illegal agentnum\n";
+%    $cgi->param('agentnum') =~ /^(\d+)$/ or errorpage("Illegal agentnum");
 %    $search{agentnum} = $1;
 %#  } else {
 %#    die "unknown query...";
@@ -232,7 +232,7 @@
 
 <!-- mason kludge -->
 %
-%  eidiot "No matching customers found!\n";
+%  errorpage("No matching customers found!");
 %} else { 
 %
 
@@ -268,7 +268,7 @@
 %
 %  if ( $cgi->param('referral_custnum') ) {
 %    $cgi->param('referral_custnum') =~ /^(\d+)$/
-%      or eidiot "Illegal referral_custnum\n";
+%      or errorpage("Illegal referral_custnum");
 %    my $referral_custnum = $1;
 %    my $cust_main = qsearchs('cust_main', { custnum => $referral_custnum } );
 %    print '<FORM METHOD="GET">'.
@@ -288,7 +288,7 @@
 %    print ' <SELECT NAME="referral_depth" SIZE="1" onChange="changed(this)">';
 %    my $max = 8; #config file
 %    $cgi->param('referral_depth') =~ /^(\d*)$/ 
-%      or eidiot "Illegal referral_depth";
+%      or errorpage("Illegal referral_depth");
 %    my $referral_depth = $1;
 %
 %    foreach my $depth ( 1 .. $max ) {
@@ -550,7 +550,7 @@
 %
 %  my $custnum = $cgi->param('custnum_text');
 %  $custnum =~ s/\D//g;
-%  $custnum =~ /^(\d{1,23})$/ or eidiot "Illegal customer number\n";
+%  $custnum =~ /^(\d{1,23})$/ or errorpage("Illegal customer number");
 %  $custnum = $1;
 %  
 %  [ qsearchs('cust_main', { 'custnum' => $custnum } ) ];
@@ -560,7 +560,7 @@
 %
 %  my($card)=$cgi->param('card');
 %  $card =~ s/\D//g;
-%  $card =~ /^(\d{13,16})$/ or eidiot "Illegal card number\n";
+%  $card =~ /^(\d{13,16})$/ or errorpage("Illegal card number");
 %  my($payinfo)=$1;
 %
 %  [ qsearch('cust_main',{'payinfo'=>$payinfo, 'payby'=>'CARD'}),
@@ -570,13 +570,13 @@
 %
 %sub referralsearch {
 %  $cgi->param('referral_custnum') =~ /^(\d+)$/
-%    or eidiot "Illegal referral_custnum";
+%    or errorpage("Illegal referral_custnum");
 %  my $cust_main = qsearchs('cust_main', { 'custnum' => $1 } )
-%    or eidiot "Customer $1 not found";
+%    or errorpage("Customer $1 not found");
 %  my $depth;
 %  if ( $cgi->param('referral_depth') ) {
 %    $cgi->param('referral_depth') =~ /^(\d+)$/
-%      or eidiot "Illegal referral_depth";
+%      or errorpage("Illegal referral_depth");
 %    $depth = $1;
 %  } else {
 %    $depth = 1;
@@ -592,7 +592,7 @@
 %  }
 %
 %  $cgi->param('last_text') =~ /^([\w \,\.\-\']*)$/
-%    or eidiot "Illegal last name";
+%    or errorpage("Illegal last name");
 %  my($last)=$1;
 %
 %  if ( $last_type{'Exact'} || $last_type{'Fuzzy'} ) {
@@ -639,7 +639,7 @@
 %
 %  $cgi->param('company_text') =~
 %    /^([\w \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\=]*)$/
-%      or eidiot "Illegal company";
+%      or errorpage("Illegal company");
 %  my $company = $1;
 %
 %  if ( $company_type{'Exact'} || $company_type{'Fuzzy'} ) {
@@ -681,7 +681,7 @@
 %
 %  $cgi->param('address2_text') =~
 %    /^([\w \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\=]*)$/
-%      or eidiot "Illegal address2";
+%      or errorpage("Illegal address2");
 %  my $address2 = $1;
 %
 %  push @cust_main, qsearch( 'cust_main',
@@ -711,7 +711,7 @@
 %  } elsif ( $phone =~ /^(\d{3,4})$/ ) {
 %    $phone = $1;
 %  } else {
-%    eidiot gettext('illegal_phone'). ": $phone";
+%    errorpage(gettext('illegal_phone'). ": $phone");
 %  }
 %
 %  my @fields = qw(daytime night fax);

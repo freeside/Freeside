@@ -51,7 +51,7 @@ if ( $cgi->param('domain') ) {
   unless ( $svc_domain ) {
     #it would be nice if this looked more like the other "not found"
     #errors, but this will do for now.
-    eidiot "Domain ". $cgi->param('domain'). " not found at all";
+    errorpage("Domain ". $cgi->param('domain'). " not found at all");
   } else {
     push @extra_sql, 'domsvc = '. $svc_domain->svcnum;
   }

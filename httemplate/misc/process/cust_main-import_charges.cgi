@@ -16,7 +16,7 @@
 
     <!-- mason kludge -->
 %
-%    eidiot($error);
+% errorpage($error);
 %#    $cgi->param('error', $error);
 %#    print $cgi->redirect( "${p}cust_main-import_charges.cgi
 %  } else {

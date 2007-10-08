@@ -2,7 +2,7 @@
                'title' => 'Query Results',
                'name'  => 'rows',
                'query' => 'SELECT '. ( $cgi->param('sql')
-                                       || eidiot('Empty query') ),
+                             || errorpage('Empty query') ),
     )
 %>
 <%init>

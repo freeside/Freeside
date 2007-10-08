@@ -10,7 +10,7 @@
 %
 %foreach my $cust_bill_pay ( $cust_pay->cust_bill_pay ) {
 %  my $error = $cust_bill_pay->delete;
-%  eidiot($error) if $error;
+%  errorpage($error) if $error;
 %}
 %
 %print $cgi->redirect($p. "view/cust_main.cgi?". $custnum);

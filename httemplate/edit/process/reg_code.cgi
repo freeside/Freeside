@@ -1,7 +1,7 @@
 %
 %
 %$cgi->param('agentnum') =~ /^(\d+)$/
-%  or eidiot 'illegal agentnum '. $cgi->param('agentnum');
+%  or errorpage('illegal agentnum '. $cgi->param('agentnum'));
 %my $agentnum = $1;
 %my $agent = qsearchs('agent', { 'agentnum' => $agentnum } );
 %

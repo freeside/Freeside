@@ -14,7 +14,7 @@
 %die "Unknown svcnum!" unless $cust_svc;
 %my $cust_pkg = $cust_svc->cust_pkg;
 %if ( $cust_pkg ) {
-%  &eidiot( 'This account has already been audited.  Cancel the '.
+%  errorpage( 'This account has already been audited.  Cancel the '.
 %           qq!<A HREF="${p}view/cust_main.cgi?!. $cust_pkg->custnum.
 %           '#cust_pkg'. $cust_pkg->pkgnum. '">'.
 %           'package</A> instead.');
@@ -27,7 +27,7 @@
 
 <!-- mason kludge -->
 %
-%  &eidiot($error);
+%  errorpage($error);
 %} else {
 %  print $cgi->redirect(popurl(2));
 %}

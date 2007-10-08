@@ -7,7 +7,7 @@
 %    }
 %    open(DUMP,"pg_dump $dbname |");
 %  } else {
-%    eidiot "don't (yet) know how to dump ". driver_name. " databases\n";
+%    errorpage("don't (yet) know how to dump ". driver_name. " databases");
 %  }
 %
 %  http_header('Content-Type' => 'text/plain' );

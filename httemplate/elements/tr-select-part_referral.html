@@ -1,5 +1,5 @@
 % if ( scalar( @{$opt{'part_referrals'}} ) == 0 ) {
-%     eidiot "You have not created any advertising sources.  You must create at least one advertising source before adding a customer.  Go to ". popurl(2). "browse/part_referral.html and create one or more advertising sources.";
+    <P><FONT SIZE="+1" COLOR="#ff0000">You have not created any advertising sources.  You must create at least one advertising source before adding a customer.  Go to <A HREF="<% popurl(2) %>browse/part_referral.html">advertising source listing</A> and create one or more advertising sources.</FONT>
 %   } elsif ( scalar( @{$opt{'part_referrals'}} ) == 1 ) {
 
      <INPUT TYPE="hidden" NAME="<% $opt{'element_name'} || $opt{'field'} || 'refnum' %>" VALUE="<% $opt{'part_referrals'}->[0]->refnum %>">
