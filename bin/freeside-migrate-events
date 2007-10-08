@@ -94,6 +94,13 @@ foreach my $part_bill_event (
   $error = $balance->insert( 'balance' => 0 );
   die $error if $error;
 
+  my $cust_bill_owed = new FS::part_event_condition {
+    'eventpart'     => $part_event->eventpart,
+    'conditionname' => 'cust_bill_owed'
+  };
+  $error = $cust_bill_owed->insert( 'owed' => 0 );
+  die $error if $error;
+
   my $payby = new FS::part_event_condition {
     'eventpart'     => $part_event->eventpart,
     'conditionname' => 'payby'

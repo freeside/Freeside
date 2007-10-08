@@ -16,6 +16,12 @@ sub eventtable_hashref {
     };
 }
 
+sub implicit_flag { 30; }
+
+sub remove_warning {
+  'Are you sure you want to remove this condition?  Doing so will allow this event to run even for invoices which have no outstanding balance.  Perhaps you want to reset "Amount owed over" to 0 instead of removing the condition entirely?'; #better error msg?
+}
+
 sub option_fields {
   (
     'owed' => { 'label'      => 'Amount owed over',

@@ -93,6 +93,9 @@
 %   }
 
     var eventtable = what.options[what.selectedIndex].value;
+%   if ( $JS_DEBUG ) {
+      alert ("eventtable: " + eventtable);
+%   }
     var eventdesc  = what.options[what.selectedIndex].text;
 
     //remove the ** Select type **
@@ -101,7 +104,7 @@
     }
 
     ////
-    // XXX gray out conditions that can't apply?
+    // XXX gray out conditions that can't apply (in addition to the warning)?
     ////
 
     ////
@@ -129,23 +132,33 @@
 %     }
       warning.style.display = 'none';
 
-      if ( ! seen_condition && conditionname != '') {
+      if ( ! seen_condition && conditionname != '' ) {
         // add the current (not valid) condition back
         opt(cond_select, conditionname, cond_desc, true );
-        if ( true <% @implicit_conditions
-                       ? ( ' && '. join(' && ', map { "conditionname != '$_'" }
-                                                    @implicit_conditions
-                                       )
-                         )
-                       : ''
-                  %> ) {
+        if ( ! condition_is_implicit(conditionname) ) {
+          cond_select.parentNode.parentNode.style.display = '';
+          cond_select.disabled = '';
           // turn on a warning and gray out the condition row
 %         if ( $JS_DEBUG ) {
             alert('turning on warning; setting style.display of '+ cond_id +
-                  '_warning (' + warning + ') to none');
+                  '_warning (' + warning + ') to ""');
 %         }
           warning.innerHTML = 'Not applicable to ' + eventdesc + ' events';
           warning.style.display = '';
+        } else {
+          if ( ! condition_in_eventtable(conditionname) ) {
+%           if ( $JS_DEBUG ) {
+              alert(conditionname + " not in " + eventtable + "; disabling");
+%           }
+            cond_select.parentNode.parentNode.style.display = 'none';
+            cond_select.disabled = 'disabled';
+          } else {
+%           if ( $JS_DEBUG ) {
+              alert(conditionname + " implicit for " + eventtable + "; enabling");
+%           }
+            cond_select.parentNode.parentNode.style.display = '';
+            cond_select.disabled = '';
+          }
         }
       }
 
@@ -320,30 +333,7 @@
 
     if ( add_condname.length == 0 ) return;
 
-    var eventtable_el = document.getElementById('eventtable');
-    var eventtable = eventtable_el.options[eventtable_el.selectedIndex].value;
-
-    var in_eventtable = false;
-
-%   foreach my $eventtable ( FS::part_event->eventtables ) {
-%     tie my %conditions, 'Tie::IxHash',
-%       FS::part_event_condition->conditions($eventtable);
-
-      if ( eventtable == '<% $eventtable %>' ) {
-
-%       foreach my $conditionname ( keys %conditions ) {
-%         my $description = $conditions{$conditionname}->{'description'};
-%         $description =~ s/'/\\'/g;
-
-          if ( add_condname == '<% $conditionname %>' ) {
-            in_eventtable = true;
-          }
-
-%       }
-
-      }
-
-%   }
+    var in_eventtable = condition_in_eventtable(add_condname);
 
     if ( ! in_eventtable ) return;
 
@@ -365,6 +355,50 @@
 
   }
 
+  function condition_in_eventtable(condname) {
+
+    var eventtable_el = document.getElementById('eventtable');
+    var eventtable = eventtable_el.options[eventtable_el.selectedIndex].value;
+
+    var in_eventtable = false;
+
+%   foreach my $eventtable ( FS::part_event->eventtables ) {
+%     tie my %conditions, 'Tie::IxHash',
+%       FS::part_event_condition->conditions($eventtable);
+
+      if ( eventtable == '<% $eventtable %>' ) {
+
+%       foreach my $conditionname ( keys %conditions ) {
+
+          if ( condname == '<% $conditionname %>' ) {
+            in_eventtable = true;
+          }
+
+%       }
+
+      }
+
+%   }
+
+    return in_eventtable;
+
+  }
+
+  function condition_is_implicit(condname) {
+
+    if ( true <% @implicit_conditions
+                   ? ( ' && '. join(' && ', map { "condname != '$_'" }
+                                                @implicit_conditions
+                                   )
+                     )
+                   : ''
+              %> ) {
+      return false;
+    } else {
+      return true;
+    }
+  }
+
   function condition_repop(cond_select) {
 
     var eventtable_el = document.getElementById('eventtable');
@@ -375,7 +409,10 @@
     var cond_desc     = cond_select.options[cond_select.selectedIndex].text;
     var seen_condition = false;
 
-    if ( cond_select.disabled ) return false; //skip deleted conditions
+    //skip deleted conditions
+    if ( cond_select.disabled && conditionname != '' && ! condition_is_implicit(conditionname) ) {
+      return false;
+    }
 
     var field_regex = /(\d+)$/;
     var match = field_regex.exec(cond_select.name);
@@ -423,9 +460,11 @@
     if ( cond_select.length > 1 || cond_select.length == 1 && cond_select.options[0].value.length > 0 ) {
        
       cond_select.parentNode.parentNode.style.display = '';
+      cond_select.disabled = '';
 
     } else {
       cond_select.parentNode.parentNode.style.display = 'none';
+      cond_select.disabled = 'disabled';
     }
 
     return seen_condition;
