@@ -239,9 +239,15 @@ following keys:
 
 =item username
 
+Username
+
 =item domain
 
+Domain
+
 =item password
+
+Password
 
 =back
 
@@ -286,7 +292,9 @@ the following keys: invnum, date, owed
 
 An HTML fragment containing shipping and billing addresses.
 
-=item The following fields are also returned: first last company address1 address2 city county state zip country daytime night fax ship_first ship_last ship_company ship_address1 ship_address2 ship_city ship_state ship_zip ship_country ship_daytime ship_night ship_fax payby payinfo payname month year invoicing_list postal_invoicing
+=item The following fields are also returned
+
+first last company address1 address2 city county state zip country daytime night fax ship_first ship_last ship_company ship_address1 ship_address2 ship_city ship_state ship_zip ship_country ship_daytime ship_night ship_fax payby payinfo payname month year invoicing_list postal_invoicing
 
 =back
 
@@ -390,13 +398,23 @@ Exact name on credit card (CARD/DCRD)
 
 =item address1
 
+Address line one
+
 =item address2
+
+Address line two
 
 =item city
 
+City
+
 =item state
 
+State
+
 =item zip
+
+Zip or postal code
 
 =item payby
 
@@ -447,6 +465,8 @@ hash reference as parameter with the following keys:
 
 =item session_id
 
+Session identifier
+
 =item save
 
 If true, address and card information entered will be saved for subsequent
@@ -460,15 +480,27 @@ payby to DCRD).  This option only has meaning if B<save> is set true.
 
 =item payname
 
+Name on card
+
 =item address1
+
+Address line one
 
 =item address2
 
+Address line two
+
 =item city
+
+City
 
 =item state
 
+State
+
 =item zip
+
+Zip or postal code
 
 =item payinfo
 
@@ -502,22 +534,39 @@ Returns a hash reference containing customer package information.  The hash refe
 
 =over 4
 
-
 =item cust_pkg HASHREF
 
 Array reference of hash references, each of which has the fields of a cust_pkg
 record (see L<FS::cust_pkg>) as well as the fields below.  Note these are not
 the internal FS:: objects, but hash references of columns and values.
 
-=item all fields of part_pkg (XXXpare this down to a secure subset)
+=over 4
 
-=item part_svc - An array of hash references, each of which has the following keys:
+=item part_pkg fields
+
+All fields of part_pkg (be careful with this information - it may reveal more
+about your available packages than you would like users to know in aggregate) 
+
+=cut
+
+#XXX pare part_pkg fields down to a more secure subset
+
+=item part_svc
+
+An array of hash references, each of which has the following keys:
 
 =over 4
 
-=item all fields of part_svc (XXXpare this down to a secure subset)
+=item part_svc fields
 
-=item avail
+All fields of part_svc (be careful with this information - it may reveal more
+about your available packages than you would like users to know in aggregate) 
+
+=cut
+
+#XXX pare part_svc fields down to a more secure subset
+
+=back
 
 =back
 
@@ -537,7 +586,11 @@ Takes a hash reference as parameter with the following keys:
 
 =item session_id
 
+Session identifier
+
 =item pkgpart
+
+pkgpart of package to order
 
 =item svcpart
 
@@ -547,11 +600,19 @@ quantity >1)
 
 =item username
 
+Username
+
 =item _password
+
+Password
 
 =item sec_phrase
 
+Optional security phrase
+
 =item popnum
+
+Optional Access number number
 
 =back
 
@@ -569,7 +630,11 @@ Takes a hash reference as parameter with the following keys:
 
 =item session_id
 
+Session identifier
+
 =item pkgpart
+
+pkgpart of package to cancel
 
 =back
 
@@ -629,21 +694,37 @@ Array reference of acceptable payment types for signup
 
 =over 4
 
-=item CARD (credit card - automatic)
+=item CARD
 
-=item DCRD (credit card - on-demand - version 1.5+ only)
+credit card - automatic
 
-=item CHEK (electronic check - automatic)
+=item DCRD
 
-=item DCHK (electronic check - on-demand - version 1.5+ only)
+credit card - on-demand - version 1.5+ only
 
-=item LECB (Phone bill billing)
+=item CHEK
 
-=item BILL (billing, not recommended for signups)
+electronic check - automatic
 
-=item COMP (free, definately not recommended for signups)
+=item DCHK
 
-=item PREPAY (special billing type: applies a credit (see FS::prepay_credit) and sets billing type to BILL)
+electronic check - on-demand - version 1.5+ only
+
+=item LECB
+
+Phone bill billing
+
+=item BILL
+
+billing, not recommended for signups
+
+=item COMP
+
+free, definitely not recommended for signups
+
+=item PREPAY
+
+special billing type: applies a credit (see FS::prepay_credit) and sets billing type to BILL
 
 =back
 
@@ -672,57 +753,109 @@ following keys:
 
 =over 4
 
-=item first - first name (required)
+=item first
 
-=item last - last name (required)
+first name (required)
 
-=item ss (not typically collected; mostly used for ACH transactions)
+=item last
+
+last name (required)
+
+=item ss
+
+(not typically collected; mostly used for ACH transactions)
 
 =item company
 
+Company name
+
 =item address1 (required)
+
+Address line one
 
 =item address2
 
+Address line two
+
 =item city (required)
+
+City
 
 =item county
 
+County
+
 =item state (required)
+
+State
 
 =item zip (required)
 
-=item daytime - phone
+Zip or postal code
 
-=item night - phone
+=item daytime
 
-=item fax - phone
+Daytime phone number
 
-=item payby - CARD, DCRD, CHEK, DCHK, LECB, BILL, COMP or PREPAY (see L</signup_info> (required)
+=item night
 
-=item payinfo - Card number for CARD/DCRD, account_number@aba_number for CHEK/DCHK, prepaid "pin" for PREPAY, purchase order number for BILL
+Evening phone number
 
-=item paycvv - Credit card CVV2 number (1.5+ or 1.4.2 with CVV schema patch)
+=item fax
 
-=item paydate - Expiration date for CARD/DCRD
+Fax number
 
-=item payname - Exact name on credit card for CARD/DCRD, bank name for CHEK/DCHK
+=item payby
 
-=item invoicing_list - comma-separated list of email addresses for email invoices.  The special value 'POST' is used to designate postal invoicing (it may be specified alone or in addition to email addresses),
+CARD, DCRD, CHEK, DCHK, LECB, BILL, COMP or PREPAY (see L</signup_info> (required)
 
-=item referral_custnum - referring customer number
+=item payinfo
 
-=item pkgpart - pkgpart of initial package
+Card number for CARD/DCRD, account_number@aba_number for CHEK/DCHK, prepaid "pin" for PREPAY, purchase order number for BILL
+
+=item paycvv
+
+Credit card CVV2 number (1.5+ or 1.4.2 with CVV schema patch)
+
+=item paydate
+
+Expiration date for CARD/DCRD
+
+=item payname
+
+Exact name on credit card for CARD/DCRD, bank name for CHEK/DCHK
+
+=item invoicing_list
+
+comma-separated list of email addresses for email invoices.  The special value 'POST' is used to designate postal invoicing (it may be specified alone or in addition to email addresses),
+
+=item referral_custnum
+
+referring customer number
+
+=item pkgpart
+
+pkgpart of initial package
 
 =item username
 
+Username
+
 =item _password
 
-=item sec_phrase - security phrase
+Password
 
-=item popnum - access number (index, not the literal number)
+=item sec_phrase
 
-=item agentnum - agent number
+Security phrase
+
+=item popnum
+
+Access number (index, not the literal number)
+
+=item agentnum
+
+Agent number
 
 =back
 
@@ -730,7 +863,9 @@ Returns a hash reference with the following keys:
 
 =over 4
 
-=item error Empty on success, or an error message on errors.  The special error '_decline' is returned for declined transactions; other error messages should be suitable for display to the user (and are customizable in under Sysadmin | View/Edit message catalog)
+=item error
+
+Empty on success, or an error message on errors.  The special error '_decline' is returned for declined transactions; other error messages should be suitable for display to the user (and are customizable in under Configuration | View/Edit message catalog)
 
 =back
 
@@ -742,19 +877,35 @@ Takes as input a hashref or list of key/value pairs with the following keys:
 
 =item selected_county
 
+Currently selected county
+
 =item selected_state
+
+Currently selected state
 
 =item selected_country
 
-=item prefix - Specify a unique prefix string  if you intend to use the HTML output multiple time son one page.
+Currently selected country
 
-=item onchange - Specify a javascript subroutine to call on changes
+=item prefix
+
+Specify a unique prefix string  if you intend to use the HTML output multiple time son one page.
+
+=item onchange
+
+Specify a javascript subroutine to call on changes
 
 =item default_state
 
+Default state
+
 =item default_country
 
-=item locales - An arrayref of hash references specifying regions.  Normally you can just pass the value of the I<cust_main_county> field returned by B<signup_info>.
+Default country
+
+=item locales
+
+An arrayref of hash references specifying regions.  Normally you can just pass the value of the I<cust_main_county> field returned by B<signup_info>.
 
 =back
 
@@ -952,7 +1103,11 @@ Takes as input a hashref or list of key/value pairs with the following keys:
 
 =item popnum
 
-=item pops - An arrayref of hash references specifying access numbers.  Normally you can just pass the value of the I<svc_acct_pop> field returned by B<signup_info>.
+Access number number
+
+=item pops
+
+An arrayref of hash references specifying access numbers.  Normally you can just pass the value of the I<svc_acct_pop> field returned by B<signup_info>.
 
 =back
 
