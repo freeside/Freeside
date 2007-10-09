@@ -39,9 +39,9 @@
 
 <TBODY>
   <TR>
-  <TD><a href="$link"><% $tr_id %></a></TD>
-  <TD><a href="$link"><% $ticketmap{$tr_id} %></a></TD>
-  <TD><a href="$link"><% $ticket{$ticketmap{$tr_id}} %></a></TD>
+  <TD><a href="<% $link %>"><% $tr_id %></a></TD>
+  <TD><a href="<% $link %>"><% $ticketmap{$tr_id} %></a></TD>
+  <TD><a href="<% $link %>"><% $ticket{$ticketmap{$tr_id}} |h %></a></TD>
   <TD><% sprintf("%0.2f", $cgi->param("seconds$tr_id")/3600) %></TD>
   <TD ALIGN="right"><% $custnum %></TD>
   <TD ALIGN="right"><% $name %></TD>
