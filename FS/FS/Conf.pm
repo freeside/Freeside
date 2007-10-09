@@ -420,7 +420,7 @@ sub _orbase_items {
           map { new FS::ConfItem { 
                                    'key' => $_,
                                    'section' => $proto->section,
-                                   'description' => 'Alternate ' . $proto->description . '  See the <a href="../docs/billing.html">billing documentation</a> for details.',
+                                   'description' => 'Alternate ' . $proto->description . '  See the <a href="http://www.sisd.com/mediawiki/index.php/Freeside:1.7:Documentation:Administration#Invoice_templates">billing documentation</a> for details.',
                                    'type' => $proto->type,
                                  };
               } &$listmaker($base);
@@ -489,8 +489,6 @@ worry that config_items is freeside-specific and icky.
 
 "Configuration" in the web interface (config/config.cgi).
 
-httemplate/docs/config.html
-
 =cut
 
 #Business::CreditCard
@@ -549,7 +547,7 @@ httemplate/docs/config.html
   {
     'key'         => 'alerter_template',
     'section'     => 'billing',
-    'description' => 'Template file for billing method expiration alerts.  See the <a href="../docs/billing.html#invoice_template">billing documentation</a> for details.',
+    'description' => 'Template file for billing method expiration alerts.  See the <a href="http://www.sisd.com/mediawiki/index.php/Freeside:1.7:Documentation:Administration#Credit_cards_and_Electronic_checks">billing documentation</a> for details.',
     'type'        => 'textarea',
   },
 
@@ -749,14 +747,14 @@ httemplate/docs/config.html
   {
     'key'         => 'invoice_template',
     'section'     => 'required',
-    'description' => 'Required template file for invoices.  See the <a href="../docs/billing.html">billing documentation</a> for details.',
+    'description' => 'Required template file for invoices.  See the <a href="http://www.sisd.com/mediawiki/index.php/Freeside:1.7:Documentation:Administration#Plaintext_invoice_templates">billing documentation</a> for details.',
     'type'        => 'textarea',
   },
 
   {
     'key'         => 'invoice_html',
     'section'     => 'billing',
-    'description' => 'Optional HTML template for invoices.  See the <a href="../docs/billing.html">billing documentation</a> for details.',
+    'description' => 'Optional HTML template for invoices.  See the <a href="http://www.sisd.com/mediawiki/index.php/Freeside:1.7:Documentation:Administration#HTML_invoice_templates">billing documentation</a> for details.',
 
     'type'        => 'textarea',
   },
@@ -785,7 +783,7 @@ httemplate/docs/config.html
   {
     'key'         => 'invoice_latex',
     'section'     => 'billing',
-    'description' => 'Optional LaTeX template for typeset PostScript invoices.  See the <a href="../docs/billing.html">billing documentation</a> for details.',
+    'description' => 'Optional LaTeX template for typeset PostScript invoices.  See the <a href="http://www.sisd.com/mediawiki/index.php/Freeside:1.7:Documentation:Administration#Typeset_.28LaTeX.29_invoice_templates">billing documentation</a> for details.',
     'type'        => 'textarea',
   },
 
@@ -966,7 +964,7 @@ httemplate/docs/config.html
   {
     'key'         => 'signupurl',
     'section'     => 'UI',
-    'description' => 'if you are using customer-to-customer referrals, and you enter the URL of your <a href="../docs/signup.html">signup server CGI</a>, the customer view screen will display a customized link to the signup server with the appropriate customer as referral',
+    'description' => 'if you are using customer-to-customer referrals, and you enter the URL of your <a href="http://www.sisd.com/mediawiki/index.php/Freeside:1.7:Documentation:Self-Service_Installation">signup server CGI</a>, the customer view screen will display a customized link to the signup server with the appropriate customer as referral',
     'type'        => 'text',
   },
 
@@ -1618,7 +1616,7 @@ httemplate/docs/config.html
   {
     'key'         => 'ticket_system',
     'section'     => '',
-    'description' => 'Ticketing system integration.  <b>RT_Internal</b> uses the built-in RT ticketing system (see the <a href="../docs/install-rt">integrated ticketing installation instructions</a>).   <b>RT_External</b> accesses an external RT installation in a separate database (local or remote).',
+    'description' => 'Ticketing system integration.  <b>RT_Internal</b> uses the built-in RT ticketing system (see the <a href="http://www.sisd.com/mediawiki/index.php/Freeside:1.7:Documentation:RT_Installation">integrated ticketing installation instructions</a>).   <b>RT_External</b> accesses an external RT installation in a separate database (local or remote).',
     'type'        => 'select',
     #'select_enum' => [ '', qw(RT_Internal RT_Libs RT_External) ],
     'select_enum' => [ '', qw(RT_Internal RT_External) ],
