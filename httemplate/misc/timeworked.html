@@ -29,27 +29,28 @@
   </TR>
 </THEAD>
 
-%  foreach ( keys %ticketmap ) {
-%    my (@customers) = @{$customers{$ticketmap{$_}}};
+%  foreach my $tr_id ( keys %ticketmap ) {
+%    my (@customers) = @{$customers{$ticketmap{$tr_id}}};
 %    next unless @customers;
 %    my $multiplier = sprintf("%.2f", 1/@customers);
 %    my ($custnum, $name) = split(':', pop @customers, 2);
+%    my $link = $p. 'rt/Ticket/Display.html?id='. $ticketmap{$tr_id}.
+%                   '#txn-'. $tr_id;
 
 <TBODY>
   <TR>
-  <TD><% $_ %></TD>
-  <TD><% $ticketmap{$_} %></TD>
-  <TD><% $ticket{$_} %></TD>
-  <TD><% sprintf("%0.2f", $cgi->param("seconds$_")/3600) %></TD>
+  <TD><a href="$link"><% $tr_id %></a></TD>
+  <TD><a href="$link"><% $ticketmap{$tr_id} %></a></TD>
+  <TD><a href="$link"><% $ticket{$ticketmap{$tr_id}} %></a></TD>
+  <TD><% sprintf("%0.2f", $cgi->param("seconds$tr_id")/3600) %></TD>
   <TD ALIGN="right"><% $custnum %></TD>
   <TD ALIGN="right"><% $name %></TD>
   <TD>
-    <INPUT TYPE="hidden" NAME="transactionid<% $_ %>" VALUE="1" >
-    <INPUT TYPE="hidden" NAME="seconds<% $_ %>" VALUE="<% $cgi->param("seconds$_") %>" >
-    <INPUT TYPE="text" NAME="multiplier<% $_ %>_<% $custnum %>" SIZE="5" VALUE="<% $cgi->param("multiplier${_}_$custnum") ? $cgi->param("multiplier${_}_$custnum") : $multiplier %>" >
+    <INPUT TYPE="hidden" NAME="transactionid<% $tr_id %>" VALUE="1" >
+    <INPUT TYPE="hidden" NAME="seconds<% $tr_id %>" VALUE="<% $cgi->param("seconds$tr_id") %>" >
+    <INPUT TYPE="text" NAME="multiplier<% $tr_id %>_<% $custnum %>" SIZE="5" VALUE="<% $cgi->param("multiplier${_}_$custnum") ? $cgi->param("multiplier${_}_$custnum") : $multiplier %>" >
   </TR>
 
-%    my $tr_id = $_;
 %    foreach ( @customers ) {
 %      ($custnum, $name) = split(':', $_, 2);
 
