@@ -79,6 +79,7 @@ die "access denied"
 
 my(%ticketmap, %ticket, %customers); 
 my $title = 'Assign Time Worked';
+tie %ticketmap, 'Tie::IxHash';
 
 RT::Init();
 
