@@ -1652,6 +1652,13 @@ httemplate/docs/config.html
   },
 
   {
+    'key'         => 'ticket_system-priority_reverse',
+    'section'     => '',
+    'description' => 'Enable this to consider lower numbered priorities more important.  A bad habit we picked up somewhere.  You probably want to avoid it and use the default.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'ticket_system-custom_priority_field',
     'section'     => '',
     'description' => 'Custom field from the ticketing system to use as a custom priority classification.',

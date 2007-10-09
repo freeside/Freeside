@@ -2,6 +2,7 @@ package FS::TicketSystem::RT_External;
 
 use strict;
 use vars qw( $DEBUG $me $conf $dbh $default_queueid $external_url
+             $priority_reverse
              $priority_field $priority_field_queue $field
 	   );
 use URI::Escape;
@@ -15,6 +16,7 @@ $DEBUG = 0;
 FS::UID->install_callback( sub { 
   $conf = new FS::Conf;
   $default_queueid = $conf->config('ticket_system-default_queueid');
+  $priority_reverse = $conf->exists('ticket_system-priority_reverse');
   $priority_field =
     $conf->config('ticket_system-custom_priority_field');
   if ( $priority_field ) {
@@ -75,7 +77,11 @@ sub customer_tickets {
           "position(tickets.status in 'newopenstalledresolvedrejecteddeleted')".
 	  " AS svalue " .
           ( length($priority) ? ", objectcustomfieldvalues.content" : '' ).
-          " $from_sql ORDER BY svalue, priority DESC, id DESC LIMIT $limit";
+          " $from_sql ".
+          " ORDER BY svalue, ".
+          "          priority ". ( $priority_reverse ? 'ASC' : 'DESC' ). ", ".
+          "          id DESC ".
+          " LIMIT $limit";
   warn "$me $sql (@param)" if $DEBUG;
   my $sth = $dbh->prepare($sql) or die $dbh->errstr. "preparing $sql";
   $sth->execute(@param)         or die $sth->errstr. "executing $sql";
