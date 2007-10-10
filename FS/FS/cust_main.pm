@@ -2819,7 +2819,7 @@ sub retry_realtime {
 
   my @cust_event = qsearchs({
     'table'     => 'cust_event',
-    'select'	=> 'cust_event.*',
+    'select'    => 'cust_event.*',
     'addl_from' => "LEFT JOIN part_event USING ( eventpart ) $join",
     'hashref'   => { 'status' => 'done' },
     'extra_sql' => " AND statustext IS NOT NULL AND statustext != '' ".
