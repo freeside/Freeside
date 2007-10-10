@@ -182,6 +182,7 @@ Reseller information
     </TD>
   </TR>
 </TABLE>
+%}
 </TD></TR></TABLE>
 %
 %
