@@ -162,29 +162,34 @@ Line-item revenue recognition
 
 </TD><TD VALIGN="top">
 
-%if ( $cgi->param('clone') ) {
-  <INPUT TYPE="hidden" NAME="agent_type" VALUE="">
-%}else{
-Reseller information 
-<% ntable("#cccccc", 2) %>
-  <TR>
-    <TD ALIGN="right"><% 'Agent Types' %></TD>
-    <TD>
-      <% include( '/elements/select-table.html',
-                  'element_name' => 'agent_type',
-                  'table'        => 'agent_type',
-  		  'name_col'     => 'atype',
-  		  'value'        => \@agent_type,
-  		  'empty_label'  => '(none)',
-  		  'element_etc'  => 'multiple size="10"',
-                )
-      %>
-    </TD>
-  </TR>
-</TABLE>
-%}
+% if ( $cgi->param('clone') ) {
+
+    <INPUT TYPE="hidden" NAME="agent_type" VALUE="">
+
+% } else {
+
+    Reseller information 
+    <% ntable("#cccccc", 2) %>
+      <TR>
+        <TD ALIGN="right"><% 'Agent Types' %></TD>
+        <TD>
+          <% include( '/elements/select-table.html',
+                      'element_name' => 'agent_type',
+                      'table'        => 'agent_type',
+                      'name_col'     => 'atype',
+                      'value'        => \@agent_type,
+                      'empty_label'  => '(none)',
+                      'element_etc'  => 'multiple size="10"',
+                    )
+          %>
+        </TD>
+      </TR>
+    </TABLE>
+
+% }
+
 </TD></TR></TABLE>
-%
+
 %
 %my $thead =  "\n\n". ntable('#cccccc', 2).
 %             '<TR><TH BGCOLOR="#dcdcdc"><FONT SIZE=-1>Quan.</FONT></TH>';
