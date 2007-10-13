@@ -1,6 +1,7 @@
 %
 %
 %my $dbh = dbh;
+%my $conf = new FS::Conf;
 %
 %my $pkgpart = $cgi->param('pkgpart');
 %
@@ -42,6 +43,9 @@
 %  } fields('part_pkg')
 %} );
 %
+%my $oldAutoCommit = $FS::UID::AutoCommit;
+%local $FS::UID::AutoCommit = 0;
+%
 %my %pkg_svc = map { $_ => scalar($cgi->param("pkg_svc$_")) }
 %              map { $_->svcpart }
 %              qsearch('part_svc', {} );
@@ -71,7 +75,7 @@
 %  $pkgpart = $new->pkgpart;
 %}
 %
-%unless ($error) {
+%unless ( $error || $conf->exists('agent_defaultpkg') ) {
 %  my $error = $new->process_m2m(
 %    'link_table'   => 'type_pkgs',
 %    'target_table' => 'agent_type',
@@ -79,11 +83,14 @@
 %  );
 %}
 %if ( $error ) {
+%  $dbh->rollback if $oldAutoCommit;
 %  $cgi->param('error', $error );
 %  print $cgi->redirect(popurl(2). "part_pkg.cgi?". $cgi->query_string );
 %} elsif ( $custnum )  {
+%  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 %  print $cgi->redirect(popurl(3). "view/cust_main.cgi?$custnum");
 %} else {
+%  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 %  print $cgi->redirect(popurl(3). "browse/part_pkg.cgi");
 %}
 %
