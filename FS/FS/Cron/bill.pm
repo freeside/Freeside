@@ -4,7 +4,8 @@ use strict;
 use vars qw( @ISA @EXPORT_OK );
 use Exporter;
 use Date::Parse;
-use FS::Record qw(qsearch qsearchs);
+use FS::UID qw(dbh);
+use FS::Record qw(qsearchs);
 use FS::cust_main;
 use FS::part_event;
 use FS::part_event_condition;
@@ -25,10 +26,23 @@ sub bill {
   $FS::cust_main::DEBUG = $debug;
   #$FS::cust_event::DEBUG = $opt{'l'} if $opt{'l'};
 
-  my %search = ();
-  $search{'payby'}    = $opt{'p'} if $opt{'p'};
-  $search{'agentnum'} = $opt{'a'} if $opt{'a'};
-  
+  my @search = ();
+
+  push @search, "cust_main.payby    = '". $opt{'p'}. "'"
+    if $opt{'p'};
+  push @search, "cust_main.agentnum =  ". $opt{'a'}
+    if $opt{'a'};
+
+  if ( @ARGV ) {
+    push @search, "( ".
+      join(' OR ', map "cust_main.custnum = $_", @ARGV ).
+    " )";
+  }
+
+  ###
+  # generate where_pkg/where_event search clause
+  ###
+
   #we're at now now (and later).
   my($time)= $opt{'d'} ? str2time($opt{'d'}) : $^T;
   $time += $opt{'y'} * 86400 if $opt{'y'};
@@ -77,28 +91,30 @@ END
 
   } FS::part_event->eventtables);
 
-  my $extra_sql = ( scalar(%search) ? ' AND ' : ' WHERE ' ).
-                  "( $where_pkg OR $where_event )";
+  push @search, "( $where_pkg OR $where_event )";
 
-  my @cust_main;
-  if ( @ARGV ) {
-    @cust_main = map { qsearchs('cust_main', { custnum => $_, %search } ) } @ARGV
-  } else {
+  ###
+  # get a list of custnums
+  ###
 
-    warn "searching for customers:\n".
-         join("\n", map "  $_ => ".$search{$_}, keys %search). "\n".
-         "  $extra_sql\n"
-      if $opt{'v'} || $opt{'l'};
+  warn "searching for customers:\n". join("\n", @search). "\n"
+    if $opt{'v'} || $opt{'l'};
 
-    @cust_main = qsearch({
-      'table'     => 'cust_main',
-      'hashref'   => \%search,
-      'extra_sql' => $extra_sql,
-    });
+  my $sth = dbh->prepare(
+    "SELECT custnum FROM cust_main".
+    " WHERE ". join(' AND ', @search)
+  ) or die dbh->errstr;
 
-  }
+  $sth->execute or die $sth->errstr;
+
+  my @custnums = map { $_->[0] } @{ $sth->fetchall_arrayref };
+
+  ###
+  # for each custnum, queue or make one customer object and bill
+  # (one at a time, to reduce memory footprint with large #s of customers)
+  ###
   
-  foreach my $cust_main ( @cust_main ) {
+  foreach my $custnum ( @custnums ) {
 
     if ( $opt{'m'} ) {
 
@@ -108,7 +124,7 @@ END
           'secure' => 'Y',
         };
         my $error = $queue->insert(
-        'custnum'      => $cust_main->custnum,
+        'custnum'      => $custnum,
         'time'         => $time,
         'invoice_time' => $invoice_time,
         'check_freq'   => $check_freq,
@@ -116,6 +132,8 @@ END
       );
 
     } else {
+
+      my $cust_main = qsearchs( 'cust_main', { 'custnum' => $custnum } );
 
       $cust_main->bill_and_collect(
         'time'         => $time,
