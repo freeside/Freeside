@@ -2272,13 +2272,14 @@ sub print_html {
   } else {
     $invoice_data{'notes'} = 
       join("\n", map { 
-                       s/%%(.*)$/<!-- $1 -->/;
-                       s/\\section\*\{\\textsc\{(.)(.*)\}\}/<p><b><font size="+1">$1<\/font>\U$2<\/b>/;
-                       s/\\begin\{enumerate\}/<ol>/;
-                       s/\\item /  <li>/;
-                       s/\\end\{enumerate\}/<\/ol>/;
-                       s/\\textbf\{(.*)\}/<b>$1<\/b>/;
+                       s/%%(.*)$/<!-- $1 -->/g;
+                       s/\\section\*\{\\textsc\{(.)(.*)\}\}/<p><b><font size="+1">$1<\/font>\U$2<\/b>/g;
+                       s/\\begin\{enumerate\}/<ol>/g;
+                       s/\\item /  <li>/g;
+                       s/\\end\{enumerate\}/<\/ol>/g;
+                       s/\\textbf\{(.*)\}/<b>$1<\/b>/g;
                        s/\\\\\*/ /;
+                       s/\\dollar ?/\$/g;
                        $_;
                      } 
                      $conf->config_orbase('invoice_latexnotes', $template)
