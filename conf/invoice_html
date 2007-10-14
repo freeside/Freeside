@@ -25,7 +25,7 @@
             </td>
             <td>
             </td>
-            <td align="left">
+            <td align="center">
               Invoice&nbsp;#<BR>
               <B><%= $invnum %></B>
             </td>
