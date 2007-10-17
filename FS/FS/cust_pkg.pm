@@ -1724,7 +1724,7 @@ sub insert_reason {
 
   my $cust_pkg_reason =
     new FS::cust_pkg_reason({ 'pkgnum'    => $self->pkgnum,
-                              'reasonnum' => $options{'reason'}, 
+                              'reasonnum' => $reasonnum, 
 		              'otaker'    => $otaker,
 		              'date'      => $options{'date'}
 			                       ? $options{'date'}
