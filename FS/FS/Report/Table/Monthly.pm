@@ -331,11 +331,12 @@ sub in_time_period_and_agent {
   my $sql = "$col >= $speriod AND $col < $eperiod";
 
   #agent selection
-  $sql .= " AND agentnum = $agentnum"
+  $sql .= " AND cust_main.agentnum = $agentnum"
     if $agentnum;
 
   #agent virtualization
-  $sql .= ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql;
+  $sql .= ' AND '.
+          $FS::CurrentUser::CurrentUser->agentnums_sql( 'table'=>'cust_main' );
 
   $sql;
 }
