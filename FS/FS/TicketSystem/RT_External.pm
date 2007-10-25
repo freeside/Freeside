@@ -73,8 +73,8 @@ sub customer_tickets {
   $limit ||= 0;
 
   my( $from_sql, @param) = $self->_from_customer( $custnum, $priority );
-  my $sql="SELECT tickets.*, queues.name, ".
-          "position(tickets.status in 'newopenstalledresolvedrejecteddeleted')".
+  my $sql="SELECT Tickets.*, Queues.name, ".
+          "position(Tickets.status in 'newopenstalledresolvedrejecteddeleted')".
 	  " AS svalue " .
           ( length($priority) ? ", objectcustomfieldvalues.content" : '' ).
           " $from_sql ".
@@ -100,8 +100,8 @@ sub _from_customer {
   my $where = '';
   if ( defined($priority) ) {
 
-    my $queue_sql = " ObjectCustomFields.ObjectId = ( SELECT id FROM queues
-                                                       WHERE queues.name = ? )
+    my $queue_sql = " ObjectCustomFields.ObjectId = ( SELECT id FROM Queues
+                                                       WHERE Queues.name = ? )
                       OR ( ? = '' AND ObjectCustomFields.ObjectId = 0 )";
 
     my $customfield_sql =
@@ -131,7 +131,7 @@ sub _from_customer {
       unshift @param, $priority;
 
       $join = "JOIN ObjectCustomFieldValues
-                 ON ( tickets.id = ObjectCustomFieldValues.ObjectId )";
+                 ON ( Tickets.id = ObjectCustomFieldValues.ObjectId )";
       
       $where = " AND content = ?
                  AND ObjectCustomFieldValues.disabled != 1
@@ -142,7 +142,7 @@ sub _from_customer {
 
       $where =
                "AND 0 = ( SELECT count(*) FROM ObjectCustomFieldValues
-                           WHERE ObjectId    = tickets.id
+                           WHERE ObjectId    = Tickets.id
                              AND ObjectType  = 'RT::Ticket'
                              AND $customfield_sql
                         )
@@ -152,9 +152,9 @@ sub _from_customer {
   }
 
   my $sql = "
-                    FROM tickets
-                    JOIN queues ON ( tickets.queue = queues.id )
-                    JOIN links ON ( tickets.id = links.localbase )
+                    FROM Tickets
+                    JOIN Queues ON ( Tickets.queue = Queues.id )
+                    JOIN Links ON ( Tickets.id = Links.localbase )
                     $join 
        WHERE ( ". join(' OR ', map "status = '$_'", $self->statuses ). " )
          AND target = 'freeside://freeside/cust_main/$custnum'
@@ -259,7 +259,7 @@ sub href_ticket {
 sub queues {
   my($self) = @_;
 
-  my $sql = "SELECT id, name FROM queues WHERE disabled = 0";
+  my $sql = "SELECT id, name FROM Queues WHERE disabled = 0";
   my $sth = $dbh->prepare($sql) or die $dbh->errstr. " preparing $sql";
   $sth->execute()               or die $sth->errstr. " executing $sql";
 
@@ -272,7 +272,7 @@ sub queue {
 
   return '' unless $queueid;
 
-  my $sql = "SELECT name FROM queues WHERE id = ?";
+  my $sql = "SELECT name FROM Queues WHERE id = ?";
   my $sth = $dbh->prepare($sql) or die $dbh->errstr. " preparing $sql";
   $sth->execute($queueid)       or die $sth->errstr. " executing $sql";
 
@@ -319,8 +319,8 @@ sub transaction_ticketid {
 sub transaction_subject {
   my( $self, $transaction_id ) = @_;
 
-  my $sql = "SELECT subject from transactions JOIN tickets ON objectid=".
-            "tickets.id WHERE transactions.id = ".  $transaction_id;
+  my $sql = "SELECT subject from Transactions JOIN Tickets ON objectid=".
+            "Tickets.id WHERE transactions.id = ".  $transaction_id;
   
   $self->_retrieve_single_value($sql);
 }
@@ -328,8 +328,8 @@ sub transaction_subject {
 sub transaction_status {
   my( $self, $transaction_id ) = @_;
 
-  my $sql = "SELECT status from transactions JOIN tickets ON objectid=".
-            "tickets.id WHERE transactions.id = ".  $transaction_id;
+  my $sql = "SELECT status from Transactions JOIN Tickets ON objectid=".
+            "Tickets.id WHERE transactions.id = ".  $transaction_id;
   
   $self->_retrieve_single_value($sql);
 }

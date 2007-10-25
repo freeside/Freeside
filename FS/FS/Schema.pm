@@ -229,7 +229,7 @@ sub dbdef_dist {
                                qw( name type null length default local )
                            } );
     
-                           if ( $column->type eq 'serial' ) {
+                           if ( $column->type =~ /^(\w*)SERIAL$/i ) {
                              $column->type('int');
                              $column->null('NULL');
                            }
@@ -1022,7 +1022,7 @@ sub tables_hashref {
         'catchall',         'int', 'NULL',       '', '', '',
 	'parent_svcnum',    'int', 'NULL',       '', '', '',
 	'registrarnum',     'int', 'NULL',       '', '', '',
-	'registrarkey', 'varchar', 'NULL',       '', '', '',
+	'registrarkey', 'varchar', 'NULL',      512, '', '',
 	'setup_date',  @date_type, '', '',
 	'renewal_interval', 'int', 'NULL',       '', '', '',
 	'expiration_date', @date_type, '', '',
@@ -1576,7 +1576,8 @@ sub tables_hashref {
         ###
 
         'acctid',   'bigserial',  '', '', '', '', 
-        'calldate', 'TIMESTAMP with time zone', '', '', \'now()', '',
+        #'calldate', 'TIMESTAMP with time zone', '', '', \'now()', '',
+        'calldate', 'timestamp',   '',      '', \'now()', '',
         'clid',        'varchar',  '', $char_d, \"''", '', 
         'src',         'varchar',  '', $char_d, \"''", '', 
         'dst',         'varchar',  '', $char_d, \"''", '', 
@@ -1668,7 +1669,7 @@ sub tables_hashref {
     'cdr_type' => {
       'columns' => [
         'cdrtypenum'  => 'serial',  '', '', '', '',
-        'cdrtypename' => 'varchar', '', '', '', '',
+        'cdrtypename' => 'varchar', '', $char_d, '', '',
       ],
       'primary_key' => 'cdrtypenum',
       'unique'      => [],
@@ -1678,7 +1679,7 @@ sub tables_hashref {
     'cdr_carrier' => {
       'columns' => [
         'carrierid'   => 'serial',  '', '', '', '',
-        'carriername' => 'varchar', '', '', '', '',
+        'carriername' => 'varchar', '', $char_d, '', '',
       ],
       'primary_key' => 'carrierid',
       'unique'      => [],
@@ -1783,7 +1784,7 @@ sub tables_hashref {
         'rightnum',   'serial', '',      '', '', '',
         'righttype', 'varchar', '', $char_d, '', '',
         'rightobjnum',   'int', '',      '', '', '',
-        'rightname', 'varchar', '',      '', '', '',
+        'rightname', 'varchar', '', $char_d, '', '',
       ],
       'primary_key' => 'rightnum',
       'unique' => [ [ 'righttype', 'rightobjnum', 'rightname' ] ],
@@ -1830,7 +1831,7 @@ sub tables_hashref {
         'confnum',  'serial',  '', '', '', '', 
         'agentnum', 'int',  'NULL', '', '', '', 
         'name',     'varchar', '', $char_d, '', '', 
-        'value',    'varchar', 'NULL', '', '', '',       # Pg specific
+        'value',    'long varbinary', 'NULL', '', '', '',
       ],
       'primary_key' => 'confnum',
       'unique' => [ [ 'agentnum', 'name' ]],

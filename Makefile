@@ -3,11 +3,13 @@
 #solaris and perhaps other very weirdass /bin/sh
 #SHELL="/bin/ksh"
 
-DATASOURCE = DBI:Pg:dbname=freeside
-#DATASOURCE=DBI:mysql:freeside
+DB_TYPE = Pg
+#DB_TYPE = mysql
 
 DB_USER = freeside
 DB_PASSWORD=
+
+DATASOURCE = DBI:${DB_TYPE}:dbname=freeside
 
 #changable now (some things which should go to the others still go to CONF)
 FREESIDE_CONF = /usr/local/etc/freeside
@@ -25,9 +27,6 @@ APACHE_VERSION = 1
 #APACHE_VERSON = 1.99
 #mod_perl v2 proper and prereleases 1.999_22 and after
 #APACHE_VERSION = 2
-
-# only mason now
-TEMPLATE = mason
 
 #deb
 FREESIDE_DOCUMENT_ROOT = /var/www/freeside
@@ -144,7 +143,7 @@ masondocs: httemplate/* httemplate/*/* httemplate/*/*/* httemplate/*/*/*/*
 alldocs: masondocs
 
 docs:
-	make ${TEMPLATE}docs
+	make masondocs
 
 wikiman:
 	chmod a+rx ./bin/pod2x
@@ -152,7 +151,7 @@ wikiman:
 
 install-docs: docs
 	[ -e ${FREESIDE_DOCUMENT_ROOT} ] && mv ${FREESIDE_DOCUMENT_ROOT} ${FREESIDE_DOCUMENT_ROOT}.`date +%Y%m%d%H%M%S` || true
-	cp -r ${TEMPLATE}docs ${FREESIDE_DOCUMENT_ROOT}
+	cp -r masondocs ${FREESIDE_DOCUMENT_ROOT}
 	chown -R freeside:freeside ${FREESIDE_DOCUMENT_ROOT}
 	cp htetc/handler.pl ${MASON_HANDLER}
 	  perl -p -i -e "\
@@ -298,7 +297,7 @@ configure-rt:
 	  s'%%%MASONDATA%%%'${MASONDATA}'g;\
 	" config.layout; \
 	./configure --enable-layout=Freeside\
-	            --with-db-type=Pg \
+	            --with-db-type=${DB_TYPE} \
 	            --with-db-dba=${DB_USER} \
 	            --with-db-database=${RT_DB_DATABASE} \
 	            --with-db-rt-user=${DB_USER} \
@@ -312,12 +311,9 @@ create-rt: configure-rt
 	[ -d /opt/rt3       ] || mkdir /opt/rt3       #
 	[ -d /opt/rt3/share ] || mkdir /opt/rt3/share #
 	cd rt; make install
-	echo -e "${DB_PASSWORD}\n\\d sessions"\
-	 | psql -U ${DB_USER} -W ${RT_DB_DATABASE} 2>&1\
-	 | grep '^Did not find'\
-	 && rt/sbin/rt-setup-database --dba '${DB_USER}' \
-	                             --dba-password '${DB_PASSWORD}' \
-	                             --action schema \
+	rt/sbin/rt-setup-database --dba '${DB_USER}' \
+	                          -dba-password '${DB_PASSWORD}' \
+	                          -action schema \
 	 || true
 	rt/sbin/rt-setup-database --action insert_initial \
 	&& rt/sbin/rt-setup-database --action insert --datafile ${RT_PATH}/etc/initialdata \
