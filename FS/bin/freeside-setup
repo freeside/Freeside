@@ -125,7 +125,7 @@ $FS::UID::callback_hack = 0;
 if (!scalar(qsearch('conf', {}))) {
   my $error = FS::Conf::init_config($config_dir);
   if ($error) {
-    dbh->rollback or die dbh->errstr;
+    $dbh->rollback or die $dbh->errstr;
     die $error;
   }
 }
