@@ -2859,7 +2859,7 @@ L<http://420.am/business-onlinepayment> for supported gateways.
 
 Available methods are: I<CC>, I<ECHECK> and I<LEC>
 
-Available options are: I<description>, I<invnum>, I<quiet>
+Available options are: I<description>, I<invnum>, I<quiet>, I<paynum_ref>
 
 The additional options I<payname>, I<address1>, I<address2>, I<city>, I<state>,
 I<zip>, I<payinfo> and I<paydate> are also available.  Any of these options,
@@ -2873,6 +2873,9 @@ specified invoice.  If you don't specify an I<invnum> you might want to
 call the B<apply_payments> method.
 
 I<quiet> can be set true to surpress email decline notices.
+
+I<paynum_ref> can be set to a scalar reference.  It will be filled in with the
+resulting paynum, if any.
 
 (moved from cust_bill) (probably should get realtime_{card,ach,lec} here too)
 
@@ -3237,6 +3240,11 @@ sub realtime_bop {
         return $e;
       }
     }
+
+    if ( $options{'paynum_ref'} ) {
+      ${ $options{'paynum_ref'} } = $cust_pay->paynum;
+    }
+
     return ''; #no error
 
   } else {
@@ -3317,7 +3325,7 @@ sub default_payment_gateway {
   #load up config
   my $bop_config = 'business-onlinepayment';
   $bop_config .= '-ach'
-    if $method eq 'ECHECK' && $conf->exists($bop_config. '-ach');
+    if $method =~ /^(ECHECK|CHEK)$/ && $conf->exists($bop_config. '-ach');
   my ( $processor, $login, $password, $action, @bop_options ) =
     $conf->config($bop_config);
   $action ||= 'normal authorization';

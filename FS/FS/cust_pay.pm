@@ -7,6 +7,7 @@ use Business::CreditCard;
 use Text::Template;
 use FS::Misc qw(send_email);
 use FS::Record qw( dbh qsearch qsearchs );
+use FS::payby;
 use FS::cust_main_Mixin;
 use FS::payinfo_Mixin;
 use FS::cust_bill;
@@ -546,6 +547,74 @@ Returns the parent customer object (see L<FS::cust_main>).
 sub cust_main {
   my $self = shift;
   qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
+}
+
+=item payby_name
+
+Returns a name for the payby field.
+
+=cut
+
+sub payby_name {
+  my $self = shift;
+  FS::payby->shortname( $self->payby );
+}
+
+=item gatewaynum
+
+Returns a gatewaynum for the processing gateway.
+
+=item processor
+
+Returns a name for the processing gateway.
+
+=item authorization
+
+Returns a name for the processing gateway.
+
+=item order_number
+
+Returns a name for the processing gateway.
+
+=cut
+
+sub gatewaynum    { shift->_parse_paybatch->{'gatewaynum'}; }
+sub processor     { shift->_parse_paybatch->{'processor'}; }
+sub authorization { shift->_parse_paybatch->{'authorization'}; }
+sub order_number  { shift->_parse_paybatch->{'order_number'}; }
+
+#sucks that this stuff is in paybatch like this in the first place,
+#but at least other code can start to use new field names
+#(code nicked from FS::cust_main::realtime_refund_bop)
+sub _parse_paybatch {
+  my $self = shift;
+
+  $self->paybatch =~ /^((\d+)\-)?(\w+):\s*([\w\-\/ ]*)(:([\w\-]+))?$/
+    or return {};
+              #"Can't parse paybatch for paynum $options{'paynum'}: ".
+              #  $cust_pay->paybatch;
+
+  my( $gatewaynum, $processor, $auth, $order_number ) = ( $2, $3, $4, $6 );
+
+  if ( $gatewaynum ) { #gateway for the payment to be refunded
+
+    my $payment_gateway =
+      qsearchs('payment_gateway', { 'gatewaynum' => $gatewaynum } );
+
+    die "payment gateway $gatewaynum not found" #?
+      unless $payment_gateway;
+
+    $processor = $payment_gateway->gateway_module;
+
+  }
+
+  {
+    'gatewaynum'    => $gatewaynum,
+    'processor'     => $processor,
+    'authorization' => $auth,
+    'order_number'  => $order_number,
+  };
+
 }
 
 =back

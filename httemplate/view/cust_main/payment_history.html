@@ -171,6 +171,10 @@
 %    }
 %  }
 %
+%  my $view = qq! (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('${p}view/cust_pay.html?link=popup;paynum=!.
+%             $cust_pay->paynum.
+%             qq!', 540, 336, 'view_cust_pay_popup' ), CAPTION, 'Payment Receipt', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">view receipt</A>)!;
+%
 %  my $refund = '';
 %  my $refund_days = $conf->config('card_refund-days') || 120;
 %  if (    $cust_pay->closed !~ /^Y/i
@@ -239,7 +243,7 @@
 %  push @history, {
 %    'date'    => $cust_pay->_date,
 %    'desc'    => $pre. "Payment$post$info$desc".
-%                 "$apply$refund$void$delete$unapply",
+%                 "$view$apply$refund$void$delete$unapply",
 %    'payment' => $cust_pay->paid,
 %    'target'  => $target,
 %  };

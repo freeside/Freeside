@@ -1,11 +1,18 @@
-<% include( '/elements/header.html', ucfirst($type{$payby}). ' processing successful',
-             include('/elements/menubar.html'),
+% if ( $cgi->param('batch') ) {
 
-    )
-%>
-<% include( '/elements/small_custview.html', $cust_main, '', '', popurl(3). "view/cust_main.cgi" ) %>
+  <% include( '/elements/header.html', ucfirst($type{$payby}). ' processing successful',
+                 include('/elements/menubar.html'),
 
-<% include('/elements/footer.html') %>
+            )
+  %>
+
+  <% include( '/elements/small_custview.html', $cust_main, '', '', popurl(3). "view/cust_main.cgi" ) %>
+
+  <% include('/elements/footer.html') %>
+
+% } else {
+<% $cgi->redirect(popurl(3). "view/cust_pay.html?paynum=$paynum" ) %>
+% }
 <%init>
 
 #some false laziness w/MyAccount::process_payment
@@ -99,6 +106,7 @@ if ( $payby eq 'CHEK' ) {
 }
 
 my $error = '';
+my $paynum = '';
 if ( $cgi->param('batch') ) {
 
   $error = $cust_main->batch_card(
@@ -110,18 +118,19 @@ if ( $cgi->param('batch') ) {
                                    map { $_ => $cgi->param($_) } 
                                      @{$payby2fields{$payby}}
                                  );
-  errotpage($error) if $error;
+  errorpage($error) if $error;
 
 } else {
 
   $error = $cust_main->realtime_bop( $FS::payby::payby2bop{$payby}, $amount,
-    'quiet'     => 1,
-    'manual'    => 1,
-    'payinfo'   => $payinfo,
-    'paydate'   => "$year-$month-01",
-    'payname'   => $payname,
-    'payunique' => $payunique,
-    'paycvv'    => $paycvv,
+    'quiet'      => 1,
+    'manual'     => 1,
+    'payinfo'    => $payinfo,
+    'paydate'    => "$year-$month-01",
+    'payname'    => $payname,
+    'payunique'  => $payunique,
+    'paycvv'     => $paycvv,
+    'paynum_ref' => \$paynum,
     map { $_ => $cgi->param($_) } @{$payby2fields{$payby}}
   );
   errorpage($error) if $error;

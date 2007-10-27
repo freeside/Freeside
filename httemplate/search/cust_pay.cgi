@@ -37,10 +37,10 @@
                  #'align' => 'lrrrll',
                  'align' => 'rrr'.FS::UI::Web::cust_aligns(),
                  'links' => [
-                   '',
-                   '',
-                   '',
-                   ( map { $_ ne 'Cust. Status' ? $link : '' }
+                   $link,
+                   $link,
+                   $link,
+                   ( map { $_ ne 'Cust. Status' ? $cust_link : '' }
                          FS::UI::Web::cust_header()
                    ),
                  ],
@@ -226,7 +226,9 @@ if ( $cgi->param('magic') ) {
 
 }
 
-my $link = sub {
+my $link = [ "${p}view/cust_pay.html?paynum=", 'paynum' ];
+
+my $cust_link = sub {
   my $cust_pay = shift;
   $cust_pay->cust_main_custnum
     ? [ "${p}view/cust_main.cgi?", 'custnum' ] 
