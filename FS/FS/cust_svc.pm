@@ -4,7 +4,7 @@ use strict;
 use vars qw( @ISA $DEBUG $me $ignore_quantity );
 use Carp;
 use FS::Conf;
-use FS::Record qw( qsearch qsearchs dbh );
+use FS::Record qw( qsearch qsearchs dbh str2time_sql );
 use FS::cust_pkg;
 use FS::part_pkg;
 use FS::part_svc;
@@ -428,17 +428,8 @@ sub seconds_since_sqlradacct {
       or die "can't connect to sqlradius database: ". $DBI::errstr;
 
     #select a unix time conversion function based on database type
-    my $str2time;
-    if ( $dbh->{Driver}->{Name} =~ /^mysql(PP)?$/ ) {
-      $str2time = 'UNIX_TIMESTAMP(';
-    } elsif ( $dbh->{Driver}->{Name} eq 'Pg' ) {
-      $str2time = 'EXTRACT( EPOCH FROM ';
-    } else {
-      warn "warning: unknown database type ". $dbh->{Driver}->{Name}.
-           "; guessing how to convert to UNIX timestamps";
-      $str2time = 'extract(epoch from ';
-    }
-
+    my $str2time = str2time_sql( $dbh->{Driver}->{Name} );
+    
     my $username = $part_export->export_username($svc_x);
 
     my $query;
@@ -538,16 +529,7 @@ sub attribute_since_sqlradacct {
       or die "can't connect to sqlradius database: ". $DBI::errstr;
 
     #select a unix time conversion function based on database type
-    my $str2time;
-    if ( $dbh->{Driver}->{Name} =~ /^mysql(PP)?$/ ) {
-      $str2time = 'UNIX_TIMESTAMP(';
-    } elsif ( $dbh->{Driver}->{Name} eq 'Pg' ) {
-      $str2time = 'EXTRACT( EPOCH FROM ';
-    } else {
-      warn "warning: unknown database type ". $dbh->{Driver}->{Name}.
-           "; guessing how to convert to UNIX timestamps";
-      $str2time = 'extract(epoch from ';
-    }
+    my $str2time = str2time_sql( $dbh->{Driver}->{Name} );
 
     my $username = $part_export->export_username($svc_x);
 
@@ -635,6 +617,27 @@ sub get_cdrs_for_update {
                         },
         'extra_sql'  => 'FOR UPDATE',
       } );
+  }
+
+  #astricon hack?  config option?
+  push @cdrs,
+    qsearch( {
+      'table'        => 'cdr',
+      'hashref'      => { 'freesidestatus' => '',
+                          'src'            => $number,
+			},
+      'extra_sql'    => 'FOR UPDATE',
+     } );
+
+  if ( length($default_prefix) ) {
+    push @cdrs,
+      qsearch( {
+        'table'        => 'cdr',
+        'hashref'      => { 'freesidestatus' => '',
+                            'src'            => "$default_prefix$number",
+  			},
+        'extra_sql'    => 'FOR UPDATE',
+       } );
   }
 
   @cdrs;

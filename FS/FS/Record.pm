@@ -24,7 +24,7 @@ use Tie::IxHash;
 @ISA = qw(Exporter);
 
 #export dbdef for now... everything else expects to find it here
-@EXPORT_OK = qw(dbh fields hfields qsearch qsearchs dbdef jsearch);
+@EXPORT_OK = qw(dbh fields hfields qsearch qsearchs dbdef jsearch str2time_sql);
 
 $DEBUG = 0;
 $me = '[FS::Record]';
@@ -2199,6 +2199,37 @@ sub DESTROY { return; }
 #sub is_tainted {
 #             return ! eval { join('',@_), kill 0; 1; };
 #         }
+
+=back
+
+=head1 SUBROUTINES
+
+=over 4
+
+=item str2time_sql [ DRIVER_NAME ]
+
+Returns a function to convert to unix time based on database type, such as
+"EXTRACT( EPOCH FROM" for Pg or "UNIX_TIMESTAMP(" for mysql.  You are
+responsible for the closing parenthesis yourself.  Don't let it down.  It's a
+sensitive parenthesis.
+
+You can pass an optional driver name such as "Pg", "mysql" or
+$dbh->{Driver}->{Name} to return a function for that database instead of
+the current database.
+
+=cut
+
+sub str2time_sql { 
+  my $driver = shift || driver_name;
+
+  return 'UNIX_TIMESTAMP('      if $driver =~ /^mysql/i;
+  return 'EXTRACT( EPOCH FROM ' if $driver =~ /^Pg/i;
+
+  warn "warning: unknown database type $driver; guessing how to convert ".
+       "dates to UNIX timestamps";
+  return 'EXTRACT(EPOCH FROM ';
+
+}
 
 =back
 

@@ -82,13 +82,13 @@ sub owed {
 
   #handle start and end ranges
 
+  my $str2time = str2time;
+
   #24h * 60m * 60s
-  push @where, "cust_bill._date <= extract(epoch from now())-".
-               ($start * 86400)
+  push @where, "cust_bill._date <= $str2time now() ) - ". ($start * 86400)
     if $start;
 
-  push @where, "cust_bill._date > extract(epoch from now()) - ".
-               ($end * 86400)
+  push @where, "cust_bill._date >  $str2time now() ) - ". ($end * 86400)
     if $end;
 
   #handle 'cust' option

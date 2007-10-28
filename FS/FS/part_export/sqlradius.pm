@@ -2,7 +2,7 @@ package FS::part_export::sqlradius;
 
 use vars qw(@ISA $DEBUG %info %options $notes1 $notes2);
 use Tie::IxHash;
-use FS::Record qw( dbh qsearch qsearchs );
+use FS::Record qw( dbh qsearch qsearchs str2time_sql );
 use FS::part_export;
 use FS::svc_acct;
 use FS::export_svc;
@@ -560,16 +560,7 @@ sub usage_sessions {
                                    qw( datasrc username password ) );
 
   #select a unix time conversion function based on database type
-  my $str2time;
-  if ( $dbh->{Driver}->{Name} =~ /^mysql(PP)?$/ ) {
-    $str2time = 'UNIX_TIMESTAMP(';
-  } elsif ( $dbh->{Driver}->{Name} eq 'Pg' ) {
-    $str2time = 'EXTRACT( EPOCH FROM ';
-  } else {
-    warn "warning: unknown database type ". $dbh->{Driver}->{Name}.
-         "; guessing how to convert to UNIX timestamps";
-    $str2time = 'extract(epoch from ';
-  }
+  my $str2time = str2time_sql( $dbh->{Driver}->{Name} );
 
   my @fields = (
                  qw( username realm framedipaddress
