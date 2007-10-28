@@ -20,7 +20,7 @@ use Date::Format;
 use Crypt::PasswdMD5 1.2;
 use Data::Dumper;
 use Authen::Passphrase;
-use FS::UID qw( datasrc );
+use FS::UID qw( datasrc driver_name );
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs fields dbh dbdef );
 use FS::Msgcat qw(gettext);
@@ -1198,11 +1198,19 @@ sub _check_duplicate {
   my $global_unique = $conf->config('global_unique-username') || 'none';
   return '' if $global_unique eq 'disabled';
 
-  #this is Pg-specific.  what to do for mysql etc?
-  # ( mysql LOCK TABLES certainly isn't equivalent or useful here :/ )
   warn "$me locking svc_acct table for duplicate search" if $DEBUG;
-  dbh->do("LOCK TABLE svc_acct IN SHARE ROW EXCLUSIVE MODE")
-    or die dbh->errstr;
+  if ( driver_name =~ /^Pg/i ) {
+    dbh->do("LOCK TABLE svc_acct IN SHARE ROW EXCLUSIVE MODE")
+      or die dbh->errstr;
+  } elsif ( driver_name =~ /^mysql/i ) {
+    dbh->do("SELECT * FROM duplicate_lock
+               WHERE lockname = 'svc_acct'
+	       FOR UPDATE"
+	   ) or die dbh->errstr;
+  } else {
+    die "unknown database ". driver_name.
+        "; don't know how to lock for duplicate search";
+  }
   warn "$me acquired svc_acct table lock for duplicate search" if $DEBUG;
 
   my $part_svc = qsearchs('part_svc', { 'svcpart' => $self->svcpart } );

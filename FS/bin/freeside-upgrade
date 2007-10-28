@@ -56,7 +56,7 @@ if (dbdef->table('cust_main')->column('agent_custid')) {
 
 if ( $DRY_RUN ) {
   print
-    join(";\n", @bugfix, dbdef->sql_update_schema( dbdef_dist, $dbh ) ). ";\n";
+    join(";\n", @bugfix, dbdef->sql_update_schema( dbdef_dist(datasrc), $dbh ) ). ";\n";
   exit;
 } else {
   foreach my $statement ( @bugfix ) {
@@ -64,7 +64,7 @@ if ( $DRY_RUN ) {
       or die "Error: ". $dbh->errstr. "\n executing: $statement";
   }
 
-  dbdef->update_schema( dbdef_dist, $dbh );
+  dbdef->update_schema( dbdef_dist(datasrc), $dbh );
 }
 
 my $hashref = {};
@@ -73,6 +73,24 @@ $hashref->{debug} = 1 if $DEBUG;
 print join "\n", prune_applications($hashref);
 print "\n" if $DRY_RUN;
 
+if ( $dbh->{Driver}->{Name} =~ /^mysql/i ) {
+
+  my $sth = $dbh->prepare(
+    "SELECT COUNT(*) FROM duplicate_lock WHERE lockname = 'svc_acct'"
+  ) or die $dbh->errstr;
+
+  $sth->execute or die $sth->errstr;
+
+  unless ( $sth->fetchrow_arrayref->[0] ) {
+
+    $sth = $dbh->prepare(
+      "INSERT INTO duplicate_lock ( lockname ) VALUES ( 'svc_acct' )"
+    ) or die $dbh->errstr;
+
+    $sth->execute or die $sth->errstr;
+
+  }
+}
 
 $dbh->commit or die $dbh->errstr;
 

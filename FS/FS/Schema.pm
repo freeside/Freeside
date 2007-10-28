@@ -65,20 +65,28 @@ assuming it is up-to-date).  See L<DBIx::DBSchema>.
 
 sub dbdef { $dbdef; }
 
-=item dbdef_dist [ OPTION => VALUE ... ]
+=item dbdef_dist [ DATASRC ]
 
 Returns the current canoical database definition as defined in this file.
+
+Optionally, pass a DBI data source to enable syntax specific to that database.
+Currently, this enables "TYPE=InnoDB" for MySQL databases.
 
 =cut
 
 sub dbdef_dist {
+  my $datasrc = @_ ? shift : '';
+  
+  my $local_options = '';
+  if ( $datasrc =~ /^dbi:mysql/i ) {
+    $local_options = 'TYPE=InnoDB';
+  }
 
   ###
   # create a dbdef object from the old data structure
   ###
 
   my $tables_hashref = tables_hashref();
-
 
   #turn it into objects
   my $dbdef = new DBIx::DBSchema map {  
@@ -125,10 +133,11 @@ sub dbdef_dist {
                        @$index;
 
     DBIx::DBSchema::Table->new({
-      'name'        => $tablename,
-      'primary_key' => $tables_hashref->{$tablename}{'primary_key'},
-      'columns'     => \@columns,
-      'indices'     => \@indices,
+      'name'          => $tablename,
+      'primary_key'   => $tables_hashref->{$tablename}{'primary_key'},
+      'columns'       => \@columns,
+      'indices'       => \@indices,
+      'local_options' => $local_options,
     });
 
   } keys %$tables_hashref;
@@ -184,64 +193,102 @@ sub dbdef_dist {
                         keys %indices;
 
     my $h_tableobj = DBIx::DBSchema::Table->new( {
-      'name'        => "h_$table",
-      'primary_key' => 'historynum',
-      'indices'     => \%h_indices,
-      'columns'     => [
-                         DBIx::DBSchema::Column->new( {
-                           'name'    => 'historynum',
-                           'type'    => 'serial',
-                           'null'    => 'NOT NULL',
-                           'length'  => '',
-                           'default' => '',
-                           'local'   => '',
-                         } ),
-                         DBIx::DBSchema::Column->new( {
-                           'name'    => 'history_date',
-                           'type'    => 'int',
-                           'null'    => 'NULL',
-                           'length'  => '',
-                           'default' => '',
-                           'local'   => '',
-                         } ),
-                         DBIx::DBSchema::Column->new( {
-                           'name'    => 'history_user',
-                           'type'    => 'varchar',
-                           'null'    => 'NOT NULL',
-                           'length'  => '80',
-                           'default' => '',
-                           'local'   => '',
-                         } ),
-                         DBIx::DBSchema::Column->new( {
-                           'name'    => 'history_action',
-                           'type'    => 'varchar',
-                           'null'    => 'NOT NULL',
-                           'length'  => '80',
-                           'default' => '',
-                           'local'   => '',
-                         } ),
-                         map {
-                           my $column = $tableobj->column($_);
+      'name'          => "h_$table",
+      'primary_key'   => 'historynum',
+      'indices'       => \%h_indices,
+      'local_options' => $local_options,
+      'columns'       => [
+          DBIx::DBSchema::Column->new( {
+            'name'    => 'historynum',
+            'type'    => 'serial',
+            'null'    => 'NOT NULL',
+            'length'  => '',
+            'default' => '',
+            'local'   => '',
+          } ),
+          DBIx::DBSchema::Column->new( {
+            'name'    => 'history_date',
+            'type'    => 'int',
+            'null'    => 'NULL',
+            'length'  => '',
+            'default' => '',
+            'local'   => '',
+          } ),
+          DBIx::DBSchema::Column->new( {
+            'name'    => 'history_user',
+            'type'    => 'varchar',
+            'null'    => 'NOT NULL',
+            'length'  => '80',
+            'default' => '',
+            'local'   => '',
+          } ),
+          DBIx::DBSchema::Column->new( {
+            'name'    => 'history_action',
+            'type'    => 'varchar',
+            'null'    => 'NOT NULL',
+            'length'  => '80',
+            'default' => '',
+            'local'   => '',
+          } ),
+          map {
+            my $column = $tableobj->column($_);
     
-                           #clone so as to not disturb the original
-                           $column = DBIx::DBSchema::Column->new( {
-                             map { $_ => $column->$_() }
-                               qw( name type null length default local )
-                           } );
+            #clone so as to not disturb the original
+            $column = DBIx::DBSchema::Column->new( {
+              map { $_ => $column->$_() }
+                qw( name type null length default local )
+            } );
     
-                           if ( $column->type =~ /^(\w*)SERIAL$/i ) {
-                             $column->type('int');
-                             $column->null('NULL');
-                           }
-                           #$column->default('')
-                           #  if $column->default =~ /^nextval\(/i;
-                           #( my $local = $column->local ) =~ s/AUTO_INCREMENT//i;
-                           #$column->local($local);
-                           $column;
-                         } $tableobj->columns
-                     ],
+            if ( $column->type =~ /^(\w*)SERIAL$/i ) {
+              $column->type('int');
+              $column->null('NULL');
+            }
+            #$column->default('')
+            #  if $column->default =~ /^nextval\(/i;
+            #( my $local = $column->local ) =~ s/AUTO_INCREMENT//i;
+            #$column->local($local);
+            $column;
+          } $tableobj->columns
+      ],
     } );
     $dbdef->addtable($h_tableobj);
+  }
+
+  if ( $datasrc =~ /^dbi:mysql/i ) {
+
+    my $dup_lock_table = DBIx::DBSchema::Table->new( {
+      'name'          => 'duplicate_lock',
+      'primary_key'   => 'duplocknum',
+      'local_options' => $local_options,
+      'columns'       => [
+        DBIx::DBSchema::Column->new( {
+          'name'    => 'duplocknum',
+          'type'    => 'serial',
+          'null'    => 'NOT NULL',
+          'length'  => '',
+          'default' => '',
+          'local'   => '',
+        } ),
+        DBIx::DBSchema::Column->new( {
+          'name'    => 'lockname',
+          'type'    => 'varchar',
+          'null'    => 'NOT NULL',
+          'length'  => '80',
+          'default' => '',
+          'local'   => '',
+        } ),
+      ],
+      'indices' => { 'duplicate_lock1' =>
+                       DBIx::DBSchema::Index->new({
+                         'name'    => 'duplicate_lock1',
+                         'unique'  => 1,
+                         'columns' => [ 'lockname' ],
+                       })
+                   },
+    } );
+
+    $dbdef->addtable($dup_lock_table);
+
   }
 
   $dbdef;

@@ -5,7 +5,7 @@ use vars qw( @ISA @EXPORT_OK );
 use Exporter;
 #use Tie::DxHash;
 use Tie::IxHash;
-use FS::UID qw( dbh );
+use FS::UID qw( dbh driver_name );
 use FS::Record;
 
 use FS::svc_domain;
@@ -44,6 +44,8 @@ sub create_initial_data {
   $FS::UID::AutoCommit = 0;
 
   populate_locales();
+
+  populate_duplock();
 
   #initial_data data
   populate_initial_data(%opt);
@@ -123,6 +125,18 @@ sub _add_locale {
   my $cust_main_county = new FS::cust_main_county( { 'tax'=>0, @_ });  
   my $error = $cust_main_county->insert;
   die $error if $error;
+}
+
+sub populate_duplock {
+
+  return unless driver_name =~ /^mysql/i;
+
+  my $sth = dbh->prepare(
+    "INSERT INTO duplicate_lock ( lockname ) VALUES ( 'svc_acct' )"
+  ) or die dbh->errstr;
+
+  $sth->execute or die $sth->errstr;
+
 }
 
 sub populate_initial_data {
