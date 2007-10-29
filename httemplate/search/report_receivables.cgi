@@ -82,7 +82,7 @@ sub owed {
 
   #handle start and end ranges
 
-  my $str2time = str2time;
+  my $str2time = str2time_sql;
 
   #24h * 60m * 60s
   push @where, "cust_bill._date <= $str2time now() ) - ". ($start * 86400)
