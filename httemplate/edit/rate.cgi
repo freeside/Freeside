@@ -62,7 +62,7 @@ Rate plan
 %     qsearch({
 %               'table'     => 'rate_region',
 %               'hashref'   => {},
-%               'order_by'  => 'ORDER BY lc(regionname)',
+%               'order_by'  => 'ORDER BY LOWER(regionname)',
 %
 %               #'select'    => 'DISTINCT ON ( regionnum ) rate_region.*',
 %               #...
