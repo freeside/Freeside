@@ -7,6 +7,14 @@
 % } elsif ( $link eq 'print' ) { 
 
   <% include('/elements/header-popup.html', "Payment Receipt" ) %>
+  
+% #it would be nice if the menubar could be hidden for print, but better to
+% # have it available than not, otherwise the user winds up at a dead end
+  <% menubar(
+       "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
+     )
+  %>
+  <BR><BR>
 
 % } else { 
 
