@@ -32,9 +32,7 @@ my($dbdef_file) = "%%%FREESIDE_CONF%%%/dbdef.". datasrc;
 
 ###
 
-#print "\nEnter the maximum username length: ";
-#my($username_len)=&getvalue;
-my $username_len = 32; #usernamemax config file
+my $username_len = 32;
 
 #print "\n\n", <<END, ":";
 #Freeside tracks the RADIUS User-Name, check attribute Password and
@@ -81,7 +79,7 @@ my $username_len = 32; #usernamemax config file
 # create a dbdef object from the old data structure
 ###
 
-my $dbdef = dbdef_dist;
+my $dbdef = dbdef_dist(datasrc);
 
 #important
 $dbdef->save($dbdef_file);
@@ -100,7 +98,6 @@ $FS::UID::callback_hack = 0;
 $|=1;
 
 foreach my $statement ( $dbdef->sql($dbh) ) {
-  warn $statement if $statement =~ /TABLE cdr/;
   $dbh->do( $statement )
     or die "CREATE error: ". $dbh->errstr. "\ndoing statement: $statement";
 }
