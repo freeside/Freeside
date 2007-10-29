@@ -127,7 +127,7 @@ my @where = ();
 
 if ( $cgi->param('agentnum') =~ /^(\d+)$/ and $1 ) {
   push @where,
-    "agentnum = $1";
+    "cust_main.agentnum = $1";
 }
 
 ##
@@ -274,7 +274,7 @@ if ( $cgi->param('magic') &&
 ##
 
 # here is the agent virtualization
-push @where, $FS::CurrentUser::CurrentUser->agentnums_sql;
+push @where, $FS::CurrentUser::CurrentUser->agentnums_sql('table'=>'cust_main');
 
 my $extra_sql = scalar(@where) ? ' WHERE '. join(' AND ', @where) : '';
 
