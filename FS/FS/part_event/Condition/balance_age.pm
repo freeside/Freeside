@@ -56,25 +56,19 @@ sub condition {
 sub condition_sql {
   my( $class, $table, %opt ) = @_;
 
-  my $time = $opt{'time'};
+  my $over    = $class->condition_sql_option('balance');
+  my $age     = $class->condition_sql_option_age_from('age', $opt{'time'});
 
-  my $over = $class->condition_sql_option('balance');
-  my $age = $class->condition_sql_option('age');
-  my $age_sql =
-    "$time - EXTRACT( EPOCH FROM REPLACE( $age, 'm', 'mon')::interval )";
-
-  my $balance_sql = FS::cust_main->balance_date_sql( $age_sql );
+  my $balance_sql = FS::cust_main->balance_date_sql( $age );
 
   "$balance_sql > $over";
-
 }
 
 sub order_sql {
-  my( $class ) = @_;
-
-  my $age = $class->condition_sql_option('age');
-  "EXTRACT( EPOCH FROM REPLACE( $age, 'm', 'mon')::interval )";
+  shift->condition_sql_option_age('age');
 }
+
+use FS::UID qw( driver_name );
 
 sub order_sql_weight {
   10;

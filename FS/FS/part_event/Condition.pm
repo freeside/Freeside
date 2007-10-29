@@ -3,6 +3,8 @@ package FS::part_event::Condition;
 use strict;
 use base qw( FS::part_event_condition );
 
+use FS::UID qw( driver_name );
+
 =head1 NAME
 
 FS::part_event::Condition - Base class for event conditions
@@ -249,10 +251,11 @@ sub option_label {
 
 =back
 
-=item condition_sql_option
+=item condition_sql_option OPTION
 
 This is a class method that returns an SQL fragment for retreiving a condition
 option.  It is primarily intended for use in B<condition_sql>.
+
 =cut
 
 sub condition_sql_option {
@@ -267,6 +270,134 @@ sub condition_sql_option {
    )";
 }
 
+=item condition_sql_option_age_from OPTION FROM_TIMESTAMP
+
+This is a class method that returns an SQL fragment that will retreive a
+condition option, parse it from a frequency (such as "1d", "1w" or "12m"),
+and subtract that interval from the supplied timestamp.  It is primarily
+intended for use in B<condition_sql>.
+
+=cut
+
+sub condition_sql_option_age_from {
+  my( $class, $option, $from ) = @_;
+
+  my $value = $class->condition_sql_option($option);
+
+#  my $str2time = str2time_sql;
+
+  if ( driver_name =~ /^Pg/i ) {
+
+    #can we do better with Pg now that we have $from?  yes we can, bob
+    "( $from - EXTRACT( EPOCH FROM REPLACE( $value, 'm', 'mon')::interval ) )";
+
+  } elsif ( driver_name =~ /^mysql/i ) {
+
+    #hmm... is there a way we can save $value?  we're just an expression, hmm
+    #we might be able to do something like "AS ${option}_value" except we get
+    #used in more complicated expressions and we need some sort of unique
+    #identifer passed down too... yow
+
+    "CASE WHEN $value IS NULL OR $value = ''
+       THEN $from
+     WHEN $value LIKE '%m'
+       THEN UNIX_TIMESTAMP(
+              FROM_UNIXTIME($from) - INTERVAL REPLACE( $value, 'm', '' ) MONTH
+            )
+     WHEN $value LIKE '%y'
+       THEN UNIX_TIMESTAMP(
+              FROM_UNIXTIME($from) - INTERVAL REPLACE( $value, 'y', '' ) YEAR
+            )
+     WHEN $value LIKE '%w'
+       THEN UNIX_TIMESTAMP(
+              FROM_UNIXTIME($from) - INTERVAL REPLACE( $value, 'w', '' ) WEEK
+            )
+     WHEN $value LIKE '%d'
+       THEN UNIX_TIMESTAMP(
+              FROM_UNIXTIME($from) - INTERVAL REPLACE( $value, 'd', '' ) DAY
+            )
+     WHEN $value LIKE '%h'
+       THEN UNIX_TIMESTAMP(
+              FROM_UNIXTIME($from) - INTERVAL REPLACE( $value, 'h', '' ) HOUR
+            )
+     END
+    "
+  } else {
+
+    die "FATAL: don't know how to subtract frequencies from dates for ".
+        driver_name. " databases";
+
+  }
+
+}
+
+=item condition_sql_option_age OPTION
+
+This is a class method that returns an SQL fragment for retreiving a condition
+option, and additionaly parsing it from a frequency (such as "1d", "1w" or
+"12m") into an approximate number of seconds.
+
+Note that since months vary in length, the results of this method should B<not>
+be used in computations (use condition_sql_option_age_from for that).  They are
+useful for for ordering and comparison to other ages.
+
+This method is primarily intended for use in B<order_sql>.
+
+=cut
+
+sub condition_sql_option_age {
+  my( $class, $option ) = @_;
+  $class->age2seconds_sql( $class->condition_sql_option($option) );
+}
+
+=item age2seconds_sql
+
+Class method returns an SQL fragment for parsing an arbitrary frequeny (such
+as "1d", "1w", "12m", "2y" or "12h") into an approximate number of seconds.
+
+Approximate meaning: months are considered to be 30 days, years to be
+365.25 days.  Otherwise the numbers of seconds returned is exact.
+
+=cut
+
+sub age2seconds_sql {
+  my( $class, $value ) = @_;
+
+  if ( driver_name =~ /^Pg/i ) {
+
+    "EXTRACT( EPOCH FROM REPLACE( $value, 'm', 'mon')::interval )";
+
+  } elsif ( driver_name =~ /^mysql/i ) {
+
+    #hmm... is there a way we can save $value?  we're just an expression, hmm
+    #we might be able to do something like "AS ${option}_age" except we get
+    #used in more complicated expressions and we need some sort of unique
+    #identifer passed down too... yow
+    # 2592000  = 30d "1 month"
+    # 31557600 = 365.25d "1 year"
+
+    "CASE WHEN $value IS NULL OR $value = ''
+       THEN 0
+     WHEN $value LIKE '%m'
+       THEN REPLACE( $value, 'm', '' ) * 2592000 
+     WHEN $value LIKE '%y'
+       THEN REPLACE( $value, 'y', '' ) * 31557600
+     WHEN $value LIKE '%w'
+       THEN REPLACE( $value, 'w', '' ) * 604800
+     WHEN $value LIKE '%d'
+       THEN REPLACE( $value, 'd', '' ) * 86400
+     WHEN $value LIKE '%h'
+       THEN REPLACE( $value, 'h', '' ) * 3600
+     END
+    "
+  } else {
+
+    die "FATAL: don't know how to approximate frequencies for ". driver_name.
+        " databases";
+
+  }
+
+}
 
 =head1 NEW CONDITION CLASSES
 

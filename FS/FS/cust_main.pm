@@ -19,7 +19,7 @@ use String::Approx qw(amatch);
 use Business::CreditCard 0.28;
 use Locale::Country;
 use Data::Dumper;
-use FS::UID qw( getotaker dbh );
+use FS::UID qw( getotaker dbh driver_name );
 use FS::Record qw( qsearchs qsearch dbdef );
 use FS::Misc qw( send_email generate_ps do_print );
 use FS::Msgcat qw(gettext);
@@ -2890,6 +2890,8 @@ sub realtime_bop {
 
   $options{'description'} ||= 'Internet services';
 
+  return $self->fake_bop($method, $amount, %options) if $options{'fake'};
+
   eval "use Business::OnlinePayment";  
   die $@ if $@;
 
@@ -3215,7 +3217,7 @@ sub realtime_bop {
        'custnum'  => $self->custnum,
        'invnum'   => $options{'invnum'},
        'paid'     => $amount,
-       '_date'     => '',
+       '_date'    => '',
        'payby'    => $method2payby{$method},
        'payinfo'  => $payinfo,
        'paybatch' => $paybatch,
@@ -3309,6 +3311,76 @@ sub realtime_bop {
   
     return $perror;
   }
+
+}
+
+=item fake_bop
+
+=cut
+
+sub fake_bop {
+  my( $self, $method, $amount, %options ) = @_;
+
+  if ( $options{'fake_failure'} ) {
+     return "Error: No error; test failure requested with fake_failure";
+  }
+
+  my %method2payby = (
+    'CC'     => 'CARD',
+    'ECHECK' => 'CHEK',
+    'LEC'    => 'LECB',
+  );
+
+  #my $paybatch = '';
+  #if ( $payment_gateway ) { # agent override
+  #  $paybatch = $payment_gateway->gatewaynum. '-';
+  #}
+  #
+  #$paybatch .= "$processor:". $transaction->authorization;
+  #
+  #$paybatch .= ':'. $transaction->order_number
+  #  if $transaction->can('order_number')
+  #  && length($transaction->order_number);
+
+  my $paybatch = 'FakeProcessor:54:32';
+
+  my $cust_pay = new FS::cust_pay ( {
+     'custnum'  => $self->custnum,
+     'invnum'   => $options{'invnum'},
+     'paid'     => $amount,
+     '_date'    => '',
+     'payby'    => $method2payby{$method},
+     #'payinfo'  => $payinfo,
+     'payinfo'  => '4111111111111111',
+     'paybatch' => $paybatch,
+     #'paydate'  => $paydate,
+     'paydate'  => '2012-05-01',
+  } );
+  $cust_pay->payunique( $options{payunique} ) if length($options{payunique});
+
+  my $error = $cust_pay->insert($options{'manual'} ? ( 'manual' => 1 ) : () );
+
+  if ( $error ) {
+    $cust_pay->invnum(''); #try again with no specific invnum
+    my $error2 = $cust_pay->insert( $options{'manual'} ?
+                                    ( 'manual' => 1 ) : ()
+                                  );
+    if ( $error2 ) {
+      # gah, even with transactions.
+      my $e = 'WARNING: Card/ACH debited but database not updated - '.
+              "error inserting (fake!) payment: $error2".
+              " (previously tried insert with invnum #$options{'invnum'}" .
+              ": $error )";
+      warn $e;
+      return $e;
+    }
+  }
+
+  if ( $options{'paynum_ref'} ) {
+    ${ $options{'paynum_ref'} } = $cust_pay->paynum;
+  }
+
+  return ''; #no error
 
 }
 
@@ -5852,8 +5924,19 @@ sub _agent_plandata {
 
   #yuck.  this whole thing needs to be reconciled better with 1.9's idea of
   #agent-specific Conf
+
+  use FS::part_event::Condition;
   
   my $agentnum = $self->agentnum;
+
+  my $regexp = '';
+  if ( driver_name =~ /^Pg/i ) {
+    $regexp = '~';
+  } elsif ( driver_name =~ /^mysql/i ) {
+    $regexp = 'REGEXP';
+  } else {
+    die "don't know how to use regular expressions in ". driver_name. " databases";
+  }
 
   my $part_event_option =
     qsearchs({
@@ -5864,7 +5947,7 @@ sub _agent_plandata {
         LEFT JOIN part_event_option AS peo_agentnum
           ON ( part_event.eventpart = peo_agentnum.eventpart
                AND peo_agentnum.optionname = 'agentnum'
-               AND peo_agentnum.optionvalue ~ '(^|,)}. $agentnum. q{(,|$)'
+               AND peo_agentnum.optionvalue }. $regexp. q{ '(^|,)}. $agentnum. q{(,|$)'
              )
         LEFT JOIN part_event_option AS peo_cust_bill_age
           ON ( part_event.eventpart = peo_cust_bill_age.eventpart
@@ -5882,13 +5965,8 @@ sub _agent_plandata {
         " ORDER BY
            CASE WHEN peo_cust_bill_age.optionname != 'cust_bill_age'
            THEN -1
-           ELSE EXTRACT( EPOCH FROM
-                           REPLACE( peo_cust_bill_age.optionvalue,
-                                    'm',
-                                    'mon'
-                                  )::interval
-                       )
-          END
+	   ELSE ". FS::part_event::Condition->age2seconds_sql('peo_cust_bill_age.optionvalue').
+        " END
           , part_event.weight".
         " LIMIT 1"
     });

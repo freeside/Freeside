@@ -59,21 +59,13 @@ sub condition {
 sub condition_sql {
   my( $class, $table, %opt ) = @_;
 
-  my $time = $opt{'time'};
+  my $age  = $class->condition_sql_option_age_from('age', $opt{'time'} );
 
-  my $age = $class->condition_sql_option('age');
-  my $age_sql = 
-    "$time - EXTRACT( EPOCH FROM REPLACE( $age, 'm', 'mon')::interval )";
-
-  "cust_bill._date <= $age_sql";
-
+  "cust_bill._date <= $age";
 }
 
 sub order_sql {
-  my( $class ) = @_;
-
-  my $age = $class->condition_sql_option('age');
-  "EXTRACT( EPOCH FROM REPLACE( $age, 'm', 'mon')::interval )";
+  shift->condition_sql_option_age('age');
 }
 
 sub order_sql_weight {
