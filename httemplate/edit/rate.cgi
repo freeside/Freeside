@@ -58,17 +58,21 @@ Rate plan
   <TH><FONT SIZE=-1>Granularity</FONT></TH>
 </TR>
 % foreach my $rate_region (
-%     sort { lc($a->regionname) cmp lc($b->regionname) }
+%     #sort { lc($a->regionname) cmp lc($b->regionname) }
 %     qsearch({
-%               'select'    => 'DISTINCT ON ( regionnum ) rate_region.*',
 %               'table'     => 'rate_region',
 %               'hashref'   => {},
+%               'order_by'  => 'ORDER BY lc(regionname)',
+%
+%               #'select'    => 'DISTINCT ON ( regionnum ) rate_region.*',
+%               #...
 %               #'addl_from' => 'INNER JOIN rate_prefix USING ( regionnum )',
 %               #'extra_sql' => "WHERE countrycode != '1'",
 %
 %                              # 'ORDER BY regionname'
 %                              # ERROR: SELECT DISTINCT ON expressions must
 %                              #        match initial ORDER BY expressions
+%                              # also, DISTINCT ON is a Pg-ism
 %            })
 %   ) {
 %     my $n = $rate_region->regionnum;

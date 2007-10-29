@@ -59,7 +59,7 @@ my $agentnums_sql = $FS::CurrentUser::CurrentUser->agentnums_sql;
 
 my( $count_query, $sql_query );
 my $count_addl = '';
-my $distinct = '';
+#my $distinct = '';
 my($begin, $end) = ( '', '' );
 my $agentnum = '';
 my($open, $days) = ( '', '' );
@@ -141,17 +141,33 @@ if ( $cgi->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/ ) {
     push @where, "cust_bill._date < ". (time-86400*$days) if $days;
   }
 
-  #here is the agent virtualization
-  push @where, $agentnums_sql;
-  my $extra_sql = scalar(@where) ? 'WHERE '. join(' AND ', @where) : '';
-
   if ( $cgi->param('newest_percust') ) {
     $newest_percust = 1;
-    $distinct = 'DISTINCT ON ( cust_bill.custnum )';
-    $orderby = 'ORDER BY cust_bill.custnum ASC, cust_bill._date DESC';
+
+    #$distinct = 'DISTINCT ON ( cust_bill.custnum )';
+    #$orderby = 'ORDER BY cust_bill.custnum ASC, cust_bill._date DESC';
     #$count_query = "SELECT 'N/A', 'N/A', 'N/A'"; #XXXXXXX fix
+    
+    my @newest_where = map { s/\bcust_bill\./newest_cust_bill./g; }
+                           grep ! /^cust_main./, @where;
+    my $newest_where = scalar(@newest_where)
+                         ? ' AND '. join(' AND ', @newest_where)
+			 : '';
+
+    push @where, "cust_bill._date = (
+      SELECT(MAX(newest_cust_bill._date)) FROM cust_bill AS newest_cust_bill
+        WHERE newest_cust_bill.custnum = cust_bill.custnum
+          $newest_where
+    )";
+
+
     $count_query = "SELECT COUNT(DISTINCT cust_bill.custnum), 'N/A', 'N/A'";
   }
+
+  #here is the agent virtualization
+  push @where, $agentnums_sql;
+
+  my $extra_sql = scalar(@where) ? 'WHERE '. join(' AND ', @where) : '';
 
   unless ( $count_query ) {
     $count_query = "SELECT COUNT(*), sum(charged), sum($owed)";
@@ -165,7 +181,8 @@ if ( $cgi->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/ ) {
     'table'     => 'cust_bill',
     'addl_from' => $join_cust_main,
     'hashref'   => {},
-    'select'    => "$distinct ". join(', ',
+    #'select'    => "$distinct ". join(', ',
+    'select'    => join(', ',
                      'cust_bill.*',
                      #( map "cust_main.$_", qw(custnum last first company) ),
                      'cust_main.custnum as cust_main_custnum',

@@ -444,7 +444,20 @@ my %base_regions = ();
 foreach my $r (
   qsearch( 'cust_main_county',
            {},
-           "DISTINCT ON ( country, state, county, CASE WHEN taxname IS NULL THEN '' ELSE taxname END ) *",
+           "DISTINCT
+              country,
+              state,
+              county,
+              CASE WHEN taxname IS NULL THEN '' ELSE taxname END AS taxname,".
+
+	      #a little bit unsure of this part... test?
+	      #ah, it looks like it winds up being irrelevant as ->{'tax'} 
+	      # from $regions is not displayed when show_taxclasses is on
+	      ( $cgi->param('show_taxclasses')
+                  ? " CASE WHEN taxclass IS NULL THEN '' ELSE taxclass END "
+                  : " '' "
+       	      )." AS taxclass"
+           ,
            $gotcust
          )
 ) {

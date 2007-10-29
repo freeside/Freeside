@@ -2716,18 +2716,33 @@ sub re_X {
   push @where, "cust_bill._date < ". (time-86400*$param{'days'})
     if $param{'days'};
 
+  if ( $param{'newest_percust'} ) {
+
+    #$distinct = 'DISTINCT ON ( cust_bill.custnum )';
+    #$orderby = 'ORDER BY cust_bill.custnum ASC, cust_bill._date DESC';
+
+    my @newest_where = map { s/\bcust_bill\./newest_cust_bill./g; }
+                           grep ! /^cust_main./, @where;
+    my $newest_where = scalar(@newest_where)
+                         ? ' AND '. join(' AND ', @newest_where)
+			 : '';
+
+    push @where, "cust_bill._date = (
+      SELECT(MAX(newest_cust_bill._date)) FROM cust_bill AS newest_cust_bill
+        WHERE newest_cust_bill.custnum = cust_bill.custnum
+          $newest_where
+    )";
+
+  }
+
   my $extra_sql = scalar(@where) ? 'WHERE '. join(' AND ', @where) : '';
 
   my $addl_from = 'left join cust_main using ( custnum )';
-
-  if ( $param{'newest_percust'} ) {
-    $distinct = 'DISTINCT ON ( cust_bill.custnum )';
-    $orderby = 'ORDER BY cust_bill.custnum ASC, cust_bill._date DESC';
-  }
      
   my @cust_bill = qsearch( 'cust_bill',
                            {},
-                           "$distinct cust_bill.*",
+                           #"$distinct cust_bill.*",
+                           "cust_bill.*",
                            $extra_sql,
                            '',
                            $addl_from

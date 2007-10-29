@@ -30,9 +30,10 @@ inherit from.
 
 =item sql_h_search END_TIMESTAMP [ START_TIMESTAMP ] 
 
-Returns an a list consisting of the "SELECT" and "EXTRA_SQL" SQL fragments to
-search for the appropriate history records created before END_TIMESTAMP
-and (optionally) not cancelled before START_TIMESTAMP.
+Returns an a list consisting of the "SELECT", "EXTRA_SQL", SQL fragments, a
+placeholder for "CACHE_OBJ" and an "AS" SQL fragment, to search for the
+appropriate history records created before END_TIMESTAMP and (optionally) not
+cancelled before START_TIMESTAMP.
 
 =cut
 
@@ -48,25 +49,45 @@ sub sql_h_search {
     confess 'Called sql_h_search without END_TIMESTAMP';
   }
 
-  my $notcancelled = '';
+  my( $notcancelled, $notcancelled_mr ) = ( '', '' );
   if ( scalar(@_) && $_[0] ) {
-    $notcancelled = "AND 0 = ( SELECT COUNT(*) FROM $table as notdel
-                                WHERE notdel.$pkey = maintable.$pkey
-                                AND notdel.history_action = 'delete'
-                                AND notdel.history_date > maintable.history_date
-                                AND notdel.history_date <= $_[0]
-                             )";
+    $notcancelled =
+      "AND 0 = ( SELECT COUNT(*) FROM $table as notdel
+                   WHERE notdel.$pkey = maintable.$pkey
+                     AND notdel.history_action = 'delete'
+                     AND notdel.history_date > maintable.history_date
+                     AND notdel.history_date <= $_[0]
+               )";
+    $notcancelled_mr =
+      "AND 0 = ( SELECT COUNT(*) FROM $table as notdel_mr
+                   WHERE notdel_mr.$pkey = mostrecent.$pkey
+                     AND notdel_mr.history_action = 'delete'
+                     AND notdel_mr.history_date > mostrecent.history_date
+                     AND notdel_mr.history_date <= $_[0]
+               )";
   }
 
   (
-    "DISTINCT ON ( $pkey ) *",
+    #"DISTINCT ON ( $pkey ) *",
+    "*",
 
     "AND history_date <= $end
      AND (    history_action = 'insert'
            OR history_action = 'replace_new'
          )
      $notcancelled
-     ORDER BY $pkey ASC, history_date DESC",
+     AND history_date = ( SELECT MAX(mostrecent.history_date)
+                            FROM $table AS mostrecent
+                            WHERE mostrecent.$pkey = maintable.$pkey
+			      AND mostrecent.history_date <= $end
+			      AND (    mostrecent.history_action = 'insert'
+			            OR mostrecent.history_action = 'replace_new'
+				  )
+			      $notcancelled_mr
+                        )
+
+     ORDER BY $pkey ASC",
+     #ORDER BY $pkey ASC, history_date DESC",
 
      '',
 
