@@ -66,11 +66,6 @@ tie my %report_customers_lists, 'Tie::IxHash',
 $report_customers_lists{'by active trouble tickets'} = [ $fsurl. 'search/cust_main.cgi?browse=tickets', '' ]
   if $conf->config('ticket_system');
 
-$report_customers_lists{'advanced customer reports'} = [ $fsurl. 'search/report_cust_main.html', '' ]
-  if ( $curuser->access_right('List customers') &&
-       $curuser->access_right('List packages')
-     );
-
 tie my %report_customers_search, 'Tie::IxHash';
 $report_customers_search{'by ordering employee'} = [ $fsurl. 'search/cust_main-otaker.cgi' ]
   if $curuser->access_right('Configuration');
@@ -80,7 +75,10 @@ tie my %report_customers, 'Tie::IxHash',
 ;
 $report_customers{'Search customers'} = [ \%report_customers_search, 'Search customers' ]
   if keys %report_customers_search;
-$report_customers{'Zip code distribution'} = [ $fsurl.'search/report_cust_main-zip.html', 'Zip codes by number of customers' ];
+$report_customers{'Zip code distribution'}     = [ $fsurl. 'search/report_cust_main-zip.html', 'Zip codes by number of customers' ];
+$report_customers{'Advanced customer reports'} = [ $fsurl. 'search/report_cust_main.html', 'by status, signup date, agent, etc.' ]
+  if    $curuser->access_right('List customers')
+     && $curuser->access_right('List packages');
 
 tie my %report_invoices_open, 'Tie::IxHash',
   'All open invoices' => [ $fsurl.'search/cust_bill.html?OPEN_date', 'All invoices with an unpaid balance' ],
@@ -237,16 +235,21 @@ tie my %config_employees, 'Tie::IxHash',
   'View/Edit employee groups' => [ $fsurl.'browse/access_group.html', 'Employee groups allow you to control access to the backend' ],
 ;
 
-tie my %config_export_svc_pkg, 'Tie::IxHash',
-  'View/Edit exports'              => [ $fsurl.'browse/part_export.cgi', 'Provisioning services to external machines, databases and APIs' ],
-  'View/Edit service definitions'  => [ $fsurl.'browse/part_svc.cgi', 'Services are items you offer to your customers' ],
-  'View/Edit package definitions'  => [ $fsurl.'browse/part_pkg.cgi', 'One or more services are grouped together into a package and given pricing information. Customers purchase packages, not services' ],
-  'View/Edit package classes'      => [ $fsurl.'browse/pkg_class.html', 'Package classes define groups of packages, for reporting and convenience purposes.' ],
-  'View/Edit cancel reason types'  => [ $fsurl.'browse/reason_type.html?class=C', 'Cancel reason types define groups of reasons, for reporting and convenience purposes.' ],
-  'View/Edit cancel reasons'       => [ $fsurl.'browse/reason.html?class=C', 'Cancel reasons explain why a service was cancelled.' ],
-  'View/Edit suspend reason types' => [ $fsurl.'browse/reason_type.html?class=S', 'Suspend reason types define groups of reasons, for reporting and convenience purposes.' ],
-  'View/Edit suspend reasons' => [ $fsurl.'browse/reason.html?class=S', 'Suspend reasons explain why a service was suspended.' ],
-;
+tie my %config_export_svc_pkg, 'Tie::IxHash', ();
+if ( $curuser->access_right('Configuration') ) {
+  $config_export_svc_pkg{'View/Edit exports'} = [ $fsurl.'browse/part_export.cgi', 'Provisioning services to external machines, databases and APIs' ];
+  $config_export_svc_pkg{'View/Edit service definitions'} = [ $fsurl.'browse/part_svc.cgi', 'Services are items you offer to your customers' ];
+}
+$config_export_svc_pkg{'View/Edit package definitions'} = [ $fsurl.'browse/part_pkg.cgi', 'One or more services are grouped together into a package and given pricing information. Customers purchase packages, not services' ]
+  if    $curuser->access_right('Edit package definitions')
+     || $curuser->access_right('Edit global package definitions');
+if ( $curuser->access_right('Configuration') ) {
+  $config_export_svc_pkg{'View/Edit package classes'} =  [ $fsurl.'browse/pkg_class.html', 'Package classes define groups of packages, for reporting and convenience purposes.' ];
+  $config_export_svc_pkg{'View/Edit cancel reason types'} = [ $fsurl.'browse/reason_type.html?class=C', 'Cancel reason types define groups of reasons, for reporting and convenience purposes.' ];
+  $config_export_svc_pkg{'View/Edit cancel reasons'} = [ $fsurl.'browse/reason.html?class=C', 'Cancel reasons explain why a service was cancelled.' ];
+  $config_export_svc_pkg{'View/Edit suspend reason types'} = [ $fsurl.'browse/reason_type.html?class=S', 'Suspend reason types define groups of reasons, for reporting and convenience purposes.' ];
+  $config_export_svc_pkg{'View/Edit suspend reasons'} = [ $fsurl.'browse/reason.html?class=S', 'Suspend reasons explain why a service was suspended.' ];
+}
 
 tie my %config_agent, 'Tie::IxHash',
   'View/Edit agent types' => [ $fsurl.'browse/agent_type.cgi', 'Agent types define groups of package definitions that you can then assign to particular agents' ],
@@ -291,11 +294,15 @@ if ( $curuser->access_right('Configuration' ) ) {
     'Settings'      => [ $fsurl.'config/config-view.cgi', '' ],
     'separator'     => '', #its a separator!
     'Employees'     => [ \%config_employees, '' ],
-    'Provisioning, services and packages'
-                    => [ \%config_export_svc_pkg, ''    ],
-    'Resellers'     => [ \%config_agent, ''    ],
   );
 }
+$config_menu{'Provisioning, services and packages'} =
+    [ \%config_export_svc_pkg, ''    ]
+  if    $curuser->access_right('Configuration' )
+     || $curuser->access_right('Edit package definitions')
+     || $curuser->access_right('Edit global package definitions');
+$config_menu{'Resellers'} = [ \%config_agent, ''    ]
+  if $curuser->access_right('Configuration');
 $config_menu{'Billing'} = [ \%config_billing, ''    ]
   if $curuser->access_right('Edit billing events')
   || $curuser->access_right('Edit global billing events');
