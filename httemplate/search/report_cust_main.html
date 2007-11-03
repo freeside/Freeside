@@ -1,0 +1,60 @@
+<% include('/elements/header.html', 'Customer Report' ) %>
+
+<FORM ACTION="cust_main_ADV.cgi" METHOD="GET">
+<INPUT TYPE="hidden" NAME="magic" VALUE="bill">
+
+  <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+    <TR>
+      <TH BGCOLOR="#e8e8e8" COLSPAN=2 ALIGN="left"><FONT SIZE="+1">Search options</FONT></TH>
+    </TR>
+    <% include( '/elements/tr-select-agent.html',
+                   ($cgi->param('agentnum') || ''),
+               )
+    %>
+
+%   foreach my $field (qw( signupdate )) {
+
+      <TR>
+        <TD ALIGN="right" VALIGN="center"><% $label{$field} %></TD>
+        <TD>
+          <TABLE>
+            <% include( '/elements/tr-input-beginning_ending.html',
+                          prefix   => $field,
+                          layout   => 'horiz',
+                      )
+            %>
+          </TABLE>
+        </TD>
+      </TR>
+
+%   }
+    
+    <TR>
+      <TD ALIGN="right" VALIGN="center">Include cancelled packages</TD>
+        <TD><INPUT TYPE="checkbox" NAME="cancelled_pkgs"></TD>
+    </TR>
+
+  </TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="Get Report">
+
+</FORM>
+
+<% include('/elements/footer.html') %>
+<%init>
+
+die "access denied"
+  unless ( $FS::CurrentUser::CurrentUser->access_right('List customers') &&
+           $FS::CurrentUser::CurrentUser->access_right('List packages')
+         );;
+
+</%init>
+<%once>
+
+my %label = (
+  'signupdate'     => 'Signup Date',
+);
+
+</%once>

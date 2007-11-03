@@ -66,6 +66,11 @@ tie my %report_customers_lists, 'Tie::IxHash',
 $report_customers_lists{'by active trouble tickets'} = [ $fsurl. 'search/cust_main.cgi?browse=tickets', '' ]
   if $conf->config('ticket_system');
 
+$report_customers_lists{'advanced customer reports'} = [ $fsurl. 'search/report_cust_main.html', '' ]
+  if ( $curuser->access_right('List customers') &&
+       $curuser->access_right('List packages')
+     );
+
 tie my %report_customers_search, 'Tie::IxHash';
 $report_customers_search{'by ordering employee'} = [ $fsurl. 'search/cust_main-otaker.cgi' ]
   if $curuser->access_right('Configuration');
