@@ -104,9 +104,9 @@ my $count_query = "SELECT COUNT(*) FROM cust_main $extra_sql";
 
 my $select;
 if ($dbh->{Driver}->{Name} eq 'Pg') {
-  $select = "*, array_to_string(array(select pkg from cust_pkg left join part_pkg using ( pkgpart ) where cust_main.custnum = cust_pkg.custnum $pkgwhere),',') as magic";
+  $select = "*, array_to_string(array(select pkg from cust_pkg left join part_pkg using ( pkgpart ) where cust_main.custnum = cust_pkg.custnum $pkgwhere),'|') as magic";
 }elsif ($dbh->{Driver}->{Name} =~ /^mysql/i) {
-  $select = "*, GROUP_CONCAT(pkg SEPARATOR ',') as magic";
+  $select = "*, GROUP_CONCAT(pkg SEPARATOR '|') as magic";
 }else{
   warn "warning: unknown database type ". $dbh->{Driver}->{Name}. 
        "omitting packing information from report.";
@@ -129,7 +129,7 @@ my (@extra_fields) = ();
 while($headercount) {
   unshift @extra_headers, "Package ". $headercount;
   unshift @extra_fields, eval q!sub {my $c = shift;
-                                     my @a = split ',', $c->magic;
+                                     my @a = split '\|', $c->magic;
                                      my $p = $a[!.--$headercount. q!];
                                      $p;
                                     };!;
