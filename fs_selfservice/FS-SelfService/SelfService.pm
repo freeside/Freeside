@@ -468,6 +468,10 @@ hash reference as parameter with the following keys:
 
 Session identifier
 
+=item amount
+
+Amount
+
 =item save
 
 If true, address and card information entered will be saved for subsequent
