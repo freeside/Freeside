@@ -297,14 +297,14 @@ sub payment_info {
 
   if ( $cust_main->payby =~ /^(CARD|DCRD)$/ ) {
     $return{card_type} = cardtype($cust_main->payinfo);
-    $return{payinfo} = $cust_main->payinfo;
+    $return{payinfo} = $cust_main->paymask;
 
     @return{'month', 'year'} = $cust_main->paydate_monthyear;
 
   }
 
   if ( $cust_main->payby =~ /^(CHEK|DCHK)$/ ) {
-    my ($payinfo1, $payinfo2) = split '@', $cust_main->payinfo;
+    my ($payinfo1, $payinfo2) = split '@', $cust_main->paymask;
     $return{payinfo1} = $payinfo1;
     $return{payinfo2} = $payinfo2;
     $return{paytype}  = $cust_main->paytype;
@@ -354,21 +354,28 @@ sub process_payment {
   my $paycvv = '';
   if ( $payby eq 'CHEK' || $payby eq 'DCHK' ) {
   
-    $p->{'payinfo1'} =~ /^(\d+)$/
+    $p->{'payinfo1'} =~ /^([\dx]+)$/
       or return { 'error' => "illegal account number ". $p->{'payinfo1'} };
     my $payinfo1 = $1;
-     $p->{'payinfo2'} =~ /^(\d+)$/
+     $p->{'payinfo2'} =~ /^([\dx]+)$/
       or return { 'error' => "illegal ABA/routing number ". $p->{'payinfo2'} };
     my $payinfo2 = $1;
     $payinfo = $payinfo1. '@'. $payinfo2;
+
+    $payinfo = $cust_main->payinfo
+      if $cust_main->paymask eq $payinfo;
    
   } elsif ( $payby eq 'CARD' || $payby eq 'DCRD' ) {
    
     $payinfo = $p->{'payinfo'};
-    $payinfo =~ s/\D//g;
+    $payinfo =~ s/[^\dx]//g;
     $payinfo =~ /^(\d{13,16})$/
       or return { 'error' => gettext('invalid_card') }; # . ": ". $self->payinfo
     $payinfo = $1;
+
+    $payinfo = $cust_main->payinfo
+      if $cust_main->paymask eq $payinfo;
+
     validate($payinfo)
       or return { 'error' => gettext('invalid_card') }; # . ": ". $self->payinfo
     return { 'error' => gettext('unknown_card_type') }
@@ -430,6 +437,15 @@ sub process_payment {
 
   return { 'error' => '' };
 
+}
+
+sub process_payment_order_pkg {
+  my $p = shift;
+
+  my $hr = process_payment($p);
+  return $hr if $hr->{'error'};
+
+  order_pkg($p);
 }
 
 sub process_prepay {
