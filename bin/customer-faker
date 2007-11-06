@@ -13,8 +13,8 @@ use FS::svc_acct;
 my $agentnum = 1;
 my $refnum = 1;
 
-#my @pkgs = ( 2, 3, 4 );
-my @pkgs = ( 4, 5, 6 );
+my @pkgs = ( 2, 3, 4 );
+#my @pkgs = ( 4, 5, 6 );
 my $svcpart = 2;
 
 use vars qw( $opt_p );
@@ -26,6 +26,9 @@ adminsuidsetup($user);
 
 my $onum = $num;
 my $start = time;
+
+my @states = qw( AL AK AS AZ AR CA CO CT DE DC FL GA GU HI ID IL IN IA KS KY LA ME MD MA MI MN MS MO MT NE NV NH NJ NM NY NC ND MP OH OK OR PA PR RI SC SD TN TX UT VT VI VA WA WV WI WY );
+#FM MH
 
 until ( $num-- <= 0 ) {
 
@@ -39,7 +42,8 @@ until ( $num-- <= 0 ) {
     'company'  => ( $num % 2 ? $faker->company. ', '. $faker->company_suffix : '' ), #half with companies..
     'address1' => $faker->street_address,
     'city'     => 'Tofutown', #missing, so everyone is from tofutown# $faker->city,
-    'state'    => $faker->us_state_abbr,
+    #'state'    => $faker->us_state_abbr,
+    'state'    => $states[ int(rand($#states)) ],
     'zip'      => $faker->us_zip_code,
     'country'  => 'US',
     'daytime'  => $faker->phone_number,
