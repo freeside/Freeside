@@ -2018,6 +2018,14 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'selfservice-session_timeout',
+    'section'     => '',
+    'description' => 'Self-service session timeout.  Defaults to 1 hour.',
+    'type'        => 'select',
+    'select_enum' => [ '1 hour', '2 hours', '4 hours', '8 hours', '1 day', '1 week', ],
+  },
+
+  {
     'key'         => 'disable_setup_suspended_pkgs',
     'section'     => 'billing',
     'description' => 'Disables charging of setup fees for suspended packages.',

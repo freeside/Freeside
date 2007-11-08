@@ -88,7 +88,8 @@ sub login {
     $session_id = md5_hex(md5_hex(time(). {}. rand(). $$))
   } until ( ! defined _cache->get($session_id) ); #just in case
 
-  _cache->set( $session_id, $session, '1 hour' );
+  my $timeout = $conf->config('selfservice-session_timeout') || '1 hour';
+  _cache->set( $session_id, $session, $timeout );
 
   return { 'error'      => '',
            'session_id' => $session_id,
