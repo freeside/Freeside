@@ -1681,7 +1681,8 @@ sub num_ncancelled_pkgs {
 }
 
 sub num_pkgs {
-  my( $self, $sql ) = @_;
+  my( $self ) = shift;
+  my $sql = scalar(@_) ? shift : '';
   $sql = "AND $sql" if $sql && $sql !~ /^\s*$/ && $sql !~ /^\s*AND/i;
   my $sth = dbh->prepare(
     "SELECT COUNT(*) FROM cust_pkg WHERE custnum = ? $sql"
