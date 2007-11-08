@@ -113,9 +113,9 @@
 %  Your content goes here
 Dear [@-- $first --@] [@-- $last --@]:\\
 \\
-  Thank you for choosing Freeside.  We aim to meet all the billing needs of
-  [@-- $company --@].  Please do not hesitate to contact us for any additional
-  service or features you require.\\
+  Thank you for choosing [@-- $company_name --@].  We aim to meet all of your
+  needs.  Please do not hesitate to contact us for any additional
+  services or assistance.\\
 
 \end{document}
 

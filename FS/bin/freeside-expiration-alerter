@@ -138,6 +138,10 @@ foreach my $customer (@customers)
         }
         $FS::alerter::_template::expdate = $expire_time;
 
+        $FS::alerter::_template::company_name = $conf->config('company_name');
+        $FS::alerter::_template::company_address =
+          join("\n", $conf->config('company_address') ). "\n";
+
         my $message = new Mail::Internet (
           'Header' => $header,
           'Body' => [ $alerter->fill_in( PACKAGE => 'FS::alerter::_template' ) ],

@@ -1,11 +1,10 @@
 
                                  Invoice
-                                 { substr("Page $page of $total_pages          ", 0, 19); } { use Date::Format; time2str("%x", $date); }  FS-{ $invnum; }
+                                 { substr("Page $page of $total_pages          ", 0, 19); } { use Date::Format; time2str("%x", $date); }  Invoice #{ $invnum; }
 
 
-Ivan Kohler
-12345 Test Lane
-Truckee, CA  96161
+{ $company_name; }
+{ $company_address; }
 
 
 { $address[0]; }
@@ -24,4 +23,4 @@ Truckee, CA  96161
   );
 }
 
- -=> Freeside - open-source billing for ISPs - http://www.sisd.com/freeside <=-
+ -=> { $company_name; } <=-

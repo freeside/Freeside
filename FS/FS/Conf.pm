@@ -732,7 +732,7 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'home',
-    'section'     => 'required',
+    'section'     => 'shell',
     'description' => 'For new users, prefixed to username to create a directory name.  Should have a leading but not a trailing slash.',
     'type'        => 'text',
   },
@@ -746,8 +746,8 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'invoice_template',
-    'section'     => 'required',
-    'description' => 'Required template file for invoices.  See the <a href="http://www.sisd.com/mediawiki/index.php/Freeside:1.7:Documentation:Administration#Plaintext_invoice_templates">billing documentation</a> for details.',
+    'section'     => 'billing',
+    'description' => 'Text template file for invoices.  Used if no invoice_html template is defined, and also seen by users using non-HTML capable mail clients.  See the <a href="http://www.sisd.com/mediawiki/index.php/Freeside:1.7:Documentation:Administration#Plaintext_invoice_templates">billing documentation</a> for details.',
     'type'        => 'textarea',
   },
 
@@ -949,7 +949,7 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'shells',
-    'section'     => 'required',
+    'section'     => 'shell',
     'description' => 'Legal shells (think /etc/shells).  You probably want to `cut -d: -f7 /etc/passwd | sort | uniq\' initially so that importing doesn\'t fail with `Illegal shell\' errors, then remove any special entries afterwords.  A blank line specifies that an empty shell is permitted.',
     'type'        => 'textarea',
   },
@@ -1697,6 +1697,13 @@ worry that config_items is freeside-specific and icky.
     'section'     => 'required',
     'description' => 'Your company name',
     'type'        => 'text',
+  },
+
+  {
+    'key'         => 'company_address',
+    'section'     => 'required',
+    'description' => 'Your company address',
+    'type'        => 'textarea',
   },
 
   {

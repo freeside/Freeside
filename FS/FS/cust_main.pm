@@ -5752,6 +5752,10 @@ sub notify {
   $notify_template->compile()
     or die "can't compile template: Text::Template::ERROR";
 
+  $FS::notify_template::_template::company_name = $conf->config('company_name');
+  $FS::notify_template::_template::company_address =
+    join("\n", $conf->config('company_address') ). "\n";
+
   my $paydate = $customer->paydate;
   $FS::notify_template::_template::first = $customer->first;
   $FS::notify_template::_template::last = $customer->last;
@@ -5805,7 +5809,7 @@ I<$payby> - a description of the method of payment for the customer
             # would be nice to use FS::payby::shortname
 I<$payinfo> - the masked account information used to collect for this customer
 I<$expdate> - the expiration of the customer payment method in seconds from epoch
-I<$returnaddress> - the return address defaults to invoice_latexreturnaddress
+I<$returnaddress> - the return address defaults to invoice_latexreturnaddress or company_address
 
 =cut
 
@@ -5855,11 +5859,21 @@ sub generate_letter {
     my $retadd = join("\n", $conf->config_orbase( 'invoice_latexreturnaddress',
                                                   $self->agent_template)
                      );
-
-    $letter_data{returnaddress} = length($retadd) ? $retadd : '~';
+    if ( length($retadd) ) {
+      $letter_data{returnaddress} = $retadd;
+    } elsif ( grep /\S/, $conf->config('company_address') ) {
+      $letter_data{returnaddress} =
+        join( '\\*'."\n", map s/( {2,})/'~' x length($1)/eg,
+                          $conf->config('company_address')
+        );
+    } else {
+      $letter_data{returnaddress} = '~';
+    }
   }
 
   $letter_data{conf_dir} = "$FS::UID::conf_dir/conf.$FS::UID::datasrc";
+
+  $letter_data{company_name} = $conf->config('company_name');
 
   my $dir = $FS::UID::conf_dir."cache.". $FS::UID::datasrc;
   my $fh = new File::Temp( TEMPLATE => 'letter.'. $self->custnum. '.XXXXXXXX',

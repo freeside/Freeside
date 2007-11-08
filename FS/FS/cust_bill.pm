@@ -1681,8 +1681,10 @@ sub print_text {
 
   #setup template variables
   package FS::cust_bill::_template; #!
-  use vars qw( $custnum $invnum $date $agent @address $overdue
-               $page $total_pages @buf );
+  use vars qw( $company_name $company_address
+               $custnum $invnum $date $agent @address $overdue
+               $page $total_pages @buf
+             );
 
   $custnum = $self->custnum;
   $invnum = $self->invnum;
@@ -1729,6 +1731,10 @@ sub print_text {
 	##    && $self->printed > 1
 	#    && $self->printed > 0
 	#  );
+
+  $FS::cust_bill::_template::company_name = $conf->config('company_name');
+  $FS::cust_bill::_template::company_address =
+    join("\n", $conf->config('company_address') ). "\n";
 
   #and subroutine for the template
   sub FS::cust_bill::_template::invoice_lines {
@@ -1814,34 +1820,49 @@ sub print_latex {
 
   my $returnaddress;
   if ( length($conf->config_orbase('invoice_latexreturnaddress', $template)) ) {
+
     $returnaddress = join("\n",
       $conf->config_orbase('invoice_latexreturnaddress', $template)
     );
+
+  } elsif ( grep /\S/, $conf->config('company_address') ) {
+
+    $returnaddress =
+      join( '\\*'."\n", map s/( {2,})/'~' x length($1)/eg,
+                            $conf->config('company_address')
+          );
+
   } else {
+
+    my $warning = "Couldn't find a return address; ".
+                  "do you need to set the company_address configuration value?";
+    warn "$warning\n";
     $returnaddress = '~';
+    #$returnaddress = $warning;
+
   }
 
   my %invoice_data = (
-    'custnum'      => $self->custnum,
-    'invnum'       => $self->invnum,
-    'date'         => time2str('%b %o, %Y', $self->_date),
-    'today'        => time2str('%b %o, %Y', $today),
-    'agent'        => _latex_escape($cust_main->agent->agent),
-    'payname'      => _latex_escape($cust_main->payname),
-    'company'      => _latex_escape($cust_main->company),
-    'address1'     => _latex_escape($cust_main->address1),
-    'address2'     => _latex_escape($cust_main->address2),
-    'city'         => _latex_escape($cust_main->city),
-    'state'        => _latex_escape($cust_main->state),
-    'zip'          => _latex_escape($cust_main->zip),
-    'footer'       => join("\n", $conf->config_orbase('invoice_latexfooter', $template) ),
-    'smallfooter'  => join("\n", $conf->config_orbase('invoice_latexsmallfooter', $template) ),
-    'returnaddress' => $returnaddress,
-    'quantity'     => 1,
-    'terms'        => $self->terms,
-    #'notes'        => join("\n", $conf->config('invoice_latexnotes') ),
+    'company_name'    => $conf->config('company_name'),
+    'company_address' => join("\n", $conf->config('company_address') ). "\n",
+    'custnum'         => $self->custnum,
+    'invnum'          => $self->invnum,
+    'date'            => time2str('%b %o, %Y', $self->_date),
+    'today'           => time2str('%b %o, %Y', $today),
+    'agent'           => _latex_escape($cust_main->agent->agent),
+    'payname'         => _latex_escape($cust_main->payname),
+    'company'         => _latex_escape($cust_main->company),
+    'address1'        => _latex_escape($cust_main->address1),
+    'address2'        => _latex_escape($cust_main->address2),
+    'city'            => _latex_escape($cust_main->city),
+    'state'           => _latex_escape($cust_main->state),
+    'zip'             => _latex_escape($cust_main->zip),
+    'returnaddress'   => $returnaddress,
+    'quantity'        => 1,
+    'terms'           => $self->terms,
+    #'notes'           => join("\n", $conf->config('invoice_latexnotes') ),
     # better hang on to conf_dir for a while
-    'conf_dir'     => "$FS::UID::conf_dir/conf.$FS::UID::datasrc",
+    'conf_dir'        => "$FS::UID::conf_dir/conf.$FS::UID::datasrc",
   );
 
   my $countrydefault = $conf->config('countrydefault') || 'US';
@@ -1851,18 +1872,24 @@ sub print_latex {
     $invoice_data{'country'} = _latex_escape(code2country($cust_main->country));
   }
 
-  $invoice_data{'notes'} =
-    join("\n",
-#  #do variable substitutions in notes
-#      map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b }
-        $conf->config_orbase('invoice_latexnotes', $template)
-    );
-  warn "invoice notes: ". $invoice_data{'notes'}. "\n"
-    if $DEBUG;
+  #do variable substitution in notes, footer, smallfooter
+  foreach my $include (qw( notes footer smallfooter )) {
 
-  $invoice_data{'footer'} =~ s/\n+$//;
-  $invoice_data{'smallfooter'} =~ s/\n+$//;
-  $invoice_data{'notes'} =~ s/\n+$//;
+    my $inc_tt = new Text::Template (
+      TYPE       => 'ARRAY',
+      SOURCE     => [ map "$_\n",
+                      $conf->config_orbase("invoice_latex$include", $template )
+                    ],
+      DELIMITERS => [ '[@--', '--@]' ],
+    ) or die "can't create new Text::Template object: $Text::Template::ERROR";
+
+    $inc_tt->compile()
+      or die "can't compile template: $Text::Template::ERROR";
+
+    $invoice_data{$include} = $inc_tt->fill_in( HASH => \%invoice_data );
+
+    $invoice_data{$include} =~ s/\n+$//;
+  }
 
   $invoice_data{'po_line'} =
     (  $cust_main->payby eq 'BILL' && $cust_main->payinfo )
@@ -2217,31 +2244,37 @@ sub print_html {
     or die 'While compiling ' . $templatefile . ': ' . $Text::Template::ERROR;
 
   my %invoice_data = (
-    'custnum'      => $self->custnum,
-    'invnum'       => $self->invnum,
-    'date'         => time2str('%b&nbsp;%o,&nbsp;%Y', $self->_date),
-    'today'        => time2str('%b %o, %Y', $today),
-    'agent'        => encode_entities($cust_main->agent->agent),
-    'payname'      => encode_entities($cust_main->payname),
-    'company'      => encode_entities($cust_main->company),
-    'address1'     => encode_entities($cust_main->address1),
-    'address2'     => encode_entities($cust_main->address2),
-    'city'         => encode_entities($cust_main->city),
-    'state'        => encode_entities($cust_main->state),
-    'zip'          => encode_entities($cust_main->zip),
-    'terms'        => $self->terms,
-    'cid'          => $cid,
-    'template'     => $template,
-#    'conf_dir'     => "$FS::UID::conf_dir/conf.$FS::UID::datasrc",
+    'company_name'    => $conf->config('company_name'),
+    'company_address' => join("\n", $conf->config('company_address') ). "\n",
+    'custnum'         => $self->custnum,
+    'invnum'          => $self->invnum,
+    'date'            => time2str('%b&nbsp;%o,&nbsp;%Y', $self->_date),
+    'today'           => time2str('%b %o, %Y', $today),
+    'agent'           => encode_entities($cust_main->agent->agent),
+    'payname'         => encode_entities($cust_main->payname),
+    'company'         => encode_entities($cust_main->company),
+    'address1'        => encode_entities($cust_main->address1),
+    'address2'        => encode_entities($cust_main->address2),
+    'city'            => encode_entities($cust_main->city),
+    'state'           => encode_entities($cust_main->state),
+    'zip'             => encode_entities($cust_main->zip),
+    'terms'           => $self->terms,
+    'cid'             => $cid,
+    'template'        => $template,
+#    'conf_dir'        => "$FS::UID::conf_dir/conf.$FS::UID::datasrc",
   );
 
   if (
          defined( $conf->config_orbase('invoice_htmlreturnaddress', $template) )
       && length(  $conf->config_orbase('invoice_htmlreturnaddress', $template) )
   ) {
+
     $invoice_data{'returnaddress'} =
       join("\n", $conf->config('invoice_htmlreturnaddress', $template) );
-  } else {
+
+  } elsif ( grep /\S/,
+            $conf->config_orbase( 'invoice_latexreturnaddress', $template ) ) {
+
     $invoice_data{'returnaddress'} =
       join("\n", map { 
                        s/~/&nbsp;/g;
@@ -2253,6 +2286,19 @@ sub print_html {
                                            $template
                                          )
           );
+
+  } elsif ( grep /\S/, $conf->config('company_address') ) {
+
+    $invoice_data{'returnaddress'} =
+      join("\n", $conf->config('company_address') );
+
+  } else {
+
+    my $warning = "Couldn't find a return address; ".
+                  "do you need to set the company_address configuration value?";
+    warn "$warning\n";
+    #$invoice_data{'returnaddress'} = $warning;
+
   }
 
   my $countrydefault = $conf->config('countrydefault') || 'US';

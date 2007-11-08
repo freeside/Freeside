@@ -1,20 +1,18 @@
 
 
-Ivan Kohler
-12345 Test Lane
-Truckee, CA  96161
+{ $company_name; }
+{ $company_address; }
 
 
 { $first; } { $last; }:
 
   We thank you for your continuing patronage.  This notice is to remind you
-that your { $payby } used to pay SISD.COM for Internet
-service will expire on { use Date::Format; time2str("%x", $expdate); }.  Please provide us with new billing
-information so that we may continue your service uninterrupted.
+that your { $payby } used to pay { $company_name; } for Internet
+service will expire on { use Date::Format; time2str("%B %o, %Y", $expdate); }.  Please provide us with new
+billing information so that we may continue your service uninterrupted.
 
 Very Truly Yours,
 
-  SISD Service Team
-
+  { $company_name; } Service Team
 
 
