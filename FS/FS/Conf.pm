@@ -615,6 +615,13 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'business-onlinepayment-email_customer',
+    'section'     => 'billing',
+    'description' => 'Controls the "email_customer" flag used by some Business::OnlinePayment processors to enable customer receipts.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'countrydefault',
     'section'     => 'UI',
     'description' => 'Default two-letter country code (if not supplied, the default is `US\')',

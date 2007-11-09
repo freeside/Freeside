@@ -3026,6 +3026,10 @@ sub realtime_bop {
   $content{invoice_number} = $options{'invnum'}
     if exists($options{'invnum'}) && length($options{'invnum'});
 
+  $content{email_customer} = 
+    (    $conf->exists('business-onlinepayment-email_customer')
+      || $conf->exists('business-onlinepayment-email-override') );
+      
   my $paydate = '';
   if ( $method eq 'CC' ) { 
 
