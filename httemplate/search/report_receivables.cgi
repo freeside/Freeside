@@ -73,61 +73,6 @@
 
              )
 %>
-<%once>
-
-sub owed {
-  my($start, $end, %opt) = @_;
-
-  my @where = ();
-
-  #handle start and end ranges
-
-  my $str2time = str2time_sql;
-
-  #24h * 60m * 60s
-  push @where, "cust_bill._date <= $str2time now() ) - ". ($start * 86400)
-    if $start;
-
-  push @where, "cust_bill._date >  $str2time now() ) - ". ($end * 86400)
-    if $end;
-
-  #handle 'cust' option
-
-  push @where, "cust_main.custnum = cust_bill.custnum"
-    if $opt{'cust'};
-
-  #handle 'agentnum' option
-  my $join = '';
-  if ( $opt{'agentnum'} ) {
-    $join = 'LEFT JOIN cust_main USING ( custnum )';
-    push @where, "agentnum = '$opt{'agentnum'}'";
-  }
-
-  my $where = scalar(@where) ? 'WHERE '.join(' AND ', @where) : '';
-
-  my $as = $opt{'noas'} ? '' : "as owed_${start}_$end";
-
-  my $charged = <<END;
-sum( charged
-     - coalesce(
-         ( select sum(amount) from cust_bill_pay
-           where cust_bill.invnum = cust_bill_pay.invnum )
-         ,0
-       )
-     - coalesce(
-         ( select sum(amount) from cust_credit_bill
-           where cust_bill.invnum = cust_credit_bill.invnum )
-         ,0
-       )
-
-   )
-END
-
-  "coalesce( ( select $charged from cust_bill $join $where ) ,0 ) $as";
-
-}
-
-</%once>
 <%init>
 
 die "access denied"
@@ -158,22 +103,29 @@ my $packages_cols = <<END;
      ( $select_count_pkgs AND $cancelled_sql ) AS cancelled_pkgs
 END
 
-my $days = 0;
-if ( $cgi->param('days') =~ /^\s*(\d+)\s*$/ ) {
-  $days = $1;
+my @where = ();
+
+unless ( $cgi->param('all_customers') ) {
+
+  my $days = 0;
+  if ( $cgi->param('days') =~ /^\s*(\d+)\s*$/ ) {
+    $days = $1;
+  }
+
+  push @where, owed($days, 0, 'cust'=>1, 'noas'=>1). " > 0";
+
 }
 
-#my $where = "where ". owed(0, 0, 'cust'=>1, 'noas'=>1). " > 0";
-my $where = "where ". owed($days, 0, 'cust'=>1, 'noas'=>1). " > 0";
-
-my $agentnum = '';
 if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
-  $agentnum = $1;
-  $where .= " AND agentnum = '$agentnum' ";
+  my $agentnum = $1;
+  push @where, "agentnum = $agentnum";
 }
 
 #here is the agent virtualization
-$where .= ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql;
+push @where, $FS::CurrentUser::CurrentUser->agentnums_sql;
+
+my $where = join(' AND ', @where);
+$where = "WHERE $where" if $where;
 
 my $count_sql = "select count(*) from cust_main $where";
 
@@ -184,8 +136,10 @@ my $sql_query = {
   'extra_sql' => "$where order by coalesce(lower(company), ''), lower(last)",
 };
 
+my $join = 'LEFT JOIN cust_main USING ( custnum )';
+
 my $total_sql = "select ".
-                  join(',', map owed( @$_, 'agentnum'=>$agentnum ), @ranges );
+  join(',', map owed( @$_, join=>$join, where=>\@where ), @ranges);
 
 my $total_sth = dbh->prepare($total_sql) or die dbh->errstr;
 $total_sth->execute or die "error executing $total_sql: ". $total_sth->errstr;
@@ -197,3 +151,56 @@ my $money_char = $conf->config('money_char') || '$';
 my $clink = [ "${p}view/cust_main.cgi?", 'custnum' ];
 
 </%init>
+<%once>
+
+sub owed {
+  my($start, $end, %opt) = @_;
+
+  my @where = ();
+
+  #handle start and end ranges
+
+  my $str2time = str2time_sql;
+
+  #24h * 60m * 60s
+  push @where, "cust_bill._date <= $str2time now() ) - ". ($start * 86400)
+    if $start;
+
+  push @where, "cust_bill._date >  $str2time now() ) - ". ($end * 86400)
+    if $end;
+
+  #handle 'cust' option
+  push @where, "cust_main.custnum = cust_bill.custnum"
+    if $opt{'cust'};
+
+  #handle 'join' option
+  my $join = $opt{'join'} || '';
+
+  #handle 'where' option
+  push @where, @{ $opt{'where'} } if $opt{'where'};
+
+  my $where = scalar(@where) ? 'WHERE '.join(' AND ', @where) : '';
+
+  my $as = $opt{'noas'} ? '' : "as owed_${start}_$end";
+
+  my $charged = <<END;
+sum( charged
+     - coalesce(
+         ( select sum(amount) from cust_bill_pay
+           where cust_bill.invnum = cust_bill_pay.invnum )
+         ,0
+       )
+     - coalesce(
+         ( select sum(amount) from cust_credit_bill
+           where cust_bill.invnum = cust_credit_bill.invnum )
+         ,0
+       )
+
+   )
+END
+
+  "coalesce( ( select $charged from cust_bill $join $where ) ,0 ) $as";
+
+}
+
+</%once>
