@@ -173,18 +173,28 @@ sub statuses {
 }
 
 sub href_customer_tickets {
-  my( $self, $custnum, $priority ) = @_;
+  my( $self, $custnum ) = ( shift, shift );
+  my( $priority, @statuses);
+  if ( ref($_[0]) ) {
+    my $opt = shift;
+    $priority = $opt->{'priority'};
+    @statuses = $opt->{'statuses'} ? @{$opt->{'statuses'}} : $self->statuses;
+  } else {
+    $priority = shift;
+    @statuses = $self->statuses;
+  }
 
   #my $href = $self->baseurl;
 
   #i snarfed this from an RT bookmarked search, then unescaped (some of) it with
   #perl -npe 's/%([0-9A-F]{2})/pack('C', hex($1))/eg;'
 
-  my $href .= 
+  #$href .= 
+  my $href = 
     "Search/Results.html?Order=ASC&".
     "Query= MemberOf = 'freeside://freeside/cust_main/$custnum' ".
     #" AND ( Status = 'open'  OR Status = 'new'  OR Status = 'stalled' )"
-    " AND ( ". join(' OR ', map "Status = '$_'", $self->statuses ). " ) "
+    " AND ( ". join(' OR ', map "Status = '$_'", @statuses ). " ) "
   ;
 
   if ( defined($priority) && $field && $priority_field_queue ) {

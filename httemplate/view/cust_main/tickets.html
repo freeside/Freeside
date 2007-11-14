@@ -6,8 +6,10 @@
 <A NAME="tickets"><FONT SIZE="+2">Tickets</FONT></A>
 <BR>
 
-(<A HREF="<% FS::TicketSystem->href_customer_tickets($cust_main->custnum) %>">View all tickets for this customer</A>)
-(<A HREF="<% FS::TicketSystem->href_new_ticket($cust_main, join(', ', grep { $_ !~ /^(POST|FAX)$/ } $cust_main->invoicing_list ) ) %>">New ticket for this customer</A>)
+(<A HREF="<% FS::TicketSystem->href_customer_tickets($cust_main->custnum) %>">View <% join('/', FS::TicketSystem->statuses ) %> tickets for this customer</A>)
+(<A HREF="<% FS::TicketSystem->href_customer_tickets($cust_main->custnum, { 'statuses' => [ 'resolved' ] } ) %>">View resolved tickets for this customer</A>)
+<BR>
+(<A HREF="<% FS::TicketSystem->href_new_ticket($cust_main, join(', ', grep { $_ !~ /^(POST|FAX)$/ } $cust_main->invoicing_list ) ) %>">Create new ticket for this customer</A>)
 
 <% include("/elements/table-grid.html") %>
 % my $bgcolor1 = '#eeeeee';
