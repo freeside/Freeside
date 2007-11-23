@@ -1,68 +1,12 @@
-%
-%
-%if ( $cgi->param('clone') && $cgi->param('clone') =~ /^(\d+)$/ ) {
-%  $cgi->param('clone', $1);
-%} else {
-%  $cgi->param('clone', '');
-%}
-%if ( $cgi->param('pkgnum') && $cgi->param('pkgnum') =~ /^(\d+)$/ ) {
-%  $cgi->param('pkgnum', $1);
-%} else {
-%  $cgi->param('pkgnum', '');
-%}
-%
-%my ($query) = $cgi->keywords;
-%
-%my $part_pkg = '';
-%my @agent_type = ();
-%if ( $cgi->param('error') ) {
-%  $part_pkg = new FS::part_pkg ( {
-%    map { $_, scalar($cgi->param($_)) } fields('part_pkg')
-%  } );
-%  (@agent_type) = $cgi->param('agent_type');
-%}
-%
-%my $action = '';
-%my $clone_part_pkg = '';
-%my $pkgpart = '';
-%if ( $cgi->param('clone') ) {
-%  $pkgpart = $cgi->param('clone');
-%  $action = 'Custom Pricing';
-%  $clone_part_pkg= qsearchs('part_pkg', { 'pkgpart' => $cgi->param('clone') } );
-%  $part_pkg ||= $clone_part_pkg->clone;
-%  $part_pkg->disabled('Y'); #isn't sticky on errors
-%} elsif ( $query && $query =~ /^(\d+)$/ ) {
-%  (@agent_type) = map {$_->typenum} qsearch('type_pkgs',{'pkgpart'=>$1})
-%    unless $part_pkg;
-%  $part_pkg ||= qsearchs('part_pkg',{'pkgpart'=>$1});
-%  $pkgpart = $part_pkg->pkgpart;
-%} else {
-%  unless ( $part_pkg ) {
-%    $part_pkg = new FS::part_pkg {};
-%    $part_pkg->plan('flat');
-%  }
-%}
-%unless ( $part_pkg->plan ) { #backwards-compat
-%  $part_pkg->plan('flat');
-%  $part_pkg->plandata("setup_fee=". $part_pkg->setup. "\n".
-%                      "recur_fee=". $part_pkg->recur. "\n");
-%}
-%$action ||= $part_pkg->pkgpart ? 'Edit' : 'Add';
-%my $hashref = $part_pkg->hashref;
-%
-%
-
-
 <% include("/elements/header.html","$action Package Definition", menubar(
   'Main Menu' => popurl(2),
   'View all packages' => popurl(2). 'browse/part_pkg.cgi',
 )) %>
 % #), ' onLoad="visualize()"'); 
-% if ( $cgi->param('error') ) { 
 
+% if ( $cgi->param('error') ) { 
   <FONT SIZE="+1" COLOR="#ff0000">Error: <% $cgi->param('error') %></FONT>
 % } 
-
 
 <FORM NAME="dummy">
 
@@ -168,7 +112,7 @@ Line-item revenue recognition
 
 % } else {
 
-    Reseller information 
+    Reseller information
     <% ntable("#cccccc", 2) %>
       <TR>
         <TD ALIGN="right"><% 'Agent Types' %></TD>
@@ -190,15 +134,10 @@ Line-item revenue recognition
 
 </TD></TR></TABLE>
 
-%
 %my $thead =  "\n\n". ntable('#cccccc', 2).
-%             '<TR><TH BGCOLOR="#dcdcdc"><FONT SIZE=-1>Quan.</FONT></TH>';
-%$thead .=  '<TH BGCOLOR="#dcdcdc"><FONT SIZE=-1>Primary</FONT></TH>'
-%  if dbdef->table('pkg_svc')->column('primary_svc');
-%$thead .= '<TH BGCOLOR="#dcdcdc">Service</TH></TR>';
-%
-%
-
+%             '<TR><TH BGCOLOR="#dcdcdc"><FONT SIZE=-1>Quan.</FONT></TH>'.
+%             '<TH BGCOLOR="#dcdcdc"><FONT SIZE=-1>Primary</FONT></TH>'.
+%             '<TH BGCOLOR="#dcdcdc">Service</TH></TR>';
 
 <BR><BR>Services included
 <% itable('', 4, 1) %><TR><TD VALIGN="top">
@@ -228,11 +167,16 @@ Line-item revenue recognition
 %                                   'quantity'    => 0,
 %                                   'primary_svc' => '',
 %                                } );
+%  if ( $cgi->param('error') ) {
+%    my $primary_svc = ( $pkg_svc->primary_svc =~ /^Y/i );
+%    my $pkg_svc_primary = scalar($cgi->param('pkg_svc_primary'));
+%    $pkg_svc->primary_svc('')
+%      if $primary_svc && $pkg_svc_primary != $svcpart;
+%    $pkg_svc->primary_svc('Y')
+%      if ! $primary_svc && $pkg_svc_primary == $svcpart;
+%  }
 %
 %  push @fixups, "pkg_svc$svcpart";
-%
-%
-
 
   <TR>
     <TD>
@@ -285,10 +229,7 @@ Line-item revenue recognition
 %#}
 %my @form_elements = ( 'classnum', 'taxclass', 'agent_type' );
 %
-%my @form_radio = ();
-%if ( dbdef->table('pkg_svc')->column('primary_svc') ) {
-%  push @form_radio, 'pkg_svc_primary';
-%}
+%my @form_radio = ( 'pkg_svc_primary' );
 %
 %tie my %freq, 'Tie::IxHash', %{FS::part_pkg->freqs_href()};
 %if ( $part_pkg->dbdef_table->column('freq')->type =~ /(int)/i ) {
@@ -342,7 +283,7 @@ Line-item revenue recognition
 %                 ( exists($plandata{$field})
 %                     ? &$format($plandata{$field})
 %                     : $href->{$field}{'default'} ).
-%                 qq!">!;
+%                 qq!" onChange="fchanged(this)">!;
 %      } elsif ( $href->{$field}{'type'} eq 'checkbox' ) {
 %        $html .= qq!<INPUT TYPE="checkbox" NAME="$field" VALUE=1 !.
 %                 ( exists($plandata{$field}) && $plandata{$field}
@@ -353,7 +294,7 @@ Line-item revenue recognition
 %        $html .= '<SELECT';
 %        $html .= ' MULTIPLE'
 %          if $href->{$field}{'type'} eq 'select_multiple';
-%        $html .= qq! NAME="$field">!;
+%        $html .= qq! NAME="$field" onChange="fchanged(this)">!;
 %
 %        if ( $href->{$field}{'select_table'} ) {
 %          foreach my $record (
@@ -396,8 +337,11 @@ Line-item revenue recognition
 %             '<BR><BR>';
 %             
 %    $html .= '<INPUT TYPE="submit" VALUE="'.
-%             ( $hashref->{pkgpart} ? "Apply changes" : "Add package" ).
-%             '">';
+%               ( $action eq 'Custom'
+%                   ? 'Customize package'
+%                   : ( $hashref->{pkgpart} ? "Apply changes" : "Add package" )
+%               ).
+%             '" onClick="fchanged(this)">';
 %
 %    $html;
 %
@@ -410,3 +354,57 @@ Line-item revenue recognition
 <BR><BR>Price plan <% $widget->html %>
   </BODY>
 </HTML>
+<%init>
+
+if ( $cgi->param('clone') && $cgi->param('clone') =~ /^(\d+)$/ ) {
+  $cgi->param('clone', $1);
+} else {
+  $cgi->param('clone', '');
+}
+if ( $cgi->param('pkgnum') && $cgi->param('pkgnum') =~ /^(\d+)$/ ) {
+  $cgi->param('pkgnum', $1);
+} else {
+  $cgi->param('pkgnum', '');
+}
+
+my ($query) = $cgi->keywords;
+
+my $part_pkg = '';
+my @agent_type = ();
+if ( $cgi->param('error') ) {
+  $part_pkg = new FS::part_pkg ( {
+    map { $_, scalar($cgi->param($_)) } fields('part_pkg')
+  } );
+  (@agent_type) = $cgi->param('agent_type');
+}
+
+my $action = '';
+my $clone_part_pkg = '';
+my $pkgpart = '';
+if ( $cgi->param('clone') ) {
+  $pkgpart = $cgi->param('clone');
+  #$action = 'Custom Pricing';
+  $action = 'Custom';
+  $clone_part_pkg= qsearchs('part_pkg', { 'pkgpart' => $cgi->param('clone') } );
+  $part_pkg ||= $clone_part_pkg->clone;
+  $part_pkg->disabled('Y') unless $cgi->param('error');
+} elsif ( $query && $query =~ /^(\d+)$/ ) {
+  (@agent_type) = map {$_->typenum} qsearch('type_pkgs',{'pkgpart'=>$1})
+    unless $part_pkg;
+  $part_pkg ||= qsearchs('part_pkg',{'pkgpart'=>$1});
+  $pkgpart = $part_pkg->pkgpart;
+} else {
+  unless ( $part_pkg ) {
+    $part_pkg = new FS::part_pkg {};
+    $part_pkg->plan('flat');
+  }
+}
+unless ( $part_pkg->plan ) { #backwards-compat
+  $part_pkg->plan('flat');
+  $part_pkg->plandata("setup_fee=". $part_pkg->setup. "\n".
+                      "recur_fee=". $part_pkg->recur. "\n");
+}
+$action ||= $part_pkg->pkgpart ? 'Edit' : 'Add';
+my $hashref = $part_pkg->hashref;
+
+</%init>
