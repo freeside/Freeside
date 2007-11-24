@@ -22,11 +22,11 @@ MASON_HANDLER = ${FREESIDE_CONF}/handler.pl
 MASONDATA = ${FREESIDE_CACHE}/masondata
 
 #mod_perl v1
-APACHE_VERSION = 1
+#APACHE_VERSION = 1
 #mod_perl v2 prereleases up to and including 1.999_21
 #APACHE_VERSON = 1.99
 #mod_perl v2 proper and prereleases 1.999_22 and after
-#APACHE_VERSION = 2
+APACHE_VERSION = 2
 
 #deb
 FREESIDE_DOCUMENT_ROOT = /var/www/freeside
@@ -54,7 +54,9 @@ INIT_INSTALL = /usr/sbin/update-rc.d freeside defaults 21 20
 #INIT_INSTALL = /usr/bin/true
 
 #deb, suse
-HTTPD_RESTART = /etc/init.d/apache restart
+#HTTPD_RESTART = /etc/init.d/apache restart
+#deb w/apache2
+HTTPD_RESTART = /etc/init.d/apache2 restart
 #redhat, fedora, mandrake
 #HTTPD_RESTART = /etc/init.d/httpd restart
 #freebsd
@@ -64,9 +66,9 @@ HTTPD_RESTART = /etc/init.d/apache restart
 #apache
 #HTTPD_RESTART = /usr/local/apache/bin/apachectl stop; sleep 10; /usr/local/apache/bin/apachectl startssl
 
-#(an include directory, not a file - "Include /etc/apache/conf.d" in httpd.conf)
+#(an include directory, not a file, "Include /etc/apachew/conf.d" in httpd.conf)
 #deb (3.1+), 
-APACHE_CONF = /etc/apache/conf.d
+APACHE_CONF = /etc/apache2/conf.d
 
 FREESIDE_RESTART = ${INIT_FILE} restart
 
