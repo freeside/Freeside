@@ -12,6 +12,7 @@ tie %options, 'Tie::IxHash',
   'url'      => { label => 'Northbound url', default=>'https://localhost:8443/prizm/nbi' },
   'user'     => { label => 'Northbound username', default=>'nbi' },
   'password' => { label => 'Password', default => '' },
+  'ems'      => { label => 'Full EMS', type => 'checkbox' },
 ;
 
 %info = (
@@ -36,6 +37,28 @@ sub prizm_command {
   );
   
   $prizm->$method(@_);
+}
+
+sub queued_prizm_command {  # subroutine
+  my( $url, $user, $password, $namespace, $method, @args ) = @_;
+
+  eval "use Net::Prizm qw(CustomerInfo PrizmElement);";
+  die $@ if $@;
+
+  my $prizm = new Net::Prizm (
+    namespace => $namespace,
+    url => $url,
+    user => $user,
+    password => $password,
+  );
+  
+  $err_or_som = $prizm->$method( @args);
+
+  die $err_or_som
+    unless ref($err_or_som);
+
+  '';
+
 }
 
 sub _export_insert {
@@ -96,24 +119,24 @@ sub _export_insert {
   warn "multiple prizm customers found for $cust_main->custnum"
     if scalar(@$pcustomer) > 1;
 
-  #kinda big question/expensive
-  $err_or_som = $self->prizm_command('NetworkIfService', 'getPrizmElements',
-                                     ['Network Default Gateway Address'],
-                                     [$svc->addr_block->ip_gateway],
-                                     ['='],
-                   );
-  return $err_or_som
-    unless ref($err_or_som);
-
-  return "No elements in network" unless exists $err_or_som->result->[0];
+#  #kinda big question/expensive
+#  $err_or_som = $self->prizm_command('NetworkIfService', 'getPrizmElements',
+#                                     ['Network Default Gateway Address'],
+#                                     [$svc->addr_block->ip_gateway],
+#                                     ['='],
+#                   );
+#  return $err_or_som
+#    unless ref($err_or_som);
+#
+#  return "No elements in network" unless exists $err_or_som->result->[0];
 
   my $networkid = 0;
-  for (my $i = 0; $i < $err_or_som->result->[0]->attributeNames; $i++) {
-    if ($err_or_som->result->[0]->attributeNames->[$i] eq "Network.ID"){
-      $networkid = $err_or_som->result->[0]->attributeValues->[$i];
-      last;
-    }
-  }
+#  for (my $i = 0; $i < $err_or_som->result->[0]->attributeNames; $i++) {
+#    if ($err_or_som->result->[0]->attributeNames->[$i] eq "Network.ID"){
+#      $networkid = $err_or_som->result->[0]->attributeValues->[$i];
+#      last;
+#    }
+#  }
 
   $err_or_som = $self->prizm_command('NetworkIfService', 'addProvisionedElement',
                                       $networkid,
@@ -124,7 +147,7 @@ sub _export_insert {
                                       sprintf("%032X", $svc->authkey),
                                       $svc->cust_svc->cust_pkg->part_pkg->pkg,
                                       $svc->vlan_profile,
-                                      1,
+                                      $self->option('ems') == 1,
                                      );
   return $err_or_som
     unless ref($err_or_som);
@@ -178,7 +201,7 @@ sub _export_insert {
                                      'activateNetworkElements',
                                      [ $element ],
                                      1,
-                                     1,
+                                     $self->option('ems') == 1,
                                     );
 
   return $err_or_som
@@ -200,7 +223,29 @@ sub _export_insert {
 
 sub _export_delete {
   my( $self, $svc ) = ( shift, shift );
-  $self->queue_statuschange('deleteElement', $svc);
+
+  my $cust_pkg = $svc->cust_svc->cust_pkg;
+
+  my $depend = [];
+
+  if ($cust_pkg) {
+    my $queue = new FS::queue {
+      'svcnum' => $svc->svcnum,
+      'job'    => 'FS::part_export::prizm::queued_prizm_command',
+    };
+    $queue->insert(
+      ( map { $self->option($_) }
+            qw( url user password ) ),
+      'CustomerIfService',
+      'removeElementFromCustomer',
+      0,
+      $cust_pkg->custnum,
+      0,
+      $svc->mac_addr,
+    ) && push @$depend, $queue->jobnum;
+  }
+
+  $self->queue_statuschange('deleteElement', $depend, $svc, 1);
 }
 
 sub _export_replace {
@@ -269,16 +314,20 @@ sub _export_replace {
 
 sub _export_suspend {
   my( $self, $svc ) = ( shift, shift );
-  $self->queue_statuschange('suspendNetworkElements', $svc);
+  my $ems = $self->option('ems') == 1;
+  $self->queue_statuschange('suspendNetworkElements', [], $svc, 1, $ems);
 }
 
 sub _export_unsuspend {
   my( $self, $svc ) = ( shift, shift );
-  $self->queue_statuschange('activateNetworkElements', $svc);
+  my $ems = $self->option('ems') == 1;
+  $self->queue_statuschange('activateNetworkElements', [], $svc, 1, $ems);
 }
 
 sub queue_statuschange {
-  my( $self, $method, $svc ) = @_;
+  my( $self, $method, $jobs, $svc, @args ) = @_;
+
+  # already in a transaction and can't die here
 
   my $queue = new FS::queue {
     'svcnum' => $svc->svcnum,
@@ -289,11 +338,19 @@ sub queue_statuschange {
           qw( url user password ) ),
     $method,
     $svc->mac_addr,
+    @args,
   );
+
+  if ($queue->jobnum) {                   # successful insertion
+    foreach my $job ( @$jobs ) {
+      $queue->depend_insert($job);
+    }
+  }
+
 }
 
 sub statuschange {  # subroutine
-  my( $url, $user, $password, $method, $mac_addr ) = @_;
+  my( $url, $user, $password, $method, $mac_addr, @args) = @_;
 
   eval "use Net::Prizm qw(CustomerInfo PrizmElement);";
   die $@ if $@;
@@ -315,14 +372,14 @@ sub statuschange {  # subroutine
   die "Can't find prizm element for " . $mac_addr
     unless $err_or_som->result->[0];
 
-  my @args;
-  # yuck! should pass args in when we know 'em
+  my $arg1;
+  # yuck!
   if ($method =~ /suspendNetworkElements/ || $method =~ /activateNetworkElements/) {
-    @args = ( [ $err_or_som->result->[0]->elementId ], 1, 1);
+    $arg1 = [ $err_or_som->result->[0]->elementId ];
   }else{
-    @args = ( $err_or_som->result->[0]->elementId, 1);
+    $arg1 = $err_or_som->result->[0]->elementId;
   }
-  $err_or_som = $prizm->$method( @args );
+  $err_or_som = $prizm->$method( $arg1, @args );
 
   die $err_or_som
     unless ref($err_or_som);
@@ -330,5 +387,6 @@ sub statuschange {  # subroutine
   '';
 
 }
+
 
 1;
