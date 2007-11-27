@@ -793,6 +793,7 @@ sub order_pkg {
   my $cust_main = qsearchs('cust_main', $search )
     or return { 'error' => "unknown custnum $custnum" };
 
+  my $status = $cust_main->status;
   #false laziness w/ClientAPI/Signup.pm
 
   my $cust_pkg = new FS::cust_pkg ( {
@@ -864,7 +865,7 @@ sub order_pkg {
   my $conf = new FS::Conf;
   if ( $conf->exists('signup_server-realtime') ) {
 
-    my $bill_error = _do_bop_realtime( $cust_main );
+    my $bill_error = _do_bop_realtime( $cust_main, $status );
 
     if ($bill_error) {
       $cust_pkg->cancel('quiet'=>1);
@@ -892,6 +893,7 @@ sub change_pkg {
   my $cust_main = qsearchs('cust_main', $search )
     or return { 'error' => "unknown custnum $custnum" };
 
+  my $status = $cust_main->status;
   my $cust_pkg = qsearchs('cust_pkg', { 'pkgnum' => $p->{pkgnum} } )
     or return { 'error' => "unknown package $p->{pkgnum}" };
 
@@ -905,7 +907,7 @@ sub change_pkg {
   my $conf = new FS::Conf;
   if ( $conf->exists('signup_server-realtime') ) {
 
-    my $bill_error = _do_bop_realtime( $cust_main );
+    my $bill_error = _do_bop_realtime( $cust_main, $status );
 
     if ($bill_error) {
       $newpkg[0]->suspend;
@@ -933,6 +935,7 @@ sub order_recharge {
   my $cust_main = qsearchs('cust_main', $search )
     or return { 'error' => "unknown custnum $custnum" };
 
+  my $status = $cust_main->status;
   my $cust_svc = qsearchs( 'cust_svc', { 'svcnum' => $p->{'svcnum'} } )
     or return { 'error' => "unknown service " . $p->{'svcnum'} };
 
@@ -956,7 +959,7 @@ sub order_recharge {
   my $conf = new FS::Conf;
   if ( $conf->exists('signup_server-realtime') && !$bill_error ) {
 
-    $bill_error = _do_bop_realtime( $cust_main );
+    $bill_error = _do_bop_realtime( $cust_main, $status );
 
     if ($bill_error) {
       return $bill_error;
@@ -976,7 +979,7 @@ sub order_recharge {
 }
 
 sub _do_bop_realtime {
-  my ($cust_main) = @_;
+  my ($cust_main, $status) = (shift, shift);
 
     my $old_balance = $cust_main->balance;
 
@@ -986,7 +989,8 @@ sub _do_bop_realtime {
 
     if (    $cust_main->balance > $old_balance
          && $cust_main->balance > 0
-         && $cust_main->payby !~ /^(BILL|DCRD|DCHK)$/ ) {
+         && ( $cust_main->payby !~ /^(BILL|DCRD|DCHK)$/ ?
+              1 : $status eq 'suspended' ) ) {
       #this makes sense.  credit is "un-doing" the invoice
       $cust_main->credit( sprintf("%.2f", $cust_main->balance - $old_balance ),
                           'self-service decline' );
