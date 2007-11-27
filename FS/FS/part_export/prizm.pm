@@ -147,7 +147,7 @@ sub _export_insert {
                                       sprintf("%032X", $svc->authkey),
                                       $svc->cust_svc->cust_pkg->part_pkg->pkg,
                                       $svc->vlan_profile,
-                                      $self->option('ems') == 1,
+                                      ($self->option('ems') ? 1 : 0 ),
                                      );
   return $err_or_som
     unless ref($err_or_som);
@@ -201,7 +201,7 @@ sub _export_insert {
                                      'activateNetworkElements',
                                      [ $element ],
                                      1,
-                                     $self->option('ems') == 1,
+                                     ( $self->option('ems') ? 1 : 0 ),
                                     );
 
   return $err_or_som
@@ -314,13 +314,13 @@ sub _export_replace {
 
 sub _export_suspend {
   my( $self, $svc ) = ( shift, shift );
-  my $ems = $self->option('ems') == 1;
+  my $ems = $self->option('ems') ? 1 : 0;
   $self->queue_statuschange('suspendNetworkElements', [], $svc, 1, $ems);
 }
 
 sub _export_unsuspend {
   my( $self, $svc ) = ( shift, shift );
-  my $ems = $self->option('ems') == 1;
+  my $ems = $self->option('ems') ? 1 : 0;
   $self->queue_statuschange('activateNetworkElements', [], $svc, 1, $ems);
 }
 
