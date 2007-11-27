@@ -148,7 +148,10 @@ if ( $cgi->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/ ) {
     #$orderby = 'ORDER BY cust_bill.custnum ASC, cust_bill._date DESC';
     #$count_query = "SELECT 'N/A', 'N/A', 'N/A'"; #XXXXXXX fix
     
-    my @newest_where = map { s/\bcust_bill\./newest_cust_bill./g; }
+    my @newest_where = map { my $x = $_;
+                             $x =~ s/\bcust_bill\./newest_cust_bill./g;
+                             $x;
+                          }
                            grep ! /^cust_main./, @where;
     my $newest_where = scalar(@newest_where)
                          ? ' AND '. join(' AND ', @newest_where)
