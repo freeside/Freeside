@@ -121,8 +121,6 @@ my $count_sql = "SELECT COUNT(*) FROM cust_bill_event $join $where";
 
 my $conf = new FS::Conf;
 
-my $failed = $cgi->param('failed');
-
 my $html_init = '
     <FONT SIZE="+1">Invoice events are the deprecated, old-style actions taken o
 n open invoices.  See Reports-&gt;Billing events-&gt;Billing events for current event reports.</FONT><BR><BR>';
