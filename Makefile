@@ -186,6 +186,7 @@ perl-modules:
 	" blib/lib/FS.pm;\
 	perl -p -i -e "\
 	  s|%%%FREESIDE_CONF%%%|${FREESIDE_CONF}|g;\
+	  s|%%%FREESIDE_CACHE%%%|${FREESIDE_CACHE}|g;\
 	" blib/lib/FS/*.pm;\
 	perl -p -i -e "\
 	  s|%%%FREESIDE_EXPORT%%%|${FREESIDE_EXPORT}|g;\

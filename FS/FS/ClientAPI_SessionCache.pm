@@ -8,7 +8,7 @@ use FS::UID qw(datasrc);
 install_callback FS::UID sub { 
   my $conf = new FS::Conf;
   $module = $conf->config('selfservice_server-cache_module')
-            || 'Cache::SharedMemoryCache';
+            || 'Cache::FileCache';
 };
 
 =head1 NAME
@@ -39,7 +39,7 @@ sub new {
     eval "use $module;";
     die $@ if $@;
     my $self = $module->new(@_);
-    $self->set_cache_root('/usr/local/etc/freeside/clientapi_session.'.datasrc)
+    $self->set_cache_root('%%%FREESIDE_CACHE%%%/clientapi_session.'.datasrc)
       if $module =~ /^Cache::FileCache$/;
     $self;
   } else {
