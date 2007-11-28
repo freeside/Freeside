@@ -3,32 +3,13 @@
                   'name'        => 'customers',
                   'query'       => $sql_query,
                   'count_query' => $count_query,
-                  'header'      => [ '#',
-                                     'Name',
-                                     'Address',
-                                     'Phone',
-                                     'Night',
-                                     'Fax',
-                                     'Email',
-                                     'Payment Type',
+                  'header'      => [ FS::UI::Web::cust_header(
+                                       $cgi->param('cust_fields')
+                                     ),
                                      @extra_headers,
                                    ],
                   'fields'      => [
-                    'custnum',
-                    'name',
-                    sub { my $c = shift;
-                          $c->address1 .
-                          ($c->address2 ? ' '.$c->address2 : '').
-                          $c->city. ', '. $c->state. ' '. $c->zip.
-                          ($c->country ne $countrydefault ? ' '. $c->country
-                                                          : ''
-                          );
-                        },
-                    'daytime',
-                    'night',
-                    'fax',
-                    'email',
-                    'payby',
+                    \&FS::UI::Web::cust_fields,
                     @extra_fields,
                   ],
               )
@@ -102,15 +83,41 @@ my $addl_from = 'LEFT JOIN cust_pkg USING ( custnum  ) ';
 
 my $count_query = "SELECT COUNT(*) FROM cust_main $extra_sql";
 
-my $select;
-if ($dbh->{Driver}->{Name} eq 'Pg') {
-  $select = "*, array_to_string(array(select pkg from cust_pkg left join part_pkg using ( pkgpart ) where cust_main.custnum = cust_pkg.custnum $pkgwhere),'|') as magic";
-}elsif ($dbh->{Driver}->{Name} =~ /^mysql/i) {
-  $select = "*, GROUP_CONCAT(pkg SEPARATOR '|') as magic";
-}else{
-  warn "warning: unknown database type ". $dbh->{Driver}->{Name}. 
-       "omitting packing information from report.";
+my $select = '*';
+my (@extra_headers) = ();
+my (@extra_fields) = ();
+
+if ($cgi->param('flattened_pkgs')) {
+
+  if ($dbh->{Driver}->{Name} eq 'Pg') {
+
+    $select .= ", array_to_string(array(select pkg from cust_pkg left join part_pkg using ( pkgpart ) where cust_main.custnum = cust_pkg.custnum $pkgwhere),'|') as magic";
+
+  }elsif ($dbh->{Driver}->{Name} =~ /^mysql/i) {
+    $select .= ", GROUP_CONCAT(pkg SEPARATOR '|') as magic";
+    $addl_from .= " LEFT JOIN part_pkg using ( pkgpart )";
+  }else{
+    warn "warning: unknown database type ". $dbh->{Driver}->{Name}. 
+         "omitting packing information from report.";
+  }
+  
+  my $header_query = "SELECT COUNT(cust_pkg.custnum = cust_main.custnum) AS count FROM cust_main $addl_from $extra_sql $pkgwhere group by cust_main.custnum order by count desc limit 1";
+
+  my $sth = dbh->prepare($header_query) or die dbh->errstr;
+  $sth->execute() or die $sth->errstr;
+  my $headerrow = $sth->fetchrow_arrayref;
+  my $headercount = $headerrow ? $headerrow->[0] : 0;
+  while($headercount) {
+    unshift @extra_headers, "Package ". $headercount;
+    unshift @extra_fields, eval q!sub {my $c = shift;
+                                       my @a = split '\|', $c->magic;
+                                       my $p = $a[!.--$headercount. q!];
+                                       $p;
+                                      };!;
+  }
+
 }
+
 my $sql_query = {
   'table'     => 'cust_main',
   'select'    => $select,
@@ -118,21 +125,5 @@ my $sql_query = {
   'extra_sql' => "$extra_sql $orderby",
 };
 
-my $header_query = "SELECT COUNT(cust_pkg.custnum = cust_main.custnum) AS count FROM cust_main $addl_from $extra_sql $pkgwhere group by cust_main.custnum order by count desc limit 1";
-
-my $sth = dbh->prepare($header_query) or die dbh->errstr;
-$sth->execute() or die $sth->errstr;
-my $headerrow = $sth->fetchrow_arrayref;
-my $headercount = $headerrow ? $headerrow->[0] : 0;
-my (@extra_headers) = ();
-my (@extra_fields) = ();
-while($headercount) {
-  unshift @extra_headers, "Package ". $headercount;
-  unshift @extra_fields, eval q!sub {my $c = shift;
-                                     my @a = split '\|', $c->magic;
-                                     my $p = $a[!.--$headercount. q!];
-                                     $p;
-                                    };!;
-}
 
 </%init>

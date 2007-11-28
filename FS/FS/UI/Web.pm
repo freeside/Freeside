@@ -220,7 +220,9 @@ sub cust_header {
     'Country'                  => 'country_full',
     'Day phone'                => 'daytime', # XXX should use msgcat, but how?
     'Night phone'              => 'night',   # XXX should use msgcat, but how?
+    'Fax number'               => 'fax',
     'Invoicing email(s)'       => 'invoicing_list_emailonly_scalar',
+    'Payment Type'             => 'payby',
   );
 
   my %header2colormethod = (
