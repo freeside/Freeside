@@ -122,8 +122,8 @@ Line-item revenue recognition
                       'table'        => 'agent_type',
                       'name_col'     => 'atype',
                       'value'        => \@agent_type,
-                      'empty_label'  => 'select agent types',
-                      'element_etc'  => 'multiple size="10"',
+                      'multiple'     =>  '1',
+                      'element_etc'  => 'size="10"',
                     )
           %>
         </TD>
