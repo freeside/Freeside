@@ -664,6 +664,32 @@ sub tables_hashref {
       'index' => [ [ 'county' ], [ 'state' ], [ 'country' ] ],
     },
 
+    'cust_pay_pending' => {
+      'columns' => [
+        'paypendingnum','serial',      '',  '', '', '',
+        'custnum',      'int',         '',  '', '', '', 
+        'paid',         @money_type,            '', '', 
+        '_date',        @date_type,             '', '', 
+        'payby',        'char',        '',   4, '', '', #CARD/BILL/COMP, should
+                                                        # be index into payby
+                                                        # table eventually
+        'payinfo',      'varchar', 'NULL', 512, '', '', #see cust_main above
+	'paymask',      'varchar', 'NULL', $char_d, '', '', 
+        'paydate',      'varchar', 'NULL', 10, '', '', 
+        #'paybatch',     'varchar', 'NULL', $char_d, '', '', #for auditing purposes.
+        'payunique',    'varchar', 'NULL', $char_d, '', '', #separate paybatch "unique" functions from current usage
+
+        'status',       'varchar',     '', $char_d, '', '', 
+        'statustext',   'text',    'NULL',  '', '', '', 
+        'gatewaynum',   'int',     'NULL',  '', '', '',
+        #'cust_balance', @money_type,            '', '',
+        'paynum',       'int',     'NULL',  '', '', '',
+      ],
+      'primary_key' => 'pendingpaynum',
+      'unique'      => [ [ 'payunique' ] ],
+      'index'       => [ [ 'custnum' ], [ 'status' ], ],
+    },
+
     'cust_pay' => {
       'columns' => [
         'paynum',   'serial',    '',   '', '', '',
@@ -682,7 +708,7 @@ sub tables_hashref {
         'closed',    'char', 'NULL', 1, '', '', 
       ],
       'primary_key' => 'paynum',
-      'unique' => [ [ 'payunique' ] ],
+      #i guess not now, with cust_pay_pending, if we actually make it here, we _do_ want to record it# 'unique' => [ [ 'payunique' ] ],
       'index' => [ [ 'custnum' ], [ 'paybatch' ], [ 'payby' ], [ '_date' ] ],
     },
 

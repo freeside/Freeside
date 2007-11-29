@@ -409,15 +409,16 @@ sub check {
 
   $self->_date(time) unless $self->_date;
 
-  # UNIQUE index should catch this too, without race conditions, but this
-  # should give a better error message the other 99.9% of the time...
-  if ( length($self->payunique)
-       && qsearchs('cust_pay', { 'payunique' => $self->payunique } ) ) {
-    #well, it *could* be a better error message
-    return "duplicate transaction".
-           " - a payment with unique identifer ". $self->payunique.
-           " already exists";
-  }
+#i guess not now, with cust_pay_pending, if we actually make it here, we _do_ want to record it
+#  # UNIQUE index should catch this too, without race conditions, but this
+#  # should give a better error message the other 99.9% of the time...
+#  if ( length($self->payunique)
+#       && qsearchs('cust_pay', { 'payunique' => $self->payunique } ) ) {
+#    #well, it *could* be a better error message
+#    return "duplicate transaction".
+#           " - a payment with unique identifer ". $self->payunique.
+#           " already exists";
+#  }
 
   $self->SUPER::check;
 }
@@ -655,8 +656,8 @@ Delete and replace methods.
 
 =head1 SEE ALSO
 
-L<FS::cust_bill_pay>, L<FS::cust_bill>, L<FS::Record>, schema.html from the
-base documentation.
+L<FS::cust_pay_pending>, L<FS::cust_bill_pay>, L<FS::cust_bill>, L<FS::Record>,
+schema.html from the base documentation.
 
 =cut
 

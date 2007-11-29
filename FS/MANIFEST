@@ -390,3 +390,5 @@ FS/conf.pm
 t/conf.t
 FS/acct_rt_transaction.pm
 t/acct_rt_transaction.t
+FS/cust_pay_pending.pm
+t/cust_pay_pending.t

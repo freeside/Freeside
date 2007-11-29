@@ -28,6 +28,7 @@ use FS::cust_svc;
 use FS::cust_bill;
 use FS::cust_bill_pkg;
 use FS::cust_pay;
+use FS::cust_pay_pending;
 use FS::cust_pay_void;
 use FS::cust_pay_batch;
 use FS::cust_credit;
@@ -2860,7 +2861,7 @@ L<http://420.am/business-onlinepayment> for supported gateways.
 
 Available methods are: I<CC>, I<ECHECK> and I<LEC>
 
-Available options are: I<description>, I<invnum>, I<quiet>, I<paynum_ref>
+Available options are: I<description>, I<invnum>, I<quiet>, I<paynum_ref>, I<payunique>
 
 The additional options I<payname>, I<address1>, I<address2>, I<city>, I<state>,
 I<zip>, I<payinfo> and I<paydate> are also available.  Any of these options,
@@ -2877,6 +2878,8 @@ I<quiet> can be set true to surpress email decline notices.
 
 I<paynum_ref> can be set to a scalar reference.  It will be filled in with the
 resulting paynum, if any.
+
+I<payunique> is a unique identifier for this payment.
 
 (moved from cust_bill) (probably should get realtime_{card,ach,lec} here too)
 
@@ -3102,6 +3105,49 @@ sub realtime_bop {
   # run transaction(s)
   ###
 
+  my $balance = exists( $options{'balance'} )
+                  ? $options{'balance'}
+                  : $self->balance;
+
+  $self->select_for_update; #mutex ... just until we get our pending record in
+
+  #the checks here are intended to catch concurrent payments
+  #double-form-submission prevention is taken care of in cust_pay_pending::check
+
+  #check the balance
+  return "The customer's balance has changed; $method transaction aborted."
+    if $self->balance < $balance;
+    #&& $self->balance < $amount; #might as well anyway?
+
+  #also check and make sure there aren't *other* pending payments for this cust
+
+  my @pending = qsearch('cust_pay_pending', {
+    'custnum' => $self->custnum,
+    'status'  => { op=>'!=', value=>'done' } 
+  });
+  return "A payment is already being processed for this customer (".
+         join(', ', map 'paypendingnum '. $_->paypendingnum, @pending ).
+         "); $method transaction aborted."
+    if scalar(@pending);
+
+  #okay, good to go, if we're a duplicate, cust_pay_pending will kick us out
+
+  my $cust_pay_pending = new FS::cust_pay_pending {
+    'custnum'    => $self->custnum,
+    #'invnum'     => $options{'invnum'},
+    'paid'       => $amount,
+    '_date'      => '',
+    'payby'      => $method2payby{$method},
+    'payinfo'    => $payinfo,
+    'paydate'    => $paydate,
+    'status'     => 'new',
+    'gatewaynum' => ( $payment_gateway ? $payment_gateway->gatewaynum : '' ),
+  };
+  $cust_pay_pending->payunique( $options{payunique} )
+    if length($options{payunique});
+  my $cpp_new_err = $cust_pay_pending->insert; #mutex lost when this is inserted
+  return $cpp_new_err if $cpp_new_err;
+
   my( $action1, $action2 ) = split(/\s*\,\s*/, $action );
 
   my $transaction = new Business::OnlinePayment( $processor, @bop_options );
@@ -3135,9 +3181,19 @@ sub realtime_bop {
     'phone'          => $self->daytime || $self->night,
     %content, #after
   );
+
+  $cust_pay_pending->status('pending');
+  my $cpp_pending_err = $cust_pay_pending->replace;
+  return $cpp_pending_err if $cpp_pending_err;
+
   $transaction->submit();
 
   if ( $transaction->is_success() && $action2 ) {
+
+    $cust_pay_pending->status('authorized');
+    my $cpp_authorized_err = $cust_pay_pending->replace;
+    return $cpp_authorized_err if $cpp_authorized_err;
+
     my $auth = $transaction->authorization;
     my $ordernum = $transaction->can('order_number')
                    ? $transaction->order_number
@@ -3178,6 +3234,10 @@ sub realtime_bop {
     }
 
   }
+
+  $cust_pay_pending->status($transaction->is_success() ? 'captured' : 'declined');
+  my $cpp_captured_err = $cust_pay_pending->replace;
+  return $cpp_captured_err if $cpp_captured_err;
 
   ###
   # remove paycvv after initial transaction
@@ -3228,7 +3288,14 @@ sub realtime_bop {
        'paybatch' => $paybatch,
        'paydate'  => $paydate,
     } );
+    #doesn't hurt to know, even though the dup check is in cust_pay_pending now
     $cust_pay->payunique( $options{payunique} ) if length($options{payunique});
+
+    my $oldAutoCommit = $FS::UID::AutoCommit;
+    local $FS::UID::AutoCommit = 0;
+    my $dbh = dbh;
+
+    #start a transaction, insert the cust_pay and set cust_pay_pending.status to done in a single transction
 
     my $error = $cust_pay->insert($options{'manual'} ? ( 'manual' => 1 ) : () );
 
@@ -3238,11 +3305,13 @@ sub realtime_bop {
                                       ( 'manual' => 1 ) : ()
                                     );
       if ( $error2 ) {
-        # gah, even with transactions.
-        my $e = 'WARNING: Card/ACH debited but database not updated - '.
+        # gah.  but at least we have a record of the state we had to abort in
+        # from cust_pay_pending now.
+        my $e = "WARNING: $method captured but payment not recorded - ".
                 "error inserting payment ($processor): $error2".
                 " (previously tried insert with invnum #$options{'invnum'}" .
-                ": $error )";
+                ": $error ) - pending payment saved as paypendingnum ".
+                $cust_pay_pending->paypendingnum. "\n";
         warn $e;
         return $e;
       }
@@ -3252,7 +3321,25 @@ sub realtime_bop {
       ${ $options{'paynum_ref'} } = $cust_pay->paynum;
     }
 
-    return ''; #no error
+    $cust_pay_pending->status('done');
+    $cust_pay_pending->statustext('captured');
+    my $cpp_done_err = $cust_pay_pending->replace;
+
+    if ( $cpp_done_err ) {
+
+      $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+      my $e = "WARNING: $method captured but payment not recorded - ".
+              "error updating status for paypendingnum ".
+              $cust_pay_pending->paypendingnum. ": $cpp_done_err \n";
+      warn $e;
+      return $e;
+
+    } else {
+
+      $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+      return ''; #no error
+
+    }
 
   } else {
 
@@ -3313,7 +3400,18 @@ sub realtime_bop {
         if $error;
 
     }
-  
+
+    $cust_pay_pending->status('done');
+    $cust_pay_pending->statustext("declined: $perror");
+    my $cpp_done_err = $cust_pay_pending->replace;
+    if ( $cpp_done_err ) {
+      my $e = "WARNING: $method declined but pending payment not resolved - ".
+              "error updating status for paypendingnum ".
+              $cust_pay_pending->paypendingnum. ": $cpp_done_err \n";
+      warn $e;
+      $perror = "$e ($perror)";
+    }
+
     return $perror;
   }
 
@@ -3783,6 +3881,8 @@ sub batch_card {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
+  #this needs to handle mysql as well as Pg, like svc_acct.pm
+  #(make it into a common function if folks need to do batching with mysql)
   $dbh->do("LOCK TABLE pay_batch IN SHARE ROW EXCLUSIVE MODE")
     or return "Cannot lock pay_batch: " . $dbh->errstr;
 

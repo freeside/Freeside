@@ -244,6 +244,8 @@ L<FS::cust_bill_ApplicationCommon> - Base class for bill application classes
 
 L<FS::cust_pay> - Payment class
 
+L<FS::cust_pay_pending> - Pending payment class
+
 L<FS::cust_pay_void> - Voided payment class
 
 L<FS::cust_bill_pay> - Payment application class

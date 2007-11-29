@@ -56,6 +56,10 @@ $cgi->param('payunique') =~ /^([\w \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\=]*)$/
   or errorpage(gettext('illegal_text'). " payunique: ". $cgi->param('payunique'));
 my $payunique = $1;
 
+$cgi->param('balance') =~ /^\s*(\-?\s*\d*(\.\d\d)?)\s*$/
+  or errorpage("illegal balance");
+my $balance = $1;
+
 my $payinfo;
 my $paycvv = '';
 if ( $payby eq 'CHEK' ) {
@@ -125,6 +129,7 @@ if ( $cgi->param('batch') ) {
   $error = $cust_main->realtime_bop( $FS::payby::payby2bop{$payby}, $amount,
     'quiet'      => 1,
     'manual'     => 1,
+    'balance'    => $balance,
     'payinfo'    => $payinfo,
     'paydate'    => "$year-$month-01",
     'payname'    => $payname,
