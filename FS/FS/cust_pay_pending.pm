@@ -131,14 +131,13 @@ sub check {
 
   my $error = 
     $self->ut_numbern('paypendingnum')
-    || $self->ut_number('pendingnum')
     || $self->ut_foreign_key('custnum', 'cust_main', 'custnum')
     || $self->ut_money('paid')
     || $self->ut_numbern('_date')
     || $self->ut_textn('payunique')
     || $self->ut_text('status')
     #|| $self->ut_textn('statustext')
-    || $self->ut_anythingn('statustext')
+    || $self->ut_anything('statustext')
     #|| $self->ut_money('cust_balance')
     || $self->ut_foreign_keyn('paynum', 'cust_pay', 'paynum' )
     || $self->payinfo_check() #payby/payinfo/paymask/paydate
@@ -150,8 +149,10 @@ sub check {
   # UNIQUE index should catch this too, without race conditions, but this
   # should give a better error message the other 99.9% of the time...
   if ( length($self->payunique) ) {
-    my $cust_pay_pending =
-      qsearchs('cust_pay_pending', { 'payunique' => $self->payunique } );
+    my $cust_pay_pending = qsearchs('cust_pay_pending', {
+      'payunique'     => $self->payunique,
+      'paypendingnum' => { op=>'!=', value=>$self->paypendingnum },
+    });
     if ( $cust_pay_pending ) {
       #well, it *could* be a better error message
       return "duplicate transaction - a payment with unique identifer ".
