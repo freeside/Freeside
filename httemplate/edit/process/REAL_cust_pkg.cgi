@@ -1,5 +1,3 @@
-%
-%
 %my $pkgnum = $cgi->param('pkgnum') or die;
 %my $old = qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
 %my %hash = $old->hash;
@@ -31,6 +29,3 @@
 %  print $cgi->redirect(popurl(3). "view/cust_main.cgi?$custnum".
 %                       "#cust_pkg$pkgnum" );
 %}
-%
-%
-
