@@ -5567,6 +5567,18 @@ sub batch_import {
                   svc_acct.username svc_acct._password 
                 );
     $payby = 'BILL';
+ } elsif ( $format eq 'extended-plus_company' ) {
+    @fields = qw( agent_custid refnum
+                  last first company address1 address2 city state zip country
+                  daytime night
+                  ship_last ship_first ship_company ship_address1 ship_address2
+                  ship_city ship_state ship_zip ship_country
+                  payinfo paycvv paydate
+                  invoicing_list
+                  cust_pkg.pkgpart
+                  svc_acct.username svc_acct._password 
+                );
+    $payby = 'BILL';
   } else {
     die "unknown format $format";
   }

@@ -20,6 +20,7 @@ Import a CSV file containing customer records.
     <SELECT NAME="format">
 <!--      <OPTION VALUE="simple">Simple -->
       <OPTION VALUE="extended" SELECTED>Extended
+      <OPTION VALUE="extended-plus_company">Extended plus company
     </SELECT>
   </TD>
 </TR>
@@ -36,6 +37,7 @@ Import a CSV file containing customer records.
 <TR>
   <TH>First package</TH>
   <TD>
+    This needs to be agent-virtualized if it gets used!
     <SELECT NAME="pkgpart"><OPTION VALUE="">(none)</OPTION>
 % foreach my $part_pkg ( qsearch('part_pkg',{'disabled'=>'' }) ) { 
 
@@ -58,7 +60,10 @@ Import a CSV file containing customer records.
 <!-- Simple file format is CSV, with the following field order: <i>cust_pkg.setup, dayphone, first, last, address1, address2, city, state, zip, comments</i>
 <BR><BR> -->
 
-Extended file format is CSV, with the following field order: <i>agent_custid, refnum<%$req%>, last<%$req%>, first<%$req%>, address1<%$req%>, address2, city<%$req%>, state<%$req%>, zip<%$req%>, country, daytime, night, ship_last, ship_first, ship_address1, ship_address2, ship_city, ship_state, ship_zip, ship_country, payinfo<%$req%>, paycvv, paydate<%$req%>, invoicing_list, pkgpart, username, _password</i>
+<b>Extended</b> file format is CSV, with the following field order: <i>agent_custid, refnum<%$req%>, last<%$req%>, first<%$req%>, address1<%$req%>, address2, city<%$req%>, state<%$req%>, zip<%$req%>, country, daytime, night, ship_last, ship_first, ship_address1, ship_address2, ship_city, ship_state, ship_zip, ship_country, payinfo<%$req%>, paycvv, paydate<%$req%>, invoicing_list, pkgpart, username, _password</i>
+<BR><BR>
+
+<b>Extended plus company</b> file format is CSV, with the following field order: <i>agent_custid, refnum<%$req%>, last<%$req%>, first<%$req%>, company, address1<%$req%>, address2, city<%$req%>, state<%$req%>, zip<%$req%>, country, daytime, night, ship_last, ship_first, ship_company, ship_address1, ship_address2, ship_city, ship_state, ship_zip, ship_country, payinfo<%$req%>, paycvv, paydate<%$req%>, invoicing_list, pkgpart, username, _password</i>
 <BR><BR>
 
 <%$req%> Required fields
@@ -78,7 +83,7 @@ advertising source table.
 
   <li><i>paycvv</i>: CVV2 number (three digits on the back of the credit card)
 
-  <li><i>paydate</i>: Credit card expiration date.
+  <li><i>paydate</i>: Credit card expiration date, MM/YYYY or MM/YY (M/YY and M/YYYY are also accepted).
 
   <li><i>invoicing_list</i>: Email address for invoices, or POST for postal invoices.
 
