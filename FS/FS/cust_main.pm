@@ -3186,7 +3186,21 @@ sub realtime_bop {
   my $cpp_pending_err = $cust_pay_pending->replace;
   return $cpp_pending_err if $cpp_pending_err;
 
-  $transaction->submit();
+  #config?
+  my $BOP_TESTING = 0;
+  my $BOP_TESTING_SUCCESS = 1;
+
+  unless ( $BOP_TESTING ) {
+    $transaction->submit();
+  } else {
+    if ( $BOP_TESTING_SUCCESS ) {
+      $transaction->is_success(1);
+      $transaction->authorization('fake auth');
+    } else {
+      $transaction->is_success(0);
+      $transaction->error_message('fake failure');
+    }
+  }
 
   if ( $transaction->is_success() && $action2 ) {
 
@@ -3260,12 +3274,6 @@ sub realtime_bop {
   ###
 
   if ( $transaction->is_success() ) {
-
-    my %method2payby = (
-      'CC'     => 'CARD',
-      'ECHECK' => 'CHEK',
-      'LEC'    => 'LECB',
-    );
 
     my $paybatch = '';
     if ( $payment_gateway ) { # agent override
