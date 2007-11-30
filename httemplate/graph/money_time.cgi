@@ -65,6 +65,7 @@ $color{$_.'_12mo'} = $color{$_}
 
 my %link = (
   'invoiced' => "${p}search/cust_bill.html?agentnum=$agentnum;",
+  'netsales' => "${p}search/cust_bill.html?agentnum=$agentnum;net=1;",
   'credits'  => "${p}search/cust_credit.html?agentnum=$agentnum;",
   'payments' => "${p}search/cust_pay.cgi?magic=_date;agentnum=$agentnum;",
 );

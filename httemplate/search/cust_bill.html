@@ -9,19 +9,22 @@
                  'redirect'    => $link,
                  'header'      => [ 'Invoice #',
                                     'Balance',
-                                    'Amount',
+                                    'Net Amount',
+                                    'Gross Amount',
                                     'Date',
                                     FS::UI::Web::cust_header(),
                                   ],
                  'fields'      => [
                    'invnum',
                    sub { sprintf($money_char.'%.2f', shift->get('owed') ) },
+                   sub { sprintf($money_char.'%.2f', shift->get('net') ) },
                    sub { sprintf($money_char.'%.2f', shift->charged     ) },
                    sub { time2str('%b %d %Y', shift->_date ) },
                    \&FS::UI::Web::cust_fields,
                  ],
                  'align' => 'rrrr'.FS::UI::Web::cust_aligns(),
                  'links' => [
+                   $link,
                    $link,
                    $link,
                    $link,
@@ -35,9 +38,11 @@
                               '',
                               '',
                               '',
+                              '',
                               FS::UI::Web::cust_colors(),
                             ],
                  'style' => [ 
+                              '',
                               '',
                               '',
                               '',
@@ -60,12 +65,10 @@ my $agentnums_sql = $FS::CurrentUser::CurrentUser->agentnums_sql;
 my( $count_query, $sql_query );
 my $count_addl = '';
 #my $distinct = '';
-my($begin, $end) = ( '', '' );
-my $agentnum = '';
-my($open, $days) = ( '', '' );
-my($invnum_min, $invnum_max) = ( '', '' );
-my $newest_percust = '';
+my %search;
+
 if ( $cgi->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/ ) {
+
   $count_query =
     "SELECT COUNT(*) FROM cust_bill $join_cust_main".
     "  WHERE invnum = $2 AND $agentnums_sql"; #agent virtualization
@@ -76,12 +79,8 @@ if ( $cgi->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/ ) {
     #'select'    => '*',
     'extra_sql' => " AND $agentnums_sql", #agent virtualization
   };
+
 } else {
-#if ( $cgi->param('begin') || $cgi->param('end')
-#     || $cgi->param('beginning') || $cgi->param('ending')
-#     || $cgi->keywords
-#   )
-#{
 
   #some false laziness w/cust_bill::re_X
   my @where;
@@ -89,60 +88,60 @@ if ( $cgi->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/ ) {
 
   if ( $cgi->param('beginning')
        && $cgi->param('beginning') =~ /^([ 0-9\-\/]{0,10})$/ ) {
-    $begin = str2time($1);
-    push @where, "cust_bill._date >= $begin";
+    $search{'begin'} = str2time($1);
+    push @where, 'cust_bill._date >= '. $search{'begin'};
   }
   if ( $cgi->param('ending')
         && $cgi->param('ending') =~ /^([ 0-9\-\/]{0,10})$/ ) {
-    $end = str2time($1) + 86399;
-    push @where, "cust_bill._date < $end";
+    $search{'end'} = str2time($1) + 86399;
+    push @where, 'cust_bill._date < '. $search{'end'};
   }
 
   if ( $cgi->param('begin') =~ /^(\d+)$/ ) {
-    $begin = $1;
-    push @where, "cust_bill._date >= $begin";
+    $search{'begin'} = $1;
+    push @where, 'cust_bill._date >= '. $search{'begin'};
   }
   if ( $cgi->param('end') =~ /^(\d+)$/ ) {
-    $end = $1;
-    push @where, "cust_bill._date < $end";
+    $search{'end'} = $1;
+    push @where, 'cust_bill._date < '. $search{'end'};
   }
 
   if ( $cgi->param('invnum_min') =~ /^\s*(\d+)\s*$/ ) {
-    $invnum_min = $1;
-    push @where, "cust_bill.invnum >= $1";
+    $search{'invnum_min'} = $1;
+    push @where, 'cust_bill.invnum >= '. $search{'invnum_min'};
   }
   if ( $cgi->param('invnum_max') =~ /^\s*(\d+)\s*$/ ) {
-    $invnum_max = $1;
-    push @where, "cust_bill.invnum <= $1";
+    $search{'invnum_max'} = $1;
+    push @where, 'cust_bill.invnum <= '. $search{'invnum_max'};
   }
 
   if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
-    $agentnum = $1;
-    push @where, "cust_main.agentnum = $agentnum";
+    $search{'agentnum'} = $1;
+    push @where, 'cust_main.agentnum = '. $search{'agentnum'};
   }
 
-  my $owed =
-    "charged - ( SELECT COALESCE(SUM(amount),0) FROM cust_bill_pay
-                 WHERE cust_bill_pay.invnum = cust_bill.invnum )
-             - ( SELECT COALESCE(SUM(amount),0) FROM cust_credit_bill
-                 WHERE cust_credit_bill.invnum = cust_bill.invnum )";
-
   if ( $cgi->param('open') ) {
-    push @where, "0 != $owed";
-    $open = 1;
+    push @where, '0 != '. FS::cust_bill->owed_sql;
+    $search{'open'} = 1;
+  }
+
+  if ( $cgi->param('net') ) {
+    push @where, '0 != '. FS::cust_bill->net_sql;
+    $search{'net'} = 1;
   }
 
   my($query) = $cgi->keywords;
   if ( $query =~ /^(OPEN(\d*)_)?(invnum|date|custnum)$/ ) {
-    ($open, $days, my $field) = ($1, $2, $3);
+    ($search{'open'}, $search{'days'}, my $field) = ($1, $2, $3);
     $field = "_date" if $field eq 'date';
     $orderby = "ORDER BY cust_bill.$field";
-    push @where, "0 != $owed" if $open;
-    push @where, "cust_bill._date < ". (time-86400*$days) if $days;
+    push @where, '0 != '. FS::cust_bill->owed_sql if $search{'open'};
+    push @where, "cust_bill._date < ". (time-86400*$search{'days'})
+      if $search{'days'};
   }
 
   if ( $cgi->param('newest_percust') ) {
-    $newest_percust = 1;
+    $search{'newest_percust'} = 1;
 
     #$distinct = 'DISTINCT ON ( cust_bill.custnum )';
     #$orderby = 'ORDER BY cust_bill.custnum ASC, cust_bill._date DESC';
@@ -173,9 +172,16 @@ if ( $cgi->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/ ) {
   my $extra_sql = scalar(@where) ? 'WHERE '. join(' AND ', @where) : '';
 
   unless ( $count_query ) {
-    $count_query = "SELECT COUNT(*), sum(charged), sum($owed)";
-    $count_addl = [ '$%.2f total invoiced',
-                    '$%.2f total outstanding balance',
+    $count_query = 'SELECT COUNT(*), '. join(', ',
+                     map "SUM($_)",
+                         ( 'charged',
+                           FS::cust_bill->net_sql,
+                           FS::cust_bill->owed_sql,
+                         )
+                   );
+    $count_addl = [ '$%.2f invoiced (gross)',
+                    '$%.2f invoiced (net)',
+                    '$%.2f outstanding balance',
                   ];
   }
   $count_query .=  " FROM cust_bill $join_cust_main $extra_sql";
@@ -190,7 +196,8 @@ if ( $cgi->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/ ) {
                      #( map "cust_main.$_", qw(custnum last first company) ),
                      'cust_main.custnum as cust_main_custnum',
                      FS::UI::Web::cust_sql_fields(),
-                     "$owed as owed",
+                     FS::cust_bill->owed_sql. ' AS owed',
+                     FS::cust_bill->net_sql.  ' AS net',
                    ),
     'extra_sql' => "$extra_sql $orderby"
   };
@@ -212,22 +219,13 @@ my $html_init = join("\n", map {
  ( my $action = $_ ) =~ s/_$//;
  include('/elements/progress-init.html',
            $_.'form',
-           [ 'begin', 'end', 'agentnum', 'open', 'days',
-             'invnum_min', 'invnum_max', 'newest_percust',
-           ],
+           [ keys %search ],
            "../misc/${_}invoices.cgi",
            { 'message' => "Invoices re-${action}ed" }, #would be nice to show the number of them, but...
            $_, #key
         ),
  qq!<FORM NAME="${_}form">!,
- qq!<INPUT TYPE="hidden" NAME="begin"           VALUE="$begin">!,
- qq!<INPUT TYPE="hidden" NAME="end"             VALUE="$end">!,
- qq!<INPUT TYPE="hidden" NAME="agentnum"        VALUE="$agentnum">!,
- qq!<INPUT TYPE="hidden" NAME="open"            VALUE="$open">!,
- qq!<INPUT TYPE="hidden" NAME="days"            VALUE="$days">!,
- qq!<INPUT TYPE="hidden" NAME="invnum_min"      VALUE="$invnum_min">!,
- qq!<INPUT TYPE="hidden" NAME="invnum_max"      VALUE="$invnum_max">!,
- qq!<INPUT TYPE="hidden" NAME="newest_percust"  VALUE="$newest_percust">!,
+ ( map qq!<INPUT TYPE="hidden" NAME="$_" VALUE="$search{$_}">!, keys %search ),
  qq!</FORM>!
 } qw( print_ email_ fax_ ) ). 
 

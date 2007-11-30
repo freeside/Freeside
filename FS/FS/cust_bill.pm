@@ -2672,8 +2672,6 @@ sub _items_payments {
 
 =back
 
-
-
 =head1 SUBROUTINES
 
 =over 4
@@ -2722,7 +2720,6 @@ sub process_re_X {
 
 sub re_X {
   my($method, $job, %param ) = @_;
-#              [ 'begin', 'end', 'agentnum', 'open', 'days', 'newest_percust' ],
   if ( $DEBUG ) {
     warn "re_X $method for job $job with param:\n".
          join( '', map { "  $_ => ". $param{$_}. "\n" } keys %param );
@@ -2750,14 +2747,11 @@ sub re_X {
     push @where, "cust_main.agentnum = $1";
   }
 
-  my $owed =
-    "charged - ( SELECT COALESCE(SUM(amount),0) FROM cust_bill_pay
-                 WHERE cust_bill_pay.invnum = cust_bill.invnum )
-             - ( SELECT COALESCE(SUM(amount),0) FROM cust_credit_bill
-                 WHERE cust_credit_bill.invnum = cust_bill.invnum )";
-
-  push @where, "0 != $owed"
+  push @where, '0 != '. FS::cust_bill->owed_sql
     if $param{'open'};
+
+  push @where, '0 != '. FS::cust_bill->net_sql
+    if $param{'net'};
 
   push @where, "cust_bill._date < ". (time-86400*$param{'days'})
     if $param{'days'};
@@ -2821,34 +2815,55 @@ sub re_X {
 
 =item owed_sql
 
-Returns an SQL fragment to retreived the amount owed.
+Returns an SQL fragment to retreive the amount owed (charged minus credited and paid).
 
 =cut
 
 sub owed_sql {
-  #my $class = shift;
-
-  "charged
-           - COALESCE(
-                       ( SELECT SUM(amount) FROM cust_bill_pay
-                           WHERE cust_bill.invnum = cust_bill_pay.invnum )
-                       ,0
-                     )
-           - COALESCE(
-                       ( SELECT SUM(amount) FROM cust_credit_bill
-                           WHERE cust_bill.invnum = cust_credit_bill.invnum )
-                       ,0
-                     )
-  ";
-
+  my $class = shift;
+  'charged - '. $class->paid_sql. ' - '. $class->credited_sql;
 }
+
+=item net_sql
+
+Returns an SQL fragment to retreive the net amount (charged minus credited).
+
+=cut
+
+sub net_sql {
+  my $class = shift;
+  'charged - '. $class->credited_sql;
+}
+
+=item paid_sql
+
+Returns an SQL fragment to retreive the amount paid against this invoice.
+
+=cut
+
+sub paid_sql {
+  #my $class = shift;
+  "( SELECT COALESCE(SUM(amount),0) FROM cust_bill_pay
+       WHERE cust_bill.invnum = cust_bill_pay.invnum   )";
+}
+
+=item credited_sql
+
+Returns an SQL fragment to retreive the amount credited against this invoice.
+
+=cut
+
+sub credited_sql {
+  #my $class = shift;
+  "( SELECT COALESCE(SUM(amount),0) FROM cust_credit_bill
+       WHERE cust_bill.invnum = cust_credit_bill.invnum   )";
+}
+
+=back
 
 =head1 BUGS
 
 The delete method.
-
-print_text formatting (and some logic :/) is in source, but needs to be
-slurped in from a file.  Also number of lines ($=).
 
 =head1 SEE ALSO
 
