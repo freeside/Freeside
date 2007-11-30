@@ -2270,7 +2270,7 @@ sub print_html {
   ) {
 
     $invoice_data{'returnaddress'} =
-      join("\n", $conf->config('invoice_htmlreturnaddress', $template) );
+      join("\n", $conf->config_orbase('invoice_htmlreturnaddress', $template) );
 
   } elsif ( grep /\S/,
             $conf->config_orbase( 'invoice_latexreturnaddress', $template ) ) {
