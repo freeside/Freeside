@@ -1965,8 +1965,6 @@ sub fields {
   return (real_fields($table), $something->virtual_fields());
 }
 
-=back
-
 =item pvf FIELD_NAME
 
 Returns the FS::part_virtual_field object corresponding to a field in the 
@@ -1982,57 +1980,6 @@ sub pvf {
                                             name    => $name } );
   }
   ''
-}
-
-=head1 SUBROUTINES
-
-=over 4
-
-=item real_fields [ TABLE ]
-
-Returns a list of the real columns in the specified table.  Called only by 
-fields() and other subroutines elsewhere in FS::Record.
-
-=cut
-
-sub real_fields {
-  my $table = shift;
-
-  my($table_obj) = dbdef->table($table);
-  confess "Unknown table $table" unless $table_obj;
-  $table_obj->columns;
-}
-
-=item _quote VALUE, TABLE, COLUMN
-
-This is an internal function used to construct SQL statements.  It returns
-VALUE DBI-quoted (see L<DBI/"quote">) unless VALUE is a number and the column
-type (see L<DBIx::DBSchema::Column>) does not end in `char' or `binary'.
-
-=cut
-
-sub _quote {
-  my($value, $table, $column) = @_;
-  my $column_obj = dbdef->table($table)->column($column);
-  my $column_type = $column_obj->type;
-  my $nullable = $column_obj->null;
-
-  warn "  $table.$column: $value ($column_type".
-       ( $nullable ? ' NULL' : ' NOT NULL' ).
-       ")\n" if $DEBUG > 2;
-
-  if ( $value eq '' && $nullable ) {
-    'NULL'
-  } elsif ( $value eq '' && $column_type =~ /^(int|numeric)/ ) {
-    cluck "WARNING: Attempting to set non-null integer $table.$column null; ".
-          "using 0 instead";
-    0;
-  } elsif ( $value =~ /^\d+(\.\d+)?$/ && 
-            ! $column_type =~ /(char|binary|text)$/i ) {
-    $value;
-  } else {
-    dbh->quote($value);
-  }
 }
 
 =item vfieldpart_hashref TABLE
@@ -2058,32 +2005,6 @@ sub vfieldpart_hashref {
 
 }
 
-
-=item hfields TABLE
-
-This is deprecated.  Don't use it.
-
-It returns a hash-type list with the fields of this record's table set true.
-
-=cut
-
-sub hfields {
-  carp "warning: hfields is deprecated";
-  my($table)=@_;
-  my(%hash);
-  foreach (fields($table)) {
-    $hash{$_}=1;
-  }
-  \%hash;
-}
-
-sub _dump {
-  my($self)=@_;
-  join("\n", map {
-    "$_: ". $self->getfield($_). "|"
-  } (fields($self->table)) );
-}
-
 =item encrypt($value)
 
 Encrypts the credit card using a combination of PK to encrypt and uuencode to armour.
@@ -2093,7 +2014,6 @@ Returns the encrypted string.
 You should generally not have to worry about calling this, as the system handles this for you.
 
 =cut
-
 
 sub encrypt {
   my ($self, $value) = @_;
@@ -2187,6 +2107,108 @@ sub loadRSA {
     }
 }
 
+=item h_search ACTION
+
+Given an ACTION, either "insert", or "delete", returns the appropriate history
+record corresponding to this record, if any.
+
+=cut
+
+sub h_search {
+  my( $self, $action ) = @_;
+
+  my $table = $self->table;
+  $table =~ s/^h_//;
+
+  my $primary_key = dbdef->table($table)->primary_key;
+
+  qsearchs({
+    'table'   => "h_$table",
+    'hashref' => { $primary_key     => $self->$primary_key(),
+                   'history_action' => $action,
+                 },
+  });
+
+}
+
+=back
+
+=head1 SUBROUTINES
+
+=over 4
+
+=item real_fields [ TABLE ]
+
+Returns a list of the real columns in the specified table.  Called only by 
+fields() and other subroutines elsewhere in FS::Record.
+
+=cut
+
+sub real_fields {
+  my $table = shift;
+
+  my($table_obj) = dbdef->table($table);
+  confess "Unknown table $table" unless $table_obj;
+  $table_obj->columns;
+}
+
+=item _quote VALUE, TABLE, COLUMN
+
+This is an internal function used to construct SQL statements.  It returns
+VALUE DBI-quoted (see L<DBI/"quote">) unless VALUE is a number and the column
+type (see L<DBIx::DBSchema::Column>) does not end in `char' or `binary'.
+
+=cut
+
+sub _quote {
+  my($value, $table, $column) = @_;
+  my $column_obj = dbdef->table($table)->column($column);
+  my $column_type = $column_obj->type;
+  my $nullable = $column_obj->null;
+
+  warn "  $table.$column: $value ($column_type".
+       ( $nullable ? ' NULL' : ' NOT NULL' ).
+       ")\n" if $DEBUG > 2;
+
+  if ( $value eq '' && $nullable ) {
+    'NULL'
+  } elsif ( $value eq '' && $column_type =~ /^(int|numeric)/ ) {
+    cluck "WARNING: Attempting to set non-null integer $table.$column null; ".
+          "using 0 instead";
+    0;
+  } elsif ( $value =~ /^\d+(\.\d+)?$/ && 
+            ! $column_type =~ /(char|binary|text)$/i ) {
+    $value;
+  } else {
+    dbh->quote($value);
+  }
+}
+
+=item hfields TABLE
+
+This is deprecated.  Don't use it.
+
+It returns a hash-type list with the fields of this record's table set true.
+
+=cut
+
+sub hfields {
+  carp "warning: hfields is deprecated";
+  my($table)=@_;
+  my(%hash);
+  foreach (fields($table)) {
+    $hash{$_}=1;
+  }
+  \%hash;
+}
+
+sub _dump {
+  my($self)=@_;
+  join("\n", map {
+    "$_: ". $self->getfield($_). "|"
+  } (fields($self->table)) );
+}
+
 sub DESTROY { return; }
 
 #sub DESTROY {
@@ -2199,12 +2221,6 @@ sub DESTROY { return; }
 #sub is_tainted {
 #             return ! eval { join('',@_), kill 0; 1; };
 #         }
-
-=back
-
-=head1 SUBROUTINES
-
-=over 4
 
 =item str2time_sql [ DRIVER_NAME ]
 
