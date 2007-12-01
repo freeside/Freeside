@@ -321,6 +321,34 @@ sub cust_pkg {
   qsearchs( 'cust_pkg', { 'pkgnum' => $self->pkgnum } );
 }
 
+=item pkg_svc
+
+Returns the pkg_svc record for for this service, if applicable.
+
+=cut
+
+sub pkg_svc {
+  my $self = shift;
+  my $cust_pkg = $self->cust_pkg;
+  return undef unless $cust_pkg;
+
+  qsearchs( 'pkg_svc', { 'svcpart' => $self->svcpart,
+                         'pkgpart' => $cust_pkg->pkgpart,
+                       }
+          );
+}
+
+=item date_inserted
+
+Returns the date this service was inserted.
+
+=cut
+
+sub date_inserted {
+  my $self = shift;
+  $self->h_date('insert');
+}
+
 =item label
 
 Returns a list consisting of:
@@ -641,23 +669,6 @@ sub get_cdrs_for_update {
   }
 
   @cdrs;
-}
-
-=item pkg_svc
-
-Returns the pkg_svc record for for this service, if applicable.
-
-=cut
-
-sub pkg_svc {
-  my $self = shift;
-  my $cust_pkg = $self->cust_pkg;
-  return undef unless $cust_pkg;
-
-  qsearchs( 'pkg_svc', { 'svcpart' => $self->svcpart,
-                         'pkgpart' => $cust_pkg->pkgpart,
-                       }
-          );
 }
 
 =back
