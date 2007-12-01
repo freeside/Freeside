@@ -2131,6 +2131,19 @@ sub h_search {
 
 }
 
+=item h_date ACTION
+
+Given an ACTION, either "insert", or "delete", returns the timestamp of the
+appropriate history record corresponding to this record, if any.
+
+=cut
+
+sub h_date {
+  my($self, $action) = @_;
+  my $h = $self->h_search($action);
+  $h ? $h->history_date : '';
+}
+
 =back
 
 =head1 SUBROUTINES
