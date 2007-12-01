@@ -33,7 +33,7 @@ inherit from.
 Returns an a list consisting of the "SELECT", "EXTRA_SQL", SQL fragments, a
 placeholder for "CACHE_OBJ" and an "AS" SQL fragment, to search for the
 appropriate history records created before END_TIMESTAMP and (optionally) not
-cancelled before START_TIMESTAMP.
+deleted before START_TIMESTAMP.
 
 =cut
 
@@ -49,16 +49,16 @@ sub sql_h_search {
     confess 'Called sql_h_search without END_TIMESTAMP';
   }
 
-  my( $notcancelled, $notcancelled_mr ) = ( '', '' );
+  my( $notdeleted, $notdeleted_mr ) = ( '', '' );
   if ( scalar(@_) && $_[0] ) {
-    $notcancelled =
+    $notdeleted =
       "AND 0 = ( SELECT COUNT(*) FROM $table as notdel
                    WHERE notdel.$pkey = maintable.$pkey
                      AND notdel.history_action = 'delete'
                      AND notdel.history_date > maintable.history_date
                      AND notdel.history_date <= $_[0]
                )";
-    $notcancelled_mr =
+    $notdeleted_mr =
       "AND 0 = ( SELECT COUNT(*) FROM $table as notdel_mr
                    WHERE notdel_mr.$pkey = mostrecent.$pkey
                      AND notdel_mr.history_action = 'delete'
@@ -75,7 +75,7 @@ sub sql_h_search {
      AND (    history_action = 'insert'
            OR history_action = 'replace_new'
          )
-     $notcancelled
+     $notdeleted
      AND history_date = ( SELECT MAX(mostrecent.history_date)
                             FROM $table AS mostrecent
                             WHERE mostrecent.$pkey = maintable.$pkey
@@ -83,7 +83,7 @@ sub sql_h_search {
 			      AND (    mostrecent.history_action = 'insert'
 			            OR mostrecent.history_action = 'replace_new'
 				  )
-			      $notcancelled_mr
+			      $notdeleted_mr
                         )
 
      ORDER BY $pkey ASC",
