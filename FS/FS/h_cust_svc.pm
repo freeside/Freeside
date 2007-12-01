@@ -28,6 +28,17 @@ inherits from FS::h_Common and FS::cust_svc.
 
 =over 4
 
+=item date_deleted
+
+Returns the date this service was deleted, if any.
+
+=cut
+
+sub date_deleted {
+  my $self = shift;
+  $self->h_date('delete');
+}
+
 =item label END_TIMESTAMP [ START_TIMESTAMP ] 
 
 Returns a list consisting of:
