@@ -10,7 +10,7 @@ use FS::part_pkg::flat;
 
 %info = (
   'name' => 'First partial month pro-rated, then flat-rate (selectable billing day)',
-  'fields' =>  {
+  'fields' => {
     'setup_fee' => { 'name' => 'Setup fee for this package',
                      'default' => 0,
                    },
@@ -21,9 +21,9 @@ use FS::part_pkg::flat;
                                    ' of service at cancellation',
                          'type' => 'checkbox',
                        },
-    'cutoff_day' => { 'name' => 'Billing_Day (1 - 28)',
-			 'default' => 1,
-					    },
+    'cutoff_day' => { 'name' => 'Billing Day (1 - 28)',
+                      'default' => 1,
+                    },
     'seconds'       => { 'name' => 'Time limit for this package',
                          'default' => '',
                          'check' => sub { shift =~ /^\d*$/ },
@@ -78,7 +78,7 @@ use FS::part_pkg::flat;
     'externalid' => { 'name'   => 'Optional External ID',
                       'default' => '',
                     },
- },
+  },
   'fieldorder' => [ 'setup_fee', 'recur_fee', 'unused_credit', 'cutoff_day',
                     'seconds', 'upbyte', 'downbytes', 'totalbytes',
                     'recharge_amount', 'recharge_seconds', 'recharge_upbytes',
