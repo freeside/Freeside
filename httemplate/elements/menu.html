@@ -267,6 +267,7 @@ if ( $curuser->access_right('Configuration') ) {
   $config_billing{'View/Edit prepaid cards'}          = [ $fsurl.'search/prepay_credit.html', 'View outstanding cards, generate new cards' ];
   $config_billing{'View/Edit call rates and regions'} = [ $fsurl.'browse/rate.cgi', 'Manage rate plans, regions and prefixes for VoIP and call billing' ];
   $config_billing{'View/Edit locales and tax rates'}  = [ $fsurl.'browse/cust_main_county.cgi', 'Change tax rates, or break down a country into states, or a state into counties and assign different tax rates to each' ];
+  $config_billing{'View/Edit credit reason types'}  = [ $fsurl.'browse/reason_type.html?class=R', 'Credit reason types define groups of reasons, for reporting and convenience purposes.' ];
 }
 
 tie my %config_dialup, 'Tie::IxHash',

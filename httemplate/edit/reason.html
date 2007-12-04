@@ -2,10 +2,7 @@
 % $cgi->param('class') =~ /^(\w)$/ or die "illegal class";
 % my $class=$1;
 %
-% my %classmap = ('C' => 'cancel',
-%              'S' => 'suspend',
-%             );
-% my $classname = $classmap{$class};
+% my $classname = $FS::reason_type::class_name{$class};
 %
 % my (@types) = qsearch( 'reason_type', { 'class' => $class } );
 %

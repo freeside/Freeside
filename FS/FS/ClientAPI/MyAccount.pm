@@ -992,8 +992,11 @@ sub _do_bop_realtime {
          && ( $cust_main->payby !~ /^(BILL|DCRD|DCHK)$/ ?
               1 : $status eq 'suspended' ) ) {
       #this makes sense.  credit is "un-doing" the invoice
+      my $conf = new FS::Conf;
       $cust_main->credit( sprintf("%.2f", $cust_main->balance - $old_balance ),
-                          'self-service decline' );
+                          'self-service decline',
+                          'reason_type' => $conf->config('signup_credit_type'),
+                        );
       $cust_main->apply_credits( 'order' => 'newest' );
 
       return { 'error' => '_decline', 'bill_error' => $bill_error };

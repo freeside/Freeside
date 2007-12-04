@@ -1,17 +1,22 @@
 package FS::cust_credit;
 
 use strict;
-use vars qw( @ISA $conf $unsuspendauto );
+use vars qw( @ISA $conf $unsuspendauto $me $DEBUG );
 use Date::Format;
 use FS::UID qw( dbh getotaker );
 use FS::Misc qw(send_email);
-use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( qsearch qsearchs dbdef );
 use FS::cust_main_Mixin;
 use FS::cust_main;
 use FS::cust_refund;
 use FS::cust_credit_bill;
+use FS::part_pkg;
+use FS::reason_type;
+use FS::reason;
 
 @ISA = qw( FS::cust_main_Mixin FS::Record );
+$me = '[ FS::cust_credit ]';
+$DEBUG = 0;
 
 #ask FS::UID to run this stuff for us later
 $FS::UID::callback{'FS::cust_credit'} = sub { 
@@ -20,6 +25,11 @@ $FS::UID::callback{'FS::cust_credit'} = sub {
   $unsuspendauto = $conf->exists('unsuspendauto');
 
 };
+
+our %reasontype_map = ( 'referral_credit_type' => 'Referral Credit',
+                        'cancel_credit_type'   => 'Cancellation Credit',
+                        'signup_credit_type'   => 'Self-Service Credit',
+                      );
 
 =head1 NAME
 
@@ -59,7 +69,9 @@ L<Time::Local> and L<Date::Parse> for conversion functions.
 
 =item otaker - order taker (assigned automatically, see L<FS::UID>)
 
-=item reason - text
+=item reason - text ( deprecated )
+
+=item reasonum - int reason (see L<FS::reason>)
 
 =item closed - books closed flag, empty or `Y'
 
@@ -91,7 +103,7 @@ returns the error, otherwise returns false.
 =cut
 
 sub insert {
-  my $self = shift;
+  my ($self, %options) = @_;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -106,6 +118,20 @@ sub insert {
 
   my $cust_main = qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
   my $old_balance = $cust_main->balance;
+
+  unless ($self->reasonnum) {
+    my $result = $self->reason( $self->getfield('reason'),
+                                exists($options{ 'reason_type' })
+                                  ? ('reason_type' => $options{ 'reason_type' })
+                                  : (),
+                              );
+    unless($result) {
+      $dbh->rollback if $oldAutoCommit;
+      return "failed to set reason for $me: ". $dbh->errstr;
+    }
+  }
+
+  $self->setfield('reason', '');
 
   my $error = $self->SUPER::insert;
   if ( $error ) {
@@ -242,6 +268,7 @@ sub check {
     || $self->ut_numbern('_date')
     || $self->ut_money('amount')
     || $self->ut_textn('reason')
+    || $self->ut_foreign_key('reasonnum', 'reason', 'reasonnum')
     || $self->ut_enum('closed', [ '', 'Y' ])
   ;
   return $error if $error;
@@ -330,6 +357,166 @@ sub cust_main {
   qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
 }
 
+
+=item reason
+
+Returns the text of the associated reason (see L<FS::reason>) for this credit.
+
+=cut
+
+sub reason {
+  my ($self, $value, %options) = @_;
+  my $dbh = dbh;
+  my $reason;
+  my $typenum = $options{'reason_type'};
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;  # this should already be in
+  local $FS::UID::AutoCommit = 0;            # a transaction if it matters
+
+  if ( defined( $value ) ) {
+    my $hashref = { 'reason' => $value };
+    $hashref->{'reason_type'} = $typenum if $typenum;
+    my $addl_from = "LEFT JOIN reason_type ON ( reason_type = typenum ) ";
+    my $extra_sql = " AND reason_type.class='R'"; 
+
+    $reason = qsearchs( { 'table'     => 'reason',
+                          'hashref'   => $hashref,
+                          'addl_from' => $addl_from,
+                          'extra_sql' => $extra_sql,
+                       } );
+
+    if (!$reason && $typenum) {
+      $reason = new FS::reason( { 'reason_type' => $typenum,
+                                  'reason' => $value,
+                              } );
+      $reason->insert and $reason = undef;
+    }
+
+    $self->reasonnum($reason ? $reason->reasonnum : '') ;
+    warn "$me reason used in set mode with non-existant reason -- clearing"
+      unless $reason;
+  }
+  $reason = qsearchs( 'reason', { 'reasonnum' => $self->reasonnum } );
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  $reason ? $reason->reason : '';
+}
+
+# _upgrade_data
+#
+# Used by FS::Upgrade to migrate to a new database.
+#
+#
+
+sub _upgrade_data {  # class method
+  my ($self, %opts) = @_;
+
+  warn "$me upgrading $self\n" if $DEBUG;
+
+  if (defined dbdef->table($self->table)->column('reason')) {
+
+    warn "$me Checking for unmigrated reasons\n" if $DEBUG;
+
+    my @cust_credits = qsearch({ 'table' => $self->table,
+                                 'hashref' => {},
+                                 'extrasql' => 'WHERE reason IS NOT NULL',
+                              });
+
+    if (scalar(grep { $_->getfield('reason') =~ /\S/ } @cust_credits)) {
+      warn "$me Found unmigrated reasons\n" if $DEBUG;
+      my $hashref = { 'class' => 'R', 'type' => 'Legacy' };
+      my $reason_type = qsearchs( 'reason_type', $hashref );
+      unless ($reason_type) {
+        $reason_type  = new FS::reason_type( $hashref );
+        my $error   = $reason_type->insert();
+        die "$self had error inserting FS::reason_type into database: $error\n"
+          if $error;
+      }
+
+      $hashref = { 'reason_type' => $reason_type->typenum,
+                   'reason' => '(none)'
+                 };
+      my $noreason = qsearchs( 'reason', $hashref );
+      unless ($noreason) {
+        $noreason = new FS::reason( $hashref );
+        my $error  = $noreason->insert();
+        die "can't insert legacy reason '(none)' into database: $error\n"
+          if $error;
+      }
+
+      foreach my $cust_credit ( @cust_credits ) {
+        my $reason = $cust_credit->getfield('reason');
+        warn "Contemplating reason $reason\n" if $DEBUG > 1;
+        if ($reason =~ /\S/) {
+          $cust_credit->reason($reason, 'reason_type' => $reason_type->typenum)
+            or die "can't insert legacy reason $reason into database\n";
+        }else{
+          $cust_credit->reasonnum($noreason->reasonnum);
+        }
+
+        $cust_credit->setfield('reason', '');
+        my $error = $cust_credit->replace;
+
+        die "error inserting $self into database: $error\n"
+          if $error;
+      }
+    }
+
+    warn "$me Ensuring existance of auto reasons\n" if $DEBUG;
+
+    foreach ( keys %reasontype_map ) {
+      unless ($conf->config($_)) {       # hmmmm
+#       warn "$me Found $_ reason type lacking\n" if $DEBUG;
+#       my $hashref = { 'class' => 'R', 'type' => $reasontype_map{$_} };
+        my $hashref = { 'class' => 'R', 'type' => 'Legacy' };
+        my $reason_type = qsearchs( 'reason_type', $hashref );
+        unless ($reason_type) {
+          $reason_type  = new FS::reason_type( $hashref );
+          my $error   = $reason_type->insert();
+          die "$self had error inserting FS::reason_type into database: $error\n"
+            if $error;
+        }
+                                            # or clause for 1.7.x
+        $conf->set($_, $reason_type->typenum) or die "failed setting config";
+      }
+    }
+
+    warn "$me Ensuring commission packages have a reason type\n" if $DEBUG;
+
+    my $hashref = { 'class' => 'R', 'type' => 'Legacy' };
+    my $reason_type = qsearchs( 'reason_type', $hashref );
+    unless ($reason_type) {
+      $reason_type  = new FS::reason_type( $hashref );
+      my $error   = $reason_type->insert();
+      die "$self had error inserting FS::reason_type into database: $error\n"
+        if $error;
+    }
+
+    my @plans = qw( flat_comission flat_comission_cust flat_comission_pkg );
+    foreach my $plan ( @plans ) {
+      foreach my $pkg ( qsearch('part_pkg', { 'plan' => $plan } ) ) {
+        unless ($pkg->option('reason_type', 1) ) { 
+          my $plandata = $pkg->plandata.
+                        "reason_type=". $reason_type->typenum. "\n";
+          $pkg->plandata($plandata);
+          my $error =
+            $pkg->replace( undef,
+                           'pkg_svc' => { map { $_->svcpart => $_->quantity }
+                                          $pkg->pkg_svc
+                                        },
+                           'primary_svc' => $pkg->svcpart,
+                         );
+            die "failed setting reason_type option: $error"
+              if $error;
+        }
+      }
+    }
+  }
+
+  '';
+
+}
 
 =back
 

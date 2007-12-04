@@ -11,6 +11,7 @@ use FS::Schema qw( dbdef dbdef_dist reload_dbdef );
 use FS::Misc::prune qw(prune_applications);
 use FS::Conf;
 use FS::Record qw(qsearch);
+use FS::Upgrade qw(upgrade);
 
 die "Not running uid freeside!" unless checkeuid();
 
@@ -91,6 +92,9 @@ if ( $dbh->{Driver}->{Name} =~ /^mysql/i ) {
 
   }
 }
+
+upgrade()
+  unless $DRY_RUN;
 
 $dbh->commit or die $dbh->errstr;
 

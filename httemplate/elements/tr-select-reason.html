@@ -53,18 +53,39 @@
   </TD>
 </TR>
 
+%     my @types = qsearch( 'reason_type', { 'class' => $class } );
+%   if (scalar(@types) < 1) {  # we should never reach this
+<TR>
+  <TD ALIGN="right">
+    <P>No reason types.  Go add some. </P>
+  </TD>
+</TR>
+%   }elsif (scalar(@types) == 1) {
+<TR>
+  <TD ALIGN="right">
+    <P id="new<% $name %>TLabel" style="display:<% $display %>">Reason Type</P>
+  </TD>
+  <TD>
+    <P id="new<% $name %>T" disabled="<% $disabled %>" style="display:<% $display %>"><% $types[0]->type %>
+    <INPUT type="hidden" name="new<% $name %>T" value="<% $types[0]->typenum %>">
+  </TD>
+</TR>
+
+%   }else{
+
 <TR>
   <TD ALIGN="right">
     <P id="new<% $id %>TLabel" style="display:<% $display %>">Reason Type</P>
   </TD>
   <TD>
     <SELECT id="new<% $id %>T" name="new<% $name %>T" "<% $disabled %>" style="display:<% $display %>">
-%     for my $type (qsearch( 'reason_type', { 'class' => $class } )){
+%     for my $type (@types)){
         <OPTION VALUE="<% $type->typenum %>" <% ($init_type == $type->typenum) ? 'SELECTED' : '' %>><% $type->type %></OPTION>
 %     }
     </SELECT>
   </TD>
 </TR>
+%   }
 
 <TR>
   <TD ALIGN="right">
@@ -94,6 +115,9 @@ if ($class eq 'C') {
 } elsif ($class eq 'S') {
   $access_right = 'Suspend customer package';
   $add_access_right = 'Add on-the-fly suspend reason';
+} elsif ($class eq 'S') {
+  $access_right = 'Post credit';
+  $add_access_right = 'Add on-the-fly credit reason';
 } else {
   die "illegal class: $class";
 }
@@ -113,7 +137,8 @@ if ($init_reason == -1 || ref($init_reason) ) {
 
 }
 
-my $extra_sql = "WHERE class = '$class' ORDER BY reason_type";
+my $extra_sql = "WHERE class = '$class' and (disabled = '' OR disabled is NULL) ".
+                "ORDER BY reason_type";
 my $curuser = $FS::CurrentUser::CurrentUser;
 
 </%init>

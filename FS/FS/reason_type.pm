@@ -6,6 +6,18 @@ use FS::Record qw( qsearch qsearchs );
 
 @ISA = qw(FS::Record);
 
+our %class_name = (  
+  'C' => 'cancel',
+  'R' => 'credit',
+  'S' => 'suspend',
+);
+
+our %class_purpose = (  
+  'C' => 'explain why we cancel a package',
+  'R' => 'explain why we credit a customer',
+  'S' => 'explain why we suspend a package',
+);
+
 =head1 NAME
 
 FS::reason_type - Object methods for reason_type records
@@ -34,7 +46,7 @@ inherits from FS::Record.  The following fields are currently supported:
 
 =item typenum - primary key
 
-=item class - currently 'C' or 'S' for cancel or suspend 
+=item class - currently 'C', 'R',  or 'S' for cancel, credit, or suspend 
 
 =item type - name of the type of reason
 
@@ -89,7 +101,7 @@ sub check {
 
   my $error = 
     $self->ut_numbern('typenum')
-    || $self->ut_enum('class', [ 'C', 'S' ] )
+    || $self->ut_enum('class', [ keys %class_name ] )
     || $self->ut_text('type')
   ;
   return $error if $error;
@@ -117,6 +129,70 @@ sub enabled_reasons {
   qsearch( 'reason', { 'reason_type' => shift->typenum,
                        'enabled'     => '',
 		     } );
+}
+
+# _populate_initial_data
+#
+# Used by FS::Setup to initialize a new database.
+#
+#
+
+sub _populate_initial_data {  # class method
+  my ($self, %opts) = @_;
+
+  my $conf = new FS::Conf;
+
+  foreach ( keys %class_name ) {
+    my $object  = $self->new( {'class' => $_,
+                               'type' => ucfirst($class_name{$_}). ' Reason',
+                            } );
+    my $error   = $object->insert();
+    die "error inserting $self into database: $error\n"
+      if $error;
+  }
+
+  my $object = qsearchs('reason_type', { 'class' => 'R' });
+  die "can't find credit reason type just inserted!\n"
+    unless $object;
+
+  foreach ( keys %FS::cust_credit::reasontype_map ) {
+#   my $object  = $self->new( {'class' => 'R',
+#                              'type' => $FS::cust_credit::reasontype_map{$_},
+#                           } );
+#   my $error   = $object->insert();
+#   die "error inserting $self into database: $error\n"
+#     if $error;
+#                                      # or clause for 1.7.x
+    $conf->set($_, $object->typenum)
+      or die "failed setting config";
+  }
+
+  '';
+
+}
+
+# _upgrade_data
+#
+# Used by FS::Upgrade to migrate to a new database.
+#
+#
+
+sub _upgrade_data {  # class method
+  my ($self, %opts) = @_;
+
+  foreach ( keys %class_name ) {
+    unless (scalar(qsearch('reason_type', { 'class' => $_ }))) {
+      my $object  = $self->new( {'class' => $_,
+                                 'type' => ucfirst($class_name{$_}),
+                              } );
+      my $error   = $object->insert();
+      die "error inserting $self into database: $error\n"
+        if $error;
+    }
+  }
+
+  '';
+
 }
 
 =back

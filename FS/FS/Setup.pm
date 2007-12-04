@@ -150,6 +150,9 @@ sub populate_initial_data {
     eval "use $class;";
     die $@ if $@;
 
+    $class->_populate_initial_data(%opt)
+      if $class->can('_populate_inital_data');
+
     my @records = @{ $data->{$table} };
 
     foreach my $record ( @records ) {
@@ -174,6 +177,9 @@ sub initial_data {
     'access_group' => [
       { 'groupname' => 'Superuser' },
     ],
+
+    #reason types
+    'reason_type' => [],
 
 #XXX need default new-style billing events
 #    #billing events

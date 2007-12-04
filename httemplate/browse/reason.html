@@ -38,14 +38,10 @@ die "access denied"
 $cgi->param('class') =~ /^(\w)$/ or die "illegal class";
 my $class = $1;
 
-my %classmap = ( 'C' => 'cancel',
-               'S' => 'suspend',
-             );
+my $classname = $FS::reason_type::class_name{$class};;
+my $classpurpose = $FS::reason_type::class_purpose{$class};;
 
-my $classname = $classmap{$class};
-
-my $html_init = ucfirst($classname) .
-" reasons explain why we $classname a package.<BR><BR>".
+my $html_init = ucfirst($classname).  " reasons $classpurpose.<BR><BR>".
 qq!<A HREF="${p}edit/reason.html?class=$class">!.
 "<I>Add a $classname reason</I></A><BR><BR>";
 

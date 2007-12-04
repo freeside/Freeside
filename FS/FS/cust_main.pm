@@ -4589,13 +4589,13 @@ otherwise returns false.
 =cut
 
 sub credit {
-  my( $self, $amount, $reason ) = @_;
+  my( $self, $amount, $reason, %options ) = @_;
   my $cust_credit = new FS::cust_credit {
     'custnum' => $self->custnum,
     'amount'  => $amount,
     'reason'  => $reason,
   };
-  $cust_credit->insert;
+  $cust_credit->insert(%options);
 }
 
 =item charge AMOUNT [ PKG [ COMMENT [ TAXCLASS ] ] ]

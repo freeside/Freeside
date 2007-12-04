@@ -451,7 +451,9 @@ sub new_customer {
     if ( $cust_main->balance > 0 ) {
 
       #this makes sense.  credit is "un-doing" the invoice
-      $cust_main->credit( $cust_main->balance, 'signup server decline' );
+      $cust_main->credit( $cust_main->balance, 'signup server decline',
+                          'reason_type' => $conf->config('signup_credit_type'),
+                        );
       $cust_main->apply_credits;
 
       #should check list for errors...

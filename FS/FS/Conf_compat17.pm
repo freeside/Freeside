@@ -2133,7 +2133,62 @@ httemplate/docs/config.html
     'type'        => 'checkbox',
   },
 
-  
+  {
+    'key'         => 'cancel_credit_type',
+    'section'     => 'billing',
+    'description' => 'The group to use for new, automatically generated credit reasons resulting from cancellation.',
+    'type'        => 'select-sub',
+    'options_sub' => sub { require FS::Record;
+                           require FS::reason_type;
+                           map { $_->typenum => $_->type }
+                               FS::Record::qsearch('reason_type', { class=>'R' } );
+                         },
+    'option_sub'  => sub { require FS::Record;
+                           require FS::reason_type;
+                           my $reason_type = FS::Record::qsearchs(
+                             'reason_type', { 'typenum' => shift }
+                           );
+                           $reason_type ? $reason_type->type : '';
+                         },
+  },
+
+  {
+    'key'         => 'referral_credit_type',
+    'section'     => 'billing',
+    'description' => 'The group to use for new, automatically generated credit reasons resulting from referrals.',
+    'type'        => 'select-sub',
+    'options_sub' => sub { require FS::Record;
+                           require FS::reason_type;
+                           map { $_->typenum => $_->type }
+                               FS::Record::qsearch('reason_type', { class=>'R' } );
+                         },
+    'option_sub'  => sub { require FS::Record;
+                           require FS::reason_type;
+                           my $reason_type = FS::Record::qsearchs(
+                             'reason_type', { 'typenum' => shift }
+                           );
+                           $reason_type ? $reason_type->type : '';
+                         },
+  },
+
+  {
+    'key'         => 'signup_credit_type',
+    'section'     => 'billing',
+    'description' => 'The group to use for new, automatically generated credit reasons resulting from signup and self-service declines.',
+    'type'        => 'select-sub',
+    'options_sub' => sub { require FS::Record;
+                           require FS::reason_type;
+                           map { $_->typenum => $_->type }
+                               FS::Record::qsearch('reason_type', { class=>'R' } );
+                         },
+    'option_sub'  => sub { require FS::Record;
+                           require FS::reason_type;
+                           my $reason_type = FS::Record::qsearchs(
+                             'reason_type', { 'typenum' => shift }
+                           );
+                           $reason_type ? $reason_type->type : '';
+                         },
+  },
 
 );
 

@@ -5,7 +5,7 @@
   <BR><BR>
 % } 
 
-<FORM ACTION="<% $p1 %>process/cust_credit.cgi" METHOD=POST>
+<FORM NAME="credit_popup" ACTION="<% $p1 %>process/cust_credit.cgi" METHOD=POST>
 <INPUT TYPE="hidden" NAME="crednum" VALUE="">
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
 <INPUT TYPE="hidden" NAME="paybatch" VALUE="">
@@ -30,10 +30,7 @@ Credit
 %#print qq! <INPUT TYPE="checkbox" NAME="refund" VALUE="$refund">Also post refund!;
 %
 
-  <TR>
-    <TD ALIGN="right">Reason</TD>
-    <TD BGCOLOR="#ffffff"><INPUT TYPE="text" NAME="reason" VALUE="<% $reason %>" SIZE=32></TD>
-  </TR>
+<% include('/elements/tr-select-reason.html', 'reasonnum', 'R', '', '', '', 'document.credit_popup.submit',) %>
 
   <TR>
     <TD ALIGN="right">Auto-apply<BR>to invoices</TD>
