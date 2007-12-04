@@ -16,6 +16,7 @@
                                      'Susp.',
                                      'Expire',
                                      'Cancel',
+                                     'Reason',
                                      FS::UI::Web::cust_header(
                                        $cgi->param('cust_fields')
                                      ),
@@ -45,6 +46,17 @@
                     #sub { time2str('%b %d %Y', shift->get('cancel')); },
                     ( map { time_or_blank($_) }
                           qw( setup last_bill bill adjourn susp expire cancel ) ),
+
+                    sub { my $self = shift;
+                          my $return = '';
+                          if ($self->getfield('cancel') ||
+                            $self->getfield('suspend')) {
+                              my $reason = $self->last_reason;# too inefficient?
+                              $return = $reason->reason if $reason;
+
+                          }
+                          $return;
+                        },
 
                     \&FS::UI::Web::cust_fields,
                     #sub { '<table border=0 cellspacing=0 cellpadding=0 STYLE="border:none">'.
