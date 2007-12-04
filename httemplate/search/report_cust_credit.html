@@ -4,18 +4,12 @@
 <INPUT TYPE="hidden" NAME="magic" VALUE="_date">
 
 <TABLE>
-  <TR>
-    <TD ALIGN="right">Credits by employee: </TD>
 
-    <TD>
-      <SELECT NAME="otaker">
-        <OPTION VALUE="">all</OPTION>
-%       foreach my $otaker ( @otakers ) { 
-          <OPTION VALUE="<% $otaker %>"><% $otaker %></OPTION>
-%       } 
-      </SELECT>
-    </TD>
-  </TR>
+  <% include( '/elements/tr-select-otaker.html',
+                'label'   => 'Credits by employee: ',
+                'otakers' => \@otakers,
+            )
+  %>
 
   <% include( '/elements/tr-select-agent.html',
                  'curr_value' => scalar( $cgi->param('agentnum') ),

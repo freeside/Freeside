@@ -45,7 +45,7 @@ Example:
     #required unless 'query' is an SQL query string (shouldn't be...)
     'count_query' => 'SELECT COUNT(*) FROM tablename',
    
-    'count_addl' => [], #additional count fields listref of sprintf strings
+    'count_addl' => [], #additional count fields listref of sprintf strings or coderefs
                         # [ $money_char.'%.2f total paid', ],
    
     #listref of column labels, <TH>
@@ -313,8 +313,14 @@ Example:
                 <BR>
 
 %               if ( $opt{'count_addl'} ) { 
-%                 my $n=0; foreach my $count ( @{$opt{'count_addl'}} ) { 
-                    <% sprintf( $count, $count_arrayref->[++$n] ) %><BR>
+%                 my $n=0;
+%                 foreach my $count ( @{$opt{'count_addl'}} ) { 
+%                   my $data = $count_arrayref->[++$n];
+%                   if ( ref($count) ) {
+                      <% &{ $count }( $data ) %>
+%                   } else {
+                      <% sprintf( $count, $data ) %><BR>
+%                   }
 %                 } 
 %               } 
               </FORM>

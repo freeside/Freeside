@@ -1,0 +1,22 @@
+<% include('/elements/header.html', 'Time worked report criteria' ) %>
+
+<FORM ACTION="rt_transaction.html" METHOD="GET">
+
+<TABLE>
+
+  <% include ( '/elements/tr-input-beginning_ending.html' ) %>
+
+  <% include ( '/elements/tr-select-otaker.html' ) %>
+
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="Search">
+
+<% include('/elements/footer.html') %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('List rating data');
+
+</%init>
