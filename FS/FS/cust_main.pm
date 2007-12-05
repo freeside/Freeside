@@ -5881,7 +5881,7 @@ sub notify {
   $FS::notify_template::_template::company_address =
     join("\n", $conf->config('company_address') ). "\n";
 
-  my $paydate = $customer->paydate;
+  my $paydate = $customer->paydate || '2037-12-31';
   $FS::notify_template::_template::first = $customer->first;
   $FS::notify_template::_template::last = $customer->last;
   $FS::notify_template::_template::company = $customer->company;
@@ -5956,8 +5956,8 @@ sub generate_letter {
   my %letter_data = map { $_ => $self->$_ } $self->fields;
   $letter_data{payinfo} = $self->mask_payinfo;
 
-  #my $paydate = $self->paydate || '2037-12';
-  my $paydate = $self->paydate =~ /^\S+$/ ? $self->paydate : '2037-12';
+  #my $paydate = $self->paydate || '2037-12-31';
+  my $paydate = $self->paydate =~ /^\S+$/ ? $self->paydate : '2037-12-31';
 
   my $payby = $self->payby;
   my ($payyear,$paymonth,$payday) = split (/-/,$paydate);
