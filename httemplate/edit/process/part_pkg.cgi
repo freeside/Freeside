@@ -38,8 +38,8 @@
 %}
 %$error = "At least one agent type must be specified."
 %  unless( scalar(@agents) ||
-%          $cgi->param('clone') && $cgi->param('clone') ~= /^\d+$/ ||
-%          !pkgpart && $conf->exists('agent-defaultpkg')
+%          $cgi->param('clone') && $cgi->param('clone') =~ /^\d+$/ ||
+%          !$pkgpart && $conf->exists('agent-defaultpkg')
 %        );
 %
 %my $new = new FS::part_pkg ( {
