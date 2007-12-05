@@ -36,11 +36,6 @@
   <TD ALIGN="right">Reason</TD>
   <TD>
     <SELECT id="<% $id %>" name="<% $name %>" onFocus="sh_add<% $func_suffix %>()" onChange="sh_add<% $func_suffix %>()">
-%    my @reasons = qsearch( { table =>'reason', 
-%                             hashref => {},
-%                             extra_sql => $extra_sql,
-%                             addl_from => 'LEFT JOIN reason_type ON reason_type.typenum = reason.reason_type',
-%			     });
       <OPTION VALUE="" <% ($init_reason eq "") ? 'SELECTED' : '' %>>Select Reason...</OPTION>
 %    foreach my $reason (@reasons) {
       <OPTION VALUE="<% $reason->reasonnum %>" <% ($init_reason == $reason->reasonnum) ? 'SELECTED' : '' %>><% $reason->reasontype->type %> : <% $reason->reason %></OPTION>
@@ -53,7 +48,7 @@
   </TD>
 </TR>
 
-%     my @types = qsearch( 'reason_type', { 'class' => $class } );
+%   my @types = qsearch( 'reason_type', { 'class' => $class } );
 %   if (scalar(@types) < 1) {  # we should never reach this
 <TR>
   <TD ALIGN="right">
@@ -79,7 +74,7 @@
   </TD>
   <TD>
     <SELECT id="new<% $id %>T" name="new<% $name %>T" "<% $disabled %>" style="display:<% $display %>">
-%     for my $type (@types)){
+%     for my $type (@types) {
         <OPTION VALUE="<% $type->typenum %>" <% ($init_type == $type->typenum) ? 'SELECTED' : '' %>><% $type->type %></OPTION>
 %     }
     </SELECT>
@@ -137,8 +132,18 @@ if ($init_reason == -1 || ref($init_reason) ) {
 
 }
 
-my $extra_sql = "WHERE class = '$class' and (disabled = '' OR disabled is NULL) ".
-                "ORDER BY reason_type";
+my $extra_sql =
+  "WHERE class = '$class' and (disabled = '' OR disabled is NULL)";
+
+my @reasons = qsearch({
+  table     => 'reason', 
+  hashref   => {},
+  extra_sql => $extra_sql,
+  addl_from => 'LEFT JOIN reason_type '.
+               ' ON reason_type.typenum = reason.reason_type',
+  order_by  => 'reason_type.type ASC, reason.reason ASC',
+});
+
 my $curuser = $FS::CurrentUser::CurrentUser;
 
 </%init>
