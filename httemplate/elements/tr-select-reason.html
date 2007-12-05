@@ -141,7 +141,7 @@ my @reasons = qsearch({
   extra_sql => $extra_sql,
   addl_from => 'LEFT JOIN reason_type '.
                ' ON reason_type.typenum = reason.reason_type',
-  order_by  => 'reason_type.type ASC, reason.reason ASC',
+  order_by  => 'ORDER BY reason_type.type ASC, reason.reason ASC',
 });
 
 my $curuser = $FS::CurrentUser::CurrentUser;
