@@ -237,6 +237,7 @@ install-apache:
 	  ) || true
 
 install-selfservice:
+	[ -e ~freeside ] || cp -pr /etc/skel ~freeside && chown -R freeside ~freeside
 	[ -e ~freeside/.ssh/id_dsa.pub ] || su - freeside -c 'ssh-keygen -t dsa'
 	for MACHINE in ${SELFSERVICE_MACHINES}; do \
 	  scp -r fs_selfservice/FS-SelfService ${SELFSERVICE_INSTALL_USER}@$$MACHINE:. ;\
