@@ -69,7 +69,6 @@ Tax information
     </TD>
   </TR>
 
-% my $conf = new FS::Conf; 
 % if ( $conf->exists('enable_taxclasses') ) { 
 
   <TR>
@@ -106,9 +105,13 @@ Line-item revenue recognition
 
 </TD><TD VALIGN="top">
 
-% if ( $cgi->param('clone') || $conf->exists('agent_defaultpkg') ) {
+% if ( $cgi->param('clone') ) {
 
     <INPUT TYPE="hidden" NAME="agent_type" VALUE="">
+
+% } elsif ( scalar(@all_agent_types) == 1) {
+
+    <INPUT TYPE="hidden" NAME="agent_type" VALUE="<% $all_agent_types[0] %>">
 
 % } else {
 
@@ -369,8 +372,10 @@ if ( $cgi->param('pkgnum') && $cgi->param('pkgnum') =~ /^(\d+)$/ ) {
 
 my ($query) = $cgi->keywords;
 
+my $conf = new FS::Conf; 
 my $part_pkg = '';
 my @agent_type = ();
+my @all_agent_types = map {$_->typenum} qsearch('agent_type',{});
 if ( $cgi->param('error') ) {
   $part_pkg = new FS::part_pkg ( {
     map { $_, scalar($cgi->param($_)) } fields('part_pkg')
@@ -397,6 +402,8 @@ if ( $cgi->param('clone') ) {
   unless ( $part_pkg ) {
     $part_pkg = new FS::part_pkg {};
     $part_pkg->plan('flat');
+    @agent_type = @all_agent_types if $conf->exists('agent_defaultpkg');
+      
   }
 }
 unless ( $part_pkg->plan ) { #backwards-compat
