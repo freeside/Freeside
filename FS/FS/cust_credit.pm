@@ -410,15 +410,15 @@ sub reason {
 #
 
 sub _upgrade_data {  # class method
-  my ($self, %opts) = @_;
+  my ($class, %opts) = @_;
 
-  warn "$me upgrading $self\n" if $DEBUG;
+  warn "$me upgrading $class\n" if $DEBUG;
 
-  if (defined dbdef->table($self->table)->column('reason')) {
+  if (defined dbdef->table($class->table)->column('reason')) {
 
     warn "$me Checking for unmigrated reasons\n" if $DEBUG;
 
-    my @cust_credits = qsearch({ 'table' => $self->table,
+    my @cust_credits = qsearch({ 'table' => $class->table,
                                  'hashref' => {},
                                  'extrasql' => 'WHERE reason IS NOT NULL',
                               });
@@ -430,7 +430,7 @@ sub _upgrade_data {  # class method
       unless ($reason_type) {
         $reason_type  = new FS::reason_type( $hashref );
         my $error   = $reason_type->insert();
-        die "$self had error inserting FS::reason_type into database: $error\n"
+        die "$class had error inserting FS::reason_type into database: $error\n"
           if $error;
       }
 
@@ -458,8 +458,8 @@ sub _upgrade_data {  # class method
         $cust_credit->setfield('reason', '');
         my $error = $cust_credit->replace;
 
-        warn "*** WARNING: error replacing reason in $self ".
-             $self->crednum. ": $error ***\n"
+        warn "*** WARNING: error replacing reason in $class ".
+             $cust_credit->crednum. ": $error ***\n"
           if $error;
       }
     }
@@ -475,7 +475,7 @@ sub _upgrade_data {  # class method
         unless ($reason_type) {
           $reason_type  = new FS::reason_type( $hashref );
           my $error   = $reason_type->insert();
-          die "$self had error inserting FS::reason_type into database: $error\n"
+          die "$class had error inserting FS::reason_type into database: $error\n"
             if $error;
         }
                                             # or clause for 1.7.x
@@ -490,7 +490,7 @@ sub _upgrade_data {  # class method
     unless ($reason_type) {
       $reason_type  = new FS::reason_type( $hashref );
       my $error   = $reason_type->insert();
-      die "$self had error inserting FS::reason_type into database: $error\n"
+      die "$class had error inserting FS::reason_type into database: $error\n"
         if $error;
     }
 
