@@ -458,7 +458,8 @@ sub _upgrade_data {  # class method
         $cust_credit->setfield('reason', '');
         my $error = $cust_credit->replace;
 
-        die "error inserting $self into database: $error\n"
+        warn "*** WARNING: error replacing reason in $self ".
+             $self->crednum. ": $error ***\n"
           if $error;
       }
     }
