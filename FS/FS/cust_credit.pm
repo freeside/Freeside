@@ -280,7 +280,7 @@ sub check {
 
   $self->_date(time) unless $self->_date;
 
-  $self->otaker(getotaker);
+  $self->otaker(getotaker) unless ($self->otaker);
 
   $self->SUPER::check;
 }
@@ -388,6 +388,7 @@ sub reason {
     if (!$reason && $typenum) {
       $reason = new FS::reason( { 'reason_type' => $typenum,
                                   'reason' => $value,
+                                  'disabled' => 'Y', 
                               } );
       $reason->insert and $reason = undef;
     }
@@ -439,6 +440,7 @@ sub _upgrade_data {  # class method
                  };
       my $noreason = qsearchs( 'reason', $hashref );
       unless ($noreason) {
+        $hashref->{'disabled'} = 'Y';
         $noreason = new FS::reason( $hashref );
         my $error  = $noreason->insert();
         die "can't insert legacy reason '(none)' into database: $error\n"

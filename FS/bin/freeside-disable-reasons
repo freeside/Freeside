@@ -1,0 +1,64 @@
+#!/usr/bin/perl -w
+
+use strict;
+use vars qw($opt_t $opt_e);
+use Getopt::Std;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch qsearchs);
+use FS::reason_type;
+use FS::reason;
+
+getopts('t:e');
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+die &usage
+  unless ($opt_t);
+
+$FS::Record::nowarn_identical = 1;
+
+my @reason = ();
+if ( $opt_t ) {
+  $opt_t =~ /^(\d+)$/ or die "invalid reason_type";
+  @reason = qsearch('reason', { reason_type => $1 } );
+  die "no reasons found\n" unless @reason;
+} else {
+  die "no reason_type specified\n";
+}
+
+foreach my $reason ( @reason ) {
+  if ( $opt_e ) {
+    $reason->disabled('');
+  }else{
+    $reason->disabled('Y');
+  }
+  my $error = $reason->replace
+    if $reason->modified;     
+  die $error if $error;
+}
+
+
+sub usage {
+  die "Usage:\n\n  freeside-disable-reasons -t reason_type [ -e ] user\n";
+}
+
+=head1 NAME
+
+freeside-disable-reasons - Command line tool to set the disabled column for reasons
+
+=head1 SYNOPSIS
+
+  freeside-disable-reasons -t reason_type [ -e ] user
+
+=head1 DESCRIPTION
+
+  Disables the reasons of the specified reason type.
+  Enables instead if -e is specified.
+
+=head1 SEE ALSO
+
+L<FS::reason>, L<FS::reason_type>
+
+=cut
+
