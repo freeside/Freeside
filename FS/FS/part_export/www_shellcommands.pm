@@ -18,6 +18,12 @@ tie my %options, 'Tie::IxHash',
   'usermod'  => { label=>'Modify command',
                   default=>'[ -n "$old_zone" ] && rm /var/www/$old_zone; [ "$old_zone" != "$new_zone" -a -n "$new_zone" ] && ( mv $old_homedir/$old_zone $new_homedir/$new_zone; ln -sf $new_homedir/$new_zone /var/www/$new_zone ); [ "$old_username" != "$new_username" ] && chown -R $new_username $new_homedir/$new_zone; ln -sf $new_homedir/$new_zone /var/www/$new_zone',
                 },
+  'suspend'  => { label=>'Suspension command',
+                  default=>'[ -n "$zone" ] && chmod 0 /var/www/$zone',
+                },
+  'unsuspend'=> { label=>'Unsuspension command',
+                  default=>'[ -n "$zone" ] && chmod 755 /var/www/$zone',
+                },
 ;
 
 %info = (
@@ -35,6 +41,8 @@ Run remote commands via SSH, for virtual web sites.  You will need to
       this.form.useradd.value = "mkdir $homedir/$zone; chown $username $homedir/$zone; ln -s $homedir/$zone /var/www/$zone";
       this.form.userdel.value = "[ -n \"$zone\" ] && rm -rf /var/www/$zone; rm -rf $homedir/$zone";
       this.form.usermod.value = "[ -n \"$old_zone\" ] && rm /var/www/$old_zone; [ \"$old_zone\" != \"$new_zone\" -a -n \"$new_zone\" ] && ( mv $old_homedir/$old_zone $new_homedir/$new_zone; ln -sf $new_homedir/$new_zone /var/www/$new_zone ); [ \"$old_username\" != \"$new_username\" ] && chown -R $new_username $new_homedir/$new_zone; ln -sf $new_homedir/$new_zone /var/www/$new_zone";
+      this.form.suspend.value = "[ -n \"$zone\" ] && chmod 0 /var/www/$zone";
+      this.form.unsuspend.value = "[ -n \"$zone\" ] && chmod 755 /var/www/$zone";
     '>
   <LI>
     <INPUT TYPE="button" VALUE="FrontPage extensions" onClick='
@@ -42,6 +50,8 @@ Run remote commands via SSH, for virtual web sites.  You will need to
       this.form.useradd.value = "/usr/local/frontpage/version5.0/bin/owsadm.exe -o install -p 80 -m $zone -xu $username -xg www-data -s /etc/apache/httpd.conf -u $username -pw $_password";
       this.form.userdel.value = "/usr/local/frontpage/version5.0/bin/owsadm.exe -o uninstall -p 80 -m $zone -s /etc/apache/httpd.conf";
       this.form.usermod.value = "";
+      this.form.suspend.value = "";
+      this.form.unsuspend.value = "";
     '>
   <LI>
     <INPUT TYPE="button" VALUE="ISPMan CLI" onClick='
@@ -49,6 +59,8 @@ Run remote commands via SSH, for virtual web sites.  You will need to
       this.form.useradd.value = "/usr/local/ispman/bin/ispman.addvhost -d $domain $bare_zone";
       this.form.userdel.value = "/usr/local/ispman/bin/ispman.deletevhost -d $domain $bare_zone";
       this.form.usermod.value = "";
+      this.form.suspend.value = "";
+      this.form.unsuspend.value = "";
     '></UL>
 The following variables are available for interpolation (prefixed with
 <code>new_</code> or <code>old_</code> for replace operations):
@@ -76,6 +88,16 @@ sub _export_insert {
 sub _export_delete {
   my($self) = shift;
   $self->_export_command('userdel', @_);
+}
+
+sub _export_suspend {
+  my($self) = shift;
+  $self->_export_command('suspend', @_);
+}
+
+sub _export_unsuspend {
+  my($self) = shift;
+  $self->_export_command('unsuspend', @_);
 }
 
 sub _export_command {
