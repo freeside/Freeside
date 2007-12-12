@@ -15,6 +15,9 @@
   <TD ALIGN="right">Username</TD>
   <TD><INPUT TYPE="text" NAME="username" VALUE="<%= $username %>"></TD>
 </TR>
+<%=
+   $OUT .= domainselector(pkgnum=>$pkgnum, svcpart=>$svcpart);
+%>
 <TR>
   <TD ALIGN="right">Password</TD>
   <TD><INPUT TYPE="password" NAME="_password" VALUE="<%= $_password %>"></TD>

@@ -51,13 +51,14 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'unprovision_svc'           => 'MyAccount/unprovision_svc',
   'myaccount_passwd'          => 'MyAccount/myaccount_passwd',
   'signup_info'               => 'Signup/signup_info',
+  'domain_select_hash'        => 'Signup/domain_select_hash',  # expose?
   'new_customer'              => 'Signup/new_customer',
   'agent_login'               => 'Agent/agent_login',
   'agent_logout'              => 'Agent/agent_logout',
   'agent_info'                => 'Agent/agent_info',
   'agent_list_customers'      => 'Agent/agent_list_customers',
 );
-@EXPORT_OK = ( keys(%autoload), qw( regionselector expselect popselector ) );
+@EXPORT_OK = ( keys(%autoload), qw( regionselector expselect popselector domainselector) );
 
 $ENV{'PATH'} ='/usr/bin:/usr/ucb:/bin';
 $ENV{'SHELL'} = '/bin/sh';
@@ -1238,6 +1239,66 @@ END
   }
 
   $text .= qq!</SELECT></TD></TR></TABLE>!;
+
+  $text;
+
+}
+
+=item domainselector HASHREF | LIST
+
+Takes as input a hashref or list of key/value pairs with the following keys:
+
+=over 4
+
+=item pkgnum
+
+Package number
+
+=item domsvc
+
+Service number of the selected item.
+
+=back
+
+Returns an HTML fragment for domain selection.
+
+=cut
+
+sub domainselector {
+  my $param;
+  if ( ref($_[0]) ) {
+    $param = shift;
+  } else {
+    $param = { @_ };
+  }
+  my $domsvc= $param->{'domsvc'};
+  my $rv = 
+      domain_select_hash(map {$_ => $param->{$_}} qw(pkgnum svcpart pkgpart) );
+  my $domains = $rv->{'domains'};
+  $domsvc = $rv->{'domsvc'} unless $domsvc;
+
+  return '<INPUT TYPE="hidden" NAME="domsvc" VALUE="">'
+    unless scalar(keys %$domains);
+    
+  if (scalar(keys %$domains) == 1) {
+    my $key;
+    foreach(keys %$domains) {
+      $key = $_;
+    }
+    return '<TR><TD ALIGN="right">Domain</TD><TD>'. $domains->{$key}.
+           '<INPUT TYPE="hidden" NAME="domsvc" VALUE="'. $key. '"></TD></TR>'
+  }
+
+  my $text .= qq!<TR><TD ALIGN="right">Domain</TD><TD><SELECT NAME="domsvc" SIZE=1 STYLE="width: 20em"><OPTION>(Choose Domain)!;
+
+
+  foreach my $domain ( sort { $domains->{$a} cmp $domains->{$b} } keys %$domains ) {
+    $text .= qq!<OPTION VALUE="!. $domain. '"'.
+             ( ( $domsvc && $domain == $domsvc ) ? ' SELECTED' : '' ). ">".
+             $domains->{$domain};
+  }
+
+  $text .= qq!</SELECT></TD></TR>!;
 
   $text;
 

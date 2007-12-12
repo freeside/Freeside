@@ -212,38 +212,11 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
 %    }
 %  }
 %
-%  if ( $part_svc->part_svc_column('domsvc')->columnflag eq 'D' ) {
-%    my $svc_domain = qsearchs('svc_domain', {
-%      'svcnum' => $part_svc->part_svc_column('domsvc')->columnvalue,
-%    } );
-%    if ( $svc_domain ) {
-%      $svc_domain{$svc_domain->svcnum} = $svc_domain;
-%    } else {
-%      warn "unknown svc_domain.svcnum for part_svc_column domsvc: ".
-%           $part_svc->part_svc_column('domsvc')->columnvalue;
-%    }
-%  }
-%
-%  if ( $part_svc->part_svc_column('domsvc')->columnflag eq 'S' ) {
-%    foreach my $domain
-%              (split(',',$part_svc->part_svc_column('domsvc')->columnvalue)) {
-%      my $svc_domain =
-%        qsearchs('svc_domain', { 'svcnum' => $domain } );
-%     $svc_domain{$svc_domain->svcnum} = $svc_domain if $svc_domain;
-%    }
-%  }elsif ($cust_pkg && !$conf->exists('svc_acct-alldomains') ) {
-%    my @cust_svc =
-%      map { qsearch('cust_svc', { 'pkgnum' => $_->pkgnum } ) }
-%          qsearch('cust_pkg', { 'custnum' => $cust_pkg->custnum } );
-%    foreach my $cust_svc ( @cust_svc ) {
-%      my $svc_domain =
-%        qsearchs('svc_domain', { 'svcnum' => $cust_svc->svcnum } );
-%     $svc_domain{$svc_domain->svcnum} = $svc_domain if $svc_domain;
-%    }
-%  } else {
-%    %svc_domain = map { $_->svcnum => $_ } qsearch('svc_domain', {} );
-%  }
-%
+%  %svc_domain = (%svc_domain,
+%                 domain_select_hash FS::svc_acct('svcpart' => $svcpart,
+%                                                 'pkgnum'  => $pkgnum,
+%                                                )
+%                );
 %
 
 
@@ -252,14 +225,14 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
     <TD>
       <SELECT NAME="domsvc" SIZE=1>
 % foreach my $svcnum (
-%             sort { $svc_domain{$a}->domain cmp $svc_domain{$b}->domain }
+%             sort { $svc_domain{$a} cmp $svc_domain{$b} }
 %                  keys %svc_domain
 %           ) {
 %             my $svc_domain = $svc_domain{$svcnum};
 %        
 
 
-             <OPTION VALUE="<% $svc_domain->svcnum %>" <% $svc_domain->svcnum == $domsvc ? ' SELECTED' : '' %>><% $svc_domain->domain %>
+             <OPTION VALUE="<% $svcnum %>" <% $svcnum == $domsvc ? ' SELECTED' : '' %>><% $svc_domain{$svcnum} %>
 % } 
 
       </SELECT>

@@ -14,7 +14,7 @@ use FS::SelfService qw( login customer_info invoice
                         process_prepay
                         list_pkgs order_pkg signup_info order_recharge
                         part_svc_info provision_acct provision_external
-                        unprovision_svc change_pkg
+                        unprovision_svc change_pkg domainselector
                         list_svcs list_svc_usage list_support_usage
                         myaccount_passwd
                       );
@@ -439,7 +439,7 @@ sub process_svc_acct {
   my $result = provision_acct (
     'session_id' => $session_id,
     map { $_ => $cgi->param($_) } qw(
-      pkgnum svcpart username _password _password2 sec_phrase popnum )
+      pkgnum svcpart username domsvc _password _password2 sec_phrase popnum )
   );
 
   if ( exists $result->{'error'} && $result->{'error'} ) { 
@@ -563,7 +563,7 @@ package FS::SelfService::_selfservicecgi;
 
 #use FS::SelfService qw(regionselector expselect popselector);
 use HTML::Entities;
-use FS::SelfService qw(popselector);
+use FS::SelfService qw(popselector domainselector);
 
 #false laziness w/agent.cgi
 sub include {

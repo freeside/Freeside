@@ -1033,10 +1033,17 @@ sub provision_acct {
     if $p->{'_password'} ne $p->{'_password2'};
   return { 'error' => gettext('empty_password') }
     unless length($p->{'_password'});
+ 
+  if ($p->{'domsvc'}) {
+    my %domains = domain_select_hash FS::svc_acct(map { $_ => $p->{$_} }
+                                                  qw ( svcpart pkgnum ) );
+    return { 'error' => gettext('invalid_domain') }
+      unless ($domains{$p->{'domsvc'}});
+  }
 
   _provision( 'FS::svc_acct',
-              [qw(username _password)],
-              [qw(username _password)],
+              [qw(username _password domsvc)],
+              [qw(username _password domsvc)],
               $p,
               @_
             );

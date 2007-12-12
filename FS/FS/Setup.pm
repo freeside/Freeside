@@ -504,6 +504,10 @@ sub msgcat_messages {
       'en_US' => 'Driver\'s License State',
     },
 
+    'invalid_domain' => {
+      'en_US' => 'Invalid domain',
+    },
+
   );
 }
 

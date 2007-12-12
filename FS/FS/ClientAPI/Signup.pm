@@ -287,6 +287,32 @@ sub signup_info {
 
 }
 
+sub domain_select_hash {
+  my $packet = shift;
+
+  my $response = {};
+
+  if ($packet->{pkgpart}) {
+    my $part_pkg = qsearchs('part_pkg' => { 'pkgpart' => $packet->{pkgpart} } );
+    #$packet->{svcpart} = $part_pkg->svcpart('svc_acct')
+    $packet->{svcpart} = $part_pkg->svcpart
+      if $part_pkg;
+  }
+
+  if ($packet->{svcpart}) {
+    my $part_svc = qsearchs('part_svc' => { 'svcpart' => $packet->{svcpart} } );
+    $response->{'domsvc'} = $part_svc->part_svc_column('domsvc')->columnvalue
+      if ($part_svc && $part_svc->part_svc_column('domsvc')->columnflag  eq 'D');
+  }
+
+  $response->{'domains'}
+    = { domain_select_hash FS::svc_acct( map { $_ => $packet->{$_} }
+                                                 qw(svcpart pkgnum)
+                                       ) };
+
+  $response;
+}
+
 sub new_customer {
   my $packet = shift;
 
