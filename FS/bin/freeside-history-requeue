@@ -1,0 +1,100 @@
+#!/usr/bin/perl -w
+
+use strict;
+use vars qw($opt_j $opt_d);
+use Getopt::Std;
+use Date::Parse;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch qsearchs);
+use FS::queue;
+
+getopts('j:d');
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+my $start = shift or die &usage;
+my $end   = shift or die &usage;
+
+$start = str2time($start) unless $start =~ /^(\d+)$/;
+$end   = str2time($end)   unless $end   =~ /^(\d+)$/;
+
+my $extra_sql = "AND history_date >= $start AND history_date <= $end";
+
+my $hashref = { 'history_action' => 'insert' };
+
+$hashref->{'job'} = $opt_j if $opt_j;
+
+my @h_queue = qsearch({
+  'table'     => 'h_queue',
+  'hashref'   => $hashref,
+  'extra_sql' => $extra_sql,
+});
+
+my $num = 0;
+
+foreach my $h_queue (@h_queue) {
+
+  my @queue_args = qsearch({
+    'table'     => 'h_queue_arg',
+    'hashref'   => { 'history_action' => 'insert',
+                     'jobnum'         => $h_queue->jobnum,
+                   },
+    'order_by'  => 'argnum',
+  });
+
+  my @args = map {
+    my $arg = $_->arg;
+    $arg =~ s/^db\.suicidegirls\.com$/sg-account/;
+    $arg;
+  } @queue_args;
+
+  my $queue = new FS::queue {
+    map { $_ => $h_queue->$_() }
+        qw( job _date status statustext svcnum )
+  };
+
+  if ( $opt_d ) { #dry run
+    print "requeueing job: ". join(' ', @args). "\n";
+    my $error = $queue->check;
+    die "error requeueing job ". $h_queue->jobnum. ": $error" if $error;
+  } else {
+    print "requeueing job: ". join(' ', @args). "\n";
+    my $error = $queue->insert(@args);
+    #warn "error requeueing job ". $h_queue->jobnum. ": $error\n" if $error;
+    print "error requeueing job ". $h_queue->jobnum. ": $error\n" if $error;
+  }
+
+  $num++;
+
+}
+
+print "requeued $num jobs\n";
+
+sub usage {
+  die "Usage:\n\n  freeside-history-requeue user start_timestamp end_timestamp\n";
+}
+
+=head1 NAME
+
+freeside-history-requeue - Command line tool to re-trigger export jobs for existing services
+
+=head1 SYNOPSIS
+
+  freeside-history-requeue [ -j job ] [ -d ] user start_timestamp end_timestamp
+
+=head1 DESCRIPTION
+
+  Re-queues all queued jobs for the specified time period.
+
+  -j: specifies that only jobs with this job string are re-queued.
+
+  -d: dry run
+
+=head1 SEE ALSO
+
+L<freeside-reexport>, L<freeside-sqlradius-reset>, L<FS::part_export>
+
+=cut
+
+1;
