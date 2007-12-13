@@ -1,0 +1,88 @@
+#!/usr/bin/perl -w
+
+use strict;
+use vars qw($opt_d);
+use Getopt::Std;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch qsearchs);
+use FS::cust_credit;
+use FS::h_cust_credit;
+
+getopts('d:');
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+die &usage
+  unless ($opt_d);
+
+$FS::Record::nowarn_identical = 1;
+
+if ( $opt_d ) {
+  $opt_d =~ /^(\d+)$/ or die "invalid date";
+} else {
+  die "no date specified\n";
+}
+
+my @cust_credit = qsearch('cust_credit', { otaker => $user } );
+die "no credits found\n" unless @cust_credit;
+
+my $cust_credit = new FS::cust_credit;
+my @fields = grep { $_ !~ /^otaker|reason|reasonnum$/ } $cust_credit->fields;
+
+foreach my $cust_credit ( @cust_credit ) {
+  my %hash = $cust_credit->hash;
+  foreach (qw(otaker reason reasonnum)) {
+    delete $hash{$_};
+  }
+  $hash{'history_action'} = 'replace_old';
+  my $h_cust_credit =
+    qsearchs({ 'table'     => 'h_cust_credit',
+               'hashref'   => \%hash,
+               'select'    => '*',
+               'extra_sql' =>  " AND history_date <= $opt_d",
+               'order_by'  =>  'ORDER BY history_date DESC LIMIT 1',
+            });
+  if ($h_cust_credit) {
+    $cust_credit->otaker($h_cust_credit->otaker);
+    my $reason = $h_cust_credit->getfield('reason');
+    if ($reason =~ /^\s*$/) {
+      $reason = '(none)';
+    }
+    $cust_credit->otaker($h_cust_credit->otaker);
+    $cust_credit->reason($reason);
+    my $error = $cust_credit->replace
+      if $cust_credit->modified;     
+    die "error replacing cust_credit: $error\n"
+      if $error;
+  }else{
+    warn "Skipping credit.crednum ". $cust_credit->crednum;
+  }
+}
+
+sub usage {
+  die "Usage:\n\n  reset-cust_credit-otaker -d epoch_date user\n";
+}
+
+=head1 NAME
+
+reset-cust_credit-otaker - Command line tool to reset the otaker column for cust_credits to a previous value 
+
+=head1 SYNOPSIS
+
+  reset-cust_credit-otaker -d epoch_date user
+
+=head1 DESCRIPTION
+
+  Sets the otaker column of the cust_credit records specified by user and
+  datespec to the value just prior to datespec.  
+
+  The reasonnum of the cust_credit record is also set to reason record
+  which matches the reason specified in the history.
+
+=head1 SEE ALSO
+
+L<FS::cust_credit>, L<FS::h_cust_credit>;
+
+=cut
+
