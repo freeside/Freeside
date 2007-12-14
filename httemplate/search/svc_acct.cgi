@@ -20,6 +20,45 @@ sub format_time {
   (($support < 0) ? '-' : '' ). int(abs($support)/3600)."h".sprintf("%02d",(abs($support)%3600)/60)."m";
 }
 
+sub timelast {
+  my( $svc_acct, $last, $permonth ) = @_;
+
+  #some false laziness w/search/rt_transaction.html
+
+  my $transactiontime = "
+    CASE transactions.type when 'Set'
+      THEN (  to_number(newvalue, '999999')
+            - to_number(oldvalue, '999999')
+           ) * 60
+      ELSE timetaken*60
+    END
+  ";
+
+  #Transactions
+  my $sql = "
+    SELECT SUM($transactiontime) FROM acct_rt_transaction
+      LEFT JOIN Transactions
+        ON Transactions.Id = acct_rt_transaction.transaction_id
+    WHERE svcnum = ? 
+      AND Transactions.Created >= ?
+  ";
+
+  my $sth = dbh->prepare($sql) or die dbh->errstr;
+  $sth->execute( $svc_acct->svcnum,
+                 time2str('%Y-%m-%d %X', time - $last*86400 ) 
+               )
+    or die $sth->errstr;
+
+  my $seconds = $sth->fetchrow_arrayref->[0];
+
+  my $return = (($seconds < 0) ? '-' : '') . concise(duration($seconds));
+
+  $return .= sprintf(' (%.2fx)', $seconds / $permonth ) if $permonth;
+
+  $return;
+
+}
+
 </%once>
 <%init>
 
@@ -57,6 +96,8 @@ if ( $cgi->param('domain') ) {
   }
 }
 
+my $timepermonth = '';
+
 my $orderby = 'ORDER BY svcnum';
 if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
 
@@ -84,28 +125,34 @@ if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
 
     my $conf = new FS::Conf;
     if ( $conf->exists('svc_acct-display_paid_time_remaining') ) {
-      push @header, 'Paid time';
-      push @fields, sub {
-        my $svc_acct = shift;
-        my $seconds = $svc_acct->seconds;
-        my $cust_pkg = $svc_acct->cust_svc->cust_pkg;
-        my $part_pkg = $cust_pkg->part_pkg;
-        my $timepermonth = $part_pkg->option('seconds');
-        $timepermonth = $timepermonth / $part_pkg->freq
-          if $part_pkg->freq =~ /^\d+$/ && $part_pkg->freq != 0;
-        return format_time($seconds) unless $timepermonth;
-        #my $recur = $part_pkg->calc_recur($cust_pkg);
-        my $recur = $part_pkg->base_recur($cust_pkg);
-        my $balance = $cust_pkg->cust_main->balance;
-        my $months_unpaid = $balance / $recur;
-        my $time_unpaid = $months_unpaid * $timepermonth;
-        format_time($seconds-$time_unpaid).
-          sprintf(' (%.2fx monthly)', ( $seconds-$time_unpaid ) / $timepermonth );
-      };
-      push @links, '';
-      $align .= 'r';
-      push @color, '';
-      push @style, '';
+      push @header, 'Paid time', 'Last 30', 'Last 60', 'Last 90';
+      push @fields,
+        sub {
+          my $svc_acct = shift;
+          my $seconds = $svc_acct->seconds;
+          my $cust_pkg = $svc_acct->cust_svc->cust_pkg;
+          my $part_pkg = $cust_pkg->part_pkg;
+          #my $timepermonth = $part_pkg->option('seconds');
+          $timepermonth = $part_pkg->option('seconds');
+          $timepermonth = $timepermonth / $part_pkg->freq
+            if $part_pkg->freq =~ /^\d+$/ && $part_pkg->freq != 0;
+          return format_time($seconds) unless $timepermonth;
+          #my $recur = $part_pkg->calc_recur($cust_pkg);
+          my $recur = $part_pkg->base_recur($cust_pkg);
+          my $balance = $cust_pkg->cust_main->balance;
+          my $months_unpaid = $balance / $recur;
+          my $time_unpaid = $months_unpaid * $timepermonth;
+          format_time($seconds-$time_unpaid).
+            sprintf(' (%.2fx monthly)', ( $seconds-$time_unpaid ) / $timepermonth );
+        },
+        sub { timelast( shift, 30, $timepermonth ); },
+        sub { timelast( shift, 60, $timepermonth ); },
+        sub { timelast( shift, 90, $timepermonth ); },
+      ;
+      push @links, '', '', '', '';
+      $align .= 'rrrr';
+      push @color, '', '', '', '';
+      push @style, '', '', '', '';
     }
 
   }
