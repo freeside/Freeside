@@ -1905,7 +1905,7 @@ sub tables_hashref {
         'confnum',  'serial',  '', '', '', '', 
         'agentnum', 'int',  'NULL', '', '', '', 
         'name',     'varchar', '', $char_d, '', '', 
-        'value',    'long varbinary', 'NULL', '', '', '',
+        'value',    'text', 'NULL', '', '', '',
       ],
       'primary_key' => 'confnum',
       'unique' => [ [ 'agentnum', 'name' ]],
