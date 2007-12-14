@@ -480,8 +480,7 @@ sub _upgrade_data {  # class method
           die "$class had error inserting FS::reason_type into database: $error\n"
             if $error;
         }
-                                            # or clause for 1.7.x
-        $conf->set($_, $reason_type->typenum) or die "failed setting config";
+        $conf->set($_, $reason_type->typenum);
       }
     }
 
