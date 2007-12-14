@@ -100,7 +100,7 @@ dbdef_create($dbh, $dbdef_file);
 $dbh->disconnect or die $dbh->errstr;
 
 delete $FS::Schema::dbdef_cache{$dbdef_file}; #force an actual reload
-$FS::UID::AutoCommit = 1;
+$FS::UID::AutoCommit = 0;
 $FS::UID::callback_hack = 1;
 $dbh = adminsuidsetup($user);
 $FS::UID::callback_hack = 0;
