@@ -93,14 +93,6 @@ if ( $dbh->{Driver}->{Name} =~ /^mysql/i ) {
   }
 }
 
-$dbh->commit or die $dbh->errstr;  # we *MUST* commit before upgrading data
-dbdef_create($dbh, $dbdef_file);
-delete $FS::Schema::dbdef_cache{$dbdef_file}; #force an actual reload
-$dbh = adminsuidsetup($user);
-
-upgrade()
-  unless $DRY_RUN;
-
 $dbh->commit or die $dbh->errstr;
 
 dbdef_create($dbh, $dbdef_file);
@@ -123,6 +115,14 @@ unless ( $DRY_RUN ) {
     }
   }
 }
+$dbh->commit or die $dbh->errstr;
+$dbh->disconnect or die $dbh->errstr;
+
+$dbh = adminsuidsetup($user);
+
+upgrade()
+  unless $DRY_RUN;
+
 $dbh->commit or die $dbh->errstr;
 $dbh->disconnect or die $dbh->errstr;
 
