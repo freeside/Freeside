@@ -144,7 +144,7 @@ if ( $cgi->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/ ) {
                     '$%.2f outstanding balance',
                   ];
   }
-  $count_query .=  " FROM cust_bill $join_cust_main WHERE $extra_sql";
+  $count_query .=  " FROM cust_bill $join_cust_main $extra_sql";
 
   $sql_query = {
     'table'     => 'cust_bill',

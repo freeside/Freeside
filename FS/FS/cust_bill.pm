@@ -2879,13 +2879,14 @@ sub search_sql {
     #$orderby = 'ORDER BY cust_bill.custnum ASC, cust_bill._date DESC';
 
     my @newest_where = map { my $x = $_;
-                             $x = s/\bcust_bill\./newest_cust_bill./g;
+                             $x =~ s/\bcust_bill\./newest_cust_bill./g;
                              $x;
                            }
                            grep ! /^cust_main./, @search;
     my $newest_where = scalar(@newest_where)
                          ? ' AND '. join(' AND ', @newest_where)
 			 : '';
+
 
     push @search, "cust_bill._date = (
       SELECT(MAX(newest_cust_bill._date)) FROM cust_bill AS newest_cust_bill
