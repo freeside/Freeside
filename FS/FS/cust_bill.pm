@@ -2729,53 +2729,7 @@ sub re_X {
   my $distinct = '';
   my $orderby = 'ORDER BY cust_bill._date';
 
-  my @where;
-
-  if ( $param{'begin'} =~ /^(\d+)$/ ) {
-    push @where, "cust_bill._date >= $1";
-  }
-  if ( $param{'end'} =~ /^(\d+)$/ ) {
-    push @where, "cust_bill._date < $1";
-  }
-  if ( $param{'invnum_min'} =~ /^(\d+)$/ ) {
-    push @where, "cust_bill.invnum >= $1";
-  }
-  if ( $param{'invnum_max'} =~ /^(\d+)$/ ) {
-    push @where, "cust_bill.invnum <= $1";
-  }
-  if ( $param{'agentnum'} =~ /^(\d+)$/ ) {
-    push @where, "cust_main.agentnum = $1";
-  }
-
-  push @where, '0 != '. FS::cust_bill->owed_sql
-    if $param{'open'};
-
-  push @where, '0 != '. FS::cust_bill->net_sql
-    if $param{'net'};
-
-  push @where, "cust_bill._date < ". (time-86400*$param{'days'})
-    if $param{'days'};
-
-  if ( $param{'newest_percust'} ) {
-
-    #$distinct = 'DISTINCT ON ( cust_bill.custnum )';
-    #$orderby = 'ORDER BY cust_bill.custnum ASC, cust_bill._date DESC';
-
-    my @newest_where = map { s/\bcust_bill\./newest_cust_bill./g; }
-                           grep ! /^cust_main./, @where;
-    my $newest_where = scalar(@newest_where)
-                         ? ' AND '. join(' AND ', @newest_where)
-			 : '';
-
-    push @where, "cust_bill._date = (
-      SELECT(MAX(newest_cust_bill._date)) FROM cust_bill AS newest_cust_bill
-        WHERE newest_cust_bill.custnum = cust_bill.custnum
-          $newest_where
-    )";
-
-  }
-
-  my $extra_sql = scalar(@where) ? 'WHERE '. join(' AND ', @where) : '';
+  my $extra_sql = ' WHERE '. FS::cust_bill->search_sql(\%param);
 
   my $addl_from = 'left join cust_main using ( custnum )';
      
@@ -2857,6 +2811,94 @@ sub credited_sql {
   #my $class = shift;
   "( SELECT COALESCE(SUM(amount),0) FROM cust_credit_bill
        WHERE cust_bill.invnum = cust_credit_bill.invnum   )";
+}
+
+=item search_sql HASHREF
+
+Class method which returns an SQL WHERE fragment to search for parameters
+specified in HASHREF.  Valid parameters are
+
+=over 4
+
+=item begin - epoch date (UNIX timestamp) setting a lower bound for _date values
+
+=item end - epoch date (UNIX timestamp) setting an upper bound for _date values
+
+=item invnum_min
+
+=item invnum_max
+
+=item agentnum
+
+=item owed
+
+=item net
+
+=item days
+
+=item newest_percust
+
+=back
+
+Note: validates all passed-in data; i.e. safe to use with unchecked CGI params.
+
+=cut
+
+sub search_sql {
+  my($class, $param) = @_;
+  my @search = ();
+
+  if ( $param->{'begin'} =~ /^(\d+)$/ ) {
+    push @search, "cust_bill._date >= $1";
+  }
+  if ( $param->{'end'} =~ /^(\d+)$/ ) {
+    push @search, "cust_bill._date < $1";
+  }
+  if ( $param->{'invnum_min'} =~ /^(\d+)$/ ) {
+    push @search, "cust_bill.invnum >= $1";
+  }
+  if ( $param->{'invnum_max'} =~ /^(\d+)$/ ) {
+    push @search, "cust_bill.invnum <= $1";
+  }
+  if ( $param->{'agentnum'} =~ /^(\d+)$/ ) {
+    push @search, "cust_main.agentnum = $1";
+  }
+
+  push @search, '0 != '. FS::cust_bill->owed_sql
+    if $param->{'open'};
+
+  push @search, '0 != '. FS::cust_bill->net_sql
+    if $param->{'net'};
+
+  push @search, "cust_bill._date < ". (time-86400*$param->{'days'})
+    if $param->{'days'};
+
+  if ( $param->{'newest_percust'} ) {
+
+    #$distinct = 'DISTINCT ON ( cust_bill.custnum )';
+    #$orderby = 'ORDER BY cust_bill.custnum ASC, cust_bill._date DESC';
+
+    my @newest_where = map { my $x = $_;
+                             $x = s/\bcust_bill\./newest_cust_bill./g;
+                             $x;
+                           }
+                           grep ! /^cust_main./, @search;
+    my $newest_where = scalar(@newest_where)
+                         ? ' AND '. join(' AND ', @newest_where)
+			 : '';
+
+    push @search, "cust_bill._date = (
+      SELECT(MAX(newest_cust_bill._date)) FROM cust_bill AS newest_cust_bill
+        WHERE newest_cust_bill.custnum = cust_bill.custnum
+          $newest_where
+    )";
+
+  }
+
+  push @search, $FS::CurrentUser::CurrentUser->agentnums_sql;
+
+  join(' AND ', @search );
+
 }
 
 =back

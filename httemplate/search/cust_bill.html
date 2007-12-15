@@ -89,87 +89,49 @@ if ( $cgi->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/ ) {
   if ( $cgi->param('beginning')
        && $cgi->param('beginning') =~ /^([ 0-9\-\/]{0,10})$/ ) {
     $search{'begin'} = str2time($1);
-    push @where, 'cust_bill._date >= '. $search{'begin'};
   }
   if ( $cgi->param('ending')
         && $cgi->param('ending') =~ /^([ 0-9\-\/]{0,10})$/ ) {
     $search{'end'} = str2time($1) + 86399;
-    push @where, 'cust_bill._date < '. $search{'end'};
   }
 
   if ( $cgi->param('begin') =~ /^(\d+)$/ ) {
     $search{'begin'} = $1;
-    push @where, 'cust_bill._date >= '. $search{'begin'};
   }
   if ( $cgi->param('end') =~ /^(\d+)$/ ) {
     $search{'end'} = $1;
-    push @where, 'cust_bill._date < '. $search{'end'};
   }
 
   if ( $cgi->param('invnum_min') =~ /^\s*(\d+)\s*$/ ) {
     $search{'invnum_min'} = $1;
-    push @where, 'cust_bill.invnum >= '. $search{'invnum_min'};
   }
   if ( $cgi->param('invnum_max') =~ /^\s*(\d+)\s*$/ ) {
     $search{'invnum_max'} = $1;
-    push @where, 'cust_bill.invnum <= '. $search{'invnum_max'};
   }
 
   if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
     $search{'agentnum'} = $1;
-    push @where, 'cust_main.agentnum = '. $search{'agentnum'};
   }
 
-  if ( $cgi->param('open') ) {
-    push @where, '0 != '. FS::cust_bill->owed_sql;
-    $search{'open'} = 1;
-  }
-
-  if ( $cgi->param('net') ) {
-    push @where, '0 != '. FS::cust_bill->net_sql;
-    $search{'net'} = 1;
-  }
+  $search{'open'} = 1 if $cgi->param('open');
+  $search{'net'}  = 1 if $cgi->param('net' );
 
   my($query) = $cgi->keywords;
   if ( $query =~ /^(OPEN(\d*)_)?(invnum|date|custnum)$/ ) {
-    ($search{'open'}, $search{'days'}, my $field) = ($1, $2, $3);
+    $search{'open'} = 1 if $1;
+    ($search{'days'}, my $field) = ($2, $3);
     $field = "_date" if $field eq 'date';
     $orderby = "ORDER BY cust_bill.$field";
-    push @where, '0 != '. FS::cust_bill->owed_sql if $search{'open'};
-    push @where, "cust_bill._date < ". (time-86400*$search{'days'})
-      if $search{'days'};
   }
+
+  $search{'newest_percust'} = 1 if $cgi->param('newest_percust');
 
   if ( $cgi->param('newest_percust') ) {
     $search{'newest_percust'} = 1;
-
-    #$distinct = 'DISTINCT ON ( cust_bill.custnum )';
-    #$orderby = 'ORDER BY cust_bill.custnum ASC, cust_bill._date DESC';
-    #$count_query = "SELECT 'N/A', 'N/A', 'N/A'"; #XXXXXXX fix
-    
-    my @newest_where = map { my $x = $_;
-                             $x =~ s/\bcust_bill\./newest_cust_bill./g;
-                             $x;
-                          }
-                           grep ! /^cust_main./, @where;
-    my $newest_where = scalar(@newest_where)
-                         ? ' AND '. join(' AND ', @newest_where)
-			 : '';
-
-    push @where, "cust_bill._date = (
-      SELECT(MAX(newest_cust_bill._date)) FROM cust_bill AS newest_cust_bill
-        WHERE newest_cust_bill.custnum = cust_bill.custnum
-          $newest_where
-    )";
-
-
     $count_query = "SELECT COUNT(DISTINCT cust_bill.custnum), 'N/A', 'N/A'";
   }
 
-  #here is the agent virtualization
-  push @where, $agentnums_sql;
-
-  my $extra_sql = scalar(@where) ? 'WHERE '. join(' AND ', @where) : '';
+  my $extra_sql = ' WHERE '. FS::cust_bill->search_sql( \%search );
 
   unless ( $count_query ) {
     $count_query = 'SELECT COUNT(*), '. join(', ',
