@@ -1,0 +1,98 @@
+#!/usr/bin/perl -Tw
+#
+# Make a bundle file from an RPM
+#
+use strict;
+
+$ENV{PATH} = '/bin:/usr/bin/';
+
+my $verbose = 0;
+
+# These are Perl dependencies that should be ignored/suppressed
+my %suppress;
+
+foreach (qw/strict subs vars FS/) {
+	$suppress{$_} = $_;
+}
+
+## These are root packages that shouldn't be cited multiple times
+## Should figure this out with CPAN
+#my %rootpkgs;
+#
+#foreach (qw/FS/) {
+#	$rootpkgs{$_} = 1;
+#}
+
+foreach my $rawrpm (@ARGV) {
+	$rawrpm =~ /^([-\.a-z0-9\/]+)\s*$/i;
+	my $rpm = $1 or next;
+	my @parts = split '/', $rpm;
+	my $name = pop @parts;
+	my $version = 0.01;
+	if ($name =~ m<([^/]+?)[-._]?v?-?([-_.\d]+[a-z]*?\d*)\.\w+\.rpm$>) {
+		$name = $1;
+		$version = $2;
+	}
+	print STDERR "rpm: $rpm ($name, $version)\n";
+	my @deps = sort `rpm -qp --requires $rpm`;
+
+	my %mods;
+
+	foreach (@deps) {
+		if (/^perl\((.*)\)\s*(>=\s+([\d\.]+))?$/) {
+			next if exists($suppress{$1});
+			my @parts = split /::/, $1;
+			if (scalar @parts > 1) {
+				next if exists($suppress{$parts[0]});
+			}
+			if ($verbose) {
+				print STDERR "$1";
+				print STDERR " >= $3" if $3;
+				print STDERR "\n";
+			}
+			$mods{$1} = $3 ? $3 : undef;
+		}
+	}
+
+	my $hdr =<<END;
+# -*- perl -*-
+
+package Bundle::$name;
+
+\$VERSION = '$version';
+
+1;
+
+__END__
+
+=head1 NAME
+
+Bundle::$name - A bundle to install prerequisites for the $name package
+
+=head1 SYNOPSIS
+
+C<perl -MCPAN -e 'install Bundle::$name'>
+
+=head1 CONTENTS
+
+END
+
+	my $ftr =<<END;
+=head1 DESCRIPTION
+
+This bundle includes all prerequisites needed by the $name package.
+
+=cut
+END
+
+	print $hdr;
+	foreach (sort keys %mods) {
+		print "$_";
+		print " $mods{$_}" if exists($mods{$_}) && $mods{$_};
+		print " -\n\n";
+	}
+	print $ftr;
+}
+
+1;
+

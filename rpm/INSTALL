@@ -1,0 +1,4 @@
+See httemplates/docs/install-rpm.html and documentation on the wiki.
+
+This directory contains files that are RPM-specific and are referenced by the spec file during a build of the Freeside RPMs.
+
