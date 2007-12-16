@@ -1,13 +1,11 @@
-<% include("/elements/header.html", "Error processing your request") %>
-
-Your request could not be processed because of the following error<% (scalar(@_) > 1) ? 's' : '' %>:
+<% include("/elements/header.html", "Error") %>
 
 % while (@_) {
 
 <P><FONT SIZE="+1" COLOR="#ff0000"><B><% shift %></B></FONT>
 
-
 %}
+
 % $m->flush_buffer();
 % $HTML::Mason::Commands::m->abort();
 % #die "shouldn't fall through to here (mason \$m->abort didn't)";
