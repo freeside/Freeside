@@ -207,13 +207,31 @@
 
 <!-- contact info -->
 
+%  my $same_checked = '';
+%  my $ship_disabled = '';
+%  unless ( $cust_main->ship_last && $same ne 'Y' ) {
+%    $same_checked = 'CHECKED';
+%    $ship_disabled = 'DISABLED STYLE="background-color: #dddddd"';
+%    foreach (
+%      qw( last first company address1 address2 city county state zip country
+%          daytime night fax )
+%    ) {
+%      $cust_main->set("ship_$_", $cust_main->get($_) );
+%    }
+%  }
+
 <BR><BR>
 Billing address
-<% include('cust_main/contact.html', $cust_main, '', 'bill_changed(this)', '', 'ss' => $ss, 'stateid' => $stateid ) %>
-
-<!-- service address -->
-% if ( defined $cust_main->dbdef_table->column('ship_last') ) { 
-
+<% include('cust_main/contact.html',
+             'cust_main'    => $cust_main,
+             'pre'          => '',
+             'onchange'     => 'bill_changed(this)',
+             'disabled'     => '',
+             'ss'           => $ss,
+             'stateid'      => $stateid,
+             'same_checked' => $same_checked, #for address2 "Unit #" labeling
+          )
+%>
 
 <SCRIPT>
 function bill_changed(what) {
@@ -241,44 +259,47 @@ function bill_changed(what) {
 function samechanged(what) {
   if ( what.checked ) {
     bill_changed(what);
-% for (qw( last first company address1 address2 city county state zip country daytime night fax )) { 
 
-    what.form.ship_<%$_%>.disabled = true;
-    what.form.ship_<%$_%>.style.backgroundColor = '#dddddd';
-% } 
+%   for (qw( last first company address1 address2 city county state zip country daytime night fax )) { 
+      what.form.ship_<%$_%>.disabled = true;
+      what.form.ship_<%$_%>.style.backgroundColor = '#dddddd';
+%   } 
+
+%   if ( $conf->exists('cust_main-require_address2') ) {
+      document.getElementById('address2_required').style.visibility = '';
+      document.getElementById('address2_label').style.visibility = '';
+      document.getElementById('ship_address2_required').style.visibility = 'hidden';
+      document.getElementById('ship_address2_label').style.visibility = 'hidden';
+%   }
 
   } else {
-% for (qw( last first company address1 address2 city county state zip country daytime night fax )) { 
 
-    what.form.ship_<%$_%>.disabled = false;
-    what.form.ship_<%$_%>.style.backgroundColor = '#ffffff';
-% } 
+%   for (qw( last first company address1 address2 city county state zip country daytime night fax )) { 
+      what.form.ship_<%$_%>.disabled = false;
+      what.form.ship_<%$_%>.style.backgroundColor = '#ffffff';
+%   } 
+
+%   if ( $conf->exists('cust_main-require_address2') ) {
+      document.getElementById('address2_required').style.visibility = 'hidden';
+      document.getElementById('address2_label').style.visibility = 'hidden';
+      document.getElementById('ship_address2_required').style.visibility = '';
+      document.getElementById('ship_address2_label').style.visibility = '';
+%   }
 
   }
 }
 </SCRIPT>
-%
-%  my $checked = '';
-%  my $disabled = '';
-%  my $disabledselect = '';
-%  unless ( $cust_main->ship_last && $same ne 'Y' ) {
-%    $checked = 'CHECKED';
-%    $disabled = 'DISABLED STYLE="background-color: #dddddd"';
-%    foreach (
-%      qw( last first company address1 address2 city county state zip country
-%          daytime night fax )
-%    ) {
-%      $cust_main->set("ship_$_", $cust_main->get($_) );
-%    }
-%  }
-%
-
 
 <BR>
 Service address 
-(<INPUT TYPE="checkbox" NAME="same" VALUE="Y" onClick="samechanged(this)" <%$checked%>>same as billing address)
-<% include('cust_main/contact.html', $cust_main, 'ship_', '', $disabled ) %>
-% } 
+(<INPUT TYPE="checkbox" NAME="same" VALUE="Y" onClick="samechanged(this)" <%$same_checked%>>same as billing address)
+<% include('cust_main/contact.html',
+             'cust_main' => $cust_main,
+             'pre'       => 'ship_',
+             'onchange'  => '',
+             'disabled'  => $ship_disabled,
+          )
+%>
 
 
 <!-- billing info -->

@@ -32,8 +32,16 @@
   </TD>
 </TR>
 
+% my $address2_label_style =
+%   ( $disabled
+%     || ! $conf->exists('cust_main-require_address2')
+%     || ( !$pre && !$opt{'same_checked'} )
+%   )
+%     ? 'visibility:hidden'
+%     : '';
+
 <TR>
-  <TD ALIGN="right">&nbsp;</TD>
+  <TD ALIGN="right"><FONT ID="<% $pre %>address2_required" color="#ff0000" STYLE="<% $address2_label_style %>">*</FONT>&nbsp;<FONT ID="<% $pre %>address2_label" STYLE="<% $address2_label_style %>"><B>Unit&nbsp;#</B></FONT></TD>
   <TD COLSPAN=7>
     <INPUT TYPE="text" NAME="<%$pre%>address2" VALUE="<% $cust_main->get($pre.'address2') %>" SIZE=70 onChange="<% $onchange %>" <%$disabled%>>
   </TD>
@@ -107,7 +115,13 @@
 
 <%init>
 
-my( $cust_main, $pre, $onchange, $disabled, %opt ) = @_;
+#my( $cust_main, $pre, $onchange, $disabled, %opt ) = @_;
+my %opt = @_;
+my $cust_main = $opt{'cust_main'};
+my $pre       = $opt{'pre'};
+my $onchange  = $opt{'onchange'};
+my $disabled  = $opt{'disabled'};
+
 my $conf = new FS::Conf;
 
 foreach (qw(ss stateid)) {

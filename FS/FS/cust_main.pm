@@ -1291,58 +1291,60 @@ sub check {
   
   }
 
-  my @addfields = qw(
-    last first company address1 address2 city county state zip
-    country daytime night fax
-  );
+  if ( $self->has_ship_address
+       && scalar ( grep { $self->getfield($_) ne $self->getfield("ship_$_") }
+                        $self->addr_fields )
+     )
+  {
+    my $error =
+      $self->ut_name('ship_last')
+      || $self->ut_name('ship_first')
+      || $self->ut_textn('ship_company')
+      || $self->ut_text('ship_address1')
+      || $self->ut_textn('ship_address2')
+      || $self->ut_text('ship_city')
+      || $self->ut_textn('ship_county')
+      || $self->ut_textn('ship_state')
+      || $self->ut_country('ship_country')
+    ;
+    return $error if $error;
 
-  if ( defined $self->dbdef_table->column('ship_last') ) {
-    if ( scalar ( grep { $self->getfield($_) ne $self->getfield("ship_$_") }
-                       @addfields )
-         && scalar ( grep { $self->getfield("ship_$_") ne '' } @addfields )
-       )
-    {
-      my $error =
-        $self->ut_name('ship_last')
-        || $self->ut_name('ship_first')
-        || $self->ut_textn('ship_company')
-        || $self->ut_text('ship_address1')
-        || $self->ut_textn('ship_address2')
-        || $self->ut_text('ship_city')
-        || $self->ut_textn('ship_county')
-        || $self->ut_textn('ship_state')
-        || $self->ut_country('ship_country')
-      ;
-      return $error if $error;
-
-      #false laziness with above
-      unless ( qsearchs('cust_main_county', {
-        'country' => $self->ship_country,
-        'state'   => '',
-       } ) ) {
-        return "Unknown ship_state/ship_county/ship_country: ".
-          $self->ship_state. "/". $self->ship_county. "/". $self->ship_country
-          unless qsearch('cust_main_county',{
-            'state'   => $self->ship_state,
-            'county'  => $self->ship_county,
-            'country' => $self->ship_country,
-          } );
-      }
-      #eofalse
-
-      $error =
-        $self->ut_phonen('ship_daytime', $self->ship_country)
-        || $self->ut_phonen('ship_night', $self->ship_country)
-        || $self->ut_phonen('ship_fax', $self->ship_country)
-        || $self->ut_zip('ship_zip', $self->ship_country)
-      ;
-      return $error if $error;
-
-    } else { # ship_ info eq billing info, so don't store dup info in database
-      $self->setfield("ship_$_", '')
-        foreach qw( last first company address1 address2 city county state zip
-                    country daytime night fax );
+    #false laziness with above
+    unless ( qsearchs('cust_main_county', {
+      'country' => $self->ship_country,
+      'state'   => '',
+     } ) ) {
+      return "Unknown ship_state/ship_county/ship_country: ".
+        $self->ship_state. "/". $self->ship_county. "/". $self->ship_country
+        unless qsearch('cust_main_county',{
+          'state'   => $self->ship_state,
+          'county'  => $self->ship_county,
+          'country' => $self->ship_country,
+        } );
     }
+    #eofalse
+
+    $error =
+      $self->ut_phonen('ship_daytime', $self->ship_country)
+      || $self->ut_phonen('ship_night', $self->ship_country)
+      || $self->ut_phonen('ship_fax', $self->ship_country)
+      || $self->ut_zip('ship_zip', $self->ship_country)
+    ;
+    return $error if $error;
+
+    return "Unit # is required."
+      if $self->ship_address2 =~ /^\s*$/
+      && $conf->exists('cust_main-require_address2');
+
+  } else { # ship_ info eq billing info, so don't store dup info in database
+
+    $self->setfield("ship_$_", '')
+      foreach $self->addr_fields;
+
+    return "Unit # is required."
+      if $self->address2 =~ /^\s*$/
+      && $conf->exists('cust_main-require_address2');
+
   }
 
   #$self->payby =~ /^(CARD|DCRD|CHEK|DCHK|LECB|BILL|COMP|PREPAY|CASH|WEST|MCRD)$/
@@ -1541,6 +1543,30 @@ sub check {
     if $DEBUG > 2;
 
   $self->SUPER::check;
+}
+
+=item addr_fields 
+
+Returns a list of fields which have ship_ duplicates.
+
+=cut
+
+sub addr_fields {
+  qw( last first company
+      address1 address2 city county state zip country
+      daytime night fax
+    );
+}
+
+=item has_ship_address
+
+Returns true if this customer record has a separate shipping address.
+
+=cut
+
+sub has_ship_address {
+  my $self = shift;
+  scalar( grep { $self->getfield("ship_$_") ne '' } $self->addr_fields );
 }
 
 =item all_pkgs

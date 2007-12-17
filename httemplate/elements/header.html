@@ -19,6 +19,11 @@
           what.value = '';
       }
 
+      function clearhint_search_address2 (what) {
+        if ( what.value == '(Unit #)' )
+          what.value = '';
+      }
+
       function clearhint_search_invoice (what) {
         if ( what.value == '(inv #)' )
           what.value = '';
@@ -113,14 +118,14 @@ input.fsblackbuttonselected {
 
     <TABLE WIDTH="100%" CELLSPACING=0 CELLPADDING=0>
       <TR>
-        <TD COLSPAN=5 WIDTH="100%" STYLE="padding:0"><IMG BORDER=0 ALT="" SRC="<%$fsurl%>images/black-gradient.png" HEIGHT="13" WIDTH="100%"></TD>
+        <TD COLSPAN=6 WIDTH="100%" STYLE="padding:0"><IMG BORDER=0 ALT="" SRC="<%$fsurl%>images/black-gradient.png" HEIGHT="13" WIDTH="100%"></TD>
       </TR>
 
 % if ( $menu_position eq 'top' ) {
 
       <TR>
 
-        <TD COLSPAN="5" WIDTH="100%" STYLE="padding:0">
+        <TD COLSPAN="6" WIDTH="100%" STYLE="padding:0">
           <SCRIPT TYPE="text/javascript">
             document.write(myBar);
           </SCRIPT>
@@ -129,12 +134,12 @@ input.fsblackbuttonselected {
       </TR>
 
       <TR>
-        <TD COLSPAN="5" WIDTH="100%" HEIGHT="2px" STYLE="padding:0" BGCOLOR="#000000">
+        <TD COLSPAN="6" WIDTH="100%" HEIGHT="2px" STYLE="padding:0" BGCOLOR="#000000">
         </TD>
       </TR>
       
       <TR>
-        <TD COLSPAN="5" WIDTH="100%" HEIGHT="4px" STYLE="padding:0" BGCOLOR="#000000">
+        <TD COLSPAN="6" WIDTH="100%" HEIGHT="4px" STYLE="padding:0" BGCOLOR="#000000">
         </TD>
       </TR>
 
@@ -156,21 +161,31 @@ input.fsblackbuttonselected {
           </FORM>
         </TD>
 
+        <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="center">
+% if ( $conf->exists('address2-search') ) { 
+            <FORM ACTION="<%$fsurl%>search/cust_main.cgi" METHOD="GET" STYLE="margin:0;display:inline">
+              <INPUT TYPE="hidden" NAME="address2_on" VALUE="1">
+              <INPUT NAME="address2_text" TYPE="text" VALUE="(Unit #)" SIZE="4" onFocus="clearhint_search_address2(this);" onClick="clearhint_search_address2(this);" STYLE="vertical-align:bottom;text-align:right;margin-bottom:1px">
+              <BR>
+              <INPUT TYPE="submit" VALUE="Search units" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:70%;padding-left:2px;padding-right:2px">
+            </FORM>
+% } 
+        </TD>
+
         <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right">
 % if ( $FS::CurrentUser::CurrentUser->access_right('View invoices') ) { 
 
             <FORM ACTION="<%$fsurl%>search/cust_bill.html" METHOD="GET" STYLE="margin:0;display:inline">
               <INPUT NAME="invnum" TYPE="text" VALUE="(inv #)" SIZE="4" onFocus="clearhint_search_invoice(this);" onClick="clearhint_search_invoice(this);" STYLE="vertical-align:bottom;text-align:right;margin-bottom:1px">
-% if ( $FS::CurrentUser::CurrentUser->access_right('List invoices') ) { 
+%   if ( $FS::CurrentUser::CurrentUser->access_right('List invoices') ) { 
 
                 <A HREF="<%$fsurl%>search/report_cust_bill.html" STYLE="color: #ffffff; font-size: 70%">Advanced</A>
-% } 
+%   } 
 
               <BR>
               <INPUT TYPE="submit" VALUE="Search invoices" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:70%">
             </FORM>
 % } 
-
         </TD>
 
         <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right">

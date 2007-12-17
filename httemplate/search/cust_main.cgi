@@ -688,9 +688,8 @@
 %                            { 'address2' => { 'op'    => 'ILIKE',
 %                                              'value' => $address2 } } );
 %  push @cust_main, qsearch( 'cust_main',
-%                            { 'address2' => { 'op'    => 'ILIKE',
-%                                              'value' => $address2 } } )
-%    if defined dbdef->table('cust_main')->column('ship_last');
+%                            { 'ship_address2' => { 'op'    => 'ILIKE',
+%                                                   'value' => $address2 } } );
 %
 %  \@cust_main;
 %}

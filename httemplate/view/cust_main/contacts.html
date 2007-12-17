@@ -25,12 +25,23 @@
   <TD ALIGN="right">Address</TD>
   <TD COLSPAN=7 BGCOLOR="#ffffff"><% $cust_main->get("${pre}address1") %></TD>
 </TR>
-% if ( $cust_main->get("${pre}address2") ) { 
 
-<TR>
-  <TD ALIGN="right">&nbsp;</TD>
-  <TD COLSPAN=7 BGCOLOR="#ffffff"><% $cust_main->get("${pre}address2") %></TD>
-</TR>
+% if ( $cust_main->get("${pre}address2") ) { 
+%   my $address2_label =
+%     ( $conf->exists('cust_main-require_address2')
+%       #  && (    ( !$which && !$cust_main->has_ship_address )
+%       #       || (  $which &&  $cust_main->has_ship_address )
+%       #     )
+%       && ! ( $which xor $cust_main->has_ship_address )
+%     )
+%       ? 'Unit&nbsp;#'
+%       : '&nbsp;';
+
+  <TR>
+    <TD ALIGN="right"><% $address2_label %></TD>
+    <TD COLSPAN=7 BGCOLOR="#ffffff"><% $cust_main->get("${pre}address2") %></TD>
+  </TR>
+
 % } 
 
 <TR>

@@ -1716,7 +1716,14 @@ worry that config_items is freeside-specific and icky.
   {
     'key'         => 'address2-search',
     'section'     => 'UI',
-    'description' => 'Enable a "Unit" search box which searches the second address field',
+    'description' => 'Enable a "Unit" search box which searches the second address field.  Useful for multi-tenant applications.  See also: cust_main-require_address2',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'cust_main-require_address2',
+    'section'     => 'UI',
+    'description' => 'Second address field is required (on service address only, if billing and service addresses differ).  Also enables "Unit" labeling of address2 on customer view and edit pages.  Useful for multi-tenant applications.  See also: address2-search',
     'type'        => 'checkbox',
   },
 
@@ -2091,7 +2098,7 @@ worry that config_items is freeside-specific and icky.
   {
     'key'         => 'cust_main-require_invoicing_list_email',
     'section'     => '',
-    'description' => 'Require at least one invoicing email address for all customer records.',
+    'description' => 'Email address field is required: require at least one invoicing email address for all customer records.',
     'type'        => 'checkbox',
   },
 
