@@ -262,11 +262,14 @@ methods.
 sub check {
   my $self = shift;
 
+  $self->otaker(getotaker) unless ($self->otaker);
+
   my $error =
     $self->ut_numbern('crednum')
     || $self->ut_number('custnum')
     || $self->ut_numbern('_date')
     || $self->ut_money('amount')
+    || $self->ut_alpha('otaker')
     || $self->ut_textn('reason')
     || $self->ut_foreign_key('reasonnum', 'reason', 'reasonnum')
     || $self->ut_enum('closed', [ '', 'Y' ])
@@ -279,8 +282,6 @@ sub check {
     unless qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
 
   $self->_date(time) unless $self->_date;
-
-  $self->otaker(getotaker) unless ($self->otaker);
 
   $self->SUPER::check;
 }
