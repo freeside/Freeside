@@ -29,10 +29,7 @@
 % if ( $cust_main->get("${pre}address2") ) { 
 %   my $address2_label =
 %     ( $conf->exists('cust_main-require_address2')
-%       #  && (    ( !$which && !$cust_main->has_ship_address )
-%       #       || (  $which &&  $cust_main->has_ship_address )
-%       #     )
-%       && ! ( $which xor $cust_main->has_ship_address )
+%       && ! ( $pre xor $cust_main->has_ship_address )
 %     )
 %       ? 'Unit&nbsp;#'
 %       : '&nbsp;';
