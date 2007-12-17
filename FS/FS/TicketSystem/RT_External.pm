@@ -293,7 +293,7 @@ sub queue {
 
 sub baseurl {
   #my $self = shift;
-  $external_url;
+  $external_url. '/';
 }
 
 sub _retrieve_single_value {
