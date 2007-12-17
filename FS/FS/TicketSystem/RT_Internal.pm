@@ -19,7 +19,7 @@ sub sql_num_customer_tickets {
 sub baseurl {
   #my $self = shift;
   if ( $RT::URI::freeside::URL ) {
-    $RT::URI::freeside::URL. 'rt/';
+    $RT::URI::freeside::URL. '/rt/';
   } else {
     'http://you_need_to_set_RT_URI_freeside_URL_in_SiteConfig.pm/';
   }
