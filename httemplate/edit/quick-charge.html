@@ -147,7 +147,7 @@ function validate_quick_charge () {
       description_input.setAttribute('name', 'description'+rownum);
       description_input.setAttribute('id',   'description'+rownum);
       description_input.setAttribute('size', 60);
-      description_input.setAttribute('maxlength', 65);
+      description_input.setAttribute('maxLength', 65);
       description_input.setAttribute('rownum',   rownum);
       description_input.onkeyup = possiblyAddRow;
       description_cell.appendChild(description_input);
