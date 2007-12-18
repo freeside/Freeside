@@ -5289,10 +5289,19 @@ sub smart_search {
     }
 
   } elsif ( $search =~ /^\s*(\d+)\s*$/ ) { # customer # search
+                                           # (also try agent_custid)
+                                           # (regex needs tweaking if your
+                                           #  legacy cust numbers have letters)
 
     push @cust_main, qsearch( {
       'table'     => 'cust_main',
       'hashref'   => { 'custnum' => $1, %options },
+      'extra_sql' => " AND $agentnums_sql", #agent virtualization
+    } );
+
+    push @cust_main, qsearch( {
+      'table'     => 'cust_main',
+      'hashref'   => { 'agent_custid' => $1, %options },
       'extra_sql' => " AND $agentnums_sql", #agent virtualization
     } );
 
