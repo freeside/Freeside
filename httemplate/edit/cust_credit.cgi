@@ -30,7 +30,12 @@ Credit
 %#print qq! <INPUT TYPE="checkbox" NAME="refund" VALUE="$refund">Also post refund!;
 %
 
-<% include('/elements/tr-select-reason.html', 'reasonnum', 'R', '', '', '', 'document.credit_popup.submit',) %>
+<% include('/elements/tr-select-reason.html',
+           'field'          => 'reasonnum',
+           'reason_class'   => 'R',
+           'control_button' => 'document.credit_popup.submit',
+          )
+%>
 
   <TR>
     <TD ALIGN="right">Auto-apply<BR>to invoices</TD>
