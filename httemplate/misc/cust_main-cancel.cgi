@@ -48,7 +48,7 @@ my $error = join(' / ', @errors) if scalar(@errors);
 
 if ( $error ) {
   $cgi->param('error', $error);
-  print $cgi->redirect(popurl(2). "cancel_pkg.html?". $cgi->query_string );
+  print $cgi->redirect(popurl(1). "cancel_cust.html?". $cgi->query_string );
 }
 
 </%init>
