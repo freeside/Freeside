@@ -420,9 +420,9 @@ sub _upgrade_data {  # class method
 
     warn "$me Checking for unmigrated reasons\n" if $DEBUG;
 
-    my @cust_credits = qsearch({ 'table' => $class->table,
-                                 'hashref' => {},
-                                 'extrasql' => 'WHERE reason IS NOT NULL',
+    my @cust_credits = qsearch({ 'table'     => $class->table,
+                                 'hashref'   => {},
+                                 'extra_sql' => 'WHERE reason IS NOT NULL',
                               });
 
     if (scalar(grep { $_->getfield('reason') =~ /\S/ } @cust_credits)) {
