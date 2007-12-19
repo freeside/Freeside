@@ -53,6 +53,8 @@ sub cust_fields_avail { (
 
   'Cust# | Cust. Status | Name | Company | Address 1 | Address 2 | City | State | Zip | Country | Day phone | Night phone | Fax number | Invoicing email(s) | Payment Type' => 
     'custnum | Status | Last, First | Company | (all address fields ) | ( all phones ) | Invoicing email(s) | Payment Type',
+  'Cust# | Cust. Status | Name | Company | Address 1 | Address 2 | City | State | Zip | Country | Day phone | Night phone | Fax number | Invoicing email(s) | Payment Type | Current Balance' => 
+    'custnum | Status | Last, First | Company | (all address fields ) | ( all phones ) | Invoicing email(s) | Payment Type | Current Balance',
 
 ); }
 

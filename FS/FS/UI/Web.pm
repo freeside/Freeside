@@ -5,6 +5,7 @@ use vars qw($DEBUG @ISA @EXPORT_OK $me);
 use Exporter;
 use FS::Conf;
 use FS::Record qw(dbdef);
+use FS::cust_main;  # are sql_balance and sql_date_balance in the right module?
 
 #use vars qw(@ISA);
 #use FS::UI
@@ -163,7 +164,7 @@ sub parse_lt_gt {
     warn "checking for ${field}_$op field\n"
       if $DEBUG;
 
-    if ( $cgi->param($field."_$op") =~ /^\s*\$?\s*([\d\,\s]+(\.\d\d)?)\s*$/ ) {
+    if ( $cgi->param($field."_$op") =~ /^\s*\$?\s*(-?[\d\,\s]+(\.\d\d)?)\s*$/ ) {
 
       my $num = $1;
       $num =~ s/[\,\s]+//g;
@@ -223,6 +224,7 @@ sub cust_header {
     'Fax number'               => 'fax',
     'Invoicing email(s)'       => 'invoicing_list_emailonly_scalar',
     'Payment Type'             => 'payby',
+    'Current Balance'          => 'current_balance',
   );
 
   my %header2colormethod = (
@@ -298,9 +300,14 @@ sub cust_sql_fields {
   #inefficientish, but tiny lists and only run once per page
   push @fields,
     grep { my $field = $_; grep { $_ eq $field } @cust_fields }
-         qw( address1 address2 city state zip daytime night );
+         qw( address1 address2 city state zip daytime night fax payby );
 
-  map "cust_main.$_", @fields;
+  my @extra_fields = ();
+  if (grep { $_ eq 'current_balance' } @cust_fields) {
+    push @extra_fields, FS::cust_main->balance_sql . " AS current_balance";
+  }
+
+  map("cust_main.$_", @fields), @extra_fields;
 }
 
 =item cust_fields OBJECT [ CUST_FIELDS_VALUE ]

@@ -30,6 +30,12 @@
 
 %   }
     
+    <% include( '/elements/tr-input-lessthan_greaterthan.html',
+                  label   => 'Current Balance',
+                  field   => 'current_balance',
+              )
+    %>
+
     <TR>
       <TD ALIGN="right" VALIGN="center">Include cancelled packages</TD>
         <TD><INPUT TYPE="checkbox" NAME="cancelled_pkgs"></TD>

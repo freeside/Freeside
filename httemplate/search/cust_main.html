@@ -69,6 +69,15 @@ foreach my $field (qw( signupdate )) {
 }
 
 ##
+# amounts
+##
+
+my $balance_sql = FS::cust_main->balance_sql();
+
+push @where, map { s/current_balance/$balance_sql/; $_ }
+                 FS::UI::Web::parse_lt_gt($cgi, 'current_balance');
+
+##
 # setup queries, subs, etc. for the search
 ##
 
@@ -83,7 +92,11 @@ my $addl_from = 'LEFT JOIN cust_pkg USING ( custnum  ) ';
 
 my $count_query = "SELECT COUNT(*) FROM cust_main $extra_sql";
 
-my $select = '*';
+my $select = join(', ', 
+               'cust_main.custnum',
+               FS::UI::Web::cust_sql_fields($cgi->param('cust_fields')),
+             );
+
 my (@extra_headers) = ();
 my (@extra_fields) = ();
 
