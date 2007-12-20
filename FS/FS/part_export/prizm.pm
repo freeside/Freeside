@@ -142,7 +142,7 @@ sub _export_insert {
                                       $networkid,
                                       $svc->mac_addr,
                                       substr($name . " " . $svc->description,
-                                             0, 50),
+                                             0, 150),
                                       $location,
                                       $contact,
                                       sprintf("%032X", $svc->authkey),
