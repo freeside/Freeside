@@ -74,6 +74,11 @@ use FS::part_pkg::flat;
 			            'over into current period',
 			  'type' => 'checkbox',
                         },
+    'recharge_reset' => { 'name' => 'Reset usage to these values on manual '.
+                                    'package recharge',
+                          'type' => 'checkbox',
+                        },
+
     #it would be better if this had to be turned on, its confusing
     'externalid' => { 'name'   => 'Optional External ID',
                       'default' => '',
@@ -83,7 +88,7 @@ use FS::part_pkg::flat;
                     'seconds', 'upbyte', 'downbytes', 'totalbytes',
                     'recharge_amount', 'recharge_seconds', 'recharge_upbytes',
                     'recharge_downbytes', 'recharge_totalbytes',
-                    'usage_rollover', 'externalid', ],
+                    'usage_rollover', 'recharge_reset', 'externalid', ],
   'freq' => 'm',
   'weight' => 20,
 );

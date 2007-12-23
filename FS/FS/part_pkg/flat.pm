@@ -76,12 +76,16 @@ use FS::part_pkg;
                                     ' over into current period',
                           'type' => 'checkbox',
                         },
+    'recharge_reset' => { 'name' => 'Reset usage to these values on manual '.
+                                    'package recharge',
+                          'type' => 'checkbox',
+                        },
   },
   'fieldorder' => [ 'setup_fee', 'recur_fee', 'unused_credit', 
                     'seconds', 'upbytes', 'downbytes', 'totalbytes',
                     'recharge_amount', 'recharge_seconds', 'recharge_upbytes',
                     'recharge_downbytes', 'recharge_totalbytes',
-                    'usage_rollover', 'externalid' ],
+                    'usage_rollover', 'recharge_reset', 'externalid' ],
   'weight' => 10,
 );
 

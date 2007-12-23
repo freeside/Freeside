@@ -40,7 +40,8 @@
 %  } elsif ( $payby =~ /^(CARD|DCRD|CHEK|DCHK|LECB|BILL|COMP)$/ ) {
 %    my $part_pkg = $svc_acct->cust_svc->cust_pkg->part_pkg;
 %    $amount = $part_pkg->option('recharge_amount', 1);
-%    my %rhash = map { $_ =~ /^recharge_(.*)$/; $1, $part_pkg->option($_, 1) }
+%    my %rhash = map { $_ =~ /^recharge_(.*)$/; $1, $part_pkg->option($_) }
+%      grep { $part_pkg->option($_, 1) }
 %      qw ( recharge_seconds recharge_upbytes recharge_downbytes
 %           recharge_totalbytes );
 %
@@ -53,7 +54,11 @@
 %    $error = $cust_main->charge($amount, "Recharge " . $svc_acct->label,
 %                                $description, $part_pkg->taxclass);
 %
-%    $error ||= $svc_acct->recharge(\%rhash);
+%    if ($part_pkg->option('recharge_reset', 1)) {
+%      $error ||= $svc_acct->set_usage(\%rhash);
+%    }else{
+%      $error ||= $svc_acct->recharge(\%rhash);
+%    }
 %
 %    my $old_balance = $cust_main->balance;
 %    $error ||= $cust_main->bill;
