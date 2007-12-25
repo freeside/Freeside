@@ -4,10 +4,7 @@
   <%  include("/elements/header.html", $title, '') %>
 % } 
 
-% if ( $cgi->param('error') ) { 
-  <FONT SIZE="+1" COLOR="#ff0000">Error: <% $cgi->param('error') %></FONT>
-  <BR><BR>
-% } 
+<% include('/elements/error.html') %>
 
 <LINK REL="stylesheet" TYPE="text/css" HREF="../elements/calendar-win2k-2.css" TITLE="win2k-2">
 <SCRIPT TYPE="text/javascript" SRC="../elements/calendar_stripped.js"></SCRIPT>

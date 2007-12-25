@@ -20,10 +20,7 @@ function SafeOnsubmit() {
 }
 </SCRIPT>
 
-% if ( $cgi->param('error') ) { 
-  <FONT SIZE="+1" COLOR="#ff0000">Error: <% $cgi->param('error') %></FONT>
-  <BR><BR>
-% } 
+<% include('/elements/error.html') %>
 
 <FORM NAME="OneTrueForm" ACTION="config-process.cgi" METHOD="POST" enctype="multipart/form-data" onSubmit="SafeOnsubmit()">
 <INPUT TYPE="hidden" NAME="agentnum" VALUE="<% $agentnum %>">

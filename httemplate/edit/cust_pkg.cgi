@@ -31,11 +31,8 @@
 %
 %
 <% include('/elements/header.html', "Add/Edit Packages", '') %>
-% if ( $cgi->param('error') ) { 
 
-  <FONT SIZE="+1" COLOR="#ff0000">Error: <% $cgi->param('error') %></FONT>
-% } 
-
+<% include('/elements/error.html') %>
 
 <FORM ACTION="<% $p1 %>process/cust_pkg.cgi" METHOD=POST>
 

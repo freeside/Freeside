@@ -2,11 +2,8 @@
   'Main Menu' => $p,
   'View all agents' => $p. 'browse/agent.cgi',
 )) %>
-% if ( $cgi->param('error') ) { 
 
-<FONT SIZE="+1" COLOR="#ff0000">Error: <% $cgi->param('error') %></FONT>
-% } 
-
+<% include('/elements/error.html') %>
 
 <FORM ACTION="<%popurl(1)%>process/agent.cgi" METHOD=POST>
 <INPUT TYPE="hidden" NAME="agentnum" VALUE="<% $agent->agentnum %>">

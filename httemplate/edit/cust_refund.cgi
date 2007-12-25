@@ -29,12 +29,8 @@
 
 
 <% include('/elements/header.html', 'Refund '. ucfirst(lc($payby)). ' payment', '') %>
-% if ( $cgi->param('error') ) { 
 
-  <FONT SIZE="+1" COLOR="#ff0000">Error: <% $cgi->param('error') %></FONT>
-  <BR><BR>
-% } 
-
+<% include('/elements/error.html') %>
 
 <% small_custview($custnum, $conf->config('countrydefault')) %>
 

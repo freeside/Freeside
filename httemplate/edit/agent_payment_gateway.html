@@ -18,11 +18,8 @@
   #'View all payment gateways' => $p. 'browse/payment_gateway.html',
   'View all agents' => $p. 'browse/agent.html',
 )) %>
-% if ( $cgi->param('error') ) { 
 
-<FONT SIZE="+1" COLOR="#ff0000">Error: <% $cgi->param('error') %></FONT>
-% } 
-
+<% include('/elements/error.html') %>
 
 <FORM ACTION="<%popurl(1)%>process/agent_payment_gateway.html" METHOD=POST>
 <INPUT TYPE="hidden" NAME="agentnum" VALUE="<% $agent->agentnum %>">

@@ -22,12 +22,8 @@
 %));
 %
 %my $p3 = popurl(3);
-%
-%if($cgi->param('error')) {
-%
- <FONT SIZE="+1" COLOR="#ff0000">Error: <%$cgi->param('error')%></FONT>
-% } 
 
+<% include('/elements/error.html') %>
 
 <FORM ACTION="<%popurl(1)%>process/router.cgi" METHOD=POST>
   <INPUT TYPE="hidden" NAME="table" VALUE="router">

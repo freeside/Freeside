@@ -1,9 +1,6 @@
 <% include('/elements/header-popup.html', "$action Customer Note") %>
 
-% if ( $cgi->param('error') ) { 
-  <FONT SIZE="+1" COLOR="#ff0000">Error: <% $cgi->param('error') %></FONT>
-  <BR><BR>
-% } 
+<% include('/elements/error.html') %>
 
 <FORM ACTION="<% popurl(1) %>process/cust_main_note.cgi" METHOD=POST>
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">

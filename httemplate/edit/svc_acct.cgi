@@ -127,11 +127,9 @@
 
 
 <% include("/elements/header.html","$action $svc account") %>
-% if ( $cgi->param('error') ) { 
 
-  <FONT SIZE="+1" COLOR="#ff0000">Error: <% $cgi->param('error') %></FONT>
-  <BR><BR>
-% } 
+<% include('/elements/error.html') %>
+
 % if ( $cust_main ) { 
 
   <% include( '/elements/small_custview.html', $cust_main, '', 1,

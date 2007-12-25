@@ -1,6 +1,5 @@
 <% include("/elements/header.html",'Address Blocks', menubar('Main Menu'   => $p)) %>
-%
-%
+
 %use NetAddr::IP;
 %
 %my @addr_block = qsearch('addr_block', {});
@@ -8,14 +7,8 @@
 %my $block;
 %my $p2 = popurl(2);
 %my $path = $p2 . "edit/process/addr_block";
-%
-%
-% if ($cgi->param('error')) { 
 
-   <FONT SIZE="+1" COLOR="#ff0000">Error: <%$cgi->param('error')%></FONT>
-   <BR><BR>
-% } 
-
+<% include('/elements/error.html') %>
 
 <%table()%>
 % foreach $block (sort {$a->NetAddr cmp $b->NetAddr} @addr_block) { 

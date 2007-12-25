@@ -1,9 +1,6 @@
 <% include('/elements/header-popup.html', "Change Package") %>
 
-% if ( $cgi->param('error') ) {
-  <FONT SIZE="+1" COLOR="#ff0000">Error: <% $cgi->param('error') %></FONT>
-  <BR><BR>
-% }
+<% include('/elements/error.html') %>
 
 <FORM ACTION="<% $p %>edit/process/cust_pkg.cgi" METHOD=POST>
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">

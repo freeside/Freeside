@@ -39,11 +39,8 @@
       )
     )
 %>
-% if ( $cgi->param('error') ) { 
 
-  <FONT SIZE="+1" COLOR="#ff0000">Error: <% $cgi->param('error') %></FONT>
-% } 
-
+<% include('/elements/error.html') %>
 
 <FORM ACTION="<% popurl(1) %>process/part_bill_event.cgi" NAME="editEvent" METHOD=POST>
 <INPUT TYPE="hidden" NAME="eventpart" VALUE="<% $part_bill_event->eventpart %>">

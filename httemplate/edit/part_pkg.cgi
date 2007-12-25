@@ -4,9 +4,7 @@
 )) %>
 % #), ' onLoad="visualize()"'); 
 
-% if ( $cgi->param('error') ) { 
-  <FONT SIZE="+1" COLOR="#ff0000">Error: <% $cgi->param('error') %></FONT>
-% } 
+<% include('/elements/error.html') %>
 
 <FORM NAME="dummy">
 
@@ -180,10 +178,18 @@ Line-item revenue recognition
 %  }
 %
 %  push @fixups, "pkg_svc$svcpart";
+%
+%  my $quan = 0;
+%  if ( $cgi->param("pkg_svc$svcpart") =~ /^\s*(\d+)\s*$/ ) {
+%    $quan = $1;
+%  } elsif ( $pkg_svc->quantity ) {
+%    $quan = $pkg_svc->quantity;
+%  }
+
 
   <TR>
     <TD>
-      <INPUT TYPE="text" NAME="pkg_svc<% $svcpart %>" SIZE=4 MAXLENGTH=3 VALUE="<% $cgi->param("pkg_svc$svcpart") || $pkg_svc->quantity || 0 %>">
+      <INPUT TYPE="text" NAME="pkg_svc<% $svcpart %>" SIZE=4 MAXLENGTH=3 VALUE="<% $quan %>">
     </TD>
    
     <TD>
@@ -207,10 +213,9 @@ Line-item revenue recognition
 
 
 </TR></TABLE></TD></TR></TABLE>
-% foreach my $f ( qw( clone pkgnum ) ) { 
-
-  <INPUT TYPE="hidden" NAME="<% $f %>" VALUE="<% $cgi->param($f) %>">
-% } 
+% foreach my $f ( qw( clone pkgnum ) ) { #safe, these were untained in %init 
+    <INPUT TYPE="hidden" NAME="<% $f %>" VALUE="<% $cgi->param($f) %>">
+% }
 
 <INPUT TYPE="hidden" NAME="pkgpart" VALUE="<% $part_pkg->pkgpart %>">
 %

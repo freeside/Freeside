@@ -182,4 +182,6 @@ function SafeOnsubmit() {
 %  }
 %
 %
-
+<%init>
+die "meta-import script not currently enabled"; #make XSS-safe if this is used for more than just admins to import data....
+</%init>

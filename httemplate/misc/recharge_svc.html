@@ -1,9 +1,6 @@
 <% include('/elements/header-popup.html', 'Recharge Service' ) %>
 
-% if ( $cgi->param('error') ) { 
-  <FONT SIZE="+1" COLOR="#ff0000">Error: <% $cgi->param('error') %></FONT>
-  <BR><BR>
-% } 
+<% include('/elements/error.html') %>
 
 <FORM NAME="recharge_popup" ACTION="<% popurl(1) %>process/recharge_svc.html" METHOD=POST>
 <INPUT TYPE="hidden" NAME="svcnum" VALUE="<% $svcnum %>">

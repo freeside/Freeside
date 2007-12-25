@@ -22,11 +22,8 @@
   'Main Menu' => $p,
   'View all payment gateways' => $p. 'browse/payment_gateway.html',
 )) %>
-% if ( $cgi->param('error') ) { 
 
-<FONT SIZE="+1" COLOR="#ff0000">Error: <% $cgi->param('error') %></FONT>
-% } 
-
+<% include('/elements/error.html') %>
 
 <FORM ACTION="<%popurl(1)%>process/payment_gateway.html" METHOD=POST>
 <INPUT TYPE="hidden" NAME="gatewaynum" VALUE="<% $payment_gateway->gatewaynum %>">

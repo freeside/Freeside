@@ -105,12 +105,8 @@
   'Main Menu' => popurl(2),
 ), ' onLoad="visualize()"')
 %>
-% if ( $cgi->param('error') ) { 
 
-  <FONT SIZE="+1" COLOR="#ff0000">Error: <% $cgi->param('error') %></FONT>
-  <BR><BR>
-% } 
-
+<% include('/elements/error.html') %>
 
 <FORM NAME="dummy">
 <INPUT TYPE="hidden" NAME="exportnum" VALUE="<% $part_export->exportnum %>">

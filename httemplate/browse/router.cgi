@@ -1,16 +1,10 @@
 <% include("/elements/header.html",'Routers', menubar('Main Menu'   => $p)) %>
 %
-%
 %my @router = qsearch('router', {});
 %my $p2 = popurl(2);
-%
-%
-% if ($cgi->param('error')) { 
 
-   <FONT SIZE="+1" COLOR="#ff0000">Error: <%$cgi->param('error')%></FONT>
-   <BR><BR>
-% } 
-%
+<% include('/elements/error.html') %>
+
 %my $hidecustomerrouters = 0;
 %my $hideurl = '';
 %if ($cgi->param('hidecustomerrouters') eq '1') {

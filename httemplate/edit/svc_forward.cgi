@@ -106,12 +106,8 @@
 
 
 <% include("/elements/header.html","Mail Forward $action") %>
-% if ( $cgi->param('error') ) { 
 
-  <FONT SIZE="+1" COLOR="#ff0000">Error: <% $cgi->param('error') %></FONT>
-  <BR><BR>
-% } 
-
+<% include('/elements/error.html') %>
 
 Service #<% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
 Service: <B><% $part_svc->svc %></B><BR><BR>

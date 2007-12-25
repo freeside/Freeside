@@ -1,9 +1,6 @@
 <%  header("Apply Credit", '') %>
 
-% if ( $cgi->param('error') ) { 
-  <FONT SIZE="+1" COLOR="#ff0000">Error: <% $cgi->param('error') %></FONT>
-  <BR><BR>
-% } 
+<% include('/elements/error.html') %>
 
 <FORM ACTION="<% $p1 %>process/cust_credit_bill.cgi" METHOD=POST>
 

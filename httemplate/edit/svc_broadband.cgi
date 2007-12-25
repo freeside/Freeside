@@ -85,12 +85,9 @@
 %
 
 
-<%include("/elements/header.html","Broadband Service $action", '')%>
-% if ($cgi->param('error')) { 
+<% include("/elements/header.html","Broadband Service $action", '') %>
 
-<FONT SIZE="+1" COLOR="#ff0000">Error: <%$cgi->param('error')%></FONT><BR>
-% } 
-
+<% include('/elements/error.html') %>
 
 Service #<B><%$svcnum ? $svcnum : "(NEW)"%></B><BR><BR>
 

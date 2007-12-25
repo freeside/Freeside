@@ -11,24 +11,28 @@
       'Main Menu' => $p,
     ))
 %>
-% if ( $cgi->param('error') ) { 
 
-  <FONT SIZE="+1" COLOR="#FF0000">Error: <% $cgi->param('error') %></FONT>
-% } 
-
+<% include('/elements/error.html') %>
 
 <FORM ACTION="<%popurl(1)%>process/reg_code.cgi" METHOD="POST" NAME="OneTrueForm" onSubmit="document.OneTrueForm.submit.disabled=true">
 <INPUT TYPE="hidden" NAME="agentnum" VALUE="<% $agent->agentnum %>">
 
 Generate
-<INPUT TYPE="text" NAME="num" VALUE="<% $cgi->param('num') %>" SIZE=5 MAXLENGTH=4>
+% my $num = '';
+% if ( $cgi->param('num') =~ /^\s*(\d+)\s*$/ ) {
+%   $num = $1;
+% }
+<INPUT TYPE="text" NAME="num" VALUE="<% $num %>" SIZE=5 MAXLENGTH=4>
 registration codes for <B><% $agent->agent %></B> allowing the following packages:
 <BR><BR>
-% foreach my $part_pkg ( qsearch('part_pkg', { 'disabled' => '' } ) ) { 
 
-  <INPUT TYPE="checkbox" NAME="pkgpart<% $part_pkg->pkgpart %>">
-  <% $part_pkg->pkg %> - <% $part_pkg->comment %>
-  <BR>
+% foreach my $part_pkg ( qsearch('part_pkg', { 'disabled' => '' } ) ) { 
+%   my $pkgpart = $part_pkg->pkgpart;
+
+    <INPUT TYPE="checkbox" NAME="pkgpart<% $pkgpart %>" <% $cgi->param("pkgpart$pkgpart") ? 'CHECKED' : '' %>>
+    <% $part_pkg->pkg %> - <% $part_pkg->comment %>
+    <BR>
+
 % } 
 
 

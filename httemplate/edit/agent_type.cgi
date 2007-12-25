@@ -20,11 +20,8 @@
   'View all agent types' => "${p}browse/agent_type.cgi",
 ))
 %>
-% if ( $cgi->param('error') ) { 
 
-  <FONT SIZE="+1" COLOR="#ff0000">Error: <% $cgi->param('error') %></FONT>
-% } 
-
+<% include('/elements/error.html') %>
 
 <FORM ACTION="<% popurl(1) %>process/agent_type.cgi" METHOD=POST>
 <INPUT TYPE="hidden" NAME="typenum" VALUE="<% $agent_type->typenum %>">

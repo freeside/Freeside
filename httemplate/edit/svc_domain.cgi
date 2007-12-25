@@ -63,11 +63,8 @@
 
 
 <% include('/elements/header.html', "$action $svc", '') %>
-% if ( $cgi->param('error') ) { 
 
-  <FONT SIZE="+1" COLOR="#ff0000">Error: <% $cgi->param('error') %></FONT>
-% } 
-
+<% include('/elements/error.html') %>
 
 <FORM ACTION="<% $p1 %>process/svc_domain.cgi" METHOD=POST>
 <INPUT TYPE="hidden" NAME="svcnum" VALUE="<% $svcnum %>">

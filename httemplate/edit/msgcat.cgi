@@ -1,10 +1,7 @@
 <% header("Edit Message catalog" ) %>
 <BR>
 
-% if ( $cgi->param('error') ) {
-  <FONT SIZE="+1" COLOR="#ff0000">Error: <% $cgi->param('error') %></FONT>
-  <BR><BR>
-% }
+<% include('/elements/error.html') %>
 
 <% $widget->html %>
 
