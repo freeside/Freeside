@@ -2,10 +2,8 @@
             ( $cgi->param('error') ? '' : 'onload="addRow()"' ),
           )
 %>
-% if ( $cgi->param('error') ) { 
 
-  <FONT SIZE="+1" COLOR="#ff0000"><% $cgi->param('error') %></FONT><BR><BR>
-% } 
+<% include('/elements/error.html') %>
 
 <SCRIPT TYPE="text/javascript">
 
@@ -73,23 +71,22 @@ function validate_quick_charge () {
 
 </SCRIPT>
 
-
-
 <FORM ACTION="process/quick-charge.cgi" NAME="QuickChargeForm" METHOD="POST" onsubmit="document.QuickChargeForm.submit.disabled=true;return validate_quick_charge();">
 
-<INPUT TYPE="hidden" NAME="custnum" VALUE="<% $cgi->param('custnum') %>">
+<INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
+
 <TABLE ID="QuickChargeTable" BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0 STYLE="background-color: #cccccc">
 
 <TR>
   <TD ALIGN="right">Amount:</TD>
   <TD>
-    $<INPUT TYPE="text" NAME="amount" SIZE=6 VALUE="<% $cgi->param('amount') %>" onChange="enable_quick_charge()" onKeyPress="enable_quick_charge_amount()">
+    $<INPUT TYPE="text" NAME="amount" SIZE=6 VALUE="<% $amount %>" onChange="enable_quick_charge()" onKeyPress="enable_quick_charge_amount()">
   </TD>
 <% include('/elements/tr-select-taxclass.html') %>
 </TR>
   <TD>Description:</TD>
   <TD>
-    <INPUT TYPE="text" NAME="pkg" SIZE="60" MAXLENGTH="65" VALUE="<% $cgi->param('pkg') %>" onChange="enable_quick_charge()" onKeyPress="enable_quick_charge_desc()">
+    <INPUT TYPE="text" NAME="pkg" SIZE="60" MAXLENGTH="65" VALUE="<% $pkg %>" onChange="enable_quick_charge()" onKeyPress="enable_quick_charge_desc()">
   </TD>
 </TR>
 <TR>
@@ -106,7 +103,7 @@ function validate_quick_charge () {
     <TR>
       <TD></TD>
       <TD>
-        <INPUT TYPE="text" NAME="description<% $row %>" SIZE="60" MAXLENGTH="65" VALUE="<% $param->{"description$row"} %>" rownum="<% $row %>" onkeyup = "possiblyAddRow;" >
+        <INPUT TYPE="text" NAME="description<% $row %>" SIZE="60" MAXLENGTH="65" VALUE="<% $param->{"description$row"} |h %>" rownum="<% $row %>" onkeyup = "possiblyAddRow;" >
       </TD>
     </TR>
 % } 
@@ -164,3 +161,18 @@ function validate_quick_charge () {
 
 </BODY>
 </HTML>
+<%init>
+
+$cgi->param('custnum') =~ /^(\d+)$/ or die 'illegal custnum';
+my $custnum = $1;
+
+my $amount = '';
+if ( $cgi->param('amount') =~ /^\s*\$?\s*(\d+(\.\d{1,2})?)\s*$/ ) {
+  $amount = $1;
+}
+
+$cgi->param('pkg') =~ /^([\w \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\=\[\]]*)$/ 
+  or die 'illegal description';
+my $pkg = $1;
+
+</%init>
