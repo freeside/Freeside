@@ -13,14 +13,75 @@ tie %options, 'Tie::IxHash',
   'user'     => { label => 'Northbound username', default=>'nbi' },
   'password' => { label => 'Password', default => '' },
   'ems'      => { label => 'Full EMS', type => 'checkbox' },
+  'element_name_length' => { label => 'Size of siteName (best left blank)' },
 ;
+
+my $notes = <<'EOT';
+Real-time export of <b>svc_broadband</b>, <b>cust_pkg</b>, and <b>cust_main</b>
+record data to Motorola
+<a href="http://motorola.canopywireless.com/products/prizm/">Canopy Prizm
+software</a> via the Northbound interface.<br><br>
+
+Freeside will attempt to create an element in an existing network with the
+values provided in svc_broadband.  Of particular interest are
+<ul>
+  <li> mac address - used to identify the element
+  <li> vlan profile - an exact match for a vlan profiles defined in prizm
+  <li> ip address - defines the management ip address of the prizm element
+  <li> latitude - GPS latitude
+  <li> longitude - GPS longitude
+  <li> altitude - GPS altitude
+</ul>
+
+In addition freeside attempts to set the service plan name in prizm to the
+name of the package in which the service resides.
+
+The service is associated with a customer in prizm as well, and freeside
+will create the customer should none already exist with import id matching
+the freeside customer number.  The following fields are set.
+
+<ul>
+  <li> importId - the freeside customer number
+  <li> customerType - freeside
+  <li> customerName - the name associated with the freeside shipping address
+  <li> address1 - the shipping address
+  <li> address2
+  <li> city
+  <li> state
+  <li> zipCode
+  <li> country
+  <li> workPhone - the daytime phone number
+  <li> homePhone - the night phone number
+  <li> freesideId - the freeside customer number
+</ul>
+
+  Additionally set on the element are
+<ul>
+  <li> Site Name - The shipping name followed by the service broadband description field
+  <li> Site Location - the shipping address
+  <li> Site Contact - the daytime and night phone numbers
+</ul>
+
+Freeside provisions, suspends, and unsuspends elements BAM only unless the
+'Full EMS' checkbox is checked.<br><br>
+
+When freeside provisions an element the siteName is copied internally by
+prizm in such a manner that it is possible for the value to exceed the size
+of the column used in the prizm database.  Therefore freeside truncates
+by default this value to 50 characters.  It is thought that this
+column is the account_name column of the element_user_account table.  It
+may be possible to lift this limit by modifying the prizm database and
+setting a new appropriate value on this export.  This is untested and
+possibly harmful.
+
+EOT
 
 %info = (
   'svc'      => 'svc_broadband',
   'desc'     => 'Real-time export to Northbound Interface',
   'options'  => \%options,
   'nodomain' => 'Y',
-  'notes'    => 'These are notes.'
+  'notes'    => $notes,
 );
 
 sub prizm_command {
@@ -138,11 +199,14 @@ sub _export_insert {
 #    }
 #  }
 
+  my $element_name_length = 50;
+  $element_name_length = $1
+    if $self->option('element_name_length') =~ /^\s*(\d+)\s*$/;
   $err_or_som = $self->prizm_command('NetworkIfService', 'addProvisionedElement',
                                       $networkid,
                                       $svc->mac_addr,
                                       substr($name . " " . $svc->description,
-                                             0, 150),
+                                             0, $element_name_length),
                                       $location,
                                       $contact,
                                       sprintf("%032X", $svc->authkey),
