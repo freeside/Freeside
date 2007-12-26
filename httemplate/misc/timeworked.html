@@ -1,72 +1,97 @@
 <% include('/elements/header.html', $title, '' ) %>
 
-% if ( $cgi->param('error') ) { 
-  <FONT SIZE="+1" COLOR="#ff0000">Error: <% $cgi->param('error') %></FONT>
-  <BR><BR>
-% } 
+<% include('/elements/error.html') %>
 
 <FORM NAME="timeworked_form" ACTION="<% popurl(1) %>process/timeworked.html" METHOD=POST>
 
 <TABLE CELLSPACING="2" CELLPADDING="2" RULES="groups" FRAME="hsides">
 
-<THEAD>
-  <TR>
-    <TH>Trans</TH>
-    <TH COLSPAN="2">Ticket</TH>
-    <TH>Time</TH>
-    <TH COLSPAN="2">Customer</TH>
-    <TH>Multiplier</TH>
-  </TR>
+  <THEAD>
+    <TR>
+      <TH>Trans</TH>
+      <TH COLSPAN="2">Ticket</TH>
+      <TH>Time</TH>
+      <TH COLSPAN="2">Customer</TH>
+      <TH>Multiplier</TH>
+    </TR>
 
-  <TR>
-    <TH>#</TH>
-    <TH>#</TH>
-    <TH>Subject</TH>
-    <TH>hours</TH>
-    <TH>#</TH>
-    <TH>Name</TH>
-    <TH></TH>
-  </TR>
-</THEAD>
+    <TR>
+      <TH>#</TH>
+      <TH>#</TH>
+      <TH>Subject</TH>
+      <TH>hours</TH>
+      <TH>#</TH>
+      <TH>Name</TH>
+      <TH></TH>
+    </TR>
+  </THEAD>
 
-%  foreach my $tr_id ( keys %ticketmap ) {
-%    my (@customers) = @{$customers{$ticketmap{$tr_id}}};
-%    next unless @customers;
-%    my $multiplier = sprintf("%.2f", 1/@customers);
-%    my ($custnum, $name) = split(':', pop @customers, 2);
-%    my $link = $p. 'rt/Ticket/Display.html?id='. $ticketmap{$tr_id}.
-%                   '#txn-'. $tr_id;
+  <TBODY>
 
-<TBODY>
-  <TR>
-  <TD><a href="<% $link %>"><% $tr_id %></a></TD>
-  <TD><a href="<% $link %>"><% $ticketmap{$tr_id} %></a></TD>
-  <TD><a href="<% $link %>"><% $ticket{$ticketmap{$tr_id}} |h %></a></TD>
-  <TD><% sprintf("%0.2f", $cgi->param("seconds$tr_id")/3600) %></TD>
-  <TD ALIGN="right"><% $custnum %></TD>
-  <TD ALIGN="right"><% $name %></TD>
-  <TD>
-    <INPUT TYPE="hidden" NAME="transactionid<% $tr_id %>" VALUE="1" >
-    <INPUT TYPE="hidden" NAME="seconds<% $tr_id %>" VALUE="<% $cgi->param("seconds$tr_id") %>" >
-    <INPUT TYPE="text" NAME="multiplier<% $tr_id %>_<% $custnum %>" SIZE="5" VALUE="<% $cgi->param("multiplier${_}_$custnum") ? $cgi->param("multiplier${_}_$custnum") : $multiplier %>" >
-  </TR>
+%   foreach my $tr_id ( keys %ticketmap ) {
+%     my (@customers) = @{$customers{$ticketmap{$tr_id}}};
+%     next unless @customers;
+%     my $default_multiplier = sprintf("%.2f", 1/@customers);
+%     my ($custnum, $name) = split(':', pop @customers, 2);
+%     my $link = $p. 'rt/Ticket/Display.html?id='. $ticketmap{$tr_id}.
+%                    '#txn-'. $tr_id;
 
-%    foreach ( @customers ) {
-%      ($custnum, $name) = split(':', $_, 2);
+      <TR>
+        <TD><a href="<% $link %>"><% $tr_id %></a></TD>
+        <TD><a href="<% $link %>"><% $ticketmap{$tr_id} %></a></TD>
+        <TD><a href="<% $link %>"><% $ticket{$ticketmap{$tr_id}} |h %></a></TD>
 
-  <TR>
-  <TD ALIGN="right" COLSPAN="5" ><% $custnum %></TD>
-  <TD ALIGN="right"><% $name %></TD>
-  <TD>
-    <INPUT TYPE="text" NAME="multiplier<% $tr_id %>_<% $custnum %>" SIZE="5" VALUE="<% $cgi->param("multiplier${tr_id}_$custnum") ? $cgi->param("multiplier${tr_id}_$custnum") : $multiplier %>" >
-  </TR>
-</TBODY>
+%       my $seconds = 0;
+%       if ( $cgi->param("seconds$tr_id") =~ /^(\d+)$/ ) {
+%         $seconds = $1;
+%       }
 
-%    }
-%  }
+        <TD><% sprintf("%0.2f", $seconds/3600) %></TD>
+        <TD ALIGN="right"><% $custnum %></TD>
+        <TD ALIGN="right"><% $name %></TD>
+        <TD>
+          <INPUT TYPE="hidden" NAME="transactionid<%$tr_id%>" VALUE="1" >
+          <INPUT TYPE="hidden" NAME="seconds<%$tr_id%>" VALUE="<% $seconds %>" >
+
+%         my $multiplier = $default_multiplier;
+%         my $mult_paramname = "multiplier${tr_id}_$custnum"
+%         if ( $cgi->param($mult_paramname) =~ /^\s*([\d\.]+)\s*$/ ) {
+%           $multiplier = $1;
+%         }
+
+          <INPUT TYPE="text" NAME="<% $mult_paramname %>" SIZE="5" VALUE="<% $multiplier %>" >
+        </TD>
+      </TR>
+
+%     foreach ( @customers ) {
+%       ($custnum, $name) = split(':', $_, 2);
+
+        <TR>
+          <TD ALIGN="right" COLSPAN="5" ><% $custnum %></TD>
+          <TD ALIGN="right"><% $name %></TD>
+          <TD>
+
+%           $multiplier = $default_multiplier;
+%           $mult_paramname = "multiplier${tr_id}_$custnum";
+%           if ( $cgi->param($mult_paramname) =~ /^\s*([\d\.]+)\s*$/ ) {
+%             $multiplier = $1;
+%           }
+
+            <INPUT TYPE="text" NAME="<% $mult_paramname %>" SIZE="5" VALUE="<% $multiplier %>" >
+
+          </TD>
+
+        </TR>
+
+%     }
+%   }
+
+  </TBODY>
 
 </TABLE>
+
 <BR>
+
 <INPUT TYPE="submit" NAME="submit" VALUE="<% $title %>">
 </FORM>
 </BODY>
