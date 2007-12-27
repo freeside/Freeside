@@ -312,8 +312,9 @@ foreach my $r (qsearch('cust_main_county', {}, '', $gotcust) ) {
 
   } else {
 
-    my $same_query = "SELECT COUNT(*) FROM cust_main_county WHERE country = ?";
-    my @same_param = ( 'country' );
+    my $same_query = 'SELECT taxclass FROM cust_main_county '.
+                     ' WHERE taxnum != ? AND country = ?';
+    my @same_param = ( 'taxnum', 'country' );
     foreach my $opt_field (qw( state county )) {
       if ( $r->$opt_field() ) {
         $same_query .= " AND $opt_field = ?";
@@ -323,12 +324,11 @@ foreach my $r (qsearch('cust_main_county', {}, '', $gotcust) ) {
       }
     }
 
-    my $num_same_region = scalar_sql( $r, \@same_param, $same_query );
+    my @taxclasses = list_sql( $r, \@same_param, $same_query );
 
-    if ( $num_same_region > 1 ) {
-
-      $mywhere .= " AND taxclass IS NULL";
-
+    if ( scalar(@taxclasses) ) {
+      $mywhere .= ' AND '. join(' AND ', map ' taxclass != ? ', @taxclasses );
+      push @param, @taxclasses;
     }
   
   }
@@ -565,7 +565,14 @@ sub scalar_sql {
   $sth->fetchrow_arrayref->[0] || 0;
 }
 
-
+sub list_sql {
+  my( $r, $param, $sql ) = @_;
+  #warn "$sql\n";
+  my $sth = dbh->prepare($sql) or die dbh->errstr;
+  $sth->execute( map $r->$_(), @$param )
+    or die "Unexpected error executing statement $sql: ". $sth->errstr;
+  map $_->[0], @{ $sth->fetchall_arrayref };
+}
 
 my $dateagentlink = "begin=$beginning;end=$ending";
 $dateagentlink .= ';agentnum='. $cgi->param('agentnum')
