@@ -1,24 +1,18 @@
 #!/usr/bin/perl
-#
-# This is a basic, fairly fuctional Mason handler.pl.
-#
-# For something a little more involved, check out session_handler.pl
 
 package HTML::Mason;
 
-# Bring in main Mason package.
+use strict;
+use vars qw($r);
 use HTML::Mason 1.27; #http://www.masonhq.com/?ApacheModPerl2Redirect
+use HTML::Mason::Interp;
+use HTML::Mason::Compiler::ToObject;
 
 # Bring in ApacheHandler, necessary for mod_perl integration.
 # Uncomment the second line (and comment the first) to use
 # Apache::Request instead of CGI.pm to parse arguments.
 use HTML::Mason::ApacheHandler;
 # use HTML::Mason::ApacheHandler (args_method=>'mod_perl');
-
-# Uncomment the next line if you plan to use the Mason previewer.
-#use HTML::Mason::Preview;
-
-use strict;
 
 ###use Module::Refresh;###
 
@@ -28,18 +22,6 @@ use strict;
 #   use CGI;
 #}
 
-# Create Mason objects
-#
-
-#my $parser = new HTML::Mason::Parser;
-#my $interp = new HTML::Mason::Interp (parser=>$parser,
-#                                      comp_root=>'/var/www/masondocs',
-#                                      data_dir=>'/usr/local/etc/freeside/masondata',
-#                                      out_mode=>'stream',
-#                                     );
-
-use vars qw($r);
-
 if ( %%%RT_ENABLED%%% ) {
  eval '
    use lib ( "/opt/rt3/local/lib", "/opt/rt3/lib" );
@@ -48,26 +30,43 @@ if ( %%%RT_ENABLED%%% ) {
    RT::LoadConfig();
  ';
  die $@ if $@;
-
-
 }
 
+# Create Mason objects
+
+my %interp = (
+  request_class        => 'HTML::Mason::Request::ApacheHandler',
+  data_dir             => '%%%MASONDATA%%%',
+  ignore_warnings_expr => '.',
+  comp_root            => [
+                            [ 'freeside' => '%%%FREESIDE_DOCUMENT_ROOT%%%'    ],
+                            [ 'rt'       => '%%%FREESIDE_DOCUMENT_ROOT%%%/rt' ],
+                          ],
+);
+
+my $fs_interp = new HTML::Mason::Interp (
+  %interp,
+  escape_flags => { 'js_string' => sub {
+                      #${$_[0]} =~ s/(['\\\n])/'\\'.($1 eq "\n" ? 'n' : $1)/ge;
+                      ${$_[0]} =~ s/(['\\])/\\$1/g;
+                      ${$_[0]} =~ s/\n/\\n/g;
+                      ${$_[0]} = "'". ${$_[0]}. "'";
+                    }
+                  },
+);
+
+my $rt_interp = new HTML::Mason::Interp (
+  %interp,
+  escape_flags => { 'h' => \&RT::Interface::Web::EscapeUTF8 },
+  compiler     => HTML::Mason::Compiler::ToObject->new(
+                    default_escape_flags => 'h',
+                    allow_globals        => [qw(%session)],
+                  ),
+);
 
 my $ah = new HTML::Mason::ApacheHandler (
-  #interp => $interp,
-  #auto_send_headers => 0,
-  comp_root=> [
-                [ 'freeside' => '%%%FREESIDE_DOCUMENT_ROOT%%%'    ],
-                [ 'rt'       => '%%%FREESIDE_DOCUMENT_ROOT%%%/rt' ],
-              ],
-  data_dir=>'%%%MASONDATA%%%',
-  #out_mode=>'stream',
-
-  #RT
-  args_method => 'CGI',
-  default_escape_flags => 'h',
-  allow_globals => [qw(%session)],
-  #autoflush => 1,
+  interp      => $fs_interp,
+  args_method => 'CGI', #(and FS too)
 );
 
 # Activate the following if running httpd as root (the normal case).
@@ -333,15 +332,11 @@ sub handler
 
 #    $r->send_http_header;
 
-    #$ah->interp->remove_escape('h');
-
     if ( $r->filename =~ /\/rt\// ) { #RT
-      #warn "processing RT file". $r->filename. "; escaping for RT\n";
 
+      $ah->interp($rt_interp);
       # MasonX::Request::ExtendedCompRoot
       #$ah->interp->comp_root( '/rt'. $ah->interp->comp_root() );
-
-      $ah->interp->set_escape( h => \&RT::Interface::Web::EscapeUTF8 );
 
       local $SIG{__WARN__};
       local $SIG{__DIE__};
@@ -349,21 +344,14 @@ sub handler
       RT::Init();
 
       # We don't need to handle non-text, non-xml items
-      return -1 if defined( $r->content_type ) && $r->content_type !~ m!(^text/|\bxml\b)!io;
+      return -1 if defined( $r->content_type )
+                && $r->content_type !~ m!(^text/|\bxml\b)!io;
 
     } else {
-      #$ah->interp->set_escape( 'h' => sub { ${$_[0]}; } );
-      $ah->interp->set_escape( 'h' => sub {} );
 
-      $ah->interp->set_escape( 'js_string' => sub {
-        #${$_[0]} =~ s/(['\\\n])/'\\'.($1 eq "\n" ? 'n' : $1)/ge;
-        ${$_[0]} =~ s/(['\\])/\\$1/g;
-        ${$_[0]} =~ s/\n/\\n/g;
-        ${$_[0]} = "'". ${$_[0]}. "'";
-      } );
+      $ah->interp($fs_interp);
+
     }
-
-    $ah->interp->ignore_warnings_expr('.');
 
     my %session;
     my $status;
