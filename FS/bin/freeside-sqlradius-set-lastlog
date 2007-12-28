@@ -1,0 +1,102 @@
+#!/usr/bin/perl -w
+
+use strict;
+use Getopt::Std;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch qsearchs str2time_sql);
+use FS::Conf;
+use FS::part_export;
+use FS::svc_acct;
+
+my %allowed_types = map { $_ => 1 } qw ( sqlradius sqlradius_withdomain );
+my $conf = new FS::Conf;
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+my $export_x = shift;
+my @part_export;
+if ( !defined($export_x) ) {
+  @part_export = qsearch('part_export', {} );
+} elsif ( $export_x =~ /^(\d+)$/ ) {
+  @part_export = qsearchs('part_export', { exportnum=>$1 } )
+    or die "exportnum $export_x not found\n";
+} else {
+  @part_export = qsearch('part_export', { exporttype=>$export_x } )
+    or die "no exports of type $export_x found\n";
+}
+
+# gross almost false laziness with FS::part_export::sqlradius::update_svc_acct
+@part_export = grep { ! $_->option('ignore_accounting') }
+               grep { $allowed_types{$_->exporttype} }
+               @part_export
+  or die "No sqlradius exports specified.";
+
+
+foreach my $part_export ( @part_export ) {
+  my $dbh = DBI->connect( map $part_export->option($_),
+                           qw ( datasrc username password ) );
+
+  my $str2time = str2time_sql( $dbh->{Driver}->{Name} );
+  my $group = "UserName";
+  $group .= ",Realm"
+    if ( ref($part_export) =~ /withdomain/ );
+
+  my $sth = $dbh->prepare("SELECT UserName, Realm,
+                          $str2time max(AcctStartTime)),
+                          $str2time max(AcctStopTime))
+                          FROM radacct
+                          WHERE AcctStartTime != 0 AND AcctStopTime != 0
+                          GROUP BY $group")
+    or die $dbh->errstr;
+  $sth->execute() or die $sth->errstr;
+
+  while (my $row = $sth->fetchrow_arrayref ) {
+    my ($username, $realm, $start, $stop) = @$row;
+
+    $username = lc($username) unless $conf->exists('username-uppercase');
+    my $extra_sql = '';
+    if ( ref($part_export) =~ /withdomain/ ) {
+      $extra_sql = " And '$realm' = ( SELECT domain FROM svc_domain
+                       WHERE svc_domain.svcnum = svc_acct.domsvc ) ";
+    }
+
+    my $svc_acct = qsearchs( 'svc_acct',
+                             { 'username' => $username },
+                             '',
+                             $extra_sql,
+                           );
+    if ($svc_acct) {
+      $svc_acct->last_login($start)
+        if $start && (!$svc_acct->last_login || $start > $svc_acct->last_login);
+      $svc_acct->last_logout($stop)
+        if $stop && (!$svc_acct->last_logout || $stop > $svc_acct->last_logout);
+    }
+  }
+}
+
+
+sub usage {
+  die "Usage:\n\n  freeside-sqlradius-set_lastlog user [ exportnum|exporttype ]\n";
+}
+
+=head1 NAME
+
+freeside-sqlradius-set-lastlog - Command line tool to set last_login and last_logout values from radius tables
+
+=head1 SYNOPSIS
+
+  freeside-sqlradius-set-lastlog user [ exportnum|exporttype ]
+
+=head1 DESCRIPTION
+
+  Sets the last_login and last_logout columns of each svc_acct based on
+  data in the radacct table for the specified export (selected by exportnum
+  or exporttype) or all exports if none are specified.
+
+=head1 SEE ALSO
+
+L<freeside-sqlradius-radacctd>, L<FS::part_export> 
+
+=cut
+
