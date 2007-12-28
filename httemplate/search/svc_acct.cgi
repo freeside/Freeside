@@ -157,6 +157,16 @@ if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
 
   }
 
+} elsif ( $cgi->param('magic') =~ /^nologin$/ ) {
+
+  if ( $cgi->param('sortby') =~ /^(\w+)$/ ) {
+    my $sortby = $1;
+    $sortby = "LOWER($sortby)"
+      if $sortby eq 'username';
+    push @extra_sql, "last_login IS NULL";
+    $orderby = "ORDER BY $sortby";
+  }
+
 } elsif ( $cgi->param('popnum') =~ /^(\d+)$/ ) {
   push @extra_sql, "popnum = $1";
   $orderby = "ORDER BY LOWER(username)";

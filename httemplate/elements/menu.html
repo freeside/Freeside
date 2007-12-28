@@ -131,6 +131,13 @@ foreach my $svcdb ( FS::part_svc->svc_tables() ) {
       ];
   }
 
+  if ( $svcdb = 'svc_acct' ) {
+    $report_svc{"All $lcname never logged in"} = 
+      [ svc_url( %svc_url, 'query' => "magic=nologin;sortby=svcnum" ),
+        '',
+      ];
+  }
+
   if ( $curuser->access_right('View/link unlinked services') ) {
     $report_svc{"Unlinked $lcname"} = 
       [ svc_url( %svc_url, 'query' => "magic=unlinked;sortby=". $sorts->[0] ),
