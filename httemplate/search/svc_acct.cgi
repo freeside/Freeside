@@ -167,6 +167,42 @@ if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
     $orderby = "ORDER BY $sortby";
   }
 
+} elsif ( $cgi->param('magic') =~ /^advanced$/ ) {
+  $orderby = "";
+
+  if ( $cgi->param('agentnum') =~ /^(\d+)$/ and $1 ) {
+    push @extra_sql, "agentnum = $1";
+  }
+
+  my $pkgpart = join (' OR cust_pkg.pkgpart=',
+                      grep {$_} map { /^(\d+)$/; } ($cgi->param('pkgpart')));
+  push @extra_sql,  '(cust_pkg.pkgpart=' . $pkgpart . ')' if $pkgpart;
+                      
+  foreach my $field (qw( last_login last_logout )) {
+
+    my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi, $field);
+
+    next if $beginning == 0 && $ending == 4294967295;
+
+    if ($cgi->param($field."_invert")) {
+      push @extra_sql,
+        "(svc_acct.$field IS NULL OR ".
+        "svc_acct.$field < $beginning AND ".
+        "svc_acct.$field > $ending)";
+    } else {
+      push @extra_sql,
+        "svc_acct.$field IS NOT NULL",
+        "svc_acct.$field >= $beginning",
+        "svc_acct.$field <= $ending";
+    }
+  
+    $orderby ||= "ORDER BY svc_acct.$field" .
+      ($cgi->param($field."_invert") ? ' DESC' : '');
+
+  }
+
+  $orderby ||= "ORDER BY svcnum";
+
 } elsif ( $cgi->param('popnum') =~ /^(\d+)$/ ) {
   push @extra_sql, "popnum = $1";
   $orderby = "ORDER BY LOWER(username)";
@@ -218,10 +254,10 @@ if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
 
 }
 
-push @header, FS::UI::Web::cust_header();
+push @header, FS::UI::Web::cust_header($cgi->param('cust_fields'));
 push @fields, \&FS::UI::Web::cust_fields,
 push @links, map { $_ ne 'Cust. Status' ? $link_cust : '' }
-                 FS::UI::Web::cust_header();
+                 FS::UI::Web::cust_header($cgi->param('cust_fields'));
 $align .= FS::UI::Web::cust_aligns();
 push @color, FS::UI::Web::cust_colors();
 push @style, FS::UI::Web::cust_styles();

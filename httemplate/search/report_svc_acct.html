@@ -1,0 +1,91 @@
+<% include('/elements/header.html', 'Account Report' ) %>
+
+<FORM ACTION="svc_acct.cgi" METHOD="GET">
+<INPUT TYPE="hidden" NAME="magic" VALUE="advanced">
+
+  <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+    <TR>
+      <TH BGCOLOR="#e8e8e8" COLSPAN=2 ALIGN="left"><FONT SIZE="+1">Search options</FONT></TH>
+    </TR>
+    <% include( '/elements/tr-select-agent.html',
+                   ($cgi->param('agentnum') || ''),
+               )
+    %>
+
+    <SCRIPT type="text/javascript">
+      function toggle(what) {
+        label = document.getElementById (what + '_label');
+        field = document.getElementById ( what + '_invert');
+        if (field.value == 1) {
+          field.value = 0;
+        } else {
+          field.value = 1;
+        }
+        if (field.value == 1) {
+          label.firstChild.nodeValue = 'Did not ' + label.firstChild.nodeValue;
+        }else{
+          text = label.firstChild.nodeValue;
+          label.firstChild.nodeValue = text.replace(/Did not /, '');
+        }
+      }
+    </SCRIPT>
+%   foreach my $field (qw( last_login last_logout )) {
+%     my $invert = $field."_invert";
+
+      <TR>
+        <TD>
+          <TABLE>
+            <TR>
+              <TD ALIGN="right" VALIGN="center" ID="<% $field."_label" %>">
+                <% $label{$field} %>
+              </TD>
+              <TD>
+                <INPUT NAME="<% $invert %>" ID="<% $invert %>" TYPE="hidden">
+                <A HREF="javascript:void(0)" onClick="toggle('<% $field %>'); return false;">Invert</A>
+              </TD>
+            </TR>
+          </TABLE>
+        </TD>
+        <TD>
+          <TABLE>
+            <% include( '/elements/tr-input-beginning_ending.html',
+                          prefix   => $field,
+                          layout   => 'horiz',
+                      )
+            %>
+          </TABLE>
+        </TD>
+      </TR>
+
+%   }
+    
+    <% include( '/elements/tr-selectmultiple-part_pkg.html' ) %> 
+ 
+    <TR>
+      <TH BGCOLOR="#e8e8e8" COLSPAN=2 ALIGN="left"><FONT SIZE="+1">Display options</FONT></TH>
+    </TR>
+    <% include( '/elements/tr-select-cust-fields.html' ) %>
+                       
+  </TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="Get Report">
+
+</FORM>
+
+<% include('/elements/footer.html') %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('List packages');
+
+</%init>
+<%once>
+
+my %label = (
+  'last_login'  => 'Last login',
+  'last_logout' => 'Last logout',
+);
+
+</%once>

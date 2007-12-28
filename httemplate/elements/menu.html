@@ -105,6 +105,7 @@ foreach my $svcdb ( FS::part_svc->svc_tables() ) {
   my $name =        "FS::$svcdb"->table_info->{'name_plural'}
              || PL( "FS::$svcdb"->table_info->{'name'}        );
   my $lcname = lc($name);
+  my $lcsname = lc("FS::$svcdb"->table_info->{'name'});
   my $longname = "FS::$svcdb"->table_info->{'longname_plural'} || $name;
   my $lclongname = lc($longname);
   my $sorts = "FS::$svcdb"->table_info->{'sorts'} || [ 'svcnum' ];
@@ -143,6 +144,11 @@ foreach my $svcdb ( FS::part_svc->svc_tables() ) {
       [ svc_url( %svc_url, 'query' => "magic=unlinked;sortby=". $sorts->[0] ),
         "Pre-Freeside $lcname without a customer record",
       ];
+  }
+
+  if ( $svcdb eq 'svc_acct' ) {
+    $report_svc{"Advanced $lcsname reports"} = 
+      [ $fsurl."search/report_$svcdb.html", '' ];
   }
 
   $report_services{$name} = [ \%report_svc, $longname ];
