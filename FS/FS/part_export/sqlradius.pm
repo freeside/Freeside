@@ -619,9 +619,11 @@ sub update_svc_acct {
 
   my $conf = new FS::Conf;
 
+  my $fdbh = dbh;
   my $dbh = sqlradius_connect( map $self->option($_),
                                    qw( datasrc username password ) );
 
+  my $str2time = str2time_sql( $dbh->{Driver}->{Name} );
   my @fields = qw( radacctid username realm acctsessiontime );
 
   my @param = ();
@@ -629,6 +631,7 @@ sub update_svc_acct {
 
   my $sth = $dbh->prepare("
     SELECT RadAcctId, UserName, Realm, AcctSessionTime,
+           $str2time AcctStartTime),  $str2time AcctStopTime), 
            AcctInputOctets, AcctOutputOctets
       FROM radacct
       WHERE FreesideStatus IS NULL
@@ -637,8 +640,8 @@ sub update_svc_acct {
   $sth->execute() or die $sth->errstr;
 
   while ( my $row = $sth->fetchrow_arrayref ) {
-    my($RadAcctId, $UserName, $Realm, $AcctSessionTime,
-       $AcctInputOctets, $AcctOutputOctets) = @$row;
+    my($RadAcctId, $UserName, $Realm, $AcctSessionTime, $AcctStartTime,
+       $AcctStopTime, $AcctInputOctets, $AcctOutputOctets) = @$row;
     warn "processing record: ".
          "$RadAcctId ($UserName\@$Realm for ${AcctSessionTime}s"
       if $DEBUG;
@@ -652,6 +655,9 @@ sub update_svc_acct {
       $extra_sql = " AND '$Realm' = ( SELECT domain FROM svc_domain
                           WHERE svc_domain.svcnum = svc_acct.domsvc ) ";
     }
+
+    my $oldAutoCommit = $FS::UID::AutoCommit; # can't undo side effects, but at
+    local $FS::UID::AutoCommit = 0;           # least we can avoid over counting
 
     my @svc_acct =
       grep { qsearch( 'export_svc', { 'exportnum' => $self->exportnum,
@@ -672,15 +678,15 @@ sub update_svc_acct {
       warn "WARNING: multiple svc_acct records found $errinfo - skipping\n";
     } else {
       warn "found svc_acct ". $svc_acct[0]->svcnum. " $errinfo\n" if $DEBUG;
-      _try_decrement($svc_acct[0], 'seconds', $AcctSessionTime) 
-        and $status='done';
-      _try_decrement($svc_acct[0], 'upbytes', $AcctInputOctets)
-        and $status='done';
-      _try_decrement($svc_acct[0], 'downbytes', $AcctOutputOctets)
-        and $status='done';
-      _try_decrement($svc_acct[0], 'totalbytes', $AcctInputOctets + 
-                     $AcctOutputOctets)
-        and $status='done';
+      $svc_acct[0]->last_login($AcctStartTime);
+      $svc_acct[0]->last_logout($AcctStopTime);
+      my @stati;
+      push @stati, _try_decrement($svc_acct[0], 'seconds', $AcctSessionTime);
+      push @stati, _try_decrement($svc_acct[0], 'upbytes', $AcctInputOctets);
+      push @stati, _try_decrement($svc_acct[0], 'downbytes', $AcctOutputOctets);
+      push @stati, _try_decrement($svc_acct[0], 'totalbytes', $AcctInputOctets + 
+                     $AcctOutputOctets);
+      $status=join(' ', @stati);
     }
 
     warn "setting FreesideStatus to $status $errinfo\n" if $DEBUG; 
@@ -689,6 +695,8 @@ sub update_svc_acct {
                                 WHERE RadAcctId = ?"
     ) or die $dbh->errstr;
     $psth->execute($status, $RadAcctId) or die $psth->errstr;
+
+    $fdbh->commit or die $fdbh->errstr if $oldAutoCommit;
 
   }
 
@@ -707,7 +715,7 @@ sub _try_decrement {
   } else {
     warn "  no existing $column value for svc_acct - skipping\n" if $DEBUG;
   }
-  return '';
+  return 'skipped';
 }
 
 1;

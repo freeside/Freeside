@@ -1057,6 +1057,8 @@ sub tables_hashref {
         'totalbytes','bigint', 'NULL',   '', '', '',
         'totalbytes_threshold',   'bigint', 'NULL',   '', '', '',
         'domsvc',    'int', '',   '', '', '', 
+        'last_login',  @date_type, '', '', 
+        'last_logout', @date_type, '', '', 
       ],
       'primary_key' => 'svcnum',
       #'unique' => [ [ 'username', 'domsvc' ] ],

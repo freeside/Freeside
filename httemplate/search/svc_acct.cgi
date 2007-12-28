@@ -77,12 +77,12 @@ my $link_cust = sub {
 
 my @extra_sql = ();
 
-my @header = ( '#', 'Service', 'Account', 'UID' );
-my @fields = ( 'svcnum', 'svc', 'email', 'uid' );
-my @links = ( $link, $link, $link, $link );
-my $align = 'rlll';
-my @color = ( '', '', '', '' );
-my @style = ( '', '', '', '' );
+my @header = ( '#', 'Service', 'Account', 'UID', 'Last Login' );
+my @fields = ( 'svcnum', 'svc', 'email', 'uid', 'last_login_text' );
+my @links = ( $link, $link, $link, $link, $link );
+my $align = 'rlllr';
+my @color = ( '', '', '', '', '' );
+my @style = ( '', '', '', '', '' );
 
 if ( $cgi->param('domain') ) { 
   my $svc_domain =
@@ -110,7 +110,7 @@ if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
     $sortby = "LOWER($sortby)"
       if $sortby eq 'username';
     push @extra_sql, "$sortby IS NOT NULL"
-      if $sortby eq 'uid' || $sortby eq 'seconds';
+      if $sortby eq 'uid' || $sortby eq 'seconds' || $sortby eq 'last_login';
     $orderby = "ORDER BY $sortby";
   }
 

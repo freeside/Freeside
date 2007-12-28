@@ -79,6 +79,7 @@
 
   Upload: <B><% sprintf("%.3f", $input) %></B> megabytes<BR>
   Download: <B><% sprintf("%.3f", $output) %></B> megabytes<BR>
+  Last Login: <B><% $svc_acct->last_login_text %></B><BR>
 % my $href = qq!<A HREF="${p}search/sqlradius.cgi?svcnum=$svcnum!; 
 
   View session detail:

@@ -204,7 +204,7 @@ sub table_info {
   {
     'name'   => 'Account',
     'longname_plural' => 'Access accounts and mailboxes',
-    'sorts' => [ 'username', 'uid', 'seconds' ],
+    'sorts' => [ 'username', 'uid', 'seconds', 'last_login' ],
     'display_weight' => 10,
     'cancel_weight'  => 50, 
     'fields' => {
@@ -322,6 +322,14 @@ sub table_info {
                                    'format' => \&FS::UI::bytecount::display_bytecount,
                                    'parse' => \&FS::UI::bytecount::parse_bytecount,
                                  },
+        'last_login'=>           {
+                                   label     => 'Last login',
+                                   type      => 'disabled',
+                                 },
+        'last_logout'=>          {
+                                   label     => 'Last logout',
+                                   type      => 'disabled',
+                                 },
     },
   };
 }
@@ -342,6 +350,54 @@ sub _fieldhandlers {
                          }
                        },
   };
+}
+
+sub last_login {
+  shift->_lastlog('in', @_);
+}
+
+sub last_logout {
+  shift->_lastlog('out', @_);
+}
+
+sub _lastlog {
+  my( $self, $op, $time ) = @_;
+
+  if ( defined($time) ) {
+    warn "$me last_log$op called on svcnum ". $self->svcnum.
+         ' ('. $self->email. "): $time\n"
+      if $DEBUG;
+
+    local $SIG{HUP} = 'IGNORE';
+    local $SIG{INT} = 'IGNORE';
+    local $SIG{QUIT} = 'IGNORE';
+    local $SIG{TERM} = 'IGNORE';
+    local $SIG{TSTP} = 'IGNORE';
+    local $SIG{PIPE} = 'IGNORE';
+
+    my $oldAutoCommit = $FS::UID::AutoCommit;
+    local $FS::UID::AutoCommit = 0;
+    my $dbh = dbh;
+
+    my $sql = "UPDATE svc_acct SET last_log$op = ? WHERE svcnum = ?";
+    warn "$me $sql\n"
+      if $DEBUG;
+
+    my $sth = $dbh->prepare( $sql )
+      or die "Error preparing $sql: ". $dbh->errstr;
+    my $rv = $sth->execute($time, $self->svcnum);
+    die "Error executing $sql: ". $sth->errstr
+      unless defined($rv);
+    die "Can't update last_log$op for svcnum". $self->svcnum
+      if $rv == 0;
+
+    warn "$me update successful; committing\n"
+      if $DEBUG;
+    $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+    $self->{'Hash'}->{"last_log$op"} = $time;
+  }else{
+    $self->getfield("last_log$op");
+  }
 }
 
 =item search_sql STRING
@@ -1916,6 +1972,17 @@ given time range.  (document this better)
 sub get_session_history {
   my $self = shift;
   $self->cust_svc->get_session_history(@_);
+}
+
+=item last_login_text 
+
+Returns text describing the time of last login.
+
+=cut
+
+sub last_login_text {
+  my $self = shift;
+  $self->last_login ? ctime($self->last_login) : 'unknown';
 }
 
 =item get_cdrs TIMESTAMP_START TIMESTAMP_END [ 'OPTION' => 'VALUE ... ]
