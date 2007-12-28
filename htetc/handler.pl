@@ -337,8 +337,6 @@ sub handler
     if ( $r->filename =~ /\/rt\// ) { #RT
 
       $ah->interp($rt_interp);
-      # MasonX::Request::ExtendedCompRoot
-      #$ah->interp->comp_root( '/rt'. $ah->interp->comp_root() );
 
       local $SIG{__WARN__};
       local $SIG{__DIE__};
