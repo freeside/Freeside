@@ -1,0 +1,62 @@
+<% include('elements/edit.html',
+     'popup'  => 1,
+     'name'   => 'Tax rate', #Edit tax rate
+     'table'  => 'cust_main_county',
+     'labels' => { 'taxnum'   => 'Tax',
+                   'country'  => 'Country',
+                   'state'    => 'State',
+                   'county'   => 'County',
+                   'taxclass' => 'Tax class',
+                   'taxname'  => 'Tax name',
+                   'tax'      => 'Tax rate',
+                   'setuptax' => 'This tax not applicable to setup fees',
+                   'recurtax' => 'This tax not applicable to recurring fees',
+                   'exempt_amount' => 'Monthly exemption per customer ($25 "Texas tax")',
+                 },
+     'fields' => \@fields,
+   )
+%>
+<%once>
+
+my $conf = new FS::Conf;
+
+</%once>
+
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $taxnum;
+if ( $cgi->param('error') ) {
+  $cgi->param('taxnum') =~ /^(\d+)$/ or die 'error, but no taxnum';
+  $taxnum = $1;
+} else {
+  my($query) = $cgi->keywords;
+  $query =~ /^(\d+)$/ or die 'no taxnum';
+  $taxnum = $1;
+}
+
+my $cust_main_county = qsearchs('cust_main_county', { 'taxnum' => $taxnum })
+  or die "unknown taxnum $1";
+
+my @fields = (
+  { field=>'country',  type=>'fixed-country', },
+  { field=>'state',    type=>'fixed-state', },
+  { field=>'county',   type=>'fixed', },
+);
+
+push @fields, { field=>'taxclass', type=>'fixed', }
+  if $conf->exists('enable_taxclasses');
+
+push @fields,
+  'taxname',
+  { field=>'tax',      type=>'percentage', },
+
+  { type=>'tablebreak-tr-title', value=>'Exemptions' },
+  { field=>'setuptax', type=>'checkbox', value=>'Y', },
+  { field=>'recurtax', type=>'checkbox', value=>'Y', },
+  { field=>'exempt_amount', type=>'money', },
+;
+
+</%init>

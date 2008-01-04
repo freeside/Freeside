@@ -51,7 +51,20 @@ Example:
     #listref of column labels, <TH>
     #required unless 'query' is an SQL query string
     # (if not specified the database column names will be used)
-    'header'      => [ '#', 'Item' ],
+    'header'      => [ '#',
+                       'Item',
+                       { 'label' => 'Another Item',
+                         
+                       },
+                     ],
+
+    #second (smaller) header line, currently only for HTML
+    'header2      => [ '#',
+                       'Item',
+                       { 'label' => 'Another Item',
+                         
+                       },
+                     ],
    
     'disable_download' => '', # set true to hide the CSV/Excel download links
     'disable_nonefound' => '', # set true to disable the "No matching Xs found"
@@ -80,19 +93,27 @@ Example:
     #listref of column footers
     'footer'      => [],
     
-    #listref - each item is the empty string, or a listref of ...
-    'links'       =>
+    #listref - each item is the empty string,
+    #          or a listref of link and method name to append,
+    #          or a listref of link and coderef to run and append
+    #          or a coderef that returns such a listref
+    'links'       => [],`
+
+    #listref - each item is the empty string,
+    #          or a string onClick handler for the corresponding link
+    #          or a coderef that returns string onClick handler
+    'link_onclicks' => [],
+
+    #one letter for each column, left/right/center/none
+    # or pass a listref with full values: [ 'left', 'right', 'center', '' ]
+    'align'       => 'lrc.',
    
-   
-    'align'       => 'lrc.', #one letter for each column, left/right/center/none
-                             # can also pass a listref with full values:
-                             # [ 'left', 'right', 'center', '' ]
-   
-    #listrefs...
+    #listrefs of ( scalars or coderefs )
     #currently only HTML, maybe eventually Excel too
     'color'       => [],
     'size'        => [],
-    'style'       => [],
+    'style'       => [], #<B> or <I>, etc.
+    'cell_style'  => [], #STYLE= attribute of TR, very HTML-specific...
     
     #redirect if there's only one item...
     # listref of URL base and column name (or method)
@@ -381,10 +402,41 @@ Example:
               <% include('/elements/table-grid.html') %>
 
                 <TR>
-%                 foreach my $header ( @$header ) { 
-                    <TH CLASS="grid" BGCOLOR="#cccccc"><% $header %></TH>
+%                 my $h2 = 0;
+%                 foreach my $header ( @{ $opt{header} } ) { 
+%                   my $label = ref($header) ? $header->{label} : $header;
+%                   my $rowspan = 1;
+%                   my $style = '';
+%                   if ( $opt{header2} ) {
+%                     if ( !length($opt{header2}->[$h2]) ) {
+%                       $rowspan = 2;
+%                       splice @{ $opt{header2} }, $h2, 1;
+%                     } else {
+%                       $h2++;
+%                       $style = 'STYLE="border-bottom: none"'
+%                     }
+%                   }
+                    <TH CLASS   = "grid"
+                        BGCOLOR = "#cccccc"
+                        ROWSPAN = "<% $rowspan %>"
+                        <% $style %>
+
+                    >
+                      <% $label %>
+                    </TH>
 %                 } 
                 </TR>
+
+%               if ( $opt{header2} ) {
+                  <TR>
+%                   foreach my $header ( @{ $opt{header2} } ) { 
+%                     my $label = ref($header) ? $header->{label} : $header;
+                      <TH CLASS="grid" BGCOLOR="#cccccc">
+                        <FONT SIZE="-1"><% $label %></FONT>
+                      </TH>
+%                   } 
+                  </TR>
+%               }
 
 %               my $bgcolor1 = '#eeeeee';
 %               my $bgcolor2 = '#ffffff';
@@ -402,11 +454,13 @@ Example:
 
 %                   if ( $opt{'fields'} ) {
 %
-%                     my $links  = $opt{'links'} ? [ @{$opt{'links'}} ] : '';
-%                     my $aligns = $opt{'align'} ? [ @{$opt{'align'}} ] : '';
-%                     my $colors = $opt{'color'} ? [ @{$opt{'color'}} ] : [];
-%                     my $sizes  = $opt{'size'}  ? [ @{$opt{'size'}}  ] : [];
-%                     my $styles = $opt{'style'} ? [ @{$opt{'style'}} ] : [];
+%                     my $links    = $opt{'links'} ? [ @{$opt{'links'}} ] : '';
+%                     my $onclicks = $opt{'link_onclicks'} ? [ @{$opt{'link_onclicks'}} ] : [];
+%                     my $aligns   = $opt{'align'} ? [ @{$opt{'align'}} ] : '';
+%                     my $colors   = $opt{'color'} ? [ @{$opt{'color'}} ] : [];
+%                     my $sizes    = $opt{'size'}  ? [ @{$opt{'size'}}  ] : [];
+%                     my $styles   = $opt{'style'} ? [ @{$opt{'style'}} ] : [];
+%                     my $cstyles  = $opt{'cell_style'} ? [ @{$opt{'cell_style'}} ] : [];
 %
 %                     foreach my $field (
 %
@@ -489,7 +543,14 @@ Example:
 %                       my $a = '';
 %                       if ( $links ) {
 %                         my $link = shift @$links;
-%                         $link = &{$link}($row) if ref($link) eq 'CODE';
+%                         $link = &{$link}($row)
+%                           if ref($link) eq 'CODE';
+%
+%                         my $onclick = shift @$onclicks;
+%                         $onclick = &{$onclick}($row)
+%                           if ref($onclick) eq 'CODE';
+%                         $onclick = qq( onClick="$onclick") if $onclick;
+%
 %                         if ( $link ) {
 %                           my( $url, $method ) = @{$link};
 %                           if ( ref($method) eq 'CODE' ) {
@@ -497,7 +558,7 @@ Example:
 %                           } else {
 %                             $a = $url. $row->$method();
 %                           }
-%                           $a = qq(<A HREF="$a">);
+%                           $a = qq(<A HREF="$a"$onclick>);
 %                         }
 %                       }
 %
@@ -520,8 +581,13 @@ Example:
 %                         $s = join( '', map "<$_>", split('', $style) );
 %                         $es = join( '', map "</$_>", split('', $style) );
 %                       }
+%
+%                       my $cstyle = shift @$cstyles;
+%                       $cstyle = &{$cstyle}($row) if ref($cstyle) eq 'CODE';
+%                       $cstyle = qq(STYLE="$cstyle")
+%                         if $cstyle;
 
-                        <TD CLASS="<% $class %>" BGCOLOR="<% $bgcolor %>"<% $align %>><% $font %><% $a %><% $s %><% $field %><% $es %><% $a ? '</A>' : '' %><% $font ? '</FONT>' : '' %></TD>
+                        <TD CLASS="<% $class %>" BGCOLOR="<% $bgcolor %>" <% $align %> <% $cstyle %>><% $font %><% $a %><% $s %><% $field %><% $es %><% $a ? '</A>' : '' %><% $font ? '</FONT>' : '' %></TD>
 
 %                     } 
 %
@@ -626,6 +692,8 @@ if ( $opt{'agent_virt'} ) {
     splice @{ $opt{'color'}  }, $pos, 0, '';
     splice @{ $opt{'links'}  }, $pos, 0, '' #[ 'agent link?', 'agentnum' ]
       if $opt{'links'};
+    splice @{ $opt{'link_onclicks'}  }, $pos, 0, ''
+      if $opt{'link_onclicks'};
 
   }
 
@@ -661,6 +729,8 @@ if ( $opt{'disableable'} ) {
       sub { shift->disabled ? 'FF0000'   : '00CC00'; };
     splice @{ $opt{'links'}  }, $pos, 0, ''
       if $opt{'links'};
+    splice @{ $opt{'link_onlicks'}  }, $pos, 0, ''
+      if $opt{'link_onlicks'};
   }
 
   #add show/hide disabled links
@@ -728,7 +798,7 @@ unless ( $type =~ /^(csv|\w*\.xls)$/ ) {
 
 # run the query
 
-my $header = $opt{header};
+my $header = [ map { ref($_) ? $_->{'label'} : $_ } @{$opt{header}} ];
 my $rows;
 if ( ref($opt{query}) ) {
 

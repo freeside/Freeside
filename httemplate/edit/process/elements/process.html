@@ -17,9 +17,11 @@ Example:
    # optional
    ###
 
-   'viewall_dir' => '', #'search' or 'browse', defaults to 'search'
+   'viewall_dir'  => '', #'search' or 'browse', defaults to 'search'
    OR
-   'redirect'    => 'view/table.cgi?', # value of primary key is appended
+   'redirect'     => 'view/table.cgi?', # value of primary key is appended
+   OR
+   'popup_reload' => 'Momentary success message', #will reload parent window
 
    'error_redirect' => popurl(2).'edit/table.cgi?', #query string appended
 
@@ -60,6 +62,54 @@ Example:
  )
 
 </%doc>
+%if ( $error ) {
+%
+%  my $edit_ext = $opt{'edit_ext'} || 'html';
+%  my $url = $opt{'error_redirect'} || popurl(2)."$table.$edit_ext";
+%  if ( length($cgi->query_string) > 1920 ) { #stupid IE 2083 URL limit
+% 
+%    my $session = int(rand(4294967296)); #XXX
+%    my $pref = new FS::access_user_pref({
+%      'usernum'    => $FS::CurrentUser::CurrentUser->usernum,
+%      'prefname'   => "redirect$session",
+%      'prefvalue'  => $cgi->query_string,
+%      'expiration' => time + 3600, #1h?  1m?
+%    });
+%    my $pref_error = $pref->insert;
+%    if ( $pref_error ) {
+%      die "FATAL: couldn't even set redirect cookie: $pref_error".
+%          " attempting to set redirect$session to ". $cgi->query_string."\n";
+%    }
+%
+<% $cgi->redirect("$url?redirect=$session") %>
+%
+%  } else {
+%
+<% $cgi->redirect("$url?". $cgi->query_string ) %>
+%
+%  } 
+%
+% #different ways of handling success
+%
+%} elsif ( $opt{'popup_reload'} ) {
+
+  <% include('/elements/header-popup.html', $opt{'popup_reload'} ) %>
+
+  <SCRIPT TYPE="text/javascript">
+    window.top.location.reload();
+  </SCRIPT>
+
+  </BODY>
+  </HTML>
+
+%} elsif ( $opt{'redirect'} ) {
+%
+<% $cgi->redirect( $opt{'redirect'}. $pkeyvalue ) %>
+%
+%} else { 
+%
+<% $cgi->redirect( popurl(3). ($opt{viewall_dir}||'search'). "/$table.html" ) %>
+%}
 <%once>
 
   my $me = 'process.html:';
@@ -162,7 +212,6 @@ if ( !$error && $opt{'process_m2name'} ) {
                                );
 }
 
-# XXX print?!?!
 
 if ( $error ) {
   $cgi->param('error', $error);
@@ -171,33 +220,6 @@ if ( $error ) {
       $cgi->param($field, '')
     }
   }
-  my $edit_ext = $opt{'edit_ext'} || 'html';
-  my $url = $opt{'error_redirect'} || popurl(2)."$table.$edit_ext";
-  if ( length($cgi->query_string) > 1920 ) { #stupid IE 2083 URL limit
-
-    my $session = int(rand(4294967296)); #XXX
-    my $pref = new FS::access_user_pref({
-      'usernum'    => $FS::CurrentUser::CurrentUser->usernum,
-      'prefname'   => "redirect$session",
-      'prefvalue'  => $cgi->query_string,
-      'expiration' => time + 3600, #1h?  1m?
-    });
-    my $pref_error = $pref->insert;
-    if ( $pref_error ) {
-      die "FATAL: couldn't even set redirect cookie: $pref_error".
-          " attempting to set redirect$session to ". $cgi->query_string."\n";
-    }
-    print $cgi->redirect("$url?redirect=$session");
-  } else {
-    print $cgi->redirect("$url?". $cgi->query_string );
-  } 
-} elsif ( $opt{'redirect'} ) {
-  print $cgi->redirect( $opt{'redirect'}. $pkeyvalue );
-} else { 
-  print $cgi->redirect( popurl(3).
-                        ( $opt{'viewall_dir'} || 'search' ).
-                        "/$table.html"
-                      );
 }
 
 </%init>
