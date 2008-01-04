@@ -22,31 +22,25 @@
 %$cgi->param('upmultiplier',   '1000000') unless $cgi->param('upmultiplier');
 %$cgi->param('downmultiplier', '1000000') unless $cgi->param('downmultiplier');
 %$cgi->param('totalmultiplier','1000000') unless $cgi->param('totalmultiplier');
-%
-%
-
 
 <% include("/elements/header.html",'Generate prepaid cards'. ($agent ? ' for '. $agent->agent : ''),
            menubar( 'Main Menu' => $p, ))
 %>
-% if ( $cgi->param('error') ) { 
 
-  <FONT SIZE="+1" COLOR="#FF0000">Error: <% $cgi->param('error') %></FONT>
-% } 
-
+<% include('/elements/error.html') %>
 
 <FORM ACTION="<%popurl(1)%>process/prepay_credit.cgi" METHOD="POST" NAME="OneTrueForm" onSubmit="document.OneTrueForm.submit.disabled=true">
 
 Generate
 <INPUT TYPE="text" NAME="num" VALUE="<% $cgi->param('num') || '(quantity)' %>" SIZE=10 MAXLENGTH=10 onFocus="if ( this.value == '(quantity)' ) { this.value = ''; }">
+
 <SELECT NAME="type">
 % foreach (qw(alpha alphanumeric numeric)) { 
-
   <OPTION<% $cgi->param('type') eq $_ ? ' SELECTED' : '' %>><% $_ %>
 % } 
-
 </SELECT>
- prepaid cards
+
+prepaid cards
 
 <BR>for <SELECT NAME="agentnum"><OPTION>(any agent)
 % foreach my $opt_agent ( qsearch('agent', { 'disabled' => '' } ) ) { 

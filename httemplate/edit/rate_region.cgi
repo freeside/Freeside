@@ -40,11 +40,8 @@
       #'View all regions' => "${p}browse/rate_region.cgi",
     ))
 %>
-% if ( $cgi->param('error') ) { 
 
-<FONT SIZE="+1" COLOR="#ff0000">Error: <% $cgi->param('error') %></FONT><BR>
-% } 
-
+<% include('/elements/error.html') %>
 
 <FORM ACTION="<%$p1%>process/rate_region.cgi" METHOD=POST>
 
