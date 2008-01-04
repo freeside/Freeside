@@ -5,10 +5,12 @@
     <% $opt{'prefix'} %><INPUT TYPE  = "<% $opt{type} || 'text' %>"
                                NAME  = "<% $opt{field} %>"
                                ID    = "<% $opt{id} %>"
-                               VALUE = "<% $opt{curr_value} || $opt{value} %>"
+                               VALUE = "<% $value |h %>"
                                <% $size %>
+                               <% $maxlength %>
+                               <% $align %>
                                <% $onchange %>
-                        >
+                        ><% $opt{'postfix'} %>
 
   </TD>
 
@@ -18,6 +20,8 @@
 
 my %opt = @_;
 
+my $value = length($opt{curr_value}) ? $opt{curr_value} : $opt{value};
+
 my $onchange = $opt{'onchange'}
                  ? 'onChange="'. $opt{'onchange'}. '(this)"'
                  : '';
@@ -25,6 +29,15 @@ my $onchange = $opt{'onchange'}
 my $size = $opt{'size'}
              ? 'SIZE="'. $opt{'size'}. '"'
              : '';
+
+my $maxlength = $opt{'maxlength'}
+                ? 'MAXLENGTH="'. $opt{'maxlength'}. '"'
+                : '';
+
+my $align = $opt{'text-align'}
+                ? 'STYLE="text-align: '. $opt{'text-align'}. '"'
+                : '';
+
 
 my $style = $opt{'cell_style'} ? 'STYLE="'. $opt{'cell_style'}. '"' : '';
 
