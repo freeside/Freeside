@@ -10,20 +10,22 @@ Example:
                   'column' => 'Label',
                 }
    
-    listref - each item is a literal column name (or method) or hashref
-                                                             or (notyet) coderef
-    if not specified all columns (except for the primary key) will be editable
+    #listref - each item is a literal column name (or method) or hashref
+    #                                                        or (notyet) coderef
+    #if not specified all columns (except for the primary key) will be editable
     'fields' => [
                   'columname',
                   { 'field' => 'another_columname',
                     'type'  => 'text', #text
                                        #money
+                                       #percentage
                                        #checkbox
                                        #select
-                                       #selectlayers
+                                       #selectlayers (can't use after a tablebreak-tr-title yet... grep "OneTrueTable")
                                        #title
+                                       #tablebreak-tr-title
                                        #hidden - hidden value from object
-                                       #fixed - display fixed value from here
+                                       #fixed - display fixed value from object or here
                                        #fixedhidden - hidden value from here
                     'value' => 'Y', #for checkbox, title, fixed, fixedhidden
                     'disabled' => 0,
@@ -95,7 +97,7 @@ Example:
    
     #XXX describe
     'field_callback' => sub { },
-   
+
     #string or coderef of additional HTML to add before </TABLE>
     'html_table_bottom' => '',
    
@@ -110,11 +112,16 @@ Example:
    
     # overrides default popurl(1)."process/$table.html"
     'post_url' => popurl(1).'process/something', 
+
+    #we're in a popup (no title/menu/searchboxes)
+    'popup' => 1,
+   
   );
 
 </%doc>
 
-<% include("/elements/header.html", $title,
+<% include('/elements/header'. ( $opt{popup} ? '-popup' : '' ). '.html',
+              $title,
               include( '/elements/menubar.html', @menubar )
            )
 %>
@@ -128,10 +135,12 @@ Example:
 <INPUT TYPE="hidden" NAME="svcdb" VALUE="<% $table %>">
 <INPUT TYPE="hidden" NAME="<% $pkey %>" VALUE="<% $object->$pkey() %>">
 
+<FONT SIZE="+1"><B>
 <% ( $opt{labels} && exists $opt{labels}->{$pkey} )
       ? $opt{labels}->{$pkey}
       : $pkey
 %>
+</B></FONT>
 #<% $object->$pkey() || "(NEW)" %>
 
 %# <% ntable("#cccccc",0) %>
@@ -162,7 +171,7 @@ Example:
 %     if $opt{'debug'};
 %
 %   my %include_common = (
-%     #checkbox, title
+%     #checkbox, title, fixed, fixedhidden
 %     #& deprecated weird value hashref used only by reason.html
 %     'value'         => $f->{'value'},
 %
@@ -188,8 +197,8 @@ Example:
 %     my $fieldnum   = delete $opt{'fieldnum'};
 %
 %     my $include = $type;
-%     $include = "input-$include" if $include =~ /^(text|money)$/;
-%     $include = "tr-$include" unless $include eq 'hidden';
+%     $include = "input-$include" if $include =~ /^(text|money|percentage)$/;
+%     $include = "tr-$include" unless $include =~ /^(hidden|tablebreak)/;
 %
 %     $include_common{'layer_prefix'} = "$field$fieldnum."
 %       if $layer_prefix_on;
@@ -265,6 +274,7 @@ Example:
 %     'label'      => $label,
 %     'fieldnum'   => $fieldnum,
 %     'curr_value' => $curr_value,
+%     'object'     => $object,
 %     'onchange'   => $onchange,
 %     'cell_style'   => ( $fieldnum ? 'border-top:1px solid black' : '' ),
 %   );
@@ -329,6 +339,7 @@ Example:
 
           // add new row
 
+          //hmm, can't use selectlayers after a tablebreak-title for now
           var table = document.getElementById('OneTrueTable');
 
           var row = table.insertRow(rownum++);
