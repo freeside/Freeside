@@ -1,0 +1,10 @@
+<% include('tr-fixed.html', %opt ) %>
+<%init>
+
+my %opt = @_;
+
+my $value = $opt{'curr_value'} || $opt{'value'};
+
+$opt{'formatted_value'} = code2country($value). " ($value)";
+
+</%init>
