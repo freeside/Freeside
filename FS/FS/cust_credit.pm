@@ -331,20 +331,32 @@ sub cust_credit_bill {
   ;
 }
 
-=item credited
+=item unapplied
 
-Returns the amount of this credit that is still outstanding; which is
+Returns the amount of this credit that is still unapplied/outstanding; 
 amount minus all refund applications (see L<FS::cust_credit_refund>) and
 applications to invoices (see L<FS::cust_credit_bill>).
 
 =cut
 
-sub credited {
+sub unapplied {
   my $self = shift;
   my $amount = $self->amount;
   $amount -= $_->amount foreach ( $self->cust_credit_refund );
   $amount -= $_->amount foreach ( $self->cust_credit_bill );
   sprintf( "%.2f", $amount );
+}
+
+=item credited
+
+Deprecated name for the unapplied method.
+
+=cut
+
+sub credited {
+  my $self = shift;
+  #carp "cust_credit->credited deprecated; use ->unapplied";
+  $self->unapplied(@_);
 }
 
 =item cust_main
@@ -527,13 +539,13 @@ sub _upgrade_data {  # class method
 
 =over 4
 
-=item credited_sql
+=item unapplied_sql
 
 Returns an SQL fragment to retreive the unapplied amount.
 
 =cut
 
-sub credited_sql {
+sub unapplied_sql {
   #my $class = shift;
 
   "amount
@@ -551,14 +563,29 @@ sub credited_sql {
 
 }
 
+=item credited_sql
+
+Deprecated name for the unapplied_sql method.
+
+=cut
+
+sub credited_sql {
+  #my $class = shift;
+
+  #carp "cust_credit->credited_sql deprecated; use ->unapplied_sql";
+
+  #$class->unapplied_sql(@_);
+  unapplied_sql();
+}
+
 =back
 
 =head1 BUGS
 
 The delete method.  The replace method.
 
-B<credited> and B<credited_sql> should probably be called B<unapplied> and
-B<unapplied_sql>.
+B<credited> and B<credited_sql> are now called B<unapplied> and
+B<unapplied_sql>.  The old method names should start to give warnings.
 
 =head1 SEE ALSO
 

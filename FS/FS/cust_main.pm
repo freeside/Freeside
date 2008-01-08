@@ -5108,55 +5108,96 @@ Returns an SQL fragment to retreive the balance.
 =cut
 
 sub balance_sql { "
-    COALESCE( ( SELECT SUM(charged) FROM cust_bill
-                  WHERE cust_bill.custnum   = cust_main.custnum ), 0)
-  - COALESCE( ( SELECT SUM(paid)    FROM cust_pay
-                  WHERE cust_pay.custnum    = cust_main.custnum ), 0)
-  - COALESCE( ( SELECT SUM(amount)  FROM cust_credit
-                  WHERE cust_credit.custnum = cust_main.custnum ), 0)
-  + COALESCE( ( SELECT SUM(refund)  FROM cust_refund
-                   WHERE cust_refund.custnum = cust_main.custnum ), 0)
+    ( SELECT COALESCE( SUM(charged), 0 ) FROM cust_bill
+        WHERE cust_bill.custnum   = cust_main.custnum     )
+  - ( SELECT COALESCE( SUM(paid),    0 ) FROM cust_pay
+        WHERE cust_pay.custnum    = cust_main.custnum     )
+  - ( SELECT COALESCE( SUM(amount),  0 ) FROM cust_credit
+        WHERE cust_credit.custnum = cust_main.custnum     )
+  + ( SELECT COALESCE( SUM(refund),  0 ) FROM cust_refund
+        WHERE cust_refund.custnum = cust_main.custnum     )
 "; }
 
-=item balance_date_sql TIME
+=item balance_date_sql START_TIME [ END_TIME [ OPTION => VALUE ... ] ]
 
 Returns an SQL fragment to retreive the balance for this customer, only
-considering invoices with date earlier than TIME. (total_owed_date minus total_credited minus
-total_unapplied_payments).  TIME is specified as an SQL fragment or a numeric
-UNIX timestamp; see L<perlfunc/"time">).  Also see L<Time::Local> and
-L<Date::Parse> for conversion functions.
+considering invoices with date earlier than START_TIME, and optionally not
+later than END_TIME (total_owed_date minus total_credited minus
+total_unapplied_payments).
+
+Times are specified as SQL fragments or numeric
+UNIX timestamps; see L<perlfunc/"time">).  Also see L<Time::Local> and
+L<Date::Parse> for conversion functions.  The empty string can be passed
+to disable that time constraint completely.
+
+Available options are:
+
+=over 4
+
+=item unapplied_date - set to true to disregard unapplied credits, payments and refunds outside the specified time period - by default the time period restriction only applies to invoices (useful for reporting, probably a bad idea for event triggering)
+
+=item total - set to true to remove all customer comparison clauses, for totals
+
+=item where - WHERE clause hashref (elements "AND"ed together) (typically used with the total option)
+
+=item join - JOIN clause (typically used with the total option)
+
+=item 
+
+=back
 
 =cut
 
 sub balance_date_sql {
-  my( $class, $time ) = @_;
+  my( $class, $start, $end, %opt ) = @_;
 
-  my $owed_sql         = FS::cust_bill->owed_sql;
-  my $unapp_refund_sql = FS::cust_refund->unapplied_sql;
-  #my $unapp_credit_sql = FS::cust_credit->unapplied_sql;
-  my $unapp_credit_sql = FS::cust_credit->credited_sql;
-  my $unapp_pay_sql    = FS::cust_pay->unapplied_sql;
+  my $owed         = FS::cust_bill->owed_sql;
+  my $unapp_refund = FS::cust_refund->unapplied_sql;
+  my $unapp_credit = FS::cust_credit->unapplied_sql;
+  my $unapp_pay    = FS::cust_pay->unapplied_sql;
 
-  "
-      COALESCE( ( SELECT SUM($owed_sql) FROM cust_bill
-                    WHERE cust_bill.custnum   = cust_main.custnum
-                      AND cust_bill._date    <= $time             )
-                ,0
-              )
-    + COALESCE( ( SELECT SUM($unapp_refund_sql) FROM cust_refund
-                    WHERE cust_refund.custnum = cust_main.custnum )
-                ,0
-              )
-    - COALESCE( ( SELECT SUM($unapp_credit_sql) FROM cust_credit
-                    WHERE cust_credit.custnum = cust_main.custnum )
-                ,0
-              )
-    - COALESCE( ( SELECT SUM($unapp_pay_sql) FROM cust_pay
-                    WHERE cust_pay.custnum = cust_main.custnum )
-                ,0
-              )
+  my $j = $opt{'join'} || '';
 
+  my $owed_wh   = $class->_money_table_where( 'cust_bill',   $start,$end,%opt );
+  my $refund_wh = $class->_money_table_where( 'cust_refund', $start,$end,%opt );
+  my $credit_wh = $class->_money_table_where( 'cust_credit', $start,$end,%opt );
+  my $pay_wh    = $class->_money_table_where( 'cust_pay',    $start,$end,%opt );
+
+  "   ( SELECT COALESCE(SUM($owed),         0) FROM cust_bill   $j $owed_wh   )
+    + ( SELECT COALESCE(SUM($unapp_refund), 0) FROM cust_refund $j $refund_wh )
+    - ( SELECT COALESCE(SUM($unapp_credit), 0) FROM cust_credit $j $credit_wh )
+    - ( SELECT COALESCE(SUM($unapp_pay),    0) FROM cust_pay    $j $pay_wh    )
   ";
+
+}
+
+=item _money_table_where TABLE START_TIME [ END_TIME [ OPTION => VALUE ... ] ]
+
+Helper method for balance_date_sql; name (and usage) subject to change
+(suggestions welcome).
+
+Returns a WHERE clause for the specified monetary TABLE (cust_bill,
+cust_refund, cust_credit or cust_pay).
+
+If TABLE is "cust_bill" or the unapplied_date option is true, only
+considers records with date earlier than START_TIME, and optionally not
+later than END_TIME .
+
+=cut
+
+sub _money_table_where {
+  my( $class, $table, $start, $end, %opt ) = @_;
+
+  my @where = ();
+  push @where, "cust_main.custnum = $table.custnum" unless $opt{'total'};
+  if ( $table eq 'cust_bill' || $opt{'unapplied_date'} ) {
+    push @where, "$table._date <= $start" if length($start);
+    push @where, "$table._date >  $end"   if length($end);
+  }
+  push @where, @{$opt{'where'}} if $opt{'where'};
+  my $where = scalar(@where) ? 'WHERE '. join(' AND ', @where ) : '';
+
+  $where;
 
 }
 

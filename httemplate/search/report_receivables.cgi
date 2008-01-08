@@ -19,28 +19,23 @@
                                           )
                                     ),
                                     sprintf( $money_char.'%.2f',
-                                             $row->{'owed_0_30'} ),
+                                             $row->{'balance_0_30'} ),
                                     sprintf( $money_char.'%.2f',
-                                             $row->{'owed_30_60'} ),
+                                             $row->{'balance_30_60'} ),
                                     sprintf( $money_char.'%.2f',
-                                             $row->{'owed_60_90'} ),
+                                             $row->{'balance_60_90'} ),
                                     sprintf( $money_char.'%.2f',
-                                             $row->{'owed_90_0'} ),
+                                             $row->{'balance_90_0'} ),
                                     sprintf( '<b>'. $money_char.'%.2f'. '</b>',
-                                             $row->{'owed_0_0'} ),
+                                             $row->{'balance_0_0'} ),
                                   ],
                  'fields'      => [
                                     \&FS::UI::Web::cust_fields,
-                                    sub { sprintf( $money_char.'%.2f',
-                                                   shift->get('owed_0_30') ) },
-                                    sub { sprintf( $money_char.'%.2f',
-                                                   shift->get('owed_30_60') ) },
-                                    sub { sprintf( $money_char.'%.2f',
-                                                   shift->get('owed_60_90') ) },
-                                    sub { sprintf( $money_char.'%.2f',
-                                                   shift->get('owed_90_0') ) },
-                                    sub { sprintf( $money_char.'%.2f',
-                                                   shift->get('owed_0_0') ) },
+                                    format_balance('0_30'),
+                                    format_balance('30_60'),
+                                    format_balance('60_90'),
+                                    format_balance('90_0'),
+                                    format_balance('0_0'),
                                   ],
                  'links'       => [
                                     ( map { $_ ne 'Cust. Status' ? $clink : '' }
@@ -86,7 +81,7 @@ my @ranges = (
   [  0,  0 ],
 );
 
-my $owed_cols = join(',', map owed( @$_, 'cust'=>1 ), @ranges );
+my $owed_cols = join(',', map balance( @$_ ), @ranges );
 
 my $select_count_pkgs = FS::cust_main->select_count_pkgs_sql;
 
@@ -112,7 +107,7 @@ unless ( $cgi->param('all_customers') ) {
     $days = $1;
   }
 
-  push @where, owed($days, 0, 'cust'=>1, 'noas'=>1). " > 0";
+  push @where, balance($days, 0, 'no_as'=>1). " > 0";
 
 }
 
@@ -133,74 +128,60 @@ my $sql_query = {
   'table'     => 'cust_main',
   'hashref'   => {},
   'select'    => "*, $owed_cols, $packages_cols",
-  'extra_sql' => "$where order by coalesce(lower(company), ''), lower(last)",
+  'extra_sql' => $where,
+  'order_by'  => "order by coalesce(lower(company), ''), lower(last)",
 };
 
 my $join = 'LEFT JOIN cust_main USING ( custnum )';
 
-my $total_sql = "select ".
-  join(',', map owed( @$_, join=>$join, where=>\@where ), @ranges);
+my $total_sql = "SELECT ".
+  join(',', map balance( @$_, total=>1, join=>$join, where=>\@where ), @ranges);
 
 my $total_sth = dbh->prepare($total_sql) or die dbh->errstr;
 $total_sth->execute or die "error executing $total_sql: ". $total_sth->errstr;
 my $row = $total_sth->fetchrow_hashref();
-
-my $conf = new FS::Conf;
-my $money_char = $conf->config('money_char') || '$';
 
 my $clink = [ "${p}view/cust_main.cgi?", 'custnum' ];
 
 </%init>
 <%once>
 
-sub owed {
+my $conf = new FS::Conf;
+
+my $money_char = $conf->config('money_char') || '$';
+
+#Example:
+#
+# my $balance = balance(
+#   $start, $end, 
+#   'no_as'  => 1, #set to true when using in a WHERE clause (supress AS clause)
+#                 #or 0 / omit when using in a SELECT clause as a column
+#                 #  ("AS balance_$start_$end")
+#   #options for totals
+#   'total'  => 1, #set to true to remove all customer comparison clauses
+#   'join'   => $join,   #JOIN clause
+#   'where'  => \@where, #WHERE clause hashref (elements "AND"ed together)
+# )
+
+sub balance {
   my($start, $end, %opt) = @_;
 
-  my @where = ();
+  my $as = $opt{'no_as'} ? '' : " AS balance_${start}_$end";
 
-  #handle start and end ranges
-
+  #handle start and end ranges (86400 = 24h * 60m * 60s)
   my $str2time = str2time_sql;
+  $start = $start ? "( $str2time now() ) - ".($start * 86400). ' )' : '';
+  $end   = $end   ? "( $str2time now() ) - ".($end   * 86400). ' )' : '';
 
-  #24h * 60m * 60s
-  push @where, "cust_bill._date <= $str2time now() ) - ". ($start * 86400)
-    if $start;
+  $opt{'unapplied_date'} = 1;
 
-  push @where, "cust_bill._date >  $str2time now() ) - ". ($end * 86400)
-    if $end;
+  FS::cust_main->balance_date_sql( $start, $end, %opt ). $as;
 
-  #handle 'cust' option
-  push @where, "cust_main.custnum = cust_bill.custnum"
-    if $opt{'cust'};
+}
 
-  #handle 'join' option
-  my $join = $opt{'join'} || '';
-
-  #handle 'where' option
-  push @where, @{ $opt{'where'} } if $opt{'where'};
-
-  my $where = scalar(@where) ? 'WHERE '.join(' AND ', @where) : '';
-
-  my $as = $opt{'noas'} ? '' : "as owed_${start}_$end";
-
-  my $charged = <<END;
-sum( charged
-     - coalesce(
-         ( select sum(amount) from cust_bill_pay
-           where cust_bill.invnum = cust_bill_pay.invnum )
-         ,0
-       )
-     - coalesce(
-         ( select sum(amount) from cust_credit_bill
-           where cust_bill.invnum = cust_credit_bill.invnum )
-         ,0
-       )
-
-   )
-END
-
-  "coalesce( ( select $charged from cust_bill $join $where ) ,0 ) $as";
-
+sub format_balance { #closures help alot
+  my $range = shift;
+  sub { sprintf( $money_char.'%.2f', shift->get("balance_$range") ) };
 }
 
 </%once>
