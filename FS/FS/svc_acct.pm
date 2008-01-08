@@ -368,15 +368,6 @@ sub _lastlog {
          ' ('. $self->email. "): $time\n"
       if $DEBUG;
 
-    local $SIG{HUP} = 'IGNORE';
-    local $SIG{INT} = 'IGNORE';
-    local $SIG{QUIT} = 'IGNORE';
-    local $SIG{TERM} = 'IGNORE';
-    local $SIG{TSTP} = 'IGNORE';
-    local $SIG{PIPE} = 'IGNORE';
-
-    my $oldAutoCommit = $FS::UID::AutoCommit;
-    local $FS::UID::AutoCommit = 0;
     my $dbh = dbh;
 
     my $sql = "UPDATE svc_acct SET last_log$op = ? WHERE svcnum = ?";
@@ -391,9 +382,6 @@ sub _lastlog {
     die "Can't update last_log$op for svcnum". $self->svcnum
       if $rv == 0;
 
-    warn "$me update successful; committing\n"
-      if $DEBUG;
-    $dbh->commit or die $dbh->errstr if $oldAutoCommit;
     $self->{'Hash'}->{"last_log$op"} = $time;
   }else{
     $self->getfield("last_log$op");
