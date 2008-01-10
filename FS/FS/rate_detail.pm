@@ -126,6 +126,18 @@ sub check {
   $self->SUPER::check;
 }
 
+=item rate 
+
+Returns the parent call plan (see L<FS::rate>) associated with this call plan
+rate.
+
+=cut
+
+sub rate {
+  my $self = shift;
+  qsearchs('rate', { 'ratenum' => $self->ratenum } );
+}
+
 =item orig_region 
 
 Returns the origination region (see L<FS::rate_region>) associated with this
@@ -149,6 +161,31 @@ sub dest_region {
   my $self = shift;
   qsearchs('rate_region', { 'regionnum' => $self->dest_regionnum } );
 }
+
+=item dest_regionname
+
+Returns the name of the destination region (see L<FS::rate_region>) associated
+with this call plan rate.
+
+=cut
+
+sub dest_regionname {
+  my $self = shift;
+  $self->dest_region->regionname;
+}
+
+=item dest_regionname
+
+Returns a short list of the prefixes for the destination region
+(see L<FS::rate_region>) associated with this call plan rate.
+
+=cut
+
+sub dest_prefixes_short {
+  my $self = shift;
+  $self->dest_region->prefixes_short;
+}
+
 
 =back
 
