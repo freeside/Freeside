@@ -268,10 +268,16 @@ if ( $curuser->access_right('Configuration') ) {
 tie my %config_agent, 'Tie::IxHash',
   'View/Edit agent types' => [ $fsurl.'browse/agent_type.cgi', 'Agent types define groups of package definitions that you can then assign to particular agents' ],
   'View/Edit agents'      => [ $fsurl.'browse/agent.cgi', 'Agents are resellers of your service. Agents may be limited to a subset of your full offerings (via their type)' ],
+  'View/Edit agent payment gateways'         => [ $fsurl.'browse/payment_gateway.html', 'Credit card and electronic check processors for agent overrides' ];
 ;
 
-tie my %config_billing, 'Tie::IxHash',
-  'View/Edit payment gateways'         => [ $fsurl.'browse/payment_gateway.html', 'Credit card and electronic check processors' ];
+tie my %config_billing_rates, 'Tie::IxHash',
+  'View/Edit rate plans' => [ $fsurl.'browse/rate.cgi', 'Manage rate plans' ],
+  'View/Edit regions and prefixes' => [ $fsurl.'browse/rate_region.html', 'Manage regions and prefixes' ],
+;
+
+tie my %config_billing, 'Tie::IxHash';
+#  'View/Edit payment gateways'         => [ $fsurl.'browse/payment_gateway.html', 'Credit card and electronic check processors' ];
 $config_billing{'View/Edit billing events'} = [ $fsurl.'browse/part_event.html', 'Billing actions for customers, invoices and packages' ]
     if $curuser->access_right('Edit billing events')
     || $curuser->access_right('Edit global billing events');
@@ -279,9 +285,10 @@ if ( $curuser->access_right('Configuration') ) {
   $config_billing{'View/Edit invoice events'}         = [ $fsurl.'browse/part_bill_event.cgi', 'Deprecated, old-style actions for overdue invoices' ];
   $config_billing{'View/Edit invoice templates'}      = [ $fsurl.'browse/invoice_template.html', 'Edit templates for HTML, plaintext and typeset invoices' ];
   $config_billing{'View/Edit prepaid cards'}          = [ $fsurl.'search/prepay_credit.html', 'View outstanding cards, generate new cards' ];
-  $config_billing{'View/Edit call rates and regions'} = [ $fsurl.'browse/rate.cgi', 'Manage rate plans, regions and prefixes for VoIP and call billing' ];
+  $config_billing{'View/Edit call rates and regions'} = [ \%config_billing_rates, 'Manage rate plans, regions and prefixes for VoIP and call billing' ];
   $config_billing{'View/Edit locales and tax rates'}  = [ $fsurl.'browse/cust_main_county.cgi', 'Change tax rates, or break down a country into states, or a state into counties and assign different tax rates to each' ];
   $config_billing{'View/Edit credit reason types'}  = [ $fsurl.'browse/reason_type.html?class=R', 'Credit reason types define groups of reasons, for reporting and convenience purposes.' ];
+  $config_billing{'View/Edit credit reasons'}  = [ $fsurl.'browse/reason.html?class=R', 'Credit reasons explain why a credit was issued.' ];
 }
 
 tie my %config_dialup, 'Tie::IxHash',
