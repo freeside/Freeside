@@ -13,9 +13,9 @@ our %class_name = (
 );
 
 our %class_purpose = (  
-  'C' => 'explain why we cancel a package',
-  'R' => 'explain why we credit a customer',
-  'S' => 'explain why we suspend a package',
+  'C' => 'explain why a customer package was cancelled',
+  'R' => 'explain why a customer was credited',
+  'S' => 'explain why a customer package was suspended',
 );
 
 =head1 NAME
