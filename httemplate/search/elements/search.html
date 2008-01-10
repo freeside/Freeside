@@ -4,7 +4,10 @@ Example:
 
   include( 'elements/search.html',
 
-    # basic options, required
+    ###
+    # required
+    ###
+
     'title'         => 'Page title',
     
     'name_singular' => 'item',  #singular name for the records returned
@@ -12,20 +15,8 @@ Example:
     'name'          => 'items', #plural name for the records returned
                                 # (deprecated, will be singularlized
                                 #  simplisticly)
-   
-    # some HTML callbacks...
-    'menubar'          => '', #menubar arrayref
-    'html_init'        => '', #after the header/menubar and before the pager
-    'html_form'        => '', #after the pager, right before the results
-                              # (only shown if there are results)
-                              # (use this for any form-opening tag rather than
-                              #  html_init, to avoid a nested form)
-    'html_foot'        => '', #at the bottom
-    'html_posttotal'   => '', #at the bottom
-                              # (these three can be strings or coderefs)
-    
-   
-    #literal SQL query string (deprecated?) or qsearch hashref, required
+
+    #literal SQL query string (deprecated?) or qsearch hashref
     'query'       => {
                        'table'     => 'tablename',
                        #everything else is optional...
@@ -44,12 +35,13 @@ Example:
    
     #required unless 'query' is an SQL query string (shouldn't be...)
     'count_query' => 'SELECT COUNT(*) FROM tablename',
-   
-    'count_addl' => [], #additional count fields listref of sprintf strings or coderefs
-                        # [ $money_char.'%.2f total paid', ],
-   
+
+    ###
+    # recommended / common
+    ###
+
     #listref of column labels, <TH>
-    #required unless 'query' is an SQL query string
+    #recommended unless 'query' is an SQL query string
     # (if not specified the database column names will be used)
     'header'      => [ '#',
                        'Item',
@@ -58,6 +50,36 @@ Example:
                        },
                      ],
 
+    #listref - each item is a literal column name (or method) or coderef
+    #if not specified all columns will be shown
+    'fields'      => [
+                       'column',
+                       sub { my $row = shift; $row->column; },
+                     ],
+
+    #redirect if there's only one item...
+    # listref of URL base and column name (or method)
+    # or a coderef that returns the same
+    'redirect' =>
+   
+    ###
+    # optional
+    ###
+   
+    # some HTML callbacks...
+    'menubar'          => '', #menubar arrayref
+    'html_init'        => '', #after the header/menubar and before the pager
+    'html_form'        => '', #after the pager, right before the results
+                              # (only shown if there are results)
+                              # (use this for any form-opening tag rather than
+                              #  html_init, to avoid a nested form)
+    'html_foot'        => '', #at the bottom
+    'html_posttotal'   => '', #at the bottom
+                              # (these three can be strings or coderefs)
+    
+    'count_addl' => [], #additional count fields listref of sprintf strings or coderefs
+                        # [ $money_char.'%.2f total paid', ],
+   
     #second (smaller) header line, currently only for HTML
     'header2      => [ '#',
                        'Item',
@@ -65,34 +87,36 @@ Example:
                          
                        },
                      ],
-   
+
+    #listref of column footers
+    'footer'      => [],
+    
+    #disabling things
     'disable_download' => '', # set true to hide the CSV/Excel download links
     'disable_nonefound' => '', # set true to disable the "No matching Xs found"
                                # message
    
-    'disableable' => 1,  # set true if this table has a "disabled" field, to
-                         # hide disabled records & have "show disabled" links
+    #handling "disabled" fields in the records
+    'disableable' => 1,  # set set to 1 (or column position for "disabled"
+                         # status col) to enable if this table has a "disabled"
+                         # field, to hide disabled records & have
+                         # "show disabled/hide disabled" links
+                         #(can't be used with a literal query)
     'disabled_statuspos' => 3, #optional position (starting from 0) to insert
                                #a Status column when showing disabled records
                                #(query needs to be a qsearch hashref and
                                # header & fields need to be defined)
+
+    #handling agent virtualization
     'agent_virt' => 1, # set true if this search should be agent-virtualized
     'agent_null_right' => 'Access Right', #opt. right to view global records
     'agent_pos' => 3, #optional position (starting from 0) to insert
                       #an Agent column 
                       #(query needs to be a qsearch hashref and
                       # header & fields need to be defined)
+
+    # link & display properties for fields
    
-    #listref - each item is a literal column name (or method) or coderef
-    #if not specified all columns will be shown
-    'fields'      => [
-                       'column',
-                       sub { my $row = shift; $row->column; },
-                     ],
-   
-    #listref of column footers
-    'footer'      => [],
-    
     #listref - each item is the empty string,
     #          or a listref of link and method name to append,
     #          or a listref of link and coderef to run and append
@@ -115,16 +139,6 @@ Example:
     'style'       => [], #<B> or <I>, etc.
     'cell_style'  => [], #STYLE= attribute of TR, very HTML-specific...
     
-    #redirect if there's only one item...
-    # listref of URL base and column name (or method)
-    # or a coderef that returns the same
-    'redirect' =>
-   
-    #set to 1 (or column position for "disabled" status col) to enable
-    #"show disabled/hide disabled" links
-    #(can't be used with a literal query)
-    'disableable' => 1,
-
   );
 
 </%doc>
@@ -186,7 +200,7 @@ Example:
 %   #http://support.microsoft.com/kb/812935
 %   #http://support.microsoft.com/kb/323308
 %   $HTML::Mason::Commands::r->headers_out->{'Cache-control'} = 'max-age=0';
-% 
+%
 %   my $data = '';
 %   my $XLS = new IO::Scalar \$data;
 %   my $workbook = Spreadsheet::WriteExcel->new($XLS)
