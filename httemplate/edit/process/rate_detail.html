@@ -1,0 +1,13 @@
+<% include( 'elements/process.html',
+              'table' => 'rate_detail',
+              'popup_reload' => 'Rate changed', #a popup "parent reload" for now
+              #someday change the individual element and go away instead
+          )
+%>
+<%init>
+
+my $conf = new FS::Conf;
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+</%init>

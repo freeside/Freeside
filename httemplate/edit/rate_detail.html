@@ -1,0 +1,59 @@
+<% include('elements/edit.html',
+     'popup'  => 1,
+     'name'   => $name,
+     'table'  => 'rate_detail',
+     'labels' => { 'ratedetailnum'       => 'Rate', #should hide...
+                   'dest_regionname'     => 'Region',
+                   'dest_prefixes_short' => 'Prefix(es)',
+                   'min_included'        => 'Included minutes',
+                   'min_charge'          => 'Charge per minute',
+                   'sec_granularity'     => 'Granularity',
+                 },
+     'fields' => [
+                   { field=>'ratenum',             type=>'hidden', },
+                   { field=>'orig_regionnum',      type=>'hidden', },
+                   { field=>'dest_regionnum',      type=>'hidden', },
+                   { field=>'dest_regionname',     type=>'fixed',  },
+                   { field=>'dest_prefixes_short', type=>'fixed',  },
+                   { field=>'min_included',        type=>'text',  size=>5 },
+                   { field=>'min_charge',          type=>'money', size=>4 },
+                   { field         =>'sec_granularity',
+                     type          =>'select',
+                     options       => [qw( 1 6 30 60 )],
+                     labels        => \%granularity,
+                     disable_empty => 1,
+                   },
+
+                 ],
+   )
+%>
+<%once>
+
+tie my %granularity, 'Tie::IxHash',
+  '1', => '1 second',
+  '6'  => '6 second',
+  '30' => '30 second', # '1/2 minute',
+  '60' => 'minute',
+;
+
+</%once>
+
+<%init>
+
+my $conf = new FS::Conf;
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+#slightly inefficient, i suppose an edit+error callback would be better
+my $name = 'rate';
+if (    $cgi->keywords               =~ /^(\d+)$/
+     || $cgi->param('ratedetailnum') =~ /^(\d+)$/ ) {
+  my $rate_detail = qsearchs('rate_detail', { 'ratedetailnum' => $1 } )
+    or die "unknown ratedetailnum $1";
+  $name =
+    $rate_detail->rate->ratename. ' rate for '. $rate_detail->dest_regionname;
+}
+
+#sec_granularity should default to 60!  for new rates when this gets used for em
+
+</%init>

@@ -1,0 +1,95 @@
+<% include( 'elements/browse.html',
+     'title'          => $title,
+     'name_singular'  => 'rate',
+     'html_init'      => $html_init,
+     'menubar'        => [ 'Rate plans' => $p.'browse/rate.cgi' ],
+     'query'          => {
+                           'table'     => 'rate_detail',
+                           'addl_from' => $join,
+                           'hashref'   => { 'ratenum' => $ratenum },
+                           'extra_sql' => $where,
+                         },
+     'count_query'    => "SELECT COUNT(*) FROM rate_detail $join".
+                         " WHERE ratenum = $ratenum $where",
+     'header'         => [
+                           'Region',
+                           'Prefix(es)',
+                           'Included<BR>minutes',
+                           'Charge per<BR>minute',
+                           'Granularity',
+                         ],
+     'fields'         => [
+                           'regionname',
+                           sub { shift->dest_region->prefixes_short },
+                           sub { shift->min_included.
+                                 '&nbsp;<FONT SIZE="-1">(edit)</FONT>';
+                               },
+                           sub { $money_char. shift->min_charge.
+                                 '&nbsp;<FONT SIZE="-1">(edit)</FONT>';
+                               },
+                           sub { $granularity{ shift->sec_granularity } },
+                         ],
+     'links'          => [ '', '', $edit_link,    $edit_link,    '' ],
+     'link_onclicks'  => [ '', '', $edit_onclick, $edit_onclick, '' ],
+     'align'          => 'llrrc',
+   )
+%>
+<%once>
+
+my %granularity = (
+  '1', => '1 second',
+  '6'  => '6 second',
+  '30' => '30 second', # '1/2 minute',
+  '60' => 'minute',
+);
+
+my $conf = new FS::Conf;
+my $money_char = $conf->config('money_char') || '$';
+
+my $html_init = qq(
+  <SCRIPT TYPE="text/javascript" SRC="${fsurl}elements/overlibmws.js"></SCRIPT>
+  <SCRIPT TYPE="text/javascript" SRC="${fsurl}elements/overlibmws_iframe.js"></SCRIPT>
+  <SCRIPT TYPE="text/javascript" SRC="${fsurl}elements/overlibmws_draggable.js"></SCRIPT>
+  <SCRIPT TYPE="text/javascript" SRC="${fsurl}elements/iframecontentmws.js"></SCRIPT>
+);
+
+my $join =
+  ' JOIN rate_region ON ( rate_detail.dest_regionnum = rate_region.regionnum )';
+
+my $edit_link = [ 'javascript:void(0);', sub { ''; } ];
+
+my $edit_onclick = sub {
+  my $rate_detail = shift;
+  my $ratedetailnum = $rate_detail->ratedetailnum;
+  my $color = '#333399';
+  qq!overlib( OLiframeContent('${p}edit/rate_detail.html?$ratedetailnum', 540, 420, 'edit_rate_detail_popup' ), CAPTION, 'Edit tax rate', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '$color', CGCOLOR, '$color' ); return false;!;
+};
+
+</%once>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+$cgi->param('ratenum') =~ /^(\d+)$/ or die "unparsable ratenum";
+my $ratenum = $1;
+my $rate = qsearchs('rate', { 'ratenum' => $ratenum } )
+  or die "unknown ratenum $ratenum";
+my $ratename = $rate->ratename;
+my $title = "$ratename rates";
+
+my @where = ();
+
+if ( $cgi->param('countrycode') =~ /^(\d+)$/ ) { 
+  my $countrycode = $1;
+  push @where, "0 < ( SELECT COUNT(*) FROM rate_prefix
+                        WHERE rate_prefix.regionnum = rate_region.regionnum
+                          AND countrycode = '$countrycode'
+                    )
+               ";
+  $title .= " for +$countrycode";
+}
+
+my $where = scalar(@where) ? ' AND '.join(' AND ', @where ) : '';
+
+</%init>

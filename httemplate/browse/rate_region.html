@@ -1,0 +1,53 @@
+<% include( 'elements/browse.html',
+     'title'          => 'Rating Regions and Prefixes',
+     'name_singular'  => 'region', #'rate region',
+     'menubar'        => [ 'Rate plans' => $p.'browse/rate.cgi' ],
+     'html_init'      => $html_init,
+     'query'          => {
+                           'select'    => $select,
+                           'table'     => 'rate_region',
+                           'addl_from' => $join,
+                           'extra_sql' => $extra_sql, 
+                           'order_by'  => 'ORDER BY LOWER(regionname)',
+                         },
+     'count_query'    => 'SELECT COUNT(*) FROM rate_region',
+     'header'         => [ '#',         'Region',  'Country code', 'Prefixes' ],
+     'fields'         => [ 'regionnum', 'regionname',   'ccode',   'prefixes' ],
+     'links'          => [ $link, $link, $link, $link ],
+   )
+%>
+<%once>
+
+my $edit_url = $p.'edit/rate_region.cgi';
+
+my $link = [ "$edit_url?", 'regionnum' ];
+
+my $html_init =
+  'Regions and prefixes for VoIP and call billing.<BR><BR>'.
+  qq(<A HREF="$edit_url"><I>Add a new region</I></A><BR><BR>);
+
+#not quite right for the shouldn't-happen multiple countrycode per region case
+my $select = 'rate_region.*, ';
+my $join = '';
+my $extra_sql = '';
+if ( driver_name =~ /^Pg/ ) {
+  my $fromwhere = 'FROM rate_prefix'.
+                  ' WHERE rate_prefix.regionnum = rate_region.regionnum';
+  $select .= "( SELECT countrycode $fromwhere LIMIT 1 ) AS ccode, 
+              ARRAY_TO_STRING( ARRAY(SELECT npa $fromwhere), ',' ) AS prefixes";
+} elsif ( driver_name =~ /^mysql/i ) {
+  $join = 'LEFT JOIN rate_prefix USING ( regionnum )';
+  $select .= "GROUP_CONCAT( DISTINCT countrycode ) AS ccode,
+              GROUP_CONCAT( npa ORDER BY npa     ) AS prefixes ";
+  $extra_sql = 'GROUP BY regionnum, regionname';
+} else {
+  die 'unknown database '. driver_name;
+}
+
+</%once>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+</%init>
