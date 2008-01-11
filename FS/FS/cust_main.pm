@@ -5328,10 +5328,14 @@ sub smart_search {
 
     }
 
-  } elsif ( $search =~ /^\s*(\d+)\s*$/ ) { # customer # search
-                                           # (also try agent_custid)
-                                           # (regex needs tweaking if your
-                                           #  legacy cust numbers have letters)
+  # custnum search (also try agent_custid), with some tweaking options if your
+  # legacy cust "numbers" have letters
+  } elsif ( $search =~ /^\s*(\d+)\s*$/
+            || ( $conf->config('cust_main-agent_custid-format') eq 'ww?d+'
+                 && $search =~ /^\s*(\w\w?\d+)\s*$/
+               )
+          )
+  {
 
     push @cust_main, qsearch( {
       'table'     => 'cust_main',
