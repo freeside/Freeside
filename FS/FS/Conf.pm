@@ -2166,6 +2166,17 @@ worry that config_items is freeside-specific and icky.
 			 },
   },
 
+  {
+    'key'         => 'cust_main-agent_custid-format',
+    'section'     => '',
+    'description' => 'Enables searching of various formatted values in cust_main.agent_custid',
+    'type'        => 'select',
+    'select_hash' => [
+                       ''      => 'Numeric only',
+                       'ww?d+' => 'Numeric with one or two letter prefix',
+                     ],
+  },
+
 );
 
 1;
