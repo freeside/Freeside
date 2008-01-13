@@ -1,11 +1,3 @@
-%
-%
-%my $classnum = $cgi->param('classnum');
-%$classnum =~ /^(\d+)$/ or errorpage("illegal classnum $classnum");
-%$classnum = $1;
-%my $inventory_class = qsearchs('inventory_class', { 'classnum' => $classnum } );
-%
-%
 <% include("/elements/header.html", $inventory_class->classname. 's') %>
 
 <FORM ACTION="process/inventory_item-import.html" METHOD="POST" ENCTYPE="multipart/form-data">
@@ -19,3 +11,13 @@ Filename: <INPUT TYPE="file" NAME="filename"><BR><BR>
 
 <% include('/elements/footer.html') %>
 
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Import');
+
+$cgi->param =~ /^(\d+)$/ or errorpage("illegal classnum $classnum");
+my $classnum = $1;
+my $inventory_class = qsearchs('inventory_class', { 'classnum' => $classnum } );
+
+</%init>

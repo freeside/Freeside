@@ -1,16 +1,13 @@
-%  if ( $error ) {
-
-    <!-- mason kludge -->
-
-%    errorpage($error);
-%#    $cgi->param('error', $error);
-%#    print $cgi->redirect( "${p}cust_main-import.cgi
-%  } else {
-
-    <% include("/elements/header.html",'Batch results upload successful') %> 
-
-%  }
+% if ( $error ) {
+%   errorpage($error);
+% } else {
+    <% include('/elements/header.html','Batch results upload successful') %> 
+    <% include('/elements/footer.html') %> 
+% }
 <%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Process batches');
 
 my $error;
 

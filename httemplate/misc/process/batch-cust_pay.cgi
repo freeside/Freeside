@@ -1,3 +1,5 @@
+%  die "access denied"
+%    unless $FS::CurrentUser::CurrentUser->access_right('Post payment batch');
 %
 %  my $param = $cgi->Vars;
 %

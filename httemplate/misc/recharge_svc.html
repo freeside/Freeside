@@ -28,7 +28,7 @@
 </TR>
 <TR>
   <TD>Enter prepaid card: </TD>
-  <TD><INPUT TYPE="text" NAME="prepaid" VALUE="<% $prepaid %>" <% $payby eq "PREP" ? '' : 'disabled' %>></TD>
+  <TD><INPUT TYPE="text" NAME="prepaid" VALUE="<% $prepaid |h %>" <% $payby eq "PREP" ? '' : 'disabled' %>></TD>
 </TR>
 
 </TABLE>
@@ -37,35 +37,42 @@
 <INPUT TYPE="submit" NAME="submit" VALUE="Recharge">
 
 </FORM>
-</BODY>
-</HTML>
+
+<% include('/elements/footer.html');
 
 <%once>
+
 my $conf = new FS::Conf;
 my $money_char = $conf->config('money_char') || '$';
+
 </%once>
 <%init>
-my($svcnum, $cust_svc, $part_pkg, $label, $value, $prepaid, $amount, $payby); 
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Recharge customer service');
+
+my($svcnum, $prepaid, $payby); 
 if ( $cgi->param('error') ) {
   $svcnum        = $cgi->param('svcnum');
   $prepaid       = $cgi->param('prepaid');
   $payby         = $cgi->param('payby');
 } elsif ( $cgi->param('svcnum') =~ /^(\d+)$/ ) {
   $svcnum  = $1;
+  $prepaid = '';
 } else {
   die "illegal query ". $cgi->keywords;
 }
 
 my $title = 'Recharge Service';
 
-$cust_svc = qsearchs('cust_svc', {'svcnum' => $svcnum});
+my $cust_svc = qsearchs('cust_svc', {'svcnum' => $svcnum});
 die "No such service: $svcnum" unless $cust_svc;
 
-($label, $value) = $cust_svc->label;
+my($label, $value) = $cust_svc->label;
 
 $payby = $cust_svc->cust_pkg->cust_main->payby unless $payby;
-$part_pkg = $cust_svc->cust_pkg->part_pkg;
-$amount = $part_pkg->option('recharge_amount', 1) || 0;
+my $part_pkg = $cust_svc->cust_pkg->part_pkg;
+my $amount = $part_pkg->option('recharge_amount', 1) || 0;
 
 my $recharge_label = "Charge $money_char$amount for ";
 

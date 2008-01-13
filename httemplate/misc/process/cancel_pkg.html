@@ -12,29 +12,39 @@ my %past = ( 'cancel'  => 'cancelled',
              'adjourn' => 'adjourned',
            );
 
+#i'm sure this is false laziness with somewhere, at least w/misc/cancel_pkg.html
+my %right = ( 'cancel'  => 'Cancel customer package immediately',
+              'expire'  => 'Cancel customer package later',
+              'suspend' => 'Suspend customer package',
+              'adjourn' => 'Suspend customer package later',
+            );
+
 </%once>
 <%init>
 
 #untaint method
 my $method = $cgi->param('method');
-$method =~ /^(cancel|expire|suspend|adjourn)$/ || die "Illegal method";
+$method =~ /^(cancel|expire|suspend|adjourn)$/ or die "Illegal method";
 $method = $1;
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right($right{$method});
 
 #untaint pkgnum
 my $pkgnum = $cgi->param('pkgnum');
-$pkgnum =~ /^(\d+)$/ || die "Illegal pkgnum";
+$pkgnum =~ /^(\d+)$/ or die "Illegal pkgnum";
 $pkgnum = $1;
 
 #untaint reasonnum
 my $reasonnum = $cgi->param('reasonnum');
-$reasonnum =~ /^(-?\d+)$/ || die "Illegal reasonnum";
+$reasonnum =~ /^(-?\d+)$/ or die "Illegal reasonnum";
 $reasonnum = $1;
 
 my $date = time;
 if ($method eq 'expire' || $method eq 'adjourn'){
   #untaint date
   $date = $cgi->param('date');
-  str2time($cgi->param('date')) =~ /^(\d+)$/ || die "Illegal date";
+  str2time($cgi->param('date')) =~ /^(\d+)$/ or die "Illegal date";
   $date = $1;
 }
 

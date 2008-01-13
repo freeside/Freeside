@@ -6,6 +6,9 @@
 </HTML>
 <%init>
 
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Cancel customer');
+
 my $custnum;
 my $ban = '';
 if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {

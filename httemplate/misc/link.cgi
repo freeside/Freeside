@@ -1,31 +1,5 @@
-%my %link_field = (
-%  'svc_acct'    => 'username',
-%  'svc_domain'  => 'domain',
-%);
-%
-%my %link_field2 = (
-%  'svc_acct'    => { label => 'Domain',
-%                     field => 'domsvc',
-%                     type  => 'select',
-%                     select_table => 'svc_domain',
-%                     select_key   => 'svcnum',
-%                     select_label => 'domain'
-%                   },
-%);
-%
-%$cgi->param('pkgnum') =~ /^(\d+)$/ or die 'unparsable pkgnum';
-%my $pkgnum = $1;
-%$cgi->param('svcpart') =~ /^(\d+)$/ or die 'unparsable svcpart';
-%my $svcpart = $1;
-%
-%my $part_svc = qsearchs('part_svc',{'svcpart'=>$svcpart});
-%my $svc = $part_svc->getfield('svc');
-%my $svcdb = $part_svc->getfield('svcdb');
-%my $link_field = $link_field{$svcdb};
-%my $link_field2 = $link_field2{$svcdb};
-%
-
 <% include("/elements/header.html","Link to existing $svc") %>
+
 <FORM ACTION="<% popurl(1) %>process/link.cgi" METHOD=POST>
 % if ( $link_field ) { 
 
@@ -72,6 +46,39 @@
 <INPUT TYPE="hidden" NAME="pkgnum" VALUE="<% $pkgnum %>">
 <INPUT TYPE="hidden" NAME="svcpart" VALUE="<% $svcpart %>">
 <BR><INPUT TYPE="submit" VALUE="Link">
-    </FORM>
-  </BODY>
-</HTML>
+</FORM>
+
+<% include('/elements/footer.html') %>
+
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('View/link unlinked services');
+
+my %link_field = (
+  'svc_acct'    => 'username',
+  'svc_domain'  => 'domain',
+);
+
+my %link_field2 = (
+  'svc_acct'    => { label => 'Domain',
+                     field => 'domsvc',
+                     type  => 'select',
+                     select_table => 'svc_domain',
+                     select_key   => 'svcnum',
+                     select_label => 'domain'
+                   },
+);
+
+$cgi->param('pkgnum') =~ /^(\d+)$/ or die 'unparsable pkgnum';
+my $pkgnum = $1;
+$cgi->param('svcpart') =~ /^(\d+)$/ or die 'unparsable svcpart';
+my $svcpart = $1;
+
+my $part_svc = qsearchs('part_svc',{'svcpart'=>$svcpart});
+my $svc = $part_svc->getfield('svc');
+my $svcdb = $part_svc->getfield('svcdb');
+my $link_field = $link_field{$svcdb};
+my $link_field2 = $link_field2{$svcdb};
+
+</%init>

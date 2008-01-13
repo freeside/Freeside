@@ -217,6 +217,9 @@ function OLiframeContent(src, width, height, name) {
 <% include('/elements/footer.html') %>
 <%init>
 
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Process payment');
+
 my %type = ( 'CARD' => 'credit card',
              'CHEK' => 'electronic check (ACH)',
            );

@@ -1,3 +1,5 @@
+%  die "access denied"
+%    unless $FS::CurrentUser::CurrentUser->access_right('Export');
 %
 %  if ( driver_name =~ /^Pg$/ ) {
 %    my $dbname = (split(':', datasrc))[2];
@@ -16,5 +18,3 @@
 %    print $_;
 %  }
 %  close DUMP;
-%
-

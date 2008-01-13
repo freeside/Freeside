@@ -1,4 +1,3 @@
-<!-- mason kludge -->
 <% include("/elements/header.html",'Map tables') %>
 
 <SCRIPT>
@@ -183,5 +182,9 @@ function SafeOnsubmit() {
 %
 %
 <%init>
-die "meta-import script not currently enabled"; #make XSS-safe if this is used for more than just admins to import data....
+
+#there's no ACL for this...  haven't used in ages
+#make XSS-safe if this is used for more than just admins to import data....
+die 'meta-import not enabled; remove this if you want to use it';
+
 </%init>

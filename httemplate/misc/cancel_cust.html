@@ -50,6 +50,8 @@ if ( $cgi->param('error') ) {
 
 $curuser = $FS::CurrentUser::CurrentUser;
 
+die "access denied" unless $curuser->access_right('Cancel customer');
+
 $cust_main = qsearchs( {
   'table'     => 'cust_main',
   'hashref'   => { 'custnum' => $custnum },

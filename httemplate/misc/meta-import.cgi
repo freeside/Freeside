@@ -1,5 +1,5 @@
-<!-- mason kludge -->
-<% include("/elements/header.html",'Import') %>
+<% include('/elements/header.html', 'Import') %>
+
 <FORM ACTION="process/meta-import.cgi" METHOD="post" ENCTYPE="multipart/form-data">
 Import data from a DBI data source<BR><BR>
 %
@@ -68,6 +68,12 @@ Import data from a DBI data source<BR><BR>
   <INPUT TYPE="submit" VALUE="Import">
 
   </FORM>
-  </BODY>
-<HTML>
 
+<% include('/elements/footer.html') %>
+
+<%init>
+
+#there's no ACL for this...  haven't used in ages
+die 'meta-import not enabled; remove this if you want to use it';
+
+</%init>

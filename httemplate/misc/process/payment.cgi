@@ -15,6 +15,9 @@
 % }
 <%init>
 
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Process payment');
+
 #some false laziness w/MyAccount::process_payment
 
 $cgi->param('custnum') =~ /^(\d+)$/

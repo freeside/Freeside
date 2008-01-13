@@ -1,7 +1,4 @@
-<% include("/elements/header.html", 'Quick payment entry',
-            menubar( 'Main Menu' => $p ),
-          )
-%>
+<% include('/elements/header.html', 'Quick payment entry') %>
 
 <% include('/elements/error.html') %>
 
@@ -24,5 +21,12 @@
 <INPUT TYPE="submit" NAME="submit" VALUE="Post payment batch">
 
 </FORM>
-</BODY>
-</HTML>
+
+<% include('/elements/footer.html') %>
+
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Post payment batch');
+
+</%init>

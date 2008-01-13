@@ -97,5 +97,13 @@ advertising source table.
 <% include('/elements/footer.html') %>
 
 <%once>
+
 my $req = qq!<font color="#ff0000">*</font>!;
+
 </%once>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Import');
+
+</%init>

@@ -23,7 +23,7 @@
 % if ($method eq 'expire' || $method eq 'adjourn') {
 <TR>
   <TD><% $submit =~ /^(\w*)\s/ %> package on </TD>
-    <TD><INPUT TYPE="text" NAME="date" ID="expire_date" VALUE="<% $date %>">
+    <TD><INPUT TYPE="text" NAME="date" ID="expire_date" VALUE="<% $date |h %>">
         <IMG SRC="<% $p %>images/calendar.png" ID="expire_button" STYLE="cursor:pointer" TITLE="Select date">
         <BR><I>m/d/y</I>
     </TD>
@@ -42,8 +42,7 @@
 <% include('/elements/tr-select-reason.html',
              'field'          => 'reasonnum',
              'reason_class'   => $class,
-             #XXX these need to be sticky on errors too...
-             #'curr_value'     => '',
+             'curr_value'     => $reasonnum,
              'control_button' => 'document.sc_popup.submit',
           )
 %>
@@ -58,45 +57,53 @@
 </HTML>
 
 <%init>
-my($method, $pkgnum, $reasonnum, $submit, $cust_pkg, $part_pkg,
-   $date, $curuser, $class); 
-$date = time2str("%m/%d/%Y", time);
+
+my $date = time2str("%m/%d/%Y", time);
+
+my($pkgnum, $reasonnum);
 if ( $cgi->param('error') ) {
-  $method        = $cgi->param('method');
-  $pkgnum        = $cgi->param('pkgnum');
-  $reasonnum     = $cgi->param('reasonnum');
-  $date = $cgi->param('date');
+  $pkgnum    = $cgi->param('pkgnum');
+  $reasonnum = $cgi->param('reasonnum');
+  $date      = $cgi->param('date');
 } elsif ( $cgi->param('pkgnum') =~ /^(\d+)$/ ) {
-  $pkgnum  = $1;
+  $pkgnum    = $1;
+  $reasonnum = '';
 } else {
   die "illegal query ". $cgi->keywords;
 }
 
-$method = $cgi->param('method');
+$cgi->param('method') =~ /^(\w+)$/ or die 'illegal method';
+my $method = $1;
+
+my($class, $submit, $right);
 if ($method eq 'cancel') {
-  $class = 'C';
-  $submit    = "Cancel Now";
-}elsif ($method eq 'expire') {
-  $class = 'C';
-  $submit    = "Cancel Later";
-}elsif ($method eq 'suspend') {
-  $class = 'S';
-  $submit    = "Suspend Now";
-}elsif ($method eq 'adjourn') {
-  $class = 'S';
-  $submit    = "Suspend Later";
-}else{
-  die "illegal query ". $cgi->keywords;
+  $class  = 'C';
+  $submit = 'Cancel Now';
+  $right  = 'Cancel customer package immediately';
+} elsif ($method eq 'expire') {
+  $class  = 'C';
+  $submit = 'Cancel Later';
+  $right  = 'Cancel customer package later';
+} elsif ($method eq 'suspend') {
+  $class  = 'S';
+  $submit = 'Suspend Now';
+  $right  = 'Suspend customer package';
+} elsif ($method eq 'adjourn') {
+  $class  = 'S';
+  $submit = "Suspend Later";
+  $right  = 'Suspend customer package later';
+} else {
+  die 'illegal query (unknown method param)';
 }
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+die "access denied" unless $curuser->access_right($right);
 
 my $title = ucfirst($method) . ' Package';
 
-$cust_pkg = qsearchs('cust_pkg', {'pkgnum' => $pkgnum});
-die "No such package: $pkgnum" unless $cust_pkg;
+my $cust_pkg = qsearchs('cust_pkg', {'pkgnum' => $pkgnum})
+  or die "Unknown pkgnum: $pkgnum";
 
-$part_pkg = $cust_pkg->part_pkg;
-
-$curuser = $FS::CurrentUser::CurrentUser;
+my $part_pkg = $cust_pkg->part_pkg;
 
 </%init>
-

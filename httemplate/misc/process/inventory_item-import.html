@@ -1,31 +1,22 @@
-%
-%
-%  my $fh = $cgi->upload('filename');
-%
-%  my $error = defined($fh)
-%    ? FS::inventory_item::batch_import( {
-%        'filehandle' => $fh,
-%        'classnum'   => $cgi->param('classnum'),
-%      } )
-%    : 'No file';
-%
-%  if ( $error ) {
-%    
-
-    <!-- mason kludge -->
-%
-% errorpage($error);
-%#    $cgi->param('error', $error);
-%#    print $cgi->redirect( "${p}cust_main-import.cgi
-%  } else {
-%    
-
-    <!-- mason kludge -->
+% if ( $error ) {
+%   errorpage($error);
+% } else {
     <% include("/elements/header.html",'Import successful') %>
     <!-- XXX redirect to batch search like the payment entry... -->
     <% include("/elements/footer.html",'Import successful') %> 
-%
 %  }
-%
+<%init>
 
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Import');
 
+my $fh = $cgi->upload('filename');
+
+my $error = defined($fh)
+  ? FS::inventory_item::batch_import( {
+      'filehandle' => $fh,
+      'classnum'   => $cgi->param('classnum'),
+    } )
+  : 'No file';
+
+</%init>
