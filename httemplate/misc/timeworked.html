@@ -54,7 +54,7 @@
           <INPUT TYPE="hidden" NAME="seconds<%$tr_id%>" VALUE="<% $seconds %>" >
 
 %         my $multiplier = $default_multiplier;
-%         my $mult_paramname = "multiplier${tr_id}_$custnum"
+%         my $mult_paramname = "multiplier${tr_id}_$custnum";
 %         if ( $cgi->param($mult_paramname) =~ /^\s*([\d\.]+)\s*$/ ) {
 %           $multiplier = $1;
 %         }
@@ -94,8 +94,8 @@
 
 <INPUT TYPE="submit" NAME="submit" VALUE="<% $title %>">
 </FORM>
-</BODY>
-</HTML>
+
+<% include('/elements/footer.html') %>
 
 <%init>
 
