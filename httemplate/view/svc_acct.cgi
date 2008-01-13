@@ -90,38 +90,42 @@
   </TD></TR></TABLE><BR>
 % } 
 
+% my @part_svc = ();
+% if ($FS::CurrentUser::CurrentUser->access_right('Change customer service')) {
 
-<SCRIPT TYPE="text/javascript">
-function enable_change () {
-  if ( document.OneTrueForm.svcpart.selectedIndex > 1 ) {
-    document.OneTrueForm.submit.disabled = false;
-  } else {
-    document.OneTrueForm.submit.disabled = true;
-  }
-}
-</SCRIPT>
-<FORM NAME="OneTrueForm" ACTION="<%$p%>edit/process/cust_svc.cgi">
-<INPUT TYPE="hidden" NAME="svcnum" VALUE="<% $svcnum %>">
-<INPUT TYPE="hidden" NAME="pkgnum" VALUE="<% $pkgnum %>">
-% #print qq!<BR><A HREF="../misc/sendconfig.cgi?$svcnum">Send account information</A>!; 
+    <SCRIPT TYPE="text/javascript">
+      function enable_change () {
+        if ( document.OneTrueForm.svcpart.selectedIndex > 1 ) {
+          document.OneTrueForm.submit.disabled = false;
+        } else {
+          document.OneTrueForm.submit.disabled = true;
+        }
+      }
+    </SCRIPT>
+
+    <FORM NAME="OneTrueForm" ACTION="<%$p%>edit/process/cust_svc.cgi">
+    <INPUT TYPE="hidden" NAME="svcnum" VALUE="<% $svcnum %>">
+    <INPUT TYPE="hidden" NAME="pkgnum" VALUE="<% $pkgnum %>">
+
+%   #print qq!<BR><A HREF="../misc/sendconfig.cgi?$svcnum">Send account information</A>!; 
 % 
-%  my @part_svc = ();
-%  if ( $pkgnum ) { 
-%    @part_svc = grep {    $_->svcdb   eq 'svc_acct'
-%                       && $_->svcpart != $part_svc->svcpart }
-%                $cust_pkg->available_part_svc;
-%  } else {
-%    @part_svc = qsearch('part_svc', {
-%      svcdb    => 'svc_acct',
-%      disabled => '',
-%      svcpart  => { op=>'!=', value=>$part_svc->svcpart },
-%    } );
-%  }
+%   if ( $pkgnum ) { 
+%     @part_svc = grep {    $_->svcdb   eq 'svc_acct'
+%                        && $_->svcpart != $part_svc->svcpart }
+%                 $cust_pkg->available_part_svc;
+%   } else {
+%     @part_svc = qsearch('part_svc', {
+%       svcdb    => 'svc_acct',
+%       disabled => '',
+%       svcpart  => { op=>'!=', value=>$part_svc->svcpart },
+%     } );
+%   }
 %
-
+% }
 
 Service #<B><% $svcnum %></B>
 | <A HREF="<%$p%>edit/svc_acct.cgi?<%$svcnum%>">Edit this service</A>
+
 % if ( @part_svc ) { 
 
 | <SELECT NAME="svcpart" onChange="enable_change()">
@@ -134,6 +138,7 @@ Service #<B><% $svcnum %></B>
 
   </SELECT>
   <INPUT NAME="submit" TYPE="submit" VALUE="Change" disabled>
+
 % } 
 
 
@@ -330,8 +335,7 @@ Service #<B><% $svcnum %></B>
 <%init>
 
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('View customer services')
-      || $FS::CurrentUser::CurrentUser->access_right('View customer'); #XXX remove me
+  unless $FS::CurrentUser::CurrentUser->access_right('View customer services');
 
 my $conf = new FS::Conf;
 

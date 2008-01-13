@@ -1,6 +1,5 @@
 % die "access denied"
-% unless $FS::CurrentUser::CurrentUser->access_right('View customer services')
-%     || $FS::CurrentUser::CurrentUser->access_right('View customer'); #XXX remove me
+%   unless $FS::CurrentUser::CurrentUser->access_right('View customer services');
 %
 %my $conf = new FS::Conf;
 %
@@ -38,8 +37,7 @@
 %      )
 %    : ( "Cancel this (unaudited) mail forward" =>
 %          "${p}misc/cancel-unaudited.cgi?$svcnum" )
-%  ),
-%  "Main menu" => $p,
+%  )
 %));
 %
 %my($srcsvc,$dstsvc,$dst) = (

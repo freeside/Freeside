@@ -4,8 +4,7 @@
       )                                                                       
     : ( "Cancel this (unaudited) website" =>
           "${p}misc/cancel-unaudited.cgi?$svcnum" )
-  ),
-  "Main menu" => $p,
+  )
 ))
 %>
 
@@ -144,8 +143,7 @@ Add router named
 <%init>
 
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('View customer services')
-      || $FS::CurrentUser::CurrentUser->access_right('View customer'); #XXX remove me
+  unless $FS::CurrentUser::CurrentUser->access_right('View customer services');
 
 my($query) = $cgi->keywords;
 $query =~ /^(\d+)$/;

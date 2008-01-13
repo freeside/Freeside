@@ -1,5 +1,4 @@
 <% include("/elements/header.html",'Invoice View', menubar(
-  "Main Menu" => $p,
   "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
 )) %>
 

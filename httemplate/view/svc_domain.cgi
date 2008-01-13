@@ -4,14 +4,19 @@
       )
     : ( "Delete this (unaudited) domain" =>
           "javascript:areyousure('${p}misc/cancel-unaudited.cgi?$svcnum', 'Delete $domain and all records?' )" )
-  ),
-  "Main menu" => $p,
+  )
 )) %>
 
 Service #<% $svcnum %>
 <BR>Service: <B><% $part_svc->svc %></B>
 <BR>Domain name: <B><% $domain %></B>
-<BR>Catch all email <A HREF="<% ${p} %>misc/catchall.cgi?<% $svcnum %>">(change)</A>:
+<BR>Catch all email 
+% if ( $FS::CurrentUser::CurrentUser->access_right('Edit domain catchall') ) {
+    <BR>Catch all email<A HREF="<% ${p} %>misc/catchall.cgi?<% $svcnum %>">(change)</A>:
+} else {
+    <BR>Catch all email:
+% }
+
 <% $email ? "<B>$email</B>" : "<I>(none)<I>" %>
 <BR><BR><A HREF="<% ${p} %>misc/whois.cgi?custnum=<%$custnum%>;svcnum=<%$svcnum%>;domain=<%$domain%>">View whois information.</A>
 <BR><BR>
@@ -50,7 +55,9 @@ Service #<% $svcnum %>
       <td CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $type %></td>
       <td CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $domain_record->recdata %>
 
-% unless ( $domain_record->rectype eq 'SOA' ) { 
+% unless ( $domain_record->rectype eq 'SOA'
+%          || ! $FS::CurrentUser::CurrentUser->access_right('Edit domain nameservice')
+%        ) { 
 %   ( my $recdata = $domain_record->recdata ) =~ s/"/\\'\\'/g;
       (<A HREF="javascript:areyousure('<%$p%>misc/delete-domain_record.cgi?<%$domain_record->recnum%>', 'Delete \'<% $domain_record->reczone %> <% $type %> <% $recdata %>\' ?' )">delete</A>)
 % } 
@@ -69,42 +76,50 @@ Service #<% $svcnum %>
   </table>
 % } 
 
+% if ( $FS::CurrentUser::CurrentUser->access_right('Edit domain nameservice') ) {
+    <BR>
+    <FORM METHOD="POST" ACTION="<%$p%>edit/process/domain_record.cgi">
+      <INPUT TYPE="hidden" NAME="svcnum" VALUE="<%$svcnum%>">
+      <INPUT TYPE="text" NAME="reczone"> 
+      <INPUT TYPE="hidden" NAME="recaf" VALUE="IN"> IN 
+      <SELECT NAME="rectype">
+%       foreach (qw( A NS CNAME MX PTR TXT) ) { 
+          <OPTION VALUE="<%$_%>"><%$_%></OPTION>
+%       } 
+      </SELECT>
+      <INPUT TYPE="text" NAME="recdata">
+      <INPUT TYPE="submit" VALUE="Add record">
+    </FORM>
 
-<BR>
-<FORM METHOD="POST" ACTION="<%$p%>edit/process/domain_record.cgi">
-<INPUT TYPE="hidden" NAME="svcnum" VALUE="<%$svcnum%>">
-<INPUT TYPE="text" NAME="reczone"> 
-<INPUT TYPE="hidden" NAME="recaf" VALUE="IN"> IN 
- <SELECT NAME="rectype">
-% foreach (qw( A NS CNAME MX PTR TXT) ) { 
+    <BR><BR>
+    or
+    <BR><BR>
 
-  <OPTION VALUE="<%$_%>"><%$_%></OPTION>
-% } 
+    <FORM NAME="SlaveForm" METHOD="POST" ACTION="<%$p%>edit/process/domain_record.cgi">
+      <INPUT TYPE="hidden" NAME="svcnum" VALUE="<%$svcnum%>">
+%     if ( @records ) { 
+         Delete all records and 
+%     } 
+      Slave from nameserver IP 
+      <INPUT TYPE="hidden" NAME="svcnum" VALUE="<%$svcnum%>">
+      <INPUT TYPE="hidden" NAME="reczone" VALUE="@"> 
+      <INPUT TYPE="hidden" NAME="recaf" VALUE="IN">
+      <INPUT TYPE="hidden" NAME="rectype" VALUE="_mstr">
+      <INPUT TYPE="text" NAME="recdata">
+      <INPUT TYPE="submit" VALUE="Slave domain" onClick="return slave_areyousure()">
+    </FORM>
 
- </SELECT>
-<INPUT TYPE="text" NAME="recdata"> <INPUT TYPE="submit" VALUE="Add record">
-</FORM><BR><BR>or<BR><BR>
-<FORM NAME="SlaveForm" METHOD="POST" ACTION="<%$p%>edit/process/domain_record.cgi">
-<INPUT TYPE="hidden" NAME="svcnum" VALUE="<%$svcnum%>">
-% if ( @records ) { 
- Delete all records and 
-% } 
+% }
 
-Slave from nameserver IP 
-<INPUT TYPE="hidden" NAME="svcnum" VALUE="<%$svcnum%>">
-<INPUT TYPE="hidden" NAME="reczone" VALUE="@"> 
-<INPUT TYPE="hidden" NAME="recaf" VALUE="IN">
-<INPUT TYPE="hidden" NAME="rectype" VALUE="_mstr">
-<INPUT TYPE="text" NAME="recdata"> <INPUT TYPE="submit" VALUE="Slave domain" onClick="return slave_areyousure()">
-</FORM>
-<BR><BR><% joblisting({'svcnum'=>$svcnum}, 1) %>
+<BR><BR>
+
+<% joblisting({'svcnum'=>$svcnum}, 1) %>
 
 <% include('/elements/footer.html') %>
 <%init>
 
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('View customer services')
-      || $FS::CurrentUser::CurrentUser->access_right('View customer'); #XXX remove me
+  unless $FS::CurrentUser::CurrentUser->access_right('View customer services');
 
 my($query) = $cgi->keywords;
 $query =~ /^(\d+)$/;

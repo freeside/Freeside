@@ -5,7 +5,6 @@
     : ( "Cancel this (unaudited) external service" =>
           "${p}misc/cancel-unaudited.cgi?$svcnum" )
   ),
-  "Main menu" => $p,
 )) %>
 
 <A HREF="<%$p%>edit/svc_external.cgi?<%$svcnum%>">Edit this information</A><BR>
@@ -30,8 +29,7 @@
 <%init>
 
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('View customer services')
-      || $FS::CurrentUser::CurrentUser->access_right('View customer'); #XXX remove me
+  unless $FS::CurrentUser::CurrentUser->access_right('View customer services');
 
 my($query) = $cgi->keywords;
 $query =~ /^(\d+)$/;
