@@ -363,13 +363,9 @@ Line-item revenue recognition
 <% include('/elements/footer.html') %>
 <%init>
 
-#1.7
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
-#1.9
-#die "access denied"
-#  unless $FS::CurrentUser::CurrentUser->access_right('Edit package definitions')
-#      || $FS::CurrentUser::CurrentUser->access_right('Edit global package definitions');
+  unless $FS::CurrentUser::CurrentUser->access_right('Edit package definitions')
+      || $FS::CurrentUser::CurrentUser->access_right('Edit global package definitions');
 
 if ( $cgi->param('clone') && $cgi->param('clone') =~ /^(\d+)$/ ) {
   $cgi->param('clone', $1);
