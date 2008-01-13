@@ -126,8 +126,7 @@
 %    #completely unapplied
 %    $pre = '<B><FONT COLOR="#FF0000">Unapplied ';
 %    $post = '</FONT></B>';
-%    if ( $curuser->access_right('Apply payment') # ) {
-%         || $curuser->access_right('Post payment') ) { #remove after 1.7.3
+%    if ( $curuser->access_right('Apply payment') ) {
 %      $apply = qq! (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('${p}edit/cust_bill_pay.cgi?!.
 %               $cust_pay->paynum.
 %               qq!', 392, 336, 'cust_bill_pay_popup' ), CAPTION, 'Apply payment', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">apply</A>)!;
@@ -166,8 +165,7 @@
 %      $desc .= '&nbsp;&nbsp;'.
 %               '<B><FONT COLOR="#FF0000">$'.
 %               $cust_pay->unapplied. ' unapplied</FONT></B>';
-%      if ( $curuser->access_right('Apply payment') # ) {
-%           || $curuser->access_right('Post payment') ) { #remove after 1.7.3
+%      if ( $curuser->access_right('Apply payment') ) {
 %        $desc .= qq! (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('${p}edit/cust_bill_pay.cgi?!.
 %                 $cust_pay->paynum. 
 %                 qq!', 392, 336, 'cust_bill_pay_popup' ), CAPTION, 'Apply payment', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">apply</A>)!;
@@ -306,8 +304,7 @@
 %    #completely unapplied
 %    $pre = '<B><FONT COLOR="#FF0000">Unapplied ';
 %    $post = '</FONT></B>';
-%    if ( $curuser->access_right('Apply credit') # ) {
-%         || $curuser->access_right('Post credit') ) { #remove after 1.7.3
+%    if ( $curuser->access_right('Apply credit') ) {
 %      $apply = qq! (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('${p}edit/cust_credit_bill.cgi?!.
 %               $cust_credit->crednum.
 %               qq!', 392, 336, 'cust_credit_bill_popup' ), CAPTION, 'Apply credit', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">apply</A>)!;
@@ -345,8 +342,7 @@
 %    if ( $cust_credit->credited > 0 ) {
 %      $desc .= '&nbsp;&nbsp;<B><FONT COLOR="#FF0000">$'.
 %               $cust_credit->credited. ' unapplied</FONT></B>';
-%      if ( $curuser->access_right('Apply credit') # ) {
-%           || $curuser->access_right('Post credit') ) { #remove after 1.7.3
+%      if ( $curuser->access_right('Apply credit') ) {
 %        $desc .= qq! (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('${p}edit/cust_credit_bill.cgi?!.
 %                 $cust_credit->crednum.
 %                 qq!', 392, 336, 'cust_credit_bill_popup' ), CAPTION, 'Apply credit', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">apply</A>)!;
