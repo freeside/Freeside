@@ -1,7 +1,6 @@
 <% include('elements/search.html',
               'title'       => 'Batch payment details',
               'name'        => 'batch details',
-	      'menubar'     => ['Main Menu'  => $p,],
 	      'query'       => $sql_query,
 	      'count_query' => $count_query,
               'html_init'   => $pay_batch ? $html_init : '',

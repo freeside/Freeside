@@ -259,16 +259,21 @@ function confirm_fax_process() {
 
 </SCRIPT>';
 
-my $menubar =  [
-                 'Re-print these events' =>
-                   "javascript:confirm_print_process()",
-                 'Re-email these events' =>
-                   "javascript:confirm_email_process()",
-               ];
+my $menubar = [];
 
-push @$menubar, 'Re-fax these events' =>
-                  "javascript:confirm_fax_process()"
-  if $conf->exists('hylafax');
+if ( $curuser->access_right('Resend invoices') ) {
+
+  push @$menubar, 'Re-print these events' =>
+                    "javascript:confirm_print_process()",
+                  'Re-email these events' =>
+                    "javascript:confirm_email_process()",
+                ;
+
+  push @$menubar, 'Re-fax these events' =>
+                    "javascript:confirm_fax_process()"
+    if $conf->exists('hylafax');
+
+}
 
 my $link_cust = sub {
   my $cust_event = shift;

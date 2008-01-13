@@ -7,8 +7,7 @@
               ( $ending == 4294967295
                   ? 'now'
                   : time2str('%h %o %Y', $ending )
-              ),
-            menubar( 'Main Menu'=>$p, )
+              )
           )
 %>
 

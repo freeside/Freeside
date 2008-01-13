@@ -1,5 +1,5 @@
-<% include("/elements/header.html", 'Prepaid Income (Unearned Revenue) Report',
-            menubar( 'Main Menu'=>$p, ) )               %>
+<% include("/elements/header.html", 'Prepaid Income (Unearned Revenue) Report') %>
+
 <% table() %>
   <TR>
     <TH>Actual Unearned Revenue</TH>

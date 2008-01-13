@@ -1,4 +1,4 @@
-<% include("/elements/header.html",'Invoice Event Listing', menubar( 'Main Menu' => $p) ) %>
+<% include('/elements/header.html', 'Invoice Event Listing') %>
 
     <FONT SIZE="+1">Invoice events are the deprecated, old-style actions taken on open invoices.  Any events still listed here should be migrated to new-style events.</FONT><BR><BR>
 
@@ -102,9 +102,8 @@
 % } 
 % } 
 
+<% include('/elements/footer.html') %>
 
-</BODY>
-</HTML>
 <%init>
 
 die "access denied"

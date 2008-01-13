@@ -1,10 +1,4 @@
-<% include( '/elements/header.html', 'RADIUS Sessions',
-             include('/elements/menubar.html',
-                       'Main menu' => $p, # popurl(2),
-                    ),
-
-    )
-%>
+<% include( '/elements/header.html', 'RADIUS Sessions') %>
 
 % ###
 % # and finally, display the thing

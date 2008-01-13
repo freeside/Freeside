@@ -140,16 +140,21 @@ $html_init .= join("\n", map {
   qq!</FORM>!
 } qw( print_ email_ fax_ ) );
 
-my $menubar =  [
-                 'Re-print these events' =>
-                   "javascript:print_process()",
-                 'Re-email these events' =>
-                   "javascript:email_process()",
-               ];
+my $menubar = [];
 
-push @$menubar, 'Re-fax these events' =>
-                  "javascript:fax_process()"
-  if $conf->exists('hylafax');
+if ( $curuser->access_right('Resend invoices') ) {
+
+  push @$menubar, 'Re-print these events' =>
+                    "javascript:print_process()",
+                  'Re-email these events' =>
+                    "javascript:email_process()",
+                ;
+
+  push @$menubar, 'Re-fax these events' =>
+                    "javascript:fax_process()"
+    if $conf->exists('hylafax');
+
+}
 
 my $link_cust = sub {
   my $cust_bill_event = shift;
