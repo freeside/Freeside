@@ -86,7 +86,7 @@
   <TD ALIGN="right">
     <P id="new<% $id %>Label" style="display:<% $display %>">New Reason</P>
   </TD>
-  <TD><INPUT id="new<% $id %>" name="new<% $name %>" type="text" value="<% $init_newreason %>" "<% $disabled %>" style="display:<% $display %>"></TD>
+  <TD><INPUT id="new<% $id %>" name="new<% $name %>" type="text" value="<% $init_newreason |h %>" "<% $disabled %>" style="display:<% $display %>"></TD>
 </TR>
 
 <%init>
