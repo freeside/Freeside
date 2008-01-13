@@ -56,60 +56,60 @@ die "access denied"
 my @groupby = ();
 
 my $transactiontime = "
-  CASE transactions.type when 'Set'
-    THEN (to_number(newvalue,'999999')-to_number(oldvalue, '999999')) * 60
-    ELSE timetaken*60
+  CASE Transactions.Type WHEN 'Set'
+    THEN (TO_NUMBER(NewValue,'999999')-TO_NUMBER(OldValue, '999999')) * 60
+    ELSE TimeTaken*60
   END
 ";
 
 push @groupby, qw( transactions.type newvalue oldvalue timetaken );
 
-my $appliedtimeclause = "coalesce (sum(acct_rt_transaction.seconds), 0)";
+my $appliedtimeclause = "COALESCE (SUM(acct_rt_transaction.seconds), 0)";
 
 my $appliedtimeselect = "
-  coalesce(
-            ( SELECT sum(seconds) FROM acct_rt_transaction
-                WHERE transaction_id = transactions.id
+  COALESCE(
+            ( SELECT SUM(seconds) FROM acct_rt_transaction
+                WHERE transaction_id = Transactions.id
             ),
             0
           )
 ";
 
-push @groupby, "transactions.id";
+push @groupby, "Transactions.id";
 
 my $wheretimeleft = "$transactiontime != $appliedtimeselect";
 
-push @groupby, "tickets.id";
-push @groupby, "tickets.subject";
-push @groupby, "transactions.created";
+push @groupby, "Tickets.id";
+push @groupby, "Tickets.Subject";
+push @groupby, "Transactions.Created";
 
 my $groupby = join(',', @groupby);
 
 my $where = "
-  WHERE objecttype='RT::Ticket'
-    AND ( ( transactions.type='Set' AND field='TimeWorked' )
-          OR transactions.type='Comment'
-          OR transactions.type='Correspond'
+  WHERE ObjectType='RT::Ticket'
+    AND ( ( Transactions.Type='Set' AND Field='TimeWorked' )
+          OR Transactions.Type='Comment'
+          OR Transactions.Type='Correspond'
         )
     AND $wheretimeleft
 ";
     #AND $wheretimeleft
 
 my $query = "
-  SELECT tickets.id, tickets.subject,
-         to_char(transactions.created, 'Dy Mon DD HH24:MI:SS YYYY'),
+  SELECT Tickets.id, Tickets.Subject,
+         TO_CHAR(Transactions.Created, 'Dy Mon DD HH24:MI:SS YYYY'),
          $transactiontime-$appliedtimeclause,
-         transactions.id
-    FROM transactions
-      JOIN tickets ON transactions.objectid = tickets.id
+         Transactions.id
+    FROM Transactions
+      JOIN Tickets ON Transactions.ObjectId = Tickets.id
       LEFT JOIN acct_rt_transaction
-        ON transactions.id = acct_rt_transaction.transaction_id
+        ON Transactions.id = acct_rt_transaction.transaction_id
     $where
     GROUP BY $groupby
-    ORDER BY transactions.created
+    ORDER BY Transactions.Created
 ";
 
-my $count_query = "SELECT COUNT(*) FROM transactions $where";
+my $count_query = "SELECT COUNT(*) FROM Transactions $where";
 
 my $link = [ "${p}rt/Ticket/Display.html?id=", sub { shift->[0]; } ];
 
