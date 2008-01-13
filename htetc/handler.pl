@@ -120,6 +120,7 @@ sub handler
       use Text::CSV_XS;
       use Spreadsheet::WriteExcel;
       use Business::CreditCard 0.30; #for mask-aware cardtype()
+      use NetAddr::IP;
       use String::Approx qw(amatch);
       use Chart::LinesPoints;
       use Chart::Mountain;
