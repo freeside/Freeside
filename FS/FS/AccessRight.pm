@@ -99,6 +99,7 @@ tie my %rights, 'Tie::IxHash',
     { rightname=>'Delete customer', desc=>"Enable customer deletions. Be very careful! Deleting a customer will remove all traces that this customer ever existed! It should probably only be used when auditing a legacy database. Normally, you cancel all of a customer's packages if they cancel service." }, #aka. deletecustomers
     'Add customer note', #NEW
     'Edit customer note', #NEW
+    'Bill customer now', #NEW
   ],
   
   ###
@@ -125,13 +126,16 @@ tie my %rights, 'Tie::IxHash',
   # customer service rights
   ###
   'Customer service rights' => [
-    'Edit usage', #NEW
-    'Edit home dir', #NEW
-    'Edit www config', #NEW
     'View customer services', #NEW
     'Provision customer service',
     'Recharge customer service', #NEW
     'Unprovision customer service',
+    'Change customer service', #NEWNEW
+    'Edit usage', #NEW
+    'Edit home dir', #NEW
+    'Edit www config', #NEW
+    'Edit domain catchall', #NEW
+    'Edit domain nameservice', #NEW
   
     { rightname=>'View/link unlinked services', global=>1 }, #not agent-virtualizable without more work
   ],
@@ -141,6 +145,7 @@ tie my %rights, 'Tie::IxHash',
   ###
   'Customer invoice / financial info rights' => [
     'View invoices',
+    'Resend invoices', #NEWNEW
     'View customer tax exemptions', #yow
     'View customer batched payments', #NEW
     'View customer billing events', #NEW
@@ -152,6 +157,7 @@ tie my %rights, 'Tie::IxHash',
   'Customer payment rights' => [
     'Post payment',
     'Post payment batch',
+    'Apply payment', #NEWNEW
     { rightname=>'Unapply payment', desc=>'Enable "unapplication" of unclosed payments from specific invoices.' }, #aka. unapplypayments
     'Process payment',
     'Refund payment',
@@ -165,7 +171,7 @@ tie my %rights, 'Tie::IxHash',
   ###
   'Customer credit and refund rights' => [
     'Post credit',
-    #'Apply credit',
+    'Apply credit', #NEWNEW
     { rightname=>'Unapply credit', desc=>'Enable "unapplication" of unclosed credits.' }, #aka unapplycredits
     { rightname=>'Delete credit', desc=>'Enable deletion of unclosed credits. Be very careful!  Only delete credits that were data-entry errors, not adjustments.' }, #aka. deletecredits Optionally specify one or more comma-separated email addresses to be notified when a credit is deleted.
     'Delete refund', #NEW
