@@ -1,5 +1,4 @@
 <% include("/elements/header.html",'Agent Listing', menubar(
-  'Main Menu'   => $p,
   'Agent Types' => $p. 'browse/agent_type.cgi',
 #  'Add new agent' => '../edit/agent.cgi'
 )) %>

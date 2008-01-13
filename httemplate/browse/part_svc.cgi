@@ -1,4 +1,4 @@
-<% include("/elements/header.html",'Service Definition Listing', menubar( 'Main Menu' => $p) ) %>
+<% include('/elements/header.html', 'Service Definition Listing') %>
 
 <SCRIPT>
 function part_export_areyousure(href) {

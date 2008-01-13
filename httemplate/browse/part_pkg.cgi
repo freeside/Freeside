@@ -1,6 +1,5 @@
 <% include( 'elements/browse.html',
                  'title'              => 'Package Definitions',
-                 'menubar'            => [ 'Main Menu' => $p ],
                  'html_init'          => $html_init,
                  'name'               => 'package definitions',
                  'disableable'        => 1,

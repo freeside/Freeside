@@ -1,12 +1,4 @@
-<% include("/elements/header.html",'Address Blocks', menubar('Main Menu'   => $p)) %>
-
-%use NetAddr::IP;
-%
-%my @addr_block = qsearch('addr_block', {});
-%my @router = qsearch('router', {});
-%my $block;
-%my $p2 = popurl(2);
-%my $path = $p2 . "edit/process/addr_block";
+<% include('/elements/header.html', 'Address Blocks') %>
 
 <% include('/elements/error.html') %>
 
@@ -71,9 +63,18 @@
     </FORM>
   </TR>
 </TABLE>
-</BODY>
-</HTML>
+
+<% include('/elements/footer.html') %>
+
 <%init>
+
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my @addr_block = qsearch('addr_block', {});
+my @router = qsearch('router', {});
+my $block;
+my $p2 = popurl(2);
+my $path = $p2 . "edit/process/addr_block";
+
 </%init>

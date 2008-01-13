@@ -1,7 +1,4 @@
-<% include("/elements/header.html",'Routers', menubar('Main Menu'   => $p)) %>
-%
-%my @router = qsearch('router', {});
-%my $p2 = popurl(2);
+<% include('/elements/header.html', 'Routers') %>
 
 <% include('/elements/error.html') %>
 
@@ -16,8 +13,6 @@
 %  $cgi->param('hidecustomerrouters', 1);
 %  $hideurl = '<A HREF="' . $cgi->self_url() . '">Hide customer routers</A>';
 %}
-%
-
 
 <A HREF="<%$p2%>edit/router.cgi">Add a new router</A>&nbsp;|&nbsp;<%$hideurl%>
 
@@ -50,9 +45,15 @@
 % } 
 
 </TABLE>
-</BODY>
-</HTML>
+
+<% include('/elements/footer.html') %>
+
 <%init>
+
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my @router = qsearch('router', {});
+my $p2 = popurl(2);
+
 </%init>

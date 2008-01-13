@@ -1,9 +1,7 @@
 <% include( 'elements/browse.html',
                  'title'       => ucfirst($classname) . ' Reasons',
-                 'menubar'     => [ # 'Main menu' => $p,
-                                    ucfirst($classname) . ' Reason Types' =>
-				       $p.'browse/reason_type.html?class='.
-				       $class,
+                 'menubar'     => [ ucfirst($classname).' Reason Types' =>
+				      $p."browse/reason_type.html?class=$class"
                                   ],
                  'html_init'   => $html_init,
                  'name'        => $classname . ' reasons',

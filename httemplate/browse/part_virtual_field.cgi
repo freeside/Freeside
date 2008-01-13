@@ -1,13 +1,4 @@
-<% include("/elements/header.html",'Virtual field definitions', menubar('Main Menu'   => $p)) %>
-
-%my %pvfs;
-%my $block;
-%my $p2 = popurl(2);
-%my $dbtable;
-%
-%foreach (qsearch('part_virtual_field', {})) {
-%  push @{ $pvfs{$_->dbtable} }, $_;
-%}
+<% include('/elements/header.html', 'Virtual field definitions') %>
 
 <% include('/elements/error.html') %>
 
@@ -32,9 +23,20 @@
 </TABLE>
 % } 
 
-</BODY>
-</HTML>
+<% include('/elements/footer.html') %>
+
 <%init>
+
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my %pvfs;
+my $block;
+my $p2 = popurl(2);
+my $dbtable;
+
+foreach (qsearch('part_virtual_field', {})) {
+  push @{ $pvfs{$_->dbtable} }, $_;
+}
+
 </%init>

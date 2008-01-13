@@ -1,9 +1,4 @@
-<!-- mason kludge -->
-%
-%
-%print header('NAS ports', menubar(
-%  'Main Menu' => $p,
-%));
+%print header('NAS ports');
 %
 %my $now = time;
 %
@@ -79,3 +74,9 @@
 %#  <TH>NAS</
 %
 
+<%init>
+
+#this hasn't been used in ages, and isn't linked from anywhere...
+die 'NAS browse not currently active';
+
+</%init>
