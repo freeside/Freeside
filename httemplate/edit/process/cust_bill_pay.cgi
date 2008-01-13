@@ -12,8 +12,7 @@
 <%init>
 
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Apply payment') #;
-      || $FS::CurrentUser::CurrentUser->access_right('Post payment'): #remove after 1.7.3
+  unless $FS::CurrentUser::CurrentUser->access_right('Apply payment');
 
 $cgi->param('paynum') =~ /^(\d*)$/ or die "Illegal paynum!";
 my $paynum = $1;
