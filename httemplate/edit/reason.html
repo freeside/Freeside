@@ -42,3 +42,9 @@
                  'viewall_url' => $p . "browse/reason.html?class=$class",
            )
 %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+</%init>

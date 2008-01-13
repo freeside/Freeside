@@ -1,4 +1,4 @@
-<%  header("Apply Credit", '') %>
+<% include('/elements/header-popup.html', 'Apply Credit') %>
 
 <% include('/elements/error.html') %>
 
@@ -53,6 +53,11 @@ function changed(what) {
 </HTML>
 
 <%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Apply credit') #;
+      || $FS::CurrentUser::CurrentUser->access_right('Post credit'): #remove after 1.7.3
+
 my($crednum, $amount, $invnum);
 if ( $cgi->param('error') ) {
   #$cust_credit_bill = new FS::cust_credit_bill ( {
@@ -85,5 +90,5 @@ my @cust_bill = sort {    $a->_date  <=> $b->_date
                      }
                 grep { $_->owed != 0 }
                 qsearch('cust_bill', { 'custnum' => $cust_credit->custnum } );
-</%init>
 
+</%init>

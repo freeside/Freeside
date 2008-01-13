@@ -20,13 +20,12 @@
 </HTML>
 
 <%init>
-my($custnum, $comment, $notenum, $action); 
-$comment = '';
 
+my $comment;
+my $notenum = '';
 if ( $cgi->param('error') ) {
   $comment     = $cgi->param('comment');
-}elsif ($cgi->param('notenum')) {
-  $cgi->param('notenum') =~ /^(\d+)$/;
+} elsif ( $cgi->param('notenum') =~ /^(\d+)$/ ) {
   $notenum = $1;
   die "illegal query ". $cgi->keywords unless $notenum;
   my $note = qsearchs('cust_main_note', { 'notenum' => $notenum });
@@ -34,15 +33,13 @@ if ( $cgi->param('error') ) {
   $comment = $note->comments;
 }
 
-$cgi->param('notenum') =~ /^(\d+)$/;
-$notenum = $1;
+$cgi->param('custnum') =~ /^(\d+)$/ or die "illeagl custnum";
+my $custnum = $1;
 
-$cgi->param('custnum') =~ /^(\d+)$/;
-$custnum     = $1;
+my $action = $notenum ? 'Edit' : 'Add';
 
-die "illegal query ". $cgi->keywords unless $custnum;
-
-$action = $notenum ? 'Edit' : 'Add';
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right("$action customer note");
 
 </%init>
 

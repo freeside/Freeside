@@ -4,3 +4,10 @@
               #someday change the individual element and go away instead
           )
 %>
+<%init>
+
+my $conf = new FS::Conf;
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+</%init>

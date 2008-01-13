@@ -36,8 +36,7 @@
 
 
 <% include("/elements/header.html", "$num prepaid cards generated".
-              ( $agent ? ' for '.$agent->agent : '' ),
-            menubar( 'Main menu' => popurl(3) )
+              ( $agent ? ' for '.$agent->agent : '' )
           )
 %>
 
@@ -60,4 +59,9 @@
 
 </BODY></HTML>
 % } 
+<%init>
 
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+</%init>

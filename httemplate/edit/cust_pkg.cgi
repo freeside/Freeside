@@ -1,35 +1,3 @@
-%
-%
-%my %pkg = ();
-%my %comment = ();
-%my %all_pkg = ();
-%my %all_comment = ();
-%#foreach (qsearch('part_pkg', { 'disabled' => '' })) {
-%#  $pkg{ $_ -> getfield('pkgpart') } = $_->getfield('pkg');
-%#  $comment{ $_ -> getfield('pkgpart') } = $_->getfield('comment');
-%#}
-%foreach (qsearch('part_pkg', {} )) {
-%  $all_pkg{ $_ -> getfield('pkgpart') } = $_->getfield('pkg');
-%  $all_comment{ $_ -> getfield('pkgpart') } = $_->getfield('comment');
-%  next if $_->disabled;
-%  $pkg{ $_ -> getfield('pkgpart') } = $_->getfield('pkg');
-%  $comment{ $_ -> getfield('pkgpart') } = $_->getfield('comment');
-%}
-%
-%my($custnum, %remove_pkg);
-%if ( $cgi->param('error') ) {
-%  $custnum = $cgi->param('custnum');
-%  %remove_pkg = map { $_ => 1 } $cgi->param('remove_pkg');
-%} else {
-%  my($query) = $cgi->keywords;
-%  $query =~ /^(\d+)$/;
-%  $custnum = $1;
-%  %remove_pkg = ();
-%}
-%
-%my $p1 = popurl(1);
-%
-%
 <% include('/elements/header.html', "Add/Edit Packages", '') %>
 
 <% include('/elements/error.html') %>
@@ -147,3 +115,40 @@ Order new packages
 </FORM>
 
 <% include('/elements/footer.html') %>
+
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Bulk change customer packages');
+
+my %pkg = ();
+my %comment = ();
+my %all_pkg = ();
+my %all_comment = ();
+#foreach (qsearch('part_pkg', { 'disabled' => '' })) {
+#  $pkg{ $_ -> getfield('pkgpart') } = $_->getfield('pkg');
+#  $comment{ $_ -> getfield('pkgpart') } = $_->getfield('comment');
+#}
+foreach (qsearch('part_pkg', {} )) {
+  $all_pkg{ $_ -> getfield('pkgpart') } = $_->getfield('pkg');
+  $all_comment{ $_ -> getfield('pkgpart') } = $_->getfield('comment');
+  next if $_->disabled;
+  $pkg{ $_ -> getfield('pkgpart') } = $_->getfield('pkg');
+  $comment{ $_ -> getfield('pkgpart') } = $_->getfield('comment');
+}
+
+my($custnum, %remove_pkg);
+if ( $cgi->param('error') ) {
+  $custnum = $cgi->param('custnum');
+  %remove_pkg = map { $_ => 1 } $cgi->param('remove_pkg');
+} else {
+  my($query) = $cgi->keywords;
+  $query =~ /^(\d+)$/;
+  $custnum = $1;
+  %remove_pkg = ();
+}
+
+my $p1 = popurl(1);
+
+</%init>
+

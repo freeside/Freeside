@@ -86,6 +86,7 @@ Payment
 </HTML>
 
 <%once>
+
 my $conf = new FS::Conf;
 
 my %payby = (
@@ -96,9 +97,13 @@ my %payby = (
 );
 
 my $money_char = $conf->config('money_char') || '$';
-</%once>
 
+</%once>
 <%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Post payment');
+
 my($link, $linknum, $paid, $payby, $payinfo, $_date); 
 if ( $cgi->param('error') ) {
   $link     = $cgi->param('link');

@@ -1,9 +1,4 @@
-<% include("/elements/header.html", 'Bulk customer service change',
-            menubar(
-                     'Main Menu' => $p,
-                   ),
-          )
-%>
+<% include('/elements/header.html', 'Bulk customer service change') %>
 
 <SCRIPT TYPE="text/javascript" SRC="../elements/overlibmws.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript" SRC="../elements/overlibmws_iframe.js"></SCRIPT>
@@ -92,8 +87,11 @@ var confirm_change = '<P ALIGN="center"><B>Bulk customer service change - Are yo
 
 </FORM>
 
-</BODY>
-</HTML>
+<% include('/elements/footer.html') %>
 
+<%init>
 
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
 
+</%init>

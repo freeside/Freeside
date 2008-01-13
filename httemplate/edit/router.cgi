@@ -1,27 +1,7 @@
-<HTML><BODY>
-%
-%
-%my $router;
-%if ( $cgi->keywords ) {
-%  my($query) = $cgi->keywords;
-%  $query =~ /^(\d+)$/;
-%  $router = qsearchs('router', { routernum => $1 }) 
-%      or print $cgi->redirect(popurl(2)."browse/router.cgi") ;
-%} else {
-%  $router = new FS::router ( {
-%    map { $_, scalar($cgi->param($_)) } fields('router')
-%  } );
-%}
-%
-%my $routernum = $router->routernum;
-%my $action = $routernum ? 'Edit' : 'Add';
-%
-%print header("$action Router", menubar(
-%  'Main Menu' => "$p",
-%  'View all routers' => "${p}browse/router.cgi",
-%));
-%
-%my $p3 = popurl(3);
+<% include('/elements/header.html', "$action Router", menubar(
+     'View all routers' => "${p}browse/router.cgi",
+   ))
+%>
 
 <% include('/elements/error.html') %>
 
@@ -70,5 +50,29 @@ Custom fields:
 
   <BR><BR><INPUT TYPE="submit" VALUE="Apply changes">
   </FORM>
-</BODY></HTML>
 
+<% include('/elements/footer.html') %>
+
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $router;
+if ( $cgi->keywords ) {
+  my($query) = $cgi->keywords;
+  $query =~ /^(\d+)$/;
+  $router = qsearchs('router', { routernum => $1 }) 
+      or print $cgi->redirect(popurl(2)."browse/router.cgi") ;
+} else {
+  $router = new FS::router ( {
+    map { $_, scalar($cgi->param($_)) } fields('router')
+  } );
+}
+
+my $routernum = $router->routernum;
+my $action = $routernum ? 'Edit' : 'Add';
+
+my $p3 = popurl(3);
+
+</%init>

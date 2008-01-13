@@ -1,5 +1,4 @@
-<% include("/elements/header.html","$action Package Definition", menubar(
-  'Main Menu' => popurl(2),
+<% include('/elements/header.html', "$action Package Definition", menubar(
   'View all packages' => popurl(2). 'browse/part_pkg.cgi',
 )) %>
 % #), ' onLoad="visualize()"'); 
@@ -360,9 +359,17 @@ Line-item revenue recognition
 
 
 <BR><BR>Price plan <% $widget->html %>
-  </BODY>
-</HTML>
+
+<% include('/elements/footer.html') %>
 <%init>
+
+#1.7
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+#1.9
+#die "access denied"
+#  unless $FS::CurrentUser::CurrentUser->access_right('Edit package definitions')
+#      || $FS::CurrentUser::CurrentUser->access_right('Edit global package definitions');
 
 if ( $cgi->param('clone') && $cgi->param('clone') =~ /^(\d+)$/ ) {
   $cgi->param('clone', $1);

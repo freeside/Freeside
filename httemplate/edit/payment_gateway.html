@@ -1,25 +1,4 @@
-%
-%
-%my $payment_gateway;
-%if ( $cgi->param('error') ) {
-%  $payment_gateway = new FS::payment_gateway ( {
-%    map { $_, scalar($cgi->param($_)) } fields('payment_gateway')
-%  } );
-%} elsif ( $cgi->keywords ) {
-%  my($query) = $cgi->keywords;
-%  $query =~ /^(\d+)$/;
-%  $payment_gateway = qsearchs( 'payment_gateway', { 'gatewaynum' => $1 } );
-%} else { #adding
-%  $payment_gateway = new FS::payment_gateway {};
-%}
-%my $action = $payment_gateway->gatewaynum ? 'Edit' : 'Add';
-%#my $hashref = $payment_gateway->hashref;
-%
-%
-
-
 <% include("/elements/header.html","$action Payment gateway", menubar(
-  'Main Menu' => $p,
   'View all payment gateways' => $p. 'browse/payment_gateway.html',
 )) %>
 
@@ -127,6 +106,27 @@ Gateway #<% $payment_gateway->gatewaynum || "(NEW)" %>
 
 <BR><INPUT TYPE="submit" VALUE="<% $payment_gateway->gatewaynum ? "Apply changes" : "Add gateway" %>">
     </FORM>
-  </BODY>
-</HTML>
 
+<% include('/elements/footer.html') %>
+
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $payment_gateway;
+if ( $cgi->param('error') ) {
+  $payment_gateway = new FS::payment_gateway ( {
+    map { $_, scalar($cgi->param($_)) } fields('payment_gateway')
+  } );
+} elsif ( $cgi->keywords ) {
+  my($query) = $cgi->keywords;
+  $query =~ /^(\d+)$/;
+  $payment_gateway = qsearchs( 'payment_gateway', { 'gatewaynum' => $1 } );
+} else { #adding
+  $payment_gateway = new FS::payment_gateway {};
+}
+my $action = $payment_gateway->gatewaynum ? 'Edit' : 'Add';
+#my $hashref = $payment_gateway->hashref;
+
+</%init>

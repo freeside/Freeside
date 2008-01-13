@@ -1,22 +1,4 @@
-%
-%
-%my($agent_type);
-%if ( $cgi->param('error') ) {
-%  $agent_type = new FS::agent_type ( {
-%    map { $_, scalar($cgi->param($_)) } fields('agent')
-%  } );
-%} elsif ( $cgi->keywords ) { #editing
-%  my( $query ) = $cgi->keywords;
-%  $query =~ /^(\d+)$/;
-%  $agent_type=qsearchs('agent_type',{'typenum'=>$1});
-%} else { #adding
-%  $agent_type = new FS::agent_type {};
-%}
-%my $action = $agent_type->typenum ? 'Edit' : 'Add';
-%
-%
 <% include("/elements/header.html","$action Agent Type", menubar(
-  'Main Menu' => "$p",
   'View all agent types' => "${p}browse/agent_type.cgi",
 ))
 %>
@@ -52,3 +34,24 @@ Select which packages agents of this type may sell to customers<BR>
     </FORM>
 
 <% include('/elements/footer.html') %>
+
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my($agent_type);
+if ( $cgi->param('error') ) {
+  $agent_type = new FS::agent_type ( {
+    map { $_, scalar($cgi->param($_)) } fields('agent')
+  } );
+} elsif ( $cgi->keywords ) { #editing
+  my( $query ) = $cgi->keywords;
+  $query =~ /^(\d+)$/;
+  $agent_type=qsearchs('agent_type',{'typenum'=>$1});
+} else { #adding
+  $agent_type = new FS::agent_type {};
+}
+my $action = $agent_type->typenum ? 'Edit' : 'Add';
+
+</%init>

@@ -1,34 +1,7 @@
-%
-%my $part_svc;
-%my $clone = '';
-%if ( $cgi->param('clone') && $cgi->param('clone') =~ /^(\d+)$/ ) {#clone
-%  #$cgi->param('clone') =~ /^(\d+)$/ or die "malformed query: $query";
-%  $part_svc = qsearchs('part_svc', { 'svcpart'=>$1 } )
-%    or die "unknown svcpart: $1";
-%  $clone = $part_svc->svcpart;
-%  $part_svc->svcpart('');
-%} elsif ( $cgi->keywords ) { #edit
-%  my($query) = $cgi->keywords;
-%  $query =~ /^(\d+)$/ or die "malformed query: $query";
-%  $part_svc=qsearchs('part_svc', { 'svcpart'=>$1 } )
-%    or die "unknown svcpart: $1";
-%} else { #adding
-%  $part_svc = new FS::part_svc {};
-%}
-%
-%my $action = $part_svc->svcpart ? 'Edit' : 'Add';
-%my $hashref = $part_svc->hashref;
-%#   my $p_svcdb = $part_svc->svcdb || 'svc_acct';
-%
-%
-%           #" onLoad=\"visualize()\""
-%
-
-<% include("/elements/header.html","$action Service Definition",
-           menubar( 'Main Menu'         => $p,
-                    'View all service definitions' => "${p}browse/part_svc.cgi"
-                  ),
-           )
+<% include('/elements/header.html', "$action Service Definition",
+           menubar('View all service definitions' => "${p}browse/part_svc.cgi"),
+           #" onLoad=\"visualize()\""
+          )
 %>
 
 <FORM NAME="dummy">
@@ -350,6 +323,38 @@ that field.
 %
 
 Table <% $widget->html %>
-  </BODY>
-</HTML>
+
+<% include('/elements/footer.html') %>
+
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $part_svc;
+my $clone = '';
+if ( $cgi->param('clone') && $cgi->param('clone') =~ /^(\d+)$/ ) {#clone
+  #$cgi->param('clone') =~ /^(\d+)$/ or die "malformed query: $query";
+  $part_svc = qsearchs('part_svc', { 'svcpart'=>$1 } )
+    or die "unknown svcpart: $1";
+  $clone = $part_svc->svcpart;
+  $part_svc->svcpart('');
+} elsif ( $cgi->keywords ) { #edit
+  my($query) = $cgi->keywords;
+  $query =~ /^(\d+)$/ or die "malformed query: $query";
+  $part_svc=qsearchs('part_svc', { 'svcpart'=>$1 } )
+    or die "unknown svcpart: $1";
+} else { #adding
+  $part_svc = new FS::part_svc {};
+}
+
+my $action = $part_svc->svcpart ? 'Edit' : 'Add';
+my $hashref = $part_svc->hashref;
+#   my $p_svcdb = $part_svc->svcdb || 'svc_acct';
+
+
+
+</%init>
+
+
 

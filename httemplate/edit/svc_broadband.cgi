@@ -1,91 +1,4 @@
-%# If it's stupid but it works, it's still stupid.
-%#  -Kristian
-%
-%use HTML::Widgets::SelectLayers;
-%use Tie::IxHash;
-%
-%my( $svcnum,  $pkgnum, $svcpart, $part_svc, $svc_broadband );
-%if ( $cgi->param('error') ) {
-%
-%  $svc_broadband = new FS::svc_broadband ( {
-%    map { $_, scalar($cgi->param($_)) } fields('svc_broadband'), qw(svcpart)
-%  } );
-%  $svcnum = $svc_broadband->svcnum;
-%  $pkgnum = $cgi->param('pkgnum');
-%  $svcpart = $svc_broadband->svcpart;
-%  $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
-%  die "No part_svc entry!" unless $part_svc;
-%
-%} elsif ( $cgi->param('pkgnum') && $cgi->param('svcpart') ) { #adding
-%
-%  $cgi->param('pkgnum') =~ /^(\d+)$/ or die 'unparsable pkgnum';
-%  $pkgnum = $1;
-%  $cgi->param('svcpart') =~ /^(\d+)$/ or die 'unparsable svcpart';
-%  $svcpart = $1;
-%
-%  $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
-%  die "No part_svc entry!" unless $part_svc;
-%
-%  $svc_broadband = new FS::svc_broadband({ svcpart => $svcpart });
-%
-%  $svcnum='';
-%
-%  $svc_broadband->set_default_and_fixed;
-%
-%} else { #editing
-%
-%  my($query) = $cgi->keywords;
-%  $query =~ /^(\d+)$/ or die "unparsable svcnum";
-%  $svcnum=$1;
-%  $svc_broadband=qsearchs('svc_broadband',{'svcnum'=>$svcnum})
-%    or die "Unknown (svc_broadband) svcnum!";
-%
-%  my($cust_svc)=qsearchs('cust_svc',{'svcnum'=>$svcnum})
-%    or die "Unknown (cust_svc) svcnum!";
-%
-%  $pkgnum=$cust_svc->pkgnum;
-%  $svcpart=$cust_svc->svcpart;
-%  
-%  $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
-%  die "No part_svc entry!" unless $part_svc;
-%
-%}
-%my $action = $svc_broadband->svcnum ? 'Edit' : 'Add';
-%
-%if ($pkgnum) {
-%
-%  #Nothing?
-%
-%} elsif ( $action eq 'Edit' ) {
-%
-%  #Nothing?
-%
-%} else {
-%  die "\$action eq Add, but \$pkgnum is null!\n";
-%}
-%
-%my $p1 = popurl(1);
-%
-%my ($ip_addr, $speed_up, $speed_down, $blocknum, $mac_addr,
-%    $latitude, $longitude, $altitude, $vlan_profile, $auth_key,
-%    $description) =
-%    ($svc_broadband->ip_addr,
-%     $svc_broadband->speed_up,
-%     $svc_broadband->speed_down,
-%     $svc_broadband->blocknum,
-%     $svc_broadband->mac_addr,
-%     $svc_broadband->latitude,
-%     $svc_broadband->longitude,
-%     $svc_broadband->altitude,
-%     $svc_broadband->vlan_profile,
-%     $svc_broadband->auth_key,
-%     $svc_broadband->description,
-%    );
-%
-%
-
-
-<% include("/elements/header.html","Broadband Service $action", '') %>
+<% include('/elements/header.html', "Broadband Service $action") %>
 
 <% include('/elements/error.html') %>
 
@@ -246,6 +159,96 @@ Service #<B><%$svcnum ? $svcnum : "(NEW)"%></B><BR><BR>
   <BR>
   <INPUT TYPE="submit" NAME="submit" VALUE="Submit">
 </FORM>
-</BODY>
-</HTML>
 
+<% include('/elements/footer.html') %>
+
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Provision customer service'); #something else more specific?
+
+# If it's stupid but it works, it's still stupid.
+#  -Kristian
+
+use HTML::Widgets::SelectLayers;
+use Tie::IxHash;
+
+my( $svcnum,  $pkgnum, $svcpart, $part_svc, $svc_broadband );
+if ( $cgi->param('error') ) {
+
+  $svc_broadband = new FS::svc_broadband ( {
+    map { $_, scalar($cgi->param($_)) } fields('svc_broadband'), qw(svcpart)
+  } );
+  $svcnum = $svc_broadband->svcnum;
+  $pkgnum = $cgi->param('pkgnum');
+  $svcpart = $svc_broadband->svcpart;
+  $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
+  die "No part_svc entry!" unless $part_svc;
+
+} elsif ( $cgi->param('pkgnum') && $cgi->param('svcpart') ) { #adding
+
+  $cgi->param('pkgnum') =~ /^(\d+)$/ or die 'unparsable pkgnum';
+  $pkgnum = $1;
+  $cgi->param('svcpart') =~ /^(\d+)$/ or die 'unparsable svcpart';
+  $svcpart = $1;
+
+  $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
+  die "No part_svc entry!" unless $part_svc;
+
+  $svc_broadband = new FS::svc_broadband({ svcpart => $svcpart });
+
+  $svcnum='';
+
+  $svc_broadband->set_default_and_fixed;
+
+} else { #editing
+
+  my($query) = $cgi->keywords;
+  $query =~ /^(\d+)$/ or die "unparsable svcnum";
+  $svcnum=$1;
+  $svc_broadband=qsearchs('svc_broadband',{'svcnum'=>$svcnum})
+    or die "Unknown (svc_broadband) svcnum!";
+
+  my($cust_svc)=qsearchs('cust_svc',{'svcnum'=>$svcnum})
+    or die "Unknown (cust_svc) svcnum!";
+
+  $pkgnum=$cust_svc->pkgnum;
+  $svcpart=$cust_svc->svcpart;
+  
+  $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
+  die "No part_svc entry!" unless $part_svc;
+
+}
+my $action = $svc_broadband->svcnum ? 'Edit' : 'Add';
+
+if ($pkgnum) {
+
+  #Nothing?
+
+} elsif ( $action eq 'Edit' ) {
+
+  #Nothing?
+
+} else {
+  die "\$action eq Add, but \$pkgnum is null!\n";
+}
+
+my $p1 = popurl(1);
+
+my ($ip_addr, $speed_up, $speed_down, $blocknum, $mac_addr,
+    $latitude, $longitude, $altitude, $vlan_profile, $auth_key,
+    $description) =
+    ($svc_broadband->ip_addr,
+     $svc_broadband->speed_up,
+     $svc_broadband->speed_down,
+     $svc_broadband->blocknum,
+     $svc_broadband->mac_addr,
+     $svc_broadband->latitude,
+     $svc_broadband->longitude,
+     $svc_broadband->altitude,
+     $svc_broadband->vlan_profile,
+     $svc_broadband->auth_key,
+     $svc_broadband->description,
+    );
+
+</%init>

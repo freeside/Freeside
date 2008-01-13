@@ -163,6 +163,9 @@ function validate_quick_charge () {
 </HTML>
 <%init>
 
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('One-time charge');
+
 $cgi->param('custnum') =~ /^(\d+)$/ or die 'illegal custnum';
 my $custnum = $1;
 

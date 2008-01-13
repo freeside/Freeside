@@ -1,4 +1,4 @@
-<% header("Apply Payment", '') %>
+<% include('/elements/header-popup.html', 'Apply Payment') %>
 
 <% include('/elements/error.html') %>
 
@@ -47,10 +47,15 @@ function changed(what) {
 <CENTER><INPUT TYPE="submit" VALUE="Apply"></CENTER>
 
 </FORM>
-</BODY>
-</HTML>
+
+<% include('/elements/footer.html') %>
 
 <%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Apply payment') #;
+      || $FS::CurrentUser::CurrentUser->access_right('Post payment'): #remove after 1.7.3
+
 my($paynum, $amount, $invnum);
 if ( $cgi->param('error') ) {
   $paynum = $cgi->param('paynum');
@@ -78,5 +83,5 @@ my @cust_bill = sort {    $a->_date  <=> $b->_date
                      }
                 grep { $_->owed != 0 }
                 qsearch('cust_bill', { 'custnum' => $cust_pay->custnum } );
-</%init>
 
+</%init>

@@ -1,5 +1,4 @@
 <% include("/elements/header.html","$action Agent", menubar(
-  'Main Menu' => $p,
   'View all agents' => $p. 'browse/agent.cgi',
 )) %>
 
@@ -77,6 +76,9 @@ Agent #<% $agent->agentnum ? $agent->agentnum : "(NEW)" %>
 
 <%init>
 
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
 my $agent;
 if ( $cgi->param('error') ) {
   $agent = new FS::agent ( {
@@ -94,5 +96,3 @@ my $action = $agent->agentnum ? 'Edit' : 'Add';
 my $conf = new FS::Conf;
 
 </%init>
-
-

@@ -1,40 +1,6 @@
-<!--mason kludge-->
-%
-%
-%if ( $cgi->param('eventpart') && $cgi->param('eventpart') =~ /^(\d+)$/ ) {
-%  $cgi->param('eventpart', $1);
-%} else {
-%  $cgi->param('eventpart', '');
-%}
-%
-%my ($creason, $newcreasonT, $newcreason);
-%my ($sreason, $newsreasonT, $newsreason);
-%
-%
-%my ($query) = $cgi->keywords;
-%my $action = '';
-%my $part_bill_event = '';
-%my $currentreasonclass = '';
-%if ( $cgi->param('error') ) {
-%  $part_bill_event = new FS::part_bill_event ( {
-%    map { $_, scalar($cgi->param($_)) } fields('part_bill_event')
-%  } );
-%}
-%if ( $query && $query =~ /^(\d+)$/ ) {
-%  $part_bill_event ||= qsearchs('part_bill_event',{'eventpart'=>$1});
-%} else {
-%  $part_bill_event ||= new FS::part_bill_event {};
-%}
-%$action ||= $part_bill_event->eventpart ? 'Edit' : 'Add';
-%my $hashref = $part_bill_event->hashref;
-%
-%
-
-
 <% include('/elements/header.html',
       "$action Invoice Event Definition",
       menubar(
-        'Main Menu' => popurl(2),
         'View all invoice events' => popurl(2). 'browse/part_bill_event.cgi',
       )
     )
@@ -536,7 +502,38 @@ Invoice Event #<% $hashref->{eventpart} ? $hashref->{eventpart} : "(NEW)" %>
 
 
     </FORM>
-  </BODY>
-</HTML>
 
+<% include('/elements/footer.html') %>
 
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+if ( $cgi->param('eventpart') && $cgi->param('eventpart') =~ /^(\d+)$/ ) {
+  $cgi->param('eventpart', $1);
+} else {
+  $cgi->param('eventpart', '');
+}
+
+my ($creason, $newcreasonT, $newcreason);
+my ($sreason, $newsreasonT, $newsreason);
+
+my ($query) = $cgi->keywords;
+my $action = '';
+my $part_bill_event = '';
+my $currentreasonclass = '';
+if ( $cgi->param('error') ) {
+  $part_bill_event = new FS::part_bill_event ( {
+    map { $_, scalar($cgi->param($_)) } fields('part_bill_event')
+  } );
+}
+if ( $query && $query =~ /^(\d+)$/ ) {
+  $part_bill_event ||= qsearchs('part_bill_event',{'eventpart'=>$1});
+} else {
+  $part_bill_event ||= new FS::part_bill_event {};
+}
+$action ||= $part_bill_event->eventpart ? 'Edit' : 'Add';
+my $hashref = $part_bill_event->hashref;
+
+</%init>

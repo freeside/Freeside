@@ -1,16 +1,4 @@
-%
-%my $agentnum = $cgi->param('agentnum');
-%$agentnum =~ /^(\d+)$/ or errorpage("illegal agentnum $agentnum");
-%$agentnum = $1;
-%my $agent = qsearchs('agent', { 'agentnum' => $agentnum } );
-%
-%
-
-
-<% include("/elements/header.html",'Generate registration codes for '. $agent->agent, menubar(
-      'Main Menu' => $p,
-    ))
-%>
+<% include('/elements/header.html', 'Generate registration codes for '. $agent->agent) %>
 
 <% include('/elements/error.html') %>
 
@@ -39,5 +27,18 @@ registration codes for <B><% $agent->agent %></B> allowing the following package
 <BR>
 <INPUT TYPE="submit" NAME="submit" VALUE="Generate">
 
-</FORM></BODY></HTML>
+</FORM>
 
+<% include('/elements/footer.html') %>
+
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $agentnum = $cgi->param('agentnum');
+$agentnum =~ /^(\d+)$/ or errorpage("illegal agentnum $agentnum");
+$agentnum = $1;
+my $agent = qsearchs('agent', { 'agentnum' => $agentnum } );
+
+</%init>

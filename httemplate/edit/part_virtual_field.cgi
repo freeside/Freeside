@@ -1,27 +1,3 @@
-%
-%my ($vfieldpart, $part_virtual_field);
-%
-%if ( $cgi->param('error') ) {
-%  $part_virtual_field = new FS::part_virtual_field ( {
-%    map { $_, scalar($cgi->param($_)) } fields('part_virtual_field')});
-%  $vfieldpart = $part_virtual_field->vfieldpart;
-%} else {
-%  my($query) = $cgi->keywords;
-%  if ( $query =~ /^(\d+)$/ ) { #editing
-%    $vfieldpart=$1;
-%    $part_virtual_field=qsearchs('part_virtual_field',
-%        {'vfieldpart' => $vfieldpart})
-%      or die "Unknown vfieldpart!";
-%  
-%  } else { #adding
-%    $part_virtual_field = new FS::part_virtual_field({});
-%  }
-%}
-%my $action = $part_virtual_field->vfieldpart ? 'Edit' : 'Add';
-%
-%my $p1 = popurl(1);
-%
-%
 <% include('/elements/header.html', "$action Virtual Field Definition") %>
 
 <% include('/elements/error.html') %>
@@ -97,3 +73,32 @@ Field #<B><%$vfieldpart or "(NEW)"%></B><BR><BR>
 <I>list_source</I> mean, <B>LEAVE THEM BLANK</B>.  We mean it.</FONT>
 
 <% include('/elements/footer.html') %>
+
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my ($vfieldpart, $part_virtual_field);
+
+if ( $cgi->param('error') ) {
+  $part_virtual_field = new FS::part_virtual_field ( {
+    map { $_, scalar($cgi->param($_)) } fields('part_virtual_field')});
+  $vfieldpart = $part_virtual_field->vfieldpart;
+} else {
+  my($query) = $cgi->keywords;
+  if ( $query =~ /^(\d+)$/ ) { #editing
+    $vfieldpart=$1;
+    $part_virtual_field=qsearchs('part_virtual_field',
+        {'vfieldpart' => $vfieldpart})
+      or die "Unknown vfieldpart!";
+  
+  } else { #adding
+    $part_virtual_field = new FS::part_virtual_field({});
+  }
+}
+my $action = $part_virtual_field->vfieldpart ? 'Edit' : 'Add';
+
+my $p1 = popurl(1);
+
+</%init>

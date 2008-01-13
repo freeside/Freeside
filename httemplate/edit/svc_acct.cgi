@@ -1,132 +1,4 @@
-%
-%
-%my $conf = new FS::Conf;
-%my @shells = $conf->config('shells');
-%
-%my $curuser = $FS::CurrentUser::CurrentUser;
-%
-%my($svcnum, $pkgnum, $svcpart, $part_svc, $svc_acct, @groups);
-%if ( $cgi->param('error') ) {
-%
-%  $svc_acct = new FS::svc_acct ( {
-%    map { $_, scalar($cgi->param($_)) } fields('svc_acct')
-%  } );
-%  $svcnum = $svc_acct->svcnum;
-%  $pkgnum = $cgi->param('pkgnum');
-%  $svcpart = $cgi->param('svcpart');
-%  $part_svc = qsearchs( 'part_svc', { 'svcpart' => $svcpart } );
-%  die "No part_svc entry for svcpart $svcpart!" unless $part_svc;
-%  @groups = $cgi->param('radius_usergroup');
-%
-%} elsif ( $cgi->param('pkgnum') && $cgi->param('svcpart') ) { #adding
-%
-%  $cgi->param('pkgnum') =~ /^(\d+)$/ or die 'unparsable pkgnum';
-%  $pkgnum = $1;
-%  $cgi->param('svcpart') =~ /^(\d+)$/ or die 'unparsable svcpart';
-%  $svcpart = $1;
-%
-%  $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
-%  die "No part_svc entry!" unless $part_svc;
-%
-%    $svc_acct = new FS::svc_acct({svcpart => $svcpart}); 
-%
-%    $svcnum='';
-%
-%} else { #editing
-%
-%  my($query) = $cgi->keywords;
-%  $query =~ /^(\d+)$/ or die "unparsable svcnum";
-%  $svcnum=$1;
-%  $svc_acct=qsearchs('svc_acct',{'svcnum'=>$svcnum})
-%    or die "Unknown (svc_acct) svcnum!";
-%
-%  my($cust_svc)=qsearchs('cust_svc',{'svcnum'=>$svcnum})
-%    or die "Unknown (cust_svc) svcnum!";
-%
-%  $pkgnum=$cust_svc->pkgnum;
-%  $svcpart=$cust_svc->svcpart;
-%
-%  $part_svc = qsearchs( 'part_svc', { 'svcpart' => $svcpart } );
-%  die "No part_svc entry for svcpart $svcpart!" unless $part_svc;
-%
-%  @groups = $svc_acct->radius_groups;
-%
-%}
-%
-%my( $cust_pkg, $cust_main ) = ( '', '' );
-%if ( $pkgnum ) {
-%  $cust_pkg = qsearchs('cust_pkg', { 'pkgnum' => $pkgnum } );
-%  $cust_main = $cust_pkg->cust_main;
-%}
-%
-%unless ( $svcnum || $cgi->param('error') ) { #adding
-%
-%  #set gecos
-%  if ($cust_main) {
-%    unless ( $part_svc->part_svc_column('uid')->columnflag eq 'F' ) {
-%      $svc_acct->setfield('finger',
-%        $cust_main->getfield('first') . " " . $cust_main->getfield('last')
-%      );
-%    }
-%  }
-%
-%  $svc_acct->set_default_and_fixed( {
-%    #false laziness w/svc-acct::_fieldhandlers
-%    'usergroup' => sub { 
-%                         my( $self, $groups ) = @_;
-%                         if ( ref($groups) eq 'ARRAY' ) {
-%                           @groups = @$groups;
-%                           $groups;
-%                         } elsif ( length($groups) ) {
-%                           @groups = split(/\s*,\s*/, $groups);
-%                           [ @groups ];
-%                         } else {
-%                           @groups = ();
-%                           [];
-%                         }
-%                       }
-%  } );
-%
-%}
-%
-%#fixed radius groups always override & display
-%if ( $part_svc->part_svc_column('usergroup')->columnflag eq 'F' ) {
-%  @groups = split(',', $part_svc->part_svc_column('usergroup')->columnvalue);
-%}
-%
-%my $action = $svcnum ? 'Edit' : 'Add';
-%
-%my $svc = $part_svc->getfield('svc');
-%
-%my $otaker = getotaker;
-%
-%my $username = $svc_acct->username;
-%my $password;
-%if ( $svc_acct->_password ) {
-%  if ( $conf->exists('showpasswords') || ! $svcnum ) {
-%    $password = $svc_acct->_password;
-%  } else {
-%    $password = "*HIDDEN*";
-%  }
-%} else {
-%  $password = '';
-%}
-%
-%my $ulen = 
-%  $conf->exists('usernamemax')
-%  ? $conf->config('usernamemax')
-%  : dbdef->table('svc_acct')->column('username')->length;
-%my $ulen2 = $ulen+2;
-%
-%my $pmax = $conf->config('passwordmax') || 8;
-%my $pmax2 = $pmax+2;
-%
-%my $p1 = popurl(1);
-%
-%
-
-
-<% include("/elements/header.html","$action $svc account") %>
+<% include('/elements/header.html', "$action $svc account") %>
 
 <% include('/elements/error.html') %>
 
@@ -445,4 +317,136 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
 
 <INPUT TYPE="submit" VALUE="Submit">
 
-</FORM></BODY></HTML>
+</FORM>
+
+<% include('/elements/footer.html') %>
+
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Provision customer service'); #something else more specific?
+
+my $conf = new FS::Conf;
+my @shells = $conf->config('shells');
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+my($svcnum, $pkgnum, $svcpart, $part_svc, $svc_acct, @groups);
+if ( $cgi->param('error') ) {
+
+  $svc_acct = new FS::svc_acct ( {
+    map { $_, scalar($cgi->param($_)) } fields('svc_acct')
+  } );
+  $svcnum = $svc_acct->svcnum;
+  $pkgnum = $cgi->param('pkgnum');
+  $svcpart = $cgi->param('svcpart');
+  $part_svc = qsearchs( 'part_svc', { 'svcpart' => $svcpart } );
+  die "No part_svc entry for svcpart $svcpart!" unless $part_svc;
+  @groups = $cgi->param('radius_usergroup');
+
+} elsif ( $cgi->param('pkgnum') && $cgi->param('svcpart') ) { #adding
+
+  $cgi->param('pkgnum') =~ /^(\d+)$/ or die 'unparsable pkgnum';
+  $pkgnum = $1;
+  $cgi->param('svcpart') =~ /^(\d+)$/ or die 'unparsable svcpart';
+  $svcpart = $1;
+
+  $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
+  die "No part_svc entry!" unless $part_svc;
+
+    $svc_acct = new FS::svc_acct({svcpart => $svcpart}); 
+
+    $svcnum='';
+
+} else { #editing
+
+  my($query) = $cgi->keywords;
+  $query =~ /^(\d+)$/ or die "unparsable svcnum";
+  $svcnum=$1;
+  $svc_acct=qsearchs('svc_acct',{'svcnum'=>$svcnum})
+    or die "Unknown (svc_acct) svcnum!";
+
+  my($cust_svc)=qsearchs('cust_svc',{'svcnum'=>$svcnum})
+    or die "Unknown (cust_svc) svcnum!";
+
+  $pkgnum=$cust_svc->pkgnum;
+  $svcpart=$cust_svc->svcpart;
+
+  $part_svc = qsearchs( 'part_svc', { 'svcpart' => $svcpart } );
+  die "No part_svc entry for svcpart $svcpart!" unless $part_svc;
+
+  @groups = $svc_acct->radius_groups;
+
+}
+
+my( $cust_pkg, $cust_main ) = ( '', '' );
+if ( $pkgnum ) {
+  $cust_pkg = qsearchs('cust_pkg', { 'pkgnum' => $pkgnum } );
+  $cust_main = $cust_pkg->cust_main;
+}
+
+unless ( $svcnum || $cgi->param('error') ) { #adding
+
+  #set gecos
+  if ($cust_main) {
+    unless ( $part_svc->part_svc_column('uid')->columnflag eq 'F' ) {
+      $svc_acct->setfield('finger',
+        $cust_main->getfield('first') . " " . $cust_main->getfield('last')
+      );
+    }
+  }
+
+  $svc_acct->set_default_and_fixed( {
+    #false laziness w/svc-acct::_fieldhandlers
+    'usergroup' => sub { 
+                         my( $self, $groups ) = @_;
+                         if ( ref($groups) eq 'ARRAY' ) {
+                           @groups = @$groups;
+                           $groups;
+                         } elsif ( length($groups) ) {
+                           @groups = split(/\s*,\s*/, $groups);
+                           [ @groups ];
+                         } else {
+                           @groups = ();
+                           [];
+                         }
+                       }
+  } );
+
+}
+
+#fixed radius groups always override & display
+if ( $part_svc->part_svc_column('usergroup')->columnflag eq 'F' ) {
+  @groups = split(',', $part_svc->part_svc_column('usergroup')->columnvalue);
+}
+
+my $action = $svcnum ? 'Edit' : 'Add';
+
+my $svc = $part_svc->getfield('svc');
+
+my $otaker = getotaker;
+
+my $username = $svc_acct->username;
+my $password;
+if ( $svc_acct->_password ) {
+  if ( $conf->exists('showpasswords') || ! $svcnum ) {
+    $password = $svc_acct->_password;
+  } else {
+    $password = "*HIDDEN*";
+  }
+} else {
+  $password = '';
+}
+
+my $ulen = 
+  $conf->exists('usernamemax')
+  ? $conf->config('usernamemax')
+  : dbdef->table('svc_acct')->column('username')->length;
+my $ulen2 = $ulen+2;
+
+my $pmax = $conf->config('passwordmax') || 8;
+my $pmax2 = $pmax+2;
+
+my $p1 = popurl(1);
+
+</%init>

@@ -1,13 +1,16 @@
-<%init>
-
-$cgi->param('svcdb') =~ /^(svc_\w+)$/ or die "unparsable svcdb";
-my $table = $1;
-require "FS/$table.pm";
-
-</%init>
 <% include( 'elements/svc_Common.html',
               'table'    => $table,
 	      'redirect' => popurl(3)."view/svc_Common.html?svcdb=$table;svcnum=",
 	      'error_redirect' => popurl(3)."edit/svc_Common.html?svcdb=$table;",
 	  )
 %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Provision customer service'); #something else more specific?
+
+$cgi->param('svcdb') =~ /^(svc_\w+)$/ or die "unparsable svcdb";
+my $table = $1;
+require "FS/$table.pm";
+
+</%init>

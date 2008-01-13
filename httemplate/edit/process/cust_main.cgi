@@ -16,6 +16,9 @@ my $DEBUG = 0;
 </%once>
 <%init>
 
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Edit customer');
+
 my $error = '';
 
 #unmunge stuff

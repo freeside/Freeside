@@ -1,5 +1,4 @@
 <% include("/elements/header.html","$action Rate plan", menubar(
-      'Main Menu' => $p,
       'View all rate plans' => "${p}browse/rate.cgi",
     ))
 %>

@@ -1,20 +1,4 @@
-%
-%
-%$cgi->param('agentnum') =~ /(\d+)$/ or die "illegal agentnum";
-%my $agent = qsearchs('agent', { 'agentnum' => $1 } );
-%die "agentnum $1 not found" unless $agent;
-%
-%#my @agent_payment_gateway;
-%if ( $cgi->param('error') ) {
-%}
-%
-%my $action = 'Add';
-%
-%
-
-
 <% include("/elements/header.html","$action payment gateway override for ". $agent->agent,  menubar(
-  'Main Menu' => $p,
   #'View all payment gateways' => $p. 'browse/payment_gateway.html',
   'View all agents' => $p. 'browse/agent.html',
 )) %>
@@ -63,5 +47,22 @@ for <SELECT NAME="cardtype" MULTIPLE>
 
 <INPUT TYPE="submit" VALUE="Add gateway override">
 </FORM>
-</BODY>
-</HTML>
+
+<% include('/elements/footer.html') %>
+
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+$cgi->param('agentnum') =~ /(\d+)$/ or die "illegal agentnum";
+my $agent = qsearchs('agent', { 'agentnum' => $1 } );
+die "agentnum $1 not found" unless $agent;
+
+#my @agent_payment_gateway;
+if ( $cgi->param('error') ) {
+}
+
+my $action = 'Add';
+
+</%init>

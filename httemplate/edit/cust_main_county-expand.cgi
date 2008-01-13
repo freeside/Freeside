@@ -18,6 +18,9 @@
 
 <%init>
 
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
 my($taxnum, $expansion, $taxclass);
 my($query) = $cgi->keywords;
 if ( $cgi->param('error') ) {

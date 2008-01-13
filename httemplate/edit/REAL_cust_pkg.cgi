@@ -2,7 +2,6 @@
 
 %#, menubar(
 %#  "View this customer (#$custnum)" => popurl(2). "view/cust_main.cgi?$custnum",
-%#  'Main Menu' => popurl(2)
 %#));
 
 <LINK REL="stylesheet" TYPE="text/css" HREF="../elements/calendar-win2k-2.css" TITLE="win2k-2">
@@ -13,9 +12,12 @@
 <FORM NAME="formname" ACTION="process/REAL_cust_pkg.cgi" METHOD="POST">
 <INPUT TYPE="hidden" NAME="pkgnum" VALUE="<% $pkgnum %>">
 
+% # raw error from below
 % if ( $error ) { 
   <FONT SIZE="+1" COLOR="#ff0000">Error: <% $error %></FONT>
 % } 
+% #or, regular error handler
+<% include('/elements/error.html') %>
 
 <% ntable("#cccccc",2) %>
 
@@ -122,16 +124,19 @@ my $format = "%m/%d/%Y %T %z (%Z)";
 </%once>
 <%init>
 
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Edit customer package dates');
+
 my $error = '';
 my( $pkgnum, $cust_pkg );
 
 if ( $cgi->param('error') ) {
 
-  $error = $cgi->param('error');
   $pkgnum = $cgi->param('pkgnum');
-  if ( $error eq '_bill_areyousure' ) {
+  if ( $cgi->param('error') eq '_bill_areyousure' ) {
     if ( $cgi->param('bill') =~ /^([\s\d\/\:\-\(\w\)]*)$/ ) {
       my $bill = $1;
+      $cgi->param('error', '');
       $error = "You are attempting to set the next bill date to $bill, which is
                 in the past.  This will charge the customer for the interval
                 from $bill until now.  Are you sure you want to do this? ".
@@ -174,4 +179,3 @@ unless ( $part_pkg->is_prepaid ) {
 }
 
 </%init>
-

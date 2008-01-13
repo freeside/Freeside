@@ -33,4 +33,12 @@
 %print $cgi->redirect(popurl(3). "browse/cust_main_county.cgi");
 %
 %
+<%init>
 
+#this isn't actually linked from anywhere just now, but it will be again soon
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+
+</%init>

@@ -1,9 +1,3 @@
-%
-%$cgi->param('class') =~ /^(\w)$/;
-%my $class = $1;
-%
-%my $classname = $FS::reason_type::class_name{$class};
-%
 <% include( 'elements/edit.html',
                  'name'   => $classname . ' Reason Type',
                  'table'  => 'reason_type',
@@ -22,3 +16,14 @@
                  'new_hashref_callback' => sub {{ 'class' => $class }},
            )
 %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+$cgi->param('class') =~ /^(\w)$/;
+my $class = $1;
+
+my $classname = $FS::reason_type::class_name{$class};
+
+</%init>

@@ -1,33 +1,3 @@
-%
-%
-%my $conf = new FS::Conf;
-%my $custnum = $cgi->param('custnum');
-%my $refund  = $cgi->param('refund');
-%my $payby   = $cgi->param('payby');
-%my $reason  = $cgi->param('reason');
-%
-%my( $paynum, $cust_pay ) = ( '', '' );
-%if ( $cgi->param('paynum') =~ /^(\d+)$/ ) {
-%  $paynum = $1;
-%  $cust_pay = qsearchs('cust_pay', { paynum=>$paynum } )
-%    or die "unknown payment # $paynum";
-%  $refund ||= $cust_pay->unrefunded;
-%  if ( $custnum ) {
-%    die "payment # $paynum is not for specified customer # $custnum"
-%      unless $custnum == $cust_pay->custnum;
-%  } else {
-%    $custnum = $cust_pay->custnum;
-%  }
-%}
-%die "no custnum or paynum specified!" unless $custnum;
-%
-%my $_date = time;
-%
-%my $p1 = popurl(1);
-%
-%
-
-
 <% include('/elements/header.html', 'Refund '. ucfirst(lc($payby)). ' payment', '') %>
 
 <% include('/elements/error.html') %>
@@ -138,3 +108,34 @@
 
 <% include('/elements/footer.html') %>
 
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Refund payment');
+
+my $conf = new FS::Conf;
+my $custnum = $cgi->param('custnum');
+my $refund  = $cgi->param('refund');
+my $payby   = $cgi->param('payby');
+my $reason  = $cgi->param('reason');
+
+my( $paynum, $cust_pay ) = ( '', '' );
+if ( $cgi->param('paynum') =~ /^(\d+)$/ ) {
+  $paynum = $1;
+  $cust_pay = qsearchs('cust_pay', { paynum=>$paynum } )
+    or die "unknown payment # $paynum";
+  $refund ||= $cust_pay->unrefunded;
+  if ( $custnum ) {
+    die "payment # $paynum is not for specified customer # $custnum"
+      unless $custnum == $cust_pay->custnum;
+  } else {
+    $custnum = $cust_pay->custnum;
+  }
+}
+die "no custnum or paynum specified!" unless $custnum;
+
+my $_date = time;
+
+my $p1 = popurl(1);
+
+</%init>

@@ -1,110 +1,10 @@
-%
-%
-%  #for misplaced logic below
-%  #use FS::part_pkg;
-%
-%  #for false laziness below (now more properly lazy)
-%  #use FS::svc_acct_pop;
-%
-%  #for (other) false laziness below
-%  #use FS::agent;
-%  #use FS::type_pkgs;
-%
-%my $conf = new FS::Conf;
-%
-%#get record
-%
-%my $error = '';
-%my($custnum, $username, $password, $popnum, $cust_main, $saved_pkgpart, $saved_domsvc);
-%my(@invoicing_list);
-%my ($ss,$stateid,$payinfo);
-%my $same = '';
-%if ( $cgi->param('error') ) {
-%  $error = $cgi->param('error');
-%  $cust_main = new FS::cust_main ( {
-%    map { $_, scalar($cgi->param($_)) } fields('cust_main')
-%  } );
-%  $custnum = $cust_main->custnum;
-%  $saved_domsvc = $cgi->param('domsvc') || '';
-%  if ( $saved_domsvc =~ /^(\d+)$/ ) {
-%    $saved_domsvc = $1;
-%  } else {
-%    $saved_domsvc = '';
-%  }
-%  $saved_pkgpart = $cgi->param('pkgpart_svcpart') || '';
-%  if ( $saved_pkgpart =~ /^(\d+)_/ ) {
-%    $saved_pkgpart = $1;
-%  } else {
-%    $saved_pkgpart = '';
-%  }
-%  $username = $cgi->param('username');
-%  $password = $cgi->param('_password');
-%  $popnum = $cgi->param('popnum');
-%  @invoicing_list = split( /\s*,\s*/, $cgi->param('invoicing_list') );
-%  $same = $cgi->param('same');
-%  $cust_main->setfield('paid' => $cgi->param('paid')) if $cgi->param('paid');
-%  $ss = $cust_main->ss;           # don't mask an entered value on errors
-%  $stateid = $cust_main->stateid; # don't mask an entered value on errors
-%  $payinfo = $cust_main->payinfo; # don't mask an entered value on errors
-%} elsif ( $cgi->keywords ) { #editing
-%  my( $query ) = $cgi->keywords;
-%  $query =~ /^(\d+)$/;
-%  $custnum=$1;
-%  $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } );
-%  if ( $cust_main->dbdef_table->column('paycvv')
-%       && length($cust_main->paycvv)             ) {
-%    my $paycvv = $cust_main->paycvv;
-%    $paycvv =~ s/./*/g;
-%    $cust_main->paycvv($paycvv);
-%  }
-%  $saved_pkgpart = 0;
-%  $saved_domsvc = 0;
-%  $username = '';
-%  $password = '';
-%  $popnum = 0;
-%  @invoicing_list = $cust_main->invoicing_list;
-%  $ss = $cust_main->masked('ss');
-%  $stateid = $cust_main->masked('stateid');
-%  $payinfo = $cust_main->paymask;
-%} else {
-%  $custnum='';
-%  $cust_main = new FS::cust_main ( {} );
-%  $cust_main->otaker( &getotaker );
-%  $cust_main->referral_custnum( $cgi->param('referral_custnum') );
-%  $saved_pkgpart = 0;
-%  $saved_domsvc = 0;
-%  $username = '';
-%  $password = '';
-%  $popnum = 0;
-%  @invoicing_list = ();
-%  push @invoicing_list, 'POST'
-%    unless $conf->exists('disablepostalinvoicedefault');
-%  $ss = '';
-%  $stateid = '';
-%  $payinfo = '';
-%}
-%$cgi->delete_all();
-%
-%my $action = $custnum ? 'Edit' : 'Add';
-%$action .= ": ". $cust_main->name if $custnum;
-%
-%my $r = qq!<font color="#ff0000">*</font>&nbsp;!;
-%
-%
-
-
-<!-- top -->
-
 <% include('/elements/header.html',
       "Customer $action",
       '',
       ' onUnload="myclose()"'
 ) %>
-% if ( $error ) { 
 
-<FONT SIZE="+1" COLOR="#ff0000">Error: <% $error %></FONT><BR><BR>
-% } 
-
+<% include('/elements.error.html') %>
 
 <FORM NAME="topform" STYLE="margin-bottom: 0">
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
@@ -544,3 +444,97 @@ function copyelement(from, to) {
 
 <% include('/elements/footer.html') %>
 
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Edit customer');
+
+#for misplaced logic below
+#use FS::part_pkg;
+
+#for false laziness below (now more properly lazy)
+#use FS::svc_acct_pop;
+
+#for (other) false laziness below
+#use FS::agent;
+#use FS::type_pkgs;
+
+my $conf = new FS::Conf;
+
+#get record
+
+my($custnum, $username, $password, $popnum, $cust_main, $saved_pkgpart, $saved_domsvc);
+my(@invoicing_list);
+my ($ss,$stateid,$payinfo);
+my $same = '';
+if ( $cgi->param('error') ) {
+  $cust_main = new FS::cust_main ( {
+    map { $_, scalar($cgi->param($_)) } fields('cust_main')
+  } );
+  $custnum = $cust_main->custnum;
+  $saved_domsvc = $cgi->param('domsvc') || '';
+  if ( $saved_domsvc =~ /^(\d+)$/ ) {
+    $saved_domsvc = $1;
+  } else {
+    $saved_domsvc = '';
+  }
+  $saved_pkgpart = $cgi->param('pkgpart_svcpart') || '';
+  if ( $saved_pkgpart =~ /^(\d+)_/ ) {
+    $saved_pkgpart = $1;
+  } else {
+    $saved_pkgpart = '';
+  }
+  $username = $cgi->param('username');
+  $password = $cgi->param('_password');
+  $popnum = $cgi->param('popnum');
+  @invoicing_list = split( /\s*,\s*/, $cgi->param('invoicing_list') );
+  $same = $cgi->param('same');
+  $cust_main->setfield('paid' => $cgi->param('paid')) if $cgi->param('paid');
+  $ss = $cust_main->ss;           # don't mask an entered value on errors
+  $stateid = $cust_main->stateid; # don't mask an entered value on errors
+  $payinfo = $cust_main->payinfo; # don't mask an entered value on errors
+} elsif ( $cgi->keywords ) { #editing
+  my( $query ) = $cgi->keywords;
+  $query =~ /^(\d+)$/;
+  $custnum=$1;
+  $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } );
+  if ( $cust_main->dbdef_table->column('paycvv')
+       && length($cust_main->paycvv)             ) {
+    my $paycvv = $cust_main->paycvv;
+    $paycvv =~ s/./*/g;
+    $cust_main->paycvv($paycvv);
+  }
+  $saved_pkgpart = 0;
+  $saved_domsvc = 0;
+  $username = '';
+  $password = '';
+  $popnum = 0;
+  @invoicing_list = $cust_main->invoicing_list;
+  $ss = $cust_main->masked('ss');
+  $stateid = $cust_main->masked('stateid');
+  $payinfo = $cust_main->paymask;
+} else {
+  $custnum='';
+  $cust_main = new FS::cust_main ( {} );
+  $cust_main->otaker( &getotaker );
+  $cust_main->referral_custnum( $cgi->param('referral_custnum') );
+  $saved_pkgpart = 0;
+  $saved_domsvc = 0;
+  $username = '';
+  $password = '';
+  $popnum = 0;
+  @invoicing_list = ();
+  push @invoicing_list, 'POST'
+    unless $conf->exists('disablepostalinvoicedefault');
+  $ss = '';
+  $stateid = '';
+  $payinfo = '';
+}
+$cgi->delete_all();
+
+my $action = $custnum ? 'Edit' : 'Add';
+$action .= ": ". $cust_main->name if $custnum;
+
+my $r = qq!<font color="#ff0000">*</font>&nbsp;!;
+
+</%init>

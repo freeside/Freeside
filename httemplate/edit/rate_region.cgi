@@ -81,7 +81,7 @@
     </TD>
 
     <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
-      <INPUT TYPE="text" SIZE=5 NAME="min_included<%$n%>" VALUE="<% $cgi->param("min_included$n") || $rate_detail->min_included %>">
+      <INPUT TYPE="text" SIZE=5 NAME="min_included<%$n%>" VALUE="<% $cgi->param("min_included$n") || $rate_detail->min_included |h %>">
     </TD>
 
     <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">

@@ -1,4 +1,13 @@
+<% include('elements/svc_Common.html',
+             'table'        => $table,
+	     'post_url'     => popurl(1). "process/svc_Common.html",
+	     %opt,
+	  )
+%>
 <%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Provision customer service'); #something else more specific?
 
 # false laziness w/view/svc_Common.html
 
@@ -22,9 +31,3 @@ if ( UNIVERSAL::can("FS::$table", 'table_info') ) {
 }
 
 </%init>
-<% include('elements/svc_Common.html',
-             'table'        => $table,
-	     'post_url'     => popurl(1). "process/svc_Common.html",
-	     %opt,
-	  )
-%>

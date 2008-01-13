@@ -9,3 +9,9 @@
                              },
            )
 %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Provision customer service'); #something else more specific?
+
+</%init>

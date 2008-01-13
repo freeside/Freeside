@@ -1,5 +1,3 @@
-%
-%
 %local $FS::UID::AutoCommit=0;
 %
 %sub check {
@@ -64,5 +62,9 @@
 %dbh->commit or die dbh->errstr;
 %print $cgi->redirect(popurl(3). "browse/router.cgi");
 %
-%
+<%init>
 
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+</%init>

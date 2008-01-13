@@ -8,6 +8,9 @@
 </HTML>
 <%init>
 
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
 $cgi->param('taxnum') =~ /^(\d+)$/ or die "Illegal taxnum!";
 my $taxnum = $1;
 my $cust_main_county = qsearchs('cust_main_county',{'taxnum'=>$taxnum})
