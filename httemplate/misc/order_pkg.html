@@ -41,7 +41,12 @@ function enable_order_pkg () {
 <INPUT NAME="submit" TYPE="submit" VALUE="Order Package" disabled>
 
 </FORM>
+</BODY>
+</HTML>
 <%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Order customer package');
 
 my $conf = new FS::Conf;
 
