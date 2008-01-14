@@ -1,6 +1,6 @@
 % if ( $conf->exists('enable_taxclasses') ) { 
 
-    <SELECT NAME="taxclass">
+    <SELECT NAME="<% $opt{'name'} || 'taxclass' %>">
 
 %   if ( $conf->exists('require_taxclasses') ) { 
         <OPTION VALUE="(select)">Select tax class

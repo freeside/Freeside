@@ -104,23 +104,38 @@ Invoice Event #<% $hashref->{eventpart} ? $hashref->{eventpart} : "(NEW)" %>
 %my $conf = new FS::Conf;
 %my $money_char = $conf->config('money_char') || '$';
 %
+%my $late_taxclass = '';
+%my $late_percent_taxclass = '';
+%if ( $conf->exists('enable_taxclasses') ) {
+%  $late_taxclass =
+%    '<BR>Taxclass '.
+%    include('/elements/select-taxclass.html', '%%%late_taxclass%%%',
+%              'name' => 'late_taxclass' );
+%  $late_percent_taxclass =
+%    '<BR>Taxclass '.
+%    include('/elements/select-taxclass.html', '%%%late_percent_taxclass%%%',
+%              'name' => 'late_percent_taxclass' );
+%}
+%
 %#this is pretty kludgy right here.
 %tie my %events, 'Tie::IxHash',
 %
 %  'fee' => {
 %    'name'   => 'Late fee (flat)',
-%    'code'   => '$cust_main->charge( %%%charge%%%, \'%%%reason%%%\' );',
+%    'code'   => '$cust_main->charge( %%%charge%%%, \'%%%reason%%%\', \'$%%%charge%%%\', \'%%%late_taxclass%%%\' );',
 %    'html'   => 
 %      'Amount <INPUT TYPE="text" SIZE="7" NAME="charge" VALUE="%%%charge%%%">'.
-%      '<BR>Reason <INPUT TYPE="text" NAME="reason" VALUE="%%%reason%%%">',
+%      '<BR>Reason <INPUT TYPE="text" NAME="reason" VALUE="%%%reason%%%">'.
+%      $late_taxclass,
 %    'weight' => 10,
 %  },
 %  'fee_percent' => {
 %    'name'   => 'Late fee (percentage)',
-%    'code'   => '$cust_main->charge( sprintf(\'%.2f\', $cust_bill->owed * %%%percent%%% / 100 ), \'%%%reason%%%\' );',
+%    'code'   => '$cust_main->charge( sprintf(\'%.2f\', $cust_bill->owed * %%%percent%%% / 100 ), \'%%%percent_reason%%%\', \'%%%percent%%% percent\', \'%%%late_percent_taxclass%%%\' );',
 %    'html'   => 
 %      'Percent <INPUT TYPE="text" SIZE="2" NAME="percent" VALUE="%%%percent%%%">%'.
-%      '<BR>Reason <INPUT TYPE="text" NAME="reason" VALUE="%%%reason%%%">',
+%      '<BR>Reason <INPUT TYPE="text" NAME="percent_reason" VALUE="%%%percent_reason%%%">'.
+%      $late_percent_taxclass,
 %    'weight' => 10,
 %  },
 %  'suspend' => {
@@ -171,8 +186,8 @@ Invoice Event #<% $hashref->{eventpart} ? $hashref->{eventpart} : "(NEW)" %>
 %
 %  'credit' => {
 %    'name'   => "Create and apply a credit for the customer's balance (i.e. write off as bad debt)",
-%    'code'   => '$cust_main->credit( $cust_main->balance, \'%%%reason%%%\' );',
-%    'html'   => '<INPUT TYPE="text" NAME="reason" VALUE="%%%reason%%%">',
+%    'code'   => '$cust_main->credit( $cust_main->balance, \'%%%credit_reason%%%\' );',
+%    'html'   => '<INPUT TYPE="text" NAME="credit_reason" VALUE="%%%credit_reason%%%">',
 %    'weight' => 30,
 %  },
 %
