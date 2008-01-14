@@ -4,7 +4,7 @@
       ' onUnload="myclose()"'
 ) %>
 
-<% include('/elements.error.html') %>
+<% include('/elements/error.html') %>
 
 <FORM NAME="topform" STYLE="margin-bottom: 0">
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">

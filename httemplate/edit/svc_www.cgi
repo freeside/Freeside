@@ -1,6 +1,6 @@
 <% include('/elements/header.html', "Web Hosting $action") %>
 
-<% include('/elements.error.html') %>
+<% include('/elements/error.html') %>
 
 <FORM ACTION="<%$p1%>process/svc_www.cgi" METHOD=POST>
 
