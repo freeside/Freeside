@@ -1,15 +1,17 @@
 Billing information
-%  # If we can't see the unencrypted card, then bill now is an exercise in frustration 
-%if ( ! $cust_main->is_encrypted($cust_main->payinfo) ) { 
+%# If we can't see the unencrypted card, then bill now is an exercise in
+%# frustration (without some sort of job queue magic to send it to a secure
+%# machine, anyway)
+%if (  $FS::CurrentUser::CurrentUser->access_right('Bill customer now')
+%      && ! $cust_main->is_encrypted($cust_main->payinfo)
+%   ) { 
   (<A HREF="<% $p %>misc/bill.cgi?<% $cust_main->custnum %>">Bill now</A>)
 % } 
 
 <% ntable("#cccccc") %><TR><TD><% ntable("#cccccc",2) %>
-%
+
 %( my $balance = $cust_main->balance )
 %  =~ s/^(\-?)(.*)$/<FONT SIZE=+1>$1<\/FONT>$money_char$2/;
-%
-
 
 <TR>
   <TD ALIGN="right">Balance due</TD>
@@ -203,8 +205,10 @@ $paystate_label = 'Bank state' if $paystate_label =~/^paystate$/;
 
 </%once>
 <%init>
+
 my( $cust_main ) = @_;
 my @invoicing_list = $cust_main->invoicing_list;
 my $conf = new FS::Conf;
 my $money_char = $conf->config('money_char') || '$';
+
 </%init>
