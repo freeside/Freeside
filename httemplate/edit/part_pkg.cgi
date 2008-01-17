@@ -243,6 +243,7 @@ Line-item revenue recognition
 %  delete $freq{$_} foreach grep { ! /^\d+$/ } keys %freq;
 %}
 %
+%#this should be replaced by /elements/selectlayers.html
 %my $widget = new HTML::Widgets::SelectLayers(
 %  'selected_layer' => $part_pkg->plan,
 %  'options'        => \%options,
@@ -363,10 +364,6 @@ Line-item revenue recognition
 <% include('/elements/footer.html') %>
 <%init>
 
-die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Edit package definitions')
-      || $FS::CurrentUser::CurrentUser->access_right('Edit global package definitions');
-
 if ( $cgi->param('clone') && $cgi->param('clone') =~ /^(\d+)$/ ) {
   $cgi->param('clone', $1);
 } else {
@@ -377,6 +374,13 @@ if ( $cgi->param('pkgnum') && $cgi->param('pkgnum') =~ /^(\d+)$/ ) {
 } else {
   $cgi->param('pkgnum', '');
 }
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right('Edit package definitions')
+      || $curuser->access_right('Edit global package definitions')
+      || ( $cgi->param('pkgnum') && $curuser->access_right('Customize customer package') );
 
 my ($query) = $cgi->keywords;
 
