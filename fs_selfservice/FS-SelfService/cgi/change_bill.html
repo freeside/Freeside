@@ -1,0 +1,25 @@
+<HTML><HEAD><TITLE>MyAccount</TITLE></HEAD>
+<BODY BGCOLOR="#eeeeee">
+<FONT SIZE=5>MyAccount</FONT><BR><BR>
+<%= $url = "$selfurl?session=$session_id;action="; ''; %>
+<%= include('myaccount_menu') %>
+<TD VALIGN="top">
+<FONT SIZE=4>Edit billing address</FONT><BR><BR>
+<%= if ( $error ) { 
+  $OUT .= qq!<FONT SIZE="+1" COLOR="#ff0000">Error: $error</FONT><BR><BR>!;
+}  ''; %>
+
+<FORM NAME="ChangeBillForm" ACTION="<%= $selfurl %>" METHOD=POST onSubmit="document.bottomform.submit.disabled=true;">
+<INPUT TYPE="hidden" NAME="session" VALUE="<%= $session_id %>">
+<INPUT TYPE="hidden" NAME="action" VALUE="process_change_bill">
+<TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>
+
+<%= $r=qq!<font color="#ff0000">*</font>&nbsp;!; include('contact') %>
+
+<INPUT TYPE="submit" NAME="submit" VALUE="<%= $custnum ?  "Apply Changes" : "Add Customer" %>">
+<BR>
+</FORM>
+</TD></TR></TABLE>
+<HR>
+<FONT SIZE="-2">powered by <a href="http://www.sisd.com/freeside">freeside</a></FONT>
+</BODY></HTML>

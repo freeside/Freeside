@@ -9,7 +9,7 @@ use Text::Template;
 use HTML::Entities;
 use Date::Format;
 use Number::Format 1.50;
-use FS::SelfService qw( login customer_info invoice
+use FS::SelfService qw( login customer_info edit_info invoice
                         payment_info process_payment 
                         process_prepay
                         list_pkgs order_pkg signup_info order_recharge
@@ -68,7 +68,7 @@ $session_id = $cgi->param('session');
 
 #order|pw_list XXX ???
 $cgi->param('action') =~
-    /^(myaccount|view_invoice|make_payment|make_ach_payment|payment_results|ach_payment_results|recharge_prepay|recharge_results|logout|change_bill|change_ship|customer_order_pkg|process_order_pkg|customer_change_pkg|process_change_pkg|process_order_recharge|provision|provision_svc|process_svc_acct|process_svc_external|delete_svc|view_usage|view_usage_details|view_support_details|change_password|process_change_password)$/
+    /^(myaccount|view_invoice|make_payment|make_ach_payment|payment_results|ach_payment_results|recharge_prepay|recharge_results|logout|change_bill|change_ship|change_pay|process_change_bill|process_change_ship|process_change_pay|customer_order_pkg|process_order_pkg|customer_change_pkg|process_change_pkg|process_order_recharge|provision|provision_svc|process_svc_acct|process_svc_external|delete_svc|view_usage|view_usage_details|view_support_details|change_password|process_change_password)$/
   or die "unknown action ". $cgi->param('action');
 my $action = $1;
 
@@ -99,6 +99,70 @@ do_template($action, {
 #--
 
 sub myaccount { customer_info( 'session_id' => $session_id ); }
+
+sub change_bill { my $payment_info =
+                    payment_info( 'session_id' => $session_id );
+                  return $payment_info if ( $payment_info->{'error'} );
+                  my $customer_info =
+                    customer_info( 'session_id' => $session_id );
+                  return { 
+                    %$payment_info,
+                    %$customer_info,
+                  };
+                }
+sub change_ship { change_bill(@_); }
+sub change_pay { change_bill(@_); }
+
+sub _process_change_info { 
+  my ($erroraction, @fields) = @_;
+
+  my $results = '';
+
+  $results ||= edit_info (
+    'session_id' => $session_id,
+    map { ($_ => $cgi->param($_)) } grep { defined($cgi->param($_)) } @fields,
+  );
+
+
+  if ( $results->{'error'} ) {
+    no strict 'refs';
+    $action = $erroraction;
+    return {
+      $cgi->Vars,
+      %{&$action()},
+      'error' => '<FONT COLOR="#FF0000">'. $results->{'error'}. '</FONT>',
+    };
+  } else {
+    return $results;
+  }
+}
+
+sub process_change_bill {
+        _process_change_info( 'change_bill', 
+          qw( first last company address1 address2 city state
+              county state zip country daytime night fax )
+        );
+}
+
+sub process_change_ship {
+        my @list = map { "ship_$_" }
+                     qw( first last company address1 address2 city state
+                         county zip country daytime night fax 
+                       );
+        if ($cgi->param('same') eq 'Y') {
+          foreach (@list) { $cgi->param($_, '') }
+        }
+
+        _process_change_info( 'change_ship', @list );
+}
+
+sub process_change_pay {
+        _process_change_info( 'change_pay', 
+          qw( payby payinfo payinfo1 payinfo2 month year payname
+              address1 address2 city county state zip country auto paytype
+              paystate ss stateid stateid_state )
+        );
+}
 
 sub view_invoice {
 
@@ -563,7 +627,7 @@ package FS::SelfService::_selfservicecgi;
 
 #use FS::SelfService qw(regionselector expselect popselector);
 use HTML::Entities;
-use FS::SelfService qw(popselector domainselector);
+use FS::SelfService qw(regionselector popselector domainselector);
 
 #false laziness w/agent.cgi
 sub include {

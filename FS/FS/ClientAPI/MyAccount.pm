@@ -42,6 +42,7 @@ use vars qw( @cust_main_editable_fields );
   ship_first ship_last ship_company ship_address1 ship_address2 ship_city
     ship_state ship_zip ship_country ship_daytime ship_night ship_fax
   payby payinfo payname paystart_month paystart_year payissue payip
+  ss paytype paystate stateid stateid_state
 );
 
 use subs qw(_provision);
@@ -113,6 +114,14 @@ sub customer_info {
   return { 'error' => $session } if $context eq 'error';
 
   my %return;
+
+  my $conf = new FS::Conf;
+  if ($conf->exists('cust_main-require_address2')) {
+    $return{'require_address2'} = '1';
+  }else{
+    $return{'require_address2'} = '';
+  }
+  
   if ( $custnum ) { #customer record
 
     my $search = { 'custnum' => $custnum };
@@ -133,7 +142,6 @@ sub customer_info {
                    } $cust_main->open_cust_bill;
     $return{open_invoices} = \@open;
 
-    my $conf = new FS::Conf;
     $return{small_custview} =
       small_custview( $cust_main, $conf->config('countrydefault') );
 
@@ -208,13 +216,46 @@ sub edit_info {
   $new->set( $_ => $p->{$_} )
     foreach grep { exists $p->{$_} } @cust_main_editable_fields;
 
-  if ( $p->{'payby'} =~ /^(CARD|DCRD)$/ ) {
+  my $payby = '';
+  if (exists($p->{'payby'})) {
+    $p->{'payby'} =~ /^([A-Z]{4})$/
+      or return { 'error' => "illegal_payby " . $p->{'payby'} };
+    $payby = $1;
+  }
+
+  if ( $payby =~ /^(CARD|DCRD)$/ ) {
+
     $new->paydate($p->{'year'}. '-'. $p->{'month'}. '-01');
+
     if ( $new->payinfo eq $cust_main->paymask ) {
       $new->payinfo($cust_main->payinfo);
     } else {
-      $new->paycvv($p->{'paycvv'});
+      $new->payinfo($p->{'payinfo'});
     }
+
+    $new->set( 'payby' => $p->{'auto'} ? 'CARD' : 'DCRD' );
+
+  }elsif ( $payby =~ /^(CHEK|DCHK)$/ ) {
+    my $payinfo;
+    $p->{'payinfo1'} =~ /^([\dx]+)$/
+      or return { 'error' => "illegal account number ". $p->{'payinfo1'} };
+    my $payinfo1 = $1;
+     $p->{'payinfo2'} =~ /^([\dx]+)$/
+      or return { 'error' => "illegal ABA/routing number ". $p->{'payinfo2'} };
+    my $payinfo2 = $1;
+    $payinfo = $payinfo1. '@'. $payinfo2;
+
+    if ( $payinfo eq $cust_main->paymask ) {
+      $new->payinfo($cust_main->payinfo);
+    } else {
+      $new->payinfo($payinfo);
+    }
+
+    $new->set( 'payby' => $p->{'auto'} ? 'CHEK' : 'DCHK' );
+
+  }elsif ( $payby =~ /^(BILL)$/ ) {
+  } elsif ( $payby ) {  #notyet ready
+    return { 'error' => "unknown payby $payby" };
   }
 
   my @invoicing_list;
@@ -264,6 +305,8 @@ sub payment_info {
       'card_types' => card_types(),
 
       'paytypes' => [ @FS::cust_main::paytypes ],
+
+      'paybys' => [ $conf->config('signup_server-payby') ],
 
       'stateid_label' => FS::Msgcat::_gettext('stateid'),
       'stateid_state_label' => FS::Msgcat::_gettext('stateid_state'),

@@ -1,0 +1,135 @@
+<TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>
+
+<TR>
+  <TH ALIGN="right"><%=$r%>Contact&nbsp;name<BR>(last,&nbsp;first)</TH>
+  <TD COLSPAN=5>
+    <INPUT TYPE="text" NAME="<%=$pre%>last" VALUE="<%= ${$pre.'last'} %>" onChange="<%= $onchange %>" <%=$disabled%>> , 
+    <INPUT TYPE="text" NAME="<%=$pre%>first" VALUE="<%= ${$pre.'first'} %>" onChange="<%= $onchange %>" <%=$disabled%>>
+  </TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right">Company</TD>
+  <TD COLSPAN=7>
+    <INPUT TYPE="text" NAME="<%=$pre%>company" VALUE="<%= ${$pre.'company'} %>" SIZE=70 onChange="<%= $onchange %>" <%=$disabled%>>
+  </TD>
+</TR>
+
+<TR>
+  <TH ALIGN="right"><%=$r%>Address</TH>
+  <TD COLSPAN=7>
+    <INPUT TYPE="text" NAME="<%=$pre%>address1" VALUE="<%= ${$pre.'address1'} %>" SIZE=70 onChange="<%= $onchange %>" <%=$disabled%>>
+  </TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right">
+    <%= 
+      my $style =
+        ( $disabled
+          || !$require_address2 
+          || ( !$pre && $ship_last )
+        )
+          ? 'visibility:hidden'
+          : '';
+
+      $OUT .= qq!<FONT ID="${pre}address2_required" color="#ff0000" STYLE="$style">*</FONT>&nbsp;<FONT ID="${pre}address2_label" STYLE="$style"><B>Unit&nbsp;#</B></FONT>!;
+    %>
+  </TD>
+  <TD COLSPAN=7>
+    <INPUT TYPE="text" NAME="<%=$pre%>address2" VALUE="<%= ${$pre.'address2'} %>" SIZE=70 onChange="<%= $onchange %>" <%=$disabled%>>
+  </TD>
+</TR>
+
+<TR>
+  <TH ALIGN="right"><%=$r%>City</TH>
+  <TD>
+    <INPUT TYPE="text" ID="<%=$pre%>city" NAME="<%=$pre%>city" VALUE="<%= ${$pre.'city'} %>" onChange="<%= $onchange %>" <%=$disabled%>>
+  </TD>
+  <%= 
+    ($county_html, $state_html, $country_html) = 
+      FS::SelfService::regionselector( {
+        prefix           => $pre,
+        selected_county  => ${$pre.'county'},
+        selected_state   => ${$pre.'state'},
+        selected_country => ${$pre.'country'},
+        default_state    => $statedefault,
+        default_country  => $countrydefault,
+        locales          => \@cust_main_county,
+      } );
+
+  $OUT .= qq!<TH ALIGN="right">${r}State/County</TH>!;
+  $OUT .= qq!<TD>$county_html $state_html</TD>!;
+  $OUT .= qq!<TH>${r}Zip</TH>!;
+  $OUT .= qq!<TD><INPUT TYPE="text" NAME="${pre}zip" VALUE="${$pre.'zip'}" SIZE=10 onChange="$onchange" $disabled></TD>!;
+  $OUT .= qq!</TR>!;
+  $OUT .= qq!<TR>!;
+  $OUT .= qq!<TH ALIGN="right">${r}Country</TH>!;
+  $OUT .= qq!<TD COLSPAN=5>$country_html</TD>!;
+  %>
+</TR>
+
+<SCRIPT>
+  <%=
+    if ( $disabled ) {
+      $OUT .= qq!var what = document.getElementById("${pre}city");!;
+      for (qw( county state country ) ) {
+        $OUT .= "what.form.$pre$_.disabled = true;";
+        $OUT .= "what.form.$pre$_.style.backgroundColor = '#dddddd';";
+      }
+    }else{
+      '';
+    }
+  %>
+</SCRIPT>
+
+<TR>
+  <TD ALIGN="right">Day Phone</TD>
+  <TD COLSPAN=5>
+    <INPUT TYPE="text" NAME="<%=$pre%>daytime" VALUE="<%= ${$pre.'daytime'} %>" SIZE=18 onChange="<%= $onchange %>" <%=$disabled%>>
+  </TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right">Night Phone</TD>
+  <TD COLSPAN=5>
+    <INPUT TYPE="text" NAME="<%=$pre%>night" VALUE="<%= ${$pre.'night'} %>" SIZE=18 onChange="<%= $onchange %>" <%=$disabled%>>
+  </TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right">Fax</TD>
+  <TD COLSPAN=5>
+    <INPUT TYPE="text" NAME="<%=$pre%>fax" VALUE="<%= ${$pre.'fax'} %>" SIZE=12 onChange="<%= $onchange %>" <%=$disabled%>>
+  </TD>
+</TR>
+
+</TABLE>
+<%=$r%>required fields<BR>
+
+<!--
+#my($county_html, $state_html, $country_html) =
+#  FS::cust_main_county::regionselector( $cust_main->get($pre.'county'),
+#                                        $cust_main->get($pre.'state'),
+#                                        $cust_main->get($pre.'country'),
+#                                        $pre,
+#                                        $onchange,
+#                                        $disabled,
+#                                      );
+
+my %select_hash = (
+  'county'   => ${$pre.'county'},
+  'state'    => ${$pre.'state'},
+  'country'  => ${$pre.'country'},
+  'prefix'   => $pre,
+  'onchange' => $onchange,
+  'disabled' => $disabled,
+);
+
+my @counties = counties( ${$pre.'state'},
+                         ${$pre.'country'},
+                       );
+my $county_style = scalar(@counties) > 1 ? '' : 'STYLE="visibility:hidden"';
+
+my $r = qq!<font color="#ff0000">*</font>&nbsp;!;
+-->

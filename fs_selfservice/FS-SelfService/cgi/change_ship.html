@@ -1,0 +1,104 @@
+<HTML><HEAD><TITLE>MyAccount</TITLE></HEAD>
+<BODY BGCOLOR="#eeeeee">
+<FONT SIZE=5>MyAccount</FONT><BR><BR>
+<%= $url = "$selfurl?session=$session_id;action="; ''; %>
+<%= include('myaccount_menu') %>
+<TD VALIGN="top">
+<FONT SIZE=4>Edit service address</FONT><BR><BR>
+<%= if ( $error ) { 
+  $OUT .= qq!<FONT SIZE="+1" COLOR="#ff0000">Error: $error</FONT><BR><BR>!;
+}  ''; %>
+
+<FORM NAME="OneTrueForm" ACTION="<%= $selfurl %>" METHOD=POST onSubmit="document.bottomform.submit.disabled=true;">
+<INPUT TYPE="hidden" NAME="session" VALUE="<%= $session_id %>">
+<INPUT TYPE="hidden" NAME="action" VALUE="process_change_ship">
+<TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>
+
+<%=
+  foreach (
+    qw( last first company address1 address2 city county state zip country
+        daytime night fax )
+  ) {
+    $OUT .= qq!<INPUT TYPE="hidden" NAME="$_" VALUE="${$_}">!;
+  };
+  '';
+%>
+<SCRIPT>
+function bill_changed(what) {
+  if ( what.form.same.checked ) {
+<%=
+  for (qw( last first company address1 address2 city zip daytime night fax )) { 
+    $OUT .= "what.form.ship_$_.value = what.form.$_.value;";
+  } 
+  '';
+%>
+    what.form.ship_country.selectedIndex = what.form.country.selectedIndex;
+
+    function fix_ship_county() {
+      what.form.ship_county.selectedIndex = what.form.county.selectedIndex;
+    }
+
+    function fix_ship_state() {
+      what.form.ship_state.selectedIndex = what.form.state.selectedIndex;
+      ship_state_changed(what.form.ship_state, fix_ship_county );
+    }
+
+    ship_country_changed(what.form.ship_country, fix_ship_state );
+
+  }
+}
+function samechanged(what) {
+  if ( what.checked ) {
+    bill_changed(what);
+
+<%=
+  for (qw( last first company address1 address2 city county state zip country daytime night fax )) { 
+    $OUT .= "what.form.ship_$_.disabled = true;";
+    $OUT .= "what.form.ship_$_.style.backgroundColor = '#dddddd';";
+  } 
+  if ( $require_address2 ) {
+    $OUT .= "document.getElementById('ship_address2_required').style.visibility = 'hidden';";
+    $OUT .= "document.getElementById('ship_address2_label').style.visibility = 'hidden';";
+  }
+%> 
+
+  } else {
+
+<%=
+  for (qw( last first company address1 address2 city county state zip country daytime night fax )) { 
+    $OUT .= "what.form.ship_$_.disabled = false;";
+    $OUT .= "what.form.ship_$_.style.backgroundColor = '#ffffff';";
+  } 
+  if ( $require_address2 ) {
+    $OUT .= "document.getElementById('ship_address2_required').style.visibility = '';";
+    $OUT .= "document.getElementById('ship_address2_label').style.visibility = '';";
+  }
+%>
+  }
+}
+</SCRIPT>
+(<INPUT TYPE="checkbox" NAME="same" VALUE="Y" onClick="samechanged(this)"
+  <%= (!$ship_last || $cgi->param('same') eq 'Y') ? 'CHECKED' : '' %>
+ >same as billing address)
+<%= $r=qq!<font color="#ff0000">*</font>&nbsp;!;
+    if (!$ship_last || $cgi->param('same') eq 'Y') {
+      $disabled = 'DISABLED STYLE="background-color: #dddddd"';
+      foreach ( qw( last first company address1 address2 city county state
+                    zip country daytime night fax )
+      ) {
+        ${"ship_$_"} = ${$_};
+      }
+    }else{
+      $disabled = '';
+    }
+    $pre = 'ship_';
+    include('contact');
+%>
+
+<INPUT TYPE="submit" NAME="submit" VALUE="<%= $custnum ?  "Apply Changes" : "Add Customer" %>">
+<BR>
+</FORM>
+</TD></TR></TABLE>
+<HR>
+<FONT SIZE="-2">powered by <a href="http://www.sisd.com/freeside">freeside</a></FONT>
+</BODY></HTML>

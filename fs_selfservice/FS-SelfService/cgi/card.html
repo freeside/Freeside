@@ -1,0 +1,73 @@
+<TR>
+  <TD ALIGN="right">Card&nbsp;number</TD>
+  <TD>
+    <TABLE>
+      <TR>
+        <TD>
+          <INPUT TYPE="text" NAME="payinfo" SIZE=20 MAXLENGTH=19 VALUE="<%=$payinfo%>"> </TD>
+        <TD>Exp.</TD>
+        <TD>
+          <SELECT NAME="month">
+            <%= for ( ( map "0$_", 1 .. 9 ), 10 .. 12 ) {
+                  $OUT .= '<OPTION'. ($_ == $month ? ' SELECTED' : ''). ">$_\n";
+            } %>
+          </SELECT>
+        </TD>
+        <TD> / </TD>
+        <TD>
+          <SELECT NAME="year">
+            <%= my @a = localtime; for ( $a[5]+1900 .. $a[5]+1915 ) {
+                  $OUT .= '<OPTION'. ($_ == $year ? ' SELECTED' : ''). ">$_\n";
+            } %>
+          </SELECT>
+        </TD>
+      </TR>
+    </TABLE>
+  </TD>
+</TR>
+<%= 
+  if ( $withcvv ) {
+    $OUT .= qq!<TR>!;
+    $OUT .= qq!<TD ALIGN="right">CVV2&nbsp;(<A HREF="javascript:myopen('cvv2.html','cvv2','toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=yes,copyhistory=no,width=480,height=288')">help</A>)</TD>!;
+    $OUT .= qq!<TD><INPUT TYPE="text" NAME="paycvv" VALUE="" SIZE=4 MAXLENGTH=4></TD>!;
+    $OUT .= qq!</TR>!;
+  }
+  '';
+%>
+<TR>
+  <TD ALIGN="right">Exact&nbsp;name&nbsp;on&nbsp;card</TD>
+  <TD><INPUT TYPE="text" SIZE=32 MAXLENGTH=80 NAME="payname" VALUE="<%=$payname%>"></TD>
+</TR><TR>
+  <TD ALIGN="right">Card&nbsp;billing&nbsp;address</TD>
+  <TD>
+    <INPUT TYPE="text" SIZE=40 MAXLENGTH=80 NAME="address1" VALUE="<%=$address1%>">
+  </TD>
+</TR><TR>
+  <TD ALIGN="right">Address&nbsp;line&nbsp;2</TD>
+  <TD>
+    <INPUT TYPE="text" SIZE=40 MAXLENGTH=80 NAME="address2" VALUE="<%=$address2%>">
+  </TD>
+</TR><TR>
+  <TD ALIGN="right">City</TD>
+  <TD>
+    <TABLE>
+      <TR>
+        <TD>
+          <INPUT TYPE="text" NAME="city" SIZE="12" MAXLENGTH=80 VALUE="<%=$city%>">
+        </TD>
+        <TD>State</TD>
+        <TD>
+          <SELECT NAME="state">
+            <%= for ( @states ) {
+              $OUT .= '<OPTION'. ($_ eq $state ? ' SELECTED' : '' ). ">$_\n";
+            } %>
+          </SELECT>
+        </TD>
+        <TD>Zip</TD>
+        <TD>
+          <INPUT TYPE="text" NAME="zip" SIZE=11 MAXLENGTH=10 VALUE="<%=$zip%>">
+        </TD>
+      </TR>
+    </TABLE>
+  </TD>
+</TR>

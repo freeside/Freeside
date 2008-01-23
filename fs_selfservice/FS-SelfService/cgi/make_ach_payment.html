@@ -36,59 +36,9 @@
       $<INPUT TYPE="text" NAME="amount" SIZE=8 VALUE="<%=sprintf("%.2f",$balance)%>">
     </TD></TR></TABLE>
   </TD>
-</TR><TR>
-  <TD ALIGN="right">Account&nbsp;type</TD>
-  <TD>
-    <SELECT NAME="paytype"><OPTION></OPTION>
-      <%= foreach ( @paytypes ) {
-            $selected = $paytype eq $_ ? ' SELECTED' : '';
-            $OUT .= qq(<OPTION$selected VALUE="$_">$_\n);
-      } %>
-    </SELECT>
-  </TD>
-</TD><TR>
-  <TD ALIGN="right">Account&nbsp;number</TD>
-  <TD><INPUT TYPE="text" NAME="payinfo1" SIZE=10 MAXLENGTH=20 VALUE="<%=$payinfo1%>"></TD>
-</TD><TR>
-  <TD ALIGN="right">ABA/Routing&nbsp;number</TD>
-  <TD><INPUT TYPE="text" NAME="payinfo2" SIZE=10 MAXLENGTH=9 VALUE="<%=$payinfo2%>"></TD>
-</TR><TR>
-  <TD ALIGN="right">Bank&nbsp;name</TD>
-  <TD><INPUT TYPE="text" SIZE=32 MAXLENGTH=80 NAME="payname" VALUE="<%=$payname%>"></TD>
-</TR><TR>
-  <%=
-    $OUT = '';
-    if ($show_paystate) {
-      $OUT .= qq!<TD ALIGN="right">Bank state</TD><TD><SELECT NAME="paystate">!;
-      for ( @states ) {
-        $OUT .= '<OPTION'. ($_ eq $paystate ? ' SELECTED' : '' ). ">$_\n";
-      }
-      $OUT .= '</SELECT></TD></TR><TR>';
-    }
-  %>
-  <%=
-    $OUT = '';
-    if ($show_ss) {
-      $OUT .= '<TD ALIGN="right">Account&nbsp;holder<BR>Social&nbsp;';
-      $OUT .= 'security&nbsp;or&nbsp;tax&nbsp;ID&nbsp;#</TD><TD>';
-      $OUT .= qq!<INPUT TYPE="text" SIZE=32 MAXLENGTH=80 NAME="ss" VALUE="$ss">!;
-      $OUT .= '</TD></TR><TR>';
-    }
-  %>
-  <%=
-    $OUT = '';
-    if ($show_stateid) {
-      $OUT .= '<TD ALIGN="right">';
-      $OUT .= qq!Account&nbsp;holder<BR>$stateid_label</TD><TD>!;
-      $OUT .= qq!<INPUT TYPE="text" SIZE=32 MAXLENGTH=80 NAME="stateid" VALUE="$stateid"></TD>!;
-      $OUT .= qq!<TD ALIGN="right">$stateid_state_label</TD>!;
-      $OUT .= '<TD><SELECT NAME="stateid_state">';
-      for ( @states ) {
-        $OUT .= '<OPTION'. ($_ eq $stateid_state ? ' SELECTED' : '' ). ">$_\n";
-      }
-      $OUT .='</SELECT></TD></TR><TR>';
-    }
-  %>
+</TR>
+<%= include('check') %>
+<TR>
   <TD COLSPAN=2>
     <INPUT TYPE="checkbox" CHECKED NAME="save" VALUE="1">
     Remember this information
