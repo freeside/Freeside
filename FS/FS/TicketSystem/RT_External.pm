@@ -73,15 +73,19 @@ sub customer_tickets {
   $limit ||= 0;
 
   my( $from_sql, @param) = $self->_from_customer( $custnum, $priority );
-  my $sql="SELECT Tickets.*, Queues.name, ".
-          "position(Tickets.status in 'newopenstalledresolvedrejecteddeleted')".
-	  " AS svalue " .
-          ( length($priority) ? ", objectcustomfieldvalues.content" : '' ).
-          " $from_sql ".
-          " ORDER BY svalue, ".
-          "          priority ". ( $priority_reverse ? 'ASC' : 'DESC' ). ", ".
-          "          id DESC ".
-          " LIMIT $limit";
+  my $sql = "
+    SELECT Tickets.*,
+           Queues.Name AS Queue,
+           Users.Name  AS Owner,
+           position(Tickets.Status in 'newopenstalledresolvedrejecteddeleted')
+             AS svalue
+           ". ( length($priority) ? ", ObjectCustomFieldValues.Content" : '' )."
+      $from_sql
+      ORDER BY svalue,
+               Priority ". ( $priority_reverse ? 'ASC' : 'DESC' ). ",
+               id DESC
+      LIMIT $limit
+  ";
   warn "$me $sql (@param)" if $DEBUG;
   my $sth = $dbh->prepare($sql) or die $dbh->errstr. "preparing $sql";
   $sth->execute(@param)         or die $sth->errstr. "executing $sql";
@@ -101,7 +105,7 @@ sub _from_customer {
   if ( defined($priority) ) {
 
     my $queue_sql = " ObjectCustomFields.ObjectId = ( SELECT id FROM Queues
-                                                       WHERE Queues.name = ? )
+                                                       WHERE Queues.Name = ? )
                       OR ( ? = '' AND ObjectCustomFields.ObjectId = 0 )";
 
     my $customfield_sql =
@@ -110,7 +114,7 @@ sub _from_customer {
                   JOIN ObjectCustomFields
                     ON ( CustomFields.id = ObjectCustomFields.CustomField )
          WHERE LookupType = 'RT::Queue-RT::Ticket'
-           AND name = ?
+           AND Name = ?
            AND ( $queue_sql )
        )";
 
@@ -133,15 +137,15 @@ sub _from_customer {
       $join = "JOIN ObjectCustomFieldValues
                  ON ( Tickets.id = ObjectCustomFieldValues.ObjectId )";
       
-      $where = " AND content = ?
-                 AND ObjectCustomFieldValues.disabled != 1
+      $where = " AND Content = ?
+                 AND ObjectCustomFieldValues.Disabled != 1
                  AND ObjectType = 'RT::Ticket'
                  AND $customfield_sql";
 
     } else {
 
       $where =
-               "AND 0 = ( SELECT count(*) FROM ObjectCustomFieldValues
+               "AND 0 = ( SELECT COUNT(*) FROM ObjectCustomFieldValues
                            WHERE ObjectId    = Tickets.id
                              AND ObjectType  = 'RT::Ticket'
                              AND $customfield_sql
@@ -153,11 +157,12 @@ sub _from_customer {
 
   my $sql = "
                     FROM Tickets
-                    JOIN Queues ON ( Tickets.queue = Queues.id )
-                    JOIN Links ON ( Tickets.id = Links.localbase )
+                    JOIN Queues ON ( Tickets.Queue = Queues.id       )
+                    JOIN Links  ON ( Tickets.id    = Links.LocalBase )
+                    JOIN Users  ON ( Tickets.Owner = Users.id        )
                     $join 
-       WHERE ( ". join(' OR ', map "status = '$_'", $self->statuses ). " )
-         AND target = 'freeside://freeside/cust_main/$custnum'
+       WHERE ( ". join(' OR ', map "Status = '$_'", $self->statuses ). " )
+         AND Target = 'freeside://freeside/cust_main/$custnum'
          $where
   ";
 
@@ -269,7 +274,7 @@ sub href_ticket {
 sub queues {
   my($self) = @_;
 
-  my $sql = "SELECT id, name FROM Queues WHERE disabled = 0";
+  my $sql = "SELECT id, Name FROM Queues WHERE Disabled = 0";
   my $sth = $dbh->prepare($sql) or die $dbh->errstr. " preparing $sql";
   $sth->execute()               or die $sth->errstr. " executing $sql";
 
@@ -282,7 +287,7 @@ sub queue {
 
   return '' unless $queueid;
 
-  my $sql = "SELECT name FROM Queues WHERE id = ?";
+  my $sql = "SELECT Name FROM Queues WHERE id = ?";
   my $sth = $dbh->prepare($sql) or die $dbh->errstr. " preparing $sql";
   $sth->execute($queueid)       or die $sth->errstr. " executing $sql";
 
@@ -310,8 +315,8 @@ sub _retrieve_single_value {
 sub transaction_creator {
   my( $self, $transaction_id ) = @_;
 
-  my $sql = "SELECT name from transactions JOIN users ON ".
-            "transactions.creator=users.id WHERE transactions.id = ".
+  my $sql = "SELECT Name FRP< Transactions JOIN Users ON ".
+            "Transactions.Creator=Users.id WHERE Transactions.id = ".
             $transaction_id;
 
   $self->_retrieve_single_value($sql);
@@ -320,7 +325,7 @@ sub transaction_creator {
 sub transaction_ticketid {
   my( $self, $transaction_id ) = @_;
 
-  my $sql = "SELECT objectid from transactions WHERE transactions.id = ".
+  my $sql = "SELECT ObjectId FROM Transactions WHERE Transactions.id = ".
             $transaction_id;
   
   $self->_retrieve_single_value($sql);
@@ -329,8 +334,8 @@ sub transaction_ticketid {
 sub transaction_subject {
   my( $self, $transaction_id ) = @_;
 
-  my $sql = "SELECT subject from Transactions JOIN Tickets ON objectid=".
-            "Tickets.id WHERE transactions.id = ".  $transaction_id;
+  my $sql = "SELECT Subject FROM Transactions JOIN Tickets ON ObjectId=".
+            "Tickets.id WHERE Transactions.id = ".  $transaction_id;
   
   $self->_retrieve_single_value($sql);
 }
@@ -338,8 +343,8 @@ sub transaction_subject {
 sub transaction_status {
   my( $self, $transaction_id ) = @_;
 
-  my $sql = "SELECT status from Transactions JOIN Tickets ON objectid=".
-            "Tickets.id WHERE transactions.id = ".  $transaction_id;
+  my $sql = "SELECT Status FROM Transactions JOIN Tickets ON ObjectId=".
+            "Tickets.id WHERE Transactions.id = ".  $transaction_id;
   
   $self->_retrieve_single_value($sql);
 }

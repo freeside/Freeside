@@ -79,7 +79,7 @@ Hello <%= $name %>!<BR><BR>
         "<TR>$td". $ticket->{'id'}. "</TD>".
         $td. $ticket->{'subject'}. "</TD>".
         $td. ($ticket->{'content'} || $ticket->{'priority'}). "</TD>".
-        $td. $ticket->{'name'}. "</TD>".
+        $td. $ticket->{'queue'}. "</TD>".
         $td. $ticket->{'status'}. "</TD>".
         '</TR>';
       $col = $col eq $col1 ? $col2 : $col1;
