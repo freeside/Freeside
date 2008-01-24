@@ -229,7 +229,8 @@ sub handler
           use Text::Wrapper;
           use Time::ParseDate;
           use HTML::Scrubber;
-          use Text::Quoted;
+          #use Text::Quoted; #slow, unreliable, segfaults and is optional
+          use Time::HiRes;
         ';
         die $@ if $@;
       }
