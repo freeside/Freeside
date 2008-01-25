@@ -650,6 +650,152 @@ sub unapplied_sql {
 
 =back
 
+=head1 SUBROUTINES
+
+=over 4 
+
+=item batch_import HASHREF
+
+Inserts new payments.
+
+=cut
+
+sub batch_import {
+  my $param = shift;
+
+  my $fh = $param->{filehandle};
+  my $agentnum = $param->{agentnum};
+  my $format = $param->{'format'};
+  my $paybatch = $param->{'paybatch'};
+
+  # here is the agent virtualization
+  my $extra_sql = ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql;
+
+  my @fields;
+  my $payby;
+  if ( $format eq 'simple' ) {
+    @fields = qw( custnum agent_custid paid payinfo );
+    $payby = 'BILL';
+  } elsif ( $format eq 'extended' ) {
+    die "unimplemented\n";
+    @fields = qw( );
+    $payby = 'BILL';
+  } else {
+    die "unknown format $format";
+  }
+
+  eval "use Text::CSV_XS;";
+  die $@ if $@;
+
+  my $csv = new Text::CSV_XS;
+
+  my $imported = 0;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+  
+  my $line;
+  while ( defined($line=<$fh>) ) {
+
+    $csv->parse($line) or do {
+      $dbh->rollback if $oldAutoCommit;
+      return "can't parse: ". $csv->error_input();
+    };
+
+    my @columns = $csv->fields();
+
+    my %cust_pay = (
+      payby    => $payby,
+      paybatch => $paybatch,
+    );
+
+    my $cust_main;
+    foreach my $field ( @fields ) {
+
+      if ( $field eq 'agent_custid'
+        && $agentnum
+        && $columns[0] =~ /\S+/ )
+      {
+
+        my $agent_custid = $columns[0];
+        my %hash = ( 'agent_custid' => $agent_custid,
+                     'agentnum'     => $agentnum,
+                   );
+
+        if ( $cust_pay{'custnum'} !~ /^\s*$/ ) {
+          $dbh->rollback if $oldAutoCommit;
+          return "can't specify custnum with agent_custid $agent_custid";
+        }
+
+        $cust_main = qsearchs({
+                                'table'     => 'cust_main',
+                                'hashref'   => \%hash,
+                                'extra_sql' => $extra_sql,
+                             });
+
+        unless ( $cust_main ) {
+          $dbh->rollback if $oldAutoCommit;
+          return "can't find customer with agent_custid $agent_custid";
+        }
+
+        $field = 'custnum';
+        $columns[0] = $cust_main->custnum;
+      }
+
+      $cust_pay{$field} = shift @columns; 
+    }
+
+    my $cust_pay = new FS::cust_pay( \%cust_pay );
+    my $error = $cust_pay->insert;
+
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "can't insert payment for $line: $error";
+    }
+
+    if ( $format eq 'simple' ) {
+      # include agentnum for less surprise?
+      $cust_main = qsearchs({
+                             'table'     => 'cust_main',
+                             'hashref'   => { 'custnum' => $cust_pay->custnum },
+                             'extra_sql' => $extra_sql,
+                           })
+        unless $cust_main;
+
+      unless ( $cust_main ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "can't find customer to which payments apply at line: $line";
+      }
+
+      $error = $cust_main->apply_payments_and_credits;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "can't apply payments to customer for $line: $error";
+      }
+
+    }
+
+    $imported++;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  return "Empty file!" unless $imported;
+
+  ''; #no error
+
+}
+
+=back
+
 =head1 BUGS
 
 Delete and replace methods.  
