@@ -2,7 +2,7 @@ package FS::part_export::prizm;
 
 use vars qw(@ISA %info %options $DEBUG);
 use Tie::IxHash;
-use FS::Record qw(fields);
+use FS::Record qw(fields dbh);
 use FS::part_export;
 
 @ISA = qw(FS::part_export);
@@ -13,6 +13,7 @@ tie %options, 'Tie::IxHash',
   'user'     => { label => 'Northbound username', default=>'nbi' },
   'password' => { label => 'Password', default => '' },
   'ems'      => { label => 'Full EMS', type => 'checkbox' },
+  'always_bam' => { label => 'Always activate/suspend authentication', type => 'checkbox' },
   'element_name_length' => { label => 'Size of siteName (best left blank)' },
 ;
 
@@ -289,6 +290,10 @@ sub _export_insert {
 sub _export_delete {
   my( $self, $svc ) = ( shift, shift );
 
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
   my $cust_pkg = $svc->cust_svc->cust_pkg;
 
   my $depend = [];
@@ -298,7 +303,7 @@ sub _export_delete {
       'svcnum' => $svc->svcnum,
       'job'    => 'FS::part_export::prizm::queued_prizm_command',
     };
-    $queue->insert(
+    my $error = $queue->insert(
       ( map { $self->option($_) }
             qw( url user password ) ),
       'CustomerIfService',
@@ -307,10 +312,27 @@ sub _export_delete {
       $cust_pkg->custnum,
       0,
       $svc->mac_addr,
-    ) && push @$depend, $queue->jobnum;
+    );
+
+    if ($error) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+
+    push @$depend, $queue->jobnum;
   }
 
-  $self->queue_statuschange('deleteElement', $depend, $svc, 1);
+  my $err_or_queue =
+    $self->queue_statuschange('deleteElement', $depend, $svc, 1);
+
+  unless (ref($err_or_queue)) {
+    $dbh->rollback if $oldAutoCommit;
+    return $err_or_queue;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
 }
 
 sub _export_replace {
@@ -379,14 +401,66 @@ sub _export_replace {
 
 sub _export_suspend {
   my( $self, $svc ) = ( shift, shift );
+  my $depend = [];
   my $ems = $self->option('ems') ? 1 : 0;
-  $self->queue_statuschange('suspendNetworkElements', [], $svc, 1, $ems);
+  my $err_or_queue = '';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  $err_or_queue = 
+     $self->queue_statuschange('suspendNetworkElements', [], $svc, 1, $ems);
+  unless (ref($err_or_queue)) {
+    $dbh->rollback if $oldAutoCommit;
+    return $err_or_queue;
+  }
+  push @$depend, $err_or_queue->jobnum;
+
+  if ($ems && $self->option('always_bam')) {
+    $err_or_queue =
+      $self->queue_statuschange('suspendNetworkElements', $depend, $svc, 1, 0);
+    unless (ref($err_or_queue)) {
+      $dbh->rollback if $oldAutoCommit;
+      return $err_or_queue;
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
 }
 
 sub _export_unsuspend {
   my( $self, $svc ) = ( shift, shift );
+  my $depend = [];
   my $ems = $self->option('ems') ? 1 : 0;
-  $self->queue_statuschange('activateNetworkElements', [], $svc, 1, $ems);
+  my $err_or_queue = '';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  if ($ems && $self->option('always_bam')) {
+    $err_or_queue =
+      $self->queue_statuschange('activateNetworkElements', [], $svc, 1, 0);
+    unless (ref($err_or_queue)) {
+      $dbh->rollback if $oldAutoCommit;
+      return $err_or_queue;
+    }
+    push @$depend, $err_or_queue->jobnum;
+  }
+
+  $err_or_queue =
+    $self->queue_statuschange('activateNetworkElements', $depend, $svc, 1, $ems);
+  unless (ref($err_or_queue)) {
+    $dbh->rollback if $oldAutoCommit;
+    return $err_or_queue;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
 }
 
 sub queue_statuschange {
@@ -398,7 +472,7 @@ sub queue_statuschange {
     'svcnum' => $svc->svcnum,
     'job'    => 'FS::part_export::prizm::statuschange',
   };
-  $queue->insert(
+  my $error = $queue->insert(
     ( map { $self->option($_) }
           qw( url user password ) ),
     $method,
@@ -406,12 +480,13 @@ sub queue_statuschange {
     @args,
   );
 
-  if ($queue->jobnum) {                   # successful insertion
+  unless ($error) {                   # successful insertion
     foreach my $job ( @$jobs ) {
-      $queue->depend_insert($job);
+      $error ||= $queue->depend_insert($job);
     }
   }
 
+  $error or $queue;
 }
 
 sub statuschange {  # subroutine
