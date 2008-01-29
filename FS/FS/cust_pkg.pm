@@ -1551,6 +1551,228 @@ sub cancel_sql {
   "cust_pkg.cancel IS NOT NULL AND cust_pkg.cancel != 0";
 }
 
+=item search_sql HREF
+
+Returns a qsearch hash expression to search for parameters specified in HREF.
+Valid parameters are
+
+=over 4
+=item agentnum
+=item magic - /^(active|inactive|suspended|cancell?ed)$/
+=item status - /^(active|inactive|suspended|one-time charge|inactive|cancell?ed)$/
+=item classnum
+=item pkgpart - list specified how?
+=item setup     - arrayref of beginning and ending epoch date
+=item last_bill - arrayref of beginning and ending epoch date
+=item bill      - arrayref of beginning and ending epoch date
+=item adjourn   - arrayref of beginning and ending epoch date
+=item susp      - arrayref of beginning and ending epoch date
+=item expire    - arrayref of beginning and ending epoch date
+=item cancel    - arrayref of beginning and ending epoch date
+=item query - /^(pkgnum/APKG_pkgnum)$/
+=item cust_fields - a value suited to passing to FS::UI::Web::cust_header
+=item CurrentUser - specifies the user for agent virtualization
+=back
+
+=cut
+
+sub search_sql { 
+  my ($class, $params) = @_;
+  my @where = ();
+
+  ##
+  # parse agent
+  ##
+
+  if ( $params->{'agentnum'} =~ /^(\d+)$/ and $1 ) {
+    push @where,
+      "agentnum = $1";
+  }
+
+  ##
+  # parse status
+  ##
+
+  if (    $params->{'magic'}  eq 'active'
+       || $params->{'status'} eq 'active' ) {
+
+    push @where, FS::cust_pkg->active_sql();
+
+  } elsif (    $params->{'magic'}  eq 'inactive'
+            || $params->{'status'} eq 'inactive' ) {
+
+    push @where, FS::cust_pkg->inactive_sql();
+
+  } elsif (    $params->{'magic'}  eq 'suspended'
+            || $params->{'status'} eq 'suspended'  ) {
+
+    push @where, FS::cust_pkg->suspended_sql();
+
+  } elsif (    $params->{'magic'}  =~ /^cancell?ed$/
+            || $params->{'status'} =~ /^cancell?ed$/ ) {
+
+    push @where, FS::cust_pkg->cancelled_sql();
+
+  } elsif ( $params->{'status'} =~ /^(one-time charge|inactive)$/ ) {
+
+    push @where, FS::cust_pkg->inactive_sql();
+
+  }
+
+  ###
+  # parse package class
+  ###
+
+  #false lazinessish w/graph/cust_bill_pkg.cgi
+  my $classnum = 0;
+  my @pkg_class = ();
+  if ( exists($params->{'classnum'})
+       && $params->{'classnum'} =~ /^(\d*)$/
+     )
+  {
+    $classnum = $1;
+    if ( $classnum ) { #a specific class
+      push @where, "classnum = $classnum";
+
+      #@pkg_class = ( qsearchs('pkg_class', { 'classnum' => $classnum } ) );
+      #die "classnum $classnum not found!" unless $pkg_class[0];
+      #$title .= $pkg_class[0]->classname.' ';
+
+    } elsif ( $classnum eq '' ) { #the empty class
+
+      push @where, "classnum IS NULL";
+      #$title .= 'Empty class ';
+      #@pkg_class = ( '(empty class)' );
+    } elsif ( $classnum eq '0' ) {
+      #@pkg_class = qsearch('pkg_class', {} ); # { 'disabled' => '' } );
+      #push @pkg_class, '(empty class)';
+    } else {
+      die "illegal classnum";
+    }
+  }
+  #eslaf
+
+  ###
+  # parse part_pkg
+  ###
+
+  my $pkgpart = join (' OR pkgpart=',
+                      grep {$_} map { /^(\d+)$/; } ($params->{'pkgpart'}));
+  push @where,  '(pkgpart=' . $pkgpart . ')' if $pkgpart;
+
+  ###
+  # parse dates
+  ###
+
+  my $orderby = '';
+
+  #false laziness w/report_cust_pkg.html
+  my %disable = (
+    'all'             => {},
+    'one-time charge' => { 'last_bill'=>1, 'bill'=>1, 'adjourn'=>1, 'susp'=>1, 'expire'=>1, 'cancel'=>1, },
+    'active'          => { 'susp'=>1, 'cancel'=>1 },
+    'suspended'       => { 'cancel' => 1 },
+    'cancelled'       => {},
+    ''                => {},
+  );
+
+  foreach my $field (qw( setup last_bill bill adjourn susp expire cancel )) {
+
+    next unless exists($params->{$field});
+
+    my($beginning, $ending) = @{$params->{$field}};
+
+    next if $beginning == 0 && $ending == 4294967295;
+
+    push @where,
+      "cust_pkg.$field IS NOT NULL",
+      "cust_pkg.$field >= $beginning",
+      "cust_pkg.$field <= $ending";
+
+    $orderby ||= "ORDER BY cust_pkg.$field";
+
+  }
+
+  $orderby ||= 'ORDER BY bill';
+
+  ###
+  # parse magic, legacy, etc.
+  ###
+
+  if ( $params->{'magic'} &&
+       $params->{'magic'} =~ /^(active|inactive|suspended|cancell?ed)$/
+  ) {
+
+    $orderby = 'ORDER BY pkgnum';
+
+    if ( $params->{'pkgpart'} =~ /^(\d+)$/ ) {
+      push @where, "pkgpart = $1";
+    }
+
+  } elsif ( $params->{'query'} eq 'pkgnum' ) {
+
+    $orderby = 'ORDER BY pkgnum';
+
+  } elsif ( $params->{'query'} eq 'APKG_pkgnum' ) {
+
+    $orderby = 'ORDER BY pkgnum';
+
+    push @where, '0 < (
+      SELECT count(*) FROM pkg_svc
+       WHERE pkg_svc.pkgpart =  cust_pkg.pkgpart
+         AND pkg_svc.quantity > ( SELECT count(*) FROM cust_svc
+                                   WHERE cust_svc.pkgnum  = cust_pkg.pkgnum
+                                     AND cust_svc.svcpart = pkg_svc.svcpart
+                                )
+    )';
+  
+  }
+
+  ##
+  # setup queries, links, subs, etc. for the search
+  ##
+
+  # here is the agent virtualization
+  if ($params->{CurrentUser}) {
+    my $access_user =
+      qsearchs('access_user', { username => $params->{CurrentUser} });
+
+    if ($access_user) {
+      push @where, $access_user->agentnums_sql;
+    }else{
+      push @where, "1=0";
+    }
+  }else{
+    push @where, $FS::CurrentUser::CurrentUser->agentnums_sql;
+  }
+
+  my $extra_sql = scalar(@where) ? ' WHERE '. join(' AND ', @where) : '';
+
+  my $addl_from = 'LEFT JOIN cust_main USING ( custnum  ) '.
+                  'LEFT JOIN part_pkg  USING ( pkgpart  ) '.
+                  'LEFT JOIN pkg_class USING ( classnum ) ';
+
+  my $count_query = "SELECT COUNT(*) FROM cust_pkg $addl_from $extra_sql";
+
+  my $sql_query = {
+    'table'       => 'cust_pkg',
+    'hashref'     => {},
+    'select'      => join(', ',
+                                'cust_pkg.*',
+                                ( map "part_pkg.$_", qw( pkg freq ) ),
+                                'pkg_class.classname',
+                                'cust_main.custnum as cust_main_custnum',
+                                FS::UI::Web::cust_sql_fields(
+                                  $params->{'cust_fields'}
+                                ),
+                     ),
+    'extra_sql'   => "$extra_sql $orderby",
+    'addl_from'   => $addl_from,
+    'count_query' => $count_query,
+  };
+
+}
+
 =head1 SUBROUTINES
 
 =over 4
@@ -1697,6 +1919,64 @@ Available options are:
 If there is an error, returns the error, otherwise returns false.
 
 =cut
+
+=item bulk_change PKGPARTS_ARYREF, REMOVE_PKGNUMS_ARYREF [ RETURN_CUST_PKG_ARRAYREF ]
+
+PKGPARTS is a list of pkgparts specifying the the billing item definitions (see
+L<FS::part_pkg>) to order for this customer.  Duplicates are of course
+permitted.
+
+REMOVE_PKGNUMS is an list of pkgnums specifying the billing items to
+replace.  The services (see L<FS::cust_svc>) are moved to the
+new billing items.  An error is returned if this is not possible (see
+L<FS::pkg_svc>).
+
+RETURN_CUST_PKG_ARRAYREF, if specified, will be filled in with the
+newly-created cust_pkg objects.
+
+=cut
+
+sub bulk_change {
+  my ($pkgparts, $remove_pkgnum, $return_cust_pkg) = @_;
+
+  # Transactionize this whole mess
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE'; 
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE'; 
+  local $SIG{PIPE} = 'IGNORE'; 
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my @errors;
+  my @old_cust_pkg = map { qsearchs('cust_pkg', { pkgnum => $_ }) }
+                         @$remove_pkgnum;
+
+  while(scalar(@old_cust_pkg)) {
+    my @return = ();
+    my $custnum = $old_cust_pkg[0]->custnum;
+    my (@remove) = map { $_->pkgnum }
+                   grep { $_->custnum == $custnum } @old_cust_pkg;
+    @old_cust_pkg = grep { $_->custnum != $custnum } @old_cust_pkg;
+
+    my $error = order $custnum, $pkgparts, \@remove, \@return;
+
+    push @errors, $error
+      if $error;
+    push @$return_cust_pkg, @return;
+  }
+
+  if (scalar(@errors)) {
+    $dbh->rollback if $oldAutoCommit;
+    return join(' / ', @errors);
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+}
 
 sub insert_reason {
   my ($self, %options) = @_;
