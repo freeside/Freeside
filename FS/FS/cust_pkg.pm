@@ -1586,7 +1586,7 @@ sub search_sql {
 
   if ( $params->{'agentnum'} =~ /^(\d+)$/ and $1 ) {
     push @where,
-      "agentnum = $1";
+      "cust_main.agentnum = $1";
   }
 
   ##
@@ -1738,12 +1738,12 @@ sub search_sql {
       qsearchs('access_user', { username => $params->{CurrentUser} });
 
     if ($access_user) {
-      push @where, $access_user->agentnums_sql;
+      push @where, $access_user->agentnums_sql('table'=>'cust_main');
     }else{
       push @where, "1=0";
     }
   }else{
-    push @where, $FS::CurrentUser::CurrentUser->agentnums_sql;
+    push @where, $FS::CurrentUser::CurrentUser->agentnums_sql('table'=>'cust_main');
   }
 
   my $extra_sql = scalar(@where) ? ' WHERE '. join(' AND ', @where) : '';
