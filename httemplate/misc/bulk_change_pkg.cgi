@@ -56,14 +56,4 @@
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Bulk change customer packages');
 
-#false laziness w/report_cust_pkg.html
-my %disable = (
-  'all'             => {},
-  'one-time charge' => { 'last_bill'=>1, 'bill'=>1, 'adjourn'=>1, 'susp'=>1, 'expire'=>1, 'cancel'=>1, },
-  'active'          => { 'susp'=>1, 'cancel'=>1 },
-  'suspended'       => { 'cancel' => 1 },
-  'cancelled'       => {},
-  ''                => {},
-);
-
 </%init>
