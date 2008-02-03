@@ -530,7 +530,10 @@ if ( $cgi->param('error') ) {
   $stateid = '';
   $payinfo = '';
 }
+
+my $error = $cgi->param('error');
 $cgi->delete_all();
+$cgi->param('error', $error);
 
 my $action = $custnum ? 'Edit' : 'Add';
 $action .= ": ". $cust_main->name if $custnum;
