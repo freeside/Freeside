@@ -5190,8 +5190,8 @@ sub _money_table_where {
   my @where = ();
   push @where, "cust_main.custnum = $table.custnum" unless $opt{'total'};
   if ( $table eq 'cust_bill' || $opt{'unapplied_date'} ) {
-    push @where, "$table._date <= $start" if length($start);
-    push @where, "$table._date >  $end"   if length($end);
+    push @where, "$table._date <= $start" if defined($start) && length($start);
+    push @where, "$table._date >  $end"   if defined($end)   && length($end);
   }
   push @where, @{$opt{'where'}} if $opt{'where'};
   my $where = scalar(@where) ? 'WHERE '. join(' AND ', @where ) : '';
