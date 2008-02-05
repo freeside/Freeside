@@ -91,7 +91,7 @@ if ( $error ) {
 
   die "access denied"
     unless $curuser->access_right('Edit package definitions')
-        || $curuser->access_right('Edit global package definitions');
+        || $curuser->access_right('Edit global package definitions')
         || ( $cgi->param('pkgnum') && $curuser->access_right('Customize customer package') );
 
   $error = $new->insert(  pkg_svc     => \%pkg_svc,
@@ -111,4 +111,3 @@ unless ( $error || $conf->exists('agent_defaultpkg') ) {
 }
 
 </%init>
-
