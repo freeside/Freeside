@@ -94,6 +94,7 @@ For security reasons, it is set to conflict with %{name} so you cannot install t
 %setup
 %{__rm} bin/pod2x # Only useful to Ivan Kohler now
 perl -pi -e 's|/usr/local/bin|%{buildroot}%{_bindir}|g' FS/Makefile.PL
+perl -pi -e 's|\s+-o\s+freeside\s+| |g' Makefile
 perl -ni -e 'print if !/\s+chown\s+/;' Makefile
 
 # Override find-requires/find-provides to supplement Perl requires for HTML::Mason file handler.pl
@@ -113,8 +114,6 @@ EOF
 
 %build
 
-# Add freeside user and group if there isn't already such a user
-%{__id} freeside 2>/dev/null >/dev/null || /usr/sbin/useradd -s /bin/sh freeside
 # False laziness...
 # The htmlman target now makes wiki documentation.  Let's pretend we made it.
 touch htmlman
