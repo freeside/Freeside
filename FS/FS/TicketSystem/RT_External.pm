@@ -315,7 +315,7 @@ sub _retrieve_single_value {
 sub transaction_creator {
   my( $self, $transaction_id ) = @_;
 
-  my $sql = "SELECT Name FRP< Transactions JOIN Users ON ".
+  my $sql = "SELECT Name FROM Transactions JOIN Users ON ".
             "Transactions.Creator=Users.id WHERE Transactions.id = ".
             $transaction_id;
 
