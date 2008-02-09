@@ -32,4 +32,4 @@ if ( $typenum ) {
     'params'       => scalar($cgi->Vars)
   );
 
-<%/init>
+</%init>
