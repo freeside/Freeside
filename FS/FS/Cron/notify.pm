@@ -42,11 +42,15 @@ sub notify_flat_delay {
                                 or  cust_pkg.expire > $time
                                   + cast(part_pkg_option.optionvalue as integer)
                                     * 86400
-/*                            and ( cust_pkg.adjourn is null
-                                or  cust_pkg.adjourn > $time
--- Should notify suspended ones   + cast(part_pkg_option.optionvalue as integer)
-                                    * 86400
-*/
+END
+
+#/*                            and ( cust_pkg.adjourn is null
+#                                or  cust_pkg.adjourn > $time
+#-- Should notify suspended ones  + cast(part_pkg_option.optionvalue as integer)
+#                                    * 86400
+#*/
+
+  $where_pkg .= <<"END";
                                   )
                         )
           )
