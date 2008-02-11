@@ -137,7 +137,9 @@ sub _upgrade_data {  # class method
       $column = dbdef->table($self->table)->column('reason');
       my $columndef = $column->line($dbh);
       $columndef =~ s/varchar\(\d+\)/text/i;
+
       if ( $dbh->{Driver}->{Name} eq 'Pg' ) {
+
         my $notnull = $columndef =~ s/not null//i;
         push @sql,"ALTER TABLE $table RENAME reason TO freeside_upgrade_reason";
         push @sql,"ALTER TABLE $table ADD $columndef";
@@ -145,9 +147,14 @@ sub _upgrade_data {  # class method
         push @sql,"ALTER TABLE $table ALTER reason SET NOT NULL"
           if $notnull;
         push @sql,"ALTER TABLE $table DROP freeside_upgrade_reason";
-      }elsif( $dbh->{Driver}->{Name} =~ /^mysql/i ){
-        push @sql,"ALTER TABLE $table MODIFY reason ". $column->line($dbh);
-      }else{
+
+      } elsif ( $dbh->{Driver}->{Name} =~ /^mysql/i ){
+
+        #crap, this isn't working
+        #push @sql,"ALTER TABLE $table MODIFY reason ". $column->line($dbh);
+        warn "WARNING: reason table upgrade not yet supported for mysql, sorry";
+
+      } else {
         die "watchu talkin' 'bout, Willis? (unsupported database type)";
       }
 
