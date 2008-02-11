@@ -132,22 +132,30 @@ sub cancel {
 
   my $svc = $self->svc_x;
   if ($svc) {
+
     my $error = $svc->cancel;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return "Error canceling service: $error";
     }
-    $error = $svc->delete;
+    $error = $svc->delete; #this deletes this cust_svc record as well
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return "Error deleting service: $error";
     }
-  }
 
-  my $error = $self->delete;
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return "Error deleting cust_svc: $error";
+  } else {
+
+    #huh?
+    warn "WARNING: no svc_ record found for svcnum ". $self->svcnum.
+         "; deleting cust_svc only\n"; 
+
+    my $error = $self->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Error deleting cust_svc: $error";
+    }
+
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;

@@ -83,6 +83,8 @@ sub upgrade_data {
     #customer credits
     'cust_credit' => [],
 
+    #duplicate history records
+    'h_cust_svc' => [],
 
   ;
 

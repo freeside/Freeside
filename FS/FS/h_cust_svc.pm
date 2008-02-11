@@ -41,7 +41,11 @@ sub date_deleted {
 
 =item label END_TIMESTAMP [ START_TIMESTAMP ] 
 
-Returns a list consisting of:
+Returns a label for this historical service, if the service was created before
+END_TIMESTAMP and (optionally) not deleted before START_TIMESTAMP.  Otherwise,
+returns an empty list.
+
+If a service is found, returns a list consisting of:
 - The name of this historical service (from part_svc)
 - A meaningful identifier (username, domain, or mail alias)
 - The table name (i.e. svc_domain) for this historical service
@@ -52,6 +56,7 @@ sub label {
   my $self = shift;
   carp "FS::h_cust_svc::label called on $self" if $DEBUG;
   my $svc_x = $self->h_svc_x(@_);
+  return () unless $svc_x;
   my $part_svc = $self->part_svc;
 
   unless ($svc_x) {
@@ -100,6 +105,44 @@ sub h_svc_x {
   } else {
     return '';
   }
+
+}
+
+# _upgrade_data
+#
+# Used by FS::Upgrade to migrate to a new database.
+#
+#
+
+use FS::UID qw( driver_name dbh );
+
+sub _upgrade_data {  # class method
+  my ($class, %opts) = @_;
+
+  warn "[FS::h_cust_svc] upgrading $class\n" if $DEBUG;
+
+  return if driver_name =~ /^mysql/; #You can't specify target table 'h_cust_svc' for update in FROM clause
+
+  my $sql = "
+    DELETE FROM h_cust_svc
+      WHERE history_action = 'delete'
+        AND historynum != ( SELECT min(historynum) FROM h_cust_svc AS main
+                              WHERE main.history_date = h_cust_svc.history_date
+                                AND main.history_user = h_cust_svc.history_user
+                                AND main.svcnum       = h_cust_svc.svcnum
+                                AND main.svcpart      = h_cust_svc.svcpart
+                                AND ( main.pkgnum     = h_cust_svc.pkgnum
+                                      OR ( main.pkgnum IS NULL AND h_cust_svc.pkgnum IS NULL )
+                                    )
+                                AND ( main.overlimit  = h_cust_svc.overlimit
+                                      OR ( main.overlimit IS NULL AND h_cust_svc.overlimit IS NULL )
+                                    )
+                          )
+  ";
+
+  warn $sql if $DEBUG;
+  my $sth = dbh->prepare($sql) or die dbh->errstr;
+  $sth->execute or die $sth->errstr;
 
 }
 
