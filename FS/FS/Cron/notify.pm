@@ -3,7 +3,7 @@ package FS::Cron::notify;
 use strict;
 use vars qw( @ISA @EXPORT_OK $DEBUG );
 use Exporter;
-use FS::UID qw( dbh );
+use FS::UID qw( dbh driver_name );
 use FS::Record qw(qsearch);
 use FS::cust_main;
 use FS::cust_pkg;
@@ -22,6 +22,8 @@ sub notify_flat_delay {
   #we're at now now (and later).
   my($time) = $^T;
 
+  my $integer = driver_name =~ /^mysql/ ? 'SIGNED' : 'INTEGER';
+
   # select * from cust_pkg where
   my $where_pkg = <<"END";
     where ( cancel is null or cancel = 0 )
@@ -34,19 +36,21 @@ sub notify_flat_delay {
                             where part_pkg.pkgpart = part_pkg_option.pkgpart
                               and part_pkg_option.optionname = 'recur_notify'
                               and part_pkg_option.optionvalue > 0
-                              and 0 <= $time
-                                + cast(part_pkg_option.optionvalue as integer)
-                                  * 86400
-                                - cust_pkg.bill
+                              and 0 <= ( $time
+                                         + CAST( part_pkg_option.optionvalue AS $integer )
+                                           * 86400
+                                         - cust_pkg.bill
+                                       )
                               and ( cust_pkg.expire is null
-                                or  cust_pkg.expire > $time
-                                  + cast(part_pkg_option.optionvalue as integer)
-                                    * 86400
+                                or  cust_pkg.expire > ( $time
+                                                        + CAST( part_pkg_option.optionvalue AS $integer )
+                                                          * 86400
+                                                      )
 END
 
 #/*                            and ( cust_pkg.adjourn is null
 #                                or  cust_pkg.adjourn > $time
-#-- Should notify suspended ones  + cast(part_pkg_option.optionvalue as integer)
+#-- Should notify suspended ones  + cast(part_pkg_option.optionvalue as $integer)
 #                                    * 86400
 #*/
 
