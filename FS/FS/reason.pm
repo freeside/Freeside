@@ -153,7 +153,7 @@ sub _upgrade_data {  # class method
 
       foreach (@sql) {
         my $sth = $dbh->prepare($_) or die $dbh->errstr;
-        $sth->execute or die $dbh->errstr;
+        $sth->execute or die $sth->errstr;
       }
     }
   }
