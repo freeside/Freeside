@@ -30,7 +30,7 @@ sub notify_flat_delay {
       0 < ( select count(*) from part_pkg
               where cust_pkg.pkgpart = part_pkg.pkgpart
                 and part_pkg.plan = 'flat_delayed'
-                and 0 < ( select count (*) from part_pkg_option
+                and 0 < ( select count(*) from part_pkg_option
                             where part_pkg.pkgpart = part_pkg_option.pkgpart
                               and part_pkg_option.optionname = 'recur_notify'
                               and part_pkg_option.optionvalue > 0
