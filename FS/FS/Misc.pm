@@ -67,7 +67,7 @@ I<type> - (optional) type parameter for multipart/related messages
 use vars qw( $conf );
 use Date::Format;
 use Mail::Header;
-use Mail::Internet 1.44;
+use Mail::Internet 2.00;
 use MIME::Entity;
 use FS::UID;
 
@@ -193,34 +193,51 @@ sub send_email {
 }
 
 #this kludges a "mysmtpsend" method into Mail::Internet for send_email above
+#now updated for MailTools v2!
 package Mail::Internet;
 
 use Mail::Address;
 use Net::SMTP;
+use Net::Domain;
 
-sub Mail::Internet::mysmtpsend {
-    my $src  = shift;
-    my %opt = @_;
-    my $host = $opt{Host};
-    my $envelope = $opt{MailFrom};
-    my $noquit = 0;
-    my $smtp;
-    my @hello = defined $opt{Hello} ? (Hello => $opt{Hello}) : ();
+sub Mail::Internet::mysmtpsend($@) {
+    my ($self, %opt) = @_;
 
-    push(@hello, 'Port', $opt{'Port'})
-	if exists $opt{'Port'};
+    my $host     = $opt{Host};
+    my $envelope = $opt{MailFrom}; # || mailaddress();
+    my $quit     = 1;
 
-    push(@hello, 'Debug', $opt{'Debug'})
-	if exists $opt{'Debug'};
+    my ($smtp, @hello);
 
-    if(ref($host) && UNIVERSAL::isa($host,'Net::SMTP')) {
-	$smtp = $host;
-	$noquit = 1;
+    push @hello, Hello => $opt{Hello}
+        if defined $opt{Hello};
+
+    push @hello, Port => $opt{Port}
+        if exists $opt{Port};
+
+    push @hello, Debug => $opt{Debug}
+        if exists $opt{Debug};
+
+#    if(!defined $host)
+#    {   local $SIG{__DIE__};
+#        my @hosts = qw(mailhost localhost);
+#        unshift @hosts, split /\:/, $ENV{SMTPHOSTS}
+#            if defined $ENV{SMTPHOSTS};
+#
+#        foreach $host (@hosts)
+#        {   $smtp = eval { Net::SMTP->new($host, @hello) };
+#            last if defined $smtp;
+#        }
+#    }
+#    elsif(ref($host) && UNIVERSAL::isa($host,'Net::SMTP'))
+    if(ref($host) && UNIVERSAL::isa($host,'Net::SMTP'))
+    {   $smtp = $host;
+        $quit = 0;
     }
-    else {
-	#local $SIG{__DIE__};
-	#$smtp = eval { Net::SMTP->new($host, @hello) };
-	$smtp = new Net::SMTP $host, @hello;
+    else
+    {   #local $SIG{__DIE__};
+        #$smtp = eval { Net::SMTP->new($host, @hello) };
+        $smtp = Net::SMTP->new($host, @hello);
     }
 
     unless ( defined($smtp) ) {
@@ -229,39 +246,35 @@ sub Mail::Internet::mysmtpsend {
       return "can't connect to $host: $err"
     }
 
-    my $hdr = $src->head->dup;
+    my $head = $self->cleaned_header_dup;
 
-    _prephdr($hdr);
+    $head->delete('Bcc');
 
     # Who is it to
 
-    my @rcpt = map { ref($_) ? @$_ : $_ } grep { defined } @opt{'To','Cc','Bcc'};
-    @rcpt = map { $hdr->get($_) } qw(To Cc Bcc)
-	unless @rcpt;
-    my @addr = map($_->address, Mail::Address->parse(@rcpt));
+    my @rcpt = map { ref $_ ? @$_ : $_ } grep { defined } @opt{'To','Cc','Bcc'};
+    @rcpt    = map { $head->get($_) } qw(To Cc Bcc)
+        unless @rcpt;
 
+    my @addr = map {$_->address} Mail::Address->parse(@rcpt);
+    #@addr or return ();
     return 'No valid destination addresses found!'
 	unless(@addr);
 
-    $hdr->delete('Bcc'); # Remove blind Cc's
-
     # Send it
 
-    #warn "Headers: \n" . join('',@{$hdr->header});
-    #warn "Body: \n" . join('',@{$src->body});
+    my $ok = $smtp->mail($envelope)
+          && $smtp->to(@addr)
+          && $smtp->data(join("", @{$head->header}, "\n", @{$self->body}));
 
-    my $ok = $smtp->mail( $envelope ) &&
-		$smtp->to(@addr) &&
-		$smtp->data(join("", @{$hdr->header},"\n",@{$src->body}));
-
+    #$quit && $smtp->quit;
+    #$ok ? @addr : ();
     if ( $ok ) {
-      $smtp->quit
-          unless $noquit;
+      $quit && $smtp->quit;
       return '';
     } else {
       return $smtp->code. ' '. $smtp->message;
     }
-
 }
 package FS::Misc;
 #eokludge
