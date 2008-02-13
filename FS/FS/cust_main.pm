@@ -4632,13 +4632,14 @@ the error, otherwise returns false.
 
 sub charge {
   my $self = shift;
-  my ( $amount, $pkg, $comment, $taxclass, $additional );
+  my ( $amount, $pkg, $comment, $taxclass, $additional, $classnum );
   if ( ref( $_[0] ) ) {
     $amount     = $_[0]->{amount};
     $pkg        = exists($_[0]->{pkg}) ? $_[0]->{pkg} : 'One-time charge';
     $comment    = exists($_[0]->{comment}) ? $_[0]->{comment}
                                            : '$'. sprintf("%.2f",$amount);
     $taxclass   = exists($_[0]->{taxclass}) ? $_[0]->{taxclass} : '';
+    $classnum   = exists($_[0]->{classnum}) ? $_[0]->{classnum} : '';
     $additional = $_[0]->{additional};
   }else{
     $amount     = shift;
@@ -4665,6 +4666,7 @@ sub charge {
     'plan'     => 'flat',
     'freq'     => 0,
     'disabled' => 'Y',
+    'classnum' => $classnum ? $classnum : '',
     'taxclass' => $taxclass,
   } );
 

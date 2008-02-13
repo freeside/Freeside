@@ -42,6 +42,7 @@ unless ( $error ) {
     'amount'     => $amount,
     'pkg'        => scalar($cgi->param('pkg')),
     'taxclass'   => scalar($cgi->param('taxclass')),
+    'classnum'   => scalar($cgi->param('classnum')),
     'additional' => \@description,
   } );
 }
