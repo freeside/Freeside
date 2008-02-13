@@ -1,11 +1,14 @@
 package FS::part_pkg::bulk;
 
 use strict;
-use vars qw(@ISA %info);
+use vars qw(@ISA $DEBUG $me %info);
 use Date::Format;
 use FS::part_pkg::flat;
 
 @ISA = qw(FS::part_pkg::flat);
+
+$DEBUG = 0;
+$me = '[FS::part_pkg::bulk]';
 
 %info = (
   'name' => 'Bulk billing based on number of active services',
@@ -44,18 +47,26 @@ sub calc_recur {
 
   my $total_svc_charge = 0;
 
+  warn "$me billing for bulk services from ". time2str('%x', $last_bill).
+                                      " to ". time2str('%x', $$sdate). "\n"
+    if $DEBUG;
+
                                            #   END      START
   foreach my $h_svc ( $cust_pkg->h_cust_svc( $$sdate, $last_bill ) ) {
 
+    my @label = $h_svc->label( $$sdate, $last_bill );
+    die "fatal: no historical label found, wtf?" unless scalar(@label); #?
+    #my $svc_details = $label[0].': '. $label[1]. ': ';
+    my $svc_details = $label[1]. ': ';
+
     my $svc_charge = 0;
-    my $svc_details = $h_svc->label. ': ';
 
     my $svc_start = $h_svc->date_inserted;
     if ( $svc_start < $last_bill ) {
       $svc_start = $last_bill;
     } elsif ( $svc_setup_fee ) {
       $svc_charge += $svc_setup_fee;
-      $details .= $money_char. sprintf('%.2f setup, ', $svc_setup_fee);
+      $svc_details .= $money_char. sprintf('%.2f setup, ', $svc_setup_fee);
     }
 
     my $svc_end = $h_svc->date_deleted;
@@ -64,12 +75,12 @@ sub calc_recur {
     $svc_charge = $self->option('svc_recur_fee') * ( $svc_end - $svc_start )
                                                  / ( $$sdate  - $last_bill );
 
-    $details .= $money_char. sprintf('%.2f', $svc_charge ).
-                ' ('.  time2str('%x', $svc_start).
-                ' - '. time2str('%x', $svc_end  ). ')'
-    if $self->option('svc_recur_fee');
+    $svc_details .= $money_char. sprintf('%.2f', $svc_charge ).
+                    ' ('.  time2str('%x', $svc_start).
+                    ' - '. time2str('%x', $svc_end  ). ')'
+      if $self->option('svc_recur_fee');
 
-    push @$details, $details;
+    push @$details, $svc_details;
     $total_svc_charge += $svc_charge;
 
   }
@@ -80,4 +91,6 @@ sub calc_recur {
 sub is_free_options {
   qw( setup_fee recur_fee svc_setup_fee svc_recur_fee );
 }
+
+1;
 
