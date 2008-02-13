@@ -46,7 +46,7 @@ inherits from FS::Record.  The following fields are currently supported:
 
 =item min_charge - charge per minute
 
-=item sec_granularity - granularity in seconds, i.e. 6 or 60
+=item sec_granularity - granularity in seconds, i.e. 6 or 60; 0 for per-call
 
 =back
 

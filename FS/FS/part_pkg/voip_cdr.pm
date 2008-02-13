@@ -261,9 +261,13 @@ sub calc_recur {
       
           my $granularity = $rate_detail->sec_granularity;
           my $seconds = $cdr->billsec; # |ength($cdr->billsec) ? $cdr->billsec : $cdr->duration;
-          $seconds += $granularity - ( $seconds % $granularity );
+          $seconds += $granularity - ( $seconds % $granularity )
+            if $granularity; # 0 is per call
           my $minutes = sprintf("%.1f", $seconds / 60);
           $minutes =~ s/\.0$// if $granularity == 60;
+
+          # per call rather than per minute
+          $minutes = 1 unless $granularity;
       
           $included_min{$regionnum} -= $minutes;
       
@@ -280,7 +284,7 @@ sub calc_recur {
           @call_details = (
             #time2str("%Y %b %d - %r", $cdr->calldate_unix ),
             time2str("%c", $cdr->calldate_unix),  #XXX this should probably be a config option dropdown so they can select US vs- rest of world dates or whatnot
-            $minutes.'m',
+            $granularity ? $minutes.'m' : $minutes.' call',
             '$'.$charge,
             $pretty_destnum,
             $rate_region->regionname,

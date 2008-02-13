@@ -49,10 +49,10 @@
       Rate plan
     </TH>
     <TH CLASS="grid" BGCOLOR="#cccccc">
-      <FONT SIZE=-1>Included<BR>minutes</FONT>
+      <FONT SIZE=-1>Included<BR>minutes/calls</FONT>
     </TH>
     <TH CLASS="grid" BGCOLOR="#cccccc">
-      <FONT SIZE=-1>Charge per<BR>minute</FONT>
+      <FONT SIZE=-1>Charge per<BR>minute/call</FONT>
     </TH>
     <TH CLASS="grid" BGCOLOR="#cccccc">
       <FONT SIZE=-1>Granularity</FONT>
@@ -81,11 +81,11 @@
     </TD>
 
     <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
-      <INPUT TYPE="text" SIZE=5 NAME="min_included<%$n%>" VALUE="<% $cgi->param("min_included$n") || $rate_detail->min_included |h %>">
+      <INPUT TYPE="text" SIZE=9 NAME="min_included<%$n%>" VALUE="<% $cgi->param("min_included$n") || $rate_detail->min_included |h %>">
     </TD>
 
     <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
-      $<INPUT TYPE="text" SIZE=4 NAME="min_charge<%$n%>" VALUE="<% sprintf('%.2f', $cgi->param("min_charge$n") || $rate_detail->min_charge ) %>">
+      $<INPUT TYPE="text" SIZE=6 NAME="min_charge<%$n%>" VALUE="<% sprintf('%.2f', $cgi->param("min_charge$n") || $rate_detail->min_charge ) %>">
     </TD>
 
     <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
@@ -137,6 +137,7 @@ tie my %granularity, 'Tie::IxHash',
   '6'  => '6 second',
   '30' => '30 second', # '1/2 minute',
   '60' => 'minute',
+  '0'  => 'call',
 ;
 
 my @rate_prefix = $rate_region->rate_prefix;
