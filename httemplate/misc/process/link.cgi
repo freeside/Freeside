@@ -1,7 +1,7 @@
 %unless ($error) {
 %  #no errors, so let's view this customer.
 %  my $custnum = $new->cust_pkg->custnum;
-<% $cgi->redirect(popurl(3). "view/cust_main.cgi?<%$custnum%>#cust_pkg<%$pkgnum%>" ) %>
+<% $cgi->redirect(popurl(3). "view/cust_main.cgi?$custnum#cust_pkg$pkgnum" ) %>
 %} else {
 % errorpage($error);
 %}
