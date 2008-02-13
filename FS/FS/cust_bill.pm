@@ -1843,7 +1843,7 @@ sub print_latex {
   }
 
   my %invoice_data = (
-    'company_name'    => $conf->config('company_name'),
+    'company_name'    => scalar( $conf->config('company_name') ),
     'company_address' => join("\n", $conf->config('company_address') ). "\n",
     'custnum'         => $self->custnum,
     'invnum'          => $self->invnum,
@@ -2244,7 +2244,7 @@ sub print_html {
     or die 'While compiling ' . $templatefile . ': ' . $Text::Template::ERROR;
 
   my %invoice_data = (
-    'company_name'    => $conf->config('company_name'),
+    'company_name'    => scalar( $conf->config('company_name') ),
     'company_address' => join("\n", $conf->config('company_address') ). "\n",
     'custnum'         => $self->custnum,
     'invnum'          => $self->invnum,
@@ -2430,6 +2430,11 @@ sub print_html {
       "<b>$money_char".  sprintf('%.2f', $self->owed + $pr_total ). '</b>';
     push @{$invoice_data{'total_items'}}, $total;
   }
+
+  warn "filling in HTML template for invoice ". $self->invnum. "\n"
+    if $DEBUG;
+  warn join("\n", map "  $_ => ".$invoice_data{$_}, keys %invoice_data ). "\n"
+    if $DEBUG > 1;
 
   $html_template->fill_in( HASH => \%invoice_data);
 }
