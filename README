@@ -1,6 +1,6 @@
 Freeside
 
-Copyright (C) 2005-2007 Freeside Internet Services, Inc.
+Copyright (C) 2005-2008 Freeside Internet Services, Inc.
 Copyright (C) 2000-2005 Ivan Kohler
 Copyright (C) 1999 Silicon Interactive Software Design
 Additional copyright holders may be found in the CREDITS file.
@@ -26,12 +26,18 @@ All rights reserved
     Foundation, either version 3 of the License, or (at your option) any later
     version.
 
+    At your option, you may also redistribute and/or modify the
+    fs_selfservice/php/freeside.class.php file (but not the rest of the
+    software) under the terms of the GNU Lesser General Public License as
+    published by the Free Software Foundation, either version 3 of the License,
+    or (at your option) any later version.
+
 Freeside is a billing and administration package for Internet Service 
 Providers.
 
-The Freeside home page is at `http://www.sisd.com/freeside'.
+The Freeside home page is at `http://www.freeside.biz/freeside'.
 
-The documentation is in `httemplate/docs'.
+The documentation is at `http://www.freeside.biz/mediawiki'.
 
 A mailing list for users is available.  Send a blank message to
 <freeside-users-subscribe@sisd.com> to subscribe.
@@ -41,9 +47,8 @@ and higher SNR than the users list.  Send a blank message to
 <freeside-devel-subscribe@sisd.com> to subscribe.
 
 Commercial installation, customization and support services as well as
-preconfigured appliances are available from Ivan Kohler <ivan@sisd.com>.
-Requests for free support sent to me directly will be ignored.  Please
-subscribe to the the user mailing list to request free support!
+preconfigured appliances are available from Freeside Internet Services, Inc.
+Contact us at: http://www.freeside.biz/freeside/contact.html
 
 Ivan Kohler <ivan-freeside_readme@420.am>
 
