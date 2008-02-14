@@ -695,8 +695,9 @@ sub tables_hashref {
       'columns' => [
         'paynum',   'serial',    '',   '', '', '',
         'custnum',  'int',    '',   '', '', '', 
-        'paid',     @money_type, '', '', 
         '_date',    @date_type, '', '', 
+        'paid',     @money_type, '', '', 
+        'otaker',   'varchar', 'NULL', 32, '', '',  #NULL for the upgrade so we can create & populate the field
         'payby',    'char',   '',     4, '', '', # CARD/BILL/COMP, should be
                                                  # index into payby table
                                                  # eventually

@@ -118,7 +118,7 @@
 %  $payby =~ s/^WEST$/Western Union/;
 %  $payby =~ s/^MCRD$/Manual credit card/;
 %  $payby =~ s/^BILL$//;
-%  my $info = $payby ? " ($payby$payinfo)" : '';
+%  my $info = $payby ? "($payby$payinfo)" : '';
 %
 %  my( $pre, $post, $desc, $apply, $ext ) = ( '', '', '', '', '' );
 %  if (    scalar(@cust_bill_pay)   == 0
@@ -243,9 +243,13 @@
 %               qq!>unapply</A>)!;
 %  }
 %
+%  my $otaker = $cust_pay->otaker;
+%  $otaker = '<i>auto billing</i>'          if $otaker eq 'fs_daily';
+%  $otaker = '<i>customer self-service</i>' if $otaker eq 'fs_selfservice';
+%
 %  push @history, {
 %    'date'    => $cust_pay->_date,
-%    'desc'    => $pre. "Payment$post$info$desc".
+%    'desc'    => $pre. "Payment$post by $otaker $info$desc".
 %                 "$view$apply$refund$void$delete$unapply",
 %    'payment' => $cust_pay->paid,
 %    'target'  => $target,

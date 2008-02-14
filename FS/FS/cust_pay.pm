@@ -1,11 +1,14 @@
 package FS::cust_pay;
 
 use strict;
-use vars qw( @ISA $conf $unsuspendauto $ignore_noapply @encrypted_fields );
+use vars qw( @ISA $DEBUG $me $conf @encrypted_fields
+             $unsuspendauto $ignore_noapply 
+           );
 use Date::Format;
 use Business::CreditCard;
 use Text::Template;
-use FS::Misc qw(send_email);
+use FS::UID qw( getotaker );
+use FS::Misc qw( send_email );
 use FS::Record qw( dbh qsearch qsearchs );
 use FS::payby;
 use FS::cust_main_Mixin;
@@ -17,6 +20,10 @@ use FS::cust_main;
 use FS::cust_pay_void;
 
 @ISA = qw(FS::Record FS::cust_main_Mixin FS::payinfo_Mixin  );
+
+$DEBUG = 0;
+
+$me = '[FS::cust_pay]';
 
 $ignore_noapply = 0;
 
@@ -59,10 +66,12 @@ currently supported:
 
 =item custnum - customer (see L<FS::cust_main>)
 
-=item paid - Amount of this payment
-
 =item _date - specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
 L<Time::Local> and L<Date::Parse> for conversion functions.
+
+=item paid - Amount of this payment
+
+=item otaker - order taker (assigned automatically, see L<FS::UID>)
 
 =item payby - Payment Type (See L<FS::payinfo_Mixin> for valid payby values)
 
@@ -389,11 +398,14 @@ returns the error, otherwise returns false.  Called by the insert method.
 sub check {
   my $self = shift;
 
+  $self->otaker(getotaker) unless ($self->otaker);
+
   my $error =
     $self->ut_numbern('paynum')
     || $self->ut_numbern('custnum')
-    || $self->ut_money('paid')
     || $self->ut_numbern('_date')
+    || $self->ut_money('paid')
+    || $self->ut_alpha('otaker')
     || $self->ut_textn('paybatch')
     || $self->ut_textn('payunique')
     || $self->ut_enum('closed', [ '', 'Y' ])
@@ -419,6 +431,8 @@ sub check {
 #           " - a payment with unique identifer ". $self->payunique.
 #           " already exists";
 #  }
+
+  $self->otaker(getotaker);
 
   $self->SUPER::check;
 }
@@ -645,6 +659,56 @@ sub unapplied_sql {
                     ,0
                   )
   ";
+
+}
+
+# _upgrade_data
+#
+# Used by FS::Upgrade to migrate to a new database.
+
+use FS::h_cust_pay;
+
+sub _upgrade_data {  #class method
+  my ($class, %opts) = @_;
+
+  warn "$me upgrading $class\n" if $DEBUG;
+
+  #not the most efficient, but hey, it only has to run once
+
+  my $count_sql =
+    "SELECT COUNT(*) FROM cust_pay WHERE otaker IS NULL OR otaker = ''";
+
+  my $sth = dbh->prepare($count_sql) or die dbh->errstr;
+  $sth->execute or die $sth->errstr;
+  my $total = $sth->fetchrow_arrayref->[0];
+
+  local($DEBUG) = 2 if $total > 1000; #could be a while, force progress info
+
+  my $count = 0;
+  my $lastprog = 0;
+  while (1) {
+
+    my $cust_pay = qsearchs( {
+      'table'     => 'cust_pay',
+      'hashref'   => {},
+      'extra_sql' => "WHERE otaker IS NULL OR otaker = ''",
+      'order_by'  => 'ORDER BY paynum LIMIT 1',
+    } );
+
+    return unless $cust_pay;
+
+    my $h_cust_pay = $cust_pay->h_search('insert');
+    $cust_pay->otaker($h_cust_pay->history_user);
+    my $error = $cust_pay->replace;
+    die $error if $error;
+
+    $count++;
+    if ( $DEBUG > 1 && $lastprog + 30 < time ) {
+      warn "$me $count/$total (". sprintf('%.2f',100*$count/$total). '%)'. "\n";
+      $lastprog = time;
+    }
+
+  }
 
 }
 

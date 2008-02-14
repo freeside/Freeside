@@ -7,6 +7,7 @@
                  'header'      => [ 'Payment',
                                     'Amount',
                                     'Date',
+                                    'By',
                                     FS::UI::Web::cust_header(),
                                   ],
                  'fields'      => [
@@ -32,14 +33,20 @@
                    },
                    sub { sprintf('$%.2f', shift->paid ) },
                    sub { time2str('%b %d %Y', shift->_date ) },
+                   sub { my $o = shift->otaker;
+                         $o = 'auto billing'          if $o eq 'fs_daily';
+                         $o = 'customer self-service' if $o eq 'fs_selfservice';
+                         $o;
+                       },
                    \&FS::UI::Web::cust_fields,
                  ],
                  #'align' => 'lrrrll',
-                 'align' => 'rrr'.FS::UI::Web::cust_aligns(),
+                 'align' => 'rrrc'.FS::UI::Web::cust_aligns(),
                  'links' => [
                    $link,
                    $link,
                    $link,
+                   '',
                    ( map { $_ ne 'Cust. Status' ? $cust_link : '' }
                          FS::UI::Web::cust_header()
                    ),
@@ -48,9 +55,11 @@
                               '',
                               '',
                               '',
+                              '',
                               FS::UI::Web::cust_colors(),
                             ],
                  'style' => [ 
+                              '',
                               '',
                               '',
                               '',

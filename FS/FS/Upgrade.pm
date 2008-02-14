@@ -84,8 +84,10 @@ sub upgrade_data {
     'cust_credit' => [],
 
     #duplicate history records
-    'h_cust_svc' => [],
+    'h_cust_svc'  => [],
 
+    #populate cust_pay.otaker
+    'cust_pay'    => [],
   ;
 
   \%hash;
