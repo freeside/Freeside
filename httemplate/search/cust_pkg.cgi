@@ -100,7 +100,7 @@
                     FS::UI::Web::cust_colors(),
                     '',
                   ],
-                  'style' => [ '', '', '', 'b', '', '', '', '', '', '', '', '', ''
+                  'style' => [ '', '', '', 'b', '', '', '', '', '', '', '', '', '',
                                FS::UI::Web::cust_styles() ],
                   'size'  => [ '', '', '', '-1' ],
                   'align' => 'rlcclrrrrrrrl'. FS::UI::Web::cust_aligns(). 'r',
