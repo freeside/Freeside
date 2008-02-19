@@ -31,10 +31,12 @@ while (my $line = <SRC>) {
   if ( $line =~ /^=item\s+field\s+-\s+description\s*$/ ) {
 
     foreach my $column ( $dbdef_table->columns ) {
-      print DEST "=item $column - ";
-      print DEST "primary key"
-        if $column eq $primary_key;
-      print DEST "\n\n";
+      print DEST "=item $column\n\n";
+      if ( $column eq $primary_key ) {
+        print DEST "primary key\n\n";
+      } else {
+        print DEST "$column\n\n";
+      }
     }
     next;
 
