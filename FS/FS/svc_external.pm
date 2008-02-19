@@ -85,7 +85,8 @@ sub label {
     sprintf('%010d', $self->id). '-'.
       substr('0000000000'.uc($self->title), -10);
   } else {
-    $self->SUPER::label;
+    #$self->SUPER::label;
+    $self->id. ' - '. $self->title;
   }
 }
 
