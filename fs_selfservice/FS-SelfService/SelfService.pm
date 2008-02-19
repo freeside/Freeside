@@ -532,13 +532,18 @@ error message on errors
 
 =item list_pkgs
 
-Returns package information for this customer.
+Returns package information for this customer.  For more detail on services,
+see L</list_svcs>.
 
 Takes a hash reference as parameter with a single key: B<session_id>
 
 Returns a hash reference containing customer package information.  The hash reference contains the following keys:
 
 =over 4
+
+=item custnum
+
+Customer number
 
 =item cust_pkg HASHREF
 
@@ -550,8 +555,9 @@ the internal FS:: objects, but hash references of columns and values.
 
 =item part_pkg fields
 
-All fields of part_pkg (be careful with this information - it may reveal more
-about your available packages than you would like users to know in aggregate) 
+All fields of part_pkg for this specific cust_pkg (be careful with this
+information - it may reveal more about your available packages than you would
+like users to know in aggregate) 
 
 =cut
 
@@ -559,7 +565,9 @@ about your available packages than you would like users to know in aggregate)
 
 =item part_svc
 
-An array of hash references, each of which has the following keys:
+An array of hash references indicating information on unprovisioned services
+available for provisioning for this specific cust_pkg.  Each has the following
+keys:
 
 =over 4
 
@@ -574,11 +582,136 @@ about your available packages than you would like users to know in aggregate)
 
 =back
 
+=item cust_svc
+
+An array of hash references indicating information on the customer services
+already provisioned for this specific cust_pkg.  Each has the following keys:
+
+=over 4
+
+=item label
+
+Array reference with three elements:
+
+=over 4
+
+=item Name of this service
+
+=item Meaningful user-specific identifier for the service (i.e. username, domain or mail alias)
+
+=item Table name of this service
+
+=back
+
+=item svcnum
+
+Primary key for this service
+
+=item svcpart
+
+Service definition (part_pkg)
+
+=item pkgnum
+
+Customer package (cust_pkg)
+
+=item overlimit
+
+Blank if the service is not over limit, or the date the service exceeded its usage limit (as a UNIX timestamp).
+
+=back
+
 =back
 
 =item error
 
 Empty on success, or an error message on errors.
+
+=back
+
+=item list_svcs
+
+Returns service information for this customer.
+
+Takes a hash reference as parameter with a single key: B<session_id>
+
+Returns a hash reference containing customer package information.  The hash reference contains the following keys:
+
+=over 4
+
+=item custnum
+
+Customer number
+
+=item svcs
+
+An array of hash references indicating information on all of this customer's
+services.  Each has the following keys:
+
+=over 4
+
+=item svcnum
+
+Primary key for this service
+
+=item label
+
+Name of this service
+
+=item value
+
+Meaningful user-specific identifier for the service (i.e. username, domain, or
+mail alias).
+
+=back
+
+Account (svc_acct) services also have the following keys:
+
+=item username
+
+Username
+
+=item email
+
+username@domain
+
+=item seconds
+
+Seconds remaining
+
+=item upbytes
+
+Upload bytes remaining
+
+=item downbytes
+
+Download bytes remaining
+
+=item totalbytes
+
+Total bytes remaining
+
+=item recharge_amount
+
+Cost of a recharge
+
+=item recharge_seconds
+
+Number of seconds gained by recharge
+
+=item recharge_upbytes
+
+Number of upload bytes gained by recharge
+
+=item recharge_downbytes
+
+Number of download bytes gained by recharge
+
+=item recharge_totalbytes
+
+Number of total bytes gained by recharge
+
+=back
 
 =back
 
