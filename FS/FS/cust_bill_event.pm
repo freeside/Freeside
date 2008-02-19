@@ -38,18 +38,30 @@ currently supported:
 
 =over 4
 
-=item eventnum - primary key
+=item eventnum
 
-=item invnum - invoice (see L<FS::cust_bill>)
+Primary key
 
-=item eventpart - event definition (see L<FS::part_bill_event>)
+=item invnum
 
-=item _date - specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
+Invoice (see L<FS::cust_bill>)
+
+=item eventpart
+
+Event definition (see L<FS::part_bill_event>)
+
+=item _date
+
+Specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
 L<Time::Local> and L<Date::Parse> for conversion functions.
 
-=item status - event status: B<done> or B<failed>
+=item status
 
-=item statustext - additional status detail (i.e. error message)
+Event status: B<done> or B<failed>
+
+=item statustext
+
+Additional status detail (i.e. error message)
 
 =back
 
@@ -189,19 +201,37 @@ sub retriable {
   $self->replace($old);
 }
 
-=item search_sql HREF
+=item search_sql HASHREF
 
 Class method which returns an SQL WHERE fragment to search for parameters
-specified in HREF.  Valid parameters are
+specified in HASHREF.  Valid parameters are
 
 =over 4
+
 =item agentnum
-=item beginning - an epoch date setting a lower bound for _date values
-=item ending - an epoch date setting a upper bound for _date values
-=item failed - limits the search to failed events if true
-=item payby - requires that the search be JOIN'd to part_bill_event # Bug?
+
+=item beginning
+
+An epoch date setting a lower bound for _date values
+
+=item ending
+
+An epoch date setting a upper bound for _date values
+
+=item failed
+
+Limits the search to failed events if true
+
+=item payby
+
+Requires that the search be JOIN'd to part_bill_event # Bug?
+
 =item invnum 
-=item currentuser - specifies the user for agent virtualization
+
+=item currentuser
+
+Specifies the user for agent virtualization
+
 =back
 
 =cut
@@ -228,10 +258,9 @@ sub search_sql {
   push @search, "cust_bill_event.invnum = '". $params->{invnum}. "'"
     if $params->{invnum};
 
-  if ($params->{CurrentUser}) {
-    my $access_user = qsearchs('access_user',
-                              {username => $params->{CurrentUser} }
-                             );
+  my $currentuser = $params->{currentuser} || $params->{CurrentUser};
+  if ($currentuser) {
+    my $access_user = qsearchs('access_user', { username => $currentuser });
     if ($access_user) {
       push @search, $access_user->agentnums_sql;
     }else{

@@ -319,11 +319,19 @@ Options are passed as a hashref or a list.  Available options are:
 
 =over 4
 
-=item null - The frament will also allow the selection of null agentnums.
+=item null
 
-=item null_right - The fragment will also allow the selection of null agentnums if the current user has the provided access right
+The frament will also allow the selection of null agentnums.
 
-=item table - Optional table name in which agentnum is being checked.  Sometimes required to resolve 'column reference "agentnum" is ambiguous' errors.
+=item null_right
+
+The fragment will also allow the selection of null agentnums if the current
+user has the provided access right
+
+=item table
+
+Optional table name in which agentnum is being checked.  Sometimes required to
+resolve 'column reference "agentnum" is ambiguous' errors.
 
 =back
 

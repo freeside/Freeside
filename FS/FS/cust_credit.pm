@@ -58,22 +58,38 @@ FS::Record.  The following fields are currently supported:
 
 =over 4
 
-=item crednum - primary key (assigned automatically for new credits)
+=item crednum
 
-=item custnum - customer (see L<FS::cust_main>)
+Primary key (assigned automatically for new credits)
 
-=item amount - amount of the credit
+=item custnum
 
-=item _date - specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
+Customer (see L<FS::cust_main>)
+
+=item amount
+
+Amount of the credit
+
+=item _date
+
+Specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
 L<Time::Local> and L<Date::Parse> for conversion functions.
 
-=item otaker - order taker (assigned automatically, see L<FS::UID>)
+=item otaker
 
-=item reason - text ( deprecated )
+Order taker (assigned automatically, see L<FS::UID>)
 
-=item reasonum - int reason (see L<FS::reason>)
+=item reason
 
-=item closed - books closed flag, empty or `Y'
+Text ( deprecated )
+
+=item reasonnum
+
+Reason (see L<FS::reason>)
+
+=item closed
+
+Books closed flag, empty or `Y'
 
 =back
 
@@ -286,24 +302,6 @@ sub check {
   $self->SUPER::check;
 }
 
-=item cust_refund
-
-Depreciated.  See the cust_credit_refund method.
-
-#Returns all refunds (see L<FS::cust_refund>) for this credit.
-
-=cut
-
-sub cust_refund {
-  use Carp;
-  croak "FS::cust_credit->cust_pay depreciated; see ".
-        "FS::cust_credit->cust_credit_refund";
-  #my $self = shift;
-  #sort { $a->_date <=> $b->_date }
-  #  qsearch( 'cust_refund', { 'crednum' => $self->crednum } )
-  #;
-}
-
 =item cust_credit_refund
 
 Returns all refund applications (see L<FS::cust_credit_refund>) for this credit.
@@ -420,8 +418,6 @@ sub reason {
 # _upgrade_data
 #
 # Used by FS::Upgrade to migrate to a new database.
-#
-#
 
 sub _upgrade_data {  # class method
   my ($class, %opts) = @_;

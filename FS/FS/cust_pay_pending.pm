@@ -40,28 +40,80 @@ following fields are currently supported:
 
 =over 4
 
-=item paypendingnum - primary key
+=item paypendingnum
 
-=item custnum - customer (see L<FS::cust_main>)
+Primary key
 
-=item paid - Amount of this payment
+=item custnum
 
-=item _date - specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
+Customer (see L<FS::cust_main>)
+
+=item paid
+
+Amount of this payment
+
+=item _date
+
+Specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
 L<Time::Local> and L<Date::Parse> for conversion functions.
 
-=item payby - Payment Type (See L<FS::payinfo_Mixin> for valid payby values)
+=item payby
 
-=item payinfo - Payment Information (See L<FS::payinfo_Mixin> for data format)
+Payment Type (See L<FS::payinfo_Mixin> for valid payby values)
 
-=item paymask - Masked payinfo (See L<FS::payinfo_Mixin> for how this works)
+=item payinfo
 
-=item paydate - Expiration date
+Payment Information (See L<FS::payinfo_Mixin> for data format)
 
-=item payunique - Unique identifer to prevent duplicate transactions.
+=item paymask
 
-=item status - new (acquires basic lock on payunique), pending (transaction is pending with the gateway), authorized (only used for two-stage transactions that require a separate capture step), captured/declined (transaction completed with payment gateway, not yet recorded in the database), done (transaction recorded in database)
+Masked payinfo (See L<FS::payinfo_Mixin> for how this works)
 
-=item statustext - 
+=item paydate
+
+Expiration date
+
+=item payunique
+
+Unique identifer to prevent duplicate transactions.
+
+=item status
+
+Pending transaction status, one of the following:
+
+=over 4
+
+=item new
+
+Aquires basic lock on payunique
+
+=item pending
+
+Transaction is pending with the gateway
+
+=item authorized
+
+Only used for two-stage transactions that require a separate capture step
+
+=item captured
+
+Transaction completed with payment gateway (sucessfully), not yet recorded in
+the database
+
+=item declined
+
+Transaction completed with payment gateway (declined), not yet recorded in
+the database
+
+=item done
+
+Transaction recorded in database
+
+=back
+
+=item statustext
+
+Additional status information.
 
 =cut
 

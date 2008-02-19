@@ -33,16 +33,25 @@ FS::Record.  The following fields are currently supported:
 
 =over 4
 
-=item svcrtid - primary key
+=item svcrtid
 
-=item svcnum -  the svcnum of the svc_acct to which the time applies
+Primary key
 
-=item transaction_id -  the id of the rt transtaction from which the time applies
+=item svcnum
 
-=item seconds - the amount of time applied from tickets
+The svcnum of the svc_acct to which the time applies
 
-=item support - the amount of time applied to support services
+=item transaction_id
 
+The id of the rt transtaction from which the time applies
+
+=item seconds
+
+The amount of time applied from tickets
+
+=item support
+
+The amount of time applied to support services
 
 =back
 

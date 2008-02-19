@@ -2825,9 +2825,13 @@ specified in HASHREF.  Valid parameters are
 
 =over 4
 
-=item begin - epoch date (UNIX timestamp) setting a lower bound for _date values
+=item begin
 
-=item end - epoch date (UNIX timestamp) setting an upper bound for _date values
+Epoch date (UNIX timestamp) setting a lower bound for _date values
+
+=item end
+
+Epoch date (UNIX timestamp) setting an upper bound for _date values
 
 =item invnum_min
 
