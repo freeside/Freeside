@@ -25,6 +25,8 @@ L<FS::Schema> - Freeside database schema
 
 L<FS::Setup> - Setup subroutines
 
+L<FS::Upgrade> - Upgrade subroutines
+
 L<FS::Conf> - Freeside configuration values
 
 L<FS::ConfItem> - Freeside configuration option meta-data.
@@ -293,6 +295,10 @@ L<FS::clientapi_session_field>
 =head2 Historical database record classes
 
 L<FS::h_Common> - History table base class
+
+L<FS::h_cust_pay> - Historical record of customer payment changes
+
+L<FS::h_cust_credit> - Historical record of customer credit changes
 
 L<FS::h_cust_bill> - Historical record of customer tax changes (old-style)
 
