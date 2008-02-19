@@ -69,6 +69,15 @@ sub table_info {
     'display_weight' => 90,
     'cancel_weight'  => 10,
     'fields' => {
+      'id'    => { label => 'Unique number of external record',
+                   type  => 'text',
+                   disable_default => 1,
+                   disable_fixed   => 1,
+                 },
+      'title' => { label => 'Printed on invoice line items',
+                   type  => 'text',
+                   disable_inventory => 1,
+                 },
     },
   };
 }
