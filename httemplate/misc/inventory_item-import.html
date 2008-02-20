@@ -16,7 +16,7 @@ Filename: <INPUT TYPE="file" NAME="filename"><BR><BR>
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Import');
 
-$cgi->param =~ /^(\d+)$/ or errorpage("illegal classnum $classnum");
+$cgi->param =~ /^(\d+)$/ or errorpage("illegal classnum");
 my $classnum = $1;
 my $inventory_class = qsearchs('inventory_class', { 'classnum' => $classnum } );
 
