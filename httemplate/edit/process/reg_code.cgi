@@ -43,4 +43,3 @@ my @pkgparts =
 $error ||= $agent->generate_reg_codes($num, \@pkgparts);
 
 </%init>
-
