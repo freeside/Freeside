@@ -1,6 +1,7 @@
 <% include( 'elements/browse.html',
-     'title'          => 'Tax Rates',
+     'title'          => "Tax Rates $title",
      'name_singular'  => 'tax rate',
+     'menubar'        => \@menubar,
      'html_init'      => $html_init,
      'html_posttotal' => $html_posttotal,
      'query'          => {
@@ -89,11 +90,20 @@ my $edit_onclick = sub {
 };
 
 sub expand_link {
-  my( $row, $desc, %opt ) = @_;
+  my( $row, $desc ) = @_;
   my $taxnum = $row->taxnum;
-  $taxnum = "taxclass$taxnum" if $opt{'taxclass'};
+  my $url = "${p}edit/cust_main_county-expand.cgi?$taxnum";
   my $color = '#333399';
-  qq!<FONT SIZE="-1"><A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('${p}edit/cust_main_county-expand.cgi?$taxnum', 540, 420, 'edit_cust_main_county_popup' ), CAPTION, '$desc', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '$color', CGCOLOR, '$color' ); return false;">!;
+
+  qq!<FONT SIZE="-1"><A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('$url', 540, 420, 'edit_cust_main_county_popup' ), CAPTION, '$desc', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '$color', CGCOLOR, '$color' ); return false;">!;
+}
+
+sub separate_taxclasses_link {
+  my( $row ) = @_;
+  my $taxnum = $row->taxnum;
+  my $url = "${p}edit/process/cust_main_county-expand.cgi?taxclass=1;taxnum=$taxnum";
+
+  qq!<FONT SIZE="-1"><A HREF="$url">!;
 }
 
 </%once>
@@ -106,10 +116,12 @@ die "access denied"
 #my $money_char = $conf->config('money_char') || '$';
 my $enable_taxclasses = $conf->exists('enable_taxclasses');
 
+my @menubar;
+
 my $html_init =
   "Click on <u>add states</u> to specify a country's tax rates by state or province.
    <BR>Click on <u>add counties</u> to specify a state's tax rates by county.";
-$html_init .= "<BR>Click on <u>add taxclasses</u> to specify tax classes."
+$html_init .= "<BR>Click on <u>separate taxclasses</u> to specify taxes per taxclass."
   if $enable_taxclasses;
 $html_init .= '<BR><BR>';
 
@@ -120,23 +132,60 @@ $html_init .= qq(
   <SCRIPT TYPE="text/javascript" SRC="${fsurl}elements/iframecontentmws.js"></SCRIPT>
 );
 
-my $filter_country = '';
-if ( $cgi->param('filter_country') =~ /^(\w\w)$/ ) {
-  $filter_country = $1;
+my $title = '';
+
+my $country = '';
+if ( $cgi->param('country') =~ /^(\w\w)$/ ) {
+  $country = $1;
+  $title = $country;
 }
-$cgi->delete('filter_country');
+$cgi->delete('country');
+
+my $state = '';
+if ( $cgi->param('state') =~ /^([\w \-\'\[\]]+)$/ ) {
+  $state = $1;
+  $title = "$state, $title";
+}
+$cgi->delete('state');
+
+my $county = '';
+if ( $cgi->param('county') =~ /^([\w \-\'\[\]]+)$/ ) {
+  $county = $1;
+  $title = "$county county, $title";
+}
+$cgi->delete('county');
+
+$title = " for $title" if $title;
+
+my $taxclass = '';
+if ( $cgi->param('taxclass') =~ /^([\w \-]+)$/ ) {
+  $taxclass = $1;
+  $title .= " for $taxclass tax class";
+}
+$cgi->delete('taxclass');
+
+if ( $country || $taxclass ) {
+  push @menubar, 'View all tax rates' => $p.'browse/cust_main_county.cgi';
+}
+
 $cgi->param('dummy', 1);
 
 my $country_filter_change =
   "window.location = '".
-  $cgi->self_url. ";filter_country=' + this.options[this.selectedIndex].value;";
+  $cgi->self_url. ";country=' + this.options[this.selectedIndex].value;";
+
+#restore this so pagination works
+$cgi->param('country',  $country) if $country;
+$cgi->param('state',    $state  ) if $state;
+$cgi->param('county',   $county ) if $county;
+$cgi->param('taxclass', $county ) if $taxclass;
 
 my $html_posttotal =
   '(show country: '.
-  qq(<SELECT NAME="filter_country" onChange="$country_filter_change">).
+  qq(<SELECT NAME="country" onChange="$country_filter_change">).
   qq(<OPTION VALUE="">(all)\n).
   join("\n", map qq[<OPTION VALUE="$_"].
-                   ( $_ eq $filter_country ? 'SELECTED' : '' ).
+                   ( $_ eq $country ? 'SELECTED' : '' ).
                    '>'. code2country($_). " ($_)",
                  @all_countries
       ).
@@ -144,10 +193,24 @@ my $html_posttotal =
 
 my $hashref = {};
 my $count_query = 'SELECT COUNT(*) FROM cust_main_county';
-if ( $filter_country ) {
-  $hashref->{'country'} = $filter_country;
-  $count_query .= " WHERE country = '$filter_country'";
+if ( $country ) {
+  $hashref->{'country'} = $country;
+  $count_query .= ' WHERE country = '. dbh->quote($country);
 }
+if ( $state ) {
+  $hashref->{'state'} = $state;
+  $count_query .= '   AND state   = '. dbh->quote($state);
+}
+if ( $county ) {
+  $hashref->{'country'} = $country;
+  $count_query .= '   AND county  = '. dbh->quote($county);
+}
+if ( $taxclass ) {
+  $hashref->{'taxclass'} = $taxclass;
+  $count_query .= ( $count_query =~ /WHERE/i ? ' AND ' : ' WHERE ' ).
+                  ' taxclass  = '. dbh->quote($taxclass);
+}
+
 
 $cell_style = '';
 
@@ -181,14 +244,14 @@ my @color = (
 );
 
 if ( $conf->exists('enable_taxclasses') ) {
-  push @header,  'Tax class';
+  push @header, qq!Tax class (<A HREF="${p}edit/part_pkg_taxclass.html">add new</A>)!;
   push @header2, '(per-package classification)';
-  push @fields,  sub { $_[0]->taxclass || '(all)&nbsp'.
-                         expand_link($_[0], 'Add Taxclasses', 'taxclass'=>1).
-                         'add&nbsp;taxclasses</A></FONT>'
-                     };
-  push @color,   sub { shift->taxclass ? '000000' : '999999' };
-  push @links,   '';
+  push @fields, sub { $_[0]->taxclass || '(all)&nbsp'.
+                       separate_taxclasses_link($_[0], 'Separate Taxclasses').
+                       'separate&nbsp;taxclasses</A></FONT>'
+                    };
+  push @color, sub { shift->taxclass ? '000000' : '999999' };
+  push @links, '';
   push @link_onclicks, '';
   $align .= 'l';
 }

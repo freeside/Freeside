@@ -49,8 +49,12 @@ sub upgrade {
     eval "use $class;";
     die $@ if $@;
 
-    $class->_upgrade_data(%opt)
-      if $class->can('_upgrade_data');
+    if ( $class->can('_upgrade_data') ) {
+      $class->_upgrade_data(%opt);
+    } else {
+      warn "WARNING: asked for upgrade of $table,".
+           " but FS::$table has no _upgrade_data method\n";
+    }
 
 #    my @records = @{ $data->{$table} };
 #
@@ -88,6 +92,10 @@ sub upgrade_data {
 
     #populate cust_pay.otaker
     'cust_pay'    => [],
+
+    #populate part_pkg_taxclass for starters
+    'part_pkg_taxclass' => [],
+
   ;
 
   \%hash;

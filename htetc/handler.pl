@@ -149,6 +149,7 @@ sub handler
       use FS::cust_credit_bill;
       use FS::cust_main qw(smart_search);
       use FS::cust_main_county;
+      use FS::part_pkg_taxclass;
       use FS::cust_pay;
       use FS::cust_pkg;
       use FS::cust_pkg_reason;

@@ -2,6 +2,7 @@ package FS::part_pkg_taxclass;
 
 use strict;
 use vars qw( @ISA );
+use FS::UID qw(dbh);
 use FS::Record qw( qsearch qsearchs );
 
 @ISA = qw(FS::Record);
@@ -100,8 +101,7 @@ sub check {
   my $self = shift;
 
   my $error = 
-    $self->ut_numbern('serial')
-    || $self->ut_number('taxclassnum')
+    $self->ut_numbern('taxclassnum')
     || $self->ut_text('taxclass')
   ;
   return $error if $error;
@@ -110,6 +110,38 @@ sub check {
 }
 
 =back
+
+=cut
+
+# _upgrade_data
+#
+# Used by FS::Upgrade to migrate to a new database.
+
+sub _upgrade_data { # class method
+  my ($class, %opts) = @_;
+
+  my $sth = dbh->prepare('
+    SELECT DISTINCT taxclass
+      FROM cust_main_county
+        LEFT JOIN part_pkg_taxclass USING ( taxclass )
+      WHERE taxclassnum IS NULL
+        AND taxclass IS NOT NULL
+  ') or die dbh->errstr;
+  $sth->execute or die $sth->errstr;
+  my %taxclass = map { $_->[0] => 1 } @{$sth->fetchall_arrayref};
+  my @taxclass = grep $_, keys %taxclass;
+
+  foreach my $taxclass ( @taxclass ) {
+
+    my $part_pkg_taxclass = new FS::part_pkg_taxclass ( {
+      'taxclass' => $taxclass,
+    } );
+    my $error = $part_pkg_taxclass->insert;
+    die $error if $error;
+
+  }
+
+}
 
 =head1 BUGS
 
