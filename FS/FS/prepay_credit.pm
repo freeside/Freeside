@@ -162,10 +162,18 @@ sub generate {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
+  my $condup = 0; #don't retry forever
+
   my @cards = ();
   for ( 1 ... $num ) {
+
+    my $identifier = join('', map($codeset[int(rand $#codeset)], (0..7) ) );
+
+    redo if qsearchs('prepay_credit',{identifier=>$identifier}) && $condup++<23;
+    $condup = 0;
+
     my $prepay_credit = new FS::prepay_credit {
-      'identifier' => join('', map($codeset[int(rand $#codeset)], (0..7) ) ),
+      'identifier' => $identifier,
       %$hashref,
     };
     my $error = $prepay_credit->check || $prepay_credit->insert;
