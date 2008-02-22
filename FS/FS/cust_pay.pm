@@ -698,7 +698,11 @@ sub _upgrade_data {  #class method
     return unless $cust_pay;
 
     my $h_cust_pay = $cust_pay->h_search('insert');
-    $cust_pay->otaker($h_cust_pay->history_user);
+    if ( $h_cust_pay ) {
+      $cust_pay->otaker($h_cust_pay->history_user);
+    } else {
+      $cust_pay->otaker('legacy');
+    }
     my $error = $cust_pay->replace;
     die $error if $error;
 
