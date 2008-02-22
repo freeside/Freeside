@@ -23,20 +23,6 @@ sub format_time {
 sub timelast {
   my( $svc_acct, $last, $permonth ) = @_;
 
-  #some false laziness w/search/rt_transaction.html
-
-  my $transactiontime = "
-    CASE transactions.type when 'Set'
-      THEN (  to_number(newvalue, '999999')
-            - to_number(oldvalue, '999999')
-           ) * 60
-      ELSE timetaken*60
-    END
-  ";
-
-  #Transactions
-#  my $sql = "
-#    SELECT SUM($transactiontime) FROM acct_rt_transaction
   my $sql = "
     SELECT SUM(support) FROM acct_rt_transaction
       LEFT JOIN Transactions
