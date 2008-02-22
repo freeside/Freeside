@@ -703,8 +703,11 @@ sub _upgrade_data {  #class method
     } else {
       $cust_pay->otaker('legacy');
     }
+
+    delete $FS::payby::hash{'COMP'}->{cust_pay}; #quelle kludge
     my $error = $cust_pay->replace;
     die $error if $error;
+    $FS::payby::hash{'COMP'}->{cust_pay} = ''; #restore it
 
     $count++;
     if ( $DEBUG > 1 && $lastprog + 30 < time ) {
