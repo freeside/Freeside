@@ -35,8 +35,10 @@ sub timelast {
   ";
 
   #Transactions
+#  my $sql = "
+#    SELECT SUM($transactiontime) FROM acct_rt_transaction
   my $sql = "
-    SELECT SUM($transactiontime) FROM acct_rt_transaction
+    SELECT SUM(support) FROM acct_rt_transaction
       LEFT JOIN Transactions
         ON Transactions.Id = acct_rt_transaction.transaction_id
     WHERE svcnum = ? 
