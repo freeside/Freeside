@@ -1555,6 +1555,20 @@ sub ut_alphan {
   '';
 }
 
+=item ut_alpha_lower COLUMN
+
+Check/untaint lowercase alphanumeric strings (no spaces).  May not be null.  If
+there is an error, returns the error, otherwise returns false.
+
+=cut
+
+sub ut_alpha_lower {
+  my($self,$field)=@_;
+  $self->getfield($field) =~ /[[:upper:]]/
+    and return "Uppercase characters are not permitted in $field";
+  $self->ut_alpha($field);
+}
+
 =item ut_phonen COLUMN [ COUNTRY ]
 
 Check/untaint phone numbers.  May be null.  If there is an error, returns
@@ -2238,9 +2252,9 @@ sub DESTROY { return; }
 =item str2time_sql [ DRIVER_NAME ]
 
 Returns a function to convert to unix time based on database type, such as
-"EXTRACT( EPOCH FROM" for Pg or "UNIX_TIMESTAMP(" for mysql.  You are
-responsible for the closing parenthesis yourself.  Don't let it down.  It's a
-sensitive parenthesis.
+"EXTRACT( EPOCH FROM" for Pg or "UNIX_TIMESTAMP(" for mysql.  See
+the str2time_sql_closing method to return a closing string rather than just
+using a closing parenthesis as previously suggested.
 
 You can pass an optional driver name such as "Pg", "mysql" or
 $dbh->{Driver}->{Name} to return a function for that database instead of
@@ -2258,6 +2272,24 @@ sub str2time_sql {
        "dates to UNIX timestamps";
   return 'EXTRACT(EPOCH FROM ';
 
+}
+
+=item str2time_sql_closing [ DRIVER_NAME ]
+
+Returns the closing suffix of a function to convert to unix time based on
+database type, such as ")::integer" for Pg or ")" for mysql.
+
+You can pass an optional driver name such as "Pg", "mysql" or
+$dbh->{Driver}->{Name} to return a function for that database instead of
+the current database.
+
+=cut
+
+sub str2time_sql_closing { 
+  my $driver = shift || driver_name;
+
+  return ' )::INTEGER ' if $driver =~ /^Pg/i;
+  return ' ) ';
 }
 
 =back

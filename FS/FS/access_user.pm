@@ -90,6 +90,9 @@ otherwise returns false.
 sub insert {
   my $self = shift;
 
+  my $error = $self->check;
+  return $error if $error;
+
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
   local $SIG{QUIT} = 'IGNORE';
@@ -101,7 +104,7 @@ sub insert {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $error = $self->htpasswd_kludge();
+  $error = $self->htpasswd_kludge();
   if ( $error ) {
     $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
     return $error;
@@ -111,7 +114,14 @@ sub insert {
 
   if ( $error ) {
     $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+
+    #make sure it isn't a dup username?  or you could nuke people's passwords
+    #blah.  really just should do our own login w/cookies
+    #and auth out of the db in the first place
+    #my $hterror = $self->htpasswd_kludge('-D');
+    #$error .= " - additionally received error cleaning up htpasswd file: $hterror"
     return $error;
+
   } else {
     $dbh->commit or die $dbh->errstr if $oldAutoCommit;
     '';
@@ -236,7 +246,7 @@ sub check {
 
   my $error = 
     $self->ut_numbern('usernum')
-    || $self->ut_alpha('username')
+    || $self->ut_alpha_lower('username')
     || $self->ut_text('_password')
     || $self->ut_text('last')
     || $self->ut_text('first')
