@@ -845,6 +845,13 @@ worry that config_items is freeside-specific and icky.
     'select_enum' => [ '', 'Payable upon receipt', 'Net 0', 'Net 10', 'Net 15', 'Net 30', 'Net 45', 'Net 60' ],
   },
 
+  { 
+    'key'         => 'invoice_sections',
+    'section'     => 'billing',
+    'description' => 'Split invoice into sections and label according to package type when enabled.',
+    'type'        => 'checkbox',
+  },
+
   {
     'key'         => 'payment_receipt_email',
     'section'     => 'billing',

@@ -1519,245 +1519,14 @@ L<Time::Local> and L<Date::Parse> for conversion functions.
 
 =cut
 
-#still some false laziness w/_items stuff (and send_csv)
 sub print_text {
-
   my( $self, $today, $template ) = @_;
-  $today ||= time;
 
-#  my $invnum = $self->invnum;
-  my $cust_main = $self->cust_main;
-  $cust_main->payname( $cust_main->first. ' '. $cust_main->getfield('last') )
-    unless $cust_main->payname && $cust_main->payby !~ /^(CHEK|DCHK)$/;
+  my %params = ( 'format' => 'template' );
+  $params{'time'} = $today if $today;
+  $params{'template'} = $template if $template;
 
-  my( $pr_total, @pr_cust_bill ) = $self->previous; #previous balance
-#  my( $cr_total, @cr_cust_credit ) = $self->cust_credit; #credits
-  #my $balance_due = $self->owed + $pr_total - $cr_total;
-  my $balance_due = $self->owed + $pr_total;
-
-  #my @collect = ();
-  #my($description,$amount);
-  @buf = ();
-
-  #previous balance
-  foreach ( @pr_cust_bill ) {
-    push @buf, [
-      "Previous Balance, Invoice #". $_->invnum. 
-                 " (". time2str("%x",$_->_date). ")",
-      $money_char. sprintf("%10.2f",$_->owed)
-    ];
-  }
-  if (@pr_cust_bill) {
-    push @buf,['','-----------'];
-    push @buf,[ 'Total Previous Balance',
-                $money_char. sprintf("%10.2f",$pr_total ) ];
-    push @buf,['',''];
-  }
-
-  #new charges
-  foreach my $cust_bill_pkg (
-    ( grep {   $_->pkgnum } $self->cust_bill_pkg ),  #packages first
-    ( grep { ! $_->pkgnum } $self->cust_bill_pkg ),  #then taxes
-  ) {
-
-    my $desc = $cust_bill_pkg->desc;
-
-    if ( $cust_bill_pkg->pkgnum > 0 ) {
-
-      if ( $cust_bill_pkg->setup != 0 ) {
-        my $description = $desc;
-        $description .= ' Setup' if $cust_bill_pkg->recur != 0;
-        push @buf, [ $description,
-                     $money_char. sprintf("%10.2f", $cust_bill_pkg->setup) ];
-        push @buf,
-          map { [ "  ". $_->[0]. ": ". $_->[1], '' ] }
-              $cust_bill_pkg->cust_pkg->h_labels($self->_date);
-      }
-
-      if ( $cust_bill_pkg->recur != 0 ) {
-        push @buf, [
-          $desc .
-            ( $conf->exists('disable_line_item_date_ranges')
-              ? ''
-              : " (" . time2str("%x", $cust_bill_pkg->sdate) . " - " .
-                       time2str("%x", $cust_bill_pkg->edate) . ")"
-            ),
-          $money_char. sprintf("%10.2f", $cust_bill_pkg->recur)
-        ];
-        push @buf,
-          map { [ "  ". $_->[0]. ": ". $_->[1], '' ] }
-              $cust_bill_pkg->cust_pkg->h_labels( $cust_bill_pkg->edate,
-                                                  $cust_bill_pkg->sdate );
-      }
-
-      push @buf, map { [ "  $_", '' ] } $cust_bill_pkg->details;
-
-    } else { #pkgnum tax or one-shot line item
-
-      if ( $cust_bill_pkg->setup != 0 ) {
-        push @buf, [ $desc,
-                     $money_char. sprintf("%10.2f", $cust_bill_pkg->setup) ];
-      }
-      if ( $cust_bill_pkg->recur != 0 ) {
-        push @buf, [ "$desc (". time2str("%x", $cust_bill_pkg->sdate). " - "
-                              . time2str("%x", $cust_bill_pkg->edate). ")",
-                     $money_char. sprintf("%10.2f", $cust_bill_pkg->recur)
-                   ];
-      }
-
-    }
-
-  }
-
-  push @buf,['','-----------'];
-  push @buf,['Total New Charges',
-             $money_char. sprintf("%10.2f",$self->charged) ];
-  push @buf,['',''];
-
-  push @buf,['','-----------'];
-  push @buf,['Total Charges',
-             $money_char. sprintf("%10.2f",$self->charged + $pr_total) ];
-  push @buf,['',''];
-
-  #credits
-  foreach ( $self->cust_credited ) {
-
-    #something more elaborate if $_->amount ne $_->cust_credit->credited ?
-
-    my $reason = substr($_->cust_credit->reason,0,32);
-    $reason .= '...' if length($reason) < length($_->cust_credit->reason);
-    $reason = " ($reason) " if $reason;
-    push @buf,[
-      "Credit #". $_->crednum. " (". time2str("%x",$_->cust_credit->_date) .")".
-        $reason,
-      $money_char. sprintf("%10.2f",$_->amount)
-    ];
-  }
-  #foreach ( @cr_cust_credit ) {
-  #  push @buf,[
-  #    "Credit #". $_->crednum. " (" . time2str("%x",$_->_date) .")",
-  #    $money_char. sprintf("%10.2f",$_->credited)
-  #  ];
-  #}
-
-  #get & print payments
-  foreach ( $self->cust_bill_pay ) {
-
-    #something more elaborate if $_->amount ne ->cust_pay->paid ?
-
-    push @buf,[
-      "Payment received ". time2str("%x",$_->cust_pay->_date ),
-      $money_char. sprintf("%10.2f",$_->amount )
-    ];
-  }
-
-  #balance due
-  my $balance_due_msg = $self->balance_due_msg;
-
-  push @buf,['','-----------'];
-  push @buf,[$balance_due_msg, $money_char. 
-    sprintf("%10.2f", $balance_due ) ];
-
-  #create the template
-  $template ||= $self->_agent_template;
-  my $templatefile = 'invoice_template';
-  $templatefile .= "_$template" if length($template);
-  my @invoice_template = $conf->config($templatefile)
-    or die "cannot load config file $templatefile";
-  $invoice_lines = 0;
-  my $wasfunc = 0;
-  foreach ( grep /invoice_lines\(\d*\)/, @invoice_template ) { #kludgy
-    /invoice_lines\((\d*)\)/;
-    $invoice_lines += $1 || scalar(@buf);
-    $wasfunc=1;
-  }
-  die "no invoice_lines() functions in template?" unless $wasfunc;
-  my $invoice_template = new Text::Template (
-    TYPE   => 'ARRAY',
-    SOURCE => [ map "$_\n", @invoice_template ],
-  ) or die "can't create new Text::Template object: $Text::Template::ERROR";
-  $invoice_template->compile()
-    or die "can't compile template: $Text::Template::ERROR";
-
-  #setup template variables
-  package FS::cust_bill::_template; #!
-  use vars qw( $company_name $company_address
-               $custnum $invnum $date $agent @address $overdue
-               $page $total_pages @buf
-             );
-
-  $custnum = $self->custnum;
-  $invnum = $self->invnum;
-  $date = $self->_date;
-  $agent = $self->cust_main->agent->agent;
-  $page = 1;
-
-  if ( $FS::cust_bill::invoice_lines ) {
-    $total_pages =
-      int( scalar(@FS::cust_bill::buf) / $FS::cust_bill::invoice_lines );
-    $total_pages++
-      if scalar(@FS::cust_bill::buf) % $FS::cust_bill::invoice_lines;
-  } else {
-    $total_pages = 1;
-  }
-
-  #format address (variable for the template)
-  my $l = 0;
-  @address = ( '', '', '', '', '', '' );
-  package FS::cust_bill; #!
-  $FS::cust_bill::_template::address[$l++] =
-    $cust_main->payname.
-      ( ( $cust_main->payby eq 'BILL' ) && $cust_main->payinfo
-        ? " (P.O. #". $cust_main->payinfo. ")"
-        : ''
-      )
-  ;
-  $FS::cust_bill::_template::address[$l++] = $cust_main->company
-    if $cust_main->company;
-  $FS::cust_bill::_template::address[$l++] = $cust_main->address1;
-  $FS::cust_bill::_template::address[$l++] = $cust_main->address2
-    if $cust_main->address2;
-  $FS::cust_bill::_template::address[$l++] =
-    $cust_main->city. ", ". $cust_main->state. "  ".  $cust_main->zip;
-
-  my $countrydefault = $conf->config('countrydefault') || 'US';
-  $FS::cust_bill::_template::address[$l++] = code2country($cust_main->country)
-    unless $cust_main->country eq $countrydefault;
-
-	#  #overdue? (variable for the template)
-	#  $FS::cust_bill::_template::overdue = ( 
-	#    $balance_due > 0
-	#    && $today > $self->_date 
-	##    && $self->printed > 1
-	#    && $self->printed > 0
-	#  );
-
-  $FS::cust_bill::_template::company_name = $conf->config('company_name');
-  $FS::cust_bill::_template::company_address =
-    join("\n", $conf->config('company_address') ). "\n";
-
-  #and subroutine for the template
-  sub FS::cust_bill::_template::invoice_lines {
-    my $lines = shift || scalar(@buf);
-    map { 
-      scalar(@buf) ? shift @buf : [ '', '' ];
-    }
-    ( 1 .. $lines );
-  }
-
-  #and fill it in
-  $FS::cust_bill::_template::page = 1;
-  my $lines;
-  my @collect;
-  while (@buf) {
-    push @collect, split("\n",
-      $invoice_template->fill_in( PACKAGE => 'FS::cust_bill::_template' )
-    );
-    $FS::cust_bill::_template::page++;
-  }
-
-  map "$_\n", @collect;
-
+  $self->print_generic( %params );
 }
 
 =item print_latex [ TIME [ , TEMPLATE ] ]
@@ -1775,322 +1544,15 @@ L<Time::Local> and L<Date::Parse> for conversion functions.
 
 =cut
 
-#still some false laziness w/print_text and print_html (and send_csv) (mostly print_text should use _items stuff though)
 sub print_latex {
 
   my( $self, $today, $template ) = @_;
-  $today ||= time;
-  warn "FS::cust_bill::print_latex called on $self with suffix $template\n"
-    if $DEBUG;
 
-  my $cust_main = $self->cust_main;
-  $cust_main->payname( $cust_main->first. ' '. $cust_main->getfield('last') )
-    unless $cust_main->payname && $cust_main->payby !~ /^(CHEK|DCHK)$/;
+  my %params = ( 'format' => 'latex' );
+  $params{'time'} = $today if $today;
+  $params{'template'} = $template if $template;
 
-  my( $pr_total, @pr_cust_bill ) = $self->previous; #previous balance
-#  my( $cr_total, @cr_cust_credit ) = $self->cust_credit; #credits
-  #my $balance_due = $self->owed + $pr_total - $cr_total;
-  my $balance_due = $self->owed + $pr_total;
-
-  #create the template
   $template ||= $self->_agent_template;
-  my $templatefile = 'invoice_latex';
-  my $suffix = length($template) ? "_$template" : '';
-  $templatefile .= $suffix;
-  my @invoice_template = map "$_\n", $conf->config($templatefile)
-    or die "cannot load config file $templatefile";
-
-  my($format, $text_template);
-  if ( grep { /^%%Detail/ } @invoice_template ) {
-    #change this to a die when the old code is removed
-    warn "old-style invoice template $templatefile; ".
-         "patch with conf/invoice_latex.diff or use new conf/invoice_latex*\n";
-    $format = 'old';
-  } else {
-    $format = 'Text::Template';
-    $text_template = new Text::Template(
-      TYPE => 'ARRAY',
-      SOURCE => \@invoice_template,
-      DELIMITERS => [ '[@--', '--@]' ],
-    );
-
-    $text_template->compile()
-      or die 'While compiling ' . $templatefile . ': ' . $Text::Template::ERROR;
-  }
-
-  my $returnaddress;
-  if ( length($conf->config_orbase('invoice_latexreturnaddress', $template)) ) {
-
-    $returnaddress = join("\n",
-      $conf->config_orbase('invoice_latexreturnaddress', $template)
-    );
-
-  } elsif ( grep /\S/, $conf->config('company_address') ) {
-
-    $returnaddress =
-      join( '\\*'."\n", map s/( {2,})/'~' x length($1)/eg,
-                            $conf->config('company_address')
-          );
-
-  } else {
-
-    my $warning = "Couldn't find a return address; ".
-                  "do you need to set the company_address configuration value?";
-    warn "$warning\n";
-    $returnaddress = '~';
-    #$returnaddress = $warning;
-
-  }
-
-  my %invoice_data = (
-    'company_name'    => scalar( $conf->config('company_name') ),
-    'company_address' => join("\n", $conf->config('company_address') ). "\n",
-    'custnum'         => $self->custnum,
-    'invnum'          => $self->invnum,
-    'date'            => time2str('%b %o, %Y', $self->_date),
-    'today'           => time2str('%b %o, %Y', $today),
-    'agent'           => _latex_escape($cust_main->agent->agent),
-    'payname'         => _latex_escape($cust_main->payname),
-    'company'         => _latex_escape($cust_main->company),
-    'address1'        => _latex_escape($cust_main->address1),
-    'address2'        => _latex_escape($cust_main->address2),
-    'city'            => _latex_escape($cust_main->city),
-    'state'           => _latex_escape($cust_main->state),
-    'zip'             => _latex_escape($cust_main->zip),
-    'returnaddress'   => $returnaddress,
-    'quantity'        => 1,
-    'terms'           => $self->terms,
-    #'notes'           => join("\n", $conf->config('invoice_latexnotes') ),
-    # better hang on to conf_dir for a while
-    'conf_dir'        => "$FS::UID::conf_dir/conf.$FS::UID::datasrc",
-  );
-
-  my $countrydefault = $conf->config('countrydefault') || 'US';
-  if ( $cust_main->country eq $countrydefault ) {
-    $invoice_data{'country'} = '';
-  } else {
-    $invoice_data{'country'} = _latex_escape(code2country($cust_main->country));
-  }
-
-  #do variable substitution in notes, footer, smallfooter
-  foreach my $include (qw( notes footer smallfooter )) {
-
-    my $inc_tt = new Text::Template (
-      TYPE       => 'ARRAY',
-      SOURCE     => [ map "$_\n",
-                      $conf->config_orbase("invoice_latex$include", $template )
-                    ],
-      DELIMITERS => [ '[@--', '--@]' ],
-    ) or die "can't create new Text::Template object: $Text::Template::ERROR";
-
-    $inc_tt->compile()
-      or die "can't compile template: $Text::Template::ERROR";
-
-    $invoice_data{$include} = $inc_tt->fill_in( HASH => \%invoice_data );
-
-    $invoice_data{$include} =~ s/\n+$//;
-  }
-
-  $invoice_data{'po_line'} =
-    (  $cust_main->payby eq 'BILL' && $cust_main->payinfo )
-      ? _latex_escape("Purchase Order #". $cust_main->payinfo)
-      : '~';
-
-  my @filled_in = ();
-  if ( $format eq 'old' ) {
-  
-    my @line_item = ();
-    my @total_item = ();
-    while ( @invoice_template ) {
-      my $line = shift @invoice_template;
-  
-      if ( $line =~ /^%%Detail\s*$/ ) {
-  
-        while ( ( my $line_item_line = shift @invoice_template )
-                !~ /^%%EndDetail\s*$/                            ) {
-          push @line_item, $line_item_line;
-        }
-        foreach my $line_item ( $self->_items ) {
-        #foreach my $line_item ( $self->_items_pkg ) {
-          $invoice_data{'ref'} = $line_item->{'pkgnum'};
-          $invoice_data{'description'} =
-            _latex_escape($line_item->{'description'});
-          if ( exists $line_item->{'ext_description'} ) {
-            $invoice_data{'description'} .=
-              "\\tabularnewline\n~~".
-              join( "\\tabularnewline\n~~",
-                    map _latex_escape($_), @{$line_item->{'ext_description'}}
-                  );
-          }
-          $invoice_data{'amount'} = $line_item->{'amount'};
-          $invoice_data{'product_code'} = $line_item->{'pkgpart'} || 'N/A';
-          push @filled_in,
-            map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b } @line_item;
-        }
-  
-      } elsif ( $line =~ /^%%TotalDetails\s*$/ ) {
-  
-        while ( ( my $total_item_line = shift @invoice_template )
-                !~ /^%%EndTotalDetails\s*$/                      ) {
-          push @total_item, $total_item_line;
-        }
-  
-        my @total_fill = ();
-  
-        my $taxtotal = 0;
-        foreach my $tax ( $self->_items_tax ) {
-          $invoice_data{'total_item'} = _latex_escape($tax->{'description'});
-          $taxtotal += $tax->{'amount'};
-          $invoice_data{'total_amount'} = '\dollar '. $tax->{'amount'};
-          push @total_fill,
-            map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b }
-                @total_item;
-        }
-
-        if ( $taxtotal ) {
-          $invoice_data{'total_item'} = 'Sub-total';
-          $invoice_data{'total_amount'} =
-            '\dollar '. sprintf('%.2f', $self->charged - $taxtotal );
-          unshift @total_fill,
-            map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b }
-                @total_item;
-        }
-  
-        $invoice_data{'total_item'} = '\textbf{Total}';
-        $invoice_data{'total_amount'} =
-          '\textbf{\dollar '. sprintf('%.2f', $self->charged + $pr_total ). '}';
-        push @total_fill,
-          map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b }
-              @total_item;
-  
-        #foreach my $thing ( sort { $a->_date <=> $b->_date } $self->_items_credits, $self->_items_payments
-  
-        # credits
-        foreach my $credit ( $self->_items_credits ) {
-          $invoice_data{'total_item'} = _latex_escape($credit->{'description'});
-          #$credittotal
-          $invoice_data{'total_amount'} = '-\dollar '. $credit->{'amount'};
-          push @total_fill, 
-            map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b }
-                @total_item;
-        }
-  
-        # payments
-        foreach my $payment ( $self->_items_payments ) {
-          $invoice_data{'total_item'} = _latex_escape($payment->{'description'});
-          #$paymenttotal
-          $invoice_data{'total_amount'} = '-\dollar '. $payment->{'amount'};
-          push @total_fill, 
-            map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b }
-                @total_item;
-        }
-  
-        $invoice_data{'total_item'} = '\textbf{'. $self->balance_due_msg. '}';
-        $invoice_data{'total_amount'} =
-          '\textbf{\dollar '. sprintf('%.2f', $self->owed + $pr_total ). '}';
-        push @total_fill,
-          map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b }
-              @total_item;
-  
-        push @filled_in, @total_fill;
-  
-      } else {
-        #$line =~ s/\$(\w+)/$invoice_data{$1}/eg;
-        $line =~ s/\$(\w+)/exists($invoice_data{$1}) ? $invoice_data{$1} : nounder($1)/eg;
-        push @filled_in, $line;
-      }
-  
-    }
-
-    sub nounder {
-      my $var = $1;
-      $var =~ s/_/\-/g;
-      $var;
-    }
-
-  } elsif ( $format eq 'Text::Template' ) {
-
-    my @detail_items = ();
-    my @total_items = ();
-
-    $invoice_data{'detail_items'} = \@detail_items;
-    $invoice_data{'total_items'} = \@total_items;
-  
-    foreach my $line_item ( $self->_items ) {
-      my $detail = {
-        ext_description => [],
-      };
-      $detail->{'ref'} = $line_item->{'pkgnum'};
-      $detail->{'quantity'} = 1;
-      $detail->{'description'} = _latex_escape($line_item->{'description'});
-      if ( exists $line_item->{'ext_description'} ) {
-        @{$detail->{'ext_description'}} = map {
-          _latex_escape($_);
-        } @{$line_item->{'ext_description'}};
-      }
-      $detail->{'amount'} = $line_item->{'amount'};
-      $detail->{'product_code'} = $line_item->{'pkgpart'} || 'N/A';
-  
-      push @detail_items, $detail;
-    }
-  
-  
-    my $taxtotal = 0;
-    foreach my $tax ( $self->_items_tax ) {
-      my $total = {};
-      $total->{'total_item'} = _latex_escape($tax->{'description'});
-      $taxtotal += $tax->{'amount'};
-      $total->{'total_amount'} = '\dollar '. $tax->{'amount'};
-      push @total_items, $total;
-    }
-  
-    if ( $taxtotal ) {
-      my $total = {};
-      $total->{'total_item'} = 'Sub-total';
-      $total->{'total_amount'} =
-        '\dollar '. sprintf('%.2f', $self->charged - $taxtotal );
-      unshift @total_items, $total;
-    }
-  
-    {
-      my $total = {};
-      $total->{'total_item'} = '\textbf{Total}';
-      $total->{'total_amount'} =
-        '\textbf{\dollar '. sprintf('%.2f', $self->charged + $pr_total ). '}';
-      push @total_items, $total;
-    }
-  
-    #foreach my $thing ( sort { $a->_date <=> $b->_date } $self->_items_credits, $self->_items_payments
-  
-    # credits
-    foreach my $credit ( $self->_items_credits ) {
-      my $total;
-      $total->{'total_item'} = _latex_escape($credit->{'description'});
-      #$credittotal
-      $total->{'total_amount'} = '-\dollar '. $credit->{'amount'};
-      push @total_items, $total;
-    }
-  
-    # payments
-    foreach my $payment ( $self->_items_payments ) {
-      my $total = {};
-      $total->{'total_item'} = _latex_escape($payment->{'description'});
-      #$paymenttotal
-      $total->{'total_amount'} = '-\dollar '. $payment->{'amount'};
-      push @total_items, $total;
-    }
-  
-    { 
-      my $total;
-      $total->{'total_item'} = '\textbf{'. $self->balance_due_msg. '}';
-      $total->{'total_amount'} =
-        '\textbf{\dollar '. sprintf('%.2f', $self->owed + $pr_total ). '}';
-      push @total_items, $total;
-    }
-
-  } else {
-    die "guru meditation #54";
-  }
 
   my $dir = $FS::UID::conf_dir. "/cache.". $FS::UID::datasrc;
   my $lh = new File::Temp( TEMPLATE => 'invoice.'. $self->invnum. '.XXXXXXXX',
@@ -2107,25 +1569,613 @@ sub print_latex {
       or die "can't write temp file: $!\n";
   }
   close $lh;
-  $invoice_data{'logo_file'} = $lh->filename;
+  $params{'logo_file'} = $lh->filename;
 
+  my @filled_in = $self->print_generic( %params );
+  
   my $fh = new File::Temp( TEMPLATE => 'invoice.'. $self->invnum. '.XXXXXXXX',
                            DIR      => $dir,
                            SUFFIX   => '.tex',
                            UNLINK   => 0,
                          ) or die "can't open temp file: $!\n";
-  if ( $format eq 'old' ) {
-    print $fh join('', @filled_in );
-  } elsif ( $format eq 'Text::Template' ) {
-    $text_template->fill_in(OUTPUT => $fh, HASH => \%invoice_data);
-  } else {
-    die "guru meditation #32";
-  }
+  print $fh join('', @filled_in );
   close $fh;
 
   $fh->filename =~ /^(.*).tex$/ or die "unparsable filename: ". $fh->filename;
-  return ($1, $invoice_data{'logo_file'});
+  return ($1, $params{'logo_file'});
 
+}
+
+=item print_generic OPTIONS_HASH
+
+Internal method - returns a filled-in template for this invoice as a scalar.
+
+See print_ps and print_pdf for methods that return PostScript and PDF output.
+
+Non optional options include 
+  format - latex, html, template
+
+Optional options include
+
+template - a value used as a suffix for a configuration template
+
+time - a value used to control the printing of overdue messages.  The
+default is now.  It isn't the date of the invoice; that's the `_date' field.
+It is specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
+L<Time::Local> and L<Date::Parse> for conversion functions.
+
+cid - 
+
+=cut
+
+sub print_generic {
+
+  my( $self, %params ) = @_;
+  my $today = $params{today} ? $params{today} : time;
+  warn "FS::cust_bill::print_generic called on $self with suffix $params{template}\n"
+    if $DEBUG;
+
+  my $format = $params{format};
+  die "Unknown format: $format"
+    unless $format =~ /^(latex|html|template)$/;
+
+  my $cust_main = $self->cust_main;
+  $cust_main->payname( $cust_main->first. ' '. $cust_main->getfield('last') )
+    unless $cust_main->payname && $cust_main->payby !~ /^(CHEK|DCHK)$/;
+
+
+  my %delimiters = ( 'latex'    => [ '[@--', '--@]' ],
+                     'html'     => [ '<%=', '%>' ],
+                     'template' => [ '{', '}' ],
+                   );
+
+  #create the template
+  my $template = $params{template} ? $params{template} : $self->_agent_template;
+  my $templatefile = "invoice_$format";
+  $templatefile .= "_$template"
+    if length($template);
+  my @invoice_template = map "$_\n", $conf->config($templatefile)
+    or die "cannot load config file $templatefile";
+
+  my $old_latex = '';
+  if ( $format eq 'latex' && grep { /^%%Detail/ } @invoice_template ) {
+    #change this to a die when the old code is removed
+    warn "old-style invoice template $templatefile; ".
+         "patch with conf/invoice_latex.diff or use new conf/invoice_latex*\n";
+    $old_latex = 'true';
+    @invoice_template = _translate_old_latex_format(@invoice_template);
+  } 
+
+  my $text_template = new Text::Template(
+    TYPE => 'ARRAY',
+    SOURCE => \@invoice_template,
+    DELIMITERS => $delimiters{$format},
+  );
+
+  $text_template->compile()
+    or die 'While compiling ' . $templatefile . ': ' . $Text::Template::ERROR;
+
+
+  # additional substitution could possibly cause breakage in existing templates
+  my %convert_maps = ( 
+    'latex' => {
+                 'notes'         => sub { map "$_", @_ },
+                 'footer'        => sub { map "$_", @_ },
+                 'smallfooter'   => sub { map "$_", @_ },
+                 'returnaddress' => sub { map "$_", @_ },
+               },
+    'html'  => {
+                 'notes' =>
+                   sub {
+                     map { 
+                       s/%%(.*)$/<!-- $1 -->/g;
+                       s/\\section\*\{\\textsc\{(.)(.*)\}\}/<p><b><font size="+1">$1<\/font>\U$2<\/b>/g;
+                       s/\\begin\{enumerate\}/<ol>/g;
+                       s/\\item /  <li>/g;
+                       s/\\end\{enumerate\}/<\/ol>/g;
+                       s/\\textbf\{(.*)\}/<b>$1<\/b>/g;
+                       s/\\\\\*/ /;
+                       s/\\dollar ?/\$/g;
+                       $_;
+                     }  @_
+                   },
+                 'footer' =>
+                   sub { map { s/~/&nbsp;/g; s/\\\\\*?\s*$/<BR>/; $_; } @_ },
+                 'smallfooter' =>
+                   sub { map { s/~/&nbsp;/g; s/\\\\\*?\s*$/<BR>/; $_; } @_ },
+                 'returnaddress' =>
+                   sub {
+                     map { 
+                       s/~/&nbsp;/g;
+                       s/\\\\\*?\s*$/<BR>/;
+                       s/\\hyphenation\{[\w\s\-]+}//;
+                       $_;
+                     }  @_
+                   },
+               },
+    'template' => {
+                 'notes' =>
+                   sub {
+                     map { 
+                       s/%%.*$//g;
+                       s/\\section\*\{\\textsc\{(.*)\}\}/\U$1/g;
+                       s/\\begin\{enumerate\}//g;
+                       s/\\item /  * /g;
+                       s/\\end\{enumerate\}//g;
+                       s/\\textbf\{(.*)\}/$1/g;
+                       s/\\\\\*/ /;
+                       s/\\dollar ?/\$/g;
+                       $_;
+                     }  @_
+                   },
+                 'footer' =>
+                   sub { map { s/~/ /g; s/\\\\\*?\s*$/\n/; $_; } @_ },
+                 'smallfooter' =>
+                   sub { map { s/~/ /g; s/\\\\\*?\s*$/\n/; $_; } @_ },
+                 'returnaddress' =>
+                   sub {
+                     map { 
+                       s/~/ /g;
+                       s/\\\\\*?\s*$/\n/;             # dubious
+                       s/\\hyphenation\{[\w\s\-]+}//;
+                       $_;
+                     }  @_
+                   },
+               },
+  );
+
+
+  # hashes for differing output formats
+  my %nbsps = ( 'latex'    => '~',
+                'html'     => '',    # '&nbps;' would be nice
+                'template' => '',    # not used
+              );
+  my $nbsp = $nbsps{$format};
+
+  my %escape_functions = ( 'latex'    => \&_latex_escape,
+                           'html'     => \&encode_entities,
+                           'template' => sub { shift },
+                         );
+  my $escape_function = $escape_functions{$format};
+
+  my %date_formats = ( 'latex'    => '%b, %o, %Y',
+                       'html'     => '%b&nbsp;%o,&nbsp;%Y',
+                       'template' => '%s',
+                     );
+  my $date_format = $date_formats{$format};
+
+  my %embolden_functions = ( 'latex'    => sub { return '\textbf{'. shift(). '}'
+                                               },
+                             'html'     => sub { return '<b>'. shift(). '</b>'
+                                               },
+                             'template' => sub { shift },
+                           );
+  my $embolden_function = $embolden_functions{$format};
+
+
+  # generate template variables
+  my $returnaddress;
+  if (
+         defined( $conf->config_orbase( "invoice_${format}returnaddress",
+                                        $template
+                                      )
+                )
+       && length( $conf->config_orbase( "invoice_${format}returnaddress",
+                                        $template
+                                      )
+                )
+  ) {
+
+    $returnaddress = join("\n",
+      $conf->config_orbase("invoice_${format}returnaddress", $template)
+    );
+
+  } elsif ( grep /\S/,
+            $conf->config_orbase('invoice_latexreturnaddress', $template) ) {
+
+    my $convert_map = $convert_maps{$format}{'returnaddress'};
+    $returnaddress =
+      join( "\n",
+            &$convert_map( $conf->config_orbase( "invoice_latexreturnaddress",
+                                                 $template
+                                               )
+                         )
+          );
+  } elsif ( grep /\S/, $conf->config('company_address') ) {
+
+    $returnaddress = join( "\n", $conf->config('company_address') );
+
+    $returnaddress =
+      join( '\\*'."\n", map s/( {2,})/'~' x length($1)/eg,
+                            $conf->config('company_address')
+          )
+        if $format eq 'latex';
+
+  } else {
+
+    my $warning = "Couldn't find a return address; ".
+                  "do you need to set the company_address configuration value?";
+    warn "$warning\n";
+    $returnaddress = $nbsp;
+    #$returnaddress = $warning;
+
+  }
+
+  my %invoice_data = (
+    'company_name'    => scalar( $conf->config('company_name') ),
+    'company_address' => join("\n", $conf->config('company_address') ). "\n",
+    'custnum'         => $self->custnum,
+    'invnum'          => $self->invnum,
+    'date'            => time2str($date_format, $self->_date),
+    'today'           => time2str('%b %o, %Y', $today),
+    'agent'           => &$escape_function($cust_main->agent->agent),
+    'payname'         => &$escape_function($cust_main->payname),
+    'company'         => &$escape_function($cust_main->company),
+    'address1'        => &$escape_function($cust_main->address1),
+    'address2'        => &$escape_function($cust_main->address2),
+    'city'            => &$escape_function($cust_main->city),
+    'state'           => &$escape_function($cust_main->state),
+    'zip'             => &$escape_function($cust_main->zip),
+    'returnaddress'   => $returnaddress,
+    'quantity'        => 1,
+    'terms'           => $self->terms,
+    'template'        => $params{'template'},
+    #'notes'           => join("\n", $conf->config('invoice_latexnotes') ),
+    # better hang on to conf_dir for a while
+    'conf_dir'        => "$FS::UID::conf_dir/conf.$FS::UID::datasrc",
+    'page'            => 1,
+    'total_pages'     => 1,
+  );
+
+  $invoice_data{'cid'} = $params{'cid'}
+    if $params{'cid'};
+
+  my $countrydefault = $conf->config('countrydefault') || 'US';
+  if ( $cust_main->country eq $countrydefault ) {
+    $invoice_data{'country'} = '';
+  } else {
+    $invoice_data{'country'} = &$escape_function(code2country($cust_main->country));
+  }
+
+  my @address = ();
+  $invoice_data{'address'} = \@address;
+  push @address,
+    $cust_main->payname.
+      ( ( $cust_main->payby eq 'BILL' ) && $cust_main->payinfo
+        ? " (P.O. #". $cust_main->payinfo. ")"
+        : ''
+      )
+  ;
+  push @address, $cust_main->company
+    if $cust_main->company;
+  push @address, $cust_main->address1;
+  push @address, $cust_main->address2
+    if $cust_main->address2;
+  push @address,
+    $cust_main->city. ", ". $cust_main->state. "  ".  $cust_main->zip;
+  push @address, $invoice_data{'country'}
+    if $invoice_data{'country'};
+  push @address, ''
+    while (scalar(@address) < 5);
+
+  #do variable substitution in notes, footer, smallfooter
+  foreach my $include (qw( notes footer smallfooter )) {
+
+    my @inc_src = $conf->config_orbase("invoice_latex$include", $template );
+    my $convert_map = $convert_maps{$format}{$include};
+
+    if (
+           defined( $conf->config_orbase("invoice_${format}$include", $template) )
+        && length(  $conf->config_orbase('invoice_${format}$include', $template) )
+    ) {
+      @inc_src = $conf->config_orbase("invoice_${format}$include", $template );
+    } else {
+      @inc_src =
+        map { s/\[@--/$delimiters{$format}[0]/g;
+              s/--@]/$delimiters{$format}[1]/g;
+              $_;
+            } 
+        &$convert_map(
+                       $conf->config_orbase("invoice_latex$include", $template )
+                     );
+    }
+
+    my $inc_tt = new Text::Template (
+      TYPE       => 'ARRAY',
+      SOURCE     => [ map "$_\n", @inc_src ],
+      DELIMITERS => $delimiters{$format},
+    ) or die "can't create new Text::Template object: $Text::Template::ERROR";
+
+    $inc_tt->compile()
+      or die "can't compile template: $Text::Template::ERROR";
+
+    $invoice_data{$include} = $inc_tt->fill_in( HASH => \%invoice_data );
+
+    $invoice_data{$include} =~ s/\n+$//
+      if ($format eq 'latex');
+  }
+
+  $invoice_data{'po_line'} =
+    (  $cust_main->payby eq 'BILL' && $cust_main->payinfo )
+      ? &$escape_function("Purchase Order #". $cust_main->payinfo)
+      : $nbsp;
+
+  my( $pr_total, @pr_cust_bill ) = $self->previous; #previous balance
+#  my( $cr_total, @cr_cust_credit ) = $self->cust_credit; #credits
+  #my $balance_due = $self->owed + $pr_total - $cr_total;
+  my $balance_due = $self->owed + $pr_total;
+
+  my %money_chars = ( 'latex'    => '',
+                      'html'     => $conf->config('money_char') || '$',
+                      'template' => '',
+                    );
+  my $money_char = $money_chars{$format};
+
+  my %other_money_chars = ( 'latex'    => '\dollar ',
+                            'html'     => $conf->config('money_char') || '$',
+                            'template' => '',
+                          );
+  my $other_money_char = $other_money_chars{$format};
+
+  my @detail_items = ();
+  my @total_items = ();
+  my @buf = ();
+  my @sections = ();
+
+  $invoice_data{'detail_items'} = \@detail_items;
+  $invoice_data{'total_items'} = \@total_items;
+  $invoice_data{'buf'} = \@buf;
+  $invoice_data{'sections'} = \@sections;
+  
+  my $previous_section = { 'description' => 'Previous Charges',
+                           'subtotal'    => $other_money_char.
+                                            sprintf('%.2f', $pr_total),
+                         };
+
+  my $multisection = $conf->exists('invoice_sections', $cust_main->agentnum);
+  if ( $multisection ) {
+    push @sections, $self->_items_sections;
+  }else{
+    push @sections, { 'description' => '', 'subtotal' => '' };
+  }
+
+  foreach my $line_item ( $self->_items_previous ) {
+    my $detail = {
+      ext_description => [],
+    };
+    $detail->{'ref'} = $line_item->{'pkgnum'};
+    $detail->{'quantity'} = 1;
+    $detail->{'section'} = $previous_section;
+    $detail->{'description'} = &$escape_function($line_item->{'description'});
+    if ( exists $line_item->{'ext_description'} ) {
+      @{$detail->{'ext_description'}} = map {
+        &$escape_function($_);
+      } @{$line_item->{'ext_description'}};
+    }
+    {
+      my $money = $old_latex ? '' : $money_char;
+      $detail->{'amount'} = $money. $line_item->{'amount'};
+    }
+    $detail->{'product_code'} = $line_item->{'pkgpart'} || 'N/A';
+  
+    push @detail_items, $detail;
+    push @buf, [ $detail->{'description'},
+                 $money_char. sprintf("%10.2f", $line_item->{'amount'}),
+               ];
+  }
+  
+  if (@pr_cust_bill) {
+    push @buf, ['','-----------'];
+    push @buf, [ 'Total Previous Balance',
+                 $money_char. sprintf("%10.2f", $pr_total) ];
+    push @buf, ['',''];
+  }
+
+  foreach my $section (@sections) {
+
+    $section->{'subtotal'} = $other_money_char.
+                             sprintf('%.2f', $section->{'subtotal'})
+      if $multisection;
+
+    if ( $section->{'description'} ) {
+      push @buf, ( [ &$escape_function($section->{'description'}), '' ],
+                   [ '', '' ],
+                 );
+    }
+
+    my %options = ();
+    $options{'section'} = $section if $multisection;
+
+    foreach my $line_item ( $self->_items_pkg(%options) ) {
+      my $detail = {
+        ext_description => [],
+      };
+      $detail->{'ref'} = $line_item->{'pkgnum'};
+      $detail->{'quantity'} = 1;
+      $detail->{'section'} = $section;
+      $detail->{'description'} = &$escape_function($line_item->{'description'});
+      if ( exists $line_item->{'ext_description'} ) {
+        @{$detail->{'ext_description'}} = map {
+          &$escape_function($_);
+        } @{$line_item->{'ext_description'}};
+      }
+      {
+        my $money = $old_latex ? '' : $money_char;
+        $detail->{'amount'} = $money. $line_item->{'amount'};
+      }
+      $detail->{'product_code'} = $line_item->{'pkgpart'} || 'N/A';
+  
+      push @detail_items, $detail;
+      push @buf, ( [ $detail->{'description'},
+                     $money_char. sprintf("%10.2f", $line_item->{'amount'}),
+                   ],
+                   map { [ " ". $_, '' ] } @{$detail->{'ext_description'}},
+                 );
+    }
+
+    if ( $section->{'description'} ) {
+      push @buf, ( ['','-----------'],
+                   [ $section->{'description'}. ' sub-total',
+                      $money_char. sprintf("%10.2f", $section->{'subtotal'})
+                   ],
+                   [ '', '' ],
+                   [ '', '' ],
+                 );
+    }
+  
+  }
+  
+  if ( $multisection ) {
+    unshift @sections, $previous_section;
+  }
+
+  my $taxtotal = 0;
+  foreach my $tax ( $self->_items_tax ) {
+    my $total = {};
+    $total->{'total_item'} = &$escape_function($tax->{'description'});
+    $taxtotal += $tax->{'amount'};
+    $total->{'total_amount'} = $other_money_char. $tax->{'amount'};
+    push @total_items, $total;
+    push @buf,[ $total->{'total_item'},
+                $money_char. sprintf("%10.2f", $total->{'total_amount'}),
+              ];
+
+  }
+  
+  if ( $taxtotal ) {
+    my $total = {};
+    if ( $multisection ) {
+      $total->{'total_item'} = 'New charges sub-total';
+    }else{
+      $total->{'total_item'} = 'Sub-total';
+    }
+    $total->{'total_amount'} =
+      $other_money_char. sprintf('%.2f', $self->charged - $taxtotal );
+    unshift @total_items, $total;
+  }
+  
+  push @buf,['','-----------'];
+  push @buf,['Total New Charges',
+             $money_char. sprintf("%10.2f",$self->charged) ];
+  push @buf,['',''];
+
+  {
+    my $total = {};
+    $total->{'total_item'} = &$embolden_function('Total');
+    $total->{'total_amount'} =
+    $total->{'total_amount'} =
+      &$embolden_function(
+        $other_money_char.  sprintf('%.2f', $self->charged + $pr_total )
+      );
+    push @total_items, $total;
+    push @buf,['','-----------'];
+    push @buf,['Total Charges',
+               $money_char. sprintf("%10.2f",$self->charged + $pr_total) ];
+    push @buf,['',''];
+  }
+  
+
+  #foreach my $thing ( sort { $a->_date <=> $b->_date } $self->_items_credits, $self->_items_payments
+  
+  # credits
+  foreach my $credit ( $self->_items_credits ) {
+    my $total;
+    $total->{'total_item'} = &$escape_function($credit->{'description'});
+    #$credittotal
+    $total->{'total_amount'} = '-'. $other_money_char. $credit->{'amount'};
+    push @total_items, $total;
+  }
+  
+  # credits (again)
+  foreach ( $self->cust_credited ) {
+
+    #something more elaborate if $_->amount ne $_->cust_credit->credited ?
+
+    my $reason = substr($_->cust_credit->reason,0,32);
+    $reason .= '...' if length($reason) < length($_->cust_credit->reason);
+    $reason = " ($reason) " if $reason;
+    push @buf,[
+      "Credit #". $_->crednum. " (". time2str("%x",$_->cust_credit->_date) .")".        $reason,
+      $money_char. sprintf("%10.2f",$_->amount)
+    ];
+  }
+
+  # payments
+  foreach my $payment ( $self->_items_payments ) {
+    my $total = {};
+    $total->{'total_item'} = &$escape_function($payment->{'description'});
+    #$paymenttotal
+    $total->{'total_amount'} = '-'. $other_money_char. $payment->{'amount'};
+    push @total_items, $total;
+    push @buf, [ $payment->{'description'},
+                 $money_char. sprintf("%10.2f", $payment->{'amount'}),
+               ];
+  }
+  
+  { 
+    my $total;
+    $total->{'total_item'} = &$embolden_function($self->balance_due_msg);
+    $total->{'total_amount'} =
+      &$embolden_function(
+        $other_money_char. sprintf('%.2f', $self->owed + $pr_total )
+      );
+    push @total_items, $total;
+    push @buf,['','-----------'];
+    push @buf,[$self->balance_due_msg, $money_char. 
+      sprintf("%10.2f", $balance_due ) ];
+  }
+
+  $invoice_data{'logo_file'} = $params{'logo_file'}
+    if $params{'logo_file'};
+
+  $invoice_lines = 0;
+  my $wasfunc = 0;
+  foreach ( grep /invoice_lines\(\d*\)/, @invoice_template ) { #kludgy
+    /invoice_lines\((\d*)\)/;
+    $invoice_lines += $1 || scalar(@buf);
+    $wasfunc=1;
+  }
+  die "no invoice_lines() functions in template?"
+    if ( $format eq 'template' && !$wasfunc );
+
+  if ($format eq 'template') {
+
+    if ( $invoice_lines ) {
+      $invoice_data{'total_pages'} = int( scalar(@buf) / $invoice_lines );
+      $invoice_data{'total_pages'}++
+        if scalar(@buf) % $invoice_lines;
+    }
+
+    #setup subroutine for the template
+    sub FS::cust_bill::_template::invoice_lines {
+      my $lines = shift || scalar(@FS::cust_bill::_template::buf);
+      map { 
+        scalar(@FS::cust_bill::_template::buf)
+          ? shift @FS::cust_bill::_template::buf
+          : [ '', '' ];
+      }
+      ( 1 .. $lines );
+    }
+
+    my $lines;
+    my @collect;
+    while (@buf) {
+      push @collect, split("\n",
+        $text_template->fill_in( HASH => \%invoice_data,
+                                 PACKAGE => 'FS::cust_bill::_template'
+                               )
+      );
+      $FS::cust_bill::_template::page++;
+    }
+    map "$_\n", @collect;
+  }else{
+    warn "filling in template for invoice ". $self->invnum. "\n"
+      if $DEBUG;
+    warn join("\n", map " $_ => ". $invoice_data{$_}, keys %invoice_data). "\n"
+      if $DEBUG > 1;
+
+    $text_template->fill_in(HASH => \%invoice_data);
+  }
 }
 
 =item print_ps [ TIME [ , TEMPLATE ] ]
@@ -2218,225 +2268,15 @@ when emailing the invoice as part of a multipart/related MIME email.
 
 =cut
 
-#some falze laziness w/print_text and print_latex (and send_csv)
 sub print_html {
   my( $self, $today, $template, $cid ) = @_;
-  $today ||= time;
 
-  my $cust_main = $self->cust_main;
-  $cust_main->payname( $cust_main->first. ' '. $cust_main->getfield('last') )
-    unless $cust_main->payname && $cust_main->payby !~ /^(CHEK|DCHK)$/;
+  my %params = ( 'format' => 'html' );
+  $params{'time'} = $today if $today;
+  $params{'template'} = $template if $template;
+  $params{'cid'} = $cid if $cid;
 
-  $template ||= $self->_agent_template;
-  my $templatefile = 'invoice_html';
-  my $suffix = length($template) ? "_$template" : '';
-  $templatefile .= $suffix;
-  my @html_template = map "$_\n", $conf->config($templatefile)
-    or die "cannot load config file $templatefile";
-
-  my $html_template = new Text::Template(
-    TYPE   => 'ARRAY',
-    SOURCE => \@html_template,
-    DELIMITERS => [ '<%=', '%>' ],
-  );
-
-  $html_template->compile()
-    or die 'While compiling ' . $templatefile . ': ' . $Text::Template::ERROR;
-
-  my %invoice_data = (
-    'company_name'    => scalar( $conf->config('company_name') ),
-    'company_address' => join("\n", $conf->config('company_address') ). "\n",
-    'custnum'         => $self->custnum,
-    'invnum'          => $self->invnum,
-    'date'            => time2str('%b&nbsp;%o,&nbsp;%Y', $self->_date),
-    'today'           => time2str('%b %o, %Y', $today),
-    'agent'           => encode_entities($cust_main->agent->agent),
-    'payname'         => encode_entities($cust_main->payname),
-    'company'         => encode_entities($cust_main->company),
-    'address1'        => encode_entities($cust_main->address1),
-    'address2'        => encode_entities($cust_main->address2),
-    'city'            => encode_entities($cust_main->city),
-    'state'           => encode_entities($cust_main->state),
-    'zip'             => encode_entities($cust_main->zip),
-    'terms'           => $self->terms,
-    'cid'             => $cid,
-    'template'        => $template,
-#    'conf_dir'        => "$FS::UID::conf_dir/conf.$FS::UID::datasrc",
-  );
-
-  if (
-         defined( $conf->config_orbase('invoice_htmlreturnaddress', $template) )
-      && length(  $conf->config_orbase('invoice_htmlreturnaddress', $template) )
-  ) {
-
-    $invoice_data{'returnaddress'} =
-      join("\n", $conf->config_orbase('invoice_htmlreturnaddress', $template) );
-
-  } elsif ( grep /\S/,
-            $conf->config_orbase( 'invoice_latexreturnaddress', $template ) ) {
-
-    $invoice_data{'returnaddress'} =
-      join("\n", map { 
-                       s/~/&nbsp;/g;
-                       s/\\\\\*?\s*$/<BR>/;
-                       s/\\hyphenation\{[\w\s\-]+\}//;
-                       $_;
-                     }
-                     $conf->config_orbase( 'invoice_latexreturnaddress',
-                                           $template
-                                         )
-          );
-
-  } elsif ( grep /\S/, $conf->config('company_address') ) {
-
-    $invoice_data{'returnaddress'} =
-      join("\n", $conf->config('company_address') );
-
-  } else {
-
-    my $warning = "Couldn't find a return address; ".
-                  "do you need to set the company_address configuration value?";
-    warn "$warning\n";
-    #$invoice_data{'returnaddress'} = $warning;
-
-  }
-
-  my $countrydefault = $conf->config('countrydefault') || 'US';
-  if ( $cust_main->country eq $countrydefault ) {
-    $invoice_data{'country'} = '';
-  } else {
-    $invoice_data{'country'} =
-      encode_entities(code2country($cust_main->country));
-  }
-
-  if (
-         defined( $conf->config_orbase('invoice_htmlnotes', $template) )
-      && length(  $conf->config_orbase('invoice_htmlnotes', $template) )
-  ) {
-    $invoice_data{'notes'} =
-      join("\n", $conf->config_orbase('invoice_htmlnotes', $template) );
-  } else {
-    $invoice_data{'notes'} = 
-      join("\n", map { 
-                       s/%%(.*)$/<!-- $1 -->/g;
-                       s/\\section\*\{\\textsc\{(.)(.*)\}\}/<p><b><font size="+1">$1<\/font>\U$2<\/b>/g;
-                       s/\\begin\{enumerate\}/<ol>/g;
-                       s/\\item /  <li>/g;
-                       s/\\end\{enumerate\}/<\/ol>/g;
-                       s/\\textbf\{(.*)\}/<b>$1<\/b>/g;
-                       s/\\\\\*/ /;
-                       s/\\dollar ?/\$/g;
-                       $_;
-                     } 
-                     $conf->config_orbase('invoice_latexnotes', $template)
-          );
-  }
-
-#  #do variable substitutions in notes
-#  $invoice_data{'notes'} =
-#    join("\n",
-#      map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b }
-#        $conf->config_orbase('invoice_latexnotes', $suffix)
-#    );
-
-  if (
-         defined( $conf->config_orbase('invoice_htmlfooter', $template) )
-      && length(  $conf->config_orbase('invoice_htmlfooter', $template) )
-  ) {
-   $invoice_data{'footer'} =
-     join("\n", $conf->config_orbase('invoice_htmlfooter', $template) );
-  } else {
-   $invoice_data{'footer'} =
-       join("\n", map { s/~/&nbsp;/g; s/\\\\\*?\s*$/<BR>/; $_; }
-                      $conf->config_orbase('invoice_latexfooter', $template)
-           );
-  }
-
-  $invoice_data{'po_line'} =
-    (  $cust_main->payby eq 'BILL' && $cust_main->payinfo )
-      ? encode_entities("Purchase Order #". $cust_main->payinfo)
-      : '';
-
-  my $money_char = $conf->config('money_char') || '$';
-
-  foreach my $line_item ( $self->_items ) {
-    my $detail = {
-      ext_description => [],
-    };
-    $detail->{'ref'} = $line_item->{'pkgnum'};
-    $detail->{'description'} = encode_entities($line_item->{'description'});
-    if ( exists $line_item->{'ext_description'} ) {
-      @{$detail->{'ext_description'}} = map {
-        encode_entities($_);
-      } @{$line_item->{'ext_description'}};
-    }
-    $detail->{'amount'} = $money_char. $line_item->{'amount'};
-    $detail->{'product_code'} = $line_item->{'pkgpart'} || 'N/A';
-
-    push @{$invoice_data{'detail_items'}}, $detail;
-  }
-
-
-  my $taxtotal = 0;
-  foreach my $tax ( $self->_items_tax ) {
-    my $total = {};
-    $total->{'total_item'} = encode_entities($tax->{'description'});
-    $taxtotal += $tax->{'amount'};
-    $total->{'total_amount'} = $money_char. $tax->{'amount'};
-    push @{$invoice_data{'total_items'}}, $total;
-  }
-
-  if ( $taxtotal ) {
-    my $total = {};
-    $total->{'total_item'} = 'Sub-total';
-    $total->{'total_amount'} =
-      $money_char. sprintf('%.2f', $self->charged - $taxtotal );
-    unshift @{$invoice_data{'total_items'}}, $total;
-  }
-
-  my( $pr_total, @pr_cust_bill ) = $self->previous; #previous balance
-  {
-    my $total = {};
-    $total->{'total_item'} = '<b>Total</b>';
-    $total->{'total_amount'} =
-      "<b>$money_char".  sprintf('%.2f', $self->charged + $pr_total ). '</b>';
-    push @{$invoice_data{'total_items'}}, $total;
-  }
-
-  #foreach my $thing ( sort { $a->_date <=> $b->_date } $self->_items_credits, $self->_items_payments
-
-  # credits
-  foreach my $credit ( $self->_items_credits ) {
-    my $total;
-    $total->{'total_item'} = encode_entities($credit->{'description'});
-    #$credittotal
-    $total->{'total_amount'} = "-$money_char". $credit->{'amount'};
-    push @{$invoice_data{'total_items'}}, $total;
-  }
-
-  # payments
-  foreach my $payment ( $self->_items_payments ) {
-    my $total = {};
-    $total->{'total_item'} = encode_entities($payment->{'description'});
-    #$paymenttotal
-    $total->{'total_amount'} = "-$money_char". $payment->{'amount'};
-    push @{$invoice_data{'total_items'}}, $total;
-  }
-
-  { 
-    my $total;
-    $total->{'total_item'} = '<b>'. $self->balance_due_msg. '</b>';
-    $total->{'total_amount'} =
-      "<b>$money_char".  sprintf('%.2f', $self->owed + $pr_total ). '</b>';
-    push @{$invoice_data{'total_items'}}, $total;
-  }
-
-  warn "filling in HTML template for invoice ". $self->invnum. "\n"
-    if $DEBUG;
-  warn join("\n", map "  $_ => ".$invoice_data{$_}, keys %invoice_data ). "\n"
-    if $DEBUG > 1;
-
-  $html_template->fill_in( HASH => \%invoice_data);
+  $self->print_generic( %params );
 }
 
 # quick subroutine for print_latex
@@ -2456,6 +2296,67 @@ sub _latex_escape {
 }
 
 #utility methods for print_*
+
+sub _translate_old_latex_format {
+  warn "_translate_old_latex_format called\n"
+    if $DEBUG; 
+
+  my @template = ();
+  while ( @_ ) {
+    my $line = shift;
+  
+    if ( $line =~ /^%%Detail\s*$/ ) {
+  
+      push @template, q![@--!,
+                      q!  foreach my $_tr_line (@detail_items) {!,
+                      q!    if ( scalar ($_tr_item->{'ext_description'} ) ) {!,
+                      q!      $_tr_line->{'description'} .= !, 
+                      q!        "\\tabularnewline\n~~".!,
+                      q!        join( "\\tabularnewline\n~~",!,
+                      q!          @{$_tr_line->{'ext_description'}}!,
+                      q!        );!,
+                      q!    }!;
+
+      while ( ( my $line_item_line = shift )
+              !~ /^%%EndDetail\s*$/                            ) {
+        $line_item_line =~ s/'/\\'/g;    # nice LTS
+        $line_item_line =~ s/\\/\\\\/g;  # escape quotes and backslashes
+        $line_item_line =~ s/\$(\w+)/'. \$_tr_line->{$1}. '/g;
+        push @template, "    \$OUT .= '$line_item_line';";
+      }
+  
+      push @template, '}',
+                      '--@]';
+
+    } elsif ( $line =~ /^%%TotalDetails\s*$/ ) {
+
+      push @template, '[@--',
+                      '  foreach my $_tr_line (@total_items) {';
+
+      while ( ( my $total_item_line = shift )
+              !~ /^%%EndTotalDetails\s*$/                      ) {
+        $total_item_line =~ s/'/\\'/g;    # nice LTS
+        $total_item_line =~ s/\\/\\\\/g;  # escape quotes and backslashes
+        $total_item_line =~ s/\$(\w+)/'. \$_tr_line->{$1}. '/g;
+        push @template, "    \$OUT .= '$total_item_line';";
+      }
+
+      push @template, '}',
+                      '--@]';
+
+    } else {
+      $line =~ s/\$(\w+)/[\@-- \$$1 --\@]/g;
+      push @template, $line;  
+    }
+  
+  }
+
+  if ($DEBUG) {
+    warn "$_\n" foreach @template;
+  }
+
+  (@template);
+}
 
 sub terms {
   my $self = shift;
@@ -2494,6 +2395,30 @@ sub balance_due_msg {
     $msg .= ' - '. $self->terms;
   }
   $msg;
+}
+
+sub _items_sections {
+  my $self = shift;
+
+  my %s = ();
+  foreach my $cust_bill_pkg ( $self->cust_bill_pkg ) {
+
+    if ( $cust_bill_pkg->pkgnum > 0 ) {
+
+      my $desc = $cust_bill_pkg->cust_pkg->part_pkg->classname;
+
+      $s{$desc} += $cust_bill_pkg->setup
+        if ( $cust_bill_pkg->setup != 0 );
+
+      $s{$desc} += $cust_bill_pkg->recur
+        if ( $cust_bill_pkg->recur != 0 );
+
+    }
+
+  }
+
+  map { {'description' => $_, 'subtotal' => $s{$_}} } sort keys %s;
+
 }
 
 sub _items {
@@ -2542,8 +2467,16 @@ sub _items_previous {
 
 sub _items_pkg {
   my $self = shift;
-  my @cust_bill_pkg = grep { $_->pkgnum } $self->cust_bill_pkg;
-  $self->_items_cust_bill_pkg(\@cust_bill_pkg, @_);
+  my %options = @_;
+  my $section = delete $options{'section'};
+  my @cust_bill_pkg =
+    grep { $_->pkgnum &&
+           ( defined($section)
+               ? $_->cust_pkg->part_pkg->classname eq $section->{'description'}
+               : 1
+           )
+         } $self->cust_bill_pkg;
+  $self->_items_cust_bill_pkg(\@cust_bill_pkg, %options);
 }
 
 sub _items_tax {

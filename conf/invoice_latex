@@ -187,58 +187,74 @@ Terms: [@-- $terms --@]\\
 \end{minipage}}
 \vspace{1.5cm}
 %
-\section*{\textsc{Charges}}
-\begin{longtable}{clr}
-\hline
-\rule{0pt}{2.5ex}
-\makebox[1.4cm]{\textbf{Ref}} & 
-\makebox[12.8cm][l]{\textbf{Description}} & 
-\makebox[2.5cm][r]{\textbf{Amount}} \\
-\hline
-\endfirsthead
-\multicolumn{3}{r}{\rule{0pt}{2.5ex}Continued from previous page}\\
-\hline
-\rule{0pt}{2.5ex}
-\makebox[1.4cm]{\textbf{Ref}} & 
-\makebox[12.8cm][l]{\textbf{Description}} & 
-\makebox[2.5cm][r]{\textbf{Amount}} \\
-\hline
-\endhead
-\multicolumn{3}{r}{\rule{0pt}{2.5ex}Continued on next page...}\\
-\endfoot
-\hline
 [@--
+  foreach my $section ( @sections ) {
+    $OUT .= '\section*{\textsc{';
+    $OUT .= ($section->{'description'}) ? $section->{'description'} : 'Charges';
+    $OUT .= '}}\begin{longtable}{clr}';
+    $OUT .= '\hline';
+    $OUT .= '\rule{0pt}{2.5ex}';
+    $OUT .= '\makebox[1.4cm]{\textbf{Ref}} & ';
+    $OUT .= '\makebox[12.8cm][l]{\textbf{Description}} & ';
+    $OUT .= '\makebox[2.5cm][r]{\textbf{Amount}} \\\\';
+    $OUT .= '\hline';
+    $OUT .= '\endfirsthead';
+    $OUT .= '\multicolumn{3}{r}{\rule{0pt}{2.5ex}Continued from previous page}\\\\';
+    $OUT .= '\hline';
+    $OUT .= '\rule{0pt}{2.5ex}';
+    $OUT .= '\makebox[1.4cm]{\textbf{Ref}} & ';
+    $OUT .= '\makebox[12.8cm][l]{\textbf{Description}} & ';
+    $OUT .= '\makebox[2.5cm][r]{\textbf{Amount}} \\\\';
+    $OUT .= '\hline';
+    $OUT .= '\endhead';
+    $OUT .= '\multicolumn{3}{r}{\rule{0pt}{2.5ex}Continued on next page...}\\\\';
+    $OUT .= '\endfoot';
+    $OUT .= '\hline';
 
-  foreach my $line (@total_items) {
-    $OUT .= '\FStotaldesc{' . $line->{'total_item'} . '}' .
-            '{' . $line->{'total_amount'} . '}' . "\n";
-  }
-
---@]
-\hline
-\endlastfoot
-[@--
-
-  foreach my $line (@detail_items) {
-    my $ext_description = $line->{'ext_description'};
-
-    # Don't break-up small packages.
-    my $rowbreak = @$ext_description < 5 ? '*' : '';
-
-    $OUT .= "\\hline\n";
-    $OUT .= '\FSdesc{' . $line->{'ref'} . '}{' . $line->{'description'} . '}' .
-            '{' . $line->{'amount'} . "}${rowbreak}\n";
-
-    foreach my $ext_desc (@$ext_description) {
-      $ext_desc = substr($ext_desc, 0, 80) . '...'
-        if (length($ext_desc) > 80);
-      $OUT .= '\FSextdesc{' . $ext_desc . '}' . "${rowbreak}\n";
+    if (scalar(@sections) > 1) {
+      $OUT .= '\FStotaldesc{' . $section->{'description'} . ' Total}' .
+              '{' . $section->{'subtotal'} . '}' . "\n";
     }
 
+    if ($section == $sections[$#sections]) {
+      foreach my $line (@total_items) {
+        $OUT .= '\FStotaldesc{' . $line->{'total_item'} . '}' .
+                '{' . $line->{'total_amount'} . '}' . "\n";
+      }
+    }
+
+    $OUT .= '\hline';
+    $OUT .= '\endlastfoot';
+
+    foreach my $line (
+      grep { ( scalar( @sections ) > 1 
+             ? $section->{'description'} eq $_->{'section'}->{'description'}
+             : 1
+           ) }
+      @detail_items )
+    {
+      my $ext_description = $line->{'ext_description'};
+  
+      # Don't break-up small packages.
+      my $rowbreak = @$ext_description < 5 ? '*' : '';
+  
+      $OUT .= "\\hline\n";
+      $OUT .= '\FSdesc{' . $line->{'ref'} . '}{' . $line->{'description'} . '}' .
+              '{' . $line->{'amount'} . "}${rowbreak}\n";
+
+      foreach my $ext_desc (@$ext_description) {
+        $ext_desc = substr($ext_desc, 0, 80) . '...'
+          if (length($ext_desc) > 80);
+        $OUT .= '\FSextdesc{' . $ext_desc . '}' . "${rowbreak}\n";
+      }
+
+    }
+
+    $OUT .= '\end{longtable}';
+
   }
 
 --@]
-\end{longtable}
 \vfill
 [@-- $notes --@]
 \end{document}
