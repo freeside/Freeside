@@ -446,6 +446,38 @@ sub downstream_csv {
 
 my($tmp_mday, $tmp_mon, $tmp_year);
 
+sub _cdr_date_parser_maker {
+  my $field = shift;
+  return sub {
+    my( $cdr, $date ) = @_;
+    $cdr->$field( _cdr_date_parse($date) );
+  };
+}
+
+sub _cdr_date_parse {
+  my $date = shift;
+
+  return '' unless length($date); #that's okay, it becomes NULL
+
+  #$date =~ /^\s*(\d{4})[\-\/]\(\d{1,2})[\-\/](\d{1,2})\s+(\d{1,2}):(\d{1,2}):(\d{1,2})\s*$/
+  $date =~ /^\s*(\d{4})\D(\d{1,2})\D(\d{1,2})\s+(\d{1,2})\D(\d{1,2})\D(\d{1,2})\s*$/
+    or die "unparsable date: $date"; #maybe we shouldn't die...
+  my($year, $mon, $day, $hour, $min, $sec) = ( $1, $2, $3, $4, $5, $6 );
+
+  timelocal($sec, $min, $hour, $day, $mon-1, $year);
+}
+
+#http://www.the-asterisk-book.com/unstable/funktionen-cdr.html
+my %amaflags = (
+  DEFAULT       => 0,
+  OMIT          => 1, #asterisk 1.4+
+  IGNORE        => 1, #asterisk 1.2
+  BILLING       => 2, #asterisk 1.4+
+  BILL          => 2, #asterisk 1.2
+  DOCUMENTATION => 3,
+  #? '' => 0,
+);
+
 my %import_formats = (
   'asterisk' => [
     'accountcode',
@@ -457,13 +489,13 @@ my %import_formats = (
     'dstchannel',
     'lastapp',
     'lastdata',
-    'startdate', # XXX will need massaging
-    'answer',    # XXX same
-    'end',       # XXX same
+    _cdr_date_parser_maker('startdate'),
+    _cdr_date_parser_maker('answerdate'),
+    _cdr_date_parser_maker('enddate'),
     'duration',
     'billsec',
     'disposition',
-    'amaflags',
+    sub { my($cdr, $amaflags) = @_; $cdr->amaflags($amaflags{$amaflags}); },
     'uniqueid',
     'userfield',
   ],
@@ -492,7 +524,7 @@ my %import_formats = (
     'carrierid',
     'upstream_rateid',
   ],
-  'ams' => [
+  'simple' => [
 
     # Date
     sub { my($cdr, $date) = @_;
@@ -556,7 +588,7 @@ sub batch_import {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  if ( $format eq 'ams' ) { # and other formats with a header too?
+  if ( $format eq 'simple' ) { # and other formats with a header too?
 
   }
 
@@ -565,7 +597,7 @@ sub batch_import {
   while ( defined($line=<$fh>) ) {
 
     #skip header...
-    if ( ! $body++ && $format eq 'ams' && $line =~ /^[\w\, ]+$/ ) {
+    if ( ! $body++ && $format eq 'simple' && $line =~ /^[\w\, ]+$/ ) {
       next;
     }
 
@@ -577,7 +609,7 @@ sub batch_import {
     my @columns = $csv->fields();
     #warn join('-',@columns);
 
-    if ( $format eq 'ams' ) {
+    if ( $format eq 'simple' ) {
       @columns = map { s/^ +//; $_; } @columns;
     }
 
