@@ -160,10 +160,16 @@ sub mask_payinfo {
   } else {
     # if not, mask it...
     if ($payby eq 'CARD' || $payby eq 'DCRD' || $payby eq 'MCRD') {
-      # Credit Cards (Show first and last four)
-      $paymask = substr($payinfo,0,6).
-                 'x'x(length($payinfo)-10).
-                 substr($payinfo,(length($payinfo)-4));
+      # Credit Cards
+      my $conf = new FS::Conf;
+      my $mask_method = $conf->config('card_masking_method') || 'first6last4';
+      $mask_method =~ /^first(\d+)last(\d+)$/
+        or die "can't parse card_masking_method $mask_method";
+      my($first, $last) = ($1, $2);
+
+      $paymask = substr($payinfo,0,$first).
+                 'x'x(length($payinfo)-$first-$last).
+                 substr($payinfo,(length($payinfo)-$last));
     } elsif ($payby eq 'CHEK' || $payby eq 'DCHK' ) {
       # Checks (Show last 2 @ bank)
       my( $account, $aba ) = split('@', $payinfo );
