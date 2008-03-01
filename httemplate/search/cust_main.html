@@ -12,8 +12,29 @@
                     \&FS::UI::Web::cust_fields,
                     @extra_fields,
                   ],
+                  'color'       => [ FS::UI::Web::cust_colors(),
+                                     map '', @extra_fields
+                                   ],
+                  'style'       => [ FS::UI::Web::cust_styles(),
+                                     map '', @extra_fields
+                                   ],
+                  'align'       => [ FS::UI::Web::cust_aligns(),
+                                     map '', @extra_fields
+                                   ],
+                  'links'       => [ ( map { $_ ne 'Cust. Status' ? $link : '' }
+                                           FS::UI::Web::cust_header(
+                                                      $cgi->param('cust_fields')
+                                                                   )
+                                     ),
+                                     map '', @extra_fields
+                                   ],
               )
 %>
+<%once>
+
+my $link = [ "${p}view/cust_main.cgi?", 'custnum' ];
+
+</%once>
 <%init>
 
 die "access denied"
@@ -76,8 +97,6 @@ my @payby = grep /^([A-Z]{4})$/, $cgi->param('payby');
 if ( @payby ) {
   push @where, '( '. join(' OR ', map "cust_main.payby = '$_'", @payby). ' )';
 }
-
-###
 
 ##
 # amounts
