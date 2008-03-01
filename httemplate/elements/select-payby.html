@@ -1,0 +1,40 @@
+<SELECT NAME="<% $opt{'field'} || 'payby' %>"
+        <% $opt{'multiple'} ? 'MULTIPLE' : '' %>
+        <% $onchange %>
+>
+
+% unless ( $opt{'multiple'} ) {
+    <OPTION VALUE="" <% '' eq $value ? 'SELECTED' : '' %> >all
+% }
+
+% foreach my $option ( keys %{ $opt{'paybys'} } ) { 
+%   my $sel = ( ref($value) && $value->{$option} ) || $option eq $value;
+
+    <OPTION VALUE="<% $option %>"
+            <% $sel ? 'SELECTED' : '' %>
+    ><% $opt{'paybys'}->{$option} %>
+
+% } 
+
+</SELECT>
+
+<%init>
+
+my %opt = @_;
+
+my $method = 'payby';
+$method = 'cust_payby'  if $opt{'payby_type'} eq 'cust';
+#$method = 'event_payby' if $opt{'payby_type'} eq 'event';
+#$method = 'pay_payby'   if $opt{'payby_type'} eq 'pay';
+
+unless ( $opt{'paybys'} ) {
+  tie %{ $opt{'paybys'} }, 'Tie::IxHash', FS::payby->$method();
+}
+
+my $onchange = $opt{'onchange'}
+                 ? 'onChange="'. $opt{'onchange'}. '(this)"'
+                 : '';
+
+my $value = $opt{'curr_value'} || $opt{'value'};
+
+</%init>

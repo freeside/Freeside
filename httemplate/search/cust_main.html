@@ -68,6 +68,17 @@ foreach my $field (qw( signupdate )) {
 
 }
 
+###
+# payby
+###
+
+my @payby = grep /^([A-Z]{4})$/, $cgi->param('payby');
+if ( @payby ) {
+  push @where, '( '. join(' OR ', map "cust_main.payby = '$_'", @payby). ' )';
+}
+
+###
+
 ##
 # amounts
 ##

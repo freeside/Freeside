@@ -1,0 +1,37 @@
+<% include ('tr-td-label.html', 'label' => 'Payment type', @_ ) %>
+
+  <TD <% $style %>>
+
+    <% include( '/elements/select-payby.html', 
+                  'curr_value'  => $curr_value,
+                  %opt
+              )
+    %>
+
+  </TD>
+
+</TR>
+
+<%init>
+
+my %opt = @_;
+
+#my $onchange = $opt{'onchange'}
+#                 ? 'onChange="'. $opt{'onchange'}. '(this)"'
+#                 : '';
+
+my $style = $opt{'cell_style'} ? 'STYLE="'. $opt{'cell_style'}. '"' : '';
+
+my $method = 'payby2longname';
+$method = 'cust_payby2longname'  if $opt{'payby_type'} eq 'cust';
+#$method = 'event_payby2longname' if $opt{'payby_type'} eq 'event';
+#$method = 'pay_payby2longname'   if $opt{'payby_type'} eq 'pay';
+
+unless ( $opt{'paybys'} ) {
+  tie %{ $opt{'paybys'} }, 'Tie::IxHash', FS::payby->$method();
+}
+
+my $curr_value = $opt{'curr_value'} || $opt{'value'};
+
+</%init>
+

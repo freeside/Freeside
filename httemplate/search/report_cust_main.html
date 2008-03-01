@@ -29,9 +29,16 @@
       </TR>
 
 %   }
+
+    <% include( '/elements/tr-select-payby.html',
+                  'payby_type' => 'cust',
+                  'multiple'   => 1,
+                  'curr_value' => { map { $_ => 1 } FS::payby->cust_payby },
+              )
+    %>
     
     <% include( '/elements/tr-input-lessthan_greaterthan.html',
-                  label   => 'Current Balance',
+                  label   => 'Current balance',
                   field   => 'current_balance',
               )
     %>
@@ -69,7 +76,7 @@ die "access denied"
 <%once>
 
 my %label = (
-  'signupdate'     => 'Signup Date',
+  'signupdate'     => 'Signup date',
 );
 
 </%once>
