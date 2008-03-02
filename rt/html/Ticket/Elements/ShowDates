@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+%# 02110-1301 or visit their web page on the internet at
+%# http://www.gnu.org/copyleft/gpl.html.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -43,41 +45,41 @@
 %# those contributions and any derivatives thereof.
 %# 
 %# END BPS TAGGED BLOCK }}}
-<TABLE>
-  <TR>
-    <TD class="label date created"><&|/l&>Created</&>:</TD>
-    <TD class="value date created"><% $Ticket->CreatedObj->AsString %></TD>
-  </TR>
-  <TR>
-    <TD class="label date starts"><&|/l&>Starts</&>:</TD>
-    <TD class="value date starts"><% $Ticket->StartsObj->AsString %></TD>
-  </TR>
-  <TR>
-    <TD class="label date started"><&|/l&>Started</&>:</TD>
-    <TD class="value date started"><% $Ticket->StartedObj->AsString %></TD>
-  </TR>
-  <TR>
-    <TD class="label date told"><a href="<% $RT::WebPath %>/Ticket/Display.html?id=<% $Ticket->id %>&Action=SetTold"><&|/l&>Last Contact</&></a>:</TD>
-    <TD class="value date told"><% $Ticket->ToldObj->AsString %></TD>
-  </TR>
-  <TR>
-    <TD class="label date due"><&|/l&>Due</&>:</TD>
-    <TD class="value date due"><% $Ticket->DueObj->AsString  %></TD>
-  </TR>
-  <TR>
-    <TD class="label date resolved"><&|/l&>Closed</&>:</TD>
-    <TD class="value date resolved"><% $Ticket->ResolvedObj->AsString  %></TD>
-  </TR>
-  <TR>
-    <TD class="label date updated"><&|/l&>Updated</&>:</TD>
+<table>
+  <tr>
+    <td class="label date created"><&|/l&>Created</&>:</td>
+    <td class="value date created"><% $Ticket->CreatedObj->AsString %></td>
+  </tr>
+  <tr>
+    <td class="label date starts"><&|/l&>Starts</&>:</td>
+    <td class="value date starts"><% $Ticket->StartsObj->AsString %></td>
+  </tr>
+  <tr>
+    <td class="label date started"><&|/l&>Started</&>:</td>
+    <td class="value date started"><% $Ticket->StartedObj->AsString %></td>
+  </tr>
+  <tr>
+    <td class="label date told"><a href="<% $RT::WebPath %>/Ticket/Display.html?id=<% $Ticket->id %>&Action=SetTold"><&|/l&>Last Contact</&></a>:</td>
+    <td class="value date told"><% $Ticket->ToldObj->AsString %></td>
+  </tr>
+  <tr>
+    <td class="label date due"><&|/l&>Due</&>:</td>
+    <td class="value date due"><% $Ticket->DueObj->AsString  %></td>
+  </tr>
+  <tr>
+    <td class="label date resolved"><&|/l&>Closed</&>:</td>
+    <td class="value date resolved"><% $Ticket->ResolvedObj->AsString  %></td>
+  </tr>
+  <tr>
+    <td class="label date updated"><&|/l&>Updated</&>:</td>
 % my $UpdatedString = $Ticket->LastUpdated ? loc("[_1] by [_2]", $Ticket->LastUpdatedAsString, $Ticket->LastUpdatedByObj->Name) : loc("Never");
 % if ($UpdatedLink) {
-    <TD class="value date updated"><A HREF="#lasttrans"><% $UpdatedString | h %></a></TD>
+    <td class="value date updated"><A HREF="#lasttrans"><% $UpdatedString | h %></a></td>
 % } else {
-    <TD class="value date updated"><% $UpdatedString | h %></TD>
+    <td class="value date updated"><% $UpdatedString | h %></td>
 % }
-  </TR>
-</TABLE>
+  </tr>
+</table>
 <%ARGS>
 $Ticket => undef
 $UpdatedLink => 1

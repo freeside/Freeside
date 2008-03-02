@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+%# 02110-1301 or visit their web page on the internet at
+%# http://www.gnu.org/copyleft/gpl.html.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -53,27 +55,27 @@
 <& /Elements/ListActions, actions => \@results &>
 
 
-<FORM ACTION="<%$RT::WebPath%>/User/Groups/Modify.html" METHOD=POST>
+<form action="<%$RT::WebPath%>/User/Groups/Modify.html" method="post">
 
 %unless ($Group->Id) {
-<INPUT TYPE=HIDDEN NAME=id VALUE="new">
+<input type="hidden" class="hidden" name="id" value="new" />
 % } else {
-<INPUT TYPE=HIDDEN NAME=id VALUE="<%$Group->Id%>">
+<input type="hidden" class="hidden" name="id" value="<%$Group->Id%>" />
 % }
-<TABLE>
-<TR><TD ALIGN=RIGHT>
+<table>
+<tr><td align="right">
 <&|/l&>Name</&>:
-</TD>
-<TD><INPUT name="Name" value="<%$Group->Name%>"></TD>
-</TR><TR>
-<TD ALIGN=RIGHT>
-<&|/l&>Description</&>:</TD><TD COLSPAN=3><INPUT name="Description" value="<%$Group->Description%>" size=60></TD>
-</TR><TR>
-<TD COLSPAN=2>
-<INPUT TYPE=HIDDEN NAME="SetEnabled" VALUE="1">
-<INPUT TYPE=CHECKBOX NAME="Enabled" VALUE="1" <%$EnabledChecked%>> <&|/l&>Enabled (Unchecking this box disables this group)</&><BR>
-</TR>
-</TABLE>
+</td>
+<td><input name="Name" value="<%$Group->Name%>" /></td>
+</tr><tr>
+<td align="right">
+<&|/l&>Description</&>:</td><td colspan="3"><input name="Description" value="<%$Group->Description%>" size="60" /></td>
+</tr><tr>
+<td colspan="2">
+<input type="hidden" class="hidden" name="SetEnabled" value="1" />
+<input type="checkbox" class="checkbox" name="Enabled" value="1" <%$EnabledChecked%> /> <&|/l&>Enabled (Unchecking this box disables this group)</&><br />
+</tr>
+</table>
 <& /Elements/Submit, Label => loc('Save Changes'), Reset => 1 &>
 </form>
 <%INIT>

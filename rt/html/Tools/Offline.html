@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+%# 02110-1301 or visit their web page on the internet at
+%# http://www.gnu.org/copyleft/gpl.html.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -53,50 +55,48 @@
 <& /Elements/Callback, Requestor => \$requestoraddress,
     Queue => \$qname, %ARGS &>
 
-<FORM ACTION="Offline.html" NAME="TicketUpdate" 
-	METHOD=POST enctype="multipart/form-data">
+<form action="Offline.html" name="TicketUpdate" 
+	method="post" enctype="multipart/form-data">
 <table>
 <tr>
-<td class=label>
+<td class="label">
 <&|/l&>Default Queue</&>:
 </td>
 <td>
 <& /Elements/SelectQueue, Name => "qname", NamedValues => 1 &>
-<i><&|/l&>If no queue is specified, create tickets in this queue.</&></i>
+<em><&|/l&>If no queue is specified, create tickets in this queue.</&></em>
 </td>
 </tr>
 <tr>
-<td class=label>
+<td class="label">
 <&|/l&>Default Requestor</&>:
 </td>
 <td>
-<input name=requestoraddress value=<%$requestoraddress%>>
-<i><&|/l&>If no Requestor is specified, create tickets with this requestor.</&></i>
+<input name="requestoraddress" value="<%$requestoraddress%>" />
+<em><&|/l&>If no Requestor is specified, create tickets with this requestor.</&></em>
 </td>
 </tr>
-<tr><td class=labeltop>
+<tr><td class="labeltop">
 <&|/l&>Template</&>:
 </td>
-<td colspan=2>
-<textarea name=string cols=80 rows=30>
-<%$string%>
-</textarea>
+<td colspan="2">
+<textarea name="string" cols="80" rows="30"><%$string%></textarea>
 </td>
 </tr>
-<tr><td class=label>
+<tr><td class="label">
 <&|/l&>Get template from file</&>:
 </td>
 <td>
-<input name="Template" type="file" value="foo">
-<INPUT TYPE=SUBMIT NAME="Parse" VALUE="<&|/l&>Go</&>">
+<input name="Template" type="file" value="foo" />
+<input type="submit" class="button" name="Parse" value="<&|/l&>Go!</&>" />
 </td>
 </tr>
 </table>
 <& /Elements/Submit, Name => 'UpdateTickets', Label => loc('Upload'), Caption => loc("Upload your changes"), color => "#993333" &>
 
-</FORM>
+</form>
 <%args>
-$requestoraddress => undef
+$requestoraddress => ''
 $qname => undef
 $string => undef
 </%args>

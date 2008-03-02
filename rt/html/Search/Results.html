@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+%# 02110-1301 or visit their web page on the internet at
+%# http://www.gnu.org/copyleft/gpl.html.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -43,7 +45,8 @@
 %# those contributions and any derivatives thereof.
 %# 
 %# END BPS TAGGED BLOCK }}}
-<& /Elements/Header, Title => $title, Refresh => $session{'tickets_refresh_interval'} &>
+<& /Elements/Header, Title => $title, Refresh => $session{'tickets_refresh_interval'}, 
+    RSSAutoDiscovery => $RSSFeedURL &>
 <& /Ticket/Elements/Tabs, 
     current_tab => "Search/Results.html".$QueryString, 
     Title => $title,
@@ -63,43 +66,80 @@
     BaseURL => $RT::WebPath."/Search/Results.html?"
 
    &>
-<div align=right>
-<form method=get action="<%$RT::WebPath%>/Search/Results.html">
-<input type="hidden" name="Query" value="<%$Query%>" />
-<input type="hidden" name="Format" value="<%$Format%>" />
-<input type="hidden" name="HideResults" value="<%$HideResults%>" />
-<input type="hidden" name="Rows" value="<%$Rows%>" />
-<input type="hidden" name="Page" value="<%$Page%>" />
-<input type="hidden" name="OrderBy" value="<%$OrderBy%>" />
-<input type="hidden" name="Order" value="<%$Order%>" />
+% my %hiddens = (Query => $Query, Format => $Format,  Rows => $Rows, OrderBy => $OrderBy,  Order => $Order, HideResults => $HideResults, Page => $Page );
+<div align="right">
+<form method="get" action="<%$RT::WebPath%>/Search/Results.html">
+%foreach my $key (keys(%hiddens)) {
+<input type="hidden" class="hidden" name="<%$key%>" value="<%defined($hiddens{$key})?$hiddens{$key}:''%>"/>
+%}
 <& /Elements/Refresh, Name => 'TicketsRefreshInterval', Default => $session {'tickets_refresh_interval'} &>
-<input type=submit value="<&|/l&>Go!</&>">
+<input type="submit" class="button" value="<&|/l&>Go!</&>" />
 </form>
 </div>
-<div align=right>
-<a href="<%$RT::WebPath%>/Search/Bulk.html<%$QueryString%>"><&|/l&>Update multiple tickets</&></a><br>
-<a href="<%$RT::WebPath%>/Search/Results.html<%$QueryString%>"><&|/l&>Bookmarkable link</&></a><br>
+<div align="right">
+<a href="<%$RT::WebPath%>/Search/Bulk.html<%$QueryString%>"><&|/l&>Update multiple tickets</&></a><br />
+<a href="<%$RT::WebPath%>/Search/Results.html<%$QueryString%>"><&|/l&>Bookmarkable link</&></a><br />
 <a href="<%$RT::WebPath%>/Search/Results.tsv<%$QueryString%>"><&|/l&>spreadsheet</&></a> |
-<a href="<%$RT::WebPath%>/Search/Results.rdf<%$ShortQueryString%>"><&|/l&>RSS</&></a> |
-<a href="<%$RT::WebPath%>/Tools/Offline.html<%$ShortQueryString%>"><&|/l&>Work offline</&></a><br>
+<a href="<%$RSSFeedURL%>"><&|/l&>RSS</&></a> |
+<a href="<%$RT::WebPath%>/Tools/Offline.html<%$ShortQueryString%>"><&|/l&>Work offline</&></a><br />
+<form method="get" action="<%$RT::WebPath%>/Search/Chart.html"><&|/l&>chart</&>
+% %hiddens = (Query => $Query, Format => $Format,  Rows => $Rows, OrderBy => $OrderBy,  Order => $Order);
+%foreach my $key (keys(%hiddens)) {
+<input type="hidden" class="hidden" name="<%$key%>" value="<%defined($hiddens{$key})?$hiddens{$key}:''%>"/>
+%}
+<&|/l, $m->scomp('Elements/SelectGroupBy', Name => 'PrimaryGroupBy', Query => $Query) &>grouped by [_1]</&>
+<&|/l, $m->scomp('Elements/SelectChartType', Name => 'ChartStyle') &>style: [_1]</&>
+<input type="submit" class="button" value="<%loc('Go!')%>" />
+</form>
 <& /Elements/Callback, _CallbackName => 'SearchActions', QueryString => $QueryString&>
 </div>
 <%INIT>
+# Read from user preferences
+my $prefs = $session{'CurrentUser'}->UserObj->Preferences("SearchDisplay") || {};
+
+# These variables are what define a search_hash; this is also
+# where we give sane defaults.
+$Format      ||= $prefs->{'Format'};
+$Order       ||= $prefs->{'Order'} || 'ASC';
+$OrderBy     ||= $prefs->{'OrderBy'} || 'id';
+
+# Some forms pass in "RowsPerPage" rather than "Rows"
+# We call it RowsPerPage everywhere else.
+
+if ( !defined($Rows) ) {
+    if ( $ARGS{'RowsPerPage'} ) {
+        $Rows = $ARGS{'RowsPerPage'};
+    } elsif ( defined $prefs->{'RowsPerPage'} ) {
+        $Rows = $prefs->{'RowsPerPage'};
+    } else {
+        $Rows = 50;
+    }
+}
+
 my ($title, $ticketcount);
 $session{'i'}++;
 $session{'tickets'} = RT::Tickets->new($session{'CurrentUser'}) ;
 $session{'tickets'}->FromSQL($Query) if ($Query);
-$session{'tickets'}->OrderBy(FIELD => $OrderBy, ORDER => $Order); 
 
+if ($OrderBy =~ /\|/) {
+    # Multiple Sorts
+    my @OrderBy = split /\|/,$OrderBy;
+    my @Order = split /\|/,$Order;
+    $session{'tickets'}->OrderByCols(
+        map { { FIELD => $OrderBy[$_], ORDER => $Order[$_] } } ( 0
+        .. $#OrderBy ) );; 
+} else {
+    $session{'tickets'}->OrderBy(FIELD => $OrderBy, ORDER => $Order); 
+}
 
 $session{'CurrentSearchHash'} = {
     Format      => $Format,
     Query       => $Query,
+    Page       => $Page,
     Order       => $Order,
     OrderBy     => $OrderBy,
     RowsPerPage => $Rows
     };
-
 
 
 if ( $session{'tickets'}->Query()) {
@@ -116,13 +156,12 @@ my $QueryString = "?".$m->comp('/Elements/QueryString',
                                OrderBy => $OrderBy,
                                Order => $Order,
                                Page => $Page);
-
 my $ShortQueryString = "?".$m->comp('/Elements/QueryString', Query => $Query);
+my $RSSFeedURL = "$RT::WebPath/Search/Results.rdf$ShortQueryString";
 
 if ($ARGS{'TicketsRefreshInterval'}) {
 	$session{'tickets_refresh_interval'} = $ARGS{'TicketsRefreshInterval'};
 }
-
 </%INIT>
 <%CLEANUP>
 $session{'tickets'}->PrepForSerialization();
@@ -131,8 +170,8 @@ $session{'tickets'}->PrepForSerialization();
 $Query => undef
 $Format => undef 
 $HideResults => 0
-$Rows => 50
+$Rows => undef
 $Page => 1
-$OrderBy => 'id'
-$Order => 'ASC'
+$OrderBy => undef
+$Order => undef
 </%ARGS>

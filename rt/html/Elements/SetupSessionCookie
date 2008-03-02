@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+%# 02110-1301 or visit their web page on the internet at
+%# http://www.gnu.org/copyleft/gpl.html.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -46,69 +48,79 @@
 <%init>
 return if $m->is_subrequest; # avoid reentrancy, as suggested by masonbook
 
-my %cookies = CGI::Cookie->fetch();
-my $cookiename = "RT_SID_".$RT::rtname.".".$ENV{'SERVER_PORT'};
-my %backends = (
-    mysql	=> 'Apache::Session::MySQL',
-    Pg		=> 'Apache::Session::Postgres',
-#    Oracle	=> 'Apache::Session::Oracle',
-) unless $RT::WebSessionClass;
-my $session_class = $RT::WebSessionClass || $backends{$RT::DatabaseType} || 'Apache::Session::File';
-my $pm = "$session_class.pm"; $pm =~ s|::|/|g; require $pm;
+my %cookies    = CGI::Cookie->fetch();
+my $cookiename = "RT_SID_" . $RT::rtname . "." . $ENV{'SERVER_PORT'};
+$SessionCookie ||= $cookies{$cookiename} ? $cookies{$cookiename}->value : undef;
 
-    # morning bug avoidance attempt -- pdh 20030815
-    unless ($RT::Handle->dbh && $RT::Handle->dbh->ping) {
-        $RT::Handle->Connect();
-    }
-    eval {
-        tie %session, $session_class,
-          $SessionCookie || ( $cookies{$cookiename} ? $cookies{$cookiename}->value() : undef ),
-          $backends{$RT::DatabaseType} ? {
-            Handle     => $RT::Handle->dbh,
-            LockHandle => $RT::Handle->dbh,
-          } : {
-            Directory     => $RT::MasonSessionDir,
-            LockDirectory => $RT::MasonSessionDir,
-          };
+my %backends   = (
+    mysql => 'Apache::Session::MySQL',
+    Pg    => 'Apache::Session::Postgres',
+
+    #    Oracle	=> 'Apache::Session::Oracle',
+);
+
+my $session_class = $RT::WebSessionClass
+    || $backends{$RT::DatabaseType}
+    || 'Apache::Session::File';
+my $pm = "$session_class.pm";
+$pm =~ s|::|/|g;
+require $pm;
+
+# morning bug avoidance attempt -- pdh 20030815
+unless ( $RT::Handle->dbh && $RT::Handle->dbh->ping ) {
+    $RT::Handle->Connect();
+}
+
+my $session_properties;
+if ( $session_class eq 'Apache::Session::File' ) {
+    $session_properties = {
+        Directory     => $RT::MasonSessionDir,
+        LockDirectory => $RT::MasonSessionDir,
+        Transaction => 1
     };
-    if ($@) {
+} else {
+    $session_properties = {
+        Handle     => $RT::Handle->dbh,
+        LockHandle => $RT::Handle->dbh,
+        Transaction => 1
+    };
+}
 
-        # If the session is invalid, create a new session.
-        if ( $@ =~ /Object does not/i ) {
-            tie %session, $session_class, undef, $backends{$RT::DatabaseType}
-              ? {
-                Handle     => $RT::Handle->dbh,
-                LockHandle => $RT::Handle->dbh,
-              }
-              : {
-                Directory     => $RT::MasonSessionDir,
-                LockDirectory => $RT::MasonSessionDir,
-              };
-            undef $cookies{$cookiename};
-        }
-        else {
-            die loc("RT couldn't store your session.") . "\n"
-              . loc(
-"This may mean that that the directory '[_1]' isn't writable or a database table is missing or corrupt.",
-                $RT::MasonSessionDir
-              )
-              . "\n\n"
-              . $@;
-        }
-    }
+eval {
+    tie %session, $session_class, $SessionCookie, $session_properties
+};
+if ($@) {
 
-    if ( !$cookies{$cookiename} ) {
-        my $cookie = new CGI::Cookie(
-            -name  => $cookiename,
-            -value => $session{_session_id},
-            -path  => '/',
-        );
-        $r->headers_out->{'Set-Cookie'} = $cookie->as_string;
+    # If the session is invalid, create a new session.
+    eval {
+        tie %session, $session_class, undef, $session_properties;
+        undef $cookies{$cookiename};
+    };
+}
 
-    } 
+if ($@) {
+    die loc("RT couldn't store your session.") . "\n"
+        . loc(
+        "This may mean that that the directory '[_1]' isn't writable or a database table is missing or corrupt.",
+        $RT::MasonSessionDir
+        )
+        . "\n\n"
+        . $@;
+}
 
-    return();
+if ( !$cookies{$cookiename} ) {
+    my $cookie = new CGI::Cookie(
+        -name  => $cookiename,
+        -value => $session{_session_id},
+        -path  => $RT::WebPath,
+        -secure => ($RT::WebSecureCookies ? 1 :0)
+    );
+    $r->headers_out->{'Set-Cookie'} = $cookie->as_string;
+
+}
+
+return ();
 </%init>
 <%args>
-$SessionCookie => ''
+$SessionCookie => undef
 </%args>

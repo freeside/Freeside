@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+%# 02110-1301 or visit their web page on the internet at
+%# http://www.gnu.org/copyleft/gpl.html.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -47,7 +49,7 @@
 % while ( my $CustomField = $CustomFields->Next ) {
 % my $Values = $Object->CustomFieldValues( $CustomField->Id );
 % my $count = $Values->Count;
-  <tr>
+  <tr id="CF-<%$CustomField->id%>-ShowRow">
     <td class="label"><% $CustomField->Name %>:</td>
     <td class="value">
 % unless ( $count ) {
@@ -57,7 +59,9 @@
 % } else {
 <ul>
 % while ( my $Value = $Values->Next ) {
-<li><% $print_value->( $CustomField, $Value ) |n %></li>
+<li>
+% $print_value->( $CustomField, $Value );
+</li>
 % }
 </ul>
 % }
@@ -72,11 +76,36 @@ $m->comp('/Elements/Callback', _CallbackName => 'MassageCustomFields',
 
 my $print_value = sub {
     my ($cf, $value) = @_;
+    my $linked = $cf->LinkValueTo;
+    if ( $linked ) {
+        $m->out('<a href="'. $value->LinkValueTo .'" target="_new">');
+    }
     my $comp = "ShowCustomField". $cf->Type;
+    $m->comp('/Elements/Callback',
+        _CallbackName => 'ShowComponentName',
+        Name          => \$comp,
+        CustomField   => $cf,
+        Object        => $Object
+    );
     if ( $m->comp_exists( $comp ) ) {
         $m->comp( $comp, Object => $value );
     } else {
         $m->print( $value->Content );
+    }
+    $m->out('</a>') if $linked;
+
+    # This section automatically populates a div with the "IncludeContentForValue" for this custom
+    # field if it's been defined
+    if ( $cf->IncludeContentForValue ) {
+       my $vid = $value->id;
+       $m->out(   '<div class="object_cf_value_include" id="object_cf_value_'. $vid .'">' );
+       $m->print( loc("See also:") );
+       $m->out(   '<a href="'. $value->IncludeContentForValue .'">' );
+       $m->print( $value->IncludeContentForValue );
+       $m->out(   qq{</a></div>\n} );
+       $m->out(   qq{<script><!--\nahah('} );
+       $m->print( $value->IncludeContentForValue );
+       $m->out(   qq{', 'object_cf_value_$vid');\n--></script>\n} );
     }
 };
 

@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+%# 02110-1301 or visit their web page on the internet at
+%# http://www.gnu.org/copyleft/gpl.html.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -43,43 +45,40 @@
 %# those contributions and any derivatives thereof.
 %# 
 %# END BPS TAGGED BLOCK }}}
-<& /Elements/TitleBoxStart, title =>  $title &>
-<TABLE BORDER=0 cellspacing=1 cellpadding=1 BGCOLOR="#eeeeee" WIDTH=100%>
-<TR>
-<TH><&|/l&>Subject</&></TH>
-<TH><&|/l&>Status</&></TH>
-<TH><&|/l&>Owner</&></TH>
-</TR>
-<TR>
-% while (my $Ticket = $MyTickets->Next) {
-<TR>
-<TD>
-<a href="<%$RT::WebPath%>/SelfService/Display.html?id=<%$Ticket->Id%>"><%$Ticket->Id%>: <%$Ticket->Subject%></a>
-</TD>
-<TD>
-<%loc($Ticket->Status)%>
-</TD><TD>
-<%$Ticket->OwnerObj->Name%>
-</TR>
-% }
-</TABLE>
-<& /Elements/TitleBoxEnd &>
-
+<&| /Widgets/TitleBox, title =>  $title &>
+<& /Elements/TicketList, Title   => $title,
+			 Format  => @Format, 
+			 Query   => $Query, 
+			 Order   => $Order, 
+			 OrderBy => $OrderBy,
+			 BaseURL => $BaseURL,
+			 Page    => $Page &>
+</&>
 
 <%INIT>
-$title ||= loc("My [_1] tickets", $friendly_status);
-my $MyTickets;
-$MyTickets = new RT::Tickets ($session{'CurrentUser'});
-$MyTickets->LimitWatcher(TYPE => 'Requestor', VALUE => $session{'CurrentUser'}->EmailAddress);
-$MyTickets->OrderBy(FIELD => 'id', ORDER => 'ASC');
-
-foreach my $status (@status) {
-
-        $MyTickets->LimitStatus(VALUE => $status);
+my $id = $session{'CurrentUser'}->id;
+my $Query = "( "
+    . join( ' OR ', map "$_.id = $id", @roles )
+    . ")";
+if ( @status ) {
+    $Query .= " AND ( "
+        . join( ' OR ', map "Status = '$_'", @status )
+        . " )";
 }
+my $Order = "ASC";
+my $OrderBy = "Created";
+my @Format = qq{
+   '<B><A HREF="$RT::WebPath/SelfService/Display.html?id=__id__">__id__</a></B>/TITLE:#',
+   '<B><A HREF="$RT::WebPath/SelfService/Display.html?id=__id__">__Subject__</a></B>/TITLE:Subject',
+   Status,
+   Requestors,
+   OwnerName};
 </%INIT>
 <%ARGS>
-$title => undef
 $friendly_status => loc('open')
+$title => loc("My [_1] tickets", $friendly_status)
+@roles => ('Watcher')
 @status => ('open', 'new', 'stalled')
+$BaseURL => undef
+$Page => 1
 </%ARGS>

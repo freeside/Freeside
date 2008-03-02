@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+%# 02110-1301 or visit their web page on the internet at
+%# http://www.gnu.org/copyleft/gpl.html.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -51,19 +53,20 @@
 
 <& /Elements/ListActions, actions => \@results &>
 
-<FORM METHOD=POST ACTION="ModifyDates.html">
-<INPUT TYPE=HIDDEN NAME=id VALUE="<%$TicketObj->Id%>">
-<& /Elements/TitleBoxStart, title => loc('Modify dates for ticket # [_1]', $TicketObj->Id),  width => "100%", color => "#663366"  &>
-
+<form method="post" action="ModifyDates.html">
+<& /Elements/Callback, _CallbackName => 'FormStart',ARGSRef =>\%ARGS &>
+<input type="hidden" class="hidden" name="id" value="<%$TicketObj->Id%>" />
+<&| /Widgets/TitleBox,title => loc('Modify dates for ticket # [_1]', $TicketObj->Id) &>
 <& Elements/EditDates, TicketObj => $TicketObj &>
-<& /Elements/TitleBoxEnd &>
-<& /Elements/Submit, Label => loc('Save Changes'), color => "#663366" &>
+</&>
+<& /Elements/Submit, Label => loc('Save Changes') &>
 </form>
 
 
 <%INIT>
 
 my $TicketObj = LoadTicket($id);
+$m->comp('/Elements/Callback', TicketObj => $TicketObj, ARGSRef => \%ARGS);
 my @results = ProcessTicketDates( TicketObj => $TicketObj, ARGSRef => \%ARGS);
 
 </%INIT>

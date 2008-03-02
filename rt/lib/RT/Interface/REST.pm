@@ -2,7 +2,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/copyleft/gpl.html.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -54,25 +56,37 @@ BEGIN {
     use Exporter ();
     use vars qw($VERSION @ISA @EXPORT);
 
-    $VERSION = do { my @r = (q$Revision: 1.1.1.5 $ =~ /\d+/g); sprintf "%d."."%02d"x$#r, @r };
+    $VERSION = do { my @r = (q$Revision: 1.1.1.6 $ =~ /\d+/g); sprintf "%d."."%02d"x$#r, @r };
 
     @ISA = qw(Exporter);
     @EXPORT = qw(expand_list form_parse form_compose vpush vsplit);
 }
 
-my $field = '[a-zA-Z][a-zA-Z0-9_-]*';
+my $field = '(?i:[a-z][a-z0-9_-]*|C(?:ustom)?F(?:ield)?-(?:[a-z0-9_ -]|\s)+)';
 
+# WARN: this code is duplicated in bin/rt.in,
+# change both functions at once
 sub expand_list {
     my ($list) = @_;
-    my ($elt, @elts, %elts);
 
-    foreach $elt (split /,/, $list) {
-        if ($elt =~ /^(\d+)-(\d+)$/) { push @elts, ($1..$2) }
-        else                         { push @elts, $elt }
+    my @elts;
+    foreach (split /,/, $list) {
+        push @elts, /^(\d+)-(\d+)$/? ($1..$2): $_;
     }
 
-    @elts{@elts}=();
-    return sort {$a<=>$b} keys %elts;
+    return map $_->[0], # schwartzian transform
+        sort {
+            defined $a->[1] && defined $b->[1]?
+                # both numbers
+                $a->[1] <=> $b->[1]
+                :!defined $a->[1] && !defined $b->[1]?
+                    # both letters
+                    $a->[2] cmp $b->[2]
+                    # mix, number must be first
+                    :defined $a->[1]? -1: 1
+        }
+        map [ $_, (defined( /^(\d+)$/ )? $1: undef), lc($_) ],
+        @elts;
 }
 
 # Returns a reference to an array of parsed forms.
@@ -108,7 +122,7 @@ sub form_parse {
                 }
                 $c .= "\n";
             }
-            elsif ($state <= 1 && $line =~ /^($field):(?:\s+(.*))?$/) {
+            elsif ($state <= 1 && $line =~ /^($field):(?:\s+(.*))?$/i) {
                 # Read a field: value specification.
                 my $f  = $1;
                 my @v  = ($2 || ());

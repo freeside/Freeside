@@ -2,7 +2,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/copyleft/gpl.html.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -613,7 +615,7 @@ sub _SetupMIMEParser {
     # Turns out that the default is to recycle tempfiles
     # Temp files should never be recycled, especially when running under perl taint checking
     
-    $parser->tmp_recycling(0);
+    $parser->tmp_recycling(0) if $parser->can('tmp_recycling');
 
 }
 

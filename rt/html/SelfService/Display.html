@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+%# 02110-1301 or visit their web page on the internet at
+%# http://www.gnu.org/copyleft/gpl.html.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -47,25 +49,25 @@
 
 <& /Elements/ListActions, actions => \@results &>
 
-  <TABLE WIDTH="100%" class="ticketsummary" >
-      <TR>
-        <TD VALIGN=TOP WIDTH="50%" class="boxcontainer">
-          <& /Elements/TitleBoxStart, title => loc('The Basics'), 
+  <table width="100%" class="ticketsummary" >
+      <tr>
+        <td valign="top" width="50%" class="boxcontainer">
+          <&| /Widgets/TitleBox, title => loc('The Basics'), 
                 title_class=> 'inverse',  
                 color => "#993333" &>
                 <& /Ticket/Elements/ShowBasics, Ticket => $Ticket &>
                 <& /Ticket/Elements/ShowCustomFields, Ticket => $Ticket &>
-          <& /Elements/TitleBoxEnd &>
-</TD>
-        <TD VALIGN=TOP WIDTH="50%" class="boxcontainer">
-          <& /Elements/TitleBoxStart, title => loc("Dates"),
+          </&>
+</td>
+        <td valign="top" width="50%" class="boxcontainer">
+          <&| /Widgets/TitleBox, title => loc("Dates"),
                 title_class=> 'inverse',
                  color => "#663366" &>
           <& /Ticket/Elements/ShowDates, Ticket => $Ticket, UpdatedLink => 0 &>
-          <& /Elements/TitleBoxEnd &>
-</TD>
-</TR>
-</TABLE>
+          </&>
+</td>
+</tr>
+</table>
 
 
 
@@ -158,15 +160,6 @@ if ( $id[0] eq 'new' ) {
                 Why => loc( "Couldn't load ticket '[_1]'", $id ) );
             $m->abort();
         }
-    }
-
-    # }}}
-
-    unless ( $Ticket->CurrentUserHasRight('ShowTicket') ) {
-        $m->comp( 'Error.html',
-            Why => loc("No permission to display that ticket") );
-        $m->abort();
-    }
 
     my ( $code, $msg );
 
@@ -183,7 +176,8 @@ if ( $id[0] eq 'new' ) {
 
     if (
         $session{'Attachments'}
-        || (   $ARGS{'UpdateContent'} ne ''
+        || ( defined $ARGS{'UpdateContent'}
+            && $ARGS{'UpdateContent'} ne ''
             && $ARGS{'UpdateContent'} ne "-- \n"
             . $session{'CurrentUser'}->UserObj->Signature )
       )
@@ -195,6 +189,7 @@ if ( $id[0] eq 'new' ) {
         Actions   => \@results,
         TicketObj => $Ticket
     );
+            delete $session{'Attachments'};
 
     # delete temporary storage entry to make WebUI clean
     unless ( keys %{ $session{'Attachments'} } and $ARGS{'UpdateAttach'} ) {
@@ -205,6 +200,27 @@ if ( $id[0] eq 'new' ) {
     push (@results, @cfupdates);
 
     # }}}
+
+    }
+
+    # This code does automatic redirection if any updates happen.
+
+    unless ( $Ticket->CurrentUserHasRight('ShowTicket') ) {
+        $m->comp( 'Error.html',
+            Why => loc("No permission to display that ticket") );
+        $m->abort();
+    }
+
+    if (@results) {
+        # We've done something, so we need to clear the decks to avoid
+        # resubmission on refresh.
+        # But we need to store Actions somewhere too, so we don't lose them.
+        $session{"Actions"} = \@results;
+        RT::Interface::Web::Redirect($RT::WebURL."SelfService/Display.html?id="
+                                     . $Ticket->id);
+    } else {
+        @results = @{ delete $session{"Actions"} || [] };
+    }
 
     my $Transactions = $Ticket->Transactions;
 

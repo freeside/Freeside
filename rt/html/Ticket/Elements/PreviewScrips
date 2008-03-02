@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+%# 02110-1301 or visit their web page on the internet at
+%# http://www.gnu.org/copyleft/gpl.html.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -94,23 +96,24 @@ unless ( $Transaction ) {
 my @non_recipients = $TicketObj->SquelchMailTo;
 </%init>
 <h2><&|/l&>This message will be sent to...</&></h2>
+
 % if ( $Object ) {
-<i><&|/l&>(Check boxes to disable notifications to the listed recipients)</&></i><br>
+<i><&|/l&>(Check boxes to disable notifications to the listed recipients)</&></i><br />
 % foreach my $scrip (@{$Object->Scrips->Prepared}) {
 % next unless $scrip->ActionObj->Action->isa('RT::Action::SendEmail');
-<b><% $scrip->Description %></b><br>
+<b><% $scrip->Description %></b><br />
 <&|/l, loc($scrip->ConditionObj->Name), loc($scrip->ActionObj->Name), loc($scrip->TemplateObj->Name)&>[_1] [_2] with template [_3]</&>
-<br>
+<br />
 %foreach my $type qw(To Cc Bcc) {
 %my @addresses =  $scrip->ActionObj->Action->$type();
 <ul>
 %foreach my $addr (@addresses) {
-<li> <b><%loc($type)%></b>: <input type="checkbox" name="Ticket-<%$TicketObj->id%>-SquelchMailTo" value="<%$addr->address%>"> <%$addr->address%>
+<li> <b><%loc($type)%></b>: <input type="checkbox" class="checkbox" name="Ticket-<%$TicketObj->id%>-SquelchMailTo" value="<%$addr->address%>" /> <%$addr->address%>
 % }
 </ul>
 % }
 % if ($RT::PreviewScripMessages) {
-<textarea cols=80 rows="5">
+<textarea cols="80" rows="5">
 <%$scrip->ActionObj->TemplateObj->MIMEObj->as_string%>
 </textarea>
 % }
@@ -120,10 +123,10 @@ my @non_recipients = $TicketObj->SquelchMailTo;
 
 <h2><&|/l&>Messages about this ticket will not be sent to...</&></h2>
 <i><&|/l&>(Check boxes to enable notifications to the listed recipients)</&></i>
-<br>
+<br />
 <ul>
 % foreach my $recipient (@non_recipients) {
-<li><input type="checkbox" name="Ticket-<%$TicketObj->id%>-UnsquelchMailTo" value="<%$recipient->Content%>">
+<li><input type="checkbox" class="checkbox" name="Ticket-<%$TicketObj->id%>-UnsquelchMailTo" value="<%$recipient->Content%>" />
 <% $recipient->Content %>
 % }
 </ul>
