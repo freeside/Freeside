@@ -225,13 +225,22 @@ sub handler
           use RT::CustomFieldValues;
           use RT::ObjectCustomFieldValues;
 
+          #blah.  manually updated from RT::Interface::Web::Handler
           use RT::Interface::Web;
           use MIME::Entity;
           use Text::Wrapper;
           use Time::ParseDate;
-          use HTML::Scrubber;
-          #use Text::Quoted; #slow, unreliable, segfaults and is optional
           use Time::HiRes;
+          use HTML::Scrubber;
+
+          #slow, unreliable, segfaults and is optional
+          #see rt/html/Ticket/Elements/ShowTransactionAttachments
+          #use Text::Quoted;
+
+          #?#use File::Path qw( rmtree );
+          #?#use File::Glob qw( bsd_glob );
+          #?#use File::Spec::Unix;
+
         ';
         die $@ if $@;
       }
