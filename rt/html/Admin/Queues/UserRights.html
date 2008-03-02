@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+%# 02110-1301 or visit their web page on the internet at
+%# http://www.gnu.org/copyleft/gpl.html.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -50,31 +52,31 @@
     Title => loc('Modify user rights for queue [_1]', $QueueObj->Name) &>
 <& /Elements/ListActions, actions => \@results &>
 
-  <FORM METHOD=POST ACTION="UserRights.html">
-    <INPUT TYPE=HIDDEN NAME=id VALUE="<% $QueueObj->id %>">
+  <form method="post" action="UserRights.html">
+    <input type="hidden" class="hidden" name="id" value="<% $QueueObj->id %>" />
       
       
-<TABLE>
+<table>
 <& /Elements/Callback, QueueObj => $QueueObj, results => \@results, %ARGS &>
 %	while (my $Member = $Users->Next()) {
 % my $UserObj = $Member->MemberObj->Object();
 % my $group = RT::Group->new($session{'CurrentUser'});
 % $group->LoadACLEquivalenceGroup($Member->MemberObj);
-  <TR ALIGN=RIGHT> 
-	<TD VALIGN=TOP>
+  <tr align="right"> 
+	<td valign="top">
 	    <% $UserObj->Name %>
-		  </TD>
-	  <TD>
+		  </td>
+	  <td>
 	    <& /Admin/Elements/SelectRights, PrincipalId=> $group->PrincipalId,
         Object => $QueueObj  &>
-	  </TD>
-	</TR>
+	  </td>
+	</tr>
 % }
-      </TABLE>
+      </table>
             
       <& /Elements/Submit, Label => loc('Modify User Rights'), Reset => 1 &>
       
-  </FORM>
+  </form>
   
 <%INIT>
  

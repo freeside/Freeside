@@ -2,7 +2,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/copyleft/gpl.html.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -43,7 +45,6 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
-
 =head1 NAME
 
   RT::CurrentUser - an RT object representing the current user
@@ -353,11 +354,14 @@ specification. but currently doesn't
 
 ok (my $cu = RT::CurrentUser->new('root'));
 ok (my $lh = $cu->LanguageHandle('en-us'));
-ok ($lh != undef);
+ok (defined $lh);
 ok ($lh->isa('Locale::Maketext'));
 is ($cu->loc('TEST_STRING'), "Concrete Mixer", "Localized TEST_STRING into English");
 ok ($lh = $cu->LanguageHandle('fr'));
-is ($cu->loc('Before'), "Avant", "Localized TEST_STRING into Frenc");
+SKIP: {
+    skip "fr locale is not loaded", 1 unless grep $_ eq 'fr', @RT::LexiconLanguages;
+    is ($cu->loc('Before'), "Avant", "Localized TEST_STRING into Frenc");
+}
 
 =end testing
 

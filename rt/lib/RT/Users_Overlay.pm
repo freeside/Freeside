@@ -2,7 +2,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/copyleft/gpl.html.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -43,7 +45,6 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
-
 =head1 NAME
 
   RT::Users - Collection of RT::User objects
@@ -433,8 +434,7 @@ sub WhoHaveRight {
         return (undef);
     }
 
-    my $from_role = $self->Clone;
-    $from_role->WhoHaveRoleRight( %args );
+    my @from_role = $self->Clone->_WhoHaveRoleRightSplitted( %args );
 
     my $from_group = $self->Clone;
     $from_group->WhoHaveGroupRight( %args );
@@ -442,8 +442,8 @@ sub WhoHaveRight {
     #XXX: DIRTY HACK
     use DBIx::SearchBuilder::Union;
     my $union = new DBIx::SearchBuilder::Union;
-    $union->add($from_role);
-    $union->add($from_group);
+    $union->add( $_ ) foreach @from_role;
+    $union->add( $from_group );
     %$self = %$union;
     bless $self, ref($union);
 
@@ -468,39 +468,48 @@ sub WhoHaveRoleRight
     my $groups = $self->_JoinGroups( %args );
     my $acl = $self->_JoinACL( %args );
 
-    my ($check_roles, $check_objects) = ('','');
-    
+    $self->Limit( ALIAS => $acl,
+                  FIELD => 'PrincipalType',
+                  VALUE => "$groups.Type",
+                  QUOTEVALUE => 0,
+                );
+
+    # no system user
+    $self->Limit( ALIAS => $self->PrincipalsAlias,
+                  FIELD => 'id',
+                  OPERATOR => '!=',
+                  VALUE => $RT::SystemUser->id
+                );
+
     my @objects = $self->_GetEquivObjects( %args );
-    if ( @objects ) {
-        my @role_clauses;
-        my @object_clauses;
-        foreach my $obj ( @objects ) {
-            my $type = ref($obj)? ref($obj): $obj;
-            my $id;
-            $id = $obj->id if ref($obj) && UNIVERSAL::can($obj, 'id') && $obj->id;
-
-            my $role_clause = "$groups.Domain = '$type-Role'";
-            # XXX: Groups.Instance is VARCHAR in DB, we should quote value
-            # if we want mysql 4.0 use indexes here. we MUST convert that
-            # field to integer and drop this quotes.
-            $role_clause   .= " AND $groups.Instance = '$id'" if $id;
-            push @role_clauses, "($role_clause)";
-
-            my $object_clause = "$acl.ObjectType = '$type'";
-            $object_clause   .= " AND $acl.ObjectId = $id" if $id;
-            push @object_clauses, "($object_clause)";
+    unless ( @objects ) {
+        unless ( $args{'IncludeSystemRights'} ) {
+            $self->_AddSubClause( WhichObjects => "($acl.ObjectType != 'RT::System')" );
         }
-
-        $check_roles .= join ' OR ', @role_clauses;
-        $check_objects = join ' OR ', @object_clauses;
-    } else {
-        if( !$args{'IncludeSystemRights'} ) {
-            $check_objects = "($acl.ObjectType != 'RT::System')";
-        }
+        return;
     }
 
-    $self->_AddSubClause( "WhichObject", "($check_objects)" );
-    $self->_AddSubClause( "WhichRole", "($check_roles)" );
+    my ($groups_clauses, $acl_clauses) = $self->_RoleClauses( $groups, $acl, @objects );
+    $self->_AddSubClause( "WhichObject", "(". join( ' OR ', @$groups_clauses ) .")" );
+    $self->_AddSubClause( "WhichRole", "(". join( ' OR ', @$acl_clauses ) .")" );
+
+    return;
+}
+
+sub _WhoHaveRoleRightSplitted {
+    my $self = shift;
+    my %args = (
+        Right                  => undef,
+        Object                 => undef,
+        IncludeSystemRights    => undef,
+        IncludeSuperusers      => undef,
+        IncludeSubgroupMembers => 1,
+        EquivObjects           => [ ],
+        @_
+    );
+
+    my $groups = $self->_JoinGroups( %args );
+    my $acl = $self->_JoinACL( %args );
 
     $self->Limit( ALIAS => $acl,
                   FIELD => 'PrincipalType',
@@ -514,7 +523,53 @@ sub WhoHaveRoleRight
                   OPERATOR => '!=',
                   VALUE => $RT::SystemUser->id
                 );
-    return;
+
+    my @objects = $self->_GetEquivObjects( %args );
+    unless ( @objects ) {
+        unless ( $args{'IncludeSystemRights'} ) {
+            $self->_AddSubClause( WhichObjects => "($acl.ObjectType != 'RT::System')" );
+        }
+        return $self;
+    }
+
+    my ($groups_clauses, $acl_clauses) = $self->_RoleClauses( $groups, $acl, @objects );
+    $self->_AddSubClause( "WhichRole", "(". join( ' OR ', @$acl_clauses ) .")" );
+    
+    my @res;
+    foreach ( @$groups_clauses ) {
+        my $tmp = $self->Clone;
+        $tmp->_AddSubClause( WhichObject => $_ );
+        push @res, $tmp;
+    }
+
+    return @res;
+}
+
+sub _RoleClauses {
+    my $self = shift;
+    my $groups = shift;
+    my $acl = shift;
+    my @objects = @_;
+
+    my @groups_clauses;
+    my @acl_clauses;
+    foreach my $obj ( @objects ) {
+        my $type = ref($obj)? ref($obj): $obj;
+        my $id;
+        $id = $obj->id if ref($obj) && UNIVERSAL::can($obj, 'id') && $obj->id;
+
+        my $role_clause = "$groups.Domain = '$type-Role'";
+        # XXX: Groups.Instance is VARCHAR in DB, we should quote value
+        # if we want mysql 4.0 use indexes here. we MUST convert that
+        # field to integer and drop this quotes.
+        $role_clause   .= " AND $groups.Instance = '$id'" if $id;
+        push @groups_clauses, "($role_clause)";
+
+        my $object_clause = "$acl.ObjectType = '$type'";
+        $object_clause   .= " AND $acl.ObjectId = $id" if $id;
+        push @acl_clauses, "($object_clause)";
+    }
+    return (\@groups_clauses, \@acl_clauses);
 }
 
 # XXX: should be generalized

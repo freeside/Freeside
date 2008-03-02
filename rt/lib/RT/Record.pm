@@ -2,7 +2,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/copyleft/gpl.html.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -43,7 +45,6 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
-
 =head1 NAME
 
   RT::Record - Base class for RT record objects
@@ -65,18 +66,23 @@ ok (require RT::Record);
 =cut
 
 package RT::Record;
+
+use strict;
+use warnings;
+
+our @ISA;
+use base qw(RT::Base);
+
 use RT::Date;
 use RT::User;
 use RT::Attributes;
-use RT::Base;
 use DBIx::SearchBuilder::Record::Cachable;
+use Encode qw();
 
-use strict;
-use vars qw/@ISA $_TABLE_ATTR/;
+our $_TABLE_ATTR = { };
 
-@ISA = qw(RT::Base);
 
-if ($RT::DontCacheSearchBuilderRecords ) {
+if ( $RT::DontCacheSearchBuilderRecords ) {
     push (@ISA, 'DBIx::SearchBuilder::Record');
 } else {
     push (@ISA, 'DBIx::SearchBuilder::Record::Cachable');
@@ -188,7 +194,7 @@ sub AddAttribute {
                                       Description => $args{'Description'},
                                       Content     => $args{'Content'} );
 
-                                     
+
     # XXX TODO: Why won't RedoSearch work here?                                     
     $self->Attributes->_DoSearch;
     
@@ -236,8 +242,12 @@ sub DeleteAttribute {
 
 =head2 FirstAttribute NAME
 
-Returns the value of the first attribute with the matching name
-for this object, or C<undef> if no such attributes exist.
+Returns the first attribute with the matching name for this object (as an
+L<RT::Attribute> object), or C<undef> if no such attributes exist.
+
+Note that if there is more than one attribute with the matching name on the
+object, the choice of which one to return is basically arbitrary.  This may be
+made well-defined in the future.
 
 =cut
 
@@ -651,11 +661,6 @@ sub SQLType {
 
 }
 
-require Encode::compat if $] < 5.007001;
-require Encode;
-
-
-
 
 sub __Value {
     my $self  = shift;
@@ -748,7 +753,7 @@ DBIx::SearchBuilder::Record
 
 sub _ClassAccessible {
     my $self = shift;
-    return $_TABLE_ATTR->{ ref($self) || $self };
+    return $_TABLE_ATTR->{ref($self)};
 }
 
 =head2 _Accessible COLUMN ATTRIBUTE
@@ -857,7 +862,7 @@ sub _DecodeLOB {
     elsif ( $ContentEncoding && $ContentEncoding ne 'none' ) {
         return ( $self->loc( "Unknown ContentEncoding [_1]", $ContentEncoding ) );
     }
-    if ( $ContentType eq 'text/plain' ) {
+    if ( RT::I18N::IsTextualContentType($ContentType) ) {
        $Content = Encode::decode_utf8($Content) unless Encode::is_utf8($Content);
     }
         return ($Content);
@@ -880,6 +885,21 @@ use vars '%LINKDIRMAP';
                    Target => 'MergedInto', },
 
 );
+
+=head2 Update  ARGSHASH
+
+Updates fields on an object for you using the proper Set methods,
+skipping unchanged values.
+
+ ARGSRef => a hashref of attributes => value for the update
+ AttributesRef => an arrayref of keys in ARGSRef that should be updated
+ AttributePrefix => a prefix that should be added to the attributes in AttributesRef
+                    when looking up values in ARGSRef
+                    Bare attributes are tried before prefixed attributes
+
+Returns a list of localized results of the update
+
+=cut
 
 sub Update {
     my $self = shift;
@@ -929,7 +949,7 @@ sub Update {
         next if ( $value eq $self->$attribute() );
         my $method = "Set$attribute";
         my ( $code, $msg ) = $self->$method($value);
-        my ($prefix) = ref($self) =~ /RT::(\w+)/;
+        my ($prefix) = ref($self) =~ /RT(?:.*)::(\w+)/;
 
         # Default to $id, but use name if we can get it.
         my $label = $self->id;
@@ -1013,7 +1033,7 @@ sub RefersTo {
 
 =head2 ReferredToBy
 
-  This returns an RT::Links object which shows all references for which this ticket is a target
+This returns an L<RT::Links> object which shows all references for which this ticket is a target
 
 =cut
 
@@ -1216,9 +1236,14 @@ sub DependsOn {
 
 # {{{ sub _Links 
 
-=head2 Links DIRECTION TYPE 
+=head2 Links DIRECTION [TYPE]
 
-return links to/from this object. 
+Return links (L<RT::Links>) to/from this object.
+
+DIRECTION is either 'Base' or 'Target'.
+
+TYPE is a type of links to return, it can be omitted to get
+links of any type.
 
 =cut
 
@@ -1253,7 +1278,9 @@ sub _Links {
 
 =head2 _AddLink
 
-Takes a paramhash of Type and one of Base or Target. Adds that link to this ticket.
+Takes a paramhash of Type and one of Base or Target. Adds that link to this object.
+
+Returns C<link id>, C<message> and C<exist> flag.
 
 
 =cut
@@ -1278,13 +1305,11 @@ sub _AddLink {
     }
     elsif ( $args{'Base'} ) {
         $args{'Target'} = $self->URI();
-	my $class = ref($self);
         $remote_link    = $args{'Base'};
         $direction      = 'Target';
     }
     elsif ( $args{'Target'} ) {
         $args{'Base'} = $self->URI();
-	my $class = ref($self);
         $remote_link  = $args{'Target'};
         $direction    = 'Base';
     }
@@ -1300,7 +1325,7 @@ sub _AddLink {
                              Target => $args{'Target'} );
     if ( $old_link->Id ) {
         $RT::Logger->debug("$self Somebody tried to duplicate a link");
-        return ( $old_link->id, $self->loc("Link already exists") );
+        return ( $old_link->id, $self->loc("Link already exists"), 1 );
     }
 
     # }}}
@@ -1365,7 +1390,7 @@ sub _DeleteLink {
         $direction='Base';
     }
     else {
-        $RT::Logger->debug("$self: Base or Target must be specified\n");
+        $RT::Logger->error("Base or Target must be specified\n");
         return ( 0, $self->loc('Either base or target must be specified') );
     }
 
@@ -1466,7 +1491,7 @@ sub _NewTransaction {
         $self->_UpdateTimeTaken( $args{'TimeTaken'} );
     }
     if ( $RT::UseTransactionBatch and $transaction ) {
-	    push @{$self->{_TransactionBatch}}, $trans;
+	    push @{$self->{_TransactionBatch}}, $trans if $args{'CommitScrips'};
     }
     return ( $transaction, $msg, $trans );
 }
@@ -1654,7 +1679,7 @@ sub _AddCustomFieldValue {
         );
 
         unless ($new_value_id) {
-            return ( 0, $self->loc( "Could not add new custom field value. [_1] ",, $value_msg));
+            return ( 0, $self->loc( "Could not add new custom field value: [_1]", $value_msg) );
         }
 
         my $new_value = RT::ObjectCustomFieldValue->new( $self->CurrentUser );
@@ -1693,7 +1718,7 @@ sub _AddCustomFieldValue {
 
     # otherwise, just add a new value and record "new value added"
     else {
-        my ($new_value_id) = $cf->AddValueForObject(
+        my ($new_value_id, $value_msg) = $cf->AddValueForObject(
             Object       => $self,
             Content      => $args{'Value'},
             LargeContent => $args{'LargeContent'},
@@ -1701,7 +1726,7 @@ sub _AddCustomFieldValue {
         );
 
         unless ($new_value_id) {
-            return ( 0, $self->loc("Could not add new custom field value. ") );
+            return ( 0, $self->loc( "Could not add new custom field value: [_1]", $value_msg) );
         }
         if ( $args{'RecordTransaction'} ) {
             my ( $TransactionId, $Msg, $TransactionObj ) =
@@ -1857,7 +1882,7 @@ sub LoadCustomFieldByIdentifier {
     } else {
 
         my $cfs = $self->CustomFields($self->CurrentUser);
-        $cfs->Limit(FIELD => 'Name', VALUE => $field);
+        $cfs->Limit(FIELD => 'Name', VALUE => $field, CASESENSITIVE => 0);
         $cf = $cfs->First || RT::CustomField->new($self->CurrentUser);
     }
     return $cf;
@@ -1871,6 +1896,10 @@ sub LoadCustomFieldByIdentifier {
 # }}}
 
 sub BasicColumns {
+}
+
+sub WikiBase {
+  return $RT::WebPath. "/index.html?q=";
 }
 
 eval "require RT::Record_Vendor";

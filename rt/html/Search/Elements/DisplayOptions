@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+%# 02110-1301 or visit their web page on the internet at
+%# http://www.gnu.org/copyleft/gpl.html.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -43,43 +45,53 @@
 %# those contributions and any derivatives thereof.
 %# 
 %# END BPS TAGGED BLOCK }}}
-<& /Elements/TitleBoxStart, title => loc("Display Columns") &>
-<table>
+<&| /Widgets/TitleBox, title => loc("Display Columns") &>
+<table width="100%">
 <tr>
 <td>
 <& EditFormat, %ARGS &>
 </td>
-<td valign=top>
-<table valign=top>
+<td valign="top">
+<table valign="top">
+
+% for my $o (0..3) {
 <tr>
-<td class=label>
+<td class="label">
+% if ($o == 0) {
 <&|/l&>Order by</&>:
-</td><td class=value>
+% }
+</td>
+<td class="value">
 <select name="OrderBy">
-% foreach my $field (keys %fields) {
+% if ($o > 0) {
+<option value=""><&|/l&>~[none~]</&></option>
+% }
+% foreach my $field (sort keys %fields) {
 %    next unless $field;
-<option value=<%$field%>
-% if ($field =~ /^$OrderBy$/i) {
-SELECTED
+<option value="<%$field%>"
+% if (defined $OrderBy[$o] and $field eq $OrderBy[$o]) {
+selected
 % }
 ><&|/l&><%$field%></&></option>
 % }
 </select>
 <select name="Order">
 <option value="ASC"
-% if ($Order eq "ASC") {
-SELECTED
+% unless ( ($Order[$o]||'') eq "DESC" ) {
+selected
 % }
-><&|/l&>Ascending</&></option>
+><&|/l&>Asc</&></option>
 <option value="DESC"
-% if ($Order eq "DESC") {
-SELECTED
+% if ( ($Order[$o]||'') eq "DESC" ) {
+selected
 % }
-><&|/l&>Descending</&></option>
+><&|/l&>Desc</&></option>
 </select>
 </td>
 </tr>
-<td class=label>
+% }
+<tr>
+<td class="label">
 <&|/l&>Rows per page</&>:
 </td><td class="value">
 <& /Elements/SelectResultsPerPage, 
@@ -91,14 +103,34 @@ SELECTED
 </td>
 </tr>
 </table>
-<& /Elements/TitleBoxEnd &>
+</&>
 
 <%INIT>
 my $tickets = new RT::Tickets($session{'CurrentUser'});
 my %fields = %{$tickets->FIELDS};
 map { $fields{$_}->[0] =~ /^(?:ENUM|INT|DATE|STRING)$/ || delete $fields{$_} } keys %fields;
 delete $fields{'EffectiveId'};
+$fields{ $_ . '.EmailAddress' } = 1 foreach( qw(Requestor Cc AdminCc) );
 
+# Add all available CustomFields to the list of sortable columns.
+my @cfs = grep /^CustomField/, @{$ARGS{AvailableColumns}};
+$fields{$_}=1 for @cfs;
+
+# Add PAW sort
+$fields{'Custom.Ownership'} = 1;
+
+my @Order;
+my @OrderBy;
+if ($OrderBy =~ /\|/) {
+    @OrderBy = split /\|/, $OrderBy;
+} else {
+    @OrderBy = ( $OrderBy );
+}
+if ($Order =~ /\|/) {
+    @Order = split /\|/, $Order;
+} else {
+    @Order = ( $Order );
+}
 
 </%INIT>
 
@@ -107,4 +139,5 @@ $Order => undef
 $OrderBy => undef
 $RowsPerPage => undef
 $Format => undef
+$GroupBy => 'id'
 </%ARGS>

@@ -2,7 +2,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/copyleft/gpl.html.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -171,7 +173,7 @@ sub Load {
 
 =head2 LoadGlobalTemplate NAME
 
-Load the global tempalte with the name NAME
+Load the global template with the name NAME
 
 =cut
 
@@ -297,7 +299,8 @@ sub MIMEObj {
  This routine performs Text::Template parsing on the template and then
  imports the results into a MIME::Entity so we can really use it
 
- Takes a hash containing Argument, TicketObj, and TransactionObj.
+ Takes a hash containing Argument, TicketObj, and TransactionObj. TicketObj
+ and TransactionObj are not mandatory, but highly recommended.
 
  It returns a tuple of (val, message)
  If val is 0, the message contains an error message
@@ -360,12 +363,16 @@ sub _ParseContent {
     );
 
     no warnings 'redefine';
-    $T::Ticket      = $args{'TicketObj'};
-    $T::Transaction = $args{'TransactionObj'};
-    $T::Argument    = $args{'Argument'};
-    $T::Requestor   = eval { $T::Ticket->Requestors->UserMembersObj->First->Name };
-    $T::rtname      = $RT::rtname;
-    *T::loc         = sub { $T::Ticket->loc(@_) };
+    local $T::Ticket      = $args{'TicketObj'};
+    local $T::Transaction = $args{'TransactionObj'};
+    local $T::Argument    = $args{'Argument'};
+    local $T::Requestor   = eval { $T::Ticket->Requestors->UserMembersObj->First->Name } if $T::Ticket;
+    local $T::rtname      = $RT::rtname;
+
+    local *T::loc         = sub {
+        $T::Ticket ? $T::Ticket->loc(@_)
+                   : $self->CurrentUser->loc(@_)
+    };
 
     my $content = $self->Content;
     unless ( defined $content ) {

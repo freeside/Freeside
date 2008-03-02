@@ -2,7 +2,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/copyleft/gpl.html.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -43,7 +45,6 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
-
 =head1 NAME
 
   RT::User - RT User object
@@ -80,7 +81,7 @@ use Digest::MD5;
 use RT::Principals;
 use RT::ACE;
 use RT::Interface::Email;
-
+use Encode;
 
 # {{{ sub _Accessible 
 
@@ -265,7 +266,7 @@ sub Create {
     #If the create failed.
     unless ($id) {
         $RT::Handle->Rollback();
-        $RT::Logger->error("Could not create a new user - " .join('-'. %args));
+        $RT::Logger->error("Could not create a new user - " .join('-', %args));
 
         return ( 0, $self->loc('Could not create user') );
     }
@@ -670,8 +671,8 @@ sub ValidateEmailAddress {
 CanonicalizeEmailAddress converts email addresses into canonical form.
 it takes one email address in and returns the proper canonical
 form. You can dump whatever your proper local config is in here.  Note
-that it may be called as a static method; in this case, $self may be
-undef.
+that it may be called as a static method; in this case the first argument
+is class name not an object.
 
 =cut
 
@@ -1063,7 +1064,7 @@ sub _GeneratePassword {
     my $password = shift;
 
     my $md5 = Digest::MD5->new();
-    $md5->add($password);
+    $md5->add(encode_utf8($password));
     return ($md5->hexdigest);
 
 }
@@ -1080,7 +1081,7 @@ sub _GeneratePasswordBase64 {
     my $password = shift;
 
     my $md5 = Digest::MD5->new();
-    $md5->add($password);
+    $md5->add(encode_utf8($password));
     return ($md5->b64digest);
 
 }
@@ -1097,18 +1098,11 @@ Returns true if the user has a valid password, otherwise returns false.
 
 sub HasPassword {
     my $self = shift;
-    if (   ( $self->__Value('Password') eq '' )
-        || ( $self->__Value('Password') eq undef ) )
-    {
-
-        return (undef);
-    }
-    if ( $self->__Value('Password') eq '*NO-PASSWORD*' ) {
-        return undef;
-    }
-
+    my $pwd = $self->__Value('Password');
+    return undef if !defined $pwd
+                    || $pwd eq ''
+                    || $pwd eq '*NO-PASSWORD*';
     return 1;
-
 }
 
 
@@ -1629,7 +1623,146 @@ sub CurrentUserHasRight {
     return ( $self->CurrentUser->HasRight(Right => $right, Object => $RT::System) );
 }
 
+sub _PrefName {
+    my $name = shift;
+    if (ref $name) {
+	$name = ref ($name).'-'.$name->Id;
+    }
+
+    return 'Pref-'.$name;
+}
+
+# {{{ sub Preferences
+
+=head2 Preferences NAME/OBJ DEFAULT
+
+  Obtain user preferences associated with given object or name.
+  Returns DEFAULT if no preferences found.  If DEFAULT is a hashref,
+  override the entries with user preferences.
+
+=cut
+
+sub Preferences {
+    my $self  = shift;
+    my $name = _PrefName (shift);
+    my $default = shift;
+
+    my $attr = RT::Attribute->new ($self->CurrentUser);
+    $attr->LoadByNameAndObject (Object => $self, Name => $name);
+
+    my $content = $attr->Id ? $attr->Content : undef;
+    if (ref ($content) eq 'HASH') {
+	if (ref ($default) eq 'HASH') {
+	    for (keys %$default) {
+		exists $content->{$_} or $content->{$_} = $default->{$_};
+	    }
+	}
+	elsif (defined $default) {
+	    $RT::Logger->error("Preferences $name for user".$self->Id." is hash but default is not");
+	}
+	return $content;
+    }
+    else {
+	return defined $content ? $content : $default;
+    }
+}
+
 # }}}
+
+# {{{ sub SetPreferences
+
+=head2 SetPreferences NAME/OBJ VALUE
+
+  Set user preferences associated with given object or name.
+
+=cut
+
+sub SetPreferences {
+    my $self  = shift;
+    my $name = _PrefName (shift);
+    my $value = shift;
+    my $attr = RT::Attribute->new ($self->CurrentUser);
+    $attr->LoadByNameAndObject (Object => $self, Name => $name);
+    if ($attr->Id) {
+	return $attr->SetContent ($value);
+    }
+    else {
+	return $self->AddAttribute ( Name => $name, Content => $value );
+    }
+}
+
+# }}}
+
+
+=head2 WatchedQueues ROLE_LIST
+
+Returns a RT::Queues object containing every queue watched by the user.
+
+Takes a list of roles which is some subset of ('Cc', 'AdminCc').  Defaults to:
+
+$user->WatchedQueues('Cc', 'AdminCc');
+
+=cut
+
+sub WatchedQueues {
+
+    my $self = shift;
+    my @roles = @_ || ('Cc', 'AdminCc');
+
+    $RT::Logger->debug('WatcheQueues got user ' . $self->Name);
+
+    my $watched_queues = RT::Queues->new($self->CurrentUser);
+
+    my $group_alias = $watched_queues->Join(
+                                             ALIAS1 => 'main',
+                                             FIELD1 => 'id',
+                                             TABLE2 => 'Groups',
+                                             FIELD2 => 'Instance',
+                                           );
+
+    $watched_queues->Limit( 
+                            ALIAS => $group_alias,
+                            FIELD => 'Domain',
+                            VALUE => 'RT::Queue-Role',
+                            ENTRYAGGREGATOR => 'AND',
+                          );
+    if (grep { $_ eq 'Cc' } @roles) {
+        $watched_queues->Limit(
+                                SUBCLAUSE => 'LimitToWatchers',
+                                ALIAS => $group_alias,
+                                FIELD => 'Type',
+                                VALUE => 'Cc',
+                                ENTRYAGGREGATOR => 'OR',
+                              );
+    }
+    if (grep { $_ eq 'AdminCc' } @roles) {
+        $watched_queues->Limit(
+                                SUBCLAUSE => 'LimitToWatchers',
+                                ALIAS => $group_alias,
+                                FIELD => 'Type',
+                                VALUE => 'AdminCc',
+                                ENTRYAGGREGATOR => 'OR',
+                              );
+    }
+
+    my $queues_alias = $watched_queues->Join(
+                                              ALIAS1 => $group_alias,
+                                              FIELD1 => 'id',
+                                              TABLE2 => 'CachedGroupMembers',
+                                              FIELD2 => 'GroupId',
+                                            );
+    $watched_queues->Limit(
+                            ALIAS => $queues_alias,
+                            FIELD => 'MemberId',
+                            VALUE => $self->PrincipalId,
+                          );
+
+    $RT::Logger->debug("WatchedQueues got " . $watched_queues->Count . " queues");
+    
+    return $watched_queues;
+
+}
+
 
 # {{{ sub _CleanupInvalidDelegations
 

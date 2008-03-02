@@ -2,7 +2,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/copyleft/gpl.html.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -70,8 +72,10 @@ RT::Base
 =head2 CurrentUser
 
 If called with an argument, sets the current user to that user object.
-This will affect ACL decisions, etc.  
-Returns the current user
+This will affect ACL decisions, etc. The argument can be either
+L<RT::CurrentUser> or L<RT::User> object.
+
+Returns the current user object of L<RT::CurrentUser> class.
 
 =cut
 
@@ -80,18 +84,30 @@ sub CurrentUser {
 
     if (@_) {
         $self->{'original_user'} = $self->{'user'};
-        $self->{'user'} = shift;
+        my $current_user = $_[0];
+        if ( ref $current_user eq 'RT::User' ) {
+            $self->{'user'} = new RT::CurrentUser;
+            $self->{'user'}->Load( $current_user->id );
+        } else {
+            $self->{'user'} = $current_user;
+        }
         # We need to weaken the CurrentUser ($self->{'user'}) reference
         # if the object in question is the currentuser object.
         # This avoids memory leaks.
-        Scalar::Util::weaken($self->{'user'}) if (ref($self->{'user'}) &&
-                                                    $self->{'user'} == $self );
+        Scalar::Util::weaken($self->{'user'})
+            if ref $self->{'user'} && $self->{'user'} == $self;
     }
 
-    unless ( ref( $self->{'user'}) ) {
-        $RT::Logger->err( "$self was created without a CurrentUser\n" . Carp::cluck() );
-        return (0);
+    unless ( ref $self->{'user'} && $self->{'user'}->isa('RT::CurrentUser') ) {
+        my $msg = "$self was created without a CurrentUser."
+            ." Any RT object which is subclass of RT::Base must be created"
+            ." with a RT::CurrentUser or a RT::User obejct as the first argument.";
+        $msg .= "\n". Carp::cluck() if @_;
+
+        $RT::Logger->err( $msg );
+        return $self->{'user'} = undef;
     }
+
     return ( $self->{'user'} );
 }
 

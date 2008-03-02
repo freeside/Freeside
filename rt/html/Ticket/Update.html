@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+%# 02110-1301 or visit their web page on the internet at
+%# http://www.gnu.org/copyleft/gpl.html.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -48,26 +50,28 @@
     Ticket => $TicketObj, 
     Title=> $title &>
 
-<FORM ACTION="Update.html" NAME="TicketUpdate" 
-	METHOD=POST enctype="multipart/form-data">
-<input type="hidden" name="QuoteTransaction" value="<% $ARGS{QuoteTransaction} %>">
-<input type="hidden" name="DefaultStatus" value="<% $DefaultStatus %>">
-<input type="hidden" name="Action" value="<% $ARGS{Action} %>">
+<form action="Update.html" name="TicketUpdate" 
+	method="post" enctype="multipart/form-data">
+<& /Elements/Callback, _CallbackName => 'FormStart',ARGSRef =>\%ARGS &>
+<input type="hidden" class="hidden" name="QuoteTransaction" value="<% $ARGS{QuoteTransaction} %>" />
+<input type="hidden" class="hidden" name="DefaultStatus" value="<% $DefaultStatus %>" />
+<input type="hidden" class="hidden" name="Action" value="<% $ARGS{Action} %>" />
+<table width="100%" border="0">
 
-<TABLE BORDER=0>
-
-<tr><td align=right><&|/l&>Status</&>:</td>
+<tr><td align="right"><&|/l&>Status</&>:</td>
 <td>
 <& /Elements/SelectStatus, Name=>"Status", DefaultLabel => loc("[_1] (Unchanged)", loc($TicketObj->Status)), Default => $ARGS{'Status'} || ($TicketObj->Status eq $DefaultStatus ? undef : $DefaultStatus)&>
 <&|/l&>Owner</&>:  
 <& /Elements/SelectOwner, Name=>"Owner", DefaultLabel => loc("[_1] (Unchanged)", $TicketObj->OwnerObj->Name()), QueueObj => $TicketObj->QueueObj, TicketObj => $TicketObj, Default => $ARGS{'Owner'} &>
-<&|/l&>Worked</&>: <input size=4 name="UpdateTimeWorked" value="<% $ARGS{UpdateTimeWorked}%>"> <&|/l&>minutes</&></td></tr>
+<&|/l&>Worked</&>: <input size="4" name="UpdateTimeWorked" value="<% $ARGS{UpdateTimeWorked} %>" /> 
+<& /Elements/SelectTimeUnits, Name => 'UpdateTimeWorked'&>
+</td></tr>
 % my $skip;
 <& /Elements/Callback, _CallbackName => 'BeforeUpdateType', skip => \$skip, %ARGS &>
 % if (!$skip) {
-<INPUT TYPE=HIDDEN NAME=id VALUE="<%$TicketObj->Id%>"><br>
+<input type="hidden" class="hidden" name="id" value="<%$TicketObj->Id%>" /><br />
 % }
-<tr><td align=right><&|/l&>Update Type</&>:</td>
+<tr><td align="right"><&|/l&>Update Type</&>:</td>
 <td><select name="UpdateType">
 % if ($CanComment) {
   <option value="private" <%$ARGS{'UpdateType'} eq "private" ? "SELECTED" : !$ARGS{'UpdateType'}&&$CommentDefault%>><&|/l&>Comments (Not sent to requestors)</&></option>
@@ -77,41 +81,41 @@
 % }
 </select> 
 </td></tr>
-<tr><td align=right><&|/l&>Subject</&>:</td><td> <input name="UpdateSubject" size=60 value="<% $ARGS{UpdateSubject} || $TicketObj->Subject()%>"></td></tr>
-<tr><td align=right><&|/l&>Cc</&>:</td><td> <input name="UpdateCc" size=60
-value="<% $ARGS{UpdateCc} %>"><BR>
-<i><font size=-2>
-<&|/l&>(Sends a carbon-copy of this update to a comma-delimited list of email addresses. Does <b>not</b> change who will receive future updates.)</&></font></i>
+<tr><td align="right"><&|/l&>Subject</&>:</td><td> <input name="UpdateSubject" size="60" value="<% $ARGS{UpdateSubject} || $TicketObj->Subject()%>" /></td></tr>
+<tr><td align="right"><&|/l&>Cc</&>:</td><td> <input name="UpdateCc" size="60"
+value="<%$ARGS{UpdateCc}||""%>" /><br />
+<i><font size="-2">
+<&|/l&>(Sends a carbon-copy of this update to a comma-delimited list of email addresses. Does <strong>not</strong> change who will receive future updates.)</&></font></i>
 </td></tr>
-<tr><td align=right><&|/l&>Bcc</&>:</td><td> <input name="UpdateBcc" size=60 VALUE="<%$ARGS{UpdateBcc}%>"><BR>
-<i><font size=-2>
-<&|/l&>(Sends a blind carbon-copy of this update to a comma-delimited list of email addresses. Does <b>not</b> change who will receive future updates.)</&></font></i>
+<tr><td align="right"><&|/l&>Bcc</&>:</td><td> <input name="UpdateBcc" size="60" value="<%$ARGS{UpdateBcc}||""%>" /><br />
+<i><font size="-2">
+<&|/l&>(Sends a blind carbon-copy of this update to a comma-delimited list of email addresses. Does <strong>not</strong> change who will receive future updates.)</&></font></i>
 </td></tr>
 % if (exists $session{'Attachments'}) {
-<TD>
+<td>
 <&|/l&>Attached file</&>:
-</TD>
-<TD COLSPAN=5>
-<&|/l&>Check box to delete</&><BR>
+</td>
+<td colspan="5">
+<&|/l&>Check box to delete</&><br />
 % foreach my $attach_name (keys %{$session{'Attachments'}}) {
-<input type="checkbox" name="DeleteAttach-<%$attach_name%>" value="1"><%$attach_name%><BR>
+<input type="checkbox" class="checkbox" name="DeleteAttach-<%$attach_name%>" value="1" /><%$attach_name%><br />
 % } # end of foreach
-</TD>
-</TR>
-<TR>
+</td>
+</tr>
+<tr>
 % } # end of if
 
 % if (my $TxnCFs = $TicketObj->TransactionCustomFields) {
 %    while (my $CF = $TxnCFs->Next()) {
-<TR>
-<TD ALIGN=RIGHT><% $CF->Name %>:</TD>
-<TD><& /Elements/EditCustomField, CustomField => $CF, NamePrefix =>
-    "Object-RT::Transaction--CustomField-" &><em><% $CF->FriendlyType %></em></TD>
-</TR>
+<tr>
+<td align="right"><% $CF->Name %>:</td>
+<td><& /Elements/EditCustomField, CustomField => $CF, NamePrefix =>
+    "Object-RT::Transaction--CustomField-" &><em><% $CF->FriendlyType %></em></td>
+</tr>
 %    } # end if while
 % } # end of if
 
-<tr><td align=right><&|/l&>Attach</&>:</td><td><input name="Attach" type="file"><INPUT TYPE=SUBMIT NAME="AddMoreAttach" VALUE="<&|/l&>Add More Files</&>"><input type="hidden" name="UpdateAttach" value="1">
+<tr><td align="right"><&|/l&>Attach</&>:</td><td><input name="Attach" type="file" /><input type="submit" class="button" name="AddMoreAttach" value="<&|/l&>Add More Files</&>" /><input type="hidden" class="hidden" name="UpdateAttach" value="1" />
 </td></tr>
 <tr><td align="right" valign="top"><&|/l&>Message</&>:</td><td>
 <& /Elements/Callback, _CallbackName => 'BeforeMessageBox', %ARGS &>
@@ -134,7 +138,7 @@ value="<% $ARGS{UpdateCc} %>"><BR>
 % if ($TicketObj->CurrentUserHasRight('ShowOutgoingEmail')) {
 <& /Ticket/Elements/PreviewScrips, TicketObj => $TicketObj, %ARGS &>
 % }
-</FORM>
+</form>
 <%INIT>
 my $CanRespond = 0;
 my $CanComment = 0;

@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+%# 02110-1301 or visit their web page on the internet at
+%# http://www.gnu.org/copyleft/gpl.html.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -51,7 +53,8 @@
     tabs => $tabs,
     actions => $actions,
     subactions => $subactions,
-    title => $Title
+    title => $Title,
+    show_menu => $show_menu,
 &>
 <a name="skipnav" id="skipnav" accesskey="8"></a>
 <%INIT>
@@ -65,11 +68,14 @@ my $basetopactions = {
 my $basetabs = {     A => { title => loc('Homepage'),
                            path => '',
                          },
+                    Ab => { title => loc('Simple Search'),
+                        path => 'Search/Simple.html'
+                         },
                     B => { title => loc('Tickets'),
                         path => 'Search/Build.html'
                       },
                     C => { title => loc('Tools'),
-                           path => 'Tools/Offline.html'
+                           path => 'Tools/index.html'
                          },
                     P => { title => loc('Approval'),
                            path => 'Approvals/'
@@ -112,4 +118,5 @@ $tabs => undef
 $actions => undef
 $subactions => undef
 $Title => undef
+$show_menu => 1
 </%ARGS>

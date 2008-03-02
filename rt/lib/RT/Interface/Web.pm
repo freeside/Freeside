@@ -2,7 +2,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/copyleft/gpl.html.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -62,10 +64,13 @@ use_ok(RT::Interface::Web);
 =cut
 
 
-package RT::Interface::Web;
 use strict;
+use warnings;
 
-
+package RT::Interface::Web;
+use HTTP::Date;
+use RT::SavedSearches;
+use URI;
 
 # {{{ EscapeUTF8
 
@@ -127,7 +132,7 @@ sub WebCanonicalizeInfo {
     my $user;
 
     if ( defined $ENV{'REMOTE_USER'} ) {
-	$user = lc ( $ENV{'REMOTE_USER'} ) if( length($ENV{'REMOTE_USER'}) );
+        $user = lc ( $ENV{'REMOTE_USER'} ) if( length($ENV{'REMOTE_USER'}) );
     }
 
     return $user;
@@ -151,14 +156,14 @@ sub WebExternalAutoInfo {
     $user_info{'Privileged'} = 1;
 
     if ($^O !~ /^(?:riscos|MacOS|MSWin32|dos|os2)$/) {
-	# Populate fields with information from Unix /etc/passwd
+        # Populate fields with information from Unix /etc/passwd
 
-	my ($comments, $realname) = (getpwnam($user))[5, 6];
-	$user_info{'Comments'} = $comments if defined $comments;
-	$user_info{'RealName'} = $realname if defined $realname;
+        my ($comments, $realname) = (getpwnam($user))[5, 6];
+        $user_info{'Comments'} = $comments if defined $comments;
+        $user_info{'RealName'} = $realname if defined $realname;
     }
     elsif ($^O eq 'MSWin32' and eval 'use Net::AdminMisc; 1') {
-	# Populate fields with information from NT domain controller
+        # Populate fields with information from NT domain controller
     }
 
     # and return the wad of stuff
@@ -168,8 +173,62 @@ sub WebExternalAutoInfo {
 # }}}
 
 
+
+=head2 Redirect URL
+
+This routine ells the current user's browser to redirect to URL.  
+Additionally, it unties the user's currently active session, helping to avoid 
+A bug in Apache::Session 1.81 and earlier which clobbers sessions if we try to use 
+a cached DBI statement handle twice at the same time.
+
+=cut
+
+
+sub Redirect {
+    my $redir_to = shift;
+    untie $HTML::Mason::Commands::session;
+    my $uri = URI->new($redir_to);
+    my $server_uri = URI->new($RT::WebURL);
+
+    # If the user is coming in via a non-canonical
+    # hostname, don't redirect them to the canonical host,
+    # it will just upset them (and invalidate their credentials)
+    if ($uri->host  eq $server_uri->host && 
+        $uri->port eq $server_uri->port) {
+            $uri->host($ENV{'HTTP_HOST'});
+            $uri->port($ENV{'SERVER_PORT'});
+        }
+
+    $HTML::Mason::Commands::m->redirect($uri->canonical);
+    $HTML::Mason::Commands::m->abort;
+}
+
+
+=head2 StaticFileHeaders 
+
+Send the browser a few headers to try to get it to (somewhat agressively)
+cache RT's static Javascript and CSS files.
+
+This routine could really use _accurate_ heuristics. (XXX TODO)
+
+=cut
+
+sub StaticFileHeaders {
+    # make cache public
+    $HTML::Mason::Commands::r->headers_out->{'Cache-Control'} = 'max-age=259200, public';
+
+    # Expire things in a month.
+    $HTML::Mason::Commands::r->headers_out->{'Expires'} = HTTP::Date::time2str( time() + 2592000 );
+
+    # if we set 'Last-Modified' then browser request a comp using 'If-Modified-Since'
+    # request, but we don't handle it and generate full reply again
+    # Last modified at server start time
+    #$HTML::Mason::Commands::r->headers_out->{'Last-Modified'} = HTTP::Date::time2str($^T);
+
+}
+
+
 package HTML::Mason::Commands;
-use strict;
 use vars qw/$r $m %session/;
 
 
@@ -194,8 +253,8 @@ sub loc {
         return ($u->loc(@_));
     }
     else {
-	# pathetic case -- SystemUser is gone.
-	return $_[0];
+        # pathetic case -- SystemUser is gone.
+        return $_[0];
     }
 }
 
@@ -277,15 +336,12 @@ sub CreateTicket {
     my $starts = new RT::Date( $session{'CurrentUser'} );
     $starts->Set( Format => 'unknown', Value => $ARGS{'Starts'} );
 
-    my @Requestors = split ( /\s*,\s*/, $ARGS{'Requestors'} );
-    my @Cc         = split ( /\s*,\s*/, $ARGS{'Cc'} );
-    my @AdminCc    = split ( /\s*,\s*/, $ARGS{'AdminCc'} );
-
     my $MIMEObj = MakeMIMEEntity(
         Subject             => $ARGS{'Subject'},
         From                => $ARGS{'From'},
         Cc                  => $ARGS{'Cc'},
         Body                => $ARGS{'Content'},
+        Type                => $ARGS{'ContentType'},
     );
 
     if ( $ARGS{'Attachments'} ) {
@@ -311,23 +367,39 @@ sub CreateTicket {
         TimeLeft        => $ARGS{'TimeLeft'},
         TimeEstimated        => $ARGS{'TimeEstimated'},
         TimeWorked      => $ARGS{'TimeWorked'},
-        Requestor       => \@Requestors,
-        Cc              => \@Cc,
-        AdminCc         => \@AdminCc,
         Subject         => $ARGS{'Subject'},
         Status          => $ARGS{'Status'},
         Due             => $due->ISO,
         Starts          => $starts->ISO,
         MIMEObj         => $MIMEObj
     );
-    foreach my $arg (keys %ARGS) {
-            my $cfid = $1;
 
-            next if ($arg =~ /-Magic$/);
-       #Object-RT::Ticket--CustomField-3-Values
+    my @temp_squelch;
+    foreach my $type (qw(Requestors Cc AdminCc)) {
+        my @tmp = map { $_->format } grep { $_->address} Mail::Address->parse( $ARGS{ $type } );
+
+        $create_args{ $type } = [
+            grep $_, map {
+                my $user = RT::User->new( $RT::SystemUser );
+                $user->LoadOrCreateByEmail( $_ );
+                # convert to ids to avoid work later
+                $user->id;
+            } @tmp
+        ];
+        $RT::Logger->debug(
+            "$type got ".join(',',@{$create_args{ $type }}) );
+
+    }
+    # XXX: workaround for name conflict :(
+    $create_args{'Requestor'} = delete $create_args{'Requestors'};
+
+    foreach my $arg (keys %ARGS) {
+        next if $arg =~ /-(?:Magic|Category)$/;
+
         if ($arg =~ /^Object-RT::Transaction--CustomField-/) {
             $create_args{$arg} = $ARGS{$arg};
         }
+        # Object-RT::Ticket--CustomField-3-Values
         elsif ($arg =~ /^Object-RT::Ticket--CustomField-(\d+)(.*?)$/) {
             my $cfid = $1;
             my $cf = RT::CustomField->new( $session{'CurrentUser'});
@@ -358,42 +430,42 @@ sub CreateTicket {
     my (@dependson, @dependedonby, @parents, @children, @refersto, @referredtoby);
 
     foreach my $luri ( split ( / /, $ARGS{"new-DependsOn"} ) ) {
-	$luri =~ s/\s*$//;    # Strip trailing whitespace
-	push @dependson, $luri;
+        $luri =~ s/\s*$//;    # Strip trailing whitespace
+        push @dependson, $luri;
     }
     $create_args{'DependsOn'} = \@dependson;
 
     foreach my $luri ( split ( / /, $ARGS{"DependsOn-new"} ) ) {
-	push @dependedonby, $luri;
+        push @dependedonby, $luri;
     }
     $create_args{'DependedOnBy'} = \@dependedonby;
 
     foreach my $luri ( split ( / /, $ARGS{"new-MemberOf"} ) ) {
-	$luri =~ s/\s*$//;    # Strip trailing whitespace
-	push @parents, $luri;
+        $luri =~ s/\s*$//;    # Strip trailing whitespace
+        push @parents, $luri;
     }
     $create_args{'Parents'} = \@parents;
 
     foreach my $luri ( split ( / /, $ARGS{"MemberOf-new"} ) ) {
-	push @children, $luri;
+        push @children, $luri;
     }
     $create_args{'Children'} = \@children;
 
     foreach my $luri ( split ( / /, $ARGS{"new-RefersTo"} ) ) {
-	$luri =~ s/\s*$//;    # Strip trailing whitespace
-	push @refersto, $luri;
+        $luri =~ s/\s*$//;    # Strip trailing whitespace
+        push @refersto, $luri;
     }
     $create_args{'RefersTo'} = \@refersto;
 
     foreach my $luri ( split ( / /, $ARGS{"RefersTo-new"} ) ) {
-	push @referredtoby, $luri;
+        push @referredtoby, $luri;
     }
     $create_args{'ReferredToBy'} = \@referredtoby;
     # }}}
   
  
     my ( $id, $Trans, $ErrMsg ) = $Ticket->Create(%create_args);
-    unless ( $id && $Trans ) {
+    unless ( $id ) {
         Abort($ErrMsg);
     }
 
@@ -467,6 +539,7 @@ sub ProcessUpdateMessage {
         my $Message = MakeMIMEEntity(
             Subject => $args{ARGSRef}->{'UpdateSubject'},
             Body    => $args{ARGSRef}->{'UpdateContent'},
+            Type    => $args{ARGSRef}->{'UpdateContentType'},
         );
 
         $Message->head->add( 'Message-ID' => 
@@ -544,6 +617,8 @@ sub ProcessUpdateMessage {
 
 Takes a paramhash Subject, Body and AttachmentFieldName.
 
+Also takes Form, Cc and Type as optional paramhash keys.
+
   Returns a MIME::Entity.
 
 =cut
@@ -557,13 +632,14 @@ sub MakeMIMEEntity {
         Cc                  => undef,
         Body                => undef,
         AttachmentFieldName => undef,
+        Type                => undef,
 #        map Encode::encode_utf8($_), @_,
         @_,
     );
 
     #Make the update content have no 'weird' newlines in it
 
-    $args{'Body'} =~ s/\r\n/\n/gs;
+    $args{'Body'} =~ s/\r\n/\n/gs if $args{'Body'};
     my $Message;
     {
         # MIME::Head is not happy in utf-8 domain.  This only happens
@@ -574,7 +650,8 @@ sub MakeMIMEEntity {
             Subject => $args{'Subject'} || "",
             From    => $args{'From'},
             Cc      => $args{'Cc'},
-            Charset => 'utf8',
+            Type    => $args{'Type'} || 'text/plain',
+            'Charset:' => 'utf8',
             Data    => [ $args{'Body'} ]
         );
     }
@@ -902,7 +979,7 @@ sub ProcessACLChanges {
 
              if ($object_type eq 'RT::System') {
                 $obj = $RT::System;
-	    } elsif ($RT::ACE::OBJECT_TYPES{$object_type}) {
+            } elsif ($RT::ACE::OBJECT_TYPES{$object_type}) {
                 $obj = $object_type->new($session{'CurrentUser'});
                 $obj->Load($object_id);      
             } else {
@@ -931,7 +1008,7 @@ sub ProcessACLChanges {
 
              if ($object_type eq 'RT::System') {
                 $obj = $RT::System;
-	    } elsif ($RT::ACE::OBJECT_TYPES{$object_type}) {
+            } elsif ($RT::ACE::OBJECT_TYPES{$object_type}) {
                 $obj = $object_type->new($session{'CurrentUser'});
                 $obj->Load($object_id);      
             } else {
@@ -973,9 +1050,9 @@ sub UpdateRecordObject {
 
     my $Object = $args{'Object'};
     my @results = $Object->Update(AttributesRef => $args{'AttributesRef'},
-				  ARGSRef       => $args{'ARGSRef'},
+                                  ARGSRef       => $args{'ARGSRef'},
                   AttributePrefix => $args{'AttributePrefix'}
-				  );
+                                  );
 
     return (@results);
 }
@@ -1073,6 +1150,7 @@ sub ProcessTicketBasics {
       Queue
     );
 
+
     if ( $ARGSRef->{'Queue'} and ( $ARGSRef->{'Queue'} !~ /^(\d+)$/ ) ) {
         my $tempqueue = RT::Queue->new($RT::SystemUser);
         $tempqueue->Load( $ARGSRef->{'Queue'} );
@@ -1123,11 +1201,11 @@ sub ProcessTicketCustomFieldUpdates {
     my %custom_fields_to_mod;
     foreach my $arg ( keys %$ARGSRef ) {
         if ( $arg =~ /^Ticket-(\d+-.*)/) {
-	    $ARGSRef->{"Object-RT::Ticket-$1"} = delete $ARGSRef->{$arg};
-	}
+            $ARGSRef->{"Object-RT::Ticket-$1"} = delete $ARGSRef->{$arg};
+        }
         elsif ( $arg =~ /^CustomField-(\d+-.*)/) {
-	    $ARGSRef->{"Object-RT::Ticket--$1"} = delete $ARGSRef->{$arg};
-	}
+            $ARGSRef->{"Object-RT::Ticket--$1"} = delete $ARGSRef->{$arg};
+        }
     }
 
     return ProcessObjectCustomFieldUpdates(%args, ARGSRef => $ARGSRef);
@@ -1187,6 +1265,8 @@ sub _ProcessObjectCustomFieldUpdates {
 
     my @results;
     foreach my $arg ( keys %{ $args{'ARGS'} } ) {
+        
+        next if $arg =~ /Category$/;
 
         # since http won't pass in a form element with a null value, we need
         # to fake it
@@ -1206,7 +1286,7 @@ sub _ProcessObjectCustomFieldUpdates {
             @values = @{ $args{'ARGS'}->{$arg} };
         } elsif ( $cf_type =~ /text/i ) { # Both Text and Wikitext
             @values = ($args{'ARGS'}->{$arg});
-        } else {
+        } elsif ( defined( $args{'ARGS'}->{ $arg } ) ) {
             @values = split /\n/, $args{'ARGS'}->{ $arg };
         }
         
@@ -1302,8 +1382,8 @@ sub _ProcessObjectCustomFieldUpdates {
             }
         }
         else {
-            push ( @results, loc("User asked for an unknown update type"
-                ." for custom field [_1] for [_2] object #[_3]",
+            push ( @results,
+                loc("User asked for an unknown update type for custom field [_1] for [_2] object #[_3]",
                 $cf->Name, ref $args{'Object'}, $args{'Object'}->id )
             );
         }
@@ -1330,27 +1410,30 @@ sub ProcessTicketWatchers {
     my $Ticket  = $args{'TicketObj'};
     my $ARGSRef = $args{'ARGSRef'};
 
-    # {{{ Munge watchers
+    # Munge watchers
 
     foreach my $key ( keys %$ARGSRef ) {
 
-        # {{{ Delete deletable watchers
-        if ( ( $key =~ /^Ticket-DeleteWatcher-Type-(.*)-Principal-(\d+)$/ )  ) {
-            my ( $code, $msg ) = 
-                $Ticket->DeleteWatcher(PrincipalId => $2,
-                                       Type => $1);
+        # Delete deletable watchers
+        if ( ( $key =~ /^Ticket-DeleteWatcher-Type-(.*)-Principal-(\d+)$/ ) )
+        {
+            my ( $code, $msg ) = $Ticket->DeleteWatcher(
+                PrincipalId => $2,
+                Type        => $1
+            );
             push @results, $msg;
         }
 
         # Delete watchers in the simple style demanded by the bulk manipulator
-        elsif ( $key =~ /^Delete(Requestor|Cc|AdminCc)$/ ) {	    
-            my ( $code, $msg ) = $Ticket->DeleteWatcher( Email => $ARGSRef->{$key}, Type => $1 );
+        elsif ( $key =~ /^Delete(Requestor|Cc|AdminCc)$/ ) {
+            my ( $code, $msg ) = $Ticket->DeleteWatcher(
+                Email => $ARGSRef->{$key},
+                Type  => $1
+            );
             push @results, $msg;
         }
 
-        # }}}
-
-        # Add new wathchers by email address      
+        # Add new wathchers by email address
         elsif ( ( $ARGSRef->{$key} =~ /^(AdminCc|Cc|Requestor)$/ )
             and ( $key =~ /^WatcherTypeEmail(\d*)$/ ) )
         {
@@ -1373,18 +1456,21 @@ sub ProcessTicketWatchers {
         }
 
         # Add new  watchers by owner
-        elsif ( ( $ARGSRef->{$key} =~ /^(AdminCc|Cc|Requestor)$/ )
-            and ( $key =~ /^Ticket-AddWatcher-Principal-(\d*)$/ ) ) {
+        elsif ( $key =~ /^Ticket-AddWatcher-Principal-(\d*)$/ ) {
+            my $principal_id = $1;
+            my $form = $ARGSRef->{$key};
+            foreach my $value ( ref($form) ? @{$form} : ($form) ) {
+                next unless $value =~ /^(?:AdminCc|Cc|Requestor)$/i;
 
-            #They're in this order because otherwise $1 gets clobbered :/
-            my ( $code, $msg ) =
-              $Ticket->AddWatcher( Type => $ARGSRef->{$key}, PrincipalId => $1 );
-            push @results, $msg;
+                my ( $code, $msg ) = $Ticket->AddWatcher(
+                    Type        => $value,
+                    PrincipalId => $principal_id
+                );
+                push @results, $msg;
+            }
         }
+
     }
-
-    # }}}
-
     return (@results);
 }
 
@@ -1426,7 +1512,7 @@ sub ProcessTicketDates {
         my $DateObj = RT::Date->new( $session{'CurrentUser'} );
 
         #If it's something other than just whitespace
-        if ( $ARGSRef->{ $field . '_Date' } ne '' ) {
+        if ( $ARGSRef->{ $field . '_Date' } && ($ARGSRef->{ $field . '_Date' } ne '') ) {
             $DateObj->Set(
                 Format => 'unknown',
                 Value  => $ARGSRef->{ $field . '_Date' }
@@ -1466,7 +1552,7 @@ sub ProcessTicketLinks {
 
 
     my (@results) = ProcessRecordLinks(RecordObj => $Ticket,
-				       ARGSRef => $ARGSRef);
+                                       ARGSRef => $ARGSRef);
 
     #Merge if we need to
     if ( $ARGSRef->{ $Ticket->Id . "-MergeInto" } ) {
@@ -1560,6 +1646,37 @@ sub _UploadedFile {
         LargeContent => do { local $/; scalar <$fh> },
         ContentType => $upload_info->{'Content-Type'},
     };
+}
+
+=head2 _load_container_object ( $type, $id );
+
+Instantiate container object for saving searches.
+
+=cut
+
+sub _load_container_object {
+    my ($obj_type, $obj_id) = @_;
+    return RT::SavedSearch->new($session{'CurrentUser'})->_load_privacy_object($obj_type, $obj_id);
+}
+
+=head2 _parse_saved_search ( $arg );
+
+Given a serialization string for saved search, and returns the
+container object and the search id.
+
+=cut
+
+sub _parse_saved_search {
+    my $spec = shift;
+    return unless $spec;
+    if ($spec  !~ /^(.*?)-(\d+)-SavedSearch-(\d+)$/ ) {
+        return;
+    }
+    my $obj_type  = $1;
+    my $obj_id    = $2;
+    my $search_id = $3;
+
+    return (_load_container_object ($obj_type, $obj_id), $search_id);
 }
 
 eval "require RT::Interface::Web_Vendor";

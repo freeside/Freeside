@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+%# 02110-1301 or visit their web page on the internet at
+%# http://www.gnu.org/copyleft/gpl.html.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -46,35 +48,35 @@
 % if (@CustomFields == 0) {
 <p><i><&|/l&>(None)</&></i></p>
 % } else {
-<TABLE cellspacing=0 cellpadding=2>
+<table cellspacing="0" cellpadding="2">
 % my $count;
 % foreach my $CustomFieldObj (@CustomFields) {
-<TR>
+<tr>
 %   if (!$ReadOnly) {
-  <TD valign="TOP">
-<input type="checkbox" name="Object-<%$id%>-CF-<%$CustomFieldObj->Id%>" value="1" <% $Checked ? 'CHECKED' : '' %>
->
-  </TD>
+  <td valign="top">
+<input type="checkbox" class="checkbox" name="Object-<%$id%>-CF-<%$CustomFieldObj->Id%>" value="1" <% $Checked ? 'CHECKED' : '' %>
+/>
+  </td>
 %   }
-  <TD valign="TOP">
-    <A HREF="<%$RT::WebPath%>/Admin/CustomFields/Modify.html?id=<%$CustomFieldObj->id()%>">
+  <td valign="top">
+    <a href="<%$RT::WebPath%>/Admin/CustomFields/Modify.html?id=<%$CustomFieldObj->id()%>">
 % if ($CustomFieldObj->Name) {
 <b><%$CustomFieldObj->Name%></b>
 % } else {
 <i>(<&|/l&>no name</&>)</i>
 % }
-</a><br>
+</a><br />
     <%$CustomFieldObj->Description%>
-  </TD>
-  <TD valign="TOP">
+  </td>
+  <td valign="top">
     <i><% $CustomFieldObj->FriendlyTypeComposite %></i>
-  </TD>
+  </td>
 %  # show 'move up' unless it's the first item
 %  if ($count++ and $Checked) {
-  <TD valign="TOP">
+  <td valign="top">
     [<a href="<%$RT::WebPath%><% $m->request_comp->path |n %>?id=<%$id%>&SubType=<%$SubType%>&CustomField=<%$CustomFieldObj->id%>&Move=-1"><&|/l&>Move up</&></a>]
 %  } else {
-  <TD valign="TOP" ALIGN=RIGHT>
+  <td valign="top" align="right">
 %  }
 
 %  # show 'move down' unless it's the last item
@@ -82,10 +84,10 @@
 %  $m->print(' | ') if $count > 1;
     [<a href="<%$RT::WebPath%><% $m->request_comp->path |n %>?id=<%$id%>&SubType=<%$SubType%>&CustomField=<%$CustomFieldObj->id%>&Move=1"><&|/l&>Move down</&></a>]
 %  }
-  </TD>
-</TR>
+  </td>
+</tr>
 % }
-</TABLE>
+</table>
 % }
 <%ARGS>
 @CustomFields

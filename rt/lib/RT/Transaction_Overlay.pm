@@ -2,7 +2,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/copyleft/gpl.html.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -43,7 +45,6 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
-
 =head1 NAME
 
   RT::Transaction - RT\'s transaction object
@@ -77,10 +78,14 @@ package RT::Transaction;
 use strict;
 no warnings qw(redefine);
 
-use vars qw( %_BriefDescriptions );
+use vars qw( %_BriefDescriptions $PreferredContentType );
 
 use RT::Attachments;
 use RT::Scrips;
+
+use HTML::FormatText;
+use HTML::TreeBuilder;
+
 
 # {{{ sub Create 
 
@@ -266,27 +271,55 @@ sub Message {
 
 =head2 Content PARAMHASH
 
-If this transaction has attached mime objects, returns the first text/plain part.
-Otherwise, returns undef.
+If this transaction has attached mime objects, returns the body of the first
+textual part (as defined in RT::I18N::IsTextualContentType).  Otherwise,
+returns undef.
 
 Takes a paramhash.  If the $args{'Quote'} parameter is set, wraps this message 
 at $args{'Wrap'}.  $args{'Wrap'} defaults to 70.
 
+If $args{'Type'} is set to C<text/html>, plain texts are upgraded to HTML.
+Otherwise, HTML texts are downgraded to plain text.  If $args{'Type'} is
+missing, it defaults to the value of C<$RT::Transaction::PreferredContentType>.
 
 =cut
 
 sub Content {
     my $self = shift;
     my %args = (
+        Type  => $PreferredContentType,
         Quote => 0,
         Wrap  => 70,
         @_
     );
 
     my $content;
-    my $content_obj = $self->ContentObj;
-    if ($content_obj) {
+    if (my $content_obj = $self->ContentObj) {
         $content = $content_obj->Content;
+
+	if ($content_obj->ContentType =~ m{^text/html$}i) {
+            $content =~ s/<p>--\s+<br \/>.*?$//s if $args{'Quote'};
+
+            if ($args{Type} ne 'text/html') {
+                $content = HTML::FormatText->new(
+                    leftmargin  => 0,
+                    rightmargin => 78,
+                )->format(
+                    HTML::TreeBuilder->new_from_content( $content )
+                );
+            }
+	}
+        else {
+            $content =~ s/\n-- \n.*?$//s if $args{'Quote'};
+
+            if ($args{Type} eq 'text/html') {
+                # Extremely simple text->html converter
+                $content =~ s/&/&#38;/g;
+                $content =~ s/</&lt;/g;
+                $content =~ s/>/&gt;/g;
+                $content = "<pre>$content</pre>";
+            }
+        }
     }
 
     # If all else fails, return a message that we couldn't find any content
@@ -295,9 +328,6 @@ sub Content {
     }
 
     if ( $args{'Quote'} ) {
-
-        # Remove quoted signature.
-        $content =~ s/\n-- \n(.*?)$//s;
 
         # What's the longest line like?
         my $max = 0;
@@ -315,11 +345,9 @@ sub Content {
             $content = $wrapper->wrap($content);
         }
 
-        $content = '['
-          . $self->CreatorObj->Name() . ' - '
-          . $self->CreatedAsString() . "]:\n\n" . $content . "\n\n";
         $content =~ s/^/> /gm;
-
+        $content = $self->loc("On [_1], [_2] wrote:", $self->CreatedAsString(), $self->CreatorObj->Name())
+          . "\n$content\n\n";
     }
 
     return ($content);
@@ -336,7 +364,6 @@ Returns the RT::Attachment object which contains the content for this Transactio
 =cut
 
 
-
 sub ContentObj {
 
     my $self = shift;
@@ -349,31 +376,30 @@ sub ContentObj {
     # Get the set of toplevel attachments to this transaction.
     my $Attachment = $self->Attachments->First();
 
-    # If it's a message or a plain part, just return the
-    # body.
-    if ( $Attachment->ContentType() =~ '^(text/plain$|message/)' ) {
+    # If it's a textual part, just return the body.
+    if ( RT::I18N::IsTextualContentType($Attachment->ContentType) ) {
         return ($Attachment);
     }
 
-    # If it's a multipart object, first try returning the first
-    # text/plain part.
+    # If it's a multipart object, first try returning the first part with preferred
+    # MIME type ('text/plain' by default).
 
     elsif ( $Attachment->ContentType() =~ '^multipart/' ) {
         my $plain_parts = $Attachment->Children();
-        $plain_parts->ContentType( VALUE => 'text/plain' );
+        $plain_parts->ContentType( VALUE => ($PreferredContentType || 'text/plain') );
 
         # If we actully found a part, return its content
         if ( $plain_parts->First && $plain_parts->First->Content ne '' ) {
             return ( $plain_parts->First );
         }
 
-        # If that fails, return the  first text/plain or message/ part
-        # which has some content.
+
+        # If that fails, return the first textual part which has some content.
 
         else {
-            my $all_parts = $self->Attachments;
+            my $all_parts = $self->Attachments();
             while ( my $part = $all_parts->Next ) {
-                if (( $part->ContentType() =~ '^(text/plain$|message/)' ) &&  $part->Content()  ) {
+                if ( ( RT::I18N::IsTextualContentType($part->ContentType) ) and ( $part->Content() ne '' ) ) {
                     return ($part);
                 }
             }
@@ -799,6 +825,27 @@ sub BriefDescription {
         my $self = shift;
         return $self->loc("Transaction [_1] purged", $self->Data);
     },
+    AddReminder => sub {
+        my $self = shift;
+        my $ticket = RT::Ticket->new($self->CurrentUser);
+        $ticket->Load($self->NewValue);
+        return $self->loc("Reminder '[_1]' added", $ticket->Subject);
+    },
+    OpenReminder => sub {
+        my $self = shift;
+        my $ticket = RT::Ticket->new($self->CurrentUser);
+        $ticket->Load($self->NewValue);
+        return $self->loc("Reminder '[_1]' reopened", $ticket->Subject);
+    
+    },
+    ResolveReminder => sub {
+        my $self = shift;
+        my $ticket = RT::Ticket->new($self->CurrentUser);
+        $ticket->Load($self->NewValue);
+        return $self->loc("Reminder '[_1]' completed", $ticket->Subject);
+    
+    
+    }
 );
 
 # }}}
@@ -1048,7 +1095,7 @@ sub CustomFieldValues {
 
     if ( UNIVERSAL::can( $self->Object, 'QueueObj' ) ) {
 
-        unless ( $field =~ /^\d+$/o ) {
+        unless ( defined $field && $field =~ /^\d+$/o ) {
             my $CFs = RT::CustomFields->new( $self->CurrentUser );
              $CFs->Limit( FIELD => 'Name', VALUE => $field);
             $CFs->LimitToLookupType($self->CustomFieldLookupType);

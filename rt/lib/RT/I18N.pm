@@ -2,7 +2,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/copyleft/gpl.html.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -43,7 +45,6 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
-
 =head1 NAME
 
 RT::I18N - a base class for localization of RT
@@ -53,23 +54,19 @@ RT::I18N - a base class for localization of RT
 package RT::I18N;
 
 use strict;
+use warnings;
+
 use Locale::Maketext 1.04;
 use Locale::Maketext::Lexicon 0.25;
 use base ('Locale::Maketext::Fuzzy');
-use vars qw( %Lexicon );
 
-#If we're running on 5.6, we desperately need Encode::compat. But if we're on 5.8, we don't really need it.
-BEGIN { if ($] < 5.007001) {
-require Encode::compat;
-} }
 use Encode;
-
 use MIME::Entity;
 use MIME::Head;
 
 # I decree that this project's first language is English.
 
-%Lexicon = (
+our %Lexicon = (
    'TEST_STRING' => 'Concrete Mixer',
 
     '__Content-Type' => 'text/plain; charset=utf-8',
@@ -156,7 +153,7 @@ sub encoding { 'utf-8' }
 
 =head2 SetMIMEEntityToUTF8 $entity
 
-An utility method which will try to convert entity body into utf8.
+An utility function which will try to convert entity body into utf8.
 It's now a wrap-up of SetMIMEEntityToEncoding($entity, 'utf-8').
 
 =cut
@@ -167,26 +164,45 @@ sub SetMIMEEntityToUTF8 {
 
 # }}}
 
+# {{{ IsTextualContentType
+
+=head2 IsTextualContentType $type
+
+An utility function that determines whether $type is I<textual>, meaning
+that it can sensibly be converted to Unicode text.
+
+Currently, it returns true iff $type matches this regular expression
+(case-insensitively):
+
+    ^(?:text/(?:plain|html)|message/rfc822)\b
+
+# }}}
+
+=cut
+
+sub IsTextualContentType {
+    my $type = shift;
+    ($type =~ m{^(?:text/(?:plain|html)|message/rfc822)\b}i) ? 1 : 0;
+}
+
 # {{{ SetMIMEEntityToEncoding
 
 =head2 SetMIMEEntityToEncoding $entity, $encoding
 
-An utility method which will try to convert entity body into specified
+An utility function which will try to convert entity body into specified
 charset encoding (encoded as octets, *not* unicode-strings).  It will
 iterate all the entities in $entity, and try to convert each one into
 specified charset if whose Content-Type is 'text/plain'.
 
-This method doesn't return anything meaningful.
+This function doesn't return anything meaningful.
 
 =cut
 
 sub SetMIMEEntityToEncoding {
     my ( $entity, $enc, $preserve_words ) = ( shift, shift, shift );
 
-    #if ( $entity->is_multipart ) {
-    #$RT::Logger->crit("This entity is a multipart " . $entity->head->as_string);
-	SetMIMEEntityToEncoding( $_, $enc, $preserve_words ) foreach $entity->parts;
-    #}
+    # do the same for parts first of all
+    SetMIMEEntityToEncoding( $_, $enc, $preserve_words ) foreach $entity->parts;
 
     my $charset = _FindOrGuessCharset($entity) or return;
     # one and only normalization
@@ -210,11 +226,9 @@ sub SetMIMEEntityToEncoding {
 
     # If this is a textual entity, we'd need to preserve its original encoding
     $head->add( "X-RT-Original-Encoding" => $charset )
-	if $head->mime_attr('content-type.charset') or $head->mime_type =~ /^text/;
+	if $head->mime_attr('content-type.charset') or IsTextualContentType($head->mime_type);
 
-
-    return unless ( $head->mime_type =~ qr{^(text/plain|message/rfc822)$}i  );
-    
+    return unless IsTextualContentType($head->mime_type);
 
     my $body = $entity->bodyhandle;
 
@@ -289,7 +303,7 @@ sub DecodeMIMEWordsToEncoding {
     my $str = shift;
     my $enc = shift;
 
-    @_ = $str =~ m/(.*?)=\?([^?]+)\?([QqBb])\?([^?]+)\?=([^=]*)/gc;
+    @_ = $str =~ m/(.*?)=\?([^?]+)\?([QqBb])\?([^?]+)\?=([^=]*)/gcs;
     return ($str) unless (@_);
 
     # add everything that hasn't matched to the end of the latest
@@ -299,20 +313,20 @@ sub DecodeMIMEWordsToEncoding {
     $str = "";
     while (@_) {
 	my ($prefix, $charset, $encoding, $enc_str, $trailing) =
-	    (shift, shift, shift, shift, shift);
+	    (shift, shift, lc shift, shift, shift);
 
         $trailing =~ s/\s?\t?$//;               # Observed from Outlook Express
 
-	if ($encoding eq 'Q' or $encoding eq 'q') {
+	if ( $encoding eq 'q' ) {
 	    use MIME::QuotedPrint;
 	    $enc_str =~ tr/_/ /;		# Observed from Outlook Express
 	    $enc_str = decode_qp($enc_str);
-	} elsif ($encoding eq 'B' or $encoding eq 'b') {
+	} elsif ( $encoding eq 'b' ) {
 	    use MIME::Base64;
 	    $enc_str = decode_base64($enc_str);
 	} else {
-	    $RT::Logger->warning("RT::I18N::DecodeMIMEWordsToCharset got a " .
-			      "strange encoding: $encoding.");
+	    $RT::Logger->warning("Incorrect encoding '$encoding' in '$str', "
+            ."only Q(uoted-printable) and B(ase64) are supported");
 	}
 
 	# now we have got a decoded subject, try to convert into the encoding
@@ -341,6 +355,10 @@ sub DecodeMIMEWordsToEncoding {
 	$str .= $prefix . $enc_str . $trailing;
     }
 
+    # We might have \n without trailing whitespace, which will result in
+    # invalid headers.
+    $str =~ s/\n//g;
+
     return ($str)
 }
 
@@ -361,8 +379,8 @@ sub _FindOrGuessCharset {
     my $head_only = shift;
     my $head = $entity->head;
 
-    if ($head->mime_attr("content-type.charset")) {
-	return $head->mime_attr("content-type.charset");
+    if ( my $charset = $head->mime_attr("content-type.charset") ) {
+        return $charset;
     }
 
     if ( !$head_only and $head->mime_type =~ m{^text/}) {
@@ -393,6 +411,7 @@ sub _GuessCharset {
 	Encode::Guess->set_suspects(@RT::EmailInputEncodings);
 	my $decoder = Encode::Guess->guess( $_[0] );
 
+      if ( defined($decoder) ) {
 	if ( ref $decoder ) {
 	    $charset = $decoder->name;
 	    $RT::Logger->debug("Guessed encoding: $charset");
@@ -412,6 +431,10 @@ sub _GuessCharset {
 	else {
 	    $RT::Logger->warning("Encode::Guess failed: $decoder; fallback to $fallback");
 	}
+      }
+      else {
+	  $RT::Logger->warning("Encode::Guess failed: decoder is undefined; fallback to $fallback");
+      }
     }
     else {
 	$RT::Logger->warning("Cannot Encode::Guess; fallback to $fallback");

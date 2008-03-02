@@ -2,7 +2,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/copyleft/gpl.html.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -56,6 +58,7 @@ use MIME::Words qw(encode_mimeword);
 
 use RT::EmailParser;
 use Mail::Address;
+use Date::Format qw(strftime);
 
 =head1 NAME
 
@@ -97,9 +100,16 @@ perl(1).
 # {{{ sub Commit
 
 sub Commit {
-    my $self = shift;
+    # DO NOT SHIFT @_ in this subroutine.  It breaks Hook::LexWrap's
+    # ability to pass @_ to a 'post' routine.
+    my $self = $_[0];
 
-    return($self->SendMessage($self->TemplateObj->MIMEObj));
+    my ($ret) = $self->SendMessage( $self->TemplateObj->MIMEObj );
+    if ( $ret > 0 ) {
+        $self->RecordOutgoingMailTransaction( $self->TemplateObj->MIMEObj )
+            if ($RT::RecordOutgoingEmail);
+    }
+    return (abs $ret);
 }
 
 # }}}
@@ -125,6 +135,13 @@ sub Prepare {
 
     $self->RemoveInappropriateRecipients();
 
+    my %seen;
+    foreach my $type qw(To Cc Bcc) {
+        @{ $self->{ $type } } =
+            grep defined && length && !$seen{ lc $_ }++,
+                @{ $self->{ $type } };
+    }
+
     # Go add all the Tos, Ccs and Bccs that we need to to the message to
     # make it happy, but only if we actually have values in those arrays.
 
@@ -147,16 +164,27 @@ sub Prepare {
     # We should never have to set the MIME-Version header
     $self->SetHeader( 'MIME-Version', '1.0' );
 
-    # try to convert message body from utf-8 to $RT::EmailOutputEncoding
-    $self->SetHeader( 'Content-Type', 'text/plain; charset="utf-8"' );
-
     # fsck.com #5959: Since RT sends 8bit mail, we should say so.
     $self->SetHeader( 'Content-Transfer-Encoding','8bit');
 
+    # For security reasons, we only send out textual mails.
+    my @parts = $MIMEObj;
+    while (my $part = shift @parts) {
+        if ($part->is_multipart) {
+            push @parts, $part->parts;
+        }
+        else {
+            if ( RT::I18N::IsTextualContentType( $part->mime_type ) ) {
+                $part->head->mime_attr( "Content-Type" => $part->mime_type )
+            } else {
+                $part->head->mime_attr( "Content-Type" => 'text/plain' );
+            }
+            $part->head->mime_attr( "Content-Type.charset" => 'utf-8' );
+        }
+    }
 
-    RT::I18N::SetMIMEEntityToEncoding( $MIMEObj, $RT::EmailOutputEncoding,
-        'mime_words_ok' );
-    $self->SetHeader( 'Content-Type', 'text/plain; charset="' . $RT::EmailOutputEncoding . '"' );
+
+    RT::I18N::SetMIMEEntityToEncoding( $MIMEObj, $RT::EmailOutputEncoding, 'mime_words_ok' );
 
     # Build up a MIME::Entity that looks like the original message.
     $self->AddAttachments() if ( $MIMEObj->head->get('RT-Attach-Message') );
@@ -226,8 +254,9 @@ TODO: Break this out to a separate module
 =cut
 
 sub SendMessage {
-    my $self    = shift;
-    my $MIMEObj = shift;
+    # DO NOT SHIFT @_ in this subroutine.  It breaks Hook::LexWrap's
+    # ability to pass @_ to a 'post' routine.
+    my ( $self, $MIMEObj ) = @_;
 
     my $msgid = $MIMEObj->head->get('Message-ID');
     chomp $msgid;
@@ -247,7 +276,51 @@ sub SendMessage {
         || $MIMEObj->head->get('Bcc') )
     {
         $RT::Logger->info( $msgid . " No recipients found. Not sending.\n" );
-        return (1);
+        return (-1);
+    }
+
+    unless ($MIMEObj->head->get('Date')) {
+        # We coerce localtime into an array since strftime has a flawed prototype that only accepts
+        # a list
+      $MIMEObj->head->replace(Date => strftime('%a, %d %b %Y %H:%M:%S %z', @{[localtime()]}));
+    }
+
+    return (0) unless ($self->OutputMIMEObject($MIMEObj));
+
+    my $success = $msgid . " sent ";
+    foreach( qw(To Cc Bcc) ) {
+        my $recipients = $MIMEObj->head->get($_);
+        $success .= " $_: ". $recipients if $recipients;
+    }
+    $success =~ s/\n//g;
+
+    $RT::Logger->info($success);
+
+    return (1);
+}
+
+
+=head2 OutputMIMEObject MIME::Entity
+
+Sends C<MIME::Entity> as an email message according to RT's mailer configuration.
+
+=cut 
+
+
+
+sub OutputMIMEObject {
+    my $self = shift;
+    my $MIMEObj = shift;
+    
+    my $msgid = $MIMEObj->head->get('Message-ID');
+    chomp $msgid;
+    
+    my $SendmailArguments = $RT::SendmailArguments;
+    if (defined $RT::VERPPrefix && defined $RT::VERPDomain) {
+      my $EnvelopeFrom = $self->TransactionObj->CreatorObj->EmailAddress;
+      $EnvelopeFrom =~ s/@/=/g;
+      $EnvelopeFrom =~ s/\s//g;
+      $SendmailArguments .= " -f ${RT::VERPPrefix}${EnvelopeFrom}\@${RT::VERPDomain}";
     }
 
 
@@ -257,7 +330,7 @@ sub SendMessage {
             local $SIG{'CHLD'} = 'DEFAULT';
 
             my $mail;
-            unless( open $mail, "|$RT::SendmailPath $RT::SendmailArguments" ) {
+            unless( open $mail, "|$RT::SendmailPath $SendmailArguments" ) {
                 die "Couldn't run $RT::SendmailPath: $!";
             }
 
@@ -283,7 +356,7 @@ sub SendMessage {
         local $ENV{MAILADDRESS};
 
         if ( $RT::MailCommand eq 'sendmail' ) {
-            push @mailer_args, split(/\s+/, $RT::SendmailArguments);
+            push @mailer_args, split(/\s+/, $SendmailArguments);
         }
         elsif ( $RT::MailCommand eq 'smtp' ) {
             $ENV{MAILADDRESS} = $RT::SMTPFrom || $MIMEObj->head->get('From');
@@ -299,19 +372,7 @@ sub SendMessage {
             return (0);
         }
     }
-
-    my $success = "$msgid sent";
-    foreach (qw(To Cc Bcc)) {
-        next unless my $addresses = $MIMEObj->head->get($_);
-        $success .= " $_: ". $addresses;
-    }
-    $success =~ s/\n//g;
-
-    $self->RecordOutgoingMailTransaction($MIMEObj) if ($RT::RecordOutgoingEmail);
-
-    $RT::Logger->info($success);
-
-    return (1);
+    return 1;
 }
 
 # }}}
@@ -348,7 +409,7 @@ sub AddAttachments {
         # Don't attach anything blank
         next unless ( $attach->ContentLength );
 
-# We want to make sure that we don't include the attachment that's being sued as the "Content" of this message"
+# We want to make sure that we don't include the attachment that's being used as the "Content" of this message.
         next
           if ( $transaction_content_obj
             && $transaction_content_obj->Id == $attach->Id
@@ -426,7 +487,12 @@ sub RecordOutgoingMailTransaction {
         ActivateScrips => 0
     );
 
-
+    if( $id ) {
+	$self->{'OutgoingMailTransaction'} = $id;
+    } else {
+        $RT::Logger->warning( "Could not record outgoing message transaction: $msg" );
+    }
+    return $id;
 }
 
 # }}}
@@ -512,6 +578,10 @@ Remove addresses that are RT addresses or that are on this transaction's blackli
 sub RemoveInappropriateRecipients {
     my $self = shift;
 
+    my $msgid = $self->TemplateObj->MIMEObj->head->get  ('Message-Id');
+
+
+
     my @blacklist;
 
     my @types = qw/To Cc Bcc/;
@@ -543,6 +613,7 @@ sub RemoveInappropriateRecipients {
                 @{ $self->{'Cc'} }  = ();
                 @{ $self->{'Bcc'} } = ();
 
+                $RT::Logger->info( $msgid . " The incoming message was autogenerated. Not redistributing this message based on site configuration.\n");
             }
             elsif ( $RT::RedistributeAutoGeneratedMessages eq 'privileged' ) {
 
@@ -560,6 +631,7 @@ sub RemoveInappropriateRecipients {
 
                     }
                 }
+                $RT::Logger->info( $msgid . " The incoming message was autogenerated. Not redistributing this message to unprivileged users based on site configuration.\n");
 
             }
 
@@ -624,7 +696,8 @@ sub SetReturnAddress {
 
     unless ( $self->TemplateObj->MIMEObj->head->get('From') ) {
         if ($RT::UseFriendlyFromLine) {
-            my $friendly_name = $self->TransactionObj->CreatorObj->RealName;
+            my $friendly_name = $self->TransactionObj->CreatorObj->RealName
+                || $self->TransactionObj->CreatorObj->Name;
             if ( $friendly_name =~ /^"(.*)"$/ ) {    # a quoted string
                 $friendly_name = $1;
             }
@@ -731,13 +804,18 @@ This routine fixes the RT tag in the subject. It's unlikely that you want to ove
 
 sub SetSubjectToken {
     my $self = shift;
-    my $tag  = "[$RT::rtname #" . $self->TicketObj->id . "]";
     my $sub  = $self->TemplateObj->MIMEObj->head->get('Subject');
-    unless ( $sub =~ /\Q$tag\E/ ) {
-        $sub =~ s/(\r\n|\n|\s)/ /gi;
-        chomp $sub;
-        $self->TemplateObj->MIMEObj->head->replace( 'Subject', "$tag $sub" );
-    }
+    my $id   = $self->TicketObj->id;
+
+    my $token_re = $RT::EmailSubjectTagRegex;
+    $token_re = qr/\Q$RT::rtname\E/o unless $token_re;
+    return if $sub =~ /\[$token_re\s+#$id\]/;
+
+    $sub =~ s/(\r\n|\n|\s)/ /gi;
+    chomp $sub;
+    $self->TemplateObj->MIMEObj->head->replace(
+        Subject => "[$RT::rtname #$id] $sub",
+    );
 }
 
 # }}}
@@ -848,10 +926,6 @@ sub SetHeaderAsEncoding {
 
     my $value = $self->TemplateObj->MIMEObj->head->get($field);
 
-    # don't bother if it's us-ascii
-
-    # See RT::I18N, 'NOTES:  Why Encode::_utf8_off before Encode::from_to'
-
     $value =  $self->MIMEEncodeString($value, $enc);
 
     $self->TemplateObj->MIMEObj->head->replace( $field, $value );
@@ -887,25 +961,36 @@ sub MIMEEncodeString {
     $max = int($max/3)*3;
 
     chomp $value;
+
+    if ( $max <= 0 ) {
+      # gives an error...
+      $RT::Logger->crit("Can't encode! Charset or encoding too big.\n");
+      return ($value);
+    }
+
     return ($value) unless $value =~ /[^\x20-\x7e]/;
 
     $value =~ s/\s*$//;
-    Encode::_utf8_off($value);
-    my $res = Encode::from_to( $value, "utf-8", $charset );
-   
-    if ($max > 0) {
-      # copy value and split in chuncks
-      my $str=$value;
-      my @chunks = unpack("a$max" x int(length($str)/$max 
-                                  + ((length($str) % $max) ? 1:0)), $str);
-      # encode an join chuncks
-      $value = join " ", 
-                     map encode_mimeword( $_, $encoding, $charset ), @chunks ;
-      return($value); 
-    } else {
-      # gives an error...
-      $RT::Logger->crit("Can't encode! Charset or encoding too big.\n");
+
+    # we need perl string to split thing char by char
+    Encode::_utf8_on($value) unless Encode::is_utf8( $value );
+
+    my ($tmp, @chunks) = ('', ());
+    while ( length $value ) {
+        my $char = substr($value, 0, 1, '');
+        my $octets = Encode::encode( $charset, $char );
+        if ( length($tmp) + length($octets) > $max ) {
+            push @chunks, $tmp;
+            $tmp = '';
+        }
+        $tmp .= $octets;
     }
+    push @chunks, $tmp if length $tmp;
+
+    # encode an join chuncks
+    $value = join "\n ",
+               map encode_mimeword( $_, $encoding, $charset ), @chunks ;
+    return($value); 
 }
 
 # }}}

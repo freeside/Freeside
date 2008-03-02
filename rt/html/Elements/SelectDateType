@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+%# 02110-1301 or visit their web page on the internet at
+%# http://www.gnu.org/copyleft/gpl.html.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -43,16 +45,16 @@
 %# those contributions and any derivatives thereof.
 %# 
 %# END BPS TAGGED BLOCK }}}
-<SELECT NAME="<%$Name%>">
-<OPTION VALUE="Created"><&|/l&>Created</&></OPTION>
-<OPTION VALUE="Started"><&|/l&>Started</&></OPTION>
-<OPTION VALUE="Resolved"><&|/l&>Resolved</&></OPTION>
-<OPTION VALUE="Told"><&|/l&>Last Contacted</&></OPTION>
-<OPTION VALUE="LastUpdated"><&|/l&>Last Updated</&></OPTION>
-<OPTION VALUE="Starts"><&|/l&>Starts</&></OPTION>
-<OPTION VALUE="Due"><&|/l&>Due</&></OPTION>
-<OPTION VALUE="Updated"><&|/l&>Updated</&></OPTION>
-</SELECT>
+<select name="<%$Name%>">
+<option value="Created"><&|/l&>Created</&></option>
+<option value="Started"><&|/l&>Started</&></option>
+<option value="Resolved"><&|/l&>Resolved</&></option>
+<option value="Told"><&|/l&>Last Contacted</&></option>
+<option value="LastUpdated"><&|/l&>Last Updated</&></option>
+<option value="Starts"><&|/l&>Starts</&></option>
+<option value="Due"><&|/l&>Due</&></option>
+<option value="Updated"><&|/l&>Updated</&></option>
+</select>
 <%ARGS>
 $Name => 'DateType'
 </%ARGS>

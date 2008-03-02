@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+%# 02110-1301 or visit their web page on the internet at
+%# http://www.gnu.org/copyleft/gpl.html.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -74,15 +76,15 @@
     Rows => $RowsPerPage
 &>
 
-<FORM METHOD="POST" ACTION="Build.html" NAME="BuildQuery">
-<input type=hidden name=SearchId value="<%$SearchId%>">
-<input type=hidden name=Query value="<%$Query%>">
-<input type=hidden name=Format value="<%$Format%>">
-<table width=100% border="0" cellpadding="5">
+<form method="post" action="Build.html" name="BuildQuery">
+<input type="hidden" class="hidden" name="SearchId" value="<%$SearchId%>" />
+<input type="hidden" class="hidden" name="Query" value="<%$Query%>" />
+<input type="hidden" class="hidden" name="Format" value="<%$Format%>" />
+<table width="100%" border="0" cellpadding="5">
 <tr valign="top">
 <td class="boxcontainer" rowspan="2" width="65%">
 <& Elements/PickCriteria, query => $Query, cfqueues => $queues &>
-<& /Elements/Submit, Caption => loc('Add additional criteria'), Label => loc('Add'), Name => 'AddClause'&>
+<& /Elements/Submit, Caption => loc('Add these terms to your search'), Label => loc('Add'), Name => 'AddClause'&>
 </td>
 
 <td>
@@ -91,6 +93,7 @@
     actions => \@actions,
     optionlist => $optionlist,
     Description => $Description &>
+<& /Elements/Submit, Label => loc('Add and Search'), Name => 'DoSearch'&>
 </td>
 </tr>
 
@@ -101,19 +104,15 @@
 </tr>
 
 <tr>
-<td colspan=2 class="boxcontainer">
+<td colspan="2" class="boxcontainer">
 
 <& Elements/DisplayOptions, %ARGS, Format=> $Format,
 AvailableColumns => $AvailableColumns,  CurrentFormat => $CurrentFormat, RowsPerPage => $RowsPerPage, OrderBy => $OrderBy, Order => $Order &>
-</td>
-</tr>
-<tr>
-<td colspan=2 class="boxcontainer">
-<& /Elements/Submit, Caption => loc("Do the Search"), Label => loc('Search'), Name => 'DoSearch'&>
+<& /Elements/Submit, Label => loc('Add and Search'), Name => 'DoSearch'&>
 </td>
 </tr>
 </table>
-</FORM>
+</form>
 
 <%INIT>
 use RT::Interface::Web::QueryBuilder;
@@ -134,7 +133,7 @@ if ( $NewQuery or $ARGS{'Delete'} ) {
     $SearchId    = '';
     $Order       = '';
     $OrderBy     = '';
-    $RowsPerPage = '';
+    $RowsPerPage = undef;
 
     # ($search hasn't been set yet; no need to clear)
 
@@ -147,22 +146,43 @@ if ( $NewQuery or $ARGS{'Delete'} ) {
 
 # }}}
 
+if (ref $OrderBy eq "ARRAY") {
+    $OrderBy = join("|", @$OrderBy);
+}
+if (ref $Order eq "ARRAY") {
+    $Order = join("|", @$Order);
+}
+
 # {{{ Attempt to load what we can from the session, set defaults
 
 # We don't read or write to the session again until the end
 $search_hash = $session{'CurrentSearchHash'};
 
+# Read from user preferences
+my $prefs = $session{'CurrentUser'}->UserObj->Preferences("SearchDisplay") || {};
+
 # These variables are what define a search_hash; this is also
 # where we give sane defaults.
 $Query       ||= $search_hash->{'Query'};
-$Format      ||= $search_hash->{'Format'};
+$Format      ||= $search_hash->{'Format'} || $prefs->{'Format'};
 $Description ||= $search_hash->{'Description'};
 $SearchId    ||= $search_hash->{'SearchId'} || 'new';
-$Order       ||= $search_hash->{'Order'} || 'ASC';
-$OrderBy     ||= $search_hash->{'OrderBy'} || 'id';
-$RowsPerPage = ( $search_hash->{'RowsPerPage'} || 50 )
-  unless defined($RowsPerPage);
-$search ||= $search_hash->{'Object'};
+$Order       ||= $search_hash->{'Order'} || $prefs->{'Order'} || 'ASC';
+$OrderBy     ||= $search_hash->{'OrderBy'} || $prefs->{'OrderBy'} || 'id';
+
+unless ( defined $RowsPerPage ) {
+    if ( defined $search_hash->{'RowsPerPage'} ) {
+        $RowsPerPage = $search_hash->{'RowsPerPage'};
+    }
+    elsif ( defined $prefs->{'RowsPerPage'} ) {
+        $RowsPerPage = $prefs->{'RowsPerPage'};
+    }
+    else {
+        $RowsPerPage = 50;
+    }
+}
+
+  $search ||= $search_hash->{'Object'};
 
 # }}}
 
@@ -175,31 +195,14 @@ $Format = $m->comp( '/Elements/ScrubHTML', Content => $Format ) if ($Format);
 if ( $ARGS{'Delete'} ) {
 
     # We set $SearchId to 'new' above already, so peek into the %ARGS
-    if ( $ARGS{'SearchId'} =~ /^(.*?)-(\d+)-SavedSearch-(\d+)$/ ) {
-        my $obj_type  = $1;
-        my $obj_id    = $2;
-        my $search_id = $3;
-
-        my $container_object;
-        if ( $obj_type eq 'RT::User' && $obj_id == $session{'CurrentUser'}->Id )
-        {
-            $container_object = $session{'CurrentUser'}->UserObj;
-        }
-        elsif ( $obj_type eq 'RT::Group' ) {
-            $container_object = RT::Group->new( $session{'CurrentUser'} );
-            $container_object->Load($obj_id);
-        }
-
-        if ( $container_object->id ) {
-
-            # We have the object the entry is an attribute on; delete
-            # the entry..
-            $container_object->Attributes->DeleteEntry(
-                Name => 'SavedSearch',
-                id   => $search_id
+    my ($container_object, $search_id) = _parse_saved_search ($ARGS{'SearchId'});
+    if ($container_object && $container_object->id) {
+	# We have the object the entry is an attribute on; delete the
+	# entry..
+	$container_object->Attributes->DeleteEntry(
+            Name => 'SavedSearch',
+	    id   => $search_id
             );
-        }
-
     }
 }
 
@@ -223,25 +226,8 @@ if ( $ARGS{'Revert'} ) {
 
 # {{{ if we're asked to load a search, load it.
 
-if ( $ARGS{'LoadSavedSearch'} =~ /^(.*?)-(\d+)-SavedSearch-(\d+)$/ ) {
-    my $obj_type  = $1;
-    my $obj_id    = $2;
-    my $search_id = $3;
-
-    # We explicitly list out the available types (user and group) and
-    # don't trust user input here
-    if (   ( $obj_type eq 'RT::User' )
-        && ( $obj_id == $session{'CurrentUser'}->id ) )
-    {
-        $search =
-          $session{'CurrentUser'}->UserObj->Attributes->WithId($search_id);
-
-    }
-    elsif ( $obj_type eq 'RT::Group' ) {
-        my $group = RT::Group->new( $session{'CurrentUser'} );
-        $group->Load($obj_id);
-        $search = $group->Attributes->WithId($search_id);
-    }
+if ( my ($container_object, $search_id ) = _parse_saved_search ($ARGS{'LoadSavedSearch'})) {
+    $search = $container_object->Attributes->WithId($search_id);
 
     # We have a $search and now; import the others
     $SearchId    = $ARGS{'LoadSavedSearch'};
@@ -254,6 +240,62 @@ if ( $ARGS{'LoadSavedSearch'} =~ /^(.*?)-(\d+)-SavedSearch-(\d+)$/ ) {
 }
 
 # }}}
+
+# {{{ if we're asked to save the current search, save it
+if ( $ARGS{'Save'} ) {
+    if ( $search && $search->id ) {
+	# permission check
+	if ($search->Object->isa('RT::System')) {
+	    unless ($session{'CurrentUser'}->HasRight( Object=> $RT::System, Right => 'SuperUser')) {
+		Abort("No permission to save system-wide searches");
+	    }
+	}
+
+        # This search is based on a previously loaded search -- so
+        # just update the current search object with new values
+        $search->SetSubValues(
+            Format      => $Format,
+            Query       => $Query,
+            Order       => $Order,
+            OrderBy     => $OrderBy,
+            RowsPerPage => $RowsPerPage,
+        );
+        $search->SetDescription($Description);
+
+    }
+    elsif ( $SearchId eq 'new' ) {
+        my $saved_search = RT::SavedSearch->new( $session{'CurrentUser'} );
+        my ( $ok, $search_msg ) = $saved_search->Save(
+            Privacy      => $ARGS{'Owner'},
+            Name         => $Description,
+            SearchParams => {
+                Format      => $Format,
+                Query       => $Query,
+                Order       => $Order,
+                OrderBy     => $OrderBy,
+                RowsPerPage => $RowsPerPage } );
+
+	if ($ok) {
+	    $search = $session{'CurrentUser'}->UserObj->Attributes->WithId($saved_search->Id);
+	    # Build new SearchId
+	    $SearchId =
+		    ref( $session{'CurrentUser'}->UserObj ) . '-'
+			. $session{'CurrentUser'}->UserObj->Id
+			. '-SavedSearch-'
+			. $search->Id;
+	}
+	else {
+	    push @actions, [ loc("Can't find a saved search to work with").': '.loc($search_msg), 0 ];
+	}
+    }
+    else {
+        push @actions, [ loc("Can't save this search"), 0 ];
+    }
+
+}
+
+# }}}
+
 
 # {{{ Parse the query
 use Regexp::Common qw /delimited/;
@@ -278,7 +320,7 @@ my $_match = sub {
 my $ParseQuery = sub {
     my $string  = shift;
     my $tree    = shift;
-    my @actions = shift;
+    my $actions = shift;
     my $want    = KEYWORD | PAREN;
     my $last    = undef;
 
@@ -287,8 +329,11 @@ my $ParseQuery = sub {
     # make a tree root
     $$tree = RT::Interface::Web::QueryBuilder::Tree->new;
     my $root       = RT::Interface::Web::QueryBuilder::Tree->new( 'AND', $$tree );
-    my $lastnode   = $root;
     my $parentnode = $root;
+
+    # on new searches, we're passed undef but still need to construct the
+    # RT::Interface::Web::QueryBuilder::Tree.  Quiet warning
+    return unless defined $string;
 
     # get the FIELDS from Tickets_Overlay
     my $tickets = new RT::Tickets( $session{'CurrentUser'} );
@@ -339,13 +384,10 @@ my $ParseQuery = sub {
             # Error
             # FIXME: I will only print out the highest $want value
             my $token = $tokens[ ( ( log $want ) / ( log 2 ) ) ];
-            push @actions,
+            push @$actions,
               [
-                loc(
-"current: $current, want $want, Error near ->$val<- expecting a "
-                      . $token
-                      . " in '$string'\n"
-                ),
+                loc("Error near ->[_1]<- expecting a [_2] in '[_3]'",
+                                  $val,              $token, $string ),
                 -1
               ];
         }
@@ -364,13 +406,13 @@ my $ParseQuery = sub {
             else {
                 $depth--;
                 $parentnode = $parentnode->getParent();
-                $lastnode   = $parentnode;
             }
 
             $want = KEYWORD | PAREN | AGGREG;
         }
         elsif ( $current & AGGREG ) {
             $ea   = $val;
+            $parentnode->setNodeValue($ea);
             $want = KEYWORD | PAREN;
         }
         elsif ( $current & KEYWORD ) {
@@ -400,20 +442,28 @@ my $ParseQuery = sub {
             $val =~ s!\\(.)!$1!g;
 
             my $class;
-            if ( exists $lcfields{ lc $key } ) {
-                $key   = $lcfields{ lc $key };
-                $class = $FIELDS{$key}->[0];
+
+            my ($key_base, $subkey)  = split(/\./,$key,2);
+            $key_base =~ s/\..*$//; # Strip off .EmailAddress, for example
+
+            if ( exists $lcfields{lc $key_base } ) {
+                $key   = $lcfields{lc $key_base } . (defined $subkey ? '.'.$subkey : '');
+                $class = $FIELDS{$key_base}->[0];
             }
+            elsif ( $key =~ /^C(?:ustom)?F(?:ield)?\.{(.*)}$/i ) {
+                $class = $FIELDS{'CF'}->[0];
+            }
+
             if ( $class ne 'INT' ) {
                 $val = "'$val'";
             }
 
-            push @actions, [ loc("Unknown field: $key"), -1 ] unless $class;
+            push @$actions, [ loc("Unknown field: [_1]", $key), -1 ] unless $class;
 
             $want = PAREN | AGGREG;
         }
         else {
-            push @actions, [ loc("I'm lost"), -1 ];
+            push @$actions, [ loc("I'm lost"), -1 ];
         }
 
         if ( $current & VALUE ) {
@@ -427,33 +477,40 @@ my $ParseQuery = sub {
             };
 
             # explicity add a child to it
-            $lastnode = RT::Interface::Web::QueryBuilder::Tree->new( $clause, $parentnode );
-            $lastnode->getParent()->setNodeValue($ea);
+            RT::Interface::Web::QueryBuilder::Tree->new( $clause, $parentnode );
 
             ( $ea, $key, $op, $value ) = ( "", "", "", "" );
+
         }
 
         $last = $current;
     }    # while
 
-    push @actions, [ loc("Incomplete query"), -1 ]
+    push @$actions, [ loc("Incomplete query"), -1 ]
       unless ( ( $want | PAREN ) || ( $want | KEYWORD ) );
 
-    push @actions, [ loc("Incomplete Query"), -1 ]
+    push @$actions, [ loc("Incomplete Query"), -1 ]
       unless ( $last && ( $last | PAREN ) || ( $last || VALUE ) );
 
     # This will never happen, because the parser will complain
-    push @actions, [ loc("Mismatched parentheses"), -1 ]
+    push @$actions, [ loc("Mismatched parentheses"), -1 ]
       unless $depth == 1;
 };
 
 my $tree;
-$ParseQuery->( $Query, \$tree, \@actions );
+{
+    my @parsing_errors;
+    $ParseQuery->( $Query, \$tree, \@parsing_errors );
 
-# if parsing went poorly, send them to the edit page to fix it
-if ( $actions[0] ) {
-    $m->comp( "Edit.html", Query => $Query, actions => \@actions );
-    $m->abort();
+    # if parsing went poorly, send them to the edit page
+    # to fix it
+    if ( @parsing_errors ) {
+        return $m->comp(
+            "Edit.html",
+            Query   => $Query,
+            actions => \@parsing_errors
+        );
+    }
 }
 
 $Query  = "";
@@ -583,7 +640,7 @@ elsif ( $ARGS{"Toggle"} ) {
 # {{{ Try to find if we're adding a clause
 foreach my $arg ( keys %ARGS ) {
     if (
-        $arg =~ m/^ValueOf(.+)/
+            $arg =~ m/^ValueOf(\w+|'CF.{.*?}')$/
         && ( ref $ARGS{$arg} eq "ARRAY"
             ? grep { $_ ne "" } @{ $ARGS{$arg} }
             : $ARGS{$arg} ne "" )
@@ -695,77 +752,6 @@ my ( $AvailableColumns, $CurrentFormat );
 
 # }}}
 
-# {{{ if we're asked to save the current search, save it
-if ( $ARGS{'Save'} ) {
-
-    if ( $search && $search->id ) {
-
-        # This search is based on a previously loaded search -- so
-        # just update the current search object with new values
-        $search->SetSubValues(
-            Format      => $Format,
-            Query       => $Query,
-            Order       => $Order,
-            OrderBy     => $OrderBy,
-            RowsPerPage => $RowsPerPage,
-        );
-        $search->SetDescription($Description);
-
-    }
-    elsif ( $SearchId eq 'new' && $ARGS{'Owner'} =~ /^(.*?)-(\d+)$/ ) {
-
-        # We're saving a new search
-        my $obj_type = $1;
-        my $obj_id   = $2;
-
-        # Find out if we're saving on the user, or a group
-        my $container_object;
-        if ( $obj_type eq 'RT::User' && $obj_id == $session{'CurrentUser'}->Id )
-        {
-            $container_object = $session{'CurrentUser'}->UserObj;
-        }
-        elsif ( $obj_type eq 'RT::Group' ) {
-            $container_object = RT::Group->new( $session{'CurrentUser'} );
-            $container_object->Load($obj_id);
-        }
-
-        if ( $container_object->id ) {
-
-            # If we got one or the other, add the saerch
-            my ( $search_id, $search_msg ) = $container_object->AddAttribute(
-                Name        => 'SavedSearch',
-                Description => $Description,
-                Content     => {
-                    Format      => $Format,
-                    Query       => $Query,
-                    Order       => $Order,
-                    OrderBy     => $OrderBy,
-                    RowsPerPage => $RowsPerPage,
-                }
-            );
-            $search =
-              $session{'CurrentUser'}->UserObj->Attributes->WithId($search_id);
-
-            # Build new SearchId
-            $SearchId =
-                ref( $session{'CurrentUser'}->UserObj ) . '-'
-              . $session{'CurrentUser'}->UserObj->Id
-              . '-SavedSearch-'
-              . $search->Id;
-        }
-        unless ( $search->id ) {
-            push @actions, [ loc("Can't find a saved search to work with"), 0 ];
-        }
-
-    }
-    else {
-        push @actions, [ loc("Can't save this search"), 0 ];
-    }
-
-}
-
-# }}}
-
 # {{{ If we're modifying an old query, check if it has changed
 my $dirty = 0;
 $dirty = 1
@@ -793,7 +779,7 @@ $session{'CurrentSearchHash'} = $search_hash;
 # }}}
 
 # {{{ Show the results, if we were asked.
-if ( $ARGS{"DoSearch"} ) {
+if ( $ARGS{"DoSearch"}) {
     $m->comp(
         "Results.html",
         Query   => $Query,
@@ -802,6 +788,7 @@ if ( $ARGS{"DoSearch"} ) {
         OrderBy => $OrderBy,
         Rows    => $RowsPerPage
     );
+    $m->comp('/Elements/Footer');
     $m->abort();
 }
 

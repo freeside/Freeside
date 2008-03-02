@@ -3,7 +3,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -23,7 +23,9 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/copyleft/gpl.html.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -44,7 +46,6 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
-
 # Designed and implemented for Best Practical Solutions, LLC by
 # Abhijit Menon-Sen <ams@wiw.org>
 
@@ -57,6 +58,7 @@ use Cwd;
 use LWP;
 use Text::ParseWords;
 use HTTP::Request::Common;
+use Term::ReadLine;
 
 # We derive configuration information from hardwired defaults, dotfiles,
 # and the RT* environment variables (in increasing order of precedence).
@@ -71,7 +73,7 @@ my %config = (
         debug   => 0,
         user    => eval{(getpwuid($<))[0]} || $ENV{USER} || $ENV{USERNAME},
         passwd  => undef,
-        server  => 'http://localhost/rt/',
+        server  => 'http://localhost/',
         query   => undef,
         orderby => undef,
     ),
@@ -81,6 +83,8 @@ my %config = (
 my $session = new Session("$HOME/.rt_sessions");
 my $REST = "$config{server}/REST/1.0";
 
+my $prompt = 'rt> ';
+
 sub whine;
 sub DEBUG { warn @_ if $config{debug} >= shift }
 
@@ -88,7 +92,7 @@ sub DEBUG { warn @_ if $config{debug} >= shift }
 # (XXX: Ask Autrijus how i18n changes these definitions.)
 
 my $name   = '[\w.-]+';
-my $field  = '[a-zA-Z][a-zA-Z0-9_-]*';
+my $field  = '(?:[a-zA-Z](?:[a-zA-Z0-9_-]|\s+)*)';
 my $label  = '[a-zA-Z0-9@_.+-]+';
 my $labels = "(?:$label,)*$label";
 my $idlist = '(?:(?:\d+-)?\d+,)*(?:\d+-)?\d+';
@@ -113,6 +117,8 @@ my %handlers = (
     link        => ["link", "ln"],
     merge       => ["merge"],
     grant       => ["grant", "revoke"],
+    take        => ["take", "steal", "untake"],
+    quit        => ["quit", "exit"],
 );
 
 my %actions;
@@ -127,10 +133,16 @@ foreach my $fn (keys %handlers) {
 sub handler {
     my $action;
 
+    push @ARGV, 'shell' if (!@ARGV);    # default to shell mode
+    shift @ARGV if ($ARGV[0] eq 'rt');    # ignore a leading 'rt'
     if (@ARGV && exists $actions{$ARGV[0]}) {
         $action = shift @ARGV;
+        $actions{$action}->($action);
     }
-    $actions{$action || "help"}->($action || ());
+    else {
+        print STDERR "rt: Unknown command '@ARGV'.\n";
+        print STDERR "rt: For help, run 'rt help'.\n";
+    }
 }
 
 handler();
@@ -143,16 +155,13 @@ exit;
 
 sub shell {
     $|=1;
-    print "rt> ";
-    while (<>) {
-        chomp;
+    my $term = new Term::ReadLine 'RT CLI';
+    while ( defined ($_ = $term->readline($prompt)) ) {
         next if /^#/ || /^\s*$/;
 
         @ARGV = shellwords($_);
         handler();
-        print "rt> ";
     }
-    print "\n";
 }
 
 sub version {
@@ -161,6 +170,11 @@ sub version {
 
 sub logout {
     submit("$REST/logout") if defined $session->cookie;
+}
+
+sub quit {
+    logout();
+    exit;
 }
 
 my %help;
@@ -268,7 +282,8 @@ sub list {
         whine "No $item specified.";
         $bad = 1;
     }
-    return help("list", $type) if $bad;
+    #return help("list", $type) if $bad;
+    return suggest_help("list", $type) if $bad;
 
     my $r = submit("$REST/search/$type", { query => $q, %data });
     print $r->content;
@@ -325,10 +340,18 @@ sub show {
         whine "No objects specified.";
         $bad = 1;
     }
-    return help("show", $type) if $bad;
+    #return help("show", $type) if $bad;
+    return suggest_help("show", $type) if $bad;
 
     my $r = submit("$REST/show", { id => \@objects, %data });
-    print $r->content;
+    my $c = $r->content;
+    # if this isn't a text reply, remove the trailing newline so we
+    # don't corrupt things like tarballs when people do
+    # show ticket/id/attachments/id/content > foo.tar.gz
+    if ($r->content_type !~ /^text\//) {
+        chomp($c);
+    }
+    print $c;
 }
 
 # To create a new object, we ask the server for a form with the defaults
@@ -432,18 +455,23 @@ sub edit {
         }
         @objects = ("$type/new");
     }
-    return help($action, $type) if $bad;
+    #return help($action, $type) if $bad;
+    return suggest_help($action, $type) if $bad;
 
     # We need a form to make changes to. We usually ask the server for
     # one, but we can avoid that if we are fed one on STDIN, or if the
     # user doesn't want to edit the form by hand, and the command line
-    # specifies only simple variable assignments.
+    # specifies only simple variable assignments.  We *should* get a
+    # form if we're creating a new ticket, so that the default values
+    # get filled in properly.
+
+    my @new_objects = grep /\/new$/, @objects;
 
     if ($input) {
         local $/ = undef;
         $text = <STDIN>;
     }
-    elsif ($edit || %add || %del || !$cl) {
+    elsif ($edit || %add || %del || !$cl || @new_objects) {
         my $r = submit("$REST/show", { id => \@objects, format => 'l' });
         $text = $r->content;
     }
@@ -599,7 +627,8 @@ sub comment {
         whine "No object specified.";
         $bad = 1;
     }
-    return help($action, "ticket") if $bad;
+    #return help($action, "ticket") if $bad;
+    return suggest_help($action, "ticket") if $bad;
 
     my $form = [
         "",
@@ -652,7 +681,7 @@ sub comment {
     }
     $data{content} = $text;
 
-    my $r = submit("$REST/ticket/comment/$id", \%data);
+    my $r = submit("$REST/ticket/$id/comment", \%data);
     print $r->content;
 }
 
@@ -679,9 +708,10 @@ sub merge {
         whine "Too $evil arguments specified.";
         $bad = 1;
     }
-    return help("merge", "ticket") if $bad;
+    #return help("merge", "ticket") if $bad;
+    return suggest_help("merge", "ticket") if $bad;
 
-    my $r = submit("$REST/ticket/merge/$id[0]", {into => $id[1]});
+    my $r = submit("$REST/ticket/$id[0]/merge/$id[1]");
     print $r->content;
 }
 
@@ -722,9 +752,48 @@ sub link {
         whine "Too $bad arguments specified.";
         $bad = 1;
     }
-    return help("link", "ticket") if $bad;
+    #return help("link", "ticket") if $bad;
+    return suggest_help("link", "ticket") if $bad;
 
     my $r = submit("$REST/ticket/link", \%data);
+    print $r->content;
+}
+
+# Take/steal a ticket
+sub take {
+    my ($cmd) = @_;
+    my ($bad, %data) = (0, ());
+
+    my $id;
+
+    # get the ticket id
+    if (@ARGV == 1) {
+        ($id) = @ARGV;
+        unless ($id =~ /^\d+$/) {
+            whine "Invalid ticket ID $id specified.";
+            $bad = 1;
+        }
+        my $form = [
+            "",
+            [ "Ticket", "Action" ],
+            {
+                Ticket => $id,
+                Action => $cmd,
+                Status => '',
+            }
+        ];
+
+        my $text = Form::compose([ $form ]);
+        $data{content} = $text;
+    }
+    else {
+        $bad = @ARGV < 1 ? "few" : "many";
+        whine "Too $bad arguments specified.";
+        $bad = 1;
+    }
+    return suggest_help("take", "ticket") if $bad;
+
+    my $r = submit("$REST/ticket/$id/take", \%data);
     print $r->content;
 }
 
@@ -839,7 +908,7 @@ sub submit {
             # For anything else, we just die.
             elsif ($res->code != 409) {
                 warn "rt: ", $res->content;
-                exit;
+                #exit;
             }
         }
     }
@@ -1268,17 +1337,29 @@ sub vsplit {
     return \@words;
 }
 
+# WARN: this code is duplicated in lib/RT/Interface/REST.pm
+# change both functions at once
 sub expand_list {
     my ($list) = @_;
-    my ($elt, @elts, %elts);
 
-    foreach $elt (split /,/, $list) {
-        if ($elt =~ /^(\d+)-(\d+)$/) { push @elts, ($1..$2) }
-        else                         { push @elts, $elt }
+    my @elts;
+    foreach (split /,/, $list) {
+        push @elts, /^(\d+)-(\d+)$/? ($1..$2): $_;
     }
 
-    @elts{@elts}=();
-    return sort {$a<=>$b} keys %elts;
+    return map $_->[0], # schwartzian transform
+        sort {
+            defined $a->[1] && defined $b->[1]?
+                # both numbers
+                $a->[1] <=> $b->[1]
+                :!defined $a->[1] && !defined $b->[1]?
+                    # both letters
+                    $a->[2] cmp $b->[2]
+                    # mix, number must be first
+                    :defined $a->[1]? -1: 1
+        }
+        map [ $_, (defined( /^(\d+)$/ )? $1: undef), lc($_) ],
+        @elts;
 }
 
 sub get_type_argument {
@@ -1328,16 +1409,23 @@ sub is_object_spec {
     return;
 }
 
+sub suggest_help {
+    my ($action, $type) = @_;
+
+    print STDERR "rt: For help, run 'rt help $action'.\n" if defined $action;
+    print STDERR "rt: For help, run 'rt help $type'.\n" if defined $type;
+}
+
 __DATA__
 
 Title: intro
 Title: introduction
 Text:
 
-    ** THIS IS AN UNSUPPORTED PREVIEW RELEASE **
-    ** PLEASE REPORT BUGS TO rt-bugs@fsck.com **
+     ** THIS IS AN UNSUPPORTED PREVIEW RELEASE **
+     ** PLEASE REPORT BUGS TO rt-bugs@bestpractical.com **
 
-    This is a command-line interface to RT 3.
+    This is a command-line interface to RT 3.0 or newer
 
     It allows you to interact with an RT server over HTTP, and offers an
     interface to RT's functionality that is better-suited to automation
@@ -1349,9 +1437,10 @@ Text:
 
     For more information:
 
-        - rt help actions       (a list of possible actions)
-        - rt help objects       (how to specify objects)
         - rt help usage         (syntax information)
+        - rt help objects       (how to specify objects)
+        - rt help actions       (a list of possible actions)
+        - rt help types         (a list of object types)
 
         - rt help config        (configuration details)
         - rt help examples      (a few useful examples)
@@ -1366,6 +1455,8 @@ Text:
     Syntax:
 
         rt <action> [options] [arguments]
+      or
+        rt shell
 
     Each invocation of this program must specify an action (e.g. "edit",
     "create"), options to modify behaviour, and other arguments required
@@ -1375,6 +1466,10 @@ Text:
     The details of the syntax and arguments for each action are given by
     "rt help <action>". Some actions may be referred to by more than one
     name ("create" is the same as "new", for example).  
+
+    You may also call "rt shell", which will give you an 'rt>' prompt at
+    which you can issue commands of the form "<action> [options] 
+    [arguments]".  See "rt help shell" for details.
 
     Objects are identified by a type and an ID (which can be a name or a
     number, depending on the type). For some actions, the object type is
@@ -1390,6 +1485,7 @@ Text:
         - rt help objects       (how to specify objects)
         - rt help actions       (a list of actions)
         - rt help types         (a list of object types)
+        - rt help shell         (how to use the shell)
 
 --
 
@@ -1742,7 +1838,7 @@ Text:
         rt ls -t tickets -i 'Priority > 5' | rt edit - set status=resolved
         rt edit ticket/4 set priority=3 owner=bar@example.com \
                          add cc=foo@example.com bcc=quux@example.net
-        rt create -t ticket subject='new ticket' priority=10 \
+        rt create -t ticket set subject='new ticket' priority=10 \
                             add cc=foo@example.com
 
 --
@@ -1788,7 +1884,7 @@ Text:
 
         rt merge <from-id> <to-id>
 
-    Merges the two specified tickets.
+    Merges the first ticket specified into the second ticket specified.
 
 --
 
@@ -1863,7 +1959,11 @@ Text:
 Title: topics
 Text:
 
-    Use "rt help <topic>" for help on any of the following subjects:
+    Syntax:
+
+        rt help <topic>
+
+    Get help on any of the following subjects:
 
         - tickets, users, groups, queues.
         - show, edit, ls/list/search, new/create.
@@ -1890,3 +1990,71 @@ Text:
     For the moment, please consult examples provided with each action.
 
 --
+
+Title: shell
+Text:
+
+    Syntax:
+
+        rt shell
+
+    Opens an interactive shell, at which you can issue commands of 
+    the form "<action> [options] [arguments]".
+
+    To exit the shell, type "quit" or "exit".
+
+    Commands can be given at the shell in the same form as they would 
+    be given at the command line without the leading 'rt' invocation.
+
+    Example:
+        $ rt shell
+        rt> create -t ticket set subject='new' add cc=foo@example.com
+        # Ticket 8 created.
+        rt> quit
+        $
+
+--
+
+Title: take
+Title: untake
+Title: steal
+Text:
+
+    Syntax:
+
+        rt <take|untake|steal> <ticket-id>
+
+    Sets the owner of the specified ticket to the current user, 
+    assuming said user has the bits to do so, or releases the 
+    ticket.  
+    
+    'Take' is used on tickets which are not currently owned 
+    (Owner: Nobody), 'steal' is used on tickets which *are* 
+    currently owned, and 'untake' is used to "release" a ticket 
+    (reset its Owner to Nobody).  'Take' cannot be used on
+    tickets which are currently owned.
+
+    Example:
+        alice$ rt create -t ticket set subject="New ticket"
+        # Ticket 7 created.
+        alice$ rt take 7
+        # Owner changed from Nobody to alice
+        alice$ su bob
+        bob$ rt steal 7
+        # Owner changed from alice to bob
+        bob$ rt untake 7
+        # Owner changed from bob to Nobody
+
+--
+
+Title: quit
+Title: exit
+Text:
+
+    Use "quit" or "exit" to leave the shell.  Only valid within shell 
+    mode.
+
+    Example:
+        $ rt shell
+        rt> quit
+        $

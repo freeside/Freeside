@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,7 +22,9 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+%# 02110-1301 or visit their web page on the internet at
+%# http://www.gnu.org/copyleft/gpl.html.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -171,12 +173,12 @@ elsif ( $AddCol ) {
 	    $column{Column} = $col;
 
     if ( $Face eq "Bold" ) {
-        $column{Prefix} .= "<B>";
-        $column{Suffix} .= "</B>";
+        $column{Prefix} .= "<b>";
+        $column{Suffix} .= "</b>";
     }
     if ( $Face eq "Italic" ) {
-        $column{Prefix} .= "<I>";
-        $column{Suffix} .= "</I>";
+        $column{Prefix} .= "<i>";
+        $column{Suffix} .= "</i>";
     }
     if ($Size) {
         $column{Prefix} .= "<" . $m->interp->apply_escapes( $Size,  'h' ) . ">";
@@ -184,11 +186,11 @@ elsif ( $AddCol ) {
     }
     if ( $Link eq "Display" ) {
         $column{Prefix} .=
-          "<A HREF=\"" . $RT::WebPath . "/Ticket/Display.html?id=__id__\">";
+          "<a HREF=\"" . $RT::WebPath . "/Ticket/Display.html?id=__id__\">";
         $column{Suffix} .= "</a>";
     }
     elsif ( $Link eq "Take" ) {
-        $column{Prefix} .= "<A HREF=\"" . $RT::WebPath
+        $column{Prefix} .= "<a HREF=\"" . $RT::WebPath
           . "/Ticket/Display.html?Action=Take&id=__id__\">";
         $column{Suffix} .= "</a>";
     }
@@ -223,10 +225,13 @@ elsif ( $ColDown ) {
 my @format_string;
 foreach my $field (@seen) {
     next unless $field;
-    my $row = "'" . $field->{Prefix};
-    $row .= "__" . $m->interp->apply_escapes( $field->{Column}, 'h' ) . "__"
+    my $row = "'";
+    $row .= $field->{Prefix} if $field->{Prefix};
+    $row .= "__" . ($field->{Column} =~ m/\(/ ? $field->{Column} # func, don't escape
+		    : $m->interp->apply_escapes( $field->{Column}, 'h' )) . "__"
       unless ( $field->{Column} eq "<blank>" );
-    $row .= $field->{Suffix} . "'";
+    $row .= $field->{Suffix} if $field->{Suffix};
+    $row .= "'";
     push( @format_string, $row );
 }
 
