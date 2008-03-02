@@ -3,11 +3,11 @@ dnl
 dnl Process this file with autoconf to produce a configure script
 dnl
 dnl Embed in generated ./configure script the following CVS info:
-AC_REVISION($Revision: 1.1.1.7 $)dnl
+AC_REVISION($Revision: 1.1.1.8 $)dnl
 
 dnl Setup autoconf
 AC_PREREQ(2.53)
-AC_INIT(RT, [3.6.4], [rt-bugs@bestpractical.com])
+AC_INIT(RT, [3.4.6], [rt-bugs@fsck.com])
 AC_CONFIG_SRCDIR([lib/RT.pm.in])
 
 dnl Extract RT version number components
@@ -202,8 +202,6 @@ AC_ARG_WITH(rt-group,
 AC_SUBST(RTGROUP)
 
 dnl INSTALL AS ME
-# XXX TODO: The command below to figure out the group brokenly relies on
-# output order (and "id -gn" doesn't work on all platforms).
 my_group=$(groups|cut -f1 -d' ')
 my_user=${USER:-$LOGNAME}
 AC_ARG_WITH(my-user-group,
@@ -235,15 +233,6 @@ AC_ARG_WITH(apachectl,
             APACHECTL=$withval, 
             APACHECTL=`which apachectl`)
 AC_SUBST(APACHECTL)
-
-dnl RT's standalone pure perl server
-AC_ARG_WITH(devel-mode,
-            AC_HELP_STRING([--with-standalone],
-                           [Install modules for pure perl standalone server]),
-
-            RT_STANDALONE="1",
-            RT_STANDALONE="0")
-AC_SUBST(RT_STANDALONE)
 
 dnl RT's "maintainer mode"
 AC_ARG_WITH(devel-mode,

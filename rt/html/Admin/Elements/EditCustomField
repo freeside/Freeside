@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-%# 02110-1301 or visit their web page on the internet at
-%# http://www.gnu.org/copyleft/gpl.html.
+%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -48,43 +46,43 @@
 <& /Elements/ListActions, actions => \@results &>
 
 
-<form method="post" action="CustomField.html">
-<input type="hidden" class="hidden" name="CustomField" value="<%$id %>" />
-<input type="hidden" class="hidden" name="Queue" value="<%$Queue%>" />
+<FORM METHOD=POST ACTION="CustomField.html">
+<INPUT TYPE=HIDDEN NAME="CustomField" VALUE="<%$id %>">
+<INPUT TYPE=HIDDEN name="Queue" value="<%$Queue%>">
 
-<table width="100%" border="0">
-<tr><td align="right">
+<TABLE WIDTH="100%" BORDER="0">
+<TR><TD ALIGN="RIGHT">
 <&|/l&>Name</&>:
-</td><td>
-<input name="Name" value="<%$CustomFieldObj->Name%>" size="20" />
-</td></tr>
-<tr><td align="right">
+</TD><TD>
+<input name="Name" VALUE="<%$CustomFieldObj->Name%>" SIZE=20>
+</TD></TR>
+<TR><TD ALIGN="RIGHT">
 <&|/l&>Description</&>:
-</td><td>
-<input name="Description" value="<%$CustomFieldObj->Description%>" size="80" />
-</td></tr>
-<tr><td align="right">
+</TD><TD>
+<input name="Description" VALUE="<%$CustomFieldObj->Description%>" SIZE=80>
+</TD></TR>
+<TR><TD ALIGN="RIGHT">
 <&|/l&>Type</&>:
-</td><td>
+</TD><TD>
 <& /Admin/Elements/SelectCustomFieldType, Name => "Type", Default => $CustomFieldObj->Type &>
-</td></tr>
-<tr><td>
-</td><td>
-<input type="hidden" class="hidden" name="SetEnabled" value="1" />
-<input type="checkbox" class="checkbox" name="Enabled" value="1" <%$EnabledChecked%> /> <&|/l&>Enabled (Unchecking this box disables this custom field)</&>
-</td></tr>
-</table>
+</TD></TR>
+<TR><TD>
+</TD><TD>
+<INPUT TYPE=HIDDEN NAME="SetEnabled" VALUE="1">
+<INPUT TYPE=CHECKBOX NAME="Enabled" VALUE="1" <%$EnabledChecked%>> <&|/l&>Enabled (Unchecking this box disables this custom field)</&>
+</TD></TR>
+</TABLE>
 
-<p>
+<P>
 % if ($CustomFieldObj->Id and $CustomFieldObj->Type =~ /Select/) {
 <h2><&|/l&>Values</&></h2>
-<font size="-1">
+<font size=-1>
 <& /Admin/Elements/EditCustomFieldValues, CustomField => $CustomFieldObj &>
 <& /Admin/Elements/AddCustomFieldValue, CustomField => $CustomFieldObj &>
 </font>
 % }
 <&/Elements/Submit, Label => loc('Create') &>
-</form>
+</FORM>
 
 
 

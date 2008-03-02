@@ -1,15 +1,14 @@
-<& /Elements/Header, Title=>loc("RT at a glance"), Refresh => $session{'home_refresh_interval'} &>
 <!--
 % $m->out('--'.'>');
 % if (0) {
 %# -->
 <html><head>
-<meta http-equiv="refresh" content="30; url=http://bestpractical.com/rt/rt-broken-install.html">
+<META HTTP-EQUIV=Refresh CONTENT="3; URL=http://bestpractical.com/rt/rt-broken-install.html">
 <title>Almost there!</title></head>
 <body>
 
-<img src="http://www.bestpractical.com/images/unconfigured-rtlogo.jpg" />
-<br /><br />
+<img src="http://www.bestpractical.com/images/unconfigured-rtlogo.jpg">
+<br><br>
 <h1>You're almost there!</h1>
 You haven't yet configured your webserver to run RT.
 
@@ -17,7 +16,7 @@ You appear to have installed RT's web interface correctly, but haven't yet confi
 server to "run" the RT server which powers the web interface.
 
 The next step is to edit your webserver's configuration file to instruct it to use
-RT's <strong>mod_perl</strong>, <strong>FastCGI</strong> or <strong>SpeedyCGI</strong> handler.
+RT's <b>mod_perl</b>, <b>fastcgi</b> or <b>speedycgi</b> handler.
 
 If you need commercial support, please contact us at sales@bestpractical.com.
 
@@ -29,7 +28,7 @@ If you need commercial support, please contact us at sales@bestpractical.com.
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -49,9 +48,7 @@ If you need commercial support, please contact us at sales@bestpractical.com.
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-%# 02110-1301 or visit their web page on the internet at
-%# http://www.gnu.org/copyleft/gpl.html.
+%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -72,13 +69,30 @@ If you need commercial support, please contact us at sales@bestpractical.com.
 %# those contributions and any derivatives thereof.
 %# 
 %# END BPS TAGGED BLOCK }}}
+<& /Elements/Header, Title=>loc("RT at a glance"), Refresh => $session{'home_refresh_interval'} &>
 <& /Elements/Tabs, 
     current_toptab => '', 
-    Title=>loc("RT at a glance"),
-    actions => $actions,
-    &>
+    Title=>loc("RT at a glance") &>
 <& /Elements/ListActions, actions => \@results &>    
-<& /Elements/MyRT &>
+<TABLE BORDER=0 WIDTH=100%>
+<TR VALIGN=TOP>
+<TD WIDTH=70% class="boxcontainer">
+<& /Elements/MyTickets &>
+<BR>
+<& /Elements/MyRequests &>
+<BR>
+<& /Elements/QuickCreate &>
+</TD>
+<TD class="boxcontainer">
+<& /Elements/Quicksearch &>
+<BR>
+<form method=get action="<%$RT::WebPath%>/index.html">
+<& /Elements/Refresh, Name => 'HomeRefreshInterval', Default => $session {'home_refresh_interval'} &>
+<div align=right><input type=submit value="<&|/l&>Go!</&>"></div>
+</form>
+</TD>
+</TR>
+</TABLE>
 <%init>
 
 my @results;
@@ -87,7 +101,6 @@ if ($ARGS{'QuickCreate'} ) {
     my $ticket = RT::Ticket->new($session{'CurrentUser'});
     my ($tid, $trans, $tmsg) = $ticket->Create(Queue => $ARGS{'Queue'},
                     Owner => $ARGS{'Owner'},
-                    Requestor => $session{'CurrentUser'}->UserObj->EmailAddress,
                     Subject => $ARGS{'Subject'});
 
 
@@ -96,20 +109,46 @@ if ($ARGS{'QuickCreate'} ) {
 
 
 if ( $ARGS{'q'} ) {
-    RT::Interface::Web::Redirect($RT::WebURL."Search/Simple.html?q=".$m->interp->apply_escapes($ARGS{q}));
+    my $query = $ARGS{'q'};
+
+   if ( $query =~ m/^\s*(\d+)\s*$/ ) {
+        $m->comp("/Ticket/Display.html" , id=> $1);
+        return();
+    }
+
+    if ($m->comp('/Elements/Callback', _CallbackName => 'SearchPreFilter', 
+		 query => $query, %ARGS)) {
+	return();
+    }
+
+    $session{'tickets'} = RT::Tickets->new( $session{'CurrentUser'} );
+
+    if ( $query =~ m/\@/ ) {
+        $m->comp("/Search/Results.html", Query => "Requestor = '$query'");
+
+        return();
+    }
+
+    #
+    # Any search on queue name or subject will be for new/open tickets
+    # only.
+    #
+
+    my $status = "Status = 'new' OR Status = 'open'";
+
+    my $queue = RT::Queue->new( $session{'CurrentUser'} );
+    if ( $queue->Load($query) && $queue->Id ) {
+        $m->comp("/Search/Results.html", Query => "Queue = '" . $queue->Id . "' AND ($status)");
+        return();
+    }
+
+    $m->comp("/Search/Results.html", Query => "Subject LIKE '$query' AND ($status)");
+    return();
+
 }
 
 if ($ARGS{'HomeRefreshInterval'}) {
 	$session{'home_refresh_interval'} = $ARGS{'HomeRefreshInterval'};
-}
-
-my $actions;
-if ($session{'CurrentUser'}->HasRight(Right => 'ModifySelf', Object => $RT::System)) {
-    $actions = {
-        A => { title => loc('Edit'),
-               path  => 'Prefs/MyRT.html',
-             },
-    };
 }
 
 </%init>

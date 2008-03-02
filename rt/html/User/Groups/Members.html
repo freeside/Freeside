@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-%# 02110-1301 or visit their web page on the internet at
-%# http://www.gnu.org/copyleft/gpl.html.
+%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -54,36 +52,36 @@
 
 
 
-<form action="<%$RT::WebPath%>/User/Groups/Members.html" method="post">
-<input type="hidden" class="hidden" name="id" value="<%$Group->Id%>" />
-<table width="100%">
-<tr>
-<td>
+<FORM ACTION="<%$RT::WebPath%>/User/Groups/Members.html" METHOD="POST">
+<INPUT TYPE=HIDDEN NAME=id VALUE="<%$Group->Id%>">
+<TABLE WIDTH="100%">
+<TR>
+<TD>
 <&|/l&>Add members</&>
-</td>
-<td>
+</TD>
+<TD>
 <&|/l&>Current members</&>
-</td>
-</tr>
+</TD>
+</TR>
 
-<tr>
-<td valign="top">
+<TR>
+<TD VALIGN=TOP>
 <& /Admin/Elements/SelectNewGroupMembers, Name => "AddMembers", Group => $Group &>
-</td>
-<td valign="top">
+</TD>
+<TD VALIGN=TOP>
 
 % if ($Group->MembersObj->Count == 0 ) {
-<em><&|/l&>(No members)</&></em>
+<i><&|/l&>(No members)</&></i>
 % } else {
-<em><&|/l&>(Check box to delete)</&></em>
-<br />
-<br />
+<i><&|/l&>(Check box to delete)</&></i>
+<br>
+<br>
 <&|/l&>Users</&>
 % my $UserMembers = $Group->MembersObj;
 % $UserMembers->LimitToUsers();
-<ul>
+<UL>
 % while (my $member = $UserMembers->Next()) {
-<li><input type="checkbox" class="checkbox" name="DeleteMember-<%$member->MemberId%>" value="1" />
+<LI><INPUT TYPE=CHECKBOX Name="DeleteMember-<%$member->MemberId%>" value="1">
 <%$member->MemberObj->Object->Name%> (<%$member->MemberObj->Object->RealName%>)
 % }
 </ul>
@@ -92,14 +90,14 @@
 % my $GroupMembers = $Group->MembersObj;
 % $GroupMembers->LimitToGroups();
 % while (my $member = $GroupMembers->Next()) {
-<li><input type="checkbox" class="checkbox" name="DeleteMember-<%$member->MemberId%>" value="1" />
+<LI><INPUT TYPE=CHECKBOX Name="DeleteMember-<%$member->MemberId%>" value="1">
 <%$member->MemberObj->Object->Name%>
 % }
 % }
-</ul>
-</td>
-</tr>
-</table>
+</UL>
+</TD>
+</TR>
+</TABLE>
 <& /Elements/Submit, Label => loc('Modify Members') &>
 </form>
 

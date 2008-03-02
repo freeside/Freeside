@@ -2,7 +2,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-# 02110-1301 or visit their web page on the internet at
-# http://www.gnu.org/copyleft/gpl.html.
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -73,15 +71,18 @@ sub Prepare {
     # if the ticket is already open or the ticket is new and the message is more mail from the
     # requestor, don't reopen it.
 
-    my $status = $self->TicketObj->Status;
-    return undef if $status eq 'open';
-    return undef if $status eq 'new' && $self->TransactionObj->IsInbound;
+    if ( ( $self->TicketObj->Status eq 'open' )
+         || ( ( $self->TicketObj->Status eq 'new' )
+              && $self->TransactionObj->IsInbound )
+         || ( defined $self->TransactionObj->Message->First
+              && $self->TransactionObj->Message->First->GetHeader('RT-Control') =~ /\bno-autoopen\b/i )
+      ) {
 
-    if ( my $msg = $self->TransactionObj->Message->First ) {
-        return undef if ($msg->GetHeader('RT-Control') || '') =~ /\bno-autoopen\b/i;
+        return undef;
     }
-
-    return 1;
+    else {
+        return (1);
+    }
 }
 # }}}
 

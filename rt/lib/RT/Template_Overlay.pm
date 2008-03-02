@@ -2,7 +2,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-# 02110-1301 or visit their web page on the internet at
-# http://www.gnu.org/copyleft/gpl.html.
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -173,7 +171,7 @@ sub Load {
 
 =head2 LoadGlobalTemplate NAME
 
-Load the global template with the name NAME
+Load the global tempalte with the name NAME
 
 =cut
 
@@ -362,12 +360,12 @@ sub _ParseContent {
     );
 
     no warnings 'redefine';
-    local $T::Ticket      = $args{'TicketObj'};
-    local $T::Transaction = $args{'TransactionObj'};
-    local $T::Argument    = $args{'Argument'};
-    local $T::Requestor   = eval { $T::Ticket->Requestors->UserMembersObj->First->Name };
-    local $T::rtname      = $RT::rtname;
-    local *T::loc         = sub { $T::Ticket->loc(@_) };
+    $T::Ticket      = $args{'TicketObj'};
+    $T::Transaction = $args{'TransactionObj'};
+    $T::Argument    = $args{'Argument'};
+    $T::Requestor   = eval { $T::Ticket->Requestors->UserMembersObj->First->Name };
+    $T::rtname      = $RT::rtname;
+    *T::loc         = sub { $T::Ticket->loc(@_) };
 
     my $content = $self->Content;
     unless ( defined $content ) {

@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-%# 02110-1301 or visit their web page on the internet at
-%# http://www.gnu.org/copyleft/gpl.html.
+%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -46,10 +44,10 @@
 %# 
 %# END BPS TAGGED BLOCK }}}
 <& /Elements/Header, Title => "Comments about $name" &>
-<&|/l&>These comments aren't generally visible to the user</&>:<br />
-<input type="hidden" class="hidden" name="id" value="<%$id%>" />
-<textarea cols="60" rows="15" wrap="soft" name="Comments"><% $UserObj->Comments %></textarea>
-</form>
+<&|/l&>These comments aren't generally visible to the user</&>:<br>
+<input type="hidden" name="id" value="<%$id%>">
+<TEXTAREA COLS=60 ROWS=15 WRAP=SOFT NAME="Comments"><% $UserObj->Comments %></TEXTAREA>
+</FORM>
 
 <%ARGS>
 $UserObj => undef

@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-%# 02110-1301 or visit their web page on the internet at
-%# http://www.gnu.org/copyleft/gpl.html.
+%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -67,7 +65,7 @@ unless ($session{'CurrentUser'}->HasRight( Object=> $RT::System, Right => 'Super
 <pre>
 % my $report =  Module::Versions::Report::report();
 % my @report = grep { /v\d/ } split("\n",$report);
-<%join('<br />', @report)|n%>
+<%join('<br>', @report)|n%>
 
 
 </pre>
@@ -83,7 +81,7 @@ unless ($session{'CurrentUser'}->HasRight( Object=> $RT::System, Right => 'Super
 <tr><td>RT::<%$key%></td>
 <td>
 % if ($key =~ /Password(?!Length)/i) { 
-<em>Password not printed</em>
+<i>Password not printed</i>
 % } else {
 <%${'RT::'.$key} %>
 % }

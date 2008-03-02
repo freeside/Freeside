@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-%# 02110-1301 or visit their web page on the internet at
-%# http://www.gnu.org/copyleft/gpl.html.
+%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -53,7 +51,7 @@ $args => undef
 $format => undef
 $fields => undef
 </%ARGS>
-<%INIT>
+<%perl>
 my $ticket = new RT::Ticket $session{CurrentUser};
 my ($c, $o, $k, $e) = ("", [], {}, "");
 
@@ -96,19 +94,7 @@ if ($type) {
 if ($tid) {
     my @data;
     my $t = new RT::Transaction $session{CurrentUser};
-    
-    # this paragraph limits the transaction ID query to transactions on this ticket. 
-    # Otherwise you can query any transaction from any ticket, which makes no sense.
-    my $Transactions = $ticket->Transactions;
-    my $tok=0;
-    while (my $T = $Transactions->Next()) {
-    	$tok=1 if ($T->Id == $tid)
-    }
-    if ($tok) {
-    	$t->Load($tid);
-    } else {
-    	return [ "# Transaction $tid is not related to Ticket $id", [], {}, 1 ];
-    }
+    $t->Load($tid);
 
     push @data, [ id    => $t->Id   ];
     push @data, [ Ticket    => $t->Ticket   ]
@@ -182,7 +168,8 @@ if ($tid) {
 	    $fieldstring .= $key;
 	}
 	my ($content, $forms);
-	$m->subexec("/REST/1.0/show", 
+
+	$m->subexec("$RT::WebPath/REST/1.0/show", 
 		    id => \@tid, 
 		    format => $format,
                     fields => $fieldstring);
@@ -197,4 +184,4 @@ if (!$c) {
 
 return [ $c, $o, $k, $e ];
 
-</%INIT>
+</%perl>

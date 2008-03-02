@@ -12,17 +12,18 @@ my $cookie_jar = HTTP::Cookies->new;
 my $agent = WWW::Mechanize->new();
 
 # give the agent a place to stash the cookies
+
 $agent->cookie_jar($cookie_jar);
 
 use RT;
-RT::LoadConfig();
+RT::LoadConfig;
 
 # get the top page
 my $url = $RT::WebURL;
-diag "Base URL is '$url'" if $ENV{TEST_VERBOSE};
 $agent->get($url);
 
 is ($agent->{'status'}, 200, "Loaded a page");
+
 
 # {{{ test a login
 
@@ -44,19 +45,20 @@ use File::Find;
 find ( \&wanted , 'html/');
 
 sub wanted {
-        -f  && /\.html$/ && $_ !~ /Logout.html$/ && test_get($File::Find::name);
+        -f  && /\.html$/ && $_ !~ /Logout.html$/  && test_get($File::Find::name);
 }       
 
 sub test_get {
         my $file = shift;
 
-        $file =~ s#^html/##;
-        diag( "testing $url/$file" ) if $ENV{TEST_VERBOSE};
+
+        $file =~ s#^html/##; 
         ok ($agent->get("$url/$file", "GET $url/$file"));
         is ($agent->{'status'}, 200, "Loaded $file");
 #        ok( $agent->{'content'} =~ /Logout/i, "Found a logout link on $file ");
         ok( $agent->{'content'} !~ /Not logged in/i, "Still logged in for  $file");
-        ok( $agent->{'content'} !~ /raw error/i, "Didn't get a Mason compilation error on $file");
+        ok( $agent->{'content'} !~ /System error/i, "Didn't get a Mason compilation error on $file");
+        
 }
 
 # }}}

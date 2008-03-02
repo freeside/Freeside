@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-%# 02110-1301 or visit their web page on the internet at
-%# http://www.gnu.org/copyleft/gpl.html.
+%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -45,6 +43,39 @@
 %# those contributions and any derivatives thereof.
 %# 
 %# END BPS TAGGED BLOCK }}}
-<label accesskey="9">
-  <& /Elements/SelectQueue, Name => 'Queue', %ARGS, ShowNullOption => 0, ShowAllQueues => 0 &>
-</label>
+<LABEL ACCESSKEY="9">
+<SELECT NAME ="<%$Name%>">
+% foreach my $queue (@{$session{'create_in_queues'}}) {
+<OPTION 
+    VALUE="<%$queue->{'id'}%>" 
+    <% $Default && $queue->{'id'} == $Default ? 'SELECTED': ''%>>
+<%$queue->{'Name'}%>
+%   if (($Verbose) and ($queue->{'Description'}) ){
+(<%$queue->{'Description'}%>)
+%  }
+</OPTION>
+% }
+</SELECT>
+</LABEL>
+
+<%INIT>
+unless ($session{'create_in_queues'}) { 
+
+@{$session{'create_in_queues'}} = ();
+my $q=new RT::Queues($session{'CurrentUser'});
+$q->UnLimit;
+while (my $queue=$q->Next) {
+        if ($queue->CurrentUserHasRight('CreateTicket')) {
+                my $ds = { Name => $queue->Name, Description => $queue->Description, id => $queue->id };
+                push (@{$session{'create_in_queues'}}, $ds);
+        }        
+}
+}
+</%INIT>
+
+
+<%ARGS>
+$Name => 'Queue'
+$Verbose =>  0
+$Default => 0
+</%ARGS>

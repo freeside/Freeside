@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-%# 02110-1301 or visit their web page on the internet at
-%# http://www.gnu.org/copyleft/gpl.html.
+%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -54,9 +52,9 @@
 
 <& /Elements/ListActions, actions => \@results &>
 
-<form action="Objects.html" method="post">
-<input type="hidden" class="hidden" name="id" value="<% $id %>" />
-<input type="hidden" class="hidden" name="UpdateObjs" value="1" />
+<FORM ACTION="Objects.html" METHOD=POST>
+<INPUT TYPE=HIDDEN NAME="id" VALUE="<% $id %>">
+<INPUT TYPE=HIDDEN NAME="UpdateObjs" VALUE="1">
 
 <h2><&|/l&>Selected objects</&></h2>
 <& /Admin/Elements/PickObjects, Objects => \@AssignedObjs, id => $id, Checked => 1 &>
@@ -64,7 +62,7 @@
 <& /Admin/Elements/PickObjects, Objects => \@UnassignedObjs, id => $id &>
 
 <& /Elements/Submit, CheckAll => 1, ClearAll => 1 &>
-</form>
+</FORM>
 
 <%INIT>
 my $CF = RT::CustomField->new($session{'CurrentUser'});

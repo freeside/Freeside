@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
-use strict;
+
 use WWW::Mechanize;
 use HTTP::Cookies;
 
-use Test::More tests => 34;
+use Test::More qw/no_plan/;
 use RT;
 RT::LoadConfig();
 RT::Init();
@@ -20,7 +20,6 @@ ok($ret, "ACL test password set. $msg");
 # Now test the web interface, making sure objects come and go as
 # required.
 
-
 my $cookie_jar = HTTP::Cookies->new;
 my $agent = WWW::Mechanize->new();
 
@@ -28,53 +27,62 @@ my $agent = WWW::Mechanize->new();
 
 $agent->cookie_jar($cookie_jar);
 
-no warnings 'once';
+
 # get the top page
-login($agent, $user_obj);
+my $url = $RT::WebURL;
+$agent->get($url);
+
+is ($agent->{'status'}, 200, "Loaded a page - $RT::WebURL");
+# {{{ test a login
+
+# follow the link marked "Login"
+
+ok($agent->{form}->find_input('user'));
+
+ok($agent->{form}->find_input('pass'));
+ok ($agent->{'content'} =~ /username:/i);
+$agent->field( 'user' => 'customer-'.$$ );
+$agent->field( 'pass' => 'customer' );
+# the field isn't named, so we have to click link 0
+$agent->click(0);
+is($agent->{'status'}, 200, "Fetched the page ok");
+ok($agent->{'content'} =~ /Logout/i, "Found a logout link");
 
 # Test for absence of Configure and Preferences tabs.
-ok(!$agent->find_link( url => $RT::WebPath . "/Admin/",
+ok(!$agent->find_link( url => "$RT::WebPath/Admin/",
 		       text => 'Configuration'), "No config tab" );
-ok(!$agent->find_link( url => $RT::WebPath . "/User/Prefs.html",
+ok(!$agent->find_link( url => "$RT::WebPath/User/Prefs.html",
 		       text => 'Preferences'), "No prefs pane" );
 
 # Now test for their presence, one at a time.  Sleep for a bit after
 # ACL changes, thanks to the 10s ACL cache.
-my ($grantid,$grantmsg) =$user_obj->PrincipalObj->GrantRight(Right => 'ShowConfigTab', Object => $RT::System);
-
-ok($grantid,$grantmsg);
-
-$agent->reload;
-
-ok($agent->{'content'} =~ /Logout/i, "Reloaded page successfully");
-ok($agent->find_link( url => $RT::WebPath . "/Admin/",
-		       text => 'Configuration'), "Found config tab" );
-my ($revokeid,$revokemsg) =$user_obj->PrincipalObj->RevokeRight(Right => 'ShowConfigTab');
-ok ($revokeid,$revokemsg);
-($grantid,$grantmsg) =$user_obj->PrincipalObj->GrantRight(Right => 'ModifySelf');
-ok ($grantid,$grantmsg);
+$user_obj->PrincipalObj->GrantRight(Right => 'ShowConfigTab');
 $agent->reload();
 ok($agent->{'content'} =~ /Logout/i, "Reloaded page successfully");
-ok($agent->find_link( url => $RT::WebPath . "/User/Prefs.html",
+ok($agent->find_link( url => "$RT::WebPath/Admin/",
+		       text => 'Configuration'), "Found config tab" );
+$user_obj->PrincipalObj->RevokeRight(Right => 'ShowConfigTab');
+$user_obj->PrincipalObj->GrantRight(Right => 'ModifySelf');
+$agent->reload();
+ok($agent->{'content'} =~ /Logout/i, "Reloaded page successfully");
+ok($agent->find_link( url => "$RT::WebPath/User/Prefs.html",
 		       text => 'Preferences'), "Found prefs pane" );
-($revokeid,$revokemsg) = $user_obj->PrincipalObj->RevokeRight(Right => 'ModifySelf');
-ok ($revokeid,$revokemsg);
+$user_obj->PrincipalObj->RevokeRight(Right => 'ModifySelf');
+
 # Good.  Now load the search page and test Load/Save Search.
-$agent->follow_link( url => $RT::WebPath . "/Search/Build.html",
+$agent->follow_link( url => "$RT::WebPath/Search/Build.html",
 		     text => 'Tickets');
 is($agent->{'status'}, 200, "Fetched search builder page");
 ok($agent->{'content'} !~ /Load saved search/i, "No search loading box");
 ok($agent->{'content'} !~ /Saved searches/i, "No saved searches box");
 
-($grantid,$grantmsg) = $user_obj->PrincipalObj->GrantRight(Right => 'LoadSavedSearch');
-ok($grantid,$grantmsg);
+$user_obj->PrincipalObj->GrantRight(Right => 'LoadSavedSearch');
 $agent->reload();
 ok($agent->{'content'} =~ /Load saved search/i, "Search loading box exists");
 ok($agent->{'content'} !~ /input\s+type=.submit.\s+name=.Save./i, 
    "Still no saved searches box");
 
-($grantid,$grantmsg) =$user_obj->PrincipalObj->GrantRight(Right => 'CreateSavedSearch');
-ok ($grantid,$grantmsg);
+$user_obj->PrincipalObj->GrantRight(Right => 'CreateSavedSearch');
 $agent->reload();
 ok($agent->{'content'} =~ /Load saved search/i, 
    "Search loading box still exists");
@@ -85,24 +93,22 @@ ok($agent->{'content'} =~ /input\s+type=.submit.\s+name=.Save./i,
 # via SelectOwner.
 
 my $queue_obj = RT::Queue->new($RT::SystemUser);
-($ret, $msg) = $queue_obj->Create(Name => 'CustomerQueue-'.$$, 
+($ret, $msg) = $queue_obj->Create(Name => 'CustomerQueue', 
 				  Description => 'queue for SelectOwner testing');
 ok($ret, "SelectOwner test queue creation. $msg");
 my $group_obj = RT::Group->new($RT::SystemUser);
-($ret, $msg) = $group_obj->CreateUserDefinedGroup(Name => 'CustomerGroup-'.$$,
+($ret, $msg) = $group_obj->CreateUserDefinedGroup(Name => 'CustomerGroup',
 			      Description => 'group for SelectOwner testing');
 ok($ret, "SelectOwner test group creation. $msg");
 
 # Add our customer to the customer group, and give it queue rights.
 ($ret, $msg) = $group_obj->AddMember($user_obj->PrincipalObj->Id());
 ok($ret, "Added customer to its group. $msg");
-($grantid,$grantmsg) =$group_obj->PrincipalObj->GrantRight(Right => 'OwnTicket',
+$group_obj->PrincipalObj->GrantRight(Right => 'OwnTicket',
 				     Object => $queue_obj);
-                                     
-ok($grantid,$grantmsg);
-($grantid,$grantmsg) =$group_obj->PrincipalObj->GrantRight(Right => 'SeeQueue',
+$group_obj->PrincipalObj->GrantRight(Right => 'SeeQueue',
 				     Object => $queue_obj);
-ok ($grantid,$grantmsg);
+
 # Now.  When we look at the search page we should be able to see
 # ourself in the list of possible owners.
 
@@ -111,28 +117,4 @@ ok($agent->form_name('BuildQuery'), "Yep, form is still there");
 my $input = $agent->current_form->find_input('ValueOfActor');
 ok(grep(/customer-$$/, $input->value_names()), "Found self in the actor listing");
 
-sub login {
-    my $agent = shift;
-
-    my $url = $RT::WebURL;
-    $agent->get($url);
-    is( $agent->{'status'}, 200,
-        "Loaded a page - $url" );
-
-    # {{{ test a login
-
-    # follow the link marked "Login"
-
-    ok( $agent->{form}->find_input('user') );
-
-    ok( $agent->{form}->find_input('pass') );
-    ok( $agent->{'content'} =~ /username:/i );
-    $agent->field( 'user' => $user_obj->Name );
-    $agent->field( 'pass' => 'customer' );
-
-    # the field isn't named, so we have to click link 0
-    $agent->click(0);
-    is( $agent->{'status'}, 200, "Fetched the page ok" );
-    ok( $agent->{'content'} =~ /Logout/i, "Found a logout link" );
-}
 1;

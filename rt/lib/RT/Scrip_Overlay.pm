@@ -2,7 +2,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-# 02110-1301 or visit their web page on the internet at
-# http://www.gnu.org/copyleft/gpl.html.
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -45,6 +43,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
   RT::Scrip - an RT Scrip object
@@ -141,10 +140,10 @@ sub Create {
         CustomPrepareCode      => undef,
         CustomCommitCode       => undef,
         CustomIsApplicableCode => undef,
-        @_
-    );
 
-    unless ( $args{'Queue'} ) {
+        @_ );
+
+    if ( !$args{'Queue'} ) {
         unless ( $self->CurrentUser->HasRight( Object => $RT::System,
                                                Right  => 'ModifyScrips' )
           ) {
@@ -153,9 +152,9 @@ sub Create {
         $args{'Queue'} = 0;    # avoid undef sneaking in
     }
     else {
-        my $QueueObj = RT::Queue->new( $self->CurrentUser );
+        my $QueueObj = new RT::Queue( $self->CurrentUser );
         $QueueObj->Load( $args{'Queue'} );
-        unless ( $QueueObj->id ) {
+        unless ( $QueueObj->id() ) {
             return ( 0, $self->loc('Invalid queue') );
         }
         unless ( $QueueObj->CurrentUserHasRight('ModifyScrips') ) {
@@ -167,28 +166,28 @@ sub Create {
     #TODO +++ validate input
 
     require RT::ScripAction;
-    return ( 0, $self->loc("Action is mandatory argument") )
-        unless $args{'ScripAction'};
-    my $action = RT::ScripAction->new( $self->CurrentUser );
-    $action->Load( $args{'ScripAction'} );
+    my $action = new RT::ScripAction( $self->CurrentUser );
+    if ( $args{'ScripAction'} ) {
+        $action->Load( $args{'ScripAction'} );
+    }
     return ( 0, $self->loc( "Action [_1] not found", $args{'ScripAction'} ) )
-        unless $action->Id;
+      unless $action->Id;
 
     require RT::Template;
-    return ( 0, $self->loc("Template is mandatory argument") )
-        unless $args{'Template'};
-    my $template = RT::Template->new( $self->CurrentUser );
-    $template->Load( $args{'Template'} );
-    return ( 0, $self->loc('Template not found') )
-        unless $template->Id;
+    my $template = new RT::Template( $self->CurrentUser );
+    if ( $args{'Template'} ) {
+        $template->Load( $args{'Template'} );
+    }
+    return ( 0, $self->loc('Template not found') ) unless $template->Id;
 
     require RT::ScripCondition;
-    return ( 0, $self->loc("Condition is mandatory argument") )
-        unless $args{'ScripCondition'};
-    my $condition = RT::ScripCondition->new( $self->CurrentUser );
-    $condition->Load( $args{'ScripCondition'} );
-    return ( 0, $self->loc('Condition not found') )
-        unless $condition->Id;
+    my $condition = new RT::ScripCondition( $self->CurrentUser );
+    if ( $args{'ScripCondition'} ) {
+        $condition->Load( $args{'ScripCondition'} );
+    }
+    unless ( $condition->Id ) {
+        return ( 0, $self->loc('Condition not found') );
+    }
 
     my ( $id, $msg ) = $self->SUPER::Create(
         Queue                  => $args{'Queue'},
@@ -200,8 +199,9 @@ sub Create {
         CustomPrepareCode      => $args{'CustomPrepareCode'},
         CustomCommitCode       => $args{'CustomCommitCode'},
         CustomIsApplicableCode => $args{'CustomIsApplicableCode'},
+
     );
-    if ( $id ) {
+    if ($id) {
         return ( $id, $self->loc('Scrip Created') );
     }
     else {
@@ -596,17 +596,15 @@ sub HasRight {
                  Principal => undef,
                  @_ );
 
-    if ( $self->SUPER::_Value('Queue') ) {
-        return $args{'Principal'}->HasRight(
-            Right  => $args{'Right'},
-            Object => $self->QueueObj
-        );
+    if (     ( defined $self->SUPER::_Value('Queue') )
+         and ( $self->SUPER::_Value('Queue') != 0 ) ) {
+        return ( $args{'Principal'}->HasRight( Right  => $args{'Right'},
+                                               Object => $self->QueueObj ) );
+
     }
     else {
-        return $args{'Principal'}->HasRight(
-            Object => $RT::System,
-            Right  => $args{'Right'},
-        );
+        return ( $args{'Principal'}
+                 ->HasRight( Object => $RT::System, Right => $args{'Right'} ) );
     }
 }
 

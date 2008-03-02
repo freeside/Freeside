@@ -3,7 +3,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -23,9 +23,7 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-# 02110-1301 or visit their web page on the internet at
-# http://www.gnu.org/copyleft/gpl.html.
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -46,6 +44,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
 rt-mailgate - Mail interface to RT3.
@@ -54,7 +53,6 @@ rt-mailgate - Mail interface to RT3.
 
 
 use strict;
-use warnings;
 use Getopt::Long;
 use LWP::UserAgent;
 
@@ -78,11 +76,10 @@ my $ua      = LWP::UserAgent->new();
 $ua->cookie_jar( { file => $opts{jar} } );
 
 my %args = (
-    SessionType => 'REST', # Surpress login box
+    queue   => $opts{queue},
+    action  => $opts{action},
+    SessionType => 'REST',    # Surpress login box
 );
-foreach ( qw(queue action) ) {
-    $args{$_} = $opts{$_} if defined $opts{$_};
-};
 
 # Read the message in from STDIN
 $args{'message'} = do { local (@ARGV, $/); <> };

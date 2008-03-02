@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-%# 02110-1301 or visit their web page on the internet at
-%# http://www.gnu.org/copyleft/gpl.html.
+%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -47,67 +45,67 @@
 %# END BPS TAGGED BLOCK }}}
 <& Elements/Header, Title => loc("Create a ticket") &>
 
-<form action="Display.html" method="post" enctype="multipart/form-data">
-<input type="hidden" class="hidden" name="id" value="new" />
+<FORM ACTION="Display.html" METHOD="POST" ENCTYPE="multipart/form-data">
+<INPUT TYPE=HIDDEN Name="id" VALUE="new">
 
-<table>
-<tr>
-<td class="label">
+<TABLE>
+<TR>
+<TD class="label">
 <&|/l&>Queue</&>:
 </td>
 <td class="value">
-    <input type="hidden" class="hidden" name="Queue" value="<%$queue_obj->id%>" />
-    <strong><%$queue_obj->Name%></strong> (<%$queue_obj->Description%>)
-</td>
-</tr>
-<tr>
-<td class="label">
+    <input type="hidden" name="Queue" value="<%$queue_obj->id%>">
+    <b><%$queue_obj->Name%></b> (<%$queue_obj->Description%>)
+</TD>
+</TR>
+<TR>
+<TD class="label">
 <&|/l&>Requestors</&>:
-</td>
-<td class="value">
-<input name="Requestors" value="<%$session{CurrentUser}->EmailAddress%>" size="20" />
-</td>
-</tr>
-<tr>
-<td class="label">
+</TD>
+<TD class="value">
+<INPUT Name="Requestors" Value="<%$session{CurrentUser}->EmailAddress%>" SIZE=20>
+</TD>
+</TR>
+<TR>
+<TD class="label">
 <&|/l&>Cc</&>:
-</td>
-<td class="value">
- <input name="Cc" size="20" />
-</td>
-</tr>
-<tr>
-<td class="label">
+</TD>
+<TD class="value">
+ <INPUT NAME="Cc" SIZE=20>
+</TD>
+</TR>
+<TR>
+<TD class="label">
 <&|/l&>Subject</&>:
-</td>
-<td class="value">
-<input name="Subject" size="60" maxsize="200" value="" />
-</td>
-</tr>
+</TD>
+<TD class="value">
+<INPUT Name="Subject" SIZE=60 MAXSIZE=200 value="">
+</TD>
+</TR>
 <tr>
     <td colspan="2">
         <& /Ticket/Elements/EditCustomFields, QueueObj => $queue_obj &>
     </td>
 </tr>
 <tr>
-<td class="label">
+<TD class="label">
 <&|/l&>Attach file</&>:
-</td>
-<td class="value">
-<input name="Attach" type="file" />
-</td>
-</tr>
-<tr>
-<td colspan="2">
-<&|/l&>Describe the issue below</&>:<br />
+</TD>
+<TD class="value">
+<INPUT Name="Attach" type="file">
+</TD>
+</TR>
+<TR>
+<TD COLSPAN=2>
+<&|/l&>Describe the issue below</&>:<br>
 <& /Elements/MessageBox &>
-</td>
-</tr>
-</table>
+</TD>
+</TR>
+</TABLE>
 <& /Elements/Submit, Label => loc("Create ticket")&>
 
 
-</form>
+</FORM>
 <%args>
 $Queue => undef
 </%args>

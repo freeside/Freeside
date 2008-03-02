@@ -2,7 +2,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-# 02110-1301 or visit their web page on the internet at
-# http://www.gnu.org/copyleft/gpl.html.
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -86,11 +84,6 @@ use RT::ObjectCustomFieldValues;
         'Upload multiple files',	# loc
         'Upload one file',		# loc
         'Upload up to [_1] files',	# loc
-    ],
-    Combobox => [
-        'Combobox: Select or enter multiple values',	# loc
-        'Combobox: Select or enter one value',		# loc
-        'Combobox: Select or enter up to [_1] values',	# loc
     ],
 );
 
@@ -201,15 +194,8 @@ sub Create {
         unless ( $queue->CurrentUserHasRight('AssignCustomFields') ) {
             return ( 0, $self->loc('Permission Denied') );
         }
-        $args{'LookupType'} = 'RT::Queue-RT::Ticket';
-        $args{'Queue'} = $queue->Id;
+	$args{'LookupType'} = 'RT::Queue-RT::Ticket';
     }
-
-    my ($ok, $msg) = $self->_IsValidRegex($args{'Pattern'});
-    if (!$ok) {
-        return (0, $self->loc("Invalid pattern: [_1]", $msg));
-    }
-
     my $rv = $self->SUPER::Create(
                          Name => $args{'Name'},
                          Type => $args{'Type'},
@@ -370,8 +356,11 @@ ok ($delval,"Deleting a cf value: $delmsg");
 =cut
 
 sub AddValue {
-    my $self = shift;
-    my %args = @_;
+	my $self = shift;
+	my %args = ( Name => undef,
+		     Description => undef,
+		     SortOrder => undef,
+		     @_ );
 
     unless ($self->CurrentUserHasRight('AdminCustomField')) {
         return (0, $self->loc('Permission Denied'));
@@ -381,9 +370,13 @@ sub AddValue {
     if ( !defined $args{'Name'} || $args{'Name'} eq '' ) {
         return(0, $self->loc("Can't add a custom field value without a name"));
     }
-
-    my $newval = RT::CustomFieldValue->new($self->CurrentUser);
-    return($newval->Create(%args, CustomField => $self->Id));
+	my $newval = RT::CustomFieldValue->new($self->CurrentUser);
+	return($newval->Create(
+		     CustomField => $self->Id,
+             Name =>$args{'Name'},
+             Description => ($args{'Description'} || ''),
+             SortOrder => ($args{'SortOrder'} || '0')
+        ));    
 }
 
 
@@ -573,22 +566,6 @@ sub Types {
 
 # }}}
 
-# {{{ IsSelectionType
- 
-=head2 IsSelectionType 
-
-Retuns a boolean value indicating whether the C<Values> method makes sense
-to this Custom Field.
-
-=cut
-
-sub IsSelectionType {
-    my $self = shift;
-    $self->Type =~ /(?:Select|Combobox)/;
-}
-
-# }}}
-
 
 =head2 FriendlyType [TYPE, MAX_VALUES]
 
@@ -659,51 +636,6 @@ sub SetType {
 	$self->SetMaxValues($1 ? 1 : 0);
     }
     $self->SUPER::SetType($type);
-}
-
-=head2 SetPattern STRING
-
-Takes a single string representing a regular expression.  Performs basic
-validation on that regex, and sets the C<Pattern> field for the CF if it
-is valid.
-
-=cut
-
-sub SetPattern {
-    my $self = shift;
-    my $regex = shift;
-
-    my ($ok, $msg) = $self->_IsValidRegex($regex);
-    if ($ok) {
-        return $self->SUPER::SetPattern($regex);
-    }
-    else {
-        return (0, $self->loc("Invalid pattern: [_1]", $msg));
-    }
-}
-
-=head2 _IsValidRegex(Str $regex) returns (Bool $success, Str $msg)
-
-Tests if the string contains an invalid regex.
-
-=cut
-
-sub _IsValidRegex {
-    my $self  = shift;
-    my $regex = shift or return (1, 'valid');
-
-    local $^W; local $@;
-    $SIG{__DIE__} = sub { 1 };
-    $SIG{__WARN__} = sub { 1 };
-
-    if (eval { qr/$regex/; 1 }) {
-        return (1, 'valid');
-    }
-
-    my $err = $@;
-    $err =~ s{[,;].*}{};    # strip debug info from error
-    chomp $err;
-    return (0, $err);
 }
 
 # {{{ SingleValue
@@ -877,7 +809,7 @@ Returns an array of all possible composite values for custom fields.
 
 sub TypeComposites {
     my $self = shift;
-    return grep !/(?:[Tt]ext|Combobox)-0/, map { ("$_-1", "$_-0") } $self->Types;
+    return grep !/Text-0/, map { ("$_-1", "$_-0") } $self->Types;
 }
 
 =head2 LookupTypes
@@ -1020,10 +952,6 @@ sub AddValueForObject {
         return ( 0, $self->loc('Permission Denied') );
     }
 
-    unless ( $self->MatchPattern($args{Content}) ) {
-        return ( 0, $self->loc('Input must match [_1]', $self->FriendlyPattern) );
-    }
-
     $RT::Handle->BeginTransaction;
 
     my $current_values = $self->ValuesForObject($obj);
@@ -1074,51 +1002,6 @@ sub AddValueForObject {
 
 # }}}
 
-# {{{ MatchPattern
-
-=head2 MatchPattern STRING
-
-Tests the incoming string against the Pattern of this custom field object
-and returns a boolean; returns true if the Pattern is empty.
-
-=cut
-
-sub MatchPattern {
-    my $self = shift;
-    my $regex = $self->Pattern;
-
-    return 1 if !length($regex);
-    return ($_[0] =~ $regex);
-}
-
-
-# }}}
-
-# {{{ FriendlyPattern
-
-=head2 FriendlyPattern
-
-Prettify the pattern of this custom field, by taking the text in C<(?#text)>
-and localizing it.
-
-=cut
-
-sub FriendlyPattern {
-    my $self = shift;
-    my $regex = $self->Pattern;
-
-    return '' if !length($regex);
-    if ($regex =~ /\(\?#([^)]*)\)/) {
-        return '[' . $self->loc($1) . ']';
-    }
-    else {
-        return $regex;
-    }
-}
-
-
-# }}}
-
 # {{{ DeleteValueForObject
 
 =head2 DeleteValueForObject HASH
@@ -1155,16 +1038,10 @@ sub DeleteValueForObject {
     }
 
 
-    # check to make sure we found it
+    # check ot make sure we found it
     unless ($oldval->Id) {
         return(0, $self->loc("Custom field value [_1] could not be found for custom field [_2]", $args{'Content'}, $self->Name));
     }
-
-    # for single-value fields, we need to validate that empty string is a valid value for it
-    if ( $self->SingleValue and not $self->MatchPattern( '' ) ) {
-        return ( 0, $self->loc('Input must match [_1]', $self->FriendlyPattern) );
-    }
-
     # delete it
 
     my $ret = $oldval->Delete();
@@ -1224,77 +1101,6 @@ sub _ForObjectType {
 
 }
 
+# }}}
 
-=head2 IncludeContentForValue [VALUE] (and SetIncludeContentForValue)
-
-Gets or sets the  C<IncludeContentForValue> for this custom field. RT
-uses this field to automatically include content into the user's browser
-as they display records with custom fields in RT.
-
-=cut
-
-sub SetIncludeContentForValue {
-    shift->IncludeContentForValue(@_);
-}
-sub IncludeContentForValue{
-    my $self = shift;
-    $self->_URLTemplate('IncludeContentForValue', @_);
-}
-
-
-
-=head2 LinkValueTo [VALUE] (and SetLinkValueTo)
-
-Gets or sets the  C<LinkValueTo> for this custom field. RT
-uses this field to make custom field values into hyperlinks in the user's
-browser as they display records with custom fields in RT.
-
-=cut
-
-
-sub SetLinkValueTo {
-    shift->LinkValueTo(@_);
-}
-
-sub LinkValueTo {
-    my $self = shift;
-    $self->_URLTemplate('LinkValueTo', @_);
-
-}
-
-
-=head2 _URLTemplate  NAME [VALUE]
-
-With one argument, returns the _URLTemplate named C<NAME>, but only if
-the current user has the right to see this custom field.
-
-With two arguments, attemptes to set the relevant template value.
-
-=cut
-
-
-
-sub _URLTemplate {
-    my $self          = shift;
-    my $template_name = shift;
-    if (@_) {
-
-        my $value = shift;
-        unless ( $self->CurrentUserHasRight('AdminCustomField') ) {
-            return ( 0, $self->loc('Permission Denied') );
-        }
-        $self->SetAttribute( Name => $template_name, Content => $value );
-        return ( 1, $self->loc('Updated') );
-    } else {
-        unless ( $self->id && $self->CurrentUserHasRight('SeeCustomField') ) {
-            return (undef);
-        }
-
-        my @attr = $self->Attributes->Named($template_name);
-        my $attr = shift @attr;
-
-        if ($attr) { return $attr->Content }
-
-    }
-}
 1;

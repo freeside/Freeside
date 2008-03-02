@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-%# 02110-1301 or visit their web page on the internet at
-%# http://www.gnu.org/copyleft/gpl.html.
+%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -46,7 +44,7 @@
 %# 
 %# END BPS TAGGED BLOCK }}}
 % if (ref($Message)) {
-<div class="message-stanza-depth-<% $Depth %>">
+<font color="<%$colors[$Depth]%>">
 <%perl>
 foreach my $stanza (@$Message) {
     if ( ref $stanza eq "ARRAY" ) {
@@ -59,23 +57,24 @@ foreach my $stanza (@$Message) {
         my $content = $stanza->{raw};
         RT::Interface::Web::EscapeUTF8(\$content);
         $m->comp('/Elements/Callback', content => \$content, %ARGS);
-        $content =~ s{$}{<br />}mg
-            if defined $content;
+                $content =~ s/\n/<br>/gi if defined $content;
 
 </%perl>
-<%$content |n%>
-%   }
+<%$content |n%><br>
+%       }
 % } # end foreach
-</div>
+</font>
 % } else {
-%       my $content = $Message;
-%       RT::Interface::Web::EscapeUTF8(\$content);
-%       $m->comp('/Elements/Callback', content => \$content, %ARGS);
-%       $content =~ s{$}{<br />}mg;
-<%$content |n%>
+% my $content = $Message;
+%        RT::Interface::Web::EscapeUTF8(\$content);
+%        $m->comp('/Elements/Callback', content => \$content, %ARGS);
+%                $content =~ s/\n/<br>/gi;
+<%$content |n%><br>
 % }
 <%INIT>
 use URI::URL;
+my $server = 'fsck.com';
+my @colors = ('#000000', '#660000', '#006600', '#000066', '#cc0000', '#00cc00', '#0000cc', '#ff0000', '#00ff00', '#0000ff');
 </%INIT>
 <%ARGS>
 $Message => undef

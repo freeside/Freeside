@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-%# 02110-1301 or visit their web page on the internet at
-%# http://www.gnu.org/copyleft/gpl.html.
+%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -45,10 +43,10 @@
 %# those contributions and any derivatives thereof.
 %# 
 %# END BPS TAGGED BLOCK }}}
-<br />
-<%$msg%><br />
+<BR>
+<%$msg%><br>
 
-<&|/l&>Add new watchers</&>:<br />
+<&|/l&>Add new watchers</&>:<br>
 
 <table>
 % if ($Users and $Users->Count) {
@@ -81,17 +79,17 @@
 <tr><td>
 <&/Elements/SelectWatcherType, Name => "WatcherTypeEmail1" &>
 </td><td>
-<input name="WatcherAddressEmail1" size="15" />
+<input name="WatcherAddressEmail1" size=15>
 </td></tr>
 <tr><td>
 <&/Elements/SelectWatcherType, Name => "WatcherTypeEmail2" &> 
 </td><td>
-<input name="WatcherAddressEmail2" size="15" />
+<input name="WatcherAddressEmail2" size=15>
 </td></tr>
 <tr><td>
 <&/Elements/SelectWatcherType, Name => "WatcherTypeEmail3" &>
 </td><td>
-<input name="WatcherAddressEmail3" size="15" />
+<input name="WatcherAddressEmail3" size=15>
 </td></tr>
 </table>
 

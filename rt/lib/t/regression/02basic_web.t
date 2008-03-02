@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 use strict;
-use Test::More tests => 19;
+use Test::More tests => 17;
 use WWW::Mechanize;
 use HTTP::Request::Common;
 use HTTP::Cookies;
@@ -16,10 +16,10 @@ my $agent = WWW::Mechanize->new();
 $agent->cookie_jar($cookie_jar);
 
 use RT;
-RT::LoadConfig();
+RT::LoadConfig;
+
 # get the top page
 my $url = $RT::WebURL;
-diag $url;
 $agent->get($url);
 
 is ($agent->{'status'}, 200, "Loaded a page");
@@ -44,20 +44,17 @@ ok( $agent->{'content'} =~ /Logout/i, "Found a logout link");
 
 $agent->get($url."Ticket/Create.html?Queue=1");
 is ($agent->{'status'}, 200, "Loaded Create.html");
-$agent->form_number(3);
+$agent->form(3);
 # Start with a string containing characters in latin1
 my $string = "I18N Web Testing זרו";
 Encode::from_to($string, 'iso-8859-1', 'utf8');
 $agent->field('Subject' => "Ticket with utf8 body");
 $agent->field('Content' => $string);
 ok($agent->submit(), "Created new ticket with $string as Content");
-like( $agent->{'content'}, qr{$string} , "Found the content");
-ok($agent->{redirected_uri}, "Did redirection");
-
-
+ok( $agent->{'content'} =~ qr{$string} , "Found the content");
 $agent->get($url."Ticket/Create.html?Queue=1");
 is ($agent->{'status'}, 200, "Loaded Create.html");
-$agent->form_number(3);
+$agent->form(3);
 # Start with a string containing characters in latin1
 my $string = "I18N Web Testing זרו";
 Encode::from_to($string, 'iso-8859-1', 'utf8');
@@ -65,15 +62,9 @@ $agent->field('Subject' => $string);
 $agent->field('Content' => "Ticket with utf8 subject");
 ok($agent->submit(), "Created new ticket with $string as Subject");
 
-like( $agent->{'content'}, qr{$string} , "Found the content");
+ok( $agent->{'content'} =~ qr{$string} , "Found the content");
 
-# Update time worked in hours
-$agent->follow_link( text_regex => qr/Basics/ );
-$agent->submit_form( form_number => 3,
-    fields => { TimeWorked => 5, 'TimeWorked-TimeUnits' => "hours" }
-);
 
-like ($agent->{'content'}, qr/to &#39;300&#39;/, "5 hours is 300 minutes");
 
 # }}}
 
@@ -91,14 +82,14 @@ ok($agent->form_name('BuildQuery'));
 $agent->field("AttachmentField", "Subject");
 $agent->field("AttachmentOp", "LIKE");
 $agent->field("ValueOfAttachment", "aaa");
-$agent->submit("AddClause");
+$agent->submit();
 
 # set the next value
 ok($agent->form_name('BuildQuery'));
 $agent->field("AttachmentField", "Subject");
 $agent->field("AttachmentOp", "LIKE");
 $agent->field("ValueOfAttachment", "bbb");
-$agent->submit("AddClause");
+$agent->submit();
 
 ok($agent->form_name('BuildQuery'));
 

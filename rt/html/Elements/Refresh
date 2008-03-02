@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-%# 02110-1301 or visit their web page on the internet at
-%# http://www.gnu.org/copyleft/gpl.html.
+%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -45,20 +43,20 @@
 %# those contributions and any derivatives thereof.
 %# 
 %# END BPS TAGGED BLOCK }}}
-<select name="<%$Name%>">
-<option value="-1"
+<SELECT NAME="<%$Name%>">
+<OPTION VALUE="-1"
 %unless ($Default) {
- selected
+ SELECTED
 %}
-><&|/l&>Don't refresh this page.</&></option>
+><&|/l&>Don't refresh this page.</&></OPTION>
 %foreach my $value (@refreshevery) {
-<option value="<%$value%>"
+<OPTION VALUE="<%$value%>"
 % if  ( $Default && ($value == $Default)) {
-selected 
+SELECTED 
 % }
-><&|/l, $value/60 &>Refresh this page every [_1] minutes.</&></option>
+><&|/l, $value/60 &>Refresh this page every [_1] minutes.</&></OPTION>
 %}
-</select>
+</SELECT>
 
 <%INIT>
 my @refreshevery = qw(120 300 600 1200 3600 7200);

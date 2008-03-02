@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-%# 02110-1301 or visit their web page on the internet at
-%# http://www.gnu.org/copyleft/gpl.html.
+%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -62,21 +60,16 @@
 <table>
 % }
 % $i++;
-  <tr id="CF-<%$CustomField->id%>-EditRow">
+  <tr>
     <td class="labeltop">
-      <b><%$CustomField->Name%></b><br />
+      <b><%$CustomField->Name%></b><br>
       <i><%$CustomField->FriendlyType%></i>
     </td>
     <td class="entry"><& /Elements/EditCustomField, 
         Object => $TicketObj, 
         CustomField => $CustomField, 
-        NamePrefix => $NamePrefix ,
-        Default => $m->notes('Field-' . $CustomField->Id),
-        &>
-%  if (my $msg = $m->notes('InvalidField-' . $CustomField->Id)) {
-        <br />
-        <em style="color: red"><% $msg %></em></td>
-%  }
+        NamePrefix => $NamePrefix 
+        &></td>
   </tr>
 % }
 </table>

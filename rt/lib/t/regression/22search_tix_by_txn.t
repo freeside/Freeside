@@ -3,9 +3,10 @@
 use warnings;
 use strict;
 
-use Test::More tests => 10;
+#use Test::More tests => 26;
+use Test::More qw/no_plan/;
 
-BEGIN{ $ENV{'TZ'} = 'GMT'};
+$ENV{'TZ'} = 'GMT';
 
 use RT;
 RT::LoadConfig();
@@ -36,3 +37,4 @@ is($txnobj->CreatedObj->ISO,'2005-08-05 20:00:56');
 $tix->FromSQL(qq{Updated = "2005-08-05" AND Subject = "$SUBJECT"});
 is( $tix->Count, 1);
 
+exit 0;
