@@ -2,7 +2,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-# 02110-1301 or visit their web page on the internet at
-# http://www.gnu.org/copyleft/gpl.html.
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -45,6 +43,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
   RT::SavedSearches - a pseudo-collection for SavedSearch objects.
@@ -163,23 +162,40 @@ sub _GetObject {
     my $self = shift;
     my $privacy = shift;
 
-    return RT::SavedSearch->new($self->CurrentUser)->_GetObject($privacy);
-}
+    my ($obj_type, $obj_id) = split(/\-/, $privacy);
+    unless ($obj_type eq 'RT::User' || $obj_type eq 'RT::Group') {
+	$RT::Logger->error("Tried to load a search belonging to an $obj_type, which is neither a user nor a group");
+	return undef;
+    }
 
-### Internal methods
+    my $object;
+    eval "
+         require $obj_type;
+         \$object = $obj_type->new(\$self->CurrentUser);
+         \$object->Load($obj_id);
+    ";
+    unless (ref($object) eq $obj_type) {
+	$RT::Logger->error("Could not load object of type $obj_type with ID $obj_id");
+	return undef;
+    }
+    
+    # Do not allow the loading of a user object other than the current
+    # user, or of a group object of which the current user is not a member.
 
-# _PrivacyObjects: returns a list of objects that can be used to load saved searches from.
+    if ($obj_type eq 'RT::User'
+	&& $object->Id != $self->CurrentUser->UserObj->Id()) {
+	$RT::Logger->error('Requested user ' . $object->Id 
+			   . 'is not current user');
+	return undef;
+    }
+    if ($obj_type eq 'RT::Group'
+	&& !$object->HasMemberRecursively($self->CurrentUser->PrincipalObj)) {
+	$RT::Logger->error('Current user does not belong to requested group ' 
+			   . $object->Id);
+	return undef;
+    }
 
-sub _PrivacyObjects {
-    my $self        = shift;
-    my $CurrentUser = $self->CurrentUser;
-
-    my $groups = RT::Groups->new($CurrentUser);
-    $groups->LimitToUserDefinedGroups;
-    $groups->WithMember( PrincipalId => $CurrentUser->Id,
-                         Recursively => 1 );
-
-    return ( $CurrentUser->UserObj, @{ $groups->ItemsArrayRef() } );
+    return $object;
 }
 
 eval "require RT::SavedSearches_Vendor";

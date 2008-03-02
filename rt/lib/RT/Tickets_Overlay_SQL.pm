@@ -2,7 +2,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-# 02110-1301 or visit their web page on the internet at
-# http://www.gnu.org/copyleft/gpl.html.
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -53,12 +51,12 @@ use warnings;
 # Import configuration data from the lexcial scope of __PACKAGE__ (or
 # at least where those two Subroutines are defined.)
 
-my %FIELD_METADATA = %{FIELDS()};
+my %FIELDS = %{FIELDS()};
 my %dispatch = %{dispatch()};
 my %can_bundle = %{can_bundle()};
 
 # Lower Case version of FIELDS, for case insensitivity
-my %lcfields = map { ( lc($_) => $_ ) } (keys %FIELD_METADATA);
+my %lcfields = map { ( lc($_) => $_ ) } (keys %FIELDS);
 
 sub _InitSQL {
   my $self = shift;
@@ -301,7 +299,7 @@ sub _parser {
       my $class;
       if (exists $lcfields{lc $key}) {
         $key = $lcfields{lc $key};
-        $class = $FIELD_METADATA{$key}->[0];
+        $class = $FIELDS{$key}->[0];
       }
    # no longer have a default, since CF's are now a real class, not fallthrough
    # fixme: "default class" is not Generic.
@@ -405,66 +403,63 @@ failure.
 =begin testing
 
 use RT::Tickets;
-use strict;
+
+
 
 my $tix = RT::Tickets->new($RT::SystemUser);
-{
-    my $query = "Status = 'open'";
-    my ($status, $msg)  = $tix->FromSQL($query);
-    ok ($status, "correct query") or diag("error: $msg");
-}
+
+my $query = "Status = 'open'";
+my ($id, $msg)  = $tix->FromSQL($query);
+
+ok ($id, $msg);
 
 
-my (@created,%created);
+my (@ids, @expectedids);
+
+my $t = RT::Ticket->new($RT::SystemUser);
+
 my $string = 'subject/content SQL test';
-{
-    my $t = RT::Ticket->new($RT::SystemUser);
-    ok( $t->Create(Queue => 'General', Subject => $string), "Ticket Created");
-    $created{ $t->Id }++; push @created, $t->Id;
+ok( $t->Create(Queue => 'General', Subject => $string), "Ticket Created");
+
+push @ids, $t->Id;
+
+my $Message = MIME::Entity->build(
+			     Subject     => 'this is my subject',
+			     From        => 'jesse@example.com',
+			     Data        => [ $string ],
+        );
+
+ok( $t->Create(Queue => 'General', Subject => 'another ticket', MIMEObj => $Message, MemberOf => $ids[0]), "Ticket Created");
+
+push @ids, $t->Id;
+
+$query = ("Subject LIKE '$string' OR Content LIKE '$string'");
+
+my ($id, $msg) = $tix->FromSQL($query);
+
+
+ok ($id, $msg);
+
+is ($tix->Count, scalar @ids, "number of returned tickets same as entered");
+while (my $tick = $tix->Next) {
+    push @expectedids, $tick->Id;
+}
+ok (eq_array(\@ids, \@expectedids), "returned expected tickets");
+
+$query = ("id = $ids[0] OR MemberOf = $ids[0]");
+
+my ($id, $msg) = $tix->FromSQL($query);
+
+ok ($id, $msg);
+
+is ($tix->Count, scalar @ids, "number of returned tickets same as entered");
+
+@expectedids = ();
+while (my $tick = $tix->Next) {
+    push @expectedids, $tick->Id;
 }
 
-{
-    my $Message = MIME::Entity->build(
-                     Subject     => 'this is my subject',
-                     From        => 'jesse@example.com',
-                     Data        => [ $string ],
-            );
-
-    my $t = RT::Ticket->new($RT::SystemUser);
-    ok( $t->Create( Queue => 'General',
-                    Subject => 'another ticket',
-                    MIMEObj => $Message,
-                    MemberOf => $created[0]
-                  ),
-        "Ticket Created"
-    );
-    $created{ $t->Id }++; push @created, $t->Id;
-}
-
-{
-    my $query = ("Subject LIKE '$string' OR Content LIKE '$string'");
-    my ($status, $msg) = $tix->FromSQL($query);
-    ok ($status, "correct query") or diag("error: $msg");
-
-    my $count = 0;
-    while (my $tick = $tix->Next) {
-        $count++ if $created{ $tick->id };
-    }
-    is ($count, scalar @created, "number of returned tickets same as entered");
-}
-
-{
-    my $query = "id = $created[0] OR MemberOf = $created[0]";
-    my ($status, $msg) = $tix->FromSQL($query);
-    ok ($status, "correct query") or diag("error: $msg");
-
-    my $count = 0;
-    while (my $tick = $tix->Next) {
-        $count++ if $created{ $tick->id };
-    }
-    is ($count, scalar @created, "number of returned tickets same as entered");
-}
-
+ok (eq_array(\@ids, \@expectedids), "returned expected tickets");
 
 =end testing
 

@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-%# 02110-1301 or visit their web page on the internet at
-%# http://www.gnu.org/copyleft/gpl.html.
+%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -45,33 +43,25 @@
 %# those contributions and any derivatives thereof.
 %# 
 %# END BPS TAGGED BLOCK }}}
-<div class="ticket-transaction<% $type_class && " $type_class" %><% $RowNum % 2 ? ' odd' : ' even' %>">
-<table width="100%" cellspacing="0" cellpadding="2" border="0">
-  <tr>
-    <td rowspan="2" valign="top" class="type">
-      <a name="txn-<%$Transaction->Id%>" href="<% $DisplayPath %>#txn-<%$Transaction->Id%>">#</a>
-      <% $LastTransaction ? '<a name="lasttrans">&nbsp;</a>' : '&nbsp;' |n %>
-    </td>
-    <td class="date"><% $transdate|n %></td>
+<TR class="<% $RowNum%2 ? 'oddline' : 'evenline'%>" >
+<TD rowspan="2" valign="top" bgcolor="<%$bgcolor%>"><A NAME="txn-<%$Transaction->Id%>" href="<% $DisplayPath %>#txn-<%$Transaction->Id%>">#</A><% $LastTransaction ? '<a name="lasttrans">&nbsp;</a>' : '&nbsp;' |n %></TD>
+<TD>&nbsp&nbsp;</TD>
+<TD><font size=-2><% $transdate|n %></font>&nbsp;</TD>
 % my $desc = $Transaction->BriefDescription;
 % $m->comp('/Elements/Callback', _CallbackName => 'ModifyDisplay', text => \$desc, Transaction => $Transaction, %ARGS);
-    <td class="description">
-      <%$Transaction->CreatorObj->Name%> - <%$TicketString%> <%$desc%>
-    </td>
-    <td class="time-taken"><%$TimeTaken%></td>
-    <td class="actions"><%$titlebar_commands|n%></td>
-  </tr>
+<TD ALIGN="LEFT"><b><%$Transaction->CreatorObj->Name%> - <%$TicketString%> <%$desc%>
 
-  <tr>
-    <td colspan="4" class="content">
+</b></TD>
+<TD><%$TimeTaken%>&nbsp;</TD>
+<TD ALIGN="RIGHT"><font size=-1><%$titlebar_commands|n%></font></TD>
+</TR>
+<TR class="<% $RowNum%2 ? 'oddline' : 'evenline'%>"><TD colspan=5>
 % if ($Transaction->CustomFieldValues->Count) {
-      <& /Elements/ShowCustomFields, Object => $Transaction &>
+<& /Elements/ShowCustomFields, Object => $Transaction &>
 % }
 % $m->comp('ShowTransactionAttachments', %ARGS, Parent => 0) unless ($Collapsed ||!$ShowBody);
-    </td>
-  </tr>
-</table>
-</div>
+</TD>
+</TR>
 
 <%ARGS>
 $Ticket => undef
@@ -92,37 +82,37 @@ $LastTransaction => 0
 
 <%INIT>
 
-my ( $TimeTaken, $TicketString, $type_class );
+my ( $TimeTaken, $TicketString, $bgcolor );
 
 my $transdate = $Transaction->CreatedAsString();
 $transdate =~ s/\s/&nbsp;/g;
 
 if ( $Transaction->Type =~ /^(Create|Correspond|Comment$)/ ) {
     if ( $Transaction->IsInbound ) {
-        $type_class = 'message';
+        $bgcolor = "#336699";
     }
     else {
-        $type_class = 'message';
+        $bgcolor = "#339999";
     }
 }
 elsif (    ( $Transaction->Field =~ /^Owner$/ )
         or ( $Transaction->Type =~ /^(AddWatcher|DelWatcher)$/ ) ) {
-    $type_class = 'people';
+    $bgcolor = "#333399";
 
 }
 elsif ( $Transaction->Type =~ /^(AddLink|DeleteLink)$/ ) {
-    $type_class = 'links';
+    $bgcolor = "#336633";
 }
 elsif ( $Transaction->Type =~ /^(Status|Set|Told)$/ ) {
     if ( $Transaction->Field =~ /^(Told|Starts|Started|Due)$/ ) {
-        $type_class = 'dates';
+        $bgcolor = "#663366";
     }
     else {
-        $type_class = 'basics';
+        $bgcolor = "#993333";
     }
 }
 else {
-    $type_class = 'other';
+    $bgcolor = "#cccccc";
 }
 
 if ( $Ticket->Id != $Transaction->Ticket ) {
@@ -148,15 +138,15 @@ my @DisplayHeaders=qw ( _all);
 if ( $Transaction->Type =~ /EmailRecord$/ ) {
     @DisplayHeaders = qw(To Cc Bcc);
 
-    my $aid = 
-
     $titlebar_commands .=
         "[<a target=\"_blank\" href=\"$EmailRecordPath?id="
       . $Transaction->Ticket
       . "&Transaction="
       . $Transaction->Id
       . "&Attachment="
-      . ( $Attachments->[0] && $Attachments->[0]->id )
+      . (    $Transaction->Attachments->First
+          && $Transaction->Attachments->First->Id )
+
       . '">' . loc('Show') . "</a>]&nbsp;";
     $ShowBody = 0;
 }

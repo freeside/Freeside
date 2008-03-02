@@ -2,7 +2,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-# 02110-1301 or visit their web page on the internet at
-# http://www.gnu.org/copyleft/gpl.html.
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -45,6 +43,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
   RT::Date - a simple Object Oriented date.
@@ -560,44 +559,6 @@ sub ISO {
 }
 
 # }}}
-
-# {{{ sub Date
-
-=head2 Date
-
-Takes nothing
-
-Returns the object's date in yyyy-mm-dd format; this is the same as
-the ISO format without the time
-
-=cut
-
-sub Date {
-    my $self = shift;
-    my ($date, $time) = split ' ', $self->ISO;
-    return $date;
-}
-
-# }}}}
-
-# {{{ sub Time
-
-=head2 Time
-
-Takes nothing
-
-Returns the object's time in hh:mm:ss format; this is the same as
-the ISO format without the date
-
-=cut
-
-sub Time {
-    my $self = shift;
-    my ($date, $time) = split ' ', $self->ISO;
-    return $time;
-}
-
-# }}}}
 
 # {{{ sub W3CDTF
 

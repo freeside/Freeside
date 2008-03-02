@@ -2,7 +2,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-# 02110-1301 or visit their web page on the internet at
-# http://www.gnu.org/copyleft/gpl.html.
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -45,6 +43,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
   RT::Queues - a collection of RT::Queue objects
@@ -121,22 +120,35 @@ sub Limit  {
 }
 # }}}
 
-# {{{ sub AddRecord
+# {{{ sub Next 
 
-=head2 AddRecord
+=head2 Next
 
-Adds a record object to this collection if this user can see.
-This is used for filtering objects for both Next and ItemsArrayRef.
+Returns the next queue that this user can see.
 
 =cut
-
-sub AddRecord {
+  
+sub Next {
     my $self = shift;
-    my $Queue = shift;
-    return unless $Queue->CurrentUserHasRight('SeeQueue');
+    
+    
+    my $Queue = $self->SUPER::Next();
+    if ((defined($Queue)) and (ref($Queue))) {
 
-    push @{$self->{'items'}}, $Queue;
-    $self->{'rows'}++;
+	if ($Queue->CurrentUserHasRight('SeeQueue')) {
+	    return($Queue);
+	}
+	
+	#If the user doesn't have the right to show this queue
+	else {	
+	    return($self->Next());
+	}
+    }
+    #if there never was any queue
+    else {
+	return(undef);
+    }	
+    
 }
 # }}}
 

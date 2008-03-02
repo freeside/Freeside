@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-%# 02110-1301 or visit their web page on the internet at
-%# http://www.gnu.org/copyleft/gpl.html.
+%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -81,10 +79,10 @@ foreach my $message ( grep { $_->Parent == $Parent } @$Attachments ) {
      }
         
 </%PERL> 
-<a href="<%$AttachPath%>/<%$Transaction->Id%>/<%$message->Id%>/<%$message->Filename | u%>"><&|/l&>Download</&> <%$message->Filename || loc('(untitled)') %></a>
-<span class="downloadcontenttype">
-[<%$message->ContentType%> <% $size %>]
-</span> 
+<A HREF="<%$AttachPath%>/<%$Transaction->Id%>/<%$message->Id%>/<%$message->Filename | u%>"><&|/l&>Download</&> <%$message->Filename || loc('(untitled)') %></a> 
+<div class="downloadcontenttype">
+<%$message->ContentType%> <% $size %> 
+</div> 
 </div>
 % }
 % # }}}
@@ -97,7 +95,6 @@ unless ( ($message->GetHeader('Content-Disposition')||"") =~ /attachment/i ) {
 
     # If it's text
     if (   $message->ContentType =~ m{^(text|message)}i
- 	&& !($RT::SuppressInlineTextFiles && $message->Filename)
         && $message->ContentLength <= $RT::MaxInlineBody )
     {
 
@@ -139,7 +136,7 @@ unless ( ($message->GetHeader('Content-Disposition')||"") =~ /attachment/i ) {
             # if it's a text/plain show the body
             elsif ( $message->ContentType =~ m{^(text|message|text)}i ) {
 
-                eval { require Text::Quoted;  $content = Text::Quoted::extract($content); };
+                eval { $content = Text::Quoted::extract($content); };
                 if ($@) { 1; }
 
                 $m->comp(
@@ -154,12 +151,12 @@ unless ( ($message->GetHeader('Content-Disposition')||"") =~ /attachment/i ) {
     }
 
     # if it's an image, show it as an image
-    elsif ( $RT::ShowTransactionImages and  $message->ContentType =~ /^image\//i ) {
+    elsif ( $message->ContentType =~ /^image\//i ) {
         $m->out('<img src="'
               . $AttachPath . '/'
               . $Transaction->Id . '/'
               . $message->Id
-              . '/" />' );
+              . '/">' );
     }
     elsif ( $message->ContentLength > 0 ) {
         $m->out(

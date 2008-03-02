@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-%# 02110-1301 or visit their web page on the internet at
-%# http://www.gnu.org/copyleft/gpl.html.
+%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -52,37 +50,36 @@
 <& /Elements/ListActions, actions => \@results &>
 
 
-<&| /Widgets/TitleBox, title => loc('Editing membership for group [_1]', $Group->Name) &>
+<& /Elements/TitleBoxStart, title => loc('Editing membership for group [_1]', $Group->Name) &>
 
-<form action="<%$RT::WebPath%>/Admin/Groups/Members.html" method="post">
-<input type="hidden" class="hidden" name="id" value="<%$Group->Id%>" />
-<table width="100%">
-<tr>
-<td>
+<FORM ACTION="<%$RT::WebPath%>/Admin/Groups/Members.html" METHOD=POST>
+<INPUT TYPE=HIDDEN NAME=id VALUE="<%$Group->Id%>">
+<TABLE WIDTH="100%">
+<TR>
+<TD>
 <h3><&|/l&>Current members</&></h3>
-</td>
-<td>
+</TD>
+<TD>
 <h3><&|/l&>Add members</&></h3>
-</td>
-</tr>
+</TD>
+</TR>
 
-<tr>
-<td valign="top">
+<TR>
+<TD VALIGN=TOP>
 
 % if ($Group->MembersObj->Count == 0 ) {
-<em><&|/l&>(No members)</&></em>
+<i><&|/l&>(No members)</&></i>
 % } else {
-<em><&|/l&>(Check box to delete)</&></em>
-<br />
-<br />
+<i><&|/l&>(Check box to delete)</&></i>
+<br>
+<br>
 <&|/l&>Users</&>
-% my $Users = $Group->UserMembersObj;
-% $Users->OrderBy( FIELD => $UserOrderBy, ORDER => $UserOrder );
-<ul>
-% while (my $user = $Users->Next()) {
-% $UsersSeen{$user->id} = 1 if $SkipSeenUsers;
-<li><input type="checkbox" class="checkbox" name="DeleteMember-<%$user->PrincipalObj->Id%>" value="1" />
-<%$user->Name%> (<%$user->RealName%>)
+% my $UserMembers = $Group->MembersObj;
+% $UserMembers->LimitToUsers();
+<UL>
+% while (my $member = $UserMembers->Next()) {
+<LI><INPUT TYPE=CHECKBOX Name="DeleteMember-<%$member->MemberId%>" value="1">
+<%$member->MemberObj->Object->Name%> (<%$member->MemberObj->Object->RealName%>)
 % }
 </ul>
 <&|/l&>Groups</&>
@@ -90,20 +87,18 @@
 % my $GroupMembers = $Group->MembersObj;
 % $GroupMembers->LimitToGroups();
 % while (my $member = $GroupMembers->Next()) {
-% $GroupsSeen{$member->MemberId} = 1 if $SkipSeenGroups;
-<li><input type="checkbox" class="checkbox" name="DeleteMember-<%$member->MemberId%>" value="1" />
+<LI><INPUT TYPE=CHECKBOX Name="DeleteMember-<%$member->MemberId%>" value="1">
 <%$member->MemberObj->Object->Name%>
 % }
 % }
-</ul>
-</td>
-<td valign="top">
-<& /Admin/Elements/SelectNewGroupMembers, Name => "AddMembers", Group => $Group,
-    SkipUsers => \%UsersSeen, SkipGroups => \%GroupsSeen &>
-</td>
-</tr>
-</table>
-</&>
+</UL>
+</TD>
+<TD VALIGN=TOP>
+<& /Admin/Elements/SelectNewGroupMembers, Name => "AddMembers", Group => $Group &>
+</TD>
+</TR>
+</TABLE>
+<& /Elements/TitleBoxEnd &>
 <& /Elements/Submit, Label => loc('Modify Members'), Reset => 1 &>
 </form>
 
@@ -151,9 +146,6 @@ foreach my $member (@AddMembers) {
     push (@results, $msg);
 }
 
-my %UsersSeen;
-my %GroupsSeen;
-$GroupsSeen{$Group->id} = 1; # can't be a member of ourself
 
 </%INIT>
 
@@ -161,8 +153,4 @@ $GroupsSeen{$Group->id} = 1; # can't be a member of ourself
 $AddMembersUsers  => undef
 $AddMembersGroups => undef
 $id => undef
-$UserOrderBy => 'Name'
-$UserOrder => 'ASC'
-$SkipSeenUsers => 1
-$SkipSeenGroups => 1
 </%ARGS>

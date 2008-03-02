@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-%# 02110-1301 or visit their web page on the internet at
-%# http://www.gnu.org/copyleft/gpl.html.
+%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -54,62 +52,62 @@
 
 
 
-<form action="<%$RT::WebPath%>/Admin/Queues/Modify.html" method="post">
+<FORM ACTION="<%$RT::WebPath%>/Admin/Queues/Modify.html" METHOD=POST>
 %if ($Create ) { 
-<input type="hidden" class="hidden" name="id" value="new" />
+<INPUT TYPE=HIDDEN NAME=id VALUE="new">
 % } else {
-<input type="hidden" class="hidden" name="id" value="<%$QueueObj->Id%>" />
+<INPUT TYPE=HIDDEN NAME=id VALUE="<%$QueueObj->Id%>">
 % }
 
-<table>
-<tr><td align="right">
+<TABLE>
+<TR><TD ALIGN=RIGHT>
 <&|/l&>Queue Name</&>: 
-</td>
-<td><input name="Name" value="<% ($Create) ? "" : $QueueObj->Name %>" /></td>
-</tr><tr>
-<td align="right">
-<&|/l&>Description</&>:</td><td colspan="3"><input name="Description" value="<% ($Create) ? "" : $QueueObj->Description %>" size="60" /></td></tr>
-<tr>
-<td align="right">
+</TD>
+<TD><INPUT name="Name" value="<% ($Create) ? "" : $QueueObj->Name %>"></TD>
+</TR><TR>
+<TD ALIGN=RIGHT>
+<&|/l&>Description</&>:</TD><TD COLSPAN=3><INPUT name="Description" value="<% ($Create) ? "" : $QueueObj->Description %>" size=60></TD></TR>
+<TR>
+<TD ALIGN=RIGHT>
 <&|/l&>Reply Address</&>:
-</td><td>
-<input name="CorrespondAddress" value="<% ($Create) ? "" : $QueueObj->CorrespondAddress %>" />
-<br /><span><em><&|/l , $RT::CorrespondAddress&>(If left blank, will default to [_1])</&></em></span>
-</td>
-<td align="right">
+</TD><TD>
+<INPUT name="CorrespondAddress" value="<% ($Create) ? "" : $QueueObj->CorrespondAddress %>">
+<BR><font size="-1"><i><&|/l , $RT::CorrespondAddress&>(If left blank, will default to [_1])</&></i></font>
+</TD>
+<TD ALIGN=RIGHT>
 
-<&|/l&>Comment Address</&>: </td><td>
-<input name="CommentAddress" value="<% ($Create) ? "" : $QueueObj->CommentAddress %>" />
-<br /><span><em><&|/l , $RT::CommentAddress&>(If left blank, will default to [_1])</&></em></span>
-</td>
-</tr><tr>
+<&|/l&>Comment Address</&>: </TD><TD>
+<INPUT NAME="CommentAddress" value="<% ($Create) ? "" : $QueueObj->CommentAddress %>">
+<BR><font size="-1"><i><&|/l , $RT::CommentAddress&>(If left blank, will default to [_1])</&></i></font>
+</TD>
+</TR><TR>
 
-<td align="right">
+<TD ALIGN=RIGHT>
 <&|/l&>Priority starts at</&>: 
-</td><td><input name="InitialPriority" value="<% ($Create) ? "" : $QueueObj->InitialPriority %>" />
-</td>
-<td align="right">
+</TD><TD><INPUT NAME="InitialPriority" value="<% ($Create) ? "" : $QueueObj->InitialPriority %>">
+</TD>
+<TD ALIGN=RIGHT>
 <&|/l&>Over time, priority moves toward</&>:
-</td><td><input name="FinalPriority" value="<% ($Create) ? "" : $QueueObj->FinalPriority %>" />
-</td>
-</tr>
-<tr>
-<td align="right">
+</TD><TD><INPUT NAME="FinalPriority" value="<% ($Create) ? "" : $QueueObj->FinalPriority %>">
+</TD>
+</TR>
+<TR>
+<TD ALIGN=RIGHT>
 <&|/l&>Requests should be due in</&>:
-</td><td>
-<input name="DefaultDueIn" value="<% ($Create) ? "" : $QueueObj->DefaultDueIn%>" /> <&|/l&>days</&>.
-</td>
-</tr>
-<tr>
-<td>
-</td>
-<td colspan="4"><input type="hidden" class="hidden" name="SetEnabled" value="1" />
-<input type="checkbox" class="checkbox" name="Enabled" value="1" <%$EnabledChecked%> /> <&|/l&>Enabled (Unchecking this box disables this queue)</&><br />
+</TD><TD>
+<INPUT NAME="DefaultDueIn" VALUE="<% ($Create) ? "" : $QueueObj->DefaultDueIn%>"> <&|/l&>days</&>.
+</TD>
+</TR>
+<TR>
+<TD>
+</TD>
+<TD COLSPAN=4><INPUT TYPE=HIDDEN NAME="SetEnabled" VALUE="1">
+<INPUT TYPE=CHECKBOX NAME="Enabled" VALUE="1" <%$EnabledChecked%>> <&|/l&>Enabled (Unchecking this box disables this queue)</&><BR>
 <& /Elements/Callback, QueueObj => $QueueObj, results => \@results, %ARGS &>
-</td>
-</tr>
+</TD>
+</TR>
 
-</table>
+</TABLE>
 <& /Elements/Submit, Label => loc('Save Changes') &>
 </form>
 

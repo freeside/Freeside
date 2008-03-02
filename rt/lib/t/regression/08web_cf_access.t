@@ -2,14 +2,13 @@
 use strict;
 
 use Test::More tests => 15;
-BEGIN {
-    use RT;
-    RT::LoadConfig;
-    RT::Init;
-}
+use RT;
+RT::LoadConfig;
+RT::Init;
 use Test::WWW::Mechanize;
 
-use constant BaseURL => $RT::WebURL;
+$RT::WebURL ||= 0; # avoid stupid warning
+my $BaseURL = $RT::WebURL;
 use constant ImageFile => $RT::MasonComponentRoot .'/NoAuth/images/bplogo.gif';
 use constant ImageFileContent => do {
     local $/;
@@ -21,7 +20,7 @@ use constant ImageFileContent => do {
 my $m = Test::WWW::Mechanize->new;
 isa_ok($m, 'Test::WWW::Mechanize');
 
-$m->get( BaseURL."?user=root;pass=password" );
+$m->get( $BaseURL."?user=root;pass=password" );
 $m->content_like(qr/Logout/, 'we did log in');
 $m->follow_link( text => 'Configuration' );
 $m->title_is(q/RT Administration/, 'admin screen');
@@ -86,7 +85,7 @@ $m->title_like(qr/testing img cf creation/, "its title is the Subject");
 $m->follow_link( text => 'bplogo.gif' );
 $m->content_is(ImageFileContent, "it links to the uploaded image");
 
-$m->get( BaseURL );
+$m->get( $BaseURL );
 
 $m->follow_link( text => 'Tickets' );
 $m->follow_link( text => 'New Query' );

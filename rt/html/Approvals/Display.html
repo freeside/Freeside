@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-%# 02110-1301 or visit their web page on the internet at
-%# http://www.gnu.org/copyleft/gpl.html.
+%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -50,13 +48,15 @@
 <& Elements/Tabs, 
     current_tab => "Approvals/Display.html", 
     Title =>  $title &>
-<form method="post" action="<%$RT::WebPath%>/Approvals/index.html">
+<form method=post action="<%$RT::WebPath%>/Approvals/index.html">
 
-<&| /Widgets/TitleBox, title => $title &>
+<& /Elements/TitleBoxStart, title => $title &>
 <& /Ticket/Elements/ShowHistory , Ticket => $Ticket, Collapsed => 0, ShowTitle => 0, ShowHeaders => 0, ShowDisplayModes => 0, ShowTitleBarCommands => 0 &>
 <hr>
+<table width=100%>
 <& Elements/Approve, ticket => $Ticket, ShowApproving => 0 &>
-</&>
+</table>
+<& /Elements/TitleBoxEnd &>
 <& /Elements/Submit&>
 </form>
 <& Elements/ShowDependency, Ticket => $Ticket &>

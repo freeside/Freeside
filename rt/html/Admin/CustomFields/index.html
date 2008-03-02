@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-%# 02110-1301 or visit their web page on the internet at
-%# http://www.gnu.org/copyleft/gpl.html.
+%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -50,44 +48,29 @@
     current_tab => 'Admin/CustomFields/', 
     Title => loc('Select a Custom Field') &>
 
-% my @types;
 % my $prev_lookup = '';
 % while (my $CustomFieldObj = $CustomFields->Next) { 
 %    $CustomFieldObj->CurrentUserHasRight('AdminCustomField') or next;
 %    my $lookup = $CustomFieldObj->FriendlyLookupType;
 %    if ($lookup ne $prev_lookup) {
 %        if ($prev_lookup) {
-</ul>
+</UL>
 %        }
-<h2><% loc("Custom Fields for [_1]", $lookup) %></h2>
-<ul>
+<H2><% loc("Custom Fields for [_1]", $lookup) %></H2>
+<UL>
 %        $prev_lookup = $lookup;
-%        push @types, [$lookup, $CustomFieldObj->LookupType];
 %    }
 %    
-<li>
-<a href="Modify.html?id=<%$CustomFieldObj->id()%>"><%$CustomFieldObj->Name%>: <%$CustomFieldObj->Description%></a>
-</li>
+<LI>
+<A HREF="Modify.html?id=<%$CustomFieldObj->id()%>"><%$CustomFieldObj->Name%>: <%$CustomFieldObj->Description%></a>
+</LI>
 % }
 % if ($prev_lookup) {
-</ul>
+</UL>
 % }
 
-<form action="<%$RT::WebPath%>/Admin/CustomFields/index.html" method="get">
-<&|/l&>Only show custom fields for:</&>
-<select name="type">
-% for (@types) {
-<option value="<% $_->[1] %>"><% $_->[0] %></option>
-% }
-</select> <input type="submit" value="<%loc('Go')%>" />
-</form>
-
-<%args>
-$type => undef
-</%args>
 <%INIT>
 my $CustomFields = RT::CustomFields->new($session{'CurrentUser'});
 $CustomFields->UnLimit();
-$CustomFields->LimitToLookupType($type) if defined $type;
 $CustomFields->OrderByCols( { FIELD => 'LookupType' }, { FIELD => 'Name' } );
 </%INIT>

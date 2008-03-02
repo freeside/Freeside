@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-%# 02110-1301 or visit their web page on the internet at
-%# http://www.gnu.org/copyleft/gpl.html.
+%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -46,26 +44,26 @@
 %# 
 %# END BPS TAGGED BLOCK }}}
 % if ($Lite) {
-%     my $d = new RT::Queue($session{'CurrentUser'});
-%     $d->Load($Default);
-<input name="<%$Name%>" size="25" value="<%$d->Name%>" />
+% my $d = new RT::Queue($session{'CurrentUser'});
+% $d->Load($Default);
+<INPUT NAME="<%$Name%>" size=25 DEFAULT="<%$d->Name%>">
+% } else {
+<SELECT NAME ="<%$Name%>">
+% if ($ShowNullOption) {
+<OPTION VALUE="">-</OPTION>
 % }
-% else {
-<select name="<%$Name%>">
-%     if ($ShowNullOption) {
-  <option value="">-</option>
-%     }
-%     for my $queue (@{$session{$cache_key}}) {
-  <option value="<% ($NamedValues ? $queue->{Name} : $queue->{Id}) %>" <% ($queue->{Id} eq $Default ? 'selected="selected"' : '') |n %>>
-    <%$queue->{Name}%>
-%             if ($Verbose and $queue->{Description}) {
-    (<%$queue->{Description}%>)
-%             }
-  </option>
-%     }
-</select>
+% while (my $queue=$q->Next) {
+% if ($ShowAllQueues || $queue->CurrentUserHasRight($CheckQueueRight)) {
+<OPTION VALUE="<%($NamedValues ? $queue->Name : $queue->Id) %>" <%( $queue->Id eq $Default ? 'SELECTED' : '')%>><%$queue->Name%>
+%   if (($Verbose) and ($queue->Description) ){
+(<%$queue->Description%>)
+%  }
+</OPTION>
 % }
-<%args>
+% }
+</SELECT>
+% }
+<%ARGS>
 $CheckQueueRight => 'CreateTicket'
 $ShowNullOption => 1
 $ShowAllQueues => 1
@@ -74,24 +72,11 @@ $Verbose => undef
 $NamedValues => 0
 $Default => 0
 $Lite => 0
-</%args>
-<%init>
-my $cache_key = "SelectQueue---"
-                . $session{'CurrentUser'}->Id
-                . "---$CheckQueueRight---$ShowAllQueues";
+</%ARGS>
 
-if (not defined $session{$cache_key} and not $Lite) {
-    my $q = new RT::Queues($session{'CurrentUser'});
-    $q->UnLimit;
-    
-    while (my $queue = $q->Next) {
-        if ($ShowAllQueues || $queue->CurrentUserHasRight($CheckQueueRight)) {
-            push @{$session{$cache_key}}, {
-                Id          => $queue->Id,
-                Name        => $queue->Name,
-                Description => $queue->Description,
-            };
-        }
-    }
-}
-</%init>
+<%INIT>
+
+my $q=new RT::Queues($session{'CurrentUser'});
+$q->UnLimit;
+
+</%INIT>

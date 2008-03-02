@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-%# 02110-1301 or visit their web page on the internet at
-%# http://www.gnu.org/copyleft/gpl.html.
+%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -46,32 +44,33 @@
 %# 
 %# END BPS TAGGED BLOCK }}}
 % if (@Objects == 0) {
-<p><i><&|/l&>(None)</&></i></p>
+<P><i><&|/l&>(None)</&></i></P>
 % } else {
-<table cellspacing="0" cellpadding="2">
+<TABLE cellspacing=0 cellpadding=2>
 % my $count;
 % foreach my $Object (@Objects) {
-<tr>
-%   my $id = "Object-".$Object->id."-CF-".$id;
+<TR>
 %   if (!$ReadOnly) {
-  <td valign="top">
-<input type="checkbox" id="<% $id %>" name="<% $id %>" value="1" <% $Checked ? 'CHECKED' : ''%>
-/>
-  </td>
+  <TD valign="TOP">
+<input type="checkbox" name="Object-<%$Object->id%>-CF-<%$id%>" value="1" <% $Checked ? 'CHECKED' : ''%>
+>
+  </TD>
 %   }
-  <td valign="top">
-    <label for="<% $id %>">
+  <TD valign="TOP">
 % if ($Object->Name) {
-    <b><%$Object->Name%></b><br />
+    <b><%$Object->Name%></b><br>
 % } else {
-    <i>(<%loc("no name")%>)</i><br />
+    <i>(<%loc("no name")%>)</i><br>
 % }
     <%$Object->can('Description') && $Object->Description%>
-    </label>
-  </td>
-</tr>
+  </TD>
+%#  <TD valign="TOP">
+%#    <i><% $CustomFieldObj->FriendlyTypeComposite %></i>
+%#  </TD>
+  </TD>
+</TR>
 % }
-</table>
+</TABLE>
 % }
 <%ARGS>
 @Objects

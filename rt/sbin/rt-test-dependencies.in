@@ -3,7 +3,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -23,9 +23,7 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-# 02110-1301 or visit their web page on the internet at
-# http://www.gnu.org/copyleft/gpl.html.
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -63,7 +61,6 @@ GetOptions(
     'with-ORACLE',                        'with-FASTCGI',
     'with-SPEEDYCGI',                     'with-MODPERL1',
     'with-MODPERL2',                      'with-DEV',
-    'with-STANDALONE',
     'download=s',
     'repository=s'
 );
@@ -72,20 +69,13 @@ unless (keys %args) {
     help();
     exit(0);
 }
+
 # Set up defaults
-my %default = (
-    'with-MASON' => 1,
-    'with-CORE' => 1,
-    'with-CLI' => 1,
-    'with-MAILGATE' => 1, 
-    'with-DEV' => @RT_DEVEL_MODE@, 
-    'with-STANDALONE' => @RT_STANDALONE@,
-);
-$args{$_} = $default{$_} foreach grep !exists $args{$_}, keys %default;
-
-use Data::Dumper;
-print Dumper( \%args );
-
+$args{'with-MASON'} = 1;
+$args{'with-CORE'} = 1;
+$args{'with-DEV'} =1; 
+$args{'with-CLI'} =1; 
+$args{'with-MAILGATE'} =1; 
 {
   my $section;
   my %always_show_sections = (
@@ -140,7 +130,6 @@ The following switches will tell the tool to check for specific dependencies
 	--with-sqlite		Database interface and driver for SQLite (unsupported)
 	--with-oracle		Database interface for oracle (unsupported)
 
-	--with-standalone	Libraries needed to support the standalone simple pure perl server
 	--with-fastcgi		Libraries needed to support the fastcgi handler
 	--with-speedycgi	Libraries needed to support the speedycgi handler
 	--with-modperl1		Libraries needed to support the modperl 1 handler
@@ -150,38 +139,26 @@ The following switches will tell the tool to check for specific dependencies
 
 You can also specify -v or --verbose to list the status of all dependencies,
 rather than just the missing ones.
-
-The "RT_FIX_DEPS_CMD" environment variable, if set, will be used
-instead of the standard CPAN shell by --install to install any
-required modules.  It will be called with the module name, or, if
-"RT_FIX_DEPS_CMD" contains a "%s", will replace the "%s" with the
-module name before calling the program.
 .
 }
 
 
-sub text_to_hash {
-    my %hash;
-    for my $line ( split /\n/, $_[0] ) {
-        my($key, $value) = $line =~ /(\S+)\s*(\S*)/;
-        $value ||= '';
-        $hash{$key} = $value;
-    }
-
-    return %hash;
+sub _ {
+    map { /(\S+)\s*(\S*)/; $1 => ($2 ? $2 :'') } split ( /\n/, $_[0] );
 }
 
-$deps{'CORE'} = [ text_to_hash( << '.') ];
+$deps{'CORE'} = [ _( << '.') ];
 Digest::base
 Digest::MD5 2.27
 DBI 1.37
+Test::Inline
 Class::ReturnValue 0.40
-Date::Format
-DBIx::SearchBuilder 1.48
+DBIx::SearchBuilder 1.35
 Text::Template
 File::Spec 0.8
 HTML::Entities 
 HTML::Scrubber 0.08
+Net::Domain
 Log::Dispatch 2.0
 Locale::Maketext 1.06
 Locale::Maketext::Lexicon 0.32
@@ -193,101 +170,91 @@ Text::Wrapper
 Time::ParseDate
 Time::HiRes 
 File::Temp
+Term::ReadKey
 Text::Autoformat
-Text::Quoted 2.02
+Text::Quoted 1.3
 Tree::Simple 1.04
-Regexp::Common
 Scalar::Util
-Module::Versions::Report 1.03
+Module::Versions::Report
 Cache::Simple::TimedExpiry
-UNIVERSAL::require
-Calendar::Simple
+XML::Simple
 .
 
-$deps{'MASON'} = [ text_to_hash( << '.') ];
+$deps{'MASON'} = [ _( << '.') ];
+Params::Validate 0.02
+Cache::Cache
+Exception::Class 1.14
 HTML::Mason 1.23
+MLDBM
 Errno
+FreezeThaw
 Digest::MD5 2.27
 CGI::Cookie 1.20
 Storable 2.08
 Apache::Session 1.53
 XML::RSS 1.05
-GD
-GD::Graph
-GD::Text
-Text::WikiFormat 0.76
-.
-
-$deps{'STANDALONE'} = [ text_to_hash( << '.') ];
 HTTP::Server::Simple 0.07
 HTTP::Server::Simple::Mason 0.09
+Text::WikiFormat
 .
 
-$deps{'MAILGATE'} = [ text_to_hash( << '.') ];
+$deps{'MAILGATE'} = [ _( << '.') ];
 HTML::TreeBuilder
 HTML::FormatText
 Getopt::Long
 LWP::UserAgent
-Pod::Usage
 .
 
-$deps{'CLI'} = [ text_to_hash( << '.') ];
+$deps{'CLI'} = [ _( << '.') ];
 Getopt::Long 2.24
-LWP
-HTTP::Request::Common
-Text::ParseWords
-Term::ReadLine
-Term::ReadKey
 .
 
-$deps{'DEV'} = [ text_to_hash( << '.') ];
+$deps{'DEV'} = [ _( << '.') ];
+Regexp::Common
 Test::Inline 
 Apache::Test
 HTML::Form
 HTML::TokeParser
 WWW::Mechanize
-Test::WWW::Mechanize 1.04
+Test::WWW::Mechanize
 Module::Refresh 0.03
-Test::Expect 0.30
-XML::Simple
-File::Find
 .
 
-$deps{'FASTCGI'} = [ text_to_hash( << '.') ];
+$deps{'FASTCGI'} = [ _( << '.') ];
 CGI 2.92
 FCGI
 CGI::Fast 
 .
 
-$deps{'SPEEDYCGI'} = [ text_to_hash( << '.') ];
+$deps{'SPEEDYCGI'} = [ _( << '.') ];
 CGI 2.92
 CGI::SpeedyCGI
 .
 
 
-$deps{'MODPERL1'} = [ text_to_hash( << '.') ];
+$deps{'MODPERL1'} = [ _( << '.') ];
 CGI 2.92
 Apache::Request
 Apache::DBI 0.92
 .
 
-$deps{'MODPERL2'} = [ text_to_hash( << '.') ];
+$deps{'MODPERL2'} = [ _( << '.') ];
 CGI 2.92
 Apache::DBI
 HTML::Mason 1.31
 .
 
-$deps{'MYSQL'} = [ text_to_hash( << '.') ];
+$deps{'MYSQL'} = [ _( << '.') ];
 DBD::mysql 2.1018
 .
-$deps{'ORACLE'} = [ text_to_hash( << '.') ];
+$deps{'ORACLE'} = [ _( << '.') ];
 DBD::Oracle
 .
-$deps{'POSTGRESQL'} = [ text_to_hash( << '.') ];
-DBD::Pg 1.43
+$deps{'POSTGRESQL'} = [ _( << '.') ];
+DBD::Pg 1.41
 .
 
-$deps{'SQLITE'} = [ text_to_hash( << '.') ];
+$deps{'SQLITE'} = [ _( << '.') ];
 DBD::SQLite 1.00
 .
 
@@ -302,24 +269,18 @@ check_perl_version();
 check_users();
 
 
-foreach my $type (sort grep $args{$_}, keys %args) {
+foreach my $type (keys %args) {
     next unless ($type =~ /^with-(.*?)$/);
-
-    $type = $1;
+    my $type = $1;
     section("$type dependencies");
-
-    my @missing;
-    my @deps = @{ $deps{$type} };
+    my @deps = (@{$deps{$type}});
     while (@deps) {
         my $module = shift @deps;
         my $version = shift @deps;
-        my $ret = test_dep($module, $version);
+        my $ret = test_dep($module, $version);	
 
-        push @missing, $module, $version unless $ret;
-    }
-    if ( $args{'install'} ) {
-        while( @missing ) {
-            resolve_dep(shift @missing, shift @missing);
+        if ($args{'install'} && !$ret) {
+            resolve_dep($module);		
         }
     }
 }
@@ -339,77 +300,14 @@ sub test_dep {
 
         return undef;
     } else {
-        my $msg = "$module";
-        $msg .= " >=$version" if $version;
-        found($msg, 1);
+        found("$module $version", 1);
         return 1;
     }
 }
 
 sub resolve_dep {
     my $module = shift;
-    my $version = shift;
-
-    print "\nInstall module $module\n";
-
-    my $ext = $ENV{'RT_FIX_DEPS_CMD'};
-    unless( $ext ) {
-        my $configured = 1;
-        {
-            local @INC = @INC;
-            if ( $ENV{'HOME'} ) {
-                unshift @INC, "$ENV{'HOME'}/.cpan";
-            }
-            $configured = eval { require CPAN::MyConfig } || eval { require CPAN::Config };
-        }
-        unless ( $configured ) {
-            print <<END;
-You didn't configure CPAN shell yet.
-Please run `@PERL@ -MCPAN -e shell` tool and configure it.
-END
-            exit(1);
-        }
-        my $rv = eval { require CPAN; CPAN::Shell->install($module) };
-        return $rv unless $@;
-
-        print <<END;
-Failed to load module CPAN.
-
--------- Error ---------
-$@
-------------------------
-
-When we tried to start installing RT's perl dependencies, 
-we were unable to load the CPAN client. This module is usually distributed
-with Perl. This usually indicates that your vendor has shipped an unconfigured
-or incorrectly configured CPAN client.
-The error above may (or may not) give you a hint about what went wrong
-
-You have several choices about how to install dependencies in 
-this situatation:
-
-1) use a different tool to install dependencies by running setting the following
-   shell environment variable and rerunning this tool:
-    RT_FIX_DEPS_CMD='@PERL@ -MCPAN -e"install %s"'
-2) Attempt to configure CPAN by running:
-   `@PERL@ -MCPAN -e shell` program from shell.
-   If this fails, you may have to manually upgrade CPAN (see below)
-3) Try to update the CPAN client. Download it from:
-   http://search.cpan.org/dist/CPAN and try again
-4) Install each dependency manually by downloading them one by one from
-   http://search.cpan.org
-
-END
-        exit(1);
-    }
-
-    if( $ext =~ /\%s/) {
-        $ext =~ s/\%s/$module/g; # sprintf( $ext, $module );
-    } else {
-        $ext .= " $module";
-    }
-    print "\t\tcommand: '$ext'\n";
-    return scalar `$ext 1>&2`;
+    system( qq[@PERL@ -MCPAN -e'install("$module")'] );
 }
 
 sub download_mods {
@@ -457,10 +355,10 @@ sub check_perl_version {
   section("perl");
   eval {require 5.008003};
   if ($@) {
-    found("5.8.3", 0,"RT is known to be non-functional on versions of perl older than 5.8.3. Please upgrade to 5.8.3 or newer.");
-    exit(1);
+    found("5.8.3", 0, "RT is known to be non-functional on versions of perl older than 5.8.3. Please upgrade to 5.8.3 or newer.");
+    die;
   } else {
-    found( ">=5.8.3($])", 1);
+    found("5.8.3", 1);
   }
 }
 

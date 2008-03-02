@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-%# 02110-1301 or visit their web page on the internet at
-%# http://www.gnu.org/copyleft/gpl.html.
+%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -54,7 +52,7 @@ $Attr => undef
 <%ONCE>
 our ( $COLUMN_MAP );
 
-my $ColumnMap = sub {
+sub ColumnMap {
     my $name = shift;
     my $attr = shift;
 
@@ -79,22 +77,20 @@ my $ColumnMap = sub {
             # For Image custom fields we also show a thumbnail here.
             return sub {
                 my $values = $_[0]->CustomFieldValues($field);
-                my @values =  map {
+                return map {
                     (
                         ($_->CustomFieldObj->Type eq 'Image')
                             ? \($m->scomp( '/Elements/ShowCustomFieldImage', Object => $_ ))
                             : $_->Content
                     ),
-                    \'<br />',
-                } @{ $values->ItemsArrayRef };
-            pop @values; # Remove that last <br />
-            return @values;
+                    \'<br>',
+                } @{ $values->ItemsArrayRef }
 	    };
         }
     }
-};
+}
 
-my $LinkCallback = sub {
+sub LinkCallback {
     my $method = shift;
 
     my $mode            = $RT::Ticket::LINKTYPEMAP{$method}{Mode};
@@ -105,14 +101,14 @@ my $LinkCallback = sub {
 
     return sub {
         map {
-            \'<a href="',
+            \'<A HREF="',
             $_->$mode_uri->Resolver->HREF,
             \'">',
             ( $_->$mode_uri->IsLocal ? $_->$local_type : $_->$mode ),
-            \'</a><br />',
+            \'</A><BR>',
         } @{ $_[0]->Links($other_mode,$type)->ItemsArrayRef }
     }
-};
+}
 
 $COLUMN_MAP = {
     QueueName => {
@@ -198,15 +194,12 @@ $COLUMN_MAP = {
         value     => sub { return $_[0]->TimeEstimated }
     },
     Requestors => {
-        attribute => 'Requestor.EmailAddress',
         value => sub { return $_[0]->Requestors->MemberEmailAddressesAsString }
     },
     Cc => {
-        attribute => 'Cc.EmailAddress',
         value => sub { return $_[0]->Cc->MemberEmailAddressesAsString }
     },
     AdminCc => {
-        attribute => 'AdminCc.EmailAddress',
         value => sub { return $_[0]->AdminCc->MemberEmailAddressesAsString }
     },
     StartsRelative => {
@@ -293,22 +286,16 @@ $COLUMN_MAP = {
 
     # Everything from LINKTYPEMAP
     (map {
-        $_ => { value => $LinkCallback->( $_ ) }
+        $_ => { value => LinkCallback( $_ ) }
     } keys %RT::Ticket::LINKTYPEMAP),
 
     '_CLASS' => {
         value => sub { return $_[1] % 2 ? 'oddline' : 'evenline' }
-    },
-    '_CHECKBOX' => {
-        attribute => 'checkbox',
-        title => loc('Update'),
-        align     => 'right',
-        value     => sub { return \('<input type="checkbox" class="checkbox" name="UpdateTicket'.$_[0]->id.'" value="1" checked />') }
     },
 
 };
 </%ONCE>
 <%init>
 $m->comp( '/Elements/Callback', COLUMN_MAP    => $COLUMN_MAP, _CallbackName => 'ColumnMap');
-return $ColumnMap->( $Name, $Attr );
+return ColumnMap($Name, $Attr);
 </%init>

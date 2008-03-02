@@ -1,40 +1,38 @@
 # BEGIN BPS TAGGED BLOCK {{{
-# 
+#
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+#
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
-# 
+#
 # (Except where explicitly superseded by other copyright notices)
-# 
-# 
+#
+#
 # LICENSE:
-# 
+#
 # This work is made available to you under the terms of Version 2 of
 # the GNU General Public License. A copy of that license should have
 # been provided with this software, but in any event can be snarfed
 # from www.gnu.org.
-# 
+#
 # This work is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-# 02110-1301 or visit their web page on the internet at
-# http://www.gnu.org/copyleft/gpl.html.
-# 
-# 
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+#
+#
 # CONTRIBUTION SUBMISSION POLICY:
-# 
+#
 # (The following paragraph is not intended to limit the rights granted
 # to you to modify and distribute this software under the terms of
 # the GNU General Public License and is only of importance to you if
 # you choose to contribute your changes and enhancements to the
 # community by submitting them to Best Practical Solutions, LLC.)
-# 
+#
 # By intentionally submitting any modifications, corrections or
 # derivatives to this work, or any other work intended for use with
 # Request Tracker, to Best Practical Solutions, LLC, you confirm that
@@ -43,7 +41,7 @@
 # royalty-free, perpetual, license to use, copy, create derivative
 # works based on those contributions, and sublicense and distribute
 # those contributions and any derivatives thereof.
-# 
+#
 # END BPS TAGGED BLOCK }}}
 package RT::Interface::Email;
 
@@ -221,7 +219,7 @@ Returns the same array with any IsRTAddress()es weeded out.
 =cut
 
 sub CullRTAddresses {
-    return grep !IsRTAddress($_), @_;
+    return ( grep { IsRTAddress($_) } @_ );
 }
 
 # }}}
@@ -244,16 +242,14 @@ sub MailError {
         level   => $args{'LogLevel'},
         message => $args{'Explanation'}
     );
-    # the colons are necessary to make ->build include non-standard headers
     my $entity = MIME::Entity->build(
         Type                   => "multipart/mixed",
         From                   => $args{'From'},
         Bcc                    => $args{'Bcc'},
         To                     => $args{'To'},
         Subject                => $args{'Subject'},
-        'Precedence:'             => 'bulk',
-        'X-RT-Loop-Prevention:' => $RT::rtname,
-        'In-Reply-To:'          => $args{'MIMEObj'} ? $args{'MIMEObj'}->head->get('Message-Id') : undef
+        Precedence             => 'bulk',
+        'X-RT-Loop-Prevention' => $RT::rtname,
     );
 
     $entity->attach( Data => $args{'Explanation'} . "\n" );
@@ -301,6 +297,7 @@ sub CreateUser {
     unless ($Val) {
 
         # Deal with the race condition of two account creations at once
+        #
         if ($Username) {
             $NewUser->LoadByName($Username);
         }
@@ -445,12 +442,11 @@ Takes an address from $head->get('Line') and returns a tuple: user@host, friendl
 sub ParseAddressFromHeader {
     my $Addr = shift;
 
-    # Some broken mailers send:  ""Vincent, Jesse"" <jesse@fsck.com>. Hate
-    $Addr =~ s/\"\"(.*?)\"\"/\"$1\"/g;                                                                                                                                                  
     my @Addresses = Mail::Address->parse($Addr);
 
-    my ($AddrObj) = grep ref $_, @Addresses;
-    unless ( $AddrObj ) {
+    my $AddrObj = $Addresses[0];
+
+    unless ( ref($AddrObj) ) {
         return ( undef, undef );
     }
 
@@ -572,22 +568,6 @@ sub Gateway {
     #Pull apart the subject line
     my $Subject = $head->get('Subject') || '';
     chomp $Subject;
-    
-    # {{{ Lets check for mail loops of various sorts.
-    my ($should_store_machine_generated_message, $IsALoop, $result);
-    ( $should_store_machine_generated_message, $ErrorsTo, $result, $IsALoop ) =
-      _HandleMachineGeneratedMail(
-        Message  => $Message,
-        ErrorsTo => $ErrorsTo,
-        Subject  => $Subject,
-        MessageId => $MessageId
-    );
-
-    # Do not pass loop messages to MailPlugins, to make sure the loop
-    # is broken, unless $RT::StoreLoops is set.
-    if ($IsALoop && !$should_store_machine_generated_message) {
-        return ( 0, $result, undef );
-    }
 
     $args{'ticket'} ||= ParseTicketId($Subject);
 
@@ -663,10 +643,6 @@ sub Gateway {
             $skip_action{$action}++ if $AuthStat == -2;
         }
 
-        # strip actions we should skip
-        @actions = grep !$skip_action{$_}, @actions if $AuthStat == -2;
-        last unless @actions;
-
         last if $AuthStat == -1;
     }
     # {{{ If authentication fails and no new user was created, get out.
@@ -703,11 +679,22 @@ sub Gateway {
         );
     }
 
+    # {{{ Lets check for mail loops of various sorts.
+    my ($continue, $result);
+     ( $continue, $ErrorsTo, $result ) = _HandleMachineGeneratedMail(
+        Message  => $Message,
+        ErrorsTo => $ErrorsTo,
+        Subject  => $Subject,
+        MessageId => $MessageId
+    );
 
-    unless ($should_store_machine_generated_message) {
+    unless ($continue) {
         return ( 0, $result, undef );
     }
     
+    # strip actions we should skip
+    @actions = grep !$skip_action{$_}, @actions;
+
     # if plugin's updated SystemTicket then update arguments
     $args{'ticket'} = $SystemTicket->Id if $SystemTicket && $SystemTicket->Id;
 
@@ -737,7 +724,7 @@ sub Gateway {
         if ( $id == 0 ) {
             MailError(
                 To          => $ErrorsTo,
-                Subject     => "Ticket creation failed: $Subject",
+                Subject     => "Ticket creation failed",
                 Explanation => $ErrStr,
                 MIMEObj     => $Message
             );
@@ -749,23 +736,20 @@ sub Gateway {
         @actions = grep !/^(comment|correspond)$/, @actions;
         $args{'ticket'} = $id;
 
-    } elsif ( $args{'ticket'} ) {
+    } else {
 
         $Ticket->Load( $args{'ticket'} );
         unless ( $Ticket->Id ) {
             my $error = "Could not find a ticket with id " . $args{'ticket'};
             MailError(
                 To          => $ErrorsTo,
-                Subject     => "Message not recorded: $Subject",
+                Subject     => "Message not recorded",
                 Explanation => $error,
                 MIMEObj     => $Message
             );
 
             return ( 0, $error );
         }
-        $args{'ticket'} = $Ticket->id;
-    } else {
-        return ( 1, "Success", $Ticket );
     }
 
     # }}}
@@ -780,7 +764,7 @@ sub Gateway {
                 #Warn the sender that we couldn't actually submit the comment.
                 MailError(
                     To          => $ErrorsTo,
-                    Subject     => "Message not recorded: $Subject",
+                    Subject     => "Message not recorded",
                     Explanation => $msg,
                     MIMEObj     => $Message
                 );
@@ -872,7 +856,6 @@ EOT
     );
 
     # Also notify the requestor that his request has been dropped.
-    if ($args{'Requestor'} ne $RT::OwnerEmail) {
     MailError(
         To          => $args{'Requestor'},
         Subject     => "Could not load a valid user",
@@ -884,7 +867,6 @@ EOT
         MIMEObj  => $args{'Message'},
         LogLevel => 'error'
     );
-    }
 }
 
 =head2 _HandleMachineGeneratedMail
@@ -895,8 +877,7 @@ Takes named params:
     Subject
 
 Checks the message to see if it's a bounce, if it looks like a loop, if it's autogenerated, etc.
-Returns a triple of ("Should we continue (boolean)", "New value for $ErrorsTo", "Status message",
-"This message appears to be a loop (boolean)" );
+Returns a triple of ("Should we continue (boolean)", "New value for $ErrorsTo", "Status message");
 
 =cut
 
@@ -924,7 +905,7 @@ sub _HandleMachineGeneratedMail {
 
     # Warn someone if it's a loop, before we drop it on the ground
     if ($IsALoop) {
-        $RT::Logger->crit("RT Received mail (".$args{MessageId}.") from itself.");
+        $RT::Logger->crit("RT Recieved mail (".$args{MessageId}.") from itself.");
 
         #Should we mail it to RTOwner?
         if ($RT::LoopsToRTOwner) {
@@ -937,7 +918,7 @@ sub _HandleMachineGeneratedMail {
         }
 
         #Do we actually want to store it?
-        return ( 0, $ErrorsTo, "Message Bounced", $IsALoop ) unless ($RT::StoreLoops);
+        return ( 0, $ErrorsTo, "Message Bounced" ) unless ($RT::StoreLoops);
     }
 
     # Squelch replies if necessary
@@ -961,7 +942,7 @@ sub _HandleMachineGeneratedMail {
         $head->add( 'RT-Squelch-Replies-To',    $Sender );
         $head->add( 'RT-DetectedAutoGenerated', 'true' );
     }
-    return ( 1, $ErrorsTo, "Handled machine detection", $IsALoop );
+    return ( 1, $ErrorsTo, "Handled machine detection" );
 }
 
 =head2 IsCorrectAction
@@ -972,8 +953,7 @@ Returns a list of valid actions we've found for this message
 
 sub IsCorrectAction {
     my $action = shift;
-    my @actions = grep $_, split /-/, $action;
-    return ( 0, '(no value)' ) unless @actions;
+    my @actions = split /-/, $action;
     foreach (@actions) {
         return ( 0, $_ ) unless /^(?:comment|correspond|take|resolve)$/;
     }

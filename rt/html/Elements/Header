@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-%# 02110-1301 or visit their web page on the internet at
-%# http://www.gnu.org/copyleft/gpl.html.
+%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -45,89 +43,78 @@
 %# those contributions and any derivatives thereof.
 %# 
 %# END BPS TAGGED BLOCK }}}
-<!DOCTYPE html 
-     PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"><head>
-
-<title><%$Title%></title>
-
+%#<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML>
+<HEAD>
+<TITLE><%$Title%></TITLE>
 % if ($Refresh && $Refresh > 0) {
-    <meta http-equiv="refresh" content="<%$Refresh%>" />
+<META HTTP-EQUIV="REFRESH" CONTENT="<%$Refresh%>">
 % }
 
 <link rel="shortcut icon" href="<%$RT::WebImagesURL%>/favicon.png" type="image/png" />
-<link rel="stylesheet" href="<%$RT::WebPath%>/NoAuth/css/<% $RT::WebDefaultStylesheet %>/main.css" type="text/css" media="all" />
-<link rel="stylesheet" href="<%$RT::WebPath%>/NoAuth/css/print.css" type="text/css" media="print" />
+<link media="all" rel="stylesheet" href="<%$RT::WebPath%>/NoAuth/webrt.css" type="text/css" />
+<link media="print" rel="stylesheet" href="<%$RT::WebPath%>/NoAuth/printrt.css" type="text/css" />
 
-% if ( $RSSAutoDiscovery ) {
-    <link rel="alternate" href="<%$RSSAutoDiscovery%>" type="application/rss+xml" title="RSS RT Search" />
-% }
-
-<script type="text/javascript" src="<%$RT::WebPath%>/NoAuth/js/util.js"></script>
-<script type="text/javascript" src="<%$RT::WebPath%>/NoAuth/js/ahah.js"></script>
-<script type="text/javascript" src="<%$RT::WebPath%>/NoAuth/js/titlebox-state.js"></script>
-<script type="text/javascript"><!--
-    onLoadHook("loadTitleBoxStates()");
-% if ( $Focus ) {
-    onLoadHook("focusElementById('<% $Focus %>')");
-% }
-% if ( $onload ) {
-    onLoadHook("<% $onload |n %>");
-% }
---></script>
-
+<script>
+function hideshow(num) {
+    idstring = "element-" + num;
+    chunk = document.getElementById(idstring);
+    if ( chunk.style.display == "none")  {
+    chunk.style.display = chunk.style.tag;
+    } else {
+        chunk.style.tag = chunk.style.display;
+        chunk.style.display = "none";
+    }
+}   
+</script>
 <& /Elements/Callback, _CallbackName => 'Head', %ARGS &>
-
-</head>
-  <body<% $id && qq[ id="comp-$id"] |n %>>
-
-% if ($ShowBar) {
-<& /Elements/Logo &>
-
-<div id="quickbar">
-  <div id="quick-personal">
-    <span class="hide"><a href="#skipnav"><&|/l&>Skip Menu</&></a> | </span>
-% if ($session{'CurrentUser'}->Name) {
-    <&|/l, "<span>".$session{'CurrentUser'}->Name."</span>" &>Logged in as [_1]</&>
-%     if ($session{'CurrentUser'}->HasRight( Right => 'ModifySelf', Object => $RT::System )) {
-    | <a href="<%$RT::WebPath%><%$Prefs%>"><&|/l&>Preferences</&></a>
-%     }
+</HEAD>
+<BODY BGCOLOR="<%$BgColor%>"
+% if ($Focus) {
+ONLOAD="
+    var tmp = (document.getElementsByName('<% $Focus %>'));
+    if (tmp.length > 0) tmp[tmp.length-1].focus();
+"
+% }
+>
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#FFFFFF">
+  <tr> 
+    <td colspan=2><a href="http://bestpractical.com"><img src="<%$RT::WebImagesURL%>/bplogo.gif" alt="<%loc("Best Practical Solutions, LLC corporate logo")%>" width="230" height="50"></a></td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td width="50%" align="right">
+% if ($session{'CurrentUser'} && $session{'CurrentUser'}->Id && $LoggedIn) {
+<SPAN STYLE="display: none"><A HREF="#skipnav"><&|/l&>Skip Menu</&></A> |</SPAN>
+%if ($session{'CurrentUser'}->HasRight( Right => 'ModifySelf', Object => $RT::System )) {
+<A  HREF="<%$RT::WebPath%><% $Prefs %>" ><&|/l&>Preferences</&></A>
+% }
+<& /Elements/Callback, %ARGS &>
+% unless ($RT::WebExternalAuth and !$RT::WebFallbackToInternalAuth) {
+| <A  HREF="<%$RT::WebPath%>/NoAuth/Logout.html<%$URL ? "?URL=".$URL : ''%>"><&|/l&>Logout</&></a>
+% }
+<BR>
+<&|/l, "<b>".$session{'CurrentUser'}->Name."</b>" &>Logged in as [_1]</&>
 % } else {
-    <&|/l&>Not logged in.</&>
+<&|/l&>Not logged in.</&>
 % }
-  <& /Elements/Callback, %ARGS &>
-% unless (!$session{'CurrentUser'}->Name
-%         or ($RT::WebExternalAuth and !$RT::WebFallbackToInternalAuth)) {
-    | <a  href="<%$RT::WebPath%>/NoAuth/Logout.html<%$URL ? "?URL=".$URL : ''%>"><&|/l&>Logout</&></a>
-% }
-  </div>
-% }
-
+    </td>
+  </tr>
+</table>
 <%INIT>
+
 $r->headers_out->{'Pragma'} = 'no-cache';
 $r->headers_out->{'Cache-control'} = 'no-cache';
-
-my $id = $m->request_comp->path;
-$id =~ s|^/||g;
-$id =~ s|/|-|g;
-$id =~ s|\.html$||g;
-$id =~ s|index$||g
-    if $id ne 'index';
-$id =~ s|-$||g;
 </%INIT>
 
 <%ARGS>
 $Prefs => '/User/Prefs.html'
-#$Focus => 'focus'
-$Focus => ''
+$Focus => 'focus'
 $Title =>  'RT'
 $Code => undef
 $Refresh => 0
 $Why => undef
+$BgColor => '#ffffff'
 $ShowBar => 1
+$LoggedIn => 1
 $URL => undef
-$RSSAutoDiscovery => undef
-$onload => undef
 </%ARGS>

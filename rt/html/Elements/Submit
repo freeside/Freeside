@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-%# 02110-1301 or visit their web page on the internet at
-%# http://www.gnu.org/copyleft/gpl.html.
+%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -45,32 +43,54 @@
 %# those contributions and any derivatives thereof.
 %# 
 %# END BPS TAGGED BLOCK }}}
-<div class="submit">
-  <div class="extra-buttons">
+% if ($CheckAll or $ClearAll) {
+<script><!--
+function set_checkbox (obj, val) {
+    var i;
+    var myfield = obj.form.getElementsByTagName('input');
+    for (i = 0; i < myfield.length; i++) {
+	if (myfield[i].type == 'checkbox') {
+	    myfield[i].checked = val;
+	}
+    }
+}
+--></script>
+% }
+<TABLE WIDTH=100% BGCOLOR="<%$color%>" CELLSPACING=0 BORDER=0 CELLPADDING=0 >
+<TR>
+<TD>
 % if ($CheckAll) {
-  <input type="button" value="<%$CheckAllLabel%>" onclick="setCheckbox(this.form, '<% $CheckboxName %>', true);return false;" class="button" />
+<INPUT TYPE=BUTTON VALUE="<%$CheckAllLabel%>" ONCLICK="set_checkbox(this, true)">
 % }
 % if ($ClearAll) {
-  <input type="button" value="<%$ClearAllLabel%>" onclick="setCheckbox(this.form, '<% $CheckboxName %>', false);return false;" class="button" />
+<INPUT TYPE=BUTTON VALUE="<%$ClearAllLabel%>" ONCLICK="set_checkbox(this, false)">
 % }
 % if ($Reset) {
-  <input type="reset" value="<%$ResetLabel%>" class="button" />
-% }
-  </div>
-  <div class="buttons">
+<INPUT TYPE=RESET VALUE="<%$ResetLabel%>">
+%}
+</TD>
+<TD>
+&nbsp;
+</TD>
+<TD ALIGN=RIGHT VALIGN=CENTER><FONT COLOR=#ffd800>
 % if ($AlternateLabel) {
-  <span class="caption"><%$AlternateCaption%></span>
-  <input type="submit" <% $Name && qq[ name="$Name"] | n %> value="<%$AlternateLabel%>" class="button" />
-% } else {
-  <span class="caption"><%$Caption%></span>
-  <input type="submit" <% $Name && qq[ name="$Name"] | n %> value="<%$Label%>" class="button" />
+<B><%$AlternateCaption%>
+<INPUT TYPE=SUBMIT
+%if ($Name) {
+NAME="<%$Name%>"
+%}
+VALUE='<%$AlternateLabel%>'></B>
 % }
-  </div>
-  <div class="submit-clear"></div>
-</div>
-
+<B><%$Caption%> <INPUT TYPE=SUBMIT
+%if ($Name) {
+NAME="<%$Name%>"
+% }
+ VALUE='<%$Label%>'></B></FONT>
+</TD>
+</TR>
+</TABLE>
 <%ARGS>
-$color => undef
+$color => "#336699"
 $Caption => ''
 $AlternateCaption => undef
 $AlternateLabel => undef
@@ -80,7 +100,6 @@ $CheckAll => undef
 $CheckAllLabel => loc('Check All')
 $ClearAll => undef
 $ClearAllLabel => loc('Clear All')
-$CheckboxName => ''
 $Reset => undef
 $ResetLabel => loc('Reset')
 </%ARGS>

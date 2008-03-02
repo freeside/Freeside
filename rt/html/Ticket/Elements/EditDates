@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-%# 02110-1301 or visit their web page on the internet at
-%# http://www.gnu.org/copyleft/gpl.html.
+%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -45,32 +43,32 @@
 %# those contributions and any derivatives thereof.
 %# 
 %# END BPS TAGGED BLOCK }}}
-<table>
-  <tr>
-    <td class="label"><&|/l&>Starts</&>:</td>
-    <td class="entry"><& /Elements/SelectDate, menu_prefix => 'Starts', current => 0 &> 
-        (<% $TicketObj->StartsObj->AsString %>)</td>
-  </tr>
-  <tr>
-    <td class="label"><&|/l&>Started</&>:</td>
-    <td class="entry"><& /Elements/SelectDate, menu_prefix => 'Started', current => 0 &> (<%$TicketObj->StartedObj->AsString %>)</td>
-  </tr>
+<TABLE>
+  <TR>
+    <TD class="label"><&|/l&>Starts</&>:</TD>
+    <TD class="entry"><& /Elements/SelectDate, menu_prefix => 'Starts', current => 0 &> 
+        (<% $TicketObj->StartsObj->AsString %>)</TD>
+  </TR>
+  <TR>
+    <TD class="label"><&|/l&>Started</&>:</TD>
+    <TD class="entry"><& /Elements/SelectDate, menu_prefix => 'Started', current => 0 &> (<%$TicketObj->StartedObj->AsString %>)</TD>
+  </TR>
 
-  <tr>
-    <td class="label">
+  <TR>
+    <TD class="label">
       <&|/l&>Last Contact</&>:
-    </td>
-    <td class="entry">
+    </TD>
+    <TD class="entry">
       <& /Elements/SelectDate, menu_prefix => 'Told', current => 0 &> (<% $TicketObj->ToldObj->AsString %>)
-    </td>
-  </tr>
-  <tr>
-    <td class="label"><&|/l&>Due</&>:</td>
-    <td class="entry">
+    </TD>
+  </TR>
+  <TR>
+    <TD class="label"><&|/l&>Due</&>:</TD>
+    <TD class="entry">
       <& /Elements/SelectDate, menu_prefix => 'Due', current => 0 &> (<% $TicketObj->DueObj->AsString %>)
-    </td>
-  </tr>
-</table>
+    </TD>
+  </TR>
+</TABLE>
 <%ARGS>
 $TicketObj => undef
 </%ARGS>

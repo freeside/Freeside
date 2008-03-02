@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-%# 02110-1301 or visit their web page on the internet at
-%# http://www.gnu.org/copyleft/gpl.html.
+%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -54,189 +52,188 @@
 
 <& /Elements/ListActions, actions => \@results &>
 
-<form action="<%$RT::WebPath%>/Admin/Users/Modify.html" method="post" enctype="multipart/form-data">
+<FORM ACTION="<%$RT::WebPath%>/Admin/Users/Modify.html" METHOD=POST ENCTYPE="multipart/form-data">
 %if ($Create) {
-<input type="hidden" class="hidden" name="id" value="new" />
+<INPUT TYPE=HIDDEN NAME=id VALUE="new">
 % } else {
-<input type="hidden" class="hidden" name="id" value="<%$UserObj->Id%>" />
+<INPUT TYPE=HIDDEN NAME=id VALUE="<%$UserObj->Id%>">
 % }
-<table width="100%" border="0">
-<tr>
+<TABLE WIDTH=100% BORDER=0>
+<TR>
 
-<td valign="top" class="boxcontainer">
-<&| /Widgets/TitleBox, title => loc('Identity') &>
+<TD VALIGN=TOP class="boxcontainer">
+<& /Elements/TitleBoxStart, title => loc('Identity') &>
 
-<table>
-<tr><td align="right">
+<TABLE>
+<TR><TD ALIGN="RIGHT">
 <&|/l&>Username</&>:
-</td><td>
-<input name="Name" value="<%$UserObj->Name%>" /> <strong><&|/l&>(required)</&></strong>
-</td></tr>
-<tr><td align="right">
+</TD><TD>
+<input name="Name" value="<%$UserObj->Name%>"> <b><&|/l&>(required)</&></b>
+</TD></TR>
+<TR><TD ALIGN="RIGHT">
 <&|/l&>Email</&>:
-</td><td>
-<input name="EmailAddress" value="<%$UserObj->EmailAddress%>" />
-</td></tr>
-<tr><td align="right">
+</TD><TD>
+<input name="EmailAddress" value="<%$UserObj->EmailAddress%>">
+</TD></TR>
+<TR><TD ALIGN="RIGHT">
 <&|/l&>Real Name</&>: 
-</td><td>
-<input name="RealName" value="<%$UserObj->RealName%>" />
-</td></tr>
-<tr><td align="right">
+</TD><TD>
+<input name="RealName" value="<%$UserObj->RealName%>">
+</TD></TR>
+<TR><TD ALIGN="RIGHT">
 <&|/l&>Nickname</&>: 
-</td><td>
-<input name="NickName" value="<%$UserObj->NickName%>" />
-</td></tr>
-<tr><td align="right">
+</TD><TD>
+<input name="NickName" value="<%$UserObj->NickName%>">
+</TD></TR>
+<TR><TD ALIGN="RIGHT">
 <&|/l&>Unix login</&>: 
-</td><td>
-<input name="Gecos" value="<%$UserObj->Gecos%>" />
-</td></tr>
-<tr><td align="right">
+</TD><TD>
+<input name="Gecos" value="<%$UserObj->Gecos%>">
+</TD></TR>
+<TR><TD ALIGN="RIGHT">
 <&|/l&>Language</&>: 
-</td><td>
+</TD><TD>
 <& /Elements/SelectLang, Name => 'Lang', Default => $UserObj->Lang &>
-</td></tr>
-<tr><td align="right">
+</TD></TR>
+<TR><TD ALIGN="RIGHT">
 <&|/l&>Extra info</&>: 
-</td><td>
-<textarea name="FreeformContactInfo" cols="20" rows="5"><%$UserObj->FreeformContactInfo%></textarea>
-</td></tr>
-</table>
-</&>
-<br />
-<&| /Widgets/TitleBox, title => loc('Access control') &>
-<input type="hidden" class="hidden" name="SetEnabled" value="1" />
-<input type="checkbox" class="checkbox" name="Enabled" value="1" <%$EnabledChecked%> />
-<&|/l&>Let this user access RT</&><br />
+</TD><TD>
+<textarea name="FreeformContactInfo" cols=20 rows=5><%$UserObj->FreeformContactInfo%></TEXTAREA>
+</TD></TR>
+</TABLE>
+<& /Elements/TitleBoxEnd &>
+<br>
+<& /Elements/TitleBoxStart, title => loc('Access control') &>
+<INPUT TYPE=HIDDEN NAME="SetEnabled" VALUE="1">
+<INPUT TYPE=CHECKBOX NAME="Enabled" VALUE="1" <%$EnabledChecked%>>
+<&|/l&>Let this user access RT</&><BR>
 
 
-<input type="hidden" class="hidden" name="SetPrivileged" value="1" />
-<input type="checkbox" class="checkbox" name="Privileged" value="1" <%$PrivilegedChecked%> /> <&|/l&>Let this user be granted rights</&><br />
+<INPUT TYPE=HIDDEN NAME="SetPrivileged" VALUE="1">
+<INPUT TYPE=CHECKBOX NAME="Privileged" VALUE="1" <%$PrivilegedChecked%>> <&|/l&>Let this user be granted rights</&><BR>
 		    
 % unless ($RT::WebExternalAuth and !$RT::WebFallbackToInternalAuth) {
-<table>
-<tr>
-<td align="right">
+<TABLE>
+<TR>
+<TD ALIGN=RIGHT>
 <&|/l&>New Password</&>:
-</td>
-<td align="left">
-<input type="password" name="Pass1" />
-</td>
-</tr>
-<tr><td align="right">
+</TD>
+<TD ALIGN=LEFT>
+<input type=password name="Pass1">
+</TD>
+</TR>
+<TR><TD ALIGN=RIGHT>
 <&|/l&>Retype Password</&>:
-</td>
-<td>
-<input type="password" name="Pass2" />
-</td>
-</tr>
-</table>
+</TD>
+<TD>
+<input type=password name="Pass2">
+</TD>
+</TR>
+</TABLE>
 % }
-</&>
-</td>
+<& /Elements/TitleBoxEnd &>
+</TD>
 
-<td valign="top" class="boxcontainer">
-<&| /Widgets/TitleBox, title => loc('Location') &>
-<table>
-<tr><td align="right">
+<TD VALIGN=TOP class="boxcontainer">
+<& /Elements/TitleBoxStart, title => loc('Location') &>
+<TABLE>
+<TR><TD ALIGN="RIGHT">
 <&|/l&>Organization</&>: 
-</td><td>
-<input name="Organization" value="<%$UserObj->Organization%>" />
-</td></tr>
-<tr><td align="right">
+</TD><TD>
+<input name="Organization" value="<%$UserObj->Organization%>">
+</TD></TR>
+<TR><TD ALIGN="RIGHT">
 <&|/l&>Address1</&>: 
-</td><td>
-<input name="Address1" value="<%$UserObj->Address1%>" />
-</td></tr>
-<tr><td align="right">
+</TD><TD>
+<input name="Address1" value="<%$UserObj->Address1%>">
+</TD></TR>
+<TR><TD ALIGN="RIGHT">
 <&|/l&>Address2</&>: 
-</td><td>
-<input name="Address2" value="<%$UserObj->Address2%>" />
-</td></tr>
-<tr><td align="right">
+</TD><TD>
+<input name="Address2" value="<%$UserObj->Address2%>">
+</TD></TR>
+<TR><TD ALIGN="RIGHT">
 <&|/l&>City</&>: 
-</td><td>
-<input name="City" value="<%$UserObj->City%>" size="14" />
+</TD><TD>
+<input name="City" value="<%$UserObj->City%>" size=14>
 
-</td></tr>
-<tr><td align="right">
+</TD></TR>
+<TR><TD ALIGN="RIGHT">
 <&|/l&>State</&>: 
-</td><td>
-<input name="State" value="<%$UserObj->State%>" size="3" />
+</TD><TD>
+<input name="State" value="<%$UserObj->State%>" size=3>
 
-</td></tr>
-<tr><td align="right">
+</TD></TR>
+<TR><TD ALIGN="RIGHT">
 <&|/l&>Zip</&>: 
-</td><td>
-<input name="Zip" value="<%$UserObj->Zip%>" size="9" />
-</td></tr>
-<tr><td align="right">
+</TD><TD>
+<input name="Zip" value="<%$UserObj->Zip%>" size=9>
+</TD></TR>
+<TR><TD ALIGN="RIGHT">
 <&|/l&>Country</&>: 
-</td><td>
-<input name="Country" value="<%$UserObj->Country%>" />
-</td></tr>
-</table>
-</&>
-<br />
-<&| /Widgets/TitleBox, title => loc('Phone numbers') &>
-<table>
-<tr><td align="right">
+</TD><TD>
+<input name="Country" value="<%$UserObj->Country%>">
+</TD></TR>
+</TABLE>
+<& /Elements/TitleBoxEnd &>
+<br>
+<& /Elements/TitleBoxStart, title => loc('Phone numbers') &>
+<TABLE>
+<TR><TD ALIGN="RIGHT">
 <&|/l&>Residence</&>: 
-</td><td>
-<input name="HomePhone" value="<%$UserObj->HomePhone%>" size="13" /><br />
-</td></tr>
-<tr><td align="right">
+</TD><TD>
+<input name="HomePhone" value="<%$UserObj->HomePhone%>" size=13><br>
+</TD></TR>
+<TR><TD ALIGN="RIGHT">
 <&|/l&>Work</&>: 
-</td><td>
-<input name="WorkPhone" value="<%$UserObj->WorkPhone%>" size="13" /><br />
-</td></tr>
-<tr><td align="right">
+</TD><TD>
+<input name="WorkPhone" value="<%$UserObj->WorkPhone%>" size=13><br>
+</TD></TR>
+<TR><TD ALIGN="RIGHT">
 <&|/l&>Mobile</&>: 
-</td><td>
-<input name="MobilePhone" value="<%$UserObj->MobilePhone%>" size="13" /><br />
-</td></tr>
-<tr><td align="right">
+</TD><TD>
+<input name="MobilePhone" value="<%$UserObj->MobilePhone%>" size=13><br>
+</TD></TR>
+<TR><TD ALIGN="RIGHT">
 <&|/l&>Pager</&>: 
-</td><td>
-<input name="PagerPhone" value="<%$UserObj->PagerPhone%>" size="13" /><br />
-</td>
-</table>
-</&>
-<br />
-<&| /Widgets/TitleBox, title => loc('Custom Fields') &>
-<table>
+</TD><TD>
+<input name="PagerPhone" value="<%$UserObj->PagerPhone%>" size=13><br>
+<& /Elements/TitleBoxEnd &>
+</TD>
+
+<TR>
+</TR>
+</TABLE>
+<BR>
+<& /Elements/TitleBoxStart, title => loc('Custom Fields') &>
+<TABLE>
 % my $CFs = $UserObj->CustomFields;
 % while (my $CF = $CFs->Next) {
-<tr valign="top"><td align="right">
+<TR VALIGN="TOP"><TD ALIGN="RIGHT">
 <% $CF->Name %>:
-</td><td>
-% if ($UserObj->id) {
+</TD><TD>
 <& /Elements/EditCustomField, %ARGS, Object => $UserObj, CustomField => $CF &>
-% } else {
-<& /Elements/EditCustomField, %ARGS, NamePrefix => 'Object-RT::User-new-CustomField-', CustomField => $CF &>
+</TD></TR>
 % }
-</td></tr>
-% }
-<tr>
-</tr>
-</table>
-</&>
-<tr>
-<td colspan="2">
-<&| /Widgets/TitleBox, title => loc('Comments about this user') &>
-<textarea class="comments" name="Comments" cols="80" rows="5" wrap="virtual"><%$UserObj->Comments%></textarea>
-</&>
+<TR>
+</TR>
+</TABLE>
+<& /Elements/TitleBoxEnd &>
+<TR>
+<TD colspan="2">
+<& /Elements/TitleBoxStart, title => loc('Comments about this user') &>
+<TEXTAREA class="comments" name="Comments" COLS=80 ROWS=5 WRAP=VIRTUAL><%$UserObj->Comments%></TEXTAREA>
+<& /Elements/TitleBoxEnd &>
 %if ($UserObj->Privileged) {
-<br />
-<&| /Widgets/TitleBox, title => loc('Signature') &>
-<textarea class="signature" cols="80" rows="5" name="Signature" wrap="hard"><%$UserObj->Signature%></textarea>
-</&>
+<BR>
+<& /Elements/TitleBoxStart, title => loc('Signature') &>
+<TEXTAREA class="signature" COLS=80 ROWS=5 name="Signature" WRAP=HARD><%$UserObj->Signature%></TEXTAREA>
+<& /Elements/TitleBoxEnd &>
 % }
 
-</td>
-</tr>
-</table>
+</TD>
+</TR>
+</TABLE>
 
 <& /Elements/Submit, Label => loc('Save Changes') &>
 </form>
@@ -292,19 +289,12 @@ else {
 
 	if ($val) {
 		push @results, $msg;
-        foreach my $key ( keys %ARGS) {
-            # Convert custom fields on the "new" object to custom fields on the one we've just created
-            if ($key =~ /^Object-RT::User-new-CustomField-(.*)$/) {
-            $ARGS{'Object-RT::User-'.$val.'-CustomField-'.$1} = delete $ARGS{$key};
-            }
-        }
-        push @results, ProcessObjectCustomFieldUpdates( ARGSRef => \%ARGS, Object => $UserObj );
 	} else {
 		push @results, loc('User could not be created: [_1]', $msg);
 	}
     } else {
-	    $UserObj->Load($id) || $UserObj->Load($Name) || Abort("Couldn't load user '$Name'");
-        $val = $UserObj->Id();
+	$UserObj->Load($id) || $UserObj->Load($Name) || Abort("Couldn't load user '$Name'");
+	$val = $UserObj->Id();
     }
 
     if ($val) {

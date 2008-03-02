@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-%# 02110-1301 or visit their web page on the internet at
-%# http://www.gnu.org/copyleft/gpl.html.
+%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -45,29 +43,25 @@
 %# those contributions and any derivatives thereof.
 %# 
 %# END BPS TAGGED BLOCK }}}
-<html>
-<head>
-<title>RT: Logout</title>
- <meta HTTP-EQUIV="Refresh" content="0;URL=<%$URL%>">
-</head>
-<body>
+<HTML>
+<HEAD>
+<TITLE>RT: Logout</TITLE>
+ <META HTTP-EQUIV="Refresh" CONTENT="0;URL=<%$URL%>">
+</HEAD>
+<BODY>
 <p><&|/l&>You have been logged out of RT.</&>
 
-<br />
-<br />
-<a href="<%$URL%>"><&|/l&>You're welcome to login again</&></a>.
+<br>
+<br>
+<A HREF="<%$URL%>"><&|/l&>You're welcome to login again</&></a>
 
-% $m->abort();
 
-<%INIT>
-$m->comp('/Elements/Callback', _CallbackName => 'BeforeSessionDelete', %ARGS);
-
+<%PERL>
 if (defined %session) {
-    tied(%session)->delete;
+	tied(%session)->delete;
 }
-
-$m->comp('/Elements/Callback', _CallbackName => 'AfterSessionDelete', %ARGS);
-</%INIT>
+$m->abort();
+</%PERL>
 
 <%ARGS>
 $URL => $RT::WebPath."/"

@@ -2,7 +2,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-# 02110-1301 or visit their web page on the internet at
-# http://www.gnu.org/copyleft/gpl.html.
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -45,6 +43,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 =head1 NAME 
 
 RT::System
@@ -65,7 +64,7 @@ In the future, there will probably be other API goodness encapsulated here.
 
 
 package RT::System;
-use base qw /RT::Record/;
+use base qw /RT::Base/;
 use strict;
 
 use RT::ACL;
@@ -134,9 +133,22 @@ sub AvailableRights {
     return(\%rights);
 }
 
-sub _Init {
-    my $self = shift;
-    $self->SUPER::_Init (@_) if @_ && $_[0];
+
+=head2 new
+
+Create a new RT::System object. Really, you should be using $RT::System
+
+=cut
+
+                         
+sub new {
+    my $proto = shift;
+    my $class = ref($proto) || $proto;
+    my $self  = {};
+    bless( $self, $class );
+
+
+    return ($self);
 }
 
 =head2 id
@@ -172,15 +184,6 @@ It does nothing
 sub Load {
 	return (1);
 }
-
-sub Name {
-    return 'RT System';
-}
-
-sub __Set { 0 }
-sub __Value { 0 }
-sub Create { 0 }
-sub Delete { 0 }
 
 eval "require RT::System_Vendor";
 die $@ if ($@ && $@ !~ qr{^Can't locate RT/System_Vendor.pm});

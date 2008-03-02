@@ -15,4 +15,5 @@
 #   perl -c /path/to/your/etc/RT_SiteConfig.pm
 
 Set( $rtname, 'example.com');
+
 1;

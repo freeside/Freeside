@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-%# 02110-1301 or visit their web page on the internet at
-%# http://www.gnu.org/copyleft/gpl.html.
+%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -47,11 +45,11 @@
 %# END BPS TAGGED BLOCK }}}
 <& /Elements/ListActions, actions => \@results &>
 
-<form action="<%$RT::WebPath%><% $m->request_comp->path |n %>" method="post" name="EditCustomFields">
-<input type="hidden" class="hidden" name="id" value="<% $Object->Id %>" />
-<input type="hidden" class="hidden" name="ObjectType" value="<% $ObjectType %>" />
-<input type="hidden" class="hidden" name="SubType" value="<% $SubType %>" />
-<input type="hidden" class="hidden" name="UpdateCFs" value="1" />
+<FORM ACTION="<%$RT::WebPath%><% $m->request_comp->path |n %>" METHOD="POST" NAME="EditCustomFields">
+<INPUT TYPE=HIDDEN NAME="id" VALUE="<% $Object->Id %>"/>
+<INPUT TYPE=HIDDEN NAME="ObjectType" VALUE="<% $ObjectType %>"/>
+<INPUT TYPE=HIDDEN NAME="SubType" VALUE="<% $SubType %>"/>
+<INPUT TYPE=HIDDEN NAME="UpdateCFs" VALUE="1"/>
 
 % if ($Object->Id) {
 <h2><&|/l&>Global Custom Fields</&></h2>
@@ -63,7 +61,7 @@
 <& PickCustomFields, CustomFields => \@UnassignedCFs, id => $id, SubType => $SubType &>
 
 <& /Elements/Submit, CheckAll => 1, ClearAll => 1 &>
-</form>
+</FORM>
 
 
 <%INIT>
@@ -73,7 +71,7 @@ my (@GlobalCFs, @UnassignedCFs);
 
 my $id = $Object->Id;
 if ($id and !$Object->CurrentUserHasRight('AssignCustomFields')) {
-    $m->out('<p><i>', loc('(No custom fields)'), '</i></p>');
+    $m->out('<P><i>', loc('(No custom fields)'), '</i></P>');
     return;
 }
 
@@ -89,20 +87,6 @@ $ObjectCFs = RT::ObjectCustomFields->new($session{'CurrentUser'});
 $ObjectCFs->UnLimit;
 $ObjectCFs->LimitToObjectId($id);
 $ObjectCFs->LimitToLookupType($lookup);
-
-# Check sanity of SortOrders
-my %SortOrders;
-$SortOrders{$_->SortOrder}++
-  while ($_ = $ObjectCFs->Next);
-
-# If there are duplicates, run though and squash them
-if (grep {$_ > 1} values %SortOrders) {
-    my $i = 1;
-    while (my $ObjectCF = $ObjectCFs->Next) {
-        $ObjectCF->SetSortOrder($i++);
-    }
-    $ObjectCFs->GotoFirstItem;
-}
 
 # {{{ deal with moving sortorder of custom fields
 if ($CustomField and $Move) {

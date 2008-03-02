@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-%# 02110-1301 or visit their web page on the internet at
-%# http://www.gnu.org/copyleft/gpl.html.
+%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -50,9 +48,9 @@
 &>
 
 
-<form action="Display.html" method="post" enctype="multipart/form-data">
-<input type="hidden" class="hidden" name="UpdateType" value="response" />
-<input type="hidden" class="hidden" name="id" value="<%$Ticket->Id%>" />
+<FORM ACTION="Display.html" METHOD=POST ENCTYPE="multipart/form-data">
+<input type=hidden name="UpdateType" value="response">
+<input TYPE="hidden" NAME="id" VALUE="<%$Ticket->Id%>">
 <table>
     <tr>
         <td class="label">
@@ -67,30 +65,30 @@
             <&|/l&>Subject</&>
         </td>
         <td class="value">
-            <input name="UpdateSubject" size="60" value="<% $Ticket->Subject %>" />
+            <input name="UpdateSubject" size=60 value="<% $Ticket->Subject %>">
         </td>
 
     </tr>
 % if (exists $session{'Attachments'}) {
 <tr>
-    <td class="label">
+    <TD class="label">
     <&|/l&>Attached file</&>
-    </td>
-    <td colspan="5" class="value">
-    <&|/l&>Check box to delete</&><br />
+    </TD>
+    <TD COLSPAN=5 class="value">
+    <&|/l&>Check box to delete</&><BR>
 % foreach my $attach_name (keys %{$session{'Attachments'}}) {
-    <input type="checkbox" class="checkbox" name="DeleteAttach-<%$attach_name%>" value="1" /><%$attach_name%><br />
+    <input type="checkbox" name="DeleteAttach-<%$attach_name%>" value="1"><%$attach_name%><BR>
 % } # end of foreach
-    </td>
-</tr>
+    </TD>
+</TR>
 % } # end of if
 <tr>
     <td class"label">
         <&|/l&>Attach</&>
     </td>
     <td class="value">
-            <input name="Attach" type="file" />
-            <input type="hidden" class="hidden" name="UpdateAttach" value="1" />
+            <input name="Attach" type="file">
+            <input type="hidden" name="UpdateAttach" value="1">
     </td>
   </tr>
 </table>
@@ -99,11 +97,11 @@
     Name => "UpdateContent", 
     QuoteTransaction => $ARGS{QuoteTransaction} 
     &>
-    <br />
+    <br>
 
 
 <& /Elements/Submit &>
-  </form>
+  </FORM>
 
 
 

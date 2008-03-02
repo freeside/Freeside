@@ -2,7 +2,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-# 02110-1301 or visit their web page on the internet at
-# http://www.gnu.org/copyleft/gpl.html.
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -45,6 +43,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 package RT::Interface::Web::Handler;
 
 use CGI qw/-private_tempfiles/;
@@ -55,6 +54,7 @@ use Time::ParseDate;
 use Time::HiRes;
 use HTML::Entities;
 use HTML::Scrubber;
+use Text::Quoted;
 use RT::Interface::Web::Handler;
 use File::Path qw( rmtree );
 use File::Glob qw( bsd_glob );
@@ -88,6 +88,16 @@ sub new {
     $class->InitSessionDir;
 
     if ( $mod_perl::VERSION && $mod_perl::VERSION >= 1.9908 ) {
+#        require Apache::RequestUtil;
+#        no warnings 'redefine';
+#        my $sub = *Apache::request{CODE};
+#        *Apache::request = sub {
+#            my $r;
+#            eval { $r = $sub->('Apache'); };
+#
+#            # warn $@ if $@;
+#            return $r;
+#        };
         goto &NewApacheHandler;
     }
     elsif ($CGI::MOD_PERL) {
@@ -107,11 +117,12 @@ sub InitSessionDir {
         # Clean up our umask to protect session files
         umask(0077);
 
-        if ($CGI::MOD_PERL) { local $@; eval {
+        if ($CGI::MOD_PERL and $CGI::MOD_PERL < 1.9908 ) {
 
             chown( Apache->server->uid, Apache->server->gid,
                 $RT::MasonSessionDir )
-        }} 
+            if Apache->server->can('uid');
+        }
 
         # Die if WebSessionDir doesn't exist or we can't write to it
         stat($RT::MasonSessionDir);

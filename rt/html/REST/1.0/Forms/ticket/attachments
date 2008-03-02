@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-%# 02110-1301 or visit their web page on the internet at
-%# http://www.gnu.org/copyleft/gpl.html.
+%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -51,7 +49,7 @@
 $id
 $args => undef
 </%ARGS>
-<%INIT>
+<%perl>
 my @data;
 my ($c, $o, $k, $e) = ("", [], {}, "");
 my $ticket = new RT::Ticket $session{CurrentUser};
@@ -82,12 +80,7 @@ if ($aid) {
         return [ "# Invalid attachment id: $aid", [], {}, 1 ];
     }
     if ($content) {
-        $c = $attachment->OriginalContent;
-        # if we're sending a binary attachment (and only the attachment)
-        # flag it so bin/rt knows to special case it
-        if ($attachment->ContentType !~ /^text\//) {
-            $r->content_type($attachment->ContentType);
-        }
+	$c = $attachment->OriginalContent;
     } else {
 	my @data;
 	push @data, [ id    => $attachment->Id   ];
@@ -132,4 +125,4 @@ else {
 }
 
 return [ $c, $o, $k, $e ];
-</%INIT>
+</%perl>

@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-%# 02110-1301 or visit their web page on the internet at
-%# http://www.gnu.org/copyleft/gpl.html.
+%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -57,18 +55,18 @@
 % if ($Ticket->TimeEstimated) {
   <tr>
     <td class="label time estimated"><&|/l&>Estimated</&>:</td>
-    <td class="value time estimated"><& ShowTime, minutes => $Ticket->TimeEstimated &></td>
+    <td class="value time estimated"><&|/l, $Ticket->TimeEstimated &>[_1] min</&></td>
   </tr>
 % }
 % if ($Ticket->TimeWorked) {
   <tr>
     <td class="label time worked"><&|/l&>Worked</&>:</td>
-    <td class="value time worked"><& ShowTime, minutes => $Ticket->TimeWorked &></td>
+    <td class="value time worked"><&|/l, $Ticket->TimeWorked &>[_1] min</&></td>
   </tr>
 % }
   <tr>
     <td class="label time left"><&|/l&>Left</&>:</td>
-    <td class="value time left"><& ShowTime, minutes => $Ticket->TimeLeft &></td>
+    <td class="value time left"><&|/l, $Ticket->TimeLeft &>[_1] min</&></td>
   </tr>
   <tr>
     <td class="label priority"><&|/l&>Priority</&>:</td>

@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-%# 02110-1301 or visit their web page on the internet at
-%# http://www.gnu.org/copyleft/gpl.html.
+%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -45,40 +43,33 @@
 %# those contributions and any derivatives thereof.
 %# 
 %# END BPS TAGGED BLOCK }}}
-<& /Admin/Elements/Header, Title => $title &>
+<& /Admin/Elements/Header, Title => $title  &>
 <& /Admin/Elements/SystemTabs, 
     current_tab => 'Admin/Global/Scrips.html', 
     current_subtab => $current_subtab, 
     subtabs => $subtabs, 
     Title => $title &>
 
-<& /Elements/ListActions, actions => \@results &>
-<& /Admin/Elements/EditScrip, title => $title,  %ARGS, id => $id &>
+<& /Admin/Elements/EditScrip, title => $title,  %ARGS &>
 
 <%init>
-my $subtabs = {
-    A => {
-        title     => loc('Select scrip'),
-        path      => "Admin/Global/Scrips.html",
-    },
-    B => {
-        title     => loc('New scrip'),
-        path      => "Admin/Global/Scrip.html?create=1&Queue=0",
-        separator => 1,
-    },
-};
-
-my $scrip = RT::Scrip->new( $session{'CurrentUser'} );
-my ($id, @results) = $m->comp( '/Admin/Elements/EditScrip:Process', %ARGS );
-
 my ($title, $current_subtab);
-if ( $id ) {
-    $current_subtab = "Admin/Global/Scrip.html?id=$id&Queue=0";
+my $subtabs = {
+		 A => { title => loc('Select scrip'),
+  		     	path => "Admin/Global/Scrips.html",
+			   },
+		 B => { title => loc('New scrip'),
+  		     	path => "Admin/Global/Scrip.html?create=1&Queue=0",
+			separator => 1,
+			   }
+	      };
+
+if ($ARGS{'id'}) {
+    $current_subtab = "Admin/Global/Scrip.html?id=".$ARGS{'id'}."&Queue=0";
     $title = loc("Modify a scrip which applies to all queues");
-    $subtabs->{"C"} = {
-        title => loc('Scrip #[_1]', $id),
-        path  => "Admin/Global/Scrip.html?id=$id&Queue=0",
-    };
+    $subtabs->{"C"} = { title => loc('Scrip #[_1]', $ARGS{'id'}),
+  		     	path => "Admin/Global/Scrip.html?id=".$ARGS{'id'}."&Queue=0"
+			   }
 }
 else {
     $current_subtab = "Admin/Global/Scrip.html?create=1&Queue=0";

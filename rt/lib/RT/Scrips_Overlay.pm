@@ -2,7 +2,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-# 02110-1301 or visit their web page on the internet at
-# http://www.gnu.org/copyleft/gpl.html.
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -45,6 +43,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
   RT::Scrips - a collection of RT Scrip objects
@@ -158,9 +157,7 @@ sub Next {
 
 =head2 Apply
 
-Run through the relevant scrips.  Scrips will run in order based on 
-description.  (Most common use case is to prepend a number to the description,
-forcing the scrips to run in ascending alphanumerical order.)
+Run through the relevant scrips. 
 
 =cut
 
@@ -307,10 +304,7 @@ sub _SetupSourceObjects {
 
 =head2 _FindScrips
 
-Find only the apropriate scrips for whatever we're doing now.  Order them 
-by their description.  (Most common use case is to prepend a number to the
-description, forcing the scrips to display and run in ascending alphanumerical 
-order.)
+Find only the apropriate scrips for whatever we're doing now
 
 =cut
 
@@ -358,9 +352,6 @@ sub _FindScrips {
         VALUE           => "Any",
         ENTRYAGGREGATOR => 'OR',
     );
-
-    # Promise some kind of ordering
-    $self->OrderBy( FIELD => 'description' );
 
     $RT::Logger->debug("Found ".$self->Count. " scrips");
 }

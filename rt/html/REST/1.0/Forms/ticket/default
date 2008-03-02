@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-%# 02110-1301 or visit their web page on the internet at
-%# http://www.gnu.org/copyleft/gpl.html.
+%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -51,9 +49,8 @@
 $id
 $changes => {}
 $fields => undef
-$args => undef
 </%ARGS>
-<%INIT>
+<%perl>
 use MIME::Entity;
 
 my @comments;
@@ -86,7 +83,7 @@ if ($id ne 'new') {
     }
 }
 else {
-    if (!keys(%data)) {
+    if (%data == 0) {
         # GET ticket/new: Return a suitable default form.
         # We get defaults from queue/1 (XXX: What if it isn't there?).
         my $due = new RT::Date $session{CurrentUser};
@@ -130,25 +127,10 @@ else {
             if (exists $create{lc $k}) {
                 $v{$create{lc $k}} = delete $data{$k};
             }
-            # Set custom field
-            elsif ($k =~ /^CF-/i) {
-                my $cf = RT::CustomField->new( $RT::SystemUser );
-                my $cfk = $k;
-                $cfk =~ s/^CF-//i;
-                unless($cf->LoadByName( Name => $cfk )) {
-                    push @comments, "# Invalid custom field name ($cfk)";
-                    delete $data{$k};
-                    next;
-                }
-                $v{"CustomField-".$cf->Id()} = delete $data{$k};
-            }
             elsif (lc $k eq 'text') {
                 $text = delete $data{$k};
             }
         }
-
-        # people fields allow multiple values
-        $v{$_} = vsplit($v{$_}) foreach ( grep $create{lc $_}, @people );
 
         if ($text) {
             $v{MIMEObj} =
@@ -159,23 +141,20 @@ else {
                 );
         }
 
-        my($tid,$trid,$terr) = $ticket->Create(%v);    
-        unless ($tid) {
-            push(@comments, "# Could not create ticket.");
-            push(@comments, "# " . $terr);
-            goto DONE;
+        $ticket->Create(%v);
+        unless ($ticket->Id) {
+            return [ "# Could not create ticket.", [], {}, 1 ];
         }
 
         delete $data{id};
         $id = $ticket->Id;
         push(@comments, "# Ticket $id created.");
-        # see if the hash is empty
-        goto DONE if ! keys(%data);
+        goto DONE if %data == 0;
     }
 }
 
 # Now we know we're dealing with an existing ticket.
-if (!keys(%data)) {
+if (%data == 0) {
     my ($time, $key, $val, @data);
 
     push @data, [ id    => "ticket/".$ticket->Id   ];
@@ -192,7 +171,7 @@ if (!keys(%data)) {
     }
 
     foreach $key (@people) {
-        next unless (!%$fields || (exists $fields->{lc $key}));
+	next unless (!%$fields || (exists $fields->{lc $key}));
         push @data, [ $key => [ $ticket->$key->MemberEmailAddresses ] ];
     }
 
@@ -209,18 +188,6 @@ if (!keys(%data)) {
         $val = $ticket->$key || 0;
         $val = $time->DurationAsString($val*60) if $val;
         push @data, [ $key => $val ];
-    }
-
-    # Display custom fields
-    my $CustomFields = $ticket->QueueObj->TicketCustomFields();
-    while (my $cf = $CustomFields->Next()) {
-	next unless (!%$fields || (exists $fields->{"cf-".lc $cf->Name}));
-        my $vals = $ticket->CustomFieldValues($cf->Id());
-        my @out = ();
-        while (my $v = $vals->Next()) {
-            push @out, $v->Content;
-        }
-        push @data, [ 'CF-' . $cf->Name => join ',', @out ];
     }
 
     my %k = map {@$_} @data;
@@ -304,20 +271,6 @@ else {
                 $s =~ s/^# //;
             }
         }
-        # Set custom field
-        elsif ($key =~ /^CF-/i) {
-            my $cf = RT::CustomField->new( $RT::SystemUser );
-            $key =~ s/^CF-//i;
-            if (not $cf->LoadByName( Name => $key )) {
-                $n = 0;
-                $s = "Unknown custom field.";
-            }
-            else {
-                ($n, $s) = $ticket->AddCustomFieldValue(
-                             Field => $cf, Value => $val );
-                $s =~ s/^# // if defined $s;
-            }
-        }
         elsif ($key ne 'id' && $key ne 'type' && $key ne 'creator') {
             $n = 0;
             $s = "Unknown field.";
@@ -342,4 +295,4 @@ DONE:
 $c ||= join("\n", @comments) if @comments;
 return [$c, $o, $k, $e];
 
-</%INIT>
+</%perl>

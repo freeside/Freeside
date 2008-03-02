@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -22,9 +22,7 @@
 %# 
 %# You should have received a copy of the GNU General Public License
 %# along with this program; if not, write to the Free Software
-%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-%# 02110-1301 or visit their web page on the internet at
-%# http://www.gnu.org/copyleft/gpl.html.
+%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -74,7 +72,6 @@ my $labels = "(?:$label,)*$label";
 #    http://.../REST/1.0/ticket/edit
 # 4. http://.../REST/1.0/ticket/nn (all possibly with a single form).
 #    http://.../REST/1.0/ticket/nn/history
-#    http://.../REST/1.0/ticket/nn/comment
 #    http://.../REST/1.0/ticket/nn/attachment/1
 #
 # Objects are specified by their type, and either a unique numeric ID,
@@ -293,12 +290,7 @@ foreach $object (@objects) {
         # We won't pass $e through to compose, trusting instead that the
         # handler added suitable comments for the user.
         if ($e) {
-            if (@$o) {
-                $status = "409 Syntax Error";
-            } 
-            else {
-                $status = "400 Bad Request";
-            }
+            $status = "409 Syntax Error" if @$o;
             push @output, [ $c, $o, $k ];
         }
         else {
@@ -311,6 +303,7 @@ unshift(@output, [ join "\n", @comments ]) if @comments;
 $output = form_compose(\@output);
 
 OUTPUT:
-$m->out("RT/".$RT::VERSION ." ".$status ."\n\n$output\n") if ($output || $status != 200);
-return;
 </%INIT>
+RT/<% $RT::VERSION %> <% $status %>
+
+<% $output |n %>
