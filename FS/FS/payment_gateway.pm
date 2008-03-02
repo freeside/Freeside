@@ -2,8 +2,9 @@ package FS::payment_gateway;
 
 use strict;
 use vars qw( @ISA );
-use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( qsearch qsearchs dbh );
 use FS::option_Common;
+use FS::agent_payment_gateway;
 
 @ISA = qw( FS::option_Common );
 
@@ -131,6 +132,58 @@ sub check {
   }
 
   $self->SUPER::check;
+}
+
+=item agent_payment_gateway
+
+Returns any agent overrides for this payment gateway.
+
+=cut
+
+sub agent_payment_gateway {
+  my $self = shift;
+  qsearch('agent_payment_gateway', { 'gatewaynum' => $self->gatewaynum } );
+}
+
+=item disable
+
+Disables this payment gateway: deletes all associated agent_payment_gateway
+overrides and sets the I<disabled> field to "B<Y>".
+
+=cut
+
+sub disable {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  foreach my $agent_payment_gateway ( $self->agent_payment_gateway ) {
+    my $error = $agent_payment_gateway->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "error deleting agent_payment_gateway override: $error";
+    }
+  }
+
+  $self->disabled('Y');
+  my $error = $self->replace();
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return "error disabling payment_gateway: $error";
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+
 }
 
 =back

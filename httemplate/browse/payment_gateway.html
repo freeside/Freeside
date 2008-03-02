@@ -1,79 +1,94 @@
-<% include("/elements/header.html",'Payment gateways', menubar(
-  'Agents'    => $p. 'browse/agent.cgi',
-)) %>
-
-<A HREF="<% $p %>edit/payment_gateway.html"><I>Add a new payment gateway</I></A><BR><BR>
-
-<% $cgi->param('showdisabled')
-    ? do { $cgi->param('showdisabled', 0);
-           '( <a href="'. $cgi->self_url. '">hide disabled gateways</a> )'; }
-    : do { $cgi->param('showdisabled', 1);
-           '( <a href="'. $cgi->self_url. '">show disabled gateways</a> )'; }
+<% include( 'elements/browse.html',
+                'title'              => 'Payment gateways',
+                'menubar'            => [ 'Agents' => $p.'browse/agent.cgi', ],
+                'html_init'          => $html_init,
+                'name'               => 'payment gateways',
+                'disableable'        => 1,
+                'disabled_statuspos' => 1,
+                'query'              => { 'table'   => 'payment_gateway',
+                                          'hashref' => {},
+                                        },
+                'count_query'        => $count_query,
+                'header'             => [ '#',
+                                          'Gateway',
+                                          'Username',
+                                          'Password',
+                                          'Action',
+                                          'Options',
+                                        ],
+                'fields'             => [ 'gatewaynum',
+                                          $gateway_sub,
+                                          'gateway_username',
+                                          sub { ' - '; },
+                                          'gateway_action',
+                                          $options_sub,
+                                        ],
+          )
 %>
-
-<% table() %>
-<TR>
-  <TH COLSPAN=<% $cgi->param('showdisabled') ? 1 : 2 %>>#</TH>
-  <TH>Gateway</TH>
-  <TH>Username</TH>
-  <TH>Password</TH>
-  <TH>Action</TH>
-  <TH>Options</TH>
-</TR>
-% foreach my $payment_gateway ( qsearch( 'payment_gateway', \%search ) ) { 
-
-
-  <TR>
-    <TD><% $payment_gateway->gatewaynum %></TD>
-% if ( !$cgi->param('showdisabled') ) { 
-
-      <TD><% $payment_gateway->disabled ? 'DISABLED' : '' %></TD>
-% } 
-
-    <TD><% $payment_gateway->gateway_module %>
-      <FONT SIZE="-1">
-        <A HREF="<%$p%>edit/payment_gateway.html?<% $payment_gateway->gatewaynum %>">(edit)</A>
-        <% !$payment_gateway->disabled 
-              ? '<A HREF="'. $p. 'misc/disable-payment_gateway.cgi?'. $payment_gateway->gatewaynum.'">(disable)</A>'
-              : ''
-        %>
-      </FONT>
-    </TD>
-    <TD><% $payment_gateway->gateway_username %></TD>
-    <TD> - </TD>
-    <TD><% $payment_gateway->gateway_action %></TD>
-    <TD>
-      <TABLE CELLSPACING=0 CELLPADDING=0>
-% my %options = $payment_gateway->options;
-%           foreach my $option ( keys %options ) {
-%        
-
-          <TR>
-            <TH><% $option %>:</TH>
-            <TD><% $options{$option} %></TD>
-          </TR>
-% } 
-
-      </TABLE>
-    </TD>
-  </TR>
-% } 
-
 
 </TABLE>
 
 <% include('/elements/footer.html') %>
+<%once>
 
+my $html_init = qq!
+  <A HREF="${p}edit/payment_gateway.html"><I>Add a new payment gateway</I></A>
+  <BR><BR>
+
+  <SCRIPT>
+    function areyousure(href) {
+     if (confirm("Are you sure you want to disable this payment gateway?") == true)
+       window.location.href = href;
+    }
+  </SCRIPT>
+
+!;
+
+my $gateway_sub = sub {
+  my($payment_gateway) = @_;
+
+  my $gatewaynum = $payment_gateway->gatewaynum;
+
+  my $html = $payment_gateway->gateway_module. ' '. qq!
+     <FONT SIZE="-1">
+        <A HREF="${p}edit/payment_gateway.html?$gatewaynum">(edit)</A>
+    !;
+
+  unless ( $payment_gateway->disabled ) {
+    $html .= qq!
+        <A HREF="javascript:areyousure('${p}misc/disable-payment_gateway.cgi?$gatewaynum')">(disable)</A>
+    !;
+  }
+
+  $html .= '</FONT>';
+
+  $html;
+
+};
+
+my $options_sub = sub {
+  my($payment_gateway) = @_;
+
+  #should return a structure instead of this manual formatting...
+
+  my $html = '<TABLE CELLSPACING=0 CELLPADDING=0>';
+
+  my %options = $payment_gateway->options;
+  foreach my $option ( keys %options ) {
+    $html .= '<TR><TH>'. $option. ':</TH>'.
+             '<TD>'. $options{$option}. '</TD></TR>';
+  }
+  $html .= '</TABLE>';
+
+  $html;
+};
+
+my $count_query = 'SELECT COUNT(*) FROM payment_gateway';
+
+</%once>
 <%init>
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
-
-my %search;
-if ( $cgi->param('showdisabled') ) {
-  %search = ();
-} else {
-  %search = ( 'disabled' => '' );
-}
 
 </%init>

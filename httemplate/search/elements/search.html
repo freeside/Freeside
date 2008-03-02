@@ -319,7 +319,9 @@ Example:
 %       unless ( $opt{'disable_nonefound'} ) { 
           No matching <% $opt{'name'} %> found.<BR>
 %       } 
-%     } else { 
+%     }
+%
+%     if ( $total || $opt{'disableable'} ) { #hmm... and there *are* ones to show??
 
         <TABLE>
           <TR>
