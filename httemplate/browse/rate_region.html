@@ -34,7 +34,7 @@ if ( driver_name =~ /^Pg/ ) {
   my $fromwhere = 'FROM rate_prefix'.
                   ' WHERE rate_prefix.regionnum = rate_region.regionnum';
   $select .= "( SELECT countrycode $fromwhere LIMIT 1 ) AS ccode, 
-              ARRAY_TO_STRING( ARRAY(SELECT npa $fromwhere), ',' ) AS prefixes";
+              ARRAY_TO_STRING( ARRAY(SELECT npa $fromwhere AND npa IS NOT NULL), ',' ) AS prefixes";
 } elsif ( driver_name =~ /^mysql/i ) {
   $join = 'LEFT JOIN rate_prefix USING ( regionnum )';
   $select .= "GROUP_CONCAT( DISTINCT countrycode ) AS ccode,
