@@ -432,8 +432,6 @@ sub check {
 #           " already exists";
 #  }
 
-  $self->otaker(getotaker);
-
   $self->SUPER::check;
 }
 
@@ -675,8 +673,9 @@ sub _upgrade_data {  #class method
 
   #not the most efficient, but hey, it only has to run once
 
-  my $count_sql =
-    "SELECT COUNT(*) FROM cust_pay WHERE otaker IS NULL OR otaker = ''";
+  my $where = "WHERE otaker IS NULL OR otaker = '' OR otaker = 'ivan' ";
+
+  my $count_sql = "SELECT COUNT(*) FROM cust_pay $where";
 
   my $sth = dbh->prepare($count_sql) or die dbh->errstr;
   $sth->execute or die $sth->errstr;
@@ -691,7 +690,7 @@ sub _upgrade_data {  #class method
     my $cust_pay = qsearchs( {
       'table'     => 'cust_pay',
       'hashref'   => {},
-      'extra_sql' => "WHERE otaker IS NULL OR otaker = ''",
+      'extra_sql' => $where,
       'order_by'  => 'ORDER BY paynum LIMIT 1',
     } );
 
