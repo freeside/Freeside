@@ -1676,6 +1676,7 @@ sub print_generic {
                        s/\\textbf\{(.*)\}/<b>$1<\/b>/g;
                        s/\\\\\*/<br>/g;
                        s/\\dollar ?/\$/g;
+                       s/\\#/#/g;
                        $_;
                      }  @_
                    },
