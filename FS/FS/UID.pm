@@ -2,7 +2,7 @@ package FS::UID;
 
 use strict;
 use vars qw(
-  @ISA @EXPORT_OK $cgi $dbh $freeside_uid $user 
+  @ISA @EXPORT_OK $DEBUG $me $cgi $dbh $freeside_uid $user 
   $conf_dir $secrets $datasrc $db_user $db_pass %callback @callback
   $driver_name $AutoCommit $callback_hack $use_confcompat
 );
@@ -19,6 +19,9 @@ use FS::CurrentUser;
 @EXPORT_OK = qw(checkeuid checkruid cgisuidsetup adminsuidsetup forksuidsetup
                 getotaker dbh datasrc getsecrets driver_name myconnect
                 use_confcompat);
+
+$DEBUG = 0;
+$me = '[FS::UID]';
 
 $freeside_uid = scalar(getpwnam('freeside'));
 
@@ -76,6 +79,7 @@ sub adminsuidsetup {
 sub forksuidsetup {
   $user = shift;
   my $olduser = $user;
+  warn "$me forksuidsetup starting for $user\n" if $DEBUG;
 
   if ( $FS::CurrentUser::upgrade_hack ) {
     $user = 'fs_bootstrap';
@@ -95,38 +99,45 @@ sub forksuidsetup {
 
   croak "Not running uid freeside!" unless checkeuid();
 
+  warn "$me forksuidsetup connecting to database\n" if $DEBUG;
   if ( $FS::CurrentUser::upgrade_hack && $olduser ) {
     $dbh = &myconnect($olduser);
   } else {
     $dbh = &myconnect();
   }
+  warn "$me forksuidsetup connected to database with handle $dbh\n" if $DEBUG;
 
+  warn "$me forksuidsetup loading schema\n" if $DEBUG;
   use FS::Schema qw(reload_dbdef);
   reload_dbdef("$conf_dir/dbdef.$datasrc")
     unless $FS::Schema::setup_hack;
 
-  FS::CurrentUser->load_user($user);
+  warn "$me forksuidsetup deciding upon config system to use\n" if $DEBUG;
 
-  if ($dbh && ! $callback_hack) {
-    my $sth = $dbh->prepare("SELECT COUNT(*) FROM conf") or die $dbh->errstr;
-    $sth->execute or die $sth->errstr;
-    my $confcount = $sth->fetchrow_arrayref->[0];
+  my $sth = $dbh->prepare("SELECT COUNT(*) FROM conf") or die $dbh->errstr;
+  $sth->execute or die $sth->errstr;
+  my $confcount = $sth->fetchrow_arrayref->[0];
 
-    if ($confcount) {
-      $use_confcompat = 0;
-    }else{
-      warn "NO CONFIGURATION RECORDS FOUND";
-    }
+  if ($confcount) {
+    $use_confcompat = 0;
+  }else{
+    warn "NO CONFIGURATION RECORDS FOUND";
   }
 
-  unless($callback_hack) {
+  unless ( $callback_hack ) {
+    warn "$me calling callbacks\n" if $DEBUG;
     foreach ( keys %callback ) {
       &{$callback{$_}};
       # breaks multi-database installs # delete $callback{$_}; #run once
     }
 
     &{$_} foreach @callback;
+  } else {
+    warn "$me skipping callbacks (callback_hack set)\n" if $DEBUG;
   }
+
+  warn "$me forksuidsetup loading user\n" if $DEBUG;
+  FS::CurrentUser->load_user($user);
 
   $dbh;
 }
