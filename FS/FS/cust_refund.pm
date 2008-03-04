@@ -235,10 +235,13 @@ returns the error, otherwise returns false.  Called by the insert method.
 sub check {
   my $self = shift;
 
+  $self->otaker(getotaker) unless ($self->otaker);
+
   my $error =
     $self->ut_numbern('refundnum')
     || $self->ut_numbern('custnum')
     || $self->ut_money('refund')
+    || $self->ut_alpha('otaker')
     || $self->ut_text('reason')
     || $self->ut_numbern('_date')
     || $self->ut_textn('paybatch')
@@ -256,8 +259,6 @@ sub check {
 
   $error = $self->payinfo_check;
   return $error if $error;
-
-  $self->otaker(getotaker);
 
   $self->SUPER::check;
 }
