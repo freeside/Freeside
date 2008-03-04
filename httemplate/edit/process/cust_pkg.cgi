@@ -30,9 +30,9 @@ my @remove_pkgnums = map {
 
 my $curuser = $FS::CurrentUser::CurrentUser;
 
-my( $action, $error_redirect );
+my( $action, $error_redirect ) = ( '', '' );
 my @pkgparts = ();
-if ( $cgi->param('new_pkgpart') =~ /^(\d+)$/ ) { #came from misc/change_pkg.cgi
+if ( $cgi->param('action') eq 'change' ) { #came from misc/change_pkg.cgi
 
   $action = 'change';
   $error_redirect = "misc/change_pkg.cgi";
@@ -41,7 +41,7 @@ if ( $cgi->param('new_pkgpart') =~ /^(\d+)$/ ) { #came from misc/change_pkg.cgi
   die "access denied"
     unless $curuser->access_right('Change customer package');
 
-} else { #came from edit/cust_pkg.cgi
+} elsif ( $cgi->param('action') eq 'bulk' ) { #came from edit/cust_pkg.cgi
 
   $action = 'bulk';
   $error_redirect = "edit/cust_pkg.cgi";
@@ -61,6 +61,8 @@ if ( $cgi->param('new_pkgpart') =~ /^(\d+)$/ ) { #came from misc/change_pkg.cgi
     }
   }
 
+} else {
+  die "guru exception #5: action is neither change nor bulk!";
 }
 
 $error ||= FS::cust_pkg::order($custnum,\@pkgparts,\@remove_pkgnums);

@@ -3,15 +3,12 @@
 <% include('/elements/error.html') %>
 
 <FORM ACTION="<% $p1 %>process/cust_pkg.cgi" METHOD=POST>
-
+<INPUT TYPE="hidden" NAME="action" VALUE="bulk">
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
-%
+
 %#current packages
 %my @cust_pkg = qsearch('cust_pkg', { 'custnum' => $custnum, 'cancel' => '' } );
-%
 %if (@cust_pkg) {
-%
-
 
   Current packages - select to remove (services are moved to a new package below)
   <TABLE>
@@ -151,4 +148,3 @@ if ( $cgi->param('error') ) {
 my $p1 = popurl(1);
 
 </%init>
-

@@ -3,6 +3,7 @@
 <% include('/elements/error.html') %>
 
 <FORM ACTION="<% $p %>edit/process/cust_pkg.cgi" METHOD=POST>
+<INPUT TYPE="hidden" NAME="action" VALUE="change">
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
 <INPUT TYPE="hidden" NAME="remove_pkg" VALUE="<% $pkgnum %>">
 
