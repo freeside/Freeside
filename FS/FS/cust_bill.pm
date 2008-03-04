@@ -1677,6 +1677,7 @@ sub print_generic {
                        s/\\\\\*/<br>/g;
                        s/\\dollar ?/\$/g;
                        s/\\#/#/g;
+                       s/~/&nbsp;/g;
                        $_;
                      }  @_
                    },
