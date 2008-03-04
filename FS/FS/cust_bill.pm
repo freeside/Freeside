@@ -1674,7 +1674,7 @@ sub print_generic {
                        s/\\item /  <li>/g;
                        s/\\end\{enumerate\}/<\/ol>/g;
                        s/\\textbf\{(.*)\}/<b>$1<\/b>/g;
-                       s/\\\\\*/ /;
+                       s/\\\\\*/<br>/g;
                        s/\\dollar ?/\$/g;
                        $_;
                      }  @_
