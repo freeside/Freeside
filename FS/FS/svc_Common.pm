@@ -708,6 +708,19 @@ sub unsuspend {
   $self->export('unsuspend', @$export_args);
 }
 
+=item export_links
+
+Runs export_links callbacks and returns the links.
+
+=cut
+
+sub export_links {
+  my $self = shift;
+  my $return = [];
+  $self->export('links', $return);
+  $return;
+}
+
 =item export HOOK [ EXPORT_ARGS ]
 
 Runs the provided export hook (i.e. "suspend", "unsuspend") for this service.

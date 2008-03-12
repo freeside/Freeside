@@ -463,6 +463,14 @@ sub _export_unsuspend {
   '';
 }
 
+sub export_links {
+  my( $self, $svc, $arrayref ) = ( shift, shift, shift );
+
+  push @$arrayref, '<A HREF="http://'. $svc->ip_addr. '">SM</A>';
+
+  '';
+}
+
 sub queue_statuschange {
   my( $self, $method, $jobs, $svc, @args ) = @_;
 

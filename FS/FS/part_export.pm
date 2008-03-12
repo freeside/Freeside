@@ -359,6 +359,14 @@ sub _export_unsuspend {
   $self->_export_replace( $svc_x, $old );
 }
 
+=item export_links SVC_OBJECT ARRAYREF
+
+Adds a list of web elements to ARRAYREF specific to this export and SVC_OBJECT.
+The elements are displayed in the UI to lead the the operator to external
+configuration, monitoring, and similar tools.
+
+=cut
+
 =back
 
 =head1 SUBROUTINES

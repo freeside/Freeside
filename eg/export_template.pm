@@ -56,7 +56,7 @@ sub _export_delete {
   ref($err_or_queue) ? '' : $err_or_queue;
 }
 
-#these two are optional
+#these three are optional
 # fallback for svc_acct will change and restore password
 sub _export_suspend {
   my( $self, $svc_something ) = (shift, shift);
@@ -70,6 +70,13 @@ sub _export_unsuspend {
   $err_or_queue = $self->myexport_queue( $svc_something->svcnum,
     'unsuspend', $svc_something->username );
   ref($err_or_queue) ? '' : $err_or_queue;
+}
+
+sub export_links {
+  my($self, $svc_something, $arrayref) = (shift, shift, shift);
+  #push @$arrayref, qq!<A HREF="http://example.com/~!. $svc_something->username.
+  #                 qq!">!. $svc_something->username. qq!</A>!;
+  '';
 }
 
 ###

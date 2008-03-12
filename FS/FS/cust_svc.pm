@@ -392,6 +392,20 @@ sub _svc_label {
 
 }
 
+=item export_links
+
+Returns a list of html elements associated with this services exports.
+
+=cut
+
+sub export_links {
+  my $self = shift;
+  my $svc_x = $self->svc_x
+    or return "can't find ". $self->part_svc->svcdb. '.svcnum '. $self->svcnum;
+
+  $svc_x->export_links;
+}
+
 =item svc_x
 
 Returns the FS::svc_XXX object for this service (i.e. an FS::svc_acct object or

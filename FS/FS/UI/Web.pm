@@ -149,6 +149,14 @@ sub svc_X_link {
   "$ahref$x</A>";
 }
 
+sub svc_export_links {
+  my ($m, $part_svc, $cust_svc) = @_ or return '';
+
+  my $ahref = $cust_svc->export_links;
+
+  join('', @$ahref);
+}
+
 sub parse_lt_gt {
   my($cgi, $field) = @_;
 

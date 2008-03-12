@@ -299,10 +299,11 @@ Current packages
       <TR>
         <TD ALIGN="right" VALIGN="top"><% FS::UI::Web::svc_link($m, $part_svc, $cust_svc) %></TD>
         <TD STYLE="padding-bottom:0px"><B><% FS::UI::Web::svc_label_link($m, $part_svc, $cust_svc) %></B></TD>
+        <TD><% FS::UI::Web::svc_export_links($m, $part_svc, $cust_svc) %></TD>
       </TR>
 
       <TR>
-        <TD ALIGN="right" COLSPAN="2" VALIGN="top" STYLE="padding-bottom:1px;padding-top:0px"><FONT SIZE="-2" COLOR="#FFD000">
+        <TD ALIGN="right" COLSPAN="3" VALIGN="top" STYLE="padding-bottom:1px;padding-top:0px"><FONT SIZE="-2" COLOR="#FFD000">
 
             <% $cust_svc->overlimit ? "Overlimit: ". time2str('%b %o %Y' . ($conf->exists('cust_pkg-display_times') ? ' %l:%M %P' : ''), $cust_svc->overlimit) : '' %>
           </FONT></TD>
@@ -338,7 +339,7 @@ Current packages
 %      ) {
 
       <TR>
-        <TD COLSPAN=2 ALIGN="center" STYLE="padding-bottom:4px;padding-top:0px">
+        <TD COLSPAN=3 ALIGN="center" STYLE="padding-bottom:4px;padding-top:0px">
           <B><% svc_provision_link($cust_pkg, $part_svc, $conf, $curuser) %></B>
         </TD>
       </TR>
