@@ -687,6 +687,7 @@ sub _upgrade_data {  #class method
 
   my $count = 0;
   my $lastprog = 0;
+  my %seen = ();
   while (1) {
 
     my $cust_pay = qsearchs( {
@@ -698,6 +699,8 @@ sub _upgrade_data {  #class method
 
     return unless $cust_pay;
 
+    next if $seen{$cust_pay->paynum}++;
+
     my $h_cust_pay = $cust_pay->h_search('insert');
     if ( $h_cust_pay ) {
       $cust_pay->otaker($h_cust_pay->history_user);
@@ -708,13 +711,11 @@ sub _upgrade_data {  #class method
     delete $FS::payby::hash{'COMP'}->{cust_pay}; #quelle kludge
     my $error = $cust_pay->replace;
 
-    #infinite...
-    #if ( $error ) {
-    #  warn " *** WARNING: Error updaating order taker for payment paynum".
-    #       $cust_pay->paynun. ": $error\n";
-    #  next;
-    #}
-    die $error if $error;
+    if ( $error ) {
+      warn " *** WARNING: Error updaating order taker for payment paynum".
+           $cust_pay->paynun. ": $error\n";
+      next;
+    }
 
     $FS::payby::hash{'COMP'}->{cust_pay} = ''; #restore it
 
