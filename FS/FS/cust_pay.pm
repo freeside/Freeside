@@ -687,19 +687,15 @@ sub _upgrade_data {  #class method
 
   my $count = 0;
   my $lastprog = 0;
-  my %seen = ();
-  while (1) {
 
-    my $cust_pay = qsearchs( {
+  my @cust_pay = qsearch( {
       'table'     => 'cust_pay',
       'hashref'   => {},
       'extra_sql' => $where,
-      'order_by'  => 'ORDER BY paynum LIMIT 1',
-    } );
+      'order_by'  => 'ORDER BY paynum',
+  } );
 
-    return unless $cust_pay;
-
-    next if $seen{$cust_pay->paynum}++;
+  foreach my $cust_pay (@cust_pay) {
 
     my $h_cust_pay = $cust_pay->h_search('insert');
     if ( $h_cust_pay ) {
