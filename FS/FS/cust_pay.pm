@@ -673,7 +673,9 @@ sub _upgrade_data {  #class method
 
   #not the most efficient, but hey, it only has to run once
 
-  my $where = "WHERE otaker IS NULL OR otaker = '' OR otaker = 'ivan' ";
+  my $where = "WHERE ( otaker IS NULL OR otaker = '' OR otaker = 'ivan' ) ".
+              "  AND 0 < ( SELECT COUNT(*) FROM cust_main                 ".
+              "              WHERE cust_main.custnum = cust_pay.custnum ) ";
 
   my $count_sql = "SELECT COUNT(*) FROM cust_pay $where";
 
@@ -705,7 +707,15 @@ sub _upgrade_data {  #class method
 
     delete $FS::payby::hash{'COMP'}->{cust_pay}; #quelle kludge
     my $error = $cust_pay->replace;
+
+    #infinite...
+    #if ( $error ) {
+    #  warn " *** WARNING: Error updaating order taker for payment paynum".
+    #       $cust_pay->paynun. ": $error\n";
+    #  next;
+    #}
     die $error if $error;
+
     $FS::payby::hash{'COMP'}->{cust_pay} = ''; #restore it
 
     $count++;
