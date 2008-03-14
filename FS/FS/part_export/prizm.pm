@@ -88,7 +88,7 @@ EOT
 sub prizm_command {
   my ($self,$namespace,$method) = (shift,shift,shift);
 
-  eval "use Net::Prizm qw(CustomerInfo PrizmElement);";
+  eval "use Net::Prizm 0.04 qw(CustomerInfo PrizmElement);";
   die $@ if $@;
 
   my $prizm = new Net::Prizm (
@@ -104,7 +104,7 @@ sub prizm_command {
 sub queued_prizm_command {  # subroutine
   my( $url, $user, $password, $namespace, $method, @args ) = @_;
 
-  eval "use Net::Prizm qw(CustomerInfo PrizmElement);";
+  eval "use Net::Prizm 0.04 qw(CustomerInfo PrizmElement);";
   die $@ if $@;
 
   my $prizm = new Net::Prizm (
@@ -500,7 +500,7 @@ sub queue_statuschange {
 sub statuschange {  # subroutine
   my( $url, $user, $password, $method, $mac_addr, @args) = @_;
 
-  eval "use Net::Prizm qw(CustomerInfo PrizmElement);";
+  eval "use Net::Prizm 0.04 qw(CustomerInfo PrizmElement);";
   die $@ if $@;
 
   my $prizm = new Net::Prizm (
