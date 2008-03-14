@@ -228,6 +228,21 @@ sub credits {
   );
 }
 
+sub netcredits {
+  my( $self, $speriod, $eperiod, $agentnum ) = @_;
+  $self->scalar_sql("
+    SELECT SUM(cust_credit_bill.amount)
+      FROM cust_credit_bill
+        LEFT JOIN cust_bill USING ( invnum  )
+        LEFT JOIN cust_main USING ( custnum )
+      WHERE ". $self->in_time_period_and_agent( $speriod,
+                                                $eperiod,
+                                                $agentnum,
+                                                'cust_bill._date'
+                                              )
+  );
+}
+
 #these should be auto-generated or $AUTOLOADed or something
 sub invoiced_12mo {
   my( $self, $speriod, $eperiod, $agentnum ) = @_;

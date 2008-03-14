@@ -25,25 +25,27 @@ if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
 
 my $agentname = $agent ? $agent->agent.' ' : '';
 
-my @items = qw( invoiced netsales credits payments receipts );
+my @items = qw( invoiced netsales credits netcredits payments receipts );
 if ( $cgi->param('12mo') == 1 ) {
   @items = map $_.'_12mo', @items;
 }
 
 my %label = (
-  'invoiced' => 'Gross Sales',
-  'netsales' => 'Net Sales',
-  'credits'  => 'Credits',
-  'payments' => 'Gross Receipts',
-  'receipts' => 'Net Receipts',
+  'invoiced'   => 'Gross Sales',
+  'netsales'   => 'Net Sales',
+  'credits'    => 'Gross Credits',
+  'netcredits' => 'Net Credits',
+  'payments'   => 'Gross Receipts',
+  'receipts'   => 'Net Receipts',
 );
 
 my %graph_suffix = (
- 'invoiced' => ' (invoiced)', 
- 'netsales' => ' (invoiced - applied credits)',
- 'credits'  => '',
- 'payments' => ' (payments)',
- 'receipts' => '/Cashflow (payments - refunds)',
+ 'invoiced'   => ' (invoiced)', 
+ 'netsales'   => ' (invoiced - applied credits)',
+ 'credits'    => ' (credited)',
+ 'netcredits' => ' (applied credits)',
+ 'payments'   => ' (payments)',
+ 'receipts'   => '/Cashflow (payments - refunds)',
 );
 my %graph_label = map { $_ => $label{$_}.$graph_suffix{$_} } keys %label;
 
@@ -54,20 +56,22 @@ $graph_label{$_.'_12mo'} = $graph_label{$_}. " (previous 12 months)"
   foreach keys %graph_label;
 
 my %color = (
-  'invoiced' => '9999ff', #light blue
-  'netsales' => '0000cc', #blue
-  'credits'  => 'cc0000', #red
-  'payments' => '99cc99', #light green
-  'receipts' => '00cc00', #green
+  'invoiced'   => '9999ff', #light blue
+  'netsales'   => '0000cc', #blue
+  'credits'    => 'ff9999', #light red
+  'netcredits' => 'cc0000', #red
+  'payments'   => '99cc99', #light green
+  'receipts'   => '00cc00', #green
 );
 $color{$_.'_12mo'} = $color{$_}
   foreach keys %color;
 
 my %link = (
-  'invoiced' => "${p}search/cust_bill.html?agentnum=$agentnum;",
-  'netsales' => "${p}search/cust_bill.html?agentnum=$agentnum;net=1;",
-  'credits'  => "${p}search/cust_credit.html?agentnum=$agentnum;",
-  'payments' => "${p}search/cust_pay.cgi?magic=_date;agentnum=$agentnum;",
+  'invoiced'   => "${p}search/cust_bill.html?agentnum=$agentnum;",
+  'netsales'   => "${p}search/cust_bill.html?agentnum=$agentnum;net=1;",
+  'credits'    => "${p}search/cust_credit.html?agentnum=$agentnum;",
+  'netcredits' => "${p}search/cust_credit_bill.html?agentnum=$agentnum;",
+  'payments'   => "${p}search/cust_pay.cgi?magic=_date;agentnum=$agentnum;",
 );
 # XXX link 12mo?
 

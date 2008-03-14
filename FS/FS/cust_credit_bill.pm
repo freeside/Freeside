@@ -4,11 +4,12 @@ use strict;
 use vars qw( @ISA $conf );
 use FS::UID qw( getotaker );
 use FS::Record qw( qsearch qsearchs );
+use FS::cust_main_Mixin;
 use FS::cust_bill_ApplicationCommon;
 use FS::cust_bill;
 use FS::cust_credit;
 
-@ISA = qw( FS::cust_bill_ApplicationCommon );
+@ISA = qw( FS::cust_main_Mixin FS::cust_bill_ApplicationCommon );
 
 #ask FS::UID to run this stuff for us later
 FS::UID->install_callback( sub { 
