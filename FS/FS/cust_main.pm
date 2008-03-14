@@ -3169,7 +3169,7 @@ sub realtime_bop {
     'gatewaynum' => ( $payment_gateway ? $payment_gateway->gatewaynum : '' ),
   };
   $cust_pay_pending->payunique( $options{payunique} )
-    if length($options{payunique});
+    if defined($options{payunique}) && length($options{payunique});
   my $cpp_new_err = $cust_pay_pending->insert; #mutex lost when this is inserted
   return $cpp_new_err if $cpp_new_err;
 
@@ -3322,7 +3322,8 @@ sub realtime_bop {
        'paydate'  => $paydate,
     } );
     #doesn't hurt to know, even though the dup check is in cust_pay_pending now
-    $cust_pay->payunique( $options{payunique} ) if length($options{payunique});
+    $cust_pay->payunique( $options{payunique} )
+      if defined($options{payunique}) && length($options{payunique});
 
     my $oldAutoCommit = $FS::UID::AutoCommit;
     local $FS::UID::AutoCommit = 0;
