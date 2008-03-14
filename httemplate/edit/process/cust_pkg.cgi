@@ -36,10 +36,15 @@ if ( $cgi->param('action') eq 'change' ) { #came from misc/change_pkg.cgi
 
   $action = 'change';
   $error_redirect = "misc/change_pkg.cgi";
-  @pkgparts = ($1);
 
   die "access denied"
     unless $curuser->access_right('Change customer package');
+
+  if ( $cgi->param('new_pkgpart') =~ /^(\d+)$/ ) {
+    @pkgparts = ($1);
+  } else {
+    $error = 'Select a new package';
+  }
 
 } elsif ( $cgi->param('action') eq 'bulk' ) { #came from edit/cust_pkg.cgi
 
