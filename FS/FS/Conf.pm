@@ -1,6 +1,7 @@
 package FS::Conf;
 
 use vars qw($base_dir @config_items @base_items @card_types $DEBUG);
+use Carp;
 use IO::File;
 use File::Basename;
 use MIME::Base64;
@@ -84,7 +85,7 @@ global default if one is present.
 
 sub _usecompat {
   my ($self, $method) = (shift, shift);
-  warn "NO CONFIGURATION RECORDS FOUND -- USING COMPATIBILITY MODE"
+  carp "NO CONFIGURATION RECORDS FOUND -- USING COMPATIBILITY MODE"
     if use_confcompat;
   my $compat = new FS::Conf_compat17 ("$base_dir/conf." . datasrc);
   $compat->$method(@_);
