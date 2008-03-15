@@ -53,6 +53,22 @@ tie my %rating_method, 'Tie::IxHash',
                           'default' => '+1',
                         },
 
+    'disable_src' => { 'name' => 'Disable rating of CDR records based on the "src" field in addition to "charged_party"',
+                       'type' => 'checkbox'
+                     },
+
+    'domestic_prefix' => { 'name'    => 'Destination prefix for domestic CDR records',
+                           'default' => '1',
+                         },
+
+#    'domestic_prefix_required' => { 'name' => 'Require explicit destination prefix for domestic CDR records',
+#                                    'type' => 'checkbox',
+#                                  },
+
+    'international_prefix' => { 'name'    => 'Destination prefix for international CDR records',
+                                'default' => '011',
+                              },
+
     #XXX also have option for an external db??
 #    'cdr_location' => { 'name' => 'CDR database location'
 #                        'type' => 'select',
@@ -144,10 +160,12 @@ sub calc_recur {
 #        $dest =~ s/^(\w+):// and $proto = $1; #sip:
 #        my $siphost = '';
 #        $dest =~ s/\@(.*)$// and $siphost = $1; # @10.54.32.1, @sip.example.com
+
+        my $intl = $self->option('international_prefix') || '011';
   
         #determine the country code
         my $countrycode;
-        if (    $number =~ /^011(((\d)(\d))(\d))(\d+)$/
+        if (    $number =~ /^$intl(((\d)(\d))(\d))(\d+)$/
              || $number =~ /^\+(((\d)(\d))(\d))(\d+)$/
            )
         {
@@ -166,8 +184,8 @@ sub calc_recur {
           }
   
         } else {
-          $countrycode = '1';
-          $number =~ s/^1//;# if length($number) > 10;
+          $countrycode = $self->option('domestic_prefix') || '1';
+          $number =~ s/^$countrycode//;# if length($number) > 10;
         }
   
         warn "rating call $to_or_from +$countrycode $number\n" if $DEBUG;
