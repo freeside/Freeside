@@ -26,7 +26,7 @@ tie my %rating_method, 'Tie::IxHash',
 #;
 
 %info = (
-  'name' => 'VoIP rating by plan of CDR records in an internal (or external?) SQL table',
+  'name' => 'VoIP rating by plan of CDR records in an internal (or external) SQL table',
   'fields' => {
     'setup_fee'     => { 'name' => 'Setup fee for this package',
                          'default' => 0,
@@ -69,7 +69,7 @@ tie my %rating_method, 'Tie::IxHash',
                                 'default' => '011',
                               },
 
-    #XXX also have option for an external db??
+    #XXX also have option for an external db
 #    'cdr_location' => { 'name' => 'CDR database location'
 #                        'type' => 'select',
 #                        'select_options' => \%cdr_location,
