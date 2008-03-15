@@ -159,7 +159,8 @@ if ( $cgi->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/ ) {
                      FS::cust_bill->owed_sql. ' AS owed',
                      FS::cust_bill->net_sql.  ' AS net',
                    ),
-    'extra_sql' => "$extra_sql $orderby"
+    'extra_sql' => $extra_sql,
+    'order_by'  => $orderby,
   };
 
 }

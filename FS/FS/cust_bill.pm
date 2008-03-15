@@ -2645,7 +2645,7 @@ use Data::Dumper;
 use MIME::Base64;
 sub process_re_X {
   my( $method, $job ) = ( shift, shift );
-  warn "process_re_X $method for job $job\n" if $DEBUG;
+  warn "$me process_re_X $method for job $job\n" if $DEBUG;
 
   my $param = thaw(decode_base64(shift));
   warn Dumper($param) if $DEBUG;
@@ -2671,16 +2671,20 @@ sub re_X {
 
   my $extra_sql = ' WHERE '. FS::cust_bill->search_sql(\%param);
 
-  my $addl_from = 'left join cust_main using ( custnum )';
+  my $addl_from = 'LEFT JOIN cust_main USING ( custnum )';
      
-  my @cust_bill = qsearch( 'cust_bill',
-                           {},
-                           #"$distinct cust_bill.*",
-                           "cust_bill.*",
-                           $extra_sql,
-                           '',
-                           $addl_from
-                         );
+  my @cust_bill = qsearch( {
+    #'select'    => "cust_bill.*",
+    'table'     => 'cust_bill',
+    'addl_from' => $addl_from,
+    'hashref'   => {},
+    'extra_sql' => $extra_sql,
+    'order_by'  => $orderby,
+    'debug' => 1,
+  } );
+
+  warn " $me re_X $method: ". scalar(@cust_bill). " invoices found\n"
+    if $DEBUG;
 
   my( $num, $last, $min_sec ) = (0, time, 5); #progresbar foo
   foreach my $cust_bill ( @cust_bill ) {
@@ -2790,6 +2794,11 @@ Note: validates all passed-in data; i.e. safe to use with unchecked CGI params.
 
 sub search_sql {
   my($class, $param) = @_;
+  if ( $DEBUG ) {
+    warn "$me search_sql called with params: \n".
+         join("\n", map { "  $_: ". $param->{$_} } keys %$param ). "\n";
+  }
+
   my @search = ();
 
   if ( $param->{'begin'} =~ /^(\d+)$/ ) {
@@ -2840,7 +2849,22 @@ sub search_sql {
 
   }
 
-  push @search, $FS::CurrentUser::CurrentUser->agentnums_sql;
+  my $curuser = $FS::CurrentUser::CurrentUser;
+  if ( $curuser->username eq 'fs_queue'
+       && $param->{'CurrentUser'} =~ /^(\w+)$/ ) {
+    my $username = $1;
+    my $newuser = qsearchs('access_user', {
+      'username' => $username,
+      'disabled' => '',
+    } );
+    if ( $newuser ) {
+      $curuser = $newuser;
+    } else {
+      warn "$me WARNING: (fs_queue) can't find CurrentUser $username\n";
+    }
+  }
+
+  push @search, $curuser->agentnums_sql;
 
   join(' AND ', @search );
 
