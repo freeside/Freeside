@@ -286,19 +286,25 @@ Line-item revenue recognition
 %
 %      my $format = sub { shift };
 %      $format = $href->{$field}{'format'} if exists($href->{$field}{'format'});
+%
 %      if ( ! exists($href->{$field}{'type'}) ) {
+%
 %        $html .= qq!<INPUT TYPE="text" NAME="$field" VALUE="!.
 %                 ( exists($plandata{$field})
 %                     ? &$format($plandata{$field})
 %                     : $href->{$field}{'default'} ).
 %                 qq!" onChange="fchanged(this)">!;
+%
 %      } elsif ( $href->{$field}{'type'} eq 'checkbox' ) {
+%
 %        $html .= qq!<INPUT TYPE="checkbox" NAME="$field" VALUE=1 !.
 %                 ( exists($plandata{$field}) && $plandata{$field}
 %                   ? ' CHECKED'
 %                   : ''
 %                 ). '>';
+%
 %      } elsif ( $href->{$field}{'type'} =~ /^select/ ) {
+%
 %        $html .= '<SELECT';
 %        $html .= ' MULTIPLE'
 %          if $href->{$field}{'type'} eq 'select_multiple';
@@ -319,13 +325,13 @@ Line-item revenue recognition
 %          }
 %        } elsif ( $href->{$field}{'select_options'} ) {
 %          foreach my $key ( keys %{ $href->{$field}{'select_options'} } ) {
-%            my $value = $href->{$field}{'select_options'}{$key};
+%            my $label = $href->{$field}{'select_options'}{$key};
 %            $html .= qq!<OPTION VALUE="$key"!.
-%                     ( $plandata{$field} =~ /(^|, *)$value *(,|$)/
+%                     ( $plandata{$field} =~ /(^|, *)$key *(,|$)/ #XXX fix
 %                         ? ' SELECTED'
 %                         : ''
 %                     ).
-%                     '>'. $value;
+%                     '>'. $label;
 %          }
 %
 %        } else {
@@ -334,6 +340,22 @@ Line-item revenue recognition
 %                   '</font>';
 %        }
 %        $html .= '</SELECT>';
+%
+%      } elsif ( $href->{$field}{'type'} eq 'radio' ) {
+%
+%        my $radio =
+%          qq!<INPUT TYPE="radio" NAME="$field" onChange="fchanged(this)"!;
+%
+%        foreach my $key ( keys %{ $href->{$field}{'options'} } ) {
+%          my $label = $href->{$field}{'options'}{$key};
+%          $html .= qq!$radio VALUE="$key"!.
+%                   ( $plandata{$field} =~ /(^|, *)$key *(,|$)/ #XXX fix
+%                       ? ' CHECKED'
+%                       : ''
+%                   ).
+%                   "> $label<BR>";
+%        }
+%
 %      }
 %
 %      $html .= '</TD></TR>';

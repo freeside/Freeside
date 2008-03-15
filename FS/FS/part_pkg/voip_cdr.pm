@@ -45,8 +45,8 @@ tie my %rating_method, 'Tie::IxHash',
                      'select_label' => 'ratename',
                    },
     'rating_method' => { 'name' => 'Region rating method',
-                         'type' => 'select',
-                         'select_options' => \%rating_method,
+                         'type' => 'radio',
+                         'options' => \%rating_method,
                        },
 
     'default_prefix' => { 'name'    => 'Default prefix optionally prepended to customer DID numbers when searching for CDR records',
@@ -93,7 +93,7 @@ tie my %rating_method, 'Tie::IxHash',
 #                  },
 
   },
-  'fieldorder' => [qw( setup_fee recur_flat unused_credit ratenum rating_method default_prefix )],
+  'fieldorder' => [qw( setup_fee recur_flat unused_credit ratenum rating_method default_prefix disable_src domestic_prefix international_prefix )],
   'weight' => 40,
 );
 
