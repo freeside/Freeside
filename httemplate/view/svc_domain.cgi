@@ -10,10 +10,9 @@
 Service #<% $svcnum %>
 <BR>Service: <B><% $part_svc->svc %></B>
 <BR>Domain name: <B><% $domain %></B>
-<BR>Catch all email 
 % if ( $FS::CurrentUser::CurrentUser->access_right('Edit domain catchall') ) {
-    <BR>Catch all email<A HREF="<% ${p} %>misc/catchall.cgi?<% $svcnum %>">(change)</A>:
-} else {
+    <BR>Catch all email <A HREF="<% ${p} %>misc/catchall.cgi?<% $svcnum %>">(change)</A>:
+% } else {
     <BR>Catch all email:
 % }
 

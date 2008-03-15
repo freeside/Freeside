@@ -4,10 +4,9 @@
 
 <FORM ACTION="<%$p1%>process/catchall.cgi" METHOD=POST>
 
-<PRE>
-
 <INPUT TYPE="hidden" NAME="svcnum" VALUE="<% $svcnum |h %>">
 Service #<FONT SIZE=+1><B><% $svcnum ? $svcnum : ' (NEW)' |h %></B></FONT>
+<BR><BR>
 
 <INPUT TYPE="hidden" NAME="pkgnum" VALUE="<% $pkgnum |h %>">
 
@@ -23,8 +22,7 @@ Mail to <I>(anything)</I>@<B><% $domain |h %></B> forwards to <SELECT NAME="catc
     <OPTION<% $_ eq $catchall ? ' SELECTED' : '' %> VALUE="<% $_ %>"><% $email{$_} %>
 % }
 </SELECT>
-
-</PRE>
+<BR><BR>
 
 <INPUT TYPE="submit" VALUE="Submit">
 
