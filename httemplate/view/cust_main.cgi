@@ -20,7 +20,15 @@ function areyousure(href, message) {
 %        && $cust_main->ncancelled_pkgs
 %      ) {
 
-  <% cust_cancel_link($cust_main) %> | 
+  <% include( '/elements/popup_link-cust_main.html',
+              { 'action'      => $p. 'misc/cancel_cust.html',
+                'label'       => 'Cancel&nbsp;this&nbsp;customer',
+                'actionlabel' => 'Confirm Cancellation',
+                'color'       => '#ff0000',
+                'cust_main'   => $cust_main,
+              }
+            )
+  %> | 
 
 % } 
 
@@ -155,33 +163,3 @@ my $cust_main = qsearchs( {
 die "Customer not found!" unless $cust_main;
 
 </%init>
-<%once>
-
-
-sub cust_cancel_link { cust_popup_link( 'misc/cancel_cust.html',
-                                        'Cancel&nbsp;this&nbsp;customer',
-                                        'Confirm Cancellation',
-                                        '#ff0000',
-                                        @_,
-                                      );
-}
-
-#false laziness w/view/cust_main/packages.html
-
-sub cust_popup_link {
-  my($action, $label, $actionlabel, $color, $cust_main) = @_;
-  $action .= '?'. $cust_main->custnum;
-  popup_link($action, $label, $actionlabel, $color);
-}
-
-sub popup_link {
-  my($action, $label, $actionlabel, $color) = @_;
-  $color ||= '#333399';
-  qq!<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('$p$action', 540, 336, 'pkg_or_svc_action_popup' ), CAPTION, '$actionlabel', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '$color', CGCOLOR, '$color', CLOSETEXT, '' ); return false;">$label</A>!;
-
-# CLOSETEXT, '', 
-#WIDTH, 576, HEIGHT, 128, TEXTSIZE, 3,
-#BGCOLOR, '#ff0000', CGCOLOR, '#ff0000'
-}
-
-</%once>

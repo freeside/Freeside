@@ -1,0 +1,56 @@
+<%doc>
+
+Example:
+
+  <SCRIPT TYPE="text/javascript" SRC="overlibmws.js"></SCRIPT>
+  <SCRIPT TYPE="text/javascript" SRC="iframecontentmws.js"></SCRIPT>
+
+  include( '/elements/cust_popup_link.html', {
+
+    #required
+    'action'         => 'content.html', # uri for content of popup which should
+                                        #   be suitable for appending keywords
+    'label'          => 'click me',     # text of <A> tag
+    'cust_main'      => $cust_main      # a FS::cust_main object
+   
+    #strongly recommended (you want a title, right?)
+    'actionlabel     => 'You clicked',  # popup title
+   
+    #opt
+    'width'          => '540',
+    'color'          => '#ff0000',
+    'closetext'      => 'Go Away',      # the value '' removes the link
+  )
+
+</%doc>
+<%init>
+my($params, $action, $label, $actionlabel, $color, $cust_main, $width);
+my $closetext = '';
+if (ref(@_[0]) eq 'HASH') {
+  $params = shift;
+  foreach (qw(action label actionlabel width color)) {
+    $action      = $params->{'action'}      if exists $params->{'action'};
+    $label       = $params->{'label'}       if exists $params->{'label'};
+    $actionlabel = $params->{'actionlabel'} if exists $params->{'actionlabel'};
+    $width       = $params->{'width'}       if exists $params->{'width'};
+    $color       = $params->{'color'}       if exists $params->{'color'};
+    $closetext   = $params->{'closetext'}   if exists $params->{'closetext'};
+    $cust_main   = $params->{'cust_main'}   if exists $params->{'cust_main'};
+  }
+}else{  # deprecated
+  ($action, $label, $actionlabel, $color, $cust_main) = @_;
+}
+
+$action .= '?'. $cust_main->custnum;
+
+</%init>
+<% $cust_main 
+   ? include('/elements/popup_link.html', { 'action'       => $action,
+                                            'label'        => $label,
+                                            'actionlabel'  => $actionlabel,
+                                            'color'        => $color,
+                                            'closetext'    => $closetext,
+                                          }
+            )
+   : ''
+%>

@@ -1,0 +1,47 @@
+<%doc>
+
+Example:
+
+  <SCRIPT TYPE="text/javascript" SRC="overlibmws.js"></SCRIPT>
+  <SCRIPT TYPE="text/javascript" SRC="iframecontentmws.js"></SCRIPT>
+
+  include( '/elements/popup_link.html', {
+
+    #required
+    'action'         => 'content.html', # uri for content of popup
+    'label'          => 'click me',     # text of <A> tag
+   
+    #strongly recommended
+    'actionlabel     => 'You clicked',  # popup title
+   
+    #opt
+    'width'          => '540',
+    'color'          => '#ff0000',
+    'closetext'      => 'Go Away',      # the value '' removes the link
+  )
+
+</%doc>
+<%init>
+my($params, $action, $label, $actionlabel, $width, $color);
+my $closetext = 'Close';
+if (ref(@_[0]) eq 'HASH') {
+  $params = shift;
+  foreach (qw(action label actionlabel width color)) {
+    $action      = $params->{'action'}      if exists $params->{'action'};
+    $label       = $params->{'label'}       if exists $params->{'label'};
+    $actionlabel = $params->{'actionlabel'} if exists $params->{'actionlabel'};
+    $width       = $params->{'width'}       if exists $params->{'width'};
+    $color       = $params->{'color'}       if exists $params->{'color'};
+    $closetext   = $params->{'closetext'}   if exists $params->{'closetext'};
+  }
+}else{  # deprecated
+  ($action, $label, $actionlabel, $width) = @_;
+}
+
+$width ||= 540;
+$color ||= '#333399';
+
+</%init>
+%if ($action && $label) {
+<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('<% "$action" %>', <% $width %>, 336, 'pkg_or_svc_action_popup' ), CAPTION, '<% $actionlabel %>', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '<% $color %>', CGCOLOR, '<% $color %>', CLOSETEXT, '<% $closetext %>' ); return false;"><% $label %></A>
+%}

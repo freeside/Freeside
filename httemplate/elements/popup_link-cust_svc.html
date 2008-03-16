@@ -1,0 +1,59 @@
+<%doc>
+
+Example:
+
+  <SCRIPT TYPE="text/javascript" SRC="overlibmws.js"></SCRIPT>
+  <SCRIPT TYPE="text/javascript" SRC="iframecontentmws.js"></SCRIPT>
+
+  include( '/elements/svc_popup_link.html', {
+
+    #required
+    'action'         => 'content.html', # uri for content of popup which should
+                                        # be suitable for appending '?svcnum='
+    'label'          => 'click me',     # text of <A> tag
+    'cust_svc'       => $cust_svc       # a FS::cust_svc object
+   
+    #strongly recommended (you want a title, right?)
+    'actionlabel     => 'You clicked',  # popup title
+   
+    #opt
+    'width'          => '540',
+    'color'          => '#ff0000',
+    'closetext'      => 'Go Away',      # the value '' removes the link
+  )
+
+</%doc>
+<%init>
+my($params, $action, $label, $actionlabel, $cust_svc, $color, $width);
+my $closetext = 'Close';
+if (ref(@_[0]) eq 'HASH') {
+  $params = shift;
+  foreach (qw(action label actionlabel width color)) {
+    $action      = $params->{'action'}      if exists $params->{'action'};
+    $label       = $params->{'label'}       if exists $params->{'label'};
+    $actionlabel = $params->{'actionlabel'} if exists $params->{'actionlabel'};
+    $width       = $params->{'width'}       if exists $params->{'width'};
+    $color       = $params->{'color'}       if exists $params->{'color'};
+    $closetext   = $params->{'closetext'}   if exists $params->{'closetext'};
+    $cust_svc    = $params->{'cust_svc'}    if exists $params->{'cust_svc'};
+  }
+}else{  # deprecated
+  ($action, $label, $actionlabel, $cust_svc) = @_;
+}
+
+$action .= '?svcnum='. $cust_svc->svcnum;
+$actionlabel .= ' service '. $cust_svc->svcnum;
+$width ||= 392;
+
+</%init>
+<% $cust_svc
+   ? include('/elements/popup_link.html', { 'action'       => $action,
+                                            'label'        => $label,
+                                            'actionlabel'  => $actionlabel,
+                                            'color'        => $color,
+                                            'width'        => $width,
+                                            'closetext'    => $closetext,
+                                          }
+            )
+   : ''
+%>

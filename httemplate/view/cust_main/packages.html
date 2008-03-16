@@ -11,7 +11,16 @@
 %      ) {
 %
   <% $s++ ? ' | ' : '' %>
-  <% popup_link('edit/quick-charge.html?custnum='. $cust_main->custnum, 'One-time charge', 'One-time charge', '#333399', 545) %>
+  <% include('/elements/popup_link.html',
+     { 
+       'action'      => $p. 'edit/quick-charge.html?custnum='. $cust_main->custnum,
+       'label'       => 'One-time charge',
+       'actionlabel' => 'One-time charge',
+       'color'       => '#333399',
+       'width'       => 545,
+     })
+  %>
+
 % } 
 % if ( $curuser->access_right('Bulk change customer packages') ) { 
   <% $s++ ? ' | ' : '' %>
@@ -434,9 +443,6 @@ sub pkg_status_row_colspan {
 
 }
 
-</%init>
-<%once>
-
 #subroutines
 
 sub get_packages {
@@ -516,64 +522,77 @@ sub pkg_datestr {
   $strip;
 }
 
-sub pkg_change_link    { pkg_popup_link('misc/change_pkg.cgi?dummy=value',
-                                          'Change&nbsp;package',
-                                          'Change',
-                                          '',
-                                          @_
-                                       );
-                       }
+sub pkg_change_link { include( '/elements/popup_link-cust_pkg.html',
+                               { 'action'      => $p. 'misc/change_pkg.cgi?dummy=value',
+                                 'label'       => 'Change&nbsp;package',
+                                 'actionlabel' => 'Change',
+                                 'cust_pkg'    => shift,
+                               }
+                             )
+                     }
 
-sub pkg_suspend_link   { pkg_popup_link( 'misc/cancel_pkg.html?method=suspend',
-                                         'Suspend&nbsp;now',
-                                         'Suspend',
-                                         '#FF9900',
-                                         @_
-                                       );
-                       }
+sub pkg_suspend_link { include( '/elements/popup_link-cust_pkg.html',
+                                { 'action'      => $p. 'misc/cancel_pkg.html?method=suspend',
+                                  'label'       => 'Suspend&nbsp;now',
+                                  'actionlabel' => 'Suspend',
+                                  'color'       => '#FF9900',
+                                  'cust_pkg'    => shift,
+                                }
+                              )
+                     }
 
-sub pkg_adjourn_link   { pkg_popup_link( 'misc/cancel_pkg.html?method=adjourn',
-                                         'Suspend&nbsp;later',
-                                         'Adjourn',
-                                         '#CC6600',
-                                         @_
-                                       );
-                       }
+
+sub pkg_adjourn_link { include( '/elements/popup_link-cust_pkg.html',
+                                { 'action'      => $p. 'misc/cancel_pkg.html?method=adjourn',
+                                  'label'       => 'Suspend&nbsp;later',
+                                  'actionlabel' => 'Adjourn',
+                                  'color'       => '#CC6600',
+                                  'cust_pkg'    => shift,
+                                }
+                              )
+                     }
 
 sub pkg_unsuspend_link { pkg_link('misc/unsusp_pkg',    'Unsuspend',           @_ ); }
-sub pkg_expire_link    { pkg_link('misc/expire_pkg',    'Cancel&nbsp;later',   @_ ); }
 sub pkg_dates_link     { pkg_link('edit/REAL_cust_pkg', 'Edit&nbsp;dates',     @_ ); }
 
-sub pkg_cancel_link    { pkg_popup_link( 'misc/cancel_pkg.html?method=cancel',
-                                         'Cancel&nbsp;now',
-                                         'Cancel',
-                                         '#ff0000',
-                                         @_
-                                       );
-                       }
+sub pkg_cancel_link { include( '/elements/popup_link-cust_pkg.html',
+                               { 'action'      => $p. 'misc/cancel_pkg.html?method=cancel',
+                                 'label'       => 'Cancel&nbsp;now',
+                                 'actionlabel' => 'Cancel',
+                                 'color'       => '#ff0000',
+                                 'cust_pkg'    => shift,
+                               }
+                             )
+                    }
 
-sub pkg_expire_link    { pkg_popup_link( 'misc/cancel_pkg.html?method=expire',
-                                         'Cancel&nbsp;later',
-                                         'Expire', #"Cancel package $num later"
-                                         '#CC0000',
-                                         @_
-                                       );
-                       }
+sub pkg_expire_link { include( '/elements/popup_link-cust_pkg.html',
+                               { 'action'      => $p. 'misc/cancel_pkg.html?method=expire',
+                                 'label'       => 'Cancel&nbsp;later',
+                                 'actionlabel' => 'Expire', #"Cancel package $num later"
+                                 'color'       => '#CC0000',
+                                 'cust_pkg'    => shift,
+                               }
+                             )
+                    }
 
-sub svc_recharge_link  { svc_popup_link( 'misc/recharge_svc.html',
-                                         'Recharge',
-                                         'Recharge',
-                                         '#333399',
-                                         @_
-                                       );
-                       }
+sub svc_recharge_link { include( '/elements/popup_link-cust_svc.html',
+                                 { 'action'      => $p. 'misc/recharge_svc.html',
+                                   'label'       => 'Recharge',
+                                   'actionlabel' => 'Recharge',
+                                   'color'       => '#333399',
+                                   'cust_svc'    => shift,
+                                 }
+                               )
+                      }
 
-sub order_pkg_link { cust_popup_link( 'misc/order_pkg.html',
-                                      'Order&nbsp;new&nbsp;package',
-                                      'Order new package',
-                                      '#333399',
-                                      @_
-                                    );
+sub order_pkg_link { include( '/elements/popup_link-cust_main.html',
+                              { 'action'      => $p. 'misc/order_pkg.html',
+                                'label'       => 'Order&nbsp;new&nbsp;package',
+                                'actionlabel' => 'Order new package',
+                                'color'       => '#333399',
+                                'cust_svc'    => shift,
+                              }
+                            )
                    }
 
 sub pkg_event_link {
@@ -589,33 +608,6 @@ sub pkg_link {
   qq!<a href="$p$action.cgi?!. $cust_pkg->pkgnum. qq!">$label</a>!;
 }
 
-sub pkg_popup_link {
-  my($action, $label, $actionlabel, $color, $cust_pkg) = @_;
-  $action .= '&pkgnum='. $cust_pkg->pkgnum;
-  $actionlabel .= ' package '. $cust_pkg->pkgnum;
-  popup_link($action, $label, $actionlabel, $color, 768);
-}
-
-sub svc_popup_link {
-  my($action, $label, $actionlabel, $color, $cust_svc) = @_;
-  $action .= '?svcnum='. $cust_svc->svcnum;
-  $actionlabel .= ' service '. $cust_svc->svcnum;
-  popup_link($action, $label, $actionlabel, $color);
-}
-
-sub cust_popup_link {
-  my($action, $label, $actionlabel, $color, $cust_main) = @_;
-  $action .= '?'. $cust_main->custnum;
-  popup_link($action, $label, $actionlabel, $color);
-}
-
-sub popup_link {
-  my($action, $label, $actionlabel, $color, $width) = @_;
-  $color ||= '#333399';
-  $width ||= 540;
-  qq!<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('$p$action', $width, 336, 'pkg_or_svc_action_popup' ), CAPTION, '$actionlabel', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '$color', CGCOLOR, '$color' ); return false;">$label</A>!;
-}
-
 sub pkg_customize_link {
   my $cust_pkg = shift or return '';
   my $custnum = $cust_pkg->custnum;
@@ -626,4 +618,4 @@ sub pkg_customize_link {
     qq!">Customize</A>!;
 }
 
-</%once>
+</%init>
