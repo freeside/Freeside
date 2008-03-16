@@ -108,25 +108,26 @@ sub forksuidsetup {
   warn "$me forksuidsetup connected to database with handle $dbh\n" if $DEBUG;
 
   warn "$me forksuidsetup loading schema\n" if $DEBUG;
-  use FS::Schema qw(reload_dbdef);
+  use FS::Schema qw(reload_dbdef dbdef);
   reload_dbdef("$conf_dir/dbdef.$datasrc")
     unless $FS::Schema::setup_hack;
 
   warn "$me forksuidsetup deciding upon config system to use\n" if $DEBUG;
 
-  my $confcount = 0;
+  if ( dbdef->table('conf') ) {
 
-  my $sth = $dbh->prepare("SELECT COUNT(*) FROM conf");
-  if ( $sth ) {
-    if ( $sth->execute ) {
-      $confcount = $sth->fetchrow_arrayref->[0];
+    my $sth = $dbh->prepare("SELECT COUNT(*) FROM conf") or die $dbh->errstr;
+    $sth->execute or die $sth->errstr;   
+    my $confcount = $sth->fetchrow_arrayref->[0];
+  
+    if ($confcount) {
+      $use_confcompat = 0;
+    }else{
+      warn "NO CONFIGURATION RECORDS FOUND";
     }
-  }
 
-  if ($confcount) {
-    $use_confcompat = 0;
-  }else{
-    warn "NO CONFIGURATION RECORDS FOUND";
+  } else {
+    warn "NO CONFIGURATION TABLE FOUND";
   }
 
   unless ( $callback_hack ) {
