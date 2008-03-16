@@ -279,6 +279,37 @@ class Login {
         $_SESSION['ari_error'] = _("Incorrect Username or Password");
       }
 
+      // freeside login
+      $freeside = new FreesideSelfService()
+      $domain = 'svc_phone';
+      $response = $freeside->login( array( 
+        'username' => strtolower($_username),
+        'domain'   => $domain,
+        'password' => strtolower($password),
+      ) );
+      error_log("[login] received response from freeside: $response");
+      $error = $response['error'];
+
+      if ( ! $error ) {
+
+          // sucessful freeside login
+          error_log("[login] logged into freeside with session_id=$session_id");
+      
+          // store session id in your session store, to be used for other calls
+          //$fs_session_id = $response['session_id'];
+          $_SESSION['fs_session'] = $response['session_id'];
+      
+      } else {
+      
+          // unsucessful login
+          error_log("[login] error logging into freeside: $error");
+          $auth = false;
+
+          // display error message to user
+          $_SESSION=['ari_error'] = _("Incorrect Username or Password");
+      
+      }
+
       // if authenticated and user wants to be remembered, set cookie 
       $remember = '';
       if (isset($_POST['remember'])) {
