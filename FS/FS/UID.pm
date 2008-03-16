@@ -118,8 +118,9 @@ sub forksuidsetup {
 
   my $sth = $dbh->prepare("SELECT COUNT(*) FROM conf");
   if ( $sth ) {
-    $sth->execute or die $sth->errstr;
-    $confcount = $sth->fetchrow_arrayref->[0];
+    if ( $sth->execute ) {
+      $confcount = $sth->fetchrow_arrayref->[0];
+    }
   }
 
   if ($confcount) {
