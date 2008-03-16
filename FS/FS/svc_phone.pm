@@ -175,6 +175,18 @@ sub check {
   $self->SUPER::check;
 }
 
+=item check_pin
+
+Checks the supplied PIN against the PIN in the database.  Returns true for a
+sucessful authentication, false if no match.
+
+=cut
+
+sub check_pin {
+  my($self, $check_pin) = @_;
+  $check_pin eq $self->pin;
+}
+
 =back
 
 =head1 BUGS

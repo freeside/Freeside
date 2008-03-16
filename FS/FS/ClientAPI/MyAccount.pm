@@ -17,6 +17,7 @@ use FS::Misc qw(card_types);
 use FS::ClientAPI_SessionCache;
 use FS::svc_acct;
 use FS::svc_domain;
+use FS::svc_phone;
 use FS::svc_external;
 use FS::part_svc;
 use FS::cust_main;
@@ -57,28 +58,53 @@ sub _cache {
 sub login {
   my $p = shift;
 
-  my $svc_domain = qsearchs('svc_domain', { 'domain' => $p->{'domain'} } )
-    or return { error => 'Domain '. $p->{'domain'}. ' not found' };
-
-  my $svc_acct = qsearchs( 'svc_acct', { 'username'  => $p->{'username'},
-                                         'domsvc'    => $svc_domain->svcnum, }
-                         );
-  return { error => 'User not found.' } unless $svc_acct;
-
   my $conf = new FS::Conf;
-  my $pkg_svc = $svc_acct->cust_svc->pkg_svc;
-  return { error => 'Only primary user may log in.' } 
-    if $conf->exists('selfservice_server-primary_only')
-       && ( ! $pkg_svc || $pkg_svc->primary_svc ne 'Y' );
 
-  return { error => 'Incorrect password.' }
-    unless $svc_acct->check_password($p->{'password'});
+  my $svc_x = '';
+  if ( $p->{'domain'} eq 'svc_phone'
+       && $conf->exists('selfservice_server-phone_login') ) { 
+
+    my $svc_phone = qsearch( 'svc_phone', { 'phonenum' => $p->{'username'}, } );
+    return { error => 'Number not found.' } unless $svc_phone
+
+    #XXX?
+    #my $pkg_svc = $svc_acct->cust_svc->pkg_svc;
+    #return { error => 'Only primary user may log in.' } 
+    #  if $conf->exists('selfservice_server-primary_only')
+    #    && ( ! $pkg_svc || $pkg_svc->primary_svc ne 'Y' );
+
+    return { error => 'Incorrect PIN.' }
+      unless $svc_phone->check_pin($p->{'password'});
+
+    $svc_x = $svc_phone;
+
+  } else {
+
+    my $svc_domain = qsearchs('svc_domain', { 'domain' => $p->{'domain'} } )
+      or return { error => 'Domain '. $p->{'domain'}. ' not found' };
+
+    my $svc_acct = qsearchs( 'svc_acct', { 'username'  => $p->{'username'},
+                                           'domsvc'    => $svc_domain->svcnum, }
+                           );
+    return { error => 'User not found.' } unless $svc_acct;
+
+    my $pkg_svc = $svc_acct->cust_svc->pkg_svc;
+    return { error => 'Only primary user may log in.' } 
+      if $conf->exists('selfservice_server-primary_only')
+        && ( ! $pkg_svc || $pkg_svc->primary_svc ne 'Y' );
+ 
+    return { error => 'Incorrect password.' }
+      unless $svc_acct->check_password($p->{'password'});
+
+    $svc_x = $svc_acct;
+
+  }
 
   my $session = {
-    'svcnum' => $svc_acct->svcnum,
+    'svcnum' => $svc_x->svcnum,
   };
 
-  my $cust_pkg = $svc_acct->cust_svc->cust_pkg;
+  my $cust_pkg = $svc_x->cust_svc->cust_pkg;
   if ( $cust_pkg ) {
     my $cust_main = $cust_pkg->cust_main;
     $session->{'custnum'} = $cust_main->custnum;

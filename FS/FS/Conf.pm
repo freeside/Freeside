@@ -1592,6 +1592,13 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'selfservice_server-phone_login',
+    'section'     => '',
+    'description' => 'Allow login to self-service with phone number and PIN.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'card_refund-days',
     'section'     => 'billing',
     'description' => 'After a payment, the number of days a refund link will be available for that payment.  Defaults to 120.',
