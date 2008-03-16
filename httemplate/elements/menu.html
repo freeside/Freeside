@@ -70,9 +70,9 @@ tie my %report_customers_search, 'Tie::IxHash';
 $report_customers_search{'by ordering employee'} = [ $fsurl. 'search/cust_main-otaker.cgi' ]
   if $curuser->access_right('Configuration');
 
-tie my %report_customers, 'Tie::IxHash',
-  'List customers' => [ \%report_customers_lists, 'List customers' ],
-;
+tie my %report_customers, 'Tie::IxHash';
+$report_customers{'List customers'} = [ \%report_customers_lists, 'List customers' ]
+  if $curuser->access_right('List customers');
 $report_customers{'Search customers'} = [ \%report_customers_search, 'Search customers' ]
   if keys %report_customers_search;
 $report_customers{'Zip code distribution'}     = [ $fsurl. 'search/report_cust_main-zip.html', 'Zip codes by number of customers' ];

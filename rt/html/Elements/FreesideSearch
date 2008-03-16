@@ -1,3 +1,4 @@
+% if ( $FS::CurrentUser::CurrentUser->access_right('List customers') ) {
 <form action="<% $RT::URI::freeside::URL %>/search/cust_main.cgi" STYLE="margin:0">
     <SCRIPT TYPE="text/javascript">
       function clearhint_search_cust (what) {
@@ -6,6 +7,7 @@
       }
     </SCRIPT>
 <input name="search_cust" accesskey="0" VALUE="(cust #, name, company or phone)" SIZE="28" onFocus="clearhint_search_cust(this);" onClick="clearhint_search_cust(this);" STYLE="text-align:right; font-family: Arial, Verdana, Helvetica, sans-serif;"><BR>
-<A NOTYET="<% $RT::URI::freeside::URL %>/search/cust_main.html" STYLE="color: #000000; font-size: 70%; font-weight:normal">Advanced</A>
+<A HREF="<% $RT::URI::freeside::URL %>/search/report_cust_main.html" STYLE="color: #ffffff; font-size: 70%; font-weight:normal">Advanced</A>
 <input type="submit" value="<&|/l&>Search customers</&>" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:70%">
 </form>
+% }
