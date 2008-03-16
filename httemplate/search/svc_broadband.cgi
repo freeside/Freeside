@@ -1,132 +1,123 @@
-%die "access denied"
-%  unless $FS::CurrentUser::CurrentUser->access_right('List services');
-%
-%my $conf = new FS::Conf;
-%
-%my @svc_broadband = ();
-%my $sortby=\*svcnum_sort;
-%#XXX agent-virtualization needs to be finished :/
-%my $agentnums_sql = $FS::CurrentUser::CurrentUser->agentnums_sql( 
-%                      'null_right' => 'View/link unlinked services'
-%                    );
-%
-%if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
-%
-%  @svc_broadband = qsearch(
-%    'table'     => 'svc_broadband',
-%    'hashref'   => {},
-%    #needs the join first 'extra_sql' => "WHERE $agentnums_sql",
-%  );
-%
-%  if ( $cgi->param('magic') eq 'unlinked' ) {
-%    @svc_broadband = grep { qsearchs('cust_svc', {
-%                                                   'svcnum' => $_->svcnum,
-%                                                   'pkgnum' => '',
-%                                                 }
-%                                    )
-%                          }
-%		      @svc_broadband;
-%  } else {
-%
-%  if ( $cgi->param('sortby') =~ /^(\w+)$/ ) {
-%    my $sortby = $1;
-%    if ( $sortby eq 'blocknum' ) {
-%      $sortby = \*blocknum_sort;
-%    }
-%  }
-%
-%} elsif ( $cgi->param('svcpart') =~ /^(\d+)$/ ) {
-%
-%  @svc_broadband =
-%    qsearch( {
-%               'table'     => 'svc_broadband',
-%               'addl_from' => 'LEFT JOIN cust_svc USING ( svcnum )',
-%               'extra_sql' => "WHERE svcpart = $1",
-%             }
-%           );
-%
-%} elsif ( $cgi->param('ip_addr') =~ /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/ ) {
-%  my $ip_addr = $1;
-%  @svc_broadband = qsearchs('svc_broadband',{'ip_addr'=>$ip_addr});
-%}
-%
-%my %routerbyblock = ();
-%foreach my $router (qsearch('router', {})) {
-%  foreach ($router->addr_block) {
-%    $routerbyblock{$_->blocknum} = $router;
-%  }
-%}
-%
-%if ( scalar(@svc_broadband) == 1 ) {
-%  print $cgi->redirect(popurl(2). "view/svc_broadband.cgi?". $svc_broadband[0]->svcnum);
-%  #exit;
-%} elsif ( scalar(@svc_broadband) == 0 ) {
-%
+<% include( 'elements/search.html',
+              'title'       => 'Broadband Search Results',
+              'name'        => 'broadband services',
+              'query'       => $sql_query,
+              'count_query' => $count_query,
+              'redirect'    => [ popurl(2). "view/svc_broadband.cgi?", 'svcnum' ],
+              'header'      => [ '#',
+                                 'Service',
+                                 'Router',
+                                 'IP Address',
+                                 FS::UI::Web::cust_header(),
+                               ],
+              'fields'      => [ 'svcnum',
+                                 'svc',
+                                 sub { $routerbyblock{shift->blocknum}->routername; },
+                                 'ip_addr',
+                                 \&FS::UI::Web::cust_fields,
+                               ],
+              'links'       => [ $link,
+                                 $link,
+                                 $link_router,
+                                 $link,
+                                 ( map { $_ ne 'Cust. Status' ? $link_cust : '' }
+                                       FS::UI::Web::cust_header()
+                                 ),
+                               ],
+              'align'       => 'rllr'. FS::UI::Web::cust_aligns(),
+              'color'       => [ 
+                                 '',
+                                 '',
+                                 '',
+                                 '',
+                                 FS::UI::Web::cust_colors(),
+                               ],
+              'style'       => [ 
+                                 '',
+                                 '',
+                                 '',
+                                 '',
+                                 FS::UI::Web::cust_styles(),
+                               ],
+          )
+%>
+<%init>
 
-<!-- mason kludge -->
-%
-% errorpage("No matching broadband services found!");
-%} else {
-%
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('List services');
 
-<!-- mason kludge -->
-%
-%  my($total)=scalar(@svc_broadband);
-%  print header("Broadband Search Results",''), <<END;
-%
-%    $total matching broadband services found
-%    <TABLE BORDER=4 CELLSPACING=0 CELLPADDING=0>
-%      <TR>
-%        <TH>Service #</TH>
-%	<TH>Router</TH>
-%        <TH>IP Address</TH>
-%      </TR>
-%END
-%
-%  foreach my $svc_broadband (
-%    sort $sortby (@svc_broadband)
-%  ) {
-%    my($svcnum,$ip_addr,$routername,$routernum)=(
-%      $svc_broadband->svcnum,
-%      $svc_broadband->ip_addr,
-%      $routerbyblock{$svc_broadband->blocknum}->routername,
-%      $routerbyblock{$svc_broadband->blocknum}->routernum,
-%    );
-%
-%    my $rowspan = 1;
-%
-%    print <<END;
-%    <TR>
-%      <TD ROWSPAN=$rowspan><A HREF="${p}view/svc_broadband.cgi?$svcnum">$svcnum</A></TD>
-%      <TD ROWSPAN=$rowspan><A HREF="${p}view/router.cgi?$routernum">$routername</A></TD>
-%      <TD ROWSPAN=$rowspan><A HREF="${p}view/svc_broadband.cgi?$svcnum">$ip_addr</A></TD>
-%END
-%
-%    #print @rows;
-%    print "</TR>";
-%
-%  }
-% 
-%  print <<END;
-%    </TABLE>
-%  </BODY>
-%</HTML>
-%END
-%
-%}
-%
-%sub svcnum_sort {
-%  $a->getfield('svcnum') <=> $b->getfield('svcnum');
-%}
-%
-%sub blocknum_sort {
-%  if ($a->getfield('blocknum') == $b->getfield('blocknum')) {
-%    $a->getfield('ip_addr') cmp $b->getfield('ip_addr');
-%  } else {
-%    $a->getfield('blocknum') cmp $b->getfield('blocknum');
-%  }
-%}
-%
-%
-%
+my $conf = new FS::Conf;
 
+my $orderby = 'ORDER BY svcnum';
+my %svc_broadband = ();
+my @extra_sql = ();
+if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
+
+  push @extra_sql, 'pkgnum IS NULL'
+    if $cgi->param('magic') eq 'unlinked';
+
+  if ( $cgi->param('sortby') =~ /^(\w+)$/ ) {
+    my $sortby = $1;
+    $orderby = "ORDER BY $sortby";
+  }
+
+} elsif ( $cgi->param('svcpart') =~ /^(\d+)$/ ) {
+  push @extra_sql, "svcpart = $1";
+} elsif ( $cgi->param('ip_addr') =~ /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/ ) {
+  push @extra_sql, "ip_addr = '$1'";
+}
+
+my $addl_from = ' LEFT JOIN cust_svc  USING ( svcnum  ) '.
+                ' LEFT JOIN part_svc  USING ( svcpart ) '.
+                ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
+                ' LEFT JOIN cust_main USING ( custnum ) ';
+
+push @extra_sql, $FS::CurrentUser::CurrentUser->agentnums_sql( 
+                   'null_right' => 'View/link unlinked services'
+                 );
+
+my $extra_sql = '';
+if ( @extra_sql ) {
+  $extra_sql = ( keys(%svc_broadband) ? ' AND ' : ' WHERE ' ).
+               join(' AND ', @extra_sql );
+}
+
+my $count_query = "SELECT COUNT(*) FROM svc_broadband $addl_from ";
+#if ( keys %svc_broadband ) {
+#  $count_query .= ' WHERE '.
+#                    join(' AND ', map "$_ = ". dbh->quote($svc_broadband{$_}),
+#                                      keys %svc_broadband
+#                        );
+#}
+$count_query .= $extra_sql;
+
+my $sql_query = {
+  'table'     => 'svc_broadband',
+  'hashref'   => {}, #\%svc_broadband,
+  'select'    => join(', ',
+                   'svc_broadband.*',
+                   'part_svc.svc',
+                    'cust_main.custnum',
+                    FS::UI::Web::cust_sql_fields(),
+                 ),
+  'extra_sql' => $extra_sql,
+  'addl_from' => $addl_from,
+};
+
+my %routerbyblock = ();
+foreach my $router (qsearch('router', {})) {
+  foreach ($router->addr_block) {
+    $routerbyblock{$_->blocknum} = $router;
+  }
+}
+
+my $link = [ $p.'view/svc_broadband.cgi', 'svcnum' ];
+
+#XXX get the router link working
+my $link_router = sub { my $routernum = $routerbyblock{shift->blocknum}->routernum;
+                        [ $p.'view/router.cgi?'.$routernum, 'routernum' ];
+                      };
+
+my $link_cust = [ $p.'view/cust_main.cgi', 'custnum' ];
+
+</%init>
