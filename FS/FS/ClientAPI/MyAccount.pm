@@ -65,7 +65,7 @@ sub login {
        && $conf->exists('selfservice_server-phone_login') ) { 
 
     my $svc_phone = qsearch( 'svc_phone', { 'phonenum' => $p->{'username'}, } );
-    return { error => 'Number not found.' } unless $svc_phone
+    return { error => 'Number not found.' } unless $svc_phone;
 
     #XXX?
     #my $pkg_svc = $svc_acct->cust_svc->pkg_svc;
