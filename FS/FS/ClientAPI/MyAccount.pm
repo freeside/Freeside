@@ -64,7 +64,7 @@ sub login {
   if ( $p->{'domain'} eq 'svc_phone'
        && $conf->exists('selfservice_server-phone_login') ) { 
 
-    my $svc_phone = qsearch( 'svc_phone', { 'phonenum' => $p->{'username'}, } );
+    my $svc_phone = qsearchs( 'svc_phone', { 'phonenum' => $p->{'username'} } );
     return { error => 'Number not found.' } unless $svc_phone;
 
     #XXX?
