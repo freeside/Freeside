@@ -16,11 +16,16 @@
 
 <A HREF="<%$p2%>edit/router.cgi">Add a new router</A>&nbsp;|&nbsp;<%$hideurl%>
 
-<%table()%>
+<% include('/elements/table-grid.html') %>
+% my $bgcolor1 = '#eeeeee';
+%   my $bgcolor2 = '#ffffff';
+%   my $bgcolor = '';
+
   <TR>
-    <TD><B>Router name</B></TD>
-    <TD><B>Address block(s)</B></TD>
+    <TH CLASS="grid" BGCOLOR="#cccccc">Router name</TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc">Address block(s)</TH>
   </TR>
+
 % foreach my $router (sort {$a->routernum <=> $b->routernum} @router) {
 %     next if $hidecustomerrouters && $router->svcnum;
 %     my @addr_block = $router->addr_block;
@@ -28,20 +33,32 @@
 %       push @addr_block, '&nbsp;';
 %     }
 %
+%    if ( $bgcolor eq $bgcolor1 ) {
+%      $bgcolor = $bgcolor2;
+%    } else {
+%      $bgcolor = $bgcolor1;
+%    }
 
   <TR>
-    <TD ROWSPAN="<%scalar(@addr_block)+1%>">
+
+    <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
       <A HREF="<%$p2%>edit/router.cgi?<%$router->routernum%>"><%$router->routername%></A>
     </TD>
-  </TR>
-% foreach my $block ( @addr_block ) { 
 
-  <TR>
-    <TD><%UNIVERSAL::isa($block, 'FS::addr_block') ? $block->NetAddr : '&nbsp;'%></TD>
-  </TR>
-% } 
+    <TD CLASS="inv" BGCOLOR="<% $bgcolor %>">
+      <TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0>
+
+%       foreach my $block ( @addr_block ) { 
+
+          <TR>
+            <TD><%UNIVERSAL::isa($block, 'FS::addr_block') ? $block->NetAddr : '&nbsp;'%></TD>
+          </TR>
+%       } 
+      </TABLE>
+    </TD>
 
   </TR>
+
 % } 
 
 </TABLE>

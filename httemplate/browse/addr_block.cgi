@@ -2,70 +2,81 @@
 
 <% include('/elements/error.html') %>
 
-<%table()%>
+<% include('/elements/table-grid.html') %>
+% my $bgcolor1 = '#eeeeee';
+%   my $bgcolor2 = '#ffffff';
+%   my $bgcolor = '';
+
+  <TR>
+    <TH CLASS="grid" BGCOLOR="#cccccc">Address block(s)</TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc">Router</TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc">Action(s)</TH>
+  </TR>
+
 % foreach $block (sort {$a->NetAddr cmp $b->NetAddr} @addr_block) { 
+%    if ( $bgcolor eq $bgcolor1 ) {
+%      $bgcolor = $bgcolor2;
+%    } else {
+%      $bgcolor = $bgcolor1;
+%    }
 
-  <TR>
-    <TD><%$block->NetAddr%></TD>
-% if (my $router = $block->router) { 
-% if (scalar($block->svc_broadband) == 0) { 
+    <TR>
+      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><%$block->NetAddr%></TD>
 
-    <TD>
-      <%$router->routername%>
-    </TD>
-    <TD>
-      <FORM ACTION="<%$path%>/deallocate.cgi" METHOD="POST">
-        <INPUT TYPE="hidden" NAME="blocknum" VALUE="<%$block->blocknum%>">
-        <INPUT TYPE="submit" NAME="submit" VALUE="Deallocate">
-      </FORM>
-    </TD>
-% } else { 
+%   if (my $router = $block->router) { 
+%
+%     if (scalar($block->svc_broadband) == 0) { 
 
-    <TD COLSPAN="2">
-    <%$router->routername%>
-    </TD>
-% } 
-% } else { 
+        <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+          <%$router->routername%>
+        </TD>
+        <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+          <FORM ACTION="<%$path%>/deallocate.cgi" METHOD="POST">
+            <INPUT TYPE="hidden" NAME="blocknum" VALUE="<%$block->blocknum%>">
+            <INPUT TYPE="submit" NAME="submit" VALUE="Deallocate">
+          </FORM>
+        </TD>
+%     } else { 
 
-    <TD>
-      <FORM ACTION="<%$path%>/allocate.cgi" METHOD="POST">
-        <INPUT TYPE="hidden" NAME="blocknum" VALUE="<%$block->blocknum%>">
-        <SELECT NAME="routernum" SIZE="1">
-% foreach (@router) { 
+        <TD COLSPAN="2" CLASS="grid" BGCOLOR="<% $bgcolor %>">
+        <%$router->routername%>
+        </TD>
+%     } 
+%
+%   } else { 
 
-          <OPTION VALUE="<%$_->routernum %>"><%$_->routername%></OPTION>
-% } 
+      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+        <FORM ACTION="<%$path%>/allocate.cgi" METHOD="POST">
+          <INPUT TYPE="hidden" NAME="blocknum" VALUE="<%$block->blocknum%>">
+          <SELECT NAME="routernum" SIZE="1">
+%           foreach (@router) { 
+              <OPTION VALUE="<%$_->routernum %>"><%$_->routername%></OPTION>
+%           } 
+          </SELECT>
+          <INPUT TYPE="submit" NAME="submit" VALUE="Allocate">
+        </FORM>
+      </TD>
+      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+        <FORM ACTION="<%$path%>/split.cgi" METHOD="POST">
+          <INPUT TYPE="hidden" NAME="blocknum" VALUE="<%$block->blocknum%>">
+          <INPUT TYPE="submit" NAME="submit" VALUE="Split">
+        </FORM>
+      </TD>
 
-        </SELECT>
-        <INPUT TYPE="submit" NAME="submit" VALUE="Allocate">
-      </FORM>
-    </TD>
-    <TD>
-      <FORM ACTION="<%$path%>/split.cgi" METHOD="POST">
-        <INPUT TYPE="hidden" NAME="blocknum" VALUE="<%$block->blocknum%>">
-        <INPUT TYPE="submit" NAME="submit" VALUE="Split">
-      </FORM>
-    </TD>
+%   }
+
   </TR>
-% }
 % } 
 
-  <TR><TD COLSPAN="3"><BR></TD></TR>
-  <TR>
-    <FORM ACTION="<%$path%>/add.cgi" METHOD="POST">
-    <TD>Gateway/Netmask</TD>
-    <TD>
-      <INPUT TYPE="text" NAME="ip_gateway" SIZE="15">/<INPUT TYPE="text" NAME="ip_netmask" SIZE="2">
-    </TD>
-    <TD>
-      <INPUT TYPE="submit" NAME="submit" VALUE="Add">
-    </TD>
-    </FORM>
-  </TR>
 </TABLE>
 
-<% include('/elements/footer.html') %>
+<BR><BR>
+<FORM ACTION="<%$path%>/add.cgi" METHOD="POST">
+Gateway/Netmask: 
+<INPUT TYPE="text" NAME="ip_gateway" SIZE="15">/<INPUT TYPE="text" NAME="ip_netmask" SIZE="2">
+<INPUT TYPE="submit" NAME="submit" VALUE="Add">
 
+<% include('/elements/footer.html') %>
 <%init>
 
 die "access denied"
