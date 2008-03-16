@@ -261,9 +261,10 @@ that field.
 %          if ( $def->{select_table} ) {
 %            foreach my $record ( qsearch( $def->{select_table}, {} ) ) {
 %              my $rvalue = $record->getfield($def->{select_key});
+%              my $select_label = $def->{select_label};
 %              $html .= qq!<OPTION VALUE="$rvalue"!.
 %                  (grep(/^$rvalue$/, split(',',$value)) ? ' SELECTED>' : '>' ).
-%                  $record->getfield($def->{select_label}). '</OPTION>';
+%                  $record->$select_label(). '</OPTION>';
 %            } #next $record
 %          } else { # select_list
 %            foreach my $item ( @{$def->{select_list}} ) {
