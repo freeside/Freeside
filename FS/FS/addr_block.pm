@@ -158,8 +158,18 @@ Returns a NetAddr::IP object for this block's address and netmask.
 
 sub NetAddr {
   my $self = shift;
+  new NetAddr::IP ($self->ip_gateway, $self->ip_netmask);
+}
 
-  return new NetAddr::IP ($self->ip_gateway, $self->ip_netmask);
+=item cidr
+
+Returns a CIDR string for this block's address and netmask, i.e. 10.4.20.0/24
+
+=cut
+
+sub cidr {
+  my $self = shift;
+  $self->NetAddr->cidr;
 }
 
 =item next_free_addr

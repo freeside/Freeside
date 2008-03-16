@@ -97,7 +97,13 @@ sub table_info {
       'speed_down'  => 'Maximum download speed for this service in Kbps.  0 denotes unlimited.',
       'speed_up'    => 'Maximum upload speed for this service in Kbps.  0 denotes unlimited.',
       'ip_addr'     => 'IP address.  Leave blank for automatic assignment.',
-      'blocknum'    => 'Address block.',
+      'blocknum'    => { 'label' => 'Address block',
+                         'type'  => 'select',
+                         'select_table' => 'addr_block',
+                         'select_key'   => 'blocknum',
+                         'select_label' => 'cidr',
+                         'disable_inventory' => 1,
+                       },
     },
   };
 }
@@ -253,7 +259,7 @@ is /32.
 
 sub NetAddr {
   my $self = shift;
-  return new NetAddr::IP ($self->ip_addr);
+  new NetAddr::IP ($self->ip_addr);
 }
 
 =item addr_block
@@ -264,8 +270,7 @@ Returns the FS::addr_block record (i.e. the address block) for this broadband se
 
 sub addr_block {
   my $self = shift;
-
-  return qsearchs('addr_block', { blocknum => $self->blocknum });
+  qsearchs('addr_block', { blocknum => $self->blocknum });
 }
 
 =back
@@ -278,8 +283,7 @@ Returns a list of allowed FS::router objects.
 
 sub allowed_routers {
   my $self = shift;
-
-  return map { $_->router } qsearch('part_svc_router', { svcpart => $self->svcpart });
+  map { $_->router } qsearch('part_svc_router', { svcpart => $self->svcpart });
 }
 
 =head1 BUGS
