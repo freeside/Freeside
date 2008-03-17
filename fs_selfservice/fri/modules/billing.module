@@ -46,7 +46,49 @@ class billing {
    */
   function display($args) {
 
-    global $ARI_HELP_FEATURE_CODES;
+    $display = new Display();
+
+    // args
+    $m = getArgument($args,'m');
+    $q = getArgument($args,'q');
+
+    $displayname = $_SESSION['ari_user']['displayname'];
+    $extension = $_SESSION['ari_user']['extension'];
+
+    // build page content
+    $ret .= checkErrorMessage();
+
+	$header_text = _("Billing");
+	if (!$_SESSION['ari_user']['admin_help']) {
+		$header_text .= sprintf(_(" for %s (%s)"), $displayname, $extension);
+	}
+
+    // build page content
+    $ret .= checkErrorMessage();
+
+    $ret .= $display->displayHeaderText($header_text);
+    $ret .= $display->displayLine();
+
+
+    $freeside = new FreesideSelfService();
+    #$fs_info = $freeside->customer_info( array(
+    #  'session_id' => $_SESSION['freeside_session_id'],
+    #) );
+    #$error = $fs_info['error'];
+    #if ( $error ) {
+    #  //$_SESSION['ari_error'] = _("Incorrect Username or Password");
+    #  $_SESSION['ari_error'] = $error; #// XXX report as ari_error???!
+    #}
+
+    $ret .= 'Billing goes here';
+    // XXX navigate to make payment, view invoice,
+    // & myaccount change payment info
+
+    return $ret;
+
+  }
+
+  function make_payment($args) {
 
     $display = new Display();
 
@@ -71,9 +113,63 @@ class billing {
     $ret .= $display->displayHeaderText($header_text);
     $ret .= $display->displayLine();
 
-    $ret .= 'Billing goes here';
+
+    #$freeside = new FreesideSelfService();
+
+    $ret .= 'Make payment goes here';
 
     return $ret;
+
+  }
+
+  function view_invoice($args) {
+
+    $display = new Display();
+
+    // args
+    $m = getArgument($args,'m');
+    $q = getArgument($args,'q');
+
+    $displayname = $_SESSION['ari_user']['displayname'];
+    $extension = $_SESSION['ari_user']['extension'];
+
+    // build page content
+    $ret .= checkErrorMessage();
+
+	$header_text = _("Billing");
+	if (!$_SESSION['ari_user']['admin_help']) {
+		$header_text .= sprintf(_(" for %s (%s)"), $displayname, $extension);
+	}
+
+    // build page content
+    $ret .= checkErrorMessage();
+
+    $ret .= $display->displayHeaderText($header_text);
+    #$ret .= $display->displayLine();
+
+    $invnum = getArgument($args, 'invnum');
+
+    $freeside = new FreesideSelfService();
+    $invoice = $freeside->invoice( array(
+      'session_id' => $_SESSION['freeside_session_id'],
+      'invnum'     => $invnum,
+    ) );
+    $error = $invoice['error'];
+    if ( $error ) {
+      //$_SESSION['ari_error'] = _("Incorrect Username or Password");
+      $_SESSION['ari_error'] = $error; // XXX report as ari_error???!
+    }
+
+    $html = $invoice['invoice_html']->scalar;
+    $html = str_replace( "\xA0", '&nbsp;', $html); // XX doh
+    error_log($html);
+
+    $ret .= '<TABLE BGCOLOR="#000000" BORDER=0><TR><TD>'.
+            $html.
+            '</TD></TR></TABLE>';
+
+    return $ret;
+
   }
 
 }

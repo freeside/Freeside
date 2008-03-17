@@ -46,8 +46,6 @@ class dashboard {
    */
   function display($args) {
 
-    global $ARI_HELP_FEATURE_CODES;
-
     $display = new Display();
 
     // args
@@ -86,9 +84,8 @@ class dashboard {
     
     if ( $fs_info['balance'] > 0 ) {
   
-      // XXX correct URL
-      $ret .= '<B><A HREF="'. $url.
-              'make_payment">Make a payment</A></B><BR><BR>';
+      $ret .= '<B><A HREF="'. $_SESSION['ARI_ROOT'].
+              '?m=billing&f=make_payment">Make a payment</A></B><BR><BR>';
 
     }
 
@@ -97,7 +94,9 @@ class dashboard {
   
       $ret .= '<TABLE BORDER=0 CELLSPACING=0 CELLPADDING=2 BGCOLOR="#eeeeee">'.
               '<TR><TH BGCOLOR="#ff6666" COLSPAN=5>Open Invoices</TH></TR>';
-      $link = '<A HREF="'. $url. 'myaccount'; // #XXX url
+      $link = '<A HREF="'. $_SESSION['ARI_ROOT'].
+              '?m=billing&f=view_invoice&invnum=';
+      
       $col1 = "eeeeee";
       $col2 = "cccccc";
       $col = $col1;
@@ -107,8 +106,7 @@ class dashboard {
         $invoice = $i[value];
   
         $td = '<TD BGCOLOR="#'. $col. '">';
-        $a  = '<A HREF="'. $url. 'view_invoice;invnum='.
-              $invoice['invnum']. '">';
+        $a  = $link. $invoice['invnum']. '">';
         $ret .=
           "<TR>$td$a". 'Invoice #'. $invoice['invnum']. "</A></TD>$td</TD>".
           "$td$a". $invoice['date']. "</A></TD>$td</TD>".

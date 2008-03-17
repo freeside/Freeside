@@ -71,7 +71,21 @@ class myaccount {
     $ret .= $display->displayHeaderText($header_text);
     $ret .= $display->displayLine();
 
-    $ret .= 'My Account goes here';
+    $freeside = new FreesideSelfService();
+    $fs_info = $freeside->customer_info( array(
+      'session_id' => $_SESSION['freeside_session_id'],
+    ) );
+    $error = $fs_info['error'];
+    if ( $error ) {
+      //$_SESSION['ari_error'] = _("Incorrect Username or Password");
+      $_SESSION['ari_error'] = $error; #// XXX report as ari_error???!
+    }
+
+    $ret .= $fs_info['small_custview'];
+    $ret .= '<BR>';
+
+
+
 
     return $ret;
   }
