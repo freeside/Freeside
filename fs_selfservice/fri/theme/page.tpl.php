@@ -64,8 +64,9 @@
     <!--begin footer-->
     <div id="ariFooter">
       <small>
-        &nbsp;&nbsp;<?php print($ari_version) ?> <?php echo _("Version")?><br>
-        &middot;&nbsp;<a href="http<?php print(isset($_SERVER['HTTPS'])&&$_SERVER['HTTPS']!=''?'s':''); ?>://www.littlejohnconsulting.com">Based on ARI from Littlejohn Consulting</a>
+        <!--&nbsp;&nbsp;<?php print($ari_version) ?> <?php echo _("Version")?><br> -->
+        Freeside Recording Interface (c) 2008 Freeside Internet Services, Inc.<br>
+        <a href="http<?php print(isset($_SERVER['HTTPS'])&&$_SERVER['HTTPS']!=''?'s':''); ?>://www.littlejohnconsulting.com">Based on ARI from Littlejohn Consulting</a>
       </small>
     </div>
     <!-- end footer -->

@@ -1,0 +1,165 @@
+<?php
+
+/**
+ * @file
+ * Functions for the interface to the help page
+ */
+
+/**
+  * Class for help
+  */
+class dashboard {
+
+  /*
+   * rank (for prioritizing modules)
+   */
+  function rank() {
+
+    $rank = -4;
+    return $rank;
+  }
+
+  /*
+   * init
+   */
+  function init() {
+  }
+
+  /*
+   * Adds menu item to nav menu
+   *
+   * @param $args
+   *   Common arguments
+   */
+  function navMenu($args) {
+
+    $ret .= "<p><small><small><a href='" . $_SESSION['ARI_ROOT'] . "?m=dashboard&f=display'>" . _("Dashboard") . "</a></small></small></p><br>";
+
+    return $ret;
+  }
+
+  /*
+   * Displays stats page
+   *
+   * @param $args
+   *   Common arguments
+   */
+  function display($args) {
+
+    global $ARI_HELP_FEATURE_CODES;
+
+    $display = new Display();
+
+    // args
+    $m = getArgument($args,'m');
+    $q = getArgument($args,'q');
+
+    $displayname = $_SESSION['ari_user']['displayname'];
+    $extension = $_SESSION['ari_user']['extension'];
+
+    // build page content
+    $ret .= checkErrorMessage();
+
+	$header_text = _("Dashboard");
+	if (!$_SESSION['ari_user']['admin_help']) {
+		$header_text .= sprintf(_(" for %s (%s)"), $displayname, $extension);
+	}
+
+    // build page content
+    $ret .= checkErrorMessage();
+
+    $ret .= $display->displayHeaderText($header_text);
+    $ret .= $display->displayLine();
+
+    $freeside = new FreesideSelfService();
+    $fs_info = $freeside->customer_info( array(
+      'session_id' => $_SESSION['freeside_session_id'],
+    ) );
+    $error = $fs_info['error'];
+    if ( $error ) {
+      //$_SESSION['ari_error'] = _("Incorrect Username or Password");
+      $_SESSION['ari_error'] = $error; #// XXX report as ari_error???!
+    }
+
+    $ret .= $fs_info['small_custview'];
+    $ret .= '<BR>';
+    
+    if ( $fs_info['balance'] > 0 ) {
+  
+      // XXX correct URL
+      $ret .= '<B><A HREF="'. $url.
+              'make_payment">Make a payment</A></B><BR><BR>';
+
+    }
+
+    // XXX count() ???
+    if ( count($fs_info['open_invoices']) ) {
+  
+      $ret .= '<TABLE BORDER=0 CELLSPACING=0 CELLPADDING=2 BGCOLOR="#eeeeee">'.
+              '<TR><TH BGCOLOR="#ff6666" COLSPAN=5>Open Invoices</TH></TR>';
+      $link = '<A HREF="'. $url. 'myaccount'; // #XXX url
+      $col1 = "eeeeee";
+      $col2 = "cccccc";
+      $col = $col1;
+  
+      while ( $i = each($fs_info['open_invoices']) ) {
+  
+        $invoice = $i[value];
+  
+        $td = '<TD BGCOLOR="#'. $col. '">';
+        $a  = '<A HREF="'. $url. 'view_invoice;invnum='.
+              $invoice['invnum']. '">';
+        $ret .=
+          "<TR>$td$a". 'Invoice #'. $invoice['invnum']. "</A></TD>$td</TD>".
+          "$td$a". $invoice['date']. "</A></TD>$td</TD>".
+          '<TD BGCOLOR="#'. $col. '" ALIGN="right">'. $a. '$'. $invoice['owed'].
+            '</A></TD>'.
+          '</TR>';
+
+        if ( $col == $col1 ) {
+          $col = $col2;
+        } else {
+          $col = $col1;
+        }
+
+      }
+
+      $ret .= '</TABLE><BR>';
+    } else {
+      $ret .= 'You have no outstanding invoices.<BR><BR>';
+    }
+
+    $ret .= 'Received calls (10)<br><br>';
+    $ret .= 'Placed calls (10)';
+
+//    if ( @tickets ) {
+//      $OUT .= '<TABLE BORDER=0 CELLSPACING=0 CELLPADDING=2 BGCOLOR="#eeeeee">'.
+//              '<TR><TH BGCOLOR="#ff6666" COLSPAN=5>Open Tickets</TH></TR>'.
+//              '<TR><TH>#</TH><TH>Subject</TH><TH>Priority</TH><TH>Queue</TH>'.
+//              '<TH>Status</TH></TR>';
+//      my $col1 = "ffffff";
+//      my $col2 = "dddddd";
+//      my $col = $col1;
+//  
+//      foreach my $ticket ( @tickets ) {
+//        my $td = qq!<TD BGCOLOR="#$col">!;
+//        $OUT .=
+//          "<TR>$td". $ticket->{'id'}. "</TD>".
+//          $td. $ticket->{'subject'}. "</TD>".
+//          $td. ($ticket->{'content'} || $ticket->{'priority'}). "</TD>".
+//          $td. $ticket->{'name'}. "</TD>".
+//          $td. $ticket->{'status'}. "</TD>".
+//          '</TR>';
+//        $col = $col eq $col1 ? $col2 : $col1;
+//      }
+//      $OUT .= '</TABLE>';
+//    } else {
+//      $OUT .= '';
+//    }
+
+    return $ret;
+  }
+
+}
+
+?>

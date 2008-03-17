@@ -53,7 +53,7 @@ class Settings {
 	
 	// and we are not logged in as admin
 	if ($exten!=$ARI_ADMIN_USERNAME) {
-		$ret .= "<p><small><small><a href='" . $_SESSION['ARI_ROOT'] . "?m=Settings&f=display'>" . _("Settings") . "</a></small></small></p><br>";
+		$ret .= "<p><small><small><a href='" . $_SESSION['ARI_ROOT'] . "?m=Settings&f=display'>" . _("Phone Settings") . "</a></small></small></p><br>";
 	}
 
     return $ret;
@@ -589,7 +589,7 @@ class Settings {
 	// build page content
 	$ret .= checkErrorMessage();
 	
-	$headerText = sprintf(_("Settings for %s (%s)"),$displayname,$exten);
+	$headerText = sprintf(_("Phone Settings for %s (%s)"),$displayname,$exten);
 	
 	$ret .= $display->displayHeaderText($headerText);
 	$ret .= $display->displayLine();

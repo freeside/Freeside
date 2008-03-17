@@ -324,7 +324,7 @@ msgstr ""
 #: ../modules/callmonitor.module:259
 #, php-format
 msgid "Call Monitor for %s (%s)"
-msgstr ""
+msgstr "Call Monitor for %s (%s)"
 
 #: ../modules/callmonitor.module:311 ../modules/voicemail.module:475
 msgid "select"
@@ -481,7 +481,7 @@ msgstr ""
 
 #: ../modules/settings.module:611
 msgid "Call Monitor Settings"
-msgstr ""
+msgstr "Call Monitor Settings"
 
 #: ../modules/settings.module:614
 msgid "Record INCOMING:"

@@ -1,0 +1,81 @@
+<?php
+
+/**
+ * @file
+ * Functions for the interface to the help page
+ */
+
+/**
+  * Class for help
+  */
+class billing {
+
+  /*
+   * rank (for prioritizing modules)
+   */
+  function rank() {
+
+    $rank = -2;
+    return $rank;
+  }
+
+  /*
+   * init
+   */
+  function init() {
+  }
+
+  /*
+   * Adds menu item to nav menu
+   *
+   * @param $args
+   *   Common arguments
+   */
+  function navMenu($args) {
+
+    $ret .= "<p><small><small><a href='" . $_SESSION['ARI_ROOT'] . "?m=billing&f=display'>" . _("Billing") . "</a></small></small></p><br>";
+
+    return $ret;
+  }
+
+  /*
+   * Displays stats page
+   *
+   * @param $args
+   *   Common arguments
+   */
+  function display($args) {
+
+    global $ARI_HELP_FEATURE_CODES;
+
+    $display = new Display();
+
+    // args
+    $m = getArgument($args,'m');
+    $q = getArgument($args,'q');
+
+    $displayname = $_SESSION['ari_user']['displayname'];
+    $extension = $_SESSION['ari_user']['extension'];
+
+    // build page content
+    $ret .= checkErrorMessage();
+
+	$header_text = _("Billing");
+	if (!$_SESSION['ari_user']['admin_help']) {
+		$header_text .= sprintf(_(" for %s (%s)"), $displayname, $extension);
+	}
+
+    // build page content
+    $ret .= checkErrorMessage();
+
+    $ret .= $display->displayHeaderText($header_text);
+    $ret .= $display->displayLine();
+
+    $ret .= 'Billing goes here';
+
+    return $ret;
+  }
+
+}
+
+?>

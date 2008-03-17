@@ -33,7 +33,7 @@ class Callmonitor {
    */
   function navMenu($args) {
 
-    $ret .= "<p><small><small><a href='" . $_SESSION['ARI_ROOT'] . "?m=Callmonitor&f=display'>" . _("Call Monitor") . "</a></small></small></p><br>";
+    $ret .= "<p><small><small><a href='" . $_SESSION['ARI_ROOT'] . "?m=Callmonitor&f=display'>" . _("Call History") . "</a></small></small></p><br>";
 
     return $ret;
   }
@@ -253,9 +253,9 @@ class Callmonitor {
 
     // header
     if ($_SESSION['ari_user']['admin_callmonitor']) {
-      $header_text = _("Call Monitor");
+      $header_text = _("Call History");
     } else {
-      $header_text = sprintf(_("Call Monitor for %s (%s)"),$displayname,$extension);
+      $header_text = sprintf(_("Call History for %s (%s)"),$displayname,$extension);
     }
     $ret .= $display->displayHeaderText($header_text);
     $ret .= $display->displaySearchBlock('left',$m,$q,$url_opts,true);

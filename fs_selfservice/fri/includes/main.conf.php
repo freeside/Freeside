@@ -108,7 +108,8 @@ $ARI_DEFAULT_ADMIN_PAGE = "callmonitor";
 # sets the default user page
 #   option: Comma delimited list of module names (ie voicemail,callmonitor,help,settings)
 #
-$ARI_DEFAULT_USER_PAGE = "voicemail";
+#$ARI_DEFAULT_USER_PAGE = "voicemail";
+$ARI_DEFAULT_USER_PAGE = "dashboard";
 
 #
 # enables ajax page refresh
