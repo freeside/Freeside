@@ -85,7 +85,21 @@ class myaccount {
     $ret .= '<BR>';
 
 
+    $ret .= '<B><A HREF="/selfservice/selfservice.cgi?session='.
+            $_SESSION['freeside_session_id'].
+            ';action=change_bill">Change billing address</A></B>';
 
+    $ret .= '&nbsp;&nbsp;|&nbsp;&nbsp;';
+
+    $ret .= '<B><A HREF="/selfservice/selfservice.cgi?session='.
+            $_SESSION['freeside_session_id'].
+            ';action=change_ship">Change service address</A></B>';
+
+    $ret .= '<BR><BR>';
+
+    $ret .= '<B><A HREF="/selfservice/selfservice.cgi?session='.
+            $_SESSION['freeside_session_id'].
+            ';action=change_pay">Change payment information</A></B><BR><BR>';
 
     return $ret;
   }

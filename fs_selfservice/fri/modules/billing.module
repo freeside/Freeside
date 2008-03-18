@@ -71,6 +71,69 @@ class billing {
 
 
     $freeside = new FreesideSelfService();
+
+   $fs_info = $freeside->customer_info( array(
+      'session_id' => $_SESSION['freeside_session_id'],
+    ) );
+    $error = $fs_info['error'];
+    if ( $error ) {
+      //$_SESSION['ari_error'] = _("Incorrect Username or Password");
+      $_SESSION['ari_error'] = $error; #// XXX report as ari_error???!
+    }
+
+    //$ret .= $fs_info['small_custview'];
+    //$ret .= '<BR>';
+
+    $ret .= 'Balance: <b>$'. $fs_info['balance']. '</b><BR><BR>';
+   
+    if ( $fs_info['balance'] > 0 ) {
+  
+      #$ret .= '<B><A HREF="'. $_SESSION['ARI_ROOT'].
+      #        '?m=billing&f=make_payment">Make a payment</A></B><BR><BR>';
+      $ret .= '<B><A HREF="/selfservice/selfservice.cgi?session='.
+              $_SESSION['freeside_session_id'].
+              ';action=make_payment">Make a payment</A></B><BR><BR>';
+
+    }
+
+    // XXX count() ???
+    if ( count($fs_info['open_invoices']) ) {
+  
+      $ret .= '<TABLE BORDER=0 CELLSPACING=0 CELLPADDING=2 BGCOLOR="#eeeeee">'.
+              '<TR><TH BGCOLOR="#ff6666" COLSPAN=5>Open Invoices</TH></TR>';
+      $link = '<A HREF="'. $_SESSION['ARI_ROOT'].
+              '?m=billing&f=view_invoice&invnum=';
+      
+      $col1 = "eeeeee";
+      $col2 = "cccccc";
+      $col = $col1;
+  
+      while ( $i = each($fs_info['open_invoices']) ) {
+  
+        $invoice = $i[value];
+  
+        $td = '<TD BGCOLOR="#'. $col. '">';
+        $a  = $link. $invoice['invnum']. '">';
+        $ret .=
+          "<TR>$td$a". 'Invoice #'. $invoice['invnum']. "</A></TD>$td</TD>".
+          "$td$a". $invoice['date']. "</A></TD>$td</TD>".
+          '<TD BGCOLOR="#'. $col. '" ALIGN="right">'. $a. '$'. $invoice['owed'].
+            '</A></TD>'.
+          '</TR>';
+
+        if ( $col == $col1 ) {
+          $col = $col2;
+        } else {
+          $col = $col1;
+        }
+
+      }
+
+      $ret .= '</TABLE><BR>';
+    } else {
+      $ret .= 'You have no outstanding invoices.<BR><BR>';
+    }
+
     #$fs_info = $freeside->customer_info( array(
     #  'session_id' => $_SESSION['freeside_session_id'],
     #) );
@@ -80,9 +143,19 @@ class billing {
     #  $_SESSION['ari_error'] = $error; #// XXX report as ari_error???!
     #}
 
-    $ret .= 'Billing goes here';
+    // $ret .= 'Billing goes here';
     // XXX navigate to make payment, view invoice,
     // & myaccount change payment info
+
+    $ret .= '<B><A HREF="/selfservice/selfservice.cgi?session='.
+            $_SESSION['freeside_session_id'].
+            ';action=make_payment">Make a credit card payment</A></B><BR><BR>';
+    $ret .= '<B><A HREF="/selfservice/selfservice.cgi?session='.
+            $_SESSION['freeside_session_id'].
+            ';action=make_payment">Make an electronic check payment</A></B><BR><BR>';
+    $ret .= '<B><A HREF="/selfservice/selfservice.cgi?session='.
+            $_SESSION['freeside_session_id'].
+            ';action=make_payment">Use a prepaid card</A></B><BR><BR>';
 
     return $ret;
 

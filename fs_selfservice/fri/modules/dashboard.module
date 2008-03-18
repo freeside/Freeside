@@ -84,8 +84,11 @@ class dashboard {
     
     if ( $fs_info['balance'] > 0 ) {
   
-      $ret .= '<B><A HREF="'. $_SESSION['ARI_ROOT'].
-              '?m=billing&f=make_payment">Make a payment</A></B><BR><BR>';
+      #$ret .= '<B><A HREF="'. $_SESSION['ARI_ROOT'].
+      #        '?m=billing&f=make_payment">Make a payment</A></B><BR><BR>';
+      $ret .= '<B><A HREF="/selfservice/selfservice.cgi?session='.
+              $_SESSION['freeside_session_id'].
+              ';action=make_payment">Make a payment</A></B><BR><BR>';
 
     }
 
@@ -127,8 +130,8 @@ class dashboard {
       $ret .= 'You have no outstanding invoices.<BR><BR>';
     }
 
-    $ret .= 'Received calls (10)<br><br>';
-    $ret .= 'Placed calls (10)';
+    #$ret .= 'Received calls (10)<br><br>';
+    #$ret .= 'Placed calls (10)';
 
 //    if ( @tickets ) {
 //      $OUT .= '<TABLE BORDER=0 CELLSPACING=0 CELLPADDING=2 BGCOLOR="#eeeeee">'.
