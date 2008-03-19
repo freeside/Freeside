@@ -392,7 +392,7 @@ Invoice Event #<% $hashref->{eventpart} ? $hashref->{eventpart} : "(NEW)" %>
 %
 %  'collect' => {
 %    'name' => 'Collect on invoices (normally only used with a <i>Late Fee</i> and <i>Generate Invoice</i> events)',
-%    'code' => '$cust_main->collect();',
+%    'code' => '$cust_main->send();',
 %    'weight'  => 80,
 %  },
 %
