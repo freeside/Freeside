@@ -1308,6 +1308,267 @@ sub OwnGroups {
 
 # }}}
 
+# {{{ Links
+
+#much false laziness w/Ticket_Overlay.pm
+
+# A helper table for links mapping to make it easier
+# to build and parse links between tickets
+
+use vars '%LINKDIRMAP';
+
+%LINKDIRMAP = (
+    MemberOf => { Base => 'MemberOf',
+                  Target => 'HasMember', },
+    RefersTo => { Base => 'RefersTo',
+                Target => 'ReferredToBy', },
+    DependsOn => { Base => 'DependsOn',
+                   Target => 'DependedOnBy', },
+    MergedInto => { Base => 'MergedInto',
+                   Target => 'MergedInto', },
+
+);
+
+sub LINKDIRMAP   { return \%LINKDIRMAP   }
+
+#sub _Links {
+#    my $self = shift;
+#
+#    #TODO: Field isn't the right thing here. but I ahave no idea what mnemonic ---
+#    #tobias meant by $f
+#    my $field = shift;
+#    my $type  = shift || "";
+#
+#    unless ( $self->{"$field$type"} ) {
+#        $self->{"$field$type"} = new RT::Links( $self->CurrentUser );
+#        if ( $self->CurrentUserHasRight('ShowTicket') ) {
+#            # Maybe this ticket is a merged ticket
+#            my $Tickets = new RT::Tickets( $self->CurrentUser );
+#            # at least to myself
+#            $self->{"$field$type"}->Limit( FIELD => $field,
+#                                           VALUE => $self->URI,
+#                                           ENTRYAGGREGATOR => 'OR' );
+#            $Tickets->Limit( FIELD => 'EffectiveId',
+#                             VALUE => $self->EffectiveId );
+#            while (my $Ticket = $Tickets->Next) {
+#                $self->{"$field$type"}->Limit( FIELD => $field,
+#                                               VALUE => $Ticket->URI,
+#                                               ENTRYAGGREGATOR => 'OR' );
+#            }
+#            $self->{"$field$type"}->Limit( FIELD => 'Type',
+#                                           VALUE => $type )
+#              if ($type);
+#        }
+#    }
+#    return ( $self->{"$field$type"} );
+#}
+
+=head2 DeleteLink
+
+Delete a link. takes a paramhash of Base, Target and Type.
+Either Base or Target must be null. The null value will 
+be replaced with this ticket\'s id
+
+=cut 
+
+sub DeleteLink {
+    my $self = shift;
+    my %args = (
+        Base   => undef,
+        Target => undef,
+        Type   => undef,
+        @_
+    );
+
+    unless ( $args{'Target'} || $args{'Base'} ) {
+        $RT::Logger->error("Base or Target must be specified\n");
+        return ( 0, $self->loc('Either base or target must be specified') );
+    }
+
+    #check acls
+    my $right = 0;
+    $right++ if $self->CurrentUserHasRight('ModifyUser');
+    if ( !$right && $RT::StrictLinkACL ) {
+        return ( 0, $self->loc("Permission Denied") );
+    }
+
+#    # If the other URI is an RT::Ticket, we want to make sure the user
+#    # can modify it too...
+#    my ($status, $msg, $other_ticket) = $self->__GetTicketFromURI( URI => $args{'Target'} || $args{'Base'} );
+#    return (0, $msg) unless $status;
+#    if ( !$other_ticket || $other_ticket->CurrentUserHasRight('ModifyTicket') ) {
+#        $right++;
+#    }
+#    if ( ( !$RT::StrictLinkACL && $right == 0 ) ||
+#         ( $RT::StrictLinkACL && $right < 2 ) )
+#    {
+#        return ( 0, $self->loc("Permission Denied") );
+#    }
+
+    my ($val, $Msg) = $self->SUPER::_DeleteLink(%args);
+
+    if ( !$val ) {
+        $RT::Logger->debug("Couldn't find that link\n");
+        return ( 0, $Msg );
+    }
+
+    my ($direction, $remote_link);
+
+    if ( $args{'Base'} ) {
+	$remote_link = $args{'Base'};
+    	$direction = 'Target';
+    }
+    elsif ( $args{'Target'} ) {
+	$remote_link = $args{'Target'};
+        $direction='Base';
+    }
+
+    if ( $args{'Silent'} ) {
+        return ( $val, $Msg );
+    }
+    else {
+	my $remote_uri = RT::URI->new( $self->CurrentUser );
+    	$remote_uri->FromURI( $remote_link );
+
+        my ( $Trans, $Msg, $TransObj ) = $self->_NewTransaction(
+            Type      => 'DeleteLink',
+            Field => $LINKDIRMAP{$args{'Type'}}->{$direction},
+	    OldValue =>  $remote_uri->URI || $remote_link,
+            TimeTaken => 0
+        );
+
+        if ( $remote_uri->IsLocal ) {
+
+            my $OtherObj = $remote_uri->Object;
+            my ( $val, $Msg ) = $OtherObj->_NewTransaction(Type  => 'DeleteLink',
+                                                           Field => $direction eq 'Target' ? $LINKDIRMAP{$args{'Type'}}->{Base}
+                                                                                           : $LINKDIRMAP{$args{'Type'}}->{Target},
+                                                           OldValue => $self->URI,
+                                                           ActivateScrips => ! $RT::LinkTransactionsRun1Scrip,
+                                                           TimeTaken => 0 );
+        }
+
+        return ( $Trans, $Msg );
+    }
+}
+
+sub AddLink {
+    my $self = shift;
+    my %args = ( Target => '',
+                 Base   => '',
+                 Type   => '',
+                 Silent => undef,
+                 @_ );
+
+    unless ( $args{'Target'} || $args{'Base'} ) {
+        $RT::Logger->error("Base or Target must be specified\n");
+        return ( 0, $self->loc('Either base or target must be specified') );
+    }
+
+    my $right = 0;
+    $right++ if $self->CurrentUserHasRight('ModifyUser');
+    if ( !$right && $RT::StrictLinkACL ) {
+        return ( 0, $self->loc("Permission Denied") );
+    }
+
+#    # If the other URI is an RT::Ticket, we want to make sure the user
+#    # can modify it too...
+#    my ($status, $msg, $other_ticket) = $self->__GetTicketFromURI( URI => $args{'Target'} || $args{'Base'} );
+#    return (0, $msg) unless $status;
+#    if ( !$other_ticket || $other_ticket->CurrentUserHasRight('ModifyTicket') ) {
+#        $right++;
+#    }
+#    if ( ( !$RT::StrictLinkACL && $right == 0 ) ||
+#         ( $RT::StrictLinkACL && $right < 2 ) )
+#    {
+#        return ( 0, $self->loc("Permission Denied") );
+#    }
+
+    return $self->_AddLink(%args);
+}
+
+#sub __GetTicketFromURI {
+#    my $self = shift;
+#    my %args = ( URI => '', @_ );
+#
+#    # If the other URI is an RT::Ticket, we want to make sure the user
+#    # can modify it too...
+#    my $uri_obj = RT::URI->new( $self->CurrentUser );
+#    $uri_obj->FromURI( $args{'URI'} );
+#
+#    unless ( $uri_obj->Resolver && $uri_obj->Scheme ) {
+#	    my $msg = $self->loc( "Couldn't resolve '[_1]' into a URI.", $args{'URI'} );
+#        $RT::Logger->warning( "$msg\n" );
+#        return( 0, $msg );
+#    }
+#    my $obj = $uri_obj->Resolver->Object;
+#    unless ( UNIVERSAL::isa($obj, 'RT::Ticket') && $obj->id ) {
+#        return (1, 'Found not a ticket', undef);
+#    }
+#    return (1, 'Found ticket', $obj);
+#}
+
+=head2 _AddLink  
+
+Private non-acled variant of AddLink so that links can be added during create.
+
+=cut
+
+sub _AddLink {
+    my $self = shift;
+    my %args = ( Target => '',
+                 Base   => '',
+                 Type   => '',
+                 Silent => undef,
+                 @_ );
+
+    my ($val, $msg, $exist) = $self->SUPER::_AddLink(%args);
+    return ($val, $msg) if !$val || $exist;
+
+    my ($direction, $remote_link);
+    if ( $args{'Target'} ) {
+        $remote_link  = $args{'Target'};
+        $direction    = 'Base';
+    } elsif ( $args{'Base'} ) {
+        $remote_link  = $args{'Base'};
+        $direction    = 'Target';
+    }
+
+    # Don't write the transaction if we're doing this on create
+    if ( $args{'Silent'} ) {
+        return ( $val, $msg );
+    }
+    else {
+        my $remote_uri = RT::URI->new( $self->CurrentUser );
+    	$remote_uri->FromURI( $remote_link );
+
+        #Write the transaction
+        my ( $Trans, $Msg, $TransObj ) = 
+	    $self->_NewTransaction(Type  => 'AddLink',
+				   Field => $LINKDIRMAP{$args{'Type'}}->{$direction},
+				   NewValue =>  $remote_uri->URI || $remote_link,
+				   TimeTaken => 0 );
+
+        if ( $remote_uri->IsLocal ) {
+
+            my $OtherObj = $remote_uri->Object;
+            my ( $val, $Msg ) = $OtherObj->_NewTransaction(Type  => 'AddLink',
+                                                           Field => $direction eq 'Target' ? $LINKDIRMAP{$args{'Type'}}->{Base} 
+                                                                                           : $LINKDIRMAP{$args{'Type'}}->{Target},
+                                                           NewValue => $self->URI,
+                                                           ActivateScrips => ! $RT::LinkTransactionsRun1Scrip,
+                                                           TimeTaken => 0 );
+        }
+        return ( $val, $Msg );
+    }
+
+}
+
+
+
+# }}}
+
+
 # {{{ sub Rights testing
 
 =head1 Rights testing
