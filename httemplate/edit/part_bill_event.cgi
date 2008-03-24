@@ -390,12 +390,6 @@ Invoice Event #<% $hashref->{eventpart} ? $hashref->{eventpart} : "(NEW)" %>
 %    'weight'  => 70,
 %  },
 %
-%  'collect' => {
-%    'name' => 'Collect on invoices (normally only used with a <i>Late Fee</i> and <i>Generate Invoice</i> events)',
-%    'code' => '$cust_main->send();',
-%    'weight'  => 80,
-%  },
-%
 %;
 %
 <SCRIPT TYPE="text/javascript">var myreasons = new Array();</SCRIPT>
