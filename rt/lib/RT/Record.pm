@@ -74,6 +74,7 @@ our @ISA;
 use base qw(RT::Base);
 
 use RT::Date;
+use RT::I18N;
 use RT::User;
 use RT::Attributes;
 use DBIx::SearchBuilder::Record::Cachable;
@@ -862,6 +863,7 @@ sub _DecodeLOB {
     elsif ( $ContentEncoding && $ContentEncoding ne 'none' ) {
         return ( $self->loc( "Unknown ContentEncoding [_1]", $ContentEncoding ) );
     }
+
     if ( RT::I18N::IsTextualContentType($ContentType) ) {
        $Content = Encode::decode_utf8($Content) unless Encode::is_utf8($Content);
     }

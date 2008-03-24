@@ -716,6 +716,43 @@ sub Create {
 
     # }}}
 
+    # {{{ Deal with auto-customer association
+
+    #unless we already have (a) customer(s)...
+    unless ( $self->Customers->Count ) {
+
+      #find any requestors with customer targets
+  
+      my %cust_target = ();
+  
+      my @Requestors =
+        grep { $_->Customers->Count }
+             @{ $self->Requestors->UserMembersObj->ItemsArrayRef };
+  
+      foreach my $Requestor ( @Requestors ) {
+        foreach my $cust_link ( @{ $Requestor->Customers->ItemsArrayRef } ) {
+          $cust_target{ $cust_link->Target } = 1;
+        }
+      }
+  
+      #and then auto-associate this ticket with those customers
+  
+      foreach my $cust_target ( keys %cust_target ) {
+  
+        my @link = ( 'Type'   => 'MemberOf',
+                     #'Target' => "freeside://freeside/cust_main/$custnum",
+                     'Target' => $cust_target,
+                   );
+  
+        my( $val, $msg ) = $self->AddLink(@link);
+        push @non_fatal_errors, $msg;
+  
+      }
+
+    }
+
+    # }}}
+
     # {{{ Add all the custom fields
 
     foreach my $arg ( keys %args ) {

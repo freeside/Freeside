@@ -21,12 +21,7 @@
   </tr>
   <tr>
     <td class="value">
-% #while (my $link = $Object->MemberOf->Next) {
-% foreach my $link (
-%   grep { $_->TargetURI->Resolver->{'fstable'} eq 'cust_main' }
-%   grep { $_->TargetURI->Scheme eq 'freeside' }
-%        @{ $Object->_Links('Base')->ItemsArrayRef }
-% ) {
+% foreach my $link ( @{ $Object->Customers->ItemsArrayRef } ) {
 
       <INPUT TYPE=CHECKBOX NAME="DeleteLink--<%$link->Type%>-<%$link->Target%>">
 %#        <& ShowLink, URI => $link->TargetURI &><br>

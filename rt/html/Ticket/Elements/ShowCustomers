@@ -11,17 +11,15 @@
 %# General Public License for more details.
 <table>
 % my $cust = 0;
-% foreach my $customerURI (
-%   grep { $_->Resolver->{'fstable'} eq 'cust_main' }
-%   grep { $_->Scheme eq 'freeside' }
-%    map { $_->TargetURI }
-%        @{ $Ticket->_Links('Base')->ItemsArrayRef }
-% ) {
+% foreach my $custResolver ( map { $_->TargetURI->Resolver }
+%                                @{ $Ticket->Customers->ItemsArrayRef }
+%                          )
+% {
 %   $cust++;
 %   my $cust_main = '';
   <tr>
     <td class="value">
-      <A HREF="<% $customerURI->Resolver->HREF %>"><% $customerURI->Resolver->AsStringLong |n %></A>
+      <A HREF="<% $custResolver->HREF %>"><% $custResolver->AsStringLong |n %></A>
     </td>
   </tr>
 % }
