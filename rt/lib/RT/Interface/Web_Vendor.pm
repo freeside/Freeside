@@ -43,12 +43,15 @@ sub ProcessTicketCustomers {
     my %args = (
         TicketObj => undef,
         ARGSRef   => undef,
+        Debug     => 0,
         @_
     );
     my @results = ();
 
     my $Ticket  = $args{'TicketObj'};
     my $ARGSRef = $args{'ARGSRef'};
+    my $Debug   = $args{'Debug'};
+    my $me = 'ProcessTicketCustomers';
 
     ### false laziness w/RT::Interface::Web::ProcessTicketLinks
     # Delete links that are gone gone gone.
@@ -71,21 +74,69 @@ sub ProcessTicketCustomers {
     }
     ###
 
-    my @delete_custnums =
-      map  { /^Ticket-AddCustomer-(\d+)$/; $1 }
-      grep { /^Ticket-AddCustomer-(\d+)$/ && $ARGSRef->{$_} }
-      keys %$ARGSRef;
+    ###
+    #find new customers
+    ###
 
     my @custnums = map  { /^Ticket-AddCustomer-(\d+)$/; $1 }
                    grep { /^Ticket-AddCustomer-(\d+)$/ && $ARGSRef->{$_} }
                    keys %$ARGSRef;
 
+    #my @delete_custnums =
+    #  map  { /^Ticket-AddCustomer-(\d+)$/; $1 }
+    #  grep { /^Ticket-AddCustomer-(\d+)$/ && $ARGSRef->{$_} }
+    #  keys %$ARGSRef;
+
+    ###
+    #figure out if we're going to auto-link requestors, and find them if so
+    ###
+
+    my $num_cur_cust = $Ticket->Customers->Count;
+    my $num_new_cust = scalar(@custnums);
+    warn "$me: $num_cur_cust current customers / $num_new_cust new customers\n"
+      if $Debug;
+
+    #if we're linking the first ticket to one customer
+    my $link_requestors = ( $num_cur_cust == 0 && $num_new_cust == 1 );
+    warn "$me: adding a single customer to a previously customerless".
+         " ticket, so linking customers to requestor too\n"
+      if $Debug && $link_requestors;
+
+    my @Requestors = ();
+    if ( $link_requestors ) {
+
+      #find any requestors without customers
+      @Requestors =
+        grep { ! $_->Customers->Count }
+             @{ $Ticket->Requestors->UserMembersObj->ItemsArrayRef };
+
+      warn "$me: found ". scalar(@Requestors). " requestors without".
+           " customers; linking them\n"
+        if $Debug;
+
+    }
+
+    ###
+    #link ticket (and requestors) to customers
+    ###
+
     foreach my $custnum ( @custnums ) {
-      my( $val, $msg ) =
-        $Ticket->AddLink( 'Type'   => 'MemberOf',
-                          'Target' => "freeside://freeside/cust_main/$custnum",
-                        );
+
+      my @link = ( 'Type'   => 'MemberOf',
+                   'Target' => "freeside://freeside/cust_main/$custnum",
+                 );
+
+      my( $val, $msg ) = $Ticket->AddLink(@link);
       push @results, $msg;
+
+      #add customer links to requestors
+      foreach my $Requestor ( @Requestors ) {
+        my( $val, $msg ) = $Requestor->AddLink(@link);
+        push @results, $msg;
+        warn "$me: linking requestor to custnum $custnum: $msg\n"
+          if $Debug > 1;
+      }
+
     }
 
     return @results;
@@ -125,10 +176,10 @@ sub ProcessObjectCustomers {
     }
     ###
 
-    my @delete_custnums =
-      map  { /^Object-AddCustomer-(\d+)$/; $1 }
-      grep { /^Object-AddCustomer-(\d+)$/ && $ARGSRef->{$_} }
-      keys %$ARGSRef;
+    #my @delete_custnums =
+    #  map  { /^Object-AddCustomer-(\d+)$/; $1 }
+    #  grep { /^Object-AddCustomer-(\d+)$/ && $ARGSRef->{$_} }
+    #  keys %$ARGSRef;
 
     my @custnums = map  { /^Object-AddCustomer-(\d+)$/; $1 }
                    grep { /^Object-AddCustomer-(\d+)$/ && $ARGSRef->{$_} }
