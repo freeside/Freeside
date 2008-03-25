@@ -69,7 +69,7 @@ ok (require RT::SearchBuilder);
 package RT::SearchBuilder;
 
 use RT::Base;
-use DBIx::SearchBuilder "1.48";
+use DBIx::SearchBuilder "1.50";
 
 use strict;
 use vars qw(@ISA);
