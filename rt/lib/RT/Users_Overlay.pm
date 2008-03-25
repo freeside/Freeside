@@ -440,6 +440,7 @@ sub WhoHaveRight {
     $from_group->WhoHaveGroupRight( %args );
 
     #XXX: DIRTY HACK
+    use DBIx::SearchBuilder 1.50; #no version on ::Union :(
     use DBIx::SearchBuilder::Union;
     my $union = new DBIx::SearchBuilder::Union;
     $union->add( $_ ) foreach @from_role;

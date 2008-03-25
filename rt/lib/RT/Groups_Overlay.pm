@@ -415,6 +415,7 @@ sub WithRight {
     $from_group->WithGroupRight( %args );
 
     #XXX: DIRTY HACK
+    use DBIx::SearchBuilder 1.50; #no version on ::Union :(
     use DBIx::SearchBuilder::Union;
     my $union = new DBIx::SearchBuilder::Union;
     $union->add($from_role);
