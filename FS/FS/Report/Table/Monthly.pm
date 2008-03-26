@@ -274,6 +274,12 @@ sub credits_12mo {
   $self->credits($speriod, $eperiod, $agentnum);
 }
 
+sub netcredits_12mo {
+  my( $self, $speriod, $eperiod, $agentnum ) = @_;
+  $speriod = $self->_subtract_11mo($speriod);
+  $self->netcredits($speriod, $eperiod, $agentnum);
+}
+
 #not being too bad with the false laziness
 use Time::Local qw(timelocal);
 sub _subtract_11mo {
