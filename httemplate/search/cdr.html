@@ -24,7 +24,6 @@ my $hashref = {};
 # and fixup $count_query
 
 my @search = ();
-my @qsearch = ();
 
 ###
 # freesidestatus
@@ -51,17 +50,21 @@ if ( $cgi->param('freesidestatus') eq 'NULL' ) {
 my $str2time_sql = str2time_sql;
 
 my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
-push @search,
-my @dsearch = ( "$str2time_sql calldate) >= $beginning ",
-                "$str2time_sql calldate) <= $ending"
-	      );
-push @search, @dsearch;
-push @qsearch, @search;
+push @search, "$str2time_sql calldate) >= $beginning ",
+              "$str2time_sql calldate) <= $ending";
 
+###
+# duration / billsec
+###
+
+push @search, FS::UI::Web::parse_lt_gt($cgi, 'duration');
+push @search, FS::UI::Web::parse_lt_gt($cgi, 'billsec');
 
 ###
 # src/dest
 ###
+
+my @qsearch = @search;
 
 if ( $cgi->param('src') =~ /^\s*([\d\-\+\ ]+)\s*$/ ) {
   ( my $src = $1 ) =~ s/\D//g;

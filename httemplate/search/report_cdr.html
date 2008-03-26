@@ -2,7 +2,7 @@
 
 <FORM ACTION="cdr.html" METHOD="GET">
 
-<TABLE>
+<TABLE BGCOLOR="#cccccc" CELLSPACING=0>
   <TR>
     <TD ALIGN="right">Status: </TD>
     <TD>
@@ -29,6 +29,18 @@
       <INPUT TYPE="text" NAME="dst">
     </TD>
   </TR>
+
+  <% include( '/elements/tr-input-lessthan_greaterthan.html',
+                'label' => 'Duration (sec)',
+                'field' => 'duration',
+            )
+  %>
+
+  <% include( '/elements/tr-input-lessthan_greaterthan.html',
+                'label' => 'Billable duration (sec)',
+                'field' => 'billsec',
+            )
+  %>
 
 </TABLE>
 
