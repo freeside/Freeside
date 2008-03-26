@@ -5,6 +5,7 @@ use vars qw( @ISA );
 use FS::Record qw( qsearch qsearchs );
 use FS::rate;
 use FS::rate_region;
+use Tie::IxHash;
 
 @ISA = qw(FS::Record);
 
@@ -184,6 +185,31 @@ Returns a short list of the prefixes for the destination region
 sub dest_prefixes_short {
   my $self = shift;
   $self->dest_region->prefixes_short;
+}
+
+
+=back
+
+=head1 SUBROUTINES
+
+=over 4
+
+=item granularities
+
+  Returns an (ordered) hash of granularity => name pairs
+
+=cut
+
+tie my %granularities, 'Tie::IxHash',
+  '1', => '1 second',
+  '6'  => '6 second',
+  '30' => '30 second', # '1/2 minute',
+  '60' => 'minute',
+  '0'  => 'call',
+;
+
+sub granularities {
+  %granularities;
 }
 
 

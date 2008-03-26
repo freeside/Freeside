@@ -132,13 +132,7 @@ my $action = $rate_region->regionnum ? 'Edit' : 'Add';
 
 my $p1 = popurl(1);
 
-tie my %granularity, 'Tie::IxHash',
-  '1', => '1 second',
-  '6'  => '6 second',
-  '30' => '30 second', # '1/2 minute',
-  '60' => 'minute',
-  '0'  => 'call',
-;
+tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
 
 my @rate_prefix = $rate_region->rate_prefix;
 my $countrycode = '';

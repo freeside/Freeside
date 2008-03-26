@@ -36,12 +36,7 @@
 %>
 <%once>
 
-my %granularity = (
-  '1', => '1 second',
-  '6'  => '6 second',
-  '30' => '30 second', # '1/2 minute',
-  '60' => 'minute',
-);
+tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
 
 my $conf = new FS::Conf;
 my $money_char = $conf->config('money_char') || '$';

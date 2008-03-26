@@ -19,7 +19,7 @@
                    { field=>'min_charge',          type=>'money', size=>4 },
                    { field         =>'sec_granularity',
                      type          =>'select',
-                     options       => [qw( 1 6 30 60 )],
+                     options       => [ keys %granularity ],
                      labels        => \%granularity,
                      disable_empty => 1,
                    },
@@ -29,12 +29,7 @@
 %>
 <%once>
 
-tie my %granularity, 'Tie::IxHash',
-  '1', => '1 second',
-  '6'  => '6 second',
-  '30' => '30 second', # '1/2 minute',
-  '60' => 'minute',
-;
+tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
 
 </%once>
 
@@ -46,7 +41,8 @@ die "access denied"
 
 #slightly inefficient, i suppose an edit+error callback would be better
 my $name = 'rate';
-if (    $cgi->keywords               =~ /^(\d+)$/
+my ($keywords) = $cgi->keywords;
+if (    $keywords                    =~ /^(\d+)$/
      || $cgi->param('ratedetailnum') =~ /^(\d+)$/ ) {
   my $rate_detail = qsearchs('rate_detail', { 'ratedetailnum' => $1 } )
     or die "unknown ratedetailnum $1";
