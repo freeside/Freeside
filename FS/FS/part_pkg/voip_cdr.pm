@@ -278,9 +278,10 @@ sub calc_recur {
             unless exists $included_min{$regionnum};
       
           my $granularity = $rate_detail->sec_granularity;
-          my $seconds = $cdr->billsec; # |ength($cdr->billsec) ? $cdr->billsec : $cdr->duration;
+          my $seconds = $cdr->billsec; # length($cdr->billsec) ? $cdr->billsec : $cdr->duration;
           $seconds += $granularity - ( $seconds % $granularity )
-            if $granularity; # 0 is per call
+            if $seconds      # don't granular-ize 0 billsec calls (bills them)
+            && $granularity; # 0 is per call
           my $minutes = sprintf("%.1f", $seconds / 60);
           $minutes =~ s/\.0$// if $granularity == 60;
 
