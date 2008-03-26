@@ -72,21 +72,35 @@ if ( ! $cgi->param('plan_weight_eventcode') ) {
   $cgi->param('eventcode', $eventcode);
   $cgi->param('plandata', $plandata);
 
-  unless($error){
-    my $new = new FS::part_bill_event ( {
-      map {
-        $_, scalar($cgi->param($_));
-      } fields('part_bill_event'),
-    } );
-    $new->setfield('reason', $rnum);
+  unless($error) {
 
     if ( $eventpart ) {
+
+      my $new = new FS::part_bill_event ( {
+        map { $_ => scalar($cgi->param($_)) }
+            fields('part_bill_event'),
+      } );
+      $new->setfield('reason' => $rnum);
       $error = $new->replace($old);
+
     } else {
-      $error = $new->insert;
-      $eventpart = $new->getfield('eventpart');
+
+      foreach my $payby ( $cgi->param('payby') ) {
+        my $new = new FS::part_bill_event ( {
+          map  { $_ => scalar($cgi->param($_)) }
+          grep { $_ ne 'payby' }
+               fields('part_bill_event')
+        } );
+        $new->setfield('payby'  => $payby);
+        $new->setfield('reason' => $rnum );
+        $error = $new->insert;
+        last if $error;
+      }
+
     }
+
   }
+
 } 
 
 </%init>

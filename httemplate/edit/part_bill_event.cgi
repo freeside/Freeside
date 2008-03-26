@@ -22,7 +22,7 @@ Invoice Event #<% $hashref->{eventpart} ? $hashref->{eventpart} : "(NEW)" %>
   <TR>
     <TD ALIGN="right">For </TD>
     <TD>
-      <SELECT NAME="payby">
+      <SELECT NAME="payby" <% $hashref->{eventpart} ? '' : 'MULTIPLE SIZE=7'%>>
 % tie my %payby, 'Tie::IxHash', FS::payby->cust_payby2longname;
 %           foreach my $payby ( keys %payby ) {
 %        
