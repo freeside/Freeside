@@ -186,8 +186,18 @@ if ( $new->custnum eq '' ) {
   if ($new->stateid =~ /^xxx/) {
     $new->stateid($old->stateid);
   }
-  if ($new->payby =~ /^(CARD|DCRD|CHEK|DCHK)$/ && $new->payinfo =~ /xx/) {
+  if ($new->payby =~ /^(CARD|DCRD)$/ && $new->payinfo =~ /xx/) {
     $new->payinfo($old->payinfo);
+  } elsif ($new->payby =~ /^(CHEK|DCHK)$/ && $new->payinfo =~ /xx/) {
+    #fix for #3085 "edit of customer's routing code only surprisingly causes
+    #nothing to happen...
+    # this probably won't do the right thing when we don't have the
+    # public key (can't actually get the real $old->payinfo)
+    my($new_account, $new_aba) = split('@', $new->payinfo);
+    my($old_account, $old_aba) = split('@', $old->payinfo);
+    $new_account = $old_account if $new_account =~ /xx/;
+    $new_aba     = $old_aba     if $new_aba     =~ /xx/;
+    $new->payinfo($new_account.'@'.$new_aba);
   }
 
   warn "$me calling $new -> replace( $old, \ @invoicing_list )" if $DEBUG;
