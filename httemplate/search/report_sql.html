@@ -1,0 +1,23 @@
+<% include('/elements/header.html', 'SQL Query' ) %>
+
+<FORM ACTION="sql.html" METHOD="GET">
+
+<TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+  <TR>
+    <TD ALIGN="right" VALIGN="top">SELECT </TD>
+    <TD><TEXTAREA NAME="sql"></TEXTAREA></TD>
+  </TR>
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="Query">
+
+</FORM>
+
+<% include('/elements/footer.html') %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Raw SQL');
+
+</%init>
