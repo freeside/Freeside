@@ -100,7 +100,8 @@
 %  my $payinfo;
 %  if ( $payby eq 'CARD' ) {
 %    $payinfo = $cust_pay->paymask;
-%  } elsif ( $payby eq 'CHEK' && $cust_pay->paymask =~ /^(\d+)\@(\d+)$/ ) {
+%  } elsif ( $payby eq 'CHEK' ) {
+%    my( $account, $aba ) = split('@', $cust_pay->paymask );
 %    $payinfo = "ABA $2, Acct #$1";
 %  } else {
 %    $payinfo = $cust_pay->payinfo;
