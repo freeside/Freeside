@@ -235,7 +235,10 @@ if ( $cgi->param('magic') ) {
 
 }
 
-my $link = [ "${p}view/cust_pay.html?paynum=", 'paynum' ];
+my $link = '';
+$link = [ "${p}view/cust_pay.html?paynum=", 'paynum' ]
+  if $FS::CurrentUser::CurrentUser->access_right('View invoices'); #XXX for now
+  #later# if $FS::CurrentUser::CurrentUser->access_right('View customer payments');
 
 my $cust_link = sub {
   my $cust_pay = shift;
