@@ -69,8 +69,7 @@ Billing information
   <TD BGCOLOR="#ffffff"><% $cust_main->payname %></TD>
 </TR>
 % } elsif ( $cust_main->payby eq 'CHEK' || $cust_main->payby eq 'DCHK') {
-%     my( $account, $aba ) = split('@', $cust_main->payinfo );
-%
+%     my( $account, $aba ) = split('@', $cust_main->paymask );
 
 
     Electronic&nbsp;check&nbsp;<% $cust_main->payby eq 'CHEK' ? '(automatic)' : '(on-demand)' %>
@@ -82,7 +81,7 @@ Billing information
 </TR>
 <TR>
   <TD ALIGN="right">Account number</TD>
-  <TD BGCOLOR="#ffffff"><% 'x'x(length($account)-2). substr($account,(length($account)-2)) %></TD>
+  <TD BGCOLOR="#ffffff"><% $account %></TD>
 </TR>
 <TR>
   <TD ALIGN="right">Account type</TD>
