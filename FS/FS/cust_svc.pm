@@ -642,43 +642,28 @@ CDRs are associated with svc_phone services via svc_phone.phonenum
 sub get_cdrs_for_update {
   my($self, %options) = @_;
 
-  my @cdrs = $self->get_cdrs_fromfield('charged_party', %options);
-
-  push @cdrs, $self->get_cdrs_fromfield('src', %options)
-    unless $options{'disable_src'};
-
-  @cdrs;
-}
-
-sub get_cdrs_fromfield {
-  my($self, $field, %options) = @_;
-
-  my $default_prefix = $options{'default_prefix'};
+  my @fields = ( 'charged_party' );
+  push @fields, 'src' unless $options{'disable_src'};
 
   #CDRs are now associated with svc_phone services via svc_phone.phonenum
   #return () unless $self->svc_x->isa('FS::svc_phone');
   return () unless $self->part_svc->svcdb eq 'svc_phone';
   my $number = $self->svc_x->phonenum;
 
-  my @cdrs = 
+  my $prefix = $options{'default_prefix'};
+
+  my @where =  map " $_ = '$number'        ", @fields;
+  push @where, map " $_ = '$prefix$number' ", @fields
+    if length($prefix);
+
+  my $extra_sql = ' AND ( '. join(' OR ', @where ). ' ) ';
+
+  my @cdrs =
     qsearch( {
       'table'      => 'cdr',
-      'hashref'    => { 'freesidestatus' => '',
-                        $field           => $number
-                      },
-      'extra_sql'  => 'FOR UPDATE',
+      'hashref'    => { 'freesidestatus' => '', },
+      'extra_sql'  => "$extra_sql FOR UPDATE",
     } );
-
-  if ( length($default_prefix) ) {
-    push @cdrs,
-      qsearch( {
-        'table'      => 'cdr',
-        'hashref'    => { 'freesidestatus' => '',
-                          $field           => "$default_prefix$number",
-                        },
-        'extra_sql'  => 'FOR UPDATE',
-      } );
-  }
 
   @cdrs;
 }
