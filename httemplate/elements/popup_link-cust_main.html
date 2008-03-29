@@ -41,7 +41,8 @@ if (ref(@_[0]) eq 'HASH') {
   ($action, $label, $actionlabel, $color, $cust_main) = @_;
 }
 
-$action .= '?'. $cust_main->custnum;
+$action .= ( $action =~ /\?/ ) ? ';' : '?';
+$action .= 'custnum='. $cust_main->custnum;
 
 </%init>
 <% $cust_main 

@@ -10,6 +10,8 @@ function enable_order_pkg () {
 }
 </SCRIPT>
 
+<% include('/elements/error.html') %>
+
 <FORM NAME="OrderPkgForm" ACTION="<% $p %>edit/process/quick-cust_pkg.cgi" METHOD="POST">
 
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<% $cust_main->custnum %>">
@@ -19,8 +21,9 @@ function enable_order_pkg () {
   <TH ALIGN="right">Package</TH>
   <TD>
     <% include('/elements/select-cust-part_pkg.html',
-                 'cust_main' => $cust_main,
-                 'onchange'  => 'enable_order_pkg',
+                 'curr_value' => scalar( $cgi->param('pkgpart') ),
+                 'cust_main'  => $cust_main,
+                 'onchange'   => 'enable_order_pkg',
               )
     %>
   </TD>
@@ -50,8 +53,7 @@ die "access denied"
 
 my $conf = new FS::Conf;
 
-my($query) = $cgi->keywords;
-$query =~ /^(\d+)$/;
+$cgi->param('custnum') =~ /^(\d+)$/;
 my $custnum = $1;
 my $cust_main = qsearchs({
   'table'     => 'cust_main',

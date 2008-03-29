@@ -17,8 +17,7 @@
 <% include('/elements/tr-select-reason.html',
              'field'          => 'reasonnum',
              'reason_class'   => 'C',
-             #XXX these need to be sticky on errors too...
-             #'curr_value'     => '',
+             'cgi'            => $cgi,
              'control_button' => 'document.cust_cancel_popup.submit',
           )
 %>
@@ -35,24 +34,21 @@
 
 <%init>
 
-my($custnum, $reasonnum, $submit, $cust_main, $curuser, $class); 
+my $reasonnum = '';
+my($submit, $class);
+
+$cgi->param('custnum') =~ /^(\d+)$/ or die 'illegal custnum';
+my $custnum = $1;
+
 if ( $cgi->param('error') ) {
-  $custnum        = $cgi->param('custnum');
-  $reasonnum     = $cgi->param('reasonnum');
-} else {
-  my( $query ) = $cgi->keywords;
-  if ( $query =~ /^(\d+)$/ ) {
-    $custnum  = $1;
-  } else {
-    die "illegal query ". $cgi->keywords;
-  }
+  $reasonnum = $cgi->param('reasonnum');
 }
 
-$curuser = $FS::CurrentUser::CurrentUser;
+my $curuser = $FS::CurrentUser::CurrentUser;
 
 die "access denied" unless $curuser->access_right('Cancel customer');
 
-$cust_main = qsearchs( {
+my $cust_main = qsearchs( {
   'table'     => 'cust_main',
   'hashref'   => { 'custnum' => $custnum },
   'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,

@@ -1,3 +1,34 @@
+<%doc>
+
+Example:
+
+  include( '/elements/tr-select-reason.html',
+
+    #required 
+    'field'         => 'reasonnum',
+    'reason_class'  => 'C', # currently 'C', 'R',  or 'S'
+                           # for cancel, credit, or suspend
+
+    #recommended
+    'cgi' => $cgi, #easiest way for things to be properly "sticky" on errors
+
+    #optional
+    'control_button' => 'element_name', #button to be enabled when a reason is
+                                        #selected
+    'id'             => 'element_id',
+
+    #deprecated ways to keep things "sticky" on errors
+    # (requires duplicate code in each using file to parse cgi params)
+    'curr_value'     => $curr_value,
+    'curr_value'     => {
+                          'typenum' => $typenum,
+                          'reason'  => $reason,
+                        },
+
+  )
+
+</%doc>
+
 <SCRIPT TYPE="text/javascript">
   function sh_add<% $func_suffix %>()
   {
@@ -36,7 +67,7 @@
   <TD ALIGN="right">Reason</TD>
   <TD>
     <SELECT id="<% $id %>" name="<% $name %>" onFocus="sh_add<% $func_suffix %>()" onChange="sh_add<% $func_suffix %>()">
-      <OPTION VALUE="" <% ($init_reason eq "") ? 'SELECTED' : '' %>>Select Reason...</OPTION>
+      <OPTION VALUE="" <% ($init_reason eq '') ? 'SELECTED' : '' %>>Select Reason...</OPTION>
 %    foreach my $reason (@reasons) {
       <OPTION VALUE="<% $reason->reasonnum %>" <% ($init_reason == $reason->reasonnum) ? 'SELECTED' : '' %>><% $reason->reasontype->type %> : <% $reason->reason %></OPTION>
 %    }
@@ -95,7 +126,13 @@ my %opt = @_;
 
 my $name = $opt{'field'};
 my $class = $opt{'reason_class'};
-my $init_reason = $opt{'curr_value'};
+
+my $init_reason;
+if ( $opt{'cgi'} ) {
+  $init_reason = $opt{'cgi'}->param($name);
+} else {
+  $init_reason = $opt{'curr_value'};
+}
 
 my $controlledbutton = $opt{'control_button'};
 
@@ -128,6 +165,9 @@ if ($init_reason == -1 || ref($init_reason) ) {
     $init_type      = $init_reason->{'typenum'};
     $init_newreason = $init_reason->{'reason'};
     $init_reason = -1;
+  } elsif ( $opt{'cgi'} ) {
+    $init_type      = $opt{'cgi'}->param( "new${name}T" );
+    $init_newreason = $opt{'cgi'}->param( "new$name"    );
   }
 
 }
