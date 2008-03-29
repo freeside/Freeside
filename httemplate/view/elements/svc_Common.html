@@ -84,6 +84,18 @@ Service #<B><% $svcnum %></B>
 </TABLE></TD></TR></TABLE>
 
 <BR>
+
+% if ( defined($opt{'html_foot'}) ) {
+
+  <% ref($opt{'html_foot'})
+       ? &{ $opt{'html_foot'} }($svc_x)
+       : $opt{'html_foot'}
+  %>
+  <BR>
+
+% }
+
+
 <% joblisting({'svcnum'=>$svcnum}, 1) %>
 
 <% include('/elements/footer.html') %>
