@@ -21,7 +21,7 @@ function enable_order_pkg () {
   <TH ALIGN="right">Package</TH>
   <TD>
     <% include('/elements/select-cust-part_pkg.html',
-                 'curr_value' => scalar( $cgi->param('pkgpart') ),
+                 'curr_value' => $pkgpart,
                  'cust_main'  => $cust_main,
                  'onchange'   => 'enable_order_pkg',
               )
@@ -41,7 +41,7 @@ function enable_order_pkg () {
 </TABLE>
 
 <BR>
-<INPUT NAME="submit" TYPE="submit" VALUE="Order Package" disabled>
+<INPUT NAME="submit" TYPE="submit" VALUE="Order Package" <% $pkgpart ? '' : 'DISABLED' %>>
 
 </FORM>
 </BODY>
@@ -60,5 +60,7 @@ my $cust_main = qsearchs({
   'hashref'   => { 'custnum' => $custnum },
   'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
 });
+
+my $pkgpart = scalar($cgi->param('pkgpart'));
 
 </%init>
