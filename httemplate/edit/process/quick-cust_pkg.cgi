@@ -1,6 +1,6 @@
 %if ($error) {
 %  $cgi->param('error', $error);
-<% $cgi->redirect(popurl(2). 'misc/order_pkg.html?'. $cgi->query_string ) %>
+<% $cgi->redirect(popurl(3). 'misc/order_pkg.html?'. $cgi->query_string ) %>
 %} else {
 %  my $frag = "cust_pkg". $cust_pkg[0]->pkgnum;
 <% header('Package ordered') %>
