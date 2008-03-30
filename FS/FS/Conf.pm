@@ -150,12 +150,12 @@ sub exists {
   defined($self->_config($name, $agentnum));
 }
 
-#=item config_orbase KEY SUFFIX
-#
-#Returns the configuration value or values (depending on context) for 
-#KEY_SUFFIX, if it exists, otherwise for KEY
-#
-#=cut
+=item config_orbase KEY SUFFIX
+
+Returns the configuration value or values (depending on context) for 
+KEY_SUFFIX, if it exists, otherwise for KEY
+
+=cut
 
 # outmoded as soon as we shift to agentnum based config values
 # well, mostly.  still useful for e.g. late notices, etc. in that we want
@@ -169,6 +169,25 @@ sub config_orbase {
     $self->config("${name}_$suffix");
   } else {
     $self->config($name);
+  }
+}
+
+=item key_orbase KEY SUFFIX
+
+If the config value KEY_SUFFIX exists, returns KEY_SUFFIX, otherwise returns
+KEY.  Useful for which exact configuration option is returned by config_orbase.
+
+=cut
+
+sub configkey_orbase {
+  my $self = shift;
+  #no compat for this...return $self->_usecompat('config_orbase', @_) if use_confcompat;
+
+  my( $name, $suffix ) = @_;
+  if ( $self->exists("${name}_$suffix") ) {
+    "${name}_$suffix";
+  } else {
+    $name;
   }
 }
 
