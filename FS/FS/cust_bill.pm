@@ -1876,8 +1876,8 @@ sub print_generic {
 
       my $convert_map = $convert_maps{$format}{$include};
 
-      @inc_src = map { s/\[@--/$delimiters{$format}[0]/g;
-                       s/--@\]/$delimiters{$format}[1]/g;
+      @inc_src = map { s/\[\@--/$delimiters{$format}[0]/g;
+                       s/--\@\]/$delimiters{$format}[1]/g;
                        $_;
                      } 
                  &$convert_map( $conf->config($inc_file) );
