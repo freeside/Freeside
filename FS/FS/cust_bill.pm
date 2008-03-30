@@ -1635,7 +1635,7 @@ sub print_generic {
   $templatefile .= "_$template"
     if length($template);
   my @invoice_template = map "$_\n", $conf->config($templatefile)
-    or die "cannot load config file $templatefile";
+    or die "cannot load config data $templatefile";
 
   my $old_latex = '';
   if ( $format eq 'latex' && grep { /^%%Detail/ } @invoice_template ) {
@@ -1653,7 +1653,7 @@ sub print_generic {
   );
 
   $text_template->compile()
-    or die 'While compiling ' . $templatefile . ': ' . $Text::Template::ERROR;
+    or die "Can't compile $templatefile: $Text::Template::ERROR\n";
 
 
   # additional substitution could possibly cause breakage in existing templates
@@ -1863,33 +1863,38 @@ sub print_generic {
   #do variable substitution in notes, footer, smallfooter
   foreach my $include (qw( notes footer smallfooter )) {
 
-    my @inc_src = $conf->config_orbase("invoice_latex$include", $template );
-    my $convert_map = $convert_maps{$format}{$include};
+    my $inc_file = $conf->key_orbase("invoice_${format}$include", $template);
+    my @inc_src;
 
-    if (
-           defined( $conf->config_orbase("invoice_${format}$include", $template) )
-        && length(  $conf->config_orbase('invoice_${format}$include', $template) )
-    ) {
-      @inc_src = $conf->config_orbase("invoice_${format}$include", $template );
+    if ( $conf->exists($inc_file) && length( $conf->config($inc_file) ) ) {
+
+      @inc_src = $conf->config($inc_file);
+
     } else {
-      @inc_src =
-        map { s/\[@--/$delimiters{$format}[0]/g;
-              s/--@]/$delimiters{$format}[1]/g;
-              $_;
-            } 
-        &$convert_map(
-                       $conf->config_orbase("invoice_latex$include", $template )
-                     );
+
+      $inc_file = $conf->key_orbase("invoice_latex$include", $template);
+
+      my $convert_map = $convert_maps{$format}{$include};
+
+      @inc_src = map { s/\[@--/$delimiters{$format}[0]/g;
+                       s/--@\]/$delimiters{$format}[1]/g;
+                       $_;
+                     } 
+                 &$convert_map( $conf->config($inc_file) );
+
     }
 
     my $inc_tt = new Text::Template (
       TYPE       => 'ARRAY',
       SOURCE     => [ map "$_\n", @inc_src ],
       DELIMITERS => $delimiters{$format},
-    ) or die "can't create new Text::Template object: $Text::Template::ERROR";
+    ) or die "Can't create new Text::Template object: $Text::Template::ERROR";
 
-    $inc_tt->compile()
-      or die "can't compile template: $Text::Template::ERROR";
+    unless ( $inc_tt->compile() ) {
+      my $error = "Can't compile $inc_file template: $Text::Template::ERROR\n";
+      warn $error. "Template:\n". join('', map "$_\n", @inc_src);
+      die $error;
+    }
 
     $invoice_data{$include} = $inc_tt->fill_in( HASH => \%invoice_data );
 

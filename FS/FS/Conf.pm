@@ -175,11 +175,12 @@ sub config_orbase {
 =item key_orbase KEY SUFFIX
 
 If the config value KEY_SUFFIX exists, returns KEY_SUFFIX, otherwise returns
-KEY.  Useful for which exact configuration option is returned by config_orbase.
+KEY.  Useful for determining which exact configuration option is returned by
+config_orbase.
 
 =cut
 
-sub configkey_orbase {
+sub key_orbase {
   my $self = shift;
   #no compat for this...return $self->_usecompat('config_orbase', @_) if use_confcompat;
 
