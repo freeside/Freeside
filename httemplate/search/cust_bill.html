@@ -213,15 +213,18 @@ function confirm_fax_process() {
 
 </SCRIPT>';
 
-my $menubar =  [
-                'Print these invoices' =>
-                  "javascript:confirm_print_process()",
-                'Email these invoices' =>
-                  "javascript:confirm_email_process()",
-              ];
+my $menubar = [];
 
-push @$menubar, 'Fax these invoices' =>
-                 "javascript:confirm_fax_process()"
- if $conf->exists('hylafax');
+if ( $FS::CurrentUser::CurrentUser->access_right('Resend invoices') ) {
+
+  push @$menubar, 'Print these invoices' =>
+                    "javascript:confirm_print_process()",
+                  'Email these invoices' =>
+                    "javascript:confirm_email_process()";
+
+  push @$menubar, 'Fax these invoices' =>
+                    "javascript:confirm_fax_process()"
+    if $conf->exists('hylafax');
+}
 
 </%init>

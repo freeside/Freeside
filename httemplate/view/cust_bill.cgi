@@ -4,56 +4,56 @@
 
 
 % if ( $cust_bill->owed > 0
-%        && ( $payby{'BILL'} || $payby{'CASH'} || $payby{'WEST'} || $payby{'MCRD'} )
-%      )
-%   {
+%      && scalar( grep $payby{$_}, qw(BILL CASH WEST MCRD) )
+%      && $FS::CurrentUser::CurrentUser->access_right('Post payment')
+%    )
+% {
 %     my $s = 0;
 
-  Post 
-% if ( $payby{'BILL'} ) { 
+      Post 
 
-  
-    <% $s++ ? ' | ' : '' %>
-    <A HREF="<% $p %>edit/cust_pay.cgi?payby=BILL;invnum=<% $invnum %>">check</A>
-% } 
-% if ( $payby{'CASH'} ) { 
+%     if ( $payby{'BILL'} ) { 
+          <% $s++ ? ' | ' : '' %>
+          <A HREF="<% $p %>edit/cust_pay.cgi?payby=BILL;invnum=<% $invnum %>">check</A>
+%     } 
 
-  
-    <% $s++ ? ' | ' : '' %>
-    <A HREF="<% $p %>edit/cust_pay.cgi?payby=CASH;invnum=<% $invnum %>">cash</A>
-% } 
-% if ( $payby{'WEST'} ) { 
+%     if ( $payby{'CASH'} ) { 
+          <% $s++ ? ' | ' : '' %>
+          <A HREF="<% $p %>edit/cust_pay.cgi?payby=CASH;invnum=<% $invnum %>">cash</A>
+%     } 
 
-  
-    <% $s++ ? ' | ' : '' %>
-    <A HREF="<% $p %>edit/cust_pay.cgi?payby=WEST;invnum=<% $invnum %>">Western Union</A>
-% } 
-% if ( $payby{'MCRD'} ) { 
+%     if ( $payby{'WEST'} ) { 
+          <% $s++ ? ' | ' : '' %>
+          <A HREF="<% $p %>edit/cust_pay.cgi?payby=WEST;invnum=<% $invnum %>">Western Union</A>
+%     } 
 
-  
-    <% $s++ ? ' | ' : '' %>
-    <A HREF="<% $p %>edit/cust_pay.cgi?payby=MCRD;invnum=<% $invnum %>">manual credit card</A>
-% } 
+%     if ( $payby{'MCRD'} ) { 
+          <% $s++ ? ' | ' : '' %>
+          <A HREF="<% $p %>edit/cust_pay.cgi?payby=MCRD;invnum=<% $invnum %>">manual credit card</A>
+%     } 
 
+      payment against this invoice<BR><BR>
 
-  payment against this invoice<BR>
 % } 
 
 
-<A HREF="<% $p %>misc/print-invoice.cgi?<% $link %>">Re-print this invoice</A>
-% if ( grep { $_ ne 'POST' } $cust_bill->cust_main->invoicing_list ) { 
+% if ( $FS::CurrentUser::CurrentUser->access_right('Resend invoices') ) {
 
-  | <A HREF="<% $p %>misc/email-invoice.cgi?<% $link %>">Re-email
-      this invoice</A>
+    <A HREF="<% $p %>misc/print-invoice.cgi?<% $link %>">Re-print this invoice</A>
+
+%   if ( grep { $_ ne 'POST' } $cust_bill->cust_main->invoicing_list ) { 
+        | <A HREF="<% $p %>misc/email-invoice.cgi?<% $link %>">Re-email this invoice</A>
+%   } 
+
+%   if ( $conf->exists('hylafax') && length($cust_bill->cust_main->fax) ) { 
+        | <A HREF="<% $p %>misc/fax-invoice.cgi?<% $link %>">Re-fax this invoice</A>
+%   } 
+
+    <BR><BR>
+
 % } 
-% if ( $conf->exists('hylafax') && length($cust_bill->cust_main->fax) ) { 
-
-  | <A HREF="<% $p %>misc/fax-invoice.cgi?<% $link %>">Re-fax
-      this invoice</A>
-% } 
 
 
-<BR><BR>
 % if ( $conf->exists('invoice_latex') ) { 
 
   <A HREF="<% $p %>view/cust_bill-pdf.cgi?<% $link %>.pdf">View typeset invoice</A>
