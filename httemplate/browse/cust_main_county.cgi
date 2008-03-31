@@ -139,12 +139,7 @@ $html_init .= "<BR>Click on <u>separate taxclasses</u> to specify taxes per taxc
   if $enable_taxclasses;
 $html_init .= '<BR><BR>';
 
-$html_init .= qq(
-  <SCRIPT TYPE="text/javascript" SRC="${fsurl}elements/overlibmws.js"></SCRIPT>
-  <SCRIPT TYPE="text/javascript" SRC="${fsurl}elements/overlibmws_iframe.js"></SCRIPT>
-  <SCRIPT TYPE="text/javascript" SRC="${fsurl}elements/overlibmws_draggable.js"></SCRIPT>
-  <SCRIPT TYPE="text/javascript" SRC="${fsurl}elements/iframecontentmws.js"></SCRIPT>
-);
+$html_init .= include('/elements/init_overlib.html');
 
 my $title = '';
 
