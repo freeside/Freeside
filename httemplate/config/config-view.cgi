@@ -59,9 +59,16 @@ Click on a configuration value to change it.
 %   }
 
     <tr>
-      <td><a href="javascript:void(0);" onClick="overlib( OLiframeContent('config.cgi?key=<% $i->key %>;agentnum=<% $agentnum %>', <% $width %>, <% $height %>, 'config_popup' ), CAPTION, 'Enter configuration value', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;" name="<% $i->key %>">
-%#        <b><% $i->key %></b></a>&nbsp;-&nbsp;<% $i->description %>
-        <b><% $i->key %></b></a>: <% $i->description %>
+      <td><% include('/elements/popup_link.html',
+                       'action'      => 'config.cgi?key='.      $i->key.
+                                                  ';agentnum='. $agentnum,
+                       'width'       => $width,
+                       'height'      => $height,
+                       'actionlabel' => 'Enter configuration value',
+                       'label'       => '<b>'. $i->key. '</b>',
+                       'aname'       => $i->key,
+                    )
+          %>: <% $i->description %>
       </td>
       <td><table border=0>
 % foreach my $type (@types) {

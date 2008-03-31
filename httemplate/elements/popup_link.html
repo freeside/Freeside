@@ -18,11 +18,15 @@ Example:
     'width'          => '540',
     'color'          => '#ff0000',
     'closetext'      => 'Go Away',      # the value '' removes the link
+    'aname'          => "target", # link NAME= value, useful for #targets
   } )
 
 </%doc>
 % if ($params->{'action'} && $label) {
-<A HREF="javascript:void(0);" onClick="<% $onclick %>"><% $label %></A>\
+<A HREF="javascript:void(0);"
+   onClick="<% $onclick %>"
+   <% $params->{'aname'} ? 'NAME="'. $params->{'aname'}. '"' : '' %>
+><% $label %></A>\
 % }
 <%init>
 
