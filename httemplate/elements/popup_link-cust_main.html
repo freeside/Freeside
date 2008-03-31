@@ -5,7 +5,7 @@ Example:
   <SCRIPT TYPE="text/javascript" SRC="overlibmws.js"></SCRIPT>
   <SCRIPT TYPE="text/javascript" SRC="iframecontentmws.js"></SCRIPT>
 
-  include( '/elements/cust_popup_link.html', {
+  include( '/elements/cust_popup_link.html', { #hashref or a list, either way
 
     #required
     'action'         => 'content.html', # uri for content of popup which should
@@ -23,35 +23,21 @@ Example:
   )
 
 </%doc>
+% if ( $params->{'cust_main'} ) {
+<% include('/elements/popup_link.html', $params ) %>\
+% }
 <%init>
-my($params, $action, $label, $actionlabel, $color, $cust_main, $width);
-my $closetext = '';
-if (ref(@_[0]) eq 'HASH') {
-  $params = shift;
-  foreach (qw(action label actionlabel width color)) {
-    $action      = $params->{'action'}      if exists $params->{'action'};
-    $label       = $params->{'label'}       if exists $params->{'label'};
-    $actionlabel = $params->{'actionlabel'} if exists $params->{'actionlabel'};
-    $width       = $params->{'width'}       if exists $params->{'width'};
-    $color       = $params->{'color'}       if exists $params->{'color'};
-    $closetext   = $params->{'closetext'}   if exists $params->{'closetext'};
-    $cust_main   = $params->{'cust_main'}   if exists $params->{'cust_main'};
-  }
-}else{  # deprecated
-  ($action, $label, $actionlabel, $color, $cust_main) = @_;
-}
 
-$action .= ( $action =~ /\?/ ) ? ';' : '?';
-$action .= 'custnum='. $cust_main->custnum;
+my $params = { 'closetext' => 'Close' };
+
+if (ref($_[0]) eq 'HASH') {
+  $params = { %$params, %{ $_[0] } };
+} else {
+  $params = { %$params, @_ };
+}
+ 
+$params->{'action'} .=
+  ( $params->{'action'} =~ /\?/ ? ';' : '?' ).
+  'custnum='. $params->{'cust_main'}->custnum;
 
 </%init>
-<% $cust_main 
-   ? include('/elements/popup_link.html', { 'action'       => $action,
-                                            'label'        => $label,
-                                            'actionlabel'  => $actionlabel,
-                                            'color'        => $color,
-                                            'closetext'    => $closetext,
-                                          }
-            )
-   : ''
-%>

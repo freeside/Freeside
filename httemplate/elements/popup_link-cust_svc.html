@@ -5,7 +5,7 @@ Example:
   <SCRIPT TYPE="text/javascript" SRC="overlibmws.js"></SCRIPT>
   <SCRIPT TYPE="text/javascript" SRC="iframecontentmws.js"></SCRIPT>
 
-  include( '/elements/svc_popup_link.html', {
+  include( '/elements/svc_popup_link.html', { #hashref or a list, either way
 
     #required
     'action'         => 'content.html', # uri for content of popup which should
@@ -23,37 +23,26 @@ Example:
   )
 
 </%doc>
+% if ( $params->{'cust_svc'} ) {
+<% include( '/elements/popup_link.html', $params ) %>\
+% }
 <%init>
-my($params, $action, $label, $actionlabel, $cust_svc, $color, $width);
-my $closetext = 'Close';
-if (ref(@_[0]) eq 'HASH') {
-  $params = shift;
-  foreach (qw(action label actionlabel width color)) {
-    $action      = $params->{'action'}      if exists $params->{'action'};
-    $label       = $params->{'label'}       if exists $params->{'label'};
-    $actionlabel = $params->{'actionlabel'} if exists $params->{'actionlabel'};
-    $width       = $params->{'width'}       if exists $params->{'width'};
-    $color       = $params->{'color'}       if exists $params->{'color'};
-    $closetext   = $params->{'closetext'}   if exists $params->{'closetext'};
-    $cust_svc    = $params->{'cust_svc'}    if exists $params->{'cust_svc'};
-  }
-}else{  # deprecated
-  ($action, $label, $actionlabel, $cust_svc) = @_;
+
+my $params = { 'closetext' => 'Close',
+               'width'     => 392,
+             };
+
+if (ref($_[0]) eq 'HASH') {
+  $params = { %$params, %{ $_[0] } };
+} else {
+  $params = { %$params, @_ };
 }
 
-$action .= '?svcnum='. $cust_svc->svcnum;
-$actionlabel .= ' service '. $cust_svc->svcnum;
-$width ||= 392;
+$params->{'action'} .=
+  ( $params->{'action'} =~ /\?/ ? ';' : '?' ).
+  'svcnum='. $params->{'cust_svc'}->svcnum;
+
+$params->{'actionlabel'} .=
+  ' service '. $params->{'cust_svc'}->svcnum; #XXX svcnum? really?
 
 </%init>
-<% $cust_svc
-   ? include('/elements/popup_link.html', { 'action'       => $action,
-                                            'label'        => $label,
-                                            'actionlabel'  => $actionlabel,
-                                            'color'        => $color,
-                                            'width'        => $width,
-                                            'closetext'    => $closetext,
-                                          }
-            )
-   : ''
-%>

@@ -5,7 +5,7 @@ Example:
   <SCRIPT TYPE="text/javascript" SRC="overlibmws.js"></SCRIPT>
   <SCRIPT TYPE="text/javascript" SRC="iframecontentmws.js"></SCRIPT>
 
-  include( '/elements/popup_link.html', {
+  include( '/elements/popup_link.html', { #hashref or a list, either way is fine
 
     #required
     'action'         => 'content.html', # uri for content of popup
@@ -18,30 +18,39 @@ Example:
     'width'          => '540',
     'color'          => '#ff0000',
     'closetext'      => 'Go Away',      # the value '' removes the link
-  )
+  } )
 
 </%doc>
+% if ($action && $label) {
+<A HREF="javascript:void(0);" onClick="<% $onclick %>"><% $label %></A>\
+% }
 <%init>
-my($params, $action, $label, $actionlabel, $width, $color);
+
+my($action, $label, $actionlabel) = ( '', '', '' );
 my $closetext = 'Close';
-if (ref(@_[0]) eq 'HASH') {
+my $width = 540;
+my $color = '#333399';
+
+my $params;
+if (ref($_[0]) eq 'HASH') {
+  #$params = { %$params, %{ $_[0] } };
   $params = shift;
-  foreach (qw(action label actionlabel width color)) {
-    $action      = $params->{'action'}      if exists $params->{'action'};
-    $label       = $params->{'label'}       if exists $params->{'label'};
-    $actionlabel = $params->{'actionlabel'} if exists $params->{'actionlabel'};
-    $width       = $params->{'width'}       if exists $params->{'width'};
-    $color       = $params->{'color'}       if exists $params->{'color'};
-    $closetext   = $params->{'closetext'}   if exists $params->{'closetext'};
-  }
-}else{  # deprecated
-  ($action, $label, $actionlabel, $width) = @_;
+} else {
+  #$params = { %$params, @_ };
+  $params = { @_ };
 }
 
-$width ||= 540;
-$color ||= '#333399';
+$action      = $params->{'action'}      if exists $params->{'action'};
+$label       = $params->{'label'}       if exists $params->{'label'};
+$actionlabel = $params->{'actionlabel'} if exists $params->{'actionlabel'};
+$width       = $params->{'width'}       if exists $params->{'width'};
+$color       = $params->{'color'}       if exists $params->{'color'};
+$closetext   = $params->{'closetext'}   if exists $params->{'closetext'};
+
+#stupid safari is caching the "location" of popup iframs, and submitting them
+#instead of displaying them.  this should prevent that.
+my $popup_name = 'popup-'.time. "-$$-". rand() * 2**32;
+
+my $onclick = "overlib( OLiframeContent('$action', $width, 336, '$popup_name' ), CAPTION, '$actionlabel', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '$color', CGCOLOR, '$color', CLOSETEXT, '$closetext' ); return false;";
 
 </%init>
-%if ($action && $label) {
-<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('<% "$action" %>', <% $width %>, 336, 'pkg_or_svc_action_popup' ), CAPTION, '<% $actionlabel %>', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '<% $color %>', CGCOLOR, '<% $color %>', CLOSETEXT, '<% $closetext %>' ); return false;"><% $label %></A>
-%}
