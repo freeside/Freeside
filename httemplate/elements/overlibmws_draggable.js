@@ -1,7 +1,7 @@
 /*
- overlibmws_draggable.js plug-in module - Copyright Foteos Macrides 2002=2005
+ overlibmws_draggable.js plug-in module - Copyright Foteos Macrides 2002-2008. All rights reserved.
    For support of the DRAGGABLE feature.
-   Initial: August 24, 2002 - Last Revised: March 2, 2006
+   Initial: August 24, 2002 - Last Revised: January 26, 2008
  See the Change History and Command Reference for overlibmws via:
 
 	http://www.macridesweb.com/oltest/
@@ -10,30 +10,36 @@
 */
 
 OLloaded=0;
-OLregCmds('draggable');
+var OLdraggableCmds='draggable,dragcap,dragid';
+OLregCmds(OLdraggableCmds);
 
 // DEFAULT CONFIGURATION
 if(OLud('draggable'))var ol_draggable=0;
+if(OLud('dragcap'))var ol_dragcap=0;
+if(OLud('dragid'))var ol_dragid='';
 // END CONFIGURATION
 
-var o3_draggable=0,o3_dragging=0,OLmMv,OLcX,OLcY,OLcbX,OLcbY;
-function OLloadDraggable(){OLload('draggable');}
-function OLparseDraggable(pf,i,ar){
-var k=i;
-if(k<ar.length){if(Math.abs(ar[k])==DRAGGABLE){OLtoggle(ar[k],pf+'draggable');return k;}}
-return -1;
+var o3_draggable=0,o3_dragcap=0,o3_dragid='',o3_dragging=0,OLdrg=null,OLmMv,
+OLcX,OLcY,OLcbX,OLcbY;function OLloadDraggable(){OLload(OLdraggableCmds);}
+function OLparseDraggable(pf,i,ar){var t=OLtoggle,k=i;if(k<ar.length){
+if(Math.abs(ar[k])==DRAGGABLE){t(ar[k],pf+'draggable');return k;}
+if(Math.abs(ar[k])==DRAGCAP){t(ar[k],pf+'dragcap');return k;}
+if(ar[k]==DRAGID){OLparQuo(ar[++k],pf+'dragid');return k;}}return -1;
 }
 
 function OLcheckDrag(){
-if(o3_draggable){if(o3_sticky&&(o3_frame==self))initDrag();else o3_draggable=0;}
+if(o3_draggable){if(o3_sticky&&(o3_frame==self))OLinitDrag();else o3_draggable=0;}
 }
-function initDrag(){
+function OLinitDrag(){
 OLmMv=OLdw.onmousemove;o3_dragging=0;
 if(OLns4){document.captureEvents(Event.MOUSEDOWN|Event.CLICK);
-document.onmousedown=OLgrabEl;;document.onclick=function(e){return routeEvent(e);}}
-else{over.onmousedown=OLgrabEl;OLsetDrgCur(1);}
+document.onmousedown=OLgrabEl;document.onclick=function(e){return routeEvent(e);}}
+else{var dvido=(o3_dragid)?OLgetRef(o3_dragid):null,capid=(OLovertwoPI&&over==over2?
+'overCap2':'overCap');if(dvido)dvido.onscroll=function(){OLdw.onmousemove=OLmMv;
+OLinitDrag();};OLdrg=(o3_cap&&o3_dragcap)?OLgetRef(capid):over;
+if(!OLdrg||!OLdrg.style)OLdrg=over;OLdrg.onmousedown=OLgrabEl;OLsetDrgCur(1);}
 }
-function OLsetDrgCur(d){if(!OLns4)over.style.cursor=(d?'move':'auto');}
+function OLsetDrgCur(d){if(!OLns4&&OLdrg)OLdrg.style.cursor=(d?'move':'auto');}
 
 function OLgrabEl(e){
 var e=(e||event);
@@ -67,7 +73,8 @@ return false;
 
 function OLclearDrag(){
 if(OLns4){document.releaseEvents(Event.MOUSEDOWN|Event.MOUSEUP|Event.CLICK);
-document.onmousedown=document.onclick=null;}else{over.onmousedown=null;OLsetDrgCur(0);}
+document.onmousedown=document.onclick=null;}else{
+if(OLdrg)OLdrg.onmousedown=null;over.onmousedown=null;OLsetDrgCur(0);}
 document.onmouseup=null;o3_dragging=0;
 }
 
