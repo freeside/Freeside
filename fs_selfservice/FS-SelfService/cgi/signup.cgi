@@ -65,7 +65,7 @@ if ( -e $signup_html ) {
                                         )
     or die $Text::Template::ERROR;
   if ( $signup_txt =~
-         /<\s*INPUT TYPE="?hidden"?\s+NAME="?agentnum"?\s+VALUE="?(\d+)"?\s*>/si
+         /<\s*INPUT TYPE="?hidden"?\s+NAME="?agentnum"?\s+VALUE="?(\d+)"?\s*\/?\s*>/si
   ) {
     $agentnum = $1;
   }
