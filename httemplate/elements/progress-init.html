@@ -1,17 +1,3 @@
-%
-%  my( $formname, $fields, $action, $url_or_message, $key ) = @_;
-%  $key = '' unless defined $key;
-%
-%  my $url_or_message_link;
-%  if ( ref($url_or_message) ) { #its a message or something
-%    $url_or_message_link =
-%      'message='. uri_escape( $url_or_message->{'message'} )
-%  } else {
-%    $url_or_message_link = "url=$url_or_message";
-%  }
-%
-
-
 <% include('/elements/xmlhttp.html',
               'method' => 'POST',
               'url'    => $action,
@@ -19,14 +5,10 @@
               'key'    => $key,
            )
 %>
-<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/overlibmws.js"></SCRIPT>
-<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/overlibmws_iframe.js"></SCRIPT>
+
+<% include('/elements/init_overlib.html') %>
+
 <SCRIPT TYPE="text/javascript">
-function OLiframeContent(src, width, height, name) {
-  return ('<iframe src="'+src+'" width="'+width+'" height="'+height+'"'
-   +(name?' name="'+name+'" id="'+name+'"':'')+' scrolling="auto">'
-   +'<div>[iframe not supported]</div></iframe>');
-}
 
 function <%$key%>process () {
 
@@ -78,8 +60,27 @@ function <%$key%>process () {
 
 function <%$key%>myCallback( jobnum ) {
 
-  overlib( OLiframeContent('<%$p%>elements/progress-popup.html?jobnum=' + jobnum + ';<%$url_or_message_link%>;formname=<%$formname%>' , 444, 168, 'progress_popup'), CAPTION, 'Please wait...', STICKY, AUTOSTATUSCAP, CLOSETEXT, '', CLOSECLICK, MIDX, 0, MIDY, 0 );
+  overlib( OLiframeContent('<%$p%>elements/progress-popup.html?jobnum=' + jobnum + ';<%$url_or_message_link%>;formname=<%$formname%>' , 444, 168, '<% $popup_name %>'), CAPTION, 'Please wait...', STICKY, AUTOSTATUSCAP, CLOSETEXT, '', CLOSECLICK, MIDX, 0, MIDY, 0 );
 
 }
 
 </SCRIPT>
+
+<%init>
+
+my( $formname, $fields, $action, $url_or_message, $key ) = @_;
+$key = '' unless defined $key;
+
+my $url_or_message_link;
+if ( ref($url_or_message) ) { #its a message or something
+  $url_or_message_link =
+    'message='. uri_escape( $url_or_message->{'message'} )
+} else {
+  $url_or_message_link = "url=$url_or_message";
+}
+
+#stupid safari is caching the "location" of popup iframs, and submitting them
+#instead of displaying them.  this should prevent that.
+my $popup_name = 'popup-'.time. "-$$-". rand() * 2**32;
+
+</%init>
