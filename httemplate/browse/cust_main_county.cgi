@@ -85,17 +85,31 @@ my $edit_link = [ 'javascript:void(0);', sub { ''; } ];
 my $edit_onclick = sub {
   my $row = shift;
   my $taxnum = $row->taxnum;
-  my $color = '#333399';
-  qq!overlib( OLiframeContent('${p}edit/cust_main_county.html?$taxnum', 540, 420, 'edit_cust_main_county_popup' ), CAPTION, 'Edit tax rate', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '$color', CGCOLOR, '$color' ); return false;!;
+  include( '/elements/popup_link_onclick.html',
+             'action'      => "${p}edit/cust_main_county.html?$taxnum",
+             'actionlabel' => 'Edit tax rate',
+             'height'      => 420,
+             #default# 'width'  => 540,
+             #default# 'color' => '#333399',
+         );
 };
 
 sub expand_link {
-  my( $row, $desc ) = @_;
-  my $taxnum = $row->taxnum;
-  my $url = "${p}edit/cust_main_county-expand.cgi?$taxnum";
-  my $color = '#333399';
+  my %param = @_;
 
-  qq!<FONT SIZE="-1"><A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('$url', 540, 420, 'edit_cust_main_county_popup' ), CAPTION, '$desc', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '$color', CGCOLOR, '$color' ); return false;">!;
+  my $taxnum = $param{'row'}->taxnum;
+  my $url = "${p}edit/cust_main_county-expand.cgi?$taxnum";
+
+  '<FONT SIZE="-1">'.
+    include( '/elements/popup_link.html',
+               'label'       => $param{'label'},
+               'action'      => $url,
+               'actionlabel' => $param{'desc'},
+               'height'      => 420,
+               #default# 'width'  => 540,
+               #default# 'color' => '#333399',
+           ).
+  '</FONT>';
 }
 
 sub separate_taxclasses_link {
@@ -227,13 +241,17 @@ my @fields = (
   sub { state_label($_[0]->state, $_[0]->country).
         ( $_[0]->state
             ? ''
-            : '&nbsp'. expand_link($_[0], 'Add States').
-                       'add&nbsp;states</A></FONT>'
+            : '&nbsp'. expand_link( desc  => 'Add States',
+                                    row   => $_[0],
+                                    label => 'add&nbsp;states',
+                                  )
         )
       },
   sub { $_[0]->county || '(all)&nbsp'.
-                         expand_link($_[0], 'Add Counties').
-                         'add&nbsp;counties</A></FONT>'
+                         expand_link( desc  => 'Add Counties',
+                                      row   => $_[0],
+                                      label => 'add&nbsp;counties',
+                                    )
       },
 );
 

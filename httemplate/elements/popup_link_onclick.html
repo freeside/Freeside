@@ -1,0 +1,55 @@
+<%doc>
+
+Example:
+
+  <SCRIPT TYPE="text/javascript" SRC="overlibmws.js"></SCRIPT>
+  <SCRIPT TYPE="text/javascript" SRC="iframecontentmws.js"></SCRIPT>
+
+  include( '/elements/popup_link_onclick.html', { #hashref or a list, either way
+
+    #required
+    'action'         => 'content.html', # uri for content of popup
+   
+    #strongly recommended
+    'actionlabel     => 'You clicked',  # popup title
+   
+    #opt
+    'width'          => '540',
+    'color'          => '#ff0000',
+    'closetext'      => 'Go Away',      # the value '' removes the link
+  } )
+
+</%doc>
+% if ($action) { 
+<% $onclick %>\
+% }
+<%init>
+
+my($action, $actionlabel) = ( '', '' );
+my( $width, $height ) = ( 540, 336 );
+my $closetext = 'Close';
+my $color = '#333399';
+
+my $params;
+if (ref($_[0]) eq 'HASH') {
+  #$params = { %$params, %{ $_[0] } };
+  $params = shift;
+} else {
+  #$params = { %$params, @_ };
+  $params = { @_ };
+}
+
+$action      = $params->{'action'}      if exists $params->{'action'};
+$actionlabel = $params->{'actionlabel'} if exists $params->{'actionlabel'};
+$width       = $params->{'width'}       if exists $params->{'width'};
+$height      = $params->{'height'}      if exists $params->{'height'};
+$color       = $params->{'color'}       if exists $params->{'color'};
+$closetext   = $params->{'closetext'}   if exists $params->{'closetext'};
+
+#stupid safari is caching the "location" of popup iframs, and submitting them
+#instead of displaying them.  this should prevent that.
+my $popup_name = 'popup-'.time. "-$$-". rand() * 2**32;
+
+my $onclick = "overlib( OLiframeContent('$action', $width, $height, '$popup_name' ), CAPTION, '$actionlabel', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '$color', CGCOLOR, '$color', CLOSETEXT, '$closetext' ); return false;";
+
+</%init>

@@ -21,15 +21,10 @@ Example:
   } )
 
 </%doc>
-% if ($action && $label) {
+% if ($params->{'action'} && $label) {
 <A HREF="javascript:void(0);" onClick="<% $onclick %>"><% $label %></A>\
 % }
 <%init>
-
-my($action, $label, $actionlabel) = ( '', '', '' );
-my $closetext = 'Close';
-my $width = 540;
-my $color = '#333399';
 
 my $params;
 if (ref($_[0]) eq 'HASH') {
@@ -40,17 +35,7 @@ if (ref($_[0]) eq 'HASH') {
   $params = { @_ };
 }
 
-$action      = $params->{'action'}      if exists $params->{'action'};
-$label       = $params->{'label'}       if exists $params->{'label'};
-$actionlabel = $params->{'actionlabel'} if exists $params->{'actionlabel'};
-$width       = $params->{'width'}       if exists $params->{'width'};
-$color       = $params->{'color'}       if exists $params->{'color'};
-$closetext   = $params->{'closetext'}   if exists $params->{'closetext'};
-
-#stupid safari is caching the "location" of popup iframs, and submitting them
-#instead of displaying them.  this should prevent that.
-my $popup_name = 'popup-'.time. "-$$-". rand() * 2**32;
-
-my $onclick = "overlib( OLiframeContent('$action', $width, 336, '$popup_name' ), CAPTION, '$actionlabel', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '$color', CGCOLOR, '$color', CLOSETEXT, '$closetext' ); return false;";
+my $label = $params->{'label'};
+my $onclick = include('/elements/popup_link_onclick.html', $params);
 
 </%init>
