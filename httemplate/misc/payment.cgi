@@ -6,16 +6,8 @@
 <INPUT TYPE="hidden" NAME="payunique" VALUE="<% $payunique %>">
 <INPUT TYPE="hidden" NAME="balance"   VALUE="<% $balance %>">
 
-<SCRIPT TYPE="text/javascript" SRC="../elements/overlibmws.js"></SCRIPT>
-<SCRIPT TYPE="text/javascript" SRC="../elements/overlibmws_iframe.js"></SCRIPT>
-<SCRIPT TYPE="text/javascript" SRC="../elements/overlibmws_draggable.js"></SCRIPT>
-<SCRIPT TYPE="text/javascript">
-function OLiframeContent(src, width, height, name) {
-  return ('<iframe src="'+src+'" width="'+width+'" height="'+height+'"'
-   +(name?' name="'+name+'" id="'+name+'"':'')+' scrolling="auto">'
-   +'<div>[iframe not supported]</div></iframe>');
-}
-</SCRIPT>
+<% include('/elements/init_overlib.html') %>
+
 % #include( '/elements/table.html', '#cccccc' ) 
 
 <% ntable('#cccccc') %>

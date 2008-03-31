@@ -1,0 +1,9 @@
+% for my $file (@files) {
+  <SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/<%$file%>.js"></SCRIPT>
+% }
+<%init>
+
+my @files = map "overlibmws$_", ( '', qw( _iframe _draggable _crossframe ) );
+push @files, 'iframecontentmws';
+
+</%init>
