@@ -22,10 +22,7 @@ body { background: #e8e8e8 }
 % my (@notes) = $cust_main->notes();
 % if ( scalar(@notes) ) { 
 
-<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/overlibmws.js"></SCRIPT>
-<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/overlibmws_iframe.js"></SCRIPT>
-<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/overlibmws_crossframe.js"></SCRIPT>
-<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/iframecontentmws.js"></SCRIPT>
+<% include('/elements/init_overlib.html') %>
 
 <TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 BORDER=0 >
 
@@ -43,12 +40,17 @@ body { background: #e8e8e8 }
 %
 %   my $pop = popurl(3);
 %   my $notenum = $note->notenum;
-%   my $clickjs = qq!onclick="overlib( OLiframeContent('${pop}edit/! .
-%                 qq!cust_main_note.cgi?custnum=$custnum&! .
-%                 qq!notenum=$notenum', 616, ! .
-%                 qq!386, 'cust_main_note_popup' ), CAPTION, 'Edit customer ! .
-%                 qq!note', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, ! .
-%                 qq!CLOSECLICK, FRAME, top); return false;"!;
+%   my $onclick = include( '/elements/popup_link_onclick.html',
+%                            'action'      => popurl(3).
+%                                             'edit/cust_main_note.cgi'.
+%                                             "?custnum=$custnum".
+%                                             ";notenum=$notenum",
+%                            'actionlabel' => 'Edit customer note',
+%                            'width'       => 616,
+%                            'height'      => 408,
+%                            'frame'       => 'top',
+%                        );
+%   my $clickjs = qq!onclick="$onclick"!;
 %
 %   my ($el, $eel);
 %   if ($curuser->access_right('Edit customer note') ) {

@@ -4,10 +4,7 @@
   <A HREF="<% $p %>edit/cust_main.cgi?<% $custnum %>">Edit this customer</A> | 
 % } 
 
-<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/overlibmws.js"></SCRIPT>
-<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/overlibmws_iframe.js"></SCRIPT>
-<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/overlibmws_draggable.js"></SCRIPT>
-<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/iframecontentmws.js"></SCRIPT>
+<% include('/elements/init_overlib.html') %>
 
 <SCRIPT TYPE="text/javascript">
 function areyousure(href, message) {
@@ -100,7 +97,15 @@ Comments
 %        ! $conf->exists('cust_main-disable_notes')
 %      ) {
 
-  <A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('<% $p %>edit/cust_main_note.cgi?custnum=<% $cust_main->custnum %>', 616, 386, 'cust_main_note_popup' ), CAPTION, 'Enter customer note', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK); return false;">Add customer note</A>
+  <% include( '/elements/popup_link-cust_main.html',
+                'label'       => 'Add customer note',
+                'action'      => $p. 'edit/cust_main_note.cgi',
+                'actionlabel' => 'Enter customer note',
+                'cust_main'   => $cust_main,
+                'width'       => 616,
+                'height'      => 408,
+            )
+  %>
 
 %   }
 

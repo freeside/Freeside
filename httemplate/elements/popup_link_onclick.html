@@ -25,7 +25,7 @@ Example:
 % }
 <%init>
 
-my($action, $actionlabel) = ( '', '' );
+my( $action, $actionlabel, $frame ) = ( '', '', '' );
 my( $width, $height ) = ( 540, 336 );
 my $closetext = 'Close';
 my $color = '#333399';
@@ -45,11 +45,18 @@ $width       = $params->{'width'}       if exists $params->{'width'};
 $height      = $params->{'height'}      if exists $params->{'height'};
 $color       = $params->{'color'}       if exists $params->{'color'};
 $closetext   = $params->{'closetext'}   if exists $params->{'closetext'};
+$frame       = $params->{'frame'}       if exists $params->{'frame'};
 
 #stupid safari is caching the "location" of popup iframs, and submitting them
 #instead of displaying them.  this should prevent that.
 my $popup_name = 'popup-'.time. "-$$-". rand() * 2**32;
 
-my $onclick = "overlib( OLiframeContent('$action', $width, $height, '$popup_name' ), CAPTION, '$actionlabel', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '$color', CGCOLOR, '$color', CLOSETEXT, '$closetext' ); return false;";
+my $onclick =
+  "overlib( OLiframeContent('$action', $width, $height, '$popup_name' ), ".
+    "CAPTION, '$actionlabel', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, ".
+    "DRAGGABLE, CLOSECLICK, ".
+    "BGCOLOR, '$color', CGCOLOR, '$color', CLOSETEXT, '$closetext'".
+    ( $frame ? ", FRAME, $frame" : '' ).
+  "); return false;";
 
 </%init>
