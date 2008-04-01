@@ -3,12 +3,28 @@
 % my $s = 0;
 % if ( $payby{'BILL'} && $curuser->access_right('Post payment') ) { 
   <% $s++ ? ' | ' : '' %>
-  <A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('<% $p %>edit/cust_pay.cgi?popup=1;payby=BILL;custnum=<% $custnum %>', 392, 336, 'cust_pay_popup' ), CAPTION, 'Enter check payment', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">Enter check payment</A>
+  <% include('/elements/popup_link-cust_main.html',
+               'label'       => 'Enter check payment',
+               'action'      => "${p}edit/cust_pay.cgi?popup=1;payby=BILL",
+               'cust_main'   => $cust_main,
+               'actionlabel' => 'Enter check payment',
+               'width'       => 392,
+               #default# 'height' => 336,
+            )
+  %>
 % } 
 
 % if ( $payby{'CASH'} && $curuser->access_right('Post payment') ) { 
   <% $s++ ? ' | ' : '' %>
-  <A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('<% $p %>edit/cust_pay.cgi?popup=1;payby=CASH;custnum=<% $custnum %>', 392, 336, 'cust_pay_popup' ), CAPTION, 'Enter cash payment', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">Enter cash payment</A>
+  <% include('/elements/popup_link-cust_main.html',
+               'label'       => 'Enter cash payment',
+               'action'      => "${p}edit/cust_pay.cgi?popup=1;payby=CASH",
+               'cust_main'   => $cust_main,
+               'actionlabel' => 'Enter cash payment',
+               'width'       => 392,
+               #default# 'height' => 336,
+            )
+  %>
 % } 
 
 % if ( $payby{'WEST'} && $curuser->access_right('Post payment') ) { 
@@ -40,7 +56,15 @@
 <BR>
 
 % if ( $curuser->access_right('Post credit') ) { 
-  <A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('<% $p %>edit/cust_credit.cgi?<% $custnum %>', 392, 336, 'cust_credit_popup' ), CAPTION, 'Enter credit', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">Enter credit</A>
+  <% include('/elements/popup_link-cust_main.html',
+               'label'       => 'Enter credit',
+               'action'      => "${p}edit/cust_credit.cgi",
+               'cust_main'   => $cust_main,
+               'actionlabel' => 'Enter credit',
+               'width'       => 392,
+               #default# 'height' => 336,
+            )
+  %>
   <BR>
 % } 
 
@@ -128,9 +152,15 @@
 %    $pre = '<B><FONT COLOR="#FF0000">Unapplied ';
 %    $post = '</FONT></B>';
 %    if ( $curuser->access_right('Apply payment') ) {
-%      $apply = qq! (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('${p}edit/cust_bill_pay.cgi?!.
-%               $cust_pay->paynum.
-%               qq!', 392, 336, 'cust_bill_pay_popup' ), CAPTION, 'Apply payment', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">apply</A>)!;
+%      $apply = ' ('. include( '/elements/popup_link.html',
+%                                'label'       => 'apply',
+%                                'action'      => "${p}edit/cust_bill_pay.cgi?".
+%                                                 $cust_pay->paynum,
+%                                'actionlabel' => 'Apply payment',
+%                                'width'       => 392,
+%                                #default# 'height' => 336,
+%                            ).
+%                ')';
 %    }
 %  } elsif (    scalar(@cust_bill_pay)   == 1
 %            && scalar(@cust_pay_refund) == 0
@@ -167,17 +197,28 @@
 %               '<B><FONT COLOR="#FF0000">$'.
 %               $cust_pay->unapplied. ' unapplied</FONT></B>';
 %      if ( $curuser->access_right('Apply payment') ) {
-%        $desc .= qq! (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('${p}edit/cust_bill_pay.cgi?!.
-%                 $cust_pay->paynum. 
-%                 qq!', 392, 336, 'cust_bill_pay_popup' ), CAPTION, 'Apply payment', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">apply</A>)!;
+%        $desc = ' ('. include( '/elements/popup_link.html',
+%                                 'label'      => 'apply',
+%                                 'action'     => "${p}edit/cust_bill_pay.cgi?".
+%                                                 $cust_pay->paynum,
+%                                 'actionlabel' => 'Apply payment',
+%                                 'width'      => 392,
+%                                 #default# 'height' => 336,
+%                            ).
+%                ')';
 %      }
 %      $desc .= '<BR>';
 %    }
 %  }
 %
-%  my $view = qq! (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('${p}view/cust_pay.html?link=popup;paynum=!.
-%             $cust_pay->paynum.
-%             qq!', 540, 336, 'view_cust_pay_popup' ), CAPTION, 'Payment Receipt', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">view receipt</A>)!;
+%  my $view =
+%    ' ('. include('/elements/popup_link.html',
+%                    'label'     => 'view receipt',
+%                    'action'    => "${p}view/cust_pay.html?link=popup;paynum=".
+%                                    $cust_pay->paynum,
+%                    'actionlabel' => 'Payment Receipt',
+%                 ).
+%     ')';
 %
 %  my $refund = '';
 %  my $refund_days = $conf->config('card_refund-days') || 120;
@@ -310,9 +351,15 @@
 %    $pre = '<B><FONT COLOR="#FF0000">Unapplied ';
 %    $post = '</FONT></B>';
 %    if ( $curuser->access_right('Apply credit') ) {
-%      $apply = qq! (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('${p}edit/cust_credit_bill.cgi?!.
-%               $cust_credit->crednum.
-%               qq!', 392, 336, 'cust_credit_bill_popup' ), CAPTION, 'Apply credit', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">apply</A>)!;
+%      $apply = ' ('. include( '/elements/popup_link.html',
+%                                'label'    => 'apply',
+%                                'action'   => "${p}edit/cust_credit_bill.cgi?".
+%                                              $cust_credit->crednum,
+%                                'actionlabel' => 'Apply credit',
+%                                'width'    => 392,
+%                                #default# 'height' => 336,
+%                            ).
+%                ')';
 %    }
 %  } elsif (    scalar(@cust_credit_bill)   == 1
 %            && scalar(@cust_credit_refund) == 0
@@ -348,9 +395,15 @@
 %      $desc .= '&nbsp;&nbsp;<B><FONT COLOR="#FF0000">$'.
 %               $cust_credit->credited. ' unapplied</FONT></B>';
 %      if ( $curuser->access_right('Apply credit') ) {
-%        $desc .= qq! (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('${p}edit/cust_credit_bill.cgi?!.
-%                 $cust_credit->crednum.
-%                 qq!', 392, 336, 'cust_credit_bill_popup' ), CAPTION, 'Apply credit', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">apply</A>)!;
+%        $desc = ' ('. include( '/elements/popup_link.html',
+%                                'label'       => 'apply',
+%                                'action'      => "${p}edit/cust_credit_bill.cgi?".
+%                                                 $cust_credit->crednum,
+%                                'actionlabel' => 'Apply credit',
+%                                'width'       => 392,
+%                                #default# 'height' => 336,
+%                            ).
+%                ')';
 %      }
 %      $desc .= '<BR>';
 %    }
