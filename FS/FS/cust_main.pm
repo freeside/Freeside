@@ -5515,6 +5515,72 @@ sub smart_search {
 
 }
 
+=item email_search
+
+Accepts the following options: I<email>, the email address to search for.  The
+email address will be searched for as an email invoice destination and as an
+svc_acct account.
+
+#Any additional options are treated as an additional qualifier on the search
+#(i.e. I<agentnum>).
+
+Returns a (possibly empty) array of FS::cust_main objects (but usually just
+none or one).
+
+=cut
+
+sub email_search {
+  my %options = @_;
+
+  local($DEBUG) = 1;
+
+  my $email = delete $options{'email'};
+
+  #we're only being used by RT at the moment... no agent virtualization yet
+  #my $agentnums_sql = $FS::CurrentUser::CurrentUser->agentnums_sql;
+
+  my @cust_main = ();
+
+  if ( $email =~ /([^@]+)\@([^@]+)/ ) {
+
+    my ( $user, $domain ) = ( $1, $2 );
+
+    warn "$me smart_search: searching for $user in domain $domain"
+      if $DEBUG;
+
+    push @cust_main,
+      map $_->cust_main,
+          qsearch( {
+                     'table'     => 'cust_main_invoice',
+                     'hashref'   => { 'dest' => $email },
+                   }
+                 );
+
+    push @cust_main,
+      map  $_->cust_main,
+      grep $_,
+      map  $_->cust_svc->cust_pkg,
+          qsearch( {
+                     'table'     => 'svc_acct',
+                     'hashref'   => { 'username' => $user, },
+                     'extra_sql' =>
+                       'AND ( SELECT domain FROM svc_domain
+                                WHERE svc_acct.domsvc = svc_domain.svcnum
+                            ) = '. dbh->quote($domain),
+                   }
+                 );
+  }
+
+  my %saw = ();
+  @cust_main = grep { !$saw{$_->custnum}++ } @cust_main;
+
+  warn "$me smart_search: found ". scalar(@cust_main). " unique customers"
+    if $DEBUG;
+
+  @cust_main;
+
+}
+
 =item check_and_rebuild_fuzzyfiles
 
 =cut

@@ -721,6 +721,31 @@ sub Create {
     #unless we already have (a) customer(s)...
     unless ( $self->Customers->Count ) {
 
+      #first find any requestors with emails but *without* customer targets
+      my @NoCust_Requestors =
+        grep { $_->EmailAddress && ! $_->Customers->Count }
+             @{ $self->Requestors->UserMembersObj->ItemsArrayRef };
+
+      for my $Requestor (@NoCust_Requestors) {
+
+         #perhaps the stuff in here should be in a User method??
+         my @Customers =
+           &RT::URI::freeside::email_search( email=>$Requestor->EmailAddress );
+
+         foreach my $custnum ( map $_->{'custnum'}, @Customers ) {
+
+           ## false laziness w/RT/Interface/Web_Vendor.pm
+           my @link = ( 'Type'   => 'MemberOf',
+                        'Target' => "freeside://freeside/cust_main/$custnum",
+                      );
+
+           my( $val, $msg ) = $Requestor->AddLink(@link);
+           #XXX should do something with $msg# push @non_fatal_errors, $msg;
+
+         }
+
+      }
+
       #find any requestors with customer targets
   
       my %cust_target = ();

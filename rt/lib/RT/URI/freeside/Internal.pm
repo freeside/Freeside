@@ -107,6 +107,12 @@ sub smart_search { #Subroutine
 
 }
 
+sub email_search { #Subroutine
+
+  return map { { $_->hash } } &FS::cust_main::email_search(@_);
+
+}
+
 sub small_custview {
 
   return &FS::CGI::small_custview(@_);

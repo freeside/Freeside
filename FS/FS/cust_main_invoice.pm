@@ -159,6 +159,17 @@ sub address {
   }
 }
 
+=item cust_main
+
+Returns the parent customer object (see L<FS::cust_main>).
+
+=cut
+
+sub cust_main {
+  my $self = shift;
+  qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
+}
+
 =back
 
 =head1 BUGS
