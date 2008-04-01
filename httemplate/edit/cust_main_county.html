@@ -21,7 +21,6 @@
 my $conf = new FS::Conf;
 
 </%once>
-
 <%init>
 
 die "access denied"
@@ -29,7 +28,8 @@ die "access denied"
 
 my $taxnum;
 if ( $cgi->param('error') ) {
-  $cgi->param('taxnum') =~ /^(\d+)$/ or die 'error, but no taxnum';
+  $cgi->param('taxnum') =~ /^(\d+)$/
+    or die "no taxnum, but error: ". $cgi->param('error');
   $taxnum = $1;
 } else {
   my($query) = $cgi->keywords;
