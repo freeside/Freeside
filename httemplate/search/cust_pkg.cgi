@@ -209,29 +209,22 @@ sub time_or_blank {
    };
 }
 
-my $html_init = '';
-for (qw (overlibmws overlibmws_iframe overlibmws_draggable iframecontentmws))
-{
-  $html_init .=
-    qq!<SCRIPT TYPE="text/javascript" SRC="$fsurl/elements/$_.js"></SCRIPT>!;
-}
+my $html_init = include('/elements/init_overlib.html');
 
 my $extra_choices = sub {
   my $query = shift;
-  my $choices = '';
 
-  my $url = qq!overlib( OLiframeContent('!. popurl(2).
-            qq!misc/bulk_change_pkg.cgi?$query', 768, 336, !.
-            qq!'bulk_pkg_change_popup' ), CAPTION, 'Change Packages'!.
-            qq!, STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, !.
-            qq!CLOSECLICK ); return false;!;
-
-  if ($FS::CurrentUser::CurrentUser->access_right('Bulk change customer packages')) {
-    $choices .= qq!<BR><A HREF="javascript:void(0);"!.
-                qq!onClick="$url">Change these packages</A>!;
-  }
-
-  return $choices;
+  return '' unless
+   $FS::CurrentUser::CurrentUser->access_right('Bulk change customer packages');
+    
+  '<BR><BR>'.
+  include( '/elements/popup_link.html',
+             'label'       => 'Change these packages',
+             'action'      => "${p}misc/bulk_change_pkg.cgi?$query",
+             'actionlabel' => 'Change Packages',
+             'width'       => 763,
+             'height'      => 336,
+         );
 };
 
 </%init>
