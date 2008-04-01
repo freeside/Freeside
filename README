@@ -1,9 +1,10 @@
-Freeside
+Freeside is a billing and administration package for Internet Service 
+Providers, VoIP providers and other online businesses.
 
 Copyright (C) 2005-2008 Freeside Internet Services, Inc.
 Copyright (C) 2000-2005 Ivan Kohler
 Copyright (C) 1999 Silicon Interactive Software Design
-Additional copyright holders may be found in the CREDITS file.
+Additional copyright holders may be found in the docs/license.html file.
 All rights reserved
 
     This program is free software; you can redistribute it and/or modify
@@ -20,35 +21,16 @@ All rights reserved
     License along with this program, in the file `AGPL'; if not,
     see <http://www.fsf.org/licensing/licenses/agpl-3.0.html>.
 
-    At your option, you may also redistribute and/or modify the files in the
-    fs_selfservice/ directory (but not the rest of the software) under the
-    terms of the GNU General Public License as published by the Free Software
-    Foundation, either version 3 of the License, or (at your option) any later
-    version.
+The Freeside home page is at http://www.freeside.biz/freeside
 
-    At your option, you may also redistribute and/or modify the
-    fs_selfservice/php/freeside.class.php file (but not the rest of the
-    software) under the terms of the GNU Lesser General Public License as
-    published by the Free Software Foundation, either version 3 of the License,
-    or (at your option) any later version.
+The documentation is at http://www.freeside.biz/mediawiki
 
-Freeside is a billing and administration package for Internet Service 
-Providers.
+Community support resources are located at
+http://www.freeside.biz/freeside/developers.html
 
-The Freeside home page is at `http://www.freeside.biz/freeside'.
+Preconfigured appliances, installation, customization, training and support
+services are available from Freeside Internet Services, Inc.
 
-The documentation is at `http://www.freeside.biz/mediawiki'.
-
-A mailing list for users is available.  Send a blank message to
-<freeside-users-subscribe@sisd.com> to subscribe.
-
-A mailing list for developers is available.  It is intended to be lower volume
-and higher SNR than the users list.  Send a blank message to
-<freeside-devel-subscribe@sisd.com> to subscribe.
-
-Commercial installation, customization and support services as well as
-preconfigured appliances are available from Freeside Internet Services, Inc.
-Contact us at: http://www.freeside.biz/freeside/contact.html
-
-Ivan Kohler <ivan-freeside_readme@420.am>
-
+Products: http://www.freeside.biz/freeside/products.html
+Services: http://www.freeside.biz/freeside/services.html
+Contact:  http://www.freeside.biz/freeside/contact.html
