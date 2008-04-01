@@ -48,6 +48,7 @@ FS/UID.pm
 FS/Msgcat.pm
 FS/Pony.pm
 FS/acct_snarf.pm
+FS/addr_block.pm
 FS/agent.pm
 FS/agent_type.pm
 FS/cust_bill.pm
@@ -167,6 +168,7 @@ FS/cust_tax_exempt.pm
 FS/cust_tax_exempt_pkg.pm
 FS/clientapi_session.pm
 FS/clientapi_session_field.pm
+t/addr_block.t
 t/agent.t
 t/agent_type.t
 t/AccessRight.t
@@ -286,6 +288,7 @@ t/rate_prefix.t
 t/radius_usergroup.t
 t/reg_code.t
 t/reg_code_pkg.t
+t/router.t
 t/session.t
 t/svc_acct.t
 t/svc_acct_pop.t
@@ -394,3 +397,15 @@ FS/cust_pay_pending.pm
 t/cust_pay_pending.t
 FS/part_pkg_taxclass.pm
 t/part_pkg_taxclass.t
+FS/tax_rate.pm
+t/tax_rate.t
+FS/tax_class.pm
+t/tax_class.t
+FS/cust_tax_location.pm
+t/cust_tax_location.t
+FS/part_pkg_taxproduct.pm
+t/part_pkg_taxproduct.t
+FS/part_pkg_taxoverride.pm
+t/part_pkg_taxoverride.t
+FS/part_pkg_taxrate.pm
+t/part_pkg_taxrate.t

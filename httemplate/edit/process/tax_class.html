@@ -1,0 +1,49 @@
+% if ( $error ) {
+%  $cgi->param('error', $error);
+<% $cgi->redirect(popurl(2). "tax_class.html?". $cgi->query_string ) %>
+%} else {
+<% $cgi->redirect(popurl(3). "browse/tax_rate.cgi?taxclassnum=". uri_escape($tax_class->taxclassnum) ) %>
+%}
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $tax_class = new FS::tax_class {
+  'taxclass' => $cgi->param('taxclass'),
+  'description' => $cgi->param('description'),
+};
+
+#maybe this whole thing should be in a transaction.  at some point, no biggie
+#none of the follow-up stuff will fail unless there's a more serious problem
+#than a hanging record in tax_class...
+
+my $error = $tax_class->insert;
+
+# all of this is highly dubious at the moment
+
+#unless ( $error ) {
+#  #auto-add the new taxclass to any regions that have taxclasses already
+#
+#  my $sth = dbh->prepare("
+#    SELECT geocode FROM tax_rate
+#      WHERE taxclass IS NOT NULL AND taxclass != ''
+#      GROUP BY geocode
+#  ") or die dbh->errstr;
+#  $sth->execute or die $sth->errstr;
+#
+#  while ( my $row = $sth->fetchrow_hashref ) {
+#    warn "inserting for $row";
+#    my $cust_main_county = new FS::tax_rate {
+#      'geocode'     => $row->{geocode},
+#      'tax'         => 0,
+#      'taxclassnum' => $tax_class->taxclassnum,
+#    };
+#    $error = $cust_main_county->insert;
+#    #last if $error;
+#    die $error if $error;
+#  }
+#
+#}
+
+</%init>

@@ -14,6 +14,8 @@ use FS::type_pkgs;
 use FS::part_pkg_option;
 use FS::pkg_class;
 use FS::agent;
+use FS::part_pkg_taxoverride;
+use FS::part_pkg_taxproduct;
 
 @ISA = qw( FS::m2m_Common FS::Record ); # FS::option_Common ); # this can use option_Common
                                                 # when all the plandata bs is
@@ -724,6 +726,34 @@ sub option {
         "not found in options or plandata!\n"
     unless $ornull;
   '';
+}
+
+=item part_pkg_taxoverride
+
+Returns all options as FS::part_pkg_taxoverride objects (see
+L<FS::part_pkg_taxoverride>).
+
+=cut
+
+sub part_pkg_taxoverride {
+  my $self = shift;
+  qsearch('part_pkg_taxoverride', { 'pkgpart' => $self->pkgpart } );
+}
+
+=item taxproduct_description
+
+Returns the description of the associated tax product for this package
+definition (see L<FS::part_pkg_taxproduct>).
+
+=cut
+
+sub taxproduct_description {
+  my $self = shift;
+  my $part_pkg_taxproduct =
+    qsearchs( 'part_pkg_taxproduct',
+              { 'taxproductnum' => $self->taxproductnum }
+            );
+  $part_pkg_taxproduct ? $part_pkg_taxproduct->description : '';
 }
 
 =item _rebless

@@ -53,6 +53,9 @@ $error = "At least one agent type must be specified."
           !$pkgpart && $conf->exists('agent-defaultpkg')
         );
 
+$cgi->param('tax_override') =~ /^([\d,]+)$/;
+my (@tax_overrides) = (grep "$_", split (",", $1));
+
 my $new = new FS::part_pkg ( {
   map {
     $_ => scalar($cgi->param($_));
@@ -103,10 +106,18 @@ if ( $error ) {
 }
 
 unless ( $error || $conf->exists('agent_defaultpkg') ) {
-  my $error = $new->process_m2m(
+  $error = $new->process_m2m(
     'link_table'   => 'type_pkgs',
     'target_table' => 'agent_type',
     'params'       => \@agents,
+  );
+}
+
+unless ( $error  ) {
+  $error = $new->process_m2m(
+    'link_table'   => 'part_pkg_taxoverride',
+    'target_table' => 'tax_rate',
+    'params'       => \@tax_overrides,
   );
 }
 

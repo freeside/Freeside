@@ -303,6 +303,7 @@ sub tables_hashref {
   my @date_type  = ( 'int', 'NULL', ''     );
   my @perl_type = ( 'text', 'NULL', ''  ); 
   my @money_type = ( 'decimal',   '', '10,2' );
+  my @money_typen = ( 'decimal',   'NULL', '10,2' );
 
   my $username_len = 32; #usernamemax config file
 
@@ -665,6 +666,68 @@ sub tables_hashref {
       'index' => [ [ 'county' ], [ 'state' ], [ 'country' ] ],
     },
 
+    'tax_rate'    => {
+      'columns' => [
+        'taxnum',       'serial',     '',      '', '', '', 
+        'geocode',     'varchar', 'NULL', $char_d, '', '',#cch provides 10 char
+        'data_vendor', 'varchar', 'NULL', $char_d, '', '',#auto update source
+        'location',    'varchar', 'NULL', $char_d, '', '',#provided by tax authority
+        'taxclassnum', 'int',      '',      '', '', '', 
+        'effective_date', @date_type, '', '', 
+        'tax',        'real',  '',    '', '', '',        # tax %
+        'excessrate', 'real',  'NULL','', '', '',        # second tax %
+        'taxbase',    @money_typen, '', '',              # amount at first tax rate
+        'taxmax',     @money_typen, '', '',              # maximum about at both rates
+        'usetax',        'real',  'NULL',    '', '', '', # tax % when non-local
+        'useexcessrate', 'real',  'NULL',    '', '', '', # second tax % when non-local
+        'unittype',    'int',  'NULL', '', '', '',      # for fee
+        'fee',         'real', 'NULL', '', '', '',      # amount tax per unit
+        'excessfee',   'real', 'NULL', '', '', '',      # second amount tax per unit
+        'feebase',     'real', 'NULL', '', '', '',      # units taxed at first rate
+        'feemax',      'real', 'NULL', '', '', '',      # maximum number of unit taxed
+        'maxtype',     'int',  'NULL', '', '', '',      # indicator of how thresholds accumulate
+        'taxname', 'varchar',  'NULL', $char_d, '', '', # may appear on invoice
+        'taxauth',     'int',  'NULL', '', '', '',      # tax authority
+        'basetype',    'int',  'NULL', '', '', '', # indicator of basis for tax
+        'passtype',    'int',  'NULL', '', '', '', # indicator declaring how item should be shown
+        'passflag',    'char', 'NULL', 1, '', '',  # Y = required to list as line item, N = Prohibited
+        'setuptax',    'char', 'NULL', 1, '', '',  # Y = setup tax exempt
+        'recurtax',    'char', 'NULL', 1, '', '',  # Y = recur tax exempt
+        'manual',      'char', 'NULL', 1, '', '',  # Y = manually edited
+      ],
+      'primary_key' => 'taxnum',
+      'unique' => [],
+      'index' => [ ['taxclassnum'], ['data_vendor', 'geocode'] ],
+    },
+
+    'cust_tax_location' => { 
+      'columns' => [
+        'custlocationnum', 'serial',  '',     '', '', '', 
+        'data_vendor',     'varchar', 'NULL', $char_d, '', '', # update source
+        'zip',             'char',    '',     5,  '', '', 
+        'state',           'char',    '',     2,  '', '', 
+        'plus4hi',         'char',    '',     4,  '', '', 
+        'plus4lo',         'char',    '',     4,  '', '', 
+        'default_location','char',    'NULL', 1,  '', '', # Y = default for zip
+        'geocode',         'varchar', '',    20,  '', '', 
+      ],
+      'primary_key' => 'custlocationnum',
+      'unique' => [],
+      'index' => [ [ 'zip', 'plus4lo', 'plus4hi' ] ],
+    },
+
+    'tax_class' => { 
+      'columns' => [
+        'taxclassnum',  'serial',  '',            '', '', '',
+        'data_vendor',  'varchar', 'NULL',   $char_d, '', '',
+        'taxclass',     'varchar', '',       $char_d, '', '',          
+        'description',  'varchar', '',     2*$char_d, '', '',          
+      ],
+      'primary_key' => 'taxclassnum',
+      'unique' => [ [ 'data_vendor', 'taxclass' ] ],
+      'index' => [],
+    },
+
     'cust_pay_pending' => {
       'columns' => [
         'paypendingnum','serial',      '',  '', '', '',
@@ -933,6 +996,7 @@ sub tables_hashref {
         'disabled',      'char', 'NULL', 1, '', '', 
         'taxclass',      'varchar', 'NULL', $char_d, '', '', 
         'classnum',      'int',     'NULL', '', '', '', 
+        'taxproductnum', 'int',     'NULL', '', '', '', 
         'pay_weight',    'real',    'NULL', '', '', '',
         'credit_weight', 'real',    'NULL', '', '', '',
         'agentnum',      'int',     'NULL', '', '', '', 
@@ -951,6 +1015,51 @@ sub tables_hashref {
       'primary_key' => 'taxclassnum',
       'unique'      => [ [ 'taxclass' ] ],
       'index'       => [],
+    },
+
+    'part_pkg_taxproduct' => {
+      'columns' => [
+        'taxproductnum', 'serial',      '',        '', '', '',
+        'data_vendor',   'varchar', 'NULL',   $char_d, '', '', 
+        'taxproduct',    'varchar',     '',   $char_d, '', '', 
+        'description',   'varchar',     '', 2*$char_d, '', '', 
+      ],
+      'primary_key' => 'taxproductnum',
+      'unique'      => [ [ 'data_vendor', 'taxproduct' ] ],
+      'index'       => [],
+    },
+
+    'part_pkg_taxrate' => { 
+      'columns' => [
+        'pkgtaxratenum', 'serial',  '',     '',      '', '',
+        'data_vendor',   'varchar', 'NULL', $char_d, '', '', # update source
+        'geocode',       'varchar', 'NULL', $char_d, '', '', # cch provides 10
+        'taxproductnum', 'int',  '',     '',       '', '',          
+        'city',             'varchar', 'NULL', $char_d, '', '', # tax_location?
+        'county',           'varchar', 'NULL', $char_d, '', '', 
+        'state',            'varchar', 'NULL', $char_d, '', '', 
+        'local',            'varchar', 'NULL', $char_d, '', '', 
+        'country',          'char',    'NULL', 2,       '', '',
+        'taxclassnumtaxed', 'int',     'NULL', '',      '', '', 
+        'taxcattaxed',      'varchar', 'NULL', $char_d, '', '', 
+        'taxclassnum',      'int',     'NULL', '',      '', '', 
+        'effdate',          @date_type, '', '', 
+        'taxable',          'char',    'NULL', 1,       '', '', 
+      ],
+      'primary_key' => 'pkgtaxratenum',
+      'unique' => [],
+      'index' => [ [ 'data_vendor', 'geocode', 'taxproductnum' ] ],
+    },
+
+    'part_pkg_taxoverride' => { 
+      'columns' => [
+        'taxoverridenum', 'serial', '', '', '', '',
+        'pkgpart',        'serial', '', '', '', '',
+        'taxnum',         'serial', '', '', '', '',
+      ],
+      'primary_key' => 'taxoverridenum',
+      'unique' => [],
+      'index' => [ [ 'pkgpart' ], [ 'taxnum' ] ],
     },
 
 #    'part_title' => {
@@ -1366,6 +1475,7 @@ sub tables_hashref {
         'routernum', 'serial', '', '', '', '', 
         'routername', 'varchar', '', $char_d, '', '', 
         'svcnum', 'int', 'NULL', '', '', '', 
+        'agentnum',   'int', 'NULL', '', '', '', 
       ],
       'primary_key' => 'routernum',
       'unique'      => [],
@@ -1389,6 +1499,7 @@ sub tables_hashref {
 	'routernum', 'int', '', '', '', '', 
         'ip_gateway', 'varchar', '', 15, '', '', 
         'ip_netmask', 'int', '', '', '', '', 
+        'agentnum',   'int', 'NULL', '', '', '', 
       ],
       'primary_key' => 'blocknum',
       'unique'      => [ [ 'blocknum', 'routernum' ] ],

@@ -149,9 +149,9 @@ sub handler
       use FS::cust_credit_bill;
       use FS::cust_main qw(smart_search);
       use FS::cust_main_county;
-      use FS::part_pkg_taxclass;
       use FS::cust_pay;
       use FS::cust_pkg;
+      use FS::part_pkg_taxclass;
       use FS::cust_pkg_reason;
       use FS::cust_refund;
       use FS::cust_svc;
@@ -207,6 +207,12 @@ sub handler
       use FS::reason_type;
       use FS::reason;
       use FS::cust_main_note;
+      use FS::tax_class;
+      use FS::cust_tax_location;
+      use FS::part_pkg_taxproduct;
+      use FS::part_pkg_taxoverride;
+      use FS::part_pkg_taxrate;
+      use FS::tax_rate;
 
       if ( %%%RT_ENABLED%%% ) {
         eval '

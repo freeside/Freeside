@@ -1,0 +1,42 @@
+<% include('/elements/header-popup.html', 'Select tax product') %>
+<SCRIPT>
+  function saveit() {
+    var num = parent.document.getElementById('taxproductnum');
+    var disp = parent.document.getElementById('taxproduct_description');
+    var sel = document.getElementById('taxproduct_popup_select');
+    num.value = sel.options[sel.selectedIndex].value;
+    disp.value = sel.options[sel.selectedIndex].text;
+    parent.cClick();
+  }
+</SCRIPT>
+<FORM="dummy" METHOD="POST" onsubmit="saveit();return false;" >
+
+<% ntable("#cccccc", 2) %>
+<TR>
+  <TD align="left">Tax product</TD>
+  <TD>
+    <% include( '/elements/select-table.html',
+                'empty_label' => '(select product)',
+                'table'       => 'part_pkg_taxproduct',
+                'name_col'    => 'description',
+                'curr_value'  => $curr_value,
+                'element_etc' => "id='taxproduct_popup_select'",
+              )
+    %>
+  </TD>
+</TR>
+</TABLE>
+<BR><BR>
+<CENTER><INPUT type="submit" value="Select"></CENTER>
+</FORM>
+<% include('/elements/footer.html') %>
+
+<%init>
+
+my $conf = new FS::Conf;
+
+my ( $query ) = $cgi->keywords;
+$query =~ /^(\d+)$/;
+my $curr_value = $1;
+
+</%init>

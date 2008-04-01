@@ -3,6 +3,11 @@
 )) %>
 % #), ' onLoad="visualize()"'); 
 
+<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/overlibmws.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/overlibmws_iframe.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/overlibmws_draggable.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/iframecontentmws.js"></SCRIPT>
+
 <% include('/elements/error.html') %>
 
 <FORM NAME="dummy">
@@ -78,6 +83,34 @@ Tax information
 % } else { 
 
   <% include('/elements/select-taxclass.html', $hashref->{taxclass} ) %>
+
+% } 
+
+% if ( $conf->exists('enable_taxproducts') ) { 
+
+  <TR><TD colspan="2">
+    <% ntable("#cccccc", 2) %>
+      <TR>
+        <TD align="right">Tax product</TD>
+        <TD>
+          <INPUT name="part_pkg_taxproduct_taxproductnum" id="taxproductnum" type="hidden" value="<% $hashref->{'taxproductnum'}%>">
+          <INPUT name="part_pkg_taxproduct_description" id="taxproduct_description" type="text" value="<% $taxproduct_description %>" size="12" onclick="overlib( OLiframeContent('part_pkg_taxproduct.html?'+document.getElementById('taxproductnum').value, 800, 400, 'tax_product_popup'), CAPTION, 'Select product', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK); return false;">
+        </TD>
+      </TR>
+      <TR>
+        <TD colspan="2" align="right">
+          <INPUT name="tax_override" id="tax_override" type="hidden" value="<% $tax_override %>">
+          <A href="javascript:void(0)" onclick="overlib( OLiframeContent('part_pkg_taxoverride.html?'+document.getElementById('tax_override').value, 800, 400, 'tax_product_popup'), CAPTION, 'Edit product tax overrides', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK); return false;">
+            <% $tax_override ? 'Edit tax overrides' : 'Override taxes' %>
+          </A>
+        </TD>
+      </TR>
+    </TABLE>
+  </TD></TR>
+
+% } else { 
+
+  <INPUT TYPE="hidden" NAME="taxproductnum" VALUE="<% $hashref->{taxproductnum} %>">
 
 % } 
 
@@ -234,7 +267,7 @@ Line-item revenue recognition
 %#} else {
 %#  push @fixups, 'taxclass'; #hidden
 %#}
-%my @form_elements = ( 'classnum', 'taxclass', 'agent_type' );
+%my @form_elements = ( 'classnum', 'taxclass', 'agent_type', 'tax_override' );
 %
 %my @form_radio = ( 'pkg_svc_primary' );
 %
@@ -252,6 +285,7 @@ Line-item revenue recognition
 %  'form_elements'  => \@form_elements,
 %  'form_text'      => [ qw(pkg comment promo_code clone pkgnum pkgpart),
 %                        qw(pay_weight credit_weight), #keys(%weight),
+%                        qw(taxproductnum),
 %                        @fixups,
 %                      ],
 %  'form_checkbox'  => [ qw(setuptax recurtax disabled) ],
@@ -409,12 +443,14 @@ my ($query) = $cgi->keywords;
 my $conf = new FS::Conf; 
 my $part_pkg = '';
 my @agent_type = ();
+my $tax_override;
 my @all_agent_types = map {$_->typenum} qsearch('agent_type',{});
 if ( $cgi->param('error') ) {
   $part_pkg = new FS::part_pkg ( {
     map { $_, scalar($cgi->param($_)) } fields('part_pkg')
   } );
   (@agent_type) = $cgi->param('agent_type');
+  $tax_override = $cgi->param('tax_override');
 }
 
 my $action = '';
@@ -429,6 +465,9 @@ if ( $cgi->param('clone') ) {
   $part_pkg->disabled('Y') unless $cgi->param('error');
 } elsif ( $query && $query =~ /^(\d+)$/ ) {
   (@agent_type) = map {$_->typenum} qsearch('type_pkgs',{'pkgpart'=>$1})
+    unless $part_pkg;
+  $tax_override =
+    join (",", map {$_->taxnum} qsearch('part_pkg_taxoverride',{'pkgpart'=>$1}))
     unless $part_pkg;
   $part_pkg ||= qsearchs('part_pkg',{'pkgpart'=>$1});
   $pkgpart = $part_pkg->pkgpart;
@@ -447,5 +486,6 @@ unless ( $part_pkg->plan ) { #backwards-compat
 }
 $action ||= $part_pkg->pkgpart ? 'Edit' : 'Add';
 my $hashref = $part_pkg->hashref;
+my $taxproduct_description = $part_pkg->taxproduct_description;
 
 </%init>

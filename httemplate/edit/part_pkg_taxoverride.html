@@ -1,0 +1,61 @@
+<%doc>
+
+  The crappy version
+  
+</%doc>
+<% include('/elements/header-popup.html', 'Select tax product') %>
+<SCRIPT>
+  function saveit2() {
+    var num = parent.document.getElementById('tax_override');
+    var sel = document.getElementById('taxoverride_popup_select');
+    var value = '';
+    for (i=0; i< sel.length; i++) {
+      if (sel.options[i].selected) {
+        value = value + sel.options[i].value + ",";
+      }
+    }
+    if (value.length > 0) {
+      value = value.substr(0, value.length-1);
+    }
+      
+    num.value = value;
+    parent.cClick();
+  }
+</SCRIPT>
+<FORM="dummy" METHOD="POST" onsubmit="saveit2();return false;" >
+
+<% ntable("#cccccc", 2) %>
+<TR>
+  <TD align="left">Tax override</TD>
+  <TD>
+    <% include( '/elements/select-table.html',
+                'table'       => 'tax_rate',
+                'name_col'    => 'taxname',
+                'curr_value'  => \@curr_value,
+                'element_etc' => "id='taxoverride_popup_select'",
+                'multiple'    => '1',
+              )
+    %>
+  </TD>
+</TR>
+</TABLE>
+<BR><BR>
+<CENTER><INPUT type="submit" value="Select"></CENTER>
+</FORM>
+<% include('/elements/footer.html') %>
+
+<%init>
+
+my $conf = new FS::Conf;
+
+my @curr_value;
+my ( $query ) = $cgi->keywords;
+$query =~ /^([\d,]+)$/;
+push @curr_value, split ',', $1
+  if $1;
+
+unless (scalar(@curr_value)) {
+  #push @curr_value, map {$_=>taxnum} $part_pkg->tax_rate;
+}
+
+</%init>

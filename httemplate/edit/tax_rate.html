@@ -1,0 +1,105 @@
+<% include('elements/edit.html',
+     'popup'  => 1,
+     'name'   => 'Tax rate', #Edit tax rate
+     'table'  => 'tax_rate',
+     'labels' => $labels,
+     'fields' => \@fields,
+   )
+%>
+<%once>
+
+my $conf = new FS::Conf;
+
+</%once>
+
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $taxnum;
+if ( $cgi->param('error') ) {
+  $cgi->param('taxnum') =~ /^(\d+)$/ or die 'error, but no taxnum';
+  $taxnum = $1;
+} else {
+  my($query) = $cgi->keywords;
+  $query =~ /^(\d+)$/ or die 'no taxnum';
+  $taxnum = $1;
+}
+
+my $tax_rate = qsearchs('tax_rate', { 'taxnum' => $taxnum })
+  or die "unknown taxnum $1";
+
+my $labels =  { 'taxnum'               => 'Tax',
+                'data_vendor'          => 'Data vendor',
+                'geocode'              => 'Vendor location code',
+                'location'             => 'Tax auth loc code',
+                'taxclass_description' => 'Tax class',
+                'taxname'              => 'Tax name',
+                'effective_date'       => 'Effective date',
+                'tax'                  => 'Tax rate (1st bracket)',
+                'excessrate'           => 'Tax rate (2nd bracket)',
+                'taxbase'              => 'First bracket',
+                'taxmax'               => 'Max tax',
+                'usetax'               => 'Use tax rate (1st bracket)',
+                'useexcessrate'        => 'Use tax rate (2nd bracket)',
+                'unittype_name'        => 'Units',
+                'fee'                  => 'Fee per unit (1st bracket)',
+                'excessfee'            => 'Fee per unit (2st bracket)',
+                'feebase'              => 'Units in first bracket',
+                'feemax'               => 'Max Units',
+                'maxtype_name'         => 'Threshold accumulation',
+                'taxauth_name',        => 'Tax authority',
+                'basetype_name'        => 'Basis',
+                'passtype_name'        => 'Passthru',
+                'passflag'             => 'Passable',
+                'setuptax'             => 'This tax not applicable to setup fees',
+                'recurtax'             => 'This tax not applicable to recurring fees',
+              };
+
+my @fields = (
+    { type=>'tablebreak-tr-title',   value=>'Location' },
+    { field=>'data_vendor',          type=>'hidden',},
+    { field=>'geocode',              type=>'fixed' },
+    { field=>'taxclassnum',          type=>'hidden' } ,
+    { field=>'taxclass_description', type=>'fixed' } ,
+    { field=>'taxname',              type=>'text' } ,
+    { field=>'effective_date',       type=>'fixed' } ,
+    { field=>'location',             type=>'text' },
+    { type=>'tablebreak-tr-title',   value=>'Money based rates' },
+    { field=>'tax',                  type=>'percentage' } ,
+    { field=>'excessrate',           type=>'percentage' } ,
+    { field=>'taxbase',              type=>'money' } ,
+    { field=>'taxmax',               type=>'money' } ,
+    { field=>'usetax',               type=>'percentage' } ,
+    { field=>'useexcessrate',        type=>'percentage' } ,
+    { type=>'tablebreak-tr-title',   value=>'Service based rates' },
+    { field=>'unittype',             type=>'hidden' } ,
+    { field=>'unittype_name',        type=>'fixed' } ,
+    { field=>'fee',                  type=>'money' } ,
+    { field=>'excessfee',            type=>'money' } ,
+    { field=>'feebase',              type=>'text' } ,
+    { field=>'feemax',               type=>'text' } ,
+    { type=>'tablebreak-tr-title',   value=>'Taxation rules' },
+    { field=>'maxtype',              type=>'hidden' } ,
+    { field=>'maxtype_name',         type=>'fixed' } ,
+    { field=>'taxauth',              type=>'hidden' } ,
+    { field=>'taxauth_name',         type=>'fixed' } ,
+    { field=>'basetype',             type=>'hidden' } ,
+    { field=>'basetype_name',        type=>'fixed' } ,
+    { field=>'passtype',             type=>'hidden' } ,
+    { field=>'passtype_name',        type=>'fixed' } ,
+    { field=>'passflag',             type=>'fixed' } ,
+    { field=>'setuptax',             type=>'checkbox' } ,
+    { field=>'recurtax',             type=>'checkbox' } ,
+    { field=>'manual',               type=>'hidden', value=>'Y' } ,
+);
+
+#push @fields,
+#  { type=>'tablebreak-tr-title', value=>'Exemptions' },
+#  { field=>'setuptax', type=>'checkbox', value=>'Y', },
+#  { field=>'recurtax', type=>'checkbox', value=>'Y', },
+#  { field=>'exempt_amount', type=>'money', },
+#;
+
+</%init>
