@@ -41,12 +41,7 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
 my $conf = new FS::Conf;
 my $money_char = $conf->config('money_char') || '$';
 
-my $html_init = qq(
-  <SCRIPT TYPE="text/javascript" SRC="${fsurl}elements/overlibmws.js"></SCRIPT>
-  <SCRIPT TYPE="text/javascript" SRC="${fsurl}elements/overlibmws_iframe.js"></SCRIPT>
-  <SCRIPT TYPE="text/javascript" SRC="${fsurl}elements/overlibmws_draggable.js"></SCRIPT>
-  <SCRIPT TYPE="text/javascript" SRC="${fsurl}elements/iframecontentmws.js"></SCRIPT>
-);
+my $html_init = include('/elements/init_overlib.html');
 
 my $join =
   ' JOIN rate_region ON ( rate_detail.dest_regionnum = rate_region.regionnum )';
@@ -56,8 +51,13 @@ my $edit_link = [ 'javascript:void(0);', sub { ''; } ];
 my $edit_onclick = sub {
   my $rate_detail = shift;
   my $ratedetailnum = $rate_detail->ratedetailnum;
-  my $color = '#333399';
-  qq!overlib( OLiframeContent('${p}edit/rate_detail.html?$ratedetailnum', 540, 420, 'edit_rate_detail_popup' ), CAPTION, 'Edit tax rate', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '$color', CGCOLOR, '$color' ); return false;!;
+  include( '/elements/popup_link_onclick.html',
+             'action'      => "${p}edit/rate_detail.html?$ratedetailnum",
+             'actionlabel' => 'Edit rate',
+             'height'      => 420,
+             #default# 'width'       => 540,
+             #default# 'color'       => '#333399',
+         );
 };
 
 </%once>
