@@ -2499,6 +2499,8 @@ sub _items_cust_bill_pkg {
   my @b = ();
   foreach my $cust_bill_pkg ( @$cust_bill_pkg ) {
 
+    my $cust_pkg = $cust_bill_pkg->cust_pkg;
+
     my $desc = $cust_bill_pkg->desc;
 
     if ( $cust_bill_pkg->pkgnum > 0 ) {
@@ -2506,7 +2508,7 @@ sub _items_cust_bill_pkg {
       if ( $cust_bill_pkg->setup != 0 ) {
         my $description = $desc;
         $description .= ' Setup' if $cust_bill_pkg->recur != 0;
-        my @d = $cust_bill_pkg->cust_pkg->h_labels_short($self->_date);
+        my @d = $cust_pkg->h_labels_short($self->_date);
         push @d, $cust_bill_pkg->details if $cust_bill_pkg->recur == 0;
         push @b, {
           description     => $description,
@@ -2529,8 +2531,11 @@ sub _items_cust_bill_pkg {
           pkgnum          => $cust_bill_pkg->pkgnum,
           amount          => sprintf("%.2f", $cust_bill_pkg->recur),
           ext_description =>
-            [ $cust_bill_pkg->cust_pkg->h_labels_short( $cust_bill_pkg->edate,
-                                                        $cust_bill_pkg->sdate),
+            #at least until cust_bill_pkg has "past" ranges in addition to
+            #the "future" sdate/edate ones... see #3032
+            [ $cust_pkg->h_labels_short( $self->_date ),
+                                         #$cust_bill_pkg->edate,
+                                         #$cust_bill_pkg->sdate),
               $cust_bill_pkg->details,
             ],
         };
