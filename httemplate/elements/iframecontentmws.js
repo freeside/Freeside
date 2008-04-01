@@ -18,6 +18,11 @@
  be 'auto' (default if omitted), 'yes' or 'no'.
 */
 function OLiframeContent(src, width, height, name, frameborder, scrolling) {
+ 
+ #stupid safari iframe location caching...
+ var unique = d.getTime() + '' + Math.floor(1000 * Math.random());
+ name = name + '' + unique;
+
  return ('<iframe src="'+src+'" width="'+width+'" height="'+height+'"'
  +(name!=null?' name="'+name+'" id="'+name+'"':'')
  +(frameborder!=null?' frameborder="'+frameborder+'"':'')
