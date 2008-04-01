@@ -41,8 +41,6 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
 my $conf = new FS::Conf;
 my $money_char = $conf->config('money_char') || '$';
 
-my $html_init = include('/elements/init_overlib.html');
-
 my $join =
   ' JOIN rate_region ON ( rate_detail.dest_regionnum = rate_region.regionnum )';
 
@@ -65,6 +63,8 @@ my $edit_onclick = sub {
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $html_init = include('/elements/init_overlib.html');
 
 $cgi->param('ratenum') =~ /^(\d+)$/ or die "unparsable ratenum";
 my $ratenum = $1;
