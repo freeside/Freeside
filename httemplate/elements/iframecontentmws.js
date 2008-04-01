@@ -19,7 +19,8 @@
 */
 function OLiframeContent(src, width, height, name, frameborder, scrolling) {
  
- #stupid safari iframe location caching...
+ /* stupid safari iframe location caching... */
+ var d = new Date();
  var unique = d.getTime() + '' + Math.floor(1000 * Math.random());
  name = name + '' + unique;
 
