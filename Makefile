@@ -66,8 +66,8 @@ HTTPD_RESTART = /etc/init.d/apache2 restart
 #apache
 #HTTPD_RESTART = /usr/local/apache/bin/apachectl stop; sleep 10; /usr/local/apache/bin/apachectl startssl
 
-#(an include directory, not a file, "Include /etc/apachew/conf.d" in httpd.conf)
-#deb (3.1+), 
+#(an include directory, not a file, "Include /etc/apache/conf.d" in httpd.conf)
+#deb (3.1+), apache2
 APACHE_CONF = /etc/apache2/conf.d
 
 FREESIDE_RESTART = ${INIT_FILE} restart
