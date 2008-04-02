@@ -94,13 +94,13 @@ Tax information
         <TD align="right">Tax product</TD>
         <TD>
           <INPUT name="part_pkg_taxproduct_taxproductnum" id="taxproductnum" type="hidden" value="<% $hashref->{'taxproductnum'}%>">
-          <INPUT name="part_pkg_taxproduct_description" id="taxproduct_description" type="text" value="<% $taxproduct_description %>" size="12" onclick="overlib( OLiframeContent('part_pkg_taxproduct.html?'+document.getElementById('taxproductnum').value, 800, 400, 'tax_product_popup'), CAPTION, 'Select product', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK); return false;">
+          <INPUT name="part_pkg_taxproduct_description" id="taxproduct_description" type="text" value="<% $taxproduct_description %>" size="12" onclick="overlib( OLiframeContent('part_pkg_taxproduct.html?'+document.getElementById('taxproductnum').value, 1000, 400, 'tax_product_popup'), CAPTION, 'Select product', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK); return false;">
         </TD>
       </TR>
       <TR>
         <TD colspan="2" align="right">
           <INPUT name="tax_override" id="tax_override" type="hidden" value="<% $tax_override %>">
-          <A href="javascript:void(0)" onclick="overlib( OLiframeContent('part_pkg_taxoverride.html?'+document.getElementById('tax_override').value, 800, 400, 'tax_product_popup'), CAPTION, 'Edit product tax overrides', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK); return false;">
+          <A href="javascript:void(0)" onclick="overlib( OLiframeContent('part_pkg_taxoverride.html?selected='+document.getElementById('tax_override').value, 1100, 600, 'tax_product_popup'), CAPTION, 'Edit product tax overrides', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK); return false;">
             <% $tax_override ? 'Edit tax overrides' : 'Override taxes' %>
           </A>
         </TD>
@@ -467,7 +467,8 @@ if ( $cgi->param('clone') ) {
   (@agent_type) = map {$_->typenum} qsearch('type_pkgs',{'pkgpart'=>$1})
     unless $part_pkg;
   $tax_override =
-    join (",", map {$_->taxnum} qsearch('part_pkg_taxoverride',{'pkgpart'=>$1}))
+    join (",", map {$_->taxclassnum}
+               qsearch('part_pkg_taxoverride',{'pkgpart'=>$1}))
     unless $part_pkg;
   $part_pkg ||= qsearchs('part_pkg',{'pkgpart'=>$1});
   $pkgpart = $part_pkg->pkgpart;

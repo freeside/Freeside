@@ -41,9 +41,9 @@ Primary key
 
 The package definition id
 
-=item taxnum
+=item taxclassnum
 
-The tax rate definition id
+The tax class id
 
 =back
 
@@ -96,7 +96,7 @@ sub check {
   my $error = 
     $self->ut_numbern('taxoverridenum')
     || $self->ut_foreign_key('pkgpart', 'part_pkg', 'pkgpart')
-    || $self->ut_foreign_key('taxnum', 'tax_rate', 'taxnum')
+    || $self->ut_foreign_key('taxclassnum', 'tax_class', 'taxclassnum')
   ;
   return $error if $error;
 

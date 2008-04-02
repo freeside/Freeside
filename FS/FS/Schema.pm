@@ -1055,11 +1055,11 @@ sub tables_hashref {
       'columns' => [
         'taxoverridenum', 'serial', '', '', '', '',
         'pkgpart',        'serial', '', '', '', '',
-        'taxnum',         'serial', '', '', '', '',
+        'taxclassnum',    'serial', '', '', '', '',
       ],
       'primary_key' => 'taxoverridenum',
       'unique' => [],
-      'index' => [ [ 'pkgpart' ], [ 'taxnum' ] ],
+      'index' => [ [ 'pkgpart' ], [ 'taxclassnum' ] ],
     },
 
 #    'part_title' => {

@@ -116,7 +116,7 @@ unless ( $error || $conf->exists('agent_defaultpkg') ) {
 unless ( $error  ) {
   $error = $new->process_m2m(
     'link_table'   => 'part_pkg_taxoverride',
-    'target_table' => 'tax_rate',
+    'target_table' => 'tax_class',
     'params'       => \@tax_overrides,
   );
 }

@@ -1,0 +1,92 @@
+<% include( 'elements/browse.html',
+     'title'             => "Tax classes $title",
+     'name_singular'     => 'tax class',
+     'menubar'           => \@menubar,
+     'html_init'         => $html_init,
+     'query'             => {
+                              'table'     => 'tax_class',
+                              'hashref'   => $hashref,
+                              'extra_sql' => $where,
+                              'order_by'  => 'ORDER BY taxclass',
+                            },
+     'count_query'       => $count_query,
+     'header'            => \@header,
+     'fields'            => \@fields,
+     'align'             => $align,
+     'links'             => \@links,
+     'link_onclicks'     => \@link_onclicks,
+     'disable_maxselect' => 1,
+     'disable_total'     => 1,
+  )
+%>
+<%once>
+
+my $conf = new FS::Conf;
+
+</%once>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $title = '';
+my @menubar = ();
+my $html_init = '';
+my $hashref = {};
+my @where = ();
+my $onclick = 'return true;';
+
+my $omit = '';
+if ( $cgi->param('magic') eq 'omit' ) {
+  $cgi->param('omit') =~ /^([,\d]+)$/;
+  $omit = $1;
+  $title .= " unselected";
+  push @where, map { "taxclassnum != $_" } grep {$_} split( /,/, $omit );
+  $onclick = sub{ 'parent.doSelect('. shift->taxclassnum. '); return false;' } 
+}
+$cgi->delete('omit');
+
+my $data_vendor = '';
+if ( $cgi->param('datavendor') =~ /^([\w]+)$/ ) {
+  $data_vendor = $1;
+  $title .= " for data vendor $1";
+  push @where, 'data_vendor = '. dbh->quote($data_vendor);
+}
+$cgi->delete('data_vendor');
+
+my $selected = '';
+if (    $cgi->param('magic') eq 'select')
+{
+  $cgi->param('selected') =~ /^([,\d]*)$/;
+  $selected = $1;
+  $title = " selected";
+  my @clauses =  map { "taxclassnum = $_" } grep {$_} split( /,/, $selected );
+  @where =  scalar(@clauses) ? '( '. join(' OR ', @clauses) .')' : '1=0';
+  $onclick = sub{ 'parent.doUnselect('. shift->taxclassnum. '); return false;' } ;
+}
+$cgi->delete('selected');
+
+
+if ( $data_vendor ) {
+  push @menubar, 'View all tax classes' => $p.'browse/tax_class.html';
+}
+
+$cgi->param('dummy', 1);
+
+#restore this so pagination works
+$cgi->param('omit', $omit ) if $omit;
+$cgi->param('selected', $selected ) if $selected;
+$cgi->param('data_vendor', $data_vendor ) if $data_vendor;
+
+my $where = scalar(@where) ? 'WHERE '. join( ' AND ', @where ) : '';
+my $count_query = 'SELECT COUNT(*) FROM tax_class '. $where;
+
+my $link = [ 'javascript:void(0);', sub{ ''; } ];
+
+my @header        = ( '', '', '' );
+my @links         = ( $link, $link, $link );
+my @link_onclicks = ( $onclick, $onclick, $onclick );
+my $align = 'lll';
+my @fields = ( 'data_vendor', 'taxclass', 'description' );
+
+</%init>

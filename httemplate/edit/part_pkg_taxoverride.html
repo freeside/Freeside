@@ -1,61 +1,124 @@
-<%doc>
+<% include('/elements/header-popup.html', 'Override taxes', '', 'onload="resizeFrames()"') %>
 
-  The crappy version
-  
-</%doc>
-<% include('/elements/header-popup.html', 'Select tax product') %>
-<SCRIPT>
-  function saveit2() {
-    var num = parent.document.getElementById('tax_override');
-    var sel = document.getElementById('taxoverride_popup_select');
-    var value = '';
-    for (i=0; i< sel.length; i++) {
-      if (sel.options[i].selected) {
-        value = value + sel.options[i].value + ",";
-      }
-    }
-    if (value.length > 0) {
-      value = value.substr(0, value.length-1);
-    }
-      
-    num.value = value;
-    parent.cClick();
-  }
-</SCRIPT>
-<FORM="dummy" METHOD="POST" onsubmit="saveit2();return false;" >
+<TABLE WIDTH="100%" HEIGHT="100%">
+  <TR><TD>
+    <iframe name="selected" src="<% $p %>browse/tax_class.html?_type=select;magic=select;maxrecords=15;offset=<% $selected_offset %>;selected=<% $selected %>;" width="100%" frameborder="0" border="0" id="selectorSelected" scrolling="no">
+</iframe>
+    <BR>
+  </TD></TR>
 
-<% ntable("#cccccc", 2) %>
-<TR>
-  <TD align="left">Tax override</TD>
-  <TD>
-    <% include( '/elements/select-table.html',
-                'table'       => 'tax_rate',
-                'name_col'    => 'taxname',
-                'curr_value'  => \@curr_value,
-                'element_etc' => "id='taxoverride_popup_select'",
-                'multiple'    => '1',
-              )
-    %>
-  </TD>
-</TR>
-</TABLE>
-<BR><BR>
-<CENTER><INPUT type="submit" value="Select"></CENTER>
+  <TR><TD>
+<FORM="dummy">
+  <CENTER>
+    <INPUT type="submit" value="Finish" onclick="s=fetchSelected(); s.shift(); parent.document.getElementById('tax_override').value=s.toString(); parent.cClick();">
+    <INPUT type="reset" value="Cancel" onclick="parent.cClick();">
+  </CENTER>
 </FORM>
-<% include('/elements/footer.html') %>
+  </TD></TR>
 
-<%init>
+  <TR><TD>
+    <iframe name="unselected" src="<% $p %>browse/tax_class.html?_type=select;magic=omit;maxrecords=15;offset=<% $unselected_offset %>;omit=<% $selected %>;" width="100%" frameborder="0" border="0" id="selectorUnselected" scrolling="no">
+</iframe>
+    <BR>
+  </TD></TR>
+
+</TABLE>
+<SCRIPT>
+
+    function resizeFrames() {
+      //frames['selected'].style.height =
+      //  frames['selected'].contentWindow.document.body.scrollHeight + "px";
+      //frames['unselected'].style.height =
+      //  frames['unselected'].contentWindow.document.body.scrollHeight + "px";
+      var f = document.getElementById('selectorSelected');
+      f.style.height = f.contentWindow.document.body.scrollHeight + "px";
+      var f = document.getElementById('selectorUnselected');
+      f.style.height = f.contentWindow.document.body.scrollHeight + "px";
+    }
+
+    function fetchOffset(search) {
+      var value = 0;
+      if (search.length > 1) {
+        var params = search.split(';');
+        for (i=0; i<params.length; i++) {
+          if (params[i].substr(0,7) == 'offset=') {
+            value = params[i].substr(7);
+          }
+        }
+      }
+      return value;
+    }
+
+    function fetchOffsetStrings() {
+      return 'selected_offset=' +
+             fetchOffset(frames['selected'].location.search) + ';' +
+             'unselected_offset=' +
+             fetchOffset(frames['unselected'].location.search) + ';';
+    }
+
+    function fetchSelected() {
+      var i;
+      var selected = new Array;
+      var replace = '?';
+      if (window.location.search.length > 1) {
+        var search = window.location.search.substr(1).split(';');
+        for (i=0; i<search.length; i++) {
+          if (search[i].substr(0,9) == 'selected=') {
+            selected = search[i].substr(9).split(',')
+          }else if (search[i].substr(0,16) ==   'selected_offset=') {
+          }else if (search[i].substr(0,18) == 'unselected_offset=') {
+          }else if (search[i].length) {
+            replace += search[i] + ';';
+          }
+        }
+      }
+      selected.unshift(replace);
+      return selected;
+    }
+    function doUnselect(classnum) {
+      var selected = fetchSelected();
+      var search = selected.shift();
+      //alert("discovered: "+selected.toString());
+      var i=-1, j=-1, k=selected.length;
+      while(++j < k) {
+        if (!(selected[j]==classnum)) {
+          selected[++i]=selected[j];
+        }
+      }
+      selected.length = ++i;
+      //alert("finished: "+selected.toString());
+
+      search += "selected=" + selected.toString() + ';';
+      window.location.search = search + fetchOffsetStrings();
+    }
+    function doSelect(classnum) {
+      var selected = fetchSelected();
+      var search = selected.shift();
+      selected.push(classnum);
+      search += "selected=" + selected.toString() + ';';
+      window.location.search = search + fetchOffsetStrings();
+    }
+</SCRIPT>
+
+<% include('/elements/footer.html') %>
+<%once>
 
 my $conf = new FS::Conf;
 
-my @curr_value;
-my ( $query ) = $cgi->keywords;
-$query =~ /^([\d,]+)$/;
-push @curr_value, split ',', $1
-  if $1;
+</%once>
+<%init>
 
-unless (scalar(@curr_value)) {
-  #push @curr_value, map {$_=>taxnum} $part_pkg->tax_rate;
-}
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+
+my $selected_offset = $1
+  if $cgi->param('selected_offset') =~/^(\d+)$/;
+
+my $unselected_offset = $1
+  if $cgi->param('unselected_offset') =~/^(\d+)$/;
+
+my $selected = $1
+  if $cgi->param('selected') =~/^([,\d]+)$/;
 
 </%init>

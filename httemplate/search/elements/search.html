@@ -93,6 +93,8 @@ Example:
     
     #disabling things
     'disable_download' => '', # set true to hide the CSV/Excel download links
+    'disable_total'    => '', # set true to hide the total"
+    'disable_maxselect' => '', # set true to disable record/page selection
     'disable_nonefound' => '', # set true to disable the "No matching Xs found"
                                # message
    
@@ -291,6 +293,17 @@ Example:
 
         <% include( '/elements/header-popup.html', $opt{'title'} ) %>
 
+%     } elsif ( $type eq 'select' ) {
+
+        <% include( '/elements/header-popup.html', $opt{'title'} ) %>
+        <% defined($opt{'html_init'}) 
+              ? ( ref($opt{'html_init'})
+                    ? &{$opt{'html_init'}}()
+                    : $opt{'html_init'}
+                )
+              : ''
+        %>
+
 %     } else {
 %
 %       my @menubar = ();
@@ -330,14 +343,18 @@ Example:
 
               <FORM>
 
-                <% $total %> total <% $opt{'name'} %>
+%               if (! $opt{'disable_total'}) {
+                  <% $total %> total <% $opt{'name'} %>
+%               }
 
-%               if ( $confmax && $total > $confmax && $type ne 'html-print' ) {
+%               if ( $confmax && $total > $confmax
+%                    && ! $opt{'disable_maxselect'}
+%                    && $type ne 'html-print' )
+%               {
 %                 $cgi->delete('maxrecords');
 %                 $cgi->param('_dummy', 1);
 
 %#                 ( show <SELECT NAME="maxrecords" onChange="this.form.submit();">
-                  ( show <SELECT NAME="maxrecords" onChange="window.location = '<% $cgi->self_url %>;maxrecords=' + this.options[this.selectedIndex].value;">
 
 %                   foreach my $max ( map { $_ * $confmax } qw( 1 5 10 25 ) ) {
                   <OPTION VALUE="<% $max %>" <% ( $maxrecords == $max ) ? 'SELECTED' : '' %>><% $max %></OPTION>
@@ -770,7 +787,7 @@ if ( $opt{'disableable'} ) {
 
 }
 
-my $type = $cgi->param('_type') =~ /^(csv|\w*\.xls|html(-print)?)$/
+my $type = $cgi->param('_type') =~ /^(csv|\w*\.xls|select|html(-print)?)$/
            ? $1 : 'html';
 
 my $limit = '';
