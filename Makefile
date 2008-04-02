@@ -234,6 +234,7 @@ install-apache:
 	    ( [ ${RT_ENABLED} -eq 1 ] && install -o root -m 755 htetc/freeside-rt.conf ${APACHE_CONF} || true ) && \
 	    perl -p -i -e "\
 	      s'%%%FREESIDE_DOCUMENT_ROOT%%%'${FREESIDE_DOCUMENT_ROOT}'g; \
+	      s'%%%FREESIDE_CONF%%%'${FREESIDE_CONF}'g; \
 	      s'%%%MASON_HANDLER%%%'${MASON_HANDLER}'g; \
 	    " ${APACHE_CONF}/freeside-*.conf \
 	  ) || true
