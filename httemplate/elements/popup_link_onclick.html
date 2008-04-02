@@ -17,6 +17,13 @@ Example:
     'height'         => 336,
     'color'          => '#ff0000',
     'closetext'      => 'Go Away',      # the value '' removes the link
+
+    #uncommon opt
+    'frame'          => 0, #bool
+    'scrolling'      => 'yes', #scrollbars:
+                               # 'auto' (default if omitted), 'yes' or 'no'.
+    'nofalse'        => 0, #bool, eliminates "return false;"
+
   } )
 
 </%doc>
@@ -29,6 +36,7 @@ my( $action, $actionlabel, $frame ) = ( '', '', '' );
 my( $width, $height ) = ( 540, 336 );
 my $closetext = 'Close';
 my $color = '#333399';
+my $scrolling = 'auto';
 
 my $params;
 if (ref($_[0]) eq 'HASH') {
@@ -46,17 +54,21 @@ $height      = $params->{'height'}      if exists $params->{'height'};
 $color       = $params->{'color'}       if exists $params->{'color'};
 $closetext   = $params->{'closetext'}   if exists $params->{'closetext'};
 $frame       = $params->{'frame'}       if exists $params->{'frame'};
+$scrolling   = $params->{'scrolling'}   if exists $params->{'scrolling'};
 
 #stupid safari is caching the "location" of popup iframs, and submitting them
 #instead of displaying them.  this should prevent that.
 my $popup_name = 'popup-'.time. "-$$-". rand() * 2**32;
 
 my $onclick =
-  "overlib( OLiframeContent('$action', $width, $height, '$popup_name' ), ".
+  "overlib( OLiframeContent('$action', $width, $height, '$popup_name', 0, '$scrolling' ), ".
     "CAPTION, '$actionlabel', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, ".
     "DRAGGABLE, CLOSECLICK, ".
     "BGCOLOR, '$color', CGCOLOR, '$color', CLOSETEXT, '$closetext'".
     ( $frame ? ", FRAME, $frame" : '' ).
-  "); return false;";
+  ");";
+  
+$onclick .= " return false;"
+  unless $params->{'nofalse'};
 
 </%init>
