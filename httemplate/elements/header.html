@@ -13,6 +13,8 @@
               )
     %>
 
+    <% include('init_overlib.html') %>
+
     <SCRIPT TYPE="text/javascript">
       function clearhint_search_cust (what) {
         if ( what.value == '(cust #, name, company or phone)' )
@@ -60,8 +62,17 @@
             <tr>
               <td align=right BGCOLOR="#ffffff">
                 <FONT SIZE="-2">
-                 <A HREF="http://www.sisd.com/freeside">Freeside</A>&nbsp;v<% $FS::VERSION %><BR>
-                 <A HREF="<% $conf->config('support-key') ? "http://www.sisd.com/mediawiki/index.php/Supported:Documentation" : "http://www.sisd.com/mediawiki/index.php/Freeside:1.9:Documentation" %>">Documentation</A><BR>
+                 <% include('/elements/popup_link.html',
+                              'action'      => $fsurl.'docs/about.html',
+                              'label'       => 'Freeside',
+                              'actionlabel' => 'About',
+                              'width'       => 300,
+                              'height'      => 360,
+                              'color'       => '#7e0079',
+                              'scrolling'   => 'no',
+                           )
+                 %>&nbsp;v<% $FS::VERSION %><BR>
+                 <A HREF="<% $conf->config('support-key') ? "http://www.freeside.biz/mediawiki/index.php/Supported:Documentation" : "http://www.freeside.biz/mediawiki/index.php/Freeside:1.9:Documentation" %>" TARGET="_blank">Documentation</A><BR>
                 </FONT>
               </td>
 % if ( $conf->config('ticket_system') eq 'RT_Internal' ) { 
@@ -70,8 +81,8 @@
                 <td bgcolor=#000000></td>
                 <td align=left>
                   <FONT SIZE="-2">
-                   <A HREF="http://www.bestpractical.com/rt">RT<A>&nbsp;v<% $RT::VERSION %><BR>
-                   <A HREF="http://wiki.bestpractical.com/">Documentation</A><BR>
+                   <A HREF="http://www.bestpractical.com/rt" TARGET="_blank">RT<A>&nbsp;v<% $RT::VERSION %><BR>
+                   <A HREF="http://wiki.bestpractical.com/" TARGET="_blank">Documentation</A><BR>
                   </FONT>
                 </td>
 % } 
