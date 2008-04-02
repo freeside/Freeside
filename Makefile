@@ -103,6 +103,8 @@ FREESIDE_URL = "http://localhost/freeside/"
 #for now, same db as specified in DATASOURCE... eventually, otherwise?
 RT_DB_DATABASE = freeside
 
+RPM_SPECFILE = rpm/freeside.spec
+
 #---
 
 
@@ -346,6 +348,11 @@ clean:
 #release: upload-docs
 release:
 	cd /home/ivan/freeside
+
+	# Update the RPM specfile
+	perl -p -i -e "s/\d+[^\}]+/${VERSION}/ if /%define\s+version\s+(\d+[^\}]+)\}/;" ${RPM_SPECFILE}
+	cvs commit -m "Updated for ${VERSION}" ${RPM_SPECFILE}
+
 	#cvs tag ${TAG}
 	cvs tag -F ${TAG}
 
