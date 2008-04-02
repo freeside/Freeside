@@ -1,0 +1,53 @@
+<% include('/elements/header-popup.html', 'Freeside') %>
+
+<% include('/elements/init_overlib.html') %>
+
+<CENTER>
+<IMG SRC="<%$fsurl%>images/small-logo.png" BORDER=0"><BR>
+<H3>version <% $FS::VERSION %></H3>
+</CENTER>
+
+<CENTER>
+<FONT SIZE="-1">&copy; 2008 Freeside Internet Services, Inc.<BR>
+All rights reserved.<BR>
+Licensed under the terms of the<BR>
+GNU <i>Affero</i> General Public License.<BR>
+</FONT>
+</CENTER>
+<BR>
+
+<CENTER>
+<A HREF="credits.html">Credits</A>
+ &nbsp;&nbsp;&nbsp;&nbsp;
+<A HREF="javascript:void(0)" onClick="openLicense()">License</A>
+
+
+<BR><BR>
+<A HREF="http://www.freeside.biz/freeside" TARGET="_blank">Freeside homepage</A>
+</CENTER>
+
+<BR>
+
+<CENTER>
+<FONT SIZE="-3">"None but ourselves can free our minds." -R.N. Marley</FONT>
+</CENTER>
+
+<SCRIPT TYPE="text/javascript">
+
+function openLicense() {
+  parent.<% include('/elements/popup_link_onclick.html',
+                      'action'      => $fsurl.'docs/license.html',
+                      'label'       => 'License',
+                      'actionlabel' => 'License',
+                      'width'       => 600, #420,
+                      'height'      => 355,
+                      'color'       => '#7e0079',
+                      'nofalse'     => 1,
+                   )
+  %>
+}
+
+</SCRIPT>
+
+</BODY>
+</HTML>
