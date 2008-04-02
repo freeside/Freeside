@@ -1,4 +1,4 @@
-#! /bin/sh
+#!/bin/sh
 #
 # chkconfig: 345 86 16
 # description: Freeside daemons
@@ -11,6 +11,8 @@ SELFSERVICE_MACHINES="%%%SELFSERVICE_MACHINES%%%"
 #INSTALLSCRIPT/INSTALLSITEBIN from Makefile.PL
 PATH="$PATH:/usr/local/bin"
 export PATH
+
+[ -r /etc/default/freeside ] && . /etc/default/freeside
 
 case "$1" in
   start)
