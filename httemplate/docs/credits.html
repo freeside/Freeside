@@ -156,9 +156,12 @@ var startingPosition = 360;
 //huh, adjust for firefox
 var ua = navigator.userAgent;
 var opera = /opera [56789]|opera\/[56789]/i.test(ua);
-var moz = !opera && /gecko/i.test(ua);
+var webkit = /webkit/i.test(ua)
+var moz = !opera && !webkit && /gecko/i.test(ua);
 if ( moz ) {
   startingPosition += 20;
+} else if ( opera ) {
+  startingPosition += 21;
 }
 
 var documentYposition = startingPosition;
