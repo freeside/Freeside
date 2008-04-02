@@ -1,8 +1,37 @@
+<% include('/elements/header-popup.html', '') %>
+
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+
+<FONT SIZE=6>
+  <CENTER>Freeside</CENTER>
+</FONT>
+
+<BR>
+
 <CENTER>
 <IMG SRC="<%$fsurl%>images/small-logo.png" BORDER=0"><BR>
-<H2>Freeside</H2>
 <H3>version <% $FS::VERSION %></H3>
-<BR><BR>
+</CENTER>
+
+<CENTER>
 
 <H3>Core team</H3>
 Peter Bowen<BR>
@@ -25,9 +54,7 @@ Dave Burgess<BR>
 Joe Camadine<BR>
 Chris Cappuccio<BR>
 Rebecca Cardennis<BR>
-Cerkit<BR>
 Shane Chrisp<BR>
-Steve Cleff<BR>
 Luke Crawford<BR>
 Brad Dameron<BR>
 Dave Denney<BR>
@@ -49,10 +76,8 @@ Roger Mangraviti<BR>
 Brian McCane<BR>
 mimooh<BR>
 Mack Nagashima<BR>
-Mark Norris<BR>
 Matt Peterson<BR>
 Luke Pfeifer<BR>
-Jerry St. Pierre<BR>
 Ricardo Signes<BR>
 Matt Simerson<BR>
 Steve Simitzis<BR>
@@ -65,5 +90,82 @@ Mark Wells<BR>
 Peter Wemm<BR>
 Mark Williamson<BR>
 Tim Yardley<BR>
-<BR>
+
 </CENTER>
+
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+<BR>
+
+<SCRIPT TYPE="text/javascript">
+
+function myScroll() {
+
+  documentYposition += 1;
+  window.scroll(0,documentYposition);
+
+  var timeout = 25;
+
+  if ( documentYposition > documentLength ) {
+    documentYposition = 0;
+  }
+
+  if ( documentYposition == startingPosition ) {
+    timeout = 5000;
+  }
+
+  setTimeout('myScroll()', timeout);
+}
+
+function DelayThenScroll() {
+  window.scroll(0,documentYposition);
+  documentLength = myHeight();
+  setTimeout('myScroll()', 3000);
+}
+
+function myHeight() {
+/*    if (document.all) 
+        return document.body.offsetHeight;
+    else if (document.layers)
+        return document.body.document.height;
+    else
+*/
+        return 1700; // approx height (add more per contributors)
+}
+
+document.body.style.overflow = 'hidden';
+
+var startingPosition = 360;
+
+//huh, adjust for firefox
+var ua = navigator.userAgent;
+var opera = /opera [56789]|opera\/[56789]/i.test(ua);
+var moz = !opera && /gecko/i.test(ua);
+if ( moz ) {
+  startingPosition += 20;
+}
+
+var documentYposition = startingPosition;
+var documentLength;
+window.onLoad = DelayThenScroll();
+
+</SCRIPT>
+
+</BODY>
+</HTML>
