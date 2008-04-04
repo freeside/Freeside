@@ -62,15 +62,15 @@
             <tr>
               <td align=right BGCOLOR="#ffffff">
                 <FONT SIZE="-2">
-                 <% include('/elements/popup_link.html',
-                              'action'      => $fsurl.'docs/about.html',
-                              'label'       => 'Freeside',
-                              'actionlabel' => 'About',
-                              'width'       => 300,
-                              'height'      => 360,
-                              'color'       => '#7e0079',
-                              'scrolling'   => 'no',
-                           )
+                  <% include('/elements/popup_link.html',
+                               'action'      => $fsurl.'docs/about.html',
+                               'label'       => 'Freeside',
+                               'actionlabel' => 'About',
+                               'width'       => 300,
+                               'height'      => 360,
+                               'color'       => '#7e0079',
+                               'scrolling'   => 'no',
+                            )
                  %>&nbsp;v<% $FS::VERSION %><BR>
                  <A HREF="<% $conf->config('support-key') ? "http://www.freeside.biz/mediawiki/index.php/Supported:Documentation" : "http://www.freeside.biz/mediawiki/index.php/Freeside:1.9:Documentation" %>" TARGET="_blank">Documentation</A><BR>
                 </FONT>
