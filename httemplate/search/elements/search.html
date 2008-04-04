@@ -354,7 +354,7 @@ Example:
 %                 $cgi->delete('maxrecords');
 %                 $cgi->param('_dummy', 1);
 
-%#                 ( show <SELECT NAME="maxrecords" onChange="this.form.submit();">
+                  ( show <SELECT NAME="maxrecords" onChange="this.form.submit();">
 
 %                   foreach my $max ( map { $_ * $confmax } qw( 1 5 10 25 ) ) {
                   <OPTION VALUE="<% $max %>" <% ( $maxrecords == $max ) ? 'SELECTED' : '' %>><% $max %></OPTION>
