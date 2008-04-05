@@ -15,7 +15,7 @@ drop_root();
 
 adminsuidsetup($user);
 
-logfile( "/usr/local/etc/freeside/prepaidd-log.". $FS::UID::datasrc );
+logfile( "%%%FREESIDE_LOG%%%/prepaidd-log.". $FS::UID::datasrc );
 
 daemonize2();
 
