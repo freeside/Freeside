@@ -145,7 +145,11 @@ if ( $pkeyvalue ) {
   });
 }
 
-my %hash = map { $_ => scalar($cgi->param($_)) } @$fields;
+my %hash =
+  map { my @entry = ( $_ => $cgi->param($_) );
+        $opt{'value_callback'} ? ( $_ => &{ $opt{'value_callback'} }( @entry ))
+                               : ( @entry )
+      } @$fields;
 
 my $new = $class->new( \%hash );
 

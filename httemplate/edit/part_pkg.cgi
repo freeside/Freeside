@@ -94,7 +94,7 @@ Tax information
         <TD align="right">Tax product</TD>
         <TD>
           <INPUT name="part_pkg_taxproduct_taxproductnum" id="taxproductnum" type="hidden" value="<% $hashref->{'taxproductnum'}%>">
-          <INPUT name="part_pkg_taxproduct_description" id="taxproduct_description" type="text" value="<% $taxproduct_description %>" size="12" onclick="overlib( OLiframeContent('part_pkg_taxproduct.html?'+document.getElementById('taxproductnum').value, 1000, 400, 'tax_product_popup'), CAPTION, 'Select product', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK); return false;">
+          <INPUT name="part_pkg_taxproduct_description" id="taxproductnum_description" type="text" value="<% $taxproduct_description %>" size="12" onclick="overlib( OLiframeContent('<% $p %>/browse/part_pkg_taxproduct.cgi?_type=select&id=taxproductnum&taxproductnum='+document.getElementById('taxproductnum').value, 1000, 400, 'tax_product_popup'), CAPTION, 'Select product', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK); return false;">
         </TD>
       </TR>
       <TR>
@@ -111,6 +111,7 @@ Tax information
 % } else { 
 
   <INPUT TYPE="hidden" NAME="taxproductnum" VALUE="<% $hashref->{taxproductnum} %>">
+  <INPUT TYPE="hidden" NAME="tax_override" VALUE="<% $tax_override %>">
 
 % } 
 
@@ -466,10 +467,16 @@ if ( $cgi->param('clone') ) {
 } elsif ( $query && $query =~ /^(\d+)$/ ) {
   (@agent_type) = map {$_->typenum} qsearch('type_pkgs',{'pkgpart'=>$1})
     unless $part_pkg;
-  $tax_override =
+  unless ($part_pkg) {
+    $tax_override =
     join (",", map {$_->taxclassnum}
-               qsearch('part_pkg_taxoverride',{'pkgpart'=>$1}))
-    unless $part_pkg;
+               qsearch( 'part_pkg_taxoverride', {'pkgpart' => $1} )
+         );
+#    join (",", map {$_->taxclassnum}
+#               $part_pkg->part_pkg_taxrate( 'cch', $conf->config('defaultloc')
+#         );
+#      unless $tax_override;
+  }
   $part_pkg ||= qsearchs('part_pkg',{'pkgpart'=>$1});
   $pkgpart = $part_pkg->pkgpart;
 } else {

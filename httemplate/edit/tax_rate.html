@@ -1,14 +1,21 @@
 <% include('elements/edit.html',
-     'popup'  => 1,
-     'name'   => 'Tax rate', #Edit tax rate
-     'table'  => 'tax_rate',
-     'labels' => $labels,
-     'fields' => \@fields,
+     'popup'          => 1,
+     'name'           => 'Tax rate', #Edit tax rate
+     'table'          => 'tax_rate',
+     'labels'         => $labels,
+     'fields'         => \@fields,
+     'value_callback' => $value_callback,
    )
 %>
 <%once>
 
 my $conf = new FS::Conf;
+my $value_callback =
+  sub { my ( $field, $value ) = @_;
+        ( $field =~ /^(tax|excessrate|usetax|useexcessrate)$/ )
+          ? $value*100
+          : $value;
+      };
 
 </%once>
 
@@ -90,16 +97,9 @@ my @fields = (
     { field=>'passtype',             type=>'hidden' } ,
     { field=>'passtype_name',        type=>'fixed' } ,
     { field=>'passflag',             type=>'fixed' } ,
-    { field=>'setuptax',             type=>'checkbox' } ,
-    { field=>'recurtax',             type=>'checkbox' } ,
+    { field=>'setuptax',             type=>'checkbox', value=>'Y'  } ,
+    { field=>'recurtax',             type=>'checkbox', value=>'Y'  } ,
     { field=>'manual',               type=>'hidden', value=>'Y' } ,
 );
-
-#push @fields,
-#  { type=>'tablebreak-tr-title', value=>'Exemptions' },
-#  { field=>'setuptax', type=>'checkbox', value=>'Y', },
-#  { field=>'recurtax', type=>'checkbox', value=>'Y', },
-#  { field=>'exempt_amount', type=>'money', },
-#;
 
 </%init>

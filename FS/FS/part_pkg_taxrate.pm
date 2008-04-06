@@ -211,11 +211,12 @@ sub batch_import {
       my $part_pkg_taxproduct = qsearchs( 'part_pkg_taxproduct', 
                                           { %part_pkg_taxproduct }
                                         );
+
       unless ($part_pkg_taxproduct) {
         $part_pkg_taxproduct{'description'} = 
-          join(' : ', map{ $hash->{$_} } qw(groupdesc itemdesc),
-                      $providers{$hash->{'provider'}} || 'Unknown',
-                      $customers{$hash->{'customer'}} || 'Unknown',
+          join(' : ', (map{ $hash->{$_} } qw(groupdesc itemdesc)),
+                      $providers{$hash->{'provider'}},
+                      $customers{$hash->{'customer'}},
               );
         $part_pkg_taxproduct = new FS::part_pkg_taxproduct \%part_pkg_taxproduct;
         my $error = $part_pkg_taxproduct->insert;

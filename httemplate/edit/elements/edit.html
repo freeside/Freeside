@@ -97,6 +97,9 @@ Example:
     #run when adding
     'new_callback' => sub { my( $cgi, $object, $fields_listref ) = @_; },
    
+    #run before display to return a different value
+    'value_callback' => sub { my( $columname, $value } ) = @_; },
+
     #XXX describe
     'field_callback' => sub { },
 
@@ -273,7 +276,10 @@ Example:
 %     #$field .= $fieldnum;
 %     $onchange .= "\nspawn_$field(what);";
 %   } else {
-%     $curr_value = $object->$field();
+%     $curr_value =
+%       ($opt{'value_callback'} && $mode ne 'error')
+%         ? &{ $opt{'value_callback'} }( $f->{'field'}, $object->$field() )
+%         : $object->$field();
 %   }
 %
 %   my @include = &{ $include_sub }(

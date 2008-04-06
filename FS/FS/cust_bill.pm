@@ -2486,9 +2486,18 @@ sub _items_pkg {
   $self->_items_cust_bill_pkg(\@cust_bill_pkg, %options);
 }
 
+sub _taxsort {
+  return 0 unless $a cmp $b;
+  return -1 if $b eq 'Tax';
+  return 1 if $a eq 'Tax';
+  return -1 if $b eq 'Other surcharges';
+  return 1 if $a eq 'Other surcharges';
+  $a cmp $b;
+}
+
 sub _items_tax {
   my $self = shift;
-  my @cust_bill_pkg = grep { ! $_->pkgnum } $self->cust_bill_pkg;
+  my @cust_bill_pkg = sort _taxsort grep { ! $_->pkgnum } $self->cust_bill_pkg;
   $self->_items_cust_bill_pkg(\@cust_bill_pkg, @_);
 }
 

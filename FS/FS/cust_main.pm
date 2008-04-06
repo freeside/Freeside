@@ -45,8 +45,6 @@ use FS::part_pkg;
 use FS::part_event;
 use FS::part_event_condition;
 #use FS::cust_event;
-use FS::cust_tax_exempt;
-use FS::cust_tax_exempt_pkg;
 use FS::type_pkgs;
 use FS::payment_gateway;
 use FS::agent_payment_gateway;
@@ -2078,6 +2076,7 @@ sub bill {
 
   my( $total_setup, $total_recur ) = ( 0, 0 );
   my %tax;
+  my %taxlisthash;
   my @precommit_hooks = ();
 
   foreach my $cust_pkg (
@@ -2247,140 +2246,94 @@ sub bill {
 
         unless ( $self->tax =~ /Y/i || $self->payby eq 'COMP' ) {
 
+          my @taxes = ();
+          my @taxoverrides = $part_pkg->part_pkg_taxoverride;
+          
           my $prefix = 
             ( $conf->exists('tax-ship_address') && length($self->ship_last) )
             ? 'ship_'
             : '';
-          my %taxhash = map { $_ => $self->get("$prefix$_") }
-                            qw( state county country );
 
-          $taxhash{'taxclass'} = $part_pkg->taxclass;
+          if ( $conf->exists('enable_taxproducts')
+               && (scalar(@taxoverrides) || $part_pkg->taxproductnum )
+             )
+          { 
 
-          my @taxes = qsearch( 'cust_main_county', \%taxhash );
+            my @taxclassnums = ();
+            my $geocode = $self->geocode('cch');
 
-          unless ( @taxes ) {
-            $taxhash{'taxclass'} = '';
-            @taxes =  qsearch( 'cust_main_county', \%taxhash );
-          }
+            if ( scalar( @taxoverrides ) ) {
+              @taxclassnums = map { $_->taxclassnum } @taxoverrides;
+            }elsif ( $part_pkg->taxproductnum ) {
+              @taxclassnums = map { $_->taxclassnum }
+                              $part_pkg->part_pkg_taxrate('cch', $geocode);
+            }
 
-          #one more try at a whole-country tax rate
-          unless ( @taxes ) {
-            $taxhash{$_} = '' foreach qw( state county );
-            @taxes =  qsearch( 'cust_main_county', \%taxhash );
-          }
+            my $extra_sql =
+              "AND (".
+              join(' OR ', map { "taxclassnum = $_" } @taxclassnums ). ")";
+
+            @taxes = qsearch({ 'table' => 'tax_rate',
+                               'hashref' => { 'geocode' => $geocode, },
+                               'extra_sql' => $extra_sql,
+                            })
+              if scalar(@taxclassnums);
+
+
+          }else{
+
+            my %taxhash = map { $_ => $self->get("$prefix$_") }
+                              qw( state county country );
+
+            $taxhash{'taxclass'} = $part_pkg->taxclass;
+
+            @taxes = qsearch( 'cust_main_county', \%taxhash );
+
+            unless ( @taxes ) {
+              $taxhash{'taxclass'} = '';
+              @taxes =  qsearch( 'cust_main_county', \%taxhash );
+            }
+
+            #one more try at a whole-country tax rate
+            unless ( @taxes ) {
+              $taxhash{$_} = '' foreach qw( state county );
+              @taxes =  qsearch( 'cust_main_county', \%taxhash );
+            }
+
+          } #if $conf->exists('enable_taxproducts') 
 
           # maybe eliminate this entirely, along with all the 0% records
           unless ( @taxes ) {
             $dbh->rollback if $oldAutoCommit;
-            return
-              "fatal: can't find tax rate for state/county/country/taxclass ".
-              join('/', ( map $self->get("$prefix$_"),
-                              qw(state county country)
-                        ),
-                        $part_pkg->taxclass ). "\n";
+            my $error;
+            if ( $conf->exists('enable_taxproducts') ) { 
+              $error = 
+                "fatal: can't find tax rate for zip/taxproduct/pkgpart ".
+                join('/', ( map $self->get("$prefix$_"),
+                                qw(zip)
+                          ),
+                          $part_pkg->taxproduct_description,
+                          $part_pkg->pkgpart ). "\n";
+            }else{
+              $error = 
+                "fatal: can't find tax rate for state/county/country/taxclass ".
+                join('/', ( map $self->get("$prefix$_"),
+                                qw(state county country)
+                          ),
+                          $part_pkg->taxclass ). "\n";
+            }
+            return $error;
           }
   
           foreach my $tax ( @taxes ) {
+            my $taxname = ref( $tax ). ' '. $tax->taxnum;
+            if ( exists( $taxlisthash{ $taxname } ) ) {
+              push @{ $taxlisthash{ $taxname  } }, $cust_bill_pkg;
+            }else{
+              $taxlisthash{ $taxname } = [ $tax, $cust_bill_pkg ];
+            }
+          }
 
-            my $taxable_charged = 0;
-            $taxable_charged += $setup
-              unless $part_pkg->setuptax =~ /^Y$/i
-                  || $tax->setuptax =~ /^Y$/i;
-            $taxable_charged += $recur
-              unless $part_pkg->recurtax =~ /^Y$/i
-                  || $tax->recurtax =~ /^Y$/i;
-            next unless $taxable_charged;
-
-            if ( $tax->exempt_amount && $tax->exempt_amount > 0 ) {
-              #my ($mon,$year) = (localtime($sdate) )[4,5];
-              my ($mon,$year) = (localtime( $sdate || $cust_bill->_date ) )[4,5];
-              $mon++;
-              my $freq = $part_pkg->freq || 1;
-              if ( $freq !~ /(\d+)$/ ) {
-                $dbh->rollback if $oldAutoCommit;
-                return "daily/weekly package definitions not (yet?)".
-                       " compatible with monthly tax exemptions";
-              }
-              my $taxable_per_month =
-                sprintf("%.2f", $taxable_charged / $freq );
-
-              #call the whole thing off if this customer has any old
-              #exemption records...
-              my @cust_tax_exempt =
-                qsearch( 'cust_tax_exempt' => { custnum=> $self->custnum } );
-              if ( @cust_tax_exempt ) {
-                $dbh->rollback if $oldAutoCommit;
-                return
-                  'this customer still has old-style tax exemption records; '.
-                  'run bin/fs-migrate-cust_tax_exempt?';
-              }
-
-              foreach my $which_month ( 1 .. $freq ) {
-
-                #maintain the new exemption table now
-                my $sql = "
-                  SELECT SUM(amount)
-                    FROM cust_tax_exempt_pkg
-                      LEFT JOIN cust_bill_pkg USING ( billpkgnum )
-                      LEFT JOIN cust_bill     USING ( invnum     )
-                    WHERE custnum = ?
-                      AND taxnum  = ?
-                      AND year    = ?
-                      AND month   = ?
-                ";
-                my $sth = dbh->prepare($sql) or do {
-                  $dbh->rollback if $oldAutoCommit;
-                  return "fatal: can't lookup exising exemption: ". dbh->errstr;
-                };
-                $sth->execute(
-                  $self->custnum,
-                  $tax->taxnum,
-                  1900+$year,
-                  $mon,
-                ) or do {
-                  $dbh->rollback if $oldAutoCommit;
-                  return "fatal: can't lookup exising exemption: ". dbh->errstr;
-                };
-                my $existing_exemption = $sth->fetchrow_arrayref->[0] || 0;
-                
-                my $remaining_exemption =
-                  $tax->exempt_amount - $existing_exemption;
-                if ( $remaining_exemption > 0 ) {
-                  my $addl = $remaining_exemption > $taxable_per_month
-                    ? $taxable_per_month
-                    : $remaining_exemption;
-                  $taxable_charged -= $addl;
-
-                  my $cust_tax_exempt_pkg = new FS::cust_tax_exempt_pkg ( {
-                    'billpkgnum' => $cust_bill_pkg->billpkgnum,
-                    'taxnum'     => $tax->taxnum,
-                    'year'       => 1900+$year,
-                    'month'      => $mon,
-                    'amount'     => sprintf("%.2f", $addl ),
-                  } );
-                  $error = $cust_tax_exempt_pkg->insert;
-                  if ( $error ) {
-                    $dbh->rollback if $oldAutoCommit;
-                    return "fatal: can't insert cust_tax_exempt_pkg: $error";
-                  }
-                } # if $remaining_exemption > 0
-
-                #++
-                $mon++;
-                #until ( $mon < 12 ) { $mon -= 12; $year++; }
-                until ( $mon < 13 ) { $mon -= 12; $year++; }
-  
-              } #foreach $which_month
-  
-            } #if $tax->exempt_amount
-
-            $taxable_charged = sprintf( "%.2f", $taxable_charged);
-
-            #$tax += $taxable_charged * $cust_main_county->tax / 100
-            $tax{ $tax->taxname || 'Tax' } +=
-              $taxable_charged * $tax->tax / 100
-
-          } #foreach my $tax ( @taxes )
 
         } #unless $self->tax =~ /Y/i || $self->payby eq 'COMP'
 
@@ -2409,6 +2362,18 @@ sub bill {
   }
 
   my $charged = sprintf( "%.2f", $total_setup + $total_recur );
+
+  foreach my $tax ( keys %taxlisthash ) {
+    my $tax_object = shift @{ $taxlisthash{$tax} };
+    my $listref_or_error = $tax_object->taxline( @{ $taxlisthash{$tax} } );
+    unless (ref($listref_or_error)) {
+      $dbh->rollback if $oldAutoCommit;
+      return $listref_or_error;
+    }
+
+    $tax{ $listref_or_error->[0] } += $listref_or_error->[1];
+  
+  }
 
   foreach my $taxname ( grep { $tax{$_} > 0 } keys %tax ) {
     my $tax = sprintf("%.2f", $tax{$taxname} );
@@ -4860,6 +4825,40 @@ Returns this customer's full country name
 sub country_full {
   my $self = shift;
   code2country($self->country);
+}
+
+=item geocode DATA_PROVIDER
+
+Returns a value for the customer location as encoded by DATA_PROVIDER.
+Currently this only makes sense for "CCH" as DATA_PROVIDER.
+
+=cut
+
+sub geocode {
+  my ($self, $data_provider) = (shift, shift);  #always cch for now
+
+  my $prefix = ( $conf->exists('tax-ship_address') && length($self->ship_last) )
+               ? 'ship_'
+               : '';
+
+  my ($zip,$plus4) = split /-/, $self->get("${prefix}zip")
+    if $self->country eq 'US';
+
+  #CCH specific location stuff
+  my $extra_sql = "AND plus4lo <= '$plus4' AND plus4hi >= '$plus4'";
+
+  my $geocode = '';
+  my $cust_tax_location =
+    qsearchs( {
+                'table'     => 'cust_tax_location', 
+                'hashref'   => { 'zip' => $zip, 'data_provider' => $data_provider },
+                'extra_sql' => $extra_sql,
+              }
+            );
+  $geocode = $cust_tax_location->geocode
+    if $cust_tax_location;
+
+  $geocode;
 }
 
 =item cust_status

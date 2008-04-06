@@ -1,29 +1,18 @@
 package FS::tax_rate;
 
 use strict;
-use vars qw( @ISA @EXPORT_OK $conf $DEBUG $me
+use vars qw( @ISA $DEBUG $me
              %tax_unittypes %tax_maxtypes %tax_basetypes %tax_authorities
-             %tax_passtypes
-             @tax_rate %tax_rate $countyflag );
-use Exporter;
+             %tax_passtypes );
 use Date::Parse;
-use Tie::IxHash;
-use FS::Record qw( qsearchs qsearch dbh );
+use FS::Record qw( qsearchs dbh );
 use FS::tax_class;
+use FS::cust_bill_pkg;
 
 @ISA = qw( FS::Record );
-@EXPORT_OK = qw( regionselector );
 
-$DEBUG = 1;
+$DEBUG = 0;
 $me = '[FS::tax_rate]';
-
-@tax_rate = ();
-$countyflag = '';
-
-#ask FS::UID to run this stuff for us later
-$FS::UID::callback{'FS::tax_rate'} = sub { 
-  $conf = new FS::Conf;
-};
 
 =head1 NAME
 
@@ -43,9 +32,6 @@ FS::tax_rate - Object methods for tax_rate objects
   $error = $record->delete;
 
   $error = $record->check;
-
-  ($county_html, $state_html, $country_html) =
-    FS::tax_rate::regionselector( $county, $state, $country );
 
 =head1 DESCRIPTION
 
@@ -75,8 +61,7 @@ a location code provided by a tax authority
 
 a foreign key into FS::tax_class - the type of tax
 referenced but FS::part_pkg_taxrate
-
-=item effective_date
+eitem effective_date
 
 the time after which the tax applies
 
@@ -349,127 +334,80 @@ sub passtype_name {
   $tax_passtypes{$self->passtype};
 }
 
+=item taxline CUST_BILL_PKG, ...
+
+Returns a listref of a name and an amount of tax calculated for the list
+of packages.  If an error occurs, a message is returned as a scalar.
+
+=cut
+
+sub taxline {
+  my $self = shift;
+  my @cust_bill_pkg = @_;
+
+  if ($self->passflag eq 'N') {
+    return "fatal: can't (yet) handle taxes not passed to the customer";
+  }
+
+  if ($self->maxtype != 0 && $self->maxtype != 9) {
+    return qq!fatal: can't (yet) handle tax with "!. $self->maxtype_name. 
+      '" threshold';
+  }
+
+  if ($self->maxtype == 9) {
+    return qq!fatal: can't (yet) handle tax with "!. $self->maxtype_name. 
+      '" threshold';  # "texas" tax
+  }
+
+  if ($self->basetype != 0 && $self->basetype != 1 &&
+      $self->basetype != 6 && $self->basetype != 7 &&
+      $self->basetype != 14
+  ) {
+    return qq!fatal: can't (yet) handle tax with "!. $self->basetype_name. 
+      '" basis';
+  }
+
+  my $name = $self->taxname;
+  $name = 'Other surcharges'
+    if ($self->passtype == 2);
+  my $amount = 0;
+  
+  my $taxable_charged = 0;
+  unless ($self->setuptax =~ /^Y$/i) {
+    $taxable_charged += $_->setup foreach @cust_bill_pkg;
+  }
+  unless ($self->recurtax =~ /^Y$/i) {
+    $taxable_charged += $_->recur foreach @cust_bill_pkg;
+  }
+
+  my $taxable_units = 0;
+  unless ($self->recurtax =~ /^Y$/i) {
+    $taxable_units += $_->units foreach @cust_bill_pkg;
+  }
+
+  #
+  # XXX insert exemption handling here
+  #
+  # the tax or fee is applied to taxbase or feebase and then
+  # the excessrate or excess fee is applied to taxmax or feemax
+  #
+
+  $amount += $taxable_charged * $self->tax;
+  $amount += $taxable_units * $self->fee;
+  
+  return [$name, $amount];
+
+}
+
 =back
 
 =head1 SUBROUTINES
 
 =over 4
 
-=item regionselector [ COUNTY STATE COUNTRY [ PREFIX [ ONCHANGE [ DISABLED ] ] ] ]
+=item batch_import
 
 =cut
-
-sub regionselector {
-  my ( $selected_county, $selected_state, $selected_country,
-       $prefix, $onchange, $disabled ) = @_;
-
-  $prefix = '' unless defined $prefix;
-
-  $countyflag = 0;
-
-#  unless ( @tax_rate ) { #cache 
-    @tax_rate = qsearch('tax_rate', {} );
-    foreach my $c ( @tax_rate ) {
-      $countyflag=1 if $c->county;
-      #push @{$tax_rate{$c->country}{$c->state}}, $c->county;
-      $tax_rate{$c->country}{$c->state}{$c->county} = 1;
-    }
-#  }
-  $countyflag=1 if $selected_county;
-
-  my $script_html = <<END;
-    <SCRIPT>
-    function opt(what,value,text) {
-      var optionName = new Option(text, value, false, false);
-      var length = what.length;
-      what.options[length] = optionName;
-    }
-    function ${prefix}country_changed(what) {
-      country = what.options[what.selectedIndex].text;
-      for ( var i = what.form.${prefix}state.length; i >= 0; i-- )
-          what.form.${prefix}state.options[i] = null;
-END
-      #what.form.${prefix}state.options[0] = new Option('', '', false, true);
-
-  foreach my $country ( sort keys %tax_rate ) {
-    $script_html .= "\nif ( country == \"$country\" ) {\n";
-    foreach my $state ( sort keys %{$tax_rate{$country}} ) {
-      ( my $dstate = $state ) =~ s/[\n\r]//g;
-      my $text = $dstate || '(n/a)';
-      $script_html .= qq!opt(what.form.${prefix}state, "$dstate", "$text");\n!;
-    }
-    $script_html .= "}\n";
-  }
-
-  $script_html .= <<END;
-    }
-    function ${prefix}state_changed(what) {
-END
-
-  if ( $countyflag ) {
-    $script_html .= <<END;
-      state = what.options[what.selectedIndex].text;
-      country = what.form.${prefix}country.options[what.form.${prefix}country.selectedIndex].text;
-      for ( var i = what.form.${prefix}county.length; i >= 0; i-- )
-          what.form.${prefix}county.options[i] = null;
-END
-
-    foreach my $country ( sort keys %tax_rate ) {
-      $script_html .= "\nif ( country == \"$country\" ) {\n";
-      foreach my $state ( sort keys %{$tax_rate{$country}} ) {
-        $script_html .= "\nif ( state == \"$state\" ) {\n";
-          #foreach my $county ( sort @{$tax_rate{$country}{$state}} ) {
-          foreach my $county ( sort keys %{$tax_rate{$country}{$state}} ) {
-            my $text = $county || '(n/a)';
-            $script_html .=
-              qq!opt(what.form.${prefix}county, "$county", "$text");\n!;
-          }
-        $script_html .= "}\n";
-      }
-      $script_html .= "}\n";
-    }
-  }
-
-  $script_html .= <<END;
-    }
-    </SCRIPT>
-END
-
-  my $county_html = $script_html;
-  if ( $countyflag ) {
-    $county_html .= qq!<SELECT NAME="${prefix}county" onChange="$onchange" $disabled>!;
-    $county_html .= '</SELECT>';
-  } else {
-    $county_html .=
-      qq!<INPUT TYPE="hidden" NAME="${prefix}county" VALUE="$selected_county">!;
-  }
-
-  my $state_html = qq!<SELECT NAME="${prefix}state" !.
-                   qq!onChange="${prefix}state_changed(this); $onchange" $disabled>!;
-  foreach my $state ( sort keys %{ $tax_rate{$selected_country} } ) {
-    my $text = $state || '(n/a)';
-    my $selected = $state eq $selected_state ? 'SELECTED' : '';
-    $state_html .= qq(\n<OPTION $selected VALUE="$state">$text</OPTION>);
-  }
-  $state_html .= '</SELECT>';
-
-  $state_html .= '</SELECT>';
-
-  my $country_html = qq!<SELECT NAME="${prefix}country" !.
-                     qq!onChange="${prefix}country_changed(this); $onchange" $disabled>!;
-  my $countrydefault = $conf->config('countrydefault') || 'US';
-  foreach my $country (
-    sort { ($b eq $countrydefault) <=> ($a eq $countrydefault) or $a cmp $b }
-      keys %tax_rate
-  ) {
-    my $selected = $country eq $selected_country ? ' SELECTED' : '';
-    $country_html .= qq(\n<OPTION$selected VALUE="$country">$country</OPTION>");
-  }
-  $country_html .= '</SELECT>';
-
-  ($county_html, $state_html, $country_html);
-
-}
 
 sub batch_import {
   my $param = shift;
@@ -517,6 +455,8 @@ sub batch_import {
         $hash->{$_} = substr($hash->{$_}, 0, 80)
           if length($hash->{$_}) > 80;
       }
+
+      '';
 
     };
 

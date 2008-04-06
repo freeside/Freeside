@@ -4,9 +4,10 @@
      'menubar'        => \@menubar,
      'html_init'      => $html_init,
      'query'          => {
-                           'table'    => 'tax_rate',
-                           'hashref'  => $hashref,
-                           'order_by' => 'ORDER BY geocode, taxclassnum',
+                           'table'     => 'tax_rate',
+                           'hashref'   => $hashref,
+                           'order_by'  => 'ORDER BY geocode, taxclassnum',
+                           'extra_sql' => $extra_sql,
                          },
      'count_query'    => $count_query,
      'header'         => \@header,
@@ -24,21 +25,62 @@
 my $conf = new FS::Conf;
 my $money_char = $conf->config('money_char') || '$';
 
-my $exempt_sub = sub {
+my $rate_sub = sub {
   my $tax_rate = shift;
 
-  my @exempt = ();
-  push @exempt,
-       sprintf("$money_char%.2f&nbsp;per&nbsp;month", $tax_rate->exempt_amount )
-    if $tax_rate->exempt_amount > 0;
+  my $units = $tax_rate->unittype_name;
+  $units =~ s/ /&nbsp;/g;
 
-  push @exempt, 'Setup&nbsp;fee'
+  my @rate = ();
+  push @rate,
+      ($tax_rate->tax * 100). '%&nbsp;<FONT SIZE="-1">(edit)</FONT>'
+    if $tax_rate->tax > 0 || $tax_rate->taxbase > 0;
+  push @rate,
+      ($tax_rate->excessrate * 100). '%&nbsp;<FONT SIZE="-1">(edit)</FONT>'
+    if $tax_rate->excessrate > 0;
+  push @rate,
+      $money_char. $tax_rate->fee.
+      qq!&nbsp;per&nbsp;$units<FONT SIZE="-1">(edit)</FONT>!
+    if $tax_rate->fee > 0 || $tax_rate->feebase > 0;
+  push @rate,
+      $money_char. $tax_rate->excessfee.
+      qq!&nbsp;per&nbsp;$units<FONT SIZE="-1">(edit)</FONT>!
+    if $tax_rate->excessfee > 0;
+
+
+  [ map [ {'data'=>$_} ], @rate ];
+};
+
+my $limit_sub = sub {
+  my $tax_rate = shift;
+
+  my $maxtype = $tax_rate->maxtype_name;
+  $maxtype =~ s/ /&nbsp;/g;
+
+  my $units = $tax_rate->unittype_name;
+  $units =~ s/ /&nbsp;/g;
+
+  my @limit = ();
+  push @limit,
+       sprintf("$money_char%.2f&nbsp%s", $tax_rate->taxbase, $maxtype )
+    if $tax_rate->taxbase > 0;
+  push @limit,
+       sprintf("$money_char%.2f&nbsp;tax", $tax_rate->taxmax )
+    if $tax_rate->taxmax > 0;
+  push @limit,
+       $tax_rate->feebase. "&nbsp;$units". ($tax_rate->feebase == 1 ? '' : 's')
+    if $tax_rate->feebase > 0;
+  push @limit,
+       $tax_rate->feemax. "&nbsp;$units". ($tax_rate->feebase == 1 ? '' : 's')
+    if $tax_rate->feemax > 0;
+
+  push @limit, 'Excluding&nbsp;setup&nbsp;fee'
     if $tax_rate->setuptax =~ /^Y$/i;
 
-  push @exempt, 'Recurring&nbsp;fee'
+  push @limit, 'Excluding&nbsp;recurring&nbsp;fee'
     if $tax_rate->recurtax =~ /^Y$/i;
 
-  [ map [ {'data'=>$_} ], @exempt ];
+  [ map [ {'data'=>$_} ], @limit ];
 };
 
 my $oldrow;
@@ -67,15 +109,7 @@ my $select_onclick = sub {
   my $row = shift;
   my $taxnum = $row->taxnum;
   my $color = '#333399';
-  qq!overlib( OLiframeContent('${p}edit/tax_rate.html?$taxnum', 540, 420, 'edit_tax_rate_popup' ), CAPTION, 'Edit tax rate', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '$color', CGCOLOR, '$color' ); return false;!;
-};
-
-my $separate_taxclasses_link  = sub {
-  my( $row ) = @_;
-  my $taxnum = $row->taxnum;
-  my $url = "${p}edit/process/tax_rate-expand.cgi?taxclassnum=1;taxnum=$taxnum";
-
-  qq!<FONT SIZE="-1"><A HREF="$url">!;
+  qq!overlib( OLiframeContent('${p}edit/tax_rate.html?$taxnum', 540, 620, 'edit_tax_rate_popup' ), CAPTION, 'Edit tax rate', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '$color', CGCOLOR, '$color' ); return false;!;
 };
 
 </%once>
@@ -85,26 +119,19 @@ die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
 
 my @menubar;
-
-my $html_init =
-  "Click on <u>geocodes</u> to specify rates for a new area.";
-$html_init .= "<BR>Click on <u>separate taxclasses</u> to specify taxes per taxclass.";
-$html_init .= '<BR><BR>';
-
-$html_init .= qq(
-  <SCRIPT TYPE="text/javascript" SRC="${fsurl}elements/overlibmws.js"></SCRIPT>
-  <SCRIPT TYPE="text/javascript" SRC="${fsurl}elements/overlibmws_iframe.js"></SCRIPT>
-  <SCRIPT TYPE="text/javascript" SRC="${fsurl}elements/overlibmws_draggable.js"></SCRIPT>
-  <SCRIPT TYPE="text/javascript" SRC="${fsurl}elements/iframecontentmws.js"></SCRIPT>
-);
-
 my $title = '';
-my $select_word = 'edit';
+
+my $data_vendor = '';
+if ( $cgi->param('data_vendor') =~ /^(\w+)$/ ) {
+  $data_vendor = $1;
+  $title = "$data_vendor";
+}
+$cgi->delete('data_vendor');
 
 my $geocode = '';
 if ( $cgi->param('geocode') =~ /^(\w+)$/ ) {
   $geocode = $1;
-  $title = "$geocode";
+  $title = " geocode $geocode";
 }
 $cgi->delete('geocode');
 
@@ -123,6 +150,36 @@ if ( $cgi->param('taxclassnum') =~ /^(\d+)$/ ) {
 }
 $cgi->delete('taxclassnum');
 
+my $tax_type = $1
+  if ( $cgi->param('tax_type') =~ /^(\d+)$/ );
+my $tax_cat = $1
+  if ( $cgi->param('tax_cat') =~ /^(\d+)$/ );
+
+my @taxclassnum = ();
+if ($tax_type || $tax_cat ) {
+  my $compare = "LIKE '". ( $tax_type || "%" ). ":". ( $tax_cat || "%" ). "'";
+  $compare = "= '$tax_type:$tax_cat'" if ($tax_type && $tax_cat);
+  my @tax_class =
+    qsearch({ 'table'     => 'tax_class',
+              'hashref'   => {},
+              'extra_sql' => "WHERE taxclass $compare",
+           });
+  if (@tax_class) {
+    @taxclassnum = map { $_->taxclassnum } @tax_class;
+    $tax_class[0]->description =~ /^(.*):(.*)/;
+    $title .= " for";
+    $title .= " $tax_type ($1) tax type" if $tax_type;
+    $title .= " and" if ($tax_type && $tax_cat);
+    $title .= " $tax_cat ($2) tax category" if $tax_cat;
+  }else{
+    $tax_type = '';
+    $tax_cat = '';
+  }
+}
+$cgi->delete('tax_type');
+$cgi->delete('tax_cat');
+
+
 if ( $geocode || $taxclassnum ) {
   push @menubar, 'View all tax rates' => $p.'browse/tax_rate.cgi';
 }
@@ -130,21 +187,34 @@ if ( $geocode || $taxclassnum ) {
 $cgi->param('dummy', 1);
 
 #restore this so pagination works
+$cgi->param('data_vendor',  $data_vendor) if $data_vendor;
 $cgi->param('geocode',  $geocode) if $geocode;
 $cgi->param('taxclassnum', $taxclassnum ) if $taxclassnum;
+$cgi->param('tax_type', $tax_type ) if $tax_type;
+$cgi->param('tax_cat', $tax_cat ) if $tax_cat;
 
 my $hashref = {};
-my $count_query = 'SELECT COUNT(*) FROM tax_rate';
-if ( $geocode ) {
-  $hashref->{'geocode'} = $geocode;
-  $count_query .= ' WHERE geocode = '. dbh->quote($geocode);
-}
-if ( $taxclassnum ) {
-  $hashref->{'taxclassnum'} = $taxclassnum;
-  $count_query .= ( $count_query =~ /WHERE/i ? ' AND ' : ' WHERE ' ).
-                  ' taxclassnum  = '. dbh->quote($taxclassnum);
+my $extra_sql = '';
+if ( $data_vendor ) {
+  $extra_sql .= ' WHERE data_vendor = '. dbh->quote($data_vendor);
 }
 
+if ( $geocode ) {
+  $extra_sql .= ( $extra_sql =~ /WHERE/i ? ' AND ' : ' WHERE ' ).
+                ' geocode LIKE '. dbh->quote($geocode.'%');
+}
+
+if ( $taxclassnum ) {
+  $extra_sql .= ( $extra_sql =~ /WHERE/i ? ' AND ' : ' WHERE ' ).
+                ' taxclassnum  = '. dbh->quote($taxclassnum);
+}
+
+if ( @taxclassnum ) {
+  $extra_sql .= ( $extra_sql =~ /WHERE/i ? ' AND ' : ' WHERE ' ).
+                join(' OR ', map { " taxclassnum  = $_ " } @taxclassnum );
+}
+
+my $count_query = "SELECT COUNT(*) FROM tax_rate $extra_sql";
 
 $cell_style = '';
 
@@ -164,18 +234,15 @@ my @color = (
 
 push @header, qq!Tax class (<A HREF="${p}edit/tax_class.html">add new</A>)!;
 push @header2, '(per-tax classification)';
-push @fields, sub { $_[0]->taxclass_description || '(all)&nbsp'.
-                     &{$separate_taxclasses_link}($_[0], 'Separate Taxclasses').
-                     'separate&nbsp;taxclasses</A></FONT>'
-                  };
-push @color, sub { shift->taxclass ? '000000' : '999999' };
+push @fields, 'taxclass_description';
+push @color, '000000';
 push @links, '';
 push @link_onclicks, '';
 $align .= 'l';
 
 push @header, 'Tax name',
               'Rate', #'Tax',
-              'Exemptions',
+              'Limits',
               ;
 
 push @header2, '(printed on invoices)',
@@ -185,8 +252,8 @@ push @header2, '(printed on invoices)',
 
 push @fields, 
   sub { shift->taxname || 'Tax' },
-  sub { shift->tax. '%&nbsp;<FONT SIZE="-1">('. $select_word. ')</FONT>' },
-  $exempt_sub,
+  $rate_sub,
+  $limit_sub,
 ;
 
 push @color,
@@ -201,5 +268,92 @@ my @cell_style = map $cell_style_sub, (1..scalar(@header));
 
 push @links,         '', $select_link,    '';
 push @link_onclicks, '', $select_onclick, '';
+
+my $html_init = '';
+
+$html_init .= qq(
+  <SCRIPT TYPE="text/javascript" SRC="${fsurl}elements/overlibmws.js"></SCRIPT>
+  <SCRIPT TYPE="text/javascript" SRC="${fsurl}elements/overlibmws_iframe.js"></SCRIPT>
+  <SCRIPT TYPE="text/javascript" SRC="${fsurl}elements/overlibmws_draggable.js"></SCRIPT>
+  <SCRIPT TYPE="text/javascript" SRC="${fsurl}elements/iframecontentmws.js"></SCRIPT>
+
+);
+
+$html_init .= qq(
+  <FORM>
+    <TABLE>
+      <TR>
+        <TD><SELECT NAME="data_vendor" onChange="this.form.submit()">
+);
+
+my $sql = "SELECT DISTINCT data_vendor FROM tax_rate ORDER BY data_vendor";
+my $dbh = dbh;
+my $sth = $dbh->prepare($sql) or die $dbh->errstr;
+$sth->execute or die $sth->errstr;
+for (['(choose data vendor)'], @{$sth->fetchall_arrayref}) {
+  $html_init .= '<OPTION VALUE="'. $_->[0]. '"'.
+                ($_->[0] eq $data_vendor ? " SELECTED" : "").
+                '">'.  $_->[0];
+}
+$html_init .= qq(
+        </SELECT>
+
+        <TD><INPUT NAME="geocode" TYPE="text" SIZE="12" VALUE="$geocode"></TD>
+
+<!-- generic
+        <TD><INPUT NAME="taxclassnum" TYPE="text" SIZE="12" VALUE="$taxclassnum"></TD>
+        <TD><INPUT TYPE="submit" VALUE="Filter by tax_class"></TD>
+-->
+
+<!-- cch specific -->
+        <TD><SELECT NAME="tax_type" onChange="this.form.submit()">
+);
+
+$sql = "SELECT DISTINCT ".
+       "substring(taxclass from 1 for position(':' in taxclass)-1),".
+       "substring(description from 1 for position(':' in description)-1) ".
+       "FROM tax_class WHERE data_vendor='cch' ORDER BY 2";
+
+$sth = $dbh->prepare($sql) or die $dbh->errstr;
+$sth->execute or die $sth->errstr;
+for (['', '(choose tax type)'], @{$sth->fetchall_arrayref}) {
+  $html_init .= '<OPTION VALUE="'. $_->[0]. '"'.
+                 ($_->[0] eq $tax_type ? " SELECTED" : "").
+                 '">'. $_->[1];
+}
+
+$html_init .= qq(
+        </SELECT>
+
+        <TD><SELECT NAME="tax_cat" onChange="this.form.submit()">
+);
+
+$sql = "SELECT DISTINCT ".
+       "substring(taxclass from position(':' in taxclass)+1),".
+       "substring(description from position(':' in description)+1) ".
+       "from tax_class WHERE data_vendor='cch' ORDER BY 2";
+
+$sth = $dbh->prepare($sql) or die $dbh->errstr;
+$sth->execute or die $sth->errstr;
+for (['', '(choose tax category)'], @{$sth->fetchall_arrayref}) {
+  $html_init .= '<OPTION VALUE="'. $_->[0]. '"'.
+                 ($_->[0] eq $tax_cat ? " SELECTED" : "").
+                 '">'.  $_->[1];
+}
+
+$html_init .= qq(
+        </SELECT>
+
+      </TR>
+      <TR>
+        <TD></TD>
+        <TD><INPUT TYPE="submit" VALUE="Filter by geocode"></TD>
+        <TD></TD>
+        <TD></TD>
+      </TR>
+    </TABLE>
+  </FORM>
+
+);
 
 </%init>

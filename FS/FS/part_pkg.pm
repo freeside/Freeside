@@ -756,6 +756,37 @@ sub taxproduct_description {
   $part_pkg_taxproduct ? $part_pkg_taxproduct->description : '';
 }
 
+=item part_pkg_taxrate DATA_PROVIDER, GEOCODE
+
+Returns the package to taxrate m2m records for this package in the location
+specified by GEOCODE (see L<FS::part_pkg_taxrate> and ).
+
+=cut
+
+sub part_pkg_taxrate {
+  my $self = shift;
+  my ($data_provider, $geocode) = @_;
+
+  my $dbh = dbh;
+  # CCH oddness in m2m
+  my $extra_sql = 'AND ('.
+    join(' OR ', map{ 'geocode = '. $dbh->quote(substr($geocode, 0, $_)) }
+                 qw(10 5 2)
+        ).
+    ')';
+  my $order_by = 'ORDER BY taxclassnum, length(geocode) desc';
+  my $select   = 'DISTINCT ON(taxclassnum) *';
+
+  qsearch( { 'table'     => 'part_pkg_taxrate',
+             'select'    => 'distinct on(taxclassnum) *',
+             'hashref'   => { 'data_provider' => $data_provider,
+                              'taxproductnum' => $self->taxproductnum,
+                            },
+             'extra_sql' => $extra_sql,
+             'order_by'  => $order_by,
+         } );
+}
+
 =item _rebless
 
 Reblesses the object into the FS::part_pkg::PLAN class (if available), where

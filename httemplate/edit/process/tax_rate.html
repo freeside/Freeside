@@ -1,9 +1,18 @@
 <% include( 'elements/process.html',
               'table' => 'tax_rate',
+              'value_callback' => $value_callback,
               'popup_reload' => 'Tax changed', #a popup "parent reload" for now
               #someday change the individual element and go away instead
           )
 %>
+<%once>
+
+my $value_callback = sub { my ($field, $value) = @_;
+                           ($field =~ /^(tax|excessrate|usetax|useexcessrate)$/)
+                             ? $value/100
+                             : $value
+                         };
+</%once>
 <%init>
 
 my $conf = new FS::Conf;

@@ -4,7 +4,13 @@ use strict;
 use vars qw( @ISA @EXPORT_OK $conf
              @cust_main_county %cust_main_county $countyflag );
 use Exporter;
-use FS::Record qw( qsearch );
+use FS::Record qw( qsearch dbh );
+use FS::cust_bill_pkg;
+use FS::cust_bill;
+use FS::cust_pkg;
+use FS::part_pkg;
+use FS::cust_tax_exempt;
+use FS::cust_tax_exempt_pkg;
 
 @ISA = qw( FS::Record );
 @EXPORT_OK = qw( regionselector );
@@ -149,6 +155,139 @@ sub recurtax {
     return $self->getfield('recurtax');
   }  
   return '';
+}
+
+=item taxline CUST_BILL_PKG, ...
+
+Returns a listref of a name and an amount of tax calculated for the list of
+packages.  Returns a scalar error message on error.
+
+=cut
+
+sub taxline {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $name = $self->taxname || 'Tax';
+  my $amount = 0;
+
+  foreach my $cust_bill_pkg (@_) {
+
+    my $cust_bill = $cust_bill_pkg->cust_pkg->cust_bill;
+    my $part_pkg = $cust_bill_pkg->cust_pkg->part_pkg;
+  
+    my $taxable_charged = 0;
+    $taxable_charged += $cust_bill_pkg->setup
+      unless $part_pkg->setuptax =~ /^Y$/i
+          || $self->setuptax =~ /^Y$/i;
+    $taxable_charged += $cust_bill_pkg->recur
+      unless $part_pkg->recurtax =~ /^Y$/i
+          || $self->recurtax =~ /^Y$/i;
+
+    return [ $name, 0 ]
+      unless $taxable_charged;
+  
+    if ( $self->exempt_amount && $self->exempt_amount > 0 ) {
+      #my ($mon,$year) = (localtime($cust_bill_pkg->sdate) )[4,5];
+      my ($mon,$year) =
+        (localtime( $cust_bill_pkg->sdate || $cust_bill->_date ) )[4,5];
+      $mon++;
+      my $freq = $part_pkg->freq || 1;
+      if ( $freq !~ /(\d+)$/ ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "daily/weekly package definitions not (yet?)".
+               " compatible with monthly tax exemptions";
+      }
+      my $taxable_per_month =
+        sprintf("%.2f", $taxable_charged / $freq );
+
+      #call the whole thing off if this customer has any old
+      #exemption records...
+      my @cust_tax_exempt =
+        qsearch( 'cust_tax_exempt' => { custnum=> $cust_bill->custnum } );
+      if ( @cust_tax_exempt ) {
+        $dbh->rollback if $oldAutoCommit;
+        return
+          'this customer still has old-style tax exemption records; '.
+          'run bin/fs-migrate-cust_tax_exempt?';
+      }
+
+      foreach my $which_month ( 1 .. $freq ) {
+  
+        #maintain the new exemption table now
+        my $sql = "
+          SELECT SUM(amount)
+            FROM cust_tax_exempt_pkg
+              LEFT JOIN cust_bill_pkg USING ( billpkgnum )
+              LEFT JOIN cust_bill     USING ( invnum     )
+            WHERE custnum = ?
+              AND taxnum  = ?
+              AND year    = ?
+              AND month   = ?
+        ";
+        my $sth = dbh->prepare($sql) or do {
+          $dbh->rollback if $oldAutoCommit;
+          return "fatal: can't lookup exising exemption: ". dbh->errstr;
+        };
+        $sth->execute(
+          $cust_bill->custnum,
+          $self->taxnum,
+          1900+$year,
+          $mon,
+        ) or do {
+          $dbh->rollback if $oldAutoCommit;
+          return "fatal: can't lookup exising exemption: ". dbh->errstr;
+        };
+        my $existing_exemption = $sth->fetchrow_arrayref->[0] || 0;
+        
+        my $remaining_exemption =
+          $self->exempt_amount - $existing_exemption;
+        if ( $remaining_exemption > 0 ) {
+          my $addl = $remaining_exemption > $taxable_per_month
+            ? $taxable_per_month
+            : $remaining_exemption;
+          $taxable_charged -= $addl;
+
+          my $cust_tax_exempt_pkg = new FS::cust_tax_exempt_pkg ( {
+            'billpkgnum' => $cust_bill_pkg->billpkgnum,
+            'taxnum'     => $self->taxnum,
+            'year'       => 1900+$year,
+            'month'      => $mon,
+            'amount'     => sprintf("%.2f", $addl ),
+          } );
+          my $error = $cust_tax_exempt_pkg->insert;
+          if ( $error ) {
+            $dbh->rollback if $oldAutoCommit;
+            return "fatal: can't insert cust_tax_exempt_pkg: $error";
+          }
+        } # if $remaining_exemption > 0
+
+        #++
+        $mon++;
+        #until ( $mon < 12 ) { $mon -= 12; $year++; }
+        until ( $mon < 13 ) { $mon -= 12; $year++; }
+
+      } #foreach $which_month
+
+    } #if $tax->exempt_amount
+
+    $taxable_charged = sprintf( "%.2f", $taxable_charged);
+
+    $amount += $taxable_charged * $self->tax / 100
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  return [ $name, $amount ]
 }
 
 =back
