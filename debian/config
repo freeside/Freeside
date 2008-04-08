@@ -1,0 +1,19 @@
+#!/bin/sh
+# config script for freeside
+
+set -e
+
+# source debconf stuff
+. /usr/share/debconf/confmodule
+
+# source dbconfig-common shell library, and call the hook function
+if [ -f /usr/share/dbconfig-common/dpkg/config ]; then
+   # we support mysql and pgsql
+   dbc_dbtypes="pgsql, mysql"
+
+   # source dbconfig-common stuff
+   . /usr/share/dbconfig-common/dpkg/config 
+   dbc_go freeside $@
+fi
+
+# ... rest of your code ...

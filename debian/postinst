@@ -1,39 +1,47 @@
-#! /bin/sh
+#!/bin/sh
 # postinst script for freeside
 #
 # see: dh_installdeb(1)
 
 set -e
 
+# source debconf stuff
+. /usr/share/debconf/confmodule
+
+# source dbconfig-common stuff
+. /usr/share/dbconfig-common/dpkg/postinst 
+
+dbc_pgsql_createdb_encoding='sql_ascii'
+
+#echo "i should create the db here"
+dbc_go freeside $@
+#echo "db should be craeted now"
+
 # summary of how this script can be called:
 #        * <postinst> `configure' <most-recently-configured-version>
 #        * <old-postinst> `abort-upgrade' <new version>
 #        * <conflictor's-postinst> `abort-remove' `in-favour' <package>
 #          <new-version>
+#        * <postinst> `abort-remove'
 #        * <deconfigured's-postinst> `abort-deconfigure' `in-favour'
 #          <failed-install-package> <version> `removing'
 #          <conflicting-package> <version>
-# for details, see /usr/share/doc/packaging-manual/
-#
-# quoting from the policy:
-#     Any necessary prompting should almost always be confined to the
-#     post-installation script, and should be protected with a conditional
-#     so that unnecessary prompting doesn't happen if a package's
-#     installation fails and the `postinst' is called with `abort-upgrade',
-#     `abort-remove' or `abort-deconfigure'.
+# for details, see http://www.debian.org/doc/debian-policy/ or
+# the debian-policy package
 
 case "$1" in
     configure)
 
+    a2enmod perl
+
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
-
     ;;
 
     *)
         echo "postinst called with unknown argument \`$1'" >&2
-        exit 0
+        exit 1
     ;;
 esac
 
@@ -43,5 +51,4 @@ esac
 #DEBHELPER#
 
 exit 0
-
 

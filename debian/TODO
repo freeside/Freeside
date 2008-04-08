@@ -1,0 +1,38 @@
+
+test) freeside-webui /etc/apache/conf.d/freeside.conf
+  AuthUserFile is wrong (just fucked)
+
+test its working) somes sort of Alias /freeside /usr/share/freeside/www is needed
+
+test in postinst) freeside package var/cache/freeside/cache.<datasrc is missing>
+
+test RT is missing.  doh.  get it working.
+
+test actually installing!
+
+--- rc2... right? ---
+
+freeside-selfservice-client doesn't install at all
+
+start freeside-sqlradius-radacctd from /etc/default/freeside too
+
+Added to README.Debian... do something else?
+Ensure apache is set to run as User freeside.
+
+init script doesn't need to add /usr/local/bin.  could start over from 
+init.d.ex or init.d.lsb.ex
+
+finish 
+
+RT install locations (or for now: disable for unstable, enable for
+experiemental.  but try to get it finished off in time for lenny)
+
+debian/copyright administrivia
+
+AGPL drama
+
+upload
+
+AGPL drama or silent waiting for days or years
+
+profit!  err

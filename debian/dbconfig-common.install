@@ -1,0 +1,90 @@
+#!/bin/sh
+
+. /etc/dbconfig-common/freeside.conf
+
+DB_USER=$dbc_dbuser
+DB_PASSWORD=$dbc_dbpass
+
+# -- can't find a better place to hook this in.  dammit.
+
+[ "$dbc_dbtype" = "pgsql" ] && DB_TYPE=Pg
+[ "$dbc_dbtype" = "mysql" ] && DB_TYPE=mysql
+#XXX ask dbc about a remote database etc.
+DATASOURCE=DBI:${DB_TYPE}:dbname=${dbc_dbname}
+    
+#debian/rules
+FREESIDE_CONF=/etc/freeside
+FREESIDE_CACHE=/var/cache/freeside
+#XXX huh?
+FREESIDE_EXPORT=/var/spool/freeside
+DEFAULT_CONF=/usr/share/freeside/default_conf
+    
+#XXX this rather seriously needs proper debian-style config file handling.
+    
+#shamelessly lifted from Makefile create-config target
+[ -e ${FREESIDE_CONF} ] || install -d -o freeside ${FREESIDE_CONF}
+    
+touch ${FREESIDE_CONF}/secrets
+chown freeside ${FREESIDE_CONF}/secrets
+chmod 600 ${FREESIDE_CONF}/secrets
+    
+[ -s ${FREESIDE_CONF}/secrets ] || echo -e "${DATASOURCE}\n${DB_USER}\n${DB_PASSWORD}" >${FREESIDE_CONF}/secrets
+chmod 600 ${FREESIDE_CONF}/secrets
+chown freeside ${FREESIDE_CONF}/secrets
+    
+#XXX yuck!  this too!
+[ -e /var/opt/freeside/rt/etc/RT_Config.pm.dbc ] || cp /var/opt/freeside/rt/etc/RT_Config.pm.dbc.generic /var/opt/freeside/rt/etc/RT_Config.pm.dbc
+perl -pi.generic -e "s/^\\s*Set\\s*\\(\s*\\\$DatabaseType.*\$/Set(\\\$DatabaseType, '$DB_TYPE');/" /var/opt/freeside/rt/etc/RT_Config.pm.dbc
+mv /var/opt/freeside/rt/etc/RT_Config.pm.dbc /var/opt/freeside/rt/etc/RT_Config.pm
+perl -pi -e "\
+  s'_DBC_DBUSER_'${dbc_dbuser}'g;\
+  s'_DBC_DBPASS_'${dbc_dbpass}'g;\
+  s'_DBC_DBNAME_'${dbc_dbname}'g;\
+" /var/opt/freeside/rt/etc/RT_Config.pm
+ 
+#dunno how to hook this in where i need it...
+#dbc_generate_include="template:/var/opt/freeside/rt/etc/RT_Config.pm"
+#dbc_generate_include_args="-o template_infile=/var/opt/freeside/rt/etc/RT_Config.pm.dbc"
+	    
+install -o freeside -d "${FREESIDE_CACHE}/counters.${DATASOURCE}"
+install -o freeside -d "${FREESIDE_CACHE}/cache.${DATASOURCE}"
+install -o freeside -d "${FREESIDE_EXPORT}/export.${DATASOURCE}"
+	    
+if [ ! -d "${FREESIDE_CONF}/conf.${DATASOURCE}" ] ; then #don't clobber conf
+install -o freeside -d "${FREESIDE_CONF}/conf.${DATASOURCE}"
+#cp conf/[a-z]* "${FREESIDE_CONF}/conf.${DATASOURCE}"
+cp -i `ls -d ${DEFAULT_CONF}/[a-z]* | grep -v CVS` "${FREESIDE_CONF}/conf.${DATASOURCE}" #-i just in case
+chown -R freeside "${FREESIDE_CONF}/conf.${DATASOURCE}"
+fi
+	
+# -- back to your regularly schedule program... go ahead, create the db
+
+DOMAIN=`dnsdomainname`
+if [ "$DOMAIN" = "localdomain" ]; then #freeside needs a valid domain
+  DOMAIN='example.com'
+fi
+
+# XXX this should probably be handled by the _install_...
+# dpkg-statoverride or something
+chown freeside /etc/freeside
+
+su freeside -c "/usr/bin/freeside-setup -d $DOMAIN"
+su freeside -c '/usr/bin/freeside-adduser -g 1 fs_queue'
+su freeside -c '/usr/bin/freeside-adduser -g 1 fs_daily'
+su freeside -c '/usr/bin/freeside-adduser -g 1 fs_selfservice'
+su freeside -c '/usr/bin/freeside-adduser -g 1 fs_upgrade'
+
+#RT paths are bunk for deb proper
+
+chown freeside /var/opt/freeside/rt/etc/RT_Config.pm
+
+su freeside -c "/var/opt/freeside/rt/sbin/rt-setup-database --dba '$DB_USER' --dba-password '$DB_PASSWORD' --action schema"
+
+su freeside -c '/var/opt/freeside/rt/sbin/rt-setup-database --action insert_initial'
+
+su freeside -c '/var/opt/freeside/rt/sbin/rt-setup-database --action insert --datafile /var/opt/freeside/rt/etc/initialdata'
+
+#XXX this totally doesn't belong here, but what the hey
+chown -R freeside /var/cache/freeside/masondata
+
+exit 0

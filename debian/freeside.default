@@ -1,0 +1,12 @@
+# Defaults for freeside initscript
+# sourced by /etc/init.d/freeside
+# installed at /etc/default/freeside by the maintainer scripts
+
+#
+# This is a POSIX shell fragment
+#
+
+# Additional options that are passed to the Freeside startup scripts.
+SELFSERVICE_MACHINES=""
+
+#start freeside-sqlradius-radacctd from here too, etc.

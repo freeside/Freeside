@@ -1,9 +1,15 @@
-#! /bin/sh
+#!/bin/sh
 # prerm script for freeside
 #
 # see: dh_installdeb(1)
 
 set -e
+
+# source debconf stuff
+. /usr/share/debconf/confmodule
+# source dbconfig-common stuff
+. /usr/share/dbconfig-common/dpkg/prerm 
+dbc_go freeside $@
 
 # summary of how this script can be called:
 #        * <prerm> `remove'
@@ -13,17 +19,20 @@ set -e
 #        * <deconfigured's-prerm> `deconfigure' `in-favour'
 #          <package-being-installed> <version> `removing'
 #          <conflicting-package> <version>
-# for details, see /usr/share/doc/packaging-manual/
+# for details, see http://www.debian.org/doc/debian-policy/ or
+# the debian-policy package
+
 
 case "$1" in
     remove|upgrade|deconfigure)
-#       install-info --quiet --remove /usr/info/freeside.info.gz
-        ;;
+    ;;
+
     failed-upgrade)
-        ;;
+    ;;
+
     *)
         echo "prerm called with unknown argument \`$1'" >&2
-        exit 0
+        exit 1
     ;;
 esac
 

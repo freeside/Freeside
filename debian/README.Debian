@@ -1,6 +1,25 @@
-freeside for Debian
+Freeside for Debian
 -------------------
 
-<possible notes regarding this package - if none, delete this file>
+1.
+Edit /etc/apache2/envvars or /etc/apache2/apache2.conf and set User and Group
+to freeside
 
- -- Ivan Kohler <ivan-debian@420.am>, Thu, 12 Apr 2001 15:49:17 -0700
+2.
+/etc/init.d/apache2 restart
+
+3.
+Create one or more Freeside users (your internal sales/tech folks, not customer accounts): 
+$ su
+# su freeside
+$ freeside-adduser -g 1 desired_username
+$ htpasswd /etc/freeside/htpasswd username
+(enter password)
+
+4.
+Go to http://your.host.name/freeside and log in.
+
+Optional but recommended.
+(Hopefully) get an SSL certificate setup and change that to https://
+
+ -- Ivan Kohler <ivan-debian@420.am>  Wed, 02 Apr 2008 01:46:20 -0700

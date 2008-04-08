@@ -1,113 +1,229 @@
 #!/usr/bin/make -f
-# Sample debian/rules that uses debhelper. 
-# GNU copyright 1997 by Joey Hess.
-#
-# This version is for a hypothetical package that builds an
-# architecture-dependant package, as well as an architecture-independent
-# package.
+# -*- makefile -*-
 
-# Uncomment this to turn on verbose mode. 
+# Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
-# This is the debhelper compatability version to use.
-export DH_COMPAT=3
+# If set to a true value then MakeMaker's prompt function will
+# always return the default without waiting for user input.
+#export PERL_MM_USE_DEFAULT=1
+
+PERL   ?= /usr/bin/perl
+#PACKAGE = $(shell dh_listpackages)
+PACKAGE = freeside
+TMP     = $(CURDIR)/debian/$(PACKAGE)
+DBC_SCRIPTS = $(TMP)/usr/share/dbconfig-common/scripts/freeside
+
+#this is gotten from dbconfig-common
+DB_TYPE = db_type_is_configured_during_pkg_install_by_dbconfig-common_not_at_build_time
+
+#no chance, it doesn't get backslash-interpolted now...
+#DEBVERSION                    = `head -1 debian/changelog | cut -d')' -f1 | cut -c11-`
+DEBVERSION                    = 1.7.3~rc2-1
+export VERSION                = $(DEBVERSION) (Debian)
+
+export FREESIDE_CONF          = /etc/freeside
+export FREESIDE_LOG           = /var/log/freeside
+export FREESIDE_LOCK          = /var/lock/freeside
+export FREESIDE_CACHE         = $(TMP)/var/cache/freeside
+FREESIDE_CACHE         = $(TMP)/var/cache/freeside
+
+#XXX huh?
+export FREESIDE_EXPORT        = /var/spool/freeside
+
+#XXX own subdir?
+export MASON_HANDLER          = $(TMP)-webui/usr/share/freeside/handler.pl
+
+export APACHE_VERSION         = 2
+export FREESIDE_DOCUMENT_ROOT = $(TMP)-webui/usr/share/freeside/www
+export INIT_FILE              = $(TMP).init
+export INIT_INSTALL           = /bin/true
+export HTTPD_RESTART          = /bin/true
+#export APACHE_CONF            = $(TMP)-webui/etc/apache2/conf.d
+export APACHE_CONF            = $(TMP)-webui/etc/freeside/apache2
+export FREESIDE_RESTART       = /bin/true
+
+#XXX root?
+export INSTALLGROUP           = adm
+
+export SELFSERVICE_MACHINES   = 
+
+#prompt ?   XXX these are runtime, not buildtime :/
+export RT_DOMAIN              = `dnsdomainname`
+export RT_TIMEZONE            = `cat /etc/timezone`
+
+export HOSTNAME               = `hostname -f`
+export FREESIDE_URL           = http://$(HOSTNAME)/freeside/
+
+#specific to deb pkg, for purposes of saving off a permanent copy of default
+#config for postinst and that sort of thing
+export DEFAULT_CONF           = $(TMP)/usr/share/freeside/default_conf
+
+#XXX yuck.  proper RT layout is entirely necessary
+#this seems to infect way to much of RT with the build location, requiring
+# a kludge to hack it out afterwords.  look into using fakeroot (didn't
+# realize it would need to be explicit argh)
+# (but leaving it for now, otherwise can't get RT to put files where we need em)
+export RT_PATH                = $(TMP)/var/opt/freeside/rt
+
+# This has to be exported to make some magic below work.
+export DH_OPTIONS
 
 configure: configure-stamp
 configure-stamp:
 	dh_testdir
 	# Add here commands to configure the package.
 	
-
 	touch configure-stamp
 
-build: configure-stamp build-stamp
-build-stamp:
+
+build: build-stamp
+build-stamp: 
 	dh_testdir
+	# Add commands to compile the package here
+	
+	( cd FS/ && $(PERL) Makefile.PL INSTALLDIRS=vendor )
 
-	# Add here commands to compile the package.
-	$(MAKE)
+	$(MAKE) -e perl-modules
 
-	touch build-stamp
+	#TEST#
+
+	touch $@
 
 clean:
 	dh_testdir
 	dh_testroot
-	rm -f build-stamp configure-stamp
+	dh_clean build-stamp install-stamp
 
 	# Add here commands to clean up after the build process.
-	-$(MAKE) clean
+	$(MAKE) -e clean
+	#|| true #XXX freeside clean target fucked
 
-	dh_clean
+	dh_clean 
 
-install: DH_OPTIONS=
-install: build
+install: install-stamp
+install-stamp: build-stamp
 	dh_testdir
 	dh_testroot
 	dh_clean -k
 	dh_installdirs
 
-	# Add here commands to install the package into debian/freeside.
-	$(MAKE) install DESTDIR=$(CURDIR)/debian/freeside
+	# Add here commands to install package into
+	# debian/<package>-whatever.
+	( cd FS/ && $(MAKE) -e DESTDIR=$(TMP)-lib install )
 
-	dh_movefiles
+	#install this for postinst later (no create-config)
+	install -d $(DEFAULT_CONF)
+	#install conf/[a-z]* $(DEFAULT_CONF)
+	#CVS is not [a-z]
+	install `ls -d conf/[a-z]* | grep -v CVS` $(DEFAULT_CONF)
 
-# Build architecture-independent files here.
-# Pass -i to all debhelper commands in this target to reduce clutter.
+	install -d $(FREESIDE_DOCUMENT_ROOT)
+	install -d $(FREESIDE_CACHE)/masondata #MASONDATA
+	$(MAKE) -e install-docs
+
+	#hack the build dir out of Freeside too.  oh yeah, sucky.
+	perl -p -i -e "\
+	  s'${TMP}(-webui)?''g;\
+	" ${TMP}-webui/usr/share/freeside/handler.pl \
+	  ${TMP}/usr/share/perl5/FS/* \
+	  ${TMP}/usr/share/perl5/FS/*/* \
+	  ${TMP}/usr/bin/*
+
+	rm -r $(FREESIDE_DOCUMENT_ROOT).*
+
+	install -d $(APACHE_CONF)
+	install debian/freeside.apache-alias.conf $(APACHE_CONF)/freeside-alias.conf
+	FREESIDE_DOCUMENT_ROOT=/usr/share/freeside/www MASON_HANDLER=/usr/share/freeside/handler.pl FREESIDE_CONF=/etc/freeside $(MAKE) -e install-apache
+
+	$(MAKE) -e install-init
+
+	#RT
+	#(configure-rt)
+
+	# XXX need to adjust db-type, db-database, db-rt-user, db-rt-pass
+	# based on info from dbc
+	( cd rt; \
+	  cp config.layout.in config.layout; \
+	  perl -p -i -e "\
+	    s'%%%FREESIDE_DOCUMENT_ROOT%%%'${FREESIDE_DOCUMENT_ROOT}'g;\
+	    s'%%%MASONDATA%%%'${FREESIDE_CACHE}/masondata'g;\
+	  " config.layout; \
+	  ./configure --prefix=${RT_PATH} \
+	              --enable-layout=Freeside \
+	              --with-db-type=Pg \
+	              --with-db-dba=freeside \
+	              --with-db-database=_DBC_DBNAME_ \
+	              --with-db-rt-user=_DBC_DBUSER_ \
+	              --with-db-rt-pass=_DBC_DBPASS_ \
+	              --with-web-user=freeside \
+	              --with-web-group=freeside \
+	              --with-rt-group=freeside \
+	)
+
+	#(create-rt)
+	install -d $(RT_PATH)
+	( cd rt; make install )
+	#hack the build dir out of RT.  yeah, sucky.
+	perl -p -i -e "\
+	  s'${TMP}''g;\
+	" ${RT_PATH}/etc/RT_Config.pm \
+	  ${RT_PATH}/lib/RT.pm \
+	  ${RT_PATH}/bin/mason_handler.fcgi \
+	  ${RT_PATH}/bin/mason_handler.scgi \
+	  ${RT_PATH}/bin/standalone_httpd \
+	  ${RT_PATH}/bin/webmux.pl \
+	  ${RT_PATH}/bin/rt-crontool \
+	  ${RT_PATH}/sbin/rt-dump-database \
+	  ${RT_PATH}/sbin/rt-setup-database
+	
+	#hack @INC dir out of RT (well, handler.pl) too.
+	perl -p -i -e "\
+	  s'/opt/rt3/'/var/opt/freeside/rt/'g;\
+	" ${TMP}-webui/usr/share/freeside/handler.pl
+
+	mv ${RT_PATH}/etc/RT_Config.pm ${RT_PATH}/etc/RT_Config.pm.dbc
+
+	perl -p -i -e "\
+	  s'%%%RT_DOMAIN%%%'${RT_DOMAIN}'g;\
+	  s'%%%RT_TIMEZONE%%%'${RT_TIMEZONE}'g;\
+	  s'%%%FREESIDE_URL%%%'${FREESIDE_URL}'g;\
+	" ${RT_PATH}/etc/RT_SiteConfig.pm
+
+	install -D debian/dbconfig-common.install $(DBC_SCRIPTS)/install/pgsql
+	install -D debian/dbconfig-common.install $(DBC_SCRIPTS)/install/mysql
+	
+	install -D debian/dbconfig-common.upgrade $(DBC_SCRIPTS)/upgrade/pgsql/$(DEBVERSION)
+	install -D debian/dbconfig-common.upgrade $(DBC_SCRIPTS)/upgrade/mysql/$(DEBVERSION)
+	
+	dh_install
+
+	touch $@
+
+binary-arch:
+# We have nothing to do here for an architecture-independent package
+
 binary-indep: build install
-	dh_testdir -i
-	dh_testroot -i
-#	dh_installdebconf -i
-	dh_installdocs -i
-	dh_installexamples -i
-	dh_installmenu -i
-#	dh_installlogrotate -i
-#	dh_installemacsen -i
-#	dh_installpam -i
-#	dh_installmime -i
-#	dh_installinit -i
-	dh_installcron -i
-#	dh_installman -i
-	dh_installinfo -i
-#	dh_undocumented -i
-	dh_installchangelogs  -i
-	dh_link -i
-	dh_compress -i
-	dh_fixperms -i
-	dh_installdeb -i
-#	dh_perl -i
-	dh_gencontrol -i
-	dh_md5sums -i
-	dh_builddeb -i
-
-# Build architecture-dependent files here.
-binary-arch: build install
-	dh_testdir -a
-	dh_testroot -a
-#	dh_installdebconf -a
-	dh_installdocs -a
-	dh_installexamples -a
-	dh_installmenu -a
-#	dh_installlogrotate -a
-#	dh_installemacsen -a
-#	dh_installpam -a
-#	dh_installmime -a
-#	dh_installinit -a
-	dh_installcron -a
-#	dh_installman -a
-	dh_installinfo -a
-#	dh_undocumented -a
-	dh_installchangelogs  -a
-	dh_strip -a
-	dh_link -a
-	dh_compress -a
-	dh_fixperms -a
-#	dh_makeshlibs -a
-	dh_installdeb -a
-#	dh_perl -a
-	dh_shlibdeps -a
-	dh_gencontrol -a
-	dh_md5sums -a
-	dh_builddeb -a
+	dh_testdir
+	dh_testroot
+	dh_installchangelogs ChangeLog
+	dh_installdocs #freeside.docs README AGPL
+	dh_installexamples eg/*
+#	dh_installmenu
+	dh_installdebconf	
+#	dh_installlogrotate	
+	dh_installinit
+	dh_installcron
+#	dh_installinfo
+	dh_installman
+	dh_perl
+	dh_link
+	dh_compress 
+	dh_fixperms
+	dh_installdeb
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
 
 binary: binary-indep binary-arch
-.PHONY: build clean binary-indep binary-arch binary install configure
+.PHONY: build clean binary-indep binary-arch binary install

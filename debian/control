@@ -1,59 +1,59 @@
 Source: freeside
-Section: admin
-Priority: optional
+Section: misc
+Priority: extra
 Maintainer: Ivan Kohler <ivan-debian@420.am>
-Build-Depends: debhelper (>> 3.0.0)
-Standards-Version: 3.5.2
+Build-Depends: debhelper (>= 5), perl (>= 5.8)
+Standards-Version: 3.7.2
+Homepage: http://www.freeside.biz/freeside
+Vcs-Browser: http://www.freeside.biz/cgi-bin/viewvc.cgi/freeside/
+Vcs-Cvs: :pserver:anonymous:anonymous@cvs.420.am:/home/cvs/cvsroot freeside
 
 Package: freeside
-Architecture: any
-Depends: freeside-lib
-Recommends: freeside-doc, freeside-ui-web
-Suggests: freeside-selfservice-server
-Description: Billing and administration package for ISPs.
- Freeside is a billing and account administration package for ISPs.  It stores
- customer information in an SQL database, and will update UNIX passwd and
- shadow files, RADIUS users file and SQL databases, and configuration for
- sendmail, qmail, BIND and/or Apache.  It is also useful as a central database
- of accounts/domains/web-space for a large number of machines.
-
-Package: freeside-doc
 Architecture: all
-Description: Documentation for freeside
- This package provides the HTML documentation for Freeside, a billing and
- account administration package for ISPs.
+Pre-Depends: freeside-lib, dbconfig-common
+Depends: ${perl:Depends}, ${shlibs:Depends}, ${misc:Depends}, freeside-webui, debconf, adduser (>= 3.11)
+Recommends: cron
+Suggests: gnupg
+Description: Billing and trouble ticketing for service providers
+ Freeside is a web-based billing and trouble ticketing application.  It
+ includes features for ISPs, hosting providers, and VoIP providers, but can
+ also be used as a generic customer database, invoicing and membership
+ application.  If you like buzzwords, call it an "BSS/OSS and CRM solution".
 
 Package: freeside-lib
 Architecture: all
-Depends: libmime-base64-perl, libdigest-md5-perl, liburi-perl, libhtml-tagset-perl, libhtml-parser-perl, libnet-perl, liblocale-codes-perl, libnet-whois-perl, libwww-perl, libbusiness-creditcard-perl, libmailtools-perl, libtimedate-perl, libdate-manip-perl, libfile-counterfile-perl, libfreezethaw-perl, libtext-template-perl, libdbd-pg-perl, libdbix-datasource-perl, libdbix-dbschema-perl, libnet-ssh-perl, libnet-scp-perl, libapache-asp-perl, libtie-ixhash-perl, libtime-duration-perl, libhtml-widgets-selectlayers-perl, libstorable-perl, libapache-dbi-perl
-Description: Freeside libraries and extension API
- This package contains the libraries which implement the business logic and
- backend functions of Freeside, a billing and account administration package
- for ISPs.  This package also contains the manual pages for the library API.
- (? like a libmodule-perl package)
+Depends: ghostscript | gs-gpl, gsfonts, tetex-base, tetex-bin, libbusiness-creditcard-perl, libcache-cache-perl, libcache-simple-timedexpiry-perl, libclass-returnvalue-perl, libcrypt-passwdmd5-perl, libdate-manip-perl, libdbd-pg-perl | libdbd-mysql-perl, libdbi-perl, libdbix-dbschema-perl (>= 0.35), libdbix-searchbuilder-perl, libdigest-sha1-perl, libfile-counterfile-perl, libfile-rsync-perl, libfrontier-rpc-perl, libhtml-format-perl, libhtml-tree-perl, libipc-run3-perl, libipc-sharelite-perl,  liblingua-en-nameparse-perl, liblocale-maketext-fuzzy-perl, liblocale-maketext-lexicon-perl, liblocale-subcountry-perl, liblog-dispatch-perl, libmailtools-perl (>= 2), libmime-perl (>= 5.424) | libmime-perl (< 5.421), libnet-scp-perl, libnet-ssh-perl, libnet-whois-raw-perl, libnetaddr-ip-perl, libnumber-format-perl, libregexp-common-perl, libstring-approx-perl, libstring-shellquote-perl, libterm-readkey-perl, libtest-inline-perl, libtext-autoformat-perl, libtext-csv-perl, libtext-template-perl, libtext-wrapper-perl, libtie-ixhash-perl, libtime-duration-perl, libtime-modules-perl, libtimedate-perl, libuniversal-require-perl, liburi-perl, libwant-perl, libwww-perl
+Recommends: libdbd-pg-perl, libdbd-mysql-perl, rsync
+Suggests: libbusiness-onlinepayment-perl
+Description: Libraries for Freeside billing and trouble ticketing
+ Freeside is a web-based billing and trouble ticketing application.
+ .
+ This package provides the perl libraries and command line utilities.
 
-Package: freeside-ui-web
+#Package: freeside-bin
+#Architecture: all
+#Depends: freeside-lib
+#Description: Command line tools for Freeside billing and trouble ticketing
+# Freeside is a web-based billing and trouble ticketing application.
+# .
+# This package provides the command-line utilities.
+
+Package: freeside-webui
 Architecture: all
-Depends: libhtml-mason-perl, libstring-approx-perl, freeside-lib, libapache-mod-perl|apache-perl
-Suggests: libapache-mod-ssl|apache-ssl
-Description: Easy-to-use web interface for Freeside
- This package contains the web interface for Freeside, a billing and account
- administration package for ISPs.  This is what sales or support folks will
- typically use to add new accounts, edit exiting accounts and so on.
+Depends: freeside-lib, apache2, libapache2-mod-perl2, libapache2-request-perl, libapache-session-perl, libchart-perl, libcolor-scheme-perl, libdatetime-perl, libdatetime-format-strptime-perl, libgd-gd2-noxpm-perl | libgd-gd2-perl, libgd-graph-perl, libhtml-mason-perl, libhtml-scrubber-perl, libhtml-widgets-selectlayers-perl, libio-stringy-perl, libjson-perl, liblingua-en-inflect-perl, libmodule-versions-report-perl, libspreadsheet-writeexcel-perl, libtree-simple-perl, libyaml-perl
+Recommends: libapache-dbi-perl
+Description: Web interface for Freeside billing and trouble ticketing
+ Freeside is a web-based billing and trouble ticketing application.
+ .
+ This package provides the web interface for employees.
 
-Package: freeside-selfservice-server
-Architecture: all
-Depends: freeside-lib, libnet-ssh-perl, ssh
-Description:
- This package contains the server side of the customer self-service interface.
- It is installed on a private backend machine, and opens an outgoing ssh
- connection to one or more public web server(s).
-
-Package: freeside-selfservice-client
-Architecture: all
-Depends: libstorable-perl, libhttp-browserdetect-perl, libbusiness-creditcard-perl, ssh
-Description:
- This package contains the client side of the customer self-service interface.
- It is typically installed on a public webserver and interfaces with
- freeside-selfservice-server installed on a private backend machine.
-
+#Package: freeside-selfservice-client
+#Architecture: all
+#Description: End-customer interface to Freeside billing and trouble ticketing
+# Freeside is a web-based billing and trouble ticketing application.
+# .
+# This package provides customer signup and self-service web interfaces and
+# XML-RPC, PHP and Perl APIs.
+# .
+# In production use, this package is typically installed on a public web server,
+# separate from the rest of the freeside-* packages.

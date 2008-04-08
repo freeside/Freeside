@@ -1,9 +1,6 @@
-freeside (1.4.1-1) unstable; urgency=low
+freeside (1.9.0~cvs0-1) unstable; urgency=low
 
-  * Initial Release.
+  * Initial release
 
- -- Ivan Kohler <ivan-debian@420.am>  Thu, 12 Apr 2001 15:49:17 -0700
+ -- Ivan Kohler <ivan-debian@420.am>  Wed, 02 Apr 2008 01:46:20 -0700
 
-Local variables:
-mode: debian-changelog
-End:

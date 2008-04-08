@@ -1,10 +1,45 @@
 This package was debianized by Ivan Kohler <ivan-debian@420.am> on
-Thu, 12 Apr 2001 15:49:17 -0700.
+Wed, 02 Apr 2008 01:46:20 -0700.
 
-It was downloaded from <fill in ftp site>
+It was downloaded from <http://www.freeside.biz/freeside>
 
-Upstream Author(s): <put author(s) name and email here>
+Upstream Author(s): 
 
-Copyright:
+    Freeside Internet Services, Inc.
 
-<Must follow here>
+Copyright: 
+
+Copyright (C) 2005-2008 Freeside Internet Services, Inc.
+Copyright (C) 2000-2005 Ivan Kohler
+Copyright (C) 1999 Silicon Interactive Software Design
+All rights reserved
+
+before uploading to debian proper: <likewise for all other copyrights from httemplate/docs/license.html>
+
+License:
+
+    This package is free software; you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation; either version 3 of the License, or
+    (at your option) any later version.
+ 
+    This package is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+ 
+    You should have received a copy of the GNU Affero General Public License
+    along with this package; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
+
+On Debian systems, the complete text of the GNU Affero General
+Public License may someday be found in `/usr/share/common-licenses/AGPL'.
+Until then, you can find it in `/usr/share/doc/freeside/AGPL'.
+
+The Debian packaging is (C) 2008, Ivan Kohler <ivan-debian@420.am> and
+is licensed under the AGPL, see above.
+
+before uploading to debian proper, from httemplate/docs/license.html:
+# Please also look if there are files or directories which have a
+# different copyright/license attached and list them here.
+
