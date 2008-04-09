@@ -11,9 +11,7 @@ Import a CSV file set containing tax rate records.
   <TH ALIGN="right">Format</TH>
   <TD>
     <SELECT NAME="format">
-      <OPTION VALUE="cch">CCH
-<!--      <OPTION VALUE="extended" SELECTED>Extended
-      <OPTION VALUE="extended-plus_company">Extended plus company -->
+      <OPTION VALUE="cch" SELECTED>CCH
     </SELECT>
   </TD>
 </TR>
@@ -45,44 +43,7 @@ Import a CSV file set containing tax rate records.
 
 </FORM>
 
-<BR>
-
-<!-- Simple file format is CSV, with the following field order: <i>cust_pkg.setup, dayphone, first, last, address1, address2, city, state, zip, comments</i>
-<BR><BR> -->
-
-<%$req%> Required fields
-<BR><BR>
-
-Field information:
-
-<ul>
-
-  <li><i>refnum</i>: Advertising source number - where a customer heard about your service.  Configuration -&gt; Miscellaneous -&gt; View/Edit advertising sources.  This field has special treatment upon import: If a string is passed instead
-of an integer, the string is searched for and if necessary auto-created in the
-advertising source table.
-
-  <li><i>payinfo</i>: Credit card number, or leave this, <i>paycvv</i> and <i>paydate</i> blank for email/paper invoicing.
-
-  <li><i>paycvv</i>: CVV2 number (three digits on the back of the credit card)
-
-  <li><i>paydate</i>: Credit card expiration date, MM/YYYY or MM/YY (M/YY and M/YYYY are also accepted).
-
-  <li><i>invoicing_list</i>: Email address for invoices, or POST for postal invoices.
-
-  <li><i>pkgpart</i>: Package definition.  Configuration -&gt; Provisioning, services and packages -&gt; View/Edit package definitions
-
-  <li><i>username</i> and <i>_password</i> are required if <i>pkgpart</i> is specified.
-</ul>
-
-<BR>
-
 <% include('/elements/footer.html') %>
-
-<%once>
-
-my $req = qq!<font color="#ff0000">*</font>!;
-
-</%once>
 <%init>
 
 die "access denied"
