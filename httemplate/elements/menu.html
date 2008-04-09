@@ -217,13 +217,12 @@ $report_menu{'SQL Query'}  = [ $fsurl.'search/report_sql.html', 'SQL Query' ]
   if $curuser->access_right('Raw SQL');
 
 tie my %tools_importing, 'Tie::IxHash',
-  'Import tax rates from CSV files' => [ $fsurl.'misc/tax-import.cgi', '' ],
   'Import customers from CSV file' => [ $fsurl.'misc/cust_main-import.cgi', '' ],
-  'Import payments from CSV file' => [ $fsurl.'misc/cust_pay-import.cgi', '' ],
-
   'Import customer comments from CSV file' => [ $fsurl.'misc/cust_main_note-import.html', '' ],
   'Import one-time charges from CSV file' => [ $fsurl.'misc/cust_main-import_charges.cgi', '' ],
+  'Import payments from CSV file' => [ $fsurl.'misc/cust_pay-import.cgi', '' ],
   'Import Call Detail Records (CDRs) from CSV file' => [ $fsurl.'misc/cdr-import.html', '' ],
+  'Import tax rates from CSV files' => [ $fsurl.'misc/tax-import.cgi', '' ],
 ;
 
 tie my %tools_exporting, 'Tie::IxHash',
@@ -291,7 +290,8 @@ if ( $curuser->access_right('Configuration') ) {
   $config_billing{'View/Edit invoice templates'}      = [ $fsurl.'browse/invoice_template.html', 'Edit templates for HTML, plaintext and typeset invoices' ];
   $config_billing{'View/Edit prepaid cards'}          = [ $fsurl.'search/prepay_credit.html', 'View outstanding cards, generate new cards' ];
   $config_billing{'View/Edit call rates and regions'} = [ \%config_billing_rates, 'Manage rate plans, regions and prefixes for VoIP and call billing' ];
-  $config_billing{'View/Edit locales and tax rates'}  = [ $fsurl.'browse/cust_main_county.cgi', 'Change tax rates, or break down a country into states, or a state into counties and assign different tax rates to each' ];
+  $config_billing{'View/Edit locales and tax rates (except CDR taxes)'}  = [ $fsurl.'browse/cust_main_county.cgi', 'Change tax rates, or break down a country into states, or a state into counties and assign different tax rates to each' ];
+  $config_billing{'View/Edit locales and tax rates (CDR taxes)'}  = [ $fsurl.'browse/tax_rate.cgi', 'Edit CDR taxes' ];
   $config_billing{'View/Edit credit reason types'}  = [ $fsurl.'browse/reason_type.html?class=R', 'Credit reason types define groups of reasons, for reporting and convenience purposes.' ];
   $config_billing{'View/Edit credit reasons'}  = [ $fsurl.'browse/reason.html?class=R', 'Credit reasons explain why a credit was issued.' ];
 }
