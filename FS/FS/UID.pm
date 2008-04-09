@@ -114,10 +114,13 @@ sub forksuidsetup {
 
   warn "$me forksuidsetup deciding upon config system to use\n" if $DEBUG;
 
-  if ( dbdef->table('conf') ) {
+  my $sth = '';
+  if ( dbdef->table('conf')
+       and $sth = $dbh->prepare("SELECT COUNT(*) FROM conf")
+       and $sth->execute
+     )
+  {
 
-    my $sth = $dbh->prepare("SELECT COUNT(*) FROM conf") or die $dbh->errstr;
-    $sth->execute or die $sth->errstr;   
     my $confcount = $sth->fetchrow_arrayref->[0];
   
     if ($confcount) {
