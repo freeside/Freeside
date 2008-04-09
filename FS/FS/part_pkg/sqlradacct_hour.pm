@@ -127,9 +127,9 @@ sub calc_recur {
 
   my $hourscharge =
     $hours * sprintf('%.2f', $self->option('recur_hourly_charge'));
-  $hourscharge = $self->option('recur_hours_cap')
-    if $self->option('recur_hours_cap')
-    && $hourscharge > $self->option('recur_hours_cap');
+  $hourscharge = $self->option('recur_hourly_cap')
+    if $self->option('recur_hourly_cap')
+    && $hourscharge > $self->option('recur_hourly_cap');
 
   if ( $self->option('recur_total_charge') > 0 ) {
     push @$details, "Last month's data ".
