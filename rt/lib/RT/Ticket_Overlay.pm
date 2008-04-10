@@ -739,7 +739,7 @@ sub Create {
                         'Target' => "freeside://freeside/cust_main/$custnum",
                       );
 
-           my( $val, $msg ) = $Requestor->AddLink(@link);
+           my( $val, $msg ) = $Requestor->_AddLink(@link);
            #XXX should do something with $msg# push @non_fatal_errors, $msg;
 
          }
@@ -769,7 +769,7 @@ sub Create {
                      'Target' => $cust_target,
                    );
   
-        my( $val, $msg ) = $self->AddLink(@link);
+        my( $val, $msg ) = $self->_AddLink(@link);
         push @non_fatal_errors, $msg;
   
       }
