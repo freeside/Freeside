@@ -440,9 +440,19 @@ sub downstream_csv {
 
 =over 4
 
-=item batch_import
+=item import_formats
+
+Returns an ordered list of key value pairs containing import format names
+as keys (for use with batch_import) and "pretty" format names as values.
 
 =cut
+
+sub import_formats {
+  'asterisk' => 'Asterisk',
+  'taqua'    => 'Taqua',
+  'unitel'   => 'Unitel/RSLCOM',
+  'simple'   => 'Simple',
+}
 
 my($tmp_mday, $tmp_mon, $tmp_year);
 
@@ -498,6 +508,101 @@ my %import_formats = (
     sub { my($cdr, $amaflags) = @_; $cdr->amaflags($amaflags{$amaflags}); },
     'uniqueid',
     'userfield',
+  ],
+  'taqua' => [
+    sub { my($cdr, $field) = @_; }, #RecordType
+    sub { my($cdr, $field) = @_; },         #all10#RecordVersion
+    sub { my($cdr, $field) = @_; }, #OrigShelfNumber
+    sub { my($cdr, $field) = @_; }, #OrigCardNumber
+    sub { my($cdr, $field) = @_; }, #OrigCircuit
+    sub { my($cdr, $field) = @_; }, #OrigCircuitType
+    sub { my($cdr, $field) = @_; }, #SequenceNumber
+    sub { my($cdr, $field) = @_; }, #SessionNumber
+    sub { my($cdr, $field) = @_; }, #CallingPartyNumber
+    sub { my($cdr, $field) = @_; }, #CalledPartyNumber
+    sub { my($cdr, $field) = @_; }, #CallArrivalTime
+    sub { my($cdr, $field) = @_; }, #CallCompletionTime
+    sub { my($cdr, $field) = @_; }, #Disposition
+    sub { my($cdr, $field) = @_; }, #DispositionTime
+    sub { my($cdr, $field) = @_; }, #TCAP
+    sub { my($cdr, $field) = @_; }, #OutboundCarrierConnectTime
+    sub { my($cdr, $field) = @_; }, #OutboundCarrierDisconnectTime
+    sub { my($cdr, $field) = @_; }, #TermTrunkGroup
+    sub { my($cdr, $field) = @_; }, #TermShelfNumber
+    sub { my($cdr, $field) = @_; }, #TermCardNumber
+    sub { my($cdr, $field) = @_; }, #TermCircuit
+    sub { my($cdr, $field) = @_; }, #TermCircuitType
+    sub { my($cdr, $field) = @_; }, #OutboundCarrierId
+    sub { my($cdr, $field) = @_; }, #BillingNumber
+    sub { my($cdr, $field) = @_; }, #SubscriberNumber
+    sub { my($cdr, $field) = @_; }, #ServiceName
+    sub { my($cdr, $field) = @_; }, #ChargeTime
+    sub { my($cdr, $field) = @_; }, #ServiceInformation
+    sub { my($cdr, $field) = @_; }, #FacilityInfo
+    sub { my($cdr, $field) = @_; }, #CallTraceTime
+    sub { my($cdr, $field) = @_; },         #all-1#UniqueIndicator
+    sub { my($cdr, $field) = @_; },         #all-1#PresentationIndicator
+    sub { my($cdr, $field) = @_; },         #empty#Pin
+    sub { my($cdr, $field) = @_; }, #CallType
+    sub { my($cdr, $field) = @_; }, #OrigRateCenter
+    sub { my($cdr, $field) = @_; }, #TermRateCenter
+    sub { my($cdr, $field) = @_; }, #OrigTrunkGroup
+    'userfield',                            #empty#UserDefined
+    sub { my($cdr, $field) = @_; },         #empty#PseudoDestinationNumber
+    sub { my($cdr, $field) = @_; },         #all-1#PseudoCarrierCode
+    sub { my($cdr, $field) = @_; },         #empty#PseudoANI
+    sub { my($cdr, $field) = @_; },         #all-1#PseudoFacilityInfo
+    sub { my($cdr, $field) = @_; }, #OrigDialedDigits
+    sub { my($cdr, $field) = @_; },         #all-1#OrigOutboundCarrier
+    sub { my($cdr, $field) = @_; }, #IncomingCarrierID
+    sub { my($cdr, $field) = @_; }, #JurisdictionInfo
+    sub { my($cdr, $field) = @_; }, #OrigDestDigits
+    sub { my($cdr, $field) = @_; }, #InsertTime
+    sub { my($cdr, $field) = @_; }, #key
+    sub { my($cdr, $field) = @_; },         #empty#AMALineNumber
+    sub { my($cdr, $field) = @_; },         #empty#AMAslpID
+    sub { my($cdr, $field) = @_; },         #empty#AMADigitsDialedWC
+    sub { my($cdr, $field) = @_; }, #OpxOffHook
+    sub { my($cdr, $field) = @_; }, #OpxOnHook
+
+#acctid - primary key
+#calldate - Call timestamp (SQL timestamp)
+#clid - Caller*ID with text
+#src - Caller*ID number / Source number
+#dst - Destination extension
+#dcontext - Destination context
+#channel - Channel used
+#dstchannel - Destination channel if appropriate
+#lastapp - Last application if appropriate
+#lastdata - Last application data
+#startdate - Start of call (UNIX-style integer timestamp)
+#answerdate - Answer time of call (UNIX-style integer timestamp)
+#enddate - End time of call (UNIX-style integer timestamp)
+#duration - Total time in system, in seconds
+#billsec - Total time call is up, in seconds
+#disposition - What happened to the call: ANSWERED, NO ANSWER, BUSY
+#amaflags - What flags to use: BILL, IGNORE etc, specified on a per
+#channel basis like accountcode.
+#accountcode - CDR account number to use: account
+#uniqueid - Unique channel identifier (Unitel/RSLCOM Event ID)
+        #userfield - CDR user-defined field
+#cdr_type - CDR type - see FS::cdr_type (Usage = 1, S&E = 7, OC&C = 8)
+#charged_party - Service number to be billed
+#upstream_currency - Wholesale currency from upstream
+#upstream_price - Wholesale price from upstream
+#upstream_rateplanid - Upstream rate plan ID
+#rated_price - Rated (or re-rated) price
+#distance - km (need units field?)
+#islocal - Local - 1, Non Local = 0
+#calltypenum - Type of call - see FS::cdr_calltype
+#description - Description (cdr_type 7&8 only) (used for
+#cust_bill_pkg.itemdesc)
+#quantity - Number of items (cdr_type 7&8 only)
+#carrierid - Upstream Carrier ID (see FS::cdr_carrier)
+#upstream_rateid - Upstream Rate ID
+        #svcnum - Link to customer service (see FS::cust_svc)
+        #freesidestatus - NULL, done (or something)
+
   ],
   'unitel' => [
     'uniqueid',
@@ -561,6 +666,25 @@ my %import_formats = (
   ],
 );
 
+my %import_header = (
+  'simple' => 1,
+  'taqua'  => 1,
+);
+
+=item batch_import HASHREF
+
+Imports CDR records.  Available options are:
+
+=over 4
+
+=item filehandle
+
+=item format
+
+=back
+
+=cut
+
 sub batch_import {
   my $param = shift;
 
@@ -588,16 +712,12 @@ sub batch_import {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  if ( $format eq 'simple' ) { # and other formats with a header too?
-
-  }
-
   my $body = 0;
   my $line;
   while ( defined($line=<$fh>) ) {
 
     #skip header...
-    if ( ! $body++ && $format eq 'simple' && $line =~ /^[\w\, ]+$/ ) {
+    if ( ! $body++ && $import_header{'format'} && $line =~ /^[\w\, ]+$/ ) {
       next;
     }
 
