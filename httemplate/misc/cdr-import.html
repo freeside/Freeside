@@ -1,11 +1,13 @@
 <% include("/elements/header.html",'Call Detail Record Import') %>
 <FORM ACTION="process/cdr-import.html" METHOD="POST" ENCTYPE="multipart/form-data">
 Import a CSV file containing Call Detail Records (CDRs).<BR><BR>
-CDR Format: <SELECT NAME="format">
-<OPTION VALUE="asterisk">Asterisk</OPTION>
-<OPTION VALUE="unitel">Unitel/RSLCOM</OPTION>
-<OPTION VALUE="simple">Simple</OPTION>
-</SELECT><BR><BR>
+CDR Format:
+<SELECT NAME="format">
+% foreach $format ( keys %formats ) {
+    <OPTION VALUE="<% $format %>"><% $format{$format} %></OPTION>
+% }
+</SELECT>
+<BR><BR>
 
 Filename: <INPUT TYPE="file" NAME="csvfile"><BR><BR>
 
@@ -18,5 +20,7 @@ Filename: <INPUT TYPE="file" NAME="csvfile"><BR><BR>
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Import');
+
+tie my %formats, FS::cdr->import_formats;
 
 </%init>

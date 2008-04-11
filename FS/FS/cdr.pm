@@ -448,10 +448,12 @@ as keys (for use with batch_import) and "pretty" format names as values.
 =cut
 
 sub import_formats {
-  'asterisk' => 'Asterisk',
-  'taqua'    => 'Taqua',
-  'unitel'   => 'Unitel/RSLCOM',
-  'simple'   => 'Simple',
+  (
+    'asterisk' => 'Asterisk',
+    'taqua'    => 'Taqua',
+    'unitel'   => 'Unitel/RSLCOM',
+    'simple'   => 'Simple',
+  );
 }
 
 my($tmp_mday, $tmp_mon, $tmp_year);
