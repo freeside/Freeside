@@ -10,6 +10,7 @@ use FS::part_pkg::flat;
 
 %info = (
   'name' => 'First partial month pro-rated, then flat-rate (selectable billing day)',
+  'shortname' => 'Prorate (Nth of month billing)',
   'fields' => {
     'setup_fee' => { 'name' => 'Setup fee for this package',
                      'default' => 0,

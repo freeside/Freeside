@@ -14,6 +14,8 @@ tie %recur_action, 'Tie::IxHash',
 
 %info = (
   'name' => 'Prepaid, flat rate',
+  #'name' => 'Prepaid (no automatic recurring)', #maybe use it here too
+  'shortname' => 'Prepaid, no automatic cycle',
   'fields' => {
     'setup_fee'   =>  { 'name' => 'One-time setup fee for this package',
                         'default' => 0,

@@ -32,7 +32,7 @@ $me = '[FS::part_pkg::bulk]';
   },
   'fieldorder' => [ 'setup_fee', 'recur_fee', 'svc_setup_fee', 'svc_recur_fee',
                     'unused_credit', ],
-  'weight' => 55,
+  'weight' => 50,
 );
 
 sub calc_recur {

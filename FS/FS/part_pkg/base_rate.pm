@@ -9,6 +9,9 @@ use FS::part_pkg;
 
 %info = (
   'name' => 'Base rate (anniversary billing, Times units ordered)',
+            # XXX it multiplies recurring fee by cust_pkg option "units", how to
+            # express that
+  'shortname' => 'Bulk (manual from "units" option)',
   'fields' => {
     'setup_fee'     => { 'name' => 'Setup fee for this package',
                          'default' => 0,
@@ -26,7 +29,7 @@ use FS::part_pkg;
   },
   'fieldorder' => [ 'setup_fee', 'recur_fee', 'unused_credit', 
                     'externalid' ],
-  'weight' => 10,
+  'weight' => 52,
 );
 
 sub calc_setup {

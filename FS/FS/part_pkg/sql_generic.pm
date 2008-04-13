@@ -10,6 +10,7 @@ use FS::part_pkg::flat;
 
 %info = (
   'name' => 'Base charge plus a per-domain metered rate from a configurable SQL query',
+  'shortname' => 'Bulk (per-domain from SQL query)',
   'fields' => {
     'setup_fee' => { 'name' => 'Setup fee for this package',
                      'default' => 0,
@@ -45,7 +46,7 @@ use FS::part_pkg::flat;
  # 'recur' => '\'my $dbh = DBI->connect(\"\' + what.datasrc.value + \'\", \"\' + what.db_username.value + \'\") or die $DBI::errstr; \'',
  #'recur' => '\'my $dbh = DBI->connect(\"\' + what.datasrc.value + \'\", \"\' + what.db_username.value + \'\", \"\' + what.db_password.value + \'\" ) or die $DBI::errstr; my $sth = $dbh->prepare(\"\' + what.query.value + \'\") or die $dbh->errstr; my $units = 0; foreach my $cust_svc ( grep { $_->part_svc->svcdb eq \"svc_domain\" } $cust_pkg->cust_svc ) { my $domain = $cust_svc->svc_x->domain; $sth->execute($domain) or die $sth->errstr; $units += $sth->fetchrow_arrayref->[0]; } $units -= \' + what.recur_included.value + \'; $units = 0 if $units < 0; \' + what.recur_flat.value + \' + $units * \' + what.recur_unit_charge.value + \';\'',
   #'recur' => '\'my $dbh = DBI->connect("\' + what.datasrc.value + \'", "\' + what.db_username.value + \'", "\' what.db_password.value + \'" ) or die $DBI::errstr; my $sth = $dbh->prepare("\' + what.query.value + \'") or die $dbh->errstr; my $units = 0; foreach my $cust_svc ( grep { $_->part_svc->svcdb eq "svc_domain" } $cust_pkg->cust_svc ) { my $domain = $cust_svc->svc_x->domain; $sth->execute($domain) or die $sth->errstr; $units += $sth->fetchrow_arrayref->[0]; } $units -= \' + what.recur_included.value + \'; $units = 0 if $units < 0; \' + what.recur_flat.value + \' + $units * \' + what.recur_unit_charge + \';\'',
-  'weight' => '70',
+  'weight' => '56',
 );
 
 sub calc_recur {

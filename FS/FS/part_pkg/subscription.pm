@@ -10,6 +10,7 @@ use FS::part_pkg::flat;
 
 %info = (
   'name' => 'First partial month full charge, then flat-rate (selectable billing day)',
+  'shortname' => 'Subscription (Nth of month, full charge for first)',
   'fields' => {
     'setup_fee' => { 'name' => 'Setup fee for this package',
                      'default' => 0,

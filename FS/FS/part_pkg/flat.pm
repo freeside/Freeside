@@ -10,6 +10,7 @@ use FS::part_pkg;
 
 %info = (
   'name' => 'Flat rate (anniversary billing)',
+  'shortname' => 'Anniversary',
   'fields' => {
     'setup_fee'     => { 'name' => 'Setup fee for this package',
                          'default' => 0,

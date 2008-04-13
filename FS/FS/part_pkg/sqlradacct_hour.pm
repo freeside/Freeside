@@ -9,6 +9,7 @@ use FS::part_pkg::flat;
 
 %info = (
   'name' => 'Base charge plus per-hour (and for data) from an SQL RADIUS radacct table',
+  'shortname' => 'Usage charges from RADIUS',
   'fields' => {
     'setup_fee' => { 'name' => 'Setup fee for this package',
                      'default' => 0,

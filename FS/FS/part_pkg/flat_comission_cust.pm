@@ -9,6 +9,7 @@ use FS::part_pkg::flat;
 
 %info = (
   'name' => 'Flat rate with recurring commission per active customer',
+  'shortname' => 'Commission per active customer',
   'fields' => {
     'setup_fee' => { 'name' => 'Setup fee for this package',
                      'default' => 0,

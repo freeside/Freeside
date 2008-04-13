@@ -10,6 +10,7 @@ use FS::part_pkg::flat;
 %info = (
   'name' => 'Free (or setup fee) for X days, then flat rate'.
             ' (anniversary billing)',
+  'shortname' => 'Anniversary, with intro period',
   'fields' =>  {
     'setup_fee' => { 'name' => 'Setup fee for this package',
                      'default' => 0,
@@ -35,7 +36,7 @@ use FS::part_pkg::flat;
                   ],
   #'setup' => '\'my $d = $cust_pkg->bill || $time; $d += 86400 * \' + what.free_days.value + \'; $cust_pkg->bill($d); $cust_pkg_mod_flag=1; \' + what.setup_fee.value',
   #'recur' => 'what.recur_fee.value',
-  'weight' => 50,
+  'weight' => 12,
 );
 
 sub calc_setup {

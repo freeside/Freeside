@@ -27,6 +27,7 @@ tie my %rating_method, 'Tie::IxHash',
 
 %info = (
   'name' => 'VoIP rating by plan of CDR records in an internal (or external) SQL table',
+  'shortname' => 'VoIP/telco CDR rating (standard)',
   'fields' => {
     'setup_fee'     => { 'name' => 'Setup fee for this package',
                          'default' => 0,
@@ -207,7 +208,7 @@ sub calc_recur {
         });
 
         #
-        die "Can't find rate for call $to_or_from +$countrycode $\numbern"
+        die "Can't find rate for call $to_or_from +$countrycode $number\n"
           unless $rate_prefix;
   
         $regionnum = $rate_prefix->regionnum;

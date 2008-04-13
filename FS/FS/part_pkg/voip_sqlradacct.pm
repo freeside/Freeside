@@ -14,6 +14,7 @@ $DEBUG = 1;
 
 %info = (
   'name' => 'VoIP rating by plan of CDR records in an SQL RADIUS radacct table',
+  'shortname' => 'VoIP/telco CDR rating (external RADIUS)',
   'fields' => {
     'setup_fee'     => { 'name' => 'Setup fee for this package',
                          'default' => 0,

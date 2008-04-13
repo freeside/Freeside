@@ -9,6 +9,7 @@ use FS::part_pkg::flat;
 
 %info = (
   'name' => 'Base charge plus charge per-minute from the session monitor',
+  'shortname' => 'Session monitor (per-minute)',
   'fields' => {
     'setup_fee' => { 'name' => 'Setup fee for this package',
                      'default' => 0,

@@ -14,6 +14,7 @@ $DEBUG_PRE = '[' . __PACKAGE__ . ']: ';
 %info = (
   'name' => 'Introductory price for X months, then flat rate,'.
             'relative to setup date (anniversary billing)',
+  'shortname' => 'Anniversary, with intro price',
   'fields' =>  {
     'setup_fee' => { 'name' => 'Setup fee for this package',
                      'default' => 0,
@@ -34,7 +35,7 @@ $DEBUG_PRE = '[' . __PACKAGE__ . ']: ';
                        },
   },
   'fieldorder' => [ 'setup_fee', 'intro_duration', 'intro_fee', 'recur_fee', 'unused_credit' ],
-  'weight' => 150,
+  'weight' => 14,
 );
 
 sub calc_recur {

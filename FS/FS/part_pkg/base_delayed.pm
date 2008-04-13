@@ -10,6 +10,7 @@ use FS::part_pkg::base_rate;
 %info = (
   'name' => 'Free (or setup fee) for X days, then base rate'.
             ' (anniversary billing)',
+  'shortname' => 'Bulk (manual from "units" option), w/intro period',
   'fields' =>  {
     'setup_fee' => { 'name' => 'Setup fee for this package',
                      'default' => 0,
@@ -35,7 +36,7 @@ use FS::part_pkg::base_rate;
                   ],
   #'setup' => '\'my $d = $cust_pkg->bill || $time; $d += 86400 * \' + what.free_days.value + \'; $cust_pkg->bill($d); $cust_pkg_mod_flag=1; \' + what.setup_fee.value',
   #'recur' => 'what.recur_fee.value',
-  'weight' => 50,
+  'weight' => 54, #&g!
 );
 
 sub calc_setup {
