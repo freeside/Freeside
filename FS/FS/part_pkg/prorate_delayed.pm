@@ -21,6 +21,11 @@ use FS::part_pkg;
     'recur_fee' => { 'name' => 'Recurring fee for this package',
                      'default' => 0,
                     },
+    'recur_notify' => { 'name' => 'Number of days before recurring billing'.
+                                  ' commences to notify customer. (0 means'.
+                                  ' no warning)',
+                     'default' => 0,
+                    },
     'unused_credit' => { 'name' => 'Credit the customer for the unused portion'.
                                    ' of service at cancellation',
                          'type' => 'checkbox',
