@@ -28,12 +28,16 @@ Example:
     'disable_empty'  => 0, # bool (implied by multiple)
     'debug'          => 0, #set true to enable
     'label_callback' => sub { my $record = shift; return "label"; },
+    'js_only'      => 0, #set true to return only the JS portions (i.e. nothing)
+    'html_only'    => 0, #set true to return only the HTML portions (no-op, i.e. return everything)
   )
 
 </%doc>
+% unless ( $opt{'js_only'} ) {
 
 <SELECT <% $opt{'multiple'} ? 'MULTIPLE' : '' %>
         NAME = "<% $opt{'element_name'} || $opt{'field'} || $key %>"
+        ID   = "<% $opt{'id'} || $key %>"
         <% $onchange %>
         <% $opt{'element_etc'} %>
 >
@@ -61,6 +65,7 @@ Example:
 
 </SELECT>
 
+%}
 <%init>
 
 my( %opt ) = @_;
@@ -68,11 +73,19 @@ my( %opt ) = @_;
 warn "elements/select-table.html: \n". Dumper(%opt)
   if exists $opt{debug} && $opt{debug};
 
-my $onchange = $opt{'onchange'}
-                 ? 'onChange="'. $opt{'onchange'}. '(this)"'
-                 : '';
+my $onchange = '';
+if ( $opt{'onchange'} ) {
+  $onchange = $opt{'onchange'};
+  $onchange .= '(this)' unless $onchange =~ /\(\w*\);?$/;
+  $onchange =~ s/\(what\);/\(this\);/g; #ugh, terrible hack.  all onchange
+                                        #callbacks should act the same
+  $onchange = 'onChange="'. $onchange. '"';
+}
 
-my $key = dbdef->table($opt{'table'})->primary_key; #? $opt{'primary_key'} ||
+my $dbdef_table = dbdef->table($opt{'table'})
+  or die "can't find dbdef for ". $opt{'table'}. " table\n";
+
+my $key = $dbdef_table->primary_key; #? $opt{'primary_key'} ||
 
 my $name_col = $opt{'name_col'};
 
