@@ -1,0 +1,29 @@
+<% include('tr-td-label.html', @_ ) %>
+
+  <TD>
+    <SELECT NAME="freq">
+%     foreach my $freq ( @freq ) {
+        <OPTION VALUE="<% $freq %>" <% $freq eq $curr_value ? 'SELECTED' : '' %>><% $freq{$freq} %>
+%     }
+    </SELECT>
+  </TD>
+
+</TR>
+
+<%init>
+
+my %opt = @_;
+
+my $curr_value = $opt{'curr_value'} || $opt{'freq'};
+
+tie my %freq, 'Tie::IxHash', %{FS::part_pkg->freqs_href()};
+if ( dbdef->table('part_pkg')->column('freq')->type =~ /(int)/i ) {
+  delete $freq{$_} foreach grep { ! /^\d+$/ } keys %freq;
+}
+
+my @freq = keys %freq;
+@freq = grep { /^\d+$/ } @freq
+  if $opt{'month_increments_only'};
+#   if exists($plans{$layer}->{'freq'}) && $plans{$layer}->{'freq'} eq 'm';
+
+</%init>
