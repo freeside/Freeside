@@ -1,0 +1,22 @@
+% if ( $conf->exists('enable_taxproducts') ) { 
+
+    <TR>
+      <TD COLSPAN="2">
+        <% include('select-taxproduct.html', @_) %>
+      </TD>
+    </TR>
+
+% } else { 
+
+    <INPUT TYPE="hidden" NAME="taxproductnum" VALUE="<% $opt{taxproductnum} %>">
+    <INPUT TYPE="hidden" NAME="tax_override"  VALUE="<% $opt{tax_override}  %>">
+
+% } 
+
+<%init>
+
+my $conf = new FS::Conf; 
+
+my %opt = @_;
+
+</%init>
