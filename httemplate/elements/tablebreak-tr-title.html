@@ -1,5 +1,14 @@
 </TABLE>
 
-<TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>
+<TABLE <% $id %> BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>
 
 <% include('tr-title.html', @_ ) %>
+
+<%init>
+
+my %opt = @_;
+
+my $id = '';
+$id = 'ID="'. $opt{'table_id'}. '"' if $opt{'table_id'};
+
+</%init>
