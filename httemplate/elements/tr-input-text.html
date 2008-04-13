@@ -1,6 +1,6 @@
 <% include('tr-td-label.html', @_ ) %>
 
-  <TD <% $style %>>
+  <TD <% $cell_style %>>
 
     <% $opt{'prefix'} %><INPUT TYPE  = "<% $opt{type} || 'text' %>"
                                NAME  = "<% $opt{field} %>"
@@ -8,7 +8,8 @@
                                VALUE = "<% $value |h %>"
                                <% $size %>
                                <% $maxlength %>
-                               <% $align %>
+                               <% $style %>
+                               <% $opt{disabled} %>
                                <% $onchange %>
                         ><% $opt{'postfix'} %>
 
@@ -34,11 +35,19 @@ my $maxlength = $opt{'maxlength'}
                 ? 'MAXLENGTH="'. $opt{'maxlength'}. '"'
                 : '';
 
-my $align = $opt{'text-align'}
-                ? 'STYLE="text-align: '. $opt{'text-align'}. '"'
-                : '';
+my @style = ();
 
+push @style, 'text-align: '. $opt{'text-align'}
+  if $opt{'text-align'};
 
-my $style = $opt{'cell_style'} ? 'STYLE="'. $opt{'cell_style'}. '"' : '';
+push @style, 'background-color: #dddddd'
+  if $opt{'disabled'};
+
+$opt{'disabled'} = 'DISABLED'
+  if $opt{'disabled'} && $opt{'disabled'} !~ /disabled/i; # uuh... yeah?
+
+my $style = scalar(@style) ? 'STYLE="'. join(';', @style). '"' : '';
+
+my $cell_style = $opt{'cell_style'} ? 'STYLE="'. $opt{'cell_style'}. '"' : '';
 
 </%init>
