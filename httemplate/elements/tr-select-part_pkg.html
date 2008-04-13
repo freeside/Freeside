@@ -1,29 +1,39 @@
-% if ( scalar(@{ $opt{'part_pkg'} }) == 0 ) { 
+% if ( $opt{'part_pkg'} && scalar(@{ $opt{'part_pkg'} }) == 0 ) { 
+%   unless ( $opt{'js_only'} ) {
 
-  <INPUT TYPE="hidden" NAME="<% $opt{'field'} || 'pkgpart' %>" VALUE="">
+      <INPUT TYPE="hidden" NAME="<% $opt{'field'} || 'pkgpart' %>" VALUE="">
 
+%   }
+%
 % } else { 
+%
+%   unless ( $opt{'js_only'} ) {
 
-  <TR>
-    <TD ALIGN="right"><% $opt{'label'} || 'Package definition' %></TD>
-    <TD>
-      <% include( '/elements/select-table.html',
-                    'table'     => 'part_pkg',
-                    'name_col'  => 'pkg',
-                    'multiple'  => 1,
-                    #N/A 'empty_label' => '(none)',
-                    %opt,
-                )
-      %>
-    </TD>
-  </TR>
+      <% include('tr-td-label.html', %opt) %>
+        <TD <% $cell_style %>>
 
+%   }
+%
+          <% include( '/elements/select-part_pkg.html', %opt ) %>
+%
+%   unless ( $opt{'js_only'} ) {
+
+        </TD>
+      </TR>
+
+%   }
+%
 % } 
-
 <%init>
 
 my( %opt ) = @_;
 
-$opt{'part_pkg'} ||= [ qsearch( 'part_pkg', {} ) ]; # { disabled=>'' } )
+my $cell_style = $opt{'cell_style'} ? 'STYLE="'. $opt{'cell_style'}. '"' : '';
+
+$opt{'label'} ||= 'Package definition';
+
+#taken care of (better) in select-part_pkg now (is there anything using this
+# that needs to override the disabed=>'' ??)
+#$opt{'part_pkg'} ||= [ qsearch( 'part_pkg', {} ) ]; # { disabled=>'' } )
 
 </%init>

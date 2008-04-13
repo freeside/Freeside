@@ -18,14 +18,9 @@ Example:
 
 </%doc>
 
-<% include( '/elements/select-table.html',
-              'table'          => 'part_pkg',
-              'name_col'       => 'pkg',
-              'empty_label'    => 'Select package',
-              'label_callback' => sub { $_[0]->pkgpart. ': '.
-                                        $_[0]->pkg.     ' - '.
-                                        $_[0]->comment;
-                                      },
+<% include( '/elements/select-part_pkg.html',
+              'empty_label'    => 'Select package', #? need here in case removed
+                                                    #from select-part_pkg ??
               %opt,
           )
 %>
@@ -36,21 +31,9 @@ my( %opt ) = @_;
 my $cust_main = $opt{'cust_main'}
   or die "cust_main not specified";
 
-$opt{'records'} = delete $opt{'part_pkg'}
-  if $opt{'part_pkg'};
-
-my $extra_sql = $opt{'extra_sql'}.
+$opt{'extra_sql'} .=
   ' AND 0 < ( SELECT COUNT(*) FROM type_pkgs '.
   '             WHERE typenum = '. $cust_main->agent->typenum.
   '             AND type_pkgs.pkgpart = part_pkg.pkgpart )';
-
-$opt{'records'} ||= [ qsearch({ 
-                                'table'     => 'part_pkg',
-                                'hashref'   => { 'disabled' => '', },
-                                'extra_sql' => "$extra_sql ORDER BY pkg",
-                                #'extra_sql' => $extra_sql,
-                                #'order_by'  => 'ORDER BY pkg',
-                             })
-                    ];
 
 </%init>

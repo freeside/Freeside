@@ -100,6 +100,7 @@ if ( $opt{'records'} ) {
     'table'     => $opt{'table'},
     'hashref'   => ( $opt{'hashref'} || {} ),
     'extra_sql' => ( $opt{'extra_sql'} || '' ),
+    'order_by'  => ( $opt{'order_by'} || "ORDER BY $name_col" ),
   });
 }
 
