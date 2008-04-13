@@ -50,13 +50,15 @@ Example:
                           # ("what" is the element)
     'js_only'      => 0, #set true to return only the JS portions
     'html_only'    => 0, #set true to return only the HTML portions
+    'select_only'  => 0, #set true to return only the <SELECT> HTML
+    'layers_only'  => 0, #set true to return only the layers <DIV> HTML
   )
 
 </%doc>
-% unless ( $opt{html_only} || $opt{js_only} ) {
+% unless ( grep $opt{$_}, qw(html_only js_only select_only layers_only) ) {
     <SCRIPT TYPE="text/javascript">
 % }
-% unless ( $opt{html_only} ) {
+% unless ( grep $opt{$_}, qw(html_only select_only layers_only) ) {
       //alert('start function define');
       function <% $key %>changed(what) {
 
@@ -86,11 +88,11 @@ Example:
       }
       //alert('end function define');
 % }
-% unless ( $opt{html_only} || $opt{js_only} ) {
+% unless ( grep $opt{$_}, qw(html_only js_only select_only layers_only) ) {
     </SCRIPT>
 % }
 %
-% unless ( $opt{js_only} ) {
+% unless ( grep $opt{$_}, qw(js_only layers_only) ) {
 
     <SELECT NAME          = "<% $key %>"
             ID            = "<% $key %>"
@@ -109,7 +111,14 @@ Example:
 
     </SELECT>
 
+% }
+% unless ( grep $opt{$_}, qw(js_only select_only layers_only) ) {
+
 <% ref($between) ? &{$between}($key) : $between %>
+
+% }
+%
+% unless ( grep $opt{$_}, qw(js_only select_only) ) {
 
 %   foreach my $layer ( keys %$options ) {
 
