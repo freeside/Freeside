@@ -298,6 +298,14 @@ sub qsearch {
          && dbdef->table($table)->column($field)->type =~ /(int|(big)?serial)/i
     ) {
       $sth->bind_param($bind++, $record->{$field}, { TYPE => SQL_INTEGER } );
+    }elsif ( $record->{$field} =~ /^[+-]?\d+(\.\d+)?$/
+         && dbdef->table($table)->column($field)->type =~ /(numeric)/i
+    ) {
+      $sth->bind_param($bind++, $record->{$field}, { TYPE => SQL_FLOAT } );
+    }elsif ( $record->{$field} =~ /[-+]?\d*\.?\d+([eE][-+]?\d+)?/
+         && dbdef->table($table)->column($field)->type =~ /(float4)/i
+    ) {
+      $sth->bind_param($bind++, $record->{$field}, { TYPE => SQL_FLOAT } );
     } else {
       $sth->bind_param($bind++, $record->{$field}, { TYPE => SQL_VARCHAR } );
     }
