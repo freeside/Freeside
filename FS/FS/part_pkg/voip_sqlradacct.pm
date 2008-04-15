@@ -19,9 +19,9 @@ $DEBUG = 1;
     'setup_fee'     => { 'name' => 'Setup fee for this package',
                          'default' => 0,
                        },
-    'recur_flat'     => { 'name' => 'Base recurring fee for this package',
-                          'default' => 0,
-                        },
+    'recur_fee'     => { 'name' => 'Base recurring fee for this package',
+                         'default' => 0,
+                       },
     'unused_credit' => { 'name' => 'Credit the customer for the unused portion'.
                                    ' of service at cancellation',
                          'type' => 'checkbox',
@@ -33,7 +33,7 @@ $DEBUG = 1;
                      'select_label' => 'ratename',
                    },
   },
-  'fieldorder' => [qw( setup_fee recur_flat unused_credit ratenum ignore_unrateable )],
+  'fieldorder' => [qw( setup_fee recur_fee unused_credit ratenum ignore_unrateable )],
   'weight' => 40,
 );
 
@@ -176,7 +176,7 @@ sub calc_recur {
 
   } # $cust_svc
 
-  $self->option('recur_flat') + $charges;
+  $self->option('recur_fee') + $charges;
 
 }
 
@@ -186,7 +186,7 @@ sub is_free {
 
 sub base_recur {
   my($self, $cust_pkg) = @_;
-  $self->option('recur_flat');
+  $self->option('recur_fee');
 }
 
 1;

@@ -15,9 +15,9 @@ use FS::part_pkg::flat;
     'setup_fee' => { 'name' => 'Setup fee for this package',
                      'default' => 0,
                    },
-    'recur_flat' => { 'name' => 'Base recurring fee for this package',
-                      'default' => 0,
-                    },
+    'recur_fee' => { 'name' => 'Base recurring fee for this package',
+                     'default' => 0,
+                   },
     'unused_credit' => { 'name' => 'Credit the customer for the unused portion'.
                                    ' of service at cancellation',
                          'type' => 'checkbox',
@@ -35,9 +35,9 @@ use FS::part_pkg::flat;
                  'default' => '',
                },
   },
-  'fieldorder' => [qw( setup_fee recur_flat unused_credit datasrc db_username db_password query )],
+  'fieldorder' => [qw( setup_fee recur_fee unused_credit datasrc db_username db_password query )],
   #'setup' => 'what.setup_fee.value',
-  #'recur' => q!'my $dbh = DBI->connect("' + what.datasrc.value + '", "' + what.db_username.value + '", "' + what.db_password.value + '" ) or die $DBI::errstr; my $sth = $dbh->prepare("' + what.query.value + '") or die $dbh->errstr; my $price = ' + what.recur_flat.value + '; foreach my $cust_svc ( grep { $_->part_svc->svcdb eq "svc_external" } $cust_pkg->cust_svc ){ my $id = $cust_svc->svc_x->id; $sth->execute($id) or die $sth->errstr; $price += $sth->fetchrow_arrayref->[0]; } $price;'!,
+  #'recur' => q!'my $dbh = DBI->connect("' + what.datasrc.value + '", "' + what.db_username.value + '", "' + what.db_password.value + '" ) or die $DBI::errstr; my $sth = $dbh->prepare("' + what.query.value + '") or die $dbh->errstr; my $price = ' + what.recur_fee.value + '; foreach my $cust_svc ( grep { $_->part_svc->svcdb eq "svc_external" } $cust_pkg->cust_svc ){ my $id = $cust_svc->svc_x->id; $sth->execute($id) or die $sth->errstr; $price += $sth->fetchrow_arrayref->[0]; } $price;'!,
   'weight' => '58',
 );
 
@@ -52,7 +52,7 @@ sub calc_recur {
   my $sth = $dbh->prepare( $self->option('query') )
     or die $dbh->errstr;
 
-  my $price = $self->option('recur_flat');
+  my $price = $self->option('recur_fee');
 
   foreach my $cust_svc (
     grep { $_->part_svc->svcdb eq "svc_external" } $cust_pkg->cust_svc
@@ -71,7 +71,7 @@ sub is_free {
 
 sub base_recur {
   my($self, $cust_pkg) = @_;
-  $self->option('recur_flat');
+  $self->option('recur_fee');
 }
 
 1;

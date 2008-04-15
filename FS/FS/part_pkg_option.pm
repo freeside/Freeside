@@ -2,7 +2,7 @@ package FS::part_pkg_option;
 
 use strict;
 use vars qw( @ISA );
-use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( qsearch qsearchs dbh );
 use FS::part_pkg;
 
 @ISA = qw(FS::Record);
@@ -116,6 +116,25 @@ sub check {
 }
 
 =back
+
+=cut
+
+#
+# Used by FS::Upgrade to migrate to a new database.
+#
+#
+
+sub _upgrade_data {  # class method
+  my ($class, %opts) = @_;
+
+  my $sql = "UPDATE part_pkg_option SETUP optionname = 'recur_fee'".
+            " WHERE optionname = 'recur_flat'";
+  my $sth = dbh->prepare($sql) or die dbh->errstr;
+  $sth->execute or die $sth->errstr;
+
+  '';
+
+}
 
 =head1 BUGS
 
