@@ -44,6 +44,10 @@ Example:
                         ...
                       },
 
+    #or manual control, instead of layer_fields and layer_values above
+    #called with args: my( $layer, $layer_fields, $layer_values, $layer_prefix )
+    'layer_callback' => 
+
     'html_between  => '', #optional HTML displayed between the SELECT and the
                           #layers, scalar or coderef ('field' passed as a param)
     'onchange'     => '', #javascript code run when the SELECT changes
@@ -129,7 +133,7 @@ Example:
                   %>"
       >
 
-        <% layer_callback($layer, $layer_fields, $layer_values, $layer_prefix) %>
+        <% &{$layer_callback}($layer, $layer_fields, $layer_values, $layer_prefix) %>
 
       </DIV>
 
@@ -164,6 +168,8 @@ my $selected = exists($opt{curr_value}) ? $opt{curr_value} : '';
 my $layer_fields = $opt{layer_fields};
 my $layer_values = $opt{layer_values};
 my $layer_prefix = $opt{layer_prefix};
+
+my $layer_callback = $opt{layer_callback} || \&layer_callback;
 
 sub layer_callback {
   my( $layer, $layer_fields, $layer_values, $layer_prefix ) = @_;

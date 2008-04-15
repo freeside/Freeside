@@ -35,14 +35,12 @@
                               html_between       => n_a('action'),
                               m2name_table       => 'part_event_condition',
                               m2name_namecol     => 'conditionname',
-                              m2name_label       => 'Condition',
-                              m2name_new_default => \@implicit_condition_objs,
-                              m2name_error_callback  =>
-                                $condition_error_callback,
-                              m2name_remove_warnings =>
-                                \%condition_remove_warnings,
-                              m2name_new_js      => 'condition_repop',
-                              m2name_remove_js   => 'condition_add',
+                              m2_label           => 'Condition',
+                              m2_new_default     => \@implicit_condition_objs,
+                              m2_error_callback  => $condition_error_callback,
+                              m2_remove_warnings => \%condition_remove_warnings,
+                              m2_new_js          => 'condition_repop',
+                              m2_remove_js       => 'condition_add',
                             },
                             { type    => 'title',
                               value   => 'Event Action',
@@ -639,7 +637,7 @@ my $condition_error_callback = sub {
 };
 
 my $condition_layer_values = sub {
-  #m2name_table option causes this to be
+  #m2_table option causes this to be
   # part_event_condition instead of part_event
   my ( $cgi, $part_event_condition, $switches ) = @_;
   scalar( #force hashref

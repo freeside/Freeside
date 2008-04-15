@@ -6,6 +6,7 @@ use vars qw( @ISA $whois_hack $conf
   $soarefresh $soaretry
 );
 use Carp;
+use Scalar::Util qw( blessed );
 use Date::Format;
 #use Net::Whois::Raw;
 use Net::Domain::TLD qw(tld_exists);
@@ -289,10 +290,11 @@ returns the error, otherwise returns false.
 =cut
 
 sub replace {
-  my ( $new, $old ) = ( shift, shift );
+  my $new = shift;
 
-  # We absolutely have to have an old vs. new record to make this work.
-  $old = $new->replace_old unless defined($old);
+  my $old = ( blessed($_[0]) && $_[0]->isa('FS::Record') )
+              ? shift
+              : $new->replace_old;
 
   return "Can't change domain - reorder."
     if $old->getfield('domain') ne $new->getfield('domain'); 

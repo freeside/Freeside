@@ -1,124 +1,140 @@
-%if ( $error ) {
-%  $dbh->rollback if $oldAutoCommit;
-%  $cgi->param('error', $error );
-<% $cgi->redirect(popurl(2). "part_pkg.cgi?". $cgi->query_string ) %>
-%} elsif ( $custnum )  {
-%  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-<% $cgi->redirect(popurl(3). "view/cust_main.cgi?$custnum") %>
-%} else {
-%  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-<% $cgi->redirect(popurl(3). "browse/part_pkg.cgi") %>
-%}
+<% include( 'elements/process.html',
+              #'debug'             => 1,
+              'table'             => 'part_pkg',
+              'viewall_dir'       => 'browse',
+              'viewall_ext'       => 'cgi',
+              'edit_ext'          => 'cgi',
+              #XXX usable with cloning? #'agent_null_right'  => 'Edit global package definitions',
+              'precheck_callback' => $precheck_callback,
+              'args_callback'     => $args_callback,
+              'process_m2m'       => \@process_m2m,
+              'debug' => 1,
+          )
+%>
 <%init>
 
-my $dbh = dbh;
-my $conf = new FS::Conf;
+my $curuser = $FS::CurrentUser::CurrentUser;
 
-my $pkgpart = $cgi->param('pkgpart');
+die "access denied"
+  unless $curuser->access_right('Edit package definitions')
+      || $curuser->access_right('Edit global package definitions')
+      || ( ! $cgi->param('pkgpart') && $cgi->param('pkgnum') && $curuser->access_right('Customize customer package') );
 
-my $old = qsearchs('part_pkg',{'pkgpart'=>$pkgpart}) if $pkgpart;
+my $precheck_callback = sub {
+  my( $cgi ) = @_;
 
-tie my %plans, 'Tie::IxHash', %{ FS::part_pkg::plan_info() };
-my $href = $plans{$cgi->param('plan')}->{'fields'};
+  my $conf = new FS::Conf;
 
-#fixup plandata
-my $error;
-my $plandata = $cgi->param('plandata');
-my @plandata = split(',', $plandata);
-$cgi->param('plandata', 
-  join('', map { my $parser = sub { shift };
-                 $parser = $href->{$_}{parse} if exists($href->{$_}{parse});
-                 my $value = join(', ', &$parser($cgi->param($_)));
-                 my $check = $href->{$_}{check};
-                 if ( $check && ! &$check($value) ) {
-                   $value = join(', ', $cgi->param($_));
-                   $error ||= "Illegal ". ($href->{$_}{name}||$_). ": $value";
-                 }
-                 "$_=$value\n";
-               } @plandata )
-);
+  foreach (qw( setuptax recurtax disabled )) {
+    $cgi->param($_, '') unless defined $cgi->param($_);
+  }
 
-foreach (qw( setuptax recurtax disabled )) {
-  $cgi->param($_, '') unless defined $cgi->param($_);
-}
+  return 'Must select a tax class'
+    if $cgi->param('taxclass') eq '(select)';
 
-my @agents;
-foreach ($cgi->param('agent_type')) {
-  /^(\d+)$/;
-  push @agents, $1 if $1;
-}
-$error = "At least one agent type must be specified."
-  unless( scalar(@agents) ||
-          $cgi->param('clone') && $cgi->param('clone') =~ /^\d+$/ ||
-          !$pkgpart && $conf->exists('agent-defaultpkg')
-        );
+  my @agents = ();
+  foreach ($cgi->param('agent_type')) {
+    /^(\d+)$/;
+    push @agents, $1 if $1;
+  }
+  return "At least one agent type must be specified."
+    unless( scalar(@agents) ||
+            $cgi->param('clone') && $cgi->param('clone') =~ /^\d+$/ ||
+            !$cgi->param('pkgpart') && $conf->exists('agent-defaultpkg')
+          );
+
+  return '';
+
+};
+
+my $custnum = '';
+
+my $args_callback = sub {
+  my( $cgi, $new ) = @_;
+  
+  my @args = ( 'primary_svc' => scalar($cgi->param('pkg_svc_primary')) );
+
+  ##
+  #options
+  ##
+  
+  $cgi->param('plan') =~ /^(\w+)$/ or die 'unparsable plan';
+  my $plan = $1;
+  
+  tie my %plans, 'Tie::IxHash', %{ FS::part_pkg::plan_info() };
+  my $href = $plans{$plan}->{'fields'};
+  
+  my $error = '';
+  my $options = $cgi->param($plan."__OPTIONS");
+  my @options = split(',', $options);
+  my %options =
+    map { my $optionname = $_;
+          my $param = $plan."__$optionname";
+          my $parser = exists($href->{$optionname}{parse})
+                         ? $href->{$optionname}{parse}
+                         : sub { shift };
+          my $value = join(', ', &$parser($cgi->param($param)));
+          my $check = $href->{$optionname}{check};
+          if ( $check && ! &$check($value) ) {
+            $value = join(', ', $cgi->param($param));
+            $error ||= "Illegal ".
+                         ($href->{$optionname}{name}||$optionname). ": $value";
+          }
+          ( $optionname => $value );
+        }
+        @options;
+
+  $options{$_} = scalar($cgi->param($_)) for (qw( setup_fee recur_fee ));
+  
+  push @args, 'options' => \%options;
+
+  ###
+  #pkg_svc
+  ###
+
+  my %pkg_svc = map { $_ => scalar($cgi->param("pkg_svc$_")) }
+                map { $_->svcpart }
+                qsearch('part_svc', {} );
+
+  push @args, 'pkg_svc' => \%pkg_svc;
+
+  ###
+  # cust_pkg and custnum_ref (inserts only)
+  ###
+  unless ( $cgi->param('pkgpart') ) {
+    push @args, 'cust_pkg'    => scalar($cgi->param('pkgnum')),
+                'custnum_ref' => \$custnum;
+  }
+
+  @args;
+
+};
 
 $cgi->param('tax_override') =~ /^([\d,]+)$/;
 my (@tax_overrides) = (grep "$_", split (",", $1));
 
-my $new = new FS::part_pkg ( {
-  map {
-    $_ => scalar($cgi->param($_));
-  } fields('part_pkg')
-} );
-
-my $oldAutoCommit = $FS::UID::AutoCommit;
-local $FS::UID::AutoCommit = 0;
-
-my %pkg_svc = map { $_ => scalar($cgi->param("pkg_svc$_")) }
-              map { $_->svcpart }
-              qsearch('part_svc', {} );
-
-my $curuser = $FS::CurrentUser::CurrentUser;
-
-my $custnum = '';
-if ( $error ) {
-
- # fall through
-
-} elsif ( $cgi->param('taxclass') eq '(select)' ) {
-
-  $error = 'Must select a tax class';
-
-} elsif ( $pkgpart ) {
-
-  die "access denied"
-    unless $curuser->access_right('Edit package definitions')
-        || $curuser->access_right('Edit global package definitions');
-
-  $error = $new->replace( $old,
-                          pkg_svc     => \%pkg_svc,
-                          primary_svc => scalar($cgi->param('pkg_svc_primary')),
-                        );
-} else {
-
-  die "access denied"
-    unless $curuser->access_right('Edit package definitions')
-        || $curuser->access_right('Edit global package definitions')
-        || ( $cgi->param('pkgnum') && $curuser->access_right('Customize customer package') );
-
-  $error = $new->insert(  pkg_svc     => \%pkg_svc,
-                          primary_svc => scalar($cgi->param('pkg_svc_primary')),
-                          cust_pkg    => $cgi->param('pkgnum'),
-                          custnum_ref => \$custnum,
-                       );
-  $pkgpart = $new->pkgpart;
-}
-
-unless ( $error || $conf->exists('agent_defaultpkg') ) {
-  $error = $new->process_m2m(
-    'link_table'   => 'type_pkgs',
-    'target_table' => 'agent_type',
-    'params'       => \@agents,
-  );
-}
-
-unless ( $error  ) {
-  $error = $new->process_m2m(
+my @process_m2m = (
+  {
     'link_table'   => 'part_pkg_taxoverride',
     'target_table' => 'tax_class',
     'params'       => \@tax_overrides,
-  );
+  }
+);
+
+my $conf = new FS::Conf;
+
+if ( $cgi->param('pkgpart') || ! $conf->exists('agent_defaultpkg') ) {
+  my @agents = ();
+  foreach ($cgi->param('agent_type')) {
+    /^(\d+)$/;
+    push @agents, $1 if $1;
+  }
+  warn "AGENTS: @agents";
+  push @process_m2m, {
+    'link_table'   => 'type_pkgs',
+    'target_table' => 'agent_type',
+    'params'       => \@agents,
+  };
 }
 
 </%init>

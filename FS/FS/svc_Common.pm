@@ -3,6 +3,7 @@ package FS::svc_Common;
 use strict;
 use vars qw( @ISA $noexport_hack $DEBUG $me );
 use Carp qw( cluck carp croak ); #specify cluck have to specify them all..
+use Scalar::Util qw( blessed );
 use FS::Record qw( qsearch qsearchs fields dbh );
 use FS::cust_main_Mixin;
 use FS::cust_svc;
@@ -359,7 +360,7 @@ sub delete {
   '';
 }
 
-=item replace OLD_RECORD
+=item replace [ OLD_RECORD ] [ HASHREF | OPTION => VALUE ]
 
 Replaces OLD_RECORD with this one.  If there is an error, returns the error,
 otherwise returns false.
@@ -367,8 +368,16 @@ otherwise returns false.
 =cut
 
 sub replace {
-  my ($new, $old) = (shift, shift);
-  my %options = @_;
+  my $new = shift;
+
+  my $old = ( blessed($_[0]) && $_[0]->isa('FS::Record') )
+              ? shift
+              : $new->replace_old;
+
+  my $options = 
+    ( ref($_[0]) eq 'HASH' )
+      ? shift
+      : { @_ };
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -380,9 +389,6 @@ sub replace {
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
-
-  # We absolutely have to have an old vs. new record to make this work.
-  $old = $new->replace_old unless defined($old);
 
   my $error = $new->set_auto_inventory;
   if ( $error ) {
@@ -399,7 +405,7 @@ sub replace {
   #new-style exports!
   unless ( $noexport_hack ) {
 
-    my $export_args = $options{'export_args'} || [];
+    my $export_args = $options->{'export_args'} || [];
 
     #not quite false laziness, but same pattern as FS::svc_acct::replace and
     #FS::part_export::sqlradius::_export_replace.  List::Compare or something

@@ -35,6 +35,11 @@ my $maxlength = $opt{'maxlength'}
                 ? 'MAXLENGTH="'. $opt{'maxlength'}. '"'
                 : '';
 
+$opt{'disabled'} = &{ $opt{'disabled'} }( \%opt )
+  if ref($opt{'disabled'}) eq 'CODE';
+$opt{'disabled'} = 'DISABLED'
+  if $opt{'disabled'} && $opt{'disabled'} !~ /disabled/i; # uuh... yeah?
+
 my @style = ();
 
 push @style, 'text-align: '. $opt{'text-align'}
@@ -42,9 +47,6 @@ push @style, 'text-align: '. $opt{'text-align'}
 
 push @style, 'background-color: #dddddd'
   if $opt{'disabled'};
-
-$opt{'disabled'} = 'DISABLED'
-  if $opt{'disabled'} && $opt{'disabled'} !~ /disabled/i; # uuh... yeah?
 
 my $style = scalar(@style) ? 'STYLE="'. join(';', @style). '"' : '';
 

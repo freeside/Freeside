@@ -2,6 +2,7 @@ package FS::part_event_option;
 
 use strict;
 use vars qw( @ISA );
+use Scalar::Util qw( blessed );
 use FS::UID qw( dbh );
 use FS::Record qw( qsearch qsearchs );
 use FS::part_event;

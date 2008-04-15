@@ -20,4 +20,7 @@
 
 my %opt = @_;
 
+$opt{'taxproduct_description'} ||= $opt{'object'}->taxproduct_description
+  if $opt{'object'};
+
 </%init>

@@ -1,15 +1,10 @@
-<% include('tr-td-label.html', @_ ) %>
-
-  <TD>
-    <SELECT NAME="freq">
-%     foreach my $freq ( @freq ) {
-        <OPTION VALUE="<% $freq %>" <% $freq eq $curr_value ? 'SELECTED' : '' %>><% $freq{$freq} %>
-%     }
-    </SELECT>
-  </TD>
-
-</TR>
-
+<% include('tr-select.html', @_, 
+             'field'      => 'freq',
+             'options'    => \@freq,
+             'labels'     => \%freq,
+             'curr_value' => $curr_value,
+          )
+%>
 <%init>
 
 my %opt = @_;

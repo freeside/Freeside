@@ -1,436 +1,145 @@
-<% include('/elements/header.html', "$action Package Definition", menubar(
-  'View all packages' => popurl(2). 'browse/part_pkg.cgi',
-)) %>
-% #), ' onLoad="visualize()"'); 
+<% include( 'elements/edit.html',
+              'post_url'    => popurl(1).'process/part_pkg.cgi',
+              'name'        => "Package definition",
+              'table'       => 'part_pkg',
+              #'viewall_dir' => 'browse',
+              'viewall_url' => $p.'browse/part_pkg.cgi',
+              'html_init'   => include('/elements/init_overlib.html').
+                               $freq_changed,
+              'html_bottom' => $html_bottom,
+              'new_hashref_callback' => $new_hashref_callback,
+              'new_object_callback'  => $new_object_callback,
+              'new_callback'         => $new_callback,
+              'edit_callback'        => $edit_callback,
+              'error_callback'       => $error_callback,
 
-<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/overlibmws.js"></SCRIPT>
-<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/overlibmws_iframe.js"></SCRIPT>
-<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/overlibmws_draggable.js"></SCRIPT>
-<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/iframecontentmws.js"></SCRIPT>
+              'labels' => { 
+                            'pkgpart'          => 'Package Definition',
+                            'pkg'              => 'Package (customer-visible)',
+                            'comment'          => 'Comment (customer-hidden)',
+                            'classnum'         => 'Package class',
+                            'promo_code'       => 'Promotional code',
+                            'freq'             => 'Recurring fee frequency',
+                            'setuptax'         => 'Setup fee tax exempt',
+                            'recurtax'         => 'Recurring fee tax exempt',
+                            'taxclass'         => 'Tax class',
+                            'plan'             => 'Price plan',
+                            'disabled'         => 'Disable new orders',
+                            'pay_weight'       => 'Payment weight',
+                            'credit_weight'    => 'Credit weight',
+                            'agentnum'         => '',
+                            'setup_fee'        => 'Setup fee',
+                            'recur_fee'        => 'Recurring fee',
+                            'bill_dst_pkgpart' => 'Include line item(s) from package',
+                            'svc_dst_pkgpart'  => 'Include services of package',
+                          },
 
-<% include('/elements/error.html') %>
+              'fields' => [
+                            { field=>'clone',  type=>'hidden' },
+                            { field=>'pkgnum', type=>'hidden' },
 
-<FORM NAME="dummy">
+                            { type => 'columnstart' },
+                            
+                              {field=>'pkg',      type=>'text', size=>40 }, #32
+                              {field=>'comment',  type=>'text', size=>40 }, #32
+                              {field=>'classnum', type=>'select-pkg_class' },
+                              {field=>'disabled', type=>'checkbox', value=>'Y'},
 
-<% itable('',8,1) %><TR><TD VALIGN="top">
+                              { type  => 'tablebreak-tr-title',
+                                value => 'Pricing', #better name?
+                              },
+                              { field => 'plan',
+                                type  => 'selectlayers-select',
+                                options => [ keys %plan_labels ],
+                                labels  => \%plan_labels,
+                              },
+                              { field => 'setup_fee',
+                                type  => 'money',
+                              },
+                              { field    => 'freq',
+                                type     => 'part_pkg_freq',
+                                onchange => 'freq_changed', #XXX enable recurring fee
+                              },
+                              { field    => 'recur_fee',
+                                type     => 'money',
+                                disabled => sub { $recur_disabled },
+                              },
+                                
+                              #price plan
+                              #setup fee
+                              #recurring frequency
+                              #recurring fee (auto-disable)
 
-Package information
+                            { type => 'columnnext' },
 
-<% ntable("#cccccc",2) %>
-  <TR>
-    <TD ALIGN="right">Package Definition #</TD>
-    <TD BGCOLOR="#ffffff">
-      <% $hashref->{pkgpart} ? $hashref->{pkgpart} : "(NEW)" %>
-    </TD>
-  </TR>
-  <TR>
-    <TD ALIGN="right">Package (customer-visible)</TD>
-    <TD>
-      <INPUT TYPE="text" NAME="pkg" SIZE=32 VALUE="<% $part_pkg->pkg %>">
-    </TD>
-  </TR>
-  <TR>
-    <TD ALIGN="right">Comment (customer-hidden)</TD>
-    <TD>
-      <INPUT TYPE="text" NAME="comment" SIZE=32 VALUE="<%$part_pkg->comment%>">
-    </TD>
-  </TR>
-  <% include( '/elements/tr-select-pkg_class.html',
-                'curr_value' => $part_pkg->classnum,
-            )
-  %>
-  <TR>
-    <TD ALIGN="right">Promotional code</TD>
-    <TD>
-      <INPUT TYPE="text" NAME="promo_code" SIZE=32 VALUE="<%$part_pkg->promo_code%>">
-    </TD>
-  </TR>
-  <TR>
-    <TD ALIGN="right">Disable new orders</TD>
-    <TD>
-      <INPUT TYPE="checkbox" NAME="disabled" VALUE="Y"<% $hashref->{disabled} eq 'Y' ? ' CHECKED' : '' %>
-    </TD>
-  </TR>
+                              {type=>'justtitle', value=>'Taxation' },
+                              {field=>'setuptax', type=>'checkbox', value=>'Y'},
+                              {field=>'recurtax', type=>'checkbox', value=>'Y'},
+                              {field=>'classnum', type=>'select-taxclass' },
+                              {field=>'taxproductnum', type=>'select-taxproduct' },
 
-</TABLE>
+                              { type  => 'tablebreak-tr-title',
+                                value => 'Promotions', #XXX better name?
+                              },
+                              { field=>'promo_code', type=>'text', size=>15 },
 
-</TD><TD VALIGN="top">
+                              { type  => 'tablebreak-tr-title',
+                                value => 'Line-item revenue recogition', #XXX better name?
+                              },
+                              { field=>'pay_weight',    type=>'text', size=>6 },
+                              { field=>'credit_weight', type=>'text', size=>6 },
 
-Tax information
-<% ntable("#cccccc", 2) %>
-  <TR>
-    <TD ALIGN="right">Setup fee tax exempt</TD>
-    <TD>
-      <INPUT TYPE="checkbox" NAME="setuptax" VALUE="Y" <% $hashref->{setuptax} eq 'Y' ? ' CHECKED' : '' %>>
-    </TD>
-  </TR>
-  <TR>
-    <TD ALIGN="right">Recurring fee tax exempt</TD>
-    <TD>
-      <INPUT TYPE="checkbox" NAME="recurtax" VALUE="Y" <% $hashref->{recurtax} eq 'Y' ? ' CHECKED' : '' %>>
-    </TD>
-  </TR>
+                            { type => 'columnnext' },
 
-% if ( $conf->exists('enable_taxclasses') ) { 
+                              { field=>'agent_type',
+                                type => 'select-agent_types',
+                                curr_value_callback => sub {
+                                  my($cgi, $object, $field) = @_;
+                                  #in the other callbacks..?  hmm.
+                                  \@agent_type;
+                                },
+                              },
 
-  <TR>
-    <TD align="right">Tax class</TD>
-    <TD>
-      <% include('/elements/select-taxclass.html', $hashref->{taxclass} ) %>
-    </TD>
-  </TR>
+                            { type => 'columnend' },
 
-% } else { 
+                            { 'type'  => 'tablebreak-tr-title',
+                              'value' => 'Pricing add-ons',
+                            },
+                            { 'field'    => 'bill_dst_pkgpart',
+                              'type'     => 'select-part_pkg',
+                              'm2_label' => 'Include line item(s) from package',
+                              'm2m_table'        => 'part_pkg_link',
+                              'm2m_target_table' => 'part_pkg', #XXX actually just the method name...
+                              'm2m_dstcol'       => 'dst_pkgpart',
+                              'm2m_static_or_something' => { 'link_type' => 'bill' }, #XXX
+                              'm2_error_callback' => sub { (); }, #XXX existing!
+                            },
 
-  <% include('/elements/select-taxclass.html', $hashref->{taxclass} ) %>
+                            { type  => 'tablebreak-tr-title',
+                              value => 'Services',
+                            },
+                            { type => 'pkg_svc', },
 
-% } 
+                            { 'field'    => 'svc_dst_pkgpart',
+                              'label'    => 'Also include services from package: ',
+                              'type'     => 'select-part_pkg',
+                              'm2_label' => 'Include services of package: ',
+                              'm2m_table'        => 'part_pkg_link',
+                              'm2m_target_table' => 'part_pkg', #XXX actually just the method name...
+                              'm2m_dstcol'       => 'dst_pkgpart',
+                              'm2m_static_or_something' => { 'link_type' => 'svc' }, #XXX
+                              'm2_error_callback' => sub { (); }, #XXX existing!
+                            },
 
-% if ( $conf->exists('enable_taxproducts') ) { 
+                            { type  => 'tablebreak-tr-title',
+                              value => 'Price plan options',
+                            },
 
-  <TR><TD colspan="2">
-    <% ntable("#cccccc", 2) %>
-      <TR>
-        <TD align="right">Tax product</TD>
-        <TD>
-          <INPUT name="part_pkg_taxproduct_taxproductnum" id="taxproductnum" type="hidden" value="<% $hashref->{'taxproductnum'}%>">
-          <INPUT name="part_pkg_taxproduct_description" id="taxproductnum_description" type="text" value="<% $taxproduct_description %>" size="12" onclick="overlib( OLiframeContent('<% $p %>/browse/part_pkg_taxproduct.cgi?_type=select&id=taxproductnum&taxproductnum='+document.getElementById('taxproductnum').value, 1000, 400, 'tax_product_popup'), CAPTION, 'Select product', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK); return false;">
-        </TD>
-      </TR>
-      <TR>
-        <TD colspan="2" align="right">
-          <INPUT name="tax_override" id="tax_override" type="hidden" value="<% $tax_override %>">
-          <A href="javascript:void(0)" onclick="overlib( OLiframeContent('part_pkg_taxoverride.html?selected='+document.getElementById('tax_override').value, 1100, 600, 'tax_product_popup'), CAPTION, 'Edit product tax overrides', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK); return false;">
-            <% $tax_override ? 'Edit tax overrides' : 'Override taxes' %>
-          </A>
-        </TD>
-      </TR>
-    </TABLE>
-  </TD></TR>
+                          ],
 
-% } else { 
-
-  <INPUT TYPE="hidden" NAME="taxproductnum" VALUE="<% $hashref->{taxproductnum} %>">
-  <INPUT TYPE="hidden" NAME="tax_override" VALUE="<% $tax_override %>">
-
-% } 
-
-</TABLE>
-<BR>
-
-Line-item revenue recognition
-<% ntable("#cccccc", 2) %>
-% tie my %weight, 'Tie::IxHash',
-%   'pay_weight'    => 'Payment',
-%   'credit_weight' => 'Credit'
-% ;
-% foreach my $weight (keys %weight) {
-    <TR>
-      <TD ALIGN="right"><% $weight{$weight} %> weight</TD>
-      <TD>
-        <INPUT TYPE="text" NAME="<% $weight %>" SIZE=6 VALUE=<% $hashref->{$weight} || 0 %>>
-      </TD>
-    </TR>
-% }
-</TABLE>
-
-</TD><TD VALIGN="top">
-
-% if ( $cgi->param('clone') ) {
-
-    <INPUT TYPE="hidden" NAME="agent_type" VALUE="">
-
-% } elsif ( scalar(@all_agent_types) == 1) {
-
-    <INPUT TYPE="hidden" NAME="agent_type" VALUE="<% $all_agent_types[0] %>">
-
-% } else {
-
-    Reseller information
-    <% ntable("#cccccc", 2) %>
-      <TR>
-        <TD ALIGN="right"><% 'Agent Types' %></TD>
-        <TD>
-          <% include( '/elements/select-table.html',
-                      'element_name' => 'agent_type',
-                      'table'        => 'agent_type',
-                      'name_col'     => 'atype',
-                      'value'        => \@agent_type,
-                      'multiple'     =>  '1',
-                      'element_etc'  => 'size="10"',
-                    )
-          %>
-        </TD>
-      </TR>
-    </TABLE>
-
-% }
-
-</TD></TR></TABLE>
-
-%my $thead =  "\n\n". ntable('#cccccc', 2).
-%             '<TR><TH BGCOLOR="#dcdcdc"><FONT SIZE=-1>Quan.</FONT></TH>'.
-%             '<TH BGCOLOR="#dcdcdc"><FONT SIZE=-1>Primary</FONT></TH>'.
-%             '<TH BGCOLOR="#dcdcdc">Service</TH></TR>';
-
-<BR><BR>Services included
-<% itable('', 4, 1) %><TR><TD VALIGN="top">
-<% $thead %>
-%
-%
-%my $where =  "WHERE disabled IS NULL OR disabled = ''";
-%if ( $pkgpart ) {
-%  $where .=  "   OR 0 < ( SELECT quantity FROM pkg_svc
-%                           WHERE pkg_svc.svcpart = part_svc.svcpart
-%                             AND pkgpart = $pkgpart
-%                        )";
-%}
-%my @part_svc = qsearch('part_svc', {}, '', $where);
-%my $q_part_pkg = $clone_part_pkg || $part_pkg;
-%my %pkg_svc = map { $_->svcpart => $_ } $q_part_pkg->pkg_svc;
-%
-%my @fixups = ();
-%my $count = 0;
-%my $columns = 3;
-%foreach my $part_svc ( @part_svc ) {
-%  my $svcpart = $part_svc->svcpart;
-%  my $pkg_svc = $pkg_svc{$svcpart}
-%             || new FS::pkg_svc ( {
-%                                   'pkgpart'     => $pkgpart,
-%                                   'svcpart'     => $svcpart,
-%                                   'quantity'    => 0,
-%                                   'primary_svc' => '',
-%                                } );
-%  if ( $cgi->param('error') ) {
-%    my $primary_svc = ( $pkg_svc->primary_svc =~ /^Y/i );
-%    my $pkg_svc_primary = scalar($cgi->param('pkg_svc_primary'));
-%    $pkg_svc->primary_svc('')
-%      if $primary_svc && $pkg_svc_primary != $svcpart;
-%    $pkg_svc->primary_svc('Y')
-%      if ! $primary_svc && $pkg_svc_primary == $svcpart;
-%  }
-%
-%  push @fixups, "pkg_svc$svcpart";
-%
-%  my $quan = 0;
-%  if ( $cgi->param("pkg_svc$svcpart") =~ /^\s*(\d+)\s*$/ ) {
-%    $quan = $1;
-%  } elsif ( $pkg_svc->quantity ) {
-%    $quan = $pkg_svc->quantity;
-%  }
-
-
-  <TR>
-    <TD>
-      <INPUT TYPE="text" NAME="pkg_svc<% $svcpart %>" SIZE=4 MAXLENGTH=3 VALUE="<% $quan %>">
-    </TD>
-   
-    <TD>
-      <INPUT TYPE="radio" NAME="pkg_svc_primary" VALUE="<% $svcpart %>" <% $pkg_svc->primary_svc =~ /^Y/i ? ' CHECKED' : '' %>>
-    </TD>
-
-    <TD>
-      <A HREF="part_svc.cgi?<% $part_svc->svcpart %>"><% $part_svc->svc %></A>      <% $part_svc->disabled =~ /^Y/i ? ' (DISABLED' : '' %>
-    </TD>
-  </TR>
-% foreach ( 1 .. $columns-1 ) {
-%       if ( $count == int( $_ * scalar(@part_svc) / $columns ) ) { 
-%  
-
-         </TABLE></TD><TD VALIGN="top"><% $thead %>
-%   }
-%     }
-%     $count++;
-%  
-% } 
-
-
-</TR></TABLE></TD></TR></TABLE>
-% foreach my $f ( qw( clone pkgnum ) ) { #safe, these were untained in %init 
-    <INPUT TYPE="hidden" NAME="<% $f %>" VALUE="<% $cgi->param($f) %>">
-% }
-
-<INPUT TYPE="hidden" NAME="pkgpart" VALUE="<% $part_pkg->pkgpart %>">
-%
-%
-%# prolly should be in database
-%tie my %plans, 'Tie::IxHash', %{ FS::part_pkg::plan_info() };
-%
-%my %plandata = map { /^(\w+)=(.*)$/; ( $1 => $2 ); }
-%                    split("\n", ($clone_part_pkg||$part_pkg)->plandata );
-%#warn join("\n", map { "$_: $plandata{$_}" } keys %plandata ). "\n";
-%
-%tie my %options, 'Tie::IxHash', map { $_=>$plans{$_}->{'name'} } keys %plans;
-%
-%#my @form_select = ('classnum');
-%#if ( $conf->exists('enable_taxclasses') ) {
-%#  push @form_select, 'taxclass';
-%#} else {
-%#  push @fixups, 'taxclass'; #hidden
-%#}
-%my @form_elements = ( 'classnum', 'taxclass', 'agent_type', 'tax_override' );
-%
-%my @form_radio = ( 'pkg_svc_primary' );
-%
-%tie my %freq, 'Tie::IxHash', %{FS::part_pkg->freqs_href()};
-%if ( $part_pkg->dbdef_table->column('freq')->type =~ /(int)/i ) {
-%  delete $freq{$_} foreach grep { ! /^\d+$/ } keys %freq;
-%}
-%
-%#this should be replaced by /elements/selectlayers.html
-%my $widget = new HTML::Widgets::SelectLayers(
-%  'selected_layer' => $part_pkg->plan,
-%  'options'        => \%options,
-%  'form_name'      => 'dummy',
-%  'form_action'    => 'process/part_pkg.cgi',
-%  'form_elements'  => \@form_elements,
-%  'form_text'      => [ qw(pkg comment promo_code clone pkgnum pkgpart),
-%                        qw(pay_weight credit_weight), #keys(%weight),
-%                        qw(taxproductnum),
-%                        @fixups,
-%                      ],
-%  'form_checkbox'  => [ qw(setuptax recurtax disabled) ],
-%  'form_radio'     => \@form_radio,
-%  'layer_callback' => sub {
-%    my $layer = shift;
-%    my $html = qq!<INPUT TYPE="hidden" NAME="plan" VALUE="$layer">!.
-%               ntable("#cccccc",2);
-%    $html .= '
-%      <TR>
-%        <TD ALIGN="right">Recurring fee frequency </TD>
-%        <TD><SELECT NAME="freq">
-%    ';
-%
-%    my @freq = keys %freq;
-%    @freq = grep { /^\d+$/ } @freq
-%      if exists($plans{$layer}->{'freq'}) && $plans{$layer}->{'freq'} eq 'm';
-%    foreach my $freq ( @freq ) {
-%      $html .= qq(<OPTION VALUE="$freq");
-%      $html .= ' SELECTED' if $freq eq $part_pkg->freq;
-%      $html .= ">$freq{$freq}";
-%    }
-%    $html .= '</SELECT></TD></TR>';
-%
-%    my $href = $plans{$layer}->{'fields'};
-%    foreach my $field ( exists($plans{$layer}->{'fieldorder'})
-%                          ? @{$plans{$layer}->{'fieldorder'}}
-%                          : keys %{ $href }
-%                      ) {
-%
-%      $html .= '<TR><TD ALIGN="right">'. $href->{$field}{'name'}. '</TD><TD>';
-%
-%      my $format = sub { shift };
-%      $format = $href->{$field}{'format'} if exists($href->{$field}{'format'});
-%
-%      if ( ! exists($href->{$field}{'type'}) ) {
-%
-%        $html .= qq!<INPUT TYPE="text" NAME="$field" VALUE="!.
-%                 ( exists($plandata{$field})
-%                     ? &$format($plandata{$field})
-%                     : $href->{$field}{'default'} ).
-%                 qq!" onChange="fchanged(this)">!;
-%
-%      } elsif ( $href->{$field}{'type'} eq 'checkbox' ) {
-%
-%        $html .= qq!<INPUT TYPE="checkbox" NAME="$field" VALUE=1 !.
-%                 ( exists($plandata{$field}) && $plandata{$field}
-%                   ? ' CHECKED'
-%                   : ''
-%                 ). '>';
-%
-%      } elsif ( $href->{$field}{'type'} =~ /^select/ ) {
-%
-%        $html .= '<SELECT';
-%        $html .= ' MULTIPLE'
-%          if $href->{$field}{'type'} eq 'select_multiple';
-%        $html .= qq! NAME="$field" onChange="fchanged(this)">!;
-%
-%        if ( $href->{$field}{'select_table'} ) {
-%          foreach my $record (
-%            qsearch( $href->{$field}{'select_table'},
-%                     $href->{$field}{'select_hash'}   )
-%          ) {
-%            my $value = $record->getfield($href->{$field}{'select_key'});
-%            $html .= qq!<OPTION VALUE="$value"!.
-%                     (  $plandata{$field} =~ /(^|, *)$value *(,|$)/
-%                          ? ' SELECTED'
-%                          : ''
-%                     ).
-%                     '>'. $record->getfield($href->{$field}{'select_label'});
-%          }
-%        } elsif ( $href->{$field}{'select_options'} ) {
-%          foreach my $key ( keys %{ $href->{$field}{'select_options'} } ) {
-%            my $label = $href->{$field}{'select_options'}{$key};
-%            $html .= qq!<OPTION VALUE="$key"!.
-%                     ( $plandata{$field} =~ /(^|, *)$key *(,|$)/ #XXX fix
-%                         ? ' SELECTED'
-%                         : ''
-%                     ).
-%                     '>'. $label;
-%          }
-%
-%        } else {
-%          $html .= '<font color="#ff0000">warning: '.
-%                   "don't know how to retreive options for $field select field".
-%                   '</font>';
-%        }
-%        $html .= '</SELECT>';
-%
-%      } elsif ( $href->{$field}{'type'} eq 'radio' ) {
-%
-%        my $radio =
-%          qq!<INPUT TYPE="radio" NAME="$field" onChange="fchanged(this)"!;
-%
-%        foreach my $key ( keys %{ $href->{$field}{'options'} } ) {
-%          my $label = $href->{$field}{'options'}{$key};
-%          $html .= qq!$radio VALUE="$key"!.
-%                   ( $plandata{$field} =~ /(^|, *)$key *(,|$)/ #XXX fix
-%                       ? ' CHECKED'
-%                       : ''
-%                   ).
-%                   "> $label<BR>";
-%        }
-%
-%      }
-%
-%      $html .= '</TD></TR>';
-%    }
-%    $html .= '</TABLE>';
-%
-%    $html .= '<INPUT TYPE="hidden" NAME="plandata" VALUE="'.
-%             join(',', keys %{ $href } ). '">'.
-%             '<BR><BR>';
-%             
-%    $html .= '<INPUT TYPE="submit" VALUE="'.
-%               ( $action eq 'Custom'
-%                   ? 'Customize package'
-%                   : ( $hashref->{pkgpart} ? "Apply changes" : "Add package" )
-%               ).
-%             '" onClick="fchanged(this)">';
-%
-%    $html;
-%
-%  },
-%);
-%
-%
-
-
-<BR><BR>Price plan <% $widget->html %>
-
-<% include('/elements/footer.html') %>
+           )
+%>
 <%init>
-
-if ( $cgi->param('clone') && $cgi->param('clone') =~ /^(\d+)$/ ) {
-  $cgi->param('clone', $1);
-} else {
-  $cgi->param('clone', '');
-}
-if ( $cgi->param('pkgnum') && $cgi->param('pkgnum') =~ /^(\d+)$/ ) {
-  $cgi->param('pkgnum', $1);
-} else {
-  $cgi->param('pkgnum', '');
-}
 
 my $curuser = $FS::CurrentUser::CurrentUser;
 
@@ -439,61 +148,264 @@ die "access denied"
       || $curuser->access_right('Edit global package definitions')
       || ( $cgi->param('pkgnum') && $curuser->access_right('Customize customer package') );
 
-my ($query) = $cgi->keywords;
+#XXX
+# - part_pkg.pm bits (need separate access methods not just part_pkg_link)
+# - tr-part_pkg_freq: month_increments_only (from price plans)
+# - test editing 
+#   - write edit bits for m2ms
+# - display add-ons in browse... yeah
+# -QIS- thank goodness
+# - test cloning
+# - test custom pricing
+#recur_flat->recur_fee migration, ugh
+# - move the selectlayer divs away from lame layer_callback
 
-my $conf = new FS::Conf; 
-my $part_pkg = '';
+#my ($query) = $cgi->keywords;
+#
+#my $part_pkg = '';
+
 my @agent_type = ();
 my $tax_override;
-my @all_agent_types = map {$_->typenum} qsearch('agent_type',{});
-if ( $cgi->param('error') ) {
-  $part_pkg = new FS::part_pkg ( {
-    map { $_, scalar($cgi->param($_)) } fields('part_pkg')
-  } );
+
+my $clone_part_pkg = '';
+
+my %options = ();
+my $recur_disabled = 1;
+my $error_callback = sub {
+  my($cgi, $object, $fields) = @_;
   (@agent_type) = $cgi->param('agent_type');
   $tax_override = $cgi->param('tax_override');
-}
-
-my $action = '';
-my $clone_part_pkg = '';
-my $pkgpart = '';
-if ( $cgi->param('clone') ) {
-  $pkgpart = $cgi->param('clone');
-  #$action = 'Custom Pricing';
-  $action = 'Custom';
   $clone_part_pkg= qsearchs('part_pkg', { 'pkgpart' => $cgi->param('clone') } );
-  $part_pkg ||= $clone_part_pkg->clone;
-  $part_pkg->disabled('Y') unless $cgi->param('error');
-} elsif ( $query && $query =~ /^(\d+)$/ ) {
-  (@agent_type) = map {$_->typenum} qsearch('type_pkgs',{'pkgpart'=>$1})
-    unless $part_pkg;
-  unless ($part_pkg) {
-    $tax_override =
+
+  $recur_disabled = $cgi->param('freq') ? 0 : 1;
+
+  #some false laziness w/process
+  $cgi->param('plan') =~ /^(\w+)$/ or die 'unparsable plan';
+  my $plan = $1;
+  my $options = $cgi->param($plan."__OPTIONS");
+  my @options = split(',', $options);
+  %options =
+    map { my $optionname = $_;
+          my $param = $plan."__$optionname";
+          my $value = join(', ', $cgi->param($param));
+          ( $optionname => $value );
+        }
+        @options;
+
+  $cgi->param($_, $options{$_}) foreach (qw( setup_fee recur_fee ));
+
+};
+
+my $new_hashref_callback = sub { { 'plan' => 'flat' }; };
+
+my $new_object_callback = sub {
+  my( $cgi, $hashref, $fields, $opt ) = @_;
+
+  if ( $cgi->param('clone') ) {
+    $opt->{action} = 'Custom';
+    $clone_part_pkg = qsearchs('part_pkg', { 'pkgpart' => $cgi->param('clone') } );
+    my $part_pkg = $clone_part_pkg->clone;
+    $part_pkg->disabled('Y');
+    %options = $clone_part_pkg->options;
+    $part_pkg;
+  } else {
+    FS::part_pkg->new( $hashref );
+  }
+
+};
+
+my $edit_callback = sub {
+  my( $cgi, $object, $fields ) = @_;
+
+  $recur_disabled = $object->freq ? 0 : 1;
+
+  (@agent_type) = map {$_->typenum} qsearch('type_pkgs',{'pkgpart'=>$1});
+  $tax_override =
     join (",", map {$_->taxclassnum}
                qsearch( 'part_pkg_taxoverride', {'pkgpart' => $1} )
          );
+
 #    join (",", map {$_->taxclassnum}
 #               $part_pkg->part_pkg_taxrate( 'cch', $conf->config('defaultloc')
 #         );
 #      unless $tax_override;
+
+  %options = $object->options;
+
+};
+
+my $new_callback = sub {
+  my( $cgi, $object, $fields ) = @_;
+
+  my $conf = new FS::Conf; 
+  if ( $conf->exists('agent_defaultpkg') ) {
+    #my @all_agent_types = map {$_->typenum} qsearch('agent_type',{});
+    @agent_type = map {$_->typenum} qsearch('agent_type',{});
   }
-  $part_pkg ||= qsearchs('part_pkg',{'pkgpart'=>$1});
-  $pkgpart = $part_pkg->pkgpart;
-} else {
-  unless ( $part_pkg ) {
-    $part_pkg = new FS::part_pkg {};
-    $part_pkg->plan('flat');
-    @agent_type = @all_agent_types if $conf->exists('agent_defaultpkg');
-      
-  }
-}
-unless ( $part_pkg->plan ) { #backwards-compat
-  $part_pkg->plan('flat');
-  $part_pkg->plandata("setup_fee=". $part_pkg->setup. "\n".
-                      "recur_fee=". $part_pkg->recur. "\n");
-}
-$action ||= $part_pkg->pkgpart ? 'Edit' : 'Add';
-my $hashref = $part_pkg->hashref;
-my $taxproduct_description = $part_pkg->taxproduct_description;
+
+};
+
+my $freq_changed = <<'END';
+  <SCRIPT TYPE="text/javascript">
+
+    function freq_changed(what) {
+      var freq = what.options[what.selectedIndex].value;
+
+      if ( freq == '0' ) {
+        what.form.recur_fee.disabled = true;
+        what.form.recur_fee.style.backgroundColor = '#dddddd';
+      } else {
+        what.form.recur_fee.disabled = false;
+        what.form.recur_fee.style.backgroundColor = '#ffffff';
+      }
+
+    }
+
+  </SCRIPT>
+END
+
+tie my %plans, 'Tie::IxHash', %{ FS::part_pkg::plan_info() };
+
+tie my %plan_labels, 'Tie::IxHash',
+  map {  $_ => ( $plans{$_}->{'shortname'} || $plans{$_}->{'name'} ) }
+      keys %plans;
+
+my $html_bottom = sub {
+  my( $object ) = @_;
+
+  #warn join("\n", map { "$_: $options{$_}" } keys %options ). "\n";
+
+  my $layer_callback = sub {
+  
+    my $layer = shift;
+    my $html = ntable("#cccccc",2);
+  
+    #$html .= '
+    #  <TR>
+    #    <TD ALIGN="right">Recurring fee frequency </TD>
+    #    <TD><SELECT NAME="freq">
+    #';
+    #
+    #my @freq = keys %freq;
+    #@freq = grep { /^\d+$/ } @freq
+  #XXX this bit#  #  if exists($plans{$layer}->{'freq'}) && $plans{$layer}->{'freq'} eq 'm';
+    #foreach my $freq ( @freq ) {
+    #  $html .= qq(<OPTION VALUE="$freq");
+    #  $html .= ' SELECTED' if $freq eq $part_pkg->freq;
+    #  $html .= ">$freq{$freq}";
+    #}
+    #$html .= '</SELECT></TD></TR>';
+  
+    my $href = $plans{$layer}->{'fields'};
+    my @fields = exists($plans{$layer}->{'fieldorder'})
+                   ? @{$plans{$layer}->{'fieldorder'}}
+                   : keys %{ $href };
+  
+    foreach my $field ( grep $_ !~ /^(setup|recur)_fee$/, @fields ) {
+  
+      $html .= '<TR><TD ALIGN="right">'. $href->{$field}{'name'}. '</TD><TD>';
+  
+      my $format = sub { shift };
+      $format = $href->{$field}{'format'} if exists($href->{$field}{'format'});
+
+      #XXX these should use elements/ fields... (or this whole thing should
+      #just use layer_fields instead of layer_callback)
+  
+      if ( ! exists($href->{$field}{'type'}) ) {
+  
+        $html .= qq!<INPUT TYPE="text" NAME="${layer}__$field" VALUE="!.
+                 ( exists($options{$field})
+                     ? &$format($options{$field})
+                     : $href->{$field}{'default'} ).
+                 qq!">!;
+  
+      } elsif ( $href->{$field}{'type'} eq 'checkbox' ) {
+  
+        $html .= qq!<INPUT TYPE="checkbox" NAME="${layer}__$field" VALUE=1 !.
+                 ( exists($options{$field}) && $options{$field}
+                   ? ' CHECKED'
+                   : ''
+                 ). '>';
+  
+      } elsif ( $href->{$field}{'type'} =~ /^select/ ) {
+  
+        $html .= '<SELECT';
+        $html .= ' MULTIPLE'
+          if $href->{$field}{'type'} eq 'select_multiple';
+        $html .= qq! NAME="${layer}__$field">!;
+  
+        if ( $href->{$field}{'select_table'} ) {
+          foreach my $record (
+            qsearch( $href->{$field}{'select_table'},
+                     $href->{$field}{'select_hash'}   )
+          ) {
+            my $value = $record->getfield($href->{$field}{'select_key'});
+            $html .= qq!<OPTION VALUE="$value"!.
+                     (  $options{$field} =~ /(^|, *)$value *(,|$)/ #XXX fix?
+                          ? ' SELECTED'
+                          : ''
+                     ).
+                     '>'. $record->getfield($href->{$field}{'select_label'});
+          }
+        } elsif ( $href->{$field}{'select_options'} ) {
+          foreach my $key ( keys %{ $href->{$field}{'select_options'} } ) {
+            my $label = $href->{$field}{'select_options'}{$key};
+            $html .= qq!<OPTION VALUE="$key"!.
+                     ( $options{$field} =~ /(^|, *)$key *(,|$)/ #XXX fix?
+                         ? ' SELECTED'
+                         : ''
+                     ).
+                     '>'. $label;
+          }
+  
+        } else {
+          $html .= '<font color="#ff0000">warning: '.
+                   "don't know how to retreive options for $field select field".
+                   '</font>';
+        }
+        $html .= '</SELECT>';
+  
+      } elsif ( $href->{$field}{'type'} eq 'radio' ) {
+  
+        my $radio =
+          qq!<INPUT TYPE="radio" NAME="${layer}__$field"!;
+  
+        foreach my $key ( keys %{ $href->{$field}{'options'} } ) {
+          my $label = $href->{$field}{'options'}{$key};
+          $html .= qq!$radio VALUE="$key"!.
+                   ( $options{$field} =~ /(^|, *)$key *(,|$)/ #XXX fix?
+                       ? ' CHECKED'
+                       : ''
+                   ).
+                   "> $label<BR>";
+        }
+  
+      }
+  
+      $html .= '</TD></TR>';
+    }
+    $html .= '</TABLE>';
+  
+    $html .= qq(<INPUT TYPE="hidden" NAME="${layer}__OPTIONS" VALUE=").
+             join(',', keys %{ $href } ). '">';
+  
+    $html;
+  
+  };
+
+  my %selectlayers = (
+    field          => 'plan',
+    options        => [ keys %plan_labels ],
+    labels         => \%plan_labels,
+    curr_value     => $object->plan,
+    layer_callback => $layer_callback,
+  );
+
+  include('/elements/selectlayers.html', %selectlayers, 'layers_only'=>1 ).
+  '<SCRIPT TYPE="text/javascript">'.
+    include('/elements/selectlayers.html', %selectlayers, 'js_only'=>1 ).
+  '</SCRIPT>';
+
+};
 
 </%init>

@@ -3,6 +3,7 @@ package FS::part_pkg;
 use strict;
 use vars qw( @ISA %plans $DEBUG );
 use Carp qw(carp cluck confess);
+use Scalar::Util qw( blessed );
 use Tie::IxHash;
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs dbh dbdef );
@@ -16,11 +17,9 @@ use FS::pkg_class;
 use FS::agent;
 use FS::part_pkg_taxoverride;
 use FS::part_pkg_taxproduct;
+#XXX#use FS::part_pkg_link;
 
-@ISA = qw( FS::m2m_Common FS::Record ); # FS::option_Common ); # this can use option_Common
-                                                # when all the plandata bs is
-                                                # gone
-
+@ISA = qw( FS::m2m_Common FS::option_Common );
 $DEBUG = 0;
 
 =head1 NAME
@@ -168,59 +167,11 @@ sub insert {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  warn "  saving legacy plandata" if $DEBUG;
-  my $plandata = $self->get('plandata');
-  $self->set('plandata', '');
-
   warn "  inserting part_pkg record" if $DEBUG;
-  my $error = $self->SUPER::insert;
+  my $error = $self->SUPER::insert( $options{options} );
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
-  }
-
-  if ( $plandata ) {
-
-    warn "  inserting part_pkg_option records for plandata" if $DEBUG;
-    foreach my $part_pkg_option ( 
-      map { /^(\w+)=(.*)$/ or do { $dbh->rollback if $oldAutoCommit;
-                                   return "illegal plandata: $plandata";
-                                 };
-            new FS::part_pkg_option {
-              'pkgpart'     => $self->pkgpart,
-              'optionname'  => $1,
-              'optionvalue' => $2,
-            };
-          }
-      split("\n", $plandata)
-    ) {
-      my $error = $part_pkg_option->insert;
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return $error;
-      }
-    }
-
-  } elsif ( $options{'options'} ) {
-
-    warn "  inserting part_pkg_option records for options hashref" if $DEBUG;
-    foreach my $optionname ( keys %{$options{'options'}} ) {
-
-      my $part_pkg_option =
-        new FS::part_pkg_option {
-          'pkgpart'     => $self->pkgpart,
-          'optionname'  => $optionname,
-          'optionvalue' => $options{'options'}->{$optionname},
-        };
-
-      my $error = $part_pkg_option->insert;
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return $error;
-      }
-
-    }
-
   }
 
   my $conf = new FS::Conf;
@@ -314,16 +265,19 @@ FS::pkg_svc record will be updated.
 =cut
 
 sub replace {
-  my( $new, $old ) = ( shift, shift );
-  my %options = @_;
+  my $new = shift;
 
-  # We absolutely have to have an old vs. new record to make this work.
-  if (!defined($old)) {
-    $old = qsearchs( 'part_pkg', { 'pkgpart' => $new->pkgpart } );
-  }
+  my $old = ( blessed($_[0]) && $_[0]->isa('FS::Record') )
+              ? shift
+              : $new->replace_old;
 
-  warn "FS::part_pkg::replace called on $new to replace $old ".
-       "with options %options"
+  my $options = 
+    ( ref($_[0]) eq 'HASH' )
+      ? shift
+      : { @_ };
+
+  warn "FS::part_pkg::replace called on $new to replace $old with options".
+       join(', ', map "$_ => ". $options->{$_}, keys %$options)
     if $DEBUG;
 
   local $SIG{HUP} = 'IGNORE';
@@ -337,6 +291,8 @@ sub replace {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
+  #plandata shit stays in replace for upgrades until after 2.0 (or edit
+  #_upgrade_data)
   warn "  saving legacy plandata" if $DEBUG;
   my $plandata = $new->get('plandata');
   $new->set('plandata', '');
@@ -351,13 +307,13 @@ sub replace {
   }
 
   warn "  replacing part_pkg record" if $DEBUG;
-  my $error = $new->SUPER::replace($old);
+  my $error = $new->SUPER::replace($old, $options->{options} );
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
   }
 
-  warn "  inserting part_pkg_option records for plandata" if $DEBUG;
+  warn "  inserting part_pkg_option records for plandata: $plandata|" if $DEBUG;
   foreach my $part_pkg_option ( 
     map { /^(\w+)=(.*)$/ or do { $dbh->rollback if $oldAutoCommit;
                                  return "illegal plandata: $plandata";
@@ -378,10 +334,10 @@ sub replace {
   }
 
   warn "  replacing pkg_svc records" if $DEBUG;
-  my $pkg_svc = $options{'pkg_svc'} || {};
+  my $pkg_svc = $options->{'pkg_svc'} || {};
   foreach my $part_svc ( qsearch('part_svc', {} ) ) {
     my $quantity = $pkg_svc->{$part_svc->svcpart} || 0;
-    my $primary_svc = $options{'primary_svc'} == $part_svc->svcpart ? 'Y' : '';
+    my $primary_svc = $options->{'primary_svc'} == $part_svc->svcpart ? 'Y' : '';
 
     my $old_pkg_svc = qsearchs('pkg_svc', {
       'pkgpart' => $old->pkgpart,
@@ -429,7 +385,8 @@ sub check {
 
   for (qw(setup recur plandata)) {
     #$self->set($_=>0) if $self->get($_) =~ /^\s*$/; }
-    return "Use of $_ field is deprecated; set a plan and options"
+    return "Use of $_ field is deprecated; set a plan and options: ".
+           $self->get($_)
       if length($self->get($_));
     $self->set($_, '');
   }
@@ -474,6 +431,22 @@ sub check {
     if ! $self->taxclass && $conf->exists('require_taxclasses');
 
   '';
+}
+
+=item pkg_comment
+
+Returns an (internal) string representing this package.  Currently,
+"pkgpart: pkg - comment", is returned.  "pkg - comment" may be returned in the
+future, omitting pkgpart.
+
+=cut
+
+sub pkg_comment {
+  my $self = shift;
+
+  #$self->pkg. ' - '. $self->comment;
+  #$self->pkg. ' ('. $self->comment. ')';
+  $self->pkgpart. ': '. $self->pkg. ' - '. $self->comment;
 }
 
 =item pkg_class
@@ -728,9 +701,20 @@ sub option {
   '';
 }
 
+=item dst_pkgpart
+
+=cut
+
+sub part_pkg_link {
+  ();
+  #XXX
+  #my $self = shift;
+  #qsearch('part_pkg_link', { 'src_pkgpart' => $self->pkgpart } );
+}
+
 =item part_pkg_taxoverride
 
-Returns all options as FS::part_pkg_taxoverride objects (see
+Returns all associated FS::part_pkg_taxoverride objects (see
 L<FS::part_pkg_taxoverride>).
 
 =cut
@@ -799,7 +783,7 @@ sub _rebless {
   my $self = shift;
   my $plan = $self->plan;
   unless ( $plan ) {
-    confess "no price plan found for pkgpart ". $self->pkgpart. "\n"
+    cluck "no price plan found for pkgpart ". $self->pkgpart. "\n"
       if $DEBUG;
     return $self;
   }
@@ -848,6 +832,74 @@ sub calc_remain { 0; }
 sub calc_cancel { 0; }
 
 =back
+
+=cut
+
+# _upgrade_data
+#
+# Used by FS::Upgrade to migrate to a new database.
+
+sub _upgrade_data { # class method
+  my($class, %opts) = @_;
+
+  warn "[FS::part_pkg] upgrading $class\n" if $DEBUG;
+
+  my @part_pkg = qsearch({
+    'table'     => 'part_pkg',
+    'extra_sql' => "WHERE ". join(' OR ',
+                     ( map "($_ IS NOT NULL AND $_ != '' )",
+                           qw( plandata setup recur ) ),
+                     'plan IS NULL', "plan = '' ",
+                   ),
+  });
+
+  foreach my $part_pkg (@part_pkg) {
+
+    unless ( $part_pkg->plan ) {
+
+      $part_pkg->plan('flat');
+
+      if ( $part_pkg->setup =~ /^\s*([\d\.]+)\s*$/ ) {
+
+        my $opt = new FS::part_pkg_option {
+          'pkgpart'     => $part_pkg->pkgpart,
+          'optionname'  => 'setup_fee',
+          'optionvalue' => $1,
+        };
+        my $error = $opt->insert;
+        die $error if $error;
+
+        $part_pkg->setup('');
+
+      } else {
+        die "Can't parse part_pkg.setup for fee; convert pkgnum ".
+            $part_pkg->pkgnum. " manually: ". $part_pkg->setup. "\n";
+      }
+
+      if ( $part_pkg->recur =~ /^\s*([\d\.]+)\s*$/ ) {
+
+        my $opt = new FS::part_pkg_option {
+          'pkgpart'     => $part_pkg->pkgpart,
+          'optionname'  => 'recur_fee',
+          'optionvalue' => $1,
+        };
+        my $error = $opt->insert;
+        die $error if $error;
+
+        $part_pkg->recur('');
+
+      } else {
+        die "Can't parse part_pkg.setup for fee; convert pkgnum ".
+            $part_pkg->pkgnum. " manually: ". $part_pkg->setup. "\n";
+      }
+
+    }
+
+    $part_pkg->replace; #this should take care of plandata, right?
+
+  }
+
+}
 
 =head1 SUBROUTINES
 

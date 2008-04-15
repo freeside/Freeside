@@ -8,6 +8,7 @@ use vars qw( $realtime_bop_decline_quiet ); #ugh
 use Safe;
 use Carp;
 use Exporter;
+use Scalar::Util qw( blessed );
 use Time::Local qw(timelocal_nocheck);
 use Data::Dumper;
 use Tie::IxHash;
@@ -1052,7 +1053,7 @@ sub delete {
 
 }
 
-=item replace OLD_RECORD [ INVOICING_LIST_ARYREF ]
+=item replace [ OLD_RECORD ] [ INVOICING_LIST_ARYREF ]
 
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
@@ -1068,22 +1069,15 @@ check_invoicing_list first.  Here's an example:
 
 sub replace {
   my $self = shift;
-  my $old = shift;
+
+  my $old = ( blessed($_[0]) && $_[0]->isa('FS::Record') )
+              ? shift
+              : $self->replace_old;
+
   my @param = @_;
+
   warn "$me replace called\n"
     if $DEBUG;
-
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
-
-  # We absolutely have to have an old vs. new record to make this work.
-  if (!defined($old)) {
-    $old = qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
-  }
 
   my $curuser = $FS::CurrentUser::CurrentUser;
   if (    $self->payby eq 'COMP'
@@ -1098,6 +1092,13 @@ sub replace {
     if $old->payby  =~ /^(CARD|DCRD)$/
     && $self->payby =~ /^(CARD|DCRD)$/
     && ( $old->payinfo eq $self->payinfo || $old->paymask eq $self->paymask );
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
 
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;

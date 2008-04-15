@@ -344,6 +344,7 @@ sub process_re_X {
 
 }
 
+#this needs some updating based on the 1.7 cust_bill_event.pm still, i think
 sub re_X {
   my($method, $beginning, $ending, $failed, $job) = @_;
 

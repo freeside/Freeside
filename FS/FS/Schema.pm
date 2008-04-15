@@ -1007,6 +1007,18 @@ sub tables_hashref {
       'index' => [ [ 'promo_code' ], [ 'disabled' ], [ 'agentnum' ], ],
     },
 
+    'part_pkg_link' => {
+      'columns' => [
+        'pkglinknum',  'serial',  '',      '', '', '',
+        'src_pkgpart', 'int',     '',      '', '', '',
+        'dst_pkgpart', 'int',     '',      '', '', '', 
+        'link_type',   'varchar', '', $char_d, '', '',
+      ],
+      'primary_key' => 'pkglinknum',
+      'unique' => [ [ 'src_pkgpart', 'dst_pkgpart', 'link_type' ] ],
+      'index'  => [ [ 'src_pkgpart' ] ],
+    },
+
     'part_pkg_taxclass' => {
       'columns' => [
         'taxclassnum',  'serial', '',       '', '', '',

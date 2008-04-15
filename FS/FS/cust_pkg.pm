@@ -2,6 +2,7 @@ package FS::cust_pkg;
 
 use strict;
 use vars qw(@ISA $disable_agentcheck $DEBUG);
+use Scalar::Util qw( blessed );
 use List::Util qw(max);
 use Tie::IxHash;
 use FS::UID qw( getotaker dbh );
@@ -301,12 +302,17 @@ Calls
 =cut
 
 sub replace {
-  my( $new, $old, %options ) = @_;
+  my $new = shift;
 
-  # We absolutely have to have an old vs. new record to make this work.
-  if (!defined($old)) {
-    $old = qsearchs( 'cust_pkg', { 'pkgnum' => $new->pkgnum } );
-  }
+  my $old = ( blessed($_[0]) && $_[0]->isa('FS::Record') )
+              ? shift
+              : $new->replace_old;
+
+  my $options = 
+    ( ref($_[0]) eq 'HASH' )
+      ? shift
+      : { @_ };
+
   #return "Can't (yet?) change pkgpart!" if $old->pkgpart != $new->pkgpart;
   return "Can't change otaker!" if $old->otaker ne $new->otaker;
 
@@ -331,8 +337,8 @@ sub replace {
   my $dbh = dbh;
 
   foreach my $method ( qw(adjourn expire) ) {  # How many reasons?
-    if ($options{'reason'} && $new->$method && $old->$method ne $new->$method) {
-      my $error = $new->insert_reason( 'reason' => $options{'reason'},
+    if ($options->{'reason'} && $new->$method && $old->$method ne $new->$method) {
+      my $error = $new->insert_reason( 'reason' => $options->{'reason'},
                                        'date'   => $new->$method,
                                      );
       if ( $error ) {
@@ -357,7 +363,7 @@ sub replace {
   }
 
   my $error = $new->SUPER::replace($old,
-                                   $options{options} ? ${options{options}} : ()
+                                   $options->{options} ? $options->{options} : ()
                                   );
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;

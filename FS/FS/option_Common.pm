@@ -161,8 +161,8 @@ sub delete {
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
 
-If a list hash reference of options is supplied, option records are created or
-modified.
+If a list or hash reference of options is supplied, option records are created
+or modified.
 
 =cut
 

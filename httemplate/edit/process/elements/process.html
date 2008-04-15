@@ -32,8 +32,13 @@ Example:
 
    'clear_on_error' => [ 'form_field1', 'form_field2', ... ],
 
+                    #pass an arrayref of hashrefs for multiple m2ms or m2names
+
    'process_m2m' => { 'link_table'   => 'link_table_name',
                       'target_table' => 'target_table_name',
+                      #optional (see m2m_Common::process_m2m), if not specified
+                      # all CGI params will be passed)
+                      'params'       => 
                     },
    'process_m2name' => { 'link_table'   => 'link_table_name',
                          'link_static' => { 'column' => 'value' },
@@ -48,6 +53,10 @@ Example:
 
 
                        },
+
+   #checks CGI params and whatever else before much else runs
+   #return an error string or empty for no error
+   'precheck_callback' => sub { my( $cgi ) = @_; },
 
    #supplies arguments to insert() and replace()
    # for use with tables that are FS::option_Common
@@ -107,8 +116,8 @@ Example:
 <% $cgi->redirect( $opt{'redirect'}. $pkeyvalue ) %>
 %
 %} else { 
-%
-<% $cgi->redirect( popurl(3). ($opt{viewall_dir}||'search'). "/$table.html" ) %>
+%  my $ext = $opt{'viewall_ext'} || 'html';
+<% $cgi->redirect( popurl(3). ($opt{viewall_dir}||'search'). "/$table.$ext" ) %>
 %}
 <%once>
 
@@ -120,6 +129,11 @@ Example:
 my(%opt) = @_;
 
 my $curuser = $FS::CurrentUser::CurrentUser;
+
+my $error = '';
+if ( $opt{'precheck_callback'} ) {
+  $error = &{ $opt{'precheck_callback'} }( $cgi );
+}
 
 #false laziness w/edit.html
 my $table = $opt{'table'};
@@ -146,7 +160,7 @@ if ( $pkeyvalue ) {
 }
 
 my %hash =
-  map { my @entry = ( $_ => $cgi->param($_) );
+  map { my @entry = ( $_ => scalar($cgi->param($_)) );
         $opt{'value_callback'} ? ( $_ => &{ $opt{'value_callback'} }( @entry ))
                                : ( @entry )
       } @$fields;
@@ -168,7 +182,7 @@ if ($old && exists($opt{'copy_on_empty'})) {
   }
 }
 
-my $error = $new->check;
+$error ||= $new->check;
 
 my @args = ();
 if ( !$error && $opt{'args_callback'} ) {
@@ -192,28 +206,42 @@ if ( !$error ) {
 
 if ( !$error && $opt{'process_m2m'} ) {
 
-  if ( $opt{'debug'} ) {
-    warn "$me processing m2m:\n". Dumper( %{ $opt{'process_m2m'} },
-                                          'params' => scalar($cgi->Vars),
-                                        );
+  my @process_m2m = ref($opt{'process_m2m'}) eq 'ARRAY'
+                      ? @{ $opt{'process_m2m'} }
+                      :  ( $opt{'process_m2m'} );
+
+  foreach my $process_m2m (@process_m2m) {
+
+    $process_m2m->{'params'} ||= scalar($cgi->Vars);
+
+    warn "$me processing m2m:\n". Dumper( %$process_m2m )
+      if $opt{'debug'};
+
+    $error = $new->process_m2m( %$process_m2m );
   }
 
-  $error = $new->process_m2m( %{ $opt{'process_m2m'} },
-                              'params' => scalar($cgi->Vars),
-                            );
 }
 
 if ( !$error && $opt{'process_m2name'} ) {
 
-  if ( $opt{'debug'} ) {
-    warn "$me processing m2name:\n". Dumper( %{ $opt{'process_m2name'} },
-                                             'params' => scalar($cgi->Vars),
-                                           );
+  my @process_m2name = ref($opt{'process_m2name'}) eq 'ARRAY'
+                         ? @{ $opt{'process_m2name'} }
+                         :  ( $opt{'process_m2name'} );
+
+
+  foreach my $process_m2name (@process_m2name) {
+
+    if ( $opt{'debug'} ) {
+      warn "$me processing m2name:\n". Dumper( %{ $process_m2name },
+                                               'params' => scalar($cgi->Vars),
+                                             );
+    }
+
+    $error = $new->process_m2name( %{ $process_m2name },
+                                   'params' => scalar($cgi->Vars),
+                                 );
   }
 
-  $error = $new->process_m2name( %{ $opt{'process_m2name'} },
-                                 'params' => scalar($cgi->Vars),
-                               );
 }
 
 

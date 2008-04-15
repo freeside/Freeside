@@ -14,6 +14,7 @@ use vars qw( @ISA $DEBUG $me $conf $skip_fuzzyfiles
              $radius_password $radius_ip
              $dirhash
              @saltset @pw_set );
+use Scalar::Util qw( blessed );
 use Carp;
 use Fcntl qw(:flock);
 use Date::Format;
@@ -734,14 +735,15 @@ contain an arrayref of group names.  See L<FS::radius_usergroup>.
 =cut
 
 sub replace {
-  my ( $new, $old ) = ( shift, shift );
-  my $error;
+  my $new = shift;
+
+  my $old = ( blessed($_[0]) && $_[0]->isa('FS::Record') )
+              ? shift
+              : $new->replace_old;
+
   warn "$me replacing $old with $new\n" if $DEBUG;
 
-  # We absolutely have to have an old vs. new record to make this work.
-  if (!defined($old)) {
-    $old = qsearchs( 'svc_acct', { 'svcnum' => $new->svcnum } );
-  }
+  my $error;
 
   return "can't modify system account" if $old->_check_system;
 
