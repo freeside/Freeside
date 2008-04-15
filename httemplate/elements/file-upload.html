@@ -1,0 +1,80 @@
+
+<script type="text/javascript">
+
+  function doUpload(form, callback) {
+    var name = 'form' + Math.floor(Math.random() * 99999); // perlize?
+    var d = document.createElement('DIV');
+    d.innerHTML = '<iframe style="display:none" src="about:blank" id="'+name+'" name="'+name+'" onload="uploadComplete(\''+name+'\')"></iframe>';
+    document.body.appendChild(d);
+
+    var i = document.getElementById(name);
+    if (callback && typeof(callback) == 'function') {
+      i.onComplete = callback;
+    }
+
+    form.setAttribute('target', name);
+    return true;
+  }
+
+  function uploadComplete(id) {
+    var i = document.getElementById(id);
+    if (i.contentDocument) {
+      var d = i.contentDocument;
+    } else if (i.contentWindow) {
+      var d = i.contentWindow.document;
+    } else {
+      var d = window.frames[id].document;
+    }
+    if (d.location.href == "about:blank") {
+      return;
+    }
+
+    document.getElementById('r').innerHTML = d.body.innerHTML;
+    if (typeof(i.onComplete) == 'function') {
+      var p;
+      if (p = d.body.innerHTML.indexOf("Freeside File Upload Successful ") >= 0) {
+        var v = d.body.innerHTML.substr(p+33)
+        var u = document.getElementById('uploaded_files');
+        v = v.substr(0, v.indexOf(';'));
+        u.value = v;
+        i.onComplete(true, '');
+      }else{
+        i.onComplete(false, d.body.innerHTML);
+      }
+    }
+  }
+
+</script>
+
+    <input type="hidden" name="uploaded_files" id="uploaded_files" value="" />
+    <input type="hidden" name="upload_fields" value="<% join(',', @field) %>" />
+% foreach (@field) {
+    <tr>
+      <th><% shift @label %></th>
+      <td><input type="file" name="<% $_ %>" /></td>
+    </tr>
+% }
+  <div style="display:<% $debug ? 'visible' : 'none' %>">Debugging: <pre id="r"></pre></div>
+
+<%init>
+my %param = @_;
+
+my $debug = $param{'debug'};
+
+my $callback = $param{'callback'} || "''";
+
+my @label = ();
+if ( ref($param{'label'}) ) {
+  push @label, @{$param{'label'}};
+}else{
+  push @label, $param{'label'};
+}
+
+my @field = ();
+if ( ref($param{'field'}) ) {
+  push @field, @{$param{'field'}};
+}else{
+  push @field, $param{'field'};
+}
+
+</%init>

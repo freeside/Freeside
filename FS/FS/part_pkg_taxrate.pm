@@ -166,17 +166,30 @@ an error, returns the error, otherwise returns false.
 =cut 
 
 sub batch_import {
-  my $param = shift;
+  my ($param, $job) = @_;
 
   my $fh = $param->{filehandle};
   my $format = $param->{'format'};
 
+  my $imported = 0;
   my @fields;
   my $hook;
-  if ( $format eq 'cch' ) {
+
+  my $line;
+  my ( $count, $last, $min_sec ) = (0, time, 5); #progressbar
+  if ( $job ) {
+    $count++
+      while ( defined($line=<$fh>) );
+    seek $fh, 0, 0;
+  }
+
+  if ( $format eq 'cch' ||  $format eq 'cch-update' ) {
     @fields = qw( city county state local geocode group groupdesc item
                   itemdesc provider customer taxtypetaxed taxcattaxed
                   taxable taxtype taxcat effdate rectype );
+    push @fields, 'actionflag' if $format eq 'cch-update';
+
+    $imported++ if $format eq 'cch-update';  #empty file ok
 
     $hook = sub { 
       my $hash = shift;
@@ -185,6 +198,8 @@ sub batch_import {
         delete($hash->{$_}) for (keys %$hash);
         return;
       }
+
+      $hash->{'data_vendor'} = 'cch';
 
       my %providers = ( '00' => 'Regulated LEC',
                         '01' => 'Regulated IXC',
@@ -213,6 +228,10 @@ sub batch_import {
                                         );
 
       unless ($part_pkg_taxproduct) {
+        return "Can't find part_pkg_taxproduct for txmatrix deletion: ".
+               join(" ", map { "$_ => ". $hash->{$_} } @fields)
+          if $hash->{'actionflag'} eq 'D';
+
         $part_pkg_taxproduct{'description'} = 
           join(' : ', (map{ $hash->{$_} } qw(groupdesc itemdesc)),
                       $providers{$hash->{'provider'}},
@@ -234,14 +253,19 @@ sub batch_import {
                 );
 
       for my $item (keys %map) {
+        my $class = join(':', map($hash->{$_}, @{$map{$item}}));
         my $tax_class =
           qsearchs( 'tax_class',
                     { data_vendor => 'cch',
-                      'taxclass' => join(':', map($hash->{$_}, @{$map{$item}})),
+                      'taxclass' => $class,
                     }
                   );
         $hash->{$item} = $tax_class->taxclassnum
           if $tax_class;
+
+        return "Can't find tax class for txmatrix deletion: ".
+               join(" ", map { "$_ => ". $hash->{$_} } @fields)
+          if ($hash->{'actionflag'} eq 'D' && !$tax_class && $class ne ':');
 
         delete($hash->{$_}) foreach @{$map{$item}};
       }
@@ -252,6 +276,23 @@ sub batch_import {
       $hash->{'country'} = 'US'; # CA is available
 
       delete($hash->{'taxable'}) if ($hash->{'taxable'} eq 'N');
+
+      if (exists($hash->{actionflag}) && $hash->{actionflag} eq 'D') {
+        delete($hash->{actionflag});
+
+        my $part_pkg_taxrate = qsearchs('part_pkg_taxrate', $hash);
+        return "Can't find part_pkg_taxrate to delete: ".
+               #join(" ", map { "$_ => ". $hash->{$_} } @fields)
+               join(" ", map { "$_ => *". $hash->{$_}. '*' } keys(%$hash) )
+          unless $part_pkg_taxrate;
+
+        my $error = $part_pkg_taxrate->delete;
+        return $error if $error;
+
+        delete($hash->{$_}) foreach (keys %$hash);
+      }
+
+      delete($hash->{actionflag});
 
       '';
     };
@@ -269,8 +310,6 @@ sub batch_import {
 
   my $csv = new Text::CSV_XS;
 
-  my $imported = 0;
-
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
   local $SIG{QUIT} = 'IGNORE';
@@ -282,12 +321,22 @@ sub batch_import {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
   
-  my $line;
   while ( defined($line=<$fh>) ) {
     $csv->parse($line) or do {
       $dbh->rollback if $oldAutoCommit;
       return "can't parse: ". $csv->error_input();
     };
+
+
+    if ( $job ) {  # progress bar
+      if ( time - $min_sec > $last ) {
+        my $error = $job->update_statustext(
+          int( 100 * $imported / $count )
+        );
+        die $error if $error;
+        $last = time;
+      }
+    }
 
     my @columns = $csv->fields();
 
@@ -295,6 +344,11 @@ sub batch_import {
     foreach my $field ( @fields ) {
       $part_pkg_taxrate{$field} = shift @columns; 
     }
+    if ( scalar( @columns ) ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Unexpected trailing columns in line (wrong format?): $line";
+    }
+
     my $error = &{$hook}(\%part_pkg_taxrate);
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;

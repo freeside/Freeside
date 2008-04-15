@@ -126,14 +126,54 @@ sub check {
 
 
 sub batch_import {
-  my $param = shift;
+  my ($param, $job) = @_;
 
   my $fh = $param->{filehandle};
   my $format = $param->{'format'};
 
+  my $imported = 0;
   my @fields;
-  if ( $format eq 'cch' ) {
+  my $hook;
+
+  my $line;
+  my ( $count, $last, $min_sec ) = (0, time, 5); #progressbar
+  if ( $job ) {
+    $count++
+      while ( defined($line=<$fh>) );
+    seek $fh, 0, 0;
+  }
+
+  if ( $format eq 'cch' || $format eq 'cch-update' ) {
     @fields = qw( zip state plus4lo plus4hi geocode default );
+    push @fields, 'actionflag' if $format eq 'cch-update';
+
+    $imported++ if $format eq 'cch-update'; #empty file ok
+    
+    $hook = sub {
+      my $hash = shift;
+
+      $hash->{'data_vendor'} = 'cch';
+
+      if (exists($hash->{actionflag}) && $hash->{actionflag} eq 'D') {
+        delete($hash->{actionflag});
+
+        my $cust_tax_location = qsearchs('cust_tax_location', $hash);
+        return "Can't find cust_tax_location to delete: ".
+               join(" ", map { "$_ => ". $hash->{$_} } @fields)
+          unless $cust_tax_location;
+
+        my $error = $cust_tax_location->delete;
+        return $error if $error;
+
+        delete($hash->{$_}) foreach (keys %$hash);
+      }
+
+      delete($hash->{'actionflag'});
+
+      '';
+      
+    };
+
   } elsif ( $format eq 'extended' ) {
     die "unimplemented\n";
     @fields = qw( );
@@ -146,8 +186,6 @@ sub batch_import {
 
   my $csv = new Text::CSV_XS;
 
-  my $imported = 0;
-
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
   local $SIG{QUIT} = 'IGNORE';
@@ -159,12 +197,21 @@ sub batch_import {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
   
-  my $line;
   while ( defined($line=<$fh>) ) {
     $csv->parse($line) or do {
       $dbh->rollback if $oldAutoCommit;
       return "can't parse: ". $csv->error_input();
     };
+
+    if ( $job ) {  # progress bar
+      if ( time - $min_sec > $last ) {
+        my $error = $job->update_statustext(
+          int( 100 * $imported / $count )
+        );
+        die $error if $error;
+        $last = time;
+      }
+    }
 
     my @columns = $csv->fields();
 
@@ -172,9 +219,21 @@ sub batch_import {
     foreach my $field ( @fields ) {
       $cust_tax_location{$field} = shift @columns; 
     }
+    if ( scalar( @columns ) ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Unexpected trailing columns in line (wrong format?): $line";
+    }
+
+    my $error = &{$hook}(\%cust_tax_location);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+
+    next unless scalar(keys %cust_tax_location);
 
     my $cust_tax_location = new FS::cust_tax_location( \%cust_tax_location );
-    my $error = $cust_tax_location->insert;
+    $error = $cust_tax_location->insert;
 
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;

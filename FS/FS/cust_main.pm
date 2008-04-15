@@ -4828,15 +4828,15 @@ sub country_full {
   code2country($self->country);
 }
 
-=item geocode DATA_PROVIDER
+=item geocode DATA_VENDOR
 
-Returns a value for the customer location as encoded by DATA_PROVIDER.
-Currently this only makes sense for "CCH" as DATA_PROVIDER.
+Returns a value for the customer location as encoded by DATA_VENDOR.
+Currently this only makes sense for "CCH" as DATA_VENDOR.
 
 =cut
 
 sub geocode {
-  my ($self, $data_provider) = (shift, shift);  #always cch for now
+  my ($self, $data_vendor) = (shift, shift);  #always cch for now
 
   my $prefix = ( $conf->exists('tax-ship_address') && length($self->ship_last) )
                ? 'ship_'
@@ -4852,7 +4852,7 @@ sub geocode {
   my $cust_tax_location =
     qsearchs( {
                 'table'     => 'cust_tax_location', 
-                'hashref'   => { 'zip' => $zip, 'data_provider' => $data_provider },
+                'hashref'   => { 'zip' => $zip, 'data_vendor' => $data_vendor },
                 'extra_sql' => $extra_sql,
               }
             );

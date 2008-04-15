@@ -79,6 +79,25 @@ Delete this record from the database.
 
 =cut
 
+sub delete {
+  my $self = shift;
+
+  return "Can't delete a tax class which has tax rates!"
+    if qsearch( 'tax_rate', { 'taxclassnum' => $self->taxclassnum } );
+
+  return "Can't delete a tax class which has package tax rates!"
+    if qsearch( 'part_pkg_taxrate', { 'taxclassnum' => $self->taxclassnum } );
+
+  return "Can't delete a tax class which has package tax rates!"
+    if qsearch( 'part_pkg_taxrate', { 'taxclassnumtaxed' => $self->taxclassnum } );
+
+  return "Can't delete a tax class which has package tax overrides!"
+    if qsearch( 'part_pkg_taxoverride', { 'taxclassnum' => $self->taxclassnum } );
+
+  $self->SUPER::delete(@_);
+  
+}
+
 =item replace OLD_RECORD
 
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
@@ -116,7 +135,7 @@ an error, returns the error, otherwise returns false.
 =cut 
 
 sub batch_import {
-  my $param = shift;
+  my ($param, $job) = @_;
 
   my $fh = $param->{filehandle};
   my $format = $param->{'format'};
@@ -126,31 +145,106 @@ sub batch_import {
   my $endhook;
   my $data = {};
   my $imported = 0;
+  my $dbh = dbh;
 
-  if ( $format eq 'cch' ) {
+  my $line;
+  my ( $count, $last, $min_sec ) = (0, time, 5); #progressbar
+  if ( $job ) {
+    $count++
+      while ( defined($line=<$fh>) );
+    seek $fh, 0, 0;
+  }
+
+  if ( $format eq 'cch' || $format eq 'cch-update' ) {
     @fields = qw( table name pos number length value description );
+    push @fields, 'actionflag' if $format eq 'cch-update';
 
     $hook = sub { 
       my $hash = shift;
 
       if ($hash->{'table'} eq 'DETAIL') {
         push @{$data->{'taxcat'}}, [ $hash->{'value'}, $hash->{'description'} ]
-          if $hash->{'name'} eq 'TAXCAT';
+          if ($hash->{'name'} eq 'TAXCAT' &&
+             (!exists($hash->{actionflag}) || $hash->{actionflag} eq 'I') );
 
         push @{$data->{'taxtype'}}, [ $hash->{'value'}, $hash->{'description'} ]
-          if $hash->{'name'} eq 'TAXTYPE';
+          if ($hash->{'name'} eq 'TAXTYPE' &&
+             (!exists($hash->{actionflag}) || $hash->{actionflag} eq 'I') );
+
+        if (exists($hash->{actionflag}) && $hash->{actionflag} eq 'D') {
+          my $name = $hash->{'name'};
+          my $value = $hash->{'value'};
+          return "Bad value for $name: $value"
+            unless $value =~ /^\d+$/;
+
+          if ($name eq 'TAXCAT' || $name eq 'TAXTYPE') {
+            my @tax_class = qsearch( 'tax_class',
+                                     { 'data_vendor' => 'cch' },
+                                     '',
+                                     "AND taxclass LIKE '".
+                                       ($name eq 'TAXTYPE' ? $value : '%').":".
+                                       ($name eq 'TAXCAT' ? $value : '%')."'",
+                                   );
+            foreach (@tax_class) {
+              my $error = $_->delete;
+              return $error if $error;
+            }
+          }
+        }
+
       }
 
       delete($hash->{$_})
         for qw( data_vendor table name pos number length value description );
+      delete($hash->{actionflag}) if exists($hash->{actionflag});
 
       '';
 
     };
 
     $endhook = sub { 
-      foreach my $type (@{$data->{'taxtype'}}) {
+
+      my $sql = "SELECT DISTINCT ".
+         "substring(taxclass from 1 for position(':' in taxclass)-1),".
+         "substring(description from 1 for position(':' in description)-1) ".
+         "FROM tax_class WHERE data_vendor='cch'";
+
+      my $sth = $dbh->prepare($sql) or die $dbh->errstr;
+      $sth->execute or die $sth->errstr;
+      my @old_types = @{$sth->fetchall_arrayref};
+
+      $sql = "SELECT DISTINCT ".
+         "substring(taxclass from position(':' in taxclass)+1),".
+         "substring(description from position(':' in description)+1) ".
+         "FROM tax_class WHERE data_vendor='cch'";
+
+      $sth = $dbh->prepare($sql) or die $dbh->errstr;
+      $sth->execute or die $sth->errstr;
+      my @old_cats = @{$sth->fetchall_arrayref};
+
+      my $catcount  = exists($data->{'taxcat'})  ? scalar(@{$data->{'taxcat'}})
+                                                 : 0;
+      my $typecount = exists($data->{'taxtype'}) ? scalar(@{$data->{'taxtype'}})
+                                                 : 0;
+
+      my $count = scalar(@old_types) * $catcount
+                + $typecount * (scalar(@old_cats) + $catcount);
+
+      $imported = 1 if $format eq 'cch-update';  #empty file ok
+
+      foreach my $type (@old_types) {
         foreach my $cat (@{$data->{'taxcat'}}) {
+
+          if ( $job ) {  # progress bar
+            if ( time - $min_sec > $last ) {
+              my $error = $job->update_statustext(
+                int( 100 * $imported / $count )
+              );
+              die $error if $error;
+              $last = time;
+            }
+          }
+
           my $tax_class =
             new FS::tax_class( { 'data_vendor' => 'cch',
                                  'taxclass'    => $type->[0].':'.$cat->[0],
@@ -161,6 +255,31 @@ sub batch_import {
           $imported++;
         }
       }
+
+      foreach my $type (@{$data->{'taxtype'}}) {
+        foreach my $cat (@old_cats, @{$data->{'taxcat'}}) {
+
+          if ( $job ) {  # progress bar
+            if ( time - $min_sec > $last ) {
+              my $error = $job->update_statustext(
+                int( 100 * $imported / $count )
+              );
+              die $error if $error;
+              $last = time;
+            }
+          }
+
+          my $tax_class =
+            new FS::tax_class( { 'data_vendor' => 'cch',
+                                 'taxclass'    => $type->[0].':'.$cat->[0],
+                                 'description' => $type->[1].':'.$cat->[1],
+                             } );
+          my $error = $tax_class->insert;
+          return $error if $error;
+          $imported++;
+        }
+      }
+
       '';
     };
 
@@ -186,10 +305,19 @@ sub batch_import {
 
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
-  my $dbh = dbh;
   
-  my $line;
   while ( defined($line=<$fh>) ) {
+
+    if ( $job ) {  # progress bar
+      if ( time - $min_sec > $last ) {
+        my $error = $job->update_statustext(
+          int( 100 * $imported / $count )
+        );
+        die $error if $error;
+        $last = time;
+      }
+    }
+
     $csv->parse($line) or do {
       $dbh->rollback if $oldAutoCommit;
       return "can't parse: ". $csv->error_input();
@@ -201,16 +329,21 @@ sub batch_import {
     foreach my $field ( @fields ) {
       $tax_class{$field} = shift @columns; 
     }
+    if ( scalar( @columns ) ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Unexpected trailing columns in line (wrong format?): $line";
+    }
+
     my $error = &{$hook}(\%tax_class);
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error;
     }
+
     next unless scalar(keys %tax_class);
 
     my $tax_class = new FS::tax_class( \%tax_class );
     $error = $tax_class->insert;
-
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return "can't insert tax_class for $line: $error";
@@ -227,16 +360,18 @@ sub batch_import {
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
-  return "Empty file!" unless $imported;
+  return "Empty File!" unless $imported;
 
   ''; #no error
 
 }
 
-
 =back
 
 =head1 BUGS
+
+  batch_import does not handle mixed I and D records in the same file for
+  format cch-update
 
 =head1 SEE ALSO
 

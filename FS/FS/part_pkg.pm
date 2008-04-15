@@ -749,7 +749,7 @@ specified by GEOCODE (see L<FS::part_pkg_taxrate> and ).
 
 sub part_pkg_taxrate {
   my $self = shift;
-  my ($data_provider, $geocode) = @_;
+  my ($data_vendor, $geocode) = @_;
 
   my $dbh = dbh;
   # CCH oddness in m2m
@@ -763,7 +763,7 @@ sub part_pkg_taxrate {
 
   qsearch( { 'table'     => 'part_pkg_taxrate',
              'select'    => 'distinct on(taxclassnum) *',
-             'hashref'   => { 'data_provider' => $data_provider,
+             'hashref'   => { 'data_vendor'   => $data_vendor,
                               'taxproductnum' => $self->taxproductnum,
                             },
              'extra_sql' => $extra_sql,

@@ -2,7 +2,7 @@ package FS::part_pkg_taxproduct;
 
 use strict;
 use vars qw( @ISA );
-use FS::Record;
+use FS::Record qw( qsearch );
 
 @ISA = qw(FS::Record);
 
@@ -78,6 +78,18 @@ otherwise returns false.
 Delete this record from the database.
 
 =cut
+
+sub delete {
+  my $self = shift;
+
+  return "Can't delete a tax product which has attached package tax rates!"
+    if qsearch( 'part_pkg_taxrate', { 'taxproductnum' => $self->taxproductnum } );
+
+  return "Can't delete a tax product which has attached packages!"
+    if qsearch( 'part_pkg', { 'taxproductnum' => $self->taxproductnum } );
+
+  $self->SUPER::delete(@_);
+}
 
 =item replace OLD_RECORD
 

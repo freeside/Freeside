@@ -1,0 +1,19 @@
+%
+%  my($title, $menubar) = ( shift, shift ); #$menubar is unused here though
+%  my $etc = @_ ? shift : ''; #$etc is for things like onLoad= etc.
+%  my $head = @_ ? shift : ''; #$head is for things that go in the <HEAD> section
+%  my $conf = new FS::Conf;
+%
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML>
+  <HEAD>
+    <TITLE>
+      <% $title %>
+    </TITLE>
+    <META HTTP-Equiv="Cache-Control" Content="no-cache">
+    <META HTTP-Equiv="Pragma" Content="no-cache">
+    <META HTTP-Equiv="Expires" Content="0"> 
+    <% $head %>
+  </HEAD>
+  <BODY BGCOLOR="#e8e8e8" <% $etc %>>

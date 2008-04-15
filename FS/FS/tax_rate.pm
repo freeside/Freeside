@@ -5,9 +5,13 @@ use vars qw( @ISA $DEBUG $me
              %tax_unittypes %tax_maxtypes %tax_basetypes %tax_authorities
              %tax_passtypes );
 use Date::Parse;
+use Storable qw( thaw );
+use MIME::Base64;
 use FS::Record qw( qsearchs dbh );
 use FS::tax_class;
 use FS::cust_bill_pkg;
+use FS::cust_tax_location;
+use FS::part_pkg_taxrate;
 
 @ISA = qw( FS::Record );
 
@@ -410,21 +414,38 @@ sub taxline {
 =cut
 
 sub batch_import {
-  my $param = shift;
+  my ($param, $job) = @_;
 
   my $fh = $param->{filehandle};
   my $format = $param->{'format'};
 
+  my %insert = ();
+  my %delete = ();
+
   my @fields;
   my $hook;
-  if ( $format eq 'cch' ) {
+
+  my $line;
+  my ( $count, $last, $min_sec ) = (0, time, 5); #progressbar
+  if ( $job ) {
+    $count++
+      while ( defined($line=<$fh>) );
+    seek $fh, 0, 0;
+  }
+  $count *=2;
+
+  if ( $format eq 'cch' || $format eq 'cch-update' ) {
     @fields = qw( geocode inoutcity inoutlocal tax location taxbase taxmax
                   excessrate effective_date taxauth taxtype taxcat taxname
                   usetax useexcessrate fee unittype feemax maxtype passflag
                   passtype basetype );
+    push @fields, 'actionflag' if $format eq 'cch-update';
+
     $hook = sub {
       my $hash = shift;
 
+      $hash->{'actionflag'} ='I' if ($hash->{'data_vendor'} eq 'cch');
+      $hash->{'data_vendor'} ='cch';
       $hash->{'effective_date'} = str2time($hash->{'effective_date'});
 
       my $taxclassid =
@@ -435,7 +456,7 @@ sub batch_import {
                       );
 
       my $tax_class = qsearchs( 'tax_class', \%tax_class );
-      return "Error inserting tax rate: no tax class $taxclassid"
+      return "Error updating tax rate: no tax class $taxclassid"
         unless $tax_class;
 
       $hash->{'taxclassnum'} = $tax_class->taxclassnum;
@@ -454,6 +475,15 @@ sub batch_import {
       foreach (keys %$hash) {
         $hash->{$_} = substr($hash->{$_}, 0, 80)
           if length($hash->{$_}) > 80;
+      }
+
+      my $actionflag = delete($hash->{'actionflag'});
+      if ($actionflag eq 'I') {
+        $insert{ $hash->{'geocode'}. ':'. $hash->{'taxclassnum'} } = $hash;
+      }elsif ($actionflag eq 'D') {
+        $delete{ $hash->{'geocode'}. ':'. $hash->{'taxclassnum'} } = $hash;
+      }else{
+        return "Unexpected action flag: ". $hash->{'actionflag'};
       }
 
       '';
@@ -486,15 +516,21 @@ sub batch_import {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
   
-  my $line;
   while ( defined($line=<$fh>) ) {
     $csv->parse($line) or do {
       $dbh->rollback if $oldAutoCommit;
       return "can't parse: ". $csv->error_input();
     };
 
-    warn "$me batch_import: $imported\n" 
-      if (!($imported % 100) && $DEBUG);
+    if ( $job ) {  # progress bar
+      if ( time - $min_sec > $last ) {
+        my $error = $job->update_statustext(
+          int( 100 * $imported / $count )
+        );
+        die $error if $error;
+        $last = time;
+      }
+    }
 
     my @columns = $csv->fields();
 
@@ -502,14 +538,95 @@ sub batch_import {
     foreach my $field ( @fields ) {
       $tax_rate{$field} = shift @columns; 
     }
+    if ( scalar( @columns ) ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Unexpected trailing columns in line (wrong format?): $line";
+    }
+
     my $error = &{$hook}(\%tax_rate);
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error;
     }
 
-    my $tax_rate = new FS::tax_rate( \%tax_rate );
-    $error = $tax_rate->insert;
+    $imported++;
+
+  }
+
+  for (grep { !exists($delete{$_}) } keys %insert) {
+    if ( $job ) {  # progress bar
+      if ( time - $min_sec > $last ) {
+        my $error = $job->update_statustext(
+          int( 100 * $imported / $count )
+        );
+        die $error if $error;
+        $last = time;
+      }
+    }
+
+    my $tax_rate = new FS::tax_rate( $insert{$_} );
+    my $error = $tax_rate->insert;
+
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "can't insert tax_rate for $line: $error";
+    }
+
+    $imported++;
+  }
+
+  for (grep { exists($delete{$_}) } keys %insert) {
+    if ( $job ) {  # progress bar
+      if ( time - $min_sec > $last ) {
+        my $error = $job->update_statustext(
+          int( 100 * $imported / $count )
+        );
+        die $error if $error;
+        $last = time;
+      }
+    }
+
+    my $old = qsearchs( 'tax_rate', $delete{$_} );
+    unless ($old) {
+      $dbh->rollback if $oldAutoCommit;
+      $old = $delete{$_};
+      return "can't find tax_rate to replace for: ".
+        #join(" ", map { "$_ => ". $old->{$_} } @fields);
+        join(" ", map { "$_ => ". $old->{$_} } keys(%$old) );
+    }
+    my $new = new FS::tax_rate( $insert{$_} );
+    $new->taxnum($old->taxnum);
+    my $error = $new->replace($old);
+
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "can't insert tax_rate for $line: $error";
+    }
+
+    $imported++;
+    $imported++;
+  }
+
+  for (grep { !exists($insert{$_}) } keys %delete) {
+    if ( $job ) {  # progress bar
+      if ( time - $min_sec > $last ) {
+        my $error = $job->update_statustext(
+          int( 100 * $imported / $count )
+        );
+        die $error if $error;
+        $last = time;
+      }
+    }
+
+    my $tax_rate = qsearchs( 'tax_rate', $delete{$_} );
+    unless ($tax_rate) {
+      $dbh->rollback if $oldAutoCommit;
+      $tax_rate = $delete{$_};
+      return "can't find tax_rate to delete for: ".
+        #join(" ", map { "$_ => ". $tax_rate->{$_} } @fields);
+        join(" ", map { "$_ => ". $tax_rate->{$_} } keys(%$tax_rate) );
+    }
+    my $error = $tax_rate->delete;
 
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
@@ -527,12 +644,160 @@ sub batch_import {
 
 }
 
+=item process_batch
+
+Load an batch import as a queued JSRPC job
+
+=cut
+
+sub process_batch {
+  my $job = shift;
+
+  my $param = thaw(decode_base64(shift));
+  my $format = $param->{'format'};        #well... this is all cch specific
+
+  my $files = $param->{'uploaded_files'}
+    or die "No files provided.";
+
+  my (%files) = map { /^(\w+):([\.\w]+)$/ ? ($1,$2):() } split /,/, $files;
+
+  if ($format eq 'cch') {
+
+    my $oldAutoCommit = $FS::UID::AutoCommit;
+    local $FS::UID::AutoCommit = 0;
+    my $dbh = dbh;
+    my $error = '';
+
+    my @list = ( 'CODE',     'codefile',  \&FS::tax_class::batch_import,
+                 'PLUS4',    'plus4file', \&FS::cust_tax_location::batch_import,
+                 'TXMATRIX', 'txmatrix',  \&FS::part_pkg_taxrate::batch_import,
+                 'DETAIL',   'detail',    \&FS::tax_rate::batch_import,
+               );
+    while( scalar(@list) ) {
+      my ($name, $file, $import_sub) = (shift @list, shift @list, shift @list);
+      unless ($files{$file}) {
+        $error = "No $name supplied";
+        next;
+      }
+      my $dir = $FS::UID::conf_dir. "/cache.". $FS::UID::datasrc;
+      my $filename = "$dir/".  $files{$file};
+      open my $fh, "< $filename" or $error ||= "Can't open $name file: $!";
+
+      $error ||= &{$import_sub}({ 'filehandle' => $fh, 'format' => $format }, $job);
+      close $fh;
+      unlink $filename or warn "Can't delete $filename: $!";
+    }
+    
+    if ($error) {
+      $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+      die $error;
+    }else{
+      $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+    }
+
+  }elsif ($format eq 'cch-update') {
+
+    my $oldAutoCommit = $FS::UID::AutoCommit;
+    local $FS::UID::AutoCommit = 0;
+    my $dbh = dbh;
+    my $error = '';
+    my @insert_list = ();
+    my @delete_list = ();
+
+    my @list = ( 'CODE',     'codefile',  \&FS::tax_class::batch_import,
+                 'PLUS4',    'plus4file', \&FS::cust_tax_location::batch_import,
+                 'TXMATRIX', 'txmatrix',  \&FS::part_pkg_taxrate::batch_import,
+               );
+    my $dir = $FS::UID::conf_dir. "/cache.". $FS::UID::datasrc;
+    while( scalar(@list) ) {
+      my ($name, $file, $import_sub) = (shift @list, shift @list, shift @list);
+      unless ($files{$file}) {
+        $error = "No $name supplied";
+        next;
+      }
+      my $filename = "$dir/".  $files{$file};
+      open my $fh, "< $filename" or $error ||= "Can't open $name file $filename: $!";
+      unlink $filename or warn "Can't delete $filename: $!";
+
+      my $ifh = new File::Temp( TEMPLATE => "$name.insert.XXXXXXXX",
+                                DIR      => $dir,
+                                UNLINK   => 0,     #meh
+                              ) or die "can't open temp file: $!\n";
+
+      my $dfh = new File::Temp( TEMPLATE => "$name.delete.XXXXXXXX",
+                                DIR      => $dir,
+                                UNLINK   => 0,     #meh
+                              ) or die "can't open temp file: $!\n";
+
+      while(<$fh>) {
+        my $handle = '';
+        $handle = $ifh if $_ =~ /"I"\s*$/;
+        $handle = $dfh if $_ =~ /"D"\s*$/;
+        unless ($handle) {
+          $error = "bad input line: $_" unless $handle;
+          last;
+        }
+        print $handle $_;
+      }
+      close $fh;
+      close $ifh;
+      close $dfh;
+
+      push @insert_list, $name, $ifh->filename, $import_sub;
+      unshift @delete_list, $name, $dfh->filename, $import_sub;
+
+    }
+    while( scalar(@insert_list) ) {
+      my ($name, $file, $import_sub) =
+        (shift @insert_list, shift @insert_list, shift @insert_list);
+
+      open my $fh, "< $file" or $error ||= "Can't open $name file $file: $!";
+      $error ||=
+        &{$import_sub}({ 'filehandle' => $fh, 'format' => $format }, $job);
+      close $fh;
+      unlink $file or warn "Can't delete $file: $!";
+    }
+    
+    $error = "No DETAIL supplied"
+      unless ($files{detail});
+    open my $fh, "< $dir/". $files{detail}
+      or $error ||= "Can't open DETAIL file: $!";
+    $error ||=
+      &FS::tax_rate::batch_import({ 'filehandle' => $fh, 'format' => $format },
+                                  $job);
+    close $fh;
+    unlink "$dir/". $files{detail} or warn "Can't delete $files{detail}: $!"
+      if $files{detail};
+
+    while( scalar(@delete_list) ) {
+      my ($name, $file, $import_sub) =
+        (shift @delete_list, shift @delete_list, shift @delete_list);
+
+      open my $fh, "< $file" or $error ||= "Can't open $name file $file: $!";
+      $error ||=
+        &{$import_sub}({ 'filehandle' => $fh, 'format' => $format }, $job);
+      close $fh;
+      unlink $file or warn "Can't delete $file: $!";
+    }
+    
+    if ($error) {
+      $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+      die $error;
+    }else{
+      $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+    }
+
+  }else{
+    die "Unknown format: $format";
+  }
+
+}
+
 =back
 
 =head1 BUGS
 
-regionselector?  putting web ui components in here?  they should probably live
-somewhere else...
+  Mixing automatic and manual editing works poorly at present.
 
 =head1 SEE ALSO
 
