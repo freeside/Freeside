@@ -2093,7 +2093,8 @@ sub bill {
     $cust_pkg->setfield('bill', '')
       unless defined($cust_pkg->bill);
  
-    my $part_pkg = $cust_pkg->part_pkg;
+    #my $part_pkg = $cust_pkg->part_pkg;
+    my @part_pkg = $cust_pkg->part_pkg->self_and_bill_linked;
 
     my %hash = $cust_pkg->hash;
     my $old_cust_pkg = new FS::cust_pkg \%hash;
@@ -2138,7 +2139,7 @@ sub bill {
 
       # XXX should this be a package event?  probably.  events are called
       # at collection time at the moment, though...
-      if ( $part_pkg->can('reset_usage') ) {
+      foreach my $part_pkg ( grep { $_->can('reset_usage') } @part_pkg ) {
         warn "    resetting usage counters" if $DEBUG > 1;
         $part_pkg->reset_usage($cust_pkg);
       }

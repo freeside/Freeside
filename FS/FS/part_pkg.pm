@@ -755,6 +755,19 @@ sub _part_pkg_link {
          );
 }
 
+sub self_and_bill_linked {
+  shift->_self_and_linked('bill', @_);
+}
+
+sub _self_and_linked {
+  my( $self, $type ) = @_;
+
+  ( $self,
+    map { $_->dst_pkg->_self_and_linked($type) }
+        $self->_part_pkg_link($type)
+  );
+}
+
 =item part_pkg_taxoverride
 
 Returns all associated FS::part_pkg_taxoverride objects (see
