@@ -145,14 +145,21 @@ Current packages
 %
 %
 % if ( $cust_pkg->get('cancel') ) { #status: cancelled
+%   my $cpr = $cust_pkg->last_cust_pkg_reason;
 
     <% pkg_status_row($cust_pkg, 'Cancelled', 'cancel', 'color'=>'FF0000' ) %>
 
     <% pkg_status_row_colspan(
-         ( $cust_pkg->last_reason ? $cust_pkg->last_reason->reason : '' ), '',
+         ( ( $cpr && ( $cpr->date == $cust_pkg->get('cancel') ||
+                       $cpr->date == $cust_pkg->expire
+                     )
+           ) ? $cpr->reasontext. ' by '. $cpr->otaker : '' ), '',
          'align' => 'right', 'color' => 'ff0000', 'size' => '-2',
        )
     %>
+
+
+    <% pkg_status_row( $cust_pkg, 'Suspended', 'susp', 'color'=>'FF9900' ) %>
 
 %   unless ( $cust_pkg->get('setup') ) { 
 
@@ -170,11 +177,15 @@ Current packages
 % } else { 
 %
 %   if ( $cust_pkg->get('susp') ) { #status: suspended
+%     my $cpr = $cust_pkg->last_cust_pkg_reason;
 
     <% pkg_status_row( $cust_pkg, 'Suspended', 'susp', 'color'=>'FF9900' ) %>
 
     <% pkg_status_row_colspan(
-         ( $cust_pkg->last_reason ? $cust_pkg->last_reason->reason : '' ), '',
+         ( ( $cpr && ( $cpr->date == $cust_pkg->susp ||
+                       $cpr->date == $cust_pkg->adjourn
+                     )
+           ) ? $cpr->reasontext. ' by '. $cpr->otaker : '' ), '',
          'align' => 'right', 'color' => 'FF9900', 'size' => '-2',
        )
     %>

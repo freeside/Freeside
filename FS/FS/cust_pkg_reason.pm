@@ -106,6 +106,29 @@ sub check {
   $self->SUPER::check;
 }
 
+=item reason
+
+Returns the reason (see L<FS::reason>) associated with this cust_pkg_reason.
+
+=cut
+
+sub reason {
+  my $self = shift;
+  qsearchs( 'reason', { 'reasonnum' => $self->reasonnum } );
+}
+
+=item reasontext
+
+Returns the text of the reason (see L<FS::reason>) associated with this
+cust_pkg_reason.
+
+=cut
+
+sub reasontext {
+  my $reason = shift->reason;
+  $reason ? $reason->reason : '';
+}
+
 =back
 
 =head1 BUGS

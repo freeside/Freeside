@@ -772,6 +772,22 @@ sub last_bill {
   $cust_bill_pkg ? $cust_bill_pkg->sdate : $self->setup || 0;
 }
 
+=item last_cust_pkg_reason
+
+Returns the most recent FS::reason associated with the package.
+
+=cut
+
+sub last_cust_pkg_reason {
+  my $self = shift;
+  qsearchs( {
+              'table' => 'cust_pkg_reason',
+              'hashref' => { 'pkgnum' => $self->pkgnum, },
+              'extra_sql'=> "AND date <= ". time,
+              'order_by' => 'ORDER BY date DESC LIMIT 1',
+           } );
+}
+
 =item last_reason
 
 Returns the most recent FS::reason associated with the package.
@@ -779,13 +795,8 @@ Returns the most recent FS::reason associated with the package.
 =cut
 
 sub last_reason {
-  my $self = shift;
-  my $cust_pkg_reason = qsearchs( {
-                                    'table' => 'cust_pkg_reason',
-				    'hashref' => { 'pkgnum' => $self->pkgnum, },
-				    'extra_sql'=> 'ORDER BY date DESC LIMIT 1',
-				  } );
-  qsearchs ( 'reason', { 'reasonnum' => $cust_pkg_reason->reasonnum } )
+  my $cust_pkg_reason = shift->last_cust_pkg_reason;
+  $cust_pkg_reason->reason
     if $cust_pkg_reason;
 }
 
