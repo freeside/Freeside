@@ -25,13 +25,8 @@ Invoice Event #<% $hashref->{eventpart} ? $hashref->{eventpart} : "(NEW)" %>
       <SELECT NAME="payby" <% $hashref->{eventpart} ? '' : 'MULTIPLE SIZE=7'%>>
 % tie my %payby, 'Tie::IxHash', FS::payby->cust_payby2longname;
 %           foreach my $payby ( keys %payby ) {
-%        
-
-
           <OPTION VALUE="<% $payby %>"<% ($part_bill_event->payby eq $payby) ? ' SELECTED' : '' %>><% $payby{$payby} %></OPTION>
 % } 
-
-
       </SELECT> customers
     </TD>
   </TR>
@@ -109,11 +104,13 @@ Invoice Event #<% $hashref->{eventpart} ? $hashref->{eventpart} : "(NEW)" %>
 %if ( $conf->exists('enable_taxclasses') ) {
 %  $late_taxclass =
 %    '<BR>Taxclass '.
-%    include('/elements/select-taxclass.html', '%%%late_taxclass%%%',
+%    include('/elements/select-taxclass.html',
+%              'curr_value' => '%%%late_taxclass%%%',
 %              'name' => 'late_taxclass' );
 %  $late_percent_taxclass =
 %    '<BR>Taxclass '.
-%    include('/elements/select-taxclass.html', '%%%late_percent_taxclass%%%',
+%    include('/elements/select-taxclass.html',
+%              'curr_value' => '%%%late_percent_taxclass%%%',
 %              'name' => 'late_percent_taxclass' );
 %}
 %

@@ -75,7 +75,7 @@
                               {type=>'justtitle', value=>'Taxation' },
                               {field=>'setuptax', type=>'checkbox', value=>'Y'},
                               {field=>'recurtax', type=>'checkbox', value=>'Y'},
-                              {field=>'classnum', type=>'select-taxclass' },
+                              {field=>'taxclass', type=>'select-taxclass' },
                               {field=>'taxproductnum', type=>'select-taxproduct' },
 
                               { type  => 'tablebreak-tr-title',

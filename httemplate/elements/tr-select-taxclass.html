@@ -2,22 +2,23 @@
 %      || scalar(@{ $opt{'taxclasses'} }) == 0
 % ) { 
 
-  <INPUT TYPE="hidden" NAME=""<% $opt{'element_name'} || $opt{'field'} || 'taxclass' %>" VALUE="<% $taxclass %>">
+  <INPUT TYPE="hidden" NAME=""<% $opt{'element_name'} || $opt{'field'} || 'taxclass' %>" VALUE="<% $selected_taxclass %>">
 
 % } else { 
 
   <TR>
     <TD ALIGN="right"><% $opt{'label'} || 'Tax class: ' %></TD>
     <TD>
-      <% include( '/elements/select-taxclass.html', $taxclass, %opt ) %>
+      <% include( '/elements/select-taxclass.html', 'curr_value' => $selected_taxclass, %opt ) %>
     </TD>
   </TR>
 
 % } 
 <%init>
 
-my( $taxclass, %opt ) = @_;
+my( %opt ) = @_;
 my $conf = new FS::Conf;
+my $selected_taxclass = $opt{'curr_value'}; # || $opt{'value'} necessary?
 
 unless ( $opt{'taxclasses'} ) {
 

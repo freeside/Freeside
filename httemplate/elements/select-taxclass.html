@@ -22,7 +22,9 @@
 
 <%init>
 
-my( $selected_taxclass, %opt ) = @_;
+my %opt = @_;
+my $selected_taxclass = $opt{'curr_value'}; # || $opt{'value'} necessary?
+
 my $conf = new FS::Conf;
 
 unless ( $opt{'taxclasses'} ) {

@@ -82,8 +82,8 @@ function validate_quick_charge () {
   <TD>
     $<INPUT TYPE="text" NAME="amount" SIZE=6 VALUE="<% $amount %>" onChange="enable_quick_charge()" onKeyPress="enable_quick_charge_amount()">
   </TD>
-<% include('/elements/tr-select-pkg_class.html', '') %>
-<% include('/elements/tr-select-taxclass.html') %>
+<% include('/elements/tr-select-pkg_class.html', 'curr_value' => $cgi->param('classnum') ) %>
+<% include('/elements/tr-select-taxclass.html', 'curr_value' => $cgi->param('taxclass') ) %>
 </TR>
   <TD>Description:</TD>
   <TD>
