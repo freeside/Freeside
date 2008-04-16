@@ -17,7 +17,7 @@ use FS::pkg_class;
 use FS::agent;
 use FS::part_pkg_taxoverride;
 use FS::part_pkg_taxproduct;
-#XXX#use FS::part_pkg_link;
+use FS::part_pkg_link;
 
 @ISA = qw( FS::m2m_Common FS::option_Common );
 $DEBUG = 0;
@@ -701,15 +701,30 @@ sub option {
   '';
 }
 
-=item dst_pkgpart
+=item bill_part_pkg_link
+
+Returns the associated part_pkg_link records (see L<FS::part_pkg_link).
 
 =cut
 
-sub part_pkg_link {
-  ();
-  #XXX
-  #my $self = shift;
-  #qsearch('part_pkg_link', { 'src_pkgpart' => $self->pkgpart } );
+sub bill_part_pkg_link {
+  shift->_part_pkg_link('bill', @_);
+}
+
+=item svc_part_pkg_link
+
+=cut
+
+sub svc_part_pkg_link {
+  shift->_part_pkg_link('svc', @_);
+}
+
+sub _part_pkg_link {
+  my( $self, $type ) = shift;
+  qsearch('part_pkg_link', { 'src_pkgpart' => $self->pkgpart,
+                             'link_type'   => $type,
+                           }
+         );
 }
 
 =item part_pkg_taxoverride
