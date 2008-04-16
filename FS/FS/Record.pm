@@ -1351,10 +1351,10 @@ null.  If there is an error, returns the error, otherwise returns false.
 
 sub ut_float {
   my($self,$field)=@_ ;
-  ($self->getfield($field) =~ /^(\d+\.\d+)$/ ||
-   $self->getfield($field) =~ /^(\d+)$/ ||
-   $self->getfield($field) =~ /^(\d+\.\d+e\d+)$/ ||
-   $self->getfield($field) =~ /^(\d+e\d+)$/)
+  ($self->getfield($field) =~ /^\s*(\d+\.\d+)\s*$/ ||
+   $self->getfield($field) =~ /^\s*(\d+)\s*$/ ||
+   $self->getfield($field) =~ /^\s*(\d+\.\d+e\d+)\s*$/ ||
+   $self->getfield($field) =~ /^\s*(\d+e\d+)\s*$/)
     or return "Illegal or empty (float) $field: ". $self->getfield($field);
   $self->setfield($field,$1);
   '';
@@ -1387,10 +1387,10 @@ false.
 
 sub ut_sfloat {
   my($self,$field)=@_ ;
-  ($self->getfield($field) =~ /^(-?\d+\.\d+)$/ ||
-   $self->getfield($field) =~ /^(-?\d+)$/ ||
-   $self->getfield($field) =~ /^(-?\d+\.\d+[eE]-?\d+)$/ ||
-   $self->getfield($field) =~ /^(-?\d+[eE]-?\d+)$/)
+  ($self->getfield($field) =~ /^\s*(-?\d+\.\d+)\s*$/ ||
+   $self->getfield($field) =~ /^\s*(-?\d+)\s*$/ ||
+   $self->getfield($field) =~ /^\s*(-?\d+\.\d+[eE]-?\d+)\s*$/ ||
+   $self->getfield($field) =~ /^\s*(-?\d+[eE]-?\d+)\s*$/)
     or return "Illegal or empty (float) $field: ". $self->getfield($field);
   $self->setfield($field,$1);
   '';
@@ -1421,7 +1421,7 @@ returns the error, otherwise returns false.
 
 sub ut_snumber {
   my($self, $field) = @_;
-  $self->getfield($field) =~ /^(-?)\s*(\d+)$/
+  $self->getfield($field) =~ /^\s*(-?)\s*(\d+)\s*$/
     or return "Illegal or empty (numeric) $field: ". $self->getfield($field);
   $self->setfield($field, "$1$2");
   '';
@@ -1436,7 +1436,7 @@ returns the error, otherwise returns false.
 
 sub ut_snumbern {
   my($self, $field) = @_;
-  $self->getfield($field) =~ /^(-?)\s*(\d*)$/
+  $self->getfield($field) =~ /^\s*(-?)\s*(\d*)\s*$/
     or return "Illegal (numeric) $field: ". $self->getfield($field);
   if ($1) {
     return "Illegal (numeric) $field: ". $self->getfield($field)
@@ -1455,7 +1455,7 @@ is an error, returns the error, otherwise returns false.
 
 sub ut_number {
   my($self,$field)=@_;
-  $self->getfield($field) =~ /^(\d+)$/
+  $self->getfield($field) =~ /^\s*(\d+)\s*$/
     or return "Illegal or empty (numeric) $field: ". $self->getfield($field);
   $self->setfield($field,$1);
   '';
@@ -1470,7 +1470,7 @@ an error, returns the error, otherwise returns false.
 
 sub ut_numbern {
   my($self,$field)=@_;
-  $self->getfield($field) =~ /^(\d*)$/
+  $self->getfield($field) =~ /^\s*(\d*)\s*$/
     or return "Illegal (numeric) $field: ". $self->getfield($field);
   $self->setfield($field,$1);
   '';
@@ -1486,7 +1486,7 @@ is an error, returns the error, otherwise returns false.
 sub ut_money {
   my($self,$field)=@_;
   $self->setfield($field, 0) if $self->getfield($field) eq '';
-  $self->getfield($field) =~ /^(\-)? ?(\d*)(\.\d{2})?$/
+  $self->getfield($field) =~ /^\s*(\-)?\s*(\d*)(\.\d{2})?\s*$/
     or return "Illegal (money) $field: ". $self->getfield($field);
   #$self->setfield($field, "$1$2$3" || 0);
   $self->setfield($field, ( ($1||''). ($2||''). ($3||'') ) || 0);
