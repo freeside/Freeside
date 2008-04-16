@@ -491,18 +491,46 @@ sub agent {
   qsearchs('agent', { 'agentnum' => $self->agentnum } );
 }
 
-=item pkg_svc
+=item pkg_svc [ HASHREF | OPTION => VALUE ]
 
 Returns all FS::pkg_svc objects (see L<FS::pkg_svc>) for this package
 definition (with non-zero quantity).
+
+One option is available, I<disable_linked>.  If set true it will return the
+services for this package definition alone, omitting services from any add-on
+packages.
 
 =cut
 
 sub pkg_svc {
   my $self = shift;
-  #sort { $b->primary cmp $a->primary } 
-    grep { $_->quantity }
-      qsearch( 'pkg_svc', { 'pkgpart' => $self->pkgpart } );
+
+#  #sort { $b->primary cmp $a->primary } 
+#    grep { $_->quantity }
+#      qsearch( 'pkg_svc', { 'pkgpart' => $self->pkgpart } );
+
+  my $opt = ref($_[0]) ? $_[0] : { @_ };
+  my %pkg_svc = map  { $_->svcpart => $_ }
+                grep { $_->quantity }
+                qsearch( 'pkg_svc', { 'pkgpart' => $self->pkgpart } );
+
+  unless ( $opt->{disable_linked} ) {
+    foreach my $dst_pkg ( map $_->dst_pkg, $self->svc_part_pkg_link ) {
+      my @pkg_svc = grep { $_->quantity }
+                    qsearch( 'pkg_svc', { pkgpart=>$dst_pkg->pkgpart } );
+      foreach my $pkg_svc ( @pkg_svc ) {
+        if ( $pkg_svc{$pkg_svc->svcpart} ) {
+          my $quantity = $pkg_svc{$pkg_svc->svcpart}->quantity;
+          $pkg_svc{$pkg_svc->svcpart}->quantity($quantity + $pkg_svc->quantity);
+        } else {
+          $pkg_svc{$pkg_svc->svcpart} = $pkg_svc;
+        }
+      }
+    }
+  }
+
+  values(%pkg_svc);
+
 }
 
 =item svcpart [ SVCDB ]

@@ -278,7 +278,7 @@ push @fields,
                       sort {     $b->primary_svc =~ /^Y/i
                              <=> $a->primary_svc =~ /^Y/i
                            }
-                           $part_pkg->pkg_svc
+                           $part_pkg->pkg_svc('disable_linked'=>1)
                       ),
                       ( map { 
                               my $dst_pkg = $_->dst_pkg;
