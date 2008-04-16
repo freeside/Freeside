@@ -720,7 +720,7 @@ sub svc_part_pkg_link {
 }
 
 sub _part_pkg_link {
-  my( $self, $type ) = shift;
+  my( $self, $type ) = @_;
   qsearch('part_pkg_link', { 'src_pkgpart' => $self->pkgpart,
                              'link_type'   => $type,
                            }

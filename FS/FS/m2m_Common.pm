@@ -1,7 +1,7 @@
 package FS::m2m_Common;
 
 use strict;
-use vars qw( @ISA $DEBUG );
+use vars qw( @ISA $DEBUG $me );
 use FS::Schema qw( dbdef );
 use FS::Record qw( qsearch qsearchs dbh );
 
@@ -9,6 +9,7 @@ use FS::Record qw( qsearch qsearchs dbh );
 #@ISA = qw( FS::Record );
 
 $DEBUG = 0;
+$me = '[FS::m2m_Common]';
 
 =head1 NAME
 
@@ -66,10 +67,15 @@ static hashref further qualifying the m2m fields
 sub process_m2m {
   my( $self, %opt ) = @_;
 
+  #use Data::Dumper;
+  #warn "$me process_m2m called on $self with options:\n". Dumper(%opt)
+  warn "$me process_m2m called on $self"
+    if $DEBUG;
+
   my $self_pkey = $self->dbdef_table->primary_key;
   my $base_field = $opt{'base_field'} || $self_pkey;
-  my %hash = $opt{'hashref'} || {};
-  $hash{$base_field} = $self->$self_pkey();
+  my $hashref = $opt{'hashref'} || {};
+  $hashref->{$base_field} = $self->$self_pkey();
 
   my $link_table = $self->_load_table($opt{'link_table'});
 
@@ -99,7 +105,7 @@ sub process_m2m {
              && ! $opt{'params'}->{"$target_field$targetnum"}
            );
          }
-         qsearch( $link_table, \%hash )
+         qsearch( $link_table, $hashref )
   ) {
     my $error = $del_obj->delete;
     if ( $error ) {
@@ -109,7 +115,7 @@ sub process_m2m {
   }
 
   foreach my $add_targetnum (
-    grep { ! qsearchs( $link_table, { %hash, $target_field => $_ } ) }
+    grep { ! qsearchs( $link_table, { %$hashref, $target_field => $_ } ) }
     map  { /^($target_field)?(\d+)$/; $2; }
     grep { /^($target_field)?(\d+)$/ }
     grep { $opt{'params'}->{$_} }
@@ -117,7 +123,7 @@ sub process_m2m {
   ) {
 
     my $add_obj = "FS::$link_table"->new( {
-      %hash, 
+      %$hashref, 
       $target_field => $add_targetnum,
     });
     my $error = $add_obj->insert;

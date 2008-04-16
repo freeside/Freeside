@@ -8,7 +8,6 @@
               'precheck_callback' => $precheck_callback,
               'args_callback'     => $args_callback,
               'process_m2m'       => \@process_m2m,
-              'debug' => 1,
           )
 %>
 <%init>
