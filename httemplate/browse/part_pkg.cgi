@@ -6,7 +6,7 @@
                  'disabled_statuspos' => 3,
                  'agent_virt'         => 1,
                  'agent_null_right'   => 'Edit global package definitions',
-                 'agent_pos'          => 4,
+                 'agent_pos'          => 5,
                  'query'              => { 'select'   => $select,
                                            'table'    => 'part_pkg',
                                            'hashref'  => {},
@@ -55,6 +55,7 @@ if ( $cgi->param('active') ) {
 
 my $conf = new FS::Conf;
 my $taxclasses = $conf->exists('enable_taxclasses');
+my $money_char = $conf->config('money_char') || '$';
 
 my $html_init;
 #unless ( $cgi->param('active') ) {
@@ -81,6 +82,49 @@ unless ( 0 ) { #already showing only one class or something?
   push @fields, sub { shift->classname || '(none)'; };
   $align .= 'l';
 }
+
+tie my %plans, 'Tie::IxHash', %{ FS::part_pkg::plan_info() };
+
+tie my %plan_labels, 'Tie::IxHash',
+  map {  $_ => ( $plans{$_}->{'shortname'} || $plans{$_}->{'name'} ) }
+      keys %plans;
+
+push @header, 'Pricing';
+$align .= 'r'; #?
+push @fields, sub {
+  my $part_pkg = shift;
+
+  [
+    [
+      { data=>$plan_labels{$part_pkg->plan},
+        align=>'center'
+      },
+    ],
+    [
+      { data=>$money_char.
+              sprintf('%.2f setup', $part_pkg->option('setup_fee') ),
+        align=>'right'
+      },
+    ],
+    [
+      { data=>( $part_pkg->freq ne '0'
+                  ? $money_char.sprintf('%.2f ', $part_pkg->option('recur_fee') )
+                  : ''
+              ).
+              $part_pkg->freq_pretty,
+        align=>'right'
+      },
+    ],
+  ];
+
+#  $plan_labels{$part_pkg->plan}.'<BR>'.
+#    $money_char.sprintf('%.2f setup<BR>', $part_pkg->option('setup_fee') ).
+#    ( $part_pkg->freq ne '0'
+#      ? $money_char.sprintf('%.2f ', $part_pkg->option('recur_fee') )
+#      : ''
+#    ).
+#    $part_pkg->freq_pretty; #.'<BR>'
+};
 
 #if ( $cgi->param('active') ) {
   push @header, 'Customer<BR>packages';
@@ -131,23 +175,17 @@ unless ( 0 ) { #already showing only one class or something?
   $align .= 'r';
 #}
 
-push @header, 'Frequency';
-push @fields, sub { shift->freq_pretty; };
-$align .= 'l';
-
 if ( $taxclasses ) {
   push @header, 'Taxclass';
   push @fields, sub { shift->taxclass() || '&nbsp;'; };
   $align .= 'l';
 }
 
-push @header, 'Plan',
-              'Data',
+push @header, 'Plan options',
               'Services';
               #'Service', 'Quan', 'Primary';
 
-push @fields, sub { shift->plan || '(legacy)' }, 
-
+push @fields, 
               sub {
                     my $part_pkg = shift;
                     if ( $part_pkg->plan ) {

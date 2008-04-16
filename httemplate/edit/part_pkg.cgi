@@ -148,9 +148,6 @@ die "access denied"
 
 #XXX
 # - tr-part_pkg_freq: month_increments_only (from price plans)
-# - test editing 
-#   - write edit bits for new m2ms
-# - display add-ons in (existing) edit
 # - display add-ons in browse... yeah
 # -QIS- thank goodness
 # - test cloning
