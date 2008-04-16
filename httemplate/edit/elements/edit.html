@@ -41,10 +41,9 @@ Example:
                     'm2name_table'   => 'table_name',
                     'm2name_namecol' => 'name_column',
                     #OR#
-                    'm2m_table'        =>
-                    'm2m_target_table' =>
-                    'm2m_srccol'  => #opt, if not the same as this table
-                    'm2m_dstcol'  => #opt, if not the same as target table
+                    'm2m_method'       =>
+                    #'m2m_srccol'  => #opt, if not the same as this table
+                    'm2m_dstcol'  => #required for now, eventuaully opt, if not the same as target table
 
                     'm2_label'   => 'Label',        #
                     'm2_new_default' => \@table_name_objects, #default
@@ -196,7 +195,7 @@ Example:
 %   $layer_values = &{ $f->{'layer_values_callback'} }( $cgi, $object )
 %     if $f->{'layer_values_callback'}
 %     && ! $f->{'m2name_table'}
-%     && ! $f->{'m2m_table'};
+%     && ! $f->{'m2m_method'};
 %
 %   warn "layer values: ". Dumper($layer_values)
 %     if $opt{'debug'};
@@ -277,17 +276,15 @@ Example:
 %
 %   my $fieldnum = '';
 %   my $curr_value = '';
-%   if ( $f->{'m2name_table'} || $f->{'m2m_table'} ) { #XXX test this for all
+%   if ( $f->{'m2name_table'} || $f->{'m2m_method'} ) { #XXX test this for all
 %                                                      #types of fields
 %     my($table, $col);
 %     if ( $f->{'m2name_table'} ) {
 %       $table = $f->{'m2name_table'};
 %       $col   = $f->{'m2name_namecol'};
-%     } elsif ( $f->{'m2m_table'} ) {
-%       $table = $f->{'m2m_table'}; #XXX method name
-%       $col   = $f->{'m2m_dstcol'}; #XXX or get it from schema, defualt to
-%                                    #same name as primary key of
-%                                    #m2m_target_table
+%     } elsif ( $f->{'m2m_method'} ) {
+%       $table = $f->{'m2m_method'};
+%       $col   = $f->{'m2m_dstcol'};
 %     }
 %     $fieldnum = 0;
 %     $layer_prefix_on = 1;
@@ -357,7 +354,7 @@ Example:
 
     <% include( @include ) %>
 
-%   if ( $f->{'m2name_table'} || $f->{'m2m_table'} ) {
+%   if ( $f->{'m2name_table'} || $f->{'m2m_method'} ) {
 
       <SCRIPT TYPE="text/javascript">
 

@@ -25,8 +25,9 @@ use FS::m2m_Common;
 FS::m2m_Common is intended as a mixin class for classes which have a
 many-to-many relationship with another table (via a linking table).
 
-Note: It is currently assumed that the link table contains two fields
-named the same as the primary keys of ths base and target tables.
+It is currently assumed that the link table contains two fields named the same
+as the primary keys of the base and target tables, but you can ovverride this
+assumption if your table is different.
 
 =head1 METHODS
 
@@ -36,13 +37,29 @@ named the same as the primary keys of ths base and target tables.
 
 Available options:
 
-link_table (required) - 
+=over 4
 
-target_table (required) - 
+=item link_table (required)
 
-params (required) - hashref; keys are primary key values in target_table (values are boolean).  For convenience, keys may optionally be prefixed with the name
-of the primary key, as in agentnum54 instead of 54, or passed as an arrayref
+=item target_table (required)
+
+=item params (required)
+
+hashref; keys are primary key values in target_table (values are boolean).  For convenience, keys may optionally be prefixed with the name
+of the primary key, as in "agentnum54" instead of "54", or passed as an arrayref
 of values.
+
+=item base_field (optional)
+
+base field, defaults to primary key of this base table
+
+=item target_field (optional)
+
+target field, defaults to the primary key of the target table
+
+=item hashref (optional)
+
+static hashref further qualifying the m2m fields
 
 =cut
 
@@ -50,12 +67,15 @@ sub process_m2m {
   my( $self, %opt ) = @_;
 
   my $self_pkey = $self->dbdef_table->primary_key;
-  my %hash = ( $self_pkey => $self->$self_pkey() );
+  my $base_field = $opt{'base_field'} || $self_pkey;
+  my %hash = $opt{'hashref'} || {};
+  $hash{$base_field} = $self->$self_pkey();
 
   my $link_table = $self->_load_table($opt{'link_table'});
 
   my $target_table = $self->_load_table($opt{'target_table'});
-  my $target_pkey = dbdef->table($target_table)->primary_key;
+  my $target_field = $opt{'target_field'}
+                     || dbdef->table($target_table)->primary_key;
 
   if ( ref($opt{'params'}) eq 'ARRAY' ) {
     $opt{'params'} = { map { $_=>1 } @{$opt{'params'}} };
@@ -74,9 +94,9 @@ sub process_m2m {
 
   foreach my $del_obj (
     grep { 
-           my $targetnum = $_->$target_pkey();
+           my $targetnum = $_->$target_field();
            (    ! $opt{'params'}->{$targetnum}
-             && ! $opt{'params'}->{"$target_pkey$targetnum"}
+             && ! $opt{'params'}->{"$target_field$targetnum"}
            );
          }
          qsearch( $link_table, \%hash )
@@ -89,16 +109,16 @@ sub process_m2m {
   }
 
   foreach my $add_targetnum (
-    grep { ! qsearchs( $link_table, { %hash, $target_pkey => $_ } ) }
-    map  { /^($target_pkey)?(\d+)$/; $2; }
-    grep { /^($target_pkey)?(\d+)$/ }
+    grep { ! qsearchs( $link_table, { %hash, $target_field => $_ } ) }
+    map  { /^($target_field)?(\d+)$/; $2; }
+    grep { /^($target_field)?(\d+)$/ }
     grep { $opt{'params'}->{$_} }
     keys %{ $opt{'params'} }
   ) {
 
     my $add_obj = "FS::$link_table"->new( {
       %hash, 
-      $target_pkey => $add_targetnum,
+      $target_field => $add_targetnum,
     });
     my $error = $add_obj->insert;
     if ( $error ) {

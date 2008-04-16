@@ -165,6 +165,8 @@ L<FS::pkg_class> - Package class class
 
 L<FS::part_pkg> - Package definition class
 
+L<FS::part_pkg_link> - Package definition link class
+
 L<FS::part_pkg_taxclass> - Tax class class
 
 L<FS::part_pkg_option> - Package definition option class

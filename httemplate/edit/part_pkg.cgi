@@ -58,7 +58,7 @@
                               },
                               { field    => 'freq',
                                 type     => 'part_pkg_freq',
-                                onchange => 'freq_changed', #XXX enable recurring fee
+                                onchange => 'freq_changed',
                               },
                               { field    => 'recur_fee',
                                 type     => 'money',
@@ -79,12 +79,12 @@
                               {field=>'taxproductnum', type=>'select-taxproduct' },
 
                               { type  => 'tablebreak-tr-title',
-                                value => 'Promotions', #XXX better name?
+                                value => 'Promotions', #better name?
                               },
                               { field=>'promo_code', type=>'text', size=>15 },
 
                               { type  => 'tablebreak-tr-title',
-                                value => 'Line-item revenue recogition', #XXX better name?
+                                value => 'Line-item revenue recogition', #better name?
                               },
                               { field=>'pay_weight',    type=>'text', size=>6 },
                               { field=>'credit_weight', type=>'text', size=>6 },
@@ -105,14 +105,13 @@
                             { 'type'  => 'tablebreak-tr-title',
                               'value' => 'Pricing add-ons',
                             },
-                            { 'field'    => 'bill_dst_pkgpart',
-                              'type'     => 'select-part_pkg',
-                              'm2_label' => 'Include line item(s) from package',
-                              'm2m_table'        => 'part_pkg_link',
-                              'm2m_target_table' => 'part_pkg', #XXX actually just the method name...
-                              'm2m_dstcol'       => 'dst_pkgpart',
-                              'm2m_static_or_something' => { 'link_type' => 'bill' }, #XXX
-                              'm2_error_callback' => sub { (); }, #XXX existing!
+                            { 'field'      => 'bill_dst_pkgpart',
+                              'type'       => 'select-part_pkg',
+                              'm2_label'   => 'Include line item(s) from package',
+                              'm2m_method' => 'bill_part_pkg_link',
+                              'm2m_dstcol' => 'dst_pkgpart',
+                              'm2_error_callback' =>
+                                &{$m2_error_callback_maker}('bill'),
                             },
 
                             { type  => 'tablebreak-tr-title',
@@ -120,15 +119,14 @@
                             },
                             { type => 'pkg_svc', },
 
-                            { 'field'    => 'svc_dst_pkgpart',
-                              'label'    => 'Also include services from package: ',
-                              'type'     => 'select-part_pkg',
-                              'm2_label' => 'Include services of package: ',
-                              'm2m_table'        => 'part_pkg_link',
-                              'm2m_target_table' => 'part_pkg', #XXX actually just the method name...
-                              'm2m_dstcol'       => 'dst_pkgpart',
-                              'm2m_static_or_something' => { 'link_type' => 'svc' }, #XXX
-                              'm2_error_callback' => sub { (); }, #XXX existing!
+                            { 'field'      => 'svc_dst_pkgpart',
+                              'label'      => 'Also include services from package: ',
+                              'type'       => 'select-part_pkg',
+                              'm2_label'   => 'Include services of package: ',
+                              'm2m_method' => 'svc_part_pkg_link',
+                              'm2m_dstcol' => 'dst_pkgpart',
+                              'm2_error_callback' =>
+                                &{$m2_error_callback_maker}('svc'),
                             },
 
                             { type  => 'tablebreak-tr-title',
@@ -149,10 +147,10 @@ die "access denied"
       || ( $cgi->param('pkgnum') && $curuser->access_right('Customize customer package') );
 
 #XXX
-# - part_pkg.pm bits (need separate access methods not just part_pkg_link)
 # - tr-part_pkg_freq: month_increments_only (from price plans)
 # - test editing 
-#   - write edit bits for m2ms
+#   - write edit bits for new m2ms
+# - display add-ons in (existing) edit
 # - display add-ons in browse... yeah
 # -QIS- thank goodness
 # - test cloning
@@ -192,7 +190,9 @@ my $error_callback = sub {
         }
         @options;
 
-  $cgi->param($_, $options{$_}) foreach (qw( setup_fee recur_fee ));
+  #$cgi->param($_, $options{$_}) foreach (qw( setup_fee recur_fee ));
+  $object->set($_ => scalar($cgi->param($_)) )
+    foreach (qw( setup_fee recur_fee ));
 
 };
 
@@ -201,16 +201,21 @@ my $new_hashref_callback = sub { { 'plan' => 'flat' }; };
 my $new_object_callback = sub {
   my( $cgi, $hashref, $fields, $opt ) = @_;
 
+  my $part_pkg = '';
   if ( $cgi->param('clone') ) {
     $opt->{action} = 'Custom';
-    $clone_part_pkg = qsearchs('part_pkg', { 'pkgpart' => $cgi->param('clone') } );
-    my $part_pkg = $clone_part_pkg->clone;
+    $clone_part_pkg = qsearchs('part_pkg', { pkgpart=>$cgi->param('clone') } );
+    $part_pkg = $clone_part_pkg->clone;
     $part_pkg->disabled('Y');
     %options = $clone_part_pkg->options;
-    $part_pkg;
   } else {
-    FS::part_pkg->new( $hashref );
+    $part_pkg = FS::part_pkg->new( $hashref );
   }
+
+  $part_pkg->set($_ => '0')
+    foreach (qw( setup_fee recur_fee ));
+
+  $part_pkg;
 
 };
 
@@ -232,6 +237,9 @@ my $edit_callback = sub {
 
   %options = $object->options;
 
+  $object->set($_ => $object->option($_))
+    foreach (qw( setup_fee recur_fee ));
+
 };
 
 my $new_callback = sub {
@@ -243,6 +251,23 @@ my $new_callback = sub {
     @agent_type = map {$_->typenum} qsearch('agent_type',{});
   }
 
+};
+
+my $m2_error_callback_maker = sub {
+  my $link_type = shift; #yay closures
+  return sub {
+    my( $cgi, $object ) = @_;
+      map  {
+             new FS::part_pkg_link {
+               'link_type'   => $link_type,
+               'src_pkgpart' => $object->pkgpart,
+               'dst_pkgpart' => $_,
+             };
+           }
+      grep $_,
+      map  $cgi->param($_),
+      grep /^${link_type}_dst_pkgpart(\d+)$/, $cgi->param;
+  };
 };
 
 my $freq_changed = <<'END';
@@ -341,7 +366,7 @@ my $html_bottom = sub {
           ) {
             my $value = $record->getfield($href->{$field}{'select_key'});
             $html .= qq!<OPTION VALUE="$value"!.
-                     (  $options{$field} =~ /(^|, *)$value *(,|$)/ #XXX fix?
+                     (  $options{$field} =~ /(^|, *)$value *(,|$)/ #?
                           ? ' SELECTED'
                           : ''
                      ).
@@ -351,7 +376,7 @@ my $html_bottom = sub {
           foreach my $key ( keys %{ $href->{$field}{'select_options'} } ) {
             my $label = $href->{$field}{'select_options'}{$key};
             $html .= qq!<OPTION VALUE="$key"!.
-                     ( $options{$field} =~ /(^|, *)$key *(,|$)/ #XXX fix?
+                     ( $options{$field} =~ /(^|, *)$key *(,|$)/ #?
                          ? ' SELECTED'
                          : ''
                      ).
@@ -373,7 +398,7 @@ my $html_bottom = sub {
         foreach my $key ( keys %{ $href->{$field}{'options'} } ) {
           my $label = $href->{$field}{'options'}{$key};
           $html .= qq!$radio VALUE="$key"!.
-                   ( $options{$field} =~ /(^|, *)$key *(,|$)/ #XXX fix?
+                   ( $options{$field} =~ /(^|, *)$key *(,|$)/ #?
                        ? ' CHECKED'
                        : ''
                    ).

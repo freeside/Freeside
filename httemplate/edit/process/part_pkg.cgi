@@ -84,7 +84,8 @@ my $args_callback = sub {
         }
         @options;
 
-  $options{$_} = scalar($cgi->param($_)) for (qw( setup_fee recur_fee ));
+  $options{$_} = scalar( $cgi->param($_) )
+    for (qw( setup_fee recur_fee ));
   
   push @args, 'options' => \%options;
 
@@ -110,6 +111,8 @@ my $args_callback = sub {
 
 };
 
+#these should probably move to @args above and be processed by part_pkg.pm...
+
 $cgi->param('tax_override') =~ /^([\d,]+)$/;
 my (@tax_overrides) = (grep "$_", split (",", $1));
 
@@ -118,7 +121,21 @@ my @process_m2m = (
     'link_table'   => 'part_pkg_taxoverride',
     'target_table' => 'tax_class',
     'params'       => \@tax_overrides,
-  }
+  },
+  { 'link_table'   => 'part_pkg_link',
+    'target_table' => 'part_pkg',
+    'base_field'   => 'src_pkgpart',
+    'target_field' => 'dst_pkgpart',
+    'hashref'      => { 'link_type' => 'bill' },
+    'params'       => [ map $cgi->param($_), grep /^bill_dst_pkgpart/, $cgi->param ],
+  },
+  { 'link_table'   => 'part_pkg_link',
+    'target_table' => 'part_pkg',
+    'base_field'   => 'src_pkgpart',
+    'target_field' => 'dst_pkgpart',
+    'hashref'      => { 'link_type' => 'svc' },
+    'params'       => [ map $cgi->param($_), grep /^svc_dst_pkgpart/, $cgi->param ],
+  },
 );
 
 my $conf = new FS::Conf;
@@ -129,7 +146,6 @@ if ( $cgi->param('pkgpart') || ! $conf->exists('agent_defaultpkg') ) {
     /^(\d+)$/;
     push @agents, $1 if $1;
   }
-  warn "AGENTS: @agents";
   push @process_m2m, {
     'link_table'   => 'type_pkgs',
     'target_table' => 'agent_type',
