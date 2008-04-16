@@ -93,28 +93,51 @@ push @header, 'Pricing';
 $align .= 'r'; #?
 push @fields, sub {
   my $part_pkg = shift;
+  (my $plan = $plan_labels{$part_pkg->plan} ) =~ s/ /&nbsp;/g;
+  my $is_recur = ( $part_pkg->freq ne '0' );
 
   [
     [
-      { data=>$plan_labels{$part_pkg->plan},
-        align=>'center'
+      { data =>$plan,
+        align=>'center',
+        colspan=>2,
       },
     ],
     [
-      { data=>$money_char.
-              sprintf('%.2f setup', $part_pkg->option('setup_fee') ),
+      { data =>$money_char.
+               sprintf('%.2f', $part_pkg->option('setup_fee') ),
         align=>'right'
       },
+      { data => ( $is_recur ? ' setup' : ' one-time' ),
+        align=>'left',
+      },
     ],
     [
-      { data=>( $part_pkg->freq ne '0'
+      { data=>( $is_recur
                   ? $money_char.sprintf('%.2f ', $part_pkg->option('recur_fee') )
-                  : ''
-              ).
-              $part_pkg->freq_pretty,
-        align=>'right'
+                  : $part_pkg->freq_pretty
+              ),
+        align=> ( $is_recur ? 'right' : 'center' ),
+        colspan=> ( $is_recur ? 1 : 2 ),
       },
+      ( $is_recur
+        ?  { data => ( $is_recur ? $part_pkg->freq_pretty : '' ),
+             align=>'left',
+           }
+        : ()
+      ),
     ],
+    ( map { 
+            my $dst_pkg = $_->dst_pkg;
+            [ 
+              { data => 'Add-on:&nbsp;'.$dst_pkg->pkg_comment,
+                align=>'center', #?
+                colspan=>2,
+              }
+            ]
+          }
+      $part_pkg->bill_part_pkg_link
+    ),
   ];
 
 #  $plan_labels{$part_pkg->plan}.'<BR>'.
@@ -190,18 +213,21 @@ push @fields,
                     my $part_pkg = shift;
                     if ( $part_pkg->plan ) {
 
+                      my %options = $part_pkg->options;
+
                       [ map { 
-                              /^(\w+)=(.*)$/; #or something;
                               [
-                                { 'data'  => $1,
+                                { 'data'  => $_,
                                   'align' => 'right',
                                 },
-                                { 'data'  => $part_pkg->format($1,$2),
+                                { 'data'  => $part_pkg->format($_,$options{$_}),
                                   'align' => 'left',
                                 },
                               ];
                             }
-                        split(/\n/, $part_pkg->plandata)
+                        grep { $options{$_} =~ /\S/ } 
+                        grep { $_ !~ /^(setup|recur)_fee$/ }
+                        keys %options
                       ];
 
                     } else {
@@ -226,7 +252,8 @@ push @fields,
               sub {
                     my $part_pkg = shift;
 
-                    [ map  {
+                    [ 
+                      (map {
                              my $pkg_svc = $_;
                              my $part_svc = $pkg_svc->part_svc;
                              my $svc = $part_svc->svc;
@@ -252,7 +279,18 @@ push @fields,
                              <=> $a->primary_svc =~ /^Y/i
                            }
                            $part_pkg->pkg_svc
-
+                      ),
+                      ( map { 
+                              my $dst_pkg = $_->dst_pkg;
+                              [
+                                { data => 'Add-on:&nbsp;'.$dst_pkg->pkg_comment,
+                                  align=>'center', #?
+                                  colspan=>2,
+                                }
+                              ]
+                            }
+                        $part_pkg->svc_part_pkg_link
+                      )
                     ];
 
                   };

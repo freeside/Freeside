@@ -148,11 +148,8 @@ die "access denied"
 
 #XXX
 # - tr-part_pkg_freq: month_increments_only (from price plans)
-# - display add-ons in browse... yeah
-# -QIS- thank goodness
 # - test cloning
 # - test custom pricing
-#recur_flat->recur_fee migration, ugh
 # - move the selectlayer divs away from lame layer_callback
 
 #my ($query) = $cgi->keywords;
