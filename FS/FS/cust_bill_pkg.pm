@@ -5,6 +5,7 @@ use vars qw( @ISA );
 use FS::Record qw( qsearch qsearchs dbdef dbh );
 use FS::cust_main_Mixin;
 use FS::cust_pkg;
+use FS::part_pkg;
 use FS::cust_bill;
 use FS::cust_bill_pkg_detail;
 use FS::cust_bill_pay_pkg;
@@ -45,6 +46,7 @@ supported:
 
 =item pkgnum - package (see L<FS::cust_pkg>) or 0 for the special virtual sales tax package, or -1 for the virtual line item (itemdesc is used for the line)
 
+=item pkgpart_override - optional package definition (see L<FS::part_pkg>) override
 =item setup - setup fee
 
 =item recur - recurring fee
@@ -192,6 +194,21 @@ sub cust_pkg {
   qsearchs( 'cust_pkg', { 'pkgnum' => $self->pkgnum } );
 }
 
+=item part_pkg
+
+Returns the package definition for this invoice line item.
+
+=cut
+
+sub part_pkg {
+  my $self = shift;
+  if ( $self->pkgpart_override ) {
+    qsearchs('part_pkg', { 'pkgpart' => $self->pkgpart_override } );
+  } else {
+    $self->cust_pkg->part_pkg;
+  }
+}
+
 =item cust_bill
 
 Returns the invoice (see L<FS::cust_bill>) for this invoice line item.
@@ -231,7 +248,7 @@ sub desc {
   my $self = shift;
 
   if ( $self->pkgnum > 0 ) {
-    $self->cust_pkg->part_pkg->pkg;
+    $self->part_pkg->pkg;
   } else {
     $self->itemdesc || 'Tax';
   }

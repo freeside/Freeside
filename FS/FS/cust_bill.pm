@@ -1347,7 +1347,7 @@ sub print_csv {
       if ( $cust_bill_pkg->pkgnum ) {
       
         ($pkg, $setup, $recur, $sdate, $edate) = (
-          $cust_bill_pkg->cust_pkg->part_pkg->pkg,
+          $cust_bill_pkg->part_pkg->pkg,
           ( $cust_bill_pkg->setup != 0
             ? sprintf("%.2f", $cust_bill_pkg->setup )
             : '' ),
@@ -1468,7 +1468,7 @@ sub realtime_bop {
              $cust_main->agentnum. ")";
     my $agent = $agent_obj->agent;
     my $pkgs = join(', ',
-      map { $_->cust_pkg->part_pkg->pkg }
+      map { $_->part_pkg->pkg }
         grep { $_->pkgnum } $self->cust_bill_pkg
     );
     $description = eval qq("$dtempl");
@@ -2412,7 +2412,7 @@ sub _items_sections {
 
     if ( $cust_bill_pkg->pkgnum > 0 ) {
 
-      my $desc = $cust_bill_pkg->cust_pkg->part_pkg->classname;
+      my $desc = $cust_bill_pkg->part_pkg->classname;
 
       $s{$desc} += $cust_bill_pkg->setup
         if ( $cust_bill_pkg->setup != 0 );
@@ -2479,7 +2479,7 @@ sub _items_pkg {
   my @cust_bill_pkg =
     grep { $_->pkgnum &&
            ( defined($section)
-               ? $_->cust_pkg->part_pkg->classname eq $section->{'description'}
+               ? $_->part_pkg->classname eq $section->{'description'}
                : 1
            )
          } $self->cust_bill_pkg;

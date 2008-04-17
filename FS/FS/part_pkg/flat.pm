@@ -155,7 +155,8 @@ sub is_prepaid {
 }
 
 sub reset_usage {
-  my($self, $cust_pkg) = @_;
+  my($self, $cust_pkg, %opt) = @_;
+  warn "    resetting usage counters" if $opt{debug} > 1;
   my %values = map { $_, $self->option($_) } 
     grep { $self->option($_, 'hush') } 
     qw(seconds upbytes downbytes totalbytes);

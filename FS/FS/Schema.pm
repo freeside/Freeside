@@ -481,6 +481,7 @@ sub tables_hashref {
       'columns' => [
         'billpkgnum', 'serial', '', '', '', '', 
         'pkgnum',  'int', '', '', '', '', 
+        'pkgpart_override',  'int', 'NULL', '', '', '', 
         'invnum',  'int', '', '', '', '', 
         'setup',   @money_type, '', '', 
         'recur',   @money_type, '', '', 

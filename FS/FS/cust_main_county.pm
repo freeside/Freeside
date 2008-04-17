@@ -184,7 +184,7 @@ sub taxline {
   foreach my $cust_bill_pkg (@_) {
 
     my $cust_bill = $cust_bill_pkg->cust_pkg->cust_bill;
-    my $part_pkg = $cust_bill_pkg->cust_pkg->part_pkg;
+    my $part_pkg = $cust_bill_pkg->part_pkg;
   
     my $taxable_charged = 0;
     $taxable_charged += $cust_bill_pkg->setup
