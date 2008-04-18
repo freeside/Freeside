@@ -19,3 +19,10 @@
 %} 
 %
 
+<%init>
+
+my $conf = new FS::Conf;
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+</%init>

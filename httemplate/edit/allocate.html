@@ -1,0 +1,26 @@
+<% include('elements/edit.html',
+                'name'        => 'Allocation',
+                'table'       => 'addr_block',
+                'labels'      => { 'NetAddr'   => 'Block',
+                                   'routernum' => 'Router',
+                                 },
+                'fields'      => [ { 'field'         => 'NetAddr',
+                                     'type'          => 'fixed',
+                                   },
+                                   { 'field'         => 'routernum',
+                                     'type'          => 'select-table',
+                                     'table'         => 'router',
+                                     'name_col'      => 'routername',
+                                     'disable_empty' => 1,
+                                   },
+                                 ],
+                'post_url'    => "process/addr_block/allocate.cgi",
+                'popup'       => 1,
+          )
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+</%init>
