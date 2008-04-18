@@ -38,8 +38,8 @@ RT::URI::freeside
 
 =head1 DESCRIPTION
 
-URI handler for freeside URIs.  See http://www.sisd.com/freeside/ for
-more information on freeside.
+URI handler for Freeside URIs.  See http://www.freeside.biz/ for more
+information on Freeside.
 
 
 =head1 Public subroutines
