@@ -1821,7 +1821,7 @@ purposes of customer auto-association during create.
 =cut
 
 sub _Requestors {
-    my $self = shift:
+    my $self = shift;
 
     my $group = RT::Group->new($RT::SystemUser);
     $group->LoadTicketRoleGroup(Type => 'Requestor', Ticket => $self->Id);
