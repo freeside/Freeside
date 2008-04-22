@@ -17,6 +17,7 @@ $DEBUG = 1;
 tie my %rating_method, 'Tie::IxHash',
   'prefix' => 'Rate calls by using destination prefix to look up a region and rate according to the internal prefix and rate tables',
   'upstream' => 'Rate calls based on upstream data: If the call type is "1", map the upstream rate ID directly to an internal rate (rate_detail), otherwise, pass the upstream price through directly.',
+  'upstream_simple' => 'Simply pass through and charge the "upstream_price" amount.',
 ;
 
 #tie my %cdr_location, 'Tie::IxHash',
@@ -253,6 +254,22 @@ sub calc_recur {
 
         }
 
+      } elsif ( $self->option('rating_method') eq 'upstream_simple' ) {
+
+        #XXX $charge = sprintf('%.2f', $cdr->upstream_price);
+        $charge = sprintf('%.3f', $cdr->upstream_price);
+        $charges += $charge;
+
+        @call_details = (
+          #time2str("%Y %b %d - %r", $cdr->calldate_unix ),
+          time2str("%c", $cdr->calldate_unix),  #XXX this should probably be a config option dropdown so they can select US vs- rest of world dates or whatnot
+          sprintf('%.2f', $cdr->billsec / 60 ).'m',
+          '$'.$charge, #XXX $money_char
+          #$pretty_destnum,
+          $cdr->userfield, #$rate_region->regionname,
+          $cdr->dst,
+        );
+
       } else {
         die "don't know how to rate CDRs using method: ".
             $self->option('rating_method'). "\n";
@@ -314,9 +331,10 @@ sub calc_recur {
     
         warn "  adding details on charge to invoice: ".
              join(' - ', @call_details )
-          if $DEBUG;
+          if $DEBUG && $charge > 0;
     
-        push @$details, join(' - ', @call_details); #\@call_details,
+        push @$details, join(' - ', @call_details) #\@call_details,
+          if $charge > 0;
   
         # if the customer flag is on, call "downstream_csv" or something
         # like it to export the call downstream!

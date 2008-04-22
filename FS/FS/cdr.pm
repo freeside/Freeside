@@ -449,10 +449,11 @@ as keys (for use with batch_import) and "pretty" format names as values.
 
 sub import_formats {
   (
-    'asterisk' => 'Asterisk',
-    'taqua'    => 'Taqua',
-    'unitel'   => 'Unitel/RSLCOM',
-    'simple'   => 'Simple',
+    'asterisk'       => 'Asterisk',
+    'taqua'          => 'Taqua',
+    'unitel'         => 'Unitel/RSLCOM',
+    'voxlinesystems' => 'VoxLineSystems',  #XXX? get the actual vendor name
+    'simple'         => 'Simple',
   );
 }
 
@@ -667,6 +668,50 @@ my %import_formats = (
     'carrierid',
     'upstream_rateid',
   ],
+  'voxlinesystems' => [ #XXX get the actual vendor name
+    'disposition',                        #Status
+    'startdate',                          #Start (what do you know, a timestamp!
+    sub { my($cdr, $field) = @_; },       #Start date
+    sub { my($cdr, $field) = @_; },       #Start time
+    'enddate',                            #End (also a timestamp!)
+    sub { my($cdr, $field) = @_; },       #End date
+    sub { my($cdr, $field) = @_; },       #End time
+    'accountcode',                        #Calling customer XXX map to agent_custid??
+    sub { my($cdr, $field) = @_; },       #Calling type
+    sub { shift->src('30000'); }, #XXX FAKE XXX 'src',                                #Calling number
+    'userfield',                          #Calling name #?
+    sub { my($cdr, $field) = @_; },       #Called type
+    'dst',                                #Called number
+    sub { my($cdr, $field) = @_; },       #Destination customer
+    sub { my($cdr, $field) = @_; },       #Destination type
+    sub { my($cdr, $field) = @_; },       #Destination Number
+    sub { my($cdr, $field) = @_; },       #Inbound calling type
+    sub { my($cdr, $field) = @_; },       #Inbound calling number
+    sub { my($cdr, $field) = @_; },       #Inbound called type
+    sub { my($cdr, $field) = @_; },       #Inbound called number
+    sub { my($cdr, $field) = @_; },       #Inbound destination type
+    sub { my($cdr, $field) = @_; },       #Inbound destination number
+    sub { my($cdr, $field) = @_; },       #Outbound calling type
+    sub { my($cdr, $field) = @_; },       #Outbound calling number
+    sub { my($cdr, $field) = @_; },       #Outbound called type
+    sub { my($cdr, $field) = @_; },       #Outbound called number
+    sub { my($cdr, $field) = @_; },       #Outbound destination type
+    sub { my($cdr, $field) = @_; },       #Outbound destination number
+    sub { my($cdr, $field) = @_; },       #Internal calling type
+    sub { my($cdr, $field) = @_; },       #Internal calling number
+    sub { my($cdr, $field) = @_; },       #Internal called type
+    sub { my($cdr, $field) = @_; },       #Internal called number
+    sub { my($cdr, $field) = @_; },       #Internal destination type
+    sub { my($cdr, $field) = @_; },       #Internal destination number
+    'duration',                           #Total seconds
+    sub { my($cdr, $field) = @_; },       #Ring seconds
+    'billsec',                            #Billable seconds
+    'upstream_price',                     #Cost
+    sub { my($cdr, $field) = @_; },       #Billing customer
+    sub { my($cdr, $field) = @_; },       #Billing customer name
+    sub { my($cdr, $field) = @_; },       #Billing type
+    sub { my($cdr, $field) = @_; },       #Billing reference
+  ],
   'simple' => [
 
     # Date
@@ -705,8 +750,9 @@ my %import_formats = (
 );
 
 my %import_header = (
-  'simple' => 1,
-  'taqua'  => 1,
+  'simple'         => 1,
+  'taqua'          => 1,
+  'voxlinesystems' => 2, #XXX vendor name
 );
 
 =item batch_import HASHREF
@@ -750,14 +796,13 @@ sub batch_import {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $body = 0;
+  my $header_lines =
+    exists($import_header{$format}) ? $import_header{$format} : 0;
+
   my $line;
   while ( defined($line=<$fh>) ) {
 
-    #skip header...
-    if ( ! $body++ && $import_header{$format} ) { #&& $line =~ /^[\w, "]+$/ ) {
-      next;
-    }
+    next if $header_lines-- > 0; #&& $line =~ /^[\w, "]+$/ 
 
     $csv->parse($line) or do {
       $dbh->rollback if $oldAutoCommit;
