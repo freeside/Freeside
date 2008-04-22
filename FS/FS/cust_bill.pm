@@ -1740,7 +1740,7 @@ sub print_generic {
                          );
   my $escape_function = $escape_functions{$format};
 
-  my %date_formats = ( 'latex'    => '%b, %o, %Y',
+  my %date_formats = ( 'latex'    => '%b %o, %Y',
                        'html'     => '%b&nbsp;%o,&nbsp;%Y',
                        'template' => '%s',
                      );
