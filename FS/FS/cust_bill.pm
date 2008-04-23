@@ -1785,13 +1785,17 @@ sub print_generic {
           );
   } elsif ( grep /\S/, $conf->config('company_address') ) {
 
-    $returnaddress = join( "\n", $conf->config('company_address') );
-
-    $returnaddress =
-      join( '\\*'."\n", map s/( {2,})/'~' x length($1)/eg,
-                            $conf->config('company_address')
-          )
-        if $format eq 'latex';
+    my $convert_map = $convert_maps{$format}{'returnaddress'};
+    $returnaddress = join( "\n", &$convert_map(
+                                   map { s/( {2,})/'~' x length($1)/eg;
+                                         s/$/\\\\\*/;
+                                         $_
+                                       }
+                                     ( $conf->config('company_name'),
+                                       $conf->config('company_address'),
+                                     )
+                                 )
+                     );
 
   } else {
 
