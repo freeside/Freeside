@@ -20,6 +20,8 @@
 
 my %opt = @_;
 
+$opt{'taxproductnum'} ||= $opt{'object'}->taxproductnum
+  if $opt{'object'};
 $opt{'taxproduct_description'} ||= $opt{'object'}->taxproduct_description
   if $opt{'object'};
 
