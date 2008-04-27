@@ -2,8 +2,8 @@
   <TR>
     <TD align="right">Tax product</TD>
     <TD>
-      <INPUT name="part_pkg_taxproduct_taxproductnum" id="taxproductnum" type="hidden" value="<% $opt{'taxproductnum'}%>">
-      <INPUT name="part_pkg_taxproduct_description" id="taxproductnum_description" type="text" value="<% $opt{taxproduct_description} %>" size="12" onclick="overlib( OLiframeContent('<% $p %>/browse/part_pkg_taxproduct.cgi?_type=select&id=taxproductnum&taxproductnum='+document.getElementById('taxproductnum').value, 1000, 400, 'tax_product_popup'), CAPTION, 'Select product', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK); return false;">
+      <INPUT name="taxproductnum" id="taxproductnum" type="hidden" value="<% $opt{'taxproductnum'}%>">
+      <INPUT name="taxproductnum_description" id="taxproductnum_description" type="text" value="<% $opt{taxproduct_description} %>" size="12" onclick="overlib( OLiframeContent('<% $p %>/browse/part_pkg_taxproduct.cgi?_type=select&id=taxproductnum&taxproductnum='+document.getElementById('taxproductnum').value, 1000, 400, 'tax_product_popup'), CAPTION, 'Select product', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK); return false;">
     </TD>
   </TR>
   <TR>
