@@ -115,33 +115,29 @@ END
   ###
   
   foreach my $custnum ( @custnums ) {
+  
+    my %args = (
+        'time'         => $time,
+        'invoice_time' => $invoice_time,
+        'actual_time'  => $^T, #when freeside-bill was started
+                               #(not, when using -m, freeside-queued)
+        'check_freq'   => $check_freq,
+        'resetup'      => ( $opt{'s'} ? $opt{'s'} : 0 ),
+    );
 
     if ( $opt{'m'} ) {
 
       #add job to queue that calls bill_and_collect with options
-        my $queue = new FS::queue {
-          'job'    => 'FS::cust_main::queued_bill',
-          'secure' => 'Y',
-        };
-        my $error = $queue->insert(
-        'custnum'      => $custnum,
-        'time'         => $time,
-        'invoice_time' => $invoice_time,
-        'check_freq'   => $check_freq,
-        'resetup'      => $opt{'s'} ? $opt{'s'} : 0,
-      );
+      my $queue = new FS::queue {
+        'job'    => 'FS::cust_main::queued_bill',
+        'secure' => 'Y',
+      };
+      my $error = $queue->insert( 'custnum'=>$custnum, %args );
 
     } else {
 
       my $cust_main = qsearchs( 'cust_main', { 'custnum' => $custnum } );
-
-      $cust_main->bill_and_collect(
-        'time'         => $time,
-        'invoice_time' => $invoice_time,
-        'check_freq'   => $check_freq,
-        'resetup'      => $opt{'s'},
-        'debug'        => $debug,
-      );
+      $cust_main->bill_and_collect( %args, 'debug' => $debug );
 
     }
 

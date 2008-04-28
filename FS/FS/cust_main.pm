@@ -1950,10 +1950,12 @@ sub bill_and_collect {
   # cancel packages
   ###
 
-  #$^T not $options{time} because freeside-daily -d is for pre-printing invoices
-  foreach my $cust_pkg (
-    grep { $_->expire && $_->expire <= $^T } $self->ncancelled_pkgs
-  ) {
+  #$options{actual_time} not $options{time} because freeside-daily -d is for
+  #pre-printing invoices
+  my @cancel_pkgs = grep { $_->expire && $_->expire <= $options{actual_time} }
+                         $self->ncancelled_pkgs;
+
+  foreach my $cust_pkg ( @cancel_pkgs ) {
     my $error = $cust_pkg->cancel;
     warn "Error cancelling expired pkg ". $cust_pkg->pkgnum.
          " for custnum ". $self->custnum. ": $error"
@@ -1964,15 +1966,22 @@ sub bill_and_collect {
   # suspend packages
   ###
 
-  #$^T not $options{time} because freeside-daily -d is for pre-printing invoices
-  foreach my $cust_pkg (
-    grep { (    $_->part_pkg->is_prepaid && $_->bill && $_->bill < $^T
-             || $_->adjourn && $_->adjourn <= $^T
-           )
-           && ! $_->susp
+  #$options{actual_time} not $options{time} because freeside-daily -d is for
+  #pre-printing invoices
+  my @susp_pkgs = 
+    grep { ! $_->susp
+           && (    (    $_->part_pkg->is_prepaid
+                     && $_->bill
+                     && $_->bill < $options{actual_time}
+                   )
+                || (    $_->adjourn
+                    && $_->adjourn <= $options{actual_time}
+                  )
+              )
          }
-         $self->ncancelled_pkgs
-  ) {
+         $self->ncancelled_pkgs;
+
+  foreach my $cust_pkg ( @susp_pkgs ) {
     my $error = $cust_pkg->suspend;
     warn "Error suspending package ". $cust_pkg->pkgnum.
          " for custnum ". $self->custnum. ": $error"
