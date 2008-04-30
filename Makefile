@@ -353,7 +353,7 @@ clean:
 release:
 	# Update the changelog
 	./CVS2CL
-	cvs commit -m "Updated for ${VERSION}" ChangeLog
+	cvs commit -m "Updated for ${VERSION}" -ko ChangeLog
 
 	# Update the RPM specfile
 	cvs edit ${RPM_SPECFILE}
