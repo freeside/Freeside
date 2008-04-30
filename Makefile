@@ -356,10 +356,12 @@ release:
 	cvs commit -m "Updated for ${VERSION}" ChangeLog
 
 	# Update the RPM specfile
+	cvs edit ${RPM_SPECFILE}
 	perl -p -i -e "s/\d+[^\}]+/${VERSION}/ if /%define\s+version\s+(\d+[^\}]+)\}/;" ${RPM_SPECFILE}
 	cvs commit -m "Updated for ${VERSION}" ${RPM_SPECFILE}
 
 	# Update the Debian changelog
+	cvs edit debian/changelog
 	dch -v ${DEBVERSION} -p "New upstream release"
 	cvs commit -m "Updated for ${VERSION}" debian/changelog
 
