@@ -118,7 +118,7 @@ PERL_INC_DEV_KLUDGE = /usr/local/share/perl/5.8.8/
 VERSION=1.9.0cvs
 TAG=freeside_1_9_0
 
-DEBVERSION = `echo $VERSION | perl -pe 's/(\d)([a-z])/\1~\2/'`-1
+DEBVERSION = `echo ${VERSION} | perl -pe 's/(\d)([a-z])/\1~\2/'`-1
 
 help:
 	@echo "supported targets:"
