@@ -84,6 +84,9 @@ sub upgrade_data {
     'reason_type' => [],
     'reason'      => [],
 
+    #need part_pkg before cust_credit...
+    'part_pkg' => [],
+
     #customer credits
     'cust_credit' => [],
 
