@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
-use vars qw($opt_d $opt_q $opt_v);
+use vars qw($opt_d $opt_s $opt_q $opt_v);
 use vars qw($DEBUG $DRY_RUN);
 use Getopt::Std;
 use DBIx::DBSchema 0.31;
@@ -15,7 +15,7 @@ use FS::Upgrade qw(upgrade);
 
 die "Not running uid freeside!" unless checkeuid();
 
-getopts("dq");
+getopts("dqs");
 
 $DEBUG = !$opt_q;
 #$DEBUG = $opt_v;
@@ -42,7 +42,7 @@ $DBIx::DBSchema::Index::DEBUG = $DEBUG;
 
 my @bugfix = ();
 
-if (dbdef->table('cust_main')->column('agent_custid')) { 
+if (dbdef->table('cust_main')->column('agent_custid') && ! $opt_s) { 
   push @bugfix,
     "UPDATE cust_main SET agent_custid = NULL where agent_custid = ''";
 
@@ -71,10 +71,10 @@ if ( $DRY_RUN ) {
 my $hashref = {};
 $hashref->{dry_run} = 1 if $DRY_RUN;
 $hashref->{debug} = 1 if $DEBUG;
-print join "\n", prune_applications($hashref);
+print join "\n", prune_applications($hashref) unless $opt_s;
 print "\n" if $DRY_RUN;
 
-if ( $dbh->{Driver}->{Name} =~ /^mysql/i ) {
+if ( $dbh->{Driver}->{Name} =~ /^mysql/i && ! $opt_s ) {
 
   my $sth = $dbh->prepare(
     "SELECT COUNT(*) FROM duplicate_lock WHERE lockname = 'svc_acct'"
@@ -121,7 +121,7 @@ $dbh->disconnect or die $dbh->errstr;
 $dbh = adminsuidsetup($user);
 
 upgrade()
-  unless $DRY_RUN;
+  unless $DRY_RUN || $opt_s;
 
 $dbh->commit or die $dbh->errstr;
 $dbh->disconnect or die $dbh->errstr;
@@ -144,7 +144,7 @@ freeside-upgrade - Upgrades database schema for new freeside verisons.
 
 =head1 SYNOPSIS
 
-  freeside-upgrade [ -d ] [ -q | -v ]
+  freeside-upgrade [ -d ] [ -s ] [ -q | -v ]
 
 =head1 DESCRIPTION
 
@@ -168,6 +168,9 @@ Also performs other upgrade functions:
 
   [ -v ]: Run verbosely, sending debugging information to STDERR.  This is the
           current default.
+
+  [ -s ]: Schema changes only.  Useful for Pg/slony slaves where the data
+          changes will be replicated from the Pg/slony master.
 
 =head1 SEE ALSO
 
