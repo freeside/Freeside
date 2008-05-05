@@ -232,13 +232,16 @@ sub payinfo_check {
   } else {
     if ( $self->is_encrypted($self->payinfo) ) {
       #something better?  all it would cause is a decryption error anyway?
-      my $error = $self->ut_anythingn('payinfo');
+      my $error = $self->ut_anything('payinfo');
       return $error if $error;
     } else {
       my $error = $self->ut_textn('payinfo');
       return $error if $error;
     }
   }
+
+  '';
+
 }
 
 =head1 BUGS
