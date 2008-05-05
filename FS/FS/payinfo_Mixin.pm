@@ -216,7 +216,7 @@ sub payinfo_check {
   FS::payby->can_payby($self->table, $self->payby)
     or return "Illegal payby: ". $self->payby;
 
-  if ( $self->payby eq 'CARD' ) {
+  if ( $self->payby eq 'CARD' && ! $self->is_encrypted($self->payinfo) ) {
     my $payinfo = $self->payinfo;
     $payinfo =~ s/\D//g;
     $self->payinfo($payinfo);
@@ -227,7 +227,7 @@ sub payinfo_check {
       validate($self->payinfo) or return "Illegal credit card number";
       return "Unknown card type" if cardtype($self->payinfo) eq "Unknown";
     } else {
-      $self->payinfo('N/A');
+      $self->payinfo('N/A'); #???
     }
   } else {
     my $error = $self->ut_textn('payinfo');
