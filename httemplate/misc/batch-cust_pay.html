@@ -6,13 +6,14 @@
 
 <!-- <B>Batch</B> <INPUT TYPE="text" NAME="paybatch"><BR><BR> -->
 
-<% include( "elements/customer-table.html",
-            header => [ '', 'Amount', 'Check #', '' ],
-            fields => [ sub {'$'}, 'paid', 'payinfo', 'error', ],
-            types  => [ 'immutable', '', '', 'immutable', ],
-            sizes  => [ 0, 8, 10, 0, ],
-            param  => { () },
-          ) %>
+<% include( "/elements/customer-table.html",
+              header => [ '', 'Amount', 'Check #', '' ],
+              fields => [ sub {'$'}, 'paid', 'payinfo', 'error', ],
+              types  => [ 'immutable', '', '', 'immutable', ],
+              sizes  => [ 0, 8, 10, 0, ],
+              param  => { () },
+          )
+%>
 
 <!-- <BR>
 <INPUT TYPE="button" VALUE="TEST addrow" onclick="addRow()"> -->
