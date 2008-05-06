@@ -1,15 +1,23 @@
-%  # options example...  
-%  #
-%  # #listrefs...
-%  # 'header'      => [ '#', 'Item' ],
-%  # 'fields'      => [
-%  #                    'column',
-%  #                    sub { my ($row,$param) = @_; $param->{"column$row"}; },
-%  #                  ],
-%  # 'sizes'       => [],                         # sizes ignored for immutable
-%  # 'types'       => ['immutable', ''],          # immutable or ''/text
-%  # 'param'       => { column0 => 1 },           # preset column of row 0 to 1
-%  # 
+<%doc>
+
+Example:
+
+  include( '/elements/customer-table.html',
+
+             #listrefs...
+             'header'      => [ '#', 'Item' ],
+             'fields'      => [
+                                'column',
+                                sub { my ($row,$param) = @_;
+                                      $param->{"column$row"};
+                                    },
+                              ],
+             'sizes'       => [],                # sizes ignored for immutable
+             'types'       => ['immutable', ''], # immutable or ''/text
+             'param'       => { column0 => 1 },  # preset column of row 0 to 1
+         )
+
+</%doc>
 
 <SCRIPT TYPE="text/javascript">
 
