@@ -34,15 +34,8 @@
 
 <%init>
 
-my $reasonnum = '';
-my($submit, $class);
-
 $cgi->param('custnum') =~ /^(\d+)$/ or die 'illegal custnum';
 my $custnum = $1;
-
-if ( $cgi->param('error') ) {
-  $reasonnum = $cgi->param('reasonnum');
-}
 
 my $curuser = $FS::CurrentUser::CurrentUser;
 

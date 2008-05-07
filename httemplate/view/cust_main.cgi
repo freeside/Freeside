@@ -27,7 +27,7 @@ function areyousure(href, message) {
             )
   %> | 
 
-% } 
+% }
 
 % if ( $conf->exists('deletecustomers')
 %        && $curuser->access_right('Delete customer')
