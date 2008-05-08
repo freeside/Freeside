@@ -210,8 +210,18 @@ Service address
            )
 %>
 
+<% include( '/elements/xmlhttp.html',
+              'url'  => $p.'misc/xmlhttp-cust_main-address_standardize.html',
+              'subs' => [ 'address_standardize' ],
+              #'method' => 'POST', #could get too long?
+          )
+%>
+
 <SCRIPT>
 function bottomfixup(what) {
+
+  //i don't think we need to copy things between two forms anymore, modern
+  //browsers are fine with DIVs inside FORMs
 
   var topvars = new Array(
     'birthdate',
@@ -272,6 +282,58 @@ function bottomfixup(what) {
                );
   }
 
+  //this part does USPS address correction
+
+  // XXX should this be first and should we update the form fields that are
+  // displayed???
+
+  //var state_el = document.bottomform.elements['state'];
+
+  //address_standardize(
+  var cust_main = new Array(
+    'company',  document.bottomform.elements['company'].value,
+    'address1', document.bottomform.elements['address1'].value,
+    'address2', document.bottomform.elements['address2'].value,
+    'city',     document.bottomform.elements['city'].value,
+    'state',    document.bottomform.elements['state'].value,
+    //'state',    state_el.options[ state_el.selectedIndex ].value,
+    'zip',      document.bottomform.elements['zip'].value,
+
+    'ship_company',  document.bottomform.elements['company'].value,
+    'ship_address1', document.bottomform.elements['address1'].value,
+    'ship_address2', document.bottomform.elements['address2'].value,
+    'ship_city',     document.bottomform.elements['city'].value,
+    'ship_state',    document.bottomform.elements['state'].value,
+    //'ship_state',    state_el.options[ state_el.selectedIndex ].value,
+    'ship_zip',      document.bottomform.elements['zip'].value
+  );
+
+  address_standardize( cust_main, update_address );
+
+}
+
+function update_address(arg) {
+
+  var argsHash = eval('(' + arg + ')');
+
+  var address1 = argsHash['address1'];
+  var zip      = argsHash['zip'];
+  var changed  = argsHash['address_standardized'];
+  var ship_changed = argsHash['ship_address_standardized'];
+
+  alert(address1);
+  alert(zip);
+  alert(changed);
+  alert(ship_changed);
+
+% if ( $conf->exists('cust_main-auto_standardize_address') ) {
+  // XXX this path not handled yet
+% } else {
+  // XXX well, this path not handled yet either.  popup a confirmation popup
+% }
+
+  document.bottomform.submit();
+
 }
 
 function copyelement(from, to) {
@@ -298,7 +360,7 @@ function copyelement(from, to) {
 
 </SCRIPT>
 
-<FORM ACTION="<% popurl(1) %>process/cust_main.cgi" METHOD=POST NAME="bottomform" onSubmit="document.bottomform.submit.disabled=true; bottomfixup(this.form);" STYLE="margin-top: 0; margin-bottom: 0">
+<FORM ACTION="<% popurl(1) %>process/cust_main.cgi" METHOD=POST NAME="bottomform" STYLE="margin-top: 0; margin-bottom: 0">
 % foreach my $hidden (
 %     'birthdate',
 %
@@ -438,7 +500,7 @@ function copyelement(from, to) {
 
 <INPUT TYPE="hidden" NAME="otaker" VALUE="<% $cust_main->otaker %>">
 <BR>
-<INPUT TYPE="submit" NAME="submit" VALUE="<% $custnum ?  "Apply Changes" : "Add Customer" %>">
+<INPUT TYPE="button" NAME="submitButton" ID="submitButton" VALUE="<% $custnum ?  "Apply Changes" : "Add Customer" %>" onClick="document.bottomform.submitButton.disabled=true; bottomfixup(this.form);">
 <BR>
 </FORM>
 

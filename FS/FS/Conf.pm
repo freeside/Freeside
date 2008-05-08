@@ -2236,6 +2236,27 @@ worry that config_items is freeside-specific and icky.
                      ],
   },
 
+  {
+    'key'         => 'usps_webtools-userid',
+    'section'     => 'UI',
+    'description' => 'Production UserID for USPS web tools.   Enables USPS address standardization.  See the <a href="http://www.usps.com/webtools/">USPS website</a>, register and agree not to use the tools for batch purposes.',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'usps_webtools-password',
+    'section'     => 'UI',
+    'description' => 'Production password for USPS web tools.   Enables USPS address standardization.  See <a href="http://www.usps.com/webtools/">USPS website</a>, register and agree not to use the tools for batch purposes.',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'cust_main-auto_standardize_address',
+    'section'     => 'UI',
+    'description' => 'When using USPS web tools, automatically standardize the address without asking.',
+    'type'        => 'checkbox',
+  },
+
 );
 
 1;

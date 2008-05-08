@@ -125,8 +125,10 @@ sub handler
       use Chart::LinesPoints;
       use Chart::Mountain;
       use Color::Scheme;
-      use HTML::Widgets::SelectLayers 0.07;
+      use HTML::Widgets::SelectLayers 0.07; #should go away in favor of
+                                            #selectlayers.html
       use Locale::Country;
+      use Business::US::USPS::WebTools::AddressStandardization;
       use FS;
       use FS::UID qw(cgisuidsetup dbh getotaker datasrc driver_name);
       use FS::Record qw(qsearch qsearchs fields dbdef str2time_sql);

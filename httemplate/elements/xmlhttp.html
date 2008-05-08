@@ -1,3 +1,19 @@
+<%doc>
+
+Example:
+
+  include( '/elements/xmlhttp.html',
+    # required
+    'url'  => $p.'misc/something.html',
+    'subs' => [ 'subroutine' ],
+
+    # optional
+    'method' => 'GET', #defaults to GET, could specify POST
+    'key'    => 'unique', #unique key
+
+  );
+
+</%doc>
 <SCRIPT TYPE="text/javascript">
 
   function rs_init_object() {
