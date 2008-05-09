@@ -15,7 +15,7 @@
 %   my @cust_main = smart_search( 'search' => $string );
 %   my $return = [ map [ $_->custnum, $_->name ], @cust_main ];
 %     
-<% to_json($return) %>
+<% objToJson($return) %>
 % } 
 <%init>
 
