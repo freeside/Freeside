@@ -147,7 +147,7 @@ Current packages
 % if ( $cust_pkg->get('cancel') ) { #status: cancelled
 %   my $cpr = $cust_pkg->last_cust_pkg_reason;
 
-    <% pkg_status_row($cust_pkg, 'Cancelled', 'cancel', 'color'=>'FF0000' ) %>
+    <% pkg_status_row($cust_pkg, 'Cancelled', 'cancel', 'color'=>'FF0000', conf=>$conf ) %>
 
     <% pkg_status_row_colspan(
          ( ( $cpr && ( $cpr->date == $cust_pkg->get('cancel') ||
@@ -159,7 +159,7 @@ Current packages
     %>
 
 
-    <% pkg_status_row( $cust_pkg, 'Suspended', 'susp', 'color'=>'FF9900' ) %>
+    <% pkg_status_row( $cust_pkg, 'Suspended', 'susp', 'color'=>'FF9900', conf=>$conf ) %>
 
 %   unless ( $cust_pkg->get('setup') ) { 
 
@@ -167,10 +167,10 @@ Current packages
 
 %   } else { 
 
-       <% pkg_status_row( $cust_pkg, 'Setup', 'setup' ) %>
-       <% pkg_status_row_changed( $cust_pkg ) %>
-       <% pkg_status_row_if( $cust_pkg, $last_bill_or_renewed, 'last_bill' ) %>
-       <% pkg_status_row_if( $cust_pkg, 'Suspended', 'susp' ) %>
+       <% pkg_status_row( $cust_pkg, 'Setup', 'setup', conf=>$conf ) %>
+       <% pkg_status_row_changed( $cust_pkg, conf=>$conf ) %>
+       <% pkg_status_row_if( $cust_pkg, $last_bill_or_renewed, 'last_bill', conf=>$conf ) %>
+       <% pkg_status_row_if( $cust_pkg, 'Suspended', 'susp', conf=>$conf ) %>
 
 %   } 
 %
@@ -179,7 +179,7 @@ Current packages
 %   if ( $cust_pkg->get('susp') ) { #status: suspended
 %     my $cpr = $cust_pkg->last_cust_pkg_reason;
 
-    <% pkg_status_row( $cust_pkg, 'Suspended', 'susp', 'color'=>'FF9900' ) %>
+    <% pkg_status_row( $cust_pkg, 'Suspended', 'susp', 'color'=>'FF9900', conf=>$conf ) %>
 
     <% pkg_status_row_colspan(
          ( ( $cpr && ( $cpr->date == $cust_pkg->susp ||
@@ -193,13 +193,13 @@ Current packages
 %   unless ( $cust_pkg->get('setup') ) { 
       <% pkg_status_row_colspan('Never billed') %>
 %   } else { 
-      <% pkg_status_row($cust_pkg, 'Setup', 'setup' ) %>
+      <% pkg_status_row($cust_pkg, 'Setup', 'setup', conf=>$conf ) %>
 %   } 
 
-    <% pkg_status_row_changed( $cust_pkg ) %>
-    <% pkg_status_row_if( $cust_pkg, $last_bill_or_renewed, 'last_bill' ) %>
-%   # pkg_status_row($cust_pkg, 'Next bill', 'bill')
-    <% pkg_status_row_if( $cust_pkg, 'Expires', 'expire' ) %>
+    <% pkg_status_row_changed( $cust_pkg, conf=>$conf ) %>
+    <% pkg_status_row_if( $cust_pkg, $last_bill_or_renewed, 'last_bill', conf=>$conf ) %>
+%   # pkg_status_row($cust_pkg, 'Next bill', 'bill', conf=>$conf)
+    <% pkg_status_row_if( $cust_pkg, 'Expires', 'expire', conf=>$conf ) %>
 
     <TR>
       <TD COLSPAN=<%$colspan%>>
@@ -244,7 +244,7 @@ Current packages
 
           <% pkg_status_row_colspan('One-time&nbsp;charge') %>
 
-          <% pkg_status_row($cust_pkg, 'Billed', 'setup') %>
+          <% pkg_status_row($cust_pkg, 'Billed', 'setup', conf=>$conf) %>
 
 %       } else { 
 %
@@ -266,17 +266,17 @@ Current packages
             %>
 %         } 
 
-          <% pkg_status_row($cust_pkg, 'Setup', 'setup') %>
+          <% pkg_status_row($cust_pkg, 'Setup', 'setup', conf=>$conf) %>
 
 %       } 
 %
 %     } 
 
-      <% pkg_status_row_changed( $cust_pkg ) %>
-      <% pkg_status_row_if( $cust_pkg, $last_bill_or_renewed, 'last_bill' ) %>
-      <% pkg_status_row_if( $cust_pkg, $next_bill_or_prepaid_until, 'bill' ) %>
-      <% pkg_status_row_if( $cust_pkg, 'Will suspend on', 'adjourn' ) %>
-      <% pkg_status_row_if( $cust_pkg, 'Expires', 'expire' ) %>
+      <% pkg_status_row_changed( $cust_pkg, conf=>$conf ) %>
+      <% pkg_status_row_if( $cust_pkg, $last_bill_or_renewed, 'last_bill', conf=>$conf ) %>
+      <% pkg_status_row_if( $cust_pkg, $next_bill_or_prepaid_until, 'bill', conf=>$conf ) %>
+      <% pkg_status_row_if( $cust_pkg, 'Will suspend on', 'adjourn', conf=>$conf ) %>
+      <% pkg_status_row_if( $cust_pkg, 'Expires', 'expire', conf=>$conf ) %>
 
 %     if ( $part_pkg->freq ) { 
 
@@ -410,7 +410,7 @@ sub pkg_status_row {
   $html   .= qq($title&nbsp;);
   $html   .= qq(</B></FONT>) if length($color);
   $html   .= qq(</TD>);
-  $html   .= pkg_datestr($cust_pkg, $field, $conf).'</TR>';
+  $html   .= pkg_datestr($cust_pkg, $field, $opt{conf}).'</TR>';
 
   $html;
 }
@@ -421,9 +421,9 @@ sub pkg_status_row_if {
 }
 
 sub pkg_status_row_changed {
-  my($cust_pkg) = @_;
+  my( $cust_pkg, %opt ) = @_;
   return '' unless $cust_pkg->change_date;
-  my $html = pkg_status_row( $cust_pkg, 'Package&nbsp;changed', 'change_date' );
+  my $html = pkg_status_row( $cust_pkg, 'Package&nbsp;changed', 'change_date', conf=>$opt{'conf'} );
   my $old = $cust_pkg->old_cust_pkg;
   if ( $old ) {
     my $part_pkg = $old->part_pkg;
