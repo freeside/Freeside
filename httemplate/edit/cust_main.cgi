@@ -4,6 +4,8 @@
       ' onUnload="myclose()"'
 ) %>
 
+<% include('/elements/init_overlib.html') %>
+
 <% include('/elements/error.html') %>
 
 <FORM NAME="topform" STYLE="margin-bottom: 0">
@@ -299,40 +301,143 @@ function bottomfixup(what) {
     //'state',    state_el.options[ state_el.selectedIndex ].value,
     'zip',      document.bottomform.elements['zip'].value,
 
-    'ship_company',  document.bottomform.elements['company'].value,
-    'ship_address1', document.bottomform.elements['address1'].value,
-    'ship_address2', document.bottomform.elements['address2'].value,
-    'ship_city',     document.bottomform.elements['city'].value,
-    'ship_state',    document.bottomform.elements['state'].value,
+    'ship_company',  document.bottomform.elements['ship_company'].value,
+    'ship_address1', document.bottomform.elements['ship_address1'].value,
+    'ship_address2', document.bottomform.elements['ship_address2'].value,
+    'ship_city',     document.bottomform.elements['ship_city'].value,
+    'ship_state',    document.bottomform.elements['ship_state'].value,
     //'ship_state',    state_el.options[ state_el.selectedIndex ].value,
-    'ship_zip',      document.bottomform.elements['zip'].value
+    'ship_zip',      document.bottomform.elements['ship_zip'].value
   );
 
   address_standardize( cust_main, update_address );
 
 }
 
+var standardize_address;
+
 function update_address(arg) {
 
   var argsHash = eval('(' + arg + ')');
 
-  var address1 = argsHash['address1'];
-  var zip      = argsHash['zip'];
   var changed  = argsHash['address_standardized'];
   var ship_changed = argsHash['ship_address_standardized'];
 
-  alert(address1);
-  alert(zip);
-  alert(changed);
-  alert(ship_changed);
+  //yay closures
+  standardize_address = function () {
 
-% if ( $conf->exists('cust_main-auto_standardize_address') ) {
-  // XXX this path not handled yet
-% } else {
-  // XXX well, this path not handled yet either.  popup a confirmation popup
-% }
+    if ( changed ) {
+      document.bottomform.elements['company'].value = argsHash['new_company'];
+      document.bottomform.elements['address1'].value = argsHash['new_address1'];
+      document.bottomform.elements['address2'].value = argsHash['new_address2'];
+      document.bottomform.elements['city'].value = argsHash['new_city'];
+      document.bottomform.elements['state'].value = argsHash['new_state'];
+  //'state',    state_el.options[ state_el.selectedIndex ].value,
+      document.bottomform.elements['zip'].value = argsHash['new_zip'];
+    }
 
-  document.bottomform.submit();
+    if ( ship_changed ) {
+      document.bottomform.elements['ship_company'].value = argsHash['new_ship_company'];
+      document.bottomform.elements['ship_address1'].value = argsHash['new_ship_address1'];
+      document.bottomform.elements['ship_address2'].value = argsHash['new_ship_address2'];
+      document.bottomform.elements['ship_city'].value = argsHash['new_ship_city'];
+      document.bottomform.elements['ship_state'].value = argsHash['new_ship_state'];
+  //'state',    state_el.options[ state_el.selectedIndex ].value,
+      document.bottomform.elements['ship_zip'].value = argsHash['new_ship_zip'];
+    }
+
+  }
+
+  if ( changed || ship_changed ) {
+
+%   if ( $conf->exists('cust_main-auto_standardize_address') ) {
+
+    standardize_address();
+    document.bottomform.submit();
+
+%   } else {
+
+    // popup a confirmation popup
+
+    var confirm_change =
+      '<CENTER><BR><B>Confirm address standardization</B><BR><BR>' +
+      '<TABLE>';
+    
+    if ( changed ) {
+
+      confirm_change = confirm_change + 
+        '<TR><TH>Entered billing address</TH>' +
+          '<TH>Standardized billing address</TH></TR>';
+        // + '<TR><TD>&nbsp;</TD><TD>&nbsp;</TD></TR>';
+      
+      if ( argsHash['company'] || argsHash['new_company'] ) {
+        confirm_change = confirm_change +
+        '<TR><TD>' + argsHash['company'] +
+          '</TD><TD>' + argsHash['new_company'] + '</TD></TR>';
+      }
+      
+      confirm_change = confirm_change +
+        '<TR><TD>' + argsHash['address1'] +
+          '</TD><TD>' + argsHash['new_address1'] + '</TD></TR>' +
+        '<TR><TD>' + argsHash['address2'] +
+          '</TD><TD>' + argsHash['new_address2'] + '</TD></TR>' +
+        '<TR><TD>' + argsHash['city'] + ', ' + argsHash['state'] + '  ' + argsHash['zip'] +
+          '</TD><TD>' + argsHash['new_city'] + ', ' + argsHash['new_state'] + '  ' + argsHash['new_zip'] + '</TD></TR>' +
+          '<TR><TD>&nbsp;</TD><TD>&nbsp;</TD></TR>';
+
+    }
+
+    if ( ship_changed ) {
+
+      confirm_change = confirm_change + 
+        '<TR><TH>Entered service address</TH>' +
+          '<TH>Standardized service address</TH></TR>';
+        // + '<TR><TD>&nbsp;</TD><TD>&nbsp;</TD></TR>';
+      
+      if ( argsHash['ship_company'] || argsHash['new_ship_company'] ) {
+        confirm_change = confirm_change +
+        '<TR><TD>' + argsHash['ship_company'] +
+          '</TD><TD>' + argsHash['new_ship_company'] + '</TD></TR>';
+      }
+      
+      confirm_change = confirm_change +
+        '<TR><TD>' + argsHash['ship_address1'] +
+          '</TD><TD>' + argsHash['new_ship_address1'] + '</TD></TR>' +
+        '<TR><TD>' + argsHash['ship_address2'] +
+          '</TD><TD>' + argsHash['new_ship_address2'] + '</TD></TR>' +
+        '<TR><TD>' + argsHash['ship_city'] + ', ' + argsHash['ship_state'] + '  ' + argsHash['ship_zip'] +
+          '</TD><TD>' + argsHash['new_ship_city'] + ', ' + argsHash['new_ship_state'] + '  ' + argsHash['new_ship_zip'] + '</TD></TR>' +
+        '<TR><TD>&nbsp;</TD><TD>&nbsp;</TD></TR>';
+
+    }
+
+    var addresses = 'address';
+    var height = 268;
+    if ( changed && ship_changed ) {
+      addresses = 'addresses';
+      height = 396; // #what
+    }
+
+    confirm_change = confirm_change +
+      '<TR><TD>' +
+        '<BUTTON TYPE="button" onClick="document.bottomform.submit();"><IMG SRC="<%$p%>images/error.png" ALT=""> Use entered ' + addresses + '</BUTTON>' + 
+      '</TD><TD>' +
+        '<BUTTON TYPE="button" onClick="standardize_address(); document.bottomform.submit();"><IMG SRC="<%$p%>images/tick.png" ALT=""> Use standardized ' + addresses + '</BUTTON>' + 
+      '</TD></TR>' +
+      '<TR><TD COLSPAN=2 ALIGN="center">' +
+        '<BUTTON TYPE="button" onClick="document.bottomform.submitButton.disabled=false; parent.cClick();"><IMG SRC="<%$p%>images/cross.png" ALT=""> Cancel submission</BUTTON></TD></TR>' +
+        
+      '</TABLE></CENTER>';
+
+    overlib( confirm_change, CAPTION, 'Confirm address standardization', STICKY, AUTOSTATUSCAP, CLOSETEXT, '', MIDX, 0, MIDY, 0, DRAGGABLE, WIDTH, 576, HEIGHT, height, BGCOLOR, '#333399', CGCOLOR, '#333399', TEXTSIZE, 3 );
+
+%   }
+
+  } else {
+
+    document.bottomform.submit();
+
+  }
 
 }
 
