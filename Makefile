@@ -21,6 +21,11 @@ FREESIDE_EXPORT = /usr/local/etc/freeside
 MASON_HANDLER = ${FREESIDE_CONF}/handler.pl
 MASONDATA = ${FREESIDE_CACHE}/masondata
 
+#where to put the default configuraiton used by freeside-setup to initialize
+#a new database (not used after that).  primarily of interest to distro
+#package maintainers
+DIST_CONF = ${FREESIDE_CONF}/default_conf
+
 #mod_perl v1
 #APACHE_VERSION = 1
 #mod_perl v2 prereleases up to and including 1.999_21
@@ -201,6 +206,7 @@ perl-modules:
 	  s|%%%FREESIDE_LOCK%%%|${FREESIDE_LOCK}|g;\
 	  s|%%%FREESIDE_CACHE%%%|${FREESIDE_CACHE}|g;\
 	  s|%%%FREESIDE_EXPORT%%%|${FREESIDE_EXPORT}|g;\
+	  s|%%%DIST_CONF%%%|${DIST_CONF}|g;\
 	" blib/script/*
 
 install-perl-modules: perl-modules
@@ -210,6 +216,11 @@ install-perl-modules: perl-modules
 	  || true
 	cd FS; \
 	make install UNINST=1
+	#install this for freeside-setup
+	install -d $(DIST_CONF)
+	#install conf/[a-z]* $(DEFAULT_CONF)
+	#CVS is not [a-z]
+	install `ls -d conf/[a-z]* | grep -v CVS` $(DIST_CONF)
 
 dev-perl-modules: perl-modules
 	[ -d ${PERL_INC_DEV_KLUDGE}/FS -a ! -L ${PERL_INC_DEV_KLUDGE}/FS ] \

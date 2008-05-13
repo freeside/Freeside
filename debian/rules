@@ -57,7 +57,7 @@ export FREESIDE_URL           = http://$(HOSTNAME)/freeside/
 
 #specific to deb pkg, for purposes of saving off a permanent copy of default
 #config for postinst and that sort of thing
-export DEFAULT_CONF           = $(TMP)/usr/share/freeside/default_conf
+export DIST_CONF           = $(TMP)/usr/share/freeside/default_conf
 
 #XXX yuck.  proper RT layout is entirely necessary
 #this seems to infect way to much of RT with the build location, requiring
@@ -112,11 +112,12 @@ install-stamp: build-stamp
 	# debian/<package>-whatever.
 	( cd FS/ && $(MAKE) -e DESTDIR=$(TMP)-lib install )
 
+        #falase laziness w/install-perl-modules now
 	#install this for postinst later (no create-config)
-	install -d $(DEFAULT_CONF)
+	install -d $(DIST_CONF)
 	#install conf/[a-z]* $(DEFAULT_CONF)
 	#CVS is not [a-z]
-	install `ls -d conf/[a-z]* | grep -v CVS` $(DEFAULT_CONF)
+	install `ls -d conf/[a-z]* | grep -v CVS` $(DIST_CONF)
 
 	install -d $(FREESIDE_DOCUMENT_ROOT)
 	install -d $(FREESIDE_CACHE)/masondata #MASONDATA
