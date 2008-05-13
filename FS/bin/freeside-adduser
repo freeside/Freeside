@@ -108,7 +108,7 @@ B<Configuration | Employees | View/Edit employees>.
 
 =head1 NOTE
 
-No explicit htpasswd options are available in 1.7 - passwordsa are now
+No explicit htpasswd options are available in 1.7 - passwords are now
 maintained automatically.
 
 =head1 SEE ALSO
