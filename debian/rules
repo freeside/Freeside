@@ -112,7 +112,7 @@ install-stamp: build-stamp
 	# debian/<package>-whatever.
 	( cd FS/ && $(MAKE) -e DESTDIR=$(TMP)-lib install )
 
-        #falase laziness w/install-perl-modules now
+        #false laziness w/install-perl-modules now
 	#install this for postinst later (no create-config)
 	install -d $(DIST_CONF)
 	#install conf/[a-z]* $(DEFAULT_CONF)
