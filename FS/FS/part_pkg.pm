@@ -254,13 +254,16 @@ sub delete {
 Replaces OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
 
-Currently available options are: I<pkg_svc> and I<primary_svc>
+Currently available options are: I<pkg_svc>, I<primary_svc> and I<options>
 
 If I<pkg_svc> is set to a hashref with svcparts as keys and quantities as
-values, the appropriate FS::pkg_svc records will be replace.
+values, the appropriate FS::pkg_svc records will be replaced.
 
 If I<primary_svc> is set to the svcpart of the primary service, the appropriate
 FS::pkg_svc record will be updated.
+
+If I<options> is set to a hashref, the appropriate FS::part_pkg_option records
+will be replaced.
 
 =cut
 
@@ -275,6 +278,8 @@ sub replace {
     ( ref($_[0]) eq 'HASH' )
       ? shift
       : { @_ };
+
+  $options->{options} = {} unless defined($options->{options});
 
   warn "FS::part_pkg::replace called on $new to replace $old with options".
        join(', ', map "$_ => ". $options->{$_}, keys %$options)
