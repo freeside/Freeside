@@ -663,7 +663,7 @@ while ( @tables ) {
   my ($id)      = $href->{'id'};
   my ($skey)    = $href->{'skey'};
 
-  $d_dbh->do("delete from $table");   #XXX FIXME!
+  #$d_dbh->do("delete from $table");
 
   my $s_sth = $s_dbh->prepare("select count(*) from $stable");
   $s_sth->execute or die $s_sth->errstr;
