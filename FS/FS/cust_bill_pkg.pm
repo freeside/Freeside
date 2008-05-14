@@ -309,6 +309,18 @@ sub cust_credit_bill_pkg {
          );
 }
 
+=item units
+
+Returns the number of billing units (for tax purposes) represented by this,
+line item.
+
+=cut
+
+sub units {
+  my $self = shift;
+  $self->part_pkg->calc_units($self->cust_pkg);
+}
+
 =back
 
 =head1 BUGS

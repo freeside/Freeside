@@ -349,6 +349,10 @@ sub taxline {
   my $self = shift;
   my @cust_bill_pkg = @_;
 
+  warn "calculating taxes for ". $self->taxnum. " on ".
+    join (",", map { $_->pkgnum } @cust_bill_pkg)
+    if $DEBUG;
+
   if ($self->passflag eq 'N') {
     return "fatal: can't (yet) handle taxes not passed to the customer";
   }
@@ -386,7 +390,16 @@ sub taxline {
 
   my $taxable_units = 0;
   unless ($self->recurtax =~ /^Y$/i) {
-    $taxable_units += $_->units foreach @cust_bill_pkg;
+    if ($self->unittype == 0) {
+      $taxable_units += $_->units foreach @cust_bill_pkg;
+    }elsif ($self->unittype == 1) {
+      return qq!fatal: can't (yet) handle fee with minute unit type!;
+    }elsif ($self->unittype == 2) {
+      $taxable_units = 1;
+    }else {
+      return qq!fatal: can't (yet) handle unknown unit type in tax!.
+        $self->taxnum;
+    }
   }
 
   #
@@ -399,6 +412,9 @@ sub taxline {
   $amount += $taxable_charged * $self->tax;
   $amount += $taxable_units * $self->fee;
   
+  warn "calculated taxes as [ $name, $amount ]\n"
+    if $DEBUG;
+
   return [$name, $amount];
 
 }

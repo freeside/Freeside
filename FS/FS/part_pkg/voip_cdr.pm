@@ -424,5 +424,12 @@ sub base_recur {
   $self->option('recur_fee');
 }
 
+#  This equates svc_phone records; perhaps svc_phone should have a field
+#  to indicate it represents a line
+sub calc_units {    
+  my($self, $cust_pkg ) = @_;
+  scalar(grep { $_->part_svc->svcdb eq 'svc_phone' } $cust_pkg->cust_svc);
+}
+
 1;
 

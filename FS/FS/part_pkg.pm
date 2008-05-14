@@ -416,6 +416,11 @@ sub check {
     || $self->ut_enum('disabled', [ '', 'Y' ] )
     || $self->ut_floatn('pay_weight')
     || $self->ut_floatn('credit_weight')
+    || $self->ut_numbern('taxproductnum')
+    || $self->ut_foreign_keyn('taxproductnum',
+                              'part_pkg_taxproduct',
+                              'taxproductnum'
+                             )
     || $self->ut_agentnum_acl('agentnum', 'Edit global package definitions')
     || $self->SUPER::check
   ;
@@ -808,25 +813,57 @@ specified by GEOCODE (see L<FS::part_pkg_taxrate> and ).
 
 =cut
 
+sub _expand_cch_taxproductnum {
+  my $self = shift;
+  my $part_pkg_taxproduct =
+    qsearchs( 'part_pkg_taxproduct',
+              { 'taxproductnum' => $self->taxproductnum }
+            );
+  my ($a,$b,$c,$d) = ( $part_pkg_taxproduct
+                         ? ( split ':', $part_pkg_taxproduct->taxproduct )
+                         : ()
+                     );
+  my $extra_sql = "AND ( taxproduct = '$a:$b:$c:$d'
+                      OR taxproduct = '$a:$b:$c:'
+                      OR taxproduct = '$a:$b:".":$d'
+                      OR taxproduct = '$a:$b:".":' )";
+  map { $_->taxproductnum } qsearch( { 'table'     => 'part_pkg_taxproduct',
+                                       'hashref'   => { 'data_vendor'=>'cch' },
+                                       'extra_sql' => $extra_sql,
+                                   } );
+                                     
+}
+
 sub part_pkg_taxrate {
   my $self = shift;
   my ($data_vendor, $geocode) = @_;
 
   my $dbh = dbh;
+  my $extra_sql = 'WHERE part_pkg_taxproduct.data_vendor = '.
+                  dbh->quote($data_vendor);
+  
   # CCH oddness in m2m
-  my $extra_sql = 'AND ('.
+  $extra_sql .= ' AND ('.
     join(' OR ', map{ 'geocode = '. $dbh->quote(substr($geocode, 0, $_)) }
                  qw(10 5 2)
         ).
     ')';
-  my $order_by = 'ORDER BY taxclassnum, length(geocode) desc';
-  my $select   = 'DISTINCT ON(taxclassnum) *';
+  # much more CCH oddness in m2m -- this is kludgy
+  $extra_sql .= ' AND ('.
+    join(' OR ', map{ "taxproductnum = $_" } $self->_expand_cch_taxproductnum).
+    ')';
 
+  my $addl_from = 'LEFT JOIN part_pkg_taxproduct USING ( taxproductnum )';
+  my $order_by = 'ORDER BY taxclassnum, length(geocode) desc, length(taxproduct) desc';
+  my $select   = 'DISTINCT ON(taxclassnum) *, taxproduct';
+
+  # should qsearch preface columns with the table to facilitate joins?
   qsearch( { 'table'     => 'part_pkg_taxrate',
-             'select'    => 'distinct on(taxclassnum) *',
-             'hashref'   => { 'data_vendor'   => $data_vendor,
-                              'taxproductnum' => $self->taxproductnum,
+             'select'    => $select,
+             'hashref'   => { # 'data_vendor'   => $data_vendor,
+                              # 'taxproductnum' => $self->taxproductnum,
                             },
+             'addl_from' => $addl_from,
              'extra_sql' => $extra_sql,
              'order_by'  => $order_by,
          } );
@@ -891,6 +928,7 @@ sub _calc_eval {
 
 sub calc_remain { 0; }
 sub calc_cancel { 0; }
+sub calc_units  { 0; }
 
 =back
 
@@ -1058,6 +1096,8 @@ setup and recur semantics are not yet defined (and are implemented in
 FS::cust_bill.  hmm.).  now they're deprecated and need to go.
 
 plandata should go
+
+part_pkg_taxrate is Pg specific
 
 =head1 SEE ALSO
 
