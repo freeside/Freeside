@@ -2237,6 +2237,13 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'disable_previous_balance',
+    'section'     => 'billing',
+    'description' => 'Disable inclusion of previous balancem payment, and credit lines on invoices',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'usps_webtools-userid',
     'section'     => 'UI',
     'description' => 'Production UserID for USPS web tools.   Enables USPS address standardization.  See the <a href="http://www.usps.com/webtools/">USPS website</a>, register and agree not to use the tools for batch purposes.',

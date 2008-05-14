@@ -1950,7 +1950,11 @@ sub print_generic {
     push @sections, { 'description' => '', 'subtotal' => '' };
   }
 
-  foreach my $line_item ( $self->_items_previous ) {
+  foreach my $line_item ( $conf->exists('disable_previous_balance') 
+                            ? ()
+                            : $self->_items_previous
+                        )
+  {
     my $detail = {
       ext_description => [],
     };
@@ -1975,7 +1979,7 @@ sub print_generic {
                ];
   }
   
-  if (@pr_cust_bill) {
+  if ( @pr_cust_bill && !$conf->exists('disable_previous_balance') ) {
     push @buf, ['','-----------'];
     push @buf, [ 'Total Previous Balance',
                  $money_char. sprintf("%10.2f", $pr_total) ];
@@ -2036,7 +2040,7 @@ sub print_generic {
   
   }
   
-  if ( $multisection ) {
+  if ( $multisection && !$conf->exists('disable_previous_balance') ) {
     unshift @sections, $previous_section;
   }
 
@@ -2066,7 +2070,10 @@ sub print_generic {
   }
   
   push @buf,['','-----------'];
-  push @buf,['Total New Charges',
+  push @buf,[( $conf->exists('disable_previous_balance') 
+               ? 'Total Charges'
+               : 'Total New Charges'
+             ),
              $money_char. sprintf("%10.2f",$self->charged) ];
   push @buf,['',''];
 
@@ -2074,66 +2081,79 @@ sub print_generic {
     my $total = {};
     $total->{'total_item'} = &$embolden_function('Total');
     $total->{'total_amount'} =
-    $total->{'total_amount'} =
       &$embolden_function(
-        $other_money_char.  sprintf('%.2f', $self->charged + $pr_total )
+        $other_money_char.
+        sprintf( '%.2f',
+                 $self->charged + ( $conf->exists('disable_previous_balance')
+                                    ? 0
+                                    : $pr_total
+                                  )
+               )
       );
     push @total_items, $total;
     push @buf,['','-----------'];
     push @buf,['Total Charges',
-               $money_char. sprintf("%10.2f",$self->charged + $pr_total) ];
+               $money_char.
+               sprintf( '%10.2f', $self->charged +
+                                    ( $conf->exists('disable_previous_balance')
+                                        ? 0
+                                        : $pr_total
+                                    )
+                      )
+              ];
     push @buf,['',''];
   }
   
-
-  #foreach my $thing ( sort { $a->_date <=> $b->_date } $self->_items_credits, $self->_items_payments
+  unless ( $conf->exists('disable_previous_balance') ) {
+    #foreach my $thing ( sort { $a->_date <=> $b->_date } $self->_items_credits, $self->_items_payments
   
-  # credits
-  foreach my $credit ( $self->_items_credits ) {
-    my $total;
-    $total->{'total_item'} = &$escape_function($credit->{'description'});
-    #$credittotal
-    $total->{'total_amount'} = '-'. $other_money_char. $credit->{'amount'};
-    push @total_items, $total;
-  }
+    # credits
+    foreach my $credit ( $self->_items_credits ) {
+      my $total;
+      $total->{'total_item'} = &$escape_function($credit->{'description'});
+      #$credittotal
+      $total->{'total_amount'} = '-'. $other_money_char. $credit->{'amount'};
+      push @total_items, $total;
+    }
   
-  # credits (again)
-  foreach ( $self->cust_credited ) {
-
-    #something more elaborate if $_->amount ne $_->cust_credit->credited ?
-
-    my $reason = substr($_->cust_credit->reason,0,32);
-    $reason .= '...' if length($reason) < length($_->cust_credit->reason);
-    $reason = " ($reason) " if $reason;
-    push @buf,[
-      "Credit #". $_->crednum. " (". time2str("%x",$_->cust_credit->_date) .")".        $reason,
-      $money_char. sprintf("%10.2f",$_->amount)
-    ];
-  }
-
-  # payments
-  foreach my $payment ( $self->_items_payments ) {
-    my $total = {};
-    $total->{'total_item'} = &$escape_function($payment->{'description'});
-    #$paymenttotal
-    $total->{'total_amount'} = '-'. $other_money_char. $payment->{'amount'};
-    push @total_items, $total;
-    push @buf, [ $payment->{'description'},
-                 $money_char. sprintf("%10.2f", $payment->{'amount'}),
-               ];
-  }
+    # credits (again)
+    foreach ( $self->cust_credited ) {
   
-  { 
-    my $total;
-    $total->{'total_item'} = &$embolden_function($self->balance_due_msg);
-    $total->{'total_amount'} =
-      &$embolden_function(
-        $other_money_char. sprintf('%.2f', $self->owed + $pr_total )
-      );
-    push @total_items, $total;
-    push @buf,['','-----------'];
-    push @buf,[$self->balance_due_msg, $money_char. 
-      sprintf("%10.2f", $balance_due ) ];
+      #something more elaborate if $_->amount ne $_->cust_credit->credited ?
+
+      my $reason = substr($_->cust_credit->reason,0,32);
+      $reason .= '...' if length($reason) < length($_->cust_credit->reason);
+      $reason = " ($reason) " if $reason;
+      push @buf,[
+        "Credit #". $_->crednum. " (". time2str("%x",$_->cust_credit->_date) .")".        $reason,
+        $money_char. sprintf("%10.2f",$_->amount)
+      ];
+    }
+
+    # payments
+    foreach my $payment ( $self->_items_payments ) {
+      my $total = {};
+      $total->{'total_item'} = &$escape_function($payment->{'description'});
+      #$paymenttotal
+      $total->{'total_amount'} = '-'. $other_money_char. $payment->{'amount'};
+      push @total_items, $total;
+      push @buf, [ $payment->{'description'},
+                   $money_char. sprintf("%10.2f", $payment->{'amount'}),
+                 ];
+    }
+  
+    { 
+      my $total;
+      $total->{'total_item'} = &$embolden_function($self->balance_due_msg);
+      $total->{'total_amount'} =
+        &$embolden_function(
+          $other_money_char. sprintf('%.2f', $self->owed + $pr_total )
+        );
+      push @total_items, $total;
+      push @buf,['','-----------'];
+      push @buf,[$self->balance_due_msg, $money_char. 
+        sprintf("%10.2f", $balance_due ) ];
+    }
   }
 
   $invoice_data{'logo_file'} = $params{'logo_file'}
