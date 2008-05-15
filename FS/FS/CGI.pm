@@ -369,7 +369,7 @@ sub small_custview {
       if $cust_main->get("${pre}address2");
     $html .= $cust_main->get("${pre}city"). ', '.
              $cust_main->get("${pre}state"). '  '.
-             $cust_main->get("${pre}ship_zip"). '<BR>';
+             $cust_main->get("${pre}zip"). '<BR>';
     $html .= $cust_main->get("${pre}country"). '<BR>'
       if $cust_main->get("${pre}country")
          && $cust_main->get("${pre}country") ne $countrydefault;
