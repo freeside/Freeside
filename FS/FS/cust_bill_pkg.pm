@@ -112,7 +112,8 @@ sub insert {
     my $cust_bill_pkg_detail = new FS::cust_bill_pkg_detail {
       'pkgnum' => $self->pkgnum,
       'invnum' => $self->invnum,
-      'detail' => $detail,
+      'format' => (ref($detail) ? $detail->[0] : '' ),
+      'detail' => (ref($detail) ? $detail->[1] : $detail ),
     };
     $error = $cust_bill_pkg_detail->insert;
     if ( $error ) {
@@ -220,18 +221,62 @@ sub cust_bill {
   qsearchs( 'cust_bill', { 'invnum' => $self->invnum } );
 }
 
-=item details
+=item details [ OPTION => VALUE ... ]
 
 Returns an array of detail information for the invoice line item.
+
+Currently available options are: I<format> I<escape_function>
+
+If I<format> is set to html or latex then the array members are improved
+for tabular appearance in those environments if possible.
+
+If I<escape_function> is set then the array members are processed by this
+function before being returned.
 
 =cut
 
 sub details {
-  my $self = shift;
+  my ( $self, %opt ) = @_;
+  my $format = $opt{format} || '';
+  my $escape_function = $opt{escape_function} || sub { shift };
   return () unless defined dbdef->table('cust_bill_pkg_detail');
-  map { $_->detail }
-    qsearch ( 'cust_bill_pkg_detail', { 'pkgnum' => $self->pkgnum,
-                                        'invnum' => $self->invnum, } );
+
+  eval "use Text::CSV_XS;";
+  die $@ if $@;
+  my $csv = new Text::CSV_XS;
+
+  my $format_sub = sub { my $detail = shift;
+                         $csv->parse($detail) or return "can't parse $detail";
+                         join(' - ', map { &$escape_function($_) }
+                                     $csv->fields
+                             );
+                       };
+
+  $format_sub = sub { my $detail = shift;
+                      $csv->parse($detail) or return "can't parse $detail";
+                      join('</TD><TD>', map { &$escape_function($_) }
+                                        $csv->fields
+                          );
+                    }
+    if $format eq 'html';
+
+  $format_sub = sub { my $detail = shift;
+                      $csv->parse($detail) or return "can't parse $detail";
+                      join(' & ', map { &$escape_function($_) } $csv->fields );
+                    }
+    if $format eq 'latex';
+
+  map { ( $_->format eq 'C'
+          ? &{$format_sub}( $_->detail )
+          : &{$escape_function}( $_->detail )
+        )
+      }
+    qsearch ({ 'table'    => 'cust_bill_pkg_detail',
+               'hashref'  => { 'pkgnum' => $self->pkgnum,
+                               'invnum' => $self->invnum,
+                             },
+               'order_by' => 'ORDER BY detailnum',
+            });
     #qsearch ( 'cust_bill_pkg_detail', { 'lineitemnum' => $self->lineitemnum });
 }
 

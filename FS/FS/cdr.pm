@@ -408,6 +408,14 @@ my %export_formats = (
     sub { shift->rated_price ? 'Y' : 'N' }, #RATED
     '', #OTHER_INFO
   ],
+  'voxlinesystems' => [
+    sub { time2str('%D', shift->calldate_unix ) },   #DATE
+    sub { time2str('%T', shift->calldate_unix ) },   #TIME
+    'userfield',                                     #USER
+    'dst',                                           #NUMBER_DIALED
+    sub { sprintf('%.2fm', shift->billsec / 60 ) },  #DURATION
+    sub { sprintf('%.3f', shift->upstream_price ) }, #PRICE
+  ],
 );
 
 sub downstream_csv {

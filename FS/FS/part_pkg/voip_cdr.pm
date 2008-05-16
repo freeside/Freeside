@@ -292,15 +292,7 @@ sub calc_recur {
         $charge = sprintf('%.3f', $cdr->upstream_price);
         $charges += $charge;
 
-        @call_details = (
-          #time2str("%Y %b %d - %r", $cdr->calldate_unix ),
-          time2str("%c", $cdr->calldate_unix),  #XXX this should probably be a config option dropdown so they can select US vs- rest of world dates or whatnot
-          sprintf('%.2f', $cdr->billsec / 60 ).'m',
-          '$'.$charge, #XXX $money_char
-          #$pretty_destnum,
-          $cdr->userfield, #$rate_region->regionname,
-          $cdr->dst,
-        );
+        @call_details = ( $cdr->downstream_csv( 'format' => 'voxlinesystems' ));
 
       } else {
         die "don't know how to rate CDRs using method: ".
@@ -363,7 +355,12 @@ sub calc_recur {
         }
 
         if ( $charge > 0 ) {
-          my $call_details = join(' - ', @call_details );
+          my $call_details;
+          if ( $self->option('rating_method') eq 'upstream_simple' ) {
+            $call_details = [ 'C', $call_details[0] ];
+          }else{
+            $call_details = join(' - ', @call_details );
+          }
           warn "  adding details on charge to invoice: $call_details"
             if $DEBUG;
           push @$details, $call_details; #\@call_details,
@@ -381,6 +378,9 @@ sub calc_recur {
       }
 
     } # $cdr
+
+    unshift @$details, [ 'C', "Date,Time,Name,Destination,Duration,Price" ]
+      if (@$details && $self->option('rating_method') eq 'upstream_simple' );
 
   } # $cust_svc
 

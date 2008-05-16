@@ -499,6 +499,7 @@ sub tables_hashref {
         'detailnum', 'serial', '', '', '', '', 
         'pkgnum',  'int', '', '', '', '', 
         'invnum',  'int', '', '', '', '', 
+        'format',  'char', 'NULL', 1, '', '',
         'detail',  'varchar', '', $char_d, '', '', 
       ],
       'primary_key' => 'detailnum',

@@ -2000,6 +2000,7 @@ sub print_generic {
 
     my %options = ();
     $options{'section'} = $section if $multisection;
+    $options{'format'} = $format;
 
     foreach my $line_item ( $self->_items_pkg(%options) ) {
       my $detail = {
@@ -2010,9 +2011,7 @@ sub print_generic {
       $detail->{'section'} = $section;
       $detail->{'description'} = &$escape_function($line_item->{'description'});
       if ( exists $line_item->{'ext_description'} ) {
-        @{$detail->{'ext_description'}} = map {
-          &$escape_function($_);
-        } @{$line_item->{'ext_description'}};
+        @{$detail->{'ext_description'}} = @{$line_item->{'ext_description'}};
       }
       {
         my $money = $old_latex ? '' : $money_char;
@@ -2528,6 +2527,9 @@ sub _items_tax {
 sub _items_cust_bill_pkg {
   my $self = shift;
   my $cust_bill_pkg = shift;
+  my %opt = @_;
+  my $format = $opt{format} || '';
+  my $escape_function = $opt{escape_function} || sub { shift };
 
   my @b = ();
   foreach my $cust_bill_pkg ( @$cust_bill_pkg ) {
@@ -2542,7 +2544,10 @@ sub _items_cust_bill_pkg {
         my $description = $desc;
         $description .= ' Setup' if $cust_bill_pkg->recur != 0;
         my @d = $cust_pkg->h_labels_short($self->_date);
-        push @d, $cust_bill_pkg->details if $cust_bill_pkg->recur == 0;
+        push @d, $cust_bill_pkg->details( 'format'          => $format,
+                                          'escape_function' => $escape_function,
+                                        )
+          if $cust_bill_pkg->recur == 0;
         push @b, {
           description     => $description,
           #pkgpart         => $part_pkg->pkgpart,
@@ -2569,7 +2574,8 @@ sub _items_cust_bill_pkg {
             [ $cust_pkg->h_labels_short( $self->_date ),
                                          #$cust_bill_pkg->edate,
                                          #$cust_bill_pkg->sdate),
-              $cust_bill_pkg->details,
+              $cust_bill_pkg->details( 'format'          => $format,
+                                       'escape_function' => $escape_function),
             ],
         };
       }
