@@ -5,13 +5,14 @@ use vars qw( @ISA @EXPORT_OK );
 use Exporter;
 use Tie::IxHash;
 use FS::UID qw( dbh driver_name );
+use FS::Conf;
 use FS::Record;
 
 use FS::svc_domain;
 $FS::svc_domain::whois_hack = 1;
 
 @ISA = qw( Exporter );
-@EXPORT_OK = qw( upgrade );
+@EXPORT_OK = qw( upgrade upgrade_sqlradius );
 
 =head1 NAME
 
@@ -105,6 +106,70 @@ sub upgrade_data {
 
 }
 
+sub upgrade_sqlradius {
+  #my %opt = @_;
+
+  my $conf = new FS::Conf;
+
+  my @part_export = FS::part_export::sqlradius->all_sqlradius_withaccounting();
+
+  foreach my $part_export ( @part_export ) {
+    my $dbh = DBI->connect( map $part_export->option($_),
+                             qw ( datasrc username password ) );
+  
+    my $str2time = str2time_sql( $dbh->{Driver}->{Name} );
+    my $group = "UserName";
+    $group .= ",Realm"
+      if ( ref($part_export) =~ /withdomain/ );
+
+    my $sth_alter = $dbh->prepare(
+      "ALTER TABLE radacct ADD COLUMN FreesideStatus varchar(32) NULL"
+    );
+    if ( $sth_alter && $sth_alter->execute ) {
+      my $sth_update = $dbh->prepare(
+       "UPDATE radacct SET FreesideStatus = 'done' WHERE FreesideStatus IS NULL"
+      ) or die $dbh->errstr;
+      $sth_update->execute or die $sth_update->errstr;
+    }
+
+    my $sth = $dbh->prepare("SELECT UserName,
+                                    Realm,
+                                    $str2time max(AcctStartTime)),
+                                    $str2time max(AcctStopTime))
+                              FROM radacct
+                              WHERE FreesideStatus = 'done'
+                                AND AcctStartTime != 0
+                                AND AcctStopTime  != 0
+                              GROUP BY $group
+                            ")
+      or die $dbh->errstr;
+    $sth->execute() or die $sth->errstr;
+  
+    while (my $row = $sth->fetchrow_arrayref ) {
+      my ($username, $realm, $start, $stop) = @$row;
+  
+      $username = lc($username) unless $conf->exists('username-uppercase');
+      my $extra_sql = '';
+      if ( ref($part_export) =~ /withdomain/ ) {
+        $extra_sql = " And '$realm' = ( SELECT domain FROM svc_domain
+                         WHERE svc_domain.svcnum = svc_acct.domsvc ) ";
+      }
+  
+      my $svc_acct = qsearchs( 'svc_acct',
+                               { 'username' => $username },
+                               '',
+                               $extra_sql,
+                             );
+      if ($svc_acct) {
+        $svc_acct->last_login($start)
+          if $start && (!$svc_acct->last_login || $start > $svc_acct->last_login);
+        $svc_acct->last_logout($stop)
+          if $stop && (!$svc_acct->last_logout || $stop > $svc_acct->last_logout);
+      }
+    }
+  }
+
+}
 
 =back
 

@@ -21,9 +21,9 @@ case "$1" in
         freeside-queued $QUEUED_USER
         echo "done."
 
-        #echo -n "Starting freeside-sqlradius-radacctd: "
-        #freeside-sqlradius-radacctd $QUEUED_USER
-        #echo "done."
+        echo -n "Starting freeside-sqlradius-radacctd: "
+        freeside-sqlradius-radacctd $QUEUED_USER
+        echo "done."
 
         echo -n "Starting freeside-prepaidd: "
         freeside-prepaidd $QUEUED_USER

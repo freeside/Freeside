@@ -123,6 +123,9 @@ $dbh = adminsuidsetup($user);
 upgrade()
   unless $DRY_RUN || $opt_s;
 
+upgrade_sqlradius()
+  unless $DRY_RUN || $opt_s;
+
 $dbh->commit or die $dbh->errstr;
 $dbh->disconnect or die $dbh->errstr;
 
@@ -135,7 +138,7 @@ sub dbdef_create { # reverse engineer the schema from the DB and save to file
 }
 
 sub usage {
-  die "Usage:\n  freeside-upgrade [ -d ] [ -q | -v ] user\n"; 
+  die "Usage:\n  freeside-upgrade [ -d ] [ -s ] [ -q | -v ] user\n"; 
 }
 
 =head1 NAME

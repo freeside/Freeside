@@ -718,5 +718,27 @@ sub _try_decrement {
   return 'skipped';
 }
 
+###
+#class methods
+###
+
+sub all_sqlradius {
+  #my $class = shift;
+
+  #don't just look for ->can('usage_sessions'), we're sqlradius-specific
+  # (radiator is supposed to be setup with a radacct table)
+  #i suppose it would be more slick to look for things that inherit from us..
+
+  my @part_export = ();
+  push @part_export, qsearch('part_export', { 'exporttype' => $_ } )
+    foreach qw(sqlradius sqlradius_withdomain radiator);
+  @part_export;
+}
+
+sub all_sqlradius_withaccounting {
+  my $class = shift;
+  grep { ! $_->option('ignore_accounting') } $class->_part_export_sqlradius;
+}
+
 1;
 

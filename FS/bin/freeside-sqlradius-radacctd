@@ -9,6 +9,7 @@ use FS::Daemon qw(daemonize1 drop_root logfile daemonize2 sigint sigterm);
 use FS::UID qw(adminsuidsetup); #forksuidsetup driver_name dbh myconnect);
 use FS::Record qw(qsearch); # qsearchs);
 use FS::part_export;
+use FS::part_export::sqlradius;
 #use FS::svc_acct;
 #use FS::cust_svc;
 
@@ -29,17 +30,7 @@ daemonize2();
 
 #--
 
-#don't just look for ->can('usage_sessions'), we're sqlradius-specific
-# (radiator is supposed to be setup with a radacct table)
-
-@part_export =
-  qsearch('part_export', { 'exporttype' => 'sqlradius' } );
-push @part_export,
-  qsearch('part_export', { 'exporttype' => 'sqlradius_withdomain' } );
-push @part_export,
-  qsearch('part_export', { 'exporttype' => 'radiator' } );
-
-@part_export = grep { ! $_->option('ignore_accounting') } @part_export;
+my @part_export = FS::part_export::sqlradius->all_sqlradius_withaccounting();
 
 die "no sqlradius, sqlradius_withdomain or radiator exports without".
     " ignore_accounting"
@@ -129,12 +120,16 @@ freeside-sqlradius-radacctd - Real-time radacct import daemon
 
 Imports records from an the SQL radacct tables of all sqlradius, 
 sqlradius_withdomain and radiator exports (except those with the
-ignore_accounting flag) and updates the svc_acct.seconds for each account.
-Runs as a daemon and updates the database in real-time.
+ignore_accounting flag) and updates the following fields in svc_acct (see
+L<FS::svc_acct>) for each account: last_login, last_logout, seconds,
+upbytes, downbytes, totalbytes.  Runs as a daemon and updates the database
+in real-time.
 
 B<username> is a username added by freeside-adduser.
 
 =head1 RADIUS DATABASE CHANGES
+
+In 1.7.4+, freeside-upgrade should have taken care of these changes already.
 
 ALTER TABLE radacct ADD COLUMN FreesideStatus varchar(32) NULL;
 
