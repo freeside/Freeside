@@ -7,11 +7,16 @@
 <!-- <B>Batch</B> <INPUT TYPE="text" NAME="paybatch"><BR><BR> -->
 
 <% include( "/elements/customer-table.html",
-              header => [ '', 'Amount', 'Check #', '' ],
-              fields => [ sub {'$'}, 'paid', 'payinfo', 'error', ],
-              types  => [ 'immutable', '', '', 'immutable', ],
-              sizes  => [ 0, 8, 10, 0, ],
-              param  => { () },
+              name_singular => 'payment',
+              header  => [ '', 'Amount', 'Check #', '' ],
+              fields  => [ sub {'$'}, 'paid', 'payinfo', 'error', ],
+              types   => [ 'immutable', '', '', 'immutable', ],
+              align   => [ 'c', 'r', 'r', 'l' ],
+              sizes   => [ 0, 8, 10, 0, ],
+              colors  => [ '', '', '', '#ff0000' ],
+              param   => { () },
+              footer  => [ '$', '_TOTAL', '', '' ],
+              footer_align => [ 'c', 'r', 'r', '' ],
           )
 %>
 

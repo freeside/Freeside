@@ -4,17 +4,36 @@ Example:
 
   include( '/elements/customer-table.html',
 
+             ###
+             # required
+             ###
+
              #listrefs...
-             'header'      => [ '#', 'Item' ],
-             'fields'      => [
-                                'column',
-                                sub { my ($row,$param) = @_;
-                                      $param->{"column$row"};
-                                    },
-                              ],
-             'sizes'       => [],                # sizes ignored for immutable
-             'types'       => ['immutable', ''], # immutable or ''/text
-             'param'       => { column0 => 1 },  # preset column of row 0 to 1
+             'header'        => [ '#', 'Item' ],
+             'fields'        => [
+                                  'column',
+                                  sub { my ($row,$param) = @_;
+                                        $param->{"column$row"};
+                                      },
+                                ],
+
+             ###
+             # optional
+             ###
+
+             'name_singular' => 'customer', #label
+
+             #listrefs
+             'types'         => ['immutable', ''], # immutable or ''/text
+             'align'         => [ 'c', 'l', 'r', '' ],
+             'size'          => [],                # sizes ignored for immutable
+             'color'         => [],
+             'footer'        => ['string', '_TOTAL'], # strings or the special
+                                                      #value _TOTAL
+             'footer_align'  => [ 'c', 'l', 'r', '' ],
+
+             'param'         => { column0 => 1 },  # preset column of row 0 to 1
+
          )
 
 </%doc>
@@ -232,12 +251,20 @@ Example:
     <TR>
 
       <TD>
-        <INPUT TYPE="text" NAME="custnum<% $row %>" ID="custnum<% $row %>" SIZE=8 MAXLENGTH=12 VALUE="<% $param->{"custnum$row"} %>" rownum="<% $row %>">
-          <SCRIPT TYPE="text/javascript">
-            var custnum_input<% $row %> = document.getElementById("custnum<% $row %>");
-            custnum_input<% $row %>.onfocus = clearhint_custnum;
-            custnum_input<% $row %>.onchange = <% $opt{prefix} %>search_custnum;
-          </SCRIPT>
+        <INPUT TYPE      = "text"
+               NAME      = "custnum<% $row %>"
+               ID        = "custnum<% $row %>"
+               SIZE      = 8
+               MAXLENGTH = 12
+               STYLE     = "text-align:right;"
+               VALUE     = "<% $param->{"custnum$row"} %>"
+               rownum    = "<% $row %>"
+        >
+        <SCRIPT TYPE="text/javascript">
+          var custnum_input<% $row %> = document.getElementById("custnum<% $row %>");
+          custnum_input<% $row %>.onfocus = clearhint_custnum;
+          custnum_input<% $row %>.onchange = <% $opt{prefix} %>search_custnum;
+        </SCRIPT>
       </TD>
 
       <TD>
@@ -264,13 +291,29 @@ Example:
 %     } else {
 %       $value = $param->{"$field$row"}; 
 %     }
-%     my $name = (ref($field) eq 'CODE') ? "column${col}_$row" : "$field$row";
-%     my $size = $sizes->[$col] || 10;
-      <TD>
+%     my $name  = (ref($field) eq 'CODE') ? "column${col}_$row" : "$field$row";
+%     my $align = $align{ $opt{align}->[$col] || 'l' };
+%     my $size  = $sizes->[$col]  || 10;
+%     my $color = $opt{color}->[$col];
+%     my $font = $color ? qq(<FONT COLOR="$color">) : '';
+%     my $onchange = '';
+%     if ( $opt{footer}->[$col] eq '_TOTAL' ) {
+%       $total[$col] += $value;
+%       $onchange = $opt{prefix}. "calc_total$col();";
+%       $onchange = qq(onchange="$onchange" onkeyup="$onchange");
+%     }
+      <TD ALIGN="<% $align %>">
 %     if (! $types->[$col] || $types->[$col] eq 'text') {
-        <INPUT TYPE="text" NAME="<% $name %>" SIZE="<% $size %>" VALUE="<% $value %>" >
+        <INPUT TYPE  = "text"
+               NAME  = "<% $name %>"
+               ID    = "<% $name %>"
+               SIZE  = "<% $size %>"
+               STYLE = "text-align: <% $align %>;"
+               VALUE = "<% $value %>"
+               <% $onchange %>
+        >
 %     } elsif ($types->[$col] eq 'immutable') {
-        <% $value %>
+        <% $font %><% $value %><% $font ? '</FONT>' : '' %>
         <INPUT TYPE="hidden" NAME="<% $name %>" VALUE="<% $value %>" >
 %     } else {
         Cannot represent unknown type: <% $types->[$col] %>
@@ -282,8 +325,61 @@ Example:
     </TR>
 % } 
 
+<TR>
+  <TH COLSPAN=2 ID="<% $opt{'prefix'} %>_TOTAL_TOTAL">
+    Total <% $row ? $row-1 : 0 %>
+    <% PL($opt{name_singular} || 'customer', ( $row ? $row-1 : 0 ) ) %>
+  </TH>
+% my $col = 0;
+% foreach my $footer ( @{$opt{footer}} ) {
+%   my $align = $align{ $opt{'footer_align'}->[$col] || 'c' };
+%   if ($footer eq '_TOTAL' ) {
+%     my $id = $opt{'fields'}->[$col];
+%     $id = ref($id) ? "column${col}_TOTAL" : "${id}_TOTAL";
+      <TH ALIGN="<% $align %>" ID="<% $id %>">&nbsp;<% sprintf('%.2f', $total[$col] ) %></TH>
+%   } else {
+      <TH ALIGN="<% $align %>"><% $footer %></TH>
+%   }
+%   $col++;
+% }
+</TR>
 
 </TABLE>
+
+<SCRIPT TYPE="text/javascript">
+% my $col = 0;
+% foreach my $footer ( @{$opt{footer}} ) {
+%   if ($footer eq '_TOTAL' ) {
+%     my $name = $opt{fields}->[$col];
+%     $name = ref($name) ? "column$col" : $name;
+      var <% $opt{prefix}.$name %>_CACHE = new Array ();
+      var <% $opt{prefix} %>th_el = document.getElementById("<%$name%>_TOTAL");
+      function <% $opt{prefix} %>calc_total<% $col %>() {
+        var row = 0;
+        var total = 0;
+        for ( var row = 0;
+              
+              ( <% $opt{prefix}.$name%>_CACHE[row] =
+                                        <% $opt{prefix}.$name%>_CACHE[row]
+                                     || document.getElementById("<%$name%>"+row)
+              ) != null;
+              
+              row++
+            )
+        {
+          var value = <%$name%>_CACHE[row].value;
+          value = parseFloat(value);
+          if ( ! isNaN(value) ) {
+            total = total + value;
+          }
+        }
+        <% $opt{prefix} %>th_el.innerHTML = '&nbsp;' + total.toFixed(2);
+
+      }
+%   }
+%   $col++;
+% }
+</SCRIPT>
 
 <% include('/elements/xmlhttp.html',
               'url'  => $p. 'misc/xmlhttp-cust_main-search.cgi',
@@ -293,6 +389,9 @@ Example:
 
 <SCRIPT TYPE="text/javascript">
 
+  var <% $opt{prefix} %>total_el =
+    document.getElementById("<% $opt{'prefix'} %>_TOTAL_TOTAL");
+
   var <% $opt{prefix} %>rownum = <% $row %>;
 
   function <% $opt{prefix} %>addRow() {
@@ -300,13 +399,14 @@ Example:
     var table = document.getElementById('<% $opt{prefix} %>OneTrueTable');
     var tablebody = table.getElementsByTagName('tbody').item(0);
 
-    var row = document.createElement('TR');
+    var row = table.insertRow(rownum+1);
 
     var custnum_cell = document.createElement('TD');
 
       var custnum_input = document.createElement('INPUT');
       custnum_input.setAttribute('name', 'custnum'+<% $opt{prefix} %>rownum);
       custnum_input.setAttribute('id',   'custnum'+<% $opt{prefix} %>rownum);
+      custnum_input.style.textAlign = 'right';
       custnum_input.setAttribute('size', 8);
       custnum_input.setAttribute('maxlength', 12);
       custnum_input.setAttribute('rownum', <% $opt{prefix} %>rownum);
@@ -342,7 +442,9 @@ Example:
 
 %   my $col = 0;
 %   foreach my $field ( @{$opt{fields}} ) {
-    var my_cell = document.createElement('TD');
+
+      var my_cell = document.createElement('TD');
+      my_cell.setAttribute('align', '<% $align{ $opt{align}->[$col] || 'l' } %>');
 
 %     if ($types->[$col] eq 'immutable') {
 %       my $value;
@@ -357,9 +459,15 @@ Example:
 
       var my_input = document.createElement('INPUT');
       my_input.setAttribute('name', '<% $field %>'+<% $opt{prefix} %>rownum);
+      my_input.setAttribute('id',   '<% $field %>'+<% $opt{prefix} %>rownum);
+      my_input.style.textAlign = '<% $align{ $opt{align}->[$col] || 'l' } %>';
       my_input.setAttribute('size', <% $sizes->[$col] || 10 %>);
 %     if ($types->[$col] eq 'immutable') {
         my_input.setAttribute('type', 'hidden');
+%     }
+%     if ( $opt{footer}->[$col] eq '_TOTAL' ) {
+        my_input.onchange   = <% $opt{prefix} %>calc_total<%$col%>;
+        my_input.onkeyup    = <% $opt{prefix} %>calc_total<%$col%>;
 %     }
       my_cell.appendChild(my_input);
 
@@ -368,7 +476,18 @@ Example:
 %     $col++;
 %   }
 
-    tablebody.appendChild(row);
+    //update the total # of rows display
+    if ( <% $opt{prefix} %>rownum == 1 ) {
+      <% $opt{prefix} %>total_el.innerHTML =
+        'Total '
+          + <% $opt{prefix} %>rownum
+          + ' <% $opt{name_singular} || 'customer' %>';
+    } else {
+      <% $opt{prefix} %>total_el.innerHTML =
+        'Total '
+          + <% $opt{prefix} %>rownum
+          + ' <% PL($opt{name_singular} || 'customer') %>';
+    }
 
     <% $opt{prefix} %>rownum++;
 
@@ -387,9 +506,19 @@ $opt{prefix} = '' unless defined $opt{prefix};
 $opt{prefix} .= '_' if $opt{prefix};
 
 my $types = $opt{'types'} ? [ @{$opt{'types'}} ] : [];
-my $sizes = $opt{'sizes'} ? [ @{$opt{'sizes'}} ] : [];
+my $sizes = $opt{'size'} ? [ @{$opt{'size'}} ] : [];
 
 my $param = $opt{param};
 $param = $cgi->Vars if $cgi->param('error');
+
+$opt{$_} ||= [] foreach qw(align color footer footer_align);
+
+my @total = map 0, @{$opt{footer}};
+
+my %align = (
+  'l' => 'left',
+  'r' => 'right',
+  'c' => 'center',
+);
 
 </%init>
