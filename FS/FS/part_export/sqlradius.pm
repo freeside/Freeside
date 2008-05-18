@@ -737,7 +737,7 @@ sub all_sqlradius {
 
 sub all_sqlradius_withaccounting {
   my $class = shift;
-  grep { ! $_->option('ignore_accounting') } $class->_part_export_sqlradius;
+  grep { ! $_->option('ignore_accounting') } $class->all_sqlradius;
 }
 
 1;
