@@ -1,15 +1,13 @@
 package FS::Report::Table::Monthly;
 
 use strict;
-use vars qw( @ISA $expenses_kludge );
+use vars qw( @ISA );
 use Time::Local;
 use FS::UID qw( dbh );
 use FS::Report::Table;
 use FS::CurrentUser;
 
 @ISA = qw( FS::Report::Table );
-
-$expenses_kludge = 0;
 
 =head1 NAME
 
@@ -142,70 +140,24 @@ sub invoiced { #invoiced
 sub netsales { #net sales
   my( $self, $speriod, $eperiod, $agentnum ) = @_;
 
-  my $credited = $self->scalar_sql("
-    SELECT SUM(cust_credit_bill.amount)
-      FROM cust_credit_bill
-        LEFT JOIN cust_bill USING ( invnum  )
-        LEFT JOIN cust_main USING ( custnum )
-    WHERE ".  $self->in_time_period_and_agent( $speriod,
-                                               $eperiod,
-                                               $agentnum,
-                                               'cust_bill._date'
-                                             )
-  );
-
-  #horrible local kludge
-  my $expenses = !$expenses_kludge ? 0 : $self->scalar_sql("
-    SELECT SUM(cust_bill_pkg.setup)
-      FROM cust_bill_pkg
-        LEFT JOIN cust_bill USING ( invnum  )
-        LEFT JOIN cust_main USING ( custnum )
-        LEFT JOIN cust_pkg  USING ( pkgnum  )
-        LEFT JOIN part_pkg  USING ( pkgpart )
-      WHERE ". $self->in_time_period_and_agent( $speriod,
-                                                $eperiod,
-                                                $agentnum,
-                                                'cust_bill._date'
-                                              ). "
-        AND LOWER(part_pkg.pkg) LIKE 'expense _%'
-  ");
-
-  $self->invoiced($speriod,$eperiod,$agentnum) - $credited - $expenses;
+    $self->invoiced($speriod,$eperiod,$agentnum)
+  - $self->credits( $speriod,$eperiod,$agentnum);
 }
 
 #deferred revenue
 
-sub receipts { #cashflow
+sub cashflow {
   my( $self, $speriod, $eperiod, $agentnum ) = @_;
 
-  my $refunded = $self->scalar_sql("
-    SELECT SUM(refund)
-      FROM cust_refund
-        LEFT JOIN cust_main USING ( custnum )
-      WHERE ". $self->in_time_period_and_agent($speriod, $eperiod, $agentnum)
-  );
+    $self->payments($speriod, $eperiod, $agentnum)
+  - $self->refunds( $speriod, $eperiod, $agentnum);
+}
 
-  #horrible local kludge that doesn't even really work right
-  my $expenses = !$expenses_kludge ? 0 : $self->scalar_sql("
-    SELECT SUM(cust_bill_pay.amount)
-      FROM cust_bill_pay
-        LEFT JOIN cust_bill USING ( invnum  )
-        LEFT JOIN cust_main USING ( custnum )
-    WHERE ". $self->in_time_period_and_agent( $speriod,
-                                              $eperiod,
-                                              $agentnum,
-                                              'cust_bill_pay._date'
-                                            ). "
-    AND 0 < ( SELECT COUNT(*) from cust_bill_pkg, cust_pkg, part_pkg
-              WHERE cust_bill.invnum = cust_bill_pkg.invnum
-              AND cust_pkg.pkgnum = cust_bill_pkg.pkgnum
-              AND cust_pkg.pkgpart = part_pkg.pkgpart
-              AND LOWER(part_pkg.pkg) LIKE 'expense _%'
-            )
-  ");
-  #    my $expenses_sql2 = "SELECT SUM(cust_bill_pay.amount) FROM cust_bill_pay, cust_bill_pkg, cust_bill, cust_pkg, part_pkg WHERE cust_bill_pay.invnum = cust_bill.invnum AND cust_bill.invnum = cust_bill_pkg.invnum AND cust_bill_pay._date >= $speriod AND cust_bill_pay._date < $eperiod AND cust_pkg.pkgnum = cust_bill_pkg.pkgnum AND cust_pkg.pkgpart = part_pkg.pkgpart AND LOWER(part_pkg.pkg) LIKE 'expense _%'";
-  
-  $self->payments($speriod, $eperiod, $agentnum) - $refunded - $expenses;
+sub netcashflow {
+  my( $self, $speriod, $eperiod, $agentnum ) = @_;
+
+    $self->receipts($speriod, $eperiod, $agentnum)
+  - $self->netrefunds( $speriod, $eperiod, $agentnum);
 }
 
 sub payments {
@@ -228,6 +180,16 @@ sub credits {
   );
 }
 
+sub refunds {
+  my( $self, $speriod, $eperiod, $agentnum ) = @_;
+  $self->scalar_sql("
+    SELECT SUM(refund)
+      FROM cust_refund
+        LEFT JOIN cust_main USING ( custnum )
+      WHERE ". $self->in_time_period_and_agent($speriod, $eperiod, $agentnum)
+  );
+}
+
 sub netcredits {
   my( $self, $speriod, $eperiod, $agentnum ) = @_;
   $self->scalar_sql("
@@ -239,6 +201,36 @@ sub netcredits {
                                                 $eperiod,
                                                 $agentnum,
                                                 'cust_bill._date'
+                                              )
+  );
+}
+
+sub receipts { #net payments
+  my( $self, $speriod, $eperiod, $agentnum ) = @_;
+  $self->scalar_sql("
+    SELECT SUM(cust_bill_pay.amount)
+      FROM cust_bill_pay
+        LEFT JOIN cust_bill USING ( invnum  )
+        LEFT JOIN cust_main USING ( custnum )
+      WHERE ". $self->in_time_period_and_agent( $speriod,
+                                                $eperiod,
+                                                $agentnum,
+                                                'cust_bill._date'
+                                              )
+  );
+}
+
+sub netrefunds {
+  my( $self, $speriod, $eperiod, $agentnum ) = @_;
+  $self->scalar_sql("
+    SELECT SUM(cust_credit_refund.amount)
+      FROM cust_credit_refund
+        LEFT JOIN cust_credit USING ( crednum  )
+        LEFT JOIN cust_main   USING ( custnum )
+      WHERE ". $self->in_time_period_and_agent( $speriod,
+                                                $eperiod,
+                                                $agentnum,
+                                                'cust_credit._date'
                                               )
   );
 }
@@ -279,6 +271,31 @@ sub netcredits_12mo {
   $speriod = $self->_subtract_11mo($speriod);
   $self->netcredits($speriod, $eperiod, $agentnum);
 }
+
+sub cashflow_12mo {
+  my( $self, $speriod, $eperiod, $agentnum ) = @_;
+  $speriod = $self->_subtract_11mo($speriod);
+  $self->cashflow($speriod, $eperiod, $agentnum);
+}
+
+sub netcashflow_12mo {
+  my( $self, $speriod, $eperiod, $agentnum ) = @_;
+  $speriod = $self->_subtract_11mo($speriod);
+  $self->cashflow($speriod, $eperiod, $agentnum);
+}
+
+sub refunds_12mo {
+  my( $self, $speriod, $eperiod, $agentnum ) = @_;
+  $speriod = $self->_subtract_11mo($speriod);
+  $self->refunds($speriod, $eperiod, $agentnum);
+}
+
+sub netrefunds_12mo {
+  my( $self, $speriod, $eperiod, $agentnum ) = @_;
+  $speriod = $self->_subtract_11mo($speriod);
+  $self->netrefunds($speriod, $eperiod, $agentnum);
+}
+
 
 #not being too bad with the false laziness
 use Time::Local qw(timelocal);

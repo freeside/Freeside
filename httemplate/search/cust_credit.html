@@ -7,42 +7,42 @@
                  #'redirect'    => $link,
                  'header'      => [ 'Amount',
                                     'Date',
-                                    FS::UI::Web::cust_header(),
                                     'By',
-                                    'Reason'
+                                    'Reason',
+                                    FS::UI::Web::cust_header(),
                                   ],
                  'fields'      => [
                    #'crednum',
                    sub { sprintf('$%.2f', shift->amount ) },
                    sub { time2str('%b %d %Y', shift->_date ) },
-                   \&FS::UI::Web::cust_fields,
                    'otaker',
                    'reason',
+                   \&FS::UI::Web::cust_fields,
                  ],
                  #'align' => 'rrrllll',
-                 'align' => 'rr'.FS::UI::Web::cust_aligns().'ll',
+                 'align' => 'rrll'.FS::UI::Web::cust_aligns(),
                  'links' => [
+                   '',
+                   '',
                    '',
                    '',
                    ( map { $_ ne 'Cust. Status' ? $clink : '' }
                          FS::UI::Web::cust_header()
                    ),
-                   '',
-                   '',
                  ],
                  'color' => [ 
                               '',
                               '',
+                              '',
+                              '',
                               FS::UI::Web::cust_colors(),
-                              '',
-                              '',
                             ],
                  'style' => [ 
                               '',
                               '',
+                              '',
+                              '',
                               FS::UI::Web::cust_styles(),
-                              '',
-                              '',
                             ],
       )
 %>

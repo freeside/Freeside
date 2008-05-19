@@ -3,11 +3,11 @@ package FS::cust_credit_refund;
 use strict;
 use vars qw( @ISA );
 use FS::Record qw( qsearch qsearchs dbh );
-#use FS::UID qw(getotaker);
+use FS::cust_main_Mixin;
 use FS::cust_credit;
 use FS::cust_refund;
 
-@ISA = qw( FS::Record );
+@ISA = qw( FS::cust_main_Mixin FS::Record );
 
 =head1 NAME
 

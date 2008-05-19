@@ -11,7 +11,7 @@ use FS::cust_pay_refund;
 use FS::cust_main;
 use FS::payinfo_Mixin;
 
-@ISA = qw( FS::Record FS::payinfo_Mixin );
+@ISA = qw( FS::payinfo_Mixin FS::cust_main_Mixin FS::Record );
 
 @encrypted_fields = ('payinfo');
 
@@ -216,7 +216,7 @@ sub delete {
 
 =item replace OLD_RECORD
 
-Currently unimplemented (accounting reasons).
+Modifying a refund?  Well, don't say I didn't warn you.
 
 =cut
 

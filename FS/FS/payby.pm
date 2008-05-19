@@ -124,7 +124,7 @@ sub can_payby {
   #return "Illegal payby" unless $hash{$payby};
   return 0 unless $hash{$payby};
 
-  $table = 'cust_pay' if $table eq 'cust_pay_batch' || $table eq 'cust_refund';
+  $table = 'cust_pay' if $table =~ /^cust_(pay_pending|pay_batch|pay_void|refund)$/;
   return 0 if exists( $hash{$payby}->{$table} );
 
   return 1;

@@ -25,27 +25,40 @@ if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
 
 my $agentname = $agent ? $agent->agent.' ' : '';
 
-my @items = qw( invoiced netsales credits netcredits payments receipts );
+my @items = qw( invoiced netsales
+                credits  netcredits
+                payments receipts
+                refunds  netrefunds
+                cashflow netcashflow
+              );
 if ( $cgi->param('12mo') == 1 ) {
   @items = map $_.'_12mo', @items;
 }
 
 my %label = (
-  'invoiced'   => 'Gross Sales',
-  'netsales'   => 'Net Sales',
-  'credits'    => 'Gross Credits',
-  'netcredits' => 'Net Credits',
-  'payments'   => 'Gross Receipts',
-  'receipts'   => 'Net Receipts',
+  'invoiced'    => 'Gross Sales',
+  'netsales'    =>   'Net Sales',
+  'credits'     => 'Gross Credits',
+  'netcredits'  =>   'Net Credits',
+  'payments'    => 'Gross Receipts',
+  'receipts'    =>   'Net Receipts',
+  'refunds'     => 'Gross Refunds',
+  'netrefunds'  =>   'Net Refunds',
+  'cashflow'    => 'Gross Cashflow',
+  'netcashflow' =>   'Net Cashflow',
 );
 
 my %graph_suffix = (
- 'invoiced'   => ' (invoiced)', 
- 'netsales'   => ' (invoiced - applied credits)',
- 'credits'    => ' (credited)',
- 'netcredits' => ' (applied credits)',
- 'payments'   => ' (payments)',
- 'receipts'   => '/Cashflow (payments - refunds)',
+ 'invoiced'    => ' (invoiced)', 
+ 'netsales'    => ' (invoiced - applied credits)',
+ 'credits'     => ' (credited)',
+ 'netcredits'  => ' (applied credits)',
+ 'payments'    => ' (payments)',
+ 'receipts'    => ' (applied payments)',
+ 'refunds'     => ' (refunds)',
+ 'netrefunds'  => ' (applied refunds)',
+ 'cashflow'    => ' (payments - refunds)',
+ 'netcashflow' => ' (applied payments - applied refunds)',
 );
 my %graph_label = map { $_ => $label{$_}.$graph_suffix{$_} } keys %label;
 
@@ -56,12 +69,16 @@ $graph_label{$_.'_12mo'} = $graph_label{$_}. " (previous 12 months)"
   foreach keys %graph_label;
 
 my %color = (
-  'invoiced'   => '9999ff', #light blue
-  'netsales'   => '0000cc', #blue
-  'credits'    => 'ff9999', #light red
-  'netcredits' => 'cc0000', #red
-  'payments'   => '99cc99', #light green
-  'receipts'   => '00cc00', #green
+  'invoiced'    => '9999ff', #light blue
+  'netsales'    => '0000cc', #blue
+  'credits'     => 'ff9999', #light red
+  'netcredits'  => 'cc0000', #red
+  'payments'    => '99cc99', #light green
+  'receipts'    => '00cc00', #green
+  'refunds'     => 'ffcc99', #light orange
+  'netrefunds'  => 'ff9900', #orange
+  'cashflow'    => '99cc33', #light olive
+  'netcashflow' => '339900', #olive
 );
 $color{$_.'_12mo'} = $color{$_}
   foreach keys %color;
@@ -72,6 +89,9 @@ my %link = (
   'credits'    => "${p}search/cust_credit.html?agentnum=$agentnum;",
   'netcredits' => "${p}search/cust_credit_bill.html?agentnum=$agentnum;",
   'payments'   => "${p}search/cust_pay.cgi?magic=_date;agentnum=$agentnum;",
+  'receipts'   => "${p}search/cust_bill_pay.html?agentnum=$agentnum;",
+  'refunds'    => "${p}search/cust_refund.html?magic=_date;agentnum=$agentnum;",
+  'netrefunds' => "${p}search/cust_credit_refund.html?agentnum=$agentnum;",
 );
 # XXX link 12mo?
 

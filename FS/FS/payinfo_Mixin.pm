@@ -22,9 +22,7 @@ This class handles the following functions for payinfo...
 
 Payment Mask (Generation and Storage)
 Data Validation (parent checks need to be sure to call this)
-Encryption - In the Future (Pull from Record.pm)
-Bad Card Stuff - In the Future (Integrate Banned Pay)
-Currency - In the Future
+Pretty printing
 
 =head1 FIELDS
 
@@ -182,11 +180,6 @@ sub mask_payinfo {
   return $paymask;
 }
 
-=cut
-
-sub _mask_payinfo {
-  my $self = shift;
-
 =item payinfo_check
 
 Checks payby and payinfo.
@@ -244,9 +237,46 @@ sub payinfo_check {
 
 }
 
+=item payby_payinfo_pretty
+
+Returns payment method and information (suitably masked, if applicable) as
+a human-readable string, such as:
+
+  Card #54xxxxxxxxxxxx32
+
+or
+
+  Check #119006
+
+=cut
+
+sub payby_payinfo_pretty {
+  my $self = shift;
+  if ( $self->payby eq 'CARD' ) {
+    'Card #'. $self->paymask;
+  } elsif ( $self->payby eq 'CHEK' ) {
+    'E-check acct#'. $self->payinfo;
+  } elsif ( $self->payby eq 'BILL' ) {
+    'Check #'. $self->payinfo;
+  } elsif ( $self->payby eq 'PREP' ) {
+    'Prepaid card #'. $self->payinfo;
+  } elsif ( $self->payby eq 'CASH' ) {
+    'Cash '. $self->payinfo;
+  } elsif ( $self->payby eq 'WEST' ) {
+    'Western Union'; #. $self->payinfo;
+  } elsif ( $self->payby eq 'MCRD' ) {
+    'Manual credit card'; #. $self->payinfo;
+  } else {
+    $self->payby. ' '. $self->payinfo;
+  }
+}
+
 =head1 BUGS
 
-Have to add the future items...
+Future items?
+  Encryption - In the Future (Pull from Record.pm)
+  Bad Card Stuff - In the Future (Integrate Banned Pay)
+  Currency - In the Future
 
 =head1 SEE ALSO
 
