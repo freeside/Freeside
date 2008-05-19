@@ -244,13 +244,13 @@ Terms: [@-- $terms --@]\\
 
       if (@$ext_description) {
         $OUT .= '\multicolumn{1}{l}{\rule{0pt}{1.0ex}} &';
-        $OUT .= '\multicolumn{2}{l}{\begin{tabular}{lllll}'; %%cheating at 5
+        $OUT .= '\multicolumn{2}{l}{\small{\begin{tabular}{llllll}';#cheating at 6
         foreach my $ext_desc (@$ext_description) {
           $ext_desc = substr($ext_desc, 0, 80) . '...'
             if (length($ext_desc) > 80);
-          $OUT .= '\small{' . $ext_desc . '}' . "\\\\${rowbreak}\n";
+          $OUT .= "$ext_desc \\\\${rowbreak}\n";
         }
-        $OUT .="\\end{tabular}}\\\\${rowbreak}\n";
+        $OUT .="\\end{tabular}}}\\\\${rowbreak}\n";
       }
 
     }
