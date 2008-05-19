@@ -262,7 +262,8 @@ sub details {
 
   $format_sub = sub { my $detail = shift;
                       $csv->parse($detail) or return "can't parse $detail";
-                      join(' & ', map { &$escape_function($_) } $csv->fields );
+                      join(' & ', map { '\small{'. &$escape_function($_). '}' }
+                                  $csv->fields );
                     }
     if $format eq 'latex';
 
