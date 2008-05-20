@@ -132,6 +132,13 @@ sub upgrade_sqlradius {
       $sth_update->execute or die $sth_update->errstr;
     }
 
+    my $sth_index = $dbh->prepare(
+      "CREATE INDEX FreesideStatus ON radacct ( FreesideStatus )"
+    );
+    if ( $sth_index ) {
+      $sth_index->execute;
+    }
+
     my $sth = $dbh->prepare("SELECT UserName,
                                     Realm,
                                     $str2time max(AcctStartTime)),
