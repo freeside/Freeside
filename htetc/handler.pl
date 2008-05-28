@@ -289,7 +289,11 @@ sub handler
 
       };
       
-      unless ( $HTML::Mason::r->filename =~ /\/rt\/.*NoAuth/ ) { #RT
+      #is this conditional a bad idea entirely, hmm
+      unless ( 
+           $HTML::Mason::r->filename =~ /\/rt\/.*NoAuth/ #RT images/JS
+        && $HTML::Mason::r->filename !~ /\/rt\/REST\//   #but NOT mail gw
+      ) {
         $cgi = new CGI;
         &cgisuidsetup($cgi);
         #&cgisuidsetup($r);
