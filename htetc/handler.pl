@@ -289,16 +289,20 @@ sub handler
 
       };
       
-      #is this conditional a bad idea entirely, hmm
-      unless ( 
-           $HTML::Mason::r->filename =~ /\/rt\/.*NoAuth/ #RT images/JS
-        && $HTML::Mason::r->filename !~ /\/rt\/REST\//   #but NOT mail gw
-      ) {
+      if ( $HTML::Mason::r->filename !~ /\/rt\/.*NoAuth/ ) { #not RT images/JS
+
         $cgi = new CGI;
         &cgisuidsetup($cgi);
         #&cgisuidsetup($r);
         $p = popurl(2);
         $fsurl = rooturl();
+
+      } elsif ( $HTML::Mason::r->filename =~ /\/rt\/REST\/.*NoAuth/ ) {
+
+        #need to log somebody in for the mail gw
+        #&adminsuidsetup('fs_selfservice'); #old installs w/'fs_selfserv'??
+        &adminsuidsetup('fs_queue');
+
       }
 
       sub include {
