@@ -300,7 +300,10 @@ sub handler
       } elsif ( $HTML::Mason::r->filename =~ /\/rt\/REST\/.*NoAuth/ ) {
 
         #need to log somebody in for the mail gw
-        #&adminsuidsetup('fs_selfservice'); #old installs w/'fs_selfserv'??
+
+        ##old installs w/fs_selfs or selfserv??
+        #&adminsuidsetup('fs_selfservice');
+
         &adminsuidsetup('fs_queue');
 
       }
