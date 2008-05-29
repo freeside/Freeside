@@ -62,10 +62,10 @@ my %graph_suffix = (
 );
 my %graph_label = map { $_ => $label{$_}.$graph_suffix{$_} } keys %label;
 
-$label{$_.'_12mo'} = $label{$_}. " (previous 12 months)"
+$label{$_.'_12mo'} = $label{$_}. " (prev 12 months)"
   foreach keys %label;
 
-$graph_label{$_.'_12mo'} = $graph_label{$_}. " (previous 12 months)"
+$graph_label{$_.'_12mo'} = $graph_label{$_}. " (prev 12 months)"
   foreach keys %graph_label;
 
 my %color = (
