@@ -798,6 +798,9 @@ single agent) or an arrayref of agentnums.
 
 INVOICE_FROM, if specified, overrides the default email invoice From: address.
 
+AMOUNT, if specified, only sends the invoice if the total amount owed on this
+invoice and all older invoices is greater than the specified amount.
+
 =cut
 
 sub queueable_send {
@@ -827,6 +830,11 @@ sub send {
     scalar(@_)
       ? shift
       : ( $self->_agent_invoice_from || $conf->config('invoice_from') );
+
+  my $balance_over = ( scalar(@_) && $_[0] !~ /^\s*$/ ) ? shift : 0;
+
+  return ''
+    unless $self->cust_main->total_owed_date($self->_date) > $balance_over;
 
   my @invoicing_list = $self->cust_main->invoicing_list;
 

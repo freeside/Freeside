@@ -249,7 +249,11 @@ Invoice Event #<% $hashref->{eventpart} ? $hashref->{eventpart} : "(NEW)" %>
 %
 %  'send_agent' => {
 %    'name' => 'Send invoice (email/print/fax) ',
-%    'code' => '$cust_bill->send(\'%%%agent_templatename%%%\', [ %%%agentnum%%% ], \'%%%agent_invoice_from%%%\');',
+%    'code' => '$cust_bill->send( \'%%%agent_templatename%%%\',
+%                                 [ %%%agentnum%%% ],
+%                                 \'%%%agent_invoice_from%%%\',
+%                                 %%%agent_balanceover%%%
+%                               );',
 %    'html' => sub {
 %        '<TABLE BORDER=0>
 %          <TR>
@@ -266,6 +270,13 @@ Invoice Event #<% $hashref->{eventpart} ? $hashref->{eventpart} : "(NEW)" %>
 %            <TD ALIGN="right">email From: </TD>
 %            <TD>
 %              <INPUT TYPE="text" NAME="agent_invoice_from" VALUE="%%%agent_invoice_from%%%">
+%            </TD>
+%          </TR>
+%          <TR>
+%            <TD ALIGN="right">if balance (this invoice and previous) over
+%            </TD>
+%            <TD>
+%              '. $money_char. '<INPUT TYPE="text" SIZE="7" NAME="agent_balanceover" VALUE="%%%agent_balanceover%%%">
 %            </TD>
 %          </TR>
 %        </TABLE>';
