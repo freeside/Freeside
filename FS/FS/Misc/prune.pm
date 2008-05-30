@@ -34,9 +34,10 @@ affected records is returned rather than actually deleting the records.
 
 sub prune_applications {
   my $options = shift;
-  my $dbh = dbh
+  my $dbh = dbh;
 
   local $DEBUG = 1 if exists($options->{debug});
+
   my $ccr = <<EOW;
     WHERE
          0 = (select count(*) from cust_credit
