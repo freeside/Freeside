@@ -2,7 +2,7 @@ package FS::cust_pay_pending;
 
 use strict;
 use vars qw( @ISA  @encrypted_fields );
-use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( qsearch qsearchs dbh ); #dbh for _upgrade_data
 use FS::payby;
 use FS::payinfo_Mixin;
 use FS::cust_main;
