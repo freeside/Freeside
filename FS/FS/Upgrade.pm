@@ -117,8 +117,10 @@ sub upgrade_sqlradius {
   my @part_export = FS::part_export::sqlradius->all_sqlradius_withaccounting();
 
   foreach my $part_export ( @part_export ) {
-    my $dbh = DBI->connect( map $part_export->option($_),
-                             qw ( datasrc username password ) );
+    my $dbh = DBI->connect(
+      ( map $part_export->option($_), qw ( datasrc username password ) ),
+      { PrintError => 0, PrintWarn => 0 }
+    );
   
     my $str2time = str2time_sql( $dbh->{Driver}->{Name} );
     my $group = "UserName";
