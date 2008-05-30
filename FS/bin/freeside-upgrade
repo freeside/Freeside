@@ -71,7 +71,11 @@ if ( $DRY_RUN ) {
 my $hashref = {};
 $hashref->{dry_run} = 1 if $DRY_RUN;
 $hashref->{debug} = 1 if $DEBUG;
-print join "\n", prune_applications($hashref) unless $opt_s;
+if ( $DRY_RUN ) {
+  print join "\n", prune_applications($hashref) unless $opt_s;
+} else {
+  prune_applications($hashref) unless $opt_s;
+}
 print "\n" if $DRY_RUN;
 
 if ( $dbh->{Driver}->{Name} =~ /^mysql/i && ! $opt_s ) {
