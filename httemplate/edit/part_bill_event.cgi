@@ -428,6 +428,7 @@ Invoice Event #<% $hashref->{eventpart} ? $hashref->{eventpart} : "(NEW)" %>
 %  print '<TD>'. $html. '</TD>' if $html;
 %  print qq!</TR>!;
 %  print '</TABLE>';
+%  print qq!<HR WIDTH="90%">!;
 %}
 %
 %  if ($currentreasonclass eq 'C'){
