@@ -215,6 +215,21 @@ sub check {
   $self->SUPER::check;
 }
 
+# _upgrade_data
+#
+# Used by FS::Upgrade to migrate to a new database.
+
+sub _upgrade_data {  #class method
+  my ($class, %opts) = @_;
+
+  my $sql =
+    "DELETE FROM cust_pay_pending WHERE status = 'new' AND _date < ".(time-600);
+
+  my $sth = dbh->prepare($sql) or die dbh->errstr;
+  $sth->execute or die $sth->errstr;
+
+}
+
 =back
 
 =head1 BUGS

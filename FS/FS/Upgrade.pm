@@ -100,6 +100,9 @@ sub upgrade_data {
     #populate part_pkg_taxclass for starters
     'part_pkg_taxclass' => [],
 
+    #remove bad pending records
+    'cust_pay_pending' => [],
+
   ;
 
   \%hash;
