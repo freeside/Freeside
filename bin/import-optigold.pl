@@ -27,6 +27,7 @@ my $extension = '.htm';
 #my $d_dbuser = 'freeside';
 my $d_dbuser = 'enet';
 #my $d_dbuser = 'ivan';
+#my $d_dbuser = 'freesideimport';
 
 #my $agentnum = 1;
 my $agentnum = 13;
@@ -34,7 +35,7 @@ my $legacy_domain_svcnum = 1;
 my $legacy_ppp_svcnum = 2;
 my $legacy_email_svcnum = 3;
 #my $legacy_broadband_svcnum = 4;
-my $legacy_broadband_svcnum = 14;
+#my $legacy_broadband_svcnum = 14;
 #my $previous_credit_reasonnum = 1;
 my $previous_credit_reasonnum = 1220;
 
@@ -332,6 +333,30 @@ svc_acct  => { 'stable'  => 'cust',
                    'domsvc'       => sub{ $legacy_domain_svcnum },
                    'status'       => 'status',
                  },
+#               'fixup'   => sub { my $svc_acct = shift;
+#                                  my $row = shift;
+#                                  my $id = $row->{'master_account'}
+#                                           ? 'slave:'. $row->{'customer_id'}
+#                                           : $row->{'login'};
+#                                  my $status = $svc_acct->status;
+#                                  if ( $status ne 'Current'
+#                                    && $status ne 'On Hold' )
+#                                  {
+#                                    $cancel{$id} =
+#                                      str2time($row->{termination_date});
+#                                    warn "not creating (cancelled) svc_acct for " .
+#                                      $svc_acct->username. "\n";
+#                                    return 1
+#                                  }
+#                                  $susp{$id} = str2time($row->{hold_date})
+#                                    if $status eq 'On Hold';
+#                                  $adjo{$id} = str2time($row->{hold_date})
+#                                    if ( $status eq 'Current' &&
+#                                         $row->{hold_date} );
+#                                  $bill{$id} =
+#                                    str2time($row->{expiration_date});
+#                                  '';
+#                                },
                'fixup'   => sub { my $svc_acct = shift;
                                   my $row = shift;
                                   my $id = $row->{'master_account'}
@@ -343,8 +368,6 @@ svc_acct  => { 'stable'  => 'cust',
                                   {
                                     $cancel{$id} =
                                       str2time($row->{termination_date});
-                                    warn "not creating (cancelled) svc_acct for " .
-                                      $svc_acct->username. "\n";
                                     return 1
                                   }
                                   $susp{$id} = str2time($row->{hold_date})
@@ -354,14 +377,25 @@ svc_acct  => { 'stable'  => 'cust',
                                          $row->{hold_date} );
                                   $bill{$id} =
                                     str2time($row->{expiration_date});
-                                  '';
+                                  my $object =
+                                    qsearchs( 'svc_acct', 
+                                              { 'username' => $row->{'login'} }
+                                            );
+                                  unless( $object ) {
+                                    warn "can't find svc_acct for legacy ppp ".
+                                      $row->{'login'};
+                                    return 1;
+                                  }
+                                  
+                                  $object_map{svc_acct}{$id} = $object->svcnum;
+                                  return 1;
                                 },
-               'skey'    => sub { my $svc_acct = shift;
-                                  my $row = shift;
-                                  my $id = $row->{'master_account'}
-                                    ? 'slave:'. $row->{'customer_id'}
-                                    : $row->{'login'};
-                                },
+#               'skey'    => sub { my $svc_acct = shift;
+#                                  my $row = shift;
+#                                  my $id = $row->{'master_account'}
+#                                    ? 'slave:'. $row->{'customer_id'}
+#                                    : $row->{'login'};
+#                                },
              },
 cust_main => { 'stable'  => 'cust',
                'mapping' =>
@@ -400,17 +434,28 @@ cust_main => { 'stable'  => 'cust',
                    'payby'        => \&payby,
                    'payinfo'      => sub { my $hash = shift;
                                            my $payby = payby($hash);
-                                           if ($payby eq 'CARD') {
+                                           my $cc =
                                              $hash->{'credit_card_number_1'}.
                                              $hash->{'credit_card_number_2'}.
                                              $hash->{'credit_card_number_3'}.
                                              $hash->{'credit_card_number_4'};
-                                           }elsif ($payby eq 'CHEK') {
+                                           my $bank = 
                                              $hash->{'bank_account_number'}.
                                              '@'.
                                              $hash->{'bank_transit_number'};
+                                           if ($payby eq 'CARD') {
+                                             $cc;
+                                           }elsif ($payby eq 'CHEK') {
+                                             $bank;
                                            }elsif ($payby eq 'BILL') {
-                                             $hash->{'blanket_purchase_order_number'};
+                                             my $info = $hash->{'blanket_purchase_order_number'};
+                                             $bank =~ s/[^\d\@]//g;
+                                             $cc =~ s/\D//g;
+                                             $info = $bank
+                                               if $bank =~ /^\d+\@\d{9}/;
+                                             $info = $cc
+                                               if $cc =~ /^\d{13,16}/;
+                                             $info;
                                            }else{
                                              die "unexpected payby";
                                            }
@@ -610,10 +655,24 @@ svc_acct  => { 'stable'  => 'email',
                    'svcpart'      => sub{ $legacy_email_svcnum },
                    'domsvc'       => sub{ $legacy_domain_svcnum },
                  },
-               'fixup'   => sub { my $object = shift;
+#               'fixup'   => sub { my ($object, $row) = (shift,shift);
+#                                  my ($sd,$sm,$sy) = split '/',
+#                                                     $row->{shut_off_date}
+#                                    if $row->{shut_off_date};
+#                                  if ($sd && $sm && $sy) {
+#                                    my ($cd, $cm, $cy) = (localtime)[3,4,5];
+#                                    $cy += 1900; $cm++;
+#                                    return 1 if $sy < $cy;
+#                                    return 1 if ($sy == $cy && $sm < $cm);
+#                                    return 1 if ($sy == $cy && $sm == $cm && $sd <= $cd);
+#                                  }
+#                                  return 1 if $object_map{'cust_main'}{$object->username};
+#                                  '';
+#                                },
+               'fixup'   => sub { my ($object, $row) = (shift,shift);
                                   my ($sd,$sm,$sy) = split '/',
-                                                     $object->{shut_off_date}
-                                    if $object->{shut_off_date};
+                                                     $row->{shut_off_date}
+                                    if $row->{shut_off_date};
                                   if ($sd && $sm && $sy) {
                                     my ($cd, $cm, $cy) = (localtime)[3,4,5];
                                     $cy += 1900; $cm++;
@@ -622,12 +681,22 @@ svc_acct  => { 'stable'  => 'email',
                                     return 1 if ($sy == $cy && $sm == $cm && $sd <= $cd);
                                   }
                                   return 1 if $object_map{'cust_main'}{$object->username};
-                                  '';
+                                  my $svc_acct =
+                                    qsearchs( 'svc_acct', 
+                                              { 'username' => $row->{'login'} }
+                                            );
+                                  unless( $svc_acct ) {
+                                    warn "can't find svc_acct for email ".
+                                      $row->{'login'};
+                                    return 1;
+                                  }
+                                  $object_map{svc_acct}{'email:'.$row->{'email_customer_id'}} = $svc_acct->svcnum;
+                                  return 1;
                                 },
-               'skey'    => sub { my $object = shift;
-                                  my $href = shift;
-                                  'email:'. $href->{'email_customer_id'};
-                                },
+#               'skey'    => sub { my $object = shift;
+#                                  my $href = shift;
+#                                  'email:'. $href->{'email_customer_id'};
+#                                },
                'wrapup'   => sub { for my $id (keys %{$object_map{'cust_pkg'}}){
                                      next unless $id =~ /^email:(\d+)/;
                                      my $custid = $1;
@@ -636,14 +705,14 @@ svc_acct  => { 'stable'  => 'email',
                                                  $object_map{'svc_acct'}{$id} }
                                        );
                                      unless ($cust_svc) {
-                                       warn "can't find legacy ppp $id\n";
+                                       warn "can't find legacy email $id\n";
                                        next;
                                      }
 
                                      $cust_svc->
                                        pkgnum($cust_pkg_map{$custid});
                                      my $error = $cust_svc->replace;
-                                     warn "error linking legacy ppp $id: $error\n";
+                                     warn "error linking legacy email $id: $error\n";
                                    }
                                  },
              },
