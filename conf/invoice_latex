@@ -19,7 +19,7 @@
 
 \documentclass[letterpaper]{article}
 
-\usepackage{fancyhdr,lastpage,ifthen,longtable,afterpage}
+\usepackage{fancyhdr,lastpage,ifthen,longtable,afterpage,caption}
 \usepackage{graphicx}			% required for logo graphic
 
 \addtolength{\voffset}{-0.0cm}		% top margin to top of header
@@ -34,6 +34,8 @@
 \setlength{\textheight}{19.5cm}
 \setlength{\oddsidemargin}{-0.9cm} 	% odd page left margin
 \setlength{\evensidemargin}{-0.9cm} 	% even page left margin
+
+\LTchunksize=40
 
 \renewcommand{\headrulewidth}{0pt}
 \renewcommand{\footrulewidth}{1pt}
@@ -188,11 +190,19 @@ Terms: [@-- $terms --@]\\
 \end{minipage}}
 \vspace{1.5cm}
 %
+\section*{}
 [@--
   foreach my $section ( @sections ) {
-    $OUT .= '\section*{\textsc{';
-    $OUT .= ($section->{'description'}) ? $section->{'description'} : 'Charges';
-    $OUT .= '}}\begin{longtable}{cllllllr}';
+    if ($section->{'pretotal'}) {
+      $OUT .= '\begin{flushright}';
+      $OUT .= '\large\textsc{'. $section->{'pretotal'}. '}\\\\';
+      $OUT .= '\\end{flushright}';
+    }
+    $OUT .= '\captionsetup{singlelinecheck=false,justification=raggedright,font={Large,sc,bf}}';
+    $OUT .= '\begin{longtable}{cllllllr}';
+    $OUT .= '\caption*{ ';
+    $OUT .= ($section->{'description'}) ? $section->{'description'}: 'Charges';
+    $OUT .= '}\\\\';
     $OUT .= '\hline';
     $OUT .= '\rule{0pt}{2.5ex}';
     $OUT .= '\makebox[1.4cm]{\textbf{Ref}} & ';
@@ -256,6 +266,11 @@ Terms: [@-- $terms --@]\\
 
     $OUT .= '\end{longtable}';
 
+    if ($section->{'posttotal'}) {
+      $OUT .= '\begin{flushright}';
+      $OUT .= '\normalfont\large\bfseries\textsc{'. $section->{'posttotal'}. '}\\\\';
+      $OUT .= '\\end{flushright}';
+    }
   }
 
 --@]

@@ -1951,6 +1951,14 @@ sub print_generic {
                                             sprintf('%.2f', $pr_total),
                          };
 
+  my $taxtotal = 0;
+  my $tax_section = { 'description' => 'Taxes, Surcharges, and Fees',
+                      'subtotal'    => $taxtotal }; # adjusted below
+
+  my $adjusttotal = 0;
+  my $adjust_section = { 'description' => 'Credits, Payments, and Adjustments',
+                         'subtotal'    => 0 }; # adjusted below
+
   my $multisection = $conf->exists('invoice_sections', $cust_main->agentnum);
   if ( $multisection ) {
     push @sections, $self->_items_sections;
@@ -2048,16 +2056,28 @@ sub print_generic {
   }
   
   if ( $multisection && !$conf->exists('disable_previous_balance') ) {
-    unshift @sections, $previous_section;
+    unshift @sections, $previous_section if $pr_total;
   }
 
-  my $taxtotal = 0;
   foreach my $tax ( $self->_items_tax ) {
     my $total = {};
     $total->{'total_item'} = &$escape_function($tax->{'description'});
     $taxtotal += $tax->{'amount'};
     $total->{'total_amount'} = $other_money_char. $tax->{'amount'};
-    push @total_items, $total;
+    if ( $multisection ) {
+      my $money = $old_latex ? '' : $money_char;
+      push @detail_items, {
+        ext_description => [],
+        ref          => '',
+        quantity     => '',
+        description  => &$escape_function($tax->{'description'}),
+        amount       => $money. $tax->{'amount'},
+        product_code => '',
+        section      => $tax_section,
+      };
+    }else{
+      push @total_items, $total;
+    }
     push @buf,[ $total->{'total_item'},
                 $money_char. sprintf("%10.2f", $total->{'total_amount'}),
               ];
@@ -2066,14 +2086,19 @@ sub print_generic {
   
   if ( $taxtotal ) {
     my $total = {};
-    if ( $multisection ) {
-      $total->{'total_item'} = 'New charges sub-total';
-    }else{
-      $total->{'total_item'} = 'Sub-total';
-    }
+    $total->{'total_item'} = 'Sub-total';
     $total->{'total_amount'} =
       $other_money_char. sprintf('%.2f', $self->charged - $taxtotal );
-    unshift @total_items, $total;
+
+    if ( $multisection ) {
+      $tax_section->{'subtotal'} = $other_money_char.
+                                   sprintf('%.2f', $taxtotal);
+      $tax_section->{'pretotal'} = 'New charges sub-total '.
+                                   $total->{'total_amount'};
+      push @sections, $tax_section if $taxtotal;
+    }else{
+      unshift @total_items, $total;
+    }
   }
   
   push @buf,['','-----------'];
@@ -2097,7 +2122,12 @@ sub print_generic {
                                   )
                )
       );
-    push @total_items, $total;
+    if ( $multisection ) {
+      $adjust_section->{'pretotal'} = 'New charges total '.
+                                      $total->{'total_amount'};
+    }else{
+      push @total_items, $total;
+    }
     push @buf,['','-----------'];
     push @buf,['Total Charges',
                $money_char.
@@ -2120,7 +2150,21 @@ sub print_generic {
       $total->{'total_item'} = &$escape_function($credit->{'description'});
       #$credittotal
       $total->{'total_amount'} = '-'. $other_money_char. $credit->{'amount'};
-      push @total_items, $total;
+      $adjusttotal += $credit->{'amount'};
+      if ( $multisection ) {
+        my $money = $old_latex ? '' : $money_char;
+        push @detail_items, {
+          ext_description => [],
+          ref          => '',
+          quantity     => '',
+          description  => &$escape_function($credit->{'description'}),
+          amount       => $money. $credit->{'amount'},
+          product_code => '',
+          section      => $adjust_section,
+        };
+      }else{
+        push @total_items, $total;
+      }
     }
   
     # credits (again)
@@ -2143,12 +2187,32 @@ sub print_generic {
       $total->{'total_item'} = &$escape_function($payment->{'description'});
       #$paymenttotal
       $total->{'total_amount'} = '-'. $other_money_char. $payment->{'amount'};
-      push @total_items, $total;
+      $adjusttotal += $payment->{'amount'};
+      if ( $multisection ) {
+        my $money = $old_latex ? '' : $money_char;
+        push @detail_items, {
+          ext_description => [],
+          ref          => '',
+          quantity     => '',
+          description  => &$escape_function($payment->{'description'}),
+          amount       => $money. $payment->{'amount'},
+          product_code => '',
+          section      => $adjust_section,
+        };
+      }else{
+        push @total_items, $total;
+      }
       push @buf, [ $payment->{'description'},
                    $money_char. sprintf("%10.2f", $payment->{'amount'}),
                  ];
     }
   
+    if ( $multisection ) {
+      $adjust_section->{'subtotal'} = $other_money_char.
+                                      sprintf('%.2f', $adjusttotal);
+      push @sections, $adjust_section;
+    }
+
     { 
       my $total;
       $total->{'total_item'} = &$embolden_function($self->balance_due_msg);
@@ -2156,7 +2220,12 @@ sub print_generic {
         &$embolden_function(
           $other_money_char. sprintf('%.2f', $self->owed + $pr_total )
         );
-      push @total_items, $total;
+      if ( $multisection ) {
+        $adjust_section->{'posttotal'} = $total->{'total_item'}. ' '.
+                                         $total->{'total_amount'};
+      }else{
+        push @total_items, $total;
+      }
       push @buf,['','-----------'];
       push @buf,[$self->balance_due_msg, $money_char. 
         sprintf("%10.2f", $balance_due ) ];

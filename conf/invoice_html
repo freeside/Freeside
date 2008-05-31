@@ -70,6 +70,16 @@
 
   <%=
       foreach my $section ( @sections ) {
+        if ($section->{'pretotal'}) {
+          $OUT .=
+            '<table width="100%"><tr><td>'.
+            '<p align="right"><b><font size="+1">'.
+            uc(substr($section->{'pretotal'},0,1)).
+            '</font><font size="+0">'. uc(substr($section->{'pretotal'},1)).
+            '</font></b>'.
+            '<p>'.
+            '</td></tr></table>';
+        }
         $OUT .= '<table><tr><td>';
         if ($section->{'description'}) {
           $OUT .=
@@ -132,6 +142,16 @@
             '</tr>'
         ;
         }
+
+        if ($section->{'posttotal'}) {
+          $OUT .= '<tr><td align="right" colspan=3>';
+          $OUT .=
+            '<p><font size="+1">'. $section->{'posttotal'}.
+            '</font>'.
+            '<p>';
+          $OUT .= '</td></tr>';
+        }
+
       }
 
       my $style = 'border-top: 3px solid #000000;';
