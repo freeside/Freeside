@@ -243,6 +243,11 @@ sub handler
           use Time::HiRes;
           use HTML::Scrubber;
 
+          #blah.  not even in RT::Interface::Web::Handler, just in 
+          #html/NoAuth/css/dhandler and rt-test-dependencies.  ask for it here
+          #to throw a real error instead of just a mysterious unstyled RT
+          use CSS::Squish 0.06;
+
           #slow, unreliable, segfaults and is optional
           #see rt/html/Ticket/Elements/ShowTransactionAttachments
           #use Text::Quoted;
