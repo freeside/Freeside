@@ -210,6 +210,41 @@ sub payby {
   $payby_map{ shift->{billing_type} };
 }
 
+sub payinfo {
+  my $hash = shift;
+  my $payby = payby($hash);
+  my $info;
+  my $cc =
+    $hash->{'credit_card_number_1'}.
+    $hash->{'credit_card_number_2'}.
+    $hash->{'credit_card_number_3'}.
+    $hash->{'credit_card_number_4'};
+  my $bank = 
+    $hash->{'bank_account_number'}.
+    '@'.
+    $hash->{'bank_transit_number'};
+  if ($payby eq 'CARD') {
+    $info = $cc;
+  }elsif ($payby eq 'CHEK') {
+    $info = $bank;
+  }elsif ($payby eq 'BILL') {
+    $info = $hash->{'blanket_purchase_order_number'};
+    $bank =~ s/[^\d\@]//g;
+    $cc =~ s/\D//g;
+    if ( $bank =~ /^\d+\@\d{9}/) {
+      $info = $bank;
+      $payby = 'DCHK';
+    }
+    if ( $cc =~ /^\d{13,16}/ ) {
+      $info = $cc;
+      $payby = 'DCRD';
+    }
+  }else{
+    die "unexpected payby";
+  }
+  ($info, $payby);
+}
+
 sub ut_name_fixup {
   my ($object, $field) = (shift, shift);
   my $value = $object->getfield($field);
@@ -383,7 +418,7 @@ svc_acct  => { 'stable'  => 'cust',
                                             );
                                   unless( $object ) {
                                     warn "can't find svc_acct for legacy ppp ".
-                                      $row->{'login'};
+                                      $row->{'login'}, "\n";
                                     return 1;
                                   }
                                   
@@ -431,80 +466,6 @@ cust_main => { 'stable'  => 'cust',
                    'ship_zip'     => sub { or_b('zip_code', shift) },
                    'ship_daytime' => sub { or_p('phone', shift) },
                    'ship_fax'     => sub { or_p('fax', shift) },
-                   'payby'        => \&payby,
-                   'payinfo'      => sub { my $hash = shift;
-                                           my $payby = payby($hash);
-                                           my $cc =
-                                             $hash->{'credit_card_number_1'}.
-                                             $hash->{'credit_card_number_2'}.
-                                             $hash->{'credit_card_number_3'}.
-                                             $hash->{'credit_card_number_4'};
-                                           my $bank = 
-                                             $hash->{'bank_account_number'}.
-                                             '@'.
-                                             $hash->{'bank_transit_number'};
-                                           if ($payby eq 'CARD') {
-                                             $cc;
-                                           }elsif ($payby eq 'CHEK') {
-                                             $bank;
-                                           }elsif ($payby eq 'BILL') {
-                                             my $info = $hash->{'blanket_purchase_order_number'};
-                                             $bank =~ s/[^\d\@]//g;
-                                             $cc =~ s/\D//g;
-                                             $info = $bank
-                                               if $bank =~ /^\d+\@\d{9}/;
-                                             $info = $cc
-                                               if $cc =~ /^\d{13,16}/;
-                                             $info;
-                                           }else{
-                                             die "unexpected payby";
-                                           }
-                                         },
-                   'paycvv'       => sub { my $hash = shift;
-                                           my $payby = payby($hash);
-                                           if ($payby eq 'CARD') {
-                                             $hash->{'credit_card_cvv_number'};
-                                           }else{
-                                             '';
-                                           }
-                                         },
-                   'paydate'      => sub { my $hash = shift;
-                                           my $payby = payby($hash);
-                                           if ($payby eq 'CARD') {
-                                             '20'.
-                                             $hash->{'credit_card_exp_date_2'}.
-                                             '-'.
-                                             substr(
-                                               $hash->{'credit_card_exp_date_1'},
-                                               0,
-                                               2,
-                                             ).
-                                             '-01';
-                                           }else{
-                                             '2037-12-01';
-                                           }
-                                         },
-                   'payname'      => sub { my $hash = shift;
-                                           my $payby = payby($hash);
-                                           if ($payby eq 'CARD') {
-                                             $hash->{'credit_card_name'};
-                                           }elsif ($payby eq 'CHEK') {
-                                             $hash->{'bank_name'};
-                                           }else{
-                                             '';
-                                           }
-                                         },
-                   'paytype'      => sub { my $hash = shift;
-                                           my $payby = payby($hash);
-                                           if ($payby eq 'CHEK') {
-                                             $hash->{'bank_account_to_debit'}
-                                               ? 'Personal '.
-                                                 $hash->{bank_account_to_debit}
-                                               : '';
-                                           }else{
-                                             '';
-                                           }
-                                         },
                    'tax'          => sub { shift->{taxable} eq '' ? 'Y' : '' },
                    'refnum'       => sub { $referrals{shift->{'referred_from'}}
                                            || 1
@@ -518,6 +479,42 @@ cust_main => { 'stable'  => 'cust',
                                   ut_name_fixup($cust_main, 'first');
                                   ut_name_fixup($cust_main, 'company');
                                   ut_name_fixup($cust_main, 'last');
+
+                                  my ($info, $payby) = payinfo($row);
+                                  $cust_main->payby($payby);
+                                  $cust_main->payinfo($info);
+
+                                  $cust_main->paycvv(
+                                      $row->{'credit_card_cvv_number'}
+                                  )
+                                    if ($payby eq 'CARD' or $payby eq 'DCRD');
+
+                                  $cust_main->paydate('20'.
+                                      $row->{'credit_card_exp_date_2'}.  '-'.
+                                      substr(
+                                        $row->{'credit_card_exp_date_1'},
+                                        0,
+                                        2,
+                                      ).
+                                      '-01'
+                                  )
+                                    if ($payby eq 'CARD' or $payby eq 'DCRD');
+
+                                  my $payname = '';
+                                  $payname = $row->{'credit_card_name'}
+                                    if ($payby eq 'CARD' or $payby eq 'DCRD');
+                                  $payname = $row->{'bank_name'}
+                                    if ($payby eq 'CHEK' or $payby eq 'DCHK');
+                                  $cust_main->payname($payname);
+
+                                  $cust_main->paytype(
+                                      $row->{'bank_account_to_debit'}
+                                        ? 'Personal '.
+                                          $row->{bank_account_to_debit}
+                                        : ''
+                                  )
+                                    if ($payby eq 'CHEK' or $payby eq 'DCHK');
+
                                   $cust_main->payby('BILL')
                                     if ($cust_main->payby eq 'CHEK' && 
                                         $cust_main->payinfo !~ /^\d+\@\d{9}$/);
@@ -529,6 +526,8 @@ cust_main => { 'stable'  => 'cust',
                                   ut_text_fixup($cust_main, 'address1');
                                   ut_state_fixup($cust_main, 'state');
                                   ut_zip_fixup($cust_main, 'zip');
+
+
                                   '';
                                 },
                'skey'    => sub { my $object = shift;
@@ -687,7 +686,7 @@ svc_acct  => { 'stable'  => 'email',
                                             );
                                   unless( $svc_acct ) {
                                     warn "can't find svc_acct for email ".
-                                      $row->{'login'};
+                                      $row->{'login'}. "\n";
                                     return 1;
                                   }
                                   $object_map{svc_acct}{'email:'.$row->{'email_customer_id'}} = $svc_acct->svcnum;
