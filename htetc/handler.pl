@@ -91,7 +91,7 @@ sub handler
       use strict;
       use vars qw( $cgi $p $fsurl);
       use vars qw( %session );
-      use CGI 2.47 qw(-private_tempfiles);
+      use CGI 3.29 qw(-private_tempfiles); #3.29 to fix RT attachment problems
       #use CGI::Carp qw(fatalsToBrowser);
       use CGI::Cookie;
       use List::Util qw( max min );
