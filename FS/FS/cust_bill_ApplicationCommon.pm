@@ -359,6 +359,18 @@ sub cust_bill {
   qsearchs( 'cust_bill', { 'invnum' => $self->invnum } );
 }
 
+=item applied_to_invoice
+
+Returns a string representing the invoice (see L<FS::cust_bill), for example:
+"applied to Invoice #54 (3/20/2008)"
+
+=cut
+
+sub applied_to_invoice {
+  my $self = shift;
+  'applied to '. $self->cust_bill->invnum_date_pretty;
+}
+
 =item lineitem_breakdown_table 
 
 =cut

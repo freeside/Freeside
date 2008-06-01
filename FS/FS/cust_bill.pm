@@ -2505,6 +2505,18 @@ sub balance_due_msg {
   $msg;
 }
 
+=item invnum_date_pretty
+
+Returns a string with the invoice number and date, for example:
+"Invoice #54 (3/20/2008)"
+
+=cut
+
+sub invnum_date_pretty {
+  my $self = shift;
+  'Invoice #'. $self->invnum. ' ('. time2str('%x', $self->_date). ')';
+}
+
 sub _items_sections {
   my $self = shift;
 

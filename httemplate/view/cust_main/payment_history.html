@@ -166,7 +166,7 @@
 %            && scalar(@cust_pay_refund) == 0
 %            && $cust_pay->unapplied == 0     ) {
 %    #applied to one invoice, the usual situation
-%    $desc = ' applied to Invoice #'. $cust_bill_pay[0]->invnum;
+%    $desc = ' '. $cust_bill_pay[0]->applied_to_invoice;
 %  } elsif (    scalar(@cust_bill_pay)   == 0
 %            && scalar(@cust_pay_refund) == 1
 %            && $cust_pay->unapplied == 0     ) {
@@ -180,7 +180,7 @@
 %      if ( $app->isa('FS::cust_bill_pay') ) {
 %        $desc .= '&nbsp;&nbsp;'.
 %                 '$'. $app->amount.
-%                 ' applied to Invoice #'. $app->invnum.
+%                 ' '. $app->applied_to_invoice.
 %                 '<BR>';
 %                 #' on '. time2str("%D", $cust_bill_pay->_date).
 %      } elsif ( $app->isa('FS::cust_pay_refund') ) {
@@ -365,7 +365,7 @@
 %            && scalar(@cust_credit_refund) == 0
 %            && $cust_credit->credited == 0      ) {
 %    #applied to one invoice, the usual situation
-%    $desc = ' applied to Invoice #'. $cust_credit_bill[0]->invnum;
+%    $desc = ' '. $cust_credit_bill[0]->applied_to_invoice;
 %  } elsif (    scalar(@cust_credit_bill)   == 0
 %            && scalar(@cust_credit_refund) == 1
 %            && $cust_credit->credited == 0      ) {
@@ -379,7 +379,7 @@
 %      if ( $app->isa('FS::cust_credit_bill') ) {
 %        $desc .= '&nbsp;&nbsp;'.
 %                 '$'. $app->amount.
-%                 ' applied to Invoice #'. $app->invnum.
+%                 ' '. $app->applied_to_invoice.
 %                 '<BR>';
 %                 #' on '. time2str("%D", $app->_date).
 %      } elsif ( $app->isa('FS::cust_credit_refund') ) {
