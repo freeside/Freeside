@@ -64,39 +64,35 @@
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
 
+#here is the agent virtualization
+my $agentnums_sql =
+  $FS::CurrentUser::CurrentUser->agentnums_sql( 'table' => 'cust_main' );
+
+my @where = ( $agentnums_sql );
+
 my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
+push @where, "_date >= $beginning",
+             "_date <= $ending";
 
-my $join_cust = "
-    JOIN cust_bill USING ( invnum ) 
-    LEFT JOIN cust_main USING ( custnum )
-";
-
-my $join_pkg = "
-    LEFT JOIN cust_pkg USING ( pkgnum )
-    LEFT JOIN part_pkg USING ( pkgpart )
-";
-
-my $where = " WHERE _date >= $beginning AND _date <= $ending ";
-
-$where .= " AND payby != 'COMP' "
+push @where , " payby != 'COMP' "
   unless $cgi->param('include_comp_cust');
 
 if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
-  $where .= " AND agentnum = $1 ";
+  push @where, "cust_main.agentnum = $1";
 }
 
 if ( $cgi->param('classnum') =~ /^(\d+)$/ ) {
   if ( $1 == 0 ) {
-    $where .= " AND classnum IS NULL ";
+    push @where, "classnum IS NULL";
   } else {
-    $where .= " AND classnum = $1 ";
+    push @where, "classnum = $1";
   }
 }
 
 if ( $cgi->param('out') ) {
 
-  $where .= "
-    AND 0 = (
+  push @where, "
+    0 = (
       SELECT COUNT(*) FROM cust_main_county
       WHERE (    cust_main_county.county  = cust_main.county
               OR ( cust_main_county.county IS NULL AND cust_main.county  =  '' )
@@ -118,21 +114,20 @@ if ( $cgi->param('out') ) {
   my $county  = dbh->quote( $cgi->param('county')  );
   my $state   = dbh->quote( $cgi->param('state')   );
   my $country = dbh->quote( $cgi->param('country') );
-  $where .= "
-    AND ( county  = $county OR $county = '' )
-    AND ( state   = $state  OR $state = '' )
-    AND   country = $country
-  ";
-  $where .= ' AND taxclass = '. dbh->quote( $cgi->param('taxclass') )
+  push @where, 
+    " ( county  = $county OR $county = '' ) ",
+    " ( state   = $state  OR $state  = '' ) ",
+    "   country = $country "
+  ;
+  push @where, ' taxclass = '. dbh->quote( $cgi->param('taxclass') )
     if $cgi->param('taxclass');
 
 }
 
-$where .= ' AND pkgnum != 0' if $cgi->param('nottax');
+push @where, 'pkgnum != 0' if $cgi->param('nottax');
+push @where, 'pkgnum  = 0' if $cgi->param('istax');
 
-$where .= ' AND pkgnum = 0' if $cgi->param('istax');
-
-$where .= " AND tax = 'Y'" if $cgi->param('cust_tax');
+push @where, " tax = 'Y' " if $cgi->param('cust_tax');
 
 my $count_query;
 if ( $cgi->param('pkg_tax') ) {
@@ -153,12 +148,9 @@ if ( $cgi->param('pkg_tax') ) {
                          )
     ";
 
-  $where .= " AND (
-                       ( part_pkg.setuptax = 'Y' AND cust_bill_pkg.setup > 0 )
-                    OR ( part_pkg.recurtax = 'Y' AND cust_bill_pkg.recur > 0 )
-                  )
-              AND ( tax != 'Y' OR tax IS NULL )
-            ";
+  push @where, "(    ( part_pkg.setuptax = 'Y' AND cust_bill_pkg.setup > 0 )
+                  OR ( part_pkg.recurtax = 'Y' AND cust_bill_pkg.recur > 0 ) )",
+               "( tax != 'Y' OR tax IS NULL )";
 
 } else {
 
@@ -166,7 +158,20 @@ if ( $cgi->param('pkg_tax') ) {
     "SELECT COUNT(*), SUM(cust_bill_pkg.setup + cust_bill_pkg.recur)";
 
 }
-$count_query .= " FROM cust_bill_pkg $join_cust  $join_pkg $where";
+
+my $where = ' WHERE '. join(' AND ', @where);
+
+my $join_cust = "
+    JOIN cust_bill USING ( invnum ) 
+    LEFT JOIN cust_main USING ( custnum )
+";
+
+my $join_pkg = "
+    LEFT JOIN cust_pkg USING ( pkgnum )
+    LEFT JOIN part_pkg USING ( pkgpart )
+";
+
+$count_query .= " FROM cust_bill_pkg $join_cust $join_pkg $where";
 
 my $query = {
   'table'     => 'cust_bill_pkg',
