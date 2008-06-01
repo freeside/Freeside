@@ -19,7 +19,7 @@ use FS::cust_pay_refund;
 use FS::cust_main;
 use FS::cust_pay_void;
 
-@ISA = qw(FS::Record FS::cust_main_Mixin FS::payinfo_Mixin  );
+@ISA = qw( FS::Record FS::cust_main_Mixin FS::payinfo_Mixin );
 
 $DEBUG = 0;
 
@@ -570,7 +570,11 @@ Returns a name for the payby field.
 
 sub payby_name {
   my $self = shift;
-  FS::payby->shortname( $self->payby );
+  if ( $self->payby eq 'BILL' ) { #kludge
+    'Check';
+  } else {
+    FS::payby->shortname( $self->payby );
+  }
 }
 
 =item gatewaynum
