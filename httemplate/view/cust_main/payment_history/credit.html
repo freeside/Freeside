@@ -1,0 +1,110 @@
+<% $pre %>Credit<% $post %>
+by <% $cust_credit->otaker %><% "$reason$desc$apply$delete$unapply" %>
+<%init>
+
+my( $cust_credit, %opt ) = @_;
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+my @cust_credit_bill = $cust_credit->cust_credit_bill;
+my @cust_credit_refund = $cust_credit->cust_credit_refund;
+
+my( $pre, $post, $desc, $apply, $ext ) = ( '', '', '', '', '' );
+if (    scalar(@cust_credit_bill)   == 0
+     && scalar(@cust_credit_refund) == 0 ) {
+  #completely unapplied
+  $pre = '<B><FONT COLOR="#FF0000">Unapplied ';
+  $post = '</FONT></B>';
+  if ( $curuser->access_right('Apply credit') ) {
+    $apply = ' ('. include( '/elements/popup_link.html',
+                              'label'    => 'apply',
+                              'action'   => "${p}edit/cust_credit_bill.cgi?".
+                                            $cust_credit->crednum,
+                              'actionlabel' => 'Apply credit',
+                              'width'    => 392,
+                              #default# 'height' => 336,
+                          ).
+              ')';
+  }
+} elsif (    scalar(@cust_credit_bill)   == 1
+          && scalar(@cust_credit_refund) == 0
+          && $cust_credit->credited == 0      ) {
+  #applied to one invoice, the usual situation
+  $desc = ' '. $cust_credit_bill[0]->applied_to_invoice;
+} elsif (    scalar(@cust_credit_bill)   == 0
+          && scalar(@cust_credit_refund) == 1
+          && $cust_credit->credited == 0      ) {
+  #applied to one refund
+  $desc = ' refunded on '.  time2str("%D", $cust_credit_refund[0]->_date);
+} else {
+  #complicated
+  $desc = '<BR>';
+  foreach my $app ( sort { $a->_date <=> $b->_date }
+                         ( @cust_credit_bill, @cust_credit_refund ) ) {
+    if ( $app->isa('FS::cust_credit_bill') ) {
+      $desc .= '&nbsp;&nbsp;'.
+               '$'. $app->amount.
+               ' '. $app->applied_to_invoice.
+               '<BR>';
+               #' on '. time2str("%D", $app->_date).
+    } elsif ( $app->isa('FS::cust_credit_refund') ) {
+      $desc .= '&nbsp;&nbsp;'.
+               '$'. $app->amount.
+               ' refunded on '. time2str("%D", $app->_date).
+               '<BR>';
+    } else {
+      die "$app is not a FS::cust_credit_bill or a FS::cust_credit_refund";
+    }
+  }
+  if ( $cust_credit->credited > 0 ) {
+    $desc .= '&nbsp;&nbsp;<B><FONT COLOR="#FF0000">$'.
+             $cust_credit->credited. ' unapplied</FONT></B>';
+    if ( $curuser->access_right('Apply credit') ) {
+      $desc = ' ('. include( '/elements/popup_link.html',
+                              'label'       => 'apply',
+                              'action'      => "${p}edit/cust_credit_bill.cgi?".
+                                               $cust_credit->crednum,
+                              'actionlabel' => 'Apply credit',
+                              'width'       => 392,
+                              #default# 'height' => 336,
+                          ).
+              ')';
+    }
+    $desc .= '<BR>';
+  }
+}
+#
+my $delete = '';
+if ( $cust_credit->closed !~ /^Y/i
+
+     #s'pose deleting a credit isn't bad like deleting a payment
+     # and this needs to be generally available until we have credit voiding..
+     #&& $conf->exists('deletecredits')
+
+     && $curuser->access_right('Delete credit')
+   )
+{
+  $delete = qq! (<A HREF="javascript:areyousure('!.
+            qq!${p}misc/delete-cust_credit.cgi?!. $cust_credit->crednum.
+            qq!', 'Are you sure you want to delete this credit?')">!.
+            qq!delete</A>)!;
+}
+
+my $unapply = '';
+if (    $cust_credit->closed !~ /^Y/i
+     && scalar(@cust_credit_bill)
+     && $curuser->access_right('Unapply credit')
+   )
+{
+  $unapply = qq! (<A HREF="javascript:areyousure('!.
+             qq!${p}misc/unapply-cust_credit.cgi?!. $cust_credit->crednum.
+             qq!', 'Are you sure you want to unapply this credit?')">!.
+             qq!unapply</A>)!;
+}
+
+my $reason = $cust_credit->reason
+               ? ' ('. $cust_credit->reason. ')'
+               : '';
+
+</%init>
+

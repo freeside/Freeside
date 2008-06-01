@@ -271,6 +271,8 @@ sub payby_payinfo_pretty {
   }
 }
 
+=back
+
 =head1 BUGS
 
 Future items?

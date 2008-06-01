@@ -1,0 +1,50 @@
+<% $pre %>Refund<% $post %>
+(<% $payby. $payinfo %>)
+by <% $cust_refund->otaker %><% $view %><% $delete %>
+<%init>
+
+my( $cust_refund, %opt ) = @_;
+
+my $conf = new FS::Conf;
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+my $payby = $cust_refund->payby;
+my $payinfo = $payby eq 'CARD'
+                ? $cust_refund->paymask
+                : $cust_refund->payinfo;
+
+$payby =~ s/^BILL$/Check #/ if $payinfo;
+$payby =~ s/^CHEK$/Electronic check /;
+$payby =~ s/^(CARD|COMP)$/$1 /;
+
+my($pre, $post) = ('', '');
+if ( $cust_refund->unapplied > 0 ) {
+  $pre = '<B><FONT COLOR="#FF0000">Unapplied ';
+  $post = '</FONT></B>';
+}
+
+my $view =
+  ' ('. include('/elements/popup_link.html',
+                  'label'     => 'view receipt',
+                  'action'    => "${p}view/cust_refund.html?link=popup;".
+                                 'refundnum='. $cust_refund->refundnum,
+                  'actionlabel' => 'Payment Receipt',
+               ).
+   ')';
+
+
+my $delete = '';
+if ( $cust_refund->closed !~ /^Y/i
+     && $conf->exists('deleterefunds')
+     && $curuser->access_right('Delete refund')
+   )
+{
+  $delete = qq! (<A HREF="javascript:areyousure('!.
+            qq!${p}misc/delete-cust_refund.cgi?!. $cust_refund->refundnum.
+            qq!', 'Are you sure you want to delete this refund?')"!.
+            qq! TITLE="Delete this refund from the database completely - not recommended"!.
+            qq!>delete</A>)!;
+}
+
+</%init>
+

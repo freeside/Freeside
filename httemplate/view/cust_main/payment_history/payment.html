@@ -1,0 +1,180 @@
+<% $pre %>Payment<% $post %> by <% $otaker %>
+<% "$info$desc$view$apply$refund$void$delete$unapply" %>
+<%init>
+
+my( $cust_pay, %opt ) = @_;
+
+my $conf = new FS::Conf;
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+my $payby = $cust_pay->payby;
+
+my $payinfo;
+if ( $payby eq 'CARD' ) {
+  $payinfo = $cust_pay->paymask;
+} elsif ( $payby eq 'CHEK' ) {
+  my( $account, $aba ) = split('@', $cust_pay->paymask );
+  $payinfo = "ABA $aba, Acct #$account";
+} else {
+  $payinfo = $cust_pay->payinfo;
+}
+my @cust_bill_pay = $cust_pay->cust_bill_pay;
+my @cust_pay_refund = $cust_pay->cust_pay_refund;
+
+my $target = "$payby$payinfo";
+$payby =~ s/^BILL$/Check #/ if $payinfo;
+$payby =~ s/^CHEK$/Electronic check /;
+$payby =~ s/^PREP$/Prepaid card /;
+$payby =~ s/^CARD$/Credit card #/; 
+$payby =~ s/^COMP$/Complimentary by /; 
+$payby =~ s/^CASH$/Cash/;
+$payby =~ s/^WEST$/Western Union/;
+$payby =~ s/^MCRD$/Manual credit card/;
+$payby =~ s/^BILL$//;
+my $info = $payby ? "($payby$payinfo)" : '';
+
+my( $pre, $post, $desc, $apply, $ext ) = ( '', '', '', '', '' );
+if (    scalar(@cust_bill_pay)   == 0
+     && scalar(@cust_pay_refund) == 0 ) {
+  #completely unapplied
+  $pre = '<B><FONT COLOR="#FF0000">Unapplied ';
+  $post = '</FONT></B>';
+  if ( $curuser->access_right('Apply payment') ) {
+    $apply = ' ('. include( '/elements/popup_link.html',
+                              'label'       => 'apply',
+                              'action'      => "${p}edit/cust_bill_pay.cgi?".
+                                               $cust_pay->paynum,
+                              'actionlabel' => 'Apply payment',
+                              'width'       => 392,
+                              #default# 'height' => 336,
+                          ).
+              ')';
+  }
+} elsif (    scalar(@cust_bill_pay)   == 1
+          && scalar(@cust_pay_refund) == 0
+          && $cust_pay->unapplied == 0     ) {
+  #applied to one invoice, the usual situation
+  $desc = ' '. $cust_bill_pay[0]->applied_to_invoice;
+} elsif (    scalar(@cust_bill_pay)   == 0
+          && scalar(@cust_pay_refund) == 1
+          && $cust_pay->unapplied == 0     ) {
+  #applied to one refund
+  $desc = ' refunded on '. time2str("%D", $cust_pay_refund[0]->_date);
+} else {
+  #complicated
+  $desc = '<BR>';
+  foreach my $app ( sort { $a->_date <=> $b->_date }
+                         ( @cust_bill_pay, @cust_pay_refund ) ) {
+    if ( $app->isa('FS::cust_bill_pay') ) {
+      $desc .= '&nbsp;&nbsp;'.
+               '$'. $app->amount.
+               ' '. $app->applied_to_invoice.
+               '<BR>';
+               #' on '. time2str("%D", $cust_bill_pay->_date).
+    } elsif ( $app->isa('FS::cust_pay_refund') ) {
+      $desc .= '&nbsp;&nbsp;'.
+               '$'. $app->amount.
+               ' refunded on '. time2str("%D", $app->_date).
+               '<BR>';
+    } else {
+      die "$app is not a FS::cust_bill_pay or FS::cust_pay_refund";
+    }
+  }
+  if ( $cust_pay->unapplied > 0 ) {
+    $desc .= '&nbsp;&nbsp;'.
+             '<B><FONT COLOR="#FF0000">$'.
+             $cust_pay->unapplied. ' unapplied</FONT></B>';
+    if ( $curuser->access_right('Apply payment') ) {
+      $desc = ' ('. include( '/elements/popup_link.html',
+                               'label'      => 'apply',
+                               'action'     => "${p}edit/cust_bill_pay.cgi?".
+                                               $cust_pay->paynum,
+                               'actionlabel' => 'Apply payment',
+                               'width'      => 392,
+                               #default# 'height' => 336,
+                          ).
+              ')';
+    }
+    $desc .= '<BR>';
+  }
+}
+
+my $view =
+  ' ('. include('/elements/popup_link.html',
+                  'label'     => 'view receipt',
+                  'action'    => "${p}view/cust_pay.html?link=popup;paynum=".
+                                  $cust_pay->paynum,
+                  'actionlabel' => 'Payment Receipt',
+               ).
+   ')';
+
+my $refund = '';
+my $refund_days = $conf->config('card_refund-days') || 120;
+if (    $cust_pay->closed !~ /^Y/i
+     && $cust_pay->payby =~ /^(CARD|CHEK)$/
+     && time-$cust_pay->_date < $refund_days*86400
+     && $cust_pay->unrefunded > 0
+     && $curuser->access_right('Refund payment')
+) {
+  $refund = qq! (<A HREF="${p}edit/cust_refund.cgi?payby=$1;!.
+            qq!paynum=!. $cust_pay->paynum. '"'.
+            qq! TITLE="Send a refund for this payment to the payment gateway"!.
+            qq!>refund</A>)!;
+}
+
+my $void = '';
+if (    $cust_pay->closed !~ /^Y/i
+     && (    ( $cust_pay->payby eq 'CARD'
+               && $curuser->access_right('Credit card void')
+             )
+          || ( $cust_pay->payby eq 'CHEK'
+               && $curuser->access_right('Echeck void')
+             )
+          || ( $cust_pay->payby !~ /^(CARD|CHEK)$/
+               && $curuser->access_right('Regular void')
+             )
+        )
+   )
+{
+  $void = qq! (<A HREF="javascript:areyousure('!.
+          qq!${p}misc/void-cust_pay.cgi?!. $cust_pay->paynum.
+          qq!', 'Are you sure you want to void this payment?')"!.
+          qq! TITLE="Void this payment from the database!.
+            ( $cust_pay->payby =~ /^(CARD|CHEK)$/
+              ? ' (do not send anything to the payment gateway)'
+              : '' 
+            ). '"'.
+          qq!>void</A>)!;
+}
+
+my $delete = '';
+if ( $cust_pay->closed !~ /^Y/i
+     && $conf->exists('deletepayments')
+     && $curuser->access_right('Delete payment')
+   )
+{
+  $delete = qq! (<A HREF="javascript:areyousure('!.
+            qq!${p}misc/delete-cust_pay.cgi?!. $cust_pay->paynum.
+            qq!', 'Are you sure you want to delete this payment?')"!.
+            qq! TITLE="Delete this payment from the database completely - not recommended"!.
+            qq!>delete</A>)!;
+}
+
+my $unapply = '';
+if (    $cust_pay->closed !~ /^Y/i
+     && scalar(@cust_bill_pay)           
+     && $curuser->access_right('Unapply payment')
+   )
+{
+  $unapply = qq! (<A HREF="javascript:areyousure('!.
+             qq!${p}misc/unapply-cust_pay.cgi?!. $cust_pay->paynum.
+             qq!', 'Are you sure you want to unapply this payment?')"!.
+             qq! TITLE="Keep this payment, but dissociate it from the invoices it is currently applied against"!.
+             qq!>unapply</A>)!;
+}
+
+my $otaker = $cust_pay->otaker;
+$otaker = '<i>auto billing</i>'          if $otaker eq 'fs_daily';
+$otaker = '<i>customer self-service</i>' if $otaker eq 'fs_selfservice';
+
+</%init>

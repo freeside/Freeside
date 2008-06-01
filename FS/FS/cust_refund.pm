@@ -3,15 +3,16 @@ package FS::cust_refund;
 use strict;
 use vars qw( @ISA @encrypted_fields );
 use Business::CreditCard;
-use FS::Record qw( qsearch qsearchs dbh );
 use FS::UID qw(getotaker);
+use FS::Record qw( qsearch qsearchs dbh );
+use FS::cust_main_Mixin;
+use FS::payinfo_transaction_Mixin;
 use FS::cust_credit;
 use FS::cust_credit_refund;
 use FS::cust_pay_refund;
 use FS::cust_main;
-use FS::payinfo_Mixin;
 
-@ISA = qw( FS::payinfo_Mixin FS::cust_main_Mixin FS::Record );
+@ISA = qw( FS::payinfo_transaction_Mixin FS::cust_main_Mixin FS::Record );
 
 @encrypted_fields = ('payinfo');
 

@@ -242,10 +242,9 @@ if ( $cgi->param('magic') ) {
 }
 
 my $link = '';
-if ( $thing eq 'pay' ) { #XXX no refund receipts yet
-  $link = [ "${p}view/cust_pay.html?paynum=", 'paynum' ]
-    if $FS::CurrentUser::CurrentUser->access_right('View invoices'); #XXX for now
-    #later# if $FS::CurrentUser::CurrentUser->access_right('View customer payments');
+if ( $FS::CurrentUser::CurrentUser->access_right('View invoices') #XXX for now
+     || $FS::CurrentUser::CurrentUser->access_right('View customer payments') ){
+  $link = [ "${p}view/cust_$thing.html?${thing}num=", $thing.'num' ]
 }
 
 my $cust_link = sub {

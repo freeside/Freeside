@@ -1,0 +1,37 @@
+<DEL>Payment <% $info %></DEL>
+<I>voided <% time2str("%D", $cust_pay_void->void_date) %>
+by <% $cust_pay_void->otaker %></I><% $unvoid %>
+<%init>
+
+my( $cust_pay_void, %opt ) = @_;
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+my $payby = $cust_pay_void->payby;
+my $payinfo = $payby eq 'CARD'
+                ? $cust_pay_void->paymask
+                : $cust_pay_void->payinfo;
+
+$payby =~ s/^BILL$/Check #/ if $payinfo;
+$payby =~ s/^CHEK$/Electronic check /;
+$payby =~ s/^BILL$//;
+$payby =~ s/^(CARD|COMP)$/$1 /;
+my $info = $payby ? " ($payby$payinfo)" : '';
+
+my $unvoid = '';
+if ( $cust_pay_void->closed !~ /^Y/i
+     && $curuser->access_right('Unvoid')
+   )
+{
+  $unvoid = qq! (<A HREF="javascript:areyousure('!.
+            qq!${p}misc/unvoid-cust_pay_void.cgi?!. $cust_pay_void->paynum.
+            qq!', 'Are you sure you want to unvoid this payment?')"!.
+            qq! TITLE="Unvoid this payment from the database!.
+              ( $cust_pay_void->payby =~ /^(CARD|CHEK)$/
+                ? ' (do not send anything to the payment gateway)'
+                : '' 
+              ). '"'.
+            qq!>unvoid</A>)!;
+}
+
+</%init>
