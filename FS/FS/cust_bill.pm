@@ -2017,6 +2017,7 @@ sub print_generic {
     my %options = ();
     $options{'section'} = $section if $multisection;
     $options{'format'} = $format;
+    $options{'escape_function'} = $escape_function;
 
     foreach my $line_item ( $self->_items_pkg(%options) ) {
       my $detail = {
@@ -2530,11 +2531,14 @@ sub _items_sections {
 
 sub _items {
   my $self = shift;
-  my @display = scalar(@_)
-                ? @_
-                : qw( _items_previous _items_pkg );
-                #: qw( _items_pkg );
-                #: qw( _items_previous _items_pkg _items_tax _items_credits _items_payments );
+
+  #my @display = scalar(@_)
+  #              ? @_
+  #              : qw( _items_previous _items_pkg );
+  #              #: qw( _items_pkg );
+  #              #: qw( _items_previous _items_pkg _items_tax _items_credits _items_payments );
+  my @display = qw( _items_previous _items_pkg );
+
   my @b = ();
   foreach my $display ( @display ) {
     push @b, $self->$display(@_);
@@ -2605,6 +2609,7 @@ sub _items_cust_bill_pkg {
   my $self = shift;
   my $cust_bill_pkg = shift;
   my %opt = @_;
+
   my $format = $opt{format} || '';
   my $escape_function = $opt{escape_function} || sub { shift };
 
@@ -2615,16 +2620,22 @@ sub _items_cust_bill_pkg {
 
     my $desc = $cust_bill_pkg->desc;
 
+    my %details_opt = ( 'format'          => $format,
+                        'escape_function' => $escape_function,
+                      );
+
     if ( $cust_bill_pkg->pkgnum > 0 ) {
 
       if ( $cust_bill_pkg->setup != 0 ) {
+
         my $description = $desc;
         $description .= ' Setup' if $cust_bill_pkg->recur != 0;
-        my @d = $cust_pkg->h_labels_short($self->_date);
-        push @d, $cust_bill_pkg->details( 'format'          => $format,
-                                          'escape_function' => $escape_function,
-                                        )
+
+        my @d = map &{$escape_function}($_),
+                       $cust_pkg->h_labels_short($self->_date);
+        push @d, $cust_bill_pkg->details(%details_opt)
           if $cust_bill_pkg->recur == 0;
+
         push @b, {
           description     => $description,
           #pkgpart         => $part_pkg->pkgpart,
@@ -2635,26 +2646,30 @@ sub _items_cust_bill_pkg {
       }
 
       if ( $cust_bill_pkg->recur != 0 ) {
+
+        my $description = $desc;
+        unless ( $conf->exists('disable_line_item_date_ranges') ) {
+          $desc .= " (" . time2str("%x", $cust_bill_pkg->sdate).
+                   " - ". time2str("%x", $cust_bill_pkg->edate). ")";
+        }
+
+        #at least until cust_bill_pkg has "past" ranges in addition to
+        #the "future" sdate/edate ones... see #3032
+        my @d = map &{$escape_function}($_),
+                    $cust_pkg->h_labels_short($self->_date);
+                                              #$cust_bill_pkg->edate,
+                                              #$cust_bill_pkg->sdate),
+        push @d, $cust_bill_pkg->details(%details_opt);
+
         push @b, {
-          description     => $desc .
-                             ( $conf->exists('disable_line_item_date_ranges')
-                               ? ''
-                               : " (" .time2str("%x", $cust_bill_pkg->sdate).
-                                 " - ".time2str("%x", $cust_bill_pkg->edate).")"
-                             ),
+          description     => $description,
           #pkgpart         => $part_pkg->pkgpart,
           pkgnum          => $cust_bill_pkg->pkgnum,
           amount          => sprintf("%.2f", $cust_bill_pkg->recur),
-          ext_description =>
-            #at least until cust_bill_pkg has "past" ranges in addition to
-            #the "future" sdate/edate ones... see #3032
-            [ $cust_pkg->h_labels_short( $self->_date ),
-                                         #$cust_bill_pkg->edate,
-                                         #$cust_bill_pkg->sdate),
-              $cust_bill_pkg->details( 'format'          => $format,
-                                       'escape_function' => $escape_function),
-            ],
+          ext_description => \@d,
+
         };
+
       }
 
     } else { #pkgnum tax or one-shot line item (??)
