@@ -45,7 +45,7 @@ foreach my $transaction (
       'custnum'        => $customer,
       'transaction_id' => $transaction,
       'seconds'        => $seconds{$customer},
-      'support'        => $seconds{$customer} * $msum,
+      'support'        => int( $seconds{$customer} * $msum ),
     };
   }
 
