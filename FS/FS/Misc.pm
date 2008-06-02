@@ -18,7 +18,7 @@ use IPC::Run3; # for do_print... should just use IPC::Run i guess
                  generate_ps generate_pdf do_print
                );
 
-$DEBUG = 0;
+$DEBUG = 1;
 
 =head1 NAME
 
@@ -587,7 +587,8 @@ sub _pslatex {
   #my $sfile = shell_quote $file;
 
   my @cmd = (
-    'latex', '-interaction=batchmode',
+    'latex',
+    #'-interaction=errorstopmode',
     '\AtBeginDocument{\RequirePackage{pslatex}}',
     '\def\PSLATEXTMP{\futurelet\PSLATEXTMP\PSLATEXTMPB}',
     '\def\PSLATEXTMPB{\ifx\PSLATEXTMP\nonstopmode\else\input\fi}',
@@ -595,11 +596,15 @@ sub _pslatex {
     "$file.tex"
   );
 
-  my $timeout = 60; #?
+  my $timeout = 30; #? should be more than enough
 
   for ( 1, 2 ) {
-    run( \@cmd, '>'=>'/dev/null', '2>'=>'/dev/null', timeout($timeout) )
+
+    local($SIG{CHLD}) = sub {};
+    #run( \@cmd, '>'=>'/dev/null', '2>'=>'/dev/null', timeout($timeout) )
+    run( \@cmd, timeout($timeout) )
       or die "pslatex $file.tex failed; see $file.log for details?\n";
+
   }
 
 }
