@@ -5,6 +5,8 @@ use vars qw ( @ISA @EXPORT_OK $DEBUG );
 use Exporter;
 use Carp;
 use Data::Dumper;
+use IPC::Run qw( run timeout );   # for _pslatex
+use IPC::Run3; # for do_print... should just use IPC::Run i guess
 #do NOT depend on any FS:: modules here, causes weird (sometimes unreproducable
 #until on client machine) dependancy loops.  put them in FS::Misc::Something
 #instead
@@ -13,7 +15,7 @@ use Data::Dumper;
 @EXPORT_OK = qw( send_email send_fax
                  states_hash counties state_label
                  card_types
-                 generate_ps do_print
+                 generate_ps generate_pdf do_print
                );
 
 $DEBUG = 0;
@@ -500,12 +502,7 @@ sub generate_ps {
   my $dir = $FS::UID::conf_dir. "/cache.". $FS::UID::datasrc;
   chdir($dir);
 
-  my $sfile = shell_quote $file;
-
-  system("pslatex $sfile.tex >/dev/null 2>&1") == 0
-    or die "pslatex $file.tex failed; see $file.log for details?\n";
-  system("pslatex $sfile.tex >/dev/null 2>&1") == 0
-    or die "pslatex $file.tex failed; see $file.log for details?\n";
+  _pslatex($file);
 
   system('dvips', '-q', '-t', 'letter', "$file.dvi", '-o', "$file.ps" ) == 0
     or die "dvips failed";
@@ -537,13 +534,81 @@ sub generate_ps {
 
 }
 
+=item generate_pdf FILENAME
+
+Returns an PDF rendition of the LaTex file, as a scalar.  FILENAME does not
+contain the .tex suffix and is unlinked by this function.
+
+=cut
+
+use String::ShellQuote;
+
+sub generate_pdf {
+  my $file = shift;
+
+  my $dir = $FS::UID::conf_dir. "/cache.". $FS::UID::datasrc;
+  chdir($dir);
+
+  #system('pdflatex', "$file.tex");
+  #system('pdflatex', "$file.tex");
+  #! LaTeX Error: Unknown graphics extension: .eps.
+
+  _pslatex($file);
+
+  my $sfile = shell_quote $file;
+
+  #system('dvipdf', "$file.dvi", "$file.pdf" );
+  system(
+    "dvips -q -t letter -f $sfile.dvi ".
+    "| gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile=$sfile.pdf ".
+    "     -c save pop -"
+  ) == 0
+    or die "dvips | gs failed: $!";
+
+  open(PDF, "<$file.pdf")
+    or die "can't open $file.pdf: $! (error in LaTeX template?)\n";
+
+  unlink("$file.dvi", "$file.log", "$file.aux", "$file.pdf", "$file.tex");
+
+  my $pdf = '';
+  while (<PDF>) {
+    $pdf .= $_;
+  }
+
+  close PDF;
+
+  return $pdf;
+
+}
+
+sub _pslatex {
+  my $file = shift;
+
+  #my $sfile = shell_quote $file;
+
+  my @cmd = (
+    'latex', '-interaction=batchmode',
+    '\AtBeginDocument{\RequirePackage{pslatex}}',
+    '\def\PSLATEXTMP{\futurelet\PSLATEXTMP\PSLATEXTMPB}',
+    '\def\PSLATEXTMPB{\ifx\PSLATEXTMP\nonstopmode\else\input\fi}',
+    '\PSLATEXTMP',
+    "$file.tex"
+  );
+
+  my $timeout = 60; #?
+
+  for ( 1, 2 ) {
+    run( \@cmd, '>'=>'/dev/null', '2>'=>'/dev/null', timeout($timeout) )
+      or die "pslatex $file.tex failed; see $file.log for details?\n";
+  }
+
+}
+
 =item print ARRAYREF
 
 Sends the lines in ARRAYREF to the printer.
 
 =cut
-
-use IPC::Run3;
 
 sub do_print {
   my $data = shift;

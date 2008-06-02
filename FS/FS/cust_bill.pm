@@ -12,7 +12,7 @@ use String::ShellQuote;
 use HTML::Entities;
 use Locale::Country;
 use FS::UID qw( datasrc );
-use FS::Misc qw( send_email send_fax generate_ps do_print );
+use FS::Misc qw( send_email send_fax generate_ps generate_pdf do_print );
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::cust_main_Mixin;
 use FS::cust_main;
@@ -2303,8 +2303,8 @@ sub print_ps {
   my ($file, $lfile) = $self->print_latex(@_);
   my $ps = generate_ps($file);
   unlink($lfile);
-  $ps;
 
+  $ps;
 }
 
 =item print_pdf [ TIME [ , TEMPLATE ] ]
@@ -2322,44 +2322,10 @@ sub print_pdf {
   my $self = shift;
 
   my ($file, $lfile) = $self->print_latex(@_);
+  my $pdf = generate_pdf($file);
+  unlink($lfile);
 
-  my $dir = $FS::UID::conf_dir. "/cache.". $FS::UID::datasrc;
-  chdir($dir);
-
-  #system('pdflatex', "$file.tex");
-  #system('pdflatex', "$file.tex");
-  #! LaTeX Error: Unknown graphics extension: .eps.
-
-  my $sfile = shell_quote $file;
-
-  system("pslatex $sfile.tex >/dev/null 2>&1") == 0
-    or die "pslatex $file.tex failed; see $file.log for details?\n";
-  system("pslatex $sfile.tex >/dev/null 2>&1") == 0
-    or die "pslatex $file.tex failed; see $file.log for details?\n";
-
-  #system('dvipdf', "$file.dvi", "$file.pdf" );
-  system(
-    "dvips -q -t letter -f $sfile.dvi ".
-    "| gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile=$sfile.pdf ".
-    "     -c save pop -"
-  ) == 0
-    or die "dvips | gs failed: $!";
-
-  open(PDF, "<$file.pdf")
-    or die "can't open $file.pdf: $! (error in LaTeX template?)\n";
-
-  unlink("$file.dvi", "$file.log", "$file.aux", "$file.pdf", "$file.tex");
-  unlink("$lfile");
-
-  my $pdf = '';
-  while (<PDF>) {
-    $pdf .= $_;
-  }
-
-  close PDF;
-
-  return $pdf;
-
+  $pdf;
 }
 
 =item print_html [ TIME [ , TEMPLATE [ , CID ] ] ]
