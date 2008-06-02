@@ -533,21 +533,7 @@ worry that config_items is freeside-specific and icky.
                    invoice_latexfooter
                    invoice_latexsmallfooter
                    invoice_latexnotes
-                   invoice_html
-                   invoice_htmlreturnaddress
-                   invoice_htmlfooter
-                   invoice_htmlnotes
-                   logo.png
-                   logo.eps
-                 );
-
-@base_items = qw (
-                   invoice_template
-                   invoice_latex
-                   invoice_latexreturnaddress
-                   invoice_latexfooter
-                   invoice_latexsmallfooter
-                   invoice_latexnotes
+                   invoice_latexcoupon
                    invoice_html
                    invoice_htmlreturnaddress
                    invoice_htmlfooter
@@ -826,6 +812,13 @@ worry that config_items is freeside-specific and icky.
     'key'         => 'invoice_latexfooter',
     'section'     => 'billing',
     'description' => 'Footer for LaTeX typeset PostScript invoices.',
+    'type'        => 'textarea',
+  },
+
+  {
+    'key'         => 'invoice_latexcoupon',
+    'section'     => 'billing',
+    'description' => 'Remittance coupon for LaTeX typeset PostScript invoices.',
     'type'        => 'textarea',
   },
 

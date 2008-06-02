@@ -1671,6 +1671,7 @@ sub print_generic {
                  'footer'        => sub { map "$_", @_ },
                  'smallfooter'   => sub { map "$_", @_ },
                  'returnaddress' => sub { map "$_", @_ },
+                 'coupon'        => sub { map "$_", @_ },
                },
     'html'  => {
                  'notes' =>
@@ -1702,6 +1703,7 @@ sub print_generic {
                        $_;
                      }  @_
                    },
+                 'coupon'        => sub { "" },
                },
     'template' => {
                  'notes' =>
@@ -1731,6 +1733,7 @@ sub print_generic {
                        $_;
                      }  @_
                    },
+                 'coupon'        => sub { "" },
                },
   );
 
@@ -1872,8 +1875,17 @@ sub print_generic {
   push @address, ''
     while (scalar(@address) < 5);
 
+  $invoice_data{'logo_file'} = $params{'logo_file'}
+    if $params{'logo_file'};
+
+  my( $pr_total, @pr_cust_bill ) = $self->previous; #previous balance
+#  my( $cr_total, @cr_cust_credit ) = $self->cust_credit; #credits
+  #my $balance_due = $self->owed + $pr_total - $cr_total;
+  my $balance_due = $self->owed + $pr_total;
+  $invoice_data{'balance'} = $balance_due;
+
   #do variable substitution in notes, footer, smallfooter
-  foreach my $include (qw( notes footer smallfooter )) {
+  foreach my $include (qw( notes footer smallfooter coupon )) {
 
     my $inc_file = $conf->key_orbase("invoice_${format}$include", $template);
     my @inc_src;
@@ -1918,11 +1930,6 @@ sub print_generic {
     (  $cust_main->payby eq 'BILL' && $cust_main->payinfo )
       ? &$escape_function("Purchase Order #". $cust_main->payinfo)
       : $nbsp;
-
-  my( $pr_total, @pr_cust_bill ) = $self->previous; #previous balance
-#  my( $cr_total, @cr_cust_credit ) = $self->cust_credit; #credits
-  #my $balance_due = $self->owed + $pr_total - $cr_total;
-  my $balance_due = $self->owed + $pr_total;
 
   my %money_chars = ( 'latex'    => '',
                       'html'     => $conf->config('money_char') || '$',
@@ -2232,9 +2239,6 @@ sub print_generic {
         sprintf("%10.2f", $balance_due ) ];
     }
   }
-
-  $invoice_data{'logo_file'} = $params{'logo_file'}
-    if $params{'logo_file'};
 
   $invoice_lines = 0;
   my $wasfunc = 0;

@@ -19,7 +19,7 @@
 
 \documentclass[letterpaper]{article}
 
-\usepackage{fancyhdr,lastpage,ifthen,longtable,afterpage,caption}
+\usepackage{fancyhdr,lastpage,ifthen,longtable,afterpage,caption,multirow,bigstrut}
 \usepackage{graphicx}			% required for logo graphic
 
 \addtolength{\voffset}{-0.0cm}		% top margin to top of header
@@ -39,6 +39,19 @@
 
 \renewcommand{\headrulewidth}{0pt}
 \renewcommand{\footrulewidth}{1pt}
+
+\renewcommand{\footrule}{
+[@--
+  $coupon ? '\ifthenelse{\equal{\thepage}{1}}' : '';
+--@]
+  {
+  }
+  {
+    \vbox to 0pt{\rule{\headwidth}{\footrulewidth}\vss}
+  }
+}
+
+\newcommand{\extracouponspace}{4.8cm}
 
 % Adjust the inset of the mailing address
 \newcommand{\addressinset}[1][]{\hspace{1.0cm}}
@@ -62,9 +75,16 @@
 \fancyfoot[C]{
   \ifthenelse{\equal{\thepage}{1}}
   { % First page
-    \small{
+[@--
+  if ($coupon) {
+    $OUT .= '\vspace{-\extracouponspace}';
+    $OUT .= '\rule[0.5em]{\textwidth}{\footrulewidth}\\\\';
+    $OUT .= $coupon;
+  }
+  '';
+--@] \small{
 [@-- $footer --@]
-    }
+    }[@-- $coupon ? '\vspace{\extracouponspace}' : '' --@]
   }
   { % ... pages
     \small{
@@ -167,6 +187,7 @@
 %
 %
 %
+[@-- $coupon ? '\enlargethispage{-\extracouponspace}' : '' --@]
 \begin{tabular}{ll}
 \addressinset \rule{0cm}{0cm} &
 \makebox{
@@ -227,12 +248,12 @@ Terms: [@-- $terms --@]\\
               '{' . $section->{'subtotal'} . '}' . "\n";
     }
 
-    if ($section == $sections[$#sections]) {
-      foreach my $line (@total_items) {
+    #if ($section == $sections[$#sections]) {
+      foreach my $line (grep {$_->{section}->{description} eq $section->{description}} @total_items) {
         $OUT .= '\FStotaldesc{' . $line->{'total_item'} . '}' .
                 '{' . $line->{'total_amount'} . '}' . "\n";
       }
-    }
+    #}
 
     $OUT .= '\hline';
     $OUT .= '\endlastfoot';
