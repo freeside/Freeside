@@ -136,8 +136,9 @@ sub handler
       use FS::Record qw(qsearch qsearchs fields dbdef str2time_sql);
       use FS::Conf;
       use FS::CGI qw(header menubar popurl rooturl table itable ntable idiot
-                     eidiot small_custview myexit http_header);
+                     eidiot myexit http_header);
       use FS::UI::Web qw(svc_url);
+      use FS::UI::Web::small_custview qw(small_custview);
       use FS::UI::bytecount;
       use FS::Msgcat qw(gettext geterror);
       use FS::Misc qw( send_email send_fax states_hash counties state_label );

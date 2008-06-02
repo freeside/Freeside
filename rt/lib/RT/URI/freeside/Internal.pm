@@ -32,7 +32,8 @@ no warnings qw(redefine);
 
 use FS;
 use FS::UID qw(dbh);
-use FS::CGI qw(popurl small_custview);
+use FS::CGI qw(popurl);
+use FS::UI::Web::small_custview qw(small_custview);
 use FS::Conf;
 use FS::Record qw(qsearchs qsearch dbdef);
 use FS::cust_main;
@@ -115,7 +116,7 @@ sub email_search { #Subroutine
 
 sub small_custview {
 
-  return &FS::CGI::small_custview(@_);
+  return &FS::UI::Web::small_custview::small_custview(@_);
 
 }
 

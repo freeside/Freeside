@@ -7,7 +7,7 @@ use Digest::MD5 qw(md5_hex);
 use Date::Format;
 use Business::CreditCard;
 use Time::Duration;
-use FS::CGI qw(small_custview); #doh
+use FS::UI::Web::small_custview qw(small_custview); #less doh
 use FS::UI::Web;
 use FS::UI::bytecount;
 use FS::Conf;

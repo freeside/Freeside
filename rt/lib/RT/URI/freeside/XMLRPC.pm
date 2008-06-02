@@ -115,7 +115,7 @@ sub smart_search { #Subroutine
 
 sub small_custview {
 
-  return _XMLRPCRequest('CGI.small_custview', @_);
+  return _XMLRPCRequest('Web.UI.small_custview.small_custview', @_);
 
 }
 
