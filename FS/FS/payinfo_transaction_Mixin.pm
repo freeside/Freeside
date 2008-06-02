@@ -4,6 +4,9 @@ use strict;
 use vars qw( @ISA );
 use FS::payby;
 use FS::payinfo_Mixin;
+use FS::Record qw(qsearchs);
+use FS::cust_main;
+use FS::payment_gateway;
 
 @ISA = qw( FS::payinfo_Mixin );
 
