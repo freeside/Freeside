@@ -112,5 +112,18 @@ sub small_custview {
   $html;
 }
 
+#bah.  don't want to pull in all of FS::CGI, that's the whole problem in the
+#first place
+sub ntable {
+  my $col = shift;
+  my $cellspacing = shift || 0;
+  if ( $col ) {
+    qq!<TABLE BGCOLOR="$col" BORDER=0 CELLSPACING=$cellspacing>!;
+  } else {
+    '<TABLE BORDER CELLSPACING=0 CELLPADDING=2 BORDERCOLOR="#999999">';
+  }
+
+}
+
 1;
 
