@@ -588,7 +588,7 @@ sub _pslatex {
 
   my @cmd = (
     'latex',
-    #'-interaction=errorstopmode',
+    '-interaction=batchmode',
     '\AtBeginDocument{\RequirePackage{pslatex}}',
     '\def\PSLATEXTMP{\futurelet\PSLATEXTMP\PSLATEXTMPB}',
     '\def\PSLATEXTMPB{\ifx\PSLATEXTMP\nonstopmode\else\input\fi}',
