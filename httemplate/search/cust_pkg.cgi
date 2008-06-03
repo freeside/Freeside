@@ -6,6 +6,7 @@
                   'count_query' => $count_query,
                   #'redirect'    => $link,
                   'header'      => [ '#',
+                                     'Quan.',
                                      'Package',
                                      'Class',
                                      'Status',
@@ -25,6 +26,7 @@
                                    ],
                   'fields'      => [
                     'pkgnum',
+                    'quantity',
                     sub { #my $part_pkg = $part_pkg{shift->pkgpart};
                           #$part_pkg->pkg; # ' - '. $part_pkg->comment;
                           $_[0]->pkg; # ' - '. $_[0]->comment;
@@ -87,6 +89,7 @@
                     '',
                     '',
                     '',
+                    '',
                     sub { shift->statuscolor; },
                     '',
                     '',
@@ -100,11 +103,12 @@
                     FS::UI::Web::cust_colors(),
                     '',
                   ],
-                  'style' => [ '', '', '', 'b', '', '', '', '', '', '', '', '', '',
+                  'style' => [ '', '', '', '', 'b', '', '', '', '', '', '', '', '', '',
                                FS::UI::Web::cust_styles() ],
-                  'size'  => [ '', '', '', '-1' ],
-                  'align' => 'rlcclrrrrrrrl'. FS::UI::Web::cust_aligns(). 'r',
+                  'size'  => [ '', '', '', '', '-1' ],
+                  'align' => 'rrlcclrrrrrrrl'. FS::UI::Web::cust_aligns(). 'r',
                   'links' => [
+                    $link,
                     $link,
                     $link,
                     '',

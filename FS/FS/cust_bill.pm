@@ -1834,7 +1834,7 @@ sub print_generic {
     'state'           => &$escape_function($cust_main->state),
     'zip'             => &$escape_function($cust_main->zip),
     'returnaddress'   => $returnaddress,
-    'quantity'        => 1,
+    #'quantity'        => 1,
     'terms'           => $self->terms,
     'template'        => $params{'template'},
     #'notes'           => join("\n", $conf->config('invoice_latexnotes') ),
@@ -1990,10 +1990,8 @@ sub print_generic {
         &$escape_function($_);
       } @{$line_item->{'ext_description'}};
     }
-    {
-      my $money = $old_latex ? '' : $money_char;
-      $detail->{'amount'} = $money. $line_item->{'amount'};
-    }
+    $detail->{'amount'} = ( $old_latex ? '' : $money_char).
+                          $line_item->{'amount'};
     $detail->{'product_code'} = $line_item->{'pkgpart'} || 'N/A';
   
     push @detail_items, $detail;
@@ -2031,16 +2029,16 @@ sub print_generic {
         ext_description => [],
       };
       $detail->{'ref'} = $line_item->{'pkgnum'};
-      $detail->{'quantity'} = 1;
+      $detail->{'quantity'} = $line_item->{'quantity'};
       $detail->{'section'} = $section;
       $detail->{'description'} = &$escape_function($line_item->{'description'});
       if ( exists $line_item->{'ext_description'} ) {
         @{$detail->{'ext_description'}} = @{$line_item->{'ext_description'}};
       }
-      {
-        my $money = $old_latex ? '' : $money_char;
-        $detail->{'amount'} = $money. $line_item->{'amount'};
-      }
+      $detail->{'amount'} = ( $old_latex ? '' : $money_char ).
+                              $line_item->{'amount'};
+      $detail->{'unit_amount'} = ( $old_latex ? '' : $money_char ).
+                                 $line_item->{'unit_amount'};
       $detail->{'product_code'} = $line_item->{'pkgpart'} || 'N/A';
   
       push @detail_items, $detail;
@@ -2623,6 +2621,8 @@ sub _items_cust_bill_pkg {
           #pkgpart         => $part_pkg->pkgpart,
           pkgnum          => $cust_bill_pkg->pkgnum,
           amount          => sprintf("%.2f", $cust_bill_pkg->setup),
+          unit_amount     => sprintf("%.2f", $cust_bill_pkg->unitsetup),
+          quantity        => $cust_bill_pkg->quantity,
           ext_description => \@d,
         };
       }
@@ -2648,8 +2648,9 @@ sub _items_cust_bill_pkg {
           #pkgpart         => $part_pkg->pkgpart,
           pkgnum          => $cust_bill_pkg->pkgnum,
           amount          => sprintf("%.2f", $cust_bill_pkg->recur),
+          unit_amount     => sprintf("%.2f", $cust_bill_pkg->unitrecur),
+          quantity        => $cust_bill_pkg->quantity,
           ext_description => \@d,
-
         };
 
       }

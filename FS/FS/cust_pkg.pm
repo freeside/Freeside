@@ -128,6 +128,8 @@ inherits from FS::Record.  The following fields are currently supported:
 =item manual_flag - If this field is set to 1, disables the automatic
 unsuspension of this package when using the B<unsuspendauto> config file.
 
+=item quantity - If not set, defaults to 1
+
 =back
 
 Note: setup, bill, adjourn, susp, expire and cancel are specified as UNIX timestamps;
@@ -1333,6 +1335,18 @@ sub attribute_since_sqlradacct {
 
   $sum;
 
+}
+
+=item quantity
+
+=cut
+
+sub quantity {
+  my( $self, $value ) = @_;
+  if ( defined($value) ) {
+    $self->setfield('quantity', $value);
+  }
+  $self->getfield('quantity') || 1;
 }
 
 =item transfer DEST_PKGNUM | DEST_CUST_PKG, [ OPTION => VALUE ... ]

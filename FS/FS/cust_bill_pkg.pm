@@ -57,6 +57,12 @@ supported:
 
 =item itemdesc - Line item description (currentlty used only when pkgnum is 0 or -1)
 
+=item quantity - If not set, defaults to 1
+
+=item unitsetup - If not set, defaults to setup
+
+=item unitrecur - If not set, defaults to recur
+
 =back
 
 sdate and edate are specified as UNIX timestamps; see L<perlfunc/"time">.  Also
@@ -365,6 +371,46 @@ line item.
 sub units {
   my $self = shift;
   $self->part_pkg->calc_units($self->cust_pkg);
+}
+
+=item quantity
+
+=cut
+
+sub quantity {
+  my( $self, $value ) = @_;
+  if ( defined($value) ) {
+    $self->setfield('quantity', $value);
+  }
+  $self->getfield('quantity') || 1;
+}
+
+=item unitsetup
+
+=cut
+
+sub unitsetup {
+  my( $self, $value ) = @_;
+  if ( defined($value) ) {
+    $self->setfield('unitsetup', $value);
+  }
+  $self->getfield('unitsetup') eq ''
+    ? $self->getfield('setup')
+    : $self->getfield('unitsetup');
+}
+
+=item unitrecur
+
+=cut
+
+sub unitrecur {
+  my( $self, $value ) = @_;
+  if ( defined($value) ) {
+    $self->setfield('unitrecur', $value);
+  }
+  $self->getfield('unitrecur') eq ''
+    ? $self->getfield('recur')
+    : $self->getfield('unitrecur');
 }
 
 =back
