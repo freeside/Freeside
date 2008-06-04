@@ -1844,6 +1844,7 @@ sub print_generic {
     'page'            => 1,
     'total_pages'     => 1,
     'ship_enable'     => $conf->exists('invoice-ship_address'),
+    'unitprices'      => $conf->exists('invoice-unitprice'),
   );
 
   my $prefix = $cust_main->has_ship_address ? 'ship_' : '';
