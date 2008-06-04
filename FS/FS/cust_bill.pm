@@ -838,13 +838,15 @@ sub send {
 
   my @invoicing_list = $self->cust_main->invoicing_list;
 
+  #$self->email_invoice($template, $invoice_from)
   $self->email($template, $invoice_from)
     if grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list or !@invoicing_list;
 
+  #$self->print_invoice($template)
   $self->print($template)
     if grep { $_ eq 'POST' } @invoicing_list; #postal
 
-  $self->fax($template)
+  $self->fax_invoice($template)
     if grep { $_ eq 'FAX' } @invoicing_list; #fax
 
   '';
@@ -876,6 +878,7 @@ sub queueable_email {
 
 }
 
+#sub email_invoice {
 sub email {
   my $self = shift;
   my $template = scalar(@_) ? shift : '';
@@ -925,6 +928,7 @@ TEMPLATENAME, if specified, is the name of a suffix for alternate invoices.
 
 =cut
 
+#sub print_invoice {
 sub print {
   my $self = shift;
   my $template = scalar(@_) ? shift : '';
@@ -932,7 +936,7 @@ sub print {
   do_print $self->lpr_data($template);
 }
 
-=item fax [ TEMPLATENAME ] 
+=item fax_invoice [ TEMPLATENAME ] 
 
 Faxes this invoice.
 
@@ -940,7 +944,7 @@ TEMPLATENAME, if specified, is the name of a suffix for alternate invoices.
 
 =cut
 
-sub fax {
+sub fax_invoice {
   my $self = shift;
   my $template = scalar(@_) ? shift : '';
 

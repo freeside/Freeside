@@ -12,7 +12,7 @@ my $invnum = $3;
 my $cust_bill = qsearchs('cust_bill',{'invnum'=>$invnum});
 die "Can't find invoice!\n" unless $cust_bill;
 
-$cust_bill->fax($template);
+$cust_bill->fax_invoice($template);
 
 my $custnum = $cust_bill->getfield('custnum');
 
