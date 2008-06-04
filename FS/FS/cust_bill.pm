@@ -1830,7 +1830,7 @@ sub print_generic {
     'date'            => time2str($date_format, $self->_date),
     'today'           => time2str('%b %o, %Y', $today),
     'agent'           => &$escape_function($cust_main->agent->agent),
-    'agent_custid     => &$escape_function($cust_main->agent_custid),
+    'agent_custid'    => &$escape_function($cust_main->agent_custid),
     'payname'         => &$escape_function($cust_main->payname),
     'company'         => &$escape_function($cust_main->company),
     'address1'        => &$escape_function($cust_main->address1),
