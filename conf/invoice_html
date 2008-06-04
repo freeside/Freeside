@@ -117,7 +117,7 @@
             '</tr>'
           ;
           if ( @{$line->{'ext_description'} } ) {
-            $OUT .= '<tr class="invoice_extdesc"><td></td><td><table>';
+            $OUT .= '<tr class="invoice_extdesc"><td></td><td><table width="100%">';
             foreach my $ext_desc ( @{$line->{'ext_description'} } ) {
               $OUT .=
                 '<tr class="invoice_extdesc">'.

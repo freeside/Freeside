@@ -268,8 +268,21 @@ sub details {
 
   $format_sub = sub { my $detail = shift;
                       $csv->parse($detail) or return "can't parse $detail";
-                      join(' & ', map { '\small{'. &$escape_function($_). '}' }
-                                  $csv->fields );
+                      #join(' & ', map { '\small{'. &$escape_function($_). '}' }
+                      #            $csv->fields );
+                      my $result = '';
+                      my $column = 1;
+                      foreach ($csv->fields) {
+                        $result .= ' & ' if $column > 1;
+                        if ($column > 6) {                     # KLUDGE ALERT!
+                          $result .= '\multicolumn{1}{l}{\small{'.
+                                     &$escape_function($_). '}}';
+                        }else{
+                          $result .= '\small{'.  &$escape_function($_). '}';
+                        }
+                        $column++;
+                      }
+                      $result;
                     }
     if $format eq 'latex';
 

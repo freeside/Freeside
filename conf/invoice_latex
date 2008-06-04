@@ -157,16 +157,18 @@
 
 
 % Commands for freeside description...
-\newcommand{\FSdesc}[3]{
+\newcommand{\FSdesc}[5]{
   \multicolumn{1}{c}{\rule{0pt}{2.5ex}\textbf{#1}} &
-  \multicolumn{6}{l}{\textbf{#2}} &
-  \multicolumn{1}{r}{\textbf{\dollar #3}}\\
+  \multicolumn{4}{l}{\textbf{#2}} &
+  \multicolumn{1}{l}{\textbf{#3}} &
+  \multicolumn{1}{r}{\textbf{#4}} &
+  \multicolumn{1}{r}{\textbf{\dollar #5}}\\
 }
 % ...extended description...
 \newcommand{\FSextdesc}[1]{
   \multicolumn{1}{l}{\rule{0pt}{1.0ex}} &
 %%  \multicolumn{2}{l}{\small{~-~#1}}\\
-  ~-~#1\\
+  ~~~#1\\
 }
 % ...and total line items.
 \newcommand{\FStotaldesc}[2]{
@@ -238,16 +240,26 @@ Terms: [@-- $terms --@]\\
     $OUT .= '\hline';
     $OUT .= '\rule{0pt}{2.5ex}';
     $OUT .= '\makebox[1.4cm]{\textbf{Ref}} & ';
-    $OUT .= '\multicolumn{6}{l}{\makebox[12.8cm][l]{\textbf{Description}}} & ';
-    $OUT .= '\makebox[2.5cm][r]{\textbf{Amount}} \\\\';
+    $OUT .= '\makebox[2.0cm][l]{\textbf{Description}}& ';
+    $OUT .= '\makebox[2.0cm][l]{}& ';
+    $OUT .= '\makebox[2.0cm][l]{}& ';
+    $OUT .= '\makebox[2.0cm][l]{}& ';
+    $OUT .= '\makebox[2.0cm][l]{\textbf{'. ($unitprices ? '~~Unit Price' : ''). '}&';
+    $OUT .= '\makebox[2.0cm]{\textbf{'. ($unitprices ? '~Quantity' : ''). '}&';
+    $OUT .= '\makebox[2.0cm][r]{\textbf{Amount}} \\\\';
     $OUT .= '\hline';
     $OUT .= '\endfirsthead';
     $OUT .= '\multicolumn{7}{r}{\rule{0pt}{2.5ex}Continued from previous page}\\\\';
     $OUT .= '\hline';
     $OUT .= '\rule{0pt}{2.5ex}';
     $OUT .= '\makebox[1.4cm]{\textbf{Ref}} & ';
-    $OUT .= '\multicolumn{6}{l}{\makebox[12.8cm][l]{\textbf{Description}}} & ';
-    $OUT .= '\makebox[2.5cm][r]{\textbf{Amount}} \\\\';
+    $OUT .= '\makebox[2.0cm][l]{\textbf{Description}}& ';
+    $OUT .= '\makebox[2.0cm][l]{}& ';
+    $OUT .= '\makebox[2.0cm][l]{}& ';
+    $OUT .= '\makebox[2.0cm][l]{}& ';
+    $OUT .= '\makebox[2.0cm][l]{\textbf{'. ($unitprices ? '~~Unit Price' : ''). '}&';
+    $OUT .= '\makebox[2.0cm]{\textbf{'. ($unitprices ? '~Quantity' : ''). '}&';
+    $OUT .= '\makebox[2.0cm][r]{\textbf{Amount}} \\\\';
     $OUT .= '\hline';
     $OUT .= '\endhead';
     $OUT .= '\multicolumn{7}{r}{\rule{0pt}{2.5ex}Continued on next page...}\\\\';
@@ -283,6 +295,8 @@ Terms: [@-- $terms --@]\\
   
       $OUT .= "\\hline\n";
       $OUT .= '\FSdesc{' . $line->{'ref'} . '}{' . $line->{'description'} . '}' .
+              '{' . ( $unitprices ? $line->{'unit_amount'} : '' ) . '}'.
+              '{' . ( $unitprices ? $line->{'quantity'} : ''  ) . '}' .
               '{' . $line->{'amount'} . "}${rowbreak}\n";
 
       foreach my $ext_desc (@$ext_description) {

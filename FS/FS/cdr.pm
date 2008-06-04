@@ -392,6 +392,18 @@ sub _convergent_format {
 
 =cut
 
+my %export_names = (
+  'convergent'      => {},
+  'voxlinesystems'  => { 'name'           => 'VoxLineSystems',
+                         'invoice_header' =>
+                           "Date,Time,Name,Destination,Duration,Price",
+                       },
+  'voxlinesystems2' => { 'name'           => 'VoxLineSystems with source',
+                         'invoice_header' =>
+                           "Date,Time,Name,Destination,Called From,Duration,Price",
+                       },
+);
+
 my %export_formats = (
   'convergent' => [
     'carriername', #CARRIER
@@ -413,6 +425,15 @@ my %export_formats = (
     sub { time2str('%T', shift->calldate_unix ) },   #TIME
     'userfield',                                     #USER
     'dst',                                           #NUMBER_DIALED
+    sub { sprintf('%.2fm', shift->billsec / 60 ) },  #DURATION
+    sub { sprintf('%.3f', shift->upstream_price ) }, #PRICE
+  ],
+  'voxlinesystems2' => [
+    sub { time2str('%D', shift->calldate_unix ) },   #DATE
+    sub { time2str('%T', shift->calldate_unix ) },   #TIME
+    'userfield',                                     #USER
+    'dst',                                           #NUMBER_DIALED
+    'src',                                           #called from
     sub { sprintf('%.2fm', shift->billsec / 60 ) },  #DURATION
     sub { sprintf('%.3f', shift->upstream_price ) }, #PRICE
   ],
@@ -447,6 +468,30 @@ sub downstream_csv {
 =head1 CLASS METHODS
 
 =over 4
+
+=item invoice_formats
+
+Returns an ordered list of key value pairs containing invoice format names
+as keys (for use with part_pkg::voip_cdr) and "pretty" format names as values.
+
+=cut
+
+sub invoice_formats {
+  map { ($_ => $export_names{$_}->{'name'}) }
+    grep { $export_names{$_}->{'invoice_header'} }
+    keys %export_names;
+}
+
+=item invoice_header FORMAT
+
+Returns a scalar containing the CSV column header for invoice format FORMAT.
+
+=cut
+
+sub invoice_header {
+  my $format = shift;
+  $export_names{$format}->{'invoice_header'};
+}
 
 =item import_formats
 

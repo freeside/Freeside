@@ -1947,6 +1947,13 @@ httemplate/docs/config.html
   },
 
   {
+    'key'         => 'invoice-unitprice',
+    'section'     => 'billing',
+    'description' => 'This switch enables unit pricing on the invoice.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'batch-enable',
     'section'     => 'billing',
     'description' => 'Enable credit card and/or ACH batching - leave disabled for real-time installations.',
