@@ -1923,7 +1923,7 @@ sub ut_agentnum_acl {
 
   if ( $self->$field() ) {
 
-    return "Access deined"
+    return "Access denied"
       unless $curuser->agentnum($self->$field());
 
   } else {

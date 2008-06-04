@@ -2071,6 +2071,7 @@ sub bill {
   my( $total_setup, $total_recur ) = ( 0, 0 );
   my %tax;
   my %taxlisthash;
+  my %taxname;
   my @precommit_hooks = ();
 
   foreach my $cust_pkg (
@@ -2292,7 +2293,7 @@ sub bill {
                               })
                 if scalar(@taxclassnums);
   
-  
+
             }else{
   
               my %taxhash = map { $_ => $self->get("$prefix$_") }
@@ -2364,20 +2365,85 @@ sub bill {
     return '';
   }
 
+  warn "having a look at the taxes we found...\n" if $DEBUG > 2;
   foreach my $tax ( keys %taxlisthash ) {
     my $tax_object = shift @{ $taxlisthash{$tax} };
+    warn "found ". $tax_object->taxname. " as $tax\n" if $DEBUG > 2;
     my $listref_or_error = $tax_object->taxline( @{ $taxlisthash{$tax} } );
     unless (ref($listref_or_error)) {
       $dbh->rollback if $oldAutoCommit;
       return $listref_or_error;
     }
+    unshift @{ $taxlisthash{$tax} }, $tax_object;
 
-    $tax{ $listref_or_error->[0] } += $listref_or_error->[1];
+    warn "adding ". $listref_or_error->[1].
+         " as ". $listref_or_error->[0]. "\n"
+      if $DEBUG > 2;
+    $tax{ $tax_object->taxname } += $listref_or_error->[1];
+    if ( $taxname{ $listref_or_error->[0] } ) {
+      push @{ $taxname{ $listref_or_error->[0] } }, $tax_object->taxname;
+    }else{
+      $taxname{ $listref_or_error->[0] } = [ $tax_object->taxname ];
+    }
   
   }
 
-  foreach my $taxname ( grep { $tax{$_} > 0 } keys %tax ) {
-    my $tax = sprintf('%.2f', $tax{$taxname} );
+  #some taxes are taxed
+  my %totlisthash;
+  
+  warn "finding taxed taxes...\n" if $DEBUG > 2;
+  foreach my $tax ( keys %taxlisthash ) {
+    my $tax_object = shift @{ $taxlisthash{$tax} };
+    warn "found possible taxed tax ". $tax_object->taxname. " we call $tax\n"
+      if $DEBUG > 2;
+    next unless $tax_object->can('tax_on_tax');
+
+    foreach my $tot ( $tax_object->tax_on_tax( $self ) ) {
+      my $totname = ref( $tot ). ' '. $tot->taxnum;
+
+      warn "checking $totname which we call ". $tot->taxname. " as applicable\n"
+        if $DEBUG > 2;
+      next unless exists( $taxlisthash{ $totname } ); # only increase
+                                                      # existing taxes
+      warn "adding $totname to taxed taxes\n" if $DEBUG > 2;
+      if ( exists( $totlisthash{ $totname } ) ) {
+        push @{ $totlisthash{ $totname  } }, $tax{ $tax_object->taxname };
+      }else{
+        $totlisthash{ $totname } = [ $tot, $tax{ $tax_object->taxname } ];
+      }
+    }
+  }
+
+  warn "having a look at taxed taxes...\n" if $DEBUG > 2;
+  foreach my $tax ( keys %totlisthash ) {
+    my $tax_object = shift @{ $totlisthash{$tax} };
+    warn "found previously found taxed tax ". $tax_object->taxname. "\n"
+      if $DEBUG > 2;
+    my $listref_or_error = $tax_object->taxline( @{ $totlisthash{$tax} } );
+    unless (ref($listref_or_error)) {
+      $dbh->rollback if $oldAutoCommit;
+      return $listref_or_error;
+    }
+
+    warn "adding taxed tax amount ". $listref_or_error->[1].
+         " as ". $tax_object->taxname. "\n"
+      if $DEBUG;
+    $tax{ $tax_object->taxname } += $listref_or_error->[1];
+  }
+  
+  #consolidate and create tax line items
+  warn "consolidating and generating...\n" if $DEBUG > 2;
+  foreach my $taxname ( keys %taxname ) {
+    my $tax = 0;
+    my %seen = ();
+    warn "adding $taxname\n" if $DEBUG > 1;
+    foreach my $taxitem ( @{ $taxname{$taxname} } ) {
+      $tax += $tax{$taxitem} unless $seen{$taxitem};
+      warn "adding $tax{$taxitem}\n" if $DEBUG > 1;
+    }
+    next unless $tax;
+
+    $tax = sprintf('%.2f', $tax );
     $total_setup = sprintf('%.2f', $total_setup+$tax );
   
     push @cust_bill_pkg, new FS::cust_bill_pkg {

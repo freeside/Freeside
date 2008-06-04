@@ -7,11 +7,12 @@ use vars qw( @ISA $DEBUG $me
 use Date::Parse;
 use Storable qw( thaw );
 use MIME::Base64;
-use FS::Record qw( qsearchs dbh );
+use FS::Record qw( qsearch qsearchs dbh );
 use FS::tax_class;
 use FS::cust_bill_pkg;
 use FS::cust_tax_location;
 use FS::part_pkg_taxrate;
+use FS::cust_main;
 
 @ISA = qw( FS::Record );
 
@@ -338,16 +339,18 @@ sub passtype_name {
   $tax_passtypes{$self->passtype};
 }
 
-=item taxline CUST_BILL_PKG, ...
+=item taxline CUST_BILL_PKG|AMOUNT, ...
 
 Returns a listref of a name and an amount of tax calculated for the list
-of packages.  If an error occurs, a message is returned as a scalar.
+of packages/amounts.  If an error occurs, a message is returned as a scalar.
 
 =cut
 
 sub taxline {
   my $self = shift;
-  my @cust_bill_pkg = @_;
+
+  my $taxable_charged = 0;
+  my @cust_bill_pkg = grep { $taxable_charged += $_ unless ref; ref; } @_;
 
   warn "calculating taxes for ". $self->taxnum. " on ".
     join (",", map { $_->pkgnum } @cust_bill_pkg)
@@ -380,7 +383,6 @@ sub taxline {
     if ($self->passtype == 2);
   my $amount = 0;
   
-  my $taxable_charged = 0;
   unless ($self->setuptax =~ /^Y$/i) {
     $taxable_charged += $_->setup foreach @cust_bill_pkg;
   }
@@ -416,6 +418,57 @@ sub taxline {
     if $DEBUG;
 
   return [$name, $amount];
+
+}
+
+=item tax_on_tax CUST_MAIN
+
+Returns a list of taxes which are candidates for taxing taxes for the
+given customer (see L<FS::cust_main>)
+
+=cut
+
+sub tax_on_tax {
+  my $self = shift;
+  my $cust_main = shift;
+
+  warn "looking up taxes on tax ". $self->taxnum. " for customer ".
+    $cust_main->custnum
+    if $DEBUG;
+
+  my $geocode = $cust_main->geocode($self->data_vendor);
+
+  # CCH oddness in m2m
+  my $dbh = dbh;
+  my $extra_sql = ' AND ('.
+    join(' OR ', map{ 'geocode = '. $dbh->quote(substr($geocode, 0, $_)) }
+                 qw(10 5 2)
+        ).
+    ')';
+
+  my $order_by = 'ORDER BY taxclassnum, length(geocode) desc';
+  my $select   = 'DISTINCT ON(taxclassnum) *';
+
+  # should qsearch preface columns with the table to facilitate joins?
+  my @taxclassnums = map { $_->taxclassnum }
+    qsearch( { 'table'     => 'part_pkg_taxrate',
+               'select'    => $select,
+               'hashref'   => { 'data_vendor'      => $self->data_vendor,
+                                'taxclassnumtaxed' => $self->taxclassnum,
+                              },
+               'extra_sql' => $extra_sql,
+               'order_by'  => $order_by,
+           } );
+
+  return () unless @taxclassnums;
+
+  $extra_sql =
+    "AND (".  join(' OR ', map { "taxclassnum = $_" } @taxclassnums ). ")";
+
+  qsearch({ 'table'     => 'tax_rate',
+            'hashref'   => { 'geocode' => $geocode, },
+            'extra_sql' => $extra_sql,
+         })
 
 }
 
