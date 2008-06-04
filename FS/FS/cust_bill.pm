@@ -1826,6 +1826,7 @@ sub print_generic {
     'date'            => time2str($date_format, $self->_date),
     'today'           => time2str('%b %o, %Y', $today),
     'agent'           => &$escape_function($cust_main->agent->agent),
+    'agent'           => &$escape_function($cust_main->agent_custid),
     'payname'         => &$escape_function($cust_main->payname),
     'company'         => &$escape_function($cust_main->company),
     'address1'        => &$escape_function($cust_main->address1),
@@ -1842,8 +1843,15 @@ sub print_generic {
     'conf_dir'        => "$FS::UID::conf_dir/conf.$FS::UID::datasrc",
     'page'            => 1,
     'total_pages'     => 1,
+    'ship_enable'     => $conf->exists('invoice-ship_address'),
   );
 
+  my $prefix = $cust_main->has_ship_address ? 'ship_' : '';
+  foreach ( qw( contact company address1 address2 city state zip country fax) ){
+    my $method = $prefix.$_;
+    $invoice_data{"ship_$_"} = _latex_escape($cust_main->$method);
+  }
+  
   $invoice_data{'cid'} = $params{'cid'}
     if $params{'cid'};
 

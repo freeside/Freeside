@@ -1868,6 +1868,13 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'invoice-ship_address',
+    'section'     => 'billing',
+    'description' => 'Enable this switch to include the ship address on the invoice.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'batch-enable',
     'section'     => 'billing',
     'description' => 'Enable credit card and/or ACH batching - leave disabled for real-time installations.',

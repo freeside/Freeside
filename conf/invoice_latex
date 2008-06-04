@@ -60,7 +60,7 @@
 \newcommand{\returninset}[1][]{\hspace{-0.25cm}}
 
 % New command for address lines i.e. skip them if blank
-\newcommand{\addressline}[1]{\ifthenelse{\equal{#1}{}}{}{#1\newline}}
+\newcommand{\addressline}[1]{\ifthenelse{\equal{#1}{}}{}{#1\\}}
 
 % Inserts dollar symbol
 \newcommand{\dollar}[1][]{\symbol{36}}
@@ -188,8 +188,7 @@
 %
 %
 [@-- $coupon ? '\enlargethispage{-\extracouponspace}' : '' --@]
-\begin{tabular}{ll}
-\addressinset \rule{0cm}{0cm} &
+\addressinset \rule{0.5cm}{0cm} 
 \makebox{
 \begin{minipage}[t]{5.0cm}
 \vspace{0.25cm}
@@ -200,11 +199,23 @@
 \addressline{[@-- $city --@], [@-- $state --@]~~[@-- $zip --@]}
 \addressline{[@-- $country --@]}
 \end{minipage}}
-\end{tabular}
 \hfill
 \makebox{
 \begin{minipage}[t]{6.4cm}
 \begin{flushright}
+[@--
+  if ($ship_enable) {
+    $OUT .= '\textbf{Service Address}\\\\';
+    $OUT .= "\\addressline{$ship_company}";
+    $OUT .= "\\addressline{$ship_address1}";
+    $OUT .= "\\addressline{$ship_address2}";
+    $OUT .= "\\addressline{$ship_city, $ship_state~~$ship_zip}";
+    $OUT .= "\\addressline{$ship_country}";
+    $OUT .= '~\\\\';
+  }else{
+    $OUT .= '';
+  }
+--@]
 Terms: [@-- $terms --@]\\
 [@-- $po_line --@]\\
 \end{flushright}
