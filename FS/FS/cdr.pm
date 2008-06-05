@@ -400,7 +400,8 @@ my %export_names = (
                        },
   'voxlinesystems2' => { 'name'           => 'VoxLineSystems with source',
                          'invoice_header' =>
-                           "Date,Time,Name,Destination,Called From,Duration,Price",
+                           #"Date,Time,Name,Called From,Destination,Duration,Price",
+                           "Date,Time,Called From,Destination,Duration,Price",
                        },
 );
 
@@ -430,7 +431,7 @@ my %export_formats = (
   ],
   'voxlinesystems2' => [
     sub { time2str('%D', shift->calldate_unix ) },   #DATE
-    sub { time2str('%T', shift->calldate_unix ) },   #TIME
+    sub { time2str('%r', shift->calldate_unix ) },   #TIME
     'userfield',                                     #USER
     'dst',                                           #NUMBER_DIALED
     'src',                                           #called from
@@ -732,6 +733,7 @@ my %import_formats = (
     'accountcode',                        #Calling customer... map to agent_custid??
     sub { my($cdr, $field) = @_; },       #Calling type
     'src',
+    #sub { my($cdr, $field) = @_; },       #Calling number
     'userfield',                          #Calling name #?
     sub { my($cdr, $field) = @_; },       #Called type
     'dst',                                #Called number
@@ -740,6 +742,7 @@ my %import_formats = (
     sub { my($cdr, $field) = @_; },       #Destination Number
     sub { my($cdr, $field) = @_; },       #Inbound calling type
     sub { my($cdr, $field) = @_; },       #Inbound calling number
+    #'src',
     sub { my($cdr, $field) = @_; },       #Inbound called type
     sub { my($cdr, $field) = @_; },       #Inbound called number
     sub { my($cdr, $field) = @_; },       #Inbound destination type
