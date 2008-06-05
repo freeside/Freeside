@@ -157,7 +157,7 @@
         }
 
         if ($section->{'posttotal'}) {
-          $OUT .= '<tr><td align="right" colspan=3>';
+          $OUT .= '<tr><td align="right" colspan=5>';
           $OUT .=
             '<p><font size="+1">'. $section->{'posttotal'}.
             '</font>'.
