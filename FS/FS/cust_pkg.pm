@@ -1583,6 +1583,8 @@ sub cancel_sql {
 
 =item search_sql HASHREF
 
+(Class method)
+
 Returns a qsearch hash expression to search for parameters specified in HASHREF.
 Valid parameters are
 
