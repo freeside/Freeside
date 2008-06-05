@@ -1,9 +1,10 @@
-<% include('/elements/header.html', 'Invoice report criteria' ) %>
+<% include('/elements/header.html', 'Invoice Report' ) %>
 
 <FORM ACTION="cust_bill.html" METHOD="GET">
 <INPUT TYPE="hidden" NAME="magic" VALUE="_date">
 
-<TABLE>
+<TABLE BGCOLOR="#cccccc" CELLSPACING=0
+
   <% include( '/elements/tr-select-agent.html',
                  'curr_value' => scalar( $cgi->param('agentnum') ),
                  'label'      => 'Invoices for agent: ',
