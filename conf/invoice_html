@@ -99,12 +99,11 @@
           '<tr>'.
             '<th align="center">Ref</th>'.
             '<th align="left">Description</th>'.
-            <%= ( $unitprices 
-                    ? '<th align="left">Unit Price</th>'.
-                      '<th align="left">Quantity</th>'
-                    : ''
-                  )
-            %>
+            ( $unitprices 
+                ? '<th align="left">Unit Price</th>'.
+                  '<th align="left">Quantity</th>'
+                : ''
+              ).
             '<th align="right">Amount</th>'.
           '</tr>';
 
