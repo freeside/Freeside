@@ -8,10 +8,17 @@
     <TR>
       <TH BGCOLOR="#e8e8e8" COLSPAN=2 ALIGN="left"><FONT SIZE="+1">Search options</FONT></TH>
     </TR>
+
     <% include( '/elements/tr-select-agent.html',
                    ($cgi->param('agentnum') || ''),
                )
     %>
+
+    <% include( '/elements/tr-select-cust_main-status.html',
+                  'label' => 'Status'
+              )
+    %>
+
 
 %   foreach my $field (qw( signupdate )) {
 

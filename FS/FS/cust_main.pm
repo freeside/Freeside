@@ -5100,7 +5100,7 @@ sub prospect_sql { "
 =item active_sql
 
 Returns an SQL expression identifying active cust_main records (customers with
-no active recurring packages, but otherwise unsuspended/uncancelled).
+active recurring packages).
 
 =cut
 
@@ -5112,7 +5112,7 @@ sub active_sql { "
 =item inactive_sql
 
 Returns an SQL expression identifying inactive cust_main records (customers with
-active recurring packages).
+no active recurring packages, but otherwise unsuspended/uncancelled).
 
 =cut
 
@@ -5148,17 +5148,16 @@ sub cancelled_sql { cancel_sql(@_); }
 sub cancel_sql {
 
   my $recurring_sql = FS::cust_pkg->recurring_sql;
-  #my $recurring_sql = "
-  #  '0' != ( select freq from part_pkg
-  #             where cust_pkg.pkgpart = part_pkg.pkgpart )
-  #";
+  my $cancelled_sql = FS::cust_pkg->cancelled_sql;
 
   "
-    0 < ( $select_count_pkgs )
+        0 < ( $select_count_pkgs )
+    AND 0 < ( $select_count_pkgs AND $recurring_sql AND $cancelled_sql   )
     AND 0 = ( $select_count_pkgs AND $recurring_sql
                   AND ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
             )
   ";
+
 }
 
 =item uncancel_sql
@@ -5276,6 +5275,187 @@ sub _money_table_where {
   my $where = scalar(@where) ? 'WHERE '. join(' AND ', @where ) : '';
 
   $where;
+
+}
+
+=item search_sql HASHREF
+
+(Class method)
+
+Returns a qsearch hash expression to search for parameters specified in HREF.
+Valid parameters are
+
+=over 4
+
+=item agentnum
+
+=item status
+
+=item cancelled_pkgs
+
+bool
+
+=item signupdate
+
+listref of start date, end date
+
+=item payby
+
+listref
+
+=item current_balance
+
+listref (list returned by FS::UI::Web::parse_lt_gt($cgi, 'current_balance'))
+
+=item cust_fields
+
+=item flattened_pkgs
+
+bool
+
+=back
+
+=cut
+
+sub search_sql {
+  my ($class, $params) = @_;
+
+  my $dbh = dbh;
+
+  my @where = ();
+  my $orderby;
+
+  ##
+  # parse agent
+  ##
+
+  if ( $params->{'agentnum'} =~ /^(\d+)$/ and $1 ) {
+    push @where,
+      "cust_main.agentnum = $1";
+  }
+
+  ##
+  # parse status
+  ##
+
+  #prospect active inactive suspended cancelled
+  if ( grep { $params->{'status'} eq $_ } FS::cust_main->statuses() ) {
+    my $method = $params->{'status'}. '_sql';
+    #push @where, $class->$method();
+    push @where, FS::cust_main->$method();
+  }
+  
+  ##
+  # parse cancelled package checkbox
+  ##
+
+  my $pkgwhere = "";
+
+  $pkgwhere .= "AND (cancel = 0 or cancel is null)"
+    unless $params->{'cancelled_pkgs'};
+
+  ##
+  # dates
+  ##
+
+  foreach my $field (qw( signupdate )) {
+
+    next unless exists($params->{$field});
+
+    my($beginning, $ending) = @{$params->{$field}};
+
+    push @where,
+      "cust_main.$field IS NOT NULL",
+      "cust_main.$field >= $beginning",
+      "cust_main.$field <= $ending";
+
+    $orderby ||= "ORDER BY cust_main.$field";
+
+  }
+
+  ###
+  # payby
+  ###
+
+  my @payby = grep /^([A-Z]{4})$/, @{ $params->{'payby'} };
+  if ( @payby ) {
+    push @where, '( '. join(' OR ', map "cust_main.payby = '$_'", @payby). ' )';
+  }
+
+  ##
+  # amounts
+  ##
+
+  #my $balance_sql = $class->balance_sql();
+  my $balance_sql = FS::cust_main->balance_sql();
+
+  push @where, map { s/current_balance/$balance_sql/; $_ }
+                   @{ $params->{'current_balance'} };
+
+  ##
+  # setup queries, subs, etc. for the search
+  ##
+
+  $orderby ||= 'ORDER BY custnum';
+
+  # here is the agent virtualization
+  push @where, $FS::CurrentUser::CurrentUser->agentnums_sql;
+
+  my $extra_sql = scalar(@where) ? ' WHERE '. join(' AND ', @where) : '';
+
+  my $addl_from = 'LEFT JOIN cust_pkg USING ( custnum  ) ';
+
+  my $count_query = "SELECT COUNT(*) FROM cust_main $extra_sql";
+
+  my $select = join(', ', 
+                 'cust_main.custnum',
+                 FS::UI::Web::cust_sql_fields($params->{'cust_fields'}),
+               );
+
+  my(@extra_headers) = ();
+  my(@extra_fields)  = ();
+
+  if ($params->{'flattened_pkgs'}) {
+
+    if ($dbh->{Driver}->{Name} eq 'Pg') {
+
+      $select .= ", array_to_string(array(select pkg from cust_pkg left join part_pkg using ( pkgpart ) where cust_main.custnum = cust_pkg.custnum $pkgwhere),'|') as magic";
+
+    }elsif ($dbh->{Driver}->{Name} =~ /^mysql/i) {
+      $select .= ", GROUP_CONCAT(pkg SEPARATOR '|') as magic";
+      $addl_from .= " LEFT JOIN part_pkg using ( pkgpart )";
+    }else{
+      warn "warning: unknown database type ". $dbh->{Driver}->{Name}. 
+           "omitting packing information from report.";
+    }
+
+    my $header_query = "SELECT COUNT(cust_pkg.custnum = cust_main.custnum) AS count FROM cust_main $addl_from $extra_sql $pkgwhere group by cust_main.custnum order by count desc limit 1";
+
+    my $sth = dbh->prepare($header_query) or die dbh->errstr;
+    $sth->execute() or die $sth->errstr;
+    my $headerrow = $sth->fetchrow_arrayref;
+    my $headercount = $headerrow ? $headerrow->[0] : 0;
+    while($headercount) {
+      unshift @extra_headers, "Package ". $headercount;
+      unshift @extra_fields, eval q!sub {my $c = shift;
+                                         my @a = split '\|', $c->magic;
+                                         my $p = $a[!.--$headercount. q!];
+                                         $p;
+                                        };!;
+    }
+
+  }
+
+  my $sql_query = {
+    'table'         => 'cust_main',
+    'select'        => $select,
+    'hashref'       => {},
+    'extra_sql'     => $extra_sql,
+    'order_by'      => $orderby,
+    'count_query'   => $count_query,
+    'extra_headers' => \@extra_headers,
+    'extra_fields'  => \@extra_fields,
+  };
 
 }
 
@@ -5520,7 +5700,7 @@ sub smart_search {
     #getting complaints searches are not returning enough
     unless ( @cust_main  && $skip_fuzzy || $conf->exists('disable-fuzzy') ) {
 
-      #still some false laziness w/ search/cust_main.cgi
+      #still some false laziness w/search_sql (was search/cust_main.cgi)
 
       #substring
 

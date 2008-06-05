@@ -42,131 +42,51 @@ die "access denied"
            $FS::CurrentUser::CurrentUser->access_right('List packages')
          );
 
-my $dbh = dbh;
-my $conf = new FS::Conf;
-my $countrydefault = $conf->config('countrydefault');
+my %search_hash = ();
 
-my($query) = $cgi->keywords;
+#$search_hash{'query'} = $cgi->keywords;
 
-my @where = ();
-
-##
-# parse agent
-##
-
-if ( $cgi->param('agentnum') =~ /^(\d+)$/ and $1 ) {
-  push @where,
-    "agentnum = $1";
+#scalars
+for my $param (qw( agentnum status cancelled_pkgs cust_fields flattened_pkgs)) {
+  $search_hash{$param} = scalar( $cgi->param($param) )
+    if $cgi->param($param);
 }
 
-##
-# parse cancelled package checkbox
-##
+#lists
+for my $param (qw( payby )) {
+  $search_hash{$param} = [ $cgi->param($param) ]
+    if $cgi->param($param);
+}
 
-my $pkgwhere = "";
-
-$pkgwhere .= "AND (cancel = 0 or cancel is null)"
-  unless $cgi->param('cancelled_pkgs');
-
-my $orderby;
-
-##
-# dates
-##
+###
+# parse dates
+###
 
 foreach my $field (qw( signupdate )) {
 
   my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi, $field);
 
   next if $beginning == 0 && $ending == 4294967295;
+       #or $disable{$cgi->param('status')}->{$field};
 
-  push @where,
-    "cust_main.$field IS NOT NULL",
-    "cust_main.$field >= $beginning",
-    "cust_main.$field <= $ending";
+  $search_hash{$field} = [ $beginning, $ending ];
 
-  $orderby ||= "ORDER BY cust_main.$field";
-
-}
-
-###
-# payby
-###
-
-my @payby = grep /^([A-Z]{4})$/, $cgi->param('payby');
-if ( @payby ) {
-  push @where, '( '. join(' OR ', map "cust_main.payby = '$_'", @payby). ' )';
 }
 
 ##
 # amounts
 ##
 
-my $balance_sql = FS::cust_main->balance_sql();
+$search_hash{'current_balance'} =
+  [ FS::UI::Web::parse_lt_gt($cgi, 'current_balance') ];
 
-push @where, map { s/current_balance/$balance_sql/; $_ }
-                 FS::UI::Web::parse_lt_gt($cgi, 'current_balance');
+###
+# etc
+###
 
-##
-# setup queries, subs, etc. for the search
-##
-
-$orderby ||= 'ORDER BY custnum';
-
-# here is the agent virtualization
-push @where, $FS::CurrentUser::CurrentUser->agentnums_sql;
-
-my $extra_sql = scalar(@where) ? ' WHERE '. join(' AND ', @where) : '';
-
-my $addl_from = 'LEFT JOIN cust_pkg USING ( custnum  ) ';
-
-my $count_query = "SELECT COUNT(*) FROM cust_main $extra_sql";
-
-my $select = join(', ', 
-               'cust_main.custnum',
-               FS::UI::Web::cust_sql_fields($cgi->param('cust_fields')),
-             );
-
-my (@extra_headers) = ();
-my (@extra_fields) = ();
-
-if ($cgi->param('flattened_pkgs')) {
-
-  if ($dbh->{Driver}->{Name} eq 'Pg') {
-
-    $select .= ", array_to_string(array(select pkg from cust_pkg left join part_pkg using ( pkgpart ) where cust_main.custnum = cust_pkg.custnum $pkgwhere),'|') as magic";
-
-  }elsif ($dbh->{Driver}->{Name} =~ /^mysql/i) {
-    $select .= ", GROUP_CONCAT(pkg SEPARATOR '|') as magic";
-    $addl_from .= " LEFT JOIN part_pkg using ( pkgpart )";
-  }else{
-    warn "warning: unknown database type ". $dbh->{Driver}->{Name}. 
-         "omitting packing information from report.";
-  }
-  
-  my $header_query = "SELECT COUNT(cust_pkg.custnum = cust_main.custnum) AS count FROM cust_main $addl_from $extra_sql $pkgwhere group by cust_main.custnum order by count desc limit 1";
-
-  my $sth = dbh->prepare($header_query) or die dbh->errstr;
-  $sth->execute() or die $sth->errstr;
-  my $headerrow = $sth->fetchrow_arrayref;
-  my $headercount = $headerrow ? $headerrow->[0] : 0;
-  while($headercount) {
-    unshift @extra_headers, "Package ". $headercount;
-    unshift @extra_fields, eval q!sub {my $c = shift;
-                                       my @a = split '\|', $c->magic;
-                                       my $p = $a[!.--$headercount. q!];
-                                       $p;
-                                      };!;
-  }
-
-}
-
-my $sql_query = {
-  'table'     => 'cust_main',
-  'select'    => $select,
-  'hashref'   => {},
-  'extra_sql' => "$extra_sql $orderby",
-};
-
+my $sql_query = FS::cust_main->search_sql(\%search_hash);
+my $count_query   = delete($sql_query->{'count_query'});
+my @extra_headers = @{ delete($sql_query->{'extra_headers'}) };
+my @extra_fields  = @{ delete($sql_query->{'extra_fields'})  };
 
 </%init>
