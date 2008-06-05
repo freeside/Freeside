@@ -150,7 +150,9 @@ sub calc_recur {
   ) {
 
     foreach my $cdr (
-      $cust_svc->get_cdrs_for_update()  # $last_bill, $$sdate )
+      $cust_svc->get_cdrs_for_update( 'disable_src'    => $self->option('disable_src'),
+                                      'default_prefix' => $self->option('default_prefix'),
+                                    )  # $last_bill, $$sdate )
     ) {
       if ( $DEBUG > 1 ) {
         warn "rating CDR $cdr\n".

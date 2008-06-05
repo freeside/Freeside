@@ -655,6 +655,9 @@ sub get_cdrs_for_update {
   my @where =  map " $_ = '$number'        ", @fields;
   push @where, map " $_ = '$prefix$number' ", @fields
     if length($prefix);
+  if ( $prefix =~ /^\+(\d+)$/ ) {
+    push @where, map " $_ = '$1$number' ", @fields
+  }
 
   my $extra_sql = ' AND ( '. join(' OR ', @where ). ' ) ';
 
