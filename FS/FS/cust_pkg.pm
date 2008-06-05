@@ -1581,27 +1581,69 @@ sub cancel_sql {
   "cust_pkg.cancel IS NOT NULL AND cust_pkg.cancel != 0";
 }
 
-=item search_sql HREF
+=item search_sql HASHREF
 
-Returns a qsearch hash expression to search for parameters specified in HREF.
+Returns a qsearch hash expression to search for parameters specified in HASHREF.
 Valid parameters are
 
 =over 4
+
 =item agentnum
-=item magic - /^(active|inactive|suspended|cancell?ed)$/
-=item status - /^(active|inactive|suspended|one-time charge|inactive|cancell?ed)$/
+
+=item magic
+
+active, inactive, suspended, cancel (or cancelled)
+
+=item status
+
+active, inactive, suspended, one-time charge, inactive, cancel (or cancelled)
+
 =item classnum
-=item pkgpart - list specified how?
-=item setup     - arrayref of beginning and ending epoch date
-=item last_bill - arrayref of beginning and ending epoch date
-=item bill      - arrayref of beginning and ending epoch date
-=item adjourn   - arrayref of beginning and ending epoch date
-=item susp      - arrayref of beginning and ending epoch date
-=item expire    - arrayref of beginning and ending epoch date
-=item cancel    - arrayref of beginning and ending epoch date
-=item query - /^(pkgnum/APKG_pkgnum)$/
-=item cust_fields - a value suited to passing to FS::UI::Web::cust_header
-=item CurrentUser - specifies the user for agent virtualization
+
+=item pkgpart
+
+list specified how?
+
+=item setup
+
+arrayref of beginning and ending epoch date
+
+=item last_bill
+
+arrayref of beginning and ending epoch date
+
+=item bill
+
+arrayref of beginning and ending epoch date
+
+=item adjourn
+
+arrayref of beginning and ending epoch date
+
+=item susp
+
+arrayref of beginning and ending epoch date
+
+=item expire
+
+arrayref of beginning and ending epoch date
+
+=item cancel
+
+arrayref of beginning and ending epoch date
+
+=item query
+
+pkgnum or APKG_pkgnum
+
+=item cust_fields
+
+a value suited to passing to FS::UI::Web::cust_header
+
+=item CurrentUser
+
+specifies the user for agent virtualization
+
 =back
 
 =cut
