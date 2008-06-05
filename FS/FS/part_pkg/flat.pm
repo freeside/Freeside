@@ -99,7 +99,9 @@ sub calc_setup {
     push @$details, $self->option( 'additional_info' . $i++ );
   }
 
-  $self->option('setup_fee');
+  my $quantity = $cust_pkg->quantity || 1;
+
+  sprintf("%.2f", $quantity * $self->option('setup_fee') );
 }
 
 sub calc_recur {
