@@ -101,7 +101,13 @@ sub calc_setup {
 
   my $quantity = $cust_pkg->quantity || 1;
 
-  sprintf("%.2f", $quantity * $self->option('setup_fee') );
+  sprintf("%.2f", $quantity * $self->unit_setup($cust_pkg, $sdate, $details) );
+}
+
+sub unit_setup {
+  my($self, $cust_pkg, $sdate, $details ) = @_;
+
+  $self->option('setup_fee');
 }
 
 sub calc_recur {
