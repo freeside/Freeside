@@ -1,0 +1,170 @@
+<%doc>
+
+Examples:
+
+  #cust_bill_pay
+  include('elements/ApplicationCommon.html',
+    'form_action' => 'process/cust_bill_pay.cgi', 
+    'src_table'   => 'cust_pay',
+    'src_thing'   => 'payment',
+    'dst_table'   => 'cust_bill',
+    'dst_thing'   => 'invoice',
+  )
+
+  #cust_credit_bill
+  include('elements/ApplicationCommon.html',
+    'form_action' => 'process/cust_credit_bill.cgi',
+    'src_table'   => 'cust_credit',
+    'src_thing'   => 'credit',
+    'dst_table'   => 'cust_bill',
+    'dst_thing'   => 'invoice',
+  )
+
+  #cust_pay_refund
+  include('elements/ApplicationCommon.html',
+    'form_action' => 'process/cust_pay_refund.cgi',
+    'src_table'   => 'cust_pay',
+    'src_thing'   => 'payment',
+    'dst_table'   => 'cust_refund',
+    'dst_thing'   => 'refund',
+  )
+
+  #cust_credit_refund
+  include('elements/ApplicationCommon.html',
+    'form_action' => 'process/cust_credit_refund.cgi',
+    'src_table'   => 'cust_credit',
+    'src_thing'   => 'credit',
+    'dst_table'   => 'cust_refund',
+    'dst_thing'   => 'refund',
+  )
+
+</%doc>
+<% include('/elements/header-popup.html', "Apply $src_thing$to" ) %>
+
+<% include('/elements/error.html') %>
+
+<FORM ACTION="<% $p1. $opt{'form_action'} %>" METHOD=POST>
+
+<% $src_thing %> #<B><% $src_pkeyvalue %></B><BR>
+<INPUT TYPE="hidden" NAME="<% $src_pkey %>" VALUE="<% $src_pkeyvalue %>">
+
+<TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>
+
+<TR>
+  <TD ALIGN="right">Date: </TD>
+  <TD><B><% time2str("%D", $src->_date) %></B></TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right">Amount: </TD>
+  <TD><B><% $money_char %><% $src->amount %></B></TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right">Unapplied amount: </TD>
+  <TD><B><% $money_char %><% $unapplied %></B></TD>
+</TR>
+
+% if ( $src_table eq 'cust_credit' ) {
+    <TR>
+      <TD ALIGN="right">Reason: </TD>
+      <TD><B><% $src->reason %></B></TD>
+    </TR>
+% }
+
+</TABLE>
+<BR>
+
+<SCRIPT TYPE="text/javascript">
+function changed(what) {
+  dst = what.options[what.selectedIndex].value;
+
+% foreach my $dst ( @dst ) {
+
+    if ( dst == <% $dst->$dst_pkey %> ) {
+      what.form.amount.value = "<% min($dst->$dst_unapplied, $unapplied) %>";
+    }
+
+% } 
+
+}
+</SCRIPT>
+
+Apply to:
+
+<TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>
+
+<TR>
+  <TD ALIGN="right"><% $dst_thing %>: </TD>
+  <TD><SELECT NAME="<% $dst_pkey %>" SIZE=1 onChange="changed(this)">
+<OPTION VALUE="">
+
+% foreach my $dst ( @dst ) { 
+  <OPTION<% $dst->$dst_pkey eq $dst_pkeyvalue ? ' SELECTED' : '' %> VALUE="<% $dst->$dst_pkey %>">#<% $dst->$dst_pkey %> - <% time2str("%D", $dst->_date) %> - $<% $dst->$dst_unapplied %>
+% } 
+
+</SELECT>
+  </TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right">Amount: </TD>
+  <TD><% $money_char %><INPUT TYPE="text" NAME="amount" VALUE="<% $amount %>" SIZE=8 MAXLENGTH=8></TD>
+</TR>
+
+</TABLE>
+
+<BR>
+<CENTER><INPUT TYPE="submit" VALUE="Apply"></CENTER>
+
+</FORM>
+
+<% include('/elements/footer.html') %>
+
+<%init>
+
+my %opt = @_;
+
+my $conf = new FS::Conf;
+my $money_char = $conf->config('money_char') || '$';
+
+my $src_thing = ucfirst($opt{'src_thing'});
+my $src_table = $opt{'src_table'};
+my $src_pkey = dbdef->table($src_table)->primary_key;
+
+my $dst_thing = ucfirst($opt{'dst_thing'});
+my $dst_table = $opt{'dst_table'};
+my $dst_pkey = dbdef->table($dst_table)->primary_key;
+my $dst_unapplied = $dst_table eq 'cust_bill' ? 'owed' : 'unapplied';
+
+my $to = $dst_table eq 'cust_refund' ? ' to Refund' : '';
+
+my($src_pkeyvalue, $amount, $dst_pkeyvalue);
+if ( $cgi->param('error') ) {
+  $src_pkeyvalue = $cgi->param($src_pkey);
+  $amount    = $cgi->param('amount');
+  $dst_pkeyvalue    = $cgi->param($dst_pkey);
+} else {
+  my($query) = $cgi->keywords;
+  $query =~ /^(\d+)$/;
+  $src_pkeyvalue = $1;
+  $amount = '';
+  $dst_pkeyvalue = '';
+}
+
+my $otaker = getotaker;
+
+my $p1 = popurl(1);
+
+my $src = qsearchs($src_table, { $src_pkey => $src_pkeyvalue } );
+die "$src_thing $src_pkeyvalue not found!" unless $src;
+
+my $unapplied = $src->unapplied;
+
+my @dst = sort {    $a->_date     <=> $b->_date
+                 or $a->$dst_pkey <=> $b->$dst_pkey
+               }
+          grep { $_->$dst_unapplied != 0 }
+          qsearch($dst_table, { 'custnum' => $src->custnum } );
+
+</%init>

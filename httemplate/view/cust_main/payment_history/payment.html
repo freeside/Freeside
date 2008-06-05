@@ -49,6 +49,16 @@ if (    scalar(@cust_bill_pay)   == 0
                               #default# 'height' => 336,
                           ).
               ')';
+    #XXX if there are any open refunds
+    $apply.= ' ('. include( '/elements/popup_link.html',
+                              'label'       => 'apply to refund',
+                              'action'      => "${p}edit/cust_pay_refund.cgi?".
+                                               $cust_pay->paynum,
+                              'actionlabel' => 'Apply payment to refund',
+                              'width'       => 392,
+                              #default# 'height' => 336,
+                          ).
+              ')';
   }
 } elsif (    scalar(@cust_bill_pay)   == 1
           && scalar(@cust_pay_refund) == 0
@@ -85,15 +95,25 @@ if (    scalar(@cust_bill_pay)   == 0
              '<B><FONT COLOR="#FF0000">$'.
              $cust_pay->unapplied. ' unapplied</FONT></B>';
     if ( $curuser->access_right('Apply payment') ) {
-      $desc = ' ('. include( '/elements/popup_link.html',
-                               'label'      => 'apply',
-                               'action'     => "${p}edit/cust_bill_pay.cgi?".
-                                               $cust_pay->paynum,
-                               'actionlabel' => 'Apply payment',
-                               'width'      => 392,
-                               #default# 'height' => 336,
-                          ).
-              ')';
+      $apply = ' ('. include( '/elements/popup_link.html',
+                                'label'      => 'apply',
+                                'action'     => "${p}edit/cust_bill_pay.cgi?".
+                                                $cust_pay->paynum,
+                                'actionlabel' => 'Apply payment',
+                                'width'      => 392,
+                                #default# 'height' => 336,
+                           ).
+               ')';
+      #XXX if there are any open refunds
+      $apply.= ' ('. include( '/elements/popup_link.html',
+                                'label'      => 'apply to refund',
+                                'action'     => "${p}edit/cust_pay_refund.cgi?".
+                                                $cust_pay->paynum,
+                                'actionlabel' => 'Apply payment to refund',
+                                'width'      => 392,
+                                #default# 'height' => 336,
+                           ).
+               ')';
     }
     $desc .= '<BR>';
   }

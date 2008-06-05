@@ -1,0 +1,77 @@
+<%doc>
+
+Examples:
+
+  #cust_bill_pay
+  include('elements/ApplicationCommon.html',
+    'error_redirect' => 'cust_bill_pay.cgi',
+    'src_table'      => 'cust_pay',
+    'src_thing'      => 'payment',
+    'link_table'     => 'cust_bill_pay',
+  )
+
+  #cust_credit_bill
+  include('elements/ApplicationCommon.html',
+    'error_redirect' => 'cust_credit_bill.cgi',
+    'src_table'      => 'cust_credit',
+    'src_thing'      => 'credit',
+    'link_table'     => 'cust_credit_bill',
+  )
+
+</%doc>
+%if ( $error ) {
+%  $cgi->param('error', $error);
+<% $cgi->redirect(popurl(2). $opt{error_redirect}. '?'. $cgi->query_string ) %>
+%} else {
+<% header("$src_thing application$to sucessful") %>
+  <SCRIPT TYPE="text/javascript">
+    window.top.location.reload();
+  </SCRIPT>
+  </BODY>
+  </HTML>
+% } 
+<%init>
+
+my %opt = @_;
+
+my $src_thing = ucfirst($opt{'src_thing'});
+my $src_table = $opt{'src_table'};
+my $src_pkey = dbdef->table($src_table)->primary_key;
+
+my $to = $opt{'link_table'} =~  /refund/ ? ' to Refund' : '';
+
+$cgi->param($src_pkey) =~ /^(\d+)$/ or die "Illegal $src_pkey!";
+my $src_pkeyvalue = $1;
+
+my $src = qsearchs($src_table, { $src_pkey => $src_pkeyvalue } )
+  or die "No such $src_pkey: $src_pkeyvalue";
+
+my $cust_main = qsearchs('cust_main', { 'custnum' => $src->custnum } )
+  or die "Bogus $src_thing: not attached to customer";
+
+my $custnum = $cust_main->custnum;
+
+my $new;
+#  $new = new FS::cust_refund ( {
+#    'reason'  => 'Refunding payment', #enter reason in UI
+#    'refund'  => $cgi->param('amount'),
+#    'payby'   => 'BILL',
+#    #'_date'   => $cgi->param('_date'),
+#    'payinfo' => 'Cash', #enter payinfo in UI
+#    'paynum' => $paynum,
+#  } );
+#} else {
+
+  my $class = 'FS::'. $opt{link_table};
+
+  $new = $class->new( {
+    map {
+      $_ => scalar($cgi->param($_));
+    } fields($opt{link_table})
+  } );
+
+#}
+
+my $error = $new->insert;
+
+</%init>

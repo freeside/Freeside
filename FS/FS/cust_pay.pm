@@ -21,7 +21,7 @@ use FS::cust_pay_void;
 
 @ISA = qw( FS::payinfo_transaction_Mixin FS::cust_main_Mixin FS::Record );
 
-$DEBUG = 0;
+$DEBUG = 1;
 
 $me = '[FS::cust_pay]';
 
@@ -550,6 +550,17 @@ sub unrefunded {
   sprintf("%.2f", $amount );
 }
 
+=item amount
+
+Returns the "paid" field.
+
+=cut
+
+sub amount {
+  my $self = shift;
+  $self->paid();
+}
+
 =back
 
 =head1 CLASS METHODS
@@ -602,7 +613,8 @@ sub _upgrade_data {  #class method
   my $sth = dbh->prepare($count_sql) or die dbh->errstr;
   $sth->execute or die $sth->errstr;
   my $total = $sth->fetchrow_arrayref->[0];
-
+  #warn "$total cust_pay records to update\n"
+  #  if $DEBUG;
   local($DEBUG) = 2 if $total > 1000; #could be a while, force progress info
 
   my $count = 0;
@@ -629,7 +641,7 @@ sub _upgrade_data {  #class method
     my $error = $cust_pay->replace;
 
     if ( $error ) {
-      warn " *** WARNING: Error updaating order taker for payment paynum".
+      warn " *** WARNING: Error updating order taker for payment paynum ".
            $cust_pay->paynun. ": $error\n";
       next;
     }
