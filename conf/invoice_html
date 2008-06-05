@@ -148,7 +148,7 @@
           $OUT .=
             '<tr class="invoice_totaldesc">'.
               qq(<td style="$style">&nbsp;</td>).
-              qq(<td align="left" style="$style">).
+              qq(<td align="left" style="$style"> colspan=3).
                 $section->{'description'}. ' Total </td>'.
               qq(<td align="right" style="$style">).
                 $section->{'subtotal'}. '</td>'.
