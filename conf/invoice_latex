@@ -244,8 +244,8 @@ Terms: [@-- $terms --@]\\
     $OUT .= '\makebox[2.0cm][l]{}& ';
     $OUT .= '\makebox[2.0cm][l]{}& ';
     $OUT .= '\makebox[2.0cm][l]{}& ';
-    $OUT .= '\makebox[2.0cm][l]{\textbf{'. ($unitprices ? '~~Unit Price' : ''). '}&';
-    $OUT .= '\makebox[2.0cm]{\textbf{'. ($unitprices ? '~Quantity' : ''). '}&';
+    $OUT .= '\makebox[2.0cm][l]{\textbf{'. ($unitprices ? '~~Unit Price' : ''). '}}&';
+    $OUT .= '\makebox[2.0cm]{\textbf{'. ($unitprices ? '~Quantity' : ''). '}}&';
     $OUT .= '\makebox[2.0cm][r]{\textbf{Amount}} \\\\';
     $OUT .= '\hline';
     $OUT .= '\endfirsthead';
@@ -257,8 +257,8 @@ Terms: [@-- $terms --@]\\
     $OUT .= '\makebox[2.0cm][l]{}& ';
     $OUT .= '\makebox[2.0cm][l]{}& ';
     $OUT .= '\makebox[2.0cm][l]{}& ';
-    $OUT .= '\makebox[2.0cm][l]{\textbf{'. ($unitprices ? '~~Unit Price' : ''). '}&';
-    $OUT .= '\makebox[2.0cm]{\textbf{'. ($unitprices ? '~Quantity' : ''). '}&';
+    $OUT .= '\makebox[2.0cm][l]{\textbf{'. ($unitprices ? '~~Unit Price' : ''). '}}&';
+    $OUT .= '\makebox[2.0cm]{\textbf{'. ($unitprices ? '~Quantity' : ''). '}}&';
     $OUT .= '\makebox[2.0cm][r]{\textbf{Amount}} \\\\';
     $OUT .= '\hline';
     $OUT .= '\endhead';
