@@ -30,6 +30,11 @@ $param->{"amount"} =~ /^\s*(\d+(\.\d{1,2})?)\s*$/
   or $error .= "Illegal amount " . $param->{"amount"} . "  ";
 my $amount = $1;
 
+my $quantity = 1;
+if ( $cgi->param('quantity') =~ /^\s*(\d+)\s*$/ ) {
+  $quantity = $1;
+}
+
 if ( $param->{'taxclass'} eq '(select)' ) {
   $error .= "Must select a tax class.  ";
 }
@@ -40,6 +45,7 @@ unless ( $error ) {
 
   $error ||= $cust_main->charge( {
     'amount'     => $amount,
+    'quantity'   => $quantity,
     'pkg'        => scalar($cgi->param('pkg')),
     'taxclass'   => scalar($cgi->param('taxclass')),
     'classnum'   => scalar($cgi->param('classnum')),

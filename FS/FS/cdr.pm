@@ -422,7 +422,7 @@ my %export_formats = (
   ],
   'voxlinesystems' => [
     sub { time2str('%D', shift->calldate_unix ) },   #DATE
-    sub { time2str('%T', shift->calldate_unix ) },   #TIME
+    sub { time2str('%r', shift->calldate_unix ) },   #TIME
     'userfield',                                     #USER
     'dst',                                           #NUMBER_DIALED
     sub { sprintf('%.2fm', shift->billsec / 60 ) },  #DURATION
@@ -729,9 +729,9 @@ my %import_formats = (
     'enddate',                            #End (also a timestamp!)
     sub { my($cdr, $field) = @_; },       #End date
     sub { my($cdr, $field) = @_; },       #End time
-    'accountcode',                        #Calling customer XXX map to agent_custid??
+    'accountcode',                        #Calling customer... map to agent_custid??
     sub { my($cdr, $field) = @_; },       #Calling type
-    sub { shift->src('30000'); }, #XXX FAKE XXX 'src',                                #Calling number
+    'src',
     'userfield',                          #Calling name #?
     sub { my($cdr, $field) = @_; },       #Called type
     'dst',                                #Called number

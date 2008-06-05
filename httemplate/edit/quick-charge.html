@@ -78,18 +78,32 @@ function validate_quick_charge () {
 <TABLE ID="QuickChargeTable" BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0 STYLE="background-color: #cccccc">
 
 <TR>
-  <TD ALIGN="right">Amount:</TD>
+  <TD ALIGN="right">Amount: </TD>
   <TD>
     $<INPUT TYPE="text" NAME="amount" SIZE=6 VALUE="<% $amount %>" onChange="enable_quick_charge()" onKeyPress="enable_quick_charge_amount()">
   </TD>
-<% include('/elements/tr-select-pkg_class.html', 'curr_value' => $cgi->param('classnum') ) %>
-<% include('/elements/tr-select-taxclass.html', 'curr_value' => $cgi->param('taxclass') ) %>
 </TR>
+
+% if ( $conf->exists('invoice-unitprice') ) {
+    <TR>
+      <TD ALIGN="right">Quantity: </TD>
+      <TD>
+        <INPUT TYPE="text" NAME="quantity" SIZE=4 VALUE="<% $quantity %>">
+      </TD>
+    </TR>
+% }
+
+<% include('/elements/tr-select-pkg_class.html', 'curr_value' => $cgi->param('classnum') ) %>
+
+<% include('/elements/tr-select-taxclass.html', 'curr_value' => $cgi->param('taxclass') ) %>
+
+<TR>
   <TD>Description:</TD>
   <TD>
     <INPUT TYPE="text" NAME="pkg" SIZE="60" MAXLENGTH="65" VALUE="<% $pkg %>" onChange="enable_quick_charge()" onKeyPress="enable_quick_charge_desc()">
   </TD>
 </TR>
+
 <TR>
   <TD></TD>
   <TD><FONT SIZE="-1">Optional additional description: </FONT></TD>
@@ -114,7 +128,7 @@ function validate_quick_charge () {
 </TABLE>
 
 <BR>
-<INPUT TYPE="submit" NAME="submit" VALUE="Add one-time charge" <% $cgi->param('error') ? '' :' DISABLED' %>>
+<INPUT TYPE="submit" ID="submit" NAME="submit" VALUE="Add one-time charge" <% $cgi->param('error') ? '' :' DISABLED' %>>
 
 </FORM>
 
@@ -167,12 +181,19 @@ function validate_quick_charge () {
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('One-time charge');
 
+my $conf = new FS::Conf;
+
 $cgi->param('custnum') =~ /^(\d+)$/ or die 'illegal custnum';
 my $custnum = $1;
 
 my $amount = '';
 if ( $cgi->param('amount') =~ /^\s*\$?\s*(\d+(\.\d{1,2})?)\s*$/ ) {
   $amount = $1;
+}
+
+my $quantity = 1;
+if ( $cgi->param('quantity') =~ /^\s*(\d+)\s*$/ ) {
+  $quantity = $1;
 }
 
 $cgi->param('pkg') =~ /^([\w \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\=\[\]]*)$/ 

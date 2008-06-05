@@ -4675,9 +4675,10 @@ the error, otherwise returns false.
 
 sub charge {
   my $self = shift;
-  my ( $amount, $pkg, $comment, $taxclass, $additional, $classnum );
+  my ( $amount, $quantity, $pkg, $comment, $taxclass, $additional, $classnum );
   if ( ref( $_[0] ) ) {
     $amount     = $_[0]->{amount};
+    $quantity   = exists($_[0]->{quantity}) ? $_[0]->{quantity} : 1;
     $pkg        = exists($_[0]->{pkg}) ? $_[0]->{pkg} : 'One-time charge';
     $comment    = exists($_[0]->{comment}) ? $_[0]->{comment}
                                            : '$'. sprintf("%.2f",$amount);
@@ -4686,6 +4687,7 @@ sub charge {
     $additional = $_[0]->{additional};
   }else{
     $amount     = shift;
+    $quantity   = 1;
     $pkg        = @_ ? shift : 'One-time charge';
     $comment    = @_ ? shift : '$'. sprintf("%.2f",$amount);
     $taxclass   = @_ ? shift : '';
@@ -4738,8 +4740,9 @@ sub charge {
   }
 
   my $cust_pkg = new FS::cust_pkg ( {
-    'custnum' => $self->custnum,
-    'pkgpart' => $pkgpart,
+    'custnum'  => $self->custnum,
+    'pkgpart'  => $pkgpart,
+    'quantity' => $quantity,
   } );
 
   $error = $cust_pkg->insert;

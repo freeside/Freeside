@@ -24,8 +24,12 @@ my $html_foot = sub {
 
   my $number = $svc_phone->phonenum;
 
+  #my @links = map {
+  #  qq(<A HREF="${p}search/cdr.html?src=$number;freesidestatus=$what{$_}">).
+  #  "View $_ CDRs</A>";
+  #} keys(%what);
   my @links = map {
-    qq(<A HREF="${p}search/cdr.html?src=$number;freesidestatus=$what{$_}">).
+    qq(<A HREF="${p}search/cdr.html?charged_party=$number;freesidestatus=$what{$_}">).
     "View $_ CDRs</A>";
   } keys(%what);
 

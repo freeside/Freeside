@@ -61,7 +61,7 @@ push @search, FS::UI::Web::parse_lt_gt($cgi, 'duration');
 push @search, FS::UI::Web::parse_lt_gt($cgi, 'billsec');
 
 ###
-# src/dest
+# src/dest/charged_party
 ###
 
 my @qsearch = @search;
@@ -77,6 +77,18 @@ if ( $cgi->param('dst') =~ /^\s*([\d\-\+ ]+)\s*$/ ) {
   $hashref->{'dst'} = $dst;
   push @search, "dst = '$dst'";
 }
+
+if ( $cgi->param('charged_party') =~ /^\s*([\d\-\+\ ]+)\s*$/ ) {
+  ( my $charged_party = $1 ) =~ s/\D//g;
+  #$hashref->{'charged_party'} = $charged_party;
+  #push @search, "charged_party = '$charged_party'";
+  #XXX countrycode
+  push @search,  " (    charged_party = '$charged_party'
+                     OR charged_party = '1$charged_party' ) ";
+  push @qsearch, " (    charged_party = '$charged_party'
+                    OR charged_party = '1$charged_party' ) ";
+}
+
 
 ###
 # finish it up
