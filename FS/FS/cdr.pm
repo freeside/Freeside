@@ -432,7 +432,7 @@ my %export_formats = (
   'voxlinesystems2' => [
     sub { time2str('%D', shift->calldate_unix ) },   #DATE
     sub { time2str('%r', shift->calldate_unix ) },   #TIME
-    'userfield',                                     #USER
+    #'userfield',                                     #USER
     'dst',                                           #NUMBER_DIALED
     'src',                                           #called from
     sub { sprintf('%.2fm', shift->billsec / 60 ) },  #DURATION
