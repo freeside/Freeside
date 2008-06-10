@@ -18,7 +18,7 @@ use IPC::Run3; # for do_print... should just use IPC::Run i guess
                  generate_ps generate_pdf do_print
                );
 
-$DEBUG = 1;
+$DEBUG = 0;
 
 =head1 NAME
 
