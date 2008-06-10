@@ -1,5 +1,5 @@
 <% include('elements/ApplicationCommon.html',
-     'error_redirect' => 'cust_bill_pay.cgi',
+     'error_redirect' => 'cust_pay_refund.cgi',
      'src_table'      => 'cust_pay',
      'src_thing'      => 'payment',
      'link_table'     => 'cust_pay_refund',
