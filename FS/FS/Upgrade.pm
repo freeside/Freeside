@@ -141,7 +141,7 @@ sub upgrade_sqlradius {
         $sth_update->execute or die $errmsg.$sth_update->errstr;
       } else {
         my $error = $sth_alter->errstr;
-        warn $errmsg.$error; #unless $error =~ /exists/i;
+        warn $errmsg.$error unless $error =~ /Duplicate column name/i;
       }
     } else {
       my $error = $dbh->errstr;
