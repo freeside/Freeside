@@ -121,6 +121,9 @@ sub upgrade_sqlradius {
       ( map $part_export->option($_), qw ( datasrc username password ) ),
       { PrintError => 0, PrintWarn => 0 }
     );
+
+    my $errmsg = 'Error adding FreesideStatus to '.
+                 $part_export->option('datasrc'). ': ';
   
     my $str2time = str2time_sql( $dbh->{Driver}->{Name} );
     my $group = "UserName";
@@ -130,18 +133,32 @@ sub upgrade_sqlradius {
     my $sth_alter = $dbh->prepare(
       "ALTER TABLE radacct ADD COLUMN FreesideStatus varchar(32) NULL"
     );
-    if ( $sth_alter && $sth_alter->execute ) {
-      my $sth_update = $dbh->prepare(
-       "UPDATE radacct SET FreesideStatus = 'done' WHERE FreesideStatus IS NULL"
-      ) or die $dbh->errstr;
-      $sth_update->execute or die $sth_update->errstr;
+    if ( $sth_alter ) {
+      if ( $sth_alter->execute ) {
+        my $sth_update = $dbh->prepare(
+         "UPDATE radacct SET FreesideStatus = 'done' WHERE FreesideStatus IS NULL"
+        ) or die $errmsg.$dbh->errstr;
+        $sth_update->execute or die $errmsg.$sth_update->errstr;
+      } else {
+        my $error = $sth_alter->errstr;
+        warn $errmsg.$error; #unless $error =~ /exists/i;
+      }
+    } else {
+      my $error = $dbh->errstr;
+      warn $errmsg.$error; #unless $error =~ /exists/i;
     }
 
     my $sth_index = $dbh->prepare(
       "CREATE INDEX FreesideStatus ON radacct ( FreesideStatus )"
     );
     if ( $sth_index ) {
-      $sth_index->execute;
+      unless ( $sth_index->execute ) {
+        my $error = $sth_index->errstr;
+        warn $errmsg.$error; #unless $error =~ /exists/i;
+      }
+    } else {
+      my $error = $dbh->errstr;
+      warn $errmsg.$error; #unless $error =~ /exists/i;
     }
 
     my $sth = $dbh->prepare("SELECT UserName,
@@ -154,8 +171,8 @@ sub upgrade_sqlradius {
                                 AND AcctStopTime  != 0
                               GROUP BY $group
                             ")
-      or die $dbh->errstr;
-    $sth->execute() or die $sth->errstr;
+      or die $errmsg.$dbh->errstr;
+    $sth->execute() or die $errmsg.$sth->errstr;
   
     while (my $row = $sth->fetchrow_arrayref ) {
       my ($username, $realm, $start, $stop) = @$row;
