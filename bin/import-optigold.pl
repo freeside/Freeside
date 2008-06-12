@@ -567,15 +567,15 @@ cust_main => { 'stable'  => 'cust',
                                     && $status ne 'On Hold' )
                                   {
                                     $cancelled = 1;
-                                    $cancel{$id} =
+                                    $cancel{$login} =
                                       str2time($row->{termination_date});
                                   }
-                                  $susp{$id} = str2time($row->{hold_date})
+                                  $susp{$login} = str2time($row->{hold_date})
                                     if ($status eq 'On Hold' && !$cancelled);
-                                  $adjo{$id} = str2time($row->{hold_date})
+                                  $adjo{$login} = str2time($row->{hold_date})
                                     if ( $status eq 'Current' && !$cancelled &&
                                          $row->{hold_date} );
-                                  $bill{$id} =
+                                  $bill{$login} =
                                       str2time($row->{expiration_date})
                                     if (!$cancelled);
 
@@ -723,28 +723,32 @@ cust_pkg  => { 'stable'  => 'billcycle',
                                         },
                    'setup'       => sub { str2time(shift->{creation_date}) },
                    'bill'        => sub { my $href = shift;
-                                          my $id = $href->{'slave_account_id'}
-                                            ? 'slave:'. $href->{'slave_account_id'}
-                                            : $href->{'cbilling_cycle_login'};
-                                          $bill{$id};
+                                          #my $id = $href->{'slave_account_id'}
+                                          #  ? 'slave:'. $href->{'slave_account_id'}
+                                          #  : $href->{'cbilling_cycle_login'};
+                                          #$bill{$id};
+                                          $bill{$href->{cbilling_cycle_login}};
                                         },
                    'susp'        => sub { my $href = shift;
-                                          my $id = $href->{'slave_account_id'}
-                                            ? 'slave:'. $href->{'slave_account_id'}
-                                            : $href->{'cbilling_cycle_login'};
-                                          $susp{$id};
+                                          #my $id = $href->{'slave_account_id'}
+                                          #  ? 'slave:'. $href->{'slave_account_id'}
+                                          #  : $href->{'cbilling_cycle_login'};
+                                          #$susp{$id};
+                                          $susp{$href->{cbilling_cycle_login}};
                                         },
                    'adjo'        => sub { my $href = shift;
-                                          my $id = $href->{'slave_account_id'}
-                                            ? 'slave:'. $href->{'slave_account_id'}
-                                            : $href->{'cbilling_cycle_login'};
-                                          $adjo{$id};
+                                          #my $id = $href->{'slave_account_id'}
+                                          #  ? 'slave:'. $href->{'slave_account_id'}
+                                          #  : $href->{'cbilling_cycle_login'};
+                                          #$adjo{$id};
+                                          $adjo{$href->{cbilling_cycle_login}};
                                         },
                    'cancel'      => sub { my $href = shift;
-                                          my $id = $href->{'slave_account_id'}
-                                            ? 'slave:'. $href->{'slave_account_id'}
-                                            : $href->{'cbilling_cycle_login'};
-                                          $cancel{$id};
+                                          #my $id = $href->{'slave_account_id'}
+                                          #  ? 'slave:'. $href->{'slave_account_id'}
+                                          #  : $href->{'cbilling_cycle_login'};
+                                          #$cancel{$id};
+                                          $cancel{$href->{cbilling_cycle_login}};
                                         },
                  },
                'fixup'  => sub { my ($object, $row) = (shift,shift);
