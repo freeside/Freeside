@@ -28,12 +28,12 @@
 
   <TR>
     <TD ALIGN="right">Package</TD>
-    <TD BGCOLOR="#ffffff"><% $cust_pkg->pkg %></TD>
+    <TD BGCOLOR="#ffffff"><% $part_pkg->pkg %></TD>
   </TR>
 
   <TR>
     <TD ALIGN="right">Comment</TD>
-    <TD BGCOLOR="#ffffff"><% $cust_pkg->comment %></TD>
+    <TD BGCOLOR="#ffffff"><% $part_pkg->comment %></TD>
   </TR>
 
   <TR>
