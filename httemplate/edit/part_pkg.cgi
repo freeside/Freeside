@@ -35,8 +35,14 @@
                           },
 
               'fields' => [
-                            { field=>'clone',  type=>'hidden' },
-                            { field=>'pkgnum', type=>'hidden' },
+                            { field=>'clone',  type=>'hidden',
+                              curr_value_callback =>
+                                sub { shift->param('clone') },
+                            },
+                            { field=>'pkgnum', type=>'hidden',
+                              curr_value_callback =>
+                                sub { shift->param('pkgnum') },
+                            },
 
                             { type => 'columnstart' },
                             
@@ -149,6 +155,7 @@ die "access denied"
 #XXX
 # - tr-part_pkg_freq: month_increments_only (from price plans)
 # - test cloning
+# - test errors cloning
 # - test custom pricing
 # - move the selectlayer divs away from lame layer_callback
 
@@ -164,9 +171,10 @@ my $clone_part_pkg = '';
 my %options = ();
 my $recur_disabled = 1;
 my $error_callback = sub {
-  my($cgi, $object, $fields) = @_;
+  my($cgi, $object, $fields, $opt ) = @_;
   (@agent_type) = $cgi->param('agent_type');
   $tax_override = $cgi->param('tax_override');
+  $opt->{action} = 'Custom' if $cgi->param('clone');
   $clone_part_pkg= qsearchs('part_pkg', { 'pkgpart' => $cgi->param('clone') } );
 
   $recur_disabled = $cgi->param('freq') ? 0 : 1;

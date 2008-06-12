@@ -91,7 +91,7 @@ Example:
     'agent_null_right' => 'Access Right Name',
    
     #run when re-displaying with an error
-    'error_callback' => sub { my( $cgi, $object, $fields_listref ) = @_; },
+    'error_callback' => sub { my( $cgi, $object, $fields_listref, $opt_hashref ) = @_; },
    
     #run when editing
     'edit_callback' => sub { my( $cgi, $object, $fields_listref ) = @_; },
@@ -548,7 +548,7 @@ if ( $cgi->param('error') ) {
     map { $_ => scalar($cgi->param($_)) } fields($table)
   });
 
-  &{$opt{'error_callback'}}($cgi, $object, $fields)
+  &{$opt{'error_callback'}}($cgi, $object, $fields, \%opt )
     if $opt{'error_callback'};
 
 } elsif ( $cgi->keywords || $cgi->param($pkey) ) { #editing

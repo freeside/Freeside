@@ -628,7 +628,6 @@ sub pkg_customize_link {
   my $cust_pkg = shift or return '';
   my $custnum = $cust_pkg->custnum;
   qq!<A HREF="${p}edit/part_pkg.cgi?!.
-    "keywords=$custnum;".
     "clone=". $cust_pkg->part_pkg->pkgpart. ';'.
     "pkgnum=". $cust_pkg->pkgnum.
     qq!">Customize</A>!;

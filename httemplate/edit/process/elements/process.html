@@ -20,6 +20,7 @@ Example:
    'viewall_dir'  => '', #'search' or 'browse', defaults to 'search'
    OR
    'redirect'     => 'view/table.cgi?', # value of primary key is appended
+                                        # (string or coderef returning a string)
    OR
    'popup_reload' => 'Momentary success message', #will reload parent window
 
@@ -111,20 +112,28 @@ Example:
   </BODY>
   </HTML>
 
-%} elsif ( $opt{'redirect'} ) {
+%} else {
+%  
+%  $opt{'redirect'} = &{$opt{'redirect'}}($cgi, $new)
+%    if ref($opt{'redirect'}) eq 'CODE';
+%
+%  if ( $opt{'redirect'} ) {
 %
 <% $cgi->redirect( $opt{'redirect'}. $pkeyvalue ) %>
 %
-%} else { 
-%  my $ext = $opt{'viewall_ext'} || 'html';
+%  } else { 
+%
+%    my $ext = $opt{'viewall_ext'} || 'html';
+%
 <% $cgi->redirect( popurl(3). ($opt{viewall_dir}||'search'). "/$table.$ext" ) %>
+%
+%  }
+%
 %}
-<%once>
-
-  my $me = 'process.html:';
-
-</%once>
+%
 <%init>
+
+my $me = 'process.html:';
 
 my(%opt) = @_;
 

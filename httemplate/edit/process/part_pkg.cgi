@@ -1,6 +1,7 @@
 <% include( 'elements/process.html',
               #'debug'             => 1,
               'table'             => 'part_pkg',
+              'redirect'          => $redirect_callback,
               'viewall_dir'       => 'browse',
               'viewall_ext'       => 'cgi',
               'edit_ext'          => 'cgi',
@@ -106,8 +107,16 @@ my $args_callback = sub {
                 'custnum_ref' => \$custnum;
   }
 
+  warn "args: ".join('/', @args). "\n";
+
   @args;
 
+};
+
+my $redirect_callback = sub {
+  #my( $cgi, $new ) = @_;
+  return '' unless $custnum;
+  popurl(3). "view/cust_main.cgi?keywords=$custnum;dummy=";
 };
 
 #these should probably move to @args above and be processed by part_pkg.pm...
