@@ -4,8 +4,8 @@ use strict;
 use DBI;
 use HTML::TableParser;
 use Date::Parse;
-use Data::Dumper;
-use FS::UID qw(adminsuidsetup);
+use Text::CSV_XS;
+use FS::Record qw(qsearch qsearchs);
 use FS::cust_credit;
 use FS::cust_main;
 use FS::cust_pkg;
@@ -13,7 +13,7 @@ use FS::cust_svc;
 use FS::svc_acct;
 use FS::part_referral;
 use FS::part_pkg;
-use FS::Record qw(qsearch qsearchs);
+use FS::UID qw(adminsuidsetup);
 
 my $DEBUG = 0;
 
@@ -29,16 +29,18 @@ my $d_dbuser = 'enet';
 #my $d_dbuser = 'ivan';
 #my $d_dbuser = 'freesideimport';
 
+my $radius_file    = 'radius.csv';
+my $email_file    = 'email.csv';
+
 #my $agentnum = 1;
 my $agentnum = 13;
 my $legacy_domain_svcnum = 1;
-my $legacy_ppp_svcnum = 2;
-my $legacy_email_svcnum = 3;
-#my $legacy_broadband_svcnum = 4;
-#my $legacy_broadband_svcnum = 14;
+my $legacy_ppp_svcpart = 2;
+my $legacy_email_svcpart = 3;
+#my $legacy_broadband_svcpart = 4;
+#my $legacy_broadband_svcpart = 14;
 #my $previous_credit_reasonnum = 1;
 my $previous_credit_reasonnum = 1220;
-
 
 
 my $state = '';  #statemachine-ish
@@ -140,12 +142,13 @@ sub row {
   warn "row $rowcount\n" unless ($rowcount % 1000);
 }
 
-
+## now svc_acct from CSV files
 
 $FS::cust_main::import=1;
 $FS::cust_pkg::disable_agentcheck = 1;
+$FS::cust_svc::ignore_quantity = 1;
 
-my (%part_pkg_map) = ();
+my (%master_map) = ();
 my (%referrals) = ();
 my (%custid) = ();
 my (%cancel) = ();
@@ -155,13 +158,106 @@ my (%bill) = ();
 my (%cust_pkg_map) = ();
 my (%object_map) = ();
 my (%package_cache) = ();
-my $count;
+my $count = 0;
+
+my $d_dbh = adminsuidsetup $d_dbuser;
+local $FS::UID::AutoCommit = 0;
+
+my @import = ( { 'file'     => $radius_file,
+                 'sep_char' => ';',
+                 'fields'   => [ qw( garbage1 username garbage2 garbage3 _password ) ],
+                 'fixup'    => sub {
+                                     my $hash = shift;
+                                     delete $hash->{$_}
+                                       foreach qw (garbage1 garbage2 garbage3);
+                                     $hash->{'svcpart'} = $legacy_ppp_svcpart;
+                                     $hash->{'domsvc'} = $legacy_domain_svcnum;
+                                     '';
+                                   },
+                 'mapkey'   => 'legacy_ppp',
+                 'skey'     => 'username',
+               },
+               { 'file'     => $email_file,
+                 'sep_char' => ';',
+                 'fields'   => [ qw( username null finger _password status garbage ) ],
+                 'fixup'    => sub {
+                                     my $hash = shift;
+                                     return 1
+                                       if $object_map{'legacy_ppp'}{$hash->{'username'}};
+                                     delete $hash->{$_}
+                                       foreach qw (null status garbage);
+                                     $hash->{'svcpart'} = $legacy_email_svcpart;
+                                     $hash->{'domsvc'} = $legacy_domain_svcnum;
+                                     '';
+                                   },
+                 'mapkey'   => 'legacy_email',
+                 'skey'     => 'username',
+               },
+);
+
+while ( @import ) {
+  my $href = shift @import;
+  my $file = $href->{'file'} or die "No file specified";
+  my (@fields)   = @{$href->{'fields'}};
+  my ($sep_char) = $href->{'sep_char'} || ';';
+  my ($fixup)    = $href->{'fixup'};
+  my ($mapkey)   = $href->{'mapkey'};
+  my ($skey)     = $href->{'skey'};
+  my $line;
+
+  my $csv = new Text::CSV_XS({'sep_char' => $sep_char});
+  open(FH, $file) or die "cannot open $file: $!";
+  $count = 0;
+
+  while ( defined($line=<FH>) ) {
+    chomp $line;
+
+    $line &= "\177" x length($line); # i hope this isn't really necessary
+    $csv->parse($line)
+      or die "cannot parse: " . $csv->error_input();
+
+    my @values = $csv->fields();
+    my %hash;
+    foreach my $field (@fields) {
+      $hash{$field} = shift @values;
+    }
+
+    if (@values) {
+      warn "skipping malformed line: $line\n";
+      next;
+    }
+
+    my $skip = &{$fixup}(\%hash)
+      if $fixup;
+
+    unless ($skip) {
+      my $svc_acct = new FS::svc_acct { %hash };
+      my $error = $svc_acct->insert;
+      if ($error) {
+        warn $error;
+        next;
+      }
+
+      if ($skey && $mapkey) {
+        my $key = (ref($skey) eq 'CODE') ? &{$skey}($svc_acct) : $hash{$skey};
+        $object_map{$mapkey}{$key} = $svc_acct->svcnum;
+      }
+
+      $count++
+    }
+  }
+  print "Imported $count service records\n";
+
+}
+
+
 
 sub pkg_freq {
   my ( $href ) = ( shift );
-  $href->{'one_type_item'}
+  $href->{'one_time_list'}
     ? 0
-    : int(eval "$href->{'months_credit'} + 0");
+#    : int(eval "$href->{'months_credit'} + 0");
+    : int(eval "$href->{'month_credit'} + 0");
 }
 
 sub b_or {
@@ -274,7 +370,8 @@ sub ut_zip_fixup {
 }
 
 my @tables = (
-part_pkg => { 'stable'  => 'product',
+#part_pkg => { 'stable'  => 'product',
+part_pkg => { 'stable'  => 'billcycle',
               'mapping' =>
                 { 'pkg'      => sub { my $href = shift;
                                       $href->{'description'}
@@ -303,22 +400,32 @@ part_pkg => { 'stable'  => 'product',
                   'pkg_svc'  => sub { my $href = shift;
                                       my $result = {};
                                       if (pkg_freq($href)){
-                                        $result->{$legacy_ppp_svcnum} = 1;
-                                        $result->{$legacy_email_svcnum} = 
+                                        $result->{$legacy_ppp_svcpart} = 1;
+                                        $result->{$legacy_email_svcpart} = 
                                             $href->{emails_allowed}
                                           if $href->{emails_allowed};
                                       }
                                     },
                   'primary_svc'=> sub { pkg_freq(shift)
-                                          ? $legacy_ppp_svcnum
+                                          ? $legacy_ppp_svcpart
                                           : ''
                                         ;
                                       },
                 },
               'fixup'   => sub { my $part_pkg = shift;
                                  my $row = shift;
-                                 return 1 unless $part_pkg->comment;
-                                 $package_cache{$part_pkg->comment} = $part_pkg;
+                                 unless ($part_pkg->pkg =~ /^\s*(\S[\S ]*?)\s*$/) {
+                                   warn "no pkg: ". $part_pkg->pkg. " for ". $row->{product_id};
+                                   return 1;
+                                 }
+
+                                 unless ($part_pkg->comment =~ /^\s*(\S[\S ]*?)\s*$/) {
+                                   warn "no comment: ". $part_pkg->comment. " for ". $row->{product_id};
+                                   return 1;
+                                 }
+
+                                 return 1 if exists($package_cache{$1});
+                                 $package_cache{$1} = $part_pkg;
                                  1;
                                },
               'wrapup'  => sub { foreach (keys %package_cache) {
@@ -332,7 +439,7 @@ part_pkg => { 'stable'  => 'product',
                                      };
                                    my $error =
                                      $part_pkg->insert(options=>$options);
-                                   die "Error inserting referral: $error"
+                                   die "Error inserting package: $error"
                                      if $error;
                                    $count++ unless $error;
                                  }
@@ -360,14 +467,14 @@ part_referral => { 'stable'  => 'cust',
                                       }
                                     },
                  },
-svc_acct  => { 'stable'  => 'cust',
-               'mapping' =>
-                 { 'username'     => 'login',
-                   '_password'    => 'password',
-                   'svcpart'      => sub{ $legacy_ppp_svcnum },
-                   'domsvc'       => sub{ $legacy_domain_svcnum },
-                   'status'       => 'status',
-                 },
+#svc_acct  => { 'stable'  => 'cust',
+#               'mapping' =>
+#                 { 'username'     => 'login',
+#                   '_password'    => 'password',
+#                   'svcpart'      => sub{ $legacy_ppp_svcpart },
+#                   'domsvc'       => sub{ $legacy_domain_svcnum },
+#                   'status'       => 'status',
+#                 },
 #               'fixup'   => sub { my $svc_acct = shift;
 #                                  my $row = shift;
 #                                  my $id = $row->{'master_account'}
@@ -392,46 +499,13 @@ svc_acct  => { 'stable'  => 'cust',
 #                                    str2time($row->{expiration_date});
 #                                  '';
 #                                },
-               'fixup'   => sub { my $svc_acct = shift;
-                                  my $row = shift;
-                                  my $id = $row->{'master_account'}
-                                           ? 'slave:'. $row->{'customer_id'}
-                                           : $row->{'login'};
-                                  my $status = $svc_acct->status;
-                                  if ( $status ne 'Current'
-                                    && $status ne 'On Hold' )
-                                  {
-                                    $cancel{$id} =
-                                      str2time($row->{termination_date});
-                                    return 1
-                                  }
-                                  $susp{$id} = str2time($row->{hold_date})
-                                    if $status eq 'On Hold';
-                                  $adjo{$id} = str2time($row->{hold_date})
-                                    if ( $status eq 'Current' &&
-                                         $row->{hold_date} );
-                                  $bill{$id} =
-                                    str2time($row->{expiration_date});
-                                  my $object =
-                                    qsearchs( 'svc_acct', 
-                                              { 'username' => $row->{'login'} }
-                                            );
-                                  unless( $object ) {
-                                    warn "can't find svc_acct for legacy ppp ".
-                                      $row->{'login'}, "\n";
-                                    return 1;
-                                  }
-                                  
-                                  $object_map{svc_acct}{$id} = $object->svcnum;
-                                  return 1;
-                                },
 #               'skey'    => sub { my $svc_acct = shift;
 #                                  my $row = shift;
 #                                  my $id = $row->{'master_account'}
 #                                    ? 'slave:'. $row->{'customer_id'}
 #                                    : $row->{'login'};
 #                                },
-             },
+#             },
 cust_main => { 'stable'  => 'cust',
                'mapping' =>
                  { 'agentnum'     => sub { $agentnum },
@@ -473,6 +547,50 @@ cust_main => { 'stable'  => 'cust',
                  },
                'fixup'   => sub { my $cust_main = shift;
                                   my $row = shift;
+
+                                  my ($master_account, $customer_id, $login) =
+                                    ('', '', '');
+                                  $row->{'master_account'} =~ /^\s*(\S[\S ]*?)\s*$/
+                                    && ($master_account = $1);
+                                  $row->{'customer_id'} =~ /^\s*(\S[\S ]*?)\s*$/
+                                    && ($customer_id = $1);
+                                  $row->{'login'} =~ /^\s*(\S[\S ]*?)\s*$/
+                                    && ($login = $1);
+
+                                  my $id = $master_account
+                                           ? 'slave:'. $customer_id
+                                           : $login;
+                                  my $status = $row->{status};
+
+                                  my $cancelled = 0;
+                                  if ( $status ne 'Current'
+                                    && $status ne 'On Hold' )
+                                  {
+                                    $cancelled = 1;
+                                    $cancel{$id} =
+                                      str2time($row->{termination_date});
+                                  }
+                                  $susp{$id} = str2time($row->{hold_date})
+                                    if ($status eq 'On Hold' && !$cancelled);
+                                  $adjo{$id} = str2time($row->{hold_date})
+                                    if ( $status eq 'Current' && !$cancelled &&
+                                         $row->{hold_date} );
+                                  $bill{$id} =
+                                      str2time($row->{expiration_date})
+                                    if (!$cancelled);
+
+                                  my $svcnum =
+                                    $object_map{legacy_ppp}{$row->{'login'} };
+                                  unless( $cancelled || $svcnum ) {
+                                    warn "can't find svc_acct for legacy ppp ".
+                                        $row->{'login'}, "\n";
+                                  }
+
+                                  $object_map{svc_acct}{$id} = $svcnum
+                                    unless $cancelled;
+
+                                  $master_map{$login} = $row->{master_account}
+                                    if $row->{master_account};
                                   return 1 if $row->{master_account};
                                   $cust_main->ship_country('US')
                                     if $cust_main->has_ship_address;
@@ -588,9 +706,17 @@ cust_main => { 'stable'  => 'cust',
 cust_pkg  => { 'stable'  => 'billcycle',
                'mapping' =>
                  { 'custnum'     => sub { my $l = shift->{cbilling_cycle_login};
-                                          $object_map{'cust_main'}{$l};
+                                          $l =~ /^\s*(\S[\S ]*?)\s*$/ && ($l = $1);
+                                          my $r = $object_map{'cust_main'}{$l};
+                                          unless ($r) {
+                                            my $m = $master_map{$l};
+                                            $r = $object_map{'cust_main'}{$m}
+                                              if $m;
+                                          }
+                                          $r;
                                         },
                    'pkgpart'     => sub { my $p = shift->{product_id};
+                                          $p =~ /^\s*(\S[\S ]*?)\s*$/ && ($p = $1);
                                           $package_cache{$p}
                                             ? $package_cache{$p}->pkgpart
                                             : '';
@@ -621,10 +747,23 @@ cust_pkg  => { 'stable'  => 'billcycle',
                                           $cancel{$id};
                                         },
                  },
+               'fixup'  => sub { my ($object, $row) = (shift,shift);
+                                 unless ($object->custnum) {
+                                   warn "can't find customer for ".
+                                     $row->{cbilling_cycle_login}. "\n";
+                                   return 1;
+                                 }
+                                 unless ($object->pkgpart) {
+                                   warn "can't find package for ".
+                                     $row->{product_id}. "\n";
+                                   return 1;
+                                 }
+                                 '';
+                               },
                'skey'   => sub { my $object = shift;
                                  my $href = shift;
-                                 if ($href->{'slave_account_id'}) {
-                                   'slave:'. $href->{'slave_account_id'};
+                                 if ($href->{'slave_account_id'} =~ /^\s*(\S[\S ]*?)\s*$/) {
+                                   "slave:$1";
                                  }else{
                                    my $id = $href->{'billing_cycle_item_id'};
                                    $cust_pkg_map{$id} = $object->pkgnum;
@@ -643,7 +782,8 @@ cust_pkg  => { 'stable'  => 'billcycle',
                                      $cust_svc->
                                        pkgnum($object_map{'cust_pkg'}{$id});
                                      my $error = $cust_svc->replace;
-                                     warn "error linking legacy ppp $id: $error\n";
+                                     warn "error linking legacy ppp $id: $error\n"
+                                       if $error;
                                    }
                                  },
              },
@@ -651,7 +791,7 @@ svc_acct  => { 'stable'  => 'email',
                'mapping' =>
                  { 'username'    => 'email_name',
                    '_password'   => 'password',
-                   'svcpart'      => sub{ $legacy_email_svcnum },
+                   'svcpart'      => sub{ $legacy_email_svcpart },
                    'domsvc'       => sub{ $legacy_domain_svcnum },
                  },
 #               'fixup'   => sub { my ($object, $row) = (shift,shift);
@@ -680,16 +820,16 @@ svc_acct  => { 'stable'  => 'email',
                                     return 1 if ($sy == $cy && $sm == $cm && $sd <= $cd);
                                   }
                                   return 1 if $object_map{'cust_main'}{$object->username};
-                                  my $svc_acct =
-                                    qsearchs( 'svc_acct', 
-                                              { 'username' => $row->{'login'} }
-                                            );
-                                  unless( $svc_acct ) {
-                                    warn "can't find svc_acct for email ".
-                                      $row->{'login'}. "\n";
+
+                                  my $svcnum =
+                                    $object_map{legacy_email}{$row->{'email_name'} };
+                                  unless( $svcnum ) {
+                                    warn "can't find svc_acct for legacy email ".
+                                      $row->{'email_name'}, "\n";
                                     return 1;
                                   }
-                                  $object_map{svc_acct}{'email:'.$row->{'email_customer_id'}} = $svc_acct->svcnum;
+
+                                  $object_map{svc_acct}{'email:'.$row->{'email_customer_id'}} = $svcnum;
                                   return 1;
                                 },
 #               'skey'    => sub { my $object = shift;
@@ -711,16 +851,14 @@ svc_acct  => { 'stable'  => 'email',
                                      $cust_svc->
                                        pkgnum($cust_pkg_map{$custid});
                                      my $error = $cust_svc->replace;
-                                     warn "error linking legacy email $id: $error\n";
+                                     warn "error linking legacy email $id: $error\n"
+                                       if $error;
                                    }
                                  },
              },
 );
 
 #my $s_dbh = DBI->connect($s_datasrc, $s_dbuser, $s_dbpass) or die $DBI::errstr;
-my $d_dbh = adminsuidsetup $d_dbuser;
-
-local $FS::UID::AutoCommit = 0;
 
 while ( @tables ) {
   my ($table, $href) = (shift @tables, shift @tables);
