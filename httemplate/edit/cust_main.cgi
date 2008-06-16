@@ -10,8 +10,8 @@
 
 <FORM NAME="topform" STYLE="margin-bottom: 0">
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
-% if ( $custnum ) { 
 
+% if ( $custnum ) { 
   Customer #<B><% $custnum %></B> - 
   <B><FONT COLOR="#<% $cust_main->statuscolor %>">
     <% ucfirst($cust_main->status) %>
@@ -19,11 +19,9 @@
   <BR><BR>
 % } 
 
-
 <% &ntable("#cccccc") %>
 
-<!-- agent -->
-
+%# agent
 <% include('/elements/tr-select-agent.html', 
               'curr_value'    => $cust_main->agentnum,
               'label'         => "<B>${r}Agent</B>",
@@ -32,16 +30,27 @@
            )
 %>
 
-<!-- referral (advertising source) -->
-%
+%# agent_custid
+% if ( $conf->exists('cust_main-edit_agent_custid') ) {
+
+    <TR>
+      <TD ALIGN="right">Customer identifier</TD>
+      <TD><INPUT TYPE="text" NAME="agent_custid" VALUE="<% $cust_main->agent_custid %>"></TD>
+    </TR>
+
+% } else {
+
+    <INPUT TYPE="hidden" NAME="agent_custid" VALUE="<% $cust_main->agent_custid %>">
+
+% }
+
+%# referral (advertising source)
 %my $refnum = $cust_main->refnum || $conf->config('referraldefault') || 0;
 %if ( $custnum && ! $conf->exists('editreferrals') ) {
-%
-
 
   <INPUT TYPE="hidden" NAME="refnum" VALUE="<% $refnum %>">
-% } else { 
 
+% } else { 
 
    <% include('/elements/tr-select-part_referral.html',
                 'curr_value' => $refnum
@@ -50,15 +59,12 @@
 % } 
 
 
-<!-- referring customer -->
-%
+%# referring customer
 %my $referring_cust_main = '';
 %if ( $cust_main->referral_custnum
 %     and $referring_cust_main =
 %           qsearchs('cust_main', { custnum => $cust_main->referral_custnum } )
 %) {
-%
-
 
   <TR>
     <TD ALIGN="right">Referring customer</TD>
@@ -228,7 +234,7 @@ function bottomfixup(what) {
   var topvars = new Array(
     'birthdate',
 
-    'custnum', 'agentnum', 'refnum', 'referral_custnum',
+    'custnum', 'agentnum', 'agent_custid', 'refnum', 'referral_custnum',
 
     'last', 'first', 'ss', 'company',
     'address1', 'address2', 'city',
@@ -469,7 +475,7 @@ function copyelement(from, to) {
 % foreach my $hidden (
 %     'birthdate',
 %
-%     'custnum', 'agentnum', 'refnum', 'referral_custnum',
+%     'custnum', 'agentnum', 'agent_custid', 'refnum', 'referral_custnum',
 %     'last', 'first', 'ss', 'company',
 %     'address1', 'address2', 'city',
 %     'county', 'state', 'zip', 'country',
