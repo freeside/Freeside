@@ -136,7 +136,7 @@ sub row {
     unless (scalar(@$cols) == $columncount);
 
   my $sql = "INSERT INTO $sourcefile VALUES(".
-    join(', ', map { $s_dbh->quote($_) } @$cols). ")";
+    join(', ', map { s/\s*(\S[\S ]*?)\s*$/$1/; $s_dbh->quote($_) } @$cols). ")";
   $s_dbh->do($sql) or die "insert failed: ". $s_dbh->errstr;
   $rowcount++;
   warn "row $rowcount\n" unless ($rowcount % 1000);
@@ -182,8 +182,8 @@ my @import = ( { 'file'     => $radius_file,
                  'fields'   => [ qw( username null finger _password status garbage ) ],
                  'fixup'    => sub {
                                      my $hash = shift;
-                                     return 1
-                                       if $object_map{'legacy_ppp'}{$hash->{'username'}};
+                                     #return 1
+                                     #  if $object_map{'legacy_ppp'}{$hash->{'username'}};
                                      delete $hash->{$_}
                                        foreach qw (null status garbage);
                                      $hash->{'svcpart'} = $legacy_email_svcpart;
@@ -254,22 +254,24 @@ while ( @import ) {
 
 sub pkg_freq {
   my ( $href ) = ( shift );
-  $href->{'one_time_list'}
+  my $once;
+  $href->{'one_time_list'} =~ /^\s*(\S[\S ]*?)\s*$/ && ($once = $1);
+  $once
     ? 0
-#    : int(eval "$href->{'months_credit'} + 0");
-    : int(eval "$href->{'month_credit'} + 0");
+    : int(eval "$href->{'months_credit'} + 0");
+#   int(eval "$href->{'month_credit'} + 0");
 }
 
 sub b_or {
   my ( $field, $hash ) = ( shift, shift );
-  $field = 'bill_'. $field
+  $field = 'billing_'. $field
     if $hash->{'billing_use'} eq 'Billing Address';
   $hash->{$field};
 }
 
 sub p_or {
   my ( $field, $hash ) = ( shift, shift );
-  $field = 'bill_'. $field
+  $field = 'billing_'. $field
     if $hash->{'billing_use'} eq 'Billing Address';
   my $ac = ( $hash->{$field. '_area_code'}
           && $hash->{$field. '_area_code'} =~ /^\d{3}$/ )
@@ -370,8 +372,8 @@ sub ut_zip_fixup {
 }
 
 my @tables = (
-#part_pkg => { 'stable'  => 'product',
-part_pkg => { 'stable'  => 'billcycle',
+part_pkg => { 'stable'  => 'product',
+#part_pkg => { 'stable'  => 'billcycle',
               'mapping' =>
                 { 'pkg'      => sub { my $href = shift;
                                       $href->{'description'}
@@ -560,6 +562,7 @@ cust_main => { 'stable'  => 'cust',
                                   my $id = $master_account
                                            ? 'slave:'. $customer_id
                                            : $login;
+                                  #my $id = $login;
                                   my $status = $row->{status};
 
                                   my $cancelled = 0;
@@ -570,18 +573,18 @@ cust_main => { 'stable'  => 'cust',
                                     $cancel{$login} =
                                       str2time($row->{termination_date});
                                   }
-                                  $susp{$login} = str2time($row->{hold_date})
+                                  $susp{$id} = str2time($row->{hold_date})
                                     if ($status eq 'On Hold' && !$cancelled);
-                                  $adjo{$login} = str2time($row->{hold_date})
+                                  $adjo{$id} = str2time($row->{hold_date})
                                     if ( $status eq 'Current' && !$cancelled &&
                                          $row->{hold_date} );
-                                  $bill{$login} =
+                                  $bill{$id} =
                                       str2time($row->{expiration_date})
                                     if (!$cancelled);
 
                                   my $svcnum =
                                     $object_map{legacy_ppp}{$row->{'login'} };
-                                  unless( $cancelled || $svcnum ) {
+                                  unless( $cancelled || $svcnum || $status eq 'Pn Hold' ) {
                                     warn "can't find svc_acct for legacy ppp ".
                                         $row->{'login'}, "\n";
                                   }
@@ -589,9 +592,9 @@ cust_main => { 'stable'  => 'cust',
                                   $object_map{svc_acct}{$id} = $svcnum
                                     unless $cancelled;
 
-                                  $master_map{$login} = $row->{master_account}
-                                    if $row->{master_account};
-                                  return 1 if $row->{master_account};
+                                  $master_map{$login} = $master_account
+                                    if $master_account;
+                                  return 1 if $master_account;
                                   $cust_main->ship_country('US')
                                     if $cust_main->has_ship_address;
                                   ut_name_fixup($cust_main, 'first');
@@ -715,40 +718,125 @@ cust_pkg  => { 'stable'  => 'billcycle',
                                           }
                                           $r;
                                         },
-                   'pkgpart'     => sub { my $p = shift->{product_id};
+                   'pkgpart'     => sub { my $href = shift;
+                                          my $p = $href->{product_id};
                                           $p =~ /^\s*(\S[\S ]*?)\s*$/ && ($p = $1);
-                                          $package_cache{$p}
-                                            ? $package_cache{$p}->pkgpart
-                                            : '';
+                                          my $pkg = $package_cache{$p}
+                                            if $package_cache{$p};
+                                          
+                                          my $month = '';
+                                          $href->{month_credit} =~ /\s*(\S[\S ]*?)\s*$/ && ($month = $1);
+                                          $month = int(eval "$month + 0");
+
+                                          my $price = 0;
+                                          $href->{unit_price} =~ /\s*(\S[\S ]*?)\s*$/ && ($price = $1);
+                                          $price = eval "$price + 0";
+
+                                          if ($pkg) {
+                                            $pkg = ''
+                                              unless $pkg->freq + 0 == $month;
+
+                                            if ($pkg && ($pkg->freq + 0)) {
+                                              my $recur = 0;
+                                              $pkg->recur =~ /\s*(\S[\S ]*?)\s*$/ && ($recur = $1);
+                                              $recur = eval "$recur + 0";
+                                              $pkg = ''
+                                                unless $recur == $price;
+                                            }
+
+                                            if ($pkg) {
+                                              $pkg = ''
+                                                unless $pkg->setuptax
+                                                  eq ($href->{taxable} ? '' : 'Y');
+                                            }
+
+                                          }
+
+                                          unless ($pkg) {
+                                            my $pkghref = { 'pkg' => ($href->{description} ? $href->{description} : $href->{product_id} ),
+                                                            'comment' => $href->{product_id},
+                                                            'freq' => $month,
+                                                            'setuptax' => ($href->{'taxable'} ? '' : 'Y'),
+                                                            'recurtax' => ($href->{'taxable'} ? '' : 'Y'),
+                                                            'plan' => 'flat',
+                                                            'disabled' => 'Y',
+                                                          };
+
+                                            my @pkgs = qsearch('part_pkg', $pkghref);
+                                            my $recur = sprintf("%.2f", ($month ? $price : 0));
+                                            for (@pkgs) {
+                                              my %options = $_->options;
+                                              if ($options{recur} eq $recur) {
+                                                $pkg = $_;
+                                                last;
+                                              }
+                                            }
+
+                                            $pkghref->{recur} = $recur
+                                              unless $pkg;
+
+                                            my $pkg_svc = {};
+
+                                            if ($month){
+                                              $pkg_svc->{$legacy_ppp_svcpart} = 1;
+                                              $pkg_svc->{$legacy_email_svcpart} = 
+                                                  $href->{emails_allowed}
+                                                if $href->{emails_allowed};
+                                            }
+                                            $pkghref->{pkg_svc} = $pkg_svc;
+                                            $pkghref->{primary_svc}
+                                              = ( $month 
+                                                  ? $legacy_ppp_svcpart
+                                                  : '');
+                                            unless ($pkg) {
+                                              $pkg = new FS::part_pkg $pkghref;
+                                              my $options =
+                                                { map { my $v = $pkg->$_;
+                                                        $pkg->$_('');
+                                                        ($_ => $v);
+                                                      }
+                                                  qw (setup recur)
+                                                };
+                                              my $error =
+                                                $pkg->insert(options=>$options);
+                                              if ($error) {
+                                                warn "Error inserting pkg ".
+                                                  join(", ", map{"$_ => ". $pkg->get($_)} fields $pkg).
+                                                  ": $error\n";
+                                                $pkg = '';
+                                              }
+                                            }
+                                          }
+                                          $pkg ? $pkg->pkgpart : '';
                                         },
                    'setup'       => sub { str2time(shift->{creation_date}) },
                    'bill'        => sub { my $href = shift;
-                                          #my $id = $href->{'slave_account_id'}
-                                          #  ? 'slave:'. $href->{'slave_account_id'}
-                                          #  : $href->{'cbilling_cycle_login'};
-                                          #$bill{$id};
-                                          $bill{$href->{cbilling_cycle_login}};
+                                          my $id = $href->{'slave_account_id'}
+                                            ? 'slave:'. $href->{'slave_account_id'}
+                                            : $href->{'cbilling_cycle_login'};
+                                          $bill{$id};
+                                          #$bill{$href->{cbilling_cycle_login}};
                                         },
                    'susp'        => sub { my $href = shift;
-                                          #my $id = $href->{'slave_account_id'}
-                                          #  ? 'slave:'. $href->{'slave_account_id'}
-                                          #  : $href->{'cbilling_cycle_login'};
-                                          #$susp{$id};
-                                          $susp{$href->{cbilling_cycle_login}};
+                                          my $id = $href->{'slave_account_id'}
+                                            ? 'slave:'. $href->{'slave_account_id'}
+                                            : $href->{'cbilling_cycle_login'};
+                                          $susp{$id};
+                                          #$susp{$href->{cbilling_cycle_login}};
                                         },
                    'adjo'        => sub { my $href = shift;
-                                          #my $id = $href->{'slave_account_id'}
-                                          #  ? 'slave:'. $href->{'slave_account_id'}
-                                          #  : $href->{'cbilling_cycle_login'};
-                                          #$adjo{$id};
-                                          $adjo{$href->{cbilling_cycle_login}};
+                                          my $id = $href->{'slave_account_id'}
+                                            ? 'slave:'. $href->{'slave_account_id'}
+                                            : $href->{'cbilling_cycle_login'};
+                                          $adjo{$id};
+                                          #$adjo{$href->{cbilling_cycle_login}};
                                         },
                    'cancel'      => sub { my $href = shift;
-                                          #my $id = $href->{'slave_account_id'}
-                                          #  ? 'slave:'. $href->{'slave_account_id'}
-                                          #  : $href->{'cbilling_cycle_login'};
-                                          #$cancel{$id};
-                                          $cancel{$href->{cbilling_cycle_login}};
+                                          my $id = $href->{'slave_account_id'}
+                                            ? 'slave:'. $href->{'slave_account_id'}
+                                            : $href->{'cbilling_cycle_login'};
+                                          $cancel{$id};
+                                          #$cancel{$href->{cbilling_cycle_login}};
                                         },
                  },
                'fixup'  => sub { my ($object, $row) = (shift,shift);
@@ -766,12 +854,15 @@ cust_pkg  => { 'stable'  => 'billcycle',
                                },
                'skey'   => sub { my $object = shift;
                                  my $href = shift;
+                                 my $id = $href->{'billing_cycle_item_id'};
+                                 $id =~ /^\s*(\S[\S ]*?)\s*$/ && ($id = $1);
+                                 $cust_pkg_map{$id} = $object->pkgnum;
                                  if ($href->{'slave_account_id'} =~ /^\s*(\S[\S ]*?)\s*$/) {
                                    "slave:$1";
                                  }else{
-                                   my $id = $href->{'billing_cycle_item_id'};
-                                   $cust_pkg_map{$id} = $object->pkgnum;
-                                   $href->{'cbilling_cycle_login'};
+                                   my $l = $href->{cbilling_cycle_login};
+                                   $l =~ /^\s*(\S[\S ]*?)\s*$/ && ($l = $1);
+                                   $l;
                                  }
                                },
                'wrapup'   => sub { for my $id (keys %{$object_map{'cust_pkg'}}){
@@ -823,16 +914,21 @@ svc_acct  => { 'stable'  => 'email',
                                     return 1 if ($sy == $cy && $sm < $cm);
                                     return 1 if ($sy == $cy && $sm == $cm && $sd <= $cd);
                                   }
-                                  return 1 if $object_map{'cust_main'}{$object->username};
+                                  #return 1 if $object_map{'cust_main'}{$object->username};
+
+                                  my $email_name;
+                                  $row->{email_name} =~ /^\s*(\S[\S ]*?)\s*$/
+                                    && ($email_name = $1);
 
                                   my $svcnum =
-                                    $object_map{legacy_email}{$row->{'email_name'} };
+                                      $object_map{legacy_email}{$email_name}
+                                    if $email_name;
                                   unless( $svcnum ) {
                                     warn "can't find svc_acct for legacy email ".
                                       $row->{'email_name'}, "\n";
                                     return 1;
                                   }
-
+                                  
                                   $object_map{svc_acct}{'email:'.$row->{'email_customer_id'}} = $svcnum;
                                   return 1;
                                 },
@@ -840,7 +936,7 @@ svc_acct  => { 'stable'  => 'email',
 #                                  my $href = shift;
 #                                  'email:'. $href->{'email_customer_id'};
 #                                },
-               'wrapup'   => sub { for my $id (keys %{$object_map{'cust_pkg'}}){
+               'wrapup'   => sub { for my $id (keys %{$object_map{'svc_acct'}}){
                                      next unless $id =~ /^email:(\d+)/;
                                      my $custid = $1;
                                      my $cust_svc =
@@ -852,11 +948,20 @@ svc_acct  => { 'stable'  => 'email',
                                        next;
                                      }
 
+                                     if ($cust_svc->pkgnum) {
+                                       warn "service already linked for $id\n";
+                                       next;
+                                     }
+
                                      $cust_svc->
                                        pkgnum($cust_pkg_map{$custid});
-                                     my $error = $cust_svc->replace;
-                                     warn "error linking legacy email $id: $error\n"
-                                       if $error;
+                                     if ($cust_svc->pkgnum){
+                                       my $error = $cust_svc->replace;
+                                       warn "error linking legacy email $id: $error\n"
+                                         if $error;
+                                     }else{
+                                       warn "can't find package for $id\n"
+                                     }
                                    }
                                  },
              },
@@ -924,6 +1029,41 @@ while ( @tables ) {
   print "$count/$rowcount of $table SUCCESSFULLY processed\n";
 
 }
+
+# link to any uncancelled package on customer
+foreach my $username ( keys %{$object_map{'legacy_email'}} ) {
+  my $cust_svc = qsearchs( 'cust_svc',
+                           { 'svcnum' => $object_map{legacy_email}{$username} }
+                         );
+ next unless $cust_svc;
+ next if $cust_svc->pkgnum;
+
+ my $custnum = $object_map{cust_main}{$username};
+ unless ($custnum) {
+   my $master = $master_map{$username};
+   $custnum = $object_map{'cust_main'}{$master}
+     if $master;
+   next unless $custnum;  
+ }
+
+ #my $extra_sql = ' AND 0 != (select freq from part_pkg where '.
+ #                'cust_pkg.pkgpart = part_pkg.pkgpart )';
+ my $extra_sql = " AND 'Prior balance' != (select pkg from part_pkg where ".
+                 "cust_pkg.pkgpart = part_pkg.pkgpart )";
+
+ my @cust_pkg = qsearch( {
+                           'table'   => 'cust_pkg',
+                           'hashref' => { 'custnum' => $custnum,
+                                          'cancel'  => '',
+                                        },
+                           'extra_sql' => $extra_sql,
+                       } );
+ next unless scalar(@cust_pkg);
+
+ $cust_svc->pkgnum($cust_pkg[0]->pkgnum);
+ $cust_svc->replace;
+}
+
 
 if ($dry_run) {
   $d_dbh->rollback;
