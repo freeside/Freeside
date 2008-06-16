@@ -567,6 +567,7 @@ cust_main => { 'stable'  => 'cust',
 
                                   my $cancelled = 0;
                                   if ( $status ne 'Current'
+                                    && $status ne 'current'
                                     && $status ne 'On Hold' )
                                   {
                                     $cancelled = 1;
