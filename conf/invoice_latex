@@ -214,6 +214,9 @@
     $OUT .= "\\addressline{$ship_city, $ship_state~~$ship_zip}";
     $OUT .= "\\addressline{$ship_country}";
     $OUT .= '~\\\\';
+    $OUT .= "\\textbf{ID:}~~$agent_custid\\\\" if $agent_custid;
+    $OUT .= "\\textbf{Fax:}~~$ship_fax\\\\" if $ship_fax;
+    $OUT .= '~\\\\' if ($ship_fax or $agent_custid);
   }else{
     $OUT .= '';
   }
