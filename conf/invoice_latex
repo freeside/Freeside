@@ -168,7 +168,7 @@
 \newcommand{\FSextdesc}[1]{
   \multicolumn{1}{l}{\rule{0pt}{1.0ex}} &
 %%  \multicolumn{2}{l}{\small{~-~#1}}\\
-  ~~~#1\\
+#1\\
 }
 % ...and total line items.
 \newcommand{\FStotaldesc}[2]{
@@ -306,7 +306,9 @@ Terms: [@-- $terms --@]\\
         if ( $ext_desc !~ /[^\\]&/ ) {
           $ext_desc = substr($ext_desc, 0, 80) . '...'
             if (length($ext_desc) > 80);
-          $ext_desc = '\small{'. $ext_desc. '}';
+          $ext_desc = '\multicolumn{6}{l}{\small{~~~'. $ext_desc. '}}';
+        }else{
+          $ext_desc = "~~~$ext_desc";
         }
         $OUT .= '\FSextdesc{' . $ext_desc . '}' . "${rowbreak}\n";
       }
