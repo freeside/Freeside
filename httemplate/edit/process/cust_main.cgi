@@ -65,9 +65,6 @@ my $new = new FS::cust_main ( {
   } fields('cust_main')
 } );
 
- delete( $new->hashref->{'agent_custid'} )
-   unless $new->hashref->{'agent_custid'};
-
 if ( defined($cgi->param('same')) && $cgi->param('same') eq "Y" ) {
   $new->setfield("ship_$_", '') foreach qw(
     last first company address1 address2 city county state zip
