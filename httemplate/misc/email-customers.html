@@ -1,0 +1,145 @@
+<% include('/elements/header.html', $title) %>
+
+<FORM NAME="OneTrueForm" ACTION="email-customers.html" METHOD="POST">
+% foreach my $key ( keys %search ) {
+%   my @values = ref($search{$key}) ? @{$search{$key}} : ( $search{$key} );
+%   foreach my $value ( @values ) {
+      <INPUT TYPE="hidden" NAME="<% $key |h %>" VALUE="<% $value |h %>">
+%   }
+% }
+
+% if ( $cgi->param('magic') eq 'send' ) {
+
+    <FONT SIZE="+2">Sending notice</FONT>
+
+    <% include('/elements/progress-init.html',
+                 'OneTrueForm',
+                 [ keys(%search), qw( from subject html_body text_body ) ],
+                 'process/email-customers.html',
+                 { 'message' => "Notice sent" }, #would be nice to show #, but..
+              )
+    %>
+
+% } elsif ( $cgi->param('magic') eq 'preview' ) {
+
+    <FONT SIZE="+2">Preview notice</FONT>
+
+% }
+
+% if ( $cgi->param('magic') ) {
+
+    <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+      <% include('/elements/tr-fixed.html',
+                   'field'      => 'from',
+                   'label'      => 'From:',
+                   'value' => scalar( $cgi->param('from') ),
+                )
+      %>
+
+      <% include('/elements/tr-fixed.html',
+                   'field'      => 'subject',
+                   'label'      => 'Subject:',
+                   'value' => scalar( $cgi->param('subject') ),
+                )
+      %>
+
+      <INPUT TYPE="hidden" NAME="html_body" VALUE="<% $cgi->param('html_body') |h %>">
+      <TR>
+        <TD ALIGN="right" VALIGN="top">Message (HTML display): </TD>
+        <TD BGCOLOR="#e8e8e8" ALIGN="left"><% $cgi->param('html_body') %></TD>
+      </TR>
+
+%     my $text_body = HTML::FormatText->new(leftmargin=>0)->format(
+%                       HTML::TreeBuilder->new_from_content(
+%                         $cgi->param('html_body')
+%                       )
+%                     );
+      <INPUT TYPE="hidden" NAME="text_body" VALUE="<% $text_body |h %>">
+      <TR>
+        <TD ALIGN="right" VALIGN="top">Message (Text display): </TD>
+        <TD BGCOLOR="#e8e8e8" ALIGN="left"><PRE><% $text_body %></PRE></TD>
+      </TR>
+
+    </TABLE>
+
+% if ( $cgi->param('magic') eq 'preview' ) {
+
+      <SCRIPT>
+        function areyousure(href) {
+          return confirm("Send this notice to <% $num_cust %> customers?");
+        }
+      </SCRIPT>
+
+      <BR>
+      <INPUT TYPE="hidden" NAME="magic" VALUE="send">
+      <INPUT TYPE="submit" VALUE="Send notice" onClick="return areyousure()">
+    
+%   }
+
+% } else {
+
+  <TABLE BGCOLOR="#cccccc" CELLSPACING=0 WIDTH="100%">
+
+    <% include('/elements/tr-input-text.html',
+                 'field' => 'from',
+                 'label' => 'From:',
+              )
+    %>
+
+    <% include('/elements/tr-input-text.html',
+                 'field' => 'subject',
+                 'label' => 'Subject:',
+              )
+    %>
+
+    <TR>
+      <TD ALIGN="right" VALIGN="top">Message: </TD>
+      <TD><% include('/elements/htmlarea.html', 'field'=>'html_body') %></TD>
+    </TR>
+
+  </TABLE>
+
+%#Substitution vars:
+
+    <BR><BR>
+    <INPUT TYPE="hidden" NAME="magic" VALUE="preview">
+    <INPUT TYPE="submit" VALUE="Preview notice">
+
+% }
+
+</FORM>
+
+% if ( $cgi->param('magic') eq 'send' ) {
+    <SCRIPT TYPE="text/javascript">
+      process();
+    </SCRIPT>
+% }
+
+<% include('/elements/footer.html') %>
+
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Bulk send customer notices');
+
+my %search = $cgi->Vars;
+delete $search{$_} for qw( magic from subject html_body text_body );
+$search{$_} = [ split(/\0/, $search{$_}) ]
+  foreach grep $search{$_} =~ /\0/, keys %search;
+
+my $title = 'Bulk send customer notices';
+
+my $num_cust;
+if ( $cgi->param('magic') eq 'preview' ) {
+  my $sql_query = FS::cust_main->search_sql(\%search);
+  my $count_query = delete($sql_query->{'count_query'});
+  my $count_sth = dbh->prepare($count_query)
+    or die "Error preparing $count_query: ". dbh->errstr;
+  $count_sth->execute
+    or die "Error executing $count_query: ". $count_sth->errstr;
+  my $count_arrayref = $count_sth->fetchrow_arrayref;
+  $num_cust = $count_arrayref->[0];
+}
+
+</%init>

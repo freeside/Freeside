@@ -1,5 +1,6 @@
 <% include( 'elements/search.html',
                   'title'       => 'Customer Search Results', 
+                  'menubar'     => $menubar,
                   'name'        => 'customers',
                   'query'       => $sql_query,
                   'count_query' => $count_query,
@@ -30,11 +31,6 @@
                                    ],
               )
 %>
-<%once>
-
-my $link = [ "${p}view/cust_main.cgi?", 'custnum' ];
-
-</%once>
 <%init>
 
 die "access denied"
@@ -88,5 +84,24 @@ my $sql_query = FS::cust_main->search_sql(\%search_hash);
 my $count_query   = delete($sql_query->{'count_query'});
 my @extra_headers = @{ delete($sql_query->{'extra_headers'}) };
 my @extra_fields  = @{ delete($sql_query->{'extra_fields'})  };
+
+my $link = [ "${p}view/cust_main.cgi?", 'custnum' ];
+
+###
+# email links
+###
+
+my $menubar = [];
+
+if ( $FS::CurrentUser::CurrentUser->access_right('Bulk send customer notices') ) {
+
+  my $uri = new URI::URL;
+  $uri->query_form( \%search_hash );
+  my $query = $uri->query;
+
+  push @$menubar, 'Email a notice to these customers' =>
+                    "${p}misc/email-customers.html?$query",
+
+}
 
 </%init>

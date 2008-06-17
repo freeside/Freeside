@@ -100,6 +100,7 @@ tie my %rights, 'Tie::IxHash',
     'Add customer note', #NEW
     'Edit customer note', #NEW
     'Bill customer now', #NEW
+    'Bulk send customer notices', #NEW
   ],
   
   ###
@@ -193,7 +194,7 @@ tie my %rights, 'Tie::IxHash',
   ###
   # report/listing rights...
   ###
-  'Reprting/listing rights' => [
+  'Reporting/listing rights' => [
     'List customers',
     'List zip codes', #NEW
     'List invoices',

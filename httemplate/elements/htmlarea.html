@@ -1,0 +1,36 @@
+<%doc>
+
+Example:
+
+  include('/elements/htmlarea.html',
+            'field'      => 'fieldname',
+            'curr_value' => $curr_value,
+            'height'     => 800,
+         );
+
+</%doc>
+
+% #init
+<SCRIPT TYPE="text/javascript" src="<% $p %>elements/fckeditor/fckeditor.js">
+</SCRIPT>
+
+% #editor
+<SCRIPT TYPE="text/javascript">
+
+  var oFCKeditor = new FCKeditor('<% $opt{'field'} %>');
+  oFCKeditor.Value = <% $opt{'curr_value'} |js_string %>;
+
+  oFCKeditor.BasePath = '<% $p %>elements/fckeditor/';
+  oFCKeditor.Config['SkinPath'] = '<% $p %>elements/fckeditor/editor/skins/silver/';
+  oFCKeditor.Height = '<% $opt{'height'} || 420 %>';
+  oFCKeditor.Config['StartupFocus'] = true;
+
+  oFCKeditor.Create();
+
+</SCRIPT>
+
+<%init>
+
+my %opt = @_;
+
+</%init>

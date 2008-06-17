@@ -1,0 +1,9 @@
+<% $server->process %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Bulk send customer notices');
+
+my $server = new FS::UI::Web::JSRPC 'FS::cust_main::process_email_search_sql', $cgi; 
+
+</%init>

@@ -10,23 +10,12 @@
 
 % if ( $type eq 'html' ) {
 
-% #init
-  <SCRIPT TYPE="text/javascript" src="<% $p %>elements/fckeditor/fckeditor.js">
-  </SCRIPT>
-
-% #editor
-  <SCRIPT TYPE="text/javascript">
-    var oFCKeditor = new FCKeditor('value');
-    oFCKeditor.Value = <% $value |js_string %>;
-
-    oFCKeditor.BasePath = '<% $p %>elements/fckeditor/';
-    oFCKeditor.Config['SkinPath'] = '<% $p %>elements/fckeditor/editor/skins/silver/';
-    oFCKeditor.Height = '800';
-    oFCKeditor.Config['StartupFocus'] = true;
-
-    oFCKeditor.Create();
-
-  </SCRIPT>
+  <% include('/elements/htmlarea.html',
+               'field'      => 'value',
+               'curr_value' => $value,
+               'height'     => 800,
+            )
+  %>
 
 % } else {
 

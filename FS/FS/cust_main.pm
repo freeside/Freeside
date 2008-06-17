@@ -22,7 +22,7 @@ use Locale::Country;
 use Data::Dumper;
 use FS::UID qw( getotaker dbh driver_name );
 use FS::Record qw( qsearchs qsearch dbdef );
-use FS::Misc qw( send_email generate_ps do_print );
+use FS::Misc qw( generate_email send_email generate_ps do_print );
 use FS::Msgcat qw(gettext);
 use FS::cust_pkg;
 use FS::cust_svc;
@@ -5467,6 +5467,122 @@ sub search_sql {
     'extra_headers' => \@extra_headers,
     'extra_fields'  => \@extra_fields,
   };
+
+}
+
+=item email_search_sql HASHREF
+
+(Class method)
+
+Emails a notice to the specified customers.
+
+Valid parameters are those of the L<search_sql> method, plus the following:
+
+=over 4
+
+=item from
+
+From: address
+
+=item subject
+
+Email Subject:
+
+=item html_body
+
+HTML body
+
+=item text_body
+
+Text body
+
+=item job
+
+Optional job queue job for status updates.
+
+=back
+
+Returns an error message, or false for success.
+
+If an error occurs during any email, stops the enture send and returns that
+error.  Presumably if you're getting SMTP errors aborting is better than 
+retrying everything.
+
+=cut
+
+sub email_search_sql {
+  my($class, $params) = @_;
+
+  my $from = delete $params->{from};
+  my $subject = delete $params->{subject};
+  my $html_body = delete $params->{html_body};
+  my $text_body = delete $params->{text_body};
+
+  my $job = delete $params->{'job'};
+
+  my $sql_query = $class->search_sql($params);
+
+  my $count_query   = delete($sql_query->{'count_query'});
+  my $count_sth = dbh->prepare($count_query)
+    or die "Error preparing $count_query: ". dbh->errstr;
+  $count_sth->execute
+    or die "Error executing $count_query: ". $count_sth->errstr;
+  my $count_arrayref = $count_sth->fetchrow_arrayref;
+  my $num_cust = $count_arrayref->[0];
+
+  #my @extra_headers = @{ delete($sql_query->{'extra_headers'}) };
+  #my @extra_fields  = @{ delete($sql_query->{'extra_fields'})  };
+
+
+  my( $num, $last, $min_sec ) = (0, time, 5); #progresbar foo
+
+  #eventually order+limit magic to reduce memory use?
+  foreach my $cust_main ( qsearch($sql_query) ) {
+
+    my $to = $cust_main->invoicing_list_emailonly_scalar;
+    next unless $to;
+
+    my $error = send_email(
+      generate_email(
+        'from'      => $from,
+        'to'        => $to,
+        'subject'   => $subject,
+        'html_body' => $html_body,
+        'text_body' => $text_body,
+      )
+    );
+    return $error if $error;
+
+    if ( $job ) { #progressbar foo
+      $num++;
+      if ( time - $min_sec > $last ) {
+        my $error = $job->update_statustext(
+          int( 100 * $num / $num_cust )
+        );
+        die $error if $error;
+        $last = time;
+      }
+    }
+
+  }
+
+  return '';
+}
+
+use Storable qw(thaw);
+use Data::Dumper;
+use MIME::Base64;
+sub process_email_search_sql {
+  my $job = shift;
+  #warn "$me process_re_X $method for job $job\n" if $DEBUG;
+
+  my $param = thaw(decode_base64(shift));
+  warn Dumper($param) if $DEBUG;
+
+  $param->{'job'} = $job;
+
+  my $error = FS::cust_main->email_search_sql( $param );
+  die $error if $error;
 
 }
 
