@@ -5007,7 +5007,7 @@ Returns a hex triplet color string for this customer's status.
 =cut
 
 use vars qw(%statuscolor);
-tie my %statuscolor, 'Tie::IxHash',
+tie %statuscolor, 'Tie::IxHash',
   'prospect'  => '7e0079', #'000000', #black?  naw, purple
   'active'    => '00CC00', #green
   'inactive'  => '0000CC', #blue
