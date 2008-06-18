@@ -2,7 +2,7 @@ package FS::conf;
 
 use strict;
 use vars qw( @ISA );
-use FS::Record qw( qsearch qsearchs );
+use FS::Record;
 
 @ISA = qw(FS::Record);
 
