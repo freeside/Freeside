@@ -2,7 +2,7 @@ package FS::part_virtual_field;
 
 use strict;
 use vars qw( @ISA );
-use FS::Record qw( qsearchs qsearch );
+use FS::Record;
 use FS::Schema qw( dbdef );
 use CGI qw(escapeHTML);
 
