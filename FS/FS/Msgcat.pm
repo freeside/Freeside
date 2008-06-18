@@ -6,17 +6,19 @@ use Exporter;
 use FS::UID;
 #use FS::Record qw( qsearchs ); # wtf?  won't import...
 use FS::Record;
-use FS::Conf;
+#use FS::Conf; #wtf?  causes dependency loops too.
 use FS::msgcat;
 
 @ISA = qw(Exporter);
 @EXPORT_OK = qw( gettext geterror );
 
-$FS::UID::callback{'Msgcat'} = sub {
+FS::UID->install_callback( sub {
+  eval { use FS::Conf; };
+  die $@ if $@;
   $conf = new FS::Conf;
   $locale = $conf->config('locale') || 'en_US';
   $debug = $conf->exists('show-msgcat-codes')
-};
+});
 
 =head1 NAME
 
