@@ -15,7 +15,7 @@ use FS::CurrentUser;
 use FS::Schema qw(dbdef);
 use FS::SearchCache;
 use FS::Msgcat qw(gettext);
-use FS::Conf;
+#use FS::Conf; #dependency loop bs, in install_callback below instead
 
 use FS::part_virtual_field;
 
@@ -38,6 +38,8 @@ my $rsa_encrypt;
 my $rsa_decrypt;
 
 FS::UID->install_callback( sub {
+  eval "use FS::Conf;";
+  die $@ if $@;
   $conf = new FS::Conf; 
   $File::CounterFile::DEFAULT_DIR = $conf->base_dir . "/counters.". datasrc;
 } );
@@ -788,7 +790,6 @@ sub insert {
 
   
   # Encrypt before the database
-  my $conf = new FS::Conf;
   if ($conf->exists('encryption') && defined(eval '@FS::'. $table . '::encrypted_fields')) {
     foreach my $field (eval '@FS::'. $table . '::encrypted_fields') {
       $self->{'saved'} = $self->getfield($field);
@@ -1066,7 +1067,6 @@ sub replace {
   return $error if $error;
   
   # Encrypt for replace
-  my $conf = new FS::Conf;
   my $saved = {};
   if ($conf->exists('encryption') && defined(eval '@FS::'. $new->table . '::encrypted_fields')) {
     foreach my $field (eval '@FS::'. $new->table . '::encrypted_fields') {
@@ -1286,7 +1286,6 @@ sub _h_statement {
 
   # If we're encrypting then don't ever store the payinfo or CVV2 in the history....
   # You can see if it changed by the paymask...
-  my $conf = new FS::Conf;
   if ($conf->exists('encryption') ) {
     @fields = grep  $_ ne 'payinfo' && $_ ne 'cvv2', @fields;
   }
@@ -2041,7 +2040,6 @@ sub encrypt {
   my ($self, $value) = @_;
   my $encrypted;
 
-  my $conf = new FS::Conf;
   if ($conf->exists('encryption')) {
     if ($self->is_encrypted($value)) {
       # Return the original value if it isn't plaintext.
@@ -2090,7 +2088,6 @@ You should generally not have to worry about calling this, as the system handles
 sub decrypt {
   my ($self,$value) = @_;
   my $decrypted = $value; # Will return the original value if it isn't encrypted or can't be decrypted.
-  my $conf = new FS::Conf;
   if ($conf->exists('encryption') && $self->is_encrypted($value)) {
     $self->loadRSA;
     if (ref($rsa_decrypt) =~ /::RSA/) {
@@ -2107,7 +2104,6 @@ sub loadRSA {
     #Initialize the Module
     $rsa_module = 'Crypt::OpenSSL::RSA'; # The Default
 
-    my $conf = new FS::Conf;
     if ($conf->exists('encryptionmodule') && $conf->config_binary('encryptionmodule') ne '') {
       $rsa_module = $conf->config('encryptionmodule');
     }
