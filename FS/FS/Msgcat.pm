@@ -13,7 +13,7 @@ use FS::msgcat;
 @EXPORT_OK = qw( gettext geterror );
 
 FS::UID->install_callback( sub {
-  eval { use FS::Conf; };
+  eval "use FS::Conf;";
   die $@ if $@;
   $conf = new FS::Conf;
   $locale = $conf->config('locale') || 'en_US';
