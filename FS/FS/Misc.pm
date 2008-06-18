@@ -745,8 +745,7 @@ sub _pslatex {
   for ( 1, 2 ) {
 
     local($SIG{CHLD}) = sub {};
-    #run( \@cmd, '>'=>'/dev/null', '2>'=>'/dev/null', timeout($timeout) )
-    run( \@cmd, timeout($timeout) )
+    run( \@cmd, '>'=>'/dev/null', '2>'=>'/dev/null', timeout($timeout) )
       or die "pslatex $file.tex failed; see $file.log for details?\n";
 
   }
