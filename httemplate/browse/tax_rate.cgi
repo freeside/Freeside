@@ -3,6 +3,7 @@
      'name_singular'  => 'tax rate',
      'menubar'        => \@menubar,
      'html_init'      => $html_init,
+     'html_form'      => $html_form,
      'query'          => {
                            'table'     => 'tax_rate',
                            'hashref'   => $hashref,
@@ -179,7 +180,6 @@ if ($tax_type || $tax_cat ) {
 $cgi->delete('tax_type');
 $cgi->delete('tax_cat');
 
-
 if ( $geocode || $taxclassnum ) {
   push @menubar, 'View all tax rates' => $p.'browse/tax_rate.cgi';
 }
@@ -192,6 +192,21 @@ $cgi->param('geocode',  $geocode) if $geocode;
 $cgi->param('taxclassnum', $taxclassnum ) if $taxclassnum;
 $cgi->param('tax_type', $tax_type ) if $tax_type;
 $cgi->param('tax_cat', $tax_cat ) if $tax_cat;
+
+my $html_form = include('/elements/init_overlib.html'). '<BR><BR>'.
+  join(' ',
+    map {
+      include('/elements/popup_link.html',
+               {
+                 'action' => $p. "misc/enable_or_disable_tax.html?action=$_&".
+                             $cgi->query_string,
+                 'label' => ucfirst($_). ' all these taxes',
+                 'actionlabel' => ucfirst($_). ' taxes',
+               },
+             );
+    }
+    qw(disable enable)
+  );
 
 my $hashref = {};
 my $extra_sql = '';
