@@ -4,7 +4,7 @@ use strict;
 use vars qw( @ISA );
 use Exporter;
 use FS::UID;
-use FS::Record qw( qsearchs );
+use FS::Record;
 
 @ISA = qw(FS::Record);
 
