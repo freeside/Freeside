@@ -210,6 +210,8 @@ my $new_object_callback = sub {
     $part_pkg = $clone_part_pkg->clone;
     $part_pkg->disabled('Y');
     %options = $clone_part_pkg->options;
+    $part_pkg->set($_ => $option{$_})
+      foreach (qw( setup_fee recur_fee ));
   } else {
     $part_pkg = FS::part_pkg->new( $hashref );
     $part_pkg->set($_ => '0')
