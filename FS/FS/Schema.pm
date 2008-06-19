@@ -1778,11 +1778,23 @@ sub tables_hashref {
       'index'       => [],
     },
 
+    'pkg_category' => {
+      'columns' => [
+        'categorynum',   'serial',  '', '', '', '', 
+        'categoryname',  'varchar', '', $char_d, '', '', 
+        'disabled',      'char', 'NULL',   1, '', '', 
+      ],
+      'primary_key' => 'categorynum',
+      'unique' => [],
+      'index' => [ ['disabled'] ],
+    },
+
     'pkg_class' => {
       'columns' => [
-        'classnum',   'serial',  '', '', '', '', 
-        'classname',  'varchar', '', $char_d, '', '', 
-        'disabled',     'char', 'NULL',   1, '', '', 
+        'classnum',    'serial',   '',      '', '', '', 
+        'classname',   'varchar',  '', $char_d, '', '', 
+        'categorynum', 'int',  'NULL',      '', '', '', 
+        'disabled',    'char', 'NULL',       1, '', '', 
       ],
       'primary_key' => 'classnum',
       'unique' => [],

@@ -2506,7 +2506,7 @@ sub _items_sections {
 
     if ( $cust_bill_pkg->pkgnum > 0 ) {
 
-      my $desc = $cust_bill_pkg->part_pkg->classname;
+      my $desc = $cust_bill_pkg->part_pkg->categoryname;
 
       $s{$desc} += $cust_bill_pkg->setup
         if ( $cust_bill_pkg->setup != 0 );
@@ -2576,7 +2576,7 @@ sub _items_pkg {
   my @cust_bill_pkg =
     grep { $_->pkgnum &&
            ( defined($section)
-               ? $_->part_pkg->classname eq $section->{'description'}
+               ? $_->part_pkg->categoryname eq $section->{'description'}
                : 1
            )
          } $self->cust_bill_pkg;

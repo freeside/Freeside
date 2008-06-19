@@ -475,6 +475,21 @@ sub pkg_class {
   }
 }
 
+=item categoryname 
+
+Returns the package category name, or the empty string if there is no package
+category.
+
+=cut
+
+sub categoryname {
+  my $self = shift;
+  my $pkg_class = $self->pkg_class;
+  $pkg_class
+    ? $pkg_class->categoryname
+    : '';
+}
+
 =item classname 
 
 Returns the package class name, or the empty string if there is no package

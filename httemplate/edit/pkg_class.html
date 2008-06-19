@@ -3,6 +3,10 @@
               'table'  => 'pkg_class',
               'fields' => [
                             'classname',
+                            (scalar(@category)
+                              ? { field=>'categorynum', type=>'select-table', 'empty_label'=>'(none)', 'table'=>'pkg_category', 'name_col'=>'categoryname' }
+                              : { field=>'categorynum', type=>'hidden' }
+                            ),
                             { field=>'disabled', type=>'checkbox', value=>'Y', },
                           ],
               'labels' => { 
@@ -19,4 +23,5 @@
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
 
+my @category = qsearch('pkg_category', { 'disabled' => '' });
 </%init>

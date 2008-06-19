@@ -205,6 +205,7 @@ sub handler
       use FS::cdr;
       use FS::inventory_class;
       use FS::inventory_item;
+      use FS::pkg_category;
       use FS::pkg_class;
       use FS::access_user;
       use FS::access_user_pref;

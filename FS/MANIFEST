@@ -409,3 +409,5 @@ FS/part_pkg_taxoverride.pm
 t/part_pkg_taxoverride.t
 FS/part_pkg_taxrate.pm
 t/part_pkg_taxrate.t
+FS/pkg_category.pm
+t/pkg_category.t

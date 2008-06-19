@@ -262,6 +262,7 @@ $config_export_svc_pkg{'View/Edit package definitions'} = [ $fsurl.'browse/part_
   if    $curuser->access_right('Edit package definitions')
      || $curuser->access_right('Edit global package definitions');
 if ( $curuser->access_right('Configuration') ) {
+  $config_export_svc_pkg{'View/Edit package categories'} =  [ $fsurl.'browse/pkg_category.html', 'Package categories define groups of package classes, for reporting and convenience purposes.' ];
   $config_export_svc_pkg{'View/Edit package classes'} =  [ $fsurl.'browse/pkg_class.html', 'Package classes define groups of packages, for reporting and convenience purposes.' ];
   $config_export_svc_pkg{'View/Edit cancel reason types'} = [ $fsurl.'browse/reason_type.html?class=C', 'Cancel reason types define groups of reasons, for reporting and convenience purposes.' ];
   $config_export_svc_pkg{'View/Edit cancel reasons'} = [ $fsurl.'browse/reason.html?class=C', 'Cancel reasons explain why a service was cancelled.' ];

@@ -106,7 +106,7 @@ Example:
     'new_callback' => sub { my( $cgi, $object, $fields_listref ) = @_; },
    
     #run before display to return a different value
-    'value_callback' => sub { my( $columname, $value } ) = @_; },
+    'value_callback' => sub { my( $columname, $value ) = @_; },
 
     #XXX describe
     'field_callback' => sub { },
@@ -212,6 +212,7 @@ Example:
 %     #select(-*)
 %     'options'       => $f->{'options'},
 %     'labels'        => $f->{'labels'},
+%     'empty_label'   => $f->{'empty_label'},
 %     'multiple'      => $f->{'multiple'},
 %     'disable_empty' => $f->{'disable_empty'},
 %     #select-reason

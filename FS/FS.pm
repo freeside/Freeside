@@ -161,6 +161,8 @@ L<FS::part_export> - External provisioning export class
 
 L<FS::part_export_option> - Export option class
 
+L<FS::pkg_category> - Package category class
+
 L<FS::pkg_class> - Package class class
 
 L<FS::part_pkg> - Package definition class

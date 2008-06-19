@@ -1,0 +1,22 @@
+<% include( 'elements/edit.html',
+              'name'   => 'Package Category',
+              'table'  => 'pkg_category',
+              'fields' => [
+                            'categoryname',
+                            { field=>'disabled', type=>'checkbox', value=>'Y', },
+                          ],
+              'labels' => { 
+                            'categorynum'  => 'Category number',
+                            'categoryname' => 'Category name',
+                            'disabled'  => 'Disable category',
+                          },
+              'viewall_dir' => 'browse',
+           )
+          
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+</%init>

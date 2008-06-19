@@ -1,0 +1,11 @@
+<% include( 'elements/process.html',
+               'table'       => 'pkg_category',
+               'viewall_dir' => 'browse',
+           )
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+</%init>

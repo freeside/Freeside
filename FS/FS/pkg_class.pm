@@ -2,8 +2,9 @@ package FS::pkg_class;
 
 use strict;
 use vars qw( @ISA );
-use FS::Record qw( qsearch );
+use FS::Record qw( qsearchs qsearch );
 use FS::part_pkg;
+use FS::pkg_category;
 
 @ISA = qw( FS::Record );
 
@@ -37,6 +38,8 @@ from FS::Record.  The following fields are currently supported:
 =item classnum - primary key (assigned automatically for new package classes)
 
 =item classname - Text name of this package class
+
+=item categorynum - Number of associated pkg_category (see L<FS::pkg_category>)
 
 =item disabled - Disabled flag, empty or 'Y'
 
@@ -95,8 +98,33 @@ sub check {
 
   $self->ut_numbern('classnum')
   or $self->ut_text('classname')
+  or $self->ut_foreign_keyn('categorynum', 'pkg_category', 'categorynum')
   or $self->SUPER::check;
 
+}
+
+=item pkg_category
+
+Returns the pkg_category record associated with this class, or false if there
+is none.
+
+=cut
+
+sub pkg_category {
+  my $self = shift;
+  qsearchs('pkg_category', { 'categorynum' => $self->categorynum } );
+}
+
+=item categoryname
+
+Returns the category name associated with this class, or false if there
+is none.
+
+=cut
+
+sub categoryname {
+  my $pkg_category = shift->pkg_category;
+  $pkg_category->categoryname if $pkg_category;
 }
 
 =back

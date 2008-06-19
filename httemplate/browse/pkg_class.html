@@ -9,9 +9,9 @@
                                     'extra_sql' => 'ORDER BY classnum',
                                   },
                  'count_query' => $count_query,
-                 'header'      => [ '#', 'Class', ],
-                 'fields'      => [ 'classnum', 'classname' ],
-                 'links'       => [ $link, $link ],
+                 'header'      => $header,
+                 'fields'      => $fields,
+                 'links'       => $links,
              )
 %>
 <%init>
@@ -27,5 +27,20 @@ my $html_init =
 my $count_query = 'SELECT COUNT(*) FROM pkg_class';
 
 my $link = [ $p.'edit/pkg_class.html?', 'classnum' ];
+
+my $header = [ '#', 'Class' ];
+my $fields = [ 'classnum', 'classname' ];
+my $links  = [ $link, $link ];
+
+my $cat_query = 'SELECT COUNT(*) FROM pkg_class where categorynum IS NOT NULL';
+my $sth = dbh->prepare($cat_query)
+  or die "Error preparing $cat_query: ". dbh->errstr;
+$sth->execute
+  or die "Error executing $cat_query: ". $sth->errstr;
+if ($sth->fetchrow_arrayref->[0]) {
+  push @$header, 'Category';
+  push @$fields, 'categoryname';
+  push @$links,  $link;
+}
 
 </%init>

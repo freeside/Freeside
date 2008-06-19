@@ -1,0 +1,33 @@
+<% include( 'elements/browse.html',
+                 'title'       => 'Package categories',
+                 'html_init'   => $html_init,
+                 'name'        => 'package categories',
+                 'disableable' => 1,
+                 'disabled_statuspos' => 2,
+                 'query'       => { 'table'     => 'pkg_category',
+                                    'hashref'   => {},
+                                    'extra_sql' => 'ORDER BY categorynum',
+                                  },
+                 'count_query' => $count_query,
+                 'header'      => [ '#', 'Category' ],
+                 'fields'      => [ 'categorynum', 'categoryname' ],
+                 'links'       => [ $link, $link ],
+             )
+%>
+
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $html_init = 
+  qq!<A HREF="${p}browse/pkg_class.html">Package classes</A><BR><BR>!.
+  'Package categories define groups of package classes, for reporting and '.
+  'convenience purposes.<BR><BR>'.
+  qq!<A HREF="${p}edit/pkg_category.html"><I>Add a package category</I></A><BR><BR>!;
+
+my $count_query = 'SELECT COUNT(*) FROM pkg_category';
+
+my $link = [ $p.'edit/pkg_category.html?', 'categorynum' ];
+
+</%init>
