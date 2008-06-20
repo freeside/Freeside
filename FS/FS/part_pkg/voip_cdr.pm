@@ -143,7 +143,7 @@ sub calc_recur {
   my $downstream_cdr = '';
 
   my $output_format = $self->option('output_format', 'Hush!')
-                      || 'voxlinesystems';
+                      || 'simple';
 
   foreach my $cust_svc (
     grep { $_->part_svc->svcdb eq 'svc_phone' } $cust_pkg->cust_svc

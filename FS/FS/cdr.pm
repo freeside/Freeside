@@ -394,15 +394,15 @@ sub _convergent_format {
 
 my %export_names = (
   'convergent'      => {},
-  'voxlinesystems'  => { 'name'           => 'VoxLineSystems',
-                         'invoice_header' =>
-                           "Date,Time,Name,Destination,Duration,Price",
-                       },
-  'voxlinesystems2' => { 'name'           => 'VoxLineSystems with source',
-                         'invoice_header' =>
-                           #"Date,Time,Name,Called From,Destination,Duration,Price",
-                           "Date,Time,Called From,Destination,Duration,Price",
-                       },
+  'simple'  => { 'name'           => 'Simple',
+                 'invoice_header' =>
+                     "Date,Time,Name,Destination,Duration,Price",
+               },
+  'simple2' => { 'name'           => 'Simple with source',
+                 'invoice_header' =>
+                     #"Date,Time,Name,Called From,Destination,Duration,Price",
+                     "Date,Time,Called From,Destination,Duration,Price",
+               },
 );
 
 my %export_formats = (
@@ -421,7 +421,7 @@ my %export_formats = (
     sub { shift->rated_price ? 'Y' : 'N' }, #RATED
     '', #OTHER_INFO
   ],
-  'voxlinesystems' => [
+  'simple' => [
     sub { time2str('%D', shift->calldate_unix ) },   #DATE
     sub { time2str('%r', shift->calldate_unix ) },   #TIME
     'userfield',                                     #USER
@@ -429,7 +429,7 @@ my %export_formats = (
     sub { sprintf('%.2fm', shift->billsec / 60 ) },  #DURATION
     sub { sprintf('%.3f', shift->upstream_price ) }, #PRICE
   ],
-  'voxlinesystems2' => [
+  'simple2' => [
     sub { time2str('%D', shift->calldate_unix ) },   #DATE
     sub { time2str('%r', shift->calldate_unix ) },   #TIME
     #'userfield',                                     #USER
@@ -506,7 +506,6 @@ sub import_formats {
     'asterisk'       => 'Asterisk',
     'taqua'          => 'Taqua',
     'unitel'         => 'Unitel/RSLCOM',
-    'voxlinesystems' => 'VoxLineSystems',  #XXX? get the actual vendor name
     'simple'         => 'Simple',
   );
 }
@@ -722,52 +721,6 @@ my %import_formats = (
     'carrierid',
     'upstream_rateid',
   ],
-  'voxlinesystems' => [ #XXX get the actual vendor name
-    'disposition',                        #Status
-    'startdate',                          #Start (what do you know, a timestamp!
-    sub { my($cdr, $field) = @_; },       #Start date
-    sub { my($cdr, $field) = @_; },       #Start time
-    'enddate',                            #End (also a timestamp!)
-    sub { my($cdr, $field) = @_; },       #End date
-    sub { my($cdr, $field) = @_; },       #End time
-    'accountcode',                        #Calling customer... map to agent_custid??
-    sub { my($cdr, $field) = @_; },       #Calling type
-    'src',
-    #sub { my($cdr, $field) = @_; },       #Calling number
-    'userfield',                          #Calling name #?
-    sub { my($cdr, $field) = @_; },       #Called type
-    'dst',                                #Called number
-    sub { my($cdr, $field) = @_; },       #Destination customer
-    sub { my($cdr, $field) = @_; },       #Destination type
-    sub { my($cdr, $field) = @_; },       #Destination Number
-    sub { my($cdr, $field) = @_; },       #Inbound calling type
-    sub { my($cdr, $field) = @_; },       #Inbound calling number
-    #'src',
-    sub { my($cdr, $field) = @_; },       #Inbound called type
-    sub { my($cdr, $field) = @_; },       #Inbound called number
-    sub { my($cdr, $field) = @_; },       #Inbound destination type
-    sub { my($cdr, $field) = @_; },       #Inbound destination number
-    sub { my($cdr, $field) = @_; },       #Outbound calling type
-    sub { my($cdr, $field) = @_; },       #Outbound calling number
-    sub { my($cdr, $field) = @_; },       #Outbound called type
-    sub { my($cdr, $field) = @_; },       #Outbound called number
-    sub { my($cdr, $field) = @_; },       #Outbound destination type
-    sub { my($cdr, $field) = @_; },       #Outbound destination number
-    sub { my($cdr, $field) = @_; },       #Internal calling type
-    sub { my($cdr, $field) = @_; },       #Internal calling number
-    sub { my($cdr, $field) = @_; },       #Internal called type
-    sub { my($cdr, $field) = @_; },       #Internal called number
-    sub { my($cdr, $field) = @_; },       #Internal destination type
-    sub { my($cdr, $field) = @_; },       #Internal destination number
-    'duration',                           #Total seconds
-    sub { my($cdr, $field) = @_; },       #Ring seconds
-    'billsec',                            #Billable seconds
-    'upstream_price',                     #Cost
-    sub { my($cdr, $field) = @_; },       #Billing customer
-    sub { my($cdr, $field) = @_; },       #Billing customer name
-    sub { my($cdr, $field) = @_; },       #Billing type
-    sub { my($cdr, $field) = @_; },       #Billing reference
-  ],
   'simple' => [
 
     # Date
@@ -808,7 +761,6 @@ my %import_formats = (
 my %import_header = (
   'simple'         => 1,
   'taqua'          => 1,
-  'voxlinesystems' => 2, #XXX vendor name
 );
 
 =item batch_import HASHREF
