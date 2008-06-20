@@ -1847,6 +1847,8 @@ sub print_generic {
     'conf_dir'        => "$FS::UID::conf_dir/conf.$FS::UID::datasrc",
     'page'            => 1,
     'total_pages'     => 1,
+    'current_charges' => sprintf("%.2f", $self->charged),
+    'duedate'         => $self->due_date2str('%m/%d/%Y'), #date_format?
     'ship_enable'     => $conf->exists('invoice-ship_address'),
     'unitprices'      => $conf->exists('invoice-unitprice'),
   );
@@ -1895,7 +1897,8 @@ sub print_generic {
 #  my( $cr_total, @cr_cust_credit ) = $self->cust_credit; #credits
   #my $balance_due = $self->owed + $pr_total - $cr_total;
   my $balance_due = $self->owed + $pr_total;
-  $invoice_data{'balance'} = $balance_due;
+  $invoice_data{'previous_balance'} = sprintf("%.2f", $pr_total);
+  $invoice_data{'balance'} = sprintf("%.2f", $balance_due);
 
   #do variable substitution in notes, footer, smallfooter
   foreach my $include (qw( notes footer smallfooter coupon )) {
@@ -2119,6 +2122,7 @@ sub print_generic {
       unshift @total_items, $total;
     }
   }
+  $invoice_data{'taxtotal'} = sprintf('%.2f', $taxtotal);
   
   push @buf,['','-----------'];
   push @buf,[( $conf->exists('disable_previous_balance') 
@@ -2164,10 +2168,11 @@ sub print_generic {
     #foreach my $thing ( sort { $a->_date <=> $b->_date } $self->_items_credits, $self->_items_payments
   
     # credits
+    my $credittotal = 0;
     foreach my $credit ( $self->_items_credits ) {
       my $total;
       $total->{'total_item'} = &$escape_function($credit->{'description'});
-      #$credittotal
+      $credittotal += $credit->{'amount'};
       $total->{'total_amount'} = '-'. $other_money_char. $credit->{'amount'};
       $adjusttotal += $credit->{'amount'};
       if ( $multisection ) {
@@ -2185,6 +2190,7 @@ sub print_generic {
         push @total_items, $total;
       }
     }
+    $invoice_data{'credittotal'} = sprintf('%.2f', $credittotal);
   
     # credits (again)
     foreach ( $self->cust_credited ) {
@@ -2201,10 +2207,11 @@ sub print_generic {
     }
 
     # payments
+    my $paymenttotal = 0;
     foreach my $payment ( $self->_items_payments ) {
       my $total = {};
       $total->{'total_item'} = &$escape_function($payment->{'description'});
-      #$paymenttotal
+      $paymenttotal += $payment->{'amount'};
       $total->{'total_amount'} = '-'. $other_money_char. $payment->{'amount'};
       $adjusttotal += $payment->{'amount'};
       if ( $multisection ) {
@@ -2225,6 +2232,7 @@ sub print_generic {
                    $money_char. sprintf("%10.2f", $payment->{'amount'}),
                  ];
     }
+    $invoice_data{'paymenttotal'} = sprintf('%.2f', $paymenttotal);
   
     if ( $multisection ) {
       $adjust_section->{'subtotal'} = $other_money_char.
@@ -2484,6 +2492,16 @@ sub balance_due_msg {
     $msg .= ' - '. $self->terms;
   }
   $msg;
+}
+
+sub balance_due_date {
+  my $self = shift;
+  my $duedate = '';
+  if (    $conf->exists('invoice_default_terms') 
+       && $conf->config('invoice_default_terms')=~ /^\s*Net\s*(\d+)\s*$/ ) {
+    $duedate = time2str("%m/%d/%Y", $self->_date + ($1*86400) );
+  }
+  $duedate;
 }
 
 =item invnum_date_pretty
