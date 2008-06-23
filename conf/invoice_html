@@ -60,6 +60,22 @@
                 )
         %>
       </td>
+      <%= $ship_enable ? ('<td align="left">'.
+                          join('<BR>',grep length($_), '<b>Service Address</b>',
+                                                       $ship_company,
+                                                       $ship_address1,
+                                                       $ship_address2,
+                                                       "$ship_city,&nbsp;$ship_state&nbsp;$ship_zip",
+                                                       $ship_country,
+                                                       ' ',
+                                                       ' ',
+                              ).
+                           ($agent_custid ? "<b>ID:</b> $agent_custid<BR>" : '').
+                           ($ship_fax ? "<b>Fax:</b> $ship_fax<BR>" : '').
+                           '</td><tr><td></td><td></td>'
+                         )
+                       : ''
+      %>
       <td align="right">
         Terms: <%= $terms %><BR>
         <%= $po_line %>

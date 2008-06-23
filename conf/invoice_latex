@@ -204,7 +204,6 @@
 \hfill
 \makebox{
 \begin{minipage}[t]{6.4cm}
-\begin{flushright}
 [@--
   if ($ship_enable) {
     $OUT .= '\textbf{Service Address}\\\\';
@@ -221,6 +220,7 @@
     $OUT .= '';
   }
 --@]
+\begin{flushright}
 Terms: [@-- $terms --@]\\
 [@-- $po_line --@]\\
 \end{flushright}
