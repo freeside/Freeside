@@ -8,15 +8,12 @@
                    '#',
                    'Month',
                    'Amount',
-                   'Date',
                    FS::UI::Web::cust_header(),
                  ],
                  'fields'      => [
                    'exemptpkgnum',
                    sub { $_[0]->month. '/'. $_[0]->year; },
                    sub { $money_char. $_[0]->amount; },
-
-                   sub { time2str('%b %d %Y', shift->_date ) },
 
                    \&FS::UI::Web::cust_fields,
                  ],
@@ -25,22 +22,18 @@
                    '',
                    '',
 
-                   '',
-
                    ( map { $_ ne 'Cust. Status' ? $clink : '' }
                          FS::UI::Web::cust_header()
                    ),
                  ],
-                 'align' => 'rrrlrc'.FS::UI::Web::cust_aligns(), # 'rlrrrc',
+                 'align' => 'rrr'.FS::UI::Web::cust_aligns(),
                  'color' => [ 
-                              '',
                               '',
                               '',
                               '',
                               FS::UI::Web::cust_colors(),
                             ],
                  'style' => [ 
-                              '',
                               '',
                               '',
                               '',
@@ -59,12 +52,12 @@ die "access denied"
 
 my @where = ();
 
-my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
-if ( $beginning || $ending ) {
-  push @where, "_date >= $beginning",
-               "_date <= $ending";
-               #"payby != 'COMP';
-}
+#my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
+#if ( $beginning || $ending ) {
+#  push @where, "_date >= $beginning",
+#               "_date <= $ending";
+#               #"payby != 'COMP';
+#}
 
 if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
   push @where, "agentnum = $1";
