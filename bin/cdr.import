@@ -1,0 +1,25 @@
+#!/bin/sh
+#
+# Usage:
+#  cdr.import user format <filename
+#
+
+use strict;
+use FS::UID qw(adminsuidsetup);
+use FS::cdr;
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+my $format = shift or die &usage;
+
+my $error = FS::cdr::batch_import( {
+  'filehandle' => *STDIN{IO},
+  'format'     => $format,
+} );
+die $error if $error;
+
+sub usage {
+  "Usage: \n  cdr.import user format <filename\n";
+}
+
