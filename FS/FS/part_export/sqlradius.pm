@@ -677,16 +677,26 @@ sub update_svc_acct {
     } elsif ( scalar(@svc_acct) > 1 ) {
       warn "WARNING: multiple svc_acct records found $errinfo - skipping\n";
     } else {
-      warn "found svc_acct ". $svc_acct[0]->svcnum. " $errinfo\n" if $DEBUG;
-      $svc_acct[0]->last_login($AcctStartTime);
-      $svc_acct[0]->last_logout($AcctStopTime);
-      my @stati;
-      push @stati, _try_decrement($svc_acct[0], 'seconds', $AcctSessionTime);
-      push @stati, _try_decrement($svc_acct[0], 'upbytes', $AcctInputOctets);
-      push @stati, _try_decrement($svc_acct[0], 'downbytes', $AcctOutputOctets);
-      push @stati, _try_decrement($svc_acct[0], 'totalbytes', $AcctInputOctets + 
-                     $AcctOutputOctets);
-      $status=join(' ', @stati);
+
+      my $svc_acct = $svc_acct[0];
+      warn "found svc_acct ". $svc_acct->svcnum. " $errinfo\n" if $DEBUG;
+
+      $svc_acct->last_login($AcctStartTime);
+      $svc_acct->last_logout($AcctStopTime);
+
+      my $cust_pkg = $svc_acct->cust_svc->cust_pkg;
+      if ( $cust_pkg && $AcctStopTime < (    $cust_pkg->last_bill
+                                          || $cust_pkg->setup     )  ) {
+        $status = 'skipped (too old)';
+      } else {
+        my @st;
+        push @st, _try_decrement($svc_acct, 'seconds',    $AcctSessionTime   );
+        push @st, _try_decrement($svc_acct, 'upbytes',    $AcctInputOctets   );
+        push @st, _try_decrement($svc_acct, 'downbytes',  $AcctOutputOctets  );
+        push @st, _try_decrement($svc_acct, 'totalbytes', $AcctInputOctets
+                                                          + $AcctOutputOctets);
+        $status=join(' ', @st);
+      }
     }
 
     warn "setting FreesideStatus to $status $errinfo\n" if $DEBUG; 
