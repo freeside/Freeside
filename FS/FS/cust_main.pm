@@ -2068,15 +2068,14 @@ sub bill {
   # & generate invoice database.
   ###
 
-  my( $total_setup, $total_recur ) = ( 0, 0 );
+  my( $total_setup, $total_recur, $postal_charge ) = ( 0, 0, 0 );
   my %tax;
   my %taxlisthash;
   my %taxname;
   my @precommit_hooks = ();
 
-  foreach my $cust_pkg (
-    qsearch('cust_pkg', { 'custnum' => $self->custnum } )
-  ) {
+  my @cust_pkgs = qsearch('cust_pkg', { 'custnum' => $self->custnum } );
+  foreach my $cust_pkg (@cust_pkgs) {
 
     #NO!! next if $cust_pkg->cancel;  
     next if $cust_pkg->getfield('cancel');  
@@ -2242,6 +2241,17 @@ sub bill {
   
         if ( $setup != 0 || $recur != 0 ) {
   
+          unless ($postal_charge) {
+            $postal_charge = 1;  # try only once
+            my $postal_pkg = $self->charge_postal_fee();
+            if ( $postal_pkg && !ref( $postal_pkg ) ) {
+              $dbh->rollback if $oldAutoCommit;
+              return "can't charge postal invoice fee for customer ".
+                $self->custnum. ": $postal_pkg";
+            }
+            push @cust_pkgs, $postal_pkg if $postal_pkg;
+          }
+
           warn "    charges (setup=$setup, recur=$recur); adding line items\n"
             if $DEBUG > 1;
           my $cust_bill_pkg = new FS::cust_bill_pkg {
@@ -4762,6 +4772,33 @@ sub charge {
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
 
+}
+
+#=item charge_postal_fee
+#
+#Applies a one time charge this customer.  If there is an error,
+#returns the error, returns the cust_pkg charge object or false
+#if there was no charge.
+#
+#=cut
+#
+# This should be a customer event.  For that to work requires that bill
+# also be a customer event.
+
+sub charge_postal_fee {
+  my $self = shift;
+
+  my $pkgpart = $conf->config('postal_invoice-fee_pkgpart');
+  return '' unless ($pkgpart && grep { $_ eq 'POST' } $self->invoicing_list);
+
+  my $cust_pkg = new FS::cust_pkg ( {
+    'custnum'  => $self->custnum,
+    'pkgpart'  => $pkgpart,
+    'quantity' => 1,
+  } );
+
+  my $error = $cust_pkg->insert;
+  $error ? $error : $cust_pkg;
 }
 
 =item cust_bill

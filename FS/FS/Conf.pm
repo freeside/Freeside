@@ -1882,6 +1882,25 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'postal_invoice-fee_pkgpart',
+    'section'     => 'billing',
+    'description' => 'This allows selection of a package to insert on invoices for customers with postal invoices selected.',
+    'type'        => 'select-sub',
+    'options_sub' => sub { require FS::Record;
+                           require FS::part_pkg;
+			   map { $_->pkgpart => $_->pkg }
+                               FS::Record::qsearch('part_pkg', { disabled=>'' } );
+			 },
+    'option_sub'  => sub { require FS::Record;
+                           require FS::part_pkg;
+			   my $part_pkg = FS::Record::qsearchs(
+			     'part_pkg', { 'pkgpart'=>shift }
+			   );
+                           $part_pkg ? $part_pkg->pkg : '';
+			 },
+  },
+
+  {
     'key'         => 'batch-enable',
     'section'     => 'billing',
     'description' => 'Enable credit card and/or ACH batching - leave disabled for real-time installations.',
