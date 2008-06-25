@@ -557,19 +557,27 @@ sub apply_payments_and_credits {
 
 }
 
-=item generate_email PARAMHASH
+=item generate_email OPTION => VALUE ...
 
-PARAMHASH can contain the following:
+Options:
 
 =over 4
 
-=item from       => sender address, required
+=item from
 
-=item tempate    => alternate template name, optional
+sender address, required
 
-=item print_text => text attachment arrayref, optional
+=item tempate
 
-=item subject    => email subject, optional
+alternate template name, optional
+
+=item print_text
+
+text attachment arrayref, optional
+
+=item subject
+
+email subject, optional
 
 =back
 

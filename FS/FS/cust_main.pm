@@ -5259,15 +5259,24 @@ Available options are:
 
 =over 4
 
-=item unapplied_date - set to true to disregard unapplied credits, payments and refunds outside the specified time period - by default the time period restriction only applies to invoices (useful for reporting, probably a bad idea for event triggering)
+=item unapplied_date
 
-=item total - set to true to remove all customer comparison clauses, for totals
+set to true to disregard unapplied credits, payments and refunds outside the specified time period - by default the time period restriction only applies to invoices (useful for reporting (or is it?), probably a bad idea for event triggering)
 
-=item where - WHERE clause hashref (elements "AND"ed together) (typically used with the total option)
+=item total
 
-=item join - JOIN clause (typically used with the total option)
+(unused.  obsolete?)
+set to true to remove all customer comparison clauses, for totals
 
-=item 
+=item where
+
+(unused.  obsolete?)
+WHERE clause hashref (elements "AND"ed together) (typically used with the total option)
+
+=item join
+
+(unused.  obsolete?)
+JOIN clause (typically used with the total option)
 
 =back
 
