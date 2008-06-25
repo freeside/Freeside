@@ -154,7 +154,7 @@ sub upgrade_sqlradius {
     if ( $sth_index ) {
       unless ( $sth_index->execute ) {
         my $error = $sth_index->errstr;
-        warn $errmsg.$error; #unless $error =~ /exists/i;
+        warn $errmsg.$error unless $error =~ /Duplicate key name/i;
       }
     } else {
       my $error = $dbh->errstr;
