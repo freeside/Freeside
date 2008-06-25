@@ -136,7 +136,9 @@ sub handler
       use FS::UID qw( adminsuidsetup cgisuidsetup getotaker
                       dbh datasrc driver_name
                     );
-      use FS::Record qw(qsearch qsearchs fields dbdef str2time_sql);
+      use FS::Record qw( qsearch qsearchs fields dbdef
+                        str2time_sql str2time_sql_closing
+                       );
       use FS::Conf;
       use FS::CGI qw(header menubar popurl rooturl table itable ntable idiot
                      eidiot myexit http_header);

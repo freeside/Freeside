@@ -24,7 +24,8 @@ use Tie::IxHash;
 @ISA = qw(Exporter);
 
 #export dbdef for now... everything else expects to find it here
-@EXPORT_OK = qw(dbh fields hfields qsearch qsearchs dbdef jsearch str2time_sql);
+@EXPORT_OK = qw(dbh fields hfields qsearch qsearchs dbdef jsearch
+                str2time_sql str2time_sql_closing );
 
 $DEBUG = 0;
 $me = '[FS::Record]';
