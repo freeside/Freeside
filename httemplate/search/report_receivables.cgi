@@ -107,7 +107,7 @@ unless ( $cgi->param('all_customers') ) {
     $days = $1;
   }
 
-  push @where, balance($days, 0, 'no_as'=>1). " > 0";
+  push @where, balance($days, 0, 'no_as'=>1). ' > 0'; # != 0';
 
 }
 
@@ -132,10 +132,8 @@ my $sql_query = {
   'order_by'  => "order by coalesce(lower(company), ''), lower(last)",
 };
 
-my $join = 'LEFT JOIN cust_main USING ( custnum )';
-
-my $total_sql = "SELECT ".
-  join(',', map balance( @$_, total=>1, join=>$join, where=>\@where ), @ranges);
+my $total_sql = "SELECT ". join(',', map balance( @$_, 'sum'=>1 ), @ranges).
+                " FROM cust_main $where";
 
 my $total_sth = dbh->prepare($total_sql) or die dbh->errstr;
 $total_sth->execute or die "error executing $total_sql: ". $total_sth->errstr;
@@ -157,7 +155,9 @@ my $money_char = $conf->config('money_char') || '$';
 #   'no_as'  => 1, #set to true when using in a WHERE clause (supress AS clause)
 #                 #or 0 / omit when using in a SELECT clause as a column
 #                 #  ("AS balance_$start_$end")
-#   #options for totals
+#   'sum'    => 1, #set to true to get a SUM() of the values, for totals
+#
+#   #obsolete? options for totals (passed to cust_main::balance_date_sql)
 #   'total'  => 1, #set to true to remove all customer comparison clauses
 #   'join'   => $join,   #JOIN clause
 #   'where'  => \@where, #WHERE clause hashref (elements "AND"ed together)
@@ -170,12 +170,16 @@ sub balance {
 
   #handle start and end ranges (86400 = 24h * 60m * 60s)
   my $str2time = str2time_sql;
-  $start = $start ? "( $str2time now() ) - ".($start * 86400). ' )' : '';
-  $end   = $end   ? "( $str2time now() ) - ".($end   * 86400). ' )' : '';
+  my $closing = str2time_sql_closing;
+  $start = $start ? "( $str2time now() $closing - ".($start * 86400). ' )' : '';
+  $end   = $end   ? "( $str2time now() $closing - ".($end   * 86400). ' )' : '';
 
-  $opt{'unapplied_date'} = 1;
+  #$opt{'unapplied_date'} = 1;
 
-  FS::cust_main->balance_date_sql( $start, $end, %opt ). $as;
+  ( $opt{sum} ? 'SUM( ' : '' ). 
+  FS::cust_main->balance_date_sql( $start, $end, %opt ).
+  ( $opt{sum} ? ' )' : '' ). 
+  $as;
 
 }
 
