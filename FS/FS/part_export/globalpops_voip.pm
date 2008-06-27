@@ -7,8 +7,8 @@ use FS::part_export;
 @ISA = qw(FS::part_export);
 
 tie my %options, 'Tie::IxHash',
-  'login'    => { label=>'GlobalPOPs Media Services API login',
-  'password' => { label=>'GlobalPOPs Media Services API password',
+  'login'    => { label=>'GlobalPOPs Media Services API login' },
+  'password' => { label=>'GlobalPOPs Media Services API password' },
 ;
 
 %info = (
@@ -69,7 +69,7 @@ sub globalpops_voip_command {
   my($login, $password, $method, @args) = @_;
 
   eval "use Net::GlobalPOPs::MediaServicesAPI;";
-  die $@ if $@:
+  die $@ if $@;
 
   my $gp = new Net::GlobalPOPs
                  'login'    => $login,
