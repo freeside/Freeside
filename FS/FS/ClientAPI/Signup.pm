@@ -16,6 +16,7 @@ use FS::svc_acct_pop;
 use FS::cust_main;
 use FS::cust_pkg;
 use FS::svc_acct;
+use FS::svc_phone;
 use FS::acct_snarf;
 use FS::queue;
 use FS::reg_code;
@@ -29,6 +30,7 @@ sub signup_info {
   warn "$me signup_info called on $packet\n" if $DEBUG;
 
   my $conf = new FS::Conf;
+  my $svc_x = $conf->config('signup_server-service') || 'svc_acct';
 
   my $cache = new FS::ClientAPI_SessionCache( {
     'namespace' => 'FS::ClientAPI::Signup',
@@ -54,7 +56,7 @@ sub signup_info {
                       'options'     => { $_->options },
                       %{$_->hashref}
                   } }
-                grep { $_->svcpart('svc_acct') && $href->{ $_->pkgpart } }
+                grep { $_->svcpart($svc_x) && $href->{ $_->pkgpart } }
                   qsearch( 'part_pkg', { 'disabled' => '' } )
             ];
         } qsearch('agent', { 'disabled' => '' })
@@ -117,6 +119,8 @@ sub signup_info {
       'refnum' => scalar($conf->config('signup_server-default_refnum')),
 
       'default_pkgpart' => scalar($conf->config('signup_server-default_pkgpart')),
+
+      'signup_service' => $svc_x,
 
     };
 
@@ -208,7 +212,7 @@ sub signup_info {
                 %{$_->hashref}
               };
             }
-          grep { $_->svcpart('svc_acct') }
+          grep { $_->svcpart($svc_x) }
           map { $_->part_pkg }
             qsearchs( 'reg_code', { 'code'     => $packet->{'reg_code'},
                                     'agentnum' => $agentnum,              } )
@@ -230,7 +234,7 @@ sub signup_info {
                 'options'     => { $_->options },
                 %{$_->hashref}
             } }
-          grep { $_->svcpart('svc_acct') }
+          grep { $_->svcpart($svc_x) }
             qsearch( 'part_pkg', { 'promo_code' => {
                                      op=>'ILIKE',
                                      value=>$packet->{'promo_code'}
@@ -317,15 +321,20 @@ sub new_customer {
   my $packet = shift;
 
   my $conf = new FS::Conf;
+  my $svc_x = $conf->config('signup_server-service') || 'svc_acct';
+
+  if ( $svc_x eq 'svc_acct' ) {
   
-  #things that aren't necessary in base class, but are for signup server
-    #return "Passwords don't match"
-    #  if $hashref->{'_password'} ne $hashref->{'_password2'}
-  return { 'error' => gettext('empty_password') }
-    unless length($packet->{'_password'});
-  # a bit inefficient for large numbers of pops
-  return { 'error' => gettext('no_access_number_selected') }
-    unless $packet->{'popnum'} || !scalar(qsearch('svc_acct_pop',{} ));
+    #things that aren't necessary in base class, but are for signup server
+      #return "Passwords don't match"
+      #  if $hashref->{'_password'} ne $hashref->{'_password2'}
+    return { 'error' => gettext('empty_password') }
+      unless length($packet->{'_password'});
+    # a bit inefficient for large numbers of pops
+    return { 'error' => gettext('no_access_number_selected') }
+      unless $packet->{'popnum'} || !scalar(qsearch('svc_acct_pop',{} ));
+
+  }
 
   my $agentnum;
   if ( exists $packet->{'session_id'} ) {
@@ -389,7 +398,7 @@ sub new_customer {
   my $part_pkg =
     qsearchs( 'part_pkg', { 'pkgpart' => $pkgpart } )
       or return { 'error' => "WARNING: unknown pkgpart: $pkgpart" };
-  my $svcpart = $part_pkg->svcpart('svc_acct');
+  my $svcpart = $part_pkg->svcpart($svc_x);
 
   my $reg_code = '';
   if ( $packet->{'reg_code'} ) {
@@ -407,31 +416,47 @@ sub new_customer {
   #my $error = $cust_pkg->check;
   #return { 'error' => $error } if $error;
 
-  my $svc_acct = new FS::svc_acct ( {
-    'svcpart'   => $svcpart,
-    map { $_ => $packet->{$_} }
-      qw( username _password sec_phrase popnum ),
-  } );
+  #should be all auto-magic and shit
+  my $svc;
+  if ( $svc_x eq 'svc_acct' ) {
 
-  my @acct_snarf;
-  my $snarfnum = 1;
-  while (    exists($packet->{"snarf_machine$snarfnum"})
-          && length($packet->{"snarf_machine$snarfnum"}) ) {
-    my $acct_snarf = new FS::acct_snarf ( {
-      'machine'   => $packet->{"snarf_machine$snarfnum"},
-      'protocol'  => $packet->{"snarf_protocol$snarfnum"},
-      'username'  => $packet->{"snarf_username$snarfnum"},
-      '_password' => $packet->{"snarf_password$snarfnum"},
+    my $svc = new FS::svc_acct ( {
+      'svcpart'   => $svcpart,
+      map { $_ => $packet->{$_} }
+        qw( username _password sec_phrase popnum ),
     } );
-    $snarfnum++;
-    push @acct_snarf, $acct_snarf;
-  }
-  $svc_acct->child_objects( \@acct_snarf );
 
-  my $y = $svc_acct->setdefault; # arguably should be in new method
+    my @acct_snarf;
+    my $snarfnum = 1;
+    while (    exists($packet->{"snarf_machine$snarfnum"})
+            && length($packet->{"snarf_machine$snarfnum"}) ) {
+      my $acct_snarf = new FS::acct_snarf ( {
+        'machine'   => $packet->{"snarf_machine$snarfnum"},
+        'protocol'  => $packet->{"snarf_protocol$snarfnum"},
+        'username'  => $packet->{"snarf_username$snarfnum"},
+        '_password' => $packet->{"snarf_password$snarfnum"},
+      } );
+      $snarfnum++;
+      push @acct_snarf, $acct_snarf;
+    }
+    $svc->child_objects( \@acct_snarf );
+
+  } elsif ( $svc_x eq 'svc_phone' ) {
+
+    my $svc = new FS::svc_phone ( {
+      'svcpart' => $svcpart,
+       map { $_ => $packet->{$_} }
+         qw( countrycode phonenum pin ),
+    } );
+
+  } else {
+    die "unknown signup service $svc_x";
+  }
+
+  my $y = $svc->setdefault; # arguably should be in new method
   return { 'error' => $y } if $y && !ref($y);
 
-  #$error = $svc_acct->check;
+  #$error = $svc->check;
   #return { 'error' => $error } if $error;
 
   #setup a job dependancy to delay provisioning
@@ -444,7 +469,7 @@ sub new_customer {
 
   use Tie::RefHash;
   tie my %hash, 'Tie::RefHash';
-  %hash = ( $cust_pkg => [ $svc_acct ] );
+  %hash = ( $cust_pkg => [ $svc ] );
   #msgcat
   $error = $cust_main->insert(
     \%hash,

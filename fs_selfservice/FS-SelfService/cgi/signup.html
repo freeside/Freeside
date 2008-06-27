@@ -1,4 +1,4 @@
-<HTML><HEAD><TITLE><%= $agent || 'ISP' %> Signup form</TITLE></HEAD>
+<HTML><HEAD><TITLE><%= $agent || ( $signup_service eq 'svc_phone' ? 'ITSP' : 'ISP' ) %> Signup form</TITLE></HEAD>
 <BODY BGCOLOR="#e8e8e8" onUnload="myclose()">
 <script language="JavaScript"><!--
   var mywindow = -1;
@@ -256,32 +256,51 @@ HTML::Widgets::SelectLayers->new(
 
   </SELECT></TD>
 </TR>
+<%=
+  if ( $signup_service eq 'svc_phone' ) {
+
+    $OUT .= '<TR><TD ALIGN="right">Phone number</TD><TD>'.
+            didselector().
+            '</TD></TR>';
+
+    $OUT .= <<ENDOUT;
+<TR>
+  <TD ALIGN="right">Voicemail PIN</TD>
+  <TD><INPUT TYPE="pin" NAME="pin" VALUE="$pin"></TD>
+</TR>
+ENDOUT
+
+  } else {
+
+    $OUT .= <<ENDOUT;
 <TR>
   <TD ALIGN="right">Username</TD>
-  <TD><INPUT TYPE="text" NAME="username" VALUE="<%= $username %>"></TD>
+  <TD><INPUT TYPE="text" NAME="username" VALUE="$username"></TD>
 </TR>
 <TR>
   <TD ALIGN="right">Password</TD>
-  <TD><INPUT TYPE="password" NAME="_password" VALUE="<%= $_password %>"></TD>
+  <TD><INPUT TYPE="password" NAME="_password" VALUE="$_password"></TD>
 </TR>
 <TR>
   <TD ALIGN="right">Re-enter Password</TD>
-  <TD><INPUT TYPE="password" NAME="_password2" VALUE="<%= $_password2 %>"></TD>
+  <TD><INPUT TYPE="password" NAME="_password2" VALUE="$_password2"></TD>
 </TR>
-<%=
-  if ( $security_phrase ) {
-    $OUT .= <<ENDOUT;
+ENDOUT
+
+    if ( $security_phrase ) {
+      $OUT .= <<SECPHRASE;
 <TR>
   <TD ALIGN="right">Security Phrase</TD>
   <TD><INPUT TYPE="text" NAME="sec_phrase" VALUE="$sec_phrase">
   </TD>
 </TR>
-ENDOUT
-  } else {
-    $OUT .= '<INPUT TYPE="hidden" NAME="sec_phrase" VALUE="">';
+SECPHRASE
+    } else {
+      $OUT .= '<INPUT TYPE="hidden" NAME="sec_phrase" VALUE="">';
+    }
+
   }
-%>
-<%=
+
   if ( @svc_acct_pop ) {
     $OUT .= '<TR><TD ALIGN="right">Access number</TD><TD>'.
             popselector( 'popnum'        => $popnum,
@@ -294,7 +313,9 @@ ENDOUT
   } else {
     $OUT .= popselector(popnum=>$popnum, pops=>\@svc_acct_pop);
   }
+
 %>
+
 </TABLE>
 
 <%= 

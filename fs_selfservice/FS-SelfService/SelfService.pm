@@ -58,7 +58,7 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'agent_info'                => 'Agent/agent_info',
   'agent_list_customers'      => 'Agent/agent_list_customers',
 );
-@EXPORT_OK = ( keys(%autoload), qw( regionselector expselect popselector domainselector) );
+@EXPORT_OK = ( keys(%autoload), qw( regionselector expselect popselector domainselector didselector) );
 
 $ENV{'PATH'} ='/usr/bin:/usr/ucb:/bin';
 $ENV{'SHELL'} = '/bin/sh';
@@ -1434,6 +1434,30 @@ sub domainselector {
   $text .= qq!</SELECT></TD></TR>!;
 
   $text;
+
+}
+
+=item didselector HASHREF | LIST
+
+Takes as input a hashref or list of key/value pairs with the following keys:
+
+=over 4
+
+=back
+
+Returns an HTML fragment for DID selection.
+
+=cut
+
+sub didselector {
+  my $param;
+  if ( ref($_[0]) ) {
+    $param = shift;
+  } else {
+    $param = { @_ };
+  }
+
+  return "choose your DID XXX";
 
 }
 

@@ -1257,7 +1257,7 @@ worry that config_items is freeside-specific and icky.
   {
     'key'         => 'signup_server-default_pkgpart',
     'section'     => '',
-    'description' => 'Default pakcage for the signup server',
+    'description' => 'Default package for the signup server',
     'type'        => 'select-sub',
     'options_sub' => sub { require FS::Record;
                            require FS::part_pkg;
@@ -1275,6 +1275,17 @@ worry that config_items is freeside-specific and icky.
 			     ? $part_pkg->pkg.' - '.$part_pkg->comment
 			     : '';
 			 },
+  },
+
+  {
+    'key'         => 'signup_server-service',
+    'section'     => '',
+    'description' => 'Service for the signup server - "Account (svc_acct)" is the default setting, or "Phone number (svc_phone)" for ITSP signup',
+    'type'        => 'select',
+    'select_hash' => [
+                       'svc_acct'  => 'Account (svc_acct)',
+                       'svc_phone' => 'Phone number (svc_phone)',
+                     ],
   },
 
   {

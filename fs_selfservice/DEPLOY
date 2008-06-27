@@ -10,7 +10,8 @@ cd FS-SelfService
 perl Makefile.PL && make && make install
 cd ..
 
-( cd ..; make deploy; cd fs_selfservice )
+#( cd ..; make deploy; cd fs_selfservice )
+( cd ..; make clean; make install-perl-modules; /etc/init.d/freeside restart; cd fs_selfservice )
 
 #cp /home/ivan/freeside/fs_selfservice/FS-SelfService/cgi/* /var/www/MyAccount
 #chown freeside /var/www/MyAccount/*.cgi
