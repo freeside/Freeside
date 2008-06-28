@@ -1,0 +1,91 @@
+<% include('/elements/xmlhttp.html',
+              'url'  => $p.'misc/areacodes.cgi',
+              'subs' => [ $opt{'prefix'}. 'get_areacodes' ],
+          )
+%>
+
+<SCRIPT TYPE="text/javascript">
+
+  function opt(what,value,text) {
+    var optionName = new Option(text, value, false, false);
+    var length = what.length;
+    what.options[length] = optionName;
+  }
+
+  function <% $opt{'prefix'} %>state_changed(what, callback) {
+
+    what.form.<% $opt{'prefix'} %>areacode.disabled = 'disabled';
+    what.form.<% $opt{'prefix'} %>areacode.style.display = 'none';
+    var areacodewait = document.getElementById('<% $opt{'prefix'} %>areacodewait');
+    areacodewait.style.display = '';
+    var areacodeerror = document.getElementById('<% $opt{'prefix'} %>areacodeerror');
+    areacodeerror.style.display = 'none';
+
+    what.form.<% $opt{'prefix'} %>exchange.disabled = 'disabled';
+    what.form.<% $opt{'prefix'} %>phonenum.disabled = 'disabled';
+
+    state = what.options[what.selectedIndex].value;
+
+    function <% $opt{'prefix'} %>update_areacodes(areacodes) {
+
+      // blank the current areacode
+      for ( var i = what.form.<% $opt{'prefix'} %>areacode.length; i >= 0; i-- )
+          what.form.<% $opt{'prefix'} %>areacode.options[i] = null;
+      // blank the current exchange too
+      for ( var i = what.form.<% $opt{'prefix'} %>exchange.length; i >= 0; i-- )
+          what.form.<% $opt{'prefix'} %>exchange.options[i] = null;
+      opt(what.form.<% $opt{'prefix'} %>exchange, '', 'Select city / exchange');
+      // blank the current phonenum too
+      for ( var i = what.form.<% $opt{'prefix'} %>phonenum.length; i >= 0; i-- )
+          what.form.<% $opt{'prefix'} %>phonenum.options[i] = null;
+      opt(what.form.<% $opt{'prefix'} %>phonenum, '', 'Select phone number');
+
+%     if ($opt{empty}) {
+        opt(what.form.<% $opt{'prefix'} %>areacode, '', '<% $opt{empty} %>');
+%     }
+
+      // add the new areacodes
+      var areacodeArray = eval('(' + areacodes + ')' );
+      for ( var s = 0; s < areacodeArray.length; s++ ) {
+          var areacodeLabel = areacodeArray[s];
+          if ( areacodeLabel == "" )
+              areacodeLabel = '(n/a)';
+          opt(what.form.<% $opt{'prefix'} %>areacode, areacodeArray[s], areacodeLabel);
+      }
+
+      areacodewait.style.display = 'none';
+      if ( areacodeArray.length >= 1 ) {
+        what.form.<% $opt{'prefix'} %>areacode.disabled = '';
+        what.form.<% $opt{'prefix'} %>areacode.style.display = '';
+      } else {
+        var areacodeerror = document.getElementById('<% $opt{'prefix'} %>areacodeerror');
+        areacodeerror.style.display = '';
+      }
+
+      //run the callback
+      if ( callback != null ) 
+        callback();
+    }
+
+    // go get the new areacodes
+    <% $opt{'prefix'} %>get_areacodes( state, <% $opt{'svcpart'} %>, <% $opt{'prefix'} %>update_areacodes );
+
+  }
+
+</SCRIPT>
+
+<DIV ID="areacodewait" STYLE="display:none"><IMG SRC="<%$fsurl%>images/wait-orange.gif"> <B>Finding area codes</B></DIV>
+
+<DIV ID="areacodeerror" STYLE="display:none"><IMG SRC="<%$fsurl%>images/cross.png"> <B>Select a different state</B></DIV>
+
+<SELECT NAME="<% $opt{'prefix'} %>areacode" onChange="<% $opt{'prefix'} %>areacode_changed(this); <% $opt{'onchange'} %>" <% $opt{'disabled'} %>>
+  <OPTION VALUE="">Select area code</OPTION>
+</SELECT>
+
+<%init>
+
+my %opt = @_;
+
+$opt{disabled} = 'disabled' unless exists $opt{disabled};
+
+</%init>

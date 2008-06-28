@@ -28,6 +28,8 @@
 
                    $part_svc = qsearchs( 'part_svc', { svcpart=>$svcpart });
                    die "No part_svc entry!" unless $part_svc;
+
+                   $svc_x->setfield('svcpart', $svcpart);
                  },
 
                  'edit_callback' => sub {
@@ -43,7 +45,7 @@
                    die "No part_svc entry!" unless $part_svc;
                  },
 
-                 'new_hash_callback' => sub {
+                 'new_hashref_callback' => sub {
                    #my( $cgi, $svc_x ) = @_;
 
                    { svcpart => $svcpart };

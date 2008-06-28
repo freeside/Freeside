@@ -1,0 +1,44 @@
+<% $opt{'prefix'} %><INPUT TYPE  = "<% $opt{type} || 'text' %>"
+                           NAME  = "<% $opt{field} %>"
+                           ID    = "<% $opt{id} %>"
+                           VALUE = "<% $value |h %>"
+                           <% $size %>
+                           <% $maxlength %>
+                           <% $style %>
+                           <% $opt{disabled} %>
+                           <% $onchange %>
+                    ><% $opt{'postfix'} %>
+<%init>
+
+my %opt = @_;
+
+my $value = length($opt{curr_value}) ? $opt{curr_value} : $opt{value};
+
+my $onchange = $opt{'onchange'}
+                 ? 'onChange="'. $opt{'onchange'}. '(this)"'
+                 : '';
+
+my $size = $opt{'size'}
+             ? 'SIZE="'. $opt{'size'}. '"'
+             : '';
+
+my $maxlength = $opt{'maxlength'}
+                ? 'MAXLENGTH="'. $opt{'maxlength'}. '"'
+                : '';
+
+$opt{'disabled'} = &{ $opt{'disabled'} }( \%opt )
+  if ref($opt{'disabled'}) eq 'CODE';
+$opt{'disabled'} = 'DISABLED'
+  if $opt{'disabled'} && $opt{'disabled'} !~ /disabled/i; # uuh... yeah?
+
+my @style = ();
+
+push @style, 'text-align: '. $opt{'text-align'}
+  if $opt{'text-align'};
+
+push @style, 'background-color: #dddddd'
+  if $opt{'disabled'};
+
+my $style = scalar(@style) ? 'STYLE="'. join(';', @style). '"' : '';
+
+</%init>

@@ -24,6 +24,181 @@ END
 
 sub rebless { shift; }
 
+sub get_dids {
+  my $self = shift;
+  my %opt = ref($_[0]) ? %{$_[0]} : @_;
+
+  my %search = ();
+  #  'orderby' => 'npa', #but it doesn't seem to work :/
+
+  if ( $opt{'areacode'} && $opt{'exchange'} ) { #return numbers
+    %getdids = ( 'npa'   => $opt{'areacode'},
+                 'nxx'   => $opt{'exchange'},
+               );
+  } elsif ( $opt{'areacode'} ) { #return city (npa-nxx-XXXX)
+    %getdids = ( 'npa'   => $opt{'areacode'} );
+  } elsif ( $opt{'state'} ) {
+    %getdids = ( 'state' => $opt{'state'} );
+  }
+
+  my $dids = $self->gp_command('getDIDs', %getdids);
+
+  #use Data::Dumper;
+  #warn Dumper($dids);
+
+  my $search = $dids->{'search'};
+
+  #warn Dumper($search);
+
+  if ( $search->{'statuscode'} == 302200 ) {
+    return [];
+  } elsif ( $search->{'statuscode'} != 100 ) {
+    die "Error running globalpop getDIDs: ".
+        $search->{'statuscode'}. ': '. $search->{'status'}; #die??
+  }
+
+  my @return = ();
+
+  #my $latas = $search->{state}{lata};
+
+  my %latas;
+  if ( grep $search->{state}{lata}{$_}, qw(name rate_center) ) {
+    %latas = map $search->{state}{lata}{$_},
+                 qw(name rate_center);
+  } else {
+    %latas = %{ $search->{state}{lata} };
+  } 
+
+  foreach my $lata ( keys %latas ) {
+
+    #warn "LATA $lata";
+    
+    #my $l = $latas{$lata};
+    #$l = $l->{rate_center} if exists $l->{rate_center};
+    
+    my $lata_dids = $self->gp_command('getDIDs', %getdids, 'lata'=>$lata);
+    my $lata_search = $lata_dids->{'search'};
+    unless ( $lata_search->{'statuscode'} == 100 ) {
+      die "Error running globalpop getDIDs: ". $lata_search->{'status'}; #die??
+    }
+   
+    my $l = $lata_search->{state}{lata}{'rate_center'};
+
+    #use Data::Dumper;
+    #warn Dumper($l);
+
+    my %rate_center;
+    if ( grep $l->{$_}, qw(name friendlyname) ) {
+      %rate_center = map $l->{$_},
+                         qw(name friendlyname);
+    } else {
+      %rate_center = %$l;
+    } 
+
+    foreach my $rate_center ( keys %rate_center ) {
+      
+      #warn "rate center $rate_center";
+
+      my $rc = $rate_center{$rate_center}; 
+      $rc = $rc->{friendlyname} if exists $rc->{friendlyname};
+
+      my @r = ();
+      if ( exists($rc->{npa}) ) {
+        @r = ($rc);
+      } else {
+        @r = map { { 'name'=>$_, %{ $rc->{$_} } }; } keys %$rc
+      }
+
+      foreach my $r (@r) {
+
+        my @npa = ();
+        if ( exists($r->{npa}{name}) ) {
+          @npa = ($r->{npa})
+        } else {
+          @npa = map { { 'name'=>$_, %{ $r->{npa}{$_} } } } keys %{ $r->{npa} };
+        }
+
+        foreach my $npa (@npa) {
+
+          if ( $opt{'areacode'} && $opt{'exchange'} ) { #return numbers
+
+            #warn Dumper($npa);
+
+            my $tn = $npa->{nxx}{tn} || $npa->{nxx}{$opt{'exchange'}}{tn};
+
+            my @tn = ref($tn) ? @$tn : ($tn);
+            #push @return, @tn;
+            push @return, map {
+                                if ( /^\s*(\d{3})(\d{3})(\d{4})\s*$/ ) {
+                                  "$1-$2-$3";
+                                } else {
+                                  $_;
+                                }
+                              }
+                              @tn;
+
+          } elsif ( $opt{'areacode'} ) { #return city (npa-nxx-XXXX)
+
+            if ( $npa->{nxx}{name} ) {
+              @nxx = ( $npa->{nxx}{name} );
+            } else {
+              @nxx = keys %{ $npa->{nxx} };
+            }
+
+            push @return, map { $r->{name}. ' ('. $npa->{name}. "-$_-XXXX)"; }
+                              @nxx;
+
+          } elsif ( $opt{'state'} ) { #and not other things, then return areacode
+            #my $ac = $npa->{name};
+            #use Data::Dumper;
+            #warn Dumper($r) unless length($ac) == 3;
+
+            push @return, $npa->{name}
+              unless grep { $_ eq $npa->{name} } @return;
+
+          } else {
+            warn "WARNING: returning nothing for get_dids without known options"; #?
+          }
+
+        } #foreach my $npa
+
+      } #foreach my $r
+
+    } #foreach my $rate_center
+
+  } #foreach my $lata
+
+  if ( $opt{'areacode'} && $opt{'exchange'} ) { #return numbers
+    @return = sort { $a cmp $b } @return; #string comparison actually dwiw
+  } elsif ( $opt{'areacode'} ) { #return city (npa-nxx-XXXX)
+    @return = sort { lc($a) cmp lc($b) } @return;
+  } elsif ( $opt{'state'} ) { #and not other things, then return areacode
+    #@return = sort { (split(' ', $a))[0] <=> (split(' ', $b))[0] } @return;
+    @return = sort { $a <=> $b } @return;
+  } else {
+    warn "WARNING: returning nothing for get_dids without known options"; #?
+  }
+
+  \@return;
+
+}
+
+sub gp_command {
+  my( $self, $command, @args ) = @_;
+
+  eval "use Net::GlobalPOPs::MediaServicesAPI;";
+  die $@ if $@;
+
+  my $gp = Net::GlobalPOPs::MediaServicesAPI->new(
+    'login'    => $self->option('login'),
+    'password' => $self->option('password'),
+    #'debug'    => $debug,
+  );
+
+  $gp->$command(@args);
+}
+
+
 sub _export_insert {
   my( $self, $svc_phone ) = (shift, shift);
   #we want to provision and catch errors now, not queue

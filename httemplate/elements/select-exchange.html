@@ -1,0 +1,86 @@
+<% include('/elements/xmlhttp.html',
+              'url'  => $p.'misc/exchanges.cgi',
+              'subs' => [ $opt{'prefix'}. 'get_exchanges' ],
+          )
+%>
+
+<SCRIPT TYPE="text/javascript">
+
+  function opt(what,value,text) {
+    var optionName = new Option(text, value, false, false);
+    var length = what.length;
+    what.options[length] = optionName;
+  }
+
+  function <% $opt{'prefix'} %>areacode_changed(what, callback) {
+
+    what.form.<% $opt{'prefix'} %>exchange.disabled = 'disabled';
+    what.form.<% $opt{'prefix'} %>exchange.style.display = 'none';
+    var exchangewait = document.getElementById('<% $opt{'prefix'} %>exchangewait');
+    exchangewait.style.display = '';
+    var exchangeerror = document.getElementById('<% $opt{'prefix'} %>exchangeerror');
+    exchangeerror.style.display = 'none';
+
+    what.form.<% $opt{'prefix'} %>phonenum.disabled = 'disabled';
+
+    areacode = what.options[what.selectedIndex].value;
+
+    function <% $opt{'prefix'} %>update_exchanges(exchanges) {
+
+      // blank the current exchange
+      for ( var i = what.form.<% $opt{'prefix'} %>exchange.length; i >= 0; i-- )
+          what.form.<% $opt{'prefix'} %>exchange.options[i] = null;
+      // blank the current phonenum too
+      for ( var i = what.form.<% $opt{'prefix'} %>phonenum.length; i >= 0; i-- )
+          what.form.<% $opt{'prefix'} %>phonenum.options[i] = null;
+      opt(what.form.<% $opt{'prefix'} %>phonenum, '', 'Select phone number');
+
+%     if ($opt{empty}) {
+        opt(what.form.<% $opt{'prefix'} %>exchange, '', '<% $opt{empty} %>');
+%     }
+
+      // add the new exchanges
+      var exchangeArray = eval('(' + exchanges + ')' );
+      for ( var s = 0; s < exchangeArray.length; s++ ) {
+          var exchangeLabel = exchangeArray[s];
+          if ( exchangeLabel == "" )
+              exchangeLabel = '(n/a)';
+          opt(what.form.<% $opt{'prefix'} %>exchange, exchangeArray[s], exchangeLabel);
+      }
+
+      exchangewait.style.display = 'none';
+      if ( exchangeArray.length >= 1 ) {
+        what.form.<% $opt{'prefix'} %>exchange.disabled = '';
+        what.form.<% $opt{'prefix'} %>exchange.style.display = '';
+      } else {
+        var exchangeerror = document.getElementById('<% $opt{'prefix'} %>exchangeerror');
+        exchangeerror.style.display = '';
+      }
+
+      //run the callback
+      if ( callback != null ) 
+        callback();
+    }
+
+    // go get the new exchanges
+    <% $opt{'prefix'} %>get_exchanges( areacode, <% $opt{'svcpart'} %>, <% $opt{'prefix'} %>update_exchanges );
+
+  }
+
+</SCRIPT>
+
+<DIV ID="exchangewait" STYLE="display:none"><IMG SRC="<%$fsurl%>images/wait-orange.gif"> <B>Finding cities / exchanges</B></DIV>
+
+<DIV ID="exchangeerror" STYLE="display:none"><IMG SRC="<%$fsurl%>images/cross.png"> <B>Select a different area code</B></DIV>
+
+<SELECT NAME="<% $opt{'prefix'} %>exchange" onChange="<% $opt{'prefix'} %>exchange_changed(this); <% $opt{'onchange'} %>" <% $opt{'disabled'} %>>
+  <OPTION VALUE="">Select city / exchange</OPTION>
+</SELECT>
+
+<%init>
+
+my %opt = @_;
+
+$opt{disabled} = 'disabled' unless exists $opt{disabled};
+
+</%init>

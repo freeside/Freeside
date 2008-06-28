@@ -6,6 +6,7 @@ use vars qw( $AUTOLOAD @ISA @EXPORT_OK $DEBUG
              %virtual_fields_cache $nowarn_identical $no_update_diff );
 use Exporter;
 use Carp qw(carp cluck croak confess);
+use Scalar::Util qw( blessed );
 use File::CounterFile;
 use Locale::Country;
 use DBI qw(:sql_types);
@@ -665,11 +666,11 @@ sub AUTOLOAD {
   $field =~ s/.*://;
   if ( defined($value) ) {
     confess "errant AUTOLOAD $field for $self (arg $value)"
-      unless ref($self) && $self->can('setfield');
+      unless blessed($self) && $self->can('setfield');
     $self->setfield($field,$value);
   } else {
     confess "errant AUTOLOAD $field for $self (no args)"
-      unless ref($self) && $self->can('getfield');
+      unless blessed($self) && $self->can('getfield');
     $self->getfield($field);
   }    
 }

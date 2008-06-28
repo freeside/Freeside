@@ -1,0 +1,23 @@
+<% include('tr-td-label.html', @_ ) %>
+
+% if ( $opt{'curr_value'} ne '' ) {
+
+    <TD BGCOLOR="#dddddd" <% $cell_style %>><% $opt{'formatted_value'} || $opt{'curr_value'} || $opt{'value'} |h %></TD>
+
+% } else {
+  
+    <TD <% $cell_style %>>
+      <% include('/elements/select-did.html', %opt ) %>
+    </TD>
+
+% }
+
+</TR>
+
+<%init>
+
+my %opt = @_;
+
+my $cell_style = $opt{'cell_style'} ? 'STYLE="'. $opt{'cell_style'}. '"' : '';
+
+</%init>

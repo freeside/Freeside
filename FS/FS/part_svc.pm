@@ -425,6 +425,19 @@ sub part_export_usage {
   grep $_->can('usage_sessions'), $self->part_export;
 }
 
+=item part_export_did
+
+Returns a list of any exports (see L<FS::part_export>) for this service that
+are capable of returing available DID (phone number) information.
+
+=cut
+
+sub part_export_did {
+  my $self = shift;
+  grep $_->can('get_dids'), $self->part_export;
+}
+
+
 =item cust_svc [ PKGPART ] 
 
 Returns a list of associated customer services (FS::cust_svc records).

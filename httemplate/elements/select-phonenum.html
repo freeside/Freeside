@@ -1,0 +1,84 @@
+<% include('/elements/xmlhttp.html',
+              'url'  => $p.'misc/phonenums.cgi',
+              'subs' => [ $opt{'prefix'}. 'get_phonenums' ],
+          )
+%>
+
+<SCRIPT TYPE="text/javascript">
+
+  function opt(what,value,text) {
+    var optionName = new Option(text, value, false, false);
+    var length = what.length;
+    what.options[length] = optionName;
+  }
+
+  function <% $opt{'prefix'} %>exchange_changed(what, callback) {
+
+    what.form.<% $opt{'prefix'} %>phonenum.disabled = 'disabled';
+    what.form.<% $opt{'prefix'} %>phonenum.style.display = 'none';
+    var phonenumwait = document.getElementById('<% $opt{'prefix'} %>phonenumwait');
+    phonenumwait.style.display = '';
+    var phonenumerror = document.getElementById('<% $opt{'prefix'} %>phonenumerror');
+    phonenumerror.style.display = 'none';
+
+    exchange = what.options[what.selectedIndex].value;
+
+    function <% $opt{'prefix'} %>update_phonenums(phonenums) {
+
+      // blank the current phonenum
+      for ( var i = what.form.<% $opt{'prefix'} %>phonenum.length; i >= 0; i-- )
+          what.form.<% $opt{'prefix'} %>phonenum.options[i] = null;
+
+%     if ($opt{empty}) {
+        opt(what.form.<% $opt{'prefix'} %>phonenum, '', '<% $opt{empty} %>');
+%     }
+
+      // add the new phonenums
+      var phonenumArray = eval('(' + phonenums + ')' );
+      for ( var s = 0; s < phonenumArray.length; s++ ) {
+          var phonenumLabel = phonenumArray[s];
+          if ( phonenumLabel == "" )
+              phonenumLabel = '(n/a)';
+          opt(what.form.<% $opt{'prefix'} %>phonenum, phonenumArray[s], phonenumLabel);
+      }
+
+      //var phonenumFormLabel = document.getElementById('<% $opt{'prefix'} %>phonenumlabel');
+
+      what.form.<% $opt{'prefix'} %>phonenum.disabled = '';
+
+      phonenumwait.style.display = 'none';
+      if ( phonenumArray.length >= 1 ) {
+        what.form.<% $opt{'prefix'} %>phonenum.disabled = '';
+        what.form.<% $opt{'prefix'} %>phonenum.style.display = '';
+      } else {
+        var phonenumerror = document.getElementById('<% $opt{'prefix'} %>phonenumerror');
+        phonenumerror.style.display = '';
+      }
+
+      //run the callback
+      if ( callback != null ) 
+        callback();
+    }
+
+    // go get the new phonenums
+    <% $opt{'prefix'} %>get_phonenums( exchange, <% $opt{'svcpart'} %>, <% $opt{'prefix'} %>update_phonenums );
+
+  }
+
+</SCRIPT>
+
+<DIV ID="phonenumwait" STYLE="display:none"><IMG SRC="<%$fsurl%>images/wait-orange.gif"> <B>Finding phone numbers</B></DIV>
+
+<DIV ID="phonenumerror" STYLE="display:none"><IMG SRC="<%$fsurl%>images/cross.png"> <B>Select a different city/exchange</B></DIV>
+
+<SELECT NAME="<% $opt{'prefix'} %>phonenum" onChange="<% $opt{'prefix'} %>phonenum_changed(this); <% $opt{'onchange'} %>" <% $opt{'disabled'} %>>
+  <OPTION VALUE="">Select phone number</OPTION>
+</SELECT>
+
+<%init>
+
+my %opt = @_;
+
+$opt{disabled} = 'disabled' unless exists $opt{disabled};
+
+</%init>
