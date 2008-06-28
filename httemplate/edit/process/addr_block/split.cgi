@@ -1,27 +1,27 @@
-%
-%my $error = '';
-%my $blocknum = $cgi->param('blocknum');
-%my $addr_block = qsearchs('addr_block', { blocknum => $blocknum });
-%
-%if ( $addr_block) {
-%  $error = $addr_block->split_block;
-%} else {
-%  $error = "Unknown blocknum: $blocknum";
-%}
-%
-%
-%if ( $error ) {
-%  $cgi->param('error', $error);
-%  print $cgi->redirect(popurl(4). "browse/addr_block.cgi?". $cgi->query_string );
-%} else { 
-%  print $cgi->redirect(popurl(4). "browse/addr_block.cgi");
-%} 
-%
-
+<% $cgi->redirect(popurl(4). "browse/addr_block.cgi?". $cgi->query_string ) %>
 <%init>
 
-my $conf = new FS::Conf;
+my $curuser = $FS::CurrentUser::CurrentUser;
+
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+  unless $curuser->access_right('Engineering configuration')
+      || $curuser->access_right('Engineering global configuration');
+
+my $error = '';
+$cgi->param('blocknum') =~ /^(\d+)$/ or die "invalid blocknum";
+my $blocknum = $1;
+
+my $addr_block = qsearchs({ 'table'     => 'addr_block',
+                            'hashref'   => { blocknum => $blocknum },
+                            'extra_sql' => ' AND '. $curuser->agentnums_sql(
+                              'null_right' => 'Engineering global configuration'
+                            ),
+                         })
+  or $error = "Unknown blocknum: $blocknum";
+
+$error ||= $addr_block->split_block;
+
+$cgi->param('error', $error)
+  if $error;
 
 </%init>

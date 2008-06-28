@@ -108,8 +108,8 @@ Example:
     #run before display to return a different value
     'value_callback' => sub { my( $columname, $value ) = @_; },
 
-    #XXX describe
-    'field_callback' => sub { },
+    #run before display to manipulate element of the 'fields' arrayref
+    'field_callback' => sub { my( $cgi, $object, $field_hashref ) = @_; },
 
     'viewall_dir' => '', #'search' or 'browse', defaults to 'search'
 
@@ -179,7 +179,7 @@ Example:
 %                       @$fields
 %                 ) {
 %
-%   &{ $opt{'field_callback'} }( $f )
+%   my $trash = &{ $opt{'field_callback'} }( $cgi, $object, $f )
 %     if $opt{'field_callback'};
 %
 %   my $field = $f->{'field'};
@@ -227,9 +227,17 @@ Example:
 %     'disabled'      => $f->{'disabled'},
 %   );
 %
-%   #select-table
+%   #select-table, checkboxes-table
 %   $include_common{$_} = $f->{$_}
 %     foreach grep exists($f->{$_}), qw( table name_col );
+%
+%   #checkboxes-table
+%   $include_common{$_} = $f->{$_}
+%     foreach grep exists($f->{$_}), qw( target_table link_table );
+%
+%   #*-table
+%   $include_common{$_} = $f->{$_}
+%     foreach grep exists($f->{$_}), qw( hashref agent_virt agent_null_right );
 %
 %   if ( $type eq 'tablebreak-tr-title' ) {
 %     $include_common{'table_id'} = 'TableNumber'. $tablenum++

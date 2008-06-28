@@ -2,13 +2,13 @@
                 'title'         => 'Address Blocks',
                 'name'          => 'address block',
                 'html_init'     => $html_init,
-                'html_form'     => $html_form,
+                'html_foot'     => $html_foot,
                 'query'         => { 'table'     => 'addr_block',
                                      'hashref'   => {},
                                      'extra_sql' => $extra_sql,
                                      'order_by'  => $order_by,
                                    },
-                'count_query'   => "SELECT count(*) from addr_block $extra_sql",
+                'count_query'   => "SELECT count(*) from addr_block $count_sql",
                 'header'        => [ 'Address Block',
                                      'Router',
                                      'Action(s)',
@@ -42,17 +42,26 @@
                                      'border-right:none;',
                                      'border-left:none;',
                                    ],
+                'agent_virt'    => 1,
+                'agent_null_right' => 'Engineering global configuration',
+                'agent_pos'     => 1,
           )
 %>
 <%init>
 
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+  unless $FS::CurrentUser::CurrentUser->access_right('Engineering configuration')
+  || $FS::CurrentUser::CurrentUser->access_right('Engineering global configuration');
 
 my $p2 = popurl(2);
 my $path = $p2 . "edit/process/addr_block";
 
-my $extra_sql = " ";
+my $extra_sql = "";
+
+my $count_sql = "WHERE ". $FS::CurrentUser::CurrentUser->agentnums_sql(
+  'null_right' => 'Engineering global configuration',
+);
+
 my $order_by = "ORDER BY ";
 $order_by .= "inet(ip_gateway), " if driver_name =~ /^Pg/i;
 $order_by .= "inet_aton(ip_gateway), " if driver_name =~ /^mysql/i;
@@ -74,10 +83,16 @@ my $confirm = sub {
   "javascript:addr_block_areyousure('$path/$verb.cgi?blocknum=$num', '$verb')";
 };
 
-my $html_form = qq(
+my $html_foot = qq(
   <FORM ACTION="$path/add.cgi" METHOD="POST">
   Gateway/Netmask: 
   <INPUT TYPE="text" NAME="ip_gateway" SIZE="15">/<INPUT TYPE="text" NAME="ip_netmask" SIZE="2">
+);
+$html_foot .= include( '/elements/select-agent.html',
+                       'agent_virt'       => 1,
+                       'agent_null_right' => 'Engineering global configuration',
+                     );
+$html_foot .= qq(
   <INPUT TYPE="submit" NAME="submit" VALUE="Add">
   </FORM>
 );

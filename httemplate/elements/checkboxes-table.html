@@ -28,9 +28,9 @@
 %  my $target_pkey = dbdef->table($opt{'target_table'})->primary_key;
 %
 %  my( $source_pkey, $sourcenum, $source_obj );
-%  if ( $opt{'source_obj'} ) {
+%  if ( $opt{'source_obj'} || $opt{'object'} ) {
 %
-%    $source_obj = $opt{'source_obj'};
+%    $source_obj = $opt{'source_obj'} || $opt{'object'};
 %    #$source_table = $source_obj->dbdef_table->table;
 %    $source_pkey = $source_obj->dbdef_table->primary_key;
 %    $sourcenum = $source_obj->$source_pkey();
@@ -48,11 +48,17 @@
 %
 %  my $extra_sql = '';
 %
+%  if ( $opt{'agent_virt'} ) {
+%    $extra_sql .= ' AND' . $FS::CurrentUser::CurrentUser->agentnums_sql(
+%                             'null_right' => $opt{'agent_null_right'}
+%                           );
+%  }
+%
 %  if ( $opt{'disable-able'} ) {
 %    $hashref->{'disabled'} = '';
 %
 %    $extra_sql .= ( $sourcenum && $source_pkey ) 
-%                    ? "OR $source_pkey = $sourcenum"
+%                    ? " OR $source_pkey = $sourcenum"
 %                    : '';
 %  }
 %

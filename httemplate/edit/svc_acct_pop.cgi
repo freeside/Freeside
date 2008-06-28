@@ -27,8 +27,11 @@ Local     <INPUT TYPE="text" NAME="loc" SIZE=5 MAXLENGTH=4 VALUE="<% $hashref->{
 
 <%init>
 
+my $curuser = $FS::CurrentUser::CurrentUser;
+
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+  unless $curuser->access_right('Engineering configuration')
+      || $curuser->access_right('Engineering global configuration');
 
 my $svc_acct_pop;
 if ( $cgi->param('error') ) {

@@ -13,7 +13,7 @@
 %    $pkgnum = $1;
 %    $cgi->param('svcpart') =~ /^(\d+)$/ or die 'unparsable svcpart';
 %    $svcpart = $1;
-%    $cgi->delete_all(); #so edit.html treats this correctly as new??
+%    #$cgi->delete_all(); #so edit.html treats this correctly as new??
 %  }
 %
 <% include( 'edit.html',
@@ -63,13 +63,30 @@
                  },
 
                  'field_callback' => sub {
-                   my $f = shift;
+                   my ($cgi, $object, $f) = @_;
                    my $columndef = $part_svc->part_svc_column($f->{'field'});
                    my $flag = $columndef->columnflag;
                    if ( $flag eq 'F' ) {
                      $f->{'type'} = 'fixed';
                      $f->{'value'} = $columndef->columnvalue;
                    }
+                 },
+
+                 'html_init' => sub {
+                   my $cust_main;
+                   if ( $pkgnum ) {
+                     my $cust_pkg = qsearchs('cust_pkg', {'pkgnum' => $pkgnum});
+                     $cust_main = $cust_pkg->cust_main if $cust_pkg;
+                   }
+                   $cust_main
+                     ? include( '/elements/small_custview.html',
+                                $cust_main,
+                                '',
+                                1,
+                                popurl(2). "view/cust_main.cgi"
+                              ). '<BR>'
+                     : '';
+
                  },
 
                  'html_table_bottom' => sub {

@@ -4,9 +4,8 @@
                  'value'       => $agentnum || '',
                  'empty_label' => 'all',
                  'hashref'     => { 'disabled' => '' },
-                 'extra_sql'   => ' AND '.
-                                  $FS::CurrentUser::CurrentUser->agentnums_sql.
-                                  ' ORDER BY agent',
+                 'order_by'    => ' ORDER BY agent',
+                 'disable_empty' => $disable_empty,
                  %opt,
              )
 %>
@@ -17,5 +16,14 @@ my $agentnum = $opt{'curr_value'} || $opt{'value'};
 
 $opt{'records'} = delete $opt{'agents'}
   if $opt{'agents'};
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+my $disable_empty = 1;
+if ( $opt{'agent_null_right'} &&
+     $curuser->access_right($opt{'agent_null_right'})
+   )
+{
+  $disable_empty--;
+}
 
 </%init>

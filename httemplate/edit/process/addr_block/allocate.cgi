@@ -8,7 +8,9 @@
 <%init>
 
 my $conf = new FS::Conf;
+my $curuser = $FS::CurrentUser::CurrentUser;
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+  unless $curuser->access_right('Engineering configuration')
+      || $curuser->access_right('Engineering global configuration');
 
 </%init>

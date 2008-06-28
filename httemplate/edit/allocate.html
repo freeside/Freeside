@@ -12,15 +12,22 @@
                                      'table'         => 'router',
                                      'name_col'      => 'routername',
                                      'disable_empty' => 1,
+                                     'agent_virt'    => 1,
+                                     'agent_null_right' =>
+                                       'Engineering global configuration',
                                    },
                                  ],
                 'post_url'    => "process/addr_block/allocate.cgi",
                 'popup'       => 1,
+                'agent_virt'  => 1,
+                'agent_null_right' => 'Engineering global configuration',
           )
 %>
 <%init>
 
+my $curuser = $FS::CurrentUser::CurrentUser;
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+  unless $curuser->access_right('Engineering configuration')
+      || $curuser->access_right('Engineering global configuration');
 
 </%init>

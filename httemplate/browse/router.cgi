@@ -6,7 +6,7 @@
                                        'hashref'   => {},
                                        'extra_sql' => $extra_sql,
                                      },
-                'count_query'     => "SELECT count(*) from router $extra_sql",
+                'count_query'     => "SELECT count(*) from router $count_sql",
                 'header'          => [ 'Router name',
                                        'Address block(s)',
                                      ],
@@ -19,12 +19,16 @@
                 'links'           => [ [ "${p2}edit/router.cgi?", 'routernum' ],
                                        '',
                                      ],
+                'agent_virt'      => 1,
+                'agent_null_right'=> "Engineering global configuration",
+                'agent_pos'       => 1,
           )
 %>
 <%init>
 
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+  unless $FS::CurrentUser::CurrentUser->access_right('Engineering configuration')
+  || $FS::CurrentUser::CurrentUser->access_right('Engineering global configuration');
 
 my $p2 = popurl(2);
 my $extra_sql = '';
@@ -39,5 +43,10 @@ if ($cgi->param('hidecustomerrouters') eq '1') {
   $cgi->param('hidecustomerrouters', 1);
   push @menubar, 'Hide customer routers', $cgi->self_url();
 }
+
+my $count_sql = $extra_sql.  ( $extra_sql =~ /WHERE/ ? ' AND' : 'WHERE' ).
+  $FS::CurrentUser::CurrentUser->agentnums_sql(
+    'null_right' => 'Engineering global configuration',
+  );
 
 </%init>

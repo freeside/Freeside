@@ -33,7 +33,8 @@ Example:
 
    'clear_on_error' => [ 'form_field1', 'form_field2', ... ],
 
-                    #pass an arrayref of hashrefs for multiple m2ms or m2names
+                  #pass an arrayref of hashrefs for multiple m2ms or m2names
+                  #be certain you incorporate m2m_Common if you see error: param
 
    'process_m2m' => { 'link_table'   => 'link_table_name',
                       'target_table' => 'target_table_name',
@@ -176,19 +177,19 @@ my %hash =
 
 my $new = $class->new( \%hash );
 
+if ($old && exists($opt{'copy_on_empty'})) {
+  foreach my $field (@{$opt{'copy_on_empty'}}) {
+    $new->set($field, $old->get($field))
+      unless scalar($cgi->param($field));
+  }
+}
+
 if ( $opt{'agent_virt'} ) {
   die "illegal agentnum"
     unless $curuser->agentnums_href->{$new->agentnum}
         or $opt{'agent_null_right'}
            && ! $new->agentnum
            && $curuser->access_right($opt{'agent_null_right'});
-}
-
-if ($old && exists($opt{'copy_on_empty'})) {
-  foreach my $field (@{$opt{'copy_on_empty'}}) {
-    $new->set($field, $old->get($field))
-      unless scalar($cgi->param($field));
-  }
 }
 
 $error ||= $new->check;

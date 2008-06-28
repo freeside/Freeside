@@ -7,6 +7,7 @@ use FS::router;
 use FS::svc_broadband;
 use FS::Conf;
 use NetAddr::IP;
+use Carp qw( carp );
 
 @ISA = qw( FS::Record );
 
@@ -47,6 +48,8 @@ block is assigned.
 
 =item ip_netmask - the netmask of the block, expressed as an integer.
 
+=item agentnum - optional agent number (see L<FS::agent>)
+
 =back
 
 =head1 METHODS
@@ -84,6 +87,28 @@ sub delete {
 Replaces OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
 
+At present it's not possible to reallocate a block to a different router 
+except by deallocating it first, which requires that none of its addresses 
+be assigned.  This is probably as it should be.
+
+sub replace_check {
+  my ( $new, $old ) = ( shift, shift );
+
+  unless($new->routernum == $old->routernum) {
+    my @svc = $self->svc_broadband;
+    if (@svc) {
+      return 'Block has assigned addresses: '.
+             join ', ', map {$_->ip_addr} @svc;
+    }
+
+    return 'Block is already allocated'
+      if($new->routernum && $old->routernum);
+
+  }
+
+  '';
+}
+
 =item check
 
 Checks all fields to make sure this is a valid record.  If there is an error,
@@ -99,6 +124,7 @@ sub check {
     $self->ut_number('routernum')
     || $self->ut_ip('ip_gateway')
     || $self->ut_number('ip_netmask')
+    || $self->ut_agentnum_acl('agentnum', 'Engineering global configuration')
   ;
   return $error if $error;
 
@@ -202,7 +228,7 @@ my @used =
 
 }
 
-=item allocate
+=item allocate -- deprecated
 
 Allocates this address block to a router.  Takes an FS::router object 
 as an argument.
@@ -215,17 +241,10 @@ be assigned.  This is probably as it should be.
 
 sub allocate {
   my ($self, $router) = @_;
-
-  return 'Block is already allocated'
-    if($self->router);
+  carp "deallocate deprecated -- use replace";
 
   return 'Block must be allocated to a router'
     unless(ref $router eq 'FS::router');
-
-  my @svc = $self->svc_broadband;
-  if (@svc) {
-    return 'Block has assigned addresses: '. join ', ', map {$_->ip_addr} @svc;
-  }
 
   my $new = new FS::addr_block {$self->hash};
   $new->routernum($router->routernum);
@@ -233,7 +252,7 @@ sub allocate {
 
 }
 
-=item deallocate
+=item deallocate -- deprecated
 
 Deallocates the block (i.e. sets the routernum to 0).  If any addresses in the 
 block are assigned to services, it fails.
@@ -241,12 +260,8 @@ block are assigned to services, it fails.
 =cut
 
 sub deallocate {
+  carp "deallocate deprecated -- use replace";
   my $self = shift;
-
-  my @svc = $self->svc_broadband;
-  if (@svc) {
-    return 'Block has assigned addresses: '. join ', ', map {$_->ip_addr} @svc;
-  }
 
   my $new = new FS::addr_block {$self->hash};
   $new->routernum(0);
@@ -327,6 +342,29 @@ sub split_block {
 =item merge
 
 To be implemented.
+
+=item agent
+
+Returns the agent (see L<FS::agent>) for this address block, if one exists.
+
+=cut
+
+sub agent {
+  qsearchs('agent', { 'agentnum' => shift->agentnum } );
+}
+
+=item label
+
+Returns text including the router name, gateway ip, and netmask for this
+block.
+
+=cut
+
+sub label {
+  my $self = shift;
+  my $router = $self->router;
+  ($router ? $router->routername : '(unallocated)'). ':'. $self->NetAddr;
+}
 
 =back
 

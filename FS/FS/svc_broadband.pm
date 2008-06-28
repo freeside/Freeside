@@ -220,6 +220,24 @@ sub check {
   if($self->speed_up < 0) { return 'speed_up must be positive'; }
   if($self->speed_down < 0) { return 'speed_down must be positive'; }
 
+  my $cust_svc = $self->svcnum
+                 ? qsearchs('cust_svc', { 'svcnum' => $self->svcnum } )
+                 : '';
+  my $cust_pkg;
+  if ($cust_svc) {
+    $cust_pkg = $cust_svc->cust_pkg;
+  }else{
+    $cust_pkg = qsearchs('cust_pkg', { 'pkgnum' => $self->pkgnum } );
+    return "Invalid pkgnum" unless $cust_pkg;
+  }
+    
+  if ($cust_pkg) {
+    my $addr_agentnum = $self->addr_block->agentnum;
+    if ($addr_agentnum && $addr_agentnum != $cust_pkg->cust_main->agentnum) {
+      return "Address block does not service this customer";
+    }
+  }
+
   if (not($self->ip_addr) or $self->ip_addr eq '0.0.0.0') {
     my $next_addr = $self->addr_block->next_free_addr;
     if ($next_addr) {
@@ -289,6 +307,9 @@ sub allowed_routers {
 =head1 BUGS
 
 The business with sb_field has been 'fixed', in a manner of speaking.
+
+allowed_routers isn't agent virtualized because part_svc isn't agent
+virtualized
 
 =head1 SEE ALSO
 

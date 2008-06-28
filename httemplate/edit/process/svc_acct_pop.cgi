@@ -6,8 +6,11 @@
 %}
 <%init>
 
+my $curuser = $FS::CurrentUser::CurrentUser;
+
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+  unless $curuser->access_right('Engineering configuration')
+      || $curuser->access_right('Engineering global configuration');
 
 my $popnum = $cgi->param('popnum');
 

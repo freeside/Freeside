@@ -5,7 +5,7 @@ use vars qw( @ISA );
 use FS::Record qw( qsearchs qsearch );
 use FS::addr_block;
 
-@ISA = qw( FS::Record );
+@ISA = qw( FS::Record FS::m2m_Common );
 
 =head1 NAME
 
@@ -82,7 +82,9 @@ sub check {
 
   my $error =
     $self->ut_numbern('routernum')
-    || $self->ut_text('routername');
+    || $self->ut_text('routername')
+    || $self->ut_agentnum_acl('agentnum', 'Engineering global configuration')
+  ;
   return $error if $error;
 
   $self->SUPER::check;
@@ -123,6 +125,16 @@ sub part_svc {
   my $self = shift;
   return map { qsearchs('part_svc', { svcpart => $_->svcpart }) }
       $self->part_svc_router;
+}
+
+=item agent
+
+Returns the agent associated with this router, if any.
+
+=cut
+
+sub agent {
+  qsearchs('agent', { 'agentnum' => shift->agentnum });
 }
 
 =back

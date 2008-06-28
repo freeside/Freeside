@@ -27,8 +27,11 @@
 %>
 <%init>
 
+my $curuser = $FS::CurrentUser::CurrentUser;
+
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+  unless $curuser->access_right('Engineering configuration')
+      || $curuser->access_right('Engineering global configuration');
 
 my $html_init = qq!
   <A HREF="${p}edit/svc_acct_pop.cgi"><I>Add new Access Number</I></A>

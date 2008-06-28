@@ -92,14 +92,25 @@ my $name_col = $opt{'name_col'};
 my $value = $opt{'curr_value'} || $opt{'value'};
 $value = [ split(/\s*,\s*/, $value) ] if $opt{'multiple'} && $value =~ /,/;
 
+my $extra_sql = $opt{'extra_sql'} || '';
+my $hashref =   $opt{'hashref'} || {};
+
+if ( $opt{'agent_virt'} ) {
+  $extra_sql .=
+    ( $extra_sql =~ /WHERE/i || scalar(keys %$hashref ) ? ' AND ' : ' WHERE ' ).
+    $FS::CurrentUser::CurrentUser->agentnums_sql(
+                                    'null_right' => $opt{'agent_null_right'}
+                                   );
+}
+
 my @records = ();
 if ( $opt{'records'} ) {
   @records = @{ $opt{'records'} };
 } else {
   @records = qsearch( {
     'table'     => $opt{'table'},
-    'hashref'   => ( $opt{'hashref'} || {} ),
-    'extra_sql' => ( $opt{'extra_sql'} || '' ),
+    'hashref'   => $hashref,
+    'extra_sql' => $extra_sql,
     'order_by'  => ( $opt{'order_by'} || "ORDER BY $name_col" ),
   });
 }
@@ -113,7 +124,7 @@ unless (    ! $value
   $opt{hashref}->{$key} = $value;
   my $record = qsearchs( {
     'table'     => $opt{table},
-    'hashref'   => $opt{hashref},
+    'hashref'   => $hashref,
     'extra_sql' => ( $opt{extra_sql} || '' ),
   });
   push @records, $record if $record;
