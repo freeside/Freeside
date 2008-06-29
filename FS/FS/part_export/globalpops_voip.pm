@@ -9,8 +9,9 @@ use FS::phone_avail;
 @ISA = qw(FS::part_export);
 
 tie my %options, 'Tie::IxHash',
-  'login'    => { label=>'GlobalPOPs Media Services API login' },
-  'password' => { label=>'GlobalPOPs Media Services API password' },
+  'login'         => { label=>'GlobalPOPs Media Services API login' },
+  'password'      => { label=>'GlobalPOPs Media Services API password' },
+  'endpointgroup' => { label=>'GlobalPOPs endpoint group number' },
 ;
 
 %info = (
@@ -64,8 +65,6 @@ sub get_dids {
 
   my $search = $dids->{'search'};
 
-  #warn Dumper($search);
-
   if ( $search->{'statuscode'} == 302200 ) {
     return [];
   } elsif ( $search->{'statuscode'} != 100 ) {
@@ -76,7 +75,6 @@ sub get_dids {
   my @return = ();
 
   #my $latas = $search->{state}{lata};
-
   my %latas;
   if ( grep $search->{state}{lata}{$_}, qw(name rate_center) ) {
     %latas = map $search->{state}{lata}{$_},
@@ -256,26 +254,74 @@ sub gp_command {
 sub _export_insert {
   my( $self, $svc_phone ) = (shift, shift);
   #we want to provision and catch errors now, not queue
+
+  my $r = $self->gp_command('reserveDID',
+    'did'           => $svc_phone->phonenum,
+    'minutes'       => 1,
+    'endpointgroup' => $self->option('endpointgroup'),
+  );
+
+  my $rdid = $r->{did};
+
+  if ( $rdid->{'statuscode'} != 100 ) {
+    return "Error running globalpop reserveDID: ".
+           $rdid->{'statuscode'}. ': '. $rdid->{'status'};
+  }
+
+  my $a = $self->gp_command('assignDID',
+    'did'           => $svc_phone->phonenum,
+    'endpointgroup' => $self->option('endpointgroup'),
+    #'rewrite'
+    #'cnam'
+  );
+
+  my $adid = $a->{did};
+
+  if ( $adid->{'statuscode'} != 100 ) {
+    return "Error running globalpop assignDID: ".
+           $adid->{'statuscode'}. ': '. $adid->{'status'};
+  }
+
+  '';
 }
 
 sub _export_replace {
   my( $self, $new, $old ) = (shift, shift, shift);
+
   #hmm, what's to change?
+  '';
 }
 
 sub _export_delete {
   my( $self, $svc_phone ) = (shift, shift);
-  #probably okay to queue the deletion...
+
+  #probably okay to queue the deletion...?
+  #but hell, let's do it inline anyway, who wants phone numbers hanging around
+
+  my $r = $self->gp_command('releaseDID',
+    'did'           => $svc_phone->phonenum,
+  );
+
+  my $rdid = $r->{did};
+
+  if ( $rdid->{'statuscode'} != 100 ) {
+    return "Error running globalpop releaseDID: ".
+           $rdid->{'statuscode'}. ': '. $rdid->{'status'};
+  }
+
+  '';
 }
 
 sub _export_suspend {
   my( $self, $svc_phone ) = (shift, shift);
   #nop for now
+  '';
 }
 
 sub _export_unsuspend {
   my( $self, $svc_phone ) = (shift, shift);
   #nop for now
+  '';
 }
 
 #hmm, might forgo queueing entirely for most things, data is too much of a pita

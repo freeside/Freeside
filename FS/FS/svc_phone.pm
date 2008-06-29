@@ -162,6 +162,10 @@ and replace methods.
 sub check {
   my $self = shift;
 
+  my $phonenum = $self->phonenum;
+  $phonenum =~ s/\D//g;
+  $self->phonenum($phonenum);
+
   my $error = 
     $self->ut_numbern('svcnum')
     || $self->ut_numbern('countrycode')

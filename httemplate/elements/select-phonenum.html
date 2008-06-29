@@ -71,7 +71,7 @@
 
 <DIV ID="phonenumerror" STYLE="display:none"><IMG SRC="<%$fsurl%>images/cross.png"> <B>Select a different city/exchange</B></DIV>
 
-<SELECT NAME="<% $opt{'prefix'} %>phonenum" onChange="<% $opt{'prefix'} %>phonenum_changed(this); <% $opt{'onchange'} %>" <% $opt{'disabled'} %>>
+<SELECT NAME="<% $opt{'prefix'} %>phonenum" notonChange="<% $opt{'prefix'} %>phonenum_changed(this); <% $opt{'onchange'} %>" <% $opt{'disabled'} %>>
   <OPTION VALUE="">Select phone number</OPTION>
 </SELECT>
 

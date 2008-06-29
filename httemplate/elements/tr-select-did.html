@@ -3,6 +3,8 @@
 % if ( $opt{'curr_value'} ne '' ) {
 
     <TD BGCOLOR="#dddddd" <% $cell_style %>><% $opt{'formatted_value'} || $opt{'curr_value'} || $opt{'value'} |h %></TD>
+    
+    <% include('hidden.html', %opt ) %>
 
 % } else {
   
