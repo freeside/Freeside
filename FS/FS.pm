@@ -134,6 +134,8 @@ L<FS::part_virtual_field> - Broadband virtual field class
 
 L<FS::svc_phone> - Phone service class
 
+L<FS::phone_avail> - Phone number availability cache
+
 L<FS::cdr> - Call Detail Record class
 
 L<FS::cdr_calltype> - CDR calltype class

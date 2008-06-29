@@ -2,7 +2,9 @@ package FS::part_export::globalpops_voip;
 
 use vars qw(@ISA %info);
 use Tie::IxHash;
+use FS::Record qw(qsearch dbh);
 use FS::part_export;
+use FS::phone_avail;
 
 @ISA = qw(FS::part_export);
 
@@ -38,7 +40,21 @@ sub get_dids {
   } elsif ( $opt{'areacode'} ) { #return city (npa-nxx-XXXX)
     %getdids = ( 'npa'   => $opt{'areacode'} );
   } elsif ( $opt{'state'} ) {
+
+    my @avail = qsearch({
+      'table'    => 'phone_avail',
+      'hashref'  => { 'exportnum'   => $self->exportnum,
+                      'countrycode' => '1', #don't hardcode me when gp goes int'l
+                      'state'       => $opt{'state'},
+                    },
+      'order_by' => 'ORDER BY npa',
+    });
+
+    return [ map $_->npa, @avail ] if @avail; #return cached area codes instead
+
+    #otherwise, search for em
     %getdids = ( 'state' => $opt{'state'} );
+
   }
 
   my $dids = $self->gp_command('getDIDs', %getdids);
@@ -173,6 +189,44 @@ sub get_dids {
   } elsif ( $opt{'areacode'} ) { #return city (npa-nxx-XXXX)
     @return = sort { lc($a) cmp lc($b) } @return;
   } elsif ( $opt{'state'} ) { #and not other things, then return areacode
+
+    #populate cache
+
+    local $SIG{HUP} = 'IGNORE';
+    local $SIG{INT} = 'IGNORE';
+    local $SIG{QUIT} = 'IGNORE';
+    local $SIG{TERM} = 'IGNORE';
+    local $SIG{TSTP} = 'IGNORE';
+    local $SIG{PIPE} = 'IGNORE';
+
+    my $oldAutoCommit = $FS::UID::AutoCommit;
+    local $FS::UID::AutoCommit = 0;
+    my $dbh = dbh;
+
+    my $errmsg = 'WARNING: error populating phone availability cache: ';
+    my $error = '';
+    foreach my $return (@return) {
+      my $phone_avail = new FS::phone_avail {
+        'exportnum'   => $self->exportnum,
+        'countrycode' => '1', #don't hardcode me when gp goes int'l
+        'state'       => $opt{'state'},
+        'npa'         => $return,
+      };
+      $error = $phone_avail->insert();
+      if ( $error ) {
+        warn $errmsg.$error;
+        last;
+      }
+    }
+
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+    } else {
+      $dbh->commit or warn $errmsg.$dbh->errstr if $oldAutoCommit;
+    }
+
+    #end populate cache
+
     #@return = sort { (split(' ', $a))[0] <=> (split(' ', $b))[0] } @return;
     @return = sort { $a <=> $b } @return;
   } else {

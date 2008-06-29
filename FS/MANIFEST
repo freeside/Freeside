@@ -411,3 +411,5 @@ FS/part_pkg_taxrate.pm
 t/part_pkg_taxrate.t
 FS/pkg_category.pm
 t/pkg_category.t
+FS/phone_avail.pm
+t/phone_avail.t

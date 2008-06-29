@@ -2037,6 +2037,20 @@ sub tables_hashref {
       'index'  => [ [ 'countrycode', 'phonenum' ] ],
     },
 
+    'phone_avail' => {
+      'columns' => [
+        'availnum',    'int',      '', '', '', '', 
+        'exportnum',   'int',      '', '', '', '', 
+        'countrycode', 'varchar',  '',  3, '', '', 
+        'state',       'char', 'NULL',  2, '', '', 
+        'npa',         'char',     '',  3, '', '', 
+        'nxx',         'char', 'NULL',  3, '', '', 
+      ],
+      'primary_key' => 'availnum',
+      'unique' => [],
+      'index'  => [ [ 'exportnum', 'countrycode', 'state' ] ],
+    },
+
     'reason_type' => {
       'columns' => [
         'typenum',   'serial',  '', '', '', '', 
