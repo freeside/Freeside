@@ -162,9 +162,6 @@ Current packages
        )
     %>
 
-
-    <% pkg_status_row( $cust_pkg, 'Suspended', 'susp', 'color'=>'FF9900', conf=>$conf ) %>
-
 %   unless ( $cust_pkg->get('setup') ) { 
 
         <% pkg_status_row_colspan('Never billed') %>
