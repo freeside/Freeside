@@ -345,5 +345,5 @@ END
 
 package FS::SelfService::_signupcgi;
 use HTML::Entities;
-use FS::SelfService qw(regionselector expselect popselector);
+use FS::SelfService qw(regionselector expselect popselector didselector);
 

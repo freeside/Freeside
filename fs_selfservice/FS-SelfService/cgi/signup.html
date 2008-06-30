@@ -12,7 +12,7 @@
     mywindow = -1
   }
 //--></script>
-<FONT SIZE=7><%= $agent || 'ISP' %> Signup form</FONT><BR><BR>
+<FONT SIZE=7><%= $agent || ( $signup_service eq 'svc_phone' ? 'ITSP' : 'ISP' ) %> Signup form</FONT><BR><BR>
 <FONT SIZE="+1" COLOR="#ff0000"><%= $error %></FONT>
 <FORM NAME="OneTrueForm" ACTION="<%= $self_url %>" METHOD=POST onSubmit="document.OneTrueForm.signup.disabled=true">
 <INPUT TYPE="hidden" NAME="session" VALUE="<%= $session_id %>">
