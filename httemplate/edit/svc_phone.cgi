@@ -6,12 +6,14 @@
                                  type  => 'select-did',
                                  label => 'Phone number',
                                },
+                               'sip_password',
                                'pin',
                              ],
                'labels'   => {
-                               'countrycode' => 'Country code',
-                               'phonenum'    => 'Phone number',
-                               'pin'         => 'PIN',
+                               'countrycode'  => 'Country code',
+                               'phonenum'     => 'Phone number',
+                               'sip_password' => 'SIP password',
+                               'pin'          => 'Voicemail PIN',
                              },
            )
 %>

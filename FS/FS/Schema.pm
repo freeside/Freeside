@@ -2027,10 +2027,11 @@ sub tables_hashref {
 
     'svc_phone' => {
       'columns' => [
-        'svcnum',      'int',         '',      '', '', '', 
-        'countrycode', 'varchar',     '',       3, '', '', 
-        'phonenum',    'varchar',     '',      15, '', '',  #12 ?
-        'pin',         'varchar', 'NULL', $char_d, '', '',
+        'svcnum',       'int',         '',      '', '', '', 
+        'countrycode',  'varchar',     '',       3, '', '', 
+        'phonenum',     'varchar',     '',      15, '', '',  #12 ?
+        'pin',          'varchar', 'NULL', $char_d, '', '',
+        'sip_password', 'varchar', 'NULL', $char_d, '', '',
       ],
       'primary_key' => 'svcnum',
       'unique' => [],

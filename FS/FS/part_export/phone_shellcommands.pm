@@ -33,7 +33,7 @@ Run remote commands via SSH, for phone numbers.  You will need to
   <LI>
     <INPUT TYPE="button" VALUE="FreePBX (build_exten CLI module needed)" onClick='
       this.form.user.value = "root";
-      this.form.useradd.value = "build_exten.php --create --exten $phonenum --name $cust_name --vm-password $pin && /usr/share/asterisk/bin/module_admin reload";
+      this.form.useradd.value = "build_exten.php --create --exten $phonenum --directdid 1$phonenum --sip-secret $sip_password --name $cust_name --vm-password $pin && /usr/share/asterisk/bin/module_admin reload";
       this.form.userdel.value = "build_exten.php --delete --exten $phonenum && /usr/share/asterisk/bin/module_admin reload";
       this.form.usermod.value = "";
       this.form.suspend.value = "";
@@ -46,8 +46,9 @@ old_ for replace operations):
 <UL>
   <LI><code>$countrycode</code> - Country code
   <LI><code>$phonenum</code> - Phone number
+  <LI><code>$sip_password</code> - SIP secret (quoted for the shell)
   <LI><code>$pin</code> - Personal identification number
-  <LI><code>$cust_name</code> - Customer name
+  <LI><code>$cust_name</code> - Customer name (quoted for the shell)
 </UL>
 END
 );
@@ -88,6 +89,7 @@ sub _export_command {
   my $cust_pkg = $svc_phone->cust_svc->cust_pkg;
   my $cust_name = $cust_pkg ? $cust_pkg->cust_main->name : '';
   $cust_name = shell_quote $cust_name;
+  my $sip_password = shell_quote $svc_phone->sip_password;
   #done setting variables for the command
 
   $self->shellcommands_queue( $svc_phone->svcnum,
