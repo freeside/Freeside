@@ -33,8 +33,8 @@ Run remote commands via SSH, for phone numbers.  You will need to
   <LI>
     <INPUT TYPE="button" VALUE="FreePBX (build_exten CLI module needed)" onClick='
       this.form.user.value = "root";
-      this.form.useradd.value = "build_exten.php --create --exten $phonenum --name $cust_name --vm-password $pin";
-      this.form.userdel.value = "build_exten.php --delete --exten $phonenum";
+      this.form.useradd.value = "build_exten.php --create --exten $phonenum --name $cust_name --vm-password $pin && /usr/share/asterisk/bin/module_admin reload";
+      this.form.userdel.value = "build_exten.php --delete --exten $phonenum && /usr/share/asterisk/bin/module_admin reload";
       this.form.usermod.value = "";
       this.form.suspend.value = "";
       this.form.unsuspend.value = "";
