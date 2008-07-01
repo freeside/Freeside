@@ -177,7 +177,7 @@ sub check {
     $self->ut_numbern('svcnum')
     || $self->ut_numbern('countrycode')
     || $self->ut_number('phonenum')
-    || $self->ut_anythingn('sip_password')
+    || $self->ut_anything('sip_password')
     || $self->ut_numbern('pin')
   ;
   return $error if $error;
