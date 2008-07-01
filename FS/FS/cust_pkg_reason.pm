@@ -98,6 +98,7 @@ sub check {
     $self->ut_numbern('num')
     || $self->ut_number('pkgnum')
     || $self->ut_number('reasonnum')
+    || $self->ut_enum('action', [ 'A', 'C', 'E', 'S' ])
     || $self->ut_text('otaker')
     || $self->ut_numbern('date')
   ;

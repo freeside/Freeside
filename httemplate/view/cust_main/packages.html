@@ -149,15 +149,12 @@ Current packages
 %
 %
 % if ( $cust_pkg->get('cancel') ) { #status: cancelled
-%   my $cpr = $cust_pkg->last_cust_pkg_reason;
+%   my $cpr = $cust_pkg->last_cust_pkg_reason('cancel');
 
     <% pkg_status_row($cust_pkg, 'Cancelled', 'cancel', 'color'=>'FF0000', conf=>$conf ) %>
 
     <% pkg_status_row_colspan(
-         ( ( $cpr && ( $cpr->date == $cust_pkg->get('cancel') ||
-                       $cpr->date == $cust_pkg->expire
-                     )
-           ) ? $cpr->reasontext. ' by '. $cpr->otaker : '' ), '',
+         ( $cpr ? $cpr->reasontext. ' by '. $cpr->otaker : '' ), '',
          'align' => 'right', 'color' => 'ff0000', 'size' => '-2',
        )
     %>
@@ -178,15 +175,12 @@ Current packages
 % } else { 
 %
 %   if ( $cust_pkg->get('susp') ) { #status: suspended
-%     my $cpr = $cust_pkg->last_cust_pkg_reason;
+%     my $cpr = $cust_pkg->last_cust_pkg_reason('susp');
 
     <% pkg_status_row( $cust_pkg, 'Suspended', 'susp', 'color'=>'FF9900', conf=>$conf ) %>
 
     <% pkg_status_row_colspan(
-         ( ( $cpr && ( $cpr->date == $cust_pkg->susp ||
-                       $cpr->date == $cust_pkg->adjourn
-                     )
-           ) ? $cpr->reasontext. ' by '. $cpr->otaker : '' ), '',
+         ( $cpr ? $cpr->reasontext. ' by '. $cpr->otaker : '' ), '',
          'align' => 'right', 'color' => 'FF9900', 'size' => '-2',
        )
     %>
@@ -418,7 +412,18 @@ sub pkg_status_row {
 
 sub pkg_status_row_if {
   my( $cust_pkg, $title, $field, %opt ) = @_;
-  $cust_pkg->get($field) ? pkg_status_row(@_) : '';
+  
+  $title = '<FONT SIZE=-1>(&nbsp;'. pkg_unadjourn_link($cust_pkg). '&nbsp;)&nbsp;</FONT>'. $title
+    if ( $field eq 'adjourn' &&
+         $curuser->access_right('Suspend customer package later')
+       );
+
+  $title = '<FONT SIZE=-1>(&nbsp;'. pkg_unexpire_link($cust_pkg). '&nbsp;)&nbsp;</FONT>'. $title
+    if ( $field eq 'expire' &&
+         $curuser->access_right('Cancel customer package later')
+       );
+
+  $cust_pkg->get($field) ? pkg_status_row($cust_pkg, $title, $field, %opt) : '';
 }
 
 sub pkg_status_row_changed {
@@ -566,6 +571,8 @@ sub pkg_adjourn_link { include( '/elements/popup_link-cust_pkg.html',
 
 sub pkg_unsuspend_link { pkg_link('misc/unsusp_pkg',    'Unsuspend',           @_ ); }
 sub pkg_dates_link     { pkg_link('edit/REAL_cust_pkg', 'Edit&nbsp;dates',     @_ ); }
+sub unadjourn_link     { pkg_link('misc/unadjourn_pkg', 'Abort',               @_ ); }
+sub unexpire_link      { pkg_link('misc/unexpire_pkg',  'Abort',               @_ ); }
 
 sub pkg_cancel_link { include( '/elements/popup_link-cust_pkg.html',
                                { 'action'      => $p. 'misc/cancel_pkg.html?method=cancel',

@@ -939,6 +939,7 @@ sub tables_hashref {
         'num',      'serial',    '',   '', '', '', 
         'pkgnum',   'int',    '',   '', '', '', 
         'reasonnum','int',    '',   '', '', '', 
+        'action',   'char', 'NULL', 1, '', '',     #should not be nullable
         'otaker',   'varchar', '', 32, '', '', 
         'date',     @date_type, '', '', 
       ],

@@ -52,11 +52,10 @@
 
                     sub { my $self = shift;
                           my $return = '';
-                          if ($self->getfield('cancel') ||
-                            $self->getfield('suspend')) {
-                              my $reason = $self->last_reason;# too inefficient?
-                              $return = $reason->reason if $reason;
-
+                          foreach my $action ( qw ( cancel susp ) ) {
+                            my $reason = $self->last_reason($action);
+                            $return = $reason->reason if $reason;
+                            last if $return;
                           }
                           $return;
                         },

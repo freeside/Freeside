@@ -46,6 +46,7 @@ if ($method eq 'expire' || $method eq 'adjourn'){
   $date = $cgi->param('date');
   str2time($cgi->param('date')) =~ /^(\d+)$/ or die "Illegal date";
   $date = $1;
+  $method = ($method eq 'expire') ? 'cancel' : 'suspend';
 }
 
 my $cust_pkg = qsearchs( 'cust_pkg', {'pkgnum'=>$pkgnum} );
@@ -61,15 +62,7 @@ if ($reasonnum == -1) {
   };
 }
 
-my $error;
-if ($method eq 'expire' || $method eq 'adjourn'){
-  my %hash = $cust_pkg->hash;
-  $hash{$method} = $date;
-  my $new = new FS::cust_pkg \%hash;
-  $error = $new->replace($cust_pkg, 'reason' => $reasonnum);
-} else {
-  $error = $cust_pkg->$method( 'reason' => $reasonnum );
-}
+my $error = $cust_pkg->$method( 'reason' => $reasonnum, 'date' => $date );
 
 if ($error) {
   $cgi->param('error', $error);

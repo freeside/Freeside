@@ -311,7 +311,7 @@ sub suspended_usergroups {
   #false laziness with FS::part_export::shellcommands
   #subclass part_export?
 
-  my $r = $svc_acct->cust_svc->cust_pkg->last_reason;
+  my $r = $svc_acct->cust_svc->cust_pkg->last_reason('susp');
   my %reasonmap = $self->_groups_susp_reason_map;
   my $userspec = '';
   if ($r) {

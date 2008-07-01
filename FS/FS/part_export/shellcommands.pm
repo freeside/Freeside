@@ -255,7 +255,9 @@ sub _export_command {
   @radius_groups = $svc_acct->radius_groups;
 
   my ($reasonnum, $reasontext, $reasontypenum, $reasontypetext);
-  if ( $cust_pkg && $action eq 'suspend' && (my $r = $cust_pkg->last_reason) ) {
+  if ( $cust_pkg && $action eq 'suspend' &&
+       (my $r = $cust_pkg->last_reason('susp')) )
+  {
     $reasonnum = $r->reasonnum;
     $reasontext = $r->reason;
     $reasontypenum = $r->reason_type;

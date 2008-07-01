@@ -44,10 +44,10 @@
   <& .row_edit, cust_pkg=>$cust_pkg, column=>'setup',     label=>'Setup' &>
   <& .row_edit, cust_pkg=>$cust_pkg, column=>'last_bill', label=>$last_bill_or_renewed &>
   <& .row_edit, cust_pkg=>$cust_pkg, column=>'bill',      label=>$next_bill_or_prepaid_until &>
-  <& .row_edit, cust_pkg=>$cust_pkg, column=>'adjourn',   label=>'Adjournment', note=>'(will <b>suspend</b> this package when the date is reached)' &>
+  <& .row_display, cust_pkg=>$cust_pkg, column=>'adjourn',   label=>'Adjournment', note=>'(will <b>suspend</b> this package when the date is reached)' &>
   <& .row_display, cust_pkg=>$cust_pkg, column=>'susp',   label=>'Suspension' &>
 
-  <& .row_edit, cust_pkg=>$cust_pkg, column=>'expire',   label=>'Expiration', note=>'(will <b>cancel</b> this package when the date is reached)' &>
+  <& .row_display, cust_pkg=>$cust_pkg, column=>'expire',   label=>'Expiration', note=>'(will <b>cancel</b> this package when the date is reached)' &>
   <& .row_display, cust_pkg=>$cust_pkg, column=>'cancel',   label=>'Cancellation' &>
 
 <%def .row_edit>
@@ -96,11 +96,16 @@
   $cust_pkg
   $column
   $label
+  $note => ''
 </%args>
 % if ( $cust_pkg->get($column) ) { 
     <TR>
       <TD ALIGN="right"><% $label %> date</TD>
-      <TD BGCOLOR="#ffffff"><% time2str($format,$cust_pkg->get($column)) %></TD>
+      <TD BGCOLOR="#ffffff"><% time2str($format,$cust_pkg->get($column)) %>
+%       if ( $note ) {
+          <BR><FONT SIZE=-1><% $note %></FONT>
+%       }
+      </TD>
     </TR>
 % } 
 </%def>

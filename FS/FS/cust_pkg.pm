@@ -342,6 +342,8 @@ sub replace {
     if ($options->{'reason'} && $new->$method && $old->$method ne $new->$method) {
       my $error = $new->insert_reason( 'reason' => $options->{'reason'},
                                        'date'   => $new->$method,
+                                       'action' => $method,
+                                       'reason_otaker' => $options{'reason_otaker'},
                                      );
       if ( $error ) {
         dbh->rollback if $oldAutoCommit;
@@ -477,6 +479,8 @@ Available options are:
 
 =item reason - can be set to a cancellation reason (see L<FS:reason>), either a reasonnum of an existing reason, or passing a hashref will create a new reason.  The hashref should have the following keys: typenum - Reason type (see L<FS::reason_type>, reason - Text of the new reason.
 
+=item date - can be set to a unix style timestamp to specify when to cancel (expire)
+
 =back
 
 If there is an error, returns the error, otherwise returns false.
@@ -485,6 +489,7 @@ If there is an error, returns the error, otherwise returns false.
 
 sub cancel {
   my( $self, %options ) = @_;
+  my $error;
 
   warn "cust_pkg::cancel called with options".
        join(', ', map { "$_: $options{$_}" } keys %options ). "\n"
@@ -501,12 +506,23 @@ sub cancel {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
   
+  my $old = $self->select_for_update;
+
+  if ( $old->get('cancel') || $self->get('cancel') ) {
+    dbh->rollback if $oldAutoCommit;
+    return "";  # no error
+  }
+
+  my $date = $options{date} if $options{date}; # expire/cancel later
+  $date = '' if ($date && $date <= time);      # complain instead?
+
   my $cancel_time = $options{'time'} || time;
 
-  my $error;
-
   if ( $options{'reason'} ) {
-    $error = $self->insert_reason( 'reason' => $options{'reason'} );
+    $error = $self->insert_reason( 'reason' => $options{'reason'},
+                                   'action' => $date ? 'expire' : 'cancel',
+                                   'reason_otaker' => $options{'reason_otaker'},
+                                 );
     if ( $error ) {
       dbh->rollback if $oldAutoCommit;
       return "Error inserting cust_pkg_reason: $error";
@@ -514,23 +530,23 @@ sub cancel {
   }
 
   my %svc;
-  foreach my $cust_svc (
-    #schwartz
-    map  { $_->[0] }
-    sort { $a->[1] <=> $b->[1] }
-    map  { [ $_, $_->svc_x->table_info->{'cancel_weight'} ]; }
-    qsearch( 'cust_svc', { 'pkgnum' => $self->pkgnum } )
-  ) {
+  unless ( $date ) {
+    foreach my $cust_svc (
+      #schwartz
+      map  { $_->[0] }
+      sort { $a->[1] <=> $b->[1] }
+      map  { [ $_, $_->svc_x->table_info->{'cancel_weight'} ]; }
+      qsearch( 'cust_svc', { 'pkgnum' => $self->pkgnum } )
+    ) {
 
-    my $error = $cust_svc->cancel;
+      my $error = $cust_svc->cancel;
 
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "Error cancelling cust_svc: $error";
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "Error cancelling cust_svc: $error";
+      }
     }
-  }
 
-  unless ( $self->getfield('cancel') ) {
     # Add a credit for remaining service
     my $remaining_value = $self->calc_remain(time=>$cancel_time);
     if ( $remaining_value > 0 && !$options{'no_credit'} ) {
@@ -543,20 +559,22 @@ sub cancel {
       if ($error) {
         $dbh->rollback if $oldAutoCommit;
         return "Error crediting customer \$$remaining_value for unused time on".
-          $self->part_pkg->pkg. ": $error";
-      }                                                                          
-    }                                                                            
-    my %hash = $self->hash;
-    $hash{'cancel'} = $cancel_time;
-    my $new = new FS::cust_pkg ( \%hash );
-    $error = $new->replace( $self, options => { $self->options } );
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
+               $self->part_pkg->pkg. ": $error";
+      }
     }
   }
 
+  my %hash = $self->hash;
+  $date ? ($hash{'expire'} = $date) : ($hash{'cancel'} = $cancel_time);
+  my $new = new FS::cust_pkg ( \%hash );
+  $error = $new->replace( $self, options => { $self->options } );
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  return '' if $date; #no errors
 
   my $conf = new FS::Conf;
   my @invoicing_list = grep { $_ !~ /^(POST|FAX)$/ } $self->cust_main->invoicing_list;
@@ -593,7 +611,59 @@ sub cancel_if_expired {
   '';
 }
 
-=item suspend  [ OPTION => VALUE ... ]
+=item unexpire
+
+Cancels any pending expiration (sets the expire field to null).
+
+If there is an error, returns the error, otherwise returns false.
+
+=cut
+
+sub unexpire {
+  my( $self, %options ) = @_;
+  my $error;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $old = $self->select_for_update;
+
+  my $pkgnum = $old->pkgnum;
+  if ( $old->get('cancel') || $self->get('cancel') ) {
+    dbh->rollback if $oldAutoCommit;
+    return "Can't unexpire cancelled package $pkgnum";
+    # or at least it's pointless
+  }
+
+  unless ( $old->get('expire') && $self->get('expire') ) {
+    dbh->rollback if $oldAutoCommit;
+    return "";  # no error
+  }
+
+  my %hash = $self->hash;
+  $hash{'expire'} = '';
+  my $new = new FS::cust_pkg ( \%hash );
+  $error = $new->replace( $self, options => { $self->options } );
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  ''; #no errors
+
+}
+
+=item suspend [ OPTION => VALUE ... ]
 
 Suspends all services (see L<FS::cust_svc> and L<FS::part_svc>) in this
 package, then suspends the package itself (sets the susp field to now).
@@ -604,6 +674,8 @@ Available options are:
 
 =item reason - can be set to a cancellation reason (see L<FS:reason>), either a reasonnum of an existing reason, or passing a hashref will create a new reason.  The hashref should have the following keys: typenum - Reason type (see L<FS::reason_type>, reason - Text of the new reason.
 
+=item date - can be set to a unix style timestamp to specify when to suspend (adjourn)
+
 =back
 
 If there is an error, returns the error, otherwise returns false.
@@ -612,6 +684,7 @@ If there is an error, returns the error, otherwise returns false.
 
 sub suspend {
   my( $self, %options ) = @_;
+  my $error;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -624,48 +697,69 @@ sub suspend {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $error;
+  my $old = $self->select_for_update;
+
+  my $pkgnum = $old->pkgnum;
+  if ( $old->get('cancel') || $self->get('cancel') ) {
+    dbh->rollback if $oldAutoCommit;
+    return "Can't suspend cancelled package $pkgnum";
+  }
+
+  if ( $old->get('susp') || $self->get('susp') ) {
+    dbh->rollback if $oldAutoCommit;
+    return "";  # no error                     # complain on adjourn?
+  }
+
+  my $date = $options{date} if $options{date}; # adjourn/suspend later
+  $date = '' if ($date && $date <= time);      # complain instead?
+
+  if ( $date && $old->get('expire') && $old->get('expire') < $date ) {
+    dbh->rollback if $oldAutoCommit;
+    return "Package $pkgnum expires before it would be suspended.";
+  }
 
   if ( $options{'reason'} ) {
-    $error = $self->insert_reason( 'reason' => $options{'reason'} );
+    $error = $self->insert_reason( 'reason' => $options{'reason'},
+                                   'action' => $date ? 'adjourn' : 'suspend',
+                                   'reason_otaker' => $options{'reason_otaker'},
+                                 );
     if ( $error ) {
       dbh->rollback if $oldAutoCommit;
       return "Error inserting cust_pkg_reason: $error";
     }
   }
 
-  foreach my $cust_svc (
-    qsearch( 'cust_svc', { 'pkgnum' => $self->pkgnum } )
-  ) {
-    my $part_svc = qsearchs( 'part_svc', { 'svcpart' => $cust_svc->svcpart } );
+  unless ( $date ) {
+    foreach my $cust_svc (
+      qsearch( 'cust_svc', { 'pkgnum' => $self->pkgnum } )
+    ) {
+      my $part_svc = qsearchs( 'part_svc', { 'svcpart' => $cust_svc->svcpart } );
 
-    $part_svc->svcdb =~ /^([\w\-]+)$/ or do {
-      $dbh->rollback if $oldAutoCommit;
-      return "Illegal svcdb value in part_svc!";
-    };
-    my $svcdb = $1;
-    require "FS/$svcdb.pm";
-
-    my $svc = qsearchs( $svcdb, { 'svcnum' => $cust_svc->svcnum } );
-    if ($svc) {
-      $error = $svc->suspend;
-      if ( $error ) {
+      $part_svc->svcdb =~ /^([\w\-]+)$/ or do {
         $dbh->rollback if $oldAutoCommit;
-        return $error;
+        return "Illegal svcdb value in part_svc!";
+      };
+      my $svcdb = $1;
+      require "FS/$svcdb.pm";
+
+      my $svc = qsearchs( $svcdb, { 'svcnum' => $cust_svc->svcnum } );
+      if ($svc) {
+        $error = $svc->suspend;
+        if ( $error ) {
+          $dbh->rollback if $oldAutoCommit;
+          return $error;
+        }
       }
     }
-
   }
 
-  unless ( $self->getfield('susp') ) {
-    my %hash = $self->hash;
-    $hash{'susp'} = time;
-    my $new = new FS::cust_pkg ( \%hash );
-    $error = $new->replace( $self, options => { $self->options } );
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
-    }
+  my %hash = $self->hash;
+  $date ? ($hash{'adjourn'} = $date) : ($hash{'susp'} = time);
+  my $new = new FS::cust_pkg ( \%hash );
+  $error = $new->replace( $self, options => { $self->options } );
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
@@ -707,6 +801,19 @@ sub unsuspend {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
+  my $old = $self->select_for_update;
+
+  my $pkgnum = $old->pkgnum;
+  if ( $old->get('cancel') || $self->get('cancel') ) {
+    dbh->rollback if $oldAutoCommit;
+    return "Can't unsuspend cancelled package $pkgnum";
+  }
+
+  unless ( $old->get('susp') && $self->get('susp') ) {
+    dbh->rollback if $oldAutoCommit;
+    return "";  # no error                     # complain instead?
+  }
+
   foreach my $cust_svc (
     qsearch('cust_svc',{'pkgnum'=> $self->pkgnum } )
   ) {
@@ -730,30 +837,86 @@ sub unsuspend {
 
   }
 
-  unless ( ! $self->getfield('susp') ) {
-    my %hash = $self->hash;
-    my $inactive = time - $hash{'susp'};
+  my %hash = $self->hash;
+  my $inactive = time - $hash{'susp'};
 
-    my $conf = new FS::Conf;
+  my $conf = new FS::Conf;
 
-    $hash{'bill'} = ( $hash{'bill'} || $hash{'setup'} ) + $inactive
-      if ( $opt{'adjust_next_bill'}
-           || $conf->config('unsuspend-always_adjust_next_bill_date') )
-      && $inactive > 0 && ( $hash{'bill'} || $hash{'setup'} );
+  $hash{'bill'} = ( $hash{'bill'} || $hash{'setup'} ) + $inactive
+    if ( $opt{'adjust_next_bill'}
+         || $conf->config('unsuspend-always_adjust_next_bill_date') )
+    && $inactive > 0 && ( $hash{'bill'} || $hash{'setup'} );
 
-    $hash{'susp'} = '';
-    $hash{'adjourn'} = '' if $hash{'adjourn'} < time;
-    my $new = new FS::cust_pkg ( \%hash );
-    $error = $new->replace( $self, options => { $self->options } );
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
-    }
+  $hash{'susp'} = '';
+  $hash{'adjourn'} = '' if $hash{'adjourn'} < time;
+  my $new = new FS::cust_pkg ( \%hash );
+  $error = $new->replace( $self, options => { $self->options } );
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   ''; #no errors
+}
+
+=item unadjourn
+
+Cancels any pending suspension (sets the adjourn field to null).
+
+If there is an error, returns the error, otherwise returns false.
+
+=cut
+
+sub unadjourn {
+  my( $self, %options ) = @_;
+  my $error;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE'; 
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $old = $self->select_for_update;
+
+  my $pkgnum = $old->pkgnum;
+  if ( $old->get('cancel') || $self->get('cancel') ) {
+    dbh->rollback if $oldAutoCommit;
+    return "Can't unadjourn cancelled package $pkgnum";
+    # or at least it's pointless
+  }
+
+  if ( $old->get('susp') || $self->get('susp') ) {
+    dbh->rollback if $oldAutoCommit;
+    return "Can't unadjourn suspended package $pkgnum";
+    # perhaps this is arbitrary
+  }
+
+  unless ( $old->get('adjourn') && $self->get('adjourn') ) {
+    dbh->rollback if $oldAutoCommit;
+    return "";  # no error
+  }
+
+  my %hash = $self->hash;
+  $hash{'adjourn'} = '';
+  my $new = new FS::cust_pkg ( \%hash );
+  $error = $new->replace( $self, options => { $self->options } );
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  ''; #no errors
+
 }
 
 =item last_bill
@@ -772,30 +935,37 @@ sub last_bill {
   $cust_bill_pkg ? $cust_bill_pkg->sdate : $self->setup || 0;
 }
 
-=item last_cust_pkg_reason
+=item last_cust_pkg_reason ACTION
 
-Returns the most recent FS::reason associated with the package.
+Returns the most recent ACTION FS::cust_pkg_reason associated with the package.
+Returns false if there is no reason or the package is not currenly ACTION'd
+ACTION is one of adjourn, susp, cancel, or expire.
 
 =cut
 
 sub last_cust_pkg_reason {
-  my $self = shift;
+  my ( $self, $action ) = ( shift, shift );
+  my $date = $self->get($action);
   qsearchs( {
               'table' => 'cust_pkg_reason',
-              'hashref' => { 'pkgnum' => $self->pkgnum, },
-              'extra_sql'=> "AND date <= ". time,
-              'order_by' => 'ORDER BY date DESC LIMIT 1',
+              'hashref' => { 'pkgnum' => $self->pkgnum,
+                             'action' => substr(uc($action), 0, 1),
+                             'date'   => $date,
+                           },
+              'order_by' => 'ORDER BY num DESC LIMIT 1',
            } );
 }
 
-=item last_reason
+=item last_reason ACTION
 
-Returns the most recent FS::reason associated with the package.
+Returns the most recent ACTION FS::reason associated with the package.
+Returns false if there is no reason or the package is not currenly ACTION'd
+ACTION is one of adjourn, susp, cancel, or expire.
 
 =cut
 
 sub last_reason {
-  my $cust_pkg_reason = shift->last_cust_pkg_reason;
+  my $cust_pkg_reason = shift->last_cust_pkg_reason(@_);
   $cust_pkg_reason->reason
     if $cust_pkg_reason;
 }
@@ -2055,7 +2225,8 @@ sub bulk_change {
 sub insert_reason {
   my ($self, %options) = @_;
 
-  my $otaker = $FS::CurrentUser::CurrentUser->username;
+  my $otaker = $options{reason_otaker} ||
+               $FS::CurrentUser::CurrentUser->username;
 
   my $reasonnum;
   if ( $options{'reason'} =~ /^(\d+)$/ ) {
@@ -2084,6 +2255,7 @@ sub insert_reason {
     new FS::cust_pkg_reason({ 'pkgnum'    => $self->pkgnum,
                               'reasonnum' => $reasonnum, 
 		              'otaker'    => $otaker,
+		              'action'    => substr(uc($options{'action'}),0,1),
 		              'date'      => $options{'date'}
 			                       ? $options{'date'}
 					       : time,
