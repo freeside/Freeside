@@ -39,13 +39,19 @@ from FS::Record.  The following fields are currently supported:
 
 =over 4
 
-=item svcnum - primary key
+=item svcnum
 
-=item countrycode - 
+primary key
 
-=item phonenum - 
+=item countrycode
 
-=item pin - 
+=item phonenum
+
+=item sip_password
+
+=item pin
+
+Voicemail PIN
 
 =back
 
@@ -71,17 +77,18 @@ sub table_info {
     'display_weight' => 60,
     'cancel_weight'  => 80,
     'fields' => {
-        'countrycode' => { label => 'Country code',
-                           type  => 'text',
-                           disable_inventory => 1,
-                           disable_select => 1,
-                         },
-        'phonenum'    => 'Phone number',
-        'pin'         => { label => 'Personal Identification Number',
-                           type  => 'text',
-                           disable_inventory => 1,
-                           disable_select => 1,
-                         },
+        'countrycode'  => { label => 'Country code',
+                            type  => 'text',
+                            disable_inventory => 1,
+                            disable_select => 1,
+                          },
+        'phonenum'     => 'Phone number',
+        'pin'          => { label => 'Personal Identification Number',
+                            type  => 'text',
+                            disable_inventory => 1,
+                            disable_select => 1,
+                          },
+        'sip_password' => 'SIP password',
     },
   };
 }
