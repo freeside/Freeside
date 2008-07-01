@@ -2144,26 +2144,6 @@ sub order {
   '';
 }
 
-=item insert_reason
-
-Associates this package with a (suspension or cancellation) reason (see
-L<FS::cust_pkg_reason>, possibly inserting a new reason on the fly (see
-L<FS::reason>).
-
-Available options are:
-
-=over 4
-
-=item reason - can be set to a cancellation reason (see L<FS:reason>), either a reasonnum of an existing reason, or passing a hashref will create a new reason.  The hashref should have the following keys: typenum - Reason type (see L<FS::reason_type>, reason - Text of the new reason.
-
-=item date
-
-=back
-
-If there is an error, returns the error, otherwise returns false.
-
-=cut
-
 =item bulk_change PKGPARTS_ARYREF, REMOVE_PKGNUMS_ARYREF [ RETURN_CUST_PKG_ARRAYREF ]
 
 PKGPARTS is a list of pkgparts specifying the the billing item definitions (see
@@ -2221,6 +2201,30 @@ sub bulk_change {
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
 }
+
+=item insert_reason
+
+Associates this package with a (suspension or cancellation) reason (see
+L<FS::cust_pkg_reason>, possibly inserting a new reason on the fly (see
+L<FS::reason>).
+
+Available options are:
+
+=over 4
+
+=item reason - can be set to a cancellation reason (see L<FS:reason>), either a reasonnum of an existing reason, or passing a hashref will create a new reason.  The hashref should have the following keys: typenum - Reason type (see L<FS::reason_type>, reason - Text of the new reason.
+
+=item otaker_reason - the access_user (see L<FS::access_user>) providing the reason
+
+=item date - a unix timestamp 
+
+=item action - the action (cancel, susp, adjourn, expire) associated with the reason
+
+=back
+
+If there is an error, returns the error, otherwise returns false.
+
+=cut
 
 sub insert_reason {
   my ($self, %options) = @_;
