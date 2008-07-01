@@ -1,10 +1,11 @@
 <% include('elements/svc_Common.html',
               'table'     => 'svc_phone',
-              'fields'    => [qw( countrycode phonenum pin )],
+              'fields'    => [qw( countrycode phonenum sip_password pin )],
               'labels'    => {
-                               'countrycode' => 'Country code',
-                               'phonenum'    => 'Phone number',
-                               'pin'         => 'PIN',
+                               'countrycode'  => 'Country code',
+                               'phonenum'     => 'Phone number',
+                               'sip_password' => 'SIP password',
+                               'pin'          => 'PIN',
                              },
               'html_foot' => $html_foot,
           )
