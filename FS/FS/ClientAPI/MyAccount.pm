@@ -420,6 +420,7 @@ sub process_payment {
     or return { 'error' => "illegal_payby " . $p->{'payby'} };
   my $payby = $1;
 
+  #false laziness w/process/payment.cgi
   my $payinfo;
   my $paycvv = '';
   if ( $payby eq 'CHEK' || $payby eq 'DCHK' ) {
@@ -438,13 +439,14 @@ sub process_payment {
   } elsif ( $payby eq 'CARD' || $payby eq 'DCRD' ) {
    
     $payinfo = $p->{'payinfo'};
-    $payinfo =~ s/[^\dx]//g;
-    $payinfo =~ /^(\d{13,16})$/
-      or return { 'error' => gettext('invalid_card') }; # . ": ". $self->payinfo
-    $payinfo = $1;
 
     $payinfo = $cust_main->payinfo
       if $cust_main->paymask eq $payinfo;
+
+    $payinfo =~ s/\D//g;
+    $payinfo =~ /^(\d{13,16})$/
+      or return { 'error' => gettext('invalid_card') }; # . ": ". $self->payinfo
+    $payinfo = $1;
 
     validate($payinfo)
       or return { 'error' => gettext('invalid_card') }; # . ": ". $self->payinfo
