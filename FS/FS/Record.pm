@@ -299,6 +299,7 @@ sub qsearch {
     grep defined( $record->{$_} ) && $record->{$_} ne '', @real_fields
   ) {
     my $value = $record->{$field};
+    $value = $value->{'value'} if ref($value);
     my $type = dbdef->table($table)->column($field)->type;
     if ( $type =~ /(int|(big)?serial)/i && $value =~ /^\d+(\.\d+)?$/ ) {
       $sth->bind_param($bind++, $record->{$field}, { TYPE => SQL_INTEGER } );
