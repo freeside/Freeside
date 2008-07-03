@@ -302,15 +302,15 @@ sub qsearch {
     $value = $value->{'value'} if ref($value);
     my $type = dbdef->table($table)->column($field)->type;
     if ( $type =~ /(int|(big)?serial)/i && $value =~ /^\d+(\.\d+)?$/ ) {
-      $sth->bind_param($bind++, $record->{$field}, { TYPE => SQL_INTEGER } );
+      $sth->bind_param($bind++, $value, { TYPE => SQL_INTEGER } );
     } elsif (    ( $type =~ /(numeric)/i     && $value =~ /^[+-]?\d+(\.\d+)?$/)
               || ( $type =~ /(real|float4)/i
                      && $value =~ /[-+]?\d*\.?\d+([eE][-+]?\d+)?/
                  )
             ) {
-      $sth->bind_param($bind++, $record->{$field}, { TYPE => SQL_FLOAT } );
+      $sth->bind_param($bind++, $value, { TYPE => SQL_FLOAT } );
     } else {
-      $sth->bind_param($bind++, $record->{$field}, { TYPE => SQL_VARCHAR } );
+      $sth->bind_param($bind++, $value, { TYPE => SQL_VARCHAR } );
     }
   }
 
