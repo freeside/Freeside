@@ -169,9 +169,19 @@ setting I<refnum> to an array reference of refnums or a hash reference with
 refnums as keys.  If no I<refnum> is defined, a default FS::pkg_referral
 record will be created corresponding to cust_main.refnum.
 
-The following options are available: I<change>
+The following options are available:
 
-I<change>, if set true, supresses any referral credit to a referring customer.
+=over 4
+
+=item change
+
+If set true, supresses any referral credit to a referring customer.
+
+=item options
+
+cust_pkg_option records will be created
+
+=back
 
 =cut
 
@@ -282,7 +292,7 @@ the customer ever purchased the item.  Instead, see the cancel method.
 #  return "Can't delete cust_pkg records!";
 #}
 
-=item replace OLD_RECORD
+=item replace [ OLD_RECORD ] [ HASHREF | OPTION => VALUE ... ]
 
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
@@ -299,7 +309,23 @@ suspend is normally updated by the suspend and unsuspend methods.
 cancel is normally updated by the cancel method (and also the order subroutine
 in some cases).
 
-Calls 
+Available options are:
+
+=over 4
+
+=item reason
+
+can be set to a cancellation reason (see L<FS:reason>), either a reasonnum of an existing reason, or passing a hashref will create a new reason.  The hashref should have the following keys: typenum - Reason type (see L<FS::reason_type>, reason - Text of the new reason.
+
+=item reason_otaker
+
+the access_user (see L<FS::access_user>) providing the reason
+
+=item options
+
+hashref of keys and values - cust_pkg_option records will be created, updated or removed as appopriate
+
+=back
 
 =cut
 
@@ -340,11 +366,12 @@ sub replace {
 
   foreach my $method ( qw(adjourn expire) ) {  # How many reasons?
     if ($options->{'reason'} && $new->$method && $old->$method ne $new->$method) {
-      my $error = $new->insert_reason( 'reason' => $options->{'reason'},
-                                       'date'   => $new->$method,
-                                       'action' => $method,
-                                       'reason_otaker' => $options{'reason_otaker'},
-                                     );
+      my $error = $new->insert_reason(
+        'reason'        => $options->{'reason'},
+        'date'          => $new->$method,
+        'action'        => $method,
+        'reason_otaker' => $options->{'reason_otaker'},
+      );
       if ( $error ) {
         dbh->rollback if $oldAutoCommit;
         return "Error inserting cust_pkg_reason: $error";
@@ -773,14 +800,20 @@ Unsuspends all services (see L<FS::cust_svc> and L<FS::part_svc>) in this
 package, then unsuspends the package itself (clears the susp field and the
 adjourn field if it is in the past).
 
-Available options are: I<adjust_next_bill>.
+Available options are:
 
-I<adjust_next_bill> can be set true to adjust the next bill date forward by
+=over 4
+
+=item adjust_next_bill
+
+Can be set true to adjust the next bill date forward by
 the amount of time the account was inactive.  This was set true by default
 since 1.4.2 and 1.5.0pre6; however, starting with 1.7.0 this needs to be
 explicitly requested.  Price plans for which this makes sense (anniversary-date
 based than prorate or subscription) could have an option to enable this
 behaviour?
+
+=back
 
 If there is an error, returns the error, otherwise returns false.
 
@@ -2212,13 +2245,21 @@ Available options are:
 
 =over 4
 
-=item reason - can be set to a cancellation reason (see L<FS:reason>), either a reasonnum of an existing reason, or passing a hashref will create a new reason.  The hashref should have the following keys: typenum - Reason type (see L<FS::reason_type>, reason - Text of the new reason.
+=item reason
 
-=item otaker_reason - the access_user (see L<FS::access_user>) providing the reason
+can be set to a cancellation reason (see L<FS:reason>), either a reasonnum of an existing reason, or passing a hashref will create a new reason.  The hashref should have the following keys: typenum - Reason type (see L<FS::reason_type>, reason - Text of the new reason.
 
-=item date - a unix timestamp 
+=item reason_otaker
 
-=item action - the action (cancel, susp, adjourn, expire) associated with the reason
+the access_user (see L<FS::access_user>) providing the reason
+
+=item date
+
+a unix timestamp 
+
+=item action
+
+the action (cancel, susp, adjourn, expire) associated with the reason
 
 =back
 
