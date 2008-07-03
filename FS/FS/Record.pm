@@ -298,17 +298,15 @@ sub qsearch {
   foreach my $field (
     grep defined( $record->{$_} ) && $record->{$_} ne '', @real_fields
   ) {
-    if ( $record->{$field} =~ /^\d+(\.\d+)?$/
-         && dbdef->table($table)->column($field)->type =~ /(int|(big)?serial)/i
-    ) {
+    my $value = $record->{$field};
+    my $type = dbdef->table($table)->column($field)->type;
+    if ( $type =~ /(int|(big)?serial)/i && $value =~ /^\d+(\.\d+)?$/ ) {
       $sth->bind_param($bind++, $record->{$field}, { TYPE => SQL_INTEGER } );
-    }elsif ( $record->{$field} =~ /^[+-]?\d+(\.\d+)?$/
-         && dbdef->table($table)->column($field)->type =~ /(numeric)/i
-    ) {
-      $sth->bind_param($bind++, $record->{$field}, { TYPE => SQL_FLOAT } );
-    }elsif ( $record->{$field} =~ /[-+]?\d*\.?\d+([eE][-+]?\d+)?/
-         && dbdef->table($table)->column($field)->type =~ /(float4)/i
-    ) {
+    } elsif (    ( $type =~ /(numeric)/i     && $value =~ /^[+-]?\d+(\.\d+)?$/)
+              || ( $type =~ /(real|float4)/i
+                     && $value =~ /[-+]?\d*\.?\d+([eE][-+]?\d+)?/
+                 )
+            ) {
       $sth->bind_param($bind++, $record->{$field}, { TYPE => SQL_FLOAT } );
     } else {
       $sth->bind_param($bind++, $record->{$field}, { TYPE => SQL_VARCHAR } );
