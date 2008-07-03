@@ -571,8 +571,8 @@ sub pkg_adjourn_link { include( '/elements/popup_link-cust_pkg.html',
 
 sub pkg_unsuspend_link { pkg_link('misc/unsusp_pkg',    'Unsuspend',           @_ ); }
 sub pkg_dates_link     { pkg_link('edit/REAL_cust_pkg', 'Edit&nbsp;dates',     @_ ); }
-sub unadjourn_link     { pkg_link('misc/unadjourn_pkg', 'Abort',               @_ ); }
-sub unexpire_link      { pkg_link('misc/unexpire_pkg',  'Abort',               @_ ); }
+sub pkg_unadjourn_link     { pkg_link('misc/unadjourn_pkg', 'Abort',               @_ ); }
+sub pkg_unexpire_link      { pkg_link('misc/unexpire_pkg',  'Abort',               @_ ); }
 
 sub pkg_cancel_link { include( '/elements/popup_link-cust_pkg.html',
                                { 'action'      => $p. 'misc/cancel_pkg.html?method=cancel',
