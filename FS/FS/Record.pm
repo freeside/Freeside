@@ -42,7 +42,7 @@ my $rsa_decrypt;
 FS::UID->install_callback( sub {
   eval "use FS::Conf;";
   die $@ if $@;
-  $conf = new FS::Conf; 
+  $conf = FS::Conf->new; 
   $File::CounterFile::DEFAULT_DIR = $conf->base_dir . "/counters.". datasrc;
 } );
 
@@ -238,6 +238,8 @@ fine in the common case where there are only two parameters:
 
 =cut
 
+my %TYPE = (); #for debugging
+
 sub qsearch {
   my($stable, $record, $select, $extra_sql, $order_by, $cache, $addl_from );
   my $debug = '';
@@ -298,20 +300,30 @@ sub qsearch {
   foreach my $field (
     grep defined( $record->{$_} ) && $record->{$_} ne '', @real_fields
   ) {
+
     my $value = $record->{$field};
     $value = $value->{'value'} if ref($value);
     my $type = dbdef->table($table)->column($field)->type;
+
+    my $TYPE = SQL_VARCHAR;
     if ( $type =~ /(int|(big)?serial)/i && $value =~ /^\d+(\.\d+)?$/ ) {
-      $sth->bind_param($bind++, $value, { TYPE => SQL_INTEGER } );
+      $TYPE = SQL_INTEGER;
     } elsif (    ( $type =~ /(numeric)/i     && $value =~ /^[+-]?\d+(\.\d+)?$/)
               || ( $type =~ /(real|float4)/i
                      && $value =~ /[-+]?\d*\.?\d+([eE][-+]?\d+)?/
                  )
             ) {
-      $sth->bind_param($bind++, $value, { TYPE => SQL_FLOAT } );
-    } else {
-      $sth->bind_param($bind++, $value, { TYPE => SQL_VARCHAR } );
+      $TYPE = SQL_FLOAT;
     }
+
+    if ( $DEBUG > 2 ) {
+      %TYPE = map { &{"DBI::$_"} => $_ } @{ $DBI::EXPORT_TAGS{sql_types} }
+        unless keys %TYPE;
+      warn "  bind_param $bind (for field $field), $value, TYPE $TYPE{$TYPE}\n";
+    }
+
+    $sth->bind_param($bind++, $value, { TYPE => $TYPE } );
+
   }
 
 #  $sth->execute( map $record->{$_},
