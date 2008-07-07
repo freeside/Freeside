@@ -317,6 +317,7 @@ sub qsearch {
     }
 
     if ( $DEBUG > 2 ) {
+      no strict 'refs';
       %TYPE = map { &{"DBI::$_"} => $_ } @{ $DBI::EXPORT_TAGS{sql_types} }
         unless keys %TYPE;
       warn "  bind_param $bind (for field $field), $value, TYPE $TYPE{$TYPE}\n";
