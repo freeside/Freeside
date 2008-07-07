@@ -327,7 +327,7 @@ foreach my $r (qsearch('cust_main_county', {}, '', $gotcust) ) {
 
     if ( scalar(@taxclasses) ) {
       $mywhere .= ' AND '. join(' AND ', map ' taxclass != ? ', @taxclasses );
-      push @param, @taxclasses;
+      push @param, map \$_, @taxclasses;
     }
   
   }
@@ -559,7 +559,7 @@ sub scalar_sql {
   my( $r, $param, $sql ) = @_;
   #warn "$sql\n";
   my $sth = dbh->prepare($sql) or die dbh->errstr;
-  $sth->execute( map $r->$_(), @$param )
+  $sth->execute( map { ref($_) ? ${$_} : $r->$_() } @$param )
     or die "Unexpected error executing statement $sql: ". $sth->errstr;
   $sth->fetchrow_arrayref->[0] || 0;
 }
