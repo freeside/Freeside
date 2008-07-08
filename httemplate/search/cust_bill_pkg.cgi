@@ -123,8 +123,17 @@ if ( $cgi->param('out') ) {
     if $cgi->param('taxclass');
 
   if ( $cgi->param('taxclassNULL') ) {
-    my $same_sql = $r->sql_taxclass_sameregion;
+
+    my %hash = ( 'country' => scalar($cgi->param('country')) );
+    foreach (qw( state county )) {
+      $hash{$_} = scalar($cgi->param($_)) if $cgi->param($_);
+    }
+    my $cust_main_county = qsearchs('cust_main_county', \%hash);
+    die "unknown base region for empty taxclass" unless $cust_main_county;
+
+    my $same_sql = $cust_main_county->sql_taxclass_sameregion;
     push @where, $same_sql if $same_sql;
+
   }
 
 }
