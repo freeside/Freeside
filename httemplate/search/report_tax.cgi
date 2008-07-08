@@ -311,25 +311,12 @@ foreach my $r (qsearch('cust_main_county', {}, '', $gotcust) ) {
 
   } else {
 
-    my $same_query = 'SELECT taxclass FROM cust_main_county '.
-                     ' WHERE taxnum != ? AND country = ?';
-    my @same_param = ( 'taxnum', 'country' );
-    foreach my $opt_field (qw( state county )) {
-      if ( $r->$opt_field() ) {
-        $same_query .= " AND $opt_field = ?";
-        push @same_param, $opt_field;
-      } else {
-        $same_query .= " AND $opt_field IS NULL";
-      }
-    }
+    $regions{$label}->{'url_param'} .= ';taxclassNULL=1'
+      if $cgi->param('show_taxclasses');
 
-    my @taxclasses = list_sql( $r, \@same_param, $same_query );
+    my $same_sql = $r->sql_taxclass_sameregion;
+    $mywhere .= " AND $same_sql" if $same_sql;
 
-    if ( scalar(@taxclasses) ) {
-      $mywhere .= ' AND '. join(' AND ', map ' taxclass != ? ', @taxclasses );
-      push @param, map \$_, @taxclasses;
-    }
-  
   }
 
   my $fromwhere = $from_join_cust. $join_pkg. $mywhere. " AND payby != 'COMP' ";
@@ -559,18 +546,9 @@ sub scalar_sql {
   my( $r, $param, $sql ) = @_;
   #warn "$sql\n";
   my $sth = dbh->prepare($sql) or die dbh->errstr;
-  $sth->execute( map { ref($_) ? ${$_} : $r->$_() } @$param )
-    or die "Unexpected error executing statement $sql: ". $sth->errstr;
-  $sth->fetchrow_arrayref->[0] || 0;
-}
-
-sub list_sql {
-  my( $r, $param, $sql ) = @_;
-  #warn "$sql\n";
-  my $sth = dbh->prepare($sql) or die dbh->errstr;
   $sth->execute( map $r->$_(), @$param )
     or die "Unexpected error executing statement $sql: ". $sth->errstr;
-  map $_->[0], @{ $sth->fetchall_arrayref };
+  $sth->fetchrow_arrayref->[0] || 0;
 }
 
 my $dateagentlink = "begin=$beginning;end=$ending";

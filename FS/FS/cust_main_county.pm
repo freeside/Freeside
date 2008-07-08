@@ -157,6 +157,47 @@ sub recurtax {
   return '';
 }
 
+=item sql_taxclass_sameregion
+
+Returns an SQL WHERE fragment or the empty string to search for entries
+with different tax classes.
+
+=cut
+
+#hmm, description above could be better...
+
+sub sql_taxclass_sameregion {
+  my $self = shift;
+
+  my $same_query = 'SELECT taxclass FROM cust_main_county '.
+                   ' WHERE taxnum != ? AND country = ?';
+  my @same_param = ( 'taxnum', 'country' );
+  foreach my $opt_field (qw( state county )) {
+    if ( $self->$opt_field() ) {
+      $same_query .= " AND $opt_field = ?";
+      push @same_param, $opt_field;
+    } else {
+      $same_query .= " AND $opt_field IS NULL";
+    }
+  }
+
+  my @taxclasses = $self->_list_sql( \@same_param, $same_query );
+
+  return '' unless scalar(@taxclasses);
+
+  '( taxclass IS NULL OR ( '.  #only if !$self->taxclass ??
+     join(' AND ', map { 'taxclass != '.dbh->quote($_) } @taxclasses ). 
+  ' ) ) ';
+}
+
+sub _list_sql {
+  my( $self, $param, $sql ) = @_;
+  my $sth = dbh->prepare($sql) or die dbh->errstr;
+  $sth->execute( map $self->$_(), @$param )
+    or die "Unexpected error executing statement $sql: ". $sth->errstr;
+  map $_->[0], @{ $sth->fetchall_arrayref };
+}
+
 =item taxline CUST_BILL_PKG, ...
 
 Returns a listref of a name and an amount of tax calculated for the list of
