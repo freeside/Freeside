@@ -185,7 +185,7 @@ my $query = {
                    FS::UI::Web::cust_sql_fields(),
                  ),
   'extra_sql' => $where,
-  'order_by'  => 'ORDER BY _date',
+  'order_by'  => 'ORDER BY _date, billpkgnum',
 };
 
 my $ilink = [ "${p}view/cust_bill.cgi?", 'invnum' ];
