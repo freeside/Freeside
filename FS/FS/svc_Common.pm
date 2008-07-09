@@ -49,7 +49,7 @@ sub search_sql_field {
   my( $class, $field, $string ) = @_;
   my $table = $class->table;
   my $q_string = dbh->quote($string);
-  "lc($table.$field) = lc($q_string)";
+  "LOWER($table.$field) = LOWER($q_string)";
 }
 
 #fallback for services that don't provide a search... 
