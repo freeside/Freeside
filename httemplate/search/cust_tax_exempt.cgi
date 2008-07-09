@@ -14,7 +14,7 @@
                  'fields'      => [
                    'exemptnum',
                    sub { $_[0]->month. '/'. $_[0]->year; },
-                   sub { my $h = $_->h_search('insert');
+                   sub { my $h = $_[0]->h_search('insert');
                          $h ? time2str('%L/%d/%Y', $h->history_date ) : ''
                        },
                    sub { $money_char. $_[0]->amount; },
