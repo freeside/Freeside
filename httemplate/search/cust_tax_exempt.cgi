@@ -11,7 +11,7 @@
                    FS::UI::Web::cust_header(),
                  ],
                  'fields'      => [
-                   'exemptpkgnum',
+                   'exemptnum',
                    sub { $_[0]->month. '/'. $_[0]->year; },
                    sub { $money_char. $_[0]->amount; },
 
