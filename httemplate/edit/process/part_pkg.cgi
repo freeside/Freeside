@@ -38,10 +38,10 @@ my $precheck_callback = sub {
     push @agents, $1 if $1;
   }
   return "At least one agent type must be specified."
-    unless( scalar(@agents) ||
-            $cgi->param('clone') && $cgi->param('clone') =~ /^\d+$/ ||
-            !$cgi->param('pkgpart') && $conf->exists('agent-defaultpkg')
-          );
+    unless scalar(@agents)
+           || ( $cgi->param('clone') && $cgi->param('clone') =~ /^\d+$/ )
+           || ( !$cgi->param('pkgpart') && $conf->exists('agent-defaultpkg') )
+           || $cgi->param('disabled');
 
   return '';
 
