@@ -7,12 +7,16 @@
                  'header'      => [
                    '#',
                    'Month',
+                   'Inserted',
                    'Amount',
                    FS::UI::Web::cust_header(),
                  ],
                  'fields'      => [
                    'exemptnum',
                    sub { $_[0]->month. '/'. $_[0]->year; },
+                   sub { my $h = $_->h_search('insert');
+                         $h ? time2str('%L/%d/%Y', $h->history_date ) : ''
+                       },
                    sub { $money_char. $_[0]->amount; },
 
                    \&FS::UI::Web::cust_fields,
@@ -21,19 +25,22 @@
                    '',
                    '',
                    '',
+                   '',
 
                    ( map { $_ ne 'Cust. Status' ? $clink : '' }
                          FS::UI::Web::cust_header()
                    ),
                  ],
-                 'align' => 'rrr'.FS::UI::Web::cust_aligns(),
+                 'align' => 'rrrr'.FS::UI::Web::cust_aligns(),
                  'color' => [ 
+                              '',
                               '',
                               '',
                               '',
                               FS::UI::Web::cust_colors(),
                             ],
                  'style' => [ 
+                              '',
                               '',
                               '',
                               '',
