@@ -67,6 +67,13 @@ if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
   push @where,  "cust_main.custnum = $1";
 }
 
+#prospect active inactive suspended cancelled
+if ( grep { $cgi->param('status') eq $_ } FS::cust_main->statuses() ) {
+  my $method = $cgi->param('status'). '_sql';
+  #push @where, $class->$method();
+  push @where, FS::cust_main->$method();
+}
+
 if ( $cgi->param('out') ) {
 
   push @where, "

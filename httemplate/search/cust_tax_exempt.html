@@ -1,0 +1,31 @@
+<% include('/elements/header.html', 'Legacy tax exemption report' ) %>
+
+<FORM ACTION="cust_tax_exempt.cgi" METHOD="GET">
+
+  <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+    <TR>
+      <TH BGCOLOR="#e8e8e8" COLSPAN=2 ALIGN="left"><FONT SIZE="+1">Search options</FONT></TH>
+    </TR>
+
+    <% include( '/elements/tr-select-cust_main-status.html',
+                  'label' => 'Customer Status'
+              )
+    %>
+
+  </TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="Get Report">
+
+
+</FORM>
+
+<% include('/elements/footer.html') %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('View customer tax exemptions');
+
+</%init>
+
