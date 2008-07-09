@@ -41,13 +41,15 @@ inherit from, i.e. FS::svc_acct.  FS::svc_Common inherits from FS::Record.
 
 Class method which returns an SQL fragment to search for STRING in FIELD.
 
+It is now case-insensitive by default.
+
 =cut
 
 sub search_sql_field {
   my( $class, $field, $string ) = @_;
   my $table = $class->table;
   my $q_string = dbh->quote($string);
-  "$table.$field = $q_string";
+  "lc($table.$field) = lc($q_string)";
 }
 
 #fallback for services that don't provide a search... 
@@ -207,7 +209,6 @@ sub insert {
   my $objects = $options{'child_objects'} || [];
   my $depend_jobnums = $options{'depend_jobnum'} || [];
   $depend_jobnums = [ $depend_jobnums ] unless ref($depend_jobnums);
-  my $error;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -220,9 +221,6 @@ sub insert {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  $error = $self->check;
-  return $error if $error;
-
   my $svcnum = $self->svcnum;
   my $cust_svc = $svcnum ? qsearchs('cust_svc',{'svcnum'=>$self->svcnum}) : '';
   #unless ( $svcnum ) {
@@ -233,7 +231,7 @@ sub insert {
       'pkgnum'  => $self->pkgnum,
       'svcpart' => $self->svcpart,
     } );
-    $error = $cust_svc->insert;
+    my $error = $cust_svc->insert;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error;
@@ -249,13 +247,9 @@ sub insert {
     $self->svcpart($cust_svc->svcpart);
   }
 
-  $error = $self->set_auto_inventory;
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $error;
-  }
-
-  $error = $self->SUPER::insert;
+  my $error =    $self->set_auto_inventory
+              || $self->check
+              || $self->SUPER::insert;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
