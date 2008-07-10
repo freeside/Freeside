@@ -167,8 +167,8 @@ Current packages
 
        <% pkg_status_row( $cust_pkg, 'Setup', 'setup', conf=>$conf ) %>
        <% pkg_status_row_changed( $cust_pkg, conf=>$conf ) %>
-       <% pkg_status_row_if( $cust_pkg, $last_bill_or_renewed, 'last_bill', conf=>$conf ) %>
-       <% pkg_status_row_if( $cust_pkg, 'Suspended', 'susp', conf=>$conf ) %>
+       <% pkg_status_row_if( $cust_pkg, $last_bill_or_renewed, 'last_bill', conf=>$conf, curuser=>$curuser ) %>
+       <% pkg_status_row_if( $cust_pkg, 'Suspended', 'susp', conf=>$conf, curuser=>$curuser ) %>
 
 %   } 
 %
@@ -192,9 +192,9 @@ Current packages
 %   } 
 
     <% pkg_status_row_changed( $cust_pkg, conf=>$conf ) %>
-    <% pkg_status_row_if( $cust_pkg, $last_bill_or_renewed, 'last_bill', conf=>$conf ) %>
+    <% pkg_status_row_if( $cust_pkg, $last_bill_or_renewed, 'last_bill', conf=>$conf, curuser=>$curuser ) %>
 %   # pkg_status_row($cust_pkg, 'Next bill', 'bill', conf=>$conf)
-    <% pkg_status_row_if( $cust_pkg, 'Expires', 'expire', conf=>$conf ) %>
+    <% pkg_status_row_if( $cust_pkg, 'Expires', 'expire', conf=>$conf, curuser=>$curuser ) %>
 
     <TR>
       <TD COLSPAN=<%$colspan%>>
@@ -268,10 +268,10 @@ Current packages
 %     } 
 
       <% pkg_status_row_changed( $cust_pkg, conf=>$conf ) %>
-      <% pkg_status_row_if( $cust_pkg, $last_bill_or_renewed, 'last_bill', conf=>$conf ) %>
-      <% pkg_status_row_if( $cust_pkg, $next_bill_or_prepaid_until, 'bill', conf=>$conf ) %>
-      <% pkg_status_row_if( $cust_pkg, 'Will suspend on', 'adjourn', conf=>$conf ) %>
-      <% pkg_status_row_if( $cust_pkg, 'Expires', 'expire', conf=>$conf ) %>
+      <% pkg_status_row_if( $cust_pkg, $last_bill_or_renewed, 'last_bill', conf=>$conf, curuser=>$curuser ) %>
+      <% pkg_status_row_if( $cust_pkg, $next_bill_or_prepaid_until, 'bill', conf=>$conf, curuser=>$curuser ) %>
+      <% pkg_status_row_if( $cust_pkg, 'Will suspend on', 'adjourn', conf=>$conf, curuser=>$curuser ) %>
+      <% pkg_status_row_if( $cust_pkg, 'Expires', 'expire', conf=>$conf, curuser=>$curuser ) %>
 
 %     if ( $part_pkg->freq ) { 
 
@@ -415,12 +415,12 @@ sub pkg_status_row_if {
   
   $title = '<FONT SIZE=-1>(&nbsp;'. pkg_unadjourn_link($cust_pkg). '&nbsp;)&nbsp;</FONT>'. $title
     if ( $field eq 'adjourn' &&
-         $curuser->access_right('Suspend customer package later')
+         $opt{curuser}->access_right('Suspend customer package later')
        );
 
   $title = '<FONT SIZE=-1>(&nbsp;'. pkg_unexpire_link($cust_pkg). '&nbsp;)&nbsp;</FONT>'. $title
     if ( $field eq 'expire' &&
-         $curuser->access_right('Cancel customer package later')
+         $opt{curuser}->access_right('Cancel customer package later')
        );
 
   $cust_pkg->get($field) ? pkg_status_row($cust_pkg, $title, $field, %opt) : '';
