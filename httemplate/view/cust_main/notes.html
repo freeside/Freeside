@@ -77,7 +77,7 @@ my (@notes) = $cust_main->notes();
 
 sub note_datestr {
   my($note, $conf, $bgcolor) = @_ or return '';
-  my $td = '<TD CLASS="grid" BGCOLOR="$bgcolor" ALIGN="right">';
+  my $td = qq{<TD CLASS="grid" BGCOLOR="$bgcolor" ALIGN="right">};
   my $format = "$td%b&nbsp;%o,&nbsp;%Y</TD>";
   $format .= "$td%l:%M%P</TD>"
     if $conf->exists('cust_main_note-display_times');
