@@ -1,36 +1,21 @@
+% if ( scalar(@notes) ) {
+
+  <% include('/elements/init_overlib.html') %>
+
+  <% include("/elements/table-grid.html") %>
+
+  <TR>
+    <TH CLASS="grid" BGCOLOR="#cccccc">Date</TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc">Time</TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc">Person</TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc">Note</TH>
+  </TR>
+
+% my $bgcolor1 = '#eeeeee';
+% my $bgcolor2 = '#ffffff';
+% my $bgcolor = '';
 %
-% my $conf = new FS::Conf;
-% my $curuser = $FS::CurrentUser::CurrentUser;
-%
-% $cgi->param('custnum') =~ /^(\d+)$/
-%   or die "No customer specified (bad URL)!";
-% my $custnum = $1;
-%
-% my $cust_main = qsearchs('cust_main', {'custnum' => $custnum} );
-% die "Custimer not found!" unless $cust_main;
-%
-
-<STYLE TYPE="text/css">
-
-body { background: #e8e8e8 }
-.inv table { border: none }
-.inv TH { border: none }
-.inv TD { border: none }
-
-</STYLE>
-
-% my (@notes) = $cust_main->notes();
-% if ( scalar(@notes) ) { 
-
-<% include('/elements/init_overlib.html') %>
-
-<TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 BORDER=0 >
-
-%   my $bgcolor1 = '#eeeeee';
-%   my $bgcolor2 = '#ffffff';
-%   my $bgcolor = '';
-%
-%   foreach my $note (@notes) {
+% foreach my $note (@notes) {
 %
 %   if ( $bgcolor eq $bgcolor1 ) {
 %     $bgcolor = $bgcolor2;
@@ -41,7 +26,7 @@ body { background: #e8e8e8 }
 %   my $pop = popurl(3);
 %   my $notenum = $note->notenum;
 %   my $onclick = include( '/elements/popup_link_onclick.html',
-%                            'action'      => popurl(3).
+%                            'action'      => popurl(2).
 %                                             'edit/cust_main_note.cgi'.
 %                                             "?custnum=$custnum".
 %                                             ";notenum=$notenum",
@@ -52,44 +37,50 @@ body { background: #e8e8e8 }
 %                        );
 %   my $clickjs = qq!onclick="$onclick"!;
 %
-%   my ($el, $eel);
+%   my $edit = '';
 %   if ($curuser->access_right('Edit customer note') ) {
-%     $el  = qq!<A HREF="javascript:void(0);" $clickjs>!;
-%     $eel = qq!</A>!;
-%   }else{
-%     $el = $eel = '';
+%     $edit = qq! <A HREF="javascript:void(0);" $clickjs>(edit)</A>!;
 %   }
 
-<TR>
-  <% note_datestr($note,$conf,$bgcolor, $el, $eel) %>
-  <TD CLASS="inv" BGCOLOR="<% $bgcolor %>">
-    <% $el %> &nbsp;<%$note->otaker%>&nbsp; <% $eel %>
-  </TD>
-  <TD CLASS="inv" BGCOLOR="<% $bgcolor %>">
-    &nbsp;<%$note->comments%>
-  </TD>
-</TR>
+    <TR>
+      <% note_datestr($note,$conf,$bgcolor) %>
+      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+        &nbsp;<% $note->otaker%>
+      </TD>
+      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+        &nbsp;<%$note->comments%><% $edit %>
+      </TD>
+    </TR>
 
 % } #end display notes
 
 </TABLE>
 
-% } 
-%
-%#subroutines
-%
-%sub note_datestr {
-% my($note, $conf, $bgcolor, $el, $eel) = @_ or return '';
-% my $format=qq{<TD class="inv" bgcolor="$bgcolor" align="left">$el<B>%b</B>$eel</TD>}.
-%            qq{<TD class="inv" bgcolor="$bgcolor" align="right">$el<B>&nbsp;%o,</B>$eel</TD>}.
-%            qq{<TD class="inv" bgcolor="$bgcolor" align="right">$el<B>&nbsp;%Y&nbsp;</B>$eel</TD>};
-% $format .= qq{<TD class="inv" bgcolor="$bgcolor" ALIGN="right">$el<B>&nbsp;%l$eel</TD>}.
-%            qq{<TD class="inv" bgcolor="$bgcolor" ALIGN="center">$el<B>:</B>$eel</TD>}.
-%            qq{<TD class="inv" bgcolor="$bgcolor" ALIGN="left">$el<B>%M</B>$eel</TD>}.
-%            qq{<TD class="inv" bgcolor="$bgcolor" ALIGN="left">$el<B>&nbsp;%P&nbsp;</B>$eel</TD>}
-%     if $conf->exists('cust_main_note-display_times');
-%   ( my $strip = time2str($format, $note->_date) ) =~ s/ (\d)/$1/g;
-%   $strip;
 % }
-%
+<%init>
 
+my $conf = new FS::Conf;
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+my(%opt) = @_;
+
+my $custnum = $opt{'custnum'};
+
+my $cust_main = qsearchs('cust_main', {'custnum' => $custnum} );
+die "Custimer not found!" unless $cust_main;
+
+my (@notes) = $cust_main->notes();
+
+#subroutines
+
+sub note_datestr {
+  my($note, $conf, $bgcolor) = @_ or return '';
+  my $td = '<TD CLASS="grid" BGCOLOR="$bgcolor" ALIGN="right">';
+  my $format = "$td%b&nbsp;%o,&nbsp;%Y</TD>";
+  $format .= "$td%l:%M%P</TD>"
+    if $conf->exists('cust_main_note-display_times');
+  ( my $strip = time2str($format, $note->_date) ) =~ s/ (\d)/$1/g;
+  $strip;
+}
+
+</%init>
