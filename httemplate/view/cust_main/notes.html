@@ -6,7 +6,9 @@
 
   <TR>
     <TH CLASS="grid" BGCOLOR="#cccccc">Date</TH>
-    <TH CLASS="grid" BGCOLOR="#cccccc">Time</TH>
+%   if ( $conf->exists('cust_main_note-display_times') ) {
+      <TH CLASS="grid" BGCOLOR="#cccccc">Time</TH>
+%   }
     <TH CLASS="grid" BGCOLOR="#cccccc">Person</TH>
     <TH CLASS="grid" BGCOLOR="#cccccc">Note</TH>
   </TR>
