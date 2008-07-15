@@ -5204,6 +5204,7 @@ sub cancel_sql {
     AND 0 = ( $select_count_pkgs AND $recurring_sql
                   AND ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
             )
+    AND 0 = (  $select_count_pkgs AND ". FS::cust_pkg->inactive_sql. " )
   ";
 
 }
