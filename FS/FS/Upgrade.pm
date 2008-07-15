@@ -117,20 +117,18 @@ sub upgrade_sqlradius {
   my @part_export = FS::part_export::sqlradius->all_sqlradius_withaccounting();
 
   foreach my $part_export ( @part_export ) {
-    my $dbh = DBI->connect(
-      ( map $part_export->option($_), qw ( datasrc username password ) ),
-      { PrintError => 0, PrintWarn => 0 }
-    );
-
-    unless ($dbh) {
-      warn "can't connect to RADIUS database ".
-           $part_export->option('datasrc').  ": $DBI::errstr\n";
-      next;
-    }
 
     my $errmsg = 'Error adding FreesideStatus to '.
                  $part_export->option('datasrc'). ': ';
-  
+
+    my $dbh = DBI->connect(
+      ( map $part_export->option($_), qw ( datasrc username password ) ),
+      { PrintError => 0, PrintWarn => 0 }
+    ) or do {
+      warn $errmsg.$DBI::errstr;
+      next;
+    };
+
     my $str2time = str2time_sql( $dbh->{Driver}->{Name} );
     my $group = "UserName";
     $group .= ",Realm"
