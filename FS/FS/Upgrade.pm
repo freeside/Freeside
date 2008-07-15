@@ -122,6 +122,12 @@ sub upgrade_sqlradius {
       { PrintError => 0, PrintWarn => 0 }
     );
 
+    unless $dbh {
+      warn "can't connect to RADIUS database ".
+           $part_export->option('datasrc').  ": $DBI::errstr\n";
+      next;
+    }
+
     my $errmsg = 'Error adding FreesideStatus to '.
                  $part_export->option('datasrc'). ': ';
   
