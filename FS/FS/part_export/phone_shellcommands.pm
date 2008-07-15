@@ -38,8 +38,8 @@ Run remote commands via SSH, for phone numbers.  You will need to
       this.form.usermod.value = "";
       this.form.suspend.value = "";
       this.form.unsuspend.value = "";
-    '>
-</UL>
+    '> (Important note: Reduce freeside-queued "max_kids" to 1 when using FreePBX integration)
+  </UL>
 
 The following variables are available for interpolation (prefixed with new_ or
 old_ for replace operations):
