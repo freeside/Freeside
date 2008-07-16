@@ -120,13 +120,17 @@ if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
           my $seconds = $svc_acct->seconds;
           my $cust_pkg = $svc_acct->cust_svc->cust_pkg;
           my $part_pkg = $cust_pkg->part_pkg;
+
           #my $timepermonth = $part_pkg->option('seconds');
           $timepermonth = $part_pkg->option('seconds');
           $timepermonth = $timepermonth / $part_pkg->freq
             if $part_pkg->freq =~ /^\d+$/ && $part_pkg->freq != 0;
-          return format_time($seconds) unless $timepermonth;
+
           #my $recur = $part_pkg->calc_recur($cust_pkg);
           my $recur = $part_pkg->base_recur($cust_pkg);
+
+          return format_time($seconds) unless $timepermonth && $recur;
+
           my $balance = $cust_pkg->cust_main->balance;
           my $months_unpaid = $balance / $recur;
           my $time_unpaid = $months_unpaid * $timepermonth;
