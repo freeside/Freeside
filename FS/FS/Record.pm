@@ -3,7 +3,9 @@ package FS::Record;
 use strict;
 use vars qw( $AUTOLOAD @ISA @EXPORT_OK $DEBUG
              $conf $me
-             %virtual_fields_cache $nowarn_identical $no_update_diff );
+             %virtual_fields_cache
+             $nowarn_identical $no_update_diff $no_check_foreign
+           );
 use Exporter;
 use Carp qw(carp cluck croak confess);
 use Scalar::Util qw( blessed );
@@ -33,6 +35,7 @@ $me = '[FS::Record]';
 
 $nowarn_identical = 0;
 $no_update_diff = 0;
+$no_check_foreign = 0;
 
 my $rsa_module;
 my $rsa_loaded;
@@ -1902,6 +1905,7 @@ on the column first.
 
 sub ut_foreign_key {
   my( $self, $field, $table, $foreign ) = @_;
+  return '' if $no_check_foreign;
   qsearchs($table, { $foreign => $self->getfield($field) })
     or return "Can't find ". $self->table. ".$field ". $self->getfield($field).
               " in $table.$foreign";
