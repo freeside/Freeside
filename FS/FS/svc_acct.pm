@@ -1140,7 +1140,7 @@ sub check {
       $recref->{_password} = $1.$2;
 
     } else {
-      return 'Illegal (crypt-encoded) password';
+      return 'Illegal (crypt-encoded) password: '. $recref->{_password};
     }
 
   } elsif ( $recref->{_password_encoding} eq 'plain' ) { 

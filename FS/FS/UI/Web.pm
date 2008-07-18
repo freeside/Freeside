@@ -332,8 +332,8 @@ setting is supplied, the <B>cust-fields</B> configuration value.
 =cut
 
 sub cust_fields {
-  my $svc_x = shift;
-  warn "FS::UI::Web::cust_fields called for $svc_x ".
+  my $record = shift;
+  warn "FS::UI::Web::cust_fields called for $record ".
        "(cust_fields: @cust_fields)"
     if $DEBUG > 1;
 
@@ -342,12 +342,12 @@ sub cust_fields {
 
   my $seen_unlinked = 0;
   map { 
-    if ( $svc_x->custnum ) {
-      warn "  $svc_x -> $_"
+    if ( $record->custnum ) {
+      warn "  $record -> $_"
         if $DEBUG > 1;
-      $svc_x->$_(@_);
+      $record->$_(@_);
     } else {
-      warn "  ($svc_x unlinked)"
+      warn "  ($record unlinked)"
         if $DEBUG > 1;
       $seen_unlinked++ ? '' : '(unlinked)';
     }

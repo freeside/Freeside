@@ -411,6 +411,7 @@ sub export_info {
 #  '';
 #}
 
+#false laziness w/part_pkg & cdr
 foreach my $INC ( @INC ) {
   foreach my $file ( glob("$INC/FS/part_export/*.pm") ) {
     warn "attempting to load export info from $file\n" if $DEBUG;

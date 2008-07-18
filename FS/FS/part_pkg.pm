@@ -1029,6 +1029,7 @@ sub _upgrade_data { # class method
 
 =cut
 
+#false laziness w/part_export & cdr
 my %info;
 foreach my $INC ( @INC ) {
   warn "globbing $INC/FS/part_pkg/*.pm\n" if $DEBUG;
@@ -1046,8 +1047,7 @@ foreach my $INC ( @INC ) {
       next;
     }
     unless ( keys %$info ) {
-      warn "no %info hash found in FS::part_pkg::$mod, skipping\n"
-        unless $mod =~ /^(passwdfile|null)$/; #hack but what the heck
+      warn "no %info hash found in FS::part_pkg::$mod, skipping\n";
       next;
     }
     warn "got plan info from FS::part_pkg::$mod: $info\n" if $DEBUG;
@@ -1060,7 +1060,7 @@ foreach my $INC ( @INC ) {
 }
 
 tie %plans, 'Tie::IxHash',
-  map { $_ => $info{$_} }
+  map  { $_ => $info{$_} }
   sort { $info{$a}->{'weight'} <=> $info{$b}->{'weight'} }
   keys %info;
 

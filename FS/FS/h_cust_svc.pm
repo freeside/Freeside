@@ -111,8 +111,6 @@ sub h_svc_x {
 # _upgrade_data
 #
 # Used by FS::Upgrade to migrate to a new database.
-#
-#
 
 use FS::UID qw( driver_name dbh );
 
