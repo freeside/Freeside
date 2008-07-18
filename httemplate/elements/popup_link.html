@@ -18,14 +18,18 @@ Example:
     'height'         => 336,
     'color'          => '#ff0000',
     'closetext'      => 'Go Away',      # the value '' removes the link
+
+    #uncommon opt
     'aname'          => "target", # link NAME= value, useful for #targets
+    'target'         => '_parent',
   } )
 
 </%doc>
 % if ($params->{'action'} && $label) {
 <A HREF="javascript:void(0);"
    onClick="<% $onclick %>"
-   <% $params->{'aname'} ? 'NAME="'. $params->{'aname'}. '"' : '' %>
+   <% $params->{'aname'}  ? 'NAME="'.   $params->{'aname'}.  '"' : '' %>
+   <% $params->{'target'} ? 'TARGET="'. $params->{'target'}. '"' : '' %>
 ><% $label %></A>\
 % }
 <%init>
