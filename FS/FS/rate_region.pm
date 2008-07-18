@@ -292,6 +292,7 @@ sub prefixes_short {
     } else {
       $out .= $rate_prefix->npa;
     }
+    $out .= ' '. $rate_prefix->nxx if $rate_prefix->nxx;
     $out .= ', ';
   }
   $out =~ s/, $//;
