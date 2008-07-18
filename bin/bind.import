@@ -8,6 +8,7 @@
 #
 # OPTIONAL:
 # -d: dry-run, debug: don't insert any records, just dump debugging output
+# -e: use existing domains records in Freeside
 # -s: import slave zones as master.  useful if you need to recreate your
 #     primary nameserver from a secondary
 # -c dir: override patch for downloading zone files (for example, when
@@ -36,8 +37,8 @@ use FS::domain_record;
 #use FS::svc_acct;
 #use FS::part_svc;
 
-use vars qw($opt_p $opt_n $opt_s $opt_c $opt_d);
-getopts("p:n:sc:d");
+use vars qw($opt_p $opt_n $opt_s $opt_c $opt_d $opt_e);
+getopts("p:n:sc:de");
 
 my $user = shift or die &usage;
 adminsuidsetup $user;
@@ -75,7 +76,7 @@ print "\nBIND import completed.\n";
 ##
 
 sub usage {
-  die "Usage:\n\n  bind.import -p partnum -n \"user\@machine:/path/to/named.conf\" [ -s ] [ -c chroot_dir ] [ -f ] user\n";
+  die "Usage:\n\n  bind.import -p partnum -n \"user\@machine:/path/to/named.conf\" [ -s ] [ -c chroot_dir ] [ -d ] [ -e ] user\n";
 }
 
 ########
