@@ -193,11 +193,16 @@ FS::SelfService - Freeside self-service API
                         'payname'          => $payname,
                         'invoicing_list'   => $invoicing_list,
                         'referral_custnum' => $referral_custnum,
+                        'agentnum'         => $agentnum,
                         'pkgpart'          => $pkgpart,
+
                         'username'         => $username,
                         '_password'        => $password,
                         'popnum'           => $popnum,
-                        'agentnum'         => $agentnum,
+                        #OR
+                        'countrycode'      => 1,
+                        'phonenum'         => $phonenum,
+                        'pin'              => $pin,
                       }
                     );
   
@@ -973,6 +978,10 @@ comma-separated list of email addresses for email invoices.  The special value '
 
 referring customer number
 
+=item agentnum
+
+Agent number
+
 =item pkgpart
 
 pkgpart of initial package
@@ -993,9 +1002,17 @@ Security phrase
 
 Access number (index, not the literal number)
 
-=item agentnum
+=item countrycode
 
-Agent number
+Country code (to be provisioned as a service)
+
+=item phonenum
+
+Phone number (to be provisioned as a service)
+
+=item pin
+
+Voicemail PIN
 
 =back
 

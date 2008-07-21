@@ -165,6 +165,7 @@ if (    ( defined($cgi->param('magic')) && $cgi->param('magic') eq 'process' )
       $cgi->param('invoicing_list' => 'POST' );
     }
 
+    #if ( $svc_x eq 'svc_acct' ) {
     if ( $cgi->param('_password') ne $cgi->param('_password2') ) {
       $error = $init_data->{msgcat}{passwords_dont_match}; #msgcat
       $cgi->param('_password', '');
@@ -188,8 +189,9 @@ if (    ( defined($cgi->param('magic')) && $cgi->param('magic') eq 'process' )
 	$error ||= $init_data->{msgcat}{illegal_or_empty_text};
     }
 
+    my $rv = '';
     unless ( $error ) {
-      my $rv = new_customer( {
+      $rv = new_customer( {
         ( map { $_ => scalar($cgi->param($_)) }
             qw( last first ss company
                 address1 address2 city county state zip country
@@ -202,8 +204,9 @@ if (    ( defined($cgi->param('magic')) && $cgi->param('magic') eq 'process' )
 
                 payby payinfo paycvv paydate payname paystate paytype
                 invoicing_list referral_custnum promo_code reg_code
-                pkgpart username sec_phrase _password popnum refnum
-                agentnum
+                pkgpart refnum agentnum
+                username sec_phrase _password popnum
+                countrycode phonenum sip_password pin
               ),
             grep { /^snarf_/ } $cgi->param
         ),
@@ -223,6 +226,7 @@ if (    ( defined($cgi->param('magic')) && $cgi->param('magic') eq 'process' )
     } else {
       print_okay(
         'pkgpart' => scalar($cgi->param('pkgpart')),
+        %$rv,
       );
     }
 
@@ -263,12 +267,30 @@ sub print_okay {
   my %param = @_;
   my $user_agent = new HTTP::BrowserDetect $ENV{HTTP_USER_AGENT};
 
-  $cgi->param('username') =~ /^(.+)$/
-    or die "fatal: invalid username got past FS::SelfService::new_customer";
-  my $username = $1;
-  $cgi->param('_password') =~ /^(.+)$/
-    or die "fatal: invalid password got past FS::SelfService::new_customer";
-  my $password = $1;
+  my( $username, $password ) = ( '', '' );
+  my( $countrycode, $phonenum, $sip_password, $pin ) = ( '', '', '', '' );
+
+  my $svc_x = $param{signup_service} || 'svc_acct'; #just in case
+  if ( $svc_x eq 'svc_acct' ) {
+
+    $cgi->param('username') =~ /^(.+)$/
+      or die "fatal: invalid username got past FS::SelfService::new_customer";
+    $username = $1;
+    $cgi->param('_password') =~ /^(.+)$/
+      or die "fatal: invalid password got past FS::SelfService::new_customer";
+    $password = $1;
+
+  } elsif ( $svc_x eq 'svc_phone' ) {
+
+    $countrycode  = $param{countrycode};
+    $phonenum     = $param{phonenum};
+    $sip_password = $param{sip_password};
+    $pin          = $param{pin};
+
+  } else {
+    die "unknown signup service $svc_x";
+  }
+
   ( $cgi->param('first'). ' '. $cgi->param('last') ) =~ /^(.*)$/
     or die "fatal: invalid email_name got past FS::SelfService::new_customer";
   my $email_name = $1; #global for template
@@ -296,23 +318,39 @@ sub print_okay {
   my $pkg =  $part_pkg->{'pkg'};
 
   if ( $ieak_template && $user_agent->windows && $user_agent->ie ) {
+
     #send an IEAK config
     print $cgi->header('application/x-Internet-signup'),
           $ieak_template->fill_in();
+
   } else { #send a simple confirmation
+
     print $cgi->header( '-expires' => 'now' ),
           $success_template->fill_in( HASH => {
-            username   => $username,
-            password   => $password,
-            _password  => $password,
-            email_name => $email_name,
-            ac         => $ac,
-            exch       => $exch,
-            loc        => $loc,
-            pkg        => $pkg,
-            part_pkg   => \$part_pkg,
+
+            email_name     => $email_name,
+            pkg            => $pkg,
+            part_pkg       => \$part_pkg,
+
+            signup_service => $svc_x,
+
+            #for svc_acct
+            username       => $username,
+            password       => $password,
+            _password      => $password,
+            ac             => $ac,   #for dialup POP
+            exch           => $exch, #
+            loc            => $loc,  #
+
+            #for svc_phone
+            countrycode    => $countrycode,
+            phonenum       => $phonenum,
+            sip_password   => $sip_password,
+            pin            => $pin,
+
           });
   }
+
 }
 
 sub success_default { #html to use if you don't specify a success file

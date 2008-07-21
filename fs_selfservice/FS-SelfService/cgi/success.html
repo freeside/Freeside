@@ -1,11 +1,41 @@
-<HTML><HEAD><TITLE>Signup successful</TITLE></HEAD>
-<BODY BGCOLOR="#e8e8e8"><FONT SIZE=7>Signup successful</FONT><BR><BR>
-Thanks for signing up!
+<HTML>
+
+<HEAD>
+  <TITLE>Signup successful</TITLE>
+</HEAD>
+
+<BODY BGCOLOR="#e8e8e8">
+
+<FONT SIZE=7>Signup successful</FONT><BR><BR>
+
+Thanks for signing up!  Save this information for future reference.
 <BR><BR>
+
 Signup information for <%= $email_name %>:
 <BR><BR>
-Username: <%= $username %><BR>
-Password: <%= $password %><BR>
-Access number: (<%= $ac %>) / <%= $exch %> - <%= $local %><BR>
-Package: <%= $pkg %><BR>
-</BODY></HTML>
+
+<%=
+    if ($signup_service eq 'svc_acct' || !$signup_service ) { #just in case
+      $OUT .= <<END
+        Username: $username<BR>
+        Password: $password><BR>
+        Access number: ($ac) / $exch - $local <BR>
+END
+    } elsif ( $signup_service eq 'svc_phone' ) {
+      $OUT .= <<END
+        <!-- Countrycode: $countrycode <BR>-->
+        Phone number: $phonenum<BR>
+        SIP Server: itsp.sip.server.name<BR>
+        SIP Login: $phonenum<BR>
+        SIP Password: $sip_password<BR>
+        Voicemail PIN: $pin<BR>
+END
+    } else {
+      die "unknown signup service $signup_service";
+    }
+%>
+
+  Package: <%= $pkg %><BR>
+
+</BODY>
+</HTML>

@@ -421,7 +421,7 @@ sub new_customer {
   my $svc;
   if ( $svc_x eq 'svc_acct' ) {
 
-    my $svc = new FS::svc_acct ( {
+    $svc = new FS::svc_acct ( {
       'svcpart'   => $svcpart,
       map { $_ => $packet->{$_} }
         qw( username _password sec_phrase popnum ),
@@ -444,10 +444,10 @@ sub new_customer {
 
   } elsif ( $svc_x eq 'svc_phone' ) {
 
-    my $svc = new FS::svc_phone ( {
+    $svc = new FS::svc_phone ( {
       'svcpart' => $svcpart,
        map { $_ => $packet->{$_} }
-         qw( countrycode phonenum pin ),
+         qw( countrycode phonenum sip_password pin ),
     } );
 
   } else {
@@ -533,7 +533,19 @@ sub new_customer {
   $error = $placeholder->delete;
   return { 'error' => $error } if $error;
 
-  return { error => '' };
+  my %return = ( 'error'          => '',
+                 'signup_service' => $svc_x,
+               );
+
+  if ( $svc_x eq 'svc_acct' ) {
+    $return{$_} = $svc->$_() for qw( username _password );
+  } elsif ( $svc_x eq 'svc_phone' ) {
+    $return{$_} = $svc->$_() for qw( countrycode phonenum sip_password pin );
+  } else {
+    die "unknown signup service $svc_x";
+  }
+
+  return \%return;
 
 }
 

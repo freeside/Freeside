@@ -25,7 +25,7 @@
 %>
 
 <%=
-  $OUT = join("\n", map { qq|<input type="hidden" name="$_" />| } qw / promo_code reg_code pkgpart username _password _password2 sec_phrase popnum / );
+  $OUT = join("\n", map { qq|<input type="hidden" name="$_" />| } qw / promo_code reg_code pkgpart username _password _password2 sec_phrase popnum countrycode phonenum sip_password pin / );
 %>
 
 Where did you hear about our service? <SELECT NAME="refnum">
@@ -362,10 +362,11 @@ function fixup_form() {
     
     // Copy signup details to OneTrueForm
     
-    var signup_elements = new Array ( 'promo_code', 'reg_code',
-				      'pkgpart', 'username',
-				      '_password', '_password2',
-				      'sec_phrase', 'popnum' );
+    var signup_elements = new Array (
+      'promo_code', 'reg_code', 'pkgpart',
+      'username', '_password', '_password2', 'sec_phrase', 'popnum',
+      'countrycode', 'phonenum', 'sip_password', 'pin'
+    );
 
     for ( ii = 0 ; ii < signup_elements.length ; ii ++ ) {
 	copyelement ( document.signup_form.elements[signup_elements[ii]],
