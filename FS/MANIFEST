@@ -45,6 +45,8 @@ FS/Report/Table/Monthly.pm
 FS/SearchCache.pm
 FS/UI/Web.pm
 FS/UID.pm
+FS/Mason.pm
+FS/Mason/Request.pm
 FS/Msgcat.pm
 FS/Pony.pm
 FS/acct_snarf.pm

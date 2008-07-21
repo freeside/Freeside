@@ -3,8 +3,8 @@
 #solaris and perhaps other very weirdass /bin/sh
 #SHELL="/bin/ksh"
 
-DB_TYPE = Pg
-#DB_TYPE = mysql
+#DB_TYPE = Pg
+DB_TYPE = mysql
 
 DB_USER = freeside
 DB_PASSWORD=
@@ -108,10 +108,13 @@ FREESIDE_URL = "http://localhost/freeside/"
 #for now, same db as specified in DATASOURCE... eventually, otherwise?
 RT_DB_DATABASE = freeside
 
+# for cvs-upgrade-deploy target, the username who checked out the CVS copy.
+CVS_USER = ivan
+
+# for auto-version updates, so we can "make release" more things automatically
 RPM_SPECFILE = rpm/freeside.spec
 
 #---
-
 
 #rt/config.layout.in
 RT_PATH = /opt/rt3
@@ -129,6 +132,7 @@ help:
 	@echo "supported targets:"
 	@echo "                   create-database create-config"
 	@echo "                   install deploy"
+	@echo "                   cvs-upgrade-deploy"
 	@echo "                   configure-rt create-rt"
 	@echo "                   clean help"
 	@echo
@@ -165,11 +169,6 @@ install-docs: docs
 	cp -r masondocs ${FREESIDE_DOCUMENT_ROOT}
 	chown -R freeside:freeside ${FREESIDE_DOCUMENT_ROOT}
 	cp htetc/handler.pl ${MASON_HANDLER}
-	  perl -p -i -e "\
-	    s'%%%FREESIDE_DOCUMENT_ROOT%%%'${FREESIDE_DOCUMENT_ROOT}'g; \
-	    s'%%%RT_ENABLED%%%'${RT_ENABLED}'g; \
-	    s'%%%MASONDATA%%%'${MASONDATA}'g;\
-	  " ${MASON_HANDLER}
 	[ ! -e ${MASONDATA} ] && mkdir ${MASONDATA} || true
 	chown -R freeside ${MASONDATA}
 
@@ -178,13 +177,9 @@ dev-docs:
 	ln -s ${FREESIDE_PATH}/httemplate ${FREESIDE_DOCUMENT_ROOT}
 	cp htetc/handler.pl ${MASON_HANDLER}
 	perl -p -i -e "\
-	  s'%%%FREESIDE_DOCUMENT_ROOT%%%'${FREESIDE_DOCUMENT_ROOT}'g; \
-	  s'%%%RT_ENABLED%%%'${RT_ENABLED}'g; \
-	  s'%%%MASONDATA%%%'${MASONDATA}'g;\
 	  s'###use Module::Refresh;###'use Module::Refresh;'; \
 	  s'###Module::Refresh->refresh;###'Module::Refresh->refresh;'; \
 	" ${MASON_HANDLER} || true
-
 
 perl-modules:
 	cd FS; \
@@ -196,6 +191,9 @@ perl-modules:
 	perl -p -i -e "\
 	  s|%%%FREESIDE_CONF%%%|${FREESIDE_CONF}|g;\
 	  s|%%%FREESIDE_CACHE%%%|${FREESIDE_CACHE}|g;\
+	  s'%%%FREESIDE_DOCUMENT_ROOT%%%'${FREESIDE_DOCUMENT_ROOT}'g; \
+	  s'%%%RT_ENABLED%%%'${RT_ENABLED}'g; \
+	  s'%%%MASONDATA%%%'${MASONDATA}'g;\
 	" blib/lib/FS/*.pm;\
 	perl -p -i -e "\
 	  s|%%%FREESIDE_EXPORT%%%|${FREESIDE_EXPORT}|g;\
@@ -276,6 +274,12 @@ install: install-perl-modules install-docs install-init install-apache install-r
 deploy: install
 	${HTTPD_RESTART}
 	${FREESIDE_RESTART}
+
+cvs-upgrade-deploy:
+	su ${CVS_USER} -c 'cvs update -d -P'
+	make install-perl-modules
+	su freeside -c "freeside-upgrade ${CVS_USER}" #not really the same user
+	make deploy
 
 dev: dev-perl-modules dev-docs
 

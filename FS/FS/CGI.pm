@@ -194,16 +194,24 @@ sub myexit {
   }
 }
 
-=item popurl LEVEL
+=item popurl LEVEL [URL]
 
-Returns current URL with LEVEL levels of path removed from the end (default 0).
+Returns current (or, optionally, passed) URL with LEVEL levels of path removed
+from the end (default 0).
 
 =cut
 
 sub popurl {
-  my($up)=@_;
-  my $cgi = &FS::UID::cgi;
-  my $url_string = $cgi->isa('Apache') ? $cgi->uri : $cgi->url;
+  my $up = shift;
+
+  my $url_string;
+  if ( scalar(@_) ) {
+    $url_string = shift;
+  } else {
+    my $cgi = &FS::UID::cgi;
+    $url_string = $cgi->isa('Apache') ? $cgi->uri : $cgi->url;
+  }
+
   $url_string =~ s/\?.*//;
   my $url = new URI::URL ( $url_string );
   my(@path)=$url->path_components;
