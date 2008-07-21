@@ -441,7 +441,7 @@ sub _orbase_items {
           map { new FS::ConfItem { 
                                    'key' => $_,
                                    'section' => $proto->section,
-                                   'description' => 'Alternate ' . $proto->description . '  See the <a href="http://www.sisd.com/mediawiki/index.php/Freeside:1.7:Documentation:Administration#Invoice_templates">billing documentation</a> for details.',
+                                   'description' => 'Alternate ' . $proto->description . '  See the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:1.7:Documentation:Administration#Invoice_templates">billing documentation</a> for details.',
                                    'type' => $proto->type,
                                  };
               } &$listmaker($base);
@@ -554,7 +554,7 @@ worry that config_items is freeside-specific and icky.
   {
     'key'         => 'alerter_template',
     'section'     => 'billing',
-    'description' => 'Template file for billing method expiration alerts.  See the <a href="http://www.sisd.com/mediawiki/index.php/Freeside:1.7:Documentation:Administration#Credit_cards_and_Electronic_checks">billing documentation</a> for details.',
+    'description' => 'Template file for billing method expiration alerts.  See the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:1.7:Documentation:Administration#Credit_cards_and_Electronic_checks">billing documentation</a> for details.',
     'type'        => 'textarea',
   },
 
@@ -761,14 +761,14 @@ worry that config_items is freeside-specific and icky.
   {
     'key'         => 'invoice_template',
     'section'     => 'billing',
-    'description' => 'Text template file for invoices.  Used if no invoice_html template is defined, and also seen by users using non-HTML capable mail clients.  See the <a href="http://www.sisd.com/mediawiki/index.php/Freeside:1.7:Documentation:Administration#Plaintext_invoice_templates">billing documentation</a> for details.',
+    'description' => 'Text template file for invoices.  Used if no invoice_html template is defined, and also seen by users using non-HTML capable mail clients.  See the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:1.7:Documentation:Administration#Plaintext_invoice_templates">billing documentation</a> for details.',
     'type'        => 'textarea',
   },
 
   {
     'key'         => 'invoice_html',
     'section'     => 'billing',
-    'description' => 'Optional HTML template for invoices.  See the <a href="http://www.sisd.com/mediawiki/index.php/Freeside:1.7:Documentation:Administration#HTML_invoice_templates">billing documentation</a> for details.',
+    'description' => 'Optional HTML template for invoices.  See the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:1.7:Documentation:Administration#HTML_invoice_templates">billing documentation</a> for details.',
 
     'type'        => 'textarea',
   },
@@ -797,7 +797,7 @@ worry that config_items is freeside-specific and icky.
   {
     'key'         => 'invoice_latex',
     'section'     => 'billing',
-    'description' => 'Optional LaTeX template for typeset PostScript invoices.  See the <a href="http://www.sisd.com/mediawiki/index.php/Freeside:1.7:Documentation:Administration#Typeset_.28LaTeX.29_invoice_templates">billing documentation</a> for details.',
+    'description' => 'Optional LaTeX template for typeset PostScript invoices.  See the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:1.7:Documentation:Administration#Typeset_.28LaTeX.29_invoice_templates">billing documentation</a> for details.',
     'type'        => 'textarea',
   },
 
@@ -992,7 +992,7 @@ worry that config_items is freeside-specific and icky.
   {
     'key'         => 'signupurl',
     'section'     => 'UI',
-    'description' => 'if you are using customer-to-customer referrals, and you enter the URL of your <a href="http://www.sisd.com/mediawiki/index.php/Freeside:1.7:Documentation:Self-Service_Installation">signup server CGI</a>, the customer view screen will display a customized link to the signup server with the appropriate customer as referral',
+    'description' => 'if you are using customer-to-customer referrals, and you enter the URL of your <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:1.7:Documentation:Self-Service_Installation">signup server CGI</a>, the customer view screen will display a customized link to the signup server with the appropriate customer as referral',
     'type'        => 'text',
   },
 
@@ -1278,6 +1278,27 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'signup_server-default_svcpart',
+    'section'     => '',
+    'description' => 'Default svcpart for the signup server - only necessary for services that trigger special provisioning widgets (such as DID provisioning).',
+    'type'        => 'select-sub',
+    'options_sub' => sub { require FS::Record;
+                           require FS::part_svc;
+                           map { $_->svcpart => $_->svc }
+                               FS::Record::qsearch( 'part_svc',
+			                            { 'disabled' => ''}
+						  );
+			 },
+    'option_sub'  => sub { require FS::Record;
+                           require FS::part_svc;
+                           my $part_svc = FS::Record::qsearchs(
+			     'part_svc', { 'svcpart'=>shift }
+			   );
+                           $part_svc ? $part_svc->svc : '';
+			 },
+  },
+
+  {
     'key'         => 'signup_server-service',
     'section'     => '',
     'description' => 'Service for the signup server - "Account (svc_acct)" is the default setting, or "Phone number (svc_phone)" for ITSP signup',
@@ -1286,6 +1307,13 @@ worry that config_items is freeside-specific and icky.
                        'svc_acct'  => 'Account (svc_acct)',
                        'svc_phone' => 'Phone number (svc_phone)',
                      ],
+  },
+
+  {
+    'key'         => 'selfservice_server-base_url',
+    'section'     => '',
+    'description' => 'Base URL for the self-service web interface - necessary for special provisioning widgets to find their way.',
+    'type'        => 'text',
   },
 
   {
@@ -1669,7 +1697,7 @@ worry that config_items is freeside-specific and icky.
   {
     'key'         => 'ticket_system',
     'section'     => '',
-    'description' => 'Ticketing system integration.  <b>RT_Internal</b> uses the built-in RT ticketing system (see the <a href="http://www.sisd.com/mediawiki/index.php/Freeside:1.7:Documentation:RT_Installation">integrated ticketing installation instructions</a>).   <b>RT_External</b> accesses an external RT installation in a separate database (local or remote).',
+    'description' => 'Ticketing system integration.  <b>RT_Internal</b> uses the built-in RT ticketing system (see the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:1.7:Documentation:RT_Installation">integrated ticketing installation instructions</a>).   <b>RT_External</b> accesses an external RT installation in a separate database (local or remote).',
     'type'        => 'select',
     #'select_enum' => [ '', qw(RT_Internal RT_Libs RT_External) ],
     'select_enum' => [ '', qw(RT_Internal RT_External) ],

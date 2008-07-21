@@ -57,6 +57,7 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'agent_logout'              => 'Agent/agent_logout',
   'agent_info'                => 'Agent/agent_info',
   'agent_list_customers'      => 'Agent/agent_list_customers',
+  'mason_comp'                => 'MasonComponent/mason_comp',
 );
 @EXPORT_OK = ( keys(%autoload), qw( regionselector expselect popselector domainselector didselector) );
 
@@ -1412,7 +1413,7 @@ sub domainselector {
 
   return '<INPUT TYPE="hidden" NAME="domsvc" VALUE="">'
     unless scalar(keys %$domains);
-    
+
   if (scalar(keys %$domains) == 1) {
     my $key;
     foreach(keys %$domains) {
@@ -1443,6 +1444,10 @@ Takes as input a hashref or list of key/value pairs with the following keys:
 
 =over 4
 
+=item field
+
+=item svcpart
+
 =back
 
 Returns an HTML fragment for DID selection.
@@ -1457,7 +1462,12 @@ sub didselector {
     $param = { @_ };
   }
 
-  return "choose your DID XXX";
+  my $rv = mason_comp( 'comp'=>'/elements/select-did.html',
+                       'args'=>[ %$param ],
+                     );
+
+  #hmm.
+  $rv->{'error'} || $rv->{'output'};
 
 }
 

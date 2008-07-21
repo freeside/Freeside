@@ -4,7 +4,10 @@ Example:
 
   include('/elements/select-did.html',
             'field'   => 'phonenum',
+
             'svcpart' => 5,
+            #OR
+            'object' => $svc_phone,
          );
 
 </%doc>
@@ -65,7 +68,7 @@ my $conf = new FS::Conf;
 my $country = $conf->config('countrydefault') || 'US';
 
 #XXX make sure this comes through on errors too
-my $svcpart = $opt{'object'}->svcpart;
+my $svcpart = $opt{'svcpart'} || $opt{'object'}->svcpart;
 
 my $part_svc = qsearchs('part_svc', { 'svcpart'=>$svcpart } );
 die "unknown svcpart $svcpart" unless $part_svc;

@@ -121,6 +121,7 @@ sub signup_info {
       'default_pkgpart' => scalar($conf->config('signup_server-default_pkgpart')),
 
       'signup_service' => $svc_x,
+      'default_svcpart' => scalar($conf->config('signup_server-default_svcpart')),
 
     };
 

@@ -260,7 +260,9 @@ HTML::Widgets::SelectLayers->new(
   if ( $signup_service eq 'svc_phone' ) {
 
     $OUT .= '<TR><TD ALIGN="right">Phone number</TD><TD>'.
-            didselector().
+            didselector( 'field'   => 'phonenum',
+                         'svcpart' => $default_svcpart,
+                       ).
             '</TD></TR>';
 
     $OUT .= <<ENDOUT;
