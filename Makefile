@@ -3,8 +3,8 @@
 #solaris and perhaps other very weirdass /bin/sh
 #SHELL="/bin/ksh"
 
-#DB_TYPE = Pg
-DB_TYPE = mysql
+DB_TYPE = Pg
+#DB_TYPE = mysql
 
 DB_USER = freeside
 DB_PASSWORD=
