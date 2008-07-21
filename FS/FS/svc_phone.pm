@@ -1,11 +1,14 @@
 package FS::svc_phone;
 
 use strict;
-use vars qw( @ISA );
+use vars qw( @ISA @pw_set );
 #use FS::Record qw( qsearch qsearchs );
 use FS::svc_Common;
 
 @ISA = qw( FS::svc_Common );
+
+#avoid l 1 and o O 0
+@pw_set = ( 'a'..'k', 'm','n', 'p-z', 'A'..'N', 'P'..'Z' , '2'..'9' );
 
 =head1 NAME
 
@@ -183,6 +186,14 @@ sub check {
   return $error if $error;
 
   $self->countrycode(1) unless $self->countrycode;
+
+  unless ( length($self->sip_password) ) {
+
+    $self->sip_password(
+      join('', map $pw_set[ int(rand $#pw_set) ], (0..16) )
+    );
+
+  }
 
   $self->SUPER::check;
 }
