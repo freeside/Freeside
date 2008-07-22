@@ -34,7 +34,11 @@ my $html_foot = sub {
     "View $_ CDRs</A>";
   } keys(%what);
 
-  join(' | ', @links). '<BR>';
+  my @ilinks = ( qq(<A HREF="${p}search/cdr.html?dst=$number">).
+                 'View incoming CDRs</A>' );
+
+  join(' | ', @links ). '<BR>'.
+  join(' | ', @ilinks). '<BR>';
 
 };
 
