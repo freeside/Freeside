@@ -35,7 +35,7 @@ Run remote commands via SSH, for phone numbers.  You will need to
       this.form.user.value = "root";
       this.form.useradd.value = "build_exten.php --create --exten $phonenum --directdid 1$phonenum --sip-secret $sip_password --name $cust_name --vm-password $pin && /usr/share/asterisk/bin/module_admin reload";
       this.form.userdel.value = "build_exten.php --delete --exten $phonenum && /usr/share/asterisk/bin/module_admin reload";
-      this.form.usermod.value = "";
+      this.form.usermod.value = "build_exten.php --modify --exten $new_phonenum --directdid 1$new_phonenum --sip-secret $new_sip_password --name $new_cust_name --vm-password $new_pin && /usr/share/asterisk/bin/module_admin reload";
       this.form.suspend.value = "";
       this.form.unsuspend.value = "";
     '> (Important note: Reduce freeside-queued "max_kids" to 1 when using FreePBX integration)
