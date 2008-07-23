@@ -1,24 +1,21 @@
 <% include( 'elements/browse.html',
-     'title'          => "Tax Rates $title",
-     'name_singular'  => 'tax rate',
-     'menubar'        => \@menubar,
-     'html_init'      => $html_init,
-     'html_form'      => $html_form,
-     'query'          => {
-                           'table'     => 'tax_rate',
-                           'hashref'   => $hashref,
-                           'order_by'  => 'ORDER BY geocode, taxclassnum',
-                           'extra_sql' => $extra_sql,
-                         },
-     'count_query'    => $count_query,
-     'header'         => \@header,
-     'header2'        => \@header2,
-     'fields'         => \@fields,
-     'align'          => $align,
-     'color'          => \@color,
-     'cell_style'     => \@cell_style,
-     'links'          => \@links,
-     'link_onclicks'  => \@link_onclicks,
+     'title'              => "Tax Rates $title",
+     'name_singular'      => 'tax rate',
+     'menubar'            => \@menubar,
+     'html_init'          => $html_init,
+     'html_form'          => $html_form,
+     'disableable'        => 1,
+     'disabled_statuspos' => 5,
+     'query'              => $query,
+     'count_query'        => $count_query,
+     'header'             => \@header,
+     'header2'            => \@header2,
+     'fields'             => \@fields,
+     'align'              => $align,
+     'color'              => \@color,
+     'cell_style'         => \@cell_style,
+     'links'              => \@links,
+     'link_onclicks'      => \@link_onclicks,
   )
 %>
 <%once>
@@ -156,7 +153,6 @@ my $tax_type = $1
 my $tax_cat = $1
   if ( $cgi->param('tax_cat') =~ /^(\d+)$/ );
 
-my @taxclassnum = ();
 if ($tax_type || $tax_cat ) {
   my $compare = "LIKE '". ( $tax_type || "%" ). ":". ( $tax_cat || "%" ). "'";
   $compare = "= '$tax_type:$tax_cat'" if ($tax_type && $tax_cat);
@@ -166,7 +162,6 @@ if ($tax_type || $tax_cat ) {
               'extra_sql' => "WHERE taxclass $compare",
            });
   if (@tax_class) {
-    @taxclassnum = map { $_->taxclassnum } @tax_class;
     $tax_class[0]->description =~ /^(.*):(.*)/;
     $title .= " for";
     $title .= " $tax_type ($1) tax type" if $tax_type;
@@ -208,28 +203,7 @@ my $html_form = include('/elements/init_overlib.html'). '<BR><BR>'.
     qw(disable enable)
   );
 
-my $hashref = {};
-my $extra_sql = '';
-if ( $data_vendor ) {
-  $extra_sql .= ' WHERE data_vendor = '. dbh->quote($data_vendor);
-}
-
-if ( $geocode ) {
-  $extra_sql .= ( $extra_sql =~ /WHERE/i ? ' AND ' : ' WHERE ' ).
-                ' geocode LIKE '. dbh->quote($geocode.'%');
-}
-
-if ( $taxclassnum ) {
-  $extra_sql .= ( $extra_sql =~ /WHERE/i ? ' AND ' : ' WHERE ' ).
-                ' taxclassnum  = '. dbh->quote($taxclassnum);
-}
-
-if ( @taxclassnum ) {
-  $extra_sql .= ( $extra_sql =~ /WHERE/i ? ' AND ' : ' WHERE ' ).
-                join(' OR ', map { " taxclassnum  = $_ " } @taxclassnum );
-}
-
-my $count_query = "SELECT COUNT(*) FROM tax_rate $extra_sql";
+my ($query, $count_query) = FS::tax_rate::browse_queries(scalar($cgi->Vars));
 
 $cell_style = '';
 

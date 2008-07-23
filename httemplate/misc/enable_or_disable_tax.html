@@ -3,11 +3,12 @@
 
 <FORM ACTION="<% popurl(1) %>process/enable_or_disable_tax.html" METHOD=POST>
 <INPUT TYPE="hidden" NAME="action" VALUE="<% $action %>">
-<INPUT TYPE="hidden" NAME="data_vendor" VALUE="<% $data_vendor %>">
-<INPUT TYPE="hidden" NAME="geocode" VALUE="<% $geocode %>">
-<INPUT TYPE="hidden" NAME="taxclassnum" VALUE="<% $taxclassnum %>">
-<INPUT TYPE="hidden" NAME="tax_type" VALUE="<% $tax_type %>">
-<INPUT TYPE="hidden" NAME="tax_cat" VALUE="<% $tax_cat %>">
+<INPUT TYPE="hidden" NAME="data_vendor" VALUE="<% $cgi->param('data_vendor') %>">
+<INPUT TYPE="hidden" NAME="geocode" VALUE="<% $cgi->param('geocode') %>">
+<INPUT TYPE="hidden" NAME="taxclassnum" VALUE="<% $cgi->param('taxclassnum') %>">
+<INPUT TYPE="hidden" NAME="tax_type" VALUE="<% $cgi->param('tax_type') %>">
+<INPUT TYPE="hidden" NAME="tax_cat" VALUE="<% $cgi->param('tax_cat') %>">
+<INPUT TYPE="hidden" NAME="showdisabled" VALUE="<% $cgi->param('showdisabled') |h %>">
 
 This will <B><% $action %></B> <% $count %> tax
 <% $count == 1 ? 'rate' : 'rates' %>.  Are you <B>certain</B> you want to do
@@ -25,68 +26,7 @@ if ( $cgi->param('action') =~ /^(\w+)$/ ) {
   $action = $1;
 }
 
-my $data_vendor = '';
-if ( $cgi->param('data_vendor') =~ /^(\w+)$/ ) {
-  $data_vendor = $1;
-}
-
-my $geocode = '';
-if ( $cgi->param('geocode') =~ /^(\w+)$/ ) {
-  $geocode = $1;
-}
-
-my $taxclassnum = '';
-if ( $cgi->param('taxclassnum') =~ /^(\d+)$/ ) {
-  $taxclassnum = $1;
-  my $tax_class = qsearchs('tax_class', {'taxclassnum' => $taxclassnum});
-  $taxclassnum = ''
-    unless ($tax_class);
-}
-
-my $tax_type = $1
-  if ( $cgi->param('tax_type') =~ /^(\d+)$/ );
-my $tax_cat = $1
-  if ( $cgi->param('tax_cat') =~ /^(\d+)$/ );
-
-my @taxclassnum = ();
-if ($tax_type || $tax_cat ) {
-  my $compare = "LIKE '". ( $tax_type || "%" ). ":". ( $tax_cat || "%" ). "'";
-  $compare = "= '$tax_type:$tax_cat'" if ($tax_type && $tax_cat);
-  my @tax_class =
-    qsearch({ 'table'     => 'tax_class',
-              'hashref'   => {},
-              'extra_sql' => "WHERE taxclass $compare",
-           });
-  if (@tax_class) {
-    @taxclassnum = map { $_->taxclassnum } @tax_class;
-    $tax_class[0]->description =~ /^(.*):(.*)/;
-  }else{
-    $tax_type = '';
-    $tax_cat = '';
-  }
-}
-
-my $extra_sql = '';
-if ( $data_vendor ) {
-  $extra_sql .= ' WHERE data_vendor = '. dbh->quote($data_vendor);
-}
-
-if ( $geocode ) {
-  $extra_sql .= ( $extra_sql =~ /WHERE/i ? ' AND ' : ' WHERE ' ).
-                ' geocode LIKE '. dbh->quote($geocode.'%');
-}
-
-if ( $taxclassnum ) {
-  $extra_sql .= ( $extra_sql =~ /WHERE/i ? ' AND ' : ' WHERE ' ).
-                ' taxclassnum  = '. dbh->quote($taxclassnum);
-}
-
-if ( @taxclassnum ) {
-  $extra_sql .= ( $extra_sql =~ /WHERE/i ? ' AND ' : ' WHERE ' ).
-                join(' OR ', map { " taxclassnum  = $_ " } @taxclassnum );
-}
-
-my $count_query = "SELECT COUNT(*) FROM tax_rate $extra_sql";
+my ($query, $count_query) = FS::tax_rate::browse_queries(scalar($cgi->Vars));
 
 my $count_sth = dbh->prepare($count_query)
   or die "Error preparing $count_query: ". dbh->errstr;

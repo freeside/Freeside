@@ -219,6 +219,7 @@ sub check {
     || $self->ut_enum('setuptax', [ '', 'Y' ] )
     || $self->ut_enum('recurtax', [ '', 'Y' ] )
     || $self->ut_enum('manual', [ '', 'Y' ] )
+    || $self->ut_enum('disabled', [ '', 'Y' ] )
     || $self->SUPER::check
     ;
 
@@ -349,6 +350,14 @@ of packages/amounts.  If an error occurs, a message is returned as a scalar.
 sub taxline {
   my $self = shift;
 
+  my $name = $self->taxname;
+  $name = 'Other surcharges'
+    if ($self->passtype == 2);
+  my $amount = 0;
+  
+  return [$name, $amount]  # we always know how to handle disabled taxes
+    if $self->disabled;
+
   my $taxable_charged = 0;
   my @cust_bill_pkg = grep { $taxable_charged += $_ unless ref; ref; } @_;
 
@@ -378,11 +387,6 @@ sub taxline {
       '" basis';
   }
 
-  my $name = $self->taxname;
-  $name = 'Other surcharges'
-    if ($self->passtype == 2);
-  my $amount = 0;
-  
   unless ($self->setuptax =~ /^Y$/i) {
     $taxable_charged += $_->setup foreach @cust_bill_pkg;
   }
@@ -860,6 +864,86 @@ sub process_batch {
     die "Unknown format: $format";
   }
 
+}
+
+=item browse_queries PARAMS
+
+Returns a list consisting of a hashref suited for use as the argument
+to qsearch, and sql query string.  Each is based on the PARAMS hashref
+of keys and values which frequently would be passed as C<scalar($cgi->Vars)>
+from a form.  This conveniently creates the query hashref and count_query
+string required by the browse and search elements.  As a side effect, 
+the PARAMS hashref is untainted and keys with unexpected values are removed.
+
+=cut
+
+sub browse_queries {
+  my $params = shift;
+
+  my $query = {
+                'table'     => 'tax_rate',
+                'hashref'   => {},
+                'order_by'  => 'ORDER BY geocode, taxclassnum',
+              },
+
+  my $extra_sql = '';
+
+  if ( $params->{data_vendor} =~ /^(\w+)$/ ) {
+    $extra_sql .= ' WHERE data_vendor = '. dbh->quote($1);
+  } else {
+    delete $params->{data_vendor};
+  }
+   
+  if ( $params->{geocode} =~ /^(\w+)$/ ) {
+    $extra_sql .= ( $extra_sql =~ /WHERE/i ? ' AND ' : ' WHERE ' ).
+                    'geocode LIKE '. dbh->quote($1.'%');
+  } else {
+    delete $params->{geocode};
+  }
+
+  if ( $params->{taxclassnum} =~ /^(\d+)$/ &&
+       qsearchs( 'tax_class', {'taxclassnum' => $1} )
+     )
+  {
+    $extra_sql .= ( $extra_sql =~ /WHERE/i ? ' AND ' : ' WHERE ' ).
+                  ' taxclassnum  = '. dbh->quote($1)
+  } else {
+    delete $params->{taxclassnun};
+  }
+
+  my $tax_type = $1
+    if ( $params->{tax_type} =~ /^(\d+)$/ );
+  delete $params->{tax_type}
+    unless $tax_type;
+
+  my $tax_cat = $1
+    if ( $params->{tax_cat} =~ /^(\d+)$/ );
+  delete $params->{tax_cat}
+    unless $tax_cat;
+
+  my @taxclassnum = ();
+  if ($tax_type || $tax_cat ) {
+    my $compare = "LIKE '". ( $tax_type || "%" ). ":". ( $tax_cat || "%" ). "'";
+    $compare = "= '$tax_type:$tax_cat'" if ($tax_type && $tax_cat);
+    @taxclassnum = map { $_->taxclassnum } 
+                   qsearch({ 'table'     => 'tax_class',
+                             'hashref'   => {},
+                             'extra_sql' => "WHERE taxclass $compare",
+                          });
+  }
+
+  $extra_sql .= ( $extra_sql =~ /WHERE/i ? ' AND ' : ' WHERE ' ). '( '.
+                join(' OR ', map { " taxclassnum  = $_ " } @taxclassnum ). ' )'
+    if ( @taxclassnum );
+
+  unless ($params->{'showdisabled'}) {
+    $extra_sql .= ( $extra_sql =~ /WHERE/i ? ' AND ' : ' WHERE ' ).
+                  "( disabled = '' OR disabled IS NULL )";
+  }
+
+  $query->{extra_sql} = $extra_sql;
+
+  return ($query, "SELECT COUNT(*) FROM tax_rate $extra_sql");
 }
 
 =back

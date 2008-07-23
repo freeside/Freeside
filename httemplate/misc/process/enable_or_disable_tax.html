@@ -20,79 +20,15 @@ if ( $cgi->param('action') =~ /^(\w+)$/ ) {
   $action = $1;
 }
 
-my $data_vendor = '';
-if ( $cgi->param('data_vendor') =~ /^(\w+)$/ ) {
-  $data_vendor = $1;
-}
-
-my $geocode = '';
-if ( $cgi->param('geocode') =~ /^(\w+)$/ ) {
-  $geocode = $1;
-}
-
-my $taxclassnum = '';
-if ( $cgi->param('taxclassnum') =~ /^(\d+)$/ ) {
-  $taxclassnum = $1;
-  my $tax_class = qsearchs('tax_class', {'taxclassnum' => $taxclassnum});
-  $taxclassnum = ''
-    unless ($tax_class);
-}
-
-my $tax_type = $1
-  if ( $cgi->param('tax_type') =~ /^(\d+)$/ );
-my $tax_cat = $1
-  if ( $cgi->param('tax_cat') =~ /^(\d+)$/ );
-
-my @taxclassnum = ();
-if ($tax_type || $tax_cat ) {
-  my $compare = "LIKE '". ( $tax_type || "%" ). ":". ( $tax_cat || "%" ). "'";
-  $compare = "= '$tax_type:$tax_cat'" if ($tax_type && $tax_cat);
-  my @tax_class =
-    qsearch({ 'table'     => 'tax_class',
-              'hashref'   => {},
-              'extra_sql' => "WHERE taxclass $compare",
-           });
-  if (@tax_class) {
-    @taxclassnum = map { $_->taxclassnum } @tax_class;
-    $tax_class[0]->description =~ /^(.*):(.*)/;
-  }else{
-    $tax_type = '';
-    $tax_cat = '';
-  }
-}
-
-my $extra_sql = '';
-if ( $data_vendor ) {
-  $extra_sql .= ' WHERE data_vendor = '. dbh->quote($data_vendor);
-}
-
-if ( $geocode ) {
-  $extra_sql .= ( $extra_sql =~ /WHERE/i ? ' AND ' : ' WHERE ' ).
-                ' geocode LIKE '. dbh->quote($geocode.'%');
-}
-
-if ( $taxclassnum ) {
-  $extra_sql .= ( $extra_sql =~ /WHERE/i ? ' AND ' : ' WHERE ' ).
-                ' taxclassnum  = '. dbh->quote($taxclassnum);
-}
-
-if ( @taxclassnum ) {
-  $extra_sql .= ( $extra_sql =~ /WHERE/i ? ' AND ' : ' WHERE ' ).
-                join(' OR ', map { " taxclassnum  = $_ " } @taxclassnum );
-}
-
-my @tax_rate = qsearch({ 'table' => 'tax_rate',
-                         'hashref' => {},
-                         'extra_sql' => $extra_sql,
-                      });
+my ($query, $count_query) = FS::tax_rate::browse_queries(scalar($cgi->Vars));
+my @tax_rate = qsearch( $query );
 
 #transaction?
 my $error;
 $error = "Invalid action" unless ($action =~ /enable|disable/);
 
 foreach my $tax_rate (@tax_rate) {
-  $action eq 'enable' ? $tax_rate->setuptax('') : $tax_rate->setuptax('Y');
-  $action eq 'enable' ? $tax_rate->recurtax('') : $tax_rate->recurtax('Y');
+  $action eq 'enable' ? $tax_rate->disabled('') : $tax_rate->disabled('Y');
   # $tax_rate->manual('Y');
   $error ||= $tax_rate->replace;
   last if $error;

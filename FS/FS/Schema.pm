@@ -707,6 +707,7 @@ sub tables_hashref {
         'setuptax',    'char', 'NULL', 1, '', '',  # Y = setup tax exempt
         'recurtax',    'char', 'NULL', 1, '', '',  # Y = recur tax exempt
         'manual',      'char', 'NULL', 1, '', '',  # Y = manually edited
+        'disabled',    'char', 'NULL', 1, '', '',  # Y = tax disabled
       ],
       'primary_key' => 'taxnum',
       'unique' => [],
