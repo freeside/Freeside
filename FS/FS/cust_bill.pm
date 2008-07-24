@@ -226,7 +226,12 @@ Returns the line items (see L<FS::cust_bill_pkg>) for this invoice.
 
 sub cust_bill_pkg {
   my $self = shift;
-  qsearch( 'cust_bill_pkg', { 'invnum' => $self->invnum } );
+  qsearch(
+    { 'table'    => 'cust_bill_pkg',
+      'hashref'  => { 'invnum' => $self->invnum },
+      'order_by' => 'ORDER BY billpkgnum',
+    }
+  );
 }
 
 =item cust_pkg
