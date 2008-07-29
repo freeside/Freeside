@@ -211,9 +211,13 @@ fi
 
 %{__mkdir_p} $RPM_BUILD_ROOT%{freeside_document_root}/selfservice
 %{__mkdir_p} $RPM_BUILD_ROOT%{freeside_document_root}/selfservice/cgi
+%{__mkdir_p} $RPM_BUILD_ROOT%{freeside_document_root}/selfservice/cgi/images
+%{__mkdir_p} $RPM_BUILD_ROOT%{freeside_document_root}/selfservice/cgi/misc
 %{__mkdir_p} $RPM_BUILD_ROOT%{freeside_document_root}/selfservice/php
 %{__mkdir_p} $RPM_BUILD_ROOT%{freeside_document_root}/selfservice/templates
-%{__install} fs_selfservice/FS-SelfService/cgi/* $RPM_BUILD_ROOT%{freeside_document_root}/selfservice/cgi
+%{__install} fs_selfservice/FS-SelfService/cgi/{*.cgi,*.html,*.gif} $RPM_BUILD_ROOT%{freeside_document_root}/selfservice/cgi
+%{__install} fs_selfservice/FS-SelfService/cgi/images/* $RPM_BUILD_ROOT%{freeside_document_root}/selfservice/cgi/images
+%{__install} fs_selfservice/FS-SelfService/cgi/misc/* $RPM_BUILD_ROOT%{freeside_document_root}/selfservice/cgi/misc
 %{__install} fs_selfservice/php/* $RPM_BUILD_ROOT%{freeside_document_root}/selfservice/php
 %{__install} fs_selfservice/FS-SelfService/*.template $RPM_BUILD_ROOT%{freeside_document_root}/selfservice/templates
 
