@@ -2161,8 +2161,8 @@ sub print_generic {
                )
       );
     if ( $multisection ) {
-      $adjust_section->{'pretotal'} = 'New charges total '.
-                                      $total->{'total_amount'};
+      $adjust_section->{'pretotal'} = 'New charges total '. $other_money_char.
+                                      sprintf('%.2f', $self->charged );
     }else{
       push @total_items, $total;
     }
