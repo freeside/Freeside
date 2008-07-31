@@ -174,7 +174,7 @@ sub balance {
   $start = $start ? "( $str2time now() $closing - ".($start * 86400). ' )' : '';
   $end   = $end   ? "( $str2time now() $closing - ".($end   * 86400). ' )' : '';
 
-  #$opt{'unapplied_date'} = 1;
+  $opt{'unapplied_date'} = 1;
 
   ( $opt{sum} ? 'SUM( ' : '' ). 
   FS::cust_main->balance_date_sql( $start, $end, %opt ).

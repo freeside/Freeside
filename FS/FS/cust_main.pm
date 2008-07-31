@@ -5262,7 +5262,7 @@ Available options are:
 
 =item unapplied_date
 
-set to true to disregard unapplied credits, payments and refunds outside the specified time period - by default the time period restriction only applies to invoices (useful for reporting (or is it?), probably a bad idea for event triggering)
+set to true to disregard unapplied credits, payments and refunds outside the specified time period - by default the time period restriction only applies to invoices (useful for reporting, probably a bad idea for event triggering)
 
 =item total
 
