@@ -61,4 +61,4 @@ my $cust_main = qsearchs( {
 } )
   or die 'Unknown custnum';
 
-<%/init>
+</%init>
