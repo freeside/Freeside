@@ -127,7 +127,13 @@ my $count_sql = "select count(*) from cust_main $where";
 my $sql_query = {
   'table'     => 'cust_main',
   'hashref'   => {},
-  'select'    => "*, $owed_cols, $packages_cols",
+  'select'    => join(',',
+                   #'cust_main.*',
+                   'custnum',
+                   $owed_cols,
+                   $packages_cols,
+                   FS::UI::Web::cust_sql_fields(),
+                 ),
   'extra_sql' => $where,
   'order_by'  => "order by coalesce(lower(company), ''), lower(last)",
 };
