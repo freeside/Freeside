@@ -19,7 +19,6 @@ use Date::Parse;
 use String::Approx qw(amatch);
 use Business::CreditCard 0.28;
 use Locale::Country;
-use Data::Dumper;
 use FS::UID qw( getotaker dbh driver_name );
 use FS::Record qw( qsearchs qsearch dbdef );
 use FS::Misc qw( generate_email send_email generate_ps do_print );
@@ -53,7 +52,7 @@ use FS::banned_pay;
 use FS::payinfo_Mixin;
 use FS::TicketSystem;
 
-@ISA = qw( FS::Record FS::payinfo_Mixin );
+@ISA = qw( FS::payinfo_Mixin FS::Record );
 
 @EXPORT_OK = qw( smart_search );
 
