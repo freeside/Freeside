@@ -1,5 +1,6 @@
 package FS::cdr::asterisk;
 
+use strict;
 use vars qw(@ISA %info);
 use FS::cdr qw(_cdr_date_parser_maker);
 

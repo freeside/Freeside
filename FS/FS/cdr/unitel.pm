@@ -1,5 +1,6 @@
 package FS::cdr::unitel;
 
+use strict;
 use vars qw(@ISA %info);
 use FS::cdr;
 

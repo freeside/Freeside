@@ -15,7 +15,7 @@ use FS::cdr_carrier;
 use FS::cdr_upstream_rate;
 
 @ISA = qw(FS::Record);
-@EXPORT_OK = qw( _cdr_date_parser_maker );
+@EXPORT_OK = qw( _cdr_date_parser_maker _cdr_min_parser_maker );
 
 $DEBUG = 0;
 
@@ -547,8 +547,24 @@ sub import_formats {
   %import_formats;
 }
 
-sub _cdr_date_parser_maker {
+sub _cdr_min_parser_maker {
   my $field = shift;
+  my @fields = ref($field) ? @$field : ($field);
+  return sub {
+    my( $cdr, $min ) = @_;
+    my $sec = eval { _cdr_min_parse($min) };
+    die "error parsing seconds for @fields from $min minutes: $@\n" if $@;
+    $cdr->$_($sec) foreach @fields;
+  };
+}
+
+sub _cdr_min_parse {
+  my $min = shift;
+  sprintf('%.0f', $min * 60 );
+}
+
+sub _cdr_date_parser_maker {
+  my $field = shift || [qw( billsec duration )];
   return sub {
     my( $cdr, $date ) = @_;
     #$cdr->$field( _cdr_date_parse($date) );
@@ -613,11 +629,11 @@ sub batch_import {
   if ( $type eq 'csv' ) {
     eval "use Text::CSV_XS;";
     die $@ if $@;
-    my $parser = new Text::CSV_XS;
+    $parser = new Text::CSV_XS;
   } elsif ( $type eq 'fixedlength' ) {
     eval "use Parse::FixedLength;";
     die $@ if $@;
-    my $parser = new Parse::FixedLength $info->{'fixedlength_format'};
+    $parser = new Parse::FixedLength $info->{'fixedlength_format'};
   } else {
     die "Unknown CDR format type $type for format $format\n";
   }
