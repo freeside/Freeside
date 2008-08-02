@@ -103,6 +103,9 @@ sub upgrade_data {
     #remove bad pending records
     'cust_pay_pending' => [],
 
+    #replace invnum and pkgnum with billpkgnum
+    'cust_bill_pkg_detail' => [],
+
   ;
 
   \%hash;

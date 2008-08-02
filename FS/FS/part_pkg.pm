@@ -762,7 +762,7 @@ sub option {
 
 =item bill_part_pkg_link
 
-Returns the associated part_pkg_link records (see L<FS::part_pkg_link).
+Returns the associated part_pkg_link records (see L<FS::part_pkg_link>).
 
 =cut
 
@@ -771,6 +771,8 @@ sub bill_part_pkg_link {
 }
 
 =item svc_part_pkg_link
+
+Returns the associated part_pkg_link records (see L<FS::part_pkg_link>).
 
 =cut
 

@@ -1,10 +1,13 @@
 package FS::cust_bill_pkg_detail;
 
 use strict;
-use vars qw( @ISA );
-use FS::Record qw( qsearch qsearchs );
+use vars qw( @ISA $me $DEBUG );
+use FS::Record qw( qsearch qsearchs dbdef );
+use FS::cust_bill_pkg;
 
 @ISA = qw(FS::Record);
+$me = '[ FS::cust_bill_pkg_detail ]';
+$DEBUG = 0;
 
 =head1 NAME
 
@@ -35,9 +38,7 @@ inherits from FS::Record.  The following fields are currently supported:
 
 =item detailnum - primary key
 
-=item pkgnum -
-
-=item invnum -
+=item billpkgnum - link to cust_bill_pkg
 
 =item detail - detail description
 
@@ -102,14 +103,72 @@ sub check {
   my $self = shift;
 
   $self->ut_numbern('detailnum')
-    || $self->ut_foreign_key('pkgnum', 'cust_pkg', 'pkgnum')
-    || $self->ut_foreign_key('invnum', 'cust_bill', 'invnum')
+    || $self->ut_foreign_key('billpkgnum', 'cust_bill_pkg', 'billpkgnum')
     || $self->ut_enum('format', [ '', 'C' ] )
     || $self->ut_text('detail')
     || $self->SUPER::check
     ;
 
 }
+
+# _upgrade_data
+#
+# Used by FS::Upgrade to migrate to a new database.
+
+sub _upgrade_data { # class method
+
+  my ($class, %opts) = @_;
+
+  warn "$me upgrading $class\n" if $DEBUG;
+
+  if ( defined( dbdef->table($class->table)->column('billpkgnum') ) &&
+       defined( dbdef->table($class->table)->column('invnum') ) &&
+       defined( dbdef->table($class->table)->column('pkgnum') ) 
+  ) {
+
+    warn "$me Checking for unmigrated invoice line item details\n" if $DEBUG;
+
+    my @cbpd = qsearch({ 'table'   => $class->table,
+                         'hashref' => {},
+                         'extra_sql' => 'WHERE invnum IS NOT NULL AND '.
+                                        'pkgnum IS NOT NULL',
+                      });
+
+    if (scalar(@cbpd)) {
+      warn "$me Found unmigrated invoice line item details\n" if $DEBUG;
+
+      foreach my $cbpd ( @cbpd ) {
+        my $detailnum = $cbpd->detailnum;
+        warn "$me Contemplating detail $detailnum\n" if $DEBUG > 1;
+        my $cust_bill_pkg =
+          qsearchs({ 'table' => 'cust_bill_pkg',
+                     'hashref' => { 'invnum' => $cbpd->invnum,
+                                    'pkgnum' => $cbpd->pkgnum,
+                                  },
+                     'order_by' => 'ORDER BY billpkgnum LIMIT 1',
+                  });
+        if ($cust_bill_pkg) {
+          $cbpd->billpkgnum($cust_bill_pkg->billpkgnum);
+          $cbpd->invnum('');
+          $cbpd->pkgnum('');
+          my $error = $cbpd->replace;
+
+          warn "*** WARNING: error replacing line item detail ".
+               "(cust_bill_pkg_detail) $detailnum: $error ***\n"
+            if $error;
+        } else {
+          warn "Found orphaned line item detail $detailnum during upgrade.\n";
+        }
+
+      } # foreach $cbpd
+
+    } # if @cbpd
+
+  } # if billpkgnum, invnum, and pkgnum columns defined
+
+  '';
+
+}                         
 
 =back
 

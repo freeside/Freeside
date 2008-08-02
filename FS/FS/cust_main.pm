@@ -2061,6 +2061,7 @@ sub bill {
   $self->select_for_update; #mutex
 
   my @cust_bill_pkg = ();
+  my @appended_cust_bill_pkg = ();
 
   ###
   # find the packages which are due for billing, find out how much they are
@@ -2092,294 +2093,60 @@ sub bill {
     my $old_cust_pkg = new FS::cust_pkg \%hash;
 
     foreach my $part_pkg ( $cust_pkg->part_pkg->self_and_bill_linked ) {
-
-      $cust_pkg->pkgpart($part_pkg->pkgpart); 
-      $cust_pkg->set($_, $hash{$_}) foreach qw( setup last_bill bill );
-  
-      my @details = ();
-
-      my $lineitems = 0;
-
-      ###
-      # bill setup
-      ###
-
-      my $setup = 0;
-      my $unitsetup = 0;
-      if ( ! $cust_pkg->setup &&
-           (
-             ( $conf->exists('disable_setup_suspended_pkgs') &&
-              ! $cust_pkg->getfield('susp')
-            ) || ! $conf->exists('disable_setup_suspended_pkgs')
-           )
-        || $options{'resetup'}
-      ) {
-    
-        warn "    bill setup\n" if $DEBUG > 1;
-        $lineitems++;
-
-        $setup = eval { $cust_pkg->calc_setup( $time, \@details ) };
-        if ( $@ ) {
-          $dbh->rollback if $oldAutoCommit;
-          return "$@ running calc_setup for $cust_pkg\n";
-        }
-
-        $unitsetup = $cust_pkg->part_pkg->unit_setup || $setup; #XXX uuh
-
-        $cust_pkg->setfield('setup', $time)
-          unless $cust_pkg->setup;
-              #do need it, but it won't get written to the db
-              #|| $cust_pkg->pkgpart != $real_pkgpart;
-
+      my $error =
+        $self->_make_lines( 'part_pkg'            => $part_pkg,
+                            'cust_pkg'            => $cust_pkg,
+                            'precommit_hooks'     => \@precommit_hooks,
+                            'line_items'          => \@cust_bill_pkg,
+                            'appended_line_items' => \@appended_cust_bill_pkg,
+                            'setup'               => \$total_setup,
+                            'recur'               => \$total_recur,
+                            'tax_matrix'          => \%taxlisthash,
+                            'time'                => $time,
+                            'options'             => \%options,
+                          );
+      if ($error) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
       }
-
-      ###
-      # bill recurring fee
-      ### 
-
-      #XXX unit stuff here too
-      my $recur = 0;
-      my $unitrecur = 0;
-      my $sdate;
-      if ( $part_pkg->getfield('freq') ne '0' &&
-           ! $cust_pkg->getfield('susp') &&
-           ( $cust_pkg->getfield('bill') || 0 ) <= $time
-      ) {
-
-        # XXX should this be a package event?  probably.  events are called
-        # at collection time at the moment, though...
-        $part_pkg->reset_usage($cust_pkg, 'debug'=>$DEBUG)
-          if $part_pkg->can('reset_usage');
-          #don't want to reset usage just cause we want a line item??
-          #&& $part_pkg->pkgpart == $real_pkgpart;
-  
-        warn "    bill recur\n" if $DEBUG > 1;
-        $lineitems++;
-  
-        # XXX shared with $recur_prog
-        $sdate = $cust_pkg->bill || $cust_pkg->setup || $time;
-  
-        #over two params!  lets at least switch to a hashref for the rest...
-        my %param = ( 'precommit_hooks' => \@precommit_hooks, );
-  
-        $recur = eval { $cust_pkg->calc_recur( \$sdate, \@details, \%param ) };
-        if ( $@ ) {
-          $dbh->rollback if $oldAutoCommit;
-          return "$@ running calc_recur for $cust_pkg\n";
-        }
-
-  
-        #change this bit to use Date::Manip? CAREFUL with timezones (see
-        # mailing list archive)
-        my ($sec,$min,$hour,$mday,$mon,$year) =
-          (localtime($sdate) )[0,1,2,3,4,5];
-    
-        #pro-rating magic - if $recur_prog fiddles $sdate, want to use that
-        # only for figuring next bill date, nothing else, so, reset $sdate again
-        # here
-        $sdate = $cust_pkg->bill || $cust_pkg->setup || $time;
-        $cust_pkg->last_bill($sdate);
-    
-        if ( $part_pkg->freq =~ /^\d+$/ ) {
-          $mon += $part_pkg->freq;
-          until ( $mon < 12 ) { $mon -= 12; $year++; }
-        } elsif ( $part_pkg->freq =~ /^(\d+)w$/ ) {
-          my $weeks = $1;
-          $mday += $weeks * 7;
-        } elsif ( $part_pkg->freq =~ /^(\d+)d$/ ) {
-          my $days = $1;
-          $mday += $days;
-        } elsif ( $part_pkg->freq =~ /^(\d+)h$/ ) {
-          my $hours = $1;
-          $hour += $hours;
-        } else {
-          $dbh->rollback if $oldAutoCommit;
-          return "unparsable frequency: ". $part_pkg->freq;
-        }
-        $cust_pkg->setfield('bill',
-          timelocal_nocheck($sec,$min,$hour,$mday,$mon,$year));
-  
-      }
-
-      warn "\$setup is undefined" unless defined($setup);
-      warn "\$recur is undefined" unless defined($recur);
-      warn "\$cust_pkg->bill is undefined" unless defined($cust_pkg->bill);
-  
-      ###
-      # If there's line items, create em cust_bill_pkg records
-      # If $cust_pkg has been modified, update it (if we're a real pkgpart)
-      ###
-  
-      if ( $lineitems ) {
-
-        if ( $cust_pkg->modified && $cust_pkg->pkgpart == $real_pkgpart ) {
-          # hmm.. and if just the options are modified in some weird price plan?
-  
-          warn "  package ". $cust_pkg->pkgnum. " modified; updating\n"
-            if $DEBUG >1;
-  
-          my $error = $cust_pkg->replace( $old_cust_pkg,
-                                          'options' => { $cust_pkg->options },
-                                        );
-          if ( $error ) { #just in case
-            $dbh->rollback if $oldAutoCommit;
-            return "Error modifying pkgnum ". $cust_pkg->pkgnum. ": $error";
-          }
-        }
-  
-        $setup = sprintf( "%.2f", $setup );
-        $recur = sprintf( "%.2f", $recur );
-        if ( $setup < 0 && ! $conf->exists('allow_negative_charges') ) {
-          $dbh->rollback if $oldAutoCommit;
-          return "negative setup $setup for pkgnum ". $cust_pkg->pkgnum;
-        }
-        if ( $recur < 0 && ! $conf->exists('allow_negative_charges') ) {
-          $dbh->rollback if $oldAutoCommit;
-          return "negative recur $recur for pkgnum ". $cust_pkg->pkgnum;
-        }
-  
-        if ( $setup != 0 || $recur != 0 ) {
-  
-          unless ($postal_charge) {
-            $postal_charge = 1;  # try only once
-            my $postal_pkg = $self->charge_postal_fee();
-            if ( $postal_pkg && !ref( $postal_pkg ) ) {
-              $dbh->rollback if $oldAutoCommit;
-              return "can't charge postal invoice fee for customer ".
-                $self->custnum. ": $postal_pkg";
-            }
-            push @cust_pkgs, $postal_pkg if $postal_pkg;
-          }
-
-          warn "    charges (setup=$setup, recur=$recur); adding line items\n"
-            if $DEBUG > 1;
-          my $cust_bill_pkg = new FS::cust_bill_pkg {
-            'pkgnum'    => $cust_pkg->pkgnum,
-            'setup'     => $setup,
-            'unitsetup' => $unitsetup,
-            'recur'     => $recur,
-            'unitrecur' => $unitrecur,
-            'quantity'  => $cust_pkg->quantity,
-            'sdate'     => $sdate,
-            'edate'     => $cust_pkg->bill,
-            'details' => \@details,
-          };
-          $cust_bill_pkg->pkgpart_override($part_pkg->pkgpart)
-            unless $part_pkg->pkgpart == $real_pkgpart;
-          push @cust_bill_pkg, $cust_bill_pkg;
-
-          $total_setup += $setup;
-          $total_recur += $recur;
-  
-          ###
-          # handle taxes
-          ###
-  
-          unless ( $self->tax =~ /Y/i || $self->payby eq 'COMP' ) {
-  
-            my @taxes = ();
-            my @taxoverrides = $part_pkg->part_pkg_taxoverride;
-            
-            my $prefix = 
-              ( $conf->exists('tax-ship_address') && length($self->ship_last) )
-              ? 'ship_'
-              : '';
-  
-            if ( $conf->exists('enable_taxproducts')
-                 && (scalar(@taxoverrides) || $part_pkg->taxproductnum )
-               )
-            { 
-  
-              my @taxclassnums = ();
-              my $geocode = $self->geocode('cch');
-  
-              if ( scalar( @taxoverrides ) ) {
-                @taxclassnums = map { $_->taxclassnum } @taxoverrides;
-              }elsif ( $part_pkg->taxproductnum ) {
-                @taxclassnums = map { $_->taxclassnum }
-                                $part_pkg->part_pkg_taxrate('cch', $geocode);
-              }
-  
-              my $extra_sql =
-                "AND (".
-                join(' OR ', map { "taxclassnum = $_" } @taxclassnums ). ")";
-  
-              @taxes = qsearch({ 'table' => 'tax_rate',
-                                 'hashref' => { 'geocode' => $geocode, },
-                                 'extra_sql' => $extra_sql,
-                              })
-                if scalar(@taxclassnums);
-  
-
-            }else{
-  
-              my %taxhash = map { $_ => $self->get("$prefix$_") }
-                                qw( state county country );
-  
-              $taxhash{'taxclass'} = $part_pkg->taxclass;
-  
-              @taxes = qsearch( 'cust_main_county', \%taxhash );
-
-            unless ( @taxes ) {
-              $taxhash{'taxclass'} = '';
-              @taxes =  qsearch( 'cust_main_county', \%taxhash );
-            }
-
-            #one more try at a whole-country tax rate
-            unless ( @taxes ) {
-              $taxhash{$_} = '' foreach qw( state county );
-              @taxes =  qsearch( 'cust_main_county', \%taxhash );
-            }
-
-            } #if $conf->exists('enable_taxproducts') 
-  
-            # maybe eliminate this entirely, along with all the 0% records
-            unless ( @taxes ) {
-              $dbh->rollback if $oldAutoCommit;
-              my $error;
-              if ( $conf->exists('enable_taxproducts') ) { 
-                $error = 
-                  "fatal: can't find tax rate for zip/taxproduct/pkgpart ".
-                  join('/', ( map $self->get("$prefix$_"),
-                                  qw(zip)
-                            ),
-                            $part_pkg->taxproduct_description,
-                            $part_pkg->pkgpart ). "\n";
-              } else {
-                $error = 
-                  "fatal: can't find tax rate for state/county/country/taxclass ".
-                  join('/', ( map $self->get("$prefix$_"),
-                                  qw(state county country)
-                            ),
-                            $part_pkg->taxclass ). "\n";
-              }
-              return $error;
-            }
-    
-            foreach my $tax ( @taxes ) {
-              my $taxname = ref( $tax ). ' '. $tax->taxnum;
-              if ( exists( $taxlisthash{ $taxname } ) ) {
-                push @{ $taxlisthash{ $taxname  } }, $cust_bill_pkg;
-              }else{
-                $taxlisthash{ $taxname } = [ $tax, $cust_bill_pkg ];
-              }
-            }
-
-
-          } #unless $self->tax =~ /Y/i || $self->payby eq 'COMP'
-
-        } #if $setup != 0 || $recur != 0
-      
-      } #if $cust_pkg->modified
 
     } #foreach my $part_pkg
 
   } #foreach my $cust_pkg
 
+  push @cust_bill_pkg, @appended_cust_bill_pkg;
+
   unless ( @cust_bill_pkg ) { #don't create an invoice w/o line items
     #but do commit any package date cycling that happened
     $dbh->commit or die $dbh->errstr if $oldAutoCommit;
     return '';
+  }
+
+  my $postal_pkg = $self->charge_postal_fee();
+  if ( $postal_pkg && !ref( $postal_pkg ) ) {
+    $dbh->rollback if $oldAutoCommit;
+    return "can't charge postal invoice fee for customer ".
+      $self->custnum. ": $postal_pkg";
+  }
+  if ( $postal_pkg ) {
+    foreach my $part_pkg ( $postal_pkg->part_pkg->self_and_bill_linked ) {
+      my $error =
+        $self->_make_lines( 'part_pkg'            => $part_pkg,
+                            'cust_pkg'            => $postal_pkg,
+                            'precommit_hooks'     => \@precommit_hooks,
+                            'line_items'          => \@cust_bill_pkg,
+                            'appended_line_items' => \@appended_cust_bill_pkg,
+                            'setup'               => \$total_setup,
+                            'recur'               => \$total_recur,
+                            'tax_matrix'          => \%taxlisthash,
+                            'time'                => $time,
+                            'options'             => \%options,
+                          );
+      if ($error) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+    }
   }
 
   warn "having a look at the taxes we found...\n" if $DEBUG > 2;
@@ -2510,6 +2277,327 @@ sub bill {
   
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   ''; #no error
+}
+
+
+sub _make_lines {
+  my ($self, %params) = @_;
+
+  my $part_pkg = $params{part_pkg} or die "no part_pkg specified";
+  my $cust_pkg = $params{cust_pkg} or die "no cust_pkg specified";
+  my $precommit_hooks = $params{precommit_hooks} or die "no package specified";
+  my $cust_bill_pkgs = $params{line_items} or die "no line buffer specified";
+  my $appended_cust_bill_pkg = $params{appended_line_items}
+    or die "no appended line buffer specified";
+  my $total_setup = $params{setup} or die "no setup accumulator specified";
+  my $total_recur = $params{recur} or die "no recur accumulator specified";
+  my $taxlisthash = $params{tax_matrix} or die "no tax accumulator specified";
+  my $time = $params{'time'} or die "no time specified";
+  my (%options) = %{$params{options}};  #hmmm  only for 'resetup'
+
+  my $dbh = dbh;
+  my $real_pkgpart = $cust_pkg->pkgpart;
+  my %hash = $cust_pkg->hash;
+  my $old_cust_pkg = new FS::cust_pkg \%hash;
+
+  $cust_pkg->pkgpart($part_pkg->pkgpart); 
+  $cust_pkg->set($_, $hash{$_}) foreach qw( setup last_bill bill );
+  
+  my @details = ();
+
+  my $lineitems = 0;
+
+  ###
+  # bill setup
+  ###
+
+  my $setup = 0;
+  my $unitsetup = 0;
+  if ( ! $cust_pkg->setup &&
+       (
+         ( $conf->exists('disable_setup_suspended_pkgs') &&
+          ! $cust_pkg->getfield('susp')
+        ) || ! $conf->exists('disable_setup_suspended_pkgs')
+       )
+    || $options{'resetup'}
+  ) {
+    
+    warn "    bill setup\n" if $DEBUG > 1;
+    $lineitems++;
+
+    $setup = eval { $cust_pkg->calc_setup( $time, \@details ) };
+    return "$@ running calc_setup for $cust_pkg\n"
+      if $@;
+
+    $unitsetup = $cust_pkg->part_pkg->unit_setup || $setup; #XXX uuh
+
+    $cust_pkg->setfield('setup', $time)
+      unless $cust_pkg->setup;
+          #do need it, but it won't get written to the db
+          #|| $cust_pkg->pkgpart != $real_pkgpart;
+
+  }
+
+  ###
+  # bill recurring fee
+  ### 
+
+  #XXX unit stuff here too
+  my $recur = 0;
+  my $unitrecur = 0;
+  my $sdate;
+  if ( $part_pkg->getfield('freq') ne '0' &&
+       ! $cust_pkg->getfield('susp') &&
+       ( $cust_pkg->getfield('bill') || 0 ) <= $time
+  ) {
+
+    # XXX should this be a package event?  probably.  events are called
+    # at collection time at the moment, though...
+    $part_pkg->reset_usage($cust_pkg, 'debug'=>$DEBUG)
+      if $part_pkg->can('reset_usage');
+      #don't want to reset usage just cause we want a line item??
+      #&& $part_pkg->pkgpart == $real_pkgpart;
+
+    warn "    bill recur\n" if $DEBUG > 1;
+    $lineitems++;
+
+    # XXX shared with $recur_prog
+    $sdate = $cust_pkg->bill || $cust_pkg->setup || $time;
+
+    #over two params!  lets at least switch to a hashref for the rest...
+    my %param = ( 'precommit_hooks' => $precommit_hooks, );
+
+    $recur = eval { $cust_pkg->calc_recur( \$sdate, \@details, \%param ) };
+    return "$@ running calc_recur for $cust_pkg\n"
+      if ( $@ );
+
+  
+    #change this bit to use Date::Manip? CAREFUL with timezones (see
+    # mailing list archive)
+    my ($sec,$min,$hour,$mday,$mon,$year) =
+      (localtime($sdate) )[0,1,2,3,4,5];
+    
+    #pro-rating magic - if $recur_prog fiddles $sdate, want to use that
+    # only for figuring next bill date, nothing else, so, reset $sdate again
+    # here
+    $sdate = $cust_pkg->bill || $cust_pkg->setup || $time;
+    $cust_pkg->last_bill($sdate);
+    
+    if ( $part_pkg->freq =~ /^\d+$/ ) {
+      $mon += $part_pkg->freq;
+      until ( $mon < 12 ) { $mon -= 12; $year++; }
+    } elsif ( $part_pkg->freq =~ /^(\d+)w$/ ) {
+      my $weeks = $1;
+      $mday += $weeks * 7;
+    } elsif ( $part_pkg->freq =~ /^(\d+)d$/ ) {
+      my $days = $1;
+      $mday += $days;
+    } elsif ( $part_pkg->freq =~ /^(\d+)h$/ ) {
+      my $hours = $1;
+      $hour += $hours;
+    } else {
+      return "unparsable frequency: ". $part_pkg->freq;
+    }
+    $cust_pkg->setfield('bill',
+      timelocal_nocheck($sec,$min,$hour,$mday,$mon,$year));
+
+  }
+
+  warn "\$setup is undefined" unless defined($setup);
+  warn "\$recur is undefined" unless defined($recur);
+  warn "\$cust_pkg->bill is undefined" unless defined($cust_pkg->bill);
+  
+  ###
+  # If there's line items, create em cust_bill_pkg records
+  # If $cust_pkg has been modified, update it (if we're a real pkgpart)
+  ###
+
+  if ( $lineitems ) {
+
+    if ( $cust_pkg->modified && $cust_pkg->pkgpart == $real_pkgpart ) {
+      # hmm.. and if just the options are modified in some weird price plan?
+  
+      warn "  package ". $cust_pkg->pkgnum. " modified; updating\n"
+        if $DEBUG >1;
+  
+      my $error = $cust_pkg->replace( $old_cust_pkg,
+                                      'options' => { $cust_pkg->options },
+                                    );
+      return "Error modifying pkgnum ". $cust_pkg->pkgnum. ": $error"
+        if $error; #just in case
+    }
+  
+    $setup = sprintf( "%.2f", $setup );
+    $recur = sprintf( "%.2f", $recur );
+    if ( $setup < 0 && ! $conf->exists('allow_negative_charges') ) {
+      return "negative setup $setup for pkgnum ". $cust_pkg->pkgnum;
+    }
+    if ( $recur < 0 && ! $conf->exists('allow_negative_charges') ) {
+      return "negative recur $recur for pkgnum ". $cust_pkg->pkgnum;
+    }
+
+    if ( $setup != 0 || $recur != 0 ) {
+
+      warn "    charges (setup=$setup, recur=$recur); adding line items\n"
+        if $DEBUG > 1;
+      my $cust_bill_pkg = new FS::cust_bill_pkg {
+        'pkgnum'    => $cust_pkg->pkgnum,
+        'setup'     => $setup,
+        'unitsetup' => $unitsetup,
+        'recur'     => $recur,
+        'unitrecur' => $unitrecur,
+        'quantity'  => $cust_pkg->quantity,
+        'sdate'     => $sdate,
+        'edate'     => $cust_pkg->bill,
+        'details'   => \@details,
+      };
+      $cust_bill_pkg->pkgpart_override($part_pkg->pkgpart)
+        unless $part_pkg->pkgpart == $real_pkgpart;
+      push @$cust_bill_pkgs, $cust_bill_pkg;
+
+      $$total_setup += $setup;
+      $$total_recur += $recur;
+
+      ###
+      # handle taxes
+      ###
+
+      unless ( $self->tax =~ /Y/i || $self->payby eq 'COMP' ) {
+
+        $self->_handle_taxes($part_pkg, $taxlisthash, $cust_bill_pkg);
+
+      } #unless $self->tax =~ /Y/i || $self->payby eq 'COMP'
+
+    } #if $setup != 0 || $recur != 0
+      
+  } #if $line_items
+
+  if ( $part_pkg->can('append_cust_bill_pkgs') ) {
+    my %param = ( 'precommit_hooks' => $precommit_hooks, );
+    my ($more_cust_bill_pkgs) =
+      eval { $part_pkg->append_cust_bill_pkgs( $cust_pkg, \$sdate, \%param ) };
+
+    return "$@ running append_cust_bill_pkgs for $cust_pkg\n"
+      if ( $@ );
+    return "$more_cust_bill_pkgs"
+      unless ( ref($more_cust_bill_pkgs) );
+
+    foreach my $cust_bill_pkg ( @{$more_cust_bill_pkgs} ) {
+
+      $cust_bill_pkg->pkgpart_override($part_pkg->pkgpart)
+        unless $part_pkg->pkgpart == $real_pkgpart;
+      push @$appended_cust_bill_pkg, $cust_bill_pkg;
+
+      $$total_setup += $cust_bill_pkg->setup;
+      $$total_recur += $cust_bill_pkg->recur;
+
+      ###
+      # handle taxes
+      ###
+
+      unless ( $self->tax =~ /Y/i || $self->payby eq 'COMP' ) {
+
+        $self->_handle_taxes($part_pkg, $taxlisthash, $cust_bill_pkg);
+
+      } #unless $self->tax =~ /Y/i || $self->payby eq 'COMP'
+    }
+  }
+
+}
+
+sub _handle_taxes {
+  my $self = shift;
+  my $part_pkg = shift;
+  my $taxlisthash = shift;
+  my $cust_bill_pkg = shift;
+
+  my @taxes = ();
+  my @taxoverrides = $part_pkg->part_pkg_taxoverride;
+    
+  my $prefix = 
+    ( $conf->exists('tax-ship_address') && length($self->ship_last) )
+    ? 'ship_'
+    : '';
+
+  if ( $conf->exists('enable_taxproducts')
+       && (scalar(@taxoverrides) || $part_pkg->taxproductnum )
+     )
+  { 
+
+    my @taxclassnums = ();
+    my $geocode = $self->geocode('cch');
+
+    if ( scalar( @taxoverrides ) ) {
+      @taxclassnums = map { $_->taxclassnum } @taxoverrides;
+    }elsif ( $part_pkg->taxproductnum ) {
+      @taxclassnums = map { $_->taxclassnum }
+                      $part_pkg->part_pkg_taxrate('cch', $geocode);
+    }
+
+    my $extra_sql =
+      "AND (".
+      join(' OR ', map { "taxclassnum = $_" } @taxclassnums ). ")";
+
+    @taxes = qsearch({ 'table' => 'tax_rate',
+                       'hashref' => { 'geocode' => $geocode, },
+                       'extra_sql' => $extra_sql,
+                    })
+      if scalar(@taxclassnums);
+
+
+  }else{
+
+    my %taxhash = map { $_ => $self->get("$prefix$_") }
+                      qw( state county country );
+
+    $taxhash{'taxclass'} = $part_pkg->taxclass;
+
+    @taxes = qsearch( 'cust_main_county', \%taxhash );
+
+    unless ( @taxes ) {
+      $taxhash{'taxclass'} = '';
+      @taxes =  qsearch( 'cust_main_county', \%taxhash );
+    }
+
+    #one more try at a whole-country tax rate
+    unless ( @taxes ) {
+      $taxhash{$_} = '' foreach qw( state county );
+      @taxes =  qsearch( 'cust_main_county', \%taxhash );
+    }
+
+  } #if $conf->exists('enable_taxproducts') 
+
+  # maybe eliminate this entirely, along with all the 0% records
+  unless ( @taxes ) {
+    my $error;
+    if ( $conf->exists('enable_taxproducts') ) { 
+      $error = 
+        "fatal: can't find tax rate for zip/taxproduct/pkgpart ".
+        join('/', ( map $self->get("$prefix$_"),
+                        qw(zip)
+                  ),
+                  $part_pkg->taxproduct_description,
+                  $part_pkg->pkgpart ). "\n";
+    } else {
+      $error = 
+        "fatal: can't find tax rate for state/county/country/taxclass ".
+        join('/', ( map $self->get("$prefix$_"),
+                        qw(state county country)
+                  ),
+                  $part_pkg->taxclass ). "\n";
+    }
+    return $error;
+  }
+
+  foreach my $tax ( @taxes ) {
+    my $taxname = ref( $tax ). ' '. $tax->taxnum;
+    if ( exists( $taxlisthash->{ $taxname } ) ) {
+      push @{ $taxlisthash->{ $taxname  } }, $cust_bill_pkg;
+    }else{
+      $taxlisthash->{ $taxname } = [ $tax, $cust_bill_pkg ];
+    }
+  }
+
 }
 
 =item collect OPTIONS

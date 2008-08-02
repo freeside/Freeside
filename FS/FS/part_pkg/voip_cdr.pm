@@ -85,6 +85,10 @@ tie my %rating_method, 'Tie::IxHash',
                          'select_options' => { FS::cdr::invoice_formats() },
                        },
 
+    'separate_usage' => { 'name' => 'Separate usage charges from recurring charges',
+                          'type' => 'checkbox',
+                        },
+
     #XXX also have option for an external db
 #    'cdr_location' => { 'name' => 'CDR database location'
 #                        'type' => 'select',
@@ -116,6 +120,7 @@ tie my %rating_method, 'Tie::IxHash',
                        disable_src
                        domestic_prefix international_prefix
                        use_amaflags use_disposition output_format
+                       separate_usage
                      )
                   ],
   'weight' => 40,
@@ -126,8 +131,16 @@ sub calc_setup {
   $self->option('setup_fee');
 }
 
-#false laziness w/voip_sqlradacct... resolve it if that one ever gets used again
 sub calc_recur {
+  my $self = shift;
+  my $charges = 0;
+  $charges = $self->calc_usage(@_)
+    unless $self->option('separate_usage', 'Hush!');
+  $self->option('recur_fee') + $charges;
+}
+
+#false laziness w/voip_sqlradacct calc_recur resolve it if that one ever gets used again
+sub calc_usage {
   my($self, $cust_pkg, $sdate, $details, $param ) = @_;
 
   my $last_bill = $cust_pkg->last_bill;
@@ -425,7 +438,7 @@ sub calc_recur {
 
   } #if ( $spool_cdr && length($downstream_cdr) )
 
-  $self->option('recur_fee') + $charges;
+  $charges;
 
 }
 
@@ -443,6 +456,31 @@ sub base_recur {
 sub calc_units {    
   my($self, $cust_pkg ) = @_;
   scalar(grep { $_->part_svc->svcdb eq 'svc_phone' } $cust_pkg->cust_svc);
+}
+
+sub append_cust_bill_pkgs {
+  my $self = shift;
+  my($cust_pkg, $sdate, $details, $param ) = @_;
+  return []
+    unless $self->option('separate_usage', 'Hush!');
+
+  my @details = ();
+  my $charges = $self->calc_usage($cust_pkg, $sdate, \@details, $param);
+
+  my $cust_bill_pkg = new FS::cust_bill_pkg {
+    'pkgnum'    => $cust_pkg->pkgnum,
+    'setup'     => 0,
+    'unitsetup' => 0,
+    'recur'     => sprintf( "%.2f", $charges),  # hmmm
+    'unitrecur' => 0,
+    'quantity'  => $cust_pkg->quantity,
+    'sdate'     => $$sdate,
+    'edate'     => $cust_pkg->bill,             # already fiddled
+    'itemdesc'  => 'Call details',              # configurable?
+    'details'   => \@details,
+  };
+
+  return [ $cust_bill_pkg ];
 }
 
 1;

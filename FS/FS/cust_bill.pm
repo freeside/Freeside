@@ -2687,6 +2687,7 @@ sub _items_cust_bill_pkg {
                     $cust_pkg->h_labels_short($self->_date);
                                               #$cust_bill_pkg->edate,
                                               #$cust_bill_pkg->sdate),
+        @d = () if $cust_bill_pkg->itemdesc;
         push @d, $cust_bill_pkg->details(%details_opt);
 
         push @b, {

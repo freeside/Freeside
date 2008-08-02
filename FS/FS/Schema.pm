@@ -508,14 +508,15 @@ sub tables_hashref {
     'cust_bill_pkg_detail' => {
       'columns' => [
         'detailnum', 'serial', '', '', '', '', 
-        'pkgnum',  'int', '', '', '', '', 
-        'invnum',  'int', '', '', '', '', 
+        'billpkgnum', 'int', 'NULL', '', '', '',        # should not be nullable
+        'pkgnum',  'int', 'NULL', '', '', '',           # deprecated
+        'invnum',  'int', 'NULL', '', '', '',           # deprecated
         'format',  'char', 'NULL', 1, '', '',
         'detail',  'varchar', '', $char_d, '', '', 
       ],
       'primary_key' => 'detailnum',
       'unique' => [],
-      'index' => [ [ 'pkgnum', 'invnum' ] ],
+      'index' => [ [ 'billpkgnum' ], [ 'pkgnum', 'invnum' ] ],
     },
 
     'cust_credit' => {

@@ -55,7 +55,7 @@ supported:
 
 =item edate - ending date of recurring fee
 
-=item itemdesc - Line item description (currentlty used only when pkgnum is 0 or -1)
+=item itemdesc - Line item description (overrides normal package description)
 
 =item quantity - If not set, defaults to 1
 
@@ -116,10 +116,9 @@ sub insert {
 
   foreach my $detail ( @{$self->get('details')} ) {
     my $cust_bill_pkg_detail = new FS::cust_bill_pkg_detail {
-      'pkgnum' => $self->pkgnum,
-      'invnum' => $self->invnum,
-      'format' => (ref($detail) ? $detail->[0] : '' ),
-      'detail' => (ref($detail) ? $detail->[1] : $detail ),
+      'billpkgnum' => $self->billpkgnum,
+      'format'     => (ref($detail) ? $detail->[0] : '' ),
+      'detail'     => (ref($detail) ? $detail->[1] : $detail ),
     };
     $error = $cust_bill_pkg_detail->insert;
     if ( $error ) {
@@ -292,9 +291,7 @@ sub details {
         )
       }
     qsearch ({ 'table'    => 'cust_bill_pkg_detail',
-               'hashref'  => { 'pkgnum' => $self->pkgnum,
-                               'invnum' => $self->invnum,
-                             },
+               'hashref'  => { 'billpkgnum' => $self->billpkgnum },
                'order_by' => 'ORDER BY detailnum',
             });
     #qsearch ( 'cust_bill_pkg_detail', { 'lineitemnum' => $self->lineitemnum });
@@ -313,7 +310,7 @@ sub desc {
   my $self = shift;
 
   if ( $self->pkgnum > 0 ) {
-    $self->part_pkg->pkg;
+    $self->itemdesc || $self->part_pkg->pkg;
   } else {
     $self->itemdesc || 'Tax';
   }
