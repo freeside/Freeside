@@ -265,7 +265,8 @@ function bottomfixup(what) {
     'tax',
     'invoicing_list', 'invoicing_list_POST', 'invoicing_list_FAX',
     'invoice_terms',
-    'spool_cdr'
+    'spool_cdr',
+    'squelch_cdr'
   );
 
   for ( f=0; f < topvars.length; f++ ) {
@@ -501,7 +502,8 @@ function copyelement(from, to) {
 %     'tax',
 %     'invoicing_list', 'invoicing_list_POST', 'invoicing_list_FAX',
 %     'invoice_terms',
-%     'spool_cdr'
+%     'spool_cdr',
+%     'squelch_cdr'
 %   ) {
 %
 

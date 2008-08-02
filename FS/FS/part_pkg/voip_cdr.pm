@@ -158,6 +158,10 @@ sub calc_usage {
   my $output_format = $self->option('output_format', 'Hush!')
                       || 'simple';
 
+  eval "use Text::CSV_XS;";
+  die $@ if $@;
+  my $csv = new Text::CSV_XS;
+
   foreach my $cust_svc (
     grep { $_->part_svc->svcdb eq 'svc_phone' } $cust_pkg->cust_svc
   ) {
@@ -298,7 +302,7 @@ sub calc_usage {
 
           $charge = sprintf('%.2f', $cdr->upstream_price);
           $charges += $charge;
-
+ 
           @call_details = (
             #time2str("%Y %b %d - %r", $cdr->calldate_unix ),
             time2str("%c", $cdr->calldate_unix),  #XXX this should probably be a config option dropdown so they can select US vs- rest of world dates or whatnot
@@ -383,10 +387,9 @@ sub calc_usage {
           if ( $self->option('rating_method') eq 'upstream_simple' ) {
             $call_details = [ 'C', $call_details[0] ];
           }else{
-            $call_details = join(' - ', @call_details );
+            $csv->combine(@call_details);
+            $call_details = [ 'C', $csv->string ];
           }
-          warn "  adding details on charge to invoice: $call_details"
-            if ( $DEBUG && !ref($call_details) );
           warn "  adding details on charge to invoice: [ ".
               join(', ', @{$call_details} ). " ]"
             if ( $DEBUG && ref($call_details) );
@@ -476,7 +479,7 @@ sub append_cust_bill_pkgs {
     'quantity'  => $cust_pkg->quantity,
     'sdate'     => $$sdate,
     'edate'     => $cust_pkg->bill,             # already fiddled
-    'itemdesc'  => 'Call details',              # configurable?
+    'itemdesc'  => 'Usage charges',             # configurable?
     'details'   => \@details,
   };
 

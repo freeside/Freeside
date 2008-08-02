@@ -1893,6 +1893,13 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'voip-cust_cdr_squelch',
+    'section'     => '',
+    'description' => 'Enable the per-customer option for not printing CDR on invoices.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'svc_forward-arbitrary_dst',
     'section'     => '',
     'description' => "Allow forwards to point to arbitrary strings that don't necessarily look like email addresses.  Only used when using forwards for weird, non-email things.",

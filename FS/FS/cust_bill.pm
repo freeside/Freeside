@@ -1631,6 +1631,8 @@ L<Time::Local> and L<Date::Parse> for conversion functions.
 
 cid - 
 
+unsquelch_cdr - overrides any per customer cdr squelching when true
+
 =cut
 
 sub print_generic {
@@ -2054,6 +2056,8 @@ sub print_generic {
     $options{'section'} = $section if $multisection;
     $options{'format'} = $format;
     $options{'escape_function'} = $escape_function;
+    $options{'format_function'} = sub { () }
+      unless $params{unsquelch_cdr} || $cust_main->squelch_cdr ne 'Y';
 
     foreach my $line_item ( $self->_items_pkg(%options) ) {
       my $detail = {
@@ -2638,6 +2642,7 @@ sub _items_cust_bill_pkg {
 
   my $format = $opt{format} || '';
   my $escape_function = $opt{escape_function} || sub { shift };
+  my $format_function = $opt{format_function} || '';
 
   my @b = ();
   foreach my $cust_bill_pkg ( @$cust_bill_pkg ) {
@@ -2648,6 +2653,7 @@ sub _items_cust_bill_pkg {
 
     my %details_opt = ( 'format'          => $format,
                         'escape_function' => $escape_function,
+                        'format_function' => $format_function,
                       );
 
     if ( $cust_bill_pkg->pkgnum > 0 ) {

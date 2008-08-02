@@ -196,6 +196,13 @@ Billing information
   </TR>
 % } 
 
+% if ( $conf->exists('voip-cust_cdr_squelch') ) { 
+  <TR>
+    <TD ALIGN="right">Print&nbsp;CDRs</TD>
+    <TD BGCOLOR="#ffffff"><% $cust_main->squelch_cdr ? 'no' : 'yes' %></TD>
+  </TR>
+% } 
+
 </TABLE></TD></TR></TABLE>
 <%once>
 

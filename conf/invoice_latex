@@ -284,6 +284,7 @@ Terms: [@-- $terms --@]\\
     $OUT .= '\hline';
     $OUT .= '\endlastfoot';
 
+    my $lastref = 0;
     foreach my $line (
       grep { ( scalar( @sections ) > 1 
              ? $section->{'description'} eq $_->{'section'}->{'description'}
@@ -296,11 +297,14 @@ Terms: [@-- $terms --@]\\
       # Don't break-up small packages.
       my $rowbreak = @$ext_description < 5 ? '*' : '';
   
-      $OUT .= "\\hline\n";
-      $OUT .= '\FSdesc{' . $line->{'ref'} . '}{' . $line->{'description'} . '}' .
+      $OUT .= "\\hline\n" if ($line->{'ref'} && $line->{'ref'} ne $lastref);
+      $OUT .= '\FSdesc'.
+              '{' . ( $line->{'ref'} ne $lastref ? $line->{'ref'} : '' ) . '}'.
+              '{' . $line->{'description'} . '}' .
               '{' . ( $unitprices ? $line->{'unit_amount'} : '' ) . '}'.
               '{' . ( $unitprices ? $line->{'quantity'} : ''  ) . '}' .
               '{' . $line->{'amount'} . "}${rowbreak}\n";
+      $lastref = $line->{'ref'};
 
       foreach my $ext_desc (@$ext_description) {
         if ( $ext_desc !~ /[^\\]&/ ) {

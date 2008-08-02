@@ -285,6 +285,8 @@ sub details {
                     }
     if $format eq 'latex';
 
+  $format_sub = $opt{format_function} if $opt{format_function};
+
   map { ( $_->format eq 'C'
           ? &{$format_sub}( $_->detail )
           : &{$escape_function}( $_->detail )

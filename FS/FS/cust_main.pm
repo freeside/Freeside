@@ -223,6 +223,8 @@ Card Verification Value, "CVV2" (also known as CVC2 or CID), the 3 or 4 digit nu
 
 =item spool_cdr - Enable individual CDR spooling, empty or `Y'
 
+=item squelch_cdr - Discourage individual CDR printing, empty or `Y'
+
 =back
 
 =head1 METHODS
@@ -1530,7 +1532,7 @@ sub check {
     $self->payname($1);
   }
 
-  foreach my $flag (qw( tax spool_cdr )) {
+  foreach my $flag (qw( tax spool_cdr squelch_cdr )) {
     $self->$flag() =~ /^(Y?)$/ or return "Illegal $flag: ". $self->$flag();
     $self->$flag($1);
   }

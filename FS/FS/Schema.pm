@@ -621,6 +621,7 @@ sub tables_hashref {
         'referral_custnum', 'int',  'NULL', '', '', '', 
         'comments', 'text', 'NULL', '', '', '', 
         'spool_cdr','char', 'NULL', 1, '', '', 
+        'squelch_cdr','char', 'NULL', 1, '', '', 
         'invoice_terms', 'varchar', 'NULL', $char_d, '', '',
       ],
       'primary_key' => 'custnum',
