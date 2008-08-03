@@ -806,16 +806,16 @@ sub insert {
   }
 
   my $table = $self->table;
-
   
   # Encrypt before the database
-  if ($conf->exists('encryption') && defined(eval '@FS::'. $table . '::encrypted_fields')) {
+  if ( defined(eval '@FS::'. $table . '::encrypted_fields')
+       && $conf->exists('encryption')
+  ) {
     foreach my $field (eval '@FS::'. $table . '::encrypted_fields') {
       $self->{'saved'} = $self->getfield($field);
       $self->setfield($field, $self->encrypt($self->getfield($field)));
     }
   }
-
 
   #false laziness w/delete
   my @real_fields =
