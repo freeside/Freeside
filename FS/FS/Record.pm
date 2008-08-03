@@ -808,7 +808,8 @@ sub insert {
   my $table = $self->table;
   
   # Encrypt before the database
-  if ( defined(eval '@FS::'. $table . '::encrypted_fields')
+  if (    defined(eval '@FS::'. $table . '::encrypted_fields')
+       && scalar( eval '@FS::'. $table . '::encrypted_fields')
        && $conf->exists('encryption')
   ) {
     foreach my $field (eval '@FS::'. $table . '::encrypted_fields') {
