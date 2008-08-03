@@ -21,7 +21,7 @@ use FS::cdr qw(_cdr_min_parser_maker);
           $date =~ /^(\d\d(\d\d)?)\/(\d{1,2})\/(\d{1,2})$/
             or die "unparsable date: $date"; #maybe we shouldn't die...
           #$cdr->startdate( timelocal(0, 0, 0 ,$3, $2-1, $1) );
-          ($tmp_mday, $tmp_mon, $tmp_year) = ( $3, $2-1, $1 );
+          ($tmp_mday, $tmp_mon, $tmp_year) = ( $4, $3-1, $1 );
         },
 
     #Time
