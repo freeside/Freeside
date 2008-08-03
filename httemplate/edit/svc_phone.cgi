@@ -8,12 +8,14 @@
                                },
                                'sip_password',
                                'pin',
+                               'phone_name',
                              ],
                'labels'   => {
                                'countrycode'  => 'Country code',
                                'phonenum'     => 'Phone number',
                                'sip_password' => 'SIP password',
                                'pin'          => 'Voicemail PIN',
+                               'phone_name'   => 'Name',
                              },
            )
 %>

@@ -2036,6 +2036,7 @@ sub tables_hashref {
         'phonenum',     'varchar',     '',      15, '', '',  #12 ?
         'pin',          'varchar', 'NULL', $char_d, '', '',
         'sip_password', 'varchar', 'NULL', $char_d, '', '',
+        'phone_name',   'varchar', 'NULL', $char_d, '', '',
       ],
       'primary_key' => 'svcnum',
       'unique' => [],

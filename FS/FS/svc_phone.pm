@@ -56,6 +56,8 @@ primary key
 
 Voicemail PIN
 
+=item phone_name
+
 =back
 
 =head1 METHODS
@@ -92,6 +94,7 @@ sub table_info {
                             disable_select => 1,
                           },
         'sip_password' => 'SIP password',
+        'name'         => 'Name',
     },
   };
 }
@@ -117,7 +120,10 @@ Returns the phone number.
 
 sub label {
   my $self = shift;
-  $self->phonenum; #XXX format it better
+  my $phonenum = $self->phonenum; #XXX format it better
+  my $label = $phonenum;
+  $label .= ' ('.$self->phone_name.')' if $self->phone_name;
+  $label;
 }
 
 =item insert
@@ -182,6 +188,7 @@ sub check {
     || $self->ut_number('phonenum')
     || $self->ut_anything('sip_password')
     || $self->ut_numbern('pin')
+    || $self->ut_textn('phone_name')
   ;
   return $error if $error;
 
