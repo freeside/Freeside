@@ -1306,7 +1306,7 @@ sub _h_statement {
 
   # If we're encrypting then don't ever store the payinfo or CVV2 in the history....
   # You can see if it changed by the paymask...
-  if ($conf->exists('encryption') ) {
+  if ($conf && $conf->exists('encryption') ) {
     @fields = grep  $_ ne 'payinfo' && $_ ne 'cvv2', @fields;
   }
   my @values = map { _quote( $self->getfield($_), $self->table, $_) } @fields;
