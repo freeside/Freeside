@@ -2092,9 +2092,11 @@ sub bill {
 
     my $real_pkgpart = $cust_pkg->pkgpart;
     my %hash = $cust_pkg->hash;
-    my $old_cust_pkg = new FS::cust_pkg \%hash;
 
     foreach my $part_pkg ( $cust_pkg->part_pkg->self_and_bill_linked ) {
+
+      $cust_pkg->set($_, $hash{$_}) foreach qw ( setup last_bill bill );
+
       my $error =
         $self->_make_lines( 'part_pkg'            => $part_pkg,
                             'cust_pkg'            => $cust_pkg,
@@ -2302,12 +2304,11 @@ sub _make_lines {
   my %hash = $cust_pkg->hash;
   my $old_cust_pkg = new FS::cust_pkg \%hash;
 
-  $cust_pkg->pkgpart($part_pkg->pkgpart); 
-  $cust_pkg->set($_, $hash{$_}) foreach qw( setup last_bill bill );
-  
   my @details = ();
 
   my $lineitems = 0;
+
+  $cust_pkg->pkgpart($part_pkg->pkgpart);
 
   ###
   # bill setup
