@@ -470,6 +470,9 @@ sub append_cust_bill_pkgs {
   my @details = ();
   my $charges = $self->calc_usage($cust_pkg, $sdate, \@details, $param);
 
+  return []
+    unless $charges;  # unless @details?
+
   my $cust_bill_pkg = new FS::cust_bill_pkg {
     'pkgnum'    => $cust_pkg->pkgnum,
     'setup'     => 0,
