@@ -496,9 +496,12 @@ sub tables_hashref {
         'sdate',   @date_type, '', '', 
         'edate',   @date_type, '', '', 
         'itemdesc', 'varchar', 'NULL', $char_d, '', '', 
+        'section',  'varchar', 'NULL', $char_d, '', '', 
         'quantity',  'int', 'NULL', '', '', '',
         'unitsetup', @money_typen, '', '', 
         'unitrecur', @money_typen, '', '', 
+        'duplicate',  'char', 'NULL', 1, '', '',  # does this need to be in db?
+        'post_total', 'char', 'NULL', 1, '', '',
       ],
       'primary_key' => 'billpkgnum',
       'unique' => [],

@@ -2491,18 +2491,20 @@ sub _make_lines {
         unless $part_pkg->pkgpart == $real_pkgpart;
       push @$appended_cust_bill_pkg, $cust_bill_pkg;
 
-      $$total_setup += $cust_bill_pkg->setup;
-      $$total_recur += $cust_bill_pkg->recur;
+      unless ($cust_bill_pkg->duplicate) {
+        $$total_setup += $cust_bill_pkg->setup;
+        $$total_recur += $cust_bill_pkg->recur;
 
-      ###
-      # handle taxes
-      ###
+        ###
+        # handle taxes
+        ###
 
-      unless ( $self->tax =~ /Y/i || $self->payby eq 'COMP' ) {
+        unless ( $self->tax =~ /Y/i || $self->payby eq 'COMP' ) {
 
-        $self->_handle_taxes($part_pkg, $taxlisthash, $cust_bill_pkg);
+          $self->_handle_taxes($part_pkg, $taxlisthash, $cust_bill_pkg);
 
-      } #unless $self->tax =~ /Y/i || $self->payby eq 'COMP'
+        } #unless $self->tax =~ /Y/i || $self->payby eq 'COMP'
+      }
     }
   }
 

@@ -235,6 +235,7 @@ Terms: [@-- $terms --@]\\
       $OUT .= '\large\textsc{'. $section->{'pretotal'}. '}\\\\';
       $OUT .= '\\end{flushright}';
     }
+    $OUT .= '\pagebreak' if $section{'post_total'};
     $OUT .= '\captionsetup{singlelinecheck=false,justification=raggedright,font={Large,sc,bf}}';
     $OUT .= '\begin{longtable}{cllllllr}';
     $OUT .= '\caption*{ ';

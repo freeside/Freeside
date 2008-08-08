@@ -1999,9 +1999,11 @@ sub print_generic {
   my $adjust_section = { 'description' => 'Credits, Payments, and Adjustments',
                          'subtotal'    => 0 }; # adjusted below
 
+  my $unsquelched = $params{unsquelch_cdr} || $cust_main->squelch_cdr ne 'Y';
   my $multisection = $conf->exists('invoice_sections', $cust_main->agentnum);
+  my $late_sections = [];
   if ( $multisection ) {
-    push @sections, $self->_items_sections;
+    push @sections, $self->_items_sections( $late_sections );
   }else{
     push @sections, { 'description' => '', 'subtotal' => '' };
   }
@@ -2040,7 +2042,7 @@ sub print_generic {
     push @buf, ['',''];
   }
 
-  foreach my $section (@sections) {
+  foreach my $section (@sections, @$late_sections) {
 
     $section->{'subtotal'} = $other_money_char.
                              sprintf('%.2f', $section->{'subtotal'})
@@ -2056,8 +2058,8 @@ sub print_generic {
     $options{'section'} = $section if $multisection;
     $options{'format'} = $format;
     $options{'escape_function'} = $escape_function;
-    $options{'format_function'} = sub { () }
-      unless $params{unsquelch_cdr} || $cust_main->squelch_cdr ne 'Y';
+    $options{'format_function'} = sub { () } unless $unsquelched;
+    $options{'unsquelched'} = $unsquelched;
 
     foreach my $line_item ( $self->_items_pkg(%options) ) {
       my $detail = {
@@ -2276,6 +2278,11 @@ sub print_generic {
       push @buf,[$self->balance_due_msg, $money_char. 
         sprintf("%10.2f", $balance_due ) ];
     }
+  }
+
+  if ( $multisection ) {
+    push @sections, @$late_sections
+      if $unsquelched;
   }
 
   $invoice_lines = 0;
@@ -2537,23 +2544,41 @@ sub invnum_date_pretty {
 
 sub _items_sections {
   my $self = shift;
+  my $late = shift;
 
   my %s = ();
-  foreach my $cust_bill_pkg ( $self->cust_bill_pkg ) {
+  my %l = ();
+
+  foreach my $cust_bill_pkg ( $self->cust_bill_pkg )
+  {
 
     if ( $cust_bill_pkg->pkgnum > 0 ) {
 
-      my $desc = $cust_bill_pkg->part_pkg->categoryname;
+      my $desc = $cust_bill_pkg->section;
 
-      $s{$desc} += $cust_bill_pkg->setup
-        if ( $cust_bill_pkg->setup != 0 );
+      if ( $cust_bill_pkg->post_total ) {
+        $l{$desc} += $cust_bill_pkg->setup
+          if ( $cust_bill_pkg->setup != 0 );
 
-      $s{$desc} += $cust_bill_pkg->recur
-        if ( $cust_bill_pkg->recur != 0 );
+        $l{$desc} += $cust_bill_pkg->recur
+          if ( $cust_bill_pkg->recur != 0 );
+
+      } else {
+        $s{$desc} += $cust_bill_pkg->setup
+          if ( $cust_bill_pkg->setup != 0 );
+
+        $s{$desc} += $cust_bill_pkg->recur
+          if ( $cust_bill_pkg->recur != 0 );
+      }
 
     }
 
   }
+
+  push @$late, map { { 'description' => $_,
+                       'subtotal'    => $l{$_},
+                       'post_total'  => 1,
+                   } } sort keys %l;
 
   map { {'description' => $_, 'subtotal' => $s{$_}} } sort keys %s;
 
@@ -2613,7 +2638,7 @@ sub _items_pkg {
   my @cust_bill_pkg =
     grep { $_->pkgnum &&
            ( defined($section)
-               ? $_->part_pkg->categoryname eq $section->{'description'}
+               ? $_->section eq $section->{'description'}
                : 1
            )
          } $self->cust_bill_pkg;
@@ -2643,9 +2668,13 @@ sub _items_cust_bill_pkg {
   my $format = $opt{format} || '';
   my $escape_function = $opt{escape_function} || sub { shift };
   my $format_function = $opt{format_function} || '';
+  my $unsquelched = $opt{unsquelched} || '';
 
   my @b = ();
-  foreach my $cust_bill_pkg ( @$cust_bill_pkg ) {
+  foreach my $cust_bill_pkg ( grep { $unsquelched ? 1 : ! $_->separate_cdr }
+                              @$cust_bill_pkg
+                            )
+  {
 
     my $cust_pkg = $cust_bill_pkg->cust_pkg;
 

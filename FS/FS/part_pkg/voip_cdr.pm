@@ -89,6 +89,13 @@ tie my %rating_method, 'Tie::IxHash',
                           'type' => 'checkbox',
                         },
 
+    'usage_section' => { 'name' => 'Section in which to place separate usage charges',
+                       },
+
+    'summarize_usage' => { 'name' => 'Include usage summary with recurring charges when usage is in separate section',
+                          'type' => 'checkbox',
+                        },
+
     #XXX also have option for an external db
 #    'cdr_location' => { 'name' => 'CDR database location'
 #                        'type' => 'select',
@@ -120,7 +127,7 @@ tie my %rating_method, 'Tie::IxHash',
                        disable_src
                        domestic_prefix international_prefix
                        use_amaflags use_disposition output_format
-                       separate_usage
+                       separate_usage summarize_usage usage_section
                      )
                   ],
   'weight' => 40,
@@ -473,7 +480,12 @@ sub append_cust_bill_pkgs {
   return []
     unless $charges;  # unless @details?
 
-  my $cust_bill_pkg = new FS::cust_bill_pkg {
+  my @cust_bill_pkg = ();
+
+  my $want_summary = $self->option('summarize_usage', 'Hush!') &&
+                     $self->option('usage_section', 'Hush!');
+
+  push @cust_bill_pkg, new FS::cust_bill_pkg {
     'pkgnum'    => $cust_pkg->pkgnum,
     'setup'     => 0,
     'unitsetup' => 0,
@@ -483,10 +495,27 @@ sub append_cust_bill_pkgs {
     'sdate'     => $$sdate,
     'edate'     => $cust_pkg->bill,             # already fiddled
     'itemdesc'  => 'Usage charges',             # configurable?
-    'details'   => \@details,
+    'duplicate' => 'Y',
+  }
+    if $want_summary;
+
+  push @cust_bill_pkg, new FS::cust_bill_pkg {
+    'pkgnum'     => $cust_pkg->pkgnum,
+    'setup'      => 0,
+    'unitsetup ' => 0,
+    'recur'      => sprintf( "%.2f", $charges),  # hmmm
+    'unitrecur ' => 0,
+    'quantity'   => $cust_pkg->quantity,
+    'sdate'      => $$sdate,
+    'edate'      => $cust_pkg->bill,             # already fiddled
+    'itemdesc'   => 'Usage charges',             # configurable?
+    'section'    => $self->option('usage_section', 'Hush!'),
+    'details'    => \@details,
+    'post_total' => ( $want_summary ? 'Y' : '' ),
   };
 
-  return [ $cust_bill_pkg ];
+
+  return [ @cust_bill_pkg ];
 }
 
 1;

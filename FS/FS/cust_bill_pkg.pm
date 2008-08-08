@@ -57,6 +57,24 @@ supported:
 
 =item itemdesc - Line item description (overrides normal package description)
 
+=item section - Invoice section (overrides normal package section)
+
+=duplicate - Indicates this item appears elsewhere on the invoice
+             (and should not be retaxed or reincluded in totals)
+
+=post_total - A hint that this item should appear after invoice totals
+
+=cut
+
+sub section {
+  my ( $self, $value ) = @_;
+  if ( defined($value) ) {
+    $self->setfield('section', $value);
+  } else {
+    $self->getfield('section') || $self->part_pkg->categoryname;
+  }
+}
+
 =item quantity - If not set, defaults to 1
 
 =item unitsetup - If not set, defaults to setup
@@ -174,6 +192,9 @@ sub check {
       || $self->ut_numbern('sdate')
       || $self->ut_numbern('edate')
       || $self->ut_textn('itemdesc')
+      || $self->ut_textn('section')
+      || $self->ut_enum('duplicate', [ '', 'Y' ])
+      || $self->ut_enum('post_total', [ '', 'Y' ])
   ;
   return $error if $error;
 
@@ -382,7 +403,7 @@ line item.
 
 sub units {
   my $self = shift;
-  $self->part_pkg->calc_units($self->cust_pkg);
+  $self->pkgnum ? $self->part_pkg->calc_units($self->cust_pkg) : 0; # 1?
 }
 
 =item quantity
@@ -423,6 +444,18 @@ sub unitrecur {
   $self->getfield('unitrecur') eq ''
     ? $self->getfield('recur')
     : $self->getfield('unitrecur');
+}
+
+=item separate_cdr
+
+Returns true if this line item represents a cdr line item in its own section.
+  
+=cut
+
+# lame, but works for now
+sub separate_cdr {
+  my( $self ) = shift;
+  $self->pkgnum && $self->section ne $self->part_pkg->categoryname;
 }
 
 =back
