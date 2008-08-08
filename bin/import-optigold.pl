@@ -262,6 +262,17 @@ sub pkg_freq {
 #   int(eval "$href->{'month_credit'} + 0");
 }
 
+sub account_id {
+  my $href = shift;
+  if ($href->{'slave_account_id'} =~ /^\s*(\S[\S ]*?)\s*$/) {
+    "slave:$1";
+  }else{
+    my $l = $href->{cbilling_cycle_login};
+    $l =~ /^\s*(\S[\S ]*?)\s*$/ && ($l = $1);
+    $l;
+  }
+}
+
 sub b_or {
   my ( $field, $hash ) = ( shift, shift );
   $field = 'billing_'. $field
@@ -559,6 +570,20 @@ cust_main => { 'stable'  => 'cust',
                                   $row->{'login'} =~ /^\s*(\S[\S ]*?)\s*$/
                                     && ($login = $1);
 
+                                  my ($first, $last, $company) =
+                                    ('', '', '');
+                                  $cust_main->first =~ /^\s*(\S[\S ]*?)\s*$/
+                                    && ($first = $1);
+                                  $cust_main->last =~ /^\s*(\S[\S ]*?)\s*$/
+                                    && ($last = $1);
+                                  $cust_main->company =~ /^\s*(\S[\S ]*?)\s*$/
+                                    && ($company = $1);
+
+                                  unless ($first || $last || $company) {
+                                    warn "bogus entry: ". $row->{'login'};
+                                    return 1;
+                                  }
+
                                   my $id = $master_account
                                            ? 'slave:'. $customer_id
                                            : $login;
@@ -811,32 +836,16 @@ cust_pkg  => { 'stable'  => 'billcycle',
                                           $pkg ? $pkg->pkgpart : '';
                                         },
                    'setup'       => sub { str2time(shift->{creation_date}) },
-                   'bill'        => sub { my $href = shift;
-                                          my $id = $href->{'slave_account_id'}
-                                            ? 'slave:'. $href->{'slave_account_id'}
-                                            : $href->{'cbilling_cycle_login'};
-                                          $bill{$id};
+                   'bill'        => sub { $bill{account_id(shift)}
                                           #$bill{$href->{cbilling_cycle_login}};
                                         },
-                   'susp'        => sub { my $href = shift;
-                                          my $id = $href->{'slave_account_id'}
-                                            ? 'slave:'. $href->{'slave_account_id'}
-                                            : $href->{'cbilling_cycle_login'};
-                                          $susp{$id};
+                   'susp'        => sub { $susp{account_id(shift)}
                                           #$susp{$href->{cbilling_cycle_login}};
                                         },
-                   'adjo'        => sub { my $href = shift;
-                                          my $id = $href->{'slave_account_id'}
-                                            ? 'slave:'. $href->{'slave_account_id'}
-                                            : $href->{'cbilling_cycle_login'};
-                                          $adjo{$id};
+                   'adjo'        => sub { $adjo{account_id(shift)}
                                           #$adjo{$href->{cbilling_cycle_login}};
                                         },
-                   'cancel'      => sub { my $href = shift;
-                                          my $id = $href->{'slave_account_id'}
-                                            ? 'slave:'. $href->{'slave_account_id'}
-                                            : $href->{'cbilling_cycle_login'};
-                                          $cancel{$id};
+                   'cancel'      => sub { $cancel{account_id(shift)}
                                           #$cancel{$href->{cbilling_cycle_login}};
                                         },
                  },
@@ -858,13 +867,7 @@ cust_pkg  => { 'stable'  => 'billcycle',
                                  my $id = $href->{'billing_cycle_item_id'};
                                  $id =~ /^\s*(\S[\S ]*?)\s*$/ && ($id = $1);
                                  $cust_pkg_map{$id} = $object->pkgnum;
-                                 if ($href->{'slave_account_id'} =~ /^\s*(\S[\S ]*?)\s*$/) {
-                                   "slave:$1";
-                                 }else{
-                                   my $l = $href->{cbilling_cycle_login};
-                                   $l =~ /^\s*(\S[\S ]*?)\s*$/ && ($l = $1);
-                                   $l;
-                                 }
+                                 account_id($href);
                                },
                'wrapup'   => sub { for my $id (keys %{$object_map{'cust_pkg'}}){
                                      my $cust_svc =
