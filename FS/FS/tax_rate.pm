@@ -719,7 +719,7 @@ sub batch_import {
 
 =item process_batch
 
-Load an batch import as a queued JSRPC job
+Load a batch import as a queued JSRPC job
 
 =cut
 
@@ -752,7 +752,7 @@ sub process_batch {
         $error = "No $name supplied";
         next;
       }
-      my $dir = $FS::UID::conf_dir. "/cache.". $FS::UID::datasrc;
+      my $dir = '%%%FREESIDE_CACHE%%%/cache.'. $FS::UID::datasrc;
       my $filename = "$dir/".  $files{$file};
       open my $fh, "< $filename" or $error ||= "Can't open $name file: $!";
 
@@ -781,7 +781,7 @@ sub process_batch {
                  'PLUS4',    'plus4file', \&FS::cust_tax_location::batch_import,
                  'TXMATRIX', 'txmatrix',  \&FS::part_pkg_taxrate::batch_import,
                );
-    my $dir = $FS::UID::conf_dir. "/cache.". $FS::UID::datasrc;
+    my $dir = '%%%FREESIDE_CACHE%%%/cache.'. $FS::UID::datasrc;
     while( scalar(@list) ) {
       my ($name, $file, $import_sub) = (shift @list, shift @list, shift @list);
       unless ($files{$file}) {
