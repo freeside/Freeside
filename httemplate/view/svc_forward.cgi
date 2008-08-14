@@ -29,7 +29,7 @@
 %}
 %
 %my $part_svc = qsearchs('part_svc',{'svcpart'=> $cust_svc->svcpart } )
-%  or die "Unkonwn svcpart";
+%  or die "Unknown svcpart";
 %
 %print header('Mail Forward View', menubar(
 %  ( ( $pkgnum || $custnum )
