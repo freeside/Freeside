@@ -16,6 +16,8 @@ use Digest::MD5 qw(md5_base64);
 use Date::Format;
 use Date::Parse;
 #use Date::Manip;
+use File::Slurp qw( slurp );
+use File::Temp qw( tempfile );
 use String::Approx qw(amatch);
 use Business::CreditCard 0.28;
 use Locale::Country;
@@ -6208,17 +6210,19 @@ sub append_fuzzyfiles {
 
 =cut
 
+#some false laziness w/cdr.pm now
 sub batch_import {
   my $param = shift;
-  #warn join('-',keys %$param);
-  my $fh = $param->{filehandle};
+
+  my $fh       = $param->{filehandle};
+  my $type     = $param->{type} || 'csv';
+
   my $agentnum = $param->{agentnum};
+  my $refnum   = $param->{refnum};
+  my $pkgpart  = $param->{pkgpart};
 
-  my $refnum = $param->{refnum};
-  my $pkgpart = $param->{pkgpart};
+  my $format   = $param->{'format'};
 
-  #my @fields = @{$param->{fields}};
-  my $format = $param->{'format'};
   my @fields;
   my $payby;
   if ( $format eq 'simple' ) {
@@ -6253,14 +6257,32 @@ sub batch_import {
     die "unknown format $format";
   }
 
-  eval "use Text::CSV_XS;";
-  die $@ if $@;
+  my $parser;
+  my $spoolfile = '';
+  if ( $type eq 'csv' ) {
+    eval "use Text::CSV_XS;";
+    die $@ if $@;
+    $parser = new Text::CSV_XS;
+  } elsif ( $type eq 'xls' ) {
 
-  my $csv = new Text::CSV_XS;
-  #warn $csv;
-  #warn $fh;
+    eval "use Spreadsheet::ParseExcel;";
+    die $@ if $@;
 
-  my $imported = 0;
+    ( my $spool_fh, $spoolfile ) =
+      tempfile('cust_main-batch_import-XXXXXXXXXXXX',
+                 DIR    => '%%%FREESIDE_CACHE%%%',
+                 SUFFIX => '.xls',
+              );
+    print $spool_fh slurp($fh);
+    close $spool_fh or die $!;
+
+    my $excel = new Spreadsheet::ParseExcel::Workbook->Parse($spoolfile);
+    $parser = $excel->{Worksheet}[0]; #first sheet
+
+  } else {
+    die "Unknown file type $type\n";
+  }
+
   #my $columns;
 
   local $SIG{HUP} = 'IGNORE';
@@ -6274,16 +6296,35 @@ sub batch_import {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
   
-  #while ( $columns = $csv->getline($fh) ) {
   my $line;
-  while ( defined($line=<$fh>) ) {
+  my $row = 0;
+  while (1) {
 
-    $csv->parse($line) or do {
-      $dbh->rollback if $oldAutoCommit;
-      return "can't parse: ". $csv->error_input();
-    };
+    my @columns = ();
+    if ( $type eq 'csv' ) {
 
-    my @columns = $csv->fields();
+      last unless defined($line=<$fh>);
+
+      $parser->parse($line) or do {
+        $dbh->rollback if $oldAutoCommit;
+        return "can't parse: ". $parser->error_input();
+      };
+      @columns = $parser->fields();
+
+    } elsif ( $type eq 'xls' ) {
+
+      last if $row > ($parser->{MaxRow} || $parser->{MinRow});
+
+      my @row = @{ $parser->{Cells}[$row] };
+      @columns = map $_->{Val}, @row;
+
+      #my $z = 'A';
+      #warn $z++. ": $_\n" for @columns;
+
+    } else {
+      die "Unknown file type $type\n";
+    }
+
     #warn join('-',@columns);
 
     my %cust_main = (
@@ -6375,7 +6416,7 @@ sub batch_import {
 
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
-      return "can't insert customer for $line: $error";
+      return "can't insert customer ". ( $line ? "for $line" : '' ). ": $error";
     }
 
     if ( $format eq 'simple' ) {
@@ -6401,12 +6442,14 @@ sub batch_import {
 
     }
 
-    $imported++;
+    $row++;
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
-  return "Empty file!" unless $imported;
+  unlink($spoolfile) if $spoolfile;
+
+  return "Empty file!" unless $row;
 
   ''; #no error
 

@@ -217,7 +217,7 @@ $report_menu{'SQL Query'}  = [ $fsurl.'search/report_sql.html', 'SQL Query' ]
   if $curuser->access_right('Raw SQL');
 
 tie my %tools_importing, 'Tie::IxHash',
-  'Import customers from CSV file' => [ $fsurl.'misc/cust_main-import.cgi', '' ],
+  'Import customers' => [ $fsurl.'misc/cust_main-import.cgi', '' ],
   'Import customer comments from CSV file' => [ $fsurl.'misc/cust_main_note-import.html', '' ],
   'Import one-time charges from CSV file' => [ $fsurl.'misc/cust_main-import_charges.cgi', '' ],
   'Import payments from CSV file' => [ $fsurl.'misc/cust_pay-import.cgi', '' ],

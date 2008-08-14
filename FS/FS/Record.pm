@@ -1614,6 +1614,8 @@ sub ut_phonen {
     $self->setfield($field,'');
   } elsif ( $country eq 'US' || $country eq 'CA' ) {
     $phonen =~ s/\D//g;
+    $phonen = $conf->config('cust_main-default_areacode').$phonen
+      if length($phonen)==7 && $conf->config('cust_main-default_areacode');
     $phonen =~ /^(\d{3})(\d{3})(\d{4})(\d*)$/
       or return gettext('illegal_phone'). " $field: ". $self->getfield($field);
     $phonen = "$1-$2-$3";

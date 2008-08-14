@@ -2350,6 +2350,13 @@ worry that config_items is freeside-specific and icky.
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'cust_main-default_areacode',
+    'section'     => 'UI',
+    'description' => 'Default area code for customers.',
+    'type'        => 'text',
+  },
+
 );
 
 1;

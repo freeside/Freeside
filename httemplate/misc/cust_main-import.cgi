@@ -1,6 +1,6 @@
 <% include("/elements/header.html",'Batch Customer Import') %>
 
-Import a CSV file containing customer records.
+Import a file containing customer records.
 <BR><BR>
 
 <FORM ACTION="process/cust_main-import.cgi" METHOD="post" ENCTYPE="multipart/form-data">
@@ -26,8 +26,8 @@ Import a CSV file containing customer records.
 </TR>
 
 <TR>
-  <TH ALIGN="right">CSV filename</TH>
-  <TD><INPUT TYPE="file" NAME="csvfile"></TD>
+  <TH ALIGN="right">Filename</TH>
+  <TD><INPUT TYPE="file" NAME="file"></TD>
 </TR>
 % #include('/elements/tr-select-part_referral.html')
 %
@@ -49,7 +49,7 @@ Import a CSV file containing customer records.
 </TR>
 -->
 
-<TR><TD COLSPAN=2 ALIGN="center" STYLE="padding-top:6px"><INPUT TYPE="submit" VALUE="Import CSV file"></TD></TR>
+<TR><TD COLSPAN=2 ALIGN="center" STYLE="padding-top:6px"><INPUT TYPE="submit" VALUE="Import file"></TD></TR>
 
 </TABLE>
 
@@ -60,10 +60,13 @@ Import a CSV file containing customer records.
 <!-- Simple file format is CSV, with the following field order: <i>cust_pkg.setup, dayphone, first, last, address1, address2, city, state, zip, comments</i>
 <BR><BR> -->
 
-<b>Extended</b> file format is CSV, with the following field order: <i>agent_custid, refnum<%$req%>, last<%$req%>, first<%$req%>, address1<%$req%>, address2, city<%$req%>, state<%$req%>, zip<%$req%>, country, daytime, night, ship_last, ship_first, ship_address1, ship_address2, ship_city, ship_state, ship_zip, ship_country, payinfo<%$req%>, paycvv, paydate<%$req%>, invoicing_list, pkgpart, username, _password</i>
+Uploaded files can be CSV (comma-separated value) files or Excel spreadsheets.  The file should have a .CSV or .XLS extension.
 <BR><BR>
 
-<b>Extended plus company</b> file format is CSV, with the following field order: <i>agent_custid, refnum<%$req%>, last<%$req%>, first<%$req%>, company, address1<%$req%>, address2, city<%$req%>, state<%$req%>, zip<%$req%>, country, daytime, night, ship_last, ship_first, ship_company, ship_address1, ship_address2, ship_city, ship_state, ship_zip, ship_country, payinfo<%$req%>, paycvv, paydate<%$req%>, invoicing_list, pkgpart, username, _password</i>
+<b>Extended</b> format has the following field order: <i>agent_custid, refnum<%$req%>, last<%$req%>, first<%$req%>, address1<%$req%>, address2, city<%$req%>, state<%$req%>, zip<%$req%>, country, daytime, night, ship_last, ship_first, ship_address1, ship_address2, ship_city, ship_state, ship_zip, ship_country, payinfo, paycvv, paydate, invoicing_list, pkgpart, username, _password</i>
+<BR><BR>
+
+<b>Extended plus company</b> format has the following field order: <i>agent_custid, refnum<%$req%>, last<%$req%>, first<%$req%>, company, address1<%$req%>, address2, city<%$req%>, state<%$req%>, zip<%$req%>, country, daytime, night, ship_last, ship_first, ship_company, ship_address1, ship_address2, ship_city, ship_state, ship_zip, ship_country, payinfo, paycvv, paydate, invoicing_list, pkgpart, username, _password</i>
 <BR><BR>
 
 <%$req%> Required fields
