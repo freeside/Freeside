@@ -511,7 +511,7 @@ sub setx {
   return $error if $error;
 
   my $part_svc = $self->part_svc;
-  return "Unkonwn svcpart" unless $part_svc;
+  return "Unknown svcpart" unless $part_svc;
 
   #set default/fixed/whatever fields from part_svc
 
