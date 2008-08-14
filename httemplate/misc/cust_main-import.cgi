@@ -3,32 +3,45 @@
 Import a file containing customer records.
 <BR><BR>
 
-<FORM ACTION="process/cust_main-import.cgi" METHOD="post" ENCTYPE="multipart/form-data">
+<% include( '/elements/form-file_upload.html',
+              'name'      => 'CustomerImportForm',
+              'action'    => 'process/cust_main-import.cgi',
+              'num_files' => 1,
+              'fields'    => [ 'agentnum', 'custbatch', 'format' ],
+              'message'   => 'Customer import successful',
+              'url'       => $p."search/cust_main.html?custbatch=$custbatch",
+          )
+%>
 
 <% &ntable("#cccccc", 2) %>
 
-<% include('/elements/tr-select-agent.html',
-              #'curr_value' => '', #$agentnum,
-              'label'       => "<B>Agent</B>",
-              'empty_label' => 'Select agent',
-           )
-%>
+  <% include( '/elements/tr-select-agent.html',
+                 #'curr_value' => '', #$agentnum,
+                 'label'       => "<B>Agent</B>",
+                 'empty_label' => 'Select agent',
+             )
+  %>
 
-<TR>
-  <TH ALIGN="right">Format</TH>
-  <TD>
-    <SELECT NAME="format">
-<!--      <OPTION VALUE="simple">Simple -->
-      <OPTION VALUE="extended" SELECTED>Extended
-      <OPTION VALUE="extended-plus_company">Extended plus company
-    </SELECT>
-  </TD>
-</TR>
+  <INPUT TYPE="hidden" NAME="custbatch" VALUE="<% $custbatch %>"%>
 
-<TR>
-  <TH ALIGN="right">Filename</TH>
-  <TD><INPUT TYPE="file" NAME="file"></TD>
-</TR>
+  <TR>
+    <TH ALIGN="right">Format</TH>
+    <TD>
+      <SELECT NAME="format">
+        <!-- <OPTION VALUE="simple">Simple -->
+        <OPTION VALUE="extended" SELECTED>Extended
+        <OPTION VALUE="extended-plus_company">Extended plus company
+      </SELECT>
+    </TD>
+  </TR>
+
+  <% include( '/elements/file-upload.html',
+                'field' => 'file',
+                'label' => 'Filename',
+            )
+  %>
+
+
 % #include('/elements/tr-select-part_referral.html')
 %
 
@@ -49,7 +62,15 @@ Import a file containing customer records.
 </TR>
 -->
 
-<TR><TD COLSPAN=2 ALIGN="center" STYLE="padding-top:6px"><INPUT TYPE="submit" VALUE="Import file"></TD></TR>
+  <TR>
+    <TD COLSPAN=2 ALIGN="center" STYLE="padding-top:6px">
+      <INPUT TYPE    = "submit"
+             ID      = "submit"
+             VALUE   = "Import file"
+             onClick = "document.CustomerImportForm.submit.disabled=true;"
+      >
+    </TD>
+  </TR>
 
 </TABLE>
 
@@ -108,5 +129,7 @@ my $req = qq!<font color="#ff0000">*</font>!;
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Import');
+
+my $custbatch = time2str('webimport-%Y/%m/%d-%T'. "-$$-". rand() * 2**32, time);
 
 </%init>

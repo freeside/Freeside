@@ -41,15 +41,24 @@ function updateStatus( status_statustext ) {
     //jsrsExecute( '<%$p%>elements/jsrsServer.html', updateStatus, 'job_status', '<% $jobnum %>' );
     job_status( '<% $jobnum %>', updateStatus );
   } else if ( status.indexOf('complete') > -1 ) {
-% if ( $message ) { 
+% if ( $message ) {
+%
+%   my $onClick = $url
+%                   ? "window.top.location.href = \\'$url\\';"
+%                   : 'parent.nd(1);';
 
     document.getElementById("progress_message").innerHTML = "<% $message %>";
     document.getElementById("progress_bar").innerHTML = '';
-    document.getElementById("progress_percent").innerHTML = '<INPUT TYPE="button" VALUE="OK" onClick="parent.nd(1);">';
+    document.getElementById("progress_percent").innerHTML =
+      '<INPUT TYPE="button" VALUE="OK" onClick="<% $onClick %>">';
     document.getElementById("progress_jobnum").innerHTML = '';
-    if ( parent.document.<%$formname%>.submit.disabled == true ) {
-      parent.document.<%$formname%>.submit.disabled=false;
-    }
+
+%   unless ( $url ) {
+        if ( parent.document.<%$formname%>.submit.disabled == true ) {
+          parent.document.<%$formname%>.submit.disabled=false;
+        }
+%   }
+
 % } elsif ( $url ) { 
 
     window.top.location.href = '<% $url %>';

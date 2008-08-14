@@ -1211,6 +1211,7 @@ sub check {
     || $self->ut_number('agentnum')
     || $self->ut_textn('agent_custid')
     || $self->ut_number('refnum')
+    || $self->ut_textn('custbatch')
     || $self->ut_name('last')
     || $self->ut_name('first')
     || $self->ut_snumbern('birthdate')
@@ -5545,6 +5546,15 @@ sub search_sql {
                    @{ $params->{'current_balance'} };
 
   ##
+  # custbatch
+  ##
+
+  if ( $params->{'custbatch'} =~ /^([\w\/\-\:\.]+)$/ and $1 ) {
+    push @where,
+      "cust_main.custbatch = '$1'";
+  }
+
+  ##
   # setup queries, subs, etc. for the search
   ##
 
@@ -6206,6 +6216,58 @@ sub append_fuzzyfiles {
   1;
 }
 
+=item process_batch_import
+
+Load a batch import as a queued JSRPC job
+
+=cut
+
+use Storable qw(thaw);
+use Data::Dumper;
+use MIME::Base64;
+sub process_batch_import {
+  my $job = shift;
+
+  my $param = thaw(decode_base64(shift));
+  warn Dumper($param) if $DEBUG;
+  
+  my $files = $param->{'uploaded_files'}
+    or die "No files provided.\n";
+
+  my (%files) = map { /^(\w+):([\.\w]+)$/ ? ($1,$2):() } split /,/, $files;
+
+  my $dir = '%%%FREESIDE_CACHE%%%/cache.'. $FS::UID::datasrc. '/';
+  my $file = $dir. $files{'file'};
+
+  my $type;
+  if ( $file =~ /\.(\w+)$/i ) {
+    $type = lc($1);
+  } else {
+    #or error out???
+    warn "can't parse file type from filename $file; defaulting to CSV";
+    $type = 'csv';
+  }
+
+  my $error =
+    FS::cust_main::batch_import( {
+      job       => $job,
+      file      => $file,
+      type      => $type,
+      custbatch => $param->{custbatch},
+      agentnum  => $param->{'agentnum'},
+      refnum    => $param->{'refnum'},
+      pkgpart   => $param->{'pkgpart'},
+      #'fields'  => [qw( cust_pkg.setup dayphone first last address1 address2
+      #                 city state zip comments                          )],
+      'format'  => $param->{'format'},
+    } );
+
+  unlink $file;
+
+  die "$error\n" if $error;
+
+}
+
 =item batch_import
 
 =cut
@@ -6214,14 +6276,18 @@ sub append_fuzzyfiles {
 sub batch_import {
   my $param = shift;
 
-  my $fh       = $param->{filehandle};
-  my $type     = $param->{type} || 'csv';
+  my $job       = $param->{job};
 
-  my $agentnum = $param->{agentnum};
-  my $refnum   = $param->{refnum};
-  my $pkgpart  = $param->{pkgpart};
+  my $filename  = $param->{file};
+  my $type      = $param->{type} || 'csv';
 
-  my $format   = $param->{'format'};
+  my $custbatch = $param->{custbatch};
+
+  my $agentnum  = $param->{agentnum};
+  my $refnum    = $param->{refnum};
+  my $pkgpart   = $param->{pkgpart};
+
+  my $format    = $param->{'format'};
 
   my @fields;
   my $payby;
@@ -6257,27 +6323,29 @@ sub batch_import {
     die "unknown format $format";
   }
 
+  my $count;
   my $parser;
-  my $spoolfile = '';
+  my @buffer = ();
   if ( $type eq 'csv' ) {
+
     eval "use Text::CSV_XS;";
     die $@ if $@;
+
     $parser = new Text::CSV_XS;
+
+    @buffer = split(/\r?\n/, slurp($filename) );
+    $count = scalar(@buffer);
+
   } elsif ( $type eq 'xls' ) {
 
     eval "use Spreadsheet::ParseExcel;";
     die $@ if $@;
 
-    ( my $spool_fh, $spoolfile ) =
-      tempfile('cust_main-batch_import-XXXXXXXXXXXX',
-                 DIR    => '%%%FREESIDE_CACHE%%%',
-                 SUFFIX => '.xls',
-              );
-    print $spool_fh slurp($fh);
-    close $spool_fh or die $!;
-
-    my $excel = new Spreadsheet::ParseExcel::Workbook->Parse($spoolfile);
+    my $excel = new Spreadsheet::ParseExcel::Workbook->Parse($filename);
     $parser = $excel->{Worksheet}[0]; #first sheet
+
+    $count = $parser->{MaxRow} || $parser->{MinRow};
+    $count++;
 
   } else {
     die "Unknown file type $type\n";
@@ -6298,12 +6366,14 @@ sub batch_import {
   
   my $line;
   my $row = 0;
+  my( $last, $min_sec ) = ( time, 5 ); #progressbar foo
   while (1) {
 
     my @columns = ();
     if ( $type eq 'csv' ) {
 
-      last unless defined($line=<$fh>);
+      last unless scalar(@buffer);
+      $line = shift(@buffer);
 
       $parser->parse($line) or do {
         $dbh->rollback if $oldAutoCommit;
@@ -6328,11 +6398,12 @@ sub batch_import {
     #warn join('-',@columns);
 
     my %cust_main = (
-      agentnum => $agentnum,
-      refnum   => $refnum,
-      country  => $conf->config('countrydefault') || 'US',
-      payby    => $payby, #default
-      paydate  => '12/2037', #default
+      custbatch => $custbatch,
+      agentnum  => $agentnum,
+      refnum    => $refnum,
+      country   => $conf->config('countrydefault') || 'US',
+      payby     => $payby, #default
+      paydate   => '12/2037', #default
     );
     my $billtime = time;
     my %cust_pkg = ( pkgpart => $pkgpart );
@@ -6384,7 +6455,9 @@ sub batch_import {
       }
     }
 
-    $cust_main{'payby'} = 'CARD' if length($cust_main{'payinfo'});
+    $cust_main{'payby'} = 'CARD'
+      if defined $cust_main{'payinfo'}
+      && length  $cust_main{'payinfo'};
 
     my $invoicing_list = $cust_main{'invoicing_list'}
                            ? [ delete $cust_main{'invoicing_list'} ]
@@ -6416,7 +6489,7 @@ sub batch_import {
 
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
-      return "can't insert customer ". ( $line ? "for $line" : '' ). ": $error";
+      return "can't insert customer". ( $line ? " for $line" : '' ). ": $error";
     }
 
     if ( $format eq 'simple' ) {
@@ -6443,11 +6516,15 @@ sub batch_import {
     }
 
     $row++;
+
+    if ( $job && time - $min_sec > $last ) { #progress bar
+      $job->update_statustext( int(100 * $row / $count) );
+      $last = time;
+    }
+
   }
 
-  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-
-  unlink($spoolfile) if $spoolfile;
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;;
 
   return "Empty file!" unless $row;
 

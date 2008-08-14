@@ -43,7 +43,9 @@ my %search_hash = ();
 #$search_hash{'query'} = $cgi->keywords;
 
 #scalars
-for my $param (qw( agentnum status cancelled_pkgs cust_fields flattened_pkgs)) {
+for my $param (qw(
+  agentnum status cancelled_pkgs cust_fields flattened_pkgs custbatch
+)) {
   $search_hash{$param} = scalar( $cgi->param($param) )
     if $cgi->param($param);
 }

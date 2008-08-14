@@ -1,0 +1,93 @@
+<%doc>
+
+Example:
+
+  <% include( '/elements/form-file_upload.html',
+
+                'name'      => 'form_name',
+                'action'    => 'process/target.cgi', #progress-init target
+                'fields'    => [ 'other', 'form', 'fields' ],
+                'num_files' => 1, #or more
+
+                'url' => $url
+                #OR
+                'message' => 'Message',
+
+                #optional
+                'key' => 'unique_key', #for using more than once on a page
+            )
+
+% #... 
+
+% # num_files=>1
+  include( '/elements/file-upload.html',
+             'field'    => 'element',
+             'label'    => 'Label',
+         )
+
+% # OR
+
+% # num_files=>2 # or more
+  include( '/elements/file-upload.html',
+             'field'    => [ 'element', 'element2', ], #etc.
+             'label'    => [ 'Label',   'Label2',   ], #etc.
+         )
+
+
+%>
+
+</%doc>
+
+<% include( '/elements/progress-init.html',
+              $opt{name},
+              $opt{fields},
+              $opt{action},
+              $msg_or_url,
+              $opt{key},
+          )
+%>
+
+<SCRIPT>
+
+  function <% $opt{key} %>gotUploaded(success, message) {
+
+    var uploaded = document.getElementById('uploaded_files');
+    var a = uploaded.value.split(',');
+    if (uploaded.value.split(',').length == <% $opt{num_files} %>){
+      process(); 
+    }else{
+      var p = document.getElementById('uploadError');
+      p.innerHTML='<FONT SIZE="+1" COLOR="#ff0000">Error: '+message+'</FONT><BR><BR>';
+      p.style='display:visible';
+      return false;
+    }
+    
+  }
+
+</SCRIPT>
+
+<div style="display:none:" id="uploadError"></div>
+
+<FORM NAME     = "<% $opt{name} %>"
+      ACTION   = "<% $fsurl %>misc/file-upload.html"
+      METHOD   = "POST"
+      ENCTYPE  = "multipart/form-data"
+      onSubmit = "return doUpload(this, <% $opt{key} %>gotUploaded)"
+>
+
+<%init>
+
+#my( $formname, $fields, $action, $url_or_message, $key ) = @_;
+my %opt = ref($_[0]) ? %{ $_[0] } : @_;
+
+my $key = exists $opt{key} ? $opt{key} : '';
+
+push @{ $opt{fields} }, 'uploaded_files';
+
+my $msg_or_url = $opt{message}
+                   ? { 'message' => $opt{message},
+                       'url'     => $opt{url},
+                     }
+                   : $opt{url};
+
+</%init>

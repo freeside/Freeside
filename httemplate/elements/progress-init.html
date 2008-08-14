@@ -73,8 +73,9 @@ $key = '' unless defined $key;
 
 my $url_or_message_link;
 if ( ref($url_or_message) ) { #its a message or something
-  $url_or_message_link =
-    'message='. uri_escape( $url_or_message->{'message'} )
+  $url_or_message_link = 'message='. uri_escape( $url_or_message->{'message'} );
+  $url_or_message_link .= ';url='.   uri_escape( $url_or_message->{'url'} )
+    if $url_or_message->{'url'};
 } else {
   $url_or_message_link = "url=$url_or_message";
 }

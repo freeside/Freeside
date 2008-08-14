@@ -571,6 +571,7 @@ sub tables_hashref {
         'custnum',  'serial',  '',     '', '', '', 
         'agentnum', 'int',  '',     '', '', '', 
         'agent_custid', 'varchar', 'NULL', $char_d, '', '',
+        'custbatch', 'varchar', 'NULL', $char_d, '', '',
 #        'titlenum', 'int',  'NULL',   '', '', '', 
         'last',     'varchar', '',     $char_d, '', '', 
 #        'middle',   'varchar', 'NULL', $char_d, '', '', 
@@ -636,6 +637,7 @@ sub tables_hashref {
                    [ 'ship_last' ], [ 'ship_company' ],
                    [ 'ship_daytime' ], [ 'ship_night' ], [ 'ship_fax' ],
                    [ 'payby' ], [ 'paydate' ],
+                   [ 'agentnum' ], [ 'custbatch' ],
                  ],
     },
 
