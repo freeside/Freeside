@@ -156,7 +156,7 @@ sub batch_import {
   }
 
   if ( $format eq 'cch' || $format eq 'cch-update' ) {
-    @fields = qw( table name pos number length value description );
+    @fields = qw( table name pos length number value description );
     push @fields, 'actionflag' if $format eq 'cch-update';
 
     $hook = sub { 
@@ -195,7 +195,7 @@ sub batch_import {
       }
 
       delete($hash->{$_})
-        for qw( data_vendor table name pos number length value description );
+        for qw( data_vendor table name pos length number value description );
       delete($hash->{actionflag}) if exists($hash->{actionflag});
 
       '';
