@@ -21,7 +21,7 @@ die "Not running uid freeside!" unless checkeuid();
 
 getopts("u:vd:");
 my $config_dir = shift || '%%%DIST_CONF%%%' ;
-$config_dir =~ /^([\w.:=]+)$/
+$config_dir =~ /^([\w.:=\/]+)$/
   or die "unacceptable configuration directory name";
 $config_dir = $1;
 
