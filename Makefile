@@ -313,6 +313,12 @@ create-config: install-perl-modules
 	mkdir "${FREESIDE_EXPORT}/export.${DATASOURCE}"
 	chown freeside "${FREESIDE_EXPORT}/export.${DATASOURCE}"
 
+	#install this for freeside-setup
+	install -d $(DIST_CONF)
+	#install conf/[a-z]* $(DEFAULT_CONF)
+	#CVS is not [a-z]
+	install `ls -d conf/[a-z]* | grep -v CVS` $(DIST_CONF)
+
 configure-rt:
 	cd rt; \
 	cp config.layout.in config.layout; \
