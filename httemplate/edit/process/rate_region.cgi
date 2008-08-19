@@ -24,9 +24,11 @@ my $countrycode = $cgi->param('countrycode');
 my @npa = split(/\s*,\s*/, $cgi->param('npa'));
 $npa[0] = '' unless @npa;
 my @rate_prefix = map {
+                        my($npa,$nxx) = split('-', $_);
                         new FS::rate_prefix {
                           'countrycode' => $countrycode,
-                          'npa'         => $_,
+                          'npa'         => $npa,
+                          'nxx'         => $nxx,
                         }
                       } @npa;
 
