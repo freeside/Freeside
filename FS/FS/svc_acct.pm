@@ -1321,7 +1321,8 @@ sub _check_duplicate {
     foreach my $dup_user ( @dup_user ) {
       my $dup_svcpart = $dup_user->cust_svc->svcpart;
       if ( exists($conflict_user_svcpart{$dup_svcpart}) ) {
-        return "duplicate username: conflicts with svcnum ". $dup_user->svcnum.
+        return "duplicate username ". $self->username.
+               ": conflicts with svcnum ". $dup_user->svcnum.
                " via exportnum ". $conflict_user_svcpart{$dup_svcpart};
       }
     }
@@ -1329,9 +1330,9 @@ sub _check_duplicate {
     foreach my $dup_userdomain ( @dup_userdomain ) {
       my $dup_svcpart = $dup_userdomain->cust_svc->svcpart;
       if ( exists($conflict_userdomain_svcpart{$dup_svcpart}) ) {
-        return "duplicate username\@domain: conflicts with svcnum ".
-               $dup_userdomain->svcnum. " via exportnum ".
-               $conflict_userdomain_svcpart{$dup_svcpart};
+        return "duplicate username\@domain ". $self->email.
+               ": conflicts with svcnum ". $dup_userdomain->svcnum.
+               " via exportnum ". $conflict_userdomain_svcpart{$dup_svcpart};
       }
     }
 
@@ -1339,9 +1340,11 @@ sub _check_duplicate {
       my $dup_svcpart = $dup_uid->cust_svc->svcpart;
       if ( exists($conflict_user_svcpart{$dup_svcpart})
            || exists($conflict_userdomain_svcpart{$dup_svcpart}) ) {
-        return "duplicate uid: conflicts with svcnum ". $dup_uid->svcnum.
-               " via exportnum ". $conflict_user_svcpart{$dup_svcpart}
-                                 || $conflict_userdomain_svcpart{$dup_svcpart};
+        return "duplicate uid ". $self->uid.
+               ": conflicts with svcnum ". $dup_uid->svcnum.
+               " via exportnum ".
+               ( $conflict_user_svcpart{$dup_svcpart}
+                 || $conflict_userdomain_svcpart{$dup_svcpart} );
       }
     }
 
