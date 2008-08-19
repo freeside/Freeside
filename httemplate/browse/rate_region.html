@@ -33,8 +33,13 @@ my $extra_sql = '';
 if ( driver_name =~ /^Pg/ ) {
   my $fromwhere = 'FROM rate_prefix'.
                   ' WHERE rate_prefix.regionnum = rate_region.regionnum';
+  my $prefix_sql = " CASE WHEN nxx IS NULL OR nxx = '' ".
+                   "   THEN npa ".
+                   "   ELSE npa || '-' || nxx ".
+                   " END";
+  my $prefixes_sql = "SELECT $prefix_sql $fromwhere AND npa IS NOT NULL";
   $select .= "( SELECT countrycode $fromwhere LIMIT 1 ) AS ccode, 
-              ARRAY_TO_STRING( ARRAY(SELECT npa $fromwhere AND npa IS NOT NULL), ',' ) AS prefixes";
+              ARRAY_TO_STRING( ARRAY($prefixes_sql), ',' ) AS prefixes";
 } elsif ( driver_name =~ /^mysql/i ) {
   $join = 'LEFT JOIN rate_prefix USING ( regionnum )';
   $select .= "GROUP_CONCAT( DISTINCT countrycode ) AS ccode,

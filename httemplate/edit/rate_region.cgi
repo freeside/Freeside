@@ -29,7 +29,7 @@
       <BR><FONT SIZE="-1">(comma-separated)</FONT>
     </TD>
     <TD>
-      <TEXTAREA NAME="npa" WRAP=SOFT><% join(', ', map $_->npa, @rate_prefix ) %></TEXTAREA>
+      <TEXTAREA NAME="npa" WRAP=SOFT><% join(', ', map { $_->npa. (length($_->nxx) ? '-'.$_->nxx : '') } @rate_prefix ) %></TEXTAREA>
     </TD>
   </TR>
 
