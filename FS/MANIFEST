@@ -417,3 +417,4 @@ FS/pkg_category.pm
 t/pkg_category.t
 FS/phone_avail.pm
 t/phone_avail.t
+FS/Yori.pm

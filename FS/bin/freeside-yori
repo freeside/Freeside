@@ -1,0 +1,16 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use FS::Yori qw(reports report);
+
+if ( @ARGV ) {
+  while ( my $report = shift ) {
+    print report($report). "\n";
+  }
+} else {
+  print join("\n", reports() ). "\n";
+}
+
+
+1;
