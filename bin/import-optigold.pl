@@ -393,7 +393,7 @@ part_pkg => { 'stable'  => 'product',
                                     },
                   'comment'  => 'product_id',
                   'freq'     => sub { pkg_freq(shift) },
-                  'recur'    => sub { my $href = shift;
+                  'recur_fee'=> sub { my $href = shift;
                                       my $price = ( pkg_freq($href)
                                         ? $href->{'unit_price'}
                                         : 0
@@ -448,7 +448,7 @@ part_pkg => { 'stable'  => 'product',
                                              $part_pkg->$_('');
                                              ($_ => $v);
                                            }
-                                       qw (setup recur)
+                                       qw (setup_fee recur_fee)
                                      };
                                    my $error =
                                      $part_pkg->insert(options=>$options);
@@ -764,7 +764,7 @@ cust_pkg  => { 'stable'  => 'billcycle',
 
                                             if ($pkg && ($pkg->freq + 0)) {
                                               my $recur = 0;
-                                              $pkg->recur =~ /\s*(\S[\S ]*?)\s*$/ && ($recur = $1);
+                                              $pkg->recur_fee =~ /\s*(\S[\S ]*?)\s*$/ && ($recur = $1);
                                               $recur = eval "$recur + 0";
                                               $pkg = ''
                                                 unless $recur == $price;
@@ -792,13 +792,13 @@ cust_pkg  => { 'stable'  => 'billcycle',
                                             my $recur = sprintf("%.2f", ($month ? $price : 0));
                                             for (@pkgs) {
                                               my %options = $_->options;
-                                              if ($options{recur} eq $recur) {
+                                              if ($options{recur_fee} eq $recur) {
                                                 $pkg = $_;
                                                 last;
                                               }
                                             }
 
-                                            $pkghref->{recur} = $recur
+                                            $pkghref->{recur_fee} = $recur
                                               unless $pkg;
 
                                             my $pkg_svc = {};
@@ -821,7 +821,7 @@ cust_pkg  => { 'stable'  => 'billcycle',
                                                         $pkg->$_('');
                                                         ($_ => $v);
                                                       }
-                                                  qw (setup recur)
+                                                  qw (setup_fee recur_fee)
                                                 };
                                               my $error =
                                                 $pkg->insert(options=>$options);
