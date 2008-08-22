@@ -1,0 +1,24 @@
+#!/usr/bin/perl
+
+use FS::UID qw(adminsuidsetup);
+use FS::Conf;
+use FS::Record qw(qsearch);
+use FS::Tron qw(tron_scan tron_lint);
+use FS::cust_svc;
+
+adminsuidsetup shift;
+
+my $conf = new FS::Conf;
+my $mcp_svcpart = $conf->config('mcp_svcpart') or die "no mcp_svcpart";
+
+#tron_scan($_) foreach qsearch('cust_svc', { 'svcpart' => $mcp_svcpart } );
+foreach my $svc ( qsearch('cust_svc', { 'svcpart' => $mcp_svcpart } ) ) {
+  my $error = tron_scan($svc);
+  warn $error if $error;
+
+  my @lint = tron_lint($svc);
+  print $svc->svc_x->title. "\n". join('', map "  $_\n", @lint )
+    if @lint;
+}
+
+1;

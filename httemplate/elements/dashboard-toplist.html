@@ -23,6 +23,9 @@
 	  <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
 	    <A HREF="view/cust_main.cgi?<% $custnum %>"><% $cust_main->name %></A>
 	  </TD>
+          <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+            <% include('/elements/mcp_lint.html', 'cust_main'=>$cust_main) %>
+          </TD>
 	  <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ALIGN="right">
 	    <FONT SIZE="-1"><A HREF="<% FS::TicketSystem->href_new_ticket($cust_main, join(', ', grep { $_ !~ /^(POST|FAX)$/ } $cust_main->invoicing_list ) ) %>">(new ticket)</A></FONT>
 	  </TD>
@@ -55,7 +58,7 @@
 %   } elsif ( $line =~ /^\-\-+$/ ) { #divider
 %     
       <TR>
-        <TH CLASS="grid" COLSPAN="<% scalar(@custom_priorities) + 3 %>"></TH>
+        <TH CLASS="grid" COLSPAN="<% scalar(@custom_priorities) + 4 %>"></TH>
       </TR>
 
 %     next;
@@ -63,13 +66,14 @@
 %   } elsif ( $line =~ /^\s*$/ ) {
 
       <TR>
-        <TD CLASS="grid" COLSPAN="<% scalar(@custom_priorities) + 3 %>" BGCOLOR="<% $bgcolor %>">&nbsp;</TD>
+        <TD CLASS="grid" COLSPAN="<% scalar(@custom_priorities) + 4 %>" BGCOLOR="<% $bgcolor %>">&nbsp;</TD>
       </TR>
 
 %   } elsif ( $line =~ /^\S/ ) { #label line
 
       <TR>
         <TH CLASS="grid" BGCOLOR="#cccccc"><% $line %></TH>
+	<TH CLASS="grid" BGCOLOR="#cccccc">Lint</TH>
 	<TH CLASS="grid" BGCOLOR="#cccccc"></TH>
 %       foreach my $priority ( @custom_priorities, '' ) {
           <TH CLASS="grid" BGCOLOR="#cccccc">
@@ -81,7 +85,7 @@
 %   } else { #regular line
 
       <TR>
-        <TD CLASS="grid"  COLSPAN="<% scalar(@custom_priorities) + 3 %>" BGCOLOR="<% $bgcolor %>"><% $line %></TD>
+        <TD CLASS="grid"  COLSPAN="<% scalar(@custom_priorities) + 4 %>" BGCOLOR="<% $bgcolor %>"><% $line %></TD>
       </TR>
 
 %   }

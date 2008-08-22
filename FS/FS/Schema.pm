@@ -1003,6 +1003,18 @@ sub tables_hashref {
       'index' => [ ['svcnum'], ['pkgnum'], ['svcpart'] ],
     },
 
+    'cust_svc_option' => {
+      'columns' => [
+        'optionnum',   'serial', '', '', '', '', 
+        'svcnum',      'int', '', '', '', '', 
+        'optionname',  'varchar', '', $char_d, '', '', 
+        'optionvalue', 'text', 'NULL', '', '', '', 
+      ],
+      'primary_key' => 'optionnum',
+      'unique'      => [],
+      'index'       => [ [ 'svcnum' ], [ 'optionname' ] ],
+    },
+
     'part_pkg' => {
       'columns' => [
         'pkgpart',       'serial',    '',   '', '', '', 

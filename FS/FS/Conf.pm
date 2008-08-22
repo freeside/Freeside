@@ -2357,6 +2357,13 @@ worry that config_items is freeside-specific and icky.
     'type'        => 'text',
   },
 
+  {
+    'key'         => 'mcp_svcpart',
+    'section'     => '',
+    'description' => 'Master Control Program svcpart.  Leave this blank.',
+    'type'        => 'text',
+  },
+
 );
 
 1;

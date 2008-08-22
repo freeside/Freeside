@@ -3,6 +3,7 @@ package FS::cust_svc;
 use strict;
 use vars qw( @ISA $DEBUG $me $ignore_quantity );
 use Carp;
+#use Scalar::Util qw( blessed );
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs dbh str2time_sql );
 use FS::cust_pkg;
@@ -16,7 +17,7 @@ use FS::cdr;
 #most FS::svc_ classes are autoloaded in svc_x emthod
 use FS::svc_acct;  #this one is used in the cache stuff
 
-@ISA = qw( FS::cust_main_Mixin FS::Record );
+@ISA = qw( FS::cust_main_Mixin FS::option_Common ); #FS::Record );
 
 $DEBUG = 0;
 $me = '[cust_svc]';
@@ -220,7 +221,13 @@ returns the error, otherwise returns false.
 =cut
 
 sub replace {
+#  my $new = shift;
+#
+#  my $old = ( blessed($_[0]) && $_[0]->isa('FS::Record') )
+#              ? shift
+#              : $new->replace_old;
   my ( $new, $old ) = ( shift, shift );
+  $old = $new->replace_old unless defined($old);
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -233,8 +240,6 @@ sub replace {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  $old = $new->replace_old unless defined($old);
-  
   if ( $new->svcpart != $old->svcpart ) {
     my $svc_x = $new->svc_x;
     my $new_svc_x = ref($svc_x)->new({$svc_x->hash, svcpart=>$new->svcpart });
@@ -246,6 +251,7 @@ sub replace {
     }
   }
 
+  #my $error = $new->SUPER::replace($old, @_);
   my $error = $new->SUPER::replace($old);
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;

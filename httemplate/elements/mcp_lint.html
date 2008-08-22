@@ -1,0 +1,37 @@
+% foreach my $lint (@lint) {
+  <FONT COLOR="#FF0000"><% $lint %></FONT><BR>
+% }
+
+<%init>
+
+my(%opt) = @_;
+
+my $conf = new FS::Conf;
+
+my @svc = ();
+if ( $opt{svc} ) {
+  @svc = ref($opt{svc}) ? @{ $opt{svc} } : ( $opt{svc} );
+} elsif ( $opt{cust_main} ) {
+  my $custnum = $opt{cust_main}->custnum;
+  @svc = qsearchs({
+           'table'     => 'cust_svc',
+           'addl_from' => ' LEFT JOIN cust_pkg  USING ( pkgnum ) '.
+                          ' LEFT JOIN cust_main USING ( custnum )',
+           'hashref'   => { 'svcpart' => $conf->config('mcp_svcpart') },
+           'extra_sql' => " AND custnum = $custnum ",
+         });
+} else {
+  die 'neither svc nor cust_main options passed to mcp_lint';
+}
+
+my @lint = ();
+foreach my $svc ( @svc ) {
+  my @svc_lint = tron_lint($svc);
+  if ( scalar(@svc) > 1 ) {
+    push @lint, map $svc->title.": $_", @svc_lint;
+  } else {
+    push @lint, @svc_lint;
+  }
+}
+
+</%init>

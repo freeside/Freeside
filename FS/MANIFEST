@@ -418,3 +418,5 @@ t/pkg_category.t
 FS/phone_avail.pm
 t/phone_avail.t
 FS/Yori.pm
+FS/cust_svc_option.pm
+t/cust_svc_option.t

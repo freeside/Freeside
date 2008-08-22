@@ -93,6 +93,7 @@ Initializes the Mason environment, loads all Freeside and RT libraries, etc.
   use FS::Misc qw( send_email send_fax states_hash counties state_label );
   use FS::Report::Table::Monthly;
   use FS::TicketSystem;
+  use FS::Tron qw( tron_lint );
 
   use FS::agent;
   use FS::agent_type;
