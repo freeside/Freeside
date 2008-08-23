@@ -106,6 +106,9 @@ sub upgrade_data {
     #replace invnum and pkgnum with billpkgnum
     'cust_bill_pkg_detail' => [],
 
+    #usage_classes if we have none
+    'usage_class' => [],
+
   ;
 
   \%hash;

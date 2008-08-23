@@ -49,6 +49,8 @@ inherits from FS::Record.  The following fields are currently supported:
 
 =item sec_granularity - granularity in seconds, i.e. 6 or 60; 0 for per-call
 
+=item classnum - usage class (see L<FS::usage_class) if any for this rate
+
 =back
 
 =head1 METHODS
@@ -121,6 +123,8 @@ sub check {
     || $self->ut_float('min_charge')
 
     || $self->ut_number('sec_granularity')
+
+    || $self->ut_foreign_keyn('classnum', 'usage_class', 'classnum' )
   ;
   return $error if $error;
 
@@ -185,6 +189,19 @@ Returns a short list of the prefixes for the destination region
 sub dest_prefixes_short {
   my $self = shift;
   $self->dest_region->prefixes_short;
+}
+
+=item classname
+
+Returns the name of the usage class (see L<FS::usage_class>) associated with
+this call plan rate.
+
+=cut
+
+sub classname {
+  my $self = shift;
+  my $usage_class = qsearchs('usage_class', { classnum => $self->classnum });
+  $usage_class ? $usage_class->classname : '';
 }
 
 

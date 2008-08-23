@@ -145,6 +145,8 @@ Initializes the Mason environment, loads all Freeside and RT libraries, etc.
   use FS::rate;
   use FS::rate_region;
   use FS::rate_prefix;
+  use FS::rate_detail;
+  use FS::usage_class;
   use FS::payment_gateway;
   use FS::agent_payment_gateway;
   use FS::XMLRPC;

@@ -3,8 +3,12 @@
 Example:
 
   include( 'elements/edit.html',  
-    'name'  =>
-    'table' =>
+    'name_singular' =>  #singular name for the record
+                        # (preferred, will be pluralized automatically)
+    'name'          =>  #name for the record
+                        # (deprecated, will be pluralized simplistically)
+    'table'         =>
+
     #? 'primary_key' => #required when the dbdef doesn't know...???
     'labels' => {
                   'column' => 'Label',
@@ -616,9 +620,9 @@ my @menubar = ();
 if ( $opt{'menubar'} ) {
   @menubar = @{ $opt{'menubar'} };
 } else {
+  my $items = $opt{'name'} ? $opt{'name'}.'s' : PL($opt{'name_singular'});
   @menubar = (
-    #eventually use Lingua::bs to pluralize
-    "View all $opt{'name'}s" => $viewall_url,
+    "View all $items" => $viewall_url,
   );
 }
 

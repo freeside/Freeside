@@ -1671,6 +1671,7 @@ sub tables_hashref {
         'min_charge',      'decimal', '', '10,5', '', '', 
         'sec_granularity', 'int',     '', '', '', '', 
         #time period (link to table of periods)?
+        'classnum',        'int',     'NULL', '', '', '', 
       ],
       'primary_key' => 'ratedetailnum',
       'unique'      => [ [ 'ratenum', 'orig_regionnum', 'dest_regionnum' ] ],
@@ -1698,6 +1699,17 @@ sub tables_hashref {
       'primary_key' => 'prefixnum',
       'unique'      => [],
       'index'       => [ [ 'countrycode' ], [ 'regionnum' ] ],
+    },
+
+    'usage_class' => {
+      'columns' => [
+        'classnum',    'serial',   '',      '', '', '', 
+        'classname',   'varchar',  '', $char_d, '', '', 
+        'disabled',    'char', 'NULL',       1, '', '', 
+      ],
+      'primary_key' => 'classnum',
+      'unique' => [],
+      'index' => [ ['disabled'] ],
     },
 
     'reg_code' => {

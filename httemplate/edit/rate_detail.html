@@ -8,6 +8,7 @@
                    'min_included'        => 'Included minutes',
                    'min_charge'          => 'Charge per minute',
                    'sec_granularity'     => 'Granularity',
+                   'classnum'            => 'Usage class',
                  },
      'fields' => [
                    { field=>'ratenum',             type=>'hidden', },
@@ -22,6 +23,13 @@
                      options       => [ keys %granularity ],
                      labels        => \%granularity,
                      disable_empty => 1,
+                   },
+                   { field         =>'classnum',
+                     type          =>'select-table',
+                     table         =>'usage_class',
+                     name_col      =>'classname',
+                     empty_label   =>'(default)',
+                     hashref        =>{ disabled => '' },
                    },
 
                  ],

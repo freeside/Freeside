@@ -279,6 +279,7 @@ tie my %config_agent, 'Tie::IxHash',
 tie my %config_billing_rates, 'Tie::IxHash',
   'View/Edit rate plans' => [ $fsurl.'browse/rate.cgi', 'Manage rate plans' ],
   'View/Edit regions and prefixes' => [ $fsurl.'browse/rate_region.html', 'Manage regions and prefixes' ],
+  'View/Edit usage classes'  => [ $fsurl.'browse/usage_class.html', 'Usage classes define groups of usage for taxation purposes.' ],
 ;
 
 tie my %config_billing, 'Tie::IxHash';

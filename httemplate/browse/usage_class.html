@@ -1,0 +1,28 @@
+<% include( 'elements/browse.html',
+                 'title'       => 'Usage classes',
+                 'html_init'   => $html_init,
+                 'name'        => 'usage classes',
+                 'disableable' => 1,
+                 'disabled_statuspos' => 2,
+                 'query'       => { 'table'     => 'usage_class',
+                                    'hashref'   => {},
+                                    'extra_sql' => 'ORDER BY classnum',
+                                  },
+                 'count_query' => 'SELECT COUNT(*) FROM usage_class',
+                 'header'      => [ '#', 'Class' ],
+                 'fields'      => [ 'classnum', 'classname' ],
+                 'links'       => [ $link, $link ],
+             )
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $html_init = 
+  'Usage classes define groups of usage for taxation purposes.<BR><BR>'.
+  qq!<A HREF="${p}edit/usage_class.html"><I>Add a usage class</I></A><BR><BR>!;
+
+my $link = [ $p.'edit/usage_class.html?', 'classnum' ];
+
+</%init>

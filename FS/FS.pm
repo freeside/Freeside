@@ -190,6 +190,8 @@ L<FS::rate_prefix> - Rate region prefixes for call billing
 
 L<FS::rate_detail> - Rate plan detail for call billing
 
+L<FS::usage_class> - Usage class class
+
 L<FS::agent> - Agent (reseller) class
 
 L<FS::agent_type> - Agent type class

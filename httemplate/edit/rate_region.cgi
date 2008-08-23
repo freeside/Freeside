@@ -57,6 +57,9 @@
     <TH CLASS="grid" BGCOLOR="#cccccc">
       <FONT SIZE=-1>Granularity</FONT>
     </TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc">
+      <FONT SIZE=-1>Usage class</FONT>
+    </TH>
   </TR>
 
 % foreach my $rate ( qsearch('rate', {}) ) {
@@ -94,6 +97,19 @@
           <OPTION VALUE="<%$granularity%>"<% $granularity == ( $cgi->param("sec_granularity$n") || $rate_detail->sec_granularity ) ? ' SELECTED' : '' %>><%$granularity{$granularity}%>
 %       } 
       </SELECT>
+    </TD>
+
+    <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+      <% include( '/elements/select-table.html',
+                  'element_name' => "classnum$n",
+                  'table'        => 'usage_class',
+                  'name_col'     => 'classname',
+                  'empty_label'  => '(default)',
+                  'hashref'      => { disabled => '' },
+                  'curr_value'   => ( $cgi->param("classnum$n") ||
+                                      $rate_detail->classnum ),
+                )
+      %>
     </TD>
 
   </TR>

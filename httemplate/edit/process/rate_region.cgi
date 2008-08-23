@@ -37,7 +37,7 @@ my @dest_detail = map {
   new FS::rate_detail {
     'ratenum'  => $ratenum,
     map { $_ => $cgi->param("$_$ratenum") }
-        qw( min_included min_charge sec_granularity )
+        qw( min_included min_charge sec_granularity classnum )
   };
 } qsearch('rate', {} );
 

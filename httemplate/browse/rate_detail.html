@@ -17,6 +17,7 @@
                            'Included<BR>minutes',
                            'Charge per<BR>minute',
                            'Granularity',
+                           'Usage class',
                          ],
      'fields'         => [
                            'regionname',
@@ -28,10 +29,11 @@
                                  '&nbsp;<FONT SIZE="-1">(edit)</FONT>';
                                },
                            sub { $granularity{ shift->sec_granularity } },
+                           'classname',
                          ],
-     'links'          => [ '', '', $edit_link,    $edit_link,    '' ],
-     'link_onclicks'  => [ '', '', $edit_onclick, $edit_onclick, '' ],
-     'align'          => 'llrrc',
+     'links'          => [ '', '', $edit_link,    $edit_link,    '', '' ],
+     'link_onclicks'  => [ '', '', $edit_onclick, $edit_onclick, '', '' ],
+     'align'          => 'llrrcc',
    )
 %>
 <%once>

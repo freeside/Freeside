@@ -1,0 +1,25 @@
+<% include( 'elements/edit.html',
+              'name_singular' => 'Usage Class',
+              'table'         => 'usage_class',
+              'fields'        => [
+                                   'classname',
+                                   { field=>'disabled',
+                                     type=>'checkbox',
+                                     value=>'Y',
+                                   },
+                                 ],
+              'labels'        => { 
+                                   'classnum'  => 'Class number',
+                                   'classname' => 'Class name',
+                                   'disabled'  => 'Disable class',
+                                 },
+              'viewall_dir'   => 'browse',
+           )
+          
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+</%init>
