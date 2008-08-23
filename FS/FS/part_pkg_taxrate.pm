@@ -150,7 +150,7 @@ sub check {
     || $self->ut_text('country')
     || $self->ut_foreign_keyn('taxclassnumtaxed', 'tax_class', 'taxclassnum')
     || $self->ut_foreign_key('taxclassnum', 'tax_class', 'taxclassnum')
-    || $self->ut_numbern('effective_date')
+    || $self->ut_snumbern('effdate')
     || $self->ut_enum('taxable', [ 'Y', '' ])
   ;
   return $error if $error;
@@ -269,8 +269,6 @@ sub batch_import {
 
         delete($hash->{$_}) foreach @{$map{$item}};
       }
-
-      $hash->{'effdate'} = str2time($hash->{'effdate'});
 
       $hash->{'effdate'} = str2time($hash->{'effdate'});
       $hash->{'country'} = 'US'; # CA is available

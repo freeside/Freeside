@@ -37,6 +37,7 @@ use FS::cust_credit;
 use FS::cust_refund;
 use FS::part_referral;
 use FS::cust_main_county;
+use FS::cust_tax_location;
 use FS::agent;
 use FS::cust_main_invoice;
 use FS::cust_credit_bill;

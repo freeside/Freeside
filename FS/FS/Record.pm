@@ -312,13 +312,13 @@ sub qsearch {
     if ( $type =~ /(int|(big)?serial)/i && $value =~ /^\d+(\.\d+)?$/ ) {
       $TYPE = SQL_INTEGER;
 
-    #DBD::Pg 1.49: Cannot bind ... unknown sql_type 6
-    #} elsif (    ( $type =~ /(numeric)/i     && $value =~ /^[+-]?\d+(\.\d+)?$/)
-    #          || ( $type =~ /(real|float4)/i
-    #                 && $value =~ /[-+]?\d*\.?\d+([eE][-+]?\d+)?/
-    #             )
-    #        ) {
-    #  $TYPE = SQL_FLOAT;
+    #DBD::Pg 1.49: Cannot bind ... unknown sql_type 6 with SQL_FLOAT
+    } elsif (    ( $type =~ /(numeric)/i     && $value =~ /^[+-]?\d+(\.\d+)?$/)
+              || ( $type =~ /(real|float4)/i
+                     && $value =~ /[-+]?\d*\.?\d+([eE][-+]?\d+)?/
+                 )
+            ) {
+      $TYPE = SQL_DECIMAL;
     }
 
     if ( $DEBUG > 2 ) {

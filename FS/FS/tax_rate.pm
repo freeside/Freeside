@@ -199,7 +199,7 @@ sub check {
     || $self->ut_textn('data_vendor')
     || $self->ut_textn('location')
     || $self->ut_foreign_key('taxclassnum', 'tax_class', 'taxclassnum')
-    || $self->ut_numbern('effective_date')
+    || $self->ut_snumbern('effective_date')
     || $self->ut_float('tax')
     || $self->ut_floatn('excessrate')
     || $self->ut_money('taxbase')
@@ -642,6 +642,8 @@ sub batch_import {
 
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
+      my $hashref = $insert{$_};
+      $line = join(", ", map { "$_ => ". $hashref->{$_} } keys(%$hashref) );
       return "can't insert tax_rate for $line: $error";
     }
 
@@ -667,13 +669,15 @@ sub batch_import {
         #join(" ", map { "$_ => ". $old->{$_} } @fields);
         join(" ", map { "$_ => ". $old->{$_} } keys(%$old) );
     }
-    my $new = new FS::tax_rate( $insert{$_} );
+    my $new = new FS::tax_rate({ $old->hash, %{$insert{$_}}, 'manual' => ''  });
     $new->taxnum($old->taxnum);
     my $error = $new->replace($old);
 
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
-      return "can't insert tax_rate for $line: $error";
+      my $hashref = $insert{$_};
+      $line = join(", ", map { "$_ => ". $hashref->{$_} } keys(%$hashref) );
+      return "can't replace tax_rate for $line: $error";
     }
 
     $imported++;
@@ -703,7 +707,9 @@ sub batch_import {
 
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
-      return "can't insert tax_rate for $line: $error";
+      my $hashref = $delete{$_};
+      $line = join(", ", map { "$_ => ". $hashref->{$_} } keys(%$hashref) );
+      return "can't delete tax_rate for $line: $error";
     }
 
     $imported++;
@@ -831,7 +837,7 @@ sub process_batch {
       unlink $file or warn "Can't delete $file: $!";
     }
     
-    $error = "No DETAIL supplied"
+    $error ||= "No DETAIL supplied"
       unless ($files{detail});
     open my $fh, "< $dir/". $files{detail}
       or $error ||= "Can't open DETAIL file: $!";
