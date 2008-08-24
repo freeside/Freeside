@@ -10,15 +10,16 @@ use FS::cust_main;
 use FS::cust_pkg;
 use FS::svc_acct;
 
-my $agentnum = 1;
 my $refnum = 1;
 
 my @pkgs = ( 2, 3, 4 );
 #my @pkgs = ( 4, 5, 6 );
 my $svcpart = 2;
 
-use vars qw( $opt_p );
-getopts('p:');
+use vars qw( $opt_p $opt_a );
+getopts('p:a:');
+
+my $agentnum = $opt_a || 1;
 
 my $user = shift or die &usage;
 my $num = shift or die &usage;
@@ -118,5 +119,5 @@ print "$onum customers inserted in $sec seconds ($persec customers/sec)\n";
 #---
 
 sub usage {
-  die "Usage:\n\n  customer-faker [ -p payby ] user num_fakes\n";
+  die "Usage:\n\n  customer-faker [ -p payby ] [ -a agentnum ] user num_fakes\n";
 }
