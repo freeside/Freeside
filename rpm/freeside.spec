@@ -1,6 +1,6 @@
 %{!?_initrddir:%define _initrddir /etc/rc.d/init.d}
 %{!?version:%define version 1.9}
-%{!?release:%define release 1}
+%{!?release:%define release 2}
 
 Summary: Freeside ISP Billing System
 Name: freeside
@@ -42,7 +42,7 @@ Freeside is a flexible ISP billing system written by Ivan Kohler
 %package mason
 Summary: HTML::Mason interface for %{name}
 Group: Applications/Internet
-Prefix: /var/www/freeside
+Prefix: %{freeside_document_root}
 Requires: mod_ssl
 Requires: perl-Apache-DBI
 Conflicts: %{name}-apacheasp
@@ -85,10 +85,41 @@ Please note that this RPM does not create the database or database user; it only
 Summary: Self-service interface for %{name}
 Group: Applications/Internet
 Conflicts: %{name}
+Requires: %{name}-selfservice-cgi
 
 %description selfservice
 This package installs the Perl modules and CGI scripts for the self-service interface for %{name}.
-For security reasons, it is set to conflict with %{name} so you cannot install the billing system and self-service interface on the same computer.
+For security reasons, it is set to conflict with %{name} as you should not install the billing system and self-service interface on the same computer.
+
+%package selfservice-core
+Summary: Core Perl libraries for the self-service interface for %{name}
+Group: Applications/Internet
+Conflicts: %{name}
+
+%description selfservice-core
+This package installs the Perl modules and client daemon for the self-service interface for %{name}.  It does not install the CGI interface and can be used with a different front-end.
+For security reasons, it is set to conflict with %{name} as you should not install the billing system and self-service interface on the same computer.
+
+%package selfservice-cgi
+Summary: CGI scripts for the self-service interface for %{name}
+Group: Applications/Internet
+Conflicts: %{name}
+Requires: %{name}-selfservice-core
+Prefix: %{freeside_document_root}/selfservice
+
+%description selfservice-cgi
+This package installs the CGI scripts for the self-service interface for %{name}.  The scripts use some core libraries packaged in a separate RPM.
+For security reasons, it is set to conflict with %{name} as you should not install the billing system and self-service interface on the same computer.
+
+%package selfservice-php
+Summary: Sample PHP files for the self-service interface for %{name}
+Group: Applications/Internet
+Conflicts: %{name}
+Prefix: %{freeside_document_root}/selfservice
+
+%description selfservice-php
+This package installs the sample PHP scripts for the self-service interface for %{name}.
+For security reasons, it is set to conflict with %{name} as you should not install the billing system and self-service interface on the same computer.
 
 %prep
 %setup
@@ -145,7 +176,8 @@ touch install-perl-modules perl-modules
 %{__mkdir_p} $RPM_BUILD_ROOT%{freeside_log}
 for DBTYPE in %{db_types}; do
 	%{__mkdir_p} $RPM_BUILD_ROOT/tmp
-	%{__make} create-config DB_TYPE=$DBTYPE RT_ENABLED=%{rt_enabled} FREESIDE_CACHE=$RPM_BUILD_ROOT%{freeside_cache} FREESIDE_CONF=$RPM_BUILD_ROOT/tmp FREESIDE_EXPORT=$RPM_BUILD_ROOT%{freeside_export} FREESIDE_LOCK=$RPM_BUILD_ROOT%{freeside_lock} FREESIDE_LOG=$RPM_BUILD_ROOT%{freeside_log}
+	[ -d $RPM_BUILD_ROOT%{freeside_conf}/default_conf ] && %{__rm} -rf $RPM_BUILD_ROOT%{freeside_conf}/default_conf
+	%{__make} create-config DB_TYPE=$DBTYPE DATASOURCE=DBI:$DBTYPE:dbname=%{name} RT_ENABLED=%{rt_enabled} FREESIDE_CACHE=$RPM_BUILD_ROOT%{freeside_cache} FREESIDE_CONF=$RPM_BUILD_ROOT/tmp FREESIDE_EXPORT=$RPM_BUILD_ROOT%{freeside_export} FREESIDE_LOCK=$RPM_BUILD_ROOT%{freeside_lock} FREESIDE_LOG=$RPM_BUILD_ROOT%{freeside_log}
 	%{__mv} $RPM_BUILD_ROOT/tmp/* $RPM_BUILD_ROOT%{freeside_conf}
 	/bin/rmdir $RPM_BUILD_ROOT/tmp
 done
@@ -252,8 +284,8 @@ find $RPM_BUILD_ROOT%{_prefix} -type f -print | \
 	grep -v '/etc/freeside/conf' | \
 	grep -v '/etc/freeside/secrets' | \
         sed "s@^$RPM_BUILD_ROOT@@g" > %{name}-%{version}-%{release}-temp-filelist
-cat ../../FS/%{name}-%{version}-%{release}-filelist %{name}-%{version}-%{release}-temp-filelist | sort | uniq -u >  %{name}-%{version}-%{release}-selfservice-filelist
-if [ "$(cat %{name}-%{version}-%{release}-selfservice-filelist)X" = "X" ] ; then
+cat ../../FS/%{name}-%{version}-%{release}-filelist %{name}-%{version}-%{release}-temp-filelist | sort | uniq -u >  %{name}-%{version}-%{release}-selfservice-core-filelist
+if [ "$(cat %{name}-%{version}-%{release}-selfservice-core-filelist)X" = "X" ] ; then
     echo "ERROR: EMPTY FILE LIST"
     exit 1
 fi
@@ -279,7 +311,7 @@ if ! %{__id} freeside &>/dev/null; then
 	/usr/sbin/useradd freeside
 fi
 
-%pre selfservice
+%pre selfservice-cgi
 if ! %{__id} freeside &>/dev/null; then
 	/usr/sbin/useradd freeside
 fi
@@ -319,6 +351,7 @@ fi
 %attr(-,freeside,freeside) %dir %{freeside_conf}
 %attr(-,freeside,freeside) %dir %{freeside_lock}
 %attr(-,freeside,freeside) %dir %{freeside_log}
+%attr(0644,freeside,freeside) %config(noreplace) %{freeside_conf}/default_conf
 
 %files mason -f %{name}-%{version}-%{release}-mason-filelist
 %defattr(-, freeside, freeside, 0755)
@@ -329,13 +362,26 @@ fi
 
 %files mysql -f %{name}-%{version}-%{release}-mysql-filelist
 
-%files selfservice -f fs_selfservice/FS-SelfService/%{name}-%{version}-%{release}-selfservice-filelist
+%files selfservice
 %defattr(-, freeside, freeside, 0644)
-%attr(0755,freeside,freeside) %{freeside_document_root}/selfservice/cgi
-%attr(0755,freeside,freeside) %{freeside_document_root}/selfservice/php
+
+%files selfservice-core -f fs_selfservice/FS-SelfService/%{name}-%{version}-%{release}-selfservice-core-filelist
+%defattr(-, freeside, freeside, 0644)
+
+%files selfservice-cgi
+%defattr(-, freeside, freeside, 0644)
+%attr(0711,freeside,freeside) %{freeside_document_root}/selfservice/cgi
 %attr(0644,freeside,freeside) %{freeside_document_root}/selfservice/templates
 
+%files selfservice-php
+%defattr(-, freeside, freeside, 0644)
+%attr(0755,freeside,freeside) %{freeside_document_root}/selfservice/php
+
 %changelog
+* Sat Aug 23 2008 Richard Siddall <richard.siddall@elirion.net> - 1.7.3-2
+- Revisions for self-service interface
+- RT support is still missing
+
 * Sun Jul 8 2007 Richard Siddall <richard.siddall@elirion.net> - 1.7.3
 - Updated for upcoming Freeside 1.7.3
 - RT support is still missing
