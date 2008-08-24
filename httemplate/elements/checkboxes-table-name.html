@@ -43,6 +43,15 @@ Example:
 
 <TABLE CELLSPACING=0 CELLPADDING=0>
 
+<TR>
+  <TD COLSPAN=2 ALIGN="center"><FONT SIZE="-1">(
+    <A HREF="javascript:setAll<%$prefix%>(true)">select all</A> |
+    <A HREF="javascript:setAll<%$prefix%>(false)">unselect all</A> |
+    <A HREF="javascript:toggleAll<%$prefix%>()">toggle all</A>
+  )</FONT></TD>
+</TR>
+
+% my $num=0;
 % foreach my $item ( @{ $opt{'names_list'} } ) {
 %
 %     my $name = ref($item) ? $item->[0] : $item;
@@ -72,7 +81,7 @@ Example:
 
   <TR>
     <TD VALIGN="top">
-      <INPUT TYPE="checkbox" NAME="<% $opt{'link_table'}. ".$name" %>" <% $checked %> VALUE="ON">
+      <INPUT TYPE="checkbox" NAME="<% $opt{'link_table'}. ".$name" %>" <% $checked %> ID="<%$prefix.$num++%>" VALUE="ON">
     </TD>
     <TD><% $display %>
 %     if ( $desc ) {
@@ -85,9 +94,35 @@ Example:
 
 </TABLE>
 
+<SCRIPT TYPE="text/javascript">
+
+  function setAll<%$prefix%>(setTo) {
+%   for ( 0 .. ($num-1) ) {
+      document.getElementById('<%$prefix.$_%>').checked = setTo;
+%   }
+  }
+
+  function toggleAll<%$prefix%>(setTo) {
+%   for ( 0 .. ($num-1) ) {
+      var element = document.getElementById('<%$prefix.$_%>');
+      if ( element.checked == true ) {
+        element.checked = false;
+      } else {
+        element.checked = true;
+      }
+%   }
+  }
+
+</SCRIPT>
+
 <%init>
 
 my( %opt ) = @_;
+
+my @pset = ( 'a'..'z', 'A'..'Z', '0'..'9' );
+
+my $prefix = $opt{prefix}
+             || join('', map $pset[ int(rand $#pset) ], (0..20) );
 
 my( $source_pkey, $sourcenum, $source_obj );
 if ( $opt{'source_obj'} ) {
