@@ -113,7 +113,7 @@ if ( $beginning || $ending ) {
 }
 
 if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
-  push @where, "agentnum = $1";
+  push @where, "cust_main.agentnum = $1";
 }
 
 if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
