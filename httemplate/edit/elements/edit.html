@@ -216,7 +216,6 @@ Example:
 %     #select(-*)
 %     'options'       => $f->{'options'},
 %     'labels'        => $f->{'labels'},
-%     'empty_label'   => $f->{'empty_label'},
 %     'multiple'      => $f->{'multiple'},
 %     'disable_empty' => $f->{'disable_empty'},
 %     #select-reason
@@ -230,6 +229,10 @@ Example:
 %     #umm.
 %     'disabled'      => $f->{'disabled'},
 %   );
+%
+%   #select-*
+%   $include_common{$_} = $f->{$_}
+%     foreach grep exists($f->{$_}), qw( empty_label );
 %
 %   #select-table, checkboxes-table
 %   $include_common{$_} = $f->{$_}
