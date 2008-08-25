@@ -32,7 +32,7 @@ sub condition {
   my($self, $cust_bill) = @_;
 
   my $servicenum = $self->option('has_service');
-  grep { $servicenum == $_->svcnum } 
+  grep { $servicenum == $_->svcpart } 
   map { $_->cust_pkg->cust_svc }
   $cust_bill->cust_bill_pkg ;
 }
