@@ -500,7 +500,7 @@ sub tables_hashref {
         'quantity',  'int', 'NULL', '', '', '',
         'unitsetup', @money_typen, '', '', 
         'unitrecur', @money_typen, '', '', 
-        'duplicate',  'char', 'NULL', 1, '', '',  # does this need to be in db?
+        'duplicate',  'char', 'NULL', 1, '', '',
         'post_total', 'char', 'NULL', 1, '', '',
       ],
       'primary_key' => 'billpkgnum',

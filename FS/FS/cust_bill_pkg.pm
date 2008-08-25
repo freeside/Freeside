@@ -370,7 +370,7 @@ sub owed_recur {
 # modeled after cust_bill::owed...
 sub owed {
   my( $self, $field ) = @_;
-  my $balance = $self->$field();
+  my $balance = $self->duplicate ? 0 : $self->$field();
   $balance -= $_->amount foreach ( $self->cust_bill_pay_pkg($field) );
   $balance -= $_->amount foreach ( $self->cust_credit_bill_pkg($field) );
   $balance = sprintf( '%.2f', $balance );

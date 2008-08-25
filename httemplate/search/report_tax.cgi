@@ -188,7 +188,8 @@ my $join_pkg = "
     LEFT JOIN part_pkg USING ( pkgpart )
 ";
 
-my $where = "WHERE _date >= $beginning AND _date <= $ending ";
+my $where = "WHERE _date >= $beginning AND _date <= $ending ".
+            "AND (duplicate IS NULL or duplicate = '')";
 my @base_param = qw( county county state state country );
 if ( $conf->exists('tax-ship_address') ) {
 
