@@ -1,5 +1,6 @@
 % foreach my $lint (@lint) {
-  <FONT COLOR="#FF0000"><% $lint %></FONT><BR>
+%   my $color = ( $lint =~ /unchecked$/ ? '#FF9900' : '#FF0000' );
+    <FONT COLOR="<% $color %>"><% $lint %></FONT><BR>
 % }
 
 <%init>

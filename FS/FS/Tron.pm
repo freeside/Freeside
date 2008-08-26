@@ -53,6 +53,7 @@ sub tron_scan {
     $hash{$option} = $value;
   }
   close READER;
+  close WRITER;
 
   unless ( keys %hash ) {
     return "error scanning $machine\n";
@@ -85,6 +86,8 @@ sub tron_lint {
     my $current = $cust_svc->option($option);
     push @lint, "$option is $current" unless $current =~ $desired{$option};
   }
+
+  push @lint, 'unchecked' unless scalar($cust_svc->options);
 
   @lint;
 
