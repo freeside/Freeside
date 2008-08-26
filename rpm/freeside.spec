@@ -1,6 +1,6 @@
 %{!?_initrddir:%define _initrddir /etc/rc.d/init.d}
 %{!?version:%define version 1.9}
-%{!?release:%define release 2}
+%{!?release:%define release 3}
 
 Summary: Freeside ISP Billing System
 Name: freeside
@@ -25,6 +25,7 @@ Requires: perl-Fax-Hylafax-Client
 %define freeside_export		/etc/freeside
 %define freeside_lock		/var/lock/freeside
 %define freeside_log		/var/log/freeside
+%define freeside_socket         /etc/freeside
 %define	rt_enabled		0
 %define apache_conffile		/etc/httpd/conf/httpd.conf
 %define	apache_confdir		/etc/httpd/conf.d
@@ -128,6 +129,14 @@ perl -pi -e 's|/usr/local/bin|%{buildroot}%{_bindir}|g' FS/Makefile.PL
 perl -pi -e 's|\s+-o\s+freeside\s+| |g' Makefile
 perl -ni -e 'print if !/\s+chown\s+/;' Makefile
 
+# Fix-ups for self-service.  Should merge this into Makefile
+perl -pi -e 's|/usr/local/sbin|%{_sbindir}|g' FS/bin/freeside-selfservice-server
+perl -pi -e 's|/usr/local/bin|%{_bindir}|g' fs_selfservice/FS-SelfService/Makefile.PL
+perl -pi -e 's|/usr/local/freeside|%{freeside_socket}|g' fs_selfservice/FS-SelfService/*.pm
+perl -pi -e 's|socket\s*=\s*"/usr/local/freeside|socket = "%{freeside_socket}|g' fs_selfservice/FS-SelfService/freeside-selfservice-*
+perl -pi -e 's|log_file\s*=\s*"/usr/local/freeside|log_file = "%{freeside_log}|g' fs_selfservice/FS-SelfService/freeside-selfservice-*
+perl -pi -e 's|lock_file\s*=\s*"/usr/local/freeside|lock_file = "%{freeside_lock}|g' fs_selfservice/FS-SelfService/freeside-selfservice-*
+
 # Override find-requires/find-provides to supplement Perl requires for HTML::Mason file handler.pl
 cat << \EOF > %{name}-req
 #!/bin/sh
@@ -197,6 +206,7 @@ touch docs
 	  s/%%%%%%QUEUED_USER%%%%%%/%{fs_queue_user}/g;\
 	  s/%%%%%%SELFSERVICE_USER%%%%%%/%{fs_selfservice_user}/g;\
 	  s/%%%%%%SELFSERVICE_MACHINES%%%%%%//g;\
+	  s|/etc/default|/etc/sysconfig|g;\
 	" $RPM_BUILD_ROOT%{_initrddir}/%{name}
 
 # Install the HTTPD configuration snippet for HTML::Mason
@@ -367,6 +377,9 @@ fi
 
 %files selfservice-core -f fs_selfservice/FS-SelfService/%{name}-%{version}-%{release}-selfservice-core-filelist
 %defattr(-, freeside, freeside, 0644)
+%attr(-,freeside,freeside) %dir %{freeside_socket}
+%attr(-,freeside,freeside) %dir %{freeside_lock}
+%attr(-,freeside,freeside) %dir %{freeside_log}
 
 %files selfservice-cgi
 %defattr(-, freeside, freeside, 0644)
@@ -378,6 +391,9 @@ fi
 %attr(0755,freeside,freeside) %{freeside_document_root}/selfservice/php
 
 %changelog
+* Tue Aug 26 2008 Richard Siddall <richard.siddall@elirion.net> - 1.9-3
+- More revisions for self-service interface
+
 * Sat Aug 23 2008 Richard Siddall <richard.siddall@elirion.net> - 1.7.3-2
 - Revisions for self-service interface
 - RT support is still missing
