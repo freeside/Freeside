@@ -25,6 +25,8 @@ if ( $opt{svc} ) {
   die 'neither svc nor cust_main options passed to mcp_lint';
 }
 
+push @lint, 'unchecked' unless @svc;
+
 my @lint = ();
 foreach my $svc ( @svc ) {
   my @svc_lint = tron_lint($svc);
