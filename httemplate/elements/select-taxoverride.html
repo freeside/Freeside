@@ -3,7 +3,7 @@
              TYPE  = "hidden"
              VALUE = "<% $value %>"
       >
-      <A href="javascript:void(0)" onclick="overlib( OLiframeContent('part_pkg_taxoverride.html?element_name=<% $name %>;selected='+document.getElementById('<% $name %>').value, 1100, 600, 'tax_product_popup'), CAPTION, 'Edit <% $class %> product tax overrides', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK); return false;">
+      <A href="javascript:void(0)" onclick="<% $onclick %>">
         <% $value ? "Edit $class tax overrides" : "Override $class taxes" %>
       </A>
 <%init>
@@ -22,5 +22,7 @@ $name =~ /^tax_override_(\w+)$/ && ( $usage = $1 );
 
 my $class = lc($usage_class{$usage} || "Usage class $usage")
   if $usage;
+
+my $onclick = $opt{onclick} || "overlib( OLiframeContent('part_pkg_taxoverride.html?element_name=$name;selected='+document.getElementById('$name').value, 1100, 600, 'tax_product_popup'), CAPTION, 'Edit $class product tax overrides', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK); return false;";
 
 </%init>

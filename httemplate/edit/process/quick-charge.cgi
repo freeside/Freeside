@@ -14,6 +14,7 @@ die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('One-time charge');
 
 my $error = '';
+my $conf = new FS::conf;
 my $param = $cgi->Vars;
 
 my @description = ();
@@ -35,8 +36,16 @@ if ( $cgi->param('quantity') =~ /^\s*(\d+)\s*$/ ) {
   $quantity = $1;
 }
 
+$param->{'tax_override'} =~ /^\s*([,\d]*)\s*$/
+  or $error .= "Illegal tax override " . $param->{"tax_override"} . "  ";
+my $override = $1;
+
 if ( $param->{'taxclass'} eq '(select)' ) {
-  $error .= "Must select a tax class.  ";
+  $error .= "Must select a tax class.  "
+    unless ($conf->exists('enable_taxproducts') &&
+             ( $override || $param->{taxproductnum} )
+           );
+  $cgi->param('taxclass', '');
 }
 
 unless ( $error ) {
@@ -48,6 +57,8 @@ unless ( $error ) {
     'quantity'   => $quantity,
     'pkg'        => scalar($cgi->param('pkg')),
     'taxclass'   => scalar($cgi->param('taxclass')),
+    'taxproductnum' => scalar($cgi->param('taxproductnum')),
+    'tax_override' => $override,
     'classnum'   => scalar($cgi->param('classnum')),
     'additional' => \@description,
   } );

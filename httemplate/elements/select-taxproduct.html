@@ -8,7 +8,7 @@
                            TYPE    = "text"
                            VALUE   = "<% $description %>"
                            SIZE    = "12"
-                           onclick = "overlib( OLiframeContent('<% $p %>/browse/part_pkg_taxproduct.cgi?_type=select&id=<% $name %>&taxproductnum='+document.getElementById('<% $name %>').value, 1000, 400, 'tax_product_popup'), CAPTION, 'Select product', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK); return false;"><% $opt{'postfix'} %>
+                           onClick = "<% $onclick %>"><% $opt{'postfix'} %>
 <%init>
 
 my %opt = @_;
@@ -22,5 +22,7 @@ unless ( $description || ! $value ) {
     $description = $part_pkg_taxproduct->description
       if $part_pkg_taxproduct;
 }
+
+my $onclick = $opt{onclick} || "overlib( OLiframeContent('${p}/browse/part_pkg_taxproduct.cgi?_type=select&id=${name}&taxproductnum='+document.getElementById('${name}').value, 1000, 400, 'tax_product_popup'), CAPTION, 'Select product', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK); return false;";
 
 </%init>

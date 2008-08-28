@@ -71,7 +71,7 @@ function validate_quick_charge () {
 
 </SCRIPT>
 
-<FORM ACTION="process/quick-charge.cgi" NAME="QuickChargeForm" METHOD="POST" onsubmit="document.QuickChargeForm.submit.disabled=true;return validate_quick_charge();">
+<FORM ACTION="process/quick-charge.cgi" NAME="QuickChargeForm" ID="QuickChargeForm" METHOD="POST" onsubmit="document.QuickChargeForm.submit.disabled=true;return validate_quick_charge();">
 
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
 
@@ -97,6 +97,10 @@ function validate_quick_charge () {
 
 <% include('/elements/tr-select-taxclass.html', 'curr_value' => $cgi->param('taxclass') ) %>
 
+<% include('/elements/tr-select-taxproduct.html', 'label' => 'Tax product', 'onclick' => 'parent.taxproductmagic(this);', 'curr_value' => $cgi->param('taxproductnum') ) %>
+
+<% include('/elements/tr-select-taxoverride.html', 'onclick' => 'parent.taxoverridemagic(this);', 'curr_value' => $cgi->param('tax_override') ) %>
+
 <TR>
   <TD>Description:</TD>
   <TD>
@@ -110,7 +114,7 @@ function validate_quick_charge () {
 </TR>
 
 % my $row = 0;
-%   if ( $cgi->param('error') ) {
+%   if ( $cgi->param('error') || $cgi->param('magic') ) {
 %     my $param = $cgi->Vars;
 %
 % for ( $row = 0; exists($param->{"description$row"}); $row++ ) { 

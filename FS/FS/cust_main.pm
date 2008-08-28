@@ -4892,6 +4892,7 @@ the error, otherwise returns false.
 sub charge {
   my $self = shift;
   my ( $amount, $quantity, $pkg, $comment, $taxclass, $additional, $classnum );
+  my ( $taxproduct, $override );
   if ( ref( $_[0] ) ) {
     $amount     = $_[0]->{amount};
     $quantity   = exists($_[0]->{quantity}) ? $_[0]->{quantity} : 1;
@@ -4901,6 +4902,8 @@ sub charge {
     $taxclass   = exists($_[0]->{taxclass}) ? $_[0]->{taxclass} : '';
     $classnum   = exists($_[0]->{classnum}) ? $_[0]->{classnum} : '';
     $additional = $_[0]->{additional};
+    $taxproduct = $_[0]->{taxproductnum};
+    $override   = { '' => $_[0]->{tax_override} };
   }else{
     $amount     = shift;
     $quantity   = 1;
@@ -4922,13 +4925,14 @@ sub charge {
   my $dbh = dbh;
 
   my $part_pkg = new FS::part_pkg ( {
-    'pkg'      => $pkg,
-    'comment'  => $comment,
-    'plan'     => 'flat',
-    'freq'     => 0,
-    'disabled' => 'Y',
-    'classnum' => $classnum ? $classnum : '',
-    'taxclass' => $taxclass,
+    'pkg'           => $pkg,
+    'comment'       => $comment,
+    'plan'          => 'flat',
+    'freq'          => 0,
+    'disabled'      => 'Y',
+    'classnum'      => $classnum ? $classnum : '',
+    'taxclass'      => $taxclass,
+    'taxproductnum' => $taxproduct,
   } );
 
   my %options = ( ( map { ("additional_info$_" => $additional->[$_] ) }
@@ -4938,7 +4942,9 @@ sub charge {
                   'setup_fee' => $amount,
                 );
 
-  my $error = $part_pkg->insert( options => \%options );
+  my $error = $part_pkg->insert( options       => \%options,
+                                 tax_overrides => $override,
+                               );
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;

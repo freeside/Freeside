@@ -10,8 +10,8 @@
   <TR><TD>
 <FORM="dummy">
   <CENTER>
-    <INPUT type="submit" value="Finish" onclick="s=fetchSelected(); s.shift(); parent.document.getElementById('<% $element_name || "tax_override" %>').value=s.toString(); parent.cClick();">
-    <INPUT type="reset" value="Cancel" onclick="parent.cClick();">
+    <INPUT type="submit" value="Finish" onclick="s=fetchSelected(); s.shift(); parent.document.getElementById('<% $element_name || "tax_override" %>').value=s.toString(); parent.<% $onclick %>();">
+    <INPUT type="reset" value="Cancel" onclick="parent.<% $onclick %>();">
   </CENTER>
 </FORM>
   </TD></TR>
@@ -123,5 +123,10 @@ my $selected = $1
 
 my $element_name = $1
   if $cgi->param('element_name') =~/^(\w+)$/;
+
+my $onclick = $1
+  if $cgi->param('onclick') =~/^(\w+)$/;
+
+$onclick = 'cClick' unless $onclick;
 
 </%init>

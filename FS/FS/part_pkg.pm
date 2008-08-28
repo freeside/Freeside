@@ -144,6 +144,10 @@ record itself), the object will be updated to point to this package definition.
 In conjunction with I<cust_pkg>, if I<custnum_ref> is set to a scalar reference,
 the scalar will be updated with the custnum value from the cust_pkg record.
 
+If I<tax_overrides> is set to a hashref with usage classes as keys and comma
+separated tax class numbers as values, appropriate FS::part_pkg_taxoverride
+records will be inserted.
+
 If I<options> is set to a hashref of options, appropriate FS::part_pkg_option
 records will be inserted.
 
@@ -188,6 +192,22 @@ sub insert {
         $dbh->rollback if $oldAutoCommit;
         return $error;
       }
+    }
+  }
+
+  warn "  inserting part_pkg_taxoverride records" if $DEBUG;
+  my %overrides = %{ $options{'tax_overrides'} || {} };
+  foreach my $usage_class ( keys %overrides ) {
+    my @overrides = (grep "$_", split (',', $overrides{$usage_class}) );
+    my $error = $self->process_m2m (
+                  'link_table'   => 'part_pkg_taxoverride',
+                  'target_table' => 'tax_class',
+                  'hashref'      => { 'usage_class' => $usage_class },
+                  'params'       => \@overrides,
+                );
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
     }
   }
 

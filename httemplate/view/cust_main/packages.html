@@ -1,5 +1,73 @@
 <A NAME="cust_pkg"><FONT SIZE="+2">Packages</FONT></A><BR>
 
+% if ( $curuser->access_right('One-time charge') ) {
+
+<SCRIPT TYPE="text/javascript">
+
+function taxproductmagic(which) {
+  var str = '';
+  var elements = which.form.elements;
+  for (var i = 0; i<elements.length; i++) {
+    if (elements[i].name == 'taxproductnum'){
+      document.getElementById('taxproductnum').value = elements[i].value;
+      continue;
+    }
+    if (elements[i].name == 'taxproductnum_description'){
+      continue;
+    }
+    if (str.length){str += ';';}
+    str += elements[i].name + '=' + escape(elements[i].value);
+  }
+  document.getElementById('charge_storage').value = str;
+  cClick();
+  overlib( OLiframeContent('<% $p %>/browse/part_pkg_taxproduct.cgi?_type=select&id=taxproductnum&onclick=taxproductquickchargemagic&taxproductnum='+document.getElementById('taxproductnum').value, 1000, 400, 'tax_product_popup'), CAPTION, 'Select product', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK);
+}
+
+function taxproductquickchargemagic() {
+  var str = document.getElementById('charge_storage').value;
+  if (str.length){str += ';';}
+  str += 'magic=taxproductnum;taxproductnum=';
+  str += escape(document.getElementById('taxproductnum').value);
+  cClick();
+  overlib( OLiframeContent('<% $p %>/edit/quick-charge.html?'+str, 545, 336, 'One-time charge'), CAPTION, 'One-time charge', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '#333399', CGCOLOR, '#333399', CLOSETEXT, 'Close');
+
+}
+
+function taxoverridemagic(which) {
+  var str = '';
+  var elements = which.ownerDocument.QuickChargeForm.elements;
+  for (var i = 0; i<elements.length; i++) {
+    if (elements[i].name == 'tax_override'){
+      document.getElementById('tax_override').value = elements[i].value;
+      continue;
+    }
+    if (str.length){str += ';';}
+    str += elements[i].name + '=' + escape(elements[i].value);
+  }
+  document.getElementById('charge_storage').value = str;
+  cClick();
+  overlib( OLiframeContent('<% $p %>/edit/part_pkg_taxoverride.html?element_name=tax_override;onclick=taxoverridequickchargemagic;selected='+document.getElementById('tax_override').value, 1100, 600, 'tax_product_popup'), CAPTION, 'Edit product tax overrides', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK);
+}
+
+function taxoverridequickchargemagic() {
+  var str = document.getElementById('charge_storage').value;
+  if (str.length){str += ';';}
+  str += 'magic=taxoverride;tax_override=';
+  str += document.getElementById('tax_override').value;
+  cClick();
+  overlib( OLiframeContent('<% $p %>/edit/quick-charge.html?'+str, 545, 336, 'One-time charge'), CAPTION, 'One-time charge', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '#333399', CGCOLOR, '#333399', CLOSETEXT, 'Close');
+
+}
+
+</SCRIPT>
+<FORM NAME='quickcharge'>
+  <INPUT NAME="taxproductnum"  ID="taxproductnum"  TYPE="hidden">
+  <INPUT NAME="tax_override"   ID="tax_override"   TYPE="hidden">
+  <INPUT NAME="charge_storage" ID="charge_storage" TYPE="hidden">
+  <INPUT NAME="taxproductnum_description"  ID="taxproductnum_description" TYPE="hidden">
+</FORM>
+% } 
+
 % my $s = 0;
 % if ( $curuser->access_right('Order customer package') ) { 
   <% $s++ ? ' | ' : '' %>
@@ -20,8 +88,8 @@
        'width'       => 545,
      })
   %>
-
 % } 
+
 % if ( $curuser->access_right('Bulk change customer packages') ) { 
   <% $s++ ? ' | ' : '' %>
   <A HREF="<% $p %>edit/cust_pkg.cgi?<% $cust_main->custnum %>">Bulk order and cancel packages</A> (preserves services)

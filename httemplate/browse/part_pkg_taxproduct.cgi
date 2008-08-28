@@ -31,6 +31,7 @@ die "access denied"
 
 my @menubar;
 my $title = '';
+my $onclick = 'cClick';
 
 my $data_vendor = '';
 if ( $cgi->param('data_vendor') =~ /^(\w+)$/ ) {
@@ -54,10 +55,14 @@ my $tax_customer = $1
 my $id = $1
   if ( $cgi->param('id') =~ /^([ \w]+)$/ );
 
+$onclick = $1
+  if ( $cgi->param('onclick') =~ /^(\w+)$/ );
+$cgi->delete('onclick');
+
 my $remove_onclick = <<EOS
   parent.document.getElementById('$id').value = '';
   parent.document.getElementById('${id}_description').value = '';
-  parent.cClick();
+  parent.$onclick();
 EOS
   if $id;
 
@@ -67,7 +72,7 @@ my $select_onclick = sub {
   my $desc = $row->description;
   "parent.document.getElementById('$id').value = $taxnum;".
   "parent.document.getElementById('${id}_description').value = '$desc';".
-  "parent.cClick();";
+  "parent.$onclick();";
 }
   if $id;
 
@@ -111,6 +116,7 @@ $cgi->param('tax_group',  $tax_group) if $tax_group;
 $cgi->param('tax_item', $tax_item ) if $tax_item;
 $cgi->param('tax_provider', $tax_provider ) if $tax_provider;
 $cgi->param('tax_customer', $tax_customer ) if $tax_customer;
+$cgi->param('onclick', $onclick ) if $onclick;
 
 my $count_query = "SELECT COUNT(*) FROM part_pkg_taxproduct $extra_sql";
 
@@ -152,6 +158,7 @@ $html_init .= qq(
   <FORM>
     <INPUT NAME="_type" TYPE="hidden" VALUE="$type">
     <INPUT NAME="taxproductnum" TYPE="hidden" VALUE="$taxproductnum">
+    <INPUT NAME="onclick" TYPE="hidden" VALUE="$onclick">
     <INPUT NAME="id" TYPE="hidden" VALUE="$id">
     <TABLE>
       <TR>
