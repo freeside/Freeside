@@ -84,6 +84,13 @@ my $args_callback = sub {
         }
         @options;
 
+  foreach ( split(',', $cgi->param('taxproductnums') ) ) {
+    my $value = $cgi->param("taxproductnum_$_");
+    $error ||= "Illegal taxproductnum_$_: $value"
+      unless ( $value =~ /^\d*$/  );
+    $options{"usage_taxproductnum_$_"} = $value;
+  }
+
   $options{$_} = scalar( $cgi->param($_) )
     for (qw( setup_fee recur_fee ));
   
@@ -145,6 +152,22 @@ my @process_m2m = (
     'params'       => [ map $cgi->param($_), grep /^svc_dst_pkgpart/, $cgi->param ],
   },
 );
+
+foreach my $override_class ($cgi->param) {
+  next unless $override_class =~ /^tax_override_(\w+)$/;
+  my $class = $1;
+
+  my (@tax_overrides) = (grep "$_", split (",", $1))
+    if $cgi->param($override_class) =~ /^([\d,]+)$/;
+
+  push @process_m2m, {
+    'link_table'   => 'part_pkg_taxoverride',
+    'target_table' => 'tax_class',
+    'hashref'      => { 'usage_class' => $class },
+    'params'       => \@tax_overrides,
+  };
+
+}
 
 my $conf = new FS::Conf;
 

@@ -502,6 +502,7 @@ sub tables_hashref {
         'unitrecur', @money_typen, '', '', 
         'duplicate',  'char', 'NULL', 1, '', '',
         'post_total', 'char', 'NULL', 1, '', '',
+        'type',       'char', 'NULL', 1, '', '',
       ],
       'primary_key' => 'billpkgnum',
       'unique' => [],
@@ -514,7 +515,9 @@ sub tables_hashref {
         'billpkgnum', 'int', 'NULL', '', '', '',        # should not be nullable
         'pkgnum',  'int', 'NULL', '', '', '',           # deprecated
         'invnum',  'int', 'NULL', '', '', '',           # deprecated
+        'amount',  @money_typen, '', '', 
         'format',  'char', 'NULL', 1, '', '',
+        'classnum', 'char', 'NULL', 1, '', '',
         'detail',  'varchar', '', $char_d, '', '', 
       ],
       'primary_key' => 'detailnum',
@@ -1103,6 +1106,7 @@ sub tables_hashref {
         'taxoverridenum', 'serial', '', '', '', '',
         'pkgpart',        'serial', '', '', '', '',
         'taxclassnum',    'serial', '', '', '', '',
+        'usage_class',    'varchar', 'NULL', $char_d, '', '', 
       ],
       'primary_key' => 'taxoverridenum',
       'unique' => [],

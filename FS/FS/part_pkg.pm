@@ -801,19 +801,84 @@ sub _self_and_linked {
   );
 }
 
-=item part_pkg_taxoverride
+=item part_pkg_taxoverride [ CLASS ]
 
 Returns all associated FS::part_pkg_taxoverride objects (see
-L<FS::part_pkg_taxoverride>).
+L<FS::part_pkg_taxoverride>).  Limits the returned set to those
+of class CLASS if defined.  Class may be one of 'setup', 'recur',
+the empty string (default), or a usage class number (see L<FS::usage_class>).
+When a class is specified, the empty string class (default) is returned
+if no more specific values exist.
 
 =cut
 
 sub part_pkg_taxoverride {
   my $self = shift;
-  qsearch('part_pkg_taxoverride', { 'pkgpart' => $self->pkgpart } );
+  my $class = shift;
+
+  my $hashref = { 'pkgpart' => $self->pkgpart };
+  $hashref->{'usage_class'} = $class if defined($class);
+  my @overrides = qsearch('part_pkg_taxoverride', $hashref );
+
+  unless ( scalar(@overrides) || !defined($class) || !$class ){
+    $hashref->{'usage_class'} = '';
+    @overrides = qsearch('part_pkg_taxoverride', $hashref );
+  }
+
+  @overrides;
 }
 
-=item taxproduct_description
+=item has_taxproduct
+
+Returns true if this package has any taxproduct associated with it.  
+
+=cut
+
+sub has_taxproduct {
+  my $self = shift;
+
+  $self->taxproductnum ||
+  scalar(grep { $_ =~/^usage_taxproductnum_/ } keys %{ {$self->options} } )
+
+}
+
+
+=item taxproduct [ CLASS ]
+
+Returns the associated tax product for this package definition (see
+L<FS::part_pkg_taxproduct>).  CLASS may be one of 'setup', 'recur' or
+the usage classnum (see L<FS::usage_class>).  Returns the default
+tax product for this record if the more specific CLASS value does
+not exist.
+
+=cut
+
+sub taxproduct {
+  my $self = shift;
+  my $class = shift;
+
+  my $part_pkg_taxproduct;
+
+  my $taxproductnum = $self->taxproductnum;
+  if ($class) { 
+    my $class_taxproductnum = $self->option("usage_taxproductnum_$class", 1);
+    $taxproductnum = $class_taxproductnum
+      if $class_taxproductnum
+  }
+  
+  $part_pkg_taxproduct =
+    qsearchs( 'part_pkg_taxproduct', { 'taxproductnum' => $taxproductnum } );
+
+  unless ($part_pkg_taxproduct || $taxproductnum eq $self->taxproductnum ) {
+    $taxproductnum = $self->taxproductnum;
+    $part_pkg_taxproduct =
+      qsearchs( 'part_pkg_taxproduct', { 'taxproductnum' => $taxproductnum } );
+  }
+
+  $part_pkg_taxproduct;
+}
+
+=item taxproduct_description [ CLASS ]
 
 Returns the description of the associated tax product for this package
 definition (see L<FS::part_pkg_taxproduct>).
@@ -822,26 +887,24 @@ definition (see L<FS::part_pkg_taxproduct>).
 
 sub taxproduct_description {
   my $self = shift;
-  my $part_pkg_taxproduct =
-    qsearchs( 'part_pkg_taxproduct',
-              { 'taxproductnum' => $self->taxproductnum }
-            );
+  my $part_pkg_taxproduct = $self->taxproduct(@_);
   $part_pkg_taxproduct ? $part_pkg_taxproduct->description : '';
 }
 
-=item part_pkg_taxrate DATA_PROVIDER, GEOCODE
+=item part_pkg_taxrate DATA_PROVIDER, GEOCODE, [ CLASS ]
 
 Returns the package to taxrate m2m records for this package in the location
-specified by GEOCODE (see L<FS::part_pkg_taxrate> and ).
+specified by GEOCODE (see L<FS::part_pkg_taxrate>) and usage class CLASS.
+CLASS may be one of 'setup', 'recur', or one of the usage classes numbers
+(see L<FS::usage_class>).
 
 =cut
 
 sub _expand_cch_taxproductnum {
   my $self = shift;
-  my $part_pkg_taxproduct =
-    qsearchs( 'part_pkg_taxproduct',
-              { 'taxproductnum' => $self->taxproductnum }
-            );
+  my $class = shift;
+  my $part_pkg_taxproduct = $self->taxproduct($class);
+
   my ($a,$b,$c,$d) = ( $part_pkg_taxproduct
                          ? ( split ':', $part_pkg_taxproduct->taxproduct )
                          : ()
@@ -859,7 +922,7 @@ sub _expand_cch_taxproductnum {
 
 sub part_pkg_taxrate {
   my $self = shift;
-  my ($data_vendor, $geocode) = @_;
+  my ($data_vendor, $geocode, $class) = @_;
 
   my $dbh = dbh;
   my $extra_sql = 'WHERE part_pkg_taxproduct.data_vendor = '.
@@ -873,7 +936,9 @@ sub part_pkg_taxrate {
     ')';
   # much more CCH oddness in m2m -- this is kludgy
   $extra_sql .= ' AND ('.
-    join(' OR ', map{ "taxproductnum = $_" } $self->_expand_cch_taxproductnum).
+    join(' OR ', map{ "taxproductnum = $_" }
+                 $self->_expand_cch_taxproductnum($class)
+        ).
     ')';
 
   my $addl_from = 'LEFT JOIN part_pkg_taxproduct USING ( taxproductnum )';

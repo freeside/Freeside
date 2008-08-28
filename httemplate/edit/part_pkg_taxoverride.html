@@ -10,7 +10,7 @@
   <TR><TD>
 <FORM="dummy">
   <CENTER>
-    <INPUT type="submit" value="Finish" onclick="s=fetchSelected(); s.shift(); parent.document.getElementById('tax_override').value=s.toString(); parent.cClick();">
+    <INPUT type="submit" value="Finish" onclick="s=fetchSelected(); s.shift(); parent.document.getElementById('<% $element_name || "tax_override" %>').value=s.toString(); parent.cClick();">
     <INPUT type="reset" value="Cancel" onclick="parent.cClick();">
   </CENTER>
 </FORM>
@@ -120,5 +120,8 @@ my $unselected_offset = $1
 
 my $selected = $1
   if $cgi->param('selected') =~/^([,\d]+)$/;
+
+my $element_name = $1
+  if $cgi->param('element_name') =~/^(\w+)$/;
 
 </%init>

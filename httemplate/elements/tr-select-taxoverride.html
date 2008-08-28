@@ -1,6 +1,6 @@
 % if ( $conf->exists('enable_taxproducts') ) { 
   <%include('tr-td-label.html', @_) %>
-    <TD <% $cell_style %>><% include('select-taxproduct.html', @_) %></TD>
+    <TD <% $cell_style %>><% include('select-taxoverride.html', @_) %></TD>
   </TR>
 
 % } else { 
@@ -12,7 +12,7 @@
 my $conf = new FS::conf;
 
 my %opt = @_;
-my $cell_style = $opt{cell_style} ? 'STYLE="'. $opt{cell_style}. '"' : '';
-my $name = $opt{name} || 'taxproductnum';
+my $cell_style = $opt{'cell_style'}? 'STYLE="'. $opt{cell_style}. '"' : '';
+my $name = $opt{name} || 'tax_override';
 
 </%init>

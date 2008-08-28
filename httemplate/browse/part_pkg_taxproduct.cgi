@@ -54,6 +54,13 @@ my $tax_customer = $1
 my $id = $1
   if ( $cgi->param('id') =~ /^([ \w]+)$/ );
 
+my $remove_onclick = <<EOS
+  parent.document.getElementById('$id').value = '';
+  parent.document.getElementById('${id}_description').value = '';
+  parent.cClick();
+EOS
+  if $id;
+
 my $select_onclick = sub {
   my $row = shift;
   my $taxnum = $row->taxproductnum;
@@ -132,7 +139,10 @@ my @fields = (
 
 my $html_init = '';
 
-$html_init = '<TABLE><TR><TD>Current tax product: </TD><TD>'.
+my $select_link = [ 'javascript:void(0);', sub { ''; } ];
+$html_init = '<TABLE><TR><TD><A HREF="javascript:void(0)" '.
+                qq!onClick="$remove_onclick">(remove)</A>&nbsp;!.
+                'Current tax product: </TD><TD>'.
                 $selected_part_pkg_taxproduct->description.
                 '</TD></TR></TABLE><BR><BR>'
   if $selected_part_pkg_taxproduct;

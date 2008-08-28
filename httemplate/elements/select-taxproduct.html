@@ -1,28 +1,26 @@
-<% ntable("#cccccc", 2) %>
-  <TR>
-    <TD align="right">Tax product</TD>
-    <TD>
-      <INPUT name="taxproductnum" id="taxproductnum" type="hidden" value="<% $opt{'taxproductnum'}%>">
-      <INPUT name="taxproductnum_description" id="taxproductnum_description" type="text" value="<% $opt{taxproduct_description} %>" size="12" onclick="overlib( OLiframeContent('<% $p %>/browse/part_pkg_taxproduct.cgi?_type=select&id=taxproductnum&taxproductnum='+document.getElementById('taxproductnum').value, 1000, 400, 'tax_product_popup'), CAPTION, 'Select product', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK); return false;">
-    </TD>
-  </TR>
-  <TR>
-    <TD colspan="2" align="right">
-      <INPUT name="tax_override" id="tax_override" type="hidden" value="<% $opt{tax_override} %>">
-      <A href="javascript:void(0)" onclick="overlib( OLiframeContent('part_pkg_taxoverride.html?selected='+document.getElementById('tax_override').value, 1100, 600, 'tax_product_popup'), CAPTION, 'Edit product tax overrides', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK); return false;">
-        <% $opt{tax_override} ? 'Edit tax overrides' : 'Override taxes' %>
-      </A>
-    </TD>
-  </TR>
-</TABLE>
-
+<% $opt{'prefix'} %><INPUT NAME    = "<% $name %>"
+                           ID      = "<% $name %>"
+                           TYPE    = "hidden"
+                           VALUE   = "<% $value |h %>"
+                    >
+                    <INPUT NAME    = "<% $name %>_description"
+                           ID      = "<% $name %>_description"
+                           TYPE    = "text"
+                           VALUE   = "<% $description %>"
+                           SIZE    = "12"
+                           onclick = "overlib( OLiframeContent('<% $p %>/browse/part_pkg_taxproduct.cgi?_type=select&id=<% $name %>&taxproductnum='+document.getElementById('<% $name %>').value, 1000, 400, 'tax_product_popup'), CAPTION, 'Select product', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK); return false;"><% $opt{'postfix'} %>
 <%init>
 
 my %opt = @_;
-
-$opt{'taxproductnum'} ||= $opt{'object'}->taxproductnum
-  if $opt{'object'};
-$opt{'taxproduct_description'} ||= $opt{'object'}->taxproduct_description
-  if $opt{'object'};
+my $name = $opt{element_name} || $opt{field} || 'taxproductnum';
+my $value = length($opt{curr_value}) ? $opt{curr_value} : $opt{value};
+my $description = $opt{'taxproduct_description'};
+  
+unless ( $description || ! $value ) {
+    my $part_pkg_taxproduct =
+      qsearchs( 'part_pkg_taxproduct', { 'taxproductnum'=> $value } );
+    $description = $part_pkg_taxproduct->description
+      if $part_pkg_taxproduct;
+}
 
 </%init>

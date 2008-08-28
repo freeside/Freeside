@@ -187,6 +187,7 @@ sub calc_usage {
       my( $rate_region, $regionnum );
       my $pretty_destnum;
       my $charge = '';
+      my $classnum = '';
       my @call_details = ();
       if ( $self->option('rating_method') eq 'prefix'
            || ! $self->option('rating_method')
@@ -387,15 +388,18 @@ sub calc_usage {
             $rate_region->regionname,
           );
 
+          $classnum = $rate_detail->classnum;
+
         }
 
         if ( $charge > 0 ) {
+          #just use FS::cust_bill_pkg_detail objects?
           my $call_details;
           if ( $self->option('rating_method') eq 'upstream_simple' ) {
-            $call_details = [ 'C', $call_details[0] ];
+            $call_details = [ 'C', $call_details[0], $charge, $classnum ];
           }else{
             $csv->combine(@call_details);
-            $call_details = [ 'C', $csv->string ];
+            $call_details = [ 'C', $csv->string, $charge, $classnum ];
           }
           warn "  adding details on charge to invoice: [ ".
               join(', ', @{$call_details} ). " ]"

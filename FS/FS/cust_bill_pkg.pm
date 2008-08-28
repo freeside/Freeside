@@ -47,6 +47,8 @@ supported:
 =item pkgnum - package (see L<FS::cust_pkg>) or 0 for the special virtual sales tax package, or -1 for the virtual line item (itemdesc is used for the line)
 
 =item pkgpart_override - optional package definition (see L<FS::part_pkg>) override
+=item type - can be set to U for usage; more later
+
 =item setup - setup fee
 
 =item recur - recurring fee
@@ -137,6 +139,8 @@ sub insert {
       'billpkgnum' => $self->billpkgnum,
       'format'     => (ref($detail) ? $detail->[0] : '' ),
       'detail'     => (ref($detail) ? $detail->[1] : $detail ),
+      'charge'     => (ref($detail) ? $detail->[2] : '' ),
+      'classnum'   => (ref($detail) ? $detail->[3] : '' ),
     };
     $error = $cust_bill_pkg_detail->insert;
     if ( $error ) {
@@ -195,6 +199,7 @@ sub check {
       || $self->ut_textn('section')
       || $self->ut_enum('duplicate', [ '', 'Y' ])
       || $self->ut_enum('post_total', [ '', 'Y' ])
+      || $self->ut_enum('type', [ '', 'U' ])      #only usage for now
   ;
   return $error if $error;
 
@@ -456,6 +461,70 @@ Returns true if this line item represents a cdr line item in its own section.
 sub separate_cdr {
   my( $self ) = shift;
   $self->pkgnum && $self->section ne $self->part_pkg->categoryname;
+}
+
+=item usage CLASSNUM
+
+Returns the amount of the charge associated with usage class CLASSNUM if
+CLASSNUM is defined.  Otherwise returns the total charge associated with
+usage.
+  
+=cut
+
+sub usage {
+  my( $self, $classnum ) = @_;
+  my $sum = 0;
+  my @values = ();
+
+  if ( $self->get('details') ) {
+
+    @values = 
+      map { $_->[2] }
+      grep { ref($_) && ( defined($classnum) ? $_->[3] eq $classnum : 1 ) }
+      $self->get('details');
+
+  }else{
+
+    my $hashref = { 'billpkgnum' => $self->billpkgnum };
+    $hashref->{ 'classnum' } = $classnum if defined($classnum);
+    @values = map { $_->charge } qsearch('cust_bill_pkg_detail', $hashref);
+
+  }
+
+  foreach ( @values ) {
+    $sum += $_ if $_;
+  }
+  $sum;
+}
+
+=item usage_classes
+
+Returns a list of usage classnums associated with this invoice line's
+details.
+  
+=cut
+
+sub usage_classes {
+  my( $self ) = @_;
+
+  if ( $self->get('details') ) {
+
+    my %seen = ();
+    foreach my $detail ( grep { ref($_) } @{$self->get('details')} ) {
+      $seen{ $detail->[3] } = 1;
+    }
+    keys %seen;
+
+  }else{
+
+    map { $_->classnum }
+        qsearch({ table   => 'cust_bill_pkg_detail',
+                  hashref => { billpkgnum => $self->billpkgnum },
+                  select  => 'DISTINCT classnum',
+               });
+
+  }
+
 }
 
 =back

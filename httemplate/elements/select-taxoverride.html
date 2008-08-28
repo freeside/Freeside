@@ -1,0 +1,26 @@
+      <INPUT NAME  = "<% $name %>"
+             ID    = "<% $name %>"
+             TYPE  = "hidden"
+             VALUE = "<% $value %>"
+      >
+      <A href="javascript:void(0)" onclick="overlib( OLiframeContent('part_pkg_taxoverride.html?element_name=<% $name %>;selected='+document.getElementById('<% $name %>').value, 1100, 600, 'tax_product_popup'), CAPTION, 'Edit <% $class %> product tax overrides', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK); return false;">
+        <% $value ? "Edit $class tax overrides" : "Override $class taxes" %>
+      </A>
+<%init>
+
+my %opt = @_;
+my $name = $opt{element_name} || $opt{field} || 'tax_override';
+my $value = length($opt{curr_value}) ? $opt{curr_value} : $opt{value};
+
+my %usage_class = map { ($_->classnum => $_->classname) }
+                  qsearch('usage_class', {});
+$usage_class{setup} = 'Setup';
+$usage_class{recur} = 'Recurring';
+
+my $usage;
+$name =~ /^tax_override_(\w+)$/ && ( $usage = $1 );
+
+my $class = lc($usage_class{$usage} || "Usage class $usage")
+  if $usage;
+
+</%init>

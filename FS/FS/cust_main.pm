@@ -2047,6 +2047,7 @@ Used in conjunction with the I<time> option, this option specifies the date of f
 sub bill {
   my( $self, %options ) = @_;
   return '' if $self->payby eq 'COMP';
+  local $DEBUG = 1;
   warn "$me bill customer ". $self->custnum. "\n"
     if $DEBUG;
 
@@ -2460,7 +2461,6 @@ sub _make_lines {
       };
       $cust_bill_pkg->pkgpart_override($part_pkg->pkgpart)
         unless $part_pkg->pkgpart == $real_pkgpart;
-      push @$cust_bill_pkgs, $cust_bill_pkg;
 
       $$total_setup += $setup;
       $$total_recur += $recur;
@@ -2471,7 +2471,14 @@ sub _make_lines {
 
       unless ( $self->tax =~ /Y/i || $self->payby eq 'COMP' ) {
 
-        $self->_handle_taxes($part_pkg, $taxlisthash, $cust_bill_pkg);
+        #some garbage disappears on cust_bill_pkg refactor
+        my $err_or_cust_bill_pkg =
+          $self->_handle_taxes($part_pkg, $taxlisthash, $cust_bill_pkg);
+
+        return $err_or_cust_bill_pkg
+          unless ( ref($err_or_cust_bill_pkg) );
+
+        push @$cust_bill_pkgs, @$err_or_cust_bill_pkg;
 
       } #unless $self->tax =~ /Y/i || $self->payby eq 'COMP'
 
@@ -2493,7 +2500,6 @@ sub _make_lines {
 
       $cust_bill_pkg->pkgpart_override($part_pkg->pkgpart)
         unless $part_pkg->pkgpart == $real_pkgpart;
-      push @$appended_cust_bill_pkg, $cust_bill_pkg;
 
       unless ($cust_bill_pkg->duplicate) {
         $$total_setup += $cust_bill_pkg->setup;
@@ -2505,7 +2511,14 @@ sub _make_lines {
 
         unless ( $self->tax =~ /Y/i || $self->payby eq 'COMP' ) {
 
-          $self->_handle_taxes($part_pkg, $taxlisthash, $cust_bill_pkg);
+          #some garbage disappears on cust_bill_pkg refactor
+          my $err_or_cust_bill_pkg =
+            $self->_handle_taxes($part_pkg, $taxlisthash, $cust_bill_pkg);
+
+          return $err_or_cust_bill_pkg
+            unless ( ref($err_or_cust_bill_pkg) );
+
+          push @$appended_cust_bill_pkg, @$err_or_cust_bill_pkg;
 
         } #unless $self->tax =~ /Y/i || $self->payby eq 'COMP'
       }
@@ -2520,39 +2533,35 @@ sub _handle_taxes {
   my $taxlisthash = shift;
   my $cust_bill_pkg = shift;
 
-  my @taxes = ();
-  my @taxoverrides = $part_pkg->part_pkg_taxoverride;
+  my %cust_bill_pkg = ();
+  my %taxes = ();
     
   my $prefix = 
     ( $conf->exists('tax-ship_address') && length($self->ship_last) )
     ? 'ship_'
     : '';
 
+  my @classes;
+  push @classes, $cust_bill_pkg->usage_classes if $cust_bill_pkg->type eq 'U';
+  push @classes, 'setup' if $cust_bill_pkg->setup;
+  push @classes, 'recur' if $cust_bill_pkg->recur;
+
   if ( $conf->exists('enable_taxproducts')
-       && (scalar(@taxoverrides) || $part_pkg->taxproductnum )
+       && (scalar($part_pkg->part_pkg_taxoverride) || $part_pkg->has_taxproduct)
      )
   { 
 
-    my @taxclassnums = ();
-    my $geocode = $self->geocode('cch');
-
-    if ( scalar( @taxoverrides ) ) {
-      @taxclassnums = map { $_->taxclassnum } @taxoverrides;
-    }elsif ( $part_pkg->taxproductnum ) {
-      @taxclassnums = map { $_->taxclassnum }
-                      $part_pkg->part_pkg_taxrate('cch', $geocode);
+    foreach my $class (@classes) {
+      my $err_or_ref = $self->_gather_taxes( $part_pkg, $class, $prefix );
+      return $err_or_ref unless ref($err_or_ref);
+      $taxes{$class} = $err_or_ref;
     }
 
-    my $extra_sql =
-      "AND (".
-      join(' OR ', map { "taxclassnum = $_" } @taxclassnums ). ")";
-
-    @taxes = qsearch({ 'table' => 'tax_rate',
-                       'hashref' => { 'geocode' => $geocode, },
-                       'extra_sql' => $extra_sql,
-                    })
-      if scalar(@taxclassnums);
-
+    unless (exists $taxes{''}) {
+      my $err_or_ref = $self->_gather_taxes( $part_pkg, '', $prefix );
+      return $err_or_ref unless ref($err_or_ref);
+      $taxes{''} = $err_or_ref;
+    }
 
   }else{
 
@@ -2561,7 +2570,7 @@ sub _handle_taxes {
 
     $taxhash{'taxclass'} = $part_pkg->taxclass;
 
-    @taxes = qsearch( 'cust_main_county', \%taxhash );
+    my @taxes = qsearch( 'cust_main_county', \%taxhash );
 
     unless ( @taxes ) {
       $taxhash{'taxclass'} = '';
@@ -2574,38 +2583,131 @@ sub _handle_taxes {
       @taxes =  qsearch( 'cust_main_county', \%taxhash );
     }
 
-  } #if $conf->exists('enable_taxproducts') 
+    $taxes{''} = [ @taxes ];
+    $taxes{'setup'} = [ @taxes ];
+    $taxes{'recur'} = [ @taxes ];
+    $taxes{$_} = [ @taxes ] foreach (@classes);
 
-  # maybe eliminate this entirely, along with all the 0% records
-  unless ( @taxes ) {
-    my $error;
-    if ( $conf->exists('enable_taxproducts') ) { 
-      $error = 
-        "fatal: can't find tax rate for zip/taxproduct/pkgpart ".
-        join('/', ( map $self->get("$prefix$_"),
-                        qw(zip)
-                  ),
-                  $part_pkg->taxproduct_description,
-                  $part_pkg->pkgpart ). "\n";
-    } else {
-      $error = 
+    # maybe eliminate this entirely, along with all the 0% records
+    unless ( @taxes ) {
+      return
         "fatal: can't find tax rate for state/county/country/taxclass ".
         join('/', ( map $self->get("$prefix$_"),
                         qw(state county country)
                   ),
                   $part_pkg->taxclass ). "\n";
     }
-    return $error;
+
+  } #if $conf->exists('enable_taxproducts') 
+
+  # XXX all this goes away with cust_bill_pay refactor
+
+  $cust_bill_pkg{setup} = $cust_bill_pkg if $cust_bill_pkg->setup;
+  $cust_bill_pkg{recur} = $cust_bill_pkg if $cust_bill_pkg->recur;
+    
+  #split setup and recur
+  if ($cust_bill_pkg->setup && $cust_bill_pkg->recur) {
+    my $cust_bill_pkg_recur = new FS::cust_bill_pkg { $cust_bill_pkg->hash };
+    $cust_bill_pkg->set('details', []);
+    $cust_bill_pkg->recur(0);
+    $cust_bill_pkg->type('');
+    $cust_bill_pkg{recur} = $cust_bill_pkg_recur;
   }
 
-  foreach my $tax ( @taxes ) {
-    my $taxname = ref( $tax ). ' '. $tax->taxnum;
-    if ( exists( $taxlisthash->{ $taxname } ) ) {
-      push @{ $taxlisthash->{ $taxname  } }, $cust_bill_pkg;
-    }else{
-      $taxlisthash->{ $taxname } = [ $tax, $cust_bill_pkg ];
+  #split usage from recur
+  my $usage = $cust_bill_pkg->usage;
+  if ($usage) {
+    my $cust_bill_pkg_usage =
+        new FS::cust_bill_pkg { $cust_bill_pkg{recur}->hash };
+    $cust_bill_pkg_usage->recur($usage);
+    $cust_bill_pkg{recur}->recur( $cust_bill_pkg{recur}->recur - $usage );
+    $cust_bill_pkg{recur}->type( '' );
+    $cust_bill_pkg{''} = $cust_bill_pkg_usage;
+  }
+
+  #subdivide usage by usage_class
+  if (exists($cust_bill_pkg{''})) {
+    foreach my $class (grep {$_} @classes) {
+      my $usage = $cust_bill_pkg{''}->usage($class);
+      my $cust_bill_pkg_usage =
+          new FS::cust_bill_pkg { $cust_bill_pkg{''}->hash };
+      $cust_bill_pkg_usage->recur($usage);
+      $cust_bill_pkg{''}->recur( $cust_bill_pkg{''}->recur - $usage );
+      $cust_bill_pkg{$class} = $cust_bill_pkg_usage;
+    }
+    $cust_bill_pkg{''}->set('details', []);
+    delete $cust_bill_pkg{''} unless $cust_bill_pkg{''}->recur;
+  }
+
+  foreach my $key (keys %cust_bill_pkg) {
+    my @taxes = @{ $taxes{$key} };
+    my $cust_bill_pkg = $cust_bill_pkg{$key};
+
+    foreach my $tax ( @taxes ) {
+      my $taxname = ref( $tax ). ' '. $tax->taxnum;
+      if ( exists( $taxlisthash->{ $taxname } ) ) {
+        push @{ $taxlisthash->{ $taxname  } }, $cust_bill_pkg;
+      }else{
+        $taxlisthash->{ $taxname } = [ $tax, $cust_bill_pkg ];
+      }
     }
   }
+
+  # sort setup,recur,'', and the rest numeric && return
+  my @result = map { $cust_bill_pkg{$_} }
+               sort { my $ad = ($a=~/^\d+$/); my $bd = ($b=~/^\d+$/);
+                      ( $ad cmp $bd ) || ( $ad ? $a<=>$b : $b cmp $a )
+                    }
+               keys %cust_bill_pkg;
+
+  \@result;
+}
+
+sub _gather_taxes {
+  my $self = shift;
+  my $part_pkg = shift;
+  my $class = shift;
+  my $prefix = shift;
+
+  my @taxes = ();
+  my $geocode = $self->geocode('cch');
+
+  my @taxclassnums = map { $_->taxclassnum }
+                     $part_pkg->part_pkg_taxoverride($class);
+
+  unless (@taxclassnums) {
+    @taxclassnums = map { $_->taxclassnum }
+                    $part_pkg->part_pkg_taxrate('cch', $geocode, $class);
+  }
+  warn "Found taxclassnum values of ". join(',', @taxclassnums)
+    if $DEBUG;
+
+  my $extra_sql =
+    "AND (".
+    join(' OR ', map { "taxclassnum = $_" } @taxclassnums ). ")";
+
+  @taxes = qsearch({ 'table' => 'tax_rate',
+                     'hashref' => { 'geocode' => $geocode, },
+                     'extra_sql' => $extra_sql,
+                  })
+    if scalar(@taxclassnums);
+
+  # maybe eliminate this entirely, along with all the 0% records
+  unless ( @taxes ) {
+    return 
+      "fatal: can't find tax rate for zip/taxproduct/pkgpart ".
+      join('/', ( map $self->get("$prefix$_"),
+                      qw(zip)
+                ),
+                $part_pkg->taxproduct_description,
+                $part_pkg->pkgpart ). "\n";
+  }
+
+  warn "Found taxes ".
+       join(',', map{ ref($_). " ". $_->get($_->primary_key) } @taxes). "\n" 
+   if $DEBUG;
+
+  [ @taxes ];
 
 }
 

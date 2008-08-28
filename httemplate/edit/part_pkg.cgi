@@ -23,6 +23,7 @@
                             'setuptax'         => 'Setup fee tax exempt',
                             'recurtax'         => 'Recurring fee tax exempt',
                             'taxclass'         => 'Tax class',
+                            'taxproduct_select'=> 'Tax products',
                             'plan'             => 'Price plan',
                             'disabled'         => 'Disable new orders',
                             'pay_weight'       => 'Payment weight',
@@ -82,7 +83,21 @@
                               {field=>'setuptax', type=>'checkbox', value=>'Y'},
                               {field=>'recurtax', type=>'checkbox', value=>'Y'},
                               {field=>'taxclass', type=>'select-taxclass' },
-                              {field=>'taxproductnum', type=>'select-taxproduct' },
+                              { field => 'taxproductnums',
+                                type  => 'hidden',
+                                value => join(',', @taxproductnums),
+                              },
+                              { field => 'taxproduct_select',
+                                type  => 'selectlayers',
+                                options => [ '(default)', @taxproductnums ],
+                                curr_value => '(default)',
+                                labels  => { ( '(default)' => '(default)' ),
+                                             map {($_=>$usage_class{$_})}
+                                             @taxproductnums
+                                           },
+                                layer_fields => \%taxproduct_fields,
+                                layer_values_callback => $taxproduct_values,
+                              },
 
                               { type  => 'tablebreak-tr-title',
                                 value => 'Promotions', #better name?
@@ -164,16 +179,41 @@ die "access denied"
 #my $part_pkg = '';
 
 my @agent_type = ();
-my $tax_override;
+my %tax_override = ();
 
 my $clone_part_pkg = '';
+
+my %taxproductnums = map { ($_->classnum => 1) }
+                     qsearch('usage_class', { 'disabled' => '' });
+
+if ( $cgi->param('error') ) {  # oh well
+  foreach ($cgi->param) {
+    /^usage_taxproductnum_(\d+)$/ && ($taxproductnums{$1} = 1);
+  }
+} elsif ( my $pkgpart = $cgi->keywords || $cgi->param('pkgpart') ) {
+  $pkgpart =~ /^(\d+)$/ or die "illegal pkgpart";
+  my $part_pkg = qsearchs( 'part_pkg', { pkgpart => $pkgpart } );
+  die "no part_pkg for pkgpart $pkgpart" unless $pkgpart;
+  foreach ($part_pkg->options) {
+    /^usage_taxproductnum_(\d+)$/ && ($taxproductnums{$1} = 1);
+  }
+  foreach ($part_pkg->part_pkg_taxoverride) {
+    $taxproductnums{$_->usage_class} = 1
+      if $_->usage_class;
+  }
+} else {
+  # do nothing
+}
+my @taxproductnums = ( qw( setup recur ), sort (keys %taxproductnums) );
 
 my %options = ();
 my $recur_disabled = 1;
 my $error_callback = sub {
   my($cgi, $object, $fields, $opt ) = @_;
   (@agent_type) = $cgi->param('agent_type');
-  $tax_override = $cgi->param('tax_override');
+  $tax_override{''} = $cgi->param('tax_override');
+  $tax_override{$_} = $cgi->param('tax_override_$_')
+    foreach(grep { /^tax_override_(\w+)$/ } $cgi->param);
   $opt->{action} = 'Custom' if $cgi->param('clone');
   $clone_part_pkg= qsearchs('part_pkg', { 'pkgpart' => $cgi->param('clone') } );
 
@@ -223,15 +263,19 @@ my $new_object_callback = sub {
 };
 
 my $edit_callback = sub {
-  my( $cgi, $object, $fields ) = @_;
+  my( $cgi, $object, $fields, $opt ) = @_;
 
   $recur_disabled = $object->freq ? 0 : 1;
 
   (@agent_type) = map {$_->typenum} qsearch('type_pkgs',{'pkgpart'=>$1});
-  $tax_override =
+  $tax_override{$_} =
     join (",", map {$_->taxclassnum}
-               qsearch( 'part_pkg_taxoverride', {'pkgpart' => $1} )
-         );
+               qsearch( 'part_pkg_taxoverride', { 'pkgpart' => $object->pkgpart,
+                                                  'usage_class' => $_,
+                                                }
+                      )
+         )
+    foreach ( '', @taxproductnums );
 
 #    join (",", map {$_->taxclassnum}
 #               $part_pkg->part_pkg_taxrate( 'cch', $conf->config('defaultloc')
@@ -432,8 +476,57 @@ my $html_bottom = sub {
   include('/elements/selectlayers.html', %selectlayers, 'layers_only'=>1 ).
   '<SCRIPT TYPE="text/javascript">'.
     include('/elements/selectlayers.html', %selectlayers, 'js_only'=>1 ).
+    "taxproduct_selectchanged(document.getElementById('taxproduct_select'));".
   '</SCRIPT>';
 
+};
+
+my %usage_class = map { ($_->classnum => $_->classname) }
+                  qsearch('usage_class', {});
+$usage_class{setup} = 'Setup';
+$usage_class{recur} = 'Recurring';
+
+my %taxproduct_fields = map { $_ => [ "taxproductnum_$_", 
+                                      { type  => 'select-taxproduct',
+                                        #label => "$usage_class{$_} tax product",
+                                      },
+                                      "tax_override_$_", 
+                                      { type  => 'select-taxoverride' }
+                                    ]
+                            }
+                         @taxproductnums;
+$taxproduct_fields{'(default)'} =
+  [ 'taxproductnum', { type => 'select-taxproduct',
+                       #label => 'Default tax product',
+                     },
+    'tax_override',  { type => 'select-taxoverride' },
+  ];
+
+my $taxproduct_values = sub {
+  my ($cgi, $object, $flags) = @_;
+  my $routine =
+    sub { my $layer = shift;
+          my @fields = @{$taxproduct_fields{$layer}};
+          my @values = ();
+          while( @fields ) {
+            my $field = shift @fields;
+            shift @fields;
+            $field =~ /^taxproductnum_\w+$/ &&
+              push @values, ( $field => $options{"usage_$field"} );
+            $field =~ /^tax_override_(\w+)$/ &&
+              push @values, ( $field => $tax_override{$1} );
+            $field =~ /^taxproductnum$/ &&
+              push @values, ( $field => $object->taxproductnum );
+            $field =~ /^tax_override$/ &&
+              push @values, ( $field => $tax_override{''} );
+          }
+          { (@values) };
+        };
+  
+  my @result = 
+    map { ( $_ => { &{$routine}($_) } ) } ( '(default)', @taxproductnums );
+  return({ @result });
+  
 };
 
 </%init>
