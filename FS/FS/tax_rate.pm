@@ -717,7 +717,7 @@ sub batch_import {
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
-  return "Empty file!" unless $imported;
+  return "Empty file!" unless ($imported || $format eq 'cch-update');
 
   ''; #no error
 
