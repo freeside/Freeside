@@ -17,6 +17,9 @@ our %desired = (
   'debian_version'   => qr/^4/,
   'apache_mpm'       => qw/^(Prefork|$)/,
 
+  #payment gateway survey
+  'payment_gateway'  => qw/^authorizenet$/,
+
   #stuff to add/replace later
   #'pg_version'       => qr/^8\.[1-9]/,
   #'apache_version'   => qr/^2/,
