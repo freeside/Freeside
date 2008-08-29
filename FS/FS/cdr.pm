@@ -129,6 +129,8 @@ following fields are currently supported:
 
 =item freesidestatus - NULL, done (or something)
 
+=item cdrbatch
+
 =back
 
 =head1 METHODS
@@ -617,6 +619,7 @@ sub batch_import {
 
   my $fh = $param->{filehandle};
   my $format = $param->{format};
+  my $cdrbatch = $param->{cdrbatch};
 
   return "Unknown format $format"
     unless exists( $cdr_info{$format} )
@@ -699,6 +702,8 @@ sub batch_import {
       }
       @{ $info->{'import_fields'} }
     ;
+ 
+    $cdr{cdrbatch} = $cdrbatch;
 
     my $cdr = new FS::cdr ( \%cdr );
 
@@ -732,7 +737,7 @@ sub batch_import {
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   #might want to disable this if we skip records for any reason...
-  return "Empty file!" unless $imported;
+  return "Empty file!" unless $imported || $param->{empty_ok};
 
   '';
 

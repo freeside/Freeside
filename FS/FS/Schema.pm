@@ -1921,10 +1921,12 @@ sub tables_hashref {
         #NULL, done (or something)
         'freesidestatus', 'varchar',   'NULL',     32,   '', '', 
 
+        'cdrbatch', 'varchar', 'NULL', $char_d, '', '',
+
       ],
       'primary_key' => 'acctid',
       'unique' => [],
-      'index' => [ [ 'calldate' ], [ 'dst' ], [ 'accountcode' ], [ 'freesidestatus' ] ],
+      'index' => [ [ 'calldate' ], [ 'dst' ], [ 'accountcode' ], [ 'freesidestatus' ], [ 'cdrbatch' ], ],
     },
 
     'cdr_calltype' => {

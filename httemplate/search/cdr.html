@@ -89,6 +89,20 @@ if ( $cgi->param('charged_party') =~ /^\s*([\d\-\+\ ]+)\s*$/ ) {
                     OR charged_party = '1$charged_party' ) ";
 }
 
+###
+# cdrbatch
+###
+
+if ( $cgi->param('cdrbatch') ne '__ALL__' ) {
+  if ( $cgi->param('cdrbatch') eq '' ) {
+    my $search = "( cdrbatch IS NULL OR cdrbatch = '' )";
+    push @qsearch, $search;
+    push @search,  $search;
+  } else {
+    $hashref->{cdrbatch} = $cgi->param('cdrbatch');
+    push @search, 'cdrbatch = '. dbh->quote($cgi->param('cdrbatch'));
+  }
+}
 
 ###
 # finish it up

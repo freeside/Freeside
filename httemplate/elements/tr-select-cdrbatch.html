@@ -1,0 +1,32 @@
+% if ( ! scalar(@{ $opt{'cdrbatches'} }) ) { 
+
+  <INPUT TYPE="hidden" NAME="<% $opt{'element_name'} || $opt{'field'} || 'cdrbatch' %>" VALUE="<% $selected_cdrbatch %>">
+
+% } else { 
+
+  <TR>
+    <TD ALIGN="right"><% $opt{'cdrbatch'} || 'CDR Batch: ' %></TD>
+    <TD>
+      <% include( '/elements/select-cdrbatch.html', 'curr_value' => $selected_cdrbatch, %opt ) %>
+    </TD>
+  </TR>
+
+% } 
+<%init>
+
+my( %opt ) = @_;
+my $conf = new FS::Conf;
+my $selected_cdrbatch = $opt{'curr_value'}; # || $opt{'value'} necessary?
+
+unless ( $opt{'cdrbatches'} ) {
+
+  my $sth = dbh->prepare('SELECT cdrbatch FROM cdr')
+    or die dbh->errstr;
+  $sth->execute or die $sth->errstr;
+  my %cdrbatches = map { $_->[0] => 1 } @{$sth->fetchall_arrayref};
+  @{ $opt{'cdrbatches'} } = grep $_, keys %cdrbatches;
+
+}
+
+</%init>
+

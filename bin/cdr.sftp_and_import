@@ -1,0 +1,114 @@
+#!/usr/bin/perl
+#
+# Usage:
+#  cdr.sftp_and_import [ -e extension ] [ -d donefolder ] [ -v ] user format [sftpuser@]servername
+#
+# -e: file extension, defaults to .csv
+# -d: if specified, moves files to the specified folder when done
+
+use strict;
+use Getopt::Std;
+use Net::SFTP::Foreign;
+use FS::UID qw(adminsuidsetup datasrc);
+use FS::cdr;
+
+###
+# parse command line
+###
+
+use vars qw( $opt_e $opt_d $opt_u $opt_v );
+getopts('e:d:u:v');
+
+$opt_e ||= 'csv';
+#$opt_e = ".$opt_e" unless $opt_e =~ /^\./;
+$opt_e =~ s/^\.//;
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+# %%%FREESIDE_CACHE%%%
+my $cachedir = '/usr/local/etc/freeside/cache.'. datasrc. '/cdrs';
+mkdir $cachedir unless -d $cachedir;
+
+my $format = shift or die &usage;
+
+use vars qw( $servername );
+$servername = shift or die &usage;
+
+###
+# get the file list
+###
+
+warn "Retreiving directory listing\n" if $opt_v;
+
+my $ls_sftp = sftp();
+
+my $ls = $ls_sftp->ls('.', wanted => qr/\.*$opt_e$/i );
+
+###
+# import each file
+###
+
+foreach my $file ( @$ls ) {
+
+  my $filename = $file->{filename};
+  warn "Downloading $filename\n" if $opt_v;
+
+  #get the file
+  my $get_sftp = sftp();
+  $get_sftp->get($filename, "$cachedir/$filename")
+    or die "Can't get $filename: ". $get_sftp->error;
+
+  warn "Processing $filename\n" if $opt_v;
+
+  open(FILE, "$cachedir/$filename") or die "can't read $cachedir/$filename: $!";
+
+  my $error = FS::cdr::batch_import( {
+    'filehandle' => *FILE{IO},
+    'format'     => $format,
+    'cdrbatch'   => $filename,
+    'empty_ok'   => 1,
+  } );
+  die $error if $error;
+
+  close FILE;
+
+  if ( $opt_d ) {
+    my $mv_sftp = sftp();
+    $mv_sftp->rename($filename, "$opt_d/$filename")
+      or die "can't move $filename to $opt_d: ". $mv_sftp->error;
+  }
+
+  unlink "$cachedir/$filename";
+
+}
+
+1;
+
+###
+# sub
+###
+
+sub usage {
+  "Usage: \n  cdr.import user format servername\n";
+}
+
+use vars qw( $sftp );
+
+sub sftp {
+
+  #reuse connections
+  return $sftp if $sftp && $sftp->cwd;
+
+  my %sftp = ( host => $servername );
+
+  #XXX remove these
+  $sftp{port} = 10022;
+  #$sftp{more} = '-v';
+
+  $sftp = Net::SFTP::Foreign->new(%sftp);
+  $sftp->error and die "SFTP connection failed: ". $sftp->error;
+
+  $sftp;
+}
+
