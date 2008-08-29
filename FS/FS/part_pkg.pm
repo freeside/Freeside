@@ -929,6 +929,7 @@ sub _expand_cch_taxproductnum {
                          ? ( split ':', $part_pkg_taxproduct->taxproduct )
                          : ()
                      );
+  $a = '' unless $a; $b = '' unless $b; $c = '' unless $c; $d = '' unless $d;
   my $extra_sql = "AND ( taxproduct = '$a:$b:$c:$d'
                       OR taxproduct = '$a:$b:$c:'
                       OR taxproduct = '$a:$b:".":$d'
