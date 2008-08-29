@@ -29,8 +29,9 @@ my $conf = new FS::Conf;
 
 unless ( $opt{'taxclasses'} ) {
 
-  my $sth = dbh->prepare('SELECT DISTINCT taxclass FROM cust_main_county')
-     or die dbh->errstr;
+  #my $sth = dbh->prepare('SELECT DISTINCT taxclass FROM cust_main_county')
+  my $sth = dbh->prepare('SELECT taxclass FROM part_pkg_taxclass')
+    or die dbh->errstr;
   $sth->execute or die $sth->errstr;
   my %taxclasses = map { $_->[0] => 1 } @{$sth->fetchall_arrayref};
   @{ $opt{'taxclasses'} } = grep $_, keys %taxclasses;

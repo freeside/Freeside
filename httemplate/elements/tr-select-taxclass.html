@@ -2,7 +2,7 @@
 %      || scalar(@{ $opt{'taxclasses'} }) == 0
 % ) { 
 
-  <INPUT TYPE="hidden" NAME=""<% $opt{'element_name'} || $opt{'field'} || 'taxclass' %>" VALUE="<% $selected_taxclass %>">
+  <INPUT TYPE="hidden" NAME="<% $opt{'element_name'} || $opt{'field'} || 'taxclass' %>" VALUE="<% $selected_taxclass %>">
 
 % } else { 
 
