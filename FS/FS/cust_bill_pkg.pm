@@ -61,8 +61,7 @@ supported:
 
 =item section - Invoice section (overrides normal package section)
 
-=duplicate - Indicates this item appears elsewhere on the invoice
-             (and should not be retaxed or reincluded in totals)
+=duplicate - Indicates this item is a candidate for summarizing and duplicating at print time
 
 =post_total - A hint that this item should appear after invoice totals
 
@@ -75,6 +74,11 @@ sub section {
   } else {
     $self->getfield('section') || $self->part_pkg->categoryname;
   }
+}
+
+sub duplicate_section {
+  my $self = shift;
+  $self->duplicate ? $self->part_pkg->categoryname : '';
 }
 
 =item quantity - If not set, defaults to 1
@@ -375,7 +379,7 @@ sub owed_recur {
 # modeled after cust_bill::owed...
 sub owed {
   my( $self, $field ) = @_;
-  my $balance = $self->duplicate ? 0 : $self->$field();
+  my $balance = $self->$field();
   $balance -= $_->amount foreach ( $self->cust_bill_pay_pkg($field) );
   $balance -= $_->amount foreach ( $self->cust_credit_bill_pkg($field) );
   $balance = sprintf( '%.2f', $balance );

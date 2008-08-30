@@ -2555,6 +2555,15 @@ sub _items_sections {
     if ( $cust_bill_pkg->pkgnum > 0 ) {
 
       my $desc = $cust_bill_pkg->section;
+      my $dup_desc = $cust_bill_pkg->duplicate_section;
+
+      if ($cust_bill_pkg->duplicate) {
+        $s{$dup_desc} += $cust_bill_pkg->setup
+          if ( $cust_bill_pkg->setup != 0 );
+
+        $s{$dup_desc} += $cust_bill_pkg->recur
+          if ( $cust_bill_pkg->recur != 0 );
+      }
 
       if ( $cust_bill_pkg->post_total ) {
         $l{$desc} += $cust_bill_pkg->setup
@@ -2634,11 +2643,12 @@ sub _items_previous {
 sub _items_pkg {
   my $self = shift;
   my %options = @_;
-  my $section = delete $options{'section'};
+  my $section = $options{'section'};
+  my $desc = $section->{'description'};
   my @cust_bill_pkg =
     grep { $_->pkgnum &&
            ( defined($section)
-               ? $_->section eq $section->{'description'}
+               ? ( $_->section eq $desc || $_->duplicate_section eq $desc )
                : 1
            )
          } $self->cust_bill_pkg;
@@ -2671,6 +2681,7 @@ sub _items_cust_bill_pkg {
   my $unsquelched = $opt{unsquelched} || '';
 
   my @b = ();
+  my $last_pkgnum = '';
   foreach my $cust_bill_pkg ( grep { $unsquelched ? 1 : ! $_->separate_cdr }
                               @$cust_bill_pkg
                             )
@@ -2706,11 +2717,19 @@ sub _items_cust_bill_pkg {
           quantity        => $cust_bill_pkg->quantity,
           ext_description => \@d,
         };
+
+        $last_pkgnum = '';
+
       }
 
       if ( $cust_bill_pkg->recur != 0 ) {
 
-        my $description = $desc;
+        my $is_summary =
+          ( $cust_bill_pkg->duplicate && 
+            $opt{section}->{description} ne $cust_bill_pkg->section
+          );
+        my $description = $is_summary ? "Usage charges" : $desc;
+
         unless ( $conf->exists('disable_line_item_date_ranges') ) {
           $description .= " (" . time2str("%x", $cust_bill_pkg->sdate).
                           " - ". time2str("%x", $cust_bill_pkg->edate). ")";
@@ -2718,23 +2737,42 @@ sub _items_cust_bill_pkg {
 
         #at least until cust_bill_pkg has "past" ranges in addition to
         #the "future" sdate/edate ones... see #3032
-        my @d = map &{$escape_function}($_),
-                    $cust_pkg->h_labels_short($self->_date);
+        my @d = ();
+        push @d, map &{$escape_function}($_),
+                       $cust_pkg->h_labels_short($self->_date)
                                               #$cust_bill_pkg->edate,
                                               #$cust_bill_pkg->sdate),
-        @d = () if $cust_bill_pkg->itemdesc;
-        push @d, $cust_bill_pkg->details(%details_opt);
+          unless ($cust_bill_pkg->pkgnum eq $last_pkgnum);
 
-        push @b, {
-          description     => $description,
-          #pkgpart         => $part_pkg->pkgpart,
-          pkgnum          => $cust_bill_pkg->pkgnum,
-          amount          => sprintf("%.2f", $cust_bill_pkg->recur),
-          unit_amount     => sprintf("%.2f", $cust_bill_pkg->unitrecur),
-          quantity        => $cust_bill_pkg->quantity,
-          ext_description => \@d,
-        };
+        @d = () if ($cust_bill_pkg->itemdesc || $is_summary);
+        push @d, $cust_bill_pkg->details(%details_opt)
+          unless $is_summary;
 
+        if ($cust_bill_pkg->pkgnum eq $last_pkgnum) {
+
+          $b[$#b]->{amount} =
+            sprintf("%.2f", $b[$#b]->{amount} + $cust_bill_pkg->recur);
+          push @{$b[$#b]->{ext_description}}, @d;
+
+        }else{
+
+          push @b, {
+            description     => $description,
+            #pkgpart         => $part_pkg->pkgpart,
+            pkgnum          => $cust_bill_pkg->pkgnum,
+            amount          => sprintf("%.2f", $cust_bill_pkg->recur),
+            unit_amount     => sprintf("%.2f", $cust_bill_pkg->unitrecur),
+            quantity        => $cust_bill_pkg->quantity,
+            ext_description => \@d,
+          };
+
+        }
+
+        if ($conf->exists('separate_usage') && $cust_bill_pkg->type ne 'U') {
+          $last_pkgnum = '';
+        }else{
+          $last_pkgnum = $cust_bill_pkg->pkgnum;
+        }
       }
 
     } else { #pkgnum tax or one-shot line item (??)
@@ -2753,6 +2791,8 @@ sub _items_cust_bill_pkg {
           'amount'      => sprintf("%.2f", $cust_bill_pkg->recur),
         };
       }
+
+      $last_pkgnum = '';
 
     }
 

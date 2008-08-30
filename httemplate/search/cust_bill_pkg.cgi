@@ -70,8 +70,6 @@ my $agentnums_sql =
 
 my @where = ( $agentnums_sql );
 
-push @where, "(duplicate IS NULL OR duplicate = '' )";
-
 my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
 push @where, "_date >= $beginning",
              "_date <= $ending";

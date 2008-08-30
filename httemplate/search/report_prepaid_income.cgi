@@ -43,9 +43,8 @@ my( $total, $total_legacy ) = ( 0, 0 );
 my @cust_bill_pkg =
   grep { $_->cust_pkg && $_->cust_pkg->part_pkg->freq !~ /^([01]|\d+[dw])$/ }
     qsearch( 'cust_bill_pkg', {
-                                'recur'     => { op=>'!=', value=>0 },
-                                'edate'     => { op=>'>', value=>$now },
-                                'duplicate' => '',
+                                'recur' => { op=>'!=', value=>0 },
+                                'edate' => { op=>'>', value=>$now },
                               }, );
 
 my @cust_pkg = 

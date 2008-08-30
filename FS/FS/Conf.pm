@@ -866,6 +866,13 @@ worry that config_items is freeside-specific and icky.
     'type'        => 'checkbox',
   },
 
+  { 
+    'key'         => 'separate_usage',
+    'section'     => 'billing',
+    'description' => 'Split the rated call usage into a separate line from the recurring charges.',
+    'type'        => 'checkbox',
+  },
+
   {
     'key'         => 'payment_receipt_email',
     'section'     => 'billing',

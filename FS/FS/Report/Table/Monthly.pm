@@ -329,7 +329,6 @@ sub cust_bill_pkg {
         LEFT JOIN cust_pkg USING ( pkgnum )
         LEFT JOIN part_pkg USING ( pkgpart )
       WHERE pkgnum != 0
-        AND ( duplicate IS NULL OR duplicate = '' )
         AND $where
         AND ". $self->in_time_period_and_agent($speriod, $eperiod, $agentnum)
   );

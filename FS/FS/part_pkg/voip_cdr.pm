@@ -85,10 +85,6 @@ tie my %rating_method, 'Tie::IxHash',
                          'select_options' => { FS::cdr::invoice_formats() },
                        },
 
-    'separate_usage' => { 'name' => 'Separate usage charges from recurring charges',
-                          'type' => 'checkbox',
-                        },
-
     'usage_section' => { 'name' => 'Section in which to place separate usage charges',
                        },
 
@@ -127,7 +123,7 @@ tie my %rating_method, 'Tie::IxHash',
                        disable_src
                        domestic_prefix international_prefix
                        use_amaflags use_disposition output_format
-                       separate_usage summarize_usage usage_section
+                       summarize_usage usage_section
                      )
                   ],
   'weight' => 40,
@@ -138,16 +134,8 @@ sub calc_setup {
   $self->option('setup_fee');
 }
 
-sub calc_recur {
-  my $self = shift;
-  my $charges = 0;
-  $charges = $self->calc_usage(@_)
-    unless $self->option('separate_usage', 'Hush!');
-  $self->option('recur_fee') + $charges;
-}
-
 #false laziness w/voip_sqlradacct calc_recur resolve it if that one ever gets used again
-sub calc_usage {
+sub calc_recur {
   my($self, $cust_pkg, $sdate, $details, $param ) = @_;
 
   my $last_bill = $cust_pkg->last_bill;
@@ -452,7 +440,7 @@ sub calc_usage {
 
   } #if ( $spool_cdr && length($downstream_cdr) )
 
-  $charges;
+  $self->option('recur_fee') + $charges;
 
 }
 
@@ -470,56 +458,6 @@ sub base_recur {
 sub calc_units {    
   my($self, $cust_pkg ) = @_;
   scalar(grep { $_->part_svc->svcdb eq 'svc_phone' } $cust_pkg->cust_svc);
-}
-
-sub append_cust_bill_pkgs {
-  my $self = shift;
-  my($cust_pkg, $sdate, $details, $param ) = @_;
-  return []
-    unless $self->option('separate_usage', 'Hush!');
-
-  my @details = ();
-  my $charges = $self->calc_usage($cust_pkg, $sdate, \@details, $param);
-
-  return []
-    unless $charges;  # unless @details?
-
-  my @cust_bill_pkg = ();
-
-  my $want_summary = $self->option('summarize_usage', 'Hush!') &&
-                     $self->option('usage_section', 'Hush!');
-
-  push @cust_bill_pkg, new FS::cust_bill_pkg {
-    'pkgnum'    => $cust_pkg->pkgnum,
-    'setup'     => 0,
-    'unitsetup' => 0,
-    'recur'     => sprintf( "%.2f", $charges),  # hmmm
-    'unitrecur' => 0,
-    'quantity'  => $cust_pkg->quantity,
-    'sdate'     => $$sdate,
-    'edate'     => $cust_pkg->bill,             # already fiddled
-    'itemdesc'  => 'Usage charges',             # configurable?
-    'duplicate' => 'Y',
-  }
-    if $want_summary;
-
-  push @cust_bill_pkg, new FS::cust_bill_pkg {
-    'pkgnum'     => $cust_pkg->pkgnum,
-    'setup'      => 0,
-    'unitsetup ' => 0,
-    'recur'      => sprintf( "%.2f", $charges),  # hmmm
-    'unitrecur ' => 0,
-    'quantity'   => $cust_pkg->quantity,
-    'sdate'      => $$sdate,
-    'edate'      => $cust_pkg->bill,             # already fiddled
-    'itemdesc'   => 'Usage charges',             # configurable?
-    'section'    => $self->option('usage_section', 'Hush!'),
-    'details'    => \@details,
-    'post_total' => ( $want_summary ? 'Y' : '' ),
-  };
-
-
-  return [ @cust_bill_pkg ];
 }
 
 1;

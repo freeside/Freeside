@@ -2068,7 +2068,6 @@ sub bill {
   $self->select_for_update; #mutex
 
   my @cust_bill_pkg = ();
-  my @appended_cust_bill_pkg = ();
 
   ###
   # find the packages which are due for billing, find out how much they are
@@ -2107,7 +2106,6 @@ sub bill {
                             'cust_pkg'            => $cust_pkg,
                             'precommit_hooks'     => \@precommit_hooks,
                             'line_items'          => \@cust_bill_pkg,
-                            'appended_line_items' => \@appended_cust_bill_pkg,
                             'setup'               => \$total_setup,
                             'recur'               => \$total_recur,
                             'tax_matrix'          => \%taxlisthash,
@@ -2122,8 +2120,6 @@ sub bill {
     } #foreach my $part_pkg
 
   } #foreach my $cust_pkg
-
-  push @cust_bill_pkg, @appended_cust_bill_pkg;
 
   unless ( @cust_bill_pkg ) { #don't create an invoice w/o line items
     #but do commit any package date cycling that happened
@@ -2144,7 +2140,6 @@ sub bill {
                             'cust_pkg'            => $postal_pkg,
                             'precommit_hooks'     => \@precommit_hooks,
                             'line_items'          => \@cust_bill_pkg,
-                            'appended_line_items' => \@appended_cust_bill_pkg,
                             'setup'               => \$total_setup,
                             'recur'               => \$total_recur,
                             'tax_matrix'          => \%taxlisthash,
@@ -2296,8 +2291,6 @@ sub _make_lines {
   my $cust_pkg = $params{cust_pkg} or die "no cust_pkg specified";
   my $precommit_hooks = $params{precommit_hooks} or die "no package specified";
   my $cust_bill_pkgs = $params{line_items} or die "no line buffer specified";
-  my $appended_cust_bill_pkg = $params{appended_line_items}
-    or die "no appended line buffer specified";
   my $total_setup = $params{setup} or die "no setup accumulator specified";
   my $total_recur = $params{recur} or die "no recur accumulator specified";
   my $taxlisthash = $params{tax_matrix} or die "no tax accumulator specified";
@@ -2448,6 +2441,7 @@ sub _make_lines {
 
       warn "    charges (setup=$setup, recur=$recur); adding line items\n"
         if $DEBUG > 1;
+
       my $cust_bill_pkg = new FS::cust_bill_pkg {
         'pkgnum'    => $cust_pkg->pkgnum,
         'setup'     => $setup,
@@ -2469,61 +2463,19 @@ sub _make_lines {
       # handle taxes
       ###
 
-      unless ( $self->tax =~ /Y/i || $self->payby eq 'COMP' ) {
+      my $err_or_cust_bill_pkg =
+        $self->_handle_taxes($part_pkg, $taxlisthash, $cust_bill_pkg, $cust_pkg);
 
-        #some garbage disappears on cust_bill_pkg refactor
-        my $err_or_cust_bill_pkg =
-          $self->_handle_taxes($part_pkg, $taxlisthash, $cust_bill_pkg);
+      return $err_or_cust_bill_pkg
+        unless ( ref($err_or_cust_bill_pkg) );
 
-        return $err_or_cust_bill_pkg
-          unless ( ref($err_or_cust_bill_pkg) );
-
-        push @$cust_bill_pkgs, @$err_or_cust_bill_pkg;
-
-      } #unless $self->tax =~ /Y/i || $self->payby eq 'COMP'
+      push @$cust_bill_pkgs, @$err_or_cust_bill_pkg;
 
     } #if $setup != 0 || $recur != 0
       
   } #if $line_items
 
-  if ( $part_pkg->can('append_cust_bill_pkgs') ) {
-    my %param = ( 'precommit_hooks' => $precommit_hooks, );
-    my ($more_cust_bill_pkgs) =
-      eval { $part_pkg->append_cust_bill_pkgs( $cust_pkg, \$sdate, \%param ) };
-
-    return "$@ running append_cust_bill_pkgs for $cust_pkg\n"
-      if ( $@ );
-    return "$more_cust_bill_pkgs"
-      unless ( ref($more_cust_bill_pkgs) );
-
-    foreach my $cust_bill_pkg ( @{$more_cust_bill_pkgs} ) {
-
-      $cust_bill_pkg->pkgpart_override($part_pkg->pkgpart)
-        unless $part_pkg->pkgpart == $real_pkgpart;
-
-      unless ($cust_bill_pkg->duplicate) {
-        $$total_setup += $cust_bill_pkg->setup;
-        $$total_recur += $cust_bill_pkg->recur;
-
-        ###
-        # handle taxes
-        ###
-
-        unless ( $self->tax =~ /Y/i || $self->payby eq 'COMP' ) {
-
-          #some garbage disappears on cust_bill_pkg refactor
-          my $err_or_cust_bill_pkg =
-            $self->_handle_taxes($part_pkg, $taxlisthash, $cust_bill_pkg);
-
-          return $err_or_cust_bill_pkg
-            unless ( ref($err_or_cust_bill_pkg) );
-
-          push @$appended_cust_bill_pkg, @$err_or_cust_bill_pkg;
-
-        } #unless $self->tax =~ /Y/i || $self->payby eq 'COMP'
-      }
-    }
-  }
+  '';
 
 }
 
@@ -2532,6 +2484,7 @@ sub _handle_taxes {
   my $part_pkg = shift;
   my $taxlisthash = shift;
   my $cust_bill_pkg = shift;
+  my $cust_pkg = shift;
 
   my %cust_bill_pkg = ();
   my %taxes = ();
@@ -2549,6 +2502,7 @@ sub _handle_taxes {
 
   if ( $conf->exists('enable_taxproducts')
        && (scalar($part_pkg->part_pkg_taxoverride) || $part_pkg->has_taxproduct)
+       && ( $self->tax !~ /Y/i && $self->payby ne 'COMP' )
      )
   { 
 
@@ -2564,7 +2518,7 @@ sub _handle_taxes {
       $taxes{''} = $err_or_ref;
     }
 
-  }else{
+  }elsif ( $self->tax !~ /Y/i && $self->payby ne 'COMP' ) {
 
     my %taxhash = map { $_ => $self->get("$prefix$_") }
                       qw( state county country );
@@ -2599,10 +2553,16 @@ sub _handle_taxes {
                   $part_pkg->taxclass ). "\n";
     }
 
-  } #if $conf->exists('enable_taxproducts') 
+  } #if $conf->exists('enable_taxproducts') ...
+ 
+  my $section = $cust_pkg->part_pkg->option('usage_section', 'Hush!')
+    if $cust_pkg->part_pkg->option('separate_usage');
+  my $want_duplicate =
+    $cust_pkg->part_pkg->option('summarize_usage', 'Hush!') &&
+    $cust_pkg->part_pkg->option('usage_section', 'Hush!');
 
-  # XXX all this goes away with cust_bill_pay refactor
-
+  # XXX this mostly goes away with cust_bill_pkg refactor
+ 
   $cust_bill_pkg{setup} = $cust_bill_pkg if $cust_bill_pkg->setup;
   $cust_bill_pkg{recur} = $cust_bill_pkg if $cust_bill_pkg->recur;
     
@@ -2626,6 +2586,9 @@ sub _handle_taxes {
         new FS::cust_bill_pkg { $cust_bill_pkg{recur}->hash };
     $cust_bill_pkg_usage->recur( $usage );
     $cust_bill_pkg_usage->type( 'U' );
+    $cust_bill_pkg_usage->duplicate( $want_duplicate ? 'Y' :  '' );
+    $cust_bill_pkg_usage->section( $section );
+    $cust_bill_pkg_usage->post_total( $want_duplicate ? 'Y' :  '' );
     my $recur = sprintf( "%.2f", $cust_bill_pkg{recur}->recur - $usage );
     $cust_bill_pkg{recur}->recur( $recur );
     $cust_bill_pkg{recur}->type( '' );
