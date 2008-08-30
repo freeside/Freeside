@@ -397,7 +397,12 @@ sub taxline {
   my $taxable_units = 0;
   unless ($self->recurtax =~ /^Y$/i) {
     if ($self->unittype == 0) {
-      $taxable_units += $_->units foreach @cust_bill_pkg;
+      my %seen = ();
+      foreach (@cust_bill_pkg) {
+        $taxable_units += $_->units
+          unless $seen{$_->pkgnum};
+        $seen{$_->pkgnum}++;
+      }
     }elsif ($self->unittype == 1) {
       return qq!fatal: can't (yet) handle fee with minute unit type!;
     }elsif ($self->unittype == 2) {

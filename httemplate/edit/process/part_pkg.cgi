@@ -164,7 +164,7 @@ foreach my $override_class ($cgi->param) {
     'link_table'   => 'part_pkg_taxoverride',
     'target_table' => 'tax_class',
     'hashref'      => { 'usage_class' => $class },
-    'params'       => \@tax_overrides,
+    'params'       => [ @tax_overrides ],
   };
 
 }

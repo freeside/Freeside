@@ -139,7 +139,7 @@ sub insert {
       'billpkgnum' => $self->billpkgnum,
       'format'     => (ref($detail) ? $detail->[0] : '' ),
       'detail'     => (ref($detail) ? $detail->[1] : $detail ),
-      'charge'     => (ref($detail) ? $detail->[2] : '' ),
+      'amount'     => (ref($detail) ? $detail->[2] : '' ),
       'classnum'   => (ref($detail) ? $detail->[3] : '' ),
     };
     $error = $cust_bill_pkg_detail->insert;
@@ -481,13 +481,13 @@ sub usage {
     @values = 
       map { $_->[2] }
       grep { ref($_) && ( defined($classnum) ? $_->[3] eq $classnum : 1 ) }
-      $self->get('details');
+      @{ $self->get('details') };
 
   }else{
 
     my $hashref = { 'billpkgnum' => $self->billpkgnum };
     $hashref->{ 'classnum' } = $classnum if defined($classnum);
-    @values = map { $_->charge } qsearch('cust_bill_pkg_detail', $hashref);
+    @values = map { $_->amount } qsearch('cust_bill_pkg_detail', $hashref);
 
   }
 

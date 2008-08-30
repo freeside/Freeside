@@ -2542,7 +2542,8 @@ sub _handle_taxes {
     : '';
 
   my @classes;
-  push @classes, $cust_bill_pkg->usage_classes if $cust_bill_pkg->type eq 'U';
+  #push @classes, $cust_bill_pkg->usage_classes if $cust_bill_pkg->type eq 'U';
+  push @classes, $cust_bill_pkg->usage_classes if $cust_bill_pkg->usage;
   push @classes, 'setup' if $cust_bill_pkg->setup;
   push @classes, 'recur' if $cust_bill_pkg->recur;
 
@@ -2610,32 +2611,40 @@ sub _handle_taxes {
     my $cust_bill_pkg_recur = new FS::cust_bill_pkg { $cust_bill_pkg->hash };
     $cust_bill_pkg->set('details', []);
     $cust_bill_pkg->recur(0);
+    $cust_bill_pkg->unitrecur(0);
     $cust_bill_pkg->type('');
+    $cust_bill_pkg_recur->setup(0);
+    $cust_bill_pkg_recur->unitsetup(0);
     $cust_bill_pkg{recur} = $cust_bill_pkg_recur;
   }
 
   #split usage from recur
-  my $usage = $cust_bill_pkg->usage;
+  my $usage = sprintf( "%.2f", $cust_bill_pkg{recur}->usage );
+  warn "usage is $usage\n" if $DEBUG;
   if ($usage) {
     my $cust_bill_pkg_usage =
         new FS::cust_bill_pkg { $cust_bill_pkg{recur}->hash };
-    $cust_bill_pkg_usage->recur($usage);
-    $cust_bill_pkg{recur}->recur( $cust_bill_pkg{recur}->recur - $usage );
+    $cust_bill_pkg_usage->recur( $usage );
+    $cust_bill_pkg_usage->type( 'U' );
+    my $recur = sprintf( "%.2f", $cust_bill_pkg{recur}->recur - $usage );
+    $cust_bill_pkg{recur}->recur( $recur );
     $cust_bill_pkg{recur}->type( '' );
+    $cust_bill_pkg{recur}->set('details', []);
     $cust_bill_pkg{''} = $cust_bill_pkg_usage;
   }
 
   #subdivide usage by usage_class
   if (exists($cust_bill_pkg{''})) {
-    foreach my $class (grep {$_} @classes) {
-      my $usage = $cust_bill_pkg{''}->usage($class);
+    foreach my $class (grep {$_ && $_ ne 'setup' && $_ ne 'recur' } @classes) {
+      my $usage = sprintf( "%.2f", $cust_bill_pkg{''}->usage($class) );
       my $cust_bill_pkg_usage =
           new FS::cust_bill_pkg { $cust_bill_pkg{''}->hash };
-      $cust_bill_pkg_usage->recur($usage);
-      $cust_bill_pkg{''}->recur( $cust_bill_pkg{''}->recur - $usage );
+      $cust_bill_pkg_usage->recur( $usage );
+      $cust_bill_pkg_usage->set('details', []);
+      my $classless = sprintf( "%.2f", $cust_bill_pkg{''}->recur - $usage );
+      $cust_bill_pkg{''}->recur( $classless );
       $cust_bill_pkg{$class} = $cust_bill_pkg_usage;
     }
-    $cust_bill_pkg{''}->set('details', []);
     delete $cust_bill_pkg{''} unless $cust_bill_pkg{''}->recur;
   }
 
