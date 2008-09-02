@@ -2392,12 +2392,17 @@ when emailing the invoice as part of a multipart/related MIME email.
 =cut
 
 sub print_html {
-  my( $self, $today, $template, $cid ) = @_;
+  my $self = shift;
+  my %params;
+  if ( ref $_[0]  ) {
+    %params = %{ shift() }; 
+  }else{
+    $params{'time'} = shift;
+    $params{'template'} = shift;
+    $params{'cid'} = shift;
+  }
 
-  my %params = ( 'format' => 'html' );
-  $params{'time'} = $today if $today;
-  $params{'template'} = $template if $template;
-  $params{'cid'} = $cid if $cid;
+  $params{'format'} = 'html';
 
   $self->print_generic( %params );
 }
@@ -2682,9 +2687,7 @@ sub _items_cust_bill_pkg {
 
   my @b = ();
   my $last_pkgnum = '';
-  foreach my $cust_bill_pkg ( grep { $unsquelched ? 1 : ! $_->separate_cdr }
-                              @$cust_bill_pkg
-                            )
+  foreach my $cust_bill_pkg ( @$cust_bill_pkg )
   {
 
     my $cust_pkg = $cust_bill_pkg->cust_pkg;

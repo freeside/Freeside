@@ -577,7 +577,7 @@ sub invoice {
   return { 'error'        => '',
            'invnum'       => $invnum,
            'invoice_text' => join('', $cust_bill->print_text ),
-           'invoice_html' => $cust_bill->print_html,
+           'invoice_html' => $cust_bill->print_html( { unsquelch_cdr => 1 } ),
          };
 
 }

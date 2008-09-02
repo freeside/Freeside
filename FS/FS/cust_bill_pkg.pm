@@ -455,18 +455,6 @@ sub unitrecur {
     : $self->getfield('unitrecur');
 }
 
-=item separate_cdr
-
-Returns true if this line item represents a cdr line item in its own section.
-  
-=cut
-
-# lame, but works for now
-sub separate_cdr {
-  my( $self ) = shift;
-  $self->pkgnum && $self->section ne $self->part_pkg->categoryname;
-}
-
 =item usage CLASSNUM
 
 Returns the amount of the charge associated with usage class CLASSNUM if
