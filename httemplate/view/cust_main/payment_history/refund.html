@@ -14,6 +14,7 @@ my $payinfo = $payby eq 'CARD'
                 : $cust_refund->payinfo;
 
 $payby =~ s/^BILL$/Check #/ if $payinfo;
+$payby =~ s/^BILL$/Check/;
 $payby =~ s/^CHEK$/Electronic check /;
 $payby =~ s/^(CARD|COMP)$/$1 /;
 

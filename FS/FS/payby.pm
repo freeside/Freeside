@@ -74,6 +74,7 @@ tie %hash, 'Tie::IxHash',
   'BILL' => {
     tinyname  => 'billing',
     shortname => 'Billing',
+    payname   => 'Check',
     longname  => 'Billing',
   },
   'PREP' => {
@@ -138,6 +139,14 @@ sub payby2longname {
 sub shortname {
   my( $self, $payby ) = @_;
   $hash{$payby}->{shortname};
+}
+
+sub payname {
+  my( $self, $payby ) = @_;
+  #$hash{$payby}->{payname} || $hash{$payby}->{shortname};
+  exists($hash{$payby}->{payname})
+    ? $hash{$payby}->{payname}
+    : $hash{$payby}->{shortname};
 }
 
 sub longname {

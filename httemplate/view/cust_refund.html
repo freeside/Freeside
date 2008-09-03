@@ -60,7 +60,7 @@
 
 <TR>
   <TD ALIGN="right">Refund method</TD>
-  <TD BGCOLOR="#FFFFFF"><B><% $cust_refund->payby_name %> #<% $cust_refund->paymask %></B></TD>
+  <TD BGCOLOR="#FFFFFF"><B><% $cust_refund->payby_name %><% $cust_refund->paymask ? ' #'.$cust_refund->paymask : '' %></B></TD>
 </TR>
 
 % if ( $cust_refund->payby =~ /^(CARD|CHEK|LECB)$/ && $cust_refund->paybatch ) { 

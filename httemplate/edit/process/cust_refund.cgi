@@ -2,17 +2,31 @@
 %  $cgi->param('error', $error);
 <% $cgi->redirect(popurl(2). "cust_refund.cgi?". $cgi->query_string ) %>
 %} else {
+%
+%  if ( $link eq 'popup' ) {
+%
+<% header('Refund entered') %>
+    <SCRIPT TYPE="text/javascript">
+      window.top.location.reload();
+    </SCRIPT>
+
+    </BODY></HTML>
+%  } else {
 <% $cgi->redirect(popurl(3). "view/cust_main.cgi?$custnum") %>
+%  }
 %}
 <%init>
 
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Refund payment');
+  unless $FS::CurrentUser::CurrentUser->access_right('Refund payment')
+      || $FS::CurrentUser::CurrentUser->access_right('Post refund');
 
 $cgi->param('custnum') =~ /^(\d*)$/ or die "Illegal custnum!";
 my $custnum = $1;
 my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
   or die "unknown custnum $custnum";
+
+my $link    = $cgi->param('popup') ? 'popup' : '';
 
 my $error = '';
 if ( $cgi->param('payby') =~ /^(CARD|CHEK)$/ ) { 
@@ -31,13 +45,12 @@ if ( $cgi->param('payby') =~ /^(CARD|CHEK)$/ ) {
                                                   'reason' => $reason,
                                                   %options );
 } else {
-  die 'unimplemented';
-  #my $new = new FS::cust_refund ( {
-  #  map {
-  #    $_, scalar($cgi->param($_));
-  #  } ( fields('cust_refund'), 'paynum' )
-  #} );
-  #$error = $new->insert;
+  my $new = new FS::cust_refund ( {
+    map {
+      $_, scalar($cgi->param($_));
+    } fields('cust_refund') #huh? , 'paynum' )
+  } );
+  $error = $new->insert;
 }
 
 </%init>

@@ -4,24 +4,22 @@
   <%  include("/elements/header.html", $title, '') %>
 % } 
 
+<% include('/elements/init_calendar.html') %>
+
 <% include('/elements/error.html') %>
-
-<LINK REL="stylesheet" TYPE="text/css" HREF="../elements/calendar-win2k-2.css" TITLE="win2k-2">
-<SCRIPT TYPE="text/javascript" SRC="../elements/calendar_stripped.js"></SCRIPT>
-<SCRIPT TYPE="text/javascript" SRC="../elements/calendar-en.js"></SCRIPT>
-<SCRIPT TYPE="text/javascript" SRC="../elements/calendar-setup.js"></SCRIPT>
-
-<FORM ACTION="<% popurl(1) %>process/cust_pay.cgi" METHOD=POST>
-<INPUT TYPE="hidden" NAME="link" VALUE="<% $link %>">
-<INPUT TYPE="hidden" NAME="linknum" VALUE="<% $linknum %>">
 
 % unless ( $link eq 'popup' ) { 
     <% small_custview($custnum, $conf->config('countrydefault')) %>
 % } 
 
+<FORM NAME="PaymentForm" ACTION="<% popurl(1) %>process/cust_pay.cgi" METHOD=POST onSubmit="document.PaymentForm.submit.disabled=true">
+<INPUT TYPE="hidden" NAME="link" VALUE="<% $link %>">
+<INPUT TYPE="hidden" NAME="linknum" VALUE="<% $linknum %>">
 <INPUT TYPE="hidden" NAME="payby" VALUE="<% $payby %>">
+<INPUT TYPE="hidden" NAME="paybatch" VALUE="<% $paybatch %>">
 
 <BR><BR>
+
 Payment
 <% ntable("#cccccc", 2) %>
 
@@ -45,7 +43,7 @@ Payment
 <TR>
   <TD ALIGN="right">Amount</TD>
   <TD BGCOLOR="#ffffff" ALIGN="right"><% $money_char %></TD>
-  <TD><INPUT TYPE="text" NAME="paid" VALUE="<% $paid %>" SIZE=8 MAXLENGTH=8> by <B><% $payby{$payby} %></B></TD>
+  <TD><INPUT TYPE="text" NAME="paid" VALUE="<% $paid %>" SIZE=8 MAXLENGTH=8> by <B><% FS::payby->payname($payby) %></B></TD>
 </TR>
 
 % if ( $payby eq 'BILL' ) { 
@@ -76,30 +74,23 @@ Payment
 
 </TABLE>
 
-<INPUT TYPE="hidden" NAME="paybatch" VALUE="<% $paybatch %>">
-
 <BR>
 <INPUT TYPE="submit" VALUE="Post payment">
 
 </FORM>
-</BODY>
-</HTML>
 
-<%once>
+% if ( $link eq 'popup' ) { 
+    </BODY>
+    </HTML>
+% } else { 
+    <% include('/elements/footer.html') %>
+% } 
+
+<%init>
 
 my $conf = new FS::Conf;
 
-my %payby = (
-  'BILL' => 'Check',
-  'CASH' => 'Cash',
-  'WEST' => 'Western Union',
-  'MCRD' => 'Manual credit card',
-);
-
 my $money_char = $conf->config('money_char') || '$';
-
-</%once>
-<%init>
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Post payment');
@@ -132,7 +123,7 @@ if ( $cgi->param('error') ) {
 
 my $paybatch = "webui-$_date-$$-". rand() * 2**32;
 
-my $title = 'Post '. $payby{$payby}. ' payment';
+my $title = 'Post '. FS::payby->payname($payby). ' payment';
 $title .= " against Invoice #$linknum" if $link eq 'invnum';
 
 my $custnum;
@@ -143,5 +134,5 @@ if ( $link eq 'invnum' ) {
 } elsif ( $link eq 'custnum' ) {
   $custnum = $linknum;
 }
-</%init>
 
+</%init>

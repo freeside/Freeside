@@ -161,8 +161,8 @@ tie my %rights, 'Tie::IxHash',
     'Apply payment', #NEWNEW
     { rightname=>'Unapply payment', desc=>'Enable "unapplication" of unclosed payments from specific invoices.' }, #aka. unapplypayments
     'Process payment',
-    'Refund payment',
-  
+    { rightname=>'Refund payment', desc=>'Enable refund of existing customer payments.' },
+
     { rightname=>'Delete payment', desc=>'Enable deletion of unclosed payments. Be very careful!  Only delete payments that were data-entry errors, not adjustments.' }, #aka. deletepayments Optionally specify one or more comma-separated email addresses to be notified when a payment is deleted.
   
   ],
@@ -175,6 +175,8 @@ tie my %rights, 'Tie::IxHash',
     'Apply credit', #NEWNEW
     { rightname=>'Unapply credit', desc=>'Enable "unapplication" of unclosed credits.' }, #aka unapplycredits
     { rightname=>'Delete credit', desc=>'Enable deletion of unclosed credits. Be very careful!  Only delete credits that were data-entry errors, not adjustments.' }, #aka. deletecredits Optionally specify one or more comma-separated email addresses to be notified when a credit is deleted.
+    { rightname=>'Post refund', desc=>'Enable posting of check and cash refunds.' },
+#    { rightname=>'Process refund', desc=>'Enable processing of generic credit card/ACH refunds (i.e. not associated with a specific prior payment).' },
     'Delete refund', #NEW
     'Add on-the-fly credit reason', #NEW
   ],

@@ -1,34 +1,37 @@
-<% include('/elements/header.html', 'Refund '. ucfirst(lc($payby)). ' payment', '') %>
+% if ( $link eq 'popup' ) { 
+  <% include('/elements/header-popup.html', $title ) %>
+% } else { 
+  <% include("/elements/header.html", $title, '') %>
+% } 
 
 <% include('/elements/error.html') %>
 
-<% small_custview($custnum, $conf->config('countrydefault')) %>
+% unless ( $link eq 'popup' ) { 
+    <% small_custview($custnum, $conf->config('countrydefault')) %>
+% } 
 
 <FORM NAME="RefundForm" ACTION="<% $p1 %>process/cust_refund.cgi" METHOD=POST onSubmit="document.RefundForm.submit.disabled=true">
+<INPUT TYPE="hidden" NAME="popup" VALUE="<% $link %>">
 <INPUT TYPE="hidden" NAME="refundnum" VALUE="">
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
 <INPUT TYPE="hidden" NAME="paynum" VALUE="<% $paynum %>">
 <INPUT TYPE="hidden" NAME="_date" VALUE="<% $_date %>">
 <INPUT TYPE="hidden" NAME="payby" VALUE="<% $payby %>">
-<INPUT TYPE="hidden" NAME="payinfo" VALUE="">
 <INPUT TYPE="hidden" NAME="paybatch" VALUE="">
 <INPUT TYPE="hidden" NAME="credited" VALUE="">
+
 <BR>
+
 % if ( $cust_pay ) {
 %
 %  #false laziness w/FS/FS/cust_pay.pm
-%  my $payby = $cust_pay->payby;
+%  my $payby = FS::payby->payname($cust_pay->payby);
 %  my $paymask = $cust_pay->paymask;
 %  my $paydate = $cust_pay->paydate;
 %  if ( $cgi->param('error') ) { 
 %    $paydate = $cgi->param('exp_year'). '-'. $cgi->param('exp_month'). '-01';
 %    $paydate = '' unless ($paydate =~ /^\d{2,4}-\d{1,2}-01$'/);
 %  }
-%  $payby =~ s/^BILL$/Check/ if $paymask;
-%  $payby =~ s/^CHEK$/Electronic check/;
-%
-%
-
 
   <BR>Payment
   <% ntable("#cccccc", 2) %>
@@ -42,7 +45,7 @@
   </TR>
 
   <TR>
-    <TD ALIGN="right">Method</TD><TD BGCOLOR="#ffffff"><% ucfirst(lc($payby)) %> # <% $paymask %></TD>
+    <TD ALIGN="right">Method</TD><TD BGCOLOR="#ffffff"><% $payby %> # <% $paymask %></TD>
   </TR>
 
 % unless ( $paydate ) {  # possibly other reasons: i.e. card has since expired
@@ -89,15 +92,27 @@
 <% ntable("#cccccc", 2) %>
 
   <TR>
-    <TD ALIGN="right">Date</TD><TD BGCOLOR="#ffffff"><% time2str("%D",$_date) %></TD>
+    <TD ALIGN="right">Date</TD>
+    <TD BGCOLOR="#ffffff"><% time2str("%D",$_date) %></TD>
   </TR>
 
   <TR>
-    <TD ALIGN="right">Amount</TD><TD BGCOLOR="#ffffff">$<INPUT TYPE="text" NAME="refund" VALUE="<% $refund %>" SIZE=8 MAXLENGTH=8></TD>
+    <TD ALIGN="right">Amount</TD>
+    <TD BGCOLOR="#ffffff">$<INPUT TYPE="text" NAME="refund" VALUE="<% $refund %>" SIZE=8 MAXLENGTH=8> by <B><% FS::payby->payname($payby) %></B></TD>
   </TR>
 
+% if ( $payby eq 'BILL' ) { 
+    <TR>
+      <TD ALIGN="right">Check #</TD>
+      <TD COLSPAN=2><INPUT TYPE="text" NAME="payinfo" VALUE="<% $payinfo %>" SIZE=10></TD>
+    </TR>
+% } else {
+    <INPUT TYPE="hidden" NAME="payinfo" VALUE="">
+% }
+
   <TR>
-    <TD ALIGN="right">Reason</TD><TD BGCOLOR="#ffffff"><INPUT TYPE="text" NAME="reason" VALUE="<% $reason %>"></TD>
+    <TD ALIGN="right">Reason</TD>
+    <TD BGCOLOR="#ffffff"><INPUT TYPE="text" NAME="reason" VALUE="<% $reason %>"></TD>
   </TR>
 </TABLE>
 
@@ -106,7 +121,12 @@
 
 </FORM>
 
-<% include('/elements/footer.html') %>
+% if ( $link eq 'popup' ) { 
+    </BODY>
+    </HTML>
+% } else { 
+    <% include('/elements/footer.html') %>
+% } 
 
 <%init>
 
@@ -117,7 +137,9 @@ my $conf = new FS::Conf;
 my $custnum = $cgi->param('custnum');
 my $refund  = $cgi->param('refund');
 my $payby   = $cgi->param('payby');
+my $payinfo = $cgi->param('payinfo');
 my $reason  = $cgi->param('reason');
+my $link    = $cgi->param('popup') ? 'popup' : '';
 
 my( $paynum, $cust_pay ) = ( '', '' );
 if ( $cgi->param('paynum') =~ /^(\d+)$/ ) {
@@ -137,5 +159,7 @@ die "no custnum or paynum specified!" unless $custnum;
 my $_date = time;
 
 my $p1 = popurl(1);
+
+my $title = 'Refund '. FS::payby->payname($payby). ' payment';
 
 </%init>
