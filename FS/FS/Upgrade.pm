@@ -82,8 +82,9 @@ sub upgrade_data {
   tie my %hash, 'Tie::IxHash', 
 
     #reason type and reasons
-    'reason_type' => [],
-    'reason'      => [],
+    'reason_type'     => [],
+    'reason'          => [],
+    'cust_pkg_reason' => [],
 
     #need part_pkg before cust_credit...
     'part_pkg' => [],
