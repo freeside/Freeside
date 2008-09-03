@@ -1,5 +1,7 @@
 <BR><BR><A NAME="history"><FONT SIZE="+2">Payment History</FONT></A><BR>
 
+%# payment links
+
 % my $s = 0;
 % if ( $payby{'BILL'} && $curuser->access_right('Post payment') ) { 
   <% $s++ ? ' | ' : '' %>
@@ -50,10 +52,12 @@
 
 % if ( $payby{'MCRD'} && $curuser->access_right('Post payment') ) { 
   <% $s++ ? ' | ' : '' %>
-  <A HREF="<% $p %>edit/cust_pay.cgi?payby=MCRD;custnum=<% $custnum %>">Post manual (offline) credit card payment</A>
+  <A HREF="<% $p %>edit/cust_pay.cgi?payby=MCRD;custnum=<% $custnum %>">Post manual (offline/POS) credit card payment</A>
 % } 
 
 <BR>
+
+%# credit link
 
 % if ( $curuser->access_right('Post credit') ) { 
   <% include('/elements/popup_link-cust_main.html',
@@ -68,10 +72,69 @@
   <BR>
 % } 
 
+%# refund links
+
+% $s = 0;
+% if ( $payby{'BILL'} && $curuser->access_right('Post refund') ) { 
+  <% $s++ ? ' | ' : '' %>
+  <% include('/elements/popup_link-cust_main.html',
+               'label'       => 'Enter check refund',
+               'action'      => "${p}edit/cust_refund.cgi?popup=1;payby=BILL",
+               'cust_main'   => $cust_main,
+               'actionlabel' => 'Enter check refund',
+               'width'       => 392,
+               #default# 'height' => 336,
+            )
+  %>
+% } 
+
+% if ( $payby{'CASH'} && $curuser->access_right('Post refund') ) { 
+  <% $s++ ? ' | ' : '' %>
+  <% include('/elements/popup_link-cust_main.html',
+               'label'       => 'Enter cash refund',
+               'action'      => "${p}edit/cust_refund.cgi?popup=1;payby=CASH",
+               'cust_main'   => $cust_main,
+               'actionlabel' => 'Enter cash refund',
+               'width'       => 392,
+               #default# 'height' => 336,
+            )
+  %>
+% } 
+
+%# someday, perhaps.  very few gateways let you do unlinked refunds at all.
+%# Authorize.net makes you sign a special form
+%#
+%#    % if ( ( $payby{'CARD'} || $payby{'DCRD'} )
+%#    %        && $curuser->access_right('Process refund')
+%#    %        && ! $cust_main->is_encrypted($cust_main->payinfo)
+%#    %      ) {
+%#      <% $s++ ? ' | ' : '' %>
+%#      <A HREF="<% $p %>misc/refund.cgi?payby=CARD;custnum=<% $custnum %>">Process credit card refund</A>
+%#    % } 
+%#    
+%#    % if ( ( $payby{'CHEK'} || $payby{'DCHK'} )
+%#    %        && $curuser->access_right('Process refund')
+%#    %        && ! $cust_main->is_encrypted($cust_main->payinfo)
+%#    %      ) {
+%#      <% $s++ ? ' | ' : '' %>
+%#      <A HREF="<% $p %>misc/refund.cgi?payby=CHEK;custnum=<% $custnum %>">Process electronic check (ACH) refund</A>
+%#    % } 
+
+% if ( $payby{'MCRD'} && $curuser->access_right('Post refund') ) { 
+  <% $s++ ? ' | ' : '' %>
+  <A HREF="<% $p %>edit/cust_refund.cgi?payby=MCRD;custnum=<% $custnum %>">Post manual (offline/POS) credit card refund</A>
+% } 
+
+<BR>
+
+%# tax exemption link
+
 % if ( $curuser->access_right('View customer tax exemptions') ) { 
   <A HREF="<% $p %>search/cust_tax_exempt_pkg.cgi?custnum=<% $custnum %>">View tax exemptions</A>
   <BR>
 % } 
+
+%# batched payment links
 
 % if ( $conf->exists('batch-enable')
 %      && $curuser->access_right('View customer batched payments')
@@ -84,13 +147,12 @@
   <BR>
 % } 
 
+%# and now the table
 
 <% include("/elements/table-grid.html") %>
 % my $bgcolor1 = '#eeeeee';
 %   my $bgcolor2 = '#ffffff';
 %   my $bgcolor = '';
-%
-
 
 <TR>
   <TH CLASS="grid" BGCOLOR="#cccccc">Date</TH>
@@ -101,9 +163,9 @@
   <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>Refund</FONT></TH>
   <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>Balance</FONT></TH>
 </TR>
-%
+
 %#display payment history
-%
+
 %sub balance_forward_row {
 %  my( $b, $date ) = @_;
 %  my $conf = new FS::Conf;
