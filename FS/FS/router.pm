@@ -83,7 +83,7 @@ sub check {
   my $error =
     $self->ut_numbern('routernum')
     || $self->ut_text('routername')
-    || $self->ut_agentnum_acl('agentnum', 'Engineering global configuration')
+    || $self->ut_agentnum_acl('agentnum', 'Broadband global configuration')
   ;
   return $error if $error;
 

@@ -9,8 +9,8 @@
 my $curuser = $FS::CurrentUser::CurrentUser;
 
 die "access denied"
-  unless $curuser->access_right('Engineering configuration')
-      || $curuser->access_right('Engineering global configuration');
+  unless $curuser->access_right('Dialup configuration')
+      || $curuser->access_right('Dialup global configuration');
 
 my $popnum = $cgi->param('popnum');
 

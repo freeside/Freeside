@@ -43,15 +43,15 @@
                                      'border-left:none;',
                                    ],
                 'agent_virt'    => 1,
-                'agent_null_right' => 'Engineering global configuration',
+                'agent_null_right' => 'Broadband global configuration',
                 'agent_pos'     => 1,
           )
 %>
 <%init>
 
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Engineering configuration')
-  || $FS::CurrentUser::CurrentUser->access_right('Engineering global configuration');
+  unless $FS::CurrentUser::CurrentUser->access_right('Broadband configuration')
+  || $FS::CurrentUser::CurrentUser->access_right('Broadband global configuration');
 
 my $p2 = popurl(2);
 my $path = $p2 . "edit/process/addr_block";
@@ -59,7 +59,7 @@ my $path = $p2 . "edit/process/addr_block";
 my $extra_sql = "";
 
 my $count_sql = "WHERE ". $FS::CurrentUser::CurrentUser->agentnums_sql(
-  'null_right' => 'Engineering global configuration',
+  'null_right' => 'Broadband global configuration',
 );
 
 my $order_by = "ORDER BY ";
@@ -90,7 +90,7 @@ my $html_foot = qq(
 );
 $html_foot .= include( '/elements/select-agent.html',
                        'agent_virt'       => 1,
-                       'agent_null_right' => 'Engineering global configuration',
+                       'agent_null_right' => 'Broadband global configuration',
                      );
 $html_foot .= qq(
   <INPUT TYPE="submit" NAME="submit" VALUE="Add">

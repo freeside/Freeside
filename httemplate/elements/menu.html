@@ -335,11 +335,10 @@ $config_menu{'Resellers'} = [ \%config_agent, ''    ]
 $config_menu{'Billing'} = [ \%config_billing, ''    ]
   if $curuser->access_right('Edit billing events')
   || $curuser->access_right('Edit global billing events');
-if ( $curuser->access_right('Engineering configuration') ) {
-  $config_menu{'Dialup'}  = [ \%config_dialup, ''    ];
-  $config_menu{'Fixed (username-less) broadband'} = 
-                            [ \%config_broadband, ''    ];
-}
+$config_menu{'Dialup'}  = [ \%config_dialup, ''    ]
+  if ( $curuser->access_right('Dialup configuration') );
+$config_menu{'Fixed (username-less) broadband'} = [ \%config_broadband, ''    ]
+  if ( $curuser->access_right('Broadband configuration') );
 $config_menu{'Miscellaneous'} = [ \%config_misc, ''    ]
   if $curuser->access_right('Edit advertising sources')
   || $curuser->access_right('Edit global advertising sources');

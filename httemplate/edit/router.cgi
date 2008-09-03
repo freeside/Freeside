@@ -21,8 +21,8 @@
 my $curuser = $FS::CurrentUser::CurrentUser;
 
 die "access denied"
-  unless $curuser->access_right('Engineering configuration')
-    || $curuser->access_right('Engineering global configuration');
+  unless $curuser->access_right('Broadband configuration')
+    || $curuser->access_right('Broadband global configuration');
 
 my $callback = sub {
   my ($cgi, $object, $fields) = (shift, shift, shift);

@@ -30,8 +30,8 @@
 my $curuser = $FS::CurrentUser::CurrentUser;
 
 die "access denied"
-  unless $curuser->access_right('Engineering configuration')
-      || $curuser->access_right('Engineering global configuration');
+  unless $curuser->access_right('Dialup configuration')
+      || $curuser->access_right('Dialup global configuration');
 
 my $html_init = qq!
   <A HREF="${p}edit/svc_acct_pop.cgi"><I>Add new Access Number</I></A>

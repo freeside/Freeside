@@ -20,15 +20,15 @@
                                        '',
                                      ],
                 'agent_virt'      => 1,
-                'agent_null_right'=> "Engineering global configuration",
+                'agent_null_right'=> "Broadband global configuration",
                 'agent_pos'       => 1,
           )
 %>
 <%init>
 
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Engineering configuration')
-  || $FS::CurrentUser::CurrentUser->access_right('Engineering global configuration');
+  unless $FS::CurrentUser::CurrentUser->access_right('Broadband configuration')
+  || $FS::CurrentUser::CurrentUser->access_right('Broadband global configuration');
 
 my $p2 = popurl(2);
 my $extra_sql = '';
@@ -46,7 +46,7 @@ if ($cgi->param('hidecustomerrouters') eq '1') {
 
 my $count_sql = $extra_sql.  ( $extra_sql =~ /WHERE/ ? ' AND' : 'WHERE' ).
   $FS::CurrentUser::CurrentUser->agentnums_sql(
-    'null_right' => 'Engineering global configuration',
+    'null_right' => 'Broadband global configuration',
   );
 
 </%init>

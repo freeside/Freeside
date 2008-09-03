@@ -5,7 +5,7 @@
             'redirect'         => popurl(4). 'browse/addr_block.cgi?',
             'error_redirect'   => popurl(4). 'browse/addr_block.cgi?',
             'agent_virt'       => 1,
-            'agent_null_right' => 'Engineering global configuration',
+            'agent_null_right' => 'Broadband global configuration',
           )
 %>
 <%init>
@@ -13,8 +13,8 @@
 my $conf = new FS::Conf;
 my $curuser = $FS::CurrentUser::CurrentUser;
 die "access denied"
-  unless $curuser->access_right('Engineering configuration')
-      || $curuser->access_right('Engineering global configuration');
+  unless $curuser->access_right('Broadband configuration')
+      || $curuser->access_right('Broadband global configuration');
 
 $cgi->param('routernum', 0);  # just to be explicit about what we are doing
 </%init>

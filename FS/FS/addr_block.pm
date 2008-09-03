@@ -124,7 +124,7 @@ sub check {
     $self->ut_number('routernum')
     || $self->ut_ip('ip_gateway')
     || $self->ut_number('ip_netmask')
-    || $self->ut_agentnum_acl('agentnum', 'Engineering global configuration')
+    || $self->ut_agentnum_acl('agentnum', 'Broadband global configuration')
   ;
   return $error if $error;
 

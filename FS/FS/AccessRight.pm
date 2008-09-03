@@ -240,8 +240,11 @@ tie my %rights, 'Tie::IxHash',
     'Edit billing events',
     { rightname=>'Edit global billing events', global=>1 },
   
-    { rightname=>'Engineering configuration' },
-    { rightname=>'Engineering global configuration', global=>1 },
+    { rightname=>'Dialup configuration' },
+    { rightname=>'Dialup global configuration', global=>1 },
+
+    { rightname=>'Broadband configuration' },
+    { rightname=>'Broadband global configuration', global=>1 },
 
     { rightname=>'Configuration', global=>1 }, #most of the rest of the configuraiton is not agent-virtualized
   ],

@@ -111,6 +111,44 @@ sub check {
   $self->SUPER::check;
 }
 
+# _upgrade_data
+#
+# Used by FS::Upgrade to migrate to a new database.
+
+sub _upgrade_data { # class method
+  my ($class, %opts) = @_;
+
+  my @unmigrated = ( qsearch( 'access_right',
+                              { 'righttype'=>'FS::access_group',
+                                'rightname'=>'Engineering configuration',
+                              }
+                            ), 
+                     qsearch( 'access_right',
+                              { 'righttype'=>'FS::access_group',
+                                'rightname'=>'Engineering global configuration',
+                              }
+                            )
+                   ); 
+  foreach ( @unmigrated ) {
+    my $rightname = $_->rightname;
+    $rightname =~ s/Engineering/Dialup/;
+    $_->rightname($rightname);
+    my $error = $_->replace;
+    die "Failed to update access right: $error"
+      if $error;
+    my $broadband = new FS::access_right { $_->hash };
+    $rightname =~ s/Dialup/Broadband/;
+    $broadband->rightnum('');
+    $broadband->rightname($rightname);
+    $error = $broadband->insert;
+    die "Failed to insert access right: $error"
+      if $error;
+  }
+
+  '';
+
+}
+
 =back
 
 =head1 BUGS
