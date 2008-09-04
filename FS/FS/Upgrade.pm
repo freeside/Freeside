@@ -110,6 +110,9 @@ sub upgrade_data {
     #usage_classes if we have none
     'usage_class' => [],
 
+    #fixup access rights
+    'access_right' => [],
+
   ;
 
   \%hash;
