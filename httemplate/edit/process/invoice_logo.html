@@ -18,7 +18,7 @@ $cgi->param('preview_session') =~ /^(\w*)$/ or die "illegal preview_session";
 my $session = $1;
 my $data = decode_base64( $curuser->option("logo_preview$session") );
 
-$conf->set("logo$name.$type", $data);
+$conf->set_binary("logo$name.$type", $data);
 
 $cgi->redirect(popurl(3). "edit/invoice_logo.html?type=$type;name=$name;msg=Logo%20changed");
 
