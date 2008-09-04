@@ -53,7 +53,7 @@
 
 % if ( $mode eq 'upload' ) {
 
-    Upload new logo (PNG format): <INPUT TYPE="file" NAME="new_logo">
+    Upload new logo (.<%uc($type)%> format): <INPUT TYPE="file" NAME="new_logo">
     <BR><INPUT TYPE="submit" NAME="submit" VALUE="Upload">
 
 % } elsif ( $mode eq 'preview' ) {
