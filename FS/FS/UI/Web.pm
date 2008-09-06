@@ -138,6 +138,10 @@ sub svc_label_link {
 
 sub svc_X_link {
   my ($x, $m, $part_svc, $cust_svc) = @_ or return '';
+
+  return $x
+   unless $FS::CurrentUser::CurrentUser->access_right('View customer services');
+
   my $ahref = svc_url(
     'ahref'    => 1,
     'm'        => $m,
@@ -149,6 +153,7 @@ sub svc_X_link {
   "$ahref$x</A>";
 }
 
+#this probably needs an ACL too...
 sub svc_export_links {
   my ($m, $part_svc, $cust_svc) = @_ or return '';
 
