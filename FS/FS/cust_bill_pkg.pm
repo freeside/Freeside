@@ -47,8 +47,6 @@ supported:
 =item pkgnum - package (see L<FS::cust_pkg>) or 0 for the special virtual sales tax package, or -1 for the virtual line item (itemdesc is used for the line)
 
 =item pkgpart_override - optional package definition (see L<FS::part_pkg>) override
-=item type - can be set to U for usage; more later
-
 =item setup - setup fee
 
 =item recur - recurring fee
@@ -60,10 +58,6 @@ supported:
 =item itemdesc - Line item description (overrides normal package description)
 
 =item section - Invoice section (overrides normal package section)
-
-=duplicate - Indicates this item is a candidate for summarizing and duplicating at print time
-
-=post_total - A hint that this item should appear after invoice totals
 
 =cut
 
@@ -201,9 +195,6 @@ sub check {
       || $self->ut_numbern('edate')
       || $self->ut_textn('itemdesc')
       || $self->ut_textn('section')
-      || $self->ut_enum('duplicate', [ '', 'Y' ])
-      || $self->ut_enum('post_total', [ '', 'Y' ])
-      || $self->ut_enum('type', [ '', 'U' ])      #only usage for now
   ;
   return $error if $error;
 
