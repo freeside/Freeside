@@ -64,7 +64,7 @@ $realtime_bop_decline_quiet = 0;
 # 1 is mostly method/subroutine entry and options
 # 2 traces progress of some operations
 # 3 is even more information including possibly sensitive data
-$DEBUG = 2;
+$DEBUG = 0;
 $me = '[FS::cust_main]';
 
 $import = 0;
