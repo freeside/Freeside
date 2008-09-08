@@ -1,21 +1,3 @@
-%
-%  my %opt = @_;
-%
-%  #my( $svcnum, $pkgnum, $svcpart, $part_svc );
-%  my( $pkgnum, $svcpart, $part_svc );
-%
-%  #get & untaint pkgnum & svcpart
-%  if ( ! $cgi->param('error')
-%       && $cgi->param('pkgnum') && $cgi->param('svcpart')
-%     )
-%  {
-%    $cgi->param('pkgnum') =~ /^(\d+)$/ or die 'unparsable pkgnum';
-%    $pkgnum = $1;
-%    $cgi->param('svcpart') =~ /^(\d+)$/ or die 'unparsable svcpart';
-%    $svcpart = $1;
-%    #$cgi->delete_all(); #so edit.html treats this correctly as new??
-%  }
-%
 <% include( 'edit.html',
 
                  'menubar' => [],
@@ -69,7 +51,9 @@
                    my $columndef = $part_svc->part_svc_column($f->{'field'});
                    my $flag = $columndef->columnflag;
                    if ( $flag eq 'F' ) {
-                     $f->{'type'} = 'fixed';
+                     $f->{'type'} = length($columndef->columnvalue)
+                                      ? 'fixed'
+                                      : 'hidden';
                      $f->{'value'} = $columndef->columnvalue;
                    }
                  },
@@ -116,3 +100,23 @@
                  %opt #pass through/override params
              )
 %>
+<%init>
+
+my %opt = @_;
+
+#my( $svcnum, $pkgnum, $svcpart, $part_svc );
+my( $pkgnum, $svcpart, $part_svc );
+
+#get & untaint pkgnum & svcpart
+if ( ! $cgi->param('error')
+     && $cgi->param('pkgnum') && $cgi->param('svcpart')
+   )
+{
+  $cgi->param('pkgnum') =~ /^(\d+)$/ or die 'unparsable pkgnum';
+  $pkgnum = $1;
+  $cgi->param('svcpart') =~ /^(\d+)$/ or die 'unparsable svcpart';
+  $svcpart = $1;
+  #$cgi->delete_all(); #so edit.html treats this correctly as new??
+}
+
+</%init>
