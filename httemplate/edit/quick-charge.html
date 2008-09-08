@@ -16,22 +16,6 @@ function enable_quick_charge () {
   }
 }
 
-function enable_quick_charge_desc () {
-  if (  document.QuickChargeForm.amount.value && document.QuickChargeForm.pkg.value ) {
-    document.QuickChargeForm.submit.disabled = false;
-  } else {
-    document.QuickChargeForm.submit.disabled = true;
-  }
-}
-
-function enable_quick_charge_amount () {
-  if ( document.QuickChargeForm.amount.value && document.QuickChargeForm.pkg.value ) {
-    document.QuickChargeForm.submit.disabled = false;
-  } else {
-    document.QuickChargeForm.submit.disabled = true;
-  }
-}
-
 function validate_quick_charge () {
   var pkg = document.QuickChargeForm.pkg.value;
   var pkg_regex = /^([\w \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\=\[\]]*)$/ ;
@@ -80,7 +64,7 @@ function validate_quick_charge () {
 <TR>
   <TD ALIGN="right">Amount: </TD>
   <TD>
-    $<INPUT TYPE="text" NAME="amount" SIZE=6 VALUE="<% $amount %>" onChange="enable_quick_charge()" onKeyPress="enable_quick_charge_amount()">
+    $<INPUT TYPE="text" NAME="amount" SIZE=6 VALUE="<% $amount %>" onChange="enable_quick_charge()" onKeyPress="enable_quick_charge()">
   </TD>
 </TR>
 
@@ -104,13 +88,13 @@ function validate_quick_charge () {
 <TR>
   <TD>Description:</TD>
   <TD>
-    <INPUT TYPE="text" NAME="pkg" SIZE="60" MAXLENGTH="65" VALUE="<% $pkg %>" onChange="enable_quick_charge()" onKeyPress="enable_quick_charge_desc()">
+    <INPUT TYPE="text" NAME="pkg" SIZE="60" MAXLENGTH="65" VALUE="<% $pkg %>" onChange="enable_quick_charge()" onKeyPress="enable_quick_charge()">
   </TD>
 </TR>
 
 <TR>
   <TD></TD>
-  <TD><FONT SIZE="-1">Optional additional description: </FONT></TD>
+  <TD><FONT SIZE="-1">Optional additional description (also printed on invoice): </FONT></TD>
 </TR>
 
 % my $row = 0;
