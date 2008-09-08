@@ -46,37 +46,40 @@ Service #<B><% $svcnum %></B>
 <BR>
 
 <% ntable("#cccccc") %><TR><TD><% ntable("#cccccc",2) %>
+
 % foreach my $f ( @$fields ) {
 %
-%     my( $field, $type);
-%     if ( ref($f) ) {
-%       $field = $f->{'field'},
-%       $type  = $f->{'type'} || 'text',
-%     } else {
-%       $field = $f;
-%       $type = 'text';
-%     }
+%   my($field, $type);
+%   if ( ref($f) ) {
+%     $field = $f->{'field'},
+%     $type  = $f->{'type'} || 'text',
+%   } else {
+%     $field = $f;
+%     $type = 'text';
+%   }
 %
+%   my $columndef = $part_svc->part_svc_column($field);
+%   unless ($columndef->columnflag eq 'F' && !length($columndef->columnvalue)) {
 
+      <TR>
+        <TD ALIGN="right">
+          <% ( $opt{labels} && exists $opt{labels}->{$field} )
+                  ? $opt{labels}->{$field}
+                  : $field
+          %>
+        </TD>
 
-  <TR>
-    <TD ALIGN="right">
-      <% ( $opt{labels} && exists $opt{labels}->{$field} )
-              ? $opt{labels}->{$field}
-              : $field
-      %>
-    </TD>
+%       #eventually more options for <SELECT>, etc. fields
+
+        <TD BGCOLOR="#ffffff"><% $svc_x->$field %><TD>
+
+      </TR>
+
+%   }
 %
-%      #eventually more options for <SELECT>, etc. fields
-%    
-
-
-    <TD BGCOLOR="#ffffff"><% $svc_x->$field %><TD>
-
-  </TR>
 % } 
-% foreach (sort { $a cmp $b } $svc_x->virtual_fields) { 
 
+% foreach (sort { $a cmp $b } $svc_x->virtual_fields) { 
   <% $svc_x->pvf($_)->widget('HTML', 'view', $svc_x->getfield($_)) %>
 % } 
 
@@ -94,7 +97,6 @@ Service #<B><% $svcnum %></B>
   <BR>
 
 % }
-
 
 <% joblisting({'svcnum'=>$svcnum}, 1) %>
 
@@ -133,6 +135,8 @@ my $svc_x = qsearchs({
 
 my $cust_svc = $svc_x->cust_svc;
 my($label, $value, $svcdb) = $cust_svc->label;
+
+my $part_svc = $cust_svc->part_svc;
 
 my $pkgnum = $cust_svc->pkgnum;
 
