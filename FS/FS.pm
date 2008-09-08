@@ -210,6 +210,8 @@ L<FS::cust_pkg> - Customer package class
 
 L<FS::cust_pkg_option> - Customer package option class
 
+L<FS::cust_pkg_detail> - Customer package details class
+
 L<FS::reason_type> - Reason type class
 
 L<FS::reason> - Reason class

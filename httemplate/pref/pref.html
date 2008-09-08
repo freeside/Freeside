@@ -57,22 +57,34 @@ Email Address
 <BR>
 
 
+Development
+<% ntable("#cccccc",2) %>
+
+  <TR>
+    <TH>Show internal package numbers: </TH>
+    <TD><INPUT TYPE="checkbox" NAME="show_pkgnum" VALUE="1" <% $curuser->option('show_pkgnum') ? 'CHECKED' : '' %>></TD>
+  </TR>
+
+</TABLE>
+<BR>
+
+
 Vonage integration (see <a href="https://secure.click2callu.com/">Click2Call</a>)
 <% ntable("#cccccc",2) %>
 
   <TR>
     <TH ALIGN="right">Vonage phone number</TH>
-    <TD><INPUT TYPE="text" NAME="vonage-fromnumber" VALUE="<% $FS::CurrentUser::CurrentUser->option('vonage-fromnumber') %>"></TD>
+    <TD><INPUT TYPE="text" NAME="vonage-fromnumber" VALUE="<% $curuser->option('vonage-fromnumber') %>"></TD>
   </TR>
 
   <TR>
     <TH ALIGN="right">Vonage username</TH>
-    <TD><INPUT TYPE="text" NAME="vonage-username" VALUE="<% $FS::CurrentUser::CurrentUser->option('vonage-username') %>"></TD>
+    <TD><INPUT TYPE="text" NAME="vonage-username" VALUE="<% $curuser->option('vonage-username') %>"></TD>
   </TR>
 
   <TR>
     <TH ALIGN="right">Vonage password</TH>
-    <TD><INPUT TYPE="password" NAME="vonage-password" VALUE="<% $FS::CurrentUser::CurrentUser->option('vonage-password') %>"></TD>
+    <TD><INPUT TYPE="password" NAME="vonage-password" VALUE="<% $curuser->option('vonage-password') %>"></TD>
   </TR>
 
 </TABLE>
@@ -91,11 +103,13 @@ Vonage integration (see <a href="https://secure.click2callu.com/">Click2Call</a>
 <% include('/elements/footer.html') %>
 <%init>
 
+my $curuser = $FS::CurrentUser::CurrentUser;
+
 # XSS via your own preferences?  seems unlikely, but nice try anyway...
-( $FS::CurrentUser::CurrentUser->option('menu_position') || 'left' )
+( $curuser->option('menu_position') || 'left' )
   =~ /^(\w+)$/ or die "illegal menu_position";
 my $menu_position = $1;
-( $FS::CurrentUser::CurrentUser->option('email_address') )
+( $curuser->option('email_address') )
   =~ /^([,\w\@.]*)$/ or die "illegal email_address";  #too late
 my $email_address = $1;
 

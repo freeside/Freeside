@@ -121,6 +121,8 @@ tie my %rights, 'Tie::IxHash',
     'Cancel customer package later',
     'Add on-the-fly cancel reason', #NEW
     'Add on-the-fly suspend reason', #NEW
+    'Edit customer package invoice details', #NEW
+    'Edit customer package comments', #NEW
   ],
   
   ###

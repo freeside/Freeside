@@ -85,7 +85,7 @@ function taxoverridequickchargemagic() {
        'label'       => 'One-time charge',
        'actionlabel' => 'One-time charge',
        'color'       => '#333399',
-       'width'       => 545,
+       'width'       => 763,
      })
   %>
 % } 
@@ -149,17 +149,32 @@ Current packages
 <!--pkgnum: <% $cust_pkg->pkgnum %>-->
 <TR>
 
-  <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
-
-    <A NAME="cust_pkg<% $cust_pkg->pkgnum %>" ID="cust_pkg<% $cust_pkg->pkgnum %>"><% $cust_pkg->pkgnum %></A>:
-    <% $part_pkg->pkg %> - <% $part_pkg->comment %>
-    <BR>
+  <TD CLASS="inv" BGCOLOR="<% $bgcolor %>">
+    <TABLE CLASS="inv" BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="100%">
+      <TR>
+        <TD COLSPAN=2>
+          <A NAME="cust_pkg<% $cust_pkg->pkgnum %>"
+             ID  ="cust_pkg<% $cust_pkg->pkgnum %>"
+          ><% $curuser->option('show_pkgnum') ? $cust_pkg->pkgnum.': ' : '' %><% $part_pkg->pkg %></A>
+          - 
+          <% $part_pkg->comment %>
+        </TD>
+      </TR>
 
 %   if ( $cust_pkg->quantity > 1 ) {
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Quantity: <B><% $cust_pkg->quantity %></B><BR>
+      <TR>
+        <TD COLSPAN=2>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Quantity: 
+          <B><% $cust_pkg->quantity %></B>
+        </TD>
+      </TR>
 %   }
 
-    <FONT SIZE=-1>
+      <TR>
+        <TD COLSPAN=2>
+
+          <FONT SIZE=-1>
+
 % unless ( $cust_pkg->get('cancel') ) { 
 %   my $br = 0;
 %   if ( $curuser->access_right('Change customer package') ) { $br=1;
@@ -185,7 +200,114 @@ Current packages
     (&nbsp;<%pkg_event_link($cust_pkg)%>&nbsp;)
 % }
 
-    </FONT>
+          </FONT>
+
+        </TD>
+      </TR>
+
+%   my $editi = $curuser->access_right('Edit customer package invoice details');
+%   my $editc = $curuser->access_right('Edit customer package comments');
+%
+%   if ( $cust_pkg->cust_pkg_detail('I') || $cust_pkg->cust_pkg_detail('C')
+%        || $editi || $editc                                                ) {
+%
+%     my $editlink = $p. 'edit/cust_pkg_detail?pkgnum='. $cust_pkg->pkgnum.
+%                    ';detailtype=';
+
+      <TR>
+
+%       if ( $cust_pkg->cust_pkg_detail('I') ) { 
+          <TD VALIGN="top">
+            <% include('/elements/table-grid.html') %>
+              <TR>
+                <TH BGCOLOR="#dddddd" STYLE="border-bottom: dashed 1px black; padding-bottom: 1px">
+                  <FONT SIZE="-1">
+                    Invoice details
+%                   if ( $editi && ! $cust_pkg->get('cancel') ) {
+                      (<% include('/elements/popup_link.html', { 
+                                    'action'      => $editlink. 'I',
+                                    'label'       => 'edit',
+                                    'actionlabel' => 'Edit invoice details',
+                                    'color'       => '#333399',
+                                    'width'       => 763,
+                                 })
+                       %>)
+%                   }
+                  </FONT>
+                </TH>
+              </TR>
+%             foreach my $cust_pkg_detail ( $cust_pkg->cust_pkg_detail('I') ) {
+                <TR>
+                  <TD><FONT SIZE="-1">&nbsp;-&nbsp;<% $cust_pkg_detail->detail |h %></FONT></TD>
+                </TR>
+%             }
+            </TABLE>
+          </TD>
+%       } else {
+          <TD>
+%           if ( $editi && ! $cust_pkg->get('cancel') ) {
+              <FONT SIZE="-1">
+                (&nbsp;<% include('/elements/popup_link.html', { 
+                               'action'      => $editlink. 'I',
+                               'label'       => 'Add&nbsp;invoice&nbsp;details',
+                               'actionlabel' => 'Add invoice details',
+                               'color'       => '#333399',
+                               'width'       => 763,
+                            })
+                  %>&nbsp;)
+              </FONT>
+%           }
+          </TD>
+%       }
+
+%       if ( $cust_pkg->cust_pkg_detail('C') ) { 
+          <TD VALIGN="top">
+            <% include('/elements/table-grid.html') %>
+              <TR>
+                <TH BGCOLOR="#dddddd" STYLE="border-bottom: dashed 1px black; padding-bottom: 1px">
+                  <FONT SIZE="-1">
+                    Comments
+%                   if ( $editc ) {
+                      (<% include('/elements/popup_link.html', { 
+                                    'action'      => $editlink. 'C',
+                                    'label'       => 'edit',
+                                    'actionlabel' => 'Edit comments',
+                                    'color'       => '#333399',
+                                    'width'       => 763,
+                                 })
+                       %>)
+%                   }
+                  </FONT>
+                </TH>
+              </TR>
+%             foreach my $cust_pkg_detail ( $cust_pkg->cust_pkg_detail('C') ) {
+                <TR>
+                  <TD><FONT SIZE="-1">&nbsp;-&nbsp;<% $cust_pkg_detail->detail |h %></FONT></TD>
+                </TR>
+%             }
+            </TABLE>
+          </TD>
+%       } else {
+          <TD>
+%           if ( $editc ) {
+              <FONT SIZE="-1">
+                (&nbsp;<% include('/elements/popup_link.html', { 
+                               'action'      => $editlink. 'C',
+                               'label'       => 'Add&nbsp;comments',
+                               'actionlabel' => 'Add comments',
+                               'color'       => '#333399',
+                               'width'       => 763,
+                            })
+                  %>&nbsp;)
+              </FONT>
+%           }
+          </TD>
+%       }
+
+      </TR>
+%   }
+
+    </TABLE>
 
   </TD>
 

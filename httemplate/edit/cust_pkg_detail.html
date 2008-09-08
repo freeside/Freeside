@@ -1,0 +1,142 @@
+<% include("/elements/header-popup.html", $title, '',
+            ( $cgi->param('error') ? '' : 'onload="addRow()"' ),
+          )
+%>
+
+%# <% include('/elements/error.html') %>
+
+<FORM ACTION="process/cust_pkg_detail.html" NAME="DetailForm" ID="DetailForm" METHOD="POST">
+
+<INPUT TYPE="hidden" NAME="pkgnum" VALUE="<% $pkgnum %>">
+<INPUT TYPE="hidden" NAME="detailtype" VALUE="<% $detailtype %>">
+
+<TABLE ID="DetailTable" BGCOLOR="#cccccc" BORDER=0 CELLSPACING=1 STYLE="background-color: #cccccc">
+
+% if ( $curuser->option('show_pkgnum') ) {
+
+    <TR>
+      <TD ALIGN="right">Package #</TD>
+      <TD BGCOLOR="#ffffff"><% $pkgnum %></TD>
+    </TR>
+
+% }
+
+  <TR>
+    <TD ALIGN="right">Package</TD>
+    <TD BGCOLOR="#ffffff"><% $part_pkg->pkg %></TD>
+  </TR>
+
+  <TR>
+    <TD ALIGN="right">Comment</TD>
+    <TD BGCOLOR="#ffffff"><% $part_pkg->comment %></TD>
+  </TR>
+
+  <TR>
+    <TD ALIGN="right">Status</TD>
+    <TD BGCOLOR="#ffffff"><FONT COLOR="#<% $cust_pkg->statuscolor %>"><B><% ucfirst($cust_pkg->status) %></B></FONT></TD>
+  </TR>
+
+  <TR>
+    <TD COLSPAN=2><% ucfirst($name{$detailtype}) %>: </TD>
+  </TR>
+
+% my $row = 0;
+% for ( @details ) { 
+
+    <TR>
+      <TD></TD>
+      <TD>
+        <INPUT TYPE="text" NAME="detail<% $row %>" SIZE="60" MAXLENGTH="65" VALUE="<% $_->detail |h %>" rownum="<% $row++ %>" onkeyup = "possiblyAddRow;" >
+      </TD>
+    </TR>
+
+% } 
+
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" ID="submit" NAME="submit" VALUE="<% $title %>">
+
+</FORM>
+
+<SCRIPT TYPE="text/javascript">
+
+  var rownum = <% $row %>;
+
+  function possiblyAddRow() {
+    if ( ( rownum - this.getAttribute('rownum') ) == 1 ) {
+      addRow();
+    }
+  }
+
+  function addRow() {
+
+    var table = document.getElementById('DetailTable');
+    var tablebody = table.getElementsByTagName('tbody').item(0);
+
+    var row = document.createElement('TR');
+
+    var empty_cell = document.createElement('TD');
+    row.appendChild(empty_cell);
+
+    var detail_cell = document.createElement('TD');
+
+      var detail_input = document.createElement('INPUT');
+      detail_input.setAttribute('name', 'detail'+rownum);
+      detail_input.setAttribute('id',   'detail'+rownum);
+      detail_input.setAttribute('size', 60);
+      detail_input.setAttribute('maxLength', 65);
+      detail_input.setAttribute('rownum',   rownum);
+      detail_input.onkeyup = possiblyAddRow;
+      detail_cell.appendChild(detail_input);
+
+    row.appendChild(detail_cell);
+
+    tablebody.appendChild(row);
+
+    rownum++;
+
+  }
+
+</SCRIPT>
+
+</BODY>
+</HTML>
+<%init>
+
+my %access_right = (
+  'I' => 'Edit customer package invoice details', 
+  'C' => 'Edit customer package comments',
+);
+
+my %name = (
+  'I' => 'invoice details',
+  'C' => 'package comments',
+);
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+$cgi->param('detailtype') =~ /^(\w)$/ or die 'illegal detailtype';
+my $detailtype = $1;
+
+my $right = $access_right{$detailtype};
+die "access denied"
+  unless $curuser->access_right($right);
+
+$cgi->param('pkgnum') =~ /^(\d+)$/ or die 'illegal pkgnum';
+my $pkgnum = $1;
+
+my $cust_pkg = qsearchs({
+  'table'     => 'cust_pkg',
+  'addl_from' => 'LEFT JOIN cust_main USING ( custnum )',
+  'hashref'   => { 'pkgnum' => $pkgnum },
+  'extra_sql' => ' AND '. $curuser->agentnums_sql,
+});
+
+my $part_pkg = $cust_pkg->part_pkg;
+
+my @details = $cust_pkg->cust_pkg_detail($detailtype);
+
+my $title = ( scalar(@details) ? 'Edit ' : 'Add ' ). $name{$detailtype};
+
+</%init>

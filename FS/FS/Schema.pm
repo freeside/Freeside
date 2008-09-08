@@ -500,9 +500,6 @@ sub tables_hashref {
         'quantity',  'int', 'NULL', '', '', '',
         'unitsetup', @money_typen, '', '', 
         'unitrecur', @money_typen, '', '', 
-        'duplicate',  'char', 'NULL', 1, '', '',
-        'post_total', 'char', 'NULL', 1, '', '',
-        'type',       'char', 'NULL', 1, '', '',
       ],
       'primary_key' => 'billpkgnum',
       'unique' => [],
@@ -943,6 +940,19 @@ sub tables_hashref {
       'primary_key' => 'optionnum',
       'unique'      => [],
       'index'       => [ [ 'pkgnum' ], [ 'optionname' ] ],
+    },
+
+    'cust_pkg_detail' => {
+      'columns' => [
+        'pkgdetailnum', 'serial', '',      '', '', '',
+        'pkgnum',          'int', '',      '', '', '',
+        'detail',      'varchar', '', $char_d, '', '', 
+        'detailtype',     'char', '',       1, '', '', # "I"nvoice or "C"omment
+        'weight',          'int', '',      '', '', '',
+      ],
+      'primary_key' => 'pkgdetailnum',
+      'unique' => [],
+      'index'  => [ [ 'pkgnum', 'detailtype' ] ],
     },
 
     'cust_pkg_reason' => {

@@ -16,6 +16,7 @@ use FS::cust_main;
 use FS::type_pkgs;
 use FS::pkg_svc;
 use FS::cust_bill_pkg;
+use FS::cust_pkg_detail;
 use FS::cust_event;
 use FS::h_cust_svc;
 use FS::reg_code;
@@ -1087,6 +1088,77 @@ Returns any invoice line items for this package (see L<FS::cust_bill_pkg>).
 sub cust_bill_pkg {
   my $self = shift;
   qsearch( 'cust_bill_pkg', { 'pkgnum' => $self->pkgnum } );
+}
+
+=item cust_pkg_detail [ DETAILTYPE ]
+
+Returns any customer package details for this package (see
+L<FS::cust_pkg_detail>).
+
+DETAILTYPE can be set to "I" for invoice details or "C" for comments.
+
+=cut
+
+sub cust_pkg_detail {
+  my $self = shift;
+  my %hash = ( 'pkgnum' => $self->pkgnum );
+  $hash{detailtype} = shift if @_;
+  qsearch({
+    'table'    => 'cust_pkg_detail',
+    'hashref'  => \%hash,
+    'order_by' => 'ORDER BY weight, pkgdetailnum',
+  });
+}
+
+=item set_cust_pkg_detail DETAILTYPE [ DETAIL, DETAIL, ... ]
+
+Sets customer package details for this package (see L<FS::cust_pkg_detail>).
+
+DETAILTYPE can be set to "I" for invoice details or "C" for comments.
+
+If there is an error, returns the error, otherwise returns false.
+
+=cut
+
+sub set_cust_pkg_detail {
+  my( $self, $detailtype, @details ) = @_;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  foreach my $current ( $self->cust_pkg_detail($detailtype) ) {
+    my $error = $current->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "error removing old detail: $error";
+    }
+  }
+
+  foreach my $detail ( @details ) {
+    my $cust_pkg_detail = new FS::cust_pkg_detail {
+      'pkgnum'     => $self->pkgnum,
+      'detailtype' => $detailtype,
+      'detail'     => $detail,
+    };
+    my $error = $cust_pkg_detail->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "error adding new detail: $error";
+    }
+
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+
 }
 
 =item cust_event

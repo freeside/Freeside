@@ -64,7 +64,7 @@ $realtime_bop_decline_quiet = 0;
 # 1 is mostly method/subroutine entry and options
 # 2 traces progress of some operations
 # 3 is even more information including possibly sensitive data
-$DEBUG = 0;
+$DEBUG = 2;
 $me = '[FS::cust_main]';
 
 $import = 0;
@@ -2047,7 +2047,6 @@ Used in conjunction with the I<time> option, this option specifies the date of f
 sub bill {
   my( $self, %options ) = @_;
   return '' if $self->payby eq 'COMP';
-  local $DEBUG = 1;
   warn "$me bill customer ". $self->custnum. "\n"
     if $DEBUG;
 
@@ -2442,6 +2441,13 @@ sub _make_lines {
       warn "    charges (setup=$setup, recur=$recur); adding line items\n"
         if $DEBUG > 1;
 
+      my @cust_pkg_detail = map { $_->detail } $cust_pkg->cust_pkg_detail('I');
+      if ( $DEBUG > 1 ) {
+        warn "      adding customer package invoice detail: $_\n"
+          foreach @cust_pkg_detail;
+      }
+      push @details, @cust_pkg_detail;
+
       my $cust_bill_pkg = new FS::cust_bill_pkg {
         'pkgnum'    => $cust_pkg->pkgnum,
         'setup'     => $setup,
@@ -2463,13 +2469,11 @@ sub _make_lines {
       # handle taxes
       ###
 
-      my $err_or_cust_bill_pkg =
+      my $error = 
         $self->_handle_taxes($part_pkg, $taxlisthash, $cust_bill_pkg, $cust_pkg);
+      return $error if $error;
 
-      return $err_or_cust_bill_pkg
-        unless ( ref($err_or_cust_bill_pkg) );
-
-      push @$cust_bill_pkgs, @$err_or_cust_bill_pkg;
+      push @$cust_bill_pkgs, $cust_bill_pkg;
 
     } #if $setup != 0 || $recur != 0
       
@@ -2518,7 +2522,7 @@ sub _handle_taxes {
       $taxes{''} = $err_or_ref;
     }
 
-  }elsif ( $self->tax !~ /Y/i && $self->payby ne 'COMP' ) {
+  } elsif ( $self->tax !~ /Y/i && $self->payby ne 'COMP' ) {
 
     my %taxhash = map { $_ => $self->get("$prefix$_") }
                       qw( state county country );
@@ -2556,83 +2560,88 @@ sub _handle_taxes {
   } #if $conf->exists('enable_taxproducts') ...
  
   my $section = $cust_pkg->part_pkg->option('usage_section', 'Hush!')
-    if $cust_pkg->part_pkg->option('separate_usage');
+    if $cust_pkg->part_pkg->option('separate_usage', 'Hush!' );
   my $want_duplicate =
     $cust_pkg->part_pkg->option('summarize_usage', 'Hush!') &&
     $cust_pkg->part_pkg->option('usage_section', 'Hush!');
 
-  # XXX this mostly goes away with cust_bill_pkg refactor
- 
-  $cust_bill_pkg{setup} = $cust_bill_pkg if $cust_bill_pkg->setup;
-  $cust_bill_pkg{recur} = $cust_bill_pkg if $cust_bill_pkg->recur;
-    
-  #split setup and recur
-  if ($cust_bill_pkg->setup && $cust_bill_pkg->recur) {
-    my $cust_bill_pkg_recur = new FS::cust_bill_pkg { $cust_bill_pkg->hash };
-    $cust_bill_pkg->set('details', []);
-    $cust_bill_pkg->recur(0);
-    $cust_bill_pkg->unitrecur(0);
-    $cust_bill_pkg->type('');
-    $cust_bill_pkg_recur->setup(0);
-    $cust_bill_pkg_recur->unitsetup(0);
-    $cust_bill_pkg{recur} = $cust_bill_pkg_recur;
-  }
-
-  #split usage from recur
-  my $usage = sprintf( "%.2f", $cust_bill_pkg{recur}->usage );
-  warn "usage is $usage\n" if $DEBUG;
-  if ($usage) {
-    my $cust_bill_pkg_usage =
-        new FS::cust_bill_pkg { $cust_bill_pkg{recur}->hash };
-    $cust_bill_pkg_usage->recur( $usage );
-    $cust_bill_pkg_usage->type( 'U' );
-    $cust_bill_pkg_usage->duplicate( $want_duplicate ? 'Y' :  '' );
-    $cust_bill_pkg_usage->section( $section );
-    $cust_bill_pkg_usage->post_total( $want_duplicate ? 'Y' :  '' );
-    my $recur = sprintf( "%.2f", $cust_bill_pkg{recur}->recur - $usage );
-    $cust_bill_pkg{recur}->recur( $recur );
-    $cust_bill_pkg{recur}->type( '' );
-    $cust_bill_pkg{recur}->set('details', []);
-    $cust_bill_pkg{''} = $cust_bill_pkg_usage;
-  }
-
-  #subdivide usage by usage_class
-  if (exists($cust_bill_pkg{''})) {
-    foreach my $class (grep {$_ && $_ ne 'setup' && $_ ne 'recur' } @classes) {
-      my $usage = sprintf( "%.2f", $cust_bill_pkg{''}->usage($class) );
-      my $cust_bill_pkg_usage =
-          new FS::cust_bill_pkg { $cust_bill_pkg{''}->hash };
-      $cust_bill_pkg_usage->recur( $usage );
-      $cust_bill_pkg_usage->set('details', []);
-      my $classless = sprintf( "%.2f", $cust_bill_pkg{''}->recur - $usage );
-      $cust_bill_pkg{''}->recur( $classless );
-      $cust_bill_pkg{$class} = $cust_bill_pkg_usage;
-    }
-    delete $cust_bill_pkg{''} unless $cust_bill_pkg{''}->recur;
-  }
-
-  foreach my $key (keys %cust_bill_pkg) {
-    my @taxes = @{ $taxes{$key} };
-    my $cust_bill_pkg = $cust_bill_pkg{$key};
-
-    foreach my $tax ( @taxes ) {
-      my $taxname = ref( $tax ). ' '. $tax->taxnum;
-      if ( exists( $taxlisthash->{ $taxname } ) ) {
-        push @{ $taxlisthash->{ $taxname  } }, $cust_bill_pkg;
-      }else{
-        $taxlisthash->{ $taxname } = [ $tax, $cust_bill_pkg ];
-      }
-    }
-  }
-
-  # sort setup,recur,'', and the rest numeric && return
-  my @result = map { $cust_bill_pkg{$_} }
-               sort { my $ad = ($a=~/^\d+$/); my $bd = ($b=~/^\d+$/);
-                      ( $ad cmp $bd ) || ( $ad ? $a<=>$b : $b cmp $a )
-                    }
-               keys %cust_bill_pkg;
-
-  \@result;
+#BUNK.  DO NOT CREATE DUPLICATE cust_bill_pkg!!!!!!!!!!!!
+#
+#  # XXX this mostly goes away with cust_bill_pkg refactor
+# 
+#  $cust_bill_pkg{setup} = $cust_bill_pkg if $cust_bill_pkg->setup;
+#  $cust_bill_pkg{recur} = $cust_bill_pkg if $cust_bill_pkg->recur;
+#
+#    
+#  #split setup and recur
+#  if ($cust_bill_pkg->setup && $cust_bill_pkg->recur) {
+#    my $cust_bill_pkg_recur = new FS::cust_bill_pkg { $cust_bill_pkg->hash };
+#    $cust_bill_pkg_recur->details($cust_bill_pkg->
+#    $cust_bill_pkg_recur->setup(0);
+#    $cust_bill_pkg_recur->unitsetup(0);
+#    $cust_bill_pkg{recur} = $cust_bill_pkg_recur;
+#
+#    $cust_bill_pkg->set('details', []);
+#    $cust_bill_pkg->recur(0);
+#    $cust_bill_pkg->unitrecur(0);
+#    $cust_bill_pkg->type('');
+#  }
+#
+#  #split usage from recur
+#  my $usage = sprintf( "%.2f", $cust_bill_pkg{recur}->usage );
+#  warn "usage is $usage\n" if $DEBUG;
+#  if ($usage) {
+#    my $cust_bill_pkg_usage =
+#        new FS::cust_bill_pkg { $cust_bill_pkg{recur}->hash };
+#    $cust_bill_pkg_usage->recur( $usage );
+#    $cust_bill_pkg_usage->type( 'U' );
+#    $cust_bill_pkg_usage->duplicate( $want_duplicate ? 'Y' :  '' );
+#    $cust_bill_pkg_usage->section( $section );
+#    $cust_bill_pkg_usage->post_total( $want_duplicate ? 'Y' :  '' );
+#    my $recur = sprintf( "%.2f", $cust_bill_pkg{recur}->recur - $usage );
+#    $cust_bill_pkg{recur}->recur( $recur );
+#    $cust_bill_pkg{recur}->type( '' );
+#    $cust_bill_pkg{recur}->set('details', []);
+#    $cust_bill_pkg{''} = $cust_bill_pkg_usage;
+#  }
+#
+#  #subdivide usage by usage_class
+#  if (exists($cust_bill_pkg{''})) {
+#    foreach my $class (grep {$_ && $_ ne 'setup' && $_ ne 'recur' } @classes) {
+#      my $usage = sprintf( "%.2f", $cust_bill_pkg{''}->usage($class) );
+#      my $cust_bill_pkg_usage =
+#          new FS::cust_bill_pkg { $cust_bill_pkg{''}->hash };
+#      $cust_bill_pkg_usage->recur( $usage );
+#      $cust_bill_pkg_usage->set('details', []);
+#      my $classless = sprintf( "%.2f", $cust_bill_pkg{''}->recur - $usage );
+#      $cust_bill_pkg{''}->recur( $classless );
+#      $cust_bill_pkg{$class} = $cust_bill_pkg_usage;
+#    }
+#    delete $cust_bill_pkg{''} unless $cust_bill_pkg{''}->recur;
+#  }
+#
+#  foreach my $key (keys %cust_bill_pkg) {
+#    my @taxes = @{ $taxes{$key} };
+#    my $cust_bill_pkg = $cust_bill_pkg{$key};
+#
+#    foreach my $tax ( @taxes ) {
+#      my $taxname = ref( $tax ). ' '. $tax->taxnum;
+#      if ( exists( $taxlisthash->{ $taxname } ) ) {
+#        push @{ $taxlisthash->{ $taxname  } }, $cust_bill_pkg;
+#      }else{
+#        $taxlisthash->{ $taxname } = [ $tax, $cust_bill_pkg ];
+#      }
+#    }
+#  }
+#
+#  # sort setup,recur,'', and the rest numeric && return
+#  my @result = map { $cust_bill_pkg{$_} }
+#               sort { my $ad = ($a=~/^\d+$/); my $bd = ($b=~/^\d+$/);
+#                      ( $ad cmp $bd ) || ( $ad ? $a<=>$b : $b cmp $a )
+#                    }
+#               keys %cust_bill_pkg;
+#
+#  \@result;
 }
 
 sub _gather_taxes {

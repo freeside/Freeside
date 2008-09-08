@@ -1,0 +1,59 @@
+% if ( $error ) {
+<% header('Error') %>
+<FONT COLOR="#ff0000"><B><% $error |h %></B></FONT><BR><BR>
+<CENTER><INPUT TYPE="BUTTON" VALUE="OK" onClick="parent.cClick()"></CENTER>
+</BODY></HTML>
+% } else {
+<% header($action) %>
+  <SCRIPT TYPE="text/javascript">
+    window.top.location.reload();
+  </SCRIPT>
+  </BODY></HTML>
+% }
+<%init>
+
+my %access_right = (
+  'I' => 'Edit customer package invoice details', 
+  'C' => 'Edit customer package comments',
+);
+
+my %name = (
+  'I' => 'invoice details',
+  'C' => 'package comments',
+);
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+$cgi->param('detailtype') =~ /^(\w)$/ or die 'illegal detailtype';
+my $detailtype = $1;
+
+my $right = $access_right{$detailtype};
+die "access denied"
+  unless $curuser->access_right($right);
+
+$cgi->param('pkgnum') =~ /^(\d+)$/ or die 'illegal pkgnum';
+my $pkgnum = $1;
+
+my $cust_pkg = qsearchs({
+  'table'     => 'cust_pkg',
+  'addl_from' => 'LEFT JOIN cust_main USING ( custnum )',
+  'hashref'   => { 'pkgnum' => $pkgnum },
+  'extra_sql' => ' AND '. $curuser->agentnums_sql,
+});
+
+
+my @orig_details = $cust_pkg->cust_pkg_detail($detailtype);
+
+my $action = ucfirst($name{$detailtype}).
+             ( scalar(@orig_details) ? ' changed ' : ' added ' );
+
+my $param = $cgi->Vars;
+my @details = ();
+for ( my $row = 0; exists($param->{"detail$row"}); $row++ ) {
+  push @details, $param->{"detail$row"}
+    if $param->{"detail$row"} =~ /\S/;
+}
+
+my $error = $cust_pkg->set_cust_pkg_detail($detailtype, @details);
+
+</%init>
