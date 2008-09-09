@@ -246,14 +246,16 @@ sub check {
   my $error =
        $self->ut_numbern('acctid')
 
-    #Usage = 1, S&E = 7, OC&C = 8
-    || $self->ut_foreign_keyn('cdrtypenum',  'cdr_type',     'cdrtypenum' )
-
-    #the big list in appendix 2
-    || $self->ut_foreign_keyn('calltypenum', 'cdr_calltype', 'calltypenum' )
-
-    # Telstra =1, Optus = 2, RSL COM = 3
-    || $self->ut_foreign_keyn('carrierid', 'cdr_carrier', 'carrierid' )
+  #add a config option to turn these back on if someone needs 'em
+  #
+  #  #Usage = 1, S&E = 7, OC&C = 8
+  #  || $self->ut_foreign_keyn('cdrtypenum',  'cdr_type',     'cdrtypenum' )
+  #
+  #  #the big list in appendix 2
+  #  || $self->ut_foreign_keyn('calltypenum', 'cdr_calltype', 'calltypenum' )
+  #
+  #  # Telstra =1, Optus = 2, RSL COM = 3
+  #  || $self->ut_foreign_keyn('carrierid', 'cdr_carrier', 'carrierid' )
   ;
   return $error if $error;
 

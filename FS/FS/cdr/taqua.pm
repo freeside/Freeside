@@ -11,9 +11,9 @@ use FS::cdr qw(_cdr_date_parser_maker);
   'weight'        => 130,
   'header'        => 1,
   'import_fields' => [  #some of these are kind arbitrary...
-    sub { my($cdr, $field) = @_; },       #XXX interesting RecordType
-             # easy to fix: Can't find cdr.cdrtypenum 1 in cdr_type.cdrtypenum
 
+    #0
+    'cdrtypenum',                         #RecordType
     sub { my($cdr, $field) = @_; },             #all10#RecordVersion
     sub { my($cdr, $field) = @_; },       #OrigShelfNumber
     sub { my($cdr, $field) = @_; },       #OrigCardNumber
@@ -23,6 +23,8 @@ use FS::cdr qw(_cdr_date_parser_maker);
     'accountcode',                        #SessionNumber
     'src',                                #CallingPartyNumber
     'dst',                                #CalledPartyNumber
+
+    #10
     _cdr_date_parser_maker('startdate'),  #CallArrivalTime
     _cdr_date_parser_maker('enddate'),    #CallCompletionTime
 
@@ -53,9 +55,11 @@ use FS::cdr qw(_cdr_date_parser_maker);
 
     sub { my($cdr, $field) = @_; },       #TermShelfNumber
     sub { my($cdr, $field) = @_; },       #TermCardNumber
+
+    #20
     sub { my($cdr, $field) = @_; },       #TermCircuit
     sub { my($cdr, $field) = @_; },       #TermCircuitType
-    sub { my($cdr, $field) = @_; },       #OutboundCarrierId
+    'carrierid',                          #OutboundCarrierId
     'charged_party',                      #BillingNumber
     sub { my($cdr, $field) = @_; },       #SubscriberNumber
     'lastapp',                            #ServiceName
@@ -63,10 +67,15 @@ use FS::cdr qw(_cdr_date_parser_maker);
     'lastdata',                           #ServiceInformation
     sub { my($cdr, $field) = @_; },       #FacilityInfo
     sub { my($cdr, $field) = @_; },             #all 1900-01-01 0#CallTraceTime
+
+    #30
     sub { my($cdr, $field) = @_; },             #all-1#UniqueIndicator
     sub { my($cdr, $field) = @_; },             #all-1#PresentationIndicator
     sub { my($cdr, $field) = @_; },             #empty#Pin
-    sub { my($cdr, $field) = @_; },       #CallType
+    'calltypenum',                        #CallType
+
+    #nothing below is used by QIS...
+
     sub { my($cdr, $field) = @_; },           #Balt/empty #OrigRateCenter
     sub { my($cdr, $field) = @_; },           #Balt/empty #TermRateCenter
 
@@ -78,6 +87,8 @@ use FS::cdr qw(_cdr_date_parser_maker);
     'userfield',                                #empty#UserDefined
     sub { my($cdr, $field) = @_; },             #empty#PseudoDestinationNumber
     sub { my($cdr, $field) = @_; },             #all-1#PseudoCarrierCode
+
+    #40
     sub { my($cdr, $field) = @_; },             #empty#PseudoANI
     sub { my($cdr, $field) = @_; },             #all-1#PseudoFacilityInfo
     sub { my($cdr, $field) = @_; },       #OrigDialedDigits
@@ -88,6 +99,8 @@ use FS::cdr qw(_cdr_date_parser_maker);
     sub { my($cdr, $field) = @_; },       #huh?#InsertTime
     sub { my($cdr, $field) = @_; },       #key
     sub { my($cdr, $field) = @_; },             #empty#AMALineNumber
+
+    #50
     sub { my($cdr, $field) = @_; },             #empty#AMAslpID
     sub { my($cdr, $field) = @_; },             #empty#AMADigitsDialedWC
     sub { my($cdr, $field) = @_; },       #OpxOffHook

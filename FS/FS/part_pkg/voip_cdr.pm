@@ -80,6 +80,19 @@ tie my %rating_method, 'Tie::IxHash',
                            'type' => 'checkbox',
                          },
 
+    'use_disposition_taqua' => { 'name' => 'Do not charge for CDRs where the disposition is not set to "100" (Taqua).',
+                                 'type' => 'checkbox',
+                               },
+
+    'use_carrierid' => { 'name' => 'Do not charge for CDRs where the Carrier ID is not set to: ',
+                         },
+
+    'use_cdrtypenum' => { 'name' => 'Do not charge for CDRs where the CDR Type is not set to: ',
+                         },
+
+    '411_rewrite' => { 'name' => 'Rewrite these (comma-separated) destination numbers to 411 for rating purposes: ',
+                      },
+
     'output_format' => { 'name' => 'Simple output format',
                          'type' => 'select',
                          'select_options' => { FS::cdr::invoice_formats() },
@@ -182,15 +195,39 @@ sub calc_recur {
          )
       {
 
+        #should have some better way of checking these options than a long
+        #if-else tree...
+        my $notchg = "not charging for CDR";
+
         if ( $self->option('use_amaflags') && $cdr->amaflags != 2 ) {
 
-          warn "not charging for CDR (amaflags != 2)\n" if $DEBUG;
+          warn "$notchg (amaflags != 2)\n" if $DEBUG;
           $charge = 0;
 
         } elsif ( $self->option('use_disposition')
                   && $cdr->disposition ne 'ANSWERED' ) {
 
-          warn "not charging for CDR (disposition != ANSWERED)\n" if $DEBUG;
+          warn "$notchg (disposition != ANSWERED)\n" if $DEBUG;
+          $charge = 0;
+
+        } elsif ( $self->option('use_disposition_taqua')
+                  && $cdr->disposition != 100 ) {
+
+          warn "$notchg (disposition != 100)\n" if $DEBUG;
+          $charge = 0;
+
+        } elsif ( $self->option('use_carrierid')
+                  && $cdr->carrierid != $self->option('use_carrierid') ) {
+
+          warn "$notchg (carrierid != ". $self->option('use_carrierid'). ")\n"
+            if $DEBUG;
+          $charge = 0;
+
+        } elsif ( $self->option('use_cdrtypenum')
+                  && $cdr->cdrtypenum != $self->option('use_cdrtypenum') ) {
+
+          warn "$notchg (cdrtypenum != ". $self->option('use_cdrtypenum'). ")\n"
+            if $DEBUG;
           $charge = 0;
 
         } else {
@@ -199,6 +236,11 @@ sub calc_recur {
           # look up rate details based on called station id
           # (or calling station id for toll free calls)
           ###
+
+          if ( $self->option('411_rewrite') ) {
+            my @dirass = split(/\s*,\s*/, $self->option('411_rewrite'));
+            $cdr->dst('411') if grep $cdr->dst eq $_, @dirass;
+          }
 
           my( $to_or_from, $number );
           if ( $cdr->dst =~ /^(\+?1)?8([02-8])\1/ ) { #tollfree call
