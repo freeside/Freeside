@@ -1,8 +1,9 @@
 package FS::ClientAPI::MyAccount;
 
 use strict;
-use vars qw($cache);
-use subs qw(_cache);
+use vars qw( $cache $DEBUG );
+use subs qw( _cache _provision );
+use Data::Dumper;
 use Digest::MD5 qw(md5_hex);
 use Date::Format;
 use Business::CreditCard;
@@ -28,6 +29,8 @@ use FS::payby;
 use FS::acct_rt_transaction;
 use HTML::Entities;
 
+$DEBUG = 0;
+
 #false laziness with FS::cust_main
 BEGIN {
   eval "use Time::Local;";
@@ -45,8 +48,6 @@ use vars qw( @cust_main_editable_fields );
   payby payinfo payname paystart_month paystart_year payissue payip
   ss paytype paystate stateid stateid_state
 );
-
-use subs qw(_provision);
 
 sub _cache {
   $cache ||= new FS::ClientAPI_SessionCache( {
@@ -88,11 +89,15 @@ sub login {
                            );
     return { error => 'User not found.' } unless $svc_acct;
 
-    my $pkg_svc = $svc_acct->cust_svc->pkg_svc;
+    #my $pkg_svc = $svc_acct->cust_svc->pkg_svc;
+    #return { error => 'Only primary user may log in.' } 
+    #  if $conf->exists('selfservice_server-primary_only')
+    #    && ( ! $pkg_svc || $pkg_svc->primary_svc ne 'Y' );
+    my $cust_svc = $svc_acct->cust_svc;
     return { error => 'Only primary user may log in.' } 
       if $conf->exists('selfservice_server-primary_only')
-        && ( ! $pkg_svc || $pkg_svc->primary_svc ne 'Y' );
- 
+         && $cust_svc->svcpart != $cust_svc->cust_pkg->svcpart('svc_acct');
+
     return { error => 'Incorrect password.' }
       unless $svc_acct->check_password($p->{'password'});
 
@@ -1099,6 +1104,8 @@ sub cancel_pkg {
 
 sub provision_acct {
   my $p = shift;
+  warn "provision_acct called\n"
+    if $DEBUG;
 
   return { 'error' => gettext('passwords_dont_match') }
     if $p->{'_password'} ne $p->{'_password2'};
@@ -1112,6 +1119,8 @@ sub provision_acct {
       unless ($domains{$p->{'domsvc'}});
   }
 
+  warn "provision_acct calling _provision\n"
+    if $DEBUG;
   _provision( 'FS::svc_acct',
               [qw(username _password domsvc)],
               [qw(username _password domsvc)],
@@ -1133,6 +1142,8 @@ sub provision_external {
 
 sub _provision {
   my( $class, $fields, $return_fields, $p ) = splice(@_, 0, 4);
+  warn "_provision called for $class\n"
+    if $DEBUG;
 
   my($context, $session, $custnum) = _custoragent_session_custnum($p);
   return { 'error' => $session } if $context eq 'error';
@@ -1144,27 +1155,42 @@ sub _provision {
 
   my $pkgnum = $p->{'pkgnum'};
 
+  warn "searching for custnum $custnum pkgnum $pkgnum\n"
+    if $DEBUG;
   my $cust_pkg = qsearchs('cust_pkg', { 'custnum' => $custnum,
                                         'pkgnum'  => $pkgnum,
                                                                } )
     or return { 'error' => "unknown pkgnum $pkgnum" };
 
+  warn "searching for svcpart ". $p->{'svcpart'}. "\n"
+    if $DEBUG;
   my $part_svc = qsearchs('part_svc', { 'svcpart' => $p->{'svcpart'} } )
     or return { 'error' => "unknown svcpart $p->{'svcpart'}" };
 
+  warn "creating $class record\n"
+    if $DEBUG;
   my $svc_x = $class->new( {
     'pkgnum'  => $p->{'pkgnum'},
     'svcpart' => $p->{'svcpart'},
     map { $_ => $p->{$_} } @$fields
   } );
+  warn "inserting $class record\n"
+    if $DEBUG;
   my $error = $svc_x->insert;
-  $svc_x = qsearchs($svc_x->table, { 'svcnum' => $svc_x->svcnum })
-    unless $error;
 
-  return { 'svc'   => $part_svc->svc,
-           'error' => $error,
-           map { $_ => $svc_x->get($_) } @$return_fields
-         };
+  unless ( $error ) {
+    warn "finding inserted record for svcnum ". $svc_x->svcnum. "\n"
+      if $DEBUG;
+    $svc_x = qsearchs($svc_x->table, { 'svcnum' => $svc_x->svcnum })
+  }
+
+  my $return = { 'svc'   => $part_svc->svc,
+                 'error' => $error,
+                 map { $_ => $svc_x->get($_) } @$return_fields
+               };
+  warn "_provision returning ". Dumper($return). "\n"
+    if $DEBUG;
+  return $return;
 
 }
 
