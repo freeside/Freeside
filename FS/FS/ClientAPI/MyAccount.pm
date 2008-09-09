@@ -94,9 +94,10 @@ sub login {
     #  if $conf->exists('selfservice_server-primary_only')
     #    && ( ! $pkg_svc || $pkg_svc->primary_svc ne 'Y' );
     my $cust_svc = $svc_acct->cust_svc;
+    my $part_pkg = $cust_svc->cust_pkg->part_pkg;
     return { error => 'Only primary user may log in.' } 
       if $conf->exists('selfservice_server-primary_only')
-         && $cust_svc->svcpart != $cust_svc->cust_pkg->svcpart('svc_acct');
+         && $cust_svc->svcpart != $part_pkg->svcpart('svc_acct');
 
     return { error => 'Incorrect password.' }
       unless $svc_acct->check_password($p->{'password'});
