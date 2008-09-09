@@ -135,8 +135,10 @@ tie my %rating_method, 'Tie::IxHash',
                        default_prefix
                        disable_src
                        domestic_prefix international_prefix
-                       use_amaflags use_disposition output_format
-                       summarize_usage usage_section
+                       use_amaflags use_disposition
+                       use_disposition_taqua use_carrierid use_cdrtypenum
+                       411_rewrite
+                       output_format summarize_usage usage_section
                      )
                   ],
   'weight' => 40,
