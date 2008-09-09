@@ -1,7 +1,7 @@
 package FS::Upgrade;
 
 use strict;
-use vars qw( @ISA @EXPORT_OK );
+use vars qw( @ISA @EXPORT_OK $DEBUG );
 use Exporter;
 use Tie::IxHash;
 use FS::UID qw( dbh driver_name );
@@ -13,6 +13,8 @@ $FS::svc_domain::whois_hack = 1;
 
 @ISA = qw( Exporter );
 @EXPORT_OK = qw( upgrade upgrade_sqlradius );
+
+$DEBUG = 1;
 
 =head1 NAME
 
@@ -51,6 +53,7 @@ sub upgrade {
     die $@ if $@;
 
     if ( $class->can('_upgrade_data') ) {
+      warn "Upgrading $table...\n";
       $class->_upgrade_data(%opt);
     } else {
       warn "WARNING: asked for upgrade of $table,".
