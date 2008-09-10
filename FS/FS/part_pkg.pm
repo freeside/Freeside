@@ -956,11 +956,11 @@ sub part_pkg_taxrate {
         ).
     ')';
   # much more CCH oddness in m2m -- this is kludgy
+  my @tpnums = $self->_expand_cch_taxproductnum($class);
   $extra_sql .= ' AND ('.
-    join(' OR ', map{ "taxproductnum = $_" }
-                 $self->_expand_cch_taxproductnum($class)
-        ).
-    ')';
+                          join(' OR ', map{ "taxproductnum = $_" } @tpnums ).
+                     ')'
+     if @tpnums;
 
   my $addl_from = 'LEFT JOIN part_pkg_taxproduct USING ( taxproductnum )';
   my $order_by = 'ORDER BY taxclassnum, length(geocode) desc, length(taxproduct) desc';
