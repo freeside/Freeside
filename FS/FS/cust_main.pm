@@ -2381,6 +2381,7 @@ sub _make_lines {
     # only for figuring next bill date, nothing else, so, reset $sdate again
     # here
     $sdate = $cust_pkg->bill || $cust_pkg->setup || $time;
+    #no need, its in $hash{last_bill}# my $last_bill = $cust_pkg->last_bill;
     $cust_pkg->last_bill($sdate);
     
     if ( $part_pkg->freq =~ /^\d+$/ ) {
@@ -2455,10 +2456,17 @@ sub _make_lines {
         'recur'     => $recur,
         'unitrecur' => $unitrecur,
         'quantity'  => $cust_pkg->quantity,
-        'sdate'     => $sdate,
-        'edate'     => $cust_pkg->bill,
         'details'   => \@details,
       };
+
+      if ( $part_pkg->option('recur_temporality') eq 'preceding' ) {
+        $cust_bill_pkg->sdate( $hash{last_bill} );
+        $cust_bill_pkg->edate( $sdate - 86399   );2#60s*60m*24h-1
+      } else { #if ( $part_pkg->option('recur_temporality') eq 'upcoming' ) {
+        $cust_bill_pkg->sdate( $sdate );
+        $cust_bill_pkg->edate( $cust_pkg->bill );
+      }
+
       $cust_bill_pkg->pkgpart_override($part_pkg->pkgpart)
         unless $part_pkg->pkgpart == $real_pkgpart;
 
