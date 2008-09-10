@@ -1823,9 +1823,45 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'hylafax',
-    'section'     => '',
+    'section'     => 'billing',
     'description' => 'Options for a HylaFAX server to enable the FAX invoice destination.  They should be in the form of a space separated list of arguments to the Fax::Hylafax::Client::sendfax subroutine.  You probably shouldn\'t override things like \'docfile\'.  *Note* Only supported when using typeset invoices (see the invoice_latex configuration option).',
     'type'        => [qw( checkbox textarea )],
+  },
+
+  {
+    'key'         => 'cust_bill-ftpformat',
+    'section'     => 'billing',
+    'description' => 'Enable FTP of raw invoice data - format.',
+    'type'        => 'select',
+    'select_enum' => [ '', 'default', 'billco', ],
+  },
+
+  {
+    'key'         => 'cust_bill-ftpserver',
+    'section'     => 'billing',
+    'description' => 'Enable FTP of raw invoice data - server.',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'cust_bill-ftpusername',
+    'section'     => 'billing',
+    'description' => 'Enable FTP of raw invoice data - server.',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'cust_bill-ftppassword',
+    'section'     => 'billing',
+    'description' => 'Enable FTP of raw invoice data - server.',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'cust_bill-ftpdir',
+    'section'     => 'billing',
+    'description' => 'Enable FTP of raw invoice data - server.',
+    'type'        => 'text',
   },
 
   {
