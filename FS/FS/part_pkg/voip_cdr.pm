@@ -80,7 +80,7 @@ tie my %temporalities, 'Tie::IxHash',
 #                                    'type' => 'checkbox',
 #                                  },
 
-    'international_prefix' => { 'name'    => 'Destination prefix for international CDR records',
+    'international_prefix' => { 'name'    => 'Destination prefix(es) for international CDR records.  Separate multiple options with commas.',
                                 'default' => '011',
                               },
 
@@ -277,10 +277,15 @@ sub calc_recur {
 #          $dest =~ s/\@(.*)$// and $siphost = $1; # @10.54.32.1, @sip.example.com
 
           my $intl = $self->option('international_prefix') || '011';
+          my @intl = ();
+          if ( $intl =~ /,/ ) {
+            @intl = split(/\s*,\s*/, $intl);
+          } else {
+            @intl = ($intl);
 
           #determine the country code
           my $countrycode;
-          if (    $number =~ /^$intl(((\d)(\d))(\d))(\d+)$/
+          if ( grep { $number =~ /^$_(((\d)(\d))(\d))(\d+)$/ } @intl
                || $number =~ /^\+(((\d)(\d))(\d))(\d+)$/
              )
           {
