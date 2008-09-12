@@ -29,6 +29,7 @@ use FS::cust_pkg;
 use FS::cust_svc;
 use FS::cust_bill;
 use FS::cust_bill_pkg;
+use FS::cust_bill_pkg_display;
 use FS::cust_pay;
 use FS::cust_pay_pending;
 use FS::cust_pay_void;
@@ -2567,89 +2568,40 @@ sub _handle_taxes {
 
   } #if $conf->exists('enable_taxproducts') ...
  
-  my $section = $cust_pkg->part_pkg->option('usage_section', 'Hush!')
-    if $cust_pkg->part_pkg->option('separate_usage', 'Hush!' );
-  my $want_duplicate =
-    $cust_pkg->part_pkg->option('summarize_usage', 'Hush!') &&
-    $cust_pkg->part_pkg->option('usage_section', 'Hush!');
+  my @display = ();
+  if ( $conf->exists('separate_usage') ) {
+    my $section = $cust_pkg->part_pkg->option('usage_section', 'Hush!');
+    my $summary = $cust_pkg->part_pkg->option('summarize_usage', 'Hush!');
+    push @display, new FS::cust_bill_pkg_display { type    => 'S' };
+    push @display, new FS::cust_bill_pkg_display { type    => 'R' };
+    push @display, new FS::cust_bill_pkg_display { type    => 'U',
+                                                   section => $section
+                                                 };
+    if ($section && $summary) {
+      $display[2]->post_total('Y');
+      push @display, new FS::cust_bill_pkg_display { type    => 'U',
+                                                     summary => 'Y',
+                                                   }
+    }
+  }
+  $cust_bill_pkg->set('display', \@display);
 
-#BUNK.  DO NOT CREATE DUPLICATE cust_bill_pkg!!!!!!!!!!!!
-#
-#  # XXX this mostly goes away with cust_bill_pkg refactor
-# 
-#  $cust_bill_pkg{setup} = $cust_bill_pkg if $cust_bill_pkg->setup;
-#  $cust_bill_pkg{recur} = $cust_bill_pkg if $cust_bill_pkg->recur;
-#
-#    
-#  #split setup and recur
-#  if ($cust_bill_pkg->setup && $cust_bill_pkg->recur) {
-#    my $cust_bill_pkg_recur = new FS::cust_bill_pkg { $cust_bill_pkg->hash };
-#    $cust_bill_pkg_recur->details($cust_bill_pkg->
-#    $cust_bill_pkg_recur->setup(0);
-#    $cust_bill_pkg_recur->unitsetup(0);
-#    $cust_bill_pkg{recur} = $cust_bill_pkg_recur;
-#
-#    $cust_bill_pkg->set('details', []);
-#    $cust_bill_pkg->recur(0);
-#    $cust_bill_pkg->unitrecur(0);
-#    $cust_bill_pkg->type('');
-#  }
-#
-#  #split usage from recur
-#  my $usage = sprintf( "%.2f", $cust_bill_pkg{recur}->usage );
-#  warn "usage is $usage\n" if $DEBUG;
-#  if ($usage) {
-#    my $cust_bill_pkg_usage =
-#        new FS::cust_bill_pkg { $cust_bill_pkg{recur}->hash };
-#    $cust_bill_pkg_usage->recur( $usage );
-#    $cust_bill_pkg_usage->type( 'U' );
-#    $cust_bill_pkg_usage->duplicate( $want_duplicate ? 'Y' :  '' );
-#    $cust_bill_pkg_usage->section( $section );
-#    $cust_bill_pkg_usage->post_total( $want_duplicate ? 'Y' :  '' );
-#    my $recur = sprintf( "%.2f", $cust_bill_pkg{recur}->recur - $usage );
-#    $cust_bill_pkg{recur}->recur( $recur );
-#    $cust_bill_pkg{recur}->type( '' );
-#    $cust_bill_pkg{recur}->set('details', []);
-#    $cust_bill_pkg{''} = $cust_bill_pkg_usage;
-#  }
-#
-#  #subdivide usage by usage_class
-#  if (exists($cust_bill_pkg{''})) {
-#    foreach my $class (grep {$_ && $_ ne 'setup' && $_ ne 'recur' } @classes) {
-#      my $usage = sprintf( "%.2f", $cust_bill_pkg{''}->usage($class) );
-#      my $cust_bill_pkg_usage =
-#          new FS::cust_bill_pkg { $cust_bill_pkg{''}->hash };
-#      $cust_bill_pkg_usage->recur( $usage );
-#      $cust_bill_pkg_usage->set('details', []);
-#      my $classless = sprintf( "%.2f", $cust_bill_pkg{''}->recur - $usage );
-#      $cust_bill_pkg{''}->recur( $classless );
-#      $cust_bill_pkg{$class} = $cust_bill_pkg_usage;
-#    }
-#    delete $cust_bill_pkg{''} unless $cust_bill_pkg{''}->recur;
-#  }
-#
-#  foreach my $key (keys %cust_bill_pkg) {
-#    my @taxes = @{ $taxes{$key} };
-#    my $cust_bill_pkg = $cust_bill_pkg{$key};
-#
-#    foreach my $tax ( @taxes ) {
-#      my $taxname = ref( $tax ). ' '. $tax->taxnum;
-#      if ( exists( $taxlisthash->{ $taxname } ) ) {
-#        push @{ $taxlisthash->{ $taxname  } }, $cust_bill_pkg;
-#      }else{
-#        $taxlisthash->{ $taxname } = [ $tax, $cust_bill_pkg ];
-#      }
-#    }
-#  }
-#
-#  # sort setup,recur,'', and the rest numeric && return
-#  my @result = map { $cust_bill_pkg{$_} }
-#               sort { my $ad = ($a=~/^\d+$/); my $bd = ($b=~/^\d+$/);
-#                      ( $ad cmp $bd ) || ( $ad ? $a<=>$b : $b cmp $a )
-#                    }
-#               keys %cust_bill_pkg;
-#
-#  \@result;
+  my %tax_cust_bill_pkg = $cust_bill_pkg->disintegrate;
+  foreach my $key (keys %tax_cust_bill_pkg) {
+    my @taxes = @{ $taxes{$key} };
+    my $tax_cust_bill_pkg = $tax_cust_bill_pkg{$key};
+
+    foreach my $tax ( @taxes ) {
+      my $taxname = ref( $tax ). ' '. $tax->taxnum;
+      if ( exists( $taxlisthash->{ $taxname } ) ) {
+        push @{ $taxlisthash->{ $taxname  } }, $tax_cust_bill_pkg;
+      }else{
+        $taxlisthash->{ $taxname } = [ $tax, $tax_cust_bill_pkg ];
+      }
+    }
+  }
+
+  '';
 }
 
 sub _gather_taxes {

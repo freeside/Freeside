@@ -519,40 +519,23 @@ sub tables_hashref {
       ],
       'primary_key' => 'detailnum',
       'unique' => [],
-      'index' => [ [ 'billpkgnum' ], [ 'pkgnum', 'invnum' ] ],
+      'index' => [ [ 'billpkgnum' ], [ 'classnum' ], [ 'pkgnum', 'invnum' ] ],
     },
 
-    #instead of 'duplicate',  'char', 'NULL', 1, '', '',
-    # that way we keep display vs *TOTALLY* out of the table for actual
-    #  finanancial line items
     'cust_bill_pkg_display' => {
       'columns' => [
         'billpkgdisplaynum', 'serial', '', '', '', '', 
         'billpkgnum', 'int', '', '', '', '', 
         'section',  'varchar', 'NULL', $char_d, '', '', 
-        #override the linked real one?#'unitsetup', @money_typen, '', '', 
-        #this too?#'unitrecur', @money_typen, '', '', 
+        #'unitsetup', @money_typen, '', '',     #override the linked real one?
+        #'unitrecur', @money_typen, '', '',     #this too?
         'post_total', 'char', 'NULL', 1, '', '',
         'type',       'char', 'NULL', 1, '', '',
-        #any other fields we need to control this display-only line item...
+        'summary',    'char', 'NULL', 1, '', '',
       ],
       'primary_key' => 'billpkgdisplaynum',
       'unique' => [],
       'index' => [ ['billpkgnum'], ],
-    },
-
-    #and this, to break down a line item into slices for taxation purposes
-    #(instead of creating usage line items for each usage class)
-    'cust_bill_pkg_slice' => {
-      'columns' => [
-        'slicenum', 'serial', '', '', '', '', 
-        'billpkgnum', 'int', '', '', '', '',
-        'amount',  @money_typen, '', '', 
-        'classnum', 'int', '', '', '', '',
-      ],
-      'primary_key' => 'slicenum',
-      'unique'      => [],
-      'index'       => [ [ 'billpkgnum' ], [ 'classnum' ], ],
     },
 
     'cust_credit' => {

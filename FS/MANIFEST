@@ -422,5 +422,7 @@ FS/cust_svc_option.pm
 t/cust_svc_option.t
 FS/usage_class.pm
 t/usage_class.t
+FS/cust_bill_pkg_display.pm
+t/cust_bill_pkg_display.t
 FS/cust_pkg_detail.pm
 t/cust_pkg_detail.t

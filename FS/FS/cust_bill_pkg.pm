@@ -1,17 +1,20 @@
 package FS::cust_bill_pkg;
 
 use strict;
-use vars qw( @ISA );
+use vars qw( @ISA $DEBUG );
 use FS::Record qw( qsearch qsearchs dbdef dbh );
 use FS::cust_main_Mixin;
 use FS::cust_pkg;
 use FS::part_pkg;
 use FS::cust_bill;
 use FS::cust_bill_pkg_detail;
+use FS::cust_bill_pkg_display;
 use FS::cust_bill_pay_pkg;
 use FS::cust_credit_bill_pkg;
 
 @ISA = qw( FS::cust_main_Mixin FS::Record );
+
+$DEBUG = 0;
 
 =head1 NAME
 
@@ -56,24 +59,6 @@ supported:
 =item edate - ending date of recurring fee
 
 =item itemdesc - Line item description (overrides normal package description)
-
-=item section - Invoice section (overrides normal package section)
-
-=cut
-
-sub section {
-  my ( $self, $value ) = @_;
-  if ( defined($value) ) {
-    $self->setfield('section', $value);
-  } else {
-    $self->getfield('section') || $self->part_pkg->categoryname;
-  }
-}
-
-sub duplicate_section {
-  my $self = shift;
-  $self->duplicate ? $self->part_pkg->categoryname : '';
-}
 
 =item quantity - If not set, defaults to 1
 
@@ -127,23 +112,31 @@ sub insert {
     return $error;
   }
 
-  unless ( defined dbdef->table('cust_bill_pkg_detail') && $self->get('details') ) {
-    $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-    return '';
+  if ( defined dbdef->table('cust_bill_pkg_detail') && $self->get('details') ) {
+    foreach my $detail ( @{$self->get('details')} ) {
+      my $cust_bill_pkg_detail = new FS::cust_bill_pkg_detail {
+        'billpkgnum' => $self->billpkgnum,
+        'format'     => (ref($detail) ? $detail->[0] : '' ),
+        'detail'     => (ref($detail) ? $detail->[1] : $detail ),
+        'amount'     => (ref($detail) ? $detail->[2] : '' ),
+        'classnum'   => (ref($detail) ? $detail->[3] : '' ),
+      };
+      $error = $cust_bill_pkg_detail->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+    }
   }
 
-  foreach my $detail ( @{$self->get('details')} ) {
-    my $cust_bill_pkg_detail = new FS::cust_bill_pkg_detail {
-      'billpkgnum' => $self->billpkgnum,
-      'format'     => (ref($detail) ? $detail->[0] : '' ),
-      'detail'     => (ref($detail) ? $detail->[1] : $detail ),
-      'amount'     => (ref($detail) ? $detail->[2] : '' ),
-      'classnum'   => (ref($detail) ? $detail->[3] : '' ),
-    };
-    $error = $cust_bill_pkg_detail->insert;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
+  if ( defined dbdef->table('cust_bill_pkg_display') && $self->get('display') ){
+    foreach my $cust_bill_pkg_display ( @{ $self->get('display') } ) {
+      $cust_bill_pkg_display->billpkgnum($self->billpkgnum);
+      $error = $cust_bill_pkg_display->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
     }
   }
 
@@ -194,7 +187,6 @@ sub check {
       || $self->ut_numbern('sdate')
       || $self->ut_numbern('edate')
       || $self->ut_textn('itemdesc')
-      || $self->ut_textn('section')
   ;
   return $error if $error;
 
@@ -446,6 +438,79 @@ sub unitrecur {
     : $self->getfield('unitrecur');
 }
 
+=item disintegrate
+
+Returns a list of cust_bill_pkg objects each with no more than a single class
+(including setup or recur) of charge.
+
+=cut
+
+sub disintegrate {
+  my $self = shift;
+  # XXX this goes away with cust_bill_pkg refactor
+
+  my $cust_bill_pkg = new FS::cust_bill_pkg { $self->hash };
+  my %cust_bill_pkg = ();
+
+  $cust_bill_pkg{setup} = $cust_bill_pkg if $cust_bill_pkg->setup;
+  $cust_bill_pkg{recur} = $cust_bill_pkg if $cust_bill_pkg->recur;
+
+
+  #split setup and recur
+  if ($cust_bill_pkg->setup && $cust_bill_pkg->recur) {
+    my $cust_bill_pkg_recur = new FS::cust_bill_pkg { $cust_bill_pkg->hash };
+    $cust_bill_pkg->set('details', []);
+    $cust_bill_pkg->recur(0);
+    $cust_bill_pkg->unitrecur(0);
+    $cust_bill_pkg->type('');
+    $cust_bill_pkg_recur->setup(0);
+    $cust_bill_pkg_recur->unitsetup(0);
+    $cust_bill_pkg{recur} = $cust_bill_pkg_recur;
+
+  }
+
+  #split usage from recur
+  my $usage = sprintf( "%.2f", $cust_bill_pkg{recur}->usage );
+  warn "usage is $usage\n" if $DEBUG;
+  if ($usage) {
+    my $cust_bill_pkg_usage =
+        new FS::cust_bill_pkg { $cust_bill_pkg{recur}->hash };
+    $cust_bill_pkg_usage->recur( $usage );
+    $cust_bill_pkg_usage->type( 'U' );
+    my $recur = sprintf( "%.2f", $cust_bill_pkg{recur}->recur - $usage );
+    $cust_bill_pkg{recur}->recur( $recur );
+    $cust_bill_pkg{recur}->type( '' );
+    $cust_bill_pkg{recur}->set('details', []);
+    $cust_bill_pkg{''} = $cust_bill_pkg_usage;
+  }
+
+  #subdivide usage by usage_class
+  if (exists($cust_bill_pkg{''})) {
+    foreach my $class (grep { $_ } $self->usage_classes) {
+      my $usage = sprintf( "%.2f", $cust_bill_pkg{''}->usage($class) );
+      my $cust_bill_pkg_usage =
+          new FS::cust_bill_pkg { $cust_bill_pkg{''}->hash };
+      $cust_bill_pkg_usage->recur( $usage );
+      $cust_bill_pkg_usage->set('details', []);
+      my $classless = sprintf( "%.2f", $cust_bill_pkg{''}->recur - $usage );
+      $cust_bill_pkg{''}->recur( $classless );
+      $cust_bill_pkg{$class} = $cust_bill_pkg_usage;
+    }
+    delete $cust_bill_pkg{''} unless $cust_bill_pkg{''}->recur;
+  }
+
+#  # sort setup,recur,'', and the rest numeric && return
+#  my @result = map { $cust_bill_pkg{$_} }
+#               sort { my $ad = ($a=~/^\d+$/); my $bd = ($b=~/^\d+$/);
+#                      ( $ad cmp $bd ) || ( $ad ? $a<=>$b : $b cmp $a )
+#                    }
+#               keys %cust_bill_pkg;
+#
+#  return (@result);
+
+   %cust_bill_pkg;
+}
+
 =item usage CLASSNUM
 
 Returns the amount of the charge associated with usage class CLASSNUM if
@@ -509,6 +574,44 @@ sub usage_classes {
   }
 
 }
+
+=item cust_bill_pkg_display [ type => TYPE ]
+
+Returns an array of display information for the invoice line item optionally
+limited to 'TYPE'.
+
+=cut
+
+sub cust_bill_pkg_display {
+  my ( $self, %opt ) = @_;
+
+  my $default =
+    new FS::cust_bill_pkg_display { billpkgnum =>$self->billpkgnum };
+
+  return ( $default ) unless defined dbdef->table('cust_bill_pkg_display');#hmmm
+
+  my $type = $opt{type} if exists $opt{type};
+  my @result;
+
+  if ( scalar( $self->get('display') ) ) {
+    @result = grep { defined($type) ? ($type eq $_->type) : 1 }
+              @{ $self->get('display') };
+  }else{
+    my $hashref = { 'billpkgnum' => $self->billpkgnum };
+    $hashref->{type} = $type if defined($type);
+    
+    @result = qsearch ({ 'table'    => 'cust_bill_pkg_display',
+                         'hashref'  => { 'billpkgnum' => $self->billpkgnum },
+                         'order_by' => 'ORDER BY billpkgdisplaynum',
+                      });
+  }
+
+  push @result, $default unless ( scalar(@result) || $type );
+
+  @result;
+
+}
+
 
 =back
 
