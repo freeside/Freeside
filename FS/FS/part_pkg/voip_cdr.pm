@@ -43,7 +43,7 @@ tie my %temporalities, 'Tie::IxHash',
                          'default' => 0,
                        },
 
-    #probably useful for other usage-charging price plans
+    #false laziness w/flat.pm
     'recur_temporality' => { 'name' => 'Charge recurring fee for period',
                              'type' => 'select',
                              'select_options' => \%temporalities,

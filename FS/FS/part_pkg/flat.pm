@@ -2,11 +2,17 @@ package FS::part_pkg::flat;
 
 use strict;
 use vars qw(@ISA %info);
+use Tie::IxHash;
 #use FS::Record qw(qsearch);
 use FS::UI::bytecount;
 use FS::part_pkg;
 
 @ISA = qw(FS::part_pkg);
+
+tie my %temporalities, 'Tie::IxHash',
+  'upcoming'  => "Upcoming (future)",
+  'preceding' => "Preceding (past)",
+;
 
 %info = (
   'name' => 'Flat rate (anniversary billing)',
@@ -18,6 +24,13 @@ use FS::part_pkg;
     'recur_fee'     => { 'name' => 'Recurring fee for this package',
                          'default' => 0,
                        },
+
+    #false laziness w/voip_cdr.pm
+    'recur_temporality' => { 'name' => 'Charge recurring fee for period',
+                             'type' => 'select',
+                             'select_options' => \%temporalities,
+                           },
+
     'unused_credit' => { 'name' => 'Credit the customer for the unused portion'.
                                    ' of service at cancellation',
                          'type' => 'checkbox',
@@ -82,11 +95,13 @@ use FS::part_pkg;
                           'type' => 'checkbox',
                         },
   },
-  'fieldorder' => [ 'setup_fee', 'recur_fee', 'unused_credit', 
-                    'seconds', 'upbytes', 'downbytes', 'totalbytes',
-                    'recharge_amount', 'recharge_seconds', 'recharge_upbytes',
-                    'recharge_downbytes', 'recharge_totalbytes',
-                    'usage_rollover', 'recharge_reset', 'externalid' ],
+  'fieldorder' => [qw( setup_fee recur_fee recur_temporality unused_credit
+                       seconds upbytes downbytes totalbytes
+                       recharge_amount recharge_seconds recharge_upbytes
+                       recharge_downbytes recharge_totalbytes
+                       usage_rollover recharge_reset externalid
+                    )
+                  ],
   'weight' => 10,
 );
 
@@ -112,6 +127,13 @@ sub unit_setup {
 
 sub calc_recur {
   my($self, $cust_pkg) = @_;
+
+  #my $last_bill = $cust_pkg->last_bill;
+  my $last_bill = $cust_pkg->get('last_bill'); #->last_bill falls back to setup
+
+  return 0
+    if $self->option('recur_temporality') eq 'preceding' && $last_bill == 0;
+
   $self->base_recur($cust_pkg);
 }
 
