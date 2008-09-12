@@ -282,6 +282,7 @@ sub calc_recur {
             @intl = split(/\s*,\s*/, $intl);
           } else {
             @intl = ($intl);
+          }
 
           #determine the country code
           my $countrycode;
