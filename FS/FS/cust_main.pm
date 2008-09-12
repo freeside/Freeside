@@ -2460,10 +2460,10 @@ sub _make_lines {
         'details'   => \@details,
       };
 
-      if ( $part_pkg->option('recur_temporality') eq 'preceding' ) {
+      if ( $part_pkg->option('recur_temporality', 1) eq 'preceding' ) {
         $cust_bill_pkg->sdate( $hash{last_bill} );
         $cust_bill_pkg->edate( $sdate - 86399   ); #60s*60m*24h-1
-      } else { #if ( $part_pkg->option('recur_temporality') eq 'upcoming' ) {
+      } else { #if ( $part_pkg->option('recur_temporality', 1) eq 'upcoming' ) {
         $cust_bill_pkg->sdate( $sdate );
         $cust_bill_pkg->edate( $cust_pkg->bill );
       }
