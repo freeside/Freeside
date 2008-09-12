@@ -1865,6 +1865,21 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'cust_bill-spoolformat',
+    'section'     => 'billing',
+    'description' => 'Enable spooling of raw invoice data - format.',
+    'type'        => 'select',
+    'select_enum' => [ '', 'default', 'billco', ],
+  },
+
+  {
+    'key'         => 'cust_bill-spoolagent',
+    'section'     => 'billing',
+    'description' => 'Enable per-agent spooling of raw invoice data.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'svc_acct-usage_suspend',
     'section'     => 'billing',
     'description' => 'Suspends the package an account belongs to when svc_acct.seconds or a bytecount is decremented to 0 or below (accounts with an empty seconds and up|down|totalbytes value are ignored).  Typically used in conjunction with prepaid packages and freeside-sqlradius-radacctd.',
@@ -2337,7 +2352,7 @@ worry that config_items is freeside-specific and icky.
   {
     'key'         => 'card_masking_method',
     'section'     => 'UI',
-    'description' => 'Digits to display when masking credit cards.  Note that the first six digits are necessary to canonically identify the credit card type (Visa/MC, Amex, Discover, Maestro, etc.) in all cases.  The first four digits can identify the most common credit card types in most cases (Visa/MC, Amex, and Discover).  The first two digits can distinguish between Visa/MC and Amex.',
+    'description' => 'Digits to display when masking credit cards.  Note that the first six digits are necessary to canonically identify the credit card type (Visa/MC, Amex, Discover, Maestro, etc.) in all cases.  The first four digits can identify the most common credit card types in most cases (Visa/MC, Amex, and Discover).  The first two digits can distinguish between Visa/MC and Amex.  Note: You should manually remove stored paymasks if you change this value on an existing database, to avoid problems using stored cards.',
     'type'        => 'select',
     'select_hash' => [
                        ''            => '123456xxxxxx1234',

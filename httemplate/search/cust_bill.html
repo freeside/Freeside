@@ -188,7 +188,7 @@ my $html_init = join("\n", map {
  qq!<FORM NAME="${_}form">!,
  ( map qq!<INPUT TYPE="hidden" NAME="$_" VALUE="$search{$_}">!, keys %search ),
  qq!</FORM>!
-} qw( print_ email_ fax_ ftp_ ) ). 
+} qw( print_ email_ fax_ ftp_ spool_ ) ). 
 
 '<SCRIPT TYPE="text/javascript">
 
@@ -216,6 +216,12 @@ function confirm_ftp_process() {
   }
   ftp_process();
 }
+function confirm_spool_process() {
+  if ( ! confirm("Are you sure you want to re-spool these invoices?") ) {
+    return;
+  }
+  spool_process();
+}
 
 </SCRIPT>';
 
@@ -235,6 +241,11 @@ if ( $FS::CurrentUser::CurrentUser->access_right('Resend invoices') ) {
   push @$menubar, 'FTP these invoices' =>
                     "javascript:confirm_ftp_process()"
     if $conf->exists('cust_bill-ftpformat');
+
+  push @$menubar, 'Spool these invoices' =>
+                    "javascript:confirm_spool_process()"
+    if $conf->exists('cust_bill-spoolformat');
+
 }
 
 </%init>
