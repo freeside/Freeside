@@ -2422,6 +2422,13 @@ worry that config_items is freeside-specific and icky.
     'type'        => 'text',
   },
 
+  {
+    'key'         => 'cust_bill-max_same_services',
+    'section'     => 'billing',
+    'description' => 'Maximum number of the same service to list individually on invoices before condensing to a single line listing the number of services.  Defaults to 5.',
+    'type'        => 'text',
+  },
+
 );
 
 1;

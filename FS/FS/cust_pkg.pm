@@ -1485,14 +1485,18 @@ sub h_labels {
 
 =item h_labels_short END_TIMESTAMP [ START_TIMESTAMP ]
 
-Like h_labels, except returns a simple flat list, and shortens long 
-(currently >5) lists of identical services to one line that lists the service
-label and the number of individual services rather than individual items.
+Like h_labels, except returns a simple flat list, and shortens long
+(currently >5 or the cust_bill-max_same_services configuration value) lists of
+identical services to one line that lists the service label and the number of
+individual services rather than individual items.
 
 =cut
 
 sub h_labels_short {
   my $self = shift;
+
+  my $conf = new FS::Conf;
+  my $max_same_services = $conf->config('cust_bill-max_same_services') || 5;
 
   my %labels;
   #tie %labels, 'Tie::IxHash';
@@ -1502,7 +1506,7 @@ sub h_labels_short {
   foreach my $label ( keys %labels ) {
     my @values = @{ $labels{$label} };
     my $num = scalar(@values);
-    if ( $num > 5 ) {
+    if ( $num > $max_same_services ) {
       push @labels, "$label ($num)";
     } else {
       push @labels, map { "$label: $_" } @values;
