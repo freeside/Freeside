@@ -285,11 +285,11 @@ sub calc_recur {
           }
 
           #determine the country code
+          my $intl_match = 0;
+          foreach (@intl) { $number =~ /^$_(((\d)(\d))(\d))(\d+)$/ and do { $intl_match++; last; }; }
+
           my $countrycode;
-          if ( ( grep { $number =~ /^$_(((\d)(\d))(\d))(\d+)$/ } @intl )
-               || $number =~ /^\+(((\d)(\d))(\d))(\d+)$/
-             )
-          {
+          if ( $intl_match || $number =~ /^\+(((\d)(\d))(\d))(\d+)$/ ) {
 
             my( $three, $two, $one, $u1, $u2, $rest ) = ( $1,$2,$3,$4,$5,$6 );
             #first look for 1 digit country code
