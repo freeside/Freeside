@@ -286,7 +286,7 @@ sub calc_recur {
 
           #determine the country code
           my $countrycode;
-          if ( grep { $number =~ /^$_(((\d)(\d))(\d))(\d+)$/ } @intl
+          if ( ( grep { $number =~ /^$_(((\d)(\d))(\d))(\d+)$/ } @intl )
                || $number =~ /^\+(((\d)(\d))(\d))(\d+)$/
              )
           {
