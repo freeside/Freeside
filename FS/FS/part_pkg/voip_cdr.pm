@@ -286,8 +286,12 @@ sub calc_recur {
 
           #determine the country code
           my $intl_match = 0;
-          foreach (@intl) { $number =~ /^$_(((\d)(\d))(\d))(\d+)$/ and do { $intl_match++; last; }; }
-
+          foreach my $i (@intl) {
+            if ( $number =~ /^$i(((\d)(\d))(\d))(\d+)$/ ) {
+              $intl_match++;
+              last;
+            }
+          }
           my $countrycode;
           if ( $intl_match || $number =~ /^\+(((\d)(\d))(\d))(\d+)$/ ) {
 
