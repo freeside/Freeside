@@ -2461,7 +2461,7 @@ sub _make_lines {
 
       if ( $part_pkg->option('recur_temporality') eq 'preceding' ) {
         $cust_bill_pkg->sdate( $hash{last_bill} );
-        $cust_bill_pkg->edate( $sdate - 86399   );2#60s*60m*24h-1
+        $cust_bill_pkg->edate( $sdate - 86399   ); #60s*60m*24h-1
       } else { #if ( $part_pkg->option('recur_temporality') eq 'upcoming' ) {
         $cust_bill_pkg->sdate( $sdate );
         $cust_bill_pkg->edate( $cust_pkg->bill );
