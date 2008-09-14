@@ -12,10 +12,9 @@ Click on a configuration value to change it.
 <% include('/elements/init_overlib.html') %>
 
 % if ($FS::UID::use_confcompat) {
-
   <FONT SIZE="+1" COLOR="#ff0000">CONFIGURATION NOT STORED IN DATABASE -- USING COMPATIBILITY MODE</FONT><BR><BR>
 %}
-%
+
 % foreach my $section ( qw(required billing username password UI session
 %                            shell BIND
 %                           ),
@@ -68,14 +67,16 @@ Click on a configuration value to change it.
           %>: <% $i->description %>
       </td>
       <td><table border=0>
+
+% my $n = 0;
 % foreach my $type (@types) {
-%             my $n = 0; 
-% if ( $type eq '' ) { 
+
+%   if ( $type eq '' ) { 
 
             <tr>
               <td><font color="#ff0000">no type</font></td>
             </tr>
-% } elsif (   $type eq 'binary' ) {
+%   } elsif (   $type eq 'binary' ) {
 
             <tr>
               <% $conf->exists($i->key, $agentnum)
@@ -83,12 +84,13 @@ Click on a configuration value to change it.
                    : 'empty'
               %>
             </tr>
-% } elsif (   $type eq 'textarea'
-%                      || $type eq 'editlist'
-%                      || $type eq 'selectmultiple' ) { 
+
+%   } elsif (    $type eq 'textarea'
+%             || $type eq 'editlist'
+%             || $type eq 'selectmultiple' ) { 
 
             <tr>
-              <td bgcolor="#ffffff">
+              <td id="<% $i->key.$n %>" bgcolor="#ffffff">
 <font size="-2"><pre>
 <% encode_entities(join("\n",
      map { length($_) > 88 ? substr($_,0,88).'...' : $_ }
@@ -98,32 +100,33 @@ Click on a configuration value to change it.
 </pre></font>
               </td>
             </tr>
-% } elsif ( $type eq 'checkbox' ) { 
+%   } elsif ( $type eq 'checkbox' ) {
 
             <tr>
-              <td bgcolor="#<% $conf->exists($i->key, $agentnum) ? '00ff00">YES' : 'ff0000">NO' %></td>
+              <td id="<% $i->key.$n %>" bgcolor="#<% $conf->exists($i->key, $agentnum) ? '00ff00">YES' : 'ff0000">NO' %></td>
             </tr>
-% } elsif ( $type eq 'text' || $type eq 'select' )  { 
+%   } elsif ( $type eq 'text' || $type eq 'select' ) {
 
             <tr>
-              <td bgcolor="#ffffff">
+              <td id="<% $i->key.$n %>" bgcolor="#ffffff">
                 <% $conf->exists($i->key, $agentnum) ? $conf->config($i->key, $agentnum) : '' %>
               </td></tr>
-% } elsif ( $type eq 'select-sub' ) { 
+%   } elsif ( $type eq 'select-sub' ) { 
 
             <tr>
-              <td bgcolor="#ffffff">
+              <td id="<% $i->key.$n %>" bgcolor="#ffffff">
                 <% $conf->config($i->key, $agentnum) %>: 
                 <% &{ $i->option_sub }( $conf->config($i->key, $agentnum) ) %>
               </td>
             </tr>
-% } else { 
+%   } else { 
 
             <tr><td>
               <font color="#ff0000">unknown type <% $type %></font>
             </td></tr>
+%   } 
+%   $n++;
 % } 
-% $n++; } 
 
       </table></td>
     </tr>

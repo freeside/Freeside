@@ -63,6 +63,43 @@ $conf->delete($_, $agentnum) foreach @delete;
 </%init>
 <% header('Configuration set') %>
   <SCRIPT TYPE="text/javascript">
-    window.top.location.reload();
+%   my $n = 0;
+%   foreach my $type ( ref($i->type) ? @{$i->type} : $i->type ) {
+    var configCell = window.top.document.getElementById('<% $i->key. $n %>');
+    //alert('found cell ' + configCell);
+%     if (    $type eq 'textarea'
+%          || $type eq 'editlist'
+%          || $type eq 'selectmultiple' ) {
+        configCell.innerHTML =
+          '<font size="-2"><pre>' + "\n" +
+          <% encode_entities(join("\n",
+               map { length($_) > 88 ? substr($_,0,88).'...' : $_ }
+                   $conf->config($i->key, $agentnum)
+             ) )
+          |js_string %> +
+          '</pre></font>';
+
+%     } elsif ( $type eq 'checkbox' ) {
+%       if ( $conf->exists($i->key, $agentnum) ) {
+          configCell.style.backgroundColor = '#00ff00';
+          configCell.innerHTML = 'YES';
+%       } else {
+          configCell.style.backgroundColor = '#ff0000';
+          configCell.innerHTML = 'NO';
+%       }
+%     } elsif ( $type eq 'text' || $type eq 'select' ) {
+        configCell.innerHTML = <% $conf->exists($i->key, $agentnum) ? $conf->config($i->key, $agentnum) : '' |js_string %>;
+%     } elsif ( $type eq 'select-sub' ) {
+        configCell.innerHTML =
+          <% $conf->config($i->key, $agentnum) |js_string %> + ': ' +
+          <% &{ $i->option_sub }( $conf->config($i->key, $agentnum) ) |js_string %>;
+%     } else {
+        alert('unknown type <% $type %>');
+        window.top.location.reload();
+%     }
+
+%     $n++;
+%   }
+    parent.cClick();
   </SCRIPT>
   </BODY></HTML>
