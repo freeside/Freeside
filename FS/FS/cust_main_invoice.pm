@@ -132,7 +132,7 @@ sub checkdest {
   } elsif ( $self->dest =~ /^(\d+)$/ ) {
     return "Unknown local account (specified by svcnum: ". $self->dest. ")"
       unless qsearchs( 'svc_acct', { 'svcnum' => $self->dest } );
-  } elsif ( $self->dest =~ /^([\w\.\-\&\+]+)\@(([\w\.\-]+\.)+\w+)$/ ) {
+  } elsif ( $self->dest =~ /^\s*([\w\.\-\&\+]+)\@(([\w\.\-]+\.)+\w+)\s*$/ ) {
     my($user, $domain) = ($1, $2);
     $self->dest("$1\@$2");
   } else {
