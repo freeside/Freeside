@@ -269,6 +269,6 @@ my $head = @_ ? shift : ''; #$head is for things that go in the <HEAD> section
 my $conf = new FS::Conf;
 
 my $menu_position = $FS::CurrentUser::CurrentUser->option('menu_position')
-                    || 'left';
+                    || 'top'; #new default for 1.9
 
 </%init>
