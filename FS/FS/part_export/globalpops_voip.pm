@@ -12,6 +12,7 @@ tie my %options, 'Tie::IxHash',
   'login'         => { label=>'GlobalPOPs Media Services API login' },
   'password'      => { label=>'GlobalPOPs Media Services API password' },
   'endpointgroup' => { label=>'GlobalPOPs endpoint group number' },
+  'dry_run'       => { label=>"Test mode - don't actually provision" },
 ;
 
 %info = (
@@ -253,6 +254,9 @@ sub gp_command {
 
 sub _export_insert {
   my( $self, $svc_phone ) = (shift, shift);
+
+  return '' if $self->option('dry_run');
+
   #we want to provision and catch errors now, not queue
 
   my $r = $self->gp_command('reserveDID',
@@ -295,6 +299,8 @@ sub _export_replace {
 sub _export_delete {
   my( $self, $svc_phone ) = (shift, shift);
 
+  return '' if $self->option('dry_run');
+
   #probably okay to queue the deletion...?
   #but hell, let's do it inline anyway, who wants phone numbers hanging around
 
@@ -325,20 +331,19 @@ sub _export_unsuspend {
 }
 
 #hmm, might forgo queueing entirely for most things, data is too much of a pita
-
-sub globalpops_voip_queue {
-  my( $self, $svcnum, $method ) = (shift, shift, shift);
-  my $queue = new FS::queue {
-    'svcnum' => $svcnum,
-    'job'    => 'FS::part_export::globalpops_voip::globalpops_voip_command',
-  };
-  $queue->insert(
-    $self->option('login'),
-    $self->option('password'),
-    $method,
-    @_,
-  );
-}
+#sub globalpops_voip_queue {
+#  my( $self, $svcnum, $method ) = (shift, shift, shift);
+#  my $queue = new FS::queue {
+#    'svcnum' => $svcnum,
+#    'job'    => 'FS::part_export::globalpops_voip::globalpops_voip_command',
+#  };
+#  $queue->insert(
+#    $self->option('login'),
+#    $self->option('password'),
+#    $method,
+#    @_,
+#  );
+#}
 
 sub globalpops_voip_command {
   my($login, $password, $method, @args) = @_;
