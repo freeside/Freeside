@@ -2112,10 +2112,19 @@ sub tables_hashref {
         'state',       'char', 'NULL',  2, '', '', 
         'npa',         'char',     '',  3, '', '', 
         'nxx',         'char', 'NULL',  3, '', '', 
+        'station',     'char', 'NULL',  4, '', '',
+        'svcnum',      'int',     'NULL',      '', '', '',
+        'availbatch', 'varchar', 'NULL', $char_d, '', '',
       ],
       'primary_key' => 'availnum',
       'unique' => [],
-      'index'  => [ [ 'exportnum', 'countrycode', 'state' ] ],
+      'index'  => [ [ 'exportnum', 'countrycode', 'state' ],     #npa search
+                    [ 'exportnum', 'countrycode', 'npa' ],       #nxx search
+                    [ 'exportnum', 'countrycode', 'npa', 'nxx' ],#station search
+                    [ 'exportnum', 'countrycode', 'npa', 'nxx', 'station' ], # #
+                    [ 'svcnum' ],
+                    [ 'availbatch' ],
+                  ],
     },
 
     'reason_type' => {

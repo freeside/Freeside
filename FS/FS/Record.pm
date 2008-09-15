@@ -11,6 +11,8 @@ use Carp qw(carp cluck croak confess);
 use Scalar::Util qw( blessed );
 use File::CounterFile;
 use Locale::Country;
+use Text::CSV_XS;
+use File::Slurp qw( slurp );
 use DBI qw(:sql_types);
 use DBIx::DBSchema 0.33;
 use FS::UID qw(dbh getotaker datasrc driver_name);
@@ -1292,6 +1294,194 @@ sub check {
     }
   }
   '';
+}
+
+=item batch_import PARAM_HASHREF
+
+Class method for batch imports.  Available params:
+
+=over 4
+
+=item job
+
+FS::queue object, will be updated with progress
+
+=back
+
+=cut
+
+use Storable qw(thaw);
+use Data::Dumper;
+use MIME::Base64;
+sub process_batch_import {
+  my($job, $opt) = ( shift, shift );
+
+  my $table = $opt->{table};
+  my @pass_params = @{ $opt->{params} };
+  my %formats = %{ $opt->{formats} };
+
+  my $param = thaw(decode_base64(shift));
+  warn Dumper($param) if $DEBUG;
+  
+  my $files = $param->{'uploaded_files'}
+    or die "No files provided.\n";
+
+  my (%files) = map { /^(\w+):([\.\w]+)$/ ? ($1,$2):() } split /,/, $files;
+
+  my $dir = '%%%FREESIDE_CACHE%%%/cache.'. $FS::UID::datasrc. '/';
+  my $file = $dir. $files{'file'};
+
+  my $type;
+  if ( $file =~ /\.(\w+)$/i ) {
+    $type = lc($1);
+  } else {
+    #or error out???
+    warn "can't parse file type from filename $file; defaulting to CSV";
+    $type = 'csv';
+  }
+
+  my $error =
+    FS::Record::batch_import( {
+      table     => $table,
+      formats   => \%formats,
+      job       => $job,
+      file      => $file,
+      type      => $type,
+      format    => $param->{format},
+      params    => { map { $_ => $param->{$_} } @pass_params },
+    } );
+
+  unlink $file;
+
+  die "$error\n" if $error;
+}
+
+sub batch_import {
+  my $param = shift;
+
+  my $table     = $param->{table};
+  my $formats   = $param->{formats};
+  my $params    = $param->{params};
+
+  my $job       = $param->{job};
+
+  my $filename  = $param->{file};
+  my $type      = $param->{type} || 'csv';
+
+  my $format = $param->{'format'};
+
+  die "unknown format $format" unless exists $formats->{ $format };
+  my @fields    = @{ $formats->{ $format } };
+
+  my $count;
+  my $parser;
+  my @buffer = ();
+  if ( $type eq 'csv' ) {
+
+    $parser = new Text::CSV_XS;
+
+    @buffer = split(/\r?\n/, slurp($filename) );
+    $count = scalar(@buffer);
+
+  } elsif ( $type eq 'xls' ) {
+
+    eval "use Spreadsheet::ParseExcel;";
+    die $@ if $@;
+
+    my $excel = new Spreadsheet::ParseExcel::Workbook->Parse($filename);
+    $parser = $excel->{Worksheet}[0]; #first sheet
+
+    $count = $parser->{MaxRow} || $parser->{MinRow};
+    $count++;
+
+  } else {
+    die "Unknown file type $type\n";
+  }
+
+  #my $columns;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+  
+  my $line;
+  my $row = 0;
+  my( $last, $min_sec ) = ( time, 5 ); #progressbar foo
+  while (1) {
+
+    my @columns = ();
+    if ( $type eq 'csv' ) {
+
+      last unless scalar(@buffer);
+      $line = shift(@buffer);
+
+      $parser->parse($line) or do {
+        $dbh->rollback if $oldAutoCommit;
+        return "can't parse: ". $parser->error_input();
+      };
+      @columns = $parser->fields();
+
+    } elsif ( $type eq 'xls' ) {
+
+      last if $row > ($parser->{MaxRow} || $parser->{MinRow});
+
+      my @row = @{ $parser->{Cells}[$row] };
+      @columns = map $_->{Val}, @row;
+
+      #my $z = 'A';
+      #warn $z++. ": $_\n" for @columns;
+
+    } else {
+      die "Unknown file type $type\n";
+    }
+
+    my %hash = %$params;
+
+    foreach my $field ( @fields ) {
+
+      my $value = shift @columns;
+     
+      if ( ref($field) eq 'CODE' ) {
+        &{$field}(\%hash, $value);
+      } else {
+        $hash{$field} = $value if length($value);
+      }
+
+    }
+
+    my $class = "FS::$table";
+
+    my $record = $class->new( \%hash );
+
+    my $error = $record->insert;
+
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "can't insert record". ( $line ? " for $line" : '' ). ": $error";
+    }
+
+    $row++;
+
+    if ( $job && time - $min_sec > $last ) { #progress bar
+      $job->update_statustext( int(100 * $row / $count) );
+      $last = time;
+    }
+
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;;
+
+  return "Empty file!" unless $row;
+
+  ''; #no error
+
 }
 
 sub _h_statement {

@@ -57,6 +57,18 @@ npa
 
 nxx
 
+=item station
+
+station
+
+=item svcnum
+
+svcnum
+
+=item availbatch
+
+availbatch
+
 =back
 
 =head1 METHODS
@@ -123,10 +135,32 @@ sub check {
     || $self->ut_alphan('state')
     || $self->ut_number('npa')
     || $self->ut_numbern('nxx')
+    || $self->ut_numbern('station')
+    || $self->ut_foreign_keyn('svcnum', 'cust_svc', 'svcnum' )
+    || $self->ut_textn('availbatch')
   ;
   return $error if $error;
 
   $self->SUPER::check;
+}
+
+sub process_batch_import {
+  my $job = shift;
+
+  my $numsub = sub {
+    my( $hash, $value ) = @_;
+    $value =~ s/\D//g;
+    $value =~ /^(\d{3})(\d{3})(\d+)$/ or die "unparsable number $value\n";
+    ( $hash->{npa}, $hash->{nxx}, $hash->{station} ) = ( $1, $2, $3 );
+  };
+
+  my $opt = { 'table'   => 'phone_avail',
+              'params'  => [ 'availbatch', 'exportnum', 'countrycode' ],
+              'formats' => { 'default' => [ 'state', $numsub ] },
+            };
+
+  FS::Record::process_batch_import( $job, $opt, @_ );
+
 }
 
 =back
