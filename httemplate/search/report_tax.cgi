@@ -288,8 +288,8 @@ if ( $conf->exists('tax-ship_address') ) {
 
 }
 
-my($total, $tot_taxable, $owed, $tax) = ( 0, 0, 0, 0, 0 );
-my( $exempt_cust, $exempt_pkg, $exempt_monthly ) = ( 0, 0 );
+my($total, $tot_taxable, $owed, $tax) = ( 0, 0, 0, 0 );
+my( $exempt_cust, $exempt_pkg, $exempt_monthly ) = ( 0, 0, 0 );
 my $out = 'Out of taxable region(s)';
 my %regions = ();
 foreach my $r (qsearch('cust_main_county', {}, '', $gotcust) ) {
