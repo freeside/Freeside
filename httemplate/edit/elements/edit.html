@@ -230,6 +230,11 @@ Example:
 %     'disabled'      => $f->{'disabled'},
 %   );
 %
+%   #selectlayers, others?
+%   $include_common{$_} = $f->{$_}
+%     foreach grep exists($f->{$_}),
+%                  qw( js_only html_only select_only layers_only cell_style);
+%
 %   #select-*
 %   $include_common{$_} = $f->{$_}
 %     foreach grep exists($f->{$_}), qw( empty_label );
@@ -365,7 +370,7 @@ Example:
 %     'object'     => $object,
 %     'cgi'        => $cgi,
 %     'onchange'   => $onchange,
-%     'cell_style'   => ( $fieldnum ? 'border-top:1px solid black' : '' ),
+%     ( $fieldnum ? ('cell_style' => 'border-top:1px solid black') : () ),
 %   );
 
     <% include( @include ) %>

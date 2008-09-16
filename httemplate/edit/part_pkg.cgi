@@ -97,6 +97,11 @@
                                            },
                                 layer_fields => \%taxproduct_fields,
                                 layer_values_callback => $taxproduct_values,
+                                layers_only  =>   !$taxproducts,
+                                cell_style   => ( !$taxproducts
+                                                  ? 'display:none'
+                                                  : ''
+                                                ),
                               },
 
                               { type  => 'tablebreak-tr-title',
@@ -166,6 +171,9 @@ die "access denied"
   unless $curuser->access_right('Edit package definitions')
       || $curuser->access_right('Edit global package definitions')
       || ( $cgi->param('pkgnum') && $curuser->access_right('Customize customer package') );
+
+my $conf = new FS::Conf;
+my $taxproducts = $conf->exists('enable_taxproducts');
 
 #XXX
 # - tr-part_pkg_freq: month_increments_only (from price plans)

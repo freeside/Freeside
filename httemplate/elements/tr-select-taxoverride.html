@@ -9,10 +9,10 @@
 
 <%init>
 
-my $conf = new FS::conf;
+my $conf = new FS::Conf;
 
 my %opt = @_;
 my $cell_style = $opt{'cell_style'}? 'STYLE="'. $opt{cell_style}. '"' : '';
-my $name = $opt{name} || 'tax_override';
+my $name = $opt{element_name} || $opt{field} || 'tax_override';
 
 </%init>
