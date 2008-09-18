@@ -200,6 +200,14 @@ sub dbdef_dist {
                                                      ],
                                       });
 
+    $h_indices{"h_${table}_srckey2"} = DBIx::DBSchema::Index->new({
+                                         'name'    => "h_${table}_srckey2",
+                                         'unique'  => 0,
+                                         'columns' => [ 'history_date',
+                                                        $tableobj->primary_key,
+                                                      ],
+                                       });
+
     my $h_tableobj = DBIx::DBSchema::Table->new( {
       'name'          => "h_$table",
       'primary_key'   => 'historynum',
