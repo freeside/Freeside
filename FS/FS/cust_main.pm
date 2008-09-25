@@ -1962,7 +1962,12 @@ sub bill_and_collect {
                          $self->ncancelled_pkgs;
 
   foreach my $cust_pkg ( @cancel_pkgs ) {
-    my $error = $cust_pkg->cancel;
+    my $cpr = $cust_pkg->last_cust_pkg_reason('expire');
+    my $error = $cust_pkg->cancel($cpr ? ( 'reason' => $cpr->reasonnum,
+                                           'reason_otaker' => $cpr->otaker
+                                         )
+                                       : ()
+                                 );
     warn "Error cancelling expired pkg ". $cust_pkg->pkgnum.
          " for custnum ". $self->custnum. ": $error"
       if $error;
@@ -1988,7 +1993,14 @@ sub bill_and_collect {
          $self->ncancelled_pkgs;
 
   foreach my $cust_pkg ( @susp_pkgs ) {
-    my $error = $cust_pkg->suspend;
+    my $cpr = $cust_pkg->last_cust_pkg_reason('adjourn')
+      if ($cust_pkg->adjourn && $cust_pkg->adjourn < $^T);
+    my $error = $cust_pkg->suspend($cpr ? ( 'reason' => $cpr->reasonnum,
+                                            'reason_otaker' => $cpr->otaker
+                                          )
+                                        : ()
+                                  );
+
     warn "Error suspending package ". $cust_pkg->pkgnum.
          " for custnum ". $self->custnum. ": $error"
       if $error;
