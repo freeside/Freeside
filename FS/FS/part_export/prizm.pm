@@ -395,6 +395,15 @@ sub _export_replace {
   return $err_or_som
     unless ref($err_or_som);
 
+  $err_or_som = $self->prizm_command('NetworkIfService', 'setElementConfigSet',
+                                     [ $element ],
+                                     $new->cust_svc->cust_pkg->part_pkg->pkg,
+                                     0,
+                                     1,
+                                    );
+  return $err_or_som
+    unless ref($err_or_som);
+
   '';
 
 }
