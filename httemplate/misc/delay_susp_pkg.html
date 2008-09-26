@@ -1,0 +1,73 @@
+%# if ( $link eq 'popup' ) { 
+  <% include('/elements/header-popup.html', $title ) %>
+%# } else { 
+%#  <%  include("/elements/header.html", $title, '') %>
+%# } 
+
+<LINK REL="stylesheet" TYPE="text/css" HREF="../elements/calendar-win2k-2.css" TITLE="win2k-2">
+<SCRIPT TYPE="text/javascript" SRC="../elements/calendar_stripped.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="../elements/calendar-en.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="../elements/calendar-setup.js"></SCRIPT>
+
+<% include('/elements/error.html') %>
+
+<FORM NAME="ds_popup" ACTION="<% popurl(1) %>process/delay_susp_pkg.html" METHOD=POST>
+<INPUT TYPE="hidden" NAME="pkgnum" VALUE="<% $pkgnum %>">
+
+<BR><BR>
+<% "Delay automatic suspension of $pkgnum: " .$part_pkg->pkg. ' - ' .$part_pkg->comment %>
+<% ntable("#cccccc", 2) %>
+
+<TR>
+  <TD>Delay until</TD>
+    <TD><INPUT TYPE="text" NAME="date" ID="dun_date" VALUE="<% $date |h %>">
+        <IMG SRC="<% $p %>images/calendar.png" ID="dun_button" STYLE="cursor:pointer" TITLE="Select date">
+        <BR><I>m/d/y</I>
+    </TD>
+</TR>
+<SCRIPT TYPE="text/javascript">
+  Calendar.setup({
+    inputField: "dun_date",
+    ifFormat:   "%m/%d/%Y",
+    button:     "dun_button",
+    align:      "BR"
+  });
+</SCRIPT>
+
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" NAME="submit" VALUE="<% $submit %>">
+
+</FORM>
+</BODY>
+</HTML>
+
+<%init>
+
+my $date = time2str("%m/%d/%Y", time);
+
+my($pkgnum);
+if ( $cgi->param('error') ) {
+  $pkgnum    = $cgi->param('pkgnum');
+  $date      = $cgi->param('date');
+} elsif ( $cgi->param('pkgnum') =~ /^(\d+)$/ ) {
+  $pkgnum    = $1;
+} else {
+  die "illegal query ". $cgi->keywords;
+}
+
+my $submit = 'Delay Suspension';
+my $right  = 'Delay suspension events';
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+die "access denied" unless $curuser->access_right($right);
+
+my $title = 'Delay Suspension of Package';
+
+my $cust_pkg = qsearchs('cust_pkg', {'pkgnum' => $pkgnum})
+  or die "Unknown pkgnum: $pkgnum";
+
+my $part_pkg = $cust_pkg->part_pkg;
+
+</%init>

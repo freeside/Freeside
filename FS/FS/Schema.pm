@@ -605,6 +605,7 @@ sub tables_hashref {
         'stateid_state', 'varchar', 'NULL', $char_d, '', '', 
         'birthdate' ,@date_type, '', '', 
         'signupdate',@date_type, '', '', 
+        'dundate',   @date_type, '', '', 
         'company',  'varchar', 'NULL', $char_d, '', '', 
         'address1', 'varchar', '',     $char_d, '', '', 
         'address2', 'varchar', 'NULL', $char_d, '', '', 

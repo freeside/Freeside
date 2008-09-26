@@ -456,10 +456,13 @@ Current packages
 %       } 
 %
 %     } 
+%   my $autosuspend = pkg_autosuspend_time( $cust_pkg );
+%   $cust_pkg->set('autosuspend', $autosuspend) if $autosuspend;
 
       <% pkg_status_row_changed( $cust_pkg, conf=>$conf ) %>
       <% pkg_status_row_if( $cust_pkg, $last_bill_or_renewed, 'last_bill', conf=>$conf, curuser=>$curuser ) %>
       <% pkg_status_row_if( $cust_pkg, $next_bill_or_prepaid_until, 'bill', conf=>$conf, curuser=>$curuser ) %>
+      <% pkg_status_row_if($cust_pkg, 'Will automatically suspend by', 'autosuspend', conf=>$conf) %>
       <% pkg_status_row_if( $cust_pkg, 'Will suspend on', 'adjourn', conf=>$conf, curuser=>$curuser ) %>
       <% pkg_status_row_if( $cust_pkg, 'Expires', 'expire', conf=>$conf, curuser=>$curuser ) %>
 
@@ -473,6 +476,9 @@ Current packages
 %             } 
 %             if ( $curuser->access_right('Suspend customer package later') ) { 
                 (&nbsp;<% pkg_adjourn_link($cust_pkg) %>&nbsp;)
+%             } 
+%             if ( $curuser->access_right('Delay suspension events') ) { 
+                (&nbsp;<% pkg_delay_link($cust_pkg) %>&nbsp;)
 %             } 
 %             if ( $curuser->access_right('Cancel customer package immediately') ) { 
                 (&nbsp;<% pkg_cancel_link($cust_pkg) %>&nbsp;)
@@ -759,10 +765,19 @@ sub pkg_adjourn_link { include( '/elements/popup_link-cust_pkg.html',
                               )
                      }
 
+sub pkg_delay_link   { include( '/elements/popup_link-cust_pkg.html',
+                                { 'action'      => $p. 'misc/delay_susp_pkg.html',
+                                  'label'       => 'Delay&nbsp;suspend',
+                                  'actionlabel' => 'Delay suspend for',
+                                  'cust_pkg'    => shift,
+                                }
+                              )
+                     }
+
 sub pkg_unsuspend_link { pkg_link('misc/unsusp_pkg',    'Unsuspend',           @_ ); }
 sub pkg_dates_link     { pkg_link('edit/REAL_cust_pkg', 'Edit&nbsp;dates',     @_ ); }
-sub pkg_unadjourn_link     { pkg_link('misc/unadjourn_pkg', 'Abort',               @_ ); }
-sub pkg_unexpire_link      { pkg_link('misc/unexpire_pkg',  'Abort',               @_ ); }
+sub pkg_unadjourn_link { pkg_link('misc/unadjourn_pkg', 'Abort',               @_ ); }
+sub pkg_unexpire_link  { pkg_link('misc/unexpire_pkg',  'Abort',               @_ ); }
 
 sub pkg_cancel_link { include( '/elements/popup_link-cust_pkg.html',
                                { 'action'      => $p. 'misc/cancel_pkg.html?method=cancel',
@@ -827,4 +842,25 @@ sub pkg_customize_link {
     qq!">Customize</A>!;
 }
 
+sub pkg_autosuspend_time {
+  my $cust_pkg = shift or return '';
+  my $days = 7;
+  my $time = time;
+  my $pending_suspend = 0;
+  while ( $days > 0 &&
+          scalar(
+            grep { $_->part_event->action eq 'suspend' }
+            @{$cust_pkg->cust_main->due_cust_event( time => $time + 86400*$days,
+                                                    testonly => 1,
+                                                  ) }
+          )
+        )
+  {
+    $pending_suspend = 1;
+    $days--;
+  }
+
+  $pending_suspend ? time + ($days + 1) * 86400 : '';
+
+}
 </%init>

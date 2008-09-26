@@ -96,6 +96,18 @@ Invoice Event #<% $hashref->{eventpart} ? $hashref->{eventpart} : "(NEW)" %>
 %  '</SELECT>';
 %}
 %
+%sub honor_dundate {
+%  my $label = shift;
+%  my $plandata = shift;
+%  '<TABLE>'.
+%  '<TR><TD ALIGN="right">Allow delay until dun date? </TD>'.
+%  qq(<TD><INPUT TYPE="checkbox" NAME="$label" VALUE="$label => 1," ).
+%    ( $plandata->{$label} eq "$label => 1," ? 'CHECKED' : '' ).
+%  '>'.
+%  '</TD></TR>'.
+%  '</TABLE>'
+%}
+%
 %my $conf = new FS::Conf;
 %my $money_char = $conf->config('money_char') || '$';
 %
@@ -137,28 +149,29 @@ Invoice Event #<% $hashref->{eventpart} ? $hashref->{eventpart} : "(NEW)" %>
 %  },
 %  'suspend' => {
 %    'name'   => 'Suspend',
-%    'code'   => '$cust_main->suspend(reason => %%%sreason%%%);',
+%    'code'   => '$cust_main->suspend(reason => %%%sreason%%%, %%%honor_dundate%%% );',
+%    'html'   => sub { &honor_dundate('honor_dundate', @_) },
 %    'weight' => 10,
 %    'reason' => 'S',
 %  },
 %  'suspend-if-balance' => {
 %    'name'   => 'Suspend if balance (this invoice and previous) over',
-%    'code'   => '$cust_bill->cust_suspend_if_balance_over( %%%balanceover%%%, reason => %%%sreason%%%, );',
-%    'html'   => " $money_char ". '<INPUT TYPE="text" SIZE="7" NAME="balanceover" VALUE="%%%balanceover%%%">',
+%    'code'   => '$cust_bill->cust_suspend_if_balance_over( %%%balanceover%%%, reason => %%%sreason%%%, %%%balance_honor_dundate%%% );',
+%    'html'   => sub { " $money_char ". '<INPUT TYPE="text" SIZE="7" NAME="balanceover" VALUE="%%%balanceover%%%"> '. &honor_dundate('balance_honor_dundate', @_) },
 %    'weight' => 10,
 %    'reason' => 'S',
 %  },
 %  'suspend-if-pkgpart' => {
 %    'name'   => 'Suspend packages',
-%    'code'   => '$cust_main->suspend_if_pkgpart({pkgparts => [%%%if_pkgpart%%%,], reason => %%%sreason%%%,});',
-%    'html'   => sub { &select_pkgpart('if_pkgpart', @_) },
+%    'code'   => '$cust_main->suspend_if_pkgpart({pkgparts => [%%%if_pkgpart%%%,], reason => %%%sreason%%%, %%%if_pkgpart_honor_dundate%%% });',
+%    'html'   => sub { &select_pkgpart('if_pkgpart', @_). &honor_dundate('if_pkgpart_honor_dundate', @_) },
 %    'weight' => 10,
 %    'reason' => 'S',
 %  },
 %  'suspend-unless-pkgpart' => {
 %    'name'   => 'Suspend packages except',
-%    'code'   => '$cust_main->suspend_unless_pkgpart({unless_pkgpart => [%%%unless_pkgpart%%%], reason => %%%sreason%%%,});',
-%    'html'   => sub { &select_pkgpart('unless_pkgpart', @_) },
+%    'code'   => '$cust_main->suspend_unless_pkgpart({unless_pkgpart => [%%%unless_pkgpart%%%], reason => %%%sreason%%%, %%%unless_pkgpart_honor_dundate%%% });',
+%    'html'   => sub { &select_pkgpart('unless_pkgpart', @_). &honor_dundate('unless_pkgpart_honor_dundate' => @_) },
 %    'weight' => 10,
 %    'reason' => 'S',
 %  },

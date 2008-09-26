@@ -1,0 +1,41 @@
+<% header("Package suspension delayed") %>
+  <SCRIPT TYPE="text/javascript">
+    window.top.location.reload();
+  </SCRIPT>
+  </BODY>
+</HTML>
+<%once>
+
+my $right = 'Delay suspension events';
+
+</%once>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right($right);
+
+my ($pkgnum, $date, $cust_pkg, $cust_main, $error);
+
+#untaint pkgnum
+$cgi->param('pkgnum') =~ /^(\d+)$/ or die "Illegal pkgnum";
+$pkgnum = $1;
+
+#untaint date
+str2time($cgi->param('date')) =~ /^(\d+)$/ or die "Illegal date";
+my $date = $1;
+
+$cust_pkg = qsearchs( 'cust_pkg', {'pkgnum'=>$pkgnum} );
+if ($cust_pkg) {
+  $cust_main = $cust_pkg->cust_main;
+  $cust_main->dundate( $date );
+  $error = $cust_main->replace;
+} else {
+  $error = "Invalid pkgnum";
+}
+
+if ($error) {
+  $cgi->param('error', $error);
+  print $cgi->redirect(popurl(2). "cancel_pkg.html?". $cgi->query_string );
+}
+
+</%init>

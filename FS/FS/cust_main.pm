@@ -227,6 +227,8 @@ Card Verification Value, "CVV2" (also known as CVC2 or CID), the 3 or 4 digit nu
 
 =item spool_cdr - Enable individual CDR spooling, empty or `Y'
 
+=item dundate - a suggestion to events (see L<FS::part_bill_event">) to delay until this unix timestamp
+
 =item squelch_cdr - Discourage individual CDR printing, empty or `Y'
 
 =back
@@ -2976,14 +2978,16 @@ sub due_cust_event {
   # 3: insert
   ##
 
-  foreach my $cust_event ( @cust_event ) {
+  unless( $opt{testonly} ) {
+    foreach my $cust_event ( @cust_event ) {
 
-    my $error = $cust_event->insert();
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
-    }
+      my $error = $cust_event->insert();
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
                                        
+    }
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
