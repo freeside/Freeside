@@ -731,6 +731,13 @@ worry that config_items is freeside-specific and icky.
   },
   
   {
+    'key'         => 'auto_router',
+    'section'     => '',
+    'description' => 'Automatically choose the correct router/block based on supplied ip address when possible while provisioning broadband services',
+    'type'        => 'checkbox',
+  },
+  
+  {
     'key'         => 'hidecancelledpackages',
     'section'     => 'UI',
     'description' => 'Prevent cancelled packages from showing up in listings (though they will still be in the database)',

@@ -8,7 +8,7 @@
                                  'speed_down'   => 'Download speed',
                                  'speed_up'     => 'Upload speed',
                                  'blocknum'     => 'Router/Block',
-                                 'block_disp'   => 'Router/Block',
+                                 'block_label'  => 'Router/Block',
                                  'mac_addr'     => 'MAC address',
                                  'latitude'     => 'Latitude',
                                  'longitude'    => 'Longitude',
@@ -29,11 +29,15 @@ die "access denied"
 # If it's stupid but it works, it's still stupid.
 #  -Kristian
 
+my $conf = new FS::Conf;
+
 my @fields = (
   qw( description ip_addr speed_down speed_up blocknum ),
   { field=>'block_label', type=>'fixed' },
   qw( mac_addr latitude longitude altitude vlan_profile authkey )
 );
+
+my $fixedblock = '';
 
 my $callback = sub {
   my ($cgi, $object, $fieldref) = @_;
@@ -48,6 +52,8 @@ my $callback = sub {
   if ($columndef->columnflag eq 'F') {
     $fieldref->{'type'} = 'fixed';
     $fieldref->{'value'} = $columndef->columnvalue;
+    $fixedblock = $fieldref->{value}
+      if $fieldref->{field} eq 'blocknum';
   }
 
   if ($object->svcnum) { 
@@ -60,9 +66,22 @@ my $callback = sub {
 
   } else { 
 
-    $fieldref->{type} = 'hidden' if $fieldref->{field} eq 'block_label';
+    if ($fieldref->{field} eq 'block_label') {
+      if ($fixedblock) {
+        $object->blocknum($fixedblock);
+        $fieldref->{value} = $object->addr_block->label;
+      }else{
+        $fieldref->{type} = 'hidden';
+      }
+    }
 
     if ($fieldref->{field} eq 'blocknum') {
+      if ( $fixedblock or $conf->exists('auto_router') ) {
+        $fieldref->{type} = 'hidden';
+        $fieldref->{value} = $fixedblock;
+        return;
+      }
+
       my $cust_pkg = qsearchs( 'cust_pkg', {pkgnum => $cgi->param('pkgnum')} );
       die "No cust_pkg entry!" unless $cust_pkg;
 

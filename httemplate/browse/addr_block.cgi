@@ -13,6 +13,7 @@
                                      'Router',
                                      'Action(s)',
                                      '',
+                                     '',
                                    ],
                 'fields'        => [ 'NetAddr',
                                      sub { my $block = shift;
@@ -26,11 +27,13 @@
                                          },
                                      $allocate_text,
                                      sub { shift->router ? '' : '<FONT SIZE="-2">(split)</FONT>' },
+                                     sub { '<FONT SIZE="-2">('. (shift->manual_flag ? 'allow' : 'prevent'). ' automatic ip assignment)</FONT>' },
                                    ],
                 'links'         => [ '',
                                      '',
                                      [ 'javascript:void(0)', '' ],
                                      $split_link,
+                                     $autoassign_link,
                                    ],
                 'link_onclicks' => [ '',
                                      '',
@@ -131,6 +134,13 @@ my $split_link = sub {
   $ref = [ &{$confirm}('split', $block->blocknum), '' ]
     unless ($block->router);
   $ref;
+}; 
+
+my $autoassign_link = sub {
+  my $block = shift;
+  my $url = "$path/manual_flag.cgi?manual_flag=";
+  $url .=  $block->manual_flag ? '' : 'Y';
+  [ "$url;blocknum=", 'blocknum' ];
 }; 
 
 </%init>

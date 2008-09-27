@@ -48,6 +48,8 @@ block is assigned.
 
 =item ip_netmask - the netmask of the block, expressed as an integer.
 
+=item manual_flag - prohibit automatic ip assignment from this block when true. 
+
 =item agentnum - optional agent number (see L<FS::agent>)
 
 =back
@@ -124,6 +126,7 @@ sub check {
     $self->ut_number('routernum')
     || $self->ut_ip('ip_gateway')
     || $self->ut_number('ip_netmask')
+    || $self->ut_enum('manual_flag', [ '', 'Y' ])
     || $self->ut_agentnum_acl('agentnum', 'Broadband global configuration')
   ;
   return $error if $error;
@@ -202,12 +205,15 @@ sub cidr {
 
 Returns a NetAddr::IP object corresponding to the first unassigned address 
 in the block (other than the network, broadcast, or gateway address).  If 
-there are no free addresses, returns false.
+there are no free addresses, returns false.  There are never free addresses
+when manual_flag is true.
 
 =cut
 
 sub next_free_addr {
   my $self = shift;
+
+  return '' if $self->manual_flag;
 
   my $conf = new FS::Conf;
   my @excludeaddr = $conf->config('exclude_ip_addr');

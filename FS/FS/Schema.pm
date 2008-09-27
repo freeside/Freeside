@@ -1586,6 +1586,7 @@ sub tables_hashref {
         'ip_gateway', 'varchar', '', 15, '', '', 
         'ip_netmask', 'int', '', '', '', '', 
         'agentnum',   'int', 'NULL', '', '', '', 
+        'manual_flag', 'char', 'NULL', 1, '', '', 
       ],
       'primary_key' => 'blocknum',
       'unique'      => [ [ 'blocknum', 'routernum' ] ],

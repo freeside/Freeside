@@ -203,7 +203,7 @@ sub check {
 
   my $error =
     $self->ut_numbern('svcnum')
-    || $self->ut_foreign_key('blocknum', 'addr_block', 'blocknum')
+    || $self->ut_numbern('blocknum')
     || $self->ut_textn('description')
     || $self->ut_number('speed_up')
     || $self->ut_number('speed_down')
@@ -231,7 +231,12 @@ sub check {
     return "Invalid pkgnum" unless $cust_pkg;
   }
     
-  if ($cust_pkg) {
+  if ($self->blocknum) {
+    $error = $self->ut_foreign_key('blocknum', 'addr_block', 'blocknum');
+    return $error if $error;
+  }
+
+  if ($cust_pkg && $self->blocknum) {
     my $addr_agentnum = $self->addr_block->agentnum;
     if ($addr_agentnum && $addr_agentnum != $cust_pkg->cust_main->agentnum) {
       return "Address block does not service this customer";
@@ -239,11 +244,26 @@ sub check {
   }
 
   if (not($self->ip_addr) or $self->ip_addr eq '0.0.0.0') {
+    return "Must supply either address or block"
+      unless $self->blocknum;
     my $next_addr = $self->addr_block->next_free_addr;
     if ($next_addr) {
       $self->ip_addr($next_addr->addr);
     } else {
       return "No free addresses in addr_block (blocknum: ".$self->blocknum.")";
+    }
+  }
+
+  if (not($self->blocknum)) {
+    return "Must supply either address or block"
+      unless ($self->ip_addr and $self->ip_addr ne '0.0.0.0');
+    my @block = grep { $_->NetAddr->contains($self->NetAddr) }
+                 map { $_->addr_block }
+                 $self->allowed_routers;
+    if (scalar(@block)) {
+      $self->blocknum($block[0]->blocknum);
+    }else{
+      return "Address not with available block.";
     }
   }
 
