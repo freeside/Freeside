@@ -138,6 +138,13 @@ if ( $cgi->param('out') ) {
 
 }
 
+if ($cgi->param('itemdesc')) {
+  if ($cgi->param('itemdesc') eq 'Tax') {
+    push @where, "(itemdesc='Tax' OR itemdesc is null)";
+  }else{
+    push @where, 'itemdesc='. dbh->quote($cgi->param('itemdesc'));
+  }
+}
 push @where, 'pkgnum != 0' if $cgi->param('nottax');
 push @where, 'pkgnum  = 0' if $cgi->param('istax');
 

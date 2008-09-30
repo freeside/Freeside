@@ -195,7 +195,9 @@ $report_financial{'Payment Batch Report'} = [ $fsurl.'search/pay_batch.html', 'P
   if $conf->exists('batch-enable');
 $report_financial{'A/R Aging'} = [ $fsurl.'search/report_receivables.html', 'Accounts Receivable Aging report' ];
 $report_financial{'Prepaid Income'} = [ $fsurl.'search/report_prepaid_income.html', 'Prepaid income (unearned revenue)  report' ];
-$report_financial{'Sales Tax Liability'} = [ $fsurl.'search/report_tax.html', 'Sales tax liability report' ];
+$report_financial{'Sales Tax Liability'} = [ $fsurl.'search/report_tax.html', 'Sales tax liability report (old taxclass system)' ];
+$report_financial{'Tax Liability'} = [ $fsurl.'search/report_newtax.html', 'Tax liability report (new tax products system)' ]
+  if $conf->exists('enable_taxproducts');
 ;
 
 tie my %report_menu, 'Tie::IxHash';

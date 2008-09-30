@@ -1,0 +1,23 @@
+<% include('/elements/header.html', 'Tax Report' ) %>
+
+<FORM ACTION="report_newtax.cgi" METHOD="GET">
+
+<TABLE>
+
+ <% include( '/elements/tr-select-agent.html' ) %>
+
+ <% include( '/elements/tr-input-beginning_ending.html' ) %>
+
+</TABLE>
+
+<BR><INPUT TYPE="submit" VALUE="Get Report">
+
+</FORM>
+
+<% include('/elements/footer.html') %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+</%init>
