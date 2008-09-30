@@ -2012,6 +2012,13 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'postal_invoice-recurring_only',
+    'section'     => 'billing',
+    'description' => 'The postal invoice fee is omitted on invoices without reucrring charges when this is set.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'batch-enable',
     'section'     => 'billing',
     'description' => 'Enable credit card and/or ACH batching - leave disabled for real-time installations.',

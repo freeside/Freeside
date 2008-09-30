@@ -2147,7 +2147,12 @@ sub bill {
     return "can't charge postal invoice fee for customer ".
       $self->custnum. ": $postal_pkg";
   }
-  if ( $postal_pkg ) {
+  if ( $postal_pkg &&
+       ( scalar( grep { $_->recur && $_->recur > 0 } @cust_bill_pkg) ||
+         !$conf->exists('postal_invoice-recurring_only')
+       )
+     )
+  {
     foreach my $part_pkg ( $postal_pkg->part_pkg->self_and_bill_linked ) {
       my $error =
         $self->_make_lines( 'part_pkg'            => $part_pkg,
