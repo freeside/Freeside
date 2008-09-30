@@ -140,7 +140,7 @@ sub _process_change_info {
 sub process_change_bill {
         _process_change_info( 'change_bill', 
           qw( first last company address1 address2 city state
-              county state zip country daytime night fax )
+              county zip country daytime night fax )
         );
 }
 
@@ -157,11 +157,22 @@ sub process_change_ship {
 }
 
 sub process_change_pay {
-        _process_change_info( 'change_pay', 
+        my $postal = $cgi->param( 'postal_invoicing' );
+        my @list =
           qw( payby payinfo payinfo1 payinfo2 month year payname
               address1 address2 city county state zip country auto paytype
-              paystate ss stateid stateid_state )
-        );
+              paystate ss stateid stateid_state invoicing_list
+            );
+        push @list, 'postal_invoicing' if $postal;
+        unless ( $postal || $cgi->param( 'invoicing_list' ) ) {
+          $action = 'change_pay';
+          return {
+            %{&change_pay()},
+            $cgi->Vars,
+            'error' => '<FONT COLOR="#FF0000">Postal or email required.</FONT>',
+          };
+        }
+        _process_change_info( 'change_pay', @list );
 }
 
 sub view_invoice {
