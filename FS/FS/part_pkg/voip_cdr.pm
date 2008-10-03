@@ -269,6 +269,8 @@ sub calc_recur {
             $number = $cdr->dst;
           }
 
+          warn "parsing call $to_or_from $number\n" if $DEBUG;
+
           #remove non-phone# stuff and whitespace
           $number =~ s/\s//g;
 #          my $proto = '';
