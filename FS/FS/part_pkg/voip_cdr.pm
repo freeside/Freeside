@@ -84,6 +84,10 @@ tie my %temporalities, 'Tie::IxHash',
                                 'default' => '011',
                               },
 
+    'disable_tollfree' => { 'name' => 'Disable automatic toll-free processing',
+                            'type' => 'checkbox',
+                          },
+
     'use_amaflags' => { 'name' => 'Do not charge for CDRs where the amaflags field is not set to "2" ("BILL"/"BILLING").',
                         'type' => 'checkbox',
                       },
@@ -147,6 +151,7 @@ tie my %temporalities, 'Tie::IxHash',
                        default_prefix
                        disable_src
                        domestic_prefix international_prefix
+                       disable_tollfree
                        use_amaflags use_disposition
                        use_disposition_taqua use_carrierid use_cdrtypenum
                        411_rewrite
@@ -261,7 +266,10 @@ sub calc_recur {
           }
 
           my( $to_or_from, $number );
-          if ( $cdr->dst =~ /^(\+?1)?8([02-8])\1/ ) { #tollfree call
+          if ( $cdr->dst =~ /^(\+?1)?8([02-8])\1/
+               && ! $self->option('disable_tollfree')
+              )
+          { #tollfree call
             $to_or_from = 'from';
             $number = $cdr->src;
           } else { #regular call
