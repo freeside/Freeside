@@ -88,7 +88,7 @@
     </TD>
 
     <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
-      $<INPUT TYPE="text" SIZE=6 NAME="min_charge<%$n%>" VALUE="<% sprintf('%.2f', $cgi->param("min_charge$n") || $rate_detail->min_charge ) %>">
+      $<INPUT TYPE="text" SIZE=6 NAME="min_charge<%$n%>" VALUE="<% $cgi->param("min_charge$n") || $rate_detail->min_charge |h %>">
     </TD>
 
     <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
