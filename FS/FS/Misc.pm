@@ -44,6 +44,8 @@ but are collected here to elimiate code duplication.
 
 Options:
 
+=over 4
+
 =item from
 
 Sender address, required

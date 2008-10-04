@@ -22,6 +22,10 @@ use FS::Misc::prune qw(prune_applications);
 
 prune_applications();
 
+=head1 SUBROUTINES
+
+=over 4
+
 =item prune_applications OPTION_HASH
 
 Removes applications of credits to refunds in the event that the database

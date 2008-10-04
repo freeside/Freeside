@@ -29,7 +29,6 @@ payinfo and paybatch.  Currently FS::cust_pay and FS::cust_refund
 
 =over 4
 
-
 =item cust_main
 
 Returns the parent customer object (see L<FS::cust_main>).
@@ -113,13 +112,12 @@ sub _parse_paybatch {
 
 }
 
-
-
-
 =back
 
 =head1 SEE ALSO
 
 L<FS::payinfo_Mixin>
 
-=back
+=cut
+
+1;

@@ -28,7 +28,7 @@ FS::usage_class - Object methods for usage_class records
 =head1 DESCRIPTION
 
 An FS::usage_class object represents a usage class.  Every rate detail
-(see L<FS::rate_detail) has, optionally, a usage class.  FS::usage_class
+(see L<FS::rate_detail>) has, optionally, a usage class.  FS::usage_class
 inherits from FS::Record.  The following fields are currently supported:
 
 =over 4

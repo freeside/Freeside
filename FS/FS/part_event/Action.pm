@@ -63,6 +63,8 @@ This method should return a list of option names and option descriptions.
 Each option description can be a scalar description, for simple options, or a
 hashref with the following values:
 
+=over 4
+
 =item label - Description
 
 =item type - Currently text, money, checkbox, checkbox-multiple, select, select-agent, select-pkg_class, select-part_referral, select-table, fixed, hidden, (others can be implemented as httemplate/elements/tr-TYPE.html mason components).  Defaults to text.

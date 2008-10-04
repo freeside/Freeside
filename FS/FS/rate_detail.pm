@@ -49,7 +49,7 @@ inherits from FS::Record.  The following fields are currently supported:
 
 =item sec_granularity - granularity in seconds, i.e. 6 or 60; 0 for per-call
 
-=item classnum - usage class (see L<FS::usage_class) if any for this rate
+=item classnum - usage class (see L<FS::usage_class>) if any for this rate
 
 =back
 

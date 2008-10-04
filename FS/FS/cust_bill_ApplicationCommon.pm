@@ -33,6 +33,8 @@ represent application of things to invoices, currently payments
 
 =head1 METHODS
 
+=over 4
+
 =item insert
 
 =cut
@@ -361,7 +363,7 @@ sub cust_bill {
 
 =item applied_to_invoice
 
-Returns a string representing the invoice (see L<FS::cust_bill), for example:
+Returns a string representing the invoice (see L<FS::cust_bill>), for example:
 "applied to Invoice #54 (3/20/2008)"
 
 =cut
