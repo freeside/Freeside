@@ -16,25 +16,30 @@ if (    scalar(@cust_credit_bill)   == 0
   $pre = '<B><FONT COLOR="#FF0000">Unapplied ';
   $post = '</FONT></B>';
   if ( $curuser->access_right('Apply credit') ) {
-    $apply = ' ('. include( '/elements/popup_link.html',
-                              'label'    => 'apply',
-                              'action'   => "${p}edit/cust_credit_bill.cgi?".
-                                            $cust_credit->crednum,
-                              'actionlabel' => 'Apply credit',
-                              'width'    => 392,
-                              #default# 'height' => 336,
-                          ).
-              ')';
-    #XXX if there are any open refunds
-    $apply.= ' ('. include( '/elements/popup_link.html',
-                              'label'    => 'apply to refund',
-                              'action'   => "${p}edit/cust_credit_refund.cgi?".
-                                            $cust_credit->crednum,
-                              'actionlabel' => 'Apply credit to refund',
-                              'width'    => 392,
-                              #default# 'height' => 336,
-                          ).
-              ')';
+    if ( $cust_credit->cust_main->total_owed > 0 ) {
+      $apply = ' ('.
+               include( '/elements/popup_link.html',
+                          'label'    => 'apply',
+                          'action'   => "${p}edit/cust_credit_bill.cgi?".
+                                        $cust_credit->crednum,
+                          'actionlabel' => 'Apply credit',
+                          'width'    => 392,
+                          #default# 'height' => 336,
+                      ).
+                ')';
+    }
+    if ( $cust_credit->cust_main->total_unapplied_refunds > 0 ) {
+      $apply.= ' ('.
+               include( '/elements/popup_link.html',
+                          'label'    => 'apply to refund',
+                          'action'   => "${p}edit/cust_credit_refund.cgi?".
+                                        $cust_credit->crednum,
+                          'actionlabel' => 'Apply credit to refund',
+                          'width'    => 392,
+                          #default# 'height' => 336,
+                      ).
+               ')';
+    }
   }
 } elsif (    scalar(@cust_credit_bill)   == 1
           && scalar(@cust_credit_refund) == 0
@@ -70,25 +75,30 @@ if (    scalar(@cust_credit_bill)   == 0
     $desc .= '&nbsp;&nbsp;<B><FONT COLOR="#FF0000">$'.
              $cust_credit->credited. ' unapplied</FONT></B>';
     if ( $curuser->access_right('Apply credit') ) {
-      $apply = ' ('. include( '/elements/popup_link.html',
-                                'label'       => 'apply',
-                                'action'      => "${p}edit/cust_credit_bill.cgi?".
-                                                 $cust_credit->crednum,
-                                'actionlabel' => 'Apply credit',
-                                'width'       => 392,
-                                #default# 'height' => 336,
-                            ).
-               ')';
-      #XXX if there are any open refunds
-      $apply.= ' ('. include( '/elements/popup_link.html',
-                                'label'       => 'apply to refund',
-                                'action'      => "${p}edit/cust_credit_refund.cgi?".
-                                                 $cust_credit->crednum,
-                                'actionlabel' => 'Apply credit to refund',
-                                'width'       => 392,
-                                #default# 'height' => 336,
-                            ).
-               ')';
+      if ( $cust_credit->cust_main->total_owed > 0 ) {
+        $apply = ' ('.
+                 include( '/elements/popup_link.html',
+                            'label'       => 'apply',
+                            'action'      => "${p}edit/cust_credit_bill.cgi?".
+                                             $cust_credit->crednum,
+                            'actionlabel' => 'Apply credit',
+                            'width'       => 392,
+                            #default# 'height' => 336,
+                        ).
+                 ')';
+      }
+      if ( $cust_credit->cust_main->total_unapplied_refunds > 0 ) {
+        $apply.= ' ('.
+                 include( '/elements/popup_link.html',
+                            'label'       => 'apply to refund',
+                            'action'      => "${p}edit/cust_credit_refund.cgi?".
+                                             $cust_credit->crednum,
+                            'actionlabel' => 'Apply credit to refund',
+                            'width'       => 392,
+                            #default# 'height' => 336,
+                        ).
+                 ')';
+      }
     }
     $desc .= '<BR>';
   }

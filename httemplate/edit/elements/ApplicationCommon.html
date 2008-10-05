@@ -43,7 +43,7 @@ Examples:
 
 <% include('/elements/error.html') %>
 
-<FORM ACTION="<% $p1. $opt{'form_action'} %>" METHOD=POST>
+<FORM ACTION="<% $p1. $opt{'form_action'} %>" NAME="ApplicationForm" ID="ApplicationForm" METHOD=POST>
 
 <% $src_thing %> #<B><% $src_pkeyvalue %></B><BR>
 <INPUT TYPE="hidden" NAME="<% $src_pkey %>" VALUE="<% $src_pkeyvalue %>">
@@ -79,6 +79,13 @@ Examples:
 function changed(what) {
   dst = what.options[what.selectedIndex].value;
 
+  if ( dst == '' ) {
+    what.form.submit.disabled=true;
+    return true;
+  }
+
+  what.form.submit.disabled=false;
+
 % foreach my $dst ( @dst ) {
 
     if ( dst == <% $dst->$dst_pkey %> ) {
@@ -97,7 +104,7 @@ Apply to:
 <TR>
   <TD ALIGN="right"><% $dst_thing %>: </TD>
   <TD><SELECT NAME="<% $dst_pkey %>" SIZE=1 onChange="changed(this)">
-<OPTION VALUE="">
+<OPTION VALUE="">Select <% $dst_thing %>
 
 % foreach my $dst ( @dst ) { 
   <OPTION<% $dst->$dst_pkey eq $dst_pkeyvalue ? ' SELECTED' : '' %> VALUE="<% $dst->$dst_pkey %>">#<% $dst->$dst_pkey %> - <% time2str("%D", $dst->_date) %> - $<% $dst->$dst_unapplied %>
@@ -115,7 +122,7 @@ Apply to:
 </TABLE>
 
 <BR>
-<CENTER><INPUT TYPE="submit" VALUE="Apply"></CENTER>
+<CENTER><INPUT TYPE="submit" VALUE="Apply" NAME="submit" ID="submit" DISABLED></CENTER>
 
 </FORM>
 
