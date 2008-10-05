@@ -1,0 +1,102 @@
+<% include( 'elements/search.html',
+              'title'         => 'Phone Number (DID) Search Results',
+              'name_singular' => 'phone number',
+              'query'         => {
+                                   'table'   => 'phone_avail',
+                                   'hashref' => {},
+                                   'select'  => join(', ',
+                                       'phone_avail.*',
+                                       'cust_main.custnum',
+                                       FS::UI::Web::cust_sql_fields(),
+                                   ),
+                                   'extra_sql' => $search,
+                                   'addl_from' => $addl_from,
+                                 },
+              'count_query'   => $count_query,
+              'header'        => [ '#',
+                                   'State',
+                                   'Phone Number',
+                                   'Export',
+                                   'Service',
+                                    FS::UI::Web::cust_header(),
+                                 ],
+              'fields'        => [
+                'availnum',
+                'state',
+                sub { my $pn = shift;
+                      '+'. $pn->countrycode. ' '.
+                        $pn->npa. ' '.  $pn->nxx. '-'. $pn->station;
+                    },
+                'exportnum', #XXX
+                #sub { },
+                'svcnum', #XXX
+                \&FS::UI::Web::cust_fields,
+              ],
+              'align'         => 'rllll'.FS::UI::Web::cust_aligns(),
+              'links'         => [
+                '',
+                '',
+                '',
+                '', #XXX #$export_link
+                '', #XXX #$svc_link
+                ( map { $_ ne 'Cust. Status' ? $link_cust : '' }
+                      FS::UI::Web::cust_header()
+                ),
+              ],
+              'color' => [ 
+                           '',
+                           '',
+                           '',
+                           '',
+                           '',
+                           FS::UI::Web::cust_colors(),
+                         ],
+              'style' => [ 
+                           '',
+                           '',
+                           '',
+                           '',
+                           '',
+                           FS::UI::Web::cust_styles(),
+                         ],
+      )
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Import');
+
+my @search = ();
+
+if ( $cgi->param('availbatch') =~ /^([\w\/\:\-\.]+)$/ ) {
+  push @search, "availbatch = '$1'";
+}
+
+#  #here is the agent virtualization
+#  push @search, $FS::CurrentUser::CurrentUser->agentnums_sql;
+
+my $search = scalar(@search) 
+               ? ' WHERE '. join(' AND ', @search)
+               : '';
+
+
+my $addl_from = ' LEFT JOIN cust_svc  USING ( svcnum  ) '.
+                #' LEFT JOIN part_svc  USING ( svcpart ) '.
+                ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
+                ' LEFT JOIN cust_main USING ( custnum ) ';
+
+my $count_query = "SELECT COUNT(*) FROM phone_avail $search"; #$addl_from?
+
+my $link_cust = sub {
+  my $phone_avail = shift;
+  if ( $phone_avail->svcnum ) {
+    my $cust_svc = $phone_avail->svc_phone->cust_svc;
+    if ( $cust_svc->pkgnum ) {
+      #my $cust_main = $cust_svc->cust_pkg->cust_main;
+      return [ "${p}view/cust_main.cgi?", 'custnum' ];
+    }
+  }
+  '';
+};
+
+</%init>
