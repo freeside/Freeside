@@ -125,6 +125,6 @@ push @where,
 
 my $extra_sql = scalar(@where) ? 'WHERE ' . join(' AND ', @where) : ''; 
 
-my $link = [ "${p}search/cust_pay_batch.cgi?batchnum=", 'batchnum' ];
+my $link = [ "${p}search/cust_pay_batch.cgi?dcln=1;batchnum=", 'batchnum' ];
 
 </%init>
