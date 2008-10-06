@@ -1455,8 +1455,8 @@ sub radius_password {
   my($pw_attrib, $password);
   if ( $self->_password_encoding eq 'ldap' ) {
 
-     $pw_attrib = 'Password-With-Header';
-     $password = $self->_password;
+    $pw_attrib = 'Password-With-Header';
+    $password = $self->_password;
 
   } elsif ( $self->_password_encoding eq 'crypt' ) {
 
@@ -1466,6 +1466,7 @@ sub radius_password {
   } elsif ( $self->_password_encoding eq 'plain' ) {
 
     $pw_attrib = $radius_password; #Cleartext-Password?  man rlm_pap
+    $password = $self->_password;
 
   } else {
 
