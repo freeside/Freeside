@@ -635,7 +635,11 @@ sub batch_import {
   if ( $type eq 'csv' ) {
     eval "use Text::CSV_XS;";
     die $@ if $@;
-    $parser = new Text::CSV_XS;
+    my %attr = ();
+    foreach ( grep exists($info->{$_}), qw( sep_char ) ) {
+      $attr{$_} = $info->{$_};
+    }
+    $parser = new Text::CSV_XS \%attr;
   } elsif ( $type eq 'fixedlength' ) {
     eval "use Parse::FixedLength;";
     die $@ if $@;
