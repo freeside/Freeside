@@ -1426,8 +1426,9 @@ sub radius_check {
       ( $FS::raddb::attrib{lc($attrib)}, $self->getfield($column) );
     } grep { /^rc_/ && $self->getfield($_) } fields( $self->table );
 
-  my $password = $self->_password;
-  my $pw_attrib = length($password) <= 12 ? $radius_password : 'Crypt-Password';  $check{$pw_attrib} = $password;
+
+  my($pw_attrib, $password) = $self->radius_password;
+  $check{$pw_attrib} = $password;
 
   my $cust_svc = $self->cust_svc;
   die "FATAL: no cust_svc record for svc_acct.svcnum ". $self->svcnum. "\n"
@@ -1438,6 +1439,42 @@ sub radius_check {
   }
 
   %check;
+
+}
+
+=item radius_password 
+
+Returns a key/value pair containing the RADIUS attribute name and value
+for the password.
+
+=cut
+
+sub radius_password {
+  my $self = shift;
+
+  my($pw_attrib, $password);
+  if ( $self->_password_encoding eq 'ldap' ) {
+
+     $pw_attrib = 'Password-With-Header';
+     $password = $self->_password;
+
+  } elsif ( $self->_password_encoding eq 'crypt' ) {
+
+    $pw_attrib = 'Crypt-Password';
+    $password = $self->_password;
+
+  } elsif ( $self->_password_encoding eq 'plain' ) {
+
+    $pw_attrib = $radius_password; #Cleartext-Password?  man rlm_pap
+
+  } else {
+
+    $pw_attrib = length($password) <= 12 ? $radius_password : 'Crypt-Password';
+    $password = $self->_password;
+
+  }
+
+  ($pw_attrib, $password);
 
 }
 
