@@ -206,7 +206,8 @@ sub upgrade_sqlradius {
       }
   
       my $svc_acct = qsearchs({
-        'table'     => 'svc_acct.*',
+        'select'    => 'svc_acct.*',
+        'table'     => 'svc_acct',
         'addl_from' => 'LEFT JOIN cust_svc   USING ( svcnum )'.
                        'LEFT JOIN export_svc USING ( svcpart )',
         'hashref'   => { 'username' => $username },
