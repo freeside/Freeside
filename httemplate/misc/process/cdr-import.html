@@ -15,7 +15,8 @@ my $fh = $cgi->upload('csvfile');
 my $error = defined($fh)
   ? FS::cdr::batch_import( {
       'filehandle' => $fh,
-      'format'     => $cgi->param('format'),
+      'format'     => scalar($cgi->param('format')),
+      'cdrbatch'   => scalar($cgi->param('cdrbatch')),
     } )
   : 'No file';
 

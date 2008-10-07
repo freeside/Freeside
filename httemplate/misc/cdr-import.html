@@ -11,6 +11,8 @@ CDR Format:
 
 Filename: <INPUT TYPE="file" NAME="csvfile"><BR><BR>
 
+<INPUT TYPE="hidden" NAME="cdrbatch" VALUE="<% $cdrbatch %>"%>
+
 <INPUT TYPE="submit" VALUE="Upload">
 </FORM>
 
@@ -22,5 +24,7 @@ die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Import');
 
 tie my %formats, 'Tie::IxHash', FS::cdr->import_formats;
+
+my $cdrbatch = time2str('webimport-%Y/%m/%d-%T'. "-$$-". rand() * 2**32, time);
 
 </%init>
