@@ -195,17 +195,24 @@ sub upgrade_sqlradius {
       my ($username, $realm, $start, $stop) = @$row;
   
       $username = lc($username) unless $conf->exists('username-uppercase');
-      my $extra_sql = '';
+
+      my $exportnum = $part_export->exportnum;
+      my $extra_sql = " AND exportnum = $exportnum ".
+                      " AND exportsvcnum IS NOT NULL ";
+
       if ( ref($part_export) =~ /withdomain/ ) {
-        $extra_sql = " And '$realm' = ( SELECT domain FROM svc_domain
+        $extra_sql = " AND '$realm' = ( SELECT domain FROM svc_domain
                          WHERE svc_domain.svcnum = svc_acct.domsvc ) ";
       }
   
-      my $svc_acct = qsearchs( 'svc_acct',
-                               { 'username' => $username },
-                               '',
-                               $extra_sql,
-                             );
+      my $svc_acct = qsearchs({
+        'table'     => 'svc_acct.*',
+        'addl_from' => 'LEFT JOIN cust_svc   USING ( svcnum )'.
+                       'LEFT JOIN export_svc USING ( svcpart )',
+        'hashref'   => { 'username' => $username },
+        'extra_sql' => $extra_sql,
+      });
+
       if ($svc_acct) {
         $svc_acct->last_login($start)
           if $start && (!$svc_acct->last_login || $start > $svc_acct->last_login);
