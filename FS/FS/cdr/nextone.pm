@@ -14,7 +14,9 @@ use FS::cdr qw(_cdr_date_parser_maker);
     'userfield',  #CallZoneData ???userfield
     'channel',    #OrigGw
     'dstchannel', #TermGw
-    'duration',   #Duration
+    sub { my( $cdr, $duration ) = @_;
+          $cdr->duration($duration);
+          $cdr->billsec($duration);   },   #Duration
     'dst',        #CallDTMF
     'src',        #Ani
     'startdate',  #DateTimeInt

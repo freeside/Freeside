@@ -63,7 +63,9 @@ use FS::cdr qw(_cdr_date_parser_maker);
     #CallDirection:1:404:404
     #ExtendedCall:1:405:405
     #ExternalCall:1:406:406
-    'duration', #Duration:9:407:415
+    sub { my( $cdr, $duration ) = @_;
+          $cdr->duration($duration);
+          $cdr->billsec($duration);   }, #'duration', #Duration:9:407:415
     #SIPCallID:64:416:479
     #IncomingDigits:30:480:509
     #OutpulsedDigits:30:510:539
@@ -89,7 +91,7 @@ use FS::cdr qw(_cdr_date_parser_maker);
 #              answerdate - Answer time of call (UNIX-style integer timestamp)
 #              enddate - End time of call (UNIX-style integer timestamp)
 #              duration - Total time in system, in seconds
-#       billsec - Total time call is up, in seconds
+#              billsec - Total time call is up, in seconds
 #       disposition - What happened to the call: ANSWERED, NO ANSWER, BUSY
 #       amaflags - What flags to use: BILL, IGNORE etc, specified on a per
 #       channel basis like accountcode.
