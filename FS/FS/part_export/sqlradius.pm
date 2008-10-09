@@ -364,7 +364,7 @@ sub sqlradius_insert { #subroutine, not method
       $i_sth->execute(
         $username,
         $attribute,
-        ( $attribute =~ /Password/i ? '==' : ':=' ),
+        ( $attribute eq 'Password' ? '==' : ':=' ),
         $attributes{$attribute},
       ) or die $i_sth->errstr;
 
