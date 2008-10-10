@@ -1504,7 +1504,8 @@ sub h_labels_short {
     foreach $self->h_labels(@_);
   my @labels;
   foreach my $label ( keys %labels ) {
-    my @values = @{ $labels{$label} };
+    my %seen = ();
+    my @values = grep { ! $seen{$_}++ } @{ $labels{$label} };
     my $num = scalar(@values);
     if ( $num > $max_same_services ) {
       push @labels, "$label ($num)";
