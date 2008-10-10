@@ -1,41 +1,29 @@
-%
-%  my( $cust_main ) = @_;
-%  my $conf = new FS::Conf;
-%  my $date_format = ($conf->config('date_format') || "%m/%d/%Y");
-%
-
-
 <% ntable("#cccccc") %><TR><TD><% &ntable("#cccccc",2) %>
 
 <TR>
   <TD ALIGN="right">Customer&nbsp;number</TD>
-  <TD BGCOLOR="#ffffff"><% $cust_main->custnum %></TD>
+  <TD BGCOLOR="#ffffff"><% $cust_main->display_custnum %></TD>
 </TR>
 
 <TR>
   <TD ALIGN="right">Status</TD>
   <TD BGCOLOR="#ffffff"><FONT COLOR="#<% $cust_main->statuscolor %>"><B><% ucfirst($cust_main->status) %></B></FONT></TD>
 </TR>
-%
-%  my @agents = qsearch( 'agent', {} );
-%  my $agent;
-%  unless ( scalar(@agents) == 1 ) {
-%    $agent = qsearchs('agent',{ 'agentnum' => $cust_main->agentnum } );
-%
 
+%my $agent;
+%if ( $num_agents == 1 ) {
+%  my @agents = qsearchs( 'agent', {} );
+%  $agent = $agents[0];
+%} else {
+%  $agent = qsearchs('agent',{ 'agentnum' => $cust_main->agentnum } );
+   <TR>
+     <TD ALIGN="right">Agent</TD>
+     <TD BGCOLOR="#ffffff"><% $agent->agentnum %>: <% $agent->agent %></TD>
+   </TR>
+% }
 
-<TR>
-  <TD ALIGN="right">Agent</TD>
-  <TD BGCOLOR="#ffffff"><% $agent->agentnum %>: <% $agent->agent %></TD>
-</TR>
-%
-%  } else {
-%    $agent = $agents[0];
-%  }
-%
-%  if ( $cust_main->agent_custid ) {
-%
-
+%  if ( $cust_main->agent_custid
+%       && ! $conf->exists('cust_main-default_agent_custid') ) {
 
 <TR>
   <TD ALIGN="right">Agent customer ref#</TD>
@@ -109,4 +97,14 @@
 % }
 
 </TABLE></TD></TR></TABLE>
+<%init>
 
+my( $cust_main ) = @_;
+my $conf = new FS::Conf;
+my $date_format = ($conf->config('date_format') || "%m/%d/%Y");
+
+my $sth = dbh->prepare('SELECT COUNT(*) FROM agent') or die dbh->errstr;
+$sth->execute or die $sth->errstr;
+my $num_agents = $sth->fetchrow_arrayref->[0];
+
+</%init>

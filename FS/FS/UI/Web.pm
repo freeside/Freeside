@@ -214,6 +214,8 @@ sub cust_header {
   warn "FS::UI:Web::cust_header called"
     if $DEBUG;
 
+  my $conf = new FS::Conf;
+
   my %header2method = (
     'Customer'                 => 'name',
     'Cust. Status'             => 'ucfirst_cust_status',
@@ -239,6 +241,8 @@ sub cust_header {
     'Payment Type'             => 'payby',
     'Current Balance'          => 'current_balance',
   );
+  $header2method{'Cust#'} = 'display_custnum'
+    if $conf->exists('cust_main-default_agent_custid');
 
   my %header2colormethod = (
     'Cust. Status' => 'cust_statuscolor',
@@ -261,7 +265,6 @@ sub cust_header {
 
   } else {
 
-    my $conf = new FS::Conf;
     if (    $conf->exists('cust-fields')
          && $conf->config('cust-fields') =~ /^([\w\. \|\#\(\)]+):?/
        )

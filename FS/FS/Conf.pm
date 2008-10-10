@@ -2423,6 +2423,23 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'cust_main-default_agent_custid',
+    'section'     => 'UI',
+    'description' => 'Display the agent_custid field instead of the custnum field.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'cust_main-auto_agent_custid',
+    'section'     => 'UI',
+    'description' => 'Automatically assign an agent_custid - select format',
+    'type'        => 'select',
+    'select_hash' => [ '' => 'No',
+                       '1YMMXXXXXXXX' => '1YMMXXXXXXXX',
+                     ],
+  },
+
+  {
     'key'         => 'cust_main-default_areacode',
     'section'     => 'UI',
     'description' => 'Default area code for customers.',

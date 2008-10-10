@@ -343,6 +343,9 @@ sub insert {
 
   $self->signupdate(time) unless $self->signupdate;
 
+  $self->auto_agent_custid()
+    if $conf->config('cust_main-auto_agent_custid') && ! $self->agent_custid;
+
   my $error = $self->SUPER::insert;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
@@ -416,6 +419,35 @@ sub insert {
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
+
+}
+
+use File::CounterFile;
+sub auto_agent_custid {
+  my $self = shift;
+
+  my $format = $conf->config('cust_main-auto_agent_custid');
+  my $agent_custid;
+  if ( $format eq '1YMMXXXXXXXX' ) {
+
+    my $counter = new File::CounterFile 'cust_main.agent_custid';
+    $counter->lock;
+
+    my $ym = 100000000000 + time2str('%y%m00000000', time);
+    if ( $ym > $counter->value ) {
+      $counter->{'value'} = $agent_custid = $ym;
+      $counter->{'updated'} = 1;
+    } else {
+      $agent_custid = $counter->inc;
+    }
+
+    $counter->unlock;
+
+  } else {
+    die "Unknown cust_main-auto_agent_custid format: $format";
+  }
+
+  $self->agent_custid($agent_custid);
 
 }
 
@@ -1233,6 +1265,7 @@ sub check {
     || $self->ut_textn('stateid_state')
     || $self->ut_textn('invoice_terms')
   ;
+
   #barf.  need message catalogs.  i18n.  etc.
   $error .= "Please select an advertising source."
     if $error =~ /^Illegal or empty \(numeric\) refnum: /;
@@ -5049,6 +5082,22 @@ sub cust_refund {
   my $self = shift;
   sort { $a->_date <=> $b->_date }
     qsearch( 'cust_refund', { 'custnum' => $self->custnum } )
+}
+
+=item display_custnum
+
+Returns the displayed customer number for this customer: agent_custid if
+cust_main-default_agent_custid is set and it has a value, custnum otherwise.
+
+=cut
+
+sub display_custnum {
+  my $self = shift;
+  if ( $conf->exists('cust_main-default_agent_custid') && $self->agent_custid ){
+    return $self->agent_custid;
+  } else {
+    return $self->custnum;
+  }
 }
 
 =item name

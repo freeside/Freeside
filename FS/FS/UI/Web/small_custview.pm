@@ -33,7 +33,7 @@ sub small_custview {
   $html = qq!View <A HREF="$url?! . $cust_main->custnum . '">'
     if $url;
 
-  $html .= 'Customer #<B>'. $cust_main->custnum. '</B></A>'.
+  $html .= 'Customer #<B>'. $cust_main->display_custnum. '</B></A>'.
     ' - <B><FONT COLOR="#'. $cust_main->statuscolor. '">'.
     ucfirst($cust_main->status). '</FONT></B>'.
     ntable('#e8e8e8'). '<TR><TD VALIGN="top">'. ntable("#cccccc",2).

@@ -12,7 +12,7 @@
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
 
 % if ( $custnum ) { 
-  Customer #<B><% $custnum %></B> - 
+  Customer #<B><% $cust_main->display_custnum %></B> - 
   <B><FONT COLOR="#<% $cust_main->statuscolor %>">
     <% ucfirst($cust_main->status) %>
   </FONT></B>

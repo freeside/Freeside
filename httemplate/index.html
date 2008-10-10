@@ -36,7 +36,7 @@
 % next unless $cust_main; 
 
     <TR>
-      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><A HREF="view/cust_main.cgi?<% $custnum %>"><% $custnum %>: <% $cust_main->name %></A></TD>
+      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><A HREF="view/cust_main.cgi?<% $custnum %>"><% $cust_main->display_custnum %>: <% $cust_main->name %></A></TD>
     </TR>
 
 %       if ( $bgcolor eq $bgcolor1 ) {
