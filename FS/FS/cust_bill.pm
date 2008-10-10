@@ -1881,7 +1881,7 @@ sub print_generic {
   my %invoice_data = (
     'company_name'    => scalar( $conf->config('company_name') ),
     'company_address' => join("\n", $conf->config('company_address') ). "\n",
-    'custnum'         => $self->custnum,
+    'custnum'         => $cust_main->display_custnum,
     'invnum'          => $self->invnum,
     'date'            => time2str($date_format, $self->_date),
     'today'           => time2str('%b %o, %Y', $today),
