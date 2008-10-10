@@ -1,0 +1,18 @@
+--- longtable.orig      2004-03-13 21:37:06.000000000 -0500
++++ longtable.sty       2008-10-10 16:32:25.000000000 -0400
+@@ -55,6 +55,7 @@
+ \newcount\LTchunksize \LTchunksize=20
+ \let\c@LTchunksize\LTchunksize
+ \newdimen\LTcapwidth  \LTcapwidth=4in
++\newlength\LTextracouponspace
+ \newbox\LT@head
+ \newbox\LT@firsthead
+ \newbox\LT@foot
+@@ -146,6 +147,7 @@
+   \advance\dimen@ \ht\ifvoid\LT@firsthead\LT@head\else\LT@firsthead\fi
+   \advance\dimen@ \dp\ifvoid\LT@firsthead\LT@head\else\LT@firsthead\fi
+   \advance\dimen@ \ht\LT@foot
++  \advance\dimen@ \LTextracouponspace
+   \dimen@ii\vfuzz
+   \vfuzz\maxdimen
+     \setbox\tw@\copy\z@

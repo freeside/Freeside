@@ -237,6 +237,8 @@ Terms: [@-- $terms --@]\\
     }
     $OUT .= '\pagebreak' if $section{'post_total'};
     $OUT .= '\captionsetup{singlelinecheck=false,justification=raggedright,font={Large,sc,bf}}';
+    $OUT .= '\ifthenelse{\equal{\thepage}{1}}{\setlength{\LTextracouponspace}{\extracouponspace}}{\setlength{\LTextracouponspace}{0pt}}'
+      if $coupon;
     $OUT .= '\begin{longtable}{cllllllr}';
     $OUT .= '\caption*{ ';
     $OUT .= ($section->{'description'}) ? $section->{'description'}: 'Charges';
