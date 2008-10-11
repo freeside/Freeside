@@ -758,6 +758,9 @@ sub suspend {
   }
 
   unless ( $date ) {
+
+    my @labels = ();
+
     foreach my $cust_svc (
       qsearch( 'cust_svc', { 'pkgnum' => $self->pkgnum } )
     ) {
@@ -777,12 +780,43 @@ sub suspend {
           $dbh->rollback if $oldAutoCommit;
           return $error;
         }
+        my( $label, $value ) = $cust_svc->label;
+        push @labels, "$label: $value";
       }
     }
+
+    my $conf = new FS::Conf;
+    if ( $conf->config('suspend_email_admin') ) {
+ 
+      my $error = send_email(
+        'from'    => $conf->config('invoice_from'), #??? well as good as any
+        'to'      => $conf->config('suspend_email_admin'),
+        'subject' => 'FREESIDE NOTIFICATION: Customer package suspended',
+        'body'    => [
+          "This is an automatic message from your Freeside installation\n",
+          "informing you that the following customer package has been suspended:\n",
+          "\n",
+          'Customer: #'. $self->custnum. ' '. $self->cust_main->name. "\n",
+          'Package : #'. $self->pkgnum. " (". $self->part_pkg->pkg_comment. ")\n",
+          ( map { "Service : $_\n" } @labels ),
+        ],
+      );
+
+      if ( $error ) {
+        warn "WARNING: can't send suspension admin email (suspending anyway): ".
+             "$error\n";
+      }
+
+    }
+
   }
 
   my %hash = $self->hash;
-  $date ? ($hash{'adjourn'} = $date) : ($hash{'susp'} = time);
+  if ( $date ) {
+    $hash{'adjourn'} = $date;
+  } else {
+    $hash{'susp'} = time;
+  }
   my $new = new FS::cust_pkg ( \%hash );
   $error = $new->replace( $self, options => { $self->options } );
   if ( $error ) {
