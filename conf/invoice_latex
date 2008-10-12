@@ -51,7 +51,7 @@
   }
 }
 
-\newcommand{\extracouponspace}{4.8cm}
+\newcommand{\extracouponspace}{3.6cm}
 
 % Adjust the inset of the mailing address
 \newcommand{\addressinset}[1][]{\hspace{1.0cm}}
