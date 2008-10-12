@@ -16,3 +16,14 @@
    \dimen@ii\vfuzz
    \vfuzz\maxdimen
      \setbox\tw@\copy\z@
+@@ -159,6 +161,10 @@
+   \advance\dimen@ -\pagegoal
+   \ifdim \dimen@>\z@\vfil\break\fi
+       \global\@colroom\@colht
++  \ifnum\thepage=1
++    \advance\vsize-\LTextracouponspace
++    \dimen@\pagegoal\advance\dimen@-\LTextracouponspace\pagegoal\dimen@
++  \fi
+   \ifvoid\LT@foot\else
+     \advance\vsize-\ht\LT@foot
+     \global\advance\@colroom-\ht\LT@foot
