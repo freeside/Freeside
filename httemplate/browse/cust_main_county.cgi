@@ -204,7 +204,7 @@ my $html_posttotal =
 
 my $bulk_popup_link = 
   include( '/elements/popup_link_onclick.html',
-             'action'      => "${p}edit/bulk_cust_main_county.html?MAGIC_taxnum_MAGIC",
+             'action'      => "${p}edit/bulk-cust_main_county.html?MAGIC_taxnum_MAGIC",
              'actionlabel' => 'Bulk add new tax',
              'nofalse'     => 1,
              'height'      => 420,
