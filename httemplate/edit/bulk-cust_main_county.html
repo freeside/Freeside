@@ -1,0 +1,130 @@
+<% include('/elements/header-popup.html', 'Bulk Tax rate') %>
+
+<FORM ACTION="<% popurl(1)."process/bulk-cust_main_county.html" %>" METHOD="POST">
+
+<INPUT TYPE="hidden" NAME="taxnum" VALUE="<% join(',', @taxnum) %>">
+
+<TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>
+
+<% include('/elements/tr-td-label.html', 'label' => 'Country' ) %>
+  <TD BGCOLOR="#dddddd"><% $countries %>
+  </TD>
+</TR>
+
+<% include('/elements/tr-td-label.html', 'label' => 'State' ) %>
+  <TD BGCOLOR="#dddddd"><% $states %>
+  </TD>
+</TR>
+
+% if ( $counties ) {
+  <% include('/elements/tr-td-label.html', 'label' => 'County' ) %>
+    <TD BGCOLOR="#dddddd"><% $counties %>
+    </TD>
+  </TR>
+% }
+
+% if ( $conf->exists('enable_taxclasses') && $taxclasses ) {
+  <% include('/elements/tr-td-label.html', 'label' => 'Tax Class' ) %>
+    <TD BGCOLOR="#dddddd"><% $taxclasses %>
+    </TD>
+  </TR>
+% }
+
+<% include('/elements/tr-input-text.html',
+             'field' => 'taxname',
+             'label' => 'Tax name'
+          )
+%>
+
+<% include('/elements/tr-input-percentage.html',
+             'field' => 'tax',
+             'label' => 'Tax rate',
+          )
+%>
+
+<% include('/elements/tablebreak-tr-title.html', value=>'Exemptions' ) %>
+
+<% include('/elements/tr-checkbox.html',
+             'field' => 'setuptax',
+             'value' => 'Y',
+             'label' => 'This tax not applicable to setup fees',
+          )
+%>
+
+<% include('/elements/tr-checkbox.html',
+             'field' => 'recurtax',
+             'value' => 'Y',
+             'label' => 'This tax not applicable to recurring fees',
+          )
+%>
+
+<% include('/elements/tr-input-money.html',
+             'field' => 'exempt_amount',
+             'label' => 'Monthly exemption per customer ($25 "Texas tax")',
+          )
+%>
+
+</TABLE>
+
+<BR>
+
+<INPUT TYPE="submit" VALUE="Bulk add tax">
+
+<%init>
+
+my $conf = new FS::Conf;
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my @taxnum;
+if ( $cgi->param('error') ) {
+  $cgi->param('taxnum') =~ /^([\d,]+)$/
+    or die "no taxnum, but error: ". $cgi->param('error');
+  @taxnum = split(',', $1);
+} else {
+  my($query) = $cgi->keywords;
+  $query =~ /^([\d,]+)$/
+    or die 'Nothing selected'; #XXX better error when nothing selected
+  @taxnum = split(',', $1);
+}
+
+my @cust_main_county =
+  map {
+        qsearchs('cust_main_county', { 'taxnum' => $_ })
+          or die "unknown taxnum $1";
+      }
+      @taxnum;
+
+my %seen_country = {};
+my @countries = map  code2country($_)."&nbsp;($_)",
+                grep !$seen_country{$_}++,
+                map  $_->country,
+                     @cust_main_county;
+my $countries = join(', ', @countries);
+
+my %seen_state = {};
+my @states = map state_label($_->[0], $_->[1]),
+            grep !$seen_state{$_->[0]}++,
+             map [ $_->state, $_->country ],
+                 @cust_main_county;
+my $states = join(', ', @states);
+
+my %seen_county = {};
+my @counties = grep !$seen_county{$_}++, map $_->county, @cust_main_county;
+my $counties = join(', ', @counties);
+
+my %seen_taxclass = {};
+my @taxclasses = grep !$seen_taxclass{$_}++, map $_->taxclass, @cust_main_county;
+my $taxclasses = join(', ', @taxclasses);
+
+#my @fields = (
+#  { field=>'country',  type=>'fixed-country', },
+#  { field=>'state',    type=>'fixed-state', },
+#  { field=>'county',   type=>'fixed', },
+#);
+
+#push @fields, { field=>'taxclass', type=>'fixed', }
+#  if $conf->exists('enable_taxclasses');
+
+</%init>

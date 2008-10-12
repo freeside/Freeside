@@ -4,6 +4,8 @@
      'menubar'        => \@menubar,
      'html_init'      => $html_init,
      'html_posttotal' => $html_posttotal,
+     'html_form'      => '<FORM NAME="taxesForm">',
+     'html_foot'      => $html_foot,
      'query'          => {
                            'table'    => 'cust_main_county',
                            'hashref'  => $hashref,
@@ -200,6 +202,77 @@ my $html_posttotal =
       ).
   '</SELECT>)';
 
+my $bulk_popup_link = 
+  include( '/elements/popup_link_onclick.html',
+             'action'      => "${p}edit/bulk_cust_main_county.html?MAGIC_taxnum_MAGIC",
+             'actionlabel' => 'Bulk add new tax',
+             'nofalse'     => 1,
+             'height'      => 420,
+             #default# 'width'  => 540,
+             #default# 'color' => '#333399',
+         );
+
+my $html_foot = <<END;
+<SCRIPT TYPE="text/javascript">
+
+  function setAll(setTo) {
+    theForm = document.taxesForm;
+    for (i=0,n=theForm.elements.length;i<n;i++) {
+      if (theForm.elements[i].name.indexOf("cust_main_county") != -1) {
+        theForm.elements[i].checked = setTo;
+      }
+    }
+  }
+
+  function toggleAll() {
+    theForm = document.taxesForm;
+    for (i=0,n=theForm.elements.length;i<n;i++) {
+      if (theForm.elements[i].name.indexOf("cust_main_county") != -1) {
+        if ( theForm.elements[i].checked == true ) {
+          theForm.elements[i].checked = false;
+        } else {
+          theForm.elements[i].checked = true;
+        }
+      }
+    }
+  }
+
+  function bulkPopup() {
+    var bulk_popup_link = "$bulk_popup_link";
+    var bulkstring = '';
+    theForm = document.taxesForm;
+    for (i=0,n=theForm.elements.length;i<n;i++) {
+      if (    theForm.elements[i].name.indexOf("cust_main_county") != -1
+           && theForm.elements[i].checked == true
+         ) {
+        var name = theForm.elements[i].name;
+        var taxnum = name.replace(/cust_main_county/, '');
+        if ( bulkstring != '' ) {
+          bulkstring = bulkstring + ',';
+        }
+        bulkstring = bulkstring + taxnum;
+       
+      }
+    }
+    if ( bulk_popup_link.length > 1920 ) { // IE 2083 URL limit
+      alert('Too many selections'); // should do some session thing...
+      return false;
+    }
+    bulk_popup_link = bulk_popup_link.replace(/MAGIC_taxnum_MAGIC/, bulkstring);
+    eval(bulk_popup_link);
+  }
+
+</SCRIPT>
+
+<BR>
+<A HREF="javascript:setAll(true)">select all</A> |
+<A HREF="javascript:setAll(false)">unselect all</A> |
+<A HREF="javascript:toggleAll()">toggle all</A>
+<BR><BR>
+<A HREF="javascript:void(0);" onClick="bulkPopup();">Add new tax to selected</A>
+
+END
+
 my $hashref = {};
 my $count_query = 'SELECT COUNT(*) FROM cust_main_county';
 if ( $country ) {
@@ -269,33 +342,68 @@ if ( $conf->exists('enable_taxclasses') ) {
   $align .= 'l';
 }
 
-push @header, 'Tax name',
+push @header,
+              '', #checkbox column
+              'Tax name',
               'Rate', #'Tax',
               'Exemptions',
               ;
 
-push @header2, '(printed on invoices)',
+push @header2,
+               '',
+               '(printed on invoices)',
                '',
                '',
                ;
 
+my $newregion = 1;
+my $cb_oldrow = '';
+my $cb_sub = sub {
+  my $cust_main_county = shift;
+
+  if ( $cb_oldrow ) {
+    if (    $cb_oldrow->country  ne $cust_main_county->country 
+         || $cb_oldrow->state    ne $cust_main_county->state  
+         || $cb_oldrow->county   ne $cust_main_county->county  
+         || $cb_oldrow->taxclass ne $cust_main_county->taxclass )
+    {
+      $newregion = 1;
+    } else {
+      $newregion = 0;
+    }  
+    
+  } else {
+    $newregion = 1;
+  }
+  $cb_oldrow = $cust_main_county;
+
+  if ( $newregion ) {
+    my $taxnum = $cust_main_county->taxnum;
+    qq!<INPUT NAME="cust_main_county$taxnum" TYPE="checkbox" VALUE="1">!;
+  } else {
+    '';
+  }
+};
+
 push @fields, 
+  $cb_sub,
   sub { shift->taxname || 'Tax' },
   sub { shift->tax. '%&nbsp;<FONT SIZE="-1">(edit)</FONT>' },
   $exempt_sub,
 ;
 
 push @color,
+  '000000',
   sub { shift->taxname ? '000000' : '666666' },
   sub { shift->tax     ? '000000' : '666666' },
   '000000',
 ;
 
-$align .= 'lrl';
+$align .= 'clrl';
 
 my @cell_style = map $cell_style_sub, (1..scalar(@header));
 
-push @links,         '', $edit_link,    '';
-push @link_onclicks, '', $edit_onclick, '';
+push @links,         '', '', $edit_link,    '';
+push @link_onclicks, '', '', $edit_onclick, '';
 
 </%init>

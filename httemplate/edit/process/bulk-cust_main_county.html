@@ -1,0 +1,63 @@
+% if ( $error ) { #better to redirect back to 
+%# <% $cgi->redirect("$url?". $cgi->query_string ) %>
+  <% include('/elements/header-popup.html', 'Error adding taxes' ) %>
+
+  <FONT SIZE="+1" COLOR="#ff0000">Error: <% $error |h %></FONT>
+  <BR><BR>
+
+  </BODY>
+  </HTML>
+
+% } else {
+  <% include('/elements/header-popup.html', 'Taxes added') %>
+
+  <SCRIPT TYPE="text/javascript">
+    window.top.location.reload();
+  </SCRIPT>
+
+  </BODY>
+  </HTML>
+% }
+<%init>
+
+$cgi->param('taxnum') =~ /^([\d,]+)$/
+  or die 'Guru Meditation #69'; #??? should have been passed in
+my @taxnum = split(',', $1);
+
+my $error = '';
+foreach my $taxnum ( @taxnum ) {
+
+  my $cust_main_county = qsearchs('cust_main_county', { 'taxnum' => $taxnum } )
+    or die "unknown taxnum: $taxnum";
+
+  if ( $cust_main_county->tax == 0 ) { #let's replace
+
+    foreach (qw( taxname tax exempt_amount setuptax recurtax )) {
+      $cust_main_county->set( $_ => scalar($cgi->param($_)) )
+    }
+
+    $error = $cust_main_county->replace and last;
+
+  } else { #let's insert a new record
+
+    my $new =
+      new FS::cust_main_county {
+        ( map { $_ => scalar($cgi->param($_)) }
+              qw( taxname tax exempt_amount setuptax recurtax )
+        ),
+        ( map { $_ => $cust_main_county->get($_) }
+              qw( country state county taxclass ) 
+        )
+      };
+
+    $error = $new->insert and last;
+    
+  }
+
+}
+
+if ( $error ) {
+  $cgi->param('error', $error);
+}
+
+</%init>
