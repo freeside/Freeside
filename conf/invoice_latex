@@ -156,7 +156,22 @@
 \renewcommand{\familydefault}{phv}
 
 
-% Commands for freeside description...
+% Commands for freeside table header...
+\newcommand{\FShead}{
+  \hline
+  \rule{0pt}{2.5ex}
+  \makebox[1.4cm]{\textbf{Ref}} &
+  \makebox[2.9cm][l]{\textbf{Description}}&
+  \makebox[1.4cm][l]{}&
+  \makebox[1.4cm][l]{}&
+  \makebox[2.5cm][l]{}&
+  \makebox[2.5cm][l]{\textbf{[@-- $unitprices ? '~~Unit Price' : '' --@]}}&
+  \makebox[1.4cm]{\textbf{[@-- $unitprices ? '~Quantity' : '' --@]}}&
+  \makebox[1.6cm][r]{\textbf{Amount}} \\
+  \hline
+}
+
+% ...description...
 \newcommand{\FSdesc}[5]{
   \multicolumn{1}{c}{\rule{0pt}{2.5ex}\textbf{#1}} &
   \multicolumn{4}{l}{\textbf{#2}} &
@@ -243,30 +258,10 @@ Terms: [@-- $terms --@]\\
     $OUT .= '\caption*{ ';
     $OUT .= ($section->{'description'}) ? $section->{'description'}: 'Charges';
     $OUT .= '}\\\\';
-    $OUT .= '\hline';
-    $OUT .= '\rule{0pt}{2.5ex}';
-    $OUT .= '\makebox[1.4cm]{\textbf{Ref}} & ';
-    $OUT .= '\makebox[2.0cm][l]{\textbf{Description}}& ';
-    $OUT .= '\makebox[2.0cm][l]{}& ';
-    $OUT .= '\makebox[2.0cm][l]{}& ';
-    $OUT .= '\makebox[2.0cm][l]{}& ';
-    $OUT .= '\makebox[2.0cm][l]{\textbf{'. ($unitprices ? '~~Unit Price' : ''). '}}&';
-    $OUT .= '\makebox[2.0cm]{\textbf{'. ($unitprices ? '~Quantity' : ''). '}}&';
-    $OUT .= '\makebox[2.0cm][r]{\textbf{Amount}} \\\\';
-    $OUT .= '\hline';
+    $OUT .= '\FShead';
     $OUT .= '\endfirsthead';
     $OUT .= '\multicolumn{7}{r}{\rule{0pt}{2.5ex}Continued from previous page}\\\\';
-    $OUT .= '\hline';
-    $OUT .= '\rule{0pt}{2.5ex}';
-    $OUT .= '\makebox[1.4cm]{\textbf{Ref}} & ';
-    $OUT .= '\makebox[2.0cm][l]{\textbf{Description}}& ';
-    $OUT .= '\makebox[2.0cm][l]{}& ';
-    $OUT .= '\makebox[2.0cm][l]{}& ';
-    $OUT .= '\makebox[2.0cm][l]{}& ';
-    $OUT .= '\makebox[2.0cm][l]{\textbf{'. ($unitprices ? '~~Unit Price' : ''). '}}&';
-    $OUT .= '\makebox[2.0cm]{\textbf{'. ($unitprices ? '~Quantity' : ''). '}}&';
-    $OUT .= '\makebox[2.0cm][r]{\textbf{Amount}} \\\\';
-    $OUT .= '\hline';
+    $OUT .= '\FShead';
     $OUT .= '\endhead';
     $OUT .= '\multicolumn{7}{r}{\rule{0pt}{2.5ex}Continued on next page...}\\\\';
     $OUT .= '\endfoot';
