@@ -40,9 +40,12 @@ foreach my $employee (@employees) {
   my $req = new HTTP::Request GET => $url;
   my $res = $ua->request($req);
 
+  my $conf = new FS::Conf;
+  my $subject = $conf->config('email_report-subject') || 'Freeside report';
+
   my %options = ( 'from'             => $email_address,
                   'to'               => $email_address,
-                  'subject'          => 'subject',
+                  'subject'          => $subject,
                   'body'             => $res->content,
                 );
 
