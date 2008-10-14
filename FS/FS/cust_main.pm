@@ -6392,6 +6392,9 @@ sub process_batch_import {
 
 =cut
 
+use FS::svc_acct;
+use FS::svc_external;
+
 #some false laziness w/cdr.pm now
 sub batch_import {
   my $param = shift;
@@ -6437,6 +6440,18 @@ sub batch_import {
                   invoicing_list
                   cust_pkg.pkgpart
                   svc_acct.username svc_acct._password 
+                );
+    $payby = 'BILL';
+ } elsif ( $format eq 'svc_external' ) {
+    @fields = qw( agent_custid refnum
+                  last first company address1 address2 city state zip country
+                  daytime night
+                  ship_last ship_first ship_company ship_address1 ship_address2
+                  ship_city ship_state ship_zip ship_country
+                  payinfo paycvv paydate
+                  invoicing_list
+                  cust_pkg.pkgpart cust_pkg.bill
+                  svc_external.id svc_external.title
                 );
     $payby = 'BILL';
   } else {
@@ -6527,7 +6542,7 @@ sub batch_import {
     );
     my $billtime = time;
     my %cust_pkg = ( pkgpart => $pkgpart );
-    my %svc_acct = ();
+    my %svc_x = ();
     foreach my $field ( @fields ) {
 
       if ( $field =~ /^cust_pkg\.(pkgpart|setup|bill|susp|adjourn|expire|cancel)$/ ) {
@@ -6543,7 +6558,11 @@ sub batch_import {
 
       } elsif ( $field =~ /^svc_acct\.(username|_password)$/ ) {
 
-        $svc_acct{$1} = shift @columns;
+        $svc_x{$1} = shift @columns;
+
+      } elsif ( $field =~ /^svc_external\.(id|title)$/ ) {
+
+        $svc_x{$1} = shift @columns;
         
       } else {
 
@@ -6591,18 +6610,25 @@ sub batch_import {
     if ( $cust_pkg{'pkgpart'} ) {
       my $cust_pkg = new FS::cust_pkg ( \%cust_pkg );
 
-      my @svc_acct = ();
-      if ( $svc_acct{'username'} ) {
+      my @svc_x = ();
+      my $svcdb = '';
+      if ( $svc_x{'username'} ) {
+        $svcdb = 'svc_acct';
+      } elsif ( $svc_x{'id'} || $svc_x{'title'} ) {
+        $svcdb = 'svc_external';
+      }
+      if ( $svcdb ) {
         my $part_pkg = $cust_pkg->part_pkg;
 	unless ( $part_pkg ) {
 	  $dbh->rollback if $oldAutoCommit;
 	  return "unknown pkgpart: ". $cust_pkg{'pkgpart'};
 	} 
-        $svc_acct{svcpart} = $part_pkg->svcpart( 'svc_acct' );
-        push @svc_acct, new FS::svc_acct ( \%svc_acct )
+        $svc_x{svcpart} = $part_pkg->svcpart( $svcdb );
+        my $class = "FS::$svcdb";
+        push @svc_x, $class->new( \%svc_x );
       }
 
-      $hash{$cust_pkg} = \@svc_acct;
+      $hash{$cust_pkg} = \@svc_x;
     }
 
     my $error = $cust_main->insert( \%hash, $invoicing_list );
