@@ -18,7 +18,7 @@ our %desired = (
   'apache_mpm'       => qw/^(Prefork|$)/,
 
   #payment gateway survey
-  'payment_gateway'  => qw/^authorizenet$/,
+#  'payment_gateway'  => qw/^authorizenet$/,
 
   #stuff to add/replace later
   #'pg_version'       => qr/^8\.[1-9]/,
