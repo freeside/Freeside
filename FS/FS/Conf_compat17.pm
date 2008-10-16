@@ -443,6 +443,13 @@ httemplate/docs/config.html
   },
 
   {
+   'key'         => 'business-onlinepayment-email_customer',
+   'section'     => 'billing',
+   'description' => 'Controls the "email_customer" flag used by some Business::OnlinePayment processors to enable customer receipts.',
+   'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'countrydefault',
     'section'     => 'UI',
     'description' => 'Default two-letter country code (if not supplied, the default is `US\')',
@@ -1811,6 +1818,13 @@ httemplate/docs/config.html
     'key'         => 'address2-search',
     'section'     => 'UI',
     'description' => 'Enable a "Unit" search box which searches the second address field',
+   'type'        => 'checkbox',
+  },
+
+  {
+   'key'         => 'cust_main-require_address2',
+   'section'     => 'UI',
+   'description' => 'Second address field is required (on service address only, if billing and service addresses differ).  Also enables "Unit" labeling of address2 on customer view and edit pages.  Useful for multi-tenant applications.  See also: address2-search',
     'type'        => 'checkbox',
   },
 
@@ -1829,9 +1843,60 @@ httemplate/docs/config.html
 
   {
     'key'         => 'hylafax',
-    'section'     => '',
+    'section'     => 'billing',
     'description' => 'Options for a HylaFAX server to enable the FAX invoice destination.  They should be in the form of a space separated list of arguments to the Fax::Hylafax::Client::sendfax subroutine.  You probably shouldn\'t override things like \'docfile\'.  *Note* Only supported when using typeset invoices (see the invoice_latex configuration option).',
     'type'        => [qw( checkbox textarea )],
+  },
+
+  {
+    'key'         => 'cust_bill-ftpformat',
+    'section'     => 'billing',
+    'description' => 'Enable FTP of raw invoice data - format.',
+    'type'        => 'select',
+    'select_enum' => [ '', 'default', 'billco', ],
+  },
+
+  {
+    'key'         => 'cust_bill-ftpserver',
+    'section'     => 'billing',
+    'description' => 'Enable FTP of raw invoice data - server.',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'cust_bill-ftpusername',
+    'section'     => 'billing',
+    'description' => 'Enable FTP of raw invoice data - server.',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'cust_bill-ftppassword',
+    'section'     => 'billing',
+    'description' => 'Enable FTP of raw invoice data - server.',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'cust_bill-ftpdir',
+    'section'     => 'billing',
+    'description' => 'Enable FTP of raw invoice data - server.',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'cust_bill-spoolformat',
+    'section'     => 'billing',
+    'description' => 'Enable spooling of raw invoice data - format.',
+    'type'        => 'select',
+    'select_enum' => [ '', 'default', 'billco', ],
+  },
+
+  {
+    'key'         => 'cust_bill-spoolagent',
+    'section'     => 'billing',
+    'description' => 'Enable per-agent spooling of raw invoice data.',
+    'type'        => 'checkbox',
   },
 
   {
@@ -1977,6 +2042,22 @@ httemplate/docs/config.html
     'section'     => 'billing',
     'description' => 'Enable credit card and/or ACH batching - leave disabled for real-time installations.',
     'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'batch-enable_payby',
+    'section'     => 'billing',
+    'description' => 'Enable batch processing for the specified payment types.',
+    'type'        => 'selectmultiple',
+    'select_enum' => [qw( CARD CHEK )],
+  },
+
+  {
+    'key'         => 'realtime-disable_payby',
+    'section'     => 'billing',
+    'description' => 'Disable realtime processing for the specified payment types.',
+    'type'        => 'selectmultiple',
+    'select_enum' => [qw( CARD CHEK )],
   },
 
   {
@@ -2132,10 +2213,32 @@ httemplate/docs/config.html
   },
 
   {
+    'key'         => 'selfservice-session_timeout',
+    'section'     => '',
+    'description' => 'Self-service session timeout.  Defaults to 1 hour.',
+    'type'        => 'select',
+    'select_enum' => [ '1 hour', '2 hours', '4 hours', '8 hours', '1 day', '1 week', ],
+  },
+
+  {
     'key'         => 'disable_setup_suspended_pkgs',
     'section'     => 'billing',
     'description' => 'Disables charging of setup fees for suspended packages.',
     'type'       => 'checkbox',
+  },
+
+  {
+    'key'         => 'cust_main-require_phone',
+    'section'     => '',
+    'description' => 'Require daytime or night for all customer records.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'cust_main-require_invoicing_list_email',
+    'section'     => '',
+    'description' => 'Email address field is required: require at least one invoicing email address for all customer records.',
+    'type'        => 'checkbox',
   },
 
   {
@@ -2265,7 +2368,33 @@ httemplate/docs/config.html
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'disable_acl_changes',
+    'section'     => '',
+    'description' => 'Disable all ACL changes, for demos.',
+    'type'        => 'checkbox',
+  },
 
+  {
+    'key'         => 'cust_main-edit_agent_custid',
+    'section'     => 'UI',
+    'description' => 'Enable editing of the agent_custid field.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'cust_main-default_areacode',
+    'section'     => 'UI',
+    'description' => 'Default area code for customers.',
+    'type'        => 'text',
+  },
+ 
+  {
+    'key'         => 'cust_bill-max_same_services',
+    'section'     => 'billing',
+    'description' => 'Maximum number of the same service to list individually on invoices before condensing to a single line listing the number of services.  Defaults to 5.',
+    'type'        => 'text',
+  },
 
 );
 
