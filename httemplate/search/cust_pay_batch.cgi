@@ -63,7 +63,9 @@ die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Financial reports')
       || $FS::CurrentUser::CurrentUser->access_right('Process batches')
       || ( $cgi->param('custnum') 
-           && $conf->exists('batch-enable')
+           && (    $conf->exists('batch-enable')
+                || $conf->config('batch-enable_payby')
+              )
            #&& $FS::CurrentUser::CurrentUser->access_right('View customer batched payments')
          );
 

@@ -1552,8 +1552,8 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'paymentforcedtobatch',
-    'section'     => 'UI',
-    'description' => 'Causes per customer payment entry to be forced to a batch processor rather than performed realtime.',
+    'section'     => 'deprecated',
+    'description' => 'See batch-enable_payby and realtime-disable_payby.  Used to (for CHEK): Cause per customer payment entry to be forced to a batch processor rather than performed realtime.',
     'type'        => 'checkbox',
   },
 
@@ -2020,9 +2020,26 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'batch-enable',
-    'section'     => 'billing',
+    'section'     => 'deprecated', #make sure batch-enable_payby is set for
+                                   #everyone before removing
     'description' => 'Enable credit card and/or ACH batching - leave disabled for real-time installations.',
     'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'batch-enable_payby',
+    'section'     => 'billing',
+    'description' => 'Enable batch processing for the specified payment types.',
+    'type'        => 'selectmultiple',
+    'select_enum' => [qw( CARD CHEK )],
+  },
+
+  {
+    'key'         => 'realtime-disable_payby',
+    'section'     => 'billing',
+    'description' => 'Disable realtime processing for the specified payment types.',
+    'type'        => 'selectmultiple',
+    'select_enum' => [qw( CARD CHEK )],
   },
 
   {

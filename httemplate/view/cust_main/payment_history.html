@@ -136,7 +136,7 @@
 
 %# batched payment links
 
-% if ( $conf->exists('batch-enable')
+% if ( ( $conf->exists('batch-enable') || $conf->config('batch-enable_payby') )
 %      && $curuser->access_right('View customer batched payments')
 %    ) { 
   View batched payments:
