@@ -106,6 +106,10 @@ tie my %temporalities, 'Tie::IxHash',
     'use_cdrtypenum' => { 'name' => 'Do not charge for CDRs where the CDR Type is not set to: ',
                          },
 
+    'use_duration'   => { 'name' => 'Calculate usage based on the duration field instead of the billsec field',
+                          'type' => 'checkbox',
+                        },
+
     '411_rewrite' => { 'name' => 'Rewrite these (comma-separated) destination numbers to 411 for rating purposes: ',
                       },
 
@@ -154,6 +158,7 @@ tie my %temporalities, 'Tie::IxHash',
                        disable_tollfree
                        use_amaflags use_disposition
                        use_disposition_taqua use_carrierid use_cdrtypenum
+                       use_duration
                        411_rewrite
                        output_format summarize_usage usage_section
                      )
@@ -415,7 +420,12 @@ sub calc_recur {
             unless exists $included_min{$regionnum};
 
           my $granularity = $rate_detail->sec_granularity;
-          my $seconds = $cdr->billsec; # length($cdr->billsec) ? $cdr->billsec : $cdr->duration;
+
+                      # length($cdr->billsec) ? $cdr->billsec : $cdr->duration;
+          my $seconds = $self->option('use_duration')
+                          ? $cdr->duration
+                          : $cdr->billsec;
+
           $seconds += $granularity - ( $seconds % $granularity )
             if $seconds      # don't granular-ize 0 billsec calls (bills them)
             && $granularity; # 0 is per call
