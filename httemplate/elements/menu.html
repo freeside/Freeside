@@ -192,7 +192,7 @@ tie my %report_financial, 'Tie::IxHash',
   'Payment Report' => [ $fsurl.'search/report_cust_pay.html', 'Payment report (by type and/or date range)' ],
 ;
 $report_financial{'Payment Batch Report'} = [ $fsurl.'search/pay_batch.html', 'Payment batches (by status and/or date range)' ]
-  if $conf->exists('batch-enable');
+  if $conf->exists('batch-enable') || $conf->config('batch-enable_payby');
 $report_financial{'A/R Aging'} = [ $fsurl.'search/report_receivables.html', 'Accounts Receivable Aging report' ];
 $report_financial{'Prepaid Income'} = [ $fsurl.'search/report_prepaid_income.html', 'Prepaid income (unearned revenue)  report' ];
 $report_financial{'Sales Tax Liability'} = [ $fsurl.'search/report_tax.html', 'Sales tax liability report (old taxclass system)' ];
@@ -241,7 +241,8 @@ tie my %tools_menu, 'Tie::IxHash', ();
 $tools_menu{'Quick payment entry'} =  [ $fsurl.'misc/batch-cust_pay.html', 'Enter multiple payments in a batch' ]
   if $curuser->access_right('Post payment batch');
 $tools_menu{'Process payment batches'} = [ $fsurl.'search/pay_batch.cgi?magic=_date;open=1;intransit=1', 'Process credit card and electronic check batches' ]
-  if $conf->exists('batch-enable') && $curuser->access_right('Process batches');
+  if ( $conf->exists('batch-enable') || $conf->config('batch-enable_payby') )
+     && $curuser->access_right('Process batches');
 $tools_menu{'Job Queue'} =  [ $fsurl.'search/queue.html', 'View pending job queue' ]
   if $curuser->access_right('Job queue');
 $tools_menu{'Time Queue'} =  [ $fsurl.'search/timeworked.html', 'View pending support time' ]
