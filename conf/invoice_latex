@@ -207,7 +207,7 @@
 [@-- $coupon ? '\enlargethispage{-\extracouponspace}' : '' --@]
 \addressinset \rule{0.5cm}{0cm} 
 \makebox{
-\begin{minipage}[t]{5.0cm}
+\begin{minipage}[t]{7.0cm}
 \vspace{0.25cm}
 \textbf{[@-- $payname --@]}\\
 \addressline{[@-- $company --@]}
