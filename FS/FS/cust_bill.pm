@@ -2833,7 +2833,7 @@ sub _items_cust_bill_pkg {
             unit_amount     => sprintf("%.2f", $cust_bill_pkg->unitrecur),
             quantity        => $cust_bill_pkg->quantity,
             ext_description => \@d,
-          };
+          } unless ( $type eq 'U' && ! $amount );
 
         }
 
