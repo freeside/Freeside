@@ -5193,7 +5193,7 @@ sub geocode {
                'table'     => 'cust_tax_location', 
                'hashref'   => { 'zip' => $zip, 'data_vendor' => $data_vendor },
                'extra_sql' => $extra_sql,
-               'order_by'  => 'ORDER BY plus4lo',#overlapping with distinct ends
+               'order_by'  => 'ORDER BY plus4hi',#overlapping with distinct ends
              }
            );
   $geocode = $cust_tax_location[0]->geocode
