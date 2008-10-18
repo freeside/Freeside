@@ -5188,15 +5188,16 @@ sub geocode {
   my $extra_sql = "AND plus4lo <= '$plus4' AND plus4hi >= '$plus4'";
 
   my $geocode = '';
-  my $cust_tax_location =
-    qsearchs( {
-                'table'     => 'cust_tax_location', 
-                'hashref'   => { 'zip' => $zip, 'data_vendor' => $data_vendor },
-                'extra_sql' => $extra_sql,
-              }
-            );
-  $geocode = $cust_tax_location->geocode
-    if $cust_tax_location;
+  my @cust_tax_location =
+    qsearch( {
+               'table'     => 'cust_tax_location', 
+               'hashref'   => { 'zip' => $zip, 'data_vendor' => $data_vendor },
+               'extra_sql' => $extra_sql,
+               'order_by'  => 'plus4lo', #overlapping areas with distinct ends
+             }
+           );
+  $geocode = $cust_tax_location[0]->geocode
+    if scalar(@cust_tax_location);
 
   $geocode;
 }
