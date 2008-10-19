@@ -59,7 +59,7 @@ Setting <b><% $key %></b>
 
 %   } elsif ( $type eq 'text' )  { 
 
-  <input name="<% "$key$n" %>" type="text" value="<% $conf->exists($key, $agentnum) ? $conf->config($key, $agentnum) : '' %>">
+  <input name="<% "$key$n" %>" type="text" value="<% $conf->exists($key, $agentnum) ? $conf->config($key, $agentnum) : '' |h %>">
 
 %   } elsif ( $type eq 'select' || $type eq 'selectmultiple' )  { 
 
