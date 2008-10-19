@@ -332,17 +332,17 @@ sub tables_hashref {
         'agentnum',          'serial',    '',       '', '', '', 
         'agent',            'varchar',    '',  $char_d, '', '', 
         'typenum',              'int',    '',       '', '', '', 
-        'disabled',            'char', 'NULL',       1, '', '', 
         'ticketing_queueid',    'int', 'NULL',      '', '', '', 
         'invoice_template', 'varchar', 'NULL', $char_d, '', '',
+        'agent_custnum',        'int', 'NULL',      '', '', '',
+        'disabled',            'char', 'NULL',       1, '', '', 
         'username',         'varchar', 'NULL', $char_d, '', '', #deprecated
         '_password',        'varchar', 'NULL', $char_d, '', '', #deprecated
         'freq',              'int', 'NULL', '', '', '', #deprecated (never used)
         'prog',                     @perl_type, '', '', #deprecated (never used)
-
       ],
       'primary_key' => 'agentnum',
-      'unique' => [],
+      'unique' => [ [ 'agent_custnum' ] ], #one agent per customer?
       'index' => [ ['typenum'], ['disabled'] ],
     },
 

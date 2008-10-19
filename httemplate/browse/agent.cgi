@@ -26,6 +26,7 @@ full offerings (via their type).<BR><BR>
 <TR>
   <TH CLASS="grid" BGCOLOR="#cccccc" COLSPAN=<% ( $cgi->param('showdisabled') || !dbdef->table('agent')->column('disabled') ) ? 2 : 3 %>>Agent</TH>
   <TH CLASS="grid" BGCOLOR="#cccccc">Type</TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc">Master Customer</TH>
   <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>Invoice<BR>Template</FONT></TH>
   <TH CLASS="grid" BGCOLOR="#cccccc">Customers</TH>
   <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>Customer<BR>packages</FONT></TH>
@@ -82,6 +83,17 @@ full offerings (via their type).<BR><BR>
 
         <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
           <A HREF="<%$p%>edit/agent_type.cgi?<% $agent->typenum %>"><% $agent->agent_type->atype %></A>
+        </TD>
+
+        <TD CLASS="inv" BGCOLOR="<% $bgcolor %>">
+%         if ( $agent->agent_custnum ) {
+            <% include('/elements/small_custview.html',
+                         $agent->agent_custnum,
+                         scalar($conf->config('countrydefault')),
+                         1, #show balance
+                      )
+            %>
+%         }
         </TD>
 
         <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">

@@ -1,23 +1,24 @@
-%
-%  my( %opt ) = @_;
-%  $opt{'field_name'} ||= 'custnum';
-%
-%  my $cust_main = '';
-%  if ( $opt{'value'} ) {
-%    $cust_main = qsearchs(
-%      'table'     => 'cust_main',
-%      'hashref'   => { 'custnum' => $opt{'value'} },
-%      'extra_sql' => " AND ". $FS::CurrentUser::CurrentUser->agentnums_sql,
-%    );
-%  }
-%
-
-
-<INPUT TYPE="hidden" NAME="<% $opt{'field_name'} %>" VALUE="<% $opt{'value'} %>">
+<INPUT TYPE="hidden" NAME="<% $opt{'field_name'} %>" VALUE="<% $value %>">
 
 <!-- some false laziness w/ misc/batch-cust_pay.html, though not as bad as i'd thought at first... -->
 
-<INPUT TYPE="text" NAME="<% $opt{'field_name'} %>_search" ID="<% $opt{'field_name'} %>_search" SIZE="32" VALUE="<% $cust_main ? $cust_main->name : '(cust #, name or company)' %>" onFocus="clearhint_<% $opt{'field_name'} %>_search(this);" onClick="clearhint_<% $opt{'field_name'} %>_search(this);" onChange="smart_<% $opt{'field_name'} %>_search(this);">
+<INPUT TYPE = "text"
+       NAME = "<% $opt{'field_name'} %>_search"
+       ID   = "<% $opt{'field_name'} %>_search"
+       SIZE = "32"
+       VALUE="<% $cust_main ? $cust_main->name : '(cust #, name or company)' %>"
+       onFocus="clearhint_<% $opt{'field_name'} %>_search(this);"
+       onClick="clearhint_<% $opt{'field_name'} %>_search(this);"
+       onChange="smart_<% $opt{'field_name'} %>_search(this);"
+>
+
+% if ( $opt{'find_button'} ) {
+    <INPUT TYPE    = "button"
+           VALUE   = 'Find',
+           NAME    = "<% $opt{'field_name'} %>_findbutton"
+           onClick = "smart_<% $opt{'field_name'} %>_search(this.form.<% $opt{'field_name'} %>_search);"
+    >
+% }
 
 <SELECT NAME="<% $opt{'field_name'} %>_select" ID="<% $opt{'field_name'} %>_select" STYLE="color:#ff0000; display:none" onChange="select_<% $opt{'field_name'} %>(this);">
 </SELECT>
@@ -161,4 +162,20 @@
   }
 
 </SCRIPT>
+<%init>
 
+my( %opt ) = @_;
+$opt{'field_name'} ||= 'custnum';
+
+my $value = $opt{'curr_value'} || $opt{'value'};
+
+my $cust_main = '';
+if ( $value ) {
+  $cust_main = qsearchs({
+    'table'     => 'cust_main',
+    'hashref'   => { 'custnum' => $value },
+    'extra_sql' => " AND ". $FS::CurrentUser::CurrentUser->agentnums_sql,
+  });
+}
+
+</%init>

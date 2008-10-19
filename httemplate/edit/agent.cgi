@@ -30,6 +30,18 @@ Agent #<% $agent->agentnum ? $agent->agentnum : "(NEW)" %>
   </TR>
 
   <TR>
+    <TH ALIGN="right">Master customer</TH>
+    <TD>
+      <% include('/elements/search-cust_main.html',
+                   'field_name'  => 'agent_custnum',
+                   'curr_value'  => $agent->agent_custnum,
+                   'find_button' => 1,
+                )
+      %>
+    </TD>
+  </TR>
+
+  <TR>
     <TD ALIGN="right">Disable</TD>
     <TD><INPUT TYPE="checkbox" NAME="disabled" VALUE="Y"<% $agent->disabled eq 'Y' ? ' CHECKED' : '' %>></TD>
   </TR>

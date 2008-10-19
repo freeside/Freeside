@@ -48,17 +48,23 @@ from FS::Record.  The following fields are currently supported:
 
 =item agent - Text name of this agent
 
-=item typenum - Agent type.  See L<FS::agent_type>
+=item typenum - Agent type (see L<FS::agent_type>)
 
-=item prog - For future use.
+=item ticketing_queueid - Ticketing Queue
 
-=item freq - For future use.
+=item invoice_template - Invoice template name
+
+=item agent_custnum - Optional agent customer (see L<FS::cust_main>)
 
 =item disabled - Disabled flag, empty or 'Y'
 
-=item username - Username for the Agent interface
+=item prog - Deprecated (never used)
 
-=item _password - Password for the Agent interface
+=item freq - Deprecated (never used)
+
+=item username - (Deprecated) Username for the Agent interface
+
+=item _password - (Deprecated) Password for the Agent interface
 
 =back
 
@@ -118,6 +124,7 @@ sub check {
       || $self->ut_numbern('freq')
       || $self->ut_textn('prog')
       || $self->ut_textn('invoice_template')
+      || $self->ut_foreign_keyn('agent_custnum', 'cust_main', 'custnum' )
   ;
   return $error if $error;
 
@@ -154,6 +161,18 @@ Returns the FS::agent_type object (see L<FS::agent_type>) for this agent.
 sub agent_type {
   my $self = shift;
   qsearchs( 'agent_type', { 'typenum' => $self->typenum } );
+}
+
+=item agent_cust_main
+
+Returns the FS::cust_main object (see L<FS::cust_main>), if any, for this
+agent.
+
+=cut
+
+sub agent_cust_main {
+  my $self = shift;
+  qsearchs( 'cust_main', { 'custnum' => $self->agent_custnum } );
 }
 
 =item pkgpart_hashref
