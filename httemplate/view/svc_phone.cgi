@@ -37,7 +37,7 @@ my $html_foot = sub {
   #  "View $_ CDRs</A>";
   #} keys(%what);
   my @links = map {
-    qq(<A HREF="${p}search/cdr.html?charged_party=$number;freesidestatus=$what{$_}">).
+    qq(<A HREF="${p}search/cdr.html?cdrbatch=__ALL__;charged_party=$number;freesidestatus=$what{$_}">).
     "View $_ CDRs</A>";
   } keys(%what);
 
