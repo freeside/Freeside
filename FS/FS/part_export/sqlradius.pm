@@ -503,7 +503,33 @@ sub sqlreplace_usergroups {
 
 #--
 
+=item usage_sessions HASHREF
+
 =item usage_sessions TIMESTAMP_START TIMESTAMP_END [ SVC_ACCT [ IP [ PREFIX [ SQL_SELECT ] ] ] ]
+
+New-style: pass a hashref with the following keys:
+
+=over 4
+
+=item stoptime_start - Lower bound for AcctStopTime, as a UNIX timestamp
+
+=item stoptime_end - Upper bound for AcctStopTime, as a UNIX timestamp
+
+=item open_sessions - Only show records with no AcctStopTime (typically used without stoptime_* options and with starttime_* options instead)
+
+=item starttime_start - Lower bound for AcctStartTime, as a UNIX timestamp
+
+=item starttime_end - Upper bound for AcctStartTime, as a UNIX timestamp
+
+=item svc_acct
+
+=item ip
+
+=item prefix
+
+=back
+
+Old-style: 
 
 TIMESTAMP_START and TIMESTAMP_END are specified as UNIX timestamps; see
 L<perlfunc/"time">.  Also see L<Time::Local> and L<Date::Parse> for conversion
@@ -546,11 +572,24 @@ Returns an arrayref of hashrefs with the following fields:
 #some false laziness w/cust_svc::seconds_since_sqlradacct
 
 sub usage_sessions {
-  my( $self, $start, $end ) = splice(@_, 0, 3);
-  my $svc_acct = @_ ? shift : '';
-  my $ip = @_ ? shift : '';
-  my $prefix = @_ ? shift : '';
-  #my $select = @_ ? shift : '*';
+  my( $self ) = shift;
+
+  my $opt = {};
+  my($start, $end, $svc_acct, $ip, $prefix) = ( '', '', '', '', '');
+  if ( ref($_[0]) ) {
+    my $opt = shift;
+    $start    = $opt->{stoptime_start};
+    $end      = $opt->{stoptime_end};
+    $svc_acct = $opt->{svc_acct};
+    $ip       = $opt->{ip};
+    $prefix   = $opt->{prefix};
+  } else {
+    ( $start, $end ) = splice(@_, 0, 2);
+    $svc_acct = @_ ? shift : '';
+    $ip = @_ ? shift : '';
+    $prefix = @_ ? shift : '';
+    #my $select = @_ ? shift : '*';
+  }
 
   $end ||= 2147483647;
 
@@ -572,37 +611,56 @@ sub usage_sessions {
                );
 
   my @param = ();
-  my $where = '';
+  my @where = '';
 
   if ( $svc_acct ) {
     my $username = $self->export_username($svc_acct);
     if ( $svc_acct =~ /^([^@]+)\@([^@]+)$/ ) {
-      $where = '( UserName = ? OR ( UserName = ? AND Realm = ? ) ) AND';
+      push @where, '( UserName = ? OR ( UserName = ? AND Realm = ? ) )';
       push @param, $username, $1, $2;
     } else {
-      $where = 'UserName = ? AND';
+      push @where, 'UserName = ?';
       push @param, $username;
     }
   }
 
   if ( length($ip) ) {
-    $where .= ' FramedIPAddress = ? AND';
+    push @where, ' FramedIPAddress = ?';
     push @param, $ip;
   }
 
   if ( length($prefix) ) {
     #assume sip: for now, else things get ugly trying to match /^\w+:$prefix/
-    $where .= " CalledStationID LIKE 'sip:$prefix\%' AND";
+    push @where, " CalledStationID LIKE 'sip:$prefix\%'";
   }
 
-  push @param, $start, $end;
+  if ( $start ) {
+    push @where, "$str2time AcctStopTime ) >= ?";
+    push @param, $start;
+  }
+  if ( $end ) {
+    push @where, "$str2time AcctStopTime ) <= ?";
+    push @param, $end;
+  }
+  if ( $opt->{open_sessions} ) {
+    push @where, 'AcctStopTime IS NULL';
+  }
+  if ( $opt->{starttime_start} ) {
+    push @where, "$str2time AcctStartTime ) >= ?";
+    push @param, $opt->{starttime_start};
+  }
+  if ( $opt->{starttime_end} ) {
+    push @where, "$str2time AcctStartTime ) <= ?";
+    push @param, $opt->{starttime_end};
+  }
+
+  my $where = join(' AND ', @where);
+  $where = "WHERE $where" if $where;
 
   my $sth = $dbh->prepare('SELECT '. join(', ', @fields).
                           "  FROM radacct
-                             WHERE $where
-                                   $str2time AcctStopTime ) >= ?
-                               AND $str2time AcctStopTime ) <=  ?
-                               ORDER BY AcctStartTime DESC
+                             $where
+                             ORDER BY AcctStartTime DESC
   ") or die $dbh->errstr;                                 
   $sth->execute(@param) or die $sth->errstr;
 

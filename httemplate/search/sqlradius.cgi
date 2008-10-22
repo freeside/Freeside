@@ -48,8 +48,17 @@
   </TR>
 
 %   foreach my $session (
-%       @{ $part_export->usage_sessions(
-%            $beginning, $ending, $cgi_svc_acct, $ip, $prefix, ) }
+%       @{ $part_export->usage_sessions( {
+%            'stoptime_start'  => $beginning,
+%            'stoptime_end'    => $ending,
+%            'open_sessions'   => $open_sessions,
+%            'starttime_start' => $starttime_beginning,
+%            'starttime_end'   => $starttime_ending,
+%            'svc_acct'        => $cgi_svc_acct,
+%            'ip'              => $ip,
+%            'prefix'          => $prefix, 
+%          } )
+%       }
 %   ) {
 %     if ( $bgcolor eq $bgcolor1 ) {
 %       $bgcolor = $bgcolor2;
@@ -88,14 +97,13 @@ die "access denied"
 ###
 
 #sort of false laziness w/cust_pay.cgi
-my $beginning = '';
-my $ending = '';
-if ( $cgi->param('beginning')
-     && $cgi->param('beginning') =~ /^([ 0-9\-\/\:\w]{0,54})$/ ) {
+my( $beginning, $ending ) = ( '', '' );
+if ( $cgi->param('stoptime_beginning')
+     && $cgi->param('stoptime_beginning') =~ /^([ 0-9\-\/\:\w]{0,54})$/ ) {
   $beginning = str2time($1);
 }
-if ( $cgi->param('ending')
-     && $cgi->param('ending') =~ /^([ 0-9\-\/\:\w]{0,54})$/ ) {
+if ( $cgi->param('stoptime_ending')
+     && $cgi->param('stoptime_ending') =~ /^([ 0-9\-\/\:\w]{0,54})$/ ) {
   $ending = str2time($1); # + 86399;
 }
 if ( $cgi->param('begin') && $cgi->param('begin') =~ /^(\d+)$/ ) {
@@ -103,6 +111,21 @@ if ( $cgi->param('begin') && $cgi->param('begin') =~ /^(\d+)$/ ) {
 }
 if ( $cgi->param('end') && $cgi->param('end') =~ /^(\d+)$/ ) {
   $ending = $1;
+}
+
+my $open_sessions = '';
+if ( $cgi->param('open_sessions') =~ /^(\d*)$/ ) {
+  $open_sessions = $1;
+}
+
+my( $starttime_beginning, $starttime_ending ) = ( '', '' );
+if ( $cgi->param('starttime_beginning')
+     && $cgi->param('starttime_beginning') =~ /^([ 0-9\-\/\:\w]{0,54})$/ ) {
+  $starttime_beginning = str2time($1);
+}
+if ( $cgi->param('starttime_ending')
+     && $cgi->param('starttime_ending') =~ /^([ 0-9\-\/\:\w]{0,54})$/ ) {
+  $starttime_ending = str2time($1); # + 86399;
 }
 
 my $cgi_svc_acct = '';

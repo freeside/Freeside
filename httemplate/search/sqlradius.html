@@ -43,8 +43,72 @@
   </TR>
 % } 
 
+  <TR>
+    <TD>Show:</TD>
+    <TD>
+      <INPUT TYPE="radio" NAME="open_sessions" VALUE="0" onClick="open_changed(this);" CHECKED>Completed sessions<BR>
+      <INPUT TYPE="radio" NAME="open_sessions" VALUE="1" onClick="open_changed(this);">Open sessions
+    </TD>
+  </TR>
 
-<% include( '/elements/tr-input-beginning_ending.html', 'input_time'=>1 ) %>
+  <TR>
+    <TH COLSPAN=2>Session start</TD>
+  </TR>
+
+  <% include( '/elements/tr-input-beginning_ending.html',
+                'prefix'     => 'starttime',
+                'input_time' => 1,
+            )
+  %>
+
+  <SCRIPT TYPE="text/javascript">
+
+    function open_changed(what) {
+
+      var value=get_open_value(what); 
+      if ( value == '1' ) {
+        what.form.stoptime_beginning_text.disabled = true;
+        what.form.stoptime_ending_text.disabled = true;
+        what.form.stoptime_beginning_text.style.backgroundColor = '#dddddd';
+        what.form.stoptime_ending_text.style.backgroundColor = '#dddddd';
+        what.form.stoptime_beginning_button.style.display = 'none';
+        what.form.stoptime_ending_button.style.display = 'none';
+        what.form.stoptime_beginning_disabled.style.display = '';
+        what.form.stoptime_ending_disabled.style.display = '';
+      } else if ( value == '0' ) {
+        what.form.stoptime_beginning_text.disabled = false;
+        what.form.stoptime_ending_text.disabled = false;
+        what.form.stoptime_beginning_text.style.backgroundColor = '#ffffff';
+        what.form.stoptime_ending_text.style.backgroundColor = '#ffffff';
+        what.form.stoptime_beginning_button.style.display = '';
+        what.form.stoptime_ending_button.style.display = '';
+        what.form.stoptime_beginning_disabled.style.display = 'none';
+        what.form.stoptime_ending_disabled.style.display = 'none';
+      }
+
+    }
+
+    function get_open_value(what) {
+      var rad_val = '';
+      for (var i=0; i < what.form.open_sessions.length; i++) {
+        if (what.form.open_sessions[i].checked) {
+          var rad_val = what.form.open_sessions[i].value;
+        }
+     }
+     return rad_val;
+   }
+
+  </SCRIPT>
+
+  <TR>
+    <TH COLSPAN=2>Session end</TD>
+  </TR>
+
+  <% include( '/elements/tr-input-beginning_ending.html',
+                'prefix'     => 'stoptime',
+                'input_time' => 1,
+            )
+  %>
 
 </TABLE>
 <BR><INPUT TYPE="submit" VALUE="View sessions">
