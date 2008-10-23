@@ -601,11 +601,17 @@ Array reference with three elements:
 
 =over 4
 
-=item Name of this service
+=item
 
-=item Meaningful user-specific identifier for the service (i.e. username, domain or mail alias)
+Name of this service
 
-=item Table name of this service
+=item
+
+Meaningful user-specific identifier for the service (i.e. username, domain or mail alias)
+
+=item
+
+Table name of this service
 
 =back
 
