@@ -2,7 +2,7 @@ package FS::part_export::phone_sqlradius;
 
 use vars qw(@ISA $DEBUG %info );
 use Tie::IxHash;
-use FS::Record; #qw( dbh qsearch qsearchs str2time_sql );
+use FS::Record qw( dbh str2time_sql ); #qsearch qsearchs );
 #use FS::part_export;
 use FS::part_export::sqlradius;
 #use FS::svc_phone;
@@ -87,6 +87,74 @@ sub _export_suspend {}
 sub _export_unsuspend {}
 
 #probably harmless that we ->can('usage_sessions').... ?
+
+#we want to feed these into CDRs, not update svc_acct records
+sub update_svc {
+  my $self = shift;
+
+  my $fdbh = dbh;
+  my $dbh = sqlradius_connect( map $self->option($_),
+                                   qw( datasrc username password ) );
+
+  my $str2time = str2time_sql( $dbh->{Driver}->{Name} );
+
+
+
+  my @fields = qw( radacctid username realm acctsessiontime );
+
+  my @param = ();
+  my $where = '';
+
+  my $sth = $dbh->prepare("
+    SELECT RadAcctId, UserName, AcctSessionTime,
+           $str2time AcctStartTime),  $str2time AcctStopTime), 
+           CallingStationID, CalledStationID
+      FROM radacct
+      WHERE FreesideStatus IS NULL
+        AND AcctStopTime != 0
+  ") or die $dbh->errstr;
+  $sth->execute() or die $sth->errstr;
+
+  while ( my $row = $sth->fetchrow_arrayref ) {
+    my( $RadAcctId, $UserName, $AcctSessionTime,
+        $AcctStartTime, $AcctStopTime, 
+        $CallingStationID, $CalledStationID,
+      )= @$row;
+    warn "processing record: ".
+         "$RadAcctId ($UserName for ${AcctSessionTime}s"
+      if $DEBUG;
+
+    my $oldAutoCommit = $FS::UID::AutoCommit; # can't undo side effects, but at
+    local $FS::UID::AutoCommit = 0;           # least we can avoid over counting
+
+    my $cdr = new FS::cdr {
+      'src'           => $CallingStationID,
+      'charged_party' => $UserName,
+      'dst'           => $CalledStationID,
+      'startdate'     => $AcctStartTime,
+      'enddate'       => $AcctStopTime,
+      'duration'      => $AcctStopTime - $AcctStartTime,
+      'billsec'       => $AcctSessionTime,
+    };
+
+    my $errinfo = "for RADIUS detail RadAcctID $RadAcctId ".
+                  "(UserName $UserName)";
+
+    my $error = $cdr->insert;
+    my $status = $error ? 'skipped' : 'done';
+
+    warn "setting FreesideStatus to $status $errinfo\n" if $DEBUG; 
+    my $psth = $dbh->prepare("UPDATE radacct
+                                SET FreesideStatus = ?
+                                WHERE RadAcctId = ?"
+    ) or die $dbh->errstr;
+    $psth->execute($status, $RadAcctId) or die $psth->errstr;
+
+    $fdbh->commit or die $fdbh->errstr if $oldAutoCommit;
+
+  }
+
+}
 
 1;
 

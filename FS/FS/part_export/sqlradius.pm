@@ -672,7 +672,7 @@ sub usage_sessions {
 
 =cut
 
-sub update_svc_acct {
+sub update_svc {
   my $self = shift;
 
   my $conf = new FS::Conf;
@@ -706,7 +706,7 @@ sub update_svc_acct {
 
     $UserName = lc($UserName) unless $conf->exists('username-uppercase');
 
-    my %search = ( 'username' => $UserName );
+    #my %search = ( 'username' => $UserName );
 
     my $extra_sql = '';
     if ( ref($self) =~ /withdomain/ ) { #well...
@@ -799,7 +799,7 @@ sub all_sqlradius {
 
   my @part_export = ();
   push @part_export, qsearch('part_export', { 'exporttype' => $_ } )
-    foreach qw(sqlradius sqlradius_withdomain radiator);
+    foreach qw( sqlradius sqlradius_withdomain radiator phone_sqlradius );
   @part_export;
 }
 

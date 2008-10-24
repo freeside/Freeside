@@ -32,8 +32,8 @@ daemonize2();
 
 my @part_export = FS::part_export::sqlradius->all_sqlradius_withaccounting();
 
-die "no sqlradius, sqlradius_withdomain or radiator exports without".
-    " ignore_accounting"
+die "no sqlradius, sqlradius_withdomain, radiator or phone_sqlradius exports".
+    " without ignore_accounting"
   unless @part_export;
 
 while (1) {
@@ -55,7 +55,7 @@ while (1) {
       adminsuidsetup($user); #get our own db handle
 
       until ( sigint || sigterm ) {
-        $part_export->update_svc_acct();
+        $part_export->update_svc();
         sleep 1;
       }
 
