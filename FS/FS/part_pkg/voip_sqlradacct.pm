@@ -13,6 +13,7 @@ use FS::rate_prefix;
 $DEBUG = 1;
 
 %info = (
+  'disabled' => 1, #they're sucked into our CDR table now instead
   'name' => 'VoIP rating by plan of CDR records in an SQL RADIUS radacct table',
   'shortname' => 'VoIP/telco CDR rating (external RADIUS)',
   'fields' => {

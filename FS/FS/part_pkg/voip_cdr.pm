@@ -8,8 +8,9 @@ use FS::Conf;
 use FS::Record qw(qsearchs qsearch);
 use FS::part_pkg::flat;
 use FS::cdr;
-#use FS::rate;
-#use FS::rate_prefix;
+use FS::rate;
+use FS::rate_prefix;
+use FS::rate_detail;
 
 @ISA = qw(FS::part_pkg::flat);
 
@@ -125,6 +126,10 @@ tie my %temporalities, 'Tie::IxHash',
                           'type' => 'checkbox',
                         },
 
+    'bill_every_call' => { 'name' => 'Generate an invoice immediately for every call.  Useful for prepaid.',
+                           'type' => 'checkbox',
+                         },
+
     #XXX also have option for an external db
 #    'cdr_location' => { 'name' => 'CDR database location'
 #                        'type' => 'select',
@@ -161,6 +166,7 @@ tie my %temporalities, 'Tie::IxHash',
                        use_duration
                        411_rewrite
                        output_format summarize_usage usage_section
+                       bill_every_call
                      )
                   ],
   'weight' => 40,
@@ -321,32 +327,15 @@ sub calc_recur {
           warn "rating call $to_or_from +$countrycode $number\n" if $DEBUG;
           $pretty_destnum = "+$countrycode $number";
 
-          #find a rate prefix, first look at most specific (4 digits) then 3, etc.,
-          # finally trying the country code only
-          my $rate_prefix = '';
-          for my $len ( reverse(1..6) ) {
-            $rate_prefix = qsearchs('rate_prefix', {
-              'countrycode' => $countrycode,
-              #'npa'         => { op=> 'LIKE', value=> substr($number, 0, $len) }
-              'npa'         => substr($number, 0, $len),
-            } ) and last;
-          }
-          $rate_prefix ||= qsearchs('rate_prefix', {
-            'countrycode' => $countrycode,
-            'npa'         => '',
-          });
+          my $rate = qsearchs('rate', { 'ratenum' => $ratenum })
+            or die "ratenum $ratenum not found!";
 
-          #
-          die "Can't find rate for call $to_or_from +$countrycode $number\n"
-            unless $rate_prefix;
+          $rate_detail = $rate->dest_detail({ 'countrycode' => $countrycode,
+                                              'phonenum'    => $number,
+                                            });
 
-          $regionnum = $rate_prefix->regionnum;
-          $rate_detail = qsearchs('rate_detail', {
-            'ratenum'        => $ratenum,
-            'dest_regionnum' => $regionnum,
-          } );
-
-          $rate_region = $rate_prefix->rate_region;
+          $rate_region = $rate_detail->dest_region;
+          $regionnum = $rate_region->regionnum;
 
           warn "  found rate for regionnum $regionnum ".
                "and rate detail $rate_detail\n"

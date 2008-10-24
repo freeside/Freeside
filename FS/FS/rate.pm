@@ -269,16 +269,52 @@ sub check {
   $self->SUPER::check;
 }
 
-=item dest_detail REGIONNUM | RATE_REGION_OBJECTD
+=item dest_detail REGIONNUM | RATE_REGION_OBJECTD | HASHREF
 
 Returns the rate detail (see L<FS::rate_detail>) for this rate to the
-specificed destination.
+specificed destination.  Destination can be specified as an FS::rate_detail
+object or regionnum (see L<FS::rate_detail>), or as a hashref with two keys:
+I<countrycode> and I<phonenum>.
 
 =cut
 
 sub dest_detail {
   my $self = shift;
-  my $regionnum = ref($_[0]) ? shift->regionnum : shift;
+
+  my $regionnum;
+  if ( ref($_[0]) eq 'HASH' ) {
+
+    my $countrycode = $_->{'countrycode'};
+    my $phonenum    = $_->{'phonenum'};
+
+    #find a rate prefix, first look at most specific (4 digits) then 3, etc.,
+    # finally trying the country code only
+    my $rate_prefix = '';
+    for my $len ( reverse(1..6) ) {
+      $rate_prefix = qsearchs('rate_prefix', {
+        'countrycode' => $countrycode,
+        #'npa'         => { op=> 'LIKE', value=> substr($number, 0, $len) }
+        'npa'         => substr($phonenum, 0, $len),
+      } ) and last;
+    }
+    $rate_prefix ||= qsearchs('rate_prefix', {
+      'countrycode' => $countrycode,
+      'npa'         => '',
+    });
+
+    #
+    #die "Can't find rate for call $to_or_from +$countrycode $number\n"
+    die "Can't find rate for +$countrycode $phonenum\n"
+      unless $rate_prefix;
+
+    $regionnum = $rate_prefix->regionnum;
+
+    #$rate_region = $rate_prefix->rate_region;
+
+  } else {
+    $regionnum = ref($_[0]) ? shift->regionnum : shift;
+  }
+
   qsearchs( 'rate_detail', { 'ratenum'        => $self->ratenum,
                              'dest_regionnum' => $regionnum,     } );
 }
