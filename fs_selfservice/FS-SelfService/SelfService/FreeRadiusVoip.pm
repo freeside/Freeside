@@ -36,13 +36,13 @@ use constant RLM_MODULE_NUMCODES=> 9; #How many return codes there are
 
 sub authorize {
 
-  #my $src = $RAD_REQUEST{'User-Name'};
+  #&log_request_attributes();
 
   my $response = call_time( 'src' => $RAD_REQUEST{'Calling-Station-Id'},
                             'dst' => $RAD_REQUEST{'Called-Station-Id'},  );
 
   if ( $response->{'error'} ) {
-    $RAD_REPLY{'Access-Reject'} = $response->{'error'};
+    $RAD_REPLY{'Reply-Message'} = $response->{'error'};
     return RLM_MODULE_REJECT;
   } else {
     $RAD_REPLY{'Session-Timeout'} = $response->{'seconds'};
