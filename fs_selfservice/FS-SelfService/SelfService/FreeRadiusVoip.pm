@@ -2,25 +2,15 @@
 # perl {
 #   #path to this module
 #   module=/usr/local/share/perl/5.8.8/FS/SelfService/FreeRadiusVoip.pm
-#   func_authenticate = authenticate
+#   func_authorize = authorize;
 # }
 #
 #In the Authorize section 
 #Make sure that you have 'files' uncommented. Then add a line containing 'perl'
 # after it. 
 #
-#In the Authentication section add 
-# Auth-Type Perl { 
-#   perl 
-# } 
-#
 # #N/A# Add a line containing 'perl' to the Accounting section. 
 # 
-# In the users file comment the 'DEFAULT Auth-Type = System' lines 
-# and then add 
-#  DEFAULT Auth-Type = Perl 
-#  Fall-Through = 1 
-#
 # and on debian systems, add this to /etc/init.d/freeradius, with the
 # correct path (http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=416266)
 #               LD_PRELOAD=/usr/lib/libperl.so.5.8.8
@@ -45,20 +35,19 @@ use constant RLM_MODULE_UPDATED=>  8; #OK (pairs modified)
 use constant RLM_MODULE_NUMCODES=> 9; #How many return codes there are
 
 sub authorize {
-  return RLM_MODULE_OK;
-}
-
-sub authenticate {
 
   #my $src = $RAD_REQUEST{'User-Name'};
 
-#  my $response = call_time( 'src' => $RAD_REQUEST{'Calling-Station-Id'},
-#                            'dst' => $RAD_REQUEST{'Called-Station-Id'},  );
-#
-#  if $response{$
+  my $response = call_time( 'src' => $RAD_REQUEST{'Calling-Station-Id'},
+                            'dst' => $RAD_REQUEST{'Called-Station-Id'},  );
 
-  $RAD_REPLY{'Session-Timeout'} = 420;
-  return RLM_MODULE_UPDATED;
+  if ( $response->{$error} ) {
+    $RAD_REPLY{'Access-Reject'} = $response->{'error'};
+    return RLM_MODULE_REJECT;
+  } else {
+    $RAD_REPLY{'Session-Timeout'} = $response->{'seconds'}
+    return RLM_MODULE_OK;
+  }
 
 }
 
