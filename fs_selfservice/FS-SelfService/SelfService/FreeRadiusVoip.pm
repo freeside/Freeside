@@ -1,7 +1,9 @@
-# Add this to the modules section of radiusd.conf
-#  #path to this module
-#  module=/usr/local/share/perl/5.8.8/FS/SelfService/FreeRadiusVoip.pm
-#  func_autheenticate = authenticate
+#Add this to the modules section of radiusd.conf
+# perl {
+#   #path to this module
+#   module=/usr/local/share/perl/5.8.8/FS/SelfService/FreeRadiusVoip.pm
+#   func_authenticate = authenticate
+# }
 #
 #In the Authorize section 
 #Make sure that you have 'files' uncommented. Then add a line containing 'perl'
@@ -18,6 +20,11 @@
 # and then add 
 #  DEFAULT Auth-Type = Perl 
 #  Fall-Through = 1 
+#
+# and on debian systems, add this to /etc/init.d/freeradius, with the
+# correct path (http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=416266)
+#               LD_PRELOAD=/usr/lib/libperl.so.5.8.8
+#               export LD_PRELOAD
 
 BEGIN { $FS::SelfService::skip_uid_check = 1; } 
 

@@ -16,10 +16,6 @@ $VERSION = '0.03';
 
 $DEBUG = 0;
 
-#you can add BEGIN { $FS::SelfService::skip_uid_check = 1; } 
-#if you grant appropriate permissions to whatever user
-$skip_uid_check = 0;
-
 $dir = "/usr/local/freeside";
 $socket =  "$dir/selfservice_socket";
 $socket .= '.'.$tag if defined $tag && length($tag);
@@ -76,6 +72,8 @@ $ENV{'CDPATH'} = '';
 $ENV{'ENV'} = '';
 $ENV{'BASH_ENV'} = '';
 
+#you can add BEGIN { $FS::SelfService::skip_uid_check = 1; } 
+#if you grant appropriate permissions to whatever user
 my $freeside_uid = scalar(getpwnam('freeside'));
 die "not running as the freeside user\n"
   if $> != $freeside_uid && ! $skip_uid_check;
