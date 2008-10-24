@@ -79,10 +79,11 @@ sub call_time {
                           );
 
   unless ( $svc_phone ) {
-    return { 'custnum' => '',
-             'seconds' => 0,
-             #'balance' => 0,
-           };
+    return { 'error' => "can't find customer for +$countrycode $phonenum" };
+#    return { 'custnum' => '',
+#             'seconds' => 0,
+#             #'balance' => 0,
+#           };
   };
 
   my $cust_pkg = $svc_phone->cust_svc->cust_pkg;
