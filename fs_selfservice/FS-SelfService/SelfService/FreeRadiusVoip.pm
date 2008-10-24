@@ -41,7 +41,7 @@ sub authorize {
   my $response = call_time( 'src' => $RAD_REQUEST{'Calling-Station-Id'},
                             'dst' => $RAD_REQUEST{'Called-Station-Id'},  );
 
-  if ( $response->{$error} ) {
+  if ( $response->{'error'} ) {
     $RAD_REPLY{'Access-Reject'} = $response->{'error'};
     return RLM_MODULE_REJECT;
   } else {
