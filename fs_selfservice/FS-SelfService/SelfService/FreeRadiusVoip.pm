@@ -45,7 +45,7 @@ sub authorize {
     $RAD_REPLY{'Access-Reject'} = $response->{'error'};
     return RLM_MODULE_REJECT;
   } else {
-    $RAD_REPLY{'Session-Timeout'} = $response->{'seconds'}
+    $RAD_REPLY{'Session-Timeout'} = $response->{'seconds'};
     return RLM_MODULE_OK;
   }
 
