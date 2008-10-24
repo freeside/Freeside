@@ -31,6 +31,8 @@ my $html_foot = sub {
   #XXX handle toll free too
 
   my $number = $svc_phone->phonenum;
+  $number = $svc_phone->countrycode. $number
+    unless $svc_phone->countrycode eq '1';
 
   #my @links = map {
   #  qq(<A HREF="${p}search/cdr.html?src=$number;freesidestatus=$what{$_}">).
