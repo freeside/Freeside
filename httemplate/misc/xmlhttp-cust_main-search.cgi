@@ -1,11 +1,21 @@
 % if ( $sub eq 'custnum_search' ) {
 % 
 %   my $custnum = $cgi->param('arg');
-%   my $cust_main = qsearchs({
-%     'table'   => 'cust_main',
-%     'hashref' => { 'custnum' => $custnum },
-%     'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
-%   });
+%   my $cust_main = '';
+%   if ( $custnum <= 2147483647 ) {
+%     $cust_main = qsearchs({
+%       'table'   => 'cust_main',
+%       'hashref' => { 'custnum' => $custnum },
+%       'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+%     });
+%   }
+%   if ( ! $cust_main ) {
+%     $cust_main = qsearchs({
+%       'table'   => 'cust_main',
+%       'hashref' => { 'agent_custid' => $custnum },
+%       'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+%     });
+%   }
 %     
 "<% $cust_main ? $cust_main->name : '' %>"
 %
@@ -18,6 +28,8 @@
 <% objToJson($return) %>
 % } 
 <%init>
+
+my $conf = new FS::Conf;
 
 my $sub = $cgi->param('sub');
 

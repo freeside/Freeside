@@ -5988,22 +5988,28 @@ sub smart_search {
 
   # custnum search (also try agent_custid), with some tweaking options if your
   # legacy cust "numbers" have letters
-  } elsif ( $search =~ /^\s*(\d+)\s*$/
+  } 
+
+  if ( $search =~ /^\s*(\d+)\s*$/
             || ( $conf->config('cust_main-agent_custid-format') eq 'ww?d+'
                  && $search =~ /^\s*(\w\w?\d+)\s*$/
                )
           )
   {
 
-    push @cust_main, qsearch( {
-      'table'     => 'cust_main',
-      'hashref'   => { 'custnum' => $1, %options },
-      'extra_sql' => " AND $agentnums_sql", #agent virtualization
-    } );
+    my $num = $1;
+
+    if ( $num <= 2147483647 ) { #need a bigint custnum?  wow.
+      push @cust_main, qsearch( {
+        'table'     => 'cust_main',
+        'hashref'   => { 'custnum' => $num, %options },
+        'extra_sql' => " AND $agentnums_sql", #agent virtualization
+      } );
+    }
 
     push @cust_main, qsearch( {
       'table'     => 'cust_main',
-      'hashref'   => { 'agent_custid' => $1, %options },
+      'hashref'   => { 'agent_custid' => $num, %options },
       'extra_sql' => " AND $agentnums_sql", #agent virtualization
     } );
 
