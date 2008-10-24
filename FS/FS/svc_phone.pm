@@ -225,7 +225,7 @@ sub check_pin {
 sub radius_reply {
   my $self = shift;
   #XXX Session-Timeout!  holy shit, need rlm_perl to ask for this in realtime
-  {};
+  ();
 }
 
 =item radius_check

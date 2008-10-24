@@ -6,7 +6,7 @@ use Getopt::Std;
 use FS::UID qw(adminsuidsetup);
 use FS::Record qw(qsearch qsearchs);
 use FS::part_export;
-use FS::svc_acct;
+#use FS::svc_acct;
 use FS::cust_svc;
 
 getopts("n");
@@ -19,7 +19,7 @@ adminsuidsetup $user;
 my @exports = ();
 if ( @ARGV ) {
   foreach my $exportnum ( @ARGV ) {
-    foreach my $exporttype (qw( sqlradius sqlradius_withdomain )) {
+    foreach my $exporttype (qw( sqlradius sqlradius_withdomain phone_sqlradius )) {
     push @exports, qsearch('part_export', { exportnum  => $exportnum,
                                             exporttype => $exporttype, } );
     }
@@ -47,25 +47,25 @@ foreach my $export ( @exports ) {
   #my @svcparts = map { $_->svcpart } $export->export_svc;
   my $overlimit_groups = $export->option('overlimit_groups');
 
-  my @svc_acct =
-    map { qsearchs('svc_acct', { 'svcnum' => $_->svcnum } ) }
-      map { qsearch('cust_svc', { 'svcpart' => $_->svcpart } ) }
-        grep { qsearch('cust_svc', { 'svcpart' => $_->svcpart } ) }
-          $export->export_svc;
+  my @svc_x =
+    map  { $_->svc_x }
+    map  { qsearch('cust_svc', { 'svcpart' => $_->svcpart } ) }
+    grep { qsearch('cust_svc', { 'svcpart' => $_->svcpart } ) }
+         $export->export_svc;
 
-  foreach my $svc_acct ( @svc_acct ) {
+  foreach my $svc_x ( @svc_x ) {
 
-    $svc_acct->check; #set any fixed usergroup so it'll export even if all
-                      #svc_acct records don't have the group yet
+    $svc_x->check; #set any fixed usergroup so it'll export even if all
+                   #svc_acct records don't have the group yet
 
-    if ($overlimit_groups && $svc_acct->overlimit) {
-      $svc_acct->usergroup( &{ $svc_acct->_fieldhandlers->{'usergroup'} }
-                            ($svc_acct, $overlimit_groups)
-                          );
+    if ($overlimit_groups && $svc_x->overlimit) {
+      $svc_x->usergroup( &{ $svc_x->_fieldhandlers->{'usergroup'} }
+                          ($svc_x, $overlimit_groups)
+                       );
     }
 
     #false laziness with FS::svc_acct::insert (like it matters)
-    my $error = $export->export_insert($svc_acct);
+    my $error = $export->export_insert($svc_x);
     die $error if $error;
 
   }
@@ -100,5 +100,4 @@ L<freeside-reexport>, L<FS::part_export>, L<FS::part_export::sqlradius>
 
 =cut
 
-
-
+1;
