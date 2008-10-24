@@ -64,8 +64,8 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'agent_list_customers'      => 'Agent/agent_list_customers',
   'mason_comp'                => 'MasonComponent/mason_comp',
   'call_time'                 => 'PrepaidPhone/call_time',
-  'call_time_nanpa'           => 'PrepaidPhone/call_time_nanpa'
-  'phonenum_balance'          => 'PrepaidPhone/phonenum_balance'
+  'call_time_nanpa'           => 'PrepaidPhone/call_time_nanpa',
+  'phonenum_balance'          => 'PrepaidPhone/phonenum_balance',
 );
 @EXPORT_OK = ( keys(%autoload), qw( regionselector expselect popselector domainselector didselector) );
 
