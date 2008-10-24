@@ -44,6 +44,10 @@ use constant RLM_MODULE_NOOP=>     7; #module succeeded without doing anything
 use constant RLM_MODULE_UPDATED=>  8; #OK (pairs modified)
 use constant RLM_MODULE_NUMCODES=> 9; #How many return codes there are
 
+sub authorize {
+  return $LM_MODULE_OK;
+}
+
 sub authenticate {
 
   #my $src = $RAD_REQUEST{'User-Name'};
