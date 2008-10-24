@@ -1,7 +1,8 @@
 package FS::SelfService;
 
 use strict;
-use vars qw($VERSION @ISA @EXPORT_OK $DEBUG $dir $socket %autoload $tag);
+use vars qw( $VERSION @ISA @EXPORT_OK $DEBUG
+             $skip_uid_check $dir $socket %autoload $tag );
 use Exporter;
 use Socket;
 use FileHandle;
@@ -14,6 +15,10 @@ $VERSION = '0.03';
 @ISA = qw( Exporter );
 
 $DEBUG = 0;
+
+#you can add BEGIN { $FS::SelfService::skip_uid_check = 1; } 
+#if you grant appropriate permissions to whatever user
+$skip_uid_check = 0;
 
 $dir = "/usr/local/freeside";
 $socket =  "$dir/selfservice_socket";
@@ -58,6 +63,9 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'agent_info'                => 'Agent/agent_info',
   'agent_list_customers'      => 'Agent/agent_list_customers',
   'mason_comp'                => 'MasonComponent/mason_comp',
+  'call_time'                 => 'PrepaidPhone/call_time',
+  'call_time_nanpa'           => 'PrepaidPhone/call_time_nanpa'
+  'phonenum_balance'          => 'PrepaidPhone/phonenum_balance'
 );
 @EXPORT_OK = ( keys(%autoload), qw( regionselector expselect popselector domainselector didselector) );
 
@@ -69,7 +77,8 @@ $ENV{'ENV'} = '';
 $ENV{'BASH_ENV'} = '';
 
 my $freeside_uid = scalar(getpwnam('freeside'));
-die "not running as the freeside user\n" if $> != $freeside_uid;
+die "not running as the freeside user\n"
+  if $> != $freeside_uid && ! $skip_uid_check;
 
 -e $dir or die "FATAL: $dir doesn't exist!";
 -d $dir or die "FATAL: $dir isn't a directory!";
