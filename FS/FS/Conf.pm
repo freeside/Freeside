@@ -2491,6 +2491,13 @@ worry that config_items is freeside-specific and icky.
     'type'        => 'text',
   },
 
+  {
+    'key'         => 'svc_phone-radius-default_password',
+    'section'     => '',
+    'description' => 'Default password when exporting svc_phone records to RADIUS',
+    'type'        => 'text',
+  },
+
 );
 
 1;

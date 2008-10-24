@@ -49,7 +49,7 @@ END
 
 $notes2 = <<'END';
 An existing RADIUS database will be updated in realtime, but you can use
-<a href="../docs/man/bin/freeside-sqlradius-reset">freeside-sqlradius-reset</a>
+<a href="http://www.freeside.biz/mediawiki/index.php/Freeside:1.9:Documentation:Developer/bin/freeside-sqlradius-reset">freeside-sqlradius-reset</a>
 to delete the entire RADIUS database and repopulate the tables from the
 Freeside database.  See the
 <a href="http://search.cpan.org/dist/DBI/DBI.pm#connect">DBI documentation</a>
@@ -95,24 +95,24 @@ sub export_username {
 }
 
 sub _export_insert {
-  my($self, $svc_acct) = (shift, shift);
+  my($self, $svc_x) = (shift, shift);
 
   foreach my $table (qw(reply check)) {
     my $method = "radius_$table";
-    my %attrib = $svc_acct->$method();
+    my %attrib = $svc_x->$method();
     next unless keys %attrib;
-    my $err_or_queue = $self->sqlradius_queue( $svc_acct->svcnum, 'insert',
-      $table, $self->export_username($svc_acct), %attrib );
+    my $err_or_queue = $self->sqlradius_queue( $svc_x->svcnum, 'insert',
+      $table, $self->export_username($svc_x), %attrib );
     return $err_or_queue unless ref($err_or_queue);
   }
-  my @groups = $svc_acct->radius_groups;
+  my @groups = $svc_x->radius_groups;
   if ( @groups ) {
-    cluck localtime(). ": queuing usergroup_insert for ". $svc_acct->svcnum.
-          " (". $self->export_username($svc_acct). " with ". join(", ", @groups)
+    cluck localtime(). ": queuing usergroup_insert for ". $svc_x->svcnum.
+          " (". $self->export_username($svc_x). " with ". join(", ", @groups)
       if $DEBUG;
     my $err_or_queue = $self->sqlradius_queue(
-      $svc_acct->svcnum, 'usergroup_insert',
-      $self->export_username($svc_acct), @groups );
+      $svc_x->svcnum, 'usergroup_insert',
+      $self->export_username($svc_x), @groups );
     return $err_or_queue unless ref($err_or_queue);
   }
   '';
@@ -283,9 +283,9 @@ sub _export_unsuspend {
 }
 
 sub _export_delete {
-  my( $self, $svc_acct ) = (shift, shift);
-  my $err_or_queue = $self->sqlradius_queue( $svc_acct->svcnum, 'delete',
-    $self->export_username($svc_acct) );
+  my( $self, $svc_x ) = (shift, shift);
+  my $err_or_queue = $self->sqlradius_queue( $svc_x->svcnum, 'delete',
+    $self->export_username($svc_x) );
   ref($err_or_queue) ? '' : $err_or_queue;
 }
 

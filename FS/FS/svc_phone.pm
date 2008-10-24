@@ -2,6 +2,7 @@ package FS::svc_phone;
 
 use strict;
 use vars qw( @ISA @pw_set );
+use FS::Conf;
 #use FS::Record qw( qsearch qsearchs );
 use FS::svc_Common;
 
@@ -215,6 +216,35 @@ sucessful authentication, false if no match.
 sub check_pin {
   my($self, $check_pin) = @_;
   $check_pin eq $self->pin;
+}
+
+=item radius_reply
+
+=cut
+
+sub radius_reply {
+  my $self = shift;
+  #XXX Session-Timeout!  holy shit, need rlm_perl to ask for this in realtime
+  {};
+}
+
+=item radius_check
+
+=cut
+
+sub radius_check {
+  my $self = shift;
+  my %check = ();
+
+  my $conf = new FS::Conf;
+
+  $check{'User-Password'} = $conf->config('svc_phone-radius-default_password');
+
+  %check;
+}
+
+sub radius_groups {
+  ();
 }
 
 =back
