@@ -2498,6 +2498,13 @@ worry that config_items is freeside-specific and icky.
     'type'        => 'text',
   },
 
+  {
+    'key'         => 'svc_phone-allow_alpha_phonenum',
+    'section'     => '',
+    'description' => 'Allow letters in phone numbers.',
+    'type'        => 'checkbox',
+  },
+
 );
 
 1;

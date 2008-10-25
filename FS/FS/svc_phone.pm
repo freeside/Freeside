@@ -179,8 +179,14 @@ and replace methods.
 sub check {
   my $self = shift;
 
+  my $conf = new FS::Conf;
+
   my $phonenum = $self->phonenum;
-  $phonenum =~ s/\D//g;
+  if ( $conf->exists('svc_phone-allow_alpha_phonenum') ) {
+    $phonenum =~ s/\W//g;
+  } else {
+    $phonenum =~ s/\D//g;
+  }
   $self->phonenum($phonenum);
 
   my $error = 
