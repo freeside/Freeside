@@ -182,17 +182,20 @@ sub check {
   my $conf = new FS::Conf;
 
   my $phonenum = $self->phonenum;
+  my $phonenum_check_method;
   if ( $conf->exists('svc_phone-allow_alpha_phonenum') ) {
     $phonenum =~ s/\W//g;
+    $phonenum_check_method = 'ut_alpha';
   } else {
     $phonenum =~ s/\D//g;
+    $phonenum_check_method = 'ut_number';
   }
   $self->phonenum($phonenum);
 
   my $error = 
     $self->ut_numbern('svcnum')
     || $self->ut_numbern('countrycode')
-    || $self->ut_number('phonenum')
+    || $self->$phonenum_check_method('phonenum')
     || $self->ut_anything('sip_password')
     || $self->ut_numbern('pin')
     || $self->ut_textn('phone_name')
