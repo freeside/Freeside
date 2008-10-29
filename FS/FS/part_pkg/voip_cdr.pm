@@ -395,7 +395,7 @@ sub calc_recur {
       # don't add it to invoice, don't set its status to NULL,
       # don't call downstream_csv or something on it...
       # but DO emit a warning...
-      #if ( ! $rate_detail && ! scalar(@call_details) ) {
+      #if ( ! $rate_detail && ! scalar(@call_details) ) {}
       if ( ! $rate_detail && $charge eq '' ) {
 
         warn "no rate_detail found for CDR.acctid:  ". $cdr->acctid.
@@ -509,8 +509,10 @@ sub calc_recur {
 
   } #if ( $spool_cdr && length($downstream_cdr) )
 
-  $self->option('recur_fee') + $charges;
+  $charges += $self->option('recur_fee')
+    if $param->{'increment_next_bill'};
 
+  $charges;
 }
 
 sub is_free {

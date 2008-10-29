@@ -2399,9 +2399,13 @@ sub _make_lines {
   my $recur = 0;
   my $unitrecur = 0;
   my $sdate;
-  if ( $part_pkg->getfield('freq') ne '0' &&
-       ! $cust_pkg->getfield('susp') &&
-       ( $cust_pkg->getfield('bill') || 0 ) <= $time
+  if ( ! $cust_pkg->getfield('susp') and
+           ( $part_pkg->getfield('freq') ne '0' &&
+             ( $cust_pkg->getfield('bill') || 0 ) <= $time
+           )
+        || ( $part_pkg->plan eq 'voip_cdr'
+              && $part_pkg->option('bill_every_call')
+           )
   ) {
 
     # XXX should this be a package event?  probably.  events are called
@@ -2418,42 +2422,50 @@ sub _make_lines {
     $sdate = $cust_pkg->bill || $cust_pkg->setup || $time;
 
     #over two params!  lets at least switch to a hashref for the rest...
-    my %param = ( 'precommit_hooks' => $precommit_hooks, );
+    my $increment_next_bill = ( $part_pkg->freq ne '0'
+                                && ( $cust_pkg->getfield('bill') || 0 ) <= $time
+                              );
+    my %param = ( 'precommit_hooks'     => $precommit_hooks,
+                  'increment_next_bill' => $increment_next_bill,
+                );
 
     $recur = eval { $cust_pkg->calc_recur( \$sdate, \@details, \%param ) };
     return "$@ running calc_recur for $cust_pkg\n"
       if ( $@ );
 
+    if ( $increment_next_bill ) {
   
-    #change this bit to use Date::Manip? CAREFUL with timezones (see
-    # mailing list archive)
-    my ($sec,$min,$hour,$mday,$mon,$year) =
-      (localtime($sdate) )[0,1,2,3,4,5];
-    
-    #pro-rating magic - if $recur_prog fiddles $sdate, want to use that
-    # only for figuring next bill date, nothing else, so, reset $sdate again
-    # here
-    $sdate = $cust_pkg->bill || $cust_pkg->setup || $time;
-    #no need, its in $hash{last_bill}# my $last_bill = $cust_pkg->last_bill;
-    $cust_pkg->last_bill($sdate);
-    
-    if ( $part_pkg->freq =~ /^\d+$/ ) {
-      $mon += $part_pkg->freq;
-      until ( $mon < 12 ) { $mon -= 12; $year++; }
-    } elsif ( $part_pkg->freq =~ /^(\d+)w$/ ) {
-      my $weeks = $1;
-      $mday += $weeks * 7;
-    } elsif ( $part_pkg->freq =~ /^(\d+)d$/ ) {
-      my $days = $1;
-      $mday += $days;
-    } elsif ( $part_pkg->freq =~ /^(\d+)h$/ ) {
-      my $hours = $1;
-      $hour += $hours;
-    } else {
-      return "unparsable frequency: ". $part_pkg->freq;
+      #change this bit to use Date::Manip? CAREFUL with timezones (see
+      # mailing list archive)
+      my ($sec,$min,$hour,$mday,$mon,$year) =
+        (localtime($sdate) )[0,1,2,3,4,5];
+
+      #pro-rating magic - if $recur_prog fiddles $sdate, want to use that
+      # only for figuring next bill date, nothing else, so, reset $sdate again
+      # here
+      $sdate = $cust_pkg->bill || $cust_pkg->setup || $time;
+      #no need, its in $hash{last_bill}# my $last_bill = $cust_pkg->last_bill;
+      $cust_pkg->last_bill($sdate);
+
+      if ( $part_pkg->freq =~ /^\d+$/ ) {
+        $mon += $part_pkg->freq;
+        until ( $mon < 12 ) { $mon -= 12; $year++; }
+      } elsif ( $part_pkg->freq =~ /^(\d+)w$/ ) {
+        my $weeks = $1;
+        $mday += $weeks * 7;
+      } elsif ( $part_pkg->freq =~ /^(\d+)d$/ ) {
+        my $days = $1;
+        $mday += $days;
+      } elsif ( $part_pkg->freq =~ /^(\d+)h$/ ) {
+        my $hours = $1;
+        $hour += $hours;
+      } else {
+        return "unparsable frequency: ". $part_pkg->freq;
+      }
+      $cust_pkg->setfield('bill',
+        timelocal_nocheck($sec,$min,$hour,$mday,$mon,$year));
+
     }
-    $cust_pkg->setfield('bill',
-      timelocal_nocheck($sec,$min,$hour,$mday,$mon,$year));
 
   }
 

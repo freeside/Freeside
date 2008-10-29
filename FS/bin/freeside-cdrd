@@ -1,0 +1,112 @@
+#!/usr/bin/perl -w
+
+use strict;
+use FS::Daemon qw(daemonize1 drop_root logfile daemonize2 sigint sigterm);
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch ); #qsearchs);
+#use FS::cdr;
+use FS::cust_pkg;
+
+my $user = shift or die &usage;
+
+#daemonize1('freeside-sprepaidd', $user); #keep unique pid files w/multi installs
+daemonize1('freeside-cdrd');
+
+drop_root();
+
+adminsuidsetup($user);
+
+logfile( "%%%FREESIDE_LOG%%%/cdrd-log.". $FS::UID::datasrc );
+
+daemonize2();
+
+#--
+
+my $addl_from =
+  'LEFT JOIN part_pkg USING ( pkgpart ) '.
+  "LEFT JOIN part_pkg_option
+     ON ( cust_pkg.pkgpart = part_pkg_option.pkgpart
+          AND part_pkg_option.optionname = 'bill_every_call' )";
+
+#XXX should pay attention to disable_src for efficiency
+
+my $extra_sql =
+  "WHERE plan = 'voip_cdr' ".
+  " AND optionvalue = '1' ".
+  " AND ( susp   IS NULL OR susp   = 0)".
+  " AND ( cancel IS NULL OR cancel = 0)".
+  " AND 0 < ( 
+      SELECT COUNT(*) FROM svc_phone LEFT JOIN cust_svc USING (svcnum)
+        WHERE cust_pkg.pkgnum = cust_svc.pkgnum
+          AND 0 < ( SELECT COUNT(*) FROM cdr
+                      WHERE ( freesidestatus IS NULL OR freesidestatus = '' )
+                        AND (    charged_party = svc_phone.phonenum
+                              OR charged_party = svc_phone.countrycode
+                                                 || svc_phone.phonenum
+                              OR src = svc_phone.phonenum
+                              OR src = svc_phone.countrycode
+                                       || svc_phone.phonenum
+                            )
+                  )
+    ) 
+  ";
+
+while (1) {
+
+  my $found = 0;
+  foreach my $cust_pkg ( 
+    qsearch( {
+      'select'    => 'cust_pkg.*, part_pkg.plan',
+      'table'     => 'cust_pkg',
+      'addl_from' => $addl_from,
+      'hashref'   => {},
+      'extra_sql' => $extra_sql,
+    } )
+  ) {
+
+    $found = 1;
+
+    my $work_cust_pkg = $cust_pkg;
+
+    my $cust_main = $cust_pkg->cust_main;
+
+    my $time = time;
+    $cust_main->bill_and_collect( 
+      'time'         => $time,
+      'invoice_time' => $time,
+      'actual_time'  => $time,
+      'check_freq'   => '1d', #well
+      #'debug'        => 1,
+    );
+
+  }
+
+  die "exiting" if sigterm() || sigint();
+  sleep 5; # unless $found;
+
+}
+
+#--
+
+sub usage { 
+  die "Usage:\n\n  freeside-prepaidd user\n";
+}
+
+=head1 NAME
+
+freeside-prepaidd - Real-time daemon for prepaid packages
+
+=head1 SYNOPSIS
+
+  freeside-prepaidd
+
+=head1 DESCRIPTION
+
+Runs continuously and suspends or cancels any prepaid customer packages which
+have passed their renewal date (next bill date).
+
+=head1 SEE ALSO
+
+=cut
+
+1;

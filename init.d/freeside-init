@@ -29,6 +29,10 @@ case "$1" in
         freeside-prepaidd $QUEUED_USER
         echo "done."
 
+        echo -n "Starting freeside-cdrd: "
+        freeside-cdrd $QUEUED_USER
+        echo "done."
+
         for MACHINE in $SELFSERVICE_MACHINES; do
           echo -n "Starting freeside-selfservice-server to $MACHINE: "
           freeside-selfservice-server $SELFSERVICE_USER $MACHINE
@@ -51,6 +55,10 @@ case "$1" in
 
         echo -n "Stopping freeside-prepaidd: "
         kill `cat /var/run/freeside-prepaidd.pid`
+        echo "done."
+
+        echo -n "Stopping freeside-cdrd: "
+        kill `cat /var/run/freeside-cdrd.pid`
         echo "done."
 
         if [ -e /var/run/freeside-selfservice-server.$SELFSERVICE_USER.pid ]
