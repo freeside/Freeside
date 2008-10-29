@@ -70,7 +70,7 @@ sub get_dids {
 sub _export_insert   { #link phone_avail to svcnum
   my( $self, $svc_phone ) = (shift, shift);
 
-  $svc_phone =~ /^(\d{3})(\d{3})(\d+)$/
+  $svc_phone->phonenum =~ /^(\d{3})(\d{3})(\d+)$/
     or return "unparsable phone number: ". $svc_phone->phonenum;
   my( $npa, $nxx, $station ) = ($1, $2, $3);
 
