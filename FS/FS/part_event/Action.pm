@@ -216,7 +216,6 @@ Returns just the option field names as a list reference.
 sub option_fields_listref {
   my $self = shift;
   my $hashref = $self->option_fields_hashref;
-  warn $hashref;
   [ keys %$hashref ];
 }
 
