@@ -7055,7 +7055,7 @@ sub _agent_plandata {
         " AND action = 'cust_bill_send_agent' ".
         " AND ( disabled IS NULL OR disabled != 'Y' ) ".
         " AND peo_agentnum.optionname = 'agentnum' ".
-        " AND agentnum IS NULL OR agentnum = $agentnum ".
+        " AND ( agentnum IS NULL OR agentnum = $agentnum ) ".
         " ORDER BY
            CASE WHEN peo_cust_bill_age.optionname != 'cust_bill_age'
            THEN -1
