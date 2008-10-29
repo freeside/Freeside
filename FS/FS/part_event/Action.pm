@@ -204,6 +204,7 @@ Returns the option fields as an (ordered) hash reference.
 sub option_fields_hashref {
   my $self = shift;
   tie my %hash, 'Tie::IxHash', $self->option_fields;
+  \%hash;
 }
 
 =item option_fields_listref
@@ -215,6 +216,7 @@ Returns just the option field names as a list reference.
 sub option_fields_listref {
   my $self = shift;
   my $hashref = $self->option_fields_hashref;
+  warn $hashref;
   [ keys %$hashref ];
 }
 
