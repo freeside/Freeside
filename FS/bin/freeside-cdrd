@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
-use FS::Daemon qw(daemonize1 drop_root logfile daemonize2 sigint sigterm);
+use FS::Daemon ':all'; #daemonize1 drop_root daemonize2 myexit logfile sig*
 use FS::UID qw(adminsuidsetup);
 use FS::Record qw(qsearch ); #qsearchs);
 #use FS::cdr;
@@ -19,6 +19,9 @@ adminsuidsetup($user);
 logfile( "%%%FREESIDE_LOG%%%/cdrd-log.". $FS::UID::datasrc );
 
 daemonize2();
+
+die "not running; no voip_cdr package defs w/ bill_every_call and customer pkgs"
+  unless _shouldrun();
 
 #--
 
@@ -66,7 +69,7 @@ while (1) {
 
     $found = 1;
 
-    my $work_cust_pkg = $cust_pkg;
+    #my $work_cust_pkg = $cust_pkg;
 
     my $cust_main = $cust_pkg->cust_main;
 
@@ -81,12 +84,34 @@ while (1) {
 
   }
 
-  die "exiting" if sigterm() || sigint();
+  myexit() if sigterm() || sigint();
   sleep 5; # unless $found;
 
 }
 
 #--
+
+sub _shouldrun {
+
+  my $extra_sql =
+    ' AND 0 < ( SELECT COUNT(*) FROM cust_pkg
+                  WHERE cust_pkg.pkgpart = part_pkg.pkgpart
+                    AND ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
+              )
+    ';
+
+  my @part_pkg =
+    grep $_->option('bill_every_call', 'hush'),
+    qsearch({
+      'table'     => 'part_pkg',
+      'hashref'   => { 'plan' => 'voip_cdr' },
+      'extra_sql' => $extra_sql,
+    })
+  ;
+
+  scalar(@part_pkg);
+
+}
 
 sub usage { 
   die "Usage:\n\n  freeside-prepaidd user\n";

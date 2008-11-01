@@ -43,35 +43,45 @@ case "$1" in
   stop)
         # Stop daemons.
         echo -n "Stopping freeside-queued: "
-        kill `cat /var/run/freeside-queued.pid`
-        echo "done."
-
+        [ -e /var/run/freeside-queued.pid ] && kill `cat /var/run/freeside-queued.pid`
         #and
+        sleep 2;
         killall freeside-queued
-
-        echo -n "Stopping freeside-sqlradius-radacctd: "
-        kill `cat /var/run/freeside-sqlradius-radacctd.pid`
         echo "done."
 
-        echo -n "Stopping freeside-prepaidd: "
-        kill `cat /var/run/freeside-prepaidd.pid`
-        echo "done."
+        if [ -e /var/run/freeside-sqlradius-radacctd.pid ]; then
+          echo -n "Stopping freeside-sqlradius-radacctd: "
+          kill `cat /var/run/freeside-sqlradius-radacctd.pid`
+          echo "done."
+        fi
 
-        echo -n "Stopping freeside-cdrd: "
-        kill `cat /var/run/freeside-cdrd.pid`
-        echo "done."
+        if [ -e /var/run/freeside-prepaidd.pid ]; then
+          echo -n "Stopping freeside-prepaidd: "
+          kill `cat /var/run/freeside-prepaidd.pid`
+          echo "done."
+        fi
+
+        if [ -e /var/run/freeside-cdrd.pid ]; then
+          echo -n "Stopping freeside-cdrd: "
+          kill `cat /var/run/freeside-cdrd.pid`
+          echo "done."
+        fi
 
         if [ -e /var/run/freeside-selfservice-server.$SELFSERVICE_USER.pid ]
         then
           echo -n "Stopping (old) freeside-selfservice-server: "
           kill `cat /var/run/freeside-selfservice-server.$SELFSERVICE_USER.pid`
           rm /var/run/freeside-selfservice-server.$SELFSERVICE_USER.pid
+          echo "done."
         fi
 
         for MACHINE in $SELFSERVICE_MACHINES; do
-          echo -n "Stopping freeside-selfservice-server to $MACHINE: "
-          kill `cat /var/run/freeside-selfservice-server.$SELFSERVICE_USER.$MACHINE.pid`
-          echo "done."
+          if [ -e /var/run/freeside-selfservice-server.$SELFSERVICE_USER.$MACHINE.pid ]
+          then
+            echo -n "Stopping freeside-selfservice-server to $MACHINE: "
+            kill `cat /var/run/freeside-selfservice-server.$SELFSERVICE_USER.$MACHINE.pid`
+            echo "done."
+          fi
         done
 
         ;;

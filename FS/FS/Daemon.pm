@@ -12,7 +12,10 @@ use Date::Format;
 #avoid duplicate code.  eventually this should use something from CPAN.
 
 @ISA = qw(Exporter);
-@EXPORT_OK = qw( daemonize1 drop_root daemonize2 sigint sigterm logfile );
+@EXPORT_OK = qw(
+  daemonize1 drop_root daemonize2 myexit logfile sigint sigterm
+);
+%EXPORT_TAGS = ( 'all' => [ @EXPORT_OK ] );
 
 $pid_dir = '/var/run';
 
@@ -73,6 +76,11 @@ sub sigint  { $sigint; }
 sub sigterm { $sigterm; }
 
 sub logfile { $logfile = shift; } #_logmsg('test'); }
+
+sub myexit {
+  unlink $pid_file if -e $pid_file;
+  exit;  
+}
 
 sub _die {
   my $msg = shift;
