@@ -292,7 +292,11 @@ my($total, $tot_taxable, $owed, $tax) = ( 0, 0, 0, 0 );
 my( $exempt_cust, $exempt_pkg, $exempt_monthly ) = ( 0, 0, 0 );
 my $out = 'Out of taxable region(s)';
 my %regions = ();
-foreach my $r (qsearch('cust_main_county', {}, '', $gotcust) ) {
+foreach my $r ( qsearch({ 'table'     => 'cust_main_county',
+                          'extra_sql' => $gotcust,
+                       })
+              )
+{
   #warn $r->county. ' '. $r->state. ' '. $r->country. "\n";
 
   my $label = getlabel($r);
@@ -423,37 +427,31 @@ foreach my $r (qsearch('cust_main_county', {}, '', $gotcust) ) {
 
 }
 
+my $distinct = "country, state, county,
+                CASE WHEN taxname IS NULL THEN '' ELSE taxname END AS taxname";
+my $taxclass_distinct = 
+  #a little bit unsure of this part... test?
+  #ah, it looks like it winds up being irrelevant as ->{'tax'} 
+  # from $regions is not displayed when show_taxclasses is on
+  ( $cgi->param('show_taxclasses')
+      ? " CASE WHEN taxclass IS NULL THEN '' ELSE taxclass END "
+      : " '' "
+  )." AS taxclass";
+
+my %qsearch = (
+  'select'    => "DISTINCT $distinct, $taxclass_distinct",
+  'table'     => 'cust_main_county',
+  'hashref'   => {},
+  'extra_sql' => $gotcust,
+);
+
 my $taxwhere = "$from_join_cust $where AND payby != 'COMP' ";
 my @taxparam = @base_param;
-my %base_regions = ();
-#foreach my $label ( keys %regions ) {
-foreach my $r (
-  qsearch( 'cust_main_county',
-           {},
-           "DISTINCT
-              country,
-              state,
-              county,
-              CASE WHEN taxname IS NULL THEN '' ELSE taxname END AS taxname,".
 
-	      #a little bit unsure of this part... test?
-	      #ah, it looks like it winds up being irrelevant as ->{'tax'} 
-	      # from $regions is not displayed when show_taxclasses is on
-	      ( $cgi->param('show_taxclasses')
-                  ? " CASE WHEN taxclass IS NULL THEN '' ELSE taxclass END "
-                  : " '' "
-       	      )." AS taxclass"
-           ,
-           $gotcust
-         )
-) {
-
-  #warn join('-', map { $r->$_() } qw( country state county taxname ) )."\n";
-
-  my $label = getlabel($r);
-
-  #my $fromwhere = $join_pkg. $where. " AND payby != 'COMP' ";
-  #my @param = @base_param; 
+#should i be a cust_main_county method or something
+#need to pass in $taxwhere & @taxparam???
+my $_taxamount_sub = sub {
+  my $r = shift;
 
   #match itemdesc if necessary!
   my $named_tax =
@@ -464,11 +462,34 @@ foreach my $r (
   my $sql = "SELECT SUM(cust_bill_pkg.setup+cust_bill_pkg.recur) ".
             " $taxwhere AND pkgnum = 0 $named_tax";
 
-  my $x = scalar_sql($r, \@taxparam, $sql );
+  scalar_sql($r, \@taxparam, $sql );
+};
+
+#foreach my $label ( keys %regions ) {
+foreach my $r ( qsearch(\%qsearch) ) {
+
+  #warn join('-', map { $r->$_() } qw( country state county taxname ) )."\n";
+
+  my $label = getlabel($r);
+
+  #my $fromwhere = $join_pkg. $where. " AND payby != 'COMP' ";
+  #my @param = @base_param; 
+
+  my $x = &{$_taxamount_sub}($r);
+
   $tax += $x;
   $regions{$label}->{'tax'} += $x;
 
-  if ( $cgi->param('show_taxclasses') ) {
+}
+
+my %base_regions = ();
+if ( $cgi->param('show_taxclasses') ) {
+
+  $qsearch{'select'} = "DISTINCT $distinct";
+  foreach my $r ( qsearch(\%qsearch) ) {
+
+    my $x = &{$_taxamount_sub}($r);
+
     my $base_label = getlabel($r, 'no_taxclass'=>1 );
     $base_regions{$base_label}->{'label'} = $base_label;
     $base_regions{$base_label}->{'url_param'} =
@@ -477,6 +498,7 @@ foreach my $r (
   }
 
 }
+
 
 #ordering
 my @regions =
