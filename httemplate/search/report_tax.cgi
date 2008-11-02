@@ -477,7 +477,7 @@ foreach my $r ( qsearch(\%qsearch) ) {
 
   my $x = &{$_taxamount_sub}($r);
 
-  $tax += $x;
+  $tax += $x unless $cgi->param('show_taxclasses');
   $regions{$label}->{'tax'} += $x;
 
 }
@@ -495,6 +495,7 @@ if ( $cgi->param('show_taxclasses') ) {
     $base_regions{$base_label}->{'url_param'} =
       join(';', map "$_=".$r->$_(), qw( county state country ) );
     $base_regions{$base_label}->{'tax'} += $x;
+    $tax += $x;
   }
 
 }
