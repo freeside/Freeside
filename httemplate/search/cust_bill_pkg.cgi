@@ -119,6 +119,13 @@ if ( $cgi->param('out') ) {
     " ( state   = $state  OR $state  = '' ) ",
     "   country = $country "
   ;
+  if ( $cgi->param('taxname') ) {
+    push @where, 'itemdesc = '. dbh->quote( $cgi->param('taxname') );
+  #} elsif ( $cgi->param('taxnameNULL') {
+  } else {
+    push @where, "( itemdesc IS NULL OR itemdesc = '' OR itemdesc = 'Tax' )";
+  }
+
   push @where, ' taxclass = '. dbh->quote( $cgi->param('taxclass') )
     if $cgi->param('taxclass');
 

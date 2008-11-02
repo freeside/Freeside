@@ -301,7 +301,10 @@ foreach my $r ( qsearch({ 'table'     => 'cust_main_county',
 
   my $label = getlabel($r);
   $regions{$label}->{'label'} = $label;
-  $regions{$label}->{'url_param'} = join(';', map "$_=".$r->$_(), qw( county state country ) );
+  $regions{$label}->{'url_param'} =
+    join(';', map "$_=".uri_escape($r->$_()),
+                  qw( county state country taxname )
+        );
 
   my @param = @base_param;
   my $mywhere = $where;
@@ -310,7 +313,7 @@ foreach my $r ( qsearch({ 'table'     => 'cust_main_county',
 
     $mywhere .= " AND taxclass = ? ";
     push @param, 'taxclass';
-    $regions{$label}->{'url_param'} .= ';taxclass='. $r->taxclass
+    $regions{$label}->{'url_param'} .= ';taxclass='. uri_escape($r->taxclass)
       if $cgi->param('show_taxclasses');
 
   } else {
@@ -494,13 +497,9 @@ if ( $cgi->param('show_taxclasses') ) {
     $base_regions{$base_label}->{'label'} = $base_label;
 
     $base_regions{$base_label}->{'url_param'} =
-      join(';', map "$_=".$r->$_(), qw( county state country ) ); #taxname???
-
-    if ( $r->taxclass ) {
-      $base_regions{$base_label}->{'url_param'} .= ';taxclass='. $r->taxclass;
-    } else {
-      $base_regions{$base_label}->{'url_param'} .= ';taxclassNULL=1'
-    }
+      join(';', map "$_=". uri_escape($r->$_()),
+                     qw( county state country taxname )
+          );
 
     $base_regions{$base_label}->{'tax'} += $x;
     $tax += $x;
