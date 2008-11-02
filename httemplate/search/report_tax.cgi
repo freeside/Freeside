@@ -492,8 +492,16 @@ if ( $cgi->param('show_taxclasses') ) {
 
     my $base_label = getlabel($r, 'no_taxclass'=>1 );
     $base_regions{$base_label}->{'label'} = $base_label;
+
     $base_regions{$base_label}->{'url_param'} =
-      join(';', map "$_=".$r->$_(), qw( county state country ) );
+      join(';', map "$_=".$r->$_(), qw( county state country ) ); #taxname???
+
+    if ( $r->taxclass ) {
+      $base_regions{$base_label}->{'url_param'} .= ';taxclass='. $r->taxclass;
+    } else {
+      $base_regions{$base_label}->{'url_param'} .= ';taxclassNULL=1'
+    }
+
     $base_regions{$base_label}->{'tax'} += $x;
     $tax += $x;
   }
