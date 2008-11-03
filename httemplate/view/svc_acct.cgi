@@ -260,7 +260,10 @@ Service #<B><% $svcnum %></B>
 %   my $tf = $uf . "_threshold";
 %   if ( $svc_acct->$uf ne '' ) {
 %     my $v = $uf eq 'seconds'
-%       ? (($svc_acct->$uf < 0 ? '-' : ''). duration_exact($svc_acct->$uf) )
+%       #? (($svc_acct->$uf < 0 ? '-' : ''). duration_exact($svc_acct->$uf) )
+%       ? ($svc_acct->$uf < 0 ? '-' : '').
+%         int(abs($svc_acct->$uf)/3600). "hr ".
+%         sprintf("%02d",(abs($svc_acct->$uf)%3600)/60). "min"
 %       : FS::UI::bytecount::display_bytecount($svc_acct->$uf);
     <TR>
       <TD ALIGN="right"><% $ulabel{$uf} %> remaining</TD>
