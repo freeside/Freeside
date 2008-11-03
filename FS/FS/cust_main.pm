@@ -2652,7 +2652,7 @@ sub _handle_taxes {
 
   my %tax_cust_bill_pkg = $cust_bill_pkg->disintegrate;
   foreach my $key (keys %tax_cust_bill_pkg) {
-    my @taxes = @{ $taxes{$key} };
+    my @taxes = @{ $taxes{$key} || [] };
     my $tax_cust_bill_pkg = $tax_cust_bill_pkg{$key};
 
     foreach my $tax ( @taxes ) {
