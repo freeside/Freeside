@@ -611,7 +611,7 @@ sub usage_sessions {
                );
 
   my @param = ();
-  my @where = '';
+  my @where = ();
 
   if ( $svc_acct ) {
     my $username = $self->export_username($svc_acct);
