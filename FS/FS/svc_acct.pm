@@ -1137,7 +1137,7 @@ sub check {
            /^(!!?)?(\$\w+\$.*|[\w\+\/\.]{13}|_[\w\+\/\.]{19}|\*)$/
        ) {
 
-      $recref->{_password} = $1.$2;
+      $recref->{_password} = ( defined($1) ? $1 : '' ). $2;
 
     } else {
       return 'Illegal (crypt-encoded) password: '. $recref->{_password};
