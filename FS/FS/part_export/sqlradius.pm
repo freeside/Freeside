@@ -577,7 +577,7 @@ sub usage_sessions {
   my $opt = {};
   my($start, $end, $svc_acct, $ip, $prefix) = ( '', '', '', '', '');
   if ( ref($_[0]) ) {
-    my $opt = shift;
+    $opt = shift;
     $start    = $opt->{stoptime_start};
     $end      = $opt->{stoptime_end};
     $svc_acct = $opt->{svc_acct};
