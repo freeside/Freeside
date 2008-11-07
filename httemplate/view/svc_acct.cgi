@@ -354,7 +354,9 @@ my $svc_acct = qsearchs({
   'table'     => 'svc_acct',
   'addl_from' => $addl_from,
   'hashref'   => { 'svcnum' => $svcnum },
-  'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+  'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql(
+                            'null_right' => 'View/link unlinked services'
+                          ),
 });
 die "Unknown svcnum" unless $svc_acct;
 
