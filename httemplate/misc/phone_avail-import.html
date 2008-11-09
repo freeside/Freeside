@@ -19,8 +19,6 @@ Import a file containing phone numbers (DIDs).
 
   <INPUT TYPE="hidden" NAME="availbatch" VALUE="<% $availbatch %>">
 
-  <INPUT TYPE="hidden" NAME="countrycode" VALUE="1">
-
   <% include( '/elements/tr-select-table.html',
                 'table'       => 'part_export',
                 'name_col'    => 'machine',
@@ -30,6 +28,16 @@ Import a file containing phone numbers (DIDs).
                 #'label_callback' => 
             )
   %>
+
+  <TR>
+    <TH ALIGN="right">Country code</TH>
+    <TD>
+      <INPUT TYPE  = "text"
+             NAME  = "countrycode"
+             VALUE = "<% $conf->config('default_phone_countrycode') || 1 %>"
+      >
+    </TD>
+  </TR>
 
   <% include( '/elements/file-upload.html',
                 'field' => 'file',
@@ -72,6 +80,9 @@ Field information:
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Import');
 
-my $availbatch = time2str('webimport-%Y/%m/%d-%T'. "-$$-". rand() * 2**32, time);
+my $conf = new FS::Conf;
+
+my $availbatch =
+  time2str('webimport-%Y/%m/%d-%T'. "-$$-". rand() * 2**32, time);
 
 </%init>

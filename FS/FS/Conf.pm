@@ -1815,6 +1815,13 @@ worry that config_items is freeside-specific and icky.
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'agent-ship_address',
+    'section'     => '',
+    'description' => "Use the agent's master service address as the service address (only ship_address2 can be entered, if blank on the master address).  Useful for multi-tenant applications.",
+    'type'        => 'checkbox',
+  },
+
   { 'key'         => 'referral_credit',
     'section'     => 'billing',
     'description' => "Enables one-time referral credits in the amount of one month <i>referred</i> customer's recurring fee (irregardless of frequency).",
@@ -2294,7 +2301,7 @@ worry that config_items is freeside-specific and icky.
   {
     'key'         => 'cust_main-require_phone',
     'section'     => '',
-    'description' => 'Require daytime or night for all customer records.',
+    'description' => 'Require daytime or night phone for all customer records.',
     'type'        => 'checkbox',
   },
 
@@ -2492,6 +2499,64 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'selfservice-head',
+    'section'     => '',
+    'description' => 'HTML for the HEAD section of the self-service interface, typically used for LINK stylesheet tags',
+    'type'        => 'textarea', #htmlarea?
+  },
+
+
+  {
+    'key'         => 'selfservice-body_header',
+    'section'     => '',
+    'description' => 'HTML header for the self-service interface',
+    'type'        => 'textarea', #htmlarea?
+  },
+
+  {
+    'key'         => 'selfservice-body_footer',
+    'section'     => '',
+    'description' => 'HTML header for the self-service interface',
+    'type'        => 'textarea', #htmlarea?
+  },
+
+
+  {
+    'key'         => 'selfservice-body_bgcolor',
+    'section'     => '',
+    'description' => 'HTML background color for the self-service interface, for example, #FFFFFF',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'selfservice-box_bgcolor',
+    'section'     => '',
+    'description' => 'HTML color for self-service interface input boxes, for example, #C0C0C0"',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'signup-no_company',
+    'section'     => '',
+    'description' => "Don't display a field for company name on signup.",
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'signup-recommend_email',
+    'section'     => '',
+    'description' => 'Encourage the entry of an invoicing email address on signup.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'signup-recommend_daytime',
+    'section'     => '',
+    'description' => 'Encourage the entry of a daytime phone number  invoicing email address on signup.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'svc_phone-radius-default_password',
     'section'     => '',
     'description' => 'Default password when exporting svc_phone records to RADIUS',
@@ -2503,6 +2568,13 @@ worry that config_items is freeside-specific and icky.
     'section'     => '',
     'description' => 'Allow letters in phone numbers.',
     'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'default_phone_countrycode',
+    'section'     => '',
+    'description' => 'Default countrcode',
+    'type'        => 'text',
   },
 
 );
