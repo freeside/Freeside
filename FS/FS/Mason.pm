@@ -103,6 +103,7 @@ Initializes the Mason environment, loads all Freeside and RT libraries, etc.
   use FS::cust_credit;
   use FS::cust_credit_bill;
   use FS::cust_main qw(smart_search);
+  use FS::cust_main::Import;
   use FS::cust_main_county;
   use FS::cust_pay;
   use FS::cust_pkg;

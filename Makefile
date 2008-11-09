@@ -199,6 +199,9 @@ perl-modules:
 	  s|%%%FREESIDE_EXPORT%%%|${FREESIDE_EXPORT}|g;\
 	" blib/lib/FS/part_export/*.pm;\
 	perl -p -i -e "\
+	  s|%%%FREESIDE_CACHE%%%|${FREESIDE_CACHE}|g;\
+	" blib/lib/FS/cust_main/*.pm;\
+	perl -p -i -e "\
 	  s|%%%FREESIDE_CONF%%%|${FREESIDE_CONF}|g;\
 	  s|%%%FREESIDE_LOG%%%|${FREESIDE_LOG}|g;\
 	  s|%%%FREESIDE_LOCK%%%|${FREESIDE_LOCK}|g;\

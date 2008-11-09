@@ -164,7 +164,7 @@ while (1) {
 
     #auto-use classes...
     #if ( $ljob->job =~ /(FS::part_export::\w+)::/ ) {
-    if (    $ljob->job =~ /(FS::part_export::\w+)::/
+    if (    $ljob->job =~ /(FS::(part_export|cust_main)::\w+)::/
          || $ljob->job =~ /(FS::\w+)::/
        )
     {

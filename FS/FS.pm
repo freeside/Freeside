@@ -61,6 +61,8 @@ L<FS::ClientAPI_SessionCache> - ClientAPI session cache
 
 L<FS::Pony> - A pony
 
+L<FS::cust_main::Import> - Batch customer importing
+
 =head2 Database record classes
 
 L<FS::Record> - Database record base class

@@ -599,13 +599,27 @@ sub svcpart {
   my $svcdb = scalar(@_) ? shift : '';
   my @svcdb_pkg_svc =
     grep { ( $svcdb eq $_->part_svc->svcdb || !$svcdb ) } $self->pkg_svc;
-  my @pkg_svc = ();
-  @pkg_svc = grep { $_->primary_svc =~ /^Y/i } @svcdb_pkg_svc
-    if dbdef->table('pkg_svc')->column('primary_svc');
+  my @pkg_svc = grep { $_->primary_svc =~ /^Y/i } @svcdb_pkg_svc;
   @pkg_svc = grep {$_->quantity == 1 } @svcdb_pkg_svc
     unless @pkg_svc;
   return '' if scalar(@pkg_svc) != 1;
   $pkg_svc[0]->svcpart;
+}
+
+=item svcpart_unique_svcdb SVCDB
+
+Returns the svcpart of the a service definition (see L<FS::part_svc>) matching
+SVCDB associated with this package definition (see L<FS::pkg_svc>).  Returns
+false if there not a primary service definition for SVCDB or there are multiple
+service definitions for SVCDB.
+
+=cut
+
+sub svcpart_unique_svcdb {
+  my( $self, $svcdb ) = @_;
+  my @svcdb_pkg_svc = grep { ( $svcdb eq $_->part_svc->svcdb ) } $self->pkg_svc;
+  return '' if scalar(@svcdb_pkg_svc) != 1;
+  $svcdb_pkg_svc[0]->svcpart;
 }
 
 =item payby

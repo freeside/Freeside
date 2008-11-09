@@ -32,6 +32,7 @@ Import a file containing customer records.
         <OPTION VALUE="extended" SELECTED>Extended
         <OPTION VALUE="extended-plus_company">Extended plus company
         <OPTION VALUE="svc_external">External service
+        <OPTION VALUE="svc_external_svc_phone">External service and phone service
       </SELECT>
     </TD>
   </TR>
@@ -92,6 +93,9 @@ Uploaded files can be CSV (comma-separated value) files or Excel spreadsheets.  
 <BR><BR>
 
 <b>External service</b> format has the following field order: <i>agent_custid, refnum<%$req%>, last<%$req%>, first<%$req%>, company, address1<%$req%>, address2, city<%$req%>, state<%$req%>, zip<%$req%>, country, daytime, night, ship_last, ship_first, ship_company, ship_address1, ship_address2, ship_city, ship_state, ship_zip, ship_country, payinfo, paycvv, paydate, invoicing_list, pkgpart, next_bill_date, id, title</i>
+<BR><BR>
+
+<b>External service and phone service</b> format has the following field order: <i>agent_custid, refnum<%$req%>, last<%$req%>, first<%$req%>, company, address1<%$req%>, address2, city<%$req%>, state<%$req%>, zip<%$req%>, country, daytime, night, ship_last, ship_first, ship_company, ship_address1, ship_address2, ship_city, ship_state, ship_zip, ship_country, payinfo, paycvv, paydate, invoicing_list, pkgpart, next_bill_date, id, title, countrycode, phonenum, sip_password, pin</i>
 <BR><BR>
 
 <%$req%> Required fields
