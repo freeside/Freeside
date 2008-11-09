@@ -355,7 +355,6 @@ sub batch_import {
           push @svc_x, $class->new( \%svc_x );
         }
         if ( $svc_phone ) {
-          warn $part_pkg->svcpart_unique_svcdb('svc_phone');
           $svc_phone->svcpart( $part_pkg->svcpart_unique_svcdb('svc_phone') );
           push @svc_x, $svc_phone;
         }
