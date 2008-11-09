@@ -100,7 +100,7 @@ full offerings (via their type).<BR><BR>
           <% $agent->invoice_template || '(Default)' %>
         </TD>
 
-        <TD CLASS="inv" BGCOLOR="<% $bgcolor %>">
+        <TD CLASS="inv" BGCOLOR="<% $bgcolor %>" VALIGN="bottom">
           <TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0>
 
             <TR>
