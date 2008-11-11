@@ -20,7 +20,7 @@
       <td align="right">
         <table CLASS="invoice_headerright" cellspacing=0>
           <tr>
-            <td align="right">
+            <td align="center">
               Invoice&nbsp;date<BR>
               <B><%= $date %></B>
             </td>
