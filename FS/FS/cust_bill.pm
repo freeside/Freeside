@@ -1894,6 +1894,7 @@ sub print_generic {
     'city'            => &$escape_function($cust_main->city),
     'state'           => &$escape_function($cust_main->state),
     'zip'             => &$escape_function($cust_main->zip),
+    'fax'             => &$escape_function($cust_main->fax),
     'returnaddress'   => $returnaddress,
     #'quantity'        => 1,
     'terms'           => $self->terms,
