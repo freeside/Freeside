@@ -71,8 +71,6 @@
                                                        ' ',
                                                        ' ',
                               ).
-                           ($agent_custid ? "<b>ID:</b> $agent_custid<BR>" : '').
-                           ($ship_fax ? "<b>Fax:</b> $ship_fax<BR>" : '').
                            '</td><tr><td></td><td></td>'
                          )
                        : ''
