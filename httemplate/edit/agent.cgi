@@ -77,6 +77,19 @@ Agent #<% $agent->agentnum ? $agent->agentnum : "(NEW)" %>
     </TR>
 % } 
 
+  <TR>
+    <TD ALIGN="right">Access Groups</TD>
+    <TD><% include('/elements/checkboxes-table.html',
+                     'source_obj'   => $agent,
+                     'link_table'   => 'access_groupagent',
+                     'target_table' => 'access_group',
+                     'name_col'     => 'groupname',
+                     'target_link'  => $p. 'edit/access_group.html?',
+                  )
+        %>
+    </TD>
+  </TR>
+
 </TABLE>
 
 <BR>

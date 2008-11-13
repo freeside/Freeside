@@ -10,7 +10,7 @@ use FS::agent_type;
 use FS::reg_code;
 use FS::TicketSystem;
 
-@ISA = qw( FS::Record );
+@ISA = qw( FS::m2m_Common FS::Record );
 
 =head1 NAME
 

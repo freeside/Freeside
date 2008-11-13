@@ -27,6 +27,7 @@ full offerings (via their type).<BR><BR>
   <TH CLASS="grid" BGCOLOR="#cccccc" COLSPAN=<% ( $cgi->param('showdisabled') || !dbdef->table('agent')->column('disabled') ) ? 2 : 3 %>>Agent</TH>
   <TH CLASS="grid" BGCOLOR="#cccccc">Type</TH>
   <TH CLASS="grid" BGCOLOR="#cccccc">Master Customer</TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc">Access Groups</TH>
   <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>Invoice<BR>Template</FONT></TH>
   <TH CLASS="grid" BGCOLOR="#cccccc">Customers</TH>
   <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>Customer<BR>packages</FONT></TH>
@@ -93,6 +94,15 @@ full offerings (via their type).<BR><BR>
                          1, #show balance
                       )
             %>
+%         }
+        </TD>
+
+        <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+%         foreach my $access_group (
+%           map $_->access_group,
+%               qsearch('access_groupagent', { 'agentnum' => $agent->agentnum })
+%         ) {
+            <A HREF="<%$p%>edit/access_group.html?<% $access_group->groupnum %>"><% $access_group->groupname |h %><BR>
 %         }
         </TD>
 
