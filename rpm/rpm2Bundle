@@ -39,7 +39,8 @@ foreach my $rawrpm (@ARGV) {
 	my %mods;
 
 	foreach (@deps) {
-		if (/^perl\((.*)\)\s*(>=\s+([\d\.]+))?$/) {
+		if (/^perl\((.*)\)\s*((>=|=|<=)\s+([\d\.]+))?$/
+		 || /^perl-(.*)\s*((>=|=|<=)\s+([\d\.]+))?$/) {
 			next if exists($suppress{$1});
 			my @parts = split /::/, $1;
 			if (scalar @parts > 1) {
@@ -47,10 +48,10 @@ foreach my $rawrpm (@ARGV) {
 			}
 			if ($verbose) {
 				print STDERR "$1";
-				print STDERR " >= $3" if $3;
+				print STDERR " $3 $4" if $4;
 				print STDERR "\n";
 			}
-			$mods{$1} = $3 ? $3 : undef;
+			$mods{$1} = $4 ? $4 : undef;
 		}
 	}
 
