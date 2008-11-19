@@ -13,6 +13,7 @@ use FS::cust_bill_pkg;
 use FS::cust_tax_location;
 use FS::part_pkg_taxrate;
 use FS::cust_main;
+use FS::Misc qw( csv_from_fixed );
 
 @ISA = qw( FS::Record );
 
@@ -503,12 +504,25 @@ sub batch_import {
   my @fields;
   my $hook;
 
+  my @column_lengths = ();
+  my @column_callbacks = ();
+  if ( $format eq 'cch-fixed' || $format eq 'cch-fixed-update' ) {
+    $format =~ s/-fixed//;
+    my $date_format = sub { my $r='';
+                            /^(\d{4})(\d{2})(\d{2})$/ && ($r="$1/$2/$3");
+                            $r;
+                          };
+    $column_callbacks[8] = $date_format;
+    push @column_lengths, qw( 10 1 1 8 8 5 8 8 8 1 2 2 30 8 8 10 2 8 2 1 2 2 );
+    push @column_lengths, 1 if $format eq 'cch-update';
+  }
+  
   my $line;
   my ( $count, $last, $min_sec ) = (0, time, 5); #progressbar
-  if ( $job ) {
-    $count++
-      while ( defined($line=<$fh>) );
-    seek $fh, 0, 0;
+  if ( $job || scalar(@column_callbacks) ) {
+    my $error =
+      csv_from_fixed(\$fh, \$count, \@column_lengths, \@column_callbacks);
+    return $error if $error;
   }
   $count *=2;
 
@@ -745,7 +759,7 @@ sub process_batch {
 
   my (%files) = map { /^(\w+):([\.\w]+)$/ ? ($1,$2):() } split /,/, $files;
 
-  if ($format eq 'cch') {
+  if ($format eq 'cch' || $format eq 'cch-fixed') {
 
     my $oldAutoCommit = $FS::UID::AutoCommit;
     local $FS::UID::AutoCommit = 0;
@@ -779,7 +793,7 @@ sub process_batch {
       $dbh->commit or die $dbh->errstr if $oldAutoCommit;
     }
 
-  }elsif ($format eq 'cch-update') {
+  }elsif ($format eq 'cch-update' || $format eq 'cch-fixed-update') {
 
     my $oldAutoCommit = $FS::UID::AutoCommit;
     local $FS::UID::AutoCommit = 0;

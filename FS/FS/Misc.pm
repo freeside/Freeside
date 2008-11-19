@@ -7,6 +7,7 @@ use Carp;
 use Data::Dumper;
 use IPC::Run qw( run timeout );   # for _pslatex
 use IPC::Run3; # for do_print... should just use IPC::Run i guess
+use File::Temp;
 #do NOT depend on any FS:: modules here, causes weird (sometimes unreproducable
 #until on client machine) dependancy loops.  put them in FS::Misc::Something
 #instead
@@ -16,6 +17,7 @@ use IPC::Run3; # for do_print... should just use IPC::Run i guess
                  states_hash counties state_label
                  card_types
                  generate_ps generate_pdf do_print
+                 csv_from_fixed
                );
 
 $DEBUG = 0;
@@ -773,6 +775,65 @@ sub do_print {
   }
 
 }
+
+=item csv_from_fixed, FILEREF COUNTREF, [ LENGTH_LISTREF, [ CALLBACKS_LISTREF ] ]
+
+Converts the filehandle referenced by FILEREF from fixed length record
+lines to a CSV file according to the lengths specified in LENGTH_LISTREF.
+The CALLBACKS_LISTREF refers to a correpsonding list of coderefs.  Each
+should return the value to be substituted in place of its single argument.
+
+Returns false on success or an error if one occurs.
+
+=cut
+
+sub csv_from_fixed {
+  my( $fhref, $countref, $lengths, $callbacks) = @_;
+
+  eval { require Text::CSV_XS; };
+  return $@ if $@;
+
+  my $ofh = $$fhref;
+  my $unpacker = new Text::CSV_XS;
+  my $total = 0;
+  my $template = join('', map {$total += $_; "A$_"} @$lengths) if $lengths;
+
+  my $dir = "%%%FREESIDE_CACHE%%%/cache.$FS::UID::datasrc";
+  my $fh = new File::Temp( TEMPLATE => "CODE.csv.XXXXXXXX",
+                           DIR      => $dir,
+                           UNLINK   => 0,
+                         ) or return "can't open temp file: $!\n"
+    if $template;
+
+  while ( defined(my $line=<$ofh>) ) {
+    $$countref++;
+    if ( $template ) {
+      my $column = 0;
+
+      chomp $line;
+      return "unexpected input at line $$countref: $line".
+             " -- expected $total but received ". length($line)
+        unless length($line) == $total;
+
+      $unpacker->combine( map { my $i = $column++;
+                                defined( $callbacks->[$i] )
+                                  ? &{ $callbacks->[$i] }( $_ )
+                                  : $_
+                              } unpack( $template, $line )
+                        )
+        or return "invalid data for CSV: ". $unpacker->error_input;
+
+      print $fh $unpacker->string(), "\n"
+        or return "can't write temp file: $!\n";
+    }
+  }
+
+  if ( $template ) { close $$fhref; $$fhref = $fh }
+
+  seek $$fhref, 0, 0;
+  '';
+}
+
 
 =back
 

@@ -1110,7 +1110,7 @@ sub tables_hashref {
         'taxproductnum', 'serial',      '',        '', '', '',
         'data_vendor',   'varchar', 'NULL',   $char_d, '', '', 
         'taxproduct',    'varchar',     '',   $char_d, '', '', 
-        'description',   'varchar',     '', 2*$char_d, '', '', 
+        'description',   'varchar',     '', 3*$char_d, '', '', 
       ],
       'primary_key' => 'taxproductnum',
       'unique'      => [ [ 'data_vendor', 'taxproduct' ] ],

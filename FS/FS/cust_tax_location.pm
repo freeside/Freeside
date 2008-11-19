@@ -3,6 +3,7 @@ package FS::cust_tax_location;
 use strict;
 use vars qw( @ISA );
 use FS::Record qw( qsearch qsearchs dbh );
+use FS::Misc qw ( csv_from_fixed );
 
 @ISA = qw(FS::Record);
 
@@ -135,12 +136,19 @@ sub batch_import {
   my @fields;
   my $hook;
 
+  my @column_lengths = ();
+  my @column_callbacks = ();
+  if ( $format eq 'cch-fixed' || $format eq 'cch-fixed-update' ) {
+    $format =~ s/-fixed//;
+    push @column_lengths, qw( 5 2 4 4 10 1 );
+    push @column_lengths, 1 if $format eq 'cch-update';
+  }
+
   my $line;
   my ( $count, $last, $min_sec ) = (0, time, 5); #progressbar
-  if ( $job ) {
-    $count++
-      while ( defined($line=<$fh>) );
-    seek $fh, 0, 0;
+  if ( $job || scalar(@column_callbacks) ) {
+    my $error = csv_from_fixed(\$fh, \$count, \@column_lengths);
+    return $error if $error;
   }
 
   if ( $format eq 'cch' || $format eq 'cch-update' ) {

@@ -18,8 +18,10 @@ Import a CSV file set containing tax rate records.
     <TH ALIGN="right">Format</TH>
     <TD>
       <SELECT NAME="format">
-        <OPTION VALUE="cch-update" SELECTED>CCH update
-        <OPTION VALUE="cch">CCH initial import
+        <OPTION VALUE="cch-update" SELECTED>CCH update (CSV)
+        <OPTION VALUE="cch">CCH initial import (CSV)
+        <OPTION VALUE="cch-fixed-update">CCH update (fixed length)
+        <OPTION VALUE="cch-fixed">CCH initial import (fixed length)
       </SELECT>
     </TD>
   </TR>
@@ -30,10 +32,10 @@ Import a CSV file set containing tax rate records.
                                 'txmatrix',
                                 'detail',
                               ],
-                'label'    => [ 'code CSV filename',
-                                'plus4 CSV filename',
-                                'txmatrix CSV filename',
-                                'detail CSV filename',
+                'label'    => [ 'code filename',
+                                'plus4 filename',
+                                'txmatrix filename',
+                                'detail filename',
                               ],
                 'debug'    => 0,
             )
