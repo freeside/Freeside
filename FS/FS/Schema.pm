@@ -342,8 +342,11 @@ sub tables_hashref {
         'prog',                     @perl_type, '', '', #deprecated (never used)
       ],
       'primary_key' => 'agentnum',
-      'unique' => [ [ 'agent_custnum' ] ], #one agent per customer?
-      'index' => [ ['typenum'], ['disabled'] ],
+      #'unique' => [ [ 'agent_custnum' ] ], #one agent per customer?
+                                            #insert is giving it a value, tho..
+      #'index' => [ ['typenum'], ['disabled'] ],
+      'unique' => [],
+      'index' => [ ['typenum'], ['disabled'], ['agent_custnum'] ],
     },
 
     'agent_type' => {
@@ -2116,7 +2119,7 @@ sub tables_hashref {
 
     'phone_avail' => {
       'columns' => [
-        'availnum',    'int',      '', '', '', '', 
+        'availnum',    'serial',   '', '', '', '', 
         'exportnum',   'int',      '', '', '', '', 
         'countrycode', 'varchar',  '',  3, '', '', 
         'state',       'char', 'NULL',  2, '', '', 
