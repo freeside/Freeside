@@ -477,10 +477,10 @@ sub calc_recur {
 
     } # $cdr
 
-    unshift @$details, [ 'C', FS::cdr::invoice_header( $output_format) ]
-      if (@$details && $self->option('rating_method') eq 'upstream_simple' );
-
   } # $cust_svc
+
+  unshift @$details, [ 'C', FS::cdr::invoice_header( $output_format) ]
+    if (@$details && $self->option('rating_method') eq 'upstream_simple' );
 
   if ( $spool_cdr && length($downstream_cdr) ) {
 
