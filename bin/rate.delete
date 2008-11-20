@@ -1,0 +1,3 @@
+#delete from rate_detail where ratenum = 18;
+#delete from rate_region where 0 = ( select count(*) from rate_detail where  rate_region.regionnum = rate_detail.dest_regionnum );
+#delete from rate_prefix where 0 = ( select count(*) from rate_region where rate_prefix.regionnum = rate_region.regionnum );
