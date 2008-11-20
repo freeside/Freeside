@@ -284,8 +284,8 @@ sub dest_detail {
   my $regionnum;
   if ( ref($_[0]) eq 'HASH' ) {
 
-    my $countrycode = $_->{'countrycode'};
-    my $phonenum    = $_->{'phonenum'};
+    my $countrycode = $_[0]->{'countrycode'};
+    my $phonenum    = $_[0]->{'phonenum'};
 
     #find a rate prefix, first look at most specific (4 digits) then 3, etc.,
     # finally trying the country code only
