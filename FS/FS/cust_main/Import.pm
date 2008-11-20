@@ -232,7 +232,8 @@ sub batch_import {
 
     } elsif ( $type eq 'xls' ) {
 
-      last if $row > ($parser->{MaxRow} || $parser->{MinRow});
+      last if $row > ($parser->{MaxRow} || $parser->{MinRow})
+           || ! $parser->{Cells}[$row];
 
       my @row = @{ $parser->{Cells}[$row] };
       @columns = map $_->{Val}, @row;
