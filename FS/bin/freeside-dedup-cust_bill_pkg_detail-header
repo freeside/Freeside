@@ -1,0 +1,57 @@
+#!/usr/bin/perl -w
+
+use strict;
+use vars qw( %seen $opt_d );
+use Getopt::Std;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch);
+use FS::cust_bill_pkg_detail;
+
+getopts('d');
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+my $extra_sql = "AND detail LIKE 'Date,Time%'";
+my @cust_bill_pkg_detail = qsearch( { 'table'     => 'cust_bill_pkg_detail',
+                                      'hashref'   => {format => 'C'},
+                                      'extra_sql' => $extra_sql,
+                                  } );
+for my $detail (@cust_bill_pkg_detail) {
+  if ( $seen{$detail->billpkgnum} ) {
+    if ($opt_d) { # dry run
+      print "DELETE cust_bill_pkg_detail WHERE detailnum=". $detail->detailnum.
+        "\n";
+    } else {
+      $detail->delete;
+    }
+  } else {
+    $seen{$detail->billpkgnum} = 1;
+  }
+}
+
+sub usage {
+  die "Usage:\n\n  freeside-sqlradius-dedup-group [-d] user\n";
+}
+
+=head1 NAME
+
+freeside-dedup-cust_bill_pkg_detail-header - Command line tool to eliminate duplicate headers from cdr details on invoices
+
+=head1 SYNOPSIS
+
+  freeside-dedup-cust_bill_pkg_detail-header user
+
+=head1 DESCRIPTION
+
+  Removes all but one header when duplicate entries exist on invoice 
+  cdr details.
+
+  -d: dry run
+
+=head1 SEE ALSO
+
+L<FS::part_pkg::voip_cdr>
+
+=cut
+
