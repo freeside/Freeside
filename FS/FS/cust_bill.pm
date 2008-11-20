@@ -1689,8 +1689,8 @@ sub print_generic {
 
   my $cust_main = $self->cust_main;
   $cust_main->payname( $cust_main->first. ' '. $cust_main->getfield('last') )
-    unless $cust_main->payname && $cust_main->payby !~ /^(CHEK|DCHK)$/;
-
+    unless $cust_main->payname
+        && $cust_main->payby !~ /^(CARD|DCRD|CHEK|DCHK)$/;
 
   my %delimiters = ( 'latex'    => [ '[@--', '--@]' ],
                      'html'     => [ '<%=', '%>' ],
