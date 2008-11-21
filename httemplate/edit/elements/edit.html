@@ -286,7 +286,7 @@ Example:
 %     $g_row++ if $type eq 'title';
 %   } else {
 %     if ( $type eq 'columnstart' ) {
-%       push @g_row_stack, $g_row++;
+%       push @g_row_stack, $g_row;
 %       $g_row = 0;
 %     #} elsif ( $type eq 'columnnext' ) {
 %     } elsif ( $type eq 'columnend' ) {
@@ -379,7 +379,8 @@ Example:
 
       <SCRIPT TYPE="text/javascript">
 
-        var <%$field%>_rownum = <% $g_row - 1 %>;
+        var <%$field%>_rownum = <% $g_row %>;
+% warn "g_row $g_row\n";
         var <%$field%>_fieldnum = <% $fieldnum %>;
 
         function spawn_<%$field%>(what) {
