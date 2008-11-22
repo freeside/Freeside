@@ -164,7 +164,7 @@ Example:
 <FORM ACTION="<% $url %>" METHOD=POST NAME="edit_topform">
 
 <INPUT TYPE="hidden" NAME="svcdb" VALUE="<% $table %>">
-<INPUT TYPE="hidden" NAME="<% $pkey %>" VALUE="<% $object->$pkey() %>">
+<INPUT TYPE="hidden" NAME="<% $pkey %>" VALUE="<% $clone ? '' : $object->$pkey() %>">
 
 <FONT SIZE="+1"><B>
 <% ( $opt{labels} && exists $opt{labels}->{$pkey} )
@@ -172,7 +172,7 @@ Example:
       : $pkey
 %>
 </B></FONT>
-#<% $object->$pkey() || "(NEW)" %>
+#<% ( !$clone && $object->$pkey() ) || "(NEW)" %>
 
 % my $tablenum = 0;
 <TABLE ID="TableNumber<% $tablenum++ %>" BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>
@@ -313,7 +313,7 @@ Example:
 %     my @existing = ();
 %     if ( $mode eq 'error' ) {
 %       @existing = &{ $f->{'m2_error_callback'} }( $cgi, $object );
-%     } elsif ( $object->$pkey() ) { # $mode eq 'edit'
+%     } elsif ( $object->$pkey() ) { # $mode eq 'edit'||'clone'
 %       @existing = $object->$table();
 %      warn scalar(@existing). " from $object->$table: ". join('/', @existing)
 %        if $opt{'debug'};
@@ -527,7 +527,7 @@ Example:
 
 <BR>
 
-<INPUT TYPE="submit" ID="submit" VALUE="<% $object->$pkey() ? "Apply changes" : "Add $opt{'name'}" %>">
+<INPUT TYPE="submit" ID="submit" VALUE="<% ( !$clone && $object->$pkey() ) ? "Apply changes" : "Add $opt{'name'}" %>">
 
 </FORM>
 
@@ -559,8 +559,19 @@ if ( $cgi->param('redirect') ) {
   $cgi = new CGI($pref);
 }
 
-my $object;
+my %qsearch = (
+    'table'     => $table,
+    'extra_sql' => ( $opt{'agent_virt'}
+                       ? ' AND '. $curuser->agentnums_sql(
+                                    'null_right' => $opt{'agent_null_right'}
+                                  )
+                       : ''
+                   ),
+);
+
 my $mode;
+my $object;
+my $clone = '';
 if ( $cgi->param('error') ) {
 
   $mode = 'error';
@@ -571,6 +582,22 @@ if ( $cgi->param('error') ) {
 
   &{$opt{'error_callback'}}($cgi, $object, $fields, \%opt )
     if $opt{'error_callback'};
+
+} elsif ( $cgi->param('clone') =~ /^(\d+)$/ ) {
+
+  $mode = 'clone';
+
+  $clone = $1;
+
+  $object = qsearchs({ %qsearch, 'hashref' => { $pkey => $clone } });
+
+  #XXX document me
+  &{$opt{'clone_callback'}}($cgi, $object, $fields)
+    if $opt{'clone_callback'};
+
+  #$object->$pkey('');
+
+  $opt{action} ||= 'Add';
 
 } elsif ( $cgi->keywords || $cgi->param($pkey) ) { #editing
 
@@ -584,16 +611,8 @@ if ( $cgi->param('error') ) {
     $value = $query;
   }
   $value =~ /^(\d+)$/ or die "unparsable $pkey";
-  $object = qsearchs({
-    'table'     => $table,
-    'hashref'   => { $pkey => $1 },
-    'extra_sql' => ( $opt{'agent_virt'}
-                       ? ' AND '. $curuser->agentnums_sql(
-                                    'null_right' => $opt{'agent_null_right'}
-                                  )
-                       : ''
-                   ),
-  });
+  $object = qsearchs({ %qsearch, 'hashref' => { $pkey => $1 } });
+  
   warn "$table $pkey => $1"
     if $opt{'debug'};
 

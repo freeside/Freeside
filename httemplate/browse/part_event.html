@@ -144,7 +144,17 @@ my $html_init =
   #XXX better description
   'Events are billing, collection or other actions triggered when certain '.
   'customer, invoice, package or other conditions are met.<BR><BR>'.
-  qq!<A HREF="${p}edit/part_event.html"><I>Add a new event</I></A><BR><BR>!;
+  qq!<FORM METHOD="POST" ACTION="${p}edit/part_event.html">!.
+  qq!<A HREF="${p}edit/part_event.html"><I>Add a new event</I></A>!.
+  '&nbsp;or&nbsp;<SELECT NAME="clone"><OPTION></OPTION>';
+
+foreach my $part_event ( qsearch('part_event', {'diabled'=>''}) ) {
+  $html_init .=  '<OPTION VALUE="'. $part_event->eventpart. '">'.
+                 $part_event->event. '</OPTION>';
+}
+
+$html_init .= '</SELECT><INPUT TYPE="submit" VALUE="Clone existing event">'.
+              '</FORM><BR>';
      
 my $count_query = 'SELECT COUNT(*) FROM part_event WHERE '.
                   $FS::CurrentUser::CurrentUser->agentnums_sql(
