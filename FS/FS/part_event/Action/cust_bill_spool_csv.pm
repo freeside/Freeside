@@ -3,13 +3,9 @@ package FS::part_event::Action::cust_bill_spool_csv;
 use strict;
 use base qw( FS::part_event::Action );
 
-sub description {
-  'Spool CSV invoice data';
-}
+sub description { 'Spool CSV invoice data'; }
 
-sub deprecated {
-  1;
-}
+sub deprecated { 1; }
 
 sub eventtable_hashref {
   { 'cust_bill' => 1 };
@@ -43,9 +39,7 @@ sub option_fields {
   );
 }
 
-sub default_weight {
-  50;
-}
+sub default_weight { 50; }
 
 sub do_action {
   my( $self, $cust_bill ) = @_;

@@ -3,13 +3,9 @@ package FS::part_event::Action::cust_bill_suspend_if_balance;
 use strict;
 use base qw( FS::part_event::Action );
 
-sub description {
-  'Suspend if balance (this invoice and previous) over';
-}
+sub description { 'Suspend if balance (this invoice and previous) over'; }
 
-sub deprecated {
-  1;
-}
+sub deprecated { 1; }
 
 sub eventtable_hashref {
   { 'cust_bill' => 1 };
@@ -23,11 +19,9 @@ sub option_fields {
                      'reason_class' => 'S',
                    },
   );
-};
-
-sub default_weight {
-  10;
 }
+
+sub default_weight { 10; }
 
 sub do_action {
   my( $self, $cust_bill ) = @_;

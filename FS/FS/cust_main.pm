@@ -4246,7 +4246,9 @@ sub batch_card {
     die $error;
   }
 
-  my $unapplied = $self->total_credited + $self->total_unapplied_payments + $self->in_transit_payments;
+  my $unapplied =   $self->total_unapplied_credits
+                  + $self->total_unapplied_payments
+                  + $self->in_transit_payments;
   foreach my $cust_bill ($self->open_cust_bill) {
     #$dbh->commit or die $dbh->errstr if $oldAutoCommit;
     my $cust_bill_pay_batch = new FS::cust_bill_pay_batch {
@@ -4271,39 +4273,6 @@ sub batch_card {
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
-}
-
-=item total_owed
-
-Returns the total owed for this customer on all invoices
-(see L<FS::cust_bill/owed>).
-
-=cut
-
-sub total_owed {
-  my $self = shift;
-  $self->total_owed_date(2145859200); #12/31/2037
-}
-
-=item total_owed_date TIME
-
-Returns the total owed for this customer on all invoices with date earlier than
-TIME.  TIME is specified as a UNIX timestamp; see L<perlfunc/"time">).  Also
-see L<Time::Local> and L<Date::Parse> for conversion functions.
-
-=cut
-
-sub total_owed_date {
-  my $self = shift;
-  my $time = shift;
-  my $total_bill = 0;
-  foreach my $cust_bill (
-    grep { $_->_date <= $time }
-      qsearch('cust_bill', { 'custnum' => $self->custnum, } )
-  ) {
-    $total_bill += $cust_bill->owed;
-  }
-  sprintf( "%.2f", $total_bill );
 }
 
 =item apply_payments_and_credits
@@ -4375,7 +4344,7 @@ sub apply_credits {
 
   $self->select_for_update; #mutex
 
-  unless ( $self->total_credited ) {
+  unless ( $self->total_unapplied_credits ) {
     $dbh->commit or die $dbh->errstr if $oldAutoCommit;
     return 0;
   }
@@ -4416,11 +4385,11 @@ sub apply_credits {
 
   }
 
-  my $total_credited = $self->total_credited;
+  my $total_unapplied_credits = $self->total_unapplied_credits;
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
-  return $total_credited;
+  return $total_unapplied_credits;
 }
 
 =item apply_payments
@@ -4452,11 +4421,13 @@ sub apply_payments {
 
   #return 0 unless
 
-  my @payments = sort { $b->_date <=> $a->_date } ( grep { $_->unapplied > 0 }
-      qsearch('cust_pay', { 'custnum' => $self->custnum } ) );
+  my @payments = sort { $b->_date <=> $a->_date }
+                 grep { $_->unapplied > 0 }
+                 $self->cust_pay;
 
-  my @invoices = sort { $a->_date <=> $b->_date} (grep { $_->owed > 0 }
-      qsearch('cust_bill', { 'custnum' => $self->custnum } ) );
+  my @invoices = sort { $a->_date <=> $b->_date}
+                 grep { $_->owed > 0 }
+                 $self->cust_bill;
 
   my $payment;
 
@@ -4495,21 +4466,72 @@ sub apply_payments {
   return $total_unapplied_payments;
 }
 
-=item total_credited
+=item total_owed
+
+Returns the total owed for this customer on all invoices
+(see L<FS::cust_bill/owed>).
+
+=cut
+
+sub total_owed {
+  my $self = shift;
+  $self->total_owed_date(2145859200); #12/31/2037
+}
+
+=item total_owed_date TIME
+
+Returns the total owed for this customer on all invoices with date earlier than
+TIME.  TIME is specified as a UNIX timestamp; see L<perlfunc/"time">).  Also
+see L<Time::Local> and L<Date::Parse> for conversion functions.
+
+=cut
+
+sub total_owed_date {
+  my $self = shift;
+  my $time = shift;
+  my $total_bill = 0;
+  foreach my $cust_bill (
+    grep { $_->_date <= $time }
+      qsearch('cust_bill', { 'custnum' => $self->custnum, } )
+  ) {
+    $total_bill += $cust_bill->owed;
+  }
+  sprintf( "%.2f", $total_bill );
+}
+
+=item total_paid
+
+Returns the total amount of all payments.
+
+=cut
+
+sub total_paid {
+  my $self = shift;
+  my $total = 0;
+  $total += $_->paid foreach $self->cust_pay;
+  sprintf( "%.2f", $total );
+}
+
+=item total_unapplied_credits
 
 Returns the total outstanding credit (see L<FS::cust_credit>) for this
 customer.  See L<FS::cust_credit/credited>.
 
+=item total_credited
+
+Old name for total_unapplied_credits.  Don't use.
+
 =cut
 
 sub total_credited {
+  #carp "total_credited deprecated, use total_unapplied_credits";
+  shift->total_unapplied_credits(@_);
+}
+
+sub total_unapplied_credits {
   my $self = shift;
   my $total_credit = 0;
-  foreach my $cust_credit ( qsearch('cust_credit', {
-    'custnum' => $self->custnum,
-  } ) ) {
-    $total_credit += $cust_credit->credited;
-  }
+  $total_credit += $_->credited foreach $self->cust_credit;
   sprintf( "%.2f", $total_credit );
 }
 
@@ -4523,11 +4545,7 @@ See L<FS::cust_pay/unapplied>.
 sub total_unapplied_payments {
   my $self = shift;
   my $total_unapplied = 0;
-  foreach my $cust_pay ( qsearch('cust_pay', {
-    'custnum' => $self->custnum,
-  } ) ) {
-    $total_unapplied += $cust_pay->unapplied;
-  }
+  $total_unapplied += $_->unapplied foreach $self->cust_pay;
   sprintf( "%.2f", $total_unapplied );
 }
 
@@ -4541,18 +4559,14 @@ customer.  See L<FS::cust_refund/unapplied>.
 sub total_unapplied_refunds {
   my $self = shift;
   my $total_unapplied = 0;
-  foreach my $cust_refund ( qsearch('cust_refund', {
-    'custnum' => $self->custnum,
-  } ) ) {
-    $total_unapplied += $cust_refund->unapplied;
-  }
+  $total_unapplied += $_->unapplied foreach $self->cust_refund;
   sprintf( "%.2f", $total_unapplied );
 }
 
 =item balance
 
 Returns the balance for this customer (total_owed plus total_unrefunded, minus
-total_credited minus total_unapplied_payments).
+total_unapplied_credits minus total_unapplied_payments).
 
 =cut
 
@@ -4561,7 +4575,7 @@ sub balance {
   sprintf( "%.2f",
       $self->total_owed
     + $self->total_unapplied_refunds
-    - $self->total_credited
+    - $self->total_unapplied_credits
     - $self->total_unapplied_payments
   );
 }
@@ -4582,7 +4596,7 @@ sub balance_date {
   sprintf( "%.2f",
         $self->total_owed_date($time)
       + $self->total_unapplied_refunds
-      - $self->total_credited
+      - $self->total_unapplied_credits
       - $self->total_unapplied_payments
   );
 }
@@ -4870,21 +4884,47 @@ sub referring_cust_main {
   qsearchs('cust_main', { 'custnum' => $self->referral_custnum } );
 }
 
-=item credit AMOUNT, REASON
+=item credit AMOUNT, REASON [ , OPTION => VALUE ... ]
 
 Applies a credit to this customer.  If there is an error, returns the error,
 otherwise returns false.
+
+REASON can be a text string, an FS::reason object, or a scalar reference to
+a reasonnum.  If a text string, it will be automatically inserted as a new
+reason, and a 'reason_type' option must be passed to indicate the
+FS::reason_type for the new reason.
+
+An I<addlinfo> option may be passed to set the credit's I<addlinfo> field.
+
+Any other options are passed to FS::cust_credit::insert.
 
 =cut
 
 sub credit {
   my( $self, $amount, $reason, %options ) = @_;
+
   my $cust_credit = new FS::cust_credit {
     'custnum' => $self->custnum,
     'amount'  => $amount,
-    'reason'  => $reason,
   };
+
+  if ( ref($reason) ) {
+
+    if ( ref($reason) eq 'SCALAR' ) {
+      $cust_credit->reasonnum( $$reason );
+    } else {
+      $cust_credit->reasonnum( $reason->reasonnum );
+    }
+
+  } else {
+    $cust_credit->set('reason', $reason)
+  }
+
+  $cust_credit->addlinfo( delete $options{'addlinfo'} )
+    if exists($options{'addlinfo'});
+
   $cust_credit->insert(%options);
+
 }
 
 =item charge AMOUNT [ PKG [ COMMENT [ TAXCLASS ] ] ]
@@ -5474,7 +5514,7 @@ sub balance_sql { "
 
 Returns an SQL fragment to retreive the balance for this customer, only
 considering invoices with date earlier than START_TIME, and optionally not
-later than END_TIME (total_owed_date minus total_credited minus
+later than END_TIME (total_owed_date minus total_unapplied_credits minus
 total_unapplied_payments).
 
 Times are specified as SQL fragments or numeric

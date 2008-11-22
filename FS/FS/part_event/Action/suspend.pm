@@ -3,9 +3,7 @@ package FS::part_event::Action::suspend;
 use strict;
 use base qw( FS::part_event::Action );
 
-sub description {
-  'Suspend';
-}
+sub description { 'Suspend'; }
 
 sub option_fields {
   ( 
@@ -14,11 +12,9 @@ sub option_fields {
                      'reason_class' => 'S',
                    },
   );
-};
-
-sub default_weight {
-  10;
 }
+
+sub default_weight { 10; }
 
 sub do_action {
   my( $self, $cust_object ) = @_;

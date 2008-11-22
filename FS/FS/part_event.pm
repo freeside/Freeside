@@ -286,18 +286,32 @@ i.e. 'cust_main'=>'cust_main.custnum'
 =cut
 
 sub eventtable_pkey_sql {
-  #my $class = shift;
+  my $class = shift;
 
-  my %hash = (
-    'cust_main'      => 'cust_main.custnum',
-    'cust_bill'      => 'cust_bill.invnum',
-    'cust_pkg'       => 'cust_pkg.pkgnum',
-    'cust_pay_batch' => 'cust_pay_batch.paybatchnum',
-  );
+  my $hashref = $class->eventtable_pkey;
+
+  my %hash = map { $_ => "$_.". $hashref->{$_} } keys %$hashref;
 
   \%hash;
 }
 
+=item eventtable_pkey
+
+Returns a hash reference of full SQL primary key names for eventtable values,
+i.e. 'cust_main'=>'custnum'
+
+=cut
+
+sub eventtable_pkey {
+  #my $class = shift;
+
+  {
+    'cust_main'      => 'custnum',
+    'cust_bill'      => 'invnum',
+    'cust_pkg'       => 'pkgnum',
+    'cust_pay_batch' => 'paybatchnum',
+  };
+}
 
 =item eventtables
 

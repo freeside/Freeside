@@ -142,6 +142,14 @@ sub base_recur {
   $self->option('recur_fee', 1) || 0;
 }
 
+sub base_recur_permonth {
+  my($self, $cust_pkg) = @_; #$cust_pkg?
+
+  return 0 unless $self->freq =~ /^\d+$/ && $self->freq > 0;
+
+  sprintf('%.2f', $self->base_recur / $self->freq );
+}
+
 sub calc_remain {
   my ($self, $cust_pkg, %options) = @_;
 

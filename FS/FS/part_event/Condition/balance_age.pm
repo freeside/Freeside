@@ -1,9 +1,6 @@
 package FS::part_event::Condition::balance_age;
 
-require 5.006;
 use strict;
-use Time::Local qw(timelocal_nocheck);
-
 use base qw( FS::part_event::Condition );
 
 sub description { 'Customer balance age'; }
@@ -28,29 +25,9 @@ sub condition {
   my $over = $self->option('balance');
   $over = 0 unless length($over);
 
-  #false laziness w/cust_bill_age
-  my $time = $opt{'time'};
-  my $age = $self->option('age');
-  $age = '0m' unless length($age);
+  my $age = $self->option_age_from('age', $opt{'time'} );
 
-  my ($sec,$min,$hour,$mday,$mon,$year) = (localtime($time) )[0,1,2,3,4,5];
-  if ( $age =~ /^(\d+)m$/i ) {
-    $mon -= $1;
-    until ( $mon >= 0 ) { $mon += 12; $year--; }
-  } elsif ( $age =~ /^(\d+)y$/i ) {
-    $year -= $1;
-  } elsif ( $age =~ /^(\d+)w$/i ) {
-    $mday -= $1 * 7;
-  } elsif ( $age =~ /^(\d+)d$/i ) {
-    $mday -= $1;
-  } elsif ( $age =~ /^(\d+)h$/i ) {
-    $hour -= $hour;
-  } else {
-    die "unparsable age: $age";
-  }
-  my $age_date = timelocal_nocheck($sec,$min,$hour,$mday,$mon,$year);
-
-  $cust_main->balance_date($age_date) > $over;
+  $cust_main->balance_date($age) > $over;
 }
 
 sub condition_sql {
@@ -61,7 +38,7 @@ sub condition_sql {
 
   my $balance_sql = FS::cust_main->balance_date_sql( $age );
 
-  "$balance_sql > $over";
+  "$balance_sql > CAST( $over AS numeric )";
 }
 
 sub order_sql {

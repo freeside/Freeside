@@ -3,9 +3,9 @@ package FS::part_event::Action::suspend_unless_pkgpart;
 use strict;
 use base qw( FS::part_event::Action );
 
-sub description {
-  'Suspend packages except';
-}
+sub description { 'Suspend packages except'; }
+
+#i should be deprecated in favor of using the unless_pkgpart condition
 
 sub option_fields {
   ( 
@@ -18,11 +18,9 @@ sub option_fields {
                      'reason_class' => 'S',
                    },
   );
-};
-
-sub default_weight {
-  10;
 }
+
+sub default_weight { 10; }
 
 sub do_action {
   my( $self, $cust_object ) = @_;

@@ -43,7 +43,7 @@ sub condition_sql {
 
   my $owed_sql = FS::cust_bill->owed_sql;
 
-  "$owed_sql <= $under";
+  "$owed_sql <= CAST( $under AS numeric )";
 }
 
 1;

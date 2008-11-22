@@ -45,7 +45,7 @@ sub condition_sql {
      FROM cust_bill_pkg cbp, cust_svc cs
     WHERE cbp.invnum = cust_bill.invnum
       AND cs.pkgnum = cbp.pkgnum
-      AND cs.svcpart = $servicenum
+      AND cs.svcpart = CAST( $servicenum AS integer )
   )
   |;
   return $sql;

@@ -1823,8 +1823,8 @@ worry that config_items is freeside-specific and icky.
   },
 
   { 'key'         => 'referral_credit',
-    'section'     => 'billing',
-    'description' => "Enables one-time referral credits in the amount of one month <i>referred</i> customer's recurring fee (irregardless of frequency).",
+    'section'     => 'deprecated',
+    'description' => "Used to enable one-time referral credits in the amount of one month <i>referred</i> customer's recurring fee (irregardless of frequency).  Replace with a billing event on appropriate packages.",
     'type'        => 'checkbox',
   },
 
@@ -2340,8 +2340,8 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'referral_credit_type',
-    'section'     => 'billing',
-    'description' => 'The group to use for new, automatically generated credit reasons resulting from referrals.',
+    'section'     => 'deprecated',
+    'description' => 'Used to be the group to use for new, automatically generated credit reasons resulting from referrals.  Now set in a package billing event for the referral.',
     'type'        => 'select-sub',
     'options_sub' => sub { require FS::Record;
                            require FS::reason_type;

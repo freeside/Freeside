@@ -34,7 +34,7 @@ sub condition_sql {
 
   my $balance_sql = FS::cust_main->balance_sql;
 
-  "$balance_sql <= $under";
+  "$balance_sql <= CAST( $under AS numeric )";
 
 }
 

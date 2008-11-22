@@ -8,17 +8,13 @@ sub description {
   'Run card with a Business::OnlinePayment realtime gateway';
 }
 
-sub deprecated {
-  1;
-}
+sub deprecated { 1; }
 
 sub eventtable_hashref {
   { 'cust_bill' => 1 };
 }
 
-sub default_weight {
-  30;
-}
+sub default_weight { 30; }
 
 sub do_action {
   my( $self, $cust_bill ) = @_;

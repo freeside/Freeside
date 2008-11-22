@@ -3,9 +3,7 @@ package FS::part_event::Action::cancel;
 use strict;
 use base qw( FS::part_event::Action );
 
-sub description {
-  'Cancel';
-}
+sub description { 'Cancel'; }
 
 sub option_fields {
   ( 
@@ -14,12 +12,9 @@ sub option_fields {
                      'reason_class' => 'C',
                    },
   );
-
-};
-
-sub default_weight {
-  20;
 }
+
+sub default_weight { 20; }
 
 sub do_action {
   my( $self, $cust_object ) = @_;

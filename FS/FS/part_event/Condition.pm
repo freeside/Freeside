@@ -2,7 +2,7 @@ package FS::part_event::Condition;
 
 use strict;
 use base qw( FS::part_event_condition );
-
+use Time::Local qw(timelocal_nocheck);
 use FS::UID qw( driver_name );
 
 =head1 NAME
@@ -250,6 +250,40 @@ sub option_label {
 }
 
 =back
+
+=item option_age_from OPTION FROM_TIMESTAMP
+
+Retreives a condition option, parses it from a frequency (such as "1d", "1w" or
+"12m"), and subtracts that interval from the supplied timestamp.  It is
+primarily intended for use in B<condition>.
+
+=cut
+
+sub option_age_from {
+  my( $self, $option, $time ) = @_;
+  my $age = $self->option($option);
+  $age = '0m' unless length($age);
+
+  my ($sec,$min,$hour,$mday,$mon,$year) = (localtime($time) )[0,1,2,3,4,5];
+
+  if ( $age =~ /^(\d+)m$/i ) {
+    $mon -= $1;
+    until ( $mon >= 0 ) { $mon += 12; $year--; }
+  } elsif ( $age =~ /^(\d+)y$/i ) {
+    $year -= $1;
+  } elsif ( $age =~ /^(\d+)w$/i ) {
+    $mday -= $1 * 7;
+  } elsif ( $age =~ /^(\d+)d$/i ) {
+    $mday -= $1;
+  } elsif ( $age =~ /^(\d+)h$/i ) {
+    $hour -= $hour;
+  } else {
+    die "unparsable age: $age";
+  }
+
+  timelocal_nocheck($sec,$min,$hour,$mday,$mon,$year);
+
+}
 
 =item condition_sql_option OPTION
 

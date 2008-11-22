@@ -8,13 +8,9 @@ sub description {
   'Generate invoices (normally only used with a Late Fee event)';
 }
 
-sub deprecated {
-  1;
-}
+sub deprecated { 1; }
 
-sub default_weight {
-  60;
-}
+sub default_weight { 60; }
 
 sub do_action {
   my( $self, $cust_object ) = @_;

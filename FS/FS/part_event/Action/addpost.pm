@@ -3,13 +3,9 @@ package FS::part_event::Action::addpost;
 use strict;
 use base qw( FS::part_event::Action );
 
-sub description {
-  'Add postal invoicing';
-}
+sub description { 'Add postal invoicing'; }
 
-sub default_weight {
-  20;
-}
+sub default_weight { 20; }
 
 sub do_action {
   my( $self, $cust_object ) = @_;

@@ -8,13 +8,9 @@ sub description {
   'Collect on invoices (normally only used with a Late Fee and Generate Invoice events)';
 }
 
-sub deprecated {
-  1;
-}
+sub deprecated { 1; }
 
-sub default_weight {
-  80;
-}
+sub default_weight { 80; }
 
 sub do_action {
   my( $self, $cust_object ) = @_;

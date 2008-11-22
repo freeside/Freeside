@@ -87,6 +87,10 @@ Text ( deprecated )
 
 Reason (see L<FS::reason>)
 
+=item addlinfo
+
+Text
+
 =item closed
 
 Books closed flag, empty or `Y'
@@ -288,6 +292,7 @@ sub check {
     || $self->ut_alpha('otaker')
     || $self->ut_textn('reason')
     || $self->ut_foreign_key('reasonnum', 'reason', 'reasonnum')
+    || $self->ut_textn('addlinfo')
     || $self->ut_enum('closed', [ '', 'Y' ])
   ;
   return $error if $error;
@@ -412,7 +417,8 @@ sub reason {
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
-  $reason ? $reason->reason : '';
+  ( $reason ? $reason->reason : '' ).
+  ( $self->addlinfo ? ' '.$self->addlinfo : '' );
 }
 
 # _upgrade_data

@@ -3,9 +3,7 @@ package FS::part_event::Action::cust_bill_fee_percent;
 use strict;
 use base qw( FS::part_event::Action );
 
-sub description {
-  'Late fee (percentage of invoice)';
-}
+sub description { 'Late fee (percentage of invoice)'; }
 
 sub eventtable_hashref {
   { 'cust_bill' => 1 };
@@ -18,9 +16,7 @@ sub option_fields {
   );
 }
 
-sub default_weight {
-  10;
-}
+sub default_weight { 10; }
 
 sub do_action {
   my( $self, $cust_bill ) = @_;

@@ -24,9 +24,7 @@ sub option_fields {
   );
 }
 
-sub default_weight {
-  50;
-}
+sub default_weight { 50; }
 
 sub do_action {
   my( $self, $cust_bill ) = @_;

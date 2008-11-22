@@ -7,13 +7,9 @@ sub description {
   'Apply unapplied payments and credits';
 }
 
-sub deprecated {
-  1;
-}
+sub deprecated { 1; }
 
-sub default_weight {
-  70;
-}
+sub default_weight { 70; }
 
 sub do_action {
   my( $self, $cust_object ) = @_;

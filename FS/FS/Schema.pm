@@ -558,6 +558,7 @@ sub tables_hashref {
         'otaker',   'varchar', '', 32, '', '', 
         'reason',   'text', 'NULL', '', '', '', 
         'reasonnum', 'int', 'NULL', '', '', '', 
+        'addlinfo', 'text', 'NULL', '', '', '',
         'closed',    'char', 'NULL', 1, '', '', 
       ],
       'primary_key' => 'crednum',
