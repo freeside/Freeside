@@ -1,13 +1,13 @@
 package FS::ClientAPI::PrepaidPhone;
 
 use strict;
-#use vars qw($DEBUG $me);
+use vars qw($DEBUG $me);
 use FS::Record qw(qsearchs);
 use FS::rate;
 use FS::svc_phone;
 
-#$DEBUG = 0;
-#$me = '[FS::ClientAPI::PrepaidPhone]';
+$DEBUG = 0;
+$me = '[FS::ClientAPI::PrepaidPhone]';
 
 #TODO:
 # - shared-secret auth? (set a conf value)
@@ -96,6 +96,9 @@ sub call_time {
   my @part_pkg = ( $part_pkg, map $_->dst_pkg, $part_pkg->bill_part_pkg_link );
   #XXX uuh, behavior indeterminate if you have more than one voip_cdr+prefix
   #add-on, i guess.
+  warn "$me ". scalar(@part_pkg). ': '.
+       join('/', map { $_->plan. $_->option('rating_method') } @part_pkg )
+    if $DEBUG;
   @part_pkg =
     grep { $_->plan eq 'voip_cdr' && $_->option('rating_method') eq 'prefix' }
          @part_pkg;
@@ -105,9 +108,25 @@ sub call_time {
     #'balance' => $cust_pkg->cust_main->balance,
   );
 
+  warn "$me: ". scalar(@part_pkg). ': '.
+       join('/', map { $_->plan. $_->option('rating_method') } @part_pkg )
+    if $DEBUG;
   return \%return unless @part_pkg;
 
+  warn "$me searching for rate ". $part_pkg[0]->option('ratenum')
+    if $DEBUG;
+
   my $rate = qsearchs('rate', { 'ratenum'=>$part_pkg[0]->option('ratenum') } );
+
+  unless ( $rate ) {
+    my $error = 'ratenum '. $part_pkg[0]->option('ratenum'). ' not found';
+    warn "$me $error"
+      if $DEBUG;
+    return { 'error'=>$error };
+  }
+
+  warn "$me found rate ". $rate->ratenum
+    if $DEBUG;
 
   #rate the call and arrive at a max # of seconds for the customer's balance
 
@@ -138,7 +157,13 @@ sub call_time {
   }
 
   #XXX granularity?  included minutes?  another day...
-  $return{'seconds'} = int(60 * $cust_main->balance / $rate_detail->min_charge);
+  if ( $cust_main->balance >= 0 ) {
+    return { 'error'=>'No balance' };
+  } else {
+    $return{'seconds'} = int(60 * abs($cust_main->balance) / $rate_detail->min_charge);
+  }
+
+  warn "$me returning seconds: ". $return{'seconds'};
 
   return \%return;
  
