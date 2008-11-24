@@ -53,25 +53,28 @@ sub call_time {
   my $src = $packet->{'src'};
   my $dst = $packet->{'dst'};
 
-  my $number;
+  my $chargeto;
+  my $rateby;
   #my $conf = new FS::Conf;
   #if ( #XXX toll-free?  collect?
   #  $phonenum = $dst;
   #} else { #use the src to find the customer
-    $number = $src;
+    $chargeto = $src;
+    $rateby = $dst;
   #}
 
   my( $countrycode, $phonenum );
-  if ( $number #this is an interesting regex to parse out 1&2 digit countrycodes
+  if ( $chargeto #an interesting regex to parse out 1&2 digit countrycodes
          =~ /^(2[078]|3[0-469]|4[013-9]|5[1-8]|6[0-6]|7|8[1-469]|9[0-58])(\d*)$/
-       || $number =~ /^(\d{3})(\d*)$/
+       || $chargeto =~ /^(\d{3})(\d*)$/
      )
   {
     $countrycode = $1;
     $phonenum = $2;
   } else { 
-    return { 'error' => "unparsable number: $number" };
+    return { 'error' => "unparsable billing number: $chargeto" };
   }
+
 
   my $svc_phone = qsearchs('svc_phone', { 'countrycode' => $countrycode,
                                           'phonenum'    => $phonenum,
@@ -87,26 +90,54 @@ sub call_time {
   };
 
   my $cust_pkg = $svc_phone->cust_svc->cust_pkg;
-  my $part_pkg = $cust_pkg->part_pkg;
   my $cust_main = $cust_pkg->cust_main;
+
+  my $part_pkg = $cust_pkg->part_pkg;
+  my @part_pkg = ( $part_pkg, map $_->dst_pkg, $part_pkg->bill_part_pkg_link );
+  #XXX uuh, behavior indeterminate if you have more than one voip_cdr+prefix
+  #add-on, i guess.
+  @part_pkg =
+    grep { $_->plan eq 'voip_cdr' && $_->option('rating_method') eq 'prefix' }
+         @part_pkg;
 
   my %return = (
     'custnum' => $cust_pkg->custnum,
     #'balance' => $cust_pkg->cust_main->balance,
   );
 
-  return \%return unless $part_pkg->plan eq 'voip_cdr'
-                      && $part_pkg->option('rating_method') eq 'prefix';
+  return \%return unless @part_pkg;
 
-  my $rate = qsearchs('rate', { 'ratenum' => $part_pkg->option('ratenum') } );
+  my $rate = qsearchs('rate', { 'ratenum'=>$part_pkg[0]->option('ratenum') } );
 
   #rate the call and arrive at a max # of seconds for the customer's balance
-  my $rate_detail = $rate->dest_detail({ 'countrycode' => $countrycode,
-                                         'phonenum'    => $phonenum,
+
+  my( $rate_countrycode, $rate_phonenum );
+  if ( $rateby #this is an interesting regex to parse out 1&2 digit countrycodes
+         =~ /^(2[078]|3[0-469]|4[013-9]|5[1-8]|6[0-6]|7|8[1-469]|9[0-58])(\d*)$/
+       || $rateby =~ /^(\d{3})(\d*)$/
+     )
+  {
+    $rate_countrycode = $1;
+    $rate_phonenum = $2;
+  } else { 
+    return { 'error' => "unparsable rating number: $rateby" };
+  }
+
+  my $rate_detail = $rate->dest_detail({ 'countrycode' => $rate_countrycode,
+                                         'phonenum'    => $rate_phonenum,
                                        });
+  unless ( $rate_detail ) {
+    return { 'error'=>"can't find rate for +$rate_countrycode $rate_phonenum"};
+  }
+
+  unless ( $rate_detail->min_charge > 0 ) {
+    #XXX no charge??  return lots of seconds, a default, 0 or what?
+    #return { 'error' => '0 rate for +$rate_countrycode $rate_phonenum; prepaid service not available" };
+    $return{'seconds'} = 1800; #half hour?!
+    return \%return;
+  }
 
   #XXX granularity?  included minutes?  another day...
-
   $return{'seconds'} = int(60 * $cust_main->balance / $rate_detail->min_charge);
 
   return \%return;
