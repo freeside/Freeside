@@ -381,7 +381,7 @@ sub esn {
   my ( $self, $svc ) = @_;
   my $svcdb = $svc->cust_svc->part_svc->svcdb;
 
-  return sprintf( '%016d', $svc->id ) if $svcdb eq 'svc_external';
+  return sprintf( '%016X', $svc->title ) if $svcdb eq 'svc_external';
   
   my $cust_pkg = $svc->cust_svc->cust_pkg;
   return '' unless $cust_pkg;
@@ -394,7 +394,7 @@ sub esn {
   warn "part_export::soma found multiple ESNs for cust_svc ". $svc->svcnum
     if scalar( @cust_svc ) > 1;
 
-  sprintf( '%016d', $cust_svc[0]->svc_x->id );
+  sprintf( '%016X', $cust_svc[0]->svc_x->title );
 }
 
 
