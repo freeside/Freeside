@@ -4,7 +4,7 @@ use vars qw(@ISA $DEBUG %info );
 use Tie::IxHash;
 use FS::Record qw( dbh str2time_sql ); #qsearch qsearchs );
 #use FS::part_export;
-use FS::part_export::sqlradius;
+use FS::part_export::sqlradius qw(sqlradius_connect);
 #use FS::svc_phone;
 #use FS::export_svc;
 #use Carp qw( cluck );
@@ -97,8 +97,6 @@ sub update_svc {
                                    qw( datasrc username password ) );
 
   my $str2time = str2time_sql( $dbh->{Driver}->{Name} );
-
-
 
   my @fields = qw( radacctid username realm acctsessiontime );
 

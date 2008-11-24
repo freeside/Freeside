@@ -1,6 +1,7 @@
 package FS::part_export::sqlradius;
 
-use vars qw(@ISA $DEBUG %info %options $notes1 $notes2);
+use vars qw(@ISA @EXPORT_OK $DEBUG %info %options $notes1 $notes2);
+use Exporter;
 use Tie::IxHash;
 use FS::Record qw( dbh qsearch qsearchs str2time_sql );
 use FS::part_export;
@@ -9,6 +10,7 @@ use FS::export_svc;
 use Carp qw( cluck );
 
 @ISA = qw(FS::part_export);
+@EXPORT_OK = qw( sqlradius_connect );
 
 $DEBUG = 0;
 
