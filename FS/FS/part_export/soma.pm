@@ -384,7 +384,7 @@ sub esn {
   if ($svcdb eq 'svc_external') {
     my $esn = $svc->title;
     $esn =~ /^\s*([\da-fA-F]{1,16})\s*$/ && ($esn = $1);
-    return sprintf( '%016s' );
+    return sprintf( '%016s', $esn );
   }
   
   my $cust_pkg = $svc->cust_svc->cust_pkg;
