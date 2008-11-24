@@ -39,8 +39,9 @@ use FS::cdr qw(_cdr_date_parser_maker);
     CompletionReason:4:544:547
     OriginationPartition:30:548:577
     DestinationPartition:30:578:607
-    BilledSourceDID:20:608:628
-    VideoCall:1:629:630
+    BilledSourceDID:20:608:627
+    OriginalCall:30:628:657
+    VideoCall:1:658:658
   )],
   'import_fields' => [
     sub {}, #Type:2:1:2
@@ -49,32 +50,33 @@ use FS::cdr qw(_cdr_date_parser_maker);
     _cdr_date_parser_maker('startdate'), #StartTime:19:37:55
     _cdr_date_parser_maker('answerdate'), #AnswerTime:19:56:74
     _cdr_date_parser_maker('enddate'), #EndTime:19:75:93
-    #SourceName:30:94:123
+    sub {}, #SourceName:30:94:123
     'channel', #SourceEndName:30:124:153
     'src', #SourceCallerID:20:154:173
     'clid', #SourceCallerName:30:174:203
-    #DestinationName:30:204:233
+    sub {}, #DestinationName:30:204:233
     'dstchannel', #DestinationEndName:30:234:263
     'dst', #DestCallerID:20:264:283
-    #DestCallerIDInfo:30:284:313
-    #DialedDigits:30:314:343
-    #Billing:30:344:373
-    #AuthCode:30:374:403
-    #CallDirection:1:404:404
-    #ExtendedCall:1:405:405
-    #ExternalCall:1:406:406
+    sub {}, #DestCallerIDInfo:30:284:313
+    sub {}, #DialedDigits:30:314:343
+    sub {}, #Billing:30:344:373
+    sub {}, #AuthCode:30:374:403
+    sub {}, #CallDirection:1:404:404
+    sub {}, #ExtendedCall:1:405:405
+    sub {}, #ExternalCall:1:406:406
     sub { my( $cdr, $duration ) = @_;
           $cdr->duration($duration);
           $cdr->billsec($duration);   }, #'duration', #Duration:9:407:415
-    #SIPCallID:64:416:479
-    #IncomingDigits:30:480:509
-    #OutpulsedDigits:30:510:539
-    #CarrierIdentificationCode:4:540:543
-    #CompletionReason:4:544:547
-    #OriginationPartition:30:548:577
-    #DestinationPartition:30:578:607
-    #BilledSourceDID:20:608:628
-    #VideoCall:1:629:630
+    sub {}, #SIPCallID:64:416:479
+    sub {}, #IncomingDigits:30:480:509
+    sub {}, #OutpulsedDigits:30:510:539
+    sub {}, #CarrierIdentificationCode:4:540:543
+    sub {}, #CompletionReason:4:544:547
+    sub {}, #OriginationPartition:30:548:577
+    sub {}, #DestinationPartition:30:578:607
+    sub {}, #BilledSourceDID:20:608:627
+    sub {}, #OriginalCall:30:628:657
+    sub {}, #VideoCall:1:658:658
   ],
 );
 #      acctid - primary key
