@@ -383,8 +383,8 @@ sub esn {
 
   if ($svcdb eq 'svc_external') {
     my $esn = $svc->title;
-    $esn =~ /^\s*(\d[a-fA-F])+\s*$/ && ($esn = $1);
-    return sprintf( '%016X', $esn ) if $svcdb eq 'svc_external';
+    $esn =~ /^\s*([\da-fA-F]{1,16})\s*$/ && ($esn = $1);
+    return sprintf( '%016s' );
   }
   
   my $cust_pkg = $svc->cust_svc->cust_pkg;
@@ -399,9 +399,9 @@ sub esn {
     if scalar( @cust_svc ) > 1;
 
   my $esn = $cust_svc[0]->svc_x->title;
-  $esn =~ /^\s*(\d[a-fA-F])+\s*$/ && ($esn = $1);
+  $esn =~ /^\s*([\da-fA-F]{1,16})\s*$/ && ($esn = $1);
   
-  sprintf( '%016X', $esn );
+  sprintf( '%016s', $esn );
 }
 
 
