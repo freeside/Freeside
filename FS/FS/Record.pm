@@ -1388,7 +1388,8 @@ sub batch_import {
     eval "use Spreadsheet::ParseExcel;";
     die $@ if $@;
 
-    my $excel = new Spreadsheet::ParseExcel::Workbook->Parse($filename);
+    my $excel = Spreadsheet::ParseExcel::Workbook->new->Parse($filename);
+
     $parser = $excel->{Worksheet}[0]; #first sheet
 
     $count = $parser->{MaxRow} || $parser->{MinRow};
@@ -1430,7 +1431,8 @@ sub batch_import {
 
     } elsif ( $type eq 'xls' ) {
 
-      last if $row > ($parser->{MaxRow} || $parser->{MinRow});
+      last if $row > ($parser->{MaxRow} || $parser->{MinRow})
+           || ! $parser->{Cells}[$row];
 
       my @row = @{ $parser->{Cells}[$row] };
       @columns = map $_->{Val}, @row;

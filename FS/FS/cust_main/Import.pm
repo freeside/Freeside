@@ -190,7 +190,7 @@ sub batch_import {
     eval "use Spreadsheet::ParseExcel;";
     die $@ if $@;
 
-    my $excel = new Spreadsheet::ParseExcel::Workbook->Parse($filename);
+    my $excel = Spreadsheet::ParseExcel::Workbook->new->Parse($filename);
     $parser = $excel->{Worksheet}[0]; #first sheet
 
     $count = $parser->{MaxRow} || $parser->{MinRow};
