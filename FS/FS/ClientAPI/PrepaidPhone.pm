@@ -152,7 +152,7 @@ sub call_time {
   unless ( $rate_detail->min_charge > 0 ) {
     #XXX no charge??  return lots of seconds, a default, 0 or what?
     #return { 'error' => '0 rate for +$rate_countrycode $rate_phonenum; prepaid service not available" };
-    $return{'seconds'} = 1800; #half hour?!
+    #customer wants no default for now# $return{'seconds'} = 1800; #half hour?!
     return \%return;
   }
 
