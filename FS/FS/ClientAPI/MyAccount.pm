@@ -55,6 +55,20 @@ sub _cache {
              } );
 }
 
+sub login_info {
+  my $p = shift;
+
+  my $conf = new FS::Conf;
+
+  my %info = (
+    'phone_login'  => $conf->exists('selfservice_server-phone_login'),
+    'single_domain'=> scalar($conf->config('selfservice_server-single_domain')),
+  );
+
+  return \%info;
+
+}
+
 #false laziness w/FS::ClientAPI::passwd::passwd
 sub login {
   my $p = shift;

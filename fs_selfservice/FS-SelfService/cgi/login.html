@@ -1,29 +1,85 @@
 <HTML><HEAD><TITLE>Login</TITLE></HEAD>
 <BODY BGCOLOR="#e8e8e8"><FONT SIZE=5>Login</FONT><BR><BR>
 <FONT SIZE="+1" COLOR="#ff0000"><%= $error %></FONT>
+
 <FORM ACTION="<%= $self_url %>" METHOD=POST>
 <INPUT TYPE="hidden" NAME="session" VALUE="login">
+
 <TABLE BGCOLOR="#c0c0c0" BORDER=0 CELLSPACING=2 CELLPADDING=0>
+
 <TR>
   <TH ALIGN="right">Username </TH>
   <TD>
-    <INPUT TYPE="text" NAME="username" VALUE="<%= $username %>">
+    <INPUT TYPE="text" NAME="username" VALUE="<%= $username %>"><%= $single_domain ? '@'.$single_domain : '' %>
   </TD>
 </TR>
-<TR>
-  <TH ALIGN="right">Domain </TH>
-  <TD>
-    <INPUT TYPE="text" NAME="domain" VALUE="<%= $domain %>">
-  </TD>
-</TR>
-<!--<INPUT TYPE="hidden" NAME="domain" VALUE="myisp.com">-->
+
+<%=
+if ( $single_domain ) {
+
+  $OUT .= qq(<INPUT TYPE="hidden" NAME="domain" VALUE="$single_domain">);
+
+} else {
+
+  $OUT .= qq(
+    <TR>
+      <TH ALIGN="right">Domain </TH>
+      <TD>
+        <INPUT TYPE="text" NAME="domain" VALUE="$domain">
+      </TD>
+    </TR>
+  );
+
+}
+
+%>
+
 <TR>
   <TH ALIGN="right">Password </TH>
   <TD>
     <INPUT TYPE="password" NAME="password">
   </TD>
 </TR>
+<TR>
+  <TD COLSPAN=2 ALIGN="center"><INPUT TYPE="submit" VALUE="Login"></TD>
+</TR>
 </TABLE>
-<BR><BR><INPUT TYPE="submit" VALUE="Login">
-</FORM></BODY></HTML>
+</FORM>
 
+<%= 
+
+if ( $phone_login ) {
+
+  $OUT .= qq(
+
+    <B>OR</B><BR><BR>
+    
+    <FORM ACTION="$self_url" METHOD=POST>
+    <INPUT TYPE="hidden" NAME="session" VALUE="login">
+    <TABLE BGCOLOR="#c0c0c0" BORDER=0 CELLSPACING=2 CELLPADDING=0>
+    <TR>
+      <TH ALIGN="right">Phone number </TH>
+      <TD>
+        <INPUT TYPE="text" NAME="username" VALUE="$username">
+      </TD>
+    </TR>
+    <INPUT TYPE="hidden" NAME="domain" VALUE="svc_phone">
+    <TR>
+      <TH ALIGN="right">PIN </TH>
+      <TD>
+        <INPUT TYPE="password" NAME="password">
+      </TD>
+    </TR>
+    <TR>
+      <TD COLSPAN=2 ALIGN="center"><INPUT TYPE="submit" VALUE="Login"></TD>
+    </TR>
+    </TABLE>
+    </FORM>
+
+  );
+
+}
+
+%>
+
+</BODY></HTML>

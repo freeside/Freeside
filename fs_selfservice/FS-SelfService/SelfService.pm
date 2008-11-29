@@ -25,6 +25,7 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'passwd'                    => 'passwd/passwd',
   'chfn'                      => 'passwd/passwd',
   'chsh'                      => 'passwd/passwd',
+  'login_info'                => 'MyAccount/login_info',
   'login'                     => 'MyAccount/login',
   'logout'                    => 'MyAccount/logout',
   'customer_info'             => 'MyAccount/customer_info',
@@ -63,7 +64,11 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'call_time_nanpa'           => 'PrepaidPhone/call_time_nanpa',
   'phonenum_balance'          => 'PrepaidPhone/phonenum_balance',
 );
-@EXPORT_OK = ( keys(%autoload), qw( regionselector expselect popselector domainselector didselector) );
+@EXPORT_OK = (
+  keys(%autoload),
+  qw( regionselector regionselector_hashref
+      expselect popselector domainselector didselector )
+);
 
 $ENV{'PATH'} ='/usr/bin:/usr/ucb:/bin';
 $ENV{'SHELL'} = '/bin/sh';
@@ -1189,22 +1194,43 @@ END
   }
   $state_html .= '</SELECT>';
 
-  $state_html .= '</SELECT>';
+  my $country_html = '';
+  if ( scalar( keys %cust_main_county ) > 1 )  {
 
-  my $country_html = qq!<SELECT NAME="${prefix}country" !.
-                     qq!onChange="${prefix}country_changed(this); $param->{'onchange'}">!;
-  my $countrydefault = $param->{default_country} || 'US';
-  foreach my $country (
-    sort { ($b eq $countrydefault) <=> ($a eq $countrydefault) or $a cmp $b }
-      keys %cust_main_county
-  ) {
-    my $selected = $country eq $param->{'selected_country'} ? ' SELECTED' : '';
-    $country_html .= "\n<OPTION$selected>$country</OPTION>"
+    $country_html = qq(<SELECT NAME="${prefix}country" ).
+                    qq(onChange="${prefix}country_changed(this); ).
+                                 $param->{'onchange'}.
+                               '"'.
+                      '>';
+    my $countrydefault = $param->{default_country} || 'US';
+    foreach my $country (
+      sort { ($b eq $countrydefault) <=> ($a eq $countrydefault) or $a cmp $b }
+        keys %cust_main_county
+    ) {
+      my $selected = $country eq $param->{'selected_country'}
+                       ? ' SELECTED'
+                       : '';
+      $country_html .= "\n<OPTION$selected>$country</OPTION>"
+    }
+    $country_html .= '</SELECT>';
+  } else {
+
+    $country_html = qq(<INPUT TYPE="hidden" NAME="${prefix}country" ).
+                            ' VALUE="'. (keys %cust_main_county )[0]. '">';
+
   }
-  $country_html .= '</SELECT>';
 
   ($county_html, $state_html, $country_html);
 
+}
+
+sub regionselector_hashref {
+  my ($county_html, $state_html, $country_html) = regionselector(@_);
+  {
+    'county_html'  => $county_html,
+    'state_html'   => $state_html,
+    'country_html' => $country_html,
+  };
 }
 
 #=item expselect HASHREF | LIST

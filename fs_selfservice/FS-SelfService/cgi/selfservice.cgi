@@ -9,7 +9,7 @@ use Text::Template;
 use HTML::Entities;
 use Date::Format;
 use Number::Format 1.50;
-use FS::SelfService qw( login customer_info edit_info invoice
+use FS::SelfService qw( login_info login customer_info edit_info invoice
                         payment_info process_payment 
                         process_prepay
                         list_pkgs order_pkg signup_info order_recharge
@@ -28,7 +28,9 @@ $form_max = 255;
 $cgi = new CGI;
 
 unless ( defined $cgi->param('session') ) {
-  do_template('login',{});
+  my $login_info = login_info();
+
+  do_template('login', $login_info );
   exit;
 }
 
@@ -52,10 +54,12 @@ if ( $cgi->param('session') eq 'login' ) {
     'password' => $password,
   );
   if ( $rv->{error} ) {
+    my $login_info = login_info();
     do_template('login', {
       'error'    => $rv->{error},
       'username' => $username,
       'domain'   => $domain,
+      %$login_info,
     } );
     exit;
   } else {
@@ -81,7 +85,10 @@ die $@ if $@;
 if ( $result->{error} eq "Can't resume session"
   || $result->{error} eq "Expired session" ) { #ick
 
-  do_template('login',{});
+  my $login_info = login_info();
+  use Data::Dumper;
+  warn Dumper($login_info);
+  do_template('login', $login_info);
   exit;
 }
 
@@ -620,12 +627,16 @@ sub do_template {
   $fill_in->{'selfurl'} = $cgi->self_url;
   $fill_in->{'cgi'} = \$cgi;
 
-  my $template = new Text::Template( TYPE    => 'FILE',
-                                     SOURCE  => "$template_dir/$name.html",
+  my $source = "$template_dir/$name.html";
+  #warn "creating template for $source\n";
+  my $template = new Text::Template( TYPE       => 'FILE',
+                                     SOURCE     => $source,
                                      DELIMITERS => [ '<%=', '%>' ],
-                                     UNTAINT => 1,                    )
+                                     UNTAINT    => 1,
+                                   )
     or die $Text::Template::ERROR;
 
+  #warn "filling in $template with $fill_in\n";
   print $cgi->header( '-expires' => 'now' ),
         $template->fill_in( PACKAGE => 'FS::SelfService::_selfservicecgi',
                             HASH    => $fill_in

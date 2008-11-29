@@ -224,7 +224,7 @@ sucessful authentication, false if no match.
 
 sub check_pin {
   my($self, $check_pin) = @_;
-  $check_pin eq $self->pin;
+  length($self->pin) && $check_pin eq $self->pin;
 }
 
 =item radius_reply
