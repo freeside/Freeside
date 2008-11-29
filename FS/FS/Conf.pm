@@ -1672,6 +1672,13 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'selfservice_server-single_domain',
+    'section'     => '',
+    'description' => 'If specified, only use this one domain for self-service access.',
+    'type'        => 'text',
+  },
+
+  {
     'key'         => 'card_refund-days',
     'section'     => 'billing',
     'description' => 'After a payment, the number of days a refund link will be available for that payment.  Defaults to 120.',
