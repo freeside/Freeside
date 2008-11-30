@@ -1,8 +1,8 @@
 <% include( 'elements/browse.html',
-                 'title'              => 'Internal Users',
-                 'menubar'            => [ 'Internal access groups' => $p.'browse/access_group.html', ],
+                 'title'              => 'Employees',
+                 'menubar'            => [ 'Employee groups' => $p.'browse/access_group.html', ],
                  'html_init'          => $html_init,
-                 'name'               => 'internal users',
+                 'name'               => 'employees',
                  'disableable'        => 1,
                  'disabled_statuspos' => 2,
                  'query'              => { 'table'     => 'access_user',
@@ -22,7 +22,7 @@ die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
 
 my $html_init = 
-  "Internal users have access to the back-office interface.  Typically, this is your employees and contractors.  In a VISP setup, you can also add accounts for your reseller's employees.<BR><BR>It is <B>highly recommended</B> to add a <B>separate account for each person</B> rather than using role accounts.<BR><BR>".
+  "Employees have access to the back-office interface.  Typically, this is your employees and contractors.  In a VISP setup, you can also add accounts for your reseller's employees.<BR><BR>It is <B>highly recommended</B> to add a <B>separate account for each person</B> rather than using role accounts.<BR><BR>".
   qq!<A HREF="${p}edit/access_user.html"><I>Add an internal user</I></A><BR><BR>!;
 
 #false laziness w/access_group.html & agent_type.cgi
