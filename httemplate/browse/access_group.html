@@ -1,8 +1,8 @@
 <% include( 'elements/browse.html',
-                 'title'       => 'Internal Access Groups',
+                 'title'       => 'Employee Groups',
                  'menubar'     => [ 'Internal users' => $p.'browse/access_user.html', ],
                  'html_init'   => $html_init,
-                 'name'        => 'internal access groups',
+                 'name'        => 'employee groups',
                  'query'       => { 'table'     => 'access_group',
                                     'hashref'   => {},
                                     'extra_sql' => 'ORDER BY groupname', #??
@@ -28,8 +28,8 @@
 <%once>
 
 my $html_init = 
-  "Internal access groups control access to the back-office interface.<BR><BR>".
-  qq!<A HREF="${p}edit/access_group.html"><I>Add an internal access group</I></A><BR><BR>!;
+  "Employee groups control access to the back-office interface.<BR><BR>".
+  qq!<A HREF="${p}edit/access_group.html"><I>Add an employee group</I></A><BR><BR>!;
 
 #false laziness w/access_user.html & agent_type.cgi
 my $agents_sub = sub {
