@@ -554,7 +554,7 @@ sub import_formats {
 sub _cdr_min_parser_maker {
   my $field = shift;
   my @fields = ref($field) ? @$field : ($field);
-  @fields = qw( billsec duration ) unless scalar(@fields);
+  @fields = qw( billsec duration ) unless scalar(@fields) && $fields[0];
   return sub {
     my( $cdr, $min ) = @_;
     my $sec = eval { _cdr_min_parse($min) };
