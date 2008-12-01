@@ -233,12 +233,24 @@ sub check {
   $self->calldate( $self->startdate_sql )
     if !$self->calldate && $self->startdate;
 
+  my $conf = new FS::Conf;
+
   unless ( $self->charged_party ) {
-    if ( $self->dst =~ /^(\+?1)?8[02-8]{2}/ ) {
-      $self->charged_party($self->dst);
+
+    if ( $conf->exists('cdr-charged_party-accountcode') && $self->accountcode ){
+
+      $self->charged_party( $self->accountcode );
+
     } else {
-      $self->charged_party($self->src);
+
+      if ( $self->dst =~ /^(\+?1)?8[02-8]{2}/ ) {
+        $self->charged_party($self->dst);
+      } else {
+        $self->charged_party($self->src);
+      }
+
     }
+
   }
 
   #check the foreign keys even?

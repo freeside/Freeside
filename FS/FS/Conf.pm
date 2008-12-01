@@ -2584,6 +2584,14 @@ worry that config_items is freeside-specific and icky.
     'type'        => 'text',
   },
 
+  {
+    'key'         => 'cdr-charged_party-accountcode',
+    'section'     => '',
+    'description' => 'Set the charged_party field of CDRs to the accountcode.',
+    'type'        => 'checkbox',
+  },
+
+
 );
 
 1;
