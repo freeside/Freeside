@@ -69,6 +69,10 @@
 <TR>
   <TH ALIGN="right"><%$r%>Country</TH>
   <TD COLSPAN=5><% include('select-country.html', %select_hash ) %></TD>
+% if ( !$pre ) { 
+  <TD><INPUT TYPE="hidden" NAME="geocode" VALUE="<% $opt{geocode} %>"></TD>
+% } 
+
 </TR>
 
 <TR>

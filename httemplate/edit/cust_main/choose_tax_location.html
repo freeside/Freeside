@@ -1,0 +1,74 @@
+<FORM NAME="choosegeocodeform">
+<CENTER><BR><B>Choose tax location</B><BR><BR>
+<P STYLE="<% $style %>"><% $header %></P>
+
+<SELECT NAME='geocodes' ID='geocodes' STYLE="<% $style %>">
+% foreach my $location (@cust_tax_location) {
+%   my $value = encode_entities(objToJson({ zip => $zip5,
+%                                           map { $_ => $location->$_ }
+%                                             qw ( city state geocode )
+%                                        })
+%                              );
+%   my $content = '';
+%   $content .= $location->$_. '&nbsp;' x ( $max{$_} - length($location->$_) )
+%     foreach qw( city county state );
+%   $content .=   $location->cityflag eq 'I' ? 'Y' : 'N' ;
+%   my $selected = '' ;
+%   if (!$have_selected && lc($location->city) eq lc($city)) {
+%     $selected = 'SELECTED';
+%   }
+  <OPTION VALUE="<% $value %>" STYLE="<% $style %>" <% $selected %>><% $content %>
+% }
+</SELECT><BR><BR>
+
+<TABLE><TR>
+  <TD> <BUTTON TYPE="button" onClick="set_geocode(document.getElementById('geocodes')); document.bottomform.submit();"><IMG SRC="<%$p%>images/tick.png" ALT=""> Set location </BUTTON></TD>
+  <TD><BUTTON TYPE="button" onClick="document.bottomform.submitButton.disabled=false; parent.cClick();"><IMG SRC="<%$p%>images/cross.png" ALT=""> Cancel submission </BUTTON></TD>
+</TR>
+</TABLE>
+
+</CENTER>
+</FORM>
+<%init>
+
+my $conf = new FS::Conf;
+my $have_selected = 0;
+
+my ($data_vendor) = $cgi->param('data_vendor') =~ /^([-\w]+)$/;
+my ($city)  = $cgi->param('city')  =~ /^([\w ]+)$/;
+my ($state) = $cgi->param('state') =~ /^(\w+)$/;
+my ($zip)   = $cgi->param('zip')   =~ /^([-\w]+)$/;
+
+my($zip5, $zip4) = split('-', $zip);
+
+my $hashref = { data_vendor => $data_vendor,
+                #city        => $city,
+                #state       => $state,
+                zip         => $zip5,
+              };
+#my @keys = qw ( city state zip );
+my @keys = qw ( zip );
+my @cust_tax_location = ();
+until ( @cust_tax_location ) {
+  @cust_tax_location = qsearch( 'cust_tax_location', $hashref );
+  last unless scalar(@keys);
+  delete $hashref->{ shift @keys };
+} 
+
+my %max = ( city => 4, county => 6, state => 5);
+foreach my $location (@cust_tax_location) {
+  foreach ( qw( city county state ) ) {
+    my $length = length($location->$_);
+    $max{$_} = ($length > $max{$_}) ? $length : $max{$_};
+  }
+}
+$max{$_}++ foreach qw( city county state );
+
+my $header = '&nbsp;&nbsp;';
+$header .= $_. '&nbsp;' x ( $max{lc($_)} - length($_) )
+  foreach qw( City County State );
+$header .=   "In city?";
+
+my $style = "font-family:monospace;";
+
+</%init>

@@ -72,7 +72,9 @@ if ( $sub eq 'address_standardize' ) {
 
       } else {
 
-        warn "USPS WebTools error: ". $verifier->response. "\n";
+        $return->{$pre.'error'} = "USPS WebTools error: ".
+                                  $verifier->{error}{description};
+
 
       }
 

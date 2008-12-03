@@ -1,0 +1,56 @@
+#!/usr/bin/perl -Tw
+
+use strict;
+use vars qw($opt_c $opt_p $opt_t $opt_d $opt_z $opt_f);
+use vars qw($DEBUG);
+use Getopt::Std;
+use FS::UID qw(adminsuidsetup);
+use FS::Conf;
+use FS::tax_rate;
+use FS::cust_tax_location;
+
+getopts('c:p:t:d:z:f:');
+
+my $user = shift or die &usage;
+my $dbh = adminsuidsetup $user;
+
+my ($format) = $opt_f =~ /^([-\w]+)$/;
+
+my @list = (
+  'CODE',     $opt_c, \&FS::tax_class::batch_import,
+  'PLUS4',    $opt_p, \&FS::cust_tax_location::batch_import,
+  'ZIP',      $opt_z, \&FS::cust_tax_location::batch_import,
+  'TXMATRIX', $opt_t, \&FS::part_pkg_taxrate::batch_import,
+  'DETAIL',   $opt_d, \&FS::tax_rate::batch_import,
+);
+
+my $oldAutoCommit = $FS::UID::AutoCommit;
+local $FS::UID::AutoCommit = 0;
+
+my $error = '';
+
+while(@list) {
+  my ($name, $file, $method) = splice(@list, 0, 3);
+
+  my $fh;
+
+  $file =~ /^([\s\d\w.]+)$/ or die "Illegal filename: $file\n";
+  $file = $1;
+
+  my $f = $format;
+  $f .= '-zip' if $name eq 'ZIP';
+
+  open $fh, '<', $file or die "can't open $name file: $!\n";
+  $error ||= &{$method}( { filehandle => $fh, 'format' => $f, } );
+
+  die "error while processing $file: $error" if $error;
+  close $fh;
+}
+
+if ($error) {
+  $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+}else{
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+}
+
+sub usage { die "Usage:\nimport-tax-rates f FORMAT -c CODEFILE -p PLUS4FILE -z ZIPFILE -t TXMATRIXFILE -d DETAILFILE  user\n\n"; }

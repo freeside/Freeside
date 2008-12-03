@@ -799,7 +799,7 @@ sub csv_from_fixed {
   my $template = join('', map {$total += $_; "A$_"} @$lengths) if $lengths;
 
   my $dir = "%%%FREESIDE_CACHE%%%/cache.$FS::UID::datasrc";
-  my $fh = new File::Temp( TEMPLATE => "CODE.csv.XXXXXXXX",
+  my $fh = new File::Temp( TEMPLATE => "FILE.csv.XXXXXXXX",
                            DIR      => $dir,
                            UNLINK   => 0,
                          ) or return "can't open temp file: $!\n"

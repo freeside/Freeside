@@ -244,7 +244,7 @@ sub batch_import {
       unless ($part_pkg_taxproduct) {
         return "Can't find part_pkg_taxproduct for txmatrix deletion: ".
                join(" ", map { "$_ => ". $hash->{$_} } @fields)
-          if $hash->{'actionflag'} eq 'D';
+          if ($hash->{'actionfield'} && $hash->{'actionflag'} eq 'D');
 
         $part_pkg_taxproduct{'description'} = 
           join(' : ', (map{ $hash->{$_} } qw(groupdesc itemdesc)),
@@ -279,7 +279,9 @@ sub batch_import {
 
         return "Can't find tax class for txmatrix deletion: ".
                join(" ", map { "$_ => ". $hash->{$_} } @fields)
-          if ($hash->{'actionflag'} eq 'D' && !$tax_class && $class ne ':');
+          if ( $hash->{'actionflag'} && $hash->{'actionflag'} eq 'D' &&
+               !$tax_class && $class ne ':'
+             );
 
         delete($hash->{$_}) foreach @{$map{$item}};
       }

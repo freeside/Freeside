@@ -1262,6 +1262,7 @@ sub check {
     || $self->ut_textn('stateid')
     || $self->ut_textn('stateid_state')
     || $self->ut_textn('invoice_terms')
+    || $self->ut_alphan('geocode')
   ;
 
   #barf.  need message catalogs.  i18n.  etc.
@@ -5227,6 +5228,9 @@ Currently this only makes sense for "CCH" as DATA_VENDOR.
 sub geocode {
   my ($self, $data_vendor) = (shift, shift);  #always cch for now
 
+  my $geocode = $self->get('geocode');  #XXX only one data_vendor for geocode
+  return $geocode if $geocode;
+
   my $prefix = ( $conf->exists('tax-ship_address') && length($self->ship_last) )
                ? 'ship_'
                : '';
@@ -5237,7 +5241,6 @@ sub geocode {
   #CCH specific location stuff
   my $extra_sql = "AND plus4lo <= '$plus4' AND plus4hi >= '$plus4'";
 
-  my $geocode = '';
   my @cust_tax_location =
     qsearch( {
                'table'     => 'cust_tax_location', 

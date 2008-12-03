@@ -5,6 +5,7 @@
 ) %>
 
 <% include('/elements/init_overlib.html') %>
+<SCRIPT SRC="<% $fsurl %>elements/ajaxcontentmws.js" TYPE="text/javascript"></SCRIPT>
 
 <% include('/elements/error.html') %>
 
@@ -249,6 +250,8 @@ function bottomfixup(what) {
     'ship_county', 'ship_state', 'ship_zip', 'ship_country',
     'ship_daytime','ship_night', 'ship_fax',
 
+    'geocode',
+
     'select' // XXX key
   );
 
@@ -329,6 +332,8 @@ function update_address(arg) {
 
   var changed  = argsHash['address_standardized'];
   var ship_changed = argsHash['ship_address_standardized'];
+  var error = argsHash['error'];
+  var ship_error = argsHash['ship_error'];
 
   //yay closures
   standardize_address = function () {
@@ -355,7 +360,14 @@ function update_address(arg) {
 
   }
 
-  if ( changed || ship_changed ) {
+  if ( error || ship_error ) {
+
+    var url = "cust_main/choose_tax_location.html?data_vendor=cch-zip;city="+document.bottomform.elements['city'].value+";state="+document.bottomform.elements['state'].value+";zip="+document.bottomform.elements['zip'].value+";";
+    // popup a chooser
+    OLgetAJAX( url, update_geocode, 300 );
+
+
+  } else if ( changed || ship_changed ) {
 
 %   if ( $conf->exists('cust_main-auto_standardize_address') ) {
 
@@ -448,6 +460,26 @@ function update_address(arg) {
 
 }
 
+function update_geocode() {
+
+  //yay closures
+  set_geocode = function (what) {
+
+    //alert(what.options[what.selectedIndex].value);
+    var argsHash = eval('(' + what.options[what.selectedIndex].value + ')');
+    document.bottomform.elements['city'].value = argsHash['city'];
+    document.bottomform.elements['state'].value = argsHash['state'];
+    document.bottomform.elements['zip'].value = argsHash['zip'];
+    document.bottomform.elements['geocode'].value = argsHash['geocode'];
+
+  }
+
+  // popup a chooser
+
+  overlib( OLresponseAJAX, CAPTION, 'Select tax location', STICKY, AUTOSTATUSCAP, CLOSETEXT, '', MIDX, 0, MIDY, 0, DRAGGABLE, WIDTH, 576, HEIGHT, 268, BGCOLOR, '#333399', CGCOLOR, '#333399', TEXTSIZE, 3 );
+
+}
+
 function copyelement(from, to) {
   if ( from == undefined ) {
     to.value = '';
@@ -489,6 +521,8 @@ function copyelement(from, to) {
 %     'ship_address1', 'ship_address2', 'ship_city',
 %     'ship_county', 'ship_state', 'ship_zip', 'ship_country',
 %     'ship_daytime','ship_night', 'ship_fax',
+%     
+%     'geocode',
 %     
 %     'select', #XXX key
 %

@@ -113,14 +113,32 @@ sub check {
   my $error = 
     $self->ut_numbern('custlocationnum')
     || $self->ut_text('data_vendor')
-    || $self->ut_number('zip')
+    || $self->ut_textn('city')
+    || $self->ut_textn('postalcity')
+    || $self->ut_textn('county')
     || $self->ut_text('state')
-    || $self->ut_number('plus4hi')
-    || $self->ut_number('plus4lo')
-    || $self->ut_enum('default', [ '', ' ', 'Y' ] )
-    || $self->ut_number('geocode')
+    || $self->ut_numbern('plus4hi')
+    || $self->ut_numbern('plus4lo')
+    || $self->ut_enum('default', [ '', ' ', 'Y' ] ) # wtf?
+    || $self->ut_enum('cityflag', [ '', 'I', 'O', 'B' ] )
+    || $self->ut_alpha('geocode')
   ;
   return $error if $error;
+
+  #ugh!  cch canada weirdness
+  if ($self->state eq 'CN') {
+    $error = "Illegal cch canadian zip"
+     unless $self->zip =~ /^[A-Z]$/;
+  } else {
+    $error = $self->ut_number('zip', $self->state eq 'CN' ? 'CA' : 'US');
+  }
+  return $error if $error;
+
+  #ugh!  cch canada weirdness
+  return "must specify either city/county or plus4lo/plus4hi"
+    unless ( $self->plus4lo && $self->plus4hi || 
+             ($self->city || $self->state eq 'CN') && $self->county
+           );
 
   $self->SUPER::check;
 }
@@ -138,15 +156,24 @@ sub batch_import {
 
   my @column_lengths = ();
   my @column_callbacks = ();
-  if ( $format eq 'cch-fixed' || $format eq 'cch-fixed-update' ) {
+  if ( $format =~ /^cch-fixed/ ) {
     $format =~ s/-fixed//;
-    push @column_lengths, qw( 5 2 4 4 10 1 );
-    push @column_lengths, 1 if $format eq 'cch-update';
+    my $f = $format;
+    my $update = 0;
+    $f =~ s/-update// && ($update = 1);
+    if ($f eq 'cch') {
+      push @column_lengths, qw( 5 2 4 4 10 1 );
+    } elsif ( $f eq 'cch-zip' ) {
+      push @column_lengths, qw( 5 28 25 2 28 5 1 1 10 1 2 );
+    } else {
+      return "Unknown format: $format";
+    }
+    push @column_lengths, 1 if $update;
   }
 
   my $line;
   my ( $count, $last, $min_sec ) = (0, time, 5); #progressbar
-  if ( $job || scalar(@column_callbacks) ) {
+  if ( $job || scalar(@column_lengths) ) {
     my $error = csv_from_fixed(\$fh, \$count, \@column_lengths);
     return $error if $error;
   }
@@ -161,6 +188,38 @@ sub batch_import {
       my $hash = shift;
 
       $hash->{'data_vendor'} = 'cch';
+
+      if (exists($hash->{actionflag}) && $hash->{actionflag} eq 'D') {
+        delete($hash->{actionflag});
+
+        my $cust_tax_location = qsearchs('cust_tax_location', $hash);
+        return "Can't find cust_tax_location to delete: ".
+               join(" ", map { "$_ => ". $hash->{$_} } @fields)
+          unless $cust_tax_location;
+
+        my $error = $cust_tax_location->delete;
+        return $error if $error;
+
+        delete($hash->{$_}) foreach (keys %$hash);
+      }
+
+      delete($hash->{'actionflag'});
+
+      '';
+      
+    };
+
+  } elsif ( $format eq 'cch-zip' || $format eq 'cch-update-zip' ) {
+    @fields = qw( zip city county state postalcity countyfips countydef default geocode cityflag unique );
+    push @fields, 'actionflag' if $format eq 'cch-update';
+
+    $imported++ if $format eq 'cch-update'; #empty file ok
+    
+    $hook = sub {
+      my $hash = shift;
+
+      $hash->{'data_vendor'} = 'cch-zip';
+      delete($hash->{$_}) foreach qw( countyfips countydef unique );
 
       if (exists($hash->{actionflag}) && $hash->{actionflag} eq 'D') {
         delete($hash->{actionflag});

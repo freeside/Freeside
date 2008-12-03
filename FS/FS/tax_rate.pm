@@ -570,13 +570,21 @@ sub batch_import {
       }
 
       my $actionflag = delete($hash->{'actionflag'});
+
+      $hash->{'taxname'} =~ s/`/'/g; 
+      $hash->{'taxname'} =~ s|\\|/|g;
+
+      return '' if $format eq 'cch';  # but not cch-update
+
       if ($actionflag eq 'I') {
-        $insert{ $hash->{'geocode'}. ':'. $hash->{'taxclassnum'} } = $hash;
+        $insert{ $hash->{'geocode'}. ':'. $hash->{'taxclassnum'} } = { %$hash };
       }elsif ($actionflag eq 'D') {
-        $delete{ $hash->{'geocode'}. ':'. $hash->{'taxclassnum'} } = $hash;
+        $delete{ $hash->{'geocode'}. ':'. $hash->{'taxclassnum'} } = { %$hash };
       }else{
         return "Unexpected action flag: ". $hash->{'actionflag'};
       }
+
+      delete($hash->{$_}) for keys %$hash;
 
       '';
 
@@ -639,6 +647,18 @@ sub batch_import {
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error;
+    }
+
+    if (scalar(keys %tax_rate)) { #inserts only, not updates for cch
+
+      my $tax_rate = new FS::tax_rate( \%tax_rate );
+      $error = $tax_rate->insert;
+
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "can't insert tax_rate for $line: $error";
+      }
+
     }
 
     $imported++;
@@ -765,23 +785,30 @@ sub process_batch {
     local $FS::UID::AutoCommit = 0;
     my $dbh = dbh;
     my $error = '';
+    my $have_location = 0;
 
     my @list = ( 'CODE',     'codefile',  \&FS::tax_class::batch_import,
                  'PLUS4',    'plus4file', \&FS::cust_tax_location::batch_import,
+                 'ZIP',      'zipfile',   \&FS::cust_tax_location::batch_import,
                  'TXMATRIX', 'txmatrix',  \&FS::part_pkg_taxrate::batch_import,
                  'DETAIL',   'detail',    \&FS::tax_rate::batch_import,
                );
     while( scalar(@list) ) {
       my ($name, $file, $import_sub) = (shift @list, shift @list, shift @list);
       unless ($files{$file}) {
+        next if $name eq 'PLUS4';
         $error = "No $name supplied";
+        $error = "Neither PLUS4 nor ZIP supplied"
+          if ($name eq 'ZIP' && !$have_location);
         next;
       }
+      $have_location = 1 if $name eq 'PLUS4';
+      my $fmt = $format. ( $name eq 'ZIP' ? '-zip' : '' );
       my $dir = '%%%FREESIDE_CACHE%%%/cache.'. $FS::UID::datasrc;
       my $filename = "$dir/".  $files{$file};
       open my $fh, "< $filename" or $error ||= "Can't open $name file: $!";
 
-      $error ||= &{$import_sub}({ 'filehandle' => $fh, 'format' => $format }, $job);
+      $error ||= &{$import_sub}({ 'filehandle' => $fh, 'format' => $fmt }, $job);
       close $fh;
       unlink $filename or warn "Can't delete $filename: $!";
     }
@@ -804,12 +831,23 @@ sub process_batch {
 
     my @list = ( 'CODE',     'codefile',  \&FS::tax_class::batch_import,
                  'PLUS4',    'plus4file', \&FS::cust_tax_location::batch_import,
+                 'ZIP',      'zipfile',   \&FS::cust_tax_location::batch_import,
                  'TXMATRIX', 'txmatrix',  \&FS::part_pkg_taxrate::batch_import,
                );
     my $dir = '%%%FREESIDE_CACHE%%%/cache.'. $FS::UID::datasrc;
     while( scalar(@list) ) {
       my ($name, $file, $import_sub) = (shift @list, shift @list, shift @list);
       unless ($files{$file}) {
+        my $vendor = $name eq 'ZIP' ? 'cch' : 'cch-zip';
+        next     # update expected only for previously installed location data
+          if (   ($name eq 'PLUS4' || $name eq 'ZIP')
+               && !scalar( qsearch( { table => 'cust_tax_location',
+                                      hashref => { data_vendor => $vendor },
+                                      select => 'DISTINCT data_vendor',
+                                  } )
+                         )
+             );
+
         $error = "No $name supplied";
         next;
       }
@@ -849,9 +887,10 @@ sub process_batch {
       my ($name, $file, $import_sub) =
         (shift @insert_list, shift @insert_list, shift @insert_list);
 
+      my $fmt = $format. ( $name eq 'ZIP' ? '-zip' : '' );
       open my $fh, "< $file" or $error ||= "Can't open $name file $file: $!";
       $error ||=
-        &{$import_sub}({ 'filehandle' => $fh, 'format' => $format }, $job);
+        &{$import_sub}({ 'filehandle' => $fh, 'format' => $fmt }, $job);
       close $fh;
       unlink $file or warn "Can't delete $file: $!";
     }
@@ -871,9 +910,10 @@ sub process_batch {
       my ($name, $file, $import_sub) =
         (shift @delete_list, shift @delete_list, shift @delete_list);
 
+      my $fmt = $format. ( $name eq 'ZIP' ? '-zip' : '' );
       open my $fh, "< $file" or $error ||= "Can't open $name file $file: $!";
       $error ||=
-        &{$import_sub}({ 'filehandle' => $fh, 'format' => $format }, $job);
+        &{$import_sub}({ 'filehandle' => $fh, 'format' => $fmt }, $job);
       close $fh;
       unlink $file or warn "Can't delete $file: $!";
     }

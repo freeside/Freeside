@@ -648,6 +648,7 @@ sub tables_hashref {
         'paystate', 'varchar', 'NULL', $char_d, '', '', 
         'paytype',  'varchar', 'NULL', $char_d, '', '', 
         'payip',    'varchar', 'NULL', 15, '', '', 
+        'geocode',  'varchar', 'NULL', 20,  '', '',
         'tax',      'char', 'NULL', 1, '', '', 
         'otaker',   'varchar', '',    32, '', '', 
         'refnum',   'int',  '',     '', '', '', 
@@ -754,11 +755,15 @@ sub tables_hashref {
       'columns' => [
         'custlocationnum', 'serial',  '',     '', '', '', 
         'data_vendor',     'varchar', 'NULL', $char_d, '', '', # update source
+        'city',            'varchar', 'NULL', $char_d, '', '',
+        'postalcity',      'varchar', 'NULL', $char_d, '', '',
+        'county',          'varchar', 'NULL', $char_d, '', '',
         'zip',             'char',    '',     5,  '', '', 
         'state',           'char',    '',     2,  '', '', 
-        'plus4hi',         'char',    '',     4,  '', '', 
-        'plus4lo',         'char',    '',     4,  '', '', 
+        'plus4hi',         'char',    'NULL', 4,  '', '', 
+        'plus4lo',         'char',    'NULL', 4,  '', '', 
         'default_location','char',    'NULL', 1,  '', '', # Y = default for zip
+        'cityflag',        'char',    'NULL', 1,  '', '', # I(n)/O(out)/B(oth)/NULL
         'geocode',         'varchar', '',    20,  '', '', 
       ],
       'primary_key' => 'custlocationnum',

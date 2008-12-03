@@ -158,7 +158,7 @@ sub batch_import {
 
   my $line;
   my ( $count, $last, $min_sec ) = (0, time, 5); #progressbar
-  if ( $job || scalar(@column_callbacks) ) {
+  if ( $job || scalar(@column_lengths) ) {
     my $error = csv_from_fixed(\$fh, \$count, \@column_lengths);
     return $error if $error;
   }
