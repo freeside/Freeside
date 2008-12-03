@@ -1,6 +1,6 @@
 <% include("/elements/header.html",'External Service View', menubar(
   ( ( $custnum )
-    ? ( "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
+    ? ( "View this customer (#$display_custnum)" => "${p}view/cust_main.cgi?$custnum",
       )                                                                       
     : ( "Cancel this (unaudited) external service" =>
           "${p}misc/cancel-unaudited.cgi?$svcnum" )
@@ -49,10 +49,11 @@ my $conf = new FS::Conf;
 #false laziness w/all svc_*.cgi
 my $cust_svc = qsearchs( 'cust_svc', { 'svcnum' => $svcnum } );
 my $pkgnum = $cust_svc->getfield('pkgnum');
-my($cust_pkg, $custnum);
+my($cust_pkg, $custnum, $display_custnum);
 if ($pkgnum) {
   $cust_pkg = qsearchs( 'cust_pkg', { 'pkgnum' => $pkgnum } );
   $custnum = $cust_pkg->custnum;
+  $display_custnum = $cust_pkg->cust_main->display_custnum;
 } else {
   $cust_pkg = '';
   $custnum = '';

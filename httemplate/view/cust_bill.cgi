@@ -1,5 +1,5 @@
 <% include("/elements/header.html",'Invoice View', menubar(
-  "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
+  "View this customer (#$display_custnum)" => "${p}view/cust_main.cgi?$custnum",
 )) %>
 
 
@@ -109,6 +109,7 @@ my $cust_bill = qsearchs({
 die "Invoice #$invnum not found!" unless $cust_bill;
 
 my $custnum = $cust_bill->custnum;
+my $display_custnum = $cust_bill->cust_main->display_custnum;
 
 #my $printed = $cust_bill->printed;
 

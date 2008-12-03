@@ -1,6 +1,6 @@
 <% include("/elements/header.html","Whois $domain", menubar(
   ( $custnum
-    ? ( "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
+    ? ( "View this customer (#$display_custnum)" => "${p}view/cust_main.cgi?$custnum",
       )
     : ()
   ),
@@ -16,6 +16,12 @@
 my $svcnum = $cgi->param('svcnum');
 my $custnum = $cgi->param('custnum');
 my $domain = $cgi->param('domain');
+
+my $display_custnum;
+if ( $custnum ) {
+  my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } );
+  $display_custnum = $cust_main->display_custnum;
+}
 
 my $whois = eval { whois($domain) };
   if ( $@ ) {

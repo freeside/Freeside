@@ -11,7 +11,7 @@
 % #it would be nice if the menubar could be hidden for print, but better to
 % # have it available than not, otherwise the user winds up at a dead end
   <% menubar(
-       "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
+       "View this customer (#$display_custnum)" => "${p}view/cust_main.cgi?$custnum",
      )
   %>
   <BR><BR>
@@ -19,7 +19,7 @@
 % } else { 
 
   <% include('/elements/header.html', "Refund Receipt", menubar(
-       "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
+       "View this customer (#$display_custnum)" => "${p}view/cust_main.cgi?$custnum",
        'Print receipt' => $pr_link,
      ))
   %>
@@ -131,6 +131,7 @@ die "Refund #$refundnum not found!" unless $cust_refund;
 my $pr_link = "${p}view/cust_refund.html?link=print;refundnum=$refundnum";
 
 my $custnum = $cust_refund->custnum;
+my $display_custnum = $cust_refund->cust_main->display_custnum;
 
 my $conf = new FS::Conf;
 
