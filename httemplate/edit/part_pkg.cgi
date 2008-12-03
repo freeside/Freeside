@@ -47,7 +47,11 @@
 
                             { type => 'columnstart' },
                             
-                              {field=>'pkg',      type=>'text', size=>40 }, #32
+                              { field     => 'pkg',
+                                type      => 'text',
+                                size      => 40, #32
+                                maxlength => 60,
+                              },
                               {field=>'comment',  type=>'text', size=>40 }, #32
                               {field=>'classnum', type=>'select-pkg_class' },
                               {field=>'disabled', type=>'checkbox', value=>'Y'},
