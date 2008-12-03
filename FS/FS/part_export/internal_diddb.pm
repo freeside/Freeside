@@ -25,7 +25,7 @@ sub get_dids {
   my $self = shift;
   my %opt = ref($_[0]) ? %{$_[0]} : @_;
 
-  my %hash = ( 'countrycode' => $self->option('countrycode'),
+  my %hash = ( 'countrycode' => ( $self->option('countrycode') || '1' ),
                'exportnum'   => $self->exportnum,
                'svcnum'      => '',
              );
@@ -80,7 +80,7 @@ sub _export_insert   { #link phone_avail to svcnum
   my( $npa, $nxx, $station ) = ($1, $2, $3);
 
   my $phone_avail = qsearchs('phone_avail', {
-    'countrycode' => $self->option('countrycode'),
+    'countrycode' => ( $self->option('countrycode') || '1' ),
     'exportnum'   => $self->exportnum,
     'svcnum'      => '',
     'npa'         => $npa,
@@ -105,7 +105,7 @@ sub _export_delete   { #unlink phone_avail from svcnum
   my( $npa, $nxx, $station ) = ($1, $2, $3);
 
   my $phone_avail = qsearchs('phone_avail', {
-    'countrycode' => $self->option('countrycode'),
+    'countrycode' => ( $self->option('countrycode') || '1'),
     'exportnum'   => $self->exportnum,
     'svcnum'      => $svc_phone->svcnum,
     #these too?
