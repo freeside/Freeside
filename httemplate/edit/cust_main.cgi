@@ -5,7 +5,6 @@
 ) %>
 
 <% include('/elements/init_overlib.html') %>
-<SCRIPT SRC="<% $fsurl %>elements/ajaxcontentmws.js" TYPE="text/javascript"></SCRIPT>
 
 <% include('/elements/error.html') %>
 
