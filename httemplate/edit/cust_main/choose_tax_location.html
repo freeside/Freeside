@@ -50,7 +50,10 @@ my $hashref = { data_vendor => $data_vendor,
 my @keys = qw ( zip );
 my @cust_tax_location = ();
 until ( @cust_tax_location ) {
-  @cust_tax_location = qsearch( 'cust_tax_location', $hashref );
+  @cust_tax_location = qsearch({ table    => 'cust_tax_location',
+                                 hashref  =>  $hashref,
+                                 order_by =>  'LIMIT 50',
+                              });
   last unless scalar(@keys);
   delete $hashref->{ shift @keys };
 } 
