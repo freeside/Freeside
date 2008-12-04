@@ -140,9 +140,9 @@ sub queue_statuschange {
 
   my $queue = new FS::queue {
     'svcnum' => $svc->svcnum,
-    'job'    => 'FS::part_export::soma::$method',
+    'job'    => 'FS::part_export::soma::statuschange',
   };
-  my $error = $queue->insert( $self->option('url'), %args );
+  my $error = $queue->insert( %args );
 
   return $error if $error;
 
@@ -311,11 +311,13 @@ sub _queueable_suspend {
       next unless $application->definitionId == $appid;
 
       $instance_id = $application->instanceId;
-      $app_def = $app_catalog->getApplicationDef($appid, $cpeid);
-      @attr_def = grep { $_->internalName eq 'status' } @{$app_def->attributes};
+      my $app_def =
+        $soma_objects->{AppCatalog}->getApplicationDef($appid, $cpeid);
+      my @attr_def = grep { $_->internalName eq 'status' }
+                          @{$app_def->attributes};
 
       foreach my $attribute ( @{$application->attributes} ) {
-        next unless $attibute->definitionId == $attr_def[0]->definitionId;
+        next unless $attribute->definitionId == $attr_def[0]->definitionId;
         $attribute->{value} = 'S';  
 
         $soma_objects->{Applications}->setAppAttribute( $cpeid,
@@ -351,11 +353,13 @@ sub _queueable_unsuspend {
       next unless $application->definitionId == $appid;
 
       $instance_id = $application->instanceId;
-      $app_def = $app_catalog->getApplicationDef($appid, $cpeid);
-      @attr_def = grep { $_->internalName eq 'status' } @{$app_def->attributes};
+      my $app_def =
+        $soma_objects->{AppCatalog}->getApplicationDef($appid, $cpeid);
+      my @attr_def = grep { $_->internalName eq 'status' }
+                     @{$app_def->attributes};
 
-      foreach my $attribute ( @{$applicate->attributes} ) {
-        next unless $attibute->definitionId == $attr_def[0]->definitionId;
+      foreach my $attribute ( @{$application->attributes} ) {
+        next unless $attribute->definitionId == $attr_def[0]->definitionId;
         $attribute->{value} = 'E';  
 
         $soma_objects->{Applications}->setAppAttribute( $cpeid,
