@@ -4,6 +4,6 @@
 <%init>
 
 my @files = map "overlibmws$_", ( '', qw( _iframe _draggable _crossframe ) );
-push @files, 'iframecontentmws';
+push @files, map { "${_}contentmws" } qw( iframe ajax );
 
 </%init>
