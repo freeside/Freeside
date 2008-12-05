@@ -872,7 +872,9 @@ sub has_taxproduct {
   my $self = shift;
 
   $self->taxproductnum ||
-  scalar(grep { $_ =~/^usage_taxproductnum_/ } keys %{ {$self->options} } )
+  scalar( grep { $_ =~/^usage_taxproductnum_/ && $self->option($_) } 
+          keys %{ {$self->options} }
+  )
 
 }
 
