@@ -235,8 +235,7 @@ sub taxline {
       unless $part_pkg->recurtax =~ /^Y$/i
           || $self->recurtax =~ /^Y$/i;
 
-    return [ $name, 0 ]
-      unless $taxable_charged;
+    next unless $taxable_charged;
   
     if ( $self->exempt_amount && $self->exempt_amount > 0 ) {
       #my ($mon,$year) = (localtime($cust_bill_pkg->sdate) )[4,5];
