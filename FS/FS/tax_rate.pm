@@ -294,6 +294,7 @@ Returns the human understandable value associated with the basetype column
                    '11' => 'gross profits',
                    '12' => 'tariff rate',
                    '14' => 'account',
+                   '15' => 'prior year gross receipts',
 );
 
 sub basetype_name {
@@ -380,9 +381,11 @@ sub taxline {
       '" threshold';  # "texas" tax
   }
 
+  # we treat gross revenue as gross receipts and expect the tax data
+  # to DTRT (i.e. tax on tax rules)
   if ($self->basetype != 0 && $self->basetype != 1 &&
       $self->basetype != 6 && $self->basetype != 7 &&
-      $self->basetype != 14
+      $self->basetype != 8 && $self->basetype != 14
   ) {
     return qq!fatal: can't (yet) handle tax with "!. $self->basetype_name. 
       '" basis';
