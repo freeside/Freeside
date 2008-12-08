@@ -8,6 +8,7 @@ use Date::Parse;
 use Date::Format;
 use Time::Local;
 use FS::UID qw( dbh );
+use FS::Conf;
 use FS::Record qw( qsearch qsearchs );
 use FS::cdr_type;
 use FS::cdr_calltype;
@@ -415,15 +416,23 @@ sub _convergent_format {
 
 my %export_names = (
   'convergent'      => {},
-  'simple'  => { 'name'           => 'Simple',
-                 'invoice_header' =>
-                     "Date,Time,Name,Destination,Duration,Price",
-               },
-  'simple2' => { 'name'           => 'Simple with source',
-                 'invoice_header' =>
-                     #"Date,Time,Name,Called From,Destination,Duration,Price",
-                     "Date,Time,Called From,Destination,Duration,Price",
-               },
+  'simple'  => {
+    'name'           => 'Simple',
+    'invoice_header' => "Date,Time,Name,Destination,Duration,Price",
+  },
+  'simple2' => {
+    'name'           => 'Simple with source',
+    'invoice_header' => "Date,Time,Called From,Destination,Duration,Price",
+                       #"Date,Time,Name,Called From,Destination,Duration,Price",
+  },
+  'default' => {
+    'name'           => 'Default',
+    'invoice_header' => 'Date,Time,Duration,Price,Number,Destination',
+  },
+  'source_default' => {
+    'name'           => 'Default with source',
+    'invoice_header' => 'Caller,Date,Time,Duration,Price,Number,Destination',
+  },
 );
 
 my %export_formats = (
@@ -459,7 +468,33 @@ my %export_formats = (
     sub { sprintf('%.2fm', shift->billsec / 60 ) },  #DURATION
     sub { sprintf('%.3f', shift->upstream_price ) }, #PRICE
   ],
+  'default' => [
+
+    #DATE
+    sub { time2str('%D', shift->calldate_unix ) },
+          # #time2str("%Y %b %d - %r", $cdr->calldate_unix ),
+
+    #TIME
+    sub { time2str('%r', shift->calldate_unix ) },
+          # time2str("%c", $cdr->calldate_unix),  #XXX this should probably be a config option dropdown so they can select US vs- rest of world dates or whatnot
+
+    #DURATION
+    sub { my($cdr, %opt) = @_;
+          $opt{minutes}. ( $opt{granularity} ? 'm' : ' call' );
+        },
+
+    #PRICE
+    sub { my($cdr, %opt) = @_; $opt{money_char}. $opt{charge}; },
+
+    #DEST ("Number")
+    sub { my($cdr, %opt) = @_; $opt{pretty_dst} || $cdr->dst; },
+
+    #REGIONNAME ("Destination")
+    sub { my($cdr, %opt) = @_; $opt{dst_regionname}; },
+
+  ],
 );
+$export_formats{'source_default'} = [ 'src', @{ $export_formats{'default'} } ];
 
 sub downstream_csv {
   my( $self, %opt ) = @_;
@@ -467,13 +502,17 @@ sub downstream_csv {
   my $format = $opt{'format'}; # 'convergent';
   return "Unknown format $format" unless exists $export_formats{$format};
 
+  #my $conf = new FS::Conf;
+  #$opt{'money_char'} ||= $conf->config('money_char') || '$';
+  $opt{'money_char'} ||= FS::Conf->new->config('money_char') || '$';
+
   eval "use Text::CSV_XS;";
   die $@ if $@;
   my $csv = new Text::CSV_XS;
 
   my @columns =
     map {
-          ref($_) ? &{$_}($self) : $self->$_();
+          ref($_) ? &{$_}($self, %opt) : $self->$_();
         }
     @{ $export_formats{$format} };
 

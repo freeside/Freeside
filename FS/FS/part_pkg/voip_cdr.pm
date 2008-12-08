@@ -117,6 +117,7 @@ tie my %temporalities, 'Tie::IxHash',
     'output_format' => { 'name' => 'Simple output format',
                          'type' => 'select',
                          'select_options' => { FS::cdr::invoice_formats() },
+                         'default'        => 'default', #XXX test
                        },
 
     'usage_section' => { 'name' => 'Section in which to place separate usage charges',
@@ -197,8 +198,11 @@ sub calc_recur {
 
   my $downstream_cdr = '';
 
-  my $output_format = $self->option('output_format', 'Hush!')
-                      || 'simple';
+  my $rating_method = $self->option('rating_method') || 'prefix';
+
+  my $output_format =
+    $self->option('output_format', 'Hush!')
+    || ( $rating_method eq 'upstream_simple' ? 'simple' : 'default' );
 
   eval "use Text::CSV_XS;";
   die $@ if $@;
@@ -224,10 +228,7 @@ sub calc_recur {
       my $charge = '';
       my $classnum = '';
       my @call_details = ();
-      if ( $self->option('rating_method') eq 'prefix'
-           || ! $self->option('rating_method')
-         )
-      {
+      if ( $rating_method eq 'prefix' ) {
 
         #should have some better way of checking these options than a long
         #if-else tree...
@@ -343,7 +344,7 @@ sub calc_recur {
 
         }
 
-      } elsif ( $self->option('rating_method') eq 'upstream' ) {
+      } elsif ( $rating_method eq 'upstream' ) { #XXX this was convergent, not currently used.  very much becoming the odd one out. remove?
 
         if ( $cdr->cdrtypenum == 1 ) { #rate based on upstream rateid
 
@@ -374,7 +375,7 @@ sub calc_recur {
 
         }
 
-      } elsif ( $self->option('rating_method') eq 'upstream_simple' ) {
+      } elsif ( $rating_method eq 'upstream_simple' ) {
 
         #XXX $charge = sprintf('%.2f', $cdr->upstream_price);
         $charge = sprintf('%.3f', $cdr->upstream_price);
@@ -383,8 +384,7 @@ sub calc_recur {
         @call_details = ($cdr->downstream_csv( 'format' => $output_format ));
 
       } else {
-        die "don't know how to rate CDRs using method: ".
-            $self->option('rating_method'). "\n";
+        die "don't know how to rate CDRs using method: $rating_method\n";
       }
 
       ###
@@ -437,12 +437,13 @@ sub calc_recur {
           warn "  (rate region $rate_region)\n" if $DEBUG;
 
           @call_details = (
-            #time2str("%Y %b %d - %r", $cdr->calldate_unix ),
-            time2str("%c", $cdr->calldate_unix),  #XXX this should probably be a config option dropdown so they can select US vs- rest of world dates or whatnot
-            $granularity ? $minutes.'m' : $minutes.' call',
-            '$'.$charge,
-            $pretty_destnum,
-            $rate_region->regionname,
+           $cdr->downstream_csv( 'format'         => $output_format,
+                                 'granularity'    => $granularity,
+                                 'minutes'        => $minutes,
+                                 'charge'         => $charge,
+                                 'pretty_dst'     => $pretty_destnum,
+                                 'dst_regionname' => $rate_region->regionname,
+                               )
           );
 
           $classnum = $rate_detail->classnum;
@@ -452,9 +453,11 @@ sub calc_recur {
         if ( $charge > 0 ) {
           #just use FS::cust_bill_pkg_detail objects?
           my $call_details;
-          if ( $self->option('rating_method') eq 'upstream_simple' ) {
+
+          #if ( $self->option('rating_method') eq 'upstream_simple' ) {
+          if ( scalar(@call_details) == 1 ) {
             $call_details = [ 'C', $call_details[0], $charge, $classnum ];
-          }else{
+          } else { #only used for $rating_method eq 'upstream' now
             $csv->combine(@call_details);
             $call_details = [ 'C', $csv->string, $charge, $classnum ];
           }
@@ -479,8 +482,8 @@ sub calc_recur {
 
   } # $cust_svc
 
-  unshift @$details, [ 'C', FS::cdr::invoice_header( $output_format) ]
-    if (@$details && $self->option('rating_method') eq 'upstream_simple' );
+  unshift @$details, [ 'C', FS::cdr::invoice_header($output_format) ]
+    if @$details && $rating_method ne 'upstream';
 
   if ( $spool_cdr && length($downstream_cdr) ) {
 
