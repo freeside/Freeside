@@ -287,10 +287,10 @@ sub details {
                       foreach ($csv->fields) {
                         $result .= ' & ' if $column > 1;
                         if ($column > 6) {                     # KLUDGE ALERT!
-                          $result .= '\multicolumn{1}{l}{\small{'.
+                          $result .= '\multicolumn{1}{l}{\scriptsize{'.
                                      &$escape_function($_). '}}';
                         }else{
-                          $result .= '\small{'.  &$escape_function($_). '}';
+                          $result .= '\scriptsize{'.  &$escape_function($_). '}';
                         }
                         $column++;
                       }
