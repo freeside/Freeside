@@ -526,7 +526,7 @@ sub tables_hashref {
         'amount',  @money_typen, '', '', 
         'format',  'char', 'NULL', 1, '', '',
         'classnum', 'char', 'NULL', 1, '', '',
-        'detail',  'varchar', '', $char_d, '', '', 
+        'detail',  'varchar', '', 255, '', '', 
       ],
       'primary_key' => 'detailnum',
       'unique' => [],
