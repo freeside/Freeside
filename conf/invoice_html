@@ -154,7 +154,10 @@
             foreach my $ext_desc ( @{$line->{'ext_description'} } ) {
               $OUT .=
                 '<tr class="invoice_extdesc">'.
-                  '<td align="left">&nbsp;&nbsp;'. $ext_desc. '</td>'.
+                  '<td align="left" '.
+                       ( $ext_desc =~ /<\/?TD>/i ? '' : 'colspan=99' ). '>'.
+                    '&nbsp;&nbsp;'. $ext_desc.
+                  '</td>'.
                 '</tr>'
             }
             $OUT .= '</table></td><td></td></tr>';
