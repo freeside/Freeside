@@ -1339,8 +1339,8 @@ sub process_batch_import {
     warn "can't parse file type from filename $file; defaulting to CSV";
     $type = 'csv';
   }
-  $type = 'csv' unless $type eq 'xls';
-    $opt->{'default_csv'} && $type ne 'xls';
+  $type = 'csv'
+    if $opt->{'default_csv'} && $type ne 'xls';
 
   my $error =
     FS::Record::batch_import( {
