@@ -1,13 +1,53 @@
-<% include("/elements/header.html", $inventory_class->classname. 's') %>
+<% include("/elements/header.html", PL($inventory_class->classname)) %>
 
-<FORM ACTION="process/inventory_item-import.html" METHOD="POST" ENCTYPE="multipart/form-data">
-<INPUT TYPE="hidden" NAME="classnum" VALUE="<% $classnum %>">
-Import a file containing <% $inventory_class->classname %>s, one per line.<BR><BR>
+Import a file containing <% PL($inventory_class->classname) %>, one per line.
+<BR><BR>
 
-Filename: <INPUT TYPE="file" NAME="filename"><BR><BR>
+<% include( '/elements/form-file_upload.html',
+              'name'      => 'InventoryItemImportForm',
+              'action'    => 'process/inventory_item-import.html',
+              'num_files' => 1,
+              #'fields'    => [ 'format', 'itembatch', 'classnum', ],
+              'fields'    => [ 'format', 'classnum', ],
+              'message'   => 'Inventory import successful',
+              #XXX redirect via $itembatch?  or just back to class browse?
+              'url'       => $p."search/inventory_item.html?classnum=$classnum;avail=1",
+          )
+%>
 
-<INPUT TYPE="submit" VALUE="Upload">
+<% &ntable("#cccccc", 2) %>
+
+  <INPUT TYPE="hidden" NAME="format" VALUE="default">
+
+  <INPUT TYPE="hidden" NAME="classnum" VALUE="<% $classnum %>">
+
+%#  <INPUT TYPE="hidden" NAME="itembatch" VALUE="<% $itembatch %>">
+
+  <% include( '/elements/file-upload.html',
+                'field' => 'file',
+                'label' => 'Filename',
+            )
+  %>
+
+  <TR>
+    <TD COLSPAN=2 ALIGN="center" STYLE="padding-top:6px">
+      <INPUT TYPE    = "submit"
+             ID      = "submit"
+             VALUE   = "Import file"
+             onClick = "document.InventoryItemImportForm.submit.disabled=true;"
+      >
+    </TD>
+  </TR>
+
+</TABLE>
+
 </FORM>
+
+<BR>
+
+Upload file can be a text file or Excel spreadsheet.  If an Excel spreadsheet,
+ should have an .XLS extension.
+<BR><BR>
 
 <% include('/elements/footer.html') %>
 
@@ -19,5 +59,9 @@ die "access denied"
 $cgi->param =~ /^(\d+)$/ or errorpage("illegal classnum");
 my $classnum = $1;
 my $inventory_class = qsearchs('inventory_class', { 'classnum' => $classnum } );
+
+#my $conf = new FS::Conf;
+#my $itembatch =
+#  time2str('webimport-%Y/%m/%d-%T'. "-$$-". rand() * 2**32, time);
 
 </%init>

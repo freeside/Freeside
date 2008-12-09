@@ -129,61 +129,25 @@ sub cust_svc {
 
 =back
 
-=head1 CLASS METHODS
+=head1 SUBROUTINES
 
 =over 4
 
-=item batch_import
+=item process_batch_import
 
 =cut
 
-sub batch_import {
-  my $param = shift;
+sub process_batch_import {
+  my $job = shift;
 
-  my $fh = $param->{filehandle};
+  my $opt = { 'table'   => 'inventory_item',
+              #'params'  => [ 'itembatch', 'classnum', ],
+              'params'  => [ 'classnum', ],
+              'formats' => { 'default' => [ 'item' ] },
+              'default_csv' => 1,
+            };
 
-  my $imported = 0;
-
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
-
-  my $oldAutoCommit = $FS::UID::AutoCommit;
-  local $FS::UID::AutoCommit = 0;
-  my $dbh = dbh;
-  
-  my $line;
-  while ( defined($line=<$fh>) ) {
-
-    chomp $line;
-
-    my $inventory_item = new FS::inventory_item {
-      'classnum' => $param->{'classnum'},
-      'item'     => $line,
-    };
-
-    my $error = $inventory_item->insert;
-
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
-
-      #or just skip?
-      #next;
-    }
-
-    $imported++;
-  }
-
-  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-
-  #might want to disable this if we skip records for any reason...
-  return "Empty file!" unless $imported;
-
-  '';
+  FS::Record::process_batch_import( $job, $opt, @_ );
 
 }
 
