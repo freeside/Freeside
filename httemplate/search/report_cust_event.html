@@ -8,7 +8,7 @@
     <INPUT TYPE="hidden" NAME="failed" VALUE="<% $cgi->param('failed') ? 1 : 0 %>">
     <TABLE>
 
-      <% include( '/elements/tr-select-agent.html' ) %>
+      <% include( '/elements/tr-select-agent.html', 'disable_empty'=>0 ) %>
 
       <!--<TR>
         <TD ALIGN="right">Customer type</TD>

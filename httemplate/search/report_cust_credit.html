@@ -12,8 +12,9 @@
   %>
 
   <% include( '/elements/tr-select-agent.html',
-                 'curr_value' => scalar( $cgi->param('agentnum') ),
-                 'label'      => 'for agent: ',
+                 'curr_value'    => scalar( $cgi->param('agentnum') ),
+                 'label'         => 'for agent: ',
+                 'disable_empty' => 0,
              )
   %>
 

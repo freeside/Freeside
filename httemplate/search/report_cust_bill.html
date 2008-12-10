@@ -6,8 +6,9 @@
 <TABLE BGCOLOR="#cccccc" CELLSPACING=0
 
   <% include( '/elements/tr-select-agent.html',
-                 'curr_value' => scalar( $cgi->param('agentnum') ),
-                 'label'      => 'Invoices for agent: ',
+                 'curr_value'    => scalar( $cgi->param('agentnum') ),
+                 'label'         => 'Invoices for agent: ',
+                 'disable_empty' => 0,
              )
   %>
   <% include( '/elements/tr-input-beginning_ending.html' ) %>
