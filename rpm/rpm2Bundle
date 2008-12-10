@@ -11,9 +11,15 @@ my $verbose = 0;
 # These are Perl dependencies that should be ignored/suppressed
 my %suppress;
 
-foreach (qw/strict subs vars FS/) {
+foreach (qw/strict subs vars base lib warnings FS/) {
 	$suppress{$_} = $_;
 }
+
+# These are Perl modules corresponding to RPM names.
+# Add entries when the mapping isn't simply "remove leading 'perl-' and replace - with ::"
+my %rpm2mod=(
+	'DBD-MySQL' => 'DBD::mysql',
+);
 
 ## These are root packages that shouldn't be cited multiple times
 ## Should figure this out with CPAN
@@ -39,19 +45,25 @@ foreach my $rawrpm (@ARGV) {
 	my %mods;
 
 	foreach (@deps) {
-		if (/^perl\((.*)\)\s*((>=|=|<=)\s+([\d\.]+))?$/
-		 || /^perl-(.*)\s*((>=|=|<=)\s+([\d\.]+))?$/) {
-			next if exists($suppress{$1});
-			my @parts = split /::/, $1;
+		if (/^perl\((.*?)\)\s*((>=|=|<=)\s+([\d\.]+))?$/
+		 || /^perl-(.*?)\s*((>=|=|<=)\s+([\d\.]+))?$/) {
+			my ($mod, $rel, $ver) = ($1, $3, $4);
+			if (/^perl-/) {
+				print STDERR "\"$mod\"\n" if $verbose;
+				$mod = $rpm2mod{$mod} if exists($rpm2mod{$mod});
+				$mod =~ s/-/::/g
+			}
+			next if exists($suppress{$mod});
+			my @parts = split /::/, $mod;
 			if (scalar @parts > 1) {
 				next if exists($suppress{$parts[0]});
 			}
 			if ($verbose) {
-				print STDERR "$1";
-				print STDERR " $3 $4" if $4;
+				print STDERR "$mod";
+				print STDERR " $rel $ver" if $ver;
 				print STDERR "\n";
 			}
-			$mods{$1} = $4 ? $4 : undef;
+			$mods{$mod} = $ver ? $ver : undef; # Should also save $rel
 		}
 	}
 
