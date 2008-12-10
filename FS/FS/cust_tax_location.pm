@@ -221,6 +221,8 @@ sub batch_import {
       $hash->{'data_vendor'} = 'cch-zip';
       delete($hash->{$_}) foreach qw( countyfips countydef unique );
 
+      $hash->{'cityflag'} = s/ //g;
+
       if (exists($hash->{actionflag}) && $hash->{actionflag} eq 'D') {
         delete($hash->{actionflag});
 
