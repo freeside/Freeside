@@ -1,15 +1,14 @@
 %{!?_initrddir:%define _initrddir /etc/rc.d/init.d}
 %{!?version:%define version 1.9}
-%{!?release:%define release 3}
+%{!?release:%define release 4}
 
 Summary: Freeside ISP Billing System
 Name: freeside
 Version: %{version}
 Release: %{release}
-License: AGPL
+License: AGPLv3
 Group: Applications/Internet
 URL: http://www.sisd.com/freeside/
-Packager: Richard Siddall <richard.siddall@elirion.net>
 Vendor: Freeside
 Source: http://www.sisd.com/freeside/%{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -25,7 +24,7 @@ Requires: perl-Fax-Hylafax-Client
 %define freeside_export		/etc/freeside
 %define freeside_lock		/var/lock/freeside
 %define freeside_log		/var/log/freeside
-%define freeside_socket         /etc/freeside
+%define freeside_socket		/etc/freeside
 %define	rt_enabled		0
 %define apache_conffile		/etc/httpd/conf/httpd.conf
 %define	apache_confdir		/etc/httpd/conf.d
@@ -47,7 +46,7 @@ Prefix: %{freeside_document_root}
 Requires: mod_ssl
 Requires: perl-Apache-DBI
 Conflicts: %{name}-apacheasp
-Provides: %{name}-frontend
+Provides: %{name}-frontend = %{version}
 BuildArch: noarch
 
 %description mason
@@ -61,7 +60,7 @@ Requires: perl-DBI
 Requires: perl-DBD-Pg >= 1.32
 Requires: %{name}
 Conflicts: %{name}-mysql
-Provides: %{name}-backend
+Provides: %{name}-backend = %{version}
 
 %description postgresql
 This package includes the PostgreSQL database backend for %{name}.
@@ -75,7 +74,7 @@ Requires: perl-DBI
 Requires: perl-DBD-MySQL
 Requires: %{name}
 Conflicts: %{name}-postgresql
-Provides: %{name}-backend
+Provides: %{name}-backend = %{version}
 
 %description mysql
 This package includes the MySQL database backend for %{name}.
@@ -123,9 +122,9 @@ This package installs the sample PHP scripts for the self-service interface for 
 For security reasons, it is set to conflict with %{name} as you should not install the billing system and self-service interface on the same computer.
 
 %prep
-%setup
+%setup -q
 %{__rm} bin/pod2x # Only useful to Ivan Kohler now
-perl -pi -e 's|/usr/local/bin|%{buildroot}%{_bindir}|g' FS/Makefile.PL
+perl -pi -e 's|/usr/local/bin|%{_bindir}|g' FS/Makefile.PL
 perl -pi -e 's|\s+-o\s+freeside\s+| |g' Makefile
 perl -ni -e 'print if !/\s+chown\s+/;' Makefile
 
@@ -140,7 +139,10 @@ perl -pi -e 's|lock_file\s*=\s*"/usr/local/freeside|lock_file = "%{freeside_lock
 # Override find-requires/find-provides to supplement Perl requires for HTML::Mason file handler.pl
 cat << \EOF > %{name}-req
 #!/bin/sh
-tee %{_tmppath}/filelist | %{_rpmlibdir}/rpmdeps --requires | grep -v -E '^perl\(the\)$' | sort -u
+tee %{_tmppath}/filelist | %{_rpmlibdir}/rpmdeps --requires | grep -v -E '^perl\(the\)$' \
+| grep -v -E '^perl\((lib|strict|vars|RT)\)$' \
+| grep -v -E '^perl\(RT::' \
+| sort -u
 grep handler.pl %{_tmppath}/filelist | xargs %{_rpmlibdir}/perldeps.pl --requires \
 | grep -v -E '^perl\((lib|strict|vars|RT)\)$' \
 | grep -v -E '^perl\(RT::' \
@@ -161,10 +163,10 @@ touch htmlman
 
 #perl -pi -e 's|%%%%%%VERSION%%%%%%|%{version}|g' FS/bin/*
 cd FS
-CFLAGS="$RPM_OPT_FLAGS" perl Makefile.PL PREFIX=$RPM_BUILD_ROOT%{_prefix} SITELIBEXP=$RPM_BUILD_ROOT%{perl_sitelib} SITEARCHEXP=$RPM_BUILD_ROOT%{perl_sitearch}
+CFLAGS="$RPM_OPT_FLAGS" perl Makefile.PL PREFIX=$RPM_BUILD_ROOT%{_prefix} SITELIBEXP=$RPM_BUILD_ROOT%{perl_sitelib} SITEARCHEXP=$RPM_BUILD_ROOT%{perl_sitearch} INSTALLSCRIPT=$RPM_BUILD_ROOT%{_bindir}
 %{__make} OPTIMIZE="$RPM_OPT_FLAGS"
 cd ..
-%{__make} perl-modules VERSION='%{version}-%{release}' FREESIDE_CACHE=%{freeside_cache} FREESIDE_CONF=%{freeside_conf} FREESIDE_EXPORT=%{freeside_export} FREESIDE_LOCK=%{freeside_lock} FREESIDE_LOG=%{freeside_log}
+%{__make} perl-modules VERSION='%{version}-%{release}' RT_ENABLED=%{rt_enabled} FREESIDE_CACHE=%{freeside_cache} FREESIDE_CONF=%{freeside_conf} FREESIDE_EXPORT=%{freeside_export} FREESIDE_LOCK=%{freeside_lock} FREESIDE_LOG=%{freeside_log}
 touch perl-modules
 
 cd fs_selfservice/FS-SelfService
@@ -238,10 +240,10 @@ done
 # Make a list of the Mason files before adding self-service, etc.
 echo "%attr(-,freeside,freeside) %{freeside_conf}/handler.pl" > %{name}-%{version}-%{release}-mason-filelist
 find $RPM_BUILD_ROOT%{freeside_document_root} -type f -print | \
-        sed "s@^$RPM_BUILD_ROOT@@g" >> %{name}-%{version}-%{release}-mason-filelist
+	sed "s@^$RPM_BUILD_ROOT@@g" >> %{name}-%{version}-%{release}-mason-filelist
 if [ "$(cat %{name}-%{version}-%{release}-mason-filelist)X" = "X" ] ; then
-    echo "ERROR: EMPTY FILE LIST"
-    exit 1
+	echo "ERROR: EMPTY FILE LIST"
+	exit 1
 fi
 
 # Install all the miscellaneous binaries into /usr/share or similar
@@ -275,10 +277,10 @@ eval `perl '-V:installarchlib'`
 find $RPM_BUILD_ROOT%{_prefix} -type f -print | \
 	grep -v '/etc/freeside/conf' | \
 	grep -v '/etc/freeside/secrets' | \
-        sed "s@^$RPM_BUILD_ROOT@@g" > %{name}-%{version}-%{release}-filelist
+	sed "s@^$RPM_BUILD_ROOT@@g" > %{name}-%{version}-%{release}-filelist
 if [ "$(cat %{name}-%{version}-%{release}-filelist)X" = "X" ] ; then
-    echo "ERROR: EMPTY FILE LIST"
-    exit 1
+	echo "ERROR: EMPTY FILE LIST"
+	exit 1
 fi
 cd ..
 
@@ -293,11 +295,11 @@ cd fs_selfservice/FS-SelfService
 find $RPM_BUILD_ROOT%{_prefix} -type f -print | \
 	grep -v '/etc/freeside/conf' | \
 	grep -v '/etc/freeside/secrets' | \
-        sed "s@^$RPM_BUILD_ROOT@@g" > %{name}-%{version}-%{release}-temp-filelist
-cat ../../FS/%{name}-%{version}-%{release}-filelist %{name}-%{version}-%{release}-temp-filelist | sort | uniq -u >  %{name}-%{version}-%{release}-selfservice-core-filelist
+	sed "s@^$RPM_BUILD_ROOT@@g" > %{name}-%{version}-%{release}-temp-filelist
+cat ../../FS/%{name}-%{version}-%{release}-filelist %{name}-%{version}-%{release}-temp-filelist | sort | uniq -u > %{name}-%{version}-%{release}-selfservice-core-filelist
 if [ "$(cat %{name}-%{version}-%{release}-selfservice-core-filelist)X" = "X" ] ; then
-    echo "ERROR: EMPTY FILE LIST"
-    exit 1
+	echo "ERROR: EMPTY FILE LIST"
+	exit 1
 fi
 cd ../..
 
@@ -391,6 +393,9 @@ fi
 %attr(0755,freeside,freeside) %{freeside_document_root}/selfservice/php
 
 %changelog
+* Tue Dec 9 2008 Richard Siddall <richard.siddall@elirion.net> - 1.9-4
+- Cleaning up after rpmlint
+
 * Tue Aug 26 2008 Richard Siddall <richard.siddall@elirion.net> - 1.9-3
 - More revisions for self-service interface
 
