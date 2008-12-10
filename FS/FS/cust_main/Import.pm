@@ -8,10 +8,12 @@ use MIME::Base64;
 use Date::Parse;
 use File::Slurp qw( slurp );
 use FS::UID qw( dbh );
+use FS::Record qw( qsearchs );
 use FS::cust_main;
 use FS::svc_acct;
 use FS::svc_external;
 use FS::svc_phone;
+use FS::part_referral;
 
 $DEBUG = 0;
 
