@@ -2280,6 +2280,7 @@ sub bill {
     warn "adding $taxname\n" if $DEBUG > 1;
     foreach my $taxitem ( @{ $taxname{$taxname} } ) {
       $tax += $tax{$taxitem} unless $seen{$taxitem};
+      $seen{$taxitem} = 1;
       warn "adding $tax{$taxitem}\n" if $DEBUG > 1;
     }
     next unless $tax;
