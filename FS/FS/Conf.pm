@@ -97,7 +97,7 @@ sub _config {
   $hashref->{agentnum} = $agentnum;
   local $FS::Record::conf = undef;  # XXX evil hack prevents recursion
   my $cv = FS::Record::qsearchs('conf', $hashref);
-  if (!$cv && defined($agentnum)) {
+  if (!$cv && defined($agentnum) && $agentnum) {
     $hashref->{agentnum} = '';
     $cv = FS::Record::qsearchs('conf', $hashref);
   }
@@ -763,6 +763,7 @@ worry that config_items is freeside-specific and icky.
     'section'     => 'required',
     'description' => 'Return address on email invoices',
     'type'        => 'text',
+    'per_agent'   => 1,
   },
 
   {
@@ -1701,6 +1702,14 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'global_unique-phonenum',
+    'section'     => '',
+    'description' => 'Global phone number uniqueness control: none (usual setting - check countrycode+phonenumun uniqueness per exports), or countrycode+phonenum (all countrycode+phonenum pairs are globally unique, regardless of exports).  disabled turns off duplicate checking completely and is STRONGLY NOT RECOMMENDED unless you REALLY need to turn this off.',
+    'type'        => 'select',
+    'select_enum' => [ 'none', 'countrycode+phonenum', 'disabled' ],
+  },
+
+  {
     'key'         => 'svc_external-skip_manual',
     'section'     => 'UI',
     'description' => 'When provisioning svc_external services, skip manual entry of id and title fields in the UI.  Usually used in conjunction with an export that populates these fields (i.e. artera_turbo).',
@@ -1799,6 +1808,7 @@ worry that config_items is freeside-specific and icky.
     'section'     => 'required',
     'description' => 'Your company name',
     'type'        => 'text',
+    'per_agent'   => 1,
   },
 
   {
@@ -1806,6 +1816,7 @@ worry that config_items is freeside-specific and icky.
     'section'     => 'required',
     'description' => 'Your company address',
     'type'        => 'textarea',
+    'per_agent'   => 1,
   },
 
   {

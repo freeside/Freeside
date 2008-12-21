@@ -249,6 +249,7 @@ sub insert {
 
   my $error =    $self->set_auto_inventory
               || $self->check
+              || $self->_check_duplicate
               || $self->SUPER::insert;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
@@ -313,6 +314,10 @@ sub insert {
 
   '';
 }
+
+#fallbacks
+sub _check_duplcate { ''; }
+sub table_dupcheck_fields { (); }
 
 =item delete [ , OPTION => VALUE ... ]
 
@@ -388,6 +393,25 @@ sub replace {
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
+  }
+
+  #redundant, but so any duplicate fields are maniuplated as appropriate
+  # (svc_phone.phonenum)
+  my $error = $new->check;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  #if ( $old->username ne $new->username || $old->domsvc != $new->domsvc ) {
+  if ( grep { $old->$_ ne $new->$_ } $new->table_dupcheck_fields ) {
+
+    $new->svcpart( $new->cust_svc->svcpart ) unless $new->svcpart;
+    $error = $new->_check_duplicate;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
   }
 
   $error = $new->SUPER::replace($old);

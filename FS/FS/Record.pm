@@ -766,6 +766,50 @@ sub select_for_update {
   } );
 }
 
+=item lock_table
+
+Locks this table with a database-driver specific lock method.  This is used
+as a mutex in order to do a duplicate search.
+
+For PostgreSQL, does "LOCK TABLE tablename IN SHARE ROW EXCLUSIVE MODE".
+
+For MySQL, does a SELECT FOR UPDATE on the duplicate_lock table.
+
+Errors are fatal; no useful return value.
+
+Note: To use this method for new tables other than svc_acct and svc_phone,
+edit freeside-upgrade and add those tables to the duplicate_lock list.
+
+=cut
+
+sub lock_table {
+  my $self = shift;
+  my $table = $self->table;
+
+  warn "$me locking $table table\n" if $DEBUG;
+
+  if ( driver_name =~ /^Pg/i ) {
+
+    dbh->do("LOCK TABLE $table IN SHARE ROW EXCLUSIVE MODE")
+      or die dbh->errstr;
+
+  } elsif ( driver_name =~ /^mysql/i ) {
+
+    dbh->do("SELECT * FROM duplicate_lock
+               WHERE lockname = '$table'
+	       FOR UPDATE"
+	   ) or die dbh->errstr;
+
+  } else {
+
+    die "unknown database ". driver_name. "; don't know how to lock table";
+
+  }
+
+  warn "$me acquired $table table lock\n" if $DEBUG;
+
+}
+
 =item insert
 
 Inserts this record to the database.  If there is an error, returns the error,

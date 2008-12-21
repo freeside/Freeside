@@ -1,15 +1,21 @@
 package FS::svc_phone;
 
 use strict;
-use vars qw( @ISA @pw_set );
+use vars qw( @ISA @pw_set $conf );
 use FS::Conf;
-#use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( qsearch qsearchs );
 use FS::svc_Common;
+use FS::part_svc;
 
 @ISA = qw( FS::svc_Common );
 
 #avoid l 1 and o O 0
 @pw_set = ( 'a'..'k', 'm','n', 'p-z', 'A'..'N', 'P'..'Z' , '2'..'9' );
+
+#ask FS::UID to run this stuff for us later
+$FS::UID::callback{'FS::svc_acct'} = sub { 
+  $conf = new FS::Conf;
+};
 
 =head1 NAME
 
@@ -101,6 +107,8 @@ sub table_info {
 }
 
 sub table { 'svc_phone'; }
+
+sub table_dupcheck_fields { ( 'countrycode', 'phonenum' ); }
 
 =item search_sql STRING
 
@@ -213,6 +221,67 @@ sub check {
   }
 
   $self->SUPER::check;
+}
+
+=item _check duplicate
+
+Internal method to check for duplicate phone numers.
+
+=cut
+
+#false laziness w/svc_acct.pm's _check_duplicate.
+sub _check_duplicate {
+  my $self = shift;
+
+  my $global_unique = $conf->config('global_unique-phonenum') || 'none';
+  return '' if $global_unique eq 'disabled';
+
+  $self->lock_table;
+
+  my @dup_ccphonenum =
+    grep { !$self->svcnum || $_->svcnum != $self->svcnum }
+    qsearch( 'svc_phone', {
+      'countrycode' => $self->countrycode,
+      'phonenum'    => $self->phonenum,
+    });
+
+  return gettext('phonenum_in_use')
+    if $global_unique eq 'countrycode+phonenum' && @dup_ccphonenum;
+
+  my $part_svc = qsearchs('part_svc', { 'svcpart' => $self->svcpart } );
+  unless ( $part_svc ) {
+    return 'unknown svcpart '. $self->svcpart;
+  }
+
+  if ( @dup_ccphonenum ) {
+
+    my $exports = FS::part_export::export_info('svc_phone');
+    my %conflict_ccphonenum_svcpart = ( $self->svcpart => 'SELF', );
+
+    foreach my $part_export ( $part_svc->part_export ) {
+
+      #this will catch to the same exact export
+      my @svcparts = map { $_->svcpart } $part_export->export_svc;
+
+      $conflict_ccphonenum_svcpart{$_} = $part_export->exportnum
+        foreach @svcparts;
+
+    }
+
+    foreach my $dup_ccphonenum ( @dup_ccphonenum ) {
+      my $dup_svcpart = $dup_ccphonenum->cust_svc->svcpart;
+      if ( exists($conflict_ccphonenum_svcpart{$dup_svcpart}) ) {
+        return "duplicate phone number ".
+               $self->countrycode. ' '. $self->phonenum.
+               ": conflicts with svcnum ". $dup_ccphonenum->svcnum.
+               " via exportnum ". $conflict_ccphonenum_svcpart{$dup_svcpart};
+      }
+    }
+
+  }
+
+  return '';
+
 }
 
 =item check_pin

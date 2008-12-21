@@ -4,7 +4,7 @@ use strict;
 use vars qw( @ISA );
 use Exporter;
 use FS::UID;
-use FS::Record;
+use FS::Record qw( qsearchs );
 
 @ISA = qw(FS::Record);
 
@@ -115,6 +115,38 @@ sub check {
   $self->locale($1);
 
   $self->SUPER::check
+}
+
+
+sub _upgrade_data { #class method
+  my( $class, %opts) = @_;
+
+  eval "use FS::Setup;";
+  die $@ if $@;
+
+  #"repopulate_msgcat", false laziness w/FS::Setup::populate_msgcat
+
+  my %messages = FS::Setup::msgcat_messages();
+
+  foreach my $msgcode ( keys %messages ) {
+    foreach my $locale ( keys %{$messages{$msgcode}} ) {
+      my %msgcat = (
+        'msgcode' => $msgcode,
+        'locale'  => $locale,
+        #'msg'     => $messages{$msgcode}{$locale},
+      );
+      my $msgcat = qsearchs('msgcat', \%msgcat);
+      next if $msgcat;
+
+      $msgcat = new FS::msgcat( {
+        %msgcat,
+        'msg' => $messages{$msgcode}{$locale},
+      } );
+      my $error = $msgcat->insert;
+      die $error if $error;
+    }
+  }
+
 }
 
 =back

@@ -461,6 +461,10 @@ sub msgcat_messages {
       'en_US' => 'Username in use',
     },
 
+    'phonenum_in_use' => {
+      'en_US' => 'Phone number in use',
+    },
+
     'illegal_email_invoice_address' => {
       'en_US' => 'Illegal email invoice address',
     },
