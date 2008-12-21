@@ -337,6 +337,8 @@ sub table_info {
 
 sub table { 'svc_acct'; }
 
+sub table_dupcheck_fields { ( 'username', 'domsvc' ); }
+
 sub _fieldhandlers {
   {
     #false laziness with edit/svc_acct.cgi
@@ -497,12 +499,6 @@ sub insert {
     }
     $self->pkgnum($cust_svc->pkgnum);
     $self->svcpart($cust_svc->svcpart);
-  }
-
-  $error = $self->_check_duplicate;
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $error;
   }
 
   my @jobnums;
@@ -815,15 +811,6 @@ sub replace {
       }
     }
 
-  }
-
-  if ( $old->username ne $new->username || $old->domsvc != $new->domsvc ) {
-    $new->svcpart( $new->cust_svc->svcpart ) unless $new->svcpart;
-    $error = $new->_check_duplicate;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
-    }
   }
 
   $error = $new->SUPER::replace($old, @_);
@@ -1227,7 +1214,7 @@ sub _check_system {
 
 =item _check_duplicate
 
-Internal function to check for duplicates usernames, username@domain pairs and
+Internal method to check for duplicates usernames, username@domain pairs and
 uids.
 
 If the I<global_unique-username> configuration value is set to B<username> or
@@ -1244,20 +1231,7 @@ sub _check_duplicate {
   my $global_unique = $conf->config('global_unique-username') || 'none';
   return '' if $global_unique eq 'disabled';
 
-  warn "$me locking svc_acct table for duplicate search" if $DEBUG;
-  if ( driver_name =~ /^Pg/i ) {
-    dbh->do("LOCK TABLE svc_acct IN SHARE ROW EXCLUSIVE MODE")
-      or die dbh->errstr;
-  } elsif ( driver_name =~ /^mysql/i ) {
-    dbh->do("SELECT * FROM duplicate_lock
-               WHERE lockname = 'svc_acct'
-	       FOR UPDATE"
-	   ) or die dbh->errstr;
-  } else {
-    die "unknown database ". driver_name.
-        "; don't know how to lock for duplicate search";
-  }
-  warn "$me acquired svc_acct table lock for duplicate search" if $DEBUG;
+  $self->lock_table;
 
   my $part_svc = qsearchs('part_svc', { 'svcpart' => $self->svcpart } );
   unless ( $part_svc ) {

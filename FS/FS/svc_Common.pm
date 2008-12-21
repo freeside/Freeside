@@ -397,7 +397,7 @@ sub replace {
 
   #redundant, but so any duplicate fields are maniuplated as appropriate
   # (svc_phone.phonenum)
-  my $error = $new->check;
+  $error = $new->check;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;

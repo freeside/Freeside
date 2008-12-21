@@ -77,21 +77,26 @@ print "\n" if $DRY_RUN;
 
 if ( $dbh->{Driver}->{Name} =~ /^mysql/i && ! $opt_s ) {
 
-  my $sth = $dbh->prepare(
-    "SELECT COUNT(*) FROM duplicate_lock WHERE lockname = 'svc_acct'"
-  ) or die $dbh->errstr;
+  foreach my $table (qw( svc_acct svc_phone )) {
 
-  $sth->execute or die $sth->errstr;
-
-  unless ( $sth->fetchrow_arrayref->[0] ) {
-
-    $sth = $dbh->prepare(
-      "INSERT INTO duplicate_lock ( lockname ) VALUES ( 'svc_acct' )"
+    my $sth = $dbh->prepare(
+      "SELECT COUNT(*) FROM duplicate_lock WHERE lockname = '$table'"
     ) or die $dbh->errstr;
 
     $sth->execute or die $sth->errstr;
 
+    unless ( $sth->fetchrow_arrayref->[0] ) {
+
+      $sth = $dbh->prepare(
+        "INSERT INTO duplicate_lock ( lockname ) VALUES ( '$table' )"
+      ) or die $dbh->errstr;
+
+      $sth->execute or die $sth->errstr;
+
+    }
+
   }
+
 }
 
 $dbh->commit or die $dbh->errstr;

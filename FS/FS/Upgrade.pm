@@ -84,6 +84,9 @@ sub upgrade_data {
 
   tie my %hash, 'Tie::IxHash', 
 
+    #msgcat
+    'msgcat' => [],
+
     #reason type and reasons
     'reason_type'     => [],
     'reason'          => [],
