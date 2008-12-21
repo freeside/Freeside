@@ -135,7 +135,8 @@ sub _upgrade_data { #class method
         'locale'  => $locale,
         #'msg'     => $messages{$msgcode}{$locale},
       );
-      my $msgcat = qsearchs('msgcat', \%msgcat);
+      #my $msgcat = qsearchs('msgcat', \%msgcat);
+      my $msgcat = FS::Record::qsearchs('msgcat', \%msgcat); #wtf?
       next if $msgcat;
 
       $msgcat = new FS::msgcat( {
