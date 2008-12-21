@@ -1439,18 +1439,18 @@ sub tables_hashref {
 
     'queue' => {
       'columns' => [
-        'jobnum', 'serial', '', '', '', '', 
-        'job', 'text', '', '', '', '', 
-        '_date', 'int', '', '', '', '', 
-        'status', 'varchar', '', $char_d, '', '', 
-        'statustext', 'text', 'NULL', '', '', '', 
-        'svcnum', 'int', 'NULL', '', '', '', 
-        'secure',  'char', 'NULL', 1, '', '', # Y = needs to be run on machine
-                                              #     w/private key
+        'jobnum',      'serial',     '',      '', '', '', 
+        'job',           'text',     '',      '', '', '', 
+        '_date',          'int',     '',      '', '', '', 
+        'status',     'varchar',     '', $char_d, '', '', 
+        'statustext',    'text', 'NULL',      '', '', '', 
+        'svcnum',         'int', 'NULL',      '', '', '', 
+        'custnum',        'int', 'NULL',      '', '', '',
+        'secure',        'char', 'NULL',       1, '', '',
       ],
       'primary_key' => 'jobnum',
       'unique'      => [],
-      'index'       => [ [ 'svcnum' ], [ 'status' ] ],
+      'index'       => [ [ 'job' ], [ 'svcnum' ], [ 'custnum' ], [ 'status' ] ],
     },
 
     'queue_arg' => {

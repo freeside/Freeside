@@ -70,7 +70,18 @@ UNIX timestamp
 
 =item svcnum
 
-Optional link to service (see L<FS::cust_svc>)
+Optional link to service (see L<FS::cust_svc>).
+
+=item custnum
+
+Optional link to customer (see L<FS::cust_main>).
+
+=item secure
+
+Secure flag, 'Y' indicates that when using encryption, the job needs to be
+run on a machine with the private key.
+
+=cut
 
 =back
 
@@ -103,7 +114,7 @@ created (see L<FS::queue_arg>).
 
 #false laziness w/part_export.pm
 sub insert {
-  my $self = shift;
+  my( $self, @args ) = @_;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -116,13 +127,16 @@ sub insert {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
+  my %args = @args;
+  $self->custnum( $args{'custnum'} ) if $args{'custnum'};
+
   my $error = $self->SUPER::insert;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
   }
 
-  foreach my $arg ( @_ ) {
+  foreach my $arg ( @args ) {
     my $queue_arg = new FS::queue_arg ( {
       'jobnum' => $self->jobnum,
       'arg'    => $arg,

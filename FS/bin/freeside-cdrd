@@ -2,10 +2,11 @@
 
 use strict;
 use FS::Daemon ':all'; #daemonize1 drop_root daemonize2 myexit logfile sig*
-use FS::UID qw(adminsuidsetup);
-use FS::Record qw(qsearch ); #qsearchs);
+use FS::UID qw( adminsuidsetup );
+use FS::Record qw( qsearch ); #qsearchs);
 #use FS::cdr;
 use FS::cust_pkg;
+use FS::queue;
 
 my $user = shift or die &usage;
 
@@ -51,8 +52,16 @@ my $extra_sql =
                                        || svc_phone.phonenum
                             )
                   )
-    ) 
+    )
+    AND 0 = (
+      SELECT COUNT(*) FROM queue
+        WHERE job = 'FS::cust_main::queued_bill'
+          AND job.custnum = cust_pkg.custnum
+    )
+    
   ";
+# don't repeatedly queue failures
+#          AND status != 'failed'
 
 while (1) {
 
@@ -71,16 +80,30 @@ while (1) {
 
     #my $work_cust_pkg = $cust_pkg;
 
-    my $cust_main = $cust_pkg->cust_main;
+    #my $cust_main = $cust_pkg->cust_main;
 
     my $time = time;
-    $cust_main->bill_and_collect( 
+
+    my $job = new FS::queue {
+      'job'     => 'FS::cust_main::queued_bill',
+      'secure'  => 'Y',
+      'custnum' => $cust_pkg->custnum,
+    };
+    my $error = $job->insert(
+      'custnum'      => $cust_pkg->custnum, 
       'time'         => $time,
       'invoice_time' => $time,
       'actual_time'  => $time,
       'check_freq'   => '1d', #well
       #'debug'        => 1,
     );
+
+    if ( $error ) {
+      #die "FATAL: error inserting billing job: $error\n";
+      warn "WARNING: error inserting billing job (will retry in 30 seconds):".
+           " $error\n";
+      sleep 30; #i dunno, wait and see if the database comes back?
+    }
 
   }
 
@@ -114,21 +137,21 @@ sub _shouldrun {
 }
 
 sub usage { 
-  die "Usage:\n\n  freeside-prepaidd user\n";
+  die "Usage:\n\n  freeside-cdrd user\n";
 }
 
 =head1 NAME
 
-freeside-prepaidd - Real-time daemon for prepaid packages
+freeside-cdrd - Real-time daemon for CDRs
 
 =head1 SYNOPSIS
 
-  freeside-prepaidd
+  freeside-cdrd
 
 =head1 DESCRIPTION
 
-Runs continuously and suspends or cancels any prepaid customer packages which
-have passed their renewal date (next bill date).
+Runs continuously, searches for CDRs and bills customers who have VoIP
+price plands with the B<bill_every_call> option set.
 
 =head1 SEE ALSO
 
