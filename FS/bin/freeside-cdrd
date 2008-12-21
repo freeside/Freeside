@@ -55,8 +55,8 @@ my $extra_sql =
     )
     AND 0 = (
       SELECT COUNT(*) FROM queue
-        WHERE job = 'FS::cust_main::queued_bill'
-          AND job.custnum = cust_pkg.custnum
+        WHERE queue.job = 'FS::cust_main::queued_bill'
+          AND queue.custnum = cust_pkg.custnum
     )
     
   ";
