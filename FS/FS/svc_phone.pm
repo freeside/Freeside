@@ -4,6 +4,7 @@ use strict;
 use vars qw( @ISA @pw_set $conf );
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs );
+use FS::Msgcat qw(gettext);
 use FS::svc_Common;
 use FS::part_svc;
 
