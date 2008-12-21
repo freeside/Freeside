@@ -48,17 +48,29 @@ FS::Record.  The following fields are currently supported:
 
 =over 4
 
-=item jobnum - primary key
+=item jobnum
 
-=item job - fully-qualified subroutine name
+Primary key
 
-=item status - job status
+=item job
 
-=item statustext - freeform text status message
+Fully-qualified subroutine name
 
-=item _date - UNIX timestamp
+=item status
 
-=item svcnum - optional link to service (see L<FS::cust_svc>)
+Job status (new, locked, or failed)
+
+=item statustext
+
+Freeform text status message
+
+=item _date
+
+UNIX timestamp
+
+=item svcnum
+
+Optional link to service (see L<FS::cust_svc>)
 
 =back
 
