@@ -50,7 +50,7 @@ Setting <b><% $key %></b>
 
 %   } elsif ( $type eq 'textarea' ) { 
 
-  <textarea name="<% "$key$n" %>" rows=12 cols=88 wrap="off"><% join("\n", $conf->config($key, $agentnum)) %></textarea>
+  <textarea name="<% "$key$n" %>" rows=12 cols=78 wrap="off"><% join("\n", $conf->config($key, $agentnum)) %></textarea>
 
 %   } elsif ( $type eq 'checkbox' ) { 
 
