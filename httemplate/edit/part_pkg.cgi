@@ -50,7 +50,7 @@
                               { field     => 'pkg',
                                 type      => 'text',
                                 size      => 40, #32
-                                maxlength => 60,
+                                maxlength => 50,
                               },
                               {field=>'comment',  type=>'text', size=>40 }, #32
                               {field=>'classnum', type=>'select-pkg_class' },
