@@ -15,10 +15,24 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 BuildArch: noarch
 Requires: %{name}-frontend
 Requires: %{name}-backend
+%if "%{_vendor}" != "suse"
 Requires: tetex-latex
+%else
+Requires: te_latex
+%endif
 Requires: perl-Fax-Hylafax-Client
 
+%if "%{_vendor}" != "suse"
+%define apache_conffile		/etc/httpd/conf/httpd.conf
+%define	apache_confdir		/etc/httpd/conf.d
+%define	apache_version		2
 %define freeside_document_root	/var/www/freeside
+%else
+%define apache_conffile		/etc/apache2/uid.conf
+%define	apache_confdir		/etc/apache2/conf.d
+%define	apache_version		2
+%define freeside_document_root	/srv/www/freeside
+%endif
 %define freeside_cache		/var/cache/subsys/freeside
 %define freeside_conf		/etc/freeside
 %define freeside_export		/etc/freeside
@@ -26,9 +40,6 @@ Requires: perl-Fax-Hylafax-Client
 %define freeside_log		/var/log/freeside
 %define freeside_socket		/etc/freeside
 %define	rt_enabled		0
-%define apache_conffile		/etc/httpd/conf/httpd.conf
-%define	apache_confdir		/etc/httpd/conf.d
-%define	apache_version		2
 %define	fs_queue_user		fs_queue
 %define	fs_selfservice_user	fs_selfservice
 %define	fs_cron_user		fs_daily
@@ -43,7 +54,9 @@ Freeside is a flexible ISP billing system written by Ivan Kohler
 Summary: HTML::Mason interface for %{name}
 Group: Applications/Internet
 Prefix: %{freeside_document_root}
+%if "%{_vendor}" != "suse"
 Requires: mod_ssl
+%endif
 Requires: perl-Apache-DBI
 Conflicts: %{name}-apacheasp
 Provides: %{name}-frontend = %{version}
@@ -136,6 +149,12 @@ perl -pi -e 's|socket\s*=\s*"/usr/local/freeside|socket = "%{freeside_socket}|g'
 perl -pi -e 's|log_file\s*=\s*"/usr/local/freeside|log_file = "%{freeside_log}|g' fs_selfservice/FS-SelfService/freeside-selfservice-*
 perl -pi -e 's|lock_file\s*=\s*"/usr/local/freeside|lock_file = "%{freeside_lock}|g' fs_selfservice/FS-SelfService/freeside-selfservice-*
 
+# Fix-ups for SuSE
+%if "%{_vendor}" == "suse"
+perl -pi -e 's|htpasswd|/usr/sbin/htpasswd2|g if /system/;' FS/FS/access_user.pm
+perl -pi -e 'print "Order deny,allow\nAllow from all\n" if /<Files/i;' htetc/freeside*.conf
+%endif
+
 # Override find-requires/find-provides to supplement Perl requires for HTML::Mason file handler.pl
 cat << \EOF > %{name}-req
 #!/bin/sh
@@ -163,14 +182,22 @@ touch htmlman
 
 #perl -pi -e 's|%%%%%%VERSION%%%%%%|%{version}|g' FS/bin/*
 cd FS
-CFLAGS="$RPM_OPT_FLAGS" perl Makefile.PL PREFIX=$RPM_BUILD_ROOT%{_prefix} SITELIBEXP=$RPM_BUILD_ROOT%{perl_sitelib} SITEARCHEXP=$RPM_BUILD_ROOT%{perl_sitearch} INSTALLSCRIPT=$RPM_BUILD_ROOT%{_bindir}
+if [ "%{_vendor}" = "suse" ]; then
+	CFLAGS="$RPM_OPT_FLAGS" perl Makefile.PL
+else
+	CFLAGS="$RPM_OPT_FLAGS" perl Makefile.PL PREFIX=$RPM_BUILD_ROOT%{_prefix} SITELIBEXP=$RPM_BUILD_ROOT%{perl_sitelib} SITEARCHEXP=$RPM_BUILD_ROOT%{perl_sitearch} INSTALLSCRIPT=$RPM_BUILD_ROOT%{_bindir}
+fi
 %{__make} OPTIMIZE="$RPM_OPT_FLAGS"
 cd ..
 %{__make} perl-modules VERSION='%{version}-%{release}' RT_ENABLED=%{rt_enabled} FREESIDE_CACHE=%{freeside_cache} FREESIDE_CONF=%{freeside_conf} FREESIDE_EXPORT=%{freeside_export} FREESIDE_LOCK=%{freeside_lock} FREESIDE_LOG=%{freeside_log}
 touch perl-modules
 
 cd fs_selfservice/FS-SelfService
-CFLAGS="$RPM_OPT_FLAGS" perl Makefile.PL PREFIX=$RPM_BUILD_ROOT%{_prefix} SITELIBEXP=$RPM_BUILD_ROOT%{perl_sitelib} SITEARCHEXP=$RPM_BUILD_ROOT%{perl_sitearch} INSTALLSCRIPT=$RPM_BUILD_ROOT%{_sbindir}
+if [ "%{_vendor}" = "suse" ]; then
+	CFLAGS="$RPM_OPT_FLAGS" perl Makefile.PL
+else
+	CFLAGS="$RPM_OPT_FLAGS" perl Makefile.PL PREFIX=$RPM_BUILD_ROOT%{_prefix} SITELIBEXP=$RPM_BUILD_ROOT%{perl_sitelib} SITEARCHEXP=$RPM_BUILD_ROOT%{perl_sitearch} INSTALLSCRIPT=$RPM_BUILD_ROOT%{_sbindir}
+fi
 %{__make} OPTIMIZE="$RPM_OPT_FLAGS"
 cd ../..
 
@@ -213,7 +240,7 @@ touch docs
 
 # Install the HTTPD configuration snippet for HTML::Mason
 %{__mkdir_p} $RPM_BUILD_ROOT%{apache_confdir}
-%{__make} install-apache FREESIDE_DOCUMENT_ROOT=%{freeside_document_root} RT_ENABLED=%{rt_enabled} APACHE_CONF=$RPM_BUILD_ROOT%{apache_confdir} APACHE_VERSION=%{apache_version} MASON_HANDLER=%{freeside_conf}/handler.pl
+%{__make} install-apache FREESIDE_DOCUMENT_ROOT=%{freeside_document_root} RT_ENABLED=%{rt_enabled} APACHE_CONF=$RPM_BUILD_ROOT%{apache_confdir} APACHE_VERSION=%{apache_version} FREESIDE_CONF=%{freeside_conf} MASON_HANDLER=%{freeside_conf}/handler.pl
 %{__perl} -pi -e "s|%%%%%%FREESIDE_DOCUMENT_ROOT%%%%%%|%{freeside_document_root}|g" $RPM_BUILD_ROOT%{apache_confdir}/freeside-*.conf
 %{__perl} -pi -e "s|%%%%%%MASON_HANDLER%%%%%%|%{freeside_conf}/handler.pl|g" $RPM_BUILD_ROOT%{apache_confdir}/freeside-*.conf
 %{__perl} -pi -e "s|/usr/local/etc/freeside|%{freeside_conf}|g" $RPM_BUILD_ROOT%{apache_confdir}/freeside-*.conf
