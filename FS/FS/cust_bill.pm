@@ -2712,11 +2712,8 @@ sub _items_previous {
 
 sub _items_pkg {
   my $self = shift;
-  my %options = @_;
-  my $section = $options{'section'};
-  my $desc = $section->{'description'};
   my @cust_bill_pkg = grep { $_->pkgnum } $self->cust_bill_pkg;
-  $self->_items_cust_bill_pkg(\@cust_bill_pkg, %options);
+  $self->_items_cust_bill_pkg(\@cust_bill_pkg, @_);
 }
 
 sub _taxsort {
@@ -2761,6 +2758,8 @@ sub _items_cust_bill_pkg {
       my $cust_pkg = $cust_bill_pkg->cust_pkg;
 
       my $desc = $cust_bill_pkg->desc;
+      $desc = substr($desc, 0, 50). '...';
+        if $format eq 'latex' && length($desc) > 50;
 
       my %details_opt = ( 'format'          => $format,
                           'escape_function' => $escape_function,
