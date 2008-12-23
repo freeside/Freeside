@@ -2758,7 +2758,7 @@ sub _items_cust_bill_pkg {
       my $cust_pkg = $cust_bill_pkg->cust_pkg;
 
       my $desc = $cust_bill_pkg->desc;
-      $desc = substr($desc, 0, 50). '...';
+      $desc = substr($desc, 0, 50). '...'
         if $format eq 'latex' && length($desc) > 50;
 
       my %details_opt = ( 'format'          => $format,
