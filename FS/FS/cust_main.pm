@@ -9,7 +9,7 @@ use Safe;
 use Carp;
 use Exporter;
 use Scalar::Util qw( blessed );
-use Time::Local qw(timelocal_nocheck);
+use Time::Local qw(timelocal timelocal_nocheck);
 use Data::Dumper;
 use Tie::IxHash;
 use Digest::MD5 qw(md5_base64);
