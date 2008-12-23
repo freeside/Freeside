@@ -2220,11 +2220,11 @@ sub bill {
     warn "adding ". $listref_or_error->[1].
          " as ". $listref_or_error->[0]. "\n"
       if $DEBUG > 2;
-    $tax{ $tax_object->taxname } += $listref_or_error->[1];
+    $tax{ $tax } += $listref_or_error->[1];
     if ( $taxname{ $listref_or_error->[0] } ) {
-      push @{ $taxname{ $listref_or_error->[0] } }, $tax_object->taxname;
+      push @{ $taxname{ $listref_or_error->[0] } }, $tax;
     }else{
-      $taxname{ $listref_or_error->[0] } = [ $tax_object->taxname ];
+      $taxname{ $listref_or_error->[0] } = [ $tax ];
     }
   
   }
@@ -2248,9 +2248,9 @@ sub bill {
                                                       # existing taxes
       warn "adding $totname to taxed taxes\n" if $DEBUG > 2;
       if ( exists( $totlisthash{ $totname } ) ) {
-        push @{ $totlisthash{ $totname  } }, $tax{ $tax_object->taxname };
+        push @{ $totlisthash{ $totname  } }, $tax{ $tax };
       }else{
-        $totlisthash{ $totname } = [ $tot, $tax{ $tax_object->taxname } ];
+        $totlisthash{ $totname } = [ $tot, $tax{ $tax } ];
       }
     }
   }
@@ -2269,7 +2269,7 @@ sub bill {
     warn "adding taxed tax amount ". $listref_or_error->[1].
          " as ". $tax_object->taxname. "\n"
       if $DEBUG;
-    $tax{ $tax_object->taxname } += $listref_or_error->[1];
+    $tax{ $tax } += $listref_or_error->[1];
   }
   
   #consolidate and create tax line items
