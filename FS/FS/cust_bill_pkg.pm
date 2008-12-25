@@ -11,6 +11,7 @@ use FS::cust_bill_pkg_detail;
 use FS::cust_bill_pkg_display;
 use FS::cust_bill_pay_pkg;
 use FS::cust_credit_bill_pkg;
+use FS::cust_tax_exempt_pkg;
 
 @ISA = qw( FS::cust_main_Mixin FS::Record );
 
@@ -133,6 +134,17 @@ sub insert {
     foreach my $cust_bill_pkg_display ( @{ $self->get('display') } ) {
       $cust_bill_pkg_display->billpkgnum($self->billpkgnum);
       $error = $cust_bill_pkg_display->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+    }
+  }
+
+  if ( $self->_cust_tax_exempt_pkg ) {
+    foreach my $cust_tax_exempt_pkg ( @{$self->_cust_tax_exempt_pkg} ) {
+      $cust_tax_exempt_pkg->billpkgnum($self->billpkgnum);
+      $error = $cust_tax_exempt_pkg->insert;
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
         return $error;
@@ -609,6 +621,17 @@ sub cust_bill_pkg_display {
   push @result, $default unless ( scalar(@result) || $type );
 
   @result;
+
+}
+
+# reserving this name for my friends FS::{tax_rate|cust_main_county}::taxline
+# and FS::cust_main::bill
+
+sub _cust_tax_exempt_pkg {
+  my ( $self ) = @_;
+
+  $self->{Hash}->{_cust_tax_exempt_pkg} or
+  $self->{Hash}->{_cust_tax_exempt_pkg} = [];
 
 }
 

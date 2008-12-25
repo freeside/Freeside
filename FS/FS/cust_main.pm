@@ -2100,6 +2100,7 @@ sub bill {
     if $DEBUG;
 
   my $time = $options{'time'} || time;
+  my $invoice_time = $options{'invoice_time'} || $time;
 
   #put below somehow?
   local $SIG{HUP} = 'IGNORE';
@@ -2210,7 +2211,11 @@ sub bill {
   foreach my $tax ( keys %taxlisthash ) {
     my $tax_object = shift @{ $taxlisthash{$tax} };
     warn "found ". $tax_object->taxname. " as $tax\n" if $DEBUG > 2;
-    my $listref_or_error = $tax_object->taxline( @{ $taxlisthash{$tax} } );
+    my $listref_or_error =
+      $tax_object->taxline( $taxlisthash{$tax},
+                            'custnum'      => $self->custnum,
+                            'invoice_time' => $invoice_time
+                          );
     unless (ref($listref_or_error)) {
       $dbh->rollback if $oldAutoCommit;
       return $listref_or_error;
@@ -2227,6 +2232,17 @@ sub bill {
       $taxname{ $listref_or_error->[0] } = [ $tax ];
     }
   
+  }
+
+  #move the cust_tax_exempt_pkg records to the cust_bill_pkgs we will commit
+  my %packagemap = map { $_->pkgnum => $_ } @cust_bill_pkg;
+  foreach my $tax ( keys %taxlisthash ) {
+    foreach ( @{ $taxlisthash{$tax} }[1 ... scalar(@{ $taxlisthash{$tax} })] ) {
+      next unless ref($_) eq 'FS::cust_bill_pkg'; # shouldn't happen
+
+      push @{ $packagemap{$_->pkgnum}->_cust_tax_exempt_pkg }, 
+        splice( @{ $_->_cust_tax_exempt_pkg } );
+    }
   }
 
   #some taxes are taxed
@@ -2260,7 +2276,11 @@ sub bill {
     my $tax_object = shift @{ $totlisthash{$tax} };
     warn "found previously found taxed tax ". $tax_object->taxname. "\n"
       if $DEBUG > 2;
-    my $listref_or_error = $tax_object->taxline( @{ $totlisthash{$tax} } );
+    my $listref_or_error =
+      $tax_object->taxline( $totlisthash{$tax},
+                            'custnum'      => $self->custnum,
+                            'invoice_time' => $invoice_time
+                          );
     unless (ref($listref_or_error)) {
       $dbh->rollback if $oldAutoCommit;
       return $listref_or_error;
@@ -2304,7 +2324,7 @@ sub bill {
   #create the new invoice
   my $cust_bill = new FS::cust_bill ( {
     'custnum' => $self->custnum,
-    '_date'   => ( $options{'invoice_time'} || $time ),
+    '_date'   => ( $invoice_time ),
     'charged' => $charged,
   } );
   my $error = $cust_bill->insert;

@@ -198,16 +198,34 @@ sub _list_sql {
   map $_->[0], @{ $sth->fetchall_arrayref };
 }
 
-=item taxline CUST_BILL_PKG, ...
+=item taxline TAXABLES, [ OPTIONSHASH ]
 
 Returns a listref of a name and an amount of tax calculated for the list of
-packages.  Returns a scalar error message on error.
+packages or amounts referenced by TAXABLES.  Returns a scalar error message
+on error.  
+
+OPTIONSHASH includes custnum and invoice_date and are hints to this method
 
 =cut
 
 sub taxline {
   my $self = shift;
 
+  my $taxables;
+  my %opt = ();
+
+  if (ref($_[0]) eq 'ARRAY') {
+    $taxables = shift;
+    %opt = @_;
+  }else{
+    $taxables = [ @_ ];
+    # exemptions broken in this case
+  }
+
+  my @exemptions = ();
+  push @exemptions, @{ $_->_cust_tax_exempt_pkg }
+    for grep { ref($_) } @$taxables;
+    
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
   local $SIG{QUIT} = 'IGNORE';
@@ -222,10 +240,13 @@ sub taxline {
   my $name = $self->taxname || 'Tax';
   my $amount = 0;
 
-  foreach my $cust_bill_pkg (@_) {
+  foreach my $cust_bill_pkg (@$taxables) {
 
-    my $cust_bill = $cust_bill_pkg->cust_pkg->cust_bill;
-    my $part_pkg = $cust_bill_pkg->part_pkg;
+    my $cust_pkg  = $cust_bill_pkg->cust_pkg;
+    my $cust_bill = $cust_pkg->cust_bill if $cust_pkg;
+    my $custnum   = $cust_pkg ? $cust_pkg->custnum : $opt{custnum};
+    my $part_pkg  = $cust_bill_pkg->part_pkg;
+    my $invoice_date = $cust_bill ? $cust_bill->_date : $opt{invoice_date};
   
     my $taxable_charged = 0;
     $taxable_charged += $cust_bill_pkg->setup
@@ -240,7 +261,7 @@ sub taxline {
     if ( $self->exempt_amount && $self->exempt_amount > 0 ) {
       #my ($mon,$year) = (localtime($cust_bill_pkg->sdate) )[4,5];
       my ($mon,$year) =
-        (localtime( $cust_bill_pkg->sdate || $cust_bill->_date ) )[4,5];
+        (localtime( $cust_bill_pkg->sdate || $invoice_date ) )[4,5];
       $mon++;
       my $freq = $part_pkg->freq || 1;
       if ( $freq !~ /(\d+)$/ ) {
@@ -254,7 +275,7 @@ sub taxline {
       #call the whole thing off if this customer has any old
       #exemption records...
       my @cust_tax_exempt =
-        qsearch( 'cust_tax_exempt' => { custnum=> $cust_bill->custnum } );
+        qsearch( 'cust_tax_exempt' => { custnum=> $custnum } );
       if ( @cust_tax_exempt ) {
         $dbh->rollback if $oldAutoCommit;
         return
@@ -280,7 +301,7 @@ sub taxline {
           return "fatal: can't lookup exising exemption: ". dbh->errstr;
         };
         $sth->execute(
-          $cust_bill->custnum,
+          $custnum,
           $self->taxnum,
           1900+$year,
           $mon,
@@ -289,6 +310,15 @@ sub taxline {
           return "fatal: can't lookup exising exemption: ". dbh->errstr;
         };
         my $existing_exemption = $sth->fetchrow_arrayref->[0] || 0;
+
+        foreach ( grep { $_->taxnum == $self->taxnum &&
+                         $_->month  == $mon          &&
+                         $_->year   == 1900+$year
+                       } @exemptions
+                )
+        {
+          $existing_exemption += $_->amount;
+        }
         
         my $remaining_exemption =
           $self->exempt_amount - $existing_exemption;
@@ -299,17 +329,22 @@ sub taxline {
           $taxable_charged -= $addl;
 
           my $cust_tax_exempt_pkg = new FS::cust_tax_exempt_pkg ( {
-            'billpkgnum' => $cust_bill_pkg->billpkgnum,
             'taxnum'     => $self->taxnum,
             'year'       => 1900+$year,
             'month'      => $mon,
             'amount'     => sprintf("%.2f", $addl ),
           } );
-          my $error = $cust_tax_exempt_pkg->insert;
-          if ( $error ) {
-            $dbh->rollback if $oldAutoCommit;
-            return "fatal: can't insert cust_tax_exempt_pkg: $error";
-          }
+          if ($cust_bill_pkg->billpkgnum) {
+            $cust_tax_exempt_pkg->billpkgnum($cust_bill_pkg->billpkgnum);
+            my $error = $cust_tax_exempt_pkg->insert;
+            if ( $error ) {
+              $dbh->rollback if $oldAutoCommit;
+              return "fatal: can't insert cust_tax_exempt_pkg: $error";
+            }
+          }else{
+            push @exemptions, $cust_tax_exempt_pkg;
+            push @{ $cust_bill_pkg->_cust_tax_exempt_pkg }, $cust_tax_exempt_pkg;
+          } # if $cust_bill_pkg->billpkgnum
         } # if $remaining_exemption > 0
 
         #++
