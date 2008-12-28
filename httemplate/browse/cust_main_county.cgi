@@ -148,7 +148,11 @@ if ( $country && $cgi->param('state') =~ /^([\w \-\'\[\]]+)$/ ) {
 $cgi->delete('state');
 
 my $county = '';
-if ( $country && $state && $cgi->param('county') =~ /^([\w \-\'\[\]]+)$/ ) {
+if ( $country && $state &&
+     $cgi->param('county') =~
+       /^([\w \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\=\[\]]+)$/
+   )
+{
   $county = $1;
   if ( $county eq '__NONE__' ) {
     $title = "No county, $title";
