@@ -18,8 +18,9 @@ Example:
       <TR>
         <TD>
           <% include('/elements/select-state.html',
-                       'country' => $country,
-                       'empty'   => 'Select state',
+                       'country'       => $country,
+                       'disable_empty' => 0,
+                       'empty_label'   => 'Select state',
                     )
           %>
         </TD>

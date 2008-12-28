@@ -1,0 +1,152 @@
+<%doc>
+
+Example:
+
+  include( '/elements/select-county.html',
+    #recommended
+    country    => $current_country,
+    state      => $current_state,
+    county     => $current_county,
+
+    #optional
+    prefix        => $optional_unique_prefix,
+    onchange      => $javascript,
+    disabled      => 0, #bool
+    disable_empty => 1, #defaults to 1, disable the empty option
+    empty_label   => 'all', #label for empty option
+  );
+
+</%doc>
+% if ( $countyflag ) { 
+
+  <% include('/elements/xmlhttp.html',
+                'url'  => $p.'misc/counties.cgi',
+                'subs' => [ $pre. 'get_counties' ],
+             )
+  %>
+  
+  <SCRIPT TYPE="text/javascript">
+  
+    function opt(what,value,text) {
+      var optionName = new Option(text, value, false, false);
+      var length = what.length;
+      what.options[length] = optionName;
+    }
+  
+    function <% $pre %>state_changed(what, callback) {
+
+      state = what.options[what.selectedIndex].value;
+      country = what.form.<% $pre %>country.options[what.form.<% $pre %>country.selectedIndex].value;
+  
+      function <% $pre %>update_counties(counties) {
+
+        // blank the current county list
+        for ( var i = what.form.<% $pre %>county.length; i >= 0; i-- )
+            what.form.<% $pre %>county.options[i] = null;
+  
+        // add the new counties
+        var countiesArray = eval('(' + counties + ')' );
+        for ( var s = 0; s < countiesArray.length; s++ ) {
+            var countyLabel = countiesArray[s];
+            if ( countyLabel == "" )
+                countyLabel = '(n/a)';
+            opt(what.form.<% $pre %>county, countiesArray[s], countyLabel);
+        }
+
+        var countyFormLabel = document.getElementById('<% $pre %>countylabel');
+
+        if ( countiesArray.length > 1 ) { 
+          what.form.<% $pre %>county.style.display = '';
+          countyFormLabel.style.visibility = 'visible';
+        } else {
+          what.form.<% $pre %>county.style.display = 'none';
+          countyFormLabel.style.visibility = 'hidden';
+        }
+
+        //run the callback
+        if ( callback != null ) 
+          callback();
+      }
+  
+      // go get the new counties
+      <% $pre %>get_counties( state, country, <% $pre %>update_counties );
+  
+    }
+  
+  </SCRIPT>
+
+  <SELECT NAME    = "<% $pre %>county"
+          ID      = "<% $pre %>county"
+          onChange= "<% $opt{'onchange'} %>"
+          <% $opt{'disabled'} %>
+  >
+
+% unless ( $opt{'disable_empty'} ) {
+  <OPTION VALUE="" <% $opt{county} eq '' ? 'SELECTED' : '' %>><% $opt{empty_label} %>
+% }
+
+% foreach my $county ( @counties ) {
+
+    <OPTION VALUE="<% $county |h %>"
+            <% $county eq $opt{'county'} ? 'SELECTED' : '' %>
+    ><% $county eq $opt{'empty_data_value'} ? $opt{'empty_data_label'} : $county %>
+
+% } 
+
+  </SELECT>
+
+% } else { 
+
+  <SCRIPT TYPE="text/javascript">
+    function <% $pre %>state_changed(what) {
+    }
+  </SCRIPT>
+
+  <SELECT NAME  = "<% $pre %>county"
+           ID   = "<% $pre %>county"
+          STYLE = "display:none"
+  >
+    <OPTION SELECTED VALUE="<% $opt{'county'} |h %>">
+  </SELECT>
+
+% } 
+
+<%init>
+
+my %opt = @_;
+foreach my $opt (qw( county state country prefix onchange disabled
+                     empty_value )) {
+  $opt{$opt} = '' unless exists($opt{$opt}) && defined($opt{$opt});
+}
+
+$opt{'disable_empty'} = 1 unless exists($opt{'disable_empty'});
+
+my $pre = $opt{'prefix'};
+
+my @counties = ();
+if ( $countyflag ) {
+
+  @counties = map { length($_) ? $_ : $opt{'empty_data_value'} }
+                  counties( $opt{'state'}, $opt{'country'} );
+
+  # this is very hacky
+  unless ( scalar(@counties) > 1 ) {
+    if ( $opt{'disabled'} =~ /STYLE=/i ) {
+      $opt{'disabled'} =~ s/STYLE="([^"]+)"/STYLE="$1; display:none"/i;
+    } else {
+      $opt{'disabled'} .= ' STYLE="display:none"';
+    }
+  }
+
+}
+
+</%init>
+<%once>
+
+my $sql = "SELECT COUNT(*) FROM cust_main_county".
+          " WHERE county IS NOT NULL AND county != ''";
+my $sth = dbh->prepare($sql) or die dbh->errstr;
+$sth->execute or die $sth->errstr;
+my $countyflag = $sth->fetchrow_arrayref->[0];
+
+</%once>

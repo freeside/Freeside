@@ -199,11 +199,11 @@
 %      ( $conf->exists('show_bankstate') ?
 %          qq!<TR><TD ALIGN="right" WIDTH="200">$paystate_label</TD>!.
 %          qq!<TD COLSPAN="3" WIDTH="408">!.
-%          include('select-state.html',
+%          include('/elements/select-state.html',
 %                    'empty'   => '(choose)',
 %                    'state'   => $cust_main->paystate,
 %                    'country' => $cust_main->country,
-%                    'prefix' => 'pay',
+%                    'prefix'  => 'pay',
 %                 ). "</TD></TR>"
 %         : '<INPUT TYPE="hidden" NAME="paystate" VALUE="'.
 %            $cust_main->paystate. '">'

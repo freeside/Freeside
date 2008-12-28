@@ -32,18 +32,6 @@
 my $conf = new FS::Conf;
 my $money_char = $conf->config('money_char') || '$';
 
-my @manual_countries = ( 'US', 'CA', 'AU', 'NZ', 'GB' ); #some manual ordering
-my @all_countries = ( @manual_countries, 
-                      grep { my $c = $_; ! grep { $c eq $_ } @manual_countries }
-                      map { $_->country } 
-                          qsearch({
-                                    'select'    => 'country',
-                                    'table'     => 'cust_main_county',
-                                    'hashref'   => {},
-                                    'extra_sql' => 'GROUP BY country',
-                                 })
-                    );
-
 my $exempt_sub = sub {
   my $cust_main_county = shift;
 
@@ -153,16 +141,20 @@ if ( $cgi->param('country') =~ /^(\w\w)$/ ) {
 $cgi->delete('country');
 
 my $state = '';
-if ( $cgi->param('state') =~ /^([\w \-\'\[\]]+)$/ ) {
+if ( $country && $cgi->param('state') =~ /^([\w \-\'\[\]]+)$/ ) {
   $state = $1;
   $title = "$state, $title";
 }
 $cgi->delete('state');
 
 my $county = '';
-if ( $cgi->param('county') =~ /^([\w \-\'\[\]]+)$/ ) {
+if ( $country && $state && $cgi->param('county') =~ /^([\w \-\'\[\]]+)$/ ) {
   $county = $1;
-  $title = "$county county, $title";
+  if ( $county eq '__NONE__' ) {
+    $title = "No county, $title";
+  } else {
+    $title = "$county county, $title";
+  }
 }
 $cgi->delete('county');
 
@@ -181,9 +173,11 @@ if ( $country || $taxclass ) {
 
 $cgi->param('dummy', 1);
 
-my $country_filter_change =
-  "window.location = '".
-  $cgi->self_url. ";country=' + this.options[this.selectedIndex].value;";
+my $filter_change =
+  "window.location = '". $cgi->self_url.
+  ";country=' + document.getElementById('country').options[document.getElementById('country').selectedIndex].value + ".
+  "';state='   + document.getElementById('state').options[document.getElementById('state').selectedIndex].value +".
+  "';county='  + document.getElementById('county').options[document.getElementById('county').selectedIndex].value;";
 
 #restore this so pagination works
 $cgi->param('country',  $country) if $country;
@@ -192,15 +186,57 @@ $cgi->param('county',   $county ) if $county;
 $cgi->param('taxclass', $county ) if $taxclass;
 
 my $html_posttotal =
-  '(show country: '.
-  qq(<SELECT NAME="country" onChange="$country_filter_change">).
-  qq(<OPTION VALUE="">(all)\n).
-  join("\n", map qq[<OPTION VALUE="$_"].
-                   ( $_ eq $country ? 'SELECTED' : '' ).
-                   '>'. code2country($_). " ($_)",
-                 @all_countries
-      ).
-  '</SELECT>)';
+  '( show country: '.
+  include('/elements/select-country.html',
+            'country'             => $country,
+            'onchange'            => $filter_change,
+            'empty_label'         => '(all)',
+            'disable_empty'       => 0,
+            'disable_stateupdate' => 1,
+         );
+
+my %states_hash = $country ? states_hash($country) : ();
+if ( scalar(keys(%states_hash)) > 1 ) {
+  $html_posttotal .=
+    ' show state: '.
+    include('/elements/select-state.html',
+              'country'              => $country,
+              'state'                => $state,
+              'onchange'             => $filter_change,
+              'empty_label'          => '(all)',
+              'disable_empty'        => 0,
+              'disable_countyupdate' => 1,
+           );
+} else {
+  $html_posttotal .=
+    '<SELECT NAME="state" ID="state" STYLE="display:none">'.
+    '  <OPTION VALUE="" SELECTED>'.
+    '</SELECT>';
+}
+
+my @counties = ( $country && $state ) ? counties($state, $country) : ();
+if ( scalar(@counties) > 1 ) {
+  $html_posttotal .=
+    ' show county: '.
+    include('/elements/select-county.html',
+              'country'              => $country,
+              'state'                => $state,
+              'county'               => $county,
+              'onchange'             => $filter_change,
+              'empty_label'          => '(all)',
+              'empty_data_label'     => '(none)',
+              'empty_data_value'     => '__NONE__',
+              'disable_empty'        => 0,
+              'disable_countyupdate' => 1,
+           );
+} else {
+  $html_posttotal .=
+    '<SELECT NAME="county" ID="county" STYLE="display:none">'.
+    '  <OPTION VALUE="" SELECTED>'.
+    '</SELECT>';
+}
+
+$html_posttotal .= ' )';
 
 my $bulk_popup_link = 
   include( '/elements/popup_link_onclick.html',
@@ -281,11 +317,16 @@ if ( $country ) {
 }
 if ( $state ) {
   $hashref->{'state'} = $state;
-  $count_query .= '   AND state   = '. dbh->quote($state);
+  $count_query .= ' AND state   = '. dbh->quote($state);
 }
 if ( $county ) {
-  $hashref->{'country'} = $country;
-  $count_query .= '   AND county  = '. dbh->quote($county);
+  if ( $county eq '__NONE__' ) {
+    $hashref->{'county'} = '';
+    $count_query .= " AND ( county = '' OR county IS NULL ) ";
+  } else {
+    $hashref->{'county'} = $county;
+    $count_query .= ' AND county  = '. dbh->quote($county);
+  }
 }
 if ( $taxclass ) {
   $hashref->{'taxclass'} = $taxclass;

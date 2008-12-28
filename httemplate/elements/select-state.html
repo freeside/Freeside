@@ -1,12 +1,35 @@
-<SELECT NAME="<% $opt{'prefix'} %>state" onChange="<% $opt{'prefix'} %>state_changed(this); <% $opt{'onchange'} %>" <% $opt{'disabled'} %>>
+<%doc>
 
-% if ($opt{empty}) {
-  <OPTION VALUE=""<% $opt{state} eq '' ? ' SELECTED' : '' %>><% $opt{empty} %>
+Example:
+
+  include( '/elements/select-state.html',
+    #recommended
+    country    => $current_country,
+    state      => $current_state,
+
+    #optional
+    prefix        => $optional_unique_prefix,
+    onchange      => $javascript,
+    disabled      => 0, #bool
+    disable_empty => 1, #defaults to 1, disable the empty option
+    empty_label   => 'all', #label for empty option
+    disable_countyupdate => 0, #bool - disabled update of the select-state.html
+  );
+
+</%doc>
+
+<SELECT NAME     = "<% $pre %>state"
+        ID       = "<% $pre %>state"
+        onChange = "<% $onchange %>"
+>
+
+% unless ( $opt{'disable_empty'} ) {
+  <OPTION VALUE=""<% $opt{state} eq '' ? ' SELECTED' : '' %>><% $opt{empty_label} %>
 % }
 
 % foreach my $state ( keys %states ) { 
 
-  <OPTION VALUE="<% $state %>"<% $state eq $opt{'state'} ? ' SELECTED' : '' %>><% $states{$state} || '(n/a)' %>
+  <OPTION VALUE="<% $state |h %>"<% $state eq $opt{'state'} ? ' SELECTED' : '' %>><% $states{$state} || '(n/a)' %>
 
 % } 
 
@@ -14,11 +37,21 @@
 </SELECT>
 
 <%init>
+
 my %opt = @_;
-foreach my $opt (qw( county state country prefix onchange disabled empty )) {
-  $opt{$_} = '' unless exists($opt{$_}) && defined($opt{$_});
+foreach my $opt (qw( state country prefix onchange disabled empty_label )) {
+  $opt{$opt} = '' unless exists($opt{$opt}) && defined($opt{$opt});
 }
 
+$opt{'disable_empty'} = 1 unless exists($opt{'disable_empty'});
+
+my $pre = $opt{'prefix'};
+
+my $onchange =
+  ( $opt{'disable_countyupdate'} ? '' : $pre.'state_changed(this); ' ).
+  $opt{'onchange'};
+
 tie my %states, 'Tie::IxHash', states_hash( $opt{'country'} ); 
+
 </%init>
 

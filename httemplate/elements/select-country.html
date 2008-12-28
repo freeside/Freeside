@@ -1,0 +1,120 @@
+<%doc>
+
+Example:
+
+  include( '/elements/select-country.html',
+    #recommended
+    country    => $current_country,
+
+    #optional
+    prefix        => $optional_unique_prefix,
+    onchange      => $javascript,
+    disabled      => 0, #bool
+    disable_empty => 1, #defaults to 1, disable the empty option
+    empty_label   => 'all', #label for empty option
+    disable_stateupdate => 0, #bool - disabled update of the select-state.html
+    
+  );
+
+</%doc>
+% unless ( $opt{'disable_stateupdate'} ) {
+
+  <% include('/elements/xmlhttp.html',
+                'url'  => $p.'misc/states.cgi',
+                'subs' => [ $pre. 'get_states' ],
+             )
+  %>
+  
+  <SCRIPT TYPE="text/javascript">
+  
+    function opt(what,value,text) {
+      var optionName = new Option(text, value, false, false);
+      var length = what.length;
+      what.options[length] = optionName;
+    }
+  
+    function <% $pre %>country_changed(what, callback) {
+  
+      country = what.options[what.selectedIndex].value;
+  
+      function <% $pre %>update_states(states) {
+  
+        // blank the current state list
+        for ( var i = what.form.<% $pre %>state.length; i >= 0; i-- )
+            what.form.<% $pre %>state.options[i] = null;
+  
+        // add the new states
+        var statesArray = eval('(' + states + ')' );
+        for ( var s = 0; s < statesArray.length; s=s+2 ) {
+            var stateLabel = statesArray[s+1];
+            if ( stateLabel == "" )
+                stateLabel = '(n/a)';
+            opt(what.form.<% $pre %>state, statesArray[s], stateLabel);
+        }
+  
+        //run the callback
+        if ( callback != null ) 
+          callback();
+      }
+  
+      // go get the new states
+      <% $pre %>get_states( country, <% $pre %>update_states );
+  
+    }
+  
+  </SCRIPT>
+
+% }
+
+<SELECT NAME     = "<% $pre %>country"
+        ID       = "<% $pre %>country"
+        onChange = "<% $onchange %>"
+        <% $opt{'disabled'} %>
+>
+
+% unless ( $opt{'disable_empty'} ) {
+    <OPTION VALUE=""><% $opt{'empty_label'} || '(all)' %>
+% }
+
+% foreach my $country ( @all_countries ) {
+
+  <OPTION VALUE="<% $country |h %>"
+          <% $country eq $opt{'country'} ? ' SELECTED' : '' %>
+  ><% code2country($country). " ($country)" %>
+
+% } 
+
+</SELECT>
+
+<%init>
+
+my %opt = @_;
+foreach my $opt (qw( country prefix onchange disabled disable_stateupdate )) {
+  $opt{$opt} = '' unless exists($opt{$opt}) && defined($opt{$opt});
+}
+
+$opt{'disable_empty'} = 1 unless exists($opt{'disable_empty'});
+
+my $pre = $opt{'prefix'};
+
+my $onchange =
+  ( $opt{'disable_stateupdate'} ? '' : $pre.'country_changed(this); ' ).
+  $opt{'onchange'};
+
+my $conf = new FS::Conf;
+my $default = $conf->config('countrydefault') || 'US';
+
+my @all_countries = ( 
+                      sort {    ($b eq $default) <=> ($a eq $default)
+                             or code2country($a) cmp code2country($b)
+                           }
+                      map  { $_->country } 
+                           qsearch({
+                                     'select'    => 'country',
+                                     'table'     => 'cust_main_county',
+                                     'hashref'   => {},
+                                     'extra_sql' => 'GROUP BY country',
+                                  })
+                    );
+
+</%init>

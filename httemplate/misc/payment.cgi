@@ -19,165 +19,190 @@
       </TD></TR></TABLE>
     </TD>
   </TR>
-% if ( $payby eq 'CARD' ) {
-%     my( $payinfo, $paycvv, $month, $year ) = ( '', '', '', '' );
-%     my $payname = $cust_main->first. ' '. $cust_main->getfield('last');
-%     my $address1 = $cust_main->address1;
-%     my $address2 = $cust_main->address2;
-%     my $city     = $cust_main->city;
-%     my $state    = $cust_main->state;
-%     my $zip     = $cust_main->zip;
-%     if ( $cust_main->payby =~ /^(CARD|DCRD)$/ ) {
-%       $payinfo = $cust_main->paymask;
-%       $paycvv = $cust_main->paycvv;
-%       ( $month, $year ) = $cust_main->paydate_monthyear;
-%       $payname = $cust_main->payname if $cust_main->payname;
-%     }
-%
 
-  <TR>
-    <TD ALIGN="right">Card&nbsp;number</TD>
-    <TD>
-      <TABLE>
-        <TR>
-          <TD>
-            <INPUT TYPE="text" NAME="payinfo" SIZE=20 MAXLENGTH=19 VALUE="<%$payinfo%>"> </TD>
-          <TD>Exp.</TD>
-          <TD>
-            <SELECT NAME="month">
+% if ( $payby eq 'CARD' ) {
+%
+%   my( $payinfo, $paycvv, $month, $year ) = ( '', '', '', '' );
+%   my $payname = $cust_main->first. ' '. $cust_main->getfield('last');
+%   my $address1 = $cust_main->address1;
+%   my $address2 = $cust_main->address2;
+%   my $city     = $cust_main->city;
+%   my $state    = $cust_main->state;
+%   my $zip     = $cust_main->zip;
+%   if ( $cust_main->payby =~ /^(CARD|DCRD)$/ ) {
+%     $payinfo = $cust_main->paymask;
+%     $paycvv = $cust_main->paycvv;
+%     ( $month, $year ) = $cust_main->paydate_monthyear;
+%     $payname = $cust_main->payname if $cust_main->payname;
+%   }
+
+    <TR>
+      <TD ALIGN="right">Card&nbsp;number</TD>
+      <TD>
+        <TABLE>
+          <TR>
+            <TD>
+              <INPUT TYPE="text" NAME="payinfo" SIZE=20 MAXLENGTH=19 VALUE="<%$payinfo%>"> </TD>
+            <TD>Exp.</TD>
+            <TD>
+              <SELECT NAME="month">
 % for ( ( map "0$_", 1 .. 9 ), 10 .. 12 ) { 
 
-                <OPTION<% $_ == $month ? ' SELECTED' : '' %>><% $_ %>
+                  <OPTION<% $_ == $month ? ' SELECTED' : '' %>><% $_ %>
 % } 
 
-            </SELECT>
-          </TD>
-          <TD> / </TD>
-          <TD>
-            <SELECT NAME="year">
+              </SELECT>
+            </TD>
+            <TD> / </TD>
+            <TD>
+              <SELECT NAME="year">
 % my @a = localtime; for ( $a[5]+1900 .. $a[5]+1915 ) { 
 
-                <OPTION<% $_ == $year ? ' SELECTED' : '' %>><% $_ %>
+                  <OPTION<% $_ == $year ? ' SELECTED' : '' %>><% $_ %>
 % } 
 
-            </SELECT>
-          </TD>
-        </TR>
-      </TABLE>
-    </TD>
-  </TR>
-  <TR>
-    <TD ALIGN="right">CVV2</TD>
-    <TD><INPUT TYPE="text" NAME="paycvv" VALUE="<% $paycvv %>" SIZE=4 MAXLENGTH=4>
-        (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('../docs/cvv2.html', 480, 352, 'cvv2_popup' ), CAPTION, 'CVV2 Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;">help</A>)
-    </TD>
-  </TR>
-  <TR>
-    <TD ALIGN="right">Exact&nbsp;name&nbsp;on&nbsp;card</TD>
-    <TD><INPUT TYPE="text" SIZE=32 MAXLENGTH=80 NAME="payname" VALUE="<%$payname%>"></TD>
-  </TR><TR>
-    <TD ALIGN="right">Card&nbsp;billing&nbsp;address</TD>
-    <TD>
-      <INPUT TYPE="text" SIZE=40 MAXLENGTH=80 NAME="address1" VALUE="<%$address1%>">
-    </TD>
-  </TR><TR>
-    <TD ALIGN="right">Address&nbsp;line&nbsp;2</TD>
-    <TD>
-      <INPUT TYPE="text" SIZE=40 MAXLENGTH=80 NAME="address2" VALUE="<%$address2%>">
-    </TD>
-  </TR><TR>
-    <TD ALIGN="right">City</TD>
-    <TD>
-      <TABLE>
-        <TR>
-          <TD>
-            <INPUT TYPE="text" NAME="city" SIZE="12" MAXLENGTH=80 VALUE="<%$city%>">
-          </TD>
-          <TD>State</TD>
-          <TD>
-            <SELECT NAME="state">
+              </SELECT>
+            </TD>
+          </TR>
+        </TABLE>
+      </TD>
+    </TR>
+    <TR>
+      <TD ALIGN="right">CVV2</TD>
+      <TD><INPUT TYPE="text" NAME="paycvv" VALUE="<% $paycvv %>" SIZE=4 MAXLENGTH=4>
+          (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('../docs/cvv2.html', 480, 352, 'cvv2_popup' ), CAPTION, 'CVV2 Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;">help</A>)
+      </TD>
+    </TR>
+    <TR>
+      <TD ALIGN="right">Exact&nbsp;name&nbsp;on&nbsp;card</TD>
+      <TD><INPUT TYPE="text" SIZE=32 MAXLENGTH=80 NAME="payname" VALUE="<%$payname%>"></TD>
+    </TR><TR>
+      <TD ALIGN="right">Card&nbsp;billing&nbsp;address</TD>
+      <TD>
+        <INPUT TYPE="text" SIZE=40 MAXLENGTH=80 NAME="address1" VALUE="<%$address1%>">
+      </TD>
+    </TR><TR>
+      <TD ALIGN="right">Address&nbsp;line&nbsp;2</TD>
+      <TD>
+        <INPUT TYPE="text" SIZE=40 MAXLENGTH=80 NAME="address2" VALUE="<%$address2%>">
+      </TD>
+    </TR><TR>
+      <TD ALIGN="right">City</TD>
+      <TD>
+        <TABLE>
+          <TR>
+            <TD>
+              <INPUT TYPE="text" NAME="city" SIZE="12" MAXLENGTH=80 VALUE="<%$city%>">
+            </TD>
+            <TD>State</TD>
+            <TD>
+              <SELECT NAME="state">
 % for ( @states ) { 
 
-                <OPTION<% $_ eq $state ? ' SELECTED' : '' %>><% $_ %> 
+                  <OPTION<% $_ eq $state ? ' SELECTED' : '' %>><% $_ %> 
 % } 
 
-            </SELECT>
-          </TD>
-          <TD>Zip</TD>
-          <TD>
-            <INPUT TYPE="text" NAME="zip" SIZE=11 MAXLENGTH=10 VALUE="<%$zip%>">
-          </TD>
-        </TR>
-      </TABLE>
-    </TD>
-  </TR>
+              </SELECT>
+            </TD>
+            <TD>Zip</TD>
+            <TD>
+              <INPUT TYPE="text" NAME="zip" SIZE=11 MAXLENGTH=10 VALUE="<%$zip%>">
+            </TD>
+          </TR>
+        </TABLE>
+      </TD>
+    </TR>
+
 % } elsif ( $payby eq 'CHEK' ) {
-%     my( $payinfo1, $payinfo2, $payname, $ss, $paytype, $paystate,
-%         $stateid, $stateid_state )
-%       = ( '', '', '', '', '', '', '', '' );
-%     if ( $cust_main->payby =~ /^(CHEK|DCHK)$/ ) {
-%       $cust_main->paymask =~ /^([\dx]+)\@([\dx]+)$/i
-%         or die "unparsable payinfo ". $cust_main->payinfo;
-%       ($payinfo1, $payinfo2) = ($1, $2);
-%       $payname = $cust_main->payname;
-%       $ss = $cust_main->ss;
-%       $paytype = $cust_main->getfield('paytype');
-%       $paystate = $cust_main->getfield('paystate');
-%       $stateid = $cust_main->getfield('stateid');
-%       $stateid_state = $cust_main->getfield('stateid_state');
-%     }
 %
+%   my( $payinfo1, $payinfo2, $payname, $ss, $paytype, $paystate,
+%       $stateid, $stateid_state )
+%     = ( '', '', '', '', '', '', '', '' );
+%   if ( $cust_main->payby =~ /^(CHEK|DCHK)$/ ) {
+%     $cust_main->paymask =~ /^([\dx]+)\@([\dx]+)$/i
+%       or die "unparsable payinfo ". $cust_main->payinfo;
+%     ($payinfo1, $payinfo2) = ($1, $2);
+%     $payname = $cust_main->payname;
+%     $ss = $cust_main->ss;
+%     $paytype = $cust_main->getfield('paytype');
+%     $paystate = $cust_main->getfield('paystate');
+%     $stateid = $cust_main->getfield('stateid');
+%     $stateid_state = $cust_main->getfield('stateid_state');
+%   }
 
-  <INPUT TYPE="hidden" NAME="month" VALUE="12">
-  <INPUT TYPE="hidden" NAME="year" VALUE="2037">
-  <TR>
-    <TD ALIGN="right">Account&nbsp;number</TD>
-    <TD><INPUT TYPE="text" SIZE=10 NAME="payinfo1" VALUE="<%$payinfo1%>"></TD>
-    <TD ALIGN="right">Type</TD>
-    <TD><SELECT NAME="paytype"><% join('', map { qq!<OPTION VALUE="$_" !.($paytype eq $_ ? 'SELECTED' : '').">$_</OPTION>" } @FS::cust_main::paytypes) %></SELECT></TD>
-  </TR>
-  <TR>
-    <TD ALIGN="right">ABA/Routing&nbsp;number</TD>
-    <TD>
-      <INPUT TYPE="text" SIZE=10 MAXLENGTH=9 NAME="payinfo2" VALUE="<%$payinfo2%>">
-      (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('../docs/ach.html', 380, 240, 'ach_popup' ), CAPTION, 'ACH Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;">help</A>)
-    </TD>
-  </TR>
-  <TR>
-    <TD ALIGN="right">Bank&nbsp;name</TD>
-    <TD><INPUT TYPE="text" NAME="payname" VALUE="<%$payname%>"></TD>
-  </TR>
-  <TR>
-    <TD ALIGN="right">Bank&nbsp;state</TD>
-    <TD><% include('../edit/cust_main/select-state.html', #meh 
-                   'empty'   => '(choose)',
-                   'state'   => $paystate,
-                   'country' => $cust_main->country,
-                   'prefix'  => 'pay',
-                  ) %></TD>
-  </TR>
-  <TR>
-    <TD ALIGN="right">
-      Account&nbsp;holder<BR>
-      Social&nbsp;security&nbsp;or&nbsp;tax&nbsp;ID&nbsp;#
-    </TD>
-    <TD><INPUT TYPE="text" NAME="ss" VALUE="<%$ss%>"></TD>
-  </TR>
-  <TR>
-    <TD ALIGN="right">
-      Account&nbsp;holder<BR>
-      Driver&rsquo;s&nbsp;license&nbsp;or&nbsp;state&nbsp;ID&nbsp;#
-    </TD>
-    <TD><INPUT TYPE="text" NAME="stateid" VALUE="<%$stateid%>"></TD>
-    <TD ALIGN="right">State</TD>
-    <TD><% include('../edit/cust_main/select-state.html', #meh 
-                   'empty'   => '(choose)',
-                   'state'   => $stateid_state,
-                   'country' => $cust_main->country,
-                   'prefix'  => 'stateid_',
-                  ) %></TD>
-  </TR>
-% } 
+    <INPUT TYPE="hidden" NAME="month" VALUE="12">
+    <INPUT TYPE="hidden" NAME="year" VALUE="2037">
+    <TR>
+      <TD ALIGN="right">Account&nbsp;number</TD>
+      <TD><INPUT TYPE="text" SIZE=10 NAME="payinfo1" VALUE="<%$payinfo1%>"></TD>
+      <TD ALIGN="right">Type</TD>
+      <TD><SELECT NAME="paytype"><% join('', map { qq!<OPTION VALUE="$_" !.($paytype eq $_ ? 'SELECTED' : '').">$_</OPTION>" } @FS::cust_main::paytypes) %></SELECT></TD>
+    </TR>
+    <TR>
+      <TD ALIGN="right">ABA/Routing&nbsp;number</TD>
+      <TD>
+        <INPUT TYPE="text" SIZE=10 MAXLENGTH=9 NAME="payinfo2" VALUE="<%$payinfo2%>">
+        (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('../docs/ach.html', 380, 240, 'ach_popup' ), CAPTION, 'ACH Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;">help</A>)
+      </TD>
+    </TR>
+    <TR>
+      <TD ALIGN="right">Bank&nbsp;name</TD>
+      <TD><INPUT TYPE="text" NAME="payname" VALUE="<%$payname%>"></TD>
+    </TR>
+
+%   if ( $conf->exists('show_bankstate') ) {
+      <TR>
+        <TD ALIGN="right">Bank&nbsp;state</TD>
+        <TD><% include('/elements/select-state.html',
+                         'disable_empty' => 0,
+                         'empty_label'   => '(choose)',
+                         'state'         => $paystate,
+                         'country'       => $cust_main->country,
+                         'prefix'        => 'pay',
+                      )
+            %>
+        </TD>
+      </TR>
+%   } else {
+      <INPUT TYPE="hidden" NAME="paystate" VALUE="<% $paystate %>">
+%   }
+
+%   if ( $conf->exists('show_ss') ) {
+      <TR>
+        <TD ALIGN="right">
+          Account&nbsp;holder<BR>
+          Social&nbsp;security&nbsp;or&nbsp;tax&nbsp;ID&nbsp;#
+        </TD>
+        <TD><INPUT TYPE="text" NAME="ss" VALUE="<% $ss %>"></TD>
+      </TR>
+%   } else {
+      <INPUT TYPE="hidden" NAME="ss" VALUE="<% $ss %>"></TD>
+%   }
+
+%   if ( $conf->exists('show_stateid') ) {
+      <TR>
+        <TD ALIGN="right">
+          Account&nbsp;holder<BR>
+          Driver&rsquo;s&nbsp;license&nbsp;or&nbsp;state&nbsp;ID&nbsp;#
+        </TD>
+        <TD><INPUT TYPE="text" NAME="stateid" VALUE="<% $stateid %>"></TD>
+        <TD ALIGN="right">State</TD>
+        <TD><% include('/elements/select-state.html',
+                         'disable_empty' => 0,
+                         'empty_label'   => '(choose)',
+                         'state'         => $stateid_state,
+                         'country'       => $cust_main->country,
+                         'prefix'        => 'stateid_',
+                      )
+            %>
+        </TD>
+      </TR>
+%   } else {
+      <INPUT TYPE="hidden" NAME="stateid" VALUE="<% $stateid %>">
+      <INPUT TYPE="hidden" NAME="stateid_state" VALUE="<% $stateid_state %>">
+%   }
+
+% } #end CARD/CHEK-specific section
 
 
 <TR>

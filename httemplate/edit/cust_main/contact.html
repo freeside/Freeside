@@ -54,11 +54,11 @@
   </TD>
   <TH ALIGN="right" ID="<%$pre%>countylabel" <%$county_style%>><%$r%>County</TH>
   <TD>
-    <% include('select-county.html', %select_hash ) %>
+    <% include('/elements/select-county.html', %select_hash ) %>
   </TD>
   <TH ALIGN="right"><%$r%>State</TH>
   <TD>
-    <% include('select-state.html', %select_hash ) %>
+    <% include('/elements/select-state.html', %select_hash ) %>
   </TD>
   <TH><%$r%>Zip</TH>
   <TD>
@@ -68,7 +68,7 @@
 
 <TR>
   <TH ALIGN="right"><%$r%>Country</TH>
-  <TD COLSPAN=5><% include('select-country.html', %select_hash ) %></TD>
+  <TD COLSPAN=5><% include('/elements/select-country.html', %select_hash ) %></TD>
 % if ( !$pre ) { 
   <TD><INPUT TYPE="hidden" NAME="geocode" VALUE="<% $opt{geocode} %>"></TD>
 % } 
@@ -102,11 +102,15 @@
   <TD ALIGN="right"><% $stateid_label %></TD>
   <TD><INPUT TYPE="text" NAME="stateid" VALUE="<% $opt{stateid} %>" SIZE=12 onChange="<% $onchange %>" <%$disabled%>></TD>
   <TD ALIGN="right"><% $stateid_state_label %></TD>
-  <TD><% include('select-state.html', 'state' => $cust_main->stateid_state,
-                                      'country' => $cust_main->country,
-                                      'prefix'  => 'stateid_',
-                                      'onchange' => $onchange,
-                                      'disabled' => $disabled) %></TD>
+  <TD><% include('/elements/select-state.html',
+                   'state'    => $cust_main->stateid_state,
+                   'country'  => $cust_main->country,
+                   'prefix'   => 'stateid_',
+                   'onchange' => $onchange,
+                   'disabled' => $disabled,
+                )
+      %>
+  </TD>
 </TR>
 % } elsif ( !$pre ) { 
 
