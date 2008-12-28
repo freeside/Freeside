@@ -186,7 +186,7 @@ $cgi->param('county',   $county ) if $county;
 $cgi->param('taxclass', $county ) if $taxclass;
 
 my $html_posttotal =
-  '( show country: '.
+  '<BR>( show country: '.
   include('/elements/select-country.html',
             'country'             => $country,
             'onchange'            => $filter_change,
