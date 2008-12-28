@@ -30,7 +30,7 @@ if ( $cgi->param('taxclass') ) {
   #warn "$_: $expansion[$_]\n" foreach (0..$#expansion);
 
   @expansion=map {
-    unless ( /^\s*([\w\- ]+)\s*$/ ) {
+    unless ( /^\s*([\w \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\=\[\]]+)\s*$/ ) {
       $cgi->param('error', "Illegal item in expansion: $_");
       print $cgi->redirect(popurl(2). "cust_main_county-expand.cgi?". $cgi->query_string );
       myexit();
