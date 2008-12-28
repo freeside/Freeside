@@ -175,9 +175,9 @@ $cgi->param('dummy', 1);
 
 my $filter_change =
   "window.location = '". $cgi->self_url.
-  ";country=' + document.getElementById('country').options[document.getElementById('country').selectedIndex].value + ".
-  "';state='   + document.getElementById('state').options[document.getElementById('state').selectedIndex].value +".
-  "';county='  + document.getElementById('county').options[document.getElementById('county').selectedIndex].value;";
+  ";country=' + encodeURIComponent( document.getElementById('country').options[document.getElementById('country').selectedIndex].value ) + ".
+  "';state='   + encodeURIComponent( document.getElementById('state').options[document.getElementById('state').selectedIndex].value ) +".
+  "';county='  + encodeURIComponent( document.getElementById('county').options[document.getElementById('county').selectedIndex].value );";
 
 #restore this so pagination works
 $cgi->param('country',  $country) if $country;
