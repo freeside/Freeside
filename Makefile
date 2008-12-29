@@ -128,6 +128,8 @@ TAG=freeside_1_9_0
 
 DEBVERSION = `echo ${VERSION} | perl -pe 's/(\d)([a-z])/\1~\2/'`-1
 
+TEXMFHOME := "\$$TEXMFHOME"
+
 help:
 	@echo "supported targets:"
 	@echo "                   create-database create-config"
@@ -231,6 +233,11 @@ dev-perl-modules: perl-modules
 	rm -rf ${PERL_INC_DEV_KLUDGE}/FS
 	ln -sf ${FREESIDE_PATH}/FS/blib/lib/FS ${PERL_INC_DEV_KLUDGE}/FS
 
+install-texmf:	
+	install -D -o freeside -m 444 etc/fslongtable.sty \
+          `kpsewhich -expand-var \\\$$TEXMFLOCAL`/tex/generic/fslongtable.sty
+	texhash `kpsewhich -expand-var \\\$$TEXMFLOCAL`
+
 install-init:
 	#[ -e ${INIT_FILE} ] || install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-init ${INIT_FILE}
 	install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-init ${INIT_FILE}
@@ -272,7 +279,7 @@ update-selfservice:
 	  ssh ${SELFSERVICE_INSTALL_USER}@$$MACHINE "cd FS-SelfService; sudo make install" ;\
 	done
 
-install: install-perl-modules install-docs install-init install-apache install-rt
+install: install-perl-modules install-docs install-init install-apache install-rt install-texmf
 
 deploy: install
 	${HTTPD_RESTART}

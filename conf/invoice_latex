@@ -19,7 +19,7 @@
 
 \documentclass[letterpaper]{article}
 
-\usepackage{fancyhdr,lastpage,ifthen,longtable,afterpage,caption,multirow,bigstrut}
+\usepackage{fancyhdr,lastpage,ifthen,fslongtable,afterpage,caption,multirow,bigstrut}
 \usepackage{graphicx}			% required for logo graphic
 
 \addtolength{\voffset}{-0.0cm}		% top margin to top of header
