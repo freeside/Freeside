@@ -382,6 +382,7 @@ sub calc_recur {
         $charges += $charge;
 
         @call_details = ($cdr->downstream_csv( 'format' => $output_format ));
+        $classnum = $cdr->calltypenum;
 
       } else {
         die "don't know how to rate CDRs using method: $rating_method\n";
