@@ -431,7 +431,7 @@ my %export_names = (
   },
   'source_default' => {
     'name'           => 'Default with source',
-    'invoice_header' => 'Caller,Date,Time,Duration,Price,Number,Destination',
+    'invoice_header' => 'Caller,Date,Time,Duration,Number,Destination,Price',
   },
 );
 
@@ -494,7 +494,11 @@ my %export_formats = (
 
   ],
 );
-$export_formats{'source_default'} = [ 'src', @{ $export_formats{'default'} } ];
+$export_formats{'source_default'} = [ 'src',
+                                      @{ $export_formats{'default'} }[0..2],
+                                      @{ $export_formats{'default'} }[4..5],
+                                      @{ $export_formats{'default'} }[3],
+                                    ];
 
 sub downstream_csv {
   my( $self, %opt ) = @_;
