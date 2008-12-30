@@ -166,9 +166,11 @@ sub _upgrade_data { # class method
                             order_by => 'ORDER BY history_action',
                          });
 
-    if (@history < 2) {
-      $hashref->{history_date}++;  # more fuzz?
+    my $fuzz = 0;
+    while (scalar(@history) < 2 && $fuzz < 3) {
+      $hashref->{history_date}++;
       $hashref->{history_action} = { %action_value }; # qsearch distorts this!
+      $fuzz++;
       push @history, qsearch({ table    => 'h_cust_pkg',
                                hashref  => $hashref,
                                order_by => 'ORDER BY history_action',
@@ -190,10 +192,12 @@ sub _upgrade_data { # class method
             (!$old[0]->expire || !$old[0]->expire != $new[0]->expire )
           ){
       $_->action('E');
+      $_->date($new[0]->expire);
     }elsif( $new[0]->adjourn &&
             (!$old[0]->adjourn || $old[0]->adjourn != $new[0]->adjourn )
           ){
       $_->action('A');
+      $_->date($new[0]->adjourn);
     }
 
     my $error = $_->replace
@@ -206,6 +210,111 @@ sub _upgrade_data { # class method
 
   #remove nullability if scalar(@migrated) - $count == 0 && ->column('action');
   
+  #seek expirations/adjourns without reason
+  foreach my $field qw( expire adjourn cancel susp ) {
+    my $addl_from =
+      "LEFT JOIN h_cust_pkg ON ".
+      "(cust_pkg_reason.pkgnum = h_cust_pkg.pkgnum AND".
+      " cust_pkg_reason.date = h_cust_pkg.$field AND".
+      " history_action = 'replace_new')";
+
+    my $extra_sql = 'AND h_cust_pkg.pkgnum IS NULL';
+
+    my @unmigrated = qsearch({ table   => 'cust_pkg_reason',
+                               hashref => { action => uc(substr($field,0,1)) },
+                               addl_from => $addl_from,
+                               select    => 'cust_pkg_reason.*',
+                               extra_sql => $extra_sql,
+                            }); 
+    foreach ( @unmigrated ) {
+      # we could create h_cust_pkg_reason and h_cust_pkg_reason packages
+      @FS::h_cust_pkg::ISA = qw( FS::h_Common FS::cust_pkg );
+      sub FS::h_cust_pkg::table { 'h_cust_pkg' };
+
+      my %action_value = ( op    => 'LIKE',
+                           value => 'replace_%',
+                         );
+      my $hashref = { pkgnum => $_->pkgnum,
+                      history_date   => $_->date,
+                      history_action => { %action_value },
+                    };
+
+      my @history = qsearch({ table    => 'h_cust_pkg',
+                              hashref  => $hashref,
+                              order_by => 'ORDER BY history_action',
+                           });
+
+      my $fuzz = 0;
+      while (scalar(@history) < 2 && $fuzz < 3) {
+        $hashref->{history_date}++;
+        $hashref->{history_action} = { %action_value }; # qsearch distorts this!
+        $fuzz++;
+        push @history, qsearch({ table    => 'h_cust_pkg',
+                                 hashref  => $hashref,
+                                 order_by => 'ORDER BY history_action',
+                              });
+      }
+
+      next unless scalar(@history) == 2;
+
+      my @new = grep { $_->history_action eq 'replace_new' } @history;
+      my @old = grep { $_->history_action eq 'replace_old' } @history;
+    
+      next if (scalar(@new) == 2 || scalar(@old) == 2);
+
+      $_->date($new[0]->get($field))
+        if ( $new[0]->get($field) &&
+             ( !$old[0]->get($field) ||
+                $old[0]->get($field) != $new[0]->get($field)
+             )
+           );
+
+      my $error = $_->replace
+        if $_->modified;
+
+      die $error if $error;
+    }
+  }
+
+  #seek cancels/suspends without reason, but with expire/adjourn reason
+  foreach my $field qw( cancel susp ) {
+
+    my %precursor_map = ( 'cancel' => 'expire', 'susp' => 'adjourn' );
+    my $precursor = $precursor_map{$field};
+    my $preaction = uc(substr($precursor,0,1));
+    my $action    = uc(substr($field,0,1));
+    my $addl_from =
+      "LEFT JOIN cust_pkg_reason ON ".
+      "(cust_pkg.pkgnum = cust_pkg_reason.pkgnum AND".
+      " cust_pkg.$precursor = cust_pkg_reason.date AND".
+      " cust_pkg_reason.action = '$preaction') ".
+      "LEFT JOIN cust_pkg_reason AS target ON ".
+      "(cust_pkg.pkgnum = target.pkgnum AND".
+      " cust_pkg.$field = target.date AND".
+      " target.action = '$action')"
+    ;
+
+    my $extra_sql = "WHERE target.pkgnum IS NULL AND ".
+                    "cust_pkg.$field IS NOT NULL AND ".
+                    "cust_pkg.$field < cust_pkg.$precursor + 86400 AND ".
+                    "cust_pkg_reason.action = '$preaction'";
+
+    my @unmigrated = qsearch({ table     => 'cust_pkg',
+                               hashref   => { },
+                               select    => 'cust_pkg.*',
+                               addl_from => $addl_from,
+                               extra_sql => $extra_sql,
+                            }); 
+    foreach ( @unmigrated ) {
+      my $cpr = new FS::cust_pkg_reason { $_->last_cust_pkg_reason($precursor)->hash, 'num' => '' };
+      $cpr->date($_->get($field));
+      $cpr->action($action);
+
+      my $error = $cpr->insert;
+      die $error if $error;
+    }
+  }
+
   '';
 
 }

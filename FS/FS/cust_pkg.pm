@@ -551,7 +551,7 @@ sub cancel {
   if ( $options{'reason'} ) {
     $error = $self->insert_reason( 'reason' => $options{'reason'},
                                    'action' => $date ? 'expire' : 'cancel',
-                                   'date'   => $date,
+                                   'date'   => $date ? $date : $cancel_time,
                                    'reason_otaker' => $options{'reason_otaker'},
                                  );
     if ( $error ) {
@@ -749,10 +749,12 @@ sub suspend {
     return "Package $pkgnum expires before it would be suspended.";
   }
 
+  my $suspend_time = $options{'time'} || time;
+
   if ( $options{'reason'} ) {
     $error = $self->insert_reason( 'reason' => $options{'reason'},
                                    'action' => $date ? 'adjourn' : 'suspend',
-                                   'date'   => $date,
+                                   'date'   => $date ? $date : $suspend_time,
                                    'reason_otaker' => $options{'reason_otaker'},
                                  );
     if ( $error ) {
@@ -819,7 +821,7 @@ sub suspend {
   if ( $date ) {
     $hash{'adjourn'} = $date;
   } else {
-    $hash{'susp'} = time;
+    $hash{'susp'} = $suspend_time;
   }
   my $new = new FS::cust_pkg ( \%hash );
   $error = $new->replace( $self, options => { $self->options } );
