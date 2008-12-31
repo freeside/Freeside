@@ -148,10 +148,13 @@ sub process_batch_import {
   my $job = shift;
 
   my $numsub = sub {
-    my( $hash, $value ) = @_;
+    my( $phone_avail, $value ) = @_;
     $value =~ s/\D//g;
     $value =~ /^(\d{3})(\d{3})(\d+)$/ or die "unparsable number $value\n";
-    ( $hash->{npa}, $hash->{nxx}, $hash->{station} ) = ( $1, $2, $3 );
+    #( $hash->{npa}, $hash->{nxx}, $hash->{station} ) = ( $1, $2, $3 );
+    $phone_avail->npa($1);
+    $phone_avail->nxx($2);
+    $phone_avail->station($3);
   };
 
   my $opt = { 'table'   => 'phone_avail',

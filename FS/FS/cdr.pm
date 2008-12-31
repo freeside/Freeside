@@ -234,6 +234,15 @@ sub check {
   $self->calldate( $self->startdate_sql )
     if !$self->calldate && $self->startdate;
 
+  #was just for $format eq 'taqua' but can't see the harm... add something to
+  #disable if it becomes a problem
+  if ( $self->duration eq '' && $self->enddate && $self->startdate ) {
+    $self->duration( $self->enddate - $self->startdate  );
+  }
+  if ( $self->billsec eq '' && $self->enddate && $self->answerdate ) {
+    $self->billsec(  $self->enddate - $self->answerdate );
+  } 
+
   my $conf = new FS::Conf;
 
   unless ( $self->charged_party ) {
@@ -671,138 +680,42 @@ Imports CDR records.  Available options are:
 
 =cut
 
-sub batch_import {
-  my $param = shift;
+sub process_batch_import {
+  my $job = shift;
 
-  my $fh = $param->{filehandle};
-  my $format = $param->{format};
-  my $cdrbatch = $param->{cdrbatch};
+  my $opt = {
+    'table'   => 'cdr',
+    'params'  => [ 'format', 'cdrbatch' ],
 
-  return "Unknown format $format"
-    unless exists( $cdr_info{$format} )
-        && exists( $cdr_info{$format}->{'import_fields'} );
+    'formats' => { map { $_ => $cdr_info{$_}->{'import_fields'}; }
+                       keys %cdr_info
+                 },
 
-  my $info = $cdr_info{$format};
+                            #drop the || 'csv' to allow auto xls for csv types?
+    'format_types' => { map { $_ => ( lc($cdr_info{$_}->{'type'}) || 'csv' ); }
+                            keys %cdr_info
+                      },
 
-  my $type = exists($info->{'type'}) ? lc($info->{'type'}) : 'csv';
+    'format_headers' => { map { $_ => ( $cdr_info{$_}->{'header'} || 0 ); }
+                              keys %cdr_info
+                        },
 
-  my $parser;
-  if ( $type eq 'csv' ) {
-    eval "use Text::CSV_XS;";
-    die $@ if $@;
-    my %attr = ();
-    foreach ( grep exists($info->{$_}), qw( sep_char ) ) {
-      $attr{$_} = $info->{$_};
-    }
-    $parser = new Text::CSV_XS \%attr;
-  } elsif ( $type eq 'fixedlength' ) {
-    eval "use Parse::FixedLength;";
-    die $@ if $@;
-    $parser = new Parse::FixedLength $info->{'fixedlength_format'};
-  } else {
-    die "Unknown CDR format type $type for format $format\n";
-  }
+    'format_sep_chars' => { map { $_ => $cdr_info{$_}->{'sep_char'}; }
+                                keys %cdr_info
+                          },
 
-  my $imported = 0;
-  #my $columns;
+    'format_fixedlength_formats' =>
+      { map { $_ => $cdr_info{$_}->{'fixedlength_format'}; }
+            keys %cdr_info
+      },
+  };
 
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
-
-  my $oldAutoCommit = $FS::UID::AutoCommit;
-  local $FS::UID::AutoCommit = 0;
-  my $dbh = dbh;
-
-  my $header_lines = exists($info->{'header'}) ? $info->{'header'} : 0;
-
-  my $line;
-  while ( defined($line=<$fh>) ) {
-
-    next if $header_lines-- > 0; #&& $line =~ /^[\w, "]+$/ 
-
-    my @columns = ();
-    if ( $type eq 'csv' ) {
-
-      $parser->parse($line) or do {
-        $dbh->rollback if $oldAutoCommit;
-        return "can't parse: ". $parser->error_input();
-      };
-
-      @columns = $parser->fields();
-
-    } elsif ( $type eq 'fixedlength' ) {
-
-      @columns = $parser->parse($line);
-
-    } else {
-      die "Unknown CDR format type $type for format $format\n";
-    }
-
-    #warn join('-',@columns);
-
-    if ( $format eq 'simple' ) { #should be a callback or opt in FS::cdr::simple
-      @columns = map { s/^ +//; $_; } @columns;
-    }
-
-    my @later = ();
-    my %cdr =
-      map {
-
-        my $field_or_sub = $_;
-        if ( ref($field_or_sub) ) {
-          push @later, $field_or_sub, shift(@columns);
-          ();
-        } else {
-          ( $field_or_sub => shift @columns );
-        }
-
-      }
-      @{ $info->{'import_fields'} }
-    ;
- 
-    $cdr{cdrbatch} = $cdrbatch;
-
-    my $cdr = new FS::cdr ( \%cdr );
-
-    while ( scalar(@later) ) {
-      my $sub = shift @later;
-      my $data = shift @later;
-      &{$sub}($cdr, $data);  # $cdr->&{$sub}($data); 
-    }
-
-    if ( $format eq 'taqua' ) { #should be a callback or opt in FS::cdr::taqua
-      if ( $cdr->enddate && $cdr->startdate  ) { #a bit more?
-        $cdr->duration( $cdr->enddate - $cdr->startdate  );
-      }
-      if ( $cdr->enddate && $cdr->answerdate ) { #a bit more?
-        $cdr->billsec(  $cdr->enddate - $cdr->answerdate );
-      } 
-    }
-
-    my $error = $cdr->insert;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
-
-      #or just skip?
-      #next;
-    }
-
-    $imported++;
-  }
-
-  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-
-  #might want to disable this if we skip records for any reason...
-  return "Empty file!" unless $imported || $param->{empty_ok};
-
-  '';
+  FS::Record::process_batch_import( $job, $opt, @_ );
 
 }
+#  if ( $format eq 'simple' ) { #should be a callback or opt in FS::cdr::simple
+#    @columns = map { s/^ +//; $_; } @columns;
+#  }
 
 =back
 

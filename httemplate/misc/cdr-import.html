@@ -1,19 +1,50 @@
 <% include("/elements/header.html",'Call Detail Record Import') %>
-<FORM ACTION="process/cdr-import.html" METHOD="POST" ENCTYPE="multipart/form-data">
-Import a CSV file containing Call Detail Records (CDRs).<BR><BR>
-CDR Format:
-<SELECT NAME="format">
-% foreach my $format ( keys %formats ) {
-    <OPTION VALUE="<% $format %>"><% $formats{$format} %></OPTION>
-% }
-</SELECT>
-<BR><BR>
+  
+<% include( '/elements/form-file_upload.html',
+              'name'      => 'CDRImportForm',
+              'action'    => 'process/cdr-import.html',
+              'num_files' => 1,
+              'fields'    => [ 'format', 'cdrbatch', ],
+              'message'   => 'CDR import successful',
+              'url'       => $p."search/cdr.html?cdrbatch=$cdrbatch",
+          )
+%>
 
-Filename: <INPUT TYPE="file" NAME="csvfile"><BR><BR>
+Import a file containing Call Detail Records (CDRs).<BR><BR>
 
 <INPUT TYPE="hidden" NAME="cdrbatch" VALUE="<% $cdrbatch %>"%>
 
-<INPUT TYPE="submit" VALUE="Upload">
+<% ntable('#cccccc', 2) %>
+
+  <TR>
+    <TD>CDR Format</TD>
+    <TD>
+      <SELECT NAME="format">
+%       foreach my $format ( keys %formats ) {
+         <OPTION VALUE="<% $format %>"><% $formats{$format} %></OPTION>
+%       }
+      </SELECT>
+    </TD>
+  </TR>
+
+  <% include( '/elements/file-upload.html',
+                'field' => 'file',
+                'label' => 'Filename',
+            )
+  %>
+
+  <TR>
+    <TD COLSPAN=2 ALIGN="center" STYLE="padding-top:6px">
+      <INPUT TYPE    = "submit"
+             ID      = "submit"
+             VALUE   = "Import file"
+             onClick = "document.InventoryItemImportForm.submit.disabled=true;"
+      >
+    </TD>
+  </TR>
+
+</TABLE>
+
 </FORM>
 
 <% include('/elements/footer.html') %>

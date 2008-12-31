@@ -114,7 +114,7 @@ tie my %temporalities, 'Tie::IxHash',
     '411_rewrite' => { 'name' => 'Rewrite these (comma-separated) destination numbers to 411 for rating purposes: ',
                       },
 
-    'output_format' => { 'name' => 'Simple output format',
+    'output_format' => { 'name' => 'CDR invoice display format',
                          'type' => 'select',
                          'select_options' => { FS::cdr::invoice_formats() },
                          'default'        => 'default', #XXX test

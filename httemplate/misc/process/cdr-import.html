@@ -1,23 +1,9 @@
-% if ( $error ) {
-%   errorpage($error);
-% } else {
-    <% include("/elements/header.html",'Import successful') %>
-    <!-- XXX redirect to batch search like the payment entry... -->
-    <% include("/elements/footer.html",'Import successful') %> 
-% }
+<% $server->process %>
 <%init>
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Import');
 
-my $fh = $cgi->upload('csvfile');
-
-my $error = defined($fh)
-  ? FS::cdr::batch_import( {
-      'filehandle' => $fh,
-      'format'     => scalar($cgi->param('format')),
-      'cdrbatch'   => scalar($cgi->param('cdrbatch')),
-    } )
-  : 'No file';
+my $server = new FS::UI::Web::JSRPC 'FS::cdr::process_batch_import', $cgi;
 
 </%init>

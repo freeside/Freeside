@@ -13,7 +13,7 @@ use FS::cdr qw(_cdr_min_parser_maker);
   'header'        => 1,
   'import_fields' => [
 
-    # Date
+    # Date (MM/DD/YY)
     sub { my($cdr, $date) = @_;
           $date =~ /^(\d{1,2})\/(\d{1,2})\/(\d\d(\d\d)?)$/
             or die "unparsable date: $date"; #maybe we shouldn't die...
