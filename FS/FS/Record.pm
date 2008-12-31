@@ -1569,6 +1569,11 @@ sub batch_import {
     eval "use Spreadsheet::ParseExcel;";
     die $@ if $@;
 
+    eval "use DateTime::Format::Excel;";
+    #for now, just let the error be thrown if it is used, since only CDR
+    # formats bill_west and troop use it, not other excel-parsing things
+    #die $@ if $@;
+
     my $excel = Spreadsheet::ParseExcel::Workbook->new->Parse($filename);
 
     $parser = $excel->{Worksheet}[0]; #first sheet
@@ -1642,7 +1647,7 @@ sub batch_import {
         #&{$field}(\%hash, $value);
         push @later, $field, $value;
       } else {
-        $hash{$field} = $value if length($value);
+        $hash{$field} = $value if defined($value) && length($value);
       }
 
     }
@@ -1664,6 +1669,7 @@ sub batch_import {
       return "can't insert record". ( $line ? " for $line" : '' ). ": $error";
     }
 
+    $row++;
     $imported++;
 
     if ( $job && time - $min_sec > $last ) { #progress bar

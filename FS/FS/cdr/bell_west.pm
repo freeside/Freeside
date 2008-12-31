@@ -24,10 +24,16 @@ use FS::cdr qw( _cdr_date_parser_maker _cdr_min_parser_maker );
 
     # DATE / Yes / "DATE"   Excel date format MM/DD/YYYY
     sub { my($cdr, $date) = @_;
-          $date =~ /^(\d{1,2})\/(\d{1,2})\/(\d\d(\d\d)?)$/
-            or die "unparsable date: $date"; #maybe we shouldn't die...
-          #$cdr->startdate( timelocal(0, 0, 0 ,$2, $1-1, $3) );
-          ($tmp_mday, $tmp_mon, $tmp_year) = ( $2, $1-1, $3 );
+
+          #$date =~ /^(\d{1,2})\/(\d{1,2})\/(\d\d(\d\d)?)$/
+          #  or die "unparsable date: $date"; #maybe we shouldn't die...
+          ##$cdr->startdate( timelocal(0, 0, 0 ,$2, $1-1, $3) );
+          #($tmp_mday, $tmp_mon, $tmp_year) = ( $2, $1-1, $3 );
+
+          my $datetime = DateTime::Format::Excel->parse_datetime( $date );
+          $tmp_mon  = $datetime->mon_0;
+          $tmp_mday = $datetime->mday;
+          $tmp_year = $datetime->year;
         },
 
     # CUST NO / Yes / "TIME"    "075959" Text based time
@@ -35,7 +41,7 @@ use FS::cdr qw( _cdr_date_parser_maker _cdr_min_parser_maker );
     #       is wrong
     sub { my($cdr, $time) = @_;
           #my($sec, $min, $hour, $mday, $mon, $year)= localtime($cdr->startdate);
-          $time =~ /^(\d{1,2}):(\d{1,2}):(\d{1,2})$/
+          $time =~ /^(\d{2})(\d{2})(\d{2})$/
             or die "unparsable time: $time"; #maybe we shouldn't die...
           #$cdr->startdate( timelocal($3, $2, $1 ,$mday, $mon, $year) );
           $cdr->startdate(
