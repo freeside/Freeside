@@ -6677,7 +6677,7 @@ sub generate_letter {
 
   $letter_data{company_name} = $conf->config('company_name');
 
-  my $dir = $FS::UID::conf_dir."cache.". $FS::UID::datasrc;
+  my $dir = $FS::UID::conf_dir."/cache.". $FS::UID::datasrc;
   my $fh = new File::Temp( TEMPLATE => 'letter.'. $self->custnum. '.XXXXXXXX',
                            DIR      => $dir,
                            SUFFIX   => '.tex',
