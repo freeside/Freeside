@@ -1431,47 +1431,23 @@ sub process_batch_import {
   my $dir = '%%%FREESIDE_CACHE%%%/cache.'. $FS::UID::datasrc. '/';
   my $file = $dir. $files{'file'};
 
-  my $type = $opt->{'format_types'}
-             ? $opt->{'format_types'}{ $param->{'format'} }
-             : '';
-
-  unless ( $type ) {
-    if ( $file =~ /\.(\w+)$/i ) {
-      $type = lc($1);
-    } else {
-      #or error out???
-      warn "can't parse file type from filename $file; defaulting to CSV";
-      $type = 'csv';
-    }
-    $type = 'csv'
-      if $opt->{'default_csv'} && $type ne 'xls';
-  }
-
-  my $header = $opt->{'format_headers'}
-                 ? $opt->{'format_headers'}{ $param->{'format'} }
-                 : 0;
-
-  my $sep_char = $opt->{'format_sep_chars'}
-                   ? $opt->{'format_sep_chars'}{ $param->{'format'} }
-                   : ',';
-
-  my $fixedlength_format =
-    $opt->{'format_fixedlength_formats'}
-      ? $opt->{'format_fixedlength_formats'}{ $param->{'format'} }
-      : '';
-
   my $error =
     FS::Record::batch_import( {
-      table              => $table,
-      formats            => \%formats,
-      job                => $job,
-      file               => $file,
-      type               => $type,
-      format             => $param->{format},
-      header             => $header,
-      sep_char           => $sep_char,
-      fixedlength_format => $fixedlength_format,
-      params             => { map { $_ => $param->{$_} } @pass_params },
+      #class-static
+      table                      => $table,
+      formats                    => \%formats,
+      format_types               => $opt->{format_types},
+      format_headers             => $opt->{format_headers},
+      format_sep_chars           => $opt->{format_sep_chars},
+      format_fixedlength_formats => $opt->{format_fixedlength_formats},
+      #per-import
+      job                        => $job,
+      file                       => $file,
+      #type                       => $type,
+      format                     => $param->{format},
+      params                     => { map { $_ => $param->{$_} } @pass_params },
+      #?
+      default_csv                => $opt->{default_csv},
     } );
 
   unlink $file;
@@ -1489,25 +1465,27 @@ Class method for batch imports.  Available params:
 
 =item formats
 
+=item format_types
+
+=item format_headers
+
+=item format_sep_chars
+
+=item format_fixedlength_formats
+
 =item params
 
 =item job
 
 FS::queue object, will be updated with progress
 
-=item filename
+=item file
 
 =item type
 
 csv, xls or fixedlength
 
 =item format
-
-=item header
-
-=item sep_char
-
-=item fixedlength_format
 
 =item empty_ok
 
@@ -1521,19 +1499,46 @@ sub batch_import {
   warn "$me batch_import call with params: \n". Dumper($param)
     if $DEBUG;
 
-  my $table     = $param->{table};
-  my $formats   = $param->{formats};
-  my $params    = $param->{params};
+  my $table   = $param->{table};
+  my $formats = $param->{formats};
 
-  my $job       = $param->{job};
-
-  my $filename  = $param->{file};
-  my $type      = $param->{type} || 'csv';
-
-  my $format = $param->{'format'};
+  my $job     = $param->{job};
+  my $file    = $param->{file};
+  my $format  = $param->{'format'};
+  my $params  = $param->{params};
 
   die "unknown format $format" unless exists $formats->{ $format };
-  my @fields    = @{ $formats->{ $format } };
+
+  my $type = $param->{'format_types'}
+             ? $param->{'format_types'}{ $format }
+             : $param->{type} || 'csv';
+
+  unless ( $type ) {
+    if ( $file =~ /\.(\w+)$/i ) {
+      $type = lc($1);
+    } else {
+      #or error out???
+      warn "can't parse file type from filename $file; defaulting to CSV";
+      $type = 'csv';
+    }
+    $type = 'csv'
+      if $param->{'default_csv'} && $type ne 'xls';
+  }
+
+  my $header = $param->{'format_headers'}
+                 ? $param->{'format_headers'}{ $param->{'format'} }
+                 : 0;
+
+  my $sep_char = $param->{'format_sep_chars'}
+                   ? $param->{'format_sep_chars'}{ $param->{'format'} }
+                   : ',';
+
+  my $fixedlength_format =
+    $param->{'format_fixedlength_formats'}
+      ? $param->{'format_fixedlength_formats'}{ $param->{'format'} }
+      : '';
+
+  my @fields = @{ $formats->{ $format } };
 
   my $row = 0;
   my $count;
@@ -1544,24 +1549,21 @@ sub batch_import {
     if ( $type eq 'csv' ) {
 
       my %attr = ();
-      foreach ( grep exists($param->{$_}), qw( sep_char ) ) {
-        $attr{$_} = $param->{$_};
-      }
-
+      $attr{sep_char} = $sep_char if $sep_char;
       $parser = new Text::CSV_XS \%attr;
 
     } elsif ( $type eq 'fixedlength' ) {
 
       eval "use Parse::FixedLength;";
       die $@ if $@;
-      $parser = new Parse::FixedLength $param->{'fixedlength_format'};
+      $parser = new Parse::FixedLength $fixedlength_format;
  
     } else {
       die "Unknown file type $type\n";
     }
 
-    @buffer = split(/\r?\n/, slurp($filename) );
-    splice(@buffer, 0, ($param->{'header'} || 0) );
+    @buffer = split(/\r?\n/, slurp($file) );
+    splice(@buffer, 0, ($header || 0) );
     $count = scalar(@buffer);
 
   } elsif ( $type eq 'xls' ) {
@@ -1574,14 +1576,14 @@ sub batch_import {
     # formats bill_west and troop use it, not other excel-parsing things
     #die $@ if $@;
 
-    my $excel = Spreadsheet::ParseExcel::Workbook->new->Parse($filename);
+    my $excel = Spreadsheet::ParseExcel::Workbook->new->Parse($file);
 
     $parser = $excel->{Worksheet}[0]; #first sheet
 
     $count = $parser->{MaxRow} || $parser->{MinRow};
     $count++;
 
-    $row = $param->{'header'} || 0;
+    $row = $header || 0;
 
   } else {
     die "Unknown file type $type\n";
@@ -1647,6 +1649,7 @@ sub batch_import {
         #&{$field}(\%hash, $value);
         push @later, $field, $value;
       } else {
+        #??? $hash{$field} = $value if length($value);
         $hash{$field} = $value if defined($value) && length($value);
       }
 

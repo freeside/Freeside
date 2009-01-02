@@ -61,13 +61,11 @@ foreach my $file ( @$ls ) {
 
   warn "Processing $filename\n" if $opt_v;
 
-  open(FILE, "$cachedir/$filename") or die "can't read $cachedir/$filename: $!";
-
   my $error = FS::cdr::batch_import( {
-    'filehandle' => *FILE{IO},
-    'format'     => $format,
-    'cdrbatch'   => $filename,
-    'empty_ok'   => 1,
+    'file'     => "$cachedir/$filename"
+    'format'   => $format,
+    'cdrbatch' => $filename,
+    'empty_ok' => 1,
   } );
   die $error if $error;
 

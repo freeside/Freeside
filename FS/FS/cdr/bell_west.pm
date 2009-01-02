@@ -4,13 +4,13 @@ use strict;
 use base qw( FS::cdr );
 use vars qw( %info $tmp_mon $tmp_mday $tmp_year );
 use Time::Local;
-use FS::cdr qw( _cdr_date_parser_maker _cdr_min_parser_maker );
+#use FS::cdr qw( _cdr_date_parser_maker _cdr_min_parser_maker );
 
 %info = (
   'name'          => 'Bell West',
   'weight'        => 210,
-  'header'        => 1,     #0 default, set to 1 to ignore the first line
-  'type'          => 'xls', #csv (default), fixedlength or xls
+  'header'        => 1,
+  'type'          => 'xls',
 
   'import_fields' => [
 
@@ -23,12 +23,8 @@ use FS::cdr qw( _cdr_date_parser_maker _cdr_min_parser_maker );
     sub {},
 
     # DATE / Yes / "DATE"   Excel date format MM/DD/YYYY
+    # XXX false laziness w/troop.pm
     sub { my($cdr, $date) = @_;
-
-          #$date =~ /^(\d{1,2})\/(\d{1,2})\/(\d\d(\d\d)?)$/
-          #  or die "unparsable date: $date"; #maybe we shouldn't die...
-          ##$cdr->startdate( timelocal(0, 0, 0 ,$2, $1-1, $3) );
-          #($tmp_mday, $tmp_mon, $tmp_year) = ( $2, $1-1, $3 );
 
           my $datetime = DateTime::Format::Excel->parse_datetime( $date );
           $tmp_mon  = $datetime->mon_0;
@@ -49,22 +45,24 @@ use FS::cdr qw( _cdr_date_parser_maker _cdr_min_parser_maker );
           );
         },
 
-    # BTN / Yes / Main billing number but not DID or real number (I guess put in SRC field)
+    # BTN / Yes / Main billing number but not DID or real number
+    # (put in SRC field)
     'src',
 
     # ORIG CITY / No / We will use your Freeside rating and description name
     'channel',
 
-    # TERM / YES / All calls should be billed, however all calls are missing "1+" and "011+" & DIR ASST = "411"
+    # TERM / YES / All calls should be billed, however all calls are
+    #              missing "1+" and "011+" & DIR ASST = "411"
     'dst',
 
     # TERM CITY / No / We will use your Freeside rating and description name
     'dstchannel',
 
-    # WTN / Yes / Bill to number (I guess put in "charged_party")
+    # WTN / Yes / Bill to number (put in "charged_party")
     'charged_party',
 
-    # CODE / Yes / Account Code (security) and we need on invoice (suggestions ?)
+    # CODE / Yes / Account Code (security) and we need on invoice
     'accountcode',
 
     # PROV/COUNTRY / No / We will use your Freeside rating and description name
@@ -74,7 +72,8 @@ use FS::cdr qw( _cdr_date_parser_maker _cdr_min_parser_maker );
           $cdr->dst( $pre. $cdr->dst ) unless $cdr->dst =~ /^$pre/;
         },
 
-    # CALL TYPE / Possibly / Not sure if you need this to determine correct billing method ?
+    # CALL TYPE / Possibly / Not sure if you need this to determine correct
+    #                        billing method ?
     # DDD normal call (Direct Dial Dsomething? ="LD"?)
     # TF  Toll Free
     #     (toll free dst# should be sufficient to rate)

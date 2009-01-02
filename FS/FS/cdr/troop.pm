@@ -1,96 +1,128 @@
-package FS::cdr::cdr_template;
+package FS::cdr::troop;
 
 use strict;
 use base qw( FS::cdr );
-use vars qw( %info );
-use FS::cdr qw( _cdr_date_parser_maker _cdr_min_parser_maker );
+use vars qw( %info  $tmp_mon $tmp_mday $tmp_year );
+use Time::Local;
+#use FS::cdr qw( _cdr_date_parser_maker _cdr_min_parser_maker );
 
 %info = (
   'name'          => 'Troop',
   'weight'        => 220,
-  'header'        => 0,     #0 default, set to 1 to ignore the first line
-  'type'          => 'csv', #csv (default), fixedlength or xls
-  'sep_char'      => ',',   #for csv, defaults to ,
-  'disabled'      => 0,     #0 default, set to 1 to disable
+  'header'        => 2,
+  'type'          => 'xls',
 
-  #listref of what to do with each field from the CDR, in order
   'import_fields' => [
-    
-    #place data directly in the specified field
-    'freeside_cdr_fieldname',
 
-    #subroutine reference
-    sub { my($cdr, $field_data) = @_; 
-          #do something to $field_data
-          $cdr->fieldname($field_data);
+    # CDR FIELD / REQUIRED / Notes
+
+    # / No / CDR sequence number
+    sub {},
+
+    # WTN / Yes
+    'charged_party',
+
+    # Account Code / Yes / Account Code (security) and we need on invoice
+    'accountcode',
+
+    # DT / Yes / "DATE"   Excel
+    # XXX false laziness w/bell_west.pm
+    sub { my($cdr, $date) = @_;
+
+          my $datetime = DateTime::Format::Excel->parse_datetime( $date );
+          $tmp_mon  = $datetime->mon_0;
+          $tmp_mday = $datetime->mday;
+          $tmp_year = $datetime->year;
         },
 
-    #premade subref factory for date parsing
-    _cdr_date_parser_maker('startddate'), #for example
+    # Time / Yes / "TIME"  excel
+    sub { my($cdr, $time) = @_;
+          #my($sec, $min, $hour, $mday, $mon, $year)= localtime($cdr->startdate);
+
+          #$sec = $time * 86400;
+          my $sec = int( $time * 86400 + .5);
+
+          #$cdr->startdate( timelocal($3, $2, $1 ,$mday, $mon, $year) );
+          $cdr->startdate(
+            timelocal(0, 0, 0, $tmp_mday, $tmp_mon, $tmp_year) + $sec
+          );
+        },
+
+
+    # Dur. / Yes / Units = seconds
+    'billsec',
+
+    # OVS Type / Maybe / add "011" to international calls
+    # N = DOM LD / normal
+    # Z = INTL LD
+    # O = INTL LD
+    # others...?
+    sub { my($cdr, $ovs) = @_;
+          my $pre = ( $ovs =~ /^\s*[OZ]\s*$/i ) ? '011' : '1';
+          $cdr->dst( $pre. $cdr->dst ) unless $cdr->dst =~ /^$pre/;
+        },
+
+    # Number / YES
+    'src',
+
+    # City / No
+    'channel',
+
+    # Prov/State / No / We will use your Freeside rating and description name
+    sub { my($cdr, $state) = @_;
+          $cdr->channel( $cdr->channel. ", $state" )
+            if $state;
+        },
+
+    # Number / Yes
+    'dst',
+
+    # City / No
+    'dstchannel',
+
+    # Prov/State / No / We will use your Freeside rating and description name
+    sub { my($cdr, $state) = @_;
+          $cdr->dstchannel( $cdr->dstchannel. ", $state" )
+            if $state;
+        },
+
+    # OVS / Maybe 
+    # Would help to add "011" to international calls (if you are willing)
+    # (using ovs above)
+    sub { my($cdr, $ovs) = @_;
+          my @ignore = ( 'BELL', 'CANADA', 'UNITED STATES', );
+          $cdr->dstchannel( $cdr->dstchannel. ", $ovs" )
+            if $ovs && ! grep { $ovs =~ /^\s*$_\s*$/ } @ignore;
+        },
+
+    # CC Ind. / No / Does show if Calling card but should not be required
+    #'N' or 'E'
+    sub {},
+
+    # Call Charge / No / Bell billing info and is not required
+    'upstream_price',
+
+    # Account # / No / Bell billing info and is not required
+    sub {},
+
+    # Net Charge / No / Bell billing info and is not required
+    sub {},
+
+    # Surcharge / No / Taxes and is not required
+    sub {},
+
+    # GST / No / Taxes and is not required
+    sub {},
+
+    # PST / No / Taxes and is not required
+    sub {},
+
+    # HST / No / Taxes and is not required
+    sub {},
     
-    #premade subref factory for decimal minute parsing
-    _cdr_min_parser_maker, #defaults to billsec and duration
-    _cdr_min_parser_maker('fieldname'), #one field
-    _cdr_min_parser_maker(['billsec', 'duration']), #listref for multiple fields
-
   ],
-
-  #Text::FixedLength field descriptions & lengths, for type=>'fixedlength' only
-  'fixedlength_format' => [qw(
-    Type:2:1:2
-    Sequence:4:3:6
-  )],
 
 );
 
 1;
 
-__END__
-
-list of freeside CDR fields, useful ones marked with *
-
-       acctid - primary key
-*[1]   calldate - Call timestamp (SQL timestamp)
-       clid - Caller*ID with text
-*      src - Caller*ID number / Source number
-*      dst - Destination extension
-       dcontext - Destination context
-       channel - Channel used
-       dstchannel - Destination channel if appropriate
-       lastapp - Last application if appropriate
-       lastdata - Last application data
-*      startdate - Start of call (UNIX-style integer timestamp)
-       answerdate - Answer time of call (UNIX-style integer timestamp)
-*      enddate - End time of call (UNIX-style integer timestamp)
-*      duration - Total time in system, in seconds
-*      billsec - Total time call is up, in seconds
-*[2]   disposition - What happened to the call: ANSWERED, NO ANSWER, BUSY
-       amaflags - What flags to use: BILL, IGNORE etc, specified on a per
-       channel basis like accountcode.
-*[3]   accountcode - CDR account number to use: account
-       uniqueid - Unique channel identifier (Unitel/RSLCOM Event ID)
-       userfield - CDR user-defined field
-       cdr_type - CDR type - see FS::cdr_type (Usage = 1, S&E = 7, OC&C = 8)
-*[4]   charged_party - Service number to be billed
-       upstream_currency - Wholesale currency from upstream
-*[5]   upstream_price - Wholesale price from upstream
-       upstream_rateplanid - Upstream rate plan ID
-       rated_price - Rated (or re-rated) price
-       distance - km (need units field?)
-       islocal - Local - 1, Non Local = 0
-*[6]   calltypenum - Type of call - see FS::cdr_calltype
-       description - Description (cdr_type 7&8 only) (used for
-       cust_bill_pkg.itemdesc)
-       quantity - Number of items (cdr_type 7&8 only)
-       carrierid - Upstream Carrier ID (see FS::cdr_carrier)
-       upstream_rateid - Upstream Rate ID
-       svcnum - Link to customer service (see FS::cust_svc)
-       freesidestatus - NULL, done (or something)
-
-[1] Auto-populated from startdate if not present
-[2] Package options available to ignore calls without a specific disposition
-[3] When using 'cdr-charged_party-accountcode' config
-[4] Auto-populated from src (normal calls) or dst (toll free calls) if not present
-[5] When using 'upstream_simple' rating method.
-[6] Set to usage class classnum when using pre-rated CDRs and usage class-based
-    taxation (local/intrastate/interstate/international)

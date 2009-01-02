@@ -672,7 +672,7 @@ Imports CDR records.  Available options are:
 
 =over 4
 
-=item filehandle
+=item file
 
 =item format
 
@@ -680,35 +680,56 @@ Imports CDR records.  Available options are:
 
 =cut
 
-sub process_batch_import {
-  my $job = shift;
 
-  my $opt = {
-    'table'   => 'cdr',
-    'params'  => [ 'format', 'cdrbatch' ],
+my %import_options = (
+  'table'   => 'cdr',
 
-    'formats' => { map { $_ => $cdr_info{$_}->{'import_fields'}; }
-                       keys %cdr_info
-                 },
+  'formats' => { map { $_ => $cdr_info{$_}->{'import_fields'}; }
+                     keys %cdr_info
+               },
 
-                            #drop the || 'csv' to allow auto xls for csv types?
-    'format_types' => { map { $_ => ( lc($cdr_info{$_}->{'type'}) || 'csv' ); }
+                          #drop the || 'csv' to allow auto xls for csv types?
+  'format_types' => { map { $_ => ( lc($cdr_info{$_}->{'type'}) || 'csv' ); }
+                          keys %cdr_info
+                    },
+
+  'format_headers' => { map { $_ => ( $cdr_info{$_}->{'header'} || 0 ); }
                             keys %cdr_info
                       },
 
-    'format_headers' => { map { $_ => ( $cdr_info{$_}->{'header'} || 0 ); }
+  'format_sep_chars' => { map { $_ => $cdr_info{$_}->{'sep_char'}; }
                               keys %cdr_info
                         },
 
-    'format_sep_chars' => { map { $_ => $cdr_info{$_}->{'sep_char'}; }
-                                keys %cdr_info
-                          },
+  'format_fixedlength_formats' =>
+    { map { $_ => $cdr_info{$_}->{'fixedlength_format'}; }
+          keys %cdr_info
+    },
+);
 
-    'format_fixedlength_formats' =>
-      { map { $_ => $cdr_info{$_}->{'fixedlength_format'}; }
-            keys %cdr_info
-      },
-  };
+sub _import_options {
+  \%import_options;
+}
+
+sub batch_import {
+  my $opt = shift;
+
+  my $iopt = _import_options;
+  $opt->{$_} = $iopt->{$_} foreach keys %$iopt;
+
+  FS::Record::batch_import( $opt );
+
+}
+
+=item process_batch_import
+
+=cut
+
+sub process_batch_import {
+  my $job = shift;
+
+  my $opt = _import_options;
+  $opt->{'params'} = [ 'format', 'cdrbatch' ];
 
   FS::Record::process_batch_import( $job, $opt, @_ );
 
