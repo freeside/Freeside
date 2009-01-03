@@ -16,8 +16,8 @@ use FS::cdr;
 # parse command line
 ###
 
-use vars qw( $opt_e $opt_d $opt_u $opt_v );
-getopts('e:d:u:v');
+use vars qw( $opt_e $opt_d $opt_v );
+getopts('e:d:v');
 
 $opt_e ||= 'csv';
 #$opt_e = ".$opt_e" unless $opt_e =~ /^\./;
@@ -64,7 +64,7 @@ foreach my $file ( @$ls ) {
   my $error = FS::cdr::batch_import( {
     'file'     => "$cachedir/$filename"
     'format'   => $format,
-    'cdrbatch' => $filename,
+    'params'   => { 'cdrbatch' => $filename, },
     'empty_ok' => 1,
   } );
   die $error if $error;

@@ -13,9 +13,12 @@ adminsuidsetup $user;
 
 my $format = shift or die &usage;
 
+my $file = shift;
+
 my $error = FS::cdr::batch_import( {
-  'file'   => shift,
+  'file'   => $file,
   'format' => $format,
+  'params' => { 'cdrbatch' => $file },
 } );
 die $error if $error;
 

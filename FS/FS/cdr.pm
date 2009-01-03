@@ -634,11 +634,12 @@ sub _cdr_min_parse {
 
 sub _cdr_date_parser_maker {
   my $field = shift;
+  my @fields = ref($field) ? @$field : ($field);
   return sub {
-    my( $cdr, $date ) = @_;
-    #$cdr->$field( _cdr_date_parse($date) );
-    eval { $cdr->$field( _cdr_date_parse($date) ); };
-    die "error parsing date for $field from $date: $@\n" if $@;
+    my( $cdr, $datestring ) = @_;
+    my $unixdate = eval { _cdr_date_parse($datestring) };
+    die "error parsing date for @fields from $datestring: $@\n" if $@;
+    $cdr->$_($unixdate) foreach @fields;
   };
 }
 
@@ -674,12 +675,21 @@ Imports CDR records.  Available options are:
 
 =item file
 
+Filename
+
 =item format
+
+=item params
+
+Hash reference of preset fields, typically cdrbatch
+
+=item empty_ok
+
+Set true to prevent throwing an error on empty imports
 
 =back
 
 =cut
-
 
 my %import_options = (
   'table'   => 'cdr',

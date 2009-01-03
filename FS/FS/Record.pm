@@ -1505,7 +1505,7 @@ sub batch_import {
   my $job     = $param->{job};
   my $file    = $param->{file};
   my $format  = $param->{'format'};
-  my $params  = $param->{params};
+  my $params  = $param->{params} || {};
 
   die "unknown format $format" unless exists $formats->{ $format };
 

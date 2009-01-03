@@ -1,0 +1,108 @@
+#!/usr/bin/perl
+#
+# Usage:
+#  cdr.http_and_import [ -p prefix ] [ -e extension ] [ -v ] user format URL
+#
+# -e: file extension, defaults to .csv
+# -d: if specified, moves files to the specified folder when done
+
+use strict;
+use Getopt::Std;
+use WWW::IndexParser;
+#use LWP::UserAgent;
+use FS::UID qw(adminsuidsetup datasrc dbh);
+use FS::cdr;
+
+###
+# parse command line
+###
+
+use vars qw( $opt_p $opt_e $opt_v );
+getopts('p:e:v');
+
+$opt_e ||= 'csv';
+#$opt_e = ".$opt_e" unless $opt_e =~ /^\./;
+$opt_e =~ s/^\.//;
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+# %%%FREESIDE_CACHE%%%
+my $cachedir = '/usr/local/etc/freeside/cache.'. datasrc. '/cdrs';
+mkdir $cachedir unless -d $cachedir;
+
+my $format = shift or die &usage;
+
+use vars qw( $URL );
+$URL = shift or die &usage;
+
+###
+# get the file list
+###
+
+warn "Retreiving directory listing\n" if $opt_v;
+
+my @files = WWW::IndexParser->new(url => $URL);
+
+###
+# import each file
+###
+
+foreach my $file ( @files ) {
+
+  my $filename = $file->{filename};
+
+  if ( $opt_p ) { next unless $filename =~ /^$opt_p/ };
+  if ( $opt_e ) { next unless $filename =~ /\.$opt_e$/i };
+
+  #check and see if we've gotten this file already!!!
+  #just going to cheat with filenames in the cache for now
+  if ( -e "$cachedir/$filename" ) {
+    warn "Already have unprocessed $cachedir/$filename; skipping\n"; # if $opt_v;
+    next;
+  }
+  if ( -e "$cachedir/$filename.DONE" ) {
+    warn "Already processed $cachedir/$filename; skipping\n" if $opt_v;
+    next;
+  }
+
+  warn "Downloading $filename\n" if $opt_v;
+
+  #get the file
+
+  my $ua = LWP::UserAgent->new;
+  my $response = $ua->get("$URL/$filename");
+
+  unless ( $response->is_success ) {
+    die "Error retreiving $URL/$filename: ". $response->status_line;
+  }
+
+  open(FILE, ">$cachedir/$filename")
+    or die "can't open $cachedir/$filename: $!";
+  print FILE $response->content;
+  close FILE or die "can't close $cachedir/$filename: $!";
+
+  warn "Processing $filename\n" if $opt_v;
+
+  my $error = FS::cdr::batch_import( {
+    'file'     => "$cachedir/$filename",
+    'format'   => $format,
+    'params'   => { 'cdrbatch' => $filename },
+    'empty_ok' => 1,
+  } );
+  die $error if $error;
+
+  close FILE;
+
+  rename("$cachedir/$filename", "$cachedir/$filename.DONE");
+
+}
+
+###
+# sub
+###
+
+sub usage {
+  "Usage: \n  cdr.http_and_import  [ -p prefix ] [ -e extension ] [ -v ] user format URL\n";
+}
+
