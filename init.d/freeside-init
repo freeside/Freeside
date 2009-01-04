@@ -75,6 +75,7 @@ case "$1" in
           echo "done."
         fi
 
+        if [ -z "$SELFSERVICE_MACHINES" ]; then SELFSERVICE_MACHINES='localhost'; fi
         for MACHINE in $SELFSERVICE_MACHINES; do
           if [ -e /var/run/freeside-selfservice-server.$SELFSERVICE_USER.$MACHINE.pid ]
           then
