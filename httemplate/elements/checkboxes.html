@@ -1,0 +1,103 @@
+<%doc>
+
+Example:
+
+  include( '/elements/checkboxes.html',
+
+    # required
+   
+    #? 'name_callback' => sub { },
+   
+    'names_list' => [ 'value',
+                      'other value',
+                      [ 'complex value' => { 'desc' => "Add'l description",
+                                             'note' => '&nbsp;*',
+                                           }
+                      ],
+                    ],
+
+    'element_name_prefix' => "$link_table.",
+
+    #recommended
+
+    'checked_callback' => sub { my( $cgi, $name ) = @_; },
+
+  )
+
+</%doc>
+
+<TABLE CELLSPACING=0 CELLPADDING=0>
+
+<TR>
+  <TD COLSPAN=2 ALIGN="center"><FONT SIZE="-1">(
+    <A HREF="javascript:setAll<%$prefix%>(true)">select all</A> |
+    <A HREF="javascript:setAll<%$prefix%>(false)">unselect all</A> |
+    <A HREF="javascript:toggleAll<%$prefix%>()">toggle all</A>
+  )</FONT></TD>
+</TR>
+
+% my $num=0;
+% foreach my $item ( @{ $opt{'names_list'} } ) {
+%
+%     my $name = ref($item) ? $item->[0] : $item;
+%     ( my $display = $name ) =~ s/ /&nbsp;/g;
+%     $display .= $item->[1]{note} if ref($item) && $item->[1]{note};
+%     my $desc = ref($item) && $item->[1]{desc} ? $item->[1]{desc} : '';
+%
+%     my $callback =
+%       ( $cgi->param('error') ? 'error_' : '' ). 'checked_callback';
+%     my $checked = &{ $opt{$callback} }( $cgi, $name ) ? 'CHECKED' : '';
+
+  <TR>
+    <TD VALIGN="top">
+      <INPUT TYPE="checkbox" NAME="<% $opt{'element_name_prefix'}. $name %>" <% $checked %> ID="<%$prefix.$num++%>" VALUE="ON">
+    </TD>
+    <TD><% $display %>
+%     if ( $desc ) {
+        <BR><FONT SIZE="-2"><% $desc %></FONT>
+%     }
+    </TD>
+  </TR>
+
+% } 
+
+</TABLE>
+
+<SCRIPT TYPE="text/javascript">
+
+  function setAll<%$prefix%>(setTo) {
+%   for ( 0 .. ($num-1) ) {
+      document.getElementById('<%$prefix.$_%>').checked = setTo;
+%   }
+  }
+
+  function toggleAll<%$prefix%>(setTo) {
+%   for ( 0 .. ($num-1) ) {
+      var element = document.getElementById('<%$prefix.$_%>');
+      if ( element.checked == true ) {
+        element.checked = false;
+      } else {
+        element.checked = true;
+      }
+%   }
+  }
+
+</SCRIPT>
+
+<%init>
+
+my( %opt ) = @_;
+
+my @pset = ( 'a'..'z', 'A'..'Z', '0'..'9' );
+
+my $prefix = $opt{prefix}
+             || join('', map $pset[ int(rand $#pset) ], (0..20) );
+
+$opt{checked_callback} ||= sub {};
+
+$opt{'error_checked_callback'} ||= sub {
+  my( $cgi, $name ) = @_;
+  $cgi->param($opt{'element_name_prefix'}. $name );
+};
+
+</%init>

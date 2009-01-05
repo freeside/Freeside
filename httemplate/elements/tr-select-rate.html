@@ -1,0 +1,21 @@
+% unless ( $opt{'js_only'} ) {
+
+    <% include('tr-td-label.html', @_ ) %>
+
+      <TD <% $style %>>
+% }
+
+        <% include( '/elements/select-rate.html', %opt ) %>
+
+% unless ( $opt{'js_only'} ) {
+      </TD>
+    </TR>
+% }
+<%init>
+
+my( %opt ) = @_;
+
+my $style = $opt{'cell_style'} ? 'STYLE="'. $opt{'cell_style'}. '"' : '';
+
+</%init>
+

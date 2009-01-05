@@ -1,0 +1,61 @@
+<% include( '/elements/header.html', 'Copy rates between plans', menubar(
+       'View all rate plans' => "${p}browse/rate.cgi",
+   ))
+%>
+
+<% include('/elements/error.html') %>
+
+<FORM ACTION="process/copy-rate_detail.html">
+
+<% ntable('#cccccc') %>
+
+  <% include( '/elements/tr-justtitle.html', 'value' => 'Copy rates' ) %>
+
+  <% include( '/elements/tr-select-rate.html',
+                'label'        => 'From rate plan',
+                'element_name' => 'src_ratenum',
+            )
+  %>
+
+  <% include( '/elements/tr-select-rate.html',
+                'label'        => 'To rate plan',
+                'element_name' => 'dst_ratenum',
+            )
+  %>
+
+  <TR>
+    <TD COLSPAN=2>Copy country codes</TD>
+  </TR>
+
+  <TR>
+    <TD COLSPAN=2>
+
+      <% include( '/elements/checkboxes.html',
+                    'names_list' => [ FS::rate_prefix->all_countrycodes ],
+                    'element_name_prefix' => 'countrycode',
+                )
+      %>
+    </TD>
+  </TR>
+
+  <TR>
+    <TD COLSPAN=2 ALIGN="center">
+      <INPUT TYPE="submit" VALUE="Copy rates">
+    </TD>
+  </TR>
+
+</TABLE>
+
+</FORM>
+
+<% include('/elements/footer.html') %>
+
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+#should have some javascript that enables submit button only when both src & dst
+#rates are chosen
+
+</%init>

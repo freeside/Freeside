@@ -1,0 +1,9 @@
+<% include( '/elements/select-table.html',
+                 'table'       => 'rate',
+                 'name_col'    => 'ratename',
+                 'empty_label' => 'Select rate plan',
+                 #'hashref'     => { 'disabled' => '' },
+                 'order_by'    => ' ORDER BY ratenum', #ratename ?
+                 @_,
+             )
+%>

@@ -1,0 +1,61 @@
+%# if ( $error ) {
+%# <% $cgi->redirect(popurl(2).'copy-rate_detail.html?'. $cgi->query_string ) %>
+%# } else {
+<% include('/elements/header.html', 'Rates copied',
+              menubar( 'View all rate plans' => popurl(3).'browse/rate.cgi' ),
+ ) %>
+%# }
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+$cgi->param('src_ratenum') =~ /^(\d+)$/ or die 'Illegal src_ratenum';
+my $src_ratenum = $1;
+
+$cgi->param('dst_ratenum') =~ /^(\d+)$/ or die 'Illegal src_ratenum';
+my $dst_ratenum = $1;
+
+my @countrycodes = map  { /^countrycode(\d+)$/ or die; $1 }
+                   grep { /^countrycode(\d+)$/ && $cgi->param($_) }
+                        $cgi->param;
+
+foreach my $countrycode ( @countrycodes ) {
+
+  my @src_rate_detail = qsearch({
+    'table'     => 'rate_detail',
+    'addl_from' => 'JOIN rate_region'.
+                   ' ON ( rate_detail.dest_regionnum = rate_region.regionnum )',
+    'hashref' => { 'ratenum' => $src_ratenum },
+    'extra_sql' =>
+      "AND 0 < ( SELECT COUNT(*) FROM rate_prefix
+                   WHERE rate_prefix.regionnum = rate_region.regionnum
+                     AND countrycode = '$countrycode'
+               )
+      ",
+  });
+
+  foreach my $src_rate_detail ( @src_rate_detail ) {
+
+    my %hash = (
+        'ratenum' => $dst_ratenum,
+        map { $_ => $src_rate_detail->get($_) }
+            qw( orig_regionnum dest_regionnum )
+      );
+
+    my $dst_rate_detail = qsearchs( 'rate_detail', \%hash)
+                          || new FS::rate_detail   \%hash;
+
+    $dst_rate_detail->$_( $src_rate_detail->get($_) )
+      foreach qw( min_included min_charge sec_granularity classnum );
+
+    my $method = $dst_rate_detail->ratedetailnum ? 'replace' : 'insert';
+
+    my $error = $dst_rate_detail->$method();
+
+    die $error if $error; # "shouldn't" happen
+
+  }
+}
+
+</%init>

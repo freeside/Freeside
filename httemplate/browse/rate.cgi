@@ -17,12 +17,8 @@
 %>
 <%once>
 
-my $sth = dbh->prepare("SELECT DISTINCT(countrycode) FROM rate_prefix")
-  or die dbh->errstr;
-$sth->execute or die $sth->errstr;
-my @all_countrycodes = map $_->[0], @{ $sth->fetchall_arrayref };
 my $all_countrycodes = join("\n", map qq(<OPTION VALUE="$_">$_),
-                                      @all_countrycodes
+                                      FS::rate_prefix->all_countrycodes
                            );
 
 my $rates_sub = sub {
@@ -51,6 +47,7 @@ die "access denied"
 my $html_init = 
   'Rate plans for VoIP and call billing.<BR><BR>'.
   qq!<A HREF="${p}edit/rate.cgi"><I>Add a rate plan</I></A>!.
+  qq! | <A HREF="${p}misc/copy-rate_detail.html"><I>Copy rates between plans</I></A>!.
   '<BR><BR>
    <SCRIPT>
    function rate_areyousure(href) {

@@ -2,7 +2,7 @@ package FS::rate_prefix;
 
 use strict;
 use vars qw( @ISA );
-use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( qsearch qsearchs dbh );
 use FS::rate_region;
 
 @ISA = qw(FS::Record);
@@ -123,6 +123,27 @@ Returns the rate region (see L<FS::rate_region>) for this prefix.
 sub rate_region {
   my $self = shift;
   qsearchs('rate_region', { 'regionnum' => $self->regionnum } );
+}
+
+=back
+
+=head1 CLASS METHODS
+
+=over 4
+
+=item all_countrycodes
+
+Returns a list of all countrycodes listed in rate_prefix
+
+=cut
+
+sub all_countrycodes { 
+  #my $class = shift;
+  my $sql =
+    "SELECT DISTINCT(countrycode) FROM rate_prefix ORDER BY countrycode";
+  my $sth = dbh->prepare($sql) or die  dbh->errstr;
+  $sth->execute                or die $sth->errstr;
+  map $_->[0], @{ $sth->fetchall_arrayref };
 }
 
 =back
