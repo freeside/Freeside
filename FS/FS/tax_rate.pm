@@ -342,15 +342,27 @@ sub passtype_name {
   $tax_passtypes{$self->passtype};
 }
 
-=item taxline CUST_BILL_PKG|AMOUNT, ...
+=item taxline TAXABLES, [ OPTIONSHASH ]
 
 Returns a listref of a name and an amount of tax calculated for the list
-of packages/amounts.  If an error occurs, a message is returned as a scalar.
+of packages/amounts referenced by TAXABLES.  If an error occurs, a message
+is returned as a scalar.
 
 =cut
 
 sub taxline {
   my $self = shift;
+
+  my $taxables;
+  my %opt = ();
+
+  if (ref($_[0]) eq 'ARRAY') {
+    $taxables = shift;
+    %opt = @_;
+  }else{
+    $taxables = [ @_ ];
+    #exemptions would be broken in this case
+  }
 
   my $name = $self->taxname;
   $name = 'Other surcharges'
@@ -361,7 +373,8 @@ sub taxline {
     if $self->disabled;
 
   my $taxable_charged = 0;
-  my @cust_bill_pkg = grep { $taxable_charged += $_ unless ref; ref; } @_;
+  my @cust_bill_pkg = grep { $taxable_charged += $_ unless ref; ref; }
+                      @$taxables;
 
   warn "calculating taxes for ". $self->taxnum. " on ".
     join (",", map { $_->pkgnum } @cust_bill_pkg)
