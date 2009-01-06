@@ -381,7 +381,10 @@ sub calc_recur {
         $charge = sprintf('%.3f', $cdr->upstream_price);
         $charges += $charge;
 
-        @call_details = ($cdr->downstream_csv( 'format' => $output_format ));
+        @call_details = ($cdr->downstream_csv( 'format' => $output_format,
+                                               'charge' => $charge,
+                                             )
+                        );
         $classnum = $cdr->calltypenum;
 
       } else {

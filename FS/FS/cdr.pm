@@ -436,11 +436,11 @@ my %export_names = (
   },
   'default' => {
     'name'           => 'Default',
-    'invoice_header' => 'Date,Time,Duration,Price,Number,Destination',
+    'invoice_header' => 'Date,Time,Number,Destination,Duration,Price',
   },
   'source_default' => {
     'name'           => 'Default with source',
-    'invoice_header' => 'Caller,Date,Time,Duration,Number,Destination,Price',
+    'invoice_header' => 'Caller,Date,Time,Number,Destination,Duration,Price',
   },
 );
 
@@ -466,7 +466,8 @@ my %export_formats = (
     'userfield',                                     #USER
     'dst',                                           #NUMBER_DIALED
     sub { sprintf('%.2fm', shift->billsec / 60 ) },  #DURATION
-    sub { sprintf('%.3f', shift->upstream_price ) }, #PRICE
+    #sub { sprintf('%.3f', shift->upstream_price ) }, #PRICE
+    sub { my($cdr, %opt) = @_; $opt{money_char}. $opt{charge}; }, #PRICE
   ],
   'simple2' => [
     sub { time2str('%D', shift->calldate_unix ) },   #DATE
@@ -475,7 +476,8 @@ my %export_formats = (
     'dst',                                           #NUMBER_DIALED
     'src',                                           #called from
     sub { sprintf('%.2fm', shift->billsec / 60 ) },  #DURATION
-    sub { sprintf('%.3f', shift->upstream_price ) }, #PRICE
+    #sub { sprintf('%.3f', shift->upstream_price ) }, #PRICE
+    sub { my($cdr, %opt) = @_; $opt{money_char}. $opt{charge}; }, #PRICE
   ],
   'default' => [
 
@@ -487,6 +489,12 @@ my %export_formats = (
     sub { time2str('%r', shift->calldate_unix ) },
           # time2str("%c", $cdr->calldate_unix),  #XXX this should probably be a config option dropdown so they can select US vs- rest of world dates or whatnot
 
+    #DEST ("Number")
+    sub { my($cdr, %opt) = @_; $opt{pretty_dst} || $cdr->dst; },
+
+    #REGIONNAME ("Destination")
+    sub { my($cdr, %opt) = @_; $opt{dst_regionname}; },
+
     #DURATION
     sub { my($cdr, %opt) = @_;
           $opt{minutes}. ( $opt{granularity} ? 'm' : ' call' );
@@ -495,19 +503,9 @@ my %export_formats = (
     #PRICE
     sub { my($cdr, %opt) = @_; $opt{money_char}. $opt{charge}; },
 
-    #DEST ("Number")
-    sub { my($cdr, %opt) = @_; $opt{pretty_dst} || $cdr->dst; },
-
-    #REGIONNAME ("Destination")
-    sub { my($cdr, %opt) = @_; $opt{dst_regionname}; },
-
   ],
 );
-$export_formats{'source_default'} = [ 'src',
-                                      @{ $export_formats{'default'} }[0..2],
-                                      @{ $export_formats{'default'} }[4..5],
-                                      @{ $export_formats{'default'} }[3],
-                                    ];
+$export_formats{'source_default'} = [ 'src', @{ $export_formats{'default'} }, ];
 
 sub downstream_csv {
   my( $self, %opt ) = @_;
