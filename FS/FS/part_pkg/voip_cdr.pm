@@ -54,16 +54,22 @@ tie my %temporalities, 'Tie::IxHash',
                                    ' of service at cancellation',
                          'type' => 'checkbox',
                        },
+
+    'rating_method' => { 'name' => 'Region rating method',
+                         'type' => 'radio',
+                         'options' => \%rating_method,
+                       },
+
     'ratenum'   => { 'name' => 'Rate plan',
                      'type' => 'select',
                      'select_table' => 'rate',
                      'select_key'   => 'ratenum',
                      'select_label' => 'ratename',
                    },
-    'rating_method' => { 'name' => 'Region rating method',
-                         'type' => 'radio',
-                         'options' => \%rating_method,
-                       },
+
+    'ignore_unrateable' => { 'name' => 'Ignore calls without a rate in the rate tables.  By default, the system will throw a fatal error upon encountering unrateable calls.',
+                             'type' => 'checkbox',
+                           },
 
     'default_prefix' => { 'name'    => 'Default prefix optionally prepended to customer DID numbers when searching for CDR records',
                           'default' => '+1',
@@ -157,7 +163,7 @@ tie my %temporalities, 'Tie::IxHash',
   },
   'fieldorder' => [qw(
                        setup_fee recur_fee recur_temporality unused_credit
-                       rating_method ratenum 
+                       rating_method ratenum ignore_unrateable
                        default_prefix
                        disable_src
                        domestic_prefix international_prefix
@@ -335,12 +341,27 @@ sub calc_recur {
                                               'phonenum'    => $number,
                                             });
 
-          $rate_region = $rate_detail->dest_region;
-          $regionnum = $rate_region->regionnum;
+          if ( $rate_detail ) {
 
-          warn "  found rate for regionnum $regionnum ".
-               "and rate detail $rate_detail\n"
-            if $DEBUG;
+            warn "  found rate for regionnum $regionnum ".
+                 "and rate detail $rate_detail\n"
+              if $DEBUG;
+            $rate_region = $rate_detail->dest_region;
+            $regionnum = $rate_region->regionnum;
+
+          } elsif ( $self->option('ignore_unrateable', 1) ) {
+
+            $rate_region = '';
+            $regionnum = '';
+            #code below will throw a warning & skip
+
+          } else {
+
+            die "FATAL: no rate_detail found in ".
+                $rate->ratenum. ":". $rate->rate. " rate plan for CDR ".
+                "acctid ". $cdr->acctid. " +$countrycode $number; ".
+                "add a rate or set ignore_unrateable flag on the package def\n";
+          }
 
         }
 
@@ -396,13 +417,13 @@ sub calc_recur {
       ###
 
       # if $rate_detail is not found, skip this CDR... i.e. 
-      # don't add it to invoice, don't set its status to NULL,
+      # don't add it to invoice, don't set its status to done,
       # don't call downstream_csv or something on it...
       # but DO emit a warning...
       #if ( ! $rate_detail && ! scalar(@call_details) ) {}
       if ( ! $rate_detail && $charge eq '' ) {
 
-        warn "no rate_detail found for CDR.acctid:  ". $cdr->acctid.
+        warn "no rate_detail found for CDR.acctid: ". $cdr->acctid.
              "; skipping\n"
 
       } else { # there *is* a rate_detail (or call_details), proceed...
