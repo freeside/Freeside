@@ -157,16 +157,21 @@
 
 
 % Commands for freeside table header...
+
+\newcommand{\FSdescriptionlength} { [@-- $unitprices ? '8.2cm' : '12.8cm' --@] }
+\newcommand{\FSdescriptioncolumncount} { [@-- $unitprices ? '4' : '6' --@] }
+\newcommand{\FSunitcolumns}{ [@-- $unitprices ? '\makebox[2.5cm][l]{\textbf{~~Unit Price}}&\makebox[1.4cm]{\textbf{~Quantity}}&' : '' --@] }
+
 \newcommand{\FShead}{
   \hline
   \rule{0pt}{2.5ex}
   \makebox[1.4cm]{\textbf{Ref}} &
-  \makebox[2.9cm][l]{\textbf{Description}}&
-  \makebox[1.4cm][l]{}&
-  \makebox[1.4cm][l]{}&
-  \makebox[2.5cm][l]{}&
-  \makebox[2.5cm][l]{\textbf{[@-- $unitprices ? '~~Unit Price' : '' --@]}}&
-  \makebox[1.4cm]{\textbf{[@-- $unitprices ? '~Quantity' : '' --@]}}&
+%  \makebox[2.9cm][l]{\textbf{Description}}&
+%  \makebox[1.4cm][l]{}&
+%  \makebox[1.4cm][l]{}&
+%  \makebox[2.5cm][l]{}&
+  \multicolumn{\FSdescriptioncolumncount}{l}{\makebox[\FSdescriptionlength][l]{\textbf{Description}}}&
+  \FSunitcolumns
   \makebox[1.6cm][r]{\textbf{Amount}} \\
   \hline
 }
