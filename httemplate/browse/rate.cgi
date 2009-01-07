@@ -38,12 +38,6 @@ my $rates_sub = sub {
 
 };
 
-</%once>
-<%init>
-
-die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
-
 my $html_init = 
   'Rate plans for VoIP and call billing.<BR><BR>'.
   qq!<A HREF="${p}edit/rate.cgi"><I>Add a rate plan</I></A>!.
@@ -60,5 +54,11 @@ my $html_init =
 my $count_query = 'SELECT COUNT(*) FROM rate';
 
 my $link = [ $p.'edit/rate.cgi?', 'ratenum' ];
+
+</%once>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
 
 </%init>

@@ -3,6 +3,7 @@
      'name_singular'  => 'region', #'rate region',
      'menubar'        => [ 'Rate plans' => $p.'browse/rate.cgi' ],
      'html_init'      => $html_init,
+     'html_posttotal' => $html_posttotal,
      'query'          => {
                            'select'    => $select,
                            'table'     => 'rate_region',
@@ -10,7 +11,7 @@
                            'extra_sql' => $extra_sql, 
                            'order_by'  => 'ORDER BY LOWER(regionname)',
                          },
-     'count_query'    => 'SELECT COUNT(*) FROM rate_region',
+     'count_query'    => $count_query,
      'header'         => [ '#',         'Region',  'Country code', 'Prefixes' ],
      'fields'         => [ 'regionnum', 'regionname',   'ccode',   'prefixes' ],
      'links'          => [ $link, $link, $link, $link ],
@@ -29,7 +30,7 @@ my $html_init =
 #not quite right for the shouldn't-happen multiple countrycode per region case
 my $select = 'rate_region.*, ';
 my $join = '';
-my $extra_sql = '';
+my $group_sql = '';
 if ( driver_name =~ /^Pg/ ) {
   my $fromwhere = 'FROM rate_prefix'.
                   ' WHERE rate_prefix.regionnum = rate_region.regionnum';
@@ -44,15 +45,47 @@ if ( driver_name =~ /^Pg/ ) {
   $join = 'LEFT JOIN rate_prefix USING ( regionnum )';
   $select .= "GROUP_CONCAT( DISTINCT countrycode ) AS ccode,
               GROUP_CONCAT( npa ORDER BY npa     ) AS prefixes ";
-  $extra_sql = 'GROUP BY regionnum, regionname';
+  $group_sql = 'GROUP BY regionnum, regionname';
 } else {
   die 'unknown database '. driver_name;
 }
+
+my $base_count_sql = 'SELECT COUNT(*) FROM rate_region';
 
 </%once>
 <%init>
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+$cgi->param('dummy', 1);
+my $countrycode_filter_change =
+  "window.location = '".
+  $cgi->self_url. ";countrycode=' + this.options[this.selectedIndex].value;";
+
+my $countrycode = '';
+my $extra_sql = $group_sql;
+my $count_query = $base_count_sql;
+if ( $cgi->param('countrycode') =~ /^(\d+)$/ ) {
+  $countrycode = $1;
+  my $ccode_sql = '( SELECT countrycode FROM rate_prefix
+                       WHERE rate_prefix.regionnum = rate_region.regionnum
+                       LIMIT 1
+                   )';
+  $extra_sql = " WHERE $ccode_sql = '$1' $extra_sql";
+  $count_query .= " WHERE $ccode_sql = '$1'";
+}
+
+my $html_posttotal = 
+  '(show countrycode: '.
+  qq(<SELECT NAME="countrycode" onChange="$countrycode_filter_change">).
+  qq(<OPTION VALUE="">(all)).
+  join("\n", map { qq(<OPTION VALUE="$_").
+                     ($_ eq $countrycode ? ' SELECTED' : '' ).
+                     ">$_",
+                 }
+                 FS::rate_prefix->all_countrycodes
+      ).
+  '</SELECT>)';
 
 </%init>
