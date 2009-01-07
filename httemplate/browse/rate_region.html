@@ -77,7 +77,7 @@ if ( $cgi->param('countrycode') =~ /^(\d+)$/ ) {
 }
 
 my $html_posttotal = 
-  '(show countrycode: '.
+  '(show country code: '.
   qq(<SELECT NAME="countrycode" onChange="$countrycode_filter_change">).
   qq(<OPTION VALUE="">(all)).
   join("\n", map { qq(<OPTION VALUE="$_").
