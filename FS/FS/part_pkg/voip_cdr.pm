@@ -358,8 +358,8 @@ sub calc_recur {
           } else {
 
             die "FATAL: no rate_detail found in ".
-                $rate->ratenum. ":". $rate->rate. " rate plan for CDR ".
-                "acctid ". $cdr->acctid. " +$countrycode $number; ".
+                $rate->ratenum. ":". $rate->ratename. " rate plan ".
+                "for +$countrycode $number (CDR acctid ". $cdr->acctid. "); ".
                 "add a rate or set ignore_unrateable flag on the package def\n";
           }
 
