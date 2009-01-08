@@ -222,6 +222,8 @@ L<FS::cust_pkg_reason> - Package reason class
 
 L<FS::cust_main> - Customer class
 
+L<FS::cust_main_location> - Customer location class
+
 L<FS::cust_main_Mixin> - Mixin class for records that contain fields from cust_main
 
 L<FS::cust_main_invoice> - Invoice destination class

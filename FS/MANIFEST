@@ -427,3 +427,5 @@ FS/cust_bill_pkg_display.pm
 t/cust_bill_pkg_display.t
 FS/cust_pkg_detail.pm
 t/cust_pkg_detail.t
+FS/cust_location.pm
+t/cust_location.t

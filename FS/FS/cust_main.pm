@@ -135,101 +135,181 @@ FS::Record.  The following fields are currently supported:
 
 =over 4
 
-=item custnum - primary key (assigned automatically for new customers)
+=item custnum
 
-=item agentnum - agent (see L<FS::agent>)
+Primary key (assigned automatically for new customers)
 
-=item refnum - Advertising source (see L<FS::part_referral>)
+=item agentnum
 
-=item first - name
+Agent (see L<FS::agent>)
 
-=item last - name
+=item refnum
 
-=item ss - social security number (optional)
+Advertising source (see L<FS::part_referral>)
 
-=item company - (optional)
+=item first
+
+First name
+
+=item last
+
+Last name
+
+=item ss
+
+Cocial security number (optional)
+
+=item company
+
+(optional)
 
 =item address1
 
-=item address2 - (optional)
+=item address2
+
+(optional)
 
 =item city
 
-=item county - (optional, see L<FS::cust_main_county>)
+=item county
 
-=item state - (see L<FS::cust_main_county>)
+(optional, see L<FS::cust_main_county>)
+
+=item state
+
+(see L<FS::cust_main_county>)
 
 =item zip
 
-=item country - (see L<FS::cust_main_county>)
+=item country
 
-=item daytime - phone (optional)
+(see L<FS::cust_main_county>)
 
-=item night - phone (optional)
+=item daytime
 
-=item fax - phone (optional)
+phone (optional)
 
-=item ship_first - name
+=item night
 
-=item ship_last - name
+phone (optional)
 
-=item ship_company - (optional)
+=item fax
+
+phone (optional)
+
+=item ship_first
+
+Shipping first name
+
+=item ship_last
+
+Shipping last name
+
+=item ship_company
+
+(optional)
 
 =item ship_address1
 
-=item ship_address2 - (optional)
+=item ship_address2
+
+(optional)
 
 =item ship_city
 
-=item ship_county - (optional, see L<FS::cust_main_county>)
+=item ship_county
 
-=item ship_state - (see L<FS::cust_main_county>)
+(optional, see L<FS::cust_main_county>)
+
+=item ship_state
+
+(see L<FS::cust_main_county>)
 
 =item ship_zip
 
-=item ship_country - (see L<FS::cust_main_county>)
+=item ship_country
 
-=item ship_daytime - phone (optional)
+(see L<FS::cust_main_county>)
 
-=item ship_night - phone (optional)
+=item ship_daytime
 
-=item ship_fax - phone (optional)
+phone (optional)
 
-=item payby - Payment Type (See L<FS::payinfo_Mixin> for valid payby values)
+=item ship_night
 
-=item payinfo - Payment Information (See L<FS::payinfo_Mixin> for data format)
+phone (optional)
 
-=item paymask - Masked payinfo (See L<FS::payinfo_Mixin> for how this works)
+=item ship_fax
+
+phone (optional)
+
+=item payby
+
+Payment Type (See L<FS::payinfo_Mixin> for valid payby values)
+
+=item payinfo
+
+Payment Information (See L<FS::payinfo_Mixin> for data format)
+
+=item paymask
+
+Masked payinfo (See L<FS::payinfo_Mixin> for how this works)
 
 =item paycvv
 
 Card Verification Value, "CVV2" (also known as CVC2 or CID), the 3 or 4 digit number on the back (or front, for American Express) of the credit card
 
-=item paydate - expiration date, mm/yyyy, m/yyyy, mm/yy or m/yy
+=item paydate
 
-=item paystart_month - start date month (maestro/solo cards only)
+Expiration date, mm/yyyy, m/yyyy, mm/yy or m/yy
 
-=item paystart_year - start date year (maestro/solo cards only)
+=item paystart_month
 
-=item payissue - issue number (maestro/solo cards only)
+Start date month (maestro/solo cards only)
 
-=item payname - name on card or billing name
+=item paystart_year
 
-=item payip - IP address from which payment information was received
+Start date year (maestro/solo cards only)
 
-=item tax - tax exempt, empty or `Y'
+=item payissue
 
-=item otaker - order taker (assigned automatically, see L<FS::UID>)
+Issue number (maestro/solo cards only)
 
-=item comments - comments (optional)
+=item payname
 
-=item referral_custnum - referring customer number
+Name on card or billing name
 
-=item spool_cdr - Enable individual CDR spooling, empty or `Y'
+=item payip
 
-=item dundate - a suggestion to events (see L<FS::part_bill_event">) to delay until this unix timestamp
+IP address from which payment information was received
 
-=item squelch_cdr - Discourage individual CDR printing, empty or `Y'
+=item tax
+
+Tax exempt, empty or `Y'
+
+=item otaker
+
+Order taker (assigned automatically, see L<FS::UID>)
+
+=item comments
+
+Comments (optional)
+
+=item referral_custnum
+
+Referring customer number
+
+=item spool_cdr
+
+Enable individual CDR spooling, empty or `Y'
+
+=item dundate
+
+A suggestion to events (see L<FS::part_bill_event">) to delay until this unix timestamp
+
+=item squelch_cdr
+
+Discourage individual CDR printing, empty or `Y'
 
 =back
 
@@ -2905,6 +2985,11 @@ Only return events for the specified eventtable (by default, events of all event
 
 Explicitly pass the objects to be tested (typically used with eventtable).
 
+=item testonly
+
+Set to true to return the objects, but not actually insert them into the
+database.
+
 =back
 
 =cut
@@ -2935,7 +3020,8 @@ sub due_cust_event {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  $self->select_for_update; #mutex
+  $self->select_for_update #mutex
+    unless $opt{testonly};
 
   ###
   # 1: find possible events (initial search)

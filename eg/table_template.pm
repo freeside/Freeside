@@ -1,10 +1,8 @@
 package FS::table_name;
 
 use strict;
-use vars qw( @ISA );
+use base qw( FS::Record );
 use FS::Record qw( qsearch qsearchs );
-
-@ISA = qw(FS::Record);
 
 =head1 NAME
 

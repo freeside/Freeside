@@ -2001,6 +2001,13 @@ worry that config_items is freeside-specific and icky.
     'section'     => 'billing',
     'description' => 'By default, tax calculations are done based on the billing address.  Enable this switch to calculate tax based on the shipping address instead.  Note: Tax reports can take a long time when enabled.',
     'type'        => 'checkbox',
+  }
+,
+  {
+    'key'         => 'tax-pkg_address',
+    'section'     => 'billing',
+    'description' => 'By default, tax calculations are done based on the billing address.  Enable this switch to calculate tax based on the package address instead (when present).  Note: Tax reports can take a long time when enabled.',
+    'type'        => 'checkbox',
   },
 
   {

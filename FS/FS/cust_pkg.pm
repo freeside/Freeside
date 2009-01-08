@@ -13,6 +13,7 @@ use FS::cust_main_Mixin;
 use FS::cust_svc;
 use FS::part_pkg;
 use FS::cust_main;
+use FS::cust_location;
 use FS::type_pkgs;
 use FS::pkg_svc;
 use FS::cust_bill_pkg;
@@ -106,7 +107,7 @@ inherits from FS::Record.  The following fields are currently supported:
 
 =item pkgnum
 
-primary key (assigned automatically for new billing items)
+Primary key (assigned automatically for new billing items)
 
 =item custnum
 
@@ -115,6 +116,10 @@ Customer (see L<FS::cust_main>)
 =item pkgpart
 
 Billing item definition (see L<FS::part_pkg>)
+
+=item locationnum
+
+Optional link to package location (see L<FS::location>)
 
 =item setup
 
@@ -435,6 +440,7 @@ sub check {
     $self->ut_numbern('pkgnum')
     || $self->ut_foreign_key('custnum', 'cust_main', 'custnum')
     || $self->ut_numbern('pkgpart')
+    || $self->ut_foreign_keyn('locationnum', 'location', 'locationnum')
     || $self->ut_numbern('setup')
     || $self->ut_numbern('bill')
     || $self->ut_numbern('susp')
@@ -1567,6 +1573,30 @@ Returns the parent customer object (see L<FS::cust_main>).
 sub cust_main {
   my $self = shift;
   qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
+}
+
+=item cust_location
+
+Returns the location object, if any (see L<FS::cust_location>).
+
+=cut
+
+sub cust_location {
+  my $self = shift;
+  return '' unless $self->locationnum;
+  qsearchs( 'cust_main', { 'locationnum' => $self->locationnum } );
+}
+
+=item cust_location_or_main
+
+If this package is associated with a location, returns the locaiton (see
+L<FS::cust_location>), otherwise returns the customer (see L<FS::cust_main>).
+
+=cut
+
+sub cust_location_or_main {
+  my $self = shift;
+  $self->cust_location || $self->cust_main;
 }
 
 =item seconds_since TIMESTAMP

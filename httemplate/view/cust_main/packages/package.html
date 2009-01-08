@@ -1,0 +1,213 @@
+<TD CLASS="inv" BGCOLOR="<% $bgcolor %>">
+  <TABLE CLASS="inv" BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="100%">
+    <TR>
+      <TD COLSPAN=2>
+        <A NAME="cust_pkg<% $cust_pkg->pkgnum %>"
+           ID  ="cust_pkg<% $cust_pkg->pkgnum %>"
+        ><% $curuser->option('show_pkgnum') ? $cust_pkg->pkgnum.': ' : '' %><B><% $part_pkg->pkg |h %></B></A>
+        - 
+        <% $part_pkg->comment |h %>
+      </TD>
+    </TR>
+
+% if ( $cust_pkg->quantity > 1 ) {
+    <TR>
+      <TD COLSPAN=2>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Quantity: 
+        <B><% $cust_pkg->quantity %></B>
+      </TD>
+    </TR>
+%  }
+
+    <TR>
+      <TD COLSPAN=2>
+        <FONT SIZE=-1>
+
+%         unless ( $cust_pkg->get('cancel') ) { 
+%
+%           my $br = 0;
+%           if ( $curuser->access_right('Change customer package') ) {
+%             $br=1;
+              (&nbsp;<%pkg_change_link($cust_pkg)%>&nbsp;)
+%           } 
+%
+%           if ( $curuser->access_right('Edit customer package dates') ) {
+%             $br=1;
+              (&nbsp;<%pkg_dates_link($cust_pkg)%>&nbsp;)
+%           } 
+%
+%           if ( $curuser->access_right('Customize customer package') ) {
+%             $br=1;
+              (&nbsp;<%pkg_customize_link($cust_pkg,$cust_pkg->custnum)%>&nbsp;)
+%           } 
+%
+            <% $br ? '<BR>' : '' %>
+%         } 
+
+%         if ( $cust_pkg->num_cust_event
+%              && (    $curuser->access_right('Billing event reports')
+%                   || $curuser->access_right('View customer billing events')
+%                 )
+%            ) {
+            (&nbsp;<%pkg_event_link($cust_pkg)%>&nbsp;)
+%         }
+
+        </FONT>
+      </TD>
+    </TR>
+
+%   my $editi = $curuser->access_right('Edit customer package invoice details');
+%   my $editc = $curuser->access_right('Edit customer package comments');
+%
+%   if (    $cust_pkg->cust_pkg_detail('I')
+%        || $cust_pkg->cust_pkg_detail('C')
+%        || $editi
+%        || $editc                          ) {
+%
+%     my $editlink = $p. 'edit/cust_pkg_detail?pkgnum='. $cust_pkg->pkgnum.
+%                    ';detailtype=';
+
+      <TR>
+
+%       if ( $cust_pkg->cust_pkg_detail('I') ) { 
+          <TD VALIGN="top">
+            <% include('/elements/table-grid.html') %>
+              <TR>
+                <TH BGCOLOR="#dddddd" STYLE="border-bottom: dashed 1px black; padding-bottom: 1px">
+                  <FONT SIZE="-1">
+                    Invoice details
+%                   if ( $editi && ! $cust_pkg->get('cancel') ) {
+                      (<% include('/elements/popup_link.html', { 
+                                    'action'      => $editlink. 'I',
+                                    'label'       => 'edit',
+                                    'actionlabel' => 'Edit invoice details',
+                                    'color'       => '#333399',
+                                    'width'       => 763,
+                                 })
+                       %>)
+%                   }
+                  </FONT>
+                </TH>
+              </TR>
+%             foreach my $cust_pkg_detail ( $cust_pkg->cust_pkg_detail('I') ) {
+                <TR>
+                  <TD><FONT SIZE="-1">&nbsp;-&nbsp;<% $cust_pkg_detail->detail |h %></FONT></TD>
+                </TR>
+%             }
+            </TABLE>
+          </TD>
+%       } else {
+          <TD>
+%           if ( $editi && ! $cust_pkg->get('cancel') ) {
+              <FONT SIZE="-1">
+                (&nbsp;<% include('/elements/popup_link.html', { 
+                               'action'      => $editlink. 'I',
+                               'label'       => 'Add&nbsp;invoice&nbsp;details',
+                               'actionlabel' => 'Add invoice details',
+                               'color'       => '#333399',
+                               'width'       => 763,
+                            })
+                  %>&nbsp;)
+              </FONT>
+%           }
+          </TD>
+%       }
+
+%       if ( $cust_pkg->cust_pkg_detail('C') ) { 
+          <TD VALIGN="top">
+            <% include('/elements/table-grid.html') %>
+              <TR>
+                <TH BGCOLOR="#dddddd" STYLE="border-bottom: dashed 1px black; padding-bottom: 1px">
+                  <FONT SIZE="-1">
+                    Comments
+%                   if ( $editc ) {
+                      (<% include('/elements/popup_link.html', { 
+                                    'action'      => $editlink. 'C',
+                                    'label'       => 'edit',
+                                    'actionlabel' => 'Edit comments',
+                                    'color'       => '#333399',
+                                    'width'       => 763,
+                                 })
+                       %>)
+%                   }
+                  </FONT>
+                </TH>
+              </TR>
+%             foreach my $cust_pkg_detail ( $cust_pkg->cust_pkg_detail('C') ) {
+                <TR>
+                  <TD><FONT SIZE="-1">&nbsp;-&nbsp;<% $cust_pkg_detail->detail |h %></FONT></TD>
+                </TR>
+%             }
+            </TABLE>
+          </TD>
+%       } else {
+          <TD>
+%           if ( $editc ) {
+              <FONT SIZE="-1">
+                (&nbsp;<% include('/elements/popup_link.html', { 
+                               'action'      => $editlink. 'C',
+                               'label'       => 'Add&nbsp;comments',
+                               'actionlabel' => 'Add comments',
+                               'color'       => '#333399',
+                               'width'       => 763,
+                            })
+                  %>&nbsp;)
+              </FONT>
+%           }
+          </TD>
+%       }
+
+      </TR>
+%   }
+
+  </TABLE>
+
+</TD>
+
+<%init>
+
+my %opt = @_;
+
+my $bgcolor  = $opt{'bgcolor'};
+my $cust_pkg = $opt{'cust_pkg'};
+my $part_pkg = $opt{'part_pkg'};
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+#subroutines
+
+#false laziness w/status.html
+sub pkg_link {
+  my($action, $label, $cust_pkg) = @_;
+  return '' unless $cust_pkg;
+  qq!<a href="$p$action.cgi?!. $cust_pkg->pkgnum. qq!">$label</a>!;
+}
+
+sub pkg_change_link {
+  include( '/elements/popup_link-cust_pkg.html',
+             'action'      => $p. 'misc/change_pkg.cgi?dummy=value',
+             'label'       => 'Change&nbsp;package',
+             'actionlabel' => 'Change',
+             'cust_pkg'    => shift,
+         )
+}
+
+sub pkg_dates_link { pkg_link('edit/REAL_cust_pkg', 'Edit&nbsp;dates', @_ ); }
+
+sub pkg_customize_link {
+  my $cust_pkg = shift or return '';
+  my $custnum = $cust_pkg->custnum;
+  qq!<A HREF="${p}edit/part_pkg.cgi?!.
+    "clone=". $cust_pkg->part_pkg->pkgpart. ';'.
+    "pkgnum=". $cust_pkg->pkgnum.
+    qq!">Customize</A>!;
+}
+
+sub pkg_event_link {
+  my($cust_pkg) = @_;
+  qq!<a href="${p}search/cust_event.html?pkgnum=!. $cust_pkg->pkgnum. qq!">!.
+  'View package events'.
+  '</a>';
+}
+
+</%init>

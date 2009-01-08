@@ -1,0 +1,35 @@
+<TD CLASS="inv" BGCOLOR="<% $bgcolor %>">
+
+% unless ( $cust_pkg->locationnum ) {
+  <I><FONT SIZE=-1>(default service address)</FONT><BR>
+% }
+
+  <% $loc->address1 |h %><BR>
+
+% if ( $loc->address2 !~ /^\s*$/ ) {
+    <% $loc->address2 |h %><BR>
+% }
+
+  <% $loc->city |h %><% %>,
+  <% $loc->state |h %> &nbsp; <% $loc->zip |h %><BR>
+
+% if ( $loc->country ne $countrydefault ) {
+  <% code2country( $loc->country ) %>
+% }
+
+  </I>
+
+</TD>
+<%init>
+
+my %opt = @_;
+
+my $bgcolor        = $opt{'bgcolor'};
+my $cust_pkg       = $opt{'cust_pkg'};
+my $part_pkg       = $opt{'part_pkg'};
+my $conf           = new FS::Conf;
+my $countrydefault = $conf->config('countrydefault') || 'US';
+
+my $loc = $cust_pkg->cust_location_or_main;
+
+</%init>

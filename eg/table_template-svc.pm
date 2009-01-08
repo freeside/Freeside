@@ -1,12 +1,9 @@
 package FS::svc_table;
 
 use strict;
-use vars qw(@ISA);
+use base qw( FS::svc_Common );
 #use FS::Record qw( qsearch qsearchs );
-use FS::svc_Common;
 use FS::cust_svc;
-
-@ISA = qw(FS::svc_Common);
 
 =head1 NAME
 
