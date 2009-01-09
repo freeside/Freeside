@@ -12,7 +12,7 @@
 %      } else {
          <TH ALIGN="right"><%$r%>Advertising source</TH>
 %      }
-       <TD>
+       <TD COLSPAN="<% $colspan %>">
          <% include( '/elements/select-part_referral.html',
                        'curr_value' => $refnum,
                        %opt
@@ -29,6 +29,8 @@ my $refnum = $opt{'curr_value'} || $opt{'value'};
 
 $opt{'part_referrals'} ||=
   [ FS::part_referral->all_part_referral( 1 ) ]; #1: include global
+
+my $colspan = delete($opt{'colspan'}) || 1;
 
 my $r = qq!<font color="#ff0000">*</font>&nbsp;!;
 

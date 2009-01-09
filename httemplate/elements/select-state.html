@@ -14,6 +14,7 @@ Example:
     disable_empty => 1, #defaults to 1, disable the empty option
     empty_label   => 'all', #label for empty option
     disable_countyupdate => 0, #bool - disabled update of the select-state.html
+    style         => [ 'attribute:value', 'another:value' ],
   );
 
 </%doc>
@@ -21,6 +22,8 @@ Example:
 <SELECT NAME     = "<% $pre %>state"
         ID       = "<% $pre %>state"
         onChange = "<% $onchange %>"
+        <% $opt{'disabled'} %>
+        <% $style %>
 >
 
 % unless ( $opt{'disable_empty'} ) {
@@ -50,6 +53,12 @@ my $pre = $opt{'prefix'};
 my $onchange =
   ( $opt{'disable_countyupdate'} ? '' : $pre.'state_changed(this); ' ).
   $opt{'onchange'};
+
+$opt{'style'} ||= [];
+my $style =
+  scalar(@{$opt{style}})
+    ? 'STYLE="'. join(';', @{$opt{style}}). '"'
+    : '';
 
 tie my %states, 'Tie::IxHash', states_hash( $opt{'country'} ); 
 

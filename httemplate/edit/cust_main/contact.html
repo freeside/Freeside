@@ -25,55 +25,15 @@
   </TD>
 </TR>
 
-<TR>
-  <TH ALIGN="right"><%$r%>Address</TH>
-  <TD COLSPAN=7>
-    <INPUT TYPE="text" NAME="<%$pre%>address1" VALUE="<% $cust_main->get($pre.'address1') %>" SIZE=70 onChange="<% $onchange %>" <%$disabled%>>
-  </TD>
-</TR>
-
-% my $address2_label_style =
-%   ( $disabled
-%     || ! $conf->exists('cust_main-require_address2')
-%     || ( !$pre && !$opt{'same_checked'} )
-%   )
-%     ? 'visibility:hidden'
-%     : '';
-
-<TR>
-  <TD ALIGN="right"><FONT ID="<% $pre %>address2_required" color="#ff0000" STYLE="<% $address2_label_style %>">*</FONT>&nbsp;<FONT ID="<% $pre %>address2_label" STYLE="<% $address2_label_style %>"><B>Unit&nbsp;#</B></FONT></TD>
-  <TD COLSPAN=7>
-    <INPUT TYPE="text" NAME="<%$pre%>address2" VALUE="<% $cust_main->get($pre.'address2') %>" SIZE=70 onChange="<% $onchange %>" <%$disabled%>>
-  </TD>
-</TR>
-
-<TR>
-  <TH ALIGN="right"><%$r%>City</TH>
-  <TD>
-    <INPUT TYPE="text" NAME="<%$pre%>city" VALUE="<% $cust_main->get($pre.'city') %>" onChange="<% $onchange %>" <%$disabled%>>
-  </TD>
-  <TH ALIGN="right" ID="<%$pre%>countylabel" <%$county_style%>><%$r%>County</TH>
-  <TD>
-    <% include('/elements/select-county.html', %select_hash ) %>
-  </TD>
-  <TH ALIGN="right"><%$r%>State</TH>
-  <TD>
-    <% include('/elements/select-state.html', %select_hash ) %>
-  </TD>
-  <TH><%$r%>Zip</TH>
-  <TD>
-    <INPUT TYPE="text" NAME="<%$pre%>zip" VALUE="<% $cust_main->get($pre.'zip') %>" SIZE=10 onChange="<% $onchange %>" <%$disabled%>>
-  </TD>
-</TR>
-
-<TR>
-  <TH ALIGN="right"><%$r%>Country</TH>
-  <TD COLSPAN=5><% include('/elements/select-country.html', %select_hash ) %></TD>
-% if ( !$pre ) { 
-  <TD><INPUT TYPE="hidden" NAME="geocode" VALUE="<% $opt{geocode} %>"></TD>
-% } 
-
-</TR>
+<% include('/elements/location.html',
+             'prefix'       => $pre,
+             'object'       => $cust_main,
+             'onchange'     => $onchange,
+             'disabled'     => $disabled,
+             'same_checked' => $opt{'same_checked'},
+             'geocode'      => $opt{'geocode'},
+          )
+%>
 
 <TR>
   <TD ALIGN="right"><% $daytime_label %></TD>
@@ -158,20 +118,6 @@ $cust_main->set('stateid_state', $cust_main->state )
 #                                        $onchange,
 #                                        $disabled,
 #                                      );
-
-my %select_hash = (
-  'county'   => $cust_main->get($pre.'county'),
-  'state'    => $cust_main->get($pre.'state'),
-  'country'  => $cust_main->get($pre.'country'),
-  'prefix'   => $pre,
-  'onchange' => $onchange,
-  'disabled' => $disabled,
-);
-
-my @counties = counties( $cust_main->get($pre.'state'),
-                         $cust_main->get($pre.'country'),
-                       );
-my $county_style = scalar(@counties) > 1 ? '' : 'STYLE="visibility:hidden"';
 
 my $daytime_label = FS::Msgcat::_gettext('daytime') =~ /^(daytime)?$/
                   ? 'Day Phone'

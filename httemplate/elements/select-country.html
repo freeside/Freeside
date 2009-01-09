@@ -13,7 +13,7 @@ Example:
     disable_empty => 1, #defaults to 1, disable the empty option
     empty_label   => 'all', #label for empty option
     disable_stateupdate => 0, #bool - disabled update of the select-state.html
-    
+    style         => [ 'attribute:value', 'another:value' ],
   );
 
 </%doc>
@@ -70,6 +70,7 @@ Example:
         ID       = "<% $pre %>country"
         onChange = "<% $onchange %>"
         <% $opt{'disabled'} %>
+        <% $style %>
 >
 
 % unless ( $opt{'disable_empty'} ) {
@@ -100,6 +101,12 @@ my $pre = $opt{'prefix'};
 my $onchange =
   ( $opt{'disable_stateupdate'} ? '' : $pre.'country_changed(this); ' ).
   $opt{'onchange'};
+
+$opt{'style'} ||= [];
+my $style =
+  scalar(@{$opt{style}})
+    ? 'STYLE="'. join(';', @{$opt{style}}). '"'
+    : '';
 
 my $conf = new FS::Conf;
 my $default = $conf->config('countrydefault') || 'US';

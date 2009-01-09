@@ -158,6 +158,27 @@ sub country_full {
   code2country($self->country);
 }
 
+=item line
+
+Returns this location on one line
+
+=cut
+
+sub line {
+  my $self = shift;
+  my $cydefault = FS::conf->new->config('countrydefault') || 'US';
+
+  my $line =       $self->address1;
+  $line   .= ', '. $self->address2              if $self->address2;
+  $line   .= ', '. $self->city;
+  $line   .= ' ('. $self->county. ' county)'    if $self->county;
+  $line   .= ', '. $self->state                 if $self->state;
+  $line   .= '  '. $self->zip                   if $self->zip;
+  $line   .= '  '. code2country($self->country) if $self->country ne $cydefault;
+
+  $line;
+}
+
 =back
 
 =head1 BUGS

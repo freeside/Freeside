@@ -10,7 +10,7 @@
     <% $loc->address2 |h %><BR>
 % }
 
-  <% $loc->city |h %><% %>,
+  <% $loc->city |h %><% $loc->county ? ' ('.$loc->county.' county)' : '' |h %>,
   <% $loc->state |h %> &nbsp; <% $loc->zip |h %><BR>
 
 % if ( $loc->country ne $countrydefault ) {

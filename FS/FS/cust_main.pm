@@ -36,6 +36,7 @@ use FS::cust_credit;
 use FS::cust_refund;
 use FS::part_referral;
 use FS::cust_main_county;
+use FS::cust_location;
 use FS::tax_rate;
 use FS::cust_tax_location;
 use FS::part_pkg_taxrate;
@@ -1719,6 +1720,17 @@ Synonym for B<all_pkgs>.
 
 sub cust_pkg {
   shift->all_pkgs(@_);
+}
+
+=item cust_location
+
+Returns all locations (see L<FS::cust_location>) for this customer.
+
+=cut
+
+sub cust_location {
+  my $self = shift;
+  qsearch('cust_location', { 'custnum' => $self->custnum } );
 }
 
 =item ncancelled_pkgs

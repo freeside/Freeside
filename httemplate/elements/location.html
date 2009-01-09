@@ -1,0 +1,150 @@
+<%doc>
+
+Example:
+
+  include( '/elements/location.html',
+             'object'       => $cust_main,  # or $cust_location
+             'prefix'       => $pre,        #only for cust_main objects
+             'onchange'     => $javascript,
+             'disabled'     => $disabled,
+             'same_checked' => $same_checked,
+             'geocode'      => $geocode, #passed through
+             'no_asterisks' => 0, #set true to disable the red asterisks next
+                                  #to required fields
+         )
+
+</%doc>
+
+<TR>
+  <TH ALIGN="right"><%$r%>Address</TH>
+  <TD COLSPAN=7>
+    <INPUT TYPE     = "text"
+           NAME     = "<%$pre%>address1"
+           VALUE    = "<% $object->get($pre.'address1') |h %>"
+           SIZE     = 70
+           onChange = "<% $onchange %>"
+           <% $disabled %>
+           <% $style %>
+    >
+  </TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right"><FONT ID="<% $pre %>address2_required" color="#ff0000" STYLE="<% $address2_label_style %>">*</FONT>&nbsp;<FONT ID="<% $pre %>address2_label" STYLE="<% $address2_label_style %>"><B>Unit&nbsp;#</B></FONT></TD>
+  <TD COLSPAN=7>
+    <INPUT TYPE     = "text"
+           NAME     = "<%$pre%>address2"
+           VALUE    = "<% $object->get($pre.'address2') |h %>"
+           SIZE     = 70
+           onChange = "<% $onchange %>"
+           <% $disabled %>
+           <% $style %>
+    >
+  </TD>
+</TR>
+
+<TR>
+  <TH ALIGN="right"><%$r%>City</TH>
+  <TD>
+    <INPUT TYPE     = "text"
+           NAME     = "<%$pre%>city"
+           VALUE    = "<% $object->get($pre.'city') |h %>"
+           onChange = "<% $onchange %>"
+           <% $disabled %>
+           <% $style %>
+    >
+  </TD>
+  <TH ALIGN="right" ID="<%$pre%>countylabel" <%$county_style%>><%$r%>County</TH>
+  <TD>
+    <% include('/elements/select-county.html', %select_hash ) %>
+  </TD>
+  <TH ALIGN="right"><%$r%>State</TH>
+  <TD>
+    <% include('/elements/select-state.html', %select_hash ) %>
+  </TD>
+  <TH><%$r%>Zip</TH>
+  <TD>
+    <INPUT TYPE     = "text"
+           NAME     = "<%$pre%>zip"
+           VALUE    = "<% $object->get($pre.'zip') |h %>"
+           SIZE     = 10
+           onChange = "<% $onchange %>"
+           <% $disabled %>
+           <% $style %>
+    >
+  </TD>
+</TR>
+
+<TR>
+  <TH ALIGN="right"><%$r%>Country</TH>
+  <TD COLSPAN=5><% include('/elements/select-country.html', %select_hash ) %></TD>
+</TR>
+
+% if ( !$pre ) { 
+  <INPUT TYPE="hidden" NAME="geocode" VALUE="<% $opt{geocode} %>">
+% } 
+
+<%init>
+
+my %opt = @_;
+
+my $pre      = $opt{'prefix'};
+my $object   = $opt{'object'};
+my $onchange = $opt{'onchange'};
+my $disabled = $opt{'disabled'};
+
+my $conf = new FS::Conf;
+
+my $r = $opt{'no_asterisks'} ? '' : qq!<font color="#ff0000">*</font>&nbsp;!;
+
+#false laziness with ship state
+my $countrydefault = $conf->config('countrydefault') || 'US';
+$object->set($pre.'country', $countrydefault )
+  unless $object->get($pre.'country');
+
+my $statedefault = $conf->config('statedefault')
+                   || ($countrydefault eq 'US' ? 'CA' : '');
+$object->set($pre.'state', $statedefault )
+  unless $object->get($pre.'state')
+         || $object->get($pre.'country') ne $countrydefault;
+
+my @style = ();
+push @style, 'background-color: #dddddd"' if $disabled;
+
+my @address2_label_style = ();
+push @address2_label_style, 'visibility:hidden'
+  if $disabled
+  || ! $conf->exists('cust_main-require_address2')
+  || ( !$pre && !$opt{'same_checked'} );
+
+my @counties = counties( $object->get($pre.'state'),
+                         $object->get($pre.'country'),
+                       );
+my @county_style = ();
+push @county_style, 'visibility:hidden'
+  unless scalar(@counties) > 1;
+
+my $style =
+  scalar(@style)
+    ? 'STYLE="'. join(';', @style). '"'
+    : '';
+my $address2_label_style =
+  scalar(@address2_label_style)
+    ? 'STYLE="'. join(';', @address2_label_style). '"'
+    : '';
+my $county_style = 
+  scalar(@county_style)
+    ? 'STYLE="'. join(';', @county_style). '"'
+    : '';
+
+my %select_hash = (
+  'county'   => $object->get($pre.'county'),
+  'state'    => $object->get($pre.'state'),
+  'country'  => $object->get($pre.'country'),
+  'prefix'   => $pre,
+  'onchange' => $onchange,
+  'disabled' => $disabled,
+  'style'    => \@style,
+);
+
+</%init>
