@@ -1,0 +1,176 @@
+<%doc>
+
+Example:
+
+  include('/elements/tr-select-cust_location.html',
+            'cgi'       => $cgi,
+            'cust_main' => $cust_main,
+         )
+
+</%doc>
+
+<% include('/elements/xmlhttp.html',
+              'url'  => $p.'misc/location.cgi',
+              'subs' => [ 'get_location' ],
+           )
+%>
+
+<SCRIPT TYPE="text/javascript">
+
+  function locationnum_changed(what) {
+    var locationnum = what.options[what.selectedIndex].value;
+    if ( locationnum == -1 ) {
+
+%     for (@location_fields) { 
+        what.form.<%$_%>.disabled = false;
+        what.form.<%$_%>.style.backgroundColor = '#ffffff';
+%     } 
+
+      what.form.address1.value = '';
+      what.form.address2.value = '';
+      what.form.city.value = '';
+      what.form.zip.value = '';
+
+      changeSelect(what.form.country, <% $countrydefault |js_string %>);
+
+      country_changed( what.form.country,
+                       fix_state_factory( <% $statedefault |js_string %>,
+                                          ''
+                                        )
+                     );
+
+    } else {
+
+      if ( locationnum == 0 ) {
+        what.form.address1.value = <% $cust_main->address1 |js_string %>;
+        what.form.address2.value = <% $cust_main->address2 |js_string %>;
+        what.form.city.value = <% $cust_main->city |js_string %>;
+        what.form.zip.value = <% $cust_main->zip |js_string %>;
+
+        changeSelect(what.form.country, <% $cust_main->country | js_string %> );
+
+        country_changed( what.form.country,
+                         fix_state_factory( <% $cust_main->state | js_string %>,
+                                            <% $cust_main->county | js_string %>
+                                          )
+                       );
+
+      } else {
+        get_location( locationnum, update_location );
+      } 
+
+%#sleep/wait until dropdowns are updated?
+%     for (@location_fields) { 
+        what.form.<%$_%>.disabled = true;
+        what.form.<%$_%>.style.backgroundColor = '#dddddd';
+%     } 
+
+    }
+  }
+
+  function fix_state_factory (state, county) {
+    function fix_state() {
+      var state_el = document.getElementById('state');
+      changeSelect(state_el, state);
+      state_changed(state_el, fix_county_factory(county) );
+    }
+    return fix_state;
+  }
+
+  function fix_county_factory(county) {
+    function fix_county() {
+      var county_el = document.getElementById('county');
+      if ( county.length > 0 ) {
+        changeSelect(county_el, county );
+      } else {
+        county_el.selectedIndex = 0;
+      }
+    }
+    return fix_county;
+  }
+
+  function changeSelect(what, value) {
+    for ( var i=0; i<what.length; i++) {
+      if ( what.options[i].value == value ) {
+        what.selectedIndex = i;
+      }
+    }
+  }
+
+  function update_location( string ) {
+    var hash = eval('('+string+')');
+    document.getElementById('address1').value = hash['address1'];
+    document.getElementById('address2').value = hash['address2'];
+    document.getElementById('city').value     = hash['city'];
+    document.getElementById('zip').value      = hash['zip'];
+
+    var country_el = document.getElementById('country');
+
+    changeSelect( country_el, hash['country'] );
+
+    country_changed( country_el,
+                     fix_state_factory( hash['state'],
+                                        hash['county']
+                                      )
+                   );
+  }
+
+</SCRIPT>
+
+<TR>
+  <TH ALIGN="right">Service location</TH>
+  <TD COLSPAN=7>
+    <SELECT NAME="locationnum" onChange="locationnum_changed(this);">
+      <OPTION VALUE="">(default service address)
+%     foreach my $loc ( $cust_main->cust_location ) {
+        <OPTION VALUE="<% $loc->locationnum %>"
+                <% $locationnum == $loc->locationnum ? 'SELECTED' : '' %>
+        ><% $loc->line |h %>
+%     }
+      <OPTION VALUE="-1"
+              <% $locationnum == -1 ? 'SELECTED' : '' %>
+      >Add new location
+    </SELECT>
+  </TD>
+</TR>
+
+<% include('/elements/location.html',
+             'object'       => $cust_location,
+             #'onchange' ?  probably not
+             'disabled'     => ( $locationnum == -1 ? '' : 'DISABLED' ),
+             'no_asterisks' => 1,
+          )
+%>
+
+<%once>
+
+my @location_fields = qw( address1 address2 city county state zip country );
+
+</%once>
+<%init>
+
+my $conf = new FS::Conf;
+my $countrydefault = $conf->config('countrydefault') || 'US';
+my $statedefault = $conf->config('statedefault')
+                   || ($countrydefault eq 'US' ? 'CA' : '');
+
+my %opt = @_;
+my $cgi       = $opt{'cgi'};
+my $cust_main = $opt{'cust_main'};
+
+$cgi->param('locationnum') =~ /^(\-?\d*)$/ or die "illegal locationnum";
+my $locationnum = $1;
+my $cust_location;
+if ( $locationnum && $locationnum != -1 ) {
+  $cust_location = qsearchs('cust_location', { 'locationnum' => $locationnum } )
+    or die "unknown locationnum";
+} else {
+  $cust_location = new FS::cust_location;
+  if ( $cgi->param('error') && $locationnum == -1 ) {
+    $cust_location->$_( $cgi->param($_) ) foreach @location_fields;
+  } else {
+    $cust_location->$_( $cust_main->$_() ) foreach @location_fields;
+  }
+}
+
+</%init>

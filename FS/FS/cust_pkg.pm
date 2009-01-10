@@ -436,11 +436,13 @@ replace methods.
 sub check {
   my $self = shift;
 
+  $self->locationnum('') if $self->locationnum == 0 || $self->locationnum == -1;
+
   my $error = 
     $self->ut_numbern('pkgnum')
     || $self->ut_foreign_key('custnum', 'cust_main', 'custnum')
     || $self->ut_numbern('pkgpart')
-    || $self->ut_foreign_keyn('locationnum', 'location', 'locationnum')
+    || $self->ut_foreign_keyn('locationnum', 'cust_location', 'locationnum')
     || $self->ut_numbern('setup')
     || $self->ut_numbern('bill')
     || $self->ut_numbern('susp')
@@ -1584,7 +1586,7 @@ Returns the location object, if any (see L<FS::cust_location>).
 sub cust_location {
   my $self = shift;
   return '' unless $self->locationnum;
-  qsearchs( 'cust_main', { 'locationnum' => $self->locationnum } );
+  qsearchs( 'cust_location', { 'locationnum' => $self->locationnum } );
 }
 
 =item cust_location_or_main

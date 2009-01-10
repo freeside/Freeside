@@ -697,9 +697,7 @@ sub order_pkgs {
   my $cust_pkgs = shift;
   my $seconds = shift;
   my %options = @_;
-  my %svc_options = ();
-  $svc_options{'depend_jobnum'} = $options{'depend_jobnum'}
-    if exists $options{'depend_jobnum'};
+
   warn "$me order_pkgs called with options ".
        join(', ', map { "$_: $options{$_}" } keys %options ). "\n"
     if $DEBUG;
@@ -718,36 +716,125 @@ sub order_pkgs {
   local $FS::svc_Common::noexport_hack = 1 if $options{'noexport'};
 
   foreach my $cust_pkg ( keys %$cust_pkgs ) {
-    $cust_pkg->custnum( $self->custnum );
-    my $error = $cust_pkg->insert;
+
+    my $error = $self->order_pkg( 'cust_pkg'      => $cust_pkg,
+                                  'svcs'          => $cust_pkgs->{$cust_pkg},
+                                  'seconds'       => $seconds,
+                                  'depend_jobnum' => $options{'depend_jobnum'},
+                                );
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
-      return "inserting cust_pkg (transaction rolled back): $error";
+      return $error;
     }
-    foreach my $svc_something ( @{$cust_pkgs->{$cust_pkg}} ) {
-      if ( $svc_something->svcnum ) {
-        my $old_cust_svc = $svc_something->cust_svc;
-        my $new_cust_svc = new FS::cust_svc { $old_cust_svc->hash };
-        $new_cust_svc->pkgnum( $cust_pkg->pkgnum);
-        $error = $new_cust_svc->replace($old_cust_svc);
-      } else {
-        $svc_something->pkgnum( $cust_pkg->pkgnum );
-        if ( $seconds && $$seconds && $svc_something->isa('FS::svc_acct') ) {
-          $svc_something->seconds( $svc_something->seconds + $$seconds );
-          $$seconds = 0;
-        }
-        $error = $svc_something->insert(%svc_options);
+
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  ''; #no error
+}
+
+=item order_pkg HASHREF | OPTION => VALUE ... 
+
+Orders a single package.  This is the preferred and most flexible method for
+ordering a single package, including the ability to set a (new or existing)
+location as well as insert services.
+
+Options may be passed as a list of key/value pairs or as a hash reference.
+Options are:
+
+=over 4
+
+=item cust_pkg
+
+FS::cust_pkg object
+
+=item cust_location
+
+Optional FS::cust_location object
+
+=item svcs
+
+Optional arryaref of FS::svc_* service objects.
+
+=item depend_jobnum
+
+If this option is set to a job queue jobnum (see L<FS::queue), all provisioning
+jobs will have a dependancy on the supplied job (they will not run until the
+specific job completes).  This can be used to defer provisioning until some
+action completes (such as running the customer's credit card successfully).
+
+=back
+
+=cut
+
+sub order_pkg {
+  my $self = shift;
+  my $opt = ref($_[0]) ? shift : { @_ };
+
+  warn "$me order_pkg called with options ".
+       join(', ', map { "$_: $opt->{$_}" } keys %$opt ). "\n"
+    if $DEBUG;
+
+  my $cust_pkg = $opt->{'cust_pkg'};
+  my $seconds  = $opt->{'seconds'};
+  my $svcs     = $opt->{'svcs'} || [];
+
+  my %svc_options = ();
+  $svc_options{'depend_jobnum'} = $opt->{'depend_jobnum'}
+    if exists($opt->{'depend_jobnum'}) && $opt->{'depend_jobnum'};
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  if ( $opt->{'cust_location'} &&
+       ( ! $cust_pkg->locationnum || $cust_pkg->locationnum == -1 ) ) {
+    my $error = $opt->{'cust_location'}->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "inserting cust_location (transaction rolled back): $error";
+    }
+    $cust_pkg->locationnum($opt->{'cust_location'}->locationnum);
+  }
+
+  $cust_pkg->custnum( $self->custnum );
+
+  my $error = $cust_pkg->insert;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return "inserting cust_pkg (transaction rolled back): $error";
+  }
+
+  foreach my $svc_something ( @{ $opt->{'svcs'} } ) {
+    if ( $svc_something->svcnum ) {
+      my $old_cust_svc = $svc_something->cust_svc;
+      my $new_cust_svc = new FS::cust_svc { $old_cust_svc->hash };
+      $new_cust_svc->pkgnum( $cust_pkg->pkgnum);
+      $error = $new_cust_svc->replace($old_cust_svc);
+    } else {
+      $svc_something->pkgnum( $cust_pkg->pkgnum );
+      if ( $seconds && $$seconds && $svc_something->isa('FS::svc_acct') ) {
+        $svc_something->seconds( $svc_something->seconds + $$seconds );
+        $$seconds = 0;
       }
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        #return "inserting svc_ (transaction rolled back): $error";
-        return $error;
-      }
+      $error = $svc_something->insert(%svc_options);
+    }
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "inserting svc_ (transaction rolled back): $error";
     }
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   ''; #no error
+
 }
 
 =item recharge_prepay IDENTIFIER | PREPAY_CREDIT_OBJ [ , AMOUNTREF, SECONDSREF, UPBYTEREF, DOWNBYTEREF ]

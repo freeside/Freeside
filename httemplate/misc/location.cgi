@@ -4,6 +4,7 @@
 my $locationnum = $cgi->param('arg');
 
 my $cust_location = qsearchs({
+  'select'    => 'cust_location.*',
   'table'     => 'cust_location',
   'hashref'   => { 'locationnum' => $locationnum },
   'addl_from' => 'LEFT JOIN cust_main USING ( custnum )',

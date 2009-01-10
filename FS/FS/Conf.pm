@@ -1948,6 +1948,13 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'cust_pkg-always_show_location',
+    'section'     => 'UI',
+    'description' => "Always display package locations, even when they're all the default service address.",
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'svc_acct-edit_uid',
     'section'     => 'shell',
     'description' => 'Allow UID editing.',

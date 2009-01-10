@@ -1,70 +1,6 @@
 <% include('/elements/header-popup.html', 'Order new package' ) %>
 
-<% include('/elements/xmlhttp.html',
-              'url'  => $p.'misc/location.cgi',
-              'subs' => [ 'get_location' ],
-           )
-%>
-
 <SCRIPT TYPE="text/javascript">
-
-  function locationnum_changed(what) {
-    var locationnum = what.options[what.selectedIndex].value;
-    if ( locationnum == -1 ) {
-
-%     for (@location_fields) { 
-        what.form.<%$_%>.disabled = false;
-        what.form.<%$_%>.style.backgroundColor = '#ffffff';
-%     } 
-
-      what.form.address1.value = '';
-      what.form.address2.value = '';
-      what.form.city.value = '';
-      what.form.zip.value = '';
-      changeSelect(what.form.country, <% $countrydefault |js_string %>);
-%#shouldn't we sleep/wait here until the state dropdown is updated?
-%#(is it even triggered???)
-      changeSelect(what.form.state, <% $statedefault |js_string %>);
-      what.form.county.selectedIndex = 0;
-
-    } else {
-
-      if ( locationnum == 0 ) {
-        what.form.address1.value = <% $cust_main->address1 |js_string %>;
-        what.form.address2.value = <% $cust_main->address2 |js_string %>;
-        what.form.city.value = <% $cust_main->city |js_string %>;
-        what.form.zip.value = <% $cust_main->zip |js_string %>;
-        changeSelect(what.form.country, <% $cust_main->country | js_string %> );
-%#shouldn't we sleep/wait here until the state dropdown is updated?
-%#(is it even triggered???)
-        changeSelect(what.form.state, <% $cust_main->state | js_string %> );
-%#shouldn't we sleep/wait here until the county dropdown is updated?
-%#(is it even triggered???)
-        changeSelect(what.form.county, <% $cust_main->county | js_string %> );
-      } else {
-        get_location( locationnum, update_location );
-      } 
-
-%#sleep/wait until dropdowns are updated?
-%     for (@location_fields) { 
-        what.form.<%$_%>.disabled = true;
-        what.form.<%$_%>.style.backgroundColor = '#dddddd';
-%     } 
-
-    }
-  }
-
-  function changeSelect(what, value) {
-    for ( var i=0; i<what.length; i++) {
-      if ( what.options[i].value == value ) {
-        what.selectedIndex = i;
-      }
-    }
-  }
-
-  function update_location( hash ) {
-    alert(hash);
-  }
 
   function enable_order_pkg () {
     if ( document.OrderPkgForm.pkgpart.selectedIndex > 0 ) {
@@ -105,28 +41,9 @@
   %>
 % }
 
-<TR>
-  <TH ALIGN="right">Service location</TH>
-  <TD COLSPAN=7>
-    <SELECT NAME="locationnum" onChange="locationnum_changed(this);">
-      <OPTION VALUE="">(default service address)
-%     foreach my $loc ( $cust_main->cust_location ) {
-        <OPTION VALUE="<% $loc->locationnum %>"
-                <% $locationnum == $loc->locationnum ? 'SELECTED' : '' %>
-        ><% $loc->line |h %>
-%     }
-      <OPTION VALUE="-1"
-              <% $locationnum == -1 ? 'SELECTED' : '' %>
-      >Add new location
-    </SELECT>
-  </TD>
-</TR>
-
-<% include('/elements/location.html',
-             'object'       => $cust_location,
-             #'onchange' ?  probably not
-             'disabled'     => ( $locationnum == -1 ? '' : 'DISABLED' ),
-             'no_asterisks' => 1,
+<% include('/elements/tr-select-cust_location.html',
+             'cgi'       => $cgi,
+             'cust_main' => $cust_main,
           )
 %>
 
@@ -138,20 +55,12 @@
 </FORM>
 </BODY>
 </HTML>
-<%once>
-
-my @location_fields = qw( address1 address2 city county state zip country );
-
-</%once>
 <%init>
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Order customer package');
 
 my $conf = new FS::Conf;
-my $countrydefault = $conf->config('countrydefault') || 'US';
-my $statedefault = $conf->config('statedefault')
-                   || ($countrydefault eq 'US' ? 'CA' : '');
 
 $cgi->param('custnum') =~ /^(\d+)$/ or die "no custnum";
 my $custnum = $1;
@@ -162,20 +71,5 @@ my $cust_main = qsearchs({
 });
 
 my $pkgpart = scalar($cgi->param('pkgpart'));
-
-$cgi->param('locationnum') =~ /^(\d*)$/ or die "illegal locationnum";
-my $locationnum = $1;
-my $cust_location;
-if ( $locationnum ) {
-  $cust_location = qsearchs('cust_location', { 'locationnum' => $locationnum } )
-    or die "unknown locationnum";
-} else {
-  $cust_location = new FS::cust_location;
-  if ( $cgi->param('error') && $locationnum == -1 ) {
-    $cust_location->$_( $cgi->param($_) ) foreach @location_fields;
-  } else {
-    $cust_location->$_( $cust_main->$_() ) foreach @location_fields;
-  }
-}
 
 </%init>

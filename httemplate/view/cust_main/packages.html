@@ -97,7 +97,7 @@ function taxoverridequickchargemagic() {
 
 
 <BR><BR>
-% if ( @$packages ) { 
+% if ( @$packages ) {
 
 Current packages
 % } 
@@ -131,7 +131,9 @@ Current packages
 <TR>
   <TH CLASS="grid" BGCOLOR="#cccccc">Package</TH>
   <TH CLASS="grid" BGCOLOR="#cccccc">Status</TH>
+% if ( $show_location ) {
   <TH CLASS="grid" BGCOLOR="#cccccc">Location</TH>
+% }
   <TH CLASS="grid" BGCOLOR="#cccccc">Services</TH>
 </TR>
 
@@ -153,7 +155,9 @@ Current packages
     <TR>
       <% include('packages/package.html',  %iopt) %>
       <% include('packages/status.html',   %iopt) %>
+% if ( $show_location ) {
       <% include('packages/location.html', %iopt) %>
+% }
       <% include('packages/services.html', %iopt) %>
     </TR>
 
@@ -182,6 +186,9 @@ my $conf = new FS::Conf;
 my $curuser = $FS::CurrentUser::CurrentUser;
 
 my $packages = get_packages($cust_main, $conf);
+
+my $show_location = $conf->exists('cust_pkg-always_show_location')
+                        || ( grep $_->locationnum, @$packages ); # ? '1' : '0';
 
 #subroutines
 
