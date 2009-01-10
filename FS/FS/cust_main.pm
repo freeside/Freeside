@@ -659,85 +659,9 @@ sub _copy_skel {
 
 }
 
-=item order_pkgs HASHREF, [ SECONDSREF, [ , OPTION => VALUE ... ] ]
-
-Like the insert method on an existing record, this method orders a package
-and included services atomicaly.  Pass a Tie::RefHash data structure to this
-method containing FS::cust_pkg and FS::svc_I<tablename> objects.  There should
-be a better explanation of this, but until then, here's an example:
-
-  use Tie::RefHash;
-  tie %hash, 'Tie::RefHash'; #this part is important
-  %hash = (
-    $cust_pkg => [ $svc_acct ],
-    ...
-  );
-  $cust_main->order_pkgs( \%hash, \'0', 'noexport'=>1 );
-
-Services can be new, in which case they are inserted, or existing unaudited
-services, in which case they are linked to the newly-created package.
-
-Currently available options are: I<depend_jobnum> and I<noexport>.
-
-If I<depend_jobnum> is set, all provisioning jobs will have a dependancy
-on the supplied jobnum (they will not run until the specific job completes).
-This can be used to defer provisioning until some action completes (such
-as running the customer's credit card successfully).
-
-The I<noexport> option is deprecated.  If I<noexport> is set true, no
-provisioning jobs (exports) are scheduled.  (You can schedule them later with
-the B<reexport> method for each cust_pkg object.  Using the B<reexport> method
-on the cust_main object is not recommended, as existing services will also be
-reexported.)
-
-=cut
-
-sub order_pkgs {
-  my $self = shift;
-  my $cust_pkgs = shift;
-  my $seconds = shift;
-  my %options = @_;
-
-  warn "$me order_pkgs called with options ".
-       join(', ', map { "$_: $options{$_}" } keys %options ). "\n"
-    if $DEBUG;
-
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
-
-  my $oldAutoCommit = $FS::UID::AutoCommit;
-  local $FS::UID::AutoCommit = 0;
-  my $dbh = dbh;
-
-  local $FS::svc_Common::noexport_hack = 1 if $options{'noexport'};
-
-  foreach my $cust_pkg ( keys %$cust_pkgs ) {
-
-    my $error = $self->order_pkg( 'cust_pkg'      => $cust_pkg,
-                                  'svcs'          => $cust_pkgs->{$cust_pkg},
-                                  'seconds'       => $seconds,
-                                  'depend_jobnum' => $options{'depend_jobnum'},
-                                );
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
-    }
-
-  }
-
-  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-  ''; #no error
-}
-
 =item order_pkg HASHREF | OPTION => VALUE ... 
 
-Orders a single package.  This is the preferred and most flexible method for
-ordering a single package, including the ability to set a (new or existing)
-location as well as insert services.
+Orders a single package.
 
 Options may be passed as a list of key/value pairs or as a hash reference.
 Options are:
@@ -835,6 +759,81 @@ sub order_pkg {
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   ''; #no error
 
+}
+
+=item order_pkgs HASHREF, [ SECONDSREF, [ , OPTION => VALUE ... ] ]
+
+Like the insert method on an existing record, this method orders multiple
+packages and included services atomicaly.  Pass a Tie::RefHash data structure
+to this method containing FS::cust_pkg and FS::svc_I<tablename> objects.
+There should be a better explanation of this, but until then, here's an
+example:
+
+  use Tie::RefHash;
+  tie %hash, 'Tie::RefHash'; #this part is important
+  %hash = (
+    $cust_pkg => [ $svc_acct ],
+    ...
+  );
+  $cust_main->order_pkgs( \%hash, \'0', 'noexport'=>1 );
+
+Services can be new, in which case they are inserted, or existing unaudited
+services, in which case they are linked to the newly-created package.
+
+Currently available options are: I<depend_jobnum> and I<noexport>.
+
+If I<depend_jobnum> is set, all provisioning jobs will have a dependancy
+on the supplied jobnum (they will not run until the specific job completes).
+This can be used to defer provisioning until some action completes (such
+as running the customer's credit card successfully).
+
+The I<noexport> option is deprecated.  If I<noexport> is set true, no
+provisioning jobs (exports) are scheduled.  (You can schedule them later with
+the B<reexport> method for each cust_pkg object.  Using the B<reexport> method
+on the cust_main object is not recommended, as existing services will also be
+reexported.)
+
+=cut
+
+sub order_pkgs {
+  my $self = shift;
+  my $cust_pkgs = shift;
+  my $seconds = shift;
+  my %options = @_;
+
+  warn "$me order_pkgs called with options ".
+       join(', ', map { "$_: $options{$_}" } keys %options ). "\n"
+    if $DEBUG;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  local $FS::svc_Common::noexport_hack = 1 if $options{'noexport'};
+
+  foreach my $cust_pkg ( keys %$cust_pkgs ) {
+
+    my $error = $self->order_pkg( 'cust_pkg'      => $cust_pkg,
+                                  'svcs'          => $cust_pkgs->{$cust_pkg},
+                                  'seconds'       => $seconds,
+                                  'depend_jobnum' => $options{'depend_jobnum'},
+                                );
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  ''; #no error
 }
 
 =item recharge_prepay IDENTIFIER | PREPAY_CREDIT_OBJ [ , AMOUNTREF, SECONDSREF, UPBYTEREF, DOWNBYTEREF ]
@@ -3896,7 +3895,7 @@ sub realtime_bop {
       my $templ_hash = { error => $transaction->error_message };
 
       my $error = send_email(
-        'from'    => $conf->config('invoice_from'),
+        'from'    => $conf->config('invoice_from', $self->agentnum ),
         'to'      => [ grep { $_ ne 'POST' } $self->invoicing_list ],
         'subject' => 'Your payment could not be processed',
         'body'    => [ $template->fill_in(HASH => $templ_hash) ],
@@ -5391,6 +5390,35 @@ sub ship_name {
   }
 }
 
+=item name_short
+
+Returns a name string for this customer, either "Company" or "First Last".
+
+=cut
+
+sub name_short {
+  my $self = shift;
+  $self->company !~ /^\s*$/ ? $self->company : $self->contact_firstlast;
+}
+
+=item ship_name_short
+
+Returns a name string for this (service/shipping) contact, either "Company"
+or "First Last".
+
+=cut
+
+sub ship_name_short {
+  my $self = shift;
+  if ( $self->get('ship_last') ) { 
+    $self->ship_company !~ /^\s*$/
+      ? $self->ship_company
+      : $self->ship_contact_firstlast;
+  } else {
+    $self->name_company_or_firstlast;
+  }
+}
+
 =item contact
 
 Returns this customer's full (billing) contact name only, "Last, First"
@@ -5413,6 +5441,30 @@ sub ship_contact {
   $self->get('ship_last')
     ? $self->get('ship_last'). ', '. $self->ship_first
     : $self->contact;
+}
+
+=item contact_firstlast
+
+Returns this customers full (billing) contact name only, "First Last".
+
+=cut
+
+sub contact_firstlast {
+  my $self = shift;
+  $self->first. ' '. $self->get('last');
+}
+
+=item ship_contact_firstlast
+
+Returns this customer's full (shipping) contact name only, "First Last".
+
+=cut
+
+sub ship_contact_firstlast {
+  my $self = shift;
+  $self->get('ship_last')
+    ? $self->first. ' '. $self->get('ship_last')
+    : $self->contact_firstlast;
 }
 
 =item country_full
@@ -6717,18 +6769,19 @@ I<$expdate> - the expiration of the customer payment in seconds from epoch
 =cut
 
 sub notify {
-  my ($customer, $template, %options) = @_;
+  my ($self, $template, %options) = @_;
 
   return unless $conf->exists($template);
 
-  my $from = $conf->config('invoice_from') if $conf->exists('invoice_from');
+  my $from = $conf->config('invoice_from', $self->agentnum)
+    if $conf->exists('invoice_from', $self->agentnum);
   $from = $options{from} if exists($options{from});
 
-  my $to = join(',', $customer->invoicing_list_emailonly);
+  my $to = join(',', $self->invoicing_list_emailonly);
   $to = $options{to} if exists($options{to});
   
-  my $subject = "Notice from " . $conf->config('company_name')
-    if $conf->exists('company_name');
+  my $subject = "Notice from " . $conf->config('company_name', $self->agentnum)
+    if $conf->exists('company_name', $self->agentnum);
   $subject = $options{subject} if exists($options{subject});
 
   my $notify_template = new Text::Template (TYPE => 'ARRAY',
@@ -6739,16 +6792,17 @@ sub notify {
   $notify_template->compile()
     or die "can't compile template: Text::Template::ERROR";
 
-  $FS::notify_template::_template::company_name = $conf->config('company_name');
+  $FS::notify_template::_template::company_name =
+    $conf->config('company_name', $self->agentnum);
   $FS::notify_template::_template::company_address =
-    join("\n", $conf->config('company_address') ). "\n";
+    join("\n", $conf->config('company_address', $self->agentnum) ). "\n";
 
-  my $paydate = $customer->paydate || '2037-12-31';
-  $FS::notify_template::_template::first = $customer->first;
-  $FS::notify_template::_template::last = $customer->last;
-  $FS::notify_template::_template::company = $customer->company;
-  $FS::notify_template::_template::payinfo = $customer->mask_payinfo;
-  my $payby = $customer->payby;
+  my $paydate = $self->paydate || '2037-12-31';
+  $FS::notify_template::_template::first = $self->first;
+  $FS::notify_template::_template::last = $self->last;
+  $FS::notify_template::_template::company = $self->company;
+  $FS::notify_template::_template::payinfo = $self->mask_payinfo;
+  my $payby = $self->payby;
   my ($payyear,$paymonth,$payday) = split (/-/,$paydate);
   my $expire_time = timelocal(0,0,0,$payday,--$paymonth,$payyear);
 
@@ -6848,10 +6902,10 @@ sub generate_letter {
                      );
     if ( length($retadd) ) {
       $letter_data{returnaddress} = $retadd;
-    } elsif ( grep /\S/, $conf->config('company_address') ) {
+    } elsif ( grep /\S/, $conf->config('company_address', $self->agentnum) ) {
       $letter_data{returnaddress} =
         join( '\\*'."\n", map s/( {2,})/'~' x length($1)/eg,
-                          $conf->config('company_address')
+                          $conf->config('company_address', $self->agentnum)
         );
     } else {
       $letter_data{returnaddress} = '~';
@@ -6860,7 +6914,7 @@ sub generate_letter {
 
   $letter_data{conf_dir} = "$FS::UID::conf_dir/conf.$FS::UID::datasrc";
 
-  $letter_data{company_name} = $conf->config('company_name');
+  $letter_data{company_name} = $conf->config('company_name', $self->agentnum);
 
   my $dir = $FS::UID::conf_dir."/cache.". $FS::UID::datasrc;
   my $fh = new File::Temp( TEMPLATE => 'letter.'. $self->custnum. '.XXXXXXXX',
@@ -6909,6 +6963,8 @@ sub print {
   my ($self, $template) = (shift, shift);
   do_print [ $self->print_ps($template) ];
 }
+
+#these three subs should just go away once agent stuff is all config overrides
 
 sub agent_template {
   my $self = shift;

@@ -1,21 +1,14 @@
 % if ($error) {
 %   $cgi->param('error', $error);
-%   $cgi->redirect(popurl(3). $error_redirect. '?'. $cgi->query_string );
-% } elsif ( $action eq 'change' ) {
-
-    <% header("Package changed") %>
-      <SCRIPT TYPE="text/javascript">
-        window.top.location.reload();
-      </SCRIPT>
-    </BODY>
-    </HTML>
-
-% } elsif ( $action eq 'bulk' ) {
-<% $cgi->redirect(popurl(3). "view/cust_main.cgi?$custnum") %>
+%   $cgi->redirect(popurl(3). 'edit/cust_pkg.cgi?'. $cgi->query_string );
 % } else {
-%   die "guru exception #5: action is neither change nor bulk!";
-% }
+<% $cgi->redirect(popurl(3). "view/cust_main.cgi?$custnum") %>
 <%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right('Bulk change customer packages');
 
 my $error = '';
 
@@ -28,46 +21,19 @@ my @remove_pkgnums = map {
   $1;
 } $cgi->param('remove_pkg');
 
-my $curuser = $FS::CurrentUser::CurrentUser;
-
 my( $action, $error_redirect ) = ( '', '' );
 my @pkgparts = ();
-if ( $cgi->param('action') eq 'change' ) { #came from misc/change_pkg.cgi
 
-  $action = 'change';
-  $error_redirect = "misc/change_pkg.cgi";
-
-  die "access denied"
-    unless $curuser->access_right('Change customer package');
-
-  if ( $cgi->param('new_pkgpart') =~ /^(\d+)$/ ) {
-    @pkgparts = ($1);
-  } else {
-    $error = 'Select a new package';
-  }
-
-} elsif ( $cgi->param('action') eq 'bulk' ) { #came from edit/cust_pkg.cgi
-
-  $action = 'bulk';
-  $error_redirect = "edit/cust_pkg.cgi";
-
-  die "access denied"
-    unless $curuser->access_right('Bulk change customer packages');
-
-  foreach my $pkgpart ( map /^pkg(\d+)$/ ? $1 : (), $cgi->param ) {
-    if ( $cgi->param("pkg$pkgpart") =~ /^(\d+)$/ ) {
-      my $num_pkgs = $1;
-      while ( $num_pkgs-- ) {
-        push @pkgparts,$pkgpart;
-      }
-    } else {
-      $error = "Illegal quantity";
-      last;
+foreach my $pkgpart ( map /^pkg(\d+)$/ ? $1 : (), $cgi->param ) {
+  if ( $cgi->param("pkg$pkgpart") =~ /^(\d+)$/ ) {
+    my $num_pkgs = $1;
+    while ( $num_pkgs-- ) {
+      push @pkgparts,$pkgpart;
     }
+  } else {
+    $error = "Illegal quantity";
+    last;
   }
-
-} else {
-  die "guru exception #5: action is neither change nor bulk!";
 }
 
 $error ||= FS::cust_pkg::order($custnum,\@pkgparts,\@remove_pkgnums);

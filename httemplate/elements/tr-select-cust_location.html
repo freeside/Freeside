@@ -118,7 +118,7 @@ Example:
 </SCRIPT>
 
 <TR>
-  <TH ALIGN="right">Service location</TH>
+  <TH ALIGN="right">Service&nbsp;location</TH>
   <TD COLSPAN=7>
     <SELECT NAME="locationnum" onChange="locationnum_changed(this);">
       <OPTION VALUE="">(default service address)
@@ -166,7 +166,7 @@ if ( $locationnum && $locationnum != -1 ) {
     or die "unknown locationnum";
 } else {
   $cust_location = new FS::cust_location;
-  if ( $cgi->param('error') && $locationnum == -1 ) {
+  if ( $locationnum == -1 ) {
     $cust_location->$_( $cgi->param($_) ) foreach @location_fields;
   } else {
     $cust_location->$_( $cust_main->$_() ) foreach @location_fields;

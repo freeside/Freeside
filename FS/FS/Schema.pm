@@ -661,13 +661,20 @@ sub tables_hashref {
       'primary_key' => 'custnum',
       'unique' => [ [ 'agentnum', 'agent_custid' ] ],
       #'index' => [ ['last'], ['company'] ],
-      'index' => [ ['last'], [ 'company' ], [ 'referral_custnum' ],
-                   [ 'daytime' ], [ 'night' ], [ 'fax' ], [ 'refnum' ],
-                   [ 'county' ], [ 'state' ], [ 'country' ], [ 'zip' ],
-                   [ 'ship_last' ], [ 'ship_company' ],
-                   [ 'ship_daytime' ], [ 'ship_night' ], [ 'ship_fax' ],
+      'index' => [
+                   [ 'agentnum' ], [ 'refnum' ], [ 'custbatch' ],
+                   [ 'referral_custnum' ],
                    [ 'payby' ], [ 'paydate' ],
-                   [ 'agentnum' ], [ 'custbatch' ],
+                   #billing
+                   [ 'last' ], [ 'company' ],
+                   [ 'county' ], [ 'state' ], [ 'country' ],
+                   [ 'zip' ],
+                   [ 'daytime' ], [ 'night' ], [ 'fax' ],
+                   #shipping
+                   [ 'ship_last' ], [ 'ship_company' ],
+                   [ 'ship_county' ], [ 'ship_state' ], [ 'ship_country' ],
+                   [ 'ship_zip' ],
+                   [ 'ship_daytime' ], [ 'ship_night' ], [ 'ship_fax' ],
                  ],
     },
 
@@ -975,6 +982,7 @@ sub tables_hashref {
         'change_date',    @date_type,             '', '',
         'change_pkgnum',       'int', 'NULL', '', '', '',
         'change_pkgpart',      'int', 'NULL', '', '', '',
+        'change_locationnum',  'int', 'NULL', '', '', '',
         'manual_flag',        'char', 'NULL',  1, '', '', 
         'quantity',            'int', 'NULL', '', '', '',
       ],
@@ -1994,7 +2002,7 @@ sub tables_hashref {
       ],
       'primary_key' => 'acctid',
       'unique' => [],
-      'index' => [ [ 'calldate' ], [ 'dst' ], [ 'accountcode' ], [ 'freesidestatus' ], [ 'cdrbatch' ], ],
+      'index' => [ [ 'calldate' ], [ 'src' ], [ 'dst' ], [ 'charged_party' ], [ 'accountcode' ], [ 'freesidestatus' ], [ 'cdrbatch' ], ],
     },
 
     'cdr_calltype' => {
@@ -2038,6 +2046,21 @@ sub tables_hashref {
       'unique' => [ [ 'upstream_rateid' ] ], #unless we add another field, yeah
       'index'  => [],
     },
+
+    #'cdr_file' => {
+    #  'columns' => [
+    #    'filenum',    'serial',     '', '', '', '',
+    #    'filename',  'varchar',     '', '', '', '',
+    #    'status',    'varchar', 'NULL', '', '', '',
+    #  ],
+    #  'primary_key' => 'filenum',
+    #  'unique' => [ [ 'filename' ], ], #just change the index if we need to
+    #                                   # agent-virtualize or have a customer
+    #                                   # with dup-filename needs or something
+    #                                   # (only used by cdr.http_and_import for
+    #                                   #  chrissakes)
+    #  'index'  => [],
+    #},
 
     'inventory_item' => {
       'columns' => [

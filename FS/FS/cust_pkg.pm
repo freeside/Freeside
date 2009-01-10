@@ -174,6 +174,10 @@ Previous pkgnum
 
 Previous pkgpart
 
+=item change_locationnum
+
+Previous locationnum
+
 =back
 
 Note: setup, last_bill, bill, adjourn, susp, expire, cancel and change_date
@@ -620,7 +624,7 @@ sub cancel {
   if ( !$options{'quiet'} && $conf->exists('emailcancel') && @invoicing_list ) {
     my $conf = new FS::Conf;
     my $error = send_email(
-      'from'    => $conf->config('invoice_from'),
+      'from'    => $conf->config('invoice_from', $self->cust_main->agentnum),
       'to'      => \@invoicing_list,
       'subject' => ( $conf->config('cancelsubject') || 'Cancellation Notice' ),
       'body'    => [ map "$_\n", $conf->config('cancelmessage') ],
@@ -803,7 +807,8 @@ sub suspend {
     if ( $conf->config('suspend_email_admin') ) {
  
       my $error = send_email(
-        'from'    => $conf->config('invoice_from'), #??? well as good as any
+        'from'    => $conf->config('invoice_from', $self->cust_main->agentnum),
+                                   #invoice_from ??? well as good as any
         'to'      => $conf->config('suspend_email_admin'),
         'subject' => 'FREESIDE NOTIFICATION: Customer package suspended',
         'body'    => [
@@ -998,6 +1003,148 @@ sub unadjourn {
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   ''; #no errors
+
+}
+
+
+=item change HASHREF | OPTION => VALUE ... 
+
+Changes this package: cancels it and creates a new one, with a different
+pkgpart or locationnum or both.  All services are transferred to the new
+package (no change will be made if this is not possible).
+
+Options may be passed as a list of key/value pairs or as a hash reference.
+Options are:
+
+=over 4
+
+=item locaitonnum
+
+New locationnum, to change the location for this package.
+
+=item cust_location
+
+New FS::cust_location object, to create a new location and assign it
+to this package.
+
+=item pkgpart
+
+New pkgpart (see L<FS::part_pkg>).
+
+=item refnum
+
+New refnum (see L<FS::part_referral>).
+
+=back
+
+At least one option must be specified (otherwise, what's the point?)
+
+Returns either the new FS::cust_pkg object or a scalar error.
+
+For example:
+
+  my $err_or_new_cust_pkg = $old_cust_pkg->change
+
+=cut
+
+#some false laziness w/order
+sub change {
+  my $self = shift;
+  my $opt = ref($_[0]) ? shift : { @_ };
+
+#  my ($custnum, $pkgparts, $remove_pkgnum, $return_cust_pkg, $refnum) = @_;
+#    
+
+  my $conf = new FS::Conf;
+
+  # Transactionize this whole mess
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE'; 
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE'; 
+  local $SIG{PIPE} = 'IGNORE'; 
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error;
+
+  my %hash = (); 
+
+  my $time = time;
+
+  #$hash{$_} = $self->$_() foreach qw( last_bill bill );
+    
+  #$hash{$_} = $self->$_() foreach qw( setup );
+
+  $hash{'setup'} = $time if $self->setup;
+
+  $hash{'change_date'} = $time;
+  $hash{"change_$_"}  = $self->$_()
+    foreach qw( pkgnum pkgpart locationnum );
+
+  if ( $opt->{'cust_location'} &&
+       ( ! $opt->{'locationnum'} || $opt->{'locationnum'} == -1 ) ) {
+    $error = $opt->{'cust_location'}->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "inserting cust_location (transaction rolled back): $error";
+    }
+    $opt->{'locationnum'} = $opt->{'cust_location'}->locationnum;
+  }
+
+  # Create the new package.
+  my $cust_pkg = new FS::cust_pkg {
+    custnum      => $self->custnum,
+    pkgpart      => ( $opt->{'pkgpart'}     || $self->pkgpart      ),
+    refnum       => ( $opt->{'refnum'}      || $self->refnum       ),
+    locationnum  => ( $opt->{'locationnum'} || $self->locationnum  ),
+    %hash,
+  };
+
+  $error = $cust_pkg->insert( 'change' => 1 );
+  if ($error) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  # Transfer services and cancel old package.
+
+  $error = $self->transfer($cust_pkg);
+  if ($error and $error == 0) {
+    # $old_pkg->transfer failed.
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  if ( $error > 0 && $conf->exists('cust_pkg-change_svcpart') ) {
+    warn "trying transfer again with change_svcpart option\n" if $DEBUG;
+    $error = $self->transfer($cust_pkg, 'change_svcpart'=>1 );
+    if ($error and $error == 0) {
+      # $old_pkg->transfer failed.
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  if ($error > 0) {
+    # Transfers were successful, but we still had services left on the old
+    # package.  We can't change the package under this circumstances, so abort.
+    $dbh->rollback if $oldAutoCommit;
+    return "Unable to transfer all services from package ". $self->pkgnum;
+  }
+
+  #Good to go, cancel old package.
+  $error = $self->cancel( quiet=>1 );
+  if ($error) {
+    $dbh->rollback;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  $cust_pkg;
 
 }
 
@@ -2246,8 +2393,8 @@ sub order {
   my $dbh = dbh;
 
   my $error;
-  my $cust_main = qsearchs('cust_main', { custnum => $custnum });
-  return "Customer not found: $custnum" unless $cust_main;
+#  my $cust_main = qsearchs('cust_main', { custnum => $custnum });
+#  return "Customer not found: $custnum" unless $cust_main;
 
   my @old_cust_pkg = map { qsearchs('cust_pkg', { pkgnum => $_ }) }
                          @$remove_pkgnum;
@@ -2257,15 +2404,19 @@ sub order {
   my %hash = (); 
   if ( scalar(@old_cust_pkg) == 1 && scalar(@$pkgparts) == 1 ) {
 
-    my $time = time;
+    my $err_or_cust_pkg =
+      $old_cust_pkg[0]->change( 'pkgpart' => $pkgparts->[0],
+                                'refnum'  => $refnum,
+                              );
 
-    #$hash{$_} = $old_cust_pkg[0]->$_() foreach qw( last_bill bill );
-    
-    #$hash{$_} = $old_cust_pkg[0]->$_() foreach qw( setup );
-    $hash{'setup'} = $time if $old_cust_pkg[0]->setup;
+    unless (ref($err_or_cust_pkg)) {
+      $dbh->rollback if $oldAutoCommit;
+      return $err_or_cust_pkg;
+    }
 
-    $hash{'change_date'} = $time;
-    $hash{"change_$_"}  = $old_cust_pkg[0]->$_() foreach qw( pkgnum pkgpart );
+    push @$return_cust_pkg, $err_or_cust_pkg;
+    return '';
+
   }
 
   # Create the new packages.
@@ -2328,8 +2479,10 @@ sub order {
 
 =item bulk_change PKGPARTS_ARYREF, REMOVE_PKGNUMS_ARYREF [ RETURN_CUST_PKG_ARRAYREF ]
 
+A bulk change method to change packages for multiple customers.
+
 PKGPARTS is a list of pkgparts specifying the the billing item definitions (see
-L<FS::part_pkg>) to order for this customer.  Duplicates are of course
+L<FS::part_pkg>) to order for each customer.  Duplicates are of course
 permitted.
 
 REMOVE_PKGNUMS is an list of pkgnums specifying the billing items to

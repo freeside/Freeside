@@ -184,12 +184,14 @@ sub pkg_link {
 }
 
 sub pkg_change_link {
+  my $cust_pkg = shift;
+  my $locationnum = $cust_pkg->locationnum;
   include( '/elements/popup_link-cust_pkg.html',
-             'action'      => $p. 'misc/change_pkg.cgi?dummy=value',
-             'label'       => 'Change&nbsp;package',
-             'actionlabel' => 'Change',
-             'cust_pkg'    => shift,
-         )
+    'action'      => $p. "misc/change_pkg.cgi?locationnum=$locationnum",
+    'label'       => 'Change&nbsp;package',
+    'actionlabel' => 'Change',
+    'cust_pkg'    => $cust_pkg,
+  );
 }
 
 sub pkg_dates_link { pkg_link('edit/REAL_cust_pkg', 'Edit&nbsp;dates', @_ ); }

@@ -22,7 +22,7 @@ Example:
            NAME     = "<%$pre%>address1"
            ID       = "<%$pre%>address1"
            VALUE    = "<% $object->get($pre.'address1') |h %>"
-           SIZE     = 70
+           SIZE     = 58
            onChange = "<% $onchange %>"
            <% $disabled %>
            <% $style %>
@@ -37,7 +37,7 @@ Example:
            NAME     = "<%$pre%>address2"
            ID       = "<%$pre%>address2"
            VALUE    = "<% $object->get($pre.'address2') |h %>"
-           SIZE     = 70
+           SIZE     = 58
            onChange = "<% $onchange %>"
            <% $disabled %>
            <% $style %>
@@ -56,7 +56,7 @@ Example:
            <% $disabled %>
            <% $style %>
     >
-  </TD>
+ </TD>
   <TH ALIGN="right" ID="<%$pre%>countylabel" <%$county_style%>><%$r%>County</TH>
   <TD>
     <% include('/elements/select-county.html', %select_hash ) %>

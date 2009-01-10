@@ -1,0 +1,46 @@
+% if ($error) {
+%   $cgi->param('error', $error);
+%   $cgi->redirect(popurl(3). 'misc/change_pkg.cgi?'. $cgi->query_string );
+% } else {
+
+    <% header("Package changed") %>
+      <SCRIPT TYPE="text/javascript">
+        window.top.location.reload();
+      </SCRIPT>
+    </BODY>
+    </HTML>
+
+% }
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right('Change customer package');
+
+my $cust_pkg = qsearchs({
+  #'select'    => 'cust_pkg.*',
+  'table'     => 'cust_pkg',
+  'addl_from' => 'LEFT JOIN cust_main USING ( custnum )',
+  'hashref'   => { 'pkgnum' => scalar($cgi->param('pkgnum')), },
+  'extra_sql' => ' AND '. $curuser->agentnums_sql,
+});
+die 'unknown pkgnum' unless $cust_pkg;
+
+my %change = map { $_ => scalar($cgi->param($_)) }
+                 qw( locationnum pkgpart );
+
+if ( $cgi->param('locationnum') == -1 ) {
+  my $cust_location = new FS::cust_location {
+    'custnum' => $cust_pkg->custnum,
+    map { $_ => scalar($cgi->param($_)) }
+        qw( address1 address2 city county state zip country )
+  };
+  $change{'cust_location'} = $cust_location;
+}
+
+my $pkg_or_error = $cust_pkg->change( \%change );
+
+my $error = ref($pkg_or_error) ? '' : $pkg_or_error;
+
+</%init>
