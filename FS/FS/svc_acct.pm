@@ -47,7 +47,7 @@ $DEBUG = 0;
 $me = '[FS::svc_acct]';
 
 #ask FS::UID to run this stuff for us later
-$FS::UID::callback{'FS::svc_acct'} = sub { 
+FS::UID->install_callback( sub { 
   $conf = new FS::Conf;
   $dir_prefix = $conf->config('home');
   @shells = $conf->config('shells');
@@ -86,7 +86,8 @@ $FS::UID::callback{'FS::svc_acct'} = sub {
   $radius_password = $conf->config('radius-password') || 'Password';
   $radius_ip = $conf->config('radius-ip') || 'Framed-IP-Address';
   @pw_set = ( 'A'..'Z' ) if $conf->exists('password-generated-allcaps');
-};
+}
+);
 
 @saltset = ( 'a'..'z' , 'A'..'Z' , '0'..'9' , '.' , '/' );
 @pw_set = ( 'a'..'z', 'A'..'Z', '0'..'9', '(', ')', '#', '!', '.', ',' );
