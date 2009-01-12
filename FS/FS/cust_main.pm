@@ -682,7 +682,7 @@ Optional arryaref of FS::svc_* service objects.
 
 =item depend_jobnum
 
-If this option is set to a job queue jobnum (see L<FS::queue), all provisioning
+If this option is set to a job queue jobnum (see L<FS::queue>), all provisioning
 jobs will have a dependancy on the supplied job (they will not run until the
 specific job completes).  This can be used to defer provisioning until some
 action completes (such as running the customer's credit card successfully).
