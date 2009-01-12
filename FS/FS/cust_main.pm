@@ -5600,22 +5600,24 @@ sub tickets {
   my $num = $conf->config('cust_main-max_tickets') || 10;
   my @tickets = ();
 
-  unless ( $conf->config('ticket_system-custom_priority_field') ) {
+  if ( $conf->config('ticket_system') ) {
+    unless ( $conf->config('ticket_system-custom_priority_field') ) {
 
-    @tickets = @{ FS::TicketSystem->customer_tickets($self->custnum, $num) };
+      @tickets = @{ FS::TicketSystem->customer_tickets($self->custnum, $num) };
 
-  } else {
+    } else {
 
-    foreach my $priority (
-      $conf->config('ticket_system-custom_priority_field-values'), ''
-    ) {
-      last if scalar(@tickets) >= $num;
-      push @tickets, 
-        @{ FS::TicketSystem->customer_tickets( $self->custnum,
-                                               $num - scalar(@tickets),
-                                               $priority,
-                                             )
-         };
+      foreach my $priority (
+        $conf->config('ticket_system-custom_priority_field-values'), ''
+      ) {
+        last if scalar(@tickets) >= $num;
+        push @tickets, 
+          @{ FS::TicketSystem->customer_tickets( $self->custnum,
+                                                 $num - scalar(@tickets),
+                                                 $priority,
+                                               )
+           };
+      }
     }
   }
   (@tickets);
