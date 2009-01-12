@@ -1,7 +1,7 @@
 package FS::cdr::taqua;
 
 use strict;
-use vars qw(@ISA %info);
+use vars qw(@ISA %info $da_rewrite);
 use FS::cdr qw(_cdr_date_parser_maker);
 
 @ISA = qw(FS::cdr);
@@ -60,7 +60,28 @@ use FS::cdr qw(_cdr_date_parser_maker);
     sub { my($cdr, $field) = @_; },       #TermCircuit
     sub { my($cdr, $field) = @_; },       #TermCircuitType
     'carrierid',                          #OutboundCarrierId
-    'charged_party',                      #BillingNumber
+
+    #BillingNumber
+    #'charged_party',                      
+    sub {
+      my( $cdr, $field, $conf ) = @_;
+
+      #could be more efficient for the no config case, if anyone ever needs that
+      $da_rewrite ||= $conf->config('cdr-taqua-da_rewrite');
+
+      if ( $da_rewrite && $field =~ /\d/ ) {
+        my $rewrite = $da_rewrite;
+        $rewrite =~ s/\s//g;
+        my @rewrite = split(',', $conf->config('cdr-taqua-da_rewrite') );
+        if ( grep { $field eq $_ } @rewrite ) {
+          $cdr->charged_party( $cdr->src() );
+          $cdr->calltypenum(12);
+          return;
+        }
+      }
+      $cdr->charged_party($field);
+    },
+
     sub { my($cdr, $field) = @_; },       #SubscriberNumber
     'lastapp',                            #ServiceName
     sub { my($cdr, $field) = @_; },       #some weirdness #ChargeTime

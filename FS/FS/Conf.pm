@@ -2014,14 +2014,14 @@ worry that config_items is freeside-specific and icky.
   {
     'key'         => 'tax-ship_address',
     'section'     => 'billing',
-    'description' => 'By default, tax calculations are done based on the billing address.  Enable this switch to calculate tax based on the shipping address instead.  Note: Tax reports can take a long time when enabled.',
+    'description' => 'By default, tax calculations are done based on the billing address.  Enable this switch to calculate tax based on the shipping address instead.',
     'type'        => 'checkbox',
   }
 ,
   {
     'key'         => 'tax-pkg_address',
     'section'     => 'billing',
-    'description' => 'By default, tax calculations are done based on the billing address.  Enable this switch to calculate tax based on the package address instead (when present).  Note: Tax reports can take a long time when enabled.',
+    'description' => 'By default, tax calculations are done based on the billing address.  Enable this switch to calculate tax based on the package address instead (when present).',
     'type'        => 'checkbox',
   },
 
@@ -2624,6 +2624,12 @@ worry that config_items is freeside-specific and icky.
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'cdr-taqua-da_rewrite',
+    'section'     => '',
+    'description' => 'For the Taqua CDR format, a comma-separated list of directory assistance 800 numbers.  Any CDRs with these numbers as "BilledNumber" will be rewritten to the "CallingPartyNumber" (and CallType "12") on import.',
+    'type'        => 'text',
+  },
 
 );
 

@@ -1365,13 +1365,15 @@ Formats hashref.  Keys are field names, values are listrefs that define the
 format.
 
 Each listref value can be a column name or a code reference.  Coderefs are run
-with the row object and data as the two parameters.  For example, this coderef
-does the same thing as using the "columnname" string:
+with the row object, data and a FS::Conf object as the three parameters.
+For example, this coderef does the same thing as using the "columnname" string:
 
   sub {
-    my( $record, $data ) = @_;
+    my( $record, $data, $conf ) = @_;
     $record->columnname( $data );
   },
+
+Coderefs are run after all "column name" fields are assigned.
 
 =item format_types
 
@@ -1662,7 +1664,7 @@ sub batch_import {
     while ( scalar(@later) ) {
       my $sub = shift @later;
       my $data = shift @later;
-      &{$sub}($record, $data);  # $record->&{$sub}($data); 
+      &{$sub}($record, $data, $conf);  # $record->&{$sub}($data, $conf); 
     }
 
     my $error = $record->insert;
