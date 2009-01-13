@@ -255,7 +255,7 @@ sub calc_recur {
       if ( $rating_method eq 'prefix' ) {
 
         my $da_rewrote = 0;
-        if ( scalar(@dirass) && $cdr->dst && grep { $cdr->dst eq $_ } @dirass ){
+        if ( length($cdr->dst) && grep { $cdr->dst eq $_ } @dirass ){
           $cdr->dst('411');
           $da_rewrote = 1;
         }
@@ -335,11 +335,11 @@ sub calc_recur {
 
           if ( $rate_detail ) {
 
+            $rate_region = $rate_detail->dest_region;
+            $regionnum = $rate_region->regionnum;
             warn "  found rate for regionnum $regionnum ".
                  "and rate detail $rate_detail\n"
               if $DEBUG;
-            $rate_region = $rate_detail->dest_region;
-            $regionnum = $rate_region->regionnum;
 
           } elsif ( $ignore_unrateable ) {
 
