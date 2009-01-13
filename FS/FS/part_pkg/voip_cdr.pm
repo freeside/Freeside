@@ -204,11 +204,28 @@ sub calc_recur {
 
   my $downstream_cdr = '';
 
-  my $rating_method = $self->option('rating_method') || 'prefix';
+  my $rating_method     = $self->option('rating_method') || 'prefix';
+  my $intl              = $self->option('international_prefix') || '011';
+  my $domestic_prefix   = $self->option('domestic_prefix');
+  my $disable_tollfree  = $self->option('disable_tollfree');
+  my $ignore_unrateable = $self->option('ignore_unrateable', 'Hush!');
+  my $use_duration      = $self->option('use_duration');
 
-  my $output_format =
-    $self->option('output_format', 'Hush!')
-    || ( $rating_method eq 'upstream_simple' ? 'simple' : 'default' );
+  my $output_format     = $self->option('output_format', 'Hush!')
+                          || ( $rating_method eq 'upstream_simple'
+                                 ? 'simple'
+                                 : 'default'
+                             );
+
+  my @dirass = ();
+  if ( $self->option('411_rewrite') ) {
+    my $dirass = $self->option('411_rewrite');
+    $dirass =~ s/\s//g;
+    @dirass = split(',', $dirass);
+  }
+
+  #for check_chargable, so we don't keep looking up options inside the loop
+  my %opt_cache = ();
 
   eval "use Text::CSV_XS;";
   die $@ if $@;
@@ -219,9 +236,10 @@ sub calc_recur {
   ) {
 
     foreach my $cdr (
-      $cust_svc->get_cdrs_for_update( 'disable_src'    => $self->option('disable_src'),
-                                      'default_prefix' => $self->option('default_prefix'),
-                                    )  # $last_bill, $$sdate )
+      $cust_svc->get_cdrs_for_update(
+        'disable_src'    => $self->option('disable_src'),
+        'default_prefix' => $self->option('default_prefix'),
+      )  # $last_bill, $$sdate )
     ) {
       if ( $DEBUG > 1 ) {
         warn "rating CDR $cdr\n".
@@ -237,18 +255,14 @@ sub calc_recur {
       if ( $rating_method eq 'prefix' ) {
 
         my $da_rewrite = 0;
-        if ( $self->option('411_rewrite') ) {
-          my $dirass = $self->option('411_rewrite');
-          $dirass =~ s/\s//g;
-          my @dirass = split(',', $dirass);
-          if ( grep $cdr->dst eq $_, @dirass ) {
-            $cdr->dst('411');
-            $da_rewrite = 1;
-          }
+        if ( scalar(@dirass) && $cdr->dst && grep $cdr->dst eq $_, @dirass ) {
+          $cdr->dst('411');
+          $da_rewrite = 1;
         }
 
         my $reason = $self->check_chargable( $cdr,
-                                             '411_rewrite' => $da_rewrite,
+                                             '411_rewrite'  => $da_rewrite,
+                                             'option_cache' => %opt_cache,
                                            );
 
         if ( $reason ) {
@@ -265,7 +279,7 @@ sub calc_recur {
 
           my( $to_or_from, $number );
           if ( $cdr->dst =~ /^(\+?1)?8([02-8])\1/
-               && ! $self->option('disable_tollfree')
+               && ! $disable_tollfree
               )
           { #tollfree call
             $to_or_from = 'from';
@@ -283,8 +297,6 @@ sub calc_recur {
 #          $dest =~ s/^(\w+):// and $proto = $1; #sip:
 #          my $siphost = '';
 #          $dest =~ s/\@(.*)$// and $siphost = $1; # @10.54.32.1, @sip.example.com
-
-          my $intl = $self->option('international_prefix') || '011';
 
           #determine the country code
           my $countrycode;
@@ -307,7 +319,7 @@ sub calc_recur {
             }
 
           } else {
-            $countrycode = $self->option('domestic_prefix') || '1';
+            $countrycode = $domestic_prefix || '1';
             $number =~ s/^$countrycode//;# if length($number) > 10;
           }
 
@@ -329,7 +341,7 @@ sub calc_recur {
             $rate_region = $rate_detail->dest_region;
             $regionnum = $rate_region->regionnum;
 
-          } elsif ( $self->option('ignore_unrateable', 1) ) {
+          } elsif ( $ignore_unrateable ) {
 
             $rate_region = '';
             $regionnum = '';
@@ -416,9 +428,7 @@ sub calc_recur {
           my $granularity = $rate_detail->sec_granularity;
 
                       # length($cdr->billsec) ? $cdr->billsec : $cdr->duration;
-          my $seconds = $self->option('use_duration')
-                          ? $cdr->duration
-                          : $cdr->billsec;
+          my $seconds = $use_duration ? $cdr->duration : $cdr->billsec;
 
           $seconds += $granularity - ( $seconds % $granularity )
             if $seconds      # don't granular-ize 0 billsec calls (bills them)
@@ -525,28 +535,40 @@ sub calc_recur {
 
 #returns a reason why not to rate this CDR, or false if the CDR is chargeable
 sub check_chargable {
-  my( $self, $cdr, %opt ) = @_;
+  my( $self, $cdr, %flags ) = @_;
 
   #should have some better way of checking these options from a hash
   #or something
 
+  my @opt = qw(
+    use_amaflags
+    use_disposition
+    use_disposition_taqua
+    use_carrierid
+    use_cdrtypenum
+  );
+  foreach my $opt (grep !exists($flags{option_cache}->{$_}), @opt ) {
+    $flags{option_cache}->{$opt} = $self->option($opt);
+  }
+  my %opt = %{ $flags{option_cache} };
+
   return 'amaflags != 2'
-    if $self->option('use_amaflags') && $cdr->amaflags != 2;
+    if $opt{'use_amaflags'} && $cdr->amaflags != 2;
 
   return 'disposition != ANSWERED'
-    if $self->option('use_disposition') && $cdr->disposition ne 'ANSWERED';
+    if $opt{'use_disposition'} && $cdr->disposition ne 'ANSWERED';
 
   return "disposition != 100"
-    if $self->option('use_disposition_taqua') && $cdr->disposition != 100;
+    if $opt{'use_disposition_taqua'} && $cdr->disposition != 100;
 
-  return 'carrierid != '. $self->option('use_carrierid')
-    if $self->option('use_carrierid')
-    && $cdr->carrierid != $self->option('use_carrierid')
-    && ! $opt{'411_rewrite'};
+  return "carrierid != $opt{'use_carrierid'}"
+    if $opt{'use_carrierid'}
+    && $cdr->carrierid != $opt{'use_carrierid'}
+    && ! $flags{'411_rewrite'};
 
-  return 'cdrtypenum != '. $self->option('use_cdrtypenum')
-    if $self->option('use_cdrtypenum')
-    && $cdr->cdrtypenum != $self->option('use_cdrtypenum');
+  return "cdrtypenum != $opt{'use_cdrtypenum'}"
+    if $opt{'use_cdrtypenum'}
+    && $cdr->cdrtypenum != $opt{'use_cdrtypenum'};
 
   #all right then, rate it
   '';
