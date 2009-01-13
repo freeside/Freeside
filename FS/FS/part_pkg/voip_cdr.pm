@@ -279,7 +279,9 @@ sub calc_recur {
           ###
 
           if ( $self->option('411_rewrite') ) {
-            my @dirass = split(/\s*,\s*/, $self->option('411_rewrite'));
+            my $dirass = $self->option('411_rewrite');
+            $dirass =~s/\s//g;
+            my @dirass = split(',', $dirass);
             $cdr->dst('411') if grep $cdr->dst eq $_, @dirass;
           }
 
