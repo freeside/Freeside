@@ -262,7 +262,7 @@ sub calc_recur {
 
         my $reason = $self->check_chargable( $cdr,
                                              '411_rewrite'  => $da_rewrite,
-                                             'option_cache' => %opt_cache,
+                                             'option_cache' => \%opt_cache,
                                            );
 
         if ( $reason ) {
