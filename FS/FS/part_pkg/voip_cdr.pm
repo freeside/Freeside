@@ -254,14 +254,14 @@ sub calc_recur {
       my @call_details = ();
       if ( $rating_method eq 'prefix' ) {
 
-        my $da_rewrite = 0;
-        if ( scalar(@dirass) && $cdr->dst && grep $cdr->dst eq $_, @dirass ) {
+        my $da_rewrote = 0;
+        if ( scalar(@dirass) && $cdr->dst && grep { $cdr->dst eq $_ } @dirass ){
           $cdr->dst('411');
-          $da_rewrite = 1;
+          $da_rewrote = 1;
         }
 
         my $reason = $self->check_chargable( $cdr,
-                                             '411_rewrite'  => $da_rewrite,
+                                             'da_rewrote'   => $da_rewrote,
                                              'option_cache' => \%opt_cache,
                                            );
 
@@ -564,7 +564,7 @@ sub check_chargable {
   return "carrierid != $opt{'use_carrierid'}"
     if $opt{'use_carrierid'}
     && $cdr->carrierid != $opt{'use_carrierid'}
-    && ! $flags{'411_rewrite'};
+    && ! $flags{'da_rewrote'};
 
   return "cdrtypenum != $opt{'use_cdrtypenum'}"
     if $opt{'use_cdrtypenum'}
