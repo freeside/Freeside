@@ -117,7 +117,7 @@ tie my %temporalities, 'Tie::IxHash',
                           'type' => 'checkbox',
                         },
 
-    '411_rewrite' => { 'name' => 'Rewrite these (comma-separated) destination numbers to 411 for rating purposes: ',
+    '411_rewrite' => { 'name' => 'Rewrite these (comma-separated) destination numbers to 411 for rating purposes (also ignore any carrierid check): ',
                       },
 
     'output_format' => { 'name' => 'CDR invoice display format',
@@ -236,54 +236,32 @@ sub calc_recur {
       my @call_details = ();
       if ( $rating_method eq 'prefix' ) {
 
-        #should have some better way of checking these options than a long
-        #if-else tree...
-        my $notchg = "not charging for CDR";
+        my $da_rewrite = 0;
+        if ( $self->option('411_rewrite') ) {
+          my $dirass = $self->option('411_rewrite');
+          $dirass =~ s/\s//g;
+          my @dirass = split(',', $dirass);
+          if ( grep $cdr->dst eq $_, @dirass ) {
+            $cdr->dst('411');
+            $da_rewrite = 1;
+          }
+        }
 
-        if ( $self->option('use_amaflags') && $cdr->amaflags != 2 ) {
+        my $reason = $self->check_chargable( $cdr,
+                                             '411_rewrite' => $da_rewrite,
+                                           );
 
-          warn "$notchg (amaflags != 2)\n" if $DEBUG;
-          $charge = 0;
+        if ( $reason ) {
 
-        } elsif ( $self->option('use_disposition')
-                  && $cdr->disposition ne 'ANSWERED' ) {
-
-          warn "$notchg (disposition != ANSWERED)\n" if $DEBUG;
-          $charge = 0;
-
-        } elsif ( $self->option('use_disposition_taqua')
-                  && $cdr->disposition != 100 ) {
-
-          warn "$notchg (disposition != 100)\n" if $DEBUG;
-          $charge = 0;
-
-        } elsif ( $self->option('use_carrierid')
-                  && $cdr->carrierid != $self->option('use_carrierid') ) {
-
-          warn "$notchg (carrierid != ". $self->option('use_carrierid'). ")\n"
-            if $DEBUG;
-          $charge = 0;
-
-        } elsif ( $self->option('use_cdrtypenum')
-                  && $cdr->cdrtypenum != $self->option('use_cdrtypenum') ) {
-
-          warn "$notchg (cdrtypenum != ". $self->option('use_cdrtypenum'). ")\n"
-            if $DEBUG;
+          warn "not charging for CDR ($reason)\n" if $DEBUG;
           $charge = 0;
 
         } else {
-
+          
           ###
           # look up rate details based on called station id
           # (or calling station id for toll free calls)
           ###
-
-          if ( $self->option('411_rewrite') ) {
-            my $dirass = $self->option('411_rewrite');
-            $dirass =~s/\s//g;
-            my @dirass = split(',', $dirass);
-            $cdr->dst('411') if grep $cdr->dst eq $_, @dirass;
-          }
 
           my( $to_or_from, $number );
           if ( $cdr->dst =~ /^(\+?1)?8([02-8])\1/
@@ -543,6 +521,35 @@ sub calc_recur {
     if $param->{'increment_next_bill'};
 
   $charges;
+}
+
+#returns a reason why not to rate this CDR, or false if the CDR is chargeable
+sub check_chargable {
+  my( $self, $cdr, %opt ) = @_;
+
+  #should have some better way of checking these options from a hash
+  #or something
+
+  return 'amaflags != 2'
+    if $self->option('use_amaflags') && $cdr->amaflags != 2;
+
+  return 'disposition != ANSWERED'
+    if $self->option('use_disposition') && $cdr->disposition ne 'ANSWERED';
+
+  return "disposition != 100"
+    if $self->option('use_disposition_taqua') && $cdr->disposition != 100;
+
+  return 'carrierid != '. $self->option('use_carrierid')
+    if $self->option('use_carrierid')
+    && $cdr->carrierid != $self->option('use_carrierid')
+    && ! $opt{'411_rewrite'};
+
+  return 'cdrtypenum != '. $self->option('use_cdrtypenum')
+    if $self->option('use_cdrtypenum')
+    && $cdr->cdrtypenum != $self->option('use_cdrtypenum');
+
+  #all right then, rate it
+  '';
 }
 
 sub is_free {
