@@ -2346,6 +2346,86 @@ sub search_sql {
 
 }
 
+=item location_sql
+
+Returns a list: the first item is an SQL fragment identifying matching 
+packages/customers via location (taking into account shipping and package
+address taxation, if enabled), and subsequent items are the parameters to
+substitute for the placeholders in that fragment.
+
+=cut
+
+sub location_sql {
+  my($class, %opt) = @_;
+  my $ornull = $opt{'ornull'};
+
+  my $conf = new FS::Conf;
+
+  # '?' placeholders in _location_sql_where
+  my @bill_param;
+  if ( $ornull ) {
+    @bill_param = qw( county county county state state state country );
+  } else {
+    @bill_param = qw( county county state state country );
+  }
+
+  my $main_where;
+  my @main_param;
+  if ( $conf->exists('tax-ship_address') ) {
+
+    $main_where = "(
+         (     ( ship_last IS NULL     OR  ship_last  = '' )
+           AND ". _location_sql_where('cust_main', '', $ornull ). "
+         )
+      OR (       ship_last IS NOT NULL AND ship_last != ''
+           AND ". _location_sql_where('cust_main', 'ship_', $ornull). "
+         )
+    )";
+    #    AND payby != 'COMP'
+
+    @main_param = ( @bill_param, @bill_param );
+
+  } else {
+
+    $main_where = _location_sql_where('cust_main'); # AND payby != 'COMP'
+    @main_param = @bill_param;
+
+  }
+
+  my $where;
+  my @param;
+  if ( $conf->exists('tax-pkg_address') ) {
+
+    $where = " (
+         ( cust_pkg.locationnum IS     NULL AND $main_where                  )
+      OR ( cust_pkg.locationnum IS NOT NULL AND ". _location_sql_where('cust_location', '', $ornull). " )
+    )";
+    @param = ( @main_param, @bill_param );
+  
+  } else {
+
+    $where = $main_where;
+    @param = @main_param;
+
+  }
+
+  ( $where, @param );
+
+}
+
+#subroutine, helper for able
+sub _location_sql_where {
+  my $table = shift;
+  my $prefix = @_ ? shift : '';
+  my $ornull = @_ ? shift : '';
+  $ornull = $ornull ? ' OR ? IS NULL ' : '';
+  "
+        ( $table.${prefix}county  = ? OR ? = '' $ornull )
+    AND ( $table.${prefix}state   = ? OR ? = '' $ornull )
+    AND   $table.${prefix}country = ?
+  ";
+}
+
 =head1 SUBROUTINES
 
 =over 4
