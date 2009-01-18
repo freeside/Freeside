@@ -152,6 +152,20 @@ sub insert {
     }
   }
 
+  my $tax_location = $self->get('cust_bill_pkg_tax_location');
+  if ( $tax_location ) {
+    foreach my $cust_bill_pkg_tax_location ( @$tax_location ) {
+      $cust_bill_pkg_tax_location->billpkgnum($self->billpkgnum);
+      warn $cust_bill_pkg_tax_location;
+      $error = $cust_bill_pkg_tax_location->insert;
+      warn $error;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+    }
+  }
+
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
 

@@ -21,11 +21,10 @@
     <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2></TH>
     <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2>Tax owed</TH>
 % unless ( $cgi->param('show_taxclasses') ) { 
-
       <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2>Tax invoiced</TH>
 % } 
-
   </TR>
+
   <TR>
     <TH CLASS="grid" BGCOLOR="#cccccc">Total</TH>
     <TH CLASS="grid" BGCOLOR="#cccccc"></TH>
@@ -37,188 +36,163 @@
     <TH CLASS="grid" BGCOLOR="#cccccc"></TH>
     <TH CLASS="grid" BGCOLOR="#cccccc">Taxable</TH>
   </TR>
+
 % my $bgcolor1 = '#eeeeee';
-%   my $bgcolor2 = '#ffffff';
-%   my $bgcolor;
+% my $bgcolor2 = '#ffffff';
+% my $bgcolor;
 %
 % foreach my $region ( @regions ) {
 %
-%       if ( $bgcolor eq $bgcolor1 ) {
-%         $bgcolor = $bgcolor2;
-%       } else {
-%         $bgcolor = $bgcolor1;
-%       }
+%   my $link = '';
+%   if ( $region->{'label'} ne 'Total' ) {
+%     if ( $region->{'label'} eq $out ) {
+%       $link = ';out=1';
+%     } else {
+%       $link = ';'. $region->{'url_param'};
+%     }
+%   }
 %
-%       my $link = '';
-%       if ( $region->{'label'} ne 'Total' ) {
-%         if ( $region->{'label'} eq $out ) {
-%           $link = ';out=1';
-%         } else {
-%           $link = ';'. $region->{'url_param'};
-%         }
-%       }
+%   if ( $bgcolor eq $bgcolor1 ) {
+%     $bgcolor = $bgcolor2;
+%   } else {
+%     $bgcolor = $bgcolor1;
+%   }
 %
-%
-%
-%
-%  
-
+%   my $td = qq(TD CLASS="grid" BGCOLOR="$bgcolor");
+%   my $bigmath = '<FONT FACE="sans-serif" SIZE="+1"><B>';
+%   my $bme = '</B></FONT>';
 
     <TR>
-      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $region->{'label'} %></TD>
-      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ALIGN="right">
-        <A HREF="<% $baselink. $link %>;nottax=1"><% $money_char %><% sprintf('%.2f', $region->{'total'} ) %></A>
+      <<%$td%>><% $region->{'label'} %></TD>
+      <<%$td%> ALIGN="right">
+        <A HREF="<% $baselink. $link %>;nottax=1"
+        ><% &$money_sprintf( $region->{'total'} ) %></A>
       </TD>
-      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><FONT SIZE="+1"><B> - </B></FONT></TD>
-      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ALIGN="right">
-        <A HREF="<% $baselink. $link %>;nottax=1;cust_tax=Y"><% $money_char %><% sprintf('%.2f', $region->{'exempt_cust'} ) %></A>
+      <<%$td%>><FONT SIZE="+1"><B> - </B></FONT></TD>
+      <<%$td%> ALIGN="right">
+        <A HREF="<% $baselink. $link %>;nottax=1;cust_tax=Y"
+        ><% &$money_sprintf( $region->{'exempt_cust'} ) %></A>
       </TD>
-      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><FONT SIZE="+1"><B> - </B></FONT></TD>
-      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ALIGN="right">
-        <A HREF="<% $baselink. $link %>;nottax=1;pkg_tax=Y"><% $money_char %><% sprintf('%.2f', $region->{'exempt_pkg'} ) %></A>
+      <<%$td%>><FONT SIZE="+1"><B> - </B></FONT></TD>
+      <<%$td%> ALIGN="right">
+        <A HREF="<% $baselink. $link %>;nottax=1;pkg_tax=Y"
+        ><% &$money_sprintf( $region->{'exempt_pkg'} ) %></A>
       </TD>
-      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><FONT SIZE="+1"><B> - </B></FONT></TD>
-      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ALIGN="right">
-        <A HREF="<% $exemptlink. $link %>"><% $money_char %><% sprintf('%.2f', $region->{'exempt_monthly'} ) %></A>
+      <<%$td%>><FONT SIZE="+1"><B> - </B></FONT></TD>
+      <<%$td%> ALIGN="right">
+        <A HREF="<% $exemptlink. $link %>"
+        ><% &$money_sprintf( $region->{'exempt_monthly'} ) %></A>
         </TD>
-      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><FONT SIZE="+1"><B> = </B></FONT></TD>
-      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ALIGN="right">
-        <% $money_char %><% sprintf('%.2f', $region->{'taxable'} ) %></A>
+      <<%$td%>><FONT SIZE="+1"><B> = </B></FONT></TD>
+      <<%$td%> ALIGN="right">
+        <% &$money_sprintf( $region->{'taxable'} ) %></A>
       </TD>
-      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $region->{'label'} eq 'Total' ? '' : '<FONT FACE="sans-serif" SIZE="+1"><B> X </B></FONT>' %></TD>
-      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ALIGN="right"><% $region->{'rate'} %></TD>
-      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $region->{'label'} eq 'Total' ? '' : '<FONT FACE="sans-serif" SIZE="+1"><B> = </B></FONT>' %></TD>
-      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ALIGN="right">
-        <% $money_char %><% sprintf('%.2f', $region->{'owed'} ) %>
+      <<%$td%>><% $region->{'label'} eq 'Total' ? '' : "$bigmath X $bme" %></TD>
+      <<%$td%> ALIGN="right"><% $region->{'rate'} %></TD>
+      <<%$td%>><% $region->{'label'} eq 'Total' ? '' : "$bigmath = $bme" %></TD>
+      <<%$td%> ALIGN="right">
+        <% &$money_sprintf( $region->{'owed'} ) %>
       </TD>
-% unless ( $cgi->param('show_taxclasses') ) { 
 
-        <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ALIGN="right">
-          <A HREF="<% $baselink. $link %>;istax=1"><% $money_char %><% sprintf('%.2f', $region->{'tax'} ) %></A>
+% unless ( $cgi->param('show_taxclasses') ) { 
+        <<%$td%> ALIGN="right">
+          <A HREF="<% $baselink. $link %>;istax=1"
+          ><% &$money_sprintf( $region->{'tax'} ) %></A>
         </TD>
 % } 
 
     </TR>
 % } 
-
 
 </TABLE>
-% if ( $cgi->param('show_taxclasses') ) { 
 
+% if ( $cgi->param('show_taxclasses') ) {
 
-  <BR>
-  <% include('/elements/table-grid.html') %>
-  <TR>
-    <TH CLASS="grid" BGCOLOR="#cccccc"></TH>
-    <TH CLASS="grid" BGCOLOR="#cccccc">Tax invoiced</TH>
-  </TR>
-% #some false laziness w/above
-%     $bgcolor1 = '#eeeeee';
-%     $bgcolor2 = '#ffffff';
-%     foreach my $region ( @base_regions ) {
-%
-%       if ( $bgcolor eq $bgcolor1 ) {
-%         $bgcolor = $bgcolor2;
-%       } else {
-%         $bgcolor = $bgcolor1;
-%       }
-%
-%       my $link = '';
-%       #if ( $region->{'label'} ne 'Total' ) {
-%         if ( $region->{'label'} eq $out ) {
-%           $link = ';out=1';
-%         } else {
-%           $link = ';'. $region->{'url_param'};
-%         }
-%       #}
-%  
-
-
+    <BR>
+    <% include('/elements/table-grid.html') %>
     <TR>
-      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $region->{'label'} %></TD>
-      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ALIGN="right">
-        <A HREF="<% $baselink. $link %>;istax=1"><% $money_char %><% sprintf('%.2f', $region->{'tax'} ) %></A>
-      </TD>
+      <TH CLASS="grid" BGCOLOR="#cccccc"></TH>
+      <TH CLASS="grid" BGCOLOR="#cccccc">Tax invoiced</TH>
     </TR>
-% } 
+
+%   #some false laziness w/above
+%   $bgcolor1 = '#eeeeee';
+%   $bgcolor2 = '#ffffff';
+%
+%   foreach my $region ( @base_regions ) {
+%
+%     my $link = '';
+%     #if ( $region->{'label'} ne 'Total' ) {
+%       if ( $region->{'label'} eq $out ) {
+%         $link = ';out=1';
+%       } else {
+%         $link = ';'. $region->{'url_param'};
+%       }
+%     #}
 %
 %     if ( $bgcolor eq $bgcolor1 ) {
 %       $bgcolor = $bgcolor2;
 %     } else {
 %       $bgcolor = $bgcolor1;
 %     }
-%  
+%     my $td = qq(TD CLASS="grid" BGCOLOR="$bgcolor");
 
+      <TR>
+        <<%$td%>><% $region->{'label'} %></TD>
+        <<%$td%> ALIGN="right">
+          <A HREF="<% $baselink. $link %>;istax=1"
+          ><% &$money_sprintf( $region->{'tax'} ) %></A>
+        </TD>
+      </TR>
+
+% } 
+
+% if ( $bgcolor eq $bgcolor1 ) {
+%   $bgcolor = $bgcolor2;
+% } else {
+%   $bgcolor = $bgcolor1;
+% }
+% my $td = qq(TD CLASS="grid" BGCOLOR="$bgcolor");
 
   <TR>
-   <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">Total</TD>
-    <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ALIGN="right">
-      <A HREF="<% $baselink %>;istax=1"><% $money_char %><% sprintf('%.2f', $tax ) %></A>
-    </TD>
+   <<%$td%>>Total</TD>
+   <<%$td%> ALIGN="right">
+     <A HREF="<% $baselink %>;istax=1"
+     ><% &$money_sprintf( $tax ) %></A>
+   </TD>
   </TR>
 
   </TABLE>
+
 % } 
 
+<% include('/elements/footer.html') %>
 
-</BODY>
-</HTML>
 <%init>
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
 
 my $conf = new FS::Conf;
-my $money_char = $conf->config('money_char') || '$';
 
 my $user = getotaker;
 
 my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
 
-my $join_cust = "
-    JOIN cust_bill USING ( invnum ) 
-    LEFT JOIN cust_main USING ( custnum )
-";
-my $from_join_cust = "
-    FROM cust_bill_pkg
-    $join_cust
-"; 
-my $join_pkg = "
-    LEFT JOIN cust_pkg USING ( pkgnum )
-    LEFT JOIN part_pkg USING ( pkgpart )
-";
+my $join_cust =     '     JOIN cust_bill      USING ( invnum  ) 
+                      LEFT JOIN cust_main     USING ( custnum ) ';
+my $join_cust_pkg = $join_cust.
+                    ' LEFT JOIN cust_pkg      USING ( pkgnum  )
+                      LEFT JOIN part_pkg      USING ( pkgpart ) ';
+$join_cust_pkg .=   ' LEFT JOIN cust_location USING ( locationnum )'
+  if $conf->exists('tax-pkg_address');
+
+my $from_join_cust_pkg = " FROM cust_bill_pkg $join_cust_pkg "; 
 
 my $where = "WHERE _date >= $beginning AND _date <= $ending ";
-my @base_param = qw( county county state state country );
-if ( $conf->exists('tax-ship_address') ) {
 
-  $where .= "
-      AND (    (     ( ship_last IS NULL     OR  ship_last  = '' )
-                 AND ( county       = ? OR ? = '' )
-                 AND ( state        = ? OR ? = '' )
-                 AND   country      = ?
-               )
-            OR (       ship_last IS NOT NULL AND ship_last != ''
-                 AND ( ship_county  = ? OR ? = '' )
-                 AND ( ship_state   = ? OR ? = '' )
-                 AND   ship_country = ?
-               )
-          )
-  ";
-  #    AND payby != 'COMP'
-
-  push @base_param, @base_param;
-
-} else {
-
-  $where .= "
-      AND ( county  = ? OR ? = '' )
-      AND ( state   = ? OR ? = '' )
-      AND   country = ?
-  ";
-  #    AND payby != 'COMP'
-
-}
+my( $location_sql, @base_param ) = FS::cust_pkg->location_sql;
+$where .= " AND $location_sql ";
 
 my $agentname = '';
 if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
@@ -228,70 +202,68 @@ if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
   $where .= ' AND cust_main.agentnum = '. $agent->agentnum;
 }
 
-my $gotcust = "
-  WHERE 0 < ( SELECT COUNT(*) FROM cust_main
-";
+sub gotcust {
+  my $table = shift;
+  my $prefix = @_ ? shift : '';
+  "
+        ( $table.${prefix}county  = cust_main_county.county
+          OR cust_main_county.county = ''
+          OR cust_main_county.county IS NULL )
+    AND ( $table.${prefix}state   = cust_main_county.state
+          OR cust_main_county.state = ''
+          OR cust_main_county.state IS NULL )
+    AND ( $table.${prefix}country = cust_main_county.country )
+  ";
+}
+
+my $gotcust;
 if ( $conf->exists('tax-ship_address') ) {
 
-  $gotcust .= "
-                WHERE
+  $gotcust = "
+               (    cust_main_county.country = cust_main.country
+                 OR cust_main_county.country = cust_main.ship_country
+               )
 
-                (    cust_main_county.country = cust_main.country
-                  OR cust_main_county.country = cust_main.ship_country
-                )
+               AND
 
-                AND
-
-                ( 
-
-                  (     ( ship_last IS NULL     OR  ship_last = '' )
-                    AND (    cust_main_county.country = cust_main.country )
-                    AND (    cust_main_county.state = cust_main.state
-                          OR cust_main_county.state = ''
-                          OR cust_main_county.state IS NULL )
-                    AND (    cust_main_county.county = cust_main.county
-                          OR cust_main_county.county = ''
-                          OR cust_main_county.county IS NULL )
-                  )
-  
-                  OR
-  
-                  (       ship_last IS NOT NULL AND ship_last != ''
-                    AND (    cust_main_county.country = cust_main.ship_country )
-                    AND (    cust_main_county.state = cust_main.ship_state
-                          OR cust_main_county.state = ''
-                          OR cust_main_county.state IS NULL )
-                    AND (    cust_main_county.county = cust_main.ship_county
-                          OR cust_main_county.county = ''
-                          OR cust_main_county.county IS NULL )
-                  )
-
-                )
-
-                LIMIT 1
-            )
+               ( 
+                 (     ( ship_last IS NULL     OR  ship_last = '' )
+                   AND ". gotcust('cust_main'). "
+                 )
+                 OR
+                 (       ship_last IS NOT NULL AND ship_last != ''
+                   AND ". gotcust('cust_main', 'ship_'). "
+                 )
+               )
   ";
 
 } else {
 
-  $gotcust .= "
-                WHERE ( cust_main.county  = cust_main_county.county
-                        OR cust_main_county.county = ''
-                        OR cust_main_county.county IS NULL )
-                  AND ( cust_main.state   = cust_main_county.state
-                        OR cust_main_county.state = ''
-                        OR cust_main_county.state IS NULL )
-                  AND ( cust_main.country = cust_main_county.country )
-                LIMIT 1
-            )
-  ";
+  $gotcust = gotcust('cust_main');
 
+}
+if ( $conf->exists('tax-pkg_address') ) {
+  $gotcust = "
+       ( cust_pkg.locationnum IS     NULL AND $gotcust)
+    OR ( cust_pkg.locationnum IS NOT NULL AND ". gotcust('cust_location'). " )";
+  $gotcust =
+    "WHERE 0 < ( SELECT COUNT(*) FROM cust_pkg
+                                 LEFT JOIN cust_main USING ( custnum )
+                                 LEFT JOIN cust_location USING ( locationnum )
+                   WHERE $gotcust
+                   LIMIT 1
+               )
+    ";
+} else {
+  $gotcust =
+    "WHERE 0 < ( SELECT COUNT(*) FROM cust_main WHERE $gotcust LIMIT 1 )";
 }
 
 my($total, $tot_taxable, $owed, $tax) = ( 0, 0, 0, 0 );
 my( $exempt_cust, $exempt_pkg, $exempt_monthly ) = ( 0, 0, 0 );
 my $out = 'Out of taxable region(s)';
 my %regions = ();
+
 foreach my $r ( qsearch({ 'table'     => 'cust_main_county',
                           'extra_sql' => $gotcust,
                        })
@@ -326,7 +298,7 @@ foreach my $r ( qsearch({ 'table'     => 'cust_main_county',
 
   }
 
-  my $fromwhere = $from_join_cust. $join_pkg. $mywhere. " AND payby != 'COMP' ";
+  my $fromwhere = "$from_join_cust_pkg $mywhere AND payby != 'COMP' ";
 
 #  my $label = getlabel($r);
 #  $regions{$label}->{'label'} = $label;
@@ -402,7 +374,7 @@ foreach my $r ( qsearch({ 'table'     => 'cust_main_county',
     "SELECT SUM(amount)
        FROM cust_tax_exempt_pkg
        JOIN cust_bill_pkg USING ( billpkgnum )
-       $join_cust $join_pkg
+       $join_cust_pkg
      $mywhere"
   );
 #  if ( $x_monthly ) {
@@ -441,6 +413,7 @@ my $taxclass_distinct =
       : " '' "
   )." AS taxclass";
 
+
 my %qsearch = (
   'select'    => "DISTINCT $distinct, $taxclass_distinct",
   'table'     => 'cust_main_county',
@@ -448,11 +421,22 @@ my %qsearch = (
   'extra_sql' => $gotcust,
 );
 
-my $taxwhere = "$from_join_cust $where AND payby != 'COMP' ";
+my $taxfromwhere = " FROM cust_bill_pkg $join_cust ";
+my $taxwhere = $where;
+if ( $conf->exists('tax-pkg_address') ) {
+
+  $taxfromwhere .= 'LEFT JOIN cust_bill_pkg_tax_location USING ( billpkgnum )
+                    LEFT JOIN cust_location USING ( locationnum ) ';
+
+  #quelle kludge
+  $taxwhere =~ s/cust_pkg\.locationnum/cust_bill_pkg_tax_location.locationnum/g;
+
+}
+$taxfromwhere .= " $taxwhere AND payby != 'COMP' ";
 my @taxparam = @base_param;
 
 #should i be a cust_main_county method or something
-#need to pass in $taxwhere & @taxparam???
+#need to pass in $taxfromwhere & @taxparam???
 my $_taxamount_sub = sub {
   my $r = shift;
 
@@ -463,7 +447,7 @@ my $_taxamount_sub = sub {
       : "AND ( itemdesc IS NULL OR itemdesc = '' OR itemdesc = 'Tax' )";
 
   my $sql = "SELECT SUM(cust_bill_pkg.setup+cust_bill_pkg.recur) ".
-            " $taxwhere AND pkgnum = 0 $named_tax";
+            " $taxfromwhere AND cust_bill_pkg.pkgnum = 0 $named_tax";
 
   scalar_sql($r, \@taxparam, $sql );
 };
@@ -533,6 +517,11 @@ push @regions, {
 };
 
 #-- 
+
+my $money_char = $conf->config('money_char') || '$';
+my $money_sprintf = sub {
+  $money_char. sprintf('%.2f', shift );
+};
 
 sub getlabel {
   my $r = shift;

@@ -498,19 +498,19 @@ sub tables_hashref {
 
     'cust_bill_pkg' => {
       'columns' => [
-        'billpkgnum', 'serial', '', '', '', '', 
-        'pkgnum',  'int', '', '', '', '', 
-        'pkgpart_override',  'int', 'NULL', '', '', '', 
-        'invnum',  'int', '', '', '', '', 
-        'setup',   @money_type, '', '', 
-        'recur',   @money_type, '', '', 
-        'sdate',   @date_type, '', '', 
-        'edate',   @date_type, '', '', 
-        'itemdesc', 'varchar', 'NULL', $char_d, '', '', 
-        'section',  'varchar', 'NULL', $char_d, '', '', 
-        'quantity',  'int', 'NULL', '', '', '',
-        'unitsetup', @money_typen, '', '', 
-        'unitrecur', @money_typen, '', '', 
+        'billpkgnum',        'serial',     '',      '', '', '', 
+        'invnum',               'int',     '',      '', '', '', 
+        'pkgnum',               'int',     '',      '', '', '', 
+        'pkgpart_override',     'int', 'NULL',      '', '', '', 
+        'setup',               @money_type,             '', '', 
+        'recur',               @money_type,             '', '', 
+        'sdate',               @date_type,              '', '', 
+        'edate',               @date_type,              '', '', 
+        'itemdesc',         'varchar', 'NULL', $char_d, '', '', 
+        'section',          'varchar', 'NULL', $char_d, '', '', 
+        'quantity',             'int', 'NULL',      '', '', '',
+        'unitsetup',           @money_typen,            '', '', 
+        'unitrecur',           @money_typen,            '', '', 
       ],
       'primary_key' => 'billpkgnum',
       'unique' => [],
@@ -547,6 +547,21 @@ sub tables_hashref {
       'primary_key' => 'billpkgdisplaynum',
       'unique' => [],
       'index' => [ ['billpkgnum'], ],
+    },
+
+    'cust_bill_pkg_tax_location' => {
+      'columns' => [
+        'billpkgtaxlocationnum', 'serial',      '', '', '', '',
+        'billpkgnum',               'int',      '', '', '', '',
+        'taxnum',                   'int',      '', '', '', '',
+        'taxtype',              'varchar', $char_d, '', '', '',
+        'pkgnum',                   'int',      '', '', '', '',
+        'locationnum',              'int',      '', '', '', '', #redundant?
+        'amount',                   @money_type,        '', '',
+      ],
+      'primary_key' => 'billpkgtaxlocationnum',
+      'unique' => [],
+      'index'  => [ [ 'billpkgnum' ], [ 'taxnum' ], [ 'pkgnum' ], [ 'locationnum' ] ],
     },
 
     'cust_credit' => {
@@ -742,7 +757,9 @@ sub tables_hashref {
       'primary_key' => 'taxnum',
       'unique' => [],
   #    'unique' => [ ['taxnum'], ['state', 'county'] ],
-      'index' => [ [ 'county' ], [ 'state' ], [ 'country' ] ],
+      'index' => [ [ 'county' ], [ 'state' ], [ 'country' ],
+                   [ 'taxclass' ],
+                 ],
     },
 
     'tax_rate'    => {

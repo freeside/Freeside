@@ -198,29 +198,18 @@ sub _list_sql {
   map $_->[0], @{ $sth->fetchall_arrayref };
 }
 
-=item taxline TAXABLES, [ OPTIONSHASH ]
+=item taxline TAXABLES_ARRAYREF, [ OPTION => VALUE ... ]
 
 Returns a listref of a name and an amount of tax calculated for the list of
-packages or amounts referenced by TAXABLES.  Returns a scalar error message
-on error.  
+packages or amounts referenced by TAXABLES_ARRAYREF.  Returns a scalar error
+message on error.  
 
-OPTIONSHASH includes custnum and invoice_date and are hints to this method
+Options include custnum and invoice_date and are hints to this method
 
 =cut
 
 sub taxline {
-  my $self = shift;
-
-  my $taxables;
-  my %opt = ();
-
-  if (ref($_[0]) eq 'ARRAY') {
-    $taxables = shift;
-    %opt = @_;
-  }else{
-    $taxables = [ @_ ];
-    # exemptions broken in this case
-  }
+  my( $self, $taxables, %opt ) = @_;
 
   my @exemptions = ();
   push @exemptions, @{ $_->_cust_tax_exempt_pkg }
@@ -362,7 +351,12 @@ sub taxline {
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-  return [ $name, $amount ]
+
+  return {
+    'name'   => $name,
+    'amount' => $amount,
+  };
+
 }
 
 =back

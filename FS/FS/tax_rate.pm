@@ -443,7 +443,10 @@ sub taxline {
   warn "calculated taxes as [ $name, $amount ]\n"
     if $DEBUG;
 
-  return [$name, $amount];
+  return {
+    'name'   => $name,
+    'amount' => $amount,
+  };
 
 }
 

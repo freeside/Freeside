@@ -429,3 +429,5 @@ FS/cust_pkg_detail.pm
 t/cust_pkg_detail.t
 FS/cust_location.pm
 t/cust_location.t
+FS/cust_bill_pkg_tax_location.pm
+t/cust_bill_pkg_tax_location.t

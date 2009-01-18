@@ -28,6 +28,7 @@ use FS::cust_svc;
 use FS::cust_bill;
 use FS::cust_bill_pkg;
 use FS::cust_bill_pkg_display;
+use FS::cust_bill_pkg_tax_location;
 use FS::cust_pay;
 use FS::cust_pay_pending;
 use FS::cust_pay_void;
@@ -2302,9 +2303,7 @@ sub bill {
   ###
 
   my( $total_setup, $total_recur, $postal_charge ) = ( 0, 0, 0 );
-  my %tax;
   my %taxlisthash;
-  my %taxname;
   my @precommit_hooks = ();
 
   my @cust_pkgs = qsearch('cust_pkg', { 'custnum' => $self->custnum } );
@@ -2386,30 +2385,54 @@ sub bill {
   }
 
   warn "having a look at the taxes we found...\n" if $DEBUG > 2;
+
+  # keys are tax names (as printed on invoices / itemdesc )
+  # values are listrefs of taxlisthash keys (internal identifiers)
+  my %taxname = ();
+
+  # keys are taxlisthash keys (internal identifiers)
+  # values are (cumulative) amounts
+  my %tax = ();
+
+  # keys are taxlisthash keys (internal identifiers)
+  # values are listrefs of cust_bill_pkg_tax_location hashrefs
+  my %tax_location = ();
+
   foreach my $tax ( keys %taxlisthash ) {
     my $tax_object = shift @{ $taxlisthash{$tax} };
     warn "found ". $tax_object->taxname. " as $tax\n" if $DEBUG > 2;
-    my $listref_or_error =
+    my $hashref_or_error =
       $tax_object->taxline( $taxlisthash{$tax},
                             'custnum'      => $self->custnum,
                             'invoice_time' => $invoice_time
                           );
-    unless (ref($listref_or_error)) {
+    unless ( ref($hashref_or_error) ) {
       $dbh->rollback if $oldAutoCommit;
-      return $listref_or_error;
+      return $hashref_or_error;
     }
     unshift @{ $taxlisthash{$tax} }, $tax_object;
 
-    warn "adding ". $listref_or_error->[1].
-         " as ". $listref_or_error->[0]. "\n"
-      if $DEBUG > 2;
-    $tax{ $tax } += $listref_or_error->[1];
-    if ( $taxname{ $listref_or_error->[0] } ) {
-      push @{ $taxname{ $listref_or_error->[0] } }, $tax;
-    }else{
-      $taxname{ $listref_or_error->[0] } = [ $tax ];
+    my $name   = $hashref_or_error->{'name'};
+    my $amount = $hashref_or_error->{'amount'};
+
+    #warn "adding $amount as $name\n";
+    $taxname{ $name } ||= [];
+    push @{ $taxname{ $name } }, $tax;
+
+    $tax{ $tax } += $amount;
+
+    $tax_location{ $tax } ||= [];
+    if ( $tax_object->get('pkgnum') || $tax_object->get('locationnum') ) {
+      push @{ $tax_location{ $tax }  },
+        {
+          'taxnum'      => $tax_object->taxnum, 
+          'taxtype'     => ref($tax_object),
+          'pkgnum'      => $tax_object->get('pkgnum'),
+          'locationnum' => $tax_object->get('locationnum'),
+          'amount'      => sprintf('%.2f', $amount ),
+        };
     }
-  
+
   }
 
   #move the cust_tax_exempt_pkg records to the cust_bill_pkgs we will commit
@@ -2475,11 +2498,15 @@ sub bill {
   foreach my $taxname ( keys %taxname ) {
     my $tax = 0;
     my %seen = ();
+    my @cust_bill_pkg_tax_location = ();
     warn "adding $taxname\n" if $DEBUG > 1;
     foreach my $taxitem ( @{ $taxname{$taxname} } ) {
-      $tax += $tax{$taxitem} unless $seen{$taxitem};
-      $seen{$taxitem} = 1;
+      next if $seen{$taxitem}++;
       warn "adding $tax{$taxitem}\n" if $DEBUG > 1;
+      $tax += $tax{$taxitem};
+      push @cust_bill_pkg_tax_location,
+        map { new FS::cust_bill_pkg_tax_location $_ }
+            @{ $tax_location{ $taxitem } };
     }
     next unless $tax;
 
@@ -2493,6 +2520,7 @@ sub bill {
       'sdate'    => '',
       'edate'    => '',
       'itemdesc' => $taxname,
+      'cust_bill_pkg_tax_location' => \@cust_bill_pkg_tax_location,
     };
 
   }
@@ -2766,71 +2794,89 @@ sub _handle_taxes {
   my %cust_bill_pkg = ();
   my %taxes = ();
     
-  my $prefix = 
-    ( $conf->exists('tax-ship_address') && length($self->ship_last) )
-    ? 'ship_'
-    : '';
-
   my @classes;
   #push @classes, $cust_bill_pkg->usage_classes if $cust_bill_pkg->type eq 'U';
   push @classes, $cust_bill_pkg->usage_classes if $cust_bill_pkg->usage;
   push @classes, 'setup' if $cust_bill_pkg->setup;
   push @classes, 'recur' if $cust_bill_pkg->recur;
 
-  if ( $conf->exists('enable_taxproducts')
-       && (scalar($part_pkg->part_pkg_taxoverride) || $part_pkg->has_taxproduct)
-       && ( $self->tax !~ /Y/i && $self->payby ne 'COMP' )
-     )
-  { 
+  if ( $self->tax !~ /Y/i && $self->payby ne 'COMP' ) {
 
-    foreach my $class (@classes) {
-      my $err_or_ref = $self->_gather_taxes( $part_pkg, $class, $prefix );
-      return $err_or_ref unless ref($err_or_ref);
-      $taxes{$class} = $err_or_ref;
-    }
+    if ( $conf->exists('enable_taxproducts')
+         && ( scalar($part_pkg->part_pkg_taxoverride)
+              || $part_pkg->has_taxproduct
+            )
+       )
+    {
 
-    unless (exists $taxes{''}) {
-      my $err_or_ref = $self->_gather_taxes( $part_pkg, '', $prefix );
-      return $err_or_ref unless ref($err_or_ref);
-      $taxes{''} = $err_or_ref;
-    }
+      if ( $conf->exists('tax-pkg_address') && $cust_pkg->locationnum ) {
+        return "fatal: Can't (yet) use tax-pkg_address with taxproducts";
+      }
 
-  } elsif ( $self->tax !~ /Y/i && $self->payby ne 'COMP' ) {
+      foreach my $class (@classes) {
+        my $err_or_ref = $self->_gather_taxes( $part_pkg, $class );
+        return $err_or_ref unless ref($err_or_ref);
+        $taxes{$class} = $err_or_ref;
+      }
 
-    my %taxhash = map { $_ => $self->get("$prefix$_") }
-                      qw( state county country );
+      unless (exists $taxes{''}) {
+        my $err_or_ref = $self->_gather_taxes( $part_pkg, '' );
+        return $err_or_ref unless ref($err_or_ref);
+        $taxes{''} = $err_or_ref;
+      }
 
-    $taxhash{'taxclass'} = $part_pkg->taxclass;
+    } else {
 
-    my @taxes = qsearch( 'cust_main_county', \%taxhash );
+      my @loc_keys = qw( state county country );
+      my %taxhash;
+      if ( $conf->exists('tax-pkg_address') && $cust_pkg->locationnum ) {
+        my $cust_location = $cust_pkg->cust_location;
+        %taxhash = map { $_ => $cust_location->$_()    } @loc_keys;
+      } else {
+        my $prefix = 
+          ( $conf->exists('tax-ship_address') && length($self->ship_last) )
+          ? 'ship_'
+          : '';
+        %taxhash = map { $_ => $self->get("$prefix$_") } @loc_keys;
+      }
 
-    unless ( @taxes ) {
-      $taxhash{'taxclass'} = '';
-      @taxes =  qsearch( 'cust_main_county', \%taxhash );
-    }
+      $taxhash{'taxclass'} = $part_pkg->taxclass;
 
-    #one more try at a whole-country tax rate
-    unless ( @taxes ) {
-      $taxhash{$_} = '' foreach qw( state county );
-      @taxes =  qsearch( 'cust_main_county', \%taxhash );
-    }
+      my @taxes = qsearch( 'cust_main_county', \%taxhash );
 
-    $taxes{''} = [ @taxes ];
-    $taxes{'setup'} = [ @taxes ];
-    $taxes{'recur'} = [ @taxes ];
-    $taxes{$_} = [ @taxes ] foreach (@classes);
+      unless ( @taxes ) {
+        $taxhash{'taxclass'} = '';
+        @taxes =  qsearch( 'cust_main_county', \%taxhash );
+      }
 
-    # maybe eliminate this entirely, along with all the 0% records
-    unless ( @taxes ) {
-      return
-        "fatal: can't find tax rate for state/county/country/taxclass ".
-        join('/', ( map $self->get("$prefix$_"),
-                        qw(state county country)
-                  ),
-                  $part_pkg->taxclass ). "\n";
-    }
+      #one more try at a whole-country tax rate
+      unless ( @taxes ) {
+        $taxhash{$_} = '' foreach qw( state county );
+        @taxes =  qsearch( 'cust_main_county', \%taxhash );
+      }
 
-  } #if $conf->exists('enable_taxproducts') ...
+      if ( $conf->exists('tax-pkg_address') && $cust_pkg->locationnum ) {
+        foreach (@taxes) {
+          $_->set('pkgnum',      $cust_pkg->pkgnum );
+          $_->set('locationnum', $cust_pkg->locationnum );
+        }
+      }
+
+      $taxes{''} = [ @taxes ];
+      $taxes{'setup'} = [ @taxes ];
+      $taxes{'recur'} = [ @taxes ];
+      $taxes{$_} = [ @taxes ] foreach (@classes);
+
+      # maybe eliminate this entirely, along with all the 0% records
+      unless ( @taxes ) {
+        return
+          "fatal: can't find tax rate for state/county/country/taxclass ".
+          join('/', map $taxhash{$_}, qw(state county country taxclass) );
+      }
+
+    } #if $conf->exists('enable_taxproducts') ...
+
+  }
  
   my @display = ();
   if ( $conf->exists('separate_usage') ) {
@@ -2856,7 +2902,12 @@ sub _handle_taxes {
     my $tax_cust_bill_pkg = $tax_cust_bill_pkg{$key};
 
     foreach my $tax ( @taxes ) {
-      my $taxname = ref( $tax ). ' '. $tax->taxnum;
+
+      my $taxname = ref( $tax ). ' taxnum'. $tax->taxnum;
+#      $taxname .= ' pkgnum'. $cust_pkg->pkgnum.
+#                  ' locationnum'. $cust_pkg->locationnum
+#        if $conf->exists('tax-pkg_address') && $cust_pkg->locationnum;
+
       if ( exists( $taxlisthash->{ $taxname } ) ) {
         push @{ $taxlisthash->{ $taxname  } }, $tax_cust_bill_pkg;
       }else{
@@ -2872,7 +2923,6 @@ sub _gather_taxes {
   my $self = shift;
   my $part_pkg = shift;
   my $class = shift;
-  my $prefix = shift;
 
   my @taxes = ();
   my $geocode = $self->geocode('cch');
@@ -2900,12 +2950,11 @@ sub _gather_taxes {
   # maybe eliminate this entirely, along with all the 0% records
   unless ( @taxes ) {
     return 
-      "fatal: can't find tax rate for zip/taxproduct/pkgpart ".
-      join('/', ( map $self->get("$prefix$_"),
-                      qw(zip)
-                ),
+      "fatal: can't find tax rate for geocode/taxproduct/pkgpart ".
+      join('/', $geocode,
                 $part_pkg->taxproduct_description,
-                $part_pkg->pkgpart ). "\n";
+                $part_pkg->pkgpart
+          );
   }
 
   warn "Found taxes ".

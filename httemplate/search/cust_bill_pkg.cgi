@@ -64,6 +64,8 @@
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
 
+my $conf = new FS::Conf;
+
 #here is the agent virtualization
 my $agentnums_sql =
   $FS::CurrentUser::CurrentUser->agentnums_sql( 'table' => 'cust_main' );
@@ -89,41 +91,66 @@ if ( $cgi->param('classnum') =~ /^(\d+)$/ ) {
   }
 }
 
+sub _where {
+  my $table = shift;
+  my $prefix = @_ ? shift : '';
+  "
+       (    cust_main_county.county  = $table.${prefix}.county
+       OR ( cust_main_county.county IS NULL AND $table.${prefix}.county  =  '' )
+       OR ( cust_main_county.county  =  ''  AND $table.${prefix}.county IS NULL)
+       OR ( cust_main_county.county IS NULL AND $table.${prefix}.county IS NULL)
+       )
+   AND (    cust_main_county.state   = $table.${prefix}.state
+       OR ( cust_main_county.state  IS NULL AND $table.${prefix}.state  =  ''  )
+       OR ( cust_main_county.state   =  ''  AND $table.${prefix}.state IS NULL )
+       OR ( cust_main_county.state  IS NULL AND $table.${prefix}.state IS NULL )
+       )
+   AND cust_main_county.country = $table.${prefix}.country
+  ";
+
+}
+
 if ( $cgi->param('out') ) {
+
+  my ( $loc_sql, @param ) = FS::cust_pkg->location_sql( 'ornull' => 1 );
+  while ( $loc_sql =~ /\?/ ) { #easier to do our own substitution
+    $loc_sql =~ s/\?/'cust_main_county.'.shift(@param)/e;
+  }
+
+  $loc_sql =~ s/cust_pkg\.locationnum/cust_bill_pkg_tax_location.locationnum/g
+    if $cgi->param('istax');
 
   push @where, "
     0 = (
-      SELECT COUNT(*) FROM cust_main_county
-      WHERE (    cust_main_county.county  = cust_main.county
-              OR ( cust_main_county.county IS NULL AND cust_main.county  =  '' )
-              OR ( cust_main_county.county  =  ''  AND cust_main.county IS NULL)
-              OR ( cust_main_county.county IS NULL AND cust_main.county IS NULL)
-            )
-        AND (    cust_main_county.state   = cust_main.state
-              OR ( cust_main_county.state  IS NULL AND cust_main.state  =  ''  )
-              OR ( cust_main_county.state   =  ''  AND cust_main.state IS NULL )
-              OR ( cust_main_county.state  IS NULL AND cust_main.state IS NULL )
-            )
-        AND cust_main_county.country = cust_main.country
-        AND cust_main_county.tax > 0
-    )
+          SELECT COUNT(*) FROM cust_main_county
+           WHERE cust_main_county.tax > 0
+             AND $loc_sql
+        )
   ";
 
 } elsif ( $cgi->param('country' ) ) {
 
-  my $county  = dbh->quote( $cgi->param('county')  );
-  my $state   = dbh->quote( $cgi->param('state')   );
-  my $country = dbh->quote( $cgi->param('country') );
-  push @where, 
-    " ( county  = $county OR $county = '' ) ",
-    " ( state   = $state  OR $state  = '' ) ",
-    "   country = $country "
-  ;
-  if ( $cgi->param('taxname') ) {
-    push @where, 'itemdesc = '. dbh->quote( $cgi->param('taxname') );
-  #} elsif ( $cgi->param('taxnameNULL') {
+  my %ph = map { $_ => dbh->quote( $cgi->param($_) ) }
+               qw( county state country );
+
+  my ( $loc_sql, @param ) = FS::cust_pkg->location_sql;
+  while ( $loc_sql =~ /\?/ ) { #easier to do our own substitution
+    $loc_sql =~ s/\?/$ph{shift(@param)}/e;
+  }
+
+  push @where, $loc_sql;
+   
+  if ( $cgi->param('istax') ) {
+    if ( $cgi->param('taxname') ) {
+      push @where, 'itemdesc = '. dbh->quote( $cgi->param('taxname') );
+    #} elsif ( $cgi->param('taxnameNULL') {
+    } else {
+      push @where, "( itemdesc IS NULL OR itemdesc = '' OR itemdesc = 'Tax' )";
+    }
+  } elsif ( $cgi->param('nottax') ) {
+    #what can we usefully do with "taxname" ????  look up a class???
   } else {
-    push @where, "( itemdesc IS NULL OR itemdesc = '' OR itemdesc = 'Tax' )";
+    #warn "neither nottax nor istax parameters specified";
   }
 
   push @where, ' taxclass = '. dbh->quote( $cgi->param('taxclass') )
@@ -152,8 +179,8 @@ if ($cgi->param('itemdesc')) {
     push @where, 'itemdesc='. dbh->quote($cgi->param('itemdesc'));
   }
 }
-push @where, 'pkgnum != 0' if $cgi->param('nottax');
-push @where, 'pkgnum  = 0' if $cgi->param('istax');
+push @where, 'cust_bill_pkg.pkgnum != 0' if $cgi->param('nottax');
+push @where, 'cust_bill_pkg.pkgnum  = 0' if $cgi->param('istax');
 
 push @where, " tax = 'Y' " if $cgi->param('cust_tax');
 
@@ -189,29 +216,54 @@ if ( $cgi->param('pkg_tax') ) {
 
 my $where = ' WHERE '. join(' AND ', @where);
 
-my $join_cust = "
-    JOIN cust_bill USING ( invnum ) 
-    LEFT JOIN cust_main USING ( custnum )
-";
+my $join_cust =  '      JOIN cust_bill USING ( invnum ) 
+                   LEFT JOIN cust_main USING ( custnum ) ';
 
-my $join_pkg = "
-    LEFT JOIN cust_pkg USING ( pkgnum )
-    LEFT JOIN part_pkg USING ( pkgpart )
-";
+
+my $join_pkg;
+if ( $cgi->param('nottax') ) {
+
+  $join_pkg =  ' LEFT JOIN cust_pkg USING ( pkgnum )
+                 LEFT JOIN part_pkg USING ( pkgpart ) ';
+  $join_pkg .= ' LEFT JOIN cust_location USING ( locationnum ) '
+    if $conf->exists('tax-pkg_address');
+
+} elsif ( $cgi->param('istax') ) {
+
+  #false laziness w/report_tax.cgi $taxfromwhere
+  if ( $conf->exists('tax-pkg_address') ) {
+    $join_pkg .= ' LEFT JOIN cust_bill_pkg_tax_location USING ( billpkgnum )
+                   LEFT JOIN cust_location              USING ( locationnum ) ';
+
+    #quelle kludge, false laziness w/report_tax.cgi
+    $where =~ s/cust_pkg\.locationnum/cust_bill_pkg_tax_location.locationnum/g; 
+  }
+
+} else { 
+
+  #die?
+  warn "neiether nottax nor istax parameters specified";
+  #same as before?
+  $join_pkg =  ' LEFT JOIN cust_pkg USING ( pkgnum )
+                 LEFT JOIN part_pkg USING ( pkgpart ) ';
+
+}
 
 $count_query .= " FROM cust_bill_pkg $join_cust $join_pkg $where";
+
+my @select = (
+               'cust_bill_pkg.*',
+               'cust_bill._date',
+             );
+push @select, 'part_pkg.pkg' unless $cgi->param('istax');
+push @select, 'cust_main.custnum',
+              FS::UI::Web::cust_sql_fields();
 
 my $query = {
   'table'     => 'cust_bill_pkg',
   'addl_from' => "$join_cust $join_pkg",
   'hashref'   => {},
-  'select'    => join(', ',
-                   'cust_bill_pkg.*',
-                   'cust_bill._date',
-                   'part_pkg.pkg',
-                   'cust_main.custnum',
-                   FS::UI::Web::cust_sql_fields(),
-                 ),
+  'select'    => join(', ', @select ),
   'extra_sql' => $where,
   'order_by'  => 'ORDER BY _date, billpkgnum',
 };

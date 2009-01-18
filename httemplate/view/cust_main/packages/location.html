@@ -19,7 +19,10 @@
 
   </I>
 
-% if ($FS::CurrentUser::CurrentUser->access_right('Change customer package')) {
+% if ( ! $cust_pkg->get('cancel')
+%      && $FS::CurrentUser::CurrentUser->access_right('Change customer package')
+%    )
+% {
   <FONT SIZE=-1>
     (&nbsp;<%pkg_change_location_link($cust_pkg)%>&nbsp;)
   </FONT>
