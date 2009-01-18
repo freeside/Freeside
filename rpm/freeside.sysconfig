@@ -1,5 +1,5 @@
 QUEUED_USER=fs_queue
 #RADACCTD_USER=
 #
-SELFSERVICE_USER = fs_selfservice
+SELFSERVICE_USER=fs_selfservice
 #SELFSERVICE_MACHINES=
