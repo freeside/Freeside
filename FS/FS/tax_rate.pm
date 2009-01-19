@@ -369,8 +369,12 @@ sub taxline {
     if ($self->passtype == 2);
   my $amount = 0;
   
-  return [$name, $amount]  # we always know how to handle disabled taxes
-    if $self->disabled;
+  if ( $self->disabled ) { # we always know how to handle disabled taxes
+    return {
+      'name'   => $name,
+      'amount' => $amount,
+    };
+  }
 
   my $taxable_charged = 0;
   my @cust_bill_pkg = grep { $taxable_charged += $_ unless ref; ref; }
@@ -781,13 +785,13 @@ sub batch_import {
 
 }
 
-=item process_batch
+=item process_batch_import
 
 Load a batch import as a queued JSRPC job
 
 =cut
 
-sub process_batch {
+sub process_batch_import {
   my $job = shift;
 
   my $param = thaw(decode_base64(shift));
