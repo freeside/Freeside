@@ -171,7 +171,7 @@ if ( $locationnum && $locationnum != -1 ) {
   if ( $locationnum == -1 ) {
     $cust_location->$_( $cgi->param($_) ) foreach @location_fields;
   } else {
-    $cust_location->$_( $cust_main->get($prefix.$_) foreach @location_fields;
+    $cust_location->$_( $cust_main->get($prefix.$_) ) foreach @location_fields;
   }
 }
 
