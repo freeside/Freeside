@@ -3,6 +3,7 @@
 %   $cgi->redirect(popurl(3). 'edit/cust_pkg.cgi?'. $cgi->query_string );
 % } else {
 <% $cgi->redirect(popurl(3). "view/cust_main.cgi?$custnum") %>
+% }
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;
