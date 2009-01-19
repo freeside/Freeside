@@ -42,16 +42,16 @@ Example:
     } else {
 
       if ( locationnum == 0 ) {
-        what.form.address1.value = <% $cust_main->address1 |js_string %>;
-        what.form.address2.value = <% $cust_main->address2 |js_string %>;
-        what.form.city.value = <% $cust_main->city |js_string %>;
-        what.form.zip.value = <% $cust_main->zip |js_string %>;
+        what.form.address1.value = <% $cust_main->get($prefix.'address1') |js_string %>;
+        what.form.address2.value = <% $cust_main->get($prefix.'address2') |js_string %>;
+        what.form.city.value = <% $cust_main->get($prefix.'city') |js_string %>;
+        what.form.zip.value = <% $cust_main->get($prefix.'zip') |js_string %>;
 
-        changeSelect(what.form.country, <% $cust_main->country | js_string %> );
+        changeSelect(what.form.country, <% $cust_main->get($prefix.'country') | js_string %> );
 
         country_changed( what.form.country,
-                         fix_state_factory( <% $cust_main->state | js_string %>,
-                                            <% $cust_main->county | js_string %>
+                         fix_state_factory( <% $cust_main->get($prefix.'state') | js_string %>,
+                                            <% $cust_main->get($prefix.'county') | js_string %>
                                           )
                        );
 
@@ -158,6 +158,8 @@ my %opt = @_;
 my $cgi       = $opt{'cgi'};
 my $cust_main = $opt{'cust_main'};
 
+my $prefix = length($cust_main->ship_last) ? 'ship_' : '';
+
 $cgi->param('locationnum') =~ /^(\-?\d*)$/ or die "illegal locationnum";
 my $locationnum = $1;
 my $cust_location;
@@ -169,7 +171,7 @@ if ( $locationnum && $locationnum != -1 ) {
   if ( $locationnum == -1 ) {
     $cust_location->$_( $cgi->param($_) ) foreach @location_fields;
   } else {
-    $cust_location->$_( $cust_main->$_() ) foreach @location_fields;
+    $cust_location->$_( $cust_main->get($prefix.$_) foreach @location_fields;
   }
 }
 
