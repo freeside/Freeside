@@ -290,7 +290,7 @@ sub dest_detail {
     #find a rate prefix, first look at most specific (4 digits) then 3, etc.,
     # finally trying the country code only
     my $rate_prefix = '';
-    for my $len ( reverse(1..6) ) {
+    for my $len ( reverse(1..10) ) {
       $rate_prefix = qsearchs('rate_prefix', {
         'countrycode' => $countrycode,
         #'npa'         => { op=> 'LIKE', value=> substr($number, 0, $len) }

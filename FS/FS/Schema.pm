@@ -1787,11 +1787,11 @@ sub tables_hashref {
 
     'rate_prefix' => {
       'columns' => [
-        'prefixnum',   'serial',    '', '', '', '', 
-        'regionnum',   'int',       '', '',, '', '', 
-        'countrycode', 'varchar',     '', 3, '', '', 
-        'npa',         'varchar', 'NULL', 6, '', '', 
-        'nxx',         'varchar', 'NULL', 3, '', '', 
+        'prefixnum',   'serial',      '', '', '', '', 
+        'regionnum',   'int',         '', '', '', '', 
+        'countrycode', 'varchar',     '',  3, '', '', 
+        'npa',         'varchar', 'NULL', 10, '', '', #actually the whole prefix
+        'nxx',         'varchar', 'NULL',  3, '', '', #actually not used
       ],
       'primary_key' => 'prefixnum',
       'unique'      => [],
