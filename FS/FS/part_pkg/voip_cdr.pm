@@ -14,7 +14,7 @@ use FS::rate_detail;
 
 @ISA = qw(FS::part_pkg::flat);
 
-$DEBUG = 1;
+$DEBUG = 0;
 
 tie my %rating_method, 'Tie::IxHash',
   'prefix' => 'Rate calls by using destination prefix to look up a region and rate according to the internal prefix and rate tables',
