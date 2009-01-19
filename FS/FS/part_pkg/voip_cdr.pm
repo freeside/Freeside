@@ -562,13 +562,13 @@ sub check_chargable {
     if $opt{'use_disposition_taqua'} && $cdr->disposition != 100;
 
   return "carrierid != $opt{'use_carrierid'}"
-    if $opt{'use_carrierid'}
-    && $cdr->carrierid != $opt{'use_carrierid'}
+    if length($opt{'use_carrierid'})
+    && $cdr->carrierid ne $opt{'use_carrierid'} #ne otherwise 0 matches ''
     && ! $flags{'da_rewrote'};
 
   return "cdrtypenum != $opt{'use_cdrtypenum'}"
-    if $opt{'use_cdrtypenum'}
-    && $cdr->cdrtypenum != $opt{'use_cdrtypenum'};
+    if length($opt{'use_cdrtypenum'})
+    && $cdr->cdrtypenum ne $opt{'use_cdrtypenum'}; #ne otherwise 0 matches ''
 
   #all right then, rate it
   '';
