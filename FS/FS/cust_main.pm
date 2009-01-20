@@ -7075,7 +7075,7 @@ sub _agent_plandata {
         " AND peo_agentnum.optionname = 'agentnum' ".
         " AND ( agentnum IS NULL OR agentnum = $agentnum ) ".
         " ORDER BY
-           CASE WHEN peo_cust_bill_age.optionname != 'cust_bill_age'
+           CASE WHEN part_event_condition_option.optionname IS NULL
            THEN -1
 	   ELSE ". FS::part_event::Condition->age2seconds_sql('part_event_condition_option.optionvalue').
         " END
