@@ -843,7 +843,9 @@ sub send {
   my $invoice_from =
     scalar(@_)
       ? shift
-      : ( $self->_agent_invoice_from || $conf->config('invoice_from') );
+      : ( $self->_agent_invoice_from ||    #XXX should go away
+          $conf->config('invoice_from', $self->cust_main->agentnum )
+        );
 
   my $balance_over = ( scalar(@_) && $_[0] !~ /^\s*$/ ) ? shift : 0;
 
@@ -899,7 +901,10 @@ sub email {
   my $invoice_from =
     scalar(@_)
       ? shift
-      : ( $self->_agent_invoice_from || $conf->config('invoice_from') );
+      : ( $self->_agent_invoice_from ||    #XXX should go away
+          $conf->config('invoice_from', $self->cust_main->agentnum )
+        );
+
 
   my @invoicing_list = grep { $_ !~ /^(POST|FAX)$/ } 
                             $self->cust_main->invoicing_list;
@@ -907,16 +912,37 @@ sub email {
   #better to notify this person than silence
   @invoicing_list = ($invoice_from) unless @invoicing_list;
 
+  my $subject = $self->email_subject($template);
+
   my $error = send_email(
     $self->generate_email(
       'from'       => $invoice_from,
       'to'         => [ grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list ],
+      'subject'    => $subject,
       'template'   => $template,
     )
   );
   die "can't email invoice: $error\n" if $error;
   #die "$error\n" if $error;
 
+}
+
+sub email_subject {
+  my $self = shift;
+
+  #my $template = scalar(@_) ? shift : '';
+  #per-template?
+
+  my $subject = $conf->config('invoice_subject', $self->cust_main->agentnum)
+                || 'Invoice';
+
+  my $cust_main = $self->cust_main;
+  my $name = $cust_main->name;
+  my $name_short = $cust_main->name_short;
+  my $invoice_number = $self->invnum;
+  my $invoice_date = $self->_date_pretty;
+
+  eval qq("$subject");
 }
 
 =item lpr_data [ TEMPLATENAME ]
@@ -1760,6 +1786,7 @@ sub print_generic {
                        s/~/&nbsp;/g;
                        s/\\\\\*?\s*$/<BR>/;
                        s/\\hyphenation\{[\w\s\-]+}//;
+                       s/\\([&])/$1/g;
                        $_;
                      }  @_
                    },
@@ -1854,7 +1881,7 @@ sub print_generic {
                                                )
                          )
           );
-  } elsif ( grep /\S/, $conf->config('company_address') ) {
+  } elsif ( grep /\S/, $conf->config('company_address', $self->cust_main->agentnum) ) {
 
     my $convert_map = $convert_maps{$format}{'returnaddress'};
     $returnaddress = join( "\n", &$convert_map(
@@ -1862,8 +1889,8 @@ sub print_generic {
                                          s/$/\\\\\*/;
                                          $_
                                        }
-                                     ( $conf->config('company_name'),
-                                       $conf->config('company_address'),
+                                     ( $conf->config('company_name', $self->cust_main->agentnum),
+                                       $conf->config('company_address', $self->cust_main->agentnum),
                                      )
                                  )
                      );
@@ -1879,8 +1906,8 @@ sub print_generic {
   }
 
   my %invoice_data = (
-    'company_name'    => scalar( $conf->config('company_name') ),
-    'company_address' => join("\n", $conf->config('company_address') ). "\n",
+    'company_name'    => scalar( $conf->config('company_name', $self->cust_main->agentnum) ),
+    'company_address' => join("\n", $conf->config('company_address', $self->cust_main->agentnum) ). "\n",
     'custnum'         => $cust_main->display_custnum,
     'invnum'          => $self->invnum,
     'date'            => time2str($date_format, $self->_date),
@@ -1898,7 +1925,7 @@ sub print_generic {
     'returnaddress'   => $returnaddress,
     #'quantity'        => 1,
     'terms'           => $self->terms,
-    'template'        => $params{'template'},
+    'template'        => $template, #params{'template'},
     #'notes'           => join("\n", $conf->config('invoice_latexnotes') ),
     # better hang on to conf_dir for a while
     'conf_dir'        => "$FS::UID::conf_dir/conf.$FS::UID::datasrc",
@@ -2586,7 +2613,18 @@ Returns a string with the invoice number and date, for example:
 
 sub invnum_date_pretty {
   my $self = shift;
-  'Invoice #'. $self->invnum. ' ('. time2str('%x', $self->_date). ')';
+  'Invoice #'. $self->invnum. ' ('. $self->_date_pretty. ')';
+}
+
+=item _date_pretty
+
+Returns a string with the date, for example: "3/20/2008"
+
+=cut
+
+sub _date_pretty {
+  my $self = shift;
+  time2str('%x', $self->_date);
 }
 
 sub _items_sections {
