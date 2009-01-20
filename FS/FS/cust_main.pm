@@ -7057,9 +7057,13 @@ sub _agent_plandata {
                AND peo_agentnum.optionname = 'agentnum'
                AND peo_agentnum.optionvalue }. $regexp. q{ '(^|,)}. $agentnum. q{(,|$)'
              )
-        LEFT JOIN part_event_option AS peo_cust_bill_age
-          ON ( part_event.eventpart = peo_cust_bill_age.eventpart
-               AND peo_cust_bill_age.optionname = 'cust_bill_age'
+        LEFT JOIN part_event_condition
+          ON ( part_event.eventpart = part_event_condition.eventpart
+               AND part_event_condition.conditionname = 'cust_bill_age'
+             )
+        LEFT JOIN part_event_condition_option
+          ON ( part_event_condition.eventconditionnum = part_event_condition_option.eventconditionnum
+               AND part_event_condition_option.optionname = 'age'
              )
       },
       #'hashref'   => { 'optionname' => $option },
@@ -7073,7 +7077,7 @@ sub _agent_plandata {
         " ORDER BY
            CASE WHEN peo_cust_bill_age.optionname != 'cust_bill_age'
            THEN -1
-	   ELSE ". FS::part_event::Condition->age2seconds_sql('peo_cust_bill_age.optionvalue').
+	   ELSE ". FS::part_event::Condition->age2seconds_sql('part_event_condition_option.optionvalue').
         " END
           , part_event.weight".
         " LIMIT 1"
