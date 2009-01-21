@@ -10,6 +10,7 @@
               'new_hashref_callback' => $new_hashref_callback,
               'new_object_callback'  => $new_object_callback,
               'new_callback'         => $new_callback,
+              'clone_callback'       => $clone_callback,
               'edit_callback'        => $edit_callback,
               'error_callback'       => $error_callback,
 
@@ -193,8 +194,6 @@ my $taxproducts = $conf->exists('enable_taxproducts');
 my @agent_type = ();
 my %tax_override = ();
 
-my $clone_part_pkg = '';
-
 my %taxproductnums = map { ($_->classnum => 1) }
                      qsearch('usage_class', { 'disabled' => '' });
 
@@ -227,7 +226,6 @@ my $error_callback = sub {
   $tax_override{$_} = $cgi->param('tax_override_$_')
     foreach(grep { /^tax_override_(\w+)$/ } $cgi->param);
   $opt->{action} = 'Custom' if $cgi->param('clone');
-  $clone_part_pkg= qsearchs('part_pkg', { 'pkgpart' => $cgi->param('clone') } );
 
   $recur_disabled = $cgi->param('freq') ? 0 : 1;
 
@@ -255,21 +253,9 @@ my $new_hashref_callback = sub { { 'plan' => 'flat' }; };
 my $new_object_callback = sub {
   my( $cgi, $hashref, $fields, $opt ) = @_;
 
-  my $part_pkg = '';
-  if ( $cgi->param('clone') ) {
-    $opt->{action} = 'Custom';
-    $clone_part_pkg = qsearchs('part_pkg', { pkgpart=>$cgi->param('clone') } );
-    $part_pkg = $clone_part_pkg->clone;
-    $part_pkg->disabled('Y');
-    %options = $clone_part_pkg->options;
-    $part_pkg->set($_ => $options{$_})
-      foreach (qw( setup_fee recur_fee ));
-    $recur_disabled = $part_pkg->freq ? 0 : 1;
-  } else {
-    $part_pkg = FS::part_pkg->new( $hashref );
-    $part_pkg->set($_ => '0')
-      foreach (qw( setup_fee recur_fee ));
-  }
+  my $part_pkg = FS::part_pkg->new( $hashref );
+  $part_pkg->set($_ => '0')
+    foreach (qw( setup_fee recur_fee ));
 
   $part_pkg;
 
@@ -311,6 +297,26 @@ my $new_callback = sub {
     @agent_type = map {$_->typenum} qsearch('agent_type',{});
   }
 
+};
+
+my $clone_callback = sub {
+  my( $cgi, $object, $fields, $opt ) = @_;
+
+  $opt->{action} = 'Custom';
+
+  #my $part_pkg = $clone_part_pkg->clone;
+  #this is all clone did anyway
+  $object->comment( '(CUSTOM) '. $object->comment )
+    unless $object->comment =~ /^\(CUSTOM\) /;
+
+  $object->disabled('Y');
+
+  %options = $object->options;
+
+  $object->set($_ => $options{$_})
+    foreach (qw( setup_fee recur_fee ));
+
+  $recur_disabled = $object->freq ? 0 : 1;
 };
 
 my $m2_error_callback_maker = sub {
@@ -486,11 +492,18 @@ my $html_bottom = sub {
     layer_callback => $layer_callback,
   );
 
-  include('/elements/selectlayers.html', %selectlayers, 'layers_only'=>1 ).
-  '<SCRIPT TYPE="text/javascript">'.
-    include('/elements/selectlayers.html', %selectlayers, 'js_only'=>1 ).
-    "taxproduct_selectchanged(document.getElementById('taxproduct_select'));".
-  '</SCRIPT>';
+  my $return =
+    include('/elements/selectlayers.html', %selectlayers, 'layers_only'=>1 ).
+    '<SCRIPT TYPE="text/javascript">'.
+      include('/elements/selectlayers.html', %selectlayers, 'js_only'=>1 );
+
+  $return .=
+    "taxproduct_selectchanged(document.getElementById('taxproduct_select'));\n"
+      if $taxproducts;
+
+  $return .= '</SCRIPT>';
+
+  $return;
 
 };
 

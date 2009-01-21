@@ -36,7 +36,7 @@ Example:
                                        #fixed - display fixed value from object or here
                                        #fixed-country
                                        #fixed-state
-                    'value' => 'Y', #for checkbox, title, fixed, fixedhidden
+                    'value' => 'Y', #for checkbox, title, fixed, hidden
                     'disabled' => 0,
                     'onchange' => 'javascript_function',
 
@@ -107,7 +107,10 @@ Example:
     'new_object_callback'
    
     #run when adding
-    'new_callback' => sub { my( $cgi, $object, $fields_listref ) = @_; },
+    'new_callback' => sub { my( $cgi, $object, $fields_listref, $optref ) = @_; },
+
+    #run when cloning
+    'clone_callback' => sub { my( $cgi, $object, $fields_listref, $optref ) = @_; },
    
     #run before display to return a different value
     'value_callback' => sub { my( $columname, $value ) = @_; },
@@ -210,7 +213,7 @@ Example:
 %     'size'          => $f->{'size'},
 %     'maxlength'     => $f->{'maxlength'},
 %
-%     #checkbox, title, fixed, fixedhidden
+%     #checkbox, title, fixed, hidden
 %     #& deprecated weird value hashref used only by reason.html
 %     'value'         => $f->{'value'},
 %
@@ -592,8 +595,7 @@ if ( $cgi->param('error') ) {
 
   $object = qsearchs({ %qsearch, 'hashref' => { $pkey => $clone } });
 
-  #XXX document me
-  &{$opt{'clone_callback'}}($cgi, $object, $fields)
+  &{$opt{'clone_callback'}}($cgi, $object, $fields, \%opt )
     if $opt{'clone_callback'};
 
   #$object->$pkey('');
