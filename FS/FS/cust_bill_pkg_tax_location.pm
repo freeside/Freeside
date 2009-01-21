@@ -112,7 +112,7 @@ sub check {
     $self->ut_numbern('billpkgtaxlocationnum')
     || $self->ut_foreign_key('billpkgnum', 'cust_bill_pkg', 'billpkgnum' )
     || $self->ut_number('taxnum') #cust_bill_pkg/tax_rate key, based on taxtype
-    || $self->ut_enum('taxtype', [ qw( FS::cust_main::county FS::tax_rate ) ] )
+    || $self->ut_enum('taxtype', [ qw( FS::cust_main_county FS::tax_rate ) ] )
     || $self->ut_foreign_key('pkgnum', 'cust_pkg', 'pkgnum' )
     || $self->ut_foreign_key('locationnum', 'cust_location', 'locationnum' )
     || $self->ut_money('amount')
