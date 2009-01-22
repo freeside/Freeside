@@ -37,6 +37,7 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'payment_info'              => 'MyAccount/payment_info',
   'process_payment'           => 'MyAccount/process_payment',
   'process_payment_order_pkg' => 'MyAccount/process_payment_order_pkg',
+  'process_payment_order_renew' => 'MyAccount/process_payment_order_renew',
   'process_prepay'            => 'MyAccount/process_prepay',
   'list_pkgs'                 => 'MyAccount/list_pkgs',     #add to ss (added?)
   'list_svcs'                 => 'MyAccount/list_svcs',     #add to ss (added?)
@@ -45,6 +46,8 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'order_pkg'                 => 'MyAccount/order_pkg',     #add to ss cgi!
   'change_pkg'                => 'MyAccount/change_pkg', 
   'order_recharge'            => 'MyAccount/order_recharge',
+  'renew_info'                => 'MyAccount/renew_info',
+  'order_renew'               => 'MyAccount/order_renew',
   'cancel_pkg'                => 'MyAccount/cancel_pkg',    #add to ss cgi!
   'charge'                    => 'MyAccount/charge',        #?
   'part_svc_info'             => 'MyAccount/part_svc_info',
@@ -548,6 +551,24 @@ Prevents multiple charges.
 Returns a hash reference with a single key, B<error>, empty on success, or an
 error message on errors
 
+=item process_payment_order_pkg
+
+Combines the B<process_payment> and B<order_pkg> functions in one step.  If the
+payment processes sucessfully, the package is ordered.  Takes a hash reference
+as parameter with the keys of both methods.
+
+Returns a hash reference with a single key, B<error>, empty on success, or an
+error message on errors.
+
+=item process_payment_order_renew
+
+Combines the B<process_payment> and B<order_renew> functions in one step.  If
+the payment processes sucessfully, the renewal is processed.  Takes a hash
+reference as parameter with the keys of both methods.
+
+Returns a hash reference with a single key, B<error>, empty on success, or an
+error message on errors.
+
 =item list_pkgs
 
 Returns package information for this customer.  For more detail on services,
@@ -782,6 +803,77 @@ Optional Access number number
 Returns a hash reference with a single key, B<error>, empty on success, or an
 error message on errors.  The special error '_decline' is returned for
 declined transactions.
+
+=item renew_info
+
+Provides useful info for early renewals.
+
+Takes a hash reference as parameter with the following keys:
+
+=over 4
+
+=item session_id
+
+Session identifier
+
+=back
+
+Returns a hash reference.  On errors, it contains a single key, B<error>, with
+the error message.  Otherwise, contains a single key, B<dates>, pointing to
+an array refernce of hash references.  Each hash reference contains the
+following keys:
+
+=over 4
+
+=item bill_date
+
+(Future) Bill date.  Indicates a future date for which billing could be run.
+Specified as a integer UNIX timestamp.  Pass this value to the B<order_renew>
+function.
+
+=item bill_date_pretty
+
+(Future) Bill date as a human-readable string.  (Convenience for display;
+subject to change, so best not to parse for the date.)
+
+=item amount
+
+Base amount which will be charged if renewed early as of this date.
+
+=item renew_date
+
+Renewal date; i.e. even-futher future date at which the customer will be paid
+through if the early renewal is completed with the given B<bill-date>.
+Specified as a integer UNIX timestamp.
+
+=item renew_date_pretty
+
+Renewal date as a human-readable string.  (Convenience for display;
+subject to change, so best not to parse for the date.)
+
+=back
+
+=item order_renew
+
+Renews this customer early; i.e. runs billing for this customer in advance.
+
+Takes a hash reference as parameter with the following keys:
+
+=over 4
+
+=item session_id
+
+Session identifier
+
+=item date
+
+Integer date as returned by the B<renew_info> function, indicating the advance
+date for which to run billing.
+
+=back
+
+Returns a hash reference with a single key, B<error>, empty on success, or an
+error message on errors.
 
 =item cancel_pkg
 

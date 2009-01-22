@@ -540,6 +540,15 @@ sub process_payment_order_pkg {
   order_pkg($p);
 }
 
+sub process_payment_order_renew {
+  my $p = shift;
+
+  my $hr = process_payment($p);
+  return $hr if $hr->{'error'};
+
+  order_renew($p);
+}
+
 sub process_prepay {
 
   my $p = shift;
@@ -1094,6 +1103,64 @@ sub _do_bop_realtime {
     }
 
     '';
+}
+
+sub renew_info {
+  my $p = shift;
+
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
+    or return { 'error' => "unknown custnum $custnum" };
+
+  my @cust_pkg = sort { $a->bill <=> $b->bill }
+                 grep { $_->part_pkg->freq ne '0' }
+                 $cust_main->ncancelled_pkgs;
+
+  #return { 'error' => 'No active packages to renew.' } unless @cust_pkg;
+
+  my $total = 0;
+
+  my @array = map {
+                    $total += $_->part_pkg->base_recur;
+                    my $renew_date = $_->part_pkg->add_freq($_->bill);
+                    {
+                      'bill_date'         => $_->bill,
+                      'bill_date_pretty'  => time2str('%x', $_->bill),
+                      'renew_date'        => $renew_date,
+                      'renew_date_pretty' => time2str('%x', $renew_date),
+                      'amount'            => $total,
+                    };
+                  }
+                  @cust_pkg;
+
+  return { 'dates' => \@array };
+
+}
+
+sub order_renew {
+  my $p = shift;
+
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
+    or return { 'error' => "unknown custnum $custnum" };
+
+  my $date = $p->{'date'};
+
+  my $now = time;
+
+  #freeside-daily -n -d $date fs_daily $custnum
+  $cust_main->bill_and_collect( 'time'         => $date,
+                                'invoice_time' => $now,
+                                'actual_time'  => $now,
+                                'check_freq'   => '1d',
+                              );
+
+  return { 'error' => '' };
+
 }
 
 sub cancel_pkg {

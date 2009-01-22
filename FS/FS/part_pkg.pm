@@ -4,6 +4,7 @@ use strict;
 use vars qw( @ISA %plans $DEBUG );
 use Carp qw(carp cluck confess);
 use Scalar::Util qw( blessed );
+use Time::Local qw( timelocal_nocheck );
 use Tie::IxHash;
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs dbh dbdef );
@@ -726,6 +727,41 @@ sub freq_pretty {
       "every $freq ${interval}s";
     }
   }
+}
+
+=item add_freq TIMESTAMP
+
+Adds the frequency of this package to the provided timestamp and returns
+the resulting timestamp, or -1 if the frequency of this package could not be
+parsed (shouldn't happen).
+
+=cut
+
+sub add_freq {
+  my( $self, $date ) = @_;
+  my $freq = $self->freq;
+
+  #change this bit to use Date::Manip? CAREFUL with timezones (see
+  # mailing list archive)
+  my ($sec,$min,$hour,$mday,$mon,$year) = (localtime($date) )[0,1,2,3,4,5];
+
+  if ( $self->freq =~ /^\d+$/ ) {
+    $mon += $self->freq;
+    until ( $mon < 12 ) { $mon -= 12; $year++; }
+  } elsif ( $self->freq =~ /^(\d+)w$/ ) {
+    my $weeks = $1;
+    $mday += $weeks * 7;
+  } elsif ( $self->freq =~ /^(\d+)d$/ ) {
+    my $days = $1;
+    $mday += $days;
+  } elsif ( $self->freq =~ /^(\d+)h$/ ) {
+    my $hours = $1;
+    $hour += $hours;
+  } else {
+    return -1;
+  }
+
+  timelocal_nocheck($sec,$min,$hour,$mday,$mon,$year);
 }
 
 =item plandata
