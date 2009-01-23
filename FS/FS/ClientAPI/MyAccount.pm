@@ -1130,7 +1130,7 @@ sub renew_info {
                       'bill_date_pretty'  => time2str('%x', $_->bill),
                       'renew_date'        => $renew_date,
                       'renew_date_pretty' => time2str('%x', $renew_date),
-                      'amount'            => $total,
+                      'amount'            => sprintf('.%2f', $total),
                     };
                   }
                   @cust_pkg;
