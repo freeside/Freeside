@@ -2,7 +2,8 @@
 class FreesideSelfService  {
 
     //Change this to match the location of your selfservice xmlrpc.cgi or daemon
-    var $URL = 'https://www.example.com/selfservice/xmlrpc.cgi';
+    #var $URL = 'https://localhost/selfservice/xmlrpc.cgi';
+    var $URL = 'http://localhost/selfservice/xmlrpc.cgi';
 
     function FreesideSelfService() {
       $this;
