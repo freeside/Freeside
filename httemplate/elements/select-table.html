@@ -4,7 +4,9 @@ Example:
 
   include( '/elements/select-table.html',
 
-    #required
+    ##
+    # required
+    ##
     'table'          => 'table_name',
     'name_col'       => 'name_column',
    
@@ -12,24 +14,42 @@ Example:
     'curr_value'     => 'current_value',
     #'value' => #deprecated form of 'curr_value',
    
-    #opt
-    'empty_label'    => '', #better specify it though, the default might change
-    'hashref'        => {},
-    'extra_sql'      => '',
-    'records'        => \@records, #instead of hashref
+    ##
+    # optional
+    ##
+
+    #search params
+    'hashref'          => {},
+    'addl_from'        => '',
+    'extra_sql'        => '',
+    'agent_virt'       => 0, #set true and make sure the result is JOINed to
+                             #something with agentnum (usually cust_main)
+    'agent_null_right' => '', #right to see un-agented entries
+    #or
+    'records'        => \@records, #instead of search params
+
+    #basic params controlling the resulting <SELECT>
     'pre_options'    => [ 'value' => 'option' ], #before normal options
+    'empty_label'    => '', #better specify it though, the default might change
+    'multiple'       => 0, # bool
+    'disable_empty'  => 0, # bool (implied by multiple)
+    'label_callback' => sub { my $record = shift; return "label"; },
+
+    #more params controlling HTML stuff about the <SELECT>
     'element_name'   => '', #HTML element name, defaults to the name of
                             # the primary key column
     'field'          => '', #synonym for element_name
     'element_etc'    => '', #additional attributes (i.e. "DISABLED") for the
                             #<SELECT> element
     'onchange'       => '', #javascript code
-    'multiple'       => 0, # bool
-    'disable_empty'  => 0, # bool (implied by multiple)
-    'debug'          => 0, #set true to enable
-    'label_callback' => sub { my $record = shift; return "label"; },
+
+    #special return options
     'js_only'      => 0, #set true to return only the JS portions (i.e. nothing)
     'html_only'    => 0, #set true to return only the HTML portions (no-op, i.e. return everything)
+
+    #debugging
+    'debug'          => 0, #set true to enable
+
   )
 
 </%doc>
@@ -92,8 +112,9 @@ my $name_col = $opt{'name_col'};
 my $value = $opt{'curr_value'} || $opt{'value'};
 $value = [ split(/\s*,\s*/, $value) ] if $opt{'multiple'} && $value =~ /,/;
 
+#my $addl_from = $opt{'addl_from'} || '';
 my $extra_sql = $opt{'extra_sql'} || '';
-my $hashref =   $opt{'hashref'} || {};
+my $hashref   = $opt{'hashref'} || {};
 
 if ( $opt{'agent_virt'} ) {
   $extra_sql .=
@@ -109,6 +130,7 @@ if ( $opt{'records'} ) {
 } else {
   @records = qsearch( {
     'table'     => $opt{'table'},
+    'addl_from' => $opt{'addl_from'},
     'hashref'   => $hashref,
     'extra_sql' => $extra_sql,
     'order_by'  => ( $opt{'order_by'} || "ORDER BY $name_col" ),
@@ -124,8 +146,9 @@ unless (    ! $value
   $opt{hashref}->{$key} = $value;
   my $record = qsearchs( {
     'table'     => $opt{table},
+    'addl_from' => $opt{'addl_from'},
     'hashref'   => $hashref,
-    'extra_sql' => ( $opt{extra_sql} || '' ),
+    'extra_sql' => $extra_sql,
   });
   push @records, $record if $record;
 }

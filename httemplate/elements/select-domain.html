@@ -1,0 +1,13 @@
+<% include( '/elements/select-table.html',
+    'table'            => 'svc_domain',
+    'name_col'         => 'domain',
+    'empty_label'      => 'all',
+    'addl_from'        => ' LEFT JOIN cust_svc  USING ( svcnum  ) '.
+                         #' LEFT JOIN part_svc  USING ( svcpart ) '.
+                          ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
+                          ' LEFT JOIN cust_main USING ( custnum ) ',
+    'agent_virt'       => 1,
+    'agent_null-right' => 'View/link unlinked services',
+    @_,
+   )
+%>

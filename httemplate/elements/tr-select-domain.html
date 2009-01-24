@@ -1,0 +1,12 @@
+% #if ( scalar(@domains) < 2 ) {
+% #} else {
+  <TR>
+    <TD ALIGN="right"><% $opt{'label'} || 'Domain' %></TD>
+    <TD>
+      <% include( '/elements/select-domain.html', %opt) %>
+    </TD>
+   </TR>
+% #}
+<%init>
+  my %opt = @_;
+</%init>

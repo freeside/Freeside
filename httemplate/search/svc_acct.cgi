@@ -83,6 +83,9 @@ if ( $cgi->param('domain') ) {
     push @extra_sql, 'domsvc = '. $svc_domain->svcnum;
   }
 }
+if ( $cgi->param('domsvc') =~ /^(\d+)$/ ) { 
+  push @extra_sql, "domsvc = $1";
+}
 
 my $timepermonth = '';
 
