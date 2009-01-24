@@ -22,28 +22,31 @@ $response = $freeside->process_payment_order_renew( array(
     'paybatch'   => $_POST['paybatch'],
 ) );
 
-#error_log("[process_payment_order_renew] received response from freeside: $response");
+error_log("[process_payment_order_renew] received response from freeside: $response");
 
 $error = $response['error'];
 
 if ( $error ) {
 
+  error_log("[process_payment_order_renew] response error: $error");
+
   header('Location:order_renew.php'.
            '?session_id='. urlencode($_POST['session_id']).
+           '?error='.      urlencode($error).
            '&payby=CARD'.
-           '&amount='.     urlencode($_POST['amount'])
-           '&payinfo='.    urlencode($_POST['payinfo'])
-           '&paycvv='.     urlencode($_POST['paycvv'])
-           '&month='.      urlencode($_POST['month'])
-           '&year='.       urlencode($_POST['year'])
-           '&payname='.    urlencode($_POST['payname'])
-           '&address1='.   urlencode($_POST['address1'])
-           '&address2='.   urlencode($_POST['address2'])
-           '&city='.       urlencode($_POST['city'])
-           '&state='.      urlencode($_POST['state'])
-           '&zip='.        urlencode($_POST['zip'])
-           '&save='.       urlencode($_POST['save'])
-           '&auto='.       urlencode($_POST['auto'])
+           '&amount='.     urlencode($_POST['amount']).
+           '&payinfo='.    urlencode($_POST['payinfo']).
+           '&paycvv='.     urlencode($_POST['paycvv']).
+           '&month='.      urlencode($_POST['month']).
+           '&year='.       urlencode($_POST['year']).
+           '&payname='.    urlencode($_POST['payname']).
+           '&address1='.   urlencode($_POST['address1']).
+           '&address2='.   urlencode($_POST['address2']).
+           '&city='.       urlencode($_POST['city']).
+           '&state='.      urlencode($_POST['state']).
+           '&zip='.        urlencode($_POST['zip']).
+           '&save='.       urlencode($_POST['save']).
+           '&auto='.       urlencode($_POST['auto']).
            '&paybatch='.   urlencode($_POST['paybatch'])
         );
   die();
@@ -52,7 +55,7 @@ if ( $error ) {
 
 // sucessful renewal.
 
-$session_id = $response['session_id']'
+$session_id = $response['session_id'];
 
 // now what?
 

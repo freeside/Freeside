@@ -38,6 +38,8 @@ extract($payment_info);
   <BODY>
     <H1>Renew Early</H1>
 
+    <FONT SIZE="+1" COLOR="#ff0000"><?php echo htmlspecialchars($_GET['error']); ?></FONT>
+
       <FORM NAME="OneTrueForm" METHOD="POST" ACTION="process_payment_order_renew.php" onSubmit="document.OneTrueForm.process.disabled=true">
 
       <INPUT TYPE="hidden" NAME="date"       VALUE="<?php echo $date; ?>">
