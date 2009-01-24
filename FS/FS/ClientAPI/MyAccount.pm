@@ -1120,7 +1120,7 @@ sub renew_info {
 
   #return { 'error' => 'No active packages to renew.' } unless @cust_pkg;
 
-  my $total = 0;
+  my $total = $cust_main->balance;
 
   my @array = map {
                     $total += $_->part_pkg->base_recur;
