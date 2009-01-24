@@ -40,9 +40,9 @@ extract($payment_info);
 
       <FORM NAME="OneTrueForm" METHOD="POST" ACTION="process_payment_order_renew.php" onSubmit="document.OneTrueForm.process.disabled=true">
 
-      <INPUT TYPE="hidden" NAME="date"    VALUE="<?php echo $date; ?>">
-      <INPUT TYPE="hidden" NAME="session" VALUE="<?php echo $session_id; ?>">
-      <INPUT TYPE="hidden" NAME="amount"  VALUE="<?php echo $amount; ?>">
+      <INPUT TYPE="hidden" NAME="date"       VALUE="<?php echo $date; ?>">
+      <INPUT TYPE="hidden" NAME="session_id" VALUE="<?php echo $session_id; ?>">
+      <INPUT TYPE="hidden" NAME="amount"     VALUE="<?php echo $amount; ?>">
 
       A payment of $<?php echo $amount; ?> will renew your account through <?php echo $renew_date_pretty; ?>.<BR><BR>
 
