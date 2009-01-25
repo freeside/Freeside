@@ -1,6 +1,6 @@
 <% include( 'elements/browse.html',
                  'title'       => 'Employee Groups',
-                 'menubar'     => [ 'Internal users' => $p.'browse/access_user.html', ],
+                 'menubar'     => [ 'View Employees' => $p.'browse/access_user.html', ],
                  'html_init'   => $html_init,
                  'name'        => 'employee groups',
                  'query'       => { 'table'     => 'access_group',
@@ -28,7 +28,7 @@
 <%once>
 
 my $html_init = 
-  "Employee groups control access to the back-office interface.<BR><BR>".
+  "Employee groups control access to the back-office interface.  Each employee can be assigned to one or more groups.<BR><BR>".
   qq!<A HREF="${p}edit/access_group.html"><I>Add an employee group</I></A><BR><BR>!;
 
 #false laziness w/access_user.html & agent_type.cgi

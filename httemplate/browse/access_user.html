@@ -1,6 +1,6 @@
 <% include( 'elements/browse.html',
                  'title'              => 'Employees',
-                 'menubar'            => [ 'Employee groups' => $p.'browse/access_group.html', ],
+                 'menubar'            => [ 'View Employee groups' => $p.'browse/access_group.html', ],
                  'html_init'          => $html_init,
                  'name'               => 'employees',
                  'disableable'        => 1,
@@ -22,8 +22,8 @@ die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
 
 my $html_init = 
-  "Employees have access to the back-office interface.  Typically, this is your employees and contractors.  In a VISP setup, you can also add accounts for your reseller's employees.<BR><BR>It is <B>highly recommended</B> to add a <B>separate account for each person</B> rather than using role accounts.<BR><BR>".
-  qq!<A HREF="${p}edit/access_user.html"><I>Add an internal user</I></A><BR><BR>!;
+  "Employees have access to the back-office interface.  Typically, this is your employees and contractors.  In a virtualized setup, you can also add accounts for your reseller's employees.<BR><BR>It is <B>highly recommended</B> to add a <B>separate account for each person</B> rather than using role accounts.<BR><BR>".
+  qq!<A HREF="${p}edit/access_user.html"><I>Add an employee</I></A><BR><BR>!;
 
 #false laziness w/access_group.html & agent_type.cgi
 my $groups_sub = sub {
