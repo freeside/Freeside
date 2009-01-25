@@ -466,6 +466,8 @@ for records where B<svcdb> is not "svc_acct".
 sub seconds_since_sqlradacct {
   my($self, $start, $end) = @_;
 
+  my $mes = "$me seconds_since_sqlradacct:";
+
   my $svc_x = $self->svc_x;
 
   my @part_export = $self->part_svc->part_export_usage;
@@ -479,9 +481,15 @@ sub seconds_since_sqlradacct {
 
     next if $part_export->option('ignore_accounting');
 
+    warn "$mes connecting to sqlradius database\n"
+      if $DEBUG;
+
     my $dbh = DBI->connect( map { $part_export->option($_) }
                             qw(datasrc username password)    )
       or die "can't connect to sqlradius database: ". $DBI::errstr;
+
+    warn "$mes connected to sqlradius database\n"
+      if $DEBUG;
 
     #select a unix time conversion function based on database type
     my $str2time = str2time_sql( $dbh->{Driver}->{Name} );
@@ -489,8 +497,10 @@ sub seconds_since_sqlradacct {
     my $username = $part_export->export_username($svc_x);
 
     my $query;
+
+    warn "$mes finding closed sessions completely within the given range\n"
+      if $DEBUG;
   
-    #find closed sessions completely within the given range
     my $sth = $dbh->prepare("SELECT SUM(acctsessiontime)
                                FROM radacct
                                WHERE UserName = ?
@@ -502,7 +512,10 @@ sub seconds_since_sqlradacct {
     $sth->execute($username, $start, $end) or die $sth->errstr;
     my $regular = $sth->fetchrow_arrayref->[0];
   
-    #find open sessions which start in the range, count session start->range end
+    warn "$mes finding open sessions which start in the range\n"
+      if $DEBUG;
+
+    # count session start->range end
     $query = "SELECT SUM( ? - $str2time AcctStartTime ) )
                 FROM radacct
                 WHERE UserName = ?
@@ -516,7 +529,9 @@ sub seconds_since_sqlradacct {
       or die $sth->errstr. " executing query $query";
     my $start_during = $sth->fetchrow_arrayref->[0];
   
-    #find closed sessions which start before the range but stop during,
+    warn "$mes finding closed sessions which start before the range but stop during\n"
+      if $DEBUG;
+
     #count range start->session end
     $sth = $dbh->prepare("SELECT SUM( $str2time AcctStopTime ) - ? ) 
                             FROM radacct
@@ -530,9 +545,11 @@ sub seconds_since_sqlradacct {
     $sth->execute($start, $username, $start, $start, $end ) or die $sth->errstr;
     my $end_during = $sth->fetchrow_arrayref->[0];
   
-    #find closed (not anymore - or open) sessions which start before the range
-    # but stop after, or are still open, count range start->range end
-    # don't count open sessions (probably missing stop record)
+    warn "$mes finding closed sessions which start before the range but stop after\n"
+      if $DEBUG;
+
+    # count range start->range end
+    # don't count open sessions anymore (probably missing stop record)
     $sth = $dbh->prepare("SELECT COUNT(*)
                             FROM radacct
                             WHERE UserName = ?
@@ -546,6 +563,9 @@ sub seconds_since_sqlradacct {
     my $entire_range = ($end-$start) * $sth->fetchrow_arrayref->[0];
 
     $seconds += $regular + $end_during + $start_during + $entire_range;
+
+    warn "$mes done finding sessions\n"
+      if $DEBUG;
 
   }
 
@@ -566,6 +586,8 @@ for records where B<svcdb> is not "svc_acct".
 sub attribute_since_sqlradacct {
   my($self, $start, $end, $attrib) = @_;
 
+  my $mes = "$me attribute_since_sqlradacct:";
+
   my $svc_x = $self->svc_x;
 
   my @part_export = $self->part_svc->part_export_usage;
@@ -580,14 +602,23 @@ sub attribute_since_sqlradacct {
 
     next if $part_export->option('ignore_accounting');
 
+    warn "$mes connecting to sqlradius database\n"
+      if $DEBUG;
+
     my $dbh = DBI->connect( map { $part_export->option($_) }
                             qw(datasrc username password)    )
       or die "can't connect to sqlradius database: ". $DBI::errstr;
+
+    warn "$mes connected to sqlradius database\n"
+      if $DEBUG;
 
     #select a unix time conversion function based on database type
     my $str2time = str2time_sql( $dbh->{Driver}->{Name} );
 
     my $username = $part_export->export_username($svc_x);
+
+    warn "$mes SUMing $attrib sessions\n"
+      if $DEBUG;
 
     my $sth = $dbh->prepare("SELECT SUM($attrib)
                                FROM radacct
@@ -599,6 +630,9 @@ sub attribute_since_sqlradacct {
     $sth->execute($username, $start, $end) or die $sth->errstr;
 
     $sum += $sth->fetchrow_arrayref->[0];
+
+    warn "$mes done SUMing sessions\n"
+      if $DEBUG;
 
   }
 
