@@ -93,32 +93,18 @@ Example:
     #agent virtualization
     'agent_virt'       => 1,
     'agent_null_right' => 'Access Right Name',
-   
-    #run when re-displaying with an error
-    'error_callback' => sub { my( $cgi, $object, $fields_listref, $opt_hashref ) = @_; },
-   
-    #run when editing
-    'edit_callback' => sub { my( $cgi, $object, $fields_listref ) = @_; },
-   
-    # returns a hashref for the new object
-    'new_hashref_callback'
-
-    # returns the new object iself (otherwise, ->new is called)
-    'new_object_callback'
-   
-    #run when adding
-    'new_callback' => sub { my( $cgi, $object, $fields_listref, $optref ) = @_; },
-
-    #run when cloning
-    'clone_callback' => sub { my( $cgi, $object, $fields_listref, $optref ) = @_; },
-   
-    #run before display to return a different value
-    'value_callback' => sub { my( $columname, $value ) = @_; },
-
-    #run before display to manipulate element of the 'fields' arrayref
-    'field_callback' => sub { my( $cgi, $object, $field_hashref ) = @_; },
 
     'viewall_dir' => '', #'search' or 'browse', defaults to 'search'
+
+    # overrides default popurl(1)."process/$table.html"
+    'post_url' => popurl(1).'process/something', 
+
+    #we're in a popup (no title/menu/searchboxes)
+    'popup' => 1,
+
+    ###
+    # HTML callbacks
+    ###
 
     'html_init'   => '', #after the header/menubar
 
@@ -136,12 +122,50 @@ Example:
     #at the very bottom (well, as low as you can go from here)
     'html_foot'  => '',
 
-    # overrides default popurl(1)."process/$table.html"
-    'post_url' => popurl(1).'process/something', 
+    ###
+    # initialization callbacks
+    ###
 
-    #we're in a popup (no title/menu/searchboxes)
-    'popup' => 1,
+    ###global callbacks
+
+    #always run if provided, after decoding long CGI "redirect=" responses but
+    # before object creation/search
+    # (useful if you have a long form that might trigger redirect= and you need
+    #  to do things with $cgi params - they're not decoded in the calling
+    #  <%init> block yet)
+    'begin_callback' = sub { my( $cgi, $fields_listref, $opt_hashref ) = @_; },
+
+    #always run, after the mode-specific object creation/search
+    'end_callback' = sub { my( $cgi, $object, $fields_listref, $opt_hashref ) = @_; },
+
+    ###mode-specific callbacks
    
+    #run when re-displaying with an error
+    'error_callback' => sub { my( $cgi, $object, $fields_listref, $opt_hashref ) = @_; },
+   
+    #run when editing
+    'edit_callback' => sub { my( $cgi, $object, $fields_listref ) = @_; },
+   
+    # returns a hashref for the new object
+    'new_hashref_callback'
+
+    # returns the new object iself (otherwise, ->new is called)
+    'new_object_callback'
+   
+    #run when adding
+    'new_callback' => sub { my( $cgi, $object, $fields_listref ) = @_; },
+
+    #run when cloning
+    'clone_callback' => sub { my( $cgi, $object, $fields_listref, $opt_hashref ) = @_; },
+
+    ###display callbacks
+
+    #run before display to return a different value
+    'value_callback' => sub { my( $columname, $value ) = @_; },
+
+    #run before display to manipulate element of the 'fields' arrayref
+    'field_callback' => sub { my( $cgi, $object, $field_hashref ) = @_; },
+
   );
 
 </%doc>
@@ -563,6 +587,9 @@ if ( $cgi->param('redirect') ) {
   $cgi = new CGI($pref);
 }
 
+&{$opt{'begin_callback'}}( $cgi, $fields, \%opt )
+  if $opt{'begin_callback'};
+
 my %qsearch = (
     'table'     => $table,
     'extra_sql' => ( $opt{'agent_virt'}
@@ -638,6 +665,9 @@ if ( $cgi->param('error') ) {
     if $opt{'new_callback'};
 
 }
+
+&{$opt{'end_callback'}}( $cgi, $object, $fields, \%opt )
+  if $opt{'end_callback'};
 
 $opt{action} ||= $object->$pkey() ? 'Edit' : 'Add';
 

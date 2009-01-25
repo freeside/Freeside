@@ -2326,15 +2326,18 @@ sub ut_foreign_keyn {
     : '';
 }
 
-=item ut_agentnum_acl
+=item ut_agentnum_acl COLUMN [ NULL_RIGHT | NULL_RIGHT_LISTREF ]
 
 Checks this column as an agentnum, taking into account the current users's
-ACLs.
+ACLs.  NULL_RIGHT or NULL_RIGHT_LISTREF, if specified, indicates the access
+right or rights allowing no agentnum.
 
 =cut
 
 sub ut_agentnum_acl {
-  my( $self, $field, $null_acl ) = @_;
+  my( $self, $field ) = (shift, shift);
+  my $null_acl = scalar(@_) ? shift : [];
+  $null_acl = [ $null_acl ] unless ref($null_acl);
 
   my $error = $self->ut_foreign_keyn($field, 'agent', 'agentnum');
   return "Illegal agentnum: $error" if $error;
@@ -2349,7 +2352,7 @@ sub ut_agentnum_acl {
   } else {
 
     return "Access denied"
-      unless $curuser->access_right($null_acl);
+      unless grep $curuser->access_right($_), @$null_acl;
 
   }
 

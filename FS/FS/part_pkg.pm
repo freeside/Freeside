@@ -432,6 +432,12 @@ sub check {
     $self->freq($1);
   }
 
+  my @null_agentnum_right = ( 'Edit global package definitions' );
+  push @null_agentnum_right, 'One-time charge'
+    if $self->freq =~ /^0/;
+  push @null_agentnum_right, 'Customize customer package'
+    if $self->disabled eq 'Y'; #good enough
+
   my $error = $self->ut_numbern('pkgpart')
     || $self->ut_text('pkg')
     || $self->ut_text('comment')
@@ -448,7 +454,7 @@ sub check {
                               'part_pkg_taxproduct',
                               'taxproductnum'
                              )
-    || $self->ut_agentnum_acl('agentnum', 'Edit global package definitions')
+    || $self->ut_agentnum_acl('agentnum', \@null_agentnum_right)
     || $self->SUPER::check
   ;
   return $error if $error;

@@ -7,6 +7,9 @@
               'html_init'   => include('/elements/init_overlib.html').
                                $freq_changed,
               'html_bottom' => $html_bottom,
+
+              'begin_callback'       => $begin_callback,
+              'end_callback'         => $end_callback,
               'new_hashref_callback' => $new_hashref_callback,
               'new_object_callback'  => $new_object_callback,
               'new_callback'         => $new_callback,
@@ -55,7 +58,7 @@
                               },
                               {field=>'comment',  type=>'text', size=>40 }, #32
                               {field=>'classnum', type=>'select-pkg_class' },
-                              {field=>'disabled', type=>'checkbox', value=>'Y'},
+                              {field=>'disabled', type=>$disabled_type, value=>'Y'},
 
                               { type  => 'tablebreak-tr-title',
                                 value => 'Pricing', #better name?
@@ -172,10 +175,19 @@
 
 my $curuser = $FS::CurrentUser::CurrentUser;
 
-die "access denied"
-  unless $curuser->access_right('Edit package definitions')
-      || $curuser->access_right('Edit global package definitions')
-      || ( $cgi->param('pkgnum') && $curuser->access_right('Customize customer package') );
+my $edit_right = $curuser->access_right('Edit package definitions')
+              || $curuser->access_right('Edit global package definitions');
+
+my $begin_callback = sub {
+  my( $cgi, $fields, $opt ) = @_;
+  die "access denied"
+    unless $edit_right
+        || ( $cgi->param('pkgnum')
+             && $curuser->access_right('Customize customer package')
+           );
+};
+
+my $disabled_type = $edit_right ? 'checkbox' : 'hidden';
 
 my $conf = new FS::Conf;
 my $taxproducts = $conf->exists('enable_taxproducts');
@@ -197,37 +209,24 @@ my %tax_override = ();
 my %taxproductnums = map { ($_->classnum => 1) }
                      qsearch('usage_class', { 'disabled' => '' });
 
-if ( $cgi->param('error') ) {  # oh well
-  foreach ($cgi->param) {
-    /^usage_taxproductnum_(\d+)$/ && ($taxproductnums{$1} = 1);
-  }
-} elsif ( my $pkgpart = $cgi->keywords || $cgi->param('pkgpart') ) {
-  $pkgpart =~ /^(\d+)$/ or die "illegal pkgpart";
-  my $part_pkg = qsearchs( 'part_pkg', { pkgpart => $pkgpart } );
-  die "no part_pkg for pkgpart $pkgpart" unless $pkgpart;
-  foreach ($part_pkg->options) {
-    /^usage_taxproductnum_(\d+)$/ && ($taxproductnums{$1} = 1);
-  }
-  foreach ($part_pkg->part_pkg_taxoverride) {
-    $taxproductnums{$_->usage_class} = 1
-      if $_->usage_class;
-  }
-} else {
-  # do nothing
-}
-my @taxproductnums = ( qw( setup recur ), sort (keys %taxproductnums) );
-
 my %options = ();
 my $recur_disabled = 1;
+
 my $error_callback = sub {
   my($cgi, $object, $fields, $opt ) = @_;
+
   (@agent_type) = $cgi->param('agent_type');
-  $tax_override{''} = $cgi->param('tax_override');
-  $tax_override{$_} = $cgi->param('tax_override_$_')
-    foreach(grep { /^tax_override_(\w+)$/ } $cgi->param);
+
   $opt->{action} = 'Custom' if $cgi->param('clone');
 
   $recur_disabled = $cgi->param('freq') ? 0 : 1;
+
+  foreach ($cgi->param) {
+    /^usage_taxproductnum_(\d+)$/ && ($taxproductnums{$1} = 1);
+  }
+  $tax_override{''} = $cgi->param('tax_override');
+  $tax_override{$_} = $cgi->param('tax_override_$_')
+    foreach(grep { /^tax_override_(\w+)$/ } $cgi->param);
 
   #some false laziness w/process
   $cgi->param('plan') =~ /^(\w+)$/ or die 'unparsable plan';
@@ -267,19 +266,14 @@ my $edit_callback = sub {
   $recur_disabled = $object->freq ? 0 : 1;
 
   (@agent_type) = map {$_->typenum} qsearch('type_pkgs',{'pkgpart'=>$1});
-  $tax_override{$_} =
-    join (",", map {$_->taxclassnum}
-               qsearch( 'part_pkg_taxoverride', { 'pkgpart' => $object->pkgpart,
-                                                  'usage_class' => $_,
-                                                }
-                      )
-         )
-    foreach ( '', @taxproductnums );
 
-#    join (",", map {$_->taxclassnum}
-#               $part_pkg->part_pkg_taxrate( 'cch', $conf->config('defaultloc')
-#         );
-#      unless $tax_override;
+  foreach ($object->options) {
+    /^usage_taxproductnum_(\d+)$/ && ($taxproductnums{$1} = 1);
+  }
+  foreach ($object->part_pkg_taxoverride) {
+    $taxproductnums{$_->usage_class} = 1
+      if $_->usage_class;
+  }
 
   %options = $object->options;
 
@@ -512,21 +506,43 @@ my %usage_class = map { ($_->classnum => $_->classname) }
 $usage_class{setup} = 'Setup';
 $usage_class{recur} = 'Recurring';
 
-my %taxproduct_fields = map { $_ => [ "taxproductnum_$_", 
-                                      { type  => 'select-taxproduct',
-                                        #label => "$usage_class{$_} tax product",
-                                      },
-                                      "tax_override_$_", 
-                                      { type  => 'select-taxoverride' }
-                                    ]
-                            }
-                         @taxproductnums;
-$taxproduct_fields{'(default)'} =
-  [ 'taxproductnum', { type => 'select-taxproduct',
-                       #label => 'Default tax product',
-                     },
-    'tax_override',  { type => 'select-taxoverride' },
-  ];
+my @taxproductnums = ();
+my %taxproduct_fields = ();
+my $end_callback = sub {
+  my( $cgi, $object, $fields, $opt ) = @_;
+
+  @taxproductnums = ( qw( setup recur ), sort (keys %taxproductnums) );
+
+  if ( $object->pkgpart ) {
+    foreach my $usage_class ( '', @taxproductnums ) {
+      $tax_override{$usage_class} =
+        join (",", map $_->taxclassnum,
+                       qsearch( 'part_pkg_taxoverride', {
+                                  'pkgpart'     => $object->pkgpart,
+                                  'usage_class' => $usage_class,
+                              })
+             );
+    }
+  }
+
+  %taxproduct_fields =
+    map { $_ => [ "taxproductnum_$_", 
+                  { type  => 'select-taxproduct',
+                    #label => "$usage_class{$_} tax product",
+                  },
+                  "tax_override_$_", 
+                  { type  => 'select-taxoverride' }
+                ]
+        }
+        @taxproductnums;
+
+  $taxproduct_fields{'(default)'} =
+    [ 'taxproductnum', { type => 'select-taxproduct',
+                         #label => 'Default tax product',
+                       },
+      'tax_override',  { type => 'select-taxoverride' },
+    ];
+};
 
 my $taxproduct_values = sub {
   my ($cgi, $object, $flags) = @_;
