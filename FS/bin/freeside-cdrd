@@ -108,7 +108,7 @@ while (1) {
   }
 
   myexit() if sigterm() || sigint();
-  sleep 5; # unless $found;
+  sleep 1 unless $found;
 
 }
 

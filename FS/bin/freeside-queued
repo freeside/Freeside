@@ -81,22 +81,19 @@ while (1) {
   #  local $FS::UID::AutoCommit = 0;
   $FS::UID::AutoCommit = 0;
 
-  #assuming mysql 4.1 w/subqueries now
-  #my $nodepend = driver_name eq 'mysql'
-  # ? ''
-  # : 'AND 0 = ( SELECT COUNT(*) FROM queue_depend'.
-  #   ' WHERE queue_depend.jobnum = queue.jobnum ) ';
   my $nodepend = 'AND 0 = ( SELECT COUNT(*) FROM queue_depend'.
-                 '           WHERE queue_depend.jobnum = queue.jobnum ) ';
+                 '           WHERE queue_depend.jobnum = queue.jobnum )';
 
-  my $job = qsearchs(
-    'queue',
-    { 'status' => 'new' },
-    '',
-    driver_name eq 'mysql'
-      ? "$nodepend ORDER BY jobnum LIMIT 1 FOR UPDATE"
-      : "$nodepend ORDER BY jobnum FOR UPDATE LIMIT 1"
-  ) or do {
+  my $order_by = "ORDER BY jobnum ". ( driver_name eq 'mysql'
+                                         ? 'LIMIT 1 FOR UPDATE'
+                                         : 'FOR UPDATE LIMIT 1' );
+
+  my $job = qsearchs({
+    'table'     => 'queue',
+    'hashref'   => { 'status' => 'new' },
+    'extra_sql' => $nodepend,
+    'order_by'  => $order_by,
+  }) or do {
     # if $oldAutoCommit {
     dbh->commit or do {
       warn "WARNING: database error, closing connection: ". dbh->errstr;
@@ -104,17 +101,9 @@ while (1) {
       next;
     };
     # }
-    sleep 5; #connecting to db is expensive
+    sleep 1;
     next;
   };
-
-  #assuming mysql 4.1 w/subqueries now
-  #if ( driver_name eq 'mysql'
-  #     && qsearch('queue_depend', { 'jobnum' => $job->jobnum } ) ) {
-  #  dbh->commit or die dbh->errstr; #if $oldAutoCommit;
-  #  sleep 5; #would be better if mysql could do everything in query above
-  #  next;
-  #}
 
   my %hash = $job->hash;
   $hash{'status'} = 'locked';
