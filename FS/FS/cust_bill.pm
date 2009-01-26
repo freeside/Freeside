@@ -1702,6 +1702,8 @@ unsquelch_cdr - overrides any per customer cdr squelching when true
 
 =cut
 
+#what's with all the sprintf('%10.2f')'s in here?  will it cause any
+# (alignment?) problems to change them all to '%.2f' ?
 sub print_generic {
 
   my( $self, %params ) = @_;
@@ -2039,7 +2041,7 @@ sub print_generic {
                     );
   my $money_char = $money_chars{$format};
 
-  my %other_money_chars = ( 'latex'    => '\dollar ',
+  my %other_money_chars = ( 'latex'    => '\dollar ',#XXX should be a config too
                             'html'     => $conf->config('money_char') || '$',
                             'template' => '',
                           );
@@ -2172,26 +2174,36 @@ sub print_generic {
   }
 
   foreach my $tax ( $self->_items_tax ) {
-    my $total = {};
-    $total->{'total_item'} = &$escape_function($tax->{'description'});
+
     $taxtotal += $tax->{'amount'};
-    $total->{'total_amount'} = $other_money_char. $tax->{'amount'};
+
+    my $description = &$escape_function( $tax->{'description'} );
+    my $amount      = sprintf( '%.2f', $tax->{'amount'} );
+
     if ( $multisection ) {
+
       my $money = $old_latex ? '' : $money_char;
       push @detail_items, {
         ext_description => [],
         ref          => '',
         quantity     => '',
-        description  => &$escape_function($tax->{'description'}),
-        amount       => $money. $tax->{'amount'},
+        description  => $description,
+        amount       => $money. $amount,
         product_code => '',
         section      => $tax_section,
       };
-    }else{
-      push @total_items, $total;
+
+    } else {
+
+      push @total_items, {
+        'total_item'   => $description,
+        'total_amount' => $other_money_char. $amount,
+      };
+
     }
-    push @buf,[ $total->{'total_item'},
-                $money_char. sprintf("%10.2f", $total->{'total_amount'}),
+
+    push @buf,[ $description,
+                $money_char. $amount,
               ];
 
   }
