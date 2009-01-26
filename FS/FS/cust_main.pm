@@ -2829,22 +2829,10 @@ sub _handle_taxes {
 
       my %taxhash_elim = %taxhash;
 
-      # no, unexpected change in behavior.
-      #my @elim = qw( taxclass county state );
-      #while ( !scalar(@taxes) && scalar(@elim) ) {
-      #  $taxhash_elim{ shift(@elim) } = '';
-      #  @taxes = qsearch( 'cust_main_county', \%taxhash_elim );
-      #}
-
-      #just try taxclass first, then state+county, not county in the middle
-      unless ( @taxes ) {
-        $taxhash_elim{'taxclass'} = '';
-        @taxes =  qsearch( 'cust_main_county', \%taxhash_elim );
-      }
-      #one more try at a whole-country tax rate
-      unless ( @taxes ) {
-        $taxhash_elim{$_} = '' foreach qw( state county );
-        @taxes =  qsearch( 'cust_main_county', \%taxhash_elim );
+      my @elim = qw( taxclass county state );
+      while ( !scalar(@taxes) && scalar(@elim) ) {
+        $taxhash_elim{ shift(@elim) } = '';
+        @taxes = qsearch( 'cust_main_county', \%taxhash_elim );
       }
 
       if ( $conf->exists('tax-pkg_address') && $cust_pkg->locationnum ) {
