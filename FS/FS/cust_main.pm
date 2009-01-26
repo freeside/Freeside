@@ -9,7 +9,7 @@ use Safe;
 use Carp;
 use Exporter;
 use Scalar::Util qw( blessed );
-use Time::Local qw(timelocal timelocal_nocheck);
+use Time::Local qw(timelocal);
 use Data::Dumper;
 use Tie::IxHash;
 use Digest::MD5 qw(md5_base64);
@@ -2662,36 +2662,19 @@ sub _make_lines {
       if ( $@ );
 
     if ( $increment_next_bill ) {
-  
-      #change this bit to use Date::Manip? CAREFUL with timezones (see
-      # mailing list archive)
-      my ($sec,$min,$hour,$mday,$mon,$year) =
-        (localtime($sdate) )[0,1,2,3,4,5];
 
-      #pro-rating magic - if $recur_prog fiddles $sdate, want to use that
+      my $next_bill = $part_pkg->add_freq($sdate);
+      return "unparsable frequency: ". $part_pkg->freq
+        if $next_bill == -1;
+  
+      #pro-rating magic - if $recur_prog fiddled $sdate, want to use that
       # only for figuring next bill date, nothing else, so, reset $sdate again
       # here
       $sdate = $cust_pkg->bill || $cust_pkg->setup || $time;
       #no need, its in $hash{last_bill}# my $last_bill = $cust_pkg->last_bill;
       $cust_pkg->last_bill($sdate);
 
-      if ( $part_pkg->freq =~ /^\d+$/ ) {
-        $mon += $part_pkg->freq;
-        until ( $mon < 12 ) { $mon -= 12; $year++; }
-      } elsif ( $part_pkg->freq =~ /^(\d+)w$/ ) {
-        my $weeks = $1;
-        $mday += $weeks * 7;
-      } elsif ( $part_pkg->freq =~ /^(\d+)d$/ ) {
-        my $days = $1;
-        $mday += $days;
-      } elsif ( $part_pkg->freq =~ /^(\d+)h$/ ) {
-        my $hours = $1;
-        $hour += $hours;
-      } else {
-        return "unparsable frequency: ". $part_pkg->freq;
-      }
-      $cust_pkg->setfield('bill',
-        timelocal_nocheck($sec,$min,$hour,$mday,$mon,$year));
+      $cust_pkg->setfield('bill', $next_bill );
 
     }
 
@@ -2844,15 +2827,24 @@ sub _handle_taxes {
 
       my @taxes = qsearch( 'cust_main_county', \%taxhash );
 
-      unless ( @taxes ) {
-        $taxhash{'taxclass'} = '';
-        @taxes =  qsearch( 'cust_main_county', \%taxhash );
-      }
+      my %taxhash_elim = %taxhash;
 
+      # no, unexpected change in behavior.
+      #my @elim = qw( taxclass county state );
+      #while ( !scalar(@taxes) && scalar(@elim) ) {
+      #  $taxhash_elim{ shift(@elim) } = '';
+      #  @taxes = qsearch( 'cust_main_county', \%taxhash_elim );
+      #}
+
+      #just try taxclass first, then state+county, not county in the middle
+      unless ( @taxes ) {
+        $taxhash_elim{'taxclass'} = '';
+        @taxes =  qsearch( 'cust_main_county', \%taxhash_elim );
+      }
       #one more try at a whole-country tax rate
       unless ( @taxes ) {
-        $taxhash{$_} = '' foreach qw( state county );
-        @taxes =  qsearch( 'cust_main_county', \%taxhash );
+        $taxhash_elim{$_} = '' foreach qw( state county );
+        @taxes =  qsearch( 'cust_main_county', \%taxhash_elim );
       }
 
       if ( $conf->exists('tax-pkg_address') && $cust_pkg->locationnum ) {
