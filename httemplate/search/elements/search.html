@@ -699,6 +699,9 @@ my %align = (
 $opt{align} = [ map $align{$_}, split(//, $opt{align}) ],
   unless !$opt{align} || ref($opt{align});
 
+$opt{disable_download} = 0
+  if $opt{disable_download} && $curuser->access_right('Configuration download');
+
 if ( $opt{'agent_virt'} ) {
 
   my $agentnums_sql = $curuser->agentnums_sql(
