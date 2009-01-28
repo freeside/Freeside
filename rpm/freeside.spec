@@ -1,6 +1,6 @@
 %{!?_initrddir:%define _initrddir /etc/rc.d/init.d}
 %{!?version:%define version 1.9}
-%{!?release:%define release 5}
+%{!?release:%define release 6}
 
 Summary: Freeside ISP Billing System
 Name: freeside
@@ -62,7 +62,6 @@ Prefix: %{freeside_document_root}
 Requires: mod_ssl
 %endif
 Requires: perl-Apache-DBI
-Conflicts: %{name}-apacheasp
 Provides: %{name}-frontend = %{version}
 BuildArch: noarch
 
@@ -101,7 +100,6 @@ Please note that this RPM does not create the database or database user; it only
 %package selfservice
 Summary: Self-service interface for %{name}
 Group: Applications/Internet
-Conflicts: %{name}
 Requires: %{name}-selfservice-cgi
 
 %description selfservice
@@ -111,7 +109,6 @@ For security reasons, it is set to conflict with %{name} as you should not insta
 %package selfservice-core
 Summary: Core Perl libraries for the self-service interface for %{name}
 Group: Applications/Internet
-Conflicts: %{name}
 
 %description selfservice-core
 This package installs the Perl modules and client daemon for the self-service interface for %{name}.  It does not install the CGI interface and can be used with a different front-end.
@@ -120,7 +117,6 @@ For security reasons, it is set to conflict with %{name} as you should not insta
 %package selfservice-cgi
 Summary: CGI scripts for the self-service interface for %{name}
 Group: Applications/Internet
-Conflicts: %{name}
 Requires: %{name}-selfservice-core
 Prefix: %{freeside_selfservice_document_root}
 
@@ -131,7 +127,6 @@ For security reasons, it is set to conflict with %{name} as you should not insta
 %package selfservice-php
 Summary: Sample PHP files for the self-service interface for %{name}
 Group: Applications/Internet
-Conflicts: %{name}
 Prefix: %{freeside_selfservice_document_root}
 
 %description selfservice-php
