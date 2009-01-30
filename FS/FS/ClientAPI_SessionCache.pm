@@ -3,6 +3,7 @@ package FS::ClientAPI_SessionCache;
 use strict;
 use vars qw($module);
 use FS::UID qw(datasrc);
+use FS::Conf;
 
 #ask FS::UID to run this stuff for us later
 install_callback FS::UID sub { 
