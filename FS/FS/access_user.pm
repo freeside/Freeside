@@ -405,6 +405,17 @@ group membership, eventually also via user overrides).
 
 sub access_right {
   my( $self, $rightname ) = @_;
+
+  #some caching of ACL requests for low-hanging fruit perf improvement
+  #since we get a new $CurrentUser object each page view there shouldn't be any
+  #issues with stickiness
+  if ( $self->{_ACLcache} ) {
+    return $self->{_ACLcache}{$rightname}
+      if exists($self->{_ACLcache}{$rightname});
+  } else {
+    $self->{_ACLcache} = {};
+  }
+
   my $sth = dbh->prepare("
     SELECT groupnum FROM access_usergroup
                     LEFT JOIN access_group USING ( groupnum )
@@ -413,10 +424,14 @@ sub access_right {
       WHERE usernum = ?
         AND righttype = 'FS::access_group'
         AND rightname = ?
+      LIMIT 1
   ") or die dbh->errstr;
   $sth->execute($self->usernum, $rightname) or die $sth->errstr;
   my $row = $sth->fetchrow_arrayref;
-  $row ? $row->[0] : '';
+
+  #$row ? $row->[0] : '';
+  $self->{_ACLcache}{$rightname} = ( $row ? $row->[0] : '' );
+
 }
 
 =back
