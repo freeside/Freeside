@@ -396,7 +396,7 @@ sub tables_hashref {
       'primary_key' => 'eventnum',
       #no... there are retries now #'unique' => [ [ 'eventpart', 'invnum' ] ],
       'unique' => [],
-      'index' => [ ['invnum'], ['status'] ],
+      'index' => [ ['invnum'], ['status'], ['eventpart'] ],
     },
 
     'part_bill_event' => {
