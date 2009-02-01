@@ -86,8 +86,6 @@ if ( $result->{error} eq "Can't resume session"
   || $result->{error} eq "Expired session" ) { #ick
 
   my $login_info = login_info();
-  use Data::Dumper;
-  warn Dumper($login_info);
   do_template('login', $login_info);
   exit;
 }
