@@ -40,10 +40,6 @@ database upgrades.
 sub upgrade {
   my %opt = @_;
 
-  my $oldAutoCommit = $FS::UID::AutoCommit;
-  local $FS::UID::AutoCommit = 0;
-  $FS::UID::AutoCommit = 0;
-
   my $data = upgrade_data(%opt);
 
   foreach my $table ( keys %$data ) {
@@ -54,7 +50,17 @@ sub upgrade {
 
     if ( $class->can('_upgrade_data') ) {
       warn "Upgrading $table...\n";
+
+      my $oldAutoCommit = $FS::UID::AutoCommit;
+      local $FS::UID::AutoCommit = 0;
+      $FS::UID::AutoCommit = 0;
+
       $class->_upgrade_data(%opt);
+
+      if ( $oldAutoCommit ) {
+        dbh->commit or die dbh->errstr;
+      }
+
     } else {
       warn "WARNING: asked for upgrade of $table,".
            " but FS::$table has no _upgrade_data method\n";
@@ -70,10 +76,6 @@ sub upgrade {
 #        if $error;
 #    }
 
-  }
-
-  if ( $oldAutoCommit ) {
-    dbh->commit or die dbh->errstr;
   }
 
 }
