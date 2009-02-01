@@ -1,0 +1,48 @@
+#!/usr/bin/perl -w
+
+#This drops anything from the database that could cause live things to happen.
+#You'd want to do this on a test copy of your live database but NEVER on the
+#live database itself.
+
+#-all exports (all records in part_export, part_export_option export_svc)
+#-all non-POST invoice destinations (cust_main_invoice)
+#-all payment gateways and agent payment gw overrides (payment_gateway,
+# payment_gateway_option, agent_payment_gateway)
+#-everything in the job queue (queue and queue_arg)
+#-business-onlinepayment and business-onlinepayment-ach config
+
+use strict;
+use FS::UID qw(adminsuidsetup dbh);
+use FS::Conf;
+
+adminsuidsetup shift;
+
+foreach my $table (qw(
+  part_export
+  part_export_option
+  export_svc
+  payment_gateway
+  payment_gateway_option
+  agent_payment_gateway
+  queue
+  queue_arg
+)) {
+
+  my $sth = dbh->prepare("DELETE FROM $table") or die dbh->errstr;
+  $sth->execute or die $sth->errstr;
+
+}
+
+my $dsth = dbh->prepare("DELETE FROM cust_main_invoice WHERE dest != 'POST'")
+  or die dbh->errstr;
+$dsth->execute or die $dsth->errstr;
+
+my $conf = new FS::Conf;
+foreach my $item (qw(
+  business-onlinepayment
+  business-onlinepayment-ach
+)) {
+  $conf->delete($item);
+}
+
+dbh->commit or die dbh->errstr;
