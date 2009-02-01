@@ -365,7 +365,14 @@ $menu{'Reports'} = [ \%report_menu, 'Lists, reporting and graphing' ]
 $menu{'Tools'} = [ \%tools_menu, 'Tools' ]
   if keys %tools_menu;
 $menu{'Configuration'} = [ \%config_menu, 'Configuraiton and setup' ]
-  if $curuser->access_right('Edit advertising sources')
+  if $curuser->access_right('Configuration')
+  || $curuser->access_right('Edit package definitions')
+  || $curuser->access_right('Edit global package definitions')
+  || $curuser->access_right('Edit billing events')
+  || $curuser->access_right('Edit global billing events')
+  || $curuser->access_right('Dialup configuration')
+  || $curuser->access_right('Broadband configuration')
+  || $curuser->access_right('Edit advertising sources')
   || $curuser->access_right('Edit global advertising sources');
 
 use vars qw($gmenunum);
