@@ -2927,16 +2927,6 @@ sub _gather_taxes {
                   })
     if scalar(@taxclassnums);
 
-  # maybe eliminate this entirely, along with all the 0% records
-  unless ( @taxes ) {
-    return 
-      "fatal: can't find tax rate for geocode/taxproduct/pkgpart ".
-      join('/', $geocode,
-                $part_pkg->taxproduct_description,
-                $part_pkg->pkgpart
-          );
-  }
-
   warn "Found taxes ".
        join(',', map{ ref($_). " ". $_->get($_->primary_key) } @taxes). "\n" 
    if $DEBUG;
