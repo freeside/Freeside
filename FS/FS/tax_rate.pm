@@ -471,7 +471,7 @@ sub _fatal_or_null {
   $name = 'Other surcharges'
     if ($self->passtype == 2);
 
-  if ($conf->exists('ignore_incalculable_tax')) {
+  if ($conf->exists('ignore_incalculable_taxes')) {
     warn $error;
     return { name => $name, amount => 0 };
   } else {
