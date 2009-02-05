@@ -385,27 +385,35 @@ sub taxline {
     if $DEBUG;
 
   if ($self->passflag eq 'N') {
-    return "fatal: can't (yet) handle taxes not passed to the customer";
+    # return "fatal: can't (yet) handle taxes not passed to the customer";
+    # until someone needs to track these in freeside
+    return {
+      'name'   => $name,
+      'amount' => 0,
+    };
   }
 
   if ($self->maxtype != 0 && $self->maxtype != 9) {
-    return qq!fatal: can't (yet) handle tax with "!. $self->maxtype_name. 
-      '" threshold';
+    return $self->_fatal_or_null( 'tax with "'.
+                                    $self->maxtype_name. '" threshold'
+                                );
   }
 
   if ($self->maxtype == 9) {
-    return qq!fatal: can't (yet) handle tax with "!. $self->maxtype_name. 
-      '" threshold';  # "texas" tax
+    return
+      $self->_fatal_or_null( 'tax with "'. $self->maxtype_name. '" threshold' );
+                                                                # "texas" tax
   }
 
   # we treat gross revenue as gross receipts and expect the tax data
   # to DTRT (i.e. tax on tax rules)
   if ($self->basetype != 0 && $self->basetype != 1 &&
-      $self->basetype != 6 && $self->basetype != 7 &&
-      $self->basetype != 8 && $self->basetype != 14
+      $self->basetype != 5 && $self->basetype != 6 &&
+      $self->basetype != 7 && $self->basetype != 8 &&
+      $self->basetype != 14
   ) {
-    return qq!fatal: can't (yet) handle tax with "!. $self->basetype_name. 
-      '" basis';
+    return
+      $self->_fatal_or_null( 'tax with "'. $self->basetype_name. '" basis' );
   }
 
   unless ($self->setuptax =~ /^Y$/i) {
@@ -425,12 +433,11 @@ sub taxline {
         $seen{$_->pkgnum}++;
       }
     }elsif ($self->unittype == 1) {
-      return qq!fatal: can't (yet) handle fee with minute unit type!;
+      return $self->_fatal_or_null( 'fee with minute unit type' );
     }elsif ($self->unittype == 2) {
       $taxable_units = 1;
     }else {
-      return qq!fatal: can't (yet) handle unknown unit type in tax!.
-        $self->taxnum;
+      return $self->_fatal_or_null( 'unknown unit type in tax'. $self->taxnum );
     }
   }
 
@@ -452,6 +459,24 @@ sub taxline {
     'amount' => $amount,
   };
 
+}
+
+sub _fatal_or_null {
+  my ($self, $error) = @_;
+
+  my $conf = new FS::Conf;
+
+  $error = "fatal: can't yet handle ". $error;
+  my $name = $self->taxname;
+  $name = 'Other surcharges'
+    if ($self->passtype == 2);
+
+  if ($conf->exists('ignore_incalculable_tax')) {
+    warn $error;
+    return { name => $name, amount => 0 };
+  } else {
+    return $error;
+  }
 }
 
 =item tax_on_tax CUST_MAIN

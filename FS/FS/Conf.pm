@@ -1468,6 +1468,13 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'ignore_incalculable_taxes',
+    'section'     => 'billing',
+    'description' => 'Prefer to invoice without tax over not billing at all',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'welcome_email',
     'section'     => '',
     'description' => 'Template file for welcome email.  Welcome emails are sent to the customer email invoice destination(s) each time a svc_acct record is created.  See the <a href="http://search.cpan.org/dist/Text-Template/lib/Text/Template.pm">Text::Template</a> documentation for details on the template substitution language.  The following variables are available<ul><li><code>$username</code> <li><code>$password</code> <li><code>$first</code> <li><code>$last</code> <li><code>$pkg</code></ul>',
