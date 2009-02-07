@@ -166,10 +166,10 @@
 
 %#display payment history
 
+%my $money_char = $conf->config('money_char') || '$';
+%
 %sub balance_forward_row {
-%  my( $b, $date ) = @_;
-%  my $conf = new FS::Conf;
-%  my $money_char = $conf->config('money_char') || '$';
+%  my( $b, $date, $money_char ) = @_;
 %  ( my $balance_forward = $money_char. $b ) =~ s/^\$\-/-&nbsp;\$/;
 
    <TR ID="balance_forward_row">
@@ -186,14 +186,13 @@
      <TD CLASS="grid" BGCOLOR="#dddddd"></TD>
      <TD CLASS="grid" BGCOLOR="#dddddd"></TD>
      <TD CLASS="grid" BGCOLOR="#dddddd"></TD>
-     <TD CLASS="grid" BGCOLOR="#dddddd"><I><% $balance_forward %></I></TD>
+     <TD CLASS="grid" BGCOLOR="#dddddd" ALIGN="right"><I><% $balance_forward %></I></TD>
 
    </TR>
 %}
 %
 %my $balance = 0;
 %my %target = ();
-%my $money_char = $conf->config('money_char') || '$';
 %
 %my $years =  $conf->config('payment_history-years') || 2;
 %my $older_than = time - $years * 31556736; #60*60*24*365.24
@@ -215,7 +214,7 @@
 %    $display = '';
 %
 %    if ( $hidden && ! $seen++ ) {
-%      balance_forward_row($balance, $item->{'date'});
+%      balance_forward_row($balance, $item->{'date'}, $money_char);
 %    }
 %
 %  }
@@ -297,7 +296,7 @@
 % } 
 
 %if ( scalar(@history) && $hidden && ! $seen++ ) {
-%  balance_forward_row($balance, $lastdate);
+%  balance_forward_row($balance, $lastdate, $money_char);
 %}
 
 </TABLE>
