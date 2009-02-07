@@ -4,7 +4,6 @@
 
 my( $cust_pay, %opt ) = @_;
 
-my $conf = new FS::Conf;
 my $curuser = $FS::CurrentUser::CurrentUser;
 
 my $payby = $cust_pay->payby;
@@ -139,7 +138,7 @@ my $view =
    ')';
 
 my $refund = '';
-my $refund_days = $conf->config('card_refund-days') || 120;
+my $refund_days = $opt{'card_refund-days'} || 120;
 if (    $cust_pay->closed !~ /^Y/i
      && $cust_pay->payby =~ /^(CARD|CHEK)$/
      && time-$cust_pay->_date < $refund_days*86400
@@ -179,7 +178,7 @@ if (    $cust_pay->closed !~ /^Y/i
 
 my $delete = '';
 if ( $cust_pay->closed !~ /^Y/i
-     && $conf->exists('deletepayments')
+     && $opt{'deletepayments'}
      && $curuser->access_right('Delete payment')
    )
 {

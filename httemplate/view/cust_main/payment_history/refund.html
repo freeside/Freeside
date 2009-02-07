@@ -5,7 +5,6 @@ by <% $cust_refund->otaker %><% $view %><% $delete %>
 
 my( $cust_refund, %opt ) = @_;
 
-my $conf = new FS::Conf;
 my $curuser = $FS::CurrentUser::CurrentUser;
 
 my $payby = $cust_refund->payby;
@@ -36,7 +35,7 @@ my $view =
 
 my $delete = '';
 if ( $cust_refund->closed !~ /^Y/i
-     && $conf->exists('deleterefunds')
+     && $opt{'deleterefunds'}
      && $curuser->access_right('Delete refund')
    )
 {

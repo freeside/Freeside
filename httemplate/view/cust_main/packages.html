@@ -145,10 +145,24 @@ Current packages
 %     $bgcolor = $bgcolor1;
 %   }
 %
+%   my $countrydefault = scalar($conf->config('countrydefault')) || 'US';
 %   my %iopt = (
-%     'bgcolor'  => $bgcolor,
-%     'cust_pkg' => $cust_pkg,
-%     'part_pkg' => $cust_pkg->part_pkg,
+%     'bgcolor'                  => $bgcolor,
+%     'cust_pkg'                 => $cust_pkg,
+%     'part_pkg'                 => $cust_pkg->part_pkg,
+%
+%     #for services.html and status.html
+%     'cust_pkg-display_times'   => $conf->exists('cust_pkg-display_times'),
+%
+%     #for location.html
+%     'countrydefault'           => $countrydefault,
+%     'statedefault'             => ( scalar($conf->config('statedefault'))
+%                                    || ($countrydefault eq 'US' ? 'CA' : '') ),
+%
+%     #for services.html
+%     'svc_external-skip_manual' => $conf->exists('svc_external-skip_manual'),
+%     'legacy_link'              => $conf->exists('legacy_link'),
+%
 %   );
 
     <!--pkgnum: <% $cust_pkg->pkgnum %>-->

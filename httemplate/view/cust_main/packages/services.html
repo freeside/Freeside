@@ -20,7 +20,7 @@
       <TR>
         <TD ALIGN="right" COLSPAN="3" VALIGN="top" STYLE="padding-bottom:1px;padding-top:0px"><FONT SIZE="-2" COLOR="#FFD000">
 
-            <% $cust_svc->overlimit ? "Overlimit: ". time2str('%b %o %Y' . ($conf->exists('cust_pkg-display_times') ? ' %l:%M %P' : ''), $cust_svc->overlimit) : '' %>
+            <% $cust_svc->overlimit ? "Overlimit: ". time2str('%b %o %Y' . ($opt{'cust_pkg-display_times'} ? ' %l:%M %P' : ''), $cust_svc->overlimit) : '' %>
           </FONT></TD>
       </TR>
 
@@ -55,7 +55,7 @@
 
       <TR>
         <TD COLSPAN=3 ALIGN="center" STYLE="padding-bottom:4px;padding-top:0px">
-          <B><% svc_provision_link($cust_pkg, $part_svc, $conf, $curuser) %></B>
+          <B><% svc_provision_link($cust_pkg, $part_svc, \%opt, $curuser) %></B>
         </TD>
       </TR>
 
@@ -74,17 +74,16 @@ my $bgcolor  = $opt{'bgcolor'};
 my $cust_pkg = $opt{'cust_pkg'};
 my $part_pkg = $opt{'part_pkg'};
 my $curuser  = $FS::CurrentUser::CurrentUser;
-my $conf     = new FS::Conf;
 
 sub svc_provision_link {
-  my ($cust_pkg, $part_svc, $conf, $curuser) = @_;
+  my ($cust_pkg, $part_svc, $opt, $curuser) = @_;
   ( my $svc_nbsp = $part_svc->svc ) =~ s/\s+/&nbsp;/g;
   my $num_avail = $part_svc->num_avail;
   my $pkgnum_svcpart = "pkgnum=". $cust_pkg->pkgnum. ';'.
                        "svcpart=". $part_svc->svcpart;
   my $url;
   if ( $part_svc->svcdb eq 'svc_external' #could be generalized
-       && $conf->exists('svc_external-skip_manual')
+       && $opt->{'svc_external-skip_manual'}
   ) {
     $url = "${p}edit/process/". $part_svc->svcdb. ".cgi?$pkgnum_svcpart";
   } else {
@@ -99,7 +98,7 @@ sub svc_provision_link {
 
   my $link = qq!<A CLASS="provision" HREF="$url">!.
              "Provision&nbsp;$svc_nbsp&nbsp;($num_avail)</A>";
-  if ( $conf->exists('legacy_link')
+  if ( $opt->{'legacy_link'}
        && $curuser->access_right('View/link unlinked services')
      )
   {

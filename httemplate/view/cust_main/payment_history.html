@@ -157,7 +157,7 @@
 <TR>
   <TH CLASS="grid" BGCOLOR="#cccccc">Date</TH>
   <TH CLASS="grid" BGCOLOR="#cccccc">Description</TH>
-  <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>Charge</FONT></TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>Invoice</FONT></TH>
   <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>Payment</FONT></TH>
   <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>In-house<BR>Credit</FONT></TH>
   <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>Refund</FONT></TH>
@@ -344,11 +344,19 @@ my %status = (
 #get payment history
 my @history = ();
 
+my %opt =
+  ( map { $_ => scalar($conf->config($_)) }
+        qw( card_refund-days )
+  ),
+  ( map { $_ => $conf->exists($_) } 
+        qw( deletepayments deleterefunds )
+  );
+
 #invoices
 foreach my $cust_bill ($cust_main->cust_bill) {
   push @history, {
     'date'   => $cust_bill->_date,
-    'desc'   => include('payment_history/invoice.html', $cust_bill),
+    'desc'   => include('payment_history/invoice.html', $cust_bill, %opt ),
     'charge' => $cust_bill->charged,
   };
 }
@@ -357,7 +365,7 @@ foreach my $cust_bill ($cust_main->cust_bill) {
 foreach my $cust_pay ($cust_main->cust_pay) {
   push @history, {
     'date'    => $cust_pay->_date,
-    'desc'    => include('payment_history/payment.html', $cust_pay),
+    'desc'    => include('payment_history/payment.html', $cust_pay, %opt ),
     'payment' => $cust_pay->paid,
     #'target'  => $target, #XXX
   };
