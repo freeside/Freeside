@@ -1,25 +1,6 @@
 #!/usr/bin/perl -w
 
 use strict;
-use WWW::Mediawiki::Client;
-#sub WWW::Mediawiki::Client::pagename_to_url {
-#    my ($self, $name, $action) = @_;
-#    WWW::Mediawiki::Client::URLConstructionException->throw(
-#            error => 'No action supplied.',
-#        ) unless $action;
-#    WWW::Mediawiki::Client::URLConstructionException->throw(
-#            error => "Page name $name ends with '.wiki'.",
-#        ) if $name =~ /.wiki$/;
-#    my $char = $self->space_substitute;
-#    $name =~ s/ /$char/;
-#    my $lang = $self->language_code;
-#    my $host = $self->host;
-#    $host =~ s/__LANG__/$lang/g;
-#    my $wiki_path = $self->wiki_path;
-#    $wiki_path =~ s/__LANG__/$lang/g;
-#    my $protocol = $self->protocol;
-#    return "$protocol://$host/$wiki_path?" . ACTION . "=$action&" . TITLE . "=$name" . '&wpRecreate=1';
-#}
 
 my $mw_username = 'ivan';
 chomp( my $mw_password = `cat .mw-password` );
@@ -58,6 +39,8 @@ foreach my $file (
   -e "$file.pod" or system("cp $file $file.pod");
 }
 
+#just for filename_to_pagename for now
+use WWW::Mediawiki::Client;
 my $mvs = WWW::Mediawiki::Client->new(
             'host'           => 'www.freeside.biz',
             'wiki_path'      => 'mediawiki/index.php',
@@ -65,8 +48,22 @@ my $mvs = WWW::Mediawiki::Client->new(
             'password'       => $mw_password,
             #'commit_message' => 'import from POD'
           );
+#$mvs->do_login;
 
-$mvs->do_login;
+use MediaWiki;
+
+my $c = MediaWiki->new;
+# $is_ok = $c->setup("config.ini");
+$c->setup({
+  'bot' => { 'user' => $mw_username, 'pass' => $mw_password },
+  'wiki' => {
+    'host' => 'www.freeside.biz',
+    'path' => 'mediawiki',
+  }
+}) or die "Mediawiki->setup failed";
+
+#Also, the 'wiki' section may specify the 'ssl' key (boolean 0/1) if the server uses an SSL connection. Section 'tmp' and key 'msgcache' specify path to the MediaWiki messages cache.
+#Options 'has_query' and 'has_filepath' in 'wiki' section enable experimental optimized interfaces. Set has_query to 1 if there is query.php extension (this should reduce traffic usage and servers load). Set has_filepath to 1 if there is Special:Filepath page in target wiki (affects only filepath() and download() functions).
 
 my @files;
 if ( @ARGV ) {
@@ -110,20 +107,21 @@ foreach my $file (@files) {
     next;
   };
 
-  $mvs->do_update("$html/$name.wiki");
+#  $mvs->do_update("$html/$name.wiki");
 
+
+  my $text = '';
   open(RAW, "<$html/$name.rawwiki") or die $!;
-  open(WIKI,">$html/$name.wiki"   ) or die $!;
   while (<RAW>) {
     s/\[\[([^#p][^\]]*)\]\]/"[[$html\/". w_e($1). "|$1]]"/ge;
-    print WIKI $_;
+    $text .= $_;
   }
   close RAW;
-  close WIKI;
 
-  print "  uploading to ". $mvs->filename_to_pagename("$html/$name.wiki"). "\n";
-  $mvs->commit_message( 'import from POD' );
-  $mvs->do_commit("$html/$name.wiki");
+  my $pagename = $mvs->filename_to_pagename("$html/$name.wiki");
+  #print " uploading to $pagename\n";
+
+  $c->text( $pagename, $text );
 
 }
 
