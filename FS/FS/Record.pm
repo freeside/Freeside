@@ -2,7 +2,7 @@ package FS::Record;
 
 use strict;
 use vars qw( $AUTOLOAD @ISA @EXPORT_OK $DEBUG
-             $conf $me
+             $conf $conf_encryption $me
              %virtual_fields_cache
              $nowarn_identical $no_update_diff $no_check_foreign
            );
@@ -44,10 +44,13 @@ my $rsa_loaded;
 my $rsa_encrypt;
 my $rsa_decrypt;
 
+$conf = '';
+$conf_encryption = '';
 FS::UID->install_callback( sub {
   eval "use FS::Conf;";
   die $@ if $@;
   $conf = FS::Conf->new; 
+  $conf_encryption = $conf->exists('encryption');
   $File::CounterFile::DEFAULT_DIR = $conf->base_dir . "/counters.". datasrc;
 } );
 
@@ -403,10 +406,8 @@ sub qsearch {
 
     # Check for encrypted fields and decrypt them.
    ## only in the local copy, not the cached object
-    if ( $conf && $conf->exists('encryption') # $conf doesn't exist when doing
-                                              # the initial search for
-                                              # access_user
-         && eval 'defined(@FS::'. $table . '::encrypted_fields)') {
+    if ( $conf_encryption 
+         && eval 'defined(@FS::'. $table . '::encrypted_fields)' ) {
       foreach my $record (@return) {
         foreach my $field (eval '@FS::'. $table . '::encrypted_fields') {
           # Set it directly... This may cause a problem in the future...
