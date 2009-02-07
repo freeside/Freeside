@@ -59,7 +59,7 @@ $c->setup({
   'wiki' => {
     'host' => 'www.freeside.biz',
     'path' => 'mediawiki',
-    'has_query' => 1,
+    #'has_query' => 1,
 
   }
 }) or die "Mediawiki->setup failed";
