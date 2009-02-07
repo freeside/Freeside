@@ -59,11 +59,10 @@ $c->setup({
   'wiki' => {
     'host' => 'www.freeside.biz',
     'path' => 'mediawiki',
+    'has_query' => 1,
+
   }
 }) or die "Mediawiki->setup failed";
-
-#Also, the 'wiki' section may specify the 'ssl' key (boolean 0/1) if the server uses an SSL connection. Section 'tmp' and key 'msgcache' specify path to the MediaWiki messages cache.
-#Options 'has_query' and 'has_filepath' in 'wiki' section enable experimental optimized interfaces. Set has_query to 1 if there is query.php extension (this should reduce traffic usage and servers load). Set has_filepath to 1 if there is Special:Filepath page in target wiki (affects only filepath() and download() functions).
 
 my @files;
 if ( @ARGV ) {
