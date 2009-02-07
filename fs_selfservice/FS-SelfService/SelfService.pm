@@ -630,21 +630,7 @@ already provisioned for this specific cust_pkg.  Each has the following keys:
 
 =item label
 
-Array reference with three elements:
-
-=over 4
-
-=item
-
-Name of this service
-
-=item
-
-Meaningful user-specific identifier for the service (i.e. username, domain or mail alias)
-
-=item
-
-Table name of this service
+Array reference with three elements: The first element is the name of this service.  The second element is a meaningful user-specific identifier for the service (i.e. username, domain or mail alias).  The last element is the table name of this service.
 
 =back
 
@@ -755,8 +741,6 @@ Number of download bytes gained by recharge
 =item recharge_totalbytes
 
 Number of total bytes gained by recharge
-
-=back
 
 =back
 
