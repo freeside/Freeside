@@ -472,10 +472,14 @@ Array reference of all states in the current default country.
 Hash reference of card types; keys are card types, values are the exact strings
 passed to the process_payment function
 
-=item paybatch
+=cut
 
-Unique transaction identifier (prevents multiple charges), passed to the
-process_payment function
+#this doesn't actually work yet
+#
+#=item paybatch
+#
+#Unique transaction identifier (prevents multiple charges), passed to the
+#process_payment function
 
 =back
 
@@ -541,15 +545,19 @@ Card expiration month
 
 Card expiration year
 
-=item paybatch
+=cut
 
-Unique transaction identifier, returned from the payment_info function.
-Prevents multiple charges.
+#this doesn't actually work yet
+#
+#=item paybatch
+#
+#Unique transaction identifier, returned from the payment_info function.
+#Prevents multiple charges.
 
 =back
 
 Returns a hash reference with a single key, B<error>, empty on success, or an
-error message on errors
+error message on errors.
 
 =item process_payment_order_pkg
 
@@ -583,6 +591,10 @@ Returns a hash reference containing customer package information.  The hash refe
 =item custnum
 
 Customer number
+
+=item error
+
+Empty on success, or an error message on errors.
 
 =item cust_pkg HASHREF
 
@@ -640,23 +652,17 @@ Primary key for this service
 
 =item svcpart
 
-Service definition (part_pkg)
+Service definition (see L<FS::part_svc>)
 
 =item pkgnum
 
-Customer package (cust_pkg)
+Customer package (see L<FS::cust_pkg>)
 
 =item overlimit
 
 Blank if the service is not over limit, or the date the service exceeded its usage limit (as a UNIX timestamp).
 
 =back
-
-=back
-
-=item error
-
-Empty on success, or an error message on errors.
 
 =back
 
@@ -697,6 +703,8 @@ mail alias).
 =back
 
 Account (svc_acct) services also have the following keys:
+
+=over 4
 
 =item username
 
@@ -744,6 +752,8 @@ Number of total bytes gained by recharge
 
 =back
 
+=back
+
 =item order_pkg
 
 Orders a package for this customer.
@@ -758,13 +768,22 @@ Session identifier
 
 =item pkgpart
 
-pkgpart of package to order
+Package to order (see L<FS::part_pkg>).
 
 =item svcpart
 
-optional svcpart, required only if the package definition does not contain
-one svc_acct service definition with quantity 1 (it may contain others with
-quantity >1)
+Service to order (see L<FS::part_svc>).
+
+Normally optional; required only to provision a non-svc_acct service, or if the
+package definition does not contain one svc_acct service definition with
+quantity 1 (it may contain others with quantity >1).  A svcpart of "none" can
+also be specified to indicate that no initial service should be provisioned.
+
+=back
+
+Fields used when provisioning an svc_acct service:
+
+=over 4
 
 =item username
 
@@ -781,6 +800,48 @@ Optional security phrase
 =item popnum
 
 Optional Access number number
+
+=back
+
+Fields used when provisioning an svc_domain service:
+
+=over 4
+
+=item domain
+
+Domain
+
+=back
+
+Fields used when provisioning an svc_phone service:
+
+=over 4
+
+=item phonenum
+
+Phone number
+
+=item pin
+
+Voicemail PIN
+
+=item sip_password
+
+SIP password
+
+=back
+
+Fields used when provisioning an svc_external service:
+
+=over 4
+
+=item id
+
+External numeric ID.
+
+=item title
+
+External text title.
 
 =back
 
@@ -1578,7 +1639,11 @@ Takes as input a hashref or list of key/value pairs with the following keys:
 
 =item field
 
+Field name for the returned HTML fragment.
+
 =item svcpart
+
+Service definition (see L<FS::part_svc>)
 
 =back
 
@@ -1611,13 +1676,22 @@ Note: Resellers can also use the B<signup_info> and B<new_customer> functions
 with their active session, and the B<customer_info> and B<order_pkg> functions
 with their active session and an additional I<custnum> parameter.
 
+For the most part, development of the reseller web interface has been
+superceded by agent-virtualized access to the backend.
+
 =over 4
 
 =item agent_login
 
+Agent login
+
 =item agent_info
 
+Agent info
+
 =item agent_list_customers
+
+List agent's customers.
 
 =back
 

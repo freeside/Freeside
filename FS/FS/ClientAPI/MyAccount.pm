@@ -499,7 +499,7 @@ sub process_payment {
     'payinfo'  => $payinfo,
     'paydate'  => $p->{'year'}. '-'. $p->{'month'}. '-01',
     'payname'  => $payname,
-    'paybatch' => $paybatch,
+    'paybatch' => $paybatch, #this doesn't actually do anything
     'paycvv'   => $paycvv,
     map { $_ => $p->{$_} } @{ $payby2fields{$payby} }
   );
@@ -921,6 +921,7 @@ sub order_pkg {
     my %fields = (
       'svc_acct'     => [ qw( username domsvc _password sec_phrase popnum ) ],
       'svc_domain'   => [ qw( domain ) ],
+      'svc_phone'    => [ qw( phonenum pin sip_password ) ],
       'svc_external' => [ qw( id title ) ],
     );
   
