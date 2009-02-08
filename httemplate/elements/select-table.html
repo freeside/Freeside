@@ -24,6 +24,7 @@ Example:
     'extra_sql'        => '',
     'agent_virt'       => 0, #set true and make sure the result is JOINed to
                              #something with agentnum (usually cust_main)
+    'agent_null'       => 0, #set true to always show un-agented entries
     'agent_null_right' => '', #right to see un-agented entries
     #or
     'records'        => \@records, #instead of search params
@@ -120,7 +121,8 @@ if ( $opt{'agent_virt'} ) {
   $extra_sql .=
     ( $extra_sql =~ /WHERE/i || scalar(keys %$hashref ) ? ' AND ' : ' WHERE ' ).
     $FS::CurrentUser::CurrentUser->agentnums_sql(
-                                    'null_right' => $opt{'agent_null_right'}
+                                    'null'       => $opt{'agent_null'},
+                                    'null_right' => $opt{'agent_null_right'},
                                    );
 }
 

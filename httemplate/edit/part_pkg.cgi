@@ -1,12 +1,16 @@
 <% include( 'elements/edit.html',
-              'post_url'    => popurl(1).'process/part_pkg.cgi',
-              'name'        => "Package definition",
-              'table'       => 'part_pkg',
-              #'viewall_dir' => 'browse',
-              'viewall_url' => $p.'browse/part_pkg.cgi',
-              'html_init'   => include('/elements/init_overlib.html').
-                               $freq_changed,
-              'html_bottom' => $html_bottom,
+              'post_url'         => popurl(1).'process/part_pkg.cgi',
+              'name'             => "Package definition",
+              'table'            => 'part_pkg',
+
+              'agent_virt'       => 1,
+              'agent_null_right' => $edit_global,
+
+              #'viewall_dir'      => 'browse',
+              'viewall_url'      => $p.'browse/part_pkg.cgi',
+              'html_init'        => include('/elements/init_overlib.html').
+                                    $freq_changed,
+              'html_bottom'      => $html_bottom,
 
               'begin_callback'       => $begin_callback,
               'end_callback'         => $end_callback,
@@ -32,7 +36,7 @@
                             'disabled'         => 'Disable new orders',
                             'pay_weight'       => 'Payment weight',
                             'credit_weight'    => 'Credit weight',
-                            'agentnum'         => '',
+                            'agentnum'         => 'Agent',
                             'setup_fee'        => 'Setup fee',
                             'recur_fee'        => 'Recurring fee',
                             'bill_dst_pkgpart' => 'Include line item(s) from package',
@@ -57,6 +61,11 @@
                                 maxlength => 50,
                               },
                               {field=>'comment',  type=>'text', size=>40 }, #32
+                              { field         => 'agentnum',
+                                type          => 'select-agent',
+                                disable_empty => ! $acl_edit_global,
+                                empty_label   => '(global)',
+                              },
                               {field=>'classnum', type=>'select-pkg_class' },
                               {field=>'disabled', type=>$disabled_type, value=>'Y'},
 
@@ -125,8 +134,9 @@
 
                             { type => 'columnnext' },
 
-                              { field=>'agent_type',
-                                type => 'select-agent_types',
+                              { field    => 'agent_type',
+                                type     => 'select-agent_types',
+                                disabled => ! $acl_edit_global,
                                 curr_value_callback => sub {
                                   my($cgi, $object, $field) = @_;
                                   #in the other callbacks..?  hmm.
@@ -175,19 +185,22 @@
 
 my $curuser = $FS::CurrentUser::CurrentUser;
 
-my $edit_right = $curuser->access_right('Edit package definitions')
-              || $curuser->access_right('Edit global package definitions');
+my $edit_global = 'Edit global package definitions';
+my $acl_edit        = $curuser->access_right('Edit package definitions');
+my $acl_edit_global = $curuser->access_right($edit_global);
+
+my $acl_edit_either = $acl_edit || $acl_edit_global;
 
 my $begin_callback = sub {
   my( $cgi, $fields, $opt ) = @_;
   die "access denied"
-    unless $edit_right
+    unless $acl_edit_either
         || ( $cgi->param('pkgnum')
              && $curuser->access_right('Customize customer package')
            );
 };
 
-my $disabled_type = $edit_right ? 'checkbox' : 'hidden';
+my $disabled_type = $acl_edit_either ? 'checkbox' : 'hidden';
 
 my $conf = new FS::Conf;
 my $taxproducts = $conf->exists('enable_taxproducts');

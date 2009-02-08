@@ -46,6 +46,7 @@ if ( $cgi->param('active') ) {
 
 my $extra_sql = '';
 
+#false laziness w/elements/select-part_pkg.html
 my $agentnums = join(',', $curuser->agentnums);
 
 unless ( $acl_edit_global ) {
@@ -62,6 +63,7 @@ unless ( $acl_edit_global ) {
     )
   ";
 }
+#eofalse
 
 my $count_cust_pkg = "
   SELECT COUNT(*) FROM cust_pkg LEFT JOIN cust_main USING ( custnum )

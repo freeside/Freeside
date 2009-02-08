@@ -48,15 +48,20 @@ sub signup_info {
     my $agentnum2part_pkg = 
       {
         map {
-          my $href = $_->pkgpart_hashref;
-          $_->agentnum =>
+          my $agent = $_;
+          my $href = $agent->pkgpart_hashref;
+          $agent->agentnum =>
             [
               map { { 'payby'       => [ $_->payby ],
                       'freq_pretty' => $_->freq_pretty,
                       'options'     => { $_->options },
                       %{$_->hashref}
                   } }
-                grep { $_->svcpart($svc_x) && $href->{ $_->pkgpart } }
+                grep { $_->svcpart($svc_x)
+                       && ( $href->{ $_->pkgpart }
+                            || $_->agentnum == $agent->agentnum
+                          )
+                     }
                   qsearch( 'part_pkg', { 'disabled' => '' } )
             ];
         } qsearch('agent', { 'disabled' => '' })
@@ -73,12 +78,16 @@ sub signup_info {
                 };
     warn "label: ". Dumper($label). "\n" if $DEBUG > 2;
 
+    my @agent_fields = qw( agentnum agent );
+
     $signup_info_cache = {
       'cust_main_county' => [ map $_->hashref,
                                   qsearch('cust_main_county', {} )
                             ],
 
-      'agent' => [ map $_->hashref,
+      'agent' => [ map { my $agent = $_;
+                         map { $_ => $agent->get($_) } @agent_fields;
+                       }
                        qsearch('agent', { 'disabled' => '' } )
                  ],
 
@@ -122,6 +131,22 @@ sub signup_info {
 
       'signup_service' => $svc_x,
       'default_svcpart' => scalar($conf->config('signup_server-default_svcpart')),
+
+      'head'         => join("\n", $conf->config('selfservice-head') ),
+      'body_header'  => join("\n", $conf->config('selfservice-body_header') ),
+      'body_footer'  => join("\n", $conf->config('selfservice-body_footer') ),
+      'body_bgcolor' => scalar( $conf->config('selfservice-body_bgcolor') ),
+      'box_bgcolor'  => scalar( $conf->config('selfservice-box_bgcolor')  ),
+
+      'company_name'   => scalar($conf->config('company_name')),
+
+      #per-agent?
+      'agent_ship_address' => scalar($conf->exists('agent-ship_address')),
+
+      'no_company'        => scalar($conf->exists('signup-no_company')),
+      'require_phone'     => scalar($conf->exists('cust_main-require_phone')),
+      'recommend_daytime' => scalar($conf->exists('signup-recommend_daytime')),
+      'recommend_email'   => scalar($conf->exists('signup-recommend_email')),
 
     };
 
@@ -270,6 +295,19 @@ sub signup_info {
       ];
     warn "$me done setting agent-specific adv. source list\n" if $DEBUG > 1;
 
+    my $agent = qsearchs('agent', { 'agentnum' => $agentnum } );
+                           
+    $signup_info->{'agent_name'} = $agent->agent;
+
+    $signup_info->{'company_name'} = $conf->config('company_name', $agentnum);
+
+    if ( $signup_info->{'agent_ship_address'} && $agent->agent_custnum ) {
+      my $cust_main = $agent->agent_cust_main;
+      my $prefix = length($cust_main->ship_last) ? 'ship_' : '';
+      $signup_info->{"ship_$_"} = $cust_main->get("$prefix$_")
+        foreach qw( address1 city county state zip country );
+    }
+
   }
   # else {
   # delete $signup_info->{'part_pkg'};
@@ -380,6 +418,19 @@ sub new_customer {
     )
 
   } );
+
+  my $agent = qsearchs('agent', { 'agentnum' => $agentnum } );
+  if ( $conf->exists('agent_ship_address') && $agent->agent_custnum ) {
+    my $agent_cust_main = $agent->agent_cust_main;
+    my $prefix = length($agent_cust_main->ship_last) ? 'ship_' : '';
+    $cust_main->set("ship_$_", $agent_cust_main->get("$prefix$_") )
+      foreach qw( address1 city county state zip country );
+
+    $cust_main->set("ship_$_", $cust_main->get($_))
+      foreach qw( last first );
+
+  }
+
 
   return { 'error' => "Illegal payment type" }
     unless grep { $_ eq $packet->{'payby'} }

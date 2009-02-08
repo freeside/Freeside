@@ -1,11 +1,12 @@
 <% include( 'elements/process.html',
               #'debug'             => 1,
               'table'             => 'part_pkg',
+              'agent_virt'        => 1,
+              'agent_null_right'  => \@agent_null_right,
               'redirect'          => $redirect_callback,
               'viewall_dir'       => 'browse',
               'viewall_ext'       => 'cgi',
               'edit_ext'          => 'cgi',
-              #XXX usable with cloning? #'agent_null_right'  => 'Edit global package definitions',
               'precheck_callback' => $precheck_callback,
               'args_callback'     => $args_callback,
               'process_m2m'       => \@process_m2m,
@@ -13,12 +14,21 @@
 %>
 <%init>
 
+my $customizing = ( ! $cgi->param('pkgpart') && $cgi->param('pkgnum') );
+
 my $curuser = $FS::CurrentUser::CurrentUser;
+
+my $edit_global = 'Edit global package definitions';
+my $customize   = 'Customize customer package';
 
 die "access denied"
   unless $curuser->access_right('Edit package definitions')
-      || $curuser->access_right('Edit global package definitions')
-      || ( ! $cgi->param('pkgpart') && $cgi->param('pkgnum') && $curuser->access_right('Customize customer package') );
+      || $curuser->access_right($edit_global)
+      || ( $customizing && $curuser->access_right($customize) );
+
+my @agent_null_right = ( $edit_global );
+push @agent_null_right, $customize if $customizing;
+
 
 my $precheck_callback = sub {
   my( $cgi ) = @_;
@@ -41,7 +51,8 @@ my $precheck_callback = sub {
     unless scalar(@agents)
            || ( $cgi->param('clone') && $cgi->param('clone') =~ /^\d+$/ )
            || ( !$cgi->param('pkgpart') && $conf->exists('agent-defaultpkg') )
-           || $cgi->param('disabled');
+           || $cgi->param('disabled')
+           || $cgi->param('agentnum');
 
   return '';
 

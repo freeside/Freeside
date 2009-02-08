@@ -92,8 +92,8 @@ Example:
     'footer'      => [],
     
     #disabling things
-    'disable_download' => '', # set true to hide the CSV/Excel download links
-    'disable_total'    => '', # set true to hide the total"
+    'disable_download'  => '', # set true to hide the CSV/Excel download links
+    'disable_total'     => '', # set true to hide the total"
     'disable_maxselect' => '', # set true to disable record/page selection
     'disable_nonefound' => '', # set true to disable the "No matching Xs found"
                                # message
@@ -110,12 +110,17 @@ Example:
                                # header & fields need to be defined)
 
     #handling agent virtualization
-    'agent_virt' => 1, # set true if this search should be agent-virtualized
-    'agent_null_right' => 'Access Right', #opt. right to view global records
-    'agent_pos' => 3, #optional position (starting from 0) to insert
-                      #an Agent column 
-                      #(query needs to be a qsearch hashref and
-                      # header & fields need to be defined)
+    'agent_virt'            => 1, # set true if this search should be
+                                  # agent-virtualized
+    'agent_null_right'      => 'Access Right', # optional right to view global
+                                               # records
+    'agent_null_right_link' => 'Access Right'  # optional right to link to
+                                               # global records; defaults to
+                                               # same as agent_null_right
+    'agent_pos'             => 3, # optional position (starting from 0) to
+                                  # insert an Agent column (query needs to be a
+                                  # qsearch hashref and header & fields need to
+                                  # be defined)
 
     # link & display properties for fields
    
@@ -581,23 +586,33 @@ Example:
 %                       my $a = '';
 %                       if ( $links ) {
 %                         my $link = shift @$links;
-%                         $link = &{$link}($row)
-%                           if ref($link) eq 'CODE';
-%
 %                         my $onclick = shift @$onclicks;
-%                         $onclick = &{$onclick}($row)
-%                           if ref($onclick) eq 'CODE';
-%                         $onclick = qq( onClick="$onclick") if $onclick;
 %
-%                         if ( $link ) {
-%                           my( $url, $method ) = @{$link};
-%                           if ( ref($method) eq 'CODE' ) {
-%                             $a = $url. &{$method}($row);
-%                           } else {
-%                             $a = $url. $row->$method();
+%                         if (    ! $opt{'agent_virt'}
+%                              || ( $null_link && ! $row->agentnum )
+%                              || grep { $row->agentnum == $_ }
+%                                      @link_agentnums
+%                            ) {
+%        
+%                           $link = &{$link}($row)
+%                             if ref($link) eq 'CODE';
+%
+%                           $onclick = &{$onclick}($row)
+%                             if ref($onclick) eq 'CODE';
+%                           $onclick = qq( onClick="$onclick") if $onclick;
+%
+%                           if ( $link ) {
+%                             my( $url, $method ) = @{$link};
+%                             if ( ref($method) eq 'CODE' ) {
+%                               $a = $url. &{$method}($row);
+%                             } else {
+%                               $a = $url. $row->$method();
+%                             }
+%                             $a = qq(<A HREF="$a"$onclick>);
 %                           }
-%                           $a = qq(<A HREF="$a"$onclick>);
+%
 %                         }
+%
 %                       }
 %
 %                       my $font = '';
@@ -702,18 +717,25 @@ $opt{align} = [ map $align{$_}, split(//, $opt{align}) ],
 $opt{disable_download} = 0
   if $opt{disable_download} && $curuser->access_right('Configuration download');
 
+my @link_agentnums = ();
+my $null_link = '';
 if ( $opt{'agent_virt'} ) {
+
+  @link_agentnums = $curuser->agentnums;
+  $null_link = $curuser->access_right(    $opt{'agent_null_right_link'}
+                                       || $opt{'agent_null_right'}      );
 
   my $agentnums_sql = $curuser->agentnums_sql(
                         'null_right' => $opt{'agent_null_right'}
                       );
 
   $opt{'query'}{'extra_sql'} .=
-    ( $opt{'query'}       =~ /WHERE/i ? ' AND ' : ' WHERE ' ).
-    $agentnums_sql;
+    ( $opt{'query'}{'extra_sql'} =~ /WHERE/i || keys %{$opt{'query'}{'hashref'}}
+      ? ' AND '
+      : ' WHERE ' ). $agentnums_sql;
+
   $opt{'count_query'} .=
-    ( $opt{'count_query'} =~ /WHERE/i ? ' AND ' : ' WHERE ' ).
-    $agentnums_sql;
+    ( $opt{'count_query'} =~ /WHERE/i ? ' AND ' : ' WHERE ' ).  $agentnums_sql;
 
   if ( $opt{'agent_pos'} || $opt{'agent_pos'} eq '0'
        and scalar($curuser->agentnums) > 1           ) {

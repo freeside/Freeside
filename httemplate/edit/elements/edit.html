@@ -254,7 +254,7 @@ Example:
 %     'layer_values'  => $layer_values,
 %     'html_between'  => $f->{'html_between'},
 %
-%     #umm.
+%     #umm.  for select-agent_types at least
 %     'disabled'      => $f->{'disabled'},
 %   );
 %
@@ -641,7 +641,8 @@ if ( $cgi->param('error') ) {
     $value = $query;
   }
   $value =~ /^(\d+)$/ or die "unparsable $pkey";
-  $object = qsearchs({ %qsearch, 'hashref' => { $pkey => $1 } });
+  $object = qsearchs({ %qsearch, 'hashref' => { $pkey => $1 } })
+    or die "$pkey $1 not found in $table";
   
   warn "$table $pkey => $1"
     if $opt{'debug'};

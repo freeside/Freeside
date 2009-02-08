@@ -17,6 +17,8 @@ Example:
 
 <% include( '/elements/select-table.html',
               'table'          => 'part_pkg',
+              'agent_virt'     => 1,
+              'agent_null'     => 1,
               'name_col'       => 'pkg',
               'empty_label'    => 'Select package', #should this be the default?
               'label_callback' => sub { shift->pkg_comment },
@@ -30,5 +32,21 @@ my( %opt ) = @_;
 
 $opt{'records'} = delete $opt{'part_pkg'}
   if $opt{'part_pkg'};
+
+#false laziness w/browse/part_pkg.cgi
+my $agentnums = join(',', $FS::CurrentUser::CurrentUser->agentnums);
+
+$opt{'extra_sql'} .=
+  " AND ( agentnum IS NOT NULL
+          OR 0 < ( SELECT COUNT(*)
+                     FROM type_pkgs
+                       LEFT JOIN agent_type USING ( typenum )
+                       LEFT JOIN agent AS typeagent USING ( typenum )
+                     WHERE type_pkgs.pkgpart = part_pkg.pkgpart
+                       AND typeagent.agentnum IN ($agentnums)
+                 )
+        )
+  ";
+#eofalse
 
 </%init>
