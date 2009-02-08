@@ -7,6 +7,7 @@ use FS::Conf;
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::m2m_Common;
 use FS::option_Common;
+use FS::access_user_pref;
 use FS::access_usergroup;
 use FS::agent;
 
@@ -353,7 +354,9 @@ sub agentnums_sql {
 
   my $agentnum = $opt{'table'} ? $opt{'table'}.'.agentnum' : 'agentnum';
 
-  my @agentnums = map { "$agentnum = $_" } $self->agentnums;
+#  my @agentnums = map { "$agentnum = $_" } $self->agentnums;
+  my @agentnums = ();
+  push @agentnums, "$agentnum IN (". join(',', $self->agentnums). ')';
 
   push @agentnums, "$agentnum IS NULL"
     if $opt{'null'}
@@ -361,6 +364,7 @@ sub agentnums_sql {
 
   return ' 1 = 0 ' unless scalar(@agentnums);
   '( '. join( ' OR ', @agentnums ). ' )';
+
 }
 
 =item agentnum
@@ -396,25 +400,36 @@ sub agents {
   });
 }
 
-=item access_right
+=item access_right RIGHTNAME | LISTREF
 
-Given a right name, returns true if this user has this right (currently via
-group membership, eventually also via user overrides).
+Given a right name or a list reference of right names, returns true if this
+user has this right, or, for a list, one of the rights (currently via group
+membership, eventually also via user overrides).
 
 =cut
 
 sub access_right {
   my( $self, $rightname ) = @_;
 
+  $rightname = [ $rightname ] unless ref($rightname);
+
   #some caching of ACL requests for low-hanging fruit perf improvement
   #since we get a new $CurrentUser object each page view there shouldn't be any
   #issues with stickiness
   if ( $self->{_ACLcache} ) {
-    return $self->{_ACLcache}{$rightname}
-      if exists($self->{_ACLcache}{$rightname});
+
+    return grep $self->{_ACLcache}{$_}, @$rightname
+      unless grep !exists($self->{_ACLcache}{$_}), @$rightname;
+
   } else {
     $self->{_ACLcache} = {};
   }
+
+  my $has_right = ' ( '. join(' OR ',
+                                      map { 'rightname = '. dbh->quote($_) }
+                                          @$rightname
+                             ).
+                  ' ) ';
 
   my $sth = dbh->prepare("
     SELECT groupnum FROM access_usergroup
@@ -423,10 +438,10 @@ sub access_right {
                          ON ( access_group.groupnum = access_right.rightobjnum )
       WHERE usernum = ?
         AND righttype = 'FS::access_group'
-        AND rightname = ?
+        AND $has_right
       LIMIT 1
   ") or die dbh->errstr;
-  $sth->execute($self->usernum, $rightname) or die $sth->errstr;
+  $sth->execute($self->usernum) or die $sth->errstr;
   my $row = $sth->fetchrow_arrayref;
 
   #$row ? $row->[0] : '';

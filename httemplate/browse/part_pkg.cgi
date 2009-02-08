@@ -1,61 +1,93 @@
 <% include( 'elements/browse.html',
-                 'title'              => 'Package Definitions',
-                 'html_init'          => $html_init,
-                 'name'               => 'package definitions',
-                 'disableable'        => 1,
-                 'disabled_statuspos' => 3,
-                 'agent_virt'         => 1,
-                 'agent_null_right'   => 'Edit global package definitions',
-                 'agent_pos'          => 5,
-                 'query'              => { 'select'   => $select,
-                                           'table'    => 'part_pkg',
-                                           'hashref'  => {},
-                                           'order_by' => "ORDER BY $orderby",
-                                         },
-                 'count_query'        => $count_query,
-                 'header'             => \@header,
-                 'fields'             => \@fields,
-                 'links'              => \@links,
-                 'align'              => $align,
+                 'title'                 => 'Package Definitions',
+                 'html_init'             => $html_init,
+                 'name'                  => 'package definitions',
+                 'disableable'           => 1,
+                 'disabled_statuspos'    => 3,
+                 'agent_virt'            => 1,
+                 'agent_null_right'      => [ $edit, $edit_global ],
+                 'agent_null_right_link' => $edit_global,
+                 'agent_pos'             => 5,
+                 'query'                 => { 'select'    => $select,
+                                              'table'     => 'part_pkg',
+                                              'hashref'   => {},
+                                              'extra_sql' => $extra_sql,
+                                              'order_by'  => "ORDER BY $orderby"
+                                            },
+                 'count_query'           => $count_query,
+                 'header'                => \@header,
+                 'fields'                => \@fields,
+                 'links'                 => \@links,
+                 'align'                 => $align,
              )
 %>
 <%init>
 
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+my $edit        = 'Edit package definitions';
+my $edit_global = 'Edit global package definitions';
+my $acl_edit        = $curuser->access_right($edit);
+my $acl_edit_global = $curuser->access_right($edit_global);
+my $acl_config      = $curuser->access_right('Configuration'); #to edit services
+
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Edit package definitions')
-      || $FS::CurrentUser::CurrentUser->access_right('Edit global package definitions');
-
-my $select = '*';
-my $orderby = 'pkgpart';
-if ( $cgi->param('active') ) {
-
-  $orderby = 'num_active DESC';
-}
-  $select = "
-
-    *,
-
-    ( SELECT COUNT(*) FROM cust_pkg WHERE cust_pkg.pkgpart = part_pkg.pkgpart
-       AND ( cancel IS NULL OR cancel = 0 )
-       AND ( susp IS NULL OR susp = 0 )
-    ) AS num_active,
-
-    ( SELECT COUNT(*) FROM cust_pkg WHERE cust_pkg.pkgpart = part_pkg.pkgpart
-        AND ( cancel IS NULL OR cancel = 0 )
-        AND susp IS NOT NULL AND susp != 0
-    ) AS num_suspended,
-
-    ( SELECT COUNT(*) FROM cust_pkg WHERE cust_pkg.pkgpart = part_pkg.pkgpart
-        AND cancel IS NOT NULL AND cancel != 0
-    ) AS num_cancelled
-
-  ";
-
-#}
+  unless $acl_edit || $acl_edit_global;
 
 my $conf = new FS::Conf;
 my $taxclasses = $conf->exists('enable_taxclasses');
 my $money_char = $conf->config('money_char') || '$';
+
+my $select = '*';
+my $orderby = 'pkgpart';
+if ( $cgi->param('active') ) {
+  $orderby = 'num_active DESC';
+}
+
+my $extra_sql = '';
+
+my $agentnums = join(',', $curuser->agentnums);
+
+unless ( $acl_edit_global ) {
+  $extra_sql .= "
+    WHERE (
+      agentnum IS NOT NULL OR 0 < (
+        SELECT COUNT(*)
+          FROM type_pkgs
+            LEFT JOIN agent_type USING ( typenum )
+            LEFT JOIN agent AS typeagent USING ( typenum )
+          WHERE type_pkgs.pkgpart = part_pkg.pkgpart
+            AND typeagent.agentnum IN ($agentnums)
+      )
+    )
+  ";
+}
+
+my $count_cust_pkg = "
+  SELECT COUNT(*) FROM cust_pkg LEFT JOIN cust_main USING ( custnum )
+    WHERE cust_pkg.pkgpart = part_pkg.pkgpart
+      AND cust_main.agentnum IN ($agentnums)
+";
+
+$select = "
+
+  *,
+
+  ( $count_cust_pkg
+      AND ( cancel IS NULL OR cancel = 0 )
+      AND ( susp IS NULL OR susp = 0 )
+  ) AS num_active,
+
+  ( $count_cust_pkg
+      AND ( cancel IS NULL OR cancel = 0 )
+      AND susp IS NOT NULL AND susp != 0
+  ) AS num_suspended,
+
+  ( $count_cust_pkg
+      AND cancel IS NOT NULL AND cancel != 0
+  ) AS num_cancelled
+
+";
 
 my $html_init;
 #unless ( $cgi->param('active') ) {
@@ -270,8 +302,11 @@ push @fields,
                                {
                                  'data'  => $svc,
                                  'align' => 'left',
-                                 'link'  => $p. 'edit/part_svc.cgi?'.
-                                            $part_svc->svcpart,
+                                 'link'  => ( $acl_config
+                                                ? $p. 'edit/part_svc.cgi?'.
+                                                  $part_svc->svcpart
+                                                : ''
+                                            ),
                                },
                              ];
                            }
@@ -299,9 +334,6 @@ $align .= 'lrl'; #rr';
 
 # --------
 
-my $count_query = 'SELECT COUNT(*) FROM part_pkg WHERE '.
-                    $FS::CurrentUser::CurrentUser->agentnums_sql(
-                      'null_right' => 'Edit global package definitions',
-                    );
+my $count_query = "SELECT COUNT(*) FROM part_pkg $extra_sql";
 
 </%init>

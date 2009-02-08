@@ -568,22 +568,33 @@ function copyelement(from, to) {
 %
 %  #false laziness, copied from FS::cust_pkg::order
 %  my $pkgpart;
+%  my $agentnum = '';
 %  my @agents = $FS::CurrentUser::CurrentUser->agents;
 %  if ( scalar(@agents) == 1 ) {
 %    # $pkgpart->{PKGPART} is true iff $custnum may purchase PKGPART
 %    $pkgpart = $agents[0]->pkgpart_hashref;
+%    $agentnum = $agents[0]->agentnum;
 %  } else {
 %    #can't know (agent not chosen), so, allow all
+%    $agentnum = 'all';
 %    my %typenum;
 %    foreach my $agent ( @agents ) {
 %      next if $typenum{$agent->typenum}++;
-%      #fixed in 5.004_05 #$pkgpart->{$_}++ foreach keys %{ $agent->pkgpart_hashref }
-%      foreach ( keys %{ $agent->pkgpart_hashref } ) { $pkgpart->{$_}++; } #5.004_04 workaround
+%      $pkgpart->{$_}++ foreach keys %{ $agent->pkgpart_hashref }
 %    }
 %  }
 %  #eslaf
 %
-%  my @part_pkg = grep { $_->svcpart('svc_acct') && $pkgpart->{ $_->pkgpart } }
+%  my @part_pkg = grep { $_->svcpart('svc_acct')
+%                        && ( $pkgpart->{ $_->pkgpart } 
+%                             || $agentnum eq 'all'
+%                             || ( $agentnum ne 'all'
+%                                  && $agentnum
+%                                  && $_->agentnum
+%                                  && $_->agentnum == $agentnum
+%                                )
+%                           )
+%                      }
 %    qsearch( 'part_pkg', { 'disabled' => '' }, '', 'ORDER BY pkg' ); # case?
 %
 %  if ( @part_pkg ) {

@@ -14,7 +14,6 @@ use FS::cust_svc;
 use FS::part_pkg;
 use FS::cust_main;
 use FS::cust_location;
-use FS::type_pkgs;
 use FS::pkg_svc;
 use FS::cust_bill_pkg;
 use FS::cust_pkg_detail;
