@@ -332,9 +332,11 @@ sub cust_sql_fields {
 
   cust_header(@_);
   #inefficientish, but tiny lists and only run once per page
+
+  my @add_fields = qw( address1 address2 city state zip daytime night fax );
   push @fields,
     grep { my $field = $_; grep { $_ eq $field } @cust_fields }
-         qw( address1 address2 city state zip daytime night fax payby );
+         ( @add_fields, ( map "ship_$_", @add_fields ), 'payby' );
 
   my @extra_fields = ();
   if (grep { $_ eq 'current_balance' } @cust_fields) {
