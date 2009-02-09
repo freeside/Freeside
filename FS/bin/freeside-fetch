@@ -35,6 +35,7 @@ foreach my $employee (@employees) {
   };
 
   my $ua = new LWP::UserAgent;
+  $ua->timeout(1800); #30m, some reports can take a while
   $ua->agent("FreesideFetcher/0.1 " . $ua->agent);
 
   my $req = new HTTP::Request GET => $url;
