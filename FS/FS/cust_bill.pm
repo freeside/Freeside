@@ -1637,7 +1637,6 @@ L<Time::Local> and L<Date::Parse> for conversion functions.
 =cut
 
 sub print_latex {
-
   my( $self, $today, $template ) = @_;
 
   my %params = ( 'format' => 'latex' );
@@ -1653,11 +1652,13 @@ sub print_latex {
                            UNLINK   => 0,
                          ) or die "can't open temp file: $!\n";
 
-  if ($template && $conf->exists("logo_${template}.eps")) {
-    print $lh $conf->config_binary("logo_${template}.eps")
+  my $agentnum = $self->cust_main->agentnum;
+
+  if ( $template && $conf->exists("logo_${template}.eps", $agentnum) ) {
+    print $lh $conf->config_binary("logo_${template}.eps", $agentnum)
       or die "can't write temp file: $!\n";
-  }else{
-    print $lh $conf->config_binary('logo.eps')
+  } else {
+    print $lh $conf->config_binary('logo.eps', $agentnum)
       or die "can't write temp file: $!\n";
   }
   close $lh;

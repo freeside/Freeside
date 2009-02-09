@@ -44,13 +44,25 @@ Setting <b><% $key %></b>
 
   <font color="#ff0000">no type</font>
 
+%   } elsif ( $type eq 'image' ) { 
+
+  <% $conf->exists($key, $agentnum)
+       ? 'Current image<br>'.
+         '<img src="config-image.cgi?key='.      $key.
+                                   ';agentnum='. $agentnum. '"><br>'
+       : ''
+  %>
+
+  <BR>
+  New image filename <input type="file" name="<% "$key$n" %>">
+
 %   } elsif ( $type eq 'binary' ) { 
 
   Filename <input type="file" name="<% "$key$n" %>">
 
 %   } elsif ( $type eq 'textarea' ) { 
 
-  <textarea name="<% "$key$n" %>" rows=12 cols=78 wrap="off"><% join("\n", $conf->config($key, $agentnum)) %></textarea>
+  <textarea name="<% "$key$n" %>" rows=12 cols=78 wrap="off"><% join("\n", $conf->config($key, $agentnum)) |h %></textarea>
 
 %   } elsif ( $type eq 'checkbox' ) { 
 
@@ -259,7 +271,7 @@ Setting <b><% $key %></b>
 
 %   } else {
 
-  <font color="#ff0000">unknown type $type</font>
+  <font color="#ff0000">unknown type <% $type %></font>
 
 %   }
 % $n++;

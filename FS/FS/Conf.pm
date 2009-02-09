@@ -108,7 +108,11 @@ sub config {
   my $self = shift;
   return $self->_usecompat('config', @_) if use_confcompat;
 
-  my($name,$agentnum)=@_;
+  my($name, $agentnum)=@_;
+
+  carp "FS::Conf->config($name, $agentnum) called"
+    if $DEBUG > 1;
+
   my $cv = $self->_config($name, $agentnum) or return;
 
   if ( wantarray ) {
@@ -146,7 +150,11 @@ sub exists {
   my $self = shift;
   return $self->_usecompat('exists', @_) if use_confcompat;
 
-  my($name,$agentnum)=@_;
+  my($name, $agentnum)=@_;
+
+  carp "FS::Conf->exists($name, $agentnum) called"
+    if $DEBUG > 1;
+
   defined($self->_config($name, $agentnum));
 }
 
@@ -556,6 +564,7 @@ worry that config_items is freeside-specific and icky.
     'section'     => 'billing',
     'description' => 'Template file for billing method expiration alerts.  See the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:1.7:Documentation:Administration#Credit_cards_and_Electronic_checks">billing documentation</a> for details.',
     'type'        => 'textarea',
+    'per-agent'   => 1,
   },
 
   {
@@ -1823,7 +1832,7 @@ worry that config_items is freeside-specific and icky.
     'section'     => 'required',
     'description' => 'Your company name',
     'type'        => 'text',
-    'per_agent'   => 1,
+    'per_agent'   => 1, #XXX just FS/FS/ClientAPI/Signup.pm
   },
 
   {
@@ -2270,15 +2279,18 @@ worry that config_items is freeside-specific and icky.
   {
     'key'         => 'logo.png',
     'section'     => 'billing',  #? 
-    'description' => 'An image to include in some types of invoices',
-    'type'        => 'binary',
+    'description' => 'Company logo for HTML invoices and the backoffice interface, in PNG format.  Suggested size somewhere near 92x62.',
+    'type'        => 'image',
+    'per_agent'   => 1, #XXX just view/logo.cgi, which is for the global
+                        #old-style editor anyway...?
   },
 
   {
     'key'         => 'logo.eps',
     'section'     => 'billing',  #? 
-    'description' => 'An image to include in some types of invoices',
+    'description' => 'Company logo for printed and PDF invoices, in EPS format.',
     'type'        => 'binary',
+    'per_agent'   => 1, #XXX as above, kinda
   },
 
   {

@@ -1,4 +1,4 @@
-<% $conf->config_binary("logo$templatename.png") %>
+<% $conf->config_binary("logo$templatename.png", $agentnum) %>
 <%init>
 
 die "access denied"
@@ -7,9 +7,19 @@ die "access denied"
 
 my $conf = new FS::Conf;
 
-my($query) = $cgi->keywords;
-$query =~ /^([^\.\/]*)$/;
-my $templatename = $1;
+my $templatename;
+my $agentnum = '';
+if ( $cgi->param('invnum') ) {
+  $templatename = $cgi->param('templatename');
+  my $cust_bill = qsearchs('cust_bill', { 'invnum' => $cgi->param('invnum') } )
+    or die 'unknown invnum';
+  $agentnum = $cust_bill->cust_main->agentnum;
+} else {
+  my($query) = $cgi->keywords;
+  $query =~ /^([^\.\/]*)$/ or die 'illegal query';
+  $templatename = $1;
+}
+
 if ( $templatename && $conf->exists("logo_$templatename.png") ) {
   $templatename = "_$templatename";
 } else {

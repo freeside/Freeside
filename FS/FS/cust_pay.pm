@@ -220,7 +220,8 @@ sub insert {
       $payby =~ s/^CHEK$/Electronic check/;
 
       $error = send_email(
-        'from'    => $conf->config('invoice_from'), #??? well as good as any
+        'from'    => $conf->config('invoice_from', $self->cust_main->agentnum),
+                                   #invoice_from??? well as good as any
         'to'      => \@invoicing_list,
         'subject' => 'Payment receipt',
         'body'    => [ $receipt_template->fill_in( HASH => {
@@ -344,7 +345,8 @@ sub delete {
     my $cust_main = $self->cust_main;
 
     my $error = send_email(
-      'from'    => $conf->config('invoice_from'), #??? well as good as any
+      'from'    => $conf->config('invoice_from', $self->cust_main->agentnum),
+                                 #invoice_from??? well as good as any
       'to'      => $conf->config('deletepayments'),
       'subject' => 'FREESIDE NOTIFICATION: Payment deleted',
       'body'    => [

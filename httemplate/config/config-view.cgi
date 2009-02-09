@@ -1,10 +1,4 @@
-<% include("/elements/header.html",
-     $title,
-     menubar(
-       'View all agents' => $p.'browse/agent.cgi',
-     )
-   )
-%>
+<% include("/elements/header.html", $title, menubar(@menubar)) %>
 
 Click on a configuration value to change it.
 <BR><BR>
@@ -15,25 +9,20 @@ Click on a configuration value to change it.
   <FONT SIZE="+1" COLOR="#ff0000">CONFIGURATION NOT STORED IN DATABASE -- USING COMPATIBILITY MODE</FONT><BR><BR>
 %}
 
-% foreach my $section ( qw(required billing username password UI session
-%                            shell BIND
-%                           ),
-%                         '', 'deprecated') { 
+% foreach my $section (@sections) {
 
-  <A NAME="<% $section || 'unclassified' %>"></A>
-  <FONT SIZE="-2">
-% foreach my $nav_section ( qw(required billing username password UI session
-%                                  shell BIND
-%                                 ),
-%                               '', 'deprecated') { 
-% if ( $section eq $nav_section ) { 
+    <A NAME="<% $section || 'unclassified' %>"></A>
+    <FONT SIZE="-2">
 
-      [<A NAME="not<% $nav_section || 'unclassified' %>" style="background-color: #cccccc"><% ucfirst($nav_section || 'unclassified') %></A>]
-% } else { 
-
-      [<A HREF="#<% $nav_section || 'unclassified' %>"><% ucfirst($nav_section || 'unclassified') %></A>]
-% } 
-% } 
+%   foreach my $nav_section (@sections) {
+%
+%     if ( $section eq $nav_section ) { 
+        [<A NAME="not<% $nav_section || 'unclassified' %>" style="background-color: #cccccc"><% ucfirst($nav_section || 'unclassified') %></A>]
+%     } else { 
+        [<A HREF="#<% $nav_section || 'unclassified' %>"><% ucfirst($nav_section || 'unclassified') %></A>]
+%     } 
+%
+%   } 
 
   </FONT><BR>
   <TABLE BGCOLOR="#cccccc" BORDER=1 CELLSPACING=0 CELLPADDING=0 BORDERCOLOR="#999999">
@@ -42,7 +31,7 @@ Click on a configuration value to change it.
       <% ucfirst($section || 'unclassified') %> configuration options
     </th>
   </tr>
-% foreach my $i (grep $_->section eq $section, @config_items) { 
+% foreach my $i (@{ $section_items{$section} }) { 
 %   my @types = ref($i->type) ? @{$i->type} : ($i->type);
 %   my( $width, $height ) = ( 522, 336 );
 %   if ( grep $_ eq 'textarea', @types ) {
@@ -76,9 +65,22 @@ Click on a configuration value to change it.
             <tr>
               <td><font color="#ff0000">no type</font></td>
             </tr>
+
+%   } elsif (   $type eq 'image' ) {
+
+            <tr>
+
+              <% $conf->exists($i->key, $agentnum)
+                   ? '<img src="config-image.cgi?key='.      $i->key.
+                                               ';agentnum='. $agentnum. '">'
+                   : 'empty'
+              %>
+            </tr>
+
 %   } elsif (   $type eq 'binary' ) {
 
             <tr>
+
               <% $conf->exists($i->key, $agentnum)
                    ? qq!<a href="config-download.cgi?key=!. $i->key. ';agentnum='. $agentnum. qq!">download</a>!
                    : 'empty'
@@ -143,16 +145,15 @@ die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
 
 my $agentnum = '';
+my $title;
+my @menubar = ();
 if ($cgi->param('agentnum') =~ /^(\d+)$/) {
   $agentnum = $1;
-}
-
-my $title;
-if ($agentnum) {
   my $agent = qsearchs('agent', { 'agentnum' => $agentnum } );
   die "Agent $agentnum not found!" unless $agent;
 
-  $title = "Configuration for ". $agent->agent;
+  push @menubar, 'View all agents' => $p.'browse/agent.cgi';
+  $title = 'Agent Configuration for '. $agent->agent;
 } else {
   $title = 'Global Configuration';
 }
@@ -162,5 +163,15 @@ my $conf = new FS::Conf;
 my @config_items = grep { $agentnum ? $_->per_agent : 1 }
                    grep { $_->key != ~/^invoice_(html|latex|template)/ }
                         $conf->config_items; 
- 
+
+my @sections = qw(required billing username password UI session shell BIND );
+push @sections, '', 'deprecated';
+
+my %section_items = ();
+foreach my $section (@sections) {
+  $section_items{$section} = [ grep $_->section eq $section, @config_items ];
+}
+
+@sections = grep scalar( @{ $section_items{$_} } ), @sections;
+
 </%init>

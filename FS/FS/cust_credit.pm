@@ -229,7 +229,8 @@ sub delete {
     my $cust_main = $self->cust_main;
 
     my $error = send_email(
-      'from'    => $conf->config('invoice_from'), #??? well as good as any
+      'from'    => $conf->config('invoice_from', $self->cust_main->agentnum),
+                                 #invoice_from??? well as good as any
       'to'      => $conf->config('deletecredits'),
       'subject' => 'FREESIDE NOTIFICATION: Credit deleted',
       'body'    => [

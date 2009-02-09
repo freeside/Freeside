@@ -13,7 +13,7 @@ use FS::UID qw(adminsuidsetup);
 use FS::Record qw(qsearch);
 use FS::cust_main;
 
-use vars qw($smtpmachine @body);
+use vars qw($smtpmachine %agent_failure_body);
 
 #hush, perl!
 $FS::alerter::_template::first = "";
@@ -47,35 +47,12 @@ adminsuidsetup $user;
 # Get the needed configuration files
 my $conf = new FS::Conf;
 $smtpmachine = $conf->config('smtpmachine');
-$mail_sender = $conf->config('invoice_from')
-  if $conf->exists('invoice_from');
-$failure_recipient = $conf->config('invoice_from')
-  if $conf->exists('invoice_from');
-
 
 my(@customers)=qsearch('cust_main',{});
 if (scalar(@customers) == 0)
 {
   exit 1;
 }
-
-# Prepare for sending email
-
-$ENV{MAILADDRESS} = $mail_sender;
-my $header = new Mail::Header ( [
-  "From: Account Processor",
-  "To: $failure_recipient",
-  "Sender: $mail_sender",
-  "Reply-To: $mail_sender",
-  "Subject: Unnotified Billing Arrangement Expirations",
-] );
-
-my @alerter_template = $conf->config('alerter_template')
-  or die "cannot load config file alerter_template";
-
-my $alerter = new Text::Template (TYPE => 'ARRAY', SOURCE => [ map "$_\n", @alerter_template ])
-  or die "can't create new Text::Template object:  Text::Template::ERROR";
-$alerter->compile() or die "can't compile template:  Text::Template::ERROR";
 
 # Now I can start looping
 foreach my $customer (@customers)
@@ -110,7 +87,26 @@ foreach my $customer (@customers)
       ($expire_time < $_date + $panic_time &&
        $expire_time > $_date + $panic_time - $window_time)) {
 
+    # Prepare for sending email, now inside the customer loop so i can be agent
+    # virtualized
 
+    my $agentnum = $customer->agentnum;
+
+    $mail_sender = $conf->config('invoice_from', $agentnum )
+      if $conf->exists('invoice_from', $agentnum);
+    $failure_recipient = $conf->config('invoice_from', $agentnum)
+      if $conf->exists('invoice_from', $agentnum);
+
+    $ENV{MAILADDRESS} = $mail_sender;
+
+    my @alerter_template = $conf->config('alerter_template', $agentnum)
+      or die "cannot load config file alerter_template";
+
+    my $alerter = new Text::Template TYPE   => 'ARRAY',
+                                     SOURCE => [ map "$_\n", @alerter_template ]
+      or die "can't create new Text::Template object: $Text::Template::ERROR";
+
+    $alerter->compile() or die "can't compile template: $Text::Template::ERROR";
 
     my @packages = $customer->ncancelled_pkgs;
     if (scalar(@packages) != 0) {
@@ -138,9 +134,10 @@ foreach my $customer (@customers)
         }
         $FS::alerter::_template::expdate = $expire_time;
 
-        $FS::alerter::_template::company_name = $conf->config('company_name');
+        $FS::alerter::_template::company_name =
+          $conf->config('company_name', $agentnum);
         $FS::alerter::_template::company_address =
-          join("\n", $conf->config('company_address') ). "\n";
+          join("\n", $conf->config('company_address', $agentnum) ). "\n";
 
         my $message = new Mail::Internet (
           'Header' => $header,
@@ -152,23 +149,41 @@ foreach my $customer (@customers)
             or die "Can't send expiration email: $!";
 
       } elsif ( ! @invoicing_list || grep { $_ eq 'POST' } @invoicing_list ) { 
-        push @body, sprintf(qq{%5d %-32.32s %4s %10s %12s %12s},
-          $custnum,
-          $first . " " . $last . "   " . $company,
-          $payby,
-          $paydate,
-          $daytime,
-          $night);
+        push @{$agent_failure_body{$customer->agentnum}},
+          sprintf(qq{%5d %-32.32s %4s %10s %12s %12s},
+            $custnum,
+            $first . " " . $last . "   " . $company,
+            $payby,
+            $paydate,
+            $daytime,
+            $night
+          );
       }
     }
   }
 }
 
-# Now I need to send EMAIL
-if (scalar(@body)) {
+# Now I need to send failure EMAIL
+
+foreach my $agentnum ( keys %agent_failure_body ) {
+
+  $mail_sender = $conf->config('invoice_from', $agentnum )
+    if $conf->exists('invoice_from', $agentnum);
+  $failure_recipient = $conf->config('invoice_from', $agentnum)
+    if $conf->exists('invoice_from', $agentnum);
+
+  $ENV{MAILADDRESS} = $mail_sender;
+  my $header = new Mail::Header ( [
+    "From: Account Processor",
+    "To: $failure_recipient",
+    "Sender: $mail_sender",
+    "Reply-To: $mail_sender",
+    "Subject: Unnotified Billing Arrangement Expirations",
+  ] );
+
   my $message = new Mail::Internet (
     'Header' => $header,
-    'Body' => [ (@body) ],
+    'Body' => [ @{$agent_failure_body{$agentnum}} ],
   );
   $!=0;
   $message->smtpsend( Host => $smtpmachine )

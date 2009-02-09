@@ -10,10 +10,10 @@
 
     <% include('menu.html', 'freeside_baseurl' => $fsurl,
                             'position'         => $menu_position,
-              )
+              ) |n
     %>
 
-    <% include('init_overlib.html') %>
+    <% include('init_overlib.html') |n %>
 
     <SCRIPT TYPE="text/javascript">
       function clearhint_search_cust (what) {
@@ -37,20 +37,20 @@
       }
 
       function clearhint_search_ticket (what) {
-        if ( what.value == '(ticket # or subject string)' )
+        if ( what.value == '(ticket #, subject, email or fulltext:text)' )
           what.value = '';
       }
     </SCRIPT>
 
-    <% $head %>
+    <% $head |n %>
 
   </HEAD>
-  <BODY <% $menu_position eq 'left' ? qq( BACKGROUND="${fsurl}images/background-cheat.png" ) : ' BGCOLOR="#e8e8e8" ' %> <% $etc %> STYLE="margin-top:0; margin-bottom:0; margin-left:0; margin-right:0">
+  <BODY <% $menu_position eq 'left' ? qq( BACKGROUND="${fsurl}images/background-cheat.png" ) : ' BGCOLOR="#e8e8e8" ' %> <% $etc |n %> STYLE="margin-top:0; margin-bottom:0; margin-left:0; margin-right:0">
     <table width="100%" CELLPADDING=0 CELLSPACING=0 STYLE="padding-left:0; padding-right:4">
       <tr>
-        <td rowspan=2 BGCOLOR="#ffffff"><IMG BORDER=0 ALT="freeside" SRC="<%$fsurl%>images/small-logo.png"></td>
+        <td rowspan=2 BGCOLOR="#ffffff"><IMG BORDER=0 ALT="freeside" SRC="<%$fsurl%>view/REAL_logo.cgi"></td>
         <td align=left rowspan=2 BGCOLOR="#ffffff"> <!-- valign="top" -->
-          <font size=6><% $conf->config('company_name') || 'ExampleCo' %></font>
+          <font size=6><% $company_name || 'ExampleCo' %></font>
         </td>
         <td align=right valign=top BGCOLOR="#ffffff"><FONT SIZE="-1">Logged in as <b><% getotaker %>&nbsp;</b><br></FONT><FONT SIZE="-2"><a href="<%$fsurl%>pref/pref.html">Preferences</a>&nbsp;<BR></FONT>
         </td>
@@ -70,7 +70,7 @@
                                'height'      => 360,
                                'color'       => '#7e0079',
                                'scrolling'   => 'no',
-                            )
+                            ) |n
                  %>&nbsp;v<% $FS::VERSION %><BR>
                  <A HREF="<% $conf->config('support-key') ? "http://www.freeside.biz/mediawiki/index.php/Supported:Documentation" : "http://www.freeside.biz/mediawiki/index.php/Freeside:1.9:Documentation" %>" TARGET="_blank">Documentation</A><BR>
                 </FONT>
@@ -165,7 +165,7 @@ input.fsblackbuttonselected {
         </TD>
 
         <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right">
-% if ( $FS::CurrentUser::CurrentUser->access_right('List customers') ) {
+% if ( $curuser->access_right('List customers') ) {
           <FORM ACTION="<%$fsurl%>search/cust_main.cgi" METHOD="GET" STYLE="margin:0">
             <INPUT NAME="search_cust" TYPE="text" VALUE="(cust #, name, company or phone)" SIZE="28" onFocus="clearhint_search_cust(this);" onClick="clearhint_search_cust(this);" STYLE="vertical-align:bottom;text-align:right"><BR>
             <A HREF="<%$fsurl%>search/report_cust_main.html" STYLE="color: #ffffff; font-size: 70%">Advanced</A>
@@ -186,11 +186,11 @@ input.fsblackbuttonselected {
         </TD>
 
         <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right">
-% if ( $FS::CurrentUser::CurrentUser->access_right('View invoices') ) { 
+% if ( $curuser->access_right('View invoices') ) { 
 
             <FORM ACTION="<%$fsurl%>search/cust_bill.html" METHOD="GET" STYLE="margin:0;display:inline">
               <INPUT NAME="invnum" TYPE="text" VALUE="(inv #)" SIZE="4" onFocus="clearhint_search_invoice(this);" onClick="clearhint_search_invoice(this);" STYLE="vertical-align:bottom;text-align:right;margin-bottom:1px">
-%   if ( $FS::CurrentUser::CurrentUser->access_right('List invoices') ) { 
+%   if ( $curuser->access_right('List invoices') ) { 
 
                 <A HREF="<%$fsurl%>search/report_cust_bill.html" STYLE="color: #ffffff; font-size: 70%">Advanced</A>
 %   } 
@@ -212,7 +212,7 @@ input.fsblackbuttonselected {
         <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right" STYLE="padding-right:4px">
 % if ( $conf->config("ticket_system") ) { 
           <FORM ACTION="<% FS::TicketSystem->baseurl %>index.html" METHOD="GET" STYLE="margin:0">
-            <INPUT NAME="q" TYPE="text" VALUE="(ticket # or subject string)" onFocus="clearhint_search_ticket(this);" onClick="clearhint_search_ticket(this);" STYLE="vertical-align:bottom;text-align:right"><BR>
+            <INPUT NAME="q" TYPE="text" VALUE="(ticket #, subject, email or fulltext:text)" onFocus="clearhint_search_ticket(this);" onClick="clearhint_search_ticket(this);" STYLE="vertical-align:bottom;text-align:right"><BR>
             <A HREF="<% FS::TicketSystem->baseurl %>Search/Build.html" STYLE="color: #ffffff; font-size: 70%">Advanced</A>
             <INPUT TYPE="submit" VALUE="Search tickets" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:70%;padding-left:2px;padding-right:2px">
           </FORM>
@@ -259,16 +259,41 @@ input.fsblackbuttonselected {
             <% $title %>
           </FONT>
 
+% unless ( $nobr ) {
           <BR><BR>
+% }
+
           <% $menubar !~ /^\s*$/ ? "$menubar<BR><BR>" : '' %>
 <%init>
 
-my($title, $menubar) = ( shift, shift );
-my $etc = @_ ? shift : ''; #$etc is for things like onLoad= etc.
-my $head = @_ ? shift : ''; #$head is for things that go in the <HEAD> section
+my( $title, $menubar, $etc, $head ) = ( '', '', '', '' );
+my( $nobr ) = ( 0 );
+if ( ref($_[0]) ) {
+  my $opt = shift;
+  $title   = $opt->{title};
+  $menubar = $opt->{menubar};
+  $etc     = $opt->{etc};
+  $head    = $opt->{head};
+  $nobr    = $opt->{nobr};
+} else {
+  ($title, $menubar) = ( shift, shift );
+  $etc = @_ ? shift : ''; #$etc is for things like onLoad= etc.
+  $head = @_ ? shift : ''; #$head is for things that go in the <HEAD> section
+}
+
 my $conf = new FS::Conf;
 
-my $menu_position = $FS::CurrentUser::CurrentUser->option('menu_position')
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+my $menu_position = $curuser->option('menu_position')
                     || 'top'; #new default for 1.9
+
+my $company_name;
+my @agentnums = $curuser->agentnums;
+if ( scalar(@agentnums) == 1 ) {
+  $company_name = $conf->config('company_name', $agentnums[0] );
+} else {
+  $company_name = $conf->config('company_name');
+}
 
 </%init>

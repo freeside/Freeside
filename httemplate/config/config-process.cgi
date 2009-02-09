@@ -25,7 +25,7 @@ foreach my $type ( ref($i->type) ? @{$i->type} : $i->type ) {
     } else {
       $conf->delete($i->key, $agentnum);
     }
-  } elsif ( $type eq 'binary' ) {
+  } elsif ( $type eq 'binary' || $type eq 'image' ) {
     if ( defined($cgi->param($i->key.$n)) && $cgi->param($i->key.$n) ) {
       my $fh = $cgi->upload($i->key.$n);
       if (defined($fh)) {
@@ -94,7 +94,7 @@ $conf->delete($_, $agentnum) foreach @delete;
           <% $conf->config($i->key, $agentnum) |js_string %> + ': ' +
           <% &{ $i->option_sub }( $conf->config($i->key, $agentnum) ) |js_string %>;
 %     } else {
-        alert('unknown type <% $type %>');
+        //alert('unknown type <% $type %>');
         window.top.location.reload();
 %     }
 
