@@ -46,25 +46,11 @@ if ( $cgi->param('active') ) {
 
 my $extra_sql = '';
 
-#false laziness w/elements/select-part_pkg.html
-my $agentnums = join(',', $curuser->agentnums);
-
 unless ( $acl_edit_global ) {
-  $extra_sql .= "
-    WHERE (
-      agentnum IS NOT NULL OR 0 < (
-        SELECT COUNT(*)
-          FROM type_pkgs
-            LEFT JOIN agent_type USING ( typenum )
-            LEFT JOIN agent AS typeagent USING ( typenum )
-          WHERE type_pkgs.pkgpart = part_pkg.pkgpart
-            AND typeagent.agentnum IN ($agentnums)
-      )
-    )
-  ";
+  $extra_sql .= ' WHERE '.  FS::part_pkg->curuser_pkgs_sql;
 }
-#eofalse
 
+my $agentnums = join(',', $curuser->agentnums);
 my $count_cust_pkg = "
   SELECT COUNT(*) FROM cust_pkg LEFT JOIN cust_main USING ( custnum )
     WHERE cust_pkg.pkgpart = part_pkg.pkgpart
@@ -97,7 +83,12 @@ my $html_init;
     One or more service definitions are grouped together into a package 
     definition and given pricing information.  Customers purchase packages
     rather than purchase services directly.<BR><BR>
+    <FORM METHOD="POST" ACTION="${p}edit/part_pkg.cgi">
     <A HREF="${p}edit/part_pkg.cgi"><I>Add a new package definition</I></A>
+    or
+    !.include('/elements/select-part_pkg.html', 'element_name' => 'clone' ). qq!
+    <INPUT TYPE="submit" VALUE="Clone existing package">
+    </FORM>
     <BR><BR>
   !;
 #}

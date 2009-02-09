@@ -91,8 +91,12 @@ Example:
     'menubar'     => '', #menubar arrayref
 
     #agent virtualization
-    'agent_virt'       => 1,
-    'agent_null_right' => 'Access Right Name',
+    'agent_virt'            => 1,
+    'agent_null_right'      => 'Access Right Name',
+    'agent_clone_extra_sql' => '', #if provided, this overrides the extra_sql
+                                   #implementing agent virt, for clone
+                                   #operations.  i.e. pass "1=1" to allow
+                                   #cloning anything
 
     'viewall_dir' => '', #'search' or 'browse', defaults to 'search'
 
@@ -105,6 +109,8 @@ Example:
     ###
     # HTML callbacks
     ###
+
+    'body_etc' => '', # Additional BODY attributes, i.e. onLoad=""
 
     'html_init'   => '', #after the header/menubar
 
@@ -172,7 +178,8 @@ Example:
 
 <% include('/elements/header'. ( $opt{popup} ? '-popup' : '' ). '.html',
               $title,
-              include( '/elements/menubar.html', @menubar )
+              include( '/elements/menubar.html', @menubar ),
+              $opt{'body_etc'},
            )
 %>
 
@@ -619,6 +626,9 @@ if ( $cgi->param('error') ) {
   $mode = 'clone';
 
   $clone = $1;
+
+  $qsearch{'extra_sql'} = ' AND '. $opt{'agent_clone_extra_sql'}
+    if $opt{'agent_clone_extra_sql'};
 
   $object = qsearchs({ %qsearch, 'hashref' => { $pkey => $clone } });
 

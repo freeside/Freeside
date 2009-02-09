@@ -1,25 +1,28 @@
 <% include( 'elements/edit.html',
-              'post_url'         => popurl(1).'process/part_pkg.cgi',
-              'name'             => "Package definition",
-              'table'            => 'part_pkg',
+              'post_url'              => popurl(1).'process/part_pkg.cgi',
+              'name'                  => "Package definition",
+              'table'                 => 'part_pkg',
 
-              'agent_virt'       => 1,
-              'agent_null_right' => $edit_global,
+              'agent_virt'            => 1,
+              'agent_null_right'      => $edit_global,
+              'agent_clone_extra_sql' => FS::part_pkg->curuser_pkgs_sql,
 
-              #'viewall_dir'      => 'browse',
-              'viewall_url'      => $p.'browse/part_pkg.cgi',
-              'html_init'        => include('/elements/init_overlib.html').
-                                    $freq_changed,
-              'html_bottom'      => $html_bottom,
+              #'viewall_dir'           => 'browse',
+              'viewall_url'           => $p.'browse/part_pkg.cgi',
+              'html_init'             => include('/elements/init_overlib.html').
+                                         $javascript,
+              'html_bottom'           => $html_bottom,
+              'body_etc'              =>
+                'onLoad="agent_changed(document.edit_topform.agentnum)"',
 
-              'begin_callback'       => $begin_callback,
-              'end_callback'         => $end_callback,
-              'new_hashref_callback' => $new_hashref_callback,
-              'new_object_callback'  => $new_object_callback,
-              'new_callback'         => $new_callback,
-              'clone_callback'       => $clone_callback,
-              'edit_callback'        => $edit_callback,
-              'error_callback'       => $error_callback,
+              'begin_callback'        => $begin_callback,
+              'end_callback'          => $end_callback,
+              'new_hashref_callback'  => $new_hashref_callback,
+              'new_object_callback'   => $new_object_callback,
+              'new_callback'          => $new_callback,
+              'clone_callback'        => $clone_callback,
+              'edit_callback'         => $edit_callback,
+              'error_callback'        => $error_callback,
 
               'labels' => { 
                             'pkgpart'          => 'Package Definition',
@@ -65,6 +68,7 @@
                                 type          => 'select-agent',
                                 disable_empty => ! $acl_edit_global,
                                 empty_label   => '(global)',
+                                onchange      => 'agent_changed',
                               },
                               {field=>'classnum', type=>'select-pkg_class' },
                               {field=>'disabled', type=>$disabled_type, value=>'Y'},
@@ -230,7 +234,7 @@ my $error_callback = sub {
 
   (@agent_type) = $cgi->param('agent_type');
 
-  $opt->{action} = 'Custom' if $cgi->param('clone');
+  $opt->{action} = 'Custom' if $cgi->param('pkgnum');
 
   $recur_disabled = $cgi->param('freq') ? 0 : 1;
 
@@ -309,14 +313,21 @@ my $new_callback = sub {
 my $clone_callback = sub {
   my( $cgi, $object, $fields, $opt ) = @_;
 
-  $opt->{action} = 'Custom';
+  if ( $cgi->param('pkgnum') ) {
 
-  #my $part_pkg = $clone_part_pkg->clone;
-  #this is all clone did anyway
-  $object->comment( '(CUSTOM) '. $object->comment )
-    unless $object->comment =~ /^\(CUSTOM\) /;
+    my $cust_pkg = qsearchs('cust_pkg', { 'pkgnum' => $cgi->param('pkgnum') } );
+    $object->agentnum( $cust_pkg->cust_main->agentnum );
 
-  $object->disabled('Y');
+    $opt->{action} = 'Custom';
+
+    #my $part_pkg = $clone_part_pkg->clone;
+    #this is all clone did anyway
+    $object->comment( '(CUSTOM) '. $object->comment )
+      unless $object->comment =~ /^\(CUSTOM\) /;
+
+    $object->disabled('Y');
+
+  }
 
   %options = $object->options;
 
@@ -343,7 +354,7 @@ my $m2_error_callback_maker = sub {
   };
 };
 
-my $freq_changed = <<'END';
+my $javascript = <<'END';
   <SCRIPT TYPE="text/javascript">
 
     function freq_changed(what) {
@@ -355,6 +366,22 @@ my $freq_changed = <<'END';
       } else {
         what.form.recur_fee.disabled = false;
         what.form.recur_fee.style.backgroundColor = '#ffffff';
+      }
+
+    }
+
+    function agent_changed(what) {
+
+      var agentnum = what.options[what.selectedIndex].value;
+
+      if ( agentnum == 0 ) {
+        what.form.agent_type.disabled = false;
+        //what.form.agent_type.style.backgroundColor = '#ffffff';
+        what.form.agent_type.style.visibility = '';
+      } else {
+        what.form.agent_type.disabled = true;
+        //what.form.agent_type.style.backgroundColor = '#dddddd';
+        what.form.agent_type.style.visibility = 'hidden';
       }
 
     }

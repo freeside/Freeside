@@ -425,11 +425,7 @@ sub access_right {
     $self->{_ACLcache} = {};
   }
 
-  my $has_right = ' ( '. join(' OR ',
-                                      map { 'rightname = '. dbh->quote($_) }
-                                          @$rightname
-                             ).
-                  ' ) ';
+  my $has_right = ' rightname IN ('. join(',', map '?', @$rightname ). ') ';
 
   my $sth = dbh->prepare("
     SELECT groupnum FROM access_usergroup
@@ -441,7 +437,7 @@ sub access_right {
         AND $has_right
       LIMIT 1
   ") or die dbh->errstr;
-  $sth->execute($self->usernum) or die $sth->errstr;
+  $sth->execute($self->usernum, @$rightname) or die $sth->errstr;
   my $row = $sth->fetchrow_arrayref;
 
   #$row ? $row->[0] : '';

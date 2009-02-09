@@ -81,9 +81,7 @@ my $rights_sub = sub {
     '<TR><TH BGCOLOR="#dcdcdc">'. $_. '</TH></TR>'.
     '<TR><TD>'.
 
-     join('<BR>', grep { warn "$access_group->access_right($_): ".
-                              $access_group->access_right($_). "\n";
-                         $access_group->access_right($_); }
+     join('<BR>', grep { $access_group->access_right($_); }
                    map { ref($_) ? $_->{'rightname'} : $_; }
                        @{ $rights{$_} }
          ).

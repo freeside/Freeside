@@ -1100,7 +1100,45 @@ sub calc_remain { 0; }
 sub calc_cancel { 0; }
 sub calc_units  { 0; }
 
+=item format OPTION DATA
+
+Returns data formatted according to the function 'format' described
+in the plan info.  Returns DATA if no such function exists.
+
+=cut
+
+sub format {
+  my ($self, $option, $data) = (shift, shift, shift);
+  if (exists($plans{$self->plan}->{fields}->{$option}{format})) {
+    &{$plans{$self->plan}->{fields}->{$option}{format}}($data);
+  }else{
+    $data;
+  }
+}
+
+=item parse OPTION DATA
+
+Returns data parsed according to the function 'parse' described
+in the plan info.  Returns DATA if no such function exists.
+
+=cut
+
+sub parse {
+  my ($self, $option, $data) = (shift, shift, shift);
+  if (exists($plans{$self->plan}->{fields}->{$option}{parse})) {
+    &{$plans{$self->plan}->{fields}->{$option}{parse}}($data);
+  }else{
+    $data;
+  }
+}
+
 =back
+
+=cut
+
+=head1 CLASS METHODS
+
+=over 4
 
 =cut
 
@@ -1170,6 +1208,37 @@ sub _upgrade_data { # class method
 
 }
 
+=item curuser_pkgs_sql
+
+Returns an SQL fragment for searching for packages the current user can
+use, either via part_pkg.agentnum directly, or via agent type (see
+L<FS::type_pkgs>).
+
+=cut
+
+sub curuser_pkgs_sql {
+  #my($class) = shift;
+
+  my $agentnums = join(',', $FS::CurrentUser::CurrentUser->agentnums);
+
+  "
+    (
+      agentnum IS NOT NULL
+      OR
+      0 < ( SELECT COUNT(*)
+              FROM type_pkgs
+                LEFT JOIN agent_type USING ( typenum )
+                LEFT JOIN agent AS typeagent USING ( typenum )
+              WHERE type_pkgs.pkgpart = part_pkg.pkgpart
+                AND typeagent.agentnum IN ($agentnums)
+          )
+    )
+  ";
+
+}
+
+=back
+
 =head1 SUBROUTINES
 
 =over 4
@@ -1215,38 +1284,6 @@ tie %plans, 'Tie::IxHash',
 
 sub plan_info {
   \%plans;
-}
-
-=item format OPTION DATA
-
-Returns data formatted according to the function 'format' described
-in the plan info.  Returns DATA if no such function exists.
-
-=cut
-
-sub format {
-  my ($self, $option, $data) = (shift, shift, shift);
-  if (exists($plans{$self->plan}->{fields}->{$option}{format})) {
-    &{$plans{$self->plan}->{fields}->{$option}{format}}($data);
-  }else{
-    $data;
-  }
-}
-
-=item parse OPTION DATA
-
-Returns data parsed according to the function 'parse' described
-in the plan info.  Returns DATA if no such function exists.
-
-=cut
-
-sub parse {
-  my ($self, $option, $data) = (shift, shift, shift);
-  if (exists($plans{$self->plan}->{fields}->{$option}{parse})) {
-    &{$plans{$self->plan}->{fields}->{$option}{parse}}($data);
-  }else{
-    $data;
-  }
 }
 
 
