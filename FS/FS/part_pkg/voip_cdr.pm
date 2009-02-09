@@ -113,6 +113,12 @@ tie my %temporalities, 'Tie::IxHash',
     'use_cdrtypenum' => { 'name' => 'Do not charge for CDRs where the CDR Type is not set to: ',
                          },
 
+    'skip_dcontext' => { 'name' => 'Do not charge for CDRs where the dcontext is set to any of these (comma-separated) values:',
+                       },
+
+    'skip_dstchannel_prefix' => { 'name' => 'Do not charge for CDRs where the dstchannel starts with:',
+                                },
+
     'use_duration'   => { 'name' => 'Calculate usage based on the duration field instead of the billsec field',
                           'type' => 'checkbox',
                         },
@@ -170,6 +176,7 @@ tie my %temporalities, 'Tie::IxHash',
                        disable_tollfree
                        use_amaflags use_disposition
                        use_disposition_taqua use_carrierid use_cdrtypenum
+                       skip_dcontext skip_dstchannel_prefix
                        use_duration
                        411_rewrite
                        output_format summarize_usage usage_section
@@ -546,6 +553,8 @@ sub check_chargable {
     use_disposition_taqua
     use_carrierid
     use_cdrtypenum
+    skip_dcontext
+    skip_dstchannel_prefix;
   );
   foreach my $opt (grep !exists($flags{option_cache}->{$_}), @opt ) {
     $flags{option_cache}->{$opt} = $self->option($opt);
@@ -569,6 +578,15 @@ sub check_chargable {
   return "cdrtypenum != $opt{'use_cdrtypenum'}"
     if length($opt{'use_cdrtypenum'})
     && $cdr->cdrtypenum ne $opt{'use_cdrtypenum'}; #ne otherwise 0 matches ''
+
+  return "dcontext IN ( $opt{'skip_dcontext'} )"
+    if $opt{'skip_dcontext'} =~ /\S/
+    && grep { $cdr->dcontext eq $_ } split(/\s*,\s*/, $opt{'skip_dcontext'});
+
+  my $len = length($opt{'skip_dstchannel_prefix'});
+  return "dstchannel starts with $opt{'skip_dstchannel_prefix'}"
+    if $len
+    && substr($cdr->dstchannel, 0, $len) eq $opt{'skip_dstchannel_prefix'};
 
   #all right then, rate it
   '';
