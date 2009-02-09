@@ -237,6 +237,24 @@ sub cust_header {
     'Day phone'                => 'daytime', # XXX should use msgcat, but how?
     'Night phone'              => 'night',   # XXX should use msgcat, but how?
     'Fax number'               => 'fax',
+    '(bill) Address 1'         => 'address1',
+    '(bill) Address 2'         => 'address2',
+    '(bill) City'              => 'city',
+    '(bill) State'             => 'state',
+    '(bill) Zip'               => 'zip',
+    '(bill) Country'           => 'country_full',
+    '(bill) Day phone'         => 'daytime', # XXX should use msgcat, but how?
+    '(bill) Night phone'       => 'night',   # XXX should use msgcat, but how?
+    '(bill) Fax number'        => 'fax',
+    '(service) Address 1'      => 'ship_address1',
+    '(service) Address 2'      => 'ship_address2',
+    '(service) City'           => 'ship_city',
+    '(service) State'          => 'ship_state',
+    '(service) Zip'            => 'ship_zip',
+    '(service) Country'        => 'ship_country_full',
+    '(service) Day phone'      => 'ship_daytime', # XXX should use msgcat, how?
+    '(service) Night phone'    => 'ship_night',   # XXX should use msgcat, how?
+    '(service) Fax number'     => 'ship_fax',
     'Invoicing email(s)'       => 'invoicing_list_emailonly_scalar',
     'Payment Type'             => 'payby',
     'Current Balance'          => 'current_balance',
@@ -281,7 +299,7 @@ sub cust_header {
   }
 
   @cust_header = split(/ \| /, $cust_fields);
-  @cust_fields = map { $header2method{$_} } @cust_header;
+  @cust_fields = map { $header2method{$_} || $_ } @cust_header;
   @cust_colors = map { exists $header2colormethod{$_}
                          ? $header2colormethod{$_}
                          : ''
