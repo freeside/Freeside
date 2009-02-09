@@ -386,14 +386,13 @@ Unused
 
               <TR>
                 <TD> 
-                  <% $override->name %>
-                  <FONT SIZE=-1><A HREF="<%$p%>config/config-delete.cgi?<% $override->confnum %>">(delete)</A></FONT>
+                  <% $override->name %>&nbsp;<FONT SIZE=-1><A HREF="<%$p%>config/config-delete.cgi?<% $override->confnum %>">(delete)</A></FONT>
                 </TD>
               </TR>
 % } 
 
             <TR>
-              <TD><FONT SIZE=-1><A HREF="<%$p%>config/config-view.cgi?agentnum=<% $agent->agentnum %>">(add override)</A></FONT></TD>
+              <TD><FONT SIZE=-1><A HREF="<%$p%>config/config-view.cgi?agentnum=<% $agent->agentnum %>">(view/add/edit overrides)</A></FONT></TD>
             </TR>
           </TABLE>
         </TD>
