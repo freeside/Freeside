@@ -23,6 +23,7 @@
               'clone_callback'        => $clone_callback,
               'edit_callback'         => $edit_callback,
               'error_callback'        => $error_callback,
+              'field_callback'        => $field_callback,
 
               'labels' => { 
                             'pkgpart'          => 'Package Definition',
@@ -225,6 +226,7 @@ my %tax_override = ();
 
 my %taxproductnums = map { ($_->classnum => 1) }
                      qsearch('usage_class', { 'disabled' => '' });
+my @taxproductnums = ( qw( setup recur ), sort (keys %taxproductnums) );
 
 my %options = ();
 my $recur_disabled = 1;
@@ -546,7 +548,6 @@ my %usage_class = map { ($_->classnum => $_->classname) }
 $usage_class{setup} = 'Setup';
 $usage_class{recur} = 'Recurring';
 
-my @taxproductnums = ();
 my %taxproduct_fields = ();
 my $end_callback = sub {
   my( $cgi, $object, $fields, $opt ) = @_;
@@ -609,6 +610,23 @@ my $taxproduct_values = sub {
     map { ( $_ => { &{$routine}($_) } ) } ( '(default)', @taxproductnums );
   return({ @result });
   
+};
+
+my $field_callback = sub {
+  my ($cgi, $object, $fieldref) = @_;
+
+  my $field = $fieldref->{field};
+  if ($field eq 'taxproductnums') {
+    $fieldref->{value} = join(',', @taxproductnums);
+  } elsif ($field eq 'taxproduct_select') {
+    $fieldref->{options} = [ '(default)', @taxproductnums ];
+    $fieldref->{labels}  = { ( '(default)' => '(default)' ),
+                             map {( $_ => ($usage_class{$_} || $_) )}
+                               @taxproductnums
+                           };
+    $fieldref->{layer_fields} = \%taxproduct_fields;
+    $fieldref->{layer_values_callback} = $taxproduct_values;
+  }
 };
 
 </%init>
