@@ -1,21 +1,60 @@
 <% include( 'elements/search.html',
                'title' => $title,
                'name'  => 'call detail records',
+
                'query' => { 'table'     => 'cdr',
                             'hashref'   => $hashref,
 			    'extra_sql' => $qsearch,
 			    'order_by'  => 'ORDER BY calldate',
                           },
                'count_query' => $count_query,
-               'header' => [ fields('cdr') ], #XXX fill in some nice names
-               'fields' => [ fields('cdr') ], #XXX fill in some pretty-print
-                                              # processing, etc.
+               'header' => [
+                             '', # checkbox column
+                             fields('cdr'), #XXX fill in some nice names
+                           ],
+               'fields' => [
+                             sub {
+                               return '' unless $edit_data;
+                               $areboxes = 1;
+                               my $cdr = shift;
+                               my $acctid = $cdr->acctid;
+                               qq!<INPUT NAME="acctid$acctid" TYPE="checkbox" VALUE="1">!;
+                             },
+                             fields('cdr'), #XXX fill in some pretty-print
+                                            #processing, etc.
+                           ],
+
+               'html_form'   => qq!<FORM NAME="cdrForm" ACTION="$p/misc/cdr.cgi" METHOD="POST">!,
+               #false laziness w/queue.html
+               'html_foot' => sub {
+                                if ( $areboxes ) {
+                                  '<BR><INPUT TYPE="button" VALUE="select all" onClick="setAll(true)">'.
+                                  '<INPUT TYPE="button" VALUE="unselect all" onClick="setAll(false)">'.
+                                  qq!<BR><INPUT TYPE="submit" NAME="action" VALUE="reprocess selected" onClick="return confirm('Are you sure you want to reprocess the selected CDRs?')">!.
+                                  qq!<INPUT TYPE="submit" NAME="action" VALUE="delete selected" onClick="return confirm('Are you sure you want to delete the selected CDRs?')"><BR>!.
+                                  '<SCRIPT TYPE="text/javascript">'.
+                                  '  function setAll(setTo) { '.
+                                  '    theForm = document.cdrForm;'.
+                                  '    for (i=0,n=theForm.elements.length;i<n;i++)'.
+                                  '      if (theForm.elements[i].name.indexOf("jobnum") != -1)'.
+                                  '        theForm.elements[i].checked = setTo;'.
+                                  '  }'.
+                                  '</SCRIPT>';
+                                } else {
+                                  '';
+                                }
+                              },
+
              )
 %>
 <%init>
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('List rating data');
+
+my $edit_data = $FS::CurrentUser::CurrentUser->access_right('Edit rating data');
+
+my $areboxes = 0;
 
 my $title = 'Call Detail Records';
 my $hashref = {};
