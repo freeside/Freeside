@@ -1666,7 +1666,7 @@ sub tables_hashref {
         'vlan_profile', 'varchar', 'NULL', $char_d, '', '', 
       ],
       'primary_key' => 'svcnum',
-      'unique'      => [],
+      'unique'      => [ [ 'mac_addr' ] ],
       'index'       => [],
     },
 
