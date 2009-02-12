@@ -53,7 +53,7 @@ Example:
 
     var uploaded = document.getElementById('uploaded_files');
     var a = uploaded.value.split(',');
-    if (uploaded.value.split(',').length == <% $opt{num_files} %>){
+    if (success && uploaded.value.split(',').length == <% $opt{num_files} %>){
       process(); 
     }else{
       var p = document.getElementById('uploadError');
