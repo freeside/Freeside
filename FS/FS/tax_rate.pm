@@ -913,10 +913,12 @@ sub process_batch_import {
                                 UNLINK   => 0,     #meh
                               ) or die "can't open temp file: $!\n";
 
+      my $insert_pattern = ($format eq 'cch-update') ? qr/"I"\s*$/ : qr/I\s*$/;
+      my $delete_pattern = ($format eq 'cch-update') ? qr/"D"\s*$/ : qr/D\s*$/;
       while(<$fh>) {
         my $handle = '';
-        $handle = $ifh if $_ =~ /"I"\s*$/;
-        $handle = $dfh if $_ =~ /"D"\s*$/;
+        $handle = $ifh if $_ =~ /$insert_pattern/;
+        $handle = $dfh if $_ =~ /$delete_pattern/;
         unless ($handle) {
           $error = "bad input line: $_" unless $handle;
           last;

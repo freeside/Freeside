@@ -211,7 +211,7 @@ sub batch_import {
 
   } elsif ( $format eq 'cch-zip' || $format eq 'cch-update-zip' ) {
     @fields = qw( zip city county state postalcity countyfips countydef default geocode cityflag unique );
-    push @fields, 'actionflag' if $format eq 'cch-update';
+    push @fields, 'actionflag' if $format eq 'cch-update-zip';
 
     $imported++ if $format eq 'cch-update'; #empty file ok
     
