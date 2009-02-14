@@ -92,8 +92,7 @@ my $html_foot = qq(
   <INPUT TYPE="text" NAME="ip_gateway" SIZE="15">/<INPUT TYPE="text" NAME="ip_netmask" SIZE="2">
 );
 $html_foot .= include( '/elements/select-agent.html',
-                       'agent_virt'       => 1,
-                       'agent_null_right' => 'Broadband global configuration',
+                         'agent_null_right' => 'Broadband global configuration',
                      );
 $html_foot .= qq(
   <INPUT TYPE="submit" NAME="submit" VALUE="Add">

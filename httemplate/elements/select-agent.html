@@ -1,10 +1,11 @@
 <% include( '/elements/select-table.html',
-                 'table'       => 'agent',
-                 'name_col'    => 'agent',
-                 'value'       => $agentnum || '',
-                 'empty_label' => 'all',
-                 'hashref'     => { 'disabled' => '' },
-                 'order_by'    => ' ORDER BY agent',
+                 'table'         => 'agent',
+                 'name_col'      => 'agent',
+                 'value'         => $agentnum || '',
+                 'agent_virt'    => 1,
+                 'empty_label'   => 'all',
+                 'hashref'       => { 'disabled' => '' },
+                 'order_by'      => ' ORDER BY agent',
                  'disable_empty' => $disable_empty,
                  %opt,
              )
@@ -18,12 +19,13 @@ $opt{'records'} = delete $opt{'agents'}
   if $opt{'agents'};
 
 my $curuser = $FS::CurrentUser::CurrentUser;
-my $disable_empty = 1;
-if ( $opt{'agent_null_right'} &&
-     $curuser->access_right($opt{'agent_null_right'})
-   )
-{
-  $disable_empty--;
+my $disable_empty = 0;
+if ( $opt{'agent_null_right'} ) {
+  if ( $curuser->access_right($opt{'agent_null_right'}) ) {
+    $disable_empty = 0;
+  } else {
+    $disable_empty = 1;
+  }
 }
 
 </%init>

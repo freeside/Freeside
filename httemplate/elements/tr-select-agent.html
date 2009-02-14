@@ -26,15 +26,8 @@
 my %opt = @_;
 my $agentnum = $opt{'curr_value'} || $opt{'value'};
 
-my @agents;
-if ( $opt{'agents'} ) {
-  #@agents = @{ $opt{'agents'} };
-  #here is the agent virtualization
-  my $agentnums_href = $FS::CurrentUser::CurrentUser->agentnums_href;
-  @agents = grep $agentnums_href->{$_->agentnum}, @{ $opt{'agents'} };
-  delete $opt{'agents'};
-} else {
-  @agents = $FS::CurrentUser::CurrentUser->agents;
-}
+my @agents = $opt{'agents'}
+               ? @{ $opt{'agents'} }
+               : $FS::CurrentUser::CurrentUser->agents;
 
 </%init>
