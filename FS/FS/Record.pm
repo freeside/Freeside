@@ -248,6 +248,16 @@ fine in the common case where there are only two parameters:
 
 my %TYPE = (); #for debugging
 
+sub _is_fs_float {
+  my ($type, $value) = @_;
+  if ( ( $type =~ /(numeric)/i && $value =~ /^[+-]?\d+(\.\d+)?$/ ) ||
+       ( $type =~ /(real|float4)/i && $value =~ /[-+]?\d*\.?\d+([eE][-+]?\d+)?/)
+     ) {
+    return 1;
+  }
+  '';
+}
+
 sub qsearch {
   my($stable, $record, $select, $extra_sql, $order_by, $cache, $addl_from );
   my $debug = '';
@@ -318,11 +328,8 @@ sub qsearch {
       $TYPE = SQL_INTEGER;
 
     #DBD::Pg 1.49: Cannot bind ... unknown sql_type 6 with SQL_FLOAT
-    } elsif (    ( $type =~ /(numeric)/i     && $value =~ /^[+-]?\d+(\.\d+)?$/)
-              || ( $type =~ /(real|float4)/i
-                     && $value =~ /[-+]?\d*\.?\d+([eE][-+]?\d+)?/
-                 )
-            ) {
+    #fixed by DBD::Pg 2.11.8
+    } elsif ( _is_fs_float( $type, $value ) ) {
       $TYPE = SQL_DECIMAL;
     }
 
@@ -333,7 +340,13 @@ sub qsearch {
       warn "  bind_param $bind (for field $field), $value, TYPE $TYPE{$TYPE}\n";
     }
 
-    $sth->bind_param($bind++, $value, { TYPE => $TYPE } );
+    if ($TYPE eq SQL_DECIMAL) {
+      # these values are arbitrary; better (faster?) ones welcome
+      $sth->bind_param($bind++, $value*1.00001, { TYPE => $TYPE } );
+      $sth->bind_param($bind++, $value*.99999, { TYPE => $TYPE } );
+    }else{
+      $sth->bind_param($bind++, $value, { TYPE => $TYPE } );
+    }
 
   }
 
@@ -481,6 +494,9 @@ sub get_real_fields {
 
       my $op = '=';
       my $column = $_;
+      my $type = dbdef->table($table)->column($column)->type;
+      my $value = $record->{$column};
+      $value = $value->{'value'} if ref($value);
       if ( ref($record->{$_}) ) {
         $op = $record->{$_}{'op'} if $record->{$_}{'op'};
         #$op = 'LIKE' if $op =~ /^ILIKE$/i && driver_name ne 'Pg';
@@ -495,8 +511,7 @@ sub get_real_fields {
       if ( ! defined( $record->{$_} ) || $record->{$_} eq '' ) {
         if ( $op eq '=' ) {
           if ( driver_name eq 'Pg' ) {
-            my $type = dbdef->table($table)->column($column)->type;
-            if ( $type =~ /(int|(big)?serial)/i ) {
+            if ( $type =~ /(int|numeric|real|float4|(big)?serial)/i ) {
               qq-( $column IS NULL )-;
             } else {
               qq-( $column IS NULL OR $column = '' )-;
@@ -506,8 +521,7 @@ sub get_real_fields {
           }
         } elsif ( $op eq '!=' ) {
           if ( driver_name eq 'Pg' ) {
-            my $type = dbdef->table($table)->column($column)->type;
-            if ( $type =~ /(int|(big)?serial)/i ) {
+            if ( $type =~ /(int|numeric|real|float4|(big)?serial)/i ) {
               qq-( $column IS NOT NULL )-;
             } else {
               qq-( $column IS NOT NULL AND $column != '' )-;
@@ -522,6 +536,8 @@ sub get_real_fields {
             qq-( $column $op "" )-;
           }
         }
+      } elsif ( $op eq '=' && _is_fs_float( $type, $value ) ) {
+        ( "$column <= ?", "$column >= ?" );
       } else {
         "$column $op ?";
       }
