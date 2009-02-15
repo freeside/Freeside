@@ -564,7 +564,7 @@ sub batch_import {
     $date_format;
     push @column_lengths, qw( 10 1 1 8 8 5 8 8 8 1 2 2 30 8 8 10 2 8 2 1 2 2 );
     push @column_lengths, 1 if $format eq 'cch-update';
-    push @column_callbacks, $trim foreach (@columnlengths); # 5, 6, 15, 17 esp
+    push @column_callbacks, $trim foreach (@column_lengths); # 5, 6, 15, 17 esp
     $column_callbacks[8] = $date_format;
   }
   
