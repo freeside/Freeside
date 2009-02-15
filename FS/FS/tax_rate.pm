@@ -560,9 +560,12 @@ sub batch_import {
                             /^(\d{4})(\d{2})(\d{2})$/ && ($r="$1/$2/$3");
                             $r;
                           };
-    $column_callbacks[8] = $date_format;
+    my $trim = sub { my $r = shift; $r =~ s/^\s*//; $r =~ s/\s*$//; $r };
+    $date_format;
     push @column_lengths, qw( 10 1 1 8 8 5 8 8 8 1 2 2 30 8 8 10 2 8 2 1 2 2 );
     push @column_lengths, 1 if $format eq 'cch-update';
+    push @column_callbacks, $trim foreach (@columnlengths); # 5, 6, 15, 17 esp
+    $column_callbacks[8] = $date_format;
   }
   
   my $line;
