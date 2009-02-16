@@ -1,0 +1,59 @@
+#!/usr/bin/perl -w
+
+use strict;
+
+# this tool manipulates fixed length cch tax files by comparing the
+# update files in the $update_dir to the initial install files 
+# in the $init_dir
+#
+# it produces .DOIT files in $update_dir which are suitable for
+# syncing a database initialzed with the files in $init_dir to
+# the state represented by the files in $update_dir
+#
+# how one acquires update files from cch that overlap with initial
+# full install remains a mystery
+
+my $init_dir = "cchinit/";
+my $update_dir = "cchupdate/";
+
+foreach my $file (qw (CODE DETAIL PLUS4 GEOCODE TXMATRIX ZIP)) {
+   my $tfile = $update_dir. $file. "T";
+   $tfile = $update_dir. "TXMATRIT" if $tfile =~ /TXMATRIXT$/;
+   open FILE, "$tfile.TXT" or die "Can't open $tfile.TXT\n";
+   open INSERT, ">$tfile.INS" or die "Can't open $tfile.INS\n";
+   open DELETE, ">$tfile.DEL" or die "Can't open $tfile.DEL\n";
+   while(<FILE>){
+     chomp;
+     print INSERT "$_\n" if s/I$//;
+     print DELETE "$_\n" if s/D$//;
+   }
+   close FILE;
+   close INSERT;
+   close DELETE;
+   system "sort $tfile.INS > $tfile.INSSORT";
+   system "sort $tfile.DEL > $tfile.DELSORT";
+   system "sort $init_dir$file.txt > $tfile.ORGINSSORT";
+   system "comm -12 $tfile.INSSORT $tfile.ORGINSSORT > $tfile.PREINS";
+   system "comm -23 $tfile.INSSORT $tfile.ORGINSSORT > $tfile.2BEINS";
+   system "comm -23 $tfile.DELSORT $tfile.ORGINSSORT > $tfile.PREDEL";
+   system "comm -12 $tfile.DELSORT $tfile.ORGINSSORT > $tfile.2BEDEL";
+}
+
+foreach my $file (qw (CODET DETAILT PLUS4T GEOCODET TXMATRIT ZIPT)) {
+   my $tfile = $update_dir. $file;
+   $tfile = "TXMATRIT" if $tfile eq "TXMATRIXT";
+   open INSERT, "$tfile.2BEINS" or die "Can't open $tfile.2BEINS\n";
+   open DELETE, "$tfile.2BEDEL" or die "Can't open $tfile.2BEDEL\n";
+   open FILE, ">$tfile.DOIT" or die "Can't open $tfile.DOIT\n";
+   while(<INSERT>){
+     chomp;
+     print FILE $_, "I\n";
+   }
+   while(<DELETE>){
+     chomp;
+     print FILE $_, "D\n";
+   }
+   close FILE;
+   close INSERT;
+   close DELETE;
+}
