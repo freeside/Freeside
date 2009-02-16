@@ -152,6 +152,8 @@ tie my %rights, 'Tie::IxHash',
     'Resend invoices', #NEWNEW
     'View customer tax exemptions', #yow
     'View customer batched payments', #NEW
+    'View customer pending payments', #NEW
+    'Edit customer pending payments', #NEW
     'View customer billing events', #NEW
   ],
   

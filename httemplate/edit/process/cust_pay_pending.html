@@ -1,0 +1,68 @@
+<% include('/elements/header-popup.html', $title ) %>
+% if ( $error ) {
+  <FONT SIZE="+1" COLOR="#ff0000">Error: <% $error |h %></FONT>
+% } else {
+    <SCRIPT TYPE="text/javascript">
+      window.top.location.reload();
+    </SCRIPT>
+% }
+</BODY>
+</HTML>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right('Edit customer pending payments');
+
+$cgi->param('action') =~ /^(\w+)$/ or die 'illegal action';
+my $action = $1;
+
+$cgi->param('paypendingnum') =~ /^(\d+)$/ or die 'illegal paypendingnum';
+my $paypendingnum = $1;
+my $cust_pay_pending =
+  qsearchs({
+    'select'    => 'cust_pay_pending.*',
+    'table'     => 'cust_pay_pending',
+    'addl_from' => 'LEFT JOIN cust_main USING ( custnum )',
+    'hashref'   => { 'paypendingnum' => $paypendingnum },
+    'extra_sql' => ' AND '. $curuser->agentnums_sql,
+  })
+  or die 'unknown paypendingnum';
+
+my $error;
+my $title;
+if ( $action eq 'delete' ) {
+
+  $error = $cust_pay_pending->delete;
+  if ( $error ) {
+    $title = 'Error deleting pending payment';
+  } else {
+    $title = 'Pending payment deletion sucessful';
+  }
+
+} elsif ( $action eq 'insert_cust_pay' ) { 
+
+  $error = $cust_pay_pending->insert_cust_pay;
+  if ( $error ) {
+    $title = 'Error completing pending payment';
+  } else {
+    $title = 'Pending payment completed';
+  }
+
+} elsif ( $action eq 'decline' ) {
+
+  $error = $cust_pay_pending->decline;
+  if ( $error ) {
+    $title = 'Error declining pending payment';
+  } else {
+    $title = 'Pending payment completed (decline)';
+  }
+
+} else {
+
+  die "unknown action $action";
+
+}
+
+</%init> 

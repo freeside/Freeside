@@ -3,12 +3,12 @@ package FS::cust_pay_pending;
 use strict;
 use vars qw( @ISA  @encrypted_fields );
 use FS::Record qw( qsearch qsearchs dbh ); #dbh for _upgrade_data
-use FS::payby;
-use FS::payinfo_Mixin;
+use FS::payinfo_transaction_Mixin;
+use FS::cust_main_Mixin;
 use FS::cust_main;
 use FS::cust_pay;
 
-@ISA = qw(FS::Record FS::payinfo_Mixin);
+@ISA = qw( FS::payinfo_transaction_Mixin FS::cust_main_Mixin FS::Record );
 
 @encrypted_fields = ('payinfo');
 
@@ -213,6 +213,83 @@ sub check {
   }
 
   $self->SUPER::check;
+}
+
+#these two are kind-of false laziness w/cust_main::realtime_bop
+#(currently only used when resolving pending payments manually)
+
+=item insert_cust_pay
+
+Sets the status of this pending pament to "done" (with statustext
+"captured (manual)"), and inserts a payment record (see L<FS::cust_pay>).
+
+Currently only used when resolving pending payments manually.
+
+=cut
+
+sub insert_cust_pay {
+  my $self = shift;
+
+  my $cust_pay = new FS::cust_pay ( {
+     'custnum'  => $self->custnum,
+     'paid'     => $self->paid,
+     '_date'    => $self->_date, #better than passing '' for now
+     'payby'    => $self->payby,
+     'payinfo'  => $self->payinfo,
+     'paybatch' => $self->paybatch,
+     'paydate'  => $self->paydate,
+  } );
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  #start a transaction, insert the cust_pay and set cust_pay_pending.status to done in a single transction
+
+  my $error = $cust_pay->insert;#($options{'manual'} ? ( 'manual' => 1 ) : () );
+
+  if ( $error ) {
+    # gah.
+    $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+    return $error;
+  }
+
+  $self->status('done');
+  $self->statustext('captured (manual)');
+  $self->paynum($cust_pay->paynum);
+  my $cpp_done_err = $self->replace;
+
+  if ( $cpp_done_err ) {
+
+    $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+    return $cpp_done_err;
+
+  } else {
+
+    $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+    return ''; #no error
+
+  }
+
+}
+
+=item decline
+
+Sets the status of this pending pament to "done" (with statustext
+"declined (manual)").
+
+Currently only used when resolving pending payments manually.
+
+=cut
+
+sub decline {
+  my $self = shift;
+
+  #could send decline email too?  doesn't seem useful in manual resolution
+
+  $self->status('done');
+  $self->statustext("declined (manual)");
+  $self->replace;
 }
 
 # _upgrade_data

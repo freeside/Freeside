@@ -138,14 +138,24 @@
 
 % if ( ( $conf->exists('batch-enable') || $conf->config('batch-enable_payby') )
 %      && $curuser->access_right('View customer batched payments')
-%    ) { 
-  View batched payments:
+%    )
+% { 
+    View batched payments:
 %   foreach my $status (qw( Queued In-transit Complete All )) {
       <A HREF="<% $p %>search/cust_pay_batch.cgi?status=<% $status{$status} %>;custnum=<% $custnum %>"><% $status %></A> 
       <% $status ne 'All' ? '|' : '' %>
 %   }
-  <BR>
+    <BR>
 % } 
+
+%# pending payment links
+
+% if ( $curuser->access_right('View customer pending payments')
+%      && scalar($cust_main->cust_pay_pending)
+%    )
+% {
+    <A HREF="<% $p %>search/cust_pay_pending.html?magic=_date;statusNOT=done;custnum=<% $custnum %>">View pending payments</A><BR>
+% }
 
 %# and now the table
 

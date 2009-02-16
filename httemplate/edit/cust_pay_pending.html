@@ -1,0 +1,154 @@
+<% include('/elements/header-popup.html', $title ) %>
+
+% if ( $action eq 'delete' ) {
+
+    <CENTER><FONT SIZE="+1"><B>Are you sure you want to delete this pending payment?</B></FONT></CENTER>
+
+% } elsif ( $action eq 'complete' ) {
+
+    <CENTER><FONT SIZE="+1"><B>No response was received from <% $cust_pay_pending->processor || 'the payment gateway' %> for this transaction.  Check <% $cust_pay_pending->processor || 'the payment gateway' %>'s reporting and determine if this transaction completed successfully.</B></FONT></CENTER>
+
+% }
+
+<BR>
+
+%#false laziness w/view/cust_pay.html
+<% include('/elements/small_custview.html',
+             $cust_pay_pending->custnum,
+             scalar($conf->config('countrydefault')),
+             1, #no balance
+          )
+%>
+<BR>
+
+<% ntable("#cccccc", 2) %>
+
+<TR>
+  <TD ALIGN="right">Pending payment#</TD>
+  <TD BGCOLOR="#FFFFFF"><B><% $cust_pay_pending->paypendingnum %></B></TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right">Date</TD>
+  <TD BGCOLOR="#FFFFFF"><B><% time2str"%a&nbsp;%b&nbsp;%o,&nbsp;%Y&nbsp;%r", $cust_pay_pending->_date %></B></TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right">Amount</TD>
+  <TD BGCOLOR="#FFFFFF"><B><% $money_char. $cust_pay_pending->paid %></B></TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right">Payment method</TD>
+  <TD BGCOLOR="#FFFFFF"><B><% $cust_pay_pending->payby_name %> #<% $cust_pay_pending->paymask %></B></TD>
+</TR>
+
+% #if ( $cust_pay_pending->payby =~ /^(CARD|CHEK|LECB)$/ && $cust_pay_pending->paybatch ) { 
+
+    <TR>
+      <TD ALIGN="right">Processor</TD>
+      <TD BGCOLOR="#FFFFFF"><B><% $cust_pay_pending->processor %></B></TD>
+    </TR>
+
+    <TR>
+      <TD ALIGN="right">Authorization#</TD>
+      <TD BGCOLOR="#FFFFFF"><B><% $cust_pay_pending->authorization %></B></TD>
+    </TR>
+
+%   if ( $cust_pay_pending->order_number ) {
+      <TR>
+        <TD ALIGN="right">Order#</TD>
+        <TD BGCOLOR="#FFFFFF"><B><% $cust_pay_pending->order_number %></B></TD>
+      </TR>
+%   }
+
+% #}
+
+</TABLE>
+
+<BR>
+
+<FORM NAME   = "pendingform"
+      METHOD = "POST"
+      ACTION = "process/cust_pay_pending.html"
+>
+
+<INPUT TYPE="hidden" NAME="paypendingnum" VALUE="<% $paypendingnum %>">
+
+<% itable() %>
+
+% if ( $action eq 'delete' ) {
+
+    <INPUT TYPE="hidden" NAME="action" VALUE="<% $action %>">
+
+    <TR>
+      <TD ALIGN="center">
+        <BUTTON TYPE="button" onClick="document.pendingform.submit();"><!--IMG SRC="<%$p%>images/tick.png" ALT=""-->Yes, delete payment</BUTTON>
+      </TD>
+      <TD>&nbsp;&nbsp;&nbsp;</TD>
+      <TD ALIGN="center">
+        <BUTTON TYPE="button" onClick="parent.cClick();"><!--IMG SRC="<%$p%>images/cross.png" ALT=""-->No, cancel deletion</BUTTON>
+      </TD>
+    </TR>
+
+% } elsif ( $action eq 'complete' ) {
+
+    <INPUT TYPE="hidden" NAME="action" VALUE="">
+
+    <TR>
+      <TD ALIGN="center">
+        <BUTTON TYPE="button" onClick="document.pendingform.action.value = 'insert_cust_pay'; document.pendingform.submit();"><!--IMG SRC="<%$p%>images/tick.png" ALT=""-->Yes, transaction completed sucessfully.</BUTTON>
+      </TD>
+      <TD>&nbsp;&nbsp;&nbsp;</TD>
+      <TD ALIGN="center">
+        <BUTTON TYPE="button" onClick="document.pendingform.action.value = 'decline'; document.pendingform.submit();"><!--IMG SRC="<%$p%>images/cross.png" ALT=""-->No, transaction was declined</BUTTON>
+      </TD>
+      <TD>&nbsp;&nbsp;&nbsp;</TD>
+      <TD ALIGN="center">
+        <BUTTON TYPE="button" onClick="document.pendingform.action.value = 'delete'; document.pendingform.submit();"><!--IMG SRC="<%$p%>images/cross.png" ALT=""-->No, transaction was not received</BUTTON>
+      </TD>
+    </TR>
+
+    <TR><TD COLSPAN=5></TD></TR>
+
+    <TR>
+      <TD COLSPAN=5 ALIGN="center">
+        <BUTTON TYPE="button" onClick="parent.cClick();"><!--IMG SRC="<%$p%>images/cross.png" ALT=""-->Cancel payment completion; transaction status not yet known</BUTTON>
+      </TD>
+    </TR>
+
+% }
+
+</TABLE>
+
+</FORM>
+</BODY>
+</HTML>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right('Edit customer pending payments');
+
+$cgi->param('action') =~ /^(\w+)$/ or die 'illegal action';
+my $action = $1;
+my $title = ucfirst($action). ' pending payment';
+
+$cgi->param('paypendingnum') =~ /^(\d+)$/ or die 'illegal paypendingnum';
+my $paypendingnum = $1;
+my $cust_pay_pending =
+  qsearchs({
+    'select'    => 'cust_pay_pending.*',
+    'table'     => 'cust_pay_pending',
+    'addl_from' => 'LEFT JOIN cust_main USING ( custnum )',
+    'hashref'   => { 'paypendingnum' => $paypendingnum },
+    'extra_sql' => ' AND '. $curuser->agentnums_sql,
+  })
+  or die 'unknown paypendingnum';
+
+my $conf = new FS::Conf;
+
+my $money_char = $conf->config('money_char') || '$';
+
+</%init>

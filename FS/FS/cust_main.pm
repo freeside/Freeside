@@ -3691,7 +3691,7 @@ sub realtime_bop {
     'country'        => ( exists($options{'country'})
                             ? $options{'country'}
                             : $self->country          ),
-    'referer'        => 'http://cleanwhisker.420.am/',
+    'referer'        => 'http://cleanwhisker.420.am/', #XXX fix referer :/
     'email'          => $email,
     'phone'          => $self->daytime || $self->night,
     %content, #after
@@ -3847,6 +3847,7 @@ sub realtime_bop {
 
     $cust_pay_pending->status('done');
     $cust_pay_pending->statustext('captured');
+    $cust_pay_pending->paynum($cust_pay->paynum);
     my $cpp_done_err = $cust_pay_pending->replace;
 
     if ( $cpp_done_err ) {
@@ -4196,7 +4197,7 @@ sub realtime_refund_bop {
     'password'       => $password,
     'order_number'   => $order_number,
     'amount'         => $amount,
-    'referer'        => 'http://cleanwhisker.420.am/',
+    'referer'        => 'http://cleanwhisker.420.am/', #XXX fix referer :/
   );
   $content{authorization} = $auth
     if length($auth); #echeck/ACH transactions have an order # but no auth
@@ -5347,6 +5348,41 @@ sub cust_pay_batch {
   my $self = shift;
   sort { $a->_date <=> $b->_date }
     qsearch( 'cust_pay_batch', { 'custnum' => $self->custnum } )
+}
+
+=item cust_pay_pending
+
+Returns all pending payments (see L<FS::cust_pay_pending>) for this customer
+(without status "done").
+
+=cut
+
+sub cust_pay_pending {
+  my $self = shift;
+  return $self->num_cust_pay_pending unless wantarray;
+  sort { $a->_date <=> $b->_date }
+    qsearch( 'cust_pay_pending', {
+                                   'custnum' => $self->custnum,
+                                   'status'  => { op=>'!=', value=>'done' },
+                                 },
+           );
+}
+
+=item num_cust_pay_pending
+
+Returns the number of pending payments (see L<FS::cust_pay_pending>) for this
+customer (without status "done").  Also called automatically when the
+cust_pay_pending method is used in a scalar context.
+
+=cut
+
+sub num_cust_pay_pending {
+  my $self = shift;
+  my $sql = " SELECT COUNT(*) FROM cust_pay_pending ".
+            "   WHERE custnum = ? AND status != 'done' ";
+  my $sth = dbh->prepare($sql) or die dbh->errstr;
+  $sth->execute($self->custnum) or die $sth->errstr;
+  $sth->fetchrow_arrayref->[0];
 }
 
 =item cust_refund

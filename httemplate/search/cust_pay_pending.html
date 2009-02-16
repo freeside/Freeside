@@ -1,0 +1,47 @@
+<% include( 'elements/cust_pay_or_refund.html',
+                'thing'         => 'pay_pending',
+                'amount_field'  => 'paid',
+                'name_singular' => 'pending payment',
+                'name_verb'     => 'pending',
+                'disable_link'  => 1,
+                'disable_by'    => 1, #add otaker to cust_pay_pending?
+                'html_init'     => include('/elements/init_overlib.html'),
+                'addl_header'   => [ 'Time', 'Payment Status', ],
+                'addl_fields'   => [ sub { time2str('%r', shift->_date ) },
+                                     $status_sub,
+                                   ],
+          )
+%>
+<%init>
+
+my %statusaction = (
+  'new'        => 'delete',
+  'pending'    => 'complete',
+  #'authorized' => '',
+  #'captured'   => '',
+  #'declined'   => '',
+  #wouldn't need to take action on a done state#'done'
+);
+
+my $edit_pending =
+  $FS::CurrentUser::CurrentUser->access_right('Edit customer pending payments');
+
+my $status_sub = sub {
+  my $pending = shift;
+  my $return = $pending->status;
+  my $action = $statusaction{$pending->status};
+  return $return unless $action && $edit_pending;
+  my $link = include('/elements/popup_link.html',
+                       'action' => $p. 'edit/cust_pay_pending.html'.
+                                     '?paypendingnum='. $pending->paypendingnum.
+                                     ";action=$action",
+                       'label'  => $action,
+                       'color'  => '#ff0000',
+                       'width'  => 655,
+                       'height' => ( $action eq 'delete' ? 480 : 575 ),
+                       'actionlabel' => ucfirst($action). ' pending payment',
+                    );
+  $return. qq! <FONT SIZE="-1">($link)</FONT>!;
+};
+
+</%init>

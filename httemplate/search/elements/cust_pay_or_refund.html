@@ -16,6 +16,18 @@ Examples:
                'name_verb'     => 'refunded',
          )
 
+  include( 'elements/cust_pay_or_refund.html',
+               'thing'         => 'pay_pending',
+               'amount_field'  => 'paid',
+               'name_singular' => 'pending payment',
+               'name_verb'     => 'pending',
+               'disable_link'  => 1,
+               'disable_by'    => 1,
+               'html_init'     => '',
+               'addl_header'   => [],
+               'addl_fields'   => [],
+          )
+
 </%doc>
 <% include( 'search.html',
                 'title'         => $title,
@@ -26,27 +38,25 @@ Examples:
                 'header'        => [ "\u$name_singular",
                                      'Amount',
                                      'Date',
-                                     'By',
+                                     @header,
                                      FS::UI::Web::cust_header(),
                                    ],
                 'fields'      => [
                   'payby_payinfo_pretty',
                   sub { sprintf('$%.2f', shift->$amount_field() ) },
                   sub { time2str('%b %d %Y', shift->_date ) },
-                  sub { my $o = shift->otaker;
-                        $o = 'auto billing'          if $o eq 'fs_daily';
-                        $o = 'customer self-service' if $o eq 'fs_selfservice';
-                        $o;
-                      },
+                  @fields,
                   \&FS::UI::Web::cust_fields,
                 ],
                 #'align' => 'lrrrll',
-                'align' => 'rrrc'.FS::UI::Web::cust_aligns(),
+                'align' => 'rrr'.
+                           join('', map 'c', @fields ).
+                           FS::UI::Web::cust_aligns(),
                 'links' => [
                   $link,
                   $link,
                   $link,
-                  '',
+                  ( map '', @fields ),
                   ( map { $_ ne 'Cust. Status' ? $cust_link : '' }
                         FS::UI::Web::cust_header()
                   ),
@@ -55,14 +65,14 @@ Examples:
                              '',
                              '',
                              '',
-                             '',
+                             ( map '', @fields ),
                              FS::UI::Web::cust_colors(),
                            ],
                 'style' => [ 
                              '',
                              '',
                              '',
-                             '',
+                             ( map '', @fields ),
                              FS::UI::Web::cust_styles(),
                            ],
           )
@@ -71,14 +81,35 @@ Examples:
 
 my %opt = @_;
 
+my $curuser = $FS::CurrentUser::CurrentUser;
+
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+  unless $curuser->access_right('Financial reports');
 
 my $thing = $opt{'thing'};
 my $amount_field = $opt{'amount_field'};
 my $name_singular = $opt{'name_singular'};
 
 my $title = "\u$name_singular Search Results";
+
+my @header = ();
+my @fields = ();
+unless ( $opt{'disable_by'} ) {
+  push @header, 'By';
+  push @fields, sub {
+                  sub { my $o = shift->otaker;
+                        $o = 'auto billing'          if $o eq 'fs_daily';
+                        $o = 'customer self-service' if $o eq 'fs_selfservice';
+                        $o;
+                      },
+  };
+}
+
+push @header, @{ $opt{'addl_header'} }
+  if $opt{'addl_header'};
+push @fields, @{ $opt{'addl_fields'} }
+  if $opt{'addl_fields'};
+
 my( $count_query, $sql_query );
 if ( $cgi->param('magic') ) {
 
@@ -93,7 +124,11 @@ if ( $cgi->param('magic') ) {
       die "unknown agentnum $1" unless $agent;
       $title = $agent->agent. " $title";
     }
-  
+
+    if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
+      push @search, "custnum = $1";
+    }
+
     if ( $cgi->param('payby') ) {
       $cgi->param('payby') =~
         /^(CARD|CHEK|BILL|PREP|CASH|WEST|MCRD)(-(VisaMC|Amex|Discover|Maestro))?$/
@@ -175,6 +210,11 @@ if ( $cgi->param('magic') ) {
       push @search, "cust_$thing.payinfo = '$1'";
     }
 
+    #for cust_pay_pending...  statusNOT=done
+    if ( $cgi->param('statusNOT') =~ /^(\w+)$/ ) {
+      push @search, "status != '$1'";
+    }
+
     my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
     push @search, "_date >= $beginning ",
                   "_date <= $ending";
@@ -197,7 +237,7 @@ if ( $cgi->param('magic') ) {
   }
 
   #here is the agent virtualization
-  push @search, $FS::CurrentUser::CurrentUser->agentnums_sql;
+  push @search, $curuser->agentnums_sql;
 
   my $search = ' WHERE '. join(' AND ', @search);
 
@@ -229,21 +269,25 @@ if ( $cgi->param('magic') ) {
 
   $count_query = "SELECT COUNT(*), SUM($amount_field) FROM cust_$thing".
                  "  WHERE payinfo = '$payinfo' AND payby = '$payby'".
-                 "  AND ". $FS::CurrentUser::CurrentUser->agentnums_sql;
+                 "  AND ". $curuser->agentnums_sql;
 
   $sql_query = {
     'table'     => "cust_$thing",
     'hashref'   => { 'payinfo' => $payinfo,
                      'payby'   => $payby    },
-    'extra_sql' => $FS::CurrentUser::CurrentUser->agentnums_sql.
+    'extra_sql' => $curuser->agentnums_sql.
                    " ORDER BY _date",
   };
 
 }
 
 my $link = '';
-if ( $FS::CurrentUser::CurrentUser->access_right('View invoices') #XXX for now
-     || $FS::CurrentUser::CurrentUser->access_right('View customer payments') ){
+if (    ( $curuser->access_right('View invoices') #XXX for now
+          || $curuser->access_right('View customer payments')
+        )
+     && ! $opt{'disable_link'}
+   )
+{
   $link = [ "${p}view/cust_$thing.html?${thing}num=", $thing.'num' ]
 }
 
