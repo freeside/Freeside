@@ -7,7 +7,10 @@
 my $profile = '';
 if ( UNIVERSAL::can(dbh, 'sprintProfile') ) {
 
-  if ( lc($r->content_type) eq 'text/html' ) {
+  if ( lc($r->content_type) eq 'text/html'
+       && $FS::CurrentUser::CurrentUser->option('show_db_profile')
+     )
+  {
 
     ## barely worth it, just in case someone tries to use profiling on a
     ## non-RT install

@@ -233,20 +233,35 @@ Initializes the Mason environment, loads all Freeside and RT libraries, etc.
     use vars qw($m);
 
     # false laziness w/below
-    if ( defined(@DBIx::Profile::ISA) ) { #profiling redirect
+    if ( defined(@DBIx::Profile::ISA) ) {
 
-      my $page =
-        qq!<HTML><BODY>Redirect to <A HREF="$location">$location</A>!.
-        '<BR><BR><PRE>'.
-          ( UNIVERSAL::can(dbh, 'sprintProfile')
-              ? encode_entities(dbh->sprintProfile())
-              : 'DBIx::Profile missing sprintProfile method;'.
-                'unpatched or too old?'                        ).
-        #"\n\n". &sprintAutoProfile().  '</PRE>'.
-        "\n\n".                         '</PRE>'.
-        '</BODY></HTML>';
-      dbh->{'private_profile'} = {};
-      return $page;
+      if ( $FS::CurrentUser::CurrentUser->option('show_db_profile') ) {
+
+        #profiling redirect
+
+        my $page =
+          qq!<HTML><BODY>Redirect to <A HREF="$location">$location</A>!.
+          '<BR><BR><PRE>'.
+            ( UNIVERSAL::can(dbh, 'sprintProfile')
+                ? encode_entities(dbh->sprintProfile())
+                : 'DBIx::Profile missing sprintProfile method;'.
+                  'unpatched or too old?'                        ).
+          #"\n\n". &sprintAutoProfile().  '</PRE>'.
+          "\n\n".                         '</PRE>'.
+          '</BODY></HTML>';
+
+
+        dbh->{'private_profile'} = {};
+        return $page;
+
+      } else {
+
+        #clear db profile, but normal redirect
+        dbh->{'private_profile'} = {};
+        $m->redirect($location);
+        '';
+
+      }
 
     } else { #normal redirect
 
@@ -272,20 +287,33 @@ Initializes the Mason environment, loads all Freeside and RT libraries, etc.
     use vars qw($m);
     $m->clear_buffer;
     #false laziness w/above
-    if ( defined(@DBIx::Profile::ISA) ) { #profiling redirect
+    if ( defined(@DBIx::Profile::ISA) ) {
 
-      $m->print(
-        qq!<HTML><BODY>Redirect to <A HREF="$location">$location</A>!.
-        '<BR><BR><PRE>'.
-          ( UNIVERSAL::can(dbh, 'sprintProfile')
-              ? encode_entities(dbh->sprintProfile())
-              : 'DBIx::Profile missing sprintProfile method;'.
-                'unpatched or too old?'                        ).
-        #"\n\n". &sprintAutoProfile().  '</PRE>'.
-        "\n\n".                         '</PRE>'.
-        '</BODY></HTML>'
-      );
-      dbh->{'private_profile'} = {};
+      if ( $FS::CurrentUser::CurrentUser->option('show_db_profile') ) {
+
+        #profiling redirect
+
+        $m->print(
+          qq!<HTML><BODY>Redirect to <A HREF="$location">$location</A>!.
+          '<BR><BR><PRE>'.
+            ( UNIVERSAL::can(dbh, 'sprintProfile')
+                ? encode_entities(dbh->sprintProfile())
+                : 'DBIx::Profile missing sprintProfile method;'.
+                  'unpatched or too old?'                        ).
+          #"\n\n". &sprintAutoProfile().  '</PRE>'.
+          "\n\n".                         '</PRE>'.
+          '</BODY></HTML>'
+        );
+
+        dbh->{'private_profile'} = {};
+
+      } else {
+
+        #clear db profile, but normal redirect
+        dbh->{'private_profile'} = {};
+        $m->redirect($location);
+
+      }
 
     } else { #normal redirect
 

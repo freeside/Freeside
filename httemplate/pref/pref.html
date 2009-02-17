@@ -64,6 +64,10 @@ Development
     <TH>Show internal package numbers: </TH>
     <TD><INPUT TYPE="checkbox" NAME="show_pkgnum" VALUE="1" <% $curuser->option('show_pkgnum') ? 'CHECKED' : '' %>></TD>
   </TR>
+  <TR>
+    <TH>Show database profiling (when available): </TH>
+    <TD><INPUT TYPE="checkbox" NAME="show_db_profile" VALUE="1" <% $curuser->option('show_db_profile') ? 'CHECKED' : '' %>></TD>
+  </TR>
 
 </TABLE>
 <BR>
