@@ -5,8 +5,7 @@
 
               'agent_virt'            => 1,
               'agent_null_right'      => $edit_global,
-              'agent_clone_extra_sql' => FS::part_pkg->curuser_pkgs_sql,
-
+              'agent_clone_extra_sql' => $agent_clone_extra_sql,
               #'viewall_dir'           => 'browse',
               'viewall_url'           => $p.'browse/part_pkg.cgi',
               'html_init'             => include('/elements/init_overlib.html').
@@ -206,6 +205,12 @@ my $begin_callback = sub {
 };
 
 my $disabled_type = $acl_edit_either ? 'checkbox' : 'hidden';
+
+my $agent_clone_extra_sql = 
+  ' ( '. FS::part_pkg->curuser_pkgs_sql.
+  #kludge to clone custom customer packages you otherwise couldn't see
+  "   OR ( part_pkg.disabled = 'Y' AND part_pkg.comment LIKE '(CUSTOM)' ) ".
+  ' ) ';
 
 my $conf = new FS::Conf;
 my $taxproducts = $conf->exists('enable_taxproducts');
