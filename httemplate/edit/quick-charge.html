@@ -1,4 +1,4 @@
-<% include("/elements/header-popup.html", 'One-time charge entry', '',
+<% include("/elements/header-popup.html", 'One-time charge', '',
             ( $cgi->param('error') ? '' : 'onload="addRow()"' ),
           )
 %>
@@ -62,7 +62,7 @@ function validate_quick_charge () {
 <TABLE ID="QuickChargeTable" BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0 STYLE="background-color: #cccccc">
 
 <TR>
-  <TD ALIGN="right">Amount: </TD>
+  <TD ALIGN="right">Amount </TD>
   <TD>
     $<INPUT TYPE="text" NAME="amount" SIZE=6 VALUE="<% $amount %>" onChange="enable_quick_charge()" onKeyPress="enable_quick_charge()">
   </TD>
@@ -70,7 +70,7 @@ function validate_quick_charge () {
 
 % if ( $conf->exists('invoice-unitprice') ) {
     <TR>
-      <TD ALIGN="right">Quantity: </TD>
+      <TD ALIGN="right">Quantity </TD>
       <TD>
         <INPUT TYPE="text" NAME="quantity" SIZE=4 VALUE="<% $quantity %>">
       </TD>
@@ -79,6 +79,12 @@ function validate_quick_charge () {
 
 <% include('/elements/tr-select-pkg_class.html', 'curr_value' => $cgi->param('classnum') ) %>
 
+
+<TR>
+  <TD ALIGN="right">Tax exempt </TD>
+  <TD><INPUT TYPE="checkbox" NAME="setuptax" VALUE="Y" <% $cgi->param('setuptax') ? 'CHECKED' : '' %>></TD>
+</TR>
+
 <% include('/elements/tr-select-taxclass.html', 'curr_value' => $cgi->param('taxclass') ) %>
 
 <% include('/elements/tr-select-taxproduct.html', 'label' => 'Tax product', 'onclick' => 'parent.taxproductmagic(this);', 'curr_value' => $cgi->param('taxproductnum') ) %>
@@ -86,7 +92,7 @@ function validate_quick_charge () {
 <% include('/elements/tr-select-taxoverride.html', 'onclick' => 'parent.taxoverridemagic(this);', 'curr_value' => $cgi->param('tax_override') ) %>
 
 <TR>
-  <TD>Description:</TD>
+  <TD ALIGN="right">Description </TD>
   <TD>
     <INPUT TYPE="text" NAME="pkg" SIZE="50" MAXLENGTH="50" VALUE="<% $pkg %>" onChange="enable_quick_charge()" onKeyPress="enable_quick_charge()">
   </TD>

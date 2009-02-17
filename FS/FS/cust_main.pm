@@ -5164,14 +5164,16 @@ the error, otherwise returns false.
 
 sub charge {
   my $self = shift;
-  my ( $amount, $quantity, $pkg, $comment, $taxclass, $additional, $classnum );
-  my ( $taxproduct, $override );
+  my ( $amount, $quantity, $pkg, $comment, $classnum, $additional );
+  my ( $setuptax, $taxclass );   #internal taxes
+  my ( $taxproduct, $override ); #vendor (CCH) taxes
   if ( ref( $_[0] ) ) {
     $amount     = $_[0]->{amount};
     $quantity   = exists($_[0]->{quantity}) ? $_[0]->{quantity} : 1;
     $pkg        = exists($_[0]->{pkg}) ? $_[0]->{pkg} : 'One-time charge';
     $comment    = exists($_[0]->{comment}) ? $_[0]->{comment}
                                            : '$'. sprintf("%.2f",$amount);
+    $setuptax   = exists($_[0]->{setuptax}) ? $_[0]->{setuptax} : '';
     $taxclass   = exists($_[0]->{taxclass}) ? $_[0]->{taxclass} : '';
     $classnum   = exists($_[0]->{classnum}) ? $_[0]->{classnum} : '';
     $additional = $_[0]->{additional};
@@ -5182,6 +5184,7 @@ sub charge {
     $quantity   = 1;
     $pkg        = @_ ? shift : 'One-time charge';
     $comment    = @_ ? shift : '$'. sprintf("%.2f",$amount);
+    $setuptax   = '';
     $taxclass   = @_ ? shift : '';
     $additional = [];
   }
@@ -5204,6 +5207,7 @@ sub charge {
     'freq'          => 0,
     'disabled'      => 'Y',
     'classnum'      => $classnum ? $classnum : '',
+    'setuptax'      => $setuptax,
     'taxclass'      => $taxclass,
     'taxproductnum' => $taxproduct,
   } );

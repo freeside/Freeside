@@ -53,14 +53,15 @@ unless ( $error ) {
     or $error .= "Unknown customer number $custnum.  ";
 
   $error ||= $cust_main->charge( {
-    'amount'     => $amount,
-    'quantity'   => $quantity,
-    'pkg'        => scalar($cgi->param('pkg')),
-    'taxclass'   => scalar($cgi->param('taxclass')),
+    'amount'        => $amount,
+    'quantity'      => $quantity,
+    'pkg'           => scalar($cgi->param('pkg')),
+    'setuptax'      => scalar($cgi->param('setuptax')),
+    'taxclass'      => scalar($cgi->param('taxclass')),
     'taxproductnum' => scalar($cgi->param('taxproductnum')),
-    'tax_override' => $override,
-    'classnum'   => scalar($cgi->param('classnum')),
-    'additional' => \@description,
+    'tax_override'  => $override,
+    'classnum'      => scalar($cgi->param('classnum')),
+    'additional'    => \@description,
   } );
 }
 
