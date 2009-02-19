@@ -4,17 +4,21 @@
 
 <SELECT NAME='geocodes' ID='geocodes' STYLE="<% $style %>">
 % foreach my $location (@cust_tax_location) {
-%   my $value = encode_entities(objToJson({ zip => $zip5,
-%                                           map { $_ => $location->$_ }
-%                                             qw ( city state geocode )
-%                                        })
+%   my %value = ( zip => $zip5,
+%                 map { $_ => $location->$_ }
+%                   qw ( city state geocode )
+%               );
+%   map { $value{$_} = $location{$_} } qw ( city state )
+%     if $location{country} eq 'CA';
+%
+%   my $value = encode_entities(objToJson({ %value })
 %                              );
 %   my $content = '';
 %   $content .= $location->$_. '&nbsp;' x ( $max{$_} - length($location->$_) )
 %     foreach qw( city county state );
 %   $content .=   $location->cityflag eq 'I' ? 'Y' : 'N' ;
 %   my $selected = '' ;
-%   if (!$have_selected && lc($location->city) eq lc($city)) {
+%   if (!$have_selected && lc($location->city) eq lc($location{city})) {
 %     $selected = 'SELECTED';
 %   }
   <OPTION VALUE="<% $value %>" STYLE="<% $style %>" <% $selected %>><% $content %>
@@ -34,20 +38,21 @@
 my $conf = new FS::Conf;
 my $have_selected = 0;
 
-my ($data_vendor) = $cgi->param('data_vendor') =~ /^([-\w]+)$/;
-my ($city)  = $cgi->param('city')  =~ /^([\w ]+)$/;
-my ($state) = $cgi->param('state') =~ /^(\w+)$/;
-my ($zip)   = $cgi->param('zip')   =~ /^([-\w]+)$/;
+my %location = ();
 
-my($zip5, $zip4) = split('-', $zip);
+($location{data_vendor}) = $cgi->param('data_vendor') =~ /^([-\w]+)$/;
+($location{city})        = $cgi->param('city')        =~ /^([\w ]+)$/;
+($location{state})       = $cgi->param('state')       =~ /^(\w+)$/;
+($location{zip})         = $cgi->param('zip')         =~ /^([-\w ]+)$/;
+($location{country})     = $cgi->param('country')     =~ /^([\w ]+)$/;
 
-my $hashref = { data_vendor => $data_vendor,
-                #city        => $city,
-                #state       => $state,
-                zip         => $zip5,
-              };
-#my @keys = qw ( city state zip );
-my @keys = qw ( zip );
+my($zip5, $zip4) = split('-', $location{zip});
+
+#only support US & CA
+my $hashref = { 'data_vendor' => $location{data_vendor} };
+$hashref->{zip} = $location{country} eq 'CA' ? substr($zip5,0,1) : $zip5,
+
+my @keys = keys(%$hashref);
 my @cust_tax_location = ();
 until ( @cust_tax_location ) {
   @cust_tax_location = qsearch({ table    => 'cust_tax_location',
@@ -65,7 +70,10 @@ foreach my $location (@cust_tax_location) {
     $max{$_} = ($length > $max{$_}) ? $length : $max{$_};
   }
 }
-$max{$_}++ foreach qw( city county state );
+foreach ( qw( city county state ) ) {
+  $max{$_} = $location{$_} if $location{$_} > $max{$_};
+  $max{$_}++;
+}
 
 my $header = '&nbsp;&nbsp;';
 $header .= $_. '&nbsp;' x ( $max{lc($_)} - length($_) )
