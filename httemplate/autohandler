@@ -17,16 +17,22 @@ if ( UNIVERSAL::can(dbh, 'sprintProfile') ) {
     #eval "use Text::Wrapper;";
     #die $@ if $@;
 
-    my $wrapper = new Text::Wrapper( columns => 80 );
     my $text = dbh->sprintProfile();
-    #my $text = $wrapper->wrap( dbh->sprintProfile() );
-    $text =~ s/^/                                                          /mg;
-    
-    $profile = '<PRE>'.
-               encode_entities( $text ).
-               #"\n\n". &sprintAutoProfile(). '</PRE>';
-               "\n\n".                        '</PRE>';
-  } 
+    #$text =~ s/^/                                                          /mg;
+
+    $profile = '<PRE>'.  encode_entities( $text ). "\n\n". '</PRE>';
+
+  }
+
+  #well, could do this without sprintProfile, but definiately don't want it on
+  #unless DBIx::Profile is loaded
+  if ( $FS::CurrentUser::CurrentUser->option('save_db_profile') ) {
+    #my $file = %%%FREESIDE_LOG%%%; #substitute here?  maybe get from FS.pm?
+    my $file = '/usr/local/etc/freeside/'; #bah
+    $file .= "dbix_profile..$$.". time;
+    dbh->setLogFile($file);
+    dbh->printProfile();
+  }
 
   dbh->{'private_profile'} = {};
 }
