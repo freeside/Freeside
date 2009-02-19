@@ -320,6 +320,7 @@ sub qsearch {
   ) {
 
     my $value = $record->{$field};
+    my $op = (ref($value) && $value->{op}) ? $value->{op} : '=';
     $value = $value->{'value'} if ref($value);
     my $type = dbdef->table($table)->column($field)->type;
 
@@ -329,6 +330,7 @@ sub qsearch {
 
     #DBD::Pg 1.49: Cannot bind ... unknown sql_type 6 with SQL_FLOAT
     #fixed by DBD::Pg 2.11.8
+    #can change back to SQL_FLOAT in early-mid 2010, once everyone's upgraded
     } elsif ( _is_fs_float( $type, $value ) ) {
       $TYPE = SQL_DECIMAL;
     }
@@ -340,13 +342,16 @@ sub qsearch {
       warn "  bind_param $bind (for field $field), $value, TYPE $TYPE{$TYPE}\n";
     }
 
-    if ($TYPE eq SQL_DECIMAL) {
-      # these values are arbitrary; better (faster?) ones welcome
-      $sth->bind_param($bind++, $value*1.00001, { TYPE => $TYPE } );
-      $sth->bind_param($bind++, $value*.99999, { TYPE => $TYPE } );
-    }else{
+    #if this needs to be re-enabled, it needs to use a custom op like
+    #"APPROX=" or something (better name?, not '=', to avoid affecting other
+    # searches
+    #if ($TYPE eq SQL_DECIMAL && $op eq 'APPROX=' ) {
+    #  # these values are arbitrary; better (faster?) ones welcome
+    #  $sth->bind_param($bind++, $value*1.00001, { TYPE => $TYPE } );
+    #  $sth->bind_param($bind++, $value*.99999, { TYPE => $TYPE } );
+    #} else {
       $sth->bind_param($bind++, $value, { TYPE => $TYPE } );
-    }
+    #}
 
   }
 
@@ -536,8 +541,11 @@ sub get_real_fields {
             qq-( $column $op "" )-;
           }
         }
-      } elsif ( $op eq '=' && _is_fs_float( $type, $value ) ) {
-        ( "$column <= ?", "$column >= ?" );
+      #if this needs to be re-enabled, it needs to use a custom op like
+      #"APPROX=" or something (better name?, not '=', to avoid affecting other
+      # searches
+      #} elsif ( $op eq 'APPROX=' && _is_fs_float( $type, $value ) ) {
+      #  ( "$column <= ?", "$column >= ?" );
       } else {
         "$column $op ?";
       }
