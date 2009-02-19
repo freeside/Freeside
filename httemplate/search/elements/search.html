@@ -60,7 +60,15 @@ Example:
     #redirect if there's only one item...
     # listref of URL base and column name (or method)
     # or a coderef that returns the same
-    'redirect' =>
+    'redirect' => sub { my( $record, $cgi ) = @_;
+                        [ popurl(2).'view/item.html', 'primary_key' ];
+                      },
+
+    #redirect if there's no items
+    # scalar URL or a coderef that returns a URL
+    'redirect_empty' => sub { my( $cgi ) = @_;
+                              popurl(2).'view/item.html';
+                            },
    
     ###
     # optional
@@ -277,9 +285,18 @@ Example:
 %        && $type ne 'html-print'
 %      ) {
 %     my $redirect = $opt{'redirect'};
-%     $redirect = &{$redirect}($rows->[0]) if ref($redirect) eq 'CODE';
+%     $redirect = &{$redirect}($rows->[0], $cgi) if ref($redirect) eq 'CODE';
 %     my( $url, $method ) = @$redirect;
 %     redirect( $url. $rows->[0]->$method() );
+%   } elsif ( exists($opt{'redirect_empty'}) && ! scalar(@$rows) && $total == 0
+%             && $type ne 'html-print'
+%             && $opt{'redirect_empty'}
+%             && ( ref($opt{'redirect_empty'}) ne 'CODE'
+%                  || &{$opt{'redirect_empty'}}($cgi)    )
+%      ) {
+%     my $redirect = $opt{'redirect_empty'};
+%     $redirect = &{$redirect}($cgi) if ref($redirect) eq 'CODE';
+%     redirect( $redirect );
 %   } else {
 %     if ( $opt{'name_singular'} ) {
 %       $opt{'name'} = PL($opt{'name_singular'});

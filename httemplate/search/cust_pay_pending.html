@@ -10,6 +10,7 @@
                 'addl_fields'   => [ sub { time2str('%r', shift->_date ) },
                                      $status_sub,
                                    ],
+                'redirect_empty' => $redirect_empty,
           )
 %>
 <%init>
@@ -42,6 +43,15 @@ my $status_sub = sub {
                        'actionlabel' => ucfirst($action). ' pending payment',
                     );
   $return. qq! <FONT SIZE="-1">($link)</FONT>!;
+};
+
+my $redirect_empty = sub {
+  my $cgi = shift;
+  if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
+    $p. "view/cust_main.cgi?$1";
+  } else {
+    '';
+  }
 };
 
 </%init>

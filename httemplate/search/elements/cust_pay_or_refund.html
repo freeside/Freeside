@@ -3,45 +3,47 @@
 Examples:
 
   include( 'elements/cust_pay_or_refund.html',
-               'thing'         => 'pay',
-               'amount_field'  => 'paid',
-               'name_singular' => 'payment',
-               'name_verb'     => 'paid',
+               'thing'          => 'pay',
+               'amount_field'   => 'paid',
+               'name_singular'  => 'payment',
+               'name_verb'      => 'paid',
          )
 
   include( 'elements/cust_pay_or_refund.html',
-               'thing'         => 'refund',
-               'amount_field'  => 'refund',
-               'name_singular' => 'refund',
-               'name_verb'     => 'refunded',
+               'thing'          => 'refund',
+               'amount_field'   => 'refund',
+               'name_singular'  => 'refund',
+               'name_verb'      => 'refunded',
          )
 
   include( 'elements/cust_pay_or_refund.html',
-               'thing'         => 'pay_pending',
-               'amount_field'  => 'paid',
-               'name_singular' => 'pending payment',
-               'name_verb'     => 'pending',
-               'disable_link'  => 1,
-               'disable_by'    => 1,
-               'html_init'     => '',
-               'addl_header'   => [],
-               'addl_fields'   => [],
+               'thing'          => 'pay_pending',
+               'amount_field'   => 'paid',
+               'name_singular'  => 'pending payment',
+               'name_verb'      => 'pending',
+               'disable_link'   => 1,
+               'disable_by'     => 1,
+               'html_init'      => '',
+               'addl_header'    => [],
+               'addl_fields'    => [],
+               'redirect_empty' => $redirect_empty,
           )
 
 </%doc>
 <% include( 'search.html',
-                'title'         => $title,
-                'name_singular' => $name_singular,
-                'query'         => $sql_query,
-                'count_query'   => $count_query,
-                'count_addl'    => [ '$%.2f total '.$opt{name_verb}, ],
-                'header'        => [ "\u$name_singular",
-                                     'Amount',
-                                     'Date',
-                                     @header,
-                                     FS::UI::Web::cust_header(),
-                                   ],
-                'fields'      => [
+                'title'          => $title,
+                'name_singular'  => $name_singular,
+                'query'          => $sql_query,
+                'count_query'    => $count_query,
+                'count_addl'     => [ '$%.2f total '.$opt{name_verb}, ],
+                'redirect_empty' => $opt{'redirect_empty'},
+                'header'         => [ "\u$name_singular",
+                                      'Amount',
+                                      'Date',
+                                      @header,
+                                      FS::UI::Web::cust_header(),
+                                    ],
+                'fields'       => [
                   'payby_payinfo_pretty',
                   sub { sprintf('$%.2f', shift->$amount_field() ) },
                   sub { time2str('%b %d %Y', shift->_date ) },
@@ -96,13 +98,11 @@ my @header = ();
 my @fields = ();
 unless ( $opt{'disable_by'} ) {
   push @header, 'By';
-  push @fields, sub {
-                  sub { my $o = shift->otaker;
-                        $o = 'auto billing'          if $o eq 'fs_daily';
-                        $o = 'customer self-service' if $o eq 'fs_selfservice';
-                        $o;
-                      },
-  };
+  push @fields, sub { my $o = shift->otaker;
+                      $o = 'auto billing'          if $o eq 'fs_daily';
+                      $o = 'customer self-service' if $o eq 'fs_selfservice';
+                      $o;
+                    };
 }
 
 push @header, @{ $opt{'addl_header'} }
