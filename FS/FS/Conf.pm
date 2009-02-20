@@ -2650,6 +2650,13 @@ worry that config_items is freeside-specific and icky.
     'type'        => 'text',
   },
 
+  {
+    'key'         => 'cust_pkg-show_autosuspend',
+    'section'     => 'UI',
+    'description' => 'Show package auto-suspend dates.  Use with caution for now; can slow down customer view for large insallations.',
+    'type'       => 'checkbox',
+  },
+
 );
 
 1;

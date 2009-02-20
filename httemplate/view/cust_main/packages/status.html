@@ -121,8 +121,11 @@
 %       } 
 %
 %     } 
-%   my $autosuspend = pkg_autosuspend_time( $cust_pkg );
-%   $cust_pkg->set('autosuspend', $autosuspend) if $autosuspend;
+%
+%     if ( $conf->exists('cust_pkg-show_autosuspend') ) {
+%       my $autosuspend = pkg_autosuspend_time( $cust_pkg );
+%       $cust_pkg->set('autosuspend', $autosuspend) if $autosuspend;
+%     }
 
       <% pkg_status_row_changed( $cust_pkg, %opt ) %>
       <% pkg_status_row_if( $cust_pkg, $last_bill_or_renewed, 'last_bill', %opt, curuser=>$curuser ) %>
@@ -166,6 +169,8 @@
 <%init>
 
 my %opt = @_;
+
+my $conf = new FS::Conf;
 
 my $bgcolor  = $opt{'bgcolor'};
 my $cust_pkg = $opt{'cust_pkg'};
@@ -352,7 +357,8 @@ sub pkg_autosuspend_time {
   my $days = 7;
   my $time = time;
   my $pending_suspend = 0;
-  #this seems to be extremely inefficient...
+  #this seems to be extremely inefficient...  and is slowing down all customer
+  #views
   while ( $days > 0 &&
           scalar(
             grep { $_->part_event->action eq 'suspend' }
