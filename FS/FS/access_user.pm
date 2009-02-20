@@ -1,7 +1,7 @@
 package FS::access_user;
 
 use strict;
-use vars qw( @ISA $htpasswd_file );
+use vars qw( @ISA $DEBUG $me $htpasswd_file );
 use FS::UID;
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs dbh );
@@ -13,6 +13,9 @@ use FS::agent;
 
 @ISA = qw( FS::m2m_Common FS::option_Common FS::Record );
 #@ISA = qw( FS::m2m_Common FS::option_Common );
+
+$DEBUG = 0;
+$me = '[FS::access_user]';
 
 #kludge htpasswd for now (i hope this bootstraps okay)
 FS::UID->install_callback( sub {
@@ -413,16 +416,29 @@ sub access_right {
 
   $rightname = [ $rightname ] unless ref($rightname);
 
+  warn "$me access_right called on ". join(', ', @$rightname). "\n"
+    if $DEBUG;
+
   #some caching of ACL requests for low-hanging fruit perf improvement
   #since we get a new $CurrentUser object each page view there shouldn't be any
   #issues with stickiness
   if ( $self->{_ACLcache} ) {
 
-    return grep $self->{_ACLcache}{$_}, @$rightname
-      unless grep !exists($self->{_ACLcache}{$_}), @$rightname;
+    unless ( grep !exists($self->{_ACLcache}{$_}), @$rightname ) {
+      warn "$me ACL cache hit for ". join(', ', @$rightname). "\n"
+        if $DEBUG;
+      return grep $self->{_ACLcache}{$_}, @$rightname
+    }
+
+    warn "$me ACL cache miss for ". join(', ', @$rightname). "\n"
+      if $DEBUG;
 
   } else {
+
+    warn "initializing ACL cache\n"
+      if $DEBUG;
     $self->{_ACLcache} = {};
+
   }
 
   my $has_right = ' rightname IN ('. join(',', map '?', @$rightname ). ') ';
@@ -440,8 +456,14 @@ sub access_right {
   $sth->execute($self->usernum, @$rightname) or die $sth->errstr;
   my $row = $sth->fetchrow_arrayref;
 
-  #$row ? $row->[0] : '';
-  $self->{_ACLcache}{$rightname} = ( $row ? $row->[0] : '' );
+  my $return = $row ? $row->[0] : '';
+
+  #just caching the single-rightname hits should be enough of a win for now
+  if ( scalar(@$rightname) == 1 ) {
+    $self->{_ACLcache}{${$rightname}[0]} = $return;
+  }
+
+  $return;
 
 }
 
