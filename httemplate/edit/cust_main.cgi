@@ -361,16 +361,23 @@ function update_address(arg) {
 
 % if ( $conf->exists('enable_taxproducts') ) {
 
-  if ( ( error || ship_error ) &&
-       ( document.bottomform.elements['country'].value == 'CA' ||
+  if ( <% $taxpre %>error ) {
+
+    if ( document.bottomform.elements['country'].value == 'CA' ||
          document.bottomform.elements['country'].value == 'US'
        )
-     )
-  {
+    {
 
-    var url = "cust_main/choose_tax_location.html?data_vendor=cch-zip;city="+document.bottomform.elements['city'].value+";state="+document.bottomform.elements['state'].value+";zip="+document.bottomform.elements['zip'].value+";country="+document.bottomform.elements['country'].value+";";
-    // popup a chooser
-    OLgetAJAX( url, update_geocode, 300 );
+      var url = "cust_main/choose_tax_location.html?data_vendor=cch-zip;city="+document.bottomform.elements['city'].value+";state="+document.bottomform.elements['state'].value+";zip="+document.bottomform.elements['zip'].value+";country="+document.bottomform.elements['country'].value+";";
+      // popup a chooser
+      OLgetAJAX( url, update_geocode, 300 );
+
+    } else {
+
+      document.bottomform.elements['geocode'].value = 'DEFAULT';
+      document.bottomform.submit();
+
+    }
 
   } else
 
@@ -690,6 +697,7 @@ die "access denied"
 
 my $conf = new FS::Conf;
 
+my $taxpre = $conf->exists('tax-ship_address') ? 'ship_' : '';
 #get record
 
 my($custnum, $username, $password, $popnum, $cust_main, $saved_pkgpart, $saved_domsvc);
