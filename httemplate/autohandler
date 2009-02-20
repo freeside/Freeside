@@ -29,7 +29,7 @@ if ( UNIVERSAL::can(dbh, 'sprintProfile') ) {
   if ( $FS::CurrentUser::CurrentUser->option('save_db_profile') ) {
     #my $file = %%%FREESIDE_LOG%%%; #substitute here?  maybe get from FS.pm?
     my $file = '/usr/local/etc/freeside/'; #bah
-    $file .= "dbix_profile..$$.". time;
+    $file .= "dbix_profile.$$.". time;
     dbh->setLogFile($file);
     dbh->printProfile();
   }
