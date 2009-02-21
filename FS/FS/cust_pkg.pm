@@ -2359,7 +2359,7 @@ substitute for the placeholders in that fragment.
 sub location_sql {
   my($class, %opt) = @_;
   my $ornull = $opt{'ornull'};
-  my $nec    = $opt{'noempty_county'};
+  my $nec    = $opt{'no_empty_county'};
 
   my $conf = new FS::Conf;
 
