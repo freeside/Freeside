@@ -37,7 +37,7 @@ $DEBUG = 0;
 $me = '[FS::Record]';
 
 $nowarn_identical = 0;
-$nowarn_classload;
+$nowarn_classload = 0;
 $no_update_diff = 0;
 $no_check_foreign = 0;
 
@@ -438,7 +438,8 @@ sub qsearch {
       }
     }
   } else {
-    cluck "warning: FS::$table not loaded; returning FS::Record objects";
+    cluck "warning: FS::$table not loaded; returning FS::Record objects"
+      unless $nowarn_classload;
     @return = map {
       FS::Record->new( $table, { %{$_} } );
     } values(%result);
