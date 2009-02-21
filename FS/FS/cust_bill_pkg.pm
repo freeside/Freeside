@@ -30,10 +30,6 @@ FS::cust_bill_pkg - Object methods for cust_bill_pkg records
 
   $error = $record->insert;
 
-  $error = $new_record->replace($old_record);
-
-  $error = $record->delete;
-
   $error = $record->check;
 
 =head1 DESCRIPTION
@@ -182,16 +178,18 @@ sub delete {
   return "Can't delete cust_bill_pkg records!";
 }
 
-=item replace OLD_RECORD
-
-Currently unimplemented.  This would be even more of an accounting nightmare
-than deleteing the items.  Just don't do it.
-
-=cut
-
-sub replace {
-  return "Can't modify cust_bill_pkg records!";
-}
+#alas, bin/follow-tax-rename
+#
+#=item replace OLD_RECORD
+#
+#Currently unimplemented.  This would be even more of an accounting nightmare
+#than deleteing the items.  Just don't do it.
+#
+#=cut
+#
+#sub replace {
+#  return "Can't modify cust_bill_pkg records!";
+#}
 
 =item check
 

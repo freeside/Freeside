@@ -1,0 +1,52 @@
+#!/usr/bin/perl
+
+use FS::UID qw( adminsuidsetup );
+use FS::Record qw( qsearch qsearchs );
+use FS::cust_bill_pkg;
+
+$FS::Record::nowarn_classload = 1;
+$FS::Record::nowarn_classload = 1;
+
+adminsuidsetup shift;
+
+my $begin = 1231876106;
+
+my @old = qsearch('h_cust_main_county', {
+  'history_action' => 'replace_old',
+  'history_date'   => { op=>'>=', value=>$begin, },
+} );
+
+foreach my $old (@old) {
+
+  my $new = qsearchs('h_cust_main_county', {
+    'history_action' => 'replace_new',
+    'history_date'   => $old->history_date,
+  });
+
+  unless ( $new ) {
+    warn "huh?  no corresponding new record found?";
+    next;
+  }
+
+  my $old_taxname = $old->taxname;
+  my $new_taxname = $new->taxname;
+
+  my @cust_bill_pkg = qsearch('cust_bill_pkg', {
+   'pkgnum'   => 0,
+   'itemdesc' => $old->taxname,
+  });
+
+  next unless @cust_bill_pkg;
+
+  warn 'fixing '. scalar(@cust_bill_pkg).
+       " dangling line items for rename $old_taxname -> $new_taxname\n";
+
+  foreach my $cust_bill_pkg ( @cust_bill_pkg ) {
+
+    $cust_bill_pkg->itemdesc( $new->taxname );
+    my $error = $cust_bill_pkg->replace;
+    die $error if $error;
+
+  }
+
+}
