@@ -4,7 +4,8 @@ use strict;
 use vars qw( $AUTOLOAD @ISA @EXPORT_OK $DEBUG
              $conf $conf_encryption $me
              %virtual_fields_cache
-             $nowarn_identical $no_update_diff $no_check_foreign
+             $nowarn_identical $nowarn_classload
+             $no_update_diff $no_check_foreign
            );
 use Exporter;
 use Carp qw(carp cluck croak confess);
@@ -36,6 +37,7 @@ $DEBUG = 0;
 $me = '[FS::Record]';
 
 $nowarn_identical = 0;
+$nowarn_classload;
 $no_update_diff = 0;
 $no_check_foreign = 0;
 
@@ -293,7 +295,8 @@ sub qsearch {
   if ( eval 'scalar(@FS::'. $table. '::ISA);' ) {
     @virtual_fields = grep exists($record->{$_}), "FS::$table"->virtual_fields;
   } else {
-    cluck "warning: FS::$table not loaded; virtual fields not searchable";
+    cluck "warning: FS::$table not loaded; virtual fields not searchable"
+      unless $nowarn_classload;
     @virtual_fields = ();
   }
 
@@ -325,7 +328,7 @@ sub qsearch {
     my $type = dbdef->table($table)->column($field)->type;
 
     my $TYPE = SQL_VARCHAR;
-    if ( $type =~ /(int|(big)?serial)/i && $value =~ /^\d+(\.\d+)?$/ ) {
+    if ( $type =~ /(big)?(int|serial)/i && $value =~ /^\d+(\.\d+)?$/ ) {
       $TYPE = SQL_INTEGER;
 
     #DBD::Pg 1.49: Cannot bind ... unknown sql_type 6 with SQL_FLOAT
@@ -364,7 +367,8 @@ sub qsearch {
   if ( eval 'scalar(@FS::'. $table. '::ISA);' ) {
     @virtual_fields = "FS::$table"->virtual_fields;
   } else {
-    cluck "warning: FS::$table not loaded; virtual fields not returned either";
+    cluck "warning: FS::$table not loaded; virtual fields not returned either"
+      unless $nowarn_classload;
     @virtual_fields = ();
   }
 
