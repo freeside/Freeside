@@ -2359,16 +2359,18 @@ substitute for the placeholders in that fragment.
 sub location_sql {
   my($class, %opt) = @_;
   my $ornull = $opt{'ornull'};
+  my $nec    = $opt{'noempty_county'};
 
   my $conf = new FS::Conf;
 
   # '?' placeholders in _location_sql_where
   my @bill_param;
   if ( $ornull ) {
-    @bill_param = qw( county county county state state state country );
+    @bill_param = qw( county county state state state country );
   } else {
-    @bill_param = qw( county county state state country );
+    @bill_param = qw( county state state country );
   }
+  unshift @bill_param, 'county' unless $nec;
 
   my $main_where;
   my @main_param;
@@ -2376,10 +2378,10 @@ sub location_sql {
 
     $main_where = "(
          (     ( ship_last IS NULL     OR  ship_last  = '' )
-           AND ". _location_sql_where('cust_main', '', $ornull ). "
+           AND ". _location_sql_where('cust_main', '', $ornull, $nec ). "
          )
       OR (       ship_last IS NOT NULL AND ship_last != ''
-           AND ". _location_sql_where('cust_main', 'ship_', $ornull). "
+           AND ". _location_sql_where('cust_main', 'ship_', $ornull, $nec ). "
          )
     )";
     #    AND payby != 'COMP'
@@ -2397,10 +2399,17 @@ sub location_sql {
   my @param;
   if ( $conf->exists('tax-pkg_address') ) {
 
+    my $loc_where = _location_sql_where( 'cust_location',
+                                         '', #prefix
+                                         $ornull,
+                                         $nec,
+                                       );
+
     $where = " (
-         ( cust_pkg.locationnum IS     NULL AND $main_where                  )
-      OR ( cust_pkg.locationnum IS NOT NULL AND ". _location_sql_where('cust_location', '', $ornull). " )
-    )";
+                    ( cust_pkg.locationnum IS     NULL AND $main_where )
+                 OR ( cust_pkg.locationnum IS NOT NULL AND $loc_where  )
+               )
+             ";
     @param = ( @main_param, @bill_param );
   
   } else {
@@ -2414,15 +2423,19 @@ sub location_sql {
 
 }
 
-#subroutine, helper for able
+#subroutine, helper for location_sql
 sub _location_sql_where {
-  my $table = shift;
-  my $prefix = @_ ? shift : '';
-  my $ornull = @_ ? shift : '';
-  $ornull = $ornull ? ' OR ? IS NULL ' : '';
+  my $table           = shift;
+  my $prefix          = @_ ? shift : '';
+  my $ornull          = @_ ? shift : '';
+  my $no_empty_county = @_ ? shift : '';
+
+  $ornull             = $ornull          ? ' OR ? IS NULL ' : '';
+  my $or_empty_county = $no_empty_county ? ''               : " OR ? = '' ";
+
   "
-        ( $table.${prefix}county  = ? OR ? = '' $ornull )
-    AND ( $table.${prefix}state   = ? OR ? = '' $ornull )
+        ( $table.${prefix}county  = ? $or_empty_county $ornull )
+    AND ( $table.${prefix}state   = ? OR ? = ''        $ornull )
     AND   $table.${prefix}country = ?
   ";
 }
