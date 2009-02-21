@@ -154,7 +154,8 @@ sub new {
 
   unless ( defined ( $self->table ) ) {
     $self->{'Table'} = shift;
-    carp "warning: FS::Record::new called with table name ". $self->{'Table'};
+    carp "warning: FS::Record::new called with table name ". $self->{'Table'}
+      unless $nowarn_classload;
   }
   
   $self->{'Hash'} = shift;
