@@ -122,9 +122,9 @@ if ( $cgi->param('error') ) {
   my($cust_svc)=qsearchs('cust_svc',{'svcnum'=>$svcnum})
     or die "Unknown (cust_svc) svcnum!";
 
-  $pkgnum=$cust_svc->pkgnum;
-  $svcpart=$cust_svc->svcpart;
-  #$config=$cgi->escapeHTML($svc_www->config);
+  $pkgnum  = $cust_svc->pkgnum;
+  $svcpart = $cust_svc->svcpart;
+  $config  = $svc_www->config;
   
   $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
   die "No part_svc entry!" unless $part_svc;
