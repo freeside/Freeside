@@ -2359,7 +2359,6 @@ substitute for the placeholders in that fragment.
 sub location_sql {
   my($class, %opt) = @_;
   my $ornull = $opt{'ornull'};
-  my $nec    = $opt{'no_empty_county'};
 
   my $conf = new FS::Conf;
 
@@ -2370,7 +2369,7 @@ sub location_sql {
   } else {
     @bill_param = qw( county state state country );
   }
-  unshift @bill_param, 'county' unless $nec;
+  unshift @bill_param, 'county'; # unless $nec;
 
   my $main_where;
   my @main_param;
@@ -2378,10 +2377,10 @@ sub location_sql {
 
     $main_where = "(
          (     ( ship_last IS NULL     OR  ship_last  = '' )
-           AND ". _location_sql_where('cust_main', '', $ornull, $nec ). "
+           AND ". _location_sql_where('cust_main', '', $ornull ). "
          )
       OR (       ship_last IS NOT NULL AND ship_last != ''
-           AND ". _location_sql_where('cust_main', 'ship_', $ornull, $nec ). "
+           AND ". _location_sql_where('cust_main', 'ship_', $ornull ). "
          )
     )";
     #    AND payby != 'COMP'
@@ -2399,11 +2398,7 @@ sub location_sql {
   my @param;
   if ( $conf->exists('tax-pkg_address') ) {
 
-    my $loc_where = _location_sql_where( 'cust_location',
-                                         '', #prefix
-                                         $ornull,
-                                         $nec,
-                                       );
+    my $loc_where = _location_sql_where( 'cust_location', '', $ornull );
 
     $where = " (
                     ( cust_pkg.locationnum IS     NULL AND $main_where )
@@ -2425,17 +2420,18 @@ sub location_sql {
 
 #subroutine, helper for location_sql
 sub _location_sql_where {
-  my $table           = shift;
-  my $prefix          = @_ ? shift : '';
-  my $ornull          = @_ ? shift : '';
-  my $no_empty_county = @_ ? shift : '';
+  my $table  = shift;
+  my $prefix = @_ ? shift : '';
+  my $ornull = @_ ? shift : '';
 
-  $ornull             = $ornull          ? ' OR ? IS NULL ' : '';
-  my $or_empty_county = $no_empty_county ? ''               : " OR ? = '' ";
+  $ornull = $ornull ? ' OR ? IS NULL ' : '';
+
+  my $or_empty_county = " OR ( ? = '' AND $table.${prefix}county IS NULL ) ";
+  my $or_empty_state =  " OR ( ? = '' AND $table.${prefix}state  IS NULL ) ";
 
   "
         ( $table.${prefix}county  = ? $or_empty_county $ornull )
-    AND ( $table.${prefix}state   = ? OR ? = ''        $ornull )
+    AND ( $table.${prefix}state   = ? $or_empty_state  $ornull )
     AND   $table.${prefix}country = ?
   ";
 }
