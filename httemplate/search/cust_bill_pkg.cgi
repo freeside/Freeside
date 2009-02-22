@@ -91,24 +91,24 @@ if ( $cgi->param('classnum') =~ /^(\d+)$/ ) {
   }
 }
 
-sub _where {
-  my $table = shift;
-  my $prefix = @_ ? shift : '';
-  "
-       (    cust_main_county.county  = $table.${prefix}.county
-       OR ( cust_main_county.county IS NULL AND $table.${prefix}.county  =  '' )
-       OR ( cust_main_county.county  =  ''  AND $table.${prefix}.county IS NULL)
-       OR ( cust_main_county.county IS NULL AND $table.${prefix}.county IS NULL)
-       )
-   AND (    cust_main_county.state   = $table.${prefix}.state
-       OR ( cust_main_county.state  IS NULL AND $table.${prefix}.state  =  ''  )
-       OR ( cust_main_county.state   =  ''  AND $table.${prefix}.state IS NULL )
-       OR ( cust_main_county.state  IS NULL AND $table.${prefix}.state IS NULL )
-       )
-   AND cust_main_county.country = $table.${prefix}.country
-  ";
-
-}
+#sub _where {
+# my $table = shift;
+# my $prefix = @_ ? shift : '';
+# "
+#      (    cust_main_county.county  = $table.${prefix}.county
+#      OR ( cust_main_county.county IS NULL AND $table.${prefix}.county  =  '' )
+#      OR ( cust_main_county.county  =  ''  AND $table.${prefix}.county IS NULL)
+#      OR ( cust_main_county.county IS NULL AND $table.${prefix}.county IS NULL)
+#      )
+#  AND (    cust_main_county.state   = $table.${prefix}.state
+#      OR ( cust_main_county.state  IS NULL AND $table.${prefix}.state  =  ''  )
+#      OR ( cust_main_county.state   =  ''  AND $table.${prefix}.state IS NULL )
+#      OR ( cust_main_county.state  IS NULL AND $table.${prefix}.state IS NULL )
+#      )
+#  AND cust_main_county.country = $table.${prefix}.country
+# ";
+#
+#}
 
 if ( $cgi->param('out') ) {
 
@@ -127,6 +127,21 @@ if ( $cgi->param('out') ) {
              AND $loc_sql
         )
   ";
+
+  #not linked to by anything, but useful for debugging "out of taxable region"
+  if ( grep $cgi->param($_), qw( county state country ) ) {
+
+    my %ph = map { $_ => dbh->quote( $cgi->param($_) ) }
+                 qw( county state country );
+
+    my ( $loc_sql, @param ) = FS::cust_pkg->location_sql;
+    while ( $loc_sql =~ /\?/ ) { #easier to do our own substitution
+      $loc_sql =~ s/\?/$ph{shift(@param)}/e;
+    }
+
+    push @where, $loc_sql;
+
+  }
 
 } elsif ( $cgi->param('country' ) ) {
 
@@ -154,7 +169,11 @@ if ( $cgi->param('out') ) {
   }
 
   push @where, ' taxclass = '. dbh->quote( $cgi->param('taxclass') )
-    if $cgi->param('taxclass');
+    if $cgi->param('taxclass')
+    && ! $cgi->param('istax'); #no part_pkg.taxclass in this case
+                               #(should we save a taxclass or a link to taxnum
+                               # in cust_bill_pkg or something like
+                               # cust_bill_pkg_tax_location?)
 
   if ( $cgi->param('taxclassNULL') ) {
 
@@ -188,24 +207,63 @@ my $count_query;
 if ( $cgi->param('pkg_tax') ) {
 
   $count_query =
-    "SELECT COUNT(*), SUM(
-                           ( CASE WHEN part_pkg.setuptax = 'Y'
-                                  THEN cust_bill_pkg.setup
-                                  ELSE 0
-                             END
-                           )
-                           +
-                           ( CASE WHEN part_pkg.recurtax = 'Y'
-                                  THEN cust_bill_pkg.recur
-                                  ELSE 0
-                             END
-                           )
-                         )
+    "SELECT COUNT(*),
+            SUM(
+                 ( CASE WHEN part_pkg.setuptax = 'Y'
+                        THEN cust_bill_pkg.setup
+                        ELSE 0
+                   END
+                 )
+                 +
+                 ( CASE WHEN part_pkg.recurtax = 'Y'
+                        THEN cust_bill_pkg.recur
+                        ELSE 0
+                   END
+                 )
+               )
     ";
 
   push @where, "(    ( part_pkg.setuptax = 'Y' AND cust_bill_pkg.setup > 0 )
                   OR ( part_pkg.recurtax = 'Y' AND cust_bill_pkg.recur > 0 ) )",
                "( tax != 'Y' OR tax IS NULL )";
+
+} elsif ( $cgi->param('taxable') ) {
+
+  my $setup_taxable = "(
+    CASE WHEN part_pkg.setuptax = 'Y'
+         THEN 0
+         ELSE cust_bill_pkg.setup
+    END
+  )";
+
+  my $recur_taxable = "(
+    CASE WHEN part_pkg.recurtax = 'Y'
+         THEN 0
+         ELSE cust_bill_pkg.recur
+    END
+  )";
+
+  my $exempt = "(
+    SELECT COALESCE( SUM(amount), 0 ) FROM cust_tax_exempt_pkg
+      WHERE cust_tax_exempt_pkg.billpkgnum = cust_bill_pkg.billpkgnum
+  )";
+
+  $count_query =
+    "SELECT COUNT(*), SUM( $setup_taxable + $recur_taxable - $exempt )";
+
+  push @where,
+    #not tax-exempt package (setup or recur)
+    "(
+          ( ( part_pkg.setuptax != 'Y' OR part_pkg.setuptax IS NULL )
+            AND cust_bill_pkg.setup > 0 )
+       OR
+          ( ( part_pkg.recurtax != 'Y' OR part_pkg.recurtax IS NULL )
+            AND cust_bill_pkg.recur > 0 )
+    )",
+    #not a tax_exempt customer
+    "( tax != 'Y' OR tax IS NULL )";
+    #not covered in full by a monthly tax exemption (texas tax)
+    "0 < ( $setup_taxable + $recur_taxable - $exempt )",
 
 } else {
 

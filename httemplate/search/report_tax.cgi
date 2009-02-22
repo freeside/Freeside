@@ -58,7 +58,22 @@
 %     $bgcolor = $bgcolor1;
 %   }
 %
+%   #my $diff = 0;
+%   my $hicolor = $bgcolor;
+%   unless ( $cgi->param('show_taxclasses') ) {
+%     my $diff = abs(   sprintf( '%.2f', $region->{'owed'} )
+%                     - sprintf( '%.2f', $region->{'tax'}  )
+%                   );
+%     if ( $diff > 0.02 ) {
+%     #  $hicolor = $hicolor eq '#eeeeee' ? '#eeee66' : '#ffff99';
+%     #} elsif ( $diff ) {
+%       $hicolor = $hicolor eq '#eeeeee' ? '#eeee99' : '#ffffcc';
+%     }
+%   }
+%
+%
 %   my $td = qq(TD CLASS="grid" BGCOLOR="$bgcolor");
+%   my $tdh = qq(TD CLASS="grid" BGCOLOR="$hicolor");
 %   my $bigmath = '<FONT FACE="sans-serif" SIZE="+1"><B>';
 %   my $bme = '</B></FONT>';
 
@@ -85,17 +100,18 @@
         </TD>
       <<%$td%>><FONT SIZE="+1"><B> = </B></FONT></TD>
       <<%$td%> ALIGN="right">
-        <% &$money_sprintf( $region->{'taxable'} ) %></A>
+        <A HREF="<% $baselink. $link %>;nottax=1;taxable=1"
+        ><% &$money_sprintf( $region->{'taxable'} ) %></A>
       </TD>
       <<%$td%>><% $region->{'label'} eq 'Total' ? '' : "$bigmath X $bme" %></TD>
       <<%$td%> ALIGN="right"><% $region->{'rate'} %></TD>
       <<%$td%>><% $region->{'label'} eq 'Total' ? '' : "$bigmath = $bme" %></TD>
-      <<%$td%> ALIGN="right">
+      <<%$tdh%> ALIGN="right">
         <% &$money_sprintf( $region->{'owed'} ) %>
       </TD>
 
 % unless ( $cgi->param('show_taxclasses') ) { 
-        <<%$td%> ALIGN="right">
+        <<%$tdh%> ALIGN="right">
           <A HREF="<% $baselink. $link %>;istax=1"
           ><% &$money_sprintf( $region->{'tax'} ) %></A>
         </TD>
@@ -285,8 +301,8 @@ foreach my $r ( qsearch({ 'table'     => 'cust_main_county',
 
     $mywhere .= " AND taxclass = ? ";
     push @param, 'taxclass';
-    $regions{$label}->{'url_param'} .= ';taxclass='. uri_escape($r->taxclass)
-      if $cgi->param('show_taxclasses');
+    $regions{$label}->{'url_param'} .= ';taxclass='. uri_escape($r->taxclass);
+    #no, always#  if $cgi->param('show_taxclasses');
 
   } else {
 
@@ -298,7 +314,7 @@ foreach my $r ( qsearch({ 'table'     => 'cust_main_county',
 
   }
 
-  my $fromwhere = "$from_join_cust_pkg $mywhere AND payby != 'COMP' ";
+  my $fromwhere = "$from_join_cust_pkg $mywhere"; # AND payby != 'COMP' ";
 
 #  my $label = getlabel($r);
 #  $regions{$label}->{'label'} = $label;
@@ -307,11 +323,17 @@ foreach my $r ( qsearch({ 'table'     => 'cust_main_county',
 
   ## calculate total for this region
 
-  my $t = scalar_sql($r, \@param,
-    "SELECT SUM(cust_bill_pkg.setup+cust_bill_pkg.recur) $fromwhere AND $nottax"
-  );
+  my $t_sql =
+   "SELECT SUM(cust_bill_pkg.setup+cust_bill_pkg.recur) $fromwhere AND $nottax";
+  my $t = scalar_sql($r, \@param, $t_sql);
   $total += $t;
   $regions{$label}->{'total'} += $t;
+
+  if ( $label eq $out ) {# && $t ) {
+    warn "adding $t for ".
+         join('/', map $r->$_, qw( taxclass county state country ) ). "\n";
+    #warn $t_sql if $r->state eq 'FL';
+  }
 
   ## calculate customer-exemption for this region
 
@@ -432,7 +454,7 @@ if ( $conf->exists('tax-pkg_address') ) {
   $taxwhere =~ s/cust_pkg\.locationnum/cust_bill_pkg_tax_location.locationnum/g;
 
 }
-$taxfromwhere .= " $taxwhere AND payby != 'COMP' ";
+$taxfromwhere .= " $taxwhere "; #AND payby != 'COMP' ";
 my @taxparam = @base_param;
 
 #should i be a cust_main_county method or something
@@ -542,10 +564,10 @@ sub getlabel {
     #kludge to avoid "will not stay shared" warning
     my $out = 'Out of taxable region(s)';
     $label = $out;
-  } elsif ( $r->taxname ) {
-    $label = $r->taxname;
-#    $regions{$label}->{'taxname'} = $label;
-#    push @{$regions{$label}->{$_}}, $r->$_() foreach qw( county state country );
+#  } elsif ( $r->taxname && count_taxname($r->taxname) == 1 ) {
+#    $label = $r->taxname;
+##    $regions{$label}->{'taxname'} = $label;
+##    push @{$regions{$label}->{$_}}, $r->$_() foreach qw( county state country );
   } else {
     $label = $r->country;
     $label = $r->state.", $label" if $r->state;
@@ -554,10 +576,21 @@ sub getlabel {
       if $r->taxclass
       && $cgi->param('show_taxclasses')
       && ! $opt{'no_taxclass'};
-    #$label = $r->taxname. " ($label)" if $r->taxname;
+    $label = $r->taxname. " ($label)" if $r->taxname;
   }
   return $label;
 }
+
+#my %count_taxname = (); #cache
+#sub count_taxname {
+#  my $taxname = shift;
+#  return $count_taxname{$taxname} if exists $count_taxname{$taxname};
+#  my $sql = 'SELECT COUNT(*) FROM cust_main_county WHERE taxname = ?';
+#  my $sth = dbh->prepare($sql) or die dbh->errstr;
+#  $sth->execute( $taxname )
+#    or die "Unexpected error executing statement $sql: ". $sth->errstr;
+#  $count_taxname{$taxname} = $sth->fetchrow_arrayref->[0];
+#}
 
 #false laziness w/FS::Report::Table::Monthly (sub should probably be moved up
 #to FS::Report or FS::Record or who the fuck knows where)
