@@ -30,8 +30,9 @@ my $rsync = File::Rsync->new({
 
 foreach my $export ( @exports ) {
 
-  my $machine = $export->machine;
-  my $file = "$spooldir/$machine.conf";
+  my $machine   = $export->machine;
+  my $exportnum = $export->exportnum;
+  my $file = "$spooldir/$machine.exportnum$exportnum.conf";
 
   warn "exporting apache configuration for $machine to $file\n"
     if $opt{d};
