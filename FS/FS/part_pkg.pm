@@ -560,6 +560,18 @@ packages.
 
 =cut
 
+=item type_pkgs
+
+Returns all FS::type_pkgs objects (see L<FS::type_pkgs>) for this package
+definition.
+
+=cut
+
+sub type_pkgs {
+  my $self = shift;
+  qsearch('type_pkgs', { 'pkgpart' => $self->pkgpart } );
+}
+
 sub pkg_svc {
   my $self = shift;
 

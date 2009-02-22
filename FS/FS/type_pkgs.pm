@@ -83,16 +83,10 @@ sub check {
 
   my $error = 
        $self->ut_numbern('typepkgnum')
-    || $self->ut_number('typenum')
-    || $self->ut_number('pkgpart')
+    || $self->ut_foreign_key('typenum', 'agent_type', 'typenum' )
+    || $self->ut_foreign_key('pkgpart', 'part_pkg',   'pkgpart' )
   ;
   return $error if $error;
-
-  return "Unknown typenum"
-    unless qsearchs( 'agent_type', { 'typenum' => $self->typenum } );
-
-  return "Unknown pkgpart"
-    unless qsearchs( 'part_pkg', { 'pkgpart' => $self->pkgpart } );
 
   $self->SUPER::check;
 }
@@ -106,6 +100,17 @@ Returns the FS::part_pkg object associated with this record.
 sub part_pkg {
   my $self = shift;
   qsearchs( 'part_pkg', { 'pkgpart' => $self->pkgpart } );
+}
+
+=item agent_type
+
+Returns the FS::agent_type object associated with this record.
+
+=cut
+
+sub agent_type {
+  my $self = shift;
+  qsearchs( 'agent_type', { 'typenum' => $self->typenum } );
 }
 
 =cut

@@ -30,6 +30,7 @@ my $edit_global = 'Edit global package definitions';
 my $acl_edit        = $curuser->access_right($edit);
 my $acl_edit_global = $curuser->access_right($edit_global);
 my $acl_config      = $curuser->access_right('Configuration'); #to edit services
+                                                               #and agent types
 
 die "access denied"
   unless $acl_edit || $acl_edit_global;
@@ -173,6 +174,40 @@ push @fields, sub {
 #    ).
 #    $part_pkg->freq_pretty; #.'<BR>'
 };
+
+###
+# Agent goes here if displayed
+###
+
+#agent type
+if ( $acl_edit_global ) {
+  #really we just want a count, but this is fine unless someone has tons
+  my @all_agent_types = map {$_->typenum} qsearch('agent_type',{});
+  if ( scalar(@all_agent_types) > 1 ) {
+    push @header, 'Agent types';
+    my $typelink = $p. 'edit/agent_type.cgi?';
+    push @fields, sub { my $part_pkg = shift;
+                        [
+                          map { warn $_;
+                                my $agent_type = $_->agent_type;
+                                warn $agent_type;
+                                [ 
+                                  { 'data'  => $agent_type->atype, #escape?
+                                    'align' => 'left',
+                                    'link'  => ( $acl_config
+                                                   ? $typelink.
+                                                     $agent_type->typenum
+                                                   : ''
+                                               ),
+                                  },
+                                ];
+                              }
+                              $part_pkg->type_pkgs
+                        ];
+                      };
+    $align .= 'l';
+  }
+}
 
 #if ( $cgi->param('active') ) {
   push @header, 'Customer<BR>packages';
