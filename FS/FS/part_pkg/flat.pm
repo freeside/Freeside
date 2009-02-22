@@ -161,7 +161,10 @@ sub calc_remain {
   }
 
   my $next_bill = $cust_pkg->getfield('bill') || 0;
-  my $last_bill = $cust_pkg->last_bill || 0;
+
+  #my $last_bill = $cust_pkg->last_bill || 0;
+  my $last_bill = $cust_pkg->get('last_bill') || 0; #->last_bill falls back to setup
+
   return 0 if    ! $self->base_recur
               || ! $self->option('unused_credit', 1)
               || ! $last_bill
