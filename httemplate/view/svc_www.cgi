@@ -39,7 +39,7 @@
 
   <TR>
     <TD ALIGN="right">Config lines</TD>
-    <TD BGCOLOR="#ffffff"><PRE><% join("\n", $svc_www->config) |h %>"</PRE></TD>
+    <TD BGCOLOR="#ffffff"><PRE><% join("\n", $svc_www->config) |h %></PRE></TD>
   </TR>
 
 % foreach (sort { $a cmp $b } $svc_www->virtual_fields) {
