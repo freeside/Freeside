@@ -13,6 +13,8 @@ use FS::Conf;
 use FS::Record qw(qsearch);
 use FS::Upgrade qw(upgrade upgrade_sqlradius);
 
+my $start = time;
+
 die "Not running uid freeside!" unless checkeuid();
 
 getopts("dqs");
@@ -35,6 +37,9 @@ dbdef_create($dbh, $dbdef_file);
 
 delete $FS::Schema::dbdef_cache{$dbdef_file}; #force an actual reload
 reload_dbdef($dbdef_file);
+
+warn "Upgrade startup completed in ". (time-$start). " seconds\n"; # if $DEBUG;
+$start = time;
 
 $DBIx::DBSchema::DEBUG = $DEBUG;
 $DBIx::DBSchema::Table::DEBUG = $DEBUG;
@@ -65,13 +70,22 @@ if ( $DRY_RUN ) {
       or die "Error: ". $dbh->errstr. "\n executing: $statement";
   }
 
+  warn "Pre-schema change upgrades completed in ". (time-$start). " seconds\n"; # if $DEBUG;
+  $start = time;
+
   dbdef->update_schema( dbdef_dist(datasrc), $dbh );
 }
+
+warn "Schema upgrade completed in ". (time-$start). " seconds\n"; # if $DEBUG;
+$start = time;
 
 my $hashref = {};
 $hashref->{dry_run} = 1 if $DRY_RUN;
 $hashref->{debug} = 1 if $DEBUG && $DRY_RUN;
 prune_applications($hashref) unless $opt_s;
+
+warn "Application pruning completed in ". (time-$start). " seconds\n"; # if $DEBUG;
+$start = time;
 
 print "\n" if $DRY_RUN;
 
@@ -96,6 +110,9 @@ if ( $dbh->{Driver}->{Name} =~ /^mysql/i && ! $opt_s ) {
     }
 
   }
+
+  warn "Duplication lock creation completed in ". (time-$start). " seconds\n"; # if $DEBUG;
+  $start = time;
 
 }
 
@@ -126,14 +143,25 @@ $dbh->disconnect or die $dbh->errstr;
 
 $dbh = adminsuidsetup($user);
 
+warn "Re-initialization with updated schema completed in ". (time-$start). " seconds\n"; # if $DEBUG;
+$start = time;
+
 upgrade()
   unless $DRY_RUN || $opt_s;
+
+warn "Table updates completed in ". (time-$start). " seconds\n"; # if $DEBUG;
+$start = time;
 
 upgrade_sqlradius()
   unless $DRY_RUN || $opt_s;
 
+warn "SQL RADIUS updates completed in ". (time-$start). " seconds\n"; # if $DEBUG;
+$start = time;
+
 $dbh->commit or die $dbh->errstr;
 $dbh->disconnect or die $dbh->errstr;
+
+warn "Commit and disconnection completed in ". (time-$start). " seconds; upgrade done!\n"; # if $DEBUG;
 
 ###
 

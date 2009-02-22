@@ -51,6 +51,8 @@ sub upgrade {
     if ( $class->can('_upgrade_data') ) {
       warn "Upgrading $table...\n";
 
+      my $start = time;
+
       my $oldAutoCommit = $FS::UID::AutoCommit;
       local $FS::UID::AutoCommit = 0;
       $FS::UID::AutoCommit = 0;
@@ -60,6 +62,9 @@ sub upgrade {
       if ( $oldAutoCommit ) {
         dbh->commit or die dbh->errstr;
       }
+      
+      #warn "\e[1K\rUpgrading $table... done in ". (time-$start). " seconds\n";
+      warn "  done in ". (time-$start). " seconds\n";
 
     } else {
       warn "WARNING: asked for upgrade of $table,".
