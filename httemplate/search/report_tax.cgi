@@ -329,11 +329,11 @@ foreach my $r ( qsearch({ 'table'     => 'cust_main_county',
   $total += $t;
   $regions{$label}->{'total'} += $t;
 
-  if ( $label eq $out ) {# && $t ) {
-    warn "adding $t for ".
-         join('/', map $r->$_, qw( taxclass county state country ) ). "\n";
-    #warn $t_sql if $r->state eq 'FL';
-  }
+  #if ( $label eq $out ) {# && $t ) {
+  #  warn "adding $t for ".
+  #       join('/', map $r->$_, qw( taxclass county state country ) ). "\n";
+  #  #warn $t_sql if $r->state eq 'FL';
+  #}
 
   ## calculate customer-exemption for this region
 
