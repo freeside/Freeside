@@ -2424,6 +2424,8 @@ sub _location_sql_where {
   my $prefix = @_ ? shift : '';
   my $ornull = @_ ? shift : '';
 
+#  $ornull             = $ornull          ? " OR ( ? IS NULL AND $table.${prefix}county IS NULL ) " : '';
+
   $ornull = $ornull ? ' OR ? IS NULL ' : '';
 
   my $or_empty_county = " OR ( ? = '' AND $table.${prefix}county IS NULL ) ";
