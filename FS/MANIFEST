@@ -74,6 +74,8 @@ FS/cust_credit_refund.pm
 FS/cust_svc.pm
 FS/h_Common.pm
 FS/h_cust_bill.pm
+FS/h_cust_pkg.pm
+FS/h_cust_pkg_reason.pm
 FS/h_cust_svc.pm
 FS/h_cust_tax_exempt.pm
 FS/h_domain_record.pm
@@ -212,10 +214,11 @@ t/cust_pkg.t
 t/cust_refund.t
 t/cust_svc.t
 t/h_cust_bill.t
+t/h_cust_pkg.t
+t/h_cust_pkg_reason.t
 t/h_cust_svc.t
 t/h_cust_tax_exempt.t
 t/h_Common.t
-t/h_cust_svc.t
 t/h_domain_record.t
 t/h_svc_acct.t
 t/h_svc_broadband.t
