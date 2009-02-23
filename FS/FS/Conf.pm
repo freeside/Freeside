@@ -334,7 +334,7 @@ sub import_config_item {
     warn "Inserting $key\n" if $DEBUG;
     local $/;
     my $value = readline(new IO::File "$dir/$key");
-    if ($item->type eq 'binary') {
+    if ($item->type =~ /^(binary|image)$/ ) {
       $self->set_binary($key, $value);
     }else{
       $self->set($key, $value);
@@ -363,7 +363,8 @@ sub verify_config_item {
   $error .= "$key fails existential comparison; "
     if $self->exists($key) xor $compat->exists($key);
 
-  unless ($type eq 'binary') {
+  if ( $type !~ /^(binary|image)$/ ) {
+
     {
       no warnings;
       $error .= "$key fails scalar comparison; "
@@ -380,21 +381,23 @@ sub verify_config_item {
       $error .= "$key fails list comparison; "
         unless $r;
     }
-  }
 
-  if ($type eq 'binary') {
+  } else {
+
     $error .= "$key fails binary comparison; "
       unless scalar($self->config_binary($key)) eq scalar($compat->config_binary($key));
+
   }
 
-  if ($error =~ /existential comparison/ && $item->section eq 'deprecated') {
-    my $proto;
-    for ( @config_items ) { $proto = $_; last if $proto->key eq $key;  }
-    unless ($proto->key eq $key) { 
-      warn "removed config item $error\n" if $DEBUG;
-      $error = '';
-    }
-  }
+#remove deprecated config on our own terms, not freeside-upgrade's
+#  if ($error =~ /existential comparison/ && $item->section eq 'deprecated') {
+#    my $proto;
+#    for ( @config_items ) { $proto = $_; last if $proto->key eq $key;  }
+#    unless ($proto->key eq $key) { 
+#      warn "removed config item $error\n" if $DEBUG;
+#      $error = '';
+#    }
+#  }
 
   $error;
 }
@@ -479,7 +482,7 @@ sub config_items {
 
 =item init-config DIR
 
-Imports the non-deprecated configuration items from DIR (1.7 compatible)
+Imports the configuration items from DIR (1.7 compatible)
 to conf records in the database.
 
 =cut
