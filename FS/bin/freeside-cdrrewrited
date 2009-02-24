@@ -29,8 +29,6 @@ die "not running; cdr-asterisk_forward_rewrite conf is off\n"
 
 #--
 
-my $domestic_prefix = 1; #hmm, global config?
-
 while (1) {
 
   #hmm... don't want to do an expensive search with an ever-growing bunch
@@ -52,12 +50,11 @@ while (1) {
 
     $found = 1;
 
-    if ( $cdr->dstchannel =~ /^Local\/($domestic_prefix)?(\d+)/i
-         && $2 ne $cdr->dst
+    if ( $cdr->dstchannel =~ /^Local\/(\d+)/i && $1 ne $cdr->dst
        )
     {
 
-      my $dst = $2;
+      my $dst = $1;
 
       warn "dst ". $cdr->dst. " does not match dstchannel $dst ".
            "(". $cdr->dstchannel. "); rewriting CDR as a forwarded call";
