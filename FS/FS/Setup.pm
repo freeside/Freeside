@@ -146,7 +146,7 @@ sub populate_initial_data {
 
   foreach my $table ( keys %$data ) {
 
-    warn "popuilating $table\n";
+    #warn "popuilating $table\n";
 
     my $class = "FS::$table";
     eval "use $class;";
@@ -165,9 +165,9 @@ sub populate_initial_data {
       die "error inserting record into $table: $error\n"
         if $error;
 
-      my $pkey = $object->primary_key;
-      my $pkeyvalue = $object->$pkey();
-      warn "  inserted $pkeyvalue\n";
+      #my $pkey = $object->primary_key;
+      #my $pkeyvalue = $object->$pkey();
+      #warn "  inserted $pkeyvalue\n";
 
     }
 
