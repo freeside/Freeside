@@ -1,0 +1,26 @@
+#!/usr/bin/perl -Tw
+
+use strict;
+use vars qw($opt_d $opt_v);
+use Getopt::Std;
+use FS::UID qw(adminsuidsetup);
+use FS::Setup qw(create_initial_data);
+
+getopts("d:");
+
+my $dbh = adminsuidsetup shift;
+create_initial_data('domain' => $opt_d);
+
+warn "Freeside initial data inserted - commiting transaction\n" if $opt_v;
+
+$dbh->commit or die $dbh->errstr;
+$dbh->disconnect or die $dbh->errstr;
+
+warn "Database initialization committed successfully\n" if $opt_v;
+
+sub usage {
+  die "Usage:\n  freeside-create-initial-data -d domain.name [ -v ] user\n"
+}
+
+1;
+
