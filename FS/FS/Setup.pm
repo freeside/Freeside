@@ -158,11 +158,17 @@ sub populate_initial_data {
     my @records = @{ $data->{$table} };
 
     foreach my $record ( @records ) {
+
       my $args = delete($record->{'_insert_args'}) || [];
       my $object = $class->new( $record );
       my $error = $object->insert( @$args );
       die "error inserting record into $table: $error\n"
         if $error;
+
+      my $pkey = $object->primary_key;
+      my $pkeyvalue = $object->$pkey();
+      warn "  inserted $pkeyvalue\n";
+
     }
 
   }
