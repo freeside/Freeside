@@ -1,11 +1,12 @@
 package FS::part_referral;
 
 use strict;
-use vars qw( @ISA );
+use vars qw( @ISA $setup_hack );
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::agent;
 
 @ISA = qw( FS::Record );
+$setup_hack = 0;
 
 =head1 NAME
 
@@ -100,7 +101,10 @@ sub check {
     || $self->ut_text('referral')
     || $self->ut_enum('disabled', [ '', 'Y' ] )
     #|| $self->ut_foreign_keyn('agentnum', 'agent', 'agentnum')
-    || $self->ut_agentnum_acl('agentnum', 'Edit global advertising sources')
+    || ( $setup_hack
+           ? $self->ut_foreign_keyn('agentnum', 'agent', 'agentnum' )
+           : $self->ut_agentnum_acl('agentnum', 'Edit global advertising sources')
+       )
   ;
   return $error if $error;
 
