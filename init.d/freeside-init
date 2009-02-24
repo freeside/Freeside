@@ -29,6 +29,10 @@ case "$1" in
         freeside-prepaidd $QUEUED_USER
         echo "done."
 
+        echo -n "Starting freeside-cdrrewrited: "
+        freeside-cdrrewrited $QUEUED_USER
+        echo "done."
+
         echo -n "Starting freeside-cdrd: "
         freeside-cdrd $QUEUED_USER
         echo "done."
@@ -64,6 +68,12 @@ case "$1" in
         if [ -e /var/run/freeside-cdrd.pid ]; then
           echo -n "Stopping freeside-cdrd: "
           kill `cat /var/run/freeside-cdrd.pid`
+          echo "done."
+        fi
+
+        if [ -e /var/run/freeside-cdrrewrited.pid ]; then
+          echo -n "Stopping freeside-cdrrewrited: "
+          kill `cat /var/run/freeside-cdrrewrited.pid`
           echo "done."
         fi
 

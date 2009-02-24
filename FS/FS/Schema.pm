@@ -2014,12 +2014,15 @@ sub tables_hashref {
         #NULL, done (or something)
         'freesidestatus', 'varchar',   'NULL',     32,   '', '', 
 
+        #NULL, done (or something)
+        'freesiderewritestatus', 'varchar',   'NULL',     32,   '', '', 
+
         'cdrbatch', 'varchar', 'NULL', $char_d, '', '',
 
       ],
       'primary_key' => 'acctid',
       'unique' => [],
-      'index' => [ [ 'calldate' ], [ 'src' ], [ 'dst' ], [ 'charged_party' ], [ 'accountcode' ], [ 'freesidestatus' ], [ 'cdrbatch' ], ],
+      'index' => [ [ 'calldate' ], [ 'src' ], [ 'dst' ], [ 'charged_party' ], [ 'accountcode' ], [ 'freesidestatus' ], [ 'freesiderewritestatus' ], [ 'cdrbatch' ], ],
     },
 
     'cdr_calltype' => {

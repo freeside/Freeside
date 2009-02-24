@@ -1,0 +1,118 @@
+#!/usr/bin/perl -w
+
+use strict;
+use vars qw( $conf );
+use FS::Daemon ':all'; #daemonize1 drop_root daemonize2 myexit logfile sig*
+use FS::UID qw( adminsuidsetup );
+use FS::Record qw( qsearch ); #qsearchs);
+#use FS::cdr;
+#use FS::cust_pkg;
+#use FS::queue;
+
+my $user = shift or die &usage;
+
+#daemonize1('freeside-sprepaidd', $user); #keep unique pid files w/multi installs
+daemonize1('freeside-cdrrewrited');
+
+drop_root();
+
+adminsuidsetup($user);
+
+logfile( "%%%FREESIDE_LOG%%%/cdrrewrited-log.". $FS::UID::datasrc );
+
+daemonize2();
+
+$conf = new FS::Conf;
+
+die "not running; cdr-asterisk_forward_rewrite conf is off\n"
+  unless _shouldrun();
+
+#--
+
+my $domestic_prefix = 1; #hmm, global config?
+
+while (1) {
+
+  #hmm... don't want to do an expensive search with an ever-growing bunch
+  # of unprocessed CDRs during the month... better to mark them all as
+  # rewritten "skipped", i.e. why we're a daemon in the first place
+  # instead of just doing this search like normal CDRs
+
+  my $found = 0;
+  foreach my $cdr ( 
+    qsearch( {
+      'table'     => 'cdr',
+      'extra_sql' => 'FOR UPDATE',
+      'hashref'   => {},
+      'extra_sql' => 'WHERE freesidestatus IS NULL'.
+                     ' AND freesiderewritestatus IS NULL'.
+                     ' LIMIT 1024', #arbitrary, but don't eat too much memory
+    } )
+  ) {
+
+    $found = 1;
+
+    if ( $cdr->dstchannel =~ /^Local\/($domestic_prefix)?(\d+)/i
+         && $2 ne $cdr->dst
+       )
+    {
+
+      my $dst = $2;
+
+      warn "dst ". $cdr->dst. " does not match dstchannel $dst ".
+           "(". $cdr->dstchannel. "); rewriting CDR as a forwarded call";
+
+      $cdr->charged_party($cdr->dst);
+      $cdr->dst($dst);
+      $cdr->amaflags(2);
+
+      $cdr->freesiderewritestatus('asterisk_forward');
+
+    } else {
+      $cdr->freesiderewritestatus('skipped')
+    }
+
+    my $error = $cdr->replace;
+
+    if ( $error ) {
+      warn "WARNING: error rewriting CDR (will retry in 30 seconds):".
+           " $error\n";
+      sleep 30; #i dunno, wait and see if the database comes back?
+    }
+
+  }
+
+  myexit() if sigterm() || sigint();
+  #sleep 1 unless $found;
+  sleep 5 unless $found;
+
+}
+
+#--
+
+sub _shouldrun {
+  $conf->exists('cdr-asterisk_forward_rewrite');
+}
+
+sub usage { 
+  die "Usage:\n\n  freeside-cdrrewrited user\n";
+}
+
+=head1 NAME
+
+freeside-cdrrewrited - Real-time daemon for CDR rewriting
+
+=head1 SYNOPSIS
+
+  freeside-cdrrewrited
+
+=head1 DESCRIPTION
+
+Runs continuously, searches for CDRs and does forwarded-call rewriting if
+the "cdr-asterisk_forward_rewrite" option is enabled.
+
+=head1 SEE ALSO
+
+=cut
+
+1;

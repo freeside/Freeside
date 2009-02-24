@@ -130,6 +130,8 @@ following fields are currently supported:
 
 =item freesidestatus - NULL, done (or something)
 
+=item freesiderewritestatus - NULL, done (or something)
+
 =item cdrbatch
 
 =back
@@ -228,6 +230,7 @@ sub check {
 #    || $self->ut_numbern('upstream_rateid')
 #    || $self->ut_numbern('svcnum')
 #    || $self->ut_textn('freesidestatus')
+#    || $self->ut_textn('freesiderewritestatus')
 #  ;
 #  return $error if $error;
 
