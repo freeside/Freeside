@@ -146,6 +146,8 @@ sub populate_initial_data {
 
   foreach my $table ( keys %$data ) {
 
+    warn "popuilating $table\n";
+
     my $class = "FS::$table";
     eval "use $class;";
     die $@ if $@;
@@ -266,7 +268,7 @@ sub initial_data {
     #which would only sell regular packages of services. Click on View/Edit
     #agent types and Add a new agent type.
     'agent_type' => [
-      { 'atype' => 'internal' },
+      { 'atype' => 'Internal' },
     ],
 
     #Allow this agent type to sell the package you created above.
