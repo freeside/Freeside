@@ -4,6 +4,7 @@
 BEGIN { $FS::Schema::setup_hack = 1; }
 
 #to allow initial insert
+use FS::part_pkg;
 $FS::part_pkg::setup_hack = 1;
 $FS::part_pkg::setup_hack = 1;
 
