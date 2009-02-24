@@ -3,6 +3,10 @@
 #to delay loading dbdef until we're ready
 BEGIN { $FS::Schema::setup_hack = 1; }
 
+#to allow initial insert
+$FS::part_pkg::setup_hack = 1;
+$FS::part_pkg::setup_hack = 1;
+
 use strict;
 use vars qw($opt_u $opt_d $opt_v);
 use Getopt::Std;

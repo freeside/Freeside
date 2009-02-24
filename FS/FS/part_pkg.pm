@@ -1,7 +1,7 @@
 package FS::part_pkg;
 
 use strict;
-use vars qw( @ISA %plans $DEBUG );
+use vars qw( @ISA %plans $DEBUG $setup_hack );
 use Carp qw(carp cluck confess);
 use Scalar::Util qw( blessed );
 use Time::Local qw( timelocal_nocheck );
@@ -22,6 +22,7 @@ use FS::part_pkg_link;
 
 @ISA = qw( FS::m2m_Common FS::option_Common );
 $DEBUG = 0;
+$setup_hack = 0;
 
 =head1 NAME
 
@@ -454,7 +455,10 @@ sub check {
                               'part_pkg_taxproduct',
                               'taxproductnum'
                              )
-    || $self->ut_agentnum_acl('agentnum', \@null_agentnum_right)
+    || ( $setup_hack
+           ? $self->ut_foreign_keyn('agentnum', 'agent', 'agentnum' )
+           : $self->ut_agentnum_acl('agentnum', \@null_agentnum_right)
+       )
     || $self->SUPER::check
   ;
   return $error if $error;
