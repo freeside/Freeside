@@ -148,7 +148,7 @@ Contact Information
       'CHEK' => qq!Electronic check<BR>${r}Account number <INPUT TYPE="text" NAME="CHEK_payinfo1" VALUE="" MAXLENGTH=10><BR>${r}ABA/Routing code <INPUT TYPE="text" NAME="CHEK_payinfo2" VALUE="" SIZE=10 MAXLENGTH=9> Type <SELECT NAME="CHEK_paytype">!. join('', map {qq!<OPTION VALUE="$_">$_</OPTION>!} @paytypes). qq!</SELECT><BR>{$r}Bank State <INPUT TYPE="text" NAME="CHEK_paystate" VALUE="" SIZE=5 MAXLENGTH=4><INPUT TYPE="hidden" NAME="CHEK_month" VALUE="12"><INPUT TYPE="hidden" NAME="CHEK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="CHEK_payname" VALUE="">!,
       'DCHK' => qq!Electronic check<BR>${r}Account number <INPUT TYPE="text" NAME="DCHK_payinfo1" VALUE="" MAXLENGTH=10> Type <SELECT NAME="DCHK_paytype">!. join('', map {qq!<OPTION VALUE="$_">$_</OPTION>!} @paytypes). qq!</SELECT><BR>${r}ABA/Routing code <INPUT TYPE="text" NAME="DCHK_payinfo2" VALUE="" SIZE=10 MAXLENGTH=9><BR>{$r}Bank State <INPUT TYPE="text" NAME="DCHK_paystate" VALUE="" SIZE=5 MAXLENGTH=4><INPUT TYPE="hidden" NAME="DCHK_month" VALUE="12"><INPUT TYPE="hidden" NAME="DCHK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="DCHK_payname" VALUE="">!,
       'LECB' => qq!Phone bill billing<BR>${r}Phone number <INPUT TYPE="text" NAME="LECB_payinfo" VALUE="" MAXLENGTH=15 SIZE=16><INPUT TYPE="hidden" NAME="LECB_month" VALUE="12"><INPUT TYPE="hidden" NAME="LECB_year" VALUE="2037"><INPUT TYPE="hidden" NAME="LECB_payname" VALUE="">!,
-      'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" NAME="BILL_payinfo" VALUE=""><BR><font color="#ff0000">*</font>Exp !. expselect("BILL", "12-2037"). qq!<BR><font color="#ff0000">*</font>Attention<BR><INPUT TYPE="text" NAME="BILL_payname" VALUE="Accounts Payable">!,
+      'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" NAME="BILL_payinfo" VALUE=""><BR><INPUT TYPE="hidden" NAME="BILL_month" VALUE="12"><INPUT TYPE="hidden" NAME="BILL_year" VALUE="2037">Attention<INPUT TYPE="text" NAME="BILL_payname" VALUE="Accounts Payable">!,
       'COMP' => qq!Complimentary<BR><font color="#ff0000">*</font>Approved by<INPUT TYPE="text" NAME="COMP_payinfo" VALUE=""><BR><font color="#ff0000">*</font>Exp !. expselect("COMP"),
       'PREPAY' => qq!Prepaid card<BR><font color="#ff0000">*</font><INPUT TYPE="text" NAME="PREPAY_payinfo" VALUE="" MAXLENGTH=80>!,
     );
@@ -178,7 +178,7 @@ Contact Information
       'CHEK' => qq!Electronic check<BR>${r}Account number <INPUT TYPE="text" NAME="CHEK_payinfo1" VALUE="$account" MAXLENGTH=10> Type <SELECT NAME="CHEK_paytype">!. join('', map {qq!<OPTION VALUE="$_"!.($paytype eq $_ ? 'SELECTED' : '').">$_</OPTION>"} @paytypes). qq!</SELECT><BR>${r}ABA/Routing code <INPUT TYPE="text" NAME="CHEK_payinfo2" VALUE="$aba" SIZE=10 MAXLENGTH=9><INPUT TYPE="hidden" NAME="CHEK_month" VALUE="12"><INPUT TYPE="hidden" NAME="CHEK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="CHEK_payname" VALUE="$payname">!,
       'DCHK' => qq!Electronic check<BR>${r}Account number <INPUT TYPE="text" NAME="DCHK_payinfo1" VALUE="$account" MAXLENGTH=10> Type <SELECT NAME="DCHK_paytype">!. join('', map {qq!<OPTION VALUE="$_"!.($paytype eq $_ ? 'SELECTED' : '').">$_</OPTION>"} @paytypes). qq!</SELECT><BR>${r}ABA/Routing code <INPUT TYPE="text" NAME="DCHK_payinfo2" VALUE="$aba" SIZE=10 MAXLENGTH=9><INPUT TYPE="hidden" NAME="DCHK_month" VALUE="12"><INPUT TYPE="hidden" NAME="DCHK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="DCHK_payname" VALUE="">!,
       'LECB' => qq!Phone bill billing<BR>${r}Phone number <INPUT TYPE="text" BANE="LECB_payinfo" VALUE="$payinfo" MAXLENGTH=15 SIZE=16><INPUT TYPE="hidden" NAME="LECB_month" VALUE="12"><INPUT TYPE="hidden" NAME="LECB_year" VALUE="2037"><INPUT TYPE="hidden" NAME="LECB_payname" VALUE="">!,
-      'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" NAME="BILL_payinfo" VALUE="$payinfo"><BR><font color="#ff0000">*</font>Exp !. expselect("BILL", $paydate). qq!<BR><font color="#ff0000">*</font>Attention<BR><INPUT TYPE="text" NAME="BILL_payname" VALUE="$payname">!,
+      'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" NAME="BILL_payinfo" VALUE="$payinfo"><BR><INPUT TYPE="hidden" NAME="BILL_month" VALUE="12"><INPUT TYPE="hidden" NAME="BILL_year" VALUE="2037">Attention<INPUT TYPE="text" NAME="BILL_payname" VALUE="$payname">!,
       'COMP' => qq!Complimentary<BR><font color="#ff0000">*</font>Approved by<INPUT TYPE="text" NAME="COMP_payinfo" VALUE="$payinfo"><BR><font color="#ff0000">*</font>Exp !. expselect("COMP", $paydate),
       'PREPAY' => qq!Prepaid card<BR><font color="#ff0000">*</font><INPUT TYPE="text" NAME="PREPAY_payinfo" VALUE="$payinfo" MAXLENGTH=80>!,
     );
@@ -224,9 +224,11 @@ foreach my $payby_option ( @payby ) {
   $options{$payby_option} = $payby_index{$payby_option};
 }
 
+my $selected_layer = ( grep { $_ eq 'CARD' } @payby ) ? 'CARD' : $payby[0];
+
 HTML::Widgets::SelectLayers->new(
   options => \%options,
-  selected_layer => 'CARD',
+  selected_layer => $selected_layer,
   form_name => 'dummy',
   html_between => '</td></tr></table>',
   form_action => 'dummy.cgi',
