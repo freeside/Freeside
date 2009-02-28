@@ -223,7 +223,7 @@ install-perl-modules: perl-modules
 	install -d $(DIST_CONF)
 	#install conf/[a-z]* $(DEFAULT_CONF)
 	#CVS is not [a-z]
-	install `ls -d conf/[a-z]* | grep -v CVS` $(DIST_CONF)
+	install `ls -d conf/[a-z]* | grep -v CVS | grep -v '^conf/registries'` $(DIST_CONF)
 
 dev-perl-modules: perl-modules
 	[ -d ${PERL_INC_DEV_KLUDGE}/FS -a ! -L ${PERL_INC_DEV_KLUDGE}/FS ] \
