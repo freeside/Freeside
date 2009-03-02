@@ -61,6 +61,10 @@ nxx
 
 station
 
+=item name
+
+Optional name
+
 =item svcnum
 
 svcnum
