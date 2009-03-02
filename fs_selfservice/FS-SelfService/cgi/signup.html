@@ -1,6 +1,12 @@
-<HTML><HEAD><TITLE><%= $agent || ( $signup_service eq 'svc_phone' ? 'ITSP' : 'ISP' ) %> Signup form</TITLE></HEAD>
-<BODY BGCOLOR="#e8e8e8" onUnload="myclose()">
-<script language="JavaScript"><!--
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+  <TITLE><%= $agent || ( $signup_service eq 'svc_phone' ? 'ITSP' : 'ISP' ) %> Signup form</TITLE>
+  <%= $head %>
+</HEAD>
+<BODY BGCOLOR="<%= $body_bgcolor || '#e8e8e8' %>" onUnload="myclose()">
+
+<script type="text/javascript">
   var mywindow = -1;
   function myopen(filename,windowname,properties) {
     myclose();
@@ -11,15 +17,22 @@
       mywindow.close();
     mywindow = -1
   }
-//--></script>
-<FONT SIZE=7><%= $agent || ( $signup_service eq 'svc_phone' ? 'ITSP' : 'ISP' ) %> Signup form</FONT><BR><BR>
+</script>
+
+<%= $OUT .= $body_header
+      || '<FONT SIZE=7>'.
+         ( $agent || ( $signup_service eq 'svc_phone' ? 'ITSP' : 'ISP' ) ).
+         ' Signup form</FONT><BR><BR>';
+%>
+
 <FONT SIZE="+1" COLOR="#ff0000"><%= $error %></FONT>
+
 <FORM NAME="OneTrueForm" ACTION="<%= $self_url %>" METHOD=POST onSubmit="document.OneTrueForm.signup.disabled=true">
 <INPUT TYPE="hidden" NAME="session" VALUE="<%= $session_id %>">
 <INPUT TYPE="hidden" NAME="action" VALUE="process_signup">
 <INPUT TYPE="hidden" NAME="referral_custnum" VALUE="<%= $referral_custnum %>">
 <INPUT TYPE="hidden" NAME="ss" VALUE="">
-<input type="hidden" name="payby" />
+<input type="hidden" name="payby">
 <%=
   $OUT = join("\n",map { my $method = $_ ; map { qq|<input type="hidden" name="${method}_$_" />| } qw / payinfo payinfo1 payinfo2 payname paystate paytype paycvv month year type  /  } @payby);
 %>
@@ -39,7 +52,7 @@ Where did you hear about our service? <SELECT NAME="refnum">
 %>
 </SELECT><BR><BR>
 Contact Information
-<TABLE BGCOLOR="#c0c0c0" BORDER=0 CELLSPACING=0 WIDTH="100%">
+<TABLE BGCOLOR="<%= $box_bgcolor || '#c0c0c0' %>" BORDER=0 CELLSPACING=0 WIDTH="100%">
 <TR>
   <TH ALIGN="right"><font color="#ff0000">*</font>Contact name<BR>(last, first)</TH>
   <TD COLSPAN=5><INPUT TYPE="text" NAME="last" VALUE="<%= $last %>">,
@@ -111,7 +124,7 @@ Contact Information
   }
 %>
 </TABLE><font color="#ff0000">*</font> required fields<BR>
-<BR>Billing information<TABLE BGCOLOR="#c0c0c0" BORDER=0 CELLSPACING=0 WIDTH="100%">
+<BR>Billing information<TABLE BGCOLOR="<%= $box_bgcolor || '#c0c0c0' %>" BORDER=0 CELLSPACING=0 WIDTH="100%">
 <TR><TD>
 
   <%=
@@ -173,7 +186,7 @@ Contact Information
 
     my( $account, $aba ) = split('@', $payinfo);
     my %paybychecked = (
-      'CARD' => qq!<TABLE BGCOLOR="#c0c0c0" BORDER=0 CELLSPACING=0 WIDTH="100%"><TR><TD ALIGN="right"><font color="#ff0000">*</font> Card type</TD><TD>$cardselect</TD></TR><TR><TD ALIGN="right"><font color="#ff0000">*</font> Card number</TD><TD><INPUT TYPE="text" NAME="CARD_payinfo" VALUE="$payinfo" MAXLENGTH=19></TD></TR><TR><TD ALIGN="right"><font color="#ff0000">*</font> Expration</TD><TD>!. expselect("CARD", $paydate). qq!</TD></TR><TR><TD ALIGN="right"><font color="#ff0000">*</font> Name on card</TD><TD><INPUT TYPE="text" NAME="CARD_payname" VALUE="$payname"></TD></TR>!,
+      'CARD' => '<TABLE BGCOLOR="'. ( $box_bgcolor || '#c0c0c0' ). qq!" BORDER=0 CELLSPACING=0 WIDTH="100%"><TR><TD ALIGN="right"><font color="#ff0000">*</font> Card type</TD><TD>$cardselect</TD></TR><TR><TD ALIGN="right"><font color="#ff0000">*</font> Card number</TD><TD><INPUT TYPE="text" NAME="CARD_payinfo" VALUE="$payinfo" MAXLENGTH=19></TD></TR><TR><TD ALIGN="right"><font color="#ff0000">*</font> Expration</TD><TD>!. expselect("CARD", $paydate). qq!</TD></TR><TR><TD ALIGN="right"><font color="#ff0000">*</font> Name on card</TD><TD><INPUT TYPE="text" NAME="CARD_payname" VALUE="$payname"></TD></TR>!,
       'DCRD' => qq!Credit card<BR><font color="#ff0000">*</font>$cardselect<INPUT TYPE="text" NAME="DCRD_payinfo" VALUE="$payinfo" MAXLENGTH=19><BR><font color="#ff0000">*</font>Exp !. expselect("DCRD", $paydate). qq!<BR><font color="#ff0000">*</font>Name on card<BR><INPUT TYPE="text" NAME="DCRD_payname" VALUE="$payname">!,
       'CHEK' => qq!Electronic check<BR>${r}Account number <INPUT TYPE="text" NAME="CHEK_payinfo1" VALUE="$account" MAXLENGTH=10> Type <SELECT NAME="CHEK_paytype">!. join('', map {qq!<OPTION VALUE="$_"!.($paytype eq $_ ? 'SELECTED' : '').">$_</OPTION>"} @paytypes). qq!</SELECT><BR>${r}ABA/Routing code <INPUT TYPE="text" NAME="CHEK_payinfo2" VALUE="$aba" SIZE=10 MAXLENGTH=9><INPUT TYPE="hidden" NAME="CHEK_month" VALUE="12"><INPUT TYPE="hidden" NAME="CHEK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="CHEK_payname" VALUE="$payname">!,
       'DCHK' => qq!Electronic check<BR>${r}Account number <INPUT TYPE="text" NAME="DCHK_payinfo1" VALUE="$account" MAXLENGTH=10> Type <SELECT NAME="DCHK_paytype">!. join('', map {qq!<OPTION VALUE="$_"!.($paytype eq $_ ? 'SELECTED' : '').">$_</OPTION>"} @paytypes). qq!</SELECT><BR>${r}ABA/Routing code <INPUT TYPE="text" NAME="DCHK_payinfo2" VALUE="$aba" SIZE=10 MAXLENGTH=9><INPUT TYPE="hidden" NAME="DCHK_month" VALUE="12"><INPUT TYPE="hidden" NAME="DCHK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="DCHK_payname" VALUE="">!,
@@ -242,7 +255,7 @@ HTML::Widgets::SelectLayers->new(
 <FORM name="signup_form" action="<%= $self_url %>" METHOD="POST" onsubmit="return fixup_form();"><BR><BR>First package
 <INPUT TYPE="hidden" NAME="promo_code" VALUE="<%= $promo_code %>">
 <INPUT TYPE="hidden" NAME="reg_code" VALUE="<%= $reg_code %>">
-<TABLE BGCOLOR="#c0c0c0" BORDER=0 CELLSPACING=0 WIDTH="100%">
+<TABLE BGCOLOR="<%= $box_bgcolor || '#c0c0c0' %>" BORDER=0 CELLSPACING=0 WIDTH="100%">
 <TR>
   <TD COLSPAN=2><SELECT NAME="pkgpart">
 
@@ -405,4 +418,7 @@ function copyelement(from, to) {
 }
 
 </script>
-</FORM></BODY></HTML>
+</FORM>
+<%= $OUT .= $body_footer %>
+</BODY>
+</HTML>
