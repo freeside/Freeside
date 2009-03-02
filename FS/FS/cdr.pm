@@ -246,25 +246,7 @@ sub check {
     $self->billsec(  $self->enddate - $self->answerdate );
   } 
 
-  my $conf = new FS::Conf;
-
-  unless ( $self->charged_party ) {
-
-    if ( $conf->exists('cdr-charged_party-accountcode') && $self->accountcode ){
-
-      $self->charged_party( $self->accountcode );
-
-    } else {
-
-      if ( $self->dst =~ /^(\+?1)?8[02-8]{2}/ ) {
-        $self->charged_party($self->dst);
-      } else {
-        $self->charged_party($self->src);
-      }
-
-    }
-
-  }
+  $self->set_charged_party;
 
   #check the foreign keys even?
   #do we want to outright *reject* the CDR?
@@ -285,6 +267,43 @@ sub check {
   return $error if $error;
 
   $self->SUPER::check;
+}
+
+=item set_charged_party
+
+If the charged_party field is already set, does nothing.  Otherwise:
+
+If the cdr-charged_party-accountcode config option is enabled, sets the
+charged_party to the accountcode.
+
+Otherwise sets the charged_party normally: to the src field in most cases,
+or to the dst field if it is a toll free number.
+
+=cut
+
+sub set_charged_party {
+  my $self = shift;
+
+  unless ( $self->charged_party ) {
+
+    my $conf = new FS::Conf;
+
+    if ( $conf->exists('cdr-charged_party-accountcode') && $self->accountcode ){
+
+      $self->charged_party( $self->accountcode );
+
+    } else {
+
+      if ( $self->dst =~ /^(\+?1)?8[02-8]{2}/ ) {
+        $self->charged_party($self->dst);
+      } else {
+        $self->charged_party($self->src);
+      }
+
+    }
+
+  }
+
 }
 
 =item set_status_and_rated_price STATUS [ RATED_PRICE ]

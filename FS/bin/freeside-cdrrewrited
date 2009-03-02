@@ -24,7 +24,8 @@ daemonize2();
 
 $conf = new FS::Conf;
 
-die "not running; cdr-asterisk_forward_rewrite conf is off\n"
+die "not running; cdr-asterisk_forward_rewrite and cdr-charged_party_rewrite ".
+    " conf options are both off\n"
   unless _shouldrun();
 
 #--
@@ -49,8 +50,10 @@ while (1) {
   ) {
 
     $found = 1;
+    my @status = ();
 
-    if ( $cdr->dstchannel =~ /^Local\/(\d+)/i && $1 ne $cdr->dst
+    if ( $conf->exists('cdr-asterisk_forward_rewrite')
+         && $cdr->dstchannel =~ /^Local\/(\d+)/i && $1 ne $cdr->dst
        )
     {
 
@@ -63,11 +66,20 @@ while (1) {
       $cdr->dst($dst);
       $cdr->amaflags(2);
 
-      $cdr->freesiderewritestatus('asterisk_forward');
+      push @status, 'asterisk_forward';
 
-    } else {
-      $cdr->freesiderewritestatus('skipped')
     }
+
+    if ( $conf->exists('cdr-charged_party_rewrite') && ! $cdr->charged_party ) {
+
+      $cdr->set_charged_party;
+      push @status, 'charged_party';
+
+    }
+
+    $cdr->freesiderewritestatus(
+      scalar(@status) ? join('/', @status) : 'skipped'
+    );
 
     my $error = $cdr->replace;
 
@@ -88,7 +100,8 @@ while (1) {
 #--
 
 sub _shouldrun {
-  $conf->exists('cdr-asterisk_forward_rewrite');
+     $conf->exists('cdr-asterisk_forward_rewrite')
+  || $conf->exists('cdr-charged_party_rewrite');
 }
 
 sub usage { 
@@ -105,8 +118,9 @@ freeside-cdrrewrited - Real-time daemon for CDR rewriting
 
 =head1 DESCRIPTION
 
-Runs continuously, searches for CDRs and does forwarded-call rewriting if
-the "cdr-asterisk_forward_rewrite" option is enabled.
+Runs continuously, searches for CDRs and does forwarded-call rewriting if the
+"cdr-asterisk_forward_rewrite" or "cdr-charged_party_rewrite" config option is
+enabled.
 
 =head1 SEE ALSO
 

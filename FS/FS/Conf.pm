@@ -2647,6 +2647,13 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'cdr-charged_party_rewrite',
+    'section'     => '',
+    'description' => 'Do charged party rewriting in the freeside-cdrrewrited daemon; useful if CDRs are being dropped off directly in the database and require special charged_party processing such as cdr-charged_party-accountcode.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'cdr-taqua-da_rewrite',
     'section'     => '',
     'description' => 'For the Taqua CDR format, a comma-separated list of directory assistance 800 numbers.  Any CDRs with these numbers as "BilledNumber" will be rewritten to the "CallingPartyNumber" (and CallType "12") on import.',
@@ -2658,6 +2665,13 @@ worry that config_items is freeside-specific and icky.
     'section'     => 'UI',
     'description' => 'Show package auto-suspend dates.  Use with caution for now; can slow down customer view for large insallations.',
     'type'       => 'checkbox',
+  },
+
+  {
+    'key'         => 'cdr-asterisk_forward_rewrite',
+    'section'     => '',
+    'description' => 'Enable special processing for CDRs representing forwarded calls: For CDRs that have a dcontext that starts with "Local/" but does not match dst, set charged_party to dst, parse a new dst from dstchannel, and set amaflags to "2" ("BILL"/"BILLING").',
+    'type'        => 'checkbox',
   },
 
 );
