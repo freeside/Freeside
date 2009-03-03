@@ -127,7 +127,12 @@ sub insert {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my %args = @args;
+  my %args = ();
+  { 
+    no warnings "misc";
+    %args = @args;
+  }
+
   $self->custnum( $args{'custnum'} ) if $args{'custnum'};
 
   my $error = $self->SUPER::insert;
