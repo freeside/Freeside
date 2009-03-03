@@ -98,7 +98,7 @@ sub forksuidsetup {
   $ENV{'ENV'} = '';
   $ENV{'BASH_ENV'} = '';
 
-  croak "Not running uid freeside!" unless checkeuid();
+  croak "Not running uid freeside (\$>=$>, \$<=$<)\n" unless checkeuid();
 
   warn "$me forksuidsetup connecting to database\n" if $DEBUG;
   if ( $FS::CurrentUser::upgrade_hack && $olduser ) {
