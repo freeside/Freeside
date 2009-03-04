@@ -286,6 +286,7 @@ Returns true if effective UID is that of the freeside user.
 =cut
 
 sub checkeuid {
+  #$> = $freeside_uid unless $>; #huh.  mpm-itk hack
   ( $> == $freeside_uid );
 }
 
