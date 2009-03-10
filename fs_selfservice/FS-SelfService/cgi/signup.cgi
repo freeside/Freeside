@@ -8,11 +8,12 @@ use vars qw( @payby $cgi $init_data
              $ieak_file $ieak_template
              $signup_html $signup_template
              $success_html $success_template
+             $collect_html $collect_template
              $decline_html $decline_template
            );
 
 use subs qw( print_form print_okay print_decline
-             success_default decline_default
+             success_default collect_default decline_default
            );
 use CGI;
 #use CGI::Carp qw(fatalsToBrowser);
@@ -35,6 +36,9 @@ $signup_html = -e 'signup.html'
 $success_html = -e 'success.html'
                   ? 'success.html'
                   : '/usr/local/freeside/success.html';
+$collect_html = -e 'collect.html'
+                  ? 'collect.html'
+                  : '/usr/local/freeside/collect.html';
 $decline_html = -e 'decline.html'
                   ? 'decline.html'
                   : '/usr/local/freeside/decline.html';
@@ -97,6 +101,24 @@ if ( -e $success_html ) {
     or die $Text::Template::ERROR;
 }
 
+if ( -e $collect_html ) {
+  my $collect_txt = Text::Template::_load_text($collect_html)
+    or die $Text::Template::ERROR;
+  $collect_txt =~ /^(.*)$/s; #untaint the template source - it's trusted
+  $collect_txt = $1;
+  $collect_template = new Text::Template ( TYPE => 'STRING',
+                                           SOURCE => $collect_txt,
+                                           DELIMITERS => [ '<%=', '%>' ],
+                                         )
+    or die $Text::Template::ERROR;
+} else {
+  $collect_template = new Text::Template ( TYPE => 'STRING',
+                                           SOURCE => &collect_default,
+                                           DELIMITERS => [ '<%=', '%>' ],
+                                         )
+    or die $Text::Template::ERROR;
+}
+
 if ( -e $decline_html ) {
   my $decline_txt = Text::Template::_load_text($decline_html)
     or die $Text::Template::ERROR;
@@ -122,9 +144,10 @@ $init_data = signup_info( 'agentnum'   => $agentnum,
                           'reg_code'   => uc(scalar($cgi->param('reg_code'))),
                         );
 
-if (    ( defined($cgi->param('magic')) && $cgi->param('magic') eq 'process' )
-     || ( defined($cgi->param('action')) && $cgi->param('action') eq 'process_signup' )
-   ) {
+my $magic  = $cgi->param('magic') || '';
+my $action = $cgi->param('action') || '';
+
+if ( $magic eq 'process' || $action eq 'process_signup' ) {
 
     $error = '';
 
@@ -218,6 +241,10 @@ if (    ( defined($cgi->param('magic')) && $cgi->param('magic') eq 'process' )
     
     if ( $error eq '_decline' ) {
       print_decline();
+    } elsif ( $error eq '_collect' ) {
+      map { $cgi->param($_, $rv->{$_}) }
+        qw( popup_url reference collectitems amount );
+      print_collect();
     } elsif ( $error ) {
       #fudge the snarf info
       no strict 'refs';
@@ -229,6 +256,16 @@ if (    ( defined($cgi->param('magic')) && $cgi->param('magic') eq 'process' )
         %$rv,
       );
     }
+
+} elsif ( $magic eq 'success' || $action eq 'success' ) {
+
+  $cgi->param('username', 'username');  #hmmm temp kludge
+  $cgi->param('_password', 'password');
+  print_okay( map { /^([\w ]+)$/ ? ( $_ => $1 ) : () } $cgi->param ); #hmmm
+
+} elsif ( $magic eq 'decline' || $action eq 'decline' ) {
+
+  print_decline();
 
 } else {
   $error = '';
@@ -256,6 +293,27 @@ sub print_form {
         $signup_template->fill_in( PACKAGE => 'FS::SelfService::_signupcgi',
                                    HASH    => $r
                                  );
+}
+
+sub print_collect {
+
+  $error = "Error: $error" if $error;
+
+  my $r = {
+    $cgi->Vars,
+    %{$init_data},
+    'error' => $error,
+  };
+
+  $r->{pkgpart} ||= $r->{default_pkgpart};
+
+  $r->{referral_custnum} = $r->{'ref'};
+  $r->{self_url} = $cgi->self_url;
+
+  print $cgi->header( '-expires' => 'now' ),
+        $collect_template->fill_in( PACKAGE => 'FS::SelfService::_signupcgi',
+                                    HASH    => $r
+                                  );
 }
 
 sub print_decline {
@@ -365,6 +423,37 @@ Username: <%= $username %><BR>
 Password: <%= $password %><BR>
 Access number: (<%= $ac %>) / <%= $exch %> - <%= $local %><BR>
 Package: <%= $pkg %><BR>
+</BODY></HTML>
+END
+}
+
+sub collect_default { #html to use if there is a collect phase
+  <<'END';
+<HTML><HEAD><TITLE>Pay now</TITLE></HEAD>
+<BODY BGCOLOR="#e8e8e8"><FONT SIZE=7>Pay now</FONT><BR><BR>
+<SCRIPT TYPE="text/javascript">
+  function popcollect() {
+    overlib( OLiframeContent('<%= $popup_url %>', 336, 550, 'Secure Payment Area', 0, 'auto' ), CAPTION, 'Pay now', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '#333399', CGCOLOR, '#333399', CLOSETEXT, 'Close' );
+    return false;
+  }
+</SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="overlibmws.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="overlibmws_iframe.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="overlibmws_draggable.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="overlibmws_crossframe.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="iframecontentmws.js"></SCRIPT>
+You are about to contact our payment processor to pay <%= $amount %> for
+<%= $pkg %>.<BR><BR>
+Your transaction reference number is <%= $reference %><BR><BR>
+<FORM NAME="collect_popper" method="post" action="javascript:void(0)" onSubmit="popcollect()">
+<%=
+  my %itemhash = @collectitems;
+  foreach my $input (keys %itemhash) {
+    $OUT .= qq!<INPUT NAME="$input" TYPE="hidden" VALUE="$itemhash{$input}">!;
+  }
+%>
+<INPUT NAME="submit" type="submit" value="Pay now">
+</FORM>
 </BODY></HTML>
 END
 }

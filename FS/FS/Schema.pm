@@ -845,10 +845,12 @@ sub tables_hashref {
         'payunique',    'varchar', 'NULL', $char_d, '', '', #separate paybatch "unique" functions from current usage
 
         'status',       'varchar',     '', $char_d, '', '', 
+        'session_id',   'varchar', 'NULL', $char_d, '', '', #only need 32
         'statustext',   'text',    'NULL',  '', '', '', 
         'gatewaynum',   'int',     'NULL',  '', '', '',
         #'cust_balance', @money_type,            '', '',
         'paynum',       'int',     'NULL',  '', '', '',
+        'jobnum',       'int',     'NULL',  '', '', '', 
       ],
       'primary_key' => 'paypendingnum',
       'unique'      => [ [ 'payunique' ] ],
@@ -1857,10 +1859,12 @@ sub tables_hashref {
     'payment_gateway' => {
       'columns' => [
         'gatewaynum',       'serial',   '',     '', '', '', 
+        'gateway_namespace','varchar',  'NULL', $char_d, '', '', 
         'gateway_module',   'varchar',  '',     $char_d, '', '', 
         'gateway_username', 'varchar',  'NULL', $char_d, '', '', 
         'gateway_password', 'varchar',  'NULL', $char_d, '', '', 
         'gateway_action',   'varchar',  'NULL', $char_d, '', '', 
+        'gateway_callback_url', 'varchar',  'NULL', $char_d, '', '', 
         'disabled',   'char',  'NULL',   1, '', '', 
       ],
       'primary_key' => 'gatewaynum',

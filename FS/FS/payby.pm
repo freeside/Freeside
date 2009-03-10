@@ -48,28 +48,33 @@ tie %hash, 'Tie::IxHash',
     tinyname  => 'card',
     shortname => 'Credit card',
     longname  => 'Credit card (automatic)',
+    realtime  => 1,
   },
   'DCRD' => {
     tinyname  => 'card',
     shortname => 'Credit card',
     longname  => 'Credit card (on-demand)',
     cust_pay  => 'CARD', #this is a customer type only, payments are CARD...
+    realtime  => 1,
   },
   'CHEK' => {
     tinyname  => 'check',
     shortname => 'Electronic check',
     longname  => 'Electronic check (automatic)',
+    realtime  => 1,
   },
   'DCHK' => {
     tinyname  => 'check',
     shortname => 'Electronic check',
     longname  => 'Electronic check (on-demand)',
     cust_pay  => 'CHEK', #this is a customer type only, payments are CHEK...
+    realtime  => 1,
   },
   'LECB' => {
     tinyname  => 'phone bill',
     shortname => 'Phone bill billing',
     longname  => 'Phone bill billing',
+    realtime  => 1,
   },
   'BILL' => {
     tinyname  => 'billing',
@@ -131,6 +136,15 @@ sub can_payby {
   return 1;
 }
 
+sub realtime {  # can use realtime payment facilities
+  my( $self, $payby ) = @_;
+
+  return 0 unless $hash{$payby};
+  return 0 unless exists( $hash{$payby}->{realtime} );
+
+  return $hash{$payby}->{realtime};
+}
+
 sub payby2longname {
   my $self = shift;
   map { $_ => $hash{$_}->{longname} } $self->payby;
@@ -157,6 +171,7 @@ sub longname {
 %payby2bop = (
   'CARD' => 'CC',
   'CHEK' => 'ECHECK',
+  'MCRD' => 'CC',
 );
 
 sub payby2bop {

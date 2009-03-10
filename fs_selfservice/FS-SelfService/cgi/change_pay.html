@@ -51,10 +51,11 @@
                       'LECB'   => qq/Phone Bill Billing/,
                       'BILL'   => qq/Billing/,
                       'COMP'   => qq/Complimentary/,
+                      'PREP'   => qq/Prepaid Card/,
                       'PREPAY' => qq/Prepaid Card/,
                     );
   tie my %options, 'Tie::IxHash', ();
-  foreach my $payby_option ( @paybys ) {
+  foreach my $payby_option ( grep { exists( $payby_index{$_} ) } @paybys ) {
     $options{$payby_option} = $payby_index{$payby_option};
   }
   $options{$payby} = $payby_index{$payby}

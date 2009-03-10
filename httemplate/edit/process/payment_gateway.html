@@ -1,35 +1,22 @@
-%if ( $error ) {
-%  $cgi->param('error', $error);
-<% $cgi->redirect(popurl(2). "payment_gateway.html?". $cgi->query_string ) %>
-%} else { 
-<% $cgi->redirect(popurl(3). "browse/payment_gateway.html") %>
-%}
+<% include( 'elements/process.html',
+            'table'         => 'payment_gateway',
+            'viewall_dir'   => 'browse',
+            'args_callback' => $args_callback,
+          )
+%>
 <%init>
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
 
-my $gatewaynum = $cgi->param('gatewaynum');
+my $args_callback = sub {
+  my ( $cgi, $new ) = @_;
 
-my $old = qsearchs('payment_gateway',{'gatewaynum'=>$gatewaynum}) if $gatewaynum;
+  my @options = split(/\r?\n/, $cgi->param('gateway_options') );
+  pop @options
+    if scalar(@options) % 2 && $options[-1] =~ /^\s*$/;
+  (@options)
+};
 
-my $new = new FS::payment_gateway ( {
-  map {
-    $_, scalar($cgi->param($_));
-  } fields('payment_gateway')
-} );
-
-my @options = split(/\r?\n/, $cgi->param('gateway_options') );
-pop @options
-  if scalar(@options) % 2 && $options[-1] =~ /^\s*$/;
-my %options = @options;
-
-my $error;
-if ( $gatewaynum ) {
-  $error=$new->replace($old, \%options);
-} else {
-  $error=$new->insert(\%options);
-  $gatewaynum=$new->getfield('gatewaynum');
-}
 
 </%init>

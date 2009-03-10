@@ -10,7 +10,7 @@ use HTML::Entities;
 use Date::Format;
 use Number::Format 1.50;
 use FS::SelfService qw( login_info login customer_info edit_info invoice
-                        payment_info process_payment 
+                        payment_info process_payment realtime_collect
                         process_prepay
                         list_pkgs order_pkg signup_info order_recharge
                         part_svc_info provision_acct provision_external
@@ -72,7 +72,7 @@ $session_id = $cgi->param('session');
 
 #order|pw_list XXX ???
 $cgi->param('action') =~
-    /^(myaccount|view_invoice|make_payment|make_ach_payment|payment_results|ach_payment_results|recharge_prepay|recharge_results|logout|change_bill|change_ship|change_pay|process_change_bill|process_change_ship|process_change_pay|customer_order_pkg|process_order_pkg|customer_change_pkg|process_change_pkg|process_order_recharge|provision|provision_svc|process_svc_acct|process_svc_external|delete_svc|view_usage|view_usage_details|view_support_details|change_password|process_change_password)$/
+    /^(myaccount|view_invoice|make_payment|make_ach_payment|make_thirdparty_payment|payment_results|ach_payment_results|recharge_prepay|recharge_results|logout|change_bill|change_ship|change_pay|process_change_bill|process_change_ship|process_change_pay|customer_order_pkg|process_order_pkg|customer_change_pkg|process_change_pkg|process_order_recharge|provision|provision_svc|process_svc_acct|process_svc_external|delete_svc|view_usage|view_usage_details|view_support_details|change_password|process_change_password)$/
   or die "unknown action ". $cgi->param('action');
 my $action = $1;
 
@@ -98,6 +98,7 @@ warn "processing template $action\n"
 do_template($action, {
   'session_id' => $session_id,
   'action'     => $action, #so the menu knows what tab we're on...
+  %{ payment_info( 'session_id' => $session_id ) },  # cust_paybys for the menu
   %{$result}
 });
 
@@ -470,6 +471,12 @@ sub ach_payment_results {
     'paybatch'   => $paybatch,
   );
 
+}
+
+sub make_thirdparty_payment {
+  $cgi->param('payby_method') =~ /^(CC|ECHECK)$/
+    or die "illegal payby method";
+  realtime_collect( 'session_id' => $session_id, 'method' => $1 );
 }
 
 sub recharge_prepay {

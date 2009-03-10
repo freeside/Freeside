@@ -18,14 +18,34 @@ my @menu = (
 
 if ( 1 ) { #XXXFIXME "enable selfservice prepay features" flag or something, eventually per-pkg or something really fancy
 
-  push @menu, (
-    { title=>'Recharge my account with a credit card',
-      url=>'make_payment', indent=>2 },
-    { title=>'Recharge my account with a check',
-      url=>'make_ach_payment', indent=>2 },
-    { title=>'Recharge my account with a prepaid card',
-      url=>'recharge_prepay', indent=>2 },
-  );
+  #XXXFIXME still a bit sloppy for multi-gateway of differing namespace
+  my $i = 0;
+  while($i < scalar(@cust_paybys)) { last if $cust_paybys[$i] =~ /^CARD/; $i++ }
+  if ( $cust_paybys[$i] =~ /^CARD/ ) {
+    push @menu, { title  => 'Recharge my account with a credit card',
+                  url    => $hide_payment_fields[$i]
+                              ? 'make_thirdparty_payment&payby_method=CC'
+                              : 'make_payment',
+                  indent => 2,
+                 }
+  }
+
+  $i = 0;
+  while($i < scalar(@cust_paybys)) { last if $cust_paybys[$i] =~ /^CHEK/; $i++ }
+  if ( $cust_paybys[$i] =~ /^CHEK/ ) {
+    push @menu, { title  => 'Recharge my account with a check',
+                  url    => $hide_payment_field[$i]
+                              ? 'make_thirdparty_payment&payby_method=ECHECK'
+                              : 'make_ach_payment',
+                  indent => 2,
+                }
+  }
+
+  push @menu, { title  => 'Recharge my account with a prepaid card',
+                url    => 'recharge_prepay',
+                indent => 2,
+              }
+    if grep(/^PREP/, @cust_paybys);
 
 }
 

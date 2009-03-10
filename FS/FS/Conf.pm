@@ -8,6 +8,7 @@ use MIME::Base64;
 use FS::ConfItem;
 use FS::ConfDefaults;
 use FS::Conf_compat17;
+use FS::payby;
 use FS::conf;
 use FS::Record qw(qsearch qsearchs);
 use FS::UID qw(dbh datasrc use_confcompat);
@@ -617,6 +618,17 @@ worry that config_items is freeside-specific and icky.
     'section'     => 'billing',
     'description' => 'Alternate <a href="http://search.cpan.org/search?mode=module&query=Business%3A%3AOnlinePayment">Business::OnlinePayment</a> support for ACH transactions (defaults to regular <b>business-onlinepayment</b>).  At least three lines: processor, login, and password.  An optional fourth line specifies the action or actions (multiple actions are separated with `,\': for example: `Authorization Only, Post Authorization\').    Optional additional lines are passed to Business::OnlinePayment as %processor_options.',
     'type'        => 'textarea',
+  },
+
+  {
+    'key'         => 'business-onlinepayment-namespace',
+    'section'     => 'billing',
+    'description' => 'Specifies which perl module namespace (which group of collection routines) is used by default.',
+    'type'        => 'select',
+    'select_hash' => [
+                       'Business::OnlinePayment' => 'Direct API (Business::OnlinePayment)',
+		       'Business::OnlineThirdPartyPayment' => 'Web API (Business::ThirdPartyPayment)',
+                     ],
   },
 
   {

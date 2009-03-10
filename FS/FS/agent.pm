@@ -3,12 +3,14 @@ package FS::agent;
 use strict;
 use vars qw( @ISA );
 #use Crypt::YAPassGen;
+use Business::CreditCard 0.28;
 use FS::Record qw( dbh qsearch qsearchs );
 use FS::cust_main;
 use FS::cust_pkg;
 use FS::agent_type;
 use FS::reg_code;
 use FS::TicketSystem;
+use FS::Conf;
 
 @ISA = qw( FS::m2m_Common FS::Record );
 
@@ -199,6 +201,106 @@ sub ticketing_queue {
   my $self = shift;
   FS::TicketSystem->queue($self->ticketing_queueid);
 };
+
+=item payment_gateway [ OPTION => VALUE, ... ]
+
+Returns a payment gateway object (see L<FS::payment_gateway>) for this agent.
+
+Currently available options are I<invnum>, I<method>, and I<payinfo>.
+
+If I<invnum> is set to the number of an invoice (see L<FS::cust_bill>) then
+an attempt will be made to select a gateway suited for the taxes paid on 
+the invoice.
+
+The I<method> and I<payinfo> options can be used to influence the choice
+as well.  Presently only 'CC' and 'ECHECK' methods are meaningful.
+
+When the I<method> is 'CC' then the card number in I<payinfo> can direct
+this routine to route to a gateway suited for that type of card.
+
+=cut
+
+sub payment_gateway {
+  my ( $self, %options ) = @_;
+
+  my $taxclass = '';
+  if ( $options{invnum} ) {
+    my $cust_bill = qsearchs('cust_bill', { 'invnum' => $options{invnum} } );
+    die "invnum ". $options{'invnum'}. " not found" unless $cust_bill;
+    my @taxclasses =
+      map  { $_->part_pkg->taxclass }
+      grep { $_ }
+      map  { $_->cust_pkg }
+      $cust_bill->cust_bill_pkg;
+    unless ( grep { $taxclasses[0] ne $_ } @taxclasses ) { #unless there are
+                                                           #different taxclasses      $taxclass = $taxclasses[0];
+    }
+  }
+
+  #look for an agent gateway override first
+  my $cardtype;
+  if ( $options{method} && $options{method} eq 'CC' ) {
+    $cardtype = cardtype($options{payinfo});
+  } elsif ( $options{method} && $options{method} eq 'ECHECK' ) {
+    $cardtype = 'ACH';
+  } else {
+    $cardtype = $options{method} || '';
+  }
+
+  my $override =
+       qsearchs('agent_payment_gateway', { agentnum => $self->agentnum,
+                                           cardtype => $cardtype,
+                                           taxclass => $taxclass,       } )
+    || qsearchs('agent_payment_gateway', { agentnum => $self->agentnum,
+                                           cardtype => '',
+                                           taxclass => $taxclass,       } )
+    || qsearchs('agent_payment_gateway', { agentnum => $self->agentnum,
+                                           cardtype => $cardtype,
+                                           taxclass => '',              } )
+    || qsearchs('agent_payment_gateway', { agentnum => $self->agentnum,
+                                           cardtype => '',
+                                           taxclass => '',              } );
+
+  my $payment_gateway = new FS::payment_gateway;
+  if ( $override ) { #use a payment gateway override
+
+    $payment_gateway = $override->payment_gateway;
+
+  } else { #use the standard settings from the config
+    # the standard settings from the config could be moved to a null agent
+    # agent_payment_gateway referenced payment_gateway
+
+    my $conf = new FS::Conf;
+    die "Real-time processing not enabled\n"
+      unless $conf->exists('business-onlinepayment');
+
+    #load up config
+    my $bop_config = 'business-onlinepayment';
+    $bop_config .= '-ach'
+      if ( $options{method}
+           && $options{method} =~ /^(ECHECK|CHEK)$/
+           && $conf->exists($bop_config. '-ach')
+         );
+    my ( $processor, $login, $password, $action, @bop_options ) =
+      $conf->config($bop_config);
+    $action ||= 'normal authorization';
+    pop @bop_options if scalar(@bop_options) % 2 && $bop_options[-1] =~ /^\s*$/;
+    die "No real-time processor is enabled - ".
+        "did you set the business-onlinepayment configuration value?\n"
+      unless $processor;
+
+    $payment_gateway->gateway_namespace( $conf->config('business-onlinepayment-namespace') ||
+                                 'Business::OnlinePayment');
+    $payment_gateway->gateway_module($processor);
+    $payment_gateway->gateway_username($login);
+    $payment_gateway->gateway_password($password);
+    $payment_gateway->gateway_action($action);
+    $payment_gateway->set('options', [ @bop_options ]);
+
+  }
+
+  $payment_gateway;
+}
 
 =item num_prospect_cust_main
 

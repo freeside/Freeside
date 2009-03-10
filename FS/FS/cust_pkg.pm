@@ -439,9 +439,7 @@ replace methods.
 sub check {
   my $self = shift;
 
-  $self->locationnum('')
-    if defined($self->locationnum) && length($self->locationnum)
-    && ( $self->locationnum == 0 || $self->locationnum == -1 );
+  $self->locationnum('') if !$self->locationnum || $self->locationnum == -1;
 
   my $error = 
     $self->ut_numbern('pkgnum')

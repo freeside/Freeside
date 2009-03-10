@@ -6,6 +6,7 @@ use Data::Dumper;
 use Tie::RefHash;
 use FS::Conf;
 use FS::Record qw(qsearch qsearchs dbdef);
+use FS::CGI qw(popurl);
 use FS::Msgcat qw(gettext);
 use FS::Misc qw(card_types);
 use FS::ClientAPI_SessionCache;
@@ -20,6 +21,7 @@ use FS::svc_phone;
 use FS::acct_snarf;
 use FS::queue;
 use FS::reg_code;
+use FS::payby;
 
 $DEBUG = 0;
 $me = '[FS::ClientAPI::Signup]';
@@ -276,6 +278,29 @@ sub signup_info {
 
   if ( $agentnum ) {
 
+    warn "$me setting agent-specific payment flag\n" if $DEBUG > 1;
+    my $agent = qsearchs('agent', { 'agentnum' => $agentnum } );
+    warn "$me has agent $agent\n" if $DEBUG > 1;
+    if ( $agent ) { #else complain loudly?
+      $signup_info->{'hide_payment_fields'} = [];
+      foreach my $payby (@{$signup_info->{payby}}) {
+        warn "$me checking $payby payment fields\n" if $DEBUG > 1;
+        my $hide = 0;
+        if (FS::payby->realtime($payby)) {
+          my $payment_gateway =
+            $agent->payment_gateway( 'method' => FS::payby->payby2bop($payby) );
+          if ($payment_gateway->gateway_namespace eq
+              'Business::OnlineThirdPartyPayment'
+             ) {
+            warn "$me hiding $payby payment fields\n" if $DEBUG > 1;
+            $hide = 1;
+          }
+        }
+        push @{$signup_info->{'hide_payment_fields'}}, $hide;
+      }
+    }
+    warn "$me done setting agent-specific payment flag\n" if $DEBUG > 1;
+
     warn "$me setting agent-specific package list\n" if $DEBUG > 1;
     $signup_info->{'part_pkg'} = $signup_info->{'agentnum2part_pkg'}{$agentnum}
       unless @{ $signup_info->{'part_pkg'} };
@@ -295,8 +320,6 @@ sub signup_info {
       ];
     warn "$me done setting agent-specific adv. source list\n" if $DEBUG > 1;
 
-    my $agent = qsearchs('agent', { 'agentnum' => $agentnum } );
-                           
     $signup_info->{'agent_name'} = $agent->agent;
 
     $signup_info->{'company_name'} = $conf->config('company_name', $agentnum);
@@ -436,6 +459,23 @@ sub new_customer {
     unless grep { $_ eq $packet->{'payby'} }
                 $conf->config('signup_server-payby');
 
+  if (FS::payby->realtime($packet->{payby})) {
+    my $payby = $packet->{payby};
+
+    my $agent = qsearchs('agent', { 'agentnum' => $agentnum });
+    return { 'error' => "Unknown reseller" }
+      unless $agent;
+
+    my $payment_gateway =
+      $agent->payment_gateway( 'method' => FS::payby->payby2bop($payby) );
+
+    if ($payment_gateway->gateway_namespace eq
+        'Business::OnlineThirdPartyPayment'
+       ) {
+      $cust_main->payby('BILL');   # MCRD better?
+    }
+  }
+
   $cust_main->payinfo($cust_main->daytime)
     if $cust_main->payby eq 'LECB' && ! $cust_main->payinfo;
 
@@ -547,9 +587,25 @@ sub new_customer {
     #     " new customer: $bill_error"
     #  if $bill_error;
 
-    $bill_error = $cust_main->collect('realtime' => 1);
+    if ($cust_main->_new_bop_required()) {
+      $bill_error = $cust_main->realtime_collect(
+         method        => FS::payby->payby2bop( $packet->{payby} ),
+         depend_jobnum => $placeholder->jobnum,
+      );
+    } else {
+      $bill_error = $cust_main->collect('realtime' => 1);
+    }
     #warn "[fs_signup_server] error collecting from new customer: $bill_error"
     #  if $bill_error;
+
+    if ($bill_error && ref($bill_error) eq 'HASH') {
+      return { 'error' => '_collect',
+               ( map { $_ => $bill_error->{$_} }
+                 qw(popup_url reference collectitems)
+               ),
+               amount => $cust_main->balance,
+             };
+    }
 
     if ( $cust_main->balance > 0 ) {
 
@@ -597,6 +653,85 @@ sub new_customer {
   }
 
   return \%return;
+
+}
+
+sub capture_payment {
+  my $packet = shift;
+
+  warn "$me capture_payment called on $packet\n" if $DEBUG;
+
+  ###
+  # identify processor/gateway from called back URL
+  ###
+
+  my $conf = new FS::Conf;
+
+  my $url = $packet->{url};
+  my $payment_gateway =
+    qsearchs('payment_gateway', { 'gateway_callback_url' => popurl(0, $url) } );
+
+  unless ($payment_gateway) {
+
+    my ( $processor, $login, $password, $action, @bop_options ) =
+      $conf->config('business-onlinepayment');
+    $action ||= 'normal authorization';
+    pop @bop_options if scalar(@bop_options) % 2 && $bop_options[-1] =~ /^\s*$/;
+    die "No real-time processor is enabled - ".
+        "did you set the business-onlinepayment configuration value?\n"
+      unless $processor;
+
+    $payment_gateway = new FS::payment_gateway( {
+      gateway_namespace => $conf->config('business-onlinepayment-namespace'),
+      gateway_module    => $processor,
+      gateway_username  => $login,
+      gateway_password  => $password,
+      gateway_action    => $action,
+      options   => [ ( @bop_options ) ],
+    });
+
+  }
+ 
+  die "No real-time third party processor is enabled - ".
+      "did you set the business-onlinepayment configuration value?\n*"
+    unless $payment_gateway->gateway_namespace eq 'Business::OnlineThirdPartyPayment';
+
+  ###
+  # locate pending transaction
+  ###
+
+  eval "use Business::OnlineThirdPartyPayment";
+  die $@ if $@;
+
+  my $transaction =
+    new Business::OnlineThirdPartyPayment( $payment_gateway->gateway_module,
+                                           @{ [ $payment_gateway->options ] },
+                                         );
+
+  my $paypendingnum = $transaction->reference($packet->{data});
+
+  my $cust_pay_pending =
+    qsearchs('cust_pay_pending', { paypendingnum => $paypendingnum } );
+
+  unless ($cust_pay_pending) {
+    my $bill_error = "No payment is being processed with id $paypendingnum".
+                     "; Transaction aborted.";
+    return { error => '_decline', bill_error => $bill_error };
+  }
+
+  if ($cust_pay_pending->status ne 'pending') {
+    my $bill_error = "Payment with id $paypendingnum is not pending, but ".
+                     $cust_pay_pending->status.  "; Transaction aborted.";
+    return { error => '_decline', bill_error => $bill_error };
+  }
+
+  my $cust_main = $cust_pay_pending->cust_main;
+  my $bill_error =
+    $cust_main->realtime_botpp_capture( $cust_pay_pending, %{$packet->{data}} );
+
+  return { 'error'      => ( $bill_error->{bill_error} ? '_decline' : '' ),
+           %$bill_error,
+         };
 
 }
 

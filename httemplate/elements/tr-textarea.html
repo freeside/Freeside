@@ -1,0 +1,25 @@
+<% include('tr-td-label.html', @_ ) %>
+
+  <TD <% $cell_style %>>
+
+    <TEXTAREA NAME          = "<% $opt{field} %>"
+              ID            = "<% $opt{id} %>"
+              <% $onchange %>
+    ><% $curr_value |h %></TEXTAREA>
+
+  </TD>
+
+</TR>
+
+<%init>
+
+my %opt = @_;
+
+my $onchange = $opt{'onchange'}
+                 ? 'onChange="'. $opt{'onchange'}. '(this)"'
+                 : '';
+
+my $cell_style = $opt{'cell_style'} ? 'STYLE="'. $opt{'cell_style'}. '"' : '';
+my $curr_value = $opt{'curr_value'};
+
+</%init>

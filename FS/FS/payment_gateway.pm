@@ -1,12 +1,14 @@
 package FS::payment_gateway;
 
 use strict;
-use vars qw( @ISA );
+use vars qw( @ISA $me $DEBUG );
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::option_Common;
 use FS::agent_payment_gateway;
 
 @ISA = qw( FS::option_Common );
+$me = '[ FS::payment_gateway ]';
+$DEBUG=0;
 
 =head1 NAME
 
@@ -36,6 +38,8 @@ currently supported:
 =over 4
 
 =item gatewaynum - primary key
+
+=item gateway_namespace - Business::OnlinePayment or Business::OnlineThirdPartyPayment
 
 =item gateway_module - Business::OnlinePayment:: module name
 
@@ -110,8 +114,12 @@ sub check {
   my $error = 
     $self->ut_numbern('gatewaynum')
     || $self->ut_alpha('gateway_module')
+    || $self->ut_enum('gateway_namespace', ['Business::OnlinePayment',
+                                            'Business::OnlineThirdPartyPayment',
+                                           ] )
     || $self->ut_textn('gateway_username')
     || $self->ut_anything('gateway_password')
+    || $self->ut_textn('gateway_callback_url')  # a bit too permissive
     || $self->ut_enum('disabled', [ '', 'Y' ] )
     #|| $self->ut_textn('gateway_action')
   ;
@@ -130,6 +138,10 @@ sub check {
   } else {
     $self->gateway_action('Normal Authorization');
   }
+
+  # this little kludge mimics FS::CGI::popurl
+  $self->gateway_callback_url($self->gateway_callback_url. '/')
+    if ( $self->gateway_callback_url && $self->gateway_callback_url !~ /\/$/ );
 
   $self->SUPER::check;
 }
@@ -184,6 +196,41 @@ sub disable {
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
 
+}
+
+=item namespace_description
+
+returns a friendly name for the namespace
+
+=cut
+
+my %namespace2description = (
+  '' => 'Direct',
+  'Business::OnlinePayment' => 'Direct',
+  'Business::OnlineThirdPartyPayment' => 'Hosted',
+);
+
+sub namespace_description {
+  $namespace2description{shift->gateway_namespace} || 'Unknown';
+}
+
+# _upgrade_data
+#
+# Used by FS::Upgrade to migrate to a new database.
+#
+#
+
+sub _upgrade_data {
+  my ($class, %opts) = @_;
+  my $dbh = dbh;
+
+  warn "$me upgrading $class\n" if $DEBUG;
+
+  foreach ( qsearch( 'payment_gateway', { 'gateway_namespace' => '' } ) ) {
+    $_->gateway_namespace('Business::OnlinePayment');  #defaulting
+    my $error = $_->replace;
+    die "$class had error during upgrade replacement: $error" if $error;
+  }
 }
 
 =back

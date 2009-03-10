@@ -353,6 +353,9 @@ sub payment_info {
       'paytypes' => [ @FS::cust_main::paytypes ],
 
       'paybys' => [ $conf->config('signup_server-payby') ],
+      'cust_paybys' => [ map { FS::payby->payby2payment($_) }
+                                 $conf->config('signup_server-payby')
+                       ],
 
       'stateid_label' => FS::Msgcat::_gettext('stateid'),
       'stateid_state_label' => FS::Msgcat::_gettext('stateid_state'),
@@ -374,6 +377,18 @@ sub payment_info {
 
   my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
     or return { 'error' => "unknown custnum $custnum" };
+
+  $return{hide_payment_fields} =
+  [
+    map { FS::payby->realtime($_) &&
+          $cust_main
+            ->agent
+            ->payment_gateway( 'method' => FS::payby->payby2bop($_) )
+            ->gateway_namespace
+            eq 'Business::OnlineThirdPartyPayment'
+        }
+    @{ $return{cust_paybys} }
+  ];
 
   $return{balance} = $cust_main->balance;
 
@@ -529,6 +544,26 @@ sub process_payment {
 
   return { 'error' => '' };
 
+}
+
+sub realtime_collect {
+
+  my $p = shift;
+
+  my $session = _cache->get($p->{'session_id'})
+    or return { 'error' => "Can't resume session" }; #better error message
+
+  my $custnum = $session->{'custnum'};
+
+  my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
+    or return { 'error' => "unknown custnum $custnum" };
+
+  my $error = $cust_main->realtime_collect( 'method'     => $p->{'method'},
+                                            'session_id' => $p->{'session_id'},
+                                          );
+  return { 'error' => $error } unless ref( $error );
+
+  return { 'error' => '', amount => $cust_main->balance, %$error };
 }
 
 sub process_payment_order_pkg {

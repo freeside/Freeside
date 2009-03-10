@@ -191,6 +191,7 @@ sub check {
     #|| $self->ut_textn('statustext')
     || $self->ut_anything('statustext')
     #|| $self->ut_money('cust_balance')
+    || $self->ut_hexn('session_id')
     || $self->ut_foreign_keyn('paynum', 'cust_pay', 'paynum' )
     || $self->payinfo_check() #payby/payinfo/paymask/paydate
   ;
@@ -214,6 +215,18 @@ sub check {
 
   $self->SUPER::check;
 }
+
+=item cust_main
+
+Returns the associated L<FS::cust_main> record if any.  Otherwise returns false.
+
+=cut
+
+sub cust_main {
+  my $self = shift;
+  qsearchs('cust_main', { custnum => $self->custnum } );
+}
+
 
 #these two are kind-of false laziness w/cust_main::realtime_bop
 #(currently only used when resolving pending payments manually)

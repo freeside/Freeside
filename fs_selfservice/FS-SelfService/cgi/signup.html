@@ -245,7 +245,7 @@ HTML::Widgets::SelectLayers->new(
   form_name => 'dummy',
   html_between => '</td></tr></table>',
   form_action => 'dummy.cgi',
-  layer_callback => sub { my $layer = shift; return $paybychecked{$layer}. '</TABLE>'; },
+  layer_callback => sub { my $layer = shift; return ( shift @hide_payment_fields ? '' : $paybychecked{$layer} ) . '</TABLE>'; },
 )->html;
 
 

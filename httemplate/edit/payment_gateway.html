@@ -1,132 +1,122 @@
-<% include("/elements/header.html","$action Payment gateway", menubar(
-  'View all payment gateways' => $p. 'browse/payment_gateway.html',
-)) %>
-
-<% include('/elements/error.html') %>
-
-<FORM ACTION="<%popurl(1)%>process/payment_gateway.html" METHOD=POST>
-<INPUT TYPE="hidden" NAME="gatewaynum" VALUE="<% $payment_gateway->gatewaynum %>">
-Gateway #<% $payment_gateway->gatewaynum || "(NEW)" %>
-
-<% ntable('#cccccc', 2, '') %>
-
-<TR>
-  <TH ALIGN="right">Gateway: </TH>
-  <TD>
-% if ( $payment_gateway->gatewaynum ) { 
-
-
-      <% $payment_gateway->gateway_module %>
-      <INPUT TYPE="hidden" NAME="gateway_module" VALUE="<% $payment_gateway->gateway_module %>">
-% } else { 
+<% include( 'elements/edit.html',
+            'table'          => 'payment_gateway',
+            'name_singular'  => 'Payment gateway',
+            'viewall_dir'    => 'browse',
+            'fields'         => $fields,
+            'field_callback' => $field_callback,
+            'labels'         => {
+                                  'gatewaynum'           => 'Gateway #',
+                                  'gateway_module'       => 'Gateway',
+                                  'gateway_username'     => 'Username',
+                                  'gateway_password'     => 'Password',
+                                  'gateway_action'       => 'Action',
+                                  'gateway_options'      => 'Options: (Name/Value pairs, one element per line)',
+                                  'gateway_callback_url' => 'Callback URL',
+                                },
+          )
+%>
 
 
-      <SELECT NAME="gateway_module" SIZE=1>
-% foreach my $module ( qw(
-%             2CheckOut
-%             AuthorizeNet
-%             BankOfAmerica
-%             Beanstream
-%             Capstone
-%             Cardstream
-%             CashCow
-%             CyberSource
-%             eSec
-%             eSelectPlus
-%             Exact
-%             iAuthorizer
-%             IPaymentTPG
-%             Jettis
-%             LinkPoint
-%             MerchantCommerce
-%             Network1Financial
-%             OCV
-%             OpenECHO
-%             PayConnect
-%             PayflowPro
-%             PaymentsGateway
-%             PXPost
-%             SecureHostingUPG
-%             Skipjack
-%             StGeorge
-%             SurePay
-%             TCLink
-%             TransactionCentral
-%             TransFirsteLink
-%             VirtualNet
-%           ) ) {
-%        
+<SCRIPT TYPE="text/javascript">
+  var gatewayNamespace = new Array;
 
-          <OPTION VALUE="<% $module %>"><% $module %>
+% foreach my $module ( sort { lc($a) cmp lc ($b) } keys %modules ) {
+    gatewayNamespace.push('<% $modules{$module} %>')
 % } 
 
-      </SELECT>
-% } 
+  // document.getElementById('gateway_namespace').value = gatewayNamespace[0];
+  function setNamespace(what) {
+    document.getElementById('gateway_namespace').value =
+      gatewayNamespace[what.selectedIndex];
+  }
 
-
-  </TD>
-</TR>
-
-<TR>
-  <TH ALIGN="right">Username: </TH>
-  <TD><INPUT TYPE="text" NAME="gateway_username" VALUE="<% $payment_gateway->gateway_username %>"></TD>
-</TR>
-
-<TR>
-  <TH ALIGN="right">Password: </TH>
-  <TD><INPUT TYPE="text" NAME="gateway_password" VALUE="<% $payment_gateway->gateway_password %>"></TD>
-</TR>
-
-<TR>
-  <TH ALIGN="right">Action: </TH>
-  <TD>
-    <SELECT NAME="gateway_action" SIZE=1>
-% foreach my $action ( 
-%                              'Normal Authorization',
-%                              'Authorization Only',
-%                              'Authorization Only, Post Authorization',
-%                            ) {
-%      
-
-        <OPTION VALUE="<% $action %>"<% $action eq $payment_gateway->gateway_action ? ' SELECTED' : '' %>><% $action %>
-% } 
-
-    </SELECT>
-  </TD>
-</TR>
-
-<TR>
-  <TH ALIGN="right">Options: (Name/Value pairs, one element per line)</TH>
-  <TD>
-    <TEXTAREA ROWS="5" NAME="gateway_options"><% join("\r", $payment_gateway->options ) %></TEXTAREA>
-  </TD>
-</TR>
-
-</TABLE>
-
-<BR><INPUT TYPE="submit" VALUE="<% $payment_gateway->gatewaynum ? "Apply changes" : "Add gateway" %>">
-    </FORM>
-
-<% include('/elements/footer.html') %>
+</SCRIPT>
 
 <%init>
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
 
-my $payment_gateway;
-if ( $cgi->param('error') ) {
-  $payment_gateway = new FS::payment_gateway ( {
-    map { $_, scalar($cgi->param($_)) } fields('payment_gateway')
-  } );
-} elsif ( $cgi->keywords ) {
-  my($query) = $cgi->keywords;
-  $query =~ /^(\d+)$/;
-  $payment_gateway = qsearchs( 'payment_gateway', { 'gatewaynum' => $1 } );
-} else { #adding
-  $payment_gateway = new FS::payment_gateway {};
-}
-my $action = $payment_gateway->gatewaynum ? 'Edit' : 'Add';
-#my $hashref = $payment_gateway->hashref;
+my %modules =  (
+  '2CheckOut'          => 'Business::OnlinePayment',
+  'AuthorizeNet'       => 'Business::OnlinePayment',
+  'BankOfAmerica'      => 'Business::OnlinePayment',
+  'Beanstream'         => 'Business::OnlinePayment',
+  'Capstone'           => 'Business::OnlinePayment',
+  'Cardstream'         => 'Business::OnlinePayment',
+  'CashCow'            => 'Business::OnlinePayment',
+  'CyberSource'        => 'Business::OnlinePayment',
+  'eSec'               => 'Business::OnlinePayment',
+  'eSelectPlus'        => 'Business::OnlinePayment',
+  'Exact'              => 'Business::OnlinePayment',
+  'iAuthorizer'        => 'Business::OnlinePayment',
+  'Interswitchng'      => 'Business::OnlineThirdPartyPayment',
+  'IPaymentTPG'        => 'Business::OnlinePayment',
+  'Jettis'             => 'Business::OnlinePayment',
+  'LinkPoint'          => 'Business::OnlinePayment',
+  'MerchantCommerce'   => 'Business::OnlinePayment',
+  'Network1Financial'  => 'Business::OnlinePayment',
+  'OCV'                => 'Business::OnlinePayment',
+  'OpenECHO'           => 'Business::OnlinePayment',
+  'PayConnect'         => 'Business::OnlinePayment',
+  'PayflowPro'         => 'Business::OnlinePayment',
+  'PaymentsGateway'    => 'Business::OnlinePayment',
+  'PXPost'             => 'Business::OnlinePayment',
+  'SecureHostingUPG'   => 'Business::OnlinePayment',
+  'Skipjack'           => 'Business::OnlinePayment',
+  'StGeorge'           => 'Business::OnlinePayment',
+  'SurePay'            => 'Business::OnlinePayment',
+  'TCLink'             => 'Business::OnlinePayment',
+  'TransactionCentral' => 'Business::OnlinePayment',
+  'TransFirsteLink'    => 'Business::OnlinePayment',
+  'VirtualNet'         => 'Business::OnlinePayment',
+); 
+
+my @actions = (
+                'Normal Authorization',
+                'Authorization Only',
+                'Authorization Only, Post Authorization',
+              );
+
+my $fields = [
+               {
+                 field               => 'gateway_namespace',
+                 type                => 'hidden',
+                 curr_value_callback => sub { my($cgi, $object, $fref) = @_;
+                                              $modules{$object->gateway_module}
+                                              || 'Business::OnlinePayment'
+                                            },
+               },
+               {
+                 field    => 'gateway_module',
+                 type     => 'select',
+                 options  => [ sort { lc($a) cmp lc ($b) } keys %modules ],
+                 onchange => 'setNamespace',
+               },
+               'gateway_username',
+               'gateway_password',
+               {
+                 field    => 'gateway_action',
+                 type     => 'select',
+                 options  => \@actions,
+               },
+               'gateway_callback_url',
+               {
+                 field               => 'gateway_options',
+                 type                => 'textarea',
+                 curr_value_callback => sub { my($cgi, $object, $fref) = @_;
+                                              join("\r", $object->options );
+                                            },
+               },
+             ];
+
+my $field_callback = sub {
+  my ($cgi, $object, $field_hashref ) = @_;
+  if ($object->gatewaynum) {
+    if ( $field_hashref->{field} eq 'gateway_module' ) {
+      $field_hashref->{type} = 'fixed';
+    }
+  }
+};
 
 </%init>

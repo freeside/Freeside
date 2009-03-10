@@ -8,7 +8,11 @@ Hello <%= $name %>!<BR><BR>
 <%= $small_custview %>
 <BR>
 <%= if ( $balance > 0 ) {
-  $OUT .= qq! <B><A HREF="${url}make_payment">Make a payment</A></B><BR><BR>!;
+  if (scalar(grep $_, @hide_payment_field)) {
+    $OUT .= qq! <B><A HREF="${url}make_payment">Make a payment</A></B><BR><BR>!;
+  } else {
+    $OUT .= qq! <B><A HREF="${url}make_thirdparty_payment&payby_method=CC">Make a payment</A></B><BR><BR>!;
+  }
 } %>
 <%=
   if ( @open_invoices ) {
