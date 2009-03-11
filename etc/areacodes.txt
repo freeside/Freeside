@@ -1,0 +1,353 @@
+201 NJ New Jersey (Hackensack, Jersey City, Hoboken and northeast New Jersey, overlays with 551)<Eastern Time Zone>
+202 DC District of Columbia (all of Washington, DC)<Eastern Time Zone>
+203 CT Connecticut (Bridgeport, New Haven, Waterbury and southwestern Connecticut, overlays with 475)<Eastern Time Zone>
+204 MB Manitoba (all of Manitoba)<Central Time Zone>
+205 AL Alabama (Birmingham, Tuscaloosa and central and western Alabama)<Central Time Zone>
+206 WA Washington (Seattle, Sea-Tac, Ballard, Madison, Capitol Hill and central Seattle neighborhoods)<Pacific Time Zone>
+207 ME Maine (all of Maine)<Eastern Time Zone>
+208 ID Idaho (all of Idaho)<Mountain & Pacific Time Zones>
+209 CA California (Stockton, Merced, Modesto, San Andreas and central California)<Pacific Time Zone>
+210 TX Texas (San Antonio area)<Central Time Zone>
+212 NY New York (New York City Manhattan area, overlays with 646 and 917)<Eastern Time Zone>
+213 CA California (Downtown Los Angeles area only)<Pacific Time Zone>
+214 TX Texas (Dallas area, overlays with 469 and 972)<Central Time Zone>
+215 PA Pennsylvania (Philadelphia area, overlays with 267 and 445)<Eastern Time Zone>
+216 OH Ohio (Cleveland area)<Eastern Time Zone>
+217 IL Illinois (Champaign, Decatur, Urbana, Springfield and central Illinois)<Central Time Zone>
+218 MN Minnesota (Duluth, Thief River Falls, Brainerd, International Falls and northern Minnesota)<Central Time Zone>
+219 IN Indiana (Gary, Valparaiso, Michigan City, Goodland, Fowler and northwestern Indiana)<Central Time Zone>
+224 IL Illinois (Waukegan, Des Plaines, northwest Chicago suburbs and northeastern Illinois, overlays with 847)<Central Time Zone>
+225 LA Louisiana (Baton Rouge, New Roads, White Castle and central eastern Louisiana)<Central Time Zone>
+226 ON Ontario (London, Windsor and southwestern Ontario, overlays with 519)<Eastern Time Zone>
+228 MS Mississippi (Gulfport, Pascagoula, Biloxi, Bay St Louis and southern Mississippi gulf coast)<Central Time Zone>
+229 GA Georgia (Albany, Valdosta, Bainbridge, Americus, Fitzgerald and southwestern Georgia)<Eastern Time Zone>
+231 MI Michigan (Traverse City, Ludington, Muskegon, Petoskey and northwestern Michigan)<Eastern Time Zone>
+234 OH Ohio (Youngstown, Warren, Akron, Canton and northeastern Ohio, overlays with 330)<Eastern Time Zone>
+239 FL Florida (Fort Meyers, Naples, Everglades and southwestern Florida)<Eastern Time Zone>
+240 MD Maryland (Hagerstown, Rockville, Cumberland and western Maryland, overlays with 301)<Eastern Time Zone>
+242 BAHAMAS (all of Bahamas)<Atlantic Time Zone (one hour later than Eastern)>
+246 BARBADOS (all of Barbados)<Atlantic Time Zone (one hour later than Eastern)>
+248 MI Michigan (Troy, Oakland County, Pontiac, Southfield, Rochester Hills and northwestern Detroit suburbs, overlays with 947)<Eastern Time Zone>
+250 BC British Columbia (all except Vancouver area)<Mountain & Pacific Time Zones>
+251 AL Alabama (Mobile, Jackson and southwestern Alabama)<Central Time Zone>
+252 NC North Carolina (Greenville, Kitty Hawk, Rocky Mount and northeastern North Carolina)<Eastern Time Zone>
+253 WA Washington (Tacoma, Auburn, Puyallup, Enumclaw, Spanaway and south Seattle suburbs)<Pacific Time Zone>
+254 TX Texas (Waco, Killeen, Belton, Stephenville and north central Texas)<Central Time Zone>
+256 AL Alabama (Florence, Huntsville, Gadsden, Anniston and northern and eastern Alabama)<Central Time Zone>
+260 IN Indiana (Fort Wayne, Decatur, Angola, Wabash and northeastern Indiana)<Eastern Time Zone>
+262 WI Wisconsin (Menomonee Falls, Waukesha, Racine and southeastern Wisconsin excluding Milwaukee area)<Central Time Zone>
+264 ANGUILLA (all of Anguilla)<Atlantic Time Zone (one hour later than Eastern)>
+267 PA Pennsylvania (Philadelphia area, overlays with 215 and 445)<Eastern Time Zone>
+268 ANTIGUA and BARBUDA (all of Antigua and Barbuda)<Atlantic Time Zone (one hour later than Eastern)>
+269 MI Michigan (Battle Creek, Benton Harbor, Allegan, Hastings, Kalamazoo, St Joseph, and southwestern Michigan)<Eastern Time Zone>
+270 KY Kentucky (Paducah, Bowling Green, Hopkinsville, Owensboro and western Kentucky)<Central Time Zone>
+276 VA Virginia (Abingdon, Wytheville, Martinsville, Bluefield and western Virginia)<Eastern Time Zone>
+281 TX Texas (Spring, Katy, Houston area, overlays with 713 and 832)<Central Time Zone>
+284 BRITISH VIRGIN ISLANDS (all of the British Virgin Islands)<Atlantic Time Zone (one hour later than Eastern)>
+289 ON Ontario (Hamilton, Toronto suburbs and central southeastern Ontario, overlays with 905)<Eastern Time Zone>
+301 MD Maryland (Hagerstown, Rockville, Cumberland and western Maryland, overlays with 240)<Eastern Time Zone>
+302 DE Delaware (all of Delaware)<Eastern Time Zone>
+303 CO Colorado (Boulder, Longmont, Aurora, Denver and central Colorado, overlays with 720)<Mountain Time Zone>
+304 WV West Virginia (all of West Virginia)<Eastern Time Zone>
+305 FL Florida (Miami, Homestead, Coral Gables, Key West and southeastern Florida, overlays with 786)<Eastern Time Zone>
+306 SK Saskatchewan (all of Saskatchewan)<Central & Mountain Time Zones>
+307 WY Wyoming (all of Wyoming)<Mountain Time Zone>
+308 NE Nebraska (North Platte, Scottsbluff, McCook, Grand Island and western Nebraska)<Central & Mountain Time Zones>
+309 IL Illinois (Peoria, Moline, Rock Island, Galesburg and central western Illinois)<Central Time Zone>
+310 CA California (Malibu, Torrance, Beverley Hills, Santa Monica, Catalina and western Los Angeles suburbs, overlays with 424)<Pacific Time Zone>
+311 NON-EMERGENCY ACCESS
+312 IL Illinois (downtown central Chicago area)<Central Time Zone>
+313 MI Michigan (Dearborn, Detroit and inner Detroit suburbs)<Eastern Time Zone>
+314 MO Missouri (St Louis, Florissant, Crestwood, Affton and surrounding suburbs)<Central Time Zone>
+315 NY New York (Watertown, Utica, Syracuse and north central New York)<Eastern Time Zone>
+316 KS Kansas ( Wichita, Augusta, El Dorado, Mulvane and the Wichita surrounding area)<Central Time Zone>
+317 IN Indiana (Indianapolis, Greenwood, Mooresville, Beech Grove and central Indiana)<Eastern Time Zone>
+318 LA Louisiana (Shreveport, Monroe, Alexandria, Fisher, Tallulah and northern Louisiana)<Central Time Zone>
+319 IA Iowa (Burlington, Iowa City, Cedar Rapids, Waterloo and east central and southeastern Iowa)<Central Time Zone>
+320 MN Minnesota (St Cloud, Morris, Hutchinson, Sandstone, Appleton and central Minnesota)<Central Time Zone>
+321 FL Florida (Orlando, Cocoa Beach, St Cloud and central eastern Florida, overlays with 407)<Eastern Time Zone>
+323 CA California (Florence and Los Angeles excluding downtown Los Angeles)<Pacific Time Zone>
+325 TX Texas (Abilene, San Angelo, Albany, Comanche, Snyder, Ozona and west central Texas)<Central Time Zone>
+330 OH Ohio (Youngstown, Warren, Akron, Canton and northeastern Ohio, overlays with 234)<Eastern Time Zone>
+331 IL Illinois (Aurora, Batavia, Geneva and western Chicago suburbs, overlays with 630)<Central Time Zone>
+334 AL Alabama ( Montgomery, Auburn, Dothan, Selma and southeastern Alabama)<Central Time Zone>
+336 NC North Carolina (Winston-Salem, Greensboro, North Wilkesboro and northwest North Carolina)<Eastern Time Zone>
+337 LA Louisiana (Leesville, Lake Charles, Lafayette, De Ridder and southwestern Louisiana)<Central Time Zone>
+339 MA Massachusetts (Saugus, Norwood and east central Massachusetts, overlays with 781)<Eastern Time Zone>
+340 US VIRGIN ISLANDS (all of the US Virgin Islands)<Atlantic Time Zone>
+345 CAYMAN ISLANDS (all of the Cayman Islands)<Eastern Time Zone>
+347 NY New York (Flushing, Jamaica, Brooklyn, Staten Island, Bronx and Queens, overlays with 718 and 917)<Eastern Time Zone>
+351 MA Massachusetts (Fitchburg, Peabody and northeastern Massachusetts, overlays with 978)<Eastern Time Zone>
+352 FL Florida (Gainesville, Ocala, Inverness, Dunnellon and central Florida)<Eastern Time Zone>
+360 WA Washington (Bellingham, Vancouver, Aberdeen, Olympia and western Washington except Seattle area)<Pacific Time Zone>
+361 TX Texas (Corpus Christi, Victoria, George West and southeastern Texas)<Central Time Zone>
+385 UT Utah (North and south of Salt Lake City including Ogden, Provo, Bountiful and Spanish Fork)<Mountain Time Zone>
+386 FL Florida (Daytona Beach, Lake City, Live Oak, Crescent City and northern and eastern Florida)<Eastern Time Zone>
+401 RI Rhode Island (all of Rhode Island)<Eastern Time Zone>
+402 NE Nebraska (Valentine, Lincoln, Norfolk, Omaha, Superior, Crofton and eastern Nebraska)<Central Time Zone>
+403 AB Alberta (Calgary, Banff, Red Deer, Medicine Hat, Lethbridge and southern Alberta)<Mountain Time Zone>
+404 GA Georgia (central Atlanta area, overlays with 470 and 678)<Eastern Time Zone>
+405 OK Oklahoma (Oklahoma City, Edmond, Norman, Shawnee, Chickasha and central Oklahoma)<Central Time Zone>
+406 MT Montana (all of Montana)<Mountain Time Zone>
+407 FL Florida (Orlando, Cocoa Beach, St Cloud and central eastern Florida, overlays with 321)<Eastern Time Zone>
+408 CA California (Los Gatos, Milpitas, Sunnyvale, Cupertino and San Jose area)<Pacific Time Zone>
+409 TX Texas (Beaumont, Galveston, Port Arthur, Jasper and southeastern Texas)<Central Time Zone>
+410 MD Maryland (Annapolis, Baltimore, Salisbury and eastern Maryland, overlays with 443)<Eastern Time Zone>
+411 LOCAL DIRECTORY ASSISTANCE
+412 PA Pennsylvania (Pittsburgh area, McKeesport, Braddock, Duquesne, overlays with 878)<Eastern Time Zone>
+413 MA Massachusetts (Pittsfield, Springfield, Holyoke, Greenfield and western Massachusetts)<Eastern Time Zone>
+414 WI Wisconsin (Milwaukee, Greenfield, Oak Creek and Milwaukee suburbs)<Central Time Zone>
+415 CA California (Sausalito, San Rafael, Novato, San Quentin, San Francisco and bay area)<Pacific Time Zone>
+416 ON Ontario (Toronto area, overlays with 647)<Eastern Time Zone>
+417 MO Missouri (Joplin, Springfield, West Plains, Lamar, Lebanon and southwestern Missouri)<Central Time Zone>
+418 QC Quebec (Quebec and eastern Quebec)<Eastern Time Zone>
+419 OH Ohio (Toledo, Mansfield, Lima, Bryan, Sandusky, Bowling Green and northwestern Ohio, overlays with 567)<Eastern Time Zone>
+423 TN Tennessee (Bristol, Sweetwater, Chattanooga, and southeastern and north eastern Tennessee)<Central & Eastern Time Zones>
+424 CA California (Malibu, Torrance, Beverley Hills, Santa Monica, Catalina and western Los Angeles suburbs, overlays with 310)<Pacific Time Zone>
+425 WA Washington (north and east Seattle suburbs including Everett, Bellevue, Redmond, Renton and Issaquah)<Pacific Time Zone>
+430 TX Texas (Tyler, Sherman, Longview, Palestine and northeastern Texas, overlays with 903)<Central Time Zone>
+432 TX Texas (Alpine, Midland, Odessa, Big Bend, Seminole, Comstock and west central Texas)< Central Time Zone>
+434 VA Virginia (Lynchburg, Danville, South Hill, Charlottesville and south central Virginia)<Eastern Time Zone>
+435 UT Utah (Logan, St George, Moab and all of Utah excluding Salt Lake City, Ogden, Provo and central Utah)<Mountain Time Zone>
+438 QC Quebec (Montreal area, overlays with 514)<Eastern Time Zone>
+440 OH Ohio (Elyria, Lorain, Oberlin, Wellington and north central Ohio)<Eastern Time Zone>
+441 BERMUDA (all of Bermuda)<Atlantic Time Zone>
+443 MD Maryland (Annapolis, Baltimore, Salisbury and eastern Maryland, overlays with 410)<Eastern Time Zone>
+450 QC Quebec (central southern Quebec excluding Montreal)<Eastern Time Zone>
+456 INTERNATIONAL INBOUND
+469 TX Texas (Dallas area, overlays with 214 and 972)<Central Time Zone>
+470 GA Georgia (Atlanta, Gainesville and north central Georgia, overlays with 404 and 678 and 770)<Eastern Time Zone>
+473 GRENADA (all of Grenada)<Atlantic Time Zone (one hour later than Eastern)>
+475 CT Connecticut ( Bridgeport, New Haven, Waterbury and southwestern Connecticut, overlays with 203)<Eastern Time Zone>
+478 GA Georgia (Macon, Warner Robins, Swainsboro, Wadley, Milledgeville, Perry and central Georgia)<Eastern Time Zone>
+479 AR Arkansas (Fort Smith, Fayetteville and northwestern Arkansas)<Central Time Zone>
+480 AZ Arizona (Chandler, eastern Phoenix area and eastern Phoenix suburbs only)<Mountain & Pacific Time Zones>
+484 PA Pennsylvania (Reading, Allentown, Chester and southeastern Pennsylvania, overlays with 610 and 835)<Eastern Time Zone>
+500 PERSONAL COMMUNICATIONS SERVICES
+501 AR Arkansas (Little Rock, Hot Springs and central Arkansas)<Central Time Zone>
+502 KY Kentucky (Louisville, Frankfort, Shelbyville and north central Kentucky)<Eastern Time Zone>
+503 OR Oregon (Portland, Salem, Tillamook, Astoria and northwestern Oregon, overlays with 971)<Pacific Time Zone>
+504 LA Louisiana (New Orleans, Kenner, Metairie and surrounding areas)<Central Time Zone>
+505 NM New Mexico (Albuquerque, Farmington, Gallup, Santa Fe and northwestern New Mexico)<Mountain Time Zone>
+506 NB New Brunswick (all of New Brunswick)<Atlantic Time Zone>
+507 MN Minnesota (Rochester, Mankato, Worthington, Marshall and southern Minnesota)<Central Time Zone>
+508 MA Massachusetts (Worcester, New Bedford and southeastern Massachusetts, overlays with 774)<Eastern Time Zone>
+509 WA Washington (Spokane, Yakima, Walla Walla, Moses Lake, Ellensburg and eastern Washington)<Pacific Time Zone>
+510 CA California (Hayward, Berkeley, Oakland, Richmond and Fremont areas)<Pacific Time Zone>
+512 TX Texas (Austin, Lampasas, Bastrop, Milam and central Texas)<Central Time Zone>
+513 OH Ohio (Cincinnati, Middletown, Hamilton, Norwood, Lebanon and southwestern Ohio)<Eastern Time Zone>
+514 QC Quebec (Montreal area, overlays with 438)<Eastern Time Zone>
+515 IA Iowa (Des Moines, Ames, Fort Dodge, Jefferson, Algona, Indianola and north central Iowa)<Central Time Zone>
+516 NY New York (Nassau County, Levittown, Hicksville, Massapequa and western Long Island)<Eastern Time Zone>
+517 MI Michigan (Jackson, Lansing, Howell, Deerfield, Addison and south central Michigan)<Eastern Time Zone>
+518 NY New York (Plattsburgh, Saranac Lake, Albany and northeastern New York)<Eastern Time Zone>
+519 ON Ontario (London, Windsor and southwestern Ontario, overlays with 226)<Eastern Time Zone>
+520 AZ Arizona (Tucson and southeastern Arizona)<Mountain & Pacific Time Zones>
+530 CA California (Alturas, Chico, Redding, Placerville, Truckee and northeastern California)<Pacific Time Zone>
+540 VA Virginia (Roanoke, Harrisonburg, Winchester, Fredericksburg and northern Virginia)<Eastern Time Zone>
+541 OR Oregon (Medford, Eugene, Ontario, Burns and all of Oregon except northwestern Oregon)<Mountain & Pacific Time Zones>
+551 NJ New Jersey (Hackensack, Jersey City, and northeast New Jersey, overlays with 201)<Eastern Time Zone>
+559 CA California (Fresno, Madera, Hanford, Visalia and central California)<Pacific Time Zone>
+561 FL Florida (West Palm Beach, Boca Raton, Boynton Beach, Delray Beach, Belleglade and central eastern Florida)<Eastern Time Zone>
+562 CA California (Long Beach, Lakewood, Bellflower and southwestern Los Angeles suburbs)<Pacific Time Zone>
+563 IA Iowa (Decorah, Dubuque, Clinton, Davenport and eastern and northeastern Iowa)<Central Time Zone>
+567 OH Ohio (Toledo, Mansfield, Lima, Bryan, Sandusky and northwestern Ohio, overlays with 419)<Eastern Time Zone>
+570 PA Pennsylvania (Scranton, Williamsport, Wilkes-Barre, Susquehanna and northeastern Pennsylvania)<Eastern Time Zone>
+571 VA Virginia (Alexandria, Washington DC suburbs, Arlington and northeastern Virginia, overlays with 703)<Eastern Time Zone>
+573 MO Missouri (Jefferson City, Hannibal, Poplar Bluff and eastern Missouri excluding St Louis)<Central Time Zone>
+574 IN Indiana (South Bend, Logansport, Elkhart, Nappanee and north central Indiana)<Central & Eastern Time Zones>
+575 NM New Mexico (Carlsbad, Las Cruces, Roswell, Silver City, Taos and southern and eastern New Mexico)<Mountain Time Zone>
+580 OK Oklahoma (Guymon, Hugo, Enid, Lawton, Ardmore, Elk City and southern and western Oklahoma)<Central Time Zone>
+585 NY New York (Rochester, Wellsville, Batavia, Olean and western New York)<Eastern Time Zone>
+586 MI Michigan (Port Huron, Flint, Flushing, Warren and eastern Michigan, overlays with 810)<Eastern Time Zone>
+600 CANADA/SERVICES
+601 MS Mississippi (Jackson, Meridian, Natchez, McComb, Hattiesburg and central Mississippi, overlays with 769)<Central Time Zone>
+602 AZ Arizona (Central Phoenix only)<Mountain & Pacific Time Zones>
+603 NH New Hampshire (all of New Hampshire)<Eastern Time Zone>
+604 BC British Columbia (Vancouver, Richmond, Abbotsford, Whistler and southwestern BC, overlays with 778)<Pacific Time Zone>
+605 SD South Dakota (all of South Dakota)<Central & Mountain Time Zones>
+606 KY Kentucky (Ashland, Hazard, Somerset, London, Corbin, Pikeville, Maysville and eastern Kentucky)<Central & Eastern Time Zones>
+607 NY New York (Binghamton, Elmira, Bath, Norwich and south central New York)<Eastern Time Zone>
+608 WI Wisconsin (Madison, La Crosse, Platteville, Janesville and southwestern Wisconsin)<Central Time Zone>
+609 NJ New Jersey (Atlantic City, Brown Mills, Trenton, and central & southeastern New Jersey)<Eastern Time Zone>
+610 PA Pennsylvania (Reading, Allentown, Chester and southeastern Pennsylvania, overlays with 484 and 835)<Eastern Time Zone>
+611 REPAIR SERVICE
+612 MN Minnesota (Central Minneapolis, Fort Snelling, St Anthony and Richfield)<Central Time Zone>
+613 ON Ontario (Ottawa and southeastern Ontario)<Eastern Time Zone>
+614 OH Ohio (Columbus area)<Eastern Time Zone>
+615 TN Tennessee (Nashville, Murfreesboro, Springfield, Lebanon, Dickson and north central Tennessee)<Central Time Zone>
+616 MI Michigan ( Grand Rapids, Holland, Greenville, Grandhaven, Zeeland, and southwestern Michigan)<Eastern Time Zone>
+617 MA Massachusetts (Boston, Cambridge and east central Massachusetts, overlays with 857)<Eastern Time Zone>
+618 IL Illinois (Carbondale, Alton, Centralia, Mount Vernon and southern Illinois)<Central Time Zone>
+619 CA California (National City, Chula Vista, Imperial Beach, Otay and the San Diego area)<Pacific Time Zone>
+620 KS Kansas (Dodge City, Great Bend, Parsons, Liberal and southern Kansas)<Central & Mountain Time Zone>
+623 AZ Arizona (Buckeye, Peoria, western Phoenix area and western Phoenix suburbs only)<Mountain & Pacific Time Zones>
+626 CA California (Arcadia, Temple City, Covina, Pasadena and eastern Los Angeles suburbs)<Pacific Time Zone>
+630 IL Illinois (Aurora, Batavia, Geneva and western Chicago suburbs, overlays with 331)<Central Time Zone>
+631 NY New York (Manorville, Huntington, Lindenhurst, Islip, Deer Park and Eastern Long Island)<Eastern Time Zone>
+636 MO Missouri (Chesterfield, Union, De Soto, Troy and east central Missouri)<Central Time Zone>
+641 IA Iowa (Mason City, Oskaloosa, Creston, Pella, Ottumwa, Britt, Clear Lake, Fairfield and central Iowa)<Central Time Zone>
+646 NY New York (New York City Manhattan area, overlays with 212 and 917)<Eastern Time Zone>
+647 ON Ontario (Toronto area, overlays with 416)<Eastern Time Zone>
+649 TURKS & CAICOS (all of Turks and Caicos)<Eastern Time Zone>
+650 CA California (San Mateo, Palo Alto, Redwood City, Menlo Park and southern San Francisco suburbs)<Pacific Time Zone>
+651 MN Minnesota (St Paul, Lindstrom, Red Wing, Hastings and east central Minnesota)<Central Time Zone>
+660 MO Missouri (Marshall, Sedalia, Macon, Trenton, Maryville and north central Missouri)<Central Time Zone>
+661 CA California (Bakersfield, Mojave, Santa Clarita, Palmdale and south central California)<Pacific Time Zone>
+662 MS Mississippi (Greenville, Tupelo, Winona, Columbus, Holly Springs and northern Mississippi)<Central Time Zone>
+664 MONTSERRAT (all of Montserrat)<Atlantic Time Zone (one hour later than Eastern)>
+670 COMMONWEALTH OF THE NORTHERN MARIANA ISLANDS (all of CNMI including Saipan)<Pacific Guam Time Zone (6 or 7 hours earlier than Pacific Time, does not observe daylight savings)>
+671 GUAM (all of Guam)<Pacific Guam Time Zone (6 or 7 hours earlier than Pacific Time, does not observe daylight savings)>
+678 GA Georgia (Atlanta, Gainesville, Griffin and north central Georgia, overlays 404 and and 470 and 770)<Eastern Time Zone>
+682 TX Texas (Fort Worth, Arlington, Grandview, Weatherford, Rhome, overlays with 817)<Central Time Zone>
+684 AMERICAN SAMOA (all of American Samoa including Pago Pago)<Samoan Standard Time Zone (3 or 4 hours earlier than Pacific Time, does not observe daylight savings)>
+700 INTEREXCHANGE CARRIER SERVICES
+701 ND North Dakota (all of North Dakota)<Mountain & Central Time Zones>
+702 NV Nevada (Las Vegas, Henderson and extreme southern Nevada)<Pacific Time Zone>
+703 VA Virginia (Alexandria, Washington DC suburbs, Arlington and northeastern Virginia, overlays with 571)<Eastern Time Zone>
+704 NC North Carolina (Charlotte, Kingstown and south central North Carolina, overlays with 980)<Eastern Time Zone>
+705 ON Ontario (North Bay and northeastern Ontario)<Eastern Time Zone>
+706 GA Georgia (Augusta, Columbus, Lagrange, Rome, Dalton and northern and west central Georgia, overlays with 762)<Eastern Time Zone>
+707 CA California (Santa Rosa, Fort Bragg, Crescent City, Eureka, Ukiah and northwestern California)<Pacific Time Zone>
+708 IL Illinois (Chicago Heights, Tinley Park and southern Chicago suburbs)<Central Time Zone>
+709 NF Newfoundland (all of Newfoundland)<Newfoundland Time Zone (one and a half hours later than Eastern)>
+710 US GOVERNMENT
+711 TRS ACCESS
+712 IA Iowa (Estherville, Council Bluffs, Sioux City, Sheldon, Denison and western Iowa)<Central Time Zone>
+713 TX Texas (Spring, Katy, Houston area, overlays with 281 and 832)<Central Time Zone>
+714 CA California (Huntington Beach, Orange, Garden Grove, Tustin, Anaheim and northern Orange County)<Pacific Time Zone>
+715 WI Wisconsin (Rhinelander, Wausau, Eau Claire, Rice Lake, Ashland and northern Wisconsin)<Central Time Zone>
+716 NY New York (Buffalo, Jamestown, Niagara Falls, Tonawanda and western New York)<Eastern Time Zone>
+717 PA Pennsylvania (Harrisburg, Gettysburg, Lancaster, York and south central Pennsylvania)<Eastern Time Zone>
+718 NY New York (Flushing, Jamaica, Brooklyn, Staten Island, Bronx and Queens, overlays with 347 and 917)<Eastern Time Zone>
+719 CO Colorado (Leadville, Pueblo, Colorado Springs, Trinidad and southeastern Colorado)<Mountain Time Zone>
+720 CO Colorado (Boulder, Longmont, Aurora, Denver and central Colorado, overlays with 303)<Mountain Time Zone>
+724 PA Pennsylvania (New Castle, Washington, Uniontown and south western Pennsylvania, overlays with 878)<Eastern Time Zone>
+727 FL Florida (Clearwater, St Petersburg, Dunedin and the west central Florida gulf coast)<Eastern Time Zone>
+731 TN Tennessee (Union City, Jackson, Dyersburg, Paris, Bolivar and western Tennessee)<Central Time Zone>
+732 NJ New Jersey (New Brunswick, Neptune, Lakewood, and east central New Jersey, overlays with 848)<Eastern Time Zone>
+734 MI Michigan (Ann Arbor, Monroe, Wayne, Ypsilanti and southwestern Detroit suburbs)<Eastern Time Zone>
+740 OH Ohio (Jackson, Lancaster, Marietta, Cambridge, Zanesville, New Castle and southeastern Ohio)<Eastern Time Zone>
+754 FL Florida (Fort Lauderdale, Pompano Beach, overlays with 954)<Eastern Time Zone>
+757 VA Virginia (Hampton, Norfolk, Williamsburg, Newport News, Virginia Beach and southeastern Virginia)<Eastern Time Zone>
+758 ST LUCIA (all of St Lucia)<Atlantic Time Zone (one hour later than Eastern)>
+760 CA California (Bishop, Ridgecrest, Indio, Barstow, El Centro, Palm Springs and southeastern California)<Pacific Time Zone>
+762 GA Georgia (Augusta, Columbus, Lagrange, Rome, Dalton and northern and west central Georgia, overlays with 706)<Eastern Time Zone>
+763 MN Minnesota (Maple Grove, Monticello, Elk River, Fridley, Blaine, and northwest Minneapolis area)<Central Time Zone>
+765 IN Indiana (Lafayette, Marion, Muncie, Richmond and central Indiana excluding Indianapolis)<Eastern Time Zone>
+767 DOMINICA (all of Dominica)<Atlantic Time Zone (one hour later than Eastern)>
+769 MS Mississippi (Jackson, Meridian, Natchez, McComb, Hattiesburg and central Mississippi, overlays with 601)<Central Time Zone>
+770 GA Georgia (Marietta, Cedartown, and north central Georgia, overlays with 470 and 678)<Eastern Time Zone>
+772 FL Florida (Vero Beach, Port Saint Lucie, Fort Pierce, Sebastian, Stuart and central eastern Florida)<Eastern Time Zone>
+773 IL Illinois (Chicago excluding downtown Chicago)<Central Time Zone>
+774 MA Massachusetts (Worcester and southeastern Massachusetts, overlays with 508)<Eastern Time Zone>
+775 NV Nevada (Reno, Elko, Ely and all of Nevada excluding Las Vegas and extreme southern Nevada)<Pacific Time Zone>
+778 BC British Columbia (Vancouver, Richmond, Abbotsford and southwestern BC overlays with 604)<Pacific Time Zone>
+779 IL Illinois (La Salle, De Kalb, Rockford, Freeport and northern Illinois excluding Chicago area, overlays with 815)<Central Time Zone>
+780 AB Alberta (Edmonton, Jasper, Grande Prairie, Peace River and northern Alberta)<Mountain Time Zone>
+781 MA Massachusetts (Saugus, Norwood and east central Massachusetts, overlays with 339)<Eastern Time Zone>
+784 ST VINCENT AND THE GRENADINES (all of St Vincent and the Grenadines)<Atlantic Time Zone (one hour later than Eastern)>
+785 KS Kansas (Colby, Topeka, Salina, Manhattan, Lawrence and northern Kansas)<Mountain & Central Time Zones>
+786 FL Florida (Miami, Homestead, Coral Gables, Key West and southeastern Florida, overlays with 305)<Eastern Time Zone>
+787 PUERTO RICO (all of Puerto Rico, overlays with 939)<Eastern & Atlantic Time Zone (does not observe daylight savings time)>
+800 TOLL FREE SERVICES
+801 UT Utah (Salt Lake City, Salt Lake County, Midvale, Alta, Magna, Kearns Holladay, and central Utah)<Mountain Time Zone>
+802 VT Vermont (all of Vermont)<Eastern Time Zone>
+803 SC South Carolina (Columbia, Rock Hill, Sumter, Aiken and central South Carolina)<Eastern Time Zone>
+804 VA Virginia (Richmond, Petersburg, West Point, Chester and east central Virginia)<Eastern Time Zone>
+805 CA California (Santa Barbara, San Luis Obispo, Lompoc and central western coastal California)<Pacific Time Zone>
+806 TX Texas (Amarillo, Lubbock, Canadian, Perryton, Shamrock, Dalhart and Texas panhandle)<Central Time Zone>
+807 ON Ontario (Thunder Bay and western Ontario)<Central & Eastern Time Zones>
+808 HI Hawaii (all of Hawaii)<Hawaiian Time Zone (2 or 3 hours earlier than Pacific Time, does not observe daylight savings)>
+809 DOMINICAN REPUBLIC (all of the Dominican Republic, overlays with 829)<Atlantic Time Zone>
+810 MI Michigan (Port Huron, Flint, Flushing, Warren and eastern Michigan, overlays with 586)<Eastern Time Zone>
+811 BUSINESS OFFICE
+812 IN Indiana (Evansville, New Albany, Terre Haute, Bloomington and southern Indiana)<Central & Eastern Time Zones>
+813 FL Florida (Tampa, Hillsborough, Plant City, Port Tampa and central western Florida)<Eastern Time Zone>
+814 PA Pennsylvania (Erie, Warren, Altoona, Johnstown, Meyersdale and central and northwestern Pennsylvania)<Eastern Time Zone>
+815 IL Illinois (La Salle, De Kalb, Rockford, Freeport and northern Illinois excluding Chicago area, overlays with 779)<Central Time Zone>
+816 MO Missouri (Kansas City, St Joseph, Independence, Harrisonville and west central Missouri)<Central Time Zone>
+817 TX Texas (Fort Worth, Arlington, Grandview, Weatherford, Rhome, overlays with 682)<Central Time Zone>
+818 CA California ( Glendale, San Fernando, Burbank and northern Los Angeles suburbs)<Pacific Time Zone>
+819 QC Quebec (Western Quebec)<Eastern Time Zone>
+822 TOLL FREE SERVICES
+828 NC North Carolina (Asheville, Brevard, Morganton, Murphy and western North Carolina)<Eastern Time Zone>
+829 DOMINICAN REPUBLIC (all of the Dominican Republic, overlays with 809)<Atlantic Time Zone>
+830 TX Texas (Uvalde, New Braunfels, Kerrville, Eagle Pass and southwest Texas)<Central Time Zone>
+831 CA California (Salinas, Hollister, Monterey, Santa Cruz and central western coastal California)<Pacific Time Zone>
+832 TX Texas (Spring, Katy, Houston area, overlays with 281 and 713)<Central Time Zone>
+833 TOLL FREE SERVICES
+835 PA Pennsylvania (Reading, Allentown, and southeastern Pennsylvania, overlays with 484 and 610)<Eastern Time Zone>
+843 SC South Carolina (Florence, Myrtle Beach, Charleston, Hilton Head Island and eastern South Carolina)<Eastern Time Zone>
+844 TOLL FREE SERVICES
+845 NY New York ( Poughkeepsie, Middletown, West Point, Newburgh and southeastern New York)<Eastern Time Zone>
+847 IL Illinois (Waukegan, Des Plaines, northwest Chicago suburbs and northeastern Illinois, overlays with 224)<Central Time Zone>
+848 NJ New Jersey (New Brunswick, Neptune, and east central New Jersey, overlays with 732)<Eastern Time Zone>
+850 FL Florida ( Pensacola, Tallahassee, Panama City and the Florida panhandle)<Central & Eastern Time Zones>
+855 TOLL FREE SERVICES
+856 NJ New Jersey (Vineland, Cherry Hill, Camden, Millville, and southwestern New Jersey)<Eastern Time Zone>
+857 MA Massachusetts (Boston, Cambridge and east central Massachusetts, overlays with 617)<Eastern Time Zone>
+858 CA California (Del Mar, La Jolla and northern San Diego suburbs)<Pacific Time Zone>
+859 KY Kentucky (Lexington, Richmond, Danville, Covington, Mount Sterling and north central Kentucky)<Eastern Time Zone>
+860 CT Connecticut (Bristol, Hartford, Norwich and northern and eastern Connecticut, overlays with 959)<Eastern Time Zone>
+862 NJ New Jersey (Newark, Paterson and northwestern New Jersey, overlays with 973)<Eastern Time Zone>
+863 FL Florida (Avon Park, Clewiston, Lakeland, Bartow, Sebring, Winter Haven and south central Florida)<Eastern Time Zone>
+864 SC South Carolina (Greenville, Spartanburg, Anderson and western South Carolina)<Eastern Time Zone>
+865 TN Tennessee (Knoxville, Newport, Jefferson City, Oak Ridge and east central Tennessee)<Eastern Time Zone>
+866 TOLL FREE SERVICES
+867 YK Yukon, Northwest Territories, and Nunavut (Yukon, Northwest Territories and Nunavut)<Pacific, Mountain, Central, Eastern, and Atlantic Time Zones>
+868 TRINIDAD AND TOBAGO (all of Trinidad and Tobago)<Atlantic Time Zone (one hour later than Eastern)>
+869 ST KITTS AND NEVIS (all of St Kitts and Nevis)<Atlantic Time Zone (one hour later than Eastern)>
+870 AR Arkansas (Texarkana, Mountain Home, Pine Bluff and southern, eastern and northeastern Arkansas)<Central Time Zone>
+876 JAMAICA (all of Jamaica)<Eastern Time Zone>
+877 TOLL FREE SERVICES
+878 PA Pennsylvania (Pittsburgh, New Castle, and southwestern Pennsylvania, overlays with 412 and 724)<Eastern Time Zone>
+880 PAID 800 SERVICE FROM CARIBBEAN TO THE US AND CANADA OR FROM CANADA TO THE US
+881 PAID 888 SERVICE FROM CARIBBEAN TO THE US AND CANADA OR FROM CANADA TO THE US
+882 PAID 877 SERVICE FROM CARIBBEAN TO THE US AND CANADA OR FROM CANADA TO THE US
+888 TOLL FREE SERVICES
+900 900 NUMBER PAY PER CALL SERVICES
+901 TN Tennessee (Memphis, Covington, Somerville and south western Tennessee)<Central Time Zone>
+902 NS Nova Scotia (all of Nova Scotia and Prince Edward Island)<Atlantic Time Zone>
+903 TX Texas (Tyler, Sherman, Longview, Palestine and northeastern Texas, overlays with 430)<Central Time Zone>
+904 FL Florida (Jacksonville, St Augustine, Starke, Green Cove Springs and northeastern Florida)<Eastern Time Zone>
+905 ON Ontario (Hamilton, Toronto suburbs and central southeastern Ontario, overlays with 289)<Eastern Time Zone>
+906 MI Michigan (Ironwood, Marquette, Sault Ste Marie, Escanaba and upper Michigan)<Central & Eastern Time Zones>
+907 AK Alaska (all of Alaska)<Alaskan (1 hour earlier than Pacific) & Aleutian (2 hours earlier than Pacific) Time Zones>
+908 NJ New Jersey (Washington, Elizabeth, Warren, Plainfield and west central New Jersey)<Eastern Time Zone>
+909 CA California (San Bernardino, Ontario, Pomona, Chino, Arrowhead and Big Bear Lake areas)<Pacific Time Zone>
+910 NC North Carolina (Fayetteville, Wilmington, Lumberton and southeastern North Carolina)<Eastern Time Zone>
+911 EMERGENCY
+912 GA Georgia ( Savannah, Vidalia, Waycross, Brunswick, Douglas and southeastern Georgia)<Eastern Time Zone>
+913 KS Kansas (Kansas City, Overland Park, Paola Leavenworth and extreme eastern Kansas)<Central Time Zone>
+914 NY New York (White Plains, Yonkers, Pelham, Westchester, Peekskill and southeastern New York)<Eastern Time Zone>
+915 TX Texas (El Paso, Dell City, Guadalupe Peak, Sierra Blanca, and far western Texas)<Mountain & Central Time Zones>
+916 CA California (Sacramento area)<Pacific Time Zone>
+917 NY New York (New York City Manhattan area, overlays with 212 and 646)<Eastern Time Zone>
+918 OK Oklahoma (Tulsa, Bartlesville, McAlester, Muskogee, Henrietta and northeastern Oklahoma)<Central Time Zone>
+919 NC North Carolina (Raleigh, Durham, Chapel Hill, Oxford and north central North Carolina)<Eastern Time Zone>
+920 WI Wisconsin (Sheboygan, Oshkosh, Green Bay, Manitowoc, Fond Du Lac and eastern Wisconsin)<Central Time Zone>
+925 CA California (Pleasanton, Martinez, Concord, Livermore, Walnut Creek and Dublin areas)<Pacific Time Zone>
+928 AZ Arizona (Flagstaff, Kingman, Prescott, Yuma and northern and western Arizona)<Mountain & Pacific Time Zones>
+931 TN Tennessee (Clarksville, Columbia, Manchester, Cookeville and central Tennessee)<Central & Eastern Time Zones>
+936 TX Texas (Nacogdoches, Lufkin, Conroe, Huntsville, Center and southeastern Texas)<Central Time Zone>
+937 OH Ohio (Marysville, Springfield, Dayton, Hillsboro and southwestern Ohio excluding Cincinnati area)<Eastern Time Zone>
+939 PUERTO RICO (all of Puerto Rico, overlays with 787)<Eastern & Atlantic Time Zone (does not observe daylight savings time)>
+940 TX Texas (Vernon, Wichita Falls, Denton, Gainesville, Decatur and north central Texas)<Central Time Zone>
+941 FL Florida ( Bradenton, Port Charlotte, Sarasota, Punta Gorda and the west central Florida coast)<Eastern Time Zone>
+947 MI Michigan (Troy, Oakland County, Pontiac, Southfield, Rochester Hills and northwestern Detroit suburbs, overlays with 248)<Eastern Time Zone>
+949 CA California (Laguna Niguel, Irvine, El Toro, Newport Beach, Corona Del Mar and southern Orange County)<Pacific Time Zone>
+951 CA California (Riverside, Corona, Murrieta, Perris, San Jacinto and Temecula areas)<Pacific Time Zone>
+952 MN Minnesota (Bloomington, Minnetonka, Chaska and southwest Minneapolis area)<Central Time Zone>
+954 FL Florida (Fort Lauderdale, Pompano Beach, overlays with 754)<Eastern Time Zone>
+956 TX Texas (Laredo, Brownsville, McAllen, Harlingen and southern Texas)<Central Time Zone>
+959 CT Connecticut (Bristol, Hartford, Norwich and northern and eastern Connecticut, overlays with 860)<Eastern Time Zone>
+970 CO Colorado (Aspen, Durango, Grand Junction, Fort Collins and northern and western Colorado)<Mountain Time Zone>
+971 OR Oregon (Portland, Salem, Hillsboro, Beaverton and northwestern Oregon, overlays with 503)<Pacific Time Zone>
+972 TX Texas (Dallas area, overlays with 214 and 469)<Central Time Zone>
+973 NJ New Jersey (Newark, Paterson and northwestern New Jersey, overlays with 862)<Eastern Time Zone>
+978 MA Massachusetts (Fitchburg, Peabody and northeastern Massachusetts, overlays with 351)<Eastern Time Zone>
+979 TX Texas (Wharton, Bryan, Bay City, College Station, Lake Jackson and southeastern Texas)<Central Time Zone>
+980 NC North Carolina (Charlotte, Kingstown and south central North Carolina, overlays with 704)<Eastern Time Zone>
+985 LA Louisiana (Houma, Slidell and southeastern Louisiana excluding New Orleans)<Central Time Zone>
+989 MI Michigan (Alpena, Mt Pleasant, Bay City, Saginaw, Midland, Owosso and central Michigan)<Eastern Time Zone>
