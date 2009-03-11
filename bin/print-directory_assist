@@ -7,6 +7,6 @@ my $acs = `cut -c1-3 ../etc/areacodes.txt`;
 my $plus = '';
 foreach my $npa ( split(/\n/, $acs ) ) {
   warn $npa;
-  $plus .= $npa. '5551212 ';
+  $plus .= $npa. '5551212,';
 }
 print "$plus\n";
