@@ -2080,33 +2080,37 @@ sub print_generic {
     push @sections, { 'description' => '', 'subtotal' => '' };
   }
 
-  foreach my $line_item ( $conf->exists('disable_previous_balance') 
-                            ? ()
-                            : $self->_items_previous
-                        )
+  unless (    $conf->exists('disable_previous_balance')
+           || $conf->exists('previous_balance-summary_only')
+         )
   {
-    my $detail = {
-      ext_description => [],
-    };
-    $detail->{'ref'} = $line_item->{'pkgnum'};
-    $detail->{'quantity'} = 1;
-    $detail->{'section'} = $previous_section;
-    $detail->{'description'} = &$escape_function($line_item->{'description'});
-    if ( exists $line_item->{'ext_description'} ) {
-      @{$detail->{'ext_description'}} = map {
-        &$escape_function($_);
-      } @{$line_item->{'ext_description'}};
+
+    foreach my $line_item ( $self->_items_previous ) {
+
+      my $detail = {
+        ext_description => [],
+      };
+      $detail->{'ref'} = $line_item->{'pkgnum'};
+      $detail->{'quantity'} = 1;
+      $detail->{'section'} = $previous_section;
+      $detail->{'description'} = &$escape_function($line_item->{'description'});
+      if ( exists $line_item->{'ext_description'} ) {
+        @{$detail->{'ext_description'}} = map {
+          &$escape_function($_);
+        } @{$line_item->{'ext_description'}};
+      }
+      $detail->{'amount'} = ( $old_latex ? '' : $money_char).
+                            $line_item->{'amount'};
+      $detail->{'product_code'} = $line_item->{'pkgpart'} || 'N/A';
+
+      push @detail_items, $detail;
+      push @buf, [ $detail->{'description'},
+                   $money_char. sprintf("%10.2f", $line_item->{'amount'}),
+                 ];
     }
-    $detail->{'amount'} = ( $old_latex ? '' : $money_char).
-                          $line_item->{'amount'};
-    $detail->{'product_code'} = $line_item->{'pkgpart'} || 'N/A';
-  
-    push @detail_items, $detail;
-    push @buf, [ $detail->{'description'},
-                 $money_char. sprintf("%10.2f", $line_item->{'amount'}),
-               ];
+
   }
-  
+
   if ( @pr_cust_bill && !$conf->exists('disable_previous_balance') ) {
     push @buf, ['','-----------'];
     push @buf, [ 'Total Previous Balance',

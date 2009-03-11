@@ -2486,6 +2486,13 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'previous_balance-summary_only',
+    'section'     => 'billing',
+    'description' => 'Only show a single line summarizing the total previous balance rather than one line per invoice.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'usps_webtools-userid',
     'section'     => 'UI',
     'description' => 'Production UserID for USPS web tools.   Enables USPS address standardization.  See the <a href="http://www.usps.com/webtools/">USPS website</a>, register and agree not to use the tools for batch purposes.',
