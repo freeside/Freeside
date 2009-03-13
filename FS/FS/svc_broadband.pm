@@ -217,6 +217,10 @@ sub check {
   ;
   return $error if $error;
 
+  #redundant, but prevents further problems until column constraint in place
+  return "MAC already in use"
+    if scalar( qsearch( 'svc_broadband', { 'mac_addr', $self->mac_addr } ) );
+
   if($self->speed_up < 0) { return 'speed_up must be positive'; }
   if($self->speed_down < 0) { return 'speed_down must be positive'; }
 
