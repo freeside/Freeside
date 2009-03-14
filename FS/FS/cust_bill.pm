@@ -660,21 +660,22 @@ sub generate_email {
     my $from = $1 || 'example.com';
     my $content_id = join('.', rand()*(2**32), $$, time). "\@$from";
 
-    my $path = "$FS::UID::conf_dir/conf.$FS::UID::datasrc";
-    my $file;
+    my $logo;
+    my $agentnum = $self->cust_main->agentnum;
     if ( defined($args{'template'}) && length($args{'template'})
-         && -e "$path/logo_". $args{'template'}. ".png"
+         && $conf->exists( 'logo_'. $args{'template'}. '.png', $agentnum )
        )
     {
-      $file = "$path/logo_". $args{'template'}. ".png";
+      $logo = 'logo_'. $args{'template'}. '.png';
     } else {
-      $file = "$path/logo.png";
+      $logo = "logo.png";
     }
+    my $image_data = $conf->config_binary( $logo, $agentnum);
 
     my $image = build MIME::Entity
       'Type'       => 'image/png',
       'Encoding'   => 'base64',
-      'Path'       => $file,
+      'Data'       => $image_data,
       'Filename'   => 'logo.png',
       'Content-ID' => "<$content_id>",
     ;
