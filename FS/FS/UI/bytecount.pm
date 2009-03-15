@@ -32,9 +32,9 @@ sub bytecount_unexact {
   return("$bc bytes")
     if ($bc < 1000);
   return(sprintf("%.2f Kbytes", $bc/1024))
-    if ($bc < 1000000);
+    if ($bc < 1048576);
   return(sprintf("%.2f Mbytes", $bc/1048576))
-    if ($bc < 1000000000);
+    if ($bc < 1073741824);
   return(sprintf("%.2f Gbytes", $bc/1073741824));
 }
 

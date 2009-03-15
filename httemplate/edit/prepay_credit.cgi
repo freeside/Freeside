@@ -97,14 +97,14 @@ tie my %multiplier, 'Tie::IxHash',
 
 tie my %bytemultiplier, 'Tie::IxHash',
   1          => 'bytes',
-  1000       => 'Kbytes',
-  1000000    => 'Mbytes',
-  1000000000 => 'Gbytes',
+  1024       => 'Kbytes',
+  1048576    => 'Mbytes',
+  1073741824 => 'Gbytes',
 ;
 
 $cgi->param('multiplier',     '60')      unless $cgi->param('multiplier');
-$cgi->param('upmultiplier',   '1000000') unless $cgi->param('upmultiplier');
-$cgi->param('downmultiplier', '1000000') unless $cgi->param('downmultiplier');
-$cgi->param('totalmultiplier','1000000') unless $cgi->param('totalmultiplier');
+$cgi->param('upmultiplier',   '1048576') unless $cgi->param('upmultiplier');
+$cgi->param('downmultiplier', '1048576') unless $cgi->param('downmultiplier');
+$cgi->param('totalmultiplier','1048576') unless $cgi->param('totalmultiplier');
 
 </%init>
