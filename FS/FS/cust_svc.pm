@@ -629,7 +629,8 @@ sub attribute_since_sqlradacct {
     ) or die $dbh->errstr;
     $sth->execute($username, $start, $end) or die $sth->errstr;
 
-    $sum += $sth->fetchrow_arrayref->[0];
+    my $row = $sth->fetchrow_arrayref;
+    $sum += $row->[0] if defined($row->[0]);
 
     warn "$mes done SUMing sessions\n"
       if $DEBUG;
