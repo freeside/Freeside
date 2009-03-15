@@ -23,6 +23,7 @@ use FS::UID qw( getotaker dbh driver_name );
 use FS::Record qw( qsearchs qsearch dbdef );
 use FS::Misc qw( generate_email send_email generate_ps do_print );
 use FS::Msgcat qw(gettext);
+use FS::payby;
 use FS::cust_pkg;
 use FS::cust_svc;
 use FS::cust_bill;
@@ -392,7 +393,7 @@ sub insert {
   my $dbh = dbh;
 
   my $prepay_identifier = '';
-  my( $amount, $seconds ) = ( 0, 0 );
+  my( $amount, $seconds, $upbytes, $downbytes, $totalbytes ) = (0, 0, 0, 0, 0);
   my $payby = '';
   if ( $self->payby eq 'PREPAY' ) {
 
@@ -403,7 +404,13 @@ sub insert {
     warn "  looking up prepaid card $prepay_identifier\n"
       if $DEBUG > 1;
 
-    my $error = $self->get_prepay($prepay_identifier, \$amount, \$seconds);
+    my $error = $self->get_prepay( $prepay_identifier,
+                                   'amount_ref'     => \$amount,
+                                   'seconds_ref'    => \$seconds,
+                                   'upbytes_ref'    => \$upbytes,
+                                   'downbytes_ref'  => \$downbytes,
+                                   'totalbytes_ref' => \$totalbytes,
+                                 );
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       #return "error applying prepaid card (transaction rolled back): $error";
@@ -465,7 +472,13 @@ sub insert {
   warn "  ordering packages\n"
     if $DEBUG > 1;
 
-  $error = $self->order_pkgs($cust_pkgs, \$seconds, %options);
+  $error = $self->order_pkgs( $cust_pkgs,
+                              %options,
+                              'seconds_ref'    => \$seconds,
+                              'upbytes_ref'    => \$upbytes,
+                              'downbytes_ref'  => \$downbytes,
+                              'totalbytes_ref' => \$totalbytes,
+                            );
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
@@ -474,6 +487,10 @@ sub insert {
   if ( $seconds ) {
     $dbh->rollback if $oldAutoCommit;
     return "No svc_acct record to apply pre-paid time";
+  }
+  if ( $upbytes || $downbytes || $totalbytes ) {
+    $dbh->rollback if $oldAutoCommit;
+    return "No svc_acct record to apply pre-paid data";
   }
 
   if ( $amount ) {
@@ -701,7 +718,6 @@ sub order_pkg {
     if $DEBUG;
 
   my $cust_pkg = $opt->{'cust_pkg'};
-  my $seconds  = $opt->{'seconds'};
   my $svcs     = $opt->{'svcs'} || [];
 
   my %svc_options = ();
@@ -745,9 +761,12 @@ sub order_pkg {
       $error = $new_cust_svc->replace($old_cust_svc);
     } else {
       $svc_something->pkgnum( $cust_pkg->pkgnum );
-      if ( $seconds && $$seconds && $svc_something->isa('FS::svc_acct') ) {
-        $svc_something->seconds( $svc_something->seconds + $$seconds );
-        $$seconds = 0;
+      if ( $svc_something->isa('FS::svc_acct') ) {
+        foreach ( grep { $opt->{$_.'_ref'} && ${ $opt->{$_.'_ref'} } }
+                       qw( seconds upbytes downbytes totalbytes )      ) {
+          $svc_something->$_( $svc_something->$_() + ${ $opt->{$_.'_ref'} } );
+          ${ $opt->{$_.'_ref'} } = 0;
+        }
       }
       $error = $svc_something->insert(%svc_options);
     }
@@ -762,7 +781,8 @@ sub order_pkg {
 
 }
 
-=item order_pkgs HASHREF, [ SECONDSREF, [ , OPTION => VALUE ... ] ]
+#deprecated #=item order_pkgs HASHREF [ , SECONDSREF ] [ , OPTION => VALUE ... ]
+=item order_pkgs HASHREF [ , OPTION => VALUE ... ]
 
 Like the insert method on an existing record, this method orders multiple
 packages and included services atomicaly.  Pass a Tie::RefHash data structure
@@ -776,12 +796,13 @@ example:
     $cust_pkg => [ $svc_acct ],
     ...
   );
-  $cust_main->order_pkgs( \%hash, \'0', 'noexport'=>1 );
+  $cust_main->order_pkgs( \%hash, 'noexport'=>1 );
 
 Services can be new, in which case they are inserted, or existing unaudited
 services, in which case they are linked to the newly-created package.
 
-Currently available options are: I<depend_jobnum> and I<noexport>.
+Currently available options are: I<depend_jobnum>, I<noexport>, I<seconds_ref>,
+I<upbytes_ref>, I<downbytes_ref>, and I<totalbytes_ref>.
 
 If I<depend_jobnum> is set, all provisioning jobs will have a dependancy
 on the supplied jobnum (they will not run until the specific job completes).
@@ -794,13 +815,18 @@ the B<reexport> method for each cust_pkg object.  Using the B<reexport> method
 on the cust_main object is not recommended, as existing services will also be
 reexported.)
 
+If I<seconds_ref>, I<upbytes_ref>, I<downbytes_ref>, or I<totalbytes_ref> is
+provided, the scalars (provided by references) will be incremented by the
+values of the prepaid card.`
+
 =cut
 
 sub order_pkgs {
   my $self = shift;
   my $cust_pkgs = shift;
-  my $seconds = shift;
+  my $seconds_ref = ref($_[0]) ? shift : ''; #deprecated
   my %options = @_;
+  $seconds_ref ||= $options{'seconds_ref'};
 
   warn "$me order_pkgs called with options ".
        join(', ', map { "$_: $options{$_}" } keys %options ). "\n"
@@ -821,11 +847,14 @@ sub order_pkgs {
 
   foreach my $cust_pkg ( keys %$cust_pkgs ) {
 
-    my $error = $self->order_pkg( 'cust_pkg'      => $cust_pkg,
-                                  'svcs'          => $cust_pkgs->{$cust_pkg},
-                                  'seconds'       => $seconds,
-                                  'depend_jobnum' => $options{'depend_jobnum'},
-                                );
+    my $error = $self->order_pkg(
+      'cust_pkg'     => $cust_pkg,
+      'svcs'         => $cust_pkgs->{$cust_pkg},
+      'seconds_ref'  => $seconds_ref,
+      map { $_ => $options{$_} } qw( upbytes_ref downbytes_ref totalbytes_ref
+                                     depend_jobnum
+                                   )
+    );
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error;
@@ -844,13 +873,14 @@ L<FS::prepay_credit>), specified either by I<identifier> or as an
 FS::prepay_credit object.  If there is an error, returns the error, otherwise
 returns false.
 
-Optionally, four scalar references can be passed as well.  They will have their
-values filled in with the amount, number of seconds, and number of upload and
-download bytes applied by this prepaid
-card.
+Optionally, five scalar references can be passed as well.  They will have their
+values filled in with the amount, number of seconds, and number of upload,
+download, and total bytes applied by this prepaid card.
 
 =cut
 
+#the ref bullshit here should be refactored like get_prepay.  MyAccount.pm is
+#the only place that uses these args
 sub recharge_prepay { 
   my( $self, $prepay_credit, $amountref, $secondsref, 
       $upbytesref, $downbytesref, $totalbytesref ) = @_;
@@ -868,8 +898,13 @@ sub recharge_prepay {
 
   my( $amount, $seconds, $upbytes, $downbytes, $totalbytes) = ( 0, 0, 0, 0, 0 );
 
-  my $error = $self->get_prepay($prepay_credit, \$amount,
-                                \$seconds, \$upbytes, \$downbytes, \$totalbytes)
+  my $error = $self->get_prepay( $prepay_credit,
+                                 'amount_ref'     => \$amount,
+                                 'seconds_ref'    => \$seconds,
+                                 'upbytes_ref'    => \$upbytes,
+                                 'downbytes_ref'  => \$downbytes,
+                                 'totalbytes_ref' => \$totalbytes,
+                               )
            || $self->increment_seconds($seconds)
            || $self->increment_upbytes($upbytes)
            || $self->increment_downbytes($downbytes)
@@ -896,13 +931,13 @@ sub recharge_prepay {
 
 }
 
-=item get_prepay IDENTIFIER | PREPAY_CREDIT_OBJ , AMOUNTREF, SECONDSREF
+=item get_prepay IDENTIFIER | PREPAY_CREDIT_OBJ [ , OPTION => VALUE ... ]
 
 Looks up and deletes a prepaid card (see L<FS::prepay_credit>),
 specified either by I<identifier> or as an FS::prepay_credit object.
 
-References to I<amount> and I<seconds> scalars should be passed as arguments
-and will be incremented by the values of the prepaid card.
+Available options are: I<amount_ref>, I<seconds_ref>, I<upbytes_ref>, I<downbytes_ref>, and I<totalbytes_ref>.  The scalars (provided by references) will be
+incremented by the values of the prepaid card.
 
 If the prepaid card specifies an I<agentnum> (see L<FS::agent>), it is used to
 check or set this customer's I<agentnum>.
@@ -913,8 +948,7 @@ If there is an error, returns the error, otherwise returns false.
 
 
 sub get_prepay {
-  my( $self, $prepay_credit, $amountref, $secondsref,
-      $upref, $downref, $totalref) = @_;
+  my( $self, $prepay_credit, %opt ) = @_;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -959,11 +993,8 @@ sub get_prepay {
     return "removing prepay_credit (transaction rolled back): $error";
   }
 
-  $$amountref  += $prepay_credit->amount;
-  $$secondsref += $prepay_credit->seconds;
-  $$upref      += $prepay_credit->upbytes;
-  $$downref    += $prepay_credit->downbytes;
-  $$totalref   += $prepay_credit->totalbytes;
+  ${ $opt{$_.'_ref'} } += $prepay_credit->$_()
+    for grep $opt{$_.'_ref'}, qw( amount seconds upbytes downbytes totalbytes );
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
