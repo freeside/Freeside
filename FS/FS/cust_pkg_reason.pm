@@ -136,12 +136,15 @@ sub reasontext {
 
 use FS::h_cust_pkg;
 use FS::h_cust_pkg_reason;
+use FS::Schema qw(dbdef);
 
 sub _upgrade_data { # class method
   my ($class, %opts) = @_;
 
-  my $test_cust_pkg_reason = new FS::cust_pkg_reason;
-  return '' unless $test_cust_pkg_reason->dbdef_table->column('action');
+  return '' unless dbdef->table('cust_pkg_reason')->column('action');
+
+  my $action_replace =
+    " AND ( history_action = 'replace_old' OR history_action = 'replace_new' )";
 
   my $count = 0;
   my @unmigrated = qsearch('cust_pkg_reason', { 'action' => '' } ); 
@@ -151,27 +154,24 @@ sub _upgrade_data { # class method
     
     next unless scalar(@history_cust_pkg_reason) == 1;
 
-    my %action_value = ( op    => 'LIKE',
-                         value => 'replace_%',
-                       );
     my $hashref = { pkgnum => $_->pkgnum,
                     history_date   => $history_cust_pkg_reason[0]->history_date,
-                    history_action => { %action_value },
                   };
 
-    my @history = qsearch({ table    => 'h_cust_pkg',
-                            hashref  => $hashref,
-                            order_by => 'ORDER BY history_action',
+    my @history = qsearch({ table     => 'h_cust_pkg',
+                            hashref   => $hashref,
+                            extra_sql => $action_replace,
+                            order_by  => 'ORDER BY history_action',
                          });
 
     my $fuzz = 0;
     while (scalar(@history) < 2 && $fuzz < 3) {
       $hashref->{history_date}++;
-      $hashref->{history_action} = { %action_value }; # qsearch distorts this!
       $fuzz++;
-      push @history, qsearch({ table    => 'h_cust_pkg',
-                               hashref  => $hashref,
-                               order_by => 'ORDER BY history_action',
+      push @history, qsearch({ table     => 'h_cust_pkg',
+                               hashref   => $hashref,
+                               extra_sql => $action_replace,
+                               order_by  => 'ORDER BY history_action',
                             });
     }
 
@@ -226,26 +226,23 @@ sub _upgrade_data { # class method
                             }); 
     foreach ( @unmigrated ) {
 
-      my %action_value = ( op    => 'LIKE',
-                           value => 'replace_%',
-                         );
       my $hashref = { pkgnum => $_->pkgnum,
                       history_date   => $_->date,
-                      history_action => { %action_value },
                     };
 
-      my @history = qsearch({ table    => 'h_cust_pkg',
-                              hashref  => $hashref,
-                              order_by => 'ORDER BY history_action',
+      my @history = qsearch({ table     => 'h_cust_pkg',
+                              hashref   => $hashref,
+                              extra_sql => $action_replace,
+                              order_by  => 'ORDER BY history_action',
                            });
 
       my $fuzz = 0;
       while (scalar(@history) < 2 && $fuzz < 3) {
         $hashref->{history_date}++;
-        $hashref->{history_action} = { %action_value }; # qsearch distorts this!
         $fuzz++;
         push @history, qsearch({ table    => 'h_cust_pkg',
                                  hashref  => $hashref,
+                                 extra_sql => $action_replace,
                                  order_by => 'ORDER BY history_action',
                               });
       }
