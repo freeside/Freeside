@@ -1,0 +1,110 @@
+#!/usr/bin/perl -w
+
+use strict;
+use vars qw($opt_s $opt_u $opt_p $opt_k);
+use Getopt::Std;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch qsearchs);
+use FS::svc_acct;
+use FS::cust_svc;
+
+my %field2sub = (
+  'seconds'    => sub {
+    my($svc_acct, $cust_pkg) = @_;
+    $svc_acct->seconds_since_sqlradacct( $cust_pkg->last_bill, time );
+  },
+  'upbytes'    => sub {
+    my($svc_acct, $cust_pkg) = @_;
+    $svc_acct->attribute_since_sqlradacct(
+      $cust_pkg->last_bill, time, 'AcctInputOctets' );
+  },
+  'downbytes'  => sub {
+    my($svc_acct, $cust_pkg) = @_;
+    $svc_acct->attribute_since_sqlradacct(
+      $cust_pkg->last_bill, time, 'AcctOutputOctets' );
+  },
+  'totalbytes' => sub {
+    my($svc_acct, $cust_pkg) = @_;
+    $svc_acct->attribute_since_sqlradacct(
+       $cust_pkg->last_bill, time, 'AcctInputOctets' )
+    +
+    $svc_acct->attribute_since_sqlradacct(
+       $cust_pkg->last_bill, time, 'AcctOutputOctets' )
+    ;
+  },
+);
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+my $field = shift;
+die "can only reset seconds, upbytes, downbytes or totalbytes"
+  unless $field2sub{$field};
+
+my $value = shift;
+
+#false laziness w/freeside-reexport
+getopts('s:u:p:k:');
+
+my @svc_x = ();
+if ( $opt_s ) {
+  my $cust_svc = qsearchs('cust_svc', { svcnum=>$opt_s } )
+    or die "svcnum $opt_s not found\n";
+  push @svc_x, $cust_svc->svc_x;
+} elsif ( $opt_u ) {
+  my $svc_x = qsearchs('svc_acct', { username=>$opt_u } )
+    or die "username $opt_u not found\n";
+  push @svc_x, $svc_x;
+} elsif ( $opt_p ) {
+  push @svc_x, map { $_->svc_x } qsearch('cust_svc', { svcpart=>$opt_p } );
+  die "no services with svcpart $opt_p found\n" unless @svc_x;
+} elsif ( $opt_k ) {
+  push @svc_x,
+    map { $_->svc_x }
+      qsearch({
+                table     => 'cust_svc',
+                addl_from => 'LEFT JOIN cust_pkg USING ( pkgnum )',
+                extra_sql => "WHERE pkgpart = $opt_k",
+             });
+  die "no services with pkgpart $opt_k found\n" unless @svc_x;
+}
+
+warn "setting $field to $value before usage\n";
+foreach my $svc_x ( @svc_x ) {
+  my $cust_pkg = $svc_x->cust_svc->cust_pkg;
+  my $cust_usage = $value - &{ $field2sub{$field} }( $svc_x, $cust_pkg );
+#  warn "resetting  ". $svc_x->svcnum.':'.$svc_x->username. " to $cust_usage\n";
+  warn "$field for ". $svc_x->svcnum.':'.$svc_x->username. " reached limit\n"
+    if $cust_usage <= 0;
+  $svc_x->$field($cust_usage);
+
+  my $error = $svc_x->replace;
+  die $error if $error;
+}
+
+sub usage {
+  die "Usage:\n\n  svc_acct-recalculate_usage user [ -s svcnum | -u username | -p svcpart ]\n";
+}
+
+=head1 NAME
+
+svc-acct-recalculate_usage - Command line tool to recalculate usage for existing services
+
+=head1 SYNOPSIS
+
+  svc_acct-recalculate_usage user usagefield initialvalue [ -s svcnum | -u username | -p svcpart ]
+
+  #recalculate a 1gb totalbytes limit for pkgpart 2
+  svc_acct-recalculate_usage ivan totalbytes 1073741824 -k 2
+
+=head1 DESCRIPTION
+
+Re-calculates the specified usage field for the specified service(s) (selected
+by svcnum, username or svcpart).
+
+=head1 SEE ALSO
+
+L<FS::svc_acct>, L<freeside-reexport>, L<FS::part_export>
+
+=cut
+
