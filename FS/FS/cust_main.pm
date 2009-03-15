@@ -6032,6 +6032,86 @@ sub in_transit_payments {
   sprintf( "%.2f", $in_transit_payments );
 }
 
+=item payment_info
+
+Returns a hash of useful information for making a payment.
+
+=over 4
+
+=item balance
+
+Current balance.
+
+=item payby
+
+'CARD' (credit card - automatic), 'DCRD' (credit card - on-demand),
+'CHEK' (electronic check - automatic), 'DCHK' (electronic check - on-demand),
+'LECB' (Phone bill billing), 'BILL' (billing), or 'COMP' (free).
+
+=back
+
+For credit card transactions:
+
+=over 4
+
+=item card_type 1
+
+=item payname
+
+Exact name on card
+
+=back
+
+For electronic check transactions:
+
+=over 4
+
+=item stateid_state
+
+=back
+
+=cut
+
+sub payment_info {
+  my $self = shift;
+
+  my %return = ();
+
+  $return{balance} = $self->balance;
+
+  $return{payname} = $self->payname
+                     || ( $self->first. ' '. $self->get('last') );
+
+  $return{$_} = $self->get($_) for qw(address1 address2 city state zip);
+
+  $return{payby} = $self->payby;
+  $return{stateid_state} = $self->stateid_state;
+
+  if ( $self->payby =~ /^(CARD|DCRD)$/ ) {
+    $return{card_type} = cardtype($self->payinfo);
+    $return{payinfo} = $self->paymask;
+
+    @return{'month', 'year'} = $self->paydate_monthyear;
+
+  }
+
+  if ( $self->payby =~ /^(CHEK|DCHK)$/ ) {
+    my ($payinfo1, $payinfo2) = split '@', $self->paymask;
+    $return{payinfo1} = $payinfo1;
+    $return{payinfo2} = $payinfo2;
+    $return{paytype}  = $self->paytype;
+    $return{paystate} = $self->paystate;
+
+  }
+
+  #doubleclick protection
+  my $_date = time;
+  $return{paybatch} = "webui-MyAccount-$_date-$$-". rand() * 2**32;
+
+  %return;
+
+}
+
 =item paydate_monthyear
 
 Returns a two-element list consisting of the month and year of this customer's
