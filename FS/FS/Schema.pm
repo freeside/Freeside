@@ -320,6 +320,8 @@ sub tables_hashref {
   my @perl_type = ( 'text', 'NULL', ''  ); 
   my @money_type = ( 'decimal',   '', '10,2' );
   my @money_typen = ( 'decimal',   'NULL', '10,2' );
+  my @taxrate_type  = ( 'decimal',   '',     '14,8' ); # requires pg 8 for 
+  my @taxrate_typen = ( 'decimal',   'NULL', '14,8' ); # fs-upgrade to work
 
   my $username_len = 32; #usernamemax config file
 
@@ -770,17 +772,17 @@ sub tables_hashref {
         'location',    'varchar', 'NULL', $char_d, '', '',#provided by tax authority
         'taxclassnum', 'int',      '',      '', '', '', 
         'effective_date', @date_type, '', '', 
-        'tax',        'real',  '',    '', '', '',        # tax %
-        'excessrate', 'real',  'NULL','', '', '',        # second tax %
+        'tax',        @taxrate_type,      '', '',        # tax %
+        'excessrate', @taxrate_typen,     '', '',        # second tax %
         'taxbase',    @money_typen, '', '',              # amount at first tax rate
         'taxmax',     @money_typen, '', '',              # maximum about at both rates
-        'usetax',        'real',  'NULL',    '', '', '', # tax % when non-local
-        'useexcessrate', 'real',  'NULL',    '', '', '', # second tax % when non-local
+        'usetax',        @taxrate_typen,     '', '',     # tax % when non-local
+        'useexcessrate', @taxrate_typen,     '', '',     # second tax % when non-local
         'unittype',    'int',  'NULL', '', '', '',      # for fee
-        'fee',         'real', 'NULL', '', '', '',      # amount tax per unit
-        'excessfee',   'real', 'NULL', '', '', '',      # second amount tax per unit
-        'feebase',     'real', 'NULL', '', '', '',      # units taxed at first rate
-        'feemax',      'real', 'NULL', '', '', '',      # maximum number of unit taxed
+        'fee',         @taxrate_typen,     '', '',      # amount tax per unit
+        'excessfee',   @taxrate_typen,     '', '',      # second amount tax per unit
+        'feebase',     @taxrate_typen,     '', '',      # units taxed at first rate
+        'feemax',      @taxrate_typen,     '', '',      # maximum number of unit taxed
         'maxtype',     'int',  'NULL', '', '', '',      # indicator of how thresholds accumulate
         'taxname', 'varchar',  'NULL', $char_d, '', '', # may appear on invoice
         'taxauth',     'int',  'NULL', '', '', '',      # tax authority
