@@ -217,7 +217,7 @@ sub check {
   ;
   return $error if $error;
 
-  #redundant, but prevents further problems until column constraint in place
+  #redundant, but better error message
   return "MAC already in use"
     if scalar( qsearch( 'svc_broadband', { 'mac_addr', $self->mac_addr } ) );
 
