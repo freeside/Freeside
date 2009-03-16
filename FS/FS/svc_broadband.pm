@@ -111,6 +111,8 @@ sub table_info {
 
 sub table { 'svc_broadband'; }
 
+sub table_dupcheck_fields { ( 'mac_addr' ); }
+
 =item search_sql STRING
 
 Class method which returns an SQL fragment to search for the given string.
@@ -218,10 +220,6 @@ sub check {
   ;
   return $error if $error;
 
-  #redundant, but better error message
-  return "MAC already in use"
-    if scalar( qsearch( 'svc_broadband', { 'mac_addr', $self->mac_addr } ) );
-
   if($self->speed_up < 0) { return 'speed_up must be positive'; }
   if($self->speed_down < 0) { return 'speed_down must be positive'; }
 
@@ -292,6 +290,18 @@ sub check {
 
   $self->SUPER::check;
 }
+
+sub _check_duplicate {
+  my $self = shift;
+
+  return "MAC already in use"
+    if ( $self->mac_addr &&
+         scalar( qsearch( 'svc_broadband', { 'mac_addr', $self->mac_addr } ) )
+       );
+
+  '';
+}
+
 
 =item NetAddr
 
