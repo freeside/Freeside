@@ -44,7 +44,7 @@ $cgi->param('payby') =~ /^(CARD|CHEK)$/
   or errorpage("illegal payby ". $cgi->param('payby'));
 my $payby = $1;
 my %payby2fields = (
-  'CARD' => [ qw( address1 address2 city state zip ) ],
+  'CARD' => [ qw( address1 address2 city county state zip country ) ],
   'CHEK' => [ qw( ss paytype paystate stateid stateid_state ) ],
 );
 my %type = ( 'CARD' => 'credit card',

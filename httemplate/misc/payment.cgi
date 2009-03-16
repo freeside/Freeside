@@ -12,7 +12,7 @@
 
 <% ntable('#cccccc') %>
   <TR>
-    <TD ALIGN="right">Payment amount</TD>
+    <TH ALIGN="right">Payment amount</TH>
     <TD>
       <TABLE><TR><TD BGCOLOR="#ffffff">
         $<INPUT TYPE="text" NAME="amount" SIZE=8 VALUE="<% $balance > 0 ? sprintf("%.2f", $balance) : '' %>">
@@ -24,11 +24,6 @@
 %
 %   my( $payinfo, $paycvv, $month, $year ) = ( '', '', '', '' );
 %   my $payname = $cust_main->first. ' '. $cust_main->getfield('last');
-%   my $address1 = $cust_main->address1;
-%   my $address2 = $cust_main->address2;
-%   my $city     = $cust_main->city;
-%   my $state    = $cust_main->state;
-%   my $zip     = $cust_main->zip;
 %   if ( $cust_main->payby =~ /^(CARD|DCRD)$/ ) {
 %     $payinfo = $cust_main->paymask;
 %     $paycvv = $cust_main->paycvv;
@@ -37,13 +32,13 @@
 %   }
 
     <TR>
-      <TD ALIGN="right">Card&nbsp;number</TD>
-      <TD>
+      <TH ALIGN="right">Card&nbsp;number</TH>
+      <TD COLSPAN=7>
         <TABLE>
           <TR>
             <TD>
               <INPUT TYPE="text" NAME="payinfo" SIZE=20 MAXLENGTH=19 VALUE="<%$payinfo%>"> </TD>
-            <TD>Exp.</TD>
+            <TH>Exp.</TH>
             <TD>
               <SELECT NAME="month">
 % for ( ( map "0$_", 1 .. 9 ), 10 .. 12 ) { 
@@ -68,50 +63,22 @@
       </TD>
     </TR>
     <TR>
-      <TD ALIGN="right">CVV2</TD>
+      <TH ALIGN="right">CVV2</TH>
       <TD><INPUT TYPE="text" NAME="paycvv" VALUE="<% $paycvv %>" SIZE=4 MAXLENGTH=4>
           (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('../docs/cvv2.html', 480, 352, 'cvv2_popup' ), CAPTION, 'CVV2 Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;">help</A>)
       </TD>
     </TR>
     <TR>
-      <TD ALIGN="right">Exact&nbsp;name&nbsp;on&nbsp;card</TD>
+      <TH ALIGN="right">Exact&nbsp;name&nbsp;on&nbsp;card</TH>
       <TD><INPUT TYPE="text" SIZE=32 MAXLENGTH=80 NAME="payname" VALUE="<%$payname%>"></TD>
-    </TR><TR>
-      <TD ALIGN="right">Card&nbsp;billing&nbsp;address</TD>
-      <TD>
-        <INPUT TYPE="text" SIZE=40 MAXLENGTH=80 NAME="address1" VALUE="<%$address1%>">
-      </TD>
-    </TR><TR>
-      <TD ALIGN="right">Address&nbsp;line&nbsp;2</TD>
-      <TD>
-        <INPUT TYPE="text" SIZE=40 MAXLENGTH=80 NAME="address2" VALUE="<%$address2%>">
-      </TD>
-    </TR><TR>
-      <TD ALIGN="right">City</TD>
-      <TD>
-        <TABLE>
-          <TR>
-            <TD>
-              <INPUT TYPE="text" NAME="city" SIZE="12" MAXLENGTH=80 VALUE="<%$city%>">
-            </TD>
-            <TD>State</TD>
-            <TD>
-              <SELECT NAME="state">
-% for ( @states ) { 
-
-                  <OPTION<% $_ eq $state ? ' SELECTED' : '' %>><% $_ %> 
-% } 
-
-              </SELECT>
-            </TD>
-            <TD>Zip</TD>
-            <TD>
-              <INPUT TYPE="text" NAME="zip" SIZE=11 MAXLENGTH=10 VALUE="<%$zip%>">
-            </TD>
-          </TR>
-        </TABLE>
-      </TD>
     </TR>
+
+    <% include( '/elements/location.html',
+                  'object'         => $cust_main, #XXX errors???
+                  'no_asterisks'   => 1,
+                  'address1_label' => 'Card billing address',
+              )
+    %>
 
 % } elsif ( $payby eq 'CHEK' ) {
 %

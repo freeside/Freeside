@@ -3,20 +3,21 @@
 Example:
 
   include( '/elements/location.html',
-             'object'       => $cust_main,  # or $cust_location
-             'prefix'       => $pre,        #only for cust_main objects
-             'onchange'     => $javascript,
-             'disabled'     => $disabled,
-             'same_checked' => $same_checked,
-             'geocode'      => $geocode, #passed through
-             'no_asterisks' => 0, #set true to disable the red asterisks next
-                                  #to required fields
+             'object'         => $cust_main,  # or $cust_location
+             'prefix'         => $pre,        #only for cust_main objects
+             'onchange'       => $javascript,
+             'disabled'       => $disabled,
+             'same_checked'   => $same_checked,
+             'geocode'        => $geocode, #passed through
+             'no_asterisks'   => 0, #set true to disable the red asterisks next
+                                    #to required fields
+             'address1_label' => 'Address', #label for address
          )
 
 </%doc>
 
 <TR>
-  <TH ALIGN="right"><%$r%>Address</TH>
+  <TH ALIGN="right"><%$r%><% $opt{'address1_label'} || 'Address' %></TH>
   <TD COLSPAN=7>
     <INPUT TYPE     = "text"
            NAME     = "<%$pre%>address1"
