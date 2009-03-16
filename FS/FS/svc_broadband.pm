@@ -6,6 +6,7 @@ use FS::Record qw( qsearchs qsearch dbh );
 use FS::svc_Common;
 use FS::cust_svc;
 use FS::addr_block;
+use FS::part_svc_router;
 use NetAddr::IP;
 
 @ISA = qw( FS::svc_Common );
