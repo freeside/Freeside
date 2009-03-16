@@ -138,9 +138,9 @@ my $cust_svc = qsearchs('cust_svc',{'svcnum'=>$svcnum});
 my $pkgnum = $cust_svc->getfield('pkgnum');
 my($cust_pkg, $custnum, $display_custnum);
 if ($pkgnum) {
-  $cust_pkg =qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
+  $cust_pkg = qsearchs('cust_pkg', {'pkgnum'=>$pkgnum} );
   $custnum = $cust_pkg->custnum;
-  $custnum = $cust_pkg->cust_main->display_custnum;
+  $display_custnum = $cust_pkg->cust_main->display_custnum;
 } else {
   $cust_pkg = '';
   $custnum = '';
