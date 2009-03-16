@@ -1666,6 +1666,7 @@ sub tables_hashref {
         'longitude', 'decimal', 'NULL', '', '', '', 
         'altitude', 'decimal', 'NULL', '', '', '', 
         'vlan_profile', 'varchar', 'NULL', $char_d, '', '', 
+        'performance_profile', 'varchar', 'NULL', $char_d, '', '',
       ],
       'primary_key' => 'svcnum',
       'unique'      => [ [ 'mac_addr' ] ],

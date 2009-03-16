@@ -200,6 +200,9 @@ sub _export_insert {
 #    }
 #  }
 
+  my $performance_profile = $svc->performance_profile;
+  $performance_profile ||= $svc->cust_svc->cust_pkg->part_pkg->pkg;
+
   my $element_name_length = 50;
   $element_name_length = $1
     if $self->option('element_name_length') =~ /^\s*(\d+)\s*$/;
@@ -211,7 +214,7 @@ sub _export_insert {
                                       $location,
                                       $contact,
                                       sprintf("%032X", $svc->authkey),
-                                      $svc->cust_svc->cust_pkg->part_pkg->pkg,
+                                      $performance_profile,
                                       $svc->vlan_profile,
                                       ($self->option('ems') ? 1 : 0 ),
                                      );
@@ -256,7 +259,7 @@ sub _export_insert {
 
   $err_or_som = $self->prizm_command('NetworkIfService', 'setElementConfigSet',
                                      [ $element ],
-                                     $svc->cust_svc->cust_pkg->part_pkg->pkg,
+                                     $performance_profile,
                                      0,
                                      1,
                                     );
@@ -395,9 +398,12 @@ sub _export_replace {
   return $err_or_som
     unless ref($err_or_som);
 
+  my $performance_profile = $new->performance_profile;
+  $performance_profile ||= $new->cust_svc->cust_pkg->part_pkg->pkg;
+
   $err_or_som = $self->prizm_command('NetworkIfService', 'setElementConfigSet',
                                      [ $element ],
-                                     $new->cust_svc->cust_pkg->part_pkg->pkg,
+                                     $performance_profile,
                                      0,
                                      1,
                                     );
