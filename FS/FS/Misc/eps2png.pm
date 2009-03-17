@@ -37,7 +37,7 @@ my $DEF_height;		# desired height
 #my $DEF_width = 90;			# desired widht
 #my $DEF_height = 36;		# desired height
 
-my ($verbose,$trace,$test,$debug) = (0,0,0,1);
+my ($verbose,$trace,$test,$debug) = (0,0,0,0);
 #handle_options ();
 set_out_type ('png'); # unless defined $format;
 warn "Producing $format ($gs_format) image.\n" if $verbose;
@@ -66,7 +66,7 @@ sub eps2png {
     my @eps = split(/\r?\n/, $eps);
 
     warn "converting eps (". length($eps). " bytes, ". scalar(@eps). " lines)\n"
-      ;#if $verbose;
+      if $verbose;
 
     my $line = shift @eps; #<EPS>;
     unless ( $eps =~ /^%!PS-Adobe.*EPSF-/ ) {
