@@ -944,6 +944,20 @@ Specified as a integer UNIX timestamp.
 Renewal date as a human-readable string.  (Convenience for display;
 subject to change, so best not to parse for the date.)
 
+=item pkgnum
+
+Package that will be renewed.
+
+=item expire_date
+
+Expiration date of the package that will be renewed.
+
+=item expire_date_pretty
+
+Expiration date of the package that will be renewed, as a human-readable
+string.  (Convenience for display; subject to change, so best not to parse for
+the date.)
+
 =back
 
 =item order_renew

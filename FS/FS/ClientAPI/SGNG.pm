@@ -7,6 +7,7 @@ use vars qw( $cache $DEBUG );
 use Time::Local qw(timelocal timelocal_nocheck);
 use Business::CreditCard;
 use FS::Record qw( qsearch qsearchs );
+use FS::Conf;
 use FS::cust_main;
 use FS::cust_pkg;
 use FS::ClientAPI::MyAccount; #qw( payment_info process_payment )
@@ -158,6 +159,10 @@ sub _cust_main_payment_info {
 
 #find old cust_main records (with payments)
 sub _previous_cust_main {
+
+  #safety check!  return nothing unless we're enabled explicitly
+  return () unless FS::Conf->new->exists('sg-multicustomer_hack');
+
   my %opt = @_;
   my $custnum  = $opt{'custnum'};
   my $username = $opt{'username'};
@@ -223,6 +228,15 @@ sub previous_process_payment {
 
   FS::ClientAPI::MyAccount::process_payment($p);
 
+}
+
+sub previous_payment_info_renew_info {
+  my $p = shift;
+  my $renew_info   = renew_info($p);
+  my $payment_info = previous_payment_info($p);
+  return { %$renew_info,
+           %$payment_info,
+         };
 }
 
 sub previous_process_payment_order_pkg {

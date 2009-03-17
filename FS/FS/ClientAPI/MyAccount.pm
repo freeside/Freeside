@@ -1162,17 +1162,29 @@ sub renew_info {
                     $total += $_->part_pkg->base_recur;
                     my $renew_date = $_->part_pkg->add_freq($_->bill);
                     {
-                      'bill_date'         => $_->bill,
-                      'bill_date_pretty'  => time2str('%x', $_->bill),
-                      'renew_date'        => $renew_date,
-                      'renew_date_pretty' => time2str('%x', $renew_date),
-                      'amount'            => sprintf('%.2f', $total),
+                      'pkgnum'             => $_->pkgnum,
+                      'amount'             => sprintf('%.2f', $total),
+                      'bill_date'          => $_->bill,
+                      'bill_date_pretty'   => time2str('%x', $_->bill),
+                      'renew_date'         => $renew_date,
+                      'renew_date_pretty'  => time2str('%x', $renew_date),
+                      'expire_date'        => $_->expire,
+                      'expire_date_pretty' => time2str('%x', $_->expire),
                     };
                   }
                   @cust_pkg;
 
   return { 'dates' => \@array };
 
+}
+
+sub payment_info_renew_info {
+  my $p = shift;
+  my $renew_info   = renew_info($p);
+  my $payment_info = payment_info($p);
+  return { %$renew_info,
+           %$payment_info,
+         };
 }
 
 sub order_renew {
