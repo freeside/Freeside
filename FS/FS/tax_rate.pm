@@ -3,11 +3,14 @@ package FS::tax_rate;
 use strict;
 use vars qw( @ISA $DEBUG $me
              %tax_unittypes %tax_maxtypes %tax_basetypes %tax_authorities
-             %tax_passtypes );
+             %tax_passtypes %GetInfoType );
 use Date::Parse;
 use Storable qw( thaw );
 use MIME::Base64;
-use FS::Record qw( qsearch qsearchs dbh );
+use DBIx::DBSchema;
+use DBIx::DBSchema::Table;
+use DBIx::DBSchema::Column;
+use FS::Record qw( qsearch qsearchs dbh dbdef );
 use FS::tax_class;
 use FS::cust_bill_pkg;
 use FS::cust_tax_location;
@@ -1061,6 +1064,67 @@ sub browse_queries {
   $query->{extra_sql} = $extra_sql;
 
   return ($query, "SELECT COUNT(*) FROM tax_rate $extra_sql");
+}
+
+# _upgrade_data
+#
+# Used by FS::Upgrade to migrate to a new database.
+#
+#
+
+sub _upgrade_data {  # class method
+  my ($self, %opts) = @_;
+  my $dbh = dbh;
+
+  warn "$me upgrading $self\n" if $DEBUG;
+
+  my @column = qw ( tax excessrate usetax useexcessrate fee excessfee
+                    feebase feemax );
+
+  if ( $dbh->{Driver}->{Name} eq 'Pg' ) {
+
+    eval "use DBI::Const::GetInfoType;";
+    die $@ if $@;
+
+    my $major_version = 0;
+    $dbh->get_info( $GetInfoType{SQL_DBMS_VER} ) =~ /^(\d{2})/
+      && ( $major_version = sprintf("%d", $1) );
+
+    if ( $major_version > 7 ) {
+
+      # ideally this would be supported in DBIx-DBSchema and friends
+
+      foreach my $column ( @column ) {
+        my $columndef = dbdef->table($self->table)->column($column);
+        unless ($columndef->type eq 'numeric') {
+
+          warn "updating tax_rate column $column to numeric\n" if $DEBUG;
+          my $sql = "ALTER TABLE tax_rate ALTER $column TYPE numeric(14,8)";
+          my $sth = $dbh->prepare($sql) or die $dbh->errstr;
+          $sth->execute or die $sth->errstr;
+
+          warn "updating h_tax_rate column $column to numeric\n" if $DEBUG;
+          $sql = "ALTER TABLE h_tax_rate ALTER $column TYPE numeric(14,8)";
+          $sth = $dbh->prepare($sql) or die $dbh->errstr;
+          $sth->execute or die $sth->errstr;
+
+        }
+      }
+
+    } else {
+
+      warn "WARNING: tax_rate table upgrade unsupported for this Pg version\n";
+
+    }
+
+  } else {
+
+    warn "WARNING: tax_rate table upgrade only supported for Pg 8+\n";
+
+  }
+
+  '';
+
 }
 
 =back

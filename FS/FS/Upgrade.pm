@@ -126,6 +126,9 @@ sub upgrade_data {
     #fixup access rights
     'access_right' => [],
 
+    #change tax_rate column types
+    'tax_rate' => [],
+
   ;
 
   \%hash;
