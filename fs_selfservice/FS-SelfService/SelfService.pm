@@ -35,6 +35,7 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'list_invoices'             => 'MyAccount/list_invoices', #?
   'cancel'                    => 'MyAccount/cancel',        #add to ss cgi!
   'payment_info'              => 'MyAccount/payment_info',
+  'payment_info_renew_info'   => 'MyAccount/payment_info_renew_info',
   'process_payment'           => 'MyAccount/process_payment',
   'process_payment_order_pkg' => 'MyAccount/process_payment_order_pkg',
   'process_payment_change_pkg' => 'MyAccount/process_payment_change_pkg',
@@ -72,6 +73,8 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   #sg
   'decompify_pkgs'            => 'SGNG/decompify_pkgs',
   'previous_payment_info'     => 'SGNG/previous_payment_info',
+  'previous_payment_info_renew_info'
+                              => 'SGNG/previous_payment_info_renew_info',
   'previous_process_payment'  => 'SGNG/previous_process_payment',
   'previous_process_payment_order_pkg'
                               => 'SGNG/previous_process_payment_order_pkg',
