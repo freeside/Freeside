@@ -573,8 +573,11 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'apacheip',
-    'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, add an <i>apache</i> <a href="../browse/part_export.cgi">export</a> instead.  Used to be the current IP address to assign to new virtual hosts',
+    #not actually deprecated yet
+    #'section'     => 'deprecated',
+    #'description' => '<b>DEPRECATED</b>, add an <i>apache</i> <a href="../browse/part_export.cgi">export</a> instead.  Used to be the current IP address to assign to new virtual hosts',
+    'section'     => '',
+    'description' => 'IP address to assign to new virtual hosts',
     'type'        => 'text',
   },
 
@@ -686,8 +689,11 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'deletecredits',
-    'section'     => 'deprecated',
-    'description' => '<B>DEPRECATED</B>, now controlled by ACLs.  Used to enable deletion of unclosed credits.  Be very careful!  Only delete credits that were data-entry errors, not adjustments.  Optionally specify one or more comma-separated email addresses to be notified when a credit is deleted.',
+    #not actually deprecated yet
+    #'section'     => 'deprecated',
+    #'description' => '<B>DEPRECATED</B>, now controlled by ACLs.  Used to enable deletion of unclosed credits.  Be very careful!  Only delete credits that were data-entry errors, not adjustments.  Optionally specify one or more comma-separated email addresses to be notified when a credit is deleted.',
+    'section'     => '',
+    'description' => 'One or more comma-separated email addresses to be notified when a credit is deleted.',
     'type'        => [qw( checkbox text )],
   },
 
