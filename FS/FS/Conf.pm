@@ -818,6 +818,7 @@ worry that config_items is freeside-specific and icky.
     'section'     => 'billing',
     'description' => 'Notes section for HTML invoices.  Defaults to the same data in invoice_latexnotes if not specified.',
     'type'        => 'textarea',
+    'per_agent'   => 1,
   },
 
   {
@@ -825,6 +826,7 @@ worry that config_items is freeside-specific and icky.
     'section'     => 'billing',
     'description' => 'Footer for HTML invoices.  Defaults to the same data in invoice_latexfooter if not specified.',
     'type'        => 'textarea',
+    'per_agent'   => 1,
   },
 
   {
@@ -846,6 +848,7 @@ worry that config_items is freeside-specific and icky.
     'section'     => 'billing',
     'description' => 'Notes section for LaTeX typeset PostScript invoices.',
     'type'        => 'textarea',
+    'per_agent'   => 1,
   },
 
   {
@@ -853,6 +856,7 @@ worry that config_items is freeside-specific and icky.
     'section'     => 'billing',
     'description' => 'Footer for LaTeX typeset PostScript invoices.',
     'type'        => 'textarea',
+    'per_agent'   => 1,
   },
 
   {
@@ -860,6 +864,7 @@ worry that config_items is freeside-specific and icky.
     'section'     => 'billing',
     'description' => 'Remittance coupon for LaTeX typeset PostScript invoices.',
     'type'        => 'textarea',
+    'per_agent'   => 1,
   },
 
   {
@@ -874,6 +879,7 @@ worry that config_items is freeside-specific and icky.
     'section'     => 'billing',
     'description' => 'Optional small footer for multi-page LaTeX typeset PostScript invoices.',
     'type'        => 'textarea',
+    'per_agent'   => 1,
   },
 
   {

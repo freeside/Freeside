@@ -1990,15 +1990,18 @@ sub print_generic {
   $invoice_data{'previous_balance'} = sprintf("%.2f", $pr_total);
   $invoice_data{'balance'} = sprintf("%.2f", $balance_due);
 
+  my $agentnum = $self->cust_main->agentnum;
+
   #do variable substitution in notes, footer, smallfooter
   foreach my $include (qw( notes footer smallfooter coupon )) {
 
     my $inc_file = $conf->key_orbase("invoice_${format}$include", $template);
     my @inc_src;
 
-    if ( $conf->exists($inc_file) && length( $conf->config($inc_file) ) ) {
+    if ( $conf->exists($inc_file, $agentnum)
+         && length( $conf->config($inc_file, $agentnum) ) ) {
 
-      @inc_src = $conf->config($inc_file);
+      @inc_src = $conf->config($inc_file, $agentnum);
 
     } else {
 
@@ -2010,7 +2013,7 @@ sub print_generic {
                        s/--\@\]/$delimiters{$format}[1]/g;
                        $_;
                      } 
-                 &$convert_map( $conf->config($inc_file) );
+                 &$convert_map( $conf->config($inc_file, $agentnum) );
 
     }
 
