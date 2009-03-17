@@ -2304,7 +2304,7 @@ worry that config_items is freeside-specific and icky.
     'key'         => 'logo.eps',
     'section'     => 'billing',  #? 
     'description' => 'Company logo for printed and PDF invoices, in EPS format.',
-    'type'        => 'binary',
+    'type'        => 'image',
     'per_agent'   => 1, #XXX as above, kinda
   },
 

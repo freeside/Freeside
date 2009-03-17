@@ -69,22 +69,32 @@ Click on a configuration value to change it.
 %   } elsif (   $type eq 'image' ) {
 
             <tr>
-
-              <% $conf->exists($i->key, $agentnum)
-                   ? '<img src="config-image.cgi?key='.      $i->key.
-                                               ';agentnum='. $agentnum. '">'
-                   : 'empty'
-              %>
+              <td bgcolor='#ffffff'>
+                <% $conf->exists($i->key, $agentnum)
+                     ? '<img src="config-image.cgi?key='.      $i->key.
+                                                 ';agentnum='. $agentnum. '">'
+                     : 'empty'
+                %>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <% $conf->exists($i->key, $agentnum)
+                     ? qq!<a href="config-download.cgi?key=!. $i->key. ';agentnum='. $agentnum. qq!">download</a>!
+                     : ''
+                %>
+              </td>
             </tr>
 
 %   } elsif (   $type eq 'binary' ) {
 
             <tr>
-
-              <% $conf->exists($i->key, $agentnum)
-                   ? qq!<a href="config-download.cgi?key=!. $i->key. ';agentnum='. $agentnum. qq!">download</a>!
-                   : 'empty'
-              %>
+              <td>
+                <% $conf->exists($i->key, $agentnum)
+                     ? qq!<a href="config-download.cgi?key=!. $i->key. ';agentnum='. $agentnum. qq!">download</a>!
+                     : 'empty'
+                %>
+              </td>
             </tr>
 
 %   } elsif (    $type eq 'textarea'

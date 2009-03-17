@@ -1,4 +1,4 @@
-<% $conf->config_binary($name, $agentnum) %>
+<% $logo %>
 <%init>
 
 die "access denied"
@@ -15,5 +15,8 @@ my $agentnum = '';
 if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
   $agentnum = $1;
 }
+
+my $logo = $conf->config_binary($name, $agentnum);
+$logo = eps2png($logo) if $name =~ /\.eps$/i;
 
 </%init>
