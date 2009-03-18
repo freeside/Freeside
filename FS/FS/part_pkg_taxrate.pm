@@ -295,10 +295,18 @@ sub batch_import {
         delete($hash->{actionflag});
 
         my $part_pkg_taxrate = qsearchs('part_pkg_taxrate', $hash);
-        return "Can't find part_pkg_taxrate to delete: ".
-               #join(" ", map { "$_ => ". $hash->{$_} } @fields)
-               join(" ", map { "$_ => *". $hash->{$_}. '*' } keys(%$hash) )
-          unless $part_pkg_taxrate;
+        unless ( $part_pkg_taxrate ) {
+          if ( $hash->{taxproductnum} ) {
+            my $taxproduct =
+              qsearchs( 'part_pkg_taxproduct',
+                        { 'taxproductnum' => $hash->{taxproductnum} }
+                      );
+            $hash->{taxproductnum} .= ' ( '. $taxproduct->taxproduct. ' )'
+              if $taxproduct;
+          }
+          return "Can't find part_pkg_taxrate to delete: ".
+                 join(" ", map { "$_ => *". $hash->{$_}. '*' } keys(%$hash) );
+        }
 
         my $error = $part_pkg_taxrate->delete;
         return $error if $error;
