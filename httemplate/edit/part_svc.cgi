@@ -131,7 +131,14 @@ that field.
 %
 %      #yucky kludge
 %      my @fields = defined( dbdef->table($layer) )
-%                      ? grep { $_ ne 'svcnum' } fields($layer)
+%                      ? grep {
+%                               $_ ne 'svcnum' &&
+%                               ( !FS::part_svc->svc_table_fields($layer)
+%                                     ->{$_}->{disable_part_svc_column}   ||
+%                                 $part_svc->part_svc_column($_)->columnflag
+%                               )
+%                             }
+%                             fields($layer)
 %                      : ();
 %      push @fields, 'usergroup' if $layer eq 'svc_acct'; #kludge
 %      $part_svc->svcpart($clone) if $clone; #haha, undone below
