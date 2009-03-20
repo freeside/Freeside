@@ -1,0 +1,58 @@
+#!/usr/bin/perl
+
+use Net::Ping;
+use Net::SSH qw( ssh_cmd );
+use Email::Send;
+
+my @other_hosts = ( 'freeside.biz', 'saturn5.com' );
+
+my( $machine, @emails ) = @ARGV;
+die "no notification email given" unless @emails;
+
+my $ping = new Net::Ping; # 'icmp'; #requires root
+
+my $pong = '';
+# can't tcp ping... $ping->ping($machine) and
+$pong = eval { ssh_cmd('freeside@'.$machine, 'echo pong') };
+#(command ignored if authorized_keys setup w/command=)
+
+if ( $@ || $pong !~ /pong/ ) { #houston, we may have a problem
+
+  #warn "can't reach $machine, checking @other_hosts\n";
+
+  #let's do a sanity check, can we see some other hosts?
+  exit unless grep $ping->ping($_), @other_hosts;
+
+  #uh-oh, this is bad.
+
+  #warn "checking to see if we've alerted on this recently\n";
+
+  #but we don't want to be too noisy, have we alerted on this in the last 24h?
+  my $file = "/tmp/alert-$machine";
+  exit if -e $file && -M $file < 1;
+
+  open(FILE, ">>$file");
+  print FILE "emailing\n";
+  close FILE;
+
+  #warn "emailing alerts\n";
+
+  foreach my $email ( @emails ) {
+
+    my $message = <<"__MESSAGE__";
+From: support\@freeside.biz
+To: $email
+Subject: ALERT - $machine
+
+ALERT: $machine appears to be down.
+
+__MESSAGE__
+
+    my $sender = Email::Send->new({mailer => 'SMTP'});
+    $sender->mailer_args([Host => 'mail.freeside.biz']);
+    $sender->send($message);
+
+  }
+
+}
+
