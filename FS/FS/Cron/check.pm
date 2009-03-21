@@ -65,7 +65,7 @@ sub check_apache {
   my $req = new HTTP::Request GET => 'https://localhost/';
   my $res = $ua->request($req);
 
-  return 1 if $res->is_success;
+  return 1 if $res->is_success || $res->status_line =~ /^403/;
   $error_msg = $res->status_line;
   return 0;
 
