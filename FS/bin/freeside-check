@@ -1,0 +1,24 @@
+#!/usr/bin/perl -w
+
+use strict;
+use Email::Send;
+use FS::UID qw( adminsuidsetup );
+use FS::Cron::check qw(
+  check_queued check_selfservice check_apache check_bop_failures
+  alert error_msg
+);
+
+my $user = shift or die &usage;
+my @emails = @ARGV;
+#die "no notification email given" unless @emails;
+
+eval { adminsuidsetup $user };
+
+if ( $@ ) { alert("Database down: $@", @emails); exit; }
+
+check_queued       or alert("Queue daemon not running", @emails);
+check_selfservice  or alert(error_msg(), @emails);
+check_apache       or alert("Apache not running: ". error_msg(), @emails);
+
+check_bop_failures or alert(error_msg(), @emails);
+

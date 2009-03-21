@@ -198,6 +198,10 @@ perl-modules:
 	  s'%%%MASONDATA%%%'${MASONDATA}'g;\
 	" blib/lib/FS/*.pm;\
 	perl -p -i -e "\
+	  s/%%%SELFSERVICE_USER%%%/${SELFSERVICE_USER}/g;\
+	  s/%%%SELFSERVICE_MACHINES%%%/${SELFSERVICE_MACHINES}/g;\
+	" blib/lib/FS/Cron/*.pm;\
+	perl -p -i -e "\
 	  s|%%%FREESIDE_EXPORT%%%|${FREESIDE_EXPORT}|g;\
 	" blib/lib/FS/part_export/*.pm;\
 	perl -p -i -e "\
