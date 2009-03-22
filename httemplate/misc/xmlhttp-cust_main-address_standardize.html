@@ -50,6 +50,9 @@ if ( $sub eq 'address_standardize' ) {
 
       unless ( $verifier->is_error ) {
 
+        my $zip = $hash->{Zip5};
+        $zip .= '-'. $hash->{Zip4} if $hash->{Zip4} =~ /\d/;
+
         $return = {
           %$return,
           "new_$pre".'company'  => $hash->{FirmName},
@@ -57,7 +60,7 @@ if ( $sub eq 'address_standardize' ) {
           "new_$pre".'address2' => $hash->{Address1},
           "new_$pre".'city'     => $hash->{City},
           "new_$pre".'state'    => $hash->{State},
-          "new_$pre".'zip'      => $hash->{Zip5}. '-'. $hash->{Zip4},
+          "new_$pre".'zip'      => $zip,
         };
 
         my @fields = (qw( company address1 address2 city state zip )); #hmm
