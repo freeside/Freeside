@@ -54,7 +54,7 @@ sub calc_recur {
                                            #   END      START
   foreach my $h_svc ( $cust_pkg->h_cust_svc( $$sdate, $last_bill ) ) {
 
-    my @label = $h_svc->label( $$sdate, $last_bill );
+    my @label = $h_svc->label_long( $$sdate, $last_bill );
     die "fatal: no historical label found, wtf?" unless scalar(@label); #?
     #my $svc_details = $label[0].': '. $label[1]. ': ';
     my $svc_details = $label[1]. ': ';

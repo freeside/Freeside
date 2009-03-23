@@ -151,6 +151,11 @@ sub label {
   $self->svcnum;
 }
 
+sub label_long {
+  my $self = shift;
+  $self->label(@_);
+}
+
 =item check
 
 Checks the validity of fields in this record.

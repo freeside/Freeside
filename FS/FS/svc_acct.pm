@@ -256,7 +256,7 @@ sub table_info {
                          disable_inventory => 1,
                          disable_select => 1,
                        },
-        'finger'    => 'Real name (GECOS)',
+        'finger'    => 'Real name', # (GECOS)',
         'domsvc'    => {
                          label     => 'Domain',
                          #def_label => 'svcnum from svc_domain',
@@ -446,7 +446,22 @@ sub label {
   $self->email(@_);
 }
 
+=item label_long [ END_TIMESTAMP [ START_TIMESTAMP ] ]
+
+Returns a longer string label for this acccount ("Real Name <username@domain>"
+if available, or "username@domain").
+
+END_TIMESTAMP and START_TIMESTAMP can optionally be passed when dealing with
+history records.
+
 =cut
+
+sub label_long {
+  my $self = shift;
+  ( $self->finger =~ /\S/ )
+    ? $self->finger. ' <'.$self->label(@_).'>'
+    : $self->label(@_);
+}
 
 =item insert [ , OPTION => VALUE ... ]
 
