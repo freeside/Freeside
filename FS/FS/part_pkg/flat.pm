@@ -209,7 +209,7 @@ sub reset_usage {
   if ($self->option('usage_rollover', 1)) {
     $cust_pkg->recharge(\%values);
   }else{
-    $cust_pkg->set_usage(\%values);
+    $cust_pkg->set_usage(\%values, %opt);
   }
 }
 

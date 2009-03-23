@@ -1821,7 +1821,7 @@ sub _op_usage {
 }
 
 sub set_usage {
-  my( $self, $valueref ) = @_;
+  my( $self, $valueref, %options ) = @_;
 
   warn "$me set_usage called for svcnum ". $self->svcnum.
        ' ('. $self->email. "): ".
@@ -1842,6 +1842,11 @@ sub set_usage {
 
   my $reset = 0;
   my %handyhash = ();
+  if ( $options{null} ) { 
+    %handyhash = ( map { ( $_ => 'NULL', $_."_threshold" => 'NULL' ) }
+                   qw( seconds upbytes downbytes totalbytes )
+                 );
+  }
   foreach my $field (keys %$valueref){
     $reset = 1 if $valueref->{$field};
     $self->setfield($field, $valueref->{$field});
@@ -1860,8 +1865,8 @@ sub set_usage {
   #die $error if $error;         #services not explicity changed via the UI
 
   my $sql = "UPDATE svc_acct SET " .
-    join (',', map { "$_ =  ?" } (keys %handyhash) ).
-    " WHERE svcnum = ?";
+    join (',', map { "$_ =  $handyhash{$_}" } (keys %handyhash) ).
+    " WHERE svcnum = ". $self->svcnum;
 
   warn "$me $sql\n"
     if $DEBUG;
@@ -1869,7 +1874,7 @@ sub set_usage {
   if (scalar(keys %handyhash)) {
     my $sth = $dbh->prepare( $sql )
       or die "Error preparing $sql: ". $dbh->errstr;
-    my $rv = $sth->execute((values %handyhash), $self->svcnum);
+    my $rv = $sth->execute();
     die "Error executing $sql: ". $sth->errstr
       unless defined($rv);
     die "Can't update usage for svcnum ". $self->svcnum

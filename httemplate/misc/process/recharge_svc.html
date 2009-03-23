@@ -1,6 +1,6 @@
 %if ($error) {
 %  $cgi->param('error', $error);
-<% cgi->redirect(popurl(2). "recharge_svc.html?". $cgi->query_string ) %>
+<% $cgi->redirect(popurl(2). "recharge_svc.html?". $cgi->query_string ) %>
 %} else {
 <% header("Package recharged") %>
   <SCRIPT TYPE="text/javascript">
@@ -47,7 +47,7 @@ unless ($error) {
     $error = $cust_main->recharge_prepay( $prepaid );
   } elsif ( $payby =~ /^(CARD|DCRD|CHEK|DCHK|LECB|BILL|COMP)$/ ) {
     my $part_pkg = $svc_acct->cust_svc->cust_pkg->part_pkg;
-    $amount = $part_pkg->option('recharge_amount', 1);
+    my $amount = $part_pkg->option('recharge_amount', 1);
     my %rhash = map { $_ =~ /^recharge_(.*)$/; $1, $part_pkg->option($_) }
       grep { $part_pkg->option($_, 1) }
       qw ( recharge_seconds recharge_upbytes recharge_downbytes
@@ -63,7 +63,7 @@ unless ($error) {
                                 $description, $part_pkg->taxclass);
 
     if ($part_pkg->option('recharge_reset', 1)) {
-      $error ||= $svc_acct->set_usage(\%rhash);
+      $error ||= $svc_acct->set_usage(\%rhash, 'null' => 1);
     }else{
       $error ||= $svc_acct->recharge(\%rhash);
     }

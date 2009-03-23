@@ -1135,6 +1135,21 @@ sub change {
     return "Unable to transfer all services from package ". $self->pkgnum;
   }
 
+  #reset usage if changing pkgpart
+  if ($self->pkgpart != $cust_pkg->pkgpart) {
+    my $part_pkg = $cust_pkg->part_pkg;
+    $error = $part_pkg->reset_usage($cust_pkg, $part_pkg->is_prepaid
+                                                 ? ()
+                                                 : ( 'null' => 1 )
+                                   )
+      if $part_pkg->can('reset_usage');
+
+    if ($error) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Error setting usage values: $error";
+    }
+  }
+
   #Good to go, cancel old package.
   $error = $self->cancel( quiet=>1 );
   if ($error) {
@@ -2712,11 +2727,11 @@ All svc_accts which are part of this package have their values reset.
 =cut
 
 sub set_usage {
-  my ($self, $valueref) = @_;
+  my ($self, $valueref, %opt) = @_;
 
   foreach my $cust_svc ($self->cust_svc){
     my $svc_x = $cust_svc->svc_x;
-    $svc_x->set_usage($valueref)
+    $svc_x->set_usage($valueref, %opt)
       if $svc_x->can("set_usage");
   }
 }
