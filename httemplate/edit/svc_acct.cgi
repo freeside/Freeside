@@ -168,7 +168,7 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
 
 
   <TR>
-    <TD ALIGN="right">GECOS</TD>
+    <TD ALIGN="right">Real Name</TD>
     <TD>
       <INPUT TYPE="text" NAME="finger" VALUE="<% $svc_acct->finger %>">
     </TD>
