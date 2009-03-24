@@ -398,7 +398,9 @@ sub tables_hashref {
       'primary_key' => 'eventnum',
       #no... there are retries now #'unique' => [ [ 'eventpart', 'invnum' ] ],
       'unique' => [],
-      'index' => [ ['invnum'], ['status'], ['eventpart'] ],
+      'index' => [ ['invnum'], ['status'], ['eventpart'],
+                   ['statustext'], ['_date'],
+                 ],
     },
 
     'part_bill_event' => {
@@ -495,7 +497,9 @@ sub tables_hashref {
       'primary_key' => 'eventnum',
       #no... there are retries now #'unique' => [ [ 'eventpart', 'invnum' ] ],
       'unique' => [],
-      'index' => [ ['eventpart'], ['tablenum'], ['status'] ],
+      'index' => [ ['eventpart'], ['tablenum'], ['status'],
+                   ['statustext'], ['_date'],
+                 ],
     },
 
     'cust_bill_pkg' => {
