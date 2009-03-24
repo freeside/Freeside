@@ -1,0 +1,22 @@
+#!/usr/bin/perl
+
+use Date::Parse;
+
+my $e = 'PlugnPay error: 97: Declined for CVV failure';
+my @y = (2008,2009);
+
+my $p = 0;
+
+foreach my $y (@y) {
+  foreach my $m (1..12) {
+    my $d = "$m/1/$y";
+    my $t = str2time($d);
+
+    #print "$pd-$d: SELECT count(*) from cust_bill_event where statustext = '$e' and _date >= $p and _date < $t;\n"
+    print "SELECT count(*) from cust_bill_event where statustext = '$e' and _date >= $p and _date < $t;\n"
+      if $p;
+
+    $p = $t;
+    $pd = $d;
+  }
+}
