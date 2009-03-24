@@ -2832,8 +2832,10 @@ sub _items_cust_bill_pkg {
           my $description = $desc;
           $description .= ' Setup' if $cust_bill_pkg->recur != 0;
 
-          my @d = map &{$escape_function}($_),
-                         $cust_pkg->h_labels_short($self->_date);
+          my @d = ();
+          push @d, map &{$escape_function}($_),
+                       $cust_pkg->h_labels_short($self->_date)
+            unless $cust_pkg->part_pkg->hide_svc_detail;
           push @d, $cust_bill_pkg->details(%details_opt)
             if $cust_bill_pkg->recur == 0;
 
@@ -2862,16 +2864,18 @@ sub _items_cust_bill_pkg {
                             " - ". time2str("%x", $cust_bill_pkg->edate). ")";
           }
 
+          my @d = ();
+
           #at least until cust_bill_pkg has "past" ranges in addition to
           #the "future" sdate/edate ones... see #3032
-          my @d = ();
           push @d, map &{$escape_function}($_),
-                         $cust_pkg->h_labels_short($self->_date)
-                                                #$cust_bill_pkg->edate,
-                                                #$cust_bill_pkg->sdate),
-            ;
-  
-          @d = () if ($cust_bill_pkg->itemdesc || $is_summary);
+                       $cust_pkg->h_labels_short($self->_date)
+                                                 #$cust_bill_pkg->edate,
+                                                 #$cust_bill_pkg->sdate)
+            unless $cust_pkg->part_pkg->hide_svc_detail
+                || $cust_bill_pkg->itemdesc
+                || $is_summary;
+
           push @d, $cust_bill_pkg->details(%details_opt)
             unless ($is_summary || $type && $type eq 'R');
   

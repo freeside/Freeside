@@ -375,23 +375,34 @@ Usage example:
 
   my($label, $value, $svcdb) = $cust_svc->label;
 
+=item label_long
+
+Like the B<label> method, except the second item in the list ("meaningful
+identifier") may be longer - typically, a full name is included.
+
 =cut
 
-sub label {
+sub label      { shift->_label('svc_label',      @_); }
+sub label_long { shift->_label('svc_label_long', @_); }
+
+sub _label {
   my $self = shift;
-  carp "FS::cust_svc::label called on $self" if $DEBUG;
+  my $method = shift;
   my $svc_x = $self->svc_x
     or return "can't find ". $self->part_svc->svcdb. '.svcnum '. $self->svcnum;
 
-  $self->_svc_label($svc_x);
+  $self->$method($svc_x);
 }
 
+sub svc_label      { shift->_svc_label('label',      @_); }
+sub svc_label_long { shift->_svc_label('label_long', @_); }
+
 sub _svc_label {
-  my( $self, $svc_x ) = ( shift, shift );
+  my( $self, $method, $svc_x ) = ( shift, shift, shift );
 
   (
     $self->part_svc->svc,
-    $svc_x->label(@_),
+    $svc_x->$method(@_),
     $self->part_svc->svcdb,
     $self->svcnum
   );

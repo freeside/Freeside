@@ -52,9 +52,15 @@ If a service is found, returns a list consisting of:
 
 =cut
 
-sub label {
+sub label      { shift->_label('svc_label',      @_); }
+sub label_long { shift->_label('svc_label_long', @_); }
+
+sub _label {
   my $self = shift;
-  carp "FS::h_cust_svc::label called on $self" if $DEBUG;
+  my $method = shift;
+
+  #carp "FS::h_cust_svc::_label called on $self" if $DEBUG;
+  warn "FS::h_cust_svc::_label called on $self for $method" if $DEBUG;
   my $svc_x = $self->h_svc_x(@_);
   return () unless $svc_x;
   my $part_svc = $self->part_svc;
@@ -65,7 +71,7 @@ sub label {
   }
 
   my @label;
-  eval { @label = $self->_svc_label($svc_x, @_); };
+  eval { @label = $self->$method($svc_x, @_); };
 
   if ($@) {
     carp 'while resolving history record for svcdb/svcnum ' . 

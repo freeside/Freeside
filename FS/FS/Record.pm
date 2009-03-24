@@ -1944,7 +1944,7 @@ sub ut_money {
 =item ut_text COLUMN
 
 Check/untaint text.  Alphanumerics, spaces, and the following punctuation
-symbols are currently permitted: ! @ # $ % & ( ) - + ; : ' " , . ? / = [ ]
+symbols are currently permitted: ! @ # $ % & ( ) - + ; : ' " , . ? / = [ ] < >
 May not be null.  If there is an error, returns the error, otherwise returns
 false.
 
@@ -1956,7 +1956,7 @@ sub ut_text {
   #warn "notexist ". \&notexist. "\n";
   #warn "AUTOLOAD ". \&AUTOLOAD. "\n";
   $self->getfield($field)
-    =~ /^([\w \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\=\[\]]+)$/
+    =~ /^([\w \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\=\[\]\<\>]+)$/
       or return gettext('illegal_or_empty_text'). " $field: ".
                  $self->getfield($field);
   $self->setfield($field,$1);

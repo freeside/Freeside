@@ -1116,6 +1116,9 @@ sub calc_remain { 0; }
 sub calc_cancel { 0; }
 sub calc_units  { 0; }
 
+#fallback for everything except bulk.pm
+sub hide_svc_detail { 0; }
+
 =item format OPTION DATA
 
 Returns data formatted according to the function 'format' described

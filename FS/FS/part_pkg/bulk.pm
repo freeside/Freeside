@@ -7,7 +7,7 @@ use FS::part_pkg::flat;
 
 @ISA = qw(FS::part_pkg::flat);
 
-$DEBUG = 0;
+$DEBUG = 1;
 $me = '[FS::part_pkg::bulk]';
 
 %info = (
@@ -45,6 +45,9 @@ sub calc_recur {
 
   my $last_bill = $cust_pkg->last_bill;
 
+  return sprintf("%.2f", $self->base_recur($cust_pkg) )
+    unless $$sdate > $last_bill;
+
   my $total_svc_charge = 0;
 
   warn "$me billing for bulk services from ". time2str('%x', $last_bill).
@@ -52,16 +55,15 @@ sub calc_recur {
     if $DEBUG;
 
                                            #   END      START
-  foreach my $h_svc ( $cust_pkg->h_cust_svc( $$sdate, $last_bill ) ) {
+  foreach my $h_cust_svc ( $cust_pkg->h_cust_svc( $$sdate, $last_bill ) ) {
 
-    my @label = $h_svc->label_long( $$sdate, $last_bill );
+    my @label = $h_cust_svc->label_long( $$sdate, $last_bill );
     die "fatal: no historical label found, wtf?" unless scalar(@label); #?
-    #my $svc_details = $label[0].': '. $label[1]. ': ';
-    my $svc_details = $label[1]. ': ';
+    my $svc_details = $label[0]. ': '. $label[1]. ': ';
 
     my $svc_charge = 0;
 
-    my $svc_start = $h_svc->date_inserted;
+    my $svc_start = $h_cust_svc->date_inserted;
     if ( $svc_start < $last_bill ) {
       $svc_start = $last_bill;
     } elsif ( $svc_setup_fee ) {
@@ -69,7 +71,7 @@ sub calc_recur {
       $svc_details .= $money_char. sprintf('%.2f setup, ', $svc_setup_fee);
     }
 
-    my $svc_end = $h_svc->date_deleted;
+    my $svc_end = $h_cust_svc->date_deleted;
     $svc_end = ( !$svc_end || $svc_end > $$sdate ) ? $$sdate : $svc_end;
 
     $svc_charge = $self->option('svc_recur_fee') * ( $svc_end - $svc_start )
@@ -86,6 +88,10 @@ sub calc_recur {
   }
 
   sprintf("%.2f", $self->base_recur($cust_pkg) + $total_svc_charge );
+}
+
+sub hide_svc_detail {
+  1;
 }
 
 sub is_free_options {
