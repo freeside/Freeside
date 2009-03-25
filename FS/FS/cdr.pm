@@ -466,7 +466,7 @@ my %export_names = (
   },
   'accountcode_default' => {
     'name'           => 'Default plus accountcode',
-    'invoice_header' => 'Caller,Date,Time,Number,Destination,Duration,Price',
+    'invoice_header' => 'Date,Time,Account,Number,Destination,Duration,Price',
   },
 );
 
