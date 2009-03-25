@@ -114,7 +114,7 @@ Vonage integration (see <a href="https://secure.click2callu.com/">Click2Call</a>
 my $curuser = $FS::CurrentUser::CurrentUser;
 
 # XSS via your own preferences?  seems unlikely, but nice try anyway...
-( $curuser->option('menu_position') || 'left' )
+( $curuser->option('menu_position') || 'top' )
   =~ /^(\w+)$/ or die "illegal menu_position";
 my $menu_position = $1;
 ( $curuser->option('email_address') )
