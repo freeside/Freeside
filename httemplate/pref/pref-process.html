@@ -1,58 +1,67 @@
-% my $error = '';
-%
-% my $access_user;
-% if ( grep { $cgi->param($_) !~ /^\s*$/ }
-%           qw(_password new_password new_password2)
-%    ) {
-%
-%   $access_user = qsearchs( 'access_user', {
-%     'username'  => getotaker,
-%     '_password' => $cgi->param('_password'),
-%   } );
-%
-%   $error = 'Current password incorrect; password not changed'
-%     unless $access_user;
-%
-%   $error ||= "New passwords don't match"
-%     unless $cgi->param('new_password') eq $cgi->param('new_password2');
-%
-%   $error ||= "No new password entered"
-%    unless length($cgi->param('new_password'));
-% 
-%   $access_user->_password($cgi->param('new_password')) unless $error;
-%
-% } else {
-%
-%   $access_user = $FS::CurrentUser::CurrentUser;
-%
-% }
-%
-% my %param = $access_user->options;
-%
-% #XXX autogen
-% my @paramlist = qw( menu_position
-%                     email_address
-%                     vonage-fromnumber vonage-username vonage-password
-%                     show_pkgnum show_db_profile save_db_profile
-%                     height width availHeight availWidth colorDepth
-%                   );
-%
-% foreach (@paramlist) {
-%   scalar($cgi->param($_)) =~ /^[,.\-\@\w]*$/ && next;
-%   $error ||= "Illegal value for parameter $_";
-%   last;
-% }
-%
-% foreach (@paramlist) {
-%   $param{$_} = scalar($cgi->param($_));
-% }
-%
-% $error ||= $access_user->replace( \%param );
-%
 % if ( $error ) {
 %   $cgi->param('error', $error);
-%   print $cgi->redirect(popurl(1). "pref.html?". $cgi->query_string );
+<% $cgi->redirect(popurl(1). "pref.html?". $cgi->query_string ) %>
 % } else {
 <% include('/elements/header.html', 'Preferences updated') %>
 <% include('/elements/footer.html') %>
 % }
+<%init>
+
+my $error = '';
+my $access_user = '';
+
+if ( grep { $cgi->param($_) !~ /^\s*$/ }
+          qw(_password new_password new_password2)
+   ) {
+
+  $access_user = qsearchs( 'access_user', {
+    'username'  => getotaker,
+    '_password' => $cgi->param('_password'),
+  } );
+
+  $error = 'Current password incorrect; password not changed'
+    unless $access_user;
+
+  $error ||= "New passwords don't match"
+    unless $cgi->param('new_password') eq $cgi->param('new_password2');
+
+  $error ||= "No new password entered"
+   unless length($cgi->param('new_password'));
+
+  $access_user->_password($cgi->param('new_password')) unless $error;
+
+} else {
+
+  $access_user = $FS::CurrentUser::CurrentUser;
+
+}
+
+#well, if you got your password change wrong, you don't get anything else
+#changed right now.  but it should be sticky on the form
+unless ( $error ) { # if ($access_user) {
+
+  my %param = $access_user->options;
+
+  #XXX autogen
+  my @paramlist = qw( menu_position
+                      email_address
+                      vonage-fromnumber vonage-username vonage-password
+                      show_pkgnum show_db_profile save_db_profile
+                      height width availHeight availWidth colorDepth
+                    );
+
+  foreach (@paramlist) {
+    scalar($cgi->param($_)) =~ /^[,.\-\@\w]*$/ && next;
+    $error ||= "Illegal value for parameter $_";
+    last;
+  }
+
+  foreach (@paramlist) {
+    $param{$_} = scalar($cgi->param($_));
+  }
+
+  $error ||= $access_user->replace( \%param );
+
+}
+
+</%init>
