@@ -1895,15 +1895,21 @@ sub ncancelled_pkgs {
 
 # This should be generalized to use config options to determine order.
 sub sort_packages {
-  if ( $a->get('cancel') and $b->get('cancel') ) {
-    $a->pkgnum <=> $b->pkgnum;
-  } elsif ( $a->get('cancel') or $b->get('cancel') ) {
+  
+  if ( $a->get('cancel') xor $b->get('cancel') ) {
     return -1 if $b->get('cancel');
     return  1 if $a->get('cancel');
+    #shouldn't get here...
     return 0;
   } else {
-    $a->pkgnum <=> $b->pkgnum;
+    my @a_cust_svc = $a->cust_svc;
+    my @b_cust_svc = $b->cust_svc;
+    return 0  if !scalar(@a_cust_svc) && !scalar(@b_cust_svc);
+    return -1 if  scalar(@a_cust_svc) && !scalar(@b_cust_svc);
+    return 1  if !scalar(@a_cust_svc) &&  scalar(@b_cust_svc);
+    $a_cust_svc[0]->svc_x->label cmp $b_cust_svc[0]->svc_x->label;
   }
+
 }
 
 =item suspended_pkgs
