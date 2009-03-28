@@ -2712,6 +2712,13 @@ worry that config_items is freeside-specific and icky.
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'disable-cust-pkg_class',
+    'section'     => 'UI',
+    'description' => 'Disable the two-step dropdown for selecting package class and package, and return to the classic single dropdown.',
+    'type'        => 'checkbox',
+  },
+
 );
 
 1;

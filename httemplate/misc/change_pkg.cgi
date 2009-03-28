@@ -13,19 +13,15 @@
       <% $curuser->option('show_pkgnum') ? $cust_pkg->pkgnum.': ' : '' %><B><% $part_pkg->pkg |h %></B> - <% $part_pkg->comment |h %>
     </TD>
   </TR>
-  
-  <TR>
-    <TH ALIGN="right">New package</TH>
-    <TD COLSPAN=7>
-      <% include('/elements/select-cust-part_pkg.html',
-                   'cust_main'    => $cust_main,
-                   'element_name' => 'pkgpart',
-                   #'extra_sql'    => ' AND pkgpart != '. $cust_pkg->pkgpart,
-                   'curr_value'   => scalar($cgi->param('pkgpart')),
-                )
-      %>
-    </TD>
-  </TR>
+
+  <% include('/elements/tr-select-cust-part_pkg.html',
+               'pre_label'  => 'New',
+               'curr_value' => scalar($cgi->param('pkgpart')),
+               'classnum'   => $part_pkg->classnum,
+               'cust_main'  => $cust_main,
+               #'extra_sql'    => ' AND pkgpart != '. $cust_pkg->pkgpart,
+            )
+  %>
 
   <% include('/elements/tr-select-cust_location.html',
                'cgi'       => $cgi,

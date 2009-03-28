@@ -139,7 +139,7 @@ if ( $opt{'records'} ) {
   });
 }
 
-unless (    ! $value
+unless (    $value < 1 # !$value #ignore negatives too
          or ref($value)
          or ! exists( $opt{hashref}->{disabled} ) #??
          or grep { $value == $_->$key() } @records

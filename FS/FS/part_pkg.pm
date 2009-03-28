@@ -1236,9 +1236,31 @@ L<FS::type_pkgs>).
 =cut
 
 sub curuser_pkgs_sql {
-  #my($class) = shift;
+  my $class = shift;
 
-  my $agentnums = join(',', $FS::CurrentUser::CurrentUser->agentnums);
+  $class->_pkgs_sql( $FS::CurrentUser::CurrentUser->agentnums );
+
+}
+
+=item agent_pkgs_sql AGENT | AGENTNUM, ...
+
+Returns an SQL fragment for searching for packages the provided agent or agents
+can use, either via part_pkg.agentnum directly, or via agent type (see
+L<FS::type_pkgs>).
+
+=cut
+
+sub agent_pkgs_sql {
+  my $class = shift;  #i'm a class method, not a sub (the question is... why??)
+  my @agentnums = map { ref($_) ? $_->agentnum : $_ } @_;
+
+  $class->_pkgs_sql(@agentnums); #is this why
+
+}
+
+sub _pkgs_sql {
+  my( $class, @agentnums ) = @_;
+  my $agentnums = join(',', @agentnums);
 
   "
     (

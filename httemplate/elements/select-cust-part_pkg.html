@@ -31,11 +31,11 @@ my( %opt ) = @_;
 my $cust_main = $opt{'cust_main'}
   or die "cust_main not specified";
 
-$opt{'extra_sql'} .=
-  ' AND ( agentnum IS NOT NULL '.
-  '         OR 0 < ( SELECT COUNT(*) FROM type_pkgs '.
-  '                    WHERE typenum = '. $cust_main->agent->typenum.
-  '                      AND type_pkgs.pkgpart = part_pkg.pkgpart )'.
-  '     )';
+$opt{'extra_sql'} .= ' AND '. FS::part_pkg->agent_pkgs_sql( $cust_main->agent );
+#  ' AND ( agentnum IS NOT NULL '.
+#  '         OR 0 < ( SELECT COUNT(*) FROM type_pkgs '.
+#  '                    WHERE typenum = '. $cust_main->agent->typenum.
+#  '                      AND type_pkgs.pkgpart = part_pkg.pkgpart )'.
+#  '     )';
 
 </%init>

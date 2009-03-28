@@ -19,17 +19,13 @@
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<% $cust_main->custnum %>">
 
 <% ntable("#cccccc", 2) %>
-<TR>
-  <TH ALIGN="right">Package</TH>
-  <TD COLSPAN=7>
-    <% include('/elements/select-cust-part_pkg.html',
-                 'curr_value' => $pkgpart,
-                 'cust_main'  => $cust_main,
-                 'onchange'   => 'enable_order_pkg',
-              )
-    %>
-  </TD>
-</TR>
+<% include('/elements/tr-select-cust-part_pkg.html',
+             'curr_value' => $pkgpart,
+             'classnum'   => -1,
+             'cust_main'  => $cust_main,
+             'onchange'   => 'enable_order_pkg',
+          )
+%>
 
 % if ( $conf->exists('pkg_referral') ) {
   <% include('/elements/tr-select-part_referral.html',

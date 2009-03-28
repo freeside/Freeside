@@ -1,0 +1,12 @@
+<% include( '/elements/select-pkg_class.html',
+              'pre_options'   => [ '-1' => 'all' ], #XXX a config ?
+              #'pre_options'   => [ '-2' => 'Select package class' ],
+              'disable_empty' => 1,
+              %opt,
+          )
+%>
+<%init>
+
+my %opt = @_;
+
+</%init>

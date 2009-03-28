@@ -22,16 +22,26 @@ Example:
               'name_col'       => 'pkg',
               'empty_label'    => 'Select package', #should this be the default?
               'label_callback' => sub { shift->pkg_comment },
-              'hashref'        => { 'disabled' => '' },
+              'hashref'        => \%hash,
               %opt,
           )
 %>
 <%init>
-
+ 
 my( %opt ) = @_;
 
 $opt{'records'} = delete $opt{'part_pkg'}
   if $opt{'part_pkg'};
+
+my %hash = ( 'disabled' => '' );
+
+if ( exists($opt{'classnum'}) && defined($opt{'classnum'}) ) {
+  if ( $opt{'classnum'} > 0 ) {
+    $hash{'classnum'} = $opt{'classnum'};
+  } elsif ( $opt{'classnum'} eq '' || $opt{'classnum'} == 0 ) {
+    $hash{'classnum'} = '';
+  } #else -1 or not specified, all classes, so don't set classnum
+}
 
 $opt{'extra_sql'} .= ' AND '. FS::part_pkg->curuser_pkgs_sql;
 

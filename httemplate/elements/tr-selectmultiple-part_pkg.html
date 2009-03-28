@@ -2,11 +2,10 @@
   <TD ALIGN="right"><% $opt{'label'} || 'Packages' %></TD>
   <TD>
     <% include( '/elements/select-table.html',
-                  'table'     => 'part_pkg',
-		  'name_col'  => 'pkg',
-		  'value'     => '',
-		  'empty_label' => '(none)',
-		  'element_etc' => 'multiple',
+                  'table'         => 'part_pkg',
+		  'name_col'      => 'pkg',
+		  'disable_empty' => 1,
+		  'element_etc'   => 'multiple',
 		  %opt,
               )
     %>

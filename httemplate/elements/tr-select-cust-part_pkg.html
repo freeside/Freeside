@@ -1,0 +1,107 @@
+%if ( scalar(@pkg_class) > 1 && ! $conf->exists('disable-cust-pkg_class') ) {
+
+  <% include('/elements/xmlhttp.html',
+                'url'  => $p.'misc/cust-part_pkg.cgi',
+                'subs' => [ 'get_part_pkg' ],
+            )
+  %>
+
+  <SCRIPT TYPE="text/javascript">
+
+    function opt(what,value,text) {
+      var optionName = new Option(text, value, false, false);
+      var length = what.length;
+      what.options[length] = optionName;
+    }
+
+    function classnum_changed(what) {
+
+      what.form.pkgpart.disabled = 'disabled'; //disable part_pkg dropdown
+      what.form.submit.disabled = true; //disable the submit button
+
+      classnum = what.options[what.selectedIndex].value;
+
+      function update_part_pkg(part_pkg) {
+
+        // blank the current packages
+        for ( var i = what.form.pkgpart.length; i>= 0; i-- )
+          what.form.pkgpart.options[i] = null;
+
+        // add the new packages
+        opt(what.form.pkgpart, '', 'Select package');
+        var packagesArray = eval('(' + part_pkg + ')' );
+        for ( var s = 0; s < packagesArray.length; s=s+2 ) {
+          var packagesLabel = packagesArray[s+1];
+          opt(what.form.pkgpart, packagesArray[s], packagesLabel);
+        }
+
+        what.form.pkgpart.disabled = ''; //re-enable part_pkg dropdown
+
+      }
+
+      get_part_pkg( <% $cust_main->custnum %>, classnum, update_part_pkg );
+    
+    }
+
+  </SCRIPT>
+
+  <TR>
+    <TH ALIGN="right">Package Class</TH>
+    <TD COLSPAN=7>
+      <% include('/elements/select-cust-pkg_class.html',
+                   'curr_value' => $opt{'classnum'},
+                   'pkg_class'  => \@pkg_class,
+                   'onchange'   => 'classnum_changed',
+                )
+      %>
+    </TD>
+  </TR>
+
+%}
+
+<TR>
+  <TH ALIGN="right">Package</TH>
+  <TD COLSPAN=7>
+    <% include('/elements/select-cust-part_pkg.html',
+                 'curr_value' => $opt{'curr_value'}, #$pkgpart
+                 'classnum'   => $opt{'classnum'},
+                 'cust_main'  => $opt{'cust_main'},  #$cust_main
+                 'onchange'   => 'enable_order_pkg',
+              )
+    %>
+  </TD>
+</TR>
+
+<%init>
+
+my $conf = new FS::Conf;
+
+my %opt = @_;
+
+my $pre_label = $opt{'pre_label'} || '';
+$pre_label .= ' ' if length($pre_label) && $pre_label =~ /\S$/;
+
+my $cust_main = $opt{'cust_main'}
+  or die "cust_main not specified";
+
+#my @pkg_class = sort { $a->classname cmp $b->classname }
+#                     qsearch( 'pkg_class', { 'disabled' => '' } );
+
+#"normal" part_pkg agent virtualization (agentnum or type)
+my @part_pkg = qsearch({
+  'select'    => 'DISTINCT classnum',
+  'table'     => 'part_pkg',
+  'hashref'   => { 'disabled' => '' },
+  'extra_sql' =>
+    ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql( 'null'=>1 ).
+    ' AND '. FS::part_pkg->agent_pkgs_sql( $opt{'cust_main'}->agent ),
+});
+
+my @pkg_class =
+  sort { $a->classname cmp $b->classname } #should get a sort order in config
+  map  { $_->pkg_class || new FS::pkg_class { 'classnum'  => '',
+                                              'classname' => '(none)' }
+       }
+  @part_pkg;
+
+</%init>
