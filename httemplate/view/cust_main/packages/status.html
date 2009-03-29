@@ -122,7 +122,7 @@
 %
 %     } 
 %
-%     if ( $conf->exists('cust_pkg-show_autosuspend') ) {
+%     if ( $opt{'cust_pkg-show_autosuspend'} ) {
 %       my $autosuspend = pkg_autosuspend_time( $cust_pkg );
 %       $cust_pkg->set('autosuspend', $autosuspend) if $autosuspend;
 %     }
@@ -169,8 +169,6 @@
 <%init>
 
 my %opt = @_;
-
-my $conf = new FS::Conf;
 
 my $bgcolor  = $opt{'bgcolor'};
 my $cust_pkg = $opt{'cust_pkg'};

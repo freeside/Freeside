@@ -1,94 +1,25 @@
 <A NAME="cust_pkg"><FONT SIZE="+2">Packages</FONT></A><BR>
 
-% if ( $curuser->access_right('One-time charge') ) {
-
-<SCRIPT TYPE="text/javascript">
-
-function taxproductmagic(which) {
-  var str = '';
-  var elements = which.form.elements;
-  for (var i = 0; i<elements.length; i++) {
-    if (elements[i].name == 'taxproductnum'){
-      document.getElementById('taxproductnum').value = elements[i].value;
-      continue;
-    }
-    if (elements[i].name == 'taxproductnum_description'){
-      continue;
-    }
-    if (str.length){str += ';';}
-    str += elements[i].name + '=' + escape(elements[i].value);
-  }
-  document.getElementById('charge_storage').value = str;
-  cClick();
-  overlib( OLiframeContent('<% $p %>/browse/part_pkg_taxproduct.cgi?_type=select&id=taxproductnum&onclick=taxproductquickchargemagic&taxproductnum='+document.getElementById('taxproductnum').value, 1000, 400, 'tax_product_popup'), CAPTION, 'Select product', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK);
-}
-
-function taxproductquickchargemagic() {
-  var str = document.getElementById('charge_storage').value;
-  if (str.length){str += ';';}
-  str += 'magic=taxproductnum;taxproductnum=';
-  str += escape(document.getElementById('taxproductnum').value);
-  cClick();
-  overlib( OLiframeContent('<% $p %>/edit/quick-charge.html?'+str, 545, 336, 'One-time charge'), CAPTION, 'One-time charge', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '#333399', CGCOLOR, '#333399', CLOSETEXT, 'Close');
-
-}
-
-function taxoverridemagic(which) {
-  var str = '';
-  var elements = which.ownerDocument.QuickChargeForm.elements;
-  for (var i = 0; i<elements.length; i++) {
-    if (elements[i].name == 'tax_override'){
-      document.getElementById('tax_override').value = elements[i].value;
-      continue;
-    }
-    if (str.length){str += ';';}
-    str += elements[i].name + '=' + escape(elements[i].value);
-  }
-  document.getElementById('charge_storage').value = str;
-  cClick();
-  overlib( OLiframeContent('<% $p %>/edit/part_pkg_taxoverride.html?element_name=tax_override;onclick=taxoverridequickchargemagic;selected='+document.getElementById('tax_override').value, 1100, 600, 'tax_product_popup'), CAPTION, 'Edit product tax overrides', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK);
-}
-
-function taxoverridequickchargemagic() {
-  var str = document.getElementById('charge_storage').value;
-  if (str.length){str += ';';}
-  str += 'magic=taxoverride;tax_override=';
-  str += document.getElementById('tax_override').value;
-  cClick();
-  overlib( OLiframeContent('<% $p %>/edit/quick-charge.html?'+str, 545, 336, 'One-time charge'), CAPTION, 'One-time charge', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '#333399', CGCOLOR, '#333399', CLOSETEXT, 'Close');
-
-}
-
-</SCRIPT>
-<FORM NAME='quickcharge'>
-  <INPUT NAME="taxproductnum"  ID="taxproductnum"  TYPE="hidden">
-  <INPUT NAME="tax_override"   ID="tax_override"   TYPE="hidden">
-  <INPUT NAME="charge_storage" ID="charge_storage" TYPE="hidden">
-  <INPUT NAME="taxproductnum_description"  ID="taxproductnum_description" TYPE="hidden">
-</FORM>
-% } 
-
 % my $s = 0;
 % if ( $curuser->access_right('Order customer package') ) { 
   <% $s++ ? ' | ' : '' %>
-  <% order_pkg_link($cust_main) %>
+  <% include( '/elements/popup_link-cust_main.html',
+                'action'      => $p. 'misc/order_pkg.html',
+                'label'       => 'Order&nbsp;new&nbsp;package',
+                'actionlabel' => 'Order new package',
+                'color'       => '#333399',
+                'cust_main'   => $cust_main,
+                'closetext'   => 'Close',
+                'width'       => 763,
+            )
+  %>
 % } 
 
 % if ( $curuser->access_right('One-time charge')
 %        && $conf->config('payby-default') ne 'HIDE'
 %      ) {
-%
   <% $s++ ? ' | ' : '' %>
-  <% include('/elements/popup_link.html',
-     { 
-       'action'      => $p. 'edit/quick-charge.html?custnum='. $cust_main->custnum,
-       'label'       => 'One-time charge',
-       'actionlabel' => 'One-time charge',
-       'color'       => '#333399',
-       'width'       => 763,
-       'height'      => 408,
-     })
-  %>
+  <% include('one_time_charge_link.html', $cust_main) %>
 % } 
 
 % if ( $curuser->access_right('Bulk change customer packages') ) { 
@@ -146,24 +77,11 @@ Current packages
 %     $bgcolor = $bgcolor1;
 %   }
 %
-%   my $countrydefault = scalar($conf->config('countrydefault')) || 'US';
 %   my %iopt = (
-%     'bgcolor'                  => $bgcolor,
-%     'cust_pkg'                 => $cust_pkg,
-%     'part_pkg'                 => $cust_pkg->part_pkg,
-%
-%     #for services.html and status.html
-%     'cust_pkg-display_times'   => $conf->exists('cust_pkg-display_times'),
-%
-%     #for location.html
-%     'countrydefault'           => $countrydefault,
-%     'statedefault'             => ( scalar($conf->config('statedefault'))
-%                                    || ($countrydefault eq 'US' ? 'CA' : '') ),
-%
-%     #for services.html
-%     'svc_external-skip_manual' => $conf->exists('svc_external-skip_manual'),
-%     'legacy_link'              => $conf->exists('legacy_link'),
-%
+%     'bgcolor'  => $bgcolor,
+%     'cust_pkg' => $cust_pkg,
+%     'part_pkg' => $cust_pkg->part_pkg,
+%     %conf_opt,
 %   );
 
     <!--pkgnum: <% $cust_pkg->pkgnum %>-->
@@ -193,6 +111,7 @@ Current packages
     if ( el ) el.scrollIntoView(true);
   </SCRIPT>
 % }
+
 <%init>
 
 my( $cust_main ) = @_;
@@ -204,6 +123,23 @@ my $packages = get_packages($cust_main, $conf);
 
 my $show_location = $conf->exists('cust_pkg-always_show_location')
                         || ( grep $_->locationnum, @$packages ); # ? '1' : '0';
+
+my $countrydefault = scalar($conf->config('countrydefault')) || 'US';
+my %conf_opt = (
+  #for services.html and status.html
+  'cust_pkg-display_times'    => $conf->exists('cust_pkg-display_times'),
+
+  #for status.html
+  'cust_pkg-show_autosuspend' => $conf->exists('cust_pkg-show_autosuspend'),
+
+  #for location.html
+  'countrydefault'            => $countrydefault,
+  'statedefault'              => ( scalar($conf->config('statedefault'))
+                                  || ($countrydefault eq 'US' ? 'CA' : '') ),
+  #for services.html
+  'svc_external-skip_manual'  => $conf->exists('svc_external-skip_manual'),
+  'legacy_link'               => $conf->exists('legacy_link'),
+);
 
 #subroutines
 
@@ -224,18 +160,6 @@ sub get_packages {
   }
 
   [ $cust_main->$method() ];
-}
-
-sub order_pkg_link {
-  include( '/elements/popup_link-cust_main.html',
-             'action'      => $p. 'misc/order_pkg.html',
-             'label'       => 'Order&nbsp;new&nbsp;package',
-             'actionlabel' => 'Order new package',
-             'color'       => '#333399',
-             'cust_main'   => shift,
-             'closetext'   => 'Close',
-             'width'       => 763,
-         )
 }
 
 </%init>

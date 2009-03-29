@@ -1,0 +1,82 @@
+<SCRIPT TYPE="text/javascript">
+
+function taxproductmagic(which) {
+  var str = '';
+  var elements = which.form.elements;
+  for (var i = 0; i<elements.length; i++) {
+    if (elements[i].name == 'taxproductnum'){
+      document.getElementById('taxproductnum').value = elements[i].value;
+      continue;
+    }
+    if (elements[i].name == 'taxproductnum_description'){
+      continue;
+    }
+    if (str.length){str += ';';}
+    str += elements[i].name + '=' + escape(elements[i].value);
+  }
+  document.getElementById('charge_storage').value = str;
+  cClick();
+  overlib( OLiframeContent('<% $p %>/browse/part_pkg_taxproduct.cgi?_type=select&id=taxproductnum&onclick=taxproductquickchargemagic&taxproductnum='+document.getElementById('taxproductnum').value, 1000, 400, 'tax_product_popup'), CAPTION, 'Select product', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK);
+}
+
+function taxproductquickchargemagic() {
+  var str = document.getElementById('charge_storage').value;
+  if (str.length){str += ';';}
+  str += 'magic=taxproductnum;taxproductnum=';
+  str += escape(document.getElementById('taxproductnum').value);
+  cClick();
+  overlib( OLiframeContent('<% $p %>/edit/quick-charge.html?'+str, 545, 336, 'One-time charge'), CAPTION, 'One-time charge', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '#333399', CGCOLOR, '#333399', CLOSETEXT, 'Close');
+
+}
+
+function taxoverridemagic(which) {
+  var str = '';
+  var elements = which.ownerDocument.QuickChargeForm.elements;
+  for (var i = 0; i<elements.length; i++) {
+    if (elements[i].name == 'tax_override'){
+      document.getElementById('tax_override').value = elements[i].value;
+      continue;
+    }
+    if (str.length){str += ';';}
+    str += elements[i].name + '=' + escape(elements[i].value);
+  }
+  document.getElementById('charge_storage').value = str;
+  cClick();
+  overlib( OLiframeContent('<% $p %>/edit/part_pkg_taxoverride.html?element_name=tax_override;onclick=taxoverridequickchargemagic;selected='+document.getElementById('tax_override').value, 1100, 600, 'tax_product_popup'), CAPTION, 'Edit product tax overrides', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK);
+}
+
+function taxoverridequickchargemagic() {
+  var str = document.getElementById('charge_storage').value;
+  if (str.length){str += ';';}
+  str += 'magic=taxoverride;tax_override=';
+  str += document.getElementById('tax_override').value;
+  cClick();
+  overlib( OLiframeContent('<% $p %>/edit/quick-charge.html?'+str, 545, 336, 'One-time charge'), CAPTION, 'One-time charge', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '#333399', CGCOLOR, '#333399', CLOSETEXT, 'Close');
+
+}
+
+</SCRIPT>
+
+<!--<FORM NAME='quickcharge' STYLE="margin:0; padding:0; display: inline;"> -->
+<FORM NAME='quickcharge' STYLE="display:inline">
+  <INPUT NAME="taxproductnum"  ID="taxproductnum"  TYPE="hidden">
+  <INPUT NAME="tax_override"   ID="tax_override"   TYPE="hidden">
+  <INPUT NAME="charge_storage" ID="charge_storage" TYPE="hidden">
+  <INPUT NAME="taxproductnum_description" ID="taxproductnum_description" TYPE="hidden">
+</FORM>
+
+<% include('/elements/popup_link.html', { 
+     'action'      => $p.'edit/quick-charge.html?custnum='. $cust_main->custnum,
+     'label'       => 'One-time charge',
+     'actionlabel' => 'One-time charge',
+     'color'       => '#333399',
+     'width'       => 763,
+     'height'      => 408,
+   })
+%>
+
+<%init>
+
+my($cust_main) = @_;
+
+</%init>
