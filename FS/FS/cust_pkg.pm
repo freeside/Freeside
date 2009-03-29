@@ -1580,20 +1580,37 @@ sub extra_part_svc {
   my $pkgnum  = $self->pkgnum;
   my $pkgpart = $self->pkgpart;
 
+#  qsearch( {
+#    'table'     => 'part_svc',
+#    'hashref'   => {},
+#    'extra_sql' =>
+#      "WHERE 0 = ( SELECT COUNT(*) FROM pkg_svc 
+#                     WHERE pkg_svc.svcpart = part_svc.svcpart 
+#                       AND pkg_svc.pkgpart = ?
+#                       AND quantity > 0 
+#                 )
+#	 AND 0 < ( SELECT COUNT(*) FROM cust_svc
+#                       LEFT JOIN cust_pkg USING ( pkgnum )
+#                     WHERE cust_svc.svcpart = part_svc.svcpart
+#                       AND pkgnum = ?
+#                 )",
+#    'extra_param' => [ [$self->pkgpart=>'int'], [$self->pkgnum=>'int'] ],
+#  } );
+
+#seems to benchmark slightly faster...
   qsearch( {
-    'table'     => 'part_svc',
-    'hashref'   => {},
-    'extra_sql' =>
-      "WHERE 0 = ( SELECT COUNT(*) FROM pkg_svc 
-                     WHERE pkg_svc.svcpart = part_svc.svcpart 
-                       AND pkg_svc.pkgpart = ?
-                       AND quantity > 0 
-                 )
-	 AND 0 < ( SELECT COUNT(*) FROM cust_svc
-                       LEFT JOIN cust_pkg using ( pkgnum )
-                     WHERE cust_svc.svcpart = part_svc.svcpart
-                       AND pkgnum = ?
-                 )",
+    'select'      => 'DISTINCT ON (svcpart) part_svc.*',
+    'table'       => 'part_svc',
+    'addl_from'   =>
+      'LEFT JOIN pkg_svc  ON (     pkg_svc.svcpart   = part_svc.svcpart 
+                               AND pkg_svc.pkgpart   = ?
+                               AND quantity > 0
+                             )
+       LEFT JOIN cust_svc ON (     cust_svc.svcpart = part_svc.svcpart )
+       LEFT JOIN cust_pkg USING ( pkgnum )
+      ',
+    'hashref'     => {},
+    'extra_sql'   => "WHERE pkgsvcnum IS NULL AND cust_pkg.pkgnum = ? ",
     'extra_param' => [ [$self->pkgpart=>'int'], [$self->pkgnum=>'int'] ],
   } );
 }
