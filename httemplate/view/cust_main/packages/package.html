@@ -38,7 +38,7 @@
 %
 %           if ( $curuser->access_right('Customize customer package') ) {
 %             $br=1;
-              (&nbsp;<%pkg_customize_link($cust_pkg,$cust_pkg->custnum)%>&nbsp;)
+              (&nbsp;<%pkg_customize_link($cust_pkg,$part_pkg)%>&nbsp;)
 %           } 
 %
             <% $br ? '<BR>' : '' %>
@@ -198,9 +198,10 @@ sub pkg_dates_link { pkg_link('edit/REAL_cust_pkg', 'Edit&nbsp;dates', @_ ); }
 
 sub pkg_customize_link {
   my $cust_pkg = shift or return '';
+  my $part_pkg = shift;
   my $custnum = $cust_pkg->custnum;
   qq!<A HREF="${p}edit/part_pkg.cgi?!.
-    "clone=". $cust_pkg->part_pkg->pkgpart. ';'.
+    "clone=". $part_pkg->pkgpart. ';'.
     "pkgnum=". $cust_pkg->pkgnum.
     qq!">Customize</A>!;
 }
