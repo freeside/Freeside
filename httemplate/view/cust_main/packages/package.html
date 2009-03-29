@@ -58,18 +58,18 @@
 
 %   my $editi = $curuser->access_right('Edit customer package invoice details');
 %   my $editc = $curuser->access_right('Edit customer package comments');
+%   my @cust_pkg_detail = $cust_pkg->cust_pkg_detail;
+%   my @invoice_detail = grep { $_->detailtype eq 'I' } @cust_pkg_detail;
+%   my @comments       = grep { $_->detailtype eq 'C' } @cust_pkg_detail;
 %
-%   if (    $cust_pkg->cust_pkg_detail('I')
-%        || $cust_pkg->cust_pkg_detail('C')
-%        || $editi
-%        || $editc                          ) {
+%   if ( scalar(@invoice_detail) || scalar(@comments) || $editi || $editc ) {
 %
 %     my $editlink = $p. 'edit/cust_pkg_detail?pkgnum='. $cust_pkg->pkgnum.
 %                    ';detailtype=';
 
       <TR>
 
-%       if ( $cust_pkg->cust_pkg_detail('I') ) { 
+%       if ( @invoice_detail ) {
           <TD VALIGN="top">
             <% include('/elements/table-grid.html') %>
               <TR>
@@ -89,7 +89,7 @@
                   </FONT>
                 </TH>
               </TR>
-%             foreach my $cust_pkg_detail ( $cust_pkg->cust_pkg_detail('I') ) {
+%             foreach my $cust_pkg_detail ( @invoice_detail ) {
                 <TR>
                   <TD><FONT SIZE="-1">&nbsp;-&nbsp;<% $cust_pkg_detail->detail |h %></FONT></TD>
                 </TR>
@@ -113,7 +113,7 @@
           </TD>
 %       }
 
-%       if ( $cust_pkg->cust_pkg_detail('C') ) { 
+%       if ( @comments ) { 
           <TD VALIGN="top">
             <% include('/elements/table-grid.html') %>
               <TR>
@@ -133,7 +133,7 @@
                   </FONT>
                 </TH>
               </TR>
-%             foreach my $cust_pkg_detail ( $cust_pkg->cust_pkg_detail('C') ) {
+%             foreach my $cust_pkg_detail ( @comments ) {
                 <TR>
                   <TD><FONT SIZE="-1">&nbsp;-&nbsp;<% $cust_pkg_detail->detail |h %></FONT></TD>
                 </TR>
