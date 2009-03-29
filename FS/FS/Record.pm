@@ -215,23 +215,24 @@ objects.
 
 The preferred usage is to pass a hash reference of named parameters:
 
-  my @records = qsearch( {
-                           'table'     => 'table_name',
-                           'hashref'   => { 'field' => 'value'
-                                            'field' => { 'op'    => '<',
-                                                         'value' => '420',
-                                                       },
-                                          },
+  @records = qsearch( {
+                        'table'       => 'table_name',
+                        'hashref'     => { 'field' => 'value'
+                                           'field' => { 'op'    => '<',
+                                                        'value' => '420',
+                                                      },
+                                         },
 
-                           #these are optional...
-                           'select'    => '*',
-                           'extra_sql' => 'AND field ',
-                           'order_by'  => 'ORDER BY something',
-                           #'cache_obj' => '', #optional
-                           'addl_from' => 'LEFT JOIN othtable USING ( field )',
-                           'debug'     => 1,
-                         }
-                       );
+                        #these are optional...
+                        'select'      => '*',
+                        'extra_sql'   => 'AND field = ? AND intfield = ?',
+                        'extra_param' => [ 'value', [ 5, 'int' ] ],
+                        'order_by'    => 'ORDER BY something',
+                        #'cache_obj'   => '', #optional
+                        'addl_from'   => 'LEFT JOIN othtable USING ( field )',
+                        'debug'       => 1,
+                      }
+                    );
 
 Much code still uses old-style positional parameters, this is also probably
 fine in the common case where there are only two parameters:
@@ -262,18 +263,20 @@ sub _is_fs_float {
 }
 
 sub qsearch {
-  my($stable, $record, $select, $extra_sql, $order_by, $cache, $addl_from );
+  my($stable, $record, $cache );
+  my( $select, $extra_sql, $extra_param, $order_by, $addl_from );
   my $debug = '';
   if ( ref($_[0]) ) { #hashref for now, eventually maybe accept a list too
     my $opt = shift;
-    $stable    = $opt->{'table'}     or die "table name is required";
-    $record    = $opt->{'hashref'}   || {};
-    $select    = $opt->{'select'}    || '*';
-    $extra_sql = $opt->{'extra_sql'} || '';
-    $order_by  = $opt->{'order_by'}  || '';
-    $cache     = $opt->{'cache_obj'} || '';
-    $addl_from = $opt->{'addl_from'} || '';
-    $debug     = $opt->{'debug'}     || '';
+    $stable      = $opt->{'table'}       or die "table name is required";
+    $record      = $opt->{'hashref'}     || {};
+    $select      = $opt->{'select'}      || '*';
+    $extra_sql   = $opt->{'extra_sql'}   || '';
+    $extra_param = $opt->{'extra_param'} || [];
+    $order_by    = $opt->{'order_by'}    || '';
+    $cache       = $opt->{'cache_obj'}   || '';
+    $addl_from   = $opt->{'addl_from'}   || '';
+    $debug       = $opt->{'debug'}       || '';
   } else {
     ($stable, $record, $select, $extra_sql, $cache, $addl_from ) = @_;
     $select ||= '*';
@@ -357,6 +360,19 @@ sub qsearch {
       $sth->bind_param($bind++, $value, { TYPE => $TYPE } );
     #}
 
+  }
+
+  foreach my $param ( @$extra_param ) {
+    my $TYPE = SQL_VARCHAR;
+    my $value = $param;
+    if ( ref($param) ) {
+      $value = $param->[0];
+      my $type = $param->[1];
+      if ( $type =~ /(big)?(int|serial)/i && $value =~ /^\d+(\.\d+)?$/ ) {
+        $TYPE = SQL_INTEGER;
+      } # & DECIMAL?  well, who cares for now
+    }
+    $sth->bind_param($bind++, $value, { TYPE => $TYPE } );
   }
 
 #  $sth->execute( map $record->{$_},

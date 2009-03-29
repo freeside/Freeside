@@ -1583,17 +1583,18 @@ sub extra_part_svc {
   qsearch( {
     'table'     => 'part_svc',
     'hashref'   => {},
-    'extra_sql' => "WHERE 0 = ( SELECT COUNT(*) FROM pkg_svc 
-                                  WHERE pkg_svc.svcpart = part_svc.svcpart 
-				    AND pkg_svc.pkgpart = $pkgpart
-				    AND quantity > 0 
-			      )
-	              AND 0 < ( SELECT count(*)
-		                  FROM cust_svc
-		                    LEFT JOIN cust_pkg using ( pkgnum )
-				  WHERE cust_svc.svcpart = part_svc.svcpart
-				    AND pkgnum = $pkgnum
-			      )",
+    'extra_sql' =>
+      "WHERE 0 = ( SELECT COUNT(*) FROM pkg_svc 
+                     WHERE pkg_svc.svcpart = part_svc.svcpart 
+                       AND pkg_svc.pkgpart = ?
+                       AND quantity > 0 
+                 )
+	 AND 0 < ( SELECT COUNT(*) FROM cust_svc
+                       LEFT JOIN cust_pkg using ( pkgnum )
+                     WHERE cust_svc.svcpart = part_svc.svcpart
+                       AND pkgnum = ?
+                 )",
+    'extra_param' => [ [$self->pkgpart=>'int'], [$self->pkgnum=>'int'] ],
   } );
 }
 
