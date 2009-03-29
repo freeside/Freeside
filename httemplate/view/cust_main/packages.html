@@ -53,6 +53,13 @@ Current packages
 
  cancelled packages</a> )
 % } 
+% if ( $num_old_packages ) {
+%   $cgi->param('showoldpackages', 1);
+    ( <a href="<% $cgi->self_url %>">show old packages</a> )
+% } elsif ( $cgi->param('showoldpackages') ) {
+%   $cgi->param('showoldpackages', 0);
+    ( <a href="<% $cgi->self_url %>">hide old packages</a> )
+% }
 % if ( @$packages ) { 
 
 <% include('/elements/table-grid.html') %>
@@ -119,7 +126,7 @@ my $conf = new FS::Conf;
 
 my $curuser = $FS::CurrentUser::CurrentUser;
 
-my $packages = get_packages($cust_main, $conf);
+my( $packages, $num_old_packages ) = get_packages($cust_main, $conf);
 
 my $show_location = $conf->exists('cust_pkg-always_show_location')
                         || ( grep $_->locationnum, @$packages ); # ? '1' : '0';
@@ -146,8 +153,7 @@ my %conf_opt = (
 sub get_packages {
   my $cust_main = shift or return undef;
   my $conf = shift;
-  
-  my @packages = ();
+
   my $method;
   if (  $cgi->param('showcancelledpackages') eq '0' #see if it was set by me
      || ( $conf->exists('hidecancelledpackages')
@@ -159,7 +165,26 @@ sub get_packages {
     $method = 'all_pkgs';
   }
 
-  [ $cust_main->$method() ];
+  my @packages = $cust_main->$method();
+  my $num_old_packages = scalar(@packages);
+
+  unless ( $cgi->param('showoldpackages') ) {
+    my $years = $conf->config('cust_main-packages-years') || 2;
+    my $seconds = 31556926; #60*60*24*365.2422 is close enough
+    my $then = time - $seconds;
+
+    my %hide = ( 'cancelled'       => 'cancel',
+                 'one-time charge' => 'setup',
+               );
+  
+    @packages =
+      grep { !exists($hide{$_->status}) or $_->get($hide{$_->status}) > $then }
+           @packages;
+  }
+
+  $num_old_packages -= scalar(@packages);
+
+  ( \@packages, $num_old_packages );
 }
 
 </%init>

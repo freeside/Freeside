@@ -2198,6 +2198,13 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'cust_main-packages-years',
+    'section'     => 'UI',
+    'description' => 'Number of years to show old (cancelled and one-time charge) packages by default.  Currently defaults to 2.',
+    'type'        => 'text',
+  },
+
+  {
     'key'         => 'cust_main-use_comments',
     'section'     => 'UI',
     'description' => 'Display free form comments on the customer edit screen.  Useful as a scratch pad.',
