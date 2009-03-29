@@ -1233,7 +1233,7 @@ sub tables_hashref {
       ],
       'primary_key' => 'pkgsvcnum',
       'unique' => [ ['pkgpart', 'svcpart'] ],
-      'index' => [ ['pkgpart'] ],
+      'index' => [ ['pkgpart'], ['quantity'] ],
     },
 
     'part_referral' => {
