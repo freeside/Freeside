@@ -178,7 +178,7 @@ sub get_packages {
     join(', ', map "part_pkg.$_", fields('part_pkg') );
 
   my $num_cust_svc = 
-    '( SELECT COUNT(*) FROM cust_svc WHERE cust_pkg.pkgnum = cust_svc.svcnum )';
+    '( SELECT COUNT(*) FROM cust_svc WHERE cust_pkg.pkgnum = cust_svc.pkgnum )';
 
   my @packages = $cust_main->$method( {
     'select'    => " $cust_pkg_fields, $part_pkg_fields, ".
