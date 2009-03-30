@@ -1500,6 +1500,9 @@ sub num_cust_svc {
        && exists($self->{'_num_cust_svc'})
        && $self->{'_num_cust_svc'} =~ /\d/;
 
+  cluck "cust_pkg->num_cust_svc called, _num_cust_svc:".$self->{'_num_cust_svc'}
+    if $DEBUG > 2;
+
   my $sql = 'SELECT COUNT(*) FROM cust_svc WHERE pkgnum = ?';
   $sql .= ' AND svcpart = ?' if @_;
 

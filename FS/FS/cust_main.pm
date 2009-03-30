@@ -1819,17 +1819,13 @@ sub all_pkgs {
   my $self = shift;
   my $extra_qsearch = ref($_[0]) ? shift : {};
 
-  return $self->num_pkgs unless wantarray; #XXX doesn't work w/$extra_qsearch
+  return $self->num_pkgs unless wantarray || keys(%$extra_qsearch);
 
   my @cust_pkg = ();
   if ( $self->{'_pkgnum'} ) {
     @cust_pkg = values %{ $self->{'_pkgnum'}->cache };
   } else {
-    @cust_pkg = qsearch({
-      %$extra_qsearch,
-      'table'   => 'cust_pkg',
-      'hashref' => { 'custnum' => $self->custnum },
-    });
+    @cust_pkg = $self->_cust_pkg($extra_qsearch);
   }
 
   sort sort_packages @cust_pkg;
@@ -1885,15 +1881,32 @@ sub ncancelled_pkgs {
 
     $extra_qsearch->{'extra_sql'} .= ' AND ( cancel IS NULL OR cancel = 0 ) ';
 
-    @cust_pkg = qsearch({
-      %$extra_qsearch,
-      'table'     => 'cust_pkg',
-      'hashref'   => { 'custnum' => $self->custnum },
-    });
+    @cust_pkg = $self->_cust_pkg($extra_qsearch);
 
   }
 
   sort sort_packages @cust_pkg;
+
+}
+
+sub _cust_pkg {
+  my $self = shift;
+  my $extra_qsearch = ref($_[0]) ? shift : {};
+
+  $extra_qsearch->{'select'} ||= '*';
+  $extra_qsearch->{'select'} .=
+   ',( SELECT COUNT(*) FROM cust_svc WHERE cust_pkg.pkgnum = cust_svc.pkgnum )
+     AS _num_cust_svc';
+
+  map {
+        $_->{'_num_cust_svc'} = $_->get('_num_cust_svc');
+        $_;
+      }
+  qsearch({
+    %$extra_qsearch,
+    'table'   => 'cust_pkg',
+    'hashref' => { 'custnum' => $self->custnum },
+  });
 
 }
 
@@ -1906,11 +1919,13 @@ sub sort_packages {
     #shouldn't get here...
     return 0;
   } else {
+    my $a_num_cust_svc = $a->num_cust_svc;
+    my $b_num_cust_svc = $b->num_cust_svc;
+    return 0  if !$a_num_cust_svc && !$b_num_cust_svc;
+    return -1 if  $a_num_cust_svc && !$b_num_cust_svc;
+    return 1  if !$a_num_cust_svc &&  $b_num_cust_svc;
     my @a_cust_svc = $a->cust_svc;
     my @b_cust_svc = $b->cust_svc;
-    return 0  if !scalar(@a_cust_svc) && !scalar(@b_cust_svc);
-    return -1 if  scalar(@a_cust_svc) && !scalar(@b_cust_svc);
-    return 1  if !scalar(@a_cust_svc) &&  scalar(@b_cust_svc);
     $a_cust_svc[0]->svc_x->label cmp $b_cust_svc[0]->svc_x->label;
   }
 
