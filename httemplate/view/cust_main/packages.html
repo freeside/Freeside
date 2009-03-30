@@ -76,7 +76,7 @@ Current packages
   <TH CLASS="grid" BGCOLOR="#cccccc">Services</TH>
 </TR>
 
-% my %part_pkg = ();
+% local($FS::cust_pkg::DEBUG) = 2;
 % foreach my $cust_pkg (@$packages) {
 %
 %   if ( $bgcolor eq $bgcolor1 ) {
@@ -85,18 +85,15 @@ Current packages
 %     $bgcolor = $bgcolor1;
 %   }
 %
-%   $part_pkg{$cust_pkg->pkgpart} ||= $cust_pkg->part_pkg;
-%   $cust_pkg->{'_pkgpart'} ||= $part_pkg{$cust_pkg->pkgpart}; #XXX cache kludge
+%   $cust_pkg->{'_pkgpart'} = new FS::part_pkg { $cust_pkg->hash }; #quelle klud
 %
 %   my %iopt = (
 %     'bgcolor'  => $bgcolor,
 %     'cust_pkg' => $cust_pkg,
-%     'part_pkg' => $part_pkg{$cust_pkg->pkgpart},
+%     'part_pkg' => $cust_pkg->part_pkg,
 %     %conf_opt,
 %   );
 %
-%   my $oldDEBUG = $FS::cust_pkg::DEBUG;
-%   $FS::cust_pkg::DEBUG = 2;
 
     <!--pkgnum: <% $cust_pkg->pkgnum %>-->
     <TR>
@@ -107,8 +104,6 @@ Current packages
 % }
       <% include('packages/services.html', %iopt) %>
     </TR>
-
-%   $FS::cust_pkg::DEBUG = $oldDEBUG;
 
 % }
 
@@ -174,7 +169,10 @@ sub get_packages {
     $method = 'all_pkgs';
   }
 
-  my @packages = $cust_main->$method();
+  my @packages = $cust_main->$method( {
+    'select'    => 'cust_pkg.*, part_pkg.*',
+    'addl_from' => 'LEFT JOIN part_pkg USING ( pkgpart )'
+  } );
   my $num_old_packages = scalar(@packages);
 
   unless ( $cgi->param('showoldpackages') ) {

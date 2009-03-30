@@ -1809,7 +1809,7 @@ sub has_ship_address {
   scalar( grep { $self->getfield("ship_$_") ne '' } $self->addr_fields );
 }
 
-=item all_pkgs
+=item all_pkgs [ EXTRA_QSEARCH_PARAMS_HASHREF ]
 
 Returns all packages (see L<FS::cust_pkg>) for this customer.
 
@@ -1817,14 +1817,19 @@ Returns all packages (see L<FS::cust_pkg>) for this customer.
 
 sub all_pkgs {
   my $self = shift;
+  my $extra_qsearch = ref($_[0]) ? shift : {};
 
-  return $self->num_pkgs unless wantarray;
+  return $self->num_pkgs unless wantarray; #XXX doesn't work w/$extra_qsearch
 
   my @cust_pkg = ();
   if ( $self->{'_pkgnum'} ) {
     @cust_pkg = values %{ $self->{'_pkgnum'}->cache };
   } else {
-    @cust_pkg = qsearch( 'cust_pkg', { 'custnum' => $self->custnum });
+    @cust_pkg = qsearch({
+      %$extra_qsearch,
+      'table'   => 'cust_pkg',
+      'hashref' => { 'custnum' => $self->custnum },
+    });
   }
 
   sort sort_packages @cust_pkg;
@@ -1851,7 +1856,7 @@ sub cust_location {
   qsearch('cust_location', { 'custnum' => $self->custnum } );
 }
 
-=item ncancelled_pkgs
+=item ncancelled_pkgs [ EXTRA_QSEARCH_PARAMS_HASHREF ]
 
 Returns all non-cancelled packages (see L<FS::cust_pkg>) for this customer.
 
@@ -1859,6 +1864,7 @@ Returns all non-cancelled packages (see L<FS::cust_pkg>) for this customer.
 
 sub ncancelled_pkgs {
   my $self = shift;
+  my $extra_qsearch = ref($_[0]) ? shift : {};
 
   return $self->num_ncancelled_pkgs unless wantarray;
 
@@ -1877,16 +1883,13 @@ sub ncancelled_pkgs {
          $self->custnum. "\n"
       if $DEBUG > 1;
 
-    @cust_pkg =
-      qsearch( 'cust_pkg', {
-                             'custnum' => $self->custnum,
-                             'cancel'  => '',
-                           });
-    push @cust_pkg,
-      qsearch( 'cust_pkg', {
-                             'custnum' => $self->custnum,
-                             'cancel'  => 0,
-                           });
+    @cust_pkg = qsearch({
+      %$extra_qsearch,
+      'table'     => 'cust_pkg',
+      'hashref'   => { 'custnum' => $self->custnum },
+      'extra_sql' => ' AND ( cancel IS NULL OR cancel = 0 ) ',
+    });
+
   }
 
   sort sort_packages @cust_pkg;
