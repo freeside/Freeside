@@ -192,7 +192,7 @@ sub get_packages {
     my %part_pkg = map  { /^part_pkg_(.+)$/ or die; ( $1 => $hash{$_} ); }
                    grep { /^part_pkg_/ } keys %hash;
     $cust_pkg->{'_pkgpart'} = new FS::part_pkg \%part_pkg;
-    $cust_pkg->{'_num_cust_svc'} = $cust_pkg->get('_num_cust_svc');
+    $cust_pkg->{'_num_cust_svc'} = $cust_pkg->get('num_cust_svc');
   }
 
   unless ( $cgi->param('showoldpackages') ) {
