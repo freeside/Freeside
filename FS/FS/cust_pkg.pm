@@ -1415,14 +1415,14 @@ services.
 sub cust_svc {
   my $self = shift;
 
+  return () unless $self->num_cust_svc(@_);
+
   if ( @_ ) {
     return qsearch( 'cust_svc', { 'pkgnum'  => $self->pkgnum,
                                   'svcpart' => shift,          } );
   }
 
-  return () unless $self->num_cust_svc;
-
-  cluck "cust_pkg->cust_svc called" if $DEBUG > 1;
+  cluck "cust_pkg->cust_svc called" if $DEBUG > 2;
 
   #if ( $self->{'_svcnum'} ) {
   #  values %{ $self->{'_svcnum'}->cache };
@@ -1496,8 +1496,9 @@ sub num_cust_svc {
   my $self = shift;
 
   return $self->{'_num_cust_svc'}
-    if !@_ && exists($self->{'_num_cust_svc'})
-           && $self->{'_num_cust_svc'} =~ /\d/;
+    if !scalar(@_)
+       && exists($self->{'_num_cust_svc'})
+       && $self->{'_num_cust_svc'} =~ /\d/;
 
   my $sql = 'SELECT COUNT(*) FROM cust_svc WHERE pkgnum = ?';
   $sql .= ' AND svcpart = ?' if @_;
