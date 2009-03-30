@@ -173,9 +173,17 @@ sub get_packages {
   my $part_pkg_fields =
     join(', ', map { "part_pkg.$_ AS part_pkg_$_" } fields('part_pkg') );
 
+  my $group_by =
+    join(', ', map "cust_pkg.$_", fields('cust_pkg') ). ', '.
+    join(', ', map "part_pkg.$_", fields('part_pkg') );
+
+  my $num_cust_svc = 
+    '( SELECT COUNT(*) FROM cust_svc WHERE cust_pkg.pkgnum = cust_svc.svcnum )';
+
   my @packages = $cust_main->$method( {
-    'select'    => "$cust_pkg_fields, $part_pkg_fields",
-    'addl_from' => 'LEFT JOIN part_pkg USING ( pkgpart )'
+    'select'    => " $cust_pkg_fields, $part_pkg_fields, ".
+                   " $num_cust_svc AS num_cust_svc ",
+    'addl_from' => ' LEFT JOIN part_pkg USING ( pkgpart ) ',
   } );
   my $num_old_packages = scalar(@packages);
 

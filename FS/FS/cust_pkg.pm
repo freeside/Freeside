@@ -2,6 +2,7 @@ package FS::cust_pkg;
 
 use strict;
 use vars qw(@ISA $disable_agentcheck $DEBUG);
+use Carp qw(cluck);
 use Scalar::Util qw( blessed );
 use List::Util qw(max);
 use Tie::IxHash;
@@ -1220,14 +1221,11 @@ L<FS::part_pkg>).
 
 =cut
 
-use Carp qw(cluck);
 sub part_pkg {
   my $self = shift;
-  cluck "part_pkg called" if $DEBUG > 1 && ! $self->{'_pkgpart'};
-  #exists( $self->{'_pkgpart'} )
-  $self->{'_pkgpart'}
-    ? $self->{'_pkgpart'}
-    : qsearchs( 'part_pkg', { 'pkgpart' => $self->pkgpart } );
+  return $self->{'_pkgpart'} if $self->{'_pkgpart'};
+  cluck "cust_pkg->part_pkg called" if $DEBUG > 1;
+  qsearchs( 'part_pkg', { 'pkgpart' => $self->pkgpart } );
 }
 
 =item old_cust_pkg
@@ -1417,6 +1415,8 @@ services.
 sub cust_svc {
   my $self = shift;
 
+  cluck "cust_pkg->cust_svc called" if $DEBUG > 1;
+
   if ( @_ ) {
     return qsearch( 'cust_svc', { 'pkgnum'  => $self->pkgnum,
                                   'svcpart' => shift,          } );
@@ -1442,7 +1442,8 @@ is specified, return only the matching services.
 
 sub overlimit {
   my $self = shift;
-  grep { $_->overlimit } $self->cust_svc;
+  return () unless $self->num_cust_svc(@_);
+  grep { $_->overlimit } $self->cust_svc(@_);
 }
 
 =item h_cust_svc END_TIMESTAMP [ START_TIMESTAMP ] 
@@ -1491,9 +1492,15 @@ specified, counts only the matching services.
 
 sub num_cust_svc {
   my $self = shift;
+
+  return $self->{'_num_cust_svc'}
+    if !@_ && exists($self->{'_num_cust_svc'})
+           && $self->{'_num_cust_svc'} =~ /\d/;
+
   my $sql = 'SELECT COUNT(*) FROM cust_svc WHERE pkgnum = ?';
   $sql .= ' AND svcpart = ?' if @_;
-  my $sth = dbh->prepare($sql) or die dbh->errstr;
+
+  my $sth = dbh->prepare($sql)     or die  dbh->errstr;
   $sth->execute($self->pkgnum, @_) or die $sth->errstr;
   $sth->fetchrow_arrayref->[0];
 }
@@ -1550,7 +1557,8 @@ sub part_svc {
     $part_svc->{'Hash'}{'num_cust_svc'} = $num_cust_svc; #more evil
     $part_svc->{'Hash'}{'num_avail'}    =
       max( 0, $pkg_svc->quantity - $num_cust_svc );
-    $part_svc->{'Hash'}{'cust_pkg_svc'} = [ $self->cust_svc($part_svc->svcpart) ];
+    $part_svc->{'Hash'}{'cust_pkg_svc'} =
+      $num_cust_svc ? [ $self->cust_svc($part_svc->svcpart) ] : [];
     $part_svc;
   } $self->part_pkg->pkg_svc;
 
@@ -1560,7 +1568,8 @@ sub part_svc {
     my $num_cust_svc = $self->num_cust_svc($part_svc->svcpart);
     $part_svc->{'Hash'}{'num_cust_svc'} = $num_cust_svc; #speak no evail
     $part_svc->{'Hash'}{'num_avail'}    = 0; #0-$num_cust_svc ?
-    $part_svc->{'Hash'}{'cust_pkg_svc'} = [ $self->cust_svc($part_svc->svcpart) ];
+    $part_svc->{'Hash'}{'cust_pkg_svc'} =
+      $num_cust_svc ? [ $self->cust_svc($part_svc->svcpart) ] : [];
     $part_svc;
   } $self->extra_part_svc;
 
