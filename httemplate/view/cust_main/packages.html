@@ -86,9 +86,9 @@ Current packages
 %   }
 %
 %   my %hash = $cust_pkg->hash;
-%   my %part_pkg = map  { /^part_pkg_(.+)$/ or die; $1 => $hash{$_}; }
+%   my %part_pkg = map  { /^part_pkg_(.+)$/ or die; ( $1 => $hash{$_} ); }
 %                  grep { /^part_pkg_/ } keys %hash;
-%   $cust_pkg->{'_pkgpart'} = new FS::part_pkg { $cust_pkg->hash }; #quelle klud
+%   $cust_pkg->{'_pkgpart'} = new FS::part_pkg \%part_pkg;
 %
 %   my %iopt = (
 %     'bgcolor'  => $bgcolor,
@@ -172,12 +172,14 @@ sub get_packages {
     $method = 'all_pkgs';
   }
 
-  my $part_pkg_fields = join(', ', map { "part_pkg.$_ AS part_pkg_$_" }
-                                       fields('part_pkg')
-                            );
+  my $cust_pkg_fields =
+    join(', ', map { "cust_pkg.$_ AS $_"          } fields('cust_pkg') );
+
+  my $part_pkg_fields =
+    join(', ', map { "part_pkg.$_ AS part_pkg_$_" } fields('part_pkg') );
 
   my @packages = $cust_main->$method( {
-    'select'    => "cust_pkg.*, $part_pkg_fields",
+    'select'    => "$cust_pkg_fields, $part_pkg_fields",
     'addl_from' => 'LEFT JOIN part_pkg USING ( pkgpart )'
   } );
   my $num_old_packages = scalar(@packages);
