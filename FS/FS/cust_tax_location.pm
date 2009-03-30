@@ -119,7 +119,7 @@ sub check {
     || $self->ut_text('state')
     || $self->ut_numbern('plus4hi')
     || $self->ut_numbern('plus4lo')
-    || $self->ut_enum('default', [ '', ' ', 'Y' ] ) # wtf?
+    || $self->ut_enum('default_location', [ '', 'Y' ] )
     || $self->ut_enum('cityflag', [ '', 'I', 'O', 'B' ] )
     || $self->ut_alpha('geocode')
   ;
@@ -179,7 +179,7 @@ sub batch_import {
   }
 
   if ( $format eq 'cch' || $format eq 'cch-update' ) {
-    @fields = qw( zip state plus4lo plus4hi geocode default );
+    @fields = qw( zip state plus4lo plus4hi geocode default_location );
     push @fields, 'actionflag' if $format eq 'cch-update';
 
     $imported++ if $format eq 'cch-update'; #empty file ok
@@ -188,6 +188,7 @@ sub batch_import {
       my $hash = shift;
 
       $hash->{'data_vendor'} = 'cch';
+      $hash->{'default_location'} =~ s/ //g;
 
       if (exists($hash->{actionflag}) && $hash->{actionflag} eq 'D') {
         delete($hash->{actionflag});
@@ -210,7 +211,7 @@ sub batch_import {
     };
 
   } elsif ( $format eq 'cch-zip' || $format eq 'cch-update-zip' ) {
-    @fields = qw( zip city county state postalcity countyfips countydef default geocode cityflag unique );
+    @fields = qw( zip city county state postalcity countyfips countydef default_location geocode cityflag unique );
     push @fields, 'actionflag' if $format eq 'cch-update-zip';
 
     $imported++ if $format eq 'cch-update'; #empty file ok
@@ -222,6 +223,7 @@ sub batch_import {
       delete($hash->{$_}) foreach qw( countyfips countydef unique );
 
       $hash->{'cityflag'} =~ s/ //g;
+      $hash->{'default_location'} =~ s/ //g;
 
       if (exists($hash->{actionflag}) && $hash->{actionflag} eq 'D') {
         delete($hash->{actionflag});
