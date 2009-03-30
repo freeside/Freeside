@@ -76,6 +76,7 @@ Current packages
   <TH CLASS="grid" BGCOLOR="#cccccc">Services</TH>
 </TR>
 
+% my %part_pkg = ();
 % foreach my $cust_pkg (@$packages) {
 %
 %   if ( $bgcolor eq $bgcolor1 ) {
@@ -84,12 +85,18 @@ Current packages
 %     $bgcolor = $bgcolor1;
 %   }
 %
+%   $part_pkg{$cust_pkg->pkgpart} ||= $cust_pkg->part_pkg;
+%   $cust_pkg->{'_pkgpart'} ||= $part_pkg{$cust_pkg->pkgpart}; #XXX cache kludge
+%
 %   my %iopt = (
 %     'bgcolor'  => $bgcolor,
 %     'cust_pkg' => $cust_pkg,
-%     'part_pkg' => $cust_pkg->part_pkg,
+%     'part_pkg' => $part_pkg{$cust_pkg->pkgpart},
 %     %conf_opt,
 %   );
+%
+%   my $oldDEBUG = $FS::cust_pkg::DEBUG;
+%   $FS::cust_pkg::DEBUG = 2;
 
     <!--pkgnum: <% $cust_pkg->pkgnum %>-->
     <TR>
@@ -100,6 +107,8 @@ Current packages
 % }
       <% include('packages/services.html', %iopt) %>
     </TR>
+
+%   $FS::cust_pkg::DEBUG = $oldDEBUG;
 
 % }
 

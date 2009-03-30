@@ -1220,8 +1220,10 @@ L<FS::part_pkg>).
 
 =cut
 
+use Carp qw(cluck);
 sub part_pkg {
   my $self = shift;
+  cluck "part_pkg called" if $DEBUG > 1 && ! $self->{'_pkgpart'};
   #exists( $self->{'_pkgpart'} )
   $self->{'_pkgpart'}
     ? $self->{'_pkgpart'}
