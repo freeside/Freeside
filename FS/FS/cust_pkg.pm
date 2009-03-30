@@ -1415,12 +1415,14 @@ services.
 sub cust_svc {
   my $self = shift;
 
-  cluck "cust_pkg->cust_svc called" if $DEBUG > 1;
-
   if ( @_ ) {
     return qsearch( 'cust_svc', { 'pkgnum'  => $self->pkgnum,
                                   'svcpart' => shift,          } );
   }
+
+  return () unless $self->num_cust_svc;
+
+  cluck "cust_pkg->cust_svc called" if $DEBUG > 1;
 
   #if ( $self->{'_svcnum'} ) {
   #  values %{ $self->{'_svcnum'}->cache };
