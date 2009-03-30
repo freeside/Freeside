@@ -1883,11 +1883,12 @@ sub ncancelled_pkgs {
          $self->custnum. "\n"
       if $DEBUG > 1;
 
+    $extra_qsearch->{'extra_sql'} .= ' AND ( cancel IS NULL OR cancel = 0 ) ';
+
     @cust_pkg = qsearch({
       %$extra_qsearch,
       'table'     => 'cust_pkg',
       'hashref'   => { 'custnum' => $self->custnum },
-      'extra_sql' => ' AND ( cancel IS NULL OR cancel = 0 ) ',
     });
 
   }
