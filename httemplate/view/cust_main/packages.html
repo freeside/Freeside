@@ -85,11 +85,6 @@ Current packages
 %     $bgcolor = $bgcolor1;
 %   }
 %
-%   my %hash = $cust_pkg->hash;
-%   my %part_pkg = map  { /^part_pkg_(.+)$/ or die; ( $1 => $hash{$_} ); }
-%                  grep { /^part_pkg_/ } keys %hash;
-%   $cust_pkg->{'_pkgpart'} = new FS::part_pkg \%part_pkg;
-%
 %   my %iopt = (
 %     'bgcolor'  => $bgcolor,
 %     'cust_pkg' => $cust_pkg,
@@ -183,6 +178,13 @@ sub get_packages {
     'addl_from' => 'LEFT JOIN part_pkg USING ( pkgpart )'
   } );
   my $num_old_packages = scalar(@packages);
+
+  foreach my $cust_pkg ( @packages ) {
+    my %hash = $cust_pkg->hash;
+    my %part_pkg = map  { /^part_pkg_(.+)$/ or die; ( $1 => $hash{$_} ); }
+                   grep { /^part_pkg_/ } keys %hash;
+    $cust_pkg->{'_pkgpart'} = new FS::part_pkg \%part_pkg;
+  }
 
   unless ( $cgi->param('showoldpackages') ) {
     my $years = $conf->config('cust_main-packages-years') || 2;
