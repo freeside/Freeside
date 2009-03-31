@@ -199,7 +199,8 @@ sub calc_recur {
   my $last_bill = $cust_pkg->get('last_bill'); #->last_bill falls back to setup
 
   return 0
-    if $self->option('recur_temporality', 1) eq 'preceding' && $last_bill == 0;
+    if $self->option('recur_temporality', 1) eq 'preceding'
+    && ( $last_bill eq '' || $last_bill == 0 );
 
   my $ratenum = $cust_pkg->part_pkg->option('ratenum');
 
