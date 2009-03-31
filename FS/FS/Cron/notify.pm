@@ -62,7 +62,7 @@ END
       0 = ( select count(*) from cust_pkg_option
               where cust_pkg.pkgnum = cust_pkg_option.pkgnum
                 and cust_pkg_option.optionname = 'impending_recur_notification_sent'
-                and cust_pkg_option.optionvalue = 1
+                and CAST( cust_pkg_option.optionvalue AS INTEGER ) = 1
           )
 END
   
