@@ -183,6 +183,7 @@ tie my %temporalities, 'Tie::IxHash',
                        use_amaflags use_disposition
                        use_disposition_taqua use_carrierid use_cdrtypenum
                        skip_dcontext skip_dstchannel_prefix
+                       skip_dst_length_less skip_lastapp
                        use_duration
                        411_rewrite
                        output_format summarize_usage usage_section
