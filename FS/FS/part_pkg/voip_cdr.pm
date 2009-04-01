@@ -119,6 +119,12 @@ tie my %temporalities, 'Tie::IxHash',
     'skip_dstchannel_prefix' => { 'name' => 'Do not charge for CDRs where the dstchannel starts with:',
                                 },
 
+    'skip_dst_length_less' => { 'name' => 'Do not charge for CDRs where the destination is less than this many digits:',
+                              },
+
+    'skip_lastapp' => { 'name' => 'Do not charge for CDRs where the lastapp matches this value',
+                      },
+
     'use_duration'   => { 'name' => 'Calculate usage based on the duration field instead of the billsec field',
                           'type' => 'checkbox',
                         },
@@ -555,7 +561,9 @@ sub check_chargable {
     use_carrierid
     use_cdrtypenum
     skip_dcontext
-    skip_dstchannel_prefix;
+    skip_dstchannel_prefix
+    skip_dst_length_less
+    skip_lastapp
   );
   foreach my $opt (grep !exists($flags{option_cache}->{$_}), @opt ) {
     $flags{option_cache}->{$opt} = $self->option($opt);
@@ -584,10 +592,17 @@ sub check_chargable {
     if $opt{'skip_dcontext'} =~ /\S/
     && grep { $cdr->dcontext eq $_ } split(/\s*,\s*/, $opt{'skip_dcontext'});
 
-  my $len = length($opt{'skip_dstchannel_prefix'});
+  my $len_prefix = length($opt{'skip_dstchannel_prefix'});
   return "dstchannel starts with $opt{'skip_dstchannel_prefix'}"
-    if $len
-    && substr($cdr->dstchannel, 0, $len) eq $opt{'skip_dstchannel_prefix'};
+    if $len_prefix
+    && substr($cdr->dstchannel,0,$len_prefix) eq $opt{'skip_dstchannel_prefix'};
+
+  my $dst_length = $opt{'skip_dst_length_less'};
+  return "destination less than $dst_length digits"
+    if $dst_length && length($cdr->dst) < $dst_length;
+
+  return "lastapp is $opt{'skip_lastapp'}"
+    if length($opt{'skip_lastapp'}) && $cdr->lastapp eq $opt{'skip_lastapp'};
 
   #all right then, rate it
   '';
