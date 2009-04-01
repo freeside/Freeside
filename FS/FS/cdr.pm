@@ -470,6 +470,15 @@ my %export_names = (
   },
 );
 
+my $duration_sub = sub {
+  my($cdr, %opt) = @_;
+  if ( $opt{minutes} ) {
+    $opt{minutes}. ( $opt{granularity} ? 'm' : ' call' );
+  } else {
+    sprintf('%.2fm', $cdr->billsec / 60 );
+  }
+};
+
 my %export_formats = (
   'convergent' => [
     'carriername', #CARRIER
@@ -491,7 +500,7 @@ my %export_formats = (
     sub { time2str('%r', shift->calldate_unix ) },   #TIME
     'userfield',                                     #USER
     'dst',                                           #NUMBER_DIALED
-    sub { sprintf('%.2fm', shift->billsec / 60 ) },  #DURATION
+    $duration_sub,                                   #DURATION
     #sub { sprintf('%.3f', shift->upstream_price ) }, #PRICE
     sub { my($cdr, %opt) = @_; $opt{money_char}. $opt{charge}; }, #PRICE
   ],
@@ -501,7 +510,7 @@ my %export_formats = (
     #'userfield',                                     #USER
     'dst',                                           #NUMBER_DIALED
     'src',                                           #called from
-    sub { sprintf('%.2fm', shift->billsec / 60 ) },  #DURATION
+    $duration_sub,                                   #DURATION
     #sub { sprintf('%.3f', shift->upstream_price ) }, #PRICE
     sub { my($cdr, %opt) = @_; $opt{money_char}. $opt{charge}; }, #PRICE
   ],
@@ -522,9 +531,7 @@ my %export_formats = (
     sub { my($cdr, %opt) = @_; $opt{dst_regionname}; },
 
     #DURATION
-    sub { my($cdr, %opt) = @_;
-          $opt{minutes}. ( $opt{granularity} ? 'm' : ' call' );
-        },
+    $duration_sub,
 
     #PRICE
     sub { my($cdr, %opt) = @_; $opt{money_char}. $opt{charge}; },
