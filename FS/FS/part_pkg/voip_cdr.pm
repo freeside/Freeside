@@ -12,7 +12,7 @@ use FS::rate;
 use FS::rate_prefix;
 use FS::rate_detail;
 
-@ISA = qw(FS::part_pkg::flat);
+@ISA = qw(FS::part_pkg::prorate);
 
 $DEBUG = 0;
 
@@ -53,6 +53,11 @@ tie my %temporalities, 'Tie::IxHash',
     'unused_credit' => { 'name' => 'Credit the customer for the unused portion'.
                                    ' of service at cancellation',
                          'type' => 'checkbox',
+                       },
+
+    'cutoff_day'    => { 'name' => 'Billing Day (1 - 28) for prorating.  Leave'.
+                                   ' blank to charge full first month instead.',
+                         'default' => '',
                        },
 
     'rating_method' => { 'name' => 'Region rating method',
@@ -175,7 +180,7 @@ tie my %temporalities, 'Tie::IxHash',
   },
   'fieldorder' => [qw(
                        setup_fee recur_fee recur_temporality unused_credit
-                       rating_method ratenum ignore_unrateable
+                       cutoff_day rating_method ratenum ignore_unrateable
                        default_prefix
                        disable_src
                        domestic_prefix international_prefix
@@ -200,7 +205,8 @@ sub calc_setup {
 
 #false laziness w/voip_sqlradacct calc_recur resolve it if that one ever gets used again
 sub calc_recur {
-  my($self, $cust_pkg, $sdate, $details, $param ) = @_;
+  my $self = shift;
+  my($cust_pkg, $sdate, $details, $param ) = @_;
 
   #my $last_bill = $cust_pkg->last_bill;
   my $last_bill = $cust_pkg->get('last_bill'); #->last_bill falls back to setup
@@ -544,8 +550,13 @@ sub calc_recur {
 
   } #if ( $spool_cdr && length($downstream_cdr) )
 
-  $charges += $self->option('recur_fee')
-    if $param->{'increment_next_bill'};
+  if ($param->{'increment_next_bill'}) {
+    if ( $self->option('cutoff_day', 1) ) {
+      $charges += $self->SUPER::calc_recur(@_);
+    } else {
+      $charges += $self->option('recur_fee')
+    }
+  }
 
   $charges;
 }
