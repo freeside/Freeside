@@ -55,9 +55,12 @@ tie my %temporalities, 'Tie::IxHash',
                          'type' => 'checkbox',
                        },
 
-    'cutoff_day'    => { 'name' => 'Billing Day (1 - 28) for prorating.  Leave'.
-                                   ' blank to charge full first month instead.',
-                         'default' => '',
+    'enable_prorate' => { 'name' => 'Enable prorating of the first month',
+                          'type' => 'checkbox',
+                        },
+
+    'cutoff_day'    => { 'name' => 'Billing Day (1 - 28) for prorating ',
+                         'default' => '1',
                        },
 
     'rating_method' => { 'name' => 'Region rating method',
@@ -180,7 +183,8 @@ tie my %temporalities, 'Tie::IxHash',
   },
   'fieldorder' => [qw(
                        setup_fee recur_fee recur_temporality unused_credit
-                       cutoff_day rating_method ratenum ignore_unrateable
+                       enable_prorate cutoff_day
+                       rating_method ratenum ignore_unrateable
                        default_prefix
                        disable_src
                        domestic_prefix international_prefix
@@ -551,7 +555,7 @@ sub calc_recur {
   } #if ( $spool_cdr && length($downstream_cdr) )
 
   if ($param->{'increment_next_bill'}) {
-    if ( $self->option('cutoff_day', 1) ) {
+    if ( $self->option('enable_prorate', 1) ) {
       $charges += $self->SUPER::calc_recur(@_);
     } else {
       $charges += $self->option('recur_fee')
