@@ -457,9 +457,11 @@ sub calc_recur {
           $included_min{$regionnum} -= $minutes;
 
           if ( $included_min{$regionnum} < 0 ) {
-            my $charge_min = 0 - $included_min{$regionnum};
+            my $charge_min = 0 - $included_min{$regionnum}; #XXX should preserve
+                                                            #(display?) this
             $included_min{$regionnum} = 0;
-            $charge = sprintf('%.2f', $rate_detail->min_charge * $charge_min );
+            $charge = sprintf('%.2f', ( $rate_detail->min_charge * $charge_min )
+                                      + 0.00000001 ); #so 1.005 rounds to 1.01
             $charges += $charge;
           }
 
