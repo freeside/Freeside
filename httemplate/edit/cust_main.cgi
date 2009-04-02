@@ -363,12 +363,12 @@ function update_address(arg) {
 
   if ( <% $taxpre %>error ) {
 
-    if ( document.bottomform.elements['country'].value == 'CA' ||
-         document.bottomform.elements['country'].value == 'US'
+    if ( document.bottomform.elements['<% $taxpre %>country'].value == 'CA' ||
+         document.bottomform.elements['<% $taxpre %>country'].value == 'US'
        )
     {
 
-      var url = "cust_main/choose_tax_location.html?data_vendor=cch-zip;city="+document.bottomform.elements['city'].value+";state="+document.bottomform.elements['state'].value+";zip="+document.bottomform.elements['zip'].value+";country="+document.bottomform.elements['country'].value+";";
+      var url = "cust_main/choose_tax_location.html?data_vendor=cch-zip;city="+document.bottomform.elements['<% $taxpre %>city'].value+";state="+document.bottomform.elements['<% $taxpre %>state'].value+";zip="+document.bottomform.elements['<% $taxpre %>zip'].value+";country="+document.bottomform.elements['<% $taxpre %>country'].value+";";
       // popup a chooser
       OLgetAJAX( url, update_geocode, 300 );
 
@@ -483,9 +483,9 @@ function update_geocode() {
 
     //alert(what.options[what.selectedIndex].value);
     var argsHash = eval('(' + what.options[what.selectedIndex].value + ')');
-    document.bottomform.elements['city'].value = argsHash['city'];
-    document.bottomform.elements['state'].value = argsHash['state'];
-    document.bottomform.elements['zip'].value = argsHash['zip'];
+    document.bottomform.elements['<% $taxpre %>city'].value = argsHash['city'];
+    document.bottomform.elements['<% $taxpre %>state'].value = argsHash['state'];
+    document.bottomform.elements['<% $taxpre %>zip'].value = argsHash['zip'];
     document.bottomform.elements['geocode'].value = argsHash['geocode'];
 
   }
