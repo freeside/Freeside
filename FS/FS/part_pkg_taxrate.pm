@@ -248,8 +248,8 @@ sub batch_import {
 
         $part_pkg_taxproduct{'description'} = 
           join(' : ', (map{ $hash->{$_} } qw(groupdesc itemdesc)),
-                      $providers{$hash->{'provider'}},
-                      $customers{$hash->{'customer'}},
+                      $providers{$hash->{'provider'}} || '',
+                      $customers{$hash->{'customer'}} || '',
               );
         $part_pkg_taxproduct = new FS::part_pkg_taxproduct \%part_pkg_taxproduct;
         my $error = $part_pkg_taxproduct->insert;
