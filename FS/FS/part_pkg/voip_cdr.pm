@@ -157,6 +157,10 @@ tie my %temporalities, 'Tie::IxHash',
                            'type' => 'checkbox',
                          },
 
+    'count_available_phones' => { 'name' => 'Consider for tax purposes the number of lines to be svc_phones that may be provisioned rather than those that actually are.',
+                           'type' => 'checkbox',
+                         },
+
     #XXX also have option for an external db
 #    'cdr_location' => { 'name' => 'CDR database location'
 #                        'type' => 'select',
@@ -197,6 +201,7 @@ tie my %temporalities, 'Tie::IxHash',
                        411_rewrite
                        output_format summarize_usage usage_section
                        bill_every_call
+                       count_available_phones
                      )
                   ],
   'weight' => 40,
@@ -639,7 +644,16 @@ sub base_recur {
 #  to indicate it represents a line
 sub calc_units {    
   my($self, $cust_pkg ) = @_;
-  scalar(grep { $_->part_svc->svcdb eq 'svc_phone' } $cust_pkg->cust_svc);
+  my $count = 0;
+  if ( $self->option('count_available_phones', 1)) {
+    map { $count += ( $_->quantity || 0 ) }
+      grep { $_->part_svc->svcdb eq 'svc_phone' }
+      $cust_pkg->part_pkg->pkg_svc;
+  } else {
+    $count = 
+      scalar(grep { $_->part_svc->svcdb eq 'svc_phone' } $cust_pkg->cust_svc);
+  }
+  $count;
 }
 
 1;
