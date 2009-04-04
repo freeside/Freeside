@@ -531,7 +531,7 @@ sub tables_hashref {
         'invnum',  'int', 'NULL', '', '', '',           # deprecated
         'amount',  @money_typen, '', '', 
         'format',  'char', 'NULL', 1, '', '',
-        'classnum', 'char', 'NULL', 1, '', '',
+        'classnum', 'int', 'NULL', '', '', '',
         'detail',  'varchar', '', 255, '', '', 
       ],
       'primary_key' => 'detailnum',

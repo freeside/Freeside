@@ -1,8 +1,8 @@
 package FS::cust_bill_pkg_detail;
 
 use strict;
-use vars qw( @ISA $me $DEBUG );
-use FS::Record qw( qsearch qsearchs dbdef );
+use vars qw( @ISA $me $DEBUG %GetInfoType );
+use FS::Record qw( qsearch qsearchs dbdef dbh );
 use FS::cust_bill_pkg;
 
 @ISA = qw(FS::Record);
@@ -120,6 +120,48 @@ sub _upgrade_data { # class method
   my ($class, %opts) = @_;
 
   warn "$me upgrading $class\n" if $DEBUG;
+
+  my $columndef = dbdef->table($class->table)->column('classnum');
+  unless ($columndef->type eq 'int4') {
+
+    my $dbh = dbh;
+    if ( $dbh->{Driver}->{Name} eq 'Pg' ) {
+
+      eval "use DBI::Const::GetInfoType;";
+      die $@ if $@;
+
+      my $major_version = 0;
+      $dbh->get_info( $GetInfoType{SQL_DBMS_VER} ) =~ /^(\d{2})/
+        && ( $major_version = sprintf("%d", $1) );
+
+      if ( $major_version > 7 ) {
+
+        # ideally this would be supported in DBIx-DBSchema and friends
+
+        foreach my $table ( qw( cust_bill_pkg_detail h_cust_bill_pkg_detail ) ){
+
+          warn "updating $table column classnum to integer\n" if $DEBUG;
+          my $sql = "ALTER TABLE $table ALTER classnum TYPE int USING ".
+            "int4(classnum)";
+          my $sth = $dbh->prepare($sql) or die $dbh->errstr;
+          $sth->execute or die $sth->errstr;
+
+        }
+
+      } else {
+
+        die "cust_bill_pkg_detail classnum upgrade unsupported for this Pg version\n";
+
+      }
+
+    } else {
+
+      die "cust_bill_pkg_detail classnum upgrade only supported for Pg 8+\n";
+
+    }
+
+  }
+
 
   if ( defined( dbdef->table($class->table)->column('billpkgnum') ) &&
        defined( dbdef->table($class->table)->column('invnum') ) &&
