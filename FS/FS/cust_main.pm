@@ -2533,20 +2533,20 @@ sub bill {
     my $tax_object = shift @{ $totlisthash{$tax} };
     warn "found previously found taxed tax ". $tax_object->taxname. "\n"
       if $DEBUG > 2;
-    my $listref_or_error =
+    my $hashref_or_error =
       $tax_object->taxline( $totlisthash{$tax},
                             'custnum'      => $self->custnum,
                             'invoice_time' => $invoice_time
                           );
-    unless (ref($listref_or_error)) {
+    unless (ref($hashref_or_error)) {
       $dbh->rollback if $oldAutoCommit;
-      return $listref_or_error;
+      return $hashref_or_error;
     }
 
-    warn "adding taxed tax amount ". $listref_or_error->[1].
+    warn "adding taxed tax amount ". $hashref_or_error->{'amount'}.
          " as ". $tax_object->taxname. "\n"
       if $DEBUG;
-    $tax{ $tax } += $listref_or_error->[1];
+    $tax{ $tax } += $hashref_or_error->{'amount'};
   }
   
   #consolidate and create tax line items
@@ -2939,7 +2939,7 @@ sub _handle_taxes {
 
     foreach my $tax ( @taxes ) {
 
-      my $taxname = ref( $tax ). ' taxnum'. $tax->taxnum;
+      my $taxname = ref( $tax ). ' '. $tax->taxnum;
 #      $taxname .= ' pkgnum'. $cust_pkg->pkgnum.
 #                  ' locationnum'. $cust_pkg->locationnum
 #        if $conf->exists('tax-pkg_address') && $cust_pkg->locationnum;
