@@ -22,7 +22,16 @@ use FS::cdr qw(_cdr_date_parser_maker);
     'uniqueid',                           #SequenceNumber
     'accountcode',                        #SessionNumber
     'src',                                #CallingPartyNumber
-    'dst',                                #CalledPartyNumber
+    #'dst',                                #CalledPartyNumber
+    #CalledPartyNumber
+    sub {
+      my( $cdr, $field, $conf ) = @_;
+      if ( $cdr->calltypenum == 6 && $cdr->cdrtypenum == 0 ) {
+        $cdr->dst("+$field");
+      } else {
+        $cdr->dst($field);
+      }
+    },
 
     #10
     _cdr_date_parser_maker('startdate'),  #CallArrivalTime
