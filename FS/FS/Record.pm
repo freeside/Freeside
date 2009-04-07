@@ -1708,11 +1708,14 @@ sub batch_import {
 
     my $record = $class->new( \%hash );
 
+    my $param = {};
     while ( scalar(@later) ) {
       my $sub = shift @later;
       my $data = shift @later;
-      &{$sub}($record, $data, $conf);  # $record->&{$sub}($data, $conf); 
+      &{$sub}($record, $data, $conf, $param); # $record->&{$sub}($data, $conf);
+      last if exists( $param->{skiprow} );
     }
+    next if exists( $param->{skiprow} );
 
     my $error = $record->insert;
 

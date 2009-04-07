@@ -308,9 +308,7 @@ sub calc_recur {
           ###
 
           my( $to_or_from, $number );
-          if ( $cdr->dst =~ /^(\+?1)?8(8|[02-7]{2})/
-               && ! $disable_tollfree
-              )
+          if ( $cdr->is_tollfree && ! $disable_tollfree )
           { #tollfree call
             $to_or_from = 'from';
             $number = $cdr->src;

@@ -13,7 +13,13 @@ use FS::cdr qw(_cdr_date_parser_maker);
   'import_fields' => [  #some of these are kind arbitrary...
 
     #0
-    'cdrtypenum',                         #RecordType
+    #RecordType
+    sub {
+      my($cdr, $field, $conf, $hashref) = @_;
+      $hashref->{skiprow} = 1 unless ($field == 0 && $cdr->disposition == 100);
+      $cdr->cdrtypenum($field);
+    },
+
     sub { my($cdr, $field) = @_; },             #all10#RecordVersion
     sub { my($cdr, $field) = @_; },       #OrigShelfNumber
     sub { my($cdr, $field) = @_; },       #OrigCardNumber
@@ -88,7 +94,7 @@ use FS::cdr qw(_cdr_date_parser_maker);
           return;
         }
       }
-      $cdr->charged_party($field);
+      '';
     },
 
     sub { my($cdr, $field) = @_; },       #SubscriberNumber

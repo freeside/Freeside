@@ -269,6 +269,17 @@ sub check {
   $self->SUPER::check;
 }
 
+=item is_tollfree
+
+  Returns true when the cdr represents a toll free number and false otherwise.
+
+=cut
+
+sub is_tollfree {
+  my $self = shift;
+  ( $self->dst =~ /^(\+?1)?8(8|[02-7]{2})/ ) ? 1 : 0;
+}
+
 =item set_charged_party
 
 If the charged_party field is already set, does nothing.  Otherwise:
@@ -294,7 +305,7 @@ sub set_charged_party {
 
     } else {
 
-      if ( $self->dst =~ /^(\+?1)?8[02-8]{2}/ ) {
+      if ( $self->is_tollfree ) {
         $self->charged_party($self->dst);
       } else {
         $self->charged_party($self->src);
