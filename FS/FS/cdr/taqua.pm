@@ -40,8 +40,8 @@ use FS::cdr qw(_cdr_date_parser_maker);
     },
 
     #10
-    _cdr_date_parser_maker('startdate'),  #CallArrivalTime
-    _cdr_date_parser_maker('enddate'),    #CallCompletionTime
+    _cdr_date_parser_maker('startdate', 'gmt' => 1),  #CallArrivalTime
+    _cdr_date_parser_maker('enddate', 'gmt' => 1),    #CallCompletionTime
 
     #Disposition
     #sub { my($cdr, $d ) = @_; $cdr->disposition( $disposition{$d}): },
@@ -57,7 +57,7 @@ use FS::cdr qw(_cdr_date_parser_maker);
                                           # 201 => '',
                                           # 203 => '',
 
-    _cdr_date_parser_maker('answerdate'), #DispositionTime
+    _cdr_date_parser_maker('answerdate', 'gmt' => 1), #DispositionTime
     sub { my($cdr, $field) = @_; },       #TCAP
     sub { my($cdr, $field) = @_; },       #OutboundCarrierConnectTime
     sub { my($cdr, $field) = @_; },       #OutboundCarrierDisconnectTime

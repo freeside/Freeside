@@ -681,10 +681,11 @@ sub _cdr_min_parse {
 
 sub _cdr_date_parser_maker {
   my $field = shift;
+  my %options = @_;
   my @fields = ref($field) ? @$field : ($field);
   return sub {
     my( $cdr, $datestring ) = @_;
-    my $unixdate = eval { _cdr_date_parse($datestring) };
+    my $unixdate = eval { _cdr_date_parse($datestring, %options) };
     die "error parsing date for @fields from $datestring: $@\n" if $@;
     $cdr->$_($unixdate) foreach @fields;
   };
@@ -692,6 +693,7 @@ sub _cdr_date_parser_maker {
 
 sub _cdr_date_parse {
   my $date = shift;
+  my %options = @_;
 
   return '' unless length($date); #that's okay, it becomes NULL
 
@@ -711,7 +713,11 @@ sub _cdr_date_parse {
   return '' if $year == 1900 && $mon == 1 && $day == 1
             && $hour == 0    && $min == 0 && $sec == 0;
 
-  timelocal($sec, $min, $hour, $day, $mon-1, $year);
+  if ($options{gmt}) {
+    timegm($sec, $min, $hour, $day, $mon-1, $year);
+  } else {
+    timelocal($sec, $min, $hour, $day, $mon-1, $year);
+  }
 }
 
 =item batch_import HASHREF
