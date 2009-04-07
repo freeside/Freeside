@@ -459,9 +459,12 @@ history records.
 
 sub label_long {
   my $self = shift;
-  ( $self->finger =~ /\S/ )
-    ? $self->finger. ' <'.$self->label(@_).'>'
-    : $self->label(@_);
+  my $label = $self->label(@_);
+  my $finger = $self->finger;
+  return $label unless $finger =~ /\S/;
+  my $maxlen = 40 - length($label) - length($self->cust_svc->part_svc->svc);
+  $finger = substr($finger, 0, $maxlen-3).'...' if length($finger) > $maxlen;
+  "$finger <$label>";
 }
 
 =item insert [ , OPTION => VALUE ... ]
