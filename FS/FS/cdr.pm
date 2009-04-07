@@ -277,7 +277,7 @@ sub check {
 
 sub is_tollfree {
   my $self = shift;
-  ( $self->dst =~ /^(\+?1)?8(8|[02-7]{2})/ ) ? 1 : 0;
+  ( $self->dst =~ /^(\+?1)?8([02-8])\1/ ) ? 1 : 0;
 }
 
 =item set_charged_party
