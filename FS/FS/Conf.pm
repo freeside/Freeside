@@ -1195,6 +1195,13 @@ worry that config_items is freeside-specific and icky.
     'type'        => 'checkbox',
   },
 
+  { 
+    'key'         => 'username-colon',
+    'section'     => 'username',
+    'description' => 'Allow the colon character (:) in usernames.',
+    'type'        => 'checkbox',
+  },
+
   {
     'key'         => 'safe-part_bill_event',
     'section'     => 'UI',
