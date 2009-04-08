@@ -58,6 +58,7 @@ die "access denied"
 my %link_field = (
   'svc_acct'    => 'username',
   'svc_domain'  => 'domain',
+  'svc_phone'   => 'phonenum',
 );
 
 my %link_field2 = (
