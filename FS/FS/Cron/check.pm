@@ -72,7 +72,7 @@ sub check_apache {
 }
 
 #and now for something entirely different...
-my $num_consecutive_bop_failures = 30;
+my $num_consecutive_bop_failures = 40;
 sub check_bop_failures {
 
   return 1 if grep { $_->statustext eq 'captured' }
