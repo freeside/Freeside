@@ -1747,16 +1747,18 @@ sub _h_statement {
 
   $time ||= time;
 
+  my %nohistory = map { $_=>1 } $self->nohistory_fields;
+
   my @fields =
-    grep { defined($self->getfield($_)) && $self->getfield($_) ne "" }
+    grep { defined($self->get($_)) && $self->get($_) ne "" && ! $nohistory{$_} }
     real_fields($self->table);
   ;
 
-  # If we're encrypting then don't ever store the payinfo or CVV2 in the history....
-  # You can see if it changed by the paymask...
-  if ($conf && $conf->exists('encryption') ) {
-    @fields = grep  $_ ne 'payinfo' && $_ ne 'cvv2', @fields;
+  # If we're encrypting then don't store the payinfo in the history
+  if ( $conf && $conf->exists('encryption') ) {
+    @fields = grep { $_ ne 'payinfo' } @fields;
   }
+
   my @values = map { _quote( $self->getfield($_), $self->table, $_) } @fields;
 
   "INSERT INTO h_". $self->table. " ( ".

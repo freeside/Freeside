@@ -91,6 +91,9 @@ sub upgrade_data {
 
   tie my %hash, 'Tie::IxHash', 
 
+    #cust_main (remove paycvv from history)
+    'cust_main' => [],
+
     #msgcat
     'msgcat' => [],
 
