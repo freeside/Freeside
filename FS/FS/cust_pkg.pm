@@ -480,10 +480,10 @@ sub check {
     unless ( $disable_agentcheck ) {
       my $agent =
         qsearchs( 'agent', { 'agentnum' => $self->cust_main->agentnum } );
-      my $pkgpart_href = $agent->pkgpart_hashref;
-      return "agent ". $agent->agentnum.
+      return "agent ". $agent->agentnum. ':'. $agent->agent.
              " can't purchase pkgpart ". $self->pkgpart
-        unless $pkgpart_href->{ $self->pkgpart };
+        unless $agent->pkgpart_hashref->{ $self->pkgpart }
+            || $agent->agentnum == $self->part_pkg->agentnum;
     }
 
     $error = $self->ut_foreign_key('pkgpart', 'part_pkg', 'pkgpart' );
