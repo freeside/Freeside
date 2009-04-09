@@ -94,7 +94,11 @@ use FS::cdr qw(_cdr_date_parser_maker);
           return;
         }
       }
-      '';
+      if ( $cdr->is_tollfree ) {        # thankfully this is already available
+        $cdr->charged_party($cdr->dst); # and this
+      } else {
+        $cdr->charged_party($field);
+      }
     },
 
     sub { my($cdr, $field) = @_; },       #SubscriberNumber
