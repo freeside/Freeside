@@ -1506,7 +1506,7 @@ worry that config_items is freeside-specific and icky.
   {
     'key'         => 'enable_taxproducts',
     'section'     => 'billing',
-    'description' => 'Enable per-package mapping to new style tax classes',
+    'description' => 'Enable per-package mapping to vendor tax data from CCH or elsewhere.',
     'type'        => 'checkbox',
   },
 
@@ -2071,7 +2071,7 @@ worry that config_items is freeside-specific and icky.
   {
     'key'         => 'tax-pkg_address',
     'section'     => 'billing',
-    'description' => 'By default, tax calculations are done based on the billing address.  Enable this switch to calculate tax based on the package address instead (when present).',
+    'description' => 'By default, tax calculations are done based on the billing address.  Enable this switch to calculate tax based on the package address instead (when present).  Note that this option is currently incompatible with vendor data taxation enabled by enable_taxproducts.',
     'type'        => 'checkbox',
   },
 
