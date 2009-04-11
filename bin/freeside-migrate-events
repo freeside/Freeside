@@ -16,20 +16,20 @@ my %plan2action = (
   'fee'                    => 'fee',
   'fee_percent'            => 'NOTYET', #XXX need fee_percent action
   'suspend'                => 'suspend',
-  'suspend-if-balance'     => 'NOTYET', #XXX "if balance" becomes a balance condition
+  'suspend-if-balance'     => 'suspend', #"if balance" becomes the balance cond
   'suspend-if-pkgpart'     => 'suspend_if_pkgpart',
   'suspend-unless-pkgpart' => 'suspend_unless_pkgpart',
   'cancel'                 => 'cancel',
   'addpost'                => 'addpost',
   'comp'                   => 'NOTYET', #XXX or N/A or something
-  'credit'                 => 'NOTYET',
+  'credit'                 => 'writeoff',
   'realtime-card'          => 'cust_bill_realtime_card',
   'realtime-check'         => 'cust_bill_realtime_check',
   'realtime-lec'           => 'cust_bill_realtime_lec',
   'batch-card'             => 'cust_bill_batch',
   #?'retriable'             =>
   'send'                   => 'cust_bill_send',
-  'send_email'             => 'NOTYET', 
+  'send_email'             => 'cust_bill_email',
   'send_alternate'         => 'cust_bill_send_alternate',
   'send_if_newest'         => 'cust_bill_send_if_newest',
   'send_agent'             => 'cust_bill_send_agent',
@@ -64,7 +64,15 @@ foreach my $part_bill_event (
   my %plandata = map { /^(\w+) (.*)$/; ($1, $2); }
                      split(/\n/, $part_bill_event->plandata);
 
-  #XXX may need to fudge some plandata2option names!!!
+  #XXX may need to fudge some other plandata2option names
+
+  my $balanceover = 0;
+  my $honor_dundate = 0;
+
+  if ( $part_bill_event->plan eq 'suspend-if-balance' ) {
+    $balanceover = delete $plandata{'balanceover'};
+    $honor_dundate = ( (delete $plandata{'balance_honor_dundate'}) =~ /1/ );
+  }
 
   my $part_event = new FS::part_event {
     'event'      => $part_bill_event->event,
@@ -86,12 +94,12 @@ foreach my $part_bill_event (
   };
   $error = $once->insert;
   die $error if $error;
-  
+
   my $balance = new FS::part_event_condition {
     'eventpart'     => $part_event->eventpart,
     'conditionname' => 'balance'
   };
-  $error = $balance->insert( 'balance' => 0 );
+  $error = $balance->insert( 'balance' => $balanceover );
   die $error if $error;
 
   my $cust_bill_owed = new FS::part_event_condition {
@@ -117,6 +125,15 @@ foreach my $part_bill_event (
     $error = $age->insert( 'age' => ($part_bill_event->seconds/86400 ).'d' );
     die $error if $error;
 
+  }
+
+  if ( $honor_dundate ) { 
+    my $dundate = new FS::part_event_condition {
+      'eventpart'     => $part_event->eventpart,
+      'conditionname' => 'dundate'
+    };
+    $error = $dundate->insert();
+    die $error if $error;
   }
   
   #my $derror = $part_bill_event->delete;
