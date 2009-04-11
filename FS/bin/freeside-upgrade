@@ -127,7 +127,7 @@ $FS::UID::AutoCommit = 0;
 $FS::UID::callback_hack = 1;
 $dbh = adminsuidsetup($user);
 $FS::UID::callback_hack = 0;
-unless ( $DRY_RUN ) {
+unless ( $DRY_RUN || $opt_s ) {
   my $dir = "%%%FREESIDE_CONF%%%/conf.". datasrc;
   if (!scalar(qsearch('conf', {}))) {
     my $error = FS::Conf::init_config($dir);
