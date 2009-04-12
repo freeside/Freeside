@@ -209,7 +209,6 @@
 %
 %
 %
-[@-- $coupon ? '\enlargethispage{-\extracouponspace}' : '' --@]
 \addressinset \rule{0.5cm}{0cm} 
 \makebox{
 \begin{minipage}[t]{7.0cm}

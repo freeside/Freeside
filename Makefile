@@ -143,8 +143,6 @@ help:
 	@echo "                   install-rt install-texmf"
 	@echo "                   install-selfservice update-selfservice"
 	@echo
-	@echo "                   install-texmf-forced"
-	@echo
 	@echo "                   dev dev-docs dev-perl-modules"
 	@echo
 	@echo "                   masondocs alldocs docs"
@@ -240,12 +238,6 @@ dev-perl-modules: perl-modules
 	ln -sf ${FREESIDE_PATH}/FS/blib/lib/FS ${PERL_INC_DEV_KLUDGE}/FS
 
 install-texmf:	
-	test -e `kpsewhich -expand-var \\\$$TEXMFLOCAL`/tex/generic/fslongtable.sty || \
-	install -D -o freeside -m 444 etc/fslongtable.sty \
-          `kpsewhich -expand-var \\\$$TEXMFLOCAL`/tex/generic/fslongtable.sty
-	texhash `kpsewhich -expand-var \\\$$TEXMFLOCAL`
-
-install-texmf-forced:	
 	install -D -o freeside -m 444 etc/fslongtable.sty \
           `kpsewhich -expand-var \\\$$TEXMFLOCAL`/tex/generic/fslongtable.sty
 	texhash `kpsewhich -expand-var \\\$$TEXMFLOCAL`

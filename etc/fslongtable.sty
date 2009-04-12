@@ -138,7 +138,6 @@
   \advance\dimen@ \ht\ifvoid\LT@firsthead\LT@head\else\LT@firsthead\fi
   \advance\dimen@ \dp\ifvoid\LT@firsthead\LT@head\else\LT@firsthead\fi
   \advance\dimen@ \ht\LT@foot
-  \advance\dimen@ \LTextracouponspace
   \dimen@ii\vfuzz
   \vfuzz\maxdimen
     \setbox\tw@\copy\z@
@@ -153,7 +152,7 @@
   \ifdim \dimen@>\z@\vfil\break\fi
       \global\@colroom\@colht
   \ifnum\thepage=1
-    \advance\vsize-\LTextracouponspace
+    \dimen@\pagegoal\advance\dimen@-\LTextracouponspace\pagegoal\dimen@
   \fi
   \ifvoid\LT@foot\else
     \advance\vsize-\ht\LT@foot
