@@ -1,0 +1,15 @@
+<% ntable("#cccccc", 2) %>
+  <% include ('/elements/tr-input-date-field.html',
+              'birthdate',
+              $cust_main->birthdate,
+              'Date of Birth',
+              $conf->config('date_format') || "%m/%d/%Y",
+              1)
+  %>
+</TABLE>
+<%init>
+
+my( $cust_main, %opt ) = @_;
+my $conf = new FS::Conf;
+
+</%init>

@@ -1,0 +1,164 @@
+<% include('/elements/xmlhttp.html',
+              'url'  => $p.'misc/svc_acct-domains.cgi',
+              'subs' => [ $opt{'prefix'}. 'get_domains' ],
+           )
+%>
+
+<% include('/elements/xmlhttp.html',
+              'url'  => $p.'misc/part_svc-columns.cgi',
+              'subs' => [ $opt{'prefix'}. 'get_part_svc' ],
+           )
+%>
+
+<SCRIPT TYPE="text/javascript">
+
+  function selopt(what,value,text,selected) {
+    var optionName = new Option(text, value, false, selected);
+    var length = what.length;
+    what.options[length] = optionName;
+  }
+
+  var pkgpart_svcpart2svcdb = {
+%   foreach my $pkgpart ( map $_->pkgpart, @part_pkg ) {
+      "<% $pkgpart_svcpart{$pkgpart} %>":"<% $svcdb{$pkgpart} %>",
+%   }
+    '':''
+  };
+
+  function <% $opt{'prefix'} %>pkgpart_svcpart_changed_too(what,selected) {
+
+    pkgpart_svcpart = what.options[what.selectedIndex].value;
+
+    var svcdb = pkgpart_svcpart2svcdb[pkgpart_svcpart];
+
+    if ( svcdb == 'svc_acct' ) {
+
+      // go get the new domains
+      function <% $opt{'prefix'} %>update_domains(domains) {
+
+        // blank the current domain list
+        for ( var i = what.form.<% $opt{'prefix'} %>domsvc.length; i >= 0; i-- )
+            what.form.<% $opt{'prefix'} %>domsvc.options[i] = null;
+
+        // add the new domains
+        var domainArray = eval('(' + domains + ')' );
+        for ( var s = 0; s < domainArray.length; s=s+2 ) {
+            var domainLabel = domainArray[s+1];
+            if ( domainLabel == "" )
+                domainLabel = '(n/a)';
+            selopt( what.form.<% $opt{'prefix'} %>domsvc,
+                    domainArray[s],
+                    domainLabel,
+                    (domainArray[s] == selected) ? true : false
+                  );
+        }
+
+      }
+
+      <% $opt{'prefix'} %>get_domains( pkgpart_svcpart,
+                                       <% $opt{'prefix'} %>update_domains
+                                     );
+
+    } else if ( svcdb == 'svc_phone' ) {
+
+      function <% $opt{'prefix'} %>update_svc_phone(part_svc_column) {
+        var colArray = eval('(' + part_svc_column + ')' );
+        for ( var s = 0; s < colArray.length; s=s+3 ) {
+          var name  = colArray[s];
+          var flag  = colArray[s+1];
+          var value = colArray[s+2];
+          var td_label = document.getElementById(name+'_label_td');
+          var td       = document.getElementById(name+'_td');
+          var input    = document.getElementById(name);
+          if ( flag == 'D' ) {
+            if ( ! input.value ) { input.value = value; }
+            td_label.style.display = ''
+            td.style.display = ''
+          } else if ( flag == 'F' ) {
+            input.value = value;
+            td_label.style.display = 'none'
+            td.style.display = 'none'
+          } else {
+            td_label.style.display = ''
+            td.style.display = ''
+          }
+        }
+      }
+
+      <% $opt{'prefix'} %>get_part_svc( pkgpart_svcpart,
+                                        <% $opt{'prefix'} %>update_svc_phone
+                                      );
+
+    }
+
+  }
+
+</SCRIPT>
+
+<% include( '/elements/selectlayers.html',
+              'field'        => $opt{'prefix'}. 'pkgpart_svcpart',
+              'curr_value'   => $opt{pkgpart_svcpart},
+              'options'      => \@options,
+              'labels'       => \%labels,
+              'html_between' => '</TD></TR></TABLE>',
+              #'onchange'     => $opt{'prefix'}. 'pkgpart_svcpart_changed(this,0);',
+              'onchange'     => $opt{'prefix'}. 'pkgpart_svcpart_changed_too(what,0)',
+
+              'layer_callback' => $layer_callback,
+              'layermap'       => \%layermap,
+          )
+%>
+
+<SCRIPT TYPE="text/javascript">
+  pkgpart_svcpart_changed_too( document.CustomerForm.pkgpart_svcpart,
+                               <% $opt{saved_domsvc} %>
+                             );
+</SCRIPT>
+
+<%init>
+
+my %opt = @_;
+
+foreach my $opt (qw( svc_part pkgparts saved_pkgpart saved_domsvc prefix)) {
+  $opt{$_} = '' unless exists($opt{$_}) && defined($opt{$_});
+}
+$opt{saved_domsvc} = 0 unless $opt{saved_domsvc};
+
+my @part_pkg = @{$opt{'part_pkg'}};
+
+my @first_svc = ( 'svc_acct', 'svc_phone' );
+
+my %pkgpart_svcpart = ();
+my %svcdb = ();
+my %layermap = ();
+foreach my $part_pkg ( @part_pkg ) {
+  my $pkgpart = $part_pkg->pkgpart;
+  my $pkgpart_svcpart         = $pkgpart. "_". $part_pkg->svcpart(\@first_svc);
+  $pkgpart_svcpart{$pkgpart}  = $pkgpart_svcpart;
+  $svcdb{$pkgpart}            = $part_pkg->part_svc(\@first_svc)->svcdb;
+  $layermap{$pkgpart_svcpart} = $svcdb{$pkgpart};
+}
+
+my @options = ( '', map $pkgpart_svcpart{ $_->pkgpart }, @part_pkg );
+my %labels = ( '' => '(none)',
+               map { $pkgpart_svcpart{ $_->pkgpart }
+                       => $_->pkg. " - ". $_->comment
+                   }
+                   @part_pkg
+             );
+
+my $layer_callback = sub {
+  my $layer = shift;
+  #$layer_fields, $layer_values, $layer_prefix
+
+#  my( $pkgpart, $svcpart ) = split('_', $layer);
+#  my $svcdb = $svcdb{$pkgpart};
+  my $svcdb = $layer;
+
+  return '' unless $svcdb; #'<BR><BR><BR><BR><BR>'
+
+  #full path cause we're being slung around as a coderef (mason closures?)
+  include("/edit/cust_main/first_pkg/$svcdb.html", %opt, );
+};
+
+</%init>

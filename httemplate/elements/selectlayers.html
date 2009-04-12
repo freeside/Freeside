@@ -63,18 +63,29 @@ Example:
     <SCRIPT TYPE="text/javascript">
 % }
 % unless ( grep $opt{$_}, qw(html_only select_only layers_only) ) {
-      //alert('start function define');
+
+%     if ( $opt{layermap} ) {
+%       my %map = %{ $opt{layermap} };
+        var layermap = { "":"",
+                         <% join(',', map { qq("$_":"$map{$_}") } keys %map ) %>
+                       };
+%     }
+
       function <% $key %>changed(what) {
 
         <% $opt{'onchange'} %>
 
         var <% $key %>layer = what.options[what.selectedIndex].value;
 
-%       foreach my $layer ( keys %$options ) {
-
+%       foreach my $layer ( @layers ) {
+%
+%         if ( $opt{layermap} ) {
+          if ( layermap[ <% $key %>layer ] == "<% $layer %>" ) {
+%         } else {
           if (<% $key %>layer == "<% $layer %>" ) {
+%         }
 
-%           foreach my $not ( grep { $_ ne $layer } keys %$options ) {
+%           foreach my $not ( grep { $_ ne $layer } @layers ) {
 %             my $element = "document.getElementById('${key}d$not').style";
               <% $element %>.display = "none";
               <% $element %>.zIndex = 0;
@@ -90,7 +101,6 @@ Example:
         //<% $opt{'onchange'} %>
 
       }
-      //alert('end function define');
 % }
 % unless ( grep $opt{$_}, qw(html_only js_only select_only layers_only) ) {
     </SCRIPT>
@@ -124,10 +134,16 @@ Example:
 %
 % unless ( grep $opt{$_}, qw(js_only select_only) ) {
 
-%   foreach my $layer ( keys %$options ) {
+%   foreach my $layer ( @layers ) {
+%     my $selected_layer;
+%     if ( $opt{layermap} ) {
+%       $selected_layer = $opt{layermap}->{$selected};
+%     } else {
+%       $selected_layer = $selected;
+%     }
 
       <DIV ID="<% $key %>d<% $layer %>"
-           STYLE="<% $layer eq $selected
+           STYLE="<% $selected_layer eq $layer
                        ? 'display: ""  ; z-index: 1'
                        : 'display: none; z-index: 0'
                   %>"
@@ -161,6 +177,14 @@ tie my %options, 'Tie::IxHash',
 
 my $between = exists($opt{html_between}) ? $opt{html_between} : '';
 my $options = \%options;
+
+my @layers = ();
+if ( $opt{layermap} ) {
+  my %layers = map { $opt{layermap}->{$_} => 1 } keys %options;
+  @layers = keys %layers;
+} else {
+  @layers = keys %options;
+}
 
 my $selected = exists($opt{curr_value}) ? $opt{curr_value} : '';
 

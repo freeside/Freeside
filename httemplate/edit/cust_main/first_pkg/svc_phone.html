@@ -1,0 +1,82 @@
+<% ntable("#cccccc") %>
+
+%#XXX this should be hidden or something in most/all cases
+  <TR>
+    <TD ALIGN="right" ID="countrycode_label_td">Country code</TD>
+    <TD ID="countrycode_td">
+      <INPUT TYPE      = "text"
+             NAME      = "countrycode"
+             ID        = "countrycode"
+             VALUE     = "<% $opt{'countrycode'} %>"
+             SIZE      = 4
+             MAXLENGTH = 3
+      >
+    </TD>
+  </TR>
+
+%#we don't know the svcpart until the dropdown is changed :/
+%#<% include('/elements/tr-select-did.html',
+%#             'label'      => 'Phone number',
+%#             'curr_value' => $opt{'phonenum'},
+%#          )
+%#%>
+  <TR>
+    <TD ALIGN="right" ID="phonenum_label_td">Phone Number</TD>
+    <TD ID="phonenum_td">
+      <INPUT TYPE      = "text"
+             NAME      = "phonenum"
+             ID        = "phonenum"
+             VALUE     = "<% $opt{'phonenum'} %>"
+             SIZE      = 21
+             MAXLENGTH = 20
+      >
+    </TD>
+  </TR>
+
+  <TR>
+    <TD ALIGN="right" ID="sip_password_label_td">SIP password</TD>
+    <TD ID="sip_password_td">
+      <INPUT TYPE      = "text"
+             NAME      = "sip_password"
+             ID        = "sip_password"
+             VALUE     = "<% $opt{'sip_password'} %>"
+             MAXLENGTH = 80
+      >
+    </TD>
+  </TR>
+
+  <TR>
+    <TD ALIGN="right" ID="pin_label_td">Voicemail PIN</TD>
+    <TD ID="pin_td">
+      <INPUT TYPE      = "text"
+             NAME      = "pin"
+             ID        = "pin"
+             VALUE     = "<% $opt{'pin'} %>"
+             SIZE      = 5
+             MAXLENGTH = 4
+      >
+    </TD>
+  </TR>
+
+%#XXX this should be hidden or something in most/all cases
+  <TR>
+    <TD ALIGN="right" ID="phone_name_label_td">Name</TD>
+    <TD ID="phone_name_td">
+      <INPUT TYPE      = "text"
+             NAME      = "phone_name"
+             ID        = "phone_name"
+             VALUE     = "<% $opt{'phone_name'} %>"
+             MAXLENGTH = 80
+      >
+    </TD>
+  </TR>
+
+</TABLE>
+
+<%init>
+
+my( %opt ) = @_;
+
+#my $conf = new FS::Conf;
+
+</%init>

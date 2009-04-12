@@ -613,25 +613,49 @@ Returns the svcpart of the primary service definition (see L<FS::part_svc>)
 associated with this package definition (see L<FS::pkg_svc>).  Returns
 false if there not a primary service definition or exactly one service
 definition with quantity 1, or if SVCDB is specified and does not match the
-svcdb of the service definition, 
+svcdb of the service definition.  SVCDB can be specified as a scalar table
+name, such as 'svc_acct', or as an arrayref of possible table names.
 
 =cut
 
 sub svcpart {
+  my $pkg_svc = shift->_primary_pkg_svc(@_);
+  $pkg_svc ? $pkg_svc->svcpart : '';
+}
+
+=item part_svc [ SVCDB ]
+
+Like the B<svcpart> method, but returns the FS::part_svc object (see
+L<FS::part_svc>).
+
+=cut
+
+sub part_svc {
+  my $pkg_svc = shift->_primary_pkg_svc(@_);
+  $pkg_svc ? $pkg_svc->part_svc : '';
+}
+
+sub _primary_pkg_svc {
   my $self = shift;
-  my $svcdb = scalar(@_) ? shift : '';
+
+  my $svcdb = scalar(@_) ? shift : [];
+  $svcdb = ref($svcdb) ? $svcdb : [ $svcdb ];
+  my %svcdb = map { $_=>1 } @$svcdb;
+
   my @svcdb_pkg_svc =
-    grep { ( $svcdb eq $_->part_svc->svcdb || !$svcdb ) } $self->pkg_svc;
+    grep { !scalar(@$svcdb) || $svcdb{ $_->part_svc->svcdb } }
+         $self->pkg_svc;
+
   my @pkg_svc = grep { $_->primary_svc =~ /^Y/i } @svcdb_pkg_svc;
   @pkg_svc = grep {$_->quantity == 1 } @svcdb_pkg_svc
     unless @pkg_svc;
   return '' if scalar(@pkg_svc) != 1;
-  $pkg_svc[0]->svcpart;
+  $pkg_svc[0];
 }
 
 =item svcpart_unique_svcdb SVCDB
 
-Returns the svcpart of the a service definition (see L<FS::part_svc>) matching
+Returns the svcpart of a service definition (see L<FS::part_svc>) matching
 SVCDB associated with this package definition (see L<FS::pkg_svc>).  Returns
 false if there not a primary service definition for SVCDB or there are multiple
 service definitions for SVCDB.
