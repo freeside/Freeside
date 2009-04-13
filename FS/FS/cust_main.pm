@@ -2459,6 +2459,7 @@ sub bill {
   foreach my $tax ( keys %taxlisthash ) {
     my $tax_object = shift @{ $taxlisthash{$tax} };
     warn "found ". $tax_object->taxname. " as $tax\n" if $DEBUG > 2;
+    warn " ". join('/', @{ $taxlisthash{$tax} } ). "\n" if $DEBUG > 2;
     my $hashref_or_error =
       $tax_object->taxline( $taxlisthash{$tax},
                             'custnum'      => $self->custnum,
