@@ -847,6 +847,7 @@ sub tables_hashref {
         'payinfo',      'varchar', 'NULL', 512, '', '', #see cust_main above
 	'paymask',      'varchar', 'NULL', $char_d, '', '', 
         'paydate',      'varchar', 'NULL', 10, '', '', 
+        'recurring_billing', 'varchar', 'NULL', $char_d, '', '',
         #'paybatch',     'varchar', 'NULL', $char_d, '', '', #for auditing purposes.
         'payunique',    'varchar', 'NULL', $char_d, '', '', #separate paybatch "unique" functions from current usage
 

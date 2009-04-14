@@ -225,16 +225,21 @@ sub payment_gateway {
 
   my $taxclass = '';
   if ( $options{invnum} ) {
+
     my $cust_bill = qsearchs('cust_bill', { 'invnum' => $options{invnum} } );
     die "invnum ". $options{'invnum'}. " not found" unless $cust_bill;
-    my @taxclasses =
-      map  { $_->part_pkg->taxclass }
+
+    my @part_pkg =
+      map  { $_->part_pkg }
       grep { $_ }
       map  { $_->cust_pkg }
       $cust_bill->cust_bill_pkg;
-    unless ( grep { $taxclasses[0] ne $_ } @taxclasses ) { #unless there are
-                                                           #different taxclasses      $taxclass = $taxclasses[0];
-    }
+
+    my @taxclasses = map $_->taxclass, @part_pkg;
+
+    $taxclass = $taxclasses[0]
+      unless grep { $taxclasses[0] ne $_ } @taxclasses; #unless there are
+                                                        #different taxclasses
   }
 
   #look for an agent gateway override first

@@ -1672,6 +1672,13 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'credit_card-recurring_billing_acct_code',
+    'section'     => 'billing',
+    'description' => 'When the "recurring billing" flag is set, also set the "acct_code" to "rebill".  Useful for reporting purposes with supported gateways (PlugNPay, others?)',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'cvv-save',
     'section'     => 'billing',
     'description' => 'Save CVV2 information after the initial transaction for the selected credit card types.  Enabling this option may be in violation of your merchant agreement(s), so please check them carefully before enabling this option for any credit card types.',
