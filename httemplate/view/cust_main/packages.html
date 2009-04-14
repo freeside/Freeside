@@ -177,8 +177,11 @@ sub get_packages {
     join(', ', map "cust_pkg.$_", fields('cust_pkg') ). ', '.
     join(', ', map "part_pkg.$_", fields('part_pkg') );
 
+  my $num_svcs = '( SELECT COUNT(*) FROM cust_svc '.
+                 '    WHERE cust_svc.pkgnum = cust_pkg.pkgnum ) AS num_svcs';
+
   my @packages = $cust_main->$method( {
-    'select'    => "$cust_pkg_fields, $part_pkg_fields",
+    'select'    => "$cust_pkg_fields, $part_pkg_fields, $num_svcs",
     'addl_from' => 'LEFT JOIN part_pkg USING ( pkgpart )',
   } );
   my $num_old_packages = scalar(@packages);
@@ -200,7 +203,9 @@ sub get_packages {
                );
   
     @packages =
-      grep { !exists($hide{$_->status}) or $_->get($hide{$_->status}) > $then }
+      grep { !exists($hide{$_->status}) or $_->get($hide{$_->status}) > $then
+             or $_->num_svcs #don't hide packages w/services
+           }
            @packages;
   }
 
