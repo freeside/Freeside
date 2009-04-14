@@ -1661,6 +1661,17 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'credit_card-recurring_billing_flag',
+    'section'     => 'billing',
+    'description' => 'This controls when the system passes the "recurring_billing" flag on credit card transactions.  If supported by your processor (and the Business::OnlinePayment processor module), passing the flag indicates this is a recurring transaction and may turn off the CVV requirement. ',
+    'type'        => 'select',
+    'select_hash' => [
+                       'actual_oncard' => 'Default/classic behavior: set the flag if a customer has actual previous charges on the card.',
+		       'transaction_is_recur' => 'Set the flag if the transaction itself is recurring, irregardless of previous charges on the card.',
+                     ],
+  },
+
+  {
     'key'         => 'cvv-save',
     'section'     => 'billing',
     'description' => 'Save CVV2 information after the initial transaction for the selected credit card types.  Enabling this option may be in violation of your merchant agreement(s), so please check them carefully before enabling this option for any credit card types.',
