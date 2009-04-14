@@ -2,7 +2,7 @@
 <%init>
 
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Resend invoices');
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
 
 my $server = new FS::UI::Web::JSRPC 'FS::tax_rate::process_batch_import', $cgi; 
 
