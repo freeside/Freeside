@@ -2281,6 +2281,7 @@ sub print_generic {
     # credits
     my $credittotal = 0;
     foreach my $credit ( $self->_items_credits ) {
+
       my $total;
       $total->{'total_item'} = &$escape_function($credit->{'description'});
       $credittotal += $credit->{'amount'};
@@ -2297,26 +2298,15 @@ sub print_generic {
           product_code => '',
           section      => $adjust_section,
         };
-      }else{
+      } else {
         push @total_items, $total;
       }
+
+      push @buf, [ $credit->{'description'}, $money_char.$credit->{'amount'} ];
+
     }
     $invoice_data{'credittotal'} = sprintf('%.2f', $credittotal);
   
-    # credits (again)
-    foreach ( $self->cust_credited ) {
-  
-      #something more elaborate if $_->amount ne $_->cust_credit->credited ?
-
-      my $reason = substr($_->cust_credit->reason,0,32);
-      $reason .= '...' if length($reason) < length($_->cust_credit->reason);
-      $reason = " ($reason) " if $reason;
-      push @buf,[
-        "Credit #". $_->crednum. " (". time2str("%x",$_->cust_credit->_date) .")".        $reason,
-        $money_char. sprintf("%10.2f",$_->amount)
-      ];
-    }
-
     # payments
     my $paymenttotal = 0;
     foreach my $payment ( $self->_items_payments ) {
@@ -2936,10 +2926,10 @@ sub _items_credits {
 
     #something more elaborate if $_->amount ne $_->cust_credit->credited ?
 
-    my $reason = $_->cust_credit->reason;
-    #my $reason = substr($_->cust_credit->reason,0,32);
-    #$reason .= '...' if length($reason) < length($_->cust_credit->reason);
+    my $reason = substr($_->cust_credit->reason,0,32);
+    $reason .= '...' if length($reason) < length($_->cust_credit->reason);
     $reason = " ($reason) " if $reason;
+
     push @b, {
       #'description' => 'Credit ref\#'. $_->crednum.
       #                 " (". time2str("%x",$_->cust_credit->_date) .")".
@@ -2949,12 +2939,6 @@ sub _items_credits {
       'amount'      => sprintf("%.2f",$_->amount),
     };
   }
-  #foreach ( @cr_cust_credit ) {
-  #  push @buf,[
-  #    "Credit #". $_->crednum. " (" . time2str("%x",$_->_date) .")",
-  #    $money_char. sprintf("%10.2f",$_->credited)
-  #  ];
-  #}
 
   @b;
 
