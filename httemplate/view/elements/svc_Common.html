@@ -1,30 +1,40 @@
-%  # options example...
-%  #
-%  # 'table' => 'svc_something'
-%  #
-%  # 'labels' => {
-%  #               'column' => 'Label',
-%  #             },
-%  #
-%  # listref - each item is a literal column name (or method) or (notyet) coderef
-%  # if not specified all columns (except for the primary key) will be viewable
-%  # 'fields' => [
-%  #             ]
-%  #
-%  # # defaults to "edit/$table.cgi?", will have svcnum appended
-%  # 'edit_url' => 
-%
-%
-% if ( $custnum ) { 
+<%doc>
 
+#Example:
+
+  include( 'elements/svc_Common.html, 
+
+             'table' => 'svc_something'
+
+             'labels' => {
+                           'column' => 'Label',
+                         },
+
+             #listref - each item is a literal column name (or method) or
+             # (notyet) coderef.  if not specified all columns (except for the
+             #primary key) will be viewable
+             'fields' => [
+                         ]
+
+             # defaults to "edit/$table.cgi?", will have svcnum appended
+             'edit_url' => 
+         )
+
+</%doc>
+% if ( $custnum ) { 
 
   <% include("/elements/header.html","View $label: $value") %>
 
   <% include( '/elements/small_custview.html', $custnum, '', 1,
      "${p}view/cust_main.cgi") %>
   <BR>
+
 % } else { 
 
+  <% include("/elements/header.html","View $label: $value", menubar(
+      "Cancel this (unaudited) $label" =>
+            "javascript:areyousure(\'${p}misc/cancel-unaudited.cgi?$svcnum\')"
+  )) %>
 
   <SCRIPT>
   function areyousure(href) {
@@ -33,12 +43,7 @@
   }
   </SCRIPT>
 
-  <% include("/elements/header.html","View $label: $value", menubar(
-      "Cancel this (unaudited) $label" =>
-            "javascript:areyousure(\'${p}misc/cancel-unaudited.cgi?$svcnum\')"
-  )) %>
 % } 
-
 
 Service #<B><% $svcnum %></B>
 % my $url = $opt{'edit_url'} || $p. 'edit/'. $opt{'table'}. '.cgi?';
@@ -130,7 +135,9 @@ my $svc_x = qsearchs({
                  ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
                  ' LEFT JOIN cust_main USING ( custnum ) ',
   'hashref'   => { 'svcnum' => $svcnum },
-  'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+  'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql(
+                            'null_right' => 'View/link unlinked services'
+                          ),
 }) or die "Unknown svcnum $svcnum in ". $opt{'table'}. " table\n";
 
 my $cust_svc = $svc_x->cust_svc;
