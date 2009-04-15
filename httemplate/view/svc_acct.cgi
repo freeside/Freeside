@@ -214,7 +214,7 @@ Service #<B><% $svcnum %></B>
 % if ($svc_acct->finger ne '') { 
 
   <TR>
-    <TD ALIGN="right">GECOS</TD>
+    <TD ALIGN="right">Real Name</TD>
     <TD BGCOLOR="#ffffff"><% $svc_acct->finger %></TD>
   </TR>
 % } 
