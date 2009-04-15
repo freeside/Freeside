@@ -451,6 +451,7 @@ sub process_payment {
     or return { 'error' => gettext('illegal_text'). " paybatch: ". $p->{'paybatch'} };
   my $paybatch = $1;
 
+  $p->{'payby'} ||= 'CARD';
   $p->{'payby'} =~ /^([A-Z]{4})$/
     or return { 'error' => "illegal_payby " . $p->{'payby'} };
   my $payby = $1;
