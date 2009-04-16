@@ -144,6 +144,7 @@ perl -ni -e 'print if !/\s+chown\s+/;' Makefile
 # Fix-ups for self-service.  Should merge this into Makefile
 perl -pi -e 's|/usr/local/sbin|%{_sbindir}|g' FS/bin/freeside-selfservice-server
 perl -pi -e 's|/usr/local/bin|%{_bindir}|g' fs_selfservice/FS-SelfService/Makefile.PL
+perl -pi -e 's|/usr/local/sbin|%{_sbindir}|g' fs_selfservice/FS-SelfService/Makefile.PL
 perl -pi -e 's|/usr/local/freeside|%{freeside_socket}|g' fs_selfservice/FS-SelfService/*.pm
 perl -pi -e 's|socket\s*=\s*"/usr/local/freeside|socket = "%{freeside_socket}|g' fs_selfservice/FS-SelfService/freeside-selfservice-*
 perl -pi -e 's|log_file\s*=\s*"/usr/local/freeside|log_file = "%{freeside_log}|g' fs_selfservice/FS-SelfService/freeside-selfservice-*
@@ -329,27 +330,42 @@ cd ../..
 
 %pre
 if ! %{__id} freeside &>/dev/null; then
-	/usr/sbin/useradd freeside
+%if "%{_vendor}" == "suse"
+	/usr/sbin/groupadd freeside
+%endif
+	/usr/sbin/useradd -m freeside
 fi
 
 %pre mason
 if ! %{__id} freeside &>/dev/null; then
-	/usr/sbin/useradd freeside
+%if "%{_vendor}" == "suse"
+	/usr/sbin/groupadd freeside
+%endif
+	/usr/sbin/useradd -m freeside
 fi
 
 %pre postgresql
 if ! %{__id} freeside &>/dev/null; then
-	/usr/sbin/useradd freeside
+%if "%{_vendor}" == "suse"
+	/usr/sbin/groupadd freeside
+%endif
+	/usr/sbin/useradd -m freeside
 fi
 
 %pre mysql
 if ! %{__id} freeside &>/dev/null; then
-	/usr/sbin/useradd freeside
+%if "%{_vendor}" == "suse"
+	/usr/sbin/groupadd freeside
+%endif
+	/usr/sbin/useradd -m freeside
 fi
 
 %pre selfservice-cgi
 if ! %{__id} freeside &>/dev/null; then
-	/usr/sbin/useradd freeside
+%if "%{_vendor}" == "suse"
+	/usr/sbin/groupadd freeside
+%endif
+	/usr/sbin/useradd -m freeside
 fi
 
 %post
