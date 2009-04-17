@@ -116,6 +116,15 @@ if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
   push @where, "agentnum = $agentnum";
 }
 
+#status (false laziness w/cust_main::search_sql
+
+#prospect active inactive suspended cancelled
+if ( grep { $cgi->param('status') eq $_ } FS::cust_main->statuses() ) {
+  my $method = $cgi->param('status'). '_sql';
+  #push @where, $class->$method();
+  push @where, FS::cust_main->$method();
+}
+
 #here is the agent virtualization
 push @where, $FS::CurrentUser::CurrentUser->agentnums_sql;
 
