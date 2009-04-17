@@ -23,7 +23,7 @@ my $fuz = 7; #seconds
  #site-specific rewrites
 my %rewrite = (
   #cust_tax_exempt.exemptnum => { 'field' => 'newvalue', ... },
-    '23' => { month=>10, year=>2005, invnum=>1640 },
+#    '23' => { month=>10, year=>2005, invnum=>1640 },
 
     #etc.
 );
