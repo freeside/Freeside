@@ -796,7 +796,7 @@ sub mimebuild_pdf {
     'Encoding'    => 'base64',
     'Data'        => [ $self->print_pdf(@_) ],
     'Disposition' => 'attachment',
-    'Filename'    => 'invoice.pdf',
+    'Filename'    => 'invoice-'. $self->invnum. '.pdf',
   );
 }
 
