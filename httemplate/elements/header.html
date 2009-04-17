@@ -202,11 +202,13 @@ input.fsblackbuttonselected {
         </TD>
 
         <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right">
+% if ( $curuser->access_right('View customer services') ) {
           <FORM ACTION="<%$fsurl%>search/cust_svc.html" METHOD="GET" STYLE="margin:0">
             <INPUT NAME="search_svc" TYPE="text" VALUE="(user, email, ip, mac, or domain)" SIZE="26" onFocus="clearhint_search_svc(this);" onClick="clearhint_search_svc(this);" STYLE="vertical-align:bottom;text-align:right"><BR>
             <A NOTYET="<%$fsurl%>search/svc_Smarter.html" STYLE="color: #000000; font-size: 70%">Advanced</A>
             <INPUT TYPE="submit" VALUE="Search services" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:70%">
           </FORM>
+% }
         </TD>
 
         <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right" STYLE="padding-right:4px">

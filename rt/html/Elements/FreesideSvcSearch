@@ -1,3 +1,4 @@
+% if ( $FS::CurrentUser::CurrentUser->access_right('View customer services') ) {
 <form action="<% $RT::URI::freeside::URL %>/search/cust_svc.html" STYLE="margin:0">
     <SCRIPT TYPE="text/javascript">
       function clearhint_search_svc (what) {
@@ -9,3 +10,4 @@
             <A NOTYET="<% $RT::URI::freeside::URL %>search/svc_Smarter.html" STYLE="color: #000000; font-size: 70%; font-weight:normal">Advanced</A>
 <input type="submit" value="<&|/l&>Search services</&>" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:70%">
 </form>
+% }
