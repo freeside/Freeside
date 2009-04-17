@@ -84,9 +84,12 @@ while (1) {
   my $nodepend = 'AND 0 = ( SELECT COUNT(*) FROM queue_depend'.
                  '           WHERE queue_depend.jobnum = queue.jobnum )';
 
-  my $order_by = "ORDER BY jobnum ". ( driver_name eq 'mysql'
-                                         ? 'LIMIT 1 FOR UPDATE'
-                                         : 'FOR UPDATE LIMIT 1' );
+  #anything with a priority goes after stuff without one
+  my $order_by = ' ORDER BY COALESCE(priority,0) ASC, jobnum ASC ';
+
+  $order_by .= ( driver_name eq 'mysql'
+                   ? ' LIMIT 1 FOR UPDATE '
+                   : ' FOR UPDATE LIMIT 1 ' );
 
   my $job = qsearchs({
     'table'     => 'queue',

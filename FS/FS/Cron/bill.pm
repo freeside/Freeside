@@ -129,8 +129,9 @@ END
 
       #add job to queue that calls bill_and_collect with options
       my $queue = new FS::queue {
-        'job'    => 'FS::cust_main::queued_bill',
-        'secure' => 'Y',
+        'job'      => 'FS::cust_main::queued_bill',
+        'secure'   => 'Y',
+        'priority' => 99, #don't get in the way of provisioning jobs
       };
       my $error = $queue->insert( 'custnum'=>$custnum, %args );
 

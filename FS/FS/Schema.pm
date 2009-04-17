@@ -1504,6 +1504,7 @@ sub tables_hashref {
         'svcnum',         'int', 'NULL',      '', '', '', 
         'custnum',        'int', 'NULL',      '', '', '',
         'secure',        'char', 'NULL',       1, '', '',
+        'priority',       'int', 'NULL',      '', '', '',
       ],
       'primary_key' => 'jobnum',
       'unique'      => [],
