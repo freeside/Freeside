@@ -84,11 +84,9 @@ Setting <b><% $key %></b>
 %         '' => '', map { $_ => $_ } @{ $config_item->select_enum };
 %     } elsif ( $config_item->select_hash ) {
 %       if ( ref($config_item->select_hash) eq 'ARRAY' ) {
-%         tie %hash, 'Tie::IxHash',
-%           '' => '', @{ $config_item->select_hash };
+%         tie %hash, 'Tie::IxHash', '' => '', @{ $config_item->select_hash };
 %       } else {
-%         tie %hash, 'Tie::IxHash',
-%           '' => '', %{ $config_item->select_hash };
+%         tie %hash, 'Tie::IxHash', '' => '', %{ $config_item->select_hash };
 %       }
 %     } else {
 %       %hash = ( '' => 'WARNING: neither select_enum nor select_hash specified in Conf.pm for configuration option "'. $key. '"' );

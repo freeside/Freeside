@@ -66,7 +66,7 @@ Click on a configuration value to change it.
               <td><font color="#ff0000">no type</font></td>
             </tr>
 
-%   } elsif (   $type eq 'image' ) {
+%   } elsif ( $type eq 'image' ) {
 
             <tr>
               <td bgcolor='#ffffff'>
@@ -86,7 +86,7 @@ Click on a configuration value to change it.
               </td>
             </tr>
 
-%   } elsif (   $type eq 'binary' ) {
+%   } elsif ( $type eq 'binary' ) {
 
             <tr>
               <td>
@@ -112,17 +112,36 @@ Click on a configuration value to change it.
 </pre></font>
               </td>
             </tr>
+
 %   } elsif ( $type eq 'checkbox' ) {
 
             <tr>
               <td id="<% $i->key.$n %>" bgcolor="#<% $conf->exists($i->key, $agentnum) ? '00ff00">YES' : 'ff0000">NO' %></td>
             </tr>
+
+%   } elsif ( $type eq 'select' && $i->select_hash ) {
+%
+%     my %hash;
+%     if ( ref($i->select_hash) eq 'ARRAY' ) {
+%       tie %hash, 'Tie::IxHash', '' => '', @{ $i->select_hash };
+%     } else {
+%       tie %hash, 'Tie::IxHash', '' => '', %{ $i->select_hash };
+%     }
+
+            <tr>
+              <td id="<% $i->key.$n %>" bgcolor="#ffffff">
+                <% $conf->exists($i->key, $agentnum) ? $hash{ $conf->config($i->key, $agentnum) } : '' %>
+              </td>
+            </tr>
+
 %   } elsif ( $type eq 'text' || $type eq 'select' ) {
 
             <tr>
               <td id="<% $i->key.$n %>" bgcolor="#ffffff">
                 <% $conf->exists($i->key, $agentnum) ? $conf->config($i->key, $agentnum) : '' %>
-              </td></tr>
+              </td>
+            </tr>
+
 %   } elsif ( $type eq 'select-sub' ) { 
 
             <tr>
@@ -131,6 +150,7 @@ Click on a configuration value to change it.
                 <% &{ $i->option_sub }( $conf->config($i->key, $agentnum) ) %>
               </td>
             </tr>
+
 %   } else { 
 
             <tr><td>

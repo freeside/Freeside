@@ -87,6 +87,15 @@ $conf->delete($_, $agentnum) foreach @delete;
           configCell.style.backgroundColor = '#ff0000';
           configCell.innerHTML = 'NO';
 %       }
+%     } elsif ( $type eq 'select' && $i->select_hash ) {
+%       my %hash;
+%       if ( ref($i->select_hash) eq 'ARRAY' ) {
+%         tie %hash, 'Tie::IxHash', '' => '', @{ $i->select_hash };
+%       } else {
+%         tie %hash, 'Tie::IxHash', '' => '', %{ $i->select_hash };
+%       }
+        configCell.innerHTML = <% $conf->exists($i->key, $agentnum) ? $hash{ $conf->config($i->key, $agentnum) } : '' |js_string %>;
+
 %     } elsif ( $type eq 'text' || $type eq 'select' ) {
         configCell.innerHTML = <% $conf->exists($i->key, $agentnum) ? $conf->config($i->key, $agentnum) : '' |js_string %>;
 %     } elsif ( $type eq 'select-sub' ) {
