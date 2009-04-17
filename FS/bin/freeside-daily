@@ -6,7 +6,7 @@ use FS::UID qw(adminsuidsetup);
 
 &untaint_argv;	#what it sounds like  (eww)
 use vars qw(%opt);
-getopts("p:a:d:vl:sy:nm", \%opt);
+getopts("p:a:d:vl:sy:nmk", \%opt);
 
 my $user = shift or die &usage;
 adminsuidsetup $user;
@@ -16,15 +16,21 @@ bill(%opt);
 
 #what to do about the below when using -m?  that is the question.
 
-use FS::Cron::notify qw(notify_flat_delay);
-notify_flat_delay(%opt);
-
+#you don't want to skip this, besides, it should be cheap
 use FS::Cron::expire_user_pref qw(expire_user_pref);
 expire_user_pref();
 
-use FS::Cron::vacuum qw(vacuum);
-vacuum();
+unless ( $opt{k} ) {
 
+  use FS::Cron::notify qw(notify_flat_delay);
+  notify_flat_delay(%opt);
+
+  use FS::Cron::vacuum qw(vacuum);
+  vacuum();
+
+}
+
+#you can skip this just by not having the config
 use FS::Cron::backup qw(backup_scp);
 backup_scp();
 
@@ -42,7 +48,7 @@ sub untaint_argv {
 }
 
 sub usage {
-  die "Usage:\n\n  freeside-daily [ -d 'date' ] user [ custnum custnum ... ]\n";
+  die "Usage:\n\n  freeside-daily [ -d 'date' ] [ -y days ] [ -p 'payby' ] [ -a agentnum ] [ -s ] [ -v ] [ -l level ] [ -m ] [ -k ] user [ custnum custnum ... ]\n";
 }
 
 ###
@@ -55,7 +61,7 @@ freeside-daily - Run daily billing and invoice collection events.
 
 =head1 SYNOPSIS
 
-  freeside-daily [ -d 'date' ] [ -y days ] [ -p 'payby' ] [ -a agentnum ] [ -s ] [ -v ] [ -l level ] [ -m ] user [ custnum custnum ... ]
+  freeside-daily [ -d 'date' ] [ -y days ] [ -p 'payby' ] [ -a agentnum ] [ -s ] [ -v ] [ -l level ] [ -m ] [ -k ] user [ custnum custnum ... ]
 
 =head1 DESCRIPTION
 
@@ -88,6 +94,8 @@ the bill and collect methods of a cust_main object.  See L<FS::cust_main>.
   -l: debugging level
 
   -m: Experimental multi-process mode uses the job queue for multi-process and/or multi-machine billing.
+
+  -k: skip notify_flat_delay and vacuum
 
 user: From the mapsecrets file - see config.html from the base documentation
 
