@@ -22,7 +22,6 @@ while (1) {
 
   dbh->commit or die dbh->errstr;
 
-  #hmm... doesn't work well, sometimes runs forever, wtf
   last if $rv == 0;
 
 }
