@@ -687,6 +687,7 @@ sub tables_hashref {
                    [ 'agentnum' ], [ 'refnum' ], [ 'custbatch' ],
                    [ 'referral_custnum' ],
                    [ 'payby' ], [ 'paydate' ],
+                   [ 'archived' ],
                    #billing
                    [ 'last' ], [ 'company' ],
                    [ 'county' ], [ 'state' ], [ 'country' ],
@@ -697,7 +698,6 @@ sub tables_hashref {
                    [ 'ship_county' ], [ 'ship_state' ], [ 'ship_country' ],
                    [ 'ship_zip' ],
                    [ 'ship_daytime' ], [ 'ship_night' ], [ 'ship_fax' ],
-                   [ 'archived' ],
                  ],
     },
 
