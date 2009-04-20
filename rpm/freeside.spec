@@ -135,7 +135,7 @@ For security reasons, it is set to conflict with %{name} as you should not insta
 
 %prep
 %setup -q
-%{__rm} bin/pod2x # Only useful to Ivan Kohler now
+%{__rm} -f bin/pod2x # Only useful to Ivan Kohler now
 perl -pi -e 's|/usr/local/bin|%{_bindir}|g' FS/Makefile.PL
 # RPM handles changing file ownership, so Makefile shouldn't
 perl -pi -e 's/\s+-o\s+(freeside|root)(\s+-g\s+\$\{\w+\})?\s+/ /g' Makefile
