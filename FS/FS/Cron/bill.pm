@@ -28,6 +28,8 @@ sub bill {
 
   my @search = ();
 
+  push @search, "cust_main.archived != 'Y' "; #disable?
+
   push @search, "cust_main.payby    = '". $opt{'p'}. "'"
     if $opt{'p'};
   push @search, "cust_main.agentnum =  ". $opt{'a'}

@@ -678,6 +678,7 @@ sub tables_hashref {
         'spool_cdr','char', 'NULL', 1, '', '', 
         'squelch_cdr','char', 'NULL', 1, '', '', 
         'invoice_terms', 'varchar', 'NULL', $char_d, '', '',
+        'archived', 'char', 'NULL', 1, '', '',
       ],
       'primary_key' => 'custnum',
       'unique' => [ [ 'agentnum', 'agent_custid' ] ],
@@ -696,6 +697,7 @@ sub tables_hashref {
                    [ 'ship_county' ], [ 'ship_state' ], [ 'ship_country' ],
                    [ 'ship_zip' ],
                    [ 'ship_daytime' ], [ 'ship_night' ], [ 'ship_fax' ],
+                   [ 'archived' ],
                  ],
     },
 
