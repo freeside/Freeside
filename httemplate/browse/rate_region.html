@@ -40,7 +40,7 @@ if ( driver_name =~ /^Pg/ ) {
                    " END";
   my $prefixes_sql = "SELECT $prefix_sql $fromwhere AND npa IS NOT NULL";
   $select .= "( SELECT countrycode $fromwhere LIMIT 1 ) AS ccode, 
-              ARRAY_TO_STRING( ARRAY($prefixes_sql), ',' ) AS prefixes";
+              ARRAY_TO_STRING( ARRAY($prefixes_sql), ', ' ) AS prefixes";
 } elsif ( driver_name =~ /^mysql/i ) {
   $join = 'LEFT JOIN rate_prefix USING ( regionnum )';
   $select .= "GROUP_CONCAT( DISTINCT countrycode ) AS ccode,
@@ -51,6 +51,8 @@ if ( driver_name =~ /^Pg/ ) {
 }
 
 my $base_count_sql = 'SELECT COUNT(*) FROM rate_region';
+
+tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
 
 </%once>
 <%init>
@@ -78,6 +80,40 @@ if ( $cgi->param('countrycode') =~ /^(\d+)$/ ) {
                    )';
   $extra_sql = " WHERE $ccode_sql = '$1' $extra_sql";
   $count_query .= " WHERE $ccode_sql = '$1'";
+}
+
+sub _rate_detail_factory {
+  my( $rate, $field ) = @_;
+  return sub {
+    my $rate_detail = $rate->dest_detail(shift)
+                      || new FS::rate_region { 'min_included'    => 0,
+                                               'min_charge'      => 0,
+                                               'sec_granularity' => 0,
+                                             };
+    my $value = $rate_detail->$field();
+    $field eq 'sec_granularity' ? $granularity{$value} : $value;
+  };
+}
+
+if ( $cgi->param('show_rates') ) {
+  foreach my $rate ( qsearch('rate', {}) ) {
+
+    my $label = $rate->ratenum.': '. $rate->ratename;
+    push @header, "$label: Included minutes/calls",
+                  "$label: Charge per minute/call",
+                  "$label: Granularity",
+                  "$label: Usage class";
+
+    #closure me harder
+    push @fields, _rate_detail_factory($rate, 'min_included'),
+                  _rate_detail_factory($rate, 'min_charge'),
+                  _rate_detail_factory($rate, 'sec_granularity'),
+                  _rate_detail_factory($rate, 'classnum');
+
+    push @links, '', '', '', '';
+
+  }
+
 }
 
 my $html_posttotal = 
