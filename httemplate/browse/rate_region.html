@@ -12,9 +12,9 @@
                            'order_by'  => 'ORDER BY LOWER(regionname)',
                          },
      'count_query'    => $count_query,
-     'header'         => [ '#',         'Region',  'Country code', 'Prefixes' ],
-     'fields'         => [ 'regionnum', 'regionname',   'ccode',   'prefixes' ],
-     'links'          => [ $link, $link, $link, $link ],
+     'header'         => \@header,
+     'fields'         => \@fields,
+     'links'          => \@links,
    )
 %>
 <%once>
@@ -57,6 +57,10 @@ my $base_count_sql = 'SELECT COUNT(*) FROM rate_region';
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my @header = ( '#',         'Region',  'Country code', 'Prefixes' );
+my @fields = ( 'regionnum', 'regionname',   'ccode',   'prefixes' );
+my @links  = ( $link, $link, $link, $link );
 
 $cgi->param('dummy', 1);
 my $countrycode_filter_change =
