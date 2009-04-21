@@ -31,10 +31,12 @@ function updateStatus( status_statustext ) {
   var statusArray = eval('(' + status_statustext + ')');
   var status = statusArray[0];
   var statustext = statusArray[1];
+  var actiontext = statusArray[2];
 
   //if ( status == 'progress' ) {
   //IE workaround, no i have no idea why
   if ( status.indexOf('progress') > -1 ) {
+    document.getElementById("progress_message").innerHTML = actiontext + '...';
     document.getElementById("progress_percent").innerHTML = statustext + '%';
     bar1.set(statustext);
     bar1.update;

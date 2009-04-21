@@ -585,7 +585,9 @@ sub job_status {
 
   my @return;
   if ( $job && $job->status ne 'failed' ) {
-    @return = ( 'progress', $job->statustext );
+    my ($progress, $action) = split ',', $job->statustext, 2; 
+    $action ||= 'Server processing job';
+    @return = ( 'progress', $progress, $action );
   } elsif ( !$job ) { #handle job gone case : job successful
                       # so close popup, redirect parent window...
     @return = ( 'complete' );
