@@ -28,7 +28,7 @@ sub bill {
 
   my @search = ();
 
-  push @search, "cust_main.archived != 'Y' "; #disable?
+  push @search, "( cust_main.archived != 'Y' OR archived IS NULL )"; #disable?
 
   push @search, "cust_main.payby    = '". $opt{'p'}. "'"
     if $opt{'p'};
