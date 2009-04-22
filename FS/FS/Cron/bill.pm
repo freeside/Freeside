@@ -111,7 +111,7 @@ END
       "SELECT custnum FROM cust_main".
       " WHERE ". join(' AND ', @search).
       " AND custnum > $prev_custnum ".
-      " ORDER BY custnum LIMIT 100 "
+      " ORDER BY custnum LIMIT 1000 "
     ) or die dbh->errstr;
 
     $sth->execute or die $sth->errstr;
