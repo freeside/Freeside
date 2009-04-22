@@ -95,32 +95,29 @@ END
 
   push @search, "( $where_pkg OR $where_event )";
 
-  my $prev_custnum = 0;
+  ###
+  # get a list of custnums
+  ###
+
+  warn "searching for customers:\n". join("\n", @search). "\n"
+    if $opt{'v'} || $opt{'l'};
+
+  dbh->do(
+    "DECLARE cron_bill_cursor CURSOR WITH HOLD FOR ". #no WITH HOLD for mysql?
+    "  SELECT custnum FROM cust_main ".
+    "    WHERE ". join(' AND ', @search).
+    "    ORDER BY custnum " #LIMIT 1000 "
+  ) or die dbh->errstr;
+
   while ( 1 ) {
 
-    ###
-    # get a list of custnums
-    ###
-
-    warn "searching for customers:\n".
-           join("\n", @search).
-           "custnum > $prev_custnum\n"
-      if $opt{'v'} || $opt{'l'};
-
-    my $sth = dbh->prepare(
-      "SELECT custnum FROM cust_main".
-      " WHERE ". join(' AND ', @search).
-      " AND custnum > $prev_custnum ".
-      " ORDER BY custnum LIMIT 1000 "
-    ) or die dbh->errstr;
+    my $sth = dbh->prepare('FETCH 1000 FROM cron_bill_cursor'); #mysql?
 
     $sth->execute or die $sth->errstr;
 
     my @custnums = map { $_->[0] } @{ $sth->fetchall_arrayref };
 
     last unless scalar(@custnums);
-
-    $prev_custnum = $custnums[-1];
 
     ###
     # for each custnum, queue or make one customer object and bill
