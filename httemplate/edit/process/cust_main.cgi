@@ -36,6 +36,8 @@ my %noauto = (
 $payby = $noauto{$payby}
   if ! $cgi->param('payauto') && exists $noauto{$payby};
 
+$cgi->param('payby', $payby);
+
 if ( $payby ) {
   if ( $payby eq 'CHEK' || $payby eq 'DCHK' ) {
     $cgi->param('payinfo',
