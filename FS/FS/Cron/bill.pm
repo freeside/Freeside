@@ -95,52 +95,65 @@ END
 
   push @search, "( $where_pkg OR $where_event )";
 
-  ###
-  # get a list of custnums
-  ###
+  my $prev_custnum = 0;
+  while ( 1 ) {
 
-  warn "searching for customers:\n". join("\n", @search). "\n"
-    if $opt{'v'} || $opt{'l'};
+    ###
+    # get a list of custnums
+    ###
 
-  my $sth = dbh->prepare(
-    "SELECT custnum FROM cust_main".
-    " WHERE ". join(' AND ', @search)
-  ) or die dbh->errstr;
+    warn "searching for customers:\n".
+           join("\n", @search).
+           "custnum > $prev_custnum\n"
+      if $opt{'v'} || $opt{'l'};
 
-  $sth->execute or die $sth->errstr;
+    my $sth = dbh->prepare(
+      "SELECT custnum FROM cust_main".
+      " WHERE ". join(' AND ', @search).
+      " AND custnum > $prev_custnum ".
+      " ORDER BY custnum LIMIT 100 "
+    ) or die dbh->errstr;
 
-  my @custnums = map { $_->[0] } @{ $sth->fetchall_arrayref };
+    $sth->execute or die $sth->errstr;
 
-  ###
-  # for each custnum, queue or make one customer object and bill
-  # (one at a time, to reduce memory footprint with large #s of customers)
-  ###
-  
-  foreach my $custnum ( @custnums ) {
-  
-    my %args = (
-        'time'         => $time,
-        'invoice_time' => $invoice_time,
-        'actual_time'  => $^T, #when freeside-bill was started
-                               #(not, when using -m, freeside-queued)
-        'check_freq'   => $check_freq,
-        'resetup'      => ( $opt{'s'} ? $opt{'s'} : 0 ),
-    );
+    my @custnums = map { $_->[0] } @{ $sth->fetchall_arrayref };
 
-    if ( $opt{'m'} ) {
+    last unless scalar(@custnums);
 
-      #add job to queue that calls bill_and_collect with options
-      my $queue = new FS::queue {
-        'job'      => 'FS::cust_main::queued_bill',
-        'secure'   => 'Y',
-        'priority' => 99, #don't get in the way of provisioning jobs
-      };
-      my $error = $queue->insert( 'custnum'=>$custnum, %args );
+    $prev_custnum = $custnums[-1];
 
-    } else {
+    ###
+    # for each custnum, queue or make one customer object and bill
+    # (one at a time, to reduce memory footprint with large #s of customers)
+    ###
+    
+    foreach my $custnum ( @custnums ) {
+    
+      my %args = (
+          'time'         => $time,
+          'invoice_time' => $invoice_time,
+          'actual_time'  => $^T, #when freeside-bill was started
+                                 #(not, when using -m, freeside-queued)
+          'check_freq'   => $check_freq,
+          'resetup'      => ( $opt{'s'} ? $opt{'s'} : 0 ),
+      );
 
-      my $cust_main = qsearchs( 'cust_main', { 'custnum' => $custnum } );
-      $cust_main->bill_and_collect( %args, 'debug' => $debug );
+      if ( $opt{'m'} ) {
+
+        #add job to queue that calls bill_and_collect with options
+        my $queue = new FS::queue {
+          'job'      => 'FS::cust_main::queued_bill',
+          'secure'   => 'Y',
+          'priority' => 99, #don't get in the way of provisioning jobs
+        };
+        my $error = $queue->insert( 'custnum'=>$custnum, %args );
+
+      } else {
+
+        my $cust_main = qsearchs( 'cust_main', { 'custnum' => $custnum } );
+        $cust_main->bill_and_collect( %args, 'debug' => $debug );
+
+      }
 
     }
 
