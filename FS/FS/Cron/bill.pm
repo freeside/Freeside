@@ -4,6 +4,7 @@ use strict;
 use vars qw( @ISA @EXPORT_OK );
 use Exporter;
 use Date::Parse;
+use DBI 1.33; #The "clone" method was added in DBI 1.33. 
 use FS::UID qw(dbh);
 use FS::Record qw(qsearchs);
 use FS::cust_main;
@@ -102,16 +103,18 @@ END
   warn "searching for customers:\n". join("\n", @search). "\n"
     if $opt{'v'} || $opt{'l'};
 
-  dbh->do(
-    "DECLARE cron_bill_cursor CURSOR WITH HOLD FOR ". #no WITH HOLD for mysql?
+  my $cursor_dbh = dbh->clone;
+
+  $cursor_dbh->do(
+    "DECLARE cron_bill_cursor CURSOR FOR ".
     "  SELECT custnum FROM cust_main ".
     "    WHERE ". join(' AND ', @search).
     "    ORDER BY custnum " #LIMIT 1000 "
-  ) or die dbh->errstr;
+  ) or die $cursor_dbh->errstr;
 
   while ( 1 ) {
 
-    my $sth = dbh->prepare('FETCH 1000 FROM cron_bill_cursor'); #mysql?
+    my $sth = $cursor_dbh->prepare('FETCH 100 FROM cron_bill_cursor'); #mysql?
 
     $sth->execute or die $sth->errstr;
 
@@ -155,6 +158,8 @@ END
     }
 
   }
+
+  $cursor_dbh->commit or die $cursor_dbh->errstr;
 
 }
 
