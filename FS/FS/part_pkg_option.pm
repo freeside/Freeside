@@ -127,9 +127,14 @@ sub check {
 sub _upgrade_data {  # class method
   my ($class, %opts) = @_;
 
-  my $sql = "UPDATE part_pkg_option SETUP optionname = 'recur_fee'".
+  my $sql = "UPDATE part_pkg_option SET optionname = 'recur_fee'".
             " WHERE optionname = 'recur_flat'";
   my $sth = dbh->prepare($sql) or die dbh->errstr;
+  $sth->execute or die $sth->errstr;
+
+  $sql = "UPDATE part_pkg_option SET optionname = 'recur_method',".
+            "optionvalue = 'prorate'  WHERE optionname = 'enable_prorate'";
+  $sth = dbh->prepare($sql) or die dbh->errstr;
   $sth->execute or die $sth->errstr;
 
   '';

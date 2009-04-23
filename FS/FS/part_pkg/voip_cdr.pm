@@ -4,6 +4,7 @@ use strict;
 use vars qw(@ISA $DEBUG %info);
 use Date::Format;
 use Tie::IxHash;
+use Time::Local;
 use FS::Conf;
 use FS::Record qw(qsearchs qsearch);
 use FS::part_pkg::flat;
@@ -20,6 +21,12 @@ tie my %rating_method, 'Tie::IxHash',
   'prefix' => 'Rate calls by using destination prefix to look up a region and rate according to the internal prefix and rate tables',
   'upstream' => 'Rate calls based on upstream data: If the call type is "1", map the upstream rate ID directly to an internal rate (rate_detail), otherwise, pass the upstream price through directly.',
   'upstream_simple' => 'Simply pass through and charge the "upstream_price" amount.',
+;
+
+tie my %recur_method, 'Tie::IxHash',
+  'anniversary' => 'Charge the recurring fee at the frequency specified above',
+  'prorate' => 'Charge a prorated fee the first time (selectable billing date)',
+  'subscription' => 'Charge the full fee for the first partial period (selectable billing date)',
 ;
 
 #tie my %cdr_location, 'Tie::IxHash',
@@ -55,12 +62,16 @@ tie my %temporalities, 'Tie::IxHash',
                          'type' => 'checkbox',
                        },
 
-    'enable_prorate' => { 'name' => 'Enable prorating of the first month',
-                          'type' => 'checkbox',
-                        },
-
-    'cutoff_day'    => { 'name' => 'Billing Day (1 - 28) for prorating ',
+    'cutoff_day'    => { 'name' => 'Billing Day (1 - 28) for prorating or '.
+                                   'subscription',
                          'default' => '1',
+                       },
+
+    'recur_method'  => { 'name' => 'Recurring fee method',
+                         #'type' => 'radio',
+                         #'options' => \%recur_method,
+                         'type' => 'select',
+                         'select_options' => \%recur_method,
                        },
 
     'rating_method' => { 'name' => 'Region rating method',
@@ -187,7 +198,7 @@ tie my %temporalities, 'Tie::IxHash',
   },
   'fieldorder' => [qw(
                        setup_fee recur_fee recur_temporality unused_credit
-                       enable_prorate cutoff_day
+                       recur_method cutoff_day
                        rating_method ratenum ignore_unrateable
                        default_prefix
                        disable_src
@@ -558,12 +569,31 @@ sub calc_recur {
   } #if ( $spool_cdr && length($downstream_cdr) )
 
   if ($param->{'increment_next_bill'}) {
-    if ( $self->option('enable_prorate', 1) ) {
+    my $recur_method = $self->option('recur_method', 1) || 'anniversary';
+                  
+    if ( $recur_method eq 'prorate' ) {
+
       $charges += $self->SUPER::calc_recur(@_);
+
     } else {
-      $charges += $self->option('recur_fee')
-    }
-  }
+
+      $charges += $self->option('recur_fee');
+
+      if ( $recur_method eq 'subscription' ) {
+
+        my $cutoff_day = $self->option('cutoff_day', 1) || 1;
+        my ($day, $mon, $year) = ( localtime($$sdate) )[ 3..5 ];
+
+        if ( $day < $cutoff_day ) {
+          if ( $mon == 0 ) { $mon=11; $year--; }
+          else { $mon--; }
+        }
+
+        $$sdate = timelocal(0, 0, 0, $cutoff_day, $mon, $year);
+
+      }#$recur_method eq 'subscription'
+    }#$recur_method eq 'prorate'
+  }#increment_next_bill
 
   $charges;
 }

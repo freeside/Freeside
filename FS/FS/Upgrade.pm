@@ -132,6 +132,9 @@ sub upgrade_data {
     #change tax_rate column types
     'tax_rate' => [],
 
+    #change recur_flat and enable_prorate
+    'part_pkg_option' => [],
+
   ;
 
   \%hash;
