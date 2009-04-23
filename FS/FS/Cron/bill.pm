@@ -107,9 +107,7 @@ END
 
   $cursor_dbh->do(
     "DECLARE cron_bill_cursor CURSOR FOR ".
-    "  SELECT custnum FROM cust_main ".
-    "    WHERE ". join(' AND ', @search).
-    "    ORDER BY custnum " #LIMIT 1000 "
+    "  SELECT custnum FROM cust_main WHERE ". join(' AND ', @search)
   ) or die $cursor_dbh->errstr;
 
   while ( 1 ) {
