@@ -1511,6 +1511,13 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'taxdatadirectdownload',
+    'section'     => 'billing',  #well
+    'description' => 'Enable downloading tax data directly from the vendor site',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'ignore_incalculable_taxes',
     'section'     => 'billing',
     'description' => 'Prefer to invoice without tax over not billing at all',

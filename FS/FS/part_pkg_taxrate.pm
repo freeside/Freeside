@@ -353,7 +353,7 @@ sub batch_import {
     if ( $job ) {  # progress bar
       if ( time - $min_sec > $last ) {
         my $error = $job->update_statustext(
-          int( 100 * $imported / $count )
+          int( 100 * $imported / $count ). ",Importing tax matrix"
         );
         die $error if $error;
         $last = time;

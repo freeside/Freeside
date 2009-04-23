@@ -246,7 +246,7 @@ sub batch_import {
           if ( $job ) {  # progress bar
             if ( time - $min_sec > $last ) {
               my $error = $job->update_statustext(
-                int( 100 * $imported / $count )
+                int( 100 * $imported / $count ). ",Importing tax classes"
               );
               die $error if $error;
               $last = time;
@@ -270,7 +270,7 @@ sub batch_import {
           if ( $job ) {  # progress bar
             if ( time - $min_sec > $last ) {
               my $error = $job->update_statustext(
-                int( 100 * $imported / $count )
+                int( 100 * $imported / $count ). ",Importing tax classes"
               );
               die $error if $error;
               $last = time;
@@ -319,7 +319,7 @@ sub batch_import {
     if ( $job ) {  # progress bar
       if ( time - $min_sec > $last ) {
         my $error = $job->update_statustext(
-          int( 100 * $imported / $count )
+          int( 100 * $imported / $count ). ",Importing tax classes"
         );
         die $error if $error;
         $last = time;

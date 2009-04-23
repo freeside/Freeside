@@ -125,19 +125,25 @@ sub check {
   ;
   return $error if $error;
 
-  #ugh!  cch canada weirdness
-  if ($self->state eq 'CN') {
+  #ugh!  cch canada weirdness and more
+  if ($self->state eq 'CN' && $self->data_vendor eq 'cch-zip' ) {
     $error = "Illegal cch canadian zip"
      unless $self->zip =~ /^[A-Z]$/;
+  } elsif ($self->state =~ /^E([B-DFGILNPR-UW])$/ && $self->data_vendor eq 'cch-zip' ) {
+    $error = "Illegal cch european zip"
+     unless $self->zip =~ /^E$1$/;
   } else {
     $error = $self->ut_number('zip', $self->state eq 'CN' ? 'CA' : 'US');
   }
   return $error if $error;
 
-  #ugh!  cch canada weirdness
+  #ugh!  cch canada weirdness and more
   return "must specify either city/county or plus4lo/plus4hi"
     unless ( $self->plus4lo && $self->plus4hi || 
-             ($self->city || $self->state eq 'CN') && $self->county
+             ( $self->city ||
+               $self->state eq 'CN' ||
+               $self->state =~ /^E([B-DFGILNPR-UW])$/
+             ) && $self->county
            );
 
   $self->SUPER::check;
@@ -277,7 +283,7 @@ sub batch_import {
     if ( $job ) {  # progress bar
       if ( time - $min_sec > $last ) {
         my $error = $job->update_statustext(
-          int( 100 * $imported / $count )
+          int( 100 * $imported / $count ). ",Importing locations"
         );
         die $error if $error;
         $last = time;

@@ -227,8 +227,14 @@ tie my %tools_importing, 'Tie::IxHash',
   'Import payments from CSV file' => [ $fsurl.'misc/cust_pay-import.cgi', '' ],
   'Import phone numbers (DIDs)' => [ $fsurl.'misc/phone_avail-import.html', '' ],
   'Import Call Detail Records (CDRs) from CSV file' => [ $fsurl.'misc/cdr-import.html', '' ],
-  'Import tax rates from CSV files' => [ $fsurl.'misc/tax-import.cgi', '' ],
 ;
+if ( $conf->exists('taxdatadirectdownload') ) {
+  $tools_importing{'Import tax rates from vendor site'} =
+   [ $fsurl.'misc/tax-fetch_and_import.cgi', '' ];
+} else {
+  $tools_importing{'Import tax rates from CSV files'} =
+   [ $fsurl.'misc/tax-import.cgi', '' ];
+}
 
 tie my %tools_exporting, 'Tie::IxHash',
   'Download database dump' => [ $fsurl. 'misc/dump.cgi', '' ],

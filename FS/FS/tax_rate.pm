@@ -6,6 +6,11 @@ use vars qw( @ISA $DEBUG $me
              %tax_passtypes %GetInfoType );
 use Date::Parse;
 use Storable qw( thaw );
+use IO::File;
+use File::Temp;
+use LWP::UserAgent;
+use HTTP::Request;
+use HTTP::Response;
 use MIME::Base64;
 use DBIx::DBSchema;
 use DBIx::DBSchema::Table;
@@ -678,7 +683,7 @@ sub batch_import {
     if ( $job ) {  # progress bar
       if ( time - $min_sec > $last ) {
         my $error = $job->update_statustext(
-          int( 100 * $imported / $count )
+          int( 100 * $imported / $count ). ",Importing tax rates"
         );
         die $error if $error;
         $last = time;
@@ -722,7 +727,7 @@ sub batch_import {
     if ( $job ) {  # progress bar
       if ( time - $min_sec > $last ) {
         my $error = $job->update_statustext(
-          int( 100 * $imported / $count )
+          int( 100 * $imported / $count ). ",Importing tax rates"
         );
         die $error if $error;
         $last = time;
@@ -746,7 +751,7 @@ sub batch_import {
     if ( $job ) {  # progress bar
       if ( time - $min_sec > $last ) {
         my $error = $job->update_statustext(
-          int( 100 * $imported / $count )
+          int( 100 * $imported / $count ). ",Importing tax rates"
         );
         die $error if $error;
         $last = time;
@@ -780,7 +785,7 @@ sub batch_import {
     if ( $job ) {  # progress bar
       if ( time - $min_sec > $last ) {
         my $error = $job->update_statustext(
-          int( 100 * $imported / $count )
+          int( 100 * $imported / $count ). ",Importing tax rates"
         );
         die $error if $error;
         $last = time;
@@ -984,6 +989,288 @@ sub process_batch_import {
     die "Unknown format: $format";
   }
 
+}
+
+=item process_download_and_update
+
+Download and process a tax update as a queued JSRPC job
+
+=cut
+
+sub process_download_and_update {
+  my $job = shift;
+
+  my $param = thaw(decode_base64(shift));
+  my $format = $param->{'format'};        #well... this is all cch specific
+
+  my ( $count, $last, $min_sec, $imported ) = (0, time, 5, 0); #progressbar
+  $count = 100;
+
+  if ( $job ) {  # progress bar
+    my $error = $job->update_statustext( int( 100 * $imported / $count ) );
+    die $error if $error;
+  }
+
+  my $dir = '%%%FREESIDE_CACHE%%%/cache.'. $FS::UID::datasrc. '/taxdata';
+  unless (-d $dir) {
+    mkdir $dir or die "can't create $dir: $!\n";
+  }
+
+  if ($format eq 'cch') {
+
+    eval "use Text::CSV_XS;";
+    die $@ if $@;
+
+    eval "use XBase;";
+    die $@ if $@;
+
+    my $conffile = '%%%FREESIDE_CONF%%%/cchconf';
+    my $conffh = new IO::File "<$conffile" or die "can't open $conffile: $!\n";
+    my ( $urls, $secret, $states ) =
+      map { /^(.*)$/ or die "bad config line in $conffile: $_\n"; $1 }
+          <$conffh>;
+
+    $dir .= '/cch';
+
+    my $oldAutoCommit = $FS::UID::AutoCommit;
+    local $FS::UID::AutoCommit = 0;
+    my $dbh = dbh;
+    my $error = '';
+
+    # really should get a table EXCLUSIVE lock here
+    # check if initial import or update
+    
+    my $sql = "SELECT count(*) from tax_rate WHERE data_vendor='$format'";
+    my $sth = $dbh->prepare($sql) or die $dbh->errstr;
+    $sth->execute() or die $sth->errstr;
+    my $upgrade = $sth->fetchrow_arrayref->[0];
+
+    # create cache and/or rotate old tax data
+
+    if (-d $dir) {
+
+      if (-d "$dir.4") {
+        opendir(my $dirh, $dir) or die "failed to open $dir.4: $!\n";
+        foreach my $file (readdir($dirh)) {
+          unlink "$dir.4/$file" if (-f "$dir.4/$file");
+        }
+        closedir($dirh);
+        rmdir "$dir.4";
+      }
+
+      for (3, 2, 1) {
+        if ( -e "$dir.$_" ) {
+          rename "$dir.$_", "$dir.". ($_+1) or die "can't rename $dir.$_: $!\n";
+        }
+      }
+      rename "$dir", "$dir.1" or die "can't rename $dir: $!\n";
+
+    } else {
+
+      die "can't find previous tax data\n" if $upgrade;
+
+    }
+
+    mkdir "$dir.new" or die "can't create $dir.new: $!\n";
+    
+    # fetch and unpack the zip files
+
+    my $ua = new LWP::UserAgent;
+    foreach my $url (split ',', $urls) {
+      my @name = split '/', $url;  #somewhat restrictive
+      my $name = pop @name;
+      $name =~ /(.*)/; # untaint that which we trust;
+      $name = $1;
+      
+      open my $taxfh, ">$dir.new/$name" or die "Can't open $dir.new/$name: $!\n";
+     
+      my $res = $ua->request(
+        new HTTP::Request( GET => $url),
+        sub { #my ($data, $response_object) = @_;
+              print $taxfh $_[0] or die "Can't write to $dir.new/$name: $!\n";
+              my $content_length = $_[1]->content_length;
+              $imported += length($_[0]);
+              if ( time - $min_sec > $last ) {
+                my $error = $job->update_statustext(
+                  ($content_length ? int(100 * $imported/$content_length) : 0 ).
+                  ",Downloading data from CCH"
+                );
+                die $error if $error;
+                $last = time;
+              }
+        },
+      );
+      die "download of $url failed: ". $res->status_line
+        unless $res->is_success;
+      
+      close $taxfh;
+      my $error = $job->update_statustext( "0,Unpacking data" );
+      die $error if $error;
+      $secret =~ /(.*)/; # untaint that which we trust;
+      $secret = $1;
+      system('unzip', "-P", $secret, "-d", "$dir.new",  "$dir.new/$name") == 0
+        or die "unzip -P $secret -d $dir.new $dir.new/$name failed";
+      #unlink "$dir.new/$name";
+    }
+ 
+    # extract csv files from the dbf files
+
+    foreach my $name ( qw( code detail geocode plus4 txmatrix zip ) ) {
+      my $error = $job->update_statustext( "0,Unpacking $name" );
+      die $error if $error;
+      warn "opening $dir.new/$name.dbf\n" if $DEBUG;
+      my $table = new XBase 'name' => "$dir.new/$name.dbf";
+      die "failed to access $dir.new/$name.dbf: ". XBase->errstr
+        unless defined($table);
+      $count = $table->last_record; # approximately;
+      $imported = 0;
+      open my $csvfh, ">$dir.new/$name.txt"
+        or die "failed to open $dir.new/$name.txt: $!\n";
+
+      my $csv = new Text::CSV_XS { 'always_quote' => 1 };
+      my @fields = $table->field_names;
+      my $cursor = $table->prepare_select;
+      my $format_date =
+        sub { my $date = shift;
+              $date =~ /^(\d{4})(\d{2})(\d{2})$/ && ($date = "$2/$3/$1");
+              $date;
+            };
+      while (my $row = $cursor->fetch_hashref) {
+        $csv->combine( map { ($table->field_type($_) eq 'D')
+                             ? &{$format_date}($row->{$_}) 
+                             : $row->{$_}
+                           }
+                       @fields
+        );
+        print $csvfh $csv->string, "\n";
+        $imported++;
+        if ( time - $min_sec > $last ) {
+          my $error = $job->update_statustext(
+            int(100 * $imported/$count).  ",Unpacking $name"
+          );
+          die $error if $error;
+          $last = time;
+        }
+      }
+      $table->close;
+      close $csvfh;
+    }
+
+    # generate the diff files
+
+    my @insert_list = ();
+    my @delete_list = ();
+
+    my @list = (
+                 # 'geocode',  \&FS::tax_rate_location::batch_import, 
+                 'code',     \&FS::tax_class::batch_import,
+                 'plus4',    \&FS::cust_tax_location::batch_import,
+                 'zip',      \&FS::cust_tax_location::batch_import,
+                 'txmatrix', \&FS::part_pkg_taxrate::batch_import,
+                 'detail',   \&FS::tax_rate::batch_import,
+               );
+
+    while( scalar(@list) ) {
+      my ( $name, $method ) = ( shift @list, shift @list );
+      my %oldlines = ();
+
+      my $error = $job->update_statustext( "0,Comparing to previous $name" );
+      die $error if $error;
+
+      warn "processing $dir.new/$name.txt\n" if $DEBUG;
+
+      if ($upgrade) {
+        open my $oldcsvfh, "$dir.1/$name.txt"
+          or die "failed to open $dir.1/$name.txt: $!\n";
+
+        while(<$oldcsvfh>) {
+          chomp;
+          $oldlines{$_} = 1;
+        }
+        close $oldcsvfh;
+      }
+
+      open my $newcsvfh, "$dir.new/$name.txt"
+        or die "failed to open $dir.new/$name.txt: $!\n";
+    
+      my $ifh = new File::Temp( TEMPLATE => "$name.insert.XXXXXXXX",
+                                DIR      => "$dir.new",
+                                UNLINK   => 0,     #meh
+                              ) or die "can't open temp file: $!\n";
+
+      my $dfh = new File::Temp( TEMPLATE => "$name.delete.XXXXXXXX",
+                                DIR      => "$dir.new",
+                                UNLINK   => 0,     #meh
+                              ) or die "can't open temp file: $!\n";
+
+      while(<$newcsvfh>) {
+        chomp;
+        if (exists($oldlines{$_})) {
+          $oldlines{$_} = 0;
+        } else {
+          print $ifh $_, ',"I"', "\n";
+        }
+      }
+      close $newcsvfh;
+
+      if ($name eq 'detail') {
+        for (keys %oldlines) {  # one file for rate details
+          print $ifh $_, ',"D"', "\n" if $oldlines{$_};
+        }
+      } else {
+        for (keys %oldlines) {
+          print $dfh $_, ',"D"', "\n" if $oldlines{$_};
+        }
+      }
+      %oldlines = ();
+
+      push @insert_list, $name, $ifh->filename, $method;
+      unshift @delete_list, $name, $dfh->filename, $method
+        unless $name eq 'detail';
+
+      close $dfh;
+      close $ifh;
+    }
+
+    while( scalar(@insert_list) ) {
+      my ($name, $file, $method) =
+        (shift @insert_list, shift @insert_list, shift @insert_list);
+
+      my $fmt = "$format-update";
+      $fmt = $fmt. ( $name eq 'zip' ? '-zip' : '' );
+      open my $fh, "< $file" or $error ||= "Can't open $name file $file: $!";
+      $error ||=
+        &{$method}({ 'filehandle' => $fh, 'format' => $fmt }, $job);
+      close $fh;
+      #unlink $file or warn "Can't delete $file: $!";
+    }
+    
+    while( scalar(@delete_list) ) {
+      my ($name, $file, $method) =
+        (shift @delete_list, shift @delete_list, shift @delete_list);
+
+      my $fmt = "$format-update";
+      $fmt = $fmt. ( $name eq 'zip' ? '-zip' : '' );
+      open my $fh, "< $file" or $error ||= "Can't open $name file $file: $!";
+      $error ||=
+        &{$method}({ 'filehandle' => $fh, 'format' => $fmt }, $job);
+      close $fh;
+      #unlink $file or warn "Can't delete $file: $!";
+    }
+    
+    if ($error) {
+      $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+      die $error;
+    }else{
+      $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+    }
+
+    rename "$dir.new", "$dir"
+      or die "cch tax update processed, but can't rename $dir.new: $!\n";
+
+  }else{
+    die "Unknown format: $format";
+  }
 }
 
 =item browse_queries PARAMS
