@@ -6,7 +6,7 @@ use FS::UID qw(adminsuidsetup);
 
 &untaint_argv;	#what it sounds like  (eww)
 use vars qw(%opt);
-getopts("p:a:d:vl:sy:nmk", \%opt);
+getopts("p:a:d:vl:sy:nmrk", \%opt);
 
 my $user = shift or die &usage;
 adminsuidsetup $user;
@@ -61,7 +61,7 @@ freeside-daily - Run daily billing and invoice collection events.
 
 =head1 SYNOPSIS
 
-  freeside-daily [ -d 'date' ] [ -y days ] [ -p 'payby' ] [ -a agentnum ] [ -s ] [ -v ] [ -l level ] [ -m ] [ -k ] user [ custnum custnum ... ]
+  freeside-daily [ -d 'date' ] [ -y days ] [ -p 'payby' ] [ -a agentnum ] [ -s ] [ -v ] [ -l level ] [ -m ] [ -r ] [ -k ] user [ custnum custnum ... ]
 
 =head1 DESCRIPTION
 
@@ -94,6 +94,8 @@ the bill and collect methods of a cust_main object.  See L<FS::cust_main>.
   -l: debugging level
 
   -m: Experimental multi-process mode uses the job queue for multi-process and/or multi-machine billing.
+
+  -r: Multi-process mode dry run option
 
   -k: skip notify_flat_delay and vacuum
 

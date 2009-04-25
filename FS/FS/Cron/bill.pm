@@ -138,13 +138,17 @@ END
 
       if ( $opt{'m'} ) {
 
-        #add job to queue that calls bill_and_collect with options
-        my $queue = new FS::queue {
-          'job'      => 'FS::cust_main::queued_bill',
-          'secure'   => 'Y',
-          'priority' => 99, #don't get in the way of provisioning jobs
-        };
-        my $error = $queue->insert( 'custnum'=>$custnum, %args );
+        if ( $opt{'r'} ) {
+          warn "DRY RUN: would add custnum $custnum for queued_bill\n";
+        } else {
+          #add job to queue that calls bill_and_collect with options
+          my $queue = new FS::queue {
+            'job'      => 'FS::cust_main::queued_bill',
+            'secure'   => 'Y',
+            'priority' => 99, #don't get in the way of provisioning jobs
+          };
+          my $error = $queue->insert( 'custnum'=>$custnum, %args );
+        }
 
       } else {
 
