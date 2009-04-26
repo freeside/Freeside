@@ -1510,7 +1510,9 @@ sub tables_hashref {
       ],
       'primary_key' => 'jobnum',
       'unique'      => [],
-      'index'       => [ [ 'job' ], [ 'svcnum' ], [ 'custnum' ], [ 'status' ] ],
+      'index'       => [ [ 'secure' ], [ 'priority' ],
+                         [ 'job' ], [ 'svcnum' ], [ 'custnum' ], [ 'status' ],
+                       ],
     },
 
     'queue_arg' => {
