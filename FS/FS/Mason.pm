@@ -42,7 +42,7 @@ Initializes the Mason environment, loads all Freeside and RT libraries, etc.
   #breaks quick payment entry
   #http://rt.cpan.org/Public/Bug/Display.html?id=37365
   die "CGI.pm v3.38 is broken, use any other version >= 3.29".
-      " (Debian 5.0?  aptitude remove ligcgi-pm-perl)"
+      " (Debian 5.0?  aptitude remove libcgi-pm-perl)"
     if $CGI::VERSION == 3.38;
 
   #use CGI::Carp qw(fatalsToBrowser);
