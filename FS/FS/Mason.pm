@@ -38,6 +38,13 @@ Initializes the Mason environment, loads all Freeside and RT libraries, etc.
   use strict;
   use vars qw( %session );
   use CGI 3.29 qw(-private_tempfiles); #3.29 to fix RT attachment problems
+
+  #breaks quick payment entry
+  #http://rt.cpan.org/Public/Bug/Display.html?id=37365
+  die "CGI.pm v3.38 is broken, use any other version >= 3.29".
+      " (Debian 5.0?  aptitude remove ligcgi-pm-perl)"
+    if $CGI::VERSION == 3.38;
+
   #use CGI::Carp qw(fatalsToBrowser);
   use CGI::Cookie;
   use List::Util qw( max min );
