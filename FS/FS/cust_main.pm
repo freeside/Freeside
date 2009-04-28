@@ -2235,7 +2235,7 @@ sub bill_and_collect {
 
   $self->apply_payments_and_credits;
 
-  unless ( $conf->config('cancelled_cust-noevents')
+  unless ( $conf->exists('cancelled_cust-noevents')
            && ! $self->num_ncancelled_pkgs
   ) {
 
