@@ -2225,18 +2225,36 @@ Debugging level.  Default is 0 (no debugging), or can be set to 1 (passed-in opt
 sub bill_and_collect {
   my( $self, %options ) = @_;
 
-  ###
-  # cancel packages
-  ###
-
   #$options{actual_time} not $options{time} because freeside-daily -d is for
   #pre-printing invoices
-  my @cancel_pkgs = grep { $_->expire && $_->expire <= $options{actual_time} }
+  $self->cancel_expired_pkgs( $options{actual_time} );
+  $self->suspend_adjourned_pkgs( $options{actual_time} );
+
+  my $error = $self->bill( %options );
+  warn "Error billing, custnum ". $self->custnum. ": $error" if $error;
+
+  $self->apply_payments_and_credits;
+
+  unless ( $conf->config('cancelled_cust-noevents')
+           && ! $self->num_ncancelled_pkgs
+  ) {
+
+    $error = $self->collect( %options );
+    warn "Error collecting, custnum". $self->custnum. ": $error" if $error;
+
+  }
+
+}
+
+sub cancel_expired_pkgs {
+  my ( $self, $time ) = @_;
+
+  my @cancel_pkgs = grep { $_->expire && $_->expire <= $time }
                          $self->ncancelled_pkgs;
 
   foreach my $cust_pkg ( @cancel_pkgs ) {
     my $cpr = $cust_pkg->last_cust_pkg_reason('expire');
-    my $error = $cust_pkg->cancel($cpr ? ( 'reason' => $cpr->reasonnum,
+    my $error = $cust_pkg->cancel($cpr ? ( 'reason'        => $cpr->reasonnum,
                                            'reason_otaker' => $cpr->otaker
                                          )
                                        : ()
@@ -2246,20 +2264,19 @@ sub bill_and_collect {
       if $error;
   }
 
-  ###
-  # suspend packages
-  ###
+}
 
-  #$options{actual_time} not $options{time} because freeside-daily -d is for
-  #pre-printing invoices
+sub suspend_adjourned_pkgs {
+  my ( $self, $time ) = @_;
+
   my @susp_pkgs = 
     grep { ! $_->susp
            && (    (    $_->part_pkg->is_prepaid
                      && $_->bill
-                     && $_->bill < $options{actual_time}
+                     && $_->bill < $time
                    )
                 || (    $_->adjourn
-                    && $_->adjourn <= $options{actual_time}
+                    && $_->adjourn <= $time
                   )
               )
          }
@@ -2278,18 +2295,6 @@ sub bill_and_collect {
          " for custnum ". $self->custnum. ": $error"
       if $error;
   }
-
-  ###
-  # bill and collect
-  ###
-
-  my $error = $self->bill( %options );
-  warn "Error billing, custnum ". $self->custnum. ": $error" if $error;
-
-  $self->apply_payments_and_credits;
-
-  $error = $self->collect( %options );
-  warn "Error collecting, custnum". $self->custnum. ": $error" if $error;
 
 }
 
