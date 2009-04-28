@@ -5,10 +5,10 @@
   <TD ALIGN="right">Attention</TD>
   <TD><INPUT TYPE="text" SIZE=32 MAXLENGTH=80 NAME="payname" VALUE="<%=$payname%>"></TD>
 </TR><TR>
+  <TD ALIGN="right">Postal mail invoice</TD>
   <TD><INPUT TYPE="checkbox" NAME="postal_invoicing" VALUE="POST" <%=
     $postal_invoicing ? 'CHECKED' : ''
     %>></TD>
-  <TD>Postal mail invoice</TD>
 </TR><TR>
   <TD>Email address(es)</TD>
   <TD><INPUT TYPE="text" NAME="invoicing_list" VALUE="<%= join(',', $invoicing_list ) %>"></TD>
