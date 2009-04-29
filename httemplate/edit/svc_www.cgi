@@ -38,7 +38,7 @@ Service #<B><% $svcnum ? $svcnum : "(NEW)" %></B>
 %         foreach $_ (keys %svc_acct) {
             <OPTION<% ($_ eq $usersvc) ? " SELECTED" : "" %> VALUE="<%$_%>"><% $svc_acct{$_} %>
 %         }
-        <SELECT>
+        </SELECT>
       </TD>
     </TR>
 % }
