@@ -350,7 +350,7 @@ sub re_X {
 
   my $from = 'LEFT JOIN part_event USING ( eventpart )';
 
-              # yuck!  hardcoed *AND* sequential scans!
+              # yuck!  hardcoded *AND* sequential scans!
   my $where = " WHERE action LIKE 'cust_bill_send%'".
               "   AND cust_event._date >= $beginning".
               "   AND cust_event._date <= $ending";
@@ -367,10 +367,9 @@ sub re_X {
   my( $num, $last, $min_sec ) = (0, time, 5); #progresbar foo
   foreach my $cust_event ( @cust_event ) {
 
-    # XXX 
-    $cust_event->cust_bill->$method(
+    $cust_event->cust_X->$method(
       $cust_event->part_event->templatename
-      || $cust_event->cust_main->agent_template
+      || $cust_event->cust_X->agent_template
     );
 
     if ( $job ) { #progressbar foo
