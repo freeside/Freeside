@@ -58,16 +58,7 @@ Click on a configuration value to change it.
 %     #$height = 
 %   }
 %
-%   my @agents = ();
-%   if ( $page_agent ) {
-%     @agents = ( $page_agent );
-%   } else {
-%     @agents = (
-%       '',
-%       grep { defined( _config_agentonly($conf, $i->key, $_->agentnum) ) }
-%            @all_agents
-%     );
-%   }
+%   my @agents = $page_agent ? ( $page_agent ) : ( '', @all_agents );
 %
 %   foreach my $agent ( @agents ) {
 %     my $agentnum = $agent ? $agent->agentnum : '';
@@ -209,13 +200,15 @@ Click on a configuration value to change it.
 <%once>
 
 #should probably be a Conf method.  what else would need to use it?
-sub _config_agentonly {
-  my($self,$name,$agentnum)=@_;
-  my $hashref = { 'name' => $name };
-  $hashref->{agentnum} = $agentnum;
-  local $FS::Record::conf = undef;  # XXX evil hack prevents recursion
-  FS::Record::qsearchs('conf', $hashref);
-}
+#not even us, apparantly...
+#  defined( _config_agentonly($conf, $i->key, $_->agentnum) )
+#sub _config_agentonly {
+#  my($self,$name,$agentnum)=@_;
+#  my $hashref = { 'name' => $name };
+#  $hashref->{agentnum} = $agentnum;
+#  local $FS::Record::conf = undef;  # XXX evil hack prevents recursion
+#  FS::Record::qsearchs('conf', $hashref);
+#}
 
 </%once>
 <%init>
