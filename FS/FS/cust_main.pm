@@ -2503,60 +2503,13 @@ sub bill {
   my %packagemap = map { $_->pkgnum => $_ } @cust_bill_pkg;
   foreach my $tax ( keys %taxlisthash ) {
     foreach ( @{ $taxlisthash{$tax} }[1 ... scalar(@{ $taxlisthash{$tax} })] ) {
-      next unless ref($_) eq 'FS::cust_bill_pkg'; # shouldn't happen
+      next unless ref($_) eq 'FS::cust_bill_pkg';
 
       push @{ $packagemap{$_->pkgnum}->_cust_tax_exempt_pkg }, 
         splice( @{ $_->_cust_tax_exempt_pkg } );
     }
   }
 
-  #some taxes are taxed
-  my %totlisthash;
-  
-  warn "finding taxed taxes...\n" if $DEBUG > 2;
-  foreach my $tax ( keys %taxlisthash ) {
-    my $tax_object = shift @{ $taxlisthash{$tax} };
-    warn "found possible taxed tax ". $tax_object->taxname. " we call $tax\n"
-      if $DEBUG > 2;
-    next unless $tax_object->can('tax_on_tax');
-
-    foreach my $tot ( $tax_object->tax_on_tax( $self ) ) {
-      my $totname = ref( $tot ). ' '. $tot->taxnum;
-
-      warn "checking $totname which we call ". $tot->taxname. " as applicable\n"
-        if $DEBUG > 2;
-      next unless exists( $taxlisthash{ $totname } ); # only increase
-                                                      # existing taxes
-      warn "adding $totname to taxed taxes\n" if $DEBUG > 2;
-      if ( exists( $totlisthash{ $totname } ) ) {
-        push @{ $totlisthash{ $totname  } }, $tax{ $tax };
-      }else{
-        $totlisthash{ $totname } = [ $tot, $tax{ $tax } ];
-      }
-    }
-  }
-
-  warn "having a look at taxed taxes...\n" if $DEBUG > 2;
-  foreach my $tax ( keys %totlisthash ) {
-    my $tax_object = shift @{ $totlisthash{$tax} };
-    warn "found previously found taxed tax ". $tax_object->taxname. "\n"
-      if $DEBUG > 2;
-    my $hashref_or_error =
-      $tax_object->taxline( $totlisthash{$tax},
-                            'custnum'      => $self->custnum,
-                            'invoice_time' => $invoice_time
-                          );
-    unless (ref($hashref_or_error)) {
-      $dbh->rollback if $oldAutoCommit;
-      return $hashref_or_error;
-    }
-
-    warn "adding taxed tax amount ". $hashref_or_error->{'amount'}.
-         " as ". $tax_object->taxname. "\n"
-      if $DEBUG;
-    $tax{ $tax } += $hashref_or_error->{'amount'};
-  }
-  
   #consolidate and create tax line items
   warn "consolidating and generating...\n" if $DEBUG > 2;
   foreach my $taxname ( keys %taxname ) {
@@ -2639,7 +2592,7 @@ sub _make_lines {
   my $total_recur = $params{recur} or die "no recur accumulator specified";
   my $taxlisthash = $params{tax_matrix} or die "no tax accumulator specified";
   my $time = $params{'time'} or die "no time specified";
-  my (%options) = %{$params{options}};  #hmmm  only for 'resetup'
+  my (%options) = %{$params{options}};
 
   my $dbh = dbh;
   my $real_pkgpart = $cust_pkg->pkgpart;
@@ -2818,7 +2771,7 @@ sub _make_lines {
       ###
 
       my $error = 
-        $self->_handle_taxes($part_pkg, $taxlisthash, $cust_bill_pkg, $cust_pkg);
+        $self->_handle_taxes($part_pkg, $taxlisthash, $cust_bill_pkg, $cust_pkg, $options{invoice_time});
       return $error if $error;
 
       push @$cust_bill_pkgs, $cust_bill_pkg;
@@ -2837,6 +2790,7 @@ sub _handle_taxes {
   my $taxlisthash = shift;
   my $cust_bill_pkg = shift;
   my $cust_pkg = shift;
+  my $invoice_time = shift;
 
   my %cust_bill_pkg = ();
   my %taxes = ();
@@ -2945,6 +2899,7 @@ sub _handle_taxes {
     my @taxes = @{ $taxes{$key} || [] };
     my $tax_cust_bill_pkg = $tax_cust_bill_pkg{$key};
 
+    my %localtaxlisthash = ();
     foreach my $tax ( @taxes ) {
 
       my $taxname = ref( $tax ). ' '. $tax->taxnum;
@@ -2952,12 +2907,43 @@ sub _handle_taxes {
 #                  ' locationnum'. $cust_pkg->locationnum
 #        if $conf->exists('tax-pkg_address') && $cust_pkg->locationnum;
 
-      if ( exists( $taxlisthash->{ $taxname } ) ) {
-        push @{ $taxlisthash->{ $taxname  } }, $tax_cust_bill_pkg;
-      }else{
-        $taxlisthash->{ $taxname } = [ $tax, $tax_cust_bill_pkg ];
+      $taxlisthash->{ $taxname } ||= [ $tax ];
+      push @{ $taxlisthash->{ $taxname  } }, $tax_cust_bill_pkg;
+
+      $localtaxlisthash{ $taxname } ||= [ $tax ];
+      push @{ $localtaxlisthash{ $taxname  } }, $tax_cust_bill_pkg;
+
+    }
+
+    warn "finding taxed taxes...\n" if $DEBUG > 2;
+    foreach my $tax ( keys %localtaxlisthash ) {
+      my $tax_object = shift @{ $localtaxlisthash{$tax} };
+      warn "found possible taxed tax ". $tax_object->taxname. " we call $tax\n"
+        if $DEBUG > 2;
+      next unless $tax_object->can('tax_on_tax');
+
+      foreach my $tot ( $tax_object->tax_on_tax( $self ) ) {
+        my $totname = ref( $tot ). ' '. $tot->taxnum;
+
+        warn "checking $totname which we call ". $tot->taxname. " as applicable\n"
+          if $DEBUG > 2;
+        next unless exists( $localtaxlisthash{ $totname } ); # only increase
+                                                             # existing taxes
+        warn "adding $totname to taxed taxes\n" if $DEBUG > 2;
+        my $hashref_or_error = 
+          $tax_object->taxline( $localtaxlisthash{$tax},
+                                'custnum'      => $self->custnum,
+                                'invoice_time' => $invoice_time,
+                              );
+        return $hashref_or_error
+          unless ref($hashref_or_error);
+        
+        $taxlisthash->{ $totname } ||= [ $tot ];
+        push @{ $taxlisthash->{ $totname  } }, $hashref_or_error->{amount};
+
       }
     }
+
   }
 
   '';
