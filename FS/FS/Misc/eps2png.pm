@@ -31,7 +31,7 @@ my $mono = 0;			# produce BW images if non-zero
 my $format;			# output format
 my $gs_format;			# GS output type
 my $output;			# output, defaults to STDOUT
-my $antialias = 8; #4;              # antialiasing
+my $antialias = 4;              # antialiasing
 my $DEF_width;			# desired widht
 my $DEF_height;		# desired height
 #my $DEF_width = 90;			# desired widht
