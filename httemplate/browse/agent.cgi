@@ -366,7 +366,7 @@ Unused
                         ? ' for '. $override->taxclass. ' only'
                         : ''
                   %>
-                  <FONT SIZE=-1><A HREF="<%$p%>misc/delete-agent_payment_gateway.cgi?<% $override->agentgatewaynum %>">(delete)</A></FONT>
+                  <FONT SIZE=-1><A HREF="javascript:areyousure('delete this payment gateway override', '<%$p%>misc/delete-agent_payment_gateway.cgi?<% $override->agentgatewaynum %>')">(delete)</A></FONT>
                 </TD>
               </TR>
 % } 
@@ -386,7 +386,7 @@ Unused
 
               <TR>
                 <TD> 
-                  <% $override->name %>&nbsp;<FONT SIZE=-1><A HREF="<%$p%>config/config-delete.cgi?<% $override->confnum %>">(delete)</A></FONT>
+                  <% $override->name %>&nbsp;<FONT SIZE=-1><A HREF="javascript:areyousure('delete this configuration override', '<%$p%>config/config-delete.cgi?<% $override->confnum %>')">(delete)</A></FONT>
                 </TD>
               </TR>
 % } 
@@ -402,6 +402,14 @@ Unused
 
 
     </TABLE>
+
+<SCRIPT TYPE="text/javascript">
+  function areyousure(what, href) {
+    if ( confirm("Are you sure you want to " + what + "?") == true )
+      window.location.href = href;
+  }
+</SCRIPT>
+
   </BODY>
 </HTML>
 <%init>
