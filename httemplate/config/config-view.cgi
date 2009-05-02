@@ -58,7 +58,22 @@ Click on a configuration value to change it.
 %     #$height = 
 %   }
 %
-%   my @agents = $page_agent ? ( $page_agent ) : ( '', @all_agents );
+%   my @agents = ();
+%   my @add_agents = ();
+%   if ( $page_agent ) {
+%     @agents = ( $page_agent );
+%   } else {
+%     @agents = ( '' );
+%     if ( $i->per_agent ) {
+%       foreach my $agent (@all_agents) {
+%         if ( defined(_config_agentonly($conf, $i->key, $agent->agentnum)) ) {
+%           push @agents, $agent;
+%         } else {
+%           push @add_agents, $agent;
+%         }
+%       }
+%     }
+%   }
 %
 %   foreach my $agent ( @agents ) {
 %     my $agentnum = $agent ? $agent->agentnum : '';
@@ -81,6 +96,10 @@ Click on a configuration value to change it.
                                                  # if $cgi->param('showagent')?
                     )
           %>: <% $i->description %>
+%       if ( $agent && $cgi->param('showagent') ) {
+          (<A HREF="javascript:areyousure('delete this agent override', 'config-delete.cgi?confnum=<% _config_agentonly($conf, $i->key, $agent->agentnum)->confnum %>;redirect=config_view')">delete agent override</A>)
+%       }
+
       </td>
       <td><table border=0>
 
@@ -190,25 +209,81 @@ Click on a configuration value to change it.
 
 % } # foreach my $agentnum
 
+% if ( @add_agents ) {
+
+  <tr>
+    <td>
+      <FORM>
+      Add <b><% $i->key %></b> override for
+        <% include('/elements/select-agent.html',
+                     'agents'      => \@add_agents,
+                     'empty_label' => 'Select agent',
+                     'onchange'    => "agent_changed",
+                     'id'          => 'agent_'. $i->key,
+                  )
+        %>
+      agent
+
+%     my $agent_el = "document.getElementById('agent_". $i->key. "')";
+      <INPUT TYPE    = "button"
+             VALUE   = "Add"
+             ID      = "add_<% $i->key %>"
+             DISABLED
+             onClick = "<%
+               include('/elements/popup_link_onclick.html',
+                         'action'      =>
+                           'config.cgi?key='.      $i->key.
+                           ";agentnum=' + ".
+                             "$agent_el.options[$agent_el.selectedIndex].value".
+                             " + '",
+                         'width'       => $width,
+                         'height'      => $height,
+                         'actionlabel' => 'Enter configuration value',
+                      )
+             %>"
+      >
+      </FORM>
+    </td>
+  </tr>
+
+% } #if @add_agents
+
 % } # foreach my $i
 
   </table><br><br>
 
 % } # foreach my $nav_section
 
+<SCRIPT TYPE="text/javascript">
+
+  function agent_changed(what) {
+    var key = what.id.substring(6); // trim agent_
+    var button = document.getElementById('add_'+key);
+    if ( what.selectedIndex > 0 ) {
+      button.disabled = false;
+    } else {
+      button.disabled = true;
+    }
+  }
+
+  function areyousure(what, href) {
+    if ( confirm("Are you sure you want to " + what + "?") == true )
+      window.location.href = href;
+  }
+
+</SCRIPT>
+
 </body></html>
 <%once>
 
 #should probably be a Conf method.  what else would need to use it?
-#not even us, apparantly...
-#  defined( _config_agentonly($conf, $i->key, $_->agentnum) )
-#sub _config_agentonly {
-#  my($self,$name,$agentnum)=@_;
-#  my $hashref = { 'name' => $name };
-#  $hashref->{agentnum} = $agentnum;
-#  local $FS::Record::conf = undef;  # XXX evil hack prevents recursion
-#  FS::Record::qsearchs('conf', $hashref);
-#}
+sub _config_agentonly {
+  my($self,$name,$agentnum)=@_;
+  my $hashref = { 'name' => $name };
+  $hashref->{agentnum} = $agentnum;
+  local $FS::Record::conf = undef;  # XXX evil hack prevents recursion
+  FS::Record::qsearchs('conf', $hashref);
+}
 
 </%once>
 <%init>

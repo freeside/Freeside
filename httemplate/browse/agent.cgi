@@ -386,7 +386,7 @@ Unused
 
               <TR>
                 <TD> 
-                  <% $override->name %>&nbsp;<FONT SIZE=-1><A HREF="javascript:areyousure('delete this configuration override', '<%$p%>config/config-delete.cgi?<% $override->confnum %>')">(delete)</A></FONT>
+                  <% $override->name %>&nbsp;<FONT SIZE=-1><A HREF="javascript:areyousure('delete this configuration override', '<%$p%>config/config-delete.cgi?confnum=<% $override->confnum %>')">(delete)</A></FONT>
                 </TD>
               </TR>
 % } 

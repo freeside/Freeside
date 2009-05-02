@@ -66,6 +66,9 @@ $conf->delete($_, $agentnum) foreach @delete;
 %   my $n = 0;
 %   foreach my $type ( ref($i->type) ? @{$i->type} : $i->type ) {
     var configCell = window.top.document.getElementById('<% $agentnum. $i->key. $n %>');
+    if ( ! configCell ) {
+      window.top.location.reload();
+    }
     //alert('found cell ' + configCell);
 %     if (    $type eq 'textarea'
 %          || $type eq 'editlist'
