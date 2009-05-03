@@ -1,0 +1,48 @@
+% $csv->combine(@$header); #or die $csv->status;
+%    
+<% $csv->string %>\
+%
+% foreach my $row ( @$rows ) {
+%
+%   if ( $opt{'fields'} ) {
+%
+%     my @line = ();
+%
+%     foreach my $field ( @{$opt{'fields'}} ) {
+%       if ( ref($field) eq 'CODE' ) {
+%         push @line, map {
+%                           ref($_) eq 'ARRAY'
+%                             ? '(N/A)' #unimplemented
+%                             : $_;
+%                         }
+%                         &{$field}($row);
+%       } else {
+%         push @line, $row->$field();
+%       }
+%     }
+%
+%     $csv->combine(@line); #or die $csv->status;
+%
+%   } else {
+%     $csv->combine(@$row); #or die $csv->status;
+%   }
+%
+%      
+<% $csv->string %>\
+%
+% }
+<%init>
+
+my %args = @_;
+my $header = $args{'header'};
+my $rows   = $args{'rows'};
+my %opt    = %{ $args{'opt'} };
+
+#http_header('Content-Type' => 'text/comma-separated-values' ); #IE chokes
+http_header('Content-Type' => 'text/plain' );
+
+my $csv = new Text::CSV_XS { 'always_quote' => 1,
+                             'eol'          => "\n", #"\015\012", #"\012"
+                           };
+
+</%init>
