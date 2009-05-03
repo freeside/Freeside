@@ -100,7 +100,8 @@ Click on a configuration value to change it.
 %         my $confnum =
 %           _config_agentonly($conf, $i->key, $agent->agentnum)->confnum;
           (<A HREF="javascript:areyousure('delete this agent override', 'config-delete.cgi?confnum=<% $confnum %>;redirect=config_view_showagent')">delete agent override</A>)
-%       } elsif ( $i->base_key ) {
+%       } elsif ( $i->base_key
+%                 || ( $deleteable{$i->key} && $conf->exists($i->key) ) ) {
 %         my $confnum =
 %           $agent
 %             ? _config_agentonly($conf, $i->key, $agent->agentnum)->confnum
@@ -318,6 +319,9 @@ my $conf = new FS::Conf;
  
 my @config_items = grep { $page_agent ? $_->per_agent : 1 }
                         $conf->config_items; 
+
+my @deleteable = qw( invoice_latexreturnaddress invoice_htmlreturnaddress );
+my %deleteable = map { $_ => 1 } @deleteable;
 
 my @sections = qw(required billing username password UI session shell BIND );
 push @sections, '', 'deprecated';
