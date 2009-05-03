@@ -1,0 +1,27 @@
+#!/usr/bin/perl
+
+use FS::UID qw(adminsuidsetup);
+use FS::Conf;
+
+adminsuidsetup('ivan');
+
+my $conf = new FS::Conf;
+
+my $file2 = pop @ARGV;
+my $file1 = pop @ARGV;
+
+open(FILE1, ">/tmp/$file1") or die "can't open /tmp/$file1: $!";
+print FILE1 $conf->config($file1);
+print FILE1 "\n";
+close FILE1 or die $!;
+
+open(FILE2, ">/tmp/$file2") or die "can't open /tmp/$file2: $!";
+print FILE2 $conf->config($file2);
+print FILE2 "\n";
+close FILE2 or die $!;
+
+my @opt = @ARGV;
+
+system('diff', @opt, "/tmp/$file1", "/tmp/$file2");
+
+#unlink("/tmp/$file1', "/tmp/$file2");
