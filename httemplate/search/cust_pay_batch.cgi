@@ -132,6 +132,9 @@ if ( $pay_batch ) {
        || ( $pay_batch->status eq 'I'
             && $FS::CurrentUser::CurrentUser->access_right('Reprocess batches')
           ) 
+       || ( $pay_batch->status eq 'R'
+            && $FS::CurrentUser::CurrentUser->access_right('Redownload resolved batches')
+          ) 
   ) {
     $html_init .= qq!<FORM ACTION="$p/misc/download-batch.cgi" METHOD="POST">!;
     if ( $fixed ) {
