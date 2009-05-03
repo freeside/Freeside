@@ -289,8 +289,7 @@ Setting <b><% $key %></b>
 <%once>
 
 my $conf = new FS::Conf;
-my @config_items = grep { $_->key != ~/^invoice_(html|latex|template)/ }
-                        $conf->config_items; 
+my @config_items = $conf->config_items; 
 my %confitems = map { $_->key => $_ } @config_items;
 
 </%once>
