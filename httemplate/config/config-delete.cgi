@@ -10,8 +10,10 @@ die "Configuration not found!" unless $conf;
 $conf->delete;
 
 my $redirect = popurl(2);
-if ( $cgi->param('redirect') eq 'config_view' ) {
+if ( $cgi->param('redirect') eq 'config_view_showagent' ) {
   $redirect .= 'config/config-view.cgi?showagent=1#'. $conf->name;
+} elsif ( $cgi->param('redirect') eq 'config_view' ) {
+  $redirect .= 'config/config-view.cgi';
 } else {
   $redirect .= 'browse/agent.cgi';
 }

@@ -92,6 +92,7 @@ sub _usecompat {
   $compat->$method(@_);
 }
 
+# needs a non _ name, called externally by config-view now (and elsewhere?)
 sub _config {
   my($self,$name,$agentnum)=@_;
   my $hashref = { 'name' => $name };
@@ -451,11 +452,12 @@ sub _orbase_items {
           die "don't know about $base items" unless $proto->key eq $base;
 
           map { new FS::ConfItem { 
-                                   'key' => $_,
-                                   'section' => $proto->section,
-                                   'description' => 'Alternate ' . $proto->description . '  See the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:1.7:Documentation:Administration#Invoice_templates">billing documentation</a> for details.',
-                                   'type' => $proto->type,
-                                 };
+                  'key'         => $_,
+                  'base_key'    => $proto->key,
+                  'section'     => $proto->section,
+                  'description' => 'Alternate ' . $proto->description . '  See the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:1.7:Documentation:Administration#Invoice_templates">billing documentation</a> for details.',
+                  'type'        => $proto->type,
+                };
               } &$listmaker($base);
         } @base_items,
   );

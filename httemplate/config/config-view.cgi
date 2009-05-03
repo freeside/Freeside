@@ -97,7 +97,16 @@ Click on a configuration value to change it.
                     )
           %>: <% $i->description %>
 %       if ( $agent && $cgi->param('showagent') ) {
-          (<A HREF="javascript:areyousure('delete this agent override', 'config-delete.cgi?confnum=<% _config_agentonly($conf, $i->key, $agent->agentnum)->confnum %>;redirect=config_view')">delete agent override</A>)
+%         my $confnum =
+%           _config_agentonly($conf, $i->key, $agent->agentnum)->confnum;
+          (<A HREF="javascript:areyousure('delete this agent override', 'config-delete.cgi?confnum=<% $confnum %>;redirect=config_view_showagent')">delete agent override</A>)
+%       } elsif ( $i->base_key ) {
+%         my $confnum =
+%           $agent
+%             ? _config_agentonly($conf, $i->key, $agent->agentnum)->confnum
+%             : $conf->_config( $i->key )->confnum;
+%         my $showagent = $cgi->param('showagent') ? '_showagent' : '';
+          (<A HREF="javascript:areyousure('delete this configuration item', 'config-delete.cgi?confnum=<% $confnum %>;redirect=config_view<%$showagent%>')">delete configuration item</A>)
 %       }
 
       </td>
@@ -308,7 +317,6 @@ if ($cgi->param('agentnum') =~ /^(\d+)$/) {
 my $conf = new FS::Conf;
  
 my @config_items = grep { $page_agent ? $_->per_agent : 1 }
-                   grep { $_->key != ~/^invoice_(html|latex|template)/ }
                         $conf->config_items; 
 
 my @sections = qw(required billing username password UI session shell BIND );
