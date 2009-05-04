@@ -25,9 +25,18 @@ my $workbook = Spreadsheet::WriteExcel->new($XLS)
 
 my $worksheet = $workbook->add_worksheet(substr($opt{'title'},0,31));
 
+$worksheet->protect();
+
 my($r,$c) = (0,0);
 
-$worksheet->write($r, $c++, $_) foreach @$header;
+my $header_format = $workbook->add_format(
+  bold     => 1,
+  locked   => 1,
+  bg_color => 55, #22,
+  bottom   => 3,
+);
+
+$worksheet->write($r, $c++, $_, $header_format ) foreach @$header;
 
 foreach my $row ( @$rows ) {
   $r++;
@@ -37,39 +46,32 @@ foreach my $row ( @$rows ) {
 
     #my $links = $opt{'links'} ? [ @{$opt{'links'}} ] : '';
     #my $aligns = $opt{'align'} ? [ @{$opt{'align'}} ] : '';
+    #could also translate color, size, style into xls equivalents?
+    my $formats = $opt{'xls_format'} ? [ @{$opt{'xls_format'}} ] : [];
 
     foreach my $field ( @{$opt{'fields'}} ) {
-      #my $align = $aligns ? shift @$aligns : '';
-      #$align = " ALIGN=$align" if $align;
-      #my $a = '';
-      #if ( $links ) {
-      #  my $link = shift @$links;
-      #  $link = &{$link}($row) if ref($link) eq 'CODE';
-      #  if ( $link ) {
-      #    my( $url, $method ) = @{$link};
-      #    if ( ref($method) eq 'CODE' ) {
-      #      $a = $url. &{$method}($row);
-      #    } else {
-      #      $a = $url. $row->$method();
-      #    }
-      #    $a = qq(<A HREF="$a">);
-      #  }
-      #}
+
+      my $format = shift @$formats;
+      $format = &{$format}($row) if ref($format) eq 'CODE';
+      $format ||= {};
+      my $xls_format = $workbook->add_format(locked=>0, %$format);
+
       if ( ref($field) eq 'CODE' ) {
         foreach my $value ( &{$field}($row) ) {
           if ( ref($value) eq 'ARRAY' ) { 
             $worksheet->write($r, $c++, '(N/A)' ); #unimplemented
           } else {
-            $worksheet->write($r, $c++, $value );
+            $worksheet->write($r, $c++, $value, $xls_format );
           }
         }
       } else {
-        $worksheet->write($r, $c++, $row->$field() );
+        $worksheet->write($r, $c++, $row->$field(), $xls_format );
       }
     }
 
   } else {
-    $worksheet->write($r, $c++, $_) foreach @$row;
+    my $xls_format = $workbook->add_format(locked=>0);
+    $worksheet->write($r, $c++, $_, $xls_format ) foreach @$row;
   }
 
 }

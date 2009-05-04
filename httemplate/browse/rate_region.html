@@ -15,6 +15,7 @@
      'header'         => \@header,
      'fields'         => \@fields,
      'links'          => \@links,
+     'xls_format'     => \@xls_format,
    )
 %>
 <%once>
@@ -40,7 +41,7 @@ if ( driver_name =~ /^Pg/ ) {
                    " END";
   my $prefixes_sql = "SELECT $prefix_sql $fromwhere AND npa IS NOT NULL";
   $select .= "( SELECT countrycode $fromwhere LIMIT 1 ) AS ccode, 
-              ARRAY_TO_STRING( ARRAY($prefixes_sql), ', ' ) AS prefixes";
+              ARRAY_TO_STRING( ARRAY($prefixes_sql), ',' ) AS prefixes";
 } elsif ( driver_name =~ /^mysql/i ) {
   $join = 'LEFT JOIN rate_prefix USING ( regionnum )';
   $select .= "GROUP_CONCAT( DISTINCT countrycode ) AS ccode,
@@ -60,9 +61,10 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
 
-my @header = ( '#',         'Region',  'Country code', 'Prefixes' );
-my @fields = ( 'regionnum', 'regionname',   'ccode',   'prefixes' );
-my @links  = ( $link, $link, $link, $link );
+my @header     = ( '#',         'Region',  'Country code', 'Prefixes' );
+my @fields     = ( 'regionnum', 'regionname',   'ccode',   'prefixes' );
+my @links      = ( ($link) x 4 );
+my @xls_format = ( ({ locked=>1, bg_color=>22 }) x 4 );
 
 $cgi->param('dummy', 1);
 my $countrycode_filter_change =
@@ -110,7 +112,8 @@ if ( $cgi->param('show_rates') ) {
                   _rate_detail_factory($rate, 'sec_granularity'),
                   _rate_detail_factory($rate, 'classnum');
 
-    push @links, '', '', '', '';
+    push @links, ( ('') x 4 );
+    push @xls_format, ( ({}) x 4 );
 
   }
 

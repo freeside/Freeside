@@ -148,11 +148,15 @@ Example:
     'align'       => 'lrc.',
    
     #listrefs of ( scalars or coderefs )
-    #currently only HTML, maybe eventually Excel too
+    # currently only HTML, maybe eventually Excel too
     'color'       => [],
     'size'        => [],
     'style'       => [], #<B> or <I>, etc.
     'cell_style'  => [], #STYLE= attribute of TR, very HTML-specific...
+
+    # Excel-specific listref of ( hashrefs or coderefs )
+    # each hashref: http://search.cpan.org/dist/Spreadsheet-WriteExcel/lib/Spreadsheet/WriteExcel.pm#Format_methods_and_Format_properties
+    'xls_format' => => [],
     
   );
 
@@ -227,7 +231,7 @@ if ( $opt{'agent_virt'} ) {
     #false laziness w/statuspos above
     my $pos = $opt{'agent_pos'};
 
-    foreach my $att (qw( align style color size )) {
+    foreach my $att (qw( align color size style cell_style xls_format )) {
       $opt{$att} ||= [ map '', @{ $opt{'fields'} } ];
     }
 

@@ -1,0 +1,51 @@
+<% include('/elements/header.html', 'Edit rates with Excel' ) %>
+
+<% include( '/elements/form-file_upload.html',
+              'name'      => 'RateImportForm',
+              'action'    => 'process/rate_edit_excel.html',
+              'num_files' => 1,
+              'fields'    => [ 'format' ], #?
+              'message'   => 'Rate edit successful',
+              'url'       => $p."browse/rate_region.html",
+          )
+%>
+
+<% &ntable("#cccccc", 2) %>
+
+  <TR>
+    <TH ALIGN="left">1. Download current rates:</TH>
+    <TD>
+      <A HREF="<%$p%>/browse/rate_region.html?show_rates=1;_type=regions.xls">Download rate spreadsheet</A>
+    </TD>
+  </TR>
+
+  <TR>
+    <TH ALIGN="left" COLSPAN=2>2. Edit rates with Excel (or other .XLS-compatible application)</TH>
+  </TR>
+
+  <% include( '/elements/file-upload.html',
+                'field' => 'file',
+                'label' => '3. Upload edited rate file: '. ( '&nbsp'x4 ), #yuck
+            )
+  %>
+
+  <TR>
+    <TD COLSPAN=2 ALIGN="center" STYLE="padding-top:6px">
+      <INPUT TYPE    = "submit"
+             ID      = "submit"
+             VALUE   = "Upload"
+             onClick = "document.RateImportForm.submit.disabled=true;"
+      >
+    </TD>
+  </TR>
+
+
+</TABLE>
+
+<% include('/elements/footer.html') %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+</%init>

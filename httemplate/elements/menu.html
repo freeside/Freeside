@@ -227,13 +227,16 @@ tie my %tools_importing, 'Tie::IxHash',
   'Import payments from CSV file' => [ $fsurl.'misc/cust_pay-import.cgi', '' ],
   'Import phone numbers (DIDs)' => [ $fsurl.'misc/phone_avail-import.html', '' ],
   'Import Call Detail Records (CDRs) from CSV file' => [ $fsurl.'misc/cdr-import.html', '' ],
+#  'Import call rates and regions' => [ $fsurl.'misc/rate-import.html', '' ],
 ;
-if ( $conf->exists('taxdatadirectdownload') ) {
-  $tools_importing{'Import tax rates from vendor site'} =
-   [ $fsurl.'misc/tax-fetch_and_import.cgi', '' ];
-} else {
-  $tools_importing{'Import tax rates from CSV files'} =
-   [ $fsurl.'misc/tax-import.cgi', '' ];
+if ( $conf->exists('enable_taxproducts') ) {
+  if ( $conf->exists('taxdatadirectdownload') ) {
+    $tools_importing{'Import tax rates from vendor site'} =
+      [ $fsurl.'misc/tax-fetch_and_import.cgi', '' ];
+  } else {
+    $tools_importing{'Import tax rates from CSV files'} =
+      [ $fsurl.'misc/tax-import.cgi', '' ];
+  }
 }
 
 tie my %tools_exporting, 'Tie::IxHash',
@@ -292,6 +295,7 @@ tie my %config_billing_rates, 'Tie::IxHash',
   'View/Edit rate plans' => [ $fsurl.'browse/rate.cgi', 'Manage rate plans' ],
   'View/Edit regions and prefixes' => [ $fsurl.'browse/rate_region.html', 'Manage regions and prefixes' ],
   'View/Edit usage classes'  => [ $fsurl.'browse/usage_class.html', 'Usage classes define groups of usage for taxation purposes.' ],
+  'Edit rates with Excel' => [ $fsurl.'misc/rate_edit_excel.html', 'Download and edit rates with Excel, then upload changes.' ],
 ;
 
 tie my %config_billing, 'Tie::IxHash';
