@@ -38,22 +38,46 @@ my $now = $cgi->param('date') && str2time($cgi->param('date')) || $time;
 $now =~ /^(\d+)$/ or die "unparsable date?";
 $now = $1;
 
+my @where = ();
+
+if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
+  my $agentnum = $1;
+  push @where, "agentnum = $agentnum";
+}
+
+#here is the agent virtualization
+push @where, $FS::CurrentUser::CurrentUser->agentnums_sql;
+
+my $where = join(' AND ', @where);
+$where = "AND $where" if $where;
+
 my( $total, $total_legacy ) = ( 0, 0 );
 
 my @cust_bill_pkg =
   grep { $_->cust_pkg && $_->cust_pkg->part_pkg->freq !~ /^([01]|\d+[dw])$/ }
-    qsearch( 'cust_bill_pkg', {
-                                'recur' => { op=>'!=', value=>0 },
-                                'edate' => { op=>'>', value=>$now },
-                              }, );
+    qsearch({
+      'select'    => 'cust_bill_pkg.*',
+      'table'     => 'cust_bill_pkg',
+      'addl_from' => ' LEFT JOIN cust_bill USING ( invnum  ) '.
+                     ' LEFT JOIN cust_main USING ( custnum ) ',
+      'hashref'   => {
+                       'recur' => { op=>'!=', value=>0    },
+                       'edate' => { op=>'>',  value=>$now },
+                     },
+      'extra_sql' => $where,
+    });
 
 my @cust_pkg = 
   grep { $_->part_pkg->recur != 0
          && $_->part_pkg->freq !~ /^([01]|\d+[dw])$/
        }
-    qsearch ( 'cust_pkg', {
-                            'bill' => { op=>'>', value=>$now }
-                          } );
+    qsearch({
+      'select'    => 'cust_pkg.*',
+      'table'     => 'cust_pkg',
+      'addl_from' => ' LEFT JOIN cust_main USING ( custnum ) ',
+      'hashref'   => { 'bill' => { op=>'>', value=>$now } },
+      'extra_sql' => $where,
+    });
 
 foreach my $cust_bill_pkg ( @cust_bill_pkg) { 
   my $period = $cust_bill_pkg->edate - $cust_bill_pkg->sdate;

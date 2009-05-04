@@ -1,28 +1,46 @@
-<% include('/elements/header.html', 'Prepaid Income (Unearned Revenue) Report',
-  '',
-  '',
-  '<LINK REL="stylesheet" TYPE="text/css" HREF="../elements/calendar-win2k-2.css" TITLE="win2k-2">
-  <SCRIPT TYPE="text/javascript" SRC="../elements/calendar_stripped.js"></SCRIPT>
-  <SCRIPT TYPE="text/javascript" SRC="../elements/calendar-en.js"></SCRIPT>
-  <SCRIPT TYPE="text/javascript" SRC="../elements/calendar-setup.js"></SCRIPT>
-  '
-) %>
+<% include('/elements/header.html','Prepaid Income (Unearned Revenue) Report')%>
 
-    <FORM ACTION="report_prepaid_income.cgi" METHOD="GET">
-    <TABLE>
-      <TR>
-        <TD>Prepaid income (unearned revenue) as of </TD>
-        <TD>
-          <INPUT TYPE="text" NAME="date" ID="date_text" VALUE="now">
-          <IMG SRC="../images/calendar.png" ID="date_button" STYLE="cursor: pointer" TITLE="Select date">
-        </TD>
-      </TR>
-      <TR>
-        <TD>
-        </TD>
-        <TD><i>m/d/y</i></TD>
-      </TR>
-    </TABLE>
+<% include('/elements/init_calendar.html') %>
+
+<FORM ACTION="report_prepaid_income.cgi" METHOD="GET">
+
+<TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+  <TR>
+    <TH BGCOLOR="#e8e8e8" COLSPAN=2 ALIGN="left">
+      <FONT SIZE="+1">Search options</FONT>
+    </TH>
+  </TR>
+
+  <TR>
+    <TD>As of </TD>
+    <TD>
+      <INPUT TYPE="text" NAME="date" ID="date_text" VALUE="now">
+      <IMG SRC="../images/calendar.png" ID="date_button" STYLE="cursor: pointer" TITLE="Select date">
+    </TD>
+  </TR>
+  <TR>
+    <TD>
+    </TD>
+    <TD><FONT SIZE="-1"><i>m/d/y</i></FONT></TD>
+  </TR>
+
+  <TR>
+    <TD COLSPAN=2>&nbsp;</TD>
+  </TR>
+
+  <% include( '/elements/tr-select-agent.html', 'disable_empty'=>0 ) %>
+
+  <TR>
+    <TD COLSPAN=2>&nbsp;</TD>
+  </TR>
+
+  <TR>
+    <TD COLSPAN=2 ALIGN="center"><INPUT TYPE="submit" VALUE="Generate report"></TD>
+  </TR>
+
+</TABLE>
+
 <SCRIPT TYPE="text/javascript">
   Calendar.setup({
     inputField: "date_text",
@@ -32,7 +50,7 @@
   });
 </SCRIPT>
 
-<INPUT TYPE="submit" VALUE="Generate report">
+</FORM>
 
 <% include('/elements/footer.html') %>
 <%init>
