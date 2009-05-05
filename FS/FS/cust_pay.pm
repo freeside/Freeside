@@ -225,13 +225,14 @@ sub insert {
         'to'      => \@invoicing_list,
         'subject' => 'Payment receipt',
         'body'    => [ $receipt_template->fill_in( HASH => {
-                       'date'    => time2str("%a %B %o, %Y", $self->_date),
-                       'name'    => $cust_main->name,
-                       'paynum'  => $self->paynum,
-                       'paid'    => sprintf("%.2f", $self->paid),
-                       'payby'   => ucfirst(lc($payby)),
-                       'payinfo' => $payinfo,
-                       'balance' => $cust_main->balance,
+                       'date'         => time2str("%a %B %o, %Y", $self->_date),
+                       'name'         => $cust_main->name,
+                       'paynum'       => $self->paynum,
+                       'paid'         => sprintf("%.2f", $self->paid),
+                       'payby'        => ucfirst(lc($payby)),
+                       'payinfo'      => $payinfo,
+                       'balance'      => $cust_main->balance,
+                       'company_name' => $conf->config('company_name'),
                      } ) ],
       );
 
