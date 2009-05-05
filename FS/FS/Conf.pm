@@ -2774,6 +2774,13 @@ worry that config_items is freeside-specific and icky.
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'agent-invoice_template',
+    'section'     => 'billing',
+    'description' => 'Enable display/edit of old-style per-agent invoice template selection',
+    'type'        => 'checkbox',
+  },
+
 );
 
 1;

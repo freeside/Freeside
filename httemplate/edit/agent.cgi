@@ -46,13 +46,21 @@ Agent #<% $agent->agentnum ? $agent->agentnum : "(NEW)" %>
     <TD><INPUT TYPE="checkbox" NAME="disabled" VALUE="Y"<% $agent->disabled eq 'Y' ? ' CHECKED' : '' %>></TD>
   </TR>
 
+% if ( $conf->exists('agent-invoice_template') ) {
+
   <% include('/elements/tr-select-invoice_template.html',
                'label'      => 'Invoice template',
                'field'      => 'invoice_template',
                'curr_value' => $agent->invoice_template,
             )
   %>
-  
+
+% } else {
+
+  <INPUT TYPE="hidden" NAME="invoice_template" VALUE="<% $agent->invoice_template %>">
+
+% }
+
 % if ( $conf->config('ticket_system') ) {
 %    my $default_queueid = $conf->config('ticket_system-default_queueid');
 %    my $default_queue = FS::TicketSystem->queue($default_queueid);
