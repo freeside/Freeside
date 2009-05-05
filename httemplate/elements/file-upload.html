@@ -55,7 +55,7 @@
 
 % foreach (@field) {
     <TR>
-      <TH ALIGN="right"><% shift @label %></TH>
+      <TH ALIGN="<% $param{'label_align'} || 'right' %>"><% shift @label %></TH>
       <TD><INPUT TYPE="file" NAME="<% $_ %>" /></TD>
     </TR>
 % }

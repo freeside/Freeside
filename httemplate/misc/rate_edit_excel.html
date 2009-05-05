@@ -4,7 +4,7 @@
               'name'      => 'RateImportForm',
               'action'    => 'process/rate_edit_excel.html',
               'num_files' => 1,
-              'fields'    => [ 'format' ], #?
+              'fields'    => [ 'format' ],
               'message'   => 'Rate edit successful',
               'url'       => $p."browse/rate_region.html",
           )
@@ -23,11 +23,21 @@
     <TH ALIGN="left" COLSPAN=2>2. Edit rates with Excel (or other .XLS-compatible application)</TH>
   </TR>
 
+  <TR>
+    <TD ALIGN="left" COLSPAN=2>
+      &nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;To add rates, add four columns like an existing rate, with headers starting with "NEW: Rate Name" or "Rate Name".<BR>
+     &nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;<FONT SIZE="-2"><I>For rate addition, protection can be turned off in Excel via the Tools-&gt;Protection-&gt;Unprotect Sheet menu command.  Note that only new rates can be added; modified grayed out cells will not be imported.</I></FONT>
+    </TD>
+  </TR>
+
   <% include( '/elements/file-upload.html',
                 'field' => 'file',
-                'label' => '3. Upload edited rate file: '. ( '&nbsp'x4 ), #yuck
+                'label' => '3. Upload edited rate file: ',
+                'label_align' => 'left',
             )
   %>
+
+  <INPUT TYPE="hidden" NAME="format" VALUE="default">
 
   <TR>
     <TD COLSPAN=2 ALIGN="center" STYLE="padding-top:6px">
