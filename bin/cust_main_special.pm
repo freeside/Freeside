@@ -34,69 +34,6 @@ $conf = new FS::Conf;
 
 =over 4
 
-=item bill_and_collect 
-
-Cancels and suspends any packages due, generates bills, applies payments and
-cred
-
-Warns on errors (Does not currently: If there is an error, returns the error, otherwise returns false.)
-
-Options are passed as name-value pairs.  Currently available options are:
-
-=over 4
-
-=item time
-
-Bills the customer as if it were that time.  Specified as a UNIX timestamp; see L<perlfunc/"time">).  Also see L<Time::Local> and L<Date::Parse> for conversion functions.  For example:
-
- use Date::Parse;
- ...
- $cust_main->bill( 'time' => str2time('April 20th, 2001') );
-
-=item invoice_time
-
-Used in conjunction with the I<time> option, this option specifies the date of for the generated invoices.  Other calculations, such as whether or not to generate the invoice in the first place, are not affected.
-
-=item check_freq
-
-"1d" for the traditional, daily events (the default), or "1m" for the new monthly events (part_event.check_freq)
-
-=item resetup
-
-If set true, re-charges setup fees.
-
-=item debug
-
-Debugging level.  Default is 0 (no debugging), or can be set to 1 (passed-in options), 2 (traces progress), 3 (more information), or 4 (include full search queries)
-
-=back
-
-=cut
-
-sub bill_and_collect {
-  my( $self, %options ) = @_;
-
-  #$options{actual_time} not $options{time} because freeside-daily -d is for
-  #pre-printing invoices
-  $self->cancel_expired_pkgs( $options{actual_time} );
-  $self->suspend_adjourned_pkgs( $options{actual_time} );
-
-  my $error = $self->bill( %options );
-  warn "Error billing, custnum ". $self->custnum. ": $error" if $error;
-
-  $self->apply_payments_and_credits;
-
-  unless ( $conf->exists('cancelled_cust-noevents')
-           && ! $self->num_ncancelled_pkgs
-  ) {
-
-    $error = $self->collect( %options );
-    warn "Error collecting, custnum". $self->custnum. ": $error" if $error;
-
-  }
-
-}
-
 =item bill OPTIONS
 
 Generates invoices (see L<FS::cust_bill>) for this customer.  Usually used in
@@ -623,149 +560,44 @@ sub _make_lines {
 
 }
 
-=item collect OPTIONS
 
-(Attempt to) collect money for this customer's outstanding invoices (see
-L<FS::cust_bill>).  Usually used after the bill method.
+sub _gather_taxes {
+  my $self = shift;
+  my $part_pkg = shift;
+  my $class = shift;
 
-Actions are now triggered by billing events; see L<FS::part_event> and the
-billing events web interface.  Old-style invoice events (see
-L<FS::part_bill_event>) have been deprecated.
+  my @taxes = ();
+  my $geocode = $self->geocode('cch');
 
-If there is an error, returns the error, otherwise returns false.
+  my @taxclassnums = map { $_->taxclassnum }
+                     $part_pkg->part_pkg_taxoverride($class);
 
-Options are passed as name-value pairs.
-
-Currently available options are:
-
-=over 4
-
-=item invoice_time
-
-Use this time when deciding when to print invoices and late notices on those invoices.  The default is now.  It is specified as a UNIX timestamp; see L<perlfunc/"time">).  Also see L<Time::Local> and L<Date::Parse> for conversion functions.
-
-=item retry
-
-Retry card/echeck/LEC transactions even when not scheduled by invoice events.
-
-=item quiet
-
-set true to surpress email card/ACH decline notices.
-
-=item check_freq
-
-"1d" for the traditional, daily events (the default), or "1m" for the new monthly events (part_event.check_freq)
-
-=item payby
-
-allows for one time override of normal customer billing method
-
-=item debug
-
-Debugging level.  Default is 0 (no debugging), or can be set to 1 (passed-in options), 2 (traces progress), 3 (more information), or 4 (include full search queries)
-
-
-=back
-
-=cut
-
-sub collect {
-  my( $self, %options ) = @_;
-  my $invoice_time = $options{'invoice_time'} || time;
-
-  #put below somehow?
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
-
-  my $oldAutoCommit = $FS::UID::AutoCommit;
-  local $FS::UID::AutoCommit = 0;
-  my $dbh = dbh;
-
-  $self->select_for_update; #mutex
-
-  if ( $DEBUG ) {
-    my $balance = $self->balance;
-    warn "$me collect customer ". $self->custnum. ": balance $balance\n"
+  unless (@taxclassnums) {
+    @taxclassnums = map { $_->taxclassnum }
+                    $part_pkg->part_pkg_taxrate('cch', $geocode, $class);
   }
+  warn "Found taxclassnum values of ". join(',', @taxclassnums)
+    if $DEBUG;
 
-  if ( exists($options{'retry_card'}) ) {
-    carp 'retry_card option passed to collect is deprecated; use retry';
-    $options{'retry'} ||= $options{'retry_card'};
-  }
-  if ( exists($options{'retry'}) && $options{'retry'} ) {
-    my $error = $self->retry_realtime;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
-    }
-  }
+  my $extra_sql =
+    "AND (".
+    join(' OR ', map { "taxclassnum = $_" } @taxclassnums ). ")";
 
-  # false laziness w/pay_batch::import_results
+  @taxes = grep { ($_->fee  || 0 ) == 0 }   #ignore unit based taxes
+           qsearch({ 'table' => 'tax_rate',
+                     'hashref' => { 'geocode' => $geocode, },
+                     'extra_sql' => $extra_sql,
+                  })
+    if scalar(@taxclassnums);
 
-  my $due_cust_event = $self->due_cust_event(
-    'debug'      => ( $options{'debug'} || 0 ),
-    'time'       => $invoice_time,
-    'check_freq' => $options{'check_freq'},
-  );
-  unless( ref($due_cust_event) ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $due_cust_event;
-  }
+  warn "Found taxes ".
+       join(',', map{ ref($_). " ". $_->get($_->primary_key) } @taxes). "\n"
+   if $DEBUG;
 
-  foreach my $cust_event ( @$due_cust_event ) {
-
-    #XXX lock event
-    
-    #re-eval event conditions (a previous event could have changed things)
-    unless ( $cust_event->test_conditions( 'time' => $invoice_time ) ) {
-      #don't leave stray "new/locked" records around
-      my $error = $cust_event->delete;
-      if ( $error ) {
-        #gah, even with transactions
-        $dbh->commit if $oldAutoCommit; #well.
-        return $error;
-      }
-      next;
-    }
-
-    {
-      local $FS::cust_main::realtime_bop_decline_quiet = 1 if $options{'quiet'};
-      warn "  running cust_event ". $cust_event->eventnum. "\n"
-        if $DEBUG > 1;
-
-      
-      #if ( my $error = $cust_event->do_event(%options) ) { #XXX %options?
-      if ( my $error = $cust_event->do_event() ) {
-        #XXX wtf is this?  figure out a proper dealio with return value
-        #from do_event
-	  # gah, even with transactions.
-	  $dbh->commit if $oldAutoCommit; #well.
-	  return $error;
-	}
-    }
-
-  }
-
-  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-  '';
+  [ @taxes ];
 
 }
 
-
-
-sub queued_bill {
-  ## actual sub, not a method, designed to be called from the queue.
-  ## sets up the customer, and calls the bill_and_collect
-  my (%args) = @_; #, ($time, $invoice_time, $check_freq, $resetup) = @_;
-  my $cust_main = qsearchs( 'cust_main', { custnum => $args{'custnum'} } );
-      $cust_main->bill_and_collect(
-        %args,
-      );
-}
 
 =back
 
