@@ -209,7 +209,9 @@ my $disabled_type = $acl_edit_either ? 'checkbox' : 'hidden';
 my $agent_clone_extra_sql = 
   ' ( '. FS::part_pkg->curuser_pkgs_sql.
   #kludge to clone custom customer packages you otherwise couldn't see
-  "   OR ( part_pkg.disabled = 'Y' AND part_pkg.comment LIKE '(CUSTOM)%' ) ".
+  #really need a proper "CUSTOM" flag that's distinct from disabled
+  #"   OR ( part_pkg.disabled = 'Y' AND part_pkg.comment LIKE '(CUSTOM)%' ) ".
+  "   OR ( part_pkg.disabled = 'Y' ) ".
   ' ) ';
 
 my $conf = new FS::Conf;
