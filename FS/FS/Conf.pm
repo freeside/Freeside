@@ -2719,9 +2719,23 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'cdr-charged_party-truncate_prefix',
+    'section'     => '',
+    'description' => 'If the charged_party field has this prefix, truncate it to the length in cdr-charged_party-truncate_length.',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'cdr-charged_party-truncate_length',
+    'section'     => '',
+    'description' => 'If the charged_party field has the prefix in cdr-charged_party-truncate_prefix, truncate it to this length.',
+    'type'        => 'text',
+  },
+
+  {
     'key'         => 'cdr-charged_party_rewrite',
     'section'     => '',
-    'description' => 'Do charged party rewriting in the freeside-cdrrewrited daemon; useful if CDRs are being dropped off directly in the database and require special charged_party processing such as cdr-charged_party-accountcode.',
+    'description' => 'Do charged party rewriting in the freeside-cdrrewrited daemon; useful if CDRs are being dropped off directly in the database and require special charged_party processing such as cdr-charged_party-accountcode or cdr-charged_party-truncate*.',
     'type'        => 'checkbox',
   },
 
