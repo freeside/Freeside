@@ -1,10 +1,4 @@
 #!/usr/bin/perl
-#
-# Usage:
-#  cdr.sftp_and_import [ -e extension ] [ -d donefolder ] [ -v ] user format [sftpuser@]servername
-#
-# -e: file extension, defaults to .csv
-# -d: if specified, moves files to the specified folder when done
 
 use strict;
 use Getopt::Std;
@@ -16,12 +10,14 @@ use FS::cdr;
 # parse command line
 ###
 
-use vars qw( $opt_e $opt_d $opt_v );
-getopts('e:d:v');
+use vars qw( $opt_p $opt_e $opt_d $opt_v );
+getopts('p:e:d:v');
 
 $opt_e ||= 'csv';
 #$opt_e = ".$opt_e" unless $opt_e =~ /^\./;
 $opt_e =~ s/^\.//;
+
+$opt_p ||= '';
 
 my $user = shift or die &usage;
 adminsuidsetup $user;
@@ -43,7 +39,7 @@ warn "Retreiving directory listing\n" if $opt_v;
 
 my $ls_sftp = sftp();
 
-my $ls = $ls_sftp->ls('.', wanted => qr/\.*$opt_e$/i );
+my $ls = $ls_sftp->ls('.', wanted => qr/^$opt_p.*\.$opt_e$/i );
 
 ###
 # import each file
@@ -62,14 +58,12 @@ foreach my $file ( @$ls ) {
   warn "Processing $filename\n" if $opt_v;
 
   my $error = FS::cdr::batch_import( {
-    'file'     => "$cachedir/$filename"
+    'file'     => "$cachedir/$filename",
     'format'   => $format,
     'params'   => { 'cdrbatch' => $filename, },
     'empty_ok' => 1,
   } );
   die $error if $error;
-
-  close FILE;
 
   if ( $opt_d ) {
     my $mv_sftp = sftp();
@@ -81,10 +75,8 @@ foreach my $file ( @$ls ) {
 
 }
 
-1;
-
 ###
-# sub
+# subs
 ###
 
 sub usage {
@@ -109,4 +101,43 @@ sub sftp {
 
   $sftp;
 }
+
+=head1 NAME
+
+cdr.sftp_and_import - Download CDR files from a remote server via SFTP
+
+=head1 SYNOPSIS
+
+  cdr.sftp_and_import [ -p prefix ] [ -e extension ] [ -d donefolder ] [ -v ] user format [sftpuser@]servername
+
+=head1 DESCRIPTION
+
+Command line tool to download CDR files from a remote server via SFTP and then
+import them into the database.
+
+-p: file prefix, if specified
+
+-e: file extension, defaults to .csv
+
+-d: if specified, moves files to the specified folder when done
+
+-v: verbose
+
+user: freeside username
+
+format: CDR format name
+
+[sftpuser@]servername: remote server
+
+=head1 BUGS
+
+Only supports SFTP right now.
+
+=head1 SEE ALSO
+
+L<FS::cdr>
+
+=cut
+
+1;
 
