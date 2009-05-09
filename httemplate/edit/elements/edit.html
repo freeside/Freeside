@@ -132,37 +132,39 @@ Example:
     # initialization callbacks
     ###
 
-    ###global callbacks
+    ###global callbacks, always run if provided
 
-    #always run if provided, after decoding long CGI "redirect=" responses but
+    #after decoding long CGI "redirect=" responses but
     # before object creation/search
     # (useful if you have a long form that might trigger redirect= and you need
     #  to do things with $cgi params - they're not decoded in the calling
     #  <%init> block yet)
     'begin_callback' = sub { my( $cgi, $fields_listref, $opt_hashref ) = @_; },
 
-    #always run, after the mode-specific object creation/search
+    #after the mode-specific object creation/search
     'end_callback' = sub { my( $cgi, $object, $fields_listref, $opt_hashref ) = @_; },
 
-    ###mode-specific callbacks
+    ###mode-specific callbacks.  one (and only one) of these four is called
    
+    #run when adding
+    'new_callback' => sub { my( $cgi, $object, $fields_listref, $opt_hashref ) = @_; },
+
+    #run when editing
+    'edit_callback' => sub { my( $cgi, $object, $fields_listref, $opt_hashref ) = @_; },
+
     #run when re-displaying with an error
     'error_callback' => sub { my( $cgi, $object, $fields_listref, $opt_hashref ) = @_; },
    
-    #run when editing
-    'edit_callback' => sub { my( $cgi, $object, $fields_listref ) = @_; },
-   
+    #run when cloning
+    'clone_callback' => sub { my( $cgi, $object, $fields_listref, $opt_hashref ) = @_; },
+
+    ###callbacks called in new mode only
+
     # returns a hashref for the new object
     'new_hashref_callback'
 
     # returns the new object iself (otherwise, ->new is called)
     'new_object_callback'
-   
-    #run when adding
-    'new_callback' => sub { my( $cgi, $object, $fields_listref ) = @_; },
-
-    #run when cloning
-    'clone_callback' => sub { my( $cgi, $object, $fields_listref, $opt_hashref ) = @_; },
 
     ###display callbacks
 
@@ -618,7 +620,7 @@ if ( $cgi->param('error') ) {
     map { $_ => scalar($cgi->param($_)) } fields($table)
   });
 
-  &{$opt{'error_callback'}}($cgi, $object, $fields, \%opt )
+  &{$opt{'error_callback'}}( $cgi, $object, $fields, \%opt )
     if $opt{'error_callback'};
 
 } elsif ( $cgi->param('clone') =~ /^(\d+)$/ ) {
@@ -632,7 +634,7 @@ if ( $cgi->param('error') ) {
 
   $object = qsearchs({ %qsearch, 'hashref' => { $pkey => $clone } });
 
-  &{$opt{'clone_callback'}}($cgi, $object, $fields, \%opt )
+  &{$opt{'clone_callback'}}( $cgi, $object, $fields, \%opt )
     if $opt{'clone_callback'};
 
   #$object->$pkey('');
@@ -657,7 +659,7 @@ if ( $cgi->param('error') ) {
   warn "$table $pkey => $1"
     if $opt{'debug'};
 
-  &{$opt{'edit_callback'}}($cgi, $object, $fields)
+  &{$opt{'edit_callback'}}( $cgi, $object, $fields, \%opt )
     if $opt{'edit_callback'};
 
 } else { #adding
@@ -672,7 +674,7 @@ if ( $cgi->param('error') ) {
               ? &{$opt{'new_object_callback'}}( $cgi, $hashref, $fields, \%opt )
               : $class->new( $hashref );
 
-  &{$opt{'new_callback'}}($cgi, $object, $fields)
+  &{$opt{'new_callback'}}( $cgi, $object, $fields, \%opt )
     if $opt{'new_callback'};
 
 }
