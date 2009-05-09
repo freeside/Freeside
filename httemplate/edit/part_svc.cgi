@@ -122,6 +122,7 @@ that field.
 %      $html .= include('/elements/table-grid.html', 'cellpadding' => 4 ).
 %               '<TR>'.
 %                 '<TH CLASS="grid" BGCOLOR="#cccccc">Field</TH>'.
+%                 '<TH CLASS="grid" BGCOLOR="#cccccc">Label</TH>'.
 %                 '<TH CLASS="grid" BGCOLOR="#cccccc" COLSPAN=2>Modifier</TH>'.
 %               '</TR>';
 %
@@ -146,13 +147,15 @@ that field.
 %
 %      foreach my $field (@fields) {
 %
-%        #my $def = $defs{$layer}{$field};
+%        #a few lines of false laziness w/browse/part_svc.cgi
 %        my $def = FS::part_svc->svc_table_fields($layer)->{$field};
-%        my $label = $def->{'def_label'} || $def->{'label'};
+%        my $def_info  = $def->{'def_info'};
 %        my $formatter = $def->{'format'} || sub { shift };
+%
 %        my $part_svc_column = $part_svc->part_svc_column($field);
+%        my $label = $part_svc_column->columnlabel || $def->{'label'};
 %        my $value = &$formatter($part_svc_column->columnvalue);
-%        my $flag = $part_svc_column->columnflag;
+%        my $flag  = $part_svc_column->columnflag;
 %
 %        if ( $bgcolor eq $bgcolor1 ) {
 %          $bgcolor = $bgcolor2;
@@ -160,9 +163,12 @@ that field.
 %          $bgcolor = $bgcolor1;
 %        }
 %        
-%        $html .= qq!<TR><TD CLASS="grid" BGCOLOR="$bgcolor" ALIGN="right">!.
-%                 ( $label || $field ).
+%        $html .= qq!<TR><TD ROWSPAN=2 CLASS="grid" BGCOLOR="$bgcolor" ALIGN="right">!.
+%                 ( $def->{'label'} || $field ).
 %                 "</TD>";
+%
+%        $html .= qq!<TD ROWSPAN=2 CLASS="grid" BGCOLOR="$bgcolor"><INPUT NAME="${layer}__${field}_label" VALUE="!. encode_entities($label). '" STYLE="text-align:right"></TD>';
+%
 %        $flag = '' if $def->{type} eq 'disabled';
 %
 %        $html .= qq!<TD CLASS="grid" BGCOLOR="$bgcolor">!;
@@ -302,6 +308,15 @@ that field.
 %        }
 %
 %        $html .= "</TD></TR>\n";
+
+%        $def_info = "($def_info)" if $def_info;
+%        $html .=
+%          qq!<TR>!.
+%          qq!  <TD COLSPAN=2 BGCOLOR="$bgcolor" ALIGN="center" !.
+%          qq!      STYLE="padding:0; border-top: none">!.
+%          qq!    <FONT SIZE="-1"><I>$def_info</I></FONT>!.
+%          qq!  </TD>!.
+%          qq!</TR>\n!;
 %
 %      } #foreach my $field (@fields) {
 %

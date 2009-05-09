@@ -55,6 +55,8 @@ function part_export_areyousure(href) {
 
     <TH CLASS="grid" BGCOLOR="#cccccc">Field</TH>
 
+    <TH CLASS="grid" BGCOLOR="#cccccc">Label</TH>
+
     <TH COLSPAN=2 CLASS="grid" BGCOLOR="#cccccc">Modifier</TH>
 
   </TR>
@@ -65,8 +67,15 @@ function part_export_areyousure(href) {
 %     my @dfields = $svc_x->fields;
 %     push @dfields, 'usergroup' if $svcdb eq 'svc_acct'; #kludge
 %     my @fields =
-%       grep { $svc_x->pvf($_)
-%           or $_ ne 'svcnum' && $part_svc->part_svc_column($_)->columnflag }
+%       grep { my $col = $part_svc->part_svc_column($_);
+%              my $def = FS::part_svc->svc_table_fields($svcdb)->{$_};
+%              $svc_x->pvf($_)
+%              or $_ ne 'svcnum' && (
+%                $col->columnflag || ( $col->columnlabel !~ /^\S*$/
+%                                      && $col->columnlabel ne $def->{'label'}
+%                                    )
+%              )
+%            }
 %            @dfields ;
 %     my $rowspan = scalar(@fields) || 1;
 %     my $url = "${p}edit/part_svc.cgi?". $part_svc->svcpart;
@@ -128,21 +137,25 @@ function part_export_areyousure(href) {
     </TD>
 
 %     unless ( @fields ) {
-%       for ( 1..3 ) {  
+%       for ( 1..4 ) {  
 	  <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"</TD>
 %       }
 %     }
 %   
 %     my($n1)='';
 %     foreach my $field ( @fields ) {
-%       my $formatter =
-%            FS::part_svc->svc_table_fields($svcdb)->{$field}->{format}
-%            || sub { shift };
-%       my $flag = $part_svc->part_svc_column($field)->columnflag;
 %
+%       #a few lines of false laziness w/edit/part_svc.cgi
+%       my $def = FS::part_svc->svc_table_fields($svcdb)->{$field};
+%       my $formatter = $def->{format} || sub { shift };
+%
+%       my $part_svc_column = $part_svc->part_svc_column($field);
+%       my $label = $part_svc_column->columnlabel || $def->{'label'};
+%       my $flag = $part_svc_column->columnflag;
 
      <% $n1 %>
      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $field %></TD>
+     <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $label %></TD>
      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $flag{$flag} %></TD>
 
      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">

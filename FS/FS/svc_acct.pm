@@ -215,9 +215,9 @@ sub table_info {
     'fields' => {
         'dir'       => 'Home directory',
         'uid'       => {
-                         label     => 'UID',
-		         def_label => 'UID (set to fixed and blank for no UIDs)',
-		         type      => 'text',
+                         label    => 'UID',
+		         def_info => 'set to fixed and blank for no UIDs',
+		         type     => 'text',
 		       },
         'slipip'    => 'IP address',
     #    'popnum'    => qq!<A HREF="$p/browse/svc_acct_pop.cgi/">POP number</A>!,
@@ -244,15 +244,14 @@ sub table_info {
                        },
         '_password' => 'Password',
         'gid'       => {
-                         label     => 'GID',
-		         def_label => 'GID (when blank, defaults to UID)',
-		         type      => 'text',
+                         label    => 'GID',
+		         def_info => 'when blank, defaults to UID',
+		         type     => 'text',
 		       },
         'shell'     => {
-                         #desc =>'Shell (all service definitions should have a default or fixed shell that is present in the <b>shells</b> configuration file, set to blank for no shell tracking)',
 		         label    => 'Shell',
-                         def_label=> 'Shell (set to blank for no shell tracking)',
-                         type     =>'select',
+                         def_info => 'set to blank for no shell tracking',
+                         type     => 'select',
                          #select_list => [ $conf->config('shells') ],
                          select_list => [ $conf ? $conf->config('shells') : () ],
                          disable_inventory => 1,
@@ -261,7 +260,6 @@ sub table_info {
         'finger'    => 'Real name', # (GECOS)',
         'domsvc'    => {
                          label     => 'Domain',
-                         #def_label => 'svcnum from svc_domain',
                          type      => 'select',
                          select_table => 'svc_domain',
                          select_key   => 'svcnum',

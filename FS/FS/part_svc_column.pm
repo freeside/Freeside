@@ -39,6 +39,8 @@ fields are currently supported:
 
 =item columnname - column name in part_svc.svcdb table
 
+=item columnlabel - label for the column
+
 =item columnvalue - default or fixed value for the column
 
 =item columnflag - null or empty (no default), `D' for default, `F' for fixed (unchangeable), `S' for selectable choice, `M' for manual selection from inventory, or `A' for automatic selection from inventory.  For virtual fields, can also be 'X' for excluded.
@@ -87,11 +89,12 @@ sub check {
     $self->ut_numbern('columnnum')
     || $self->ut_number('svcpart')
     || $self->ut_alpha('columnname')
+    || $self->ut_textn('columnlabel')
     || $self->ut_anything('columnvalue')
   ;
   return $error if $error;
 
-  $self->columnflag =~ /^([DFSMAX])$/
+  $self->columnflag =~ /^([DFSMAX]?)$/
     or return "illegal columnflag ". $self->columnflag;
   $self->columnflag(uc($1));
 

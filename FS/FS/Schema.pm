@@ -1268,6 +1268,7 @@ sub tables_hashref {
         'columnnum',   'serial',         '', '', '', '', 
         'svcpart',     'int',         '', '', '', '', 
         'columnname',  'varchar',     '', 64, '', '', 
+        'columnlabel', 'varchar', 'NULL', $char_d, '', '',
         'columnvalue', 'varchar', 'NULL', $char_d, '', '', 
         'columnflag',  'char',    'NULL', 1, '', '', 
       ],

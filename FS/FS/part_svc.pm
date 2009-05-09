@@ -133,7 +133,8 @@ sub insert {
 #        fields('part_svc');
   foreach my $field (
     grep { $_ ne 'svcnum'
-           && defined( $self->getfield($svcdb.'__'.$_.'_flag') )
+           && ( defined( $self->getfield($svcdb.'__'.$_.'_flag') )
+                || $self->getfield($svcdb.'__'.$_.'_label') !~ /^\s*$/ )
          } (fields($svcdb), @fields)
   ) {
     my $part_svc_column = $self->part_svc_column($field);
@@ -142,20 +143,28 @@ sub insert {
       'columnname' => $field,
     } );
 
-    my $flag = $self->getfield($svcdb.'__'.$field.'_flag');
-    #if ( uc($flag) =~ /^([DFMAX])$/ ) {
-    if ( uc($flag) =~ /^([A-Z])$/ ) { #part_svc_column will test it
-      my $parser = FS::part_svc->svc_table_fields($svcdb)->{$field}->{parse}
-                   || sub { shift };
-      $part_svc_column->setfield('columnflag', $1);
-      $part_svc_column->setfield('columnvalue',
-        &$parser($self->getfield($svcdb.'__'.$field))
-      );
+    my $flag  = $self->getfield($svcdb.'__'.$field.'_flag');
+    my $label = $self->getfield($svcdb.'__'.$field.'_label');
+    if ( uc($flag) =~ /^([A-Z])$/ || $label !~ /^\s*$/ ) {
+
+      if ( uc($flag) =~ /^([A-Z])$/ ) {
+        my $parser = FS::part_svc->svc_table_fields($svcdb)->{$field}->{parse}
+                     || sub { shift };
+        $part_svc_column->setfield('columnflag', $1);
+        $part_svc_column->setfield('columnvalue',
+          &$parser($self->getfield($svcdb.'__'.$field))
+        );
+      }
+
+      $part_svc_column->setfield('columnlabel', $label)
+        if $label !~ /^\s*$/;
+
       if ( $previous ) {
         $error = $part_svc_column->replace($previous);
       } else {
         $error = $part_svc_column->insert;
       }
+
     } else {
       $error = $previous ? $previous->delete : '';
     }
@@ -254,7 +263,8 @@ sub replace {
     my $svcdb = $new->svcdb;
     foreach my $field (
       grep { $_ ne 'svcnum'
-             && defined( $new->getfield($svcdb.'__'.$_.'_flag') )
+             && ( defined( $new->getfield($svcdb.'__'.$_.'_flag') )
+                  || $new->getfield($svcdb.'__'.$_.'_label') !~ /^\s*$/ )
            } (fields($svcdb),@fields)
     ) {
       my $part_svc_column = $new->part_svc_column($field);
@@ -263,15 +273,23 @@ sub replace {
         'columnname' => $field,
       } );
 
-      my $flag = $new->getfield($svcdb.'__'.$field.'_flag');
-      #if ( uc($flag) =~ /^([DFMAX])$/ ) {
-      if ( uc($flag) =~ /^([A-Z])$/ ) { #part_svc_column will test it
-        my $parser = FS::part_svc->svc_table_fields($svcdb)->{$field}->{parse}
+      my $flag  = $new->getfield($svcdb.'__'.$field.'_flag');
+      my $label = $new->getfield($svcdb.'__'.$field.'_label');
+ 
+      if ( uc($flag) =~ /^([A-Z])$/ || $label !~ /^\s*$/ ) {
+
+        if ( uc($flag) =~ /^([A-Z])$/ ) {
+          my $parser = FS::part_svc->svc_table_fields($svcdb)->{$field}->{parse}
                      || sub { shift };
-        $part_svc_column->setfield('columnflag', $1);
-        $part_svc_column->setfield('columnvalue',
-          &$parser($new->getfield($svcdb.'__'.$field))
-        );
+          $part_svc_column->setfield('columnflag', $1);
+          $part_svc_column->setfield('columnvalue',
+            &$parser($new->getfield($svcdb.'__'.$field))
+          );
+        }
+
+        $part_svc_column->setfield('columnlabel', $label)
+          if $label !~ /^\s*$/;
+
         if ( $previous ) {
           $error = $part_svc_column->replace($previous);
         } else {
@@ -713,17 +731,16 @@ sub process {
               push @fields, 'usergroup' if $svcdb eq 'svc_acct'; #kludge
 
               map {
-                    if ( $param->{ $svcdb.'__'.$_.'_flag' } =~ /^[MA]$/ ) {
-                      $param->{ $svcdb.'__'.$_ } =
-                        delete( $param->{ $svcdb.'__'.$_.'_classnum' } );
+                    my $f = $svcdb.'__'.$_;
+                    if ( $param->{ $f.'_flag' } =~ /^[MA]$/ ) {
+                      $param->{ $f } = delete( $param->{ $f.'_classnum' } );
                     }
-		    if ( $param->{ $svcdb.'__'.$_.'_flag' } =~ /^S$/ ) {
-                      $param->{ $svcdb.'__'.$_} =
-                        ref($param->{ $svcdb.'__'.$_})
-                          ? join(',', @{$param->{ $svcdb.'__'.$_ }} )
-                          : $param->{ $svcdb.'__'.$_ };
+		    if ( $param->{ $f.'_flag' } =~ /^S$/ ) {
+                      $param->{ $f } = ref($param->{ $f })
+                                         ? join(',', @{$param->{ $f }} )
+                                         : $param->{ $f };
 		    }
-                    ( $svcdb.'__'.$_, $svcdb.'__'.$_.'_flag' );
+                    ( $f, $f.'_flag', $f.'_label' );
                   }
                   @fields;
 
@@ -738,7 +755,7 @@ sub process {
   my $error;
   if ( $param->{'svcpart'} ) {
     $error = $new->replace( $old,
-                            '1.3-COMPAT',
+                            '1.3-COMPAT',    #totally bunk, as jeff noted
                             [ 'usergroup' ],
                             \%exportnums,
                             $job
