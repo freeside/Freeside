@@ -102,7 +102,7 @@ sub table_info {
                             disable_select => 1,
                           },
         'sip_password' => 'SIP password',
-        'name'         => 'Name',
+        'phone_name'   => 'Name',
     },
   };
 }
