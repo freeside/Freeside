@@ -19,6 +19,7 @@ use FS::Record qw( qsearch qsearchs dbh dbdef );
 use FS::tax_class;
 use FS::cust_bill_pkg;
 use FS::cust_tax_location;
+use FS::tax_rate_location;
 use FS::part_pkg_taxrate;
 use FS::cust_main;
 use FS::Misc qw( csv_from_fixed );
@@ -538,6 +539,26 @@ sub tax_on_tax {
 
 }
 
+=item tax_rate_location
+
+Returns an object representing the location associated with this tax
+(see L<FS::tax_rate_location>)
+
+=cut
+
+sub tax_rate_location {
+  my $self = shift;
+
+  qsearchs({ 'table'     => 'tax_rate_location',
+             'hashref'   => { 'data_vendor' => $self->data_vendor, 
+                              'geocode'     => $self->geocode,
+                              'disabled'    => '',
+                            },
+          }) ||
+  new FS::tax_rate_location;
+
+}
+
 =back
 
 =head1 SUBROUTINES
@@ -845,7 +866,8 @@ sub process_batch_import {
     my $error = '';
     my $have_location = 0;
 
-    my @list = ( 'CODE',     'codefile',  \&FS::tax_class::batch_import,
+    my @list = ( 'GEOCODE',  'geofile',   \&FS::tax_rate_location::batch_import,
+                 'CODE',     'codefile',  \&FS::tax_class::batch_import,
                  'PLUS4',    'plus4file', \&FS::cust_tax_location::batch_import,
                  'ZIP',      'zipfile',   \&FS::cust_tax_location::batch_import,
                  'TXMATRIX', 'txmatrix',  \&FS::part_pkg_taxrate::batch_import,
@@ -887,7 +909,8 @@ sub process_batch_import {
     my @insert_list = ();
     my @delete_list = ();
 
-    my @list = ( 'CODE',     'codefile',  \&FS::tax_class::batch_import,
+    my @list = ( 'GEOCODE',  'geofile',   \&FS::tax_rate_location::batch_import,
+                 'CODE',     'codefile',  \&FS::tax_class::batch_import,
                  'PLUS4',    'plus4file', \&FS::cust_tax_location::batch_import,
                  'ZIP',      'zipfile',   \&FS::cust_tax_location::batch_import,
                  'TXMATRIX', 'txmatrix',  \&FS::part_pkg_taxrate::batch_import,

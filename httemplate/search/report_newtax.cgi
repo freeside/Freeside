@@ -15,6 +15,7 @@
 
   <TR>
     <TH CLASS="grid" BGCOLOR="#cccccc"></TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc"></TH>
     <TH CLASS="grid" BGCOLOR="#cccccc">Tax collected</TH>
   </TR>
 % my $bgcolor1 = '#eeeeee';
@@ -37,9 +38,11 @@
 
     <TR>
       <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $tax->{'label'} %></TD>
+      <% $tax->{base} ? qq!<TD CLASS="grid" BGCOLOR="$bgcolor"></TD>! : '' %>
       <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ALIGN="right">
         <A HREF="<% $baselink. $link %>;istax=1"><% $money_char %><% sprintf('%.2f', $tax->{'tax'} ) %></A>
       </TD>
+      <% !($tax->{base}) ? qq!<TD CLASS="grid" BGCOLOR="$bgcolor"></TD>! : '' %>
     </TR>
 % } 
 
@@ -61,10 +64,11 @@ my $join_cust = "
     JOIN cust_bill USING ( invnum ) 
     LEFT JOIN cust_main USING ( custnum )
 ";
-my $from_join_cust = "
-    FROM cust_bill_pkg
-    $join_cust
-"; 
+
+my $join_loc = "LEFT JOIN cust_bill_pkg_tax_rate_location USING ( billpkgnum )";
+my $join_tax_loc = "LEFT JOIN tax_rate_location USING ( taxratelocationnum )";
+
+my $addl_from = " $join_cust $join_loc $join_tax_loc "; 
 
 my $where = "WHERE _date >= $beginning AND _date <= $ending ";
 
@@ -76,23 +80,58 @@ if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
   $where .= ' AND cust_main.agentnum = '. $agent->agentnum;
 }
 
+# my ( $location_sql, @location_param ) = FS::cust_pkg->location_sql;
+# $where .= " AND $location_sql";
+#my @taxparam = ( 'itemdesc', @location_param );
+# now something along the lines of geocode matching ?
+#$where .= FS::cust_pkg->_location_sql_where('cust_tax_location');;
+my @taxparam = ( 'itemdesc', 'tax_rate_location.state', 'tax_rate_location.county', 'tax_rate_location.city', 'cust_bill_pkg_tax_rate_location.locationtaxid' );
+
+my $select = 'DISTINCT itemdesc,locationtaxid,tax_rate_location.state,tax_rate_location.county,tax_rate_location.city';
+
 my $tax = 0;
 my %taxes = ();
+my %basetaxes = ();
 foreach my $t (qsearch({ table     => 'cust_bill_pkg',
+                         select    => $select,
                          hashref   => { pkgpart => 0 },
-                         addl_from => $join_cust,
+                         addl_from => $addl_from,
                          extra_sql => $where,
                       })
               )
 {
-  #warn $t->itemdesc. "\n";
+  my @params = map { my $f = $_; $f =~ s/.*\.//; $f } @taxparam;
+  my $label = join('~', map { $t->$_ } @params);
+  $label = 'Tax'. $label if $label =~ /^~/;
+  unless ( exists( $taxes{$label} ) ) {
+    my ($baselabel, @trash) = split /~/, $label;
 
-  my $label = $t->itemdesc;
-  $label ||= 'Tax';
-  $taxes{$label}->{'label'} = $label;
-  $taxes{$label}->{'url_param'} = "itemdesc=$label";
+    $taxes{$label}->{'label'} = join(', ', split(/~/, $label) );
+    $taxes{$label}->{'url_param'} =
+      join(';', map { "$_=". uri_escape($t->$_) } @params);
 
-  # calculate total for this tax 
+    my $taxwhere = "FROM cust_bill_pkg $addl_from $where AND payby != 'COMP' ".
+      "AND ". join( ' AND ', map { "( $_ = ? OR ? = '' AND $_ IS NULL)" } @taxparam );
+
+    my $sql = "SELECT SUM(cust_bill_pkg.setup+cust_bill_pkg.recur) ".
+              " $taxwhere AND cust_bill_pkg.pkgnum = 0";
+
+    my $x = scalar_sql($t, [ map { $_, $_ } @params ], $sql );
+    $tax += $x;
+    $taxes{$label}->{'tax'} += $x;
+
+    unless ( exists( $taxes{$baselabel} ) ) {
+
+      $basetaxes{$baselabel}->{'label'} = $baselabel;
+      $basetaxes{$baselabel}->{'url_param'} = "itemdesc=$baselabel";
+      $basetaxes{$baselabel}->{'base'} = 1;
+
+    }
+
+    $basetaxes{$baselabel}->{'tax'} += $x;
+      
+  }
+
   # calculate customer-exemption for this tax
   # calculate package-exemption for this tax
   # calculate monthly exemption (texas tax) for this tax
@@ -101,40 +140,27 @@ foreach my $t (qsearch({ table     => 'cust_bill_pkg',
 }
 
 
-foreach my $t (qsearch({ table     => 'cust_bill_pkg',
-                         select    => 'DISTINCT itemdesc',
-                         hashref   => { pkgpart => 0 },
-                         addl_from => $join_cust,
-                         extra_sql => $where,
-                      })
-              )
-{
-
-  my $label = $t->itemdesc;
-  $label ||= 'Tax';
-  my @taxparam = ( 'itemdesc' );
-  my $taxwhere = "$from_join_cust $where AND payby != 'COMP' ".
-    "AND itemdesc = ?" ;
-
-  my $sql = "SELECT SUM(cust_bill_pkg.setup+cust_bill_pkg.recur) ".
-            " $taxwhere AND pkgnum = 0";
-
-  my $x = scalar_sql($t, \@taxparam, $sql );
-  $tax += $x;
-  $taxes{$label}->{'tax'} += $x;
-
-}
-
 #ordering
-my @taxes =
-  map $taxes{$_},
-  sort { ($b cmp $a) }
-  keys %taxes;
+my @taxes = ();
+
+foreach my $tax ( sort { $a cmp $b } keys %taxes ) {
+  my ($base, @trash) = split '~', $tax;
+  my $basetax = delete( $basetaxes{$base} );
+  if ($basetax) {
+    if ( $basetax->{tax} == $taxes{$tax}->{tax} ) {
+      $taxes{$tax}->{base} = 1;
+    } else {
+      push @taxes, $basetax;
+    }
+  }
+  push @taxes, $taxes{$tax};
+}
 
 push @taxes, {
   'label'          => 'Total',
   'url_param'      => '',
   'tax'            => $tax,
+  'base'           => 1,
 };
 
 #-- 
@@ -143,7 +169,6 @@ push @taxes, {
 #to FS::Report or FS::Record or who the fuck knows where)
 sub scalar_sql {
   my( $r, $param, $sql ) = @_;
-  #warn "$sql\n";
   my $sth = dbh->prepare($sql) or die dbh->errstr;
   $sth->execute( map $r->$_(), @$param )
     or die "Unexpected error executing statement $sql: ". $sth->errstr;

@@ -189,6 +189,26 @@ if ( $cgi->param('out') ) {
 
   }
 
+ } elsif ( scalar( grep( /locationtaxid/, $cgi->param ) ) ) {
+
+  # this should really be shoved out to FS::cust_pkg->location_sql or something
+  # along with the code in report_newtax.cgi
+
+  my %pn = (
+   'county'        => 'tax_rate_location.county',
+   'state'         => 'tax_rate_location.state',
+   'city'          => 'tax_rate_location.city',
+   'locationtaxid' => 'cust_bill_pkg_tax_rate_location.locationtaxid',
+  );
+
+  my %ph = map { ( $pn{$_} => dbh->quote( $cgi->param($_) || '' ) ) }
+           qw( county state city locationtaxid );
+
+  push @where,
+    join( ' AND ', map { "( $_ = $ph{$_} OR $ph{$_} = '' AND $_ IS NULL)" }
+                   keys %ph
+    );
+
 }
 
 if ($cgi->param('itemdesc')) {
@@ -295,6 +315,10 @@ if ( $cgi->param('nottax') ) {
 
     #quelle kludge, false laziness w/report_tax.cgi
     $where =~ s/cust_pkg\.locationnum/cust_bill_pkg_tax_location.locationnum/g; 
+  } elsif ( scalar( grep( /locationtaxid/, $cgi->param ) ) ) {
+    $join_pkg .=
+      ' LEFT JOIN cust_bill_pkg_tax_rate_location USING ( billpkgnum ) '.
+      ' LEFT JOIN tax_rate_location USING ( taxratelocationnum ) ';
   }
 
 } else { 

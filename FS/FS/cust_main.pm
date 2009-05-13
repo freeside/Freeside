@@ -30,6 +30,7 @@ use FS::cust_bill;
 use FS::cust_bill_pkg;
 use FS::cust_bill_pkg_display;
 use FS::cust_bill_pkg_tax_location;
+use FS::cust_bill_pkg_tax_rate_location;
 use FS::cust_pay;
 use FS::cust_pay_pending;
 use FS::cust_pay_void;
@@ -40,6 +41,7 @@ use FS::part_referral;
 use FS::cust_main_county;
 use FS::cust_location;
 use FS::tax_rate;
+use FS::tax_rate_location;
 use FS::cust_tax_location;
 use FS::part_pkg_taxrate;
 use FS::agent;
@@ -2461,6 +2463,10 @@ sub bill {
   # values are listrefs of cust_bill_pkg_tax_location hashrefs
   my %tax_location = ();
 
+  # keys are taxlisthash keys (internal identifiers)
+  # values are listrefs of cust_bill_pkg_tax_rate_location hashrefs
+  my %tax_rate_location = ();
+
   foreach my $tax ( keys %taxlisthash ) {
     my $tax_object = shift @{ $taxlisthash{$tax} };
     warn "found ". $tax_object->taxname. " as $tax\n" if $DEBUG > 2;
@@ -2497,6 +2503,20 @@ sub bill {
         };
     }
 
+    $tax_rate_location{ $tax } ||= [];
+    if ( ref($tax_object) eq 'FS::tax_rate' ) {
+      my $taxratelocationnum =
+        $tax_object->tax_rate_location->taxratelocationnum;
+      push @{ $tax_rate_location{ $tax }  },
+        {
+          'taxnum'             => $tax_object->taxnum, 
+          'taxtype'            => ref($tax_object),
+          'amount'             => sprintf('%.2f', $amount ),
+          'locationtaxid'      => $tax_object->location,
+          'taxratelocationnum' => $taxratelocationnum,
+        };
+    }
+
   }
 
   #move the cust_tax_exempt_pkg records to the cust_bill_pkgs we will commit
@@ -2516,6 +2536,7 @@ sub bill {
     my $tax = 0;
     my %seen = ();
     my @cust_bill_pkg_tax_location = ();
+    my @cust_bill_pkg_tax_rate_location = ();
     warn "adding $taxname\n" if $DEBUG > 1;
     foreach my $taxitem ( @{ $taxname{$taxname} } ) {
       next if $seen{$taxitem}++;
@@ -2524,6 +2545,9 @@ sub bill {
       push @cust_bill_pkg_tax_location,
         map { new FS::cust_bill_pkg_tax_location $_ }
             @{ $tax_location{ $taxitem } };
+      push @cust_bill_pkg_tax_rate_location,
+        map { new FS::cust_bill_pkg_tax_rate_location $_ }
+            @{ $tax_rate_location{ $taxitem } };
     }
     next unless $tax;
 
@@ -2538,6 +2562,7 @@ sub bill {
       'edate'    => '',
       'itemdesc' => $taxname,
       'cust_bill_pkg_tax_location' => \@cust_bill_pkg_tax_location,
+      'cust_bill_pkg_tax_rate_location' => \@cust_bill_pkg_tax_rate_location,
     };
 
   }

@@ -6,7 +6,7 @@ Import a CSV file set containing tax rate records.
 <% include( '/elements/form-file_upload.html',
               'name'      => 'TaxRateUpload',
               'action'    => 'process/tax-import.cgi', 
-              'num_files' => 5,
+              'num_files' => 6,
               'fields'    => [ 'format', ],
               'message'   => 'Tax rates imported',
           )
@@ -27,13 +27,15 @@ Import a CSV file set containing tax rate records.
   </TR>
 
   <% include( '/elements/file-upload.html',
-                'field'    => [ 'codefile',
+                'field'    => [ 'geofile',
+                                'codefile',
                                 'plus4file',
                                 'zipfile',
                                 'txmatrix',
                                 'detail',
                               ],
-                'label'    => [ 'code filename',
+                'label'    => [ 'geocode filename',
+                                'code filename',
                                 'plus4 filename',
                                 'zip filename',
                                 'txmatrix filename',

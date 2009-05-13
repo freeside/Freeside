@@ -1,0 +1,48 @@
+#!/usr/bin/perl -Tw
+
+use strict;
+use vars qw($opt_g $opt_f);
+use vars qw($DEBUG);
+use Getopt::Std;
+use FS::UID qw(adminsuidsetup);
+use FS::Conf;
+use FS::tax_rate_location;
+
+getopts('f:g:');
+
+my $user = shift or die &usage;
+my $dbh = adminsuidsetup $user;
+
+my ($format) = $opt_f =~ /^([-\w]+)$/;
+
+my @list = (
+  'GEOCODE',      $opt_g, \&FS::tax_rate_location::batch_import,
+);
+
+my $oldAutoCommit = $FS::UID::AutoCommit;
+local $FS::UID::AutoCommit = 0;
+
+my $error = '';
+
+while(@list) {
+  my ($name, $file, $method) = splice(@list, 0, 3);
+
+  my $fh;
+
+  $file =~ /^([\s\d\w.]+)$/ or die "Illegal filename: $file\n";
+  $file = $1;
+
+  open $fh, '<', $file or die "can't open $name file: $!\n";
+  $error ||= &{$method}( { filehandle => $fh, 'format' => $format, } );
+
+  die "error while processing $file: $error" if $error;
+  close $fh;
+}
+
+if ($error) {
+  $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+}else{
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+}
+
+sub usage { die "Usage:\ntax_rates_location.import -f FORMAT -g GEOCODEFILE user\n\n"; }

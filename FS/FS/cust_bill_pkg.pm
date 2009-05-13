@@ -162,6 +162,19 @@ sub insert {
     }
   }
 
+  my $tax_rate_location = $self->get('cust_bill_pkg_tax_rate_location');
+  if ( $tax_rate_location ) {
+    foreach my $cust_bill_pkg_tax_rate_location ( @$tax_rate_location ) {
+      $cust_bill_pkg_tax_rate_location->billpkgnum($self->billpkgnum);
+      $error = $cust_bill_pkg_tax_rate_location->insert;
+      warn $error;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+    }
+  }
+
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
 

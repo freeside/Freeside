@@ -560,7 +560,7 @@ sub tables_hashref {
         'billpkgtaxlocationnum', 'serial',      '', '', '', '',
         'billpkgnum',               'int',      '', '', '', '',
         'taxnum',                   'int',      '', '', '', '',
-        'taxtype',              'varchar', $char_d, '', '', '',
+        'taxtype',              'varchar',      '', $char_d, '', '',
         'pkgnum',                   'int',      '', '', '', '',
         'locationnum',              'int',      '', '', '', '', #redundant?
         'amount',                   @money_type,        '', '',
@@ -568,6 +568,21 @@ sub tables_hashref {
       'primary_key' => 'billpkgtaxlocationnum',
       'unique' => [],
       'index'  => [ [ 'billpkgnum' ], [ 'taxnum' ], [ 'pkgnum' ], [ 'locationnum' ] ],
+    },
+
+    'cust_bill_pkg_tax_rate_location' => {
+      'columns' => [
+        'billpkgtaxratelocationnum', 'serial',      '', '', '', '',
+        'billpkgnum',                   'int',      '', '', '', '',
+        'taxnum',                       'int',      '', '', '', '',
+        'taxtype',                  'varchar',      '', $char_d, '', '',
+        'locationtaxid',            'varchar',  'NULL', $char_d, '', '',
+        'taxratelocationnum',           'int',      '', '', '', '',
+        'amount',                       @money_type,        '', '',
+      ],
+      'primary_key' => 'billpkgtaxratelocationnum',
+      'unique' => [],
+      'index'  => [ [ 'billpkgnum' ], [ 'taxnum' ], [ 'taxratelocationnum' ] ],
     },
 
     'cust_credit' => {
@@ -803,6 +818,21 @@ sub tables_hashref {
       'primary_key' => 'taxnum',
       'unique' => [],
       'index' => [ ['taxclassnum'], ['data_vendor', 'geocode'] ],
+    },
+
+    'tax_rate_location' => { 
+      'columns' => [
+        'taxratelocationnum', 'serial',  '',     '', '', '', 
+        'data_vendor',        'varchar', 'NULL', $char_d, '', '',
+        'geocode',            'varchar', '',     20,      '', '', 
+        'city',               'varchar', 'NULL', $char_d, '', '',
+        'county',             'varchar', 'NULL', $char_d, '', '',
+        'state',              'char',    '',     2,  '', '', 
+        'disabled',           'char',    'NULL', 1, '', '',
+      ],
+      'primary_key' => 'taxratelocationnum',
+      'unique' => [],
+      'index' => [ [ 'data_vendor', 'geocode', 'disabled' ] ],
     },
 
     'cust_tax_location' => { 
