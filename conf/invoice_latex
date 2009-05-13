@@ -197,18 +197,7 @@
 
 
 \begin{document}
-%
-%%	Headers and footers defined for the first page
-%
-%%	The LH Heading comprising logo
-%%	UNCOMMENT the following FOUR lines and change the path if necssary to provide a logo
-%
-%%	The Heading comprising isue date, customer ref & INVOICE name
-%
-%%	Header & footer changes for subsequent pages
-%
-%
-%
+%	Headers and footers defined for the first page
 \addressinset \rule{0.5cm}{0cm} 
 \makebox{
 \begin{minipage}[t]{7.0cm}
