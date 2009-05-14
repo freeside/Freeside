@@ -59,6 +59,7 @@ function update_address(arg) {
   var ship_changed = argsHash['ship_address_standardized'];
   var error = argsHash['error'];
   var ship_error = argsHash['ship_error'];
+  
 
   //yay closures
   standardize_address = function () {
@@ -91,7 +92,9 @@ function update_address(arg) {
 
 % if ( $conf->exists('enable_taxproducts') ) {
 
-  if ( <% $taxpre %>error ) {
+  if ( <% $taxpre %>error ||
+       new String(argsHash['new_<% $taxpre %>zip']).length < 10 )
+  {
 
     var country_el = cf.elements['<% $taxpre %>country'];
     var country = country_el.options[ country_el.selectedIndex ].value;
