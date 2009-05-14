@@ -164,6 +164,12 @@ Billing information
   <TD ALIGN="right">Tax&nbsp;exempt</TD>
   <TD BGCOLOR="#ffffff"><% $cust_main->tax ? 'yes' : 'no' %></TD>
 </TR>
+% if ( $conf->exists('enable_taxproducts') ) {
+<TR>
+  <TD ALIGN="right">Tax&nbsp;location</TD>
+  <TD BGCOLOR="#ffffff"><% $cust_main->geocode('cch') %></TD>
+</TR>
+% }
 <TR>
   <TD ALIGN="right">Postal&nbsp;invoices</TD>
   <TD BGCOLOR="#ffffff">
