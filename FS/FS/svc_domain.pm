@@ -388,7 +388,6 @@ sub check {
     or $self->ut_numbern('setup_date')
     or $self->ut_numbern('renewal_interval')
     or $self->ut_numbern('expiration_date')
-    or $self->ut_textn('purpose')
     or $self->SUPER::check;
 
 }

@@ -7,17 +7,31 @@
 <INPUT TYPE="hidden" NAME="pkgnum" VALUE="<% $pkgnum %>">
 <INPUT TYPE="hidden" NAME="svcpart" VALUE="<% $svcpart %>">
 
-<INPUT TYPE="radio" NAME="action" VALUE="N"<% $kludge_action eq 'N' ? ' CHECKED' : '' %>>New
+<% ntable("#cccccc",2) %>
+<TR>
+<P>Domain <INPUT TYPE="text" NAME="domain" VALUE="<% $domain %>" SIZE=28 MAXLENGTH=63>
+<BR>
+% if ($export) {
+Available top-level domains: <% $export->option('tlds') %>
+</TR>
+
+<TR>
+<INPUT TYPE="radio" NAME="action" VALUE="N"<% $kludge_action eq 'N' ? ' CHECKED' : '' %>>Register at <% $registrar->{'name'} %>
 <BR>
 
-<INPUT TYPE="radio" NAME="action" VALUE="M"<% $kludge_action eq 'M' ? ' CHECKED' : '' %>>Transfer
+<INPUT TYPE="radio" NAME="action" VALUE="M"<% $kludge_action eq 'M' ? ' CHECKED' : '' %>>Transfer to <% $registrar->{'name'} %>
+<BR>
 
-<P>Domain <INPUT TYPE="text" NAME="domain" VALUE="<% $domain %>" SIZE=28 MAXLENGTH=63>
+<INPUT TYPE="radio" NAME="action" VALUE="I"<% $kludge_action eq 'I' ? ' CHECKED' : '' %>>Registered elsewhere
 
-<BR>Purpose/Description: <INPUT TYPE="text" NAME="purpose" VALUE="<% $purpose %>" SIZE=64>
+</TR>
 
+% }
+
+<TR>
 <P><INPUT TYPE="submit" VALUE="Submit">
-
+</TR>
+</TABLE>
 </FORM>
 
 <% include('/elements/footer.html') %>
@@ -27,7 +41,7 @@
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Provision customer service'); #something else more specific?
 
-my($svcnum, $pkgnum, $svcpart, $kludge_action, $purpose, $part_svc,
+my($svcnum, $pkgnum, $svcpart, $kludge_action, $part_svc,
    $svc_domain);
 if ( $cgi->param('error') ) {
 
@@ -38,7 +52,6 @@ if ( $cgi->param('error') ) {
   $pkgnum = $cgi->param('pkgnum');
   $svcpart = $cgi->param('svcpart');
   $kludge_action = $cgi->param('action');
-  $purpose = $cgi->param('purpose');
   $part_svc = qsearchs('part_svc', { 'svcpart' => $svcpart } );
   die "No part_svc entry!" unless $part_svc;
 
@@ -61,7 +74,6 @@ if ( $cgi->param('error') ) {
 } else { #editing
 
   $kludge_action = '';
-  $purpose = '';
   my($query) = $cgi->keywords;
   $query =~ /^(\d+)$/ or die "unparsable svcnum";
   $svcnum=$1;
@@ -81,6 +93,20 @@ if ( $cgi->param('error') ) {
 my $action = $svcnum ? 'Edit' : 'Add';
 
 my $svc = $part_svc->getfield('svc');
+
+my @exports = $part_svc->part_export();
+
+my $registrar;
+my $export;
+
+# Find the first export that does domain registration
+foreach (@exports) {
+	$export = $_ if $_->can('registrar');
+}
+# If we have a domain registration export, get the registrar object
+if ($export) {
+	$registrar = $export->registrar;
+}
 
 my $otaker = getotaker;
 

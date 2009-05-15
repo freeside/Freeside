@@ -79,13 +79,28 @@ my $widget = new HTML::Widgets::SelectLayers(
                     );
       $html .= qq!<TR><TD ALIGN="right">$label</TD><TD>!;
       if ( $type eq 'select' ) {
-        $html .= qq!<SELECT NAME="$option">!;
-        foreach my $select_option ( @{$optinfo->{options}} ) {
+        my $size = defined($optinfo->{size}) ? " SIZE=" . $optinfo->{size} : '';
+        my $multi = defined($optinfo->{multi}) ? ' MULTIPLE' : '';
+        $html .= qq!<SELECT NAME="$option"$multi$size>!;
+        my @values = split '\s+', $value if $multi;
+        my @options;
+        if (defined($optinfo->{option_values})) {
+          my $valsub = $optinfo->{option_values};
+          @options = &$valsub();
+        } elsif (defined($optinfo->{options})) {
+          @options = @{$optinfo->{options}};
+        }
+        foreach my $select_option ( @options ) {
           #if ( ref($select_option) ) {
           #} else {
-            my $selected = $select_option eq $value ? ' SELECTED' : '';
+            my $selected = ($multi ? grep {$_ eq $select_option} @values : $select_option eq $value ) ? ' SELECTED' : '';
+            my $label = $select_option;
+            if (defined($optinfo->{option_label})) {
+              my $labelsub = $optinfo->{option_label};
+              $label = &$labelsub($select_option);
+            }
             $html .= qq!<OPTION VALUE="$select_option"$selected>!.
-                     qq!$select_option</OPTION>!;
+                     qq!$label</OPTION>!;
           #}
         }
         $html .= '</SELECT>';

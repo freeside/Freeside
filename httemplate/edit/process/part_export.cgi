@@ -16,7 +16,8 @@ my $old = qsearchs('part_export', { 'exportnum'=>$exportnum } ) if $exportnum;
 #fixup options
 #warn join('-', split(',',$cgi->param('options')));
 my %options = map {
-  my $value = $cgi->param($_);
+  my @values = $cgi->param($_);
+  my $value = scalar(@values) > 1 ? join (' ', @values) : $values[0];
   $value =~ s/\r\n/\n/g; #browsers? (textarea)
   $_ => $value;
 } split(',', $cgi->param('options'));

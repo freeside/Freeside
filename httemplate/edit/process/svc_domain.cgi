@@ -18,8 +18,8 @@ my $svcnum = $1;
 my $new = new FS::svc_domain ( {
   map {
     $_, scalar($cgi->param($_));
-  #} qw(svcnum pkgnum svcpart domain action purpose)
-  } ( fields('svc_domain'), qw( pkgnum svcpart action purpose ) )
+  #} qw(svcnum pkgnum svcpart domain action)
+  } ( fields('svc_domain'), qw( pkgnum svcpart action ) )
 } );
 
 my $error = '';
