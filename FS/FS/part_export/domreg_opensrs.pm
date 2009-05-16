@@ -51,12 +51,12 @@ tie %options, 'Tie::IxHash',
                       type => 'select',
                       options => [ 0, 1, 2, 3 ],
 		      default => 0 },
-  'register'     => { label => 'Use for registration',
-                      type => 'checkbox',
-                      default => '1' },
-  'transfer'     => { label => 'Use for transfer',
-                      type => 'checkbox',
-                      default => '1' },
+#  'register'     => { label => 'Use for registration',
+#                      type => 'checkbox',
+#                      default => '1' },
+#  'transfer'     => { label => 'Use for transfer',
+#                      type => 'checkbox',
+#                      default => '1' },
   'tlds'         => { label => 'Use this export for these top-level domains (TLDs)',
                       type => 'select',
                       multi => 1,
@@ -154,6 +154,32 @@ sub gen_contact_info
   return $c;
 }
 
+sub validate_contact_info {
+  my $c = shift;
+
+  my %fields = (
+    firstname => "first name",
+    lastname => "last name",
+    address => "street address",
+    city => "city", 
+    state => "state",
+    zip => "ZIP/postal code",
+    country => "country",
+    email => "email address",
+    phone => "phone number",
+  );
+  my @err = ();
+  foreach (keys %fields) {
+    if (!defined($c->{$_}) || !$c->{$_}) {
+      push @err, $fields{$_};
+    }
+  }
+  if (scalar(@err) > 0) {
+    return "Contact information needs: " . join(', ', @err);
+  }
+  undef;
+}
+
 sub testmode {
   my $self = shift;
 
@@ -183,6 +209,9 @@ sub _export_insert {
 
   my $c = gen_contact_info($cust_main);
 
+  my $err = validate_contact_info($c);
+  return $err if $err;
+
   my $srs = Net::OpenSRS->new();
 
   $srs->debug_level( $self->option('debug_level') ); # Output should be in the Apache error log
@@ -198,10 +227,10 @@ sub _export_insert {
   }
 
   if ($svc_domain->action eq 'N') {
-    return "Domain registration not enabled" if !$self->option('register');
+#    return "Domain registration not enabled" if !$self->option('register');
     return $srs->last_response() if !$srs->register_domain( $svc_domain->domain, $c);
   } elsif ($svc_domain->action eq 'M') {
-    return "Domain transfer not enabled" if !$self->option('transfer');
+#    return "Domain transfer not enabled" if !$self->option('transfer');
     return $srs->last_response() if !$srs->transfer_domain( $svc_domain->domain, $c);
   } else {
     return "Unknown domain action " . $svc_domain->action;
