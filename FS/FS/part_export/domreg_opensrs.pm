@@ -7,7 +7,6 @@ use FS::Conf;
 use FS::part_export::null;
 use FS::svc_domain;
 use FS::part_pkg;
-use Net::OpenSRS;
 
 =head1 NAME
 
@@ -192,6 +191,9 @@ sub _export_insert {
   my( $self, $svc_domain ) = ( shift, shift );
 
   return if $svc_domain->action eq 'I';  # Ignoring registration, just doing DNS
+
+  eval "use Net::OpenSRS;";
+  return $@ if $@;
 
   # Get the TLD of the new domain
   my @bits = split /\./, $svc_domain->domain;
