@@ -31,6 +31,10 @@ on the setting of the svc_domain's action field.
 
 =back
 
+This export uses Net::OpenSRS.  Registration and transfer attempts will fail unless Net::OpenSRS is installed
+and LWP::UserAgent is able to make HTTPS posts.  You can turn on debugging messages and use the OpenSRS test
+gateway when setting up this export.
+
 =cut
 
 @ISA = qw(FS::part_export::null);
@@ -267,8 +271,9 @@ sub registrar {
 
 =head1 SEE ALSO
 
-L<FS::part_export_option>, L<FS::export_svc>, L<FS::svc_domain>,
+L<Net::OpenSRS>, L<FS::part_export_option>, L<FS::export_svc>, L<FS::svc_domain>,
 L<FS::Record>, schema.html from the base documentation.
+
 
 =cut
 
