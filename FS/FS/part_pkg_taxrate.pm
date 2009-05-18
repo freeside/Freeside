@@ -3,6 +3,8 @@ package FS::part_pkg_taxrate;
 use strict;
 use vars qw( @ISA );
 use Date::Parse;
+use DateTime;
+use DateTime::Format::Strptime;
 use FS::UID qw(dbh);
 use FS::Record qw( qsearch qsearchs );
 use FS::part_pkg_taxproduct;
@@ -181,7 +183,7 @@ sub batch_import {
   if ( $format eq 'cch-fixed' || $format eq 'cch-fixed-update' ) {
     $format =~ s/-fixed//;
     my $date_format = sub { my $r='';
-                            /^(\d{4})(\d{2})(\d{2})$/ && ($r="$1/$2/$3");
+                            /^(\d{4})(\d{2})(\d{2})$/ && ($r="$3/$2/$1");
                             $r;
                           };
     $column_callbacks[16] = $date_format;
@@ -286,7 +288,12 @@ sub batch_import {
         delete($hash->{$_}) foreach @{$map{$item}};
       }
 
-      $hash->{'effdate'} = str2time($hash->{'effdate'});
+      my $parser = new DateTime::Format::Strptime( pattern => "%m/%d/%Y",
+                                                   time_zone => 'floating',
+                                                 );
+      my $dt = $parser->parse_datetime( $hash->{'effdate'} );
+      $hash->{'effdate'} = $dt ? $dt->epoch : '';
+ 
       $hash->{'country'} = 'US'; # CA is available
 
       delete($hash->{'taxable'}) if ($hash->{'taxable'} eq 'N');

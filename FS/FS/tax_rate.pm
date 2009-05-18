@@ -5,6 +5,8 @@ use vars qw( @ISA $DEBUG $me
              %tax_unittypes %tax_maxtypes %tax_basetypes %tax_authorities
              %tax_passtypes %GetInfoType );
 use Date::Parse;
+use DateTime;
+use DateTime::Format::Strptime;
 use Storable qw( thaw );
 use IO::File;
 use File::Temp;
@@ -586,7 +588,7 @@ sub batch_import {
   if ( $format eq 'cch-fixed' || $format eq 'cch-fixed-update' ) {
     $format =~ s/-fixed//;
     my $date_format = sub { my $r='';
-                            /^(\d{4})(\d{2})(\d{2})$/ && ($r="$1/$2/$3");
+                            /^(\d{4})(\d{2})(\d{2})$/ && ($r="$3/$2/$1");
                             $r;
                           };
     my $trim = sub { my $r = shift; $r =~ s/^\s*//; $r =~ s/\s*$//; $r };
@@ -617,7 +619,13 @@ sub batch_import {
 
       $hash->{'actionflag'} ='I' if ($hash->{'data_vendor'} eq 'cch');
       $hash->{'data_vendor'} ='cch';
-      $hash->{'effective_date'} = str2time($hash->{'effective_date'});
+      my $parser = new DateTime::Format::Strptime( pattern => "%m/%d/%Y",
+                                                   time_zone => 'floating',
+                                                 );
+      my $dt = $parser->parse_datetime( $hash->{'effective_date'} );
+      $hash->{'effective_date'} = $dt ? $dt->epoch : '';
+
+      $hash->{$_} = sprintf("%.2f", $hash->{$_}) foreach qw( taxbase taxmax );
 
       my $taxclassid =
         join(':', map{ $hash->{$_} } qw(taxtype taxcat) );
