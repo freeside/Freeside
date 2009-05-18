@@ -1,0 +1,54 @@
+<%= $url = "$selfurl?session=$session_id;action="; ''; %>
+<%= include('header') %>
+
+<FONT SIZE=4>Call usage for
+<%= Date::Format::time2str('%b&nbsp;%o&nbsp;%Y', $beginning) %> -
+<%= Date::Format::time2str('%b&nbsp;%o&nbsp;%Y', $ending) %>
+</FONT><BR><BR>
+
+<%= if ( $error ) {
+  $OUT .= qq!<FONT SIZE="+1" COLOR="#ff0000">$error</FONT><BR><BR>!;
+} ''; %>
+ 
+<TABLE WIDTH="100%">
+  <TR>
+    <TD WIDTH="50%">
+<%= if ($previous < $beginning) {
+    $OUT .= qq!<A HREF="${url}view_cdr_details;svcnum=$svcnum;beginning=!;
+    $OUT .= qq!$previous;ending=$beginning">Previous period</A>!;
+    }else{
+      '';
+    } %>
+    </TD>
+    <TD  WIDTH="50%" ALIGN="right">
+<%= if ($next > $ending) {
+    $OUT .= qq!<A HREF="${url}view_cdr_details;svcnum=$svcnum;beginning=!;
+    $OUT .= qq!$ending;ending=$next">Next period</A>!;
+    }else{
+      '';
+    }%>
+    </TD>
+  </TR>
+</TABLE>
+<TABLE BGCOLOR="#cccccc">
+  <TR>
+<%= foreach my $header (@header) {
+      $OUT .= qq(<TH ALIGN="right">$header</TH>);
+    }
+%>
+  </TR>
+<%= my $total = 0;
+    my $utotal = 0;
+    my $dtotal = 0;
+    foreach my $usage ( @usage ) {
+      $OUT .= '<TR>';
+      $OUT .= qq(<TD>$_</TD>) foreach @{$usage};
+      $OUT .= '</TR>';
+    }
+%>
+
+</TABLE>
+<BR>
+
+</TD></TR></TABLE>
+<%= include('footer') %>

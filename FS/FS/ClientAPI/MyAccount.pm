@@ -10,7 +10,7 @@ use Business::CreditCard;
 use Time::Duration;
 use FS::UI::Web::small_custview qw(small_custview); #less doh
 use FS::UI::Web;
-use FS::UI::bytecount;
+use FS::UI::bytecount qw( display_bytecount );
 use FS::Conf;
 use FS::Record qw(qsearch qsearchs);
 use FS::Msgcat qw(gettext);
@@ -772,8 +772,14 @@ sub list_svcs {
                          : $cust_main->unsuspended_pkgs ) {
     push @cust_svc, @{[ $cust_pkg->cust_svc ]}; #@{[ ]} to force array context
   }
-  @cust_svc = grep { $_->part_svc->svcdb eq $p->{'svcdb'} } @cust_svc
-    if $p->{'svcdb'};
+  if ( $p->{'svcdb'} ) {
+    my $svcdb = ref($p->{'svcdb'}) eq 'HASH'
+                  ? $p->{'svcdb'}
+                  : ref($p->{'svcdb'}) eq 'ARRAY'
+                    ? { map { $_=>1 } @{ $p->{'svcdb'} } }
+                    : { $p->{'svcdb'} => 1 };
+    @cust_svc = grep $svcdb->{ $_->part_svc->svcdb }, @cust_svc
+  }
 
   #@svc_x = sort { $a->domain cmp $b->domain || $a->username cmp $b->username }
   #              @svc_x;
@@ -781,30 +787,51 @@ sub list_svcs {
   { 
     #no#'svcnum'   => $session->{'svcnum'},
     'custnum'  => $custnum,
-    'svcs'     => [ map { 
-                          my $svc_x = $_->svc_x;
-                          my($label, $value) = $_->label;
-                          my $part_pkg = $svc_x->cust_svc->cust_pkg->part_pkg;
+    'svcs'     => [
+      map { 
+            my $svc_x = $_->svc_x;
+            my($label, $value) = $_->label;
+            my $svcdb = $_->part_svc->svcdb;
+            my $part_pkg = $_->cust_pkg->part_pkg;
 
-                          { 'svcnum'    => $_->svcnum,
-                            'label'     => $label,
-                            'value'     => $value,
-                            'username'  => $svc_x->username,
-                            'email'     => $svc_x->email,
-                            'seconds'   => $svc_x->seconds,
-                            'upbytes'   => FS::UI::bytecount::display_bytecount($svc_x->upbytes),
-                            'downbytes' => FS::UI::bytecount::display_bytecount($svc_x->downbytes),
-                            'totalbytes'=> FS::UI::bytecount::display_bytecount($svc_x->totalbytes),
-                            'recharge_amount' => $part_pkg->option('recharge_amount', 1),
-                            'recharge_seconds' => $part_pkg->option('recharge_seconds', 1),
-                            'recharge_upbytes' => FS::UI::bytecount::display_bytecount($part_pkg->option('recharge_upbytes', 1)),
-                            'recharge_downbytes' => FS::UI::bytecount::display_bytecount($part_pkg->option('recharge_downbytes', 1)),
-                            'recharge_totalbytes' => FS::UI::bytecount::display_bytecount($part_pkg->option('recharge_totalbytes', 1)),
-                            # more...
-                          };
-                        }
-                        @cust_svc
-                  ],
+            my %hash = (
+              'svcnum' => $_->svcnum,
+              'svcdb'  => $svcdb,
+              'label'  => $label,
+              'value'  => $value,
+            );
+
+            if ( $svcdb eq 'svc_acct' ) {
+              %hash = (
+                %hash,
+                'username'   => $svc_x->username,
+                'email'      => $svc_x->email,
+                'seconds'    => $svc_x->seconds,
+                'upbytes'    => display_bytecount($svc_x->upbytes),
+                'downbytes'  => display_bytecount($svc_x->downbytes),
+                'totalbytes' => display_bytecount($svc_x->totalbytes),
+
+                'recharge_amount'  => $part_pkg->option('recharge_amount',1),
+                'recharge_seconds' => $part_pkg->option('recharge_seconds',1),
+                'recharge_upbytes'    =>
+                  display_bytecount($part_pkg->option('recharge_upbytes',1)),
+                'recharge_downbytes'  =>
+                  display_bytecount($part_pkg->option('recharge_downbytes',1)),
+                'recharge_totalbytes' =>
+                  display_bytecount($part_pkg->option('recharge_totalbytes',1)),
+                # more...
+              );
+
+            } elsif ( $svcdb eq 'svc_phone' ) {
+              %hash = (
+                %hash,
+              );
+            }
+
+            \%hash;
+          }
+          @cust_svc
+    ],
   };
 
 }
@@ -814,9 +841,8 @@ sub _list_svc_usage {
   my @usage = ();
   foreach my $part_export ( 
     map { qsearch ( 'part_export', { 'exporttype' => $_ } ) }
-    qw (sqlradius sqlradius_withdomain')
+    qw( sqlradius sqlradius_withdomain )
   ) {
-
     push @usage, @ { $part_export->usage_sessions($begin, $end, $svc_acct) };
   }
   (@usage);
@@ -849,29 +875,50 @@ sub list_support_usage {
   _usage_details(\&_list_support_usage, @_);
 }
 
+sub _list_cdr_usage {
+  my($svc_phone, $begin, $end) = @_;
+  map [ $_->downstream_csv('format' => 'default') ], #XXX config for format
+      $svc_phone->cust_svc->get_cdrs( 'begin'=>$begin, 'end'=>$end, );
+}
+
+sub list_cdr_usage {
+  my $p = shift;
+  _usage_details( \&_list_cdr_usage, $p,
+                  'svcdb' => 'svc_phone',
+                );
+}
+
 sub _usage_details {
-  my ($callback, $p) = (shift,shift);
+  my($callback, $p, %opt) = @_;
 
   my($context, $session, $custnum) = _custoragent_session_custnum($p);
   return { 'error' => $session } if $context eq 'error';
 
   my $search = { 'svcnum' => $p->{'svcnum'} };
   $search->{'agentnum'} = $session->{'agentnum'} if $context eq 'agent';
-  my $svc_acct = qsearchs ( 'svc_acct', $search );
+
+  my $svcdb = $opt{'svcdb'} || 'svc_acct';
+
+  my $svc_x = qsearchs( $svcdb, $search );
   return { 'error' => 'No service selected in list_svc_usage' } 
-    unless $svc_acct;
+    unless $svc_x;
 
-  my $freq   = $svc_acct->cust_svc->cust_pkg->part_pkg->freq;
-  my $start  = $svc_acct->cust_svc->cust_pkg->setup;
-  #my $end    = $svc_acct->cust_svc->cust_pkg->bill; # or time?
-  my $end    = time;
+  my $header = $svcdb eq 'svc_phone'
+                 ? [ split(',', FS::cdr::invoice_header('default') ) ]  #XXX
+                 : [];
 
-  unless($p->{beginning}){
-    $p->{beginning} = $svc_acct->cust_svc->cust_pkg->last_bill;
-    $p->{ending} = $end;
+  my $cust_pkg = $svc_x->cust_svc->cust_pkg;
+  my $freq     = $cust_pkg->part_pkg->freq;
+  my $start    = $cust_pkg->setup;
+  #my $end      = $cust_pkg->bill; # or time?
+  my $end      = time;
+
+  unless ( $p->{beginning} ) {
+    $p->{beginning} = $cust_pkg->last_bill;
+    $p->{ending}    = $end;
   }
 
-  my (@usage) = &$callback($svc_acct,$p->{beginning},$p->{ending});
+  my (@usage) = &$callback($svc_x, $p->{beginning}, $p->{ending});
 
   #kinda false laziness with FS::cust_main::bill, but perhaps
   #we should really change this bit to DateTime and DateTime::Duration
@@ -914,6 +961,7 @@ sub _usage_details {
     'ending'    => $p->{ending},
     'previous'  => ($previous > $start) ? $previous : $start,
     'next'      => ($next < $end) ? $next : $end,
+    'header'    => $header,
     'usage'     => \@usage,
   };
 }

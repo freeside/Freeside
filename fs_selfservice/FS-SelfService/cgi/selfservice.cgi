@@ -15,7 +15,8 @@ use FS::SelfService qw( login_info login customer_info edit_info invoice
                         list_pkgs order_pkg signup_info order_recharge
                         part_svc_info provision_acct provision_external
                         unprovision_svc change_pkg domainselector
-                        list_svcs list_svc_usage list_support_usage
+                        list_svcs
+                        list_svc_usage list_cdr_usage list_support_usage
                         myaccount_passwd
                       );
 
@@ -72,7 +73,7 @@ $session_id = $cgi->param('session');
 
 #order|pw_list XXX ???
 $cgi->param('action') =~
-    /^(myaccount|view_invoice|make_payment|make_ach_payment|make_thirdparty_payment|payment_results|ach_payment_results|recharge_prepay|recharge_results|logout|change_bill|change_ship|change_pay|process_change_bill|process_change_ship|process_change_pay|customer_order_pkg|process_order_pkg|customer_change_pkg|process_change_pkg|process_order_recharge|provision|provision_svc|process_svc_acct|process_svc_external|delete_svc|view_usage|view_usage_details|view_support_details|change_password|process_change_password)$/
+    /^(myaccount|view_invoice|make_payment|make_ach_payment|make_thirdparty_payment|payment_results|ach_payment_results|recharge_prepay|recharge_results|logout|change_bill|change_ship|change_pay|process_change_bill|process_change_ship|process_change_pay|customer_order_pkg|process_order_pkg|customer_change_pkg|process_change_pkg|process_order_recharge|provision|provision_svc|process_svc_acct|process_svc_external|delete_svc|view_usage|view_usage_details|view_cdr_details|view_support_details|change_password|process_change_password)$/
   or die "unknown action ". $cgi->param('action');
 my $action = $1;
 
@@ -564,13 +565,22 @@ sub delete_svc {
 sub view_usage {
   list_svcs(
     'session_id'  => $session_id,
-    'svcdb'       => 'svc_acct',
+    'svcdb'       => [ 'svc_acct', 'svc_phone' ],
     'ncancelled'  => 1,
   );
 }
 
 sub view_usage_details {
   list_svc_usage(
+    'session_id'  => $session_id,
+    'svcnum'      => $cgi->param('svcnum'),
+    'beginning'   => $cgi->param('beginning') || '',
+    'ending'      => $cgi->param('ending') || '',
+  );
+}
+
+sub view_cdr_details {
+  list_cdr_usage(
     'session_id'  => $session_id,
     'svcnum'      => $cgi->param('svcnum'),
     'beginning'   => $cgi->param('beginning') || '',

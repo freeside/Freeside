@@ -692,32 +692,56 @@ CDRs are associated with svc_phone services via svc_phone.phonenum
 =cut
 
 sub get_cdrs_for_update {
+  my $self = shift;
+  $self->get_cdrs( 'freesidestatus' => '',
+                   'for_update'     => 1,
+                   @_,
+                 );
+}
+
+sub get_cdrs {
   my($self, %options) = @_;
 
   my @fields = ( 'charged_party' );
   push @fields, 'src' unless $options{'disable_src'};
 
-  #CDRs are now associated with svc_phone services via svc_phone.phonenum
+  my $for_update = $options{'for_update'} ? 'FOR UPDATE' : '';
+
+  my %hash = ();
+  $hash{'freesidestatus'} = $options{'freesidestatus'}
+    if exists($options{'freesidestatus'});
+
+  #CDRs are associated with svc_phone services via svc_phone.phonenum
+
   #return () unless $self->svc_x->isa('FS::svc_phone');
   return () unless $self->part_svc->svcdb eq 'svc_phone';
   my $number = $self->svc_x->phonenum;
 
   my $prefix = $options{'default_prefix'};
 
-  my @where =  map " $_ = '$number'        ", @fields;
-  push @where, map " $_ = '$prefix$number' ", @fields
+  my @orwhere =  map " $_ = '$number'        ", @fields;
+  push @orwhere, map " $_ = '$prefix$number' ", @fields
     if length($prefix);
   if ( $prefix =~ /^\+(\d+)$/ ) {
-    push @where, map " $_ = '$1$number' ", @fields
+    push @orwhere, map " $_ = '$1$number' ", @fields
   }
 
-  my $extra_sql = ' AND ( '. join(' OR ', @where ). ' ) ';
+  my @where = ( ' ( '. join(' OR ', @orwhere ). ' ) ' );
+
+  if ( $options{'begin'} ) {
+    push @where, 'startdate >= '. $options{'begin'};
+  }
+  if ( $options{'end'} ) {
+    push @where, 'startdate < '.  $options{'end'};
+  }
+
+  my $extra_sql = ( keys(%hash) ? ' AND ' : ' WHERE ' ). join(' AND ', @where );
 
   my @cdrs =
     qsearch( {
       'table'      => 'cdr',
-      'hashref'    => { 'freesidestatus' => '', },
-      'extra_sql'  => "$extra_sql FOR UPDATE",
+      'hashref'    => \%hash,
+      'extra_sql'  => "$extra_sql $for_update",
     } );
 
   @cdrs;

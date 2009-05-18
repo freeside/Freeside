@@ -1,9 +1,14 @@
 package FS::UI::bytecount;
 
 use strict;
-use vars qw($DEBUG $me);
+use vars qw($DEBUG $me @ISA @EXPORT_OK);
+use Exporter;
 use FS::Conf;
 use Number::Format 1.50;
+
+@ISA = qw( Exporter );
+
+@EXPORT_OK = qw( bytecount_unexact parse_bytecount display_bytecount );
 
 $DEBUG = 0;
 $me = '[FS::UID::bytecount]';

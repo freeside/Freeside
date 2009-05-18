@@ -1,24 +1,30 @@
-<HTML><HEAD><TITLE>MyAccount</TITLE></HEAD>
-<BODY BGCOLOR="#eeeeee"><FONT SIZE=5>MyAccount</FONT><BR><BR>
-<%= $url = "$selfurl?session=$session_id;action="; ''; %>
-<%= include('myaccount_menu') %>
-<TD VALIGN="top">
-
-<FONT SIZE=4>Service usage</FONT><BR><BR>
+<%= $url = "$selfurl?session=$session_id;action=";
+    @svc_acct  = grep { $_->{svcdb} eq 'svc_acct'  } @svcs;
+    @svc_phone = grep { $_->{svcdb} eq 'svc_phone' } @svcs;
+    '';
+%>
+<%= include('header') %>
 
 <%= if ( $error ) {
   $OUT .= qq!<FONT SIZE="+1" COLOR="#ff0000">$error</FONT><BR><BR>!;
 } ''; %>
 
-<TABLE BGCOLOR="#cccccc">
-  <TR>
-    <TH ALIGN="left">Account</TH>
-    <TH ALIGN="right">Time remaining</TH>
-    <TH ALIGN="right">Upload remaining</TH>
-    <TH ALIGN="right">Download remaining</TH>
-    <TH ALIGN="right">Total remaining</TH>
-  </TR>
-<%= foreach my $svc ( @svcs ) {
+<%= if ( @svc_acct ) {
+      $OUT.= '<FONT SIZE="4">Account usage</FONT><BR><BR>
+              <TABLE BGCOLOR="#cccccc">
+                <TR>
+                  <TH ALIGN="left">Account</TH>
+                  <TH ALIGN="right">Time remaining</TH>
+                  <TH ALIGN="right">Upload remaining</TH>
+                  <TH ALIGN="right">Download remaining</TH>
+                  <TH ALIGN="right">Total remaining</TH>
+                </TR>';
+    } else {
+      $OUT .= '';
+    }
+%>
+
+<%= foreach my $svc ( @svc_acct ) {
       my $link = "${url}view_usage_details;".
         "svcnum=$svc->{'svcnum'};beginning=0;ending=0";
   $OUT .= '<TR><TD>';
@@ -48,11 +54,33 @@
       $OUT .= $svc->{'recharge_totalbytes'} if $svc->{'recharge_totalbytes'};
     $OUT .= '</TD></TR>';
     }
-  } %>
+  }
+%>
 
-</TABLE>
-<BR>
+<%= scalar(@svc_acct) ? '</TABLE><BR><BR>' : '' %>
+
+<%= if ( @svc_phone ) {
+      $OUT.= '<FONT SIZE="4">Call usage</FONT><BR><BR>
+              <TABLE BGCOLOR="#cccccc">
+                <TR>
+                  <TH ALIGN="left">Number</TH>'; #"Account" ?
+                                                 #what else?
+      $OUT .= '</TR>';
+    } else {
+      $OUT .= '';
+    }
+%>
+
+<%= foreach my $svc_phone ( @svc_phone ) {
+      my $link = "${url}view_cdr_details;".
+        "svcnum=$svc_phone->{'svcnum'};beginning=0;ending=0";
+  $OUT .= '<TR><TD>';
+    $OUT .= qq!<A HREF="$link">!. $svc_phone->{'label'}. ': '. $svc_phone->{'value'}.'</A>';
+  $OUT .= '</TD></TR>';
+  }
+%>
+
+<%= scalar(@svc_phone) ? '</TABLE><BR><BR>' : '' %>
 
 </TD></TR></TABLE>
-
 <%= include('footer') %>
