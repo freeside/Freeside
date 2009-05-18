@@ -92,10 +92,6 @@ sub sftp {
 
   my %sftp = ( host => $servername );
 
-  #XXX remove these
-  $sftp{port} = 10022;
-  #$sftp{more} = '-v';
-
   $sftp = Net::SFTP::Foreign->new(%sftp);
   $sftp->error and die "SFTP connection failed: ". $sftp->error;
 
