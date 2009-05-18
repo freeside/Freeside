@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
-use vars qw($opt_d $opt_s $opt_q $opt_v);
+use vars qw($opt_d $opt_s $opt_q $opt_v $opt_r);
 use vars qw($DEBUG $DRY_RUN);
 use Getopt::Std;
 use DBIx::DBSchema 0.31;
@@ -17,7 +17,7 @@ my $start = time;
 
 die "Not running uid freeside!" unless checkeuid();
 
-getopts("dqs");
+getopts("dqrs");
 
 $DEBUG = !$opt_q;
 #$DEBUG = $opt_v;
@@ -153,7 +153,7 @@ warn "Table updates completed in ". (time-$start). " seconds\n"; # if $DEBUG;
 $start = time;
 
 upgrade_sqlradius()
-  unless $DRY_RUN || $opt_s;
+  unless $DRY_RUN || $opt_s || $opt_r;
 
 warn "SQL RADIUS updates completed in ". (time-$start). " seconds\n"; # if $DEBUG;
 $start = time;
@@ -172,7 +172,7 @@ sub dbdef_create { # reverse engineer the schema from the DB and save to file
 }
 
 sub usage {
-  die "Usage:\n  freeside-upgrade [ -d ] [ -s ] [ -q | -v ] user\n"; 
+  die "Usage:\n  freeside-upgrade [ -d ] [ -r ] [ -s ] [ -q | -v ] user\n"; 
 }
 
 =head1 NAME
@@ -181,7 +181,7 @@ freeside-upgrade - Upgrades database schema for new freeside verisons.
 
 =head1 SYNOPSIS
 
-  freeside-upgrade [ -d ] [ -s ] [ -q | -v ]
+  freeside-upgrade [ -d ] [ -r ] [ -s ] [ -q | -v ]
 
 =head1 DESCRIPTION
 
@@ -202,6 +202,9 @@ Also performs other upgrade functions:
           them.
 
   [ -q ]: Run quietly.  This may become the default at some point.
+
+  [ -r ]: Skip sqlradius updates.  Useful for occassions where the sqlradius
+          databases may be inaccessible.
 
   [ -v ]: Run verbosely, sending debugging information to STDERR.  This is the
           current default.
