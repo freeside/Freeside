@@ -3,6 +3,7 @@ package FS::tax_rate_location;
 use strict;
 use base qw( FS::Record );
 use FS::Record qw( qsearch qsearchs dbh );
+use FS::Misc qw( csv_from_fixed );
 
 =head1 NAME
 
