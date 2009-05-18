@@ -827,7 +827,7 @@ sub tables_hashref {
         'geocode',            'varchar', '',     20,      '', '', 
         'city',               'varchar', 'NULL', $char_d, '', '',
         'county',             'varchar', 'NULL', $char_d, '', '',
-        'state',              'char',    '',     2,  '', '', 
+        'state',              'char',    'NULL',       2, '', '', 
         'disabled',           'char',    'NULL', 1, '', '',
       ],
       'primary_key' => 'taxratelocationnum',
