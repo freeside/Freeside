@@ -2795,6 +2795,13 @@ worry that config_items is freeside-specific and icky.
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'svc_broadband-manage_link',
+    'section'     => 'UI',
+    'description' => 'URL for svc_broadband "Manage Device" link.  The following substitutions are available: $ip_addr.',
+    'type'        => 'text',
+  },
+
 );
 
 1;
