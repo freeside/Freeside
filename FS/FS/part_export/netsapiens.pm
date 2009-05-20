@@ -29,23 +29,26 @@ END
 sub rebless { shift; }
 
 sub ns_command {
-  my( $self, $method, $command, @args ) = @_;
+  my( $self, $method, $command ) = splice(@_,0,3);
 
   eval 'use REST::Client';
   die $@ if $@;
 
   my $ns = new REST::Client 'host'=>$self->option('url');
 
-  my $content = $method eq 'PUT' ? $ns->buildQuery( { @args } ) : '';
-  $content =~ s/^\?//;
+  my @args = ( $command );
 
-  warn $content;
+  if ( $method eq 'PUT' ) {
+    my $content = $method eq 'PUT' ? $ns->buildQuery( { @_ } ) : '';
+    $content =~ s/^\?//;
+    push @args, $content;
+  }
 
   my $auth =
     encode_base64( $self->option('login'). ':'. $self->option('password') );
+  push @args, { 'Authorization' => "Basic $auth" };
 
-  $ns->$method( $command, $content, { 'Authorization' => "Basic $auth" } );
-
+  $ns->$method( @args );
   $ns;
 }
 
@@ -77,50 +80,11 @@ sub ns_create_or_update {
 
   my $ns = $self->ns_command( 'PUT', $self->ns_subscriber($svc_phone), 
                                 'subscriber_login' => $phonenum.'@'.$domain,
-                                'firstname'        => $firstname, #4?
-                                'lastname'         => $lastname,  #5?
-                                'subscriber_pin'   => $svc_phone->pin, #6?
-                                'dial_plan'        => 'Default',    #config? #7?
-                                'dial_policy'      => $dial_policy, #8?
-#no_answer_timeout30   
-#  simultaneous_ringyes   
-#  gmt_offset-8   
-#  aor_schemesip:   
-#  do_not_disturbyes   
-#  email_vmail   
-#  data_limit0   
-#  screen   
-#  last_update2008-10-01 12:19:01.0   
-#  domain_diryes   
-#  callid_name[*]   
-#  admin_vmailyes   
-#  subscriber_name   
-#  rcv_broadcast   
-#  directory_order1   
-#  accept   
-#  rating_required   
-#  date_created2008-02-22 08:38:01   
-#  message_waiting   
-#  rate   
-#  directory_listingno   
-#  time_zoneUS/Pacific   
-#  forward_no_answeryes   
-#  vmail_sort_lifo   
-#  modeover-capacity   
-#  subscriber_groupn/a   
-#  vmail_say_time   
-#  presenceinactive   
-#  directory_match826   
-#  language   
-#  forward_busyyes   
-#  callid_nmbr[*]   
-#  vmail   
-#  subscriber_login1007@vbox.netsapiens.com   
-#  rejectyes   
-#  forwardyes   
-#  vmail_say_cidno   
-#  email_address   
-#  greeting_index
+                                'firstname'        => $firstname,
+                                'lastname'         => $lastname,
+                                'subscriber_pin'   => $svc_phone->pin,
+                                'dial_plan'        => 'Default', #config?
+                                'dial_policy'      => $dial_policy,
                             );
 
   if ( $ns->responseCode !~ /^2/ ) {
@@ -148,13 +112,11 @@ sub ns_delete {
 sub ns_parse_response {
   my( $self, $content ) = ( shift, shift );
 
+  #try to screen-scrape something useful
   tie my %hash, Tie::IxHash;
-  #while ( $content =~ s/^.*?<p>\s*<b>(.+?)<\/b>\s*<(\w+)>(.+?)<\/\2><\/p>//i ) {
   while ( $content =~ s/^.*?<p>\s*<b>(.+?)<\/b>\s*(.+?)\s*<\/p>//is ) {
     ( $hash{$1} = $2 ) =~ s/^\s*<(\w+)>(.+?)<\/\1>/$2/is;
   }
-
-  #warn $content; #probably useless
 
   %hash;
 }
