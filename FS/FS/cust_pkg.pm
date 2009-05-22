@@ -1683,8 +1683,8 @@ tie my %statuscolor, 'Tie::IxHash',
 
 sub statuses {
   my $self = shift; #could be class...
-  grep { $_ !~ /^(not yet billed)$/ } #this is a dumb status anyway
-                                      # mayble split btw one-time vs. recur
+  #grep { $_ !~ /^(not yet billed)$/ } #this is a dumb status anyway
+  #                                    # mayble split btw one-time vs. recur
     keys %statuscolor;
 }
 
@@ -2087,6 +2087,18 @@ sub active_sql { "
   AND ( cust_pkg.susp   IS NULL OR cust_pkg.susp   = 0 )
 "; }
 
+=item not_yet_billed_sql
+
+Returns an SQL expression identifying packages which have not yet been billed.
+
+=cut
+
+sub not_yet_billed_sql { "
+      ( cust_pkg.setup  IS NULL OR cust_pkg.setup  = 0 )
+  AND ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
+  AND ( cust_pkg.susp   IS NULL OR cust_pkg.susp   = 0 )
+"; }
+
 =item inactive_sql
 
 Returns an SQL expression identifying inactive packages (one-time packages
@@ -2096,6 +2108,7 @@ that are otherwise unsuspended/uncancelled).
 
 sub inactive_sql { "
   ". $_[0]->onetime_sql(). "
+  AND cust_pkg.setup IS NOT NULL AND cust_pkg.setup != 0
   AND ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
   AND ( cust_pkg.susp   IS NULL OR cust_pkg.susp   = 0 )
 "; }
@@ -2220,8 +2233,13 @@ sub search_sql {
 
     push @where, FS::cust_pkg->active_sql();
 
-  } elsif (    $params->{'magic'}  eq 'inactive'
-            || $params->{'status'} eq 'inactive' ) {
+  } elsif (    $params->{'magic'}  eq 'not yet billed'
+            || $params->{'status'} eq 'not yet billed' ) {
+
+    push @where, FS::cust_pkg->not_yet_billed_sql();
+
+  } elsif (    $params->{'magic'}  =~ /^(one-time charge|inactive)/
+            || $params->{'status'} =~ /^(one-time charge|inactive)/ ) {
 
     push @where, FS::cust_pkg->inactive_sql();
 
@@ -2234,10 +2252,6 @@ sub search_sql {
             || $params->{'status'} =~ /^cancell?ed$/ ) {
 
     push @where, FS::cust_pkg->cancelled_sql();
-
-  } elsif ( $params->{'status'} =~ /^(one-time charge|inactive)$/ ) {
-
-    push @where, FS::cust_pkg->inactive_sql();
 
   }
 

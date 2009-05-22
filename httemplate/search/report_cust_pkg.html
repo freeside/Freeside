@@ -129,6 +129,7 @@ my %label = (
 #false laziness w/cust_pkg.cgi
 my %disable = (
   'all'             => {},
+  'not yet billed'  => { 'setup'=>1, 'last_bill'=>1, 'bill'=>1, 'adjourn'=>1, 'susp'=>1, 'expire'=>1, 'cancel'=>1, },
   'one-time charge' => { 'last_bill'=>1, 'bill'=>1, 'adjourn'=>1, 'susp'=>1, 'expire'=>1, 'cancel'=>1, },
   'active'          => { 'susp'=>1, 'cancel'=>1 },
   'suspended'       => { 'cancel' => 1 },
