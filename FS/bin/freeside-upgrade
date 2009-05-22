@@ -149,6 +149,8 @@ $start = time;
 upgrade()
   unless $DRY_RUN || $opt_s;
 
+$dbh->commit or die $dbh->errstr;
+
 warn "Table updates completed in ". (time-$start). " seconds\n"; # if $DEBUG;
 $start = time;
 
@@ -161,7 +163,7 @@ $start = time;
 $dbh->commit or die $dbh->errstr;
 $dbh->disconnect or die $dbh->errstr;
 
-warn "Commit and disconnection completed in ". (time-$start). " seconds; upgrade done!\n"; # if $DEBUG;
+warn "Final commit and disconnection completed in ". (time-$start). " seconds; upgrade done!\n"; # if $DEBUG;
 
 ###
 
