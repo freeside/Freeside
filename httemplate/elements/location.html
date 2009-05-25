@@ -23,7 +23,7 @@ Example:
            NAME     = "<%$pre%>address1"
            ID       = "<%$pre%>address1"
            VALUE    = "<% $object->get($pre.'address1') |h %>"
-           SIZE     = 58
+           SIZE     = 54
            onChange = "<% $onchange %>"
            <% $disabled %>
            <% $style %>
@@ -38,7 +38,7 @@ Example:
            NAME     = "<%$pre%>address2"
            ID       = "<%$pre%>address2"
            VALUE    = "<% $object->get($pre.'address2') |h %>"
-           SIZE     = 58
+           SIZE     = 54
            onChange = "<% $onchange %>"
            <% $disabled %>
            <% $style %>
@@ -48,7 +48,7 @@ Example:
 
 <TR>
   <TH ALIGN="right"><%$r%>City</TH>
-  <TD>
+  <TD WIDTH="1">
     <INPUT TYPE     = "text"
            NAME     = "<%$pre%>city"
            ID       = "<%$pre%>city"
@@ -57,13 +57,11 @@ Example:
            <% $disabled %>
            <% $style %>
     >
- </TD>
-  <TH ALIGN="right" ID="<%$pre%>countylabel" <%$county_style%>><%$r%>County</TH>
-  <TD>
-    <% include('/elements/select-county.html', %select_hash ) %>
   </TD>
-  <TH ALIGN="right"><%$r%>State</TH>
-  <TD>
+  <TH ALIGN="right" ID="<%$pre%>countylabel" <%$county_style%>><%$r%>County</TH>
+  <TD><% include('/elements/select-county.html', %select_hash ) %></TD>
+  <TH ALIGN="right" WIDTH="1"><%$r%>State</TH>
+  <TD WIDTH="1">
     <% include('/elements/select-state.html', %select_hash ) %>
   </TD>
   <TH><%$r%>Zip</TH>
@@ -82,7 +80,7 @@ Example:
 
 <TR>
   <TH ALIGN="right"><%$r%>Country</TH>
-  <TD COLSPAN=5><% include('/elements/select-country.html', %select_hash ) %></TD>
+  <TD COLSPAN=6><% include('/elements/select-country.html', %select_hash ) %></TD>
 </TR>
 
 % if ( !$pre ) { 
@@ -126,7 +124,7 @@ my @counties = counties( $object->get($pre.'state'),
                          $object->get($pre.'country'),
                        );
 my @county_style = ();
-push @county_style, 'visibility:hidden'
+push @county_style, 'display:none' # 'visibility:hidden'
   unless scalar(@counties) > 1;
 
 my $style =

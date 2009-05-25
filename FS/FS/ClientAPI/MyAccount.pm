@@ -506,7 +506,8 @@ sub process_payment {
   }
 
   my %payby2fields = (
-    'CARD' => [ qw( paystart_month paystart_year payissue address1 address2 city state zip payip ) ],
+    'CARD' => [ qw( paystart_month paystart_year payissue payip
+                    address1 address2 city state zip country    ) ],
     'CHEK' => [ qw( ss paytype paystate stateid stateid_state payip ) ],
   );
 
@@ -527,8 +528,8 @@ sub process_payment {
     my $new = new FS::cust_main { $cust_main->hash };
     if ($payby eq 'CARD' || $payby eq 'DCRD') {
       $new->set( $_ => $p->{$_} )
-        foreach qw( payname paystart_month paystart_year payissue payip
-                    address1 address2 city state zip payinfo );
+        foreach qw( payinfo payname paystart_month paystart_year payissue payip
+                    address1 address2 city state zip country );
       $new->set( 'payby' => $p->{'auto'} ? 'CARD' : 'DCRD' );
     } elsif ($payby eq 'CHEK' || $payby eq 'DCHK') {
       $new->set( $_ => $p->{$_} )

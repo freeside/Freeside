@@ -86,8 +86,9 @@ $socket .= '.'.$tag if defined $tag && length($tag);
 );
 @EXPORT_OK = (
   keys(%autoload),
-  qw( regionselector regionselector_hashref
-      expselect popselector domainselector didselector )
+  qw( regionselector regionselector_hashref location_form
+      expselect popselector domainselector didselector
+    )
 );
 
 $ENV{'PATH'} ='/usr/bin:/usr/ucb:/bin';
@@ -549,6 +550,10 @@ State
 =item zip
 
 Zip or postal code
+
+=item country
+
+Two-letter country code
 
 =item payinfo
 
@@ -1435,6 +1440,52 @@ sub regionselector_hashref {
     'country_html' => $country_html,
   };
 }
+
+=item location_form HASHREF | LIST
+
+Takes as input a hashref or list of key/value pairs with the following keys:
+
+=over 4
+
+=item session_id
+
+Current customer session_id
+
+=item no_asterisks
+
+Omit red asterisks from required fields.
+
+=item address1_label
+
+Label for first address line.
+
+=back
+
+Returns an HTML fragment for a location form (address, city, state, zip,
+country)
+
+=cut
+
+sub location_form {
+  my $param;
+  if ( ref($_[0]) ) {
+    $param = shift;
+  } else {
+    $param = { @_ };
+  }
+
+  my $session_id = delete $param->{'session_id'};
+
+  my $rv = mason_comp( 'session_id' => $session_id,
+                       'comp'       => '/elements/location.html',
+                       'args'       => [ %$param ],
+                     );
+
+  #hmm.
+  $rv->{'error'} || $rv->{'output'};
+
+}
+
 
 #=item expselect HASHREF | LIST
 #

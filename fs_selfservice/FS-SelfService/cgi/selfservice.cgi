@@ -664,7 +664,7 @@ package FS::SelfService::_selfservicecgi;
 
 #use FS::SelfService qw(regionselector expselect popselector);
 use HTML::Entities;
-use FS::SelfService qw(regionselector popselector domainselector);
+use FS::SelfService qw(regionselector popselector domainselector location_form);
 
 #false laziness w/agent.cgi
 sub include {

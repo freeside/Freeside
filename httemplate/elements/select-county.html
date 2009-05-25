@@ -58,10 +58,12 @@ Example:
 
         if ( countiesArray.length > 1 ) { 
           what.form.<% $pre %>county.style.display = '';
-          countyFormLabel.style.visibility = 'visible';
+          //countyFormLabel.style.visibility = 'visible';
+          countyFormLabel.style.display = '';
         } else {
           what.form.<% $pre %>county.style.display = 'none';
-          countyFormLabel.style.visibility = 'hidden';
+          //countyFormLabel.style.visibility = 'hidden';
+          countyFormLabel.style.display = 'none';
         }
 
         //run the callback

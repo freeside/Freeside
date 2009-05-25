@@ -1,11 +1,11 @@
 <TR>
-  <TD ALIGN="right">Card&nbsp;number</TD>
-  <TD>
+  <TH ALIGN="right">Card&nbsp;number</TH>
+  <TD COLSPAN=6>
     <TABLE>
       <TR>
         <TD>
           <INPUT TYPE="text" NAME="payinfo" SIZE=20 MAXLENGTH=19 VALUE="<%=$payinfo%>"> </TD>
-        <TD>Exp.</TD>
+        <TH>Exp.</TH>
         <TD>
           <SELECT NAME="month">
             <%= for ( ( map "0$_", 1 .. 9 ), 10 .. 12 ) {
@@ -35,39 +35,13 @@
   '';
 %>
 <TR>
-  <TD ALIGN="right">Exact&nbsp;name&nbsp;on&nbsp;card</TD>
-  <TD><INPUT TYPE="text" SIZE=32 MAXLENGTH=80 NAME="payname" VALUE="<%=$payname%>"></TD>
-</TR><TR>
-  <TD ALIGN="right">Card&nbsp;billing&nbsp;address</TD>
-  <TD>
-    <INPUT TYPE="text" SIZE=40 MAXLENGTH=80 NAME="address1" VALUE="<%=$address1%>">
-  </TD>
-</TR><TR>
-  <TD ALIGN="right">Address&nbsp;line&nbsp;2</TD>
-  <TD>
-    <INPUT TYPE="text" SIZE=40 MAXLENGTH=80 NAME="address2" VALUE="<%=$address2%>">
-  </TD>
-</TR><TR>
-  <TD ALIGN="right">City</TD>
-  <TD>
-    <TABLE>
-      <TR>
-        <TD>
-          <INPUT TYPE="text" NAME="city" SIZE="12" MAXLENGTH=80 VALUE="<%=$city%>">
-        </TD>
-        <TD>State</TD>
-        <TD>
-          <SELECT NAME="state">
-            <%= for ( @states ) {
-              $OUT .= '<OPTION'. ($_ eq $state ? ' SELECTED' : '' ). ">$_\n";
-            } %>
-          </SELECT>
-        </TD>
-        <TD>Zip</TD>
-        <TD>
-          <INPUT TYPE="text" NAME="zip" SIZE=11 MAXLENGTH=10 VALUE="<%=$zip%>">
-        </TD>
-      </TR>
-    </TABLE>
-  </TD>
+  <TH ALIGN="right">Exact&nbsp;name&nbsp;on&nbsp;card</TH>
+  <TD COLSPAN=6><INPUT TYPE="text" SIZE=32 MAXLENGTH=80 NAME="payname" VALUE="<%=$payname%>"></TD>
 </TR>
+
+<%= location_form( 'session_id'     => $session_id,
+                   'no_asterisks'   => 1,
+                   #'address1_label' => 'Card billing address',
+                   'address1_label' => 'Card&nbsp;billing&nbsp;address',
+                 )
+%>
