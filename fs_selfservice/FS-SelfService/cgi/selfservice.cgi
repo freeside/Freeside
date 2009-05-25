@@ -366,11 +366,14 @@ sub payment_results {
   $cgi->param('city') =~ /^(.{0,80})$/ or die "illegal city";
   my $city = $1;
 
-  $cgi->param('state') =~ /^(.{2})$/ or die "illegal state";
+  $cgi->param('state') =~ /^(.{80})$/ or die "illegal state";
   my $state = $1;
 
   $cgi->param('zip') =~ /^(.{0,10})$/ or die "illegal zip";
   my $zip = $1;
+
+  $cgi->param('country') =~ /^(.{0,2})$/ or die "illegal country";
+  my $country = $1;
 
   my $save = 0;
   $save = 1 if $cgi->param('save');
@@ -395,6 +398,7 @@ sub payment_results {
     'city'       => $city,
     'state'      => $state,
     'zip'        => $zip,
+    'country'    => $country,
     'save'       => $save,
     'auto'       => $auto,
     'paybatch'   => $paybatch,
