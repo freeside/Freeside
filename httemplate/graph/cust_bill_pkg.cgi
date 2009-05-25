@@ -9,7 +9,7 @@
                 'links'        => \@links,
                 'remove_empty' => 1,
                 'bottom_total' => 1,
-                'bottom_link'  => "$link;",
+                'bottom_link'  => $bottom_link,
                 'agentnum'     => $agentnum,
              )
 %>
@@ -27,21 +27,42 @@ if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
 }
 my $title = $sel_agent ? $sel_agent->agent.' ' : '';
 
-#false lazinessish w/search/cust_pkg.cgi
+my $link = "${p}search/cust_bill_pkg.cgi?nottax=1;include_comp_cust=1";
+my $bottom_link = "$link;";
+
+#classnum (here)
+# 0: all classes
+# not specified: empty class
+# N: classnum
+#classnum (link)
+# not specified: all classes
+# 0: empty class
+# N: classnum
+
+#false lazinessish w/FS::cust_pkg::search_sql (previously search/cust_pkg.cgi)
 my $classnum = 0;
 my @pkg_class = ();
 if ( $cgi->param('classnum') =~ /^(\d*)$/ ) {
   $classnum = $1;
-  if ( $classnum ) {
+
+  if ( $classnum ) { #a specific class
+
     @pkg_class = ( qsearchs('pkg_class', { 'classnum' => $classnum } ) );
     die "classnum $classnum not found!" unless $pkg_class[0];
     $title .= $pkg_class[0]->classname.' ';
-  } elsif ( $classnum eq '' ) {
+    $bottom_link .= "classnum=$classnum;";
+
+  } elsif ( $classnum eq '' ) { #the empty class
+
     $title .= 'Empty class ';
     @pkg_class = ( '(empty class)' );
-  } elsif ( $classnum eq '0' ) {
+    $bottom_link .= "classnum=0;";
+
+  } elsif ( $classnum eq '0' ) { #all classes
+
     @pkg_class = qsearch('pkg_class', {} ); # { 'disabled' => '' } );
     push @pkg_class, '(empty class)';
+
   }
 }
 #eslaf
@@ -56,8 +77,6 @@ my @params = ();
 my @labels = ();
 my @colors = ();
 my @links  = ();
-
-my $link = "${p}search/cust_bill_pkg.cgi?nottax=1;include_comp_cust=1";
 
 foreach my $agent ( $sel_agent || qsearch('agent', { 'disabled' => '' } ) ) {
 
