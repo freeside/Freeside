@@ -275,16 +275,6 @@ if ( $conf->exists('tax-pkg_address') ) {
     "WHERE 0 < ( SELECT COUNT(*) FROM cust_main WHERE $gotcust LIMIT 1 )";
 }
 
-#tax-report_groups filtering
-my($group_op, $group_value) = ( '', '' );
-if ( $cgi->param('report_group') =~ /^(=|!=) (.*)$/ ) {
-  ( $group_op, $group_value ) = ( $1, $2 );
-}
-my $skipping_out = $group_op ? 1 : 0; #in case there are other reasons
-
-my( $total, $tot_taxable, $tot_owed ) = ( 0, 0, 0 );
-my( $exempt_cust, $exempt_pkg, $exempt_monthly ) = ( 0, 0, 0 );
-
 my $out = 'Out of taxable region(s)';
 my %regions = ();
 
@@ -335,9 +325,8 @@ foreach my $r ( qsearch({ 'table'     => 'cust_main_county',
    "SELECT SUM(cust_bill_pkg.setup+cust_bill_pkg.recur) $fromwhere AND $nottax";
   my $t = scalar_sql($r, \@param, $t_sql);
   $regions{$label}->{'total'} += $t;
-  $total += $t unless $label eq $out && $skipping_out;
 
-  #if ( $label eq $out ) {# && $t ) {
+  #if ( $label eq $out ) # && $t ) {
   #  warn "adding $t for ".
   #       join('/', map $r->$_, qw( taxclass county state country ) ). "\n";
   #  #warn $t_sql if $r->state eq 'FL';
@@ -365,7 +354,6 @@ foreach my $r ( qsearch({ 'table'     => 'cust_main_county',
   );
 
   $regions{$label}->{'exempt_cust'} += $x_cust;
-  $exempt_cust += $x_cust unless $label eq $out && $skipping_out;
   
   ## calculate package-exemption for this region
 
@@ -393,7 +381,6 @@ foreach my $r ( qsearch({ 'table'     => 'cust_main_county',
     "
   );
   $regions{$label}->{'exempt_pkg'} += $x_pkg;
-  $exempt_pkg += $x_pkg unless $label eq $out && $skipping_out;
 
   ## calculate monthly exemption (texas tax) for this region
 
@@ -407,22 +394,12 @@ foreach my $r ( qsearch({ 'table'     => 'cust_main_county',
        $join_cust_pkg
      $mywhere"
   );
-#  if ( $x_monthly ) {
-#    #warn $r->taxnum(). ": $x_monthly\n";
-#    $taxable -= $x_monthly;
-#  }
-
   $regions{$label}->{'exempt_monthly'} += $x_monthly;
-  $exempt_monthly += $x_monthly unless $label eq $out && $skipping_out;
 
   my $taxable = $t - $x_cust - $x_pkg - $x_monthly;
-
   $regions{$label}->{'taxable'} += $taxable;
-  $tot_taxable += $taxable unless $label eq $out && $skipping_out;
 
-  my $owed = $taxable * ($r->tax/100);
-  $regions{$label}->{'owed'} += $owed;
-  $tot_owed += $owed unless $label eq $out && $skipping_out;
+  $regions{$label}->{'owed'} += $taxable * ($r->tax/100);
 
   if ( defined($regions{$label}->{'rate'})
        && $regions{$label}->{'rate'} != $r->tax.'%' ) {
@@ -523,11 +500,12 @@ if ( $cgi->param('show_taxclasses') ) {
 
 }
 
-
 my @regions = keys %regions;
 
 #tax-report_groups filtering
-if ( $group_op ) {
+my($group_op, $group_value) = ( '', '' );
+if ( $cgi->param('report_group') =~ /^(=|!=) (.*)$/ ) {
+  ( $group_op, $group_value ) = ( $1, $2 );
   @regions = grep {
     if ( $_ eq $out ) { #don't display "out of taxable region" in this case
       0;
@@ -539,6 +517,18 @@ if ( $group_op ) {
       die "guru meditation #00de: group_op $group_op\n";
     }
   } @regions;
+}
+
+#now calculate totals
+my( $total, $tot_taxable, $tot_owed ) = ( 0, 0, 0 );
+my( $exempt_cust, $exempt_pkg, $exempt_monthly ) = ( 0, 0, 0 );
+foreach (@regions) {
+  $total          += $regions{$_}->{'total'};
+  $tot_taxable    += $regions{$_}->{'taxable'};
+  $tot_owed       += $regions{$_}->{'owed'};
+  $exempt_cust    += $regions{$_}->{'exempt_cust'};
+  $exempt_pkg     += $regions{$_}->{'exempt_pkg'};
+  $exempt_monthly += $regions{$_}->{'exempt_monthly'};
 }
 
 #ordering
