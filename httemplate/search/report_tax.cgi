@@ -1,4 +1,4 @@
-<% include("/elements/header.html", "$agentname Sales Tax Report - ".
+<% include("/elements/header.html", "$agentname Tax Report - ".
               ( $beginning
                   ? time2str('%h %o %Y ', $beginning )
                   : ''
