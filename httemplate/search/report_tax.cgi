@@ -460,6 +460,25 @@ my $_taxamount_sub = sub {
   scalar_sql($r, \@taxparam, $sql );
 };
 
+#tax-report_groups filtering
+my($group_op, $group_value) = ( '', '' );
+if ( $cgi->param('report_group') =~ /^(=|!=) (.*)$/ ) {
+  ( $group_op, $group_value ) = ( $1, $2 );
+}
+my $group_test = sub {
+  my $label = shift;
+  return 1 unless $group_op; #in case we get called inadvertantly
+  if ( $label eq $out ) { #don't display "out of taxable region" in this case
+    0;
+  } elsif ( $group_op eq '=' ) {
+    $label =~ /^$group_value/;
+  } elsif ( $group_op eq '!=' ) {
+    $label !~ /^$group_value/;
+  } else {
+    die "guru meditation #00de: group_op $group_op\n";
+  }
+};
+
 my $tot_tax = 0;
 #foreach my $label ( keys %regions ) {
 foreach my $r ( qsearch(\%qsearch) ) {
@@ -467,6 +486,9 @@ foreach my $r ( qsearch(\%qsearch) ) {
   #warn join('-', map { $r->$_() } qw( country state county taxname ) )."\n";
 
   my $label = getlabel($r);
+  if ( $group_op ) {
+    next unless &{$group_test}($label);
+  }
 
   #my $fromwhere = $join_pkg. $where. " AND payby != 'COMP' ";
   #my @param = @base_param; 
@@ -503,21 +525,8 @@ if ( $cgi->param('show_taxclasses') ) {
 my @regions = keys %regions;
 
 #tax-report_groups filtering
-my($group_op, $group_value) = ( '', '' );
-if ( $cgi->param('report_group') =~ /^(=|!=) (.*)$/ ) {
-  ( $group_op, $group_value ) = ( $1, $2 );
-  @regions = grep {
-    if ( $_ eq $out ) { #don't display "out of taxable region" in this case
-      0;
-    } elsif ( $group_op eq '=' ) {
-      $_ =~ /^$group_value \(/;
-    } elsif ( $group_op eq '!=' ) {
-      $_ !~ /^$group_value \(/;
-    } else {
-      die "guru meditation #00de: group_op $group_op\n";
-    }
-  } @regions;
-}
+@regions = grep &{$group_test}($_), @regions
+  if $group_op;
 
 #now calculate totals
 my( $total, $tot_taxable, $tot_owed ) = ( 0, 0, 0 );
