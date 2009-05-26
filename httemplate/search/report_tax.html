@@ -4,28 +4,48 @@
 
 <TABLE>
 
+% if ( $conf->config('tax-report_groups') ) {
+%   my @lines = $conf->config('tax-report_groups');
+    
+  <TR>
+    <TD>Tax group</TD>
+    <TD>
+      <SELECT NAME="report_group">
+
+        <OPTION VALUE="">all</OPTION>
+
+%       foreach my $line ( @lines ) {
+%         $line =~ /^\s*(.+)\s+(=|!=)\s+(.*)\s*$/ #or next;
+%           or do { warn "bad report_group line: $line\n"; next; };
+%         my($label, $op, $value) = ($1, $2, $3);
+
+          <OPTION VALUE="<% "$op $value" %>"><% $label %></OPTION>
+%       }
+
+      </SELECT>
+    </TD>
+  </TR>
+
+% }
+
  <% include( '/elements/tr-select-agent.html', 'disable_empty'=>0 ) %>
 
  <% include( '/elements/tr-input-beginning_ending.html' ) %>
-% my $conf = new FS::Conf;
-%    if ( $conf->exists('enable_taxclasses') ) {
-% 
 
+%    if ( $conf->exists('enable_taxclasses') ) {
    <TR>
      <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="show_taxclasses" VALUE="1"></TD>
      <TD>Show tax classes</TD>
    </TR>
 % } 
-% my @pkg_class = qsearch('pkg_class', {});
-%    if ( @pkg_class ) {
-% 
 
+% my @pkg_class = qsearch('pkg_class', {});
+% if ( @pkg_class ) {
    <TR>
      <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="show_pkgclasses" VALUE="1"></TD>
      <TD>Show package classes</TD>
    </TR>
 % } 
-
 
 </TABLE>
 
@@ -38,5 +58,7 @@
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+my $conf = new FS::Conf;
 
 </%init>

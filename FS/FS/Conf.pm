@@ -1380,7 +1380,7 @@ worry that config_items is freeside-specific and icky.
   {
     'key'         => 'selfservice_server-base_url',
     'section'     => '',
-    'description' => 'Base URL for the self-service web interface - necessary for special provisioning widgets to find their way.',
+    'description' => 'Base URL for the self-service web interface - necessary for some widgets to find their way, including retrieval of non-US state information and phone number provisioning.',
     'type'        => 'text',
   },
 
@@ -2800,6 +2800,13 @@ worry that config_items is freeside-specific and icky.
     'section'     => 'UI',
     'description' => 'URL for svc_broadband "Manage Device" link.  The following substitutions are available: $ip_addr.',
     'type'        => 'text',
+  },
+
+  {
+    'key'         => 'tax-report_groups',
+    'section'     => '',
+    'description' => 'List of grouping possibilities for tax names on reports, one per line, "label op value" (op can be = or !=).',
+    'type'        => 'textarea',
   },
 
 );

@@ -174,7 +174,7 @@
    <<%$td%>>Total</TD>
    <<%$td%> ALIGN="right">
      <A HREF="<% $baselink %>;istax=1"
-     ><% &$money_sprintf( $tax ) %></A>
+     ><% &$money_sprintf( $tot_tax ) %></A>
    </TD>
   </TR>
 
@@ -275,8 +275,16 @@ if ( $conf->exists('tax-pkg_address') ) {
     "WHERE 0 < ( SELECT COUNT(*) FROM cust_main WHERE $gotcust LIMIT 1 )";
 }
 
-my($total, $tot_taxable, $owed, $tax) = ( 0, 0, 0, 0 );
+#tax-report_groups filtering
+my($group_op, $group_value) = ( '', '' );
+if ( $cgi->param('report_group') =~ /^(=|!=) (.*)$/ ) {
+  ( $group_op, $group_value ) = ( $1, $2 );
+}
+my $skipping_out = $group_op ? 1 : 0; #in case there are other reasons
+
+my( $total, $tot_taxable, $tot_owed ) = ( 0, 0, 0 );
 my( $exempt_cust, $exempt_pkg, $exempt_monthly ) = ( 0, 0, 0 );
+
 my $out = 'Out of taxable region(s)';
 my %regions = ();
 
@@ -326,8 +334,8 @@ foreach my $r ( qsearch({ 'table'     => 'cust_main_county',
   my $t_sql =
    "SELECT SUM(cust_bill_pkg.setup+cust_bill_pkg.recur) $fromwhere AND $nottax";
   my $t = scalar_sql($r, \@param, $t_sql);
-  $total += $t;
   $regions{$label}->{'total'} += $t;
+  $total += $t unless $label eq $out && $skipping_out;
 
   #if ( $label eq $out ) {# && $t ) {
   #  warn "adding $t for ".
@@ -356,8 +364,8 @@ foreach my $r ( qsearch({ 'table'     => 'cust_main_county',
      $fromwhere AND $nottax AND tax = 'Y' "
   );
 
-  $exempt_cust += $x_cust;
   $regions{$label}->{'exempt_cust'} += $x_cust;
+  $exempt_cust += $x_cust unless $label eq $out && $skipping_out;
   
   ## calculate package-exemption for this region
 
@@ -384,8 +392,8 @@ foreach my $r ( qsearch({ 'table'     => 'cust_main_county',
        AND ( tax != 'Y' OR tax IS NULL )
     "
   );
-  $exempt_pkg += $x_pkg;
   $regions{$label}->{'exempt_pkg'} += $x_pkg;
+  $exempt_pkg += $x_pkg unless $label eq $out && $skipping_out;
 
   ## calculate monthly exemption (texas tax) for this region
 
@@ -404,16 +412,17 @@ foreach my $r ( qsearch({ 'table'     => 'cust_main_county',
 #    $taxable -= $x_monthly;
 #  }
 
-  $exempt_monthly += $x_monthly;
   $regions{$label}->{'exempt_monthly'} += $x_monthly;
+  $exempt_monthly += $x_monthly unless $label eq $out && $skipping_out;
 
   my $taxable = $t - $x_cust - $x_pkg - $x_monthly;
 
-  $tot_taxable += $taxable;
   $regions{$label}->{'taxable'} += $taxable;
+  $tot_taxable += $taxable unless $label eq $out && $skipping_out;
 
-  $owed += $taxable * ($r->tax/100);
-  $regions{$label}->{'owed'} += $taxable * ($r->tax/100);
+  my $owed = $taxable * ($r->tax/100);
+  $regions{$label}->{'owed'} += $owed;
+  $tot_owed += $owed unless $label eq $out && $skipping_out;
 
   if ( defined($regions{$label}->{'rate'})
        && $regions{$label}->{'rate'} != $r->tax.'%' ) {
@@ -474,6 +483,7 @@ my $_taxamount_sub = sub {
   scalar_sql($r, \@taxparam, $sql );
 };
 
+my $tot_tax = 0;
 #foreach my $label ( keys %regions ) {
 foreach my $r ( qsearch(\%qsearch) ) {
 
@@ -486,8 +496,8 @@ foreach my $r ( qsearch(\%qsearch) ) {
 
   my $x = &{$_taxamount_sub}($r);
 
-  $tax += $x unless $cgi->param('show_taxclasses');
   $regions{$label}->{'tax'} += $x;
+  $tot_tax += $x unless $cgi->param('show_taxclasses');
 
 }
 
@@ -508,17 +518,34 @@ if ( $cgi->param('show_taxclasses') ) {
           );
 
     $base_regions{$base_label}->{'tax'} += $x;
-    $tax += $x;
+    $tot_tax += $x;
   }
 
 }
 
 
+my @regions = keys %regions;
+
+#tax-report_groups filtering
+if ( $group_op ) {
+  @regions = grep {
+    if ( $_ eq $out ) { #don't display "out of taxable region" in this case
+      0;
+    } elsif ( $group_op eq '=' ) {
+      $_ =~ /^$group_value \(/;
+    } elsif ( $group_op eq '!=' ) {
+      $_ !~ /^$group_value \(/;
+    } else {
+      die "guru meditation #00de: group_op $group_op\n";
+    }
+  } @regions;
+}
+
 #ordering
-my @regions =
+@regions =
   map $regions{$_},
   sort { ( ($a eq $out) cmp ($b eq $out) ) || ($b cmp $a) }
-  keys %regions;
+  @regions;
 
 my @base_regions =
   map $base_regions{$_},
@@ -534,8 +561,8 @@ push @regions, {
   'exempt_monthly' => $exempt_monthly,
   'taxable'        => $tot_taxable,
   'rate'           => '',
-  'owed'           => $owed,
-  'tax'            => $tax,
+  'owed'           => $tot_owed,
+  'tax'            => $tot_tax,
 };
 
 #-- 
