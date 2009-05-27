@@ -95,7 +95,10 @@ if ( $cgi->param('classnum') =~ /^(\d+)$/ ) {
   }
 }
 
-push @where, map ' taxclass = '.dbh->quote($_), $cgi->param('taxclass')
+push @where, ' ( '. join(' OR ',
+                      map ' taxclass = '.dbh->quote($_), $cgi->param('taxclass')
+                    ).
+             ' ) '
   if $cgi->param('taxclass')
   && ! $cgi->param('istax'); #no part_pkg.taxclass in this case
                              #(should we save a taxclass or a link to taxnum
