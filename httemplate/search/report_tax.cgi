@@ -275,7 +275,6 @@ if ( $conf->exists('tax-pkg_address') ) {
 
 my $out = 'Out of taxable region(s)';
 my %regions = ();
-my %taxclasses = ();
 
 foreach my $r ( qsearch({ 'table'     => 'cust_main_county',
                           'extra_sql' => $gotcust,
@@ -301,7 +300,7 @@ foreach my $r ( qsearch({ 'table'     => 'cust_main_county',
     $regions{$label}->{'url_param'} .= ';taxclass='. uri_escape($r->taxclass);
     #no, always#  if $cgi->param('show_taxclasses');
 
-    $taxclasses{$r->taxclass} = 1;
+    $regions{$label}->{'taxclass'} = $r->taxclass;
 
   } else {
 
@@ -529,6 +528,27 @@ my @regions = keys %regions;
 @regions = grep &{$group_test}($_), @regions
   if $group_op;
 
+#calculate totals
+my( $total, $tot_taxable, $tot_owed ) = ( 0, 0, 0 );
+my( $exempt_cust, $exempt_pkg, $exempt_monthly ) = ( 0, 0, 0 );
+my %taxclasses = ();
+foreach (@regions) {
+  $total          += $regions{$_}->{'total'};
+  $tot_taxable    += $regions{$_}->{'taxable'};
+  $tot_owed       += $regions{$_}->{'owed'};
+  $exempt_cust    += $regions{$_}->{'exempt_cust'};
+  $exempt_pkg     += $regions{$_}->{'exempt_pkg'};
+  $exempt_monthly += $regions{$_}->{'exempt_monthly'};
+  $taxclasses{$regions{$_}->{'taxclass'}} = 1
+    if $regions{$_}->{'taxclass'};
+}
+
+my $total_url_param = '';
+if ( $group_op ) {
+  $total_url_param = 'report_group='.uri_escape("$group_op $group_value").';'.
+                     join(';', 'taxclass='.dbh->quote($_), keys %taxclasses );
+}
+
 #ordering
 @regions =
   map $regions{$_},
@@ -540,25 +560,7 @@ my @base_regions =
   sort { ( ($a eq $out) cmp ($b eq $out) ) || ($b cmp $a) }
   keys %base_regions;
 
-#totals
-my( $total, $tot_taxable, $tot_owed ) = ( 0, 0, 0 );
-my( $exempt_cust, $exempt_pkg, $exempt_monthly ) = ( 0, 0, 0 );
-foreach (@regions) {
-  $total          += $regions{$_}->{'total'};
-  $tot_taxable    += $regions{$_}->{'taxable'};
-  $tot_owed       += $regions{$_}->{'owed'};
-  $exempt_cust    += $regions{$_}->{'exempt_cust'};
-  $exempt_pkg     += $regions{$_}->{'exempt_pkg'};
-  $exempt_monthly += $regions{$_}->{'exempt_monthly'};
-}
-
-my $total_url_param = '';
-
-if ( $group_op ) {
-  $total_url_param = 'report_group='.uri_escape("$group_op $group_value").';'.
-                     join(';', 'taxclass = '.dbh->quote($_), keys %taxclasses );
-}
-
+#add total line
 push @regions, {
   'label'          => 'Total',
   'url_param'      => $total_url_param,
