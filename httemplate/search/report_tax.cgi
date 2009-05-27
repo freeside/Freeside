@@ -110,8 +110,12 @@
       </TD>
 
 % unless ( $cgi->param('show_taxclasses') ) { 
+%       my $invlink = $region->{'url_param_inv'}
+%                       ? ';'. $region->{'url_param_inv'}
+%                       : $link;
+
         <<%$tdh%> ALIGN="right">
-          <A HREF="<% $baselink. $link %>;istax=1"
+          <A HREF="<% $baselink. $invlink %>;istax=1"
           ><% &$money_sprintf( $region->{'tax'} ) %></A>
         </TD>
 % } 
@@ -553,6 +557,7 @@ foreach (@regions) {
 }
 
 my $total_url_param = '';
+my $total_url_param_invoiced = '';
 if ( $group_op ) {
 
   my @country = keys %country;
@@ -565,13 +570,13 @@ if ( $group_op ) {
     if scalar(@state) > 1;
   my $state = $state[0];
 
+  $total_url_param_invoiced =
   $total_url_param =
     'report_group='.uri_escape("$group_op $group_value").';'.
-    join(';', map 'taxclass='.uri_escape($_), keys %taxclasses ).';'.
+    join(';', map 'taxclass='.uri_escape($_), keys %taxclasses );
+  $total_url_param .= ';'.
     "country=$country;state=".uri_escape($state).';'.
-    join(';', map 'county='.uri_escape($_), keys %county )
-  ;
-
+    join(';', map 'county='.uri_escape($_), keys %county ) ;
 
 }
 
@@ -590,6 +595,7 @@ my @base_regions =
 push @regions, {
   'label'          => 'Total',
   'url_param'      => $total_url_param,
+  'url_param_inv'  => $total_url_param_invoiced,
   'total'          => $total,
   'exempt_cust'    => $exempt_cust,
   'exempt_pkg'     => $exempt_pkg,
