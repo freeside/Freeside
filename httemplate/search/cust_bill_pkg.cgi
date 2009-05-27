@@ -168,7 +168,7 @@ if ( $cgi->param('out') ) {
 
           my %ph = ( 'county' => $_,
                      map { $_ => dbh->quote( $cgi->param($_) ) }
-                       qw( county state country )
+                       qw( state country )
                    );
 
           my ( $loc_sql, @param ) = FS::cust_pkg->location_sql;

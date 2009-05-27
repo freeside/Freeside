@@ -285,6 +285,9 @@ foreach my $r ( qsearch({ 'table'     => 'cust_main_county',
 
   my $label = getlabel($r);
   $regions{$label}->{'label'} = $label;
+
+  $regions{$label}->{$_} = $r->$_() for (qw( county state country )); #taxname?
+
   $regions{$label}->{'url_param'} =
     join(';', map "$_=".uri_escape($r->$_()),
                   qw( county state country taxname )
@@ -532,6 +535,9 @@ my @regions = keys %regions;
 my( $total, $tot_taxable, $tot_owed ) = ( 0, 0, 0 );
 my( $exempt_cust, $exempt_pkg, $exempt_monthly ) = ( 0, 0, 0 );
 my %taxclasses = ();
+my %county = ();
+my %state = ();
+my %country = ();
 foreach (@regions) {
   $total          += $regions{$_}->{'total'};
   $tot_taxable    += $regions{$_}->{'taxable'};
@@ -541,13 +547,32 @@ foreach (@regions) {
   $exempt_monthly += $regions{$_}->{'exempt_monthly'};
   $taxclasses{$regions{$_}->{'taxclass'}} = 1
     if $regions{$_}->{'taxclass'};
+  $county{$regions{$_}->{'county'}} = 1;
+  $state{$regions{$_}->{'state'}} = 1;
+  $country{$regions{$_}->{'country'}} = 1;
 }
 
 my $total_url_param = '';
 if ( $group_op ) {
+
+  my @country = keys %country;
+  warn "WARNING: multiple countries on this grouped report; total links broken"
+    if scalar(@country) > 1;
+  my $country = $country[0];
+
+  my @state = keys %state;
+  warn "WARNING: multiple countries on this grouped report; total links broken"
+    if scalar(@state) > 1;
+  my $state = $state[0];
+
   $total_url_param =
     'report_group='.uri_escape("$group_op $group_value").';'.
-    join(';', map 'taxclass='.dbh->quote($_), keys %taxclasses );
+    join(';', map 'taxclass='.uri_escape($_), keys %taxclasses ).';'.
+    "country=$country;state=".uri_escape($state).';'.
+    join(';', map 'county='.uri_escape($_), keys %county )
+  ;
+
+
 }
 
 #ordering
