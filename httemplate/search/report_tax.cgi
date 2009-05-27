@@ -545,8 +545,9 @@ foreach (@regions) {
 
 my $total_url_param = '';
 if ( $group_op ) {
-  $total_url_param = 'report_group='.uri_escape("$group_op $group_value").';'.
-                     join(';', 'taxclass='.dbh->quote($_), keys %taxclasses );
+  $total_url_param =
+    'report_group='.uri_escape("$group_op $group_value").';'.
+    join(';', map 'taxclass='.dbh->quote($_), keys %taxclasses );
 }
 
 #ordering
