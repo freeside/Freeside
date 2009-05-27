@@ -156,15 +156,47 @@ if ( $cgi->param('out') ) {
 
 } elsif ( $cgi->param('country') ) {
 
-  my %ph = map { $_ => dbh->quote( $cgi->param($_) ) }
-               qw( county state country );
+  my @counties = $cgi->param('county');
+   
+  if ( scalar(@counties) > 1 ) {
 
-  my ( $loc_sql, @param ) = FS::cust_pkg->location_sql;
-  while ( $loc_sql =~ /\?/ ) { #easier to do our own substitution
-    $loc_sql =~ s/\?/$ph{shift(@param)}/e;
+    #hacky, could be more efficient.  care if it is ever used for more than the
+    # tax-report_groups filtering kludge
+
+    my $locs_sql =
+      ' ( '. join(' OR ', map {
+
+          my %ph = ( 'county' => $_,
+                     map { $_ => dbh->quote( $cgi->param($_) ) }
+                       qw( county state country )
+                   );
+
+          my ( $loc_sql, @param ) = FS::cust_pkg->location_sql;
+          while ( $loc_sql =~ /\?/ ) { #easier to do our own substitution
+            $loc_sql =~ s/\?/$ph{shift(@param)}/e;
+          }
+
+          $loc_sql;
+
+        } @counties
+
+      ). ' ) ';
+
+    push @where, $locs_sql;
+
+  } else {
+
+    my %ph = map { $_ => dbh->quote( $cgi->param($_) ) }
+                 qw( county state country );
+
+    my ( $loc_sql, @param ) = FS::cust_pkg->location_sql;
+    while ( $loc_sql =~ /\?/ ) { #easier to do our own substitution
+      $loc_sql =~ s/\?/$ph{shift(@param)}/e;
+    }
+
+    push @where, $loc_sql;
+
   }
-
-  push @where, $loc_sql;
    
   if ( $cgi->param('istax') ) {
     if ( $cgi->param('taxname') ) {
