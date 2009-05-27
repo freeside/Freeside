@@ -166,7 +166,7 @@ if ( $cgi->param('out') ) {
     my $locs_sql =
       ' ( '. join(' OR ', map {
 
-          my %ph = ( 'county' => $_,
+          my %ph = ( 'county' => dbh->quote($_),
                      map { $_ => dbh->quote( $cgi->param($_) ) }
                        qw( state country )
                    );
