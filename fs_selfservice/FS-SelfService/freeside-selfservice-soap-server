@@ -1,0 +1,53 @@
+#!/usr/bin/perl -w
+#
+# freeside-selfservice-soap-server
+#
+
+use strict;
+use Fcntl qw(:flock);
+use POSIX;
+use Getopt::Std;
+use SOAP::Transport::HTTP;
+use FS::SelfService;
+
+use vars qw( $opt_p $opt_d $opt_s );
+use vars qw( $DEBUG );
+
+getopts("s:p:d");
+$DEBUG = $opt_d;
+my $tag = $opt_s ? $opt_s : '';
+$tag = ($opt_s ? ':' : '') . $opt_p ? ':'.$opt_p : '';
+
+my $log_file = "/usr/local/freeside/selfservice.soap$tag.log";
+
+my $pid = fork;
+defined($pid) or die "Can't fork to start: $!";
+print "Started daemon with pid $pid\n" if $pid;
+exit if $pid;
+
+POSIX::setsid();
+open STDIN, "/dev/null" or die "Can't get rid of STDIN";
+open STDOUT, ">/dev/null" or die "Can't get rid of STDOUT";
+open STDERR, ">&STDOUT" or die "Can't get rid of STDERR";
+
+$SIG{__WARN__} = \&_logmsg;
+$SIG{__DIE__} = sub { &_logmsg(@_); exit };
+
+my $daemon = SOAP::Transport::HTTP::Daemon
+  ->new($opt_s ? (LocalAddr => $opt_s) : (), LocalPort => $opt_p ? $opt_p : 8080)
+  ->dispatch_to('/usr/local/freeside/SOAP/') #, 'FS::SelfService'
+  ->objects_by_reference('iZoomOnlineProvisionService')
+  ->handle;
+
+warn "Handling request at ", $daemon->url, "\n";
+$daemon->handle;
+
+sub _logmsg {
+  chomp( my $msg = shift );
+  my $log = new IO::File ">>$log_file";
+  flock($log, LOCK_EX);
+  seek($log, 0, 2);
+  print $log "[". scalar(localtime). "] [$$] $msg\n";
+  flock($log, LOCK_UN);
+  close $log;
+}

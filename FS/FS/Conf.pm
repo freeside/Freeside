@@ -1153,6 +1153,7 @@ worry that config_items is freeside-specific and icky.
     'section'     => 'username',
     'description' => 'Usernames must contain at least one letter',
     'type'        => 'checkbox',
+    'per_agent'   => 1,
   },
 
   {
@@ -2667,6 +2668,23 @@ worry that config_items is freeside-specific and icky.
     'section'     => '',
     'description' => 'HTML color for self-service interface input boxes, for example, #C0C0C0"',
     'type'        => 'text',
+  },
+
+  {
+    'key'         => 'selfservice-bulk_format',
+    'section'     => '',
+    'description' => 'Parameter arrangement for selfservice bulk features',
+    'type'        => 'select',
+    'select_enum' => [ '', 'izoom-soap', 'izoom-ftp' ],
+    'per_agent'   => 1,
+  },
+
+  {
+    'key'         => 'selfservice-bulk_ftp_dir',
+    'section'     => '',
+    'description' => 'Enable bulk ftp provisioning in this folder',
+    'type'        => 'text',
+    'per_agent'   => 1,
   },
 
   {

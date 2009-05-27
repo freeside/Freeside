@@ -709,6 +709,14 @@ jobs will have a dependancy on the supplied job (they will not run until the
 specific job completes).  This can be used to defer provisioning until some
 action completes (such as running the customer's credit card successfully).
 
+=item ticket_subject
+
+Optional subject for a ticket created and attached to this customer
+
+=item ticket_subject
+
+Optional queue name for ticket additions
+
 =back
 
 =cut
@@ -727,6 +735,9 @@ sub order_pkg {
   my %svc_options = ();
   $svc_options{'depend_jobnum'} = $opt->{'depend_jobnum'}
     if exists($opt->{'depend_jobnum'}) && $opt->{'depend_jobnum'};
+
+  my %insert_params = map { $opt->{$_} ? ( $_ => $opt->{$_} ) : () }
+                          qw( ticket_subject ticket_queue );
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -751,7 +762,7 @@ sub order_pkg {
 
   $cust_pkg->custnum( $self->custnum );
 
-  my $error = $cust_pkg->insert;
+  my $error = $cust_pkg->insert( %insert_params );
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return "inserting cust_pkg (transaction rolled back): $error";

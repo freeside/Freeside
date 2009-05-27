@@ -438,3 +438,5 @@ FS/tax_rate_location.pm
 t/tax_rate_location.t
 FS/cust_bill_pkg_tax_rate_location.pm
 t/cust_bill_pkg_tax_rate_location.t
+FS/cust_recon.pm
+t/cust_recon.t

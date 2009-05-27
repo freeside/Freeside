@@ -716,6 +716,32 @@ sub tables_hashref {
                  ],
     },
 
+    'cust_recon' => {  # what purpose does this serve?
+      'columns' => [
+        'reconid',      'serial',  '',          '', '', '', 
+        'recondate',    @date_type,                 '', '', 
+        'custnum',      'int'   ,  '',          '', '', '', 
+        'agentnum',     'int',     '',          '', '', '', 
+        'last',         'varchar', '',     $char_d, '', '', 
+        'first',        'varchar', '',     $char_d, '', '', 
+        'address1',     'varchar', '',     $char_d, '', '', 
+        'address2',     'varchar', 'NULL', $char_d, '', '', 
+        'city',         'varchar', '',     $char_d, '', '', 
+        'state',        'varchar', 'NULL', $char_d, '', '', 
+        'zip',          'varchar', 'NULL',      10, '', '', 
+        'pkg',          'varchar', 'NULL', $char_d, '', '', 
+        'adjourn',      @date_type,                 '', '',
+        'status',       'varchar', 'NULL',      10, '', '', 
+        'agent_custid', 'varchar',  '',    $char_d, '', '',
+        'agent_pkg',    'varchar', 'NULL', $char_d, '', '', 
+        'agent_adjourn', @date_type,                '', '',
+        'comments',     'text',    'NULL',      '', '', '', 
+      ],
+      'primary_key' => 'reconid',
+      'unique' => [],
+      'index' => [],
+    },
+
     #eventually use for billing & ship from cust_main too
     #for now, just cust_pkg locations
     'cust_location' => {

@@ -1023,6 +1023,21 @@ sub check {
   ;
   return $error if $error;
 
+  my $cust_pkg;
+  local $username_letter = $username_letter;
+  if ($self->svcnum) {
+    my $cust_svc = $self->cust_svc
+      or return "no cust_svc record found for svcnum ". $self->svcnum;
+    my $cust_pkg = $cust_svc->cust_pkg;
+  }
+  if ($self->pkgnum) {
+    $cust_pkg = qsearchs('cust_pkg', { 'pkgnum' => $self->pkgnum } );#complain?
+  }
+  if ($cust_pkg) {
+    $username_letter =
+      $conf->exists('username-letter', $cust_pkg->cust_main->agentnum);
+  }
+
   my $ulen = $usernamemax || $self->dbdef_table->column('username')->length;
   if ( $username_uppercase ) {
     $recref->{username} =~ /^([a-z0-9_\-\.\&\%\:]{$usernamemin,$ulen})$/i

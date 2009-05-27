@@ -617,7 +617,7 @@ sub check_chargable {
     skip_lastapp
   );
   foreach my $opt (grep !exists($flags{option_cache}->{$_}), @opt ) {
-    $flags{option_cache}->{$opt} = $self->option($opt);
+    $flags{option_cache}->{$opt} = $self->option($opt, 1);
   }
   my %opt = %{ $flags{option_cache} };
 

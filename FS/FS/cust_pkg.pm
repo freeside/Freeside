@@ -6,6 +6,7 @@ use Carp qw(cluck);
 use Scalar::Util qw( blessed );
 use List::Util qw(max);
 use Tie::IxHash;
+use MIME::Entity;
 use FS::UID qw( getotaker dbh );
 use FS::Misc qw( send_email );
 use FS::Record qw( qsearch qsearchs );
@@ -229,6 +230,14 @@ If set true, supresses any referral credit to a referring customer.
 
 cust_pkg_option records will be created
 
+=item ticket_subject
+
+a ticket will be added to this customer with this subject
+
+=item ticket_queue
+
+an optional queue name for ticket additions
+
 =back
 
 =cut
@@ -270,6 +279,29 @@ sub insert {
   #}
 
   my $conf = new FS::Conf;
+
+  if ( $conf->config('ticket_system') && $options{ticket_subject} ) {
+    eval '
+      use lib ( "/opt/rt3/local/lib", "/opt/rt3/lib" );
+      use RT;
+    ';
+    die $@ if $@;
+
+    RT::LoadConfig();
+    RT::Init();
+    my $q = new RT::Queue($RT::SystemUser);
+    $q->Load($options{ticket_queue}) if $options{ticket_queue};
+    my $t = new RT::Ticket($RT::SystemUser);
+    my $mime = new MIME::Entity;
+    $mime->build( Type => 'text/plain', Data => $options{ticket_subject} );
+    $t->Create( $options{ticket_queue} ? (Queue => $q) : (),
+                Subject => $options{ticket_subject},
+                MIMEObj => $mime,
+              );
+    $t->AddLink( Type   => 'MemberOf',
+                 Target => 'freeside://freeside/cust_main/'. $self->custnum,
+               );
+  }
 
   if ($conf->config('welcome_letter') && $self->cust_main->num_pkgs == 1) {
     my $queue = new FS::queue {
