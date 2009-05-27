@@ -83,6 +83,10 @@ if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
   push @where, "cust_main.agentnum = $1";
 }
 
+#classnum
+# not specified: all classes
+# 0: empty class
+# N: classnum
 if ( $cgi->param('classnum') =~ /^(\d+)$/ ) {
   if ( $1 == 0 ) {
     push @where, "classnum IS NULL";
@@ -90,6 +94,13 @@ if ( $cgi->param('classnum') =~ /^(\d+)$/ ) {
     push @where, "classnum = $1";
   }
 }
+
+push @where, map ' taxclass = '.dbh->quote($_), $cgi->param('taxclass')
+  if $cgi->param('taxclass')
+  && ! $cgi->param('istax'); #no part_pkg.taxclass in this case
+                             #(should we save a taxclass or a link to taxnum
+                             # in cust_bill_pkg or something like
+                             # cust_bill_pkg_tax_location?)
 
 #sub _where {
 # my $table = shift;
@@ -143,7 +154,7 @@ if ( $cgi->param('out') ) {
 
   }
 
-} elsif ( $cgi->param('country' ) ) {
+} elsif ( $cgi->param('country') ) {
 
   my %ph = map { $_ => dbh->quote( $cgi->param($_) ) }
                qw( county state country );
@@ -168,13 +179,6 @@ if ( $cgi->param('out') ) {
     #warn "neither nottax nor istax parameters specified";
   }
 
-  push @where, ' taxclass = '. dbh->quote( $cgi->param('taxclass') )
-    if $cgi->param('taxclass')
-    && ! $cgi->param('istax'); #no part_pkg.taxclass in this case
-                               #(should we save a taxclass or a link to taxnum
-                               # in cust_bill_pkg or something like
-                               # cust_bill_pkg_tax_location?)
-
   if ( $cgi->param('taxclassNULL') ) {
 
     my %hash = ( 'country' => scalar($cgi->param('country')) );
@@ -189,7 +193,7 @@ if ( $cgi->param('out') ) {
 
   }
 
- } elsif ( scalar( grep( /locationtaxid/, $cgi->param ) ) ) {
+} elsif ( scalar( grep( /locationtaxid/, $cgi->param ) ) ) {
 
   # this should really be shoved out to FS::cust_pkg->location_sql or something
   # along with the code in report_newtax.cgi
@@ -211,13 +215,27 @@ if ( $cgi->param('out') ) {
 
 }
 
-if ($cgi->param('itemdesc')) {
-  if ($cgi->param('itemdesc') eq 'Tax') {
+if ( $cgi->param('itemdesc') ) {
+  if ( $cgi->param('itemdesc') eq 'Tax' ) {
     push @where, "(itemdesc='Tax' OR itemdesc is null)";
-  }else{
+  } else {
     push @where, 'itemdesc='. dbh->quote($cgi->param('itemdesc'));
   }
 }
+
+if ( $cgi->param('report_group') =~ /^(=|!=) (.*)$/ && $cgi->param('istax') ) {
+  my ( $group_op, $group_value ) = ( $1, $2 );
+  if ( $group_op eq '=' ) {
+    #push @where, 'itemdesc LIKE '. dbh->quote($group_value.'%');
+    push @where, 'itemdesc = '. dbh->quote($group_value);
+  } elsif ( $group_op eq '!=' ) {
+    push @where, '( itemdesc != '. dbh->quote($group_value) .' OR itemdesc IS NULL )';
+  } else {
+    die "guru meditation #00de: group_op $group_op\n";
+  }
+  
+}
+
 push @where, 'cust_bill_pkg.pkgnum != 0' if $cgi->param('nottax');
 push @where, 'cust_bill_pkg.pkgnum  = 0' if $cgi->param('istax');
 
