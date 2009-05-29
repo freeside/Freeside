@@ -10,7 +10,7 @@
                'count_query' => $count_query,
                'header' => [
                              '', # checkbox column
-                             fields('cdr'), #XXX fill in some nice names
+                             @header,
                            ],
                'fields' => [
                              sub {
@@ -20,7 +20,7 @@
                                my $acctid = $cdr->acctid;
                                qq!<INPUT NAME="acctid$acctid" TYPE="checkbox" VALUE="1">!;
                              },
-                             fields('cdr'), #XXX fill in some pretty-print
+                             @fields,       #XXX fill in some pretty-print
                                             #processing, etc.
                            ],
 
@@ -155,5 +155,37 @@ my $count_query = "SELECT COUNT(*) FROM cdr $search";
 my $qsearch = join(' AND ', @qsearch);
 $qsearch = ( scalar(keys %$hashref) ? ' AND ' : ' WHERE ' ) . $qsearch
   if $qsearch;
+
+###
+# display fields
+###
+
+#XXX fill in some (more) nice names
+my %header = (
+  'calldate'       => 'Call Date',
+  'clid'           => 'Caller ID',
+  'charged_party'  => 'Charged party',
+  'src'            => 'Source',
+  'dst'            => 'Destination',
+  'dcontext'       => 'Destination Context',
+  'channel'        => 'Channel',
+  'dstchannel'     => 'Destination Channel',
+  'freesidestatus' => 'Freeside status',
+);
+
+my @first = qw( acctid calldate clid charged_party src dst dcontext );
+my %first = map { $_=>1 } @first;
+
+my @fields = ( @first, grep !$first{$_}, fields('cdr') );
+
+my @header = map {
+                   if ( exists($header{$_}) ) {
+                     $header{$_};
+                   } else {
+                     my $header = $_;
+                     $header =~ s/\_/ /g;
+                     ucfirst($header);
+                   }
+                 } @fields;
 
 </%init>
