@@ -29,8 +29,8 @@ use FS::cdr qw(_cdr_date_parser_maker);
     _cdr_date_parser_maker('startdate'),  #05 Authorize timestamp
     _cdr_date_parser_maker('answerdate'), #06 Start timestamp
     'billsec', #'duration', #07 Duration
-    _e164_parser_maker('src'), #08 Caller
-    _e164_parser_maker('dst'), #09 Callee
+    _e164_parser_maker('src',      'charged_party'),                 #08 Caller
+    _e164_parser_maker('dcontext', 'dst', 'norewrite_pivotonly'=>1) ,#09 Callee
     'channel', #10 Source IP
     'dstchannel', #11 Destination IP
     'userfield', #12 selector Tag
@@ -80,43 +80,40 @@ use FS::cdr qw(_cdr_date_parser_maker);
 );
 
 sub _e164_parser_maker {
-  my $field = shift;
+  my( $field, $pivot_field, %opt ) = @_;
   return sub {
     my( $cdr, $e164 ) = @_;
-    eval { $cdr->$field( _e164_parse($e164) ); };
-    die "error parsing e164 for $field from $e164: $@\n" if $@;
+    my( $pivot, $number ) = _e164_parse($e164);
+    if ( $opt{'norewrite_pivotonly'} && ! $pivot ) { 
+      $cdr->$pivot_field( $number );
+    } else {
+      $cdr->$field( $number );
+      $cdr->$pivot_field( $pivot );
+    }
   };
 }
-
-my %e164_types = (
-  '000000' => '',
-  '100005' => '',
-  '100009' => '',
-  '100012' => '',
-  '100014' => '',
-  '100015' => '',
-  '100016' => '',
-  '300000' => '',
-);
 
 sub _e164_parse {
   my $e164 = shift;
 
   $e164 =~ s/^e164://;
 
-  my ($type, $number);
+  my ($pivot, $number);
   if ( $e164 =~ /^O(\d+)$/ ) {
-    $type = ''; #?
+    $pivot = ''; #?
     $number = $1;
-  } elsif ( $e164 =~ /^(\d{6})(\d+)$/ ) {
-    $type = $1;
+  } elsif ( $e164 =~ /^000000(\d+)$/ ) {
+    $pivot = '';
+    $number = $1;
+  } elsif ( $e164 =~ /^(1\d{5})(\d+)$/ ) {
+    $pivot = $1;
     $number = $2;
   } else {
-    $type = '';
+    $pivot = '';
     $number = $e164; #unparsable...
   }
-  #$type...?
-  $number;
+
+  ( $pivot, $number );
 }
 
 1;

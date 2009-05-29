@@ -315,13 +315,13 @@ sub set_charged_party {
 
   }
 
-  my $prefix = $conf->config('cdr-charged_party-truncate_prefix');
-  my $prefix_len = length($prefix);
-  my $trunc_len = $conf->config('cdr-charged_party-truncate_length');
-
-  $self->charged_party( substr($self->charged_party, 0, $trunc_len) )
-    if $prefix_len && $trunc_len
-    && substr($self->charged_party, 0, $prefix_len) eq $prefix;
+#  my $prefix = $conf->config('cdr-charged_party-truncate_prefix');
+#  my $prefix_len = length($prefix);
+#  my $trunc_len = $conf->config('cdr-charged_party-truncate_length');
+#
+#  $self->charged_party( substr($self->charged_party, 0, $trunc_len) )
+#    if $prefix_len && $trunc_len
+#    && substr($self->charged_party, 0, $prefix_len) eq $prefix;
 
 }
 

@@ -2736,19 +2736,19 @@ worry that config_items is freeside-specific and icky.
     'type'        => 'checkbox',
   },
 
-  {
-    'key'         => 'cdr-charged_party-truncate_prefix',
-    'section'     => '',
-    'description' => 'If the charged_party field has this prefix, truncate it to the length in cdr-charged_party-truncate_length.',
-    'type'        => 'text',
-  },
-
-  {
-    'key'         => 'cdr-charged_party-truncate_length',
-    'section'     => '',
-    'description' => 'If the charged_party field has the prefix in cdr-charged_party-truncate_prefix, truncate it to this length.',
-    'type'        => 'text',
-  },
+#  {
+#    'key'         => 'cdr-charged_party-truncate_prefix',
+#    'section'     => '',
+#    'description' => 'If the charged_party field has this prefix, truncate it to the length in cdr-charged_party-truncate_length.',
+#    'type'        => 'text',
+#  },
+#
+#  {
+#    'key'         => 'cdr-charged_party-truncate_length',
+#    'section'     => '',
+#    'description' => 'If the charged_party field has the prefix in cdr-charged_party-truncate_prefix, truncate it to this length.',
+#    'type'        => 'text',
+#  },
 
   {
     'key'         => 'cdr-charged_party_rewrite',
