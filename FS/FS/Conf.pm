@@ -916,7 +916,7 @@ worry that config_items is freeside-specific and icky.
   { 
     'key'         => 'invoice_sections',
     'section'     => 'billing',
-    'description' => 'Split invoice into sections and label according to package class when enabled.',
+    'description' => 'Split invoice into sections and label according to package category when enabled.',
     'type'        => 'checkbox',
   },
 
