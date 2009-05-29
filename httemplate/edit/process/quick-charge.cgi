@@ -27,7 +27,7 @@ $param->{"custnum"} =~ /^(\d+)$/
   or $error .= "Illegal customer number " . $param->{"custnum"} . "  ";
 my $custnum = $1;
 
-$param->{"amount"} =~ /^\s*(\d+(\.\d{1,2})?)\s*$/
+$param->{"amount"} =~ /^\s*(\d*(?:\.?\d{1,2}))\s*$/
   or $error .= "Illegal amount " . $param->{"amount"} . "  ";
 my $amount = $1;
 

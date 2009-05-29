@@ -20,7 +20,7 @@ function validate_quick_charge () {
   var pkg = document.QuickChargeForm.pkg.value;
   var pkg_regex = /^([\w \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\=\[\]]*)$/ ;
   var amount = document.QuickChargeForm.amount.value;
-  var amount_regex = /^\s*\$?\s*(\d+(\.\d{1,2})?)\s*$/ ;
+  var amount_regex = /^\s*\$?\s*(\d*(\.?\d{1,2}))\s*$/ ;
   var rval = true;
 
   if ( ! amount_regex.test(amount) ) {
