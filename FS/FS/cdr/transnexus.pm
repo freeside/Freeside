@@ -3,6 +3,7 @@ package FS::cdr::transnexus;
 use strict;
 use base qw( FS::cdr );
 use vars qw( %info );
+use MIME::Base64;
 use FS::cdr qw( _cdr_date_parser_maker _cdr_min_parser_maker );
 
 %info = (
@@ -14,12 +15,12 @@ use FS::cdr qw( _cdr_date_parser_maker _cdr_min_parser_maker );
   #listref of what to do with each field from the CDR, in order
   'import_fields' => [
 
-    _cdr_date_parser_maker('startddate'), #O_CallStartTime
+    _cdr_date_parser_maker('startddate'),        #O_CallStartTime
     'src',            #CallingNumberReported
     'dst',            #CalledNumberReported
     'channel',        #SourceDeviceName      / O_ReportingDeviceName
     'dstchannel',     #O_ReportingDeviceName / DestinationDeviceName
-    'clid',           #CallId
+    sub { $_[0]->clid( decode_base64($_[1]) ); }, #CallId
     'uniqueid',       #TransactionId
     'duration',       #RatedDuration
     'billsec',        #O_BillingDuration
