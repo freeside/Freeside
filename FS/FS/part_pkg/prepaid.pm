@@ -12,6 +12,11 @@ tie %recur_action, 'Tie::IxHash',
   'cancel'  => 'cancel',
 ;
 
+tie my %overlimit_action, 'Tie::IxHash',
+  'overlimit' => 'Default overlimit processing',
+  'cancel'    => 'Cancel',
+;
+
 %info = (
   'name' => 'Prepaid, flat rate',
   #'name' => 'Prepaid (no automatic recurring)', #maybe use it here too
@@ -27,8 +32,17 @@ tie %recur_action, 'Tie::IxHash',
                         'type' => 'select',
 			'select_options' => \%recur_action,
 	              },
+    %FS::part_pkg::flat::usage_fields,
+    'overlimit_action' => { 'name' => 'Action to take upon reaching a usage limit.',
+                            'type' => 'select',
+                            'select_options' => \%overlimit_action,
+	              },
+    #XXX if you set overlimit_action to 'cancel', should also have the ability
+    # to select a reason
   },
-  'fieldorder' => [ 'setup_fee', 'recur_fee', 'recur_action', ],
+  'fieldorder' => [ qw( setup_fee recur_fee recur_action ),
+                    @FS::part_pkg::flat::usage_fieldorder,
+                  ],
   'weight' => 25,
 );
 

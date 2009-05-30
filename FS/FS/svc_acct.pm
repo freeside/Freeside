@@ -1772,6 +1772,28 @@ sub _op_usage {
   die "Can't update $column for svcnum". $self->svcnum
     if $rv == 0;
 
+  #overlimit_action eq 'cancel' handling
+  my $cust_pkg = $self->cust_svc->cust_pkg;
+  if ( $cust_pkg
+       && $cust_pkg->part_pkg->option('overlimit_action', 1) eq 'cancel' 
+       && $op eq '-' && &{$op2condition{$op}}($self, $column, $amount)
+     )
+  {
+
+    my $error = $cust_pkg->cancel; #XXX should have a reason
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Error cancelling: $error";
+    }
+
+    #nothing else is relevant if we're cancelling, so commit & return success
+    warn "$me update successful; committing\n"
+      if $DEBUG;
+    $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+    return '';
+
+  }
+
   my $action = $op2action{$op};
 
   if ( &{$op2condition{$op}}($self, $column, $amount) &&
