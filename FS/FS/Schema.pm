@@ -2091,7 +2091,7 @@ sub tables_hashref {
         #NULL, done (or something)
         'freesiderewritestatus', 'varchar',   'NULL',     32,   '', '', 
 
-        'cdrbatch', 'varchar', 'NULL', $char_d, '', '',
+        'cdrbatch', 'varchar', 'NULL', 255, '', '',
 
       ],
       'primary_key' => 'acctid',
