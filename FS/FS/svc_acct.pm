@@ -539,12 +539,13 @@ sub insert {
       my %values = $part_pkg->usage_valuehash;
       my $multiplier = $conf->exists('svc_acct-usage_threshold') 
                          ? 1 - $conf->config('svc_acct-usage_threshold')/100
-                         : 0.20;
+                         : 0.20; #doesn't matter
 
       foreach ( keys %values ) {
         next if $self->getfield($_);
         $self->setfield( $_, $values{$_} );
-        $self->setfield( $_. '_threshold', int( $values{$_} * $multiplier ) );
+        $self->setfield( $_. '_threshold', int( $values{$_} * $multiplier ) )
+          if $conf->exists('svc_acct-usage_threshold');
       }
 
     }

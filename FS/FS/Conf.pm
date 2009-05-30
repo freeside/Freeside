@@ -2014,7 +2014,7 @@ worry that config_items is freeside-specific and icky.
   {
     'key'         => 'svc_acct-usage_threshold',
     'section'     => 'billing',
-    'description' => 'The threshold (expressed as percentage) of acct.seconds or acct.up|down|totalbytes at which a warning message is sent to a service holder.  Typically used in conjunction with prepaid packages and freeside-sqlradius-radacctd.  Defaults to 80.',
+    'description' => 'The threshold (expressed as percentage) of acct.seconds or acct.up|down|totalbytes at which a warning message is sent to a service holder.  Typically used in conjunction with prepaid packages and freeside-sqlradius-radacctd.',
     'type'        => 'text',
   },
 
