@@ -1,0 +1,142 @@
+#!/usr/bin/perl
+
+use strict;
+use Getopt::Std;
+use Net::SFTP::Foreign;
+use FS::UID qw(adminsuidsetup datasrc);
+use FS::cdr;
+
+###
+# parse command line
+###
+
+use vars qw( $opt_p $opt_d $opt_v );
+getopts('v');
+
+$opt_p = 'last';
+$opt_d = 'done';
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+# %%%FREESIDE_CACHE%%%
+my $cachedir = '/usr/local/etc/freeside/cache.'. datasrc. '/cdrs';
+mkdir $cachedir unless -d $cachedir;
+
+#my $format = shift or die &usage;
+my $format = 'transnexus';
+
+use vars qw( $servername );
+$servername = shift or die &usage;
+
+my $DIR = '/home/ossadmin/OSS/nexoss/CDR_ARCHIVE_BY_ACCOUNT';
+
+###
+# get the file list
+###
+
+warn "Retreiving directory listing\n" if $opt_v;
+
+my $ls_sftp = sftp();
+
+my $lsdir = $ls_sftp->ls($DIR);
+
+###
+# import each file in each dir
+###
+
+foreach my $dir ( @$lsdir ) {
+
+  my $dirname = $dir->{filename};
+  warn "Scanning dir $dirname\n" if $opt_v;
+
+  my $ls = $ls_sftp->ls("$DIR/$dirname", wanted => qr/^$opt_p.*-CDRs$/i );
+
+  foreach my $file ( @$ls ) {
+
+    my $filename = $file->{filename};
+    warn "Downloading $filename\n" if $opt_v;
+
+    #get the file
+    my $get_sftp = sftp();
+    $get_sftp->get("$DIR/$dirname/$filename", "$cachedir/$filename")
+      or die "Can't get $filename: ". $get_sftp->error;
+
+    warn "Processing $filename\n" if $opt_v;
+
+    my $error = FS::cdr::batch_import( {
+      'file'     => "$cachedir/$filename",
+      'format'   => $format,
+      'params'   => { 'cdrbatch' => $filename, },
+      'empty_ok' => 1,
+    } );
+    die $error if $error;
+
+    if ( $opt_d ) {
+      my $mv_sftp = sftp();
+      $mv_sftp->mkdir("$DIR/$dirname/$opt_d");
+      $mv_sftp->rename( "$DIR/$dirname/$filename",
+                        "$DIR/$dirname/$opt_d/$filename" )
+        or die "can't move $filename to $opt_d: ". $mv_sftp->error;
+    }
+
+    unlink "$cachedir/$filename";
+
+  }
+
+}
+
+###
+# subs
+###
+
+sub usage {
+  "Usage: \n  cdr-transnexus.import [ -v ] user [sftpuser@]servername\n";
+}
+
+use vars qw( $sftp );
+
+sub sftp {
+
+  #reuse connections
+  return $sftp if $sftp && $sftp->cwd;
+
+  my %sftp = ( host => $servername );
+
+  $sftp = Net::SFTP::Foreign->new(%sftp);
+  $sftp->error and die "SFTP connection failed: ". $sftp->error;
+
+  $sftp;
+}
+
+=head1 NAME
+
+cdr.sftp_and_import - Download CDR files from a remote server via SFTP
+
+=head1 SYNOPSIS
+
+  cdr-transnexus.import [ -v ] user [sftpuser@]servername
+
+=head1 DESCRIPTION
+
+Command line tool to download CDR files from a remote server via SFTP and then
+import them into the database.
+
+-v: verbose
+
+user: freeside username
+
+[sftpuser@]servername: remote server
+
+=head1 BUGS
+
+Hacked up copy of freeside-cdr-sftp_and_import
+
+=head1 SEE ALSO
+
+L<FS::cdr>
+
+=cut
+
+1;
+
