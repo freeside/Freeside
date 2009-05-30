@@ -41,7 +41,7 @@ tie my %overlimit_action, 'Tie::IxHash',
     # to select a reason
   },
   'fieldorder' => [ qw( setup_fee recur_fee recur_action ),
-                    @FS::part_pkg::flat::usage_fieldorder,
+                    @FS::part_pkg::flat::usage_fieldorder, 'overlimit_action',
                   ],
   'weight' => 25,
 );
