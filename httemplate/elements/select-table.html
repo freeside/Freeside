@@ -64,8 +64,13 @@ Example:
 >
 
 % while ( @pre_options ) { 
-    <OPTION VALUE="<% shift(@pre_options) %>"><% shift(@pre_options) %>
-
+%   my $pre_opt   = shift(@pre_options);
+%   my $pre_label = shift(@pre_options);
+%   my $selected =    ( ref($value) && $value->{$pre_opt} )
+%                  || ( $value eq $pre_opt );
+    <OPTION VALUE="<% $pre_opt %>"
+            <% $selected ? 'SELECTED' : '' %>
+    ><% $pre_label %>
 % } 
 
 % unless ( $opt{'multiple'} || $opt{'disable_empty'} ) {

@@ -1,6 +1,7 @@
 <% include( 'elements/browse.html',
                  'title'                 => 'Package Definitions',
                  'html_init'             => $html_init,
+                 'html_posttotal'        => $html_posttotal,
                  'name'                  => 'package definitions',
                  'disableable'           => 1,
                  'disabled_statuspos'    => 3,
@@ -48,10 +49,10 @@ if ( $cgi->param('active') ) {
   $orderby = 'num_active DESC';
 }
 
-my $extra_sql = '';
+my @where = ();
 
 #if ( $cgi->param('activeONLY') ) {
-#  $extra_sql = ' WHERE num_active > 0 '; #XXX doesn't affect count...
+#  push @where, ' WHERE num_active > 0 '; #XXX doesn't affect count...
 #}
 
 if ( $cgi->param('recurring') ) {
@@ -59,20 +60,29 @@ if ( $cgi->param('recurring') ) {
   $extra_count = ' freq != 0 ';
 }
 
+my $classnum = '';
+if ( $cgi->param('classnum') =~ /^(\d+)$/ ) {
+  $classnum = $1;
+  push @where, $classnum ? "classnum =  $classnum"
+                         : "classnum IS NULL";
+}
+$cgi->delete('classnum');
+
 if ( $cgi->param('missing_recur_fee') ) {
-  my $missing = "0 = ( SELECT COUNT(*) FROM part_pkg_option
-                         WHERE optionname = 'recur_fee'
-                           AND part_pkg_option.pkgpart = part_pkg.pkgpart
-                           AND CAST ( optionvalue AS NUMERIC ) > 0
-                     )";
-  $extra_sql .= ( ( scalar(keys %hash) || $extra_sql ) ? ' AND ' : ' WHERE ' ).
-                $missing;
+  push @where, "0 = ( SELECT COUNT(*) FROM part_pkg_option
+                        WHERE optionname = 'recur_fee'
+                          AND part_pkg_option.pkgpart = part_pkg.pkgpart
+                          AND CAST ( optionvalue AS NUMERIC ) > 0
+                    )";
 }
 
-unless ( $acl_edit_global ) {
-  $extra_sql .= ( ( scalar(keys %hash) || $extra_sql ) ? ' AND ' : ' WHERE ' ).
-                 FS::part_pkg->curuser_pkgs_sql;
-}
+push @where, FS::part_pkg->curuser_pkgs_sql
+  unless $acl_edit_global;
+
+my $extra_sql = scalar(@where)
+                ? ( scalar(keys %hash) ? ' AND ' : ' WHERE ' ).
+                  join( 'AND ', @where)
+                : '';
 
 my $agentnums = join(',', $curuser->agentnums);
 my $count_cust_pkg = "
@@ -116,6 +126,31 @@ my $html_init;
     <BR><BR>
   !;
 #}
+
+$cgi->param('dummy', 1);
+
+my $filter_change =
+  qq(\n<SCRIPT TYPE="text/javascript">\n).
+  "function filter_change() {".
+  "  window.location = '". $cgi->self_url.
+       ";classnum=' + document.getElementById('classnum').options[document.getElementById('classnum').selectedIndex].value".
+  "}".
+  "\n</SCRIPT>\n";
+
+#restore this so pagination works
+$cgi->param('classnum', $classnum) if length($classnum);
+
+my $html_posttotal =
+  "$filter_change\n<BR>( show class: ".
+  include('/elements/select-pkg_class.html',
+            #'curr_value'    => $classnum,
+            'value'         => $classnum, #insist on 0 :/
+            'onchange'      => 'filter_change()',
+            'pre_options'   => [ '-1' => 'all',
+                                 '0'  => '(none)', ],
+            'disable_empty' => 1,
+         ).
+  ' )';
 
 # ------
 
