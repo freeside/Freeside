@@ -39,9 +39,11 @@ sub ns_command {
   my @args = ( $command );
 
   if ( $method eq 'PUT' ) {
-    my $content = $method eq 'PUT' ? $ns->buildQuery( { @_ } ) : '';
+    my $content = $ns->buildQuery( { @_ } );
     $content =~ s/^\?//;
     push @args, $content;
+  } elsif ( $method eq 'GET' ) {
+    $args[0] .= $ns->buildQuery( { @_ } );
   }
 
   my $auth =
