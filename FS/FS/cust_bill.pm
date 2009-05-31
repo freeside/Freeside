@@ -2578,8 +2578,8 @@ sub terms {
   return $self->cust_main->invoice_terms
     if $self->cust_main->invoice_terms;
 
-  #use configured default or default default
-  $conf->config('invoice_default_terms') || 'Payable upon receipt';
+  #use configured default
+  $conf->config('invoice_default_terms');
 }
 
 sub due_date {
