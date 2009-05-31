@@ -1,0 +1,207 @@
+#!/usr/bin/perl
+#
+# */5 * * * /home/ivan/freeside/bin/cdr-netsapiens.import ivan exportnum
+
+use strict;
+use vars qw( $DEBUG );
+use REST::Client;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearchs);
+use FS::part_export;
+use FS::cdr;
+
+$DEBUG = 2;
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+my $exportnum = shift or die &usage;
+my $part_export = qsearchs('part_export', { 'exportnum' => $exportnum } )
+  or die "unknown exportnum $exportnum\n";
+
+#find max time_release
+#SELECT MAX(
+#2009-02-19 20:17:37
+my $time_release = '2009-01-01 00:00:00';
+
+#retreive CDRs >= this time
+#XXX (in pages, this tops out at 20) _start=>0, _limit=>20
+
+my $ns = $part_export->ns_command( 'GET', '/cdr/',
+                                     'time_release' => '$time_release,',
+                                     '_sort'        => '+time_release',
+                                 );
+
+#loop over them, double check duplicates, insert the rest
+
+my $content = $ns->responseContent;
+
+#<a href="/tac2/cdr/20090219201719000016%40SkyNet360.Com">20090219201719000016@SkyNet360.Com</a>
+#    <form method="post" action="/tac2/cdr/20090219201719000016%40SkyNet360.Com">
+while ( $content =~
+          s/^.*?<form method="post" action="\/tac2\/cdr\/(\d+)\%40[^"]*">//is )
+{
+
+  my $accountcode = $1;
+  warn "$accountcode\n" if $DEBUG;
+
+  $content =~ s/(.*?)<\/form>//is;
+  my $cdr_content = $1;
+
+  while ( $cdr_content =~
+            s/.*?<input name="(\w+)" type="\w+" value="([^"]+)" \/>//is )
+  {
+    warn "  $1 => $2\n" if $DEBUG > 1;
+
+    my $cdr = new FS::cdr {
+      #'src' =>
+      #'dst' =>
+#      'startdate'   => 'time_start', #XXX needs parsing
+#      'enddate'     => 'time_release', #XXX needs parsing
+      'duration'    => 'duration',
+      'billsec'     => 'time_talking',
+      #'disposition' => 
+      'accountcode' => $accountcode,
+      #'charged_party'
+    };
+     
+
+  }
+
+}
+
+sub usage {
+  "Usage: \n  cdr-netsapiens.import user exportnum\n";
+}
+
+__END__
+
+  rly_prt_0 => 23946
+  orig_req_host => residential.skynet360.com
+  batch_dura => 0
+  orig_from_host => 63.251.149.5
+  batch_tim_beg => 2009-02-19 20:17:19
+  term_match => sip:7865457300@residential.skynet360.com
+  term_domain => residential.skynet360.com
+  term_sub => 7865457300
+  orig_req_user => 7865457300
+  orig_callid => 5D1164E6-44E011D6-8C84C368-EA5A0BC4@63.251.149.5
+  term_ip => 63.251.148.137:1453
+  term_to_uri => sip:7865457300@residential.skynet360.com
+  release_code => end
+          time_start => 2009-02-19 20:17:19.0
+  batch_hold => 0
+  orig_from_user => 9046384544
+  time_holding => 0
+  term_logi_uri => sip:7865457300@residential.skynet360.com
+  time_talking => 0
+  orig_from_uri => sip:9046384544@63.251.149.5
+  duration => 0
+  orig_logi_uri => sip:9046384544@63.251.149.5
+  rly_cnt_b => 0
+  time_insert => 2009-02-19 15:17:38.0
+  orig_to_user => 7865457300
+  rly_prt_a => 63.251.149.18:21972
+  cdr_index => 0
+  orig_to_host => 63.251.149.18
+  orig_match => sip:*@63.251.149.5
+        time_release => 2009-02-19 20:17:37
+  codec => G.711 u-law
+  orig_req_uri => sip:7865457300@residential.skynet360.com
+  orig_to_uri => sip:7865457300@63.251.149.18
+  rly_cnt_a => 13
+  orig_ip => 63.251.149.5:57326
+  release_text => Orig: Cancel
+  time_disp => 0
+  time_ringing => 2009-02-19 20:17:19
+  _method => put
+prt_0 => 23946
+  orig_req_host => residential.skynet360.com
+  batch_dura => 0
+  orig_from_host => 63.251.149.5
+  batch_tim_beg => 2009-02-19 20:17:19
+  term_match => sip:7865457300@residential.skynet360.com
+  term_domain => residential.skynet360.com
+  time_start => 2009-02-19 20:17:19.0
+  term_sub => 7865457300
+  orig_req_user => 7865457300
+  orig_callid => 5D1164E6-44E011D6-8C84C368-EA5A0BC4@63.251.149.5
+  term_ip => 63.251.148.137:1453
+  term_to_uri => sip:7865457300@residential.skynet360.com
+  release_code => end
+  time_start => 2009-02-19 20:17:19.0
+  batch_hold => 0
+  orig_from_user => 9046384544
+  time_holding => 0
+  term_logi_uri => sip:7865457300@residential.skynet360.com
+  time_talking => 0
+  orig_from_uri => sip:9046384544@63.251.149.5
+  duration => 0
+  orig_logi_uri => sip:9046384544@63.251.149.5
+  rly_cnt_b => 0
+  time_insert => 2009-02-19 15:17:38.0
+  orig_to_user => 7865457300
+  rly_prt_a => 63.251.149.18:21972
+  cdr_index => 0
+  orig_to_host => 63.251.149.18
+  orig_match => sip:*@63.251.149.5
+  time_release => 2009-02-19 20:17:37
+  codec => G.711 u-law
+  orig_req_uri => sip:7865457300@residential.skynet360.com
+  orig_to_uri => sip:7865457300@63.251.149.18
+  rly_cnt_a => 13
+  orig_ip => 63.251.149.5:57326
+  release_text => Orig: Cancel
+  time_disp => 0
+  time_ringing => 2009-02-19 20:17:19
+  _method => put
+
+list of freeside CDR fields, useful ones marked with *
+
+       acctid - primary key
+*[1]   calldate - Call timestamp (SQL timestamp)
+       clid - Caller*ID with text
+*      src - Caller*ID number / Source number
+*      dst - Destination extension
+       dcontext - Destination context
+       channel - Channel used
+       dstchannel - Destination channel if appropriate
+       lastapp - Last application if appropriate
+       lastdata - Last application data
+*      startdate - Start of call (UNIX-style integer timestamp)
+       answerdate - Answer time of call (UNIX-style integer timestamp)
+*      enddate - End time of call (UNIX-style integer timestamp)
+*      duration - Total time in system, in seconds
+*      billsec - Total time call is up, in seconds
+*[2]   disposition - What happened to the call: ANSWERED, NO ANSWER, BUSY
+       amaflags - What flags to use: BILL, IGNORE etc, specified on a per
+       channel basis like accountcode.
+*[3]   accountcode - CDR account number to use: account
+       uniqueid - Unique channel identifier (Unitel/RSLCOM Event ID)
+       userfield - CDR user-defined field
+       cdr_type - CDR type - see FS::cdr_type (Usage = 1, S&E = 7, OC&C = 8)
+*[4]   charged_party - Service number to be billed
+       upstream_currency - Wholesale currency from upstream
+*[5]   upstream_price - Wholesale price from upstream
+       upstream_rateplanid - Upstream rate plan ID
+       rated_price - Rated (or re-rated) price
+       distance - km (need units field?)
+       islocal - Local - 1, Non Local = 0
+*[6]   calltypenum - Type of call - see FS::cdr_calltype
+       description - Description (cdr_type 7&8 only) (used for
+       cust_bill_pkg.itemdesc)
+       quantity - Number of items (cdr_type 7&8 only)
+       carrierid - Upstream Carrier ID (see FS::cdr_carrier)
+       upstream_rateid - Upstream Rate ID
+       svcnum - Link to customer service (see FS::cust_svc)
+       freesidestatus - NULL, done (or something)
+
+[1] Auto-populated from startdate if not present
+[2] Package options available to ignore calls without a specific disposition
+[3] When using 'cdr-charged_party-accountcode' config
+[4] Auto-populated from src (normal calls) or dst (toll free calls) if not present
+[5] When using 'upstream_simple' rating method.
+[6] Set to usage class classnum when using pre-rated CDRs and usage class-based
+    taxation (local/intrastate/interstate/international)
+
+
