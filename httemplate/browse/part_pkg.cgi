@@ -57,7 +57,7 @@ my @where = ();
 
 if ( $cgi->param('recurring') ) {
   $hash{'freq'} = { op=>'!=', value=>'0' };
-  $extra_count = ' freq != 0 ';
+  $extra_count = " freq != '0' ";
 }
 
 my $classnum = '';
@@ -151,6 +151,14 @@ my $html_posttotal =
             'disable_empty' => 1,
          ).
   ' )';
+
+my $recur_toggle = $cgi->param('recurring') ? 'show' : 'hide';
+$cgi->param('recurring', $cgi->param('recurring') ^ 1 );
+
+$html_posttotal .=
+  '( <A HREF="'. $cgi->self_url.'">'. "$recur_toggle one-time charges</A> )";
+
+$cgi->param('recurring', $cgi->param('recurring') ^ 1 ); #put it back
 
 # ------
 
