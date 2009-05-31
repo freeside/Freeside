@@ -2579,7 +2579,7 @@ sub terms {
     if $self->cust_main->invoice_terms;
 
   #use configured default
-  $conf->config('invoice_default_terms');
+  $conf->config('invoice_default_terms') || '';
 }
 
 sub due_date {
