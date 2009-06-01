@@ -23,6 +23,7 @@ use FS::cust_bill_pkg;
 use FS::cust_tax_location;
 use FS::tax_rate_location;
 use FS::part_pkg_taxrate;
+use FS::part_pkg_taxproduct;
 use FS::cust_main;
 use FS::Misc qw( csv_from_fixed );
 
@@ -1022,6 +1023,240 @@ sub process_batch_import {
 
 }
 
+=item process_download_and_reload
+
+Download and process a tax update as a queued JSRPC job after wiping the
+existing wipable tax data.
+
+=cut
+
+sub process_download_and_reload {
+  my $job = shift;
+
+  my $param = thaw(decode_base64($_[0]));
+  my $format = $param->{'format'};        #well... this is all cch specific
+
+  my ( $count, $last, $min_sec, $imported ) = (0, time, 5, 0); #progressbar
+  $count = 100;
+
+  if ( $job ) {  # progress bar
+    my $error = $job->update_statustext( int( 100 * $imported / $count ) );
+    die $error if $error;
+  }
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+  my $error = '';
+
+  my $sql =
+    "SELECT count(*) FROM part_pkg_taxoverride JOIN tax_class ".
+    "USING (taxclassnum) WHERE data_vendor = '$format'";
+  my $sth = $dbh->prepare($sql) or die $dbh->errstr;
+  $sth->execute
+    or die "Unexpected error executing statement $sql: ". $sth->errstr;
+  die "Don't (yet) know how to handle part_pkg_taxoverride records."
+    if $sth->fetchrow_arrayref->[0];
+
+  # really should get a table EXCLUSIVE lock here
+
+  #remember disabled taxes
+  my %disabled_tax_rate = ();
+  foreach my $tax_rate ( qsearch( { table   => 'tax_rate',
+                                    hashref => { disabled => 'Y',
+                                                 data_vendor => $format,
+                                               },
+                                    select  => 'geocode, taxclassnum',
+                                  }
+                                 )
+                       )
+  {
+    my $tax_class =
+      qsearchs( 'tax_class', { taxclassnum => $tax_rate->taxclassnum } );
+    unless ( $tax_class ) {
+      warn "failed to find tax_class ". $tax_rate->taxclassnum;
+      next;
+    }
+    $disabled_tax_rate{$tax_rate->geocode. ':'. $tax_class->taxclass} = 1;
+  }
+
+  #remember tax products
+  # XXX FIXME  this loop only works when cch is the only data provider
+  my %taxproduct = ();
+  my $extra_sql = "WHERE taxproductnum IS NOT NULL OR ".
+                  "0 < ( SELECT count(*) from part_pkg_option WHERE ".
+                  "       part_pkg_option.pkgpart = part_pkg.pkgpart AND ".
+                  "       optionname LIKE 'usage_taxproductnum_%' AND ".
+                  "       optionvalue != '' )";
+  foreach my $part_pkg ( qsearch( { table => 'part_pkg',
+                                    select  => 'DISTINCT pkgpart,taxproductnum',
+                                    hashref => {},
+                                    extra_sql => $extra_sql,
+                                  }
+                                )
+                       )
+  {
+    warn "working with package part ". $part_pkg->pkgpart.
+      "which has a taxproductnum of ". $part_pkg->taxproductnum. "\n" if $DEBUG;
+    my $part_pkg_taxproduct = $part_pkg->taxproduct('');
+    $taxproduct{$part_pkg->pkgpart}{''} = $part_pkg_taxproduct->taxproduct
+      if $part_pkg_taxproduct;
+
+    foreach my $option ( $part_pkg->part_pkg_option ) {
+      next unless $option->optionname =~ /^usage_taxproductnum_(\w)$/;
+      my $class = $1;
+
+      $part_pkg_taxproduct = $part_pkg->taxproduct($class);
+      $taxproduct{$part_pkg->pkgpart}{$class} = $part_pkg_taxproduct->taxproduct
+        if $part_pkg_taxproduct;
+    }
+  }
+
+  #wipe out the old data
+  foreach my $tax_rate_location ( qsearch( 'tax_rate_location',
+                                           { data_vendor => $format,
+                                             disabled    => '',
+                                           }
+                                         )
+                                )
+  {
+    $tax_rate_location->disabled('Y');
+    my $error = $tax_rate_location->replace;
+    if ( $error ) {
+      $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+      die $error;
+    }
+  }
+
+  local $FS::part_pkg_taxproduct::delete_kludge = 1;
+  my @table = qw(
+    tax_rate part_pkg_taxrate part_pkg_taxproduct tax_class cust_tax_location
+  );
+  foreach my $table ( @table ) {
+    foreach my $row ( qsearch( $table, { data_vendor => $format } ) ) {
+      my $error = $row->delete;
+      if ( $error ) {
+        $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+        die $error;
+      }
+    }
+  }
+
+  if ( $format eq 'cch' ) {
+    foreach my $cust_tax_location ( qsearch( 'cust_tax_location',
+                                             { data_vendor => "$format-zip" }
+                                           )
+                                  )
+    {
+      my $error = $cust_tax_location->delete;
+      if ( $error ) {
+        $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+        die $error;
+      }
+    }
+  }
+
+  #import new data
+  process_download_and_update($job, @_);
+
+  #restore taxproducts
+  foreach my $pkgpart ( keys %taxproduct ) {
+    warn "restoring taxproductnums on pkgpart $pkgpart\n" if $DEBUG;
+
+    my $part_pkg = qsearchs('part_pkg', { pkgpart => $pkgpart } );
+    unless ( $part_pkg ) {
+      $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+      die "somehow failed to find part_pkg with pkgpart $pkgpart!\n";
+    }
+
+    my %options = $part_pkg->options;
+    my %pkg_svc = map { $_->svcpart => $_->quantity } $part_pkg->pkg_svc;
+    my $primary_svc = $part_pkg->svcpart;
+    my $new = new FS::part_pkg { $part_pkg->hash };
+
+    foreach my $class ( keys %{ $taxproduct{$pkgpart} } ) {
+      warn "working with class '$class'\n" if $DEBUG;
+      my $part_pkg_taxproduct =
+        qsearchs( 'part_pkg_taxproduct',
+                  { taxproduct  => $taxproduct{$pkgpart}{$class},
+                    data_vendor => $format,
+                  }
+                );
+
+      unless ( $part_pkg_taxproduct ) {
+        $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+        die "failed to find part_pkg_taxproduct ($taxproduct{pkgpart}{$class})".
+            " for pkgpart $pkgpart\n";
+      }
+
+      if ( $class eq '' ) {
+        $new->taxproductnum($part_pkg_taxproduct->taxproductnum);
+        next;
+      }
+
+      $options{"usage_taxproductnum_$class"} =
+        $part_pkg_taxproduct->taxproductnum;
+
+    }
+
+    my $error = $new->replace( $part_pkg,
+                               'pkg_svc' => \%pkg_svc,
+                               'primary_svc' => $primary_svc,
+                               'options' => \%options,
+    );
+      
+    if ( $error ) {
+      $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+      die $error;
+    }
+  }
+
+  #disable tax_rates
+  foreach my $key (keys %disabled_tax_rate) {
+    my ($geocode,$taxclass) = split /:/, $key, 2;
+    my @tax_class = qsearch( 'tax_class', { data_vendor => $format,
+                                            taxclass    => $taxclass,
+                                          } );
+    if (scalar(@tax_class) > 1) {
+      $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+      die "found multiple tax_class records for format $format class $taxclass";
+    }
+      
+    unless (scalar(@tax_class)) {
+      warn "no tax_class for format $format class $taxclass\n";
+      next;
+    }
+
+    my @tax_rate =
+      qsearch('tax_rate', { data_vendor  => $format,
+                            geocode      => $geocode,
+                            taxclassnum  => $tax_class[0]->taxclassnum,
+                          }
+    );
+
+    if (scalar(@tax_rate) > 1) {
+      $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+      die "found multiple tax_rate records for format $format geocode $geocode".
+          " and taxclass $taxclass ( taxclassnum ". $tax_class[0]->taxclassnum.
+          " )";
+    }
+      
+    if (scalar(@tax_rate)) {
+      $tax_rate[0]->disabled('Y');
+      my $error = $tax_rate[0]->replace;
+      if ( $error ) {
+        $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+        die $error;
+      }
+    }
+  }
+
+  #success!
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  
+}
+
 =item process_download_and_update
 
 Download and process a tax update as a queued JSRPC job
@@ -1193,7 +1428,7 @@ sub process_download_and_update {
     my @delete_list = ();
 
     my @list = (
-                 # 'geocode',  \&FS::tax_rate_location::batch_import, 
+                 'geocode',  \&FS::tax_rate_location::batch_import, 
                  'code',     \&FS::tax_class::batch_import,
                  'plus4',    \&FS::cust_tax_location::batch_import,
                  'zip',      \&FS::cust_tax_location::batch_import,

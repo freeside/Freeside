@@ -1,10 +1,11 @@
 package FS::part_pkg_taxproduct;
 
 use strict;
-use vars qw( @ISA );
+use vars qw( @ISA $delete_kludge );
 use FS::Record qw( qsearch );
 
 @ISA = qw(FS::Record);
+$delete_kludge = 0;
 
 =head1 NAME
 
@@ -85,8 +86,10 @@ sub delete {
   return "Can't delete a tax product which has attached package tax rates!"
     if qsearch( 'part_pkg_taxrate', { 'taxproductnum' => $self->taxproductnum } );
 
-  return "Can't delete a tax product which has attached packages!"
-    if qsearch( 'part_pkg', { 'taxproductnum' => $self->taxproductnum } );
+  unless ( $delete_kludge ) {
+    return "Can't delete a tax product which has attached packages!"
+      if qsearch( 'part_pkg', { 'taxproductnum' => $self->taxproductnum } );
+  }
 
   $self->SUPER::delete(@_);
 }
