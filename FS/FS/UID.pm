@@ -2,9 +2,9 @@ package FS::UID;
 
 use strict;
 use vars qw(
-  @ISA @EXPORT_OK $DEBUG $me $cgi $dbh $freeside_uid $user 
-  $conf_dir $cache_dir $secrets $datasrc $db_user $db_pass %callback @callback
-  $driver_name $AutoCommit $callback_hack $use_confcompat
+  @ISA @EXPORT_OK $DEBUG $me $cgi $freeside_uid $user $conf_dir $cache_dir
+  $secrets $datasrc $db_user $db_pass $schema $dbh $driver_name
+  $AutoCommit %callback @callback $callback_hack $use_confcompat
 );
 use subs qw(
   getsecrets cgisetotaker
@@ -150,12 +150,24 @@ sub forksuidsetup {
 }
 
 sub myconnect {
-  DBI->connect( getsecrets(@_), { 'AutoCommit'         => 0,
-                                  'ChopBlanks'         => 1,
-                                  'ShowErrorStatement' => 1,
-                                }
-              )
+  my $handle = DBI->connect( getsecrets(@_), { 'AutoCommit'         => 0,
+                                               'ChopBlanks'         => 1,
+                                               'ShowErrorStatement' => 1,
+                                             }
+                           )
     or die "DBI->connect error: $DBI::errstr\n";
+
+  if ( $schema ) {
+    use DBIx::DBSchema::_util qw(_load_driver ); #quelle hack
+    my $driver = _load_driver($handle);
+    if ( $driver =~ /^Pg/ ) {
+      no warnings 'redefine';
+      eval "sub DBIx::DBSchema::DBD::${driver}::default_db_schema {'$schema'}";
+      die $@ if $@;
+    }
+  }
+
+  $handle;
 }
 
 =item install_callback
@@ -325,10 +337,11 @@ sub getsecrets {
     $secrets = 'secrets';
   }
 
-  ($datasrc, $db_user, $db_pass) = 
+  ($datasrc, $db_user, $db_pass, $schema) = 
     map { /^(.*)$/; $1 } readline(new IO::File "$conf_dir/$secrets")
       or die "Can't get secrets: $conf_dir/$secrets: $!\n";
   undef $driver_name;
+
   ($datasrc, $db_user, $db_pass);
 }
 
