@@ -1,6 +1,6 @@
 %{!?_initrddir:%define _initrddir /etc/rc.d/init.d}
 %{!?version:%define version 1.9}
-%{!?release:%define release 6}
+%{!?release:%define release 7}
 
 Summary: Freeside ISP Billing System
 Name: freeside
@@ -220,7 +220,7 @@ for DBTYPE in %{db_types}; do
 	%{__mv} $RPM_BUILD_ROOT/tmp/* $RPM_BUILD_ROOT%{freeside_conf}
 	/bin/rmdir $RPM_BUILD_ROOT/tmp
 done
-%{__rm} install-perl-modules perl-modules $RPM_BUILD_ROOT%{freeside_conf}/conf*/ticket_system
+%{__rm} install-perl-modules perl-modules $RPM_BUILD_ROOT%{freeside_conf}/conf*/ticket_system $RPM_BUILD_ROOT%{freeside_conf}/default_conf/ticket_system
 
 touch docs
 %{__perl} -pi -e "s|%%%%%%FREESIDE_DOCUMENT_ROOT%%%%%%|%{freeside_document_root}|g" htetc/handler.pl
@@ -416,7 +416,7 @@ fi
 %attr(-,freeside,freeside) %dir %{freeside_conf}
 %attr(-,freeside,freeside) %dir %{freeside_lock}
 %attr(-,freeside,freeside) %dir %{freeside_log}
-%attr(0644,freeside,freeside) %config(noreplace) %{freeside_conf}/default_conf
+%attr(0711,freeside,freeside) %config(noreplace) %{freeside_conf}/default_conf
 
 %files mason -f %{name}-%{version}-%{release}-mason-filelist
 %defattr(-, freeside, freeside, 0755)
