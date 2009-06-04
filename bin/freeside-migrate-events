@@ -1,13 +1,16 @@
 #!/usr/bin/perl -w
 
 use strict;
-
-use FS::UID qw(adminsuidsetup);
+use Getopt::Std;
+use FS::UID qw( adminsuidsetup dbh );
 use FS::Record qw( qsearch );
 use FS::part_bill_event;
 use FS::part_event;
 use FS::cust_bill_event;
 use FS::cust_event;
+
+use vars qw( $opt_m );
+getopts('m');
 
 my $user = shift or die &usage;
 adminsuidsetup($user);
@@ -139,29 +142,46 @@ foreach my $part_bill_event (
   #my $derror = $part_bill_event->delete;
   #die "error removing part_bill_event: $derror\n" if $derror;
 
-  foreach my $cust_bill_event (
-    qsearch({
-      'table'     => 'cust_bill_event',
-      'hashref'   => { 'eventpart' => $part_bill_event->eventpart, },
-    })
-  ) {
+  if ( $opt_m ) {
 
-    my $cust_event = new FS::cust_event {
-      'eventpart'  => $part_event->eventpart,
-      'tablenum'   => $cust_bill_event->invnum,
-      '_date'      => $cust_bill_event->_date,
-      'status'     => $cust_bill_event->status,
-      'statustext' => $cust_bill_event->statustext,
-    };
+    #this should probably just become the default once we're sure it works 100%
 
-    my $cerror = $cust_event->insert;
-    #die "error inserting cust_event: $cerror\n" if $cerror;
-    warn "error inserting cust_event: $cerror\n" if $cerror;
-  
-    #my $dcerror = $cust_bill_event->delete;
-    #die "error removing cust_bill_event: $dcerror\n" if $dcerror;
+    my $sth = dbh->prepare('
+      INSERT INTO cust_event ( eventpart, tablenum, _date, status, statustext )
+                       SELECT     ?     ,  invnum , _date, status, statustext
+                         FROM cust_bill_event WHERE eventpart = ?
+    ') or die dbh->errstr;
 
-    print ".";
+    $sth->execute( $part_event->eventpart, $part_bill_event->eventpart )
+      or die $sth->errstr;
+
+  } else {
+
+    foreach my $cust_bill_event (
+      qsearch({
+        'table'     => 'cust_bill_event',
+        'hashref'   => { 'eventpart' => $part_bill_event->eventpart, },
+      })
+    ) {
+
+      my $cust_event = new FS::cust_event {
+        'eventpart'  => $part_event->eventpart,
+        'tablenum'   => $cust_bill_event->invnum,
+        '_date'      => $cust_bill_event->_date,
+        'status'     => $cust_bill_event->status,
+        'statustext' => $cust_bill_event->statustext,
+      };
+
+      my $cerror = $cust_event->insert;
+      #die "error inserting cust_event: $cerror\n" if $cerror;
+      warn "error inserting cust_event: $cerror\n" if $cerror;
+    
+      #my $dcerror = $cust_bill_event->delete;
+      #die "error removing cust_bill_event: $dcerror\n" if $dcerror;
+
+      print ".";
+
+    }
 
   }
 
@@ -197,6 +217,8 @@ Doesn't migrate reasons.
 
 Doesn't delete the old events (which is not a big deal, since the new code
 won't run them...)
+
+Can take lots of memory for large databases.
 
 =head1 SEE ALSO
 
