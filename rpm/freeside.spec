@@ -52,7 +52,7 @@ Requires: perl-Fax-Hylafax-Client
 %define	rpmfiles	rpm
 
 %description
-Freeside is a flexible ISP billing system written by Ivan Kohler
+Freeside is a flexible ISP billing system
 
 %package mason
 Summary: HTML::Mason interface for %{name}
