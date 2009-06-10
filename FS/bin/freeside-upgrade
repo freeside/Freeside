@@ -62,7 +62,7 @@ if (dbdef->table('cust_main')->column('agent_custid') && ! $opt_s) {
 
 my @statements =
   grep { $_ !~ /^CREATE +INDEX +h_queue/ } #useless, holds up queue insertion
-       dbdef->sql_update_schema( dbdef_dist(datasrc), $dbh )
+       dbdef->sql_update_schema( dbdef_dist(datasrc), $dbh );
 
 if ( $DRY_RUN ) {
   print
