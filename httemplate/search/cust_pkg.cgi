@@ -10,6 +10,8 @@
                                      'Package',
                                      'Class',
                                      'Status',
+                                     'Setup',
+                                     'Base Recur',
                                      'Freq.',
                                      'Setup',
                                      'Last bill',
@@ -33,6 +35,14 @@
                         },
                     'classname',
                     sub { ucfirst(shift->status); },
+                    sub { sprintf( $money_char.'%.2f',
+                                   shift->part_pkg->option('setup_fee'),
+                                 );
+                        },
+                    sub { sprintf( $money_char.'%.2f',
+                                   shift->part_pkg->base_recur
+                                 );
+                        },
                     sub { #shift->part_pkg->freq_pretty;
 
                           #my $part_pkg = $part_pkg{shift->pkgpart};
@@ -99,17 +109,21 @@
                     '',
                     '',
                     '',
+                    '',
+                    '',
                     FS::UI::Web::cust_colors(),
                     '',
                   ],
-                  'style' => [ '', '', '', '', 'b', '', '', '', '', '', '', '', '', '',
+                  'style' => [ '', '', '', '', 'b', '', '', '', '', '', '', '', '', '', '', '',
                                FS::UI::Web::cust_styles() ],
                   'size'  => [ '', '', '', '', '-1' ],
-                  'align' => 'rrlcclrrrrrrrl'. FS::UI::Web::cust_aligns(). 'r',
+                  'align' => 'rrlccrrlrrrrrrrl'. FS::UI::Web::cust_aligns(). 'r',
                   'links' => [
                     $link,
                     $link,
                     $link,
+                    '',
+                    '',
                     '',
                     '',
                     '',
@@ -135,6 +149,9 @@
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('List packages');
+
+my $conf = new FS::Conf;
+my $money_char = $conf->config('money_char') || '$';
 
 # my %part_pkg = map { $_->pkgpart => $_ } qsearch('part_pkg', {});
 
