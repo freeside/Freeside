@@ -318,5 +318,8 @@ Terms: [@-- $terms --@]\\
 
 --@]
 \vfill
-[@-- $notes --@]
+\begin{minipage}[t]{\textwidth}
+  [@-- $notes --@]
+  [@-- $coupon ? '\ifthenelse{\equal{\thepage}{1}}{\rule{0pt}{\extracouponspace}}{}' : '' --@]
+\end{minipage}
 \end{document}
