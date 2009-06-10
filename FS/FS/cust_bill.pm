@@ -2861,8 +2861,12 @@ sub _items_cust_bill_pkg {
 
           #at least until cust_bill_pkg has "past" ranges in addition to
           #the "future" sdate/edate ones... see #3032
+          my @dates = ( $self->_date );
+          my $prev = $cust_bill_pkg->previous_cust_bill_pkg;
+          push @dates, $prev->sdate if $prev;
+
           push @d, map &{$escape_function}($_),
-                       $cust_pkg->h_labels_short($self->_date)
+                       $cust_pkg->h_labels_short(@dates)
                                                  #$cust_bill_pkg->edate,
                                                  #$cust_bill_pkg->sdate)
             unless $cust_pkg->part_pkg->hide_svc_detail

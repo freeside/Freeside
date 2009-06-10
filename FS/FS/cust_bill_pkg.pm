@@ -276,6 +276,23 @@ sub cust_bill {
   qsearchs( 'cust_bill', { 'invnum' => $self->invnum } );
 }
 
+=item previous_cust_bill_pkg
+
+Returns the previous cust_bill_pkg for this package, if any.
+
+=cut
+
+sub previous_cust_bill_pkg {
+  my $self = shift;
+  qsearchs({
+    'table'    => 'cust_bill_pkg',
+    'hashref'  => { 'pkgnum' => $self->pkgnum,
+                    'sdate'  => { op=>'<', value=>$self->sdate },
+                  },
+    'order_by' => 'ORDER BY sdate DESC LIMIT 1',
+  });
+}
+
 =item details [ OPTION => VALUE ... ]
 
 Returns an array of detail information for the invoice line item.
