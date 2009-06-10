@@ -6,7 +6,8 @@ use Exporter;
 use Date::Parse;
 use DBI 1.33; #The "clone" method was added in DBI 1.33. 
 use FS::UID qw(dbh);
-use FS::Record qw(qsearchs);
+use FS::Record qw( qsearch qsearchs );
+use FS::queue;
 use FS::cust_main;
 use FS::part_event;
 use FS::part_event_condition;
@@ -141,6 +142,14 @@ END
         if ( $opt{'r'} ) {
           warn "DRY RUN: would add custnum $custnum for queued_bill\n";
         } else {
+
+          #avoid queuing another job if there's one still waiting to run
+          next if qsearch( 'queue', { 'job'     => 'FS::cust_main::queued_bill',
+                                      'custnum' => $custnum,
+                                      'status'  => 'new',
+                                    }
+                         );
+
           #add job to queue that calls bill_and_collect with options
           my $queue = new FS::queue {
             'job'      => 'FS::cust_main::queued_bill',
@@ -148,6 +157,7 @@ END
             'priority' => 99, #don't get in the way of provisioning jobs
           };
           my $error = $queue->insert( 'custnum'=>$custnum, %args );
+
         }
 
       } else {
