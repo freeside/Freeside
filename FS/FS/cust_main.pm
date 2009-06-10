@@ -6756,7 +6756,7 @@ Returns all batched payments (see L<FS::cust_pay_void>) for this customer.
 
 sub cust_pay_batch {
   my $self = shift;
-  sort { $a->_date <=> $b->_date }
+  sort { $a->paybatchnum <=> $b->paybatchnum }
     qsearch( 'cust_pay_batch', { 'custnum' => $self->custnum } )
 }
 
