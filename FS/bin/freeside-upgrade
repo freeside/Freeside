@@ -60,20 +60,24 @@ if (dbdef->table('cust_main')->column('agent_custid') && ! $opt_s) {
 #from 1.3 to 1.4... if not, it needs to be hooked into -upgrade here or
 #you'll lose all the part_svc settings it migrates to part_svc_column
 
+my @statements =
+  grep { $_ !~ /^CREATE +INDEX +h_queue/ } #useless, holds up queue insertion
+       dbdef->sql_update_schema( dbdef_dist(datasrc), $dbh )
+
 if ( $DRY_RUN ) {
   print
-    join(";\n", @bugfix, dbdef->sql_update_schema( dbdef_dist(datasrc), $dbh ) ). ";\n";
+    join(";\n", @bugfix, @statements ). ";\n";
   exit;
 } else {
-  foreach my $statement ( @bugfix ) {
+  foreach my $statement ( @bugfix, @statements ) {
     $dbh->do( $statement )
       or die "Error: ". $dbh->errstr. "\n executing: $statement";
   }
 
-  warn "Pre-schema change upgrades completed in ". (time-$start). " seconds\n"; # if $DEBUG;
-  $start = time;
+#  warn "Pre-schema change upgrades completed in ". (time-$start). " seconds\n"; # if $DEBUG;
+#  $start = time;
 
-  dbdef->update_schema( dbdef_dist(datasrc), $dbh );
+#  dbdef->update_schema( dbdef_dist(datasrc), $dbh );
 }
 
 warn "Schema upgrade completed in ". (time-$start). " seconds\n"; # if $DEBUG;
