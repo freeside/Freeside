@@ -1,6 +1,6 @@
 %{!?_initrddir:%define _initrddir /etc/rc.d/init.d}
 %{!?version:%define version 1.9}
-%{!?release:%define release 7}
+%{!?release:%define release 8}
 
 Summary: Freeside ISP Billing System
 Name: freeside
@@ -210,17 +210,17 @@ cd ../..
 touch install-perl-modules perl-modules
 %{__mkdir_p} $RPM_BUILD_ROOT%{freeside_cache}
 %{__mkdir_p} $RPM_BUILD_ROOT%{freeside_conf}
-#%{__mkdir_p} $RPM_BUILD_ROOT%{freeside_export}
+%{__mkdir_p} $RPM_BUILD_ROOT%{freeside_export}
 %{__mkdir_p} $RPM_BUILD_ROOT%{freeside_lock}
 %{__mkdir_p} $RPM_BUILD_ROOT%{freeside_log}
 for DBTYPE in %{db_types}; do
 	%{__mkdir_p} $RPM_BUILD_ROOT/tmp
 	[ -d $RPM_BUILD_ROOT%{freeside_conf}/default_conf ] && %{__rm} -rf $RPM_BUILD_ROOT%{freeside_conf}/default_conf
-	%{__make} create-config DB_TYPE=$DBTYPE DATASOURCE=DBI:$DBTYPE:dbname=%{name} RT_ENABLED=%{rt_enabled} FREESIDE_CACHE=$RPM_BUILD_ROOT%{freeside_cache} FREESIDE_CONF=$RPM_BUILD_ROOT/tmp FREESIDE_EXPORT=$RPM_BUILD_ROOT%{freeside_export} FREESIDE_LOCK=$RPM_BUILD_ROOT%{freeside_lock} FREESIDE_LOG=$RPM_BUILD_ROOT%{freeside_log}
-	%{__mv} $RPM_BUILD_ROOT/tmp/* $RPM_BUILD_ROOT%{freeside_conf}
-	/bin/rmdir $RPM_BUILD_ROOT/tmp
+	%{__make} create-config DB_TYPE=$DBTYPE DATASOURCE=DBI:$DBTYPE:dbname=%{name} RT_ENABLED=%{rt_enabled} FREESIDE_CACHE=$RPM_BUILD_ROOT%{freeside_cache} FREESIDE_CONF=$RPM_BUILD_ROOT/tmp FREESIDE_EXPORT=$RPM_BUILD_ROOT%{freeside_export} FREESIDE_LOCK=$RPM_BUILD_ROOT%{freeside_lock} FREESIDE_LOG=$RPM_BUILD_ROOT%{freeside_log} DIST_CONF=$RPM_BUILD_ROOT%{freeside_conf}/default_conf
+	%{__mv} $RPM_BUILD_ROOT/tmp/secrets $RPM_BUILD_ROOT%{freeside_conf}
+	%{__rm} -rf $RPM_BUILD_ROOT/tmp
 done
-%{__rm} install-perl-modules perl-modules $RPM_BUILD_ROOT%{freeside_conf}/conf*/ticket_system $RPM_BUILD_ROOT%{freeside_conf}/default_conf/ticket_system
+%{__rm} install-perl-modules perl-modules $RPM_BUILD_ROOT%{freeside_conf}/default_conf/ticket_system
 
 touch docs
 %{__perl} -pi -e "s|%%%%%%FREESIDE_DOCUMENT_ROOT%%%%%%|%{freeside_document_root}|g" htetc/handler.pl
@@ -447,6 +447,9 @@ fi
 %attr(0755,freeside,freeside) %{freeside_selfservice_document_root}/php
 
 %changelog
+* Thu Jun 11 2009 Richard Siddall <richard.siddall@elirion.net> - 1.9-8
+- Since configuration is now kept in the RDBMS, don't install a configuration folder
+
 * Mon Dec 22 2008 Richard Siddall <richard.siddall@elirion.net> - 1.9-5
 - Modifications to make self-service work if you really insist on installing it on the same machine as Freeside
 
