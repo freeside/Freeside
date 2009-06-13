@@ -417,6 +417,7 @@ fi
 %attr(-,freeside,freeside) %dir %{freeside_lock}
 %attr(-,freeside,freeside) %dir %{freeside_log}
 %attr(0711,freeside,freeside) %config(noreplace) %{freeside_conf}/default_conf
+%attr(0644,freeside,freeside) %config(noreplace) %{freeside_conf}/default_conf/*
 
 %files mason -f %{name}-%{version}-%{release}-mason-filelist
 %defattr(-, freeside, freeside, 0755)
