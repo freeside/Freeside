@@ -140,6 +140,7 @@ tie my %rights, 'Tie::IxHash',
     'Edit www config', #NEW
     'Edit domain catchall', #NEW
     'Edit domain nameservice', #NEW
+    'Manage domain registration',
   
     { rightname=>'View/link unlinked services', global=>1 }, #not agent-virtualizable without more work
   ],

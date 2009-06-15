@@ -14,7 +14,7 @@ Service #<% $svcnum %>
 <BR>Domain name: <B><% $domain %></B>
 % if ($export) {
 <BR>Status: <B><% $status %></B>
-%   if ( $FS::CurrentUser::CurrentUser->access_right('Change customer service') ) {
+%   if ( $FS::CurrentUser::CurrentUser->access_right('Manage domain registration') ) {
 %     if ( defined($ops{'register'}) ) {
     <A HREF="<% ${p} %>edit/process/domreg.cgi?op=register&svcnum=<% $svcnum %>">Register at <% $registrar->{'name'} %></A>&nbsp;
 %     }
