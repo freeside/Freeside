@@ -126,6 +126,14 @@ sub format_tel {
   return $tel;
 }
 
+=item gen_contact_info
+
+Generates contact data for the domain based on the customer data.
+
+Currently relies on Net::OpenSRS to format the telephone number for OpenSRS.
+
+=cut
+
 sub gen_contact_info
 {
   my ($co)=@_;
@@ -157,6 +165,15 @@ sub gen_contact_info
   return $c;
 }
 
+=item validate_contact_info
+
+Attempts to validate contact data for the domain based on OpenSRS rules.
+
+Returns undef if the contact data is acceptable, an error message if the contact
+data lacks one or more required fields.
+
+=cut
+
 sub validate_contact_info {
   my $c = shift;
 
@@ -183,6 +200,13 @@ sub validate_contact_info {
   undef;
 }
 
+=item testmode
+
+Returns the Net::OpenSRS-required test mode string based on whether the export
+is configured to use the live or the test gateway.
+
+=cut
+
 sub testmode {
   my $self = shift;
 
@@ -191,59 +215,30 @@ sub testmode {
   undef;
 }
 
+=item _export_insert
+
+Attempts to "export" the domain, i.e. register or transfer it if the user selected
+that option when editing the domain.
+
+Returns an error message on failure or undef on success.
+
+May also return an error message if it cannot load the required Perl module Net::OpenSRS,
+or if the domain is not registerable, or if insufficient data is provided in the customer
+record to generate the required contact information to register or transfer the domain.
+
+=cut
+
 sub _export_insert {
   my( $self, $svc_domain ) = ( shift, shift );
 
   return if $svc_domain->action eq 'I';  # Ignoring registration, just doing DNS
 
-  eval "use Net::OpenSRS;";
-  return $@ if $@;
-
-  # Get the TLD of the new domain
-  my @bits = split /\./, $svc_domain->domain;
-
-  return "Can't register subdomains: " . $svc_domain->domain if scalar(@bits) != 2;
-
-  my $tld = pop @bits;
-
-  # See if it's one this export supports
-  my @tlds = split /\s+/, $self->option('tlds');
-  @tlds =  map { s/\.//; $_ } @tlds;
-  return "Can't register top-level domain $tld, restricted to: " . $self->option('tlds') if ! grep { $_ eq $tld } @tlds;
-
-  my $cust_main = $svc_domain->cust_svc->cust_pkg->cust_main;
-
-  my $c = gen_contact_info($cust_main);
-
-  my $err = validate_contact_info($c);
-  return $err if $err;
-
-  my $srs = Net::OpenSRS->new();
-
-  $srs->debug_level( $self->option('debug_level') ); # Output should be in the Apache error log
-
-  $srs->environment( $self->testmode() );
-  $srs->set_key( $self->option('privatekey') );
-
-  $srs->set_manage_auth( $self->option('username'), $self->option('password') );
-
-  my $cookie = $srs->get_cookie( $self->option('masterdomain') );
-  if (!$cookie) {
-     return "Unable to get cookie at OpenSRS: " . $srs->last_response();
-  }
-
   if ($svc_domain->action eq 'N') {
-#    return "Domain registration not enabled" if !$self->option('register');
-    return $srs->last_response() if !$srs->register_domain( $svc_domain->domain, $c);
+    return $self->register( $svc_domain );
   } elsif ($svc_domain->action eq 'M') {
-#    return "Domain transfer not enabled" if !$self->option('transfer');
-    return $srs->last_response() if !$srs->transfer_domain( $svc_domain->domain, $c);
-  } else {
-    return "Unknown domain action " . $svc_domain->action;
-  }
-
-  return ''; # Should only get here if register or transfer succeeded
-
+    return $self->transfer( $svc_domain );
+  } 
+  return "Unknown domain action " . $svc_domain->action;
 }
 
 ## Domain registration exports do nothing on replace.  Mainly because we haven't decided what they should do.
@@ -260,6 +255,242 @@ sub _export_insert {
 #
 #  return '';
 #}
+
+=item is_supported_domain
+
+Return undef if the domain name uses a TLD or SLD that is supported by this registrar.
+Otherwise return an error message explaining what's wrong.
+
+=cut
+
+sub is_supported_domain {
+  my $self = shift;
+  my $svc_domain = shift;
+
+  # Get the TLD of the new domain
+  my @bits = split /\./, $svc_domain->domain;
+
+  return "Can't register subdomains: " . $svc_domain->domain if scalar(@bits) != 2;
+
+  my $tld = pop @bits;
+
+  # See if it's one this export supports
+  my @tlds = split /\s+/, $self->option('tlds');
+  @tlds =  map { s/\.//; $_ } @tlds;
+  return "Can't register top-level domain $tld, restricted to: " . $self->option('tlds') if ! grep { $_ eq $tld } @tlds;
+  return undef;
+}
+
+=item get_srs
+
+=cut
+
+sub get_srs {
+  my $self = shift;
+
+  my $srs = Net::OpenSRS->new();
+
+  $srs->debug_level( $self->option('debug_level') ); # Output should be in the Apache error log
+
+  $srs->environment( $self->testmode() );
+  $srs->set_key( $self->option('privatekey') );
+
+  $srs->set_manage_auth( $self->option('username'), $self->option('password') );
+  return $srs;
+}
+
+=item get_status
+
+Returns a reference to a hashref containing information on the domain's status.  The keys
+defined depend on the status.
+
+'unregistered' means the domain is not registered.
+
+Otherwise, if the domain is in an asynchronous operation such as a transfer, returns the state
+of that operation.
+
+Otherwise returns a value indicating if the domain can be managed through our reseller account.
+
+=cut
+
+sub get_status {
+  my ( $self, $svc_domain ) = @_;
+  my $rslt = {};
+
+  eval "use Net::OpenSRS;";
+  return $@ if $@;
+
+  my $srs = $self->get_srs;
+
+  if ($srs->is_available( $svc_domain->domain )) {
+    $rslt->{'unregistered'} = 1;
+  } else {
+    $rslt = $srs->check_transfer( $svc_domain->domain );
+    if (defined($rslt->{'reason'})) {
+      my $rv = $srs->make_request(
+        {
+          action     => 'belongs_to_rsp',
+          object     => 'domain',
+          attributes => {
+            domain => $svc_domain->domain
+          }
+        }
+      );
+      if ($rv) {
+        $self->_set_response;
+        if ( $rv->{attributes}->{'domain_expdate'} ) {
+	  $rslt->{'expdate'} = $rv->{attributes}->{'domain_expdate'};
+        }
+      }
+    }
+  }
+
+  return $rslt; # Success
+}
+
+=item register
+
+Attempts to register the domain through the reseller account associated with this export.
+
+Like most export functions, returns an error message on failure or undef on success.
+
+=cut
+
+sub register {
+  my ( $self, $svc_domain, $years ) = @_;
+
+  return "Net::OpenSRS does not support period other than 1 year" if $years != 1;
+
+  eval "use Net::OpenSRS;";
+  return $@ if $@;
+
+  my $err = $self->is_supported_domain( $svc_domain );
+  return $err if $err;
+
+  my $cust_main = $svc_domain->cust_svc->cust_pkg->cust_main;
+
+  my $c = gen_contact_info($cust_main);
+
+  $err = validate_contact_info($c);
+  return $err if $err;
+
+  my $srs = $self->get_srs;
+
+  my $cookie = $srs->get_cookie( $self->option('masterdomain') );
+  if (!$cookie) {
+     return "Unable to get cookie at OpenSRS: " . $srs->last_response();
+  }
+
+#  return "Domain registration not enabled" if !$self->option('register');
+  return $srs->last_response() if !$srs->register_domain( $svc_domain->domain, $c);
+
+  return ''; # Should only get here if register succeeded
+}
+
+=item transfer
+
+Attempts to transfer the domain into the reseller account associated with this export.
+
+Like most export functions, returns an error message on failure or undef on success.
+
+=cut
+
+sub transfer {
+  my ( $self, $svc_domain ) = @_;
+
+  eval "use Net::OpenSRS;";
+  return $@ if $@;
+
+  my $err = $self->is_supported_domain( $svc_domain );
+  return $err if $err;
+
+  my $cust_main = $svc_domain->cust_svc->cust_pkg->cust_main;
+
+  my $c = gen_contact_info($cust_main);
+
+  $err = validate_contact_info($c);
+  return $err if $err;
+
+  my $srs = $self->get_srs;
+
+  my $cookie = $srs->get_cookie( $self->option('masterdomain') );
+  if (!$cookie) {
+     return "Unable to get cookie at OpenSRS: " . $srs->last_response();
+  }
+
+#  return "Domain transfer not enabled" if !$self->option('transfer');
+  return $srs->last_response() if !$srs->transfer_domain( $svc_domain->domain, $c);
+
+  return ''; # Should only get here if transfer succeeded
+}
+
+=item renew
+
+Attempts to renew the domain for the specified number of years.
+
+Like most export functions, returns an error message on failure or undef on success.
+
+=cut
+
+sub renew {
+  my ( $self, $svc_domain, $years ) = @_;
+
+  eval "use Net::OpenSRS;";
+  return $@ if $@;
+
+  my $err = $self->is_supported_domain( $svc_domain );
+  return $err if $err;
+
+  my $srs = $self->get_srs;
+
+  my $cookie = $srs->get_cookie( $self->option('masterdomain') );
+  if (!$cookie) {
+     return "Unable to get cookie at OpenSRS: " . $srs->last_response();
+  }
+
+#  return "Domain renewal not enabled" if !$self->option('renew');
+  return $srs->last_response() if !$srs->renew_domain( $svc_domain->domain, $years );
+
+  return ''; # Should only get here if renewal succeeded
+}
+
+=item revoke
+
+Attempts to revoke the domain registration.  Only succeeds if invoked during the OpenSRS
+grace period immediately after registration.
+
+Like most export functions, returns an error message on failure or undef on success.
+
+=cut
+
+sub revoke {
+  my ( $self, $svc_domain ) = @_;
+
+  eval "use Net::OpenSRS;";
+  return $@ if $@;
+
+  my $err = $self->is_supported_domain( $svc_domain );
+  return $err if $err;
+
+  my $srs = $self->get_srs;
+
+  my $cookie = $srs->get_cookie( $self->option('masterdomain') );
+  if (!$cookie) {
+     return "Unable to get cookie at OpenSRS: " . $srs->last_response();
+  }
+
+#  return "Domain registration revocation not enabled" if !$self->option('revoke');
+  return $srs->last_response() if !$srs->revoke_domain( $svc_domain->domain);
+
+  return ''; # Should only get here if transfer succeeded
+}
+
+=item registrar
+
+Should return a full-blown object representing OpenSRS, but current just returns a hashref
+containing the registrar name.
+
+=cut
 
 sub registrar {
   return {

@@ -7,9 +7,38 @@
   )
 )) %>
 
+<% include('/elements/error.html') %>
+
 Service #<% $svcnum %>
 <BR>Service: <B><% $part_svc->svc %></B>
 <BR>Domain name: <B><% $domain %></B>
+% if ($export) {
+<BR>Status: <B><% $status %></B>
+%   if ( $FS::CurrentUser::CurrentUser->access_right('Change customer service') ) {
+%     if ( defined($ops{'register'}) ) {
+    <A HREF="<% ${p} %>edit/process/domreg.cgi?op=register&svcnum=<% $svcnum %>">Register at <% $registrar->{'name'} %></A>&nbsp;
+%     }
+%     if ( defined($ops{'transfer'}) ) {
+    <A HREF="<% ${p} %>edit/process/domreg.cgi?op=transfer&svcnum=<% $svcnum %>">Transfer to <% $registrar->{'name'} %></A>&nbsp;
+%     }
+%     if ( defined($ops{'renew'}) ) {
+    <FORM NAME="Renew" METHOD="POST" ACTION="<% ${p} %>edit/process/domreg.cgi">
+      <INPUT TYPE="hidden" NAME="svcnum" VALUE="<%$svcnum%>">
+      <INPUT TYPE="hidden" NAME="op" VALUE="renew">
+      <SELECT NAME="period">
+%       foreach (1..10) { 
+          <OPTION VALUE="<%$_%>"><%$_%> year<% $_ > 1 ? 's' : '' %></OPTION>
+%       } 
+      </SELECT>
+      <INPUT TYPE="submit" VALUE="Renew">&nbsp;
+    </FORM>
+%     }
+%     if ( defined($ops{'revoke'}) ) {
+    <A HREF="<% ${p} %>edit/process/domreg.cgi?op=revoke&svcnum=<% $svcnum %>">Revoke</A>
+%     }
+%   }
+% }
+
 % if ( $FS::CurrentUser::CurrentUser->access_right('Edit domain catchall') ) {
     <BR>Catch all email <A HREF="<% ${p} %>misc/catchall.cgi?<% $svcnum %>">(change)</A>:
 % } else {
@@ -157,5 +186,38 @@ if ($svc_domain->catchall) {
 }
 
 my $domain = $svc_domain->domain;
+
+my $status = 'Unknown';
+my %ops = ();
+
+my @exports = $part_svc->part_export();
+
+my $registrar;
+my $export;
+
+# Find the first export that does domain registration
+foreach (@exports) {
+	$export = $_ if $_->can('registrar');
+}
+# If we have a domain registration export, get the registrar object
+if ($export) {
+	$registrar = $export->registrar;
+	my $domstat = $export->get_status( $svc_domain );
+	if (defined($domstat->{'message'})) {
+		$status = $domstat->{'message'};
+	} elsif (defined($domstat->{'unregistered'})) {
+		$status = 'Not registered';
+		$ops{'register'} = "Register";
+	} elsif (defined($domstat->{'status'})) {
+		$status = $domstat->{'status'} . ' ' . $domstat->{'contact_email'} . ' ' . $domstat->{'last_update_time'};
+	} elsif (defined($domstat->{'expdate'})) {
+		$status = "Expires " . $domstat->{'expdate'};
+		$ops{'renew'} = "Renew";
+		$ops{'revoke'} = "Revoke";
+	} else {
+		$status = $domstat->{'reason'};
+		$ops{'transfer'} = "Transfer";
+	}
+}
 
 </%init>
