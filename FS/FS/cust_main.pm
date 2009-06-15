@@ -2429,18 +2429,18 @@ sub bill {
     return '';
   }
 
-  my $postal_pkg = $self->charge_postal_fee();
-  if ( $postal_pkg && !ref( $postal_pkg ) ) {
-    $dbh->rollback if $oldAutoCommit;
-    return "can't charge postal invoice fee for customer ".
-      $self->custnum. ": $postal_pkg";
-  }
-  if ( $postal_pkg &&
-       ( scalar( grep { $_->recur && $_->recur > 0 } @cust_bill_pkg) ||
+  if ( scalar( grep { $_->recur && $_->recur > 0 } @cust_bill_pkg) ||
          !$conf->exists('postal_invoice-recurring_only')
-       )
      )
   {
+
+    my $postal_pkg = $self->charge_postal_fee();
+    if ( $postal_pkg && !ref( $postal_pkg ) ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "can't charge postal invoice fee for customer ".
+        $self->custnum. ": $postal_pkg";
+    }
+
     foreach my $part_pkg ( $postal_pkg->part_pkg->self_and_bill_linked ) {
       my $error =
         $self->_make_lines( 'part_pkg'            => $part_pkg,
