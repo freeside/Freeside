@@ -1,10 +1,109 @@
-%
-%  my($item, $url, @html);
-%  while (@_) {
-%    ($item, $url) = splice(@_,0,2);
-%    next if $item =~ /^\s*Main\s+Menu\s*$/i;
-%    push @html, qq!<A HREF="$url">$item</A>!;
-%  }
-%
+<%doc>
 
-<% join(' | ', @html) %>
+Example:
+
+  include( '/elements/menubar.html',
+           
+           #options hashref (optional)
+           { 'newstyle' => 1, #may become the default at some point
+           },
+
+           #menubar entries (required)
+           'label'  => $url,
+           'label2' => $url2,
+           #etc.
+
+         );
+
+</%doc>
+%if ( $opt->{'newstyle'} ) {
+
+%  #false laziness w/header.html... shouldn't these just go in freeside.css?
+
+   <style type="text/css">
+   a.fsblackbutton {
+            background-color:#333333;
+            color: #ffffff;
+            border:1px solid;
+            border-top-color:#cccccc;
+            border-left-color:#cccccc;
+            border-right-color:#aaaaaa;
+            border-bottom-color:#aaaaaa;
+            /*font-weight:bold;*/
+            /*padding-left:12px;
+            padding-right:12px;*/
+            padding-left:4px;
+            padding-right:4px;
+            text-decoration:none;
+            overflow:visible;
+            filter:progid:DXImageTransform.Microsoft.Gradient(GradientType=0,StartColorStr='#ff333333',EndColorStr='#ff666666')
+   }
+   
+   a.fsblackbuttonselected {
+            background-color:#7e0079;
+            color: #ffffff;
+            border:1px solid;
+            border-top-color:#cccccc;
+            border-left-color:#cccccc;
+            border-right-color:#aaaaaa;
+            border-bottom-color:#aaaaaa;
+            /*font-weight:bold;*/
+            /*padding-left:12px;
+            padding-right:12px;*/
+            padding-left:4px;
+            padding-right:4px;
+            text-decoration:none;
+            overflow:visible;
+            filter:progid:DXImageTransform.Microsoft.Gradient(GradientType=0,StartColorStr='#ff330033',EndColorStr='#ff7e0079')
+   }
+   </style>
+
+   <TABLE BGCOLOR="#000000" BORDER=0 CELLSPACING=0 CELLPADDING=4>
+     <TR>
+       <TD STYLE="background-image:url(<%$fsurl%>images/gray-black-side.png); background-repeat:repeat-y;padding-left:0px">
+         &nbsp;&nbsp;
+       </TD>
+       <TD>
+         <% join(' ', @html ) %>
+       </TD>
+       <TD STYLE="background-image:url(<%$fsurl%>images/black-gray-side.png); background-repeat:repeat-y;padding-right:0px">
+         &nbsp;&nbsp;
+       </TD>
+     </TR>
+   </TABLE>
+
+%} else {
+
+   <% join(' | ', @html) %>
+
+%}
+<%init>
+
+my $opt = ref($_[0]) ? shift : {};
+
+my $url_base = $opt->{'url_base'};
+
+my @html;
+while (@_) {
+
+  my ($item, $url) = splice(@_,0,2);
+  next if $item =~ /^\s*Main\s+Menu\s*$/i;
+
+  my $style = '';
+  if ( $opt->{'newstyle'} ) {
+
+    my $dclass = $item eq $opt->{'selected'}
+                   ? 'fsblackbuttonselected'
+                   : 'fsblackbutton';
+
+    $style =
+      qq( CLASS="$dclass" ).
+      qq( onMouseOver="this.className='fsblackbuttonselected'; return true;" ).
+      qq( onMouseOut="this.className='$dclass'; return true;" );
+  }
+
+  push @html, qq!<A HREF="$url_base$url" $style>$item</A>!;
+
+}
+
+</%init>

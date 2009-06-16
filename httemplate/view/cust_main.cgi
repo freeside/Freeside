@@ -1,8 +1,19 @@
-<% include("/elements/header.html","Customer View: ". $cust_main->name ) %>
+<% include('/elements/header.html', {
+             'title' => "Customer View: ". $cust_main->name,
+             'nobr'  => 1,
+          })
+%>
+<BR>
 
-% if ( $curuser->access_right('Edit customer') ) { 
-  <A HREF="<% $p %>edit/cust_main.cgi?<% $custnum %>">Edit this customer</A> | 
-% } 
+<% include('/elements/menubar.html',
+             { 'newstyle' => 1,
+               'selected' => $viewname{$view},
+               'url_base' => $cgi->url. "?custnum=$custnum;show=",
+             },
+             %views,
+          )
+%>
+<BR>
 
 <% include('/elements/init_overlib.html') %>
 
@@ -12,6 +23,12 @@ function areyousure(href, message) {
     window.location.href = href;
 }
 </SCRIPT>
+
+% if ( $view eq 'basics' || $view eq 'jumbo' ) {
+
+% if ( $curuser->access_right('Edit customer') ) { 
+  <A HREF="<% $p %>edit/cust_main.cgi?<% $custnum %>">Edit this customer</A> | 
+% } 
 
 % if ( $curuser->access_right('Cancel customer')
 %        && $cust_main->ncancelled_pkgs
@@ -74,10 +91,12 @@ function areyousure(href, message) {
   </TD>
 </TR>
 </TABLE>
-%
-%if ( $cust_main->comments =~ /[^\s\n\r]/ ) {
-%
 
+% }
+
+% if ( $view eq 'notes' || $view eq 'jumbo' ) {
+
+%if ( $cust_main->comments =~ /[^\s\n\r]/ ) {
 <BR>
 Comments
 <% ntable("#cccccc") %><TR><TD><% ntable("#cccccc",2) %>
@@ -87,12 +106,16 @@ Comments
   </TD>
 </TR>
 </TABLE></TABLE>
-% } 
 <BR><BR>
+% }
+
 % my $notecount = scalar($cust_main->notes());
 % if ( ! $conf->exists('cust_main-disable_notes') || $notecount) {
 
-<A NAME="cust_main_note"><FONT SIZE="+2">Notes</FONT></A><BR>
+%   unless ( $view eq 'notes' && $cust_main->comments !~ /[^\s\n\r]/ ) {
+      <A NAME="cust_main_note"><FONT SIZE="+2">Notes</FONT></A><BR>
+%   }
+
 %   if ( $curuser->access_right('Add customer note') &&
 %        ! $conf->exists('cust_main-disable_notes')
 %      ) {
@@ -115,24 +138,47 @@ Comments
 
 % }
 
+% }
+
+% if ( $view eq 'jumbo' ) {
+    <BR><BR>
+    <A NAME="tickets"><FONT SIZE="+2">Tickets</FONT></A><BR>
+% }
+
+% if ( $view eq 'tickets' || $view eq 'jumbo' ) {
 
 % if ( $conf->config('ticket_system') ) { 
-
-  <BR><BR>
   <% include('cust_main/tickets.html', $cust_main ) %>
 % } 
+  <BR><BR>
 
+% }
 
-<BR><BR>
+% if ( $view eq 'jumbo' ) { #XXX enable me && $curuser->access_right('View customer packages') { 
+
+  <A NAME="cust_pkg"><FONT SIZE="+2">Packages</FONT></A><BR>
+% }
+
+% if ( $view eq 'packages' || $view eq 'jumbo' ) {
 
 % #XXX enable me# if ( $curuser->access_right('View customer packages') { 
 <% include('cust_main/packages.html', $cust_main ) %>
 % #}
 
+% }
+
+% if ( $view eq 'jumbo' ) {
+    <BR><BR>
+    <A NAME="history"><FONT SIZE="+2">Payment History</FONT></A><BR>
+% }
+
+% if ( $view eq 'payment_history' || $view eq 'jumbo' ) {
+
 % if ( $conf->config('payby-default') ne 'HIDE' ) { 
   <% include('cust_main/payment_history.html', $cust_main ) %>
 % } 
 
+% }
 
 <% include('/elements/footer.html') %>
 <%init>
@@ -144,15 +190,41 @@ die "access denied"
 
 my $conf = new FS::Conf;
 
-die "No customer specified (bad URL)!" unless $cgi->keywords;
-my($query) = $cgi->keywords; # needs parens with my, ->keywords returns array
-$query =~ /^(\d+)$/;
-my $custnum = $1;
+my $custnum;
+if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
+  $custnum = $1;
+} else {
+  die "No customer specified (bad URL)!" unless $cgi->keywords;
+  my($query) = $cgi->keywords; # needs parens with my, ->keywords returns array
+  $query =~ /^(\d+)$/;
+  $custnum = $1;
+}
+
 my $cust_main = qsearchs( {
   'table'     => 'cust_main',
   'hashref'   => { 'custnum' => $custnum },
   'extra_sql' => ' AND '. $curuser->agentnums_sql,
 });
 die "Customer not found!" unless $cust_main;
+
+#false laziness w/pref/pref.html
+tie my %views, 'Tie::IxHash',
+       'Basics'           => 'basics',
+       'Notes'            => 'notes', #notes and files?
+;
+$views{'Tickets'}         =  'tickets'
+                               if $conf->config('ticket_system');
+$views{'Packages'}        =  'packages';
+$views{'Payment History'} =  'payment_history'
+                               unless $conf->config('payby-default' eq 'HIDE');
+#$views{'Change History'}  =  '';
+$views{'Jumbo'}           =  'jumbo';
+
+my %viewname = reverse %views;
+
+
+my $view =  $cgi->param('show')
+         || $curuser->option('default_customer_view')
+         || 'jumbo'; #'Basics' in 1.9.1?
 
 </%init>

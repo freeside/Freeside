@@ -31,12 +31,27 @@ Interface
 <% ntable("#cccccc",2) %>
 
   <TR>
-    <TH>Menu location: </TH>
+    <TH ALIGN="right">Menu location: </TH>
     <TD>
       <INPUT TYPE="radio" NAME="menu_position" VALUE="left" onClick="document.images['menu_example'].src='../images/menu-left-example.png';" <% $menu_position eq 'left' ? ' CHECKED' : ''%>> Left<BR>
       <INPUT TYPE="radio" NAME="menu_position" VALUE="top"onClick="document.images['menu_example'].src='../images/menu-top-example.png';" <% $menu_position eq 'top' ? ' CHECKED' : ''%>> Top <BR>
     </TD>
     <TD><IMG NAME="menu_example" SRC="../images/menu-<% $menu_position %>-example.png"></TD>
+  </TR>
+
+  <TR>
+    <TH ALIGN="right">Default customer view: </TD>
+    <TD COLSPAN=2>
+      <SELECT NAME="default_customer_view">
+%       foreach my $view ( keys %customer_views ) {
+%         my $selected =
+%           $customer_views{$view} eq $curuser->option('default_customer_view')
+%             ? 'SELECTED'
+%             : '';
+          <OPTION VALUE="<%$customer_views{$view}%>" <%$selected%>><%$view%></OPTION>
+%       }
+      </SELECT>
+    </TD>
   </TR>
 
 </TABLE>
@@ -109,6 +124,21 @@ Vonage integration (see <a href="https://secure.click2callu.com/">Click2Call</a>
 <INPUT TYPE="submit" VALUE="Update preferences">
 
 <% include('/elements/footer.html') %>
+<%once>
+
+  #false laziness w/view/cust_main.cgi
+
+  tie my %customer_views, 'Tie::IxHash',
+    'Basics'          => 'basics',
+    'Notes'           => 'notes', #notes and files?
+    'Tickets'         => 'tickets',
+    'Packages'        => 'packages',
+    'Payment History' => 'payment_history',
+    #'Change History'  => '',
+    'Jumbo'           => 'jumbo',
+  ;
+
+</%once>
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;
