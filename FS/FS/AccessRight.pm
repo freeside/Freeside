@@ -211,6 +211,7 @@ tie my %rights, 'Tie::IxHash',
   
     { rightname=> 'List rating data', desc=>'Usage reports', global=>1 },
     'Billing event reports',
+    'Receivables report',
     'Financial reports',
   ],
   
