@@ -124,7 +124,12 @@ my $trigger_link = sub {
   my $eventtable = $cust_event->eventtable;
   if ( $eventtable eq 'cust_pkg' ) {
     my $custnum = $cust_event->cust_main_custnum;
-    [ "${p}view/cust_main.cgi?$custnum#cust_pkg", 'tablenum' ];
+    my $show = $FS::CurrentUser::CurrentUser->default_customer_view =~ /^(jumbo|packages)$/
+                 ? ''
+                 : ';show=packages';
+    my $pkgnum = $cust_event->tablenum;
+    my $frag = "cust_pkg$pkgnum"; #hack for IE ignoring real #fragment
+    [ "${p}view/cust_main.cgi?custnum=$custnum$show;fragment=$frag#cust_pkg", 'tablenum' ];
   } else {
     [ "${p}view/$eventtable.cgi?", 'tablenum' ];
   }

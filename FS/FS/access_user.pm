@@ -1,7 +1,7 @@
 package FS::access_user;
 
 use strict;
-use vars qw( @ISA $DEBUG $me $htpasswd_file );
+use vars qw( @ISA $DEBUG $me $conf $htpasswd_file );
 use FS::UID;
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs dbh );
@@ -19,7 +19,7 @@ $me = '[FS::access_user]';
 
 #kludge htpasswd for now (i hope this bootstraps okay)
 FS::UID->install_callback( sub {
-  my $conf = new FS::Conf;
+  $conf = new FS::Conf;
   $htpasswd_file = $conf->base_dir. '/htpasswd';
 } );
 
@@ -44,8 +44,8 @@ FS::access_user - Object methods for access_user records
 
 =head1 DESCRIPTION
 
-An FS::access_user object represents an internal access user.  FS::access_user inherits from
-FS::Record.  The following fields are currently supported:
+An FS::access_user object represents an internal access user.  FS::access_user
+inherits from FS::Record.  The following fields are currently supported:
 
 =over 4
 
@@ -274,6 +274,9 @@ sub name {
 
 =item access_usergroup
 
+Returns links to the the groups this user is a part of, as FS::access_usergroup
+objects (see L<FS::access_usergroup).
+
 =cut
 
 sub access_usergroup {
@@ -464,6 +467,23 @@ sub access_right {
   }
 
   $return;
+
+}
+
+=item default_customer_view
+
+Returns the default customer view for this user, from the 
+"default_customer_view" user preference, the "cust_main-default_view" config,
+or the hardcoded default, "jumbo" (may change to "basics" in the near future).
+
+=cut
+
+sub default_customer_view {
+  my $self = shift;
+
+  $self->option('default_customer_view')
+    || $conf->config('cust_main-default_view')
+    || 'jumbo'; #'basics' in 1.9.1?
 
 }
 

@@ -207,7 +207,7 @@ my $cust_main = qsearchs( {
 });
 die "Customer not found!" unless $cust_main;
 
-#false laziness w/pref/pref.html
+#false laziness w/pref/pref.html and Conf.pm (cust_main-default_view)
 tie my %views, 'Tie::IxHash',
        'Basics'           => 'basics',
        'Notes'            => 'notes', #notes and files?
@@ -222,9 +222,6 @@ $views{'Jumbo'}           =  'jumbo';
 
 my %viewname = reverse %views;
 
-
-my $view =  $cgi->param('show')
-         || $curuser->option('default_customer_view')
-         || 'jumbo'; #'Basics' in 1.9.1?
+my $view =  $cgi->param('show') || $curuser->default_customer_view;
 
 </%init>

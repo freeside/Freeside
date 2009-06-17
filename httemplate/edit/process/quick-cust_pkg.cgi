@@ -3,12 +3,15 @@
 <% $cgi->redirect(popurl(3). 'misc/order_pkg.html?'. $cgi->query_string ) %>
 %} else {
 %  my $frag = "cust_pkg". $cust_pkg->pkgnum;
+%  my $show = $curuser->default_customer_view =~ /^(jumbo|packages)$/
+%               ? ''
+%               : ';show=packages';
 <% header('Package ordered') %>
   <SCRIPT TYPE="text/javascript">
     // XXX fancy ajax rebuild table at some point, but a page reload will do for now
 
     // XXX chop off trailing #target and replace... ?
-    window.top.location = '<% popurl(3). "view/cust_main.cgi?keywords=$custnum;fragment=$frag#$frag" %>';
+    window.top.location = '<% popurl(3). "view/cust_main.cgi?custnum=$custnum$show;fragment=$frag#$frag" %>';
 
   </SCRIPT>
 
@@ -16,8 +19,10 @@
 %}
 <%init>
 
+my $curuser = $FS::CurrentUser::CurrentUser;
+
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Order customer package');
+  unless $curuser->access_right('Order customer package');
 
 #untaint custnum (probably not necessary, searching for it is escape enough)
 $cgi->param('custnum') =~ /^(\d+)$/

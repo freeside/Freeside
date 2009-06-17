@@ -2827,6 +2827,23 @@ worry that config_items is freeside-specific and icky.
     'type'        => 'textarea',
   },
 
+  {
+    'key'         => 'cust_main-default_view',
+    'section'     => 'UI',
+    'description' => 'Default customer view, for users who have not selected a default view in their preferences.',
+    'type'        => 'select',
+    'select_hash' => [
+      #false laziness w/view/cust_main.cgi and pref/pref.html
+      'basics'          => 'Basics',
+      'notes'           => 'Notes',
+      'tickets'         => 'Tickets',
+      'packages'        => 'Packages',
+      'payment_history' => 'Payment History',
+      #''                => 'Change History',
+      'jumbo'           => 'Jumbo',
+    ],
+  },
+
 );
 
 1;

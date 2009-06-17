@@ -5,7 +5,9 @@ Example:
   include( '/elements/menubar.html',
            
            #options hashref (optional)
-           { 'newstyle' => 1, #may become the default at some point
+           { 'newstyle' => 1,  #may become the default at some point
+             'url_base' => '', #prepended to menubar URLs, for convenience
+             'selected' => '', #currently selected label
            },
 
            #menubar entries (required)

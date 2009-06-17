@@ -147,8 +147,10 @@
 %>
 <%init>
 
+my $curuser = $FS::CurrentUser::CurrentUser;
+
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('List packages');
+  unless $curuser->access_right('List packages');
 
 my $conf = new FS::Conf;
 my $money_char = $conf->config('money_char') || '$';
@@ -192,8 +194,17 @@ foreach my $field (qw( setup last_bill bill adjourn susp expire cancel )) {
 my $sql_query = FS::cust_pkg->search_sql(\%search_hash);
 my $count_query = delete($sql_query->{'count_query'});
 
+my $show = $curuser->default_customer_view =~ /^(jumbo|packages)$/
+             ? ''
+             : ';show=packages';
+
 my $link = sub {
-  [ "${p}view/cust_main.cgi?".shift->custnum.'#cust_pkg', 'pkgnum' ];
+  my $self = shift;
+  my $frag = 'cust_pkg'. $self->pkgnum; #hack for IE ignoring real #fragment
+  [ "${p}view/cust_main.cgi?custnum=".$self->custnum.
+                           "$show;fragment=$frag#cust_pkg",
+    'pkgnum'
+  ];
 };
 
 my $clink = sub {

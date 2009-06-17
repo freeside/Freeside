@@ -134,7 +134,13 @@ my $args_callback = sub {
 my $redirect_callback = sub {
   #my( $cgi, $new ) = @_;
   return '' unless $custnum;
-  popurl(3). "view/cust_main.cgi?keywords=$custnum;dummy=";
+  my $show = $curuser->default_customer_view =~ /^(jumbo|packages)$/
+               ? ''
+               : ';show=packages';
+  #my $frag = "cust_pkg$pkgnum"; #hack for IE ignoring real #fragment
+ 
+  #can we link back to the specific customized package?  it would be nice...
+  popurl(3). "view/cust_main.cgi?custnum=$custnum$show;dummy=";
 };
 
 #these should probably move to @args above and be processed by part_pkg.pm...

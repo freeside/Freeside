@@ -1,5 +1,7 @@
+%my $curuser = $FS::CurrentUser::CurrentUser;
+%
 %die "access denied"
-%  unless $FS::CurrentUser::CurrentUser->access_right('List customers');
+%  unless $curuser->access_right('List customers');
 %
 %my $conf = new FS::Conf;
 %my $maxrecords = $conf->config('maxsearchrecordsperpage');
@@ -485,7 +487,11 @@
 %
 %      my $pkg = $part_pkg->pkg;
 %      my $comment = $part_pkg->comment;
-%      my $pkgview = "${p}view/cust_main.cgi?$custnum#cust_pkg$pkgnum";
+%      my $show = $curuser->default_customer_view =~ /^(jumbo|packages)$/
+%                   ? ''
+%                   : ';show=packages';
+%      my $frag = "cust_pkg$pkgnum"; #hack for IE ignoring real #fragment
+%      my $pkgview = "${p}view/cust_main.cgi?custnum=$custnum$show;fragment=$frag#$frag";
 %      my @cust_svc = @{shift @lol_cust_svc};
 %      #my(@cust_svc) = qsearch( 'cust_svc', { 'pkgnum' => $_->pkgnum } );
 %      my $rowspan = scalar(@cust_svc) || 1;

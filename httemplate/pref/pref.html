@@ -126,7 +126,7 @@ Vonage integration (see <a href="https://secure.click2callu.com/">Click2Call</a>
 <% include('/elements/footer.html') %>
 <%once>
 
-  #false laziness w/view/cust_main.cgi
+  #false laziness w/view/cust_main.cgi and Conf.pm (cust_main-default_view)
 
   tie my %customer_views, 'Tie::IxHash',
     'Basics'          => 'basics',

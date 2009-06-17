@@ -1,14 +1,20 @@
 %unless ($error) {
 %  #no errors, so let's view this customer.
 %  my $custnum = $new->cust_pkg->custnum;
-<% $cgi->redirect(popurl(3). "view/cust_main.cgi?$custnum#cust_pkg$pkgnum" ) %>
+%  my $show = $curuser->default_customer_view =~ /^(jumbo|packages)$/
+%               ? ''
+%               : ';show=packages';
+%  my $frag = "cust_pkg$pkgnum"; #hack for IE ignoring real #fragment
+<% $cgi->redirect(popurl(3). "view/cust_main.cgi?custnum=$custnum$show;fragment=$frag#$frag" ) %>
 %} else {
 % errorpage($error);
 %}
 <%init>
 
+my $curuser = $FS::CurrentUser::CurrentUser;
+
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('View/link unlinked services');
+  unless $curuser->access_right('View/link unlinked services');
 
 my $DEBUG = 0;
 
