@@ -138,7 +138,8 @@ sub calc_recur {
 
         $pkg_charge += $recur_charge;
 
-        push @$details, $pkg_details;
+        push @$details, $pkg_details
+          if $pkg_charge;
         $total_agent_charge += $pkg_charge;
 
       } #foreach $cust_pkg
