@@ -35,6 +35,7 @@ $me = '[FS::part_pkg::bulk]';
   'weight' => 50,
 );
 
+#some false laziness-ish w/agent.pm...  not a lot
 sub calc_recur {
   my($self, $cust_pkg, $sdate, $details ) = @_;
 
@@ -74,20 +75,23 @@ sub calc_recur {
     my $svc_end = $h_cust_svc->date_deleted;
     $svc_end = ( !$svc_end || $svc_end > $$sdate ) ? $$sdate : $svc_end;
 
-    $svc_charge = $self->option('svc_recur_fee') * ( $svc_end - $svc_start )
-                                                 / ( $$sdate  - $last_bill );
+    my $recur_charge =
+      $self->option('svc_recur_fee') * ( $svc_end - $svc_start )
+                                     / ( $$sdate  - $last_bill );
 
-    $svc_details .= $money_char. sprintf('%.2f', $svc_charge ).
+    $svc_details .= $money_char. sprintf('%.2f', $recur_charge ).
                     ' ('.  time2str('%x', $svc_start).
                     ' - '. time2str('%x', $svc_end  ). ')'
-      if $self->option('svc_recur_fee');
+      if $recur_charge;
+
+    $svc_charge += $recur_charge;
 
     push @$details, $svc_details;
     $total_svc_charge += $svc_charge;
 
   }
 
-  sprintf("%.2f", $self->base_recur($cust_pkg) + $total_svc_charge );
+  sprintf('%.2f', $self->base_recur($cust_pkg) + $total_svc_charge );
 }
 
 sub hide_svc_detail {
