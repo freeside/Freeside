@@ -185,23 +185,27 @@ tie my %report_bill_event, 'Tie::IxHash',
   'Invoice event errors' => [ $fsurl.'search/cust_bill_event.html?failed=1', 'Reports on deprecated, old-style events for failed credit cards, processor or printer problems, etc.' ],
 ;
 
-tie my %report_financial, 'Tie::IxHash', 
-  'Sales, Credits and Receipts' => [ $fsurl.'graph/report_money_time.html', 'Sales, credits and receipts summary graph' ],
-  'Sales Report' => [ $fsurl.'graph/report_cust_bill_pkg.html', 'Sales report and graph (by agent, package class and/or date range)' ],
-  'Credit Report' => [ $fsurl.'search/report_cust_credit.html', 'Credit report (by employee and/or date range)' ],
-  'Payment Report' => [ $fsurl.'search/report_cust_pay.html', 'Payment report (by type and/or date range)' ],
-;
-$report_financial{'Pending Payment Report'} = [ $fsurl.'search/cust_pay_pending.html?magic=_date;statusNOT=done', 'Pending real-time payments' ]
-  if $curuser->access_right('View customer pending payments');
-$report_financial{'Payment Batch Report'} = [ $fsurl.'search/pay_batch.html', 'Payment batches (by status and/or date range)' ]
-  if $conf->exists('batch-enable') || $conf->config('batch-enable_payby');
-$report_financial{'A/R Aging'} = [ $fsurl.'search/report_receivables.html', 'Accounts Receivable Aging report' ]
-  if $curuser->access_right('Receivables report');
-$report_financial{'Prepaid Income'} = [ $fsurl.'search/report_prepaid_income.html', 'Prepaid income (unearned revenue)  report' ];
-$report_financial{'Sales Tax Liability'} = [ $fsurl.'search/report_tax.html', 'Sales tax liability report (old taxclass system)' ];
-$report_financial{'Tax Liability'} = [ $fsurl.'search/report_newtax.html', 'Tax liability report (new tax products system)' ]
-  if $conf->exists('enable_taxproducts');
-;
+tie my %report_financial, 'Tie::IxHash';
+if($curuser->access_right('Financial reports')) {
+  %report_financial = (
+    'Sales, Credits and Receipts' => [ $fsurl.'graph/report_money_time.html', 'Sales, credits and receipts summary graph' ],
+    'Sales Report' => [ $fsurl.'graph/report_cust_bill_pkg.html', 'Sales report and graph (by agent, package class and/or date range)' ],
+    'Credit Report' => [ $fsurl.'search/report_cust_credit.html', 'Credit report (by employee and/or date range)' ],
+    'Payment Report' => [ $fsurl.'search/report_cust_pay.html', 'Payment report (by type and/or date range)' ],
+  );
+  $report_financial{'Pending Payment Report'} = [ $fsurl.'search/cust_pay_pending.html?magic=_date;statusNOT=done', 'Pending real-time payments' ]
+    if $curuser->access_right('View customer pending payments');
+  $report_financial{'Payment Batch Report'} = [ $fsurl.'search/pay_batch.html', 'Payment batches (by status and/or date range)' ]
+    if $conf->exists('batch-enable') || $conf->config('batch-enable_payby');
+  $report_financial{'Prepaid Income'} = [ $fsurl.'search/report_prepaid_income.html', 'Prepaid income (unearned revenue)  report' ];
+  $report_financial{'A/R Aging'} = [ $fsurl.'search/report_receivables.html', 'Accounts Receivable Aging report' ];
+  $report_financial{'Sales Tax Liability'} = [ $fsurl.'search/report_tax.html', 'Sales tax liability report (old taxclass system)' ];
+  $report_financial{'Tax Liability'} = [ $fsurl.'search/report_newtax.html', 'Tax liability report (new tax products system)' ]
+    if $conf->exists('enable_taxproducts');
+}
+elsif($curuser->access_right('Receivables report')) {
+  $report_financial{'A/R Aging'} = [ $fsurl.'search/report_receivables.html', 'Accounts Receivable Aging report' ];
+} # else $report_financial contains nothing.
 
 tie my %report_menu, 'Tie::IxHash';
 $report_menu{'Customers'}   = [ \%report_customers, 'Customer reports'  ]
@@ -217,7 +221,8 @@ $report_menu{'Usage'} =  [ \%report_rating,    'Usage reports'  ]
 $report_menu{'Billing events'} =  [ \%report_bill_event, 'Billing events' ]
   if $curuser->access_right('Billing event reports');
 $report_menu{'Financial'}  = [ \%report_financial, 'Financial reports' ]
-  if $curuser->access_right('Financial reports');
+  if $curuser->access_right('Financial reports') 
+  or $curuser->access_right('Receivables report');
 $report_menu{'SQL Query'}  = [ $fsurl.'search/report_sql.html', 'SQL Query' ]
   if $curuser->access_right('Raw SQL');
 

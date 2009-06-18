@@ -71,7 +71,8 @@
 <%init>
 
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Receivables report');
+  unless $FS::CurrentUser::CurrentUser->access_right('Receivables report')
+      or $FS::CurrentUser::CurrentUser->access_right('Financial reports');
 
 my @ranges = (
   [  0, 30 ],
