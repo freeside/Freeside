@@ -2436,28 +2436,33 @@ sub bill {
 
     my $postal_pkg = $self->charge_postal_fee();
     if ( $postal_pkg && !ref( $postal_pkg ) ) {
+
       $dbh->rollback if $oldAutoCommit;
       return "can't charge postal invoice fee for customer ".
         $self->custnum. ": $postal_pkg";
+
+    } elsif ( $postal_pkg ) {
+
+      foreach my $part_pkg ( $postal_pkg->part_pkg->self_and_bill_linked ) {
+        my $error =
+          $self->_make_lines( 'part_pkg'            => $part_pkg,
+                              'cust_pkg'            => $postal_pkg,
+                              'precommit_hooks'     => \@precommit_hooks,
+                              'line_items'          => \@cust_bill_pkg,
+                              'setup'               => \$total_setup,
+                              'recur'               => \$total_recur,
+                              'tax_matrix'          => \%taxlisthash,
+                              'time'                => $time,
+                              'options'             => \%options,
+                            );
+        if ($error) {
+          $dbh->rollback if $oldAutoCommit;
+          return $error;
+        }
+      }
+
     }
 
-    foreach my $part_pkg ( $postal_pkg->part_pkg->self_and_bill_linked ) {
-      my $error =
-        $self->_make_lines( 'part_pkg'            => $part_pkg,
-                            'cust_pkg'            => $postal_pkg,
-                            'precommit_hooks'     => \@precommit_hooks,
-                            'line_items'          => \@cust_bill_pkg,
-                            'setup'               => \$total_setup,
-                            'recur'               => \$total_recur,
-                            'tax_matrix'          => \%taxlisthash,
-                            'time'                => $time,
-                            'options'             => \%options,
-                          );
-      if ($error) {
-        $dbh->rollback if $oldAutoCommit;
-        return $error;
-      }
-    }
   }
 
   warn "having a look at the taxes we found...\n" if $DEBUG > 2;
