@@ -85,6 +85,10 @@ inherits from FS::Record.  The following fields are currently supported:
 
 =item disabled - Disabled flag, empty or `Y'
 
+=item setup_cost - for cost tracking
+
+=item recur_cost - for cost tracking
+
 =item pay_weight - Weight (relative to credit_weight and other package definitions) that controls payment application to specific line items.
 
 =item credit_weight - Weight (relative to other package definitions) that controls credit application to specific line items.
@@ -448,6 +452,10 @@ sub check {
     || $self->ut_enum('recurtax', [ '', 'Y' ] )
     || $self->ut_textn('taxclass')
     || $self->ut_enum('disabled', [ '', 'Y' ] )
+    #|| $self->ut_moneyn('setup_cost')
+    #|| $self->ut_moneyn('recur_cost')
+    || $self->ut_floatn('setup_cost')
+    || $self->ut_floatn('recur_cost')
     || $self->ut_floatn('pay_weight')
     || $self->ut_floatn('credit_weight')
     || $self->ut_numbern('taxproductnum')

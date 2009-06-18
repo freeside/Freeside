@@ -37,6 +37,8 @@
                             'taxproduct_select'=> 'Tax products',
                             'plan'             => 'Price plan',
                             'disabled'         => 'Disable new orders',
+                            'setup_cost'       => 'Setup cost',
+                            'recur_cost'       => 'Recur cost',
                             'pay_weight'       => 'Payment weight',
                             'credit_weight'    => 'Credit weight',
                             'agentnum'         => 'Agent',
@@ -131,10 +133,10 @@
                               { field=>'promo_code', type=>'text', size=>15 },
 
                               { type  => 'tablebreak-tr-title',
-                                value => 'Line-item revenue recogition', #better name?
+                                value => 'Cost tracking', #better name?
                               },
-                              { field=>'pay_weight',    type=>'text', size=>6 },
-                              { field=>'credit_weight', type=>'text', size=>6 },
+                              { field=>'setup_cost', type=>'money', },
+                              { field=>'recur_cost', type=>'money', },
 
                             { type => 'columnnext' },
 
@@ -147,6 +149,13 @@
                                   \@agent_type;
                                 },
                               },
+
+                              { type  => 'tablebreak-tr-title',
+                                value => 'Line-item revenue recogition', #better name?
+                              },
+                              { field=>'pay_weight',    type=>'text', size=>6 },
+                              { field=>'credit_weight', type=>'text', size=>6 },
+
 
                             { type => 'columnend' },
 

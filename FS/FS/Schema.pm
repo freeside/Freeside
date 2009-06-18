@@ -1194,6 +1194,8 @@ sub tables_hashref {
         'taxclass',      'varchar', 'NULL', $char_d, '', '', 
         'classnum',      'int',     'NULL', '', '', '', 
         'taxproductnum', 'int',     'NULL', '', '', '', 
+        'setup_cost',    @money_typen,          '', '',
+        'recur_cost',    @money_typen,          '', '',
         'pay_weight',    'real',    'NULL', '', '', '',
         'credit_weight', 'real',    'NULL', '', '', '',
         'agentnum',      'int',     'NULL', '', '', '', 
