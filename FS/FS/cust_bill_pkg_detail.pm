@@ -148,6 +148,37 @@ sub _upgrade_data { # class method
 
         }
 
+      } elsif ( $dbh->{pg_server_version} =~ /^704/ ) {  # earlier?
+
+        # ideally this would be supported in DBIx-DBSchema and friends
+
+        #  XXX_FIXME better locking
+
+        foreach my $table ( qw( cust_bill_pkg_detail h_cust_bill_pkg_detail ) ){
+
+          warn "updating $table column classnum to integer\n" if $DEBUG;
+
+          my $sql = "ALTER TABLE $table RENAME classnum TO old_classnum";
+          my $sth = $dbh->prepare($sql) or die $dbh->errstr;
+          $sth->execute or die $sth->errstr;
+
+          my $def = dbdef->table($table)->column('classnum');
+          $def->type('integer');
+          $def->length(''); 
+          $sql = "ALTER TABLE $table ADD COLUMN ". $def->line($dbh);
+          $sth = $dbh->prepare($sql) or die $dbh->errstr;
+          $sth->execute or die $sth->errstr;
+
+          $sql = "UPDATE $table SET classnum = int4( text( old_classnum ) )";
+          $sth = $dbh->prepare($sql) or die $dbh->errstr;
+          $sth->execute or die $sth->errstr;
+
+          $sql = "ALTER TABLE $table DROP old_classnum";
+          $sth = $dbh->prepare($sql) or die $dbh->errstr;
+          $sth->execute or die $sth->errstr;
+
+        }
+
       } else {
 
         die "cust_bill_pkg_detail classnum upgrade unsupported for this Pg version\n";

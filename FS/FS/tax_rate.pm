@@ -1664,6 +1664,50 @@ sub _upgrade_data {  # class method
         }
       }
 
+    } elsif ( $dbh->{pg_server_version} =~ /^704/ ) {
+
+      # ideally this would be supported in DBIx-DBSchema and friends
+
+      foreach my $column ( @column ) {
+        my $columndef = dbdef->table($self->table)->column($column);
+        unless ($columndef->type eq 'numeric') {
+
+          warn "updating tax_rate column $column to numeric\n" if $DEBUG;
+
+          foreach my $table ( qw( tax_rate h_tax_rate ) ) {
+
+            my $sql = "ALTER TABLE $table RENAME $column TO old_$column";
+            my $sth = $dbh->prepare($sql) or die $dbh->errstr;
+            $sth->execute or die $sth->errstr;
+
+            my $def = dbdef->table($table)->column($column);
+            $def->type('numeric');
+            $def->length('14,8'); 
+            my $null = $def->null;
+            $def->null('NULL');
+
+            $sql = "ALTER TABLE $table ADD COLUMN ". $def->line($dbh);
+            $sth = $dbh->prepare($sql) or die $dbh->errstr;
+            $sth->execute or die $sth->errstr;
+
+            $sql = "UPDATE $table SET $column = CAST( old_$column AS numeric )";
+            $sth = $dbh->prepare($sql) or die $dbh->errstr;
+            $sth->execute or die $sth->errstr;
+
+            unless ( $null eq 'NULL' ) {
+              $sql = "ALTER TABLE $table ALTER $column SET NOT NULL";
+              $sth = $dbh->prepare($sql) or die $dbh->errstr;
+              $sth->execute or die $sth->errstr;
+            }
+
+            $sql = "ALTER TABLE $table DROP old_$column";
+            $sth = $dbh->prepare($sql) or die $dbh->errstr;
+            $sth->execute or die $sth->errstr;
+
+          }
+        }
+      }
+
     } else {
 
       warn "WARNING: tax_rate table upgrade unsupported for this Pg version\n";
