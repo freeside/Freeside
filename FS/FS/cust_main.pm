@@ -2240,7 +2240,7 @@ sub bill_and_collect {
 
   #$options{actual_time} not $options{time} because freeside-daily -d is for
   #pre-printing invoices
-  $self->cancel_expired_pkgs( $options{actual_time} );
+  $self->cancel_expired_pkgs(    $options{actual_time} );
   $self->suspend_adjourned_pkgs( $options{actual_time} );
 
   my $error = $self->bill( %options );
@@ -2262,8 +2262,9 @@ sub bill_and_collect {
 sub cancel_expired_pkgs {
   my ( $self, $time ) = @_;
 
-  my @cancel_pkgs = grep { $_->expire && $_->expire <= $time }
-                         $self->ncancelled_pkgs;
+  my @cancel_pkgs = $self->ncancelled_pkgs( { 
+    'extra_sql' => " expire IS NOT NULL AND expire > 0 AND expire <= $time ",
+  } );
 
   foreach my $cust_pkg ( @cancel_pkgs ) {
     my $cpr = $cust_pkg->last_cust_pkg_reason('expire');
@@ -2282,18 +2283,27 @@ sub cancel_expired_pkgs {
 sub suspend_adjourned_pkgs {
   my ( $self, $time ) = @_;
 
-  my @susp_pkgs = 
-    grep { ! $_->susp
-           && (    (    $_->part_pkg->is_prepaid
-                     && $_->bill
-                     && $_->bill < $time
-                   )
-                || (    $_->adjourn
-                    && $_->adjourn <= $time
-                  )
-              )
+  my @susp_pkgs = $self->ncancelled_pkgs( {
+    'extra_sql' =>
+      " ( susp IS NULL OR susp = 0 )
+         AND (    ( bill    IS NOT NULL AND bill    != 0 AND bill    <  $time )
+               OR ( adjourn IS NOT NULL AND adjourn != 0 AND adjourn <= $time )
+             )
+      ",
+  } );
+
+  #only because there's no SQL test for is_prepaid :/
+  @susp_pkgs = 
+    grep {     (    $_->part_pkg->is_prepaid
+                 && $_->bill
+                 && $_->bill < $time
+               )
+            || (    $_->adjourn
+                 && $_->adjourn <= $time
+               )
+           
          }
-         $self->ncancelled_pkgs;
+         @susp_pkgs;
 
   foreach my $cust_pkg ( @susp_pkgs ) {
     my $cpr = $cust_pkg->last_cust_pkg_reason('adjourn')
@@ -2382,11 +2392,7 @@ sub bill {
   my %taxlisthash;
   my @precommit_hooks = ();
 
-  my @cust_pkgs = qsearch('cust_pkg', { 'custnum' => $self->custnum } );
-  foreach my $cust_pkg (@cust_pkgs) {
-
-    #NO!! next if $cust_pkg->cancel;  
-    next if $cust_pkg->getfield('cancel');  
+  foreach my $cust_pkg ( $self->ncancelled_pkgs ) {
 
     warn "  bill package ". $cust_pkg->pkgnum. "\n" if $DEBUG > 1;
 
@@ -6714,7 +6720,14 @@ customer.
 
 sub open_cust_bill {
   my $self = shift;
-  grep { $_->owed > 0 } $self->cust_bill;
+
+  qsearch({
+    'table'     => 'cust_bill',
+    'hashref'   => { 'custnum' => $self->custnum, },
+    'extra_sql' => ' AND '. FS::cust_bill->owed_sql. ' > 0',
+    'order_by'  => 'ORDER BY _date ASC',
+  });
+
 }
 
 =item cust_credit
