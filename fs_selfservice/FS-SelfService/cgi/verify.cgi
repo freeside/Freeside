@@ -83,7 +83,9 @@ if ( -e $decline_html ) {
 $cgi = new CGI;
 
 my $rv = capture_payment(
-           data => { map { $_ => scalar($cgi->param($_)) } $cgi->param },
+           data => { 'manual' => 1,
+                     map { $_ => scalar($cgi->param($_)) } $cgi->param
+                   },
            url  => $cgi->self_url,
 );
 
