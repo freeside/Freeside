@@ -38,10 +38,15 @@ $me = '[FS::part_pkg::agent]';
     'cutoff_day'    => { 'name' => 'Billing Day (1 - 28)',
                          'default' => '1',
                        },
+
+    'no_pkg_prorate'   => { 'name' => 'Disable prorating bulk packages (charge full price for packages active only a portion of the month)',
+                            'type' => 'checkbox',
+                          },
+
   },
 
   #'fieldorder' => [qw( setup_fee recur_fee recur_method cutoff_day ) ],
-  'fieldorder' => [qw( setup_fee recur_fee cutoff_day ) ],
+  'fieldorder' => [qw( setup_fee recur_fee cutoff_day no_pkg_prorate ) ],
 
   'weight' => 51,
 
@@ -60,15 +65,15 @@ sub calc_recur {
   my $conf = new FS::Conf;
   my $money_char = $conf->config('money_char') || '$';
 
-  my $prorate_sdate = $$sdate;
-  
   my $total_agent_charge = 0;
 
   warn "$me billing for agent packages from ". time2str('%x', $last_bill).
-                                       " to ". time2str('%x', $$sdate).
-                                "prorated to". time2str('%x', $prorate_sdate ).
+                                       " to ". time2str('%x', $$sdate);
        "\n"
     if $DEBUG;
+
+  my $prorate_ratio =   ( $$sdate                     - $last_bill )
+                      / ( $self->add_freq($last_bill) - $last_bill );
 
   #almost always just one,
   #unless you have multiple agents with same master customer0
@@ -128,8 +133,13 @@ sub calc_recur {
         my $pkg_end = $cust_pkg->get('cancel');
         $pkg_end = ( !$pkg_end || $pkg_end > $$sdate ) ? $$sdate : $pkg_end;
 
-        my $recur_charge += $pkg_base_recur * ( $pkg_end - $pkg_start )
-                                            / ( $prorate_sdate  - $last_bill );
+
+        my $pkg_recur_charge = $prorate_ratio * $pkg_base_recur;
+        $pkg_recur_charge *= ( $pkg_end - $pkg_start )
+                           / ( $$sdate  - $last_bill )
+          unless $self->option('no_pkg_prorate');
+
+        my $recur_charge += $pkg_recur_charge;
 
         $pkg_details .= $money_char. sprintf('%.2f', $recur_charge ).
                         ' ('.  time2str('%x', $pkg_start).
