@@ -2263,7 +2263,7 @@ sub cancel_expired_pkgs {
   my ( $self, $time ) = @_;
 
   my @cancel_pkgs = $self->ncancelled_pkgs( { 
-    'extra_sql' => " expire IS NOT NULL AND expire > 0 AND expire <= $time ",
+    'extra_sql' => " AND expire IS NOT NULL AND expire > 0 AND expire <= $time "
   } );
 
   foreach my $cust_pkg ( @cancel_pkgs ) {
@@ -2285,10 +2285,10 @@ sub suspend_adjourned_pkgs {
 
   my @susp_pkgs = $self->ncancelled_pkgs( {
     'extra_sql' =>
-      " ( susp IS NULL OR susp = 0 )
-         AND (    ( bill    IS NOT NULL AND bill    != 0 AND bill    <  $time )
-               OR ( adjourn IS NOT NULL AND adjourn != 0 AND adjourn <= $time )
-             )
+      " AND ( susp IS NULL OR susp = 0 )
+        AND (    ( bill    IS NOT NULL AND bill    != 0 AND bill    <  $time )
+              OR ( adjourn IS NOT NULL AND adjourn != 0 AND adjourn <= $time )
+            )
       ",
   } );
 
