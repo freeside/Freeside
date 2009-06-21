@@ -68,8 +68,7 @@ sub calc_recur {
   my $total_agent_charge = 0;
 
   warn "$me billing for agent packages from ". time2str('%x', $last_bill).
-                                       " to ". time2str('%x', $$sdate);
-       "\n"
+                                       " to ". time2str('%x', $$sdate). "\n"
     if $DEBUG;
 
   my $prorate_ratio =   ( $$sdate                     - $last_bill )
