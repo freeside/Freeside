@@ -23,7 +23,7 @@ Real-time export to
 <a href="http://www.swsoft.com/">Plesk</a> managed server.
 Requires installation of
 <a href="http://search.cpan.org/dist/Net-Plesk">Net::Plesk</a>
-from CPAN.
+from CPAN and proper <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:1.7:Documentation:Administration:acct_plesk.pm">configuration</a>.
 END
 );
 
