@@ -78,7 +78,7 @@ Invoice Event #<% $hashref->{eventpart} ? $hashref->{eventpart} : "(NEW)" %>
 %  join("\n", map {
 %    '<OPTION VALUE="'. $_->pkgpart. '"'.
 %    ( $selected{$_->pkgpart} ? ' SELECTED' : '' ).
-%    '>'. $_->pkg. ' - '. $_->comment
+%    '>'. $_->pkg_comment
 %  } qsearch('part_pkg', { 'disabled' => '' } ) ).
 %  '</SELECT>';
 %}

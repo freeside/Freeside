@@ -1191,6 +1191,7 @@ sub tables_hashref {
         'plan',          'varchar', 'NULL', $char_d, '', '', 
         'plandata',      'text', 'NULL', '', '', '', 
         'disabled',      'char', 'NULL', 1, '', '', 
+        'custom',        'char', 'NULL', 1, '', '', 
         'taxclass',      'varchar', 'NULL', $char_d, '', '', 
         'classnum',      'int',     'NULL', '', '', '', 
         'taxproductnum', 'int',     'NULL', '', '', '', 

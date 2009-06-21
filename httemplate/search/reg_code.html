@@ -13,7 +13,7 @@
                    sub {
                      map { 
                        qq!<A HREF="${p}edit/part_pkg.cgi?!. $_->pkgpart. '">'.
-                       $_->pkg. ' - '. $_->comment.
+                       $_->pkg_comment(nopkgpart => 1).
                        '</A><BR>'
                      } $_[0]->part_pkg
                    },

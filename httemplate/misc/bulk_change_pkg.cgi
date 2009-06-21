@@ -28,10 +28,7 @@
                      'table'          => 'part_pkg',
                      'name_col'       => 'pkg',
                      'empty_label'    => 'Select package',
-                     'label_callback' => sub { $_[0]->pkgpart. ': '.
-                                               $_[0]->pkg.     ' - '.
-                                               $_[0]->comment;
-                                             },
+                     'label_callback' => sub { $_[0]->pkg_comment },
                      'element_name'   => 'new_pkgpart',
                      'curr_value'     => ( $cgi->param('error')
                                            ? scalar($cgi->param('new_pkgpart'))

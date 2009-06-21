@@ -89,6 +89,34 @@
 
 %   }
     
+    <SCRIPT TYPE="text/javascript">
+  
+      function custom_changed(what) {
+
+        if ( what.checked  ) {
+
+          what.form.pkgpart.disabled = true;
+          what.form.pkgpart.style.backgroundColor = '#dddddd';
+
+        } else {
+
+          what.form.pkgpart.disabled = false;
+          what.form.pkgpart.style.backgroundColor = '#ffffff';
+
+        }
+
+      }
+
+    </SCRIPT>
+
+    <% include( '/elements/tr-checkbox.html',
+                'label' => 'Custom packages',
+                'field' => 'custom',
+                'value' => 1,
+                'onchange' => 'custom_changed(this);',
+              )
+    %> 
+
     <% include( '/elements/tr-selectmultiple-part_pkg.html' ) %> 
 
     <TR>

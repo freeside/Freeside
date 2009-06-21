@@ -46,7 +46,7 @@ Import data from a DBI data source<BR><BR>
     First package: <SELECT NAME="pkgpart"><OPTION VALUE="">(none)</OPTION>
 % foreach my $part_pkg ( qsearch('part_pkg',{'disabled'=>'' }) ) { 
 
-     <OPTION VALUE="<% $part_pkg->pkgpart %>"><% $part_pkg->pkg. ' - '. $part_pkg->comment %></OPTION>
+     <OPTION VALUE="<% $part_pkg->pkgpart %>"><% $part_pkg->pkg_comment %></OPTION>
 % } 
 
 </SELECT><BR><BR>

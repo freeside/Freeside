@@ -32,6 +32,11 @@
   </TR>
 
   <TR>
+    <TD ALIGN="right">Custom</TD>
+    <TD BGCOLOR="#ffffff"><% $part_pkg->custom %></TD>
+  </TR>
+
+  <TR>
     <TD ALIGN="right">Comment</TD>
     <TD BGCOLOR="#ffffff"><% $part_pkg->comment %></TD>
   </TR>

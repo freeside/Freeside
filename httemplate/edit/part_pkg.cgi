@@ -58,6 +58,8 @@
                                 sub { shift->param('pkgnum') },
                             },
 
+                            { field=>'custom',  type=>'hidden' },
+
                             { type => 'columnstart' },
                             
                               { field     => 'pkg',
@@ -217,10 +219,7 @@ my $disabled_type = $acl_edit_either ? 'checkbox' : 'hidden';
 
 my $agent_clone_extra_sql = 
   ' ( '. FS::part_pkg->curuser_pkgs_sql.
-  #kludge to clone custom customer packages you otherwise couldn't see
-  #really need a proper "CUSTOM" flag that's distinct from disabled
-  #"   OR ( part_pkg.disabled = 'Y' AND part_pkg.comment LIKE '(CUSTOM)%' ) ".
-  "   OR ( part_pkg.disabled = 'Y' ) ".
+  "   OR ( part_pkg.custom = 'Y' ) ".
   ' ) ';
 
 my $conf = new FS::Conf;
@@ -339,9 +338,8 @@ my $clone_callback = sub {
     $opt->{action} = 'Custom';
 
     #my $part_pkg = $clone_part_pkg->clone;
-    #this is all clone did anyway
-    $object->comment( '(CUSTOM) '. $object->comment )
-      unless $object->comment =~ /^\(CUSTOM\) /;
+    #this is all clone does anyway
+    $object->custom('Y');
 
     $object->disabled('Y');
 

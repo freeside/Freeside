@@ -18,7 +18,7 @@ registration codes for <B><% $agent->agent %></B> allowing the following package
 %   my $pkgpart = $part_pkg->pkgpart;
 
     <INPUT TYPE="checkbox" NAME="pkgpart<% $pkgpart %>" <% $cgi->param("pkgpart$pkgpart") ? 'CHECKED' : '' %>>
-    <% $part_pkg->pkg %> - <% $part_pkg->comment %>
+    <% $part_pkg->pkg_comment %>
     <BR>
 
 % } 

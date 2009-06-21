@@ -161,7 +161,7 @@ my $money_char = $conf->config('money_char') || '$';
   
   $search_hash{'query'} = $cgi->keywords;
   
-  for my $param (qw(agentnum magic status classnum pkgpart)) {
+  for my $param (qw(agentnum magic status classnum pkgpart custom)) {
     $search_hash{$param} = $cgi->param($param)
       if $cgi->param($param);
   }

@@ -85,6 +85,8 @@ inherits from FS::Record.  The following fields are currently supported:
 
 =item disabled - Disabled flag, empty or `Y'
 
+=item custom - Custom flag, empty or `Y'
+
 =item setup_cost - for cost tracking
 
 =item recur_cost - for cost tracking
@@ -113,9 +115,8 @@ sub table { 'part_pkg'; }
 =item clone
 
 An alternate constructor.  Creates a new package definition by duplicating
-an existing definition.  A new pkgpart is assigned and `(CUSTOM) ' is prepended
-to the comment field.  To add the package definition to the database, see
-L<"insert">.
+an existing definition.  A new pkgpart is assigned and the custom flag is
+set to Y.  To add the package definition to the database, see L<"insert">.
 
 =cut
 
@@ -124,8 +125,7 @@ sub clone {
   my $class = ref($self);
   my %hash = $self->hash;
   $hash{'pkgpart'} = '';
-  $hash{'comment'} = "(CUSTOM) ". $hash{'comment'}
-    unless $hash{'comment'} =~ /^\(CUSTOM\) /;
+  $hash{'custom'} = 'Y';
   #new FS::part_pkg ( \%hash ); # ?
   new $class ( \%hash ); # ?
 }
@@ -452,6 +452,7 @@ sub check {
     || $self->ut_enum('recurtax', [ '', 'Y' ] )
     || $self->ut_textn('taxclass')
     || $self->ut_enum('disabled', [ '', 'Y' ] )
+    || $self->ut_enum('custom', [ '', 'Y' ] )
     #|| $self->ut_moneyn('setup_cost')
     #|| $self->ut_moneyn('recur_cost')
     || $self->ut_floatn('setup_cost')
@@ -488,20 +489,30 @@ sub check {
   '';
 }
 
-=item pkg_comment
+=item pkg_comment [ OPTION => VALUE... ]
 
 Returns an (internal) string representing this package.  Currently,
 "pkgpart: pkg - comment", is returned.  "pkg - comment" may be returned in the
-future, omitting pkgpart.
+future, omitting pkgpart.  The comment will have '(CUSTOM) ' prepended if
+custom is Y.
+
+If the option nopkgpart is true then the "pkgpart: ' is omitted.
 
 =cut
 
 sub pkg_comment {
   my $self = shift;
+  my %opt = @_;
 
   #$self->pkg. ' - '. $self->comment;
   #$self->pkg. ' ('. $self->comment. ')';
-  $self->pkgpart. ': '. $self->pkg. ' - '. $self->comment;
+  my $pre = $opt{nopkgpart} ? '' : $self->pkgpart. ': ';
+  $pre. $self->pkg. ' - '. $self->custom_comment;
+}
+
+sub custom_comment {
+  my $self = shift;
+  ( $self->custom ? '(CUSTOM) ' : '' ). $self->comment;
 }
 
 =item pkg_class
@@ -1257,6 +1268,33 @@ sub _upgrade_data { # class method
 
   }
 
+  # now upgrade to the explicit custom flag
+
+  @part_pkg = qsearch({
+    'table'     => 'part_pkg',
+    'hashref'   => { disabled => 'Y', custom => '' },
+    'extra_sql' => "AND comment LIKE '(CUSTOM) %'",
+  });
+
+  foreach my $part_pkg (@part_pkg) {
+    my $new = new FS::part_pkg { $part_pkg->hash };
+    $new->custom('Y');
+    my $comment = $part_pkg->comment;
+    $comment =~ s/^\(CUSTOM\) //;
+    $new->comment($comment);
+
+    my $pkg_svc = { map { $_->svcpart => $_->quantity } $part_pkg->pkg_svc };
+    my $primary = $part_pkg->svcpart;
+    my $options = { $part_pkg->options };
+
+    my $error = $new->replace( $part_pkg,
+                               'pkg_svc'     => $pkg_svc,
+                               'primary_svc' => $primary,
+                               'options'     => $options,
+                             );
+    die $error if $error;
+  }
+
 }
 
 =item curuser_pkgs_sql
@@ -1378,6 +1416,8 @@ FS::cust_bill.  hmm.).  now they're deprecated and need to go.
 plandata should go
 
 part_pkg_taxrate is Pg specific
+
+replace should be smarter about managing the related tables (options, pkg_svc)
 
 =head1 SEE ALSO
 

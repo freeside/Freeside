@@ -6,7 +6,7 @@
            ID  ="cust_pkg<% $cust_pkg->pkgnum %>"
         ><% $curuser->option('show_pkgnum') ? $cust_pkg->pkgnum.': ' : '' %><B><% $part_pkg->pkg |h %></B></A>
         - 
-        <% $part_pkg->comment |h %>
+        <% $part_pkg->custom_comment |h %>
       </TD>
     </TR>
 

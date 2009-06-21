@@ -20,7 +20,7 @@ Select which packages agents of this type may sell to customers<BR>
               'source_obj'    => $agent_type,
               'link_table'    => 'type_pkgs',
               'target_table'  => 'part_pkg',
-              'name_callback' => sub { $_[0]->pkg. ' - '. $_[0]->comment; },
+              'name_callback' => sub { $_[0]->pkg_comment(nopkgpart => 1); },
               'target_link'   => $p.'edit/part_pkg.cgi?',
               'disable-able'  => 1,
 

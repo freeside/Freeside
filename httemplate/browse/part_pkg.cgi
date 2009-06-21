@@ -4,11 +4,11 @@
                  'html_posttotal'        => $html_posttotal,
                  'name'                  => 'package definitions',
                  'disableable'           => 1,
-                 'disabled_statuspos'    => 3,
+                 'disabled_statuspos'    => 4,
                  'agent_virt'            => 1,
                  'agent_null_right'      => [ $edit, $edit_global ],
                  'agent_null_right_link' => $edit_global,
-                 'agent_pos'             => 5,
+                 'agent_pos'             => 6,
                  'query'                 => { 'select'    => $select,
                                               'table'     => 'part_pkg',
                                               'hashref'   => \%hash,
@@ -164,10 +164,12 @@ $cgi->param('recurring', $cgi->param('recurring') ^ 1 ); #put it back
 
 my $link = [ $p.'edit/part_pkg.cgi?', 'pkgpart' ];
 
-my @header = ( '#', 'Package', 'Comment' );
-my @fields = ( 'pkgpart', 'pkg', 'comment' );
-my $align = 'rll';
-my @links = ( $link, $link, '' );
+my @header = ( '#', 'Package', 'Comment', 'Custom' );
+my @fields = ( 'pkgpart', 'pkg', 'comment',
+               sub{ '<B><FONT COLOR="#0000CC">'.$_[0]->custom.'</FONT></B>' }
+             );
+my $align = 'rllc';
+my @links = ( $link, $link, '', '' );
 
 unless ( 0 ) { #already showing only one class or something?
   push @header, 'Class';

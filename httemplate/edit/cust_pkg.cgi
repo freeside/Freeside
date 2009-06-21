@@ -128,10 +128,10 @@ my %all_comment = ();
 #}
 foreach (qsearch('part_pkg', {} )) {
   $all_pkg{ $_ -> getfield('pkgpart') } = $_->getfield('pkg');
-  $all_comment{ $_ -> getfield('pkgpart') } = $_->getfield('comment');
+  $all_comment{ $_ -> getfield('pkgpart') } = $_->custom_comment;
   next if $_->disabled;
   $pkg{ $_ -> getfield('pkgpart') } = $_->getfield('pkg');
-  $comment{ $_ -> getfield('pkgpart') } = $_->getfield('comment');
+  $comment{ $_ -> getfield('pkgpart') } = $_->custom_comment;
 }
 
 my($custnum, %remove_pkg);

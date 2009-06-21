@@ -244,7 +244,7 @@ sub pkg_status_row_changed {
   if ( $old ) {
     my $part_pkg = $old->part_pkg;
     my $label = 'Changed from '. $cust_pkg->change_pkgnum. ': '.
-                $part_pkg->pkg. ' - '. $part_pkg->comment;
+                $part_pkg->pkg_comment(nopartpkg => 1);
     $html .= pkg_status_row_colspan( $label, '', size=>'-1', align=>'right' );
   }
   $html;

@@ -141,9 +141,7 @@ foreach my $part_pkg ( @part_pkg ) {
 
 my @options = ( '', map $pkgpart_svcpart{ $_->pkgpart }, @part_pkg );
 my %labels = ( '' => '(none)',
-               map { $pkgpart_svcpart{ $_->pkgpart }
-                       => $_->pkg. " - ". $_->comment
-                   }
+               map { $pkgpart_svcpart{ $_->pkgpart } => $_->pkg_comment }
                    @part_pkg
              );
 

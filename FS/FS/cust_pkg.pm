@@ -2193,6 +2193,10 @@ active, inactive, suspended, cancel (or cancelled)
 
 active, inactive, suspended, one-time charge, inactive, cancel (or cancelled)
 
+=item custom
+
+ boolean selects custom packages
+
 =item classnum
 
 =item pkgpart
@@ -2319,6 +2323,12 @@ sub search_sql {
     }
   }
   #eslaf
+
+  ###
+  # parse custom
+  ###
+
+  push @where,  "part_pkg.custom = 'Y'" if $params->{custom};
 
   ###
   # parse part_pkg
