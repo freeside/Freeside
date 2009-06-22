@@ -3085,6 +3085,7 @@ sub _gather_taxes {
 
   unless (@taxclassnums) {
     @taxclassnums = map { $_->taxclassnum }
+                    grep { $_->taxable eq 'Y' }
                     $part_pkg->part_pkg_taxrate('cch', $geocode, $class);
   }
   warn "Found taxclassnum values of ". join(',', @taxclassnums)
