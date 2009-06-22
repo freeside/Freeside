@@ -275,7 +275,7 @@ sub name {
 =item access_usergroup
 
 Returns links to the the groups this user is a part of, as FS::access_usergroup
-objects (see L<FS::access_usergroup).
+objects (see L<FS::access_usergroup>).
 
 =cut
 
