@@ -1225,27 +1225,29 @@ sub _upgrade_data { # class method
   foreach my $part_pkg (@part_pkg) {
 
     unless ( $part_pkg->plan ) {
-
       $part_pkg->plan('flat');
+    }
 
-      if ( $part_pkg->setup =~ /^\s*([\d\.]+)\s*$/ ) {
+    if ( length($part_pkg->option('setup_fee')) == 0 
+         && $part_pkg->setup =~ /^\s*([\d\.]+)\s*$/ ) {
 
-        my $opt = new FS::part_pkg_option {
-          'pkgpart'     => $part_pkg->pkgpart,
-          'optionname'  => 'setup_fee',
-          'optionvalue' => $1,
-        };
-        my $error = $opt->insert;
-        die $error if $error;
+      my $opt = new FS::part_pkg_option {
+        'pkgpart'     => $part_pkg->pkgpart,
+        'optionname'  => 'setup_fee',
+        'optionvalue' => $1,
+      };
+      my $error = $opt->insert;
+      die $error if $error;
 
-        $part_pkg->setup('');
 
-      } else {
-        die "Can't parse part_pkg.setup for fee; convert pkgnum ".
-            $part_pkg->pkgnum. " manually: ". $part_pkg->setup. "\n";
-      }
+      #} else {
+      #  die "Can't parse part_pkg.setup for fee; convert pkgnum ".
+      #      $part_pkg->pkgnum. " manually: ". $part_pkg->setup. "\n";
+    }
+    $part_pkg->setup('');
 
-      if ( $part_pkg->recur =~ /^\s*([\d\.]+)\s*$/ ) {
+    if ( length($part_pkg->option('recur_fee')) == 0
+         && $part_pkg->recur =~ /^\s*([\d\.]+)\s*$/ ) {
 
         my $opt = new FS::part_pkg_option {
           'pkgpart'     => $part_pkg->pkgpart,
@@ -1255,14 +1257,12 @@ sub _upgrade_data { # class method
         my $error = $opt->insert;
         die $error if $error;
 
-        $part_pkg->recur('');
 
-      } else {
-        die "Can't parse part_pkg.setup for fee; convert pkgnum ".
-            $part_pkg->pkgnum. " manually: ". $part_pkg->setup. "\n";
-      }
-
+      #} else {
+      #  die "Can't parse part_pkg.setup for fee; convert pkgnum ".
+      #      $part_pkg->pkgnum. " manually: ". $part_pkg->setup. "\n";
     }
+    $part_pkg->recur('');
 
     $part_pkg->replace; #this should take care of plandata, right?
 
