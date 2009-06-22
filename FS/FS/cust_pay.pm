@@ -216,11 +216,15 @@ sub insert {
       my $payby = $self->payby;
       my $payinfo = $self->payinfo;
       $payby =~ s/^BILL$/Check/ if $payinfo;
-      $payinfo = $self->paymask if $payby eq 'CARD' || $payby eq 'CHEK';
+      if ( $payby eq 'CARD' || $payby eq 'CHEK' ) {
+        $payinfo = $self->paymask
+      } else {
+        $payinfo = $self->decrypt($payinfo);
+      }
       $payby =~ s/^CHEK$/Electronic check/;
 
       $error = send_email(
-        'from'    => $conf->config('invoice_from', $self->cust_main->agentnum),
+        'from'    => $conf->config('invoice_from', $cust_main->agentnum),
                                    #invoice_from??? well as good as any
         'to'      => \@invoicing_list,
         'subject' => 'Payment receipt',
