@@ -19,6 +19,8 @@ my $DEBUG = 0;
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Edit customer');
 
+my $conf = new FS::Conf;
+
 my $error = '';
 
 #unmunge stuff
@@ -72,7 +74,6 @@ if ( defined($cgi->param('same')) && $cgi->param('same') eq "Y" ) {
 }
 
 if ( $cgi->param('birthdate') && $cgi->param('birthdate') =~ /^([ 0-9\-\/]{0,10})$/) {
-  my $conf = new FS::Conf;
   my $format = $conf->config('date_format') || "%m/%d/%Y";
   my $parser = DateTime::Format::Strptime->new(pattern => $format,
                                                time_zone => 'floating',
@@ -90,6 +91,9 @@ if ( $cgi->param('birthdate') && $cgi->param('birthdate') =~ /^([ 0-9\-\/]{0,10}
 
 $new->setfield('paid', $cgi->param('paid') )
   if $cgi->param('paid');
+
+my @exempt_groups = grep /\S/, $conf->config('tax-cust_exempt-groups');
+my @tax_exempt = grep { $cgi->param("tax_$_") eq 'Y' } @exempt_groups;
 
 #perhaps this stuff should go to cust_main.pm
 if ( $new->custnum eq '' ) {
@@ -179,7 +183,9 @@ if ( $new->custnum eq '' ) {
   use Tie::RefHash;
   tie my %hash, 'Tie::RefHash';
   %hash = ( $cust_pkg => [ $svc ] ) if $cust_pkg;
-  $error ||= $new->insert( \%hash, \@invoicing_list );
+  $error ||= $new->insert( \%hash, \@invoicing_list,
+                           'tax_exemption' => \@tax_exempt,
+                         );
 
   my $conf = new FS::Conf;
   if ( $conf->exists('backend-realtime') && ! $error ) {
@@ -222,7 +228,9 @@ if ( $new->custnum eq '' ) {
   local($FS::cust_main::DEBUG) = $DEBUG if $DEBUG;
   local($FS::Record::DEBUG)    = $DEBUG if $DEBUG;
 
-  $error ||= $new->replace($old, \@invoicing_list);
+  $error ||= $new->replace( $old, \@invoicing_list,
+                            'tax_exemption' => \@tax_exempt,
+                          );
 
   warn "$me returned from replace" if $DEBUG;
   

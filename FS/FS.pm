@@ -228,6 +228,8 @@ L<FS::cust_main_Mixin> - Mixin class for records that contain fields from cust_m
 
 L<FS::cust_main_invoice> - Invoice destination class
 
+L<FS::cust_main_exemption> - Customer tax exemption class
+
 L<FS::cust_main_note> - Customer note class
 
 L<FS::banned_pay> - Banned payment information class

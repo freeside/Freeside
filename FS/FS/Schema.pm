@@ -788,6 +788,18 @@ sub tables_hashref {
       'index' => [ [ 'custnum' ], [ '_date' ], ],
     },
 
+    'cust_main_exemption' => {
+      'columns' => [
+        'exemptionnum', 'serial', '',      '', '', '',
+        'custnum',         'int', '',      '', '', '', 
+        'taxname',     'varchar', '', $char_d, '', '',
+        #start/end dates?  for reporting?
+      ],
+      'primary_key' => 'exemptionnum',
+      'unique'      => [],
+      'index'       => [ [ 'custnum' ] ],
+    },
+
     'cust_main_county' => { #county+state+country are checked off the
                             #cust_main_county for validation and to provide
                             # a tax rate.

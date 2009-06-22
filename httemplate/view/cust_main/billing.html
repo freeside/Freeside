@@ -159,11 +159,18 @@ Billing information
 </TR>
 % } 
 
-
+% my @exempt_groups = grep /\S/, $conf->config('tax-cust_exempt-groups');
 <TR>
-  <TD ALIGN="right">Tax&nbsp;exempt</TD>
+  <TD ALIGN="right">Tax&nbsp;exempt<% @exempt_groups ? ' (all taxes)' : '' %></TD>
   <TD BGCOLOR="#ffffff"><% $cust_main->tax ? 'yes' : 'no' %></TD>
 </TR>
+% foreach my $exempt_group ( @exempt_groups ) {
+<TR>
+  <TD ALIGN="right">Tax&nbsp;exempt (<% $exempt_group %> taxes)</TD>
+  <TD BGCOLOR="#ffffff"><% $cust_main->tax_exemption($exempt_group) ? 'yes' : 'no' %></TD>
+</TR>
+% }
+
 % if ( $conf->exists('enable_taxproducts') ) {
 <TR>
   <TD ALIGN="right">Tax&nbsp;location</TD>

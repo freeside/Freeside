@@ -40,6 +40,7 @@ use FS::cust_refund;
 use FS::part_referral;
 use FS::cust_main_county;
 use FS::cust_location;
+use FS::cust_main_exemption;
 use FS::tax_rate;
 use FS::tax_rate_location;
 use FS::cust_tax_location;
@@ -363,7 +364,7 @@ invoicing_list destination to the newly-created svc_acct.  Here's an example:
 
   $cust_main->insert( {}, [ $email, 'POST' ] );
 
-Currently available options are: I<depend_jobnum> and I<noexport>.
+Currently available options are: I<depend_jobnum>, I<noexport> and I<tax_exemption>.
 
 If I<depend_jobnum> is set, all provisioning jobs will have a dependancy
 on the supplied jobnum (they will not run until the specific job completes).
@@ -373,6 +374,9 @@ as running the customer's credit card successfully).
 The I<noexport> option is deprecated.  If I<noexport> is set true, no
 provisioning jobs (exports) are scheduled.  (You can schedule them later with
 the B<reexport> method.)
+
+The I<tax_exemption> option can be set to an arrayref of tax names.
+FS::cust_main_exemption records will be created and inserted.
 
 =cut
 
@@ -457,6 +461,24 @@ sub insert {
       return $error;
     }
     $self->invoicing_list( $invoicing_list );
+  }
+
+  warn "  setting cust_main_exemption\n"
+    if $DEBUG > 1;
+
+  my $tax_exemption = delete $options{'tax_exemption'};
+  if ( $tax_exemption ) {
+    foreach my $taxname ( @$tax_exemption ) {
+      my $cust_main_exemption = new FS::cust_main_exemption {
+        'custnum' => $self->custnum,
+        'taxname' => $taxname,
+      };
+      my $error = $cust_main_exemption->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "inserting cust_main_exemption (transaction rolled back): $error";
+      }
+    }
   }
 
   if (    $conf->config('cust_main-skeleton_tables')
@@ -1295,6 +1317,16 @@ sub delete {
     }
   }
 
+  foreach my $cust_main_exemption (
+    qsearch( 'cust_main_exemption', { 'custnum' => $self->custnum } )
+  ) {
+    my $error = $cust_main_exemption->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
   my $error = $self->SUPER::delete;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
@@ -1306,7 +1338,8 @@ sub delete {
 
 }
 
-=item replace [ OLD_RECORD ] [ INVOICING_LIST_ARYREF ]
+=item replace [ OLD_RECORD ] [ INVOICING_LIST_ARYREF ] [ , OPTION => VALUE ... ] ]
+
 
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
@@ -1317,6 +1350,11 @@ expected and rollback the entire transaction; it is not necessary to call
 check_invoicing_list first.  Here's an example:
 
   $new_cust_main->replace( $old_cust_main, [ $email, 'POST' ] );
+
+Currently available options are: I<tax_exemption>.
+
+The I<tax_exemption> option can be set to an arrayref of tax names.
+FS::cust_main_exemption records will be deleted and inserted as appropriate.
 
 =cut
 
@@ -1364,7 +1402,7 @@ sub replace {
     return $error;
   }
 
-  if ( @param ) { # INVOICING_LIST_ARYREF
+  if ( @param && ref($param[0]) eq 'ARRAY' ) { # INVOICING_LIST_ARYREF
     my $invoicing_list = shift @param;
     $error = $self->check_invoicing_list( $invoicing_list );
     if ( $error ) {
@@ -1372,6 +1410,40 @@ sub replace {
       return $error;
     }
     $self->invoicing_list( $invoicing_list );
+  }
+
+  my %options = @param;
+
+  my $tax_exemption = delete $options{'tax_exemption'};
+  if ( $tax_exemption ) {
+
+    my %cust_main_exemption =
+      map { $_->taxname => $_ }
+          qsearch('cust_main_exemption', { 'custnum' => $old->custnum } );
+
+    foreach my $taxname ( @$tax_exemption ) {
+
+      next if delete $cust_main_exemption{$taxname};
+
+      my $cust_main_exemption = new FS::cust_main_exemption {
+        'custnum' => $self->custnum,
+        'taxname' => $taxname,
+      };
+      my $error = $cust_main_exemption->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "inserting cust_main_exemption (transaction rolled back): $error";
+      }
+    }
+
+    foreach my $cust_main_exemption ( values %cust_main_exemption ) {
+      my $error = $cust_main_exemption->delete;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "deleting cust_main_exemption (transaction rolled back): $error";
+      }
+    }
+
   }
 
   if ( $self->payby =~ /^(CARD|CHEK|LECB)$/ &&
@@ -6054,6 +6126,22 @@ see L<Time::Local> and L<Date::Parse> for conversion functions.
 sub total_owed_date {
   my $self = shift;
   my $time = shift;
+
+#  my $custnum = $self->custnum;
+#
+#  my $owed_sql = FS::cust_bill->owed_sql;
+#
+#  my $sql = "
+#    SELECT SUM($owed_sql) FROM cust_bill
+#      WHERE custnum = $custnum
+#        AND _date <= $time
+#  ";
+#
+#  my $sth = dbh->prepare($sql) or die dbh->errstr;
+#  $sth->execute() or die $sth->errstr;
+#
+#  return sprintf( '%.2f', $sth->fetchrow_arrayref->[0] );
+
   my $total_bill = 0;
   foreach my $cust_bill (
     grep { $_->_date <= $time }
@@ -6062,6 +6150,7 @@ sub total_owed_date {
     $total_bill += $cust_bill->owed;
   }
   sprintf( "%.2f", $total_bill );
+
 }
 
 =item total_paid
@@ -6285,6 +6374,20 @@ sub paydate_monthyear {
   } else {
     ('', '');
   }
+}
+
+=item tax_exemption TAXNAME
+
+=cut
+
+sub tax_exemption {
+  my( $self, $taxname ) = @_;
+
+  qsearchs( 'cust_main_exemption', { 'custnum' => $self->custnum,
+                                     'taxname' => { 'op'    => 'LIKE',
+                                                    'value' => $taxname.'%' },
+                                    },
+          );
 }
 
 =item invoicing_list [ ARRAYREF ]
