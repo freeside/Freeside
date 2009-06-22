@@ -355,9 +355,25 @@ foreach my $r ( qsearch({ 'table'     => 'cust_main_county',
 #    );
 #  }
 
+  #false laziness -ish w/report_tax.cgi
+  my $cust_exempt;
+  if ( $r->taxname ) {
+    my $q_taxname = dbh->quote($r->taxname);
+    $cust_exempt =
+      "( tax = 'Y'
+         OR EXISTS ( SELECT 1 FROM cust_main_exemption
+                       WHERE cust_main_exemption.custnum = cust_main.custnum
+                         AND cust_main_exemption.taxname = $q_taxname
+                   )
+       )
+      ";
+  } else {
+    $cust_exempt = " tax = 'Y' ";
+  }
+
   my $x_cust = scalar_sql($r, \@param,
     "SELECT SUM(cust_bill_pkg.setup+cust_bill_pkg.recur)
-     $fromwhere AND $nottax AND tax = 'Y' "
+     $fromwhere AND $nottax AND $cust_exempt "
   );
 
   $regions{$label}->{'exempt_cust'} += $x_cust;

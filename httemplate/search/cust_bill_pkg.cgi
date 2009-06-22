@@ -274,7 +274,24 @@ if ( $cgi->param('report_group') =~ /^(=|!=) (.*)$/ && $cgi->param('istax') ) {
 push @where, 'cust_bill_pkg.pkgnum != 0' if $cgi->param('nottax');
 push @where, 'cust_bill_pkg.pkgnum  = 0' if $cgi->param('istax');
 
-push @where, " tax = 'Y' " if $cgi->param('cust_tax');
+if ( $cgi->param('cust_tax') ) {
+  #false laziness -ish w/report_tax.cgi
+  my $cust_exempt;
+  if ( $cgi->param('taxname') ) {
+    my $q_taxname = dbh->quote($cgi->param('taxname'));
+    $cust_exempt =
+      "( tax = 'Y'
+         OR EXISTS ( SELECT 1 FROM cust_main_exemption
+                       WHERE cust_main_exemption.custnum = cust_main.custnum
+                         AND cust_main_exemption.taxname = $q_taxname )
+       )
+      ";
+  } else {
+    $cust_exempt = " tax = 'Y' ";
+  }
+
+  push @where, $cust_exempt;
+}
 
 my $count_query;
 if ( $cgi->param('pkg_tax') ) {

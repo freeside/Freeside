@@ -2830,7 +2830,7 @@ worry that config_items is freeside-specific and icky.
   {
     'key'         => 'tax-cust_exempt-groups',
     'section'     => '',
-    'description' => 'List of grouping possibilities for tax names, for per-customer exemption purposes, one tax name prefix for line.  For example, "GST" would indicate the ability to exempt customers individually from taxes starting with "GST" (but not other taxes).',
+    'description' => 'List of grouping possibilities for tax names, for per-customer exemption purposes, one tax name per line.  For example, "GST" would indicate the ability to exempt customers individually from taxes named "GST" (but not other taxes).',
     'type'        => 'textarea',
   },
 

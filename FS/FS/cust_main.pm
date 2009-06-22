@@ -2972,6 +2972,10 @@ sub _handle_taxes {
         @taxes = qsearch( 'cust_main_county', \%taxhash_elim );
       }
 
+      @taxes = grep { ! $_->taxname or ! $self->tax_exemption($_->taxname) }
+                    @taxes
+        if $self->cust_main_exemption; #just to be safe
+
       if ( $conf->exists('tax-pkg_address') && $cust_pkg->locationnum ) {
         foreach (@taxes) {
           $_->set('pkgnum',      $cust_pkg->pkgnum );
@@ -2984,12 +2988,12 @@ sub _handle_taxes {
       $taxes{'recur'} = [ @taxes ];
       $taxes{$_} = [ @taxes ] foreach (@classes);
 
-      # maybe eliminate this entirely, along with all the 0% records
-      unless ( @taxes ) {
-        return
-          "fatal: can't find tax rate for state/county/country/taxclass ".
-          join('/', map $taxhash{$_}, qw(state county country taxclass) );
-      }
+      # # maybe eliminate this entirely, along with all the 0% records
+      # unless ( @taxes ) {
+      #   return
+      #     "fatal: can't find tax rate for state/county/country/taxclass ".
+      #     join('/', map $taxhash{$_}, qw(state county country taxclass) );
+      # }
 
     } #if $conf->exists('enable_taxproducts') ...
 
@@ -6384,10 +6388,18 @@ sub tax_exemption {
   my( $self, $taxname ) = @_;
 
   qsearchs( 'cust_main_exemption', { 'custnum' => $self->custnum,
-                                     'taxname' => { 'op'    => 'LIKE',
-                                                    'value' => $taxname.'%' },
-                                    },
+                                     'taxname' => $taxname,
+                                   },
           );
+}
+
+=item cust_main_exemption
+
+=cut
+
+sub cust_main_exemption {
+  my $self = shift;
+  qsearch( 'cust_main_exemption', { 'custnum' => $self->custnum } );
 }
 
 =item invoicing_list [ ARRAYREF ]
