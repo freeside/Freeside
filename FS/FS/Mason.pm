@@ -57,7 +57,7 @@ Initializes the Mason environment, loads all Freeside and RT libraries, etc.
   use DateTime::Format::Strptime;
   use Lingua::EN::Inflect qw(PL);
   use Tie::IxHash;
-  use URI::URL;
+  use URI;
   use URI::Escape;
   use HTML::Entities;
   use HTML::TreeBuilder;

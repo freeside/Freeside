@@ -97,7 +97,7 @@ my $menubar = [];
 
 if ( $FS::CurrentUser::CurrentUser->access_right('Bulk send customer notices') ) {
 
-  my $uri = new URI::URL;
+  my $uri = new URI;
   $uri->query_form( \%search_hash );
   my $query = $uri->query;
 
