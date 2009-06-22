@@ -369,7 +369,7 @@ sub replace {
   foreach my $part_svc ( qsearch('part_svc', {} ) ) {
     my $quantity = $pkg_svc->{$part_svc->svcpart} || 0;
     my $primary_svc =
-      ( defined($options->{'primary_svc'})
+      ( defined($options->{'primary_svc'}) && $options->{'primary_svc'}
         && $options->{'primary_svc'} == $part_svc->svcpart
       )
         ? 'Y'
