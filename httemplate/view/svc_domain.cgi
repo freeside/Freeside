@@ -22,16 +22,7 @@ Service #<% $svcnum %>
     <A HREF="<% ${p} %>edit/process/domreg.cgi?op=transfer&svcnum=<% $svcnum %>">Transfer to <% $registrar->{'name'} %></A>&nbsp;
 %     }
 %     if ( defined($ops{'renew'}) ) {
-    <FORM NAME="Renew" METHOD="POST" ACTION="<% ${p} %>edit/process/domreg.cgi">
-      <INPUT TYPE="hidden" NAME="svcnum" VALUE="<%$svcnum%>">
-      <INPUT TYPE="hidden" NAME="op" VALUE="renew">
-      <SELECT NAME="period">
-%       foreach (1..10) { 
-          <OPTION VALUE="<%$_%>"><%$_%> year<% $_ > 1 ? 's' : '' %></OPTION>
-%       } 
-      </SELECT>
-      <INPUT TYPE="submit" VALUE="Renew">&nbsp;
-    </FORM>
+    <A HREF="<% ${p} %>edit/process/domreg.cgi?op=renew&svcnum=<% $svcnum %>&period=1">Renew at <% $registrar->{'name'} %></A>&nbsp;
 %     }
 %     if ( defined($ops{'revoke'}) ) {
     <A HREF="<% ${p} %>edit/process/domreg.cgi?op=revoke&svcnum=<% $svcnum %>">Revoke</A>
