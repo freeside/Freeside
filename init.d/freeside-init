@@ -18,6 +18,7 @@ case "$1" in
   start)
         # Start daemons.
         echo -n "Starting freeside-queued: "
+        #perl -MDBIx::Profile /usr/local/bin/freeside-queued $QUEUED_USER
         freeside-queued $QUEUED_USER
         echo "done."
 
