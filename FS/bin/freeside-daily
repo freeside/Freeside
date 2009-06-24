@@ -14,6 +14,10 @@ adminsuidsetup $user;
 use FS::Cron::bill qw(bill);
 bill(%opt);
 
+# Send alerts about upcoming credit card expiration.
+use FS::Cron::alert_expiration qw(alert_expiration);
+alert_expiration(%opt);
+
 #what to do about the below when using -m?  that is the question.
 
 #you don't want to skip this, besides, it should be cheap
