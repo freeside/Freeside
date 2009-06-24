@@ -1281,6 +1281,7 @@ sub _upgrade_data { # class method
     $new->custom('Y');
     my $comment = $part_pkg->comment;
     $comment =~ s/^\(CUSTOM\) //;
+    $comment = '(none)' unless $comment =~ /\S/;
     $new->comment($comment);
 
     my $pkg_svc = { map { $_->svcpart => $_->quantity } $part_pkg->pkg_svc };
