@@ -18,17 +18,18 @@
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
 
+my $link = "${p}search/cust_bill_pkg.cgi?nottax=1;include_comp_cust=1";
+my $bottom_link = "$link;";
+
 #XXX or virtual
 my( $agentnum, $sel_agent ) = ('', '');
 if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
   $agentnum = $1;
+  $bottom_link .= "agentnum=$agentnum;";
   $sel_agent = qsearchs('agent', { 'agentnum' => $agentnum } );
   die "agentnum $agentnum not found!" unless $sel_agent;
 }
 my $title = $sel_agent ? $sel_agent->agent.' ' : '';
-
-my $link = "${p}search/cust_bill_pkg.cgi?nottax=1;include_comp_cust=1";
-my $bottom_link = "$link;";
 
 #classnum (here)
 # 0: all classes
@@ -93,7 +94,6 @@ foreach my $agent ( $sel_agent || qsearch('agent', { 'disabled' => '' } ) ) {
   foreach my $pkg_class ( @pkg_class ) {
 
     push @items, 'cust_bill_pkg';
-
 
     push @labels,
       ( $sel_agent ? '' : $agent->agent.' ' ).
