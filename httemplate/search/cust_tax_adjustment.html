@@ -1,0 +1,52 @@
+<% include( 'elements/search.html',
+              'title'         => $title,
+              'name_singular' => 'tax adjustment',
+              'query'         => $query,
+              'count_query'   => $count_query,
+              'header'        => [ 'Tax', 'Amount', 'Comment', 'Invoice' ],
+              'fields'        => [ 'taxname',
+                                   sub { $money_char. shift->amount },
+                                   'comment',
+                                   sub { my $l = shift->cust_bill_pkg;
+                                         $l ? '#'.$l->invnum : '';
+                                       },
+                                 ],
+              'links'         => [ '', '', '', $ilink ],
+          )
+%>
+
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Add customer tax adjustment');
+
+my $conf = new FS::Conf;
+my $money_char = $conf->config('money_char') || '$';
+
+my $count_query = 'SELECT COUNT(*) FROM cust_tax_adjustment';
+
+my $hashref = {};
+
+my $custnum = $cgi->param('custnum');
+my $cust_main;
+if ( $custnum ) {
+  $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } );
+  $hashref->{'custnum'} = $custnum;
+}
+
+my $title = 'Tax adjustments';
+$title .= ' for '. $cust_main->name if $cust_main;
+
+my $query = { 'table'   => 'cust_tax_adjustment',
+              'hashref' => $hashref,
+            };
+
+my $ilink = [ $p.'view/cust_bill.cgi?', sub { my $l = shift->cust_bill_pkg;
+                                               $l ? $l->invnum : 'EXCEPTION';
+                                             }
+           ];
+
+#XXX would be nice to list customer fields on the report too, if we ever need
+# to link to here without a custnum (i'm sure we will, eventually...)
+
+</%init>

@@ -127,10 +127,33 @@
 
 %# tax exemption link
 
-% if ( $curuser->access_right('View customer tax exemptions') ) { 
-  <A HREF="<% $p %>search/cust_tax_exempt_pkg.cgi?custnum=<% $custnum %>">View tax exemptions</A>
+% my $view_exemptions = $curuser->access_right('View customer tax exemptions');
+% my $add_adjustment = ( $conf->exists('enable_tax_adjustments')
+%                       && $curuser->access_right('Add customer tax adjustment')
+%                      );
+% if ( $view_exemptions || $add_adjustment ) {
+
+%   if ( $view_exemptions ) {
+      <A HREF="<% $p %>search/cust_tax_exempt_pkg.cgi?custnum=<% $custnum %>">View tax exemptions</A>
+      <% $add_adjustment ? '|' : '' %>
+%   } 
+
+%   if ( $add_adjustment ) {
+      <% include('/elements/popup_link.html', {
+           'action' => $p.'edit/cust_tax_adjustment.html?custnum='. $cust_main->custnum,
+           'label'  => 'Add tax adjustment',
+           'actionlabel' => 'Add tax adjustment',
+           #'color'  => '#333399',
+           #'width' => 763,
+           'height' => 200,
+         })
+      %>
+      |
+      <A HREF="<% $p %>search/cust_tax_adjustment.html?custnum=<% $custnum %>">View tax adjustments</A>
+%   } 
+
   <BR>
-% } 
+% }
 
 %# batched payment links
 

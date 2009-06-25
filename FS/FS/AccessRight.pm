@@ -152,6 +152,7 @@ tie my %rights, 'Tie::IxHash',
     'View invoices',
     'Resend invoices', #NEWNEW
     'View customer tax exemptions', #yow
+    'Add customer tax adjustment', #new, but no need to phase in
     'View customer batched payments', #NEW
     'View customer pending payments', #NEW
     'Edit customer pending payments', #NEW

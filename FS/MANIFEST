@@ -442,3 +442,5 @@ FS/cust_recon.pm
 t/cust_recon.t
 FS/cust_main_exemption.pm
 t/cust_main_exemption.t
+FS/cust_tax_adjustment.pm
+t/cust_tax_adjustment.t

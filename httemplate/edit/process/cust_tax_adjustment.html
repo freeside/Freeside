@@ -1,0 +1,41 @@
+% if ( $error ) {
+%   $cgi->param('error', $error );
+<% $cgi->redirect($p.'cust_tax_adjustment.html?'. $cgi->query_string) %>
+% } else {
+<% header("Tax adjustment added") %>
+  <SCRIPT TYPE="text/javascript">
+    //window.top.location.reload();
+    parent.cClick();
+  </SCRIPT>
+  </BODY></HTML>
+% }
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Add customer tax adjustment');
+
+my $error = '';
+my $conf = new FS::conf;
+my $param = $cgi->Vars;
+
+$param->{"custnum"} =~ /^(\d+)$/
+  or $error .= "Illegal customer number " . $param->{"custnum"} . "  ";
+my $custnum = $1;
+
+$param->{"amount"} =~ /^\s*(\d*(?:\.?\d{1,2}))\s*$/
+  or $error .= "Illegal amount " . $param->{"amount"} . "  ";
+my $amount = $1;
+
+unless ( $error ) {
+
+  my $cust_tax_adjustment = new FS::cust_tax_adjustment {
+    'custnum' => $custnum,
+    'taxname' => $param->{'taxname'},
+    'amount'  => $amount,
+    'comment' => $param->{'comment'},
+  };
+  $error = $cust_tax_adjustment->insert;
+
+}
+
+</%init>

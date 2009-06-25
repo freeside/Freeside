@@ -2851,6 +2851,13 @@ worry that config_items is freeside-specific and icky.
     ],
   },
 
+  {
+    'key'         => 'enable_tax_adjustments',
+    'section'     => 'billing',
+    'description' => 'Enable the ability to add manual tax adjustments.',
+    'type'        => 'checkbox',
+  },
+
 );
 
 1;

@@ -41,6 +41,7 @@ use FS::part_referral;
 use FS::cust_main_county;
 use FS::cust_location;
 use FS::cust_main_exemption;
+use FS::cust_tax_adjustment;
 use FS::tax_rate;
 use FS::tax_rate_location;
 use FS::cust_tax_location;
@@ -2657,6 +2658,35 @@ sub bill {
       'itemdesc' => $taxname,
       'cust_bill_pkg_tax_location' => \@cust_bill_pkg_tax_location,
       'cust_bill_pkg_tax_rate_location' => \@cust_bill_pkg_tax_rate_location,
+    };
+
+  }
+
+  #add tax adjustments
+  warn "adding tax adjustments...\n" if $DEBUG > 2;
+  foreach my $cust_tax_adjustment (
+    qsearch('cust_tax_adjustment', { 'custnum'    => $self->custnum,
+                                     'billpkgnum' => '',
+                                   }
+           )
+  ) {
+
+    my $tax = sprintf('%.2f', $cust_tax_adjustment->amount );
+    $total_setup = sprintf('%.2f', $total_setup+$tax );
+
+    my $itemdesc = $cust_tax_adjustment->taxname;
+    $itemdesc = '' if $itemdesc eq 'Tax';
+
+    push @cust_bill_pkg, new FS::cust_bill_pkg {
+      'pkgnum'      => 0,
+      'setup'       => $tax,
+      'recur'       => 0,
+      'sdate'       => '',
+      'edate'       => '',
+      'itemdesc'    => $itemdesc,
+      'itemcomment' => $cust_tax_adjustment->comment,
+      'cust_tax_adjustment' => $cust_tax_adjustment,
+      #'cust_bill_pkg_tax_location' => \@cust_bill_pkg_tax_location,
     };
 
   }

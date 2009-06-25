@@ -1,0 +1,102 @@
+<% include('/elements/header-popup.html', 'Tax adjustment' ) %>
+
+<% include('/elements/error.html') %>
+
+<SCRIPT TYPE="text/javascript">
+
+function enable_tax_adjustment () {
+  if (    document.TaxAdjustmentForm.amount.value
+       && document.TaxAdjustmentForm.taxname.selectedIndex > 0  ) {
+    document.TaxAdjustmentForm.submit.disabled = false;
+  } else {
+    document.TaxAdjustmentForm.submit.disabled = true;
+  }
+}
+
+function validate_tax_adjustment () {
+  var comment = document.TaxAdjustmentForm.comment.value;
+  var comment_regex = /^([\w \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\=\[\]]*)$/ ;
+  var amount = document.TaxAdjustmentForm.amount.value;
+  var amount_regex = /^\s*\$?\s*(\d*(\.?\d{1,2}))\s*$/ ;
+  var rval = true;
+
+  if ( ! amount_regex.test(amount) ) {
+    alert('Illegal amount - enter the amount of the tax adjustment, for example, "5" or "43" or "21.46".');
+    return false;
+  }
+  if ( ! comment_regex.test(comment) ) {
+    alert('Illegal comment - spaces, letters, numbers, and the following punctuation characters are allowed: . , ! ? @ # $ % & ( ) - + ; : ' + "'" + ' " = [ ]' );
+    return false;
+  }
+
+  return true;
+}
+
+</SCRIPT>
+
+<FORM ACTION="process/cust_tax_adjustment.html" NAME="TaxAdjustmentForm" ID="TaxAdjustmentForm" METHOD="POST" onsubmit="document.TaxAdjustmentForm.submit.disabled=true;return validate_tax_adjustment();">
+
+<INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
+
+<TABLE ID="TaxAdjustmentTable" BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0 STYLE="background-color: #cccccc">
+
+<TR>
+  <TD ALIGN="right">Tax </TD>
+  <TD>
+    <SELECT NAME="taxname" ID="taxname" onChange="enable_tax_adjustment()" onKeyPress="enable_tax_adjustment()">
+      <OPTION VALUE=""></OPTION>
+%     foreach my $taxname (@taxname) {
+        <OPTION VALUE="<% $taxname %>"><% $taxname %></OPTION>
+%     }
+    </SELECT>
+  </TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right">Amount </TD>
+  <TD>
+    $<INPUT TYPE="text" NAME="amount" SIZE=6 VALUE="<% $amount %>" onChange="enable_tax_adjustment()" onKeyPress="enable_tax_adjustment()">
+  </TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right">Comment </TD>
+  <TD>
+    <INPUT TYPE="text" NAME="comment" SIZE="50" MAXLENGTH="50" VALUE="<% $comment %>" onChange="enable_tax_adjustment()" onKeyPress="enable_tax_adjustment()">
+  </TD>
+</TR>
+
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" ID="submit" NAME="submit" VALUE="Add tax adjustment" <% $cgi->param('error') ? '' :' DISABLED' %>>
+
+</FORM>
+
+</BODY>
+</HTML>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Add customer tax adjustment');
+
+my $sql = 'SELECT DISTINCT(taxname) FROM cust_main_county';
+my $sth = dbh->prepare($sql) or die dbh->errstr;
+$sth->execute() or die $sth->errstr;
+my @taxname = map { $_->[0] || 'Tax' } @{ $sth->fetchall_arrayref([]) };
+
+my $conf = new FS::Conf;
+
+$cgi->param('custnum') =~ /^(\d+)$/ or die 'illegal custnum';
+my $custnum = $1;
+
+my $amount = '';
+if ( $cgi->param('amount') =~ /^\s*\$?\s*(\d+(\.\d{1,2})?)\s*$/ ) {
+  $amount = $1;
+}
+
+$cgi->param('comment') =~ /^([\w \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\=\[\]]*)$/ 
+  or die 'illegal description';
+my $comment = $1;
+
+</%init>

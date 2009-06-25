@@ -513,6 +513,7 @@ sub tables_hashref {
         'sdate',               @date_type,              '', '', 
         'edate',               @date_type,              '', '', 
         'itemdesc',         'varchar', 'NULL', $char_d, '', '', 
+        'itemcomment',      'varchar', 'NULL', $char_d, '', '', 
         'section',          'varchar', 'NULL', $char_d, '', '', 
         'quantity',             'int', 'NULL',      '', '', '',
         'unitsetup',           @money_typen,            '', '', 
@@ -520,7 +521,7 @@ sub tables_hashref {
       ],
       'primary_key' => 'billpkgnum',
       'unique' => [],
-      'index' => [ ['invnum'], [ 'pkgnum' ] ],
+      'index' => [ ['invnum'], [ 'pkgnum' ], [ 'itemdesc' ], ],
     },
 
     'cust_bill_pkg_detail' => {
@@ -798,6 +799,21 @@ sub tables_hashref {
       'primary_key' => 'exemptionnum',
       'unique'      => [],
       'index'       => [ [ 'custnum' ] ],
+    },
+
+    'cust_tax_adjustment' => {
+      'columns' => [
+        'adjustmentnum', 'serial',     '',      '', '', '',
+        'custnum',          'int',     '',      '', '', '',
+        'taxname',      'varchar',     '', $char_d, '', '',
+        'amount',    @money_type,                   '', '', 
+        'comment',     'varchar',  'NULL', $char_d, '', '', 
+        'billpkgnum',       'int', 'NULL',      '', '', '',
+        #more?  no cust_bill_pkg_tax_location?
+      ],
+      'primary_key' => 'adjustmentnum',
+      'unique'      => [],
+      'index'       => [ [ 'custnum' ], [ 'billpkgnum' ] ],
     },
 
     'cust_main_county' => { #county+state+country are checked off the

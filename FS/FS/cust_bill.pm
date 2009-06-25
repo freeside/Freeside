@@ -1457,11 +1457,9 @@ sub print_csv {
   
       } else { #pkgnum tax
         next unless $cust_bill_pkg->setup != 0;
-        my $itemdesc = defined $cust_bill_pkg->dbdef_table->column('itemdesc')
-                         ? ( $cust_bill_pkg->itemdesc || 'Tax' )
-                         : 'Tax';
-        ($pkg, $setup, $recur, $sdate, $edate) =
-          ( $itemdesc, sprintf("%10.2f",$cust_bill_pkg->setup), '', '', '' );
+        $pkg = $cust_bill_pkg->desc;
+        $setup = sprintf('%10.2f', $cust_bill_pkg->setup );
+        ( $sdate, $edate ) = ( '', '' );
       }
   
       $csv->combine(

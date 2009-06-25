@@ -175,6 +175,17 @@ sub insert {
     }
   }
 
+  my $cust_tax_adjustment = $self->get('cust_tax_adjustment');
+  if ( $cust_tax_adjustment ) {
+    $cust_tax_adjustment->billpkgnum($self->billpkgnum);
+    $error = $cust_tax_adjustment->replace;
+    warn $error;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
 
@@ -224,6 +235,7 @@ sub check {
       || $self->ut_numbern('sdate')
       || $self->ut_numbern('edate')
       || $self->ut_textn('itemdesc')
+      || $self->ut_textn('itemcomment')
   ;
   return $error if $error;
 
@@ -381,7 +393,9 @@ sub desc {
   if ( $self->pkgnum > 0 ) {
     $self->itemdesc || $self->part_pkg->pkg;
   } else {
-    $self->itemdesc || 'Tax';
+    my $desc = $self->itemdesc || 'Tax';
+    $desc .= ' '. $self->itemcomment if $self->itemcomment =~ /\S/;
+    $desc;
   }
 }
 

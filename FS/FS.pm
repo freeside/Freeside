@@ -102,6 +102,8 @@ L<FS::cust_main_county> - Locale (tax rate) class
 
 L<FS::cust_tax_exempt> - Tax exemption record class
 
+L<FS::cust_tax_adjustment> - Tax adjustment record class
+
 L<FS::cust_tax_exempt_pkg> - Line-item specific tax exemption record class
 
 L<FS::svc_Common> - Service base class
