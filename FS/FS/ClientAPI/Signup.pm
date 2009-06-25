@@ -286,11 +286,12 @@ sub signup_info {
       foreach my $payby (@{$signup_info->{payby}}) {
         warn "$me checking $payby payment fields\n" if $DEBUG > 1;
         my $hide = 0;
-        if (FS::payby->realtime($payby)) {
+        if ( FS::payby->realtime($payby) ) {
           my $payment_gateway =
             $agent->payment_gateway( 'method' => FS::payby->payby2bop($payby) );
-          if ($payment_gateway->gateway_namespace eq
-              'Business::OnlineThirdPartyPayment'
+          if ( $payment_gateway
+                 && $payment_gateway->gateway_namespace
+                      eq 'Business::OnlineThirdPartyPayment'
              ) {
             warn "$me hiding $payby payment fields\n" if $DEBUG > 1;
             $hide = 1;

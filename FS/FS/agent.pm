@@ -206,7 +206,10 @@ sub ticketing_queue {
 
 Returns a payment gateway object (see L<FS::payment_gateway>) for this agent.
 
-Currently available options are I<invnum>, I<method>, and I<payinfo>.
+Currently available options are I<nofatal>, I<invnum>, I<method>, and I<payinfo>.
+
+If I<nofatal> is set, and no gateway is available, then the empty string
+will be returned instead of throwing a fatal exception.
 
 If I<invnum> is set to the number of an invoice (see L<FS::cust_bill>) then
 an attempt will be made to select a gateway suited for the taxes paid on 
@@ -276,8 +279,13 @@ sub payment_gateway {
     # agent_payment_gateway referenced payment_gateway
 
     my $conf = new FS::Conf;
-    die "Real-time processing not enabled\n"
-      unless $conf->exists('business-onlinepayment');
+    unless ( $conf->exists('business-onlinepayment') ) {
+      if ( $options{'nofatal'} ) {
+        return '';
+      } else {
+        die "Real-time processing not enabled\n";
+      }
+    }
 
     #load up config
     my $bop_config = 'business-onlinepayment';
