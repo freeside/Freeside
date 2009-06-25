@@ -61,7 +61,9 @@ sub signup_info {
                   } }
                 grep { $_->svcpart($svc_x)
                        && ( $href->{ $_->pkgpart }
-                            || $_->agentnum == $agent->agentnum
+                            || ( $_->agentnum
+                                 && $_->agentnum == $agent->agentnum
+                               )
                           )
                      }
                   qsearch( 'part_pkg', { 'disabled' => '' } )
