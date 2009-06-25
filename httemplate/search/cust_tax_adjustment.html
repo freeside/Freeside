@@ -27,11 +27,13 @@ my $count_query = 'SELECT COUNT(*) FROM cust_tax_adjustment';
 
 my $hashref = {};
 
-my $custnum = $cgi->param('custnum');
-my $cust_main;
-if ( $custnum ) {
+my $custnum = '';
+my $cust_main = '';
+if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
+  $custnum = $1;
   $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } );
   $hashref->{'custnum'} = $custnum;
+  $count_query .= " WHERE custnum = $custnum ";
 }
 
 my $title = 'Tax adjustments';
