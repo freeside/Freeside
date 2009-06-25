@@ -290,7 +290,9 @@ sub signup_info {
         my $hide = 0;
         if ( FS::payby->realtime($payby) ) {
           my $payment_gateway =
-            $agent->payment_gateway( 'method' => FS::payby->payby2bop($payby) );
+            $agent->payment_gateway( 'method'  => FS::payby->payby2bop($payby),
+                                     'nofatal' => 1,
+                                   );
           if ( $payment_gateway
                  && $payment_gateway->gateway_namespace
                       eq 'Business::OnlineThirdPartyPayment'
