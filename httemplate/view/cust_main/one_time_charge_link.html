@@ -57,13 +57,7 @@ function taxoverridequickchargemagic() {
 
 </SCRIPT>
 
-<!--<FORM NAME='quickcharge' STYLE="margin:0; padding:0; display: inline;"> -->
-<FORM NAME='quickcharge' STYLE="display:inline">
-  <INPUT NAME="taxproductnum"  ID="taxproductnum"  TYPE="hidden">
-  <INPUT NAME="tax_override"   ID="tax_override"   TYPE="hidden">
-  <INPUT NAME="charge_storage" ID="charge_storage" TYPE="hidden">
-  <INPUT NAME="taxproductnum_description" ID="taxproductnum_description" TYPE="hidden">
-</FORM>
+<FORM NAME='quickcharge' STYLE="margin:0; padding:0; display:inline"><INPUT NAME="taxproductnum"  ID="taxproductnum"  TYPE="hidden"><INPUT NAME="tax_override"   ID="tax_override"   TYPE="hidden"><INPUT NAME="charge_storage" ID="charge_storage" TYPE="hidden"><INPUT NAME="taxproductnum_description" ID="taxproductnum_description" TYPE="hidden"></FORM>
 
 <% include('/elements/popup_link.html', { 
      'action'      => $p.'edit/quick-charge.html?custnum='. $cust_main->custnum,
