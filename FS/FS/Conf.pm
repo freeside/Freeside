@@ -566,11 +566,19 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'alert_expiration',
+    'section'     => 'billing',
+    'description' => 'Enable alerts about billing method expiration.',
+    'type'        => 'checkbox',
+    'per_agent'   => 1,
+  },
+
+  {
     'key'         => 'alerter_template',
     'section'     => 'billing',
     'description' => 'Template file for billing method expiration alerts.  See the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:1.7:Documentation:Administration#Credit_cards_and_Electronic_checks">billing documentation</a> for details.',
     'type'        => 'textarea',
-    'per-agent'   => 1,
+    'per_agent'   => 1,
   },
 
   {

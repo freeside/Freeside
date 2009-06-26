@@ -3,6 +3,7 @@
 use strict;
 use Getopt::Std;
 use FS::UID qw(adminsuidsetup);
+use FS::Conf;
 
 &untaint_argv;	#what it sounds like  (eww)
 use vars qw(%opt);
@@ -16,7 +17,8 @@ bill(%opt);
 
 # Send alerts about upcoming credit card expiration.
 use FS::Cron::alert_expiration qw(alert_expiration);
-alert_expiration(%opt);
+my $conf = new FS::Conf;
+alert_expiration(%opt) if($conf->exists('alert_expiration'));
 
 #what to do about the below when using -m?  that is the question.
 
