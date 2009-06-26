@@ -8110,11 +8110,11 @@ sub smart_search {
 
     }
 
-    #eliminate duplicates
-    my %saw = ();
-    @cust_main = grep { !$saw{$_->custnum}++ } @cust_main;
-
   }
+
+  #eliminate duplicates
+  my %saw = ();
+  @cust_main = grep { !$saw{$_->custnum}++ } @cust_main;
 
   @cust_main;
 
