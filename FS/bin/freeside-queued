@@ -4,6 +4,7 @@ use strict;
 use vars qw( $DEBUG $kids $max_kids %kids );
 use POSIX qw(:sys_wait_h);
 use IO::File;
+use Getopt::Std;
 use FS::UID qw(adminsuidsetup forksuidsetup driver_name dbh myconnect);
 use FS::Daemon qw(daemonize1 drop_root logfile daemonize2 sigint sigterm);
 use FS::Conf;
@@ -17,6 +18,10 @@ use Net::SSH 0.07;
 $DEBUG = 0;
 
 $kids = 0;
+
+&untaint_argv;  #what it sounds like  (eww)
+use vars qw(%opt);
+getopts('sn', \%opt );
 
 my $user = shift or die &usage;
 
@@ -95,9 +100,16 @@ while (1) {
                    ? " LIMIT $limit FOR UPDATE "
                    : " FOR UPDATE LIMIT $limit " );
 
+  my $hashref = { 'status' => 'new' };
+  if ( $opt{'s'} ) {
+    $hashref->{'status'} = 'Y';
+  } elsif ( $opt{'n'} ) {
+    $hashref->{'status'} = '';
+  }
+
   my @jobs = qsearch({
     'table'     => 'queue',
-    'hashref'   => { 'status' => 'new' },
+    'hashref'   => $hashref,
     'extra_sql' => $nodepend,
     'order_by'  => $order_by,
   });
@@ -217,6 +229,15 @@ while (1) {
   }
 }
 
+sub untaint_argv {
+  foreach $_ ( $[ .. $#ARGV ) { #untaint @ARGV
+    #$ARGV[$_] =~ /^([\w\-\/]*)$/ || die "Illegal arguement \"$ARGV[$_]\"";
+    # Date::Parse
+    $ARGV[$_] =~ /^(.*)$/ || die "Illegal arguement \"$ARGV[$_]\"";
+    $ARGV[$_]=$1;
+  }
+}
+
 sub usage {
   die "Usage:\n\n  freeside-queued user\n";
 }
@@ -237,11 +258,15 @@ freeside-queued - Job queue daemon
 
 =head1 SYNOPSIS
 
-  freeside-queued user
+  freeside-queued [ -s | -n ] user
 
 =head1 DESCRIPTION
 
 Job queue daemon.  Should be running at all times.
+
+-s: "secure" jobs only (queued billing jobs)
+
+-n: non-"secure" jobs only (other jobs)
 
 user: from the mapsecrets file - see config.html from the base documentation
 
