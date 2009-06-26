@@ -102,9 +102,9 @@ while (1) {
 
   my $hashref = { 'status' => 'new' };
   if ( $opt{'s'} ) {
-    $hashref->{'status'} = 'Y';
+    $hashref->{'secure'} = 'Y';
   } elsif ( $opt{'n'} ) {
-    $hashref->{'status'} = '';
+    $hashref->{'secure'} = '';
   }
 
   my @jobs = qsearch({
