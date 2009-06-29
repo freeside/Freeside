@@ -1,0 +1,112 @@
+#!/usr/bin/perl -w
+
+use strict;
+use Getopt::Std;
+use Date::Parse;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw( qsearch );
+use FS::cust_pay;
+
+&untaint_argv;	#what it sounds like  (eww)
+use vars qw(%opt);
+getopts("p:a:b:e:", \%opt);
+
+my $user = shift or die &usage;
+my $dbh = adminsuidsetup $user;
+
+my @where = ();
+
+push @where, 'agentnum = '. $dbh->quote($opt{a}) if $opt{a};
+push @where, 'cust_pay.payby = '. $dbh->quote($opt{p}) if $opt{p};
+push @where, 'cust_pay._date > '. $dbh->quote(str2time($opt{b})) if $opt{b};
+push @where, 'cust_pay._date < '. $dbh->quote(str2time($opt{e})) if $opt{e};
+
+my $extra_sql = scalar(@where) ? 'WHERE '. join(' AND ', @where) : '';
+my $addl_from = 'LEFT JOIN cust_main USING( custnum )';
+
+my @payrow = qsearch( { table     => 'cust_pay',
+                        hashref   => {},
+                        select    => 'count(*) AS quantity, paid',
+                        addl_from => $addl_from,
+                        extra_sql => $extra_sql,
+                        order_by  => 'GROUP BY paid',
+                      }
+                    );
+
+my $max = 0;
+foreach (@payrow) {
+  $max = $_->quantity if $_->quantity > $max;
+}
+my $scale = int($max/60) + 1;
+
+print "\n  PAYMENTS RECEIVED";
+print " AFTER $opt{b}" if $opt{b};
+print " UNTIL $opt{e}" if $opt{e};
+print " VIA $opt{p}" if $opt{p};
+print " BY AGENT $opt{a}" if $opt{a};
+print "\n\n";
+print "(each * represents $scale)\n\n" if $scale > 1;
+
+foreach my $payrow ( @payrow ) {
+  print sprintf("%10.2f", $payrow->paid),
+        ": ",
+        sprintf("%6d", $payrow->quantity),
+        "| ",
+        '*' x($payrow->quantity/$scale),
+        "\n";
+}
+
+print "\n";
+
+
+###
+# subroutines
+###
+
+sub untaint_argv {
+  foreach $_ ( $[ .. $#ARGV ) { #untaint @ARGV
+    #$ARGV[$_] =~ /^([\w\-\/]*)$/ || die "Illegal arguement \"$ARGV[$_]\"";
+    # Date::Parse
+    $ARGV[$_] =~ /^(.*)$/ || die "Illegal arguement \"$ARGV[$_]\"";
+    $ARGV[$_]=$1;
+  }
+}
+
+sub usage {
+  die "Usage:\n\n  cust_pay_histogram [ -b 'begin_date' ] [ -e 'end_date' ] [ -p 'payby' ] [ -a agentnum ] user\n";
+}
+
+###
+# documentation
+###
+
+=head1 NAME
+
+cust_pay_histogram - Show a histogram of payments made for a date range.
+
+=head1 SYNOPSIS
+
+  freeside-daily [ -b 'begin_date' ] [ -e 'end_date'] [ -p 'payby' ] [ -a agentnum ] user
+
+=head1 DESCRIPTION
+
+Displays a histogram of cust_pay records in the database.
+
+  -b: Include only payments since 'begin_date'.  Date is in any format Date::Parse is happy with, but be careful.
+
+  -e: Include only payments before 'end_date'.  Date is in any format Date::Parse is happy with, but be careful.
+
+  -p: Only process payments with the specified payby (I<CARD>, I<DCRD>, I<CHEK>, I<DCHK>, I<BILL>, I<COMP>, I<LECB>)
+
+  -a: Only process payments of customers with the specified agentnum
+
+user: From the mapsecrets file - see config.html from the base documentation
+
+=head1 BUGS
+
+=head1 SEE ALSO
+
+L<FS::cust_pay>
+
+=cut
+
