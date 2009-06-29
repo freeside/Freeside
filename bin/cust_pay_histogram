@@ -34,7 +34,9 @@ my @payrow = qsearch( { table     => 'cust_pay',
                     );
 
 my $max = 0;
+my $sum = 0;
 foreach (@payrow) {
+  $sum += $_->quantity;
   $max = $_->quantity if $_->quantity > $max;
 }
 my $scale = int($max/60) + 1;
@@ -45,6 +47,7 @@ print " UNTIL $opt{e}" if $opt{e};
 print " VIA $opt{p}" if $opt{p};
 print " BY AGENT $opt{a}" if $opt{a};
 print "\n\n";
+print "Total number of payments: $sum\n\n";
 print "(each * represents $scale)\n\n" if $scale > 1;
 
 foreach my $payrow ( @payrow ) {
