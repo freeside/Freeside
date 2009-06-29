@@ -17,8 +17,10 @@ Requires: %{name}-frontend
 Requires: %{name}-backend
 %if "%{_vendor}" != "suse"
 Requires: tetex-latex
+Requires: ghostscript
 %else
 Requires: te_latex
+Requires: ghostscript-library
 %endif
 Requires: perl-Fax-Hylafax-Client
 
@@ -47,6 +49,8 @@ Requires: perl-Fax-Hylafax-Client
 %define	fs_selfservice_user	fs_selfservice
 %define	fs_cron_user		fs_daily
 %define	db_types		Pg mysql
+
+%define texmflocal	/usr/share/texmf
 
 %define _rpmlibdir	/usr/lib/rpm
 %define	rpmfiles	rpm
@@ -328,6 +332,9 @@ cd ../..
 %{__install} %{rpmfiles}/freeside-selfservice.conf $RPM_BUILD_ROOT%{apache_confdir}/%{name}-selfservice.conf
 %{__perl} -pi -e "s|%%%%%%FREESIDE_SELFSERVICE_DOCUMENT_ROOT%%%%%%|%{freeside_selfservice_document_root}|g" $RPM_BUILD_ROOT%{apache_confdir}/%{name}-selfservice.conf
 
+# This is part of Makefile's install-texmf.  The rest is in triggers.  These files are not in the filelist
+%{__install} -D etc/fslongtable.sty $RPM_BUILD_ROOT%{texmflocal}/tex/generic/fslongtable.sty
+
 %pre
 if ! %{__id} freeside &>/dev/null; then
 %if "%{_vendor}" == "suse"
@@ -405,6 +412,10 @@ if ! %{__grep} TEXINPUTS /etc/init.d/apache2 >/dev/null; then
 fi
 %endif
 
+%triggerin -- tetex 
+#texhash `kpsewhich -expand-var \$TEXMFLOCAL`
+texhash %{texmflocal}
+
 %clean
 %{__rm} -rf %{buildroot}
 
@@ -418,6 +429,7 @@ fi
 %attr(-,freeside,freeside) %dir %{freeside_log}
 %attr(0711,freeside,freeside) %config(noreplace) %{freeside_conf}/default_conf
 %attr(0644,freeside,freeside) %config(noreplace) %{freeside_conf}/default_conf/*
+%attr(444,root,root) %{texmflocal}/tex/generic/fslongtable.sty
 
 %files mason -f %{name}-%{version}-%{release}-mason-filelist
 %defattr(-, freeside, freeside, 0755)
