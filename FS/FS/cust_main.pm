@@ -7573,6 +7573,13 @@ sub search_sql {
     unless $params->{'cancelled_pkgs'};
 
   ##
+  # parse without census tract checkbox
+  ##
+
+  push @where, "(censustract = '' or censustract is null)"
+    if $params->{'no_censustract'};
+
+  ##
   # dates
   ##
 

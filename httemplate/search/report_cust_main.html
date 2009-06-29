@@ -56,6 +56,15 @@
         <TD><INPUT TYPE="checkbox" NAME="cancelled_pkgs"></TD>
     </TR>
 
+%   if ( $conf->exists('cust_main-require_censustract') ) {
+
+    <TR>
+      <TD ALIGN="right" VALIGN="center">Without census tract</TD>
+        <TD><INPUT TYPE="checkbox" NAME="no_censustract"></TD>
+    </TR>
+
+%   }
+
     <TR>
       <TH BGCOLOR="#e8e8e8" COLSPAN=2>&nbsp;</TH>
     </TR>
@@ -83,6 +92,8 @@ die "access denied"
   unless ( $FS::CurrentUser::CurrentUser->access_right('List customers') &&
            $FS::CurrentUser::CurrentUser->access_right('List packages')
          );;
+
+my $conf = new FS::Conf;
 
 </%init>
 <%once>

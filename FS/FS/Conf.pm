@@ -2576,6 +2576,13 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'cust_main-require_censustract',
+    'section'     => 'UI',
+    'description' => 'Customer is required to have a census tract.  Useful for FCC form 477 reports. See also: cust_main-auto_standardize_address',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'disable_acl_changes',
     'section'     => '',
     'description' => 'Disable all ACL changes, for demos.',

@@ -72,6 +72,20 @@
                )
     %>
 
+%   if ( scalar( qsearch( 'part_pkg_report_option', { 'disabled' => '' } ) ) ) {
+
+    <% include( '/elements/tr-select-table.html',
+                   'label'        => 'Report classes',
+                   'table'        => 'part_pkg_report_option',
+                   'name_col'     => 'name',
+                   'hashref'      => { 'disabled' => '' },
+                   'element_name' => 'report_option',
+                   'multiple'     => 'multiple',
+               )
+    %>
+
+%   }
+
 %   foreach my $field (qw( setup last_bill bill adjourn susp expire cancel )) {
 
       <TR>

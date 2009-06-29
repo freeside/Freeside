@@ -86,52 +86,17 @@ function update_address(arg) {
       cf.elements['ship_zip'].value      = argsHash['new_ship_zip'];
     }
 
+    post_standardization();
+
   }
 
-  var cf = document.CustomerForm;
 
-% if ( $conf->exists('enable_taxproducts') ) {
-
-  if ( <% $taxpre %>error ||
-       new String(argsHash['new_<% $taxpre %>zip']).length < 10 )
-  {
-
-    var country_el = cf.elements['<% $taxpre %>country'];
-    var country = country_el.options[ country_el.selectedIndex ].value;
-
-    if ( country == 'CA' || country == 'US' ) {
-
-      var state_el = cf.elements['<% $taxpre %>state'];
-      var state = state_el.options[ state_el.selectedIndex ].value;
-
-      var url = "cust_main/choose_tax_location.html" +
-                  "?data_vendor=cch-zip" + 
-                  ";city="    + cf.elements['<% $taxpre %>city'].value +
-                  ";state="   + state + 
-                  ";zip="     + cf.elements['<% $taxpre %>zip'].value +
-                  ";country=" + country +
-                  ";";
-
-      // popup a chooser
-      OLgetAJAX( url, update_geocode, 300 );
-
-    } else {
-
-      cf.elements['geocode'].value = 'DEFAULT';
-      cf.submit();
-
-    }
-
-  } else
-
-% }
 
   if ( changed || ship_changed ) {
 
 %   if ( $conf->exists('cust_main-auto_standardize_address') ) {
 
     standardize_address();
-    cf.submit();
 
 %   } else {
 
@@ -198,9 +163,9 @@ function update_address(arg) {
 
     confirm_change = confirm_change +
       '<TR><TD>' +
-        '<BUTTON TYPE="button" onClick="document.CustomerForm.submit();"><IMG SRC="<%$p%>images/error.png" ALT=""> Use entered ' + addresses + '</BUTTON>' + 
+        '<BUTTON TYPE="button" onClick="post_standardization();"><IMG SRC="<%$p%>images/error.png" ALT=""> Use entered ' + addresses + '</BUTTON>' + 
       '</TD><TD>' +
-        '<BUTTON TYPE="button" onClick="standardize_address(); document.CustomerForm.submit();"><IMG SRC="<%$p%>images/tick.png" ALT=""> Use standardized ' + addresses + '</BUTTON>' + 
+        '<BUTTON TYPE="button" onClick="standardize_address();"><IMG SRC="<%$p%>images/tick.png" ALT=""> Use standardized ' + addresses + '</BUTTON>' + 
       '</TD></TR>' +
       '<TR><TD COLSPAN=2 ALIGN="center">' +
         '<BUTTON TYPE="button" onClick="document.CustomerForm.submitButton.disabled=false; parent.cClick();"><IMG SRC="<%$p%>images/cross.png" ALT=""> Cancel submission</BUTTON></TD></TR>' +
@@ -213,9 +178,84 @@ function update_address(arg) {
 
   } else {
 
-    cf.submit();
+    post_standardization();
 
   }
+
+
+}
+
+function post_standardization() {
+
+  var cf = document.CustomerForm;
+
+% if ( $conf->exists('enable_taxproducts') ) {
+
+  if ( new String(cf.elements['<% $taxpre %>zip'].value).length < 10 )
+  {
+
+    var country_el = cf.elements['<% $taxpre %>country'];
+    var country = country_el.options[ country_el.selectedIndex ].value;
+
+    if ( country == 'CA' || country == 'US' ) {
+
+      var state_el = cf.elements['<% $taxpre %>state'];
+      var state = state_el.options[ state_el.selectedIndex ].value;
+
+      var url = "cust_main/choose_tax_location.html" +
+                  "?data_vendor=cch-zip" + 
+                  ";city="    + cf.elements['<% $taxpre %>city'].value +
+                  ";state="   + state + 
+                  ";zip="     + cf.elements['<% $taxpre %>zip'].value +
+                  ";country=" + country +
+                  ";";
+
+      // popup a chooser
+      OLgetAJAX( url, update_geocode, 300 );
+
+    } else {
+
+      cf.elements['geocode'].value = 'DEFAULT';
+      post_geocode();
+
+    }
+
+  } else {
+
+    post_geocode();
+
+  }
+
+% } else {
+
+  post_geocode();
+
+% }
+
+}
+
+function post_geocode() {
+
+% if ( $conf->exists('cust_main-require_censustract') ) {
+
+  //alert('fetch census tract data');
+  var cf = document.CustomerForm;
+  var state_el = cf.elements['ship_state'];
+  var census_data = new Array(
+    'year',    '2008', // from config value?
+    'address', cf.elements['ship_address1'].value,
+    'city',    cf.elements['ship_city'].value,
+    'state',   state_el.options[ state_el.selectedIndex ].value,
+    'zip',     cf.elements['ship_zip'].value
+  );
+
+  censustract( census_data, update_censustract );
+
+% }else{
+
+  document.CustomerForm.submit();
+
+% }
 
 }
 
@@ -232,12 +272,71 @@ function update_geocode() {
     setselect(cf.elements['<% $taxpre %>state'], argsHash['state']);
     cf.elements['<% $taxpre %>zip'].value      = argsHash['zip'];
     cf.elements['geocode'].value  = argsHash['geocode'];
+    post_geocode();
 
   }
 
   // popup a chooser
 
   overlib( OLresponseAJAX, CAPTION, 'Select tax location', STICKY, AUTOSTATUSCAP, CLOSETEXT, '', MIDX, 0, MIDY, 0, DRAGGABLE, WIDTH, 576, HEIGHT, 268, BGCOLOR, '#333399', CGCOLOR, '#333399', TEXTSIZE, 3 );
+
+}
+
+var set_censustract;
+
+function update_censustract(arg) {
+
+  var argsHash = eval('(' + arg + ')');
+
+  var cf = document.CustomerForm;
+
+  var msacode    = argsHash['msacode'];
+  var statecode  = argsHash['statecode'];
+  var countycode = argsHash['countycode'];
+  var tractcode  = argsHash['tractcode'];
+  var error      = argsHash['error'];
+  
+  set_censustract = function () {
+
+    cf.elements['censustract'].value =
+      document.forms.popupcensustract.elements.censustract.value;
+    cf.submit();
+
+  }
+
+  if (error) {
+    // popup an entry dialog
+
+    var choose_censustract =
+      '<CENTER><BR><B>Enter census tract</B><BR><BR>' + 
+      '<FORM name="popupcensustract">' +
+      '<TABLE>';
+    
+    choose_censustract = choose_censustract + 
+      '<TR><TH>Census Tract: </TH>' +
+        '<TD><INPUT NAME="censustract" ID="censustract"></TD>' +
+      '</TR><TR>' +
+        '<TD>&nbsp;</TD><TD>&nbsp;</TD></TR>';
+      
+    choose_censustract = choose_censustract + 
+      '<TR><TD>' +
+        '<BUTTON TYPE="button" onClick="set_censustract();"><IMG SRC="<%$p%>images/tick.png" ALT="">Submit census tract</BUTTON>' + 
+      '</TD><TD>' +
+        '<BUTTON TYPE="button" onClick="document.CustomerForm.submitButton.disabled=false; parent.cClick();"><IMG SRC="<%$p%>images/cross.png" ALT=""> Cancel submission</BUTTON></TD></TR>' +
+      '</TABLE></FORM></CENTER>';
+
+      overlib( choose_censustract, CAPTION, 'Choose a census tract', STICKY, AUTOSTATUSCAP, CLOSETEXT, '', MIDX, 0, MIDY, 0, DRAGGABLE, WIDTH, 576, HEIGHT, 268, BGCOLOR, '#333399', CGCOLOR, '#333399', TEXTSIZE, 3 );
+
+      setTimeout("document.forms.popupcensustract.elements.censustract.focus()",1);
+  } else {
+
+    cf.elements['censustract'].value =
+      new String(statecode)  +
+      new String(countycode) +
+      new String(tractcode);
+    cf.submit();
+
+  }
 
 }
 

@@ -7,6 +7,13 @@
           )
 %>
 
+<% include( '/elements/xmlhttp.html',
+              'url'  => $p.'misc/xmlhttp-cust_main-censustract.html',
+              'subs' => [ 'censustract' ],
+              #'method' => 'POST', #could get too long?
+          )
+%>
+
 <SCRIPT TYPE="text/javascript">
   <% include('bottomfixup.js') %>
 </SCRIPT>

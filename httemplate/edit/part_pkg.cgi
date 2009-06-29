@@ -46,6 +46,7 @@
                             'recur_fee'        => 'Recurring fee',
                             'bill_dst_pkgpart' => 'Include line item(s) from package',
                             'svc_dst_pkgpart'  => 'Include services of package',
+                            'report_option'    => 'Report classes',
                           },
 
               'fields' => [
@@ -161,6 +162,19 @@
 
                             { type => 'columnend' },
 
+                            { 'type'  => $census ? 'tablebreak-tr-title'
+                                                 : 'hidden',
+                              'value' => 'Optional report classes',
+                              'field' => 'census_title',
+                            },
+                            { 'field'    => 'report_option',
+                              'type'     => $census ? 'select-table' : 'hidden',
+                              'table'    => 'part_pkg_report_option',
+                              'name_col' => 'name',
+                              'multiple' => 1,
+                            },
+
+
                             { 'type'  => 'tablebreak-tr-title',
                               'value' => 'Pricing add-ons',
                             },
@@ -224,6 +238,7 @@ my $agent_clone_extra_sql =
 
 my $conf = new FS::Conf;
 my $taxproducts = $conf->exists('enable_taxproducts');
+my $census = scalar( qsearch( 'part_pkg_report_option', {} ) );
 
 #XXX
 # - tr-part_pkg_freq: month_increments_only (from price plans)
@@ -301,12 +316,25 @@ my $edit_callback = sub {
 
   (@agent_type) = map {$_->typenum} qsearch('type_pkgs',{'pkgpart'=>$1});
 
+  my @report_option = ();
   foreach ($object->options) {
     /^usage_taxproductnum_(\d+)$/ && ($taxproductnums{$1} = 1);
+    /^report_option_(\d+)$/ && (push @report_option, $1);
   }
   foreach ($object->part_pkg_taxoverride) {
     $taxproductnums{$_->usage_class} = 1
       if $_->usage_class;
+  }
+
+  $cgi->param('report_option', join(',', @report_option));
+  foreach my $field ( @$fields ) {
+    next unless ( 
+      ref($field) eq 'HASH' &&
+      $field->{field} &&
+      $field->{field} eq 'report_option'
+    );
+    #$field->{curr_value} = join(',', @report_option);
+    $field->{value} = join(',', @report_option);
   }
 
   %options = $object->options;

@@ -2325,10 +2325,42 @@ sub search_sql {
   #eslaf
 
   ###
+  # parse package report options
+  ###
+
+  my @report_option = ();
+  if ( exists($params->{'report_option'})
+       && $params->{'report_option'} =~ /^([,\d]*)$/
+     )
+  {
+    @report_option = split(',', $1);
+  }
+
+  if (@report_option) {
+    # this will result in the empty set for the dangling comma case as it should
+    push @where, 
+      map{ "0 < ( SELECT count(*) FROM part_pkg_option
+                    WHERE part_pkg_option.pkgpart = part_pkg.pkgpart
+                    AND optionname = 'report_option_$_'
+                    AND optionvalue = '1' )"
+         } @report_option;
+  }
+
+  #eslaf
+
+  ###
   # parse custom
   ###
 
   push @where,  "part_pkg.custom = 'Y'" if $params->{custom};
+
+  ###
+  # parse censustract
+  ###
+
+  if ( $params->{'censustract'} =~ /^([.\d]+)$/ and $1 ) {
+    push @where,  "cust_main.censustract = '". $params->{censustract}. "'";
+  }
 
   ###
   # parse part_pkg

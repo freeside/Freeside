@@ -9,6 +9,7 @@ Example:
              'disabled'       => $disabled,
              'same_checked'   => $same_checked,
              'geocode'        => $geocode, #passed through
+             'censustract'    => $censustract, #passed through
              'no_asterisks'   => 0, #set true to disable the red asterisks next
                                     #to required fields
              'address1_label' => 'Address', #label for address
@@ -85,6 +86,8 @@ Example:
 
 % if ( !$pre ) { 
   <INPUT TYPE="hidden" NAME="geocode" VALUE="<% $opt{geocode} %>">
+% } else {
+  <INPUT TYPE="hidden" NAME="censustract" VALUE="<% $opt{censustract} %>">
 % } 
 
 <%init>

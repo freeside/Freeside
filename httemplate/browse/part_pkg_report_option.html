@@ -1,0 +1,28 @@
+<% include( 'elements/browse.html',
+                 'title'       => 'Package optional report classes',
+                 'html_init'   => $html_init,
+                 'name'        => 'package optional report classes',
+                 'disableable' => 1,
+                 'disabled_statuspos' => 2,
+                 'query'       => { 'table'     => 'part_pkg_report_option',
+                                    'hashref'   => {},
+                                    'extra_sql' => 'ORDER BY name',
+                                  },
+                 'count_query' => 'SELECT COUNT(*) FROM part_pkg_report_option',
+                 'header'      => [ '#', 'Class' ],
+                 'fields'      => [ 'num', 'name' ],
+                 'links'       => [ $link, $link ],
+             )
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $html_init = 
+  'Package optional report classes define groups of packages, for reporting purposes.'.
+  qq!<BR><BR><A HREF="${p}edit/part_pkg_report_option.html"><I>Add a class</I></A><BR><BR>!;
+
+my $link = [ $p.'edit/part_pkg_report_option.html?', 'num' ];
+
+</%init>

@@ -1,0 +1,103 @@
+<% objToJson($return) %>
+<%init>
+
+my $DEBUG = 0;
+
+my $url='http://www.ffiec.gov/Geocode/default.aspx';
+
+my $sub = $cgi->param('sub');
+
+my $return = {};
+my $error = '';
+
+use LWP::UserAgent;
+use HTTP::Request;
+use HTTP::Request::Common qw( GET POST );
+use HTML::TokeParser;
+
+if ( $sub eq 'censustract' ) {
+
+  my %arg = $cgi->param('arg');
+  warn join('', map "$_: $arg{$_}\n", keys %arg )
+    if $DEBUG;
+
+  my $ua = new LWP::UserAgent;
+  my $res = $ua->request( GET( $url ) );
+
+  warn $res->as_string
+    if $DEBUG > 1;
+
+  unless ($res->code  eq '200') {
+
+    $error = $res->message;
+
+  } else {
+
+    my $content = $res->content;
+    my $p = new HTML::TokeParser \$content;
+    my $viewstate;
+    while (my $token = $p->get_tag('input') ) {
+      next unless $token->[1]->{name} eq '__VIEWSTATE';
+      $viewstate = $token->[1]->{value};
+      last;
+    }
+
+    unless ($viewstate) {
+
+      $error = "no __VIEWSTATE found";
+
+    } else {
+
+      my($zip5, $zip4) = split('-',$arg{zip});
+
+      my @ffiec_args = (
+        __VIEWSTATE => $viewstate,
+        ddlbYear    => $arg{year},
+        txtAddress  => $arg{address},
+        txtCity     => $arg{city},  
+        ddlbState   => $arg{state},
+        txtZipCode  => $zip5,
+        btnSearch   => 'Search',
+      );
+      warn join("\n", @ffiec_args )
+        if $DEBUG;
+
+      $res = $ua->request( POST( $url, \@ffiec_args ) );
+      warn $res->as_string
+        if $DEBUG > 1;
+
+      unless ($res->code  eq '200') {
+
+        $error = $res->message;
+
+      } else {
+
+        my @id = qw( MSACode StateCode CountyCode TractCode );
+        $content = $res->content;
+        $p = new HTML::TokeParser \$content;
+        my $prefix = 'UcGeoResult11_lb';
+        my $compare =
+          sub { my $t=shift; scalar( grep { lc($t) eq lc("$prefix$_")} @id ) };
+
+        while (my $token = $p->get_tag('span') ) {
+          next unless ( $token->[1]->{id} && &$compare( $token->[1]->{id} ) );
+          $token->[1]->{id} =~ /^$prefix(\w+)$/;
+          $return->{lc($1)} = $p->get_trimmed_text("/span");
+        }
+
+        $error = "No census tract found" unless $return->{tractcode};
+
+      } #unless ($res->code  eq '200')
+
+    } #unless ($viewstate)
+
+  } #unless ($res->code  eq '200')
+
+  $error = "FFIEC Geocoding error: $error" if $error;
+  $return->{'error'} = $error;
+
+  $return;
+
+}
+
+</%init>

@@ -439,6 +439,8 @@ FS/cust_bill_pkg_tax_rate_location.pm
 t/cust_bill_pkg_tax_rate_location.t
 FS/cust_recon.pm
 t/cust_recon.t
+FS/part_pkg_report_option.pm
+t/part_pkg_report_option.t
 FS/cust_main_exemption.pm
 t/cust_main_exemption.t
 FS/cust_tax_adjustment.pm

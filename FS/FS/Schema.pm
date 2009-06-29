@@ -686,6 +686,7 @@ sub tables_hashref {
         'paytype',  'varchar', 'NULL', $char_d, '', '', 
         'payip',    'varchar', 'NULL', 15, '', '', 
         'geocode',  'varchar', 'NULL', 20,  '', '',
+        'censustract', 'varchar', 'NULL', 20,  '', '', # 7 to save space?
         'tax',      'char', 'NULL', 1, '', '', 
         'otaker',   'varchar', '',    32, '', '', 
         'refnum',   'int',  '',     '', '', '', 
@@ -1848,6 +1849,17 @@ sub tables_hashref {
       'primary_key' => 'optionnum',
       'unique'      => [],
       'index'       => [ [ 'pkgpart' ], [ 'optionname' ] ],
+    },
+
+    'part_pkg_report_option' => {
+      'columns' => [
+        'num',      'serial',   '',      '', '', '', 
+        'name',     'varchar',  '', $char_d, '', '', 
+        'disabled', 'char', 'NULL',       1, '', '', 
+      ],
+      'primary_key' => 'num',
+      'unique' => [ [ 'name' ] ],
+      'index' => [ [ 'disabled' ] ],
     },
 
     'rate' => {

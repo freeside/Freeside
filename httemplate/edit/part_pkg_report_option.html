@@ -1,0 +1,23 @@
+<% include( 'elements/edit.html',
+              'name'   => 'Package optional report class',
+              'table'  => 'part_pkg_report_option',
+              'fields' => [
+                            'name',
+                            { field=>'num', type=>'hidden' },
+                            { field=>'disabled', type=>'checkbox', value=>'Y', },
+                          ],
+              'labels' => { 
+                            'num'      => 'Class number',
+                            'name'     => 'Class name',
+                            'disabled' => 'Disable class',
+                          },
+              'viewall_dir' => 'browse',
+           )
+          
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+</%init>

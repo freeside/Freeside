@@ -167,9 +167,9 @@ L<FS::part_export> - External provisioning export class
 
 L<FS::part_export_option> - Export option class
 
-L<FS::pkg_category> - Package category class
+L<FS::pkg_category> - Package category class (invoice oriented)
 
-L<FS::pkg_class> - Package class class
+L<FS::pkg_class> - Package class class (tax oriented)
 
 L<FS::part_pkg> - Package definition class
 
@@ -178,6 +178,8 @@ L<FS::part_pkg_link> - Package definition link class
 L<FS::part_pkg_taxclass> - Tax class class
 
 L<FS::part_pkg_option> - Package definition option class
+
+L<FS::part_pkg_report_option> - Package reporting classification class
 
 L<FS::pkg_svc> - Class linking package definitions (see L<FS::part_pkg>) with
 service definitions (see L<FS::part_svc>)
