@@ -13,7 +13,6 @@ bin/freeside-deloutsource
 bin/freeside-deloutsourceuser
 bin/freeside-deluser
 bin/freeside-email
-bin/freeside-expiration-alerter
 bin/freeside-queued
 bin/freeside-radgroup
 bin/freeside-reexport
