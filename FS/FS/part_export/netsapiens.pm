@@ -63,6 +63,15 @@ sub ns_subscriber {
   "/domains_config/$domain/subscriber_config/$phonenum";
 }
 
+sub ns_dialplan {
+  my($self, $svc_phone) = (shift, shift);
+
+  my $countrycode = $svc_phone->countrycode;
+  my $phonenum    = $svc_phone->phonenum;
+
+  "/dialplans/DID+Table/dialplan_config/sip:$countrycode$phonenum@*"
+}
+
 sub ns_create_or_update {
   my($self, $svc_phone, $dial_policy) = (shift, shift, shift);
 
@@ -80,6 +89,8 @@ sub ns_create_or_update {
     $lastname  = $cust_main->get('last');
   }
 
+  #create user
+
   my $ns = $self->ns_command( 'PUT', $self->ns_subscriber($svc_phone), 
                                 'subscriber_login' => $phonenum.'@'.$domain,
                                 'firstname'        => $firstname,
@@ -92,6 +103,17 @@ sub ns_create_or_update {
   if ( $ns->responseCode !~ /^2/ ) {
      return $ns->responseCode. ' '.
             join(', ', $self->ns_parse_response( $ns->responseContent ) );
+  }
+
+  #map DID to user
+  my $ns2 = $self->ns_command( 'PUT', $self->ns_dialplan($svc_phone),
+                                 'to_user' => $phonenum.'@'.$domain,
+                                 'to_host' => $domain,
+                             );
+
+  if ( $ns2->responseCode !~ /^2/ ) {
+     return $ns2->responseCode. ' '.
+            join(', ', $self->ns_parse_response( $ns2->responseContent ) );
   }
 
   '';
