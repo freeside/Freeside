@@ -9,6 +9,7 @@ use Safe;
 use Carp;
 use Exporter;
 use Scalar::Util qw( blessed );
+use List::Util qw( min );
 use Time::Local qw(timelocal);
 use Data::Dumper;
 use Tie::IxHash;
@@ -2056,6 +2057,18 @@ sub unsuspended_pkgs {
   grep { ! $_->susp } $self->ncancelled_pkgs;
 }
 
+=item next_bill_date
+
+Returns the next date this customer will be billed, as a UNIX timestamp, or
+undef if no active package has a next bill date.
+
+=cut
+
+sub next_bill_date {
+  my $self = shift;
+  min( map $_->get('bill'), grep $_->get('bill'), $self->unsuspended_pkgs );
+}
+
 =item num_cancelled_pkgs
 
 Returns the number of cancelled packages (see L<FS::cust_pkg>) for this
@@ -2760,14 +2773,19 @@ sub _make_lines {
 
   my $setup = 0;
   my $unitsetup = 0;
-  if ( ! $cust_pkg->setup &&
-       (
-         ( $conf->exists('disable_setup_suspended_pkgs') &&
-          ! $cust_pkg->getfield('susp')
-        ) || ! $conf->exists('disable_setup_suspended_pkgs')
-       )
-    || $options{'resetup'}
-  ) {
+  if ( $options{'resetup'}
+       || ( ! $cust_pkg->setup
+            && ( ! $cust_pkg->start_date
+                 || $cust_pkg->start_date <= $time
+               )
+            && ( ! $conf->exists('disable_setup_suspended_pkgs')
+                 || ( $conf->exists('disable_setup_suspended_pkgs') &&
+                      ! $cust_pkg->getfield('susp')
+                    )
+               )
+          )
+    )
+  {
     
     warn "    bill setup\n" if $DEBUG > 1;
     $lineitems++;
@@ -2782,6 +2800,9 @@ sub _make_lines {
       unless $cust_pkg->setup;
           #do need it, but it won't get written to the db
           #|| $cust_pkg->pkgpart != $real_pkgpart;
+
+    $cust_pkg->setfield('start_date', '')
+      if $cust_pkg->start_date;
 
   }
 
@@ -6727,12 +6748,14 @@ the error, otherwise returns false.
 
 sub charge {
   my $self = shift;
-  my ( $amount, $quantity, $pkg, $comment, $classnum, $additional );
+  my ( $amount, $quantity, $start_date, $classnum );
+  my ( $pkg, $comment, $additional );
   my ( $setuptax, $taxclass );   #internal taxes
   my ( $taxproduct, $override ); #vendor (CCH) taxes
   if ( ref( $_[0] ) ) {
     $amount     = $_[0]->{amount};
     $quantity   = exists($_[0]->{quantity}) ? $_[0]->{quantity} : 1;
+    $start_date = exists($_[0]->{start_date}) ? $_[0]->{start_date} : '';
     $pkg        = exists($_[0]->{pkg}) ? $_[0]->{pkg} : 'One-time charge';
     $comment    = exists($_[0]->{comment}) ? $_[0]->{comment}
                                            : '$'. sprintf("%.2f",$amount);
@@ -6742,9 +6765,10 @@ sub charge {
     $additional = $_[0]->{additional};
     $taxproduct = $_[0]->{taxproductnum};
     $override   = { '' => $_[0]->{tax_override} };
-  }else{
+  } else {
     $amount     = shift;
     $quantity   = 1;
+    $start_date = '';
     $pkg        = @_ ? shift : 'One-time charge';
     $comment    = @_ ? shift : '$'. sprintf("%.2f",$amount);
     $setuptax   = '';
@@ -6802,9 +6826,10 @@ sub charge {
   }
 
   my $cust_pkg = new FS::cust_pkg ( {
-    'custnum'  => $self->custnum,
-    'pkgpart'  => $pkgpart,
-    'quantity' => $quantity,
+    'custnum'    => $self->custnum,
+    'pkgpart'    => $pkgpart,
+    'quantity'   => $quantity,
+    'start_date' => $start_date,
   } );
 
   $error = $cust_pkg->insert;

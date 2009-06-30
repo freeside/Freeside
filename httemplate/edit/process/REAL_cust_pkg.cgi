@@ -19,6 +19,7 @@ die "access denied"
 my $pkgnum = $cgi->param('pkgnum') or die;
 my $old = qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
 my %hash = $old->hash;
+$hash{'start_date'} = $cgi->param('start_date') ? str2time($cgi->param('start_date')) : '';
 $hash{'setup'} = $cgi->param('setup') ? str2time($cgi->param('setup')) : '';
 $hash{'bill'} = $cgi->param('bill') ? str2time($cgi->param('bill')) : '';
 $hash{'last_bill'} =

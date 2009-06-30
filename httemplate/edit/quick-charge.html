@@ -3,6 +3,11 @@
           )
 %>
 
+<LINK REL="stylesheet" TYPE="text/css" HREF="../elements/calendar-win2k-2.css" TITLE="win2k-2">
+<SCRIPT TYPE="text/javascript" SRC="../elements/calendar_stripped.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="../elements/calendar-en.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="../elements/calendar-setup.js"></SCRIPT>
+
 <% include('/elements/error.html') %>
 
 <SCRIPT TYPE="text/javascript">
@@ -78,6 +83,33 @@ function validate_quick_charge () {
 % }
 
 <% include('/elements/tr-select-pkg_class.html', 'curr_value' => $cgi->param('classnum') ) %>
+
+<TR>
+  <TD ALIGN="right">Charge date </TD>
+  <TD>
+    <INPUT TYPE  = "text"
+           NAME  = "start_date"
+           SIZE  = 32
+           ID    = "start_date_text"
+           VALUE = "<% $start_date %>"
+    >
+    <IMG SRC   = "../images/calendar.png"
+         ID    = "start_date_button"
+         STYLE = "cursor: pointer"
+         TITLE = "Select date"
+    >
+    <FONT SIZE=-1>(leave blank to charge immediately)</FONT>
+  </TD>
+</TR>
+
+<SCRIPT TYPE="text/javascript">
+  Calendar.setup({
+    inputField: "start_date_text",
+    ifFormat:   "%m/%d/%Y",
+    button:     "start_date_button",
+    align:      "BR"
+  });
+</SCRIPT>
 
 
 <TR>
@@ -179,6 +211,12 @@ my $conf = new FS::Conf;
 
 $cgi->param('custnum') =~ /^(\d+)$/ or die 'illegal custnum';
 my $custnum = $1;
+my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } ); #XXX agent-virt
+
+my $format = "%m/%d/%Y %T %z (%Z)"; #false laziness w/REAL_cust_pkg.cgi?
+my $start_date = $cust_main->next_bill_date;
+warn "*** $start_date";
+$start_date = $start_date ? time2str($format, $start_date) : '';
 
 my $amount = '';
 if ( $cgi->param('amount') =~ /^\s*\$?\s*(\d+(\.\d{1,2})?)\s*$/ ) {

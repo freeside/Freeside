@@ -122,6 +122,10 @@ Billing item definition (see L<FS::part_pkg>)
 
 Optional link to package location (see L<FS::location>)
 
+=item start_date
+
+date
+
 =item setup
 
 date
@@ -479,6 +483,7 @@ sub check {
     || $self->ut_foreign_key('custnum', 'cust_main', 'custnum')
     || $self->ut_numbern('pkgpart')
     || $self->ut_foreign_keyn('locationnum', 'cust_location', 'locationnum')
+    || $self->ut_numbern('start_date')
     || $self->ut_numbern('setup')
     || $self->ut_numbern('bill')
     || $self->ut_numbern('susp')

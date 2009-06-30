@@ -13,10 +13,16 @@ use FS::part_event;
 use FS::part_event_condition;
 
 @ISA = qw( Exporter );
-@EXPORT_OK = qw ( bill );
+@EXPORT_OK = qw ( bill bill_where );
+
+#freeside-daily %opt:
+#  -s: re-charge setup fees
+#  -v: enable debugging
+#  -l: debugging level
+#  -m: Experimental multi-process mode uses the job queue for multi-process and/or multi-machine billing.
+#  -r: Multi-process mode dry run option
 
 sub bill {
-
   my %opt = @_;
 
   my $check_freq = $opt{'check_freq'} || '1d';
@@ -24,91 +30,24 @@ sub bill {
   my $debug = 0;
   $debug = 1 if $opt{'v'};
   $debug = $opt{'l'} if $opt{'l'};
- 
   $FS::cust_main::DEBUG = $debug;
   #$FS::cust_event::DEBUG = $opt{'l'} if $opt{'l'};
 
-  my @search = ();
-
-  push @search, "( cust_main.archived != 'Y' OR archived IS NULL )"; #disable?
-
-  push @search, "cust_main.payby    = '". $opt{'p'}. "'"
-    if $opt{'p'};
-  push @search, "cust_main.agentnum =  ". $opt{'a'}
-    if $opt{'a'};
-
-  if ( @ARGV ) {
-    push @search, "( ".
-      join(' OR ', map "cust_main.custnum = $_", @ARGV ).
-    " )";
-  }
-
-  ###
-  # generate where_pkg/where_event search clause
-  ###
-
   #we're at now now (and later).
-  my($time)= $opt{'d'} ? str2time($opt{'d'}) : $^T;
-  $time += $opt{'y'} * 86400 if $opt{'y'};
+  $opt{'time'} = $opt{'d'} ? str2time($opt{'d'}) : $^T;
+  $opt{'time'} += $opt{'y'} * 86400 if $opt{'y'};
 
-  my $invoice_time = $opt{'n'} ? $^T : $time;
-
-  # select * from cust_main where
-  my $where_pkg = <<"END";
-    0 < ( select count(*) from cust_pkg
-            where cust_main.custnum = cust_pkg.custnum
-              and ( cancel is null or cancel = 0 )
-              and (    setup is null or setup =  0
-                    or bill  is null or bill  <= $time 
-                    or ( expire is not null and expire <= $^T )
-                    or ( adjourn is not null and adjourn <= $^T )
-                  )
-        )
-END
-
-  my $where_event = join(' OR ', map {
-    my $eventtable = $_;
-
-    my $join  = FS::part_event_condition->join_conditions_sql(  $eventtable );
-    my $where = FS::part_event_condition->where_conditions_sql( $eventtable,
-                                                                'time'=>$time,
-                                                              );
-
-    my $are_part_event = 
-      "0 < ( SELECT COUNT(*) FROM part_event $join
-               WHERE check_freq = '$check_freq'
-                 AND eventtable = '$eventtable'
-                 AND ( disabled = '' OR disabled IS NULL )
-                 AND $where
-           )
-      ";
-
-    if ( $eventtable eq 'cust_main' ) { 
-      $are_part_event;
-    } else {
-      "0 < ( SELECT COUNT(*) FROM $eventtable
-               WHERE cust_main.custnum = $eventtable.custnum
-                 AND $are_part_event
-           )
-      ";
-    }
-
-  } FS::part_event->eventtables);
-
-  push @search, "( $where_pkg OR $where_event )";
+  $opt{'invoice_time'} = $opt{'n'} ? $^T : $opt{'time'};
 
   ###
   # get a list of custnums
   ###
 
-  warn "searching for customers:\n". join("\n", @search). "\n"
-    if $opt{'v'} || $opt{'l'};
-
   my $cursor_dbh = dbh->clone;
 
   $cursor_dbh->do(
     "DECLARE cron_bill_cursor CURSOR FOR ".
-    "  SELECT custnum FROM cust_main WHERE ". join(' AND ', @search)
+    "  SELECT custnum FROM cust_main WHERE ". bill_where( %opt )
   ) or die $cursor_dbh->errstr;
 
   while ( 1 ) {
@@ -129,8 +68,8 @@ END
     foreach my $custnum ( @custnums ) {
     
       my %args = (
-          'time'         => $time,
-          'invoice_time' => $invoice_time,
+          'time'         => $opt{'time'},
+          'invoice_time' => $opt{'invoice_time'},
           'actual_time'  => $^T, #when freeside-bill was started
                                  #(not, when using -m, freeside-queued)
           'check_freq'   => $check_freq,
@@ -172,6 +111,110 @@ END
   }
 
   $cursor_dbh->commit or die $cursor_dbh->errstr;
+
+}
+
+# freeside-daily %opt:
+#  -d: Pretend it's 'date'.  Date is in any format Date::Parse is happy with,
+#      but be careful.
+#
+#  -y: In addition to -d, which specifies an absolute date, the -y switch
+#      specifies an offset, in days.  For example, "-y 15" would increment the
+#      "pretend date" 15 days from whatever was specified by the -d switch
+#      (or now, if no -d switch was given).
+#
+#  -n: When used with "-d" and/or "-y", specifies that invoices should be dated
+#      with today's date, irregardless of the pretend date used to pre-generate
+#      the invoices.
+#
+#  -p: Only process customers with the specified payby (I<CARD>, I<DCRD>, I<CHEK>, I<DCHK>, I<BILL>, I<COMP>, I<LECB>)
+#
+#  -a: Only process customers with the specified agentnum
+#
+#  -v: enable debugging
+#
+#  -l: debugging level
+
+sub bill_where {
+  my( %opt ) = @_;
+
+  my $time = $opt{'time'};
+  my $invoice_time = $opt{'invoice_time'};
+
+  my $check_freq = $opt{'check_freq'} || '1d';
+
+  my @search = ();
+
+  push @search, "( cust_main.archived != 'Y' OR archived IS NULL )"; #disable?
+
+  push @search, "cust_main.payby    = '". $opt{'p'}. "'"
+    if $opt{'p'};
+  push @search, "cust_main.agentnum =  ". $opt{'a'}
+    if $opt{'a'};
+
+  if ( @ARGV ) {
+    push @search, "( ".
+      join(' OR ', map "cust_main.custnum = $_", @ARGV ).
+    " )";
+  }
+
+  ###
+  # generate where_pkg/where_event search clause
+  ###
+
+  # select * from cust_main where
+  my $where_pkg = <<"END";
+    EXISTS(
+      SELECT 1 FROM cust_pkg
+        WHERE cust_main.custnum = cust_pkg.custnum
+          AND ( cancel IS NULL OR cancel = 0 )
+          AND (    ( ( setup IS NULL OR setup =  0 )
+                     AND ( start_date IS NULL OR start_date = 0
+                           OR ( start_date IS NOT NULL AND start_date <= $^T )
+                         )
+                   )
+                OR bill  IS NULL OR bill  <= $time 
+                OR ( expire  IS NOT NULL AND expire  <= $^T )
+                OR ( adjourn IS NOT NULL AND adjourn <= $^T )
+              )
+    )
+END
+
+  my $where_event = join(' OR ', map {
+    my $eventtable = $_;
+
+    my $join  = FS::part_event_condition->join_conditions_sql(  $eventtable );
+    my $where = FS::part_event_condition->where_conditions_sql( $eventtable,
+                                                                'time'=>$time,
+                                                              );
+
+    my $are_part_event = 
+      "EXISTS ( SELECT 1 FROM part_event $join
+                  WHERE check_freq = '$check_freq'
+                    AND eventtable = '$eventtable'
+                    AND ( disabled = '' OR disabled IS NULL )
+                    AND $where
+              )
+      ";
+
+    if ( $eventtable eq 'cust_main' ) { 
+      $are_part_event;
+    } else {
+      "EXISTS ( SELECT 1 FROM $eventtable
+                  WHERE cust_main.custnum = $eventtable.custnum
+                    AND $are_part_event
+              )
+      ";
+    }
+
+  } FS::part_event->eventtables);
+
+  push @search, "( $where_pkg OR $where_event )";
+
+  warn "searching for customers:\n". join("\n", @search). "\n"
+    if $opt{'v'} || $opt{'l'};
+
+  join(' AND ', @search);
 
 }
 
