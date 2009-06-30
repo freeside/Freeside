@@ -2,8 +2,9 @@ package FS::part_pkg_taxclass;
 
 use strict;
 use vars qw( @ISA );
-use FS::UID qw(dbh);
-use FS::Record qw( qsearch qsearchs );
+use FS::UID qw( dbh );
+use FS::Record; # qw( qsearch qsearchs );
+use FS::cust_main_county;
 
 @ISA = qw(FS::Record);
 
@@ -41,6 +42,10 @@ Primary key
 
 Tax class
 
+=item disabled
+
+Disabled flag, empty or 'Y'
+
 =back
 
 =head1 METHODS
@@ -67,7 +72,57 @@ otherwise returns false.
 
 =cut
 
-# the insert method can be inherited from FS::Record
+sub insert {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = $self->SUPER::insert;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  my $sth = dbh->prepare("
+    SELECT country, state, county FROM cust_main_county
+      WHERE taxclass IS NOT NULL AND taxclass != ''
+      GROUP BY country, state, county
+  ") or die dbh->errstr;
+  $sth->execute or die $sth->errstr;
+
+  while ( my $row = $sth->fetchrow_hashref ) {
+    #warn "inserting for $row";
+    my $cust_main_county = new FS::cust_main_county {
+      'country'  => $row->{country},
+      'state'    => $row->{state},
+      'county'   => $row->{county},
+      'tax'      => 0,
+      'taxclass' => $self->taxclass,
+      #exempt_amount
+      #taxname
+      #setuptax
+      #recurtax
+    };
+    $error = $cust_main_county->insert;
+    #last if $error;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+}
 
 =item delete
 
@@ -84,7 +139,18 @@ returns the error, otherwise returns false.
 
 =cut
 
-# the replace method can be inherited from FS::Record
+sub replace {
+  my $new = shift;
+
+  my $old = ( blessed($_[0]) && $_[0]->isa('FS::Record') )
+              ? shift
+              : $new->replace_old;
+
+  return "Can't change tax class name (disable and create anew)"
+    if $old->taxclass ne $new->taxclass;
+
+  $new->SUPER::replace(@_);
+}
 
 =item check
 
@@ -103,6 +169,7 @@ sub check {
   my $error = 
     $self->ut_numbern('taxclassnum')
     || $self->ut_text('taxclass')
+    || $self->ut_enum('disabled', [ '', 'Y' ] )
   ;
   return $error if $error;
 

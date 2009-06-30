@@ -319,6 +319,8 @@ if ( $curuser->access_right('Configuration') ) {
   $config_billing{'View/Edit call rates and regions'} = [ \%config_billing_rates, 'Manage rate plans, regions and prefixes for VoIP and call billing' ];
   $config_billing{'View/Edit locales and tax rates (old tax class system)'}  = [ $fsurl.'browse/cust_main_county.cgi', 'Change tax rates, or break down a country into states, or a state into counties and assign different tax rates to each' ];
   $config_billing{'View/Edit tax rates (new tax products system)'}  = [ $fsurl.'browse/tax_rate.cgi', 'Edit tax rates for the new tax products system' ];
+  $config_billing{'View/Edit tax classes'}  = [ $fsurl.'browse/part_pkg_taxclass.html', 'Edit tax classes' ]
+    if $conf->exists('enable_taxclasses');
   $config_billing{'View/Edit credit reason types'}  = [ $fsurl.'browse/reason_type.html?class=R', 'Credit reason types define groups of reasons, for reporting and convenience purposes.' ];
   $config_billing{'View/Edit credit reasons'}  = [ $fsurl.'browse/reason.html?class=R', 'Credit reasons explain why a credit was issued.' ];
 }

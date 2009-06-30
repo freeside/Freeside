@@ -23,9 +23,9 @@ my $selected_taxclass = $opt{'curr_value'}; # || $opt{'value'} necessary?
 unless ( $opt{'taxclasses'} ) {
 
   #my $sth = dbh->prepare('SELECT DISTINCT taxclass FROM cust_main_county')
-  my $sth = dbh->prepare('SELECT taxclass FROM part_pkg_taxclass')
+  my $sth = dbh->prepare("SELECT taxclass FROM part_pkg_taxclass WHERE disabled IS NULL OR disabled = '' OR taxclass = ?")
     or die dbh->errstr;
-  $sth->execute or die $sth->errstr;
+  $sth->execute($selected_taxclass) or die $sth->errstr;
   my %taxclasses = map { $_->[0] => 1 } @{$sth->fetchall_arrayref};
   @{ $opt{'taxclasses'} } = grep $_, keys %taxclasses;
 

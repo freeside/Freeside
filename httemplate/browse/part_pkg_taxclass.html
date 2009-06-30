@@ -1,0 +1,27 @@
+<% include( 'elements/browse.html',
+                 'title'         => 'Tax Classes',
+                 'name_singular' => 'tax class',
+                 'menubar'       => [ 'Add a new tax class' =>
+                                        $p.'edit/part_pkg_taxclass.html',
+                                    ],
+                 'query'         => { 'table' => 'part_pkg_taxclass', },
+                 'count_query'   => 'SELECT COUNT(*) FROM part_pkg_taxclass',
+                 'header'        => [ '#', 'Device type' ],
+                 'fields'        => [ 'taxclassnum',
+                                      'taxclass',
+                                    ],
+                 'links'         => [ $link,
+                                      $link,
+                                    ],
+                 'disableable'   => 1,
+                 'disabled_statuspos' => 1,
+             )
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $link = [ "${p}edit/part_pkg_taxclass.html?", 'taxclassnum' ];
+
+</%init>

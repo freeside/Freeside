@@ -1253,10 +1253,11 @@ sub tables_hashref {
       'columns' => [
         'taxclassnum',  'serial', '',       '', '', '',
         'taxclass',     'varchar', '', $char_d, '', '', 
+        'disabled', 'char',   'NULL',         1, '', '', 
       ],
       'primary_key' => 'taxclassnum',
       'unique'      => [ [ 'taxclass' ] ],
-      'index'       => [],
+      'index'       => [ [ 'disabled' ] ],
     },
 
     'part_pkg_taxproduct' => {

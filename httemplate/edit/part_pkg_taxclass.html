@@ -1,32 +1,23 @@
-<% include('/elements/header.html', "$action taxclass") %>
-
-<% include('/elements/error.html') %>
-
-<FORM ACTION="<% $p1 %>process/part_pkg_taxclass.html" METHOD=POST>
-
-<INPUT TYPE="hidden" NAME="taxclassnum" VALUE="">
-
-Tax class <INPUT TYPE="text" NAME="taxclass" VALUE="<% $taxclass |h %>">
-
-<BR><BR>
-<INPUT TYPE="submit" VALUE="<% $action %> taxclass">
-
-</FORM>
-
-<% include('/elements/footer.html') %>
-
+<% include('elements/edit.html',
+     'name_singular' => 'tax class',
+     'table'         => 'part_pkg_taxclass',
+     'labels'        => {
+                          'taxclassnum' => 'Tax class',
+                          'taxclass'    => 'Tax class',
+                          'disabled'    => 'Disabled',
+                        },
+     'fields'        => [ 'taxclass',
+                          { 'field' => 'disabled',
+                            'type'  => 'checkbox',
+                            'value' => 'Y',
+                          },
+                        ],
+     'viewall_dir'   => 'browse',
+   )
+%>
 <%init>
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
-
-my $taxclass = '';
-if ( $cgi->param('error') ) {
-  $taxclass = $cgi->param('taxclass');
-}
-
-my $action = 'Add';
-
-my $p1 = popurl(1);
 
 </%init>
