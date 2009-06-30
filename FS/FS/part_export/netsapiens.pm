@@ -41,7 +41,7 @@ sub ns_device_command {
   $self->_ns_command('device', @_);
 }
 
-sub ns_command {
+sub _ns_command {
   my( $self, $prefix, $method, $command ) = splice(@_,0,4);
 
   eval 'use REST::Client';
@@ -280,7 +280,6 @@ sub export_device_delete {
   }
 
   '';
-
 
 }
 
