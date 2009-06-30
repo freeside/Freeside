@@ -173,7 +173,7 @@ L<FS::part_export_option> - Export option class
 
 L<FS::pkg_category> - Package category class (invoice oriented)
 
-L<FS::pkg_class> - Package class class (tax oriented)
+L<FS::pkg_class> - Package class class
 
 L<FS::part_pkg> - Package definition class
 
