@@ -215,7 +215,6 @@ my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } ); #XXX agent-vi
 
 my $format = "%m/%d/%Y %T %z (%Z)"; #false laziness w/REAL_cust_pkg.cgi?
 my $start_date = $cust_main->next_bill_date;
-warn "*** $start_date";
 $start_date = $start_date ? time2str($format, $start_date) : '';
 
 my $amount = '';
