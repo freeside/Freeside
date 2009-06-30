@@ -1,0 +1,53 @@
+<% include("/elements/header.html", 'Import device types') %>
+
+Import a file containing phone device types, one per line.
+<BR><BR>
+
+<% include( '/elements/form-file_upload.html',
+              'name'      => 'PartDeviceImportForm',
+              'action'    => 'process/part_device-import.html',
+              'num_files' => 1,
+              'fields'    => [ 'format', ], 
+              'message'   => 'Device type import successful',
+              'url'       => $p.'browse/part_device.html',
+          )
+%>
+
+<% &ntable("#cccccc", 2) %>
+
+  <INPUT TYPE="hidden" NAME="format" VALUE="default">
+
+  <% include( '/elements/file-upload.html',
+                'field' => 'file',
+                'label' => 'Filename',
+            )
+  %>
+
+  <TR>
+    <TD COLSPAN=2 ALIGN="center" STYLE="padding-top:6px">
+      <INPUT TYPE    = "submit"
+             ID      = "submit"
+             VALUE   = "Import file"
+             onClick = "document.PartDeviceImportForm.submit.disabled=true;"
+      >
+    </TD>
+  </TR>
+
+</TABLE>
+
+</FORM>
+
+<BR>
+
+Upload file can be a text file or Excel spreadsheet.  If an Excel spreadsheet,
+ should have an .XLS extension.
+<BR><BR>
+
+<% include('/elements/footer.html') %>
+
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Import');
+
+</%init>

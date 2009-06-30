@@ -7,6 +7,7 @@ use FS::Record qw( qsearch qsearchs );
 use FS::Msgcat qw(gettext);
 use FS::svc_Common;
 use FS::part_svc;
+use FS::phone_device;
 
 @ISA = qw( FS::svc_Common );
 
@@ -324,6 +325,17 @@ sub radius_check {
 
 sub radius_groups {
   ();
+}
+
+=item phone_device
+
+Returns any FS::phone_device records associated with this service.
+
+=cut
+
+sub phone_device {
+  my $self = shift;
+  qsearch('phone_device', { 'svcnum' => $self->svcnum } );
 }
 
 =back

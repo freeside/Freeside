@@ -1,0 +1,16 @@
+<% include( 'elements/edit.html',
+                 'name'   => 'Phone device type',
+                 'table'  => 'part_device',
+                 'labels' => { 
+                               'devicepart' => 'Part number',
+                               'devicename' => 'Device name',
+                             },
+                 'viewall_dir' => 'browse',
+           )
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+</%init>

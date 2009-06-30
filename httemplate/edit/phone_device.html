@@ -1,0 +1,37 @@
+<% include( 'elements/edit.html',
+                 'name'   => 'Phone device',
+                 'table'  => 'phone_device',
+                 'labels' => { 
+                               'devicenum'  => 'Device',
+                               'devicepart' => 'Device type',
+                               'mac_addr'   => 'MAC address',
+                             },
+                 'fields' => [ { 'field'    => 'devicepart',
+                                 'type'     => 'select-table',
+                                 'table'    => 'part_device',
+                                 'name_col' => 'devicename',
+                                 'empty_label' =>'Select device type',
+                                 #'hashref'        =>{ disabled => '' },
+                               },
+                               'mac_addr',
+                               { 'field' => 'svcnum',
+                                 'type'  => 'hidden',
+                               },
+                             ],
+                 'menubar' => [], #disable viewall
+                 #'viewall_dir' => 'browse',
+                 'new_callback' => sub {
+                                     my( $cgi, $object ) = @_;
+                                     $object->svcnum( $cgi->param('svcnum') );
+                                   },
+           )
+%>
+<%init>
+
+# :/  needs agent-virt so you can't futz with arbitrary devices
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Provision customer service'); #something else more specific?
+
+
+</%init>

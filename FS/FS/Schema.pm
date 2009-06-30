@@ -2306,6 +2306,29 @@ sub tables_hashref {
       'index'  => [ [ 'countrycode', 'phonenum' ] ],
     },
 
+    'phone_device' => {
+      'columns' => [
+        'devicenum', 'serial',     '', '', '', '',
+        'devicepart',   'int',     '', '', '', '',
+        'svcnum',       'int',     '', '', '', '', 
+        'mac_addr', 'varchar', 'NULL', 12, '', '', 
+      ],
+      'primary_key' => 'devicenum',
+      'unique' => [ [ 'mac_addr' ], ],
+      'index'  => [ [ 'devicepart' ], [ 'svcnum' ], ],
+    },
+
+    'part_device' => {
+      'columns' => [
+        'devicepart', 'serial',  '',      '', '', '',
+        'devicename', 'varchar', '', $char_d, '', '',
+        #'classnum', #tie to an inventory class?
+      ],
+      'primary_key' => 'devicepart',
+      'unique' => [ [ 'devicename' ] ], #?
+      'index'  => [],
+    },
+
     'phone_avail' => {
       'columns' => [
         'availnum',    'serial',      '',      '', '', '', 

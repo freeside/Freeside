@@ -1,0 +1,18 @@
+<% include( 'elements/process.html',
+               'table'    => 'phone_device',
+               'redirect' => sub {
+                 my( $cgi, $phone_device ) = @_;
+                 popurl(3).'view/svc_phone.cgi?'.
+                   'svcnum='. $phone_device->svcnum.
+                   ';devicenum=';
+               },
+           )
+%>
+<%init>
+
+# :/  needs agent-virt so you can't futz with arbitrary devices
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Provision customer service'); #something else more specific?
+
+</%init>

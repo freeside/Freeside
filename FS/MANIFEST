@@ -445,3 +445,7 @@ FS/cust_main_exemption.pm
 t/cust_main_exemption.t
 FS/cust_tax_adjustment.pm
 t/cust_tax_adjustment.t
+FS/phone_device.pm
+t/phone_device.t
+FS/part_device.pm
+t/part_device.t

@@ -174,6 +174,8 @@ Initializes the Mason environment, loads all Freeside and RT libraries, etc.
   use FS::access_right;
   use FS::AccessRight;
   use FS::svc_phone;
+  use FS::phone_device;
+  use FS::part_device;
   use FS::reason_type;
   use FS::reason;
   use FS::cust_main_note;

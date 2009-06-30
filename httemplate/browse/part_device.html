@@ -1,0 +1,27 @@
+<% include( 'elements/browse.html',
+                 'title'       => 'Phone device types',
+                 'name'        => 'phone device types',
+                 'menubar'     => [ 'Add a new device type' =>
+                                      $p.'edit/part_device.html',
+                                    'Import device types' =>
+                                      $p.'misc/part_device-import.html',
+                                  ],
+                 'query'       => { 'table' => 'part_device', },
+                 'count_query' => 'SELECT COUNT(*) FROM part_device',
+                 'header'      => [ '#', 'Device type' ],
+                 'fields'      => [ 'devicepart',
+                                    'devicename',
+                                  ],
+                 'links'       => [ $link,
+                                    $link,
+                                  ],
+             )
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $link = [ "${p}edit/part_device.html?", 'devicepart' ];
+
+</%init>

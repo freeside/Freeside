@@ -332,6 +332,10 @@ tie my %config_broadband, 'Tie::IxHash',
   'View/Edit address blocks' => [ $fsurl.'browse/addr_block.cgi', 'Manage address blocks and block assignments to broadband routers' ],
 ;
 
+tie my %config_phone, 'Tie::IxHash',
+  'View/Edit phone device types' => [ $fsurl.'browse/part_device.html', 'Phone device types' ],
+;
+
 tie my %config_misc, 'Tie::IxHash';
 $config_misc{'View/Edit advertising sources'} = [ $fsurl.'browse/part_referral.html', 'Where a customer heard about your service.  Tracked for informational purposes' ]
   if $curuser->access_right('Edit advertising sources')
@@ -364,6 +368,8 @@ $config_menu{'Dialup'}  = [ \%config_dialup, ''    ]
   if ( $curuser->access_right('Dialup configuration') );
 $config_menu{'Fixed (username-less) broadband'} = [ \%config_broadband, ''    ]
   if ( $curuser->access_right('Broadband configuration') );
+$config_menu{'Phone'}  = [ \%config_phone, ''    ]
+  if ( $curuser->access_right('Configuration') );
 $config_menu{'Miscellaneous'} = [ \%config_misc, ''    ]
   if $curuser->access_right('Edit advertising sources')
   || $curuser->access_right('Edit global advertising sources');
@@ -393,6 +399,7 @@ $menu{'Configuration'} = [ \%config_menu, 'Configuraiton and setup' ]
   || $curuser->access_right('Edit global billing events')
   || $curuser->access_right('Dialup configuration')
   || $curuser->access_right('Broadband configuration')
+  || $curuser->access_right('Phone configuration')
   || $curuser->access_right('Edit advertising sources')
   || $curuser->access_right('Edit global advertising sources');
 
