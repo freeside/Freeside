@@ -9,10 +9,13 @@ use FS::part_export;
 @ISA = qw(FS::part_export);
 
 tie my %options, 'Tie::IxHash',
-  'login'         => { label=>'NetSapiens tac2 API username' },
-  'password'      => { label=>'NetSapiens tac2 API password' },
-  'url'           => { label=>'NetSapiens tac2 URL' },
-  'domain'        => { label=>'NetSapiens Domain' },
+  'login'           => { label=>'NetSapiens tac2 User API username' },
+  'password'        => { label=>'NetSapiens tac2 User API password' },
+  'url'             => { label=>'NetSapiens tac2 User URL' },
+  'device_login'    => { label=>'NetSapiens tac2 Device API username' },
+  'device_password' => { label=>'NetSapiens tac2 Device API password' },
+  'device_url'      => { label=>'NetSapiens tac2 Device URL' },
+  'domain'          => { label=>'NetSapiens Domain' },
 ;
 
 %info = (
@@ -29,12 +32,22 @@ END
 sub rebless { shift; }
 
 sub ns_command {
-  my( $self, $method, $command ) = splice(@_,0,3);
+  my $self = shift;
+  $self->_ns_command('', @_);
+}
+
+sub ns_device_command { 
+  my $self = shift;
+  $self->_ns_command('device', @_);
+}
+
+sub ns_command {
+  my( $self, $prefix, $method, $command ) = splice(@_,0,4);
 
   eval 'use REST::Client';
   die $@ if $@;
 
-  my $ns = new REST::Client 'host'=>$self->option('url');
+  my $ns = new REST::Client 'host'=>$self->option($prefix.'url');
 
   my @args = ( $command );
 
@@ -46,8 +59,8 @@ sub ns_command {
     $args[0] .= $ns->buildQuery( { @_ } );
   }
 
-  my $auth =
-    encode_base64( $self->option('login'). ':'. $self->option('password') );
+  my $auth = encode_base64( $self->option($prefix.'login'). ':'.
+                            $self->option($prefix.'password')    );
   push @args, { 'Authorization' => "Basic $auth" };
 
   $ns->$method( @args );
@@ -63,6 +76,27 @@ sub ns_subscriber {
   "/domains_config/$domain/subscriber_config/$phonenum";
 }
 
+sub ns_registrar {
+  my($self, $svc_phone) = (shift, shift);
+
+  my $domain = $self->option('domain');
+  my $countrycode = $svc_phone->countrycode;
+  my $phonenum    = $svc_phone->phonenum;
+
+  $self->ns_subscriber($svc_phone).
+    '/registrar_config/'. $self->ns_devicename($svc_phone);
+}
+
+sub ns_devicename {
+  my( $self, $svc_phone ) = (shift, shift);
+
+  my $domain = $self->option('domain');
+  my $countrycode = $svc_phone->countrycode;
+  my $phonenum    = $svc_phone->phonenum;
+
+  "sip:$countrycode$phonenum@$domain";
+}
+
 sub ns_dialplan {
   my($self, $svc_phone) = (shift, shift);
 
@@ -72,11 +106,21 @@ sub ns_dialplan {
   "/dialplans/DID+Table/dialplan_config/sip:$countrycode$phonenum@*"
 }
 
+sub ns_device {
+  my($self, $svc_phone, $phone_device ) = (shift, shift, shift);
+
+  #my $countrycode = $svc_phone->countrycode;
+  #my $phonenum    = $svc_phone->phonenum;
+
+  "/phones_config/". $phone_device->mac_addr;
+}
+
 sub ns_create_or_update {
   my($self, $svc_phone, $dial_policy) = (shift, shift, shift);
 
   my $domain = $self->option('domain');
-  my $phonenum = $svc_phone->phonenum;
+  my $countrycode = $svc_phone->countrycode;
+  my $phonenum    = $svc_phone->phonenum;
 
   my( $firstname, $lastname );
   if ( $svc_phone->phone_name =~ /^\s*(\S+)\s+(\S.*\S)\s*$/ ) {
@@ -89,31 +133,42 @@ sub ns_create_or_update {
     $lastname  = $cust_main->get('last');
   }
 
-  #create user
+  # Piece 1 (already done) - User creation
 
   my $ns = $self->ns_command( 'PUT', $self->ns_subscriber($svc_phone), 
-                                'subscriber_login' => $phonenum.'@'.$domain,
-                                'firstname'        => $firstname,
-                                'lastname'         => $lastname,
-                                'subscriber_pin'   => $svc_phone->pin,
-                                'dial_plan'        => 'Default', #config?
-                                'dial_policy'      => $dial_policy,
-                            );
+    'subscriber_login' => $phonenum.'@'.$domain,
+    'firstname'        => $firstname,
+    'lastname'         => $lastname,
+    'subscriber_pin'   => $svc_phone->pin,
+    'dial_plan'        => 'Default', #config?
+    'dial_policy'      => $dial_policy,
+  );
 
   if ( $ns->responseCode !~ /^2/ ) {
      return $ns->responseCode. ' '.
             join(', ', $self->ns_parse_response( $ns->responseContent ) );
   }
 
-  #map DID to user
-  my $ns2 = $self->ns_command( 'PUT', $self->ns_dialplan($svc_phone),
-                                 'to_user' => $phonenum.'@'.$domain,
-                                 'to_host' => $domain,
-                             );
+  #Piece 2 - sip device creation 
+
+  my $ns2 = $self->ns_command( 'PUT', $self->ns_registrar($svc_phone),
+  );
 
   if ( $ns2->responseCode !~ /^2/ ) {
      return $ns2->responseCode. ' '.
             join(', ', $self->ns_parse_response( $ns2->responseContent ) );
+  }
+
+  #Piece 3 - DID mapping to user
+
+  my $ns3 = $self->ns_command( 'PUT', $self->ns_dialplan($svc_phone),
+    'to_user' => $countrycode.$phonenum,
+    'to_host' => $domain,
+  );
+
+  if ( $ns3->responseCode !~ /^2/ ) {
+     return $ns3->responseCode. ' '.
+            join(', ', $self->ns_parse_response( $ns3->responseContent ) );
   }
 
   '';
@@ -123,6 +178,8 @@ sub ns_delete {
   my($self, $svc_phone) = (shift, shift);
 
   my $ns = $self->ns_command( 'DELETE', $self->ns_subscriber($svc_phone) );
+
+  #delete other things?
 
   if ( $ns->responseCode !~ /^2/ ) {
      return $ns->responseCode. ' '.
@@ -165,13 +222,76 @@ sub _export_delete {
 
 sub _export_suspend {
   my( $self, $svc_phone ) = (shift, shift);
-  $self->ns_create_or_udpate($svc_phone, 'Deny');
+  $self->ns_create_or_update($svc_phone, 'Deny');
 }
 
 sub _export_unsuspend {
   my( $self, $svc_phone ) = (shift, shift);
   #$self->ns_create_or_update($svc_phone, 'Permit All');
   $self->_export_insert($svc_phone);
+}
+
+sub export_device_insert {
+  my( $self, $svc_phone, $phone_device ) = (shift, shift, shift);
+
+  #my $domain = $self->option('domain');
+  my $countrycode = $svc_phone->countrycode;
+  my $phonenum    = $svc_phone->phonenum;
+
+  my $device = $self->ns_devicename($svc_phone);
+
+  my $ns = $self->ns_device_command(
+    'PUT', $self->ns_device($svc_phone, $phone_device),
+      'line1_enable' => 'yes',
+      'device1'      => $self->ns_devicename($svc_phone),
+      'line1_ext'    => $countrycode.$phonenum,
+,
+      #'line2_enable' => 'yes',
+      #'device2'      =>
+      #'line2_ext'    =>
+
+      #'notes' => 
+      'server'       => 'SiPbx',
+      'domain'       => $self->option('domain'),
+
+      'brand'        => $phone_device->part_device->devicename,
+      
+  );
+
+  if ( $ns->responseCode !~ /^2/ ) {
+     return $ns->responseCode. ' '.
+            join(', ', $self->ns_parse_response( $ns->responseContent ) );
+  }
+
+  '';
+
+}
+
+sub export_device_delete {
+  my( $self, $svc_phone, $phone_device ) = (shift, shift, shift);
+
+  my $ns = $self->ns_device_command(
+    'DELETE', $self->ns_device($svc_phone, $phone_device),
+  );
+
+  if ( $ns->responseCode !~ /^2/ ) {
+     return $ns->responseCode. ' '.
+            join(', ', $self->ns_parse_response( $ns->responseContent ) );
+  }
+
+  '';
+
+
+}
+
+
+sub export_device_replace {
+  my( $self, $svc_phone, $new_phone_device, $old_phone_device ) =
+    (shift, shift, shift, shift);
+
+  #?
+  $self->export_device_insert( $svc_phone, $new_phone_device );
+
 }
 
 sub export_links {

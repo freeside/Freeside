@@ -2,7 +2,7 @@ package FS::phone_device;
 
 use strict;
 use base qw( FS::Record );
-use FS::Record qw( qsearchs ); # qsearch );
+use FS::Record qw( dbh qsearchs ); # qsearch );
 use FS::part_device;
 use FS::svc_phone;
 
@@ -76,7 +76,32 @@ otherwise returns false.
 
 =cut
 
-# the insert method can be inherited from FS::Record
+sub insert {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = $self->SUPER::insert;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $self->svc_phone->export('device_insert', $self); #call device export
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+}
+
 
 =item delete
 
@@ -84,7 +109,31 @@ Delete this record from the database.
 
 =cut
 
-# the delete method can be inherited from FS::Record
+sub delete {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  $self->svc_phone->export('device_delete', $self); #call device export
+
+  my $error = $self->SUPER::delete;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+}
 
 =item replace OLD_RECORD
 
@@ -93,7 +142,35 @@ returns the error, otherwise returns false.
 
 =cut
 
-# the replace method can be inherited from FS::Record
+sub replace {
+  my $new = shift;
+
+  my $old = ( blessed($_[0]) && $_[0]->isa('FS::Record') )
+              ? shift
+              : $new->replace_old;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = $new->SUPER::replace($old);
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $new->svc_phone->export('device_replace', $new, $old); #call device export
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+}
 
 =item check
 
@@ -135,6 +212,18 @@ customer device.
 sub part_device {
   my $self = shift;
   qsearchs( 'part_device', { 'devicepart' => $self->devicepart } );
+}
+
+=item svc_phone
+
+Returns the phone number (see L<FS::svc_phone>) associated with this customer
+device.
+
+=cut
+
+sub svc_phone {
+  my $self = shift;
+  qsearchs( 'svc_phone', { 'svcnum' => $self->svcnum } );
 }
 
 =back
