@@ -11,8 +11,9 @@ sub eventtable_hashref {
 
 sub option_fields {
   ( 
-    'percent' => { label=>'Percent', size=>2, },
-    'reason'  => 'Reason',
+    'percent'  => { label=>'Percent', size=>2, },
+    'reason'   => 'Reason',
+    'taxclass' => { label=>'Tax class', type=>'select-taxclass', },
   );
 }
 
@@ -24,10 +25,16 @@ sub do_action {
   #my $cust_main = $self->cust_main($cust_bill);
   my $cust_main = $cust_bill->cust_main;
 
-  my $error = $cust_main->charge(
-    sprintf('%.2f', $cust_bill->owed * $self->option('percent') / 100 ),
-    $self->option('reason')
-  );
+  my $amount =
+    sprintf('%.2f', $cust_bill->owed * $self->option('percent') / 100 );
+
+  my $error = $cust_main->charge( {
+    'amount'     => $amount,
+    'pkg'        => $self->option('reason'),
+    'taxclass'   => $self->option('taxclass'),
+    #'start_date' => $cust_main->next_bill_date, #unless its more than N months away?
+  } );
+
   die $error if $error;
 
   '';

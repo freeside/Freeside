@@ -1,6 +1,6 @@
 % if ( $conf->exists('enable_taxclasses') ) { 
 
-    <SELECT NAME="<% $opt{'name'} || 'taxclass' %>">
+    <SELECT NAME="<% $opt{'element_name'} || $opt{'field'} || 'taxclass' %>">
 
 %   if ( $conf->exists('require_taxclasses') ) { 
         <OPTION VALUE="(select)">Select tax class
@@ -16,7 +16,7 @@
 
 % } else { 
 
-  <INPUT TYPE="hidden" NAME="taxclass" VALUE="<% $selected_taxclass %>">
+  <INPUT TYPE="hidden" NAME="<% $opt{'element_name'} || $opt{'field'} || 'taxclass' %>" VALUE="<% $selected_taxclass %>">
 
 % } 
 

@@ -9,7 +9,11 @@
   <TR>
     <TD ALIGN="right"><% $opt{'label'} || 'Tax class: ' %></TD>
     <TD>
-      <% include( '/elements/select-taxclass.html', 'curr_value' => $selected_taxclass, %opt ) %>
+      <% include( '/elements/select-taxclass.html',
+                    'curr_value' => $selected_taxclass,
+                    %opt
+                )
+      %>
     </TD>
   </TR>
 
