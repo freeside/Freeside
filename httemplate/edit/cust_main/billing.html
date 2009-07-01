@@ -427,18 +427,31 @@
        <TD COLSPAN="2"><INPUT TYPE="checkbox" NAME="spool_cdr" VALUE="Y" <% $cust_main->spool_cdr eq "Y" ? 'CHECKED' : '' %>> Spool CDRs</TD>
       </TR>
 % } else { 
-
       <INPUT TYPE="hidden" NAME="spool_cdr" VALUE="<% $cust_main->spool_cdr %>">
-% } 
+% }
 
 % if ( $conf->exists('voip-cust_cdr_squelch') ) { 
       <TR>
        <TD COLSPAN="2"><INPUT TYPE="checkbox" NAME="squelch_cdr" VALUE="Y" <% $cust_main->squelch_cdr eq "Y" ? 'CHECKED' : '' %>> Omit CDRs from invoices</TD>
       </TR>
 % } else { 
-
       <INPUT TYPE="hidden" NAME="squelch_cdr" VALUE="<% $cust_main->squelch_cdr %>">
-% } 
+% }
+
+
+% if ( $show_term || $cust_main->cdr_termination_percentage ) {
+      <TR>
+       <TD ALIGN="right">CDR termination settlement</TD>
+       <TD><INPUT TYPE  = "text"
+                  NAME  = "cdr_termination_percentage"
+                  SIZE  = 6
+                  VALUE = "<% $cust_main->cdr_termination_percentage %>"
+                  STYLE = "text-align:right;"
+        ><B>%</B></TD>
+      </TR>
+% } else {
+      <INPUT TYPE="hidden" NAME="cdr_termination_percentage" VALUE="<% $cust_main->cdr_termination_percentage %>">
+% }
 
   </TABLE>
 
@@ -463,5 +476,11 @@ my @payby = grep /\w/, $conf->config('payby');
 #@payby = (qw( CARD DCRD CHEK DCHK LECB BILL CASH WEST COMP ))
 @payby = (qw( CARD DCRD CHEK DCHK LECB BILL CASH COMP ))
   unless @payby;
+
+#false laziness w/view/cust_main/billing.html
+my $term_sql = "SELECT COUNT(*) FROM cust_pkg LEFT JOIN part_pkg USING ( pkgpart ) WHERE custnum = ? AND plan = 'cdr_termination' LIMIT 1";
+my $term_sth = dbh->prepare($term_sql)  or die dbh->errstr;
+$term_sth->execute($cust_main->custnum) or die $term_sth->errstr;
+my $show_term = $term_sth->fetchrow_arrayref->[0];
 
 </%init>

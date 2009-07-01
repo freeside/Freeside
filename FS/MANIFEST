@@ -449,3 +449,5 @@ FS/phone_device.pm
 t/phone_device.t
 FS/part_device.pm
 t/part_device.t
+FS/cdr_termination.pm
+t/cdr_termination.t

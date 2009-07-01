@@ -694,6 +694,7 @@ sub tables_hashref {
         'comments', 'text', 'NULL', '', '', '', 
         'spool_cdr','char', 'NULL', 1, '', '', 
         'squelch_cdr','char', 'NULL', 1, '', '', 
+        'cdr_termination_percentage', 'decimal', 'NULL', '', '', '',
         'invoice_terms', 'varchar', 'NULL', $char_d, '', '',
         'archived', 'char', 'NULL', 1, '', '',
       ],
@@ -2144,6 +2145,32 @@ sub tables_hashref {
       'index' => [ [ 'calldate' ], [ 'src' ], [ 'dst' ], [ 'charged_party' ], [ 'accountcode' ], [ 'freesidestatus' ], [ 'freesiderewritestatus' ], [ 'cdrbatch' ], ],
     },
 
+    'cdr_termination' => {
+      'columns' => [
+        'cdrtermnum', 'bigserial', '',   '', '', '',
+        'acctid',        'bigint', '',   '', '', '', 
+        'termpart',         'int', '',   '', '', '',#future expansion, see below
+        'rated_price',  @money_typen,        '', '',
+        'status',     'varchar', 'NULL', 32, '', '',
+      ],
+      'primary_key' => 'cdrtermnum',
+      'unique'      => [ [ 'acctid', 'termpart' ] ],
+      'index'       => [ [ 'acctid' ], [ 'status' ], ],
+    },
+
+    #to handle multiple termination/settlement passes...
+   # 'part_termination' => {
+   #   'columns' => [
+   #     'termpart',       'int', '',      '', '', '',
+   #     'termname',   'varchar', '', $char_d, '', '',
+   #     'cdr_column', 'varchar', '', $char_d, '', '', #maybe set it here instead of in the price plan?
+   #   ],
+   #   'primary_key' => 'termpart',
+   #   'unique' => [],
+   #   'index'  => [],
+   # },
+
+    #the remaining cdr_ tables are not really used
     'cdr_calltype' => {
       'columns' => [
         'calltypenum',   'serial',  '', '', '', '', 

@@ -1553,6 +1553,7 @@ sub check {
     || $self->ut_textn('stateid_state')
     || $self->ut_textn('invoice_terms')
     || $self->ut_alphan('geocode')
+    || $self->ut_floatn('cdr_termination_percentage')
   ;
 
   #barf.  need message catalogs.  i18n.  etc.
@@ -6739,10 +6740,37 @@ sub credit {
 
 }
 
-=item charge AMOUNT [ PKG [ COMMENT [ TAXCLASS ] ] ]
+=item charge HASHREF || AMOUNT [ PKG [ COMMENT [ TAXCLASS ] ] ]
 
 Creates a one-time charge for this customer.  If there is an error, returns
 the error, otherwise returns false.
+
+New-style, with a hashref of options:
+
+  my $error = $cust_main->charge(
+                                  {
+                                    'amount'     => 54.32,
+                                    'quantity'   => 1,
+                                    'start_date' => str2time('7/4/2009'),
+                                    'pkg'        => 'Description',
+                                    'comment'    => 'Comment',
+                                    'additional' => [], #extra invoice detail
+                                    'classnum'   => 1,  #pkg_class
+
+                                    'setuptax'   => '', # or 'Y' for tax exempt
+
+                                    #internal taxation
+                                    'taxclass'   => 'Tax class',
+
+                                    #vendor taxation
+                                    'taxproduct' => 2,  #part_pkg_taxproduct
+                                    'override'   => {}, #XXX describe
+                                  }
+                                );
+
+Old-style:
+
+  my $error = $cust_main->charge( 54.32, 'Description', 'Comment', 'Tax class' );
 
 =cut
 
