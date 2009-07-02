@@ -14,6 +14,7 @@ sub option_fields {
     'percent'  => { label=>'Percent', size=>2, },
     'reason'   => 'Reason',
     'taxclass' => { label=>'Tax class', type=>'select-taxclass', },
+    'nextbill' => { label=>'Hold late fee until next invoice', type=>'checkbox', value=>'Y' },
   );
 }
 
@@ -28,12 +29,16 @@ sub do_action {
   my $amount =
     sprintf('%.2f', $cust_bill->owed * $self->option('percent') / 100 );
 
-  my $error = $cust_main->charge( {
+  my %charge = (
     'amount'     => $amount,
     'pkg'        => $self->option('reason'),
     'taxclass'   => $self->option('taxclass'),
-    #'start_date' => $cust_main->next_bill_date, #unless its more than N months away?
-  } );
+  );
+
+  $charge{'start_date'} = $cust_main->next_bill_date #unless its more than N months away?
+    if $self->option('nextbill');
+
+  my $error = $cust_main->charge( \%charge );
 
   die $error if $error;
 

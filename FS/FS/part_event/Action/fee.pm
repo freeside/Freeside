@@ -10,6 +10,7 @@ sub option_fields {
     'charge'   => { label=>'Amount', type=>'money', }, # size=>7, },
     'reason'   => 'Reason',
     'taxclass' => { label=>'Tax class', type=>'select-taxclass', },
+    'nextbill' => { label=>'Hold late fee until next invoice', type=>'checkbox', value=>'Y' },
   );
 }
 
@@ -20,12 +21,16 @@ sub do_action {
 
   my $cust_main = $self->cust_main($cust_object);
 
-  my $error = $cust_main->charge( {
+  my %charge = (
     'amount'   => $self->option('charge'),
     'pkg'      => $self->option('reason'),
     'taxclass' => $self->option('taxclass')
-    #'start_date' => $cust_main->next_bill_date, #unless its more than N months away?
-  } );
+  );
+
+  $charge{'start_date'} = $cust_main->next_bill_date #unless its more than N months away?
+    if $self->option('nextbill');
+
+  my $error = $cust_main->charge( \%charge );
 
   die $error if $error;
 

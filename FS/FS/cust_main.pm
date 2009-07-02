@@ -6790,7 +6790,7 @@ sub charge {
     $setuptax   = exists($_[0]->{setuptax}) ? $_[0]->{setuptax} : '';
     $taxclass   = exists($_[0]->{taxclass}) ? $_[0]->{taxclass} : '';
     $classnum   = exists($_[0]->{classnum}) ? $_[0]->{classnum} : '';
-    $additional = $_[0]->{additional};
+    $additional = $_[0]->{additional} || [];
     $taxproduct = $_[0]->{taxproductnum};
     $override   = { '' => $_[0]->{tax_override} };
   } else {
