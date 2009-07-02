@@ -3,6 +3,7 @@
 <FORM ACTION="cdr.html" METHOD="GET">
 
 <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
   <TR>
     <TD ALIGN="right">Status: </TD>
     <TD>
@@ -13,6 +14,23 @@
       </SELECT>
     </TD>
   </TR>
+
+% #if ( ) {  # disable for everyone not using termination billing...
+%   foreach my $termpart ( 1..1 ) { #qsearch('part_termination
+
+    <TR>
+      <TD ALIGN="right">Termination Status: </TD>
+      <TD>
+        <SELECT NAME="termpart<%$termpart%>status">
+          <OPTION VALUE="">(all)
+          <OPTION VALUE="NULL">unprocessed
+          <OPTION VALUE="done">processed
+        </SELECT>
+      </TD>
+    </TR>
+
+%   }
+% #}
 
   <% include ( '/elements/tr-input-beginning_ending.html' ) %>
 

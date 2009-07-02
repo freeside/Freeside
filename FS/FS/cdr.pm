@@ -527,8 +527,8 @@ my %export_formats = (
     sub { time2str('%D', shift->calldate_unix ) },   #DATE
     sub { time2str('%r', shift->calldate_unix ) },   #TIME
     #'userfield',                                     #USER
-    'dst',                                           #NUMBER_DIALED
     'src',                                           #called from
+    'dst',                                           #NUMBER_DIALED
     $duration_sub,                                   #DURATION
     #sub { sprintf('%.3f', shift->upstream_price ) }, #PRICE
     sub { my($cdr, %opt) = @_; $opt{money_char}. $opt{charge}; }, #PRICE

@@ -117,26 +117,26 @@ sub check {
     #|| $self->ut_foreign_key('termpart', 'part_termination', 'termpart')
     || $self->ut_number('termpart')
     || $self->ut_float('rated_price')
-    || $self->ut_enum('status', '', 'done' ) # , 'skipped' )
+    || $self->ut_enum('status', [ '', 'done' ] ) # , 'skipped' ] )
   ;
   return $error if $error;
 
   $self->SUPER::check;
 }
 
-=item set_status_and_rated_price STATUS [ RATED_PRICE ]
-
-Sets the status to the provided string.  If there is an error, returns the
-error, otherwise returns false.
-
-=cut
-
-sub set_status_and_rated_price {
-  my($self, $status, $rated_price) = @_;
-  $self->status($status);
-  $self->rated_price($rated_price);
-  $self->replace();
-}
+#=item set_status_and_rated_price STATUS [ RATED_PRICE ]
+#
+#Sets the status to the provided string.  If there is an error, returns the
+#error, otherwise returns false.
+#
+#=cut
+#
+#sub set_status_and_rated_price {
+#  my($self, $status, $rated_price) = @_;
+#  $self->status($status);
+#  $self->rated_price($rated_price);
+#  $self->replace();
+#}
 
 =back
 

@@ -65,24 +65,6 @@ my $hashref = {};
 my @search = ();
 
 ###
-# freesidestatus
-###
-
-if ( $cgi->param('freesidestatus') eq 'NULL' ) {
-
-  my $title = "Unprocessed $title";
-  $hashref->{'freesidestatus'} = ''; # Record.pm will take care of it
-  push @search, "( freesidestatus IS NULL OR freesidestatus = '' )";
-
-} elsif ( $cgi->param('freesidestatus') =~ /^([\w ]+)$/ ) {
-
-  my $title = "Processed $title";
-  $hashref->{'freesidestatus'} = $1;
-  push @search, "freesidestatus = '$1'";
-
-}
-
-###
 # dates
 ###
 
@@ -99,11 +81,70 @@ push @search, "$str2time_sql calldate) >= $beginning ",
 push @search, FS::UI::Web::parse_lt_gt($cgi, 'duration');
 push @search, FS::UI::Web::parse_lt_gt($cgi, 'billsec');
 
+#above here things just push @search
+#below here things also have to define $hashref->{} or push @qsearch
+my @qsearch = @search;
+
+###
+# freesidestatus
+###
+
+if ( $cgi->param('freesidestatus') eq 'NULL' ) {
+
+  $title = "Unprocessed $title";
+  $hashref->{'freesidestatus'} = ''; # Record.pm will take care of it
+  push @search, "( freesidestatus IS NULL OR freesidestatus = '' )";
+
+} elsif ( $cgi->param('freesidestatus') =~ /^([\w ]+)$/ ) {
+
+  $title = "Processed $title";
+  $hashref->{'freesidestatus'} = $1;
+  push @search, "freesidestatus = '$1'";
+
+}
+
+###
+# termpartNstatus
+###
+
+foreach my $param ( grep /^termpart\d+status$/, $cgi->param ) {
+
+  my $status = $cgi->param($param);
+
+  $param =~ /^termpart(\d+)status$/ or die 'guru meditation 54something';
+  my $termpart = $1;
+
+  my $search = '';
+  if ( $status eq 'NULL' ) {
+
+    #false lazienss w/cdr_termination.pm (i should be a part_termination method)
+    my $where_term =
+      "( cdr.acctid = cdr_termination.acctid AND termpart = $termpart ) ";
+    #my $join_term = "LEFT JOIN cdr_termination ON ( $where_term )";
+    $search =
+      "NOT EXISTS ( SELECT 1 FROM cdr_termination WHERE $where_term )";
+
+  } elsif ( $cgi->param('freesidestatus') =~ /^([\w ]+)$/ ) {
+
+    #false lazienss w/cdr_termination.pm (i should be a part_termination method)
+    my $where_term =
+      "( cdr.acctid = cdr_termination.acctid AND termpart = $termpart AND status = '$1' ) ";
+    #my $join_term = "LEFT JOIN cdr_termination ON ( $where_term )";
+    $search =
+      "EXISTS ( SELECT 1 FROM cdr_termination WHERE $where_term )";
+
+  }
+
+  if ( $search ) {
+    push @search,  $search;
+    push @qsearch, $search;
+  }
+
+}
+
 ###
 # src/dest/charged_party
 ###
-
-my @qsearch = @search;
 
 if ( $cgi->param('src') =~ /^\s*([\d\-\+\ ]+)\s*$/ ) {
   ( my $src = $1 ) =~ s/\D//g;
@@ -122,10 +163,12 @@ if ( $cgi->param('charged_party') =~ /^\s*([\d\-\+\ ]+)\s*$/ ) {
   #$hashref->{'charged_party'} = $charged_party;
   #push @search, "charged_party = '$charged_party'";
   #XXX countrycode
-  push @search,  " (    charged_party = '$charged_party'
-                     OR charged_party = '1$charged_party' ) ";
-  push @qsearch, " (    charged_party = '$charged_party'
-                    OR charged_party = '1$charged_party' ) ";
+
+  my $search = " (    charged_party = '$charged_party'
+                   OR charged_party = '1$charged_party' ) ";
+
+  push @search,  $search;
+  push @qsearch, $search;
 }
 
 ###
