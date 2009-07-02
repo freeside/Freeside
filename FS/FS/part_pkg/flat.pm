@@ -144,7 +144,8 @@ sub unit_setup {
 }
 
 sub calc_recur {
-  my($self, $cust_pkg) = @_;
+  my $self = shift;
+  my($cust_pkg) = @_;
 
   #my $last_bill = $cust_pkg->last_bill;
   my $last_bill = $cust_pkg->get('last_bill'); #->last_bill falls back to setup
@@ -152,7 +153,7 @@ sub calc_recur {
   return 0
     if $self->option('recur_temporality', 1) eq 'preceding' && $last_bill == 0;
 
-  $self->base_recur($cust_pkg);
+  $self->base_recur(@_);
 }
 
 sub base_recur {
