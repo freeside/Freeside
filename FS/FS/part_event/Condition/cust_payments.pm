@@ -3,7 +3,7 @@ package FS::part_event::Condition::cust_payments;
 use strict;
 use base qw( FS::part_event::Condition );
 
-sub description { 'Customer total payments'; }
+sub description { 'Customer total payments (amount)'; }
 
 sub option_fields {
   (
