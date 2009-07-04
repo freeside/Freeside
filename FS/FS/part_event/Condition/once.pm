@@ -7,7 +7,7 @@ use FS::cust_event;
 
 use base qw( FS::part_event::Condition );
 
-sub description { "Don't run this event again after it has completed sucessfully"; }
+sub description { "Don't run this event again after it has completed successfully"; }
 
 sub implicit_flag { 10; }
 
