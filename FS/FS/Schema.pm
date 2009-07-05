@@ -2142,7 +2142,12 @@ sub tables_hashref {
       ],
       'primary_key' => 'acctid',
       'unique' => [],
-      'index' => [ [ 'calldate' ], [ 'src' ], [ 'dst' ], [ 'charged_party' ], [ 'accountcode' ], [ 'carrierid' ], [ 'freesidestatus' ], [ 'freesiderewritestatus' ], [ 'cdrbatch' ], ],
+      'index' => [ [ 'calldate' ],
+                   [ 'src' ], [ 'dst' ], [ 'dcontext' ], [ 'charged_party' ],
+                   [ 'accountcode' ], [ 'carrierid' ],
+                   [ 'freesidestatus' ], [ 'freesiderewritestatus' ],
+                   [ 'cdrbatch' ],
+                 ],
     },
 
     'cdr_termination' => {

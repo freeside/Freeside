@@ -153,6 +153,54 @@ points to.  You can ask the object for a copy with the I<hash> method.
 
 sub table { 'cdr'; }
 
+sub table_info {
+  {
+    'fields' => {
+#XXX fill in some (more) nice names
+        #'acctid'                => '',
+        'calldate'              => 'Call date',
+        'clid'                  => 'Caller ID',
+        'src'                   => 'Source',
+        'dst'                   => 'Destination',
+        'dcontext'              => 'Dest. context',
+        'channel'               => 'Channel',
+        'dstchannel'            => 'Destination channel',
+        #'lastapp'               => '',
+        #'lastdata'              => '',
+        'startdate'             => 'Start date',
+        'answerdate'            => 'Answer date',
+        'enddate'               => 'End date',
+        'duration'              => 'Duration',
+        'billsec'               => 'Billable seconds',
+        'disposition'           => 'Disposition',
+        'amaflags'              => 'AMA flags',
+        'accountcode'           => 'Account code',
+        #'uniqueid'              => '',
+        'userfield'             => 'User field',
+        #'cdrtypenum'            => '',
+        'charged_party'         => 'Charged party',
+        #'upstream_currency'     => '',
+        'upstream_price'        => 'Upstream price',
+        #'upstream_rateplanid'   => '',
+        #'ratedetailnum'         => '',
+        'rated_price'           => 'Rated price',
+        #'distance'              => '',
+        #'islocal'               => '',
+        #'calltypenum'           => '',
+        #'description'           => '',
+        #'quantity'              => '',
+        'carrierid'             => 'Carrier ID',
+        #'upstream_rateid'       => '',
+        'svcnum'                => 'Freeside service',
+        'freesidestatus'        => 'Freeside status',
+        'freesiderewritestatus' => 'Freeside rewrite status',
+        'cdrbatch'              => 'Batch',
+    },
+
+  };
+
+}
+
 =item insert
 
 Adds this record to the database.  If there is an error, returns the error,

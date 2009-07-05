@@ -158,6 +158,12 @@ if ( $cgi->param('dst') =~ /^\s*([\d\-\+ ]+)\s*$/ ) {
   push @search, "dst = '$dst'";
 }
 
+if ( $cgi->param('dcontext') =~ /^\s*(.+)\s*$/ ) {
+  my $dcontext = $1;
+  $hashref->{'dcontext'} = $dcontext;
+  push @search, "dcontext = '$dcontext'";
+}
+
 if ( $cgi->param('charged_party') =~ /^\s*([\d\-\+\ ]+)\s*$/ ) {
   ( my $charged_party = $1 ) =~ s/\D//g;
   #$hashref->{'charged_party'} = $charged_party;
@@ -203,23 +209,16 @@ $qsearch = ( scalar(keys %$hashref) ? ' AND ' : ' WHERE ' ) . $qsearch
 # display fields
 ###
 
-#XXX fill in some (more) nice names
-my %header = (
-  'calldate'       => 'Call Date',
-  'clid'           => 'Caller ID',
-  'charged_party'  => 'Charged party',
-  'src'            => 'Source',
-  'dst'            => 'Destination',
-  'dcontext'       => 'Destination Context',
-  'channel'        => 'Channel',
-  'dstchannel'     => 'Destination Channel',
-  'freesidestatus' => 'Freeside status',
-);
+my %header = %{ FS::cdr->table_info->{'fields'} };
 
 my @first = qw( acctid calldate clid charged_party src dst dcontext );
 my %first = map { $_=>1 } @first;
 
 my @fields = ( @first, grep !$first{$_}, fields('cdr') );
+
+if ( $cgi->param('show') ) {
+  @fields = grep $cgi->param("show_$_"), @fields;
+}
 
 my @header = map {
                    if ( exists($header{$_}) ) {

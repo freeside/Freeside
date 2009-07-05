@@ -5,6 +5,12 @@
 <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
 
   <TR>
+    <TH BGCOLOR="#e8e8e8" COLSPAN=2 ALIGN="left">
+      <FONT SIZE="+1">Search options</FONT>
+    </TH>
+  </TR>
+
+  <TR>
     <TD ALIGN="right">Status: </TD>
     <TD>
       <SELECT NAME="freesidestatus">
@@ -48,6 +54,21 @@
     </TD>
   </TR>
 
+  <TR>
+    <TD ALIGN="right">Destination Context: </TD>
+    <TD>
+      <INPUT TYPE="text" NAME="dcontext">
+    </TD>
+  </TR>
+
+
+  <TR>
+    <TD ALIGN="right">Charged Party #: </TD>
+    <TD>
+      <INPUT TYPE="text" NAME="charged_party">
+    </TD>
+  </TR>
+
   <% include( '/elements/tr-input-lessthan_greaterthan.html',
                 'label' => 'Duration (sec)',
                 'field' => 'duration',
@@ -62,6 +83,28 @@
 
   <% include( '/elements/tr-select-cdrbatch.html' ) %>
 
+  <TR>
+    <TH BGCOLOR="#e8e8e8" COLSPAN=2>&nbsp;</TH>
+  </TR>
+
+  <TR>
+    <TH BGCOLOR="#e8e8e8" COLSPAN=2 ALIGN="left"><FONT SIZE="+1">Display options</FONT></TH>
+  </TR>
+
+  <INPUT TYPE="hidden" NAME="show" VALUE="1">
+
+  <TR>
+    <TD COLSPAN=2>
+      <% include('/elements/checkboxes.html',
+                   'names_list'          => $names_list,
+                   'element_name_prefix' => 'show_',
+                   'checked_callback'    => sub { $show_default{$_[1]} },
+                                                  # my($cgi, $name) = @_;
+                )
+      %>
+    </TD>
+  </TR>
+
 </TABLE>
 
 <BR>
@@ -72,5 +115,27 @@
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('List rating data');
+
+my @fields = fields('cdr');
+my $labels = FS::cdr->table_info->{'fields'};
+
+#XXX config
+my @show_default = qw(
+  calldate clid src dst dcontext charged_party
+  startdate answerdate enddate duration billsec
+  disposition amaflags accountcode userfield
+  rated_price upstream_price carrierid 
+  svcnum freesidestatus freesiderewritestatus cdrbatch
+);
+my %show_default = map { $_=>1 } @show_default;
+
+my $names_list = [ map {
+                         [ $_ => {
+                                   'label' => 'Show '. ( $labels->{$_} || $_ )
+                                 }
+                         ]
+                       } 
+                   @fields
+                 ];
 
 </%init>
