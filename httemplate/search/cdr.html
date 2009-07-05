@@ -23,6 +23,7 @@
                              @fields,       #XXX fill in some pretty-print
                                             #processing, etc.
                            ],
+               'links' => \@links,
 
                'html_form'   => qq!<FORM NAME="cdrForm" ACTION="$p/misc/cdr.cgi" METHOD="POST">!,
                #false laziness w/queue.html
@@ -225,9 +226,33 @@ my @header = map {
                      $header{$_};
                    } else {
                      my $header = $_;
-                     $header =~ s/\_/ /g;
+                     $header =~ s/\_/ /g; #//wtf
                      ucfirst($header);
                    }
                  } @fields;
+
+my $date_sub_factory = sub {
+  my $column = shift;
+  sub {
+    #my $cdr = shift;
+    my $date = shift->$column();
+    $date ? time2str( '%Y-%m-%d %T', $date ) : ''; #config time2str format?
+  };
+};
+
+my %fields = (
+  #any other formatters?
+  map { $_ => &{ $date_sub_factory }($_) } qw( startdate answerdate enddate )
+);
+
+my %links = (
+  'svcnum' =>
+    sub { $_[0]->svcnum ? [ $p.'view/svc_phone.cgi?', 'svcnum' ] : ''; },
+);
+
+@fields = map { exists($fields{$_}) ? $fields{$_} : $_ } @fields;
+
+              #checkbox column
+my @links = ( '', map { exists($links{$_}) ? $links{$_} : '' } @fields );
 
 </%init>
