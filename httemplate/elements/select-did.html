@@ -68,6 +68,7 @@ my %opt = @_;
 my $conf = new FS::Conf;
 my $country = $conf->config('countrydefault') || 'US';
 
+#false laziness w/tr-select-did.html
 #XXX make sure this comes through on errors too
 my $svcpart = $opt{'svcpart'} || $opt{'object'}->svcpart;
 
