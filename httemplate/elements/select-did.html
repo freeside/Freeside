@@ -70,7 +70,7 @@ my $country = $conf->config('countrydefault') || 'US';
 
 #false laziness w/tr-select-did.html
 #XXX make sure this comes through on errors too
-my $svcpart = $opt{'svcpart'} || $opt{'object'}->svcpart;
+my $svcpart = $opt{'svcpart'} || $opt{'object'}->cust_svc->svcpart;
 
 my $part_svc = qsearchs('part_svc', { 'svcpart'=>$svcpart } );
 die "unknown svcpart $svcpart" unless $part_svc;
