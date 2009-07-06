@@ -194,6 +194,23 @@ if ( $cgi->param('cdrbatch') ne '__ALL__' ) {
 }
 
 ###
+# acctid
+###
+
+if ( $cgi->param('acctid') =~ /\d/ ) {
+  my $acctid = $cgi->param('acctid');
+  $acctid =~ s/\r\n/\n/g; #browsers?
+  my @acctid = map  { /^\s*(\d+)\s*$/ or die "guru meditation #4"; $1; }
+               grep { /^\s*(\d+)\s*$/ }
+               split(/\n/, $acctid);
+  if ( @acctid ) {
+    my $search = 'acctid IN ( '. join(',', @acctid). ' )';
+    push @qsearch, $search;
+    push @search,  $search;
+  }
+}
+
+###
 # finish it up
 ###
 
