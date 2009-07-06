@@ -111,7 +111,7 @@ my $html_foot = sub {
     "View $_ CDRs</A>";
   } keys(%what);
 
-  my @ilinks = ( qq(<A HREF="${p}search/cdr.html?dst=$number">).
+  my @ilinks = ( qq(<A HREF="${p}search/cdr.html?cdrbatch=__ALL__;dst=$number">).
                  'View incoming CDRs</A>' );
 
   ###
