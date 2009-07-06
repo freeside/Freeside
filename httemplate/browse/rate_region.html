@@ -15,6 +15,7 @@
      'header'         => \@header,
      'fields'         => \@fields,
      'links'          => \@links,
+     'align'          => \@align,
      'xls_format'     => \@xls_format,
    )
 %>
@@ -40,12 +41,12 @@ if ( driver_name =~ /^Pg/ ) {
                    "   ELSE npa || '-' || nxx ".
                    " END";
   my $prefixes_sql = "SELECT $prefix_sql $fromwhere AND npa IS NOT NULL";
-  $select .= "( SELECT countrycode $fromwhere LIMIT 1 ) AS ccode, 
-              ARRAY_TO_STRING( ARRAY($prefixes_sql), ',' ) AS prefixes";
+  $select .= "( SELECT '+'||countrycode $fromwhere LIMIT 1 ) AS ccode, 
+              ARRAY_TO_STRING( ARRAY($prefixes_sql), ', ' ) AS prefixes";
 } elsif ( driver_name =~ /^mysql/i ) {
   $join = 'LEFT JOIN rate_prefix USING ( regionnum )';
-  $select .= "GROUP_CONCAT( DISTINCT countrycode ) AS ccode,
-              GROUP_CONCAT( npa ORDER BY npa     ) AS prefixes ";
+  $select .= "'+'||GROUP_CONCAT( DISTINCT countrycode ) AS ccode,
+              GROUP_CONCAT( npa ORDER BY npa SEPARATOR ', ' ) AS prefixes ";
   $group_sql = 'GROUP BY regionnum, regionname';
 } else {
   die 'unknown database '. driver_name;
@@ -64,6 +65,7 @@ die "access denied"
 my @header     = ( '#',         'Region',  'Country code', 'Prefixes' );
 my @fields     = ( 'regionnum', 'regionname',   'ccode',   'prefixes' );
 my @links      = ( ($link) x 4 );
+my @align      = ( 'right', 'left', 'right', 'left' );
 my @xls_format = ( ({ locked=>1, bg_color=>22 }) x 4 );
 
 $cgi->param('dummy', 1);
