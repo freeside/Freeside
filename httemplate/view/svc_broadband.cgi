@@ -22,10 +22,14 @@
           <TD ALIGN="right">Description</TD>
           <TD BGCOLOR="#ffffff"><%$description%></TD>
         </TR>
-        <TR>
-          <TD ALIGN="right">Router</TD>
-          <TD BGCOLOR="#ffffff"><%$routernum%>: <%$routername%></TD>
-        </TR>
+
+%       if ( $router ) {
+          <TR>
+            <TD ALIGN="right">Router</TD>
+            <TD BGCOLOR="#ffffff"><%$router->routernum%>: <%$router->routername%></TD>
+          </TR>
+%       }
+
         <TR>
           <TD ALIGN="right">Download Speed</TD>
           <TD BGCOLOR="#ffffff"><%$speed_down%></TD>
@@ -34,18 +38,22 @@
           <TD ALIGN="right">Upload Speed</TD>
           <TD BGCOLOR="#ffffff"><%$speed_up%></TD>
         </TR>
-        <TR>
-          <TD ALIGN="right">IP Address</TD>
-          <TD BGCOLOR="#ffffff"><%$ip_addr%></TD>
-        </TR>
-        <TR>
-          <TD ALIGN="right">IP Netmask</TD>
-          <TD BGCOLOR="#ffffff"><%$ip_netmask%></TD>
-        </TR>
-        <TR>
-          <TD ALIGN="right">IP Gateway</TD>
-          <TD BGCOLOR="#ffffff"><%$ip_gateway%></TD>
-        </TR>
+
+%       if ( $ip_addr ) { 
+          <TR>
+            <TD ALIGN="right">IP Address</TD>
+            <TD BGCOLOR="#ffffff"><%$ip_addr%></TD>
+          </TR>
+          <TR>
+            <TD ALIGN="right">IP Netmask</TD>
+            <TD BGCOLOR="#ffffff"><%$addr_block->NetAddr->mask%></TD>
+          </TR>
+          <TR>
+            <TD ALIGN="right">IP Gateway</TD>
+            <TD BGCOLOR="#ffffff"><%$addr_block->ip_gateway%></TD>
+          </TR>
+%       }
+
         <TR>
           <TD ALIGN="right">MAC Address</TD>
           <TD BGCOLOR="#ffffff"><%$mac_addr%></TD>
@@ -173,18 +181,14 @@ if ($pkgnum) {
 #eofalse
 
 my $addr_block = $svc_broadband->addr_block;
-my $router = $addr_block->router;
+my $router = $addr_block->router if $addr_block;
 
-if (not $router) { die "Could not lookup router for svc_broadband (svcnum $svcnum)" };
+#if (not $router) { die "Could not lookup router for svc_broadband (svcnum $svcnum)" };
 
 my (
-     $routername,
-     $routernum,
      $speed_down,
      $speed_up,
      $ip_addr,
-     $ip_gateway,
-     $ip_netmask,
      $mac_addr,
      $latitude,
      $longitude,
@@ -193,13 +197,9 @@ my (
      $auth_key,
      $description,
    ) = (
-     $router->getfield('routername'),
-     $router->getfield('routernum'),
      $svc_broadband->getfield('speed_down'),
      $svc_broadband->getfield('speed_up'),
      $svc_broadband->getfield('ip_addr'),
-     $addr_block->ip_gateway,
-     $addr_block->NetAddr->mask,
      $svc_broadband->mac_addr,
      $svc_broadband->latitude,
      $svc_broadband->longitude,

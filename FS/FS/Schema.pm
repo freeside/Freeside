@@ -1760,7 +1760,7 @@ sub tables_hashref {
       'columns' => [
         'svcnum', 'int', '', '', '', '', 
         'description', 'varchar', 'NULL', $char_d, '', '', 
-        'blocknum', 'int', '', '', '', '', 
+        'blocknum', 'int', 'NULL', '', '', '', 
         'speed_up', 'int', '', '', '', '', 
         'speed_down', 'int', '', '', '', '', 
         'ip_addr', 'varchar', 'NULL', 15, '', '', 
