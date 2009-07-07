@@ -1763,7 +1763,7 @@ sub tables_hashref {
         'blocknum', 'int', '', '', '', '', 
         'speed_up', 'int', '', '', '', '', 
         'speed_down', 'int', '', '', '', '', 
-        'ip_addr', 'varchar', '', 15, '', '', 
+        'ip_addr', 'varchar', 'NULL', 15, '', '', 
         'mac_addr', 'varchar', 'NULL', 12, '', '', 
         'authkey',  'varchar', 'NULL', 32, '', '', 
         'latitude', 'decimal', 'NULL', '', '', '', 

@@ -246,7 +246,19 @@ sub check {
     }
   }
 
+  $error = $self->_check_ip_addr;
+  return $error if $error;
+
+  $self->SUPER::check;
+}
+
+sub _check_ip_addr {
+  my $self = shift;
+
   if (not($self->ip_addr) or $self->ip_addr eq '0.0.0.0') {
+
+    return '' if $conf->exists('svc_broadband-allow_null_ip_addr'); #&& !$self->blocknum
+
     return "Must supply either address or block"
       unless $self->blocknum;
     my $next_addr = $self->addr_block->next_free_addr;
@@ -255,6 +267,7 @@ sub check {
     } else {
       return "No free addresses in addr_block (blocknum: ".$self->blocknum.")";
     }
+
   }
 
   if (not($self->blocknum)) {
@@ -288,7 +301,7 @@ sub check {
     return 'Router '.$router->routernum.' cannot provide svcpart '.$self->svcpart;
   }
 
-  $self->SUPER::check;
+  '';
 }
 
 sub _check_duplicate {

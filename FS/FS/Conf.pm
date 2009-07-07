@@ -2835,6 +2835,14 @@ worry that config_items is freeside-specific and icky.
     'type'        => 'text',
   },
 
+  #more fine-grained, service def-level control could be useful eventually?
+  {
+    'key'         => 'svc_broadband-allow_null_ip_addr',
+    'section'     => '',
+    'description' => '',
+    'type'        => 'checkbox',
+  },
+
   {
     'key'         => 'tax-report_groups',
     'section'     => '',
