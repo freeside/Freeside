@@ -1,0 +1,177 @@
+#!/usr/bin/perl -w
+
+use strict;
+use vars qw( $user $cust_main @customers );
+use Getopt::Std;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearchs);
+use FS::Conf;
+use FS::cust_main;
+use FS::cust_pay;
+use Business::OnlinePayment; # For retrieving the void list only.
+use Time::Local;
+use Date::Parse 'str2time';
+use Date::Format 'time2str';
+
+my %opt;
+getopts("f:ca:g:s:e:", \%opt);
+
+$user = shift or die &usage;
+&adminsuidsetup( $user );
+
+# The -g and -a options need to override this.
+my $method = $opt{'c'} ? 'ECHECK' : 'CARD';
+my $gateway;
+if($opt{'g'}) {
+  $gateway = FS::payment_gateway->by_key($opt{'g'})
+    or die "Payment gateway not found: '".$opt{'g'}."'.";
+}
+elsif($opt{'a'}) {
+  my $agent = FS::agent->by_key($opt{'a'})
+    or die "Agent not found: '".$opt{'a'}."'.";
+  $gateway = $agent->payment_gateway(method => $method)
+    or die "Agent has no payment gateway for method '$method'.";
+}
+
+my ($processor, $login, $password, $action, @bop_options) =
+  FS::cust_main->default_payment_gateway($method);
+my $gatewaynum = '';
+
+if($gateway) {
+# override the default gateway
+  $gatewaynum = $gateway->gatewaynum . '-' if $gateway->gatewaynum;
+  $processor = $gateway->gateway_module;
+  $login     = $gateway->gateway_username;
+  $password  = $gateway->gateway_password;
+  $action    = $gateway->gateway_action;
+  @bop_options = $gateway->options;
+}
+
+my @auths;
+if($opt{'f'}) {
+# Read the list of authorization numbers from a file.
+  my $in;
+  open($in, '< '. $opt{'f'}) or die "Unable to open file: '".$opt{'f'}."'.";
+  @auths = grep /^\d+$/, <$in>;
+  chomp @auths;
+}
+else {
+# Get the list from the processor.  This requires the processor module to 
+# support get_returns.
+  my $transaction = new Business::OnlinePayment ( $processor, @bop_options );
+  if(! $transaction->can('get_returns')) {
+    die "'$processor' does not provide an automated void list.";
+  }
+  my @local = localtime;
+# Start and end dates for this can be set via -s and -e.  If they're not,
+# end defaults to midnight today and start defaults to one day before end.
+  my $end = defined($opt{'e'}) ? 
+      str2time($opt{'e'}) : timelocal(0, 0, 0, @local[3,4,5]);
+  my $start = defined($opt{'s'}) ?
+      str2time($opt{'s'}) : $end - 86400;
+  die "Invalid date range: '$start'-'$end'" if not ($start and $end);
+  $transaction->content (
+    login     => $login,
+    password  => $password,
+    start     => time2str("%Y-%m-%d",$start),
+    end       => time2str("%Y-%m-%d",$end),
+    );
+  @auths = $transaction->get_returns;
+}
+
+$opt{'r'} ||= 'freeside-void-payments';
+
+foreach my $authnum (@auths) {
+  my $paybatch = $gatewaynum . $processor . ':' . $authnum;
+  my $cust_pay = qsearchs('cust_pay', { paybatch => $paybatch } );
+  if($cust_pay) {
+    $cust_pay->void($opt{'r'});
+  }
+  else {
+    warn "cust_pay record not found: '$paybatch'";
+  }
+}
+
+sub usage {
+    die "Usage:\n\n  freeside-void-payments [ -f file | [ -s start-date ] [ -e end-date ] ] [ -r 'reason' ] [ -g gatewaynum | -a agentnum ] [ -c ] user\n";
+}
+
+__END__
+
+# Documentation
+
+=head1 NAME
+
+freeside-void-payments - Automatically void a list of returned payments.
+
+=head1 SYNOPSIS
+
+  freeside-void-payments [ -f file | [ -s start-date ] [ -e end-date ] ] [ -r 'reason' ] [ -g gatewaynum | -a agentnum ] [ -c ] user
+
+=head1 DESCRIPTION
+
+Voids payments that were returned by the payment processor.  Can be 
+run periodically from crontab or manually after receiving a list of 
+returned payments.  Normally this is a meaningful operation only for 
+electronic checks.
+
+This script voids payments based on the combination of gateway (see 
+L<FS::payment_gateway>) and authorization number, since this is 
+generally how the processor will identify them later.
+
+  -f: Read the list of authorization numbers from the specified file.  
+      If they are not from the default payment gateway, -g or -a 
+      must be given to identify the gateway.
+      
+  If -f is not given, the script will attempt to contact the gateway 
+  and download a list of returned transactions.  To support this, 
+  the Business::OnlinePayment module for the processor must implement 
+  the I<get_returns()> method.  For an example, see 
+  L<Business::OnlinePayment::WesternACH>.
+
+  -s, -e: Specify the starting and ending dates for the void list.  
+      This has no effect if -f is given.  The end date defaults to 
+      today, and the start date defaults to one day before the end date.
+
+  -r: The reason for voiding the payments, to be stored in the database.
+
+  -g: The L<FS::payment_gateway> number for the gateway that handled 
+      these payments.  If -f is not given, this determines which 
+      gateway will be contacted.  This overrides -a.
+
+  -a: The agentnum whose default gateway will be used.  If neither -a 
+      nor -g is given, the system default gateway will be used.
+
+  -c: Use the default gateway for check transactions rather than 
+      credit cards.
+
+A warning will be emitted for each transaction that can't be found.  
+This may happen if it's already been voided, or if the gateway 
+doesn't match.
+
+=head1 EXAMPLE
+
+Given 'returns.txt', which contains one authorization number on each 
+line, provided by your default e-check processor:
+
+  freeside-void-payments -f returns.txt -c -r 'Returned check'
+
+If your default processor is Western ACH, which supports automated 
+returns processing, this voids all returned payments since 2009-06-01:
+
+  freeside-void-payments -r 'Returned check' -s 2009-06-01
+
+This, in your crontab, will void returned payments for the last 
+day at 8:30 every morning:
+
+  30 8 * * * /usr/local/bin/freeside-void-payments -r 'Returned check'
+
+=head1 BUGS
+
+Most payment gateways don't support it, making the script largely useless.
+
+=head1 SEE ALSO
+
+L<Business::OnlinePayment>, L<FS::cust_pay>
+
+=cut
