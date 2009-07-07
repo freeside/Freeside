@@ -2,7 +2,7 @@
      'post_url'             => popurl(1). 'process/svc_broadband.cgi',
      'name'                 => 'broadband service',
      'table'                => 'svc_broadband',
-     'labels'               => { 'svcnum'       => 'Service #',
+     'labels'               => { 'svcnum'       => 'Service',
                                  'description'  => 'Description',
                                  'ip_addr'      => 'IP address',
                                  'speed_down'   => 'Download speed',
