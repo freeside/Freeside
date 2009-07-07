@@ -28,7 +28,10 @@ use FS::cdr qw(_cdr_date_parser_maker);
     '', #04 Leg number (all 0)
     _cdr_date_parser_maker('startdate'),  #05 Authorize timestamp
     _cdr_date_parser_maker('answerdate'), #06 Start timestamp
-    'billsec', #'duration', #07 Duration
+    sub { my( $cdr, $duration ) = @_; #07 Duration
+          $cdr->duration($duration);
+          $cdr->billsec( $duration);
+        },
     _e164_parser_maker('src',      'charged_party'),                 #08 Caller
     _e164_parser_maker('dcontext', 'dst', 'norewrite_pivotonly'=>1) ,#09 Callee
     'channel', #10 Source IP
