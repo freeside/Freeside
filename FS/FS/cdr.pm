@@ -766,8 +766,8 @@ sub _cdr_date_parse {
      die "unparsable date: $date"; #maybe we shouldn't die...
   }
 
-  return '' if $year == 1900 && $mon == 1 && $day == 1
-            && $hour == 0    && $min == 0 && $sec == 0;
+  return '' if ( $year == 1900 || $year == 1970 ) && $mon == 1 && $day == 1
+            && $hour == 0 && $min == 0 && $sec == 0;
 
   if ($options{gmt}) {
     timegm($sec, $min, $hour, $day, $mon-1, $year);
