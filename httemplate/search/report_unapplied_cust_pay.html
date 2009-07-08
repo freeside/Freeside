@@ -1,0 +1,41 @@
+<% include('/elements/header.html', 'Unapplied Payments Aging Summary' ) %>
+%# 'Prepaid Balance Aging Summary', #???
+
+<FORM NAME="OneTrueForm" ACTION="unapplied_cust_pay.html" METHOD="GET">
+
+<TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+  <TR>
+    <TH BGCOLOR="#e8e8e8" COLSPAN=2 ALIGN="left">
+      <FONT SIZE="+1">Search options</FONT>
+    </TH>
+  </TR>
+
+  <% include( '/elements/tr-select-agent.html', 'disable_empty'=>0 ) %>
+
+  <% include( '/elements/tr-select-cust_main-status.html',
+                'label' => 'Customer Status'
+            )
+  %>
+  
+  <TR>
+    <TD ALIGN="right">Customers</TD>
+    <TD>
+      <INPUT TYPE="radio" NAME="all_customers" VALUE="1" onClick="if (this.checked) { document.OneTrueForm.days.disabled=true; document.OneTrueForm.days.style.backgroundColor = '#dddddd'; } else { document.OneTrueForm.days.disabled=false; document.OneTrueForm.days.style.backgroundColor = '#ffffff'; }">All customers (even those without an outstanding balance)<BR>
+      <INPUT TYPE="radio" NAME="all_customers" VALUE="0" CHECKED onClick="if ( ! this.checked ) { document.OneTrueForm.days.disabled=true; document.OneTrueForm.days.style.backgroundColor = '#dddddd'; } else { document.OneTrueForm.days.disabled=false; document.OneTrueForm.days.style.backgroundColor = '#ffffff'; }">Customers with a balance over <INPUT NAME="days" TYPE="text" SIZE=4 MAXLENGTH=3 VALUE="0"> days old
+    </TD>
+  </TR>
+
+</TABLE>
+
+<BR><INPUT TYPE="submit" VALUE="Get Report">
+</FORM>
+
+<% include('/elements/footer.html') %>
+
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+</%init>
