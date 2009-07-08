@@ -22,14 +22,16 @@ Example:
     #uncommon opt
     'aname'          => "target", # link NAME= value, useful for #targets
     'target'         => '_parent',
+    'style'          => 'css-attribute:value',
   } )
 
 </%doc>
 % if ($params->{'action'} && $label) {
 <A HREF="javascript:void(0);"
-   onClick="<% $onclick %>"
-   <% $params->{'aname'}  ? 'NAME="'.   $params->{'aname'}.  '"' : '' %>
-   <% $params->{'target'} ? 'TARGET="'. $params->{'target'}. '"' : '' %>
+   onClick="<% $onclick |n %>"
+   <% $params->{'aname'}  ? 'NAME="'.   $params->{'aname'}.  '"' : '' |n %>
+   <% $params->{'target'} ? 'TARGET="'. $params->{'target'}. '"' : '' |n %>
+   <% $params->{'style'}  ? 'STYLE="'.  $params->{'style'}.  '"' : '' |n %>
 ><% $label %></A>\
 % }
 <%init>

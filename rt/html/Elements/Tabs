@@ -59,20 +59,6 @@
 <a name="skipnav" id="skipnav" accesskey="8"></a>
 <%INIT>
 my $action;
-my $basetopactions = {
-#	A => { html => $m->scomp('/Elements/CreateTicket')	
-#		},
-	A => { html => $m->scomp('/Elements/FreesideNewCust')	
-		},
-	B => { html => $m->scomp('/Elements/FreesideSearch')	
-		},
-	C => { html => $m->scomp('/Elements/FreesideInvoiceSearch')	
-		},
-	D => { html => $m->scomp('/Elements/FreesideSvcSearch')	
-		},
-	E => { html => $m->scomp('/Elements/SimpleSearch') 
-		}
-	};
 my $basetabs = {
                   ' A'=> { title => 'Billing Main',
                            path  => &RT::URI::freeside::FreesideURL(),
@@ -111,9 +97,6 @@ if ($session{'CurrentUser'}->HasRight( Right => 'ModifySelf',
 
 if (!defined $toptabs) {
    $toptabs = $basetabs;
-}
-if (!defined $topactions) {
-   $topactions = $basetopactions;
 }
 
   require RT::URI::freeside;

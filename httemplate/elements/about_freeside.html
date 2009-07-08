@@ -1,0 +1,19 @@
+<FONT SIZE="-2" STYLE="color:#999999">
+  <% include('/elements/popup_link.html',
+               'action'      => $fsurl.'docs/about.html',
+               'label'       => 'Freeside',
+               'style'       => 'color:#999999',
+               'actionlabel' => 'About',
+               'width'       => 300,
+               'height'      => 360,
+               'color'       => '#7e0079',
+               'scrolling'   => 'no',
+            ) |n
+ %>&nbsp;v<% $FS::VERSION %><BR>
+ <A HREF="<% $conf->config('support-key') ? "http://www.freeside.biz/mediawiki/index.php/Supported:Documentation" : "http://www.freeside.biz/mediawiki/index.php/Freeside:1.9:Documentation" %>" TARGET="_blank" STYLE="color:#999999">Documentation</A>
+</FONT>
+<%init>
+
+my $conf = new FS::Conf;
+
+</%init>

@@ -33,8 +33,8 @@
 %
 %         my( $subhtml, $submenuname ) = submenu($url_or_submenu, $item);
 
-          <% $subhtml %>
-          myBar.add(new WebFXMenuButton("<% $item %>", null, "<% $tooltip %>", <% $submenuname %> ));
+          <% $subhtml |n %>
+          myBar.add(new WebFXMenuButton("<% $item %>", null, "<% $tooltip %>", <% $submenuname |n %> ));
 
 %     } else { 
     
@@ -56,7 +56,7 @@ my $fsurl = $opt{'freeside_baseurl'};
 
 my $curuser = $FS::CurrentUser::CurrentUser;
 
-#Active tickets not assigned to a customer
+#XXX Active tickets not assigned to a customer
 
 tie my %report_customers_lists, 'Tie::IxHash',
   'by customer number' => [ $fsurl. 'search/cust_main.cgi?browse=custnum', '' ],
@@ -180,6 +180,25 @@ tie my %report_rating, 'Tie::IxHash',
   'Time worked' => [ $fsurl.'search/report_rt_transaction.html', '' ],
 ;
 
+tie my %report_ticketing_statistics, 'Tie::IxHash',
+  'Tickets per day per Queue'         => [ $fsurl.'rt/RTx/Statistics/CallsQueueDay', 'View the number of tickets created, resolved or deleted in a specific Queue, over the requested period of days' ],
+  'Ticket status by Queue'            => [ $fsurl.'rt/RTx/Statistics/OpenStalled', 'View numbers of new, open and stalled tickets in a selected Queue' ],
+  'Tickets per day (multiple Queues)' => [ $fsurl.'rt/RTx/Statistics/CallsMultiQueue', 'View tickets created, resolved or deleted on in one or more Queues over a specified time period' ],
+  'Tickets per Day of Week'           => [ $fsurl.'rt/RTx/Statistics/DayOfWeek', 'View trends showing when tickets are created, resolved or deleted' ],
+  'Time to resolve'                   => [ $fsurl.'rt/RTx/Statistics/Resolution', 'View how long tickets take to be resolved by Queue' ],
+  'Time to resolve (scatter graph)'   => [ $fsurl.'rt/RTx/Statistics/TimeToResolve', 'View a detailed scatter graph of time to resolve tickets by Queue' ],
+;
+
+tie my %report_ticketing, 'Tie::IxHash',
+  'Resolved by owner'       => [ $fsurl.'rt/Tools/Reports/ResolvedByOwner.html', '' ],
+  'Resolved in date range'  => [ $fsurl.'rt/Tools/Reports/ResolvedByDates.html', '' ],
+  'Created in date range'   => [ $fsurl.'rt/Tools/Reports/CreatedByDates.html', '' ],
+  'separator'               => '',
+  'Statistics'              => [ \%report_ticketing_statistics, '' ],
+  'separator2'              => '',
+  'Advanced ticket reports' => [ $fsurl.'rt/Search/Build.html', 'List tickets by any criteria' ],
+;
+
 tie my %report_bill_event, 'Tie::IxHash',
   'All billing events' => [ $fsurl.'search/report_cust_event.html', 'All billing events for a date range' ],
   'Billing event errors' => [ $fsurl.'search/report_cust_event.html?failed=1', 'Failed credit cards, processor or printer problems, etc.' ],
@@ -189,6 +208,7 @@ tie my %report_bill_event, 'Tie::IxHash',
 
 tie my %report_financial, 'Tie::IxHash';
 if($curuser->access_right('Financial reports')) {
+
   %report_financial = (
     'Sales, Credits and Receipts' => [ $fsurl.'graph/report_money_time.html', 'Sales, credits and receipts summary graph' ],
     'Sales Report' => [ $fsurl.'graph/report_cust_bill_pkg.html', 'Sales report and graph (by agent, package class and/or date range)' ],
@@ -199,14 +219,16 @@ if($curuser->access_right('Financial reports')) {
     if $curuser->access_right('View customer pending payments');
   $report_financial{'Payment Batch Report'} = [ $fsurl.'search/pay_batch.html', 'Payment batches (by status and/or date range)' ]
     if $conf->exists('batch-enable') || $conf->config('batch-enable_payby');
+  $report_financial{'A/R Aging'} = [ $fsurl.'search/report_receivables.html', 'Accounts Receivable Aging report' ];
   $report_financial{'Prepaid Income'} = [ $fsurl.'search/report_prepaid_income.html', 'Prepaid income (unearned revenue)  report' ];
-  $report_financial{'A/R Aging'} = [ $fsurl.'search/report_receivables.html', 'Accounts Receivable Aging report' ];
-  $report_financial{'Sales Tax Liability'} = [ $fsurl.'search/report_tax.html', 'Sales tax liability report (old taxclass system)' ];
-  $report_financial{'Tax Liability'} = [ $fsurl.'search/report_newtax.html', 'Tax liability report (new tax products system)' ]
+  $report_financial{'Sales Tax Liability'} = [ $fsurl.'search/report_tax.html', 'Sales tax liability report (internal taxclass system)' ];
+  $report_financial{'Tax Liability'} = [ $fsurl.'search/report_newtax.html', 'Tax liability report (vendor data tax products system)' ]
     if $conf->exists('enable_taxproducts');
-}
-elsif($curuser->access_right('Receivables report')) {
+
+} elsif($curuser->access_right('Receivables report')) {
+
   $report_financial{'A/R Aging'} = [ $fsurl.'search/report_receivables.html', 'Accounts Receivable Aging report' ];
+
 } # else $report_financial contains nothing.
 
 tie my %report_menu, 'Tie::IxHash';
@@ -220,6 +242,9 @@ $report_menu{'Services'}    =  [ \%report_services,  'Services reports'  ]
   if $curuser->access_right('List services');
 $report_menu{'Usage'} =  [ \%report_rating,    'Usage reports'  ]
   if $curuser->access_right('List rating data');
+$report_menu{'Tickets'}   = [ \%report_ticketing, 'Ticket reports' ]
+  if $conf->config('ticket_system')
+  ;#&& FS::TicketSystem->access_right(\%session, 'Something');
 $report_menu{'Billing events'} =  [ \%report_bill_event, 'Billing events' ]
   if $curuser->access_right('Billing event reports');
 $report_menu{'Financial'}  = [ \%report_financial, 'Financial reports' ]
@@ -229,20 +254,20 @@ $report_menu{'SQL Query'}  = [ $fsurl.'search/report_sql.html', 'SQL Query' ]
   if $curuser->access_right('Raw SQL');
 
 tie my %tools_importing, 'Tie::IxHash',
-  'Import customers' => [ $fsurl.'misc/cust_main-import.cgi', '' ],
-  'Import customer comments from CSV file' => [ $fsurl.'misc/cust_main_note-import.html', '' ],
-  'Import one-time charges from CSV file' => [ $fsurl.'misc/cust_main-import_charges.cgi', '' ],
-  'Import payments from CSV file' => [ $fsurl.'misc/cust_pay-import.cgi', '' ],
-  'Import phone numbers (DIDs)' => [ $fsurl.'misc/phone_avail-import.html', '' ],
-  'Import Call Detail Records (CDRs) from CSV file' => [ $fsurl.'misc/cdr-import.html', '' ],
+  'Customers' => [ $fsurl.'misc/cust_main-import.cgi', '' ],
+  'Customer comments from CSV file' => [ $fsurl.'misc/cust_main_note-import.html', '' ],
+  'One-time charges from CSV file' => [ $fsurl.'misc/cust_main-import_charges.cgi', '' ],
+  'Payments from CSV file' => [ $fsurl.'misc/cust_pay-import.cgi', '' ],
+  'Phone numbers (DIDs)' => [ $fsurl.'misc/phone_avail-import.html', '' ],
+  'Call Detail Records (CDRs)' => [ $fsurl.'misc/cdr-import.html', '' ],
 #  'Import call rates and regions' => [ $fsurl.'misc/rate-import.html', '' ],
 ;
 if ( $conf->exists('enable_taxproducts') ) {
   if ( $conf->exists('taxdatadirectdownload') ) {
-    $tools_importing{'Import tax rates from vendor site'} =
+      $tools_importing{'Tax rates from vendor site'} =
       [ $fsurl.'misc/tax-fetch_and_import.cgi', '' ];
   } else {
-    $tools_importing{'Import tax rates from CSV files'} =
+    $tools_importing{'Tax rates from CSV files'} =
       [ $fsurl.'misc/tax-import.cgi', '' ];
   }
 }
@@ -256,6 +281,14 @@ tie my %tools_exporting, 'Tie::IxHash',
 #      <!-- or <A HREF="browse/nas-sqlradius.cgi">RADIUS</A>
 #    <BR> -->
 
+tie my %tools_ticketing, 'Tie::IxHash',
+  'Offline'      => [ $fsurl.'rt/Tools/Offline.html', '' ],
+  'My Day'       => [ $fsurl.'rt/Tools/MyDay.html', '' ],
+  'My Approvals' => [ $fsurl.'rt/Approvals/', '' ],
+;
+$tools_ticketing{'Cron Tool'} = [ $fsurl.'rt/Developer/CronTool/', '' ]
+  if $conf->exists('rt-crontool');
+
 tie my %tools_menu, 'Tie::IxHash', ();
 $tools_menu{'Quick payment entry'} =  [ $fsurl.'misc/batch-cust_pay.html', 'Enter multiple payments in a batch' ]
   if $curuser->access_right('Post payment batch');
@@ -264,6 +297,8 @@ $tools_menu{'Process payment batches'} = [ $fsurl.'search/pay_batch.cgi?magic=_d
      && $curuser->access_right('Process batches');
 $tools_menu{'Job Queue'} =  [ $fsurl.'search/queue.html', 'View pending job queue' ]
   if $curuser->access_right('Job queue');
+$tools_menu{'Ticketing'} = [ \%tools_ticketing, 'Ticketing tools' ]
+  if $conf->config('ticket_system');
 $tools_menu{'Time Queue'} =  [ $fsurl.'search/timeworked.html', 'View pending support time' ]
   if $curuser->access_right('Time queue');
 $tools_menu{'Importing'} =  [ \%tools_importing, 'Import tools' ]
@@ -272,66 +307,83 @@ $tools_menu{'Exporting'} =  [ \%tools_exporting, 'Export tools' ]
   if $curuser->access_right('Export');
 
 tie my %config_employees, 'Tie::IxHash',
-  'View/Edit employees' => [ $fsurl.'browse/access_user.html', 'Setup internal users' ],
-  'View/Edit employee groups' => [ $fsurl.'browse/access_group.html', 'Employee groups allow you to control access to the backend' ],
+  'Employees' => [ $fsurl.'browse/access_user.html', 'Setup internal users' ],
+  'Employee groups' => [ $fsurl.'browse/access_group.html', 'Employee groups allow you to control access to the backend' ],
 ;
 
-tie my %config_export_svc_pkg, 'Tie::IxHash', ();
+tie my %config_export_svc, 'Tie::IxHash', ();
 if ( $curuser->access_right('Configuration') ) {
-  $config_export_svc_pkg{'View/Edit exports'} = [ $fsurl.'browse/part_export.cgi', 'Provisioning services to external machines, databases and APIs' ];
-  $config_export_svc_pkg{'View/Edit service definitions'} = [ $fsurl.'browse/part_svc.cgi', 'Services are items you offer to your customers' ];
+  $config_export_svc{'Exports'} = [ $fsurl.'browse/part_export.cgi', 'Provisioning services to external machines, databases and APIs' ];
+  $config_export_svc{'Service definitions'} = [ $fsurl.'browse/part_svc.cgi', 'Services are items you offer to your customers' ];
 }
-$config_export_svc_pkg{'View/Edit package definitions'} = [ $fsurl.'browse/part_pkg.cgi', 'One or more services are grouped together into a package and given pricing information. Customers purchase packages, not services' ]
+
+tie my %config_pkg, 'Tie::IxHash', ();
+$config_pkg{'Package definitions'} = [ $fsurl.'browse/part_pkg.cgi', 'One or more services are grouped together into a package and given pricing information. Customers purchase packages, not services' ]
   if    $curuser->access_right('Edit package definitions')
      || $curuser->access_right('Edit global package definitions');
 if ( $curuser->access_right('Configuration') ) {
-  $config_export_svc_pkg{'View/Edit package categories'} =  [ $fsurl.'browse/pkg_category.html', 'Package categories define groups of package classes, for reporting and convenience purposes.' ];
-  $config_export_svc_pkg{'View/Edit package tax classes'} =  [ $fsurl.'browse/pkg_class.html', 'Package classes define groups of packages, for reporting and convenience purposes.' ];
-  $config_export_svc_pkg{'View/Edit package report classes'} =  [ $fsurl.'browse/part_pkg_report_option.html', 'Package classes define optional groups of packages for reporting purposes.' ];
-  $config_export_svc_pkg{'View/Edit cancel reason types'} = [ $fsurl.'browse/reason_type.html?class=C', 'Cancel reason types define groups of reasons, for reporting and convenience purposes.' ];
-  $config_export_svc_pkg{'View/Edit cancel reasons'} = [ $fsurl.'browse/reason.html?class=C', 'Cancel reasons explain why a service was cancelled.' ];
-  $config_export_svc_pkg{'View/Edit suspend reason types'} = [ $fsurl.'browse/reason_type.html?class=S', 'Suspend reason types define groups of reasons, for reporting and convenience purposes.' ];
-  $config_export_svc_pkg{'View/Edit suspend reasons'} = [ $fsurl.'browse/reason.html?class=S', 'Suspend reasons explain why a service was suspended.' ];
+  $config_pkg{'Package categories'} =  [ $fsurl.'browse/pkg_category.html', 'Package categories define groups of package classes, for reporting and convenience purposes.' ];
+  $config_pkg{'Package tax classes'} =  [ $fsurl.'browse/pkg_class.html', 'Package classes define groups of packages, for reporting and convenience purposes.' ];
+  $config_pkg{'Package report classes'} =  [ $fsurl.'browse/part_pkg_report_option.html', 'Package classes define optional groups of packages for reporting purposes.' ];
+  $config_pkg{'Cancel reason types'} = [ $fsurl.'browse/reason_type.html?class=C', 'Cancel reason types define groups of reasons, for reporting and convenience purposes.' ];
+  $config_pkg{'Cancel reasons'} = [ $fsurl.'browse/reason.html?class=C', 'Cancel reasons explain why a service was cancelled.' ];
+  $config_pkg{'Suspend reason types'} = [ $fsurl.'browse/reason_type.html?class=S', 'Suspend reason types define groups of reasons, for reporting and convenience purposes.' ];
+  $config_pkg{'Suspend reasons'} = [ $fsurl.'browse/reason.html?class=S', 'Suspend reasons explain why a service was suspended.' ];
 }
 
 tie my %config_agent, 'Tie::IxHash',
-  'View/Edit agent types' => [ $fsurl.'browse/agent_type.cgi', 'Agent types define groups of package definitions that you can then assign to particular agents' ],
-  'View/Edit agents'      => [ $fsurl.'browse/agent.cgi', 'Agents are resellers of your service. Agents may be limited to a subset of your full offerings (via their type)' ],
-  'View/Edit agent payment gateways'         => [ $fsurl.'browse/payment_gateway.html', 'Credit card and electronic check processors for agent overrides' ];
+  'Agent types' => [ $fsurl.'browse/agent_type.cgi', 'Agent types define groups of package definitions that you can then assign to particular agents' ],
+  'Agents'      => [ $fsurl.'browse/agent.cgi', 'Agents are resellers of your service. Agents may be limited to a subset of your full offerings (via their type)' ],
+  'Agent payment gateways'         => [ $fsurl.'browse/payment_gateway.html', 'Credit card and electronic check processors for agent overrides' ];
 ;
 
 tie my %config_billing_rates, 'Tie::IxHash',
-  'View/Edit rate plans' => [ $fsurl.'browse/rate.cgi', 'Manage rate plans' ],
-  'View/Edit regions and prefixes' => [ $fsurl.'browse/rate_region.html', 'Manage regions and prefixes' ],
-  'View/Edit usage classes'  => [ $fsurl.'browse/usage_class.html', 'Usage classes define groups of usage for taxation purposes.' ],
-  'Edit rates with Excel' => [ $fsurl.'misc/rate_edit_excel.html', 'Download and edit rates with Excel, then upload changes.' ],
+  'Rate plans' => [ $fsurl.'browse/rate.cgi', 'Manage rate plans' ],
+  'Regions and prefixes' => [ $fsurl.'browse/rate_region.html', 'Manage regions and prefixes' ],
+  'Usage classes'  => [ $fsurl.'browse/usage_class.html', 'Usage classes define groups of usage for taxation purposes.' ],
+  'Edit rates with Excel' => [ $fsurl.'misc/rate_edit_excel.html', 'Download and edit rates with Excel, then upload changes.' ], #"Edit with Excel" ?
 ;
 
 tie my %config_billing, 'Tie::IxHash';
-#  'View/Edit payment gateways'         => [ $fsurl.'browse/payment_gateway.html', 'Credit card and electronic check processors' ];
-$config_billing{'View/Edit billing events'} = [ $fsurl.'browse/part_event.html', 'Billing actions for customers, invoices and packages' ]
+#  'Payment gateways'         => [ $fsurl.'browse/payment_gateway.html', 'Credit card and electronic check processors' ];
+$config_billing{'Billing events'} = [ $fsurl.'browse/part_event.html', 'Billing actions for customers, invoices and packages' ]
     if $curuser->access_right('Edit billing events')
     || $curuser->access_right('Edit global billing events');
 if ( $curuser->access_right('Configuration') ) {
-  $config_billing{'View/Edit invoice events'}         = [ $fsurl.'browse/part_bill_event.cgi', 'Deprecated, old-style actions for overdue invoices' ];
-  $config_billing{'View/Edit invoice templates'}      = [ $fsurl.'browse/invoice_template.html', 'Edit templates for HTML, plaintext and typeset invoices' ];
-  $config_billing{'View/Edit prepaid cards'}          = [ $fsurl.'search/prepay_credit.html', 'View outstanding cards, generate new cards' ];
-  $config_billing{'View/Edit call rates and regions'} = [ \%config_billing_rates, 'Manage rate plans, regions and prefixes for VoIP and call billing' ];
-  $config_billing{'View/Edit locales and tax rates (old tax class system)'}  = [ $fsurl.'browse/cust_main_county.cgi', 'Change tax rates, or break down a country into states, or a state into counties and assign different tax rates to each' ];
-  $config_billing{'View/Edit tax rates (new tax products system)'}  = [ $fsurl.'browse/tax_rate.cgi', 'Edit tax rates for the new tax products system' ];
-  $config_billing{'View/Edit tax classes'}  = [ $fsurl.'browse/part_pkg_taxclass.html', 'Edit tax classes' ]
-    if $conf->exists('enable_taxclasses');
-  $config_billing{'View/Edit credit reason types'}  = [ $fsurl.'browse/reason_type.html?class=R', 'Credit reason types define groups of reasons, for reporting and convenience purposes.' ];
-  $config_billing{'View/Edit credit reasons'}  = [ $fsurl.'browse/reason.html?class=R', 'Credit reasons explain why a credit was issued.' ];
+  #$config_billing{'Invoice events'}         = [ $fsurl.'browse/part_bill_event.cgi', 'Deprecated, old-style actions for overdue invoices' ];
+  $config_billing{'Invoice templates'}      = [ $fsurl.'browse/invoice_template.html', 'Edit templates for HTML, plaintext and typeset invoices' ];
+  $config_billing{'Prepaid cards'}          = [ $fsurl.'search/prepay_credit.html', 'View outstanding cards, generate new cards' ];
+  $config_billing{'Call rates and regions'} = [ \%config_billing_rates, 'Manage rate plans, regions and prefixes for VoIP and call billing' ];
+
+  my $config_taxes_name = 'Locales and tax rates'.
+                          ( $conf->exists('enable_taxproducts')
+                            ? ' (internal tax class system)'
+                            : ''
+                          );
+  $config_billing{$config_taxes_name}  = [ $fsurl.'browse/cust_main_county.cgi', 'Change tax rates, or break down a country into states, or a state into counties and assign different tax rates to each' ];
+  $config_billing{'Tax rates (vendor data tax products system)'}  = [ $fsurl.'browse/tax_rate.cgi', 'Edit tax rates for the vendor data tax products system' ]
+     if $conf->exists('enable_taxproducts');
+
+  $config_billing{'Credit reason types'}  = [ $fsurl.'browse/reason_type.html?class=R', 'Credit reason types define groups of reasons, for reporting and convenience purposes.' ];
+  $config_billing{'Credit reasons'}  = [ $fsurl.'browse/reason.html?class=R', 'Credit reasons explain why a credit was issued.' ];
 }
 
+tie my %config_ticketing, 'Tie::IxHash',
+  'Ticketing Users'      => [ $fsurl.'rt/Admin/Users', 'View/Edit ticketing users' ], #XXX to be unified
+  'Ticketing Groups'     => [ $fsurl.'rt/Admin/Groups', 'View/Edit ticketing groups' ], #XXX to be unified
+  'Ticketing Queues'     => [ $fsurl.'rt/Admin/Queues', '' ], 
+  'Ticket Custom Fields' => [ $fsurl.'rt/Admin/CustomFields', '' ], 
+  'Ticketing Global'     => [ $fsurl.'rt/Admin/Global', 'Global ticketing configuration' ], 
+  #'Ticketing Tools'     => [ $fsurl.'rt/Admin/Tools', '' ], 
+;
+
 tie my %config_dialup, 'Tie::IxHash',
-  'View/Edit access numbers' => [ $fsurl.'browse/svc_acct_pop.cgi', 'Points of Presence' ],
+  'Access numbers' => [ $fsurl.'browse/svc_acct_pop.cgi', 'Points of Presence' ],
 ;
 
 tie my %config_broadband, 'Tie::IxHash',
-  'View/Edit routers'        => [ $fsurl.'browse/router.cgi', 'Broadband access routers' ],
-  'View/Edit address blocks' => [ $fsurl.'browse/addr_block.cgi', 'Manage address blocks and block assignments to broadband routers' ],
+  'Routers'        => [ $fsurl.'browse/router.cgi', 'Broadband access routers' ],
+  'Address blocks' => [ $fsurl.'browse/addr_block.cgi', 'Manage address blocks and block assignments to broadband routers' ],
 ;
 
 tie my %config_phone, 'Tie::IxHash',
@@ -339,13 +391,13 @@ tie my %config_phone, 'Tie::IxHash',
 ;
 
 tie my %config_misc, 'Tie::IxHash';
-$config_misc{'View/Edit advertising sources'} = [ $fsurl.'browse/part_referral.html', 'Where a customer heard about your service.  Tracked for informational purposes' ]
+$config_misc{'Advertising sources'} = [ $fsurl.'browse/part_referral.html', 'Where a customer heard about your service.  Tracked for informational purposes' ]
   if $curuser->access_right('Edit advertising sources')
   || $curuser->access_right('Edit global advertising sources');
 if ( $curuser->access_right('Configuration') ) {
-  $config_misc{'View/Edit virtual fields'} = [ $fsurl.'browse/part_virtual_field.cgi', 'Locally defined fields', ];
-  $config_misc{'View/Edit message catalog'} = [ $fsurl.'browse/msgcat.cgi', 'Change error messages and other customizable labels' ];
-  $config_misc{'View/Edit inventory classes and inventory'} = [ $fsurl.'browse/inventory_class.html', 'Setup inventory classes and stock inventory' ];
+  $config_misc{'Virtual fields'} = [ $fsurl.'browse/part_virtual_field.cgi', 'Locally defined fields', ];
+  $config_misc{'Message catalog'} = [ $fsurl.'browse/msgcat.cgi', 'Change error messages and other customizable labels' ];
+  $config_misc{'Inventory classes and inventory'} = [ $fsurl.'browse/inventory_class.html', 'Setup inventory classes and stock inventory' ];
 }
 
 tie my %config_menu, 'Tie::IxHash';
@@ -356,8 +408,9 @@ if ( $curuser->access_right('Configuration' ) ) {
     'Employees'     => [ \%config_employees, '' ],
   );
 }
-$config_menu{'Provisioning, services and packages'} =
-    [ \%config_export_svc_pkg, ''    ]
+$config_menu{'Provisioning and services'} = [ \%config_export_svc, '' ]
+  if $curuser->access_right('Configuration' );
+$config_menu{'Packages'} = [ \%config_pkg, '' ]
   if    $curuser->access_right('Configuration' )
      || $curuser->access_right('Edit package definitions')
      || $curuser->access_right('Edit global package definitions');
@@ -366,6 +419,9 @@ $config_menu{'Resellers'} = [ \%config_agent, ''    ]
 $config_menu{'Billing'} = [ \%config_billing, ''    ]
   if $curuser->access_right('Edit billing events')
   || $curuser->access_right('Edit global billing events');
+$config_menu{'Ticketing'} = [ \%config_ticketing, '' ]
+  if $conf->config('ticket_system')
+  && FS::TicketSystem->access_right(\%session, 'ShowConfigTab');
 $config_menu{'Dialup'}  = [ \%config_dialup, ''    ]
   if ( $curuser->access_right('Dialup configuration') );
 $config_menu{'Fixed (username-less) broadband'} = [ \%config_broadband, ''    ]
@@ -445,7 +501,7 @@ sub submenu {
 
     } keys %$submenu )
   ). "\n".
-  "myMenu$menunum.width = 280;\n",
+  "myMenu$menunum.width = 256;\n",
 
   "myMenu$menunum";
 

@@ -31,4 +31,5 @@ html/Elements/FreesideNewCust
 html/Elements/FreesideSearch
 html/Elements/FreesideSvcSearch
 
-
+ html/User/Prefs.html
+ html/Prefs/SearchOptions.html

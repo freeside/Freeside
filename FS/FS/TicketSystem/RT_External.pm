@@ -349,5 +349,10 @@ sub transaction_status {
   $self->_retrieve_single_value($sql);
 }
 
+sub access_right {
+  warn "WARNING: no access rights available w/ external RT";
+  0;
+}
+
 1;
 

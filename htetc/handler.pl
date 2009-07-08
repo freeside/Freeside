@@ -69,6 +69,8 @@ sub handler
 
     } else {
 
+      RT::Init() if $RT::VERSION; #for lack of something else
+
       $ah->interp($fs_interp);
 
     }

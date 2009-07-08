@@ -48,49 +48,16 @@
   <BODY <% $menu_position eq 'left' ? qq( BACKGROUND="${fsurl}images/background-cheat.png" ) : ' BGCOLOR="#e8e8e8" ' %> <% $etc |n %> STYLE="margin-top:0; margin-bottom:0; margin-left:0; margin-right:0">
     <table width="100%" CELLPADDING=0 CELLSPACING=0 STYLE="padding-left:0; padding-right:4">
       <tr>
-        <td rowspan=2 BGCOLOR="#ffffff"><IMG BORDER=0 ALT="freeside" SRC="<%$fsurl%>view/REAL_logo.cgi"></td>
-        <td align=left rowspan=2 BGCOLOR="#ffffff"> <!-- valign="top" -->
+        <td BGCOLOR="#ffffff"><IMG BORDER=0 ALT="freeside" HEIGHT="36" SRC="<%$fsurl%>view/REAL_logo.cgi"></td>
+        <td align=left BGCOLOR="#ffffff"> <!-- valign="top" -->
           <font size=6><% $company_name || 'ExampleCo' %></font>
         </td>
-        <td align=right valign=top BGCOLOR="#ffffff"><FONT SIZE="-1">Logged in as <b><% getotaker %>&nbsp;</b><br></FONT><FONT SIZE="-2"><a href="<%$fsurl%>pref/pref.html">Preferences</a>&nbsp;<BR></FONT>
-        </td>
-      </tr>
-      <tr>
-        <td align=right valign=bottom BGCOLOR="#ffffff">
-  
-          <table>
-            <tr>
-              <td align=right BGCOLOR="#ffffff">
-                <FONT SIZE="-2">
-                  <% include('/elements/popup_link.html',
-                               'action'      => $fsurl.'docs/about.html',
-                               'label'       => 'Freeside',
-                               'actionlabel' => 'About',
-                               'width'       => 300,
-                               'height'      => 360,
-                               'color'       => '#7e0079',
-                               'scrolling'   => 'no',
-                            ) |n
-                 %>&nbsp;v<% $FS::VERSION %><BR>
-                 <A HREF="<% $conf->config('support-key') ? "http://www.freeside.biz/mediawiki/index.php/Supported:Documentation" : "http://www.freeside.biz/mediawiki/index.php/Freeside:1.9:Documentation" %>" TARGET="_blank">Documentation</A><BR>
-                </FONT>
-              </td>
-% if ( $conf->config('ticket_system') eq 'RT_Internal' ) { 
-% eval "use RT;"; 
-
-                <td bgcolor=#000000></td>
-                <td align=left>
-                  <FONT SIZE="-2">
-                   <A HREF="http://www.bestpractical.com/rt" TARGET="_blank">RT<A>&nbsp;v<% $RT::VERSION %><BR>
-                   <A HREF="http://wiki.bestpractical.com/" TARGET="_blank">Documentation</A><BR>
-                  </FONT>
-                </td>
-% } 
-
-  
-            </tr>
-          </table>
-  
+        <td align=right valign=top BGCOLOR="#ffffff"><FONT SIZE="-1">Logged in as <b><% getotaker %>&nbsp;</b><br></FONT><FONT SIZE="-2"><a href="<%$fsurl%>pref/pref.html">Preferences</a>
+%         if ( $conf->config("ticket_system")
+%              && FS::TicketSystem->access_right(\%session, 'ModifySelf') ) {
+            | <a href="<%$fsurl%>rt/User/Prefs.html">Ticketing preferences</a>
+%         }
+          <BR></FONT>
         </td>
       </tr>
     </table>
@@ -136,10 +103,20 @@ input.fsblackbuttonselected {
 
       <TR>
 
-        <TD COLSPAN="6" WIDTH="100%" STYLE="padding:0">
+        <TD COLSPAN="4" WIDTH="100%" STYLE="padding:0" BGCOLOR="#000000">
           <SCRIPT TYPE="text/javascript">
             document.write(myBar);
           </SCRIPT>
+        </TD>
+
+
+        <TD COLSPAN="2" ALIGN="right" STYLE="padding:0px 8px 0px 0px" BGCOLOR="#000000">
+          <TABLE CELLSPACING=0 CELLPADDING=0 BGCOLOR="#333333" BORDER=1>
+            <TR>
+              <TD ALIGN="right" STYLE="padding-right:3px;padding-bottom:1px;border-right:1px solid #999999"><% include('/elements/about_freeside.html') |n %></TD>
+              <TD ALIGN="left" STYLE="padding-left:3px;padding-bottom:1px"><% include('/elements/about_rt.html') |n %></TD>
+            </TR>
+          </TABLE>
         </TD>
 
       </TR>
@@ -249,6 +226,15 @@ input.fsblackbuttonselected {
           </SCRIPT>
           <BR>
           <IMG SRC="<%$fsurl%>images/32clear.gif" HEIGHT="1" WIDTH="154">
+
+          <TABLE CELLSPACING=0 CELLPADDING=0 BGCOLOR="#000000" WIDTH="100%">
+            <TR>
+              <TD ALIGN="left" STYLE="padding-bottom:1px;border-bottom:1px solid #999999"><% include('/elements/about_freeside.html') %></TD>
+            </TR>
+            <TR>
+              <TD ALIGN="right" STYLE="padding-bottom:1px"><% include('/elements/about_rt.html') %></TD>
+            </TR>
+          </TABLE>
 
         </TD>
         <TD STYLE="padding:0" HEIGHT="100%" WIDTH=13 VALIGN="top"><IMG WIDTH="13" HEIGHT="100%" BORDER=0 ALT="" SRC="<%$fsurl%>images/black-gray-side.png"></TD>

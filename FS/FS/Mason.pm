@@ -384,6 +384,9 @@ sub mason_interps {
                         ${$_[0]} = "'". ${$_[0]}. "'";
                       }
                     },
+    compiler     => HTML::Mason::Compiler::ToObject->new(
+                      allow_globals        => [qw(%session)],
+                    ),
   );
 
   my $rt_interp = new HTML::Mason::Interp (

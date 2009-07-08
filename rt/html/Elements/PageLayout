@@ -45,44 +45,19 @@
 %# those contributions and any derivatives thereof.
 %# 
 %# END BPS TAGGED BLOCK }}}
-
-<table class="black" border=0 cellspacing=0 cellpadding=0 width="100%">
-<tr>
-  <TD colspan=5 WIDTH="100%" STYLE="padding:0"><IMG BORDER=0 ALT="" SRC="<% $RT::URI::freeside::URL %>/images/black-gradient.png" HEIGHT="13" WIDTH="100%"></TD>
-</tr>
-<tr>
-
-  <div id="topactions">
-%  my $notfirst = 0; foreach my $action (sort keys %{$topactions}) {
-    <span class="topaction">
-    <td class="blackright" ALIGN="right" VALIGN="center">
-% $m->out($topactions->{"$action"}->{'html'});
-    </td>
-    </span>
-% }
-  </div>
-
-</tr>
-</table>
-
-%# End of div#quickbar from /Elements/Header
-</div>
-
 <table border=0 cellspacing=0 cellpadding=0 width="100%" height="100%">
-  <TR>
-    <TD STYLE="padding:0" WIDTH="100%"><IMG BORDER=0 ALT="" SRC="<% $RT::URI::freeside::URL %>/images/black-gray-top.png" HEIGHT="13" WIDTH="100%"></TD>
-    </TR>
     <TR HEIGHT="100%">
       <TD>
 
-% if ( $show_menu ) {
+% if (0) { ##FREESIDE MENUS INSTEAD## if ( $show_menu ) {
+%# if ( $show_menu ) {
 <div id="nav">
 <& /Elements/Menu, toptabs => $toptabs, current_toptab => $current_toptab &>
 </div>
 % }
 
 <div id="header">
-  <h1><%$title%></h1>
+%#already shown  <h1><%$title%></h1>
 
 % my $sep       = 0;
 % my $postsep   = 0;

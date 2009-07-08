@@ -2881,6 +2881,13 @@ worry that config_items is freeside-specific and icky.
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'rt-crontool',
+    'section'     => '',
+    'description' => 'Enable the RT CronTool extension.',
+    'type'        => 'checkbox',
+  },
+
 );
 
 1;
