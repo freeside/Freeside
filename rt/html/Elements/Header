@@ -95,10 +95,10 @@ $head .= <<END;
 END
 
 if ( $Focus ) {
-    $head .= onLoadHook("focusElementById('$Focus')");
+    $head .= qq{    onLoadHook("focusElementById('$Focus')");\n};
 }
 if ( $onload ) {
-    $head .= onLoadHook("$onload");
+    $head .= qq{    onLoadHook("$onload");\n};
 }
 
 $head .= '--></script>';
