@@ -88,7 +88,7 @@ Example:
 my %opt = @_;
 
 #actually need to auto-generate other things too for a passed-in ranges to work
-my @ranges = $opt{'ranges'} ? @{ delete($opt{'ranges'}) } : [
+my $ranges = $opt{'ranges'} ? delete($opt{'ranges'}) : [
   [  0, 30 ],
   [ 30, 60 ],
   [ 60, 90 ],
@@ -99,7 +99,7 @@ my @ranges = $opt{'ranges'} ? @{ delete($opt{'ranges'}) } : [
 my $range_sub = delete($opt{'range_sub'}); #or die
 
 #my $range_cols = join(',', map &{$range_sub}( @$_ ), @ranges );
-my $range_cols = join(',', map call_range_sub($range_sub, @$_ ), @ranges );
+my $range_cols = join(',', map call_range_sub($range_sub, @$_ ), @$ranges );
 
 my $select_count_pkgs = FS::cust_main->select_count_pkgs_sql;
 
@@ -157,7 +157,7 @@ my $sql_query = {
   'select'    => join(',',
                    #'cust_main.*',
                    'custnum',
-                   $owed_cols,
+                   $range_cols,
                    $packages_cols,
                    FS::UI::Web::cust_sql_fields(),
                  ),
@@ -167,7 +167,7 @@ my $sql_query = {
 
 my $total_sql =
   "SELECT ".
-      join(',', map call_range_sub( $range_sub, @$_, 'sum'=>1 ), @ranges).
+      join(',', map call_range_sub( $range_sub, @$_, 'sum'=>1 ), @$ranges).
     " FROM cust_main $where";
 
 my $total_sth = dbh->prepare($total_sql) or die dbh->errstr;
@@ -211,7 +211,7 @@ sub call_range_sub {
 
 }
 
-sub format_range { #closures help alot
+sub format_rangecol { #closures help alot
   my $range = shift;
   sub { sprintf( $money_char.'%.2f', shift->get("rangecol_$range") ) };
 }
