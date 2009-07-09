@@ -21,8 +21,8 @@
   <TR>
     <TD ALIGN="right">Customers</TD>
     <TD>
-      <INPUT TYPE="radio" NAME="all_customers" VALUE="1" onClick="if (this.checked) { document.OneTrueForm.days.disabled=true; document.OneTrueForm.days.style.backgroundColor = '#dddddd'; } else { document.OneTrueForm.days.disabled=false; document.OneTrueForm.days.style.backgroundColor = '#ffffff'; }">All customers (even those without an outstanding balance)<BR>
-      <INPUT TYPE="radio" NAME="all_customers" VALUE="0" CHECKED onClick="if ( ! this.checked ) { document.OneTrueForm.days.disabled=true; document.OneTrueForm.days.style.backgroundColor = '#dddddd'; } else { document.OneTrueForm.days.disabled=false; document.OneTrueForm.days.style.backgroundColor = '#ffffff'; }">Customers with a balance over <INPUT NAME="days" TYPE="text" SIZE=4 MAXLENGTH=3 VALUE="0"> days old
+      <INPUT TYPE="radio" NAME="all_customers" VALUE="1" onClick="if (this.checked) { document.OneTrueForm.days.disabled=true; document.OneTrueForm.days.style.backgroundColor = '#dddddd'; } else { document.OneTrueForm.days.disabled=false; document.OneTrueForm.days.style.backgroundColor = '#ffffff'; }">All customers (even those without unapplied payments)<BR>
+      <INPUT TYPE="radio" NAME="all_customers" VALUE="0" CHECKED onClick="if ( ! this.checked ) { document.OneTrueForm.days.disabled=true; document.OneTrueForm.days.style.backgroundColor = '#dddddd'; } else { document.OneTrueForm.days.disabled=false; document.OneTrueForm.days.style.backgroundColor = '#ffffff'; }">Customers with unapplied payments <INPUT NAME="days" TYPE="text" SIZE=4 MAXLENGTH=3 VALUE="0"> days old
     </TD>
   </TR>
 

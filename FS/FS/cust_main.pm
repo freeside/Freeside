@@ -7519,6 +7519,32 @@ sub balance_date_sql {
 
 }
 
+=item unapplied_payments_date_sql START_TIME [ END_TIME ]
+
+Returns an SQL fragment to retreive the total unapplied payments for this
+customer, only considering invoices with date earlier than START_TIME, and
+optionally not later than END_TIME.
+
+Times are specified as SQL fragments or numeric
+UNIX timestamps; see L<perlfunc/"time">).  Also see L<Time::Local> and
+L<Date::Parse> for conversion functions.  The empty string can be passed
+to disable that time constraint completely.
+
+Available options are:
+
+=cut
+
+sub unapplied_payments_date_sql {
+  my( $class, $start, $end, ) = @_;
+
+  my $unapp_pay    = FS::cust_pay->unapplied_sql;
+
+  my $pay_where = $class->_money_table_where( 'cust_pay', $start, $end,
+                                                          'unapplied_date'=>1 );
+
+  " ( SELECT COALESCE(SUM($unapp_pay), 0) FROM cust_pay $pay_where ) ";
+}
+
 =item _money_table_where TABLE START_TIME [ END_TIME [ OPTION => VALUE ... ] ]
 
 Helper method for balance_date_sql; name (and usage) subject to change

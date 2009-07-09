@@ -219,6 +219,7 @@ if($curuser->access_right('Financial reports')) {
     if $curuser->access_right('View customer pending payments');
   $report_financial{'Payment Batch Report'} = [ $fsurl.'search/pay_batch.html', 'Payment batches (by status and/or date range)' ]
     if $conf->exists('batch-enable') || $conf->config('batch-enable_payby');
+  $report_financial{'Unapplied payment Aging'} = [ $fsurl.'search/report_unapplied_cust_pay.html', 'Unapplied payment aging report' ];
   $report_financial{'A/R Aging'} = [ $fsurl.'search/report_receivables.html', 'Accounts Receivable Aging report' ];
   $report_financial{'Prepaid Income'} = [ $fsurl.'search/report_prepaid_income.html', 'Prepaid income (unearned revenue)  report' ];
   $report_financial{'Sales Tax Liability'} = [ $fsurl.'search/report_tax.html', 'Sales tax liability report (internal taxclass system)' ];
