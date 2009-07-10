@@ -752,6 +752,7 @@ sub _cdr_date_parse {
   my %options = @_;
 
   return '' unless length($date); #that's okay, it becomes NULL
+  return '' if $date eq 'NA'; #sansay
 
   if ( $date =~ /^([a-z]{3})\s+([a-z]{3})\s+(\d{1,2})\s+(\d{1,2}):(\d{1,2}):(\d{1,2})\s+(\d{4})$/i && $7 > 1970 ) {
     my $time = str2time($date);
