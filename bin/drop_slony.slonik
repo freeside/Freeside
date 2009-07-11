@@ -1,0 +1,9 @@
+cluster name = freeside;
+
+node 1 admin conninfo = 'dbname=freeside host=XXX user=postgres';
+node 2 admin conninfo = 'dbname=freeside host=XXX user=postgres';
+
+drop set (id=1, origin=1);
+
+uninstall node ( id=1 );
+
