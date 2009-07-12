@@ -371,11 +371,11 @@ if ( $curuser->access_right('Configuration') ) {
 
 tie my %config_ticketing, 'Tie::IxHash',
   'Ticketing Users'      => [ $fsurl.'rt/Admin/Users', 'View/Edit ticketing users' ], #XXX to be unified
-  'Ticketing Groups'     => [ $fsurl.'rt/Admin/Groups', 'View/Edit ticketing groups' ], #XXX to be unified
-  'Ticketing Queues'     => [ $fsurl.'rt/Admin/Queues', '' ], 
-  'Ticket Custom Fields' => [ $fsurl.'rt/Admin/CustomFields', '' ], 
-  'Ticketing Global'     => [ $fsurl.'rt/Admin/Global', 'Global ticketing configuration' ], 
-  #'Ticketing Tools'     => [ $fsurl.'rt/Admin/Tools', '' ], 
+  'Ticketing Groups'     => [ $fsurl.'rt/Admin/Groups', 'View/Edit ticketing groups and group membership' ], #XXX to be unified
+  'Ticketing Queues'     => [ $fsurl.'rt/Admin/Queues', 'View/Edit ticketing queues and queue-specific properties' ], 
+  'Ticket Custom Fields' => [ $fsurl.'rt/Admin/CustomFields', 'View/Edit ticketing custom fields' ], 
+  'Ticketing Global'     => [ $fsurl.'rt/Admin/Global', 'View/Edit ticketing configuration applicable to all queues' ], 
+  #"System Configuraiton"?  useless, just makes people report errors about missing Module::Versions::Report #'Ticketing Tools'     => [ $fsurl.'rt/Admin/Tools', '' ], 
 ;
 
 tie my %config_dialup, 'Tie::IxHash',
