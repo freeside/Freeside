@@ -2342,7 +2342,7 @@ sub ut_enum {
   my( $self, $field, $choices ) = @_;
   foreach my $choice ( @$choices ) {
     if ( $self->getfield($field) eq $choice ) {
-      $self->setfield($choice);
+      $self->setfield($field, $choice);
       return '';
     }
   }
