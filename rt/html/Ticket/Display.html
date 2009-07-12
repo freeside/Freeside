@@ -46,11 +46,11 @@
 %# 
 %# END BPS TAGGED BLOCK }}}
 <& /Elements/Header, 
-    Title => loc("#[_1]: [_2]", $TicketObj->Id, $TicketObj->Subject) &>
+    Title => loc("Ticket #[_1]: [_2]", $TicketObj->Id, $TicketObj->Subject) &>
 <& /Ticket/Elements/Tabs, 
     Ticket => $TicketObj, 
     current_tab => 'Ticket/Display.html?id='.$TicketObj->id,
-    Title => loc("#[_1]: [_2]", $TicketObj->Id, $TicketObj->Subject) &>
+    Title => loc("Ticket #[_1]: [_2]", $TicketObj->Id, $TicketObj->Subject) &>
 
 <& /Elements/ListActions, actions => \@Actions &>
 <& /Elements/Callback, _CallbackName => 'BeforeShowSummary', Ticket => $TicketObj, %ARGS &>

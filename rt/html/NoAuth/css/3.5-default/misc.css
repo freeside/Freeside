@@ -46,7 +46,8 @@
 %# 
 %# END BPS TAGGED BLOCK }}}
 body {
-    font-family: Verdana, sans-serif;
+    /* font-family: Verdana, sans-serif; */
+    font-family: Arial, Verdana, Helvetica, sans-serif;
     font-size: 76%;
     margin: 0;
     /* background-color: white; */
@@ -74,9 +75,11 @@ body {
 .evenline { background-color: white; }
 .oddline { background-color: #ddd; }
 
+/*
 td {
     padding: 0.1em 0.5em 0.1em 0.5em;
 }
+*/
 
 .clear { clear: both; }
 

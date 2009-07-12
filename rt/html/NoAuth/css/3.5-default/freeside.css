@@ -1,77 +1,3 @@
-.black {
-        background-color: #000000;
-        color: #ffffff;
-        background-position: left top;
-        vertical-align: top;
-        text-align: left;
-}
-
-.blackright { 
-        background-color: #000000;
-        color: #ffffff;
-        background-position: left top;
-        vertical-align: center;
-        text-align: right;
-        font-size:16px;
-        padding-right:4px
-}
-
-input.fsblackbutton {
-        background-color:#333333;
-        color: #ffffff;
-        border:1px solid;
-        border-top-color:#cccccc;
-        border-left-color:#cccccc;
-        border-right-color:#aaaaaa;
-        border-bottom-color:#aaaaaa;
-        font-family: Arial, Verdana, Helvetica, sans-serif;
-        font-weight:bold;
-        padding-left:12px;
-        padding-right:12px;
-        overflow:visible;
-        filter:progid:DXImageTransform.Microsoft.Gradient(GradientType=0,StartColorStr='#ff333333',EndColorStr='#ff666666')
-}
-
-input.fsblackbuttonselected {
-        background-color:#7e0079;
-        color: #ffffff;
-        border:1px solid;
-        border-top-color:#cccccc;
-        border-left-color:#cccccc;
-        border-right-color:#aaaaaa;
-        border-bottom-color:#aaaaaa;
-        font-family: Arial, Verdana, Helvetica, sans-serif;
-        font-weight:bold;
-        padding-left:12px;
-        padding-right:12px;
-        overflow:visible;
-        filter:progid:DXImageTransform.Microsoft.Gradient(GradientType=0,StartColorStr='#ff330033',EndColorStr='#ff7e0079')
-}
-
-.darkmediumgray {
-        background-color: #aaaaaa;
-        background-position: left top;
-        vertical-align: top;
-        text-align: left;
-}
-.darkmediumgrayright { 
-        background-color: #aaaaaa;
-        background-position: left top;
-        vertical-align: top;
-        text-align: right;
-}
-.bggray {
-        background-color: #e8e8e8;
-        background-position: left top;
-        vertical-align: top;
-        text-align: left;
-}
-.bggrayright { 
-        background-color: #e8e8e8;
-        background-position: left top;
-        vertical-align: top;
-        text-align: right;
-}
 
 div.titlebox {
         background: #d4d4d4;
@@ -80,3 +6,4 @@ div.titlebox {
 div.titlebox-title {
         background: #e8e8e8;
 }
+

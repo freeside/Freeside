@@ -49,4 +49,6 @@ $RT::QuickCreateLong = 0; #set to true to cause quick ticket creation to
                           #redirect to the "long" ticket creation screen
                           #instead of just creating a ticket with the subject.
 
+Set($MessageBoxWidth , 80);
+
 1;

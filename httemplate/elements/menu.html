@@ -12,7 +12,9 @@
 
 % }
 
-<link href="<%$fsurl%>elements/freeside.css" type="text/css" rel="stylesheet">
+% unless ( $opt{'nocss'} ) {
+  <link href="<%$fsurl%>elements/freeside.css" type="text/css" rel="stylesheet">
+% }
 
 <SCRIPT TYPE="text/javascript">
 
@@ -446,6 +448,8 @@ if ( $conf->config('ticket_system') ) {
       'Ticketing start page',
     ],
 }
+$menu{'New customer'} = [ $fsurl.'edit/cust_main.cgi', 'Add a new customer' ]
+  if $curuser->access_right('New customer');
 $menu{'Reports'} = [ \%report_menu, 'Lists, reporting and graphing' ]
   if keys %report_menu;
 $menu{'Tools'} = [ \%tools_menu, 'Tools' ]

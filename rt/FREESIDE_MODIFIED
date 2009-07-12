@@ -15,6 +15,7 @@ lib/RT/URI/freeside/XMLRPC.pm
  html/Elements/Tabs
  html/Elements/Footer
  html/Elements/CollectionAsTable/Row #backport from 3.3-TESTING
+ html/Ticket/Display.html
 html/Ticket/Elements/AddCustomers
 html/Ticket/Elements/EditCustomers
 html/Ticket/Elements/ShowCustomers
@@ -23,6 +24,8 @@ html/Ticket/Elements/ShowCustomers
 html/Ticket/ModifyCustomers.html
 html/NoAuth/images/small-logo.png
  html/NoAuth/css/3.5-default/main.css
+ html/NoAuth/css/3.5-default/misc.css
+ html/NoAuth/css/3.5-default/titlebox.css
 html/NoAuth/css/3.5-default/freeside.css
 
 html/Widgets/TitleBoxStart
