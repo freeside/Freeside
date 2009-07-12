@@ -241,7 +241,7 @@ sub rooturl {
        (browse|config|docs|edit|graph|misc|search|view|pref|rt|elements)
        /
        (process/)?
-       ([\w\-\.\/]+)
+       ([\w\-\.\/]*)
        $
      }
      {}x;
