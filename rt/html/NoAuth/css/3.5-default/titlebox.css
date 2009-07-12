@@ -51,7 +51,8 @@
 
 .titlebox .titlebox-content {
     margin-top: -1px;
-    padding: 1em 2em 0.5em 2em;
+    padding: 0.25em .50em 0.125em .50em;
+    /*padding: 1em 2em 0.5em 2em;*/
     margin: 0;
     /*margin: 1em 2em 0.5em 2em;*/
 }
