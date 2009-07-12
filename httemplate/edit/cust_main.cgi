@@ -199,8 +199,12 @@ function samechanged(what) {
 
 <%init>
 
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+#probably redundant given the checks below...
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Edit customer');
+  unless $curuser->access_right('New customer')
+     ||  $curuser->access_right('Edit customer');
 
 my $conf = new FS::Conf;
 
@@ -219,6 +223,10 @@ if ( $cgi->param('error') ) {
   } );
 
   $custnum = $cust_main->custnum;
+
+  die "access denied"
+    unless $curuser->access_right($custnum ? 'Edit customer' : 'New customer');
+
   @invoicing_list = split( /\s*,\s*/, $cgi->param('invoicing_list') );
   $same = $cgi->param('same');
   $cust_main->setfield('paid' => $cgi->param('paid')) if $cgi->param('paid');
@@ -245,6 +253,9 @@ if ( $cgi->param('error') ) {
 
 } elsif ( $cgi->keywords ) { #editing
 
+  die "access denied"
+    unless $curuser->access_right('Edit customer');
+
   my( $query ) = $cgi->keywords;
   $query =~ /^(\d+)$/;
   $custnum=$1;
@@ -261,6 +272,9 @@ if ( $cgi->param('error') ) {
   $payinfo = $cust_main->paymask;
 
 } else { #new customer
+
+  die "access denied"
+    unless $curuser->access_right('New customer');
 
   $custnum='';
   $cust_main = new FS::cust_main ( {} );
