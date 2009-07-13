@@ -60,16 +60,13 @@ Example:
    }
    </style>
 
-   <TABLE BGCOLOR="#000000" BORDER=0 CELLSPACING=0 CELLPADDING=4>
+   <TABLE BGCOLOR="#000000" BORDER=0 CELLSPACING=0 CELLPADDING=0>
      <TR>
-       <TD STYLE="background-image:url(<%$fsurl%>images/gray-black-side.png); background-repeat:repeat-y;padding-left:0px">
-         &nbsp;&nbsp;
-       </TD>
+       <TD><IMG SRC="<%$fsurl%>images/gray-black-side.png" WIDTH=13 HEIGHT=25></TD>
        <TD>
          <% join(' ', @html ) %>
        </TD>
-       <TD STYLE="background-image:url(<%$fsurl%>images/black-gray-side.png); background-repeat:repeat-y;padding-right:0px">
-         &nbsp;&nbsp;
+       <TD><IMG SRC="<%$fsurl%>images/black-gray-side.png" WIDTH=13 HEIGHT=25></TD>
        </TD>
      </TR>
    </TABLE>
