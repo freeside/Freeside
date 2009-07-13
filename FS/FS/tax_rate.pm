@@ -917,6 +917,7 @@ sub process_batch_import {
     my $error = '';
     my @insert_list = ();
     my @delete_list = ();
+    my @predelete_list = ();
 
     my @list = ( 'GEOCODE',  'geofile',   \&FS::tax_rate_location::batch_import,
                  'CODE',     'codefile',  \&FS::tax_class::batch_import,
@@ -972,9 +973,26 @@ sub process_batch_import {
       close $dfh;
 
       push @insert_list, $name, $ifh->filename, $import_sub;
-      unshift @delete_list, $name, $dfh->filename, $import_sub;
+      if ( $name eq 'GEOCODE' ) { #handle this whole ordering issue better
+        unshift @predelete_list, $name, $dfh->filename, $import_sub;
+      } else {
+        unshift @delete_list, $name, $dfh->filename, $import_sub;
+      }
 
     }
+
+    while( scalar(@predelete_list) ) {
+      my ($name, $file, $import_sub) =
+        (shift @predelete_list, shift @predelete_list, shift @predelete_list);
+
+      my $fmt = $format. ( $name eq 'ZIP' ? '-zip' : '' );
+      open my $fh, "< $file" or $error ||= "Can't open $name file $file: $!";
+      $error ||=
+        &{$import_sub}({ 'filehandle' => $fh, 'format' => $fmt }, $job);
+      close $fh;
+      unlink $file or warn "Can't delete $file: $!";
+    }
+    
     while( scalar(@insert_list) ) {
       my ($name, $file, $import_sub) =
         (shift @insert_list, shift @insert_list, shift @insert_list);
@@ -1316,7 +1334,7 @@ sub process_download_and_update {
     if (-d $dir) {
 
       if (-d "$dir.4") {
-        opendir(my $dirh, $dir) or die "failed to open $dir.4: $!\n";
+        opendir(my $dirh, "$dir.4") or die "failed to open $dir.4: $!\n";
         foreach my $file (readdir($dirh)) {
           unlink "$dir.4/$file" if (-f "$dir.4/$file");
         }
@@ -1426,6 +1444,7 @@ sub process_download_and_update {
 
     my @insert_list = ();
     my @delete_list = ();
+    my @predelete_list = ();
 
     my @list = (
                  'geocode',  \&FS::tax_rate_location::batch_import, 
@@ -1491,11 +1510,29 @@ sub process_download_and_update {
       %oldlines = ();
 
       push @insert_list, $name, $ifh->filename, $method;
-      unshift @delete_list, $name, $dfh->filename, $method
-        unless $name eq 'detail';
+      if ( $name eq 'geocode' ) {
+        unshift @predelete_list, $name, $dfh->filename, $method
+          unless $name eq 'detail';
+      } else {
+        unshift @delete_list, $name, $dfh->filename, $method
+          unless $name eq 'detail';
+      }
 
       close $dfh;
       close $ifh;
+    }
+
+    while( scalar(@predelete_list) ) {
+      my ($name, $file, $method) =
+        (shift @predelete_list, shift @predelete_list, shift @predelete_list);
+
+      my $fmt = "$format-update";
+      $fmt = $fmt. ( $name eq 'zip' ? '-zip' : '' );
+      open my $fh, "< $file" or $error ||= "Can't open $name file $file: $!";
+      $error ||=
+        &{$method}({ 'filehandle' => $fh, 'format' => $fmt }, $job);
+      close $fh;
+      #unlink $file or warn "Can't delete $file: $!";
     }
 
     while( scalar(@insert_list) ) {

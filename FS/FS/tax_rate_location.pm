@@ -125,11 +125,18 @@ sub check {
   ;
   return $error if $error;
 
-  my $t = qsearchs( 'tax_rate_location',
-                    { map { $_ => $self->$_ } qw( data_vendor geocode ) },
-                  );
+  my $t;
+  $t = qsearchs( 'tax_rate_location',
+                 { disabled => '',
+                   ( map { $_ => $self->$_ } qw( data_vendor geocode ) ),
+                 },
+               )
+    unless $self->disabled;
 
-  return "geocode already in use for this vendor"
+  $t = $self->by_key( $self->taxratelocationnum )
+    if ( !$t && $self->taxratelocationnum );
+
+  return "geocode ". $self->geocode. " already in use for this vendor"
     if ( $t && $t->taxratelocationnum != $self->taxratelocationnum );
 
   return "may only be disabled"
@@ -194,7 +201,7 @@ sub batch_import {
       if (exists($hash->{'actionflag'}) && $hash->{'actionflag'} eq 'D') {
         delete($hash->{actionflag});
 
-        $hash->{deleted} = '';
+        $hash->{disabled} = '';
         my $tax_rate_location = qsearchs('tax_rate_location', $hash);
         return "Can't find tax_rate_location to delete: ".
                join(" ", map { "$_ => ". $hash->{$_} } @fields)
@@ -279,7 +286,7 @@ sub batch_import {
 
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
-        return "can't insert tax_rate for $line: $error";
+        return "can't insert tax_rate_location for $line: $error";
       }
 
     }
