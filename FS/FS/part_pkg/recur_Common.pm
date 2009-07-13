@@ -1,12 +1,14 @@
 package FS::part_pkg::recur_Common;
 
 use strict;
-use vars qw( @ISA %recur_method );
+use vars qw( @ISA %info %recur_method );
 use Tie::IxHash;
 use Time::Local;
 use FS::part_pkg::prorate;
 
 @ISA = qw(FS::part_pkg::prorate);
+
+%info = ( 'disabled' => 1 ); #recur_Common not a usable price plan directly
 
 tie %recur_method, 'Tie::IxHash',
   'anniversary'  => 'Charge the recurring fee at the frequency specified above',
