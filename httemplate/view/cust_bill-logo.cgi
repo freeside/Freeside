@@ -10,7 +10,7 @@ my $conf = new FS::Conf;
 my $templatename;
 my $agentnum = '';
 if ( $cgi->param('invnum') ) {
-  $templatename = $cgi->param('templatename');
+  $templatename = $cgi->param('template') || $cgi->param('templatename');
   my $cust_bill = qsearchs('cust_bill', { 'invnum' => $cgi->param('invnum') } )
     or die 'unknown invnum';
   $agentnum = $cust_bill->cust_main->agentnum;
