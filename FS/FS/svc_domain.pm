@@ -140,8 +140,8 @@ otherwise returns false.
 The additional fields I<pkgnum> and I<svcpart> (see L<FS::cust_svc>) should be 
 defined.  An FS::cust_svc record will be created and inserted.
 
-The additional field I<action> should be set to I<N> for new domains or I<M>
-for transfers.
+The additional field I<action> should be set to I<N> for new domains, I<M>
+for transfers, or I<I> for no action (registered elsewhere).
 
 A registration or transfer email will be submitted unless
 $FS::svc_domain::whois_hack is true.
