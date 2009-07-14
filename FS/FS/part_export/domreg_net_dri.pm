@@ -438,7 +438,7 @@ sub get_status {
   };
 #  rslt->{'message'} = $@->as_string if $@;
   if ($@) {
-    rslt->{'message'} = (UNIVERSAL::isa($@, 'Net::DRI::Exception')) ? $@->as_string : $@->message;
+    $rslt->{'message'} = (UNIVERSAL::isa($@, 'Net::DRI::Exception')) ? $@->as_string : $@->message;
   }
 
   return $rslt; # Success
