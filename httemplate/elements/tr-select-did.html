@@ -19,7 +19,7 @@
 <%init>
 
 my %opt = @_;
-warn Dumper(\%opt);
+#warn Dumper(\%opt); if $DEBUG;
 my $cell_style = $opt{'cell_style'} ? 'STYLE="'. $opt{'cell_style'}. '"' : '';
 
 #false laziness w/select-did.html
