@@ -203,6 +203,7 @@ perl-modules:
 	" blib/lib/FS/Cron/*.pm;\
 	perl -p -i -e "\
 	  s|%%%FREESIDE_EXPORT%%%|${FREESIDE_EXPORT}|g;\
+	  s|%%%FREESIDE_LOG%%%|${FREESIDE_LOG}|g;\
 	" blib/lib/FS/part_export/*.pm;\
 	perl -p -i -e "\
 	  s|%%%FREESIDE_CACHE%%%|${FREESIDE_CACHE}|g;\

@@ -1,6 +1,6 @@
 %if ($error) {
 %  $cgi->param('error', $error);
-<% $cgi->redirect(popurl(3). "view/svc_domain.cgi?$svcnum") %>
+%    errorpage($error);
 %} else {
 <% $cgi->redirect(popurl(3). "view/svc_domain.cgi?$svcnum") %>
 %}

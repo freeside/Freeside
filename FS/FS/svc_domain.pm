@@ -300,7 +300,7 @@ sub replace {
     if $old->getfield('domain') ne $new->getfield('domain'); 
 
   # Better to do it here than to force the caller to remember that svc_domain is weird.
-  $new->setfield(action => 'M');
+  $new->setfield(action => 'I');
   my $error = $new->SUPER::replace($old, @_);
   return $error if $error;
 }
