@@ -69,7 +69,14 @@ sub handler
 
     } else {
 
+      local $SIG{__WARN__};
+      local $SIG{__DIE__};
+
       RT::Init() if $RT::VERSION; #for lack of something else
+
+      #we don't want the RT error handlers under FS
+      undef $SIG{__WARN__};
+      undef $SIG{__DIE__};
 
       $ah->interp($fs_interp);
 
