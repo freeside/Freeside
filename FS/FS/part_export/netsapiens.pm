@@ -1,12 +1,13 @@
 package FS::part_export::netsapiens;
 
-use vars qw(@ISA %info);
+use vars qw(@ISA $me %info);
 use URI;
 use MIME::Base64;
 use Tie::IxHash;
 use FS::part_export;
 
 @ISA = qw(FS::part_export);
+$me = '[FS::part_export::netsapiens]';
 
 tie my %options, 'Tie::IxHash',
   'login'           => { label=>'NetSapiens tac2 User API username' },
@@ -16,6 +17,7 @@ tie my %options, 'Tie::IxHash',
   'device_password' => { label=>'NetSapiens tac2 Device API password' },
   'device_url'      => { label=>'NetSapiens tac2 Device URL' },
   'domain'          => { label=>'NetSapiens Domain' },
+  'debug'           => { label=>'Enable debugging', type=>'checkbox' },
 ;
 
 %info = (
@@ -38,7 +40,7 @@ sub ns_command {
 
 sub ns_device_command { 
   my $self = shift;
-  $self->_ns_command('device', @_);
+  $self->_ns_command('device_', @_);
 }
 
 sub _ns_command {
@@ -58,6 +60,10 @@ sub _ns_command {
   } elsif ( $method eq 'GET' ) {
     $args[0] .= $ns->buildQuery( { @_ } );
   }
+
+  warn "$me $method ". $self->option($prefix.'url').
+       " $command ". join(', ', @_). "\n"
+    if $self->option('debug');
 
   my $auth = encode_base64( $self->option($prefix.'login'). ':'.
                             $self->option($prefix.'password')    );
