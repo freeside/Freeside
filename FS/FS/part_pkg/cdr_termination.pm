@@ -81,10 +81,9 @@ tie my %temporalities, 'Tie::IxHash',
                         },
 
   },
-
+                       #cdr_column
   'fieldorder' => [qw(
                        setup_fee recur_fee
-                       cdr_column
                        recur_temporality unused_credit recur_method cutoff_day
                        output_format usage_section summarize_usage
                      )
