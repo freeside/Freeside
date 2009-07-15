@@ -349,7 +349,10 @@ sub set_charged_party {
 
     if ( $conf->exists('cdr-charged_party-accountcode') && $self->accountcode ){
 
-      $self->charged_party( $self->accountcode );
+      my $charged_party = $self->accountcode;
+      $charged_party =~ s/^0+//
+        if $conf->exists('cdr-charged_party-accountcode-trim_leading_0s');
+      $self->charged_party( $charged_party );
 
     } else {
 

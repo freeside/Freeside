@@ -2751,6 +2751,13 @@ worry that config_items is freeside-specific and icky.
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'cdr-charged_party-accountcode-trim_leading_0s',
+    'section'     => '',
+    'description' => 'When setting the charged_party field of CDRs to the accountcode, trim any leading zeros.',
+    'type'        => 'checkbox',
+  },
+
 #  {
 #    'key'         => 'cdr-charged_party-truncate_prefix',
 #    'section'     => '',
