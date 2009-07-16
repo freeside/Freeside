@@ -185,6 +185,8 @@ Initializes the Mason environment, loads all Freeside and RT libraries, etc.
   use FS::part_pkg_taxoverride;
   use FS::part_pkg_taxrate;
   use FS::tax_rate;
+  use FS::part_pkg_report_option;
+  # Sammath Naur
 
   if ( %%%RT_ENABLED%%% ) {
     eval '
