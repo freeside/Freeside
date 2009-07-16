@@ -1,0 +1,54 @@
+<% include('/elements/header.html', 'FCC Form 477 Report' ) %>
+
+<FORM ACTION="477.html" METHOD="GET">
+<INPUT TYPE="hidden" NAME="magic" VALUE="bill">
+<INPUT TYPE="hidden" NAME="status" VALUE="active">
+
+  <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+    <TR>
+      <TH BGCOLOR="#e8e8e8" COLSPAN=2 ALIGN="left">
+        <FONT SIZE="+1">Search options</FONT>
+      </TH>
+    </TR>
+
+    <% include( '/elements/tr-select-agent.html',
+                   'curr_value'    => scalar( $cgi->param('agentnum') ),
+                   'disable_empty' => 0,
+               )
+    %>
+
+    <% include( '/elements/tr-select-pkg_class.html',
+                   'pre_options' => [ '0' => 'all' ],
+                   'empty_label' => '(empty class)',
+               )
+    %>
+
+%   if ( scalar( qsearch( 'part_pkg_report_option', { 'disabled' => '' } ) ) ) {
+
+    <% include( '/elements/tr-select-table.html',
+                   'label'        => 'Report classes',
+                   'table'        => 'part_pkg_report_option',
+                   'name_col'     => 'name',
+                   'hashref'      => { 'disabled' => '' },
+                   'element_name' => 'report_option',
+                   'multiple'     => 'multiple',
+               )
+    %>
+
+%   }
+
+  </TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="Get Report">
+
+</FORM>
+
+<% include('/elements/footer.html') %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('List packages');
+
+</%init>
