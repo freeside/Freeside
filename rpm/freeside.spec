@@ -166,6 +166,7 @@ cat << \EOF > %{name}-req
 tee %{_tmppath}/filelist | %{_rpmlibdir}/rpmdeps --requires | grep -v -E '^perl\(the\)$' \
 | grep -v -E '^perl\((lib|strict|vars|RT)\)$' \
 | grep -v -E '^perl\(RT::' \
+| grep -v -E '^perl\(FS::' \
 | sort -u
 grep handler.pl %{_tmppath}/filelist | xargs %{_rpmlibdir}/perldeps.pl --requires \
 | grep -v -E '^perl\((lib|strict|vars|RT)\)$' \
