@@ -334,8 +334,6 @@ FS/inventory_class.pm
 t/inventory_class.t
 FS/inventory_item.pm
 t/inventory_item.t
-FS/cdr_upstream_rate.pm
-t/cdr_upstream_rate.t
 FS/access_user.pm
 t/access_user.t
 FS/access_user_pref.pm
