@@ -162,10 +162,14 @@ my $money_char = $conf->config('money_char') || '$';
   
   $search_hash{'query'} = $cgi->keywords;
   
-  for my $param (qw(agentnum magic status classnum pkgpart custom)) {
-    $search_hash{$param} = $cgi->param($param)
-      if $cgi->param($param);
+  for ( qw(agentnum magic status classnum pkgpart custom censustract) ) {
+    $search_hash{$_} = $cgi->param($_) if $cgi->param($_);
   }
+
+
+my @report_option = $cgi->param('report_option')
+  if $cgi->param('report_option');
+$search_hash{report_option} = join(',', @report_option) if @report_option;
 
 ###
 # parse dates
