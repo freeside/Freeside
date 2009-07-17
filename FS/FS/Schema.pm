@@ -2206,18 +2206,6 @@ sub tables_hashref {
       'index'       => [],
     },
 
-    #map upstream rateid to ours...
-    'cdr_upstream_rate' => {
-      'columns' => [
-        'upstreamratenum', 'serial',  '', '', '', '',
-        'upstream_rateid', 'varchar', '', $char_d, '', '', 
-        'ratedetailnum',   'int', 'NULL', '', '', '',
-      ],
-      'primary_key' => 'upstreamratenum', #XXX need a primary key
-      'unique' => [ [ 'upstream_rateid' ] ], #unless we add another field, yeah
-      'index'  => [],
-    },
-
     #'cdr_file' => {
     #  'columns' => [
     #    'filenum',    'serial',     '', '', '', '',

@@ -150,8 +150,6 @@ L<FS::cdr_calltype> - CDR calltype class
 
 L<FS::cdr_carrier> - CDR carrier class
 
-L<FS::cdr_upstream_rate> - CDR upstream rate class
-
 L<FS::cdr_type> - CDR type class
 
 L<FS::svc_external> - Externally tracked service class.

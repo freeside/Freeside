@@ -19,8 +19,9 @@ $DEBUG = 0;
 
 tie my %rating_method, 'Tie::IxHash',
   'prefix' => 'Rate calls by using destination prefix to look up a region and rate according to the internal prefix and rate tables',
-  'upstream' => 'Rate calls based on upstream data: If the call type is "1", map the upstream rate ID directly to an internal rate (rate_detail), otherwise, pass the upstream price through directly.',
+#  'upstream' => 'Rate calls based on upstream data: If the call type is "1", map the upstream rate ID directly to an internal rate (rate_detail), otherwise, pass the upstream price through directly.',
   'upstream_simple' => 'Simply pass through and charge the "upstream_price" amount.',
+  'flat' => 'A single price per minute for all calls.',
 ;
 
 tie my %recur_method, 'Tie::IxHash',
@@ -243,7 +244,7 @@ sub calc_recur {
 
   my $charges = 0;
 
-  my $downstream_cdr = '';
+#  my $downstream_cdr = '';
 
   my $rating_method     = $self->option('rating_method') || 'prefix';
   my $intl              = $self->option('international_prefix') || '011';
@@ -396,36 +397,36 @@ sub calc_recur {
 
         }
 
-      } elsif ( $rating_method eq 'upstream' ) { #XXX this was convergent, not currently used.  very much becoming the odd one out. remove?
-
-        if ( $cdr->cdrtypenum == 1 ) { #rate based on upstream rateid
-
-          $rate_detail = $cdr->cdr_upstream_rate->rate_detail;
-
-          $regionnum = $rate_detail->dest_regionnum;
-          $rate_region = $rate_detail->dest_region;
-
-          $pretty_destnum = $cdr->dst;
-
-          warn "  found rate for regionnum $regionnum and ".
-               "rate detail $rate_detail\n"
-            if $DEBUG;
-
-        } else { #pass upstream price through
-
-          $charge = sprintf('%.2f', $cdr->upstream_price);
-          $charges += $charge;
- 
-          @call_details = (
-            #time2str("%Y %b %d - %r", $cdr->calldate_unix ),
-            time2str("%c", $cdr->calldate_unix),  #XXX this should probably be a config option dropdown so they can select US vs- rest of world dates or whatnot
-            'N/A', #minutes...
-            '$'.$charge,
-            #$pretty_destnum,
-            $cdr->description, #$rate_region->regionname,
-          );
-
-        }
+#      } elsif ( $rating_method eq 'upstream' ) { #XXX this was convergent, not currently used.  very much becoming the odd one out. remove?
+#
+#        if ( $cdr->cdrtypenum == 1 ) { #rate based on upstream rateid
+#
+#          $rate_detail = $cdr->cdr_upstream_rate->rate_detail;
+#
+#          $regionnum = $rate_detail->dest_regionnum;
+#          $rate_region = $rate_detail->dest_region;
+#
+#          $pretty_destnum = $cdr->dst;
+#
+#          warn "  found rate for regionnum $regionnum and ".
+#               "rate detail $rate_detail\n"
+#            if $DEBUG;
+#
+#        } else { #pass upstream price through
+#
+#          $charge = sprintf('%.2f', $cdr->upstream_price);
+#          $charges += $charge;
+# 
+#          @call_details = (
+#            #time2str("%Y %b %d - %r", $cdr->calldate_unix ),
+#            time2str("%c", $cdr->calldate_unix),  #XXX this should probably be a config option dropdown so they can select US vs- rest of world dates or whatnot
+#            'N/A', #minutes...
+#            '$'.$charge,
+#            #$pretty_destnum,
+#            $cdr->description, #$rate_region->regionname,
+#          );
+#
+#        }
 
       } elsif ( $rating_method eq 'upstream_simple' ) {
 
@@ -526,8 +527,8 @@ sub calc_recur {
         # if the customer flag is on, call "downstream_csv" or something
         # like it to export the call downstream!
         # XXX price plan option to pick format, or something...
-        $downstream_cdr .= $cdr->downstream_csv( 'format' => 'convergent' )
-          if $spool_cdr;
+        #$downstream_cdr .= $cdr->downstream_csv( 'format' => 'XXX format' )
+        #  if $spool_cdr;
 
         my $error = $cdr->set_status_and_rated_price('done', $charge);
         die $error if $error;
@@ -541,32 +542,32 @@ sub calc_recur {
   unshift @$details, [ 'C', FS::cdr::invoice_header($output_format) ]
     if @$details && $rating_method ne 'upstream';
 
-  if ( $spool_cdr && length($downstream_cdr) ) {
-
-    use FS::UID qw(datasrc);
-    my $dir = '/usr/local/etc/freeside/export.'. datasrc. '/cdr';
-    mkdir $dir, 0700 unless -d $dir;
-    $dir .= '/'. $cust_pkg->custnum.
-    mkdir $dir, 0700 unless -d $dir;
-    my $filename = time2str("$dir/CDR%Y%m%d-spool.CSV", time); #XXX invoice date instead?  would require changing the order things are generated in cust_main::bill insert cust_bill first - with transactions it could be done though
-
-    push @{ $param->{'precommit_hooks'} },
-         sub {
-               #lock the downstream spool file and append the records 
-               use Fcntl qw(:flock);
-               use IO::File;
-               my $spool = new IO::File ">>$filename"
-                 or die "can't open $filename: $!\n";
-               flock( $spool, LOCK_EX)
-                 or die "can't lock $filename: $!\n";
-               seek($spool, 0, 2)
-                 or die "can't seek to end of $filename: $!\n";
-               print $spool $downstream_cdr;
-               flock( $spool, LOCK_UN );
-               close $spool;
-             };
-
-  } #if ( $spool_cdr && length($downstream_cdr) )
+#  if ( $spool_cdr && length($downstream_cdr) ) {
+#
+#    use FS::UID qw(datasrc);
+#    my $dir = '/usr/local/etc/freeside/export.'. datasrc. '/cdr';
+#    mkdir $dir, 0700 unless -d $dir;
+#    $dir .= '/'. $cust_pkg->custnum.
+#    mkdir $dir, 0700 unless -d $dir;
+#    my $filename = time2str("$dir/CDR%Y%m%d-spool.CSV", time); #XXX invoice date instead?  would require changing the order things are generated in cust_main::bill insert cust_bill first - with transactions it could be done though
+#
+#    push @{ $param->{'precommit_hooks'} },
+#         sub {
+#               #lock the downstream spool file and append the records 
+#               use Fcntl qw(:flock);
+#               use IO::File;
+#               my $spool = new IO::File ">>$filename"
+#                 or die "can't open $filename: $!\n";
+#               flock( $spool, LOCK_EX)
+#                 or die "can't lock $filename: $!\n";
+#               seek($spool, 0, 2)
+#                 or die "can't seek to end of $filename: $!\n";
+#               print $spool $downstream_cdr;
+#               flock( $spool, LOCK_UN );
+#               close $spool;
+#             };
+#
+#  } #if ( $spool_cdr && length($downstream_cdr) )
 
   if ($param->{'increment_next_bill'}) {
     my $recur_method = $self->option('recur_method', 1) || 'anniversary';

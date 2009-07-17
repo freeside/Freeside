@@ -472,51 +472,11 @@ sub calltypename {
   $cdr_calltype ? $cdr_calltype->calltypename : '';
 }
 
-=item cdr_upstream_rate
-
-Returns the upstream rate mapping (see L<FS::cdr_upstream_rate>), or the empty
-string if no FS::cdr_upstream_rate object is associated with this CDR.
-
-=cut
-
-sub cdr_upstream_rate {
-  my $self = shift;
-  return '' unless $self->upstream_rateid;
-  qsearchs('cdr_upstream_rate', { 'upstream_rateid' => $self->upstream_rateid })
-    or '';
-}
-
-=item _convergent_format COLUMN [ COUNTRYCODE ]
-
-Returns the number in COLUMN formatted as follows:
-
-If the country code does not match COUNTRYCODE (default "61"), it is returned
-unchanged.
-
-If the country code does match COUNTRYCODE (default "61"), it is removed.  In
-addiiton, "0" is prepended unless the number starts with 13, 18 or 19. (???)
-
-=cut
-
-sub _convergent_format {
-  my( $self, $field ) = ( shift, shift );
-  my $countrycode = scalar(@_) ? shift : '61'; #+61 = australia
-  #my $number = $self->$field();
-  my $number = $self->get($field);
-  #if ( $number =~ s/^(\+|011)$countrycode// ) {
-  if ( $number =~ s/^\+$countrycode// ) {
-    $number = "0$number"
-      unless $number =~ /^1[389]/; #???
-  }
-  $number;
-}
-
 =item downstream_csv [ OPTION => VALUE, ... ]
 
 =cut
 
 my %export_names = (
-  'convergent'      => {},
   'simple'  => {
     'name'           => 'Simple',
     'invoice_header' => "Date,Time,Name,Destination,Duration,Price",
@@ -550,21 +510,6 @@ my $duration_sub = sub {
 };
 
 my %export_formats = (
-  'convergent' => [
-    'carriername', #CARRIER
-    sub { shift->_convergent_format('src') }, #SERVICE_NUMBER
-    sub { shift->_convergent_format('charged_party') }, #CHARGED_NUMBER
-    sub { time2str('%Y-%m-%d', shift->calldate_unix ) }, #DATE
-    sub { time2str('%T',       shift->calldate_unix ) }, #TIME
-    'billsec', #'duration', #DURATION
-    sub { shift->_convergent_format('dst') }, #NUMBER_DIALED
-    '', #XXX add (from prefixes in most recent email) #FROM_DESC
-    '', #XXX add (from prefixes in most recent email) #TO_DESC
-    'calltypename', #CLASS_CODE
-    'rated_price', #PRICE
-    sub { shift->rated_price ? 'Y' : 'N' }, #RATED
-    '', #OTHER_INFO
-  ],
   'simple' => [
     sub { time2str('%D', shift->calldate_unix ) },   #DATE
     sub { time2str('%r', shift->calldate_unix ) },   #TIME
@@ -618,7 +563,7 @@ $export_formats{'accountcode_default'} =
 sub downstream_csv {
   my( $self, %opt ) = @_;
 
-  my $format = $opt{'format'}; # 'convergent';
+  my $format = $opt{'format'};
   return "Unknown format $format" unless exists $export_formats{$format};
 
   #my $conf = new FS::Conf;
