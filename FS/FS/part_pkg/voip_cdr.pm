@@ -21,7 +21,7 @@ tie my %rating_method, 'Tie::IxHash',
   'prefix' => 'Rate calls by using destination prefix to look up a region and rate according to the internal prefix and rate tables',
 #  'upstream' => 'Rate calls based on upstream data: If the call type is "1", map the upstream rate ID directly to an internal rate (rate_detail), otherwise, pass the upstream price through directly.',
   'upstream_simple' => 'Simply pass through and charge the "upstream_price" amount.',
-  'flat' => 'A single price per minute for all calls.',
+  'single_price' => 'A single price per minute for all calls.',
 ;
 
 tie my %recur_method, 'Tie::IxHash',
@@ -75,7 +75,7 @@ tie my %temporalities, 'Tie::IxHash',
                          'select_options' => \%recur_method,
                        },
 
-    'rating_method' => { 'name' => 'Region rating method',
+    'rating_method' => { 'name' => 'Rating method',
                          'type' => 'radio',
                          'options' => \%rating_method,
                        },
@@ -86,6 +86,10 @@ tie my %temporalities, 'Tie::IxHash',
                      'select_key'   => 'ratenum',
                      'select_label' => 'ratename',
                    },
+
+    'min_charge' => { 'name' => 'Charge per minute when using "single price per minute" rating method',
+                      'type' => 'money',
+                    },
 
     'ignore_unrateable' => { 'name' => 'Ignore calls without a rate in the rate tables.  By default, the system will throw a fatal error upon encountering unrateable calls.',
                              'type' => 'checkbox',
@@ -439,6 +443,32 @@ sub calc_recur {
                                              )
                         );
         $classnum = $cdr->calltypenum;
+
+      } elsif ( $rating_method eq 'single_price' ) {
+
+        # a little false laziness w/below
+
+        my $granularity = 60;
+
+                    # length($cdr->billsec) ? $cdr->billsec : $cdr->duration;
+        my $seconds = $use_duration ? $cdr->duration : $cdr->billsec;
+
+        $seconds += $granularity - ( $seconds % $granularity )
+          if $seconds      # don't granular-ize 0 billsec calls (bills them)
+          ;#&& $granularity; # 0 is per call
+        my $minutes = sprintf("%.1f", $seconds / 60);
+        $minutes =~ s/\.0$// ;# if $granularity == 60;
+
+        $charge = sprintf('%.2f', ( $self->option('min_charge') * $minutes )
+                                  + 0.00000001 ); #so 1.005 rounds to 1.01
+
+        $charge =  
+        $charges += $charge;
+
+        @call_details = ($cdr->downstream_csv( 'format' => $output_format,
+                                               'charge' => $charge,
+                                             )
+                        );
 
       } else {
         die "don't know how to rate CDRs using method: $rating_method\n";
