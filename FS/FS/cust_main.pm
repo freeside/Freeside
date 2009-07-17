@@ -2331,6 +2331,9 @@ Debugging level.  Default is 0 (no debugging), or can be set to 1 (passed-in opt
 
 =back
 
+Options are passed to the B<bill> and B<collect> methods verbatim, so all
+options of those methods are also available.
+
 =cut
 
 sub bill_and_collect {
@@ -2448,6 +2451,10 @@ An array ref of specific packages (objects) to attempt billing, instead trying a
 
  $cust_main->bill( pkg_list => [$pkg1, $pkg2] );
 
+=item not_pkgpart
+
+A hashref of pkgparts to exclude from this billing run.
+
 =item invoice_time
 
 Used in conjunction with the I<time> option, this option specifies the date of for the generated invoices.  Other calculations, such as whether or not to generate the invoice in the first place, are not affected.
@@ -2471,6 +2478,8 @@ sub bill {
 
   my $time = $options{'time'} || time;
   my $invoice_time = $options{'invoice_time'} || $time;
+
+  $options{'not_pkgpart'} ||= {};
 
   #put below somehow?
   local $SIG{HUP} = 'IGNORE';
@@ -2497,8 +2506,10 @@ sub bill {
   my %taxlisthash;
   my @precommit_hooks = ();
 
-  $options{ pkg_list } ||= [ $self->ncancelled_pkgs ];  #param checks?
-  foreach my $cust_pkg ( @{ $options{ pkg_list } } ) {
+  $options{'pkg_list'} ||= [ $self->ncancelled_pkgs ];  #param checks?
+  foreach my $cust_pkg ( @{ $options{'pkg_list'} } ) {
+
+    next if $options{'not_pkgpart'}->{$cust_pkg->pkgpart};
 
     warn "  bill package ". $cust_pkg->pkgnum. "\n" if $DEBUG > 1;
 

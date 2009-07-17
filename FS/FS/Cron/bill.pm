@@ -21,6 +21,7 @@ use FS::part_event_condition;
 #  -l: debugging level
 #  -m: Experimental multi-process mode uses the job queue for multi-process and/or multi-machine billing.
 #  -r: Multi-process mode dry run option
+#  -g: Don't bill these pkgparts
 
 sub bill {
   my %opt = @_;
@@ -38,6 +39,9 @@ sub bill {
   $opt{'time'} += $opt{'y'} * 86400 if $opt{'y'};
 
   $opt{'invoice_time'} = $opt{'n'} ? $^T : $opt{'time'};
+
+  my $not_pkgpart = $opt{g} ? { map { $_=>1 } split(/,\s*/, $opt{g}) }
+                            : {};
 
   ###
   # get a list of custnums
@@ -74,6 +78,7 @@ sub bill {
                                  #(not, when using -m, freeside-queued)
           'check_freq'   => $check_freq,
           'resetup'      => ( $opt{'s'} ? $opt{'s'} : 0 ),
+          'not_pkgpart'  => $not_pkgpart,
       );
 
       if ( $opt{'m'} ) {
@@ -151,6 +156,8 @@ sub bill_where {
     if $opt{'p'};
   push @search, "cust_main.agentnum =  ". $opt{'a'}
     if $opt{'a'};
+
+  #it would be useful if i recognized $opt{g} / $not_pkgpart...
 
   if ( @ARGV ) {
     push @search, "( ".
