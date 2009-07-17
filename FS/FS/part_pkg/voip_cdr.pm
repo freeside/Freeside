@@ -204,7 +204,7 @@ tie my %temporalities, 'Tie::IxHash',
   'fieldorder' => [qw(
                        setup_fee recur_fee recur_temporality unused_credit
                        recur_method cutoff_day
-                       rating_method ratenum ignore_unrateable
+                       rating_method ratenum min_charge ignore_unrateable
                        default_prefix
                        disable_src
                        domestic_prefix international_prefix
