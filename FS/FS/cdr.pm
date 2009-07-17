@@ -13,7 +13,6 @@ use FS::Record qw( qsearch qsearchs );
 use FS::cdr_type;
 use FS::cdr_calltype;
 use FS::cdr_carrier;
-use FS::cdr_upstream_rate;
 
 @ISA = qw(FS::Record);
 @EXPORT_OK = qw( _cdr_date_parser_maker _cdr_min_parser_maker );
