@@ -1494,6 +1494,13 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'bill_usage_on_cancel',
+    'section'     => 'billing',
+    'description' => 'Enable automatic generation of an invoice for usage when a package is cancelled.  Not all packages can do this.  Usage data must already be available.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'require_cardname',
     'section'     => 'billing',
     'description' => 'Require an "Exact name on card" to be entered explicitly; don\'t default to using the first and last name.',

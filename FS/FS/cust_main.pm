@@ -2201,11 +2201,15 @@ Available options are:
 
 =item ban - can be set true to ban this customer's credit card or ACH information, if present.
 
+=item nobill - can be set true to skip billing if it might otherwise be done.
+
 =back
 
 Always returns a list: an empty list on success or a list of errors.
 
 =cut
+
+# nb that dates are not specified as valid options to this method
 
 sub cancel {
   my( $self, %opt ) = @_;
@@ -2231,6 +2235,13 @@ sub cancel {
   }
 
   my @pkgs = $self->ncancelled_pkgs;
+
+  if ( !$opt{nobill} && $conf->exists('bill_usage_on_cancel') ) {
+    $opt{nobill} = 1;
+    my $error = $self->bill( pkg_list => [ @pkgs ], cancel => 1 );
+    warn "Error billing during cancel, custnum ". $self->custnum. ": $error"
+      if $error;
+  }
 
   warn "$me cancelling ". scalar($self->ncancelled_pkgs). "/".
        scalar(@pkgs). " packages for customer ". $self->custnum. "\n"
@@ -2441,6 +2452,13 @@ An array ref of specific packages (objects) to attempt billing, instead trying a
 
 Used in conjunction with the I<time> option, this option specifies the date of for the generated invoices.  Other calculations, such as whether or not to generate the invoice in the first place, are not affected.
 
+=item cancel
+
+This boolean value informs the us that the package is being cancelled.  This
+typically might mean not charging the normal recurring fee but only usage
+fees since the last billing. Setup charges may be charged.  Not all package
+plans support this feature (they tend to charge 0).
+
 =back
 
 =cut
@@ -2479,7 +2497,8 @@ sub bill {
   my %taxlisthash;
   my @precommit_hooks = ();
 
-  foreach my $cust_pkg ( $self->ncancelled_pkgs ) {
+  $options{ pkg_list } ||= [ $self->ncancelled_pkgs ];  #param checks?
+  foreach my $cust_pkg ( @{ $options{ pkg_list } } ) {
 
     warn "  bill package ". $cust_pkg->pkgnum. "\n" if $DEBUG > 1;
 
@@ -2537,6 +2556,8 @@ sub bill {
     } elsif ( $postal_pkg ) {
 
       foreach my $part_pkg ( $postal_pkg->part_pkg->self_and_bill_linked ) {
+        my %postal_options = %options;
+        delete $postal_options{cancel};
         my $error =
           $self->_make_lines( 'part_pkg'            => $part_pkg,
                               'cust_pkg'            => $postal_pkg,
@@ -2546,7 +2567,7 @@ sub bill {
                               'recur'               => \$total_recur,
                               'tax_matrix'          => \%taxlisthash,
                               'time'                => $time,
-                              'options'             => \%options,
+                              'options'             => \%postal_options,
                             );
         if ($error) {
           $dbh->rollback if $oldAutoCommit;
@@ -2822,6 +2843,7 @@ sub _make_lines {
         || ( $part_pkg->plan eq 'voip_cdr'
               && $part_pkg->option('bill_every_call')
            )
+        || ( $options{cancel} )
   ) {
 
     # XXX should this be a package event?  probably.  events are called
@@ -2835,18 +2857,22 @@ sub _make_lines {
     $lineitems++;
 
     # XXX shared with $recur_prog
-    $sdate = $cust_pkg->bill || $cust_pkg->setup || $time;
+    $sdate = ( $options{cancel} ? $cust_pkg->last_bill : $cust_pkg->bill )
+             || $cust_pkg->setup
+             || $time;
 
     #over two params!  lets at least switch to a hashref for the rest...
     my $increment_next_bill = ( $part_pkg->freq ne '0'
                                 && ( $cust_pkg->getfield('bill') || 0 ) <= $time
+                                && !$options{cancel}
                               );
     my %param = ( 'precommit_hooks'     => $precommit_hooks,
                   'increment_next_bill' => $increment_next_bill,
                 );
 
-    $recur = eval { $cust_pkg->calc_recur( \$sdate, \@details, \%param ) };
-    return "$@ running calc_recur for $cust_pkg\n"
+    my $method = $options{cancel} ? 'calc_cancel' : 'calc_recur';
+    $recur = eval { $cust_pkg->$method( \$sdate, \@details, \%param ) };
+    return "$@ running $method for $cust_pkg\n"
       if ( $@ );
 
     if ( $increment_next_bill ) {
@@ -2926,9 +2952,11 @@ sub _make_lines {
       if ( $part_pkg->option('recur_temporality', 1) eq 'preceding' ) {
         $cust_bill_pkg->sdate( $hash{last_bill} );
         $cust_bill_pkg->edate( $sdate - 86399   ); #60s*60m*24h-1
+        $cust_bill_pkg->edate( $time ) if $options{cancel};
       } else { #if ( $part_pkg->option('recur_temporality', 1) eq 'upcoming' ) {
         $cust_bill_pkg->sdate( $sdate );
         $cust_bill_pkg->edate( $cust_pkg->bill );
+        #$cust_bill_pkg->edate( $time ) if $options{cancel};
       }
 
       $cust_bill_pkg->pkgpart_override($part_pkg->pkgpart)

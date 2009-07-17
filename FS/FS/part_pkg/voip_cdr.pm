@@ -12,6 +12,7 @@ use FS::cdr;
 use FS::rate;
 use FS::rate_prefix;
 use FS::rate_detail;
+use FS::part_pkg::recur_Common;
 
 @ISA = qw(FS::part_pkg::prorate);
 
@@ -22,12 +23,6 @@ tie my %rating_method, 'Tie::IxHash',
 #  'upstream' => 'Rate calls based on upstream data: If the call type is "1", map the upstream rate ID directly to an internal rate (rate_detail), otherwise, pass the upstream price through directly.',
   'upstream_simple' => 'Simply pass through and charge the "upstream_price" amount.',
   'single_price' => 'A single price per minute for all calls.',
-;
-
-tie my %recur_method, 'Tie::IxHash',
-  'anniversary' => 'Charge the recurring fee at the frequency specified above',
-  'prorate' => 'Charge a prorated fee the first time (selectable billing date)',
-  'subscription' => 'Charge the full fee for the first partial period (selectable billing date)',
 ;
 
 #tie my %cdr_location, 'Tie::IxHash',
@@ -72,7 +67,7 @@ tie my %temporalities, 'Tie::IxHash',
                          #'type' => 'radio',
                          #'options' => \%recur_method,
                          'type' => 'select',
-                         'select_options' => \%recur_method,
+                         'select_options' => \%FS::part_pkg::recur_common::recur_method,
                        },
 
     'rating_method' => { 'name' => 'Rating method',
@@ -228,8 +223,29 @@ sub calc_setup {
   $self->option('setup_fee');
 }
 
-#false laziness w/voip_sqlradacct calc_recur resolve it if that one ever gets used again
 sub calc_recur {
+  my $self = shift;
+  my($cust_pkg, $sdate, $details, $param ) = @_;
+
+  my $charges = 0;
+
+  $charges += $self->calc_usage(@_);
+  $charges += $self->calc_recur_Common(@_);
+
+  $charges;
+
+}
+
+sub calc_cancel {
+  my $self = shift;
+  my($cust_pkg, $sdate, $details, $param ) = @_;
+
+  $self->calc_usage(@_);
+}
+
+#false laziness w/voip_sqlradacct calc_recur resolve it if that one ever gets used again
+
+sub calc_usage {
   my $self = shift;
   my($cust_pkg, $sdate, $details, $param ) = @_;
 
@@ -598,33 +614,6 @@ sub calc_recur {
 #             };
 #
 #  } #if ( $spool_cdr && length($downstream_cdr) )
-
-  if ($param->{'increment_next_bill'}) {
-    my $recur_method = $self->option('recur_method', 1) || 'anniversary';
-                  
-    if ( $recur_method eq 'prorate' ) {
-
-      $charges += $self->SUPER::calc_recur(@_);
-
-    } else {
-
-      $charges += $self->option('recur_fee');
-
-      if ( $recur_method eq 'subscription' ) {
-
-        my $cutoff_day = $self->option('cutoff_day', 1) || 1;
-        my ($day, $mon, $year) = ( localtime($$sdate) )[ 3..5 ];
-
-        if ( $day < $cutoff_day ) {
-          if ( $mon == 0 ) { $mon=11; $year--; }
-          else { $mon--; }
-        }
-
-        $$sdate = timelocal(0, 0, 0, $cutoff_day, $mon, $year);
-
-      }#$recur_method eq 'subscription'
-    }#$recur_method eq 'prorate'
-  }#increment_next_bill
 
   $charges;
 }

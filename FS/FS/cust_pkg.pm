@@ -560,6 +560,8 @@ Available options are:
 
 =item date - can be set to a unix style timestamp to specify when to cancel (expire)
 
+=item nobill - can be set true to skip billing if it might otherwise be done.
+
 =back
 
 If there is an error, returns the error, otherwise returns false.
@@ -569,6 +571,8 @@ If there is an error, returns the error, otherwise returns false.
 sub cancel {
   my( $self, %options ) = @_;
   my $error;
+
+  my $conf = new FS::Conf;
 
   warn "cust_pkg::cancel called with options".
        join(', ', map { "$_: $options{$_}" } keys %options ). "\n"
@@ -594,6 +598,19 @@ sub cancel {
 
   my $date = $options{date} if $options{date}; # expire/cancel later
   $date = '' if ($date && $date <= time);      # complain instead?
+
+  #race condition: usage could be ongoing until unprovisioned
+  #resolved by performing a change package instead (which unprovisions) and
+  #later cancelling
+  if ( !$options{nobill} && !$date && $conf->exists('bill_usage_on_cancel') ) {
+      my $error =
+        $self->cust_main->bill( pkg_list => [ $self ], cancel => 1 );
+      warn "Error billing during cancel, custnum ".
+        #$self->cust_main->custnum. ": $error"
+        ": $error"
+        if $error;
+  }
+
 
   my $cancel_time = $options{'time'} || time;
 
