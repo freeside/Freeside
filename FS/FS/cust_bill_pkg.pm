@@ -63,6 +63,8 @@ supported:
 
 =item unitrecur - If not set, defaults to recur
 
+=item hidden - If set to Y, indicates data should not appear as separate line item on invoice
+
 =back
 
 sdate and edate are specified as UNIX timestamps; see L<perlfunc/"time">.  Also
@@ -236,6 +238,7 @@ sub check {
       || $self->ut_numbern('edate')
       || $self->ut_textn('itemdesc')
       || $self->ut_textn('itemcomment')
+      || $self->ut_enum('hidden', [ '', 'Y' ])
   ;
   return $error if $error;
 

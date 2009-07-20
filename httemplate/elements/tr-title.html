@@ -1,5 +1,10 @@
 <TR>
-  <TD BGCOLOR="#e8e8e8" COLSPAN=2>&nbsp;</TD>
+  <TD BGCOLOR="#e8e8e8" COLSPAN=<% $opt{colspan} || 2 %>>&nbsp;</TD>
 </TR>
 
 <% include('tr-justtitle.html', @_) %>
+<%init>
+
+my %opt = @_;
+
+</%init>

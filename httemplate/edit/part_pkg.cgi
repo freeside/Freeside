@@ -175,8 +175,9 @@
                             },
 
 
-                            { 'type'  => 'tablebreak-tr-title',
-                              'value' => 'Pricing add-ons',
+                            { 'type'    => 'tablebreak-tr-title',
+                              'value'   => 'Pricing add-ons',
+                              'colspan' => 4,
                             },
                             { 'field'      => 'bill_dst_pkgpart',
                               'type'       => 'select-part_pkg',
@@ -185,6 +186,13 @@
                               'm2m_dstcol' => 'dst_pkgpart',
                               'm2_error_callback' =>
                                 &{$m2_error_callback_maker}('bill'),
+                              'm2_fields' => [ { 'field' => 'hidden',
+                                                 'type'  => 'checkbox',
+                                                 'value' => 'Y',
+                                                 'curr_value' => '',
+                                                 'label' => 'Bundle',
+                                               },
+                                             ],
                             },
 
                             { type  => 'tablebreak-tr-title',
@@ -385,16 +393,26 @@ my $m2_error_callback_maker = sub {
   my $link_type = shift; #yay closures
   return sub {
     my( $cgi, $object ) = @_;
-      map  {
-             new FS::part_pkg_link {
-               'link_type'   => $link_type,
-               'src_pkgpart' => $object->pkgpart,
-               'dst_pkgpart' => $_,
-             };
-           }
-      grep $_,
-      map  $cgi->param($_),
-      grep /^${link_type}_dst_pkgpart(\d+)$/, $cgi->param;
+    my $num;
+    map {
+
+          if ( /^${link_type}_dst_pkgpart(\d+)$/ &&
+               ( my $dst = $cgi->param("${link_type}_dst_pkgpart$1") ) )
+          {
+
+            my $hidden = $cgi->param("${link_type}_dst_pkgpart__hidden$1")
+                         || '';
+            new FS::part_pkg_link {
+              'link_type'   => $link_type,
+              'src_pkgpart' => $object->pkgpart,
+              'dst_pkgpart' => $dst,
+              'hidden'      => $hidden,
+            };
+          } else {
+            ();
+          }
+        }
+    $cgi->param;
   };
 };
 

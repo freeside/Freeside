@@ -289,7 +289,8 @@ Example:
 %     foreach grep exists($f->{$_}), qw( hashref agent_virt agent_null_right );
 %
 %   if ( $type eq 'tablebreak-tr-title' ) {
-%     $include_common{'table_id'} = 'TableNumber'. $tablenum++
+%     $include_common{'table_id'} = 'TableNumber'. $tablenum++;
+%     $include_common{'colspan'} = $f->{colspan} if $f->{colspan};
 %   }
 %
 %   my $layer_prefix_on = '';
@@ -315,6 +316,27 @@ Example:
 %         %opt,
 %     );
 %     @include;
+%   };
+%
+%   my $column_sub = sub {
+%     my %opt = @_;
+%
+%     my $column   = delete($opt{field});
+%     my $fieldnum = delete($opt{fieldnum});
+%     my $include  = delete($opt{type}) || 'text';
+%     $include = "input-$include" if $include =~ /^(text|money|percentage)$/;
+%
+%     ( "/elements/$include.html",
+%         'field'        => $field.'__'.$column.$fieldnum,
+%         'id'           => $field.'__'.$column.$fieldnum,
+%         'layer_prefix' => $field.'__'.$column.$fieldnum.".",
+%         ( $fieldnum
+%             ? ('cell_style' => 'border-top:1px solid black')
+%             : ()
+%         ),
+%         'cgi' => $cgi,
+%         %opt,
+%     );
 %   };
 %
 %   unless ( $type =~ /^column/ ) {
@@ -382,8 +404,35 @@ Example:
 %         'layer_values' => $layer_values,
 %         'cell_style'   => ( $fieldnum ? 'border-top:1px solid black' : '' ),
 %       );
+%       $existing[0] =~ s(^/elements/tr-)(/elements/);
+%       my @label = @existing;
+%       $label[0] = '/elements/tr-td-label.html';
 
+        <% include( @label ) %>
+        <TD>
         <% include( @existing ) %>
+        </TD>
+
+%       if ( $f->{'m2_fields'} ) {
+%         foreach my $c ( @{ $f->{'m2_fields'} } ) {
+%           my $column = $c->{field};
+%           my @column = &{ $column_sub }( %$c,
+%                                          'fieldnum' => $fieldnum,
+%                                          'curr_value' => $name_obj->$column()
+%                                        );
+
+            <TD id='<% $field %>__<% $column %>_label<% $fieldnum %>'
+                style='text-align:right;vertical-align:top;
+                       border-top:1px solid black;padding-top:5px;'>
+              <% $c->{'label'} || '' %>
+            </TD>
+            <TD style='border-top:1px solid black;padding-top:3px;'>
+              <% include( @column ) %>
+            </TD>
+%         }
+%       }
+
+        </TR>
 
 %       $fieldnum++;
 %       $g_row++;
@@ -409,9 +458,40 @@ Example:
 %     'onchange'   => $onchange,
 %     ( $fieldnum ? ('cell_style' => 'border-top:1px solid black') : () ),
 %   );
+%
+%   if ( $f->{'m2name_table'} || $f->{'m2m_method'} ) {
+%     $include[0] =~ s(^/elements/tr-)(/elements/);
+%     my @label = @include;
+%     $label[0] = '/elements/tr-td-label.html';
 
-    <% include( @include ) %>
+      <% include( @label ) %>
+      <TD>
+      <% include( @include ) %>
+      </TD>
 
+%     if ( $f->{'m2_fields'} ) {
+%       foreach my $c ( @{ $f->{'m2_fields'} } ) {
+%         my $column = $c->{field};
+%         my @column = &{ $column_sub }( %$c, 'fieldnum' => $fieldnum );
+
+          <TD id='<% $field %>__<% $column %>_label<% $fieldnum %>'
+              style='text-align:right;vertical-align:top;
+                     border-top:1px solid black;padding-top:5px;'>
+            <% $c->{'label'} || '' %>
+          </TD>
+          <TD style='border-top:1px solid black;padding-top:3px;'>
+            <% include( @column ) %>
+          </TD>
+%       }
+%     }
+
+      </TR>
+
+%   } else {
+
+      <% include( @include ) %>
+
+%   }
 %   if ( $f->{'m2name_table'} || $f->{'m2m_method'} ) {
 
       <SCRIPT TYPE="text/javascript">
@@ -498,6 +578,39 @@ Example:
           widget_cell.innerHTML = newrow;
 
           row.appendChild(widget_cell);
+
+%         if ( $f->{'m2_fields'} ) {
+%           foreach my $c ( @{ $f->{'m2_fields'} } ) {
+%             my $column = $c->{field};
+%             my @column = &{ $column_sub }(%$c, 'fieldnum' => 'MAGIC_NUMBER');
+
+              var column =  <% include(@column, html_only=>1) |js_string %>;
+              column  = column.replace(  magic_regex, <%$field%>_fieldnum );
+
+              var column_label = document.createElement('TD');
+              column_label.id =
+                '<% $field %>__<% $column %>_label' + <%$field%>_fieldnum;
+
+              column_label.style.textAlign = "right";
+              column_label.style.verticalAlign = "top";
+              column_label.style.borderTop = "1px solid black";
+              column_label.style.paddingTop = "5px";
+
+              column_label.innerHTML = '<% $c->{'label'} || '' %>';
+
+              row.appendChild(column_label);
+          
+              var column_widget = document.createElement('TD');
+
+              column_widget.style.borderTop = "1px solid black";
+              column_widget.style.paddingTop = "3px";
+
+              column_widget.innerHTML = column;
+
+              row.appendChild(column_widget);
+
+%           }
+%         }
 
 %         if ( $f->{'m2_new_js'} ) {
             // take out items selected in previous dropdowns

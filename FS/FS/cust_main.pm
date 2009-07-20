@@ -2535,6 +2535,7 @@ sub bill {
                             'recur'               => \$total_recur,
                             'tax_matrix'          => \%taxlisthash,
                             'time'                => $time,
+                            'real_pkgpart'        => $real_pkgpart,
                             'options'             => \%options,
                           );
       if ($error) {
@@ -2566,6 +2567,7 @@ sub bill {
 
     } elsif ( $postal_pkg ) {
 
+      my $real_pkgpart = $postal_pkg->pkgpart;
       foreach my $part_pkg ( $postal_pkg->part_pkg->self_and_bill_linked ) {
         my %postal_options = %options;
         delete $postal_options{cancel};
@@ -2578,6 +2580,7 @@ sub bill {
                               'recur'               => \$total_recur,
                               'tax_matrix'          => \%taxlisthash,
                               'time'                => $time,
+                              'real_pkgpart'        => $real_pkgpart,
                               'options'             => \%postal_options,
                             );
         if ($error) {
@@ -2790,7 +2793,7 @@ sub _make_lines {
   my (%options) = %{$params{options}};
 
   my $dbh = dbh;
-  my $real_pkgpart = $cust_pkg->pkgpart;
+  my $real_pkgpart = $params{real_pkgpart};
   my %hash = $cust_pkg->hash;
   my $old_cust_pkg = new FS::cust_pkg \%hash;
 
@@ -2958,6 +2961,7 @@ sub _make_lines {
         'unitrecur' => $unitrecur,
         'quantity'  => $cust_pkg->quantity,
         'details'   => \@details,
+        'hidden'    => $part_pkg->hidden,
       };
 
       if ( $part_pkg->option('recur_temporality', 1) eq 'preceding' ) {
@@ -2981,7 +2985,7 @@ sub _make_lines {
       ###
 
       my $error = 
-        $self->_handle_taxes($part_pkg, $taxlisthash, $cust_bill_pkg, $cust_pkg, $options{invoice_time});
+        $self->_handle_taxes($part_pkg, $taxlisthash, $cust_bill_pkg, $cust_pkg, $options{invoice_time}, $real_pkgpart);
       return $error if $error;
 
       push @$cust_bill_pkgs, $cust_bill_pkg;
@@ -3001,6 +3005,7 @@ sub _handle_taxes {
   my $cust_bill_pkg = shift;
   my $cust_pkg = shift;
   my $invoice_time = shift;
+  my $real_pkgpart = shift;
 
   my %cust_bill_pkg = ();
   my %taxes = ();
@@ -3091,20 +3096,29 @@ sub _handle_taxes {
   }
  
   my @display = ();
-  if ( $conf->exists('separate_usage') ) {
+  if ( $conf->exists('separate_usage') || $cust_bill_pkg->hidden ) {
+
+    my $temp_pkg = new FS::cust_pkg { pkgpart => $real_pkgpart };
+    my %hash = $cust_bill_pkg->hidden  # maybe for all bill linked?
+               ? (  'section' => $temp_pkg->part_pkg->categoryname )
+               : ();
+
     my $section = $cust_pkg->part_pkg->option('usage_section', 'Hush!');
     my $summary = $cust_pkg->part_pkg->option('summarize_usage', 'Hush!');
-    push @display, new FS::cust_bill_pkg_display { type    => 'S' };
-    push @display, new FS::cust_bill_pkg_display { type    => 'R' };
-    push @display, new FS::cust_bill_pkg_display { type    => 'U',
-                                                   section => $section
-                                                 };
+    push @display, new FS::cust_bill_pkg_display { type => 'S', %hash };
+    push @display, new FS::cust_bill_pkg_display { type => 'R', %hash };
+
     if ($section && $summary) {
-      $display[2]->post_total('Y');
       push @display, new FS::cust_bill_pkg_display { type    => 'U',
                                                      summary => 'Y',
-                                                   }
+                                                     %hash,
+                                                   };
+      $hash{post_total} = 'Y';
     }
+
+    $hash{section} = $section if $conf->exists('separate_usage');
+    push @display, new FS::cust_bill_pkg_display { type => 'U', %hash };
+
   }
   $cust_bill_pkg->set('display', \@display);
 

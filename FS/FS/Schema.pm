@@ -518,6 +518,7 @@ sub tables_hashref {
         'quantity',             'int', 'NULL',      '', '', '',
         'unitsetup',           @money_typen,            '', '', 
         'unitrecur',           @money_typen,            '', '', 
+        'hidden',              'char', 'NULL',       1, '', '',
       ],
       'primary_key' => 'billpkgnum',
       'unique' => [],
@@ -1240,15 +1241,18 @@ sub tables_hashref {
 
     'part_pkg_link' => {
       'columns' => [
-        'pkglinknum',  'serial',  '',      '', '', '',
-        'src_pkgpart', 'int',     '',      '', '', '',
-        'dst_pkgpart', 'int',     '',      '', '', '', 
-        'link_type',   'varchar', '', $char_d, '', '',
+        'pkglinknum',  'serial',   '',      '', '', '',
+        'src_pkgpart', 'int',      '',      '', '', '',
+        'dst_pkgpart', 'int',      '',      '', '', '', 
+        'link_type',   'varchar',  '', $char_d, '', '',
+        'hidden',      'char', 'NULL',       1, '', '',
       ],
       'primary_key' => 'pkglinknum',
-      'unique' => [ [ 'src_pkgpart', 'dst_pkgpart', 'link_type' ] ],
+      'unique' => [ [ 'src_pkgpart', 'dst_pkgpart', 'link_type', 'hidden' ] ],
       'index'  => [ [ 'src_pkgpart' ] ],
     },
+    # XXX somewhat borked unique: we don't really want a hidden and unhidden
+    # it turns out we'd prefer to use svc, bill, and invisibill (or something)
 
     'part_pkg_taxclass' => {
       'columns' => [

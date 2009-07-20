@@ -1,13 +1,7 @@
 <% include('tr-td-label.html', @_ ) %>
 
   <TD <% $style %>>
-    <INPUT TYPE  = "checkbox"
-           NAME  = "<% $opt{field} %>"
-           ID    = "<% $opt{id} %>"
-           VALUE = "<% $opt{value} %>"
-           <% $opt{curr_value} eq $opt{value} ? ' CHECKED' : '' %>
-           <% $onchange %>
-    >
+    <% include('checkbox.html', @_) %>
   </TD>
 
 </TR>

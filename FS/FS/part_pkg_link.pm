@@ -51,6 +51,11 @@ Destination package (see L<FS::part_pkg>)
 Link type - currently, "bill" (source package bills a line item from target
 package), or "svc" (source package includes services from target package).
 
+=item hidden
+
+Flag indicating that this subpackage should be felt, but not seen as an invoice
+line item when set to 'Y'
+
 =back
 
 =head1 METHODS
@@ -114,7 +119,8 @@ sub check {
     $self->ut_numbern('pkglinknum')
     || $self->ut_foreign_key('src_pkgpart', 'part_pkg', 'pkgpart')
     || $self->ut_foreign_key('dst_pkgpart', 'part_pkg', 'pkgpart')
-    || $self->ut_text('link_type', [ 'bill', 'svc' ] )
+    || $self->ut_enum('link_type', [ 'bill', 'svc' ] )
+    || $self->ut_enum('hidden', [ '', 'Y' ] )
   ;
   return $error if $error;
 

@@ -1,0 +1,19 @@
+<% $opt{'prefix'} %><INPUT TYPE  = "checkbox"
+                           NAME  = "<% $opt{field} %>"
+                           ID    = "<% $opt{id} %>"
+                           VALUE = "<% $opt{value} %>"
+                           <% $opt{curr_value} eq $opt{value}
+                                ? ' CHECKED'
+                                : ''
+                           %>
+                           <% $onchange %>
+                    ><% $opt{'postfix'} %>
+<%init>
+
+my %opt = @_;
+
+my $onchange = $opt{'onchange'}
+                 ? 'onChange="'. $opt{'onchange'}. '(this)"'
+                 : '';
+
+</%init>

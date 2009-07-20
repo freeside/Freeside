@@ -917,10 +917,12 @@ sub svc_part_pkg_link {
 
 sub _part_pkg_link {
   my( $self, $type ) = @_;
-  qsearch('part_pkg_link', { 'src_pkgpart' => $self->pkgpart,
-                             'link_type'   => $type,
-                           }
-         );
+  qsearch({ table    => 'part_pkg_link',
+            hashref  => { 'src_pkgpart' => $self->pkgpart,
+                          'link_type'   => $type,
+                        },
+            order_by => "ORDER BY hidden",
+         });
 }
 
 sub self_and_bill_linked {
@@ -928,12 +930,18 @@ sub self_and_bill_linked {
 }
 
 sub _self_and_linked {
-  my( $self, $type ) = @_;
+  my( $self, $type, $hidden ) = @_;
+  $hidden ||= '';
 
-  ( $self,
-    map { $_->dst_pkg->_self_and_linked($type) }
-        $self->_part_pkg_link($type)
-  );
+  my @result = ();
+  foreach ( ( $self, map { $_->dst_pkg->_self_and_linked($type, $_->hidden) }
+                     $self->_part_pkg_link($type) ) )
+  {
+    $_->hidden($hidden) if $hidden;
+    push @result, $_;
+  }
+
+  (@result);
 }
 
 =item part_pkg_taxoverride [ CLASS ]

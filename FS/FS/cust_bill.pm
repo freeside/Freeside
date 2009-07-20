@@ -2793,8 +2793,19 @@ sub _items_cust_bill_pkg {
   my $section = $opt{section}->{description} if $opt{section};
 
   my @b = ();
+  my ($s, $r, $u) = ( undef, undef, undef );
   foreach my $cust_bill_pkg ( @$cust_bill_pkg )
   {
+
+    foreach ( $s, $r, $u ) {
+      if ( $_ && !$cust_bill_pkg->hidden ) {
+        $_->{amount}      = sprintf( "%.2f", $_->{amount} ),
+        $_->{unit_amount} = sprintf( "%.2f", $_->{unit_amount} ),
+        push @b, { %$_ };
+        $_ = undef;
+      }
+    }
+
     foreach my $display ( grep { defined($section)
                                  ? $_->section eq $section
                                  : 1
@@ -2826,18 +2837,25 @@ sub _items_cust_bill_pkg {
           my @d = ();
           push @d, map &{$escape_function}($_),
                        $cust_pkg->h_labels_short($self->_date)
-            unless $cust_pkg->part_pkg->hide_svc_detail;
+            unless $cust_pkg->part_pkg->hide_svc_detail
+                || $cust_bill_pkg->hidden;
           push @d, $cust_bill_pkg->details(%details_opt)
             if $cust_bill_pkg->recur == 0;
 
-          push @b, {
-            description     => $description,
-            #pkgpart         => $part_pkg->pkgpart,
-            pkgnum          => $cust_bill_pkg->pkgnum,
-            amount          => sprintf("%.2f", $cust_bill_pkg->setup),
-            unit_amount     => sprintf("%.2f", $cust_bill_pkg->unitsetup),
-            quantity        => $cust_bill_pkg->quantity,
-            ext_description => \@d,
+          if ( $cust_bill_pkg->hidden ) {
+            $s->{amount}      += $cust_bill_pkg->setup;
+            $s->{unit_amount} += $cust_bill_pkg->unitsetup;
+            push @{ $s->{ext_description} }, @d;
+          } else {
+            $s = {
+              description     => $description,
+              #pkgpart         => $part_pkg->pkgpart,
+              pkgnum          => $cust_bill_pkg->pkgnum,
+              amount          => $cust_bill_pkg->setup,
+              unit_amount     => $cust_bill_pkg->unitsetup,
+              quantity        => $cust_bill_pkg->quantity,
+              ext_description => \@d,
+            };
           };
 
         }
@@ -2869,6 +2887,7 @@ sub _items_cust_bill_pkg {
                                                  #$cust_bill_pkg->sdate)
             unless $cust_pkg->part_pkg->hide_svc_detail
                 || $cust_bill_pkg->itemdesc
+                || $cust_bill_pkg->hidden
                 || $is_summary;
 
           push @d, $cust_bill_pkg->details(%details_opt)
@@ -2883,17 +2902,45 @@ sub _items_cust_bill_pkg {
             $amount = $cust_bill_pkg->usage;
           }
   
-          push @b, {
-            description     => $description,
-            #pkgpart         => $part_pkg->pkgpart,
-            pkgnum          => $cust_bill_pkg->pkgnum,
-            amount          => sprintf("%.2f", $amount),
-            unit_amount     => sprintf("%.2f", $cust_bill_pkg->unitrecur),
-            quantity        => $cust_bill_pkg->quantity,
-            ext_description => \@d,
-          } unless ( $type eq 'U' && ! $amount );
+          if ( !$type || $type eq 'R' ) {
 
-        }
+            if ( $cust_bill_pkg->hidden ) {
+              $r->{amount}      += $amount;
+              $r->{unit_amount} += $cust_bill_pkg->unitrecur;
+              push @{ $r->{ext_description} }, @d;
+            } else {
+              $r = {
+                description     => $description,
+                #pkgpart         => $part_pkg->pkgpart,
+                pkgnum          => $cust_bill_pkg->pkgnum,
+                amount          => $amount,
+                unit_amount     => $cust_bill_pkg->unitrecur,
+                quantity        => $cust_bill_pkg->quantity,
+                ext_description => \@d,
+              };
+            }
+
+          } elsif ( $amount ) {  # && $type eq 'U'
+
+            if ( $cust_bill_pkg->hidden ) {
+              $u->{amount}      += $amount;
+              $u->{unit_amount} += $cust_bill_pkg->unitrecur;
+              push @{ $u->{ext_description} }, @d;
+            } else {
+              $u = {
+                description     => $description,
+                #pkgpart         => $part_pkg->pkgpart,
+                pkgnum          => $cust_bill_pkg->pkgnum,
+                amount          => $amount,
+                unit_amount     => $cust_bill_pkg->unitrecur,
+                quantity        => $cust_bill_pkg->quantity,
+                ext_description => \@d,
+              };
+            }
+
+          }
+
+        } # recurring or usage with recurring charge
 
       } else { #pkgnum tax or one-shot line item (??)
 
@@ -2916,6 +2963,14 @@ sub _items_cust_bill_pkg {
 
     }
 
+  }
+
+  foreach ( $s, $r, $u ) {
+    if ( $_ ) {
+      $_->{amount}      = sprintf( "%.2f", $_->{amount} ),
+      $_->{unit_amount} = sprintf( "%.2f", $_->{unit_amount} ),
+      push @b, { %$_ };
+    }
   }
 
   @b;

@@ -163,16 +163,28 @@ my @process_m2m = (
     'target_table' => 'part_pkg',
     'base_field'   => 'src_pkgpart',
     'target_field' => 'dst_pkgpart',
-    'hashref'      => { 'link_type' => 'bill' },
-    'params'       => [ map $cgi->param($_), grep /^bill_dst_pkgpart/, $cgi->param ],
+    'hashref'      => { 'link_type' => 'svc', 'hidden' => '' },
+    'params'       => [ map $cgi->param($_),
+                        grep /^svc_dst_pkgpart/, $cgi->param
+                      ],
   },
-  { 'link_table'   => 'part_pkg_link',
-    'target_table' => 'part_pkg',
-    'base_field'   => 'src_pkgpart',
-    'target_field' => 'dst_pkgpart',
-    'hashref'      => { 'link_type' => 'svc' },
-    'params'       => [ map $cgi->param($_), grep /^svc_dst_pkgpart/, $cgi->param ],
-  },
+  map { 
+    my $hidden = $_;
+    { 'link_table'   => 'part_pkg_link',
+      'target_table' => 'part_pkg',
+      'base_field'   => 'src_pkgpart',
+      'target_field' => 'dst_pkgpart',
+      'hashref'      => { 'link_type' => 'bill', 'hidden' => $hidden },
+      'params'       => [ map { $cgi->param($_) }
+                          grep { my $param = "bill_dst_pkgpart__hidden";
+                                 my $digit = '';
+                                 (($digit) = /^bill_dst_pkgpart(\d+)/ ) &&
+                                 $cgi->param("$param$digit") eq $hidden;
+                               }
+                          $cgi->param
+                        ],
+    },
+  } ( '', 'Y' ),
 );
 
 foreach my $override_class ($cgi->param) {
