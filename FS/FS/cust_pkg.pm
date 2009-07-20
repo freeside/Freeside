@@ -647,7 +647,6 @@ sub cancel {
     # Add a credit for remaining service
     my $remaining_value = $self->calc_remain(time=>$cancel_time);
     if ( $remaining_value > 0 && !$options{'no_credit'} ) {
-      my $conf = new FS::Conf;
       my $error = $self->cust_main->credit(
         $remaining_value,
         'Credit for unused time on '. $self->part_pkg->pkg,
@@ -673,10 +672,8 @@ sub cancel {
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   return '' if $date; #no errors
 
-  my $conf = new FS::Conf;
   my @invoicing_list = grep { $_ !~ /^(POST|FAX)$/ } $self->cust_main->invoicing_list;
   if ( !$options{'quiet'} && $conf->exists('emailcancel') && @invoicing_list ) {
-    my $conf = new FS::Conf;
     my $error = send_email(
       'from'    => $conf->config('invoice_from', $self->cust_main->agentnum),
       'to'      => \@invoicing_list,
