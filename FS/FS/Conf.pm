@@ -2098,6 +2098,13 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'voip-cdr_email',
+    'section'     => '',
+    'description' => 'Include the call details on emailed invoices even if the customer is configured for not printing them on the invoices.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'svc_forward-arbitrary_dst',
     'section'     => '',
     'description' => "Allow forwards to point to arbitrary strings that don't necessarily look like email addresses.  Only used when using forwards for weird, non-email things.",

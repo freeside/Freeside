@@ -605,6 +605,8 @@ sub generate_email {
     'subject'   => (($args{'subject'}) ? $args{'subject'} : 'Invoice'),
   );
 
+  my %cdrs = ( 'unsquelch_cdr' => $conf->exists('voip-cdr_email') );
+
   if (ref($args{'to'}) eq 'ARRAY') {
     $return{'to'} = $args{'to'};
   } else {
@@ -643,7 +645,7 @@ sub generate_email {
       if ( ref($args{'print_text'}) eq 'ARRAY' ) {
         $data = $args{'print_text'};
       } else {
-        $data = [ $self->print_text('', $args{'template'}) ];
+        $data = [ $self->print_text('', $args{'template'}, %cdrs) ];
       }
 
     }
@@ -690,7 +692,11 @@ sub generate_email {
                          '    </title>',
                          '  </head>',
                          '  <body bgcolor="#e8e8e8">',
-                         $self->print_html('', $args{'template'}, $content_id),
+                         $self->print_html({ time          => '',
+                                             template      => $args{'template'},
+                                             cid           => $content_id,
+                                             %cdrs,
+                                          }),
                          '  </body>',
                          '</html>',
                        ],
@@ -723,7 +729,7 @@ sub generate_email {
 
       $related->add_part($image);
 
-      my $pdf = build MIME::Entity $self->mimebuild_pdf('', $args{'template'});
+      my $pdf = build MIME::Entity $self->mimebuild_pdf('', $args{'template'}, %cdrs);
 
       $return{'mimeparts'} = [ $related, $pdf ];
 
@@ -751,7 +757,7 @@ sub generate_email {
 
       #mime parts arguments a la MIME::Entity->build().
       $return{'mimeparts'} = [
-        { $self->mimebuild_pdf('', $args{'template'}) }
+        { $self->mimebuild_pdf('', $args{'template'}, %cdrs) }
       ];
     }
   
@@ -771,7 +777,7 @@ sub generate_email {
       if ( ref($args{'print_text'}) eq 'ARRAY' ) {
         $return{'body'} = $args{'print_text'};
       } else {
-        $return{'body'} = [ $self->print_text('', $args{'template'}) ];
+        $return{'body'} = [ $self->print_text('', $args{'template'}, %cdrs) ];
       }
 
     }
@@ -1611,11 +1617,12 @@ L<Time::Local> and L<Date::Parse> for conversion functions.
 =cut
 
 sub print_text {
-  my( $self, $today, $template ) = @_;
+  my( $self, $today, $template, %opt ) = @_;
 
   my %params = ( 'format' => 'template' );
   $params{'time'} = $today if $today;
   $params{'template'} = $template if $template;
+  $params{'unsquelch_cdr'} = $opt{'unsquelch_cdr'} if $opt{'unsquelch_cdr'};
 
   $self->print_generic( %params );
 }
@@ -1636,11 +1643,12 @@ L<Time::Local> and L<Date::Parse> for conversion functions.
 =cut
 
 sub print_latex {
-  my( $self, $today, $template ) = @_;
+  my( $self, $today, $template, %opt ) = @_;
 
   my %params = ( 'format' => 'latex' );
   $params{'time'} = $today if $today;
   $params{'template'} = $template if $template;
+  $params{'unsquelch_cdr'} = $opt{'unsquelch_cdr'} if $opt{'unsquelch_cdr'};
 
   $template ||= $self->_agent_template;
 
