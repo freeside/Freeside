@@ -15,6 +15,7 @@ lib/RT/URI/freeside/XMLRPC.pm
  html/Elements/Tabs
  html/Elements/Footer
  html/Elements/CollectionAsTable/Row #backport from 3.3-TESTING
+ html/Ticket/Create.html
  html/Ticket/Display.html
 html/Ticket/Elements/AddCustomers
 html/Ticket/Elements/EditCustomers

@@ -387,10 +387,10 @@ if ((!exists $ARGS{'AddMoreAttach'}) and ($ARGS{'id'} eq 'new')) { # new ticket?
 
 my $actions = {
     A => {
-        html => q[<a href="#basics" onclick="return switchVisibility('Ticket-Create-basics','Ticket-Create-details');">] . loc('Show basics') . q[</a>],
+        html => q[<a href="#basics" onclick="return switchVisibility('Ticket-Create-basics','Ticket-Create-details');" CLASS="fsblackbutton">] . loc('Show basics') . q[</a>],
     },
     B => {
-        html => q[<a href="#details" onclick="return switchVisibility('Ticket-Create-details','Ticket-Create-basics');">] . loc('Show details') . q[</a>],
+        html => q[<a href="#details" onclick="return switchVisibility('Ticket-Create-details','Ticket-Create-basics');" CLASS="fsblackbutton">] . loc('Show details') . q[</a>],
     },
 };
 </%INIT>
