@@ -4,6 +4,7 @@ config.layout.in
  etc/RT_SiteConfig.pm
 lib/RT/Interface/Web_Vendor.pm
 lib/RT/SearchBuilder.pm #need DBIx::SearchBuilder >= 1.36 for Pg 8.1+
+lib/RT/Transaction_Overlay.pm
 lib/RT/URI/freeside.pm
 lib/RT/URI/freeside/Internal.pm
 lib/RT/URI/freeside/XMLRPC.pm

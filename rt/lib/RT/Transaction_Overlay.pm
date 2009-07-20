@@ -276,7 +276,7 @@ textual part (as defined in RT::I18N::IsTextualContentType).  Otherwise,
 returns undef.
 
 Takes a paramhash.  If the $args{'Quote'} parameter is set, wraps this message 
-at $args{'Wrap'}.  $args{'Wrap'} defaults to 70.
+at $args{'Wrap'}.  $args{'Wrap'} defaults to $RT::MessageBoxWidth - 2 or 70.
 
 If $args{'Type'} is set to C<text/html>, plain texts are upgraded to HTML.
 Otherwise, HTML texts are downgraded to plain text.  If $args{'Type'} is
@@ -290,6 +290,7 @@ sub Content {
         Type  => $PreferredContentType,
         Quote => 0,
         Wrap  => 70,
+        Wrap  => ( $RT::MessageBoxWidth || 72 ) - 2,
         @_
     );
 
@@ -335,7 +336,7 @@ sub Content {
             $max = length if ( length > $max );
         }
 
-        if ( $max > 76 ) {
+        if ( $max > $args{'Wrap'}+6 ) { # 76 ) {
             require Text::Wrapper;
             my $wrapper = new Text::Wrapper(
                 columns    => $args{'Wrap'},
