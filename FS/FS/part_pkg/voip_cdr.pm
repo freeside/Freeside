@@ -4,17 +4,16 @@ use strict;
 use vars qw(@ISA $DEBUG %info);
 use Date::Format;
 use Tie::IxHash;
-use Time::Local;
 use FS::Conf;
 use FS::Record qw(qsearchs qsearch);
-use FS::part_pkg::flat;
+use FS::part_pkg::recur_Common;
 use FS::cdr;
 use FS::rate;
 use FS::rate_prefix;
 use FS::rate_detail;
 use FS::part_pkg::recur_Common;
 
-@ISA = qw(FS::part_pkg::prorate);
+@ISA = qw(FS::part_pkg::recur_Common);
 
 $DEBUG = 0;
 
@@ -67,7 +66,7 @@ tie my %temporalities, 'Tie::IxHash',
                          #'type' => 'radio',
                          #'options' => \%recur_method,
                          'type' => 'select',
-                         'select_options' => \%FS::part_pkg::recur_common::recur_method,
+                         'select_options' => \%FS::part_pkg::recur_Common::recur_method,
                        },
 
     'rating_method' => { 'name' => 'Rating method',
@@ -151,6 +150,7 @@ tie my %temporalities, 'Tie::IxHash',
     '411_rewrite' => { 'name' => 'Rewrite these (comma-separated) destination numbers to 411 for rating purposes (also ignore any carrierid check): ',
                       },
 
+    #false laziness w/cdr_termination.pm
     'output_format' => { 'name' => 'CDR invoice display format',
                          'type' => 'select',
                          'select_options' => { FS::cdr::invoice_formats() },
@@ -163,6 +163,7 @@ tie my %temporalities, 'Tie::IxHash',
     'summarize_usage' => { 'name' => 'Include usage summary with recurring charges when usage is in separate section',
                           'type' => 'checkbox',
                         },
+    #eofalse
 
     'bill_every_call' => { 'name' => 'Generate an invoice immediately for every call.  Useful for prepaid.',
                            'type' => 'checkbox',
@@ -681,11 +682,6 @@ sub check_chargable {
 
 sub is_free {
   0;
-}
-
-sub base_recur {
-  my($self, $cust_pkg) = @_;
-  $self->option('recur_fee');
 }
 
 #  This equates svc_phone records; perhaps svc_phone should have a field
