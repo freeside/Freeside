@@ -475,10 +475,12 @@ sub calc_usage {
         my $minutes = sprintf("%.1f", $seconds / 60);
         $minutes =~ s/\.0$// ;# if $granularity == 60;
 
-        $charge = sprintf('%.2f', ( $self->option('min_charge') * $minutes )
-                                  + 0.00000001 ); #so 1.005 rounds to 1.01
+        # XXX config?
+        #$charge = sprintf('%.2f', ( $self->option('min_charge') * $minutes )
+                                  #+ 0.00000001 ); #so 1.005 rounds to 1.01
+        $charge = sprintf('%.4f', ( $self->option('min_charge') * $minutes )
+                                  + 0.0000000001 ); #so 1.00005 rounds to 1.0001
 
-        $charge =  
         $charges += $charge;
 
         @call_details = ($cdr->downstream_csv( 'format' => $output_format,
