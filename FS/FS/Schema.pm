@@ -2112,7 +2112,7 @@ sub tables_hashref {
 
         # how it was rated internally...
         'ratedetailnum',           'int', 'NULL',      '', '', '',
-        'rated_price',         'decimal', 'NULL',  '10,2', '', '',
+        'rated_price',         'decimal', 'NULL',  '10,4', '', '',
 
         'distance',            'decimal', 'NULL',      '', '', '',
         'islocal',                 'int', 'NULL',      '', '', '', # '',  '', 0, '' instead?
@@ -2156,11 +2156,11 @@ sub tables_hashref {
 
     'cdr_termination' => {
       'columns' => [
-        'cdrtermnum', 'bigserial', '',   '', '', '',
-        'acctid',        'bigint', '',   '', '', '', 
-        'termpart',         'int', '',   '', '', '',#future expansion, see below
-        'rated_price',  @money_typen,        '', '',
-        'status',     'varchar', 'NULL', 32, '', '',
+        'cdrtermnum', 'bigserial',     '',      '', '', '',
+        'acctid',        'bigint',     '',      '', '', '', 
+        'termpart',         'int',     '',      '', '', '',#future use see below
+        'rated_price',  'decimal', 'NULL',  '10,4', '', '',
+        'status',       'varchar', 'NULL',      32, '', '',
       ],
       'primary_key' => 'cdrtermnum',
       'unique'      => [ [ 'acctid', 'termpart' ] ],

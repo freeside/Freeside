@@ -164,7 +164,9 @@ sub calc_recur {
 
     #add a cdr_termination record and the charges
 
-    my $term_price = sprintf('%.2f', $cdr->rated_price * $term_percent / 100 );
+    # XXX config?
+    #my $term_price = sprintf('%.2f', $cdr->rated_price * $term_percent / 100 );
+    my $term_price = sprintf('%.4f', $cdr->rated_price * $term_percent / 100 );
 
     my $cdr_termination = new FS::cdr_termination {
       'acctid'      => $cdr->acctid,
