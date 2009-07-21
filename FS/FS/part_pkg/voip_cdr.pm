@@ -83,7 +83,7 @@ tie my %temporalities, 'Tie::IxHash',
                    },
 
     'min_charge' => { 'name' => 'Charge per minute when using "single price per minute" rating method',
-                      'type' => 'money',
+                      'type' => 'text',
                     },
 
     'ignore_unrateable' => { 'name' => 'Ignore calls without a rate in the rate tables.  By default, the system will throw a fatal error upon encountering unrateable calls.',
