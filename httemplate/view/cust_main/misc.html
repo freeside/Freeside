@@ -85,13 +85,15 @@
   </TR>
 
 % if ( $conf->exists('cust_main-enable_birthdate') ) {
-%   my $dt = DateTime->from_epoch(epoch => $cust_main->birthdate,
-%                                  time_zone=>'floating',
-%                                 );
+%   my $dt = $cust_main->birthdate ne ''
+%              ? DateTime->from_epoch( 'epoch'     => $cust_main->birthdate,
+%                                      'time_zone' =>'floating',
+%                                    )
+%              : '';
 
   <TR>
     <TD ALIGN="right">Date of Birth</TD>
-    <TD BGCOLOR="#ffffff"><% $cust_main->birthdate ne '' ? $dt->strftime($date_format) : '' %></TD>
+    <TD BGCOLOR="#ffffff"><% $dt ? $dt->strftime($date_format) : '' %></TD>
   </TR>
 
 % }
