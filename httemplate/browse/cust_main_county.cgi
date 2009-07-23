@@ -23,10 +23,6 @@
      'link_onclicks'  => \@link_onclicks,
   )
 %>
-%
-% #         <FONT SIZE=-1><A HREF="<% $p %>edit/process/cust_main_county-collapse.cgi?<% $hashref->{taxnum} %>">collapse state</A></FONT>
-% # % } 
-%
 <%once>
 
 my $conf = new FS::Conf;
@@ -102,6 +98,17 @@ sub expand_link {
   '</FONT>';
 }
 
+sub collapse_link {
+  my %param = @_;
+
+  my $taxnum = $param{'row'}->taxnum;
+  my $url = "${p}edit/process/cust_main_county-collapse.cgi?$taxnum";
+  $url = "javascript:collapse_areyousure('$url')";
+
+  qq(<FONT SIZE="-1"><A HREF="$url">$param{'label'}</A></FONT>);
+}
+
+
 sub separate_taxclasses_link {
   my( $row ) = @_;
   my $taxnum = $row->taxnum;
@@ -109,6 +116,8 @@ sub separate_taxclasses_link {
 
   qq!<FONT SIZE="-1"><A HREF="$url">!;
 }
+
+#un-separate taxclasses too
 
 </%once>
 <%init>
@@ -122,9 +131,18 @@ my $enable_taxclasses = $conf->exists('enable_taxclasses');
 
 my @menubar;
 
-my $html_init =
-  "Click on <u>add states</u> to specify a country's tax rates by state or province.
-   <BR>Click on <u>add counties</u> to specify a state's tax rates by county.";
+my $html_init = <<END;
+  <SCRIPT>
+    function collapse_areyousure(href) {
+     if (confirm("Are you sure you want to remove all county tax rates for this state?") == true)
+       window.location.href = href;
+    }
+  </SCRIPT>
+
+  Click on <u>add states</u> to specify a country's tax rates by state or province.
+  <BR>Click on <u>add counties</u> to specify a state's tax rates by county, or <u>remove counties</u> to remove per-county tax rates.
+END
+
 $html_init .= "<BR>Click on <u>separate taxclasses</u> to specify taxes per taxclass."
   if $enable_taxclasses;
 $html_init .= '<BR><BR>';
@@ -360,11 +378,16 @@ my @fields = (
                                   )
         )
       },
-  sub { $_[0]->county || '(all)&nbsp'.
-                         expand_link( desc  => 'Add Counties',
-                                      row   => $_[0],
-                                      label => 'add&nbsp;counties',
-                                    )
+  sub { $_[0]->county
+          ? $_[0]->county. '&nbsp'.
+              collapse_link( label=> 'remove&nbsp;counties',
+                             row  => $_[0],
+                           )
+          : '(all)&nbsp'.
+              expand_link(   desc  => 'Add Counties',
+                             row   => $_[0],
+                             label => 'add&nbsp;counties',
+                         );
       },
 );
 
