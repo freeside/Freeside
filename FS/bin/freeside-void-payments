@@ -14,7 +14,7 @@ use Date::Parse 'str2time';
 use Date::Format 'time2str';
 
 my %opt;
-getopts("f:ca:g:s:e:", \%opt);
+getopts("r:f:ca:g:s:e:", \%opt);
 
 $user = shift or die &usage;
 &adminsuidsetup( $user );
