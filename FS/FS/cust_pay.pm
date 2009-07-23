@@ -345,7 +345,8 @@ sub delete {
     return $error;
   }
 
-  if ( $conf->config('deletepayments') ne '' ) {
+  if (    $conf->exists('deletepayments')
+       && $conf->config('deletepayments') ne '' ) {
 
     my $cust_main = $self->cust_main;
 
