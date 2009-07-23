@@ -23,6 +23,7 @@
                                      $num_accounts_sub,
                                    ],
                   'align'       => 'rllrrrr',
+                  'links'       => [ map { $svc_acct_pop_link } (1..6) ],
           )
 %>
 <%init>
