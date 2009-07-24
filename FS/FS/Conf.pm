@@ -1664,6 +1664,14 @@ worry that config_items is freeside-specific and icky.
     'select_enum' => [ 'Framed-IP-Address', 'Framed-Address' ],
   },
 
+  #http://dev.coova.org/svn/coova-chilli/doc/dictionary.chillispot
+  {
+    'key'         => 'radius-chillispot-max',
+    'section'     => '',
+    'description' => 'Enable ChilliSpot (and CoovaChilli) Max attributes, specifically ChilliSpot-Max-{Input,Output,Total}-{Octets,Gigawords}.',
+    'type'        => 'checkbox',
+  },
+
   {
     'key'         => 'svc_acct-alldomains',
     'section'     => '',

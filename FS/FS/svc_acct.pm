@@ -15,6 +15,7 @@ use vars qw( @ISA $DEBUG $me $conf $skip_fuzzyfiles
              $dirhash
              @saltset @pw_set );
 use Scalar::Util qw( blessed );
+use Math::BigInt;
 use Carp;
 use Fcntl qw(:flock);
 use Date::Format;
@@ -1440,6 +1441,28 @@ sub radius_reply {
     $reply{'Session-Timeout'} = $self->seconds;
   }
 
+  if ( $conf->exists('radius-chillispot-max') ) {
+    #http://dev.coova.org/svn/coova-chilli/doc/dictionary.chillispot
+
+    #hmm.  just because sqlradius.pm says so?
+    my %whatis = (
+      'input'  => 'up',
+      'output' => 'down',
+      'total'  => 'total',
+    );
+
+    foreach my $what (qw( input output total )) {
+      my $is = $whatis{$what}.'bytes';
+      if ( $self->$is() =~ /\d/ ) {
+        my $big = new Math::BigInt $self->$is();
+        my $att = "Chillispot-Max-\u$what";
+        $reply{"$att-Octets"}    = $big->copy->band(0xffffffff)->bstr;
+        $reply{"$att-Gigawords"} = $big->copy->brsft(32)->bstr;
+      }
+    }
+
+  }
+
   %reply;
 }
 
@@ -1772,6 +1795,16 @@ sub _op_usage {
   die "Can't update $column for svcnum". $self->svcnum
     if $rv == 0;
 
+  #$self->snapshot; #not necessary, we retain the old values
+  #create an object with the updated usage values
+  my $new = qsearchs('svc_acct', { 'svcnum' => $self->svcnum });
+  #call exports
+  my $error = $new->replace($self);
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return "Error replacing: $error";
+  }
+
   #overlimit_action eq 'cancel' handling
   my $cust_pkg = $self->cust_svc->cust_pkg;
   if ( $cust_pkg
@@ -1923,6 +1956,16 @@ sub set_usage {
       unless defined($rv);
     die "Can't update usage for svcnum ". $self->svcnum
       if $rv == 0;
+  }
+
+  #$self->snapshot; #not necessary, we retain the old values
+  #create an object with the updated usage values
+  my $new = qsearchs('svc_acct', { 'svcnum' => $self->svcnum });
+  #call exports
+  my $error = $new->replace($self);
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return "Error replacing: $error";
   }
 
   if ( $reset ) {
@@ -2705,6 +2748,8 @@ probably live somewhere else...
 
 insertion of RADIUS group stuff in insert could be done with child_objects now
 (would probably clean up export of them too)
+
+_op_usage and set_usage bypass the history... maybe they shouldn't
 
 =head1 SEE ALSO
 
