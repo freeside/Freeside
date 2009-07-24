@@ -8,13 +8,14 @@ use FS::Record qw(qsearchs);
 use FS::Conf;
 use FS::cust_main;
 use FS::cust_pay;
+use FS::cust_pay_void;
 use Business::OnlinePayment; # For retrieving the void list only.
 use Time::Local;
 use Date::Parse 'str2time';
 use Date::Format 'time2str';
 
 my %opt;
-getopts("r:f:ca:g:s:e:", \%opt);
+getopts("r:f:ca:g:s:e:vn", \%opt);
 
 $user = shift or die &usage;
 &adminsuidsetup( $user );
@@ -80,20 +81,41 @@ else {
 }
 
 $opt{'r'} ||= 'freeside-void-payments';
-
+my $success = 0;
+my $notfound = 0;
+print "Voiding ".scalar(@auths)." transactions:\n" if $opt{'v'};
 foreach my $authnum (@auths) {
   my $paybatch = $gatewaynum . $processor . ':' . $authnum;
   my $cust_pay = qsearchs('cust_pay', { paybatch => $paybatch } );
+  my $error;
   if($cust_pay) {
-    $cust_pay->void($opt{'r'});
+    $error = $cust_pay->void($opt{'r'});
+    $success++ if not $error;
   }
   else {
-    warn "cust_pay record not found: '$paybatch'";
+    my $cpv = qsearchs('cust_pay_void', { paybatch => $paybatch });
+    if($cpv) {
+      $error = 'already voided '.time2str('%Y-%m-%d', $cpv->void_date) . 
+        ' by ' . $cpv->otaker;
+    }
+    else {
+      $error = 'not found';
+      $notfound++;
+    }
+  }
+  if($opt{'v'}) {
+    print $authnum;
+    print "\t($error)" if $error; 
+    print "\n";
   }
 }
 
+if($opt{'v'}) {
+  print scalar(@auths)." transactions: $success voided, $notfound not found\n";
+}
+
 sub usage {
-    die "Usage:\n\n  freeside-void-payments [ -f file | [ -s start-date ] [ -e end-date ] ] [ -r 'reason' ] [ -g gatewaynum | -a agentnum ] [ -c ] user\n";
+    die "Usage:\n\n  freeside-void-payments [ -f file | [ -s start-date ] [ -e end-date ] ] [ -r 'reason' ] [ -g gatewaynum | -a agentnum ] [ -c ] [ -v ] [ -n ]user\n";
 }
 
 __END__
@@ -106,7 +128,7 @@ freeside-void-payments - Automatically void a list of returned payments.
 
 =head1 SYNOPSIS
 
-  freeside-void-payments [ -f file | [ -s start-date ] [ -e end-date ] ] [ -r 'reason' ] [ -g gatewaynum | -a agentnum ] [ -c ] user
+  freeside-void-payments [ -f file | [ -s start-date ] [ -e end-date ] ] [ -r 'reason' ] [ -g gatewaynum | -a agentnum ] [ -c ] [ -v ] [ -n ] user
 
 =head1 DESCRIPTION
 
@@ -144,6 +166,8 @@ generally how the processor will identify them later.
 
   -c: Use the default gateway for check transactions rather than 
       credit cards.
+
+  -v: Be verbose.
 
 A warning will be emitted for each transaction that can't be found.  
 This may happen if it's already been voided, or if the gateway 
