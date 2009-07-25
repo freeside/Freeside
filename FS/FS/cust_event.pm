@@ -1,7 +1,7 @@
 package FS::cust_event;
 
 use strict;
-use vars qw( @ISA $DEBUG );
+use vars qw( @ISA $DEBUG $me );
 use Carp qw( croak confess );
 use FS::Record qw( qsearch qsearchs dbdef );
 use FS::cust_main_Mixin;
@@ -14,6 +14,7 @@ use FS::cust_bill;
 @ISA = qw(FS::cust_main_Mixin FS::Record);
 
 $DEBUG = 0;
+$me = '[FS::cust_event]';
 
 =head1 NAME
 
@@ -295,6 +296,100 @@ sub retriable {
   $self->replace($old);
 }
 
+=item join_cust_sql
+
+=cut
+
+sub join_sql {
+  #my $class = shift;
+
+  "
+       JOIN part_event USING ( eventpart )
+  LEFT JOIN cust_bill ON ( eventtable = 'cust_bill' AND tablenum = invnum  )
+  LEFT JOIN cust_pkg  ON ( eventtable = 'cust_pkg'  AND tablenum = pkgnum  )
+  LEFT JOIN cust_main ON (    ( eventtable = 'cust_main' AND tablenum = cust_main.custnum )
+                           OR ( eventtable = 'cust_bill' AND cust_bill.custnum = cust_main.custnum )
+                           OR ( eventtable = 'cust_pkg'  AND cust_pkg.custnum  = cust_main.custnum )
+                         )
+  ";
+
+}
+
+=item search_sql HASHREF
+
+Class method which returns an SQL WHERE fragment to search for parameters
+specified in HASHREF.  Valid parameters are
+
+=over 4
+
+=item
+
+=item
+
+=back
+
+=cut
+
+#Note: validates all passed-in data; i.e. safe to use with unchecked CGI params.
+#sub 
+
+sub search_sql {
+  my($class, $param) = @_;
+  if ( $DEBUG ) {
+    warn "$me search_sql called with params: \n".
+         join("\n", map { "  $_: ". $param->{$_} } keys %$param ). "\n";
+  }
+
+  my @search = ();
+
+  if ( $param->{'agentnum'} && $param->{'agentnum'} =~ /^(\d+)$/ ) {
+    push @search, "cust_main.agentnum = $1";
+    #my $agent = qsearchs('agent', { 'agentnum' => $1 } );
+    #die "unknown agentnum $1" unless $agent;
+  }
+
+  if ( $param->{'beginning'} =~ /^(\d+)$/ ) {
+    push @search, "cust_event._date >= $1";
+  }
+  if ( $param->{'ending'} =~ /^(\d+)$/ ) {
+    push @search, "cust_event._date <= $1";
+  }
+
+  if ( $param->{'failed'} ) {
+    push @search, "statustext != ''",
+                  "statustext IS NOT NULL",
+                  "statustext != 'N/A'";
+  }
+
+  #if ( $param->{'part_event.payby'} =~ /^(\w+)$/ ) {
+  #  push @search, "part_event.payby = '$1'";
+  #}
+
+  if ( $param->{'custnum'} =~ /^(\d+)$/ ) {
+    push @search, "cust_main.custnum = '$1'";
+  }
+
+  if ( $param->{'invnum'} =~ /^(\d+)$/ ) {
+    push @search, "part_event.eventtable = 'cust_bill'",
+                  "tablenum = '$1'";
+  }
+
+  if ( $param->{'pkgnum'} =~ /^(\d+)$/ ) {
+    push @search, "part_event.eventtable = 'cust_pkg'",
+                  "tablenum = '$1'";
+  }
+
+  #here is the agent virtualization
+  push @search,
+    $FS::CurrentUser::CurrentUser->agentnums_sql( 'table' => 'cust_main' );
+
+  my $where = 'WHERE '. join(' AND ', @search );
+
+
+  join(' AND ', @search );
+
+}
+
 =back
 
 =head1 SUBROUTINES
@@ -336,41 +431,43 @@ sub process_re_X {
 
   re_X(
     $method,
-    $param->{'beginning'},
-    $param->{'ending'},
-    $param->{'failed'},
+    $param,
     $job,
   );
 
 }
 
-#this needs some updating based on the 1.7 cust_bill_event.pm still, i think
 sub re_X {
-  my($method, $beginning, $ending, $failed, $job) = @_;
+  my($method, $param, $job) = @_;
 
-  my $from = 'LEFT JOIN part_event USING ( eventpart )';
+  my $search_sql = FS::cust_event->search_sql($param);
 
-              # yuck!  hardcoded *AND* sequential scans!
-  my $where = " WHERE action LIKE 'cust_bill_send%'".
-              "   AND cust_event._date >= $beginning".
-              "   AND cust_event._date <= $ending";
-  $where .= " AND statustext != '' AND statustext IS NOT NULL"
-    if $failed;
+  #maybe not...?  we do want the "re-" action to match the search more closely
+  #            # yuck!  hardcoded *AND* sequential scans!
+  #my $where = " WHERE action LIKE 'cust_bill_send%' ".
+  #           ( $search_sql ? " AND $search_sql" : "" );
+
+  my $where = ( $search_sql ? " WHERE $search_sql" : "" );
 
   my @cust_event = qsearch({
     'table'     => 'cust_event',
-    'addl_from' => $from,
+    'addl_from' => FS::cust_event->join_sql(),
     'hashref'   => {},
     'extra_sql' => $where,
   });
 
+  warn "$me re_X found ". scalar(@cust_event). " events\n"
+    if $DEBUG;
+
   my( $num, $last, $min_sec ) = (0, time, 5); #progresbar foo
   foreach my $cust_event ( @cust_event ) {
 
-    $cust_event->cust_X->$method(
-      $cust_event->part_event->templatename
-      || $cust_event->cust_X->agent_template
-    );
+    my $cust_X = $cust_event->cust_X; # cust_bill
+    next unless $cust_X->can($method);
+
+    $cust_X->$method( $cust_event->part_event->templatename
+                      || $cust_X->agent_template
+                    );
 
     if ( $job ) { #progressbar foo
       $num++;

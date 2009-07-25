@@ -147,61 +147,24 @@ die "access denied"
               || $cgi->param('invnum')  =~ /^(\d+)$/
               || $cgi->param('pkgnum')  =~ /^(\d+)$/
             );
-         
 
-my $title = $cgi->param('failed')
-              ? 'Failed billing events'
-              : 'Billing events';
+my $title = $cgi->param('failed') ? 'Failed billing events' : 'Billing events';
 
-my @search = ();
+my %search = ();
 
-if ( $cgi->param('agentnum') && $cgi->param('agentnum') =~ /^(\d+)$/ ) {
-  push @search, "cust_main.agentnum = $1";
-  #my $agent = qsearchs('agent', { 'agentnum' => $1 } );
-  #die "unknown agentnum $1" unless $agent;
+my @scalars = qw ( agentnum custnum invnum pkgnum failed );
+for my $param ( @scalars ) {
+  $search{$param} = scalar( $cgi->param($param) )
+    if $cgi->param($param);
 }
 
 my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
-push @search, "cust_event._date >= $beginning",
-              "cust_event._date <= $ending";
+$search{'beginning'} = $beginning;
+$search{'ending'}    = $ending;
 
-if ( $cgi->param('failed') ) {
-  push @search, "statustext != ''",
-                "statustext IS NOT NULL",
-                "statustext != 'N/A'";
-}
+my $where = ' WHERE '. FS::cust_event->search_sql( \%search );
 
-#if ( $cgi->param('part_event.payby') =~ /^(\w+)$/ ) {
-#  push @search, "part_event.payby = '$1'";
-#}
-
-if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
-  push @search, "cust_main.custnum = '$1'";
-}
-if ( $cgi->param('invnum') =~ /^(\d+)$/ ) {
-  push @search, "part_event.eventtable = 'cust_bill'",
-                "tablenum = '$1'";
-}
-if ( $cgi->param('pkgnum') =~ /^(\d+)$/ ) {
-  push @search, "part_event.eventtable = 'cust_pkg'",
-                "tablenum = '$1'";
-}
-
-#here is the agent virtualization
-push @search, $curuser->agentnums_sql( 'table' => 'cust_main' );
-
-my $where = 'WHERE '. join(' AND ', @search );
-
-my $join = "
-       JOIN part_event USING ( eventpart )
-  LEFT JOIN cust_bill ON ( eventtable = 'cust_bill' AND tablenum = invnum  )
-  LEFT JOIN cust_pkg  ON ( eventtable = 'cust_pkg'  AND tablenum = pkgnum  )
-  LEFT JOIN cust_main ON (    ( eventtable = 'cust_main' AND tablenum = cust_main.custnum )
-                           OR ( eventtable = 'cust_bill' AND cust_bill.custnum = cust_main.custnum )
-                           OR ( eventtable = 'cust_pkg'  AND cust_pkg.custnum  = cust_main.custnum )
-                         )
-";
-           #'LEFT JOIN cust_main  USING ( custnum   ) ';
+my $join = FS::cust_event->join_sql();
 
 my $sql_query = {
   'table'     => 'cust_event',
@@ -222,22 +185,24 @@ my $count_sql = "SELECT COUNT(*) FROM cust_event $join $where";
 
 my $conf = new FS::Conf;
 
-my $failed = $cgi->param('failed');
+my @params = ( @scalars, qw( beginning ending ) );
 
 my $html_init = join("\n", map {
   ( my $action = $_ ) =~ s/_$//;
   include('/elements/progress-init.html',
             $_.'form',
-            [ 'action', 'beginning', 'ending', 'failed' ],
+            [ 'action', @params ],
             "../misc/${_}events.cgi",
             { 'message' => "Invoices re-${action}ed" }, #would be nice to show the number of them, but...
             $_, #key
          ),
   qq!<FORM NAME="${_}form">!,
   qq!<INPUT TYPE="hidden" NAME="action" VALUE="$_">!, #not used though
-  qq!<INPUT TYPE="hidden" NAME="beginning" VALUE="$beginning">!,
-  qq!<INPUT TYPE="hidden" NAME="ending"    VALUE="$ending">!,
-  qq!<INPUT TYPE="hidden" NAME="failed"    VALUE="$failed">!,
+  ( map { my $value = encode_entities( $search{$_} );
+          qq(<INPUT TYPE="hidden" NAME="$_" VALUE="$value">);
+        }
+        @params #keys %search
+  ),
   qq!</FORM>!
 } qw( print_ email_ fax_ ) ).
 
