@@ -54,6 +54,12 @@ FS::UID->install_callback( sub {
   $conf = FS::Conf->new; 
   $conf_encryption = $conf->exists('encryption');
   $File::CounterFile::DEFAULT_DIR = $conf->base_dir . "/counters.". datasrc;
+  if ( driver_name eq 'Pg' ) {
+    eval "use DBD::Pg qw(:pg_types);";
+    die $@ if $@;
+  } else {
+    eval "sub PG_BYTEA { die 'guru meditation #9: calling PG_BYTEA when not running Pg?'; }";
+  }
 } );
 
 
@@ -252,8 +258,40 @@ fine in the common case where there are only two parameters:
 
 my %TYPE = (); #for debugging
 
+sub _bind_type {
+  my($type, $value) = @_;
+
+  my $bind_type = { TYPE => SQL_VARCHAR };
+
+  if ( $type =~ /(big)?(int|serial)/i && $value =~ /^\d+(\.\d+)?$/ ) {
+
+    $bind_type = { TYPE => SQL_INTEGER };
+
+  } elsif ( $type =~ /^bytea$/i || $type =~ /(blob|varbinary)/i ) {
+
+    if ( driver_name eq 'Pg' ) {
+      no strict 'subs';
+      $bind_type = { pg_type => PG_BYTEA };
+    #} else {
+    #  $bind_type = ? #SQL_VARCHAR could be fine?
+    }
+
+  #DBD::Pg 1.49: Cannot bind ... unknown sql_type 6 with SQL_FLOAT
+  #fixed by DBD::Pg 2.11.8
+  #can change back to SQL_FLOAT in early-mid 2010, once everyone's upgraded
+  #(make a Tron test first)
+  } elsif ( _is_fs_float( $type, $value ) ) {
+
+    $bind_type = { TYPE => SQL_DECIMAL };
+
+  }
+
+  $bind_type;
+
+}
+
 sub _is_fs_float {
-  my ($type, $value) = @_;
+  my($type, $value) = @_;
   if ( ( $type =~ /(numeric)/i && $value =~ /^[+-]?\d+(\.\d+)?$/ ) ||
        ( $type =~ /(real|float4)/i && $value =~ /[-+]?\d*\.?\d+([eE][-+]?\d+)?/)
      ) {
@@ -331,23 +369,14 @@ sub qsearch {
     $value = $value->{'value'} if ref($value);
     my $type = dbdef->table($table)->column($field)->type;
 
-    my $TYPE = SQL_VARCHAR;
-    if ( $type =~ /(big)?(int|serial)/i && $value =~ /^\d+(\.\d+)?$/ ) {
-      $TYPE = SQL_INTEGER;
+    my $bind_type = _bind_type($type, $value);
 
-    #DBD::Pg 1.49: Cannot bind ... unknown sql_type 6 with SQL_FLOAT
-    #fixed by DBD::Pg 2.11.8
-    #can change back to SQL_FLOAT in early-mid 2010, once everyone's upgraded
-    } elsif ( _is_fs_float( $type, $value ) ) {
-      $TYPE = SQL_DECIMAL;
-    }
-
-    if ( $DEBUG > 2 ) {
-      no strict 'refs';
-      %TYPE = map { &{"DBI::$_"}() => $_ } @{ $DBI::EXPORT_TAGS{sql_types} }
-        unless keys %TYPE;
-      warn "  bind_param $bind (for field $field), $value, TYPE $TYPE{$TYPE}\n";
-    }
+    #if ( $DEBUG > 2 ) {
+    #  no strict 'refs';
+    #  %TYPE = map { &{"DBI::$_"}() => $_ } @{ $DBI::EXPORT_TAGS{sql_types} }
+    #    unless keys %TYPE;
+    #  warn "  bind_param $bind (for field $field), $value, TYPE $TYPE{$TYPE}\n";
+    #}
 
     #if this needs to be re-enabled, it needs to use a custom op like
     #"APPROX=" or something (better name?, not '=', to avoid affecting other
@@ -357,22 +386,20 @@ sub qsearch {
     #  $sth->bind_param($bind++, $value*1.00001, { TYPE => $TYPE } );
     #  $sth->bind_param($bind++, $value*.99999, { TYPE => $TYPE } );
     #} else {
-      $sth->bind_param($bind++, $value, { TYPE => $TYPE } );
+      $sth->bind_param($bind++, $value, $bind_type );
     #}
 
   }
 
   foreach my $param ( @$extra_param ) {
-    my $TYPE = SQL_VARCHAR;
+    my $bind_type = { TYPE => SQL_VARCHAR };
     my $value = $param;
     if ( ref($param) ) {
       $value = $param->[0];
       my $type = $param->[1];
-      if ( $type =~ /(big)?(int|serial)/i && $value =~ /^\d+(\.\d+)?$/ ) {
-        $TYPE = SQL_INTEGER;
-      } # & DECIMAL?  well, who cares for now
+      $bind_type = _bind_type($type, $value);
     }
-    $sth->bind_param($bind++, $value, { TYPE => $TYPE } );
+    $sth->bind_param($bind++, $value, $bind_type );
   }
 
 #  $sth->execute( map $record->{$_},
@@ -2678,7 +2705,7 @@ sub _quote {
        ")\n" if $DEBUG > 2;
 
   if ( $value eq '' && $nullable ) {
-    'NULL'
+    'NULL';
   } elsif ( $value eq '' && $column_type =~ /^(int|numeric)/ ) {
     cluck "WARNING: Attempting to set non-null integer $table.$column null; ".
           "using 0 instead";
@@ -2686,6 +2713,12 @@ sub _quote {
   } elsif ( $value =~ /^\d+(\.\d+)?$/ && 
             ! $column_type =~ /(char|binary|text)$/i ) {
     $value;
+  } elsif (( $column_type =~ /^bytea$/i || $column_type =~ /(blob|varbinary)/i )
+           && driver_name eq 'Pg'
+          )
+  {
+    no strict 'subs';
+    dbh->quote($value, PG_BYTEA);
   } else {
     dbh->quote($value);
   }
