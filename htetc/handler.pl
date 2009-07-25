@@ -44,7 +44,8 @@ sub handler
 
     ###Module::Refresh->refresh;###
 
-    $r->content_type('text/html');
+    #$r->content_type('text/html; charset=utf-8');
+    $r->content_type('text/html; charset=iso-8859-1');
     #eorar
 
     my $headers = $r->headers_out;
