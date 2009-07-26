@@ -443,10 +443,10 @@ httemplate/docs/config.html
   },
 
   {
-   'key'         => 'business-onlinepayment-email_customer',
-   'section'     => 'billing',
-   'description' => 'Controls the "email_customer" flag used by some Business::OnlinePayment processors to enable customer receipts.',
-   'type'        => 'checkbox',
+    'key'         => 'business-onlinepayment-email_customer',
+    'section'     => 'billing',
+    'description' => 'Controls the "email_customer" flag used by some Business::OnlinePayment processors to enable customer receipts.',
+    'type'        => 'checkbox',
   },
 
   {
@@ -639,6 +639,13 @@ httemplate/docs/config.html
     'key'         => 'invoice_from',
     'section'     => 'required',
     'description' => 'Return address on email invoices',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'invoice_subject',
+    'section'     => 'billing',
+    'description' => 'Subject: header on email invoices.  Defaults to "Invoice".  The following substitutions are available: $name, $name_short, $invoice_number, and $invoice_date.',
     'type'        => 'text',
   },
 
@@ -1185,6 +1192,13 @@ httemplate/docs/config.html
     'type'        => 'checkbox',
   },
 
+  { 
+    'key'         => 'username-colon',
+    'section'     => 'username',
+    'description' => 'Allow the colon character (:) in usernames.',
+    'type'        => 'checkbox',
+  },
+
   {
     'key'         => 'safe-part_bill_event',
     'section'     => 'UI',
@@ -1558,8 +1572,8 @@ httemplate/docs/config.html
 
   {
     'key'         => 'paymentforcedtobatch',
-    'section'     => 'UI',
-    'description' => 'Causes per customer payment entry to be forced to a batch processor rather than performed realtime.',
+    'section'     => 'deprecated',
+    'description' => 'See batch-enable_payby and realtime-disable_payby.  Used to (for CHEK): Cause per customer payment entry to be forced to a batch processor rather than performed realtime.',
     'type'        => 'checkbox',
   },
 
@@ -1584,6 +1598,14 @@ httemplate/docs/config.html
     'description' => 'RADIUS attribute for IP addresses.',
     'type'        => 'select',
     'select_enum' => [ 'Framed-IP-Address', 'Framed-Address' ],
+  },
+
+  #http://dev.coova.org/svn/coova-chilli/doc/dictionary.chillispot
+  {
+    'key'         => 'radius-chillispot-max',
+    'section'     => '',
+    'description' => 'Enable ChilliSpot (and CoovaChilli) Max attributes, specifically ChilliSpot-Max-{Input,Output,Total}-{Octets,Gigawords}.',
+    'type'        => 'checkbox',
   },
 
   {
@@ -1612,6 +1634,24 @@ httemplate/docs/config.html
     'section'     => 'deprecated',
     'description' => '<b>DEPRECATED</b>, enable the <i>Complimentary customer</i> access right instead.  Was: Usernames (Freeside users, created with <a href="../docs/man/bin/freeside-adduser.html">freeside-adduser</a>) which can create complimentary customers, one per line.  If no usernames are entered, all users can create complimentary accounts.',
     'type'        => 'textarea',
+  },
+
+  {
+    'key'         => 'credit_card-recurring_billing_flag',
+    'section'     => 'billing',
+    'description' => 'This controls when the system passes the "recurring_billing" flag on credit card transactions.  If supported by your processor (and the Business::OnlinePayment processor module), passing the flag indicates this is a recurring transaction and may turn off the CVV requirement. ',
+    'type'        => 'select',
+    'select_hash' => [
+                       'actual_oncard' => 'Default/classic behavior: set the flag if a customer has actual previous charges on the card.',
+                       'transaction_is_recur' => 'Set the flag if the transaction itself is recurring, irregardless of previous charges on the card.',
+                     ],
+  },
+
+  {
+    'key'         => 'credit_card-recurring_billing_acct_code',
+    'section'     => 'billing',
+    'description' => 'When the "recurring billing" flag is set, also set the "acct_code" to "rebill".  Useful for reporting purposes with supported gateways (PlugNPay, others?)',
+    'type'        => 'checkbox',
   },
 
   {
@@ -1818,13 +1858,13 @@ httemplate/docs/config.html
     'key'         => 'address2-search',
     'section'     => 'UI',
     'description' => 'Enable a "Unit" search box which searches the second address field',
-   'type'        => 'checkbox',
+    'type'        => 'checkbox',
   },
 
   {
-   'key'         => 'cust_main-require_address2',
-   'section'     => 'UI',
-   'description' => 'Second address field is required (on service address only, if billing and service addresses differ).  Also enables "Unit" labeling of address2 on customer view and edit pages.  Useful for multi-tenant applications.  See also: address2-search',
+    'key'         => 'cust_main-require_address2',
+    'section'     => 'UI',
+    'description' => 'Second address field is required (on service address only, if billing and service addresses differ).  Also enables "Unit" labeling of address2 on customer view and edit pages.  Useful for multi-tenant applications.  See also: address2-search',
     'type'        => 'checkbox',
   },
 
@@ -2025,21 +2065,29 @@ httemplate/docs/config.html
     'type'        => 'select-sub',
     'options_sub' => sub { require FS::Record;
                            require FS::part_pkg;
-                          map { $_->pkgpart => $_->pkg }
+                           map { $_->pkgpart => $_->pkg }
                                FS::Record::qsearch('part_pkg', { disabled=>'' } );
-                        },
+                         },
     'option_sub'  => sub { require FS::Record;
                            require FS::part_pkg;
-                          my $part_pkg = FS::Record::qsearchs(
-                            'part_pkg', { 'pkgpart'=>shift }
-                          );
+                           my $part_pkg = FS::Record::qsearchs(
+                             'part_pkg', { 'pkgpart'=>shift }
+                           );
                            $part_pkg ? $part_pkg->pkg : '';
-                        },
+                         },
+  },
+
+  {
+    'key'         => 'postal_invoice-recurring_only',
+    'section'     => 'billing',
+    'description' => 'The postal invoice fee is omitted on invoices without recurring charges when this is set',
+    'type'        => 'checkbox',
   },
 
   {
     'key'         => 'batch-enable',
-    'section'     => 'billing',
+    'section'     => 'deprecated', #make sure batch-enable_payby is set for
+                                   #everyone before removing
     'description' => 'Enable credit card and/or ACH batching - leave disabled for real-time installations.',
     'type'        => 'checkbox',
   },
@@ -2228,20 +2276,6 @@ httemplate/docs/config.html
   },
 
   {
-    'key'         => 'cust_main-require_phone',
-    'section'     => '',
-    'description' => 'Require daytime or night for all customer records.',
-    'type'        => 'checkbox',
-  },
-
-  {
-    'key'         => 'cust_main-require_invoicing_list_email',
-    'section'     => '',
-    'description' => 'Email address field is required: require at least one invoicing email address for all customer records.',
-    'type'        => 'checkbox',
-  },
-
-  {
     'key' => 'password-generated-allcaps',
     'section' => 'password',
     'description' => 'Causes passwords automatically generated to consist entirely of capital letters',
@@ -2273,6 +2307,20 @@ httemplate/docs/config.html
     'key'         => 'disable_line_item_date_ranges',
     'section'     => 'billing',
     'description' => 'Prevent freeside from automatically generating date ranges on invoice line items.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'cust_main-require_phone',
+    'section'     => '',
+    'description' => 'Require daytime or night for all customer records.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'cust_main-require_invoicing_list_email',
+    'section'     => '',
+    'description' => 'Email address field is required: require at least one invoicing email address for all customer records.',
     'type'        => 'checkbox',
   },
 
@@ -2388,11 +2436,53 @@ httemplate/docs/config.html
     'description' => 'Default area code for customers.',
     'type'        => 'text',
   },
- 
+
   {
     'key'         => 'cust_bill-max_same_services',
     'section'     => 'billing',
     'description' => 'Maximum number of the same service to list individually on invoices before condensing to a single line listing the number of services.  Defaults to 5.',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'suspend_email_admin',
+    'section'     => '',
+    'description' => 'Destination admin email address to enable suspension notices',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'email_report-subject',
+    'section'     => '',
+    'description' => 'Subject for reports emailed by freeside-fetch.  Defaults to "Freeside report".',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'sg-multicustomer_hack',
+    'section'     => '',
+    'description' => "Don't use this.",
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'queued-max_kids',
+    'section'     => '',
+    'description' => 'Maximum number of queued processes.  Defaults to 10.',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'cancelled_cust-noevents',
+    'section'     => 'billing',
+    'description' => "Don't run events for cancelled customers",
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'svc_broadband-manage_link',
+    'section'     => 'UI',
+    'description' => 'URL for svc_broadband "Manage Device" link.  The following substitutions are available: $ip_addr.',
     'type'        => 'text',
   },
 
