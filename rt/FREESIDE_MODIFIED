@@ -12,6 +12,7 @@ lib/RT/URI/freeside/XMLRPC.pm
  html/Elements/Menu
  html/Elements/PageLayout
  html/Elements/QuickCreate
+ html/Elements/SelectDate
  html/Elements/SimpleSearch
  html/Elements/Tabs
  html/Elements/Footer
