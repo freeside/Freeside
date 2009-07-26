@@ -111,13 +111,13 @@ foreach my $router (qsearch('router', {})) {
   }
 }
 
-my $link = [ $p.'view/svc_broadband.cgi', 'svcnum' ];
+my $link = [ $p.'view/svc_broadband.cgi?', 'svcnum' ];
 
 #XXX get the router link working
 my $link_router = sub { my $routernum = $routerbyblock{shift->blocknum}->routernum;
                         [ $p.'view/router.cgi?'.$routernum, 'routernum' ];
                       };
 
-my $link_cust = [ $p.'view/cust_main.cgi', 'custnum' ];
+my $link_cust = [ $p.'view/cust_main.cgi?', 'custnum' ];
 
 </%init>
