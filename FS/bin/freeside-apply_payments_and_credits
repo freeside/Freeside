@@ -1,0 +1,79 @@
+#!/usr/bin/perl -w
+
+use strict;
+use vars qw( $DEBUG );
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch qsearchs);
+use FS::cust_main;
+use DBI;
+
+$DEBUG = 1;
+
+my $user = shift or die &usage;
+my $dbh = adminsuidsetup $user;
+
+my $unapplied_payments_sql = <<EOF;
+SELECT custnum FROM cust_pay WHERE paid >
+  ( ( SELECT coalesce(sum(amount),0) FROM cust_bill_pay
+        WHERE cust_pay.paynum = cust_bill_pay.paynum )
+  + ( SELECT coalesce(sum(amount),0) FROM cust_pay_refund
+        WHERE cust_pay.paynum = cust_pay_refund.paynum)
+  ) 
+EOF
+
+my $unapplied_credits_sql = <<EOF;
+SELECT custnum FROM cust_credit WHERE cust_credit.amount >
+  ( ( SELECT coalesce(sum(cust_credit_bill.amount),0) FROM cust_credit_bill
+        WHERE cust_credit.crednum = cust_credit_bill.crednum )
+  + ( SELECT coalesce(sum(cust_Credit_refund.amount),0) FROM cust_credit_refund
+        WHERE cust_credit.crednum = cust_credit_refund.crednum)
+  )
+EOF
+
+my %custnum = ();
+
+my $sth = $dbh->prepare($unapplied_payments_sql) or die $dbh->errstr;
+$sth->execute or die "unapplied payment search failed: ". $sth->errstr;
+
+map { $custnum{$_->[0]} = 1 } @{ $sth->fetchall_arrayref };
+
+$sth = $dbh->prepare($unapplied_credits_sql) or die $dbh->errstr;
+$sth->execute or die "unapplied credit search failed: ". $sth->errstr;
+
+map { $custnum{$_->[0]} = 1 } @{ $sth->fetchall_arrayref };
+
+foreach my $custnum ( keys %custnum ) {
+
+  warn "processing customer $custnum\n" if $DEBUG;
+
+  my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
+    or die "customer $custnum no longer exists!\n";
+
+  my $error = $cust_main->apply_payments_and_credits;
+  die $error if $error;
+
+}
+
+sub usage {
+  die "Usage:\n\n  freeside-apply_payments_and_credits user\n";
+}
+
+=head1 NAME
+
+freeside-apply_payments_and_credits - Command line interface to apply payments and credits to invoice
+
+=head1 SYNOPSIS
+
+  freeside-apply_payments_and_credits username
+
+=head1 DESCRIPTION
+
+Finds unapplied payment and credit amounts and applies them to any outstanding
+uncovered invoice amounts.
+
+B<username> is a username added by freeside-adduser.
+
+=cut
+
+
+
