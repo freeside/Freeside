@@ -117,7 +117,6 @@ if ( $cgi->param('magic') ) {
   my $orderby;
   if ( $cgi->param('magic') eq '_date' ) {
 
-
     if ( $cgi->param('agentnum') && $cgi->param('agentnum') =~ /^(\d+)$/ ) {
       push @search, "agentnum = $1"; # $search{'agentnum'} = $1;
       my $agent = qsearchs('agent', { 'agentnum' => $1 } );
@@ -218,6 +217,13 @@ if ( $cgi->param('magic') ) {
     my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
     push @search, "_date >= $beginning ",
                   "_date <= $ending";
+
+    if ( $thing eq 'pay_void' ) {
+      my($v_beginning, $v_ending) =
+        FS::UI::Web::parse_beginning_ending($cgi, 'void');
+      push @search, "void_date >= $v_beginning ",
+                    "void_date <= $v_ending";
+    }
 
     push @search, FS::UI::Web::parse_lt_gt($cgi, $amount_field );
 

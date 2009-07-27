@@ -3,7 +3,13 @@
 <FORM ACTION="<% $void ? 'cust_pay_void.html' : 'cust_pay.cgi' %>" METHOD="GET">
 <INPUT TYPE="hidden" NAME="magic" VALUE="_date">
 
-<TABLE>
+<TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+  <TR>
+    <TH BGCOLOR="#e8e8e8" COLSPAN=2 ALIGN="left">
+      <FONT SIZE="+1">Search options</FONT>
+    </TH>
+  </TR>
 
   <TR>
     <TD ALIGN="right">Payments of type: </TD>
@@ -55,7 +61,32 @@
              )
   %>
 
-  <% include( '/elements/tr-input-beginning_ending.html' ) %>
+  <TR>
+    <TD ALIGN="right" VALIGN="center">Payment</TD>
+    <TD>
+      <TABLE>
+        <% include( '/elements/tr-input-beginning_ending.html',
+                      layout   => 'horiz',
+                  )
+        %>
+      </TABLE>
+    </TD>
+  </TR>
+
+% if ( $void ) {
+    <TR>
+      <TD ALIGN="right" VALIGN="center">Voided</TD>
+      <TD>
+        <TABLE>
+          <% include( '/elements/tr-input-beginning_ending.html',
+                        prefix => 'void',
+                        layout => 'horiz',
+                    )
+          %>
+        </TABLE>
+      </TD>
+    </TR>
+% }
 
   <% include( '/elements/tr-input-lessthan_greaterthan.html',
                 'label' => 'Amount',
