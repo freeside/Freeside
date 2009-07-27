@@ -78,6 +78,8 @@ Click on a configuration value to change it.
 %   foreach my $agent ( @agents ) {
 %     my $agentnum = $agent ? $agent->agentnum : '';
 %
+%     next if $section eq 'deprecated' && ! $conf->exists($i->key, $agentnum);
+%
 %     my $label = $i->key;
 %     $label = '['. $agent->agent. "] $label"
 %       if $agent && $cgi->param('showagent');

@@ -715,6 +715,20 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'unapplypayments',
+    'section'     => 'deprecated',
+    'description' => '<B>DEPRECATED</B>, now controlled by ACLs.  Used to enable "unapplication" of unclosed payments.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'unapplycredits',
+    'section'     => 'deprecated',
+    'description' => '<B>DEPRECATED</B>, now controlled by ACLs.  Used to nable "unapplication" of unclosed credits.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'dirhash',
     'section'     => 'shell',
     'description' => 'Optional numeric value to control directory hashing.  If positive, hashes directories for the specified number of levels from the front of the username.  If negative, hashes directories for the specified number of levels from the end of the username.  Some examples: <ul><li>1: user -> <a href="#home">/home</a>/u/user<li>2: user -> <a href="#home">/home</a>/u/s/user<li>-1: user -> <a href="#home">/home</a>/r/user<li>-2: user -> <a href="#home">home</a>/r/e/user</ul>',
@@ -936,6 +950,13 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'invoice_send_receipts',
+    'section'     => 'deprecated',
+    'description' => '<b>DEPRECATED</b>, this used to send an invoice copy on payments and credits.  See the payment_receipt_email and XXXX instead.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'payment_receipt_email',
     'section'     => 'billing',
     'description' => 'Template file for payment receipts.  Payment receipts are sent to the customer email invoice destination(s) when a payment is received.  See the <a href="http://search.cpan.org/dist/Text-Template/lib/Text/Template.pm">Text::Template</a> documentation for details on the template substitution language.  The following variables are available: <ul><li><code>$date</code> <li><code>$name</code> <li><code>$paynum</code> - Freeside payment number <li><code>$paid</code> - Amount of payment <li><code>$payby</code> - Payment type (Card, Check, Electronic check, etc.) <li><code>$payinfo</code> - Masked credit card number or check number <li><code>$balance</code> - New balance</ul>',
@@ -1022,6 +1043,13 @@ worry that config_items is freeside-specific and icky.
 #    'section'     => 'required',
 #    'description' => 'Directory which contains domain registry information.  Each registry is a directory.',
 #  },
+
+  {
+    'key'         => 'report_template',
+    'section'     => 'deprecated',
+    'description' => 'Deprecated template file for reports.',
+    'type'        => 'textarea',
+  },
 
   {
     'key'         => 'maxsearchrecordsperpage',
@@ -1694,6 +1722,13 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'users-allow_comp',
+    'section'     => 'deprecated',
+    'description' => '<b>DEPRECATED</b>, enable the <i>Complimentary customer</i> access right instead.  Was: Usernames (Freeside users, created with <a href="../docs/man/bin/freeside-adduser.html">freeside-adduser</a>) which can create complimentary customers, one per line.  If no usernames are entered, all users can create complimentary accounts.',
+    'type'        => 'textarea',
+  },
+
+  {
     'key'         => 'credit_card-recurring_billing_flag',
     'section'     => 'billing',
     'description' => 'This controls when the system passes the "recurring_billing" flag on credit card transactions.  If supported by your processor (and the Business::OnlinePayment processor module), passing the flag indicates this is a recurring transaction and may turn off the CVV requirement. ',
@@ -1926,6 +1961,27 @@ worry that config_items is freeside-specific and icky.
     'description' => 'Your company address',
     'type'        => 'textarea',
     'per_agent'   => 1,
+  },
+
+  {
+    'key'         => 'echeck-void',
+    'section'     => 'deprecated',
+    'description' => '<B>DEPRECATED</B>, now controlled by ACLs.  Used to enable local-only voiding of echeck payments in addition to refunds against the payment gateway',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'cc-void',
+    'section'     => 'deprecated',
+    'description' => '<B>DEPRECATED</B>, now controlled by ACLs.  Used to enable local-only voiding of credit card payments in addition to refunds against the payment gateway',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'unvoid',
+    'section'     => 'deprecated',
+    'description' => '<B>DEPRECATED</B>, now controlled by ACLs.  Used to enable unvoiding of voided payments',
+    'type'        => 'checkbox',
   },
 
   {
@@ -2938,6 +2994,48 @@ worry that config_items is freeside-specific and icky.
     'description' => 'Enable the RT CronTool extension.',
     'type'        => 'checkbox',
   },
+
+  { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+  { key => "apachemachine", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+  { key => "apachemachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+  { key => "bindprimary", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+  { key => "bindsecondaries", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+  { key => "bsdshellmachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+  { key => "cyrus", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+  { key => "cp_app", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+  { key => "erpcdmachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+  { key => "icradiusmachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+  { key => "icradius_mysqldest", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+  { key => "icradius_mysqlsource", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+  { key => "icradius_secrets", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+  { key => "maildisablecatchall", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+  { key => "mxmachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+  { key => "nsmachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+  { key => "arecords", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+  { key => "cnamerecords", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+  { key => "nismachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+  { key => "qmailmachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+  { key => "radiusmachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+  { key => "sendmailconfigpath", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+  { key => "sendmailmachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+  { key => "sendmailrestart", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+  { key => "shellmachine", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+  { key => "shellmachine-useradd", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+  { key => "shellmachine-userdel", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+  { key => "shellmachine-usermod", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+  { key => "shellmachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+  { key => "radiusprepend", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+  { key => "textradiusprepend", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+  { key => "username_policy", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+  { key => "vpopmailmachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+  { key => "vpopmailrestart", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+  { key => "safe-part_pkg", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+  { key => "selfservice_server-quiet", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+  { key => "signup_server-quiet", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+  { key => "signup_server-email", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+  { key => "vonage-username", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+  { key => "vonage-password", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
+  { key => "vonage-fromnumber", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
 
 );
 
