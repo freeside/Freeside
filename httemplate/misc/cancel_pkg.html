@@ -17,7 +17,7 @@
 
 
 <BR><BR>
-<% ucfirst($method) . $part_pkg->pkg_comment %>
+<% ucfirst($method) %> <% $part_pkg->pkg_comment %>
 <% ntable("#cccccc", 2) %>
 
 % if ($method eq 'expire' || $method eq 'adjourn') {
