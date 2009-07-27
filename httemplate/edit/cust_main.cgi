@@ -32,6 +32,15 @@
   <% include('cust_main/birthdate.html', $cust_main) %>
 % }
 
+%# latitude and longitude
+% if ( $conf->exists('cust_main-require_censustract') ) {
+%   my ($latitude, $longitude) = $cust_main->service_coordinates;
+%   $latitude ||= $conf->config('company_latitude') || '';
+%   $longitude ||= $conf->config('company_longitude') || '';
+  <INPUT NAME="latitude" TYPE="hidden" VALUE="<% $latitude |h %>">
+  <INPUT NAME="longitude" TYPE="hidden" VALUE="<% $longitude |h %>">
+% }
+
 %# contact info
 
 %  my $same_checked = '';

@@ -87,7 +87,15 @@ Example:
 % if ( !$pre ) { 
   <INPUT TYPE="hidden" NAME="geocode" VALUE="<% $opt{geocode} %>">
 % } else {
-  <INPUT TYPE="hidden" NAME="censustract" VALUE="<% $opt{censustract} %>">
+%   if ( $pre eq 'ship_' && $conf->exists('cust_main-require_censustract') ) {
+      <TR><TH ALIGN="right">Census tract<BR>(automatic)</TH>
+        <TD>
+          <INPUT TYPE="text" NAME="censustract" VALUE="<% $opt{censustract} %>">
+        </TD>
+      </TR>
+%   } else {
+      <INPUT TYPE="hidden" NAME="censustract" VALUE="<% $opt{censustract} %>">
+%   } 
 % } 
 
 <%init>

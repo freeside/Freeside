@@ -86,6 +86,8 @@ if ( $sub eq 'censustract' ) {
         }
 
         $error = "No census tract found" unless $return->{tractcode};
+        $return->{tractcode} .= ' '
+          unless $error || $JSON::VERSION >= 2; #broken JSON 1 workaround
 
       } #unless ($res->code  eq '200')
 

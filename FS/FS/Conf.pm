@@ -2605,6 +2605,28 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'census_year',
+    'section'     => 'UI',
+    'description' => 'The year to use in census tract lookups',
+    'type'        => 'select',
+    'select_enum' => [ qw( 2008 2007 2006 ) ],
+  },
+
+  {
+    'key'         => 'company_latitude',
+    'section'     => 'UI',
+    'description' => 'Your company latitude (-90 through 90)',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'company_longitude',
+    'section'     => 'UI',
+    'description' => 'Your company longitude (-180 thru 180)',
+    'type'        => 'text',
+  },
+
+  {
     'key'         => 'disable_acl_changes',
     'section'     => '',
     'description' => 'Disable all ACL changes, for demos.',

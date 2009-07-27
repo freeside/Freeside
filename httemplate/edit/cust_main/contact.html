@@ -111,6 +111,10 @@ $cust_main->set($pre.'state', $statedefault )
 $cust_main->set('stateid_state', $cust_main->state )
   unless $pre || $cust_main->get('stateid_state');
 
+if ( $conf->exists('cust_main-require_censustract') ) {
+  $opt{censustract} ||= $cust_main->censustract;
+}
+
 #my($county_html, $state_html, $country_html) =
 #  FS::cust_main_county::regionselector( $cust_main->get($pre.'county'),
 #                                        $cust_main->get($pre.'state'),

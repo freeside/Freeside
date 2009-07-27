@@ -98,6 +98,15 @@
 
 % }
 
+% if ( $conf->exists('cust_main-require_censustract') ) {
+
+  <TR>
+    <TD ALIGN="right">Census tract</TD>
+    <TD BGCOLOR="#ffffff"><% $cust_main->censustract  %></TD>
+  </TR>
+
+% }
+
 </TABLE></TD></TR></TABLE>
 <%init>
 

@@ -1571,6 +1571,13 @@ sub check {
     unless ! $self->referral_custnum 
            || qsearchs( 'cust_main', { 'custnum' => $self->referral_custnum } );
 
+  if ( $self->censustract ne '' ) {
+    $self->censustract =~ /^\s*(\d{9})\.?(\d{2})\s*$/
+      or return "Illegal census tract: ". $self->censustract;
+    
+    $self->censustract("$1.$2");
+  }
+
   if ( $self->ss eq '' ) {
     $self->ss('');
   } else {
@@ -7369,6 +7376,19 @@ sub support_services {
     grep { exists $packages{ $_->pkgpart } }
     $self->ncancelled_pkgs;
 
+}
+
+# Return a list of latitude/longitude for one of the services (if any)
+sub service_coordinates {
+  my $self = shift;
+
+  my @svc_X = 
+    grep { $_->latitude && $_->longitude }
+    map { $_->svc_x }
+    map { $_->cust_svc }
+    $self->ncancelled_pkgs;
+
+  scalar(@svc_X) ? ( $svc_X[0]->latitude, $svc_X[0]->longitude ) : ()
 }
 
 =back

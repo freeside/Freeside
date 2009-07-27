@@ -2377,8 +2377,11 @@ sub search_sql {
   # parse censustract
   ###
 
-  if ( $params->{'censustract'} =~ /^([.\d]+)$/ and $1 ) {
-    push @where,  "cust_main.censustract = '". $params->{censustract}. "'";
+  if ( exists($params->{'censustract'}) ) {
+    $params->{'censustract'} =~ /^([.\d]*)$/;
+    my $censustract = "cust_main.censustract = '$1'";
+    $censustract .= ' OR cust_main.censustract is NULL' unless $1;
+    push @where,  "( $censustract )";
   }
 
   ###

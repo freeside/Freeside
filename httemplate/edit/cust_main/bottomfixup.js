@@ -242,7 +242,7 @@ function post_geocode() {
   var cf = document.CustomerForm;
   var state_el = cf.elements['ship_state'];
   var census_data = new Array(
-    'year',    '2008', // from config value?
+    'year',   <% $conf->config('census_year') || '2008' %>,
     'address', cf.elements['ship_address1'].value,
     'city',    cf.elements['ship_city'].value,
     'state',   state_el.options[ state_el.selectedIndex ].value,
@@ -296,44 +296,52 @@ function update_censustract(arg) {
   var tractcode  = argsHash['tractcode'];
   var error      = argsHash['error'];
   
+  var newcensus = 
+    new String(statecode)  +
+    new String(countycode) +
+    new String(tractcode).replace(/\s$/, '');  // JSON 1 workaround
+
   set_censustract = function () {
 
-    cf.elements['censustract'].value =
-      document.forms.popupcensustract.elements.censustract.value;
+    cf.elements['censustract'].value = newcensus
     cf.submit();
 
   }
 
-  if (error) {
+  if (error || cf.elements['censustract'].value != newcensus) {
     // popup an entry dialog
 
     var choose_censustract =
-      '<CENTER><BR><B>Enter census tract</B><BR><BR>' + 
-      '<FORM name="popupcensustract">' +
+      '<CENTER><BR><B>Confirm censustract</B><BR>' +
+      '<A href="http://maps.ffiec.gov/FFIECMapper/TGMapSrv.aspx?' +
+      'census_year=<% $conf->config('census_year') || '2008' %>' +
+      '&latitude=' + cf.elements['latitude'].value +
+      '&longitude=' + cf.elements['longitude'].value +
+      '" target="_blank">Map service module location</A><BR><BR>' +
       '<TABLE>';
     
     choose_censustract = choose_censustract + 
-      '<TR><TH>Census Tract: </TH>' +
-        '<TD><INPUT NAME="censustract" ID="censustract"></TD>' +
-      '</TR><TR>' +
-        '<TD>&nbsp;</TD><TD>&nbsp;</TD></TR>';
-      
-    choose_censustract = choose_censustract + 
+      '<TR><TH>Entered census tract</TH>' +
+        '<TH>Calculated census tract</TH></TR>' +
+      '<TR><TD>' + cf.elements['censustract'].value +
+        '</TD><TD>' + newcensus + '</TD></TR>' +
+        '<TR><TD>&nbsp;</TD><TD>&nbsp;</TD></TR>';
+
+    choose_censustract = choose_censustract +
       '<TR><TD>' +
-        '<BUTTON TYPE="button" onClick="set_censustract();"><IMG SRC="<%$p%>images/tick.png" ALT="">Submit census tract</BUTTON>' + 
+        '<BUTTON TYPE="button" onClick="document.CustomerForm.submit();"><IMG SRC="<%$p%>images/error.png" ALT=""> Use entered census tract </BUTTON>' + 
       '</TD><TD>' +
+        '<BUTTON TYPE="button" onClick="set_censustract();"><IMG SRC="<%$p%>images/tick.png" ALT=""> Use calculated census tract </BUTTON>' + 
+      '</TD></TR>' +
+      '<TR><TD COLSPAN=2 ALIGN="center">' +
         '<BUTTON TYPE="button" onClick="document.CustomerForm.submitButton.disabled=false; parent.cClick();"><IMG SRC="<%$p%>images/cross.png" ALT=""> Cancel submission</BUTTON></TD></TR>' +
-      '</TABLE></FORM></CENTER>';
+        
+      '</TABLE></CENTER>';
 
-      overlib( choose_censustract, CAPTION, 'Choose a census tract', STICKY, AUTOSTATUSCAP, CLOSETEXT, '', MIDX, 0, MIDY, 0, DRAGGABLE, WIDTH, 576, HEIGHT, 268, BGCOLOR, '#333399', CGCOLOR, '#333399', TEXTSIZE, 3 );
+    overlib( choose_censustract, CAPTION, 'Confirm censustract', STICKY, AUTOSTATUSCAP, CLOSETEXT, '', MIDX, 0, MIDY, 0, DRAGGABLE, WIDTH, 576, HEIGHT, 268, BGCOLOR, '#333399', CGCOLOR, '#333399', TEXTSIZE, 3 );
 
-      setTimeout("document.forms.popupcensustract.elements.censustract.focus()",1);
   } else {
 
-    cf.elements['censustract'].value =
-      new String(statecode)  +
-      new String(countycode) +
-      new String(tractcode);
     cf.submit();
 
   }

@@ -162,10 +162,14 @@ my $money_char = $conf->config('money_char') || '$';
   
   $search_hash{'query'} = $cgi->keywords;
   
-  for ( qw(agentnum magic status classnum pkgpart custom censustract) ) {
+  for ( qw(agentnum magic status classnum pkgpart custom ) ) {
     $search_hash{$_} = $cgi->param($_) if $cgi->param($_);
   }
 
+  for my $param ( qw(censustract) ) {
+    $search_hash{$param} = $cgi->param($param) || ''
+      if ( grep { /$param/ } $cgi->param );
+  }
 
 my @report_option = $cgi->param('report_option')
   if $cgi->param('report_option');
