@@ -135,10 +135,19 @@ foreach my $svcdb ( FS::part_svc->svc_tables() ) {
   }
 
   if ( $svcdb eq 'svc_acct' ) {
+
     $report_svc{"All $lcname never logged in"} = 
       [ svc_url( %svc_url, 'query' => "magic=nologin;sortby=svcnum" ),
         '',
       ];
+
+  } elsif ( $svcdb eq 'svc_phone' ) {
+
+    $report_svc{"${name}' total usage by time period"} = 
+      [ $fsurl. 'search/report_svc_phone.html',
+        'Total usage (minutes, and amount billed) for the specified time period, per phone number.',
+      ];
+
   }
 
   if ( $curuser->access_right('View/link unlinked services') ) {
@@ -204,9 +213,20 @@ tie my %report_ticketing, 'Tie::IxHash',
 tie my %report_bill_event, 'Tie::IxHash',
   'All billing events' => [ $fsurl.'search/report_cust_event.html', 'All billing events for a date range' ],
   'Billing event errors' => [ $fsurl.'search/report_cust_event.html?failed=1', 'Failed credit cards, processor or printer problems, etc.' ],
-  'All invoice events' => [ $fsurl.'search/cust_bill_event.html', 'Reports on deprecated, old-style invoice events for a date range' ],
-  'Invoice event errors' => [ $fsurl.'search/cust_bill_event.html?failed=1', 'Reports on deprecated, old-style events for failed credit cards, processor or printer problems, etc.' ],
+#  'All invoice events' => [ $fsurl.'search/cust_bill_event.html', 'Reports on deprecated, old-style invoice events for a date range' ],
+#  'Invoice event errors' => [ $fsurl.'search/cust_bill_event.html?failed=1', 'Reports on deprecated, old-style events for failed credit cards, processor or printer problems, etc.' ],
 ;
+
+tie my %report_payments, 'Tie::IxHash',
+    'Payments' => [ $fsurl.'search/report_cust_pay.html', 'Payment report (by type and/or date range)' ],
+;
+$report_payments{'Pending Payments'} = [ $fsurl.'search/cust_pay_pending.html?magic=_date;statusNOT=done', 'Pending real-time payments' ]
+  if $curuser->access_right('View customer pending payments');
+$report_payments{'Voided Payments'} = [ $fsurl.'search/report_cust_pay.html?void=1', 'Voided payment report (by type and/or date range)' ]
+  if $curuser->access_right('View customer pending payments');
+$report_payments{'Payment Batches'} = [ $fsurl.'search/pay_batch.html', 'Payment batches (by status and/or date range)' ]
+  if $conf->exists('batch-enable') || $conf->config('batch-enable_payby');
+$report_payments{'Unapplied Payment Aging'} = [ $fsurl.'search/report_unapplied_cust_pay.html', 'Unapplied payment aging report' ];
 
 tie my %report_financial, 'Tie::IxHash';
 if($curuser->access_right('Financial reports')) {
@@ -215,13 +235,7 @@ if($curuser->access_right('Financial reports')) {
     'Sales, Credits and Receipts' => [ $fsurl.'graph/report_money_time.html', 'Sales, credits and receipts summary graph' ],
     'Sales Report' => [ $fsurl.'graph/report_cust_bill_pkg.html', 'Sales report and graph (by agent, package class and/or date range)' ],
     'Credit Report' => [ $fsurl.'search/report_cust_credit.html', 'Credit report (by employee and/or date range)' ],
-    'Payment Report' => [ $fsurl.'search/report_cust_pay.html', 'Payment report (by type and/or date range)' ],
   );
-  $report_financial{'Pending Payment Report'} = [ $fsurl.'search/cust_pay_pending.html?magic=_date;statusNOT=done', 'Pending real-time payments' ]
-    if $curuser->access_right('View customer pending payments');
-  $report_financial{'Payment Batch Report'} = [ $fsurl.'search/pay_batch.html', 'Payment batches (by status and/or date range)' ]
-    if $conf->exists('batch-enable') || $conf->config('batch-enable_payby');
-  $report_financial{'Unapplied payment Aging'} = [ $fsurl.'search/report_unapplied_cust_pay.html', 'Unapplied payment aging report' ];
   $report_financial{'A/R Aging'} = [ $fsurl.'search/report_receivables.html', 'Accounts Receivable Aging report' ];
   $report_financial{'Prepaid Income'} = [ $fsurl.'search/report_prepaid_income.html', 'Prepaid income (unearned revenue)  report' ];
   $report_financial{'Sales Tax Liability'} = [ $fsurl.'search/report_tax.html', 'Sales tax liability report (internal taxclass system)' ];
@@ -239,6 +253,8 @@ $report_menu{'Customers'}   = [ \%report_customers, 'Customer reports'  ]
   if $curuser->access_right('List customers');
 $report_menu{'Invoices'}    =  [ \%report_invoices,  'Invoice reports'   ]
   if $curuser->access_right('List invoices');
+$report_menu{'Payments'}    =  [ \%report_payments,  'Payment reports'   ]
+  if $curuser->access_right('Financial reports');
 $report_menu{'Packages'}    =  [ \%report_packages,  'Package reports'   ]
   if $curuser->access_right('List packages');
 $report_menu{'Services'}    =  [ \%report_services,  'Services reports'  ]

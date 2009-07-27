@@ -288,7 +288,9 @@ if (    ( $curuser->access_right('View invoices') #XXX for now
      && ! $opt{'disable_link'}
    )
 {
-  $link = [ "${p}view/cust_$thing.html?${thing}num=", $thing.'num' ]
+  my $key = $thing eq 'pay_void' ? 'paynum' : $thing.'num';
+  my $q = ( $thing eq 'pay_void' ? 'void=1;' : '' ). "$key=";
+  $link = [ "${p}view/cust_$thing.html?$q", $key ]
 }
 
 my $cust_link = sub {

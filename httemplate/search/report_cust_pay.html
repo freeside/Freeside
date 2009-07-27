@@ -1,6 +1,6 @@
-<% include('/elements/header.html', 'Payment report' ) %>
+<% include('/elements/header.html', $title ) %>
 
-<FORM ACTION="cust_pay.cgi" METHOD="GET">
+<FORM ACTION="<% $void ? 'cust_pay_void.html' : 'cust_pay.cgi' %>" METHOD="GET">
 <INPUT TYPE="hidden" NAME="magic" VALUE="_date">
 
 <TABLE>
@@ -75,5 +75,9 @@
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+my $void = $cgi->param('void') ? 1 : 0;
+
+my $title = $void ? 'Voided payment report' : 'Payment report';
 
 </%init>

@@ -1,12 +1,12 @@
 % if ( $link eq 'popup' ) { 
 
-  <% include('/elements/header-popup.html', "Payment Receipt" ) %>
+  <% include('/elements/header-popup.html', "$thing Receipt" ) %>
 
   <CENTER><A HREF="javascript:self.parent.location = '<% $pr_link %>'">Print</A></CENTER><BR>
 
 % } elsif ( $link eq 'print' ) { 
 
-  <% include('/elements/header-popup.html', "Payment Receipt" ) %>
+  <% include('/elements/header-popup.html', "$thing Receipt" ) %>
   
 % #it would be nice if the menubar could be hidden for print, but better to
 % # have it available than not, otherwise the user winds up at a dead end
@@ -18,7 +18,7 @@
 
 % } else { 
 
-  <% include('/elements/header.html', "Payment Receipt", menubar(
+  <% include('/elements/header.html', "$thing Receipt", menubar(
        "View this customer (#$display_custnum)" => "${p}view/cust_main.cgi?$custnum",
        'Print receipt' => $pr_link,
      ))
@@ -47,6 +47,20 @@
   <TD ALIGN="right">Date</TD>
   <TD BGCOLOR="#FFFFFF"><B><% time2str"%a&nbsp;%b&nbsp;%o,&nbsp;%Y&nbsp;%r", $cust_pay->_date %></B></TD>
 </TR>
+
+% if ( $void ) {
+
+  <TR>
+    <TD ALIGN="right">Void Date</TD>
+    <TD BGCOLOR="#FFFFFF"><B><% time2str"%a&nbsp;%b&nbsp;%o,&nbsp;%Y&nbsp;%r", $cust_pay->void_date %></B></TD>
+  </TR>
+
+%#  <TR>
+%#    <TD ALIGN="right">Void reason</TD>
+%#    <TD BGCOLOR="#FFFFFF"><B><% $cust_pay->reason %></B></TD>
+%#  </TR>
+
+% }
 
 <TR>
   <TD ALIGN="right">Amount</TD>
@@ -112,16 +126,20 @@ if ( $cgi->param('link') =~ /^(\w+)$/ ) {
   $link = $1;
 }
 
+my $void = $cgi->param('void') ? 1 : 0;
+my $thing = $void ? 'Voided Payment' : 'Payment';
+my $table = $void ? 'cust_pay_void'  : 'cust_pay';
+
 my $cust_pay = qsearchs({
-  'select'    => 'cust_pay.*',
-  'table'     => 'cust_pay',
+  'select'    => "$table.*",
+  'table'     => $table,
   'addl_from' => 'LEFT JOIN cust_main USING ( custnum )',
   'hashref'   => { 'paynum' => $paynum },
   'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
 });
-die "Payment #$paynum not found!" unless $cust_pay;
+die "$thing #$paynum not found!" unless $cust_pay;
 
-my $pr_link = "${p}view/cust_pay.html?link=print;paynum=$paynum";
+my $pr_link = "${p}view/cust_pay.html?link=print;paynum=$paynum;void=$void";
 
 my $custnum = $cust_pay->custnum;
 my $display_custnum = $cust_pay->cust_main->display_custnum;
