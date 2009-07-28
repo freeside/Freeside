@@ -704,6 +704,18 @@ sub generate_email {
       #'Filename'    => 'invoice.pdf',
     );
 
+    my @otherparts = ();
+    if ( $self->cust_main->email_csv_cdr ) {
+
+      push @otherparts, build MIME::Entity
+        'Type'        => 'text/csv',
+        'Encoding'    => '7bit',
+        'Data'        => [ map { "$_\n" } $self->call_details ],
+        'Disposition' => 'attachment',
+      ;
+
+    }
+
     if ( $conf->exists('invoice_email_pdf') ) {
 
       #attaching pdf too:
@@ -731,7 +743,7 @@ sub generate_email {
 
       my $pdf = build MIME::Entity $self->mimebuild_pdf('', $args{'template'}, %cdrs);
 
-      $return{'mimeparts'} = [ $related, $pdf ];
+      $return{'mimeparts'} = [ $related, $pdf, @otherparts ];
 
     } else {
 
@@ -743,7 +755,7 @@ sub generate_email {
       #   image/png
 
       $return{'content-type'} = 'multipart/related';
-      $return{'mimeparts'} = [ $alternative, $image ];
+      $return{'mimeparts'} = [ $alternative, $image, @otherparts ];
       $return{'type'} = 'multipart/alternative'; #Content-Type of first part...
       #$return{'disposition'} = 'inline';
 
@@ -3031,6 +3043,22 @@ sub _items_payments {
 
   @b;
 
+}
+
+=item call_details
+
+Returns an array of CSV strings representing the call details for this invoice
+
+=cut
+
+sub call_details {
+  my $self = shift;
+  map { $_->details( 'format_function' => sub{ shift },
+                     'escape_function' => sub{ return() },
+                   )
+      }
+    grep { $_->pkgnum }
+    $self->cust_bill_pkg;
 }
 
 

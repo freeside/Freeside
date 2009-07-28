@@ -216,6 +216,13 @@ Billing information
   </TR>
 % } 
 
+% if ( $conf->exists('voip-cust_email_csv_cdr') ) { 
+  <TR>
+    <TD ALIGN="right">Email&nbsp;CDRs&nbsp;as&nbsp;CSV</TD>
+    <TD BGCOLOR="#ffffff"><% $cust_main->email_csv_cdr ? 'yes' : 'no' %></TD>
+  </TR>
+% } 
+
 % if ( $show_term || $cust_main->cdr_termination_percentage ) {
   <TR>
     <TD ALIGN="right">CDR termination settlement</TD>

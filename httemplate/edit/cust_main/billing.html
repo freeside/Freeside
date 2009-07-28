@@ -438,6 +438,13 @@
       <INPUT TYPE="hidden" NAME="squelch_cdr" VALUE="<% $cust_main->squelch_cdr %>">
 % }
 
+% if ( $conf->exists('voip-cust_email_csv_cdr') ) { 
+      <TR>
+       <TD COLSPAN="2"><INPUT TYPE="checkbox" NAME="email_csv_cdr" VALUE="Y" <% $cust_main->email_csv_cdr eq "Y" ? 'CHECKED' : '' %>> Attach CDRs as CSV to emailed invoices</TD>
+      </TR>
+% } else { 
+      <INPUT TYPE="hidden" NAME="email_csv_cdr" VALUE="<% $cust_main->email_csv_cdr %>">
+% }
 
 % if ( $show_term || $cust_main->cdr_termination_percentage ) {
       <TR>

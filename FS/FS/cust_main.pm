@@ -1869,7 +1869,7 @@ sub check {
     $self->payname($1);
   }
 
-  foreach my $flag (qw( tax spool_cdr squelch_cdr archived )) {
+  foreach my $flag (qw( tax spool_cdr squelch_cdr archived email_csv_cdr )) {
     $self->$flag() =~ /^(Y?)$/ or return "Illegal $flag: ". $self->$flag();
     $self->$flag($1);
   }

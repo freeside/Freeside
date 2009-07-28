@@ -698,6 +698,7 @@ sub tables_hashref {
         'cdr_termination_percentage', 'decimal', 'NULL', '', '', '',
         'invoice_terms', 'varchar', 'NULL', $char_d, '', '',
         'archived', 'char', 'NULL', 1, '', '',
+        'email_csv_cdr', 'char', 'NULL', 1, '', '',
       ],
       'primary_key' => 'custnum',
       'unique' => [ [ 'agentnum', 'agent_custid' ] ],
