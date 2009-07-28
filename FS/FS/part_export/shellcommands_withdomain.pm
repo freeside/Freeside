@@ -51,6 +51,9 @@ tie my %options, 'Tie::IxHash',
                type=>'select', options=>[qw(crypt md5)],
                default => 'crypt',
              },
+  'no_queue' => { label => 'Run command immediately',
+                 type  => 'checkbox',
+           },
 ;
 
 %info = (

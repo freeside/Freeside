@@ -65,6 +65,9 @@ tie my %options, 'Tie::IxHash',
                              'Radius group mapping to reason (via template user)',
 			    type  => 'textarea',
 			  },
+  'no_queue' => { label => 'Run command immediately',
+                   type  => 'checkbox',
+                },
 ;
 
 %info = (
@@ -367,12 +370,23 @@ sub _export_replace {
 
   my $command_string = eval(qq("$command"));
 
-  $self->shellcommands_queue( $new->svcnum,
-    user         => $self->option('user')||'root',
-    host         => $self->machine,
-    command      => $command_string,
-    stdin_string => $stdin_string,
+  my @ssh_cmd_args = (
+    user          => $self->option('user') || 'root',
+    host          => $self->machine,
+    command       => $command_string,
+    stdin_string  => $stdin_string,
   );
+
+  if($self->options('no_queue')) {
+    # discard return value just like freeside-queued.
+    eval { ssh_cmd(@ssh_cmd_args) };
+    $error = $@;
+    return $error. ' ('. $self->exporttype. ' to '. $self->machine. ')'
+      if $error;
+  }
+  else {
+    $self->shellcommands_queue( $new->svcnum, @ssh_cmd_args );
+  }
 }
 
 #a good idea to queue anything that could fail or take any time
