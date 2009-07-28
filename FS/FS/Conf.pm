@@ -2319,6 +2319,13 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'change_history-years',
+    'section'     => 'UI',
+    'description' => 'Number of years of change history to show by default.  Currently defaults to 0.5.',
+    'type'        => 'text',
+  },
+
+  {
     'key'         => 'cust_main-packages-years',
     'section'     => 'UI',
     'description' => 'Number of years to show old (cancelled and one-time charge) packages by default.  Currently defaults to 2.',
@@ -2976,7 +2983,7 @@ worry that config_items is freeside-specific and icky.
       'tickets'         => 'Tickets',
       'packages'        => 'Packages',
       'payment_history' => 'Payment History',
-      #''                => 'Change History',
+      'change_history'  => 'Change History',
       'jumbo'           => 'Jumbo',
     ],
   },

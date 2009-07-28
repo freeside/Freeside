@@ -95,6 +95,7 @@ sub label {
       substr('0000000000'.uc($self->title), -10);
   } else {
     #$self->SUPER::label;
+    return $self->id unless $self->title =~ /\S/;
     $self->id. ' - '. $self->title;
   }
 }

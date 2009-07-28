@@ -124,24 +124,22 @@ Vonage integration (see <a href="https://secure.click2callu.com/">Click2Call</a>
 <INPUT TYPE="submit" VALUE="Update preferences">
 
 <% include('/elements/footer.html') %>
-<%once>
-
-  #false laziness w/view/cust_main.cgi and Conf.pm (cust_main-default_view)
-
-  tie my %customer_views, 'Tie::IxHash',
-    'Basics'          => 'basics',
-    'Notes'           => 'notes', #notes and files?
-    'Tickets'         => 'tickets',
-    'Packages'        => 'packages',
-    'Payment History' => 'payment_history',
-    #'Change History'  => '',
-    'Jumbo'           => 'jumbo',
-  ;
-
-</%once>
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;
+
+#false laziness w/view/cust_main.cgi and Conf.pm (cust_main-default_view)
+
+tie my %customer_views, 'Tie::IxHash',
+  'Basics'          => 'basics',
+  'Notes'           => 'notes', #notes and files?
+  'Tickets'         => 'tickets',
+  'Packages'        => 'packages',
+  'Payment History' => 'payment_history',
+;
+$customer_views{'Change History'} = 'change_history'
+  if $curuser->access_right('View customer history');
+$customer_views{'Jumbo'} = 'jumbo';
 
 # XSS via your own preferences?  seems unlikely, but nice try anyway...
 ( $curuser->option('menu_position') || 'top' )

@@ -113,6 +113,7 @@ Comments
 % if ( ! $conf->exists('cust_main-disable_notes') || $notecount) {
 
 %   unless ( $view eq 'notes' && $cust_main->comments !~ /[^\s\n\r]/ ) {
+      <BR>
       <A NAME="cust_main_note"><FONT SIZE="+2">Notes</FONT></A><BR>
 %   }
 
@@ -180,6 +181,10 @@ Comments
 
 % }
 
+% if ( $view eq 'change_history' ) { #  || $view eq 'jumbo'
+  <% include('cust_main/change_history.html', $cust_main ) %>
+% }
+
 <% include('/elements/footer.html') %>
 <%init>
 
@@ -213,11 +218,12 @@ tie my %views, 'Tie::IxHash',
        'Notes'            => 'notes', #notes and files?
 ;
 $views{'Tickets'}         =  'tickets'
-                               if $conf->config('ticket_system');
+  if $conf->config('ticket_system');
 $views{'Packages'}        =  'packages';
 $views{'Payment History'} =  'payment_history'
-                               unless $conf->config('payby-default' eq 'HIDE');
-#$views{'Change History'}  =  '';
+  unless $conf->config('payby-default' eq 'HIDE');
+$views{'Change History'}  =  'change_history'
+  if $curuser->access_right('View customer history');
 $views{'Jumbo'}           =  'jumbo';
 
 my %viewname = reverse %views;

@@ -94,6 +94,7 @@ tie my %rights, 'Tie::IxHash',
     'View customer',
     #'View Customer | View tickets',
     'Edit customer',
+    'View customer history',
     'Cancel customer',
     'Complimentary customer', #aka users-allow_comp 
     { rightname=>'Delete customer', desc=>"Enable customer deletions. Be very careful! Deleting a customer will remove all traces that this customer ever existed! It should probably only be used when auditing a legacy database. Normally, you cancel all of a customer's packages if they cancel service." }, #aka. deletecustomers

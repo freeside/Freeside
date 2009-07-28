@@ -186,6 +186,16 @@ Initializes the Mason environment, loads all Freeside and RT libraries, etc.
   use FS::part_pkg_taxrate;
   use FS::tax_rate;
   use FS::part_pkg_report_option;
+  use FS::h_cust_pkg;
+  use FS::h_svc_acct;
+  use FS::h_svc_broadband;
+  use FS::h_svc_domain;
+  #use FS::h_domain_record;
+  use FS::h_svc_external;
+  use FS::h_svc_forward;
+  use FS::h_svc_phone;
+  #use FS::h_phone_device;
+  use FS::h_svc_www;
   # Sammath Naur
 
   if ( %%%RT_ENABLED%%% ) {
@@ -223,7 +233,7 @@ Initializes the Mason environment, loads all Freeside and RT libraries, etc.
 
       #slow, unreliable, segfaults and is optional
       #see rt/html/Ticket/Elements/ShowTransactionAttachments
-      #use Text::Quoted;
+      use Text::Quoted;
 
       #?#use File::Path qw( rmtree );
       #?#use File::Glob qw( bsd_glob );
