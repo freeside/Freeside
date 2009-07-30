@@ -383,8 +383,6 @@ my %opt = (
   )
 );
 
-warn Dumper(\%opt);
-
 #invoices
 foreach my $cust_bill ($cust_main->cust_bill) {
   push @history, {
