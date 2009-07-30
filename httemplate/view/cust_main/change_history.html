@@ -202,7 +202,7 @@ my $pkg_labelsub = sub {
 
 my $svc_labelsub = sub {
   my($item, $label) = @_;
-  $label. ': <b>'. encode_entities($item->label). '</b>';
+  $label. ': <b>'. encode_entities($item->label($item->history_date)). '</b>';
 };
 
 my %h_table_labelsub = (
