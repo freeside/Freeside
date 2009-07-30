@@ -105,7 +105,7 @@ my $money_char = $conf->config('money_char') || '$';
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Post payment');
 
-my($link, $linknum, $paid, $payby, $payinfo, $_date, $pkgnum); 
+my($link, $linknum, $paid, $payby, $payinfo, $_date);
 if ( $cgi->param('error') ) {
   $link     = $cgi->param('link');
   $linknum  = $cgi->param('linknum');
