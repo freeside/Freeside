@@ -366,7 +366,7 @@ sub payment_results {
   $cgi->param('city') =~ /^(.{0,80})$/ or die "illegal city";
   my $city = $1;
 
-  $cgi->param('state') =~ /^(.{80})$/ or die "illegal state";
+  $cgi->param('state') =~ /^(.{0,80})$/ or die "illegal state";
   my $state = $1;
 
   $cgi->param('zip') =~ /^(.{0,10})$/ or die "illegal zip";
