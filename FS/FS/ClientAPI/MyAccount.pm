@@ -128,6 +128,8 @@ sub login {
   if ( $cust_pkg ) {
     my $cust_main = $cust_pkg->cust_main;
     $session->{'custnum'} = $cust_main->custnum;
+    $session->{'pkgnum'} = $cust_pkg->pkgnum
+      if $conf->exists('pkg-balances');
   }
 
   my $session_id;
@@ -518,6 +520,7 @@ sub process_payment {
     'payname'  => $payname,
     'paybatch' => $paybatch, #this doesn't actually do anything
     'paycvv'   => $paycvv,
+    'pkgnum'   => $session->{'pkgnum'},
     map { $_ => $p->{$_} } @{ $payby2fields{$payby} }
   );
   return { 'error' => $error } if $error;
@@ -560,9 +563,11 @@ sub realtime_collect {
   my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
     or return { 'error' => "unknown custnum $custnum" };
 
-  my $error = $cust_main->realtime_collect( 'method'     => $p->{'method'},
-                                            'session_id' => $p->{'session_id'},
-                                          );
+  my $error = $cust_main->realtime_collect(
+    'method'     => $p->{'method'},
+    'pkgnum'     => $session->{'pkgnum'},
+    'session_id' => $p->{'session_id'},
+  );
   return { 'error' => $error } unless ref( $error );
 
   return { 'error' => '', amount => $cust_main->balance, %$error };

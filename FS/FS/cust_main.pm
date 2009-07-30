@@ -3961,6 +3961,7 @@ sub realtime_bop {
     'payinfo'           => $payinfo,
     'paydate'           => $paydate,
     'recurring_billing' => $content{recurring_billing},
+    'pkgnum'            => $options{'pkgnum'},
     'status'            => 'new',
     'gatewaynum'        => ( $payment_gateway ? $payment_gateway->gatewaynum : '' ),
   };
@@ -4116,6 +4117,7 @@ sub realtime_bop {
        'payinfo'  => $payinfo,
        'paybatch' => $paybatch,
        'paydate'  => $paydate,
+       'pkgnum'   => $options{'pkgnum'},
     } );
     #doesn't hurt to know, even though the dup check is in cust_pay_pending now
     $cust_pay->payunique( $options{payunique} )
@@ -4629,7 +4631,7 @@ On failure returns an error message.
 
 Returns false or a hashref upon success.  The hashref contains keys popup_url reference, and collectitems.  The first is a URL to which a browser should be redirected for completion of collection.  The second is a reference id for the transaction suitable for the end user.  The collectitems is a reference to a list of name value pairs suitable for assigning to a html form and posted to popup_url.
 
-Available options are: I<method>, I<amount>, I<description>, I<invnum>, I<quiet>, I<paynum_ref>, I<payunique>, I<session_id>
+Available options are: I<method>, I<amount>, I<description>, I<invnum>, I<quiet>, I<paynum_ref>, I<payunique>, I<session_id>, I<pkgnum>
 
 I<method> is one of: I<CC>, I<ECHECK> and I<LEC>.  If none is specified
 then it is deduced from the customer record.
@@ -5002,6 +5004,7 @@ sub _new_realtime_bop {
     'payinfo'           => $options{payinfo},
     'paydate'           => $paydate,
     'recurring_billing' => $content{recurring_billing},
+    'pkgnum'            => $options{'pkgnum'},
     'status'            => 'new',
     'gatewaynum'        => $payment_gateway->gatewaynum || '',
     'session_id'        => $options{session_id} || '',
@@ -5248,6 +5251,7 @@ sub _realtime_bop_result {
        #'payinfo'  => $payinfo,
        'paybatch' => $paybatch,
        'paydate'  => $cust_pay_pending->paydate,
+       'pkgnum'   => $cust_pay_pending->pkgnum,
     } );
     #doesn't hurt to know, even though the dup check is in cust_pay_pending now
     $cust_pay->payunique( $options{payunique} )
