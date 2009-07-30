@@ -75,7 +75,4 @@ my $_date   = time;
 my $otaker  = getotaker;
 my $p1      = popurl(1);
 
-my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
-  or die "unknown custnum $custnum\n";
-
 </%init>
