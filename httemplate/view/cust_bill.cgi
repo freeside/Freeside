@@ -6,6 +6,7 @@
 % if ( $cust_bill->owed > 0
 %      && scalar( grep $payby{$_}, qw(BILL CASH WEST MCRD) )
 %      && $FS::CurrentUser::CurrentUser->access_right('Post payment')
+%      && ! $conf->exists('pkg-balances')
 %    )
 % {
 %     my $s = 0;

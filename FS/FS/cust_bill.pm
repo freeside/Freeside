@@ -235,6 +235,25 @@ sub cust_bill_pkg {
   );
 }
 
+=item cust_bill_pkg_pkgnum PKGNUM
+
+Returns the line items (see L<FS::cust_bill_pkg>) for this invoice and
+specified pkgnum.
+
+=cut
+
+sub cust_bill_pkg_pkgnum {
+  my( $self, $pkgnum ) = @_;
+  qsearch(
+    { 'table'    => 'cust_bill_pkg',
+      'hashref'  => { 'invnum' => $self->invnum,
+                      'pkgnum' => $pkgnum,
+                    },
+      'order_by' => 'ORDER BY billpkgnum',
+    }
+  );
+}
+
 =item cust_pkg
 
 Returns the packages (see L<FS::cust_pkg>) corresponding to the line items for
@@ -432,6 +451,38 @@ sub cust_credited {
   ;
 }
 
+=item cust_bill_pay_pkgnum
+
+Returns all payment applications (see L<FS::cust_bill_pay>) for this invoice
+with matching pkgnum.
+
+=cut
+
+sub cust_bill_pay_pkgnum {
+  my( $self, $pkgnum ) = @_;
+  sort { $a->_date <=> $b->_date }
+    qsearch( 'cust_bill_pay', { 'invnum' => $self->invnum,
+                                'pkgnum' => $pkgnum,
+                              }
+           );
+}
+
+=item cust_credited_pkgnum
+
+Returns all applied credits (see L<FS::cust_credit_bill>) for this invoice
+with matching pkgnum.
+
+=cut
+
+sub cust_credited_pkgnum {
+  my( $self, $pkgnum ) = @_;
+  sort { $a->_date <=> $b->_date }
+    qsearch( 'cust_credit_bill', { 'invnum' => $self->invnum,
+                                   'pkgnum' => $pkgnum,
+                                 }
+           );
+}
+
 =item tax
 
 Returns the tax amount (see L<FS::cust_bill_pkg>) for this invoice.
@@ -465,6 +516,21 @@ sub owed {
   $balance;
 }
 
+sub owed_pkgnum {
+  my( $self, $pkgnum ) = @_;
+
+  #my $balance = $self->charged;
+  my $balance = 0;
+  $balance += $_->setup + $_->recur for $self->cust_bill_pkg_pkgnum($pkgnum);
+
+  $balance -= $_->amount            for $self->cust_bill_pay_pkgnum($pkgnum);
+  $balance -= $_->amount            for $self->cust_credited_pkgnum($pkgnum);
+
+  $balance = sprintf( "%.2f", $balance);
+  $balance =~ s/^\-0\.00$/0.00/; #yay ieee fp
+  $balance;
+}
+
 =item apply_payments_and_credits
 
 =cut
@@ -487,6 +553,13 @@ sub apply_payments_and_credits {
 
   my @payments = grep { $_->unapplied > 0 } $self->cust_main->cust_pay;
   my @credits  = grep { $_->credited > 0 } $self->cust_main->cust_credit;
+
+  if ( $conf->exists('pkg-balances') ) {
+    # limit @payments & @credits to those w/ a pkgnum grepped from $self
+    my %pkgnums = map { $_ => 1 } map $_->pkgnum, $self->cust_bill_pkg;
+    @payments = grep { ! $_->pkgnum || $pkgnums{$_->pkgnum} } @payments;
+    @credits  = grep { ! $_->pkgnum || $pkgnums{$_->pkgnum} } @credits;
+  }
 
   while ( $self->owed > 0 and ( @payments || @credits ) ) {
 
@@ -525,27 +598,38 @@ sub apply_payments_and_credits {
       die "guru meditation #12 and 35";
     }
 
+    my $unapp_amount;
     if ( $app eq 'pay' ) {
 
       my $payment = shift @payments;
-
-      $app = new FS::cust_bill_pay {
-        'paynum'  => $payment->paynum,
-	'amount'  => sprintf('%.2f', min( $payment->unapplied, $self->owed ) ),
-      };
+      $unapp_amount = $payment->unapplied;
+      $app = new FS::cust_bill_pay { 'paynum'  => $payment->paynum };
+      $app->pkgnum( $payment->pkgnum )
+        if $conf->exists('pkg-balances') && $payment->pkgnum;
 
     } elsif ( $app eq 'credit' ) {
 
       my $credit = shift @credits;
-
-      $app = new FS::cust_credit_bill {
-        'crednum' => $credit->crednum,
-	'amount'  => sprintf('%.2f', min( $credit->credited, $self->owed ) ),
-      };
+      $unapp_amount = $credit->credited;
+      $app = new FS::cust_credit_bill { 'crednum' => $credit->crednum };
+      $app->pkgnum( $credit->pkgnum )
+        if $conf->exists('pkg-balances') && $credit->pkgnum;
 
     } else {
       die "guru meditation #12 and 35";
     }
+
+    my $owed;
+    if ( $conf->exists('pkg-balances') && $app->pkgnum ) {
+      warn "owed_pkgnum ". $app->pkgnum;
+      $owed = $self->owed_pkgnum($app->pkgnum);
+    } else {
+      $owed = $self->owed;
+    }
+    next unless $owed > 0;
+
+    warn "min ( $unapp_amount, $owed )\n";
+    $app->amount( sprintf('%.2f', min( $unapp_amount, $owed ) ) );
 
     $app->invnum( $self->invnum );
 

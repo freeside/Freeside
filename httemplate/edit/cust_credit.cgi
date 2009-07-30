@@ -40,6 +40,16 @@ Credit
     <TD><SELECT NAME="apply"><OPTION VALUE="yes" SELECTED>yes<OPTION>no</SELECT></TD>
   </TR>
 
+% if ( $conf->exists('pkg-balances') ) {
+  <% include('/elements/tr-select-cust_pkg-balances.html',
+               'custnum' => $custnum,
+               'cgi'     => $cgi
+            )
+  %>
+% } else {
+  <INPUT TYPE="hidden" NAME="pkgnum" VALUE="">
+% }
+
 </TABLE>
 
 <BR>
@@ -64,5 +74,8 @@ my $amount  = $cgi->param('amount');
 my $_date   = time;
 my $otaker  = getotaker;
 my $p1      = popurl(1);
+
+my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
+  or die "unknown custnum $custnum\n";
 
 </%init>

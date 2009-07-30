@@ -72,6 +72,16 @@ Payment
 % } 
 </TR>
 
+% if ( $conf->exists('pkg-balances') ) {
+  <% include('/elements/tr-select-cust_pkg-balances.html',
+               'custnum' => $custnum,
+               'cgi'     => $cgi
+            )
+  %>
+% } else {
+  <INPUT TYPE="hidden" NAME="pkgnum" VALUE="">
+% }
+
 </TABLE>
 
 <BR>
@@ -95,7 +105,7 @@ my $money_char = $conf->config('money_char') || '$';
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Post payment');
 
-my($link, $linknum, $paid, $payby, $payinfo, $_date); 
+my($link, $linknum, $paid, $payby, $payinfo, $_date, $pkgnum); 
 if ( $cgi->param('error') ) {
   $link     = $cgi->param('link');
   $linknum  = $cgi->param('linknum');
@@ -131,7 +141,7 @@ if ( $link eq 'invnum' ) {
   my $cust_bill = qsearchs('cust_bill', { 'invnum' => $linknum } )
     or die "unknown invnum $linknum";
   $custnum = $cust_bill->custnum;
-} elsif ( $link eq 'custnum' ) {
+} elsif ( $link eq 'custnum' || $link eq 'popup' ) {
   $custnum = $linknum;
 }
 

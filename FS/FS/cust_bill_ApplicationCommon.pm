@@ -115,6 +115,8 @@ sub apply_to_lineitems {
 
   my @apply = ();
 
+  my $conf = new FS::Conf;
+
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
   local $SIG{QUIT} = 'IGNORE';
@@ -127,6 +129,8 @@ sub apply_to_lineitems {
   my $dbh = dbh;
 
   my @open = $self->cust_bill->open_cust_bill_pkg; #FOR UPDATE...?
+  @open = grep { $_->pkgnum == $self->pkgnum } @open
+    if $conf->exists('pkg-balances') && $self->pkgnum;
   warn "$me ". scalar(@open). " open line items for invoice ".
        $self->cust_bill->invnum. ": ". join(', ', @open). "\n"
     if $DEBUG;

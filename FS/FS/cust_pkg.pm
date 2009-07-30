@@ -1750,6 +1750,63 @@ sub statuscolor {
   $statuscolor{$self->status};
 }
 
+=item pkg_label
+
+Returns a label for this package.  (Currently "pkgnum: pkg - comment" or
+"pkg-comment" depending on user preference).
+
+=cut
+
+sub pkg_label {
+  my $self = shift;
+  my $label = $self->part_pkg->pkg_comment( 'nopkgpart' => 1 );
+  $label = $self->pkgnum. ": $label"
+    if $FS::CurrentUser::CurrentUser->option('show_pkgnum');
+  $label;
+}
+
+=item pkg_label_long
+
+Returns a long label for this package, adding the primary service's label to
+pkg_label.
+
+=cut
+
+sub pkg_label_long {
+  my $self = shift;
+  my $label = $self->pkg_label;
+  my $cust_svc = $self->primary_cust_svc;
+  $label .= ' ('. ($cust_svc->label)[1]. ')' if $cust_svc;
+  $label;
+}
+
+=item primary_cust_svc
+
+Returns a primary service (as FS::cust_svc object) if one can be identified.
+
+=cut
+
+#for labeling purposes - might not 100% match up with part_pkg->svcpart's idea
+
+sub primary_cust_svc {
+  my $self = shift;
+
+  my @cust_svc = $self->cust_svc;
+
+  return '' unless @cust_svc; #no serivces - irrelevant then
+  
+  return $cust_svc[0] if scalar(@cust_svc) == 1; #always return a single service
+
+  # primary service as specified in the package definition
+  # or exactly one service definition with quantity one
+  my $svcpart = $self->part_pkg->svcpart;
+  @cust_svc = grep { $_->svcpart == $svcpart } @cust_svc;
+  return $cust_svc[0] if scalar(@cust_svc) == 1;
+
+  #couldn't identify one thing..
+  return '';
+}
+
 =item labels
 
 Returns a list of lists, calling the label method for all services

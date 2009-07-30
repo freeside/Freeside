@@ -18,6 +18,11 @@ $payby =~ s/^BILL$//;
 $payby =~ s/^(CARD|COMP)$/$1 /;
 my $info = $payby ? " ($payby$payinfo)" : '';
 
+if ( $opt{'pkg-balances'} && $cust_pay_void->pkgnum ) {
+  my $cust_pkg = qsearchs('cust_pkg', { 'pkgnum' => $cust_pay_void->pkgnum } );
+  $info .= ' for '. $cust_pkg->pkg_label_long;
+}
+
 my $unvoid = '';
 if ( $cust_pay_void->closed !~ /^Y/i
      && $curuser->access_right('Unvoid')

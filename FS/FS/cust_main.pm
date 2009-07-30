@@ -6110,32 +6110,52 @@ sub apply_credits {
   @invoices = sort { $b->_date <=> $a->_date } @invoices
     if defined($opt{'order'}) && $opt{'order'} eq 'newest';
 
+  if ( $conf->exists('pkg-balances') ) {
+    # limit @credits to those w/ a pkgnum grepped from $self
+    my %pkgnums = ();
+    foreach my $i (@invoices) {
+      foreach my $li ( $i->cust_bill_pkg ) {
+        $pkgnums{$li->pkgnum} = 1;
+      }
+    }
+    @credits = grep { ! $_->pkgnum || $pkgnums{$_->pkgnum} } @credits;
+  }
+
   my $credit;
+
   foreach my $cust_bill ( @invoices ) {
-    my $amount;
 
     if ( !defined($credit) || $credit->credited == 0) {
       $credit = pop @credits or last;
     }
 
-    if ($cust_bill->owed >= $credit->credited) {
-      $amount=$credit->credited;
-    }else{
-      $amount=$cust_bill->owed;
+    my $owed;
+    if ( $conf->exists('pkg-balances') && $credit->pkgnum ) {
+      $owed = $cust_bill->owed_pkgnum($credit->pkgnum);
+    } else {
+      $owed = $cust_bill->owed;
     }
+    unless ( $owed > 0 ) {
+      push @credits, $credit;
+      next;
+    }
+
+    my $amount = min( $credit->credited, $owed );
     
     my $cust_credit_bill = new FS::cust_credit_bill ( {
       'crednum' => $credit->crednum,
       'invnum'  => $cust_bill->invnum,
       'amount'  => $amount,
     } );
+    $cust_credit_bill->pkgnum( $credit->pkgnum )
+      if $conf->exists('pkg-balances') && $credit->pkgnum;
     my $error = $cust_credit_bill->insert;
     if ( $error ) {
       $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
       die $error;
     }
     
-    redo if ($cust_bill->owed > 0);
+    redo if ($cust_bill->owed > 0) && ! $conf->exists('pkg-balances');
 
   }
 
@@ -6183,33 +6203,52 @@ sub apply_payments {
                  grep { $_->owed > 0 }
                  $self->cust_bill;
 
+  if ( $conf->exists('pkg-balances') ) {
+    # limit @payments to those w/ a pkgnum grepped from $self
+    my %pkgnums = ();
+    foreach my $i (@invoices) {
+      foreach my $li ( $i->cust_bill_pkg ) {
+        $pkgnums{$li->pkgnum} = 1;
+      }
+    }
+    @payments = grep { ! $_->pkgnum || $pkgnums{$_->pkgnum} } @payments;
+  }
+
   my $payment;
 
   foreach my $cust_bill ( @invoices ) {
-    my $amount;
 
     if ( !defined($payment) || $payment->unapplied == 0 ) {
       $payment = pop @payments or last;
     }
 
-    if ( $cust_bill->owed >= $payment->unapplied ) {
-      $amount = $payment->unapplied;
+    my $owed;
+    if ( $conf->exists('pkg-balances') && $payment->pkgnum ) {
+      $owed = $cust_bill->owed_pkgnum($payment->pkgnum);
     } else {
-      $amount = $cust_bill->owed;
+      $owed = $cust_bill->owed;
     }
+    unless ( $owed > 0 ) {
+      push @payments, $payment;
+      next;
+    }
+
+    my $amount = min( $payment->unapplied, $owed );
 
     my $cust_bill_pay = new FS::cust_bill_pay ( {
       'paynum' => $payment->paynum,
       'invnum' => $cust_bill->invnum,
       'amount' => $amount,
     } );
+    $cust_bill_pay->pkgnum( $payment->pkgnum )
+      if $conf->exists('pkg-balances') && $payment->pkgnum;
     my $error = $cust_bill_pay->insert;
     if ( $error ) {
       $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
       die $error;
     }
 
-    redo if ( $cust_bill->owed > 0);
+    redo if ( $cust_bill->owed > 0) && ! $conf->exists('pkg-balances');
 
   }
 
@@ -6270,6 +6309,41 @@ sub total_owed_date {
 
 }
 
+=item total_owed_pkgnum PKGNUM
+
+Returns the total owed on all invoices for this customer's specific package
+when using experimental package balances (see L<FS::cust_bill/owed_pkgnum>).
+
+=cut
+
+sub total_owed_pkgnum {
+  my( $self, $pkgnum ) = @_;
+  $self->total_owed_date_pkgnum(2145859200, $pkgnum); #12/31/2037
+}
+
+=item total_owed_date_pkgnum TIME PKGNUM
+
+Returns the total owed for this customer's specific package when using
+experimental package balances on all invoices with date earlier than
+TIME.  TIME is specified as a UNIX timestamp; see L<perlfunc/"time">).  Also
+see L<Time::Local> and L<Date::Parse> for conversion functions.
+
+=cut
+
+sub total_owed_date_pkgnum {
+  my( $self, $time, $pkgnum ) = @_;
+
+  my $total_bill = 0;
+  foreach my $cust_bill (
+    grep { $_->_date <= $time }
+      qsearch('cust_bill', { 'custnum' => $self->custnum, } )
+  ) {
+    $total_bill += $cust_bill->owed_pkgnum($pkgnum);
+  }
+  sprintf( "%.2f", $total_bill );
+
+}
+
 =item total_paid
 
 Returns the total amount of all payments.
@@ -6306,6 +6380,21 @@ sub total_unapplied_credits {
   sprintf( "%.2f", $total_credit );
 }
 
+=item total_unapplied_credits_pkgnum PKGNUM
+
+Returns the total outstanding credit (see L<FS::cust_credit>) for this
+customer.  See L<FS::cust_credit/credited>.
+
+=cut
+
+sub total_unapplied_credits_pkgnum {
+  my( $self, $pkgnum ) = @_;
+  my $total_credit = 0;
+  $total_credit += $_->credited foreach $self->cust_credit_pkgnum($pkgnum);
+  sprintf( "%.2f", $total_credit );
+}
+
+
 =item total_unapplied_payments
 
 Returns the total unapplied payments (see L<FS::cust_pay>) for this customer.
@@ -6319,6 +6408,22 @@ sub total_unapplied_payments {
   $total_unapplied += $_->unapplied foreach $self->cust_pay;
   sprintf( "%.2f", $total_unapplied );
 }
+
+=item total_unapplied_payments_pkgnum PKGNUM
+
+Returns the total unapplied payments (see L<FS::cust_pay>) for this customer's
+specific package when using experimental package balances.  See
+L<FS::cust_pay/unapplied>.
+
+=cut
+
+sub total_unapplied_payments_pkgnum {
+  my( $self, $pkgnum ) = @_;
+  my $total_unapplied = 0;
+  $total_unapplied += $_->unapplied foreach $self->cust_pay_pkgnum($pkgnum);
+  sprintf( "%.2f", $total_unapplied );
+}
+
 
 =item total_unapplied_refunds
 
@@ -6369,6 +6474,26 @@ sub balance_date {
       + $self->total_unapplied_refunds
       - $self->total_unapplied_credits
       - $self->total_unapplied_payments
+  );
+}
+
+=item balance_pkgnum PKGNUM
+
+Returns the balance for this customer's specific package when using
+experimental package balances (total_owed plus total_unrefunded, minus
+total_unapplied_credits minus total_unapplied_payments)
+
+=cut
+
+sub balance_pkgnum {
+  my( $self, $pkgnum ) = @_;
+
+  sprintf( "%.2f",
+      $self->total_owed_pkgnum($pkgnum)
+# n/a - refunds aren't part of pkg-balances since they don't apply to invoices
+#    + $self->total_unapplied_refunds_pkgnum($pkgnum)
+    - $self->total_unapplied_credits_pkgnum($pkgnum)
+    - $self->total_unapplied_payments_pkgnum($pkgnum)
   );
 }
 
@@ -7001,6 +7126,22 @@ sub cust_credit {
     qsearch( 'cust_credit', { 'custnum' => $self->custnum } )
 }
 
+=item cust_credit_pkgnum
+
+Returns all the credits (see L<FS::cust_credit>) for this customer's specific
+package when using experimental package balances.
+
+=cut
+
+sub cust_credit_pkgnum {
+  my( $self, $pkgnum ) = @_;
+  sort { $a->_date <=> $b->_date }
+    qsearch( 'cust_credit', { 'custnum' => $self->custnum,
+                              'pkgnum'  => $pkgnum,
+                            }
+    );
+}
+
 =item cust_pay
 
 Returns all the payments (see L<FS::cust_pay>) for this customer.
@@ -7011,6 +7152,22 @@ sub cust_pay {
   my $self = shift;
   sort { $a->_date <=> $b->_date }
     qsearch( 'cust_pay', { 'custnum' => $self->custnum } )
+}
+
+=item cust_pay_pkgnum
+
+Returns all the payments (see L<FS::cust_pay>) for this customer's specific
+package when using experimental package balances.
+
+=cut
+
+sub cust_pay_pkgnum {
+  my( $self, $pkgnum ) = @_;
+  sort { $a->_date <=> $b->_date }
+    qsearch( 'cust_pay', { 'custnum' => $self->custnum,
+                           'pkgnum'  => $pkgnum,
+                         }
+    );
 }
 
 =item cust_pay_void

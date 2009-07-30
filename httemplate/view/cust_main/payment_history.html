@@ -374,13 +374,16 @@ my %status = (
 #get payment history
 my @history = ();
 
-my %opt =
+my %opt = (
   ( map { $_ => scalar($conf->config($_)) }
         qw( card_refund-days )
   ),
   ( map { $_ => $conf->exists($_) } 
-        qw( deletepayments deleterefunds )
-  );
+        qw( deletepayments deleterefunds pkg-balances )
+  )
+);
+
+warn Dumper(\%opt);
 
 #invoices
 foreach my $cust_bill ($cust_main->cust_bill) {
@@ -405,7 +408,7 @@ foreach my $cust_pay ($cust_main->cust_pay) {
 foreach my $cust_pay_void ($cust_main->cust_pay_void) {
   push @history, {
     'date'   => $cust_pay_void->_date,
-    'desc'   => include('payment_history/voided_payment.html', $cust_pay_void),
+    'desc'   => include('payment_history/voided_payment.html', $cust_pay_void, %opt ),
     'void_payment' => $cust_pay_void->paid,
   };
 
@@ -415,7 +418,7 @@ foreach my $cust_pay_void ($cust_main->cust_pay_void) {
 foreach my $cust_credit ($cust_main->cust_credit) {
   push @history, {
     'date'   => $cust_credit->_date,
-    'desc'   => include('payment_history/credit.html', $cust_credit),
+    'desc'   => include('payment_history/credit.html', $cust_credit, %opt ),
     'credit' => $cust_credit->amount,
   };
 

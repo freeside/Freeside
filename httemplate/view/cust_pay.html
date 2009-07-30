@@ -93,6 +93,15 @@
 
 % }
 
+% if ( $conf->exists('pkg-balances') && $cust_pay->pkgnum ) {
+%   my $cust_pkg = qsearchs('cust_pkg', { 'pkgnum' => $cust_pay->pkgnum } );
+    <TR>
+      <TD ALIGN="right">For package</TD>
+      <TD BGCOLOR="#FFFFFF"><B><% $cust_pkg->pkg_label_long %></B></TD>
+    </TR>
+
+% }
+
 </TABLE>
 
 % if ( $link eq 'print' ) {

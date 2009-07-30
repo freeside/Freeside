@@ -1,0 +1,30 @@
+<SELECT NAME="pkgnum">
+    <OPTION VALUE="">(any)
+% foreach my $cust_pkg (@cust_pkg) {
+%   my $sel = ( $cgi->param('pkgnum') == $cust_pkg->pkgnum ) ? 'SELECTED' : '';
+    <OPTION <% $sel %> VALUE="<% $cust_pkg->pkgnum %>"><% $cust_pkg->pkg_label_long |h %>
+% }
+</SELECT>
+<%init>
+
+my %opt = @_;
+
+my @cust_pkg;
+if ( $opt{'cust_pkg'} ) {
+
+  @cust_pkg = @{ $opt{'cust_pkg'} };
+
+} else {
+
+  my $custnum = $opt{'custnum'};
+
+  my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
+    or die "unknown custnum $custnum\n";
+
+  @cust_pkg =
+    grep { ! $_->get('cancel') || $cust_main->balance_pkgnum($_->pkgnum) }
+         $cust_main->all_pkgs;
+
+}
+
+</%init>

@@ -138,6 +138,9 @@ my %conf_opt = (
 
   #for status.html
   'cust_pkg-show_autosuspend' => $conf->exists('cust_pkg-show_autosuspend'),
+  #for status.html pkg-balances
+  'pkg-balances'              => $conf->exists('pkg-balances'),
+  'money_char'                => ( $conf->config('money_char') || '$' ),
 
   #for location.html
   'countrydefault'            => $countrydefault,

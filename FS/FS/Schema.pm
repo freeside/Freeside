@@ -598,6 +598,7 @@ sub tables_hashref {
         'reasonnum', 'int', 'NULL', '', '', '', 
         'addlinfo', 'text', 'NULL', '', '', '',
         'closed',    'char', 'NULL', 1, '', '', 
+        'pkgnum', 'int', 'NULL', '', '', '', #desired pkgnum for pkg-balances
       ],
       'primary_key' => 'crednum',
       'unique' => [],
@@ -611,6 +612,7 @@ sub tables_hashref {
         'invnum',  'int', '', '', '', '', 
         '_date',    @date_type, '', '', 
         'amount',   @money_type, '', '', 
+        'pkgnum', 'int', 'NULL', '', '', '', #desired pkgnum for pkg-balances
       ],
       'primary_key' => 'creditbillnum',
       'unique' => [],
@@ -941,6 +943,7 @@ sub tables_hashref {
         #'paybatch',     'varchar', 'NULL', $char_d, '', '', #for auditing purposes.
         'payunique',    'varchar', 'NULL', $char_d, '', '', #separate paybatch "unique" functions from current usage
 
+        'pkgnum', 'int', 'NULL', '', '', '', #desired pkgnum for pkg-balances
         'status',       'varchar',     '', $char_d, '', '', 
         'session_id',   'varchar', 'NULL', $char_d, '', '', #only need 32
         'statustext',   'text',    'NULL',  '', '', '', 
@@ -970,6 +973,7 @@ sub tables_hashref {
         'paybatch', 'varchar',   'NULL', $char_d, '', '', #for auditing purposes.
         'payunique', 'varchar', 'NULL', $char_d, '', '', #separate paybatch "unique" functions from current usage
         'closed',    'char', 'NULL', 1, '', '', 
+        'pkgnum', 'int', 'NULL', '', '', '', #desired pkgnum for pkg-balances
       ],
       'primary_key' => 'paynum',
       #i guess not now, with cust_pay_pending, if we actually make it here, we _do_ want to record it# 'unique' => [ [ 'payunique' ] ],
@@ -989,6 +993,7 @@ sub tables_hashref {
 	'paymask', 'varchar', 'NULL', $char_d, '', '', 
         'paybatch',  'varchar',   'NULL', $char_d, '', '', #for auditing purposes.
         'closed',    'char', 'NULL', 1, '', '', 
+        'pkgnum', 'int', 'NULL', '', '', '', #desired pkgnum for pkg-balances
         'void_date', @date_type, '', '', 
         'reason',    'varchar',   'NULL', $char_d, '', '', 
         'otaker',   'varchar', '', 32, '', '', 
@@ -1005,6 +1010,7 @@ sub tables_hashref {
         'paynum',  'int',     '',   '', '', '', 
         'amount',  @money_type, '', '', 
         '_date',   @date_type, '', '', 
+        'pkgnum', 'int', 'NULL', '', '', '', #desired pkgnum for pkg-balances
       ],
       'primary_key' => 'billpaynum',
       'unique' => [],

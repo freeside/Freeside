@@ -9,6 +9,7 @@ use FS::cust_pay;
 #use FS::cust_bill_pay;
 #use FS::cust_pay_refund;
 #use FS::cust_main;
+use FS::cust_pkg;
 
 @ISA = qw( FS::Record FS::payinfo_Mixin );
 
@@ -40,24 +41,44 @@ are currently supported:
 
 =over 4
 
-=item paynum - primary key (assigned automatically for new payments)
+=item paynum
 
-=item custnum - customer (see L<FS::cust_main>)
+primary key (assigned automatically for new payments)
 
-=item paid - Amount of this payment
+=item custnum
 
-=item _date - specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
+customer (see L<FS::cust_main>)
+
+=item paid
+
+Amount of this payment
+
+=item _date
+
+specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
 L<Time::Local> and L<Date::Parse> for conversion functions.
 
-=item payby - `CARD' (credit cards), `CHEK' (electronic check/ACH),
+=item payby
+
+`CARD' (credit cards), `CHEK' (electronic check/ACH),
 `LECB' (phone bill billing), `BILL' (billing), `CASH' (cash),
 `WEST' (Western Union), `MCRD' (Manual credit card), or `COMP' (free)
 
-=item payinfo - card number, check #, or comp issuer (4-8 lowercase alphanumerics; think username), respectively
+=item payinfo
 
-=item paybatch - text field for tracking card processing
+card number, check #, or comp issuer (4-8 lowercase alphanumerics; think username), respectively
 
-=item closed - books closed flag, empty or `Y'
+=item paybatch
+
+text field for tracking card processing
+
+=item closed
+
+books closed flag, empty or `Y'
+
+=item pkgnum
+
+Desired pkgnum when using experimental package balances.
 
 =item void_date
 
@@ -156,6 +177,7 @@ sub check {
     || $self->ut_number('_date')
     || $self->ut_textn('paybatch')
     || $self->ut_enum('closed', [ '', 'Y' ])
+    || $self->ut_foreign_keyn('pkgnum', 'cust_pkg', 'pkgnum')
     || $self->ut_numbern('void_date')
     || $self->ut_textn('reason')
   ;

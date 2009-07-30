@@ -17,6 +17,7 @@ use FS::cust_bill;
 use FS::cust_bill_pay;
 use FS::cust_pay_refund;
 use FS::cust_main;
+use FS::cust_pkg;
 use FS::cust_pay_void;
 
 @ISA = qw( FS::payinfo_transaction_Mixin FS::cust_main_Mixin FS::Record );
@@ -62,28 +63,54 @@ currently supported:
 
 =over 4
 
-=item paynum - primary key (assigned automatically for new payments)
+=item paynum
 
-=item custnum - customer (see L<FS::cust_main>)
+primary key (assigned automatically for new payments)
 
-=item _date - specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
+=item custnum
+
+customer (see L<FS::cust_main>)
+
+=item _date
+
+specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
 L<Time::Local> and L<Date::Parse> for conversion functions.
 
-=item paid - Amount of this payment
+=item paid
 
-=item otaker - order taker (assigned automatically, see L<FS::UID>)
+Amount of this payment
 
-=item payby - Payment Type (See L<FS::payinfo_Mixin> for valid payby values)
+=item otaker
 
-=item payinfo - Payment Information (See L<FS::payinfo_Mixin> for data format)
+order taker (assigned automatically, see L<FS::UID>)
 
-=item paymask - Masked payinfo (See L<FS::payinfo_Mixin> for how this works)
+=item payby
 
-=item paybatch - text field for tracking card processing or other batch grouping
+Payment Type (See L<FS::payinfo_Mixin> for valid payby values)
 
-=item payunique - Optional unique identifer to prevent duplicate transactions.
+=item payinfo
 
-=item closed - books closed flag, empty or `Y'
+Payment Information (See L<FS::payinfo_Mixin> for data format)
+
+=item paymask
+
+Masked payinfo (See L<FS::payinfo_Mixin> for how this works)
+
+=item paybatch
+
+text field for tracking card processing or other batch grouping
+
+=item payunique
+
+Optional unique identifer to prevent duplicate transactions.
+
+=item closed
+
+books closed flag, empty or `Y'
+
+=item pkgnum
+
+Desired pkgnum when using experimental package balances.
 
 =back
 
@@ -417,6 +444,7 @@ sub check {
     || $self->ut_textn('paybatch')
     || $self->ut_textn('payunique')
     || $self->ut_enum('closed', [ '', 'Y' ])
+    || $self->ut_foreign_keyn('pkgnum', 'cust_pkg', 'pkgnum')
     || $self->payinfo_check()
   ;
   return $error if $error;

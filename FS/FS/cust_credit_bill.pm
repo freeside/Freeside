@@ -8,6 +8,7 @@ use FS::cust_main_Mixin;
 use FS::cust_bill_ApplicationCommon;
 use FS::cust_bill;
 use FS::cust_credit;
+use FS::cust_pkg;
 
 @ISA = qw( FS::cust_main_Mixin FS::cust_bill_ApplicationCommon );
 
@@ -122,6 +123,7 @@ sub check {
     || $self->ut_foreign_key('invnum', 'cust_bill', 'invnum' )
     || $self->ut_numbern('_date')
     || $self->ut_money('amount')
+    || $self->ut_foreign_keyn('pkgnum', 'cust_pkg', 'pkgnum')
   ;
   return $error if $error;
 

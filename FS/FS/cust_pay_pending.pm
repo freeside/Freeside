@@ -6,6 +6,7 @@ use FS::Record qw( qsearch qsearchs dbh ); #dbh for _upgrade_data
 use FS::payinfo_transaction_Mixin;
 use FS::cust_main_Mixin;
 use FS::cust_main;
+use FS::cust_pkg;
 use FS::cust_pay;
 
 @ISA = qw( FS::payinfo_transaction_Mixin FS::cust_main_Mixin FS::Record );
@@ -76,6 +77,10 @@ Expiration date
 =item payunique
 
 Unique identifer to prevent duplicate transactions.
+
+=item pkgnum
+
+Desired pkgnum when using experimental package balances.
 
 =item status
 
@@ -193,6 +198,7 @@ sub check {
     #|| $self->ut_money('cust_balance')
     || $self->ut_hexn('session_id')
     || $self->ut_foreign_keyn('paynum', 'cust_pay', 'paynum' )
+    || $self->ut_foreign_keyn('pkgnum', 'cust_pkg', 'pkgnum')
     || $self->payinfo_check() #payby/payinfo/paymask/paydate
   ;
   return $error if $error;

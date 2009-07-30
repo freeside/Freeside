@@ -9,7 +9,13 @@ my $curuser = $FS::CurrentUser::CurrentUser;
 my @cust_credit_bill = $cust_credit->cust_credit_bill;
 my @cust_credit_refund = $cust_credit->cust_credit_refund;
 
-my( $pre, $post, $desc, $apply, $ext ) = ( '', '', '', '', '' );
+my $desc = '';
+if ( $opt{'pkg-balances'} && $cust_credit->pkgnum ) {
+  my $cust_pkg = qsearchs('cust_pkg', { 'pkgnum' => $cust_credit->pkgnum } );
+  $desc .= ' for '. $cust_pkg->pkg_label_long;
+}
+
+my( $pre, $post, $apply, $ext ) = ( '', '', '', '' );
 if (    scalar(@cust_credit_bill)   == 0
      && scalar(@cust_credit_refund) == 0 ) {
   #completely unapplied
@@ -45,15 +51,15 @@ if (    scalar(@cust_credit_bill)   == 0
           && scalar(@cust_credit_refund) == 0
           && $cust_credit->credited == 0      ) {
   #applied to one invoice, the usual situation
-  $desc = ' '. $cust_credit_bill[0]->applied_to_invoice;
+  $desc .= ' '. $cust_credit_bill[0]->applied_to_invoice;
 } elsif (    scalar(@cust_credit_bill)   == 0
           && scalar(@cust_credit_refund) == 1
           && $cust_credit->credited == 0      ) {
   #applied to one refund
-  $desc = ' refunded on '.  time2str("%D", $cust_credit_refund[0]->_date);
+  $desc .= ' refunded on '.  time2str("%D", $cust_credit_refund[0]->_date);
 } else {
   #complicated
-  $desc = '<BR>';
+  $desc .= '<BR>';
   foreach my $app ( sort { $a->_date <=> $b->_date }
                          ( @cust_credit_bill, @cust_credit_refund ) ) {
     if ( $app->isa('FS::cust_credit_bill') ) {

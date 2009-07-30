@@ -8,6 +8,7 @@ use FS::Misc qw(send_email);
 use FS::Record qw( qsearch qsearchs dbdef );
 use FS::cust_main_Mixin;
 use FS::cust_main;
+use FS::cust_pkg;
 use FS::cust_refund;
 use FS::cust_credit_bill;
 use FS::part_pkg;
@@ -94,6 +95,10 @@ Text
 =item closed
 
 Books closed flag, empty or `Y'
+
+=item pkgnum
+
+Desired pkgnum when using experimental package balances.
 
 =back
 
@@ -295,6 +300,7 @@ sub check {
     || $self->ut_foreign_key('reasonnum', 'reason', 'reasonnum')
     || $self->ut_textn('addlinfo')
     || $self->ut_enum('closed', [ '', 'Y' ])
+    || $self->ut_foreign_keyn('pkgnum', 'cust_pkg', 'pkgnum')
   ;
   return $error if $error;
 
