@@ -1,9 +1,6 @@
-<HTML><HEAD><TITLE>MyAccount</TITLE></HEAD>
-<BODY BGCOLOR="#eeeeee">
-<FONT SIZE=5>MyAccount</FONT><BR><BR>
 <%= $url = "$selfurl?session=$session_id;action="; ''; %>
-<%= include('myaccount_menu') %>
-<TD VALIGN="top">
+<%= include('header') %>
+
 <FONT SIZE=4>Edit service address</FONT><BR><BR>
 <%= if ( $error ) { 
   $OUT .= qq!<FONT SIZE="+1" COLOR="#ff0000">Error: $error</FONT><BR><BR>!;
@@ -98,5 +95,5 @@ function samechanged(what) {
 <INPUT TYPE="submit" NAME="submit" VALUE="<%= $custnum ?  "Apply Changes" : "Add Customer" %>">
 <BR>
 </FORM>
-</TD></TR></TABLE>
+
 <%= include('footer') %>

@@ -1,5 +1,13 @@
-<HTML><HEAD><TITLE>MyAccount</TITLE></HEAD>
-<BODY BGCOLOR="#eeeeee"><FONT SIZE=5>MyAccount</FONT><BR><BR>
+<HTML>
+  <HEAD>
+    <TITLE>MyAccount</TITLE>
+    <%= $head %>
+  </HEAD>
+  <BODY BGCOLOR="<%= $body_bgcolor || '#e8e8e8' %>">
+  <%= $body_header %>
+
+  <FONT SIZE=5>MyAccount</FONT><BR><BR>
 You have been logged out.
-</BODY></HTML>
+
+<%= $body_footer %>
 

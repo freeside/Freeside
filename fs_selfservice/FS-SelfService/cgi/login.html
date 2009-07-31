@@ -1,11 +1,18 @@
-<HTML><HEAD><TITLE>Login</TITLE></HEAD>
-<BODY BGCOLOR="#e8e8e8"><FONT SIZE=5>Login</FONT><BR><BR>
+<HTML>
+  <HEAD>
+    <TITLE>Login</TITLE>
+    <%= $head %>
+  </HEAD>
+  <BODY BGCOLOR="<%= $body_bgcolor || '#e8e8e8' %>">
+  <%= $body_header %>
+
+<FONT SIZE=5>Login</FONT><BR><BR>
 <FONT SIZE="+1" COLOR="#ff0000"><%= $error %></FONT>
 
 <FORM ACTION="<%= $self_url %>" METHOD=POST>
 <INPUT TYPE="hidden" NAME="session" VALUE="login">
 
-<TABLE BGCOLOR="#c0c0c0" BORDER=0 CELLSPACING=2 CELLPADDING=0>
+<TABLE BGCOLOR="<%= $box_bgcolor || '#c0c0c0' %>" BORDER=0 CELLSPACING=2 CELLPADDING=0>
 
 <TR>
   <TH ALIGN="right">Username </TH>
@@ -50,13 +57,15 @@ if ( $single_domain ) {
 
 if ( $phone_login ) {
 
+  $box_bgcolor ||= '#c0c0c0';
+
   $OUT .= qq(
 
     <B>OR</B><BR><BR>
     
     <FORM ACTION="$self_url" METHOD=POST>
     <INPUT TYPE="hidden" NAME="session" VALUE="login">
-    <TABLE BGCOLOR="#c0c0c0" BORDER=0 CELLSPACING=2 CELLPADDING=0>
+    <TABLE BGCOLOR="$box_bgcolor" BORDER=0 CELLSPACING=2 CELLPADDING=0>
     <TR>
       <TH ALIGN="right">Phone number </TH>
       <TD>
@@ -82,4 +91,4 @@ if ( $phone_login ) {
 
 %>
 
-</BODY></HTML>
+<%= $body_footer %>

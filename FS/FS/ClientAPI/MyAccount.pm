@@ -55,6 +55,25 @@ sub _cache {
              } );
 }
 
+sub skin_info {
+  #my $p = shift;
+
+  my $conf = new FS::Conf;
+
+  my %skin = (
+    'head'         => join("\n", $conf->config('selfservice-head') ),
+    'body_header'  => join("\n", $conf->config('selfservice-body_header') ),
+    'body_footer'  => join("\n", $conf->config('selfservice-body_footer') ),
+    'body_bgcolor' => scalar( $conf->config('selfservice-body_bgcolor') ),
+    'box_bgcolor'  => scalar( $conf->config('selfservice-box_bgcolor')  ),
+
+    'company_name'   => scalar($conf->config('company_name')),
+  );
+
+  \%skin;
+
+}
+
 sub login_info {
   my $p = shift;
 

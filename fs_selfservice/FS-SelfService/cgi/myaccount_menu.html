@@ -1,6 +1,6 @@
 <%= $url = "$selfurl?session=$session_id;action="; ''; %>
 <TABLE BORDER=0><TR>
-<TD VALIGN="top" HEIGHT="100%" BGCOLOR="#dddddd">
+<TD VALIGN="top" HEIGHT="100%" BGCOLOR="<%= $box_bgcolor || '#c0c0c0' %>">
 
 <TABLE CELLSPACING=0 BORDER=0 HEIGHT="100%">
 
@@ -74,7 +74,7 @@ foreach my $item ( @menu ) {
 
   $OUT .= '<TR><TD'; 
   if ( exists $item->{'url'} && $action eq $item->{'url'} ) {
-    $OUT .= ' BGCOLOR="#eeeeee" '.
+    $OUT .= ' BGCOLOR="'. ( $body_bgcolor || '#eeeeee' ). '" '.
             ' STYLE="border-top: 1px solid black;'.
                    ' border-left: 1px solid black;'.
                    ' border-bottom: 1px solid black"';

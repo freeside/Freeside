@@ -1,21 +1,6 @@
-<HTML><HEAD><TITLE>MyAccount</TITLE></HEAD>
-<BODY BGCOLOR="#eeeeee">
-<script language="JavaScript"><!--
-  var mywindow = -1;
-  function myopen(filename,windowname,properties) {
-    myclose();
-    mywindow = window.open(filename,windowname,properties);
-  }
-  function myclose() {
-    if ( mywindow != -1 )
-      mywindow.close();
-    mywindow = -1
-  }
-//--></script>
-<FONT SIZE=5>MyAccount</FONT><BR><BR>
 <%= $url = "$selfurl?session=$session_id;action="; ''; %>
-<%= include('myaccount_menu') %>
-<TD VALIGN="top">
+<%= include('header') %>
+
 <FONT SIZE=4>Make a payment</FONT><BR><BR>
 <FORM NAME="OneTrueForm" METHOD="POST" ACTION="<%=$selfurl%>" onSubmit="document.OneTrueForm.process.disabled=true">
 <INPUT TYPE="hidden" NAME="session" VALUE="<%=$session_id%>">
@@ -64,5 +49,5 @@
 <INPUT TYPE="hidden" NAME="paybatch" VALUE="<%=$paybatch%>">
 <INPUT TYPE="submit" NAME="process" VALUE="Process payment"> <!-- onClick="this.disabled=true"> -->
 </FORM>
-</TD></TR></TABLE>
+
 <%= include('footer') %>

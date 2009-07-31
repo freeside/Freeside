@@ -1,8 +1,6 @@
-<HTML><HEAD><TITLE>MyAccount</TITLE></HEAD>
-<BODY BGCOLOR="#eeeeee"><FONT SIZE=5>MyAccount</FONT><BR><BR>
 <%= $url = "$selfurl?session=$session_id;action="; ''; %>
-<%= include('myaccount_menu') %>
-<TD VALIGN="top">
+<%= include('header') %>
+
 <FONT SIZE=4>Recharge results</FONT><BR><BR>
 <%= if ( $error ) {
   $OUT .= qq!<FONT SIZE="+1" COLOR="#ff0000">Error processing your prepaid card: $error</FONT>!;
@@ -17,5 +15,5 @@
 
   $OUT .= 'Thank you.';
 } %>
-</TD></TR></TABLE>
+
 <%= include('footer') %>

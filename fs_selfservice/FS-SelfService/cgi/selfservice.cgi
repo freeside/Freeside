@@ -9,16 +9,15 @@ use Text::Template;
 use HTML::Entities;
 use Date::Format;
 use Number::Format 1.50;
-use FS::SelfService qw( login_info login customer_info edit_info invoice
-                        payment_info process_payment realtime_collect
-                        process_prepay
-                        list_pkgs order_pkg signup_info order_recharge
-                        part_svc_info provision_acct provision_external
-                        unprovision_svc change_pkg domainselector
-                        list_svcs
-                        list_svc_usage list_cdr_usage list_support_usage
-                        myaccount_passwd
-                      );
+use FS::SelfService qw(
+  skin_info login_info login customer_info edit_info invoice
+  payment_info process_payment realtime_collect process_prepay
+  list_pkgs order_pkg signup_info order_recharge
+  part_svc_info provision_acct provision_external
+  unprovision_svc change_pkg domainselector
+  list_svcs list_svc_usage list_cdr_usage list_support_usage
+  myaccount_passwd
+);
 
 $template_dir = '.';
 
@@ -645,6 +644,9 @@ sub do_template {
   $cgi->delete_all();
   $fill_in->{'selfurl'} = $cgi->self_url;
   $fill_in->{'cgi'} = \$cgi;
+
+  my $skin_info = skin_info();
+  $fill_in->{$_} = $skin_info->{$_} foreach keys %$skin_info;
 
   my $source = "$template_dir/$name.html";
   #warn "creating template for $source\n";

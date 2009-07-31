@@ -1,9 +1,23 @@
 <HTML>
   <HEAD>
-    <TITLE>MyAccount</TITLE>
+    <TITLE><%= $title || 'MyAccount' %></TITLE>
+    <%= $head %>
   </HEAD>
-  <BODY BGCOLOR="#eeeeee">
-    <FONT SIZE=5>MyAccount</FONT>
+  <BODY BGCOLOR="<%= $body_bgcolor || '#eeeeee' %>">
+    <script language="JavaScript"><!--
+      var mywindow = -1;
+      function myopen(filename,windowname,properties) {
+        myclose();
+        mywindow = window.open(filename,windowname,properties);
+      }
+      function myclose() {
+        if ( mywindow != -1 )
+          mywindow.close();
+        mywindow = -1
+      }
+    //--></script>
+    <%= $body_header %>
+    <FONT SIZE=5><%= $title || 'MyAccount' %></FONT>
     <BR><BR>
     <%= include('myaccount_menu') %>
     <TD VALIGN="top">

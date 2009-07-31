@@ -1,8 +1,5 @@
-<HTML><HEAD><TITLE>MyAccount</TITLE></HEAD>
-<BODY BGCOLOR="#eeeeee"><FONT SIZE=5>MyAccount</FONT><BR><BR>
 <%= $url = "$selfurl?session=$session_id;action="; ''; %>
-<%= include('myaccount_menu') %>
-<TD VALIGN="top">
+<%= include('header') %>
 
 <%= if ( $error ) {
   $OUT .= qq!<FONT SIZE="+1" COLOR="#ff0000">Error: $error</FONT>!;
@@ -10,5 +7,5 @@
   $OUT .= "<FONT SIZE=4>$svc removed.</FONT>";
 } %>
 
-</TD></TR></TABLE>
+
 <%= include('footer') %>

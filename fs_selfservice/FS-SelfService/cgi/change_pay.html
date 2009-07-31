@@ -1,21 +1,6 @@
-<HTML><HEAD><TITLE>MyAccount</TITLE></HEAD>
-<BODY BGCOLOR="#eeeeee">
-<script language="JavaScript"><!--
-  var mywindow = -1;
-  function myopen(filename,windowname,properties) {
-    myclose();
-    mywindow = window.open(filename,windowname,properties);
-  }
-  function myclose() {
-    if ( mywindow != -1 )
-      mywindow.close();
-    mywindow = -1
-  }
-//--></script>
-<FONT SIZE=5>MyAccount</FONT><BR><BR>
 <%= $url = "$selfurl?session=$session_id;action="; ''; %>
-<%= include('myaccount_menu') %>
-<TD VALIGN="top">
+<%= include('header') %>
+
 <FONT SIZE=4>Change payment information</FONT><BR><BR>
 <%= if ( $error ) { 
   $OUT .= qq!<FONT SIZE="+1" COLOR="#ff0000">Error: $error</FONT><BR><BR>!;
@@ -70,5 +55,5 @@
   )->html;
 
 %>
-</TD></TR></TABLE>
+
 <%= include('footer') %>

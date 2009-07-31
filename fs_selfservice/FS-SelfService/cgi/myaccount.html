@@ -1,8 +1,5 @@
-<HTML><HEAD><TITLE>MyAccount</TITLE></HEAD>
-<BODY BGCOLOR="#eeeeee"><FONT SIZE=5>MyAccount</FONT><BR><BR>
 <%= $url = "$selfurl?session=$session_id;action="; ''; %>
-<%= include('myaccount_menu') %>
-<TD VALIGN="top">
+<%= include('header') %>
 
 Hello <%= $name %>!<BR><BR>
 <%= $small_custview %>
@@ -94,5 +91,4 @@ Hello <%= $name %>!<BR><BR>
   }
 %>
 
-</TD></TR></TABLE>
 <%= include('footer') %>
