@@ -51,7 +51,7 @@ foreach my $dir ( @$lsdir ) {
   warn "Scanning dir $dirname\n" if $opt_v;
 
   #my $ls = $ls_sftp->ls("$DIR/$dirname", wanted => qr/^$opt_p.*-CDRs$/i );
-  my $ls = $ls_sftp->ls("$DIR/$dirname", wanted => qr/^$opt_p.*-Customer-CDRs$/i );
+  my $ls = $ls_sftp->ls("$DIR/$dirname", wanted => qr/^$opt_p.*Customer-CDRs$/i );
 
   foreach my $file ( @$ls ) {
 
