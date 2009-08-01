@@ -3,6 +3,8 @@ package FS::queue;
 use strict;
 use vars qw( @ISA @EXPORT_OK $DEBUG $conf $jobnums);
 use Exporter;
+use MIME::Base64;
+use Storable qw( nfreeze thaw );
 use FS::UID qw(myconnect);
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs dbh );
@@ -142,9 +144,11 @@ sub insert {
   }
 
   foreach my $arg ( @args ) {
+    my $freeze = ref($arg) ? 'Y' : '';
     my $queue_arg = new FS::queue_arg ( {
       'jobnum' => $self->jobnum,
-      'arg'    => $arg,
+      'frozen' => $freeze,
+      'arg'    => $freeze ? encode_base64(nfreeze($arg)) : $arg,# always freeze?
     } );
     $error = $queue_arg->insert;
     if ( $error ) {
@@ -254,11 +258,12 @@ Returns a list of the arguments associated with this job.
 
 sub args {
   my $self = shift;
-  map $_->arg, qsearch( 'queue_arg',
-                        { 'jobnum' => $self->jobnum },
-                        '',
-                        'ORDER BY argnum'
-                      );
+  map { $_->frozen ? thaw(decode_base64($_->arg)) : $_->arg }
+    qsearch( 'queue_arg',
+             { 'jobnum' => $self->jobnum },
+             '',
+             'ORDER BY argnum'
+           );
 }
 
 =item cust_svc

@@ -1622,6 +1622,7 @@ sub tables_hashref {
       'columns' => [
         'argnum', 'serial', '', '', '', '', 
         'jobnum', 'int', '', '', '', '', 
+        'frozen', 'char', 'NULL',       1, '', '',
         'arg', 'text', 'NULL', '', '', '', 
       ],
       'primary_key' => 'argnum',

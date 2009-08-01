@@ -36,6 +36,8 @@ FS::Record.  The following fields are currently supported:
 
 =item jobnum - see L<FS::queue>
 
+=item frozen - argument is frozen with Storable
+
 =item arg - argument
 
 =back
@@ -96,6 +98,7 @@ sub check {
   my $error =
     $self->ut_numbern('argnum')
     || $self->ut_numbern('jobnum')
+    || $self->ut_enum('frozen', [ '', 'Y' ])
     || $self->ut_anything('arg')
   ;
   return $error if $error;
