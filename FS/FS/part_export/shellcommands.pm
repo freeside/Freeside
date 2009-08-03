@@ -316,7 +316,7 @@ sub _export_command {
       if $error;
   }
   else {
-    $self->shellcommands_queue( $new->svcnum, @ssh_cmd_args );
+    $self->shellcommands_queue( $svc_acct->svcnum, @ssh_cmd_args );
   }
 }
 
