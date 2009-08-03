@@ -308,7 +308,7 @@ sub _export_command {
     stdin_string  => $stdin_string,
   );
 
-  if($self->options('no_queue')) {
+  if($self->option('no_queue')) {
     # discard return value just like freeside-queued.
     eval { ssh_cmd(@ssh_cmd_args) };
     $error = $@;
@@ -387,7 +387,7 @@ sub _export_replace {
     stdin_string  => $stdin_string,
   );
 
-  if($self->options('no_queue')) {
+  if($self->option('no_queue')) {
     # discard return value just like freeside-queued.
     eval { ssh_cmd(@ssh_cmd_args) };
     $error = $@;
