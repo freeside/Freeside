@@ -53,14 +53,25 @@ foreach my $export ( @exports ) {
 
   my @svc_x =
     map  { $_->svc_x }
-    map  { qsearch('cust_svc', { 'svcpart' => $_->svcpart } ) }
-    grep { qsearch('cust_svc', { 'svcpart' => $_->svcpart } ) }
+    #map  { qsearch('cust_svc', { 'svcpart' => $_->svcpart } ) }
+    #grep { qsearch('cust_svc', { 'svcpart' => $_->svcpart } ) }
+    #     $export->export_svc;
+    map  { @{ $_->[1] } }
+    grep { scalar( @{ $_->[1] } ) }
+    map  { [ $_, [ qsearch('cust_svc', { 'svcpart' => $_->svcpart } ) ] ] }
          $export->export_svc;
+
 
   foreach my $svc_x ( @svc_x ) {
 
-    $svc_x->check; #set any fixed usergroup so it'll export even if all
-                   #svc_acct records don't have the group yet
+    #$svc_x->check; #set any fixed usergroup so it'll export even if all
+    #               #svc_acct records don't have the group yet
+    #more efficient?
+    my $x = $svc_x->setfixed( $svc_x->_fieldhandlers);
+    unless ( ref($x) ) {
+      warn "WARNING: can't set fixed usergroups for svcnum ". $svc_x->svcnum.
+           "\n";
+    } 
 
     if ($overlimit_groups && $svc_x->overlimit) {
       $svc_x->usergroup( &{ $svc_x->_fieldhandlers->{'usergroup'} }

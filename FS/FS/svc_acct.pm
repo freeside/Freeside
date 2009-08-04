@@ -1496,11 +1496,15 @@ sub radius_check {
   $check{$pw_attrib} = $password;
 
   my $cust_svc = $self->cust_svc;
-  die "FATAL: no cust_svc record for svc_acct.svcnum ". $self->svcnum. "\n"
-    unless $cust_svc;
-  my $cust_pkg = $cust_svc->cust_pkg;
-  if ( $cust_pkg && $cust_pkg->part_pkg->is_prepaid && $cust_pkg->bill ) {
-    $check{'Expiration'} = time2str('%B %e %Y %T', $cust_pkg->bill ); #http://lists.cistron.nl/pipermail/freeradius-users/2005-January/040184.html
+  if ( $cust_svc ) {
+    my $cust_pkg = $cust_svc->cust_pkg;
+    if ( $cust_pkg && $cust_pkg->part_pkg->is_prepaid && $cust_pkg->bill ) {
+      $check{'Expiration'} = time2str('%B %e %Y %T', $cust_pkg->bill ); #http://lists.cistron.nl/pipermail/freeradius-users/2005-January/040184.html
+    }
+  } else {
+    warn "WARNING: no cust_svc record for svc_acct.svcnum ". $self->svcnum.
+         "; can't set Expiration\n"
+      unless $cust_svc;
   }
 
   %check;
