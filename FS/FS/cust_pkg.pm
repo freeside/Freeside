@@ -1188,13 +1188,14 @@ sub change {
   }
 
   #reset usage if changing pkgpart
+  # AND usage rollover is off (otherwise adds twice, now and at package bill)
   if ($self->pkgpart != $cust_pkg->pkgpart) {
     my $part_pkg = $cust_pkg->part_pkg;
     $error = $part_pkg->reset_usage($cust_pkg, $part_pkg->is_prepaid
                                                  ? ()
                                                  : ( 'null' => 1 )
                                    )
-      if $part_pkg->can('reset_usage');
+      if $part_pkg->can('reset_usage') && ! $part_pkg->option('usage_rollover');
 
     if ($error) {
       $dbh->rollback if $oldAutoCommit;
@@ -1835,6 +1836,19 @@ sub h_labels {
   map { [ $_->label(@_) ] } $self->h_cust_svc(@_);
 }
 
+=item labels_short
+
+Like labels, except returns a simple flat list, and shortens long
+(currently >5 or the cust_bill-max_same_services configuration value) lists of
+identical services to one line that lists the service label and the number of
+individual services rather than individual items.
+
+=cut
+
+sub labels_short {
+  shift->_labels_short( 'labels', @_ );
+}
+
 =item h_labels_short END_TIMESTAMP [ START_TIMESTAMP ]
 
 Like h_labels, except returns a simple flat list, and shortens long
@@ -1845,7 +1859,11 @@ individual services rather than individual items.
 =cut
 
 sub h_labels_short {
-  my $self = shift;
+  shift->_labels_short( 'h_labels', @_ );
+}
+
+sub _labels_short {
+  my( $self, $method ) = ( shift, shift );
 
   my $conf = new FS::Conf;
   my $max_same_services = $conf->config('cust_bill-max_same_services') || 5;
