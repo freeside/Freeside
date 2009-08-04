@@ -42,6 +42,10 @@ unless ( $opt_n ) {
   }
 }
 
+use FS::svc_Common;
+$FS::svc_Common::overlimit_missing_cust_svc_nonfatal_kludge = 1;
+$FS::svc_Common::overlimit_missing_cust_svc_nonfatal_kludge = 1;
+
 foreach my $export ( @exports ) {
 
   #my @svcparts = map { $_->svcpart } $export->export_svc;

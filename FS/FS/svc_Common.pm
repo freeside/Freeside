@@ -1,8 +1,9 @@
 package FS::svc_Common;
 
 use strict;
-use vars qw( @ISA $noexport_hack $DEBUG $me );
-use Carp qw( cluck carp croak ); #specify cluck have to specify them all..
+use vars qw( @ISA $noexport_hack $DEBUG $me
+             $overlimit_missing_cust_svc_nonfatal_kludge );
+use Carp qw( cluck carp croak confess ); #specify cluck have to specify them all
 use Scalar::Util qw( blessed );
 use FS::Record qw( qsearch qsearchs fields dbh );
 use FS::cust_main_Mixin;
@@ -17,6 +18,8 @@ use FS::inventory_class;
 
 $me = '[FS::svc_Common]';
 $DEBUG = 0;
+
+$overlimit_missing_cust_svc_nonfatal_kludge = 0;
 
 =head1 NAME
 
@@ -798,7 +801,19 @@ Sets or retrieves overlimit date.
 
 sub overlimit {
   my $self = shift;
-  $self->cust_svc->overlimit(@_);
+  #$self->cust_svc->overlimit(@_);
+  my $cust_svc = $self->cust_svc;
+  unless ( $cust_svc ) { #wtf?
+    my $error = "$me overlimit: missing cust_svc record for svc_acct svcnum ".
+                $self->svcnum;
+    if ( $overlimit_missing_cust_svc_nonfatal_kludge ) {
+      cluck "$error; continuing anyway as requested";
+      return '';
+    } else {
+      confess $error;
+    }
+  }
+  $cust_svc->overlimit(@_);
 }
 
 =item cancel
