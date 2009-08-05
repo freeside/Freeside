@@ -1455,7 +1455,7 @@ sub radius_reply {
       my $is = $whatis{$what}.'bytes';
       if ( $self->$is() =~ /\d/ ) {
         my $big = new Math::BigInt $self->$is();
-        $big = new Math::BigInto '0' if $big->is_neg();
+        $big = new Math::BigInt '0' if $big->is_neg();
         my $att = "Chillispot-Max-\u$what";
         $reply{"$att-Octets"}    = $big->copy->band(0xffffffff)->bstr;
         $reply{"$att-Gigawords"} = $big->copy->brsft(32)->bstr;
