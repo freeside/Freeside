@@ -63,7 +63,7 @@ sub calc_remain {
   my $time = time;  #should be able to pass this in for credit calculation
   my $next_bill = $cust_pkg->getfield('bill') || 0;
   my $last_bill = $cust_pkg->last_bill || 0;
-  return 0 if    ! $self->base_recur
+  return 0 if    ! $self->base_recur($cust_pkg)
               || ! $self->option('unused_credit', 1)
               || ! $last_bill
               || ! $next_bill
@@ -81,7 +81,7 @@ sub calc_remain {
   my $freq_sec = $1 * $sec{$2||'m'};
   return 0 unless $freq_sec;
 
-  sprintf("%.2f", $self->base_recur * ( $next_bill - $time ) / $freq_sec );
+  sprintf("%.2f", $self->base_recur($cust_pkg) * ( $next_bill - $time ) / $freq_sec );
 
 }
 

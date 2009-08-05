@@ -162,11 +162,11 @@ sub base_recur {
 }
 
 sub base_recur_permonth {
-  my($self, $cust_pkg) = @_; #$cust_pkg?
+  my($self, $cust_pkg) = @_;
 
   return 0 unless $self->freq =~ /^\d+$/ && $self->freq > 0;
 
-  sprintf('%.2f', $self->base_recur / $self->freq );
+  sprintf('%.2f', $self->base_recur($cust_pkg) / $self->freq );
 }
 
 sub calc_remain {
@@ -184,7 +184,7 @@ sub calc_remain {
   #my $last_bill = $cust_pkg->last_bill || 0;
   my $last_bill = $cust_pkg->get('last_bill') || 0; #->last_bill falls back to setup
 
-  return 0 if    ! $self->base_recur
+  return 0 if    ! $self->base_recur($cust_pkg)
               || ! $self->option('unused_credit', 1)
               || ! $last_bill
               || ! $next_bill
@@ -202,7 +202,7 @@ sub calc_remain {
   my $freq_sec = $1 * $sec{$2||'m'};
   return 0 unless $freq_sec;
 
-  sprintf("%.2f", $self->base_recur * ( $next_bill - $time ) / $freq_sec );
+  sprintf("%.2f", $self->base_recur($cust_pkg) * ( $next_bill - $time ) / $freq_sec );
 
 }
 
@@ -216,7 +216,7 @@ sub is_prepaid {
 
 sub usage_valuehash {
   my $self = shift;
-  map { $_, $self->option($_) } 
+  map { $_, $self->option($_) }
     grep { $self->option($_, 'hush') } 
     qw(seconds upbytes downbytes totalbytes);
 }

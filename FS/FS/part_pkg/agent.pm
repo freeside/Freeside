@@ -119,7 +119,7 @@ sub calc_recur {
         my $pkg_setup_fee  =
           $part_pkg->setup_cost || $part_pkg->option('setup_fee');
         my $pkg_base_recur =
-          $part_pkg->recur_cost || $part_pkg->base_recur_permonth;
+          $part_pkg->recur_cost || $part_pkg->base_recur_permonth($cust_pkg);
 
         my $pkg_start = $cust_pkg->get('setup');
         if ( $pkg_start < $last_bill ) {

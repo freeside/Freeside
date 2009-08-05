@@ -56,7 +56,7 @@ sub calc_remain {
   return 0 if    $last_bill + (86400 * $free_days) == $next_bill
               && $last_bill == $cust_pkg->setup;
 
-  return 0 if    ! $self->base_recur
+  return 0 if    ! $self->base_recur($cust_pkg)
               || ! $self->option('unused_credit', 1)
               || ! $last_bill
               || ! $next_bill;
