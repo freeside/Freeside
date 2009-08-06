@@ -118,7 +118,7 @@ sub ns_device {
   #my $countrycode = $svc_phone->countrycode;
   #my $phonenum    = $svc_phone->phonenum;
 
-  "/phones_config/". $phone_device->mac_addr;
+  "/phones_config/". lc($phone_device->mac_addr);
 }
 
 sub ns_create_or_update {
