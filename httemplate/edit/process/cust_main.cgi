@@ -73,20 +73,41 @@ if ( defined($cgi->param('same')) && $cgi->param('same') eq "Y" ) {
   );
 }
 
-if ( $cgi->param('birthdate') && $cgi->param('birthdate') =~ /^([ 0-9\-\/]{0,10})$/) {
-  my $format = $conf->config('date_format') || "%m/%d/%Y";
-  my $parser = DateTime::Format::Strptime->new(pattern => $format,
-                                               time_zone => 'floating',
-                                              );
-  my $dt =  $parser->parse_datetime($1);
-  if ($dt) {
-    $new->setfield('birthdate', $dt->epoch);
-    $cgi->param('birthdate', $dt->epoch);
-  } else {
-#    $error ||= $cgi->param('birthdate') . " is an invalid birthdate:" . $parser->errmsg;
-    $error ||= "Invalid birthdate: " . $cgi->param('birthdate') . ".";
-    $cgi->param('birthdate', '');
+my %usedatetime = ( 'birthdate' => 1 );
+
+foreach my $dfield (qw( birthdate signupdate )) {
+
+  if ( $cgi->param($dfield) && $cgi->param($dfield) =~ /^([ 0-9\-\/]{0,10})$/) {
+
+    my $value = $1;
+    my $parsed = '';
+
+    if ( exists $usedatetime{$dfield} && $usedatetime{$dfield} ) {
+
+      my $format = $conf->config('date_format') || "%m/%d/%Y";
+      my $parser = DateTime::Format::Strptime->new( pattern   => $format,
+                                                    time_zone => 'floating',
+                                                  );
+      my $dt = $parser->parse_datetime($value);
+      if ( $dt ) {
+        $parsed = $dt->epoch;
+      } else {
+    #    $error ||= $cgi->param('birthdate') . " is an invalid birthdate:" . $parser->errmsg;
+        $error ||= "Invalid $dfield: $value";
+      }
+
+    } else {
+
+      $parsed = str2time($value)
+        or $error ||= "Invalid $dfield: $value";
+
+    }
+
+    $new->setfield( $dfield, $parsed );
+    $cgi->param(    $dfield, $parsed );
+
   }
+
 }
 
 $new->setfield('paid', $cgi->param('paid') )

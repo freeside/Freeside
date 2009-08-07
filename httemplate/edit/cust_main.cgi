@@ -56,7 +56,7 @@
 %    }
 %  }
 
-<BR><BR>
+<BR>
 <FONT SIZE="+1"><B>Billing address</B></FONT>
 
 <% include('cust_main/contact.html',
@@ -182,6 +182,7 @@ function samechanged(what) {
 
 <INPUT TYPE="hidden" NAME="otaker" VALUE="<% $cust_main->otaker %>">
 
+%# cust_main/bottomfixup.js
 % foreach my $hidden (
 %    'payauto',
 %    'payinfo', 'payinfo1', 'payinfo2', 'paytype',

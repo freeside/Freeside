@@ -23,7 +23,17 @@
 
 
 <%init>
-my($name, $value, $label, $format, $usedatetime) = @_;
+my($name, $value, $label, $format, $usedatetime);
+if ( ref($_[0]) ) {
+  my $opt = shift;
+  $name        = $opt->{'name'};
+  $value       = $opt->{'value'};
+  $label       = $opt->{'label'};
+  $format      = $opt->{'format'};
+  $usedatetime = $opt->{'usedatetime'};
+} else {
+  ($name, $value, $label, $format, $usedatetime) = @_;
+}
 
 $format = "%m/%d/%Y" unless $format;
 $label = $name unless $label;
@@ -32,7 +42,7 @@ if ( $value =~ /\S/ ) {
   if ( $usedatetime ) {
     my $dt = DateTime->from_epoch(epoch => $value, time_zone => 'floating');
     $value = $dt->strftime($format);
-  } else {
+  } elsif ( $value =~ /^\d+$/ ) {
     $value = time2str($format, $value);
   }
 } else {
