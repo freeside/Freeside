@@ -1,5 +1,10 @@
 <% include('/elements/header-popup.html', 'Order new package' ) %>
 
+<LINK REL="stylesheet" TYPE="text/css" HREF="../elements/calendar-win2k-2.css" TITLE="win2k-2">
+<SCRIPT TYPE="text/javascript" SRC="../elements/calendar_stripped.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="../elements/calendar-en.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="../elements/calendar-setup.js"></SCRIPT>
+
 <SCRIPT TYPE="text/javascript">
 
   function enable_order_pkg () {
@@ -26,6 +31,34 @@
              'onchange'   => 'enable_order_pkg',
           )
 %>
+
+%# false laziness w/edit/quick-charge.html
+<TR>
+  <TH ALIGN="right">Start date </TD>
+  <TD COLSPAN=6>
+    <INPUT TYPE  = "text"
+           NAME  = "start_date"
+           SIZE  = 32
+           ID    = "start_date_text"
+           VALUE = "<% $start_date %>"
+    >
+    <IMG SRC   = "../images/calendar.png"
+         ID    = "start_date_button"
+         STYLE = "cursor: pointer"
+         TITLE = "Select date"
+    >
+    <FONT SIZE=-1>(leave blank to start immediately)</FONT>
+  </TD>
+</TR>
+
+<SCRIPT TYPE="text/javascript">
+  Calendar.setup({
+    inputField: "start_date_text",
+    ifFormat:   "%m/%d/%Y",
+    button:     "start_date_button",
+    align:      "BR"
+  });
+</SCRIPT>
 
 % if ( $conf->exists('pkg_referral') ) {
   <% include('/elements/tr-select-part_referral.html',
@@ -67,5 +100,9 @@ my $cust_main = qsearchs({
 });
 
 my $pkgpart = scalar($cgi->param('pkgpart'));
+
+my $format = "%m/%d/%Y %T %z (%Z)"; #false laziness w/REAL_cust_pkg.cgi?
+my $start_date = $cust_main->next_bill_date;
+$start_date = $start_date ? time2str($format, $start_date) : '';
 
 </%init>

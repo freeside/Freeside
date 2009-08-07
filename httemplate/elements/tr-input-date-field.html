@@ -28,12 +28,15 @@ my($name, $value, $label, $format, $usedatetime) = @_;
 $format = "%m/%d/%Y" unless $format;
 $label = $name unless $label;
 
-if ($usedatetime) {
-  my $dt = DateTime->from_epoch(epoch => $value, time_zone => 'floating');
-  $value = $dt->strftime($format)
-    unless $value eq '';
-}else{
-  $value = time2str($format, $value);
+if ( $value =~ /\S/ ) {
+  if ( $usedatetime ) {
+    my $dt = DateTime->from_epoch(epoch => $value, time_zone => 'floating');
+    $value = $dt->strftime($format);
+  } else {
+    $value = time2str($format, $value);
+  }
+} else {
+  $value = '';
 }
 
 </%init>
