@@ -186,6 +186,7 @@ Initializes the Mason environment, loads all Freeside and RT libraries, etc.
   use FS::part_pkg_taxrate;
   use FS::tax_rate;
   use FS::part_pkg_report_option;
+  use FS::cust_attachment;
   use FS::h_cust_pkg;
   use FS::h_svc_acct;
   use FS::h_svc_broadband;

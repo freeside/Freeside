@@ -100,6 +100,9 @@ tie my %rights, 'Tie::IxHash',
     { rightname=>'Delete customer', desc=>"Enable customer deletions. Be very careful! Deleting a customer will remove all traces that this customer ever existed! It should probably only be used when auditing a legacy database. Normally, you cancel all of a customer's packages if they cancel service." }, #aka. deletecustomers
     'Add customer note', #NEW
     'Edit customer note', #NEW
+    'Download attachment', #NEW
+    'Add attachment', #NEW
+    'Edit attachment', #NEW
     'Bill customer now', #NEW
     'Bulk send customer notices', #NEW
   ],

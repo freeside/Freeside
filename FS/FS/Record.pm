@@ -55,13 +55,12 @@ FS::UID->install_callback( sub {
   $conf_encryption = $conf->exists('encryption');
   $File::CounterFile::DEFAULT_DIR = $conf->base_dir . "/counters.". datasrc;
   if ( driver_name eq 'Pg' ) {
-    eval "use DBD::Pg qw(:pg_types);";
+    eval "use DBD::Pg ':pg_types'";
     die $@ if $@;
   } else {
     eval "sub PG_BYTEA { die 'guru meditation #9: calling PG_BYTEA when not running Pg?'; }";
   }
 } );
-
 
 =head1 NAME
 
@@ -2718,7 +2717,10 @@ sub _quote {
           )
   {
     no strict 'subs';
-    dbh->quote($value, PG_BYTEA);
+#    dbh->quote($value, { pg_type => PG_BYTEA() }); # doesn't work right
+    # Pg binary string quoting: convert each character to 3-digit octal prefixed with \\, 
+    # single-quote the whole mess, and put an "E" in front.
+    return ("E'" . join('', map { sprintf('\\\\%03o', ord($_)) } split(//, $value) ) . "'");
   } else {
     dbh->quote($value);
   }

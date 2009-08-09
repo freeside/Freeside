@@ -736,6 +736,20 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'disable_cust_attachment',
+    'section'     => '',
+    'description' => 'Disable customer file attachments',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'max_attachment_size',
+    'section'     => '',
+    'description' => 'Maximum size for customer file attachments (leave blank for unlimited)',
+    'type'        => 'text',
+  },
+
+  {
     'key'         => 'disable_customer_referrals',
     'section'     => 'UI',
     'description' => 'Disable new customer-to-customer referrals in the web interface',

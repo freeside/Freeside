@@ -372,6 +372,22 @@ sub tables_hashref {
       'index' => [ ['typenum'] ],
     },
 
+    'cust_attachment' => {
+      'columns' => [
+        'attachnum', 'serial', '', '', '', '',
+        'custnum',   'int', '', '', '', '',
+        '_date',     @date_type, '', '',
+        'otaker',    'varchar', '', 32, '', '',
+        'filename',  'varchar', '', 32, '', '',
+        'mime_type', 'varchar', '', 32, '', '',
+        'body',      'blob', 'NULL', '', '', '',
+        'disabled',  @date_type, '', '',
+      ],
+      'primary_key' => 'attachnum',
+      'unique'      => [],
+      'index'       => [ ['custnum'] ],
+    },
+
     'cust_bill' => {
       'columns' => [
         'invnum',    'serial',  '', '', '', '', 

@@ -113,7 +113,6 @@ Comments
 % if ( ! $conf->exists('cust_main-disable_notes') || $notecount) {
 
 %   unless ( $view eq 'notes' && $cust_main->comments !~ /[^\s\n\r]/ ) {
-      <BR>
       <A NAME="cust_main_note"><FONT SIZE="+2">Notes</FONT></A><BR>
 %   }
 
@@ -138,6 +137,22 @@ Comments
 <% include('cust_main/notes.html', 'custnum' => $cust_main->custnum ) %>
 
 % }
+<BR>
+
+% if(! $conf->config('disable_cust_attachment') 
+%  and $curuser->access_right('Add attachment')) {
+<% include( '/elements/popup_link-cust_main.html',
+              'label'       => 'Attach file',
+              'action'      => $p.'edit/cust_main_attach.cgi',
+              'actionlabel' => 'Upload file',
+              'cust_main'   => $cust_main,
+              'width'       => 616,
+              'height'      => 408,
+          )
+%>
+% }
+<% include('cust_main/attachments.html', 'custnum' => $cust_main->custnum ) %>
+<BR>
 
 % }
 
@@ -181,10 +196,6 @@ Comments
 
 % }
 
-% if ( $view eq 'change_history' ) { #  || $view eq 'jumbo'
-  <% include('cust_main/change_history.html', $cust_main ) %>
-% }
-
 <% include('/elements/footer.html') %>
 <%init>
 
@@ -218,12 +229,11 @@ tie my %views, 'Tie::IxHash',
        'Notes'            => 'notes', #notes and files?
 ;
 $views{'Tickets'}         =  'tickets'
-  if $conf->config('ticket_system');
+                               if $conf->config('ticket_system');
 $views{'Packages'}        =  'packages';
 $views{'Payment History'} =  'payment_history'
-  unless $conf->config('payby-default' eq 'HIDE');
-$views{'Change History'}  =  'change_history'
-  if $curuser->access_right('View customer history');
+                               unless $conf->config('payby-default' eq 'HIDE');
+#$views{'Change History'}  =  '';
 $views{'Jumbo'}           =  'jumbo';
 
 my %viewname = reverse %views;
