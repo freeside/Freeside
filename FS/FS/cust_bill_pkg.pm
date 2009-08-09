@@ -299,6 +299,7 @@ Returns the previous cust_bill_pkg for this package, if any.
 
 sub previous_cust_bill_pkg {
   my $self = shift;
+  return unless $self->sdate;
   qsearchs({
     'table'    => 'cust_bill_pkg',
     'hashref'  => { 'pkgnum' => $self->pkgnum,
