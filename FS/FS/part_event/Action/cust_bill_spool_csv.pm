@@ -35,6 +35,7 @@ sub option_fields {
                            },
     'spoolagent_spools' => { label => 'Individual per-agent spools',
                              type  => 'checkbox',
+                             value => 'Y',
                            },
   );
 }
