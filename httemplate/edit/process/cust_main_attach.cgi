@@ -4,6 +4,7 @@
 %} else {
 % my $act = 'added';
 % $act = 'updated' if ($attachnum);
+% $act = 'purged' if($attachnum and $purge);
 % $act = 'undeleted' if($attachnum and $undelete);
 % $act = 'deleted' if($attachnum and $delete);
 <% header('Attachment ' . $act ) %>
@@ -23,12 +24,13 @@ $cgi->param('attachnum') =~ /^(\d*)$/
   or die "Illegal attachnum: ". $cgi->param('attachnum');
 my $attachnum = $1;
 
-my $otaker = $FS::CurrentUser::CurrentUser->name;
-$otaker = $FS::CurrentUser::CurrentUser->username
-  if ($otaker eq "User, Legacy");
+my $curuser = $FS::CurrentUser::CurrentUser;
+my $otaker = $curuser->name;
+$otaker = $curuser->username if ($otaker eq "User, Legacy");
 
 my $delete = $cgi->param('delete');
 my $undelete = $cgi->param('undelete');
+my $purge = $cgi->param('purge');
 
 my $new = new FS::cust_attachment ( {
   attachnum => $attachnum,
@@ -43,6 +45,8 @@ if($attachnum) {
   $old = qsearchs('cust_attachment', { attachnum => $attachnum });
   if(!$old) {
     $error = "Attachnum '$attachnum' not found";
+  }
+  elsif($purge) { # do nothing
   }
   else {
     map { $new->$_($old->$_) } 
@@ -72,12 +76,19 @@ else { # This is a new attachment, so require a file.
     $error = 'No file uploaded';
   }
 }
-my $user = $FS::CurrentUser::CurrentUser;
+my $action = 'Add';
+$action = 'Edit' if $attachnum;
+$action = 'Delete' if $attachnum and $delete;
+$action = 'Undelete' if $attachnum and $undelete;
+$action = 'Purge' if $attachnum and $purge;
 
-$error = 'access denied' unless $user->access_right(($old ? 'Edit' : 'Add') . ' attachment');
+$error = 'access denied' unless $curuser->access_right($action . ' attachment');
 
 if(!$error) {
-  if($old) {
+  if($old and $old->disabled and $purge) {
+    $error = $old->delete;
+  }
+  elsif($old) {
     $error = $new->replace($old);
   }
   else {

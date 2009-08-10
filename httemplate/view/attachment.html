@@ -1,16 +1,16 @@
+<% $attach->body %>
 <%init>
 my ($query) = $cgi->keywords;
 $query =~ /^(\d+)$/;
 my $attachnum = $1 or die 'Invalid attachment number';
 $FS::CurrentUser::CurrentUser->access_right('Download attachment') or die 'access denied';
 
-my $attach = qsearchs('cust_attachment', { attachnum => $attachnum }) or die 'Attachment not found: $attachnum';
+my $attach = qsearchs('cust_attachment', { attachnum => $attachnum }) or die "Attachment not found: $attachnum";
+die 'access denied' if $attach->disabled;
 
 $m->clear_buffer;
 $r->content_type($attach->mime_type || 'text/plain');
 $r->headers_out->add('Content-Disposition' => 'attachment;filename=' . $attach->filename);
 
-binmode STDOUT;
-print STDOUT $attach->body;
 
 </%init>

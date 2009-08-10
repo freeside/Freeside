@@ -103,6 +103,10 @@ tie my %rights, 'Tie::IxHash',
     'Download attachment', #NEW
     'Add attachment', #NEW
     'Edit attachment', #NEW
+    'Delete attachment', #NEW
+    'View deleted attachments', #NEW
+    'Undelete attachment', #NEW
+    'Purge attachment', #NEW
     'Bill customer now', #NEW
     'Bulk send customer notices', #NEW
   ],

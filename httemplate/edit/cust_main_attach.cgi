@@ -24,7 +24,7 @@ Filename <INPUT TYPE="file" NAME="file"><BR>
 <INPUT TYPE="submit" NAME="submit" 
     VALUE="<% $attachnum ? "Apply Changes" : "Upload File" %>">
 
-% if(defined $attach) {
+% if(defined $attach and $curuser->access_right('Delete attachment')) {
 <BR>
 <INPUT TYPE="submit" NAME="delete" value="Delete File">
 % }
@@ -35,6 +35,7 @@ Filename <INPUT TYPE="file" NAME="file"><BR>
 
 <%init>
 
+my $curuser = $FS::CurrentUser::CurrentUser;
 my $attachnum = '';
 my $attach;
 if ( $cgi->param('error') ) {
@@ -52,7 +53,7 @@ my $custnum = $1;
 my $action = $attachnum ? 'Edit' : 'Add';
 
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right("$action customer note");
+  unless $curuser->access_right("$action customer note");
 
 </%init>
 

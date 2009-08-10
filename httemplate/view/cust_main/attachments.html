@@ -19,9 +19,19 @@
 % my $bgcolor1 = '#eeeeee';
 % my $bgcolor2 = '#ffffff';
 % my $bgcolor = '';
+% if($cgi->param('show_deleted')) {
+%   if ($curuser->access_right('View deleted attachments')) {
+%     @attachments = grep { $_->disabled } @attachments;
+%   }
+%   else {
+%     @attachments = ();
+%   }
+% }
+% else {
+%   @attachments = grep { not $_->disabled } @attachments;
+% }
 %
-% foreach my $attach ((grep { $_->disabled } @attachments),
-%                     (grep { ! $_->disabled } @attachments)) {
+% foreach my $attach (@attachments) {
 %
 %   if ( $bgcolor eq $bgcolor1 ) {
 %     $bgcolor = $bgcolor2;
@@ -32,42 +42,38 @@
 %   my $pop = popurl(3);
 %   my $attachnum = $attach->attachnum;
 %   my $edit = '';
-%   my $download = '';
-%   if($attach->disabled) {
-%     my $onclick = include('/elements/popup_link_onclick.html',
-%                            'action'   => popurl(2).
-%                                         'edit/process/cust_main_attach.cgi'.
-%                                         "?custnum=$custnum;".
-%                                         "attachnum=$attachnum;".
-%                                         "undelete=1",
-%                            'actionlabel' => 'Undelete attachment',
-%                            'width'       => 616,
-%                            'height'      => 408,
-%                            'frame'       => 'top',
-%                         );
-%     my $clickjs = qq!onclick="$onclick"!;
-%     if($curuser->access_right('Edit attachment')) {
-%       $edit = qq! <A HREF="javascript:void(0);" $clickjs>(undelete)</A>!;
+%   if($attach->disabled) { # then you can undelete it or purge it.
+%     if ($curuser->access_right('Undelete attachment')) {
+%       my $clickjs = popup('edit/process/cust_main_attach.cgi?'.
+%                           "custnum=$custnum;attachnum=$attachnum;".
+%                           "undelete=1",
+%                           'Undelete attachment');
+%       $edit .= qq!&nbsp; <A HREF="javascript:void(0);" $clickjs>(undelete)</A>!;
+%     }
+%     if ($curuser->access_right('Purge attachment')) {
+%       my $clickjs = popup('edit/process/cust_main_attach.cgi?'.
+%                           "custnum=$custnum;attachnum=$attachnum;".
+%                           "purge=1",
+%                           'Purge attachment');
+%       $edit .= qq!&nbsp; <A HREF="javascript:void(0);" $clickjs>(purge)</A>!;
 %     }
 %   }
-%   else {
-%     my $onclick = include( '/elements/popup_link_onclick.html',
-%                              'action'      => popurl(2).
-%                                               'edit/cust_main_attach.cgi'.
-%                                               "?custnum=$custnum".
-%                                               ";attachnum=$attachnum",
-%                              'actionlabel' => 'Edit customer note',
-%                              'width'       => 616,
-%                              'height'      => 408,
-%                              'frame'       => 'top',
-%                          );
-%     my $clickjs = qq!onclick="$onclick"!;
-%
+%   else { # you can download or edit it
 %     if ($curuser->access_right('Edit attachment') ) {
-%       $edit = qq! <A HREF="javascript:void(0);" $clickjs>(edit)</A>!;
+%       my $clickjs = popup('edit/cust_main_attach.cgi?'.
+%                           "custnum=$custnum;attachnum=$attachnum",
+%                           'Edit attachment properties');
+%       $edit .= qq!&nbsp; <A HREF="javascript:void(0);" $clickjs>(edit)</A>!;
+%     }
+%     if($curuser->access_right('Delete attachment') ) {
+%       my $clickjs = popup('edit/process/cust_main_attach.cgi?'.
+%                           "custnum=$custnum;attachnum=$attachnum;".
+%                           "delete=1",
+%                           'Delete attachment');
+%       $edit .= qq!&nbsp; <A HREF="javascript:void(0);" $clickjs>(delete)</A>!;
 %     }
 %     if ($curuser->access_right('Download attachment') ) {
-%       $download = qq! <A HREF="!.popurl(1).'attachment.html?'.$attachnum.qq!">(download)</A>!;
+%       $edit .= qq!&nbsp; <A HREF="!.popurl(1).'attachment.html?'.$attachnum.qq!">(download)</A>!;
 %     }
 %   }
 
@@ -86,10 +92,8 @@
        &nbsp;<% size_units( $attach->size ) %>
       </TD>
       <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
-        &nbsp;<% $edit %>
-        &nbsp;<% $download %>
+       <% $edit %>
       </TD>
-      <% $attach->disabled ? '</I>' : '' %>
     </TR>
 
 % } #end display notes
@@ -129,5 +133,19 @@ sub size_units {
   return int($bytes / 1024)."K" if $bytes < 1048576;
   return int($bytes / 1048576)."M";
 }
+
+sub popup {
+  my ($url, $label) = @_;
+  my $onclick = 
+    include('/elements/popup_link_onclick.html',
+      'action'     => popurl(2).$url,
+      'actionlabel' => $label,
+      'width'       => 616,
+      'height'      => 408,
+      'frame'       => 'top',
+    );
+  return qq!onclick="$onclick"!;
+}
+
 
 </%init>

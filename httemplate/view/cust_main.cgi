@@ -108,7 +108,7 @@ Comments
 </TABLE></TABLE>
 <BR><BR>
 % }
-
+<A NAME="notes">
 % my $notecount = scalar($cust_main->notes());
 % if ( ! $conf->exists('cust_main-disable_notes') || $notecount) {
 
@@ -152,6 +152,16 @@ Comments
 %>
 % }
 <% include('cust_main/attachments.html', 'custnum' => $cust_main->custnum ) %>
+% if($cgi->param('show_deleted')) {
+<A HREF="<% $p.'view/cust_main.cgi?custnum=' . $cust_main->custnum .
+           ($view ? ";show=$view" : '') . '#notes' 
+           %>"><I>(Show active attachments)</I></A>
+% }
+% elsif($curuser->access_right('View deleted attachments')) {
+<A HREF="<% $p.'view/cust_main.cgi?custnum=' . $cust_main->custnum .
+           ($view ? ";show=$view" : '') . ';show_deleted=1#notes'
+           %>"><I>(Show deleted attachments)</I></A>
+% }
 <BR>
 
 % }
