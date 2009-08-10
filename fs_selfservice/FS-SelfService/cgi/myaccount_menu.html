@@ -7,14 +7,17 @@
 <%= 
 
 my @menu = (
-{ title=>' ' },
-{ title=>'Overview', url=>'myaccount', size=>'+1', },
-{ title=>' ' },
-
-{ title=>'Purchase', size=>'+1', },
-  { title=>'Purchase additional package',
-    url=>'customer_order_pkg', 'indent'=>2 },
+  { title=>' ' },
+  { title=>'Overview', url=>'myaccount', size=>'+1', },
+  { title=>' ' },
+  { title=>'Purchase', size=>'+1', },
 );
+
+unless ( $pkgnum ) {
+  push @menu,
+    { title=>'Purchase additional package',
+      url=>'customer_order_pkg', 'indent'=>2 };
+}
 
 if ( 1 ) { #XXXFIXME "enable selfservice prepay features" flag or something, eventually per-pkg or something really fancy
 
@@ -34,7 +37,7 @@ if ( 1 ) { #XXXFIXME "enable selfservice prepay features" flag or something, eve
   while($i < scalar(@cust_paybys)) { last if $cust_paybys[$i] =~ /^CHEK/; $i++ }
   if ( $cust_paybys[$i] =~ /^CHEK/ ) {
     push @menu, { title  => 'Recharge my account with a check',
-                  url    => $hide_payment_field[$i]
+                  url    => $hide_payment_fields[$i]
                               ? 'make_thirdparty_payment&payby_method=ECHECK'
                               : 'make_ach_payment',
                   indent => 2,
@@ -49,26 +52,36 @@ if ( 1 ) { #XXXFIXME "enable selfservice prepay features" flag or something, eve
 
 }
 
-push @menu, (
+push @menu,
+  { title=>' ' },
+  { title=>'View my usage', url=>'view_usage', size=>'+1', },
+;
 
-{ title=>' ' },
+unless ( $pkgnum ) {
+  push @menu,
+    { title=>'Setup my services', url=>'provision', size=>'+1', },
+  ;
+}
 
-{ title=>'View my usage', url=>'view_usage', size=>'+1', },
-{ title=>'Setup my services', url=>'provision', size=>'+1', },
+push @menu,
+  { title=>' ' };
 
-{ title=>' ' },
+push @menu,
+  { title=>'Change my information', size=>'+1', };
 
-{ title=>'Change my information', size=>'+1', },
-  { title=>'Change billing address',      url=>'change_bill',     indent=>2 },
-  { title=>'Change service address',      url=>'change_ship',     indent=>2 },
-  { title=>'Change payment information',  url=>'change_pay',      indent=>2 },
+unless ( $pkgnum ) {
+  push @menu,
+    { title=>'Change billing address',      url=>'change_bill',     indent=>2 },
+    { title=>'Change service address',      url=>'change_ship',     indent=>2 },
+    { title=>'Change payment information',  url=>'change_pay',      indent=>2 },
+  ;
+}
+
+push @menu,
   { title=>'Change password(s)',          url=>'change_password', indent=>2 },
-
-{ title=>' ' },
-
-{ title=>'Logout',   url=>'logout', size=>'+1', },
-
-);
+  { title=>' ' },
+  { title=>'Logout',   url=>'logout', size=>'+1', },
+;
 
 foreach my $item ( @menu ) {
 
@@ -83,14 +96,14 @@ foreach my $item ( @menu ) {
   }
   $OUT.='>';
 
-  $OUT .= '<FONT SIZE="'. $item->{'size'}. '">'
-    if exists $item->{'size'};
-
   $OUT .= '&nbsp;' x $item->{'indent'}
     if exists $item->{'indent'};
 
   $OUT .= '<A HREF="'. $url. $item->{'url'}. '">'
     if exists $item->{'url'} && $action ne $item->{'url'};
+
+  $OUT .= '<FONT SIZE="'. $item->{'size'}. '">'
+    if exists $item->{'size'};
 
   $item->{'title'} =~ s/ /&nbsp;/g;
   $OUT .= $item->{'title'};

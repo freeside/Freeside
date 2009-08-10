@@ -61,6 +61,7 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'myaccount_passwd'          => 'MyAccount/myaccount_passwd',
   'signup_info'               => 'Signup/signup_info',
   'skin_info'                 => 'MyAccount/skin_info',
+  'access_info'               => 'MyAccount/access_info',
   'domain_select_hash'        => 'Signup/domain_select_hash',  # expose?
   'new_customer'              => 'Signup/new_customer',
   'capture_payment'           => 'Signup/capture_payment',

@@ -1,5 +1,6 @@
-<HTML><HEAD><TITLE>My Account</TITLE></HEAD>
-<BODY BGCOLOR="#eeeeee"><FONT SIZE=5>MyAccount</FONT><BR><BR>
+<%= $url = "$selfurl?session=$session_id;action="; ''; %>
+<%= include('header') %>
+
 <SCRIPT TYPE="text/javascript">
   function popcollect() {
     overlib( OLiframeContent('<%= $popup_url %>', 336, 550, 'Secure Payment Area', 0, 'auto' ), CAPTION, 'Pay now', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK, BGCOLOR, '#333399', CGCOLOR, '#333399', CLOSETEXT, 'Close' );
@@ -11,9 +12,7 @@
 <SCRIPT TYPE="text/javascript" SRC="overlibmws_draggable.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript" SRC="overlibmws_crossframe.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript" SRC="iframecontentmws.js"></SCRIPT>
-<%= $url = "$selfurl?session=$session_id;action="; ''; %>
-<%= include('myaccount_menu') %>
-<TD VALIGN="top">
+
 <FONT SIZE=4>Pay now</FONT><BR><BR>
 
 <%= if ( $error ) {
@@ -34,5 +33,5 @@ EOF
   $OUT .= qq!</FORM>!;
 }
 %>
-</TD></TR></TABLE>
-</BODY></HTML>
+
+<%= include('footer') %>

@@ -60,17 +60,20 @@ sub skin_info {
 
   my $conf = new FS::Conf;
 
-  my %skin = (
-    'head'         => join("\n", $conf->config('selfservice-head') ),
-    'body_header'  => join("\n", $conf->config('selfservice-body_header') ),
-    'body_footer'  => join("\n", $conf->config('selfservice-body_footer') ),
-    'body_bgcolor' => scalar( $conf->config('selfservice-body_bgcolor') ),
-    'box_bgcolor'  => scalar( $conf->config('selfservice-box_bgcolor')  ),
+  use vars qw($skin_info); #cache for performance.
+  #agentnum eventually...?  but if they're not logged in yet.. ?
+
+  $skin_info ||= {
+    'head'           => join("\n", $conf->config('selfservice-head') ),
+    'body_header'    => join("\n", $conf->config('selfservice-body_header') ),
+    'body_footer'    => join("\n", $conf->config('selfservice-body_footer') ),
+    'body_bgcolor'   => scalar( $conf->config('selfservice-body_bgcolor') ),
+    'box_bgcolor'    => scalar( $conf->config('selfservice-box_bgcolor')  ),
 
     'company_name'   => scalar($conf->config('company_name')),
-  );
+  };
 
-  \%skin;
+  $skin_info;
 
 }
 
@@ -80,6 +83,7 @@ sub login_info {
   my $conf = new FS::Conf;
 
   my %info = (
+    %{ skin_info() },
     'phone_login'  => $conf->exists('selfservice_server-phone_login'),
     'single_domain'=> scalar($conf->config('selfservice_server-single_domain')),
   );
@@ -122,16 +126,6 @@ sub login {
                            );
     return { error => 'User not found.' } unless $svc_acct;
 
-    #my $pkg_svc = $svc_acct->cust_svc->pkg_svc;
-    #return { error => 'Only primary user may log in.' } 
-    #  if $conf->exists('selfservice_server-primary_only')
-    #    && ( ! $pkg_svc || $pkg_svc->primary_svc ne 'Y' );
-    my $cust_svc = $svc_acct->cust_svc;
-    my $part_pkg = $cust_svc->cust_pkg->part_pkg;
-    return { error => 'Only primary user may log in.' } 
-      if $conf->exists('selfservice_server-primary_only')
-         && $cust_svc->svcpart != $part_pkg->svcpart('svc_acct');
-
     return { error => 'Incorrect password.' }
       unless $svc_acct->check_password($p->{'password'});
 
@@ -143,13 +137,27 @@ sub login {
     'svcnum' => $svc_x->svcnum,
   };
 
-  my $cust_pkg = $svc_x->cust_svc->cust_pkg;
+  my $cust_svc = $svc_x->cust_svc;
+  my $cust_pkg = $cust_svc->cust_pkg;
   if ( $cust_pkg ) {
     my $cust_main = $cust_pkg->cust_main;
     $session->{'custnum'} = $cust_main->custnum;
-    $session->{'pkgnum'} = $cust_pkg->pkgnum
-      if $conf->exists('pkg-balances');
+    if ( $conf->exists('pkg-balances') ) {
+      my @cust_pkg = grep { $_->part_pkg->freq !~ /^(0|$)/ }
+                          $cust_main->ncancelled_pkgs;
+      $session->{'pkgnum'} = $cust_pkg->pkgnum
+        if scalar(@cust_pkg) > 1;
+    }
   }
+
+  #my $pkg_svc = $svc_acct->cust_svc->pkg_svc;
+  #return { error => 'Only primary user may log in.' } 
+  #  if $conf->exists('selfservice_server-primary_only')
+  #    && ( ! $pkg_svc || $pkg_svc->primary_svc ne 'Y' );
+  my $part_pkg = $cust_pkg->part_pkg;
+  return { error => 'Only primary user may log in.' }
+    if $conf->exists('selfservice_server-primary_only')
+       && $cust_svc->svcpart != $part_pkg->svcpart([qw( svc_acct svc_phone )]);
 
   my $session_id;
   do {
@@ -168,10 +176,55 @@ sub logout {
   my $p = shift;
   if ( $p->{'session_id'} ) {
     _cache->remove($p->{'session_id'});
-    return { 'error' => '' };
+    return { %{ skin_info() }, 'error' => '' };
   } else {
-    return { 'error' => "Can't resume session" }; #better error message
+    return { %{ skin_info() }, 'error' => "Can't resume session" }; #better error message
   }
+}
+
+sub access_info {
+  my $p = shift;
+
+  my $conf = new FS::Conf;
+
+  my $info = skin_info($p);
+
+  use vars qw( $cust_paybys ); #cache for performance
+  unless ( $cust_paybys ) {
+
+    my %cust_paybys = map { $_ => 1 }
+                      map { FS::payby->payby2payment($_) }
+                          $conf->config('signup_server-payby');
+
+    $cust_paybys = [ keys %cust_paybys ];
+
+  }
+  $info->{'cust_paybys'} = $cust_paybys;
+
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
+    or return { 'error' => "unknown custnum $custnum" };
+
+  $info->{hide_payment_fields} =
+  [
+    map { FS::payby->realtime($_) &&
+          $cust_main
+            ->agent
+            ->payment_gateway( 'method' => FS::payby->payby2bop($_) )
+            ->gateway_namespace
+            eq 'Business::OnlineThirdPartyPayment'
+        }
+    @{ $info->{cust_paybys} }
+  ];
+
+  return { %$info,
+           'custnum'    => $custnum,
+           'pkgnum'     => $session->{'pkgnum'},
+           'svcnum'     => $session->{'svcnum'},
+           'nonprimary' => $session->{'nonprimary'},
+         };
 }
 
 sub customer_info {
@@ -196,21 +249,32 @@ sub customer_info {
     my $cust_main = qsearchs('cust_main', $search )
       or return { 'error' => "unknown custnum $custnum" };
 
-    $return{balance} = $cust_main->balance;
+    if ( $session->{'pkgnum'} ) { 
+      $return{balance} = $cust_main->balance_pkgnum( $session->{'pkgnum'} );
+    } else {
+      $return{balance} = $cust_main->balance;
+    }
 
     $return{tickets} = [ ($cust_main->tickets) ];
 
-    my @open = map {
-                     {
-                       invnum => $_->invnum,
-                       date   => time2str("%b %o, %Y", $_->_date),
-                       owed   => $_->owed,
-                     };
-                   } $cust_main->open_cust_bill;
-    $return{open_invoices} = \@open;
+    unless ( $session->{'pkgnum'} ) {
+      my @open = map {
+                       {
+                         invnum => $_->invnum,
+                         date   => time2str("%b %o, %Y", $_->_date),
+                         owed   => $_->owed,
+                       };
+                     } $cust_main->open_cust_bill;
+      $return{open_invoices} = \@open;
+    }
 
     $return{small_custview} =
-      small_custview( $cust_main, $conf->config('countrydefault') );
+      small_custview( $cust_main,
+                      scalar($conf->config('countrydefault')),
+                      ( $session->{'pkgnum'} ? 1 : 0 ), #nobalance
+                    );
+
+    warn $return{small_custview};
 
     $return{name} = $cust_main->first. ' '. $cust_main->get('last');
 
@@ -359,6 +423,12 @@ sub payment_info {
                      'country' => $conf->config('countrydefault') || 'US'
                    } );
 
+    my %cust_paybys = map { $_ => 1 }
+                      map { FS::payby->payby2payment($_) }
+                          $conf->config('signup_server-payby');
+
+    my @cust_paybys = keys %cust_paybys;
+
     $payment_info = {
 
       #list all counties/states/countries
@@ -374,9 +444,7 @@ sub payment_info {
       'paytypes' => [ @FS::cust_main::paytypes ],
 
       'paybys' => [ $conf->config('signup_server-payby') ],
-      'cust_paybys' => [ map { FS::payby->payby2payment($_) }
-                                 $conf->config('signup_server-payby')
-                       ],
+      'cust_paybys' => \@cust_paybys,
 
       'stateid_label' => FS::Msgcat::_gettext('stateid'),
       'stateid_state_label' => FS::Msgcat::_gettext('stateid_state'),
@@ -411,7 +479,7 @@ sub payment_info {
     @{ $return{cust_paybys} }
   ];
 
-  $return{balance} = $cust_main->balance;
+  $return{balance} = $cust_main->balance; #XXX pkg-balances?
 
   $return{payname} = $cust_main->payname
                      || ( $cust_main->first. ' '. $cust_main->get('last') );
@@ -589,7 +657,11 @@ sub realtime_collect {
   );
   return { 'error' => $error } unless ref( $error );
 
-  return { 'error' => '', amount => $cust_main->balance, %$error };
+  my $amount = $session->{'pkgnum'}
+                 ? $cust_main->balance_pkgnum( $session->{'pkgnum'} )
+                 : $cust_main->balance;
+
+  return { 'error' => '', amount => $amount, %$error };
 }
 
 sub process_payment_order_pkg {
@@ -802,6 +874,7 @@ sub list_svcs {
   foreach my $cust_pkg ( $p->{'ncancelled'} 
                          ? $cust_main->ncancelled_pkgs
                          : $cust_main->unsuspended_pkgs ) {
+    next if $session->{'pkgnum'} && $cust_pkg->pkgnum != $session->{'pkgnum'};
     push @cust_svc, @{[ $cust_pkg->cust_svc ]}; #@{[ ]} to force array context
   }
   if ( $p->{'svcdb'} ) {
