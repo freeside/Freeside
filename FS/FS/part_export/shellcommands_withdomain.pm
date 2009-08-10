@@ -87,6 +87,17 @@ the same username with different domains.  You will need to
     this.form.usermod_stdin.value = "";
     this.form.usermod_pwonly.checked = true;
   '>
+  <LI><INPUT TYPE="button" VALUE="MagicMail" onClick='
+    this.form.useradd.value = "/usr/bin/mm_create_email_service -e $svcnum -d $domain -u $username -p $quoted_password -f $first -l $last -m $svcnum -g EMAIL";
+    this.form.useradd_stdin.value = "";
+    this.form.userdel.value = "/usr/bin/mm_delete_user -e ${username}\\\@${domain}";
+    this.form.userdel_stdin.value = "";
+    this.form.suspend.value = "/usr/bin/mm_suspend_user -e ${username}\\\@${domain}";
+    this.form.suspend_stdin.value = "";
+    this.form.unsuspend.value = "/usr/bin/mm_activate_user -e ${username}\\\@${domain}";
+    this.form.unsuspend_stdin.value = "";
+    this.form.no_queue.checked = 1;
+  '>
 </UL>
 
 The following variables are available for interpolation (prefixed with
