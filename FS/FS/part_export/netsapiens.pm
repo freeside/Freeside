@@ -85,10 +85,6 @@ sub ns_subscriber {
 sub ns_registrar {
   my($self, $svc_phone) = (shift, shift);
 
-  my $domain = $self->option('domain');
-  my $countrycode = $svc_phone->countrycode;
-  my $phonenum    = $svc_phone->phonenum;
-
   $self->ns_subscriber($svc_phone).
     '/registrar_config/'. $self->ns_devicename($svc_phone);
 }
@@ -97,19 +93,21 @@ sub ns_devicename {
   my( $self, $svc_phone ) = (shift, shift);
 
   my $domain = $self->option('domain');
-  my $countrycode = $svc_phone->countrycode;
+  #my $countrycode = $svc_phone->countrycode;
   my $phonenum    = $svc_phone->phonenum;
 
-  "sip:$countrycode$phonenum@$domain";
+  #"sip:$countrycode$phonenum\@$domain";
+  "sip:$phonenum\@$domain";
 }
 
 sub ns_dialplan {
   my($self, $svc_phone) = (shift, shift);
 
-  my $countrycode = $svc_phone->countrycode;
+  #my $countrycode = $svc_phone->countrycode;
   my $phonenum    = $svc_phone->phonenum;
 
-  "/dialplans/DID+Table/dialplan_config/sip:$countrycode$phonenum@*"
+  #"/dialplans/DID+Table/dialplan_config/sip:$countrycode$phonenum\@*"
+  "/dialplans/DID+Table/dialplan_config/sip:$phonenum\@*"
 }
 
 sub ns_device {
@@ -125,7 +123,7 @@ sub ns_create_or_update {
   my($self, $svc_phone, $dial_policy) = (shift, shift, shift);
 
   my $domain = $self->option('domain');
-  my $countrycode = $svc_phone->countrycode;
+  #my $countrycode = $svc_phone->countrycode;
   my $phonenum    = $svc_phone->phonenum;
 
   my( $firstname, $lastname );
@@ -158,6 +156,7 @@ sub ns_create_or_update {
   #Piece 2 - sip device creation 
 
   my $ns2 = $self->ns_command( 'PUT', $self->ns_registrar($svc_phone),
+    'termination_match' => $self->ns_devicename($svc_phone)
   );
 
   if ( $ns2->responseCode !~ /^2/ ) {
@@ -168,7 +167,7 @@ sub ns_create_or_update {
   #Piece 3 - DID mapping to user
 
   my $ns3 = $self->ns_command( 'PUT', $self->ns_dialplan($svc_phone),
-    'to_user' => $countrycode.$phonenum,
+    'to_user' => $phonenum,
     'to_host' => $domain,
   );
 
@@ -250,7 +249,7 @@ sub export_device_insert {
     'PUT', $self->ns_device($svc_phone, $phone_device),
       'line1_enable' => 'yes',
       'device1'      => $self->ns_devicename($svc_phone),
-      'line1_ext'    => $countrycode.$phonenum,
+      'line1_ext'    => $phonenum,
 ,
       #'line2_enable' => 'yes',
       #'device2'      =>
