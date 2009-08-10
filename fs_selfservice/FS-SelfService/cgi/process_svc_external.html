@@ -1,12 +1,8 @@
-<HTML><HEAD><TITLE><%= $error ? 'MyAccount' : sprintf("Your serial number is %010d-$title", $id) %></TITLE></HEAD>
-<BODY BGCOLOR="#eeeeee"><FONT SIZE=5>MyAccount</FONT><BR><BR>
 <%= $url = "$selfurl?session=$session_id;action="; ''; %>
-<%= include('myaccount_menu') %>
-<TD VALIGN="top">
+<%= include('header') %>
 
 <FONT SIZE=4><%= $svc %> setup successfully.</FONT>
 
 <BR><BR>Your serial number is <%= sprintf("%010d-$title", $id) %>
 
-</TD></TR></TABLE>
 <%= include('footer') %>
