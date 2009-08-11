@@ -22,9 +22,9 @@ sub do_action {
 
   my $cust_main = $self->cust_main($cust_object);
 
-  my $error = $cust_main->credit( $cust_main->balance,
-                                  $self->option('reasonnum'),
-                                );
+  my $reasonnum = $self->option('reasonnum');
+
+  my $error = $cust_main->credit( $cust_main->balance, \$reasonnum );
   die $error if $error;
 
   '';
