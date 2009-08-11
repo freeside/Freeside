@@ -394,6 +394,7 @@ release:
 	# Update the RPM specfile
 	cvs edit ${RPM_SPECFILE}
 	perl -p -i -e "s/\d+[^\}]+/${VERSION}/ if /%define\s+version\s+(\d+[^\}]+)\}/;" ${RPM_SPECFILE}
+	perl -p -i -e "s/\d+[^\}]+/1/ if /%define\s+release\s+(\d+[^\}]+)\}/;" ${RPM_SPECFILE}
 	cvs commit -m "Updated for ${VERSION}" ${RPM_SPECFILE}
 
 	# Update the Debian changelog
