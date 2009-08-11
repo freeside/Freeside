@@ -4221,7 +4221,13 @@ sub realtime_bop {
       $template->compile()
         or return "($perror) can't compile template: $Text::Template::ERROR";
 
-      my $templ_hash = { error => $transaction->error_message };
+      my $templ_hash = {
+        'company_name'    =>
+          scalar( $conf->config('company_name', $self->agentnum ) ),
+        'company_address' =>
+          join("\n", $conf->config('company_address', $self->agentnum ) ),
+        'error'           => $transaction->error_message,
+      };
 
       my $error = send_email(
         'from'    => $conf->config('invoice_from', $self->agentnum ),
@@ -5401,7 +5407,13 @@ sub _realtime_bop_result {
       $template->compile()
         or return "($perror) can't compile template: $Text::Template::ERROR";
 
-      my $templ_hash = { error => $transaction->error_message };
+      my $templ_hash = {
+        'company_name'    =>
+          scalar( $conf->config('company_name', $self->agentnum ) ),
+        'company_address' =>
+          join("\n", $conf->config('company_address', $self->agentnum ) ),
+        'error'           => $transaction->error_message,
+      };
 
       my $error = send_email(
         'from'    => $conf->config('invoice_from', $self->agentnum ),
