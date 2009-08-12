@@ -7,17 +7,23 @@
 
 <FORM ACTION="<% $p %>misc/process/bulk_change_pkg.cgi" METHOD=POST>
 
-<INPUT TYPE="hidden" NAME="query" VALUE="<% $cgi->keywords %>">
-%  for my $param (qw(agentnum magic status classnum pkgpart)) {
-<INPUT TYPE="hidden" NAME="<% $param %>" VALUE="<% $cgi->param($param) %>">
+%# some false laziness w/search/cust_pkg.cgi
+
+<INPUT TYPE="hidden" NAME="query" VALUE="<% $cgi->keywords |h %>">
+%  for my $param (qw(agentnum magic status classnum custom censustract)) {
+<INPUT TYPE="hidden" NAME="<% $param %>" VALUE="<% $cgi->param($param) |h %>">
 %  }
+%
+% foreach my $pkgpart ($cgi->param('pkgpart')) {
+<INPUT TYPE="hidden" NAME="pkgpart" VALUE="<% $pkgpart |h %>">
+% }
 %
 % foreach my $field (qw( setup last_bill bill adjourn susp expire cancel )) {
 % 
-  <INPUT TYPE="hidden" NAME="<% $field %>begin" VALUE="<% $cgi->param("${field}.begin") %>">
-  <INPUT TYPE="hidden" NAME="<% $field %>beginning" VALUE="<% $cgi->param("${field}beginning") %>">
-  <INPUT TYPE="hidden" NAME="<% $field %>end" VALUE="<% $cgi->param("${field}.end") %>">
-  <INPUT TYPE="hidden" NAME="<% $field %>ending" VALUE="<% $cgi->param("${field}.ending") %>">
+  <INPUT TYPE="hidden" NAME="<% $field %>begin" VALUE="<% $cgi->param("${field}.begin") |h %>">
+  <INPUT TYPE="hidden" NAME="<% $field %>beginning" VALUE="<% $cgi->param("${field}beginning") |h %>">
+  <INPUT TYPE="hidden" NAME="<% $field %>end" VALUE="<% $cgi->param("${field}.end") |h %>">
+  <INPUT TYPE="hidden" NAME="<% $field %>ending" VALUE="<% $cgi->param("${field}.ending") |h %>">
 % }
 
 <% ntable('#cccccc') %>

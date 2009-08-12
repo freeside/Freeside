@@ -2295,7 +2295,7 @@ active, inactive, suspended, one-time charge, inactive, cancel (or cancelled)
 
 =item pkgpart
 
-list specified how?
+pkgpart or arrayref or hashref of pkgparts
 
 =item setup
 
@@ -2463,9 +2463,24 @@ sub search_sql {
   # parse part_pkg
   ###
 
-  my $pkgpart = join (' OR pkgpart=',
-                      grep {$_} map { /^(\d+)$/; } ($params->{'pkgpart'}));
-  push @where,  '(pkgpart=' . $pkgpart . ')' if $pkgpart;
+  if ( ref($params->{'pkgpart'}) ) {
+
+    my @pkgpart = ();
+    if ( ref($params->{'pkgpart'}) eq 'HASH' ) {
+      @pkgpart = grep $params->{'pkgpart'}{$_}, keys %{ $params->{'pkgpart'} };
+    } elsif ( ref($params->{'pkgpart'}) eq 'ARRAY' ) {
+      @pkgpart = @{ $params->{'pkgpart'} };
+    } else {
+      die 'unhandled pkgpart ref '. $params->{'pkgpart'};
+    }
+
+    @pkgpart = grep /^(\d+)$/, @pkgpart;
+
+    push @where, 'pkgpart IN ('. join(',', @pkgpart). ')';
+
+  } elsif ( $params->{'pkgpart'} =~ /^(\d+)$/ ) {
+    push @where, "pkgpart = $1";
+  } 
 
   ###
   # parse dates

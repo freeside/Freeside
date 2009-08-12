@@ -158,18 +158,22 @@ my $money_char = $conf->config('money_char') || '$';
 
 # my %part_pkg = map { $_->pkgpart => $_ } qsearch('part_pkg', {});
 
-  my %search_hash = ();
-  
-  $search_hash{'query'} = $cgi->keywords;
-  
-  for ( qw(agentnum magic status classnum pkgpart custom ) ) {
-    $search_hash{$_} = $cgi->param($_) if $cgi->param($_);
-  }
+my %search_hash = ();
 
-  for my $param ( qw(censustract) ) {
-    $search_hash{$param} = $cgi->param($param) || ''
-      if ( grep { /$param/ } $cgi->param );
-  }
+#some false laziness w/misc/bulk_change_pkg.cgi
+  
+$search_hash{'query'} = $cgi->keywords;
+  
+for (qw( agentnum magic status classnum custom )) {
+  $search_hash{$_} = $cgi->param($_) if $cgi->param($_);
+}
+
+$search_hash{'pkgpart'} = [ $cgi->param('pkgpart') ];
+
+for my $param ( qw(censustract) ) {
+  $search_hash{$param} = $cgi->param($param) || ''
+    if ( grep { /$param/ } $cgi->param );
+}
 
 my @report_option = $cgi->param('report_option')
   if $cgi->param('report_option');
