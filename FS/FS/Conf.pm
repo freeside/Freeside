@@ -76,11 +76,23 @@ sub base_dir {
   $1;
 }
 
-=item config KEY [ AGENTNUM ]
+=item conf KEY [ AGENTNUM [ NODEFAULT ] ]
+
+Returns the L<FS::conf> record for the key and agent.
+
+=cut
+
+sub conf {
+  my $self = shift;
+  $self->_config(@_);
+}
+
+=item config KEY [ AGENTNUM [ NODEFAULT ] ]
 
 Returns the configuration value or values (depending on context) for key.
 The optional agent number selects an agent specific value instead of the
-global default if one is present.
+global default if one is present.  If NODEFAULT is true only the agent
+specific value(s) is returned.
 
 =cut
 
@@ -92,14 +104,13 @@ sub _usecompat {
   $compat->$method(@_);
 }
 
-# needs a non _ name, called externally by config-view now (and elsewhere?)
 sub _config {
-  my($self,$name,$agentnum)=@_;
+  my($self,$name,$agentnum,$agentonly)=@_;
   my $hashref = { 'name' => $name };
   $hashref->{agentnum} = $agentnum;
   local $FS::Record::conf = undef;  # XXX evil hack prevents recursion
   my $cv = FS::Record::qsearchs('conf', $hashref);
-  if (!$cv && defined($agentnum) && $agentnum) {
+  if (!$agentonly && !$cv && defined($agentnum) && $agentnum) {
     $hashref->{agentnum} = '';
     $cv = FS::Record::qsearchs('conf', $hashref);
   }
@@ -110,12 +121,10 @@ sub config {
   my $self = shift;
   return $self->_usecompat('config', @_) if use_confcompat;
 
-  my($name, $agentnum)=@_;
-
-  carp "FS::Conf->config($name, $agentnum) called"
+  carp "FS::Conf->config(". join(', ', @_). ") called"
     if $DEBUG > 1;
 
-  my $cv = $self->_config($name, $agentnum) or return;
+  my $cv = $self->_config(@_) or return;
 
   if ( wantarray ) {
     my $v = $cv->value;
@@ -126,7 +135,7 @@ sub config {
   }
 }
 
-=item config_binary KEY [ AGENTNUM ]
+=item config_binary KEY [ AGENTNUM [ NODEFAULT ] ]
 
 Returns the exact scalar value for key.
 
@@ -136,12 +145,11 @@ sub config_binary {
   my $self = shift;
   return $self->_usecompat('config_binary', @_) if use_confcompat;
 
-  my($name,$agentnum)=@_;
-  my $cv = $self->_config($name, $agentnum) or return;
+  my $cv = $self->_config(@_) or return;
   decode_base64($cv->value);
 }
 
-=item exists KEY [ AGENTNUM ]
+=item exists KEY [ AGENTNUM [ NODEFAULT ] ]
 
 Returns true if the specified key exists, even if the corresponding value
 is undefined.
@@ -154,10 +162,10 @@ sub exists {
 
   my($name, $agentnum)=@_;
 
-  carp "FS::Conf->exists($name, $agentnum) called"
+  carp "FS::Conf->exists(". join(', ', @_). ") called"
     if $DEBUG > 1;
 
-  defined($self->_config($name, $agentnum));
+  defined($self->_config(@_));
 }
 
 =item config_orbase KEY SUFFIX
@@ -617,6 +625,40 @@ worry that config_items is freeside-specific and icky.
     'section'     => 'billing',
     'description' => 'Your RSA Private Key - Including this will enable the "Bill Now" feature.  However if the system is compromised, a hacker can use this key to decode the stored credit card information.  This is generally not a good idea.',
     'type'        => 'textarea',
+  },
+
+  {
+    'key'         => 'billco-url',
+    'section'     => 'billing',
+    'description' => 'The url to use for performing uploads to the invoice mailing service.',
+    'type'        => 'text',
+    'per_agent'   => 1,
+  },
+
+  {
+    'key'         => 'billco-username',
+    'section'     => 'billing',
+    'description' => 'The login name to use for uploads to the invoice mailing service.',
+    'type'        => 'text',
+    'per_agent'   => 1,
+    'agentonly'   => 1,
+  },
+
+  {
+    'key'         => 'billco-password',
+    'section'     => 'billing',
+    'description' => 'The password to use for uploads to the invoice mailing service.',
+    'type'        => 'text',
+    'per_agent'   => 1,
+    'agentonly'   => 1,
+  },
+
+  {
+    'key'         => 'billco-clicode',
+    'section'     => 'billing',
+    'description' => 'The clicode to use for uploads to the invoice mailing service.',
+    'type'        => 'text',
+    'per_agent'   => 1,
   },
 
   {

@@ -66,7 +66,7 @@ Click on a configuration value to change it.
 %     @agents = ( '' );
 %     if ( $i->per_agent ) {
 %       foreach my $agent (@all_agents) {
-%         if ( defined(_config_agentonly($conf, $i->key, $agent->agentnum)) ) {
+%         if ( defined($conf->conf( $i->key, $agent->agentnum, 1 ) ) ) {
 %           push @agents, $agent;
 %         } else {
 %           push @add_agents, $agent;
@@ -99,15 +99,14 @@ Click on a configuration value to change it.
                     )
           %>: <% $i->description %>
 %       if ( $agent && $cgi->param('showagent') ) {
-%         my $confnum =
-%           _config_agentonly($conf, $i->key, $agent->agentnum)->confnum;
+%         my $confnum = $conf->conf( $i->key, $agent->agentnum, 1 )->confnum;
           (<A HREF="javascript:areyousure('delete this agent override', 'config-delete.cgi?confnum=<% $confnum %>;redirect=config_view_showagent')">delete agent override</A>)
 %       } elsif ( $i->base_key
 %                 || ( $deleteable{$i->key} && $conf->exists($i->key) ) ) {
 %         my $confnum =
 %           $agent
-%             ? _config_agentonly($conf, $i->key, $agent->agentnum)->confnum
-%             : $conf->_config( $i->key )->confnum;
+%             ? $conf->conf( $i->key, $agent->agentnum, 1 )->confnum
+%             : $conf->conf( $i->key )->confnum;
 %         my $showagent = $cgi->param('showagent') ? '_showagent' : '';
           (<A HREF="javascript:areyousure('delete this configuration item', 'config-delete.cgi?confnum=<% $confnum %>;redirect=config_view<%$showagent%>')">delete configuration item</A>)
 %       }
@@ -286,18 +285,6 @@ Click on a configuration value to change it.
 </SCRIPT>
 
 </body></html>
-<%once>
-
-#should probably be a Conf method.  what else would need to use it?
-sub _config_agentonly {
-  my($self,$name,$agentnum)=@_;
-  my $hashref = { 'name' => $name };
-  $hashref->{agentnum} = $agentnum;
-  local $FS::Record::conf = undef;  # XXX evil hack prevents recursion
-  FS::Record::qsearchs('conf', $hashref);
-}
-
-</%once>
 <%init>
 
 die "access denied"
@@ -320,6 +307,7 @@ if ($cgi->param('agentnum') =~ /^(\d+)$/) {
 my $conf = new FS::Conf;
  
 my @config_items = grep { $page_agent ? $_->per_agent : 1 }
+                   grep { $page_agent ? 1 : !$_->agentonly }
                         $conf->config_items; 
 
 my @deleteable = qw( invoice_latexreturnaddress invoice_htmlreturnaddress );

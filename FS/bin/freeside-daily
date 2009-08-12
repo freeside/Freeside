@@ -15,6 +15,10 @@ adminsuidsetup $user;
 use FS::Cron::bill qw(bill);
 bill(%opt);
 
+#you can skip this just by not having the config
+use FS::Cron::upload qw(upload);
+upload(%opt);
+
 # Send alerts about upcoming credit card expiration.
 use FS::Cron::alert_expiration qw(alert_expiration);
 my $conf = new FS::Conf;

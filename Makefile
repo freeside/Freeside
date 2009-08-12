@@ -200,6 +200,7 @@ perl-modules:
 	perl -p -i -e "\
 	  s/%%%SELFSERVICE_USER%%%/${SELFSERVICE_USER}/g;\
 	  s/%%%SELFSERVICE_MACHINES%%%/${SELFSERVICE_MACHINES}/g;\
+	  s|%%%FREESIDE_EXPORT%%%|${FREESIDE_EXPORT}|g;\
 	" blib/lib/FS/Cron/*.pm;\
 	perl -p -i -e "\
 	  s|%%%FREESIDE_EXPORT%%%|${FREESIDE_EXPORT}|g;\
