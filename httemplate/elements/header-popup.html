@@ -1,10 +1,3 @@
-%
-%  my($title, $menubar) = ( shift, shift ); #$menubar is unused here though
-%  my $etc = @_ ? shift : ''; #$etc is for things like onLoad= etc.
-%  my $head = @_ ? shift : ''; #$head is for things that go in the <HEAD> section
-%  my $conf = new FS::Conf;
-%
-
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <HTML>
   <HEAD>
@@ -21,4 +14,30 @@
     <FONT SIZE=6>
       <CENTER><% $title %></CENTER>
     </FONT>
+
+% unless ( $nobr ) {
     <BR><!--<BR>-->
+% }
+
+<%init>
+
+my( $title, $menubar, $etc, $head ) = ( '', '', '', '' );
+#my( $nobr, $nocss ) = ( 0, 0 );
+my $nobr = 0;
+if ( ref($_[0]) ) {
+  my $opt = shift;
+  $title   = $opt->{title};
+  $menubar = $opt->{menubar};
+  $etc     = $opt->{etc};
+  $head    = $opt->{head};
+  $nobr    = $opt->{nobr};
+#  $nocss   = $opt->{nocss};
+} else {
+  ($title, $menubar) = ( shift, shift );
+  $etc = @_ ? shift : ''; #$etc is for things like onLoad= etc.
+  $head = @_ ? shift : ''; #$head is for things that go in the <HEAD> section
+}
+
+my $conf = new FS::Conf;
+
+</%init>
