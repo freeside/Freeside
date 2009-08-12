@@ -9,6 +9,8 @@ sub eventtable_hashref {
   { 'cust_bill' => 1 };
 }
 
+sub event_stage { 'pre-bill'; }
+
 sub option_fields {
   ( 
     'percent'  => { label=>'Percent', size=>2, },

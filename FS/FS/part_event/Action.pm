@@ -54,6 +54,19 @@ sub eventtable_hashref {
     };
 }
 
+=item event_stage
+
+Action classes may define an event_stage method to indicate a preference
+for being run at a non-standard stage of the billing and collection process.
+
+This method may currently return "collect" (the default) or "pre-bill".
+
+=cut
+
+sub event_stage {
+  'collect';
+}
+
 =item option_fields
 
 Action classes may define an option_fields method to indicate that they

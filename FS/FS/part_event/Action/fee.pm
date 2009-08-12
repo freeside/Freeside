@@ -5,6 +5,8 @@ use base qw( FS::part_event::Action );
 
 sub description { 'Late fee (flat)'; }
 
+sub event_stage { 'pre-bill'; }
+
 sub option_fields {
   ( 
     'charge'   => { label=>'Amount', type=>'money', }, # size=>7, },

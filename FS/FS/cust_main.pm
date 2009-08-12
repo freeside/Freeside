@@ -2488,7 +2488,6 @@ sub bill {
 
   $options{'not_pkgpart'} ||= {};
 
-  #put below somehow?
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
   local $SIG{QUIT} = 'IGNORE';
@@ -2501,6 +2500,17 @@ sub bill {
   my $dbh = dbh;
 
   $self->select_for_update; #mutex
+
+  my $error = $self->do_cust_event(
+    'debug'      => ( $options{'debug'} || 0 ),
+    'time'       => $invoice_time,
+    'check_freq' => $options{'check_freq'},
+    'stage'      => 'pre-bill',
+  );
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
 
   my @cust_bill_pkg = ();
 
@@ -2755,7 +2765,7 @@ sub bill {
     '_date'   => ( $invoice_time ),
     'charged' => $charged,
   } );
-  my $error = $cust_bill->insert;
+  $error = $cust_bill->insert;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return "can't create invoice for customer #". $self->custnum. ": $error";
@@ -3222,7 +3232,7 @@ sub _gather_taxes {
 
 }
 
-=item collect OPTIONS
+=item collect [ HASHREF | OPTION => VALUE ... ]
 
 (Attempt to) collect money for this customer's outstanding invoices (see
 L<FS::cust_bill>).  Usually used after the bill method.
@@ -3247,24 +3257,23 @@ Use this time when deciding when to print invoices and late notices on those inv
 
 Retry card/echeck/LEC transactions even when not scheduled by invoice events.
 
-=item quiet
-
-set true to surpress email card/ACH decline notices.
-
 =item check_freq
 
 "1d" for the traditional, daily events (the default), or "1m" for the new monthly events (part_event.check_freq)
 
-=item payby
+=item quiet
 
-allows for one time override of normal customer billing method
+set true to surpress email card/ACH decline notices.
 
 =item debug
 
 Debugging level.  Default is 0 (no debugging), or can be set to 1 (passed-in options), 2 (traces progress), 3 (more information), or 4 (include full search queries)
 
-
 =back
+
+# =item payby
+#
+# allows for one time override of normal customer billing method
 
 =cut
 
@@ -3303,12 +3312,107 @@ sub collect {
     }
   }
 
+  my $error = $self->do_cust_event(
+    'debug'      => ( $options{'debug'} || 0 ),
+    'time'       => $invoice_time,
+    'check_freq' => $options{'check_freq'},
+    'stage'      => 'collect',
+  );
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+
+}
+
+=item do_cust_event [ HASHREF | OPTION => VALUE ... ]
+
+Runs billing events; see L<FS::part_event> and the billing events web
+interface.
+
+If there is an error, returns the error, otherwise returns false.
+
+Options are passed as name-value pairs.
+
+Currently available options are:
+
+=over 4
+
+=item time
+
+Use this time when deciding when to print invoices and late notices on those invoices.  The default is now.  It is specified as a UNIX timestamp; see L<perlfunc/"time">).  Also see L<Time::Local> and L<Date::Parse> for conversion functions.
+
+=item check_freq
+
+"1d" for the traditional, daily events (the default), or "1m" for the new monthly events (part_event.check_freq)
+
+=item stage
+
+"collect" (the default) or "pre-bill"
+
+=item quiet
+ 
+set true to surpress email card/ACH decline notices.
+
+=item debug
+
+Debugging level.  Default is 0 (no debugging), or can be set to 1 (passed-in options), 2 (traces progress), 3 (more information), or 4 (include full search queries)
+
+=cut
+
+# =item payby
+#
+# allows for one time override of normal customer billing method
+
+# =item retry
+#
+# Retry card/echeck/LEC transactions even when not scheduled by invoice events.
+
+sub do_cust_event {
+  my( $self, %options ) = @_;
+  my $time = $options{'time'} || time;
+
+  #put below somehow?
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  $self->select_for_update; #mutex
+
+  if ( $DEBUG ) {
+    my $balance = $self->balance;
+    warn "$me do_cust_event customer ". $self->custnum. ": balance $balance\n"
+  }
+
+#  if ( exists($options{'retry_card'}) ) {
+#    carp 'retry_card option passed to collect is deprecated; use retry';
+#    $options{'retry'} ||= $options{'retry_card'};
+#  }
+#  if ( exists($options{'retry'}) && $options{'retry'} ) {
+#    my $error = $self->retry_realtime;
+#    if ( $error ) {
+#      $dbh->rollback if $oldAutoCommit;
+#      return $error;
+#    }
+#  }
+
   # false laziness w/pay_batch::import_results
 
   my $due_cust_event = $self->due_cust_event(
     'debug'      => ( $options{'debug'} || 0 ),
-    'time'       => $invoice_time,
+    'time'       => $time,
     'check_freq' => $options{'check_freq'},
+    'stage'      => ( $options{'stage'} || 'collect' ),
   );
   unless( ref($due_cust_event) ) {
     $dbh->rollback if $oldAutoCommit;
@@ -3320,7 +3424,7 @@ sub collect {
     #XXX lock event
     
     #re-eval event conditions (a previous event could have changed things)
-    unless ( $cust_event->test_conditions( 'time' => $invoice_time ) ) {
+    unless ( $cust_event->test_conditions( 'time' => $time ) ) {
       #don't leave stray "new/locked" records around
       my $error = $cust_event->delete;
       if ( $error ) {
@@ -3372,6 +3476,10 @@ options are:
 =item check_freq
 
 Search only for events of this check frequency (how often events of this type are checked); currently "1d" (daily, the default) and "1m" (monthly) are recognized.
+
+=item stage
+
+"collect" (the default) or "pre-bill"
 
 =item time
 
@@ -3428,7 +3536,7 @@ sub due_cust_event {
     unless $opt{testonly};
 
   ###
-  # 1: find possible events (initial search)
+  # find possible events (initial search)
   ###
   
   my @cust_event = ();
@@ -3519,8 +3627,20 @@ sub due_cust_event {
        " total possible cust events found in initial search\n"
     if $DEBUG; # > 1;
 
+
   ##
-  # 2: test conditions
+  # test stage
+  ##
+
+  $opt{stage} ||= 'collect';
+  @cust_event =
+    grep { my $stage = $_->part_event->event_stage;
+           $opt{stage} eq $stage or ( ! $stage && $opt{stage} eq 'collect' )
+         }
+         @cust_event;
+
+  ##
+  # test conditions
   ##
   
   my %unsat = ();
@@ -3537,7 +3657,7 @@ sub due_cust_event {
     if $DEBUG; # > 1;
 
   ##
-  # 3: insert
+  # insert
   ##
 
   unless( $opt{testonly} ) {
@@ -3555,7 +3675,7 @@ sub due_cust_event {
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   ##
-  # 4: return
+  # return
   ##
 
   warn "  returning events: ". Dumper(@cust_event). "\n"
