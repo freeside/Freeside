@@ -8,6 +8,8 @@ QUEUED_USER=%%%QUEUED_USER%%%
 SELFSERVICE_USER=%%%SELFSERVICE_USER%%%
 SELFSERVICE_MACHINES="%%%SELFSERVICE_MACHINES%%%"
 
+IF=eth0
+
 #INSTALLSCRIPT/INSTALLSITEBIN from Makefile.PL
 PATH="$PATH:/usr/local/bin"
 export PATH
@@ -20,6 +22,8 @@ case "$1" in
         echo -n "Starting freeside-queued: "
         #perl -MDBIx::Profile /usr/local/bin/freeside-queued $QUEUED_USER
         freeside-queued $QUEUED_USER
+        #export NYTPROF="file=/usr/local/etc/freeside/nytprof.out"
+        #PERL5OPT="-d:NYTProf" freeside-queued $QUEUED_USER
         echo "done."
 
         echo -n "Starting freeside-sqlradius-radacctd: "
@@ -43,6 +47,10 @@ case "$1" in
           freeside-selfservice-server $SELFSERVICE_USER $MACHINE
           echo "done."
         done
+
+        #ip=`/sbin/ifconfig $IF | grep 'inet addr:' | cut -d: -f2- | cut -d' ' -f1`
+        #cp /opt/rt3/etc/RT_SiteConfig.pm.ORIG /opt/rt3/etc/RT_SiteConfig.pm
+        #perl -pi -e "s/localhost/$ip/" /opt/rt3/etc/RT_SiteConfig.pm
 
         ;;
   stop)
