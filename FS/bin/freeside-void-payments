@@ -15,7 +15,7 @@ use Date::Parse 'str2time';
 use Date::Format 'time2str';
 
 my %opt;
-getopts("r:f:ca:g:s:e:vn", \%opt);
+getopts("r:f:ca:g:s:e:vnX:", \%opt);
 
 $user = shift or die &usage;
 &adminsuidsetup( $user );
@@ -32,6 +32,11 @@ elsif($opt{'a'}) {
     or die "Agent not found: '".$opt{'a'}."'.";
   $gateway = $agent->payment_gateway(method => $method)
     or die "Agent has no payment gateway for method '$method'.";
+}
+
+if(defined($opt{'X'})) {
+  die "Cancellation reason not found: '".$opt{'X'}."'" 
+    if(! qsearchs('reason', { reasonnum => $opt{'X'} } ) );
 }
 
 my ($processor, $login, $password, $action, @bop_options) =
@@ -83,14 +88,20 @@ else {
 $opt{'r'} ||= 'freeside-void-payments';
 my $success = 0;
 my $notfound = 0;
+my $canceled = 0;
 print "Voiding ".scalar(@auths)." transactions:\n" if $opt{'v'};
 foreach my $authnum (@auths) {
   my $paybatch = $gatewaynum . $processor . ':' . $authnum;
   my $cust_pay = qsearchs('cust_pay', { paybatch => $paybatch } );
   my $error;
+  my $cancel_error;
   if($cust_pay) {
     $error = $cust_pay->void($opt{'r'});
     $success++ if not $error;
+    if($opt{'X'} and not $error) {
+      $cancel_error = join(';',$cust_pay->cust_main->cancel('reason' => $opt{'X'}));
+      $canceled++ if !$cancel_error;
+    }
   }
   else {
     my $cpv = qsearchs('cust_pay_void', { paybatch => $paybatch });
@@ -105,17 +116,24 @@ foreach my $authnum (@auths) {
   }
   if($opt{'v'}) {
     print $authnum;
-    print "\t($error)" if $error; 
+    if($error) {
+      print "\t($error)";
+    }
+    elsif($opt{'X'}) {
+      print "\t(canceled service)" if !$cancel_error;
+      print "\n\t(cancellation failed: $cancel_error)" if $cancel_error;
+    }
     print "\n";
   }
 }
 
 if($opt{'v'}) {
   print scalar(@auths)." transactions: $success voided, $notfound not found\n";
+  print "$canceled customer".($canceled == 1 ? '' : 's')." canceled\n" if $opt{'X'};
 }
 
 sub usage {
-    die "Usage:\n\n  freeside-void-payments [ -f file | [ -s start-date ] [ -e end-date ] ] [ -r 'reason' ] [ -g gatewaynum | -a agentnum ] [ -c ] [ -v ] [ -n ]user\n";
+    die "Usage:\n\n  freeside-void-payments [ -f file | [ -s start-date ] [ -e end-date ] ] [ -r 'reason' ] [ -g gatewaynum | -a agentnum ] [ -c ] [ -v ] [ -n ] [-X reasonnum ] user\n";
 }
 
 __END__
@@ -168,6 +186,9 @@ generally how the processor will identify them later.
       credit cards.
 
   -v: Be verbose.
+  
+  -X: Automatically cancel all packages belonging to customers whose payments 
+      were returned.  Requires a cancellation reasonnum (from L<FS::reason>).
 
 A warning will be emitted for each transaction that can't be found.  
 This may happen if it's already been voided, or if the gateway 
