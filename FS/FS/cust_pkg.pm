@@ -2476,7 +2476,7 @@ sub search_sql {
 
     @pkgpart = grep /^(\d+)$/, @pkgpart;
 
-    push @where, 'pkgpart IN ('. join(',', @pkgpart). ')';
+    push @where, 'pkgpart IN ('. join(',', @pkgpart). ')' if scalar(@pkgpart);
 
   } elsif ( $params->{'pkgpart'} =~ /^(\d+)$/ ) {
     push @where, "pkgpart = $1";
