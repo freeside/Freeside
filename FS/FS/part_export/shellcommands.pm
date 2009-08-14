@@ -175,6 +175,8 @@ old_ for replace operations):
   <LI><code>$reasontext (when suspending)</code>
   <LI><code>$reasontypenum (when suspending)</code>
   <LI><code>$reasontypetext (when suspending)</code>
+  <LI><code>$pkgnum</code>
+  <LI><code>$custnum</code>
   <LI>All other fields in <a href="../docs/schema.html#svc_acct">svc_acct</a> are also available.
 </UL>
 END
@@ -299,6 +301,8 @@ sub _export_command {
   $finger = shell_quote $finger;
   $crypt_password = shell_quote $crypt_password;
   $ldap_password  = shell_quote $ldap_password;
+  $pkgnum = $cust_pkg ? $cust_pkg->pkgnum : '';
+  $custnum = $cust_pkg ? $cust_pkg->custnum : '';
 
   my $command_string = eval(qq("$command"));
   my @ssh_cmd_args = (
@@ -330,6 +334,8 @@ sub _export_replace {
     ${"old_$_"} = $old->getfield($_) foreach $old->fields;
     ${"new_$_"} = $new->getfield($_) foreach $new->fields;
   }
+  my $old_cust_pkg = $old->cust_svc->cust_pkg;
+  my $new_cust_pkg = $new->cust_svc->cust_pkg;
   $new_finger =~ /^(.*)\s+(\S+)$/ or $new_finger =~ /^((.*))$/;
   ($new_first, $new_last ) = ( $1, $2 );
   $quoted_new__password = shell_quote $new__password; #old, wrong?
@@ -377,6 +383,10 @@ sub _export_replace {
   $new_finger = shell_quote $new_finger;
   $new_crypt_password = shell_quote $new_crypt_password;
   $new_ldap_password  = shell_quote $new_ldap_password;
+  $old_pkgnum = $old_cust_pkg ? $old_cust_pkg->pkgnum : '';
+  $old_custnum = $old_cust_pkg ? $old_cust_pkg->custnum : '';
+  $new_pkgnum = $new_cust_pkg ? $new_cust_pkg->pkgnum : '';
+  $new_custnum = $new_cust_pkg ? $new_cust_pkg->custnum : '';
 
   my $command_string = eval(qq("$command"));
 
