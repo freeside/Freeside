@@ -53,7 +53,7 @@ my $custnum = $1;
 my $action = $attachnum ? 'Edit' : 'Add';
 
 die "access denied"
-  unless $curuser->access_right("$action customer note");
+  unless $curuser->access_right("$action attachment");
 
 </%init>
 
