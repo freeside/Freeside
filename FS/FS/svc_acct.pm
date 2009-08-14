@@ -429,7 +429,13 @@ sub search_sql {
       $class->search_sql_field('username', $string ).
     ' ) ';
   } else {
-    $class->search_sql_field('username', $string);
+    ' ( '.
+      $class->search_sql_field('username', $string).
+      ( $string =~ /^\d+$/
+          ? 'OR '. $class->search_sql_field('svcnum', $string)
+          : ''
+      ).
+    ' ) ';
   }
 }
 
