@@ -98,15 +98,6 @@ tie my %rights, 'Tie::IxHash',
     'Cancel customer',
     'Complimentary customer', #aka users-allow_comp 
     { rightname=>'Delete customer', desc=>"Enable customer deletions. Be very careful! Deleting a customer will remove all traces that this customer ever existed! It should probably only be used when auditing a legacy database. Normally, you cancel all of a customer's packages if they cancel service." }, #aka. deletecustomers
-    'Add customer note', #NEW
-    'Edit customer note', #NEW
-    'Download attachment', #NEW
-    'Add attachment', #NEW
-    'Edit attachment', #NEW
-    'Delete attachment', #NEW
-    'View deleted attachments', #NEW
-    'Undelete attachment', #NEW
-    'Purge attachment', #NEW
     'Bill customer now', #NEW
     'Bulk send customer notices', #NEW
   ],
@@ -206,6 +197,21 @@ tie my %rights, 'Tie::IxHash',
     { rightname=>'Unvoid', desc=>'Enable unvoiding of voided payments' }, #aka. unvoid 
     
   
+  ],
+ 
+  ###
+  # note/attachment rights...
+  ###
+  'Customer note and attachment rights' => [
+    'Add customer note', #NEW
+    'Edit customer note', #NEW
+    'Download attachment', #NEW
+    'Add attachment', #NEW
+    'Edit attachment', #NEW
+    'Delete attachment', #NEW
+    'View deleted attachments', #NEW
+    'Undelete attachment', #NEW
+    'Purge attachment', #NEW
   ],
   
   ###
