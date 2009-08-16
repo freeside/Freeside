@@ -311,26 +311,33 @@ function update_censustract(arg) {
   if (error || cf.elements['censustract'].value != newcensus) {
     // popup an entry dialog
 
+    if (error) { newcensus = error; }
+    newcensus.replace(/.*ndefined.*/, 'Not found');
+
     var choose_censustract =
       '<CENTER><BR><B>Confirm censustract</B><BR>' +
       '<A href="http://maps.ffiec.gov/FFIECMapper/TGMapSrv.aspx?' +
       'census_year=<% $conf->config('census_year') || '2008' %>' +
       '&latitude=' + cf.elements['latitude'].value +
       '&longitude=' + cf.elements['longitude'].value +
-      '" target="_blank">Map service module location</A><BR><BR>' +
+      '" target="_blank">Map service module location</A><BR>' +
+      '<A href="http://maps.ffiec.gov/FFIECMapper/TGMapSrv.aspx?' +
+      'census_year=<% $conf->config('census_year') || '2008' %>' +
+      '&zip_code=' + cf.elements['ship_zip'].value +
+      '" target="_blank">Map zip code center</A><BR><BR>' +
       '<TABLE>';
     
     choose_censustract = choose_censustract + 
-      '<TR><TH>Entered census tract</TH>' +
-        '<TH>Calculated census tract</TH></TR>' +
+      '<TR><TH style="width:50%">Entered census tract</TH>' +
+        '<TH style="width:50%">Calculated census tract</TH></TR>' +
       '<TR><TD>' + cf.elements['censustract'].value +
         '</TD><TD>' + newcensus + '</TD></TR>' +
         '<TR><TD>&nbsp;</TD><TD>&nbsp;</TD></TR>';
 
     choose_censustract = choose_censustract +
-      '<TR><TD>' +
+      '<TR><TD ALIGN="center">' +
         '<BUTTON TYPE="button" onClick="document.CustomerForm.submit();"><IMG SRC="<%$p%>images/error.png" ALT=""> Use entered census tract </BUTTON>' + 
-      '</TD><TD>' +
+      '</TD><TD ALIGN="center">' +
         '<BUTTON TYPE="button" onClick="set_censustract();"><IMG SRC="<%$p%>images/tick.png" ALT=""> Use calculated census tract </BUTTON>' + 
       '</TD></TR>' +
       '<TR><TD COLSPAN=2 ALIGN="center">' +
