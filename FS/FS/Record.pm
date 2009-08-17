@@ -1988,6 +1988,22 @@ sub ut_money {
   '';
 }
 
+=item ut_moneyn COLUMN
+
+Check/untaint monetary numbers.  May be negative.  If there
+is an error, returns the error, otherwise returns false.
+
+=cut
+
+sub ut_moneyn {
+  my($self,$field)=@_;
+  if ($self->getfield($field) eq '') {
+    $self->setfield($field, '');
+    return '';
+  }
+  $self->ut_money($field);
+}
+
 =item ut_text COLUMN
 
 Check/untaint text.  Alphanumerics, spaces, and the following punctuation

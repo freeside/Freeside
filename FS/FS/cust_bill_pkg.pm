@@ -119,6 +119,7 @@ sub insert {
         'detail'     => (ref($detail) ? $detail->[1] : $detail ),
         'amount'     => (ref($detail) ? $detail->[2] : '' ),
         'classnum'   => (ref($detail) ? $detail->[3] : '' ),
+        'phonenum'   => (ref($detail) ? $detail->[4] : '' ),
       };
       $error = $cust_bill_pkg_detail->insert;
       if ( $error ) {
@@ -371,7 +372,7 @@ sub details {
   $format_sub = $opt{format_function} if $opt{format_function};
 
   map { ( $_->format eq 'C'
-          ? &{$format_sub}( $_->detail )
+          ? &{$format_sub}( $_->detail, $_ )
           : &{$escape_function}( $_->detail )
         )
       }

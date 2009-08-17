@@ -4,6 +4,7 @@ use strict;
 use vars qw( @ISA $me $DEBUG %GetInfoType );
 use FS::Record qw( qsearch qsearchs dbdef dbh );
 use FS::cust_bill_pkg;
+use FS::Conf;
 
 @ISA = qw(FS::Record);
 $me = '[ FS::cust_bill_pkg_detail ]';
@@ -102,10 +103,26 @@ and replace methods.
 sub check {
   my $self = shift;
 
+  my $conf = new FS::Conf;
+
+  my $phonenum = $self->phonenum;
+  my $phonenum_check_method;
+  if ( $conf->exists('svc_phone-allow_alpha_phonenum') ) {
+    $phonenum =~ s/\W//g;
+    $phonenum_check_method = 'ut_alphan';
+  } else {
+    $phonenum =~ s/\D//g;
+    $phonenum_check_method = 'ut_numbern';
+  }
+  $self->phonenum($phonenum);
+
   $self->ut_numbern('detailnum')
     || $self->ut_foreign_key('billpkgnum', 'cust_bill_pkg', 'billpkgnum')
+    || $self->ut_moneyn('amount')
     || $self->ut_enum('format', [ '', 'C' ] )
     || $self->ut_text('detail')
+    || $self->ut_foreign_keyn('classnum', 'usage_class', 'classnum')
+    || $self->$phonenum_check_method('phonenum')
     || $self->SUPER::check
     ;
 

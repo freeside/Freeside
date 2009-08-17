@@ -794,8 +794,11 @@ sub generate_email {
       push @otherparts, build MIME::Entity
         'Type'        => 'text/csv',
         'Encoding'    => '7bit',
-        'Data'        => [ map { "$_\n" } $self->call_details ],
+        'Data'        => [ map { "$_\n" }
+                             $self->call_details('prepend_billed_number' => 1)
+                         ],
         'Disposition' => 'attachment',
+        'Filename'    => 'usage-'. $self->invnum. '.csv',
       ;
 
     }
@@ -3129,20 +3132,36 @@ sub _items_payments {
 
 }
 
-=item call_details
+=item call_details [ OPTION => VALUE ... ]
 
 Returns an array of CSV strings representing the call details for this invoice
+The only option available is the boolean prepend_billed_number
 
 =cut
 
 sub call_details {
-  my $self = shift;
-  map { $_->details( 'format_function' => sub{ shift },
-                     'escape_function' => sub{ return() },
-                   )
-      }
-    grep { $_->pkgnum }
-    $self->cust_bill_pkg;
+  my ($self, %opt) = @_;
+
+  my $format_function = sub { shift };
+
+  if ($opt{prepend_billed_number}) {
+    $format_function = sub {
+      my $detail = shift;
+      my $row = shift;
+
+      $row->amount ? $row->phonenum. ",". $detail : '"Billed number",'. $detail;
+      
+    };
+  }
+
+  my @details = map { $_->details( 'format_function' => $format_function,
+                                   'escape_function' => sub{ return() },
+                                 )
+                    }
+                  grep { $_->pkgnum }
+                  $self->cust_bill_pkg;
+  my $header = $details[0];
+  ( $header, grep { $_ ne $header } @details );
 }
 
 

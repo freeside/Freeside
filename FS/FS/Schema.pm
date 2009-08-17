@@ -550,6 +550,7 @@ sub tables_hashref {
         'amount',  @money_typen, '', '', 
         'format',  'char', 'NULL', 1, '', '',
         'classnum', 'int', 'NULL', '', '', '',
+        'phonenum', 'varchar', 'NULL', 15, '', '',
         'detail',  'varchar', '', 255, '', '', 
       ],
       'primary_key' => 'detailnum',

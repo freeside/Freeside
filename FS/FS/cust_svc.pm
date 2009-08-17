@@ -741,7 +741,8 @@ sub get_cdrs {
     qsearch( {
       'table'      => 'cdr',
       'hashref'    => \%hash,
-      'extra_sql'  => "$extra_sql $for_update",
+      'extra_sql'  => $extra_sql,
+      'order_by'   => "ORDER BY startdate $for_update",
     } );
 
   @cdrs;

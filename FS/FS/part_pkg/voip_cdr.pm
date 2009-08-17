@@ -558,13 +558,16 @@ sub calc_usage {
         if ( $charge > 0 ) {
           #just use FS::cust_bill_pkg_detail objects?
           my $call_details;
+          my $phonenum = $cust_svc->svc_x->phonenum;
 
           #if ( $self->option('rating_method') eq 'upstream_simple' ) {
           if ( scalar(@call_details) == 1 ) {
-            $call_details = [ 'C', $call_details[0], $charge, $classnum ];
+            $call_details =
+              [ 'C', $call_details[0], $charge, $classnum, $phonenum ];
           } else { #only used for $rating_method eq 'upstream' now
             $csv->combine(@call_details);
-            $call_details = [ 'C', $csv->string, $charge, $classnum ];
+            $call_details =
+              [ 'C', $csv->string, $charge, $classnum, $phonenum ];
           }
           warn "  adding details on charge to invoice: [ ".
               join(', ', @{$call_details} ). " ]"
