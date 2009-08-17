@@ -15,6 +15,9 @@ tie my %options, 'Tie::IxHash',
                        type =>'textarea',
                        #default=>"$_password\n$_password\n",
                      },
+  'useradd_no_queue' => { label => 'Run immediately',
+                 type  => 'checkbox',
+           },
   'userdel' => { label=>'Delete command',
                  #default=>'',
                },
@@ -22,6 +25,9 @@ tie my %options, 'Tie::IxHash',
                        type =>'textarea',
                        #default=>'',
                      },
+  'userdel_no_queue' => { label => 'Run immediately',
+                 type  => 'checkbox',
+           },
   'usermod' => { label=>'Modify command',
                  default=>'',
                },
@@ -29,6 +35,9 @@ tie my %options, 'Tie::IxHash',
                        type =>'textarea',
                        #default=>"$_password\n$_password\n",
                      },
+  'usermod_no_queue' => { label => 'Run immediately',
+                 type  => 'checkbox',
+           },
   'usermod_pwonly' => { label=>'Disallow username, domain, uid, dir and RADIUS group changes',
                         type =>'checkbox',
                       },
@@ -41,19 +50,22 @@ tie my %options, 'Tie::IxHash',
   'suspend_stdin' => { label=>'Suspension command STDIN',
                        default=>'',
                      },
+  'suspend_no_queue' => { label => 'Run immediately',
+                 type  => 'checkbox',
+           },
   'unsuspend' => { label=>'Unsuspension command',
                    default=>'',
                  },
   'unsuspend_stdin' => { label=>'Unsuspension command STDIN',
                          default=>'',
                        },
+  'unsuspend_no_queue' => { label => 'Run immediately',
+                 type  => 'checkbox',
+           },
   'crypt' => { label   => 'Default password encryption',
                type=>'select', options=>[qw(crypt md5)],
                default => 'crypt',
              },
-  'no_queue' => { label => 'Run command immediately',
-                 type  => 'checkbox',
-           },
 ;
 
 %info = (
@@ -90,13 +102,14 @@ the same username with different domains.  You will need to
   <LI><INPUT TYPE="button" VALUE="MagicMail" onClick='
     this.form.useradd.value = "/usr/bin/mm_create_email_service -e $svcnum -d $domain -u $username -p $quoted_password -f $first -l $last -m $svcnum -g EMAIL";
     this.form.useradd_stdin.value = "";
+    this.form.useradd_no_queue.checked = 1;
     this.form.userdel.value = "/usr/bin/mm_delete_user -e ${username}\\\@${domain}";
     this.form.userdel_stdin.value = "";
+    this.form.userdel_no_queue.checked = 1;
     this.form.suspend.value = "/usr/bin/mm_suspend_user -e ${username}\\\@${domain}";
     this.form.suspend_stdin.value = "";
     this.form.unsuspend.value = "/usr/bin/mm_activate_user -e ${username}\\\@${domain}";
     this.form.unsuspend_stdin.value = "";
-    this.form.no_queue.checked = 1;
   '>
 </UL>
 

@@ -14,6 +14,9 @@ tie my %options, 'Tie::IxHash',
                  default=>'useradd -c $finger -d $dir -m -s $shell -u $uid -p $crypt_password $username'
                 #default=>'cp -pr /etc/skel $dir; chown -R $uid.$gid $dir'
                },
+  'useradd_no_queue' => { label=>'Run immediately',
+                          type => 'checkbox',
+                        },
   'useradd_stdin' => { label=>'Insert command STDIN',
                        type =>'textarea',
                        default=>'',
@@ -22,6 +25,9 @@ tie my %options, 'Tie::IxHash',
                  default=>'userdel -r $username',
                  #default=>'rm -rf $dir',
                },
+  'userdel_no_queue' => { label=>'Run immediately',
+                          type =>'checkbox',
+                        },
   'userdel_stdin' => { label=>'Delete command STDIN',
                        type =>'textarea',
                        default=>'',
@@ -35,6 +41,9 @@ tie my %options, 'Tie::IxHash',
                  #  'rm -rf $old_dir'.
                  #')'
                },
+  'usermod_no_queue' => { label=>'Run immediately',
+                          type =>'checkbox',
+                        },
   'usermod_stdin' => { label=>'Modify command STDIN',
                        type =>'textarea',
                        default=>'',
@@ -48,12 +57,18 @@ tie my %options, 'Tie::IxHash',
   'suspend' => { label=>'Suspension command',
                  default=>'usermod -L $username',
                },
+  'suspend_no_queue' => { label=>'Run immediately',
+                          type =>'checkbox',
+                        },
   'suspend_stdin' => { label=>'Suspension command STDIN',
                        default=>'',
                      },
   'unsuspend' => { label=>'Unsuspension command',
                    default=>'usermod -U $username',
                  },
+  'unsuspend_no_queue' => { label=>'Run immediately',
+                            type =>'checkbox',
+                          },
   'unsuspend_stdin' => { label=>'Unsuspension command STDIN',
                          default=>'',
                        },
@@ -65,9 +80,9 @@ tie my %options, 'Tie::IxHash',
                              'Radius group mapping to reason (via template user)',
 			    type  => 'textarea',
 			  },
-  'no_queue' => { label => 'Run command immediately',
-                   type  => 'checkbox',
-                },
+#  'no_queue' => { label => 'Run command immediately',
+#                   type  => 'checkbox',
+#                },
 ;
 
 %info = (
@@ -312,7 +327,7 @@ sub _export_command {
     stdin_string  => $stdin_string,
   );
 
-  if($self->option('no_queue')) {
+  if($self->option($action . '_no_queue')) {
     # discard return value just like freeside-queued.
     eval { ssh_cmd(@ssh_cmd_args) };
     $error = $@;
@@ -397,7 +412,7 @@ sub _export_replace {
     stdin_string  => $stdin_string,
   );
 
-  if($self->option('no_queue')) {
+  if($self->option('usermod_no_queue')) {
     # discard return value just like freeside-queued.
     eval { ssh_cmd(@ssh_cmd_args) };
     $error = $@;
