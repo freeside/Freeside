@@ -242,7 +242,7 @@ function post_geocode() {
   var cf = document.CustomerForm;
   var state_el = cf.elements['ship_state'];
   var census_data = new Array(
-    'year',   <% $conf->config('census_year') || '2008' %>,
+    'year',   <% $conf->config('census_year') || '2009' %>,
     'address', cf.elements['ship_address1'].value,
     'city',    cf.elements['ship_city'].value,
     'state',   state_el.options[ state_el.selectedIndex ].value,
