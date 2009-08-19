@@ -105,7 +105,6 @@ the same username with different domains.  You will need to
     this.form.useradd_no_queue.checked = 1;
     this.form.userdel.value = "/usr/bin/mm_delete_user -e ${username}\\\@${domain}";
     this.form.userdel_stdin.value = "";
-    this.form.userdel_no_queue.checked = 1;
     this.form.suspend.value = "/usr/bin/mm_suspend_user -e ${username}\\\@${domain}";
     this.form.suspend_stdin.value = "";
     this.form.unsuspend.value = "/usr/bin/mm_activate_user -e ${username}\\\@${domain}";
