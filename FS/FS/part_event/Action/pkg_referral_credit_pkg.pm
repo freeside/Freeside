@@ -38,6 +38,7 @@ sub _calc_referral_credit {
 
   my $what = $self->option('what');
 
+  #false laziness w/Condition/cust_payments_pkg.pm
   if ( $what eq 'base_recur_permonth' ) { #huh.  yuck.
     if ( $part_pkg->freq !~ /^\d+$/ ) {
       die 'WARNING: Not crediting customer '. $cust_main->referral_custnum.
