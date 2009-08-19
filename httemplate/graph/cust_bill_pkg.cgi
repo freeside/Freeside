@@ -68,6 +68,9 @@ if ( $cgi->param('classnum') =~ /^(\d*)$/ ) {
 }
 #eslaf
 
+my $use_override = 0;
+$use_override = 1 if ( $cgi->param('use_override') );
+
 my $hue = 0;
 #my $hue_increment = 170;
 #my $hue_increment = 145;
@@ -104,11 +107,13 @@ foreach my $agent ( $sel_agent || qsearch('agent', { 'disabled' => '' } ) ) {
 
     my $row_classnum = ref($pkg_class) ? $pkg_class->classnum : 0;
     my $row_agentnum = $agent->agentnum;
-    push @params, [ 'classnum' => $row_classnum,
-                    'agentnum' => $row_agentnum,
+    push @params, [ 'classnum'     => $row_classnum,
+                    'agentnum'     => $row_agentnum,
+                    'use_override' => $use_override,
                   ];
 
-    push @links, "$link;agentnum=$row_agentnum;classnum=$row_classnum;";
+    push @links, "$link;agentnum=$row_agentnum;classnum=$row_classnum;".
+                 "use_override=$use_override;";
 
     @recur_colors = ($col_scheme->colors)[0,4,8,1,5,9]
       unless @recur_colors;

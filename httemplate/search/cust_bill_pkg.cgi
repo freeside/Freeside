@@ -16,8 +16,8 @@
                  'fields'      => [
                    'billpkgnum',
                    sub { $_[0]->pkgnum > 0
-                           ? $_[0]->get('pkg')
-                           : $_[0]->get('itemdesc')
+                           ? $_[0]->get('pkg')      # possibly use override.pkg
+                           : $_[0]->get('itemdesc') # but i think this correct
                        },
                    #strikethrough or "N/A ($amount)" or something these when
                    # they're not applicable to pkg_tax search
@@ -87,11 +87,22 @@ if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
 # not specified: all classes
 # 0: empty class
 # N: classnum
+my $use_override = $cgi->param('use_override');
 if ( $cgi->param('classnum') =~ /^(\d+)$/ ) {
+  my $comparison = '';
   if ( $1 == 0 ) {
-    push @where, "classnum IS NULL";
+    $comparison = "IS NULL";
   } else {
-    push @where, "classnum = $1";
+    $comparison = "= $1";
+  }
+
+  if ( $use_override ) {
+    push @where, "(
+      part_pkg.classnum $comparison AND pkgpart_override IS NULL OR
+      override.classnum $comparison AND pkgpart_override IS NOT NULL
+    )";
+  } else {
+    push @where, "part_pkg.classnum $comparison";
   }
 }
 
@@ -372,7 +383,9 @@ my $join_pkg;
 if ( $cgi->param('nottax') ) {
 
   $join_pkg =  ' LEFT JOIN cust_pkg USING ( pkgnum )
-                 LEFT JOIN part_pkg USING ( pkgpart ) ';
+                 LEFT JOIN part_pkg USING ( pkgpart )
+                 LEFT JOIN part_pkg AS override
+                   ON pkgpart_override = override.pkgpart ';
   $join_pkg .= ' LEFT JOIN cust_location USING ( locationnum ) '
     if $conf->exists('tax-pkg_address');
 

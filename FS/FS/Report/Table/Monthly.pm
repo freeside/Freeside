@@ -311,11 +311,21 @@ sub cust_bill_pkg {
   my( $self, $speriod, $eperiod, $agentnum, %opt ) = @_;
 
   my $where = '';
+  my $comparison = '';
   if ( $opt{'classnum'} =~ /^(\d+)$/ ) {
     if ( $1 == 0 ) {
-      $where = "classnum IS NULL";
+      $comparison = "IS NULL";
     } else {
-      $where = "classnum = $1";
+      $comparison = "= $1";
+    }
+
+    if ( $opt{'use_override'} ) {
+      $where = "(
+        part_pkg.classnum $comparison AND pkgpart_override IS NULL OR
+        override.classnum $comparison AND pkgpart_override IS NOT NULL
+      )";
+    } else {
+      $where = "part_pkg.classnum $comparison";
     }
   }
 
@@ -328,6 +338,7 @@ sub cust_bill_pkg {
         LEFT JOIN cust_main USING ( custnum )
         LEFT JOIN cust_pkg USING ( pkgnum )
         LEFT JOIN part_pkg USING ( pkgpart )
+        LEFT JOIN part_pkg AS override ON pkgpart_override = override.pkgpart
       WHERE pkgnum != 0
         AND $where
         AND ". $self->in_time_period_and_agent($speriod, $eperiod, $agentnum)
