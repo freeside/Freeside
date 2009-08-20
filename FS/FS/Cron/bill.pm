@@ -194,7 +194,7 @@ END
     my $where = FS::part_event_condition->where_conditions_sql( $eventtable,
                                                                 'time'=>$time,
                                                               );
-    my $where = "AND $where" if $where;
+    $where = $where ? "AND $where" : '';
 
     my $are_part_event = 
       "EXISTS ( SELECT 1 FROM part_event $join

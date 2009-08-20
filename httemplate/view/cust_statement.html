@@ -4,13 +4,15 @@
 
 % if ( $FS::CurrentUser::CurrentUser->access_right('Resend invoices') ) {
 
-    <A HREF="<% $p %>misc/print-invoice.cgi?<% $link %>">Re-print this statement</A>
+%#    <A HREF="<% $p %>misc/print-invoice.cgi?<% $link %>">Re-print this statement</A>
 
 %   if ( grep { $_ ne 'POST' } $cust_statement->cust_main->invoicing_list ) { 
-        | <A HREF="<% $p %>misc/email-invoice.cgi?<% $link %>">Re-email this statement</A>
+%#        |
+        <A HREF="<% $p %>misc/email-invoice.cgi?<% $link %>">Re-email this statement</A>
 %   } 
 
-%   if ( $conf->exists('hylafax') && length($cust_statement->cust_main->fax) ) { 
+%   if ( 0 ) {
+%   #if ( $conf->exists('hylafax') && length($cust_statement->cust_main->fax) ) { 
         | <A HREF="<% $p %>misc/fax-invoice.cgi?<% $link %>">Re-fax this statement</A>
 %   } 
 
@@ -19,7 +21,8 @@
 % } 
 
 
-% if ( $conf->exists('invoice_latex') ) { 
+% #if ( $conf->exists('invoice_latex') ) { 
+% if ( 0 ) { #broken???
 
   <A HREF="<% $p %>view/cust_statement-pdf.cgi?<% $link %>.pdf">View typeset statement</A>
   <BR><BR>
@@ -47,7 +50,7 @@ die "access denied"
 #untaint statement
 my($query) = $cgi->keywords;
 $query =~ /^((.+)-)?(\d+)$/;
-my $templatename = $2;
+my $templatename = $2 || 'statement'; #XXX configure... via event??  eh..
 my $statementnum = $3;
 
 my $conf = new FS::Conf;

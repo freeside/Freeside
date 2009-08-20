@@ -11,8 +11,9 @@ sub description {
 }
 
 sub eventtable_hashref {
-    { 'cust_main' => 1, };
-    { 'cust_pkg'  => 1, };
+  { 'cust_main' => 1,
+    'cust_pkg'  => 1,
+  };
 }
 
 sub default_weight {

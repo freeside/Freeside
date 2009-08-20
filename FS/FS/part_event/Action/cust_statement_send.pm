@@ -19,7 +19,7 @@ sub default_weight {
 sub do_action {
   my( $self, $cust_statement ) = @_;
 
-  $cust_statement->send;
+  $cust_statement->send( 'statement' ); #XXX configure
 
 }
 

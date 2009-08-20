@@ -197,6 +197,7 @@ Initializes the Mason environment, loads all Freeside and RT libraries, etc.
   use FS::h_svc_phone;
   #use FS::h_phone_device;
   use FS::h_svc_www;
+  use FS::cust_statement;
   # Sammath Naur
 
   if ( %%%RT_ENABLED%%% ) {

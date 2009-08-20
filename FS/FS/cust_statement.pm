@@ -180,6 +180,18 @@ sub _aggregate {
   @agg;
 }
 
+sub _total {
+  my( $self, $method ) = ( shift, shift );
+
+  my $total = 0;
+
+  foreach my $cust_bill ( $self->cust_bill ) {
+    $total += $cust_bill->$method( @_ );
+  }
+
+  $total;
+}
+
 =item cust_bill_pkg
 
 Returns the line items (see L<FS::cust_bill_pkg>) for all associated invoices.
@@ -221,20 +233,29 @@ sub cust_bill_pkg_pkgnum { shift->_aggregate('cust_bill_pkg_pkgnum', @_); }
 
 =item tax
 
-Returns the tax amount (see L<FS::cust_bill_pkg>) for this invoice.
+Returns the total tax amount for all assoicated invoices.0
 
 =cut
 
-sub tax {
-  my $self = shift;
+=item charged
 
-  my $total = 0;
+Returns the total amount charged for all associated invoices.
 
-  foreach my $cust_bill ( $self->cust_bill ) {
-    $total += $cust_bill->tax;
-  }
+=cut
 
-  $total;
+=item owed
+
+Returns the total amount owed for all associated invoices.
+
+=cut
+
+sub tax     { shift->_total('tax',     @_); }
+sub charged { shift->_total('charged', @_); }
+sub owed    { shift->_total('owed',    @_); }
+
+#don't show previous info
+sub previous {
+  ( 0 ); # 0, empty list
 }
 
 =back
