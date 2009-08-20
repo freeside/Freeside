@@ -41,6 +41,7 @@ of eventtables (values set true indicate the condition can be tested):
       'cust_bill'      => 1,
       'cust_pkg'       => 0,
       'cust_pay_batch' => 0,
+      'cust_statement' => 0,
     };
   }
 
@@ -52,6 +53,7 @@ sub eventtable_hashref {
       'cust_bill'      => 1,
       'cust_pkg'       => 1,
       'cust_pay_batch' => 1,
+      'cust_statement' => 1,
     };
 }
 
