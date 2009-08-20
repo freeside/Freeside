@@ -194,13 +194,14 @@ END
     my $where = FS::part_event_condition->where_conditions_sql( $eventtable,
                                                                 'time'=>$time,
                                                               );
+    my $where = "AND $where" if $where;
 
     my $are_part_event = 
       "EXISTS ( SELECT 1 FROM part_event $join
                   WHERE check_freq = '$check_freq'
                     AND eventtable = '$eventtable'
                     AND ( disabled = '' OR disabled IS NULL )
-                    AND $where
+                    $where
               )
       ";
 

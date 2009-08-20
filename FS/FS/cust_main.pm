@@ -7251,6 +7251,18 @@ sub open_cust_bill {
 
 }
 
+=item cust_statements
+
+Returns all the statements (see L<FS::cust_statement>) for this customer.
+
+=cut
+
+sub cust_statement {
+  my $self = shift;
+  sort { $a->_date <=> $b->_date }
+    qsearch('cust_statement', { 'custnum' => $self->custnum, } )
+}
+
 =item cust_credit
 
 Returns all the credits (see L<FS::cust_credit>) for this customer.

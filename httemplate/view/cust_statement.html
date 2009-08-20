@@ -1,0 +1,75 @@
+<% include("/elements/header.html",'Statement View', menubar(
+  "View this customer (#$display_custnum)" => "${p}view/cust_main.cgi?$custnum",
+)) %>
+
+% if ( $FS::CurrentUser::CurrentUser->access_right('Resend invoices') ) {
+
+    <A HREF="<% $p %>misc/print-invoice.cgi?<% $link %>">Re-print this statement</A>
+
+%   if ( grep { $_ ne 'POST' } $cust_statement->cust_main->invoicing_list ) { 
+        | <A HREF="<% $p %>misc/email-invoice.cgi?<% $link %>">Re-email this statement</A>
+%   } 
+
+%   if ( $conf->exists('hylafax') && length($cust_statement->cust_main->fax) ) { 
+        | <A HREF="<% $p %>misc/fax-invoice.cgi?<% $link %>">Re-fax this statement</A>
+%   } 
+
+    <BR><BR>
+
+% } 
+
+
+% if ( $conf->exists('invoice_latex') ) { 
+
+  <A HREF="<% $p %>view/cust_statement-pdf.cgi?<% $link %>.pdf">View typeset statement</A>
+  <BR><BR>
+% } 
+
+% #if ( $cust_statement->num_cust_event ) {
+% if ( 0 ) {
+<A HREF="<%$p%>search/cust_event.html?statementnum=<% $cust_statement->statementnum %>">(&nbsp;View statement events&nbsp;)</A><BR><BR>
+% } 
+
+% if ( $conf->exists('invoice_html') ) { 
+
+  <% join('', $cust_statement->print_html('', $templatename) ) %>
+% } else { 
+
+  <PRE><% join('', $cust_statement->print_text('', $templatename) ) %></PRE>
+% } 
+
+<% include('/elements/footer.html') %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('View invoices');
+
+#untaint statement
+my($query) = $cgi->keywords;
+$query =~ /^((.+)-)?(\d+)$/;
+my $templatename = $2;
+my $statementnum = $3;
+
+my $conf = new FS::Conf;
+
+my @payby =  grep /\w/, $conf->config('payby');
+#@payby = (qw( CARD DCRD CHEK DCHK LECB BILL CASH WEST COMP ))
+@payby = (qw( CARD DCRD CHEK DCHK LECB BILL CASH COMP ))
+  unless @payby;
+my %payby = map { $_=>1 } @payby;
+
+my $cust_statement = qsearchs({
+  'select'    => 'cust_statement.*',
+  'table'     => 'cust_statement',
+  'addl_from' => 'LEFT JOIN cust_main USING ( custnum )',
+  'hashref'   => { 'statementnum' => $statementnum },
+  'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+});
+die "Statement #$statementnum not found!" unless $cust_statement;
+
+my $custnum = $cust_statement->custnum;
+my $display_custnum = $cust_statement->cust_main->display_custnum;
+
+my $link = $templatename ? "$templatename-$statementnum" : $statementnum;
+
+</%init>

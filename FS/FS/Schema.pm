@@ -390,16 +390,28 @@ sub tables_hashref {
 
     'cust_bill' => {
       'columns' => [
-        'invnum',    'serial',  '', '', '', '', 
-        'custnum',   'int',  '', '', '', '', 
-        '_date',     @date_type, '', '', 
-        'charged',   @money_type, '', '', 
-        'printed',   'int',  '', '', '', '', 
-        'closed',    'char', 'NULL', 1, '', '', 
+        'invnum',    'serial',     '', '', '', '', 
+        'custnum',      'int',     '', '', '', '', 
+        '_date',        @date_type,        '', '', 
+        'charged',      @money_type,       '', '', 
+        'printed',      'int',     '', '', '', '', 
+        'closed',      'char', 'NULL',  1, '', '', 
+        'statementnum', 'int', 'NULL', '', '', '',
       ],
       'primary_key' => 'invnum',
       'unique' => [],
-      'index' => [ ['custnum'], ['_date'] ],
+      'index' => [ ['custnum'], ['_date'], ['statementnum'], ],
+    },
+
+    'cust_statement' => {
+      'columns' => [
+        'statementnum', 'serial', '', '', '', '',
+        'custnum',         'int', '', '', '', '',
+        '_date',           @date_type,    '', '',
+      ],
+      'primary_key' => 'statementnum',
+      'unique' => [],
+      'index' => [ ['custnum'], ['_date'], ],
     },
 
     'cust_bill_event' => {

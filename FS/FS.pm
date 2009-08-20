@@ -242,6 +242,8 @@ L<FS::banned_pay> - Banned payment information class
 
 L<FS::cust_bill> - Invoice class
 
+L<FS::cust_statement> - Informational statement class
+
 L<FS::cust_bill_pkg> - Invoice line item class
 
 L<FS::cust_bill_pkg_detail> - Invoice line item detail class

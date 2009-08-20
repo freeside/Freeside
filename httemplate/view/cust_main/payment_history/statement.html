@@ -1,0 +1,34 @@
+<% $link %><% $pre %>Statement #<% $statementnum %>
+%# (Balance $ <% $cust_statement->owed %>)
+<% $post %><% $link ? '</A>' : '' %><% $events %>
+<%init>
+
+my( $cust_statement, %opt ) = @_;
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+my($pre, $post) = ('', '');
+#if ( $cust_statement->owed > 0 ) {
+#  $pre = '<B><FONT SIZE="+1" COLOR="#FF0000">Open ';
+#  $post = '</FONT></B>';
+#}
+
+my $statementnum = $cust_statement->statementnum;
+
+my $link = $curuser->access_right('View invoices')
+             ? qq!<A HREF="${p}view/cust_statement.html?$statementnum">!
+             : '';
+
+my $events = '';
+
+#if ( $cust_statement->num_cust_event
+#     && (    $curuser->access_right('Billing event reports')
+#          || $curuser->access_right('View customer billing events')
+#        )
+#   ) {
+#  $events =
+#    qq!<BR><FONT SIZE="-1"><A HREF="${p}search/cust_event.html?statementnum=!.
+#    $cust_statement->statementnum. '">(&nbsp;View statement events&nbsp;)</A></FONT>';
+#}
+
+</%init>

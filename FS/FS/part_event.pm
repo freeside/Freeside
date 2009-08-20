@@ -52,7 +52,7 @@ following fields are currently supported:
 
 =item event - event name
 
-=item eventtable - table name against which this event is triggered; currently "cust_bill" (the traditional invoice events), "cust_main" (customer events) or "cust_pkg (package events)
+=item eventtable - table name against which this event is triggered; currently "cust_bill" (the traditional invoice events), "cust_main" (customer events) or "cust_pkg (package events) (or "cust_statement")
 
 =item check_freq - how often events of this type are checked; currently "1d" (daily) and "1m" (monthly) are recognized.  Note that the apprioriate freeside-daily and/or freeside-monthly cron job needs to be in place.
 
@@ -133,7 +133,7 @@ sub check {
   my $error = 
        $self->ut_numbern('eventpart')
     || $self->ut_text('event')
-    || $self->ut_enum('eventtable', [ 'cust_bill', 'cust_main', 'cust_pkg' ] )
+    || $self->ut_enum('eventtable', [ $self->eventtables ] )
     || $self->ut_enum('check_freq', [ '1d', '1m' ])
     || $self->ut_number('weight')
     || $self->ut_alpha('action')
@@ -273,6 +273,7 @@ sub eventtable_labels {
     'cust_bill'      => 'Invoice',
     'cust_main'      => 'Customer',
     'cust_pay_batch' => 'Batch payment',
+    'cust_statement' => 'Statement',  #too general a name here? "Invoice group"?
   ;
 
   \%hash
@@ -310,6 +311,7 @@ sub eventtable_pkey {
     'cust_bill'      => 'invnum',
     'cust_pkg'       => 'pkgnum',
     'cust_pay_batch' => 'paybatchnum',
+    'cust_statement' => 'statementnum',
   };
 }
 

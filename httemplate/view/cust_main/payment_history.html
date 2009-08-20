@@ -392,6 +392,15 @@ foreach my $cust_bill ($cust_main->cust_bill) {
   };
 }
 
+#statements
+foreach my $cust_statement ($cust_main->cust_statement) {
+  push @history, {
+    'date'   => $cust_statement->_date,
+    'desc'   => include('payment_history/statement.html', $cust_statement, %opt ),
+    #'charge' => $cust_bill->charged,
+  };
+}
+
 #payments (some false laziness w/credits)
 foreach my $cust_pay ($cust_main->cust_pay) {
   push @history, {
