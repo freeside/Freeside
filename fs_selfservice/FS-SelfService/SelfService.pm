@@ -1658,6 +1658,8 @@ END
 
   $text .= "}\n</SCRIPT>\n";
 
+  $param->{'acstate'} = '' unless defined($param->{'acstate'});
+
   $text .=
     qq!<TABLE CELLPADDING="0"><TR><TD><SELECT NAME="acstate"! .
     qq!SIZE=1 onChange="acstate_changed(this)"><OPTION VALUE=-1>State!;
