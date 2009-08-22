@@ -2,7 +2,6 @@
 #!/usr/bin/perl -Tw
 
 use strict;
-use Getopt::Std;
 use FS::SelfService qw(passwd);
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
