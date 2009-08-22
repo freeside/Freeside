@@ -677,7 +677,7 @@ Example:
 
 <BR>
 
-<INPUT TYPE="submit" ID="submit" VALUE="<% ( !$clone && $object->$pkey() ) ? "Apply changes" : "Add $opt{'name'}" %>">
+<INPUT TYPE="submit" ID="submit" VALUE="<% ( !$clone && $object->$pkey() ) ? "Apply changes" : "Add ". ( $opt{'name'} || $opt{'name_singular'} ) %>">
 
 </FORM>
 
@@ -797,7 +797,7 @@ if ( $cgi->param('error') ) {
 
 $opt{action} ||= $object->$pkey() ? 'Edit' : 'Add';
 
-my $title = $opt{action}. ' '. $opt{name};
+my $title = $opt{action}. ' '. ( $opt{name} || $opt{'name_singular'} );
 
 my $viewall_url = $p . ( $opt{'viewall_dir'} || 'search' ) . "/$table.html";
 $viewall_url = $opt{'viewall_url'} if $opt{'viewall_url'};  
