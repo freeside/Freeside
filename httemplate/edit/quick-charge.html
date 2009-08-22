@@ -84,6 +84,7 @@ function validate_quick_charge () {
 
 <% include('/elements/tr-select-pkg_class.html', 'curr_value' => $cgi->param('classnum') ) %>
 
+%# false laziness w/misc/order_pkg.html
 <TR>
   <TD ALIGN="right">Charge date </TD>
   <TD>
