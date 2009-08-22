@@ -1207,7 +1207,10 @@ sub replace {
   
   # Encrypt for replace
   my $saved = {};
-  if ($conf->exists('encryption') && defined(eval '@FS::'. $new->table . '::encrypted_fields')) {
+  if (    $conf->exists('encryption')
+       && defined(eval '@FS::'. $new->table . '::encrypted_fields')
+       && scalar( eval '@FS::'. $new->table . '::encrypted_fields')
+  ) {
     foreach my $field (eval '@FS::'. $new->table . '::encrypted_fields') {
       $saved->{$field} = $new->getfield($field);
       $new->setfield($field, $new->encrypt($new->getfield($field)));
