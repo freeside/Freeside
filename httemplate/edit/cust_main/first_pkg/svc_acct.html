@@ -29,14 +29,44 @@
              VALUE     = "<% $opt{'password'} %>"
              SIZE      = <% $pmax2 %>
              MAXLENGTH = <% $passwordmax %>>
-      (blank to generate)
+%     unless ( $opt{'password_verify'} ) {
+        (blank to generate)
+%     }
     </TD>
   </TR>
 
-  <TR>
-    <TD ALIGN="right">Access number</TD>
-    <TD><% FS::svc_acct_pop::popselector($opt{'popnum'}) %></TD>
-  </TR>
+% if ( $opt{'password_verify'} ) {
+    <TR>
+      <TD ALIGN="right">Re-enter Password</TD>
+      <TD>
+        <INPUT TYPE      = "text"
+               NAME      = "_password2"
+               VALUE     = "<% $opt{'password2'} %>"
+               SIZE      = <% $pmax2 %>
+               MAXLENGTH = <% $passwordmax %>>
+      </TD>
+    </TR>
+% }
+
+% if ( $conf->exists('security_phrase') ) {
+    <TR>
+      <TD ALIGN="right">Security Phrase</TD>
+      <TD><INPUT TYPE="text" NAME="sec_phrase" VALUE="<% $opt{'sec_phrase'} %>">
+      </TD>
+    </TR>
+% } else {
+    <INPUT TYPE="hidden" NAME="sec_phrase" VALUE="">
+% }
+
+% if ( $conf->exists('svc_acct-disable_access_number') ) {
+    <INPUT TYPE="hidden" NAME="popnum" VALUE="">
+% } else {
+    <TR>
+      <TD ALIGN="right">Access number</TD>
+%#           XXX should gain "area code" selection and labels on the dropdowns
+      <TD><% FS::svc_acct_pop::popselector($opt{'popnum'}) %></TD>
+    </TR>
+% }
 
 </TABLE>
 

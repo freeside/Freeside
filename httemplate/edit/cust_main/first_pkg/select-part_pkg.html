@@ -1,14 +1,16 @@
 <% include('/elements/xmlhttp.html',
-              'url'  => $p.'misc/svc_acct-domains.cgi',
+              'url'  => $url_prefix.'misc/svc_acct-domains.cgi',
               'subs' => [ $opt{'prefix'}. 'get_domains' ],
            )
 %>
 
 <% include('/elements/xmlhttp.html',
-              'url'  => $p.'misc/part_svc-columns.cgi',
+              'url'  => $url_prefix.'misc/part_svc-columns.cgi',
               'subs' => [ $opt{'prefix'}. 'get_part_svc' ],
            )
 %>
+
+<INPUT TYPE="hidden" NAME="svcdb" VALUE="">
 
 <SCRIPT TYPE="text/javascript">
 
@@ -27,9 +29,13 @@
 
   function <% $opt{'prefix'} %>pkgpart_svcpart_changed_too(what,selected) {
 
+    <% $opt{'onchange'} %>;
+
     pkgpart_svcpart = what.options[what.selectedIndex].value;
 
     var svcdb = pkgpart_svcpart2svcdb[pkgpart_svcpart];
+
+    what.form.svcdb.value = svcdb;
 
     if ( svcdb == 'svc_acct' ) {
 
@@ -124,6 +130,8 @@ foreach my $opt (qw( svc_part pkgparts saved_pkgpart saved_domsvc prefix)) {
 }
 $opt{saved_domsvc} = 0 unless $opt{saved_domsvc};
 
+my $url_prefix = $opt{'relurls'} ? '' : $p;
+
 my @part_pkg = @{$opt{'part_pkg'}};
 
 my @first_svc = ( 'svc_acct', 'svc_phone' );
@@ -140,7 +148,7 @@ foreach my $part_pkg ( @part_pkg ) {
 }
 
 my @options = ( '', map $pkgpart_svcpart{ $_->pkgpart }, @part_pkg );
-my %labels = ( '' => '(none)',
+my %labels = ( '' => ( $opt{'empty_label'} || '(none)' ),
                map { $pkgpart_svcpart{ $_->pkgpart } => $_->pkg_comment }
                    @part_pkg
              );

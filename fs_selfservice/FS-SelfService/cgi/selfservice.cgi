@@ -17,6 +17,7 @@ use FS::SelfService qw(
   unprovision_svc change_pkg domainselector
   list_svcs list_svc_usage list_cdr_usage list_support_usage
   myaccount_passwd
+  mason_comp
 );
 
 $template_dir = '.';
@@ -199,11 +200,24 @@ sub customer_order_pkg {
   my $customer_info = customer_info( 'session_id' => $session_id );
   return $customer_info if ( $customer_info->{'error'} );
 
+  my $pkgselect = mason_comp(
+    'session_id' => $session_id,
+    'comp'       => '/edit/cust_main/first_pkg/select-part_pkg.html',
+    'args'       => [ 'password_verify' => 1,
+                      'onchange'        => 'enable_order_pkg()',
+                      'relurls'         => 1,
+                      'empty_label'     => 'Select package',
+                    ],
+  );
+
+  $pkgselect = $pkgselect->{'error'} || $pkgselect->{'output'};
+
   return {
     ( map { $_ => $init_data->{$_} }
           qw( part_pkg security_phrase svc_acct_pop ),
     ),
     %$customer_info,
+    'pkg_selector' => $pkgselect,
   };
 }
 
@@ -229,23 +243,46 @@ sub process_order_pkg {
 
   my $results = '';
 
-  unless ( length($cgi->param('_password')) ) {
-    my $init_data = signup_info( 'customer_session_id' => $session_id );
-    $results = { 'error' => $init_data->{msgcat}{empty_password} };
-    $results = { 'error' => $init_data->{error} } if($init_data->{error});
+  my @params = (qw( custnum pkgpart ));
+  my $svcdb = '';
+  if ( $cgi->param('pkgpart_svcpart') =~ /^(\d+)_(\d+)$/ ) {
+    $cgi->param('pkgpart', $1);
+    $cgi->param('svcpart', $2);
+    push @params, 'svcpart';
+    $svcdb = $cgi->param('svcdb');
+    push @params, 'domsvc' if $svcdb eq 'svc_acct';
+  } else {
+    $svcdb = 'svc_acct';
   }
-  if ( $cgi->param('_password') ne $cgi->param('_password2') ) {
-    my $init_data = signup_info( 'customer_session_id' => $session_id );
-    $results = { 'error' => $init_data->{msgcat}{passwords_dont_match} };
-    $results = { 'error' => $init_data->{error} } if($init_data->{error});
-    $cgi->param('_password', '');
-    $cgi->param('_password2', '');
+
+  if ( $svcdb eq 'svc_acct' ) {
+
+    push @params, qw( username _password _password2 sec_phrase popnum );
+
+    unless ( length($cgi->param('_password')) ) {
+      my $init_data = signup_info( 'customer_session_id' => $session_id );
+      $results = { 'error' => $init_data->{msgcat}{empty_password} };
+      $results = { 'error' => $init_data->{error} } if($init_data->{error});
+    }
+    if ( $cgi->param('_password') ne $cgi->param('_password2') ) {
+      my $init_data = signup_info( 'customer_session_id' => $session_id );
+      $results = { 'error' => $init_data->{msgcat}{passwords_dont_match} };
+      $results = { 'error' => $init_data->{error} } if($init_data->{error});
+      $cgi->param('_password', '');
+      $cgi->param('_password2', '');
+    }
+
+  } elsif ( $svcdb eq 'svc_phone' ) {
+
+    push @params, qw( phonenum sip_password pin phone_name );
+
+  } else {
+    die "$svcdb not handled on process_order_pkg yet";
   }
 
   $results ||= order_pkg (
     'session_id' => $session_id,
-    map { $_ => $cgi->param($_) }
-        qw( custnum pkgpart username _password _password2 sec_phrase popnum )
+    map { $_ => $cgi->param($_) } @params
   );
 
 

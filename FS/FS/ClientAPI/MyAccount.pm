@@ -1110,7 +1110,7 @@ sub order_pkg {
     my %fields = (
       'svc_acct'     => [ qw( username domsvc _password sec_phrase popnum ) ],
       'svc_domain'   => [ qw( domain ) ],
-      'svc_phone'    => [ qw( phonenum pin sip_password ) ],
+      'svc_phone'    => [ qw( phonenum pin sip_password phone_name ) ],
       'svc_external' => [ qw( id title ) ],
     );
   

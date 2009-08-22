@@ -3079,6 +3079,13 @@ worry that config_items is freeside-specific and icky.
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'svc_acct-disable_access_number',
+    'section'     => 'UI',
+    'descritpion' => 'Disable access number selection.',
+    'type'        => 'checkbox',
+  },
+
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachine", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
