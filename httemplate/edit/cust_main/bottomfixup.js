@@ -1,5 +1,6 @@
 function bottomfixup(what) {
 
+%# ../cust_main.cgi
   var layervars = new Array(
     'payauto',
     'payinfo', 'payinfo1', 'payinfo2', 'paytype',
