@@ -451,7 +451,7 @@ sub cust_credited {
   ;
 }
 
-=item cust_bill_pay_pkgnum
+=item cust_bill_pay_pkgnum PKGNUM
 
 Returns all payment applications (see L<FS::cust_bill_pay>) for this invoice
 with matching pkgnum.
@@ -467,7 +467,7 @@ sub cust_bill_pay_pkgnum {
            );
 }
 
-=item cust_credited_pkgnum
+=item cust_credited_pkgnum PKGNUM
 
 Returns all applied credits (see L<FS::cust_credit_bill>) for this invoice
 with matching pkgnum.

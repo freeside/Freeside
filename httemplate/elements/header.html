@@ -1,4 +1,26 @@
+<%doc>
+
+Example:
+
+  include( '/elements/header.html',
+           {
+             'title'   => 'Title',
+             'menubar' => \@menubar,
+             'etc'     => '', #included in <BODY> tag, for things like onLoad=
+             'head'    => '', #included before closing </HEAD> tag
+             'nobr'    => 0,  #1 for no <BR><BR> after the title
+           }
+         );
+
+  #old-style
+  include( '/elements/header.html', 'Title', $menubar, $etc, $head);
+
+
+</%doc>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+%#<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+%# above is what RT declares, should we switch now? hopefully no glitches result
+%# or just fuck it, XHTML died anyway, HTML 5 or bust?
 <HTML>
   <HEAD>
     <TITLE>
