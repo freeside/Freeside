@@ -74,7 +74,13 @@
 
           <% pkg_status_row_colspan( $cust_pkg, 'Not&nbsp;yet&nbsp;billed&nbsp;(one-time&nbsp;charge)', '', 'colspan'=>$colspan, %opt ) %>
 
-          <% pkg_status_row_if($cust_pkg, 'Start billing', 'start_date', %opt) %>
+          <% pkg_status_row_if(
+               $cust_pkg,
+               ( $part_pkg->freq ? 'Start billing' : 'Bill on' ),
+               'start_date',
+               %opt
+             )
+          %>
 
           <TR>
             <TD COLSPAN=<%$colspan%>>
