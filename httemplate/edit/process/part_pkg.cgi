@@ -93,6 +93,7 @@ my $args_callback = sub {
           }
           ( $optionname => $value );
         }
+        grep { $_ !~ /^report_option_/ }
         @options;
 
   foreach ( split(',', $cgi->param('taxproductnums') ) ) {
@@ -102,7 +103,7 @@ my $args_callback = sub {
     $options{"usage_taxproductnum_$_"} = $value;
   }
 
-  foreach ( split(',', $cgi->param('report_option') ) ) {
+  foreach ( $cgi->param('report_option') ) {
     $error ||= "Illegal optional report class: $_" unless ( $_ =~ /^\d*$/  );
     $options{"report_option_$_"} = 1;
   }
