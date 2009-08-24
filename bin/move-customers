@@ -1,6 +1,7 @@
 #!/usr/bin/perl -w
 
 #script to move customers from one installation to another
+# source is remote, destination is local
 # script is kinda-specific to a somewhat old source installation (1.7? older?)
 # target installation has to be 1.9 (after 9/2009)
 
@@ -16,6 +17,7 @@ use FS::part_pkg;
 use FS::part_svc;
 use FS::cust_bill_ApplicationCommon;
 use FS::svc_Common;
+use FS::cust_event;
 
 my $DANGEROUS = 1;
 my $DRY = 0;
@@ -30,38 +32,89 @@ my $source_pw = '';
 #my @source_agents = ( 2, 7, 3, 4, 5, 1 );
 my @source_agents = ( 1, 2, 3, 4, 5, 7 );
 
+my $dest_agent_typenum = 1; #XXX change for production
 
-my $dest_agent_typenum = 1; #?
+my $dest_refnum = 1; #XXX change for production
 
-my $dest_refnum = 1; #XXX
+my $dest_legacy_credit_reasontype = 4; #XXX change for production
 
-my $dest_legacy_credit_reasontype = 4;
+my $dest_pkg_classnum = 1; #XXX change for production
 
-my $dest_pkg_classnum = 1;
-
+#XXX change for production
 my %domsvc_map = (
   1    => 1,
   3653 => 1,
   7634 => 1,
 );
 
+#XXX change for production
+#testing
+my %eventparts = (
+  'CARD' => [ 1, ],
+  'CHEK' => [],
+  'BILL' => [],
+  'DCHK' => [],
+  'DCRD' => [],
+  'COMP' => [],
+);
+#production
+#my %eventparts = (
+#  'CARD' => [ 1, ],
+#  'CHEK' => [ 2, ],
+#  'BILL' => [ 5, ],
+#  'DCHK' => [ 12, ],
+#  'DCRD' => [ 15, ],
+#  'COMP' => [],
+#)
+
 # XXX set passwordmin conf to 4
 # XXX set passwordmax conf to 21
 
 #--
+
+# target(local) setup
 
 my $user = shift
   or die "Usage:\n  (edit variables at top of script and then)\n".
          "  move-customers user\n";
 adminsuidsetup $user;
 
+$FS::cust_main::ignore_expired_card = 1;
+$FS::cust_main::ignore_expired_card = 1;
+$FS::part_pkg::skip_pkg_svc_hack = 1;
+$FS::part_pkg::skip_pkg_svc_hack = 1;
+$FS::cust_bill_ApplicationCommon::skip_apply_to_lineitems_hack = 1;
+$FS::cust_bill_ApplicationCommon::skip_apply_to_lineitems_hack = 1;
+$FS::svc_Common::noexport_hack = 1;
+$FS::svc_Common::noexport_hack = 1;
+
+my $void_paynum = 2147483646; #top of int range
+
+# -- 
+
+# source(remote) setup
+
 $sdbh = DBI->connect($source_datasrc, $source_user, $source_pw)
   or die $DBI::errstr;
 
 $sdbh->{ChopBlanks} = 1;
 
+# --
+
+my %map = ();
+$map{'_DOMSVC'} = \%domsvc_map;
+
 import_table('pkg_class', 'nomap' => 1);
 import_table('svc_acct_pop', 'nomap' => 1);
+
+#XXX
+#import_table('reason_type', 'nomap' => 1);
+#foreach my $src_typenum ( keys %{ $map{'reason_type'} } ) {
+#  import_table('reason', 'reason_type' => $src_typenum,
+#                         'search'      => 'reason_type',
+#                         'map'         => 'reason_type',
+#              );
+#}
 
 my $agent_sth = $sdbh->prepare(
   'SELECT * FROM agent WHERE agentnum IN ( '. join(',', @source_agents ). ')'
@@ -69,20 +122,6 @@ my $agent_sth = $sdbh->prepare(
 
 $agent_sth->execute or die $agent_sth->errstr;
 
-my %map = ();
-$map{'_DOMSVC'} = \%domsvc_map;
-
-$FS::cust_main::ignore_expired_card = 1;
-$FS::cust_main::ignore_expired_card = 1;
-
-$FS::part_pkg::skip_pkg_svc_hack = 1;
-$FS::part_pkg::skip_pkg_svc_hack = 1;
-
-$FS::cust_bill_ApplicationCommon::skip_apply_to_lineitems_hack = 1;
-$FS::cust_bill_ApplicationCommon::skip_apply_to_lineitems_hack = 1;
-
-$FS::svc_Common::noexport_hack = 1;
-$FS::svc_Common::noexport_hack = 1;
 
 while ( my $agentrow = $agent_sth->fetchrow_hashref ) {
 
@@ -114,8 +153,9 @@ while ( my $agentrow = $agent_sth->fetchrow_hashref ) {
                   cust_refund
                 )
         )
+        #pkg_class, part_pkg_pop
         #part_pkg, pkg_svc, part_svc, part_svc_column
-        #pkg_class
+        #XXX more... does it matter?
       ) {
 
         #warn $statement;
@@ -188,16 +228,26 @@ while ( my $customerrow = $customer_sth->fetchrow_hashref ) {
 
     $map{'cust_main'}->{$src_custnum} = $cust_main->custnum;
 
-    #easy direct cust_main relations:
+    #now import the relations, easy and hard:
 
-    #XXX ivan showing up as cust_pay otaker?  just deal?
+    import_table( 'cust_main_note', 'custnum' => $src_custnum );
 
-    foreach my $table ( qw(
-      cust_main_note
-      cust_pay
-    ) ) {
-      import_table( $table, 'custnum' => $src_custnum );
-    }
+    import_table( 'cust_pay', 'custnum' => $src_custnum,
+      #ivan showing up as cust_pay otaker
+      # old db doesn't have cust_pay.otaker, pull it from history
+      'preinsert_callback' => sub {
+        my($row, $cust_pay) = @_;
+
+        my $sth = $sdbh->prepare(
+          "SELECT history_user FROM h_cust_pay WHERE history_action = 'insert'
+             AND paynum = ". $row->{'paynum'}
+        ) or die $sdbh->errstr;
+        $sth->execute or die $sth->errstr;
+        my $otaker = $sth->fetchrow_arrayref->[0];
+        
+        $cust_pay->otaker($otaker);
+      },
+    );
 
     # crap, cust_credit.reason is text in old db
 #*** WARNING: error importing cust_credit src crednum 2200: failed to set reason for [ FS::cust_credit ]:  at ./move-customers line 232.
@@ -238,7 +288,13 @@ while ( my $customerrow = $customer_sth->fetchrow_hashref ) {
     # dunno what's up with this (ship_country '  ', fixed)
 #*** WARNING: error importing customer src custnum 6854: Illegal (name) (error code illegal_name) ship_last:  at ./move-customers line 129.
 
-    # XXX cust_pay_void (something w/ paynum???  huh)  or just deal?  there's only 110
+    # cust_pay_void
+    import_table( 'cust_pay_void', 'custnum' => $src_custnum,
+      'preinsert_callback' => sub {
+        my($row, $object) = @_;
+        $object->paynum( $void_paynum-- );
+      },
+    );
 
     # (not in old db: cust_attachment, cust_statement, cust_location,
     #  cust_main_exemption, cust_pay_pending )
@@ -364,6 +420,16 @@ while ( my $customerrow = $customer_sth->fetchrow_hashref ) {
         #my( $src_pkgnum, $dst_pkgnum ) = @_;
         my $src_pkgnum = shift;
 
+        #XXX grr... action makes this very hard... 
+        ## cust_pkg_reason (shit, and bring in/remap reasons)
+        #import_table( 'cust_pkg_reason',
+        #                'pkgnum'  => $src_pkgnum,
+        #                'search'  => 'pkgnum',
+        #                'map'     => 'cust_pkg',
+        #                'map2'    => 'reason',
+        #                'map2key' => 'reasonnum',
+        #            );
+
         #cust_svc
         import_table( 'cust_svc',
                         'pkgnum'  => $src_pkgnum,
@@ -423,8 +489,8 @@ while ( my $customerrow = $customer_sth->fetchrow_hashref ) {
         $object->agent_invid( $row->{'invnum'} );
       },
       'post_callback' => sub {
-        #my( $src_invnum, $dst_invnum ) = @_;
-        my $src_invnum = shift;
+        my( $src_invnum, $dst_invnum ) = @_;
+        #my $src_invnum = shift;
 
         # cust_bill_pkg ( map invnum and pkgnum... )
         import_table( 'cust_bill_pkg',
@@ -486,13 +552,28 @@ while ( my $customerrow = $customer_sth->fetchrow_hashref ) {
                                     );
                       },
                     );
+
+        #need to do something about events. mark initial stuff as done
+        foreach my $eventpart ( @{ $eventparts{$cust_main->payby} } ) {
+
+          my $cust_event = new FS::cust_event {
+            'eventpart' => $eventpart,
+            'tablenum'  => $dst_invnum,
+            '_date'     => time, # XXX something?  probably not
+            'status'    => 'done',
+          };
+
+          my $error = $cust_event->insert;
+          die "*** FATAL: error inserting cust_event for eventpart $eventpart,".
+              " tablenum (invnum) $dst_invnum: $error"
+            if $error;
+
+        }
+
       },
     );
 
     # ---
-
-    # XXX
-    # cust_pkg_reason (shit, and bring in/remap reasons)
 
     # (not in old db: cust_pkg_detail)
     # (not used in old db: cust_bill_pay_batch, cust_pkg_option)
@@ -502,10 +583,6 @@ while ( my $customerrow = $customer_sth->fetchrow_hashref ) {
     # (not in old db: cust_bill_pkg_display, cust_bill_pkg_tax_location,
     #  cust_bill_pkg_tax_rate_location, cust_tax_adjustment, cust_svc_option, )
     # (not used in old db: cust_tax_exempt_pkg)
-
-    #XXX then:
-    #need to do something about events. mark initial stuff as done or something?
-    # what else?  that's it?
 
     #do this last, so no notices go out
     import_table( 'cust_main_invoice', 'custnum' => $src_custnum );
