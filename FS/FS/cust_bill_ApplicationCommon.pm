@@ -1,7 +1,7 @@
 package FS::cust_bill_ApplicationCommon;
 
 use strict;
-use vars qw( @ISA $DEBUG $me );
+use vars qw( @ISA $DEBUG $me $skip_apply_to_lineitems_hack );
 use List::Util qw(min);
 use FS::Schema qw( dbdef );
 use FS::Record qw( qsearch qsearchs dbh );
@@ -10,6 +10,8 @@ use FS::Record qw( qsearch qsearchs dbh );
 
 $DEBUG = 0;
 $me = '[FS::cust_bill_ApplicationCommon]';
+
+$skip_apply_to_lineitems_hack = 0;
 
 =head1 NAME
 
@@ -112,6 +114,8 @@ Auto-applies this invoice application to specific line items, if possible.
 
 sub apply_to_lineitems {
   my $self = shift;
+
+  return '' if $skip_apply_to_lineitems_hack;
 
   my @apply = ();
 

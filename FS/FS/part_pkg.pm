@@ -1,7 +1,7 @@
 package FS::part_pkg;
 
 use strict;
-use vars qw( @ISA %plans $DEBUG $setup_hack );
+use vars qw( @ISA %plans $DEBUG $setup_hack $skip_pkg_svc_hack );
 use Carp qw(carp cluck confess);
 use Scalar::Util qw( blessed );
 use Time::Local qw( timelocal_nocheck );
@@ -23,6 +23,7 @@ use FS::part_pkg_link;
 @ISA = qw( FS::m2m_Common FS::option_Common );
 $DEBUG = 0;
 $setup_hack = 0;
+$skip_pkg_svc_hack = 0;
 
 =head1 NAME
 
@@ -217,26 +218,30 @@ sub insert {
     }
   }
 
-  warn "  inserting pkg_svc records" if $DEBUG;
-  my $pkg_svc = $options{'pkg_svc'} || {};
-  foreach my $part_svc ( qsearch('part_svc', {} ) ) {
-    my $quantity = $pkg_svc->{$part_svc->svcpart} || 0;
-    my $primary_svc =
-      ( $options{'primary_svc'} && $options{'primary_svc'}==$part_svc->svcpart )
-        ? 'Y'
-        : '';
+  unless ( $skip_pkg_svc_hack ) {
 
-    my $pkg_svc = new FS::pkg_svc( {
-      'pkgpart'     => $self->pkgpart,
-      'svcpart'     => $part_svc->svcpart,
-      'quantity'    => $quantity, 
-      'primary_svc' => $primary_svc,
-    } );
-    my $error = $pkg_svc->insert;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
+    warn "  inserting pkg_svc records" if $DEBUG;
+    my $pkg_svc = $options{'pkg_svc'} || {};
+    foreach my $part_svc ( qsearch('part_svc', {} ) ) {
+      my $quantity = $pkg_svc->{$part_svc->svcpart} || 0;
+      my $primary_svc =
+        ( $options{'primary_svc'} && $options{'primary_svc'}==$part_svc->svcpart )
+          ? 'Y'
+          : '';
+
+      my $pkg_svc = new FS::pkg_svc( {
+        'pkgpart'     => $self->pkgpart,
+        'svcpart'     => $part_svc->svcpart,
+        'quantity'    => $quantity, 
+        'primary_svc' => $primary_svc,
+      } );
+      my $error = $pkg_svc->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
     }
+
   }
 
   if ( $options{'cust_pkg'} ) {
