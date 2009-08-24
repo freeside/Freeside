@@ -146,6 +146,7 @@ while ( my $agentrow = $agent_sth->fetchrow_hashref ) {
     };
 
     $cust_main->ship_country('') if $cust_main->ship_country eq '  ';
+    $cust_main->tax('') if $cust_main->tax =~ /^\s+$/;
 
     my $error = $cust_main->insert;
     if ( $error ) {
@@ -188,7 +189,7 @@ while ( my $agentrow = $agent_sth->fetchrow_hashref ) {
         # cust_credit_refund (map refundnum and crednum...)
         import_table( 'cust_credit_refund',
                       'refundnum' => $src_refundnum,
-                      'search'    => 'refundum',
+                      'search'    => 'refundnum',
                       'map'       => 'cust_refund',
                       'map2'      => 'cust_credit',
                       'map2key'   => 'crednum',
@@ -197,7 +198,7 @@ while ( my $agentrow = $agent_sth->fetchrow_hashref ) {
         # cust_pay_refund (map refundnum and paynum...)
         import_table( 'cust_pay_refund',
                       'refundnum' => $src_refundnum,
-                      'search'    => 'refundum',
+                      'search'    => 'refundnum',
                       'map'       => 'cust_refund',
                       'map2'      => 'cust_pay',
                       'map2key'   => 'paynum',
