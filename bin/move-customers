@@ -17,6 +17,7 @@ use FS::part_svc;
 use FS::cust_bill_ApplicationCommon;
 
 my $DANGEROUS = 1;
+my $DRY = 1;
 
 #ssh -p 2222 -L 1080:66.209.32.4:7219 -L 5454:localhost:5432 66.209.32.4
 
@@ -45,6 +46,8 @@ adminsuidsetup $user;
 
 $sdbh = DBI->connect($source_datasrc, $source_user, $source_pw)
   or die $DBI::errstr;
+
+$sdbh->{ChopBlanks} = 1;
 
 import_table('pkg_class', 'nomap' => 1);
 
@@ -145,8 +148,8 @@ while ( my $agentrow = $agent_sth->fetchrow_hashref ) {
       'agent_custid' => $src_custnum,
     };
 
-    $cust_main->ship_country('') if $cust_main->ship_country eq '  ';
-    $cust_main->tax('') if $cust_main->tax =~ /^\s+$/;
+    #$cust_main->ship_country('') if $cust_main->ship_country eq '  ';
+    #$cust_main->tax('') if $cust_main->tax =~ /^\s+$/;
 
     my $error = $cust_main->insert;
     if ( $error ) {
@@ -248,6 +251,10 @@ while ( my $agentrow = $agent_sth->fetchrow_hashref ) {
           if $src_classnum;
 
         my $part_pkg = new FS::part_pkg $hashref;
+
+        #$part_pkg->setuptax('') if $part_pkg->setuptax =~ /^\s+$/;
+        #$part_pkg->recurtax('') if $part_pkg->recurtax =~ /^\s+$/;
+
         my $error = $part_pkg->insert( 'options' => {} );
         die "*** FATAL: error importing part_pkg src pkgpart $src_pkgpart ".
             ": $error"
@@ -432,6 +439,18 @@ while ( my $agentrow = $agent_sth->fetchrow_hashref ) {
 
   }
 
+}
+
+
+warn "import successful!\n"
+if ( $DRY ) {
+  warn "rolling back (dry run)\n";
+  dbh->rollback or die dbh->errstr;
+  warn "rolled back\n"
+} else {
+  warn "commiting\n";
+  dbh->commit or die dbh->errstr;
+  warn "committed\n";
 }
 
 sub import_table {
