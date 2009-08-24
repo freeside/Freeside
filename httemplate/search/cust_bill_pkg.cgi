@@ -8,7 +8,10 @@
                    '#',
                    'Description',
                    'Setup charge',
-                   'Recurring charge',
+                   ( $use_usage eq 'usage'
+                     ? 'Usage charge'
+                     : 'Recurring charge'
+                   ),
                    'Invoice',
                    'Date',
                    FS::UI::Web::cust_header(),
@@ -22,7 +25,17 @@
                    #strikethrough or "N/A ($amount)" or something these when
                    # they're not applicable to pkg_tax search
                    sub { sprintf($money_char.'%.2f', shift->setup ) },
-                   sub { sprintf($money_char.'%.2f', shift->recur ) },
+                   sub { my $row = shift;
+                         my $value = 0;
+                         if ( $use_usage eq 'recurring' ) {
+                           $value = $row->recur - $row->usage;
+                         } elsif ( $use_usage eq 'usage' ) {
+                           $value = $row->usage;
+                         } else {
+                           $value = $row->recur;
+                         }
+                         sprintf($money_char.'%.2f', $value );
+                       },
                    'invnum',
                    sub { time2str('%b %d %Y', shift->_date ) },
                    \&FS::UI::Web::cust_fields,
@@ -105,6 +118,8 @@ if ( $cgi->param('classnum') =~ /^(\d+)$/ ) {
     push @where, "part_pkg.classnum $comparison";
   }
 }
+
+my $use_usage = $cgi->param('use_usage');
 
 push @where, ' ( '. join(' OR ',
                       map ' taxclass = '.dbh->quote($_), $cgi->param('taxclass')
@@ -368,8 +383,15 @@ if ( $cgi->param('pkg_tax') ) {
 
 } else {
 
-  $count_query =
-    "SELECT COUNT(*), SUM(cust_bill_pkg.setup + cust_bill_pkg.recur)";
+  $count_query = "SELECT COUNT(*), ";
+
+  if ( $use_usage eq 'recurring' ) {
+    $count_query .= "SUM(setup + recur - usage)";
+  } elsif ( $use_usage eq 'usage' ) {
+    $count_query .= "SUM(usage)";
+  } else {
+    $count_query .= "SUM(cust_bill_pkg.setup + cust_bill_pkg.recur)";
+  }
 
 }
 
@@ -414,7 +436,17 @@ if ( $cgi->param('nottax') ) {
 
 }
 
-$count_query .= " FROM cust_bill_pkg $join_cust $join_pkg $where";
+if ($use_usage) {
+  $count_query .=
+    " FROM (SELECT cust_bill_pkg.setup, cust_bill_pkg.recur, 
+             ( SELECT COALESCE( SUM(amount), 0 ) FROM cust_bill_pkg_detail
+               WHERE cust_bill_pkg.billpkgnum = cust_bill_pkg_detail.billpkgnum
+             ) AS usage FROM cust_bill_pkg  $join_cust $join_pkg $where
+           ) AS countquery";
+} else {
+  $count_query .= " FROM cust_bill_pkg $join_cust $join_pkg $where";
+}
+warn "count_query is $count_query\n";
 
 my @select = (
                'cust_bill_pkg.*',

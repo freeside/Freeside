@@ -234,6 +234,7 @@ if($curuser->access_right('Financial reports')) {
   %report_financial = (
     'Sales, Credits and Receipts' => [ $fsurl.'graph/report_money_time.html', 'Sales, credits and receipts summary graph' ],
     'Sales Report' => [ $fsurl.'graph/report_cust_bill_pkg.html', 'Sales report and graph (by agent, package class and/or date range)' ],
+    'Rated Call Sales Report' => [ $fsurl.'graph/report_cust_bill_pkg_detail.html', 'Sales report and graph (by agent, package class, usage class and/or date range)' ],
     'Credit Report' => [ $fsurl.'search/report_cust_credit.html', 'Credit report (by employee and/or date range)' ],
   );
   $report_financial{'A/R Aging'} = [ $fsurl.'search/report_receivables.html', 'Accounts Receivable Aging report' ];

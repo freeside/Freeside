@@ -71,6 +71,9 @@ if ( $cgi->param('classnum') =~ /^(\d*)$/ ) {
 my $use_override = 0;
 $use_override = 1 if ( $cgi->param('use_override') );
 
+my $use_usage = 0;
+$use_usage = 1 if ( $cgi->param('use_usage') );
+
 my $hue = 0;
 #my $hue_increment = 170;
 #my $hue_increment = 145;
@@ -92,35 +95,40 @@ foreach my $agent ( $sel_agent || qsearch('agent', { 'disabled' => '' } ) ) {
   my @onetime_colors = ();
 
   ### fixup the color handling for package classes...
+  ### and usage
   my $n = 0;
 
   foreach my $pkg_class ( @pkg_class ) {
+    foreach my $component ( $use_usage ? ('recurring', 'usage') : ('') ) {
 
-    push @items, 'cust_bill_pkg';
+      push @items, 'cust_bill_pkg';
 
-    push @labels,
-      ( $sel_agent ? '' : $agent->agent.' ' ).
-      ( $classnum eq '0'
-          ? ( ref($pkg_class) ? $pkg_class->classname : $pkg_class ) 
-          : ''
-      );
+      push @labels,
+        ( $sel_agent ? '' : $agent->agent.' ' ).
+        ( $classnum eq '0'
+            ? ( ref($pkg_class) ? $pkg_class->classname : $pkg_class ) 
+            : ''
+        ).
+        " $component";
 
-    my $row_classnum = ref($pkg_class) ? $pkg_class->classnum : 0;
-    my $row_agentnum = $agent->agentnum;
-    push @params, [ 'classnum'     => $row_classnum,
-                    'agentnum'     => $row_agentnum,
-                    'use_override' => $use_override,
-                  ];
+      my $row_classnum = ref($pkg_class) ? $pkg_class->classnum : 0;
+      my $row_agentnum = $agent->agentnum;
+      push @params, [ 'classnum'     => $row_classnum,
+                      'agentnum'     => $row_agentnum,
+                      'use_override' => $use_override,
+                      'use_usage'    => $component,
+                    ];
 
-    push @links, "$link;agentnum=$row_agentnum;classnum=$row_classnum;".
-                 "use_override=$use_override;";
+      push @links, "$link;agentnum=$row_agentnum;classnum=$row_classnum;".
+                   "use_override=$use_override;use_usage=$component;";
 
-    @recur_colors = ($col_scheme->colors)[0,4,8,1,5,9]
-      unless @recur_colors;
-    @onetime_colors = ($col_scheme->colors)[2,6,10,3,7,11]
-      unless @onetime_colors;
-    push @colors, shift @recur_colors;
+      @recur_colors = ($col_scheme->colors)[0,4,8,1,5,9]
+        unless @recur_colors;
+      @onetime_colors = ($col_scheme->colors)[2,6,10,3,7,11]
+        unless @onetime_colors;
+      push @colors, shift @recur_colors;
 
+    }
   }
 
   $hue += $hue_increment;

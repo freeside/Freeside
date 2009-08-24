@@ -331,7 +331,9 @@ sub cust_bill_pkg {
 
   $agentnum ||= $opt{'agentnum'};
 
-  $self->scalar_sql("
+  my $usage = cust_bill_pkg_detail(@_);
+
+  my $total = $self->scalar_sql("
     SELECT SUM(cust_bill_pkg.setup + cust_bill_pkg.recur)
       FROM cust_bill_pkg
         LEFT JOIN cust_bill USING ( invnum )
@@ -341,6 +343,64 @@ sub cust_bill_pkg {
         LEFT JOIN part_pkg AS override ON pkgpart_override = override.pkgpart
       WHERE pkgnum != 0
         AND $where
+        AND ". $self->in_time_period_and_agent($speriod, $eperiod, $agentnum)
+  );
+  
+  if ($opt{use_usage} && $opt{use_usage} eq 'recurring') {
+    return $total-$usage;
+  } elsif ($opt{use_usage} && $opt{use_usage} eq 'usage') {
+    return $usage;
+  } else {
+    return $total;
+  }
+}
+
+sub cust_bill_pkg_detail {
+  my( $self, $speriod, $eperiod, $agentnum, %opt ) = @_;
+
+  my @where = ( "cust_bill_pkg.pkgnum != 0" );
+  my $comparison = '';
+  if ( $opt{'classnum'} =~ /^(\d+)$/ ) {
+    if ( $1 == 0 ) {
+      $comparison = "IS NULL";
+    } else {
+      $comparison = "= $1";
+    }
+
+    if ( $opt{'use_override'} ) {
+      push @where, "(
+        part_pkg.classnum $comparison AND pkgpart_override IS NULL OR
+        override.classnum $comparison AND pkgpart_override IS NOT NULL
+      )";
+    } else {
+      push @where, "part_pkg.classnum $comparison";
+    }
+  }
+
+  if ( $opt{'usageclass'} =~ /^(\d+)$/ ) {
+    if ( $1 == 0 ) {
+      $comparison = "IS NULL";
+    } else {
+      $comparison = "= $1";
+    }
+
+    push @where, "cust_bill_pkg_detail.classnum $comparison";
+  }
+
+  $agentnum ||= $opt{'agentnum'};
+
+  my $where = join( ' AND ', @where );
+
+  $self->scalar_sql("
+    SELECT SUM(amount)
+      FROM cust_bill_pkg_detail
+        LEFT JOIN cust_bill_pkg USING ( billpkgnum )
+        LEFT JOIN cust_bill ON cust_bill_pkg.invnum = cust_bill.invnum
+        LEFT JOIN cust_main USING ( custnum )
+        LEFT JOIN cust_pkg ON cust_bill_pkg.pkgnum = cust_pkg.pkgnum
+        LEFT JOIN part_pkg USING ( pkgpart )
+        LEFT JOIN part_pkg AS override ON pkgpart_override = override.pkgpart
+      WHERE $where
         AND ". $self->in_time_period_and_agent($speriod, $eperiod, $agentnum)
   );
   
