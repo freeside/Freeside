@@ -15,9 +15,10 @@ use FS::cust_main;
 use FS::part_pkg;
 use FS::part_svc;
 use FS::cust_bill_ApplicationCommon;
+use FS::svc_Common;
 
 my $DANGEROUS = 1;
-my $DRY = 1;
+my $DRY = 0;
 
 #ssh -p 2222 -L 1080:66.209.32.4:7219 -L 5454:localhost:5432 66.209.32.4
 
@@ -26,7 +27,8 @@ my $source_datasrc = 'DBI:Pg:host=localhost;port=5454;dbname=freeside';
 my $source_user = 'readonly';
 my $source_pw = '';
 
-my @source_agents = ( 2, 7, 3, 4, 5, 1 );
+#my @source_agents = ( 2, 7, 3, 4, 5, 1 );
+my @source_agents = ( 1, 2, 3, 4, 5, 7 );
 
 
 my $dest_agent_typenum = 1; #?
@@ -36,6 +38,15 @@ my $dest_refnum = 1; #XXX
 my $dest_legacy_credit_reasontype = 4;
 
 my $dest_pkg_classnum = 1;
+
+my %domsvc_map = (
+  1    => 1,
+  3653 => 1,
+  7634 => 1,
+);
+
+# XXX set passwordmin conf to 4
+# XXX set passwordmax conf to 21
 
 #--
 
@@ -50,6 +61,7 @@ $sdbh = DBI->connect($source_datasrc, $source_user, $source_pw)
 $sdbh->{ChopBlanks} = 1;
 
 import_table('pkg_class', 'nomap' => 1);
+import_table('svc_acct_pop', 'nomap' => 1);
 
 my $agent_sth = $sdbh->prepare(
   'SELECT * FROM agent WHERE agentnum IN ( '. join(',', @source_agents ). ')'
@@ -58,6 +70,7 @@ my $agent_sth = $sdbh->prepare(
 $agent_sth->execute or die $agent_sth->errstr;
 
 my %map = ();
+$map{'_DOMSVC'} = \%domsvc_map;
 
 $FS::cust_main::ignore_expired_card = 1;
 $FS::cust_main::ignore_expired_card = 1;
@@ -67,6 +80,9 @@ $FS::part_pkg::skip_pkg_svc_hack = 1;
 
 $FS::cust_bill_ApplicationCommon::skip_apply_to_lineitems_hack = 1;
 $FS::cust_bill_ApplicationCommon::skip_apply_to_lineitems_hack = 1;
+
+$FS::svc_Common::noexport_hack = 1;
+$FS::svc_Common::noexport_hack = 1;
 
 while ( my $agentrow = $agent_sth->fetchrow_hashref ) {
 
@@ -125,13 +141,22 @@ while ( my $agentrow = $agent_sth->fetchrow_hashref ) {
 
   }
 
-  my $customer_sth = $sdbh->prepare(
-    'SELECT * FROM cust_main WHERE agentnum = '. $agentrow->{'agentnum'}
-  ) or die $sdbh->errstr;
+  $map{'agent'}->{ $agentrow->{'agentnum'} } = $agent->agentnum;
 
-  $customer_sth->execute or die $customer_sth->errstr;
+}
 
-  while ( my $customerrow = $customer_sth->fetchrow_hashref ) {
+  #my $customer_sth = $sdbh->prepare(
+  #  'SELECT * FROM cust_main WHERE agentnum = '. $agentrow->{'agentnum'}
+  #) or die $sdbh->errstr;
+my $customer_sth = $sdbh->prepare(
+  'SELECT * FROM cust_main WHERE agentnum IN ( '. join(',', @source_agents ). ')
+     ORDER BY custnum'
+) or die $sdbh->errstr;
+
+$customer_sth->execute or die $customer_sth->errstr;
+
+while ( my $customerrow = $customer_sth->fetchrow_hashref ) {
+
     #use Data::Dumper;
     # warn Dumper($customerrow);
     my $src_custnum = $customerrow->{'custnum'};
@@ -144,7 +169,7 @@ while ( my $agentrow = $agent_sth->fetchrow_hashref ) {
       'custnum'      => '',
       'referral_custnum' => '', #restore afterwords?
       'refnum'       => $dest_refnum,
-      'agentnum'     => $agent->agentnum,
+      'agentnum'     => $map{'agent'}->{ $customerrow->{'agentnum'} },
       'agent_custid' => $src_custnum,
     };
 
@@ -180,7 +205,7 @@ while ( my $agentrow = $agent_sth->fetchrow_hashref ) {
       'insert_opts' => [ 'reason_type' => $dest_legacy_credit_reasontype ],
       'preinsert_callback' => sub {
         my($row, $object) = @_;
-        $object->reason('(none)') if $object->get('reason') =~ /^\s*$/;
+        $object->set('reason', '(none)') if $object->get('reason') =~ /^\s*$/;
       },
     );
 
@@ -316,6 +341,12 @@ while ( my $agentrow = $agent_sth->fetchrow_hashref ) {
                           'svcpart' => $src_svcpart,
                           'search'  => 'svcpart',
                           'map'     => 'part_svc',
+                          'preinsert_callback' => sub {
+                            my($row, $object) = @_;
+                            if ( $object->columnname eq 'domsvc' ) {
+                               $object->columnvalue( $map{'_DOMSVC'}->{ $object->columnvalue } );
+                            }
+                          },
                         );
         
             #what we came here for in the first place
@@ -328,6 +359,60 @@ while ( my $agentrow = $agent_sth->fetchrow_hashref ) {
         $object->pkgpart( $part_pkg->pkgpart );
 
       },
+
+      'post_callback' => sub {
+        #my( $src_pkgnum, $dst_pkgnum ) = @_;
+        my $src_pkgnum = shift;
+
+        #cust_svc
+        import_table( 'cust_svc',
+                        'pkgnum'  => $src_pkgnum,
+                        'search'  => 'pkgnum',
+                        'map'     => 'cust_pkg',
+                        'map2'    => 'part_svc',
+                        'map2key' => 'svcpart',
+                        'post_callback' => sub {
+                          #my( $src_svcnum, $dst_svcnum ) = @_;
+                          my $src_svcnum = shift;
+
+                          #svc_domain
+                          import_table( 'svc_domain',
+                                          'svcnum' => $src_svcnum,
+                                          'search' => 'svcnum',
+                                          'map'    => 'cust_svc',
+                                          'noblank_primary' => 1,
+                                      );
+
+                          #svc_acct
+                          import_table( 'svc_acct',
+                                          'svcnum'  => $src_svcnum,
+                                          'search'  => 'svcnum',
+                                          'map'     => 'cust_svc',
+                                          'noblank_primary' => 1,
+                                          'map2'    => 'svc_acct_pop',
+                                          'map2key' => 'popnum',
+                                          #'map3'    => 'svc_domain',
+                                          'map3'    => '_DOMSVC',
+                                          'map3key' => 'domsvc',
+                                      );
+
+                          #radius_usergroup
+                          import_table( 'radius_usergroup',
+                                          'svcnum' => $src_svcnum,
+                                          'search' => 'svcnum',
+                                          'map'    => 'cust_svc',
+                                      );
+
+                          #other svc_ tables not in old db
+
+                        },
+                    );
+
+      },
+
+
+
+
     );
     # end of cust_pkg (part_pkg, part_svc, etc.)
 
@@ -406,17 +491,9 @@ while ( my $agentrow = $agent_sth->fetchrow_hashref ) {
 
     # ---
 
-    # XXX last of the stuff to import...
-    # &
+    # XXX
     # cust_pkg_reason (shit, and bring in/remap reasons)
-    # cust_svc
-    #  then
-    #    svc_acct
-    #     radius_usergroup
-    #    svc_domain
-    #    (rest not in old db)
-    #    svc_acct_pop??? looks like it
-    #
+
     # (not in old db: cust_pkg_detail)
     # (not used in old db: cust_bill_pay_batch, cust_pkg_option)
 
@@ -437,12 +514,10 @@ while ( my $agentrow = $agent_sth->fetchrow_hashref ) {
     warn "customer ". $cust_main->custnum. " inserted\n";
     #exit;
 
-  }
-
 }
 
 
-warn "import successful!\n"
+warn "import successful!\n";
 if ( $DRY ) {
   warn "rolling back (dry run)\n";
   dbh->rollback or die dbh->errstr;
@@ -478,18 +553,26 @@ sub import_table {
   while ( my $row = $sth->fetchrow_hashref ) {
     #my $src_custnum = $customerrow->{'custnum'};
 
-    my $hashref = {
-      %{ $row },
-      $primary_key => '',
-    };
+    my $hashref = { %$row };
+    $hashref->{$primary_key} = ''
+      unless $opt{'noblank_primary'};
     $hashref->{ $search } = $map{$map}->{ $row->{$search} }
       unless $opt{'nomap'};
 
     if ( $opt{'map2'} ) {
       my $key2 = $opt{'map2key'};
       $hashref->{$key2} = $map{ $opt{'map2'} }->{ $row->{$key2} }
-        unless $opt{map2key} eq 'pkgnum' && $row->{$key2} eq '0';
+        unless $opt{map2key} eq 'pkgnum' && (    $row->{$key2} eq '0'
+                                              || $row->{$key2} eq '-1'
+                                            )
+            or ! defined($row->{$key2})
+            or $row->{$key2} eq '';
       #warn "map $opt{map2}.$opt{map2key}: ". $row->{$key2}. " to ". $map{ $opt{'map2'} }->{ $row->{$key2} };
+    }
+
+    if ( $opt{'map3'} ) {
+      my $key3 = $opt{'map3key'};
+      $hashref->{$key3} = $map{ $opt{'map3'} }->{ $row->{$key3} };
     }
 
     my $object = eval "new FS::$table \$hashref;";
