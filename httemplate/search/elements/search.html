@@ -16,7 +16,8 @@ Example:
                                 # (deprecated, will be singularlized
                                 #  simplisticly)
 
-    #literal SQL query string (deprecated?) or qsearch hashref
+    #literal SQL query string (deprecated?) or qsearch hashref or arrayref
+    #of qsearch hashrefs for a union of qsearches
     'query'       => {
                        'table'     => 'tablename',
                        #everything else is optional...
@@ -347,6 +348,15 @@ my $header = [ map { ref($_) ? $_->{'label'} : $_ } @{$opt{header}} ];
 my $rows;
 if ( ref($opt{query}) ) {
 
+  my @query;
+  if (ref($opt{query}) eq 'HASH') {
+    @query = ( $opt{query} );
+  } elsif (ref($opt{query}) eq 'ARRAY') {
+    @query = @{ $opt{query} };
+  } else {
+    die "invalid query reference";
+  }
+
   if ( $opt{disableable} && ! $cgi->param('showdisabled') ) {
     #%search = ( 'disabled' => '' );
     $opt{'query'}->{'hashref'}->{'disabled'} = '';
@@ -354,14 +364,15 @@ if ( ref($opt{query}) ) {
   }
 
   #eval "use FS::$opt{'query'};";
-  $rows = [ qsearch({
-    'select'    => $opt{'query'}->{'select'},
-    'table'     => $opt{'query'}->{'table'}, 
-    'addl_from' => (exists($opt{'query'}->{'addl_from'}) ? $opt{'query'}->{'addl_from'} : ''),
-    'hashref'   => $opt{'query'}->{'hashref'} || {}, 
-    'extra_sql' => $opt{'query'}->{'extra_sql'},
-    'order_by'  => $opt{'query'}->{'order_by'}. " $limit",
-  }) ];
+  my @param = qw( select table addl_from hashref extra_sql order_by );
+  $rows = [ qsearch( [ map { my $query = $_;
+                             ({ map { $_ => $query->{$_} } @param });
+                           }
+                       @query
+                     ],
+                     'order_by' => $opt{order_by}. " ". $limit,
+                   )
+          ]; 
 } else {
   my $sth = dbh->prepare("$opt{'query'} $limit")
     or die "Error preparing $opt{'query'}: ". dbh->errstr;

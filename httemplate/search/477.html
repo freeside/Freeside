@@ -2,25 +2,38 @@
                   'title'       => 'FCC Form 477 Results', 
                   'html_init'   => $html_init,
                   'name'        => 'regions',
-                  'query'       => $sql_query,
-                  'count_query' => $count_query,
+                  'query'       => [ @sql_query ],
+                  'count_query' =>  $count_query,
+                  'order_by'    => 'ORDER BY censustract',
                   'header'      => [
-                                     'State code',
                                      'County code',
                                      'Census tract code',
+                                     'Upload rate',
+                                     'Download rate',
+                                     'Technology code',
+                                     'Technology code other',
                                      'Quantity',
+                                     'Percentage residential',
                                    ],
                   'fields'      => [
-                    sub { my $row = shift; substr($row->censustract, 0, 2) },
                     sub { my $row = shift; substr($row->censustract, 2, 3) },
                     sub { my $row = shift; substr($row->censustract, 5) },
+                    'upload',
+                    'download',
+                    sub { 7 },
+                    sub { '' },
                     'quantity',
+                    sub { my $row = shift; sprintf "%.2f", $row->residential },
                   ],
                   'links'      => [
-                    [ $link, 'censustract' ],
-                    [ $link, 'censustract' ],
-                    [ $link, 'censustract' ],
-                    [ $link, 'censustract' ],
+                    [ $link, $link_suffix ],
+                    [ $link, $link_suffix ],
+                    [ $link, $link_suffix ],
+                    [ $link, $link_suffix ],
+                    [ $link, $link_suffix ],
+                    [ $link, $link_suffix ],
+                    [ $link, $link_suffix ],
+                    [ $link, $link_suffix ],
                   ],
               )
 %>
@@ -32,39 +45,111 @@ die "access denied"
   unless $curuser->access_right('List packages');
 
 my %search_hash = ();
+my @sql_query = ();
   
-$search_hash{'query'} = $cgi->keywords;
-  
-for ( qw(agentnum magic status classnum) ) {
+for ( qw(agentnum magic classnum) ) {
   $search_hash{$_} = $cgi->param($_) if $cgi->param($_);
 }
 
+my @column_option = $cgi->param('column_option')
+  if $cgi->param('column_option');
 
-my @report_option = $cgi->param('report_option')
-  if $cgi->param('report_option');
-$search_hash{report_option} = join(',', @report_option) if @report_option;
+my @row_option = $cgi->param('row_option')
+  if $cgi->param('row_option');
 
-my $where = join(' OR ', map { "num = $_" } grep { /^\d+$/ } @report_option );
-my @report_option_name = $where ?
-                           ( map { $_->name }
+my $where = join(' OR ', map { "num = $_" } grep { /^\d+$/ } @column_option );
+my %column_option_name = $where ?
+                           ( map { $_->name => $_->num }
                              qsearch({ 'table' => 'part_pkg_report_option',
                                        'hashref' => {},
                                        'extra_sql' => "WHERE $where",
                                     })
                            ) :
-                           ( 'all packages' );
+                           ( 'all packages' => '' );
 
-my $html_init = "For <BR>". join(' and <BR>', @report_option_name). "<BR>";
+$where = join(' OR ', map { "num = $_" } grep { /^\d+$/ } @row_option );
+my %row_option_name = $where ?
+                        ( map { $_->name => $_->num }
+                          qsearch({ 'table' => 'part_pkg_report_option',
+                                    'hashref' => {},
+                                    'extra_sql' => "WHERE $where",
+                                 })
+                        ) :
+                        ( 'all packages' => '' );
 
-my $sql_query = FS::cust_pkg->search_sql(\%search_hash);
+@row_option = map { $row_option_name{$_} } sort keys %row_option_name;
+@column_option = map { $column_option_name{$_} } sort keys %column_option_name;
 
-$sql_query->{select} = 'count(*) as quantity, censustract';
-$sql_query->{extra_sql} =~ /^(.*)(ORDER BY bill)(.*)$/s or die "couldn't parse extra_sql";
-$sql_query->{extra_sql} = "$1 GROUP BY censustract $3"; 
+#$search_hash{row_option} = join(',', @row_option) if @row_option;
+my $html_init = '<H2>Summary</H2>'. include('/elements/table.html');
+  $html_init .= '<TR><TH></TH>';
+foreach my $column ( sort keys %column_option_name ) {
+  $html_init .= "<TH>$column</TH>";
+}
+  $html_init .= "</TR>";
 
-my $count_query = delete($sql_query->{'count_query'});
-$count_query = 'SELECT count(*) FROM (SELECT count(*) FROM cust_pkg '.
-  $sql_query->{addl_from}. ' '. $sql_query->{extra_sql}. ') AS foo';
+my $rowcount = 1;
+foreach my $row ( sort keys %row_option_name ) {
 
-my $link = 'cust_pkg.cgi?'. $cgi->query_string. ';censustract=';
+  $html_init .= "<TR><TH>$row</TH>";
+
+  my $columncount = 2;
+  foreach my $column ( sort keys %column_option_name ) {
+    my @report_option = ();
+    push @report_option, $row_option_name{$row}
+      if $row_option_name{$row};
+    push @report_option, $column_option_name{$column}
+      if $column_option_name{$column};
+    my $report_option = join(',', @report_option) if @report_option;
+
+    my $sql_query = FS::cust_pkg->search_sql(
+      { %search_hash,
+        ($report_option ? ( 'report_option' => $report_option ) : () ),
+      }
+    );
+    my $extracolumns = "$rowcount AS upload, $columncount AS download";
+    my $percent = "100-100*cast(count(cust_main.company) as numeric)/cast(count(*) as numeric) AS residential";
+    $sql_query->{select} = "count(*) AS quantity, $extracolumns, censustract, $percent";
+    $sql_query->{extra_sql} =~ /^(.*)(ORDER BY pkgnum)(.*)$/s
+      or die "couldn't parse extra_sql";
+    $sql_query->{extra_sql} = "$1 GROUP BY censustract $3"; 
+
+    my $count_sql = delete($sql_query->{'count_query'});
+
+    my $count_sth = dbh->prepare($count_sql)
+      or die "Error preparing $count_sql: ". dbh->errstr;
+    $count_sth->execute
+      or die "Error executing $count_sql: ". $count_sth->errstr;
+    my $count_arrayref = $count_sth->fetchrow_arrayref;
+    my $count = $count_arrayref->[0];
+
+    $html_init .= "<TD>$count</TD>";
+    push @sql_query, $sql_query;
+    $columncount++;
+  }
+
+  $html_init .= "</TR>";
+  $rowcount++;
+}
+
+$html_init .= "</TABLE><BR><H2>Details</H2>";
+
+my $count_query = 'SELECT count(*) FROM ( ('.
+   join( ') UNION (',
+          map { my $extra = $_->{extra_sql};  my $addl = $_->{addl_from};
+                "SELECT censustract from cust_pkg $addl $extra";
+              }
+          @sql_query
+       ). ') ) AS foo';
+
+my $link = 'cust_pkg.cgi?'.
+           join(';', map{ "$_=". $search_hash{$_} } keys %search_hash). ';';
+my $link_suffix = sub { my $row = shift;
+                        my $result = 'censustract='. $row->censustract. ';';
+                        $result .= 'report_option='. @row_option[$row->upload - 1]
+                          if @row_option[$row->upload - 1];
+                        $result .= 'report_option='. @column_option[$row->download - 1]
+                          if @column_option[$row->download - 1];
+                        $result;
+                      };
 </%init>

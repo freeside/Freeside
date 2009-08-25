@@ -1,8 +1,7 @@
 <% include('/elements/header.html', 'FCC Form 477 Report' ) %>
 
 <FORM ACTION="477.html" METHOD="GET">
-<INPUT TYPE="hidden" NAME="magic" VALUE="bill">
-<INPUT TYPE="hidden" NAME="status" VALUE="active">
+<INPUT TYPE="hidden" NAME="magic" VALUE="active">
 
   <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
 
@@ -25,13 +24,24 @@
     %>
 
 %   if ( scalar( qsearch( 'part_pkg_report_option', { 'disabled' => '' } ) ) ) {
+%   # the m2 javascript magic in edit/elements/edit.html would be better here
 
     <% include( '/elements/tr-select-table.html',
-                   'label'        => 'Report classes',
+                   'label'        => 'Column report classes',
                    'table'        => 'part_pkg_report_option',
                    'name_col'     => 'name',
                    'hashref'      => { 'disabled' => '' },
-                   'element_name' => 'report_option',
+                   'element_name' => 'column_option',
+                   'multiple'     => 'multiple',
+               )
+    %>
+
+    <% include( '/elements/tr-select-table.html',
+                   'label'        => 'Row report classes',
+                   'table'        => 'part_pkg_report_option',
+                   'name_col'     => 'name',
+                   'hashref'      => { 'disabled' => '' },
+                   'element_name' => 'row_option',
                    'multiple'     => 'multiple',
                )
     %>
