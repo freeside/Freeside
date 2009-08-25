@@ -244,6 +244,9 @@ fine in the common case where there are only two parameters:
 
   my @records = qsearch( 'table', { 'field' => 'value' } );
 
+Also possible is an experimental LISTREF of PARAMS_HASHREFs for a UNION of
+the individual PARAMS_HASHREF queries
+
 ###oops, argh, FS::Record::new only lets us create database fields.
 #Normal behaviour if SELECT is not specified is `*', as in
 #C<SELECT * FROM table WHERE ...>.  However, there is an experimental new
@@ -300,104 +303,146 @@ sub _is_fs_float {
 }
 
 sub qsearch {
-  my($stable, $record, $cache );
-  my( $select, $extra_sql, $extra_param, $order_by, $addl_from );
-  my $debug = '';
-  if ( ref($_[0]) ) { #hashref for now, eventually maybe accept a list too
+  my( @stable, @record, @cache );
+  my( @select, @extra_sql, @extra_param, @order_by, @addl_from );
+  my @debug = ();
+  my %union_options = ();
+  if ( ref($_[0]) eq 'ARRAY' ) {
+    my $optlist = shift;
+    %union_options = @_;
+    foreach my $href ( @$optlist ) {
+      push @stable,      ( $href->{'table'} or die "table name is required" );
+      push @record,      ( $href->{'hashref'}     || {} );
+      push @select,      ( $href->{'select'}      || '*' );
+      push @extra_sql,   ( $href->{'extra_sql'}   || '' );
+      push @extra_param, ( $href->{'extra_param'} || [] );
+      push @order_by,    ( $href->{'order_by'}    || '' );
+      push @cache,       ( $href->{'cache_obj'}   || '' );
+      push @addl_from,   ( $href->{'addl_from'}   || '' );
+      push @debug,       ( $href->{'debug'}       || '' );
+    }
+    die "at least one hashref is required" unless scalar(@stable);
+  } elsif ( ref($_[0]) eq 'HASH' ) {
     my $opt = shift;
-    $stable      = $opt->{'table'}       or die "table name is required";
-    $record      = $opt->{'hashref'}     || {};
-    $select      = $opt->{'select'}      || '*';
-    $extra_sql   = $opt->{'extra_sql'}   || '';
-    $extra_param = $opt->{'extra_param'} || [];
-    $order_by    = $opt->{'order_by'}    || '';
-    $cache       = $opt->{'cache_obj'}   || '';
-    $addl_from   = $opt->{'addl_from'}   || '';
-    $debug       = $opt->{'debug'}       || '';
+    $stable[0]      = $opt->{'table'}       or die "table name is required";
+    $record[0]      = $opt->{'hashref'}     || {};
+    $select[0]      = $opt->{'select'}      || '*';
+    $extra_sql[0]   = $opt->{'extra_sql'}   || '';
+    $extra_param[0] = $opt->{'extra_param'} || [];
+    $order_by[0]    = $opt->{'order_by'}    || '';
+    $cache[0]       = $opt->{'cache_obj'}   || '';
+    $addl_from[0]   = $opt->{'addl_from'}   || '';
+    $debug[0]       = $opt->{'debug'}       || '';
   } else {
-    ($stable, $record, $select, $extra_sql, $cache, $addl_from ) = @_;
-    $select ||= '*';
+    ( $stable[0],
+      $record[0],
+      $select[0],
+      $extra_sql[0],
+      $cache[0],
+      $addl_from[0]
+    ) = @_;
+    $select[0] ||= '*';
   }
+  my $cache = $cache[0];
 
-  #$stable =~ /^([\w\_]+)$/ or die "Illegal table: $table";
-  #for jsearch
-  $stable =~ /^([\w\s\(\)\.\,\=]+)$/ or die "Illegal table: $stable";
-  $stable = $1;
+  my @statement = ();
+  my @value = ();
+  my @bind_type = ();
   my $dbh = dbh;
+  foreach my $stable ( @stable ) {
+    my $record      = shift @record;
+    my $select      = shift @select;
+    my $extra_sql   = shift @extra_sql;
+    my $extra_param = shift @extra_param;
+    my $order_by    = shift @order_by;
+    my $cache       = shift @cache;
+    my $addl_from   = shift @addl_from;
+    my $debug       = shift @debug;
 
-  my $table = $cache ? $cache->table : $stable;
-  my $dbdef_table = dbdef->table($table)
-    or die "No schema for table $table found - ".
-           "do you need to run freeside-upgrade?";
-  my $pkey = $dbdef_table->primary_key;
+    #$stable =~ /^([\w\_]+)$/ or die "Illegal table: $table";
+    #for jsearch
+    $stable =~ /^([\w\s\(\)\.\,\=]+)$/ or die "Illegal table: $stable";
+    $stable = $1;
 
-  my @real_fields = grep exists($record->{$_}), real_fields($table);
-  my @virtual_fields;
-  if ( eval 'scalar(@FS::'. $table. '::ISA);' ) {
-    @virtual_fields = grep exists($record->{$_}), "FS::$table"->virtual_fields;
-  } else {
-    cluck "warning: FS::$table not loaded; virtual fields not searchable"
-      unless $nowarn_classload;
-    @virtual_fields = ();
+    my $table = $cache ? $cache->table : $stable;
+    my $dbdef_table = dbdef->table($table)
+      or die "No schema for table $table found - ".
+             "do you need to run freeside-upgrade?";
+    my $pkey = $dbdef_table->primary_key;
+
+    my @real_fields = grep exists($record->{$_}), real_fields($table);
+    my @virtual_fields;
+    if ( eval 'scalar(@FS::'. $table. '::ISA);' ) {
+      @virtual_fields = grep exists($record->{$_}), "FS::$table"->virtual_fields;
+    } else {
+      cluck "warning: FS::$table not loaded; virtual fields not searchable"
+        unless $nowarn_classload;
+      @virtual_fields = ();
+    }
+
+    my $statement .= "SELECT $select FROM $stable";
+    $statement .= " $addl_from" if $addl_from;
+    if ( @real_fields or @virtual_fields ) {
+      $statement .= ' WHERE '. join(' AND ',
+        get_real_fields($table, $record, \@real_fields) ,
+        get_virtual_fields($table, $pkey, $record, \@virtual_fields),
+        );
+    }
+
+    $statement .= " $extra_sql" if defined($extra_sql);
+    $statement .= " $order_by"  if defined($order_by);
+
+    push @statement, $statement;
+
+    warn "[debug]$me $statement\n" if $DEBUG > 1 || $debug;
+ 
+
+    foreach my $field (
+      grep defined( $record->{$_} ) && $record->{$_} ne '', @real_fields
+    ) {
+
+      my $value = $record->{$field};
+      my $op = (ref($value) && $value->{op}) ? $value->{op} : '=';
+      $value = $value->{'value'} if ref($value);
+      my $type = dbdef->table($table)->column($field)->type;
+
+      my $bind_type = _bind_type($type, $value);
+
+      #if ( $DEBUG > 2 ) {
+      #  no strict 'refs';
+      #  %TYPE = map { &{"DBI::$_"}() => $_ } @{ $DBI::EXPORT_TAGS{sql_types} }
+      #    unless keys %TYPE;
+      #  warn "  bind_param $bind (for field $field), $value, TYPE $TYPE{$TYPE}\n";
+      #}
+
+      push @value, $value;
+      push @bind_type, $bind_type;
+
+    }
+
+    foreach my $param ( @$extra_param ) {
+      my $bind_type = { TYPE => SQL_VARCHAR };
+      my $value = $param;
+      if ( ref($param) ) {
+        $value = $param->[0];
+        my $type = $param->[1];
+        $bind_type = _bind_type($type, $value);
+      }
+      push @value, $value;
+      push @bind_type, $bind_type;
+    }
   }
 
-  my $statement = "SELECT $select FROM $stable";
-  $statement .= " $addl_from" if $addl_from;
-  if ( @real_fields or @virtual_fields ) {
-    $statement .= ' WHERE '. join(' AND ',
-      get_real_fields($table, $record, \@real_fields) ,
-      get_virtual_fields($table, $pkey, $record, \@virtual_fields),
-      );
-  }
+  my $statement = join( ' ) UNION ( ', @statement );
+  $statement = "( $statement )" if scalar(@statement) > 1;
+  $statement .= " $union_options{order_by}" if $union_options{order_by};
 
-  $statement .= " $extra_sql" if defined($extra_sql);
-  $statement .= " $order_by"  if defined($order_by);
-
-  warn "[debug]$me $statement\n" if $DEBUG > 1 || $debug;
   my $sth = $dbh->prepare($statement)
     or croak "$dbh->errstr doing $statement";
 
   my $bind = 1;
-
-  foreach my $field (
-    grep defined( $record->{$_} ) && $record->{$_} ne '', @real_fields
-  ) {
-
-    my $value = $record->{$field};
-    my $op = (ref($value) && $value->{op}) ? $value->{op} : '=';
-    $value = $value->{'value'} if ref($value);
-    my $type = dbdef->table($table)->column($field)->type;
-
-    my $bind_type = _bind_type($type, $value);
-
-    #if ( $DEBUG > 2 ) {
-    #  no strict 'refs';
-    #  %TYPE = map { &{"DBI::$_"}() => $_ } @{ $DBI::EXPORT_TAGS{sql_types} }
-    #    unless keys %TYPE;
-    #  warn "  bind_param $bind (for field $field), $value, TYPE $TYPE{$TYPE}\n";
-    #}
-
-    #if this needs to be re-enabled, it needs to use a custom op like
-    #"APPROX=" or something (better name?, not '=', to avoid affecting other
-    # searches
-    #if ($TYPE eq SQL_DECIMAL && $op eq 'APPROX=' ) {
-    #  # these values are arbitrary; better (faster?) ones welcome
-    #  $sth->bind_param($bind++, $value*1.00001, { TYPE => $TYPE } );
-    #  $sth->bind_param($bind++, $value*.99999, { TYPE => $TYPE } );
-    #} else {
-      $sth->bind_param($bind++, $value, $bind_type );
-    #}
-
-  }
-
-  foreach my $param ( @$extra_param ) {
-    my $bind_type = { TYPE => SQL_VARCHAR };
-    my $value = $param;
-    if ( ref($param) ) {
-      $value = $param->[0];
-      my $type = $param->[1];
-      $bind_type = _bind_type($type, $value);
-    }
+  foreach my $value ( @value ) {
+    my $bind_type = shift @bind_type;
     $sth->bind_param($bind++, $value, $bind_type );
   }
 
@@ -407,6 +452,13 @@ sub qsearch {
 
   $sth->execute or croak "Error executing \"$statement\": ". $sth->errstr;
 
+  # virtual fields and blessings are nonsense in a heterogeneous UNION, right?
+  my $table = $stable[0];
+  my $pkey = '';
+  $table = '' if grep { $_ ne $table } @stable;
+  $pkey = dbdef->table($table)->primary_key if $table;
+
+  my @virtual_fields = ();
   if ( eval 'scalar(@FS::'. $table. '::ISA);' ) {
     @virtual_fields = "FS::$table"->virtual_fields;
   } else {
