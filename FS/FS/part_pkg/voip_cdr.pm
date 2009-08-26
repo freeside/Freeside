@@ -35,6 +35,8 @@ tie my %temporalities, 'Tie::IxHash',
   'preceding' => "Preceding (past)",
 ;
 
+tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
+
 %info = (
   'name' => 'VoIP rating by plan of CDR records in an internal (or external) SQL table',
   'shortname' => 'VoIP/telco CDR rating (standard)',
@@ -83,6 +85,11 @@ tie my %temporalities, 'Tie::IxHash',
 
     'min_charge' => { 'name' => 'Charge per minute when using "single price per minute" rating method',
                     },
+
+    'sec_granularity' => { 'name' => 'Granularity when using "single price per minute" rating method',
+                           'type' => 'select',
+                           'select_options' => \%granularity,
+                         },
 
     'ignore_unrateable' => { 'name' => 'Ignore calls without a rate in the rate tables.  By default, the system will throw a fatal error upon encountering unrateable calls.',
                              'type' => 'checkbox',
@@ -199,7 +206,8 @@ tie my %temporalities, 'Tie::IxHash',
   'fieldorder' => [qw(
                        setup_fee recur_fee recur_temporality unused_credit
                        recur_method cutoff_day
-                       rating_method ratenum min_charge ignore_unrateable
+                       rating_method ratenum min_charge sec_granularity
+                       ignore_unrateable
                        default_prefix
                        disable_src
                        domestic_prefix international_prefix
@@ -464,16 +472,18 @@ sub calc_usage {
 
         # a little false laziness w/below
 
-        my $granularity = 60;
+        my $granularity = length($self->option('sec_granularity'))
+                            ? $self->option('sec_granularity')
+                            : 60;
 
                     # length($cdr->billsec) ? $cdr->billsec : $cdr->duration;
         my $seconds = $use_duration ? $cdr->duration : $cdr->billsec;
 
         $seconds += $granularity - ( $seconds % $granularity )
           if $seconds      # don't granular-ize 0 billsec calls (bills them)
-          ;#&& $granularity; # 0 is per call
-        my $minutes = sprintf("%.1f", $seconds / 60);
-        $minutes =~ s/\.0$// ;# if $granularity == 60;
+          && $granularity; # 0 is per call
+        my $minutes = $seconds / 60; # sprintf("%.1f", 
+        #$minutes =~ s/\.0$// if $granularity == 60;
 
         # XXX config?
         #$charge = sprintf('%.2f', ( $self->option('min_charge') * $minutes )
