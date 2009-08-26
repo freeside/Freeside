@@ -1,0 +1,32 @@
+<% include('/elements/header.html', 'Phone number total usage' ) %>
+
+<FORM ACTION="svc_phone.cgi" METHOD="GET">
+
+<INPUT TYPE="hidden" NAME="magic"       VALUE="all">
+<INPUT TYPE="hidden" NAME="usage_total" VALUE="1">
+
+<TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+%#  <TR>
+%#    <TH BGCOLOR="#e8e8e8" COLSPAN=2 ALIGN="left">
+%#     <FONT SIZE="+1">Search options</FONT>
+%#    </TH>
+%#  </TR>
+
+  <% include ( '/elements/tr-input-beginning_ending.html', prefix=>'usage' ) %>
+
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="Search phone numbers">
+
+</FORM>
+
+<% include('/elements/footer.html') %>
+<%init>
+
+#? 'List services' ?  something new?
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('List rating data');
+
+</%init>

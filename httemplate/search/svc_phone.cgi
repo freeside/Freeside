@@ -3,33 +3,39 @@
                  'name'              => 'phone numbers',
                  'query'             => $sql_query,
                  'count_query'       => $count_query,
-                 'redirect'          => $link,
+                 'redirect'          => $redirect,
                  'header'            => [ '#',
                                           'Service',
                                           'Country code',
                                           'Phone number',
+                                          @header,
                                           FS::UI::Web::cust_header(),
                                         ],
                  'fields'            => [ 'svcnum',
                                           'svc',
                                           'countrycode',
                                           'phonenum',
+                                          @fields,
                                           \&FS::UI::Web::cust_fields,
                                         ],
                  'links'             => [ $link,
                                           $link,
                                           $link,
                                           $link,
+                                          ( map '', @header ),
                                           ( map { $_ ne 'Cust. Status' ? $link_cust : '' }
                                                 FS::UI::Web::cust_header()
                                           ),
                                         ],
-                 'align' => 'rlrr'. FS::UI::Web::cust_aligns(),
+                 'align' => 'rlrr'.
+                            join('', map 'r', @header).
+                            FS::UI::Web::cust_aligns(),
                  'color' => [ 
                               '',
                               '',
                               '',
                               '',
+                              ( map '', @header ),
                               FS::UI::Web::cust_colors(),
                             ],
                  'style' => [ 
@@ -37,6 +43,7 @@
                               '',
                               '',
                               '',
+                              ( map '', @header ),
                               FS::UI::Web::cust_styles(),
                             ],
               )
@@ -48,9 +55,16 @@ die "access denied"
 
 my $conf = new FS::Conf;
 
-my $orderby = 'ORDER BY svcnum';
+my @select = ();
 my %svc_phone = ();
 my @extra_sql = ();
+my $orderby = 'ORDER BY svcnum';
+
+my @header = ();
+my @fields = ();
+my $link = [ "${p}view/svc_phone.cgi?", 'svcnum' ];
+my $redirect = $link;
+
 if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
 
   push @extra_sql, 'pkgnum IS NULL'
@@ -59,6 +73,50 @@ if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
   if ( $cgi->param('sortby') =~ /^(\w+)$/ ) {
     my $sortby = $1;
     $orderby = "ORDER BY $sortby";
+  }
+
+  if ( $cgi->param('usage_total') ) {
+
+    my($beginning,$ending) = FS::UI::Web::parse_beginning_ending($cgi, 'usage');
+
+    $redirect = '';
+
+    my $and_date = " AND startdate >= $beginning ".
+                   " AND startdate <= $ending ";
+
+    my $fromwhere = " FROM cdr WHERE cdr.svcnum = svc_phone.svcnum $and_date";
+
+    #more efficient to join against cdr just once... this will do for now
+    push @select, map { " ( SELECT SUM($_) $fromwhere ) AS $_ " }
+                      qw( billsec rated_price );
+
+    my $money_char = $conf->config('money_char') || '$';
+
+    push @header, 'Minutes', 'Billed';
+    push @fields, 
+      sub { sprintf('%.3f', shift->get('billsec') / 60 ); },
+      sub { $money_char. sprintf('%.2f', shift->get('rated_price') ); };
+
+    #XXX and termination... (this needs a config to turn on, not by default)
+    if ( 1 ) { # $conf->exists('cdr-termination_hack') { #}
+
+      my $f_w =
+        " FROM cdr_termination LEFT JOIN cdr USING ( acctid ) ".
+        " WHERE cdr.acctid = svc_phone.phonenum ". # XXX connectone-specific
+        $and_date;
+
+      push @select,
+        " ( SELECT SUM(billsec) $f_w ) AS term_billsec ".
+        " ( SELECT SUM(cdr_termination.rated_price) $f_w ) AS term_rated_price";
+
+      push @header, 'Term Min', 'Term Billed',
+      push @fields,
+        sub { sprintf('%.3f', shift->get('term_billsec') / 60 ); },
+        sub { $money_char. sprintf('%.2f', shift->get('rated_price') ); };
+
+    }
+                 
+
   }
 
 } elsif ( $cgi->param('svcpart') =~ /^(\d+)$/ ) {
@@ -105,8 +163,6 @@ my $sql_query = {
   'extra_sql' => "$extra_sql $orderby",
   'addl_from' => $addl_from,
 };
-
-my $link = [ "${p}view/svc_phone.cgi?", 'svcnum' ];
 
 #smaller false laziness w/svc_*.cgi here
 my $link_cust = sub {
