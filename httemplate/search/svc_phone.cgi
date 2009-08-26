@@ -109,7 +109,7 @@ if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
         " ( SELECT SUM(billsec) $f_w ) AS term_billsec ".
         " ( SELECT SUM(cdr_termination.rated_price) $f_w ) AS term_rated_price";
 
-      push @header, 'Term Min', 'Term Billed',
+      push @header, 'Term Min', 'Term Billed';
       push @fields,
         sub { sprintf('%.3f', shift->get('term_billsec') / 60 ); },
         sub { $money_char. sprintf('%.2f', shift->get('rated_price') ); };
