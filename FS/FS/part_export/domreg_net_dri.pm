@@ -355,7 +355,7 @@ sub get_dri {
 
 #  return $self->{dri} if $self->{dri}; #!!!TBD!!! connection caching.
 
-  eval "use Net::DRI;";
+  eval "use Net::DRI 0.95;";
   return $@ if $@;
 
 # $dri=Net::DRI->new(...) to create the global object. Save the result,
