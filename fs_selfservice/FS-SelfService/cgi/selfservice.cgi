@@ -165,13 +165,18 @@ sub process_change_ship {
 
 sub process_change_pay {
         my $postal = $cgi->param( 'postal_invoicing' );
+        my $payby  = $cgi->param( 'payby' );
         my @list =
           qw( payby payinfo payinfo1 payinfo2 month year payname
               address1 address2 city county state zip country auto paytype
               paystate ss stateid stateid_state invoicing_list
             );
         push @list, 'postal_invoicing' if $postal;
-        unless ( $postal || $cgi->param( 'invoicing_list' ) ) {
+        unless (    $payby ne 'BILL'
+                 || $postal
+                 || $cgi->param( 'invoicing_list' )
+               )
+        {
           $action = 'change_pay';
           return {
             %{&change_pay()},
