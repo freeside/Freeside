@@ -383,6 +383,7 @@ if ( $curuser->access_right('Configuration') ) {
   $config_billing{$config_taxes_name}  = [ $fsurl.'browse/cust_main_county.cgi', 'Change tax rates, or break down a country into states, or a state into counties and assign different tax rates to each' ];
   $config_billing{'Tax rates (vendor data tax products system)'}  = [ $fsurl.'browse/tax_rate.cgi', 'Edit tax rates for the vendor data tax products system' ]
      if $conf->exists('enable_taxproducts');
+  $config_billing{'Tax classes'} = [ $fsurl. 'browse/part_pkg_taxclass.html', 'Tax classes' ];
 
   $config_billing{'Credit reason types'}  = [ $fsurl.'browse/reason_type.html?class=R', 'Credit reason types define groups of reasons, for reporting and convenience purposes.' ];
   $config_billing{'Credit reasons'}  = [ $fsurl.'browse/reason.html?class=R', 'Credit reasons explain why a credit was issued.' ];
