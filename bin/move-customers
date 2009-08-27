@@ -18,8 +18,9 @@ use FS::part_svc;
 use FS::cust_bill_ApplicationCommon;
 use FS::svc_Common;
 use FS::cust_event;
+use FS::svc_domain;
 
-my $DANGEROUS = 1;
+my $DANGEROUS = 0;
 my $DRY = 0;
 
 #ssh -p 2222 -L 1080:66.209.32.4:7219 -L 5454:localhost:5432 66.209.32.4
@@ -32,43 +33,38 @@ my $source_pw = '';
 #my @source_agents = ( 2, 7, 3, 4, 5, 1 );
 my @source_agents = ( 1, 2, 3, 4, 5, 7 );
 
-my $dest_agent_typenum = 1; #XXX change for production
+my $dest_agent_typenum = 12;
 
-my $dest_refnum = 1; #XXX change for production
+my $dest_refnum = 60;
 
-my $dest_legacy_credit_reasontype = 4; #XXX change for production
+my $dest_legacy_credit_reasontype = 5;
 
-my $dest_pkg_classnum = 1; #XXX change for production
+my $dest_pkg_classnum = 6;
 
-#XXX change for production
 my %domsvc_map = (
-  1    => 1,
-  3653 => 1,
-  7634 => 1,
+  1    => 20450,
+  3653 => 20162,
+  7634 => 20451,
 );
 
-#XXX change for production
 #testing
-my %eventparts = (
-  'CARD' => [ 1, ],
-  'CHEK' => [],
-  'BILL' => [],
-  'DCHK' => [],
-  'DCRD' => [],
-  'COMP' => [],
-);
-#production
 #my %eventparts = (
 #  'CARD' => [ 1, ],
-#  'CHEK' => [ 2, ],
-#  'BILL' => [ 5, ],
-#  'DCHK' => [ 12, ],
-#  'DCRD' => [ 15, ],
+#  'CHEK' => [],
+#  'BILL' => [],
+#  'DCHK' => [],
+#  'DCRD' => [],
 #  'COMP' => [],
-#)
-
-# XXX set passwordmin conf to 4
-# XXX set passwordmax conf to 21
+);
+#production
+my %eventparts = (
+  'CARD' => [ 1, ],
+  'CHEK' => [ 2, ],
+  'BILL' => [ 5, ],
+  'DCHK' => [ 12, ],
+  'DCRD' => [ 15, ],
+  'COMP' => [],
+)
 
 #--
 
@@ -87,6 +83,8 @@ $FS::cust_bill_ApplicationCommon::skip_apply_to_lineitems_hack = 1;
 $FS::cust_bill_ApplicationCommon::skip_apply_to_lineitems_hack = 1;
 $FS::svc_Common::noexport_hack = 1;
 $FS::svc_Common::noexport_hack = 1;
+$FS::svc_domain::whois_hack = 1;
+$FS::svc_domain::whois_hack = 1;
 
 my $void_paynum = 2147483646; #top of int range
 
