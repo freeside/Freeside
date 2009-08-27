@@ -55,7 +55,7 @@ my %domsvc_map = (
 #  'DCHK' => [],
 #  'DCRD' => [],
 #  'COMP' => [],
-);
+#);
 #production
 my %eventparts = (
   'CARD' => [ 1, ],
@@ -64,7 +64,7 @@ my %eventparts = (
   'DCHK' => [ 12, ],
   'DCRD' => [ 15, ],
   'COMP' => [],
-)
+);
 
 #--
 
