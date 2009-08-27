@@ -19,6 +19,7 @@ use FS::cust_bill_ApplicationCommon;
 use FS::svc_Common;
 use FS::cust_event;
 use FS::svc_domain;
+use FS::cust_pkg;
 
 my $DANGEROUS = 0;
 my $DRY = 0;
@@ -85,6 +86,8 @@ $FS::svc_Common::noexport_hack = 1;
 $FS::svc_Common::noexport_hack = 1;
 $FS::svc_domain::whois_hack = 1;
 $FS::svc_domain::whois_hack = 1;
+$FS::cust_pkg::disable_agentcheck = 1;
+$FS::cust_pkg::disable_agentcheck = 1;
 
 my $void_paynum = 2147483646; #top of int range
 
@@ -127,7 +130,7 @@ while ( my $agentrow = $agent_sth->fetchrow_hashref ) {
 
   warn "importing customers for $src_agent\n";
 
-  my $agent = qsearchs('agent', { 'agent' => $src_agent } );
+  my $agent = qsearchs('agent', { 'agent' => $src_agent, 'disabled' => '' } );
 
   if ( $agent ) {
 
