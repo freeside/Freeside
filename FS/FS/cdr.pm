@@ -715,6 +715,9 @@ sub _cdr_date_parse {
     ($year, $mon, $day, $hour, $min, $sec) = ( $1, $2, $3, $4, $5, $6 );
   } elsif ( $date  =~ /^\s*(\d{1,2})\D(\d{1,2})\D(\d{4})\s+(\d{1,2})\D(\d{1,2})\D(\d{1,2})(\D|$)/ ) {
     ($mon, $day, $year, $hour, $min, $sec) = ( $1, $2, $3, $4, $5, $6 );
+  } elsif ( $date  =~ /^\s*(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d+\.\d+)(\D|$)/ ) {
+    # broadsoft: 20081223201938.314
+    ($year, $mon, $day, $hour, $min, $sec) = ( $1, $2, $3, $4, $5, $6);
   } else {
      die "unparsable date: $date"; #maybe we shouldn't die...
   }
