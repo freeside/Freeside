@@ -2,7 +2,8 @@
 
 use strict;
 use Getopt::Std;
-use Net::SFTP::Foreign;
+use Net::SFTP::Foreign::Compat;
+use Net::FTP;
 use FS::UID qw(adminsuidsetup datasrc);
 use FS::cdr;
 
@@ -10,8 +11,8 @@ use FS::cdr;
 # parse command line
 ###
 
-use vars qw( $opt_p $opt_r $opt_e $opt_d $opt_v );
-getopts('p:r:e:d:v');
+use vars qw( $opt_m $opt_p $opt_r $opt_e $opt_d $opt_v );
+getopts('m:p:r:e:d:v');
 
 $opt_e ||= 'csv';
 #$opt_e = ".$opt_e" unless $opt_e =~ /^\./;
@@ -35,28 +36,50 @@ $servername = shift or die &usage;
 # get the file list
 ###
 
-warn "Retreiving directory listing\n" if $opt_v;
+warn "Retrieving directory listing\n" if $opt_v;
 
-my $ls_sftp = sftp();
+$opt_m = 'sftp' if !defined($opt_m);
+$opt_m = lc($opt_m);
 
-$ls_sftp->setcwd($opt_r) or die "can't chdir to $opt_r\n"
-  if $opt_r;
+my $ls;
 
-my $ls = $ls_sftp->ls('.', wanted => qr/^$opt_p.*\.$opt_e$/i );
+if($opt_m eq 'ftp') {
+  my $ls_ftp = ftp();
+
+  $ls = [ grep { /^$opt_p.*\.$opt_e$/i } $ls_ftp->ls ];
+}
+elsif($opt_m eq 'sftp') {
+  my $ls_sftp = sftp();
+
+  $ls_sftp->setcwd($opt_r) or die "can't chdir to $opt_r\n"
+    if $opt_r;
+
+  $ls = $ls_sftp->ls('.', wanted => qr/^$opt_p.*\.$opt_e$/i,
+                          names_only => 1 );
+}
+else {
+  die "Method '$opt_m' not supported; must be ftp or sftp\n";
+}
 
 ###
 # import each file
 ###
 
-foreach my $file ( @$ls ) {
+foreach my $filename ( @$ls ) {
 
-  my $filename = $file->{filename};
   warn "Downloading $filename\n" if $opt_v;
 
   #get the file
-  my $get_sftp = sftp();
-  $get_sftp->get($filename, "$cachedir/$filename")
-    or die "Can't get $filename: ". $get_sftp->error;
+  if($opt_m eq 'ftp') {
+    my $ftp = ftp();
+    $ftp->get($filename, "$cachedir/$filename")
+      or die "Can't get $filename: ". $ftp->message . "\n";
+  }
+  else {
+    my $sftp = sftp();
+    $sftp->get($filename, "$cachedir/$filename")
+      or die "Can't get $filename: ". $sftp->error . "\n";
+  }
 
   warn "Processing $filename\n" if $opt_v;
 
@@ -69,9 +92,16 @@ foreach my $file ( @$ls ) {
   die $error if $error;
 
   if ( $opt_d ) {
-    my $mv_sftp = sftp();
-    $mv_sftp->rename($filename, "$opt_d/$filename")
-      or die "can't move $filename to $opt_d: ". $mv_sftp->error;
+    if($opt_m eq 'ftp') {
+      my $ftp = ftp();
+      $ftp->rename($filename, "$opt_d/$filename")
+        or die "Can't move $filename to $opt_d: ".$ftp->message . "\n";
+    }
+    else {
+      my $sftp = sftp();
+      $sftp->rename($filename, "$opt_d/$filename")
+        or die "can't move $filename to $opt_d: ". $sftp->error . "\n";
+    }
   }
 
   unlink "$cachedir/$filename";
@@ -86,7 +116,19 @@ sub usage {
   "Usage: \n  cdr.import user format servername\n";
 }
 
-use vars qw( $sftp );
+use vars qw( $sftp $ftp );
+
+sub ftp {
+  return $ftp if $ftp && $ftp->pwd;
+  
+  my ($hostname, $user) = reverse split('@', $servername);
+  my ($user, $pass) = split(':', $user);
+
+  my $ftp = Net::FTP->new($hostname) or die "FTP connection to '$hostname' failed.";
+  $ftp->login($user, $pass) or die "FTP login failed: ".$ftp->message;
+  $ftp->cwd($opt_r) or die "can't chdir to $opt_r\n" if $opt_r;
+  return $ftp;
+}
 
 sub sftp {
 
@@ -107,12 +149,14 @@ cdr.sftp_and_import - Download CDR files from a remote server via SFTP
 
 =head1 SYNOPSIS
 
-  cdr.sftp_and_import [ -p prefix ] [ -e extension ] [ -r remotefolder ] [ -d donefolder ] [ -v ] user format [sftpuser@]servername
+  cdr.sftp_and_import [ -m method ][ -p prefix ] [ -e extension ] [ -r remotefolder ] [ -d donefolder ] [ -v ] user format [sftpuser@]servername
 
 =head1 DESCRIPTION
 
-Command line tool to download CDR files from a remote server via SFTP and then
+Command line tool to download CDR files from a remote server via SFTP or FTP and then
 import them into the database.
+
+-m: transfer method (sftp or ftp), defaults to sftp
 
 -p: file prefix, if specified
 
@@ -129,10 +173,9 @@ user: freeside username
 format: CDR format name
 
 [sftpuser@]servername: remote server
+(or ftpuser:ftppass@servername)
 
 =head1 BUGS
-
-Only supports SFTP right now.
 
 =head1 SEE ALSO
 
