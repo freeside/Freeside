@@ -209,12 +209,12 @@ sub access_info {
 
   $info->{hide_payment_fields} =
   [
-    map { FS::payby->realtime($_) &&
-          $cust_main
-            ->agent
-            ->payment_gateway( 'method' => FS::payby->payby2bop($_) )
-            ->gateway_namespace
-            eq 'Business::OnlineThirdPartyPayment'
+    map { return 0 unless FS::payby->realtime($_);
+          my $pg = $cust_main->agent->payment_gateway(
+            'method'  => FS::payby->payby2bop($_),
+            'nofatal' => 1,
+          ) or return 0;
+          $pg->gateway_namespace eq 'Business::OnlineThirdPartyPayment';
         }
     @{ $info->{cust_paybys} }
   ];
@@ -469,12 +469,12 @@ sub payment_info {
 
   $return{hide_payment_fields} =
   [
-    map { FS::payby->realtime($_) &&
-          $cust_main
-            ->agent
-            ->payment_gateway( 'method' => FS::payby->payby2bop($_) )
-            ->gateway_namespace
-            eq 'Business::OnlineThirdPartyPayment'
+    map { return 0 unless FS::payby->realtime($_);
+          my $pg = $cust_main->agent->payment_gateway(
+            'method'  => FS::payby->payby2bop($_),
+            'nofatal' => 1,
+          ) or return 0;
+          $pg->gateway_namespace eq 'Business::OnlineThirdPartyPayment';
         }
     @{ $return{cust_paybys} }
   ];
