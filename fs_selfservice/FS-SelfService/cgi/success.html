@@ -18,7 +18,7 @@ Signup information for <%= $email_name %>:
     if ($signup_service eq 'svc_acct' || !$signup_service ) { #just in case
       $OUT .= <<END
         Username: $username<BR>
-        Password: $password><BR>
+        Password: $password<BR>
         Access number: ($ac) / $exch - $local <BR>
 END
     } elsif ( $signup_service eq 'svc_phone' ) {
