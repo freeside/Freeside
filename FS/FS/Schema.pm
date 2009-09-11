@@ -559,7 +559,7 @@ sub tables_hashref {
         'billpkgnum', 'int', 'NULL', '', '', '',        # should not be nullable
         'pkgnum',  'int', 'NULL', '', '', '',           # deprecated
         'invnum',  'int', 'NULL', '', '', '',           # deprecated
-        'amount',  @money_typen, '', '', 
+        'amount',  'decimal', 'NULL', '10,4', '', '',
         'format',  'char', 'NULL', 1, '', '',
         'classnum', 'int', 'NULL', '', '', '',
         'phonenum', 'varchar', 'NULL', 15, '', '',

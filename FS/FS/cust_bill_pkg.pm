@@ -111,7 +111,7 @@ sub insert {
     return $error;
   }
 
-  if ( defined dbdef->table('cust_bill_pkg_detail') && $self->get('details') ) {
+  if ( $self->get('details') ) {
     foreach my $detail ( @{$self->get('details')} ) {
       my $cust_bill_pkg_detail = new FS::cust_bill_pkg_detail {
         'billpkgnum' => $self->billpkgnum,
@@ -124,18 +124,18 @@ sub insert {
       $error = $cust_bill_pkg_detail->insert;
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
-        return $error;
+        return "error inserting cust_bill_pkg_detail: $error";
       }
     }
   }
 
-  if ( defined dbdef->table('cust_bill_pkg_display') && $self->get('display') ){
+  if ( $self->get('display') ) {
     foreach my $cust_bill_pkg_display ( @{ $self->get('display') } ) {
       $cust_bill_pkg_display->billpkgnum($self->billpkgnum);
       $error = $cust_bill_pkg_display->insert;
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
-        return $error;
+        return "error inserting cust_bill_pkg_display: $error";
       }
     }
   }
@@ -146,7 +146,7 @@ sub insert {
       $error = $cust_tax_exempt_pkg->insert;
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
-        return $error;
+        return "error inserting cust_tax_exempt_pkg: $error";
       }
     }
   }
@@ -160,7 +160,7 @@ sub insert {
       warn $error;
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
-        return $error;
+        return "error inserting cust_bill_pkg_tax_location: $error";
       }
     }
   }
@@ -173,7 +173,7 @@ sub insert {
       warn $error;
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
-        return $error;
+        return "error inserting cust_bill_pkg_tax_rate_location: $error";
       }
     }
   }
@@ -185,7 +185,7 @@ sub insert {
     warn $error;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
-      return $error;
+      return "error replacing cust_tax_adjustment: $error";
     }
   }
 

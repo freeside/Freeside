@@ -118,7 +118,8 @@ sub check {
 
   $self->ut_numbern('detailnum')
     || $self->ut_foreign_key('billpkgnum', 'cust_bill_pkg', 'billpkgnum')
-    || $self->ut_moneyn('amount')
+    #|| $self->ut_moneyn('amount')
+    || $self->ut_float('amount')
     || $self->ut_enum('format', [ '', 'C' ] )
     || $self->ut_text('detail')
     || $self->ut_foreign_keyn('classnum', 'usage_class', 'classnum')
