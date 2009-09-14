@@ -1,0 +1,20 @@
+<% objToJson($return) %>
+<%init>
+
+my $conf = new FS::Conf;
+
+my $sub = $cgi->param('sub');
+
+die "$sub not supported" unless $sub eq 'ping';
+
+my $ip = $cgi->param('arg');
+
+my $ping = new Net::Ping('external', 5);
+$ping->hires(1);
+#my $a=time; warn "pinging\n";
+my ($ret, $duration, $ip2) = $ping->ping($ip);
+#warn "done pinging (". int(time-$a). "s)\n";
+
+my $return = [ $ret, $duration ];
+
+</%init>

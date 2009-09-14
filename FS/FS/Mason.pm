@@ -52,6 +52,7 @@ Initializes the Mason environment, loads all Freeside and RT libraries, etc.
   use Date::Format;
   use Date::Parse;
   use Time::Local;
+  use Time::HiRes;
   use Time::Duration;
   use DateTime;
   use DateTime::Format::Strptime;
@@ -77,6 +78,17 @@ Initializes the Mason environment, loads all Freeside and RT libraries, etc.
   use Spreadsheet::WriteExcel;
   use Business::CreditCard 0.30; #for mask-aware cardtype()
   use NetAddr::IP;
+  use Net::Ping;
+  use Net::Ping::External;
+  #if CPAN #7815 ever gets fixed# if ( $Net::Ping::External::VERSION <= 0.12 ) {
+    eval 'sub Net::Ping::External::_ping_linux { 
+            my %args = @_;
+            my $command = "ping -s $args{size} -c $args{count} -w $args{timeout} $args{host}";
+            return Net::Ping::External::_ping_system($command, 0);
+          }
+         ';
+    die $@ if $@;
+  #}
   use String::Approx qw(amatch);
   use Chart::LinesPoints;
   use Chart::Mountain;

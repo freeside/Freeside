@@ -1,0 +1,102 @@
+<% include('/elements/header-popup.html', "Ping $ip" ) %>
+
+<% include('/elements/xmlhttp.html',
+             'url'  => $p. 'misc/xmlhttp-ping.html',
+             'subs' => [ 'ping' ],
+          )
+%>
+
+%# <img src="<%$p%>images/bullet_red.png" border=0>
+
+
+<%ntable("#cccccc", 2)%>
+
+<TR>
+  <TD>Status</TD>
+  <TD BGCOLOR="#ffffff" ID="ping_status">Checking...</TD>
+</TR>
+<TR>
+  <TD>Packet loss</TD>
+  <TD BGCOLOR="#ffffff" ID="ping_packetloss"></TD>
+</TR>
+<TR>
+  <TD>Latency</TD>
+  <TD BGCOLOR="#ffffff" ID="ping_latency"></TD>
+</TR>
+<TR>
+  <TD>Packets</TD>
+  <TD BGCOLOR="#ffffff" ID="ping_packets"></TD>
+</TR>
+
+</TABLE>
+
+<BR>
+<CENTER>
+<INPUT TYPE="button" VALUE="Close" onClick="parent.nd(1);">
+</CENTER>
+
+<SCRIPT TYPE="text/javascript">
+
+  var fails = 0;
+  var pongs = 0;
+  var totaltime = 0;
+  var avg = 0;
+
+  function ping_update ( updatetext ) {
+    var pingArray = eval('(' + updatetext + ')');
+    var status = pingArray[0];
+    var rtt = pingArray[1];
+
+    if ( status == 0 ) {
+      fails++;
+    } else if ( status == 1 ) {
+      pongs++;
+      totaltime = totaltime + rtt;
+      avg = totaltime / pongs;
+    }
+
+    var loss = 100 * fails / ( fails + pongs );
+
+    var statusCell     = document.getElementById('ping_status');
+    var packetlossCell = document.getElementById('ping_packetloss');
+    var latencyCell    = document.getElementById('ping_latency');
+    var packetsCell    = document.getElementById('ping_packets');
+
+    var status = '';
+    // red conditions
+    if ( loss == 100 ) {
+      status = '<FONT COLOR="#ff0000">Unreachable</FONT>';
+    } else
+    // yellow conditions
+    if ( loss > 50 ) {
+      status = '<FONT COLOR="#ff9900">High packet loss</FONT>';
+    } else
+    if ( avg > 1 ) {
+      status = '<FONT COLOR="#ff9900">High latency</FONT>';
+    } else {
+      status = '<FONT COLOR="#00cc00">Up</FONT>';
+    }
+
+    statusCell.innerHTML = '<B>' + status + '</B>';
+    packetlossCell.innerHTML = '<B>' + Math.round(loss) + '%</B>';
+    if ( avg > 0 ) {
+      latencyCell.innerHTML = '<B>' + Math.round( avg*1000 ) + 'ms</B>';
+    }
+    var packets = fails + pongs;
+    packetsCell.innerHTML = '<B>' + packets + '</B>';
+
+    setTimeout( "ping('<%$ip%>', ping_update)", 1000 );
+
+  }
+
+  ping( '<%$ip%>', ping_update );
+
+</SCRIPT>
+
+<%init>
+
+my($query) = $cgi->keywords;
+$query =~ /^([\d\.]+)$/ or die 'Illegal IP';
+my $ip = $1;
+
+</%init>

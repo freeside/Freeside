@@ -8,7 +8,9 @@
 ))
 %>
 
-<A HREF="<%${p}%>edit/svc_broadband.cgi?<%$svcnum%>">Edit this information</A>
+<% include('/elements/init_overlib.html') %>
+
+<A HREF="<%$p%>edit/svc_broadband.cgi?<%$svcnum%>">Edit this information</A>
 <BR>
 <%ntable("#cccccc")%>
   <TR>
@@ -42,7 +44,10 @@
 %       if ( $ip_addr ) { 
           <TR>
             <TD ALIGN="right">IP Address</TD>
-            <TD BGCOLOR="#ffffff"><%$ip_addr%></TD>
+            <TD BGCOLOR="#ffffff">
+              <%$ip_addr%>
+              (<% include('/elements/popup_link-ping.html', 'ip'=>$ip_addr ) %>)
+            </TD>
           </TR>
           <TR>
             <TD ALIGN="right">IP Netmask</TD>

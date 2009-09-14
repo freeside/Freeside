@@ -1,0 +1,30 @@
+<%doc>
+
+Example:
+
+  include('/elements/init_overlib.html')
+
+  include( '/elements/popup_link-ping.html', { #hashref or a list, either way
+             'ip' => '10.9.8.7',
+  })
+
+</%doc>
+<% include('/elements/popup_link.html', $params ) %>\
+<%init>
+
+my $params = { 'closetext' => 'Close' };
+
+if (ref($_[0]) eq 'HASH') {
+  $params = { %$params, %{ $_[0] } };
+} else {
+  $params = { %$params, @_ };
+}
+
+$params->{'label'} ||= 'ping';
+$params->{'actionlabel'} ||= 'Ping '. $params->{'ip'};
+$params->{'width'} ||= 350;
+$params->{'height'} ||= 220;
+
+$params->{'action'} = $p. 'misc/ping.html?'. $params->{'ip'};
+
+</%init>
