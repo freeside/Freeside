@@ -375,7 +375,7 @@ sub set_charged_party {
 
 }
 
-=item set_status_and_rated_price STATUS [ RATED_PRICE ]
+=item set_status_and_rated_price STATUS [ RATED_PRICE [ SVCNUM ] ]
 
 Sets the status to the provided string.  If there is an error, returns the
 error, otherwise returns false.
@@ -383,9 +383,10 @@ error, otherwise returns false.
 =cut
 
 sub set_status_and_rated_price {
-  my($self, $status, $rated_price) = @_;
+  my($self, $status, $rated_price, $svcnum) = @_;
   $self->freesidestatus($status);
   $self->rated_price($rated_price);
+  $self->svcnum($svcnum) if $svcnum;
   $self->replace();
 }
 

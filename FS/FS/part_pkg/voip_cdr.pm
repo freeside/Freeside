@@ -591,7 +591,10 @@ sub calc_usage {
         #$downstream_cdr .= $cdr->downstream_csv( 'format' => 'XXX format' )
         #  if $spool_cdr;
 
-        my $error = $cdr->set_status_and_rated_price('done', $charge);
+        my $error = $cdr->set_status_and_rated_price( 'done',
+                                                      $charge,
+                                                      $cust_svc->svcnum,
+                                                    );
         die $error if $error;
 
       }
