@@ -1,153 +1,135 @@
-%die "access denied"
-%  unless $FS::CurrentUser::CurrentUser->access_right('List services');
-%
-%my $conf = new FS::Conf;
-%
-%my @svc_external = ();
-%my @h_svc_external = ();
-%my $sortby=\*svcnum_sort;
-%if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
-%
-%  @svc_external=qsearch('svc_external',{});
-%
-%  if ( $cgi->param('magic') eq 'unlinked' ) {
-%    @svc_external = grep { qsearchs('cust_svc', {
-%                                                  'svcnum' => $_->svcnum,
-%                                                  'pkgnum' => '',
-%                                                }
-%                                   )
-%                         }
-%		     @svc_external;
-%  }
-%
-%  if ( $cgi->param('sortby') =~ /^(\w+)$/ ) {
-%    my $sortby = $1;
-%    if ( $sortby eq 'id' ) {
-%      $sortby = \*id_sort;
-%    }
-%  }
-%
-%} elsif ( $cgi->param('svcpart') =~ /^(\d+)$/ ) {
-%
-%  @svc_external =
-%    qsearch( 'svc_external', {}, '',
-%               " WHERE $1 = ( SELECT svcpart FROM cust_svc ".
-%               "              WHERE cust_svc.svcnum = svc_external.svcnum ) "
-%    );
-%
-%} elsif ( $cgi->param('title') =~ /^(.*)$/ ) {
-%  $sortby=\*id_sort;
-%  @svc_external=qsearch('svc_external',{ title => $1 });
-%  if( $cgi->param('history') == 1 ) {
-%    @h_svc_external=qsearch('h_svc_external',{ title => $1 });
-%  }
-%} elsif ( $cgi->param('id') =~ /^([\w\-\.]+)$/ ) {
-%  my $id = $1;
-%  @svc_external = qsearchs('svc_external',{'id'=>$id});
-%}
-%
-%if ( scalar(@svc_external) == 1 ) {
-%
-%  
-<% $cgi->redirect(popurl(2). "view/svc_external.cgi?". $svc_external[0]->svcnum) %>
-%
-%
-%} elsif ( scalar(@svc_external) == 0 ) {
-%
-%  
-<% include('/elements/header.html', 'External Search Results' ) %>
+<% include( 'elements/search.html',
+                 'title'             => 'External service search results',
+                 'name'              => 'external services',
+                 'query'             => $sql_query,
+                 'count_query'       => $count_query,
+                 'redirect'          => $redirect,
+                 'header'            => [ '#',
+                                          'Service',
+                                          ( FS::Msgcat::_gettext('svc_external-id') || 'External ID' ),
+                                          ( FS::Msgcat::_gettext('svc_external-title') || 'Title' ),
+                                          FS::UI::Web::cust_header(),
+                                        ],
+                 'fields'            => [ 'svcnum',
+                                          'svc',
+                                          'id',
+                                          'title',
+                                          \&FS::UI::Web::cust_fields,
+                                        ],
+                 'links'             => [ $link,
+                                          $link,
+                                          $link,
+                                          $link,
+                                          ( map { $_ ne 'Cust. Status' ? $link_cust : '' }
+                                                FS::UI::Web::cust_header()
+                                          ),
+                                        ],
+                 'align' => 'rlrr'.
+                            FS::UI::Web::cust_aligns(),
+                 'color' => [ 
+                              '',
+                              '',
+                              '',
+                              '',
+                              FS::UI::Web::cust_colors(),
+                            ],
+                 'style' => [ 
+                              '',
+                              '',
+                              '',
+                              '',
+                              FS::UI::Web::cust_styles(),
+                            ],
+          )
+%>
 
-  No matching external services found
-% } else {
-%
-%  
-<% include('/elements/header.html', 'External Search Results', '') %>
+<%init>
 
-    <% scalar(@svc_external) %> matching external services found
-    <TABLE BORDER=4 CELLSPACING=0 CELLPADDING=0>
-      <TR>
-        <TH>Service #</TH>
-        <TH><% FS::Msgcat::_gettext('svc_external-id') || 'External&nbsp;ID' %></TH>
-        <TH><% FS::Msgcat::_gettext('svc_external-title') || 'Title' %></TH>
-      </TR>
-%
-%  foreach my $svc_external (
-%    sort $sortby (@svc_external)
-%  ) {
-%    my($svcnum, $id, $title)=(
-%      $svc_external->svcnum,
-%      $svc_external->id,
-%      $svc_external->title,
-%    );
-%
-%    my $rowspan = 1;
-%
-%    print <<END;
-%    <TR>
-%      <TD ROWSPAN=$rowspan><A HREF="${p}view/svc_external.cgi?$svcnum">$svcnum</A></TD>
-%      <TD ROWSPAN=$rowspan><A HREF="${p}view/svc_external.cgi?$svcnum">$id</A></TD>
-%      <TD ROWSPAN=$rowspan><A HREF="${p}view/svc_external.cgi?$svcnum">$title</A></TD>
-%END
-%
-%    #print @rows;
-%    print "</TR>";
-%
-%  }
-%  if( scalar(@h_svc_external) > 0 ) {
-%    print <<HTML;
-%    </TABLE>
-%    <TABLE BORDER=4 CELLSPACING=0 CELLPADDING=0>
-%      <TR>
-%        <TH>Freeside ID</TH>
-%        <TH>Service #</TH>
-%        <TH>Title</TH>
-%        <TH>Date</TH>
-%      </TR>
-%HTML
-%
-%    foreach my $h_svc ( @h_svc_external ) {
-%        my($svcnum, $id, $title, $user, $date)=(
-%            $h_svc->svcnum,
-%            $h_svc->id,
-%            $h_svc->title,
-%            $h_svc->history_user,
-%            $h_svc->history_date,
-%        );
-%        my $rowspan = 1;
-%        my ($h_cust_svc) = qsearchs( 'h_cust_svc', {
-%            svcnum  =>  $svcnum,
-%        });
-%        my $cust_pkg = qsearchs( 'cust_pkg', {
-%            pkgnum  =>  $h_cust_svc->pkgnum,
-%        });
-%        my $custnum = $cust_pkg->custnum;
-%
-%        print <<END;
-%        <TR>
-%          <TD ROWSPAN=$rowspan><A HREF="${p}view/cust_main.cgi?$custnum">$custnum</A></TD>
-%          <TD ROWSPAN=$rowspan><A HREF="${p}view/cust_main.cgi?$custnum">$svcnum</A></TD>
-%          <TD ROWSPAN=$rowspan><A HREF="${p}view/cust_main.cgi?$custnum">$title</A></TD>
-%          <TD ROWSPAN=$rowspan><A HREF="${p}view/cust_main.cgi?$custnum">$date</A></TD>
-%        </TR>
-%END
-%    }
-%  }
-%
-%  print <<END;
-%    </TABLE>
-%  </BODY>
-%</HTML>
-%END
-%
-%}
-%
-%sub svcnum_sort {
-%  $a->getfield('svcnum') <=> $b->getfield('svcnum');
-%}
-%
-%sub id_sort {
-%  $a->getfield('id') <=> $b->getfield('id');
-%}
-%
-%
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('List services');
 
+my $conf = new FS::Conf;
+
+my %svc_external;
+my @extra_sql = ();
+my $orderby = 'ORDER BY svcnum';
+
+my $link = [ "${p}view/svc_external.cgi?", 'svcnum' ];
+my $redirect = $link;
+
+if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
+
+  push @extra_sql, 'pkgnum IS NULL'
+    if $cgi->param('magic') eq 'unlinked';
+
+  if ( $cgi->param('sortby') =~ /^(\w+)$/ ) {
+    my $sortby = $1;
+    $orderby = "ORDER BY $sortby";
+  }
+
+} elsif ( $cgi->param('svcpart') =~ /^(\d+)$/ ) {
+
+  push @extra_sql, "svcpart = $1";
+
+} elsif ( $cgi->param('title') =~ /^(.*)$/ ) {
+
+  $svc_external{'title'} = $1;
+  $orderby = 'ORDER BY id';
+
+  # is this linked from anywhere???
+  # if( $cgi->param('history') == 1 ) {
+  #   @h_svc_external=qsearch('h_svc_external',{ title => $1 });
+  # }
+
+} elsif ( $cgi->param('id') =~ /^([\w\-\.]+)$/ ) {
+
+  $svc_external{'id'} = $1;
+
+}
+
+my $addl_from = ' LEFT JOIN cust_svc  USING ( svcnum  ) '.
+                ' LEFT JOIN part_svc  USING ( svcpart ) '.
+                ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
+                ' LEFT JOIN cust_main USING ( custnum ) ';
+
+#here is the agent virtualization
+push @extra_sql, $FS::CurrentUser::CurrentUser->agentnums_sql(
+                   'null_right' => 'View/link unlinked services'
+                 );
+
+my $extra_sql = '';
+if ( @extra_sql ) {
+  $extra_sql = ( keys(%svc_external) ? ' AND ' : ' WHERE ' ).
+               join(' AND ', @extra_sql );
+}
+
+my $count_query = "SELECT COUNT(*) FROM svc_external $addl_from ";
+if ( keys %svc_external ) {
+  $count_query .= ' WHERE '.
+                    join(' AND ', map "$_ = ". dbh->quote($svc_external{$_}),
+                                      keys %svc_external
+                        );
+}
+$count_query .= $extra_sql;
+
+my $sql_query = {
+  'table'     => 'svc_external',
+  'hashref'   => \%svc_external,
+  'select'    => join(', ',
+                   'svc_external.*',
+                   'part_svc.svc',
+                   'cust_main.custnum',
+                   FS::UI::Web::cust_sql_fields(),
+                 ),
+  'extra_sql' => "$extra_sql $orderby",
+  'addl_from' => $addl_from,
+};
+
+#smaller false laziness w/svc_*.cgi here
+my $link_cust = sub {
+  my $svc_x = shift;
+  $svc_x->custnum ? [ "${p}view/cust_main.cgi?", 'custnum' ] : '';
+};
+
+
+</%init>
