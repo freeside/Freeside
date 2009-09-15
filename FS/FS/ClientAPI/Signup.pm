@@ -471,14 +471,12 @@ sub new_customer {
     return { 'error' => "Unknown reseller" }
       unless $agent;
 
-    my $payment_gateway =
-      $agent->payment_gateway( 'method' => FS::payby->payby2bop($payby) );
+    my $gw = $agent->payment_gateway( 'method'  => FS::payby->payby2bop($payby),
+                                      'nofatal' => 1,
+                                    );
 
-    if ($payment_gateway->gateway_namespace eq
-        'Business::OnlineThirdPartyPayment'
-       ) {
-      $cust_main->payby('BILL');   # MCRD better?
-    }
+    $cust_main->payby('BILL')   # MCRD better?
+      if $gw && $gw->gateway_namespace eq 'Business::OnlineThirdPartyPayment';
   }
 
   $cust_main->payinfo($cust_main->daytime)
