@@ -338,6 +338,8 @@ sub cust_sql_fields {
     grep { my $field = $_; grep { $_ eq $field } @cust_fields }
          ( @add_fields, ( map "ship_$_", @add_fields ), 'payby' );
 
+  push @fields, 'agent_custid';
+
   my @extra_fields = ();
   if (grep { $_ eq 'current_balance' } @cust_fields) {
     push @extra_fields, FS::cust_main->balance_sql . " AS current_balance";
@@ -595,6 +597,7 @@ sub job_status {
     @return = ( 'error', $job ? $job->statustext : $jobnum );
   }
 
+  #to_json(\@return);  #waiting on deb 5.0 for new JSON.pm?
   objToJson(\@return);
 
 }

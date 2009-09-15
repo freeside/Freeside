@@ -26,7 +26,12 @@ for example, from a JOINed search.  See httemplate/search/ for examples.
 
 =over 4
 
-=item name
+=cut
+
+sub cust_unlinked_msg { '(unlinked)'; }
+sub cust_linked { $_[0]->custnum; }
+
+=item display_custnum
 
 Given an object that contains fields from cust_main (say, from a JOINed
 search; see httemplate/search/ for examples), returns the equivalent of the
@@ -35,8 +40,21 @@ a customer.
 
 =cut
 
-sub cust_unlinked_msg { '(unlinked)'; }
-sub cust_linked { $_[0]->custnum; }
+sub display_custnum {
+  my $self = shift;
+  $self->cust_linked
+    ? FS::cust_main::display_custnum($self)
+    : $self->cust_unlinked_msg;
+}
+
+=item name
+
+Given an object that contains fields from cust_main (say, from a JOINed
+search; see httemplate/search/ for examples), returns the equivalent of the
+FS::cust_main I<name> method, or "(unlinked)" if this object is not linked to
+a customer.
+
+=cut
 
 sub name {
   my $self = shift;
