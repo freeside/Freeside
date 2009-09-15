@@ -81,8 +81,8 @@ if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
 
     $redirect = '';
 
-    my $and_date = " AND startdate >= $beginning ".
-                   " AND startdate <= $ending ";
+    #my $and_date = " AND startdate >= $beginning AND startdate <= $ending ";
+    my $and_date = " AND enddate >= $beginning AND enddate <= $ending ";
 
     my $fromwhere = " FROM cdr WHERE cdr.svcnum = svc_phone.svcnum $and_date";
 
@@ -106,7 +106,7 @@ if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
         $and_date;
 
       push @select,
-        " ( SELECT SUM(billsec) $f_w ) AS term_billsec ".
+        " ( SELECT SUM(billsec) $f_w ) AS term_billsec ",
         " ( SELECT SUM(cdr_termination.rated_price) $f_w ) AS term_rated_price";
 
       push @header, 'Term Min', 'Term Billed';
@@ -157,8 +157,9 @@ my $sql_query = {
   'select'    => join(', ',
                    'svc_phone.*',
                    'part_svc.svc',
-                    'cust_main.custnum',
-                    FS::UI::Web::cust_sql_fields(),
+                   @select,
+                   'cust_main.custnum',
+                   FS::UI::Web::cust_sql_fields(),
                  ),
   'extra_sql' => "$extra_sql $orderby",
   'addl_from' => $addl_from,
