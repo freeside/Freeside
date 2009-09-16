@@ -80,7 +80,9 @@ Initializes the Mason environment, loads all Freeside and RT libraries, etc.
   use NetAddr::IP;
   use Net::Ping;
   use Net::Ping::External;
-  #if CPAN #7815 ever gets fixed# if ( $Net::Ping::External::VERSION <= 0.12 ) {
+  #if CPAN #7815 ever gets fixed# if ( $Net::Ping::External::VERSION <= 0.12 )
+  {
+    no warnings 'redefine';
     eval 'sub Net::Ping::External::_ping_linux { 
             my %args = @_;
             my $command = "ping -s $args{size} -c $args{count} -w $args{timeout} $args{host}";
@@ -88,7 +90,7 @@ Initializes the Mason environment, loads all Freeside and RT libraries, etc.
           }
          ';
     die $@ if $@;
-  #}
+  }
   use String::Approx qw(amatch);
   use Chart::LinesPoints;
   use Chart::Mountain;
