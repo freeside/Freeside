@@ -628,7 +628,7 @@ sub apply_payments_and_credits {
     }
     next unless $owed > 0;
 
-    warn "min ( $unapp_amount, $owed )\n";
+    warn "min ( $unapp_amount, $owed )\n" if $DEBUG;
     $app->amount( sprintf('%.2f', min( $unapp_amount, $owed ) ) );
 
     $app->invnum( $self->invnum );
