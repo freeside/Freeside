@@ -119,36 +119,43 @@ if ( $cgi->param('classnum') =~ /^(\d+)$/ ) {
   }
 }
 
-my $use_usage = $cgi->param('use_usage');
+if ( $cgi->param('taxclass')
+     && ! $cgi->param('istax')  #no part_pkg.taxclass in this case
+                                #(should we save a taxclass or a link to taxnum
+                                # in cust_bill_pkg or something like
+                                # cust_bill_pkg_tax_location?)
+   )
+{
 
-push @where, ' ( '. join(' OR ',
-                      map ' taxclass = '.dbh->quote($_), $cgi->param('taxclass')
-                    ).
-             ' ) '
-  if $cgi->param('taxclass')
-  && ! $cgi->param('istax'); #no part_pkg.taxclass in this case
-                             #(should we save a taxclass or a link to taxnum
-                             # in cust_bill_pkg or something like
-                             # cust_bill_pkg_tax_location?)
+  #override taxclass when use_override is specified?  probably
+  #if ( $use_override ) {
+  #
+  #  push @where,
+  #    ' ( '. join(' OR ',
+  #                  map {
+  #                        ' (    part_pkg.taxclass = '. dbh->quote($_).
+  #                        '      AND pkgpart_override IS NULL '.
+  #                        '   OR '.
+  #                        '      override.taxclass = '. dbh->quote($_).
+  #                        '      AND pkgpart_override IS NOT NULL '.
+  #                        ' ) '
+  #                      }
+  #                      $cgi->param('taxclass')
+  #               ).
+  #    ' ) ';
+  #
+  #} else {
 
-#sub _where {
-# my $table = shift;
-# my $prefix = @_ ? shift : '';
-# "
-#      (    cust_main_county.county  = $table.${prefix}.county
-#      OR ( cust_main_county.county IS NULL AND $table.${prefix}.county  =  '' )
-#      OR ( cust_main_county.county  =  ''  AND $table.${prefix}.county IS NULL)
-#      OR ( cust_main_county.county IS NULL AND $table.${prefix}.county IS NULL)
-#      )
-#  AND (    cust_main_county.state   = $table.${prefix}.state
-#      OR ( cust_main_county.state  IS NULL AND $table.${prefix}.state  =  ''  )
-#      OR ( cust_main_county.state   =  ''  AND $table.${prefix}.state IS NULL )
-#      OR ( cust_main_county.state  IS NULL AND $table.${prefix}.state IS NULL )
-#      )
-#  AND cust_main_county.country = $table.${prefix}.country
-# ";
-#
-#}
+    push @where,
+      ' ( '. join(' OR ',
+                    map ' part_pkg.taxclass = '.dbh->quote($_),
+                        $cgi->param('taxclass')
+                 ).
+      ' ) ';
+
+  #}
+
+}
 
 if ( $cgi->param('out') ) {
 
@@ -318,6 +325,8 @@ if ( $cgi->param('cust_tax') ) {
 
   push @where, $cust_exempt;
 }
+
+my $use_usage = $cgi->param('use_usage');
 
 my $count_query;
 if ( $cgi->param('pkg_tax') ) {
