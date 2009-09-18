@@ -745,7 +745,8 @@ if ( $cgi->param('error') ) {
   $qsearch{'extra_sql'} = ' AND '. $opt{'agent_clone_extra_sql'}
     if $opt{'agent_clone_extra_sql'};
 
-  $object = qsearchs({ %qsearch, 'hashref' => { $pkey => $clone } });
+  $object = qsearchs({ %qsearch, 'hashref' => { $pkey => $clone } })
+    or die "$pkey $clone not found in $table";
 
   &{$opt{'clone_callback'}}( $cgi, $object, $fields, \%opt )
     if $opt{'clone_callback'};
