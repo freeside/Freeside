@@ -6951,12 +6951,35 @@ sub invoicing_list_emailonly_scalar {
   join(', ', $self->invoicing_list_emailonly);
 }
 
+=item referral_custnum_cust_main
+
+Returns the customer who referred this customer (or the empty string, if
+this customer was not referred).
+
+Note the difference with referral_cust_main method: This method,
+referral_custnum_cust_main returns the single customer (if any) who referred
+this customer, while referral_cust_main returns an array of customers referred
+BY this customer.
+
+=cut
+
+sub referral_custnum_cust_main {
+  my $self = shift;
+  return '' unless $self->referral_custnum;
+  qsearchs('cust_main', { 'custnum' => $self->referral_custnum } );
+}
+
 =item referral_cust_main [ DEPTH [ EXCLUDE_HASHREF ] ]
 
 Returns an array of customers referred by this customer (referral_custnum set
 to this custnum).  If DEPTH is given, recurses up to the given depth, returning
 customers referred by customers referred by this customer and so on, inclusive.
 The default behavior is DEPTH 1 (no recursion).
+
+Note the difference with referral_custnum_cust_main method: This method,
+referral_cust_main, returns an array of customers referred BY this customer,
+while referral_custnum_cust_main returns the single customer (if any) who
+referred this customer.
 
 =cut
 
