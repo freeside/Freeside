@@ -1,9 +1,11 @@
 <SCRIPT TYPE="text/javascript">
 
 function taxproductmagic(which) {
+
   var str = '';
   var elements = which.form.elements;
   for (var i = 0; i<elements.length; i++) {
+
     if (elements[i].name == 'taxproductnum'){
       document.getElementById('taxproductnum').value = elements[i].value;
       continue;
@@ -11,8 +13,21 @@ function taxproductmagic(which) {
     if (elements[i].name == 'taxproductnum_description'){
       continue;
     }
+
     if (str.length){str += ';';}
-    str += elements[i].name + '=' + escape(elements[i].value);
+
+    var value = '';
+    if ( elements[i].type == 'checkbox' || elements[i].type == 'radio' ) {
+      if ( elements[i].checked == true ) {
+        value = elements[i].value;
+      //} else {
+      //  value = '';
+      }
+    } else {
+      value = elements[i].value;
+    }
+    str += elements[i].name + '=' + escape(value);
+
   }
   document.getElementById('charge_storage').value = str;
   cClick();
