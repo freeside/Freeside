@@ -8,7 +8,9 @@
 % foreach my $option ( @{ $opt{'statuses'} } ) { 
 
     <OPTION VALUE="<% $option %>"
-            <% $option eq $curr_value ? 'SELECTED' : '' %>
+            <% ref($value) && $value->{$option} || $option eq $value
+               ? 'SELECTED' : ''
+            %>
     ><% $option %>
 
 % } 
@@ -25,6 +27,7 @@ my $onchange = $opt{'onchange'}
                  ? 'onChange="'. $opt{'onchange'}. '(this)"'
                  : '';
 
-my $curr_value = $opt{'curr_value'} || $opt{'value'};
+my $value = $opt{'curr_value'} || $opt{'value'};
+$value = [ split(/\s*,\s*/, $value) ] if $opt{'multiple'} && $value =~ /,/;
 
 </%init>
