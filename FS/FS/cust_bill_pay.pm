@@ -150,6 +150,25 @@ sub cust_pay {
   qsearchs( 'cust_pay', { 'paynum' => $self->paynum } );
 }
 
+=item send_receipt HASHREF | OPTION => VALUE ...
+
+
+Sends a payment receipt for the associated payment, against this specific
+invoice.  If there is an error, returns the error, otherwise returns false.
+
+See L<FS::cust_pay/send_receipt>.
+
+=cut
+
+sub send_receipt {
+  my $self = shift;
+  my $opt = ref($_[0]) ? shift : { @_ };
+  $self->cust_pay->send_receipt(
+    'cust_bill' => $self->cust_bill,
+    %$opt,
+  );
+}
+
 =back
 
 =head1 BUGS

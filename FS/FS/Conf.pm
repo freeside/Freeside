@@ -1015,8 +1015,19 @@ worry that config_items is freeside-specific and icky.
   {
     'key'         => 'payment_receipt_email',
     'section'     => 'billing',
-    'description' => 'Template file for payment receipts.  Payment receipts are sent to the customer email invoice destination(s) when a payment is received.  See the <a href="http://search.cpan.org/dist/Text-Template/lib/Text/Template.pm">Text::Template</a> documentation for details on the template substitution language.  The following variables are available: <ul><li><code>$date</code> <li><code>$name</code> <li><code>$paynum</code> - Freeside payment number <li><code>$paid</code> - Amount of payment <li><code>$payby</code> - Payment type (Card, Check, Electronic check, etc.) <li><code>$payinfo</code> - Masked credit card number or check number <li><code>$balance</code> - New balance</ul>',
+    'description' => 'Template file for payment receipts.  Payment receipts are sent to the customer email invoice destination(s) when a payment is received.  See the <a href="http://search.cpan.org/dist/Text-Template/lib/Text/Template.pm">Text::Template</a> documentation for details on the template substitution language.  The following variables are available: <ul><li><code>$date</code> <li><code>$name</code> <li><code>$paynum</code> - Freeside payment number <li><code>$paid</code> - Amount of payment <li><code>$payby</code> - Payment type (Card, Check, Electronic check, etc.) <li><code>$payinfo</code> - Masked credit card number or check number <li><code>$balance</code> - New balance<li><code>$pkg</code> - Package (requires payment_receipt-trigger set to cust_bill_pay_pkg)</ul>',
     'type'        => [qw( checkbox textarea )],
+  },
+
+  {
+    'key'         => 'payment_receipt-trigger',
+    'section'     => 'billing',
+    'description' => 'When payment receipts are triggered.  Defaults to when payment is made.',
+    'type'        => 'select',
+    'select_hash' => [
+                       'cust_pay'          => 'When payment is made.',
+                       'cust_bill_pay_pkg' => 'When payment is applied.',
+                     ],
   },
 
   {
@@ -2487,6 +2498,14 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'dashboard-install_welcome',
+    'section'     => 'UI',
+    'description' => 'New install welcome screen.',
+    'type'        => 'select',
+    'select_enum' => [ '', 'ITSP_fsinc_hosted', ],
+  },
+
+  {
     'key'         => 'dashboard-toplist',
     'section'     => 'UI',
     'description' => 'List of items to display on the top of the front page',
@@ -2769,7 +2788,14 @@ worry that config_items is freeside-specific and icky.
   {
     'key'         => 'cust_main-default_agent_custid',
     'section'     => 'UI',
-    'description' => 'Display the agent_custid field instead of the custnum field.',
+    'description' => 'Display the agent_custid field when available instead of the custnum field.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'cust_bill-default_agent_invid',
+    'section'     => 'UI',
+    'description' => 'Display the agent_invid field when available instead of the invnum field.',
     'type'        => 'checkbox',
   },
 

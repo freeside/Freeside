@@ -132,21 +132,22 @@ sub cust_unlinked_msg {
   ' (cust_pay.paynum '. $self->paynum. ')';
 }
 
-=item insert
+=item insert [ OPTION => VALUE ... ]
 
 Adds this payment to the database.
 
 For backwards-compatibility and convenience, if the additional field invnum
 is defined, an FS::cust_bill_pay record for the full amount of the payment
-will be created.  In this case, custnum is optional.  An hash of optional
-arguments may be passed.  Currently "manual" is supported.  If true, a
-payment receipt is sent instead of a statement when 'payment_receipt_email'
-configuration option is set.
+will be created.  In this case, custnum is optional.
+
+A hash of optional arguments may be passed.  Currently "manual" is supported.
+If true, a payment receipt is sent instead of a statement when
+'payment_receipt_email' configuration option is set.
 
 =cut
 
 sub insert {
-  my ($self, %options) = @_;
+  my($self, %options) = @_;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -169,7 +170,6 @@ sub insert {
     $self->custnum($cust_bill->custnum );
   }
 
-
   my $error = $self->check;
   return $error if $error;
 
@@ -189,7 +189,7 @@ sub insert {
       'amount' => $self->paid,
       '_date'  => $self->_date,
     };
-    $error = $cust_bill_pay->insert;
+    $error = $cust_bill_pay->insert(%options);
     if ( $error ) {
       if ( $ignore_noapply ) {
         warn "warning: error inserting $cust_bill_pay: $error ".
@@ -216,74 +216,15 @@ sub insert {
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
-  #my $cust_main = $self->cust_main;
-  if ( $conf->exists('payment_receipt_email')
-       && grep { $_ !~ /^(POST|FAX)$/ } $cust_main->invoicing_list
-  ) {
-
-    $cust_bill ||= ($cust_main->cust_bill)[-1]; #rather inefficient though?
-
-    my $error;
-    if (    ( exists($options{'manual'}) && $options{'manual'} )
-         || ! $conf->exists('invoice_html_statement')
-         || ! $cust_bill
-       ) {
-
-      my $receipt_template = new Text::Template (
-        TYPE   => 'ARRAY',
-        SOURCE => [ map "$_\n", $conf->config('payment_receipt_email') ],
-      ) or do {
-        warn "can't create payment receipt template: $Text::Template::ERROR";
-        return '';
-      };
-
-      my @invoicing_list = grep { $_ !~ /^(POST|FAX)$/ }
-                             $cust_main->invoicing_list;
-
-      my $payby = $self->payby;
-      my $payinfo = $self->payinfo;
-      $payby =~ s/^BILL$/Check/ if $payinfo;
-      if ( $payby eq 'CARD' || $payby eq 'CHEK' ) {
-        $payinfo = $self->paymask
-      } else {
-        $payinfo = $self->decrypt($payinfo);
-      }
-      $payby =~ s/^CHEK$/Electronic check/;
-
-      $error = send_email(
-        'from'    => $conf->config('invoice_from', $cust_main->agentnum),
-                                   #invoice_from??? well as good as any
-        'to'      => \@invoicing_list,
-        'subject' => 'Payment receipt',
-        'body'    => [ $receipt_template->fill_in( HASH => {
-                       'date'         => time2str("%a %B %o, %Y", $self->_date),
-                       'name'         => $cust_main->name,
-                       'paynum'       => $self->paynum,
-                       'paid'         => sprintf("%.2f", $self->paid),
-                       'payby'        => ucfirst(lc($payby)),
-                       'payinfo'      => $payinfo,
-                       'balance'      => $cust_main->balance,
-                       'company_name' => $conf->config('company_name'),
-                     } ) ],
-      );
-
-    } else {
-
-      my $queue = new FS::queue {
-         'paynum' => $self->paynum,
-         'job'    => 'FS::cust_bill::queueable_email',
-      };
-      $error = $queue->insert(
-        'invnum' => $cust_bill->invnum,
-        'template' => 'statement',
-      );
-
-    }
-
-    if ( $error ) {
-      warn "can't send payment receipt/statement: $error";
-    }
-
+  #payment receipt
+  my $trigger = $conf->config('payment_receipt-trigger') || 'cust_pay';
+  if ( $trigger eq 'cust_pay' ) {
+    my $error = $self->send_receipt(
+      'manual'    => $options{'manual'},
+      'cust_bill' => $cust_bill,
+      'cust_main' => $cust_main,
+    );
+    warn "can't send payment receipt/statement: $error" if $error;
   }
 
   '';
@@ -471,58 +412,109 @@ sub check {
   $self->SUPER::check;
 }
 
-=item batch_insert CUST_PAY_OBJECT, ...
+=item send_receipt HASHREF | OPTION => VALUE ...
 
-Class method which inserts multiple payments.  Takes a list of FS::cust_pay
-objects.  Returns a list, each element representing the status of inserting the
-corresponding payment - empty.  If there is an error inserting any payment, the
-entire transaction is rolled back, i.e. all payments are inserted or none are.
+Sends a payment receipt for this payment..
 
-For example:
+Available options:
 
-  my @errors = FS::cust_pay->batch_insert(@cust_pay);
-  my $num_errors = scalar(grep $_, @errors);
-  if ( $num_errors == 0 ) {
-    #success; all payments were inserted
-  } else {
-    #failure; no payments were inserted.
-  }
+=over 4
+
+=item manual
+
+Flag indicating the payment is being made manually.
+
+=item cust_bill
+
+Invoice (FS::cust_bill) object.  If not specified, the most recent invoice
+will be assumed.
+
+=item cust_main
+
+Customer (FS::cust_main) object (for efficiency).
+
+=back
 
 =cut
 
-sub batch_insert {
-  my $self = shift; #class method
+sub send_receipt {
+  my $self = shift;
+  my $opt = ref($_[0]) ? shift : { @_ };
 
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
+  my $cust_bill = $opt->{'cust_bill'};
+  my $cust_main = $opt->{'cust_main'} || $self->cust_main;
 
-  my $oldAutoCommit = $FS::UID::AutoCommit;
-  local $FS::UID::AutoCommit = 0;
-  my $dbh = dbh;
+  my $conf = new FS::Conf;
 
-  my $errors = 0;
-  
-  my @errors = map {
-    my $error = $_->insert( 'manual' => 1 );
-    if ( $error ) { 
-      $errors++;
+  return ''
+    unless $conf->exists('payment_receipt_email')
+        && grep { $_ !~ /^(POST|FAX)$/ } $cust_main->invoicing_list;
+
+  $cust_bill ||= ($cust_main->cust_bill)[-1]; #rather inefficient though?
+
+  if (    ( exists($opt->{'manual'}) && $opt->{'manual'} )
+       || ! $conf->exists('invoice_html_statement')
+       || ! $cust_bill
+     ) {
+
+    my $receipt_template = new Text::Template (
+      TYPE   => 'ARRAY',
+      SOURCE => [ map "$_\n", $conf->config('payment_receipt_email') ],
+    ) or do {
+      warn "can't create payment receipt template: $Text::Template::ERROR";
+      return '';
+    };
+
+    my @invoicing_list = grep { $_ !~ /^(POST|FAX)$/ }
+                           $cust_main->invoicing_list;
+
+    my $payby = $self->payby;
+    my $payinfo = $self->payinfo;
+    $payby =~ s/^BILL$/Check/ if $payinfo;
+    if ( $payby eq 'CARD' || $payby eq 'CHEK' ) {
+      $payinfo = $self->paymask
     } else {
-      $_->cust_main->apply_payments;
+      $payinfo = $self->decrypt($payinfo);
     }
-    $error;
-  } @_;
+    $payby =~ s/^CHEK$/Electronic check/;
 
-  if ( $errors ) {
-    $dbh->rollback if $oldAutoCommit;
+    my %fill_in = (
+      'date'         => time2str("%a %B %o, %Y", $self->_date),
+      'name'         => $cust_main->name,
+      'paynum'       => $self->paynum,
+      'paid'         => sprintf("%.2f", $self->paid),
+      'payby'        => ucfirst(lc($payby)),
+      'payinfo'      => $payinfo,
+      'balance'      => $cust_main->balance,
+      'company_name' => $conf->config('company_name', $cust_main->agentnum),
+    );
+
+    if ( $opt->{'cust_pkg'} ) {
+      $fill_in{'pkg'} = $opt->{'cust_pkg'}->part_pkg->pkg;
+      #setup date, other things?
+    }
+
+    send_email(
+      'from'    => $conf->config('invoice_from', $cust_main->agentnum),
+                                 #invoice_from??? well as good as any
+      'to'      => \@invoicing_list,
+      'subject' => 'Payment receipt',
+      'body'    => [ $receipt_template->fill_in( HASH => \%fill_in ) ],
+    );
+
   } else {
-    $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-  }
 
-  @errors;
+    my $queue = new FS::queue {
+       'paynum' => $self->paynum,
+       'job'    => 'FS::cust_bill::queueable_email',
+    };
+
+    $queue->insert(
+      'invnum'   => $cust_bill->invnum,
+      'template' => 'statement',
+    );
+
+  }
 
 }
 
@@ -602,6 +594,61 @@ sub amount {
 =head1 CLASS METHODS
 
 =over 4
+
+=item batch_insert CUST_PAY_OBJECT, ...
+
+Class method which inserts multiple payments.  Takes a list of FS::cust_pay
+objects.  Returns a list, each element representing the status of inserting the
+corresponding payment - empty.  If there is an error inserting any payment, the
+entire transaction is rolled back, i.e. all payments are inserted or none are.
+
+For example:
+
+  my @errors = FS::cust_pay->batch_insert(@cust_pay);
+  my $num_errors = scalar(grep $_, @errors);
+  if ( $num_errors == 0 ) {
+    #success; all payments were inserted
+  } else {
+    #failure; no payments were inserted.
+  }
+
+=cut
+
+sub batch_insert {
+  my $self = shift; #class method
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $errors = 0;
+  
+  my @errors = map {
+    my $error = $_->insert( 'manual' => 1 );
+    if ( $error ) { 
+      $errors++;
+    } else {
+      $_->cust_main->apply_payments;
+    }
+    $error;
+  } @_;
+
+  if ( $errors ) {
+    $dbh->rollback if $oldAutoCommit;
+  } else {
+    $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  }
+
+  @errors;
+
+}
 
 =item unapplied_sql
 

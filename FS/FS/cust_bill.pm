@@ -16,6 +16,7 @@ use FS::Misc qw( send_email send_fax generate_ps generate_pdf do_print );
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::cust_main_Mixin;
 use FS::cust_main;
+use FS::cust_statement;
 use FS::cust_bill_pkg;
 use FS::cust_bill_pkg_display;
 use FS::cust_credit;
@@ -82,6 +83,8 @@ owes you money.  The specific charges are itemized as B<cust_bill_pkg> records
 (see L<FS::cust_bill_pkg>).  FS::cust_bill inherits from FS::Record.  The
 following fields are currently supported:
 
+Regular fields
+
 =over 4
 
 =item invnum - primary key (assigned automatically for new invoices)
@@ -93,9 +96,25 @@ L<Time::Local> and L<Date::Parse> for conversion functions.
 
 =item charged - amount of this invoice
 
+=back
+
+Deprecated
+
+=over 4
+
 =item printed - deprecated
 
+=back
+
+Specific use cases
+
+=over 4
+
 =item closed - books closed flag, empty or `Y'
+
+=item statementnum - invoice aggregation (see L<FS::cust_statement>)
+
+=item agent_invid - legacy invoice number
 
 =back
 
@@ -183,22 +202,37 @@ sub check {
 
   my $error =
     $self->ut_numbern('invnum')
-    || $self->ut_number('custnum')
+    || $self->ut_foreign_key('custnum', 'cust_main', 'custnum' )
     || $self->ut_numbern('_date')
     || $self->ut_money('charged')
     || $self->ut_numbern('printed')
     || $self->ut_enum('closed', [ '', 'Y' ])
+    || $self->ut_foreign_keyn('statementnum', 'cust_statement', 'statementnum' )
+    || $self->ut_numbern('agent_invid') #varchar?
   ;
   return $error if $error;
-
-  return "Unknown customer"
-    unless qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
 
   $self->_date(time) unless $self->_date;
 
   $self->printed(0) if $self->printed eq '';
 
   $self->SUPER::check;
+}
+
+=item display_invnum
+
+Returns the displayed invoice number for this invoice: agent_invid if
+cust_bill-default_agent_invid is set and it has a value, invnum otherwise.
+
+=cut
+
+sub display_invnum {
+  my $self = shift;
+  if ( $conf->exists('cust_bill-default_agent_invid') && $self->agent_invid ){
+    return $self->agent_invid;
+  } else {
+    return $self->invnum;
+  }
 }
 
 =item previous
@@ -531,12 +565,20 @@ sub owed_pkgnum {
   $balance;
 }
 
-=item apply_payments_and_credits
+=item apply_payments_and_credits [ OPTION => VALUE ... ]
+
+Applies unapplied payments and credits to this invoice.
+
+A hash of optional arguments may be passed.  Currently "manual" is supported.
+If true, a payment receipt is sent instead of a statement when
+'payment_receipt_email' configuration option is set.
+
+If there is an error, returns the error, otherwise returns false.
 
 =cut
 
 sub apply_payments_and_credits {
-  my $self = shift;
+  my( $self, %options ) = @_;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -633,7 +675,7 @@ sub apply_payments_and_credits {
 
     $app->invnum( $self->invnum );
 
-    my $error = $app->insert;
+    my $error = $app->insert(%options);
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return "Error inserting ". $app->table. " record: $error";

@@ -2,7 +2,10 @@ package FS::cust_bill_pay_pkg;
 
 use strict;
 use vars qw( @ISA );
+use FS::Conf;
 use FS::Record qw( qsearch qsearchs );
+use FS::cust_bill_pay;
+use FS::cust_bill_pkg;
 
 @ISA = qw(FS::Record);
 
@@ -77,7 +80,39 @@ otherwise returns false.
 
 =cut
 
-# the insert method can be inherited from FS::Record
+sub insert {
+  my($self, %options) = @_;
+
+  #local $SIG{HUP} = 'IGNORE';
+  #local $SIG{INT} = 'IGNORE';
+  #local $SIG{QUIT} = 'IGNORE';
+  #local $SIG{TERM} = 'IGNORE';
+  #local $SIG{TSTP} = 'IGNORE';
+  #local $SIG{PIPE} = 'IGNORE';
+  #
+  #my $oldAutoCommit = $FS::UID::AutoCommit;
+  #local $FS::UID::AutoCommit = 0;
+  #my $dbh = dbh;
+
+  my $error = $self->SUPER::insert;
+  if ( $error ) {
+    #$dbh->rollback if $oldAutoCommit;
+    return "error inserting $self: $error";
+  }
+
+  #payment receipt
+  my $conf = new FS::Conf;
+  my $trigger = $conf->config('payment_receipt-trigger') || 'cust_pay';
+  if ( $trigger eq 'cust_bill_pay_pkg' ) {
+    my $error = $self->send_receipt(
+      'manual'    => $options{'manual'},
+    );
+    warn "can't send payment receipt/statement: $error" if $error;
+  }
+
+  '';
+
+}
 
 =item delete
 
@@ -123,6 +158,47 @@ sub check {
 
   $self->SUPER::check;
 }
+
+=item cust_bill_pay
+
+Returns the FS::cust_bill_pay object (payment application to the overall
+invoice).
+
+=cut
+
+sub cust_bill_pay {
+  my $self = shift;
+  qsearchs('cust_bill_pay', { 'billpaynum' => $self->billpaynum } );
+}
+
+=item cust_bill_pkg
+
+Returns the FS::cust_bill_pkg object (line item to which payment is applied).
+
+=cut
+
+sub cust_bill_pkg {
+  my $self = shift;
+  qsearchs('cust_bill_pkg', { 'billpkgnum' => $self->billpkgnum } );
+}
+
+=item send_receipt
+
+Sends a payment receipt for the associated payment, against this specific
+invoice and packages.  If there is an error, returns the error, otherwise
+returns false.
+
+=cut
+
+sub send_receipt {
+  my $self = shift;
+  my $opt = ref($_[0]) ? shift : { @_ };
+  $self->cust_bill_pay->send_receipt(
+    'cust_pkg' => $self->cust_bill_pkg->cust_pkg,
+    %$opt,
+  );
+}
+
 
 =back
 

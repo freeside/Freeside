@@ -6168,19 +6168,23 @@ sub batch_card {
   '';
 }
 
-=item apply_payments_and_credits
+=item apply_payments_and_credits [ OPTION => VALUE ... ]
 
 Applies unapplied payments and credits.
 
 In most cases, this new method should be used in place of sequential
 apply_payments and apply_credits methods.
 
+A hash of optional arguments may be passed.  Currently "manual" is supported.
+If true, a payment receipt is sent instead of a statement when
+'payment_receipt_email' configuration option is set.
+
 If there is an error, returns the error, otherwise returns false.
 
 =cut
 
 sub apply_payments_and_credits {
-  my $self = shift;
+  my( $self, %options ) = @_;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -6196,7 +6200,7 @@ sub apply_payments_and_credits {
   $self->select_for_update; #mutex
 
   foreach my $cust_bill ( $self->open_cust_bill ) {
-    my $error = $cust_bill->apply_payments_and_credits;
+    my $error = $cust_bill->apply_payments_and_credits(%options);
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return "Error applying: $error";
@@ -6305,19 +6309,24 @@ sub apply_credits {
   return $total_unapplied_credits;
 }
 
-=item apply_payments
+=item apply_payments  [ OPTION => VALUE ... ]
 
 Applies (see L<FS::cust_bill_pay>) unapplied payments (see L<FS::cust_pay>)
 to outstanding invoice balances in chronological order.
 
  #and returns the value of any remaining unapplied payments.
 
+A hash of optional arguments may be passed.  Currently "manual" is supported.
+If true, a payment receipt is sent instead of a statement when
+'payment_receipt_email' configuration option is set.
+
+
 Dies if there is an error.
 
 =cut
 
 sub apply_payments {
-  my $self = shift;
+  my( $self, %options ) = @_;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -6381,7 +6390,7 @@ sub apply_payments {
     } );
     $cust_bill_pay->pkgnum( $payment->pkgnum )
       if $conf->exists('pkg-balances') && $payment->pkgnum;
-    my $error = $cust_bill_pay->insert;
+    my $error = $cust_bill_pay->insert(%options);
     if ( $error ) {
       $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
       die $error;

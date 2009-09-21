@@ -56,7 +56,7 @@ sub insert {
   my $dbh = dbh;
 
   my $error =    $self->SUPER::insert(@_)
-              || $self->apply_to_lineitems;
+              || $self->apply_to_lineitems(@_);
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
@@ -113,7 +113,8 @@ Auto-applies this invoice application to specific line items, if possible.
 =cut
 
 sub apply_to_lineitems {
-  my $self = shift;
+  #my $self = shift;
+  my( $self, %options ) = @_;
 
   return '' if $skip_apply_to_lineitems_hack;
 
@@ -322,7 +323,7 @@ sub apply_to_lineitems {
       'sdate'      => $cust_bill_pkg->sdate,
       'edate'      => $cust_bill_pkg->edate,
     });
-    my $error = $application->insert;
+    my $error = $application->insert(%options);
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error;
