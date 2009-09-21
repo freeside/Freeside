@@ -9,7 +9,7 @@ use RT::CurrentUser;
 
 @ISA = qw( FS::TicketSystem::RT_Libs );
 
-$DEBUG = 1;
+$DEBUG = 0;
 
 sub sql_num_customer_tickets {
   "( select count(*) from tickets
