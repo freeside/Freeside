@@ -1857,7 +1857,7 @@ sub print_generic {
 
   my( $self, %params ) = @_;
   my $today = $params{today} ? $params{today} : time;
-  warn "FS::cust_bill::print_generic called on $self with suffix $params{template}\n"
+  warn "$me print_generic called on $self with suffix $params{template}\n"
     if $DEBUG;
 
   my $format = $params{format};
@@ -2208,7 +2208,7 @@ sub print_generic {
   $invoice_data{'total_items'} = \@total_items;
   $invoice_data{'buf'} = \@buf;
   $invoice_data{'sections'} = \@sections;
-  
+
   my $previous_section = { 'description' => 'Previous Charges',
                            'subtotal'    => $other_money_char.
                                             sprintf('%.2f', $pr_total),
@@ -2381,7 +2381,7 @@ sub print_generic {
     }
   }
   $invoice_data{'taxtotal'} = sprintf('%.2f', $taxtotal);
-  
+
   push @buf,['','-----------'];
   push @buf,[( $conf->exists('disable_previous_balance') 
                ? 'Total Charges'
@@ -2456,7 +2456,7 @@ sub print_generic {
     foreach my $credit ( $self->_items_credits('trim_len'=>32) ) {
       push @buf, [ $credit->{'description'}, $money_char.$credit->{'amount'} ];
     }
-  
+
     # payments
     my $paymenttotal = 0;
     foreach my $payment ( $self->_items_payments ) {
@@ -2965,8 +2965,6 @@ sub _items_cust_bill_pkg {
 
       my $type = $display->type;
 
-      my $cust_pkg = $cust_bill_pkg->cust_pkg;
-
       my $desc = $cust_bill_pkg->desc;
       $desc = substr($desc, 0, 50). '...'
         if $format eq 'latex' && length($desc) > 50;
@@ -2977,6 +2975,8 @@ sub _items_cust_bill_pkg {
                         );
 
       if ( $cust_bill_pkg->pkgnum > 0 ) {
+
+        my $cust_pkg = $cust_bill_pkg->cust_pkg;
 
         if ( $cust_bill_pkg->setup != 0 && (!$type || $type eq 'S') ) {
 
