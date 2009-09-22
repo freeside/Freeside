@@ -1,8 +1,9 @@
 package FS::Mason;
 
 use strict;
-use vars qw( @ISA @EXPORT_OK );
+use vars qw( @ISA @EXPORT_OK $addl_handler_use );
 use Exporter;
+use File::Slurp qw( slurp );
 use HTML::Mason 1.27; #http://www.masonhq.com/?ApacheModPerl2Redirect
 use HTML::Mason::Interp;
 use HTML::Mason::Compiler::ToObject;
@@ -29,6 +30,12 @@ FS::Mason - Initialize the Mason environment
 Initializes the Mason environment, loads all Freeside and RT libraries, etc.
 
 =cut
+
+$addl_handler_use = '';
+my $addl_handler_use_file = '%%%FREESIDE_CONF%%%/addl_handler_use.pl';
+if ( -e $addl_handler_use_file ) {
+  $addl_handler_use = slurp( $addl_handler_use_file );
+}
 
 # List of modules that you want to use from components (see Admin
 # manual for details)
@@ -214,6 +221,11 @@ Initializes the Mason environment, loads all Freeside and RT libraries, etc.
   use FS::cust_statement;
   # Sammath Naur
 
+  if ( $FS::Mason::addl_handler_use ) {
+    eval $FS::Mason::addl_handler_use;
+    die $@ if $@;
+  }
+
   if ( %%%RT_ENABLED%%% ) {
     eval '
       use lib ( "/opt/rt3/local/lib", "/opt/rt3/lib" );
@@ -389,6 +401,21 @@ sub mason_interps {
     RT::LoadConfig();
   }
 
+  # A hook supporting strange legacy ways people have added stuff on
+
+  my @addl_comp_root = ();
+  my $addl_comp_root_file = '%%%FREESIDE_CONF%%%/addl_comp_root.pl';
+  if ( -e $addl_comp_root_file ) {
+    warn "reading $addl_comp_root_file\n";
+    my $text = slurp( $addl_comp_root_file );
+    my @addl = eval $text;
+    if ( @addl && ! $@ ) {
+      @addl_comp_root = @addl;
+    } elsif ($@) {
+      warn "error parsing $addl_comp_root_file: $@\n";
+    }
+  }
+
   my %interp = (
     request_class        => $request_class,
     data_dir             => '%%%MASONDATA%%%',
@@ -398,6 +425,7 @@ sub mason_interps {
     comp_root            => [
                               [ 'freeside'=>'%%%FREESIDE_DOCUMENT_ROOT%%%'    ],
                               [ 'rt'      =>'%%%FREESIDE_DOCUMENT_ROOT%%%/rt' ],
+                              @addl_comp_root,
                             ],
   );
 
