@@ -156,14 +156,16 @@ sub _from_customer {
   }
 
   my $sql = "
-                    FROM Tickets
-                    JOIN Queues ON ( Tickets.Queue = Queues.id       )
-                    JOIN Links  ON ( Tickets.id    = Links.LocalBase )
-                    JOIN Users  ON ( Tickets.Owner = Users.id        )
-                    $join 
-       WHERE ( ". join(' OR ', map "Status = '$_'", $self->statuses ). " )
-         AND Target = 'freeside://freeside/cust_main/$custnum'
-         $where
+    FROM Tickets
+      JOIN Queues ON ( Tickets.Queue = Queues.id )
+      JOIN Users  ON ( Tickets.Owner = Users.id  )
+      JOIN Links  ON ( Tickets.id    = Links.LocalBase
+                       AND Links.Base LIKE '%/ticket/' || Tickets.id )
+      $join 
+
+    WHERE ( ". join(' OR ', map "Status = '$_'", $self->statuses ). " )
+      AND Target = 'freeside://freeside/cust_main/$custnum'
+      $where
   ";
 
   ( $sql, @param );
