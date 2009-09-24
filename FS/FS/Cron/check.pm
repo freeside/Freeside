@@ -47,14 +47,14 @@ sub check_selfservice {
 
 sub check_sg {
   my $conf = new FS::Conf;
+  #different trigger if they ever stop using multicustomer_hack ?
   return 1 unless $conf->exists('sg-multicustomer_hack');
 
   my $ua = new LWP::UserAgent;
   $ua->agent("FreesideCronCheck/0.1 " . $ua->agent);
 
-  #XXX shiiiiit.
-  my $USER = '';
-  my $PASS = '';
+  my $USER = $conf->config('sg-ping_username');
+  my $PASS = $conf->config('sg-ping_password');
   my $req = new HTTP::Request GET=>"https://$USER:$PASS\@localhost/sg/ping.cgi";
   my $res = $ua->request($req);
 
@@ -68,6 +68,7 @@ sub check_sg {
 
 sub check_sgng {
   my $conf = new FS::Conf;
+  #different trigger if they ever stop using multicustomer_hack ?
   return 1 unless $conf->exists('sg-multicustomer_hack');
 
   eval 'use RPC::XML; use RPC::XML::Client;';
