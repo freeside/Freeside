@@ -20,6 +20,13 @@ sub _cache {
              } );
 }
 
+sub ping {
+  #my $p = shift;
+
+  return { 'pong' => '1' };
+
+}
+
 #this might almost be general-purpose
 sub decompify_pkgs {
   my $p = shift;

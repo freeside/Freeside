@@ -76,6 +76,7 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'bulk_processrow'           => 'Bulk/processrow',
   'check_username'            => 'Bulk/check_username',
   #sg
+  'ping'                      => 'SGNG/ping',
   'decompify_pkgs'            => 'SGNG/decompify_pkgs',
   'previous_payment_info'     => 'SGNG/previous_payment_info',
   'previous_payment_info_renew_info'
