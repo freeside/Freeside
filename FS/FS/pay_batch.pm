@@ -1,11 +1,13 @@
 package FS::pay_batch;
 
 use strict;
-use vars qw( @ISA );
+use vars qw( @ISA $DEBUG %import_info %export_info $conf );
 use Time::Local;
 use Text::CSV_XS;
+use XML::Simple qw(XMLin XMLout);
 use FS::Record qw( dbh qsearch qsearchs );
 use FS::cust_pay;
+use FS::Conf;
 
 @ISA = qw(FS::Record);
 
@@ -137,6 +139,42 @@ sub set_status {
   $self->replace();
 }
 
+# further false laziness
+
+%import_info = %export_info = ();
+foreach my $INC (@INC) {
+  warn "globbing $INC/FS/pay_batch/*.pm\n" if $DEBUG;
+  foreach my $file ( glob("$INC/FS/pay_batch/*.pm")) {
+    warn "attempting to load batch format from $file\n" if $DEBUG;
+    $file =~ /\/(\w+)\.pm$/;
+    next if !$1;
+    my $mod = $1;
+    my ($import, $export, $name) = 
+      eval "use FS::pay_batch::$mod; 
+           ( \\%FS::pay_batch::$mod\::import_info,
+             \\%FS::pay_batch::$mod\::export_info,
+             \$FS::pay_batch::$mod\::name)";
+    $name ||= $mod; # in case it's not defined
+    if( $@) {
+      # in FS::cdr this is a die, not a warn.  That's probably a bug.
+      warn "error using FS::pay_batch::$mod (skipping): $@\n";
+      next;
+    }
+    if(!keys(%$import)) {
+      warn "no \%import_info found in FS::pay_batch::$mod (skipping)\n";
+    }
+    else {
+      $import_info{$name} = $import;
+    }
+    if(!keys(%$export)) {
+      warn "no \%export_info found in FS::pay_batch::$mod (skipping)\n";
+    }
+    else {
+      $export_info{$name} = $export;
+    }
+  }
+}
+
 =item import_results OPTION => VALUE, ...
 
 Import batch results.
@@ -155,222 +193,19 @@ sub import_results {
   my $param = ref($_[0]) ? shift : { @_ };
   my $fh = $param->{'filehandle'};
   my $format = $param->{'format'};
+  my $info = $import_info{$format}
+    or die "unknown format $format";
 
-  my $filetype;      # CSV, Fixed80, Fixed264
-  my @fields;
-  my $formatre;      # for Fixed.+
-  my @values;
-  my $begin_condition;
-  my $end_condition;
-  my $end_hook;
-  my $hook;
-  my $approved_condition;
-  my $declined_condition;
-
-  if ( $format eq 'csv-td_canada_trust-merchant_pc_batch' ) {
-
-    $filetype = "CSV";
-
-    @fields = (
-      'paybatchnum', # Reference#:  Invoice number of the transaction
-      'paid',        # Amount:  Amount of the transaction.  Dollars and cents
-                     #          with no decimal entered.
-      '',            # Card Type:  0 - MCrd, 1 - Visa, 2 - AMEX, 3 - Discover,
-                     #             4 - Insignia, 5 - Diners/EnRoute, 6 - JCB
-      '_date',       # Transaction Date:  Date the Transaction was processed
-      'time',        # Transaction Time:  Time the transaction was processed
-      'payinfo',     # Card Number:  Card number for the transaction
-      '',            # Expiry Date:  Expiry date of the card
-      '',            # Auth#:  Authorization number entered for force post
-                     #         transaction
-      'type',        # Transaction Type:  0 - purchase, 40 - refund,
-                     #                    20 - force post
-      'result',      # Processing Result: 3 - Approval,
-                     #                    4 - Declined/Amount over limit,
-                     #                    5 - Invalid/Expired/stolen card,
-                     #                    6 - Comm Error
-      '',            # Terminal ID: Terminal ID used to process the transaction
-    );
-
-    $end_condition = sub {
-      my $hash = shift;
-      $hash->{'type'} eq '0BC';
-    };
-
-    $end_hook = sub {
-      my( $hash, $total) = @_;
-      $total = sprintf("%.2f", $total);
-      my $batch_total = sprintf("%.2f", $hash->{'paybatchnum'} / 100 );
-      return "Our total $total does not match bank total $batch_total!"
-        if $total != $batch_total;
-      '';
-    };
-
-    $hook = sub {
-      my $hash = shift;
-      $hash->{'paid'} = sprintf("%.2f", $hash->{'paid'} / 100 );
-      $hash->{'_date'} = timelocal( substr($hash->{'time'},  4, 2),
-                                    substr($hash->{'time'},  2, 2),
-                                    substr($hash->{'time'},  0, 2),
-                                    substr($hash->{'_date'}, 6, 2),
-                                    substr($hash->{'_date'}, 4, 2)-1,
-                                    substr($hash->{'_date'}, 0, 4)-1900, );
-    };
-
-    $approved_condition = sub {
-      my $hash = shift;
-      $hash->{'type'} eq '0' && $hash->{'result'} == 3;
-    };
-
-    $declined_condition = sub {
-      my $hash = shift;
-      $hash->{'type'} eq '0' && (    $hash->{'result'} == 4
-                                  || $hash->{'result'} == 5 );
-    };
-
-
-  }elsif ( $format eq 'csv-chase_canada-E-xactBatch' ) {
-
-    $filetype = "CSV";
-
-    @fields = (
-      '',            # Internal(bank) id of the transaction
-      '',            # Transaction Type:  00 - purchase,      01 - preauth,
-                     #                    02 - completion,    03 - forcepost,
-                     #                    04 - refund,        05 - auth,
-                     #                    06 - purchase corr, 07 - refund corr,
-                     #                    08 - void           09 - void return
-      '',            # gateway used to process this transaction
-      'paid',        # Amount:  Amount of the transaction.  Dollars and cents
-                     #          with decimal entered.
-      'auth',        # Auth#:  Authorization number (if approved)
-      'payinfo',     # Card Number:  Card number for the transaction
-      '',            # Expiry Date:  Expiry date of the card
-      '',            # Cardholder Name
-      'bankcode',    # Bank response code (3 alphanumeric)
-      'bankmess',    # Bank response message
-      'etgcode',     # ETG response code (2 alphanumeric)
-      'etgmess',     # ETG response message
-      '',            # Returned customer number for the transaction
-      'paybatchnum', # Reference#:  paybatch number of the transaction
-      '',            # Reference#:  Invoice number of the transaction
-      'result',      # Processing Result: Approved of Declined
-    );
-
-    $end_condition = sub {
-      '';
-    };
-
-    $hook = sub {
-      my $hash = shift;
-      my $cpb = shift;
-      $hash->{'paid'} = sprintf("%.2f", $hash->{'paid'}); #hmmmm
-      $hash->{'_date'} = time;  # got a better one?
-      $hash->{'payinfo'} = $cpb->{'payinfo'}
-        if( substr($hash->{'payinfo'}, -4) eq substr($cpb->{'payinfo'}, -4) );
-    };
-
-    $approved_condition = sub {
-      my $hash = shift;
-      $hash->{'etgcode'} eq '00' && $hash->{'result'} eq "Approved";
-    };
-
-    $declined_condition = sub {
-      my $hash = shift;
-      $hash->{'etgcode'} ne '00' # internal processing error
-        || ( $hash->{'result'} eq "Declined" );
-    };
-
-
-  }elsif ( $format eq 'PAP' ) {
-
-    $filetype = "Fixed264";
-
-    @fields = (
-      'recordtype',  # We are interested in the 'D' or debit records
-      'batchnum',    # Record#:  batch number we used when sending the file
-      'datacenter',  # Where in the bowels of the bank the data was processed
-      'paid',        # Amount:  Amount of the transaction.  Dollars and cents
-                     #          with no decimal entered.
-      '_date',       # Transaction Date:  Date the Transaction was processed
-      'bank',        # Routing information
-      'payinfo',     # Account number for the transaction
-      'paybatchnum', # Reference#:  Invoice number of the transaction
-    );
-
-    $formatre = '^(.).{19}(.{4})(.{3})(.{10})(.{6})(.{9})(.{12}).{110}(.{19}).{71}$'; 
-
-    $end_condition = sub {
-      my $hash = shift;
-      $hash->{'recordtype'} eq 'W';
-    };
-
-    $end_hook = sub {
-      my( $hash, $total) = @_;
-      $total = sprintf("%.2f", $total);
-      my $batch_total = $hash->{'datacenter'}.$hash->{'paid'}.
-                        substr($hash->{'_date'},0,1);          # YUCK!
-      $batch_total = sprintf("%.2f", $batch_total / 100 );
-      return "Our total $total does not match bank total $batch_total!"
-        if $total != $batch_total;
-      '';
-    };
-
-    $hook = sub {
-      my $hash = shift;
-      $hash->{'paid'} = sprintf("%.2f", $hash->{'paid'} / 100 );
-      my $tmpdate = timelocal( 0,0,1,1,0,substr($hash->{'_date'}, 0, 3)+2000); 
-      $tmpdate += 86400*(substr($hash->{'_date'}, 3, 3)-1) ;
-      $hash->{'_date'} = $tmpdate;
-      $hash->{'payinfo'} = $hash->{'payinfo'} . '@' . $hash->{'bank'};
-    };
-
-    $approved_condition = sub {
-      1;
-    };
-
-    $declined_condition = sub {
-      0;
-    };
-
-  }elsif ( $format eq 'ach-spiritone' ) {
-
-    $filetype = "CSV";
-
-    @fields = (
-      '',            # Name
-      'paybatchnum', # ID: Number of the transaction
-      'aba',         # ABA Number for the transaction
-      'payinfo',     # Bank Account Number for the transaction
-      '',            # Transaction Type:  27 - debit
-      'paid',        # Amount:  Amount of the transaction.  Dollars and cents
-                     #          with decimal entered.
-      '',            # Default Transaction Type
-      '',            # Default Amount:  Dollars and cents with decimal entered.
-    );
-
-    $end_condition = sub {
-      '';
-    };
-
-    $hook = sub {
-      my $hash = shift;
-      $hash->{'_date'} = time;  # got a better one?
-      $hash->{'payinfo'} = $hash->{'payinfo'} . '@' . $hash->{'aba'};
-    };
-
-    $approved_condition = sub {
-      1;
-    };
-
-    $declined_condition = sub {
-      0;
-    };
-
-
-  } else {
-    return "Unknown format $format";
-  }
+  my $filetype            = $info->{'filetype'};      # CSV or fixed
+  my @fields              = @{ $info->{'fields'} };
+  my $formatre            = $info->{'formatre'};      # for fixed
+  my @all_values;
+  my $begin_condition     = $info->{'begin_condition'};
+  my $end_condition       = $info->{'end_condition'};
+  my $end_hook            = $info->{'end_hook'};
+  my $hook                = $info->{'hook'};
+  my $approved_condition  = $info->{'approved'};
+  my $declined_condition  = $info->{'declined'};
 
   my $csv = new Text::CSV_XS;
 
@@ -390,36 +225,66 @@ sub import_results {
   unless ( $reself->status eq 'I' ) {
     $dbh->rollback if $oldAutoCommit;
     return "batchnum ". $self->batchnum. "no longer in transit";
-  };
+  }
 
   my $error = $self->set_status('R');
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
-    return $error
+    return $error;
   }
 
   my $total = 0;
   my $line;
-  while ( defined($line=<$fh>) ) {
 
-    next if $line =~ /^\s*$/; #skip blank lines
+  # Order of operations has been changed here.
+  # We now slurp everything into @all_values, then 
+  # process one line at a time.
 
-    if ($filetype eq "CSV") {
-      $csv->parse($line) or do {
-        $dbh->rollback if $oldAutoCommit;
-        return "can't parse: ". $csv->error_input();
-      };
-      @values = $csv->fields();
-    }elsif ($filetype eq "Fixed80" || $filetype eq "Fixed264"){
-      @values = $line =~ /$formatre/;
-      unless (@values) {
-        $dbh->rollback if $oldAutoCommit;
-        return "can't parse: ". $line;
-      };
-    }else{
+  if ($filetype eq 'XML') {
+    my @xmlkeys = @{ $info->{'xmlkeys'} };  # for XML
+    my $xmlrow  = $info->{'xmlrow'};        # also for XML
+
+    # Do everything differently.
+    my $data = XMLin($fh, KeepRoot => 1);
+    my $rows = $data;
+    # $xmlrow = [ RootKey, FirstLevelKey, SecondLevelKey... ]
+    $rows = $rows->{$_} foreach( @$xmlrow );
+    if(!defined($rows)) {
       $dbh->rollback if $oldAutoCommit;
-      return "Unknown file type $filetype";
+      return "can't find rows in XML file";
     }
+    $rows = [ $rows ] if ref($rows) ne 'ARRAY';
+    foreach my $row (@$rows) {
+      push @all_values, [ @{$row}{@xmlkeys} ];
+    }
+  }
+  else {
+    while ( defined($line=<$fh>) ) {
+
+      next if $line =~ /^\s*$/; #skip blank lines
+
+      if ($filetype eq "CSV") {
+        $csv->parse($line) or do {
+          $dbh->rollback if $oldAutoCommit;
+          return "can't parse: ". $csv->error_input();
+        };
+        push @all_values, [ $csv->fields() ];
+      }elsif ($filetype eq 'fixed'){
+        my @values = $line =~ /$formatre/;
+        unless (@values) {
+          $dbh->rollback if $oldAutoCommit;
+          return "can't parse: ". $line;
+        };
+        push @all_values, \@values;
+      }else{
+        $dbh->rollback if $oldAutoCommit;
+        return "Unknown file type $filetype";
+      }
+    }
+  }
+
+  foreach (@all_values) {
+    my @values = @$_;
 
     my %hash;
     foreach my $field ( @fields ) {
@@ -428,8 +293,9 @@ sub import_results {
       $hash{$field} = $value;
     }
 
-    if ( &{$end_condition}(\%hash) ) {
-      my $error = &{$end_hook}(\%hash, $total);
+    if ( defined($end_condition) and &{$end_condition}(\%hash) ) {
+      my $error;
+      $error = &{$end_hook}(\%hash, $total) if defined($end_hook);
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
         return $error;
@@ -514,12 +380,99 @@ sub import_results {
 
     }
 
-
   }
   
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
 
+}
+
+sub export_batch {
+# Formerly httemplate/misc/download-batch.cgi
+  my $self = shift;
+  my $conf = new FS::Conf;
+  my $format = shift || $conf->config('batch-default_format')
+               or die "No batch format configured\n";
+  my $info = $export_info{$format} or die "Format not found: '$format'\n";
+  &{$info->{'init'}}($conf) if exists($info->{'init'});
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;  
+
+  my $error;
+
+  my $first_download;
+  if($self->status eq 'O') {
+    $first_download = 1;
+  }
+  elsif($self->status eq 'I' and
+        $FS::CurrentUser::CurrentUser->access_right('Reprocess batches')) {
+    $first_download = 0;
+  }
+  else {
+    die "No pending batch.\n"
+  }
+
+  $error = $self->set_status('I');
+  die "error updating pay_batch status: $error\n" if $error;
+
+  my $batch = '';
+  my $batchtotal = 0;
+  my $batchcount = 0;
+
+  my @cust_pay_batch = sort { $a->paybatchnum <=> $b->paybatchnum }
+                      qsearch('cust_pay_batch', { batchnum => $self->batchnum } );
+
+  my $h = $info->{'header'};
+  if(ref($h) eq 'CODE') {
+    $batch .= &$h($self, \@cust_pay_batch) . "\n";
+  }
+  else {
+    $batch .= $h . "\n";
+  }
+  foreach my $cust_pay_batch (@cust_pay_batch) {
+    if($first_download) {
+      my $balance = $cust_pay_batch->cust_main->balance;
+      $error = '';
+      if($balance <= 0) { # then don't charge this customer
+        $error = $cust_pay_batch->delete;
+        undef $cust_pay_batch;
+      }
+      elsif($balance < $cust_pay_batch->amount) { # then reduce the charge to the remaining balance
+        $cust_pay_batch->amount($balance);
+        $error = $cust_pay_batch->replace;
+      }
+      # else $balance >= $cust_pay_batch->amount
+      if($error) {
+        $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+        die $error;
+      }
+    }
+    if($cust_pay_batch) { # that is, it wasn't deleted
+      $batchcount++;
+      $batchtotal += $cust_pay_batch->amount;
+      $batch .= &{$info->{'row'}}($cust_pay_batch, $self) . "\n";
+    }
+  }
+  my $f = $info->{'footer'};
+  if(ref($f) eq 'CODE') {
+    $batch .= &$f($self, $batchcount, $batchtotal) . "\n";
+  }
+  else {
+    $batch .= $f . "\n";
+  }
+
+  if ($info->{'autopost'}) {
+    $error = &{$info->{'autopost'}}($self, $batch);
+    if($error) {
+      $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+      die $error;
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  return $batch;
 }
 
 =back

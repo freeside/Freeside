@@ -147,6 +147,7 @@ if ( $pay_batch ) {
                     qq!<OPTION VALUE="PAP">80 byte file for TD Canada Trust PAP Batch</OPTION>!.
                     qq!<OPTION VALUE="BoM">Bank of Montreal ECA batch</OPTION>!.
                     qq!<OPTION VALUE="ach-spiritone">Spiritone ACH batch</OPTION>!.
+                    qq!<OPTION VALUE="paymentech">Chase Paymentech</OPTION>!.
                     qq!</SELECT>!;
     }
     $html_init .= qq!<INPUT TYPE="hidden" NAME="batchnum" VALUE="$batchnum"><INPUT TYPE="submit" VALUE="Download"></FORM><BR>!;
@@ -171,6 +172,7 @@ if ( $pay_batch ) {
                     qq!<OPTION VALUE="PAP">264 byte results for TD Canada Trust PAP Batch</OPTION>!.
                     qq!<OPTION VALUE="BoM">Bank of Montreal ECA results</OPTION>!.
                     qq!<OPTION VALUE="ach-spiritone">Spiritone ACH batch</OPTION>!.
+                    qq!<OPTION VALUE="paymentech">Chase Paymentech</OPTION>!.
                     qq!</SELECT><BR>!;
     }
     $html_init .= qq!<INPUT TYPE="hidden" NAME="batchnum" VALUE="$batchnum">!;

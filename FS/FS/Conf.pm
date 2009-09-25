@@ -2386,6 +2386,13 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'batchconfig-paymentech',
+    'section'     => 'billing',
+    'description' => 'Configuration for Chase Paymentech batching, four lines: 1. BIN, 2. Terminal ID, 3. Merchant ID, 4. Username',
+    'type'        => 'textarea',
+  },
+
+  {
     'key'         => 'payment_history-years',
     'section'     => 'UI',
     'description' => 'Number of years of payment history to show by default.  Currently defaults to 2.',
