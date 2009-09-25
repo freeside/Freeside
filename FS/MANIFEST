@@ -449,5 +449,7 @@ FS/part_device.pm
 t/part_device.t
 FS/cdr_termination.pm
 t/cdr_termination.t
+FS/cust_attachment.pm
+t/cust_attachment.t
 FS/cust_statement.pm
 t/cust_statement.t
