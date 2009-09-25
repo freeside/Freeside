@@ -267,9 +267,24 @@ Setting <b><% $key %></b>
     <td><input type="button" value="add" onClick="doadd<% "$key$n" %>(this.form)"></td>
   </tr></table>
 
+%   } elsif ( $element_types{$type} ) {
+%
+%     my %opt = ( 'element_name' => "$key$n",
+%                 'empty_label'  => ' ',
+%               );
+%     if ( $config_item->multiple ) {
+%       $opt{'multiple'} = 1 if $config_item->multiple;
+%       $opt{'curr_value'} = [ $conf->config($key, $agentnum) ];
+%     } else {
+%       $opt{'curr_value'} = 
+%         $conf->exists($key, $agentnum) ? $conf->config($key, $agentnum) : '';
+%     }
+
+      <% include("/elements/$type.html", %opt ) %>
+
 %   } else {
 
-  <font color="#ff0000">unknown type <% $type %></font>
+      <font color="#ff0000">unknown type <% $type %></font>
 
 %   }
 % $n++;
@@ -291,6 +306,10 @@ Setting <b><% $key %></b>
 my $conf = new FS::Conf;
 my @config_items = $conf->config_items; 
 my %confitems = map { $_->key => $_ } @config_items;
+
+my %element_types = map { $_ => 1 } qw(
+  select-part_svc
+);
 
 </%once>
 <%init>

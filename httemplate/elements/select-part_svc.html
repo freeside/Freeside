@@ -1,0 +1,18 @@
+<% include( '/elements/select-table.html',
+              'table'         => 'part_svc',
+              'name_col'      => 'svc',
+              'label_showkey' => 1,
+              #N/A 'empty_label' => '(none)',
+              %opt,
+          )
+%>
+<%init>
+
+my( %opt ) = @_;
+
+$opt{'records'} = delete $opt{'part_svc'}
+  if $opt{'part_svc'};
+
+$opt{'records'} ||= [ qsearch( 'part_svc', {} ) ]; # { disabled=>'' } )
+
+</%init>

@@ -7,11 +7,8 @@
   <TR>
     <TD ALIGN="right"><% $opt{'label'} || 'Package definition' %></TD>
     <TD>
-      <% include( '/elements/select-table.html',
-                    'table'     => 'part_svc',
-                    'name_col'  => 'svc',
-                    'multiple'  => 1,
-                    #N/A 'empty_label' => '(none)',
+      <% include( '/elements/select-part_svc.html',
+                    'multiple' => 1,
                     %opt,
                 )
       %>

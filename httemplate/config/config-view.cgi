@@ -156,7 +156,9 @@ Click on a configuration value to change it.
 
 %   } elsif (    $type eq 'textarea'
 %             || $type eq 'editlist'
-%             || $type eq 'selectmultiple' ) { 
+%             || $type eq 'selectmultiple'
+%           )
+%   {
 
             <tr>
               <td id="<% $agentnum.$i->key.$n %>" bgcolor="#ffffff">
@@ -197,7 +199,7 @@ Click on a configuration value to change it.
               </td>
             </tr>
 
-%   } elsif ( $type eq 'select-sub' ) { 
+%   } elsif ( $type eq 'select-sub' ) {
 
             <tr>
               <td id="<% $agentnum.$i->key.$n %>" bgcolor="#ffffff">
@@ -206,12 +208,25 @@ Click on a configuration value to change it.
               </td>
             </tr>
 
-%   } else { 
+%   } elsif ( $type eq 'select-part_svc' ) {
+%     my @svcparts = $conf->config($i->key, $agentnum);
+
+            <tr>
+              <td id="<% $agentnum.$i->key.$n %>" bgcolor="#ffffff">
+                <% join('<BR>', map { $_ # ': '. $svc
+                                    }
+                                    @svcparts
+                       )
+                %>
+              </td>
+            </tr>
+
+%   } else {
 
             <tr><td>
               <font color="#ff0000">unknown type <% $type %></font>
             </td></tr>
-%   } 
+%   }
 %   $n++;
 % } 
 

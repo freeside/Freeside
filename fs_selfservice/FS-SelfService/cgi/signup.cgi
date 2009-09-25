@@ -229,6 +229,7 @@ if ( $magic eq 'process' || $action eq 'process_signup' ) {
                 invoicing_list referral_custnum promo_code reg_code
                 pkgpart refnum agentnum
                 username sec_phrase _password popnum
+                mac_addr
                 countrycode phonenum sip_password pin
               ),
             grep { /^snarf_/ } $cgi->param

@@ -41,15 +41,18 @@ foreach my $type ( ref($i->type) ? @{$i->type} : $i->type ) {
     } else {
       push @delete, $i->key;
     }
-  } elsif ( $type eq 'text' || $type eq 'select' || $type eq 'select-sub' )  {
-    if ( $cgi->param($i->key.$n) ne '' ) {
-      $conf->set($i->key, $cgi->param($i->key.$n), $agentnum);
+  } elsif ( $type =~ /^(editlist|selectmultiple)$/
+            or ( $type =~ /^select(-(sub|part_svc))?$/ || $i->multiple )
+          )
+  {
+    if ( scalar(@{[ $cgi->param($i->key.$n) ]}) ) {
+      $conf->set($i->key, join("\n", @{[ $cgi->param($i->key.$n) ]} ), $agentnum);
     } else {
       $conf->delete($i->key, $agentnum);
     }
-  } elsif ( $type eq 'editlist' || $type eq 'selectmultiple' )  {
-    if ( scalar(@{[ $cgi->param($i->key.$n) ]}) ) {
-      $conf->set($i->key, join("\n", @{[ $cgi->param($i->key.$n) ]} ), $agentnum);
+  } elsif ( $type =~ /^(text|select(-(sub|part_svc))?)$/ ) {
+    if ( $cgi->param($i->key.$n) ne '' ) {
+      $conf->set($i->key, $cgi->param($i->key.$n), $agentnum);
     } else {
       $conf->delete($i->key, $agentnum);
     }
@@ -101,6 +104,11 @@ $conf->delete($_, $agentnum) foreach @delete;
 
 %     } elsif ( $type eq 'text' || $type eq 'select' ) {
         configCell.innerHTML = <% $conf->exists($i->key, $agentnum) ? $conf->config($i->key, $agentnum) : '' |js_string %>;
+%     } elsif ( $type eq 'select-part_svc' && ! $i->multiple ) {
+        configCell.innerHTML =
+          <% $conf->config($i->key, $agentnum) |js_string %>
+%# + ': ' +
+%#          <% &{ $i->option_sub }( $conf->config($i->key, $agentnum) ) |js_string %>;
 %     } elsif ( $type eq 'select-sub' ) {
         configCell.innerHTML =
           <% $conf->config($i->key, $agentnum) |js_string %> + ': ' +

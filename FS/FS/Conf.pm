@@ -1452,22 +1452,23 @@ worry that config_items is freeside-specific and icky.
   {
     'key'         => 'signup_server-default_svcpart',
     'section'     => '',
-    'description' => 'Default svcpart for the signup server - only necessary for services that trigger special provisioning widgets (such as DID provisioning).',
-    'type'        => 'select-sub',
-    'options_sub' => sub { require FS::Record;
-                           require FS::part_svc;
-                           map { $_->svcpart => $_->svc }
-                               FS::Record::qsearch( 'part_svc',
-			                            { 'disabled' => ''}
-						  );
-			 },
-    'option_sub'  => sub { require FS::Record;
-                           require FS::part_svc;
-                           my $part_svc = FS::Record::qsearchs(
-			     'part_svc', { 'svcpart'=>shift }
-			   );
-                           $part_svc ? $part_svc->svc : '';
-			 },
+    'description' => 'Default service definition for the signup server - only necessary for services that trigger special provisioning widgets (such as DID provisioning).',
+    'type'        => 'select-part_svc',
+  },
+
+  {
+    'key'         => 'signup_server-mac_addr_svcparts',
+    'section'     => '',
+    'description' => 'Service definitions which can receive mac addresses (current mapped to username for svc_acct).',
+    'type'        => 'select-part_svc',
+    'multiple'    => 1,
+  },
+
+  {
+    'key'         => 'signup_server-nomadix',
+    'section'     => '',
+    'description' => 'Signup page Nomadix integration',
+    'type'        => 'checkbox',
   },
 
   {
@@ -1866,7 +1867,7 @@ worry that config_items is freeside-specific and icky.
     'key'         => 'svc_www-usersvc_svcpart',
     'section'     => '',
     'description' => 'Allowable service definition svcparts for virtual hosts, one per line.',
-    'type'        => 'textarea',
+    'type'        => 'textarea', #select-part_svc ... multiple
   },
 
   {
@@ -2827,7 +2828,7 @@ worry that config_items is freeside-specific and icky.
     'key'         => 'mcp_svcpart',
     'section'     => '',
     'description' => 'Master Control Program svcpart.  Leave this blank.',
-    'type'        => 'text',
+    'type'        => 'text', #select-part_svc
   },
 
   {

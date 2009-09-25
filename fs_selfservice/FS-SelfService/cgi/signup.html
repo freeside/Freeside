@@ -38,7 +38,7 @@
 %>
 
 <%=
-  $OUT = join("\n", map { qq|<input type="hidden" name="$_" />| } qw / promo_code reg_code pkgpart username _password _password2 sec_phrase popnum countrycode phonenum sip_password pin / );
+  $OUT = join("\n", map { qq|<input type="hidden" name="$_" />| } qw / promo_code reg_code pkgpart username _password _password2 sec_phrase popnum mac_addr countrycode phonenum sip_password pin / );
 %>
 
 Where did you hear about our service? <SELECT NAME="refnum">
@@ -46,7 +46,7 @@ Where did you hear about our service? <SELECT NAME="refnum">
   $OUT .= '<OPTION VALUE="">' unless $refnum;
   foreach my $part_referral ( @part_referral ) {
     $OUT .= '<OPTION VALUE="'. $part_referral->{'refnum'}. '"';
-    $OUT .= ' SELECTED' if $part_referral->{'refnum'} eq $refnum;
+    $OUT .= ' SELECTED' if $part_referral->{'refnum'} == $refnum;
     $OUT .= '>'. $part_referral->{'referral'};
   }
 %>
@@ -316,6 +316,18 @@ SECPHRASE
       $OUT .= '<INPUT TYPE="hidden" NAME="sec_phrase" VALUE="">';
     }
 
+    if ( $nomadix ) {
+
+      warn $mac_addr;
+      $mac_addr ||= $MA;
+      warn $mac_addr;
+
+      $OUT .= <<NOMADIX;
+        <INPUT TYPE="hidden" NAME="mac_addr" VALUE="$mac_addr">
+NOMADIX
+
+    }
+
   }
 
   if ( @svc_acct_pop ) {
@@ -380,6 +392,7 @@ function fixup_form() {
     var signup_elements = new Array (
       'promo_code', 'reg_code', 'pkgpart',
       'username', '_password', '_password2', 'sec_phrase', 'popnum',
+      'mac_addr',
       'countrycode', 'phonenum', 'sip_password', 'pin'
     );
 

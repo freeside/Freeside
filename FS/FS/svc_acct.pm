@@ -56,7 +56,8 @@ FS::UID->install_callback( sub {
   @shells = $conf->config('shells');
   $usernamemin = $conf->config('usernamemin') || 2;
   $usernamemax = $conf->config('usernamemax');
-  $passwordmin = $conf->config('passwordmin') || 6;
+  $passwordmin = $conf->config('passwordmin'); # || 6;
+  $passwordmin = ( $passwordmin =~ /\d+/ ) ? $passwordmin : 6; #blank->6, keep 0
   $passwordmax = $conf->config('passwordmax') || 8;
   $username_letter = $conf->exists('username-letter');
   $username_letterfirst = $conf->exists('username-letterfirst');
@@ -1231,7 +1232,7 @@ sub check {
     #carp "warning: _password_encoding unspecified\n";
 
     #generate a password if it is blank
-    unless ( length( $recref->{_password} ) ) {
+    unless ( length($recref->{_password}) || ! $passwordmin ) {
 
       $recref->{_password} =
         join('',map($pw_set[ int(rand $#pw_set) ], (0..7) ) );

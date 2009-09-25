@@ -34,6 +34,7 @@ Example:
     'empty_label'    => '', #better specify it though, the default might change
     'multiple'       => 0, # bool
     'disable_empty'  => 0, # bool (implied by multiple)
+    'label_showkey'  => 0, # bool
     'label_callback' => sub { my $record = shift; return "label"; },
 
     #more params controlling HTML stuff about the <SELECT>
@@ -77,13 +78,19 @@ Example:
     <OPTION VALUE=""><% $opt{'empty_label'} || 'all' %>
 % }
 
-% foreach my $record ( sort { $a->$name_col() cmp $b->$name_col() } @records ) {
+% foreach my $record ( sort {    $a->$name_col() cmp $b->$name_col()
+%                             || $a->$key()      <=> $b->$key()
+%                           }
+%                           @records
+%                    )
+% {
 %   my $recvalue = $record->$key();
     <OPTION VALUE="<% $recvalue %>"
             <% ref($value) && $value->{$recvalue} || $value == $recvalue
                ? ' SELECTED' : ''
             %>
-    ><% $opt{'label_callback'}
+    ><% $opt{'label_showkey'} ? "$recvalue: " : '' %>
+     <% $opt{'label_callback'}
           ? &{ $opt{'label_callback'} }( $record )
           : $record->$name_col()
      %>

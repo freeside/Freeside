@@ -107,6 +107,8 @@ sub signup_info {
 
       'security_phrase' => $conf->exists('security_phrase'),
 
+      'nomadix' => $conf->exists('signup_server-nomadix'),
+
       'payby' => [ $conf->config('signup_server-payby') ],
 
       'card_types' => card_types(),
@@ -512,14 +514,14 @@ sub new_customer {
   #return { 'error' => $error } if $error;
 
   #should be all auto-magic and shit
-  my $svc;
+  my @svc = ();
   if ( $svc_x eq 'svc_acct' ) {
 
-    $svc = new FS::svc_acct ( {
+    my $svc = new FS::svc_acct {
       'svcpart'   => $svcpart,
       map { $_ => $packet->{$_} }
         qw( username _password sec_phrase popnum ),
-    } );
+    };
 
     my @acct_snarf;
     my $snarfnum = 1;
@@ -536,20 +538,47 @@ sub new_customer {
     }
     $svc->child_objects( \@acct_snarf );
 
+    push @svc, $svc;
+
   } elsif ( $svc_x eq 'svc_phone' ) {
 
-    $svc = new FS::svc_phone ( {
+    my $svc = new FS::svc_phone ( {
       'svcpart' => $svcpart,
        map { $_ => $packet->{$_} }
          qw( countrycode phonenum sip_password pin ),
     } );
 
+    push @svc, $svc;
+
   } else {
     die "unknown signup service $svc_x";
   }
-
-  my $y = $svc->setdefault; # arguably should be in new method
+  my $y = $svc[0]->setdefault; # arguably should be in new method
   return { 'error' => $y } if $y && !ref($y);
+
+  if ($packet->{'mac_addr'} && $conf->exists('signup_server-mac_addr_svcparts'))
+  {
+
+    my %mac_addr_svcparts = map { $_ => 1 }
+                            $conf->config('signup_server-mac_addr_svcparts');
+    my @pkg_svc = grep { $_->quantity && $mac_addr_svcparts{$_->svcpart} }
+                  $cust_pkg->part_pkg->pkg_svc;
+
+    return { 'error' => 'No service defined to assign mac address' }
+      unless @pkg_svc;
+
+    my $svc = new FS::svc_acct {
+      'svcpart'   => $pkg_svc[0]->svcpart, #multiple matches? alas..
+      'username'  => $packet->{'mac_addr'},
+      '_password' => '', #blank as requested (set passwordmin to 0)
+    };
+
+    my $y = $svc->setdefault; # arguably should be in new method
+    return { 'error' => $y } if $y && !ref($y);
+
+    push @svc, $svc;
+
+  }
 
   #$error = $svc->check;
   #return { 'error' => $error } if $error;
@@ -564,7 +593,7 @@ sub new_customer {
 
   use Tie::RefHash;
   tie my %hash, 'Tie::RefHash';
-  %hash = ( $cust_pkg => [ $svc ] );
+  %hash = ( $cust_pkg => \@svc );
   #msgcat
   $error = $cust_main->insert(
     \%hash,
@@ -648,9 +677,9 @@ sub new_customer {
                );
 
   if ( $svc_x eq 'svc_acct' ) {
-    $return{$_} = $svc->$_() for qw( username _password );
+    $return{$_} = $svc[0]->$_() for qw( username _password );
   } elsif ( $svc_x eq 'svc_phone' ) {
-    $return{$_} = $svc->$_() for qw( countrycode phonenum sip_password pin );
+    $return{$_} = $svc[0]->$_() for qw( countrycode phonenum sip_password pin );
   } else {
     die "unknown signup service $svc_x";
   }
