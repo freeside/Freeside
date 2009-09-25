@@ -1430,23 +1430,7 @@ worry that config_items is freeside-specific and icky.
     'key'         => 'signup_server-default_pkgpart',
     'section'     => '',
     'description' => 'Default package for the signup server',
-    'type'        => 'select-sub',
-    'options_sub' => sub { require FS::Record;
-                           require FS::part_pkg;
-                           map { $_->pkgpart => $_->pkg.' - '.$_->comment }
-                               FS::Record::qsearch( 'part_pkg',
-			                            { 'disabled' => ''}
-						  );
-			 },
-    'option_sub'  => sub { require FS::Record;
-                           require FS::part_pkg;
-                           my $part_pkg = FS::Record::qsearchs(
-			     'part_pkg', { 'pkgpart'=>shift }
-			   );
-                           $part_pkg
-			     ? $part_pkg->pkg.' - '.$part_pkg->comment
-			     : '';
-			 },
+    'type'        => 'select-part_pkg',
   },
 
   {
@@ -1820,6 +1804,13 @@ worry that config_items is freeside-specific and icky.
     'description' => 'Save CVV2 information after the initial transaction for the selected credit card types.  Enabling this option may be in violation of your merchant agreement(s), so please check them carefully before enabling this option for any credit card types.',
     'type'        => 'selectmultiple',
     'select_enum' => \@card_types,
+  },
+
+  {
+    'key'         => 'manual_process-pkgpart',
+    'section'     => 'billing',
+    'description' => 'Package to add to each manual credit card and ACH payments entered from the backend.  Enabling this option may be in violation of your merchant agreement(s), so please check them carefully before enabling this option.',
+    'type'        => 'select-part_pkg',
   },
 
   {
@@ -2283,19 +2274,7 @@ worry that config_items is freeside-specific and icky.
     'key'         => 'postal_invoice-fee_pkgpart',
     'section'     => 'billing',
     'description' => 'This allows selection of a package to insert on invoices for customers with postal invoices selected.',
-    'type'        => 'select-sub',
-    'options_sub' => sub { require FS::Record;
-                           require FS::part_pkg;
-			   map { $_->pkgpart => $_->pkg }
-                               FS::Record::qsearch('part_pkg', { disabled=>'' } );
-			 },
-    'option_sub'  => sub { require FS::Record;
-                           require FS::part_pkg;
-			   my $part_pkg = FS::Record::qsearchs(
-			     'part_pkg', { 'pkgpart'=>shift }
-			   );
-                           $part_pkg ? $part_pkg->pkg : '';
-			 },
+    'type'        => 'select-part_pkg',
   },
 
   {
@@ -2607,7 +2586,8 @@ worry that config_items is freeside-specific and icky.
     'key'         => 'support_packages',
     'section'     => '',
     'description' => 'A list of packages eligible for RT ticket time transfer, one pkgpart per line.', #this should really be a select multiple, or specified in the packages themselves...
-    'type'        => 'textarea',
+    'type'        => 'select-part_pkg',
+    'multiple'    => 1,
   },
 
   {

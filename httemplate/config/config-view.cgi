@@ -48,7 +48,8 @@ Click on a configuration value to change it.
   </tr>
 % foreach my $i (@{ $section_items{$section} }) { 
 %   my @types = ref($i->type) ? @{$i->type} : ($i->type);
-%   my( $width, $height ) = ( 522, 336 );
+%#  my( $width, $height ) = ( 522, 336 );
+%   my( $width, $height ) = ( 600, 336 );
 %   if ( grep $_ eq 'textarea', @types ) {
 %     #800x600
 %     $width = 763;
@@ -208,14 +209,14 @@ Click on a configuration value to change it.
               </td>
             </tr>
 
-%   } elsif ( $type eq 'select-part_svc' ) {
-%     my @svcparts = $conf->config($i->key, $agentnum);
+%   } elsif ( $type =~ /^select-(part_svc|part_pkg)$/ ) {
+%     my @keys = $conf->config($i->key, $agentnum);
 
             <tr>
               <td id="<% $agentnum.$i->key.$n %>" bgcolor="#ffffff">
-                <% join('<BR>', map { $_ # ': '. $svc
+                <% join('<BR>', map { $_ # ': '. $svc, $pkg, whatever
                                     }
-                                    @svcparts
+                                    @keys
                        )
                 %>
               </td>

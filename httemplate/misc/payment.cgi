@@ -10,15 +10,65 @@
 
 % #include( '/elements/table.html', '#cccccc' ) 
 
+% my $amount = $balance > 0 ? sprintf("%.2f", $balance) : '';
+
 <% ntable('#cccccc') %>
   <TR>
     <TH ALIGN="right">Payment amount</TH>
-    <TD>
+    <TD COLSPAN=7>
       <TABLE><TR><TD BGCOLOR="#ffffff">
-        $<INPUT TYPE="text" NAME="amount" SIZE=8 VALUE="<% $balance > 0 ? sprintf("%.2f", $balance) : '' %>">
+        <% $money_char %><INPUT NAME     = "amount"
+                                TYPE     = "text"
+                                VALUE    = "<% $amount %>"
+                                SIZE     = 8
+                                STYLE    = "text-align:right;"
+%                               if ( $fee ) {
+                                  onChange   = "amount_changed(this)"
+                                  onKeyDown  = "amount_changed(this)"
+                                  onKeyUp    = "amount_changed(this)"
+                                  onKeyPress = "amount_changed(this)"
+%                               }
+                         >
+      </TD><TD BGCOLOR="#cccccc">
+%        if ( $fee ) {
+           <INPUT TYPE="hidden" NAME="fee_pkgpart" VALUE="<% $fee_pkg->pkgpart %>">
+           <INPUT TYPE="hidden" NAME="fee" VALUE="<% $fee %>">
+           <B><FONT SIZE='+1'>+</FONT>
+              <% $money_char . $fee %>
+           </B>
+           <% $fee_pkg->pkg |h %>
+           <B><FONT SIZE='+1'>=</FONT></B>
+      </TD><TD ID="ajax_total_cell" BGCOLOR="#dddddd" STYLE="border:1px solid blue">
+           <FONT SIZE="+1"><% length($amount) ? $money_char. sprintf('%.2f', $amount + $fee ) : '' %> TOTAL</FONT>
+  
+%        }
       </TD></TR></TABLE>
     </TD>
   </TR>
+
+% if ( $fee ) {
+
+    <SCRIPT TYPE="text/javascript">
+
+      function amount_changed(what) {
+
+
+        var total = '';
+        if ( what.value.length ) {
+          total = parseFloat(what.value) + <% $fee %>;
+          /* total = Math.round(total*100)/100; */
+          total = '<% $money_char %>' + total.toFixed(2);
+        }
+
+        var total_cell = document.getElementById('ajax_total_cell');
+        total_cell.innerHTML = '<FONT SIZE="+1">' + total + ' TOTAL</FONT>';
+
+      }
+
+    </SCRIPT>
+
+% }
+
 
 % if ( $payby eq 'CARD' ) {
 %
@@ -237,16 +287,29 @@ my $balance = $cust_main->balance;
 
 my $payinfo = '';
 
-#false laziness w/selfservice make_payment.html shortcut for one-country
 my $conf = new FS::Conf;
+
+my $money_char = $conf->config('money_char') || '$';
+
+#false laziness w/selfservice make_payment.html shortcut for one-country
 my %states = map { $_->state => 1 }
                qsearch('cust_main_county', {
                  'country' => $conf->config('countrydefault') || 'US'
                } );
 my @states = sort { $a cmp $b } keys %states;
 
+my $fee = '';
+my $fee_pkg = '';
+if ( $conf->config('manual_process-pkgpart') ) {
+  $fee_pkg =
+    qsearchs('part_pkg', { pkgpart=>$conf->config('manual_process-pkgpart') } );
+
+  #well ->unit_setup or ->calc_setup both call for a $cust_pkg
+  # (though ->unit_setup doesn't use it...)
+  $fee = $fee_pkg->option('setup_fee')
+    if $fee_pkg; #in case.. better than dying with a perl traceback
+}
+
 my $payunique = "webui-payment-". time. "-$$-". rand() * 2**32;
 
 </%init>
-
-
