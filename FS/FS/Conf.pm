@@ -1867,7 +1867,8 @@ worry that config_items is freeside-specific and icky.
     'key'         => 'svc_www-usersvc_svcpart',
     'section'     => '',
     'description' => 'Allowable service definition svcparts for virtual hosts, one per line.',
-    'type'        => 'textarea', #select-part_svc ... multiple
+    'type'        => 'select-part_svc',
+    'multiple'    => 1,
   },
 
   {
