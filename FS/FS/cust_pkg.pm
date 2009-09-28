@@ -603,8 +603,9 @@ sub cancel {
   #resolved by performing a change package instead (which unprovisions) and
   #later cancelling
   if ( !$options{nobill} && !$date && $conf->exists('bill_usage_on_cancel') ) {
+      my $copy = $self->new({$self->hash});
       my $error =
-        $self->cust_main->bill( pkg_list => [ $self ], cancel => 1 );
+        $copy->cust_main->bill( pkg_list => [ $copy ], cancel => 1 );
       warn "Error billing during cancel, custnum ".
         #$self->cust_main->custnum. ": $error"
         ": $error"
