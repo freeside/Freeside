@@ -60,7 +60,8 @@ sub check_sg {
   my $res = $ua->request($req);
 
   return 1 if $res->is_success
-           && $res->content =~ /OK/;
+           && $res->content =~ /OK/
+           && $res->content !~ /error/i; #doh, the error message includes "OK"
 
   $error_msg = $res->is_success ? $res->content : $res->status_line;
   return 0;
