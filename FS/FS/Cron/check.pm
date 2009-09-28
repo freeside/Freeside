@@ -61,7 +61,7 @@ sub check_sg {
   return 1 if $res->is_success
            && $res->content =~ /OK/;
 
-  $error_msg = $res->is_success ? $res->content : Rres->status_line;
+  $error_msg = $res->is_success ? $res->content : $res->status_line;
   return 0;
 
 }
