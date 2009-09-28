@@ -6,6 +6,7 @@ use vars qw( @ISA @EXPORT_OK $DEBUG $FS_RUN $error_msg
            );
 use Exporter;
 use LWP::UserAgent;
+use Email::Send;
 use FS::Conf;
 use FS::Record qw(qsearch);
 use FS::cust_pay_pending;

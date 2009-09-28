@@ -2,7 +2,6 @@
 #!/usr/bin/perl -w
 
 use strict;
-use Email::Send;
 use FS::UID qw( adminsuidsetup );
 use FS::Cron::check qw(
   check_queued check_selfservice check_apache check_bop_failures
@@ -23,8 +22,9 @@ check_selfservice  or alert(error_msg(), @emails);
 check_apache       or alert('Apache not running: '. error_msg(), @emails);
 
 #no-ops unless you are sg
-check_sg           or alert('FS::ClientAPI::SG not responding',   @emails);
-check_sgng         or alert('FS::ClientAPI::SGNG not responding', @emails);
+my $sg = 'FS::ClientAPI::SG';
+check_sg           or alert("$sg not responding: ". error_msg(),     @emails);
+check_sgng         or alert("${sg}NG not responding: ". error_msg(), @emails);
 
 check_bop_failures or alert(error_msg(), @emails);
 
