@@ -126,7 +126,7 @@ die "access denied"
 my %search = $cgi->Vars;
 delete $search{$_} for qw( magic from subject html_body text_body );
 $search{$_} = [ split(/\0/, $search{$_}) ]
-  foreach grep $search{$_} =~ /\0/, keys %search;
+  foreach grep { $_ eq 'payby' || $search{$_} =~ /\0/ } keys %search;
 
 my $title = 'Bulk send customer notices';
 
