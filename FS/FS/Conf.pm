@@ -3007,6 +3007,13 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'sg-login_username',
+    'section'     => '',
+    'description' => "Don't use this.",
+    'type'        => 'text',
+  },
+
+  {
     'key'         => 'disable-cust-pkg_class',
     'section'     => 'UI',
     'description' => 'Disable the two-step dropdown for selecting package class and package, and return to the classic single dropdown.',

@@ -6,6 +6,8 @@ use vars qw( @ISA @EXPORT_OK $DEBUG $FS_RUN $error_msg
            );
 use Exporter;
 use LWP::UserAgent;
+use HTTP::Request;
+use URI::Escape;
 use Email::Send;
 use FS::Conf;
 use FS::Record qw(qsearch);
@@ -14,7 +16,7 @@ use FS::cust_pay_pending;
 @ISA = qw( Exporter );
 @EXPORT_OK = qw(
   check_queued check_selfservice check_apache check_bop_failures
-  check_sg check_sgng
+  check_sg check_sg_login check_sgng
   alert error_msg
 );
 
@@ -65,7 +67,30 @@ sub check_sg {
 
   $error_msg = $res->is_success ? $res->content : $res->status_line;
   return 0;
+}
 
+sub check_sg_login {
+  my $conf = new FS::Conf;
+  #different trigger if they ever stop using multicustomer_hack ?
+  return 1 unless $conf->exists('sg-multicustomer_hack');
+
+  my $ua = new LWP::UserAgent;
+  $ua->agent("FreesideCronCheck/0.1 " . $ua->agent);
+
+  my $USER = $conf->config('sg-ping_username');
+  my $PASS = $conf->config('sg-ping_password');
+  my $USERNAME = $conf->config('sg-login_username');
+  my $req = new HTTP::Request
+    GET=>"https://$USER:$PASS\@localhost/sg/start.cgi?".
+         'username='. uri_escape($USERNAME);
+  my $res = $ua->request($req);
+
+  return 1 if $res->is_success
+           && $res->content =~ /[\da-f]{32}/i #session_id
+           && $res->content !~ /error/i;
+
+  $error_msg = $res->is_success ? $res->content : $res->status_line;
+  return 0;
 }
 
 sub check_sgng {
@@ -124,7 +149,7 @@ sub check_apache {
 }
 
 #and now for something entirely different...
-my $num_consecutive_bop_failures = 50;
+my $num_consecutive_bop_failures = 60;
 sub check_bop_failures {
 
   return 1 if grep { $_->statustext eq 'captured' }
