@@ -377,9 +377,11 @@ sub payment_results {
     #or $error ||= $init_data->{msgcat}{invalid_card}; #. $self->payinfo;
     or die "illegal card"; #!!!
   $payinfo = $1;
-  validate($payinfo)
-    #or $error ||= $init_data->{msgcat}{invalid_card}; #. $self->payinfo;
-    or die "invalid card"; #!!!
+  unless ( $payinfo =~ /x/ ) {
+    validate($payinfo)
+      #or $error ||= $init_data->{msgcat}{invalid_card}; #. $self->payinfo;
+      or die "invalid card"; #!!!
+  }
 
   if ( $cgi->param('card_type') ) {
     cardtype($payinfo) eq $cgi->param('card_type')
