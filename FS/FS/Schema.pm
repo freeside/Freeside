@@ -1441,7 +1441,7 @@ sub tables_hashref {
       'columns' => [
         'svcnum',    'int',    '',   '', '', '', 
         'username',  'varchar',   '',   $username_len, '', '',
-        '_password', 'varchar',   '',  512, '', '',
+        '_password', 'varchar',   'NULL',  512, '', '',
         '_password_encoding', 'varchar', 'NULL', $char_d, '', '',
         'sec_phrase', 'varchar',  'NULL',   $char_d, '', '', 
         'popnum',    'int',    'NULL',   '', '', '', 
