@@ -8235,6 +8235,9 @@ sub email_search_sql {
 
   my $job = delete $params->{'job'};
 
+  $params->{'payby'} = [ split(/\0/, $params->{'payby'}) ]
+    unless ref($params->{'payby'});
+
   my $sql_query = $class->search_sql($params);
 
   my $count_query   = delete($sql_query->{'count_query'});
@@ -8295,6 +8298,9 @@ sub process_email_search_sql {
   warn Dumper($param) if $DEBUG;
 
   $param->{'job'} = $job;
+
+  $param->{'payby'} = [ split(/\0/, $param->{'payby'}) ]
+    unless ref($param->{'payby'});
 
   my $error = FS::cust_main->email_search_sql( $param );
   die $error if $error;
