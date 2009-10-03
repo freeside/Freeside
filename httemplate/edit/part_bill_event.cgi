@@ -178,7 +178,7 @@ Invoice Event #<% $hashref->{eventpart} ? $hashref->{eventpart} : "(NEW)" %>
 %  'cancel' => {
 %    'name'   => 'Cancel',
 %    'code'   => '$cust_main->cancel(reason => %%%creason%%%);',
-%    'weight' => 10,
+%    'weight' => 90, #10,
 %    'reason' => 'C',
 %  },
 %
