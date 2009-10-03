@@ -178,7 +178,7 @@ Invoice Event #<% $hashref->{eventpart} ? $hashref->{eventpart} : "(NEW)" %>
 %  'cancel' => {
 %    'name'   => 'Cancel',
 %    'code'   => '$cust_main->cancel(reason => %%%creason%%%);',
-%    'weight' => 90, #10,
+%    'weight' => 80, #10,
 %    'reason' => 'C',
 %  },
 %
@@ -191,7 +191,7 @@ Invoice Event #<% $hashref->{eventpart} ? $hashref->{eventpart} : "(NEW)" %>
 %  'comp' => {
 %    'name' => 'Pay invoice with a complimentary "payment"',
 %    'code' => '$cust_bill->comp();',
-%    'weight' => 30,
+%    'weight' => 90, #30,
 %  },
 %
 %  'credit' => {
