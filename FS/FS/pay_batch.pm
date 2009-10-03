@@ -4,7 +4,6 @@ use strict;
 use vars qw( @ISA $DEBUG %import_info %export_info $conf );
 use Time::Local;
 use Text::CSV_XS;
-use XML::Simple qw(XMLin XMLout);
 use FS::Record qw( dbh qsearch qsearchs );
 use FS::cust_pay;
 use FS::Conf;
@@ -241,11 +240,13 @@ sub import_results {
   # process one line at a time.
 
   if ($filetype eq 'XML') {
+    eval "use XML::Simple";
+    die $@ if $@;
     my @xmlkeys = @{ $info->{'xmlkeys'} };  # for XML
     my $xmlrow  = $info->{'xmlrow'};        # also for XML
 
     # Do everything differently.
-    my $data = XMLin($fh, KeepRoot => 1);
+    my $data = XML::Simple::XMLin($fh, KeepRoot => 1);
     my $rows = $data;
     # $xmlrow = [ RootKey, FirstLevelKey, SecondLevelKey... ]
     $rows = $rows->{$_} foreach( @$xmlrow );

@@ -6,7 +6,6 @@ use Time::Local;
 use Date::Format 'time2str';
 use Date::Parse 'str2time';
 use FS::Conf;
-use XML::Simple qw(XMLin XMLout);
 
 my $conf;
 my ($bin, $merchantID, $terminalID, $username);
@@ -49,6 +48,9 @@ my %paytype = (
 
 %export_info = (
   init  => sub {
+# Load this at run time
+    eval "use XML::Simple";
+    die $@ if $@;
     my $conf = shift;
     ($bin, $terminalID, $merchantID, $username) =
        $conf->config('batchconfig-paymentech');
@@ -58,7 +60,7 @@ my %paytype = (
     my $pay_batch = shift;
     my @cust_pay_batch = @{(shift)};
     my $count = 0;
-    XMLout( {
+    XML::Simple::XMLout( {
       transRequest => {
         RequestCount => scalar(@cust_pay_batch),
         batchFileID  => {
