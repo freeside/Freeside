@@ -24,7 +24,7 @@ my $error = $access_group->insert;
 die $error if $error;
 
 if ( $opt_s ) {
-  foreach my $rightname ( FS::AccessRight->rights ) {
+  foreach my $rightname ( FS::AccessRight->default_superuser_rights ) {
     my $access_right = new FS::access_right {
       'righttype'   => 'FS::access_group',
       'rightobjnum' => $access_group->groupnum,

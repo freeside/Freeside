@@ -150,6 +150,7 @@ tie my %rights, 'Tie::IxHash',
   'Customer invoice / financial info rights' => [
     'View invoices',
     'Resend invoices', #NEWNEW
+    'Delete invoices', #new, but no need to phase in
     'View customer tax exemptions', #yow
     'Add customer tax adjustment', #new, but no need to phase in
     'View customer batched payments', #NEW
@@ -285,14 +286,38 @@ tie my %rights, 'Tie::IxHash',
   
 =item rights
 
-Returns a list of right names.
+Returns the full list of right names.
 
 =cut
   
-  sub rights {
+sub rights {
   #my $class = shift;
   map { ref($_) ? $_->{'rightname'} : $_ } map @{ $rights{$_} }, keys %rights;
-  }
+}
+
+=item default_superuser_rights
+
+Most (but not all) right names.
+
+=cut
+
+sub default_superuser_rights {
+  my $class = shift;
+  my %omit = map { $_=>1 } (
+    'Delete customer',
+    'Delete invoices',
+    'Delete payment',
+    'Delete credit', #?
+    'Delete refund', #?
+    'Time queue',
+    'Redownload resolved batches',
+    'Raw SQL',
+    'Configuration download',
+  );
+
+  no warnings 'uninitialized';
+  grep { ! $omit{$_} } $class->rights;
+}
   
 =item rights_info
 

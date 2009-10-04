@@ -1,7 +1,7 @@
 package FS::cust_bill_pkg;
 
 use strict;
-use vars qw( @ISA $DEBUG );
+use vars qw( @ISA $DEBUG $me );
 use FS::Record qw( qsearch qsearchs dbdef dbh );
 use FS::cust_main_Mixin;
 use FS::cust_pkg;
@@ -12,10 +12,14 @@ use FS::cust_bill_pkg_display;
 use FS::cust_bill_pay_pkg;
 use FS::cust_credit_bill_pkg;
 use FS::cust_tax_exempt_pkg;
+use FS::cust_bill_pkg_tax_location;
+use FS::cust_bill_pkg_tax_rate_location;
+use FS::cust_tax_adjustment;
 
 @ISA = qw( FS::cust_main_Mixin FS::Record );
 
-$DEBUG = 0;
+$DEBUG = 2;
+$me = '[FS::cust_bill_pkg]';
 
 =head1 NAME
 
@@ -40,30 +44,57 @@ supported:
 
 =over 4
 
-=item billpkgnum - primary key
+=item billpkgnum
 
-=item invnum - invoice (see L<FS::cust_bill>)
+primary key
 
-=item pkgnum - package (see L<FS::cust_pkg>) or 0 for the special virtual sales tax package, or -1 for the virtual line item (itemdesc is used for the line)
+=item invnum
 
-=item pkgpart_override - optional package definition (see L<FS::part_pkg>) override
-=item setup - setup fee
+invoice (see L<FS::cust_bill>)
 
-=item recur - recurring fee
+=item pkgnum
 
-=item sdate - starting date of recurring fee
+package (see L<FS::cust_pkg>) or 0 for the special virtual sales tax package, or -1 for the virtual line item (itemdesc is used for the line)
 
-=item edate - ending date of recurring fee
+=item pkgpart_override
 
-=item itemdesc - Line item description (overrides normal package description)
+optional package definition (see L<FS::part_pkg>) override
 
-=item quantity - If not set, defaults to 1
+=item setup
 
-=item unitsetup - If not set, defaults to setup
+setup fee
 
-=item unitrecur - If not set, defaults to recur
+=item recur
 
-=item hidden - If set to Y, indicates data should not appear as separate line item on invoice
+recurring fee
+
+=item sdate
+
+starting date of recurring fee
+
+=item edate
+
+ending date of recurring fee
+
+=item itemdesc
+
+Line item description (overrides normal package description)
+
+=item quantity
+
+If not set, defaults to 1
+
+=item unitsetup
+
+If not set, defaults to setup
+
+=item unitrecur
+
+If not set, defaults to recur
+
+=item hidden
+
+If set to Y, indicates data should not appear as separate line item on invoice
 
 =back
 
@@ -196,13 +227,65 @@ sub insert {
 
 =item delete
 
-Currently unimplemented.  I don't remove line items because there would then be
-no record the items ever existed (which is bad, no?)
+Not recommended.
 
 =cut
 
 sub delete {
-  return "Can't delete cust_bill_pkg records!";
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  foreach my $table (qw(
+    cust_bill_pkg_detail
+    cust_bill_pkg_display
+    cust_bill_pkg_tax_location
+    cust_bill_pkg_tax_rate_location
+    cust_tax_exempt_pkg
+    cust_bill_pay_pkg
+    cust_credit_bill_pkg
+  )) {
+
+    foreach my $linked ( qsearch($table, { billpkgnum=>$self->billpkgnum }) ) {
+      my $error = $linked->delete;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+    }
+
+  }
+
+  foreach my $cust_tax_adjustment (
+    qsearch('cust_tax_adjustment', { billpkgnum=>$self->billpkgnum })
+  ) {
+    $cust_tax_adjustment->billpkgnum(''); #NULL
+    my $error = $cust_tax_adjustment->replace;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  my $error = $self->SUPER::delete(@_);
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
+
 }
 
 #alas, bin/follow-tax-rename
@@ -263,6 +346,7 @@ Returns the package (see L<FS::cust_pkg>) for this invoice line item.
 
 sub cust_pkg {
   my $self = shift;
+  warn "$me $self -> cust_pkg";
   qsearchs( 'cust_pkg', { 'pkgnum' => $self->pkgnum } );
 }
 

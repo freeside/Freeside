@@ -2,10 +2,31 @@
   "View this customer (#$display_custnum)" => "${p}view/cust_main.cgi?$custnum",
 )) %>
 
+% if ( $conf->exists('deleteinvoices')
+%      && $curuser->access_right('Delete invoices' )
+%    )
+% {
+
+    <SCRIPT TYPE="text/javascript">
+    function areyousure(href, message) {
+      if (confirm(message) == true)
+        window.location.href = href;
+    }
+    </SCRIPT>
+
+    <A HREF  = "javascript:areyousure(
+                  '<%$p%>misc/delete-cust_bill.html?<% $invnum %>',
+                  'Are you sure you want to delete this invoice?'
+               )"
+       TITLE = "Delete this invoice from the database completely"
+    >Delete this invoice</A>
+    <BR><BR>
+
+% }
 
 % if ( $cust_bill->owed > 0
 %      && scalar( grep $payby{$_}, qw(BILL CASH WEST MCRD) )
-%      && $FS::CurrentUser::CurrentUser->access_right('Post payment')
+%      && $curuser->access_right('Post payment')
 %      && ! $conf->exists('pkg-balances')
 %    )
 % {
@@ -37,8 +58,7 @@
 
 % } 
 
-
-% if ( $FS::CurrentUser::CurrentUser->access_right('Resend invoices') ) {
+% if ( $curuser->access_right('Resend invoices') ) {
 
     <A HREF="<% $p %>misc/print-invoice.cgi?<% $link %>">Re-print this invoice</A>
 
@@ -54,10 +74,9 @@
 
 % } 
 
-
 % if ( $conf->exists('invoice_latex') ) { 
 
-  <A HREF="<% $p %>view/cust_bill-pdf.cgi?<% $link %>.pdf">View typeset invoice</A>
+  <A HREF="<% $p %>view/cust_bill-pdf.cgi?<% $link %>.pdf">View typeset invoice PDF</A>
   <BR><BR>
 % } 
 
@@ -83,8 +102,10 @@
 <% include('/elements/footer.html') %>
 <%init>
 
+my $curuser = $FS::CurrentUser::CurrentUser;
+
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('View invoices');
+  unless $curuser->access_right('View invoices');
 
 #untaint invnum
 my($query) = $cgi->keywords;
@@ -105,7 +126,7 @@ my $cust_bill = qsearchs({
   'table'     => 'cust_bill',
   'addl_from' => 'LEFT JOIN cust_main USING ( custnum )',
   'hashref'   => { 'invnum' => $invnum },
-  'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+  'extra_sql' => ' AND '. $curuser->agentnums_sql,
 });
 die "Invoice #$invnum not found!" unless $cust_bill;
 
@@ -117,5 +138,3 @@ my $display_custnum = $cust_bill->cust_main->display_custnum;
 my $link = $templatename ? "$templatename-$invnum" : $invnum;
 
 </%init>
-
-

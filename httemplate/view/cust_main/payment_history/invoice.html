@@ -1,8 +1,10 @@
-<% $link %><% $pre %>Invoice #<% $invnum %>
-(Balance $ <% $cust_bill->owed %>)<% $post %><% $link ? '</A>' : '' %><% $events %>
+<% $link %><% $pre %>Invoice #<% $cust_bill->display_invnum %>
+(Balance $ <% $cust_bill->owed %>)<% $post %><% $link ? '</A>' : '' %><% $delete %><% $events %>
 <%init>
 
 my( $cust_bill, %opt ) = @_;
+
+my $conf = new FS::Conf;
 
 my $curuser = $FS::CurrentUser::CurrentUser;
 
@@ -18,6 +20,15 @@ my $link = $curuser->access_right('View invoices')
              ? qq!<A HREF="${p}view/cust_bill.cgi?$invnum">!
              : '';
 
+my $delete = '';
+if ( $opt{'deleteinvoices'} && $curuser->access_right('Delete invoices') ) {
+  $delete = qq! (<A HREF="javascript:areyousure('!.
+            qq!${p}misc/delete-cust_bill.html?$invnum',!.
+            qq!'Are you sure you want to delete this invoice?')"!.
+            qq! TITLE="Delete this invoice from the database completely"!.
+            qq!>delete</A>)!;
+}
+
 my $events = '';
 #1.9
 if ( $cust_bill->num_cust_event
@@ -26,8 +37,8 @@ if ( $cust_bill->num_cust_event
         )
    ) {
   $events =
-    qq!<BR><FONT SIZE="-1"><A HREF="${p}search/cust_event.html?invnum=!.
-    $cust_bill->invnum. '">(&nbsp;View invoice events&nbsp;)</A></FONT>';
+    qq!<BR><FONT SIZE="-1"><A HREF="${p}search/cust_event.html?invnum=$invnum!.
+    '">(&nbsp;View invoice events&nbsp;)</A></FONT>';
 }
 #
 

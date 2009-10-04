@@ -364,7 +364,7 @@ sub populate_access {
   use FS::AccessRight;
   use FS::access_right;
 
-  foreach my $rightname ( FS::AccessRight->rights ) {
+  foreach my $rightname ( FS::AccessRight->default_superuser_rights ) {
     my $access_right = new FS::access_right {
       'righttype'   => 'FS::access_group',
       'rightobjnum' => 1, #$supergroup->groupnum,

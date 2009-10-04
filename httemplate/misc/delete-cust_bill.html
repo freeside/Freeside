@@ -1,0 +1,21 @@
+% if ( $error ) {
+%   errorpage($error);
+% } else {
+<% $cgi->redirect($p. "view/cust_main.cgi?". $custnum) %>
+% }
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Delete invoices');
+
+#untaint invnum
+my($query) = $cgi->keywords;
+$query =~ /^(\d+)$/ || die "Illegal crednum";
+my $invnum = $1;
+
+my $cust_bill = qsearchs('cust_bill',{'invnum'=>$invnum});
+my $custnum = $cust_bill->custnum;
+
+my $error = $cust_bill->delete;
+
+</%init>

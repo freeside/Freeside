@@ -160,7 +160,50 @@ Really, don't use it.
 sub delete {
   my $self = shift;
   return "Can't delete closed invoice" if $self->closed =~ /^Y/i;
-  $self->SUPER::delete(@_);
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  foreach my $table (qw(
+    cust_bill_event
+    cust_event
+    cust_credit_bill
+    cust_bill_pay
+    cust_bill_pay
+    cust_credit_bill
+    cust_pay_batch
+    cust_bill_pay_batch
+    cust_bill_pkg
+  )) {
+
+    foreach my $linked ( $self->$table() ) {
+      my $error = $linked->delete;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+    }
+
+  }
+
+  my $error = $self->SUPER::delete(@_);
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
+
 }
 
 =item replace OLD_RECORD
@@ -460,6 +503,16 @@ sub cust_pay {
   #;
 }
 
+sub cust_pay_batch {
+  my $self = shift;
+  qsearch('cust_pay_batch', { 'invnum' => $self->invnum } );
+}
+
+sub cust_bill_pay_batch {
+  my $self = shift;
+  qsearch('cust_bill_pay_batch', { 'invnum' => $self->invnum } );
+}
+
 =item cust_bill_pay
 
 Returns all payment applications (see L<FS::cust_bill_pay>) for this invoice.
@@ -474,6 +527,8 @@ sub cust_bill_pay {
 
 =item cust_credited
 
+=item cust_credit_bill
+
 Returns all applied credits (see L<FS::cust_credit_bill>) for this invoice.
 
 =cut
@@ -483,6 +538,10 @@ sub cust_credited {
   sort { $a->_date <=> $b->_date }
     qsearch( 'cust_credit_bill', { 'invnum' => $self->invnum } )
   ;
+}
+
+sub cust_credit_bill {
+  shift->cust_credited(@_);
 }
 
 =item cust_bill_pay_pkgnum PKGNUM
