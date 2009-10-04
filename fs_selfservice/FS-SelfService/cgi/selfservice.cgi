@@ -464,14 +464,16 @@ sub ach_payment_results {
   my $amount = $1;
 
   my $payinfo1 = $cgi->param('payinfo1');
-  $payinfo1=~ /^(\d+)$/
+  $payinfo1 =~ s/[^\dx]//g;
+  $payinfo1 =~ /^([\dx]+)$/
     or die "illegal account"; #!!!
-  $payinfo1= $1;
+  $payinfo1 = $1;
 
   my $payinfo2 = $cgi->param('payinfo2');
-  $payinfo2=~ /^(\d+)$/
+  $payinfo2 =~ s/[^\dx]//g;
+  $payinfo2 =~ /^([\dx]+)$/
     or die "illegal ABA/routing code"; #!!!
-  $payinfo2= $1;
+  $payinfo2 = $1;
 
   $cgi->param('payname') =~ /^(.{0,80})$/ or die "illegal payname";
   my $payname = $1;
