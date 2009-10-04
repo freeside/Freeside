@@ -40,6 +40,7 @@ function areyousure(href, message) {
                 'actionlabel' => 'Confirm Cancellation',
                 'color'       => '#ff0000',
                 'cust_main'   => $cust_main,
+                'width'       => 616, #make room for reasons
               }
             )
   %> | 
