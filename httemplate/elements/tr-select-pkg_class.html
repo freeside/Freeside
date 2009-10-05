@@ -1,4 +1,4 @@
-% if ( scalar(@{ $opt{'pkg_class'} }) == 0 ) { 
+% if ( $count == 0 ) { 
 
   <INPUT TYPE="hidden" NAME="<% $opt{'field'} || 'classnum' %>" VALUE="">
 
@@ -22,6 +22,6 @@
 my %opt = @_;
 my $classnum = $opt{'curr_value'} || $opt{'value'};
 
-$opt{'pkg_class'} ||= [ qsearch( 'pkg_class', {} ) ]; # { disabled=>'' } )
+my $count = scalar( qsearch( 'pkg_class', {} ) );
 
 </%init>
