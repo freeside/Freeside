@@ -197,6 +197,7 @@ function post_standardization() {
 
     var country_el = cf.elements['<% $taxpre %>country'];
     var country = country_el.options[ country_el.selectedIndex ].value;
+    var geocode = cf.elements['geocode'].value;
 
     if ( country == 'CA' || country == 'US' ) {
 
@@ -209,6 +210,7 @@ function post_standardization() {
                   ";state="   + state + 
                   ";zip="     + cf.elements['<% $taxpre %>zip'].value +
                   ";country=" + country +
+                  ";geocode=" + geocode +
                   ";";
 
       // popup a chooser

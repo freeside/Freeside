@@ -1,5 +1,6 @@
 <FORM NAME="choosegeocodeform">
 <CENTER><BR><B>Choose tax location</B><BR><BR>
+<P>the geocode is:<% $header %></P>
 <P STYLE="<% $style %>"><% $header %></P>
 
 <SELECT NAME='geocodes' ID='geocodes' STYLE="<% $style %>">
@@ -18,7 +19,7 @@
 %     foreach qw( city county state );
 %   $content .=   $location->cityflag eq 'I' ? 'Y' : 'N' ;
 %   my $selected = '' ;
-%   if (!$have_selected && lc($location->city) eq lc($location{city})) {
+%   if ($geocode && $location->geocode eq $geocode) {
 %     $selected = 'SELECTED';
 %   }
   <OPTION VALUE="<% $value %>" STYLE="<% $style %>" <% $selected %>><% $content %>
@@ -36,7 +37,6 @@
 <%init>
 
 my $conf = new FS::Conf;
-my $have_selected = 0;
 
 my %location = ();
 
@@ -45,6 +45,8 @@ my %location = ();
 ($location{state})       = $cgi->param('state')       =~ /^(\w+)$/;
 ($location{zip})         = $cgi->param('zip')         =~ /^([-\w ]+)$/;
 ($location{country})     = $cgi->param('country')     =~ /^([\w ]+)$/;
+
+my($geocode)             = $cgi->param('geocode')     =~ /^([\w]+)$/;
 
 my($zip5, $zip4) = split('-', $location{zip});
 
