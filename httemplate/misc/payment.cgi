@@ -10,8 +10,6 @@
 
 % #include( '/elements/table.html', '#cccccc' ) 
 
-% my $amount = $balance > 0 ? sprintf("%.2f", $balance) : '';
-
 <% ntable('#cccccc') %>
   <TR>
     <TH ALIGN="right">Payment amount</TH>
@@ -32,14 +30,14 @@
       </TD><TD BGCOLOR="#cccccc">
 %        if ( $fee ) {
            <INPUT TYPE="hidden" NAME="fee_pkgpart" VALUE="<% $fee_pkg->pkgpart %>">
-           <INPUT TYPE="hidden" NAME="fee" VALUE="<% $fee %>">
-           <B><FONT SIZE='+1'>+</FONT>
+           <INPUT TYPE="hidden" NAME="fee" VALUE="<% $fee_display eq 'add' ? $fee : '' %>">
+           <B><FONT SIZE='+1'><% $fee_op %></FONT>
               <% $money_char . $fee %>
            </B>
            <% $fee_pkg->pkg |h %>
            <B><FONT SIZE='+1'>=</FONT></B>
       </TD><TD ID="ajax_total_cell" BGCOLOR="#dddddd" STYLE="border:1px solid blue">
-           <FONT SIZE="+1"><% length($amount) ? $money_char. sprintf('%.2f', $amount + $fee ) : '' %> TOTAL</FONT>
+           <FONT SIZE="+1"><% length($amount) ? $money_char. sprintf('%.2f', ($fee_display eq 'add') ? $amount + $fee : $amount - $fee ) : '' %> <% $fee_display eq 'add' ? 'TOTAL' : 'AVAILABLE' %></FONT>
   
 %        }
       </TD></TR></TABLE>
@@ -55,13 +53,13 @@
 
         var total = '';
         if ( what.value.length ) {
-          total = parseFloat(what.value) + <% $fee %>;
+          total = parseFloat(what.value) <% $fee_op %> <% $fee %>;
           /* total = Math.round(total*100)/100; */
           total = '<% $money_char %>' + total.toFixed(2);
         }
 
         var total_cell = document.getElementById('ajax_total_cell');
-        total_cell.innerHTML = '<FONT SIZE="+1">' + total + ' TOTAL</FONT>';
+        total_cell.innerHTML = '<FONT SIZE="+1">' + total + ' <% $fee_display eq 'add' ? 'TOTAL' : 'AVAILABLE' %></FONT>';
 
       }
 
@@ -300,7 +298,13 @@ my @states = sort { $a cmp $b } keys %states;
 
 my $fee = '';
 my $fee_pkg = '';
+my $fee_display = '';
+my $fee_op = '';
 if ( $conf->config('manual_process-pkgpart') ) {
+
+  $fee_display = $conf->config('manual_process-display') || 'add';
+  $fee_op = $fee_display eq 'add' ? '+' : '-';
+
   $fee_pkg =
     qsearchs('part_pkg', { pkgpart=>$conf->config('manual_process-pkgpart') } );
 
@@ -308,6 +312,15 @@ if ( $conf->config('manual_process-pkgpart') ) {
   # (though ->unit_setup doesn't use it...)
   $fee = $fee_pkg->option('setup_fee')
     if $fee_pkg; #in case.. better than dying with a perl traceback
+
+}
+
+my $amount = '';
+if ( $balance > 0 ) {
+  $amount = $balance;
+  $amount += $fee
+    if $fee && $fee_display eq 'subtract';
+  $amount = sprintf("%.2f", $amount);
 }
 
 my $payunique = "webui-payment-". time. "-$$-". rand() * 2**32;

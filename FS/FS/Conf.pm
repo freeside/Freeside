@@ -1863,6 +1863,18 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'manual_process-display',
+    'section'     => 'billing',
+    'description' => 'When using manual_process-pkgpart, add the fee to the amount entered (default), or subtract the fee from the amount entered.',
+    'type'        => 'select',
+    'select_hash' => [
+                       'add'      => 'Add fee to amount entered',
+                       'subtract' => 'Subtract fee from amount entered',
+                     ],
+  },
+
+
+  {
     'key'         => 'allow_negative_charges',
     'section'     => 'billing',
     'description' => 'Allow negative charges.  Normally not used unless importing data from a legacy system that requires this.',

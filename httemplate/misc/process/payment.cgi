@@ -150,11 +150,18 @@ if ( $cgi->param('batch') ) {
 
   #no error, so order the fee package if applicable...
   if ( $cgi->param('fee_pkgpart') =~ /^(\d+)$/ ) {
-    my $error = $cust_main->order_pkg(
-      'cust_pkg' => new FS::cust_pkg { 'pkgpart' => $1 }
-    );
+
+    my $cust_pkg = new FS::cust_pkg { 'pkgpart' => $1 };
+
+    my $error = $cust_main->order_pkg( 'cust_pkg' => $cust_pkg );
     errorpage("payment processed successfully, but error ordering fee: $error")
       if $error;
+
+    #and generate an invoice for it now too
+    $error = $cust_main->bill( 'pkg_list' => [ $cust_pkg ] );
+    errorpage("payment processed and fee ordered sucessfully, but error billing fee: $error")
+      if $error;
+
   }
 
   $cust_main->apply_payments;
