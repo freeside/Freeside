@@ -11,12 +11,12 @@ my $payby = $cust_pay_void->payby;
 
 my $payinfo;
 if ( $payby eq 'CARD' ) {
-  $payinfo = $cust_pay->paymask;
+  $payinfo = $cust_pay_void->paymask;
 } elsif ( $payby eq 'CHEK' ) {
-  my( $account, $aba ) = split('@', $cust_pay->paymask );
+  my( $account, $aba ) = split('@', $cust_pay_void->paymask );
   $payinfo = "ABA $aba, Acct #$account";
 } else {
-  $payinfo = $cust_pay->payinfo;
+  $payinfo = $cust_pay_void->payinfo;
 }
 
 $payby =~ s/^BILL$/Check #/ if $payinfo;
