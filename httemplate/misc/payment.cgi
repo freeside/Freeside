@@ -300,9 +300,10 @@ my $fee = '';
 my $fee_pkg = '';
 my $fee_display = '';
 my $fee_op = '';
-if ( $conf->config('manual_process-pkgpart') ) {
-
-  last if $conf->exists('manual_process-skip_first') && ! $cust_main->cust_pay;
+if ( $conf->config('manual_process-pkgpart')
+     and ! $conf->exists('manual_process-skip_first') || $cust_main->cust_pay
+   )
+{
 
   $fee_display = $conf->config('manual_process-display') || 'add';
   $fee_op = $fee_display eq 'add' ? '+' : '-';
