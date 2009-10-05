@@ -3147,7 +3147,9 @@ sub _handle_taxes {
   }
  
   my @display = ();
-  if ( $conf->exists('separate_usage') || $cust_bill_pkg->hidden ) {
+  my $separate = $conf->exists('separate_usage');
+  my $usage_mandate = $cust_pkg->part_pkg->option('usage_mandate', 'Hush!');
+  if ( $separate || $cust_bill_pkg->hidden || $usage_mandate ) {
 
     my $temp_pkg = new FS::cust_pkg { pkgpart => $real_pkgpart };
     my %hash = $cust_bill_pkg->hidden  # maybe for all bill linked?
@@ -3156,18 +3158,28 @@ sub _handle_taxes {
 
     my $section = $cust_pkg->part_pkg->option('usage_section', 'Hush!');
     my $summary = $cust_pkg->part_pkg->option('summarize_usage', 'Hush!');
-    push @display, new FS::cust_bill_pkg_display { type => 'S', %hash };
-    push @display, new FS::cust_bill_pkg_display { type => 'R', %hash };
+    if ( $separate ) {
+      push @display, new FS::cust_bill_pkg_display { type => 'S', %hash };
+      push @display, new FS::cust_bill_pkg_display { type => 'R', %hash };
+    } else {
+      push @display, new FS::cust_bill_pkg_display
+                       { type => '',
+                         %hash,
+                         ( ( $usage_mandate ) ? ( 'summary' => 'Y' ) : () ),
+                       };
+    }
 
-    if ($section && $summary) {
+    if ($separate && $section && $summary) {
       push @display, new FS::cust_bill_pkg_display { type    => 'U',
                                                      summary => 'Y',
                                                      %hash,
                                                    };
+    }
+    if ($usage_mandate || $section && $summary) {
       $hash{post_total} = 'Y';
     }
 
-    $hash{section} = $section if $conf->exists('separate_usage');
+    $hash{section} = $section if ($separate || $usage_mandate);
     push @display, new FS::cust_bill_pkg_display { type => 'U', %hash };
 
   }

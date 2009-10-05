@@ -163,12 +163,16 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                          'default'        => 'default', #XXX test
                        },
 
-    'usage_section' => { 'name' => 'Section in which to place separate usage charges',
+    'usage_section' => { 'name' => 'Section in which to place usage charges (whether separated or not)',
                        },
 
     'summarize_usage' => { 'name' => 'Include usage summary with recurring charges when usage is in separate section',
                           'type' => 'checkbox',
                         },
+
+    'usage_mandate' => { 'name' => 'Always put usage details in separate section',
+                          'type' => 'checkbox',
+                       },
     #eofalse
 
     'bill_every_call' => { 'name' => 'Generate an invoice immediately for every call.  Useful for prepaid.',
@@ -218,7 +222,7 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                        skip_dst_length_less skip_lastapp
                        use_duration
                        411_rewrite
-                       output_format summarize_usage usage_section
+                       output_format usage_mandate summarize_usage usage_section
                        bill_every_call
                        count_available_phones
                      )

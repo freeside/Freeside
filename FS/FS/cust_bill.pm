@@ -3179,7 +3179,8 @@ sub _items_cust_bill_pkg {
         {
 
           my $is_summary = $display->summary;
-          my $description = $is_summary ? "Usage charges" : $desc;
+          my $description = ($is_summary && $type && $type eq 'U')
+                            ? "Usage charges" : $desc;
 
           unless ( $conf->exists('disable_line_item_date_ranges') ) {
             $description .= " (" . time2str("%x", $cust_bill_pkg->sdate).
@@ -3201,7 +3202,7 @@ sub _items_cust_bill_pkg {
             unless $cust_pkg->part_pkg->hide_svc_detail
                 || $cust_bill_pkg->itemdesc
                 || $cust_bill_pkg->hidden
-                || $is_summary;
+                || $is_summary && $type && $type eq 'U';
 
           push @d, $cust_bill_pkg->details(%details_opt)
             unless ($is_summary || $type && $type eq 'R');
