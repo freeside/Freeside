@@ -7377,8 +7377,24 @@ Returns all the payments (see L<FS::cust_pay>) for this customer.
 
 sub cust_pay {
   my $self = shift;
+  return $self->num_cust_pay unless wantarray;
   sort { $a->_date <=> $b->_date }
     qsearch( 'cust_pay', { 'custnum' => $self->custnum } )
+}
+
+=item num_cust_pay
+
+Returns the number of payments (see L<FS::cust_pay>) for this customer.  Also
+called automatically when the cust_pay method is used in a scalar context.
+
+=cut
+
+sub num_cust_pay {
+  my $self = shift;
+  my $sql = "SELECT COUNT(*) FROM cust_pay WHERE custnum = ?";
+  my $sth = dbh->prepare($sql) or die dbh->errstr;
+  $sth->execute($self->custnum) or die $sth->errstr;
+  $sth->fetchrow_arrayref->[0];
 }
 
 =item cust_pay_pkgnum

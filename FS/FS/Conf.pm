@@ -1873,6 +1873,12 @@ worry that config_items is freeside-specific and icky.
                      ],
   },
 
+  {
+    'key'         => 'manual_process-skip_first',
+    'section'     => 'billing',
+    'description' => "When using manual_process-pkgpart, omit the fee if it is the customer's first payment.",
+    'type'        => 'checkbox',
+  },
 
   {
     'key'         => 'allow_negative_charges',
