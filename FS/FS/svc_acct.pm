@@ -57,7 +57,10 @@ FS::UID->install_callback( sub {
   $usernamemin = $conf->config('usernamemin') || 2;
   $usernamemax = $conf->config('usernamemax');
   $passwordmin = $conf->config('passwordmin'); # || 6;
-  $passwordmin = ( $passwordmin =~ /\d+/ ) ? $passwordmin : 6; #blank->6, keep 0
+  #blank->6, keep 0
+  $passwordmin = ( defined($passwordmin) && $passwordmin =~ /\d+/ )
+                   ? $passwordmin
+                   : 6;
   $passwordmax = $conf->config('passwordmax') || 8;
   $username_letter = $conf->exists('username-letter');
   $username_letterfirst = $conf->exists('username-letterfirst');
