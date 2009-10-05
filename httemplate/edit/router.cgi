@@ -10,10 +10,12 @@
      'fields'      => [
                         { 'field'=>'routername', 'type'=>'text', 'size'=>32 },
                         { 'field'=>'agentnum',   'type'=>'select-agent' },
+                        { 'field'=>'svcnum',     'type'=>'hidden' },
                       ],
      'error_callback' => $callback,
      'edit_callback'  => $callback,
      'new_callback'   => $callback,
+     'html_table_bottom' => $html_table_bottom,
    )
 %>
 <%init>
@@ -41,4 +43,11 @@ my $callback = sub {
   }
 };
 
+my $html_table_bottom = sub {
+  my $router = shift;
+  foreach my $field ($router->virtual_fields) {
+    $html .= $router->pvf($field)->widget('HTML', 'edit', $router->get($field));
+  }
+  $html;
+};
 </%init>
