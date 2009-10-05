@@ -13,7 +13,7 @@
 .invoice_totaldesc TD { font-size: 10pt; empty-cells: show }
 </STYLE>
 
-<table class="invoice" bgcolor="#ffffff" WIDTH=768 CELLSPACING=8><tr><td>
+<table class="invoice" bgcolor="#ffffff" WIDTH=625 CELLSPACING=8><tr><td>
 
   <table class="invoice_header" width="100%">
     <tr>
