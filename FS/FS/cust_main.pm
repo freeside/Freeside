@@ -3036,7 +3036,7 @@ sub _make_lines {
       ###
 
       my $error = 
-        $self->_handle_taxes($part_pkg, $taxlisthash, $cust_bill_pkg, $cust_pkg, $options{invoice_time}, $real_pkgpart);
+        $self->_handle_taxes($part_pkg, $taxlisthash, $cust_bill_pkg, $cust_pkg, $options{invoice_time}, $real_pkgpart, \%options);
       return $error if $error;
 
       push @$cust_bill_pkgs, $cust_bill_pkg;
@@ -3057,6 +3057,7 @@ sub _handle_taxes {
   my $cust_pkg = shift;
   my $invoice_time = shift;
   my $real_pkgpart = shift;
+  my $options = shift;
 
   my %cust_bill_pkg = ();
   my %taxes = ();
@@ -3064,8 +3065,8 @@ sub _handle_taxes {
   my @classes;
   #push @classes, $cust_bill_pkg->usage_classes if $cust_bill_pkg->type eq 'U';
   push @classes, $cust_bill_pkg->usage_classes if $cust_bill_pkg->usage;
-  push @classes, 'setup' if $cust_bill_pkg->setup;
-  push @classes, 'recur' if $cust_bill_pkg->recur;
+  push @classes, 'setup' if ($cust_bill_pkg->setup && !$options->{cancel});
+  push @classes, 'recur' if ($cust_bill_pkg->recur && !$options->{cancel});
 
   if ( $self->tax !~ /Y/i && $self->payby ne 'COMP' ) {
 
