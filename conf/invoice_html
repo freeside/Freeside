@@ -3,6 +3,8 @@
 .invoice_header { font-size: 10pt }
 .invoice_headerright TH { border-top: 2px solid #000000; border-bottom: 2px solid #000000 }
 .invoice_headerright TD { font-size: 10pt; empty-cells: show }
+.invoice_summary TH { border-bottom: 2px solid #000000 }
+.invoice_summary TD { font-size: 10pt; empty-cells: show }
 .invoice_longtable table { cellspacing: none }
 .invoice_longtable TH { border-top: 2px solid #000000; border-bottom: 1px solid #000000; padding-left: none; padding-right: none; font-size: 10pt }
 .invoice_desc TD { border-top: 2px solid #000000; font-weight: bold; font-size: 10pt }
@@ -11,7 +13,7 @@
 .invoice_totaldesc TD { font-size: 10pt; empty-cells: show }
 </STYLE>
 
-<table class="invoice" bgcolor="#ffffff" WIDTH=625 CELLSPACING=8><tr><td>
+<table class="invoice" bgcolor="#ffffff" WIDTH=768 CELLSPACING=8><tr><td>
 
   <table class="invoice_header" width="100%">
     <tr>
@@ -82,10 +84,10 @@
     </tr>
 
   </table>
-
+  <%= $summary %>
   <%=
-      foreach my $section ( @sections ) {
-        if ($section->{'pretotal'}) {
+      foreach my $section ( grep { !$summary || $_->{description} ne $finance_section } @sections ) {
+        if ($section->{'pretotal'} && !$summary) {
           $OUT .=
             '<table width="100%"><tr><td>'.
             '<p align="right"><b><font size="+1">'.
@@ -95,91 +97,92 @@
             '<p>'.
             '</td></tr></table>';
         }
-        $OUT .= '<table><tr><td>';
-        if ($section->{'description'}) {
-          $OUT .=
-            '<p><b><font size="+1">'. uc(substr($section->{'description'},0,1)).
-            '</font><font size="+0">'. uc(substr($section->{'description'},1)).
-            '</font></b>'.
-            '<p>';
-        }else{
-          $OUT .=
-            '<p><b><font size="+1">C</font><font size="+0">HARGES</font></b>'.
-            '<p>';
-        }
-        $OUT .= '</td></tr></table>';
-
-        $OUT .=
-          '<table class="invoice_longtable" CELLSPACING=0 WIDTH="100%">'.
-          '<tr>'.
-            '<th align="center">Ref</th>'.
-            '<th align="left">Description</th>'.
-            ( $unitprices 
-                ? '<th align="left">Unit Price</th>'.
-                  '<th align="left">Quantity</th>'
-                : ''
-              ).
-            '<th align="right">Amount</th>'.
-          '</tr>';
-
-        my $lastref = 0;
-        foreach my $line (
-          grep { ( scalar(@sections) > 1 
-                 ? $section->{'description'} eq $_->{'section'}->{'description'}
-                 : 1
-               ) }
-          @detail_items )
-        {
-          $OUT .=
-            '<tr class="invoice_desc'.
-              ( ($line->{'ref'} && $line->{'ref'} ne $lastref) ? '' : '_more' ).
-              '">'.
-              '<td align="center">'. 
-              ( $line->{'ref'} ne $lastref ? $line->{'ref'} : '' ). '</td>'.
-              '<td align="left">'. $line->{'description'}. '</td>'.
-              ( $unitprices 
-                  ? '<td align="left">'. $line->{'unit_amount'}. '</td>'.
-                    '<td align="left">'. $line->{'quantity'}. '</td>'
-                  : ''
-              ).
-
-              '<td align="right">'. $line->{'amount'}. '</td>'.
-            '</tr>'
-          ;
-          $lastref = $line->{'ref'};
-          if ( @{$line->{'ext_description'} } ) {
-            $OUT .= '<tr class="invoice_extdesc"><td></td><td';
-            $OUT .= $unitprices ? ' colspan=3>' : '>';
-            $OUT .= '<table width="100%">';
-            foreach my $ext_desc ( @{$line->{'ext_description'} } ) {
-              $OUT .=
-                '<tr class="invoice_extdesc">'.
-                  '<td align="left" '.
-                       ( $ext_desc =~ /<\/?TD>/i ? '' : 'colspan=99' ). '>'.
-                    '&nbsp;&nbsp;'. $ext_desc.
-                  '</td>'.
-                '</tr>'
-            }
-            $OUT .= '</table></td><td></td></tr>';
+        unless ($section->{'summarized'}) {
+          $OUT .= '<table><tr><td>';
+          if ($section->{'description'}) {
+            $OUT .=
+              '<p><b><font size="+1">'. uc(substr($section->{'description'},0,1)).
+              '</font><font size="+0">'. uc(substr($section->{'description'},1)).
+              '</font></b>'.
+              '<p>';
+          }else{
+            $OUT .=
+              '<p><b><font size="+1">C</font><font size="+0">HARGES</font></b>'.
+              '<p>';
           }
-        }
+          $OUT .= '</td></tr></table>';
 
-
-        if (scalar(@sections) > 1) {
-          my $style = 'border-top: 3px solid #000000;'.
-                      'border-bottom: 3px solid #000000;';
           $OUT .=
-            '<tr class="invoice_totaldesc">'.
-              qq(<td style="$style">&nbsp;</td>).
-              qq(<td align="left" style="$style"). 
-                ( $unitprices ? ' colspan=3>' : '>' ).
-                $section->{'description'}. ' Total </td>'.
-              qq(<td align="right" style="$style">).
-                $section->{'subtotal'}. '</td>'.
-            '</tr>'
-        ;
-        }
+            '<table class="invoice_longtable" CELLSPACING=0 WIDTH="100%">'.
+            '<tr>'.
+              '<th align="center">Ref</th>'.
+              '<th align="left">Description</th>'.
+              ( $unitprices 
+                  ? '<th align="left">Unit Price</th>'.
+                    '<th align="left">Quantity</th>'
+                  : ''
+                ).
+              '<th align="right">Amount</th>'.
+            '</tr>';
 
+          my $lastref = 0;
+          foreach my $line (
+            grep { ( scalar(@sections) > 1 
+                   ? $section->{'description'} eq $_->{'section'}->{'description'}
+                   : 1
+                 ) }
+            @detail_items )
+          {
+            $OUT .=
+              '<tr class="invoice_desc'.
+                ( ($line->{'ref'} && $line->{'ref'} ne $lastref) ? '' : '_more' ).
+                '">'.
+                '<td align="center">'. 
+                ( $line->{'ref'} ne $lastref ? $line->{'ref'} : '' ). '</td>'.
+                '<td align="left">'. $line->{'description'}. '</td>'.
+                ( $unitprices 
+                    ? '<td align="left">'. $line->{'unit_amount'}. '</td>'.
+                      '<td align="left">'. $line->{'quantity'}. '</td>'
+                    : ''
+                ).
+
+                '<td align="right">'. $line->{'amount'}. '</td>'.
+              '</tr>'
+            ;
+            $lastref = $line->{'ref'};
+            if ( @{$line->{'ext_description'} } ) {
+              $OUT .= '<tr class="invoice_extdesc"><td></td><td';
+              $OUT .= $unitprices ? ' colspan=3>' : '>';
+              $OUT .= '<table width="100%">';
+              foreach my $ext_desc ( @{$line->{'ext_description'} } ) {
+                $OUT .=
+                  '<tr class="invoice_extdesc">'.
+                    '<td align="left" '.
+                         ( $ext_desc =~ /<\/?TD>/i ? '' : 'colspan=99' ). '>'.
+                      '&nbsp;&nbsp;'. $ext_desc.
+                    '</td>'.
+                  '</tr>'
+              }
+              $OUT .= '</table></td><td></td></tr>';
+            }
+          }
+
+
+          if (scalar(@sections) > 1) {
+            my $style = 'border-top: 3px solid #000000;'.
+                        'border-bottom: 3px solid #000000;';
+            $OUT .=
+              '<tr class="invoice_totaldesc">'.
+                qq(<td style="$style">&nbsp;</td>).
+                qq(<td align="left" style="$style"). 
+                  ( $unitprices ? ' colspan=3>' : '>' ).
+                  $section->{'description'}. ' Total </td>'.
+                qq(<td align="right" style="$style">).
+                  $section->{'subtotal'}. '</td>'.
+              '</tr>'
+          ;
+          }
+        } 
         if ($section->{'posttotal'}) {
           $OUT .= '<tr><td align="right" colspan=5>';
           $OUT .=
@@ -218,7 +221,7 @@
   </table>
   <br><br>
 
-<%= $notes %>
+<%= length($summary) ? '' : $notes %>
 
   <hr NOSHADE SIZE=2 COLOR="#000000">
   <p align="center"><%= $footer %>

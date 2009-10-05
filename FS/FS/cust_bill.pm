@@ -1968,6 +1968,7 @@ sub print_generic {
                  'smallfooter'   => sub { map "$_", @_ },
                  'returnaddress' => sub { map "$_", @_ },
                  'coupon'        => sub { map "$_", @_ },
+                 'summary'       => sub { map "$_", @_ },
                },
     'html'  => {
                  'notes' =>
@@ -2001,6 +2002,7 @@ sub print_generic {
                      }  @_
                    },
                  'coupon'        => sub { "" },
+                 'summary'       => sub { "" },
                },
     'template' => {
                  'notes' =>
@@ -2031,6 +2033,7 @@ sub print_generic {
                      }  @_
                    },
                  'coupon'        => sub { "" },
+                 'summary'       => sub { "" },
                },
   );
 
@@ -2147,6 +2150,14 @@ sub print_generic {
     'unitprices'      => $conf->exists('invoice-unitprice'),
   );
 
+  $invoice_data{finance_section} = '';
+  if ( $conf->config('finance_pkgclass') ) {
+    my $pkg_class =
+      qsearchs('pkg_class', { classnum => $conf->config('finance_pkgclass') });
+    $invoice_data{finance_section} = $pkg_class->categoryname;
+  } 
+ $invoice_data{finance_amount} = '0.00';
+
   my $countrydefault = $conf->config('countrydefault') || 'US';
   my $prefix = $cust_main->has_ship_address ? 'ship_' : '';
   foreach ( qw( contact company address1 address2 city state zip country fax) ){
@@ -2193,10 +2204,18 @@ sub print_generic {
 #  my( $cr_total, @cr_cust_credit ) = $self->cust_credit; #credits
   #my $balance_due = $self->owed + $pr_total - $cr_total;
   my $balance_due = $self->owed + $pr_total;
+  $invoice_data{'true_previous_balance'} = sprintf("%.2f", $self->previous_balance);
+  $invoice_data{'balance_adjustments'} = sprintf("%.2f", $self->previous_balance - $self->billing_balance);
   $invoice_data{'previous_balance'} = sprintf("%.2f", $pr_total);
   $invoice_data{'balance'} = sprintf("%.2f", $balance_due);
 
   my $agentnum = $self->cust_main->agentnum;
+
+  my $summarypage = '';
+  if ( $conf->exists('invoice_usesummary', $agentnum) ) {
+    $summarypage = 1;
+  }
+  $invoice_data{'summarypage'} = $summarypage;
 
   #do variable substitution in notes, footer, smallfooter
   foreach my $include (qw( notes footer smallfooter coupon )) {
@@ -2257,6 +2276,7 @@ sub print_generic {
                             'template' => '',
                           );
   my $other_money_char = $other_money_chars{$format};
+  $invoice_data{'dollar'} = $other_money_char;
 
   my @detail_items = ();
   my @total_items = ();
@@ -2271,21 +2291,27 @@ sub print_generic {
   my $previous_section = { 'description' => 'Previous Charges',
                            'subtotal'    => $other_money_char.
                                             sprintf('%.2f', $pr_total),
+                           'summarized'  => $summarypage ? 'Y' : '',
                          };
 
   my $taxtotal = 0;
   my $tax_section = { 'description' => 'Taxes, Surcharges, and Fees',
-                      'subtotal'    => $taxtotal }; # adjusted below
+                      'subtotal'    => $taxtotal,   # adjusted below
+                      'summarized'  => $summarypage ? 'Y' : '',
+                    };
 
   my $adjusttotal = 0;
   my $adjust_section = { 'description' => 'Credits, Payments, and Adjustments',
-                         'subtotal'    => 0 }; # adjusted below
+                         'subtotal'    => 0,   # adjusted below
+                         'summarized'  => $summarypage ? 'Y' : '',
+                       };
 
   my $unsquelched = $params{unsquelch_cdr} || $cust_main->squelch_cdr ne 'Y';
   my $multisection = $conf->exists('invoice_sections', $cust_main->agentnum);
   my $late_sections = [];
   if ( $multisection ) {
-    push @sections, $self->_items_sections( $late_sections );
+    push @sections,
+      $self->_items_sections( $late_sections, $summarypage, $escape_function );
   }else{
     push @sections, { 'description' => '', 'subtotal' => '' };
   }
@@ -2330,6 +2356,10 @@ sub print_generic {
 
   foreach my $section (@sections, @$late_sections) {
 
+    $invoice_data{finance_amount} = sprintf('%.2f', $section->{'subtotal'} )
+      if ( $invoice_data{finance_section} &&
+           $section->{'description'} eq $invoice_data{finance_section} );
+
     $section->{'subtotal'} = $other_money_char.
                              sprintf('%.2f', $section->{'subtotal'})
       if $multisection;
@@ -2346,6 +2376,7 @@ sub print_generic {
     $options{'escape_function'} = $escape_function;
     $options{'format_function'} = sub { () } unless $unsquelched;
     $options{'unsquelched'} = $unsquelched;
+    $options{'summary_page'} = $summarypage;
 
     foreach my $line_item ( $self->_items_pkg(%options) ) {
       my $detail = {
@@ -2384,6 +2415,9 @@ sub print_generic {
   
   }
   
+  $invoice_data{current_less_finance} =
+    sprintf('%.2f', $self->charged - $invoice_data{finance_amount} );
+
   if ( $multisection && !$conf->exists('disable_previous_balance') ) {
     unshift @sections, $previous_section if $pr_total;
   }
@@ -2555,7 +2589,11 @@ sub print_generic {
       $total->{'total_item'} = &$embolden_function($self->balance_due_msg);
       $total->{'total_amount'} =
         &$embolden_function(
-          $other_money_char. sprintf('%.2f', $self->owed + $pr_total )
+          $other_money_char. sprintf('%.2f', $summarypage 
+                                               ? $self->charged +
+                                                 $self->billing_balance
+                                               : $self->owed + $pr_total
+                                    )
         );
       if ( $multisection ) {
         $adjust_section->{'posttotal'} = $total->{'total_item'}. ' '.
@@ -2572,6 +2610,49 @@ sub print_generic {
   if ( $multisection ) {
     push @sections, @$late_sections
       if $unsquelched;
+  }
+
+  my @includelist = ();
+  push @includelist, 'summary' if $summarypage;
+  foreach my $include ( @includelist ) {
+
+    my $inc_file = $conf->key_orbase("invoice_${format}$include", $template);
+    my @inc_src;
+
+    if ( length( $conf->config($inc_file, $agentnum) ) ) {
+
+      @inc_src = $conf->config($inc_file, $agentnum);
+
+    } else {
+
+      $inc_file = $conf->key_orbase("invoice_latex$include", $template);
+
+      my $convert_map = $convert_maps{$format}{$include};
+
+      @inc_src = map { s/\[\@--/$delimiters{$format}[0]/g;
+                       s/--\@\]/$delimiters{$format}[1]/g;
+                       $_;
+                     } 
+                 &$convert_map( $conf->config($inc_file, $agentnum) );
+
+    }
+
+    my $inc_tt = new Text::Template (
+      TYPE       => 'ARRAY',
+      SOURCE     => [ map "$_\n", @inc_src ],
+      DELIMITERS => $delimiters{$format},
+    ) or die "Can't create new Text::Template object: $Text::Template::ERROR";
+
+    unless ( $inc_tt->compile() ) {
+      my $error = "Can't compile $inc_file template: $Text::Template::ERROR\n";
+      warn $error. "Template:\n". join('', map "$_\n", @inc_src);
+      die $error;
+    }
+
+    $invoice_data{$include} = $inc_tt->fill_in( HASH => \%invoice_data );
+
+    $invoice_data{$include} =~ s/\n+$//
+      if ($format eq 'latex');
   }
 
   $invoice_lines = 0;
@@ -2850,21 +2931,30 @@ sub _date_pretty {
 sub _items_sections {
   my $self = shift;
   my $late = shift;
+  my $summarypage = shift;
+  my $escape = shift;
 
   my %s = ();
   my %l = ();
+  my %not_tax = ();
 
   foreach my $cust_bill_pkg ( $self->cust_bill_pkg )
   {
 
-    if ( $cust_bill_pkg->pkgnum > 0 ) {
+
       my $usage = $cust_bill_pkg->usage;
 
       foreach my $display ($cust_bill_pkg->cust_bill_pkg_display) {
+        next if ( $display->summary && $summarypage );
+
         my $desc = $display->section;
         my $type = $display->type;
 
-        if ( $display->post_total ) {
+        if ( $cust_bill_pkg->pkgnum > 0 ) {
+          $not_tax{$desc} = 1;
+        }
+
+        if ( $display->post_total && !$summarypage ) {
           if (! $type || $type eq 'S') {
             $l{$desc} += $cust_bill_pkg->setup
               if ( $cust_bill_pkg->setup != 0 );
@@ -2908,16 +2998,29 @@ sub _items_sections {
 
       }
 
-    }
-
   }
 
-  push @$late, map { { 'description' => $_,
+  my %cache = map { $_->categoryname => $_ }
+              qsearch( 'pkg_category', {disabled => 'Y'} );
+  $cache{$_->categoryname} = $_
+    foreach qsearch( 'pkg_category', {disabled => ''} );
+
+  push @$late, map { { 'description' => &{$escape}($_),
                        'subtotal'    => $l{$_},
                        'post_total'  => 1,
-                   } } sort keys %l;
+                   } }
+                 sort { $cache{$a}->weight <=> $cache{$b}->weight } keys %l;
 
-  map { {'description' => $_, 'subtotal' => $s{$_}} } sort keys %s;
+  map { { 'description' => &{$escape}($_),
+          'subtotal'    => $s{$_},
+          'summarized'  => $not_tax{$_} ? '' : 'Y',
+          'tax_section' => $not_tax{$_} ? '' : 'Y',
+      } }
+    sort { $cache{$a}->weight <=> $cache{$b}->weight }
+    ( $summarypage
+        ? ( grep { exists($s{$_}) || !$cache{$_}->disabled } keys %cache )
+        : ( keys %s )
+    );
 
 }
 
@@ -2999,6 +3102,7 @@ sub _items_cust_bill_pkg {
   my $format_function = $opt{format_function} || '';
   my $unsquelched = $opt{unsquelched} || '';
   my $section = $opt{section}->{description} if $opt{section};
+  my $summary_page = $opt{summary_page} || '';
 
   my @b = ();
   my ($s, $r, $u) = ( undef, undef, undef );
@@ -3018,6 +3122,7 @@ sub _items_cust_bill_pkg {
                                  ? $_->section eq $section
                                  : 1
                                }
+                          grep { $_->summary || !$summary_page }
                           $cust_bill_pkg->cust_bill_pkg_display
                         )
     {

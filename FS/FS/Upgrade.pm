@@ -135,6 +135,9 @@ sub upgrade_data {
     #change recur_flat and enable_prorate
     'part_pkg_option' => [],
 
+    #add weights to pkg_category
+    'pkg_category' => [],
+
   ;
 
   \%hash;

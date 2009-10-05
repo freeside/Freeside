@@ -1,11 +1,13 @@
 package FS::pkg_category;
 
 use strict;
-use vars qw( @ISA );
-use FS::Record qw( qsearch );
+use vars qw( @ISA $me $DEBUG );
+use FS::Record qw( qsearch dbh );
 use FS::part_pkg;
 
 @ISA = qw( FS::Record );
+$DEBUG = 0;
+$me = '[FS::pkg_category]';
 
 =head1 NAME
 
@@ -95,8 +97,37 @@ sub check {
 
   $self->ut_numbern('categorynum')
   or $self->ut_text('categoryname')
+  or $self->ut_snumber('weight')
   or $self->SUPER::check;
 
+}
+
+# _ upgrade_data
+#
+# Used by FS::Upgrade to migrate to a new database.
+#
+#
+
+sub _upgrade_data {
+  my ($class, %opts) = @_;
+  my $dbh = dbh;
+
+  warn "$me upgrading $class\n" if $DEBUG;
+
+  my @pkg_category =
+    qsearch('pkg_category', { weight => { op => '!=', value => '' } } );
+
+  unless( scalar(@pkg_category) ) {
+    my @pkg_category = qsearch('pkg_category', {} );
+    my $weight = 0;
+    foreach ( sort { $a->description cmp $b->description } @pkg_category ) {
+      $_->weight($weight);
+      my $error = $_->replace;
+      die "error setting pkg_category weight: $error\n" if $error;
+      $weight += 10;
+    }
+  }
+  '';
 }
 
 =back

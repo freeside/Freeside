@@ -1,0 +1,45 @@
+\begin{tabular}{ll}
+\begin{minipage}{6.4cm}
+\begin{tabular}{m{0cm}m{6.4cm}}
+\rule{0cm}{10cm}&\begin{minipage}{6cm}[@-- $notes --@]\end{minipage}\\
+\end{tabular}
+\end{minipage} &
+\rule{2cm}{0cm}
+\begin{minipage}{12.8cm}
+\begin{tabular}{lr}
+\hline
+&\\
+\textbf{\underline{Summary of Previous Balance and Payments}} & \\
+&\\
+\textbf{Previous Balance}&\textbf{\dollar[@-- $true_previous_balance --@]}\\
+\textbf{Payments}&\textbf{\dollar[@-- $balance_adjustments --@]}\\
+\cline{2-2}
+\textbf{Balance Outstanding}&\textbf{\dollar[@-- sprintf('%.2f', $true_previous_balance -$balance_adjustments) --@]}\\
+&\\
+\hline
+&\\
+\textbf{\underline{Summary of New Charges}} & \\
+&\\
+[@--
+  foreach my $section ( grep { $_->{tax_section} || !$_->{summarized} and !($finance_section && $_->{'description'} eq $finance_section)} @sections ) {
+    $OUT .= '\textbf{'. ($section->{'description'} ? $section->{'description'} : 'Charges' ). '}';
+    $OUT .= '&\textbf{'. $section->{'subtotal'}. '}\\\\';
+  }
+  $OUT .= '\cline{2-2}';
+--@]
+\textbf{New Charges Total}&\textbf{\dollar[@-- $current_less_finance --@]}\\
+&\\
+\hline
+&\\
+\textbf{\underline{Invoice Summary}} & \\
+& \\
+\textbf{Previous Past Due Charges}&\textbf{\dollar[@-- sprintf('%.2f', $true_previous_balance - $balance_adjustments) --@]}\\
+\textbf{Finance charges on overdue amount}&\textbf{\dollar[@-- $finance_amount --@]}\\
+\textbf{New Charges}&\textbf{\dollar[@-- $current_less_finance --@]}\\
+\cline{2-2}
+\textbf{Total Amount Due}&\textbf{\dollar[@-- sprintf('%.2f', $true_previous_balance + $current_charges - $balance_adjustments) --@]}\\
+&\\
+\hline
+\end{tabular}
+\end{minipage} \\
+\end{tabular}

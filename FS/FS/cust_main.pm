@@ -2717,6 +2717,23 @@ sub bill {
     $tax = sprintf('%.2f', $tax );
     $total_setup = sprintf('%.2f', $total_setup+$tax );
   
+    my $pkg_category = qsearchs( 'pkg_category', { 'categoryname' => $taxname,
+                                                   'disabled'     => '',
+                                                 },
+                               );
+
+    my @display = ();
+    if ( $pkg_category and
+         $conf->config('invoice_latexsummary') ||
+         $conf->config('invoice_htmlsummary')
+       )
+    {
+
+      my %hash = (  'section' => $pkg_category->categoryname );
+      push @display, new FS::cust_bill_pkg_display { type => 'S', %hash };
+
+    }
+
     push @cust_bill_pkg, new FS::cust_bill_pkg {
       'pkgnum'   => 0,
       'setup'    => $tax,
@@ -2724,6 +2741,7 @@ sub bill {
       'sdate'    => '',
       'edate'    => '',
       'itemdesc' => $taxname,
+      'display'  => \@display,
       'cust_bill_pkg_tax_location' => \@cust_bill_pkg_tax_location,
       'cust_bill_pkg_tax_rate_location' => \@cust_bill_pkg_tax_rate_location,
     };
@@ -2761,11 +2779,24 @@ sub bill {
 
   my $charged = sprintf('%.2f', $total_setup + $total_recur );
 
+  my @cust_bill = $self->cust_bill;
+  my $balance = $self->balance;
+  my $previous_balance = scalar(@cust_bill)
+                           ?  $cust_bill[$#cust_bill]->billing_balance
+                           :  0;
+
+  $previous_balance += $cust_bill[$#cust_bill]->charged
+    if scalar(@cust_bill);
+  #my $balance_adjustments =
+  #  sprintf('%.2f', $balance - $prior_prior_balance - $prior_charged);
+
   #create the new invoice
   my $cust_bill = new FS::cust_bill ( {
-    'custnum' => $self->custnum,
-    '_date'   => ( $invoice_time ),
-    'charged' => $charged,
+    'custnum'             => $self->custnum,
+    '_date'               => ( $invoice_time ),
+    'charged'             => $charged,
+    'billing_balance'     => $balance,
+    'previous_balance'    => $previous_balance,
   } );
   $error = $cust_bill->insert;
   if ( $error ) {

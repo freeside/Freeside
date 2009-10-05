@@ -19,7 +19,7 @@
 
 \documentclass[letterpaper]{article}
 
-\usepackage{fancyhdr,lastpage,ifthen,fslongtable,afterpage,caption,multirow,bigstrut}
+\usepackage{fancyhdr,lastpage,ifthen,array,fslongtable,afterpage,caption,multirow,bigstrut}
 \usepackage{graphicx}			% required for logo graphic
 
 \addtolength{\voffset}{-0.0cm}		% top margin to top of header
@@ -232,83 +232,86 @@ Terms: [@-- $terms --@]\\
 \end{minipage}}
 \vspace{1.5cm}
 %
+[@-- $summary --@]
+%
 \section*{}
 [@--
-  foreach my $section ( @sections ) {
-    if ($section->{'pretotal'}) {
+  foreach my $section ( grep { !$summary || $_->{description} ne $finance_section } @sections ) {
+    if ($section->{'pretotal'} && !$summary) {
       $OUT .= '\begin{flushright}';
       $OUT .= '\large\textsc{'. $section->{'pretotal'}. '}\\\\';
       $OUT .= '\\end{flushright}';
     }
     $OUT .= '\pagebreak' if $section{'post_total'};
-    $OUT .= '\captionsetup{singlelinecheck=false,justification=raggedright,font={Large,sc,bf}}';
-    $OUT .= '\ifthenelse{\equal{\thepage}{1}}{\setlength{\LTextracouponspace}{\extracouponspace}}{\setlength{\LTextracouponspace}{0pt}}'
-      if $coupon;
-    $OUT .= '\begin{longtable}{cllllllr}';
-    $OUT .= '\caption*{ ';
-    $OUT .= ($section->{'description'}) ? $section->{'description'}: 'Charges';
-    $OUT .= '}\\\\';
-    $OUT .= '\FShead';
-    $OUT .= '\endfirsthead';
-    $OUT .= '\multicolumn{7}{r}{\rule{0pt}{2.5ex}Continued from previous page}\\\\';
-    $OUT .= '\FShead';
-    $OUT .= '\endhead';
-    $OUT .= '\multicolumn{7}{r}{\rule{0pt}{2.5ex}Continued on next page...}\\\\';
-    $OUT .= '\endfoot';
-    $OUT .= '\hline';
+    unless ($section->{'summarized'} ) {
+      $OUT .= '\captionsetup{singlelinecheck=false,justification=raggedright,font={Large,sc,bf}}';
+      $OUT .= '\ifthenelse{\equal{\thepage}{1}}{\setlength{\LTextracouponspace}{\extracouponspace}}{\setlength{\LTextracouponspace}{0pt}}'
+        if $coupon;
+      $OUT .= '\begin{longtable}{cllllllr}';
+      $OUT .= '\caption*{ ';
+      $OUT .= ($section->{'description'}) ? $section->{'description'}: 'Charges';
+      $OUT .= '}\\\\';
+      $OUT .= '\FShead';
+      $OUT .= '\endfirsthead';
+      $OUT .= '\multicolumn{7}{r}{\rule{0pt}{2.5ex}Continued from previous page}\\\\';
+      $OUT .= '\FShead';
+      $OUT .= '\endhead';
+      $OUT .= '\multicolumn{7}{r}{\rule{0pt}{2.5ex}Continued on next page...}\\\\';
+      $OUT .= '\endfoot';
+      $OUT .= '\hline';
 
-    if (scalar(@sections) > 1) {
-      $OUT .= '\FStotaldesc{' . $section->{'description'} . ' Total}' .
-              '{' . $section->{'subtotal'} . '}' . "\n";
-    }
-
-    #if ($section == $sections[$#sections]) {
-      foreach my $line (grep {$_->{section}->{description} eq $section->{description}} @total_items) {
-        $OUT .= '\FStotaldesc{' . $line->{'total_item'} . '}' .
-                '{' . $line->{'total_amount'} . '}' . "\n";
+      if (scalar(@sections) > 1) {
+        $OUT .= '\FStotaldesc{' . $section->{'description'} . ' Total}' .
+                '{' . $section->{'subtotal'} . '}' . "\n";
       }
-    #}
 
-    $OUT .= '\hline';
-    $OUT .= '\endlastfoot';
-
-    my $lastref = 0;
-    foreach my $line (
-      grep { ( scalar( @sections ) > 1 
-             ? $section->{'description'} eq $_->{'section'}->{'description'}
-             : 1
-           ) }
-      @detail_items )
-    {
-      my $ext_description = $line->{'ext_description'};
-  
-      # Don't break-up small packages.
-      my $rowbreak = @$ext_description < 5 ? '*' : '';
-  
-      $OUT .= "\\hline\n" if ($line->{'ref'} && $line->{'ref'} ne $lastref);
-      $OUT .= '\FSdesc'.
-              '{' . ( $line->{'ref'} ne $lastref ? $line->{'ref'} : '' ) . '}'.
-              '{' . $line->{'description'} . '}' .
-              '{' . ( $unitprices ? $line->{'unit_amount'} : '' ) . '}'.
-              '{' . ( $unitprices ? $line->{'quantity'} : ''  ) . '}' .
-              '{' . $line->{'amount'} . "}${rowbreak}\n";
-      $lastref = $line->{'ref'};
-
-      foreach my $ext_desc (@$ext_description) {
-        if ( $ext_desc !~ /[^\\]&/ ) {
-          $ext_desc = substr($ext_desc, 0, 80) . '...'
-            if (length($ext_desc) > 80);
-          $ext_desc = '\multicolumn{6}{l}{\small{~~~'. $ext_desc. '}}';
-        }else{
-          $ext_desc = "~~~$ext_desc";
+      #if ($section == $sections[$#sections]) {
+        foreach my $line (grep {$_->{section}->{description} eq $section->{description}} @total_items) {
+          $OUT .= '\FStotaldesc{' . $line->{'total_item'} . '}' .
+                  '{' . $line->{'total_amount'} . '}' . "\n";
         }
-        $OUT .= '\FSextdesc{' . $ext_desc . '}' . "${rowbreak}\n";
+      #}
+
+      $OUT .= '\hline';
+      $OUT .= '\endlastfoot';
+
+      my $lastref = 0;
+      foreach my $line (
+        grep { ( scalar( @sections ) > 1 
+               ? $section->{'description'} eq $_->{'section'}->{'description'}
+               : 1
+             ) }
+        @detail_items )
+      {
+        my $ext_description = $line->{'ext_description'};
+  
+        # Don't break-up small packages.
+        my $rowbreak = @$ext_description < 5 ? '*' : '';
+  
+        $OUT .= "\\hline\n" if ($line->{'ref'} && $line->{'ref'} ne $lastref);
+        $OUT .= '\FSdesc'.
+                '{' . ( $line->{'ref'} ne $lastref ? $line->{'ref'} : '' ) . '}'.
+                '{' . $line->{'description'} . '}' .
+                '{' . ( $unitprices ? $line->{'unit_amount'} : '' ) . '}'.
+                '{' . ( $unitprices ? $line->{'quantity'} : ''  ) . '}' .
+                '{' . $line->{'amount'} . "}${rowbreak}\n";
+        $lastref = $line->{'ref'};
+
+        foreach my $ext_desc (@$ext_description) {
+          if ( $ext_desc !~ /[^\\]&/ ) {
+            $ext_desc = substr($ext_desc, 0, 80) . '...'
+              if (length($ext_desc) > 80);
+            $ext_desc = '\multicolumn{6}{l}{\small{~~~'. $ext_desc. '}}';
+          }else{
+            $ext_desc = "~~~$ext_desc";
+          }
+          $OUT .= '\FSextdesc{' . $ext_desc . '}' . "${rowbreak}\n";
+        }
+
       }
 
+      $OUT .= '\end{longtable}';
     }
-
-    $OUT .= '\end{longtable}';
-
     if ($section->{'posttotal'}) {
       $OUT .= '\begin{flushright}';
       $OUT .= '\normalfont\large\bfseries\textsc{'. $section->{'posttotal'}. '}\\\\';
@@ -319,7 +322,7 @@ Terms: [@-- $terms --@]\\
 --@]
 \vfill
 \begin{minipage}[t]{\textwidth}
-  [@-- $notes --@]
+  [@-- length($summary) ? '' : $notes --@]
   [@-- $coupon ? '\ifthenelse{\equal{\thepage}{1}}{\rule{0pt}{\extracouponspace}}{}' : '' --@]
 \end{minipage}
 \end{document}

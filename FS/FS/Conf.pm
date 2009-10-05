@@ -892,6 +892,13 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'invoice_usesummary',
+    'section'     => 'billing',
+    'description' => 'Indicates that html and latex invoices should be in summary style and make use of invoice_latexsummary.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'invoice_template',
     'section'     => 'billing',
     'description' => 'Text template file for invoices.  Used if no invoice_html template is defined, and also seen by users using non-HTML capable mail clients.  See the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:1.7:Documentation:Administration#Plaintext_invoice_templates">billing documentation</a> for details.',
@@ -923,6 +930,14 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'invoice_htmlsummary',
+    'section'     => 'billing',
+    'description' => 'Summary initial page for HTML invoices.',
+    'type'        => 'textarea',
+    'per_agent'   => 1,
+  },
+
+  {
     'key'         => 'invoice_htmlreturnaddress',
     'section'     => 'billing',
     'description' => 'Return address for HTML invoices.  Defaults to the same data in invoice_latexreturnaddress if not specified.',
@@ -948,6 +963,14 @@ worry that config_items is freeside-specific and icky.
     'key'         => 'invoice_latexfooter',
     'section'     => 'billing',
     'description' => 'Footer for LaTeX typeset PostScript invoices.',
+    'type'        => 'textarea',
+    'per_agent'   => 1,
+  },
+
+  {
+    'key'         => 'invoice_latexsummary',
+    'section'     => 'billing',
+    'description' => 'Summary initial page for LaTeX typeset PostScript invoices.',
     'type'        => 'textarea',
     'per_agent'   => 1,
   },
@@ -1003,6 +1026,25 @@ worry that config_items is freeside-specific and icky.
     'section'     => 'billing',
     'description' => 'Split invoice into sections and label according to package category when enabled.',
     'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'finance_pkgclass',
+    'section'     => 'billing',
+    'description' => 'The package class for finance charges',
+    'type'        => 'select-sub',
+    'options_sub' => sub { require FS::Record;
+                           require FS::pkg_class;
+                           map { $_->classnum => $_->classname }
+                               FS::Record::qsearch('pkg_class', {} );
+		         },
+    'option_sub'  => sub { require FS::Record;
+                           require FS::pkg_class;
+                           my $pkg_class = FS::Record::qsearchs(
+			     'pkg_class', { 'classnum'=>shift }
+			   );
+                           $pkg_class ? $pkg_class->classname : '';
+			 },
   },
 
   { 

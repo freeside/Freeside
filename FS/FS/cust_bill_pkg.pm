@@ -361,7 +361,10 @@ sub part_pkg {
   if ( $self->pkgpart_override ) {
     qsearchs('part_pkg', { 'pkgpart' => $self->pkgpart_override } );
   } else {
-    $self->cust_pkg->part_pkg;
+    my $part_pkg;
+    my $cust_pkg = $self->cust_pkg;
+    $part_pkg = $cust_pkg->part_pkg if $cust_pkg;
+    $part_pkg;
   }
 }
 

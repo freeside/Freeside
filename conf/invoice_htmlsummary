@@ -1,0 +1,74 @@
+<table>
+  <tr>
+    <td>
+      <table>
+        <tr><td><%= $notes %></td></tr>
+      </table>
+    </td>
+    <td>
+      <table class="invoice_summary">
+        <tr><th colspan=2><br></th></tr>
+        <tr>
+          <td><b><u><br>Summary of Previous Balance and Payments<br></u></b></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td><b>Previous Balance</b></td>
+          <td align="right"><b><%= $dollar.$true_previous_balance %></b></td>
+        </tr>
+        <tr>
+          <td><b>Payments</b></td>
+          <th align="right"><b><%= $dollar.$balance_adjustments %></b></th>
+        </tr>
+        <tr>
+          <td><b>Balance Outstanding</b></td>
+          <td align="right"><b><%= $dollar.sprintf('%.2f', $true_previous_balance - $balance_adjustments) %></b></td>
+        </tr>
+        <tr><th colspan=2><br></th></tr>
+        <tr><td colspan=2><br></td></tr>
+        <tr>
+          <td><b><u>Summary of New Charges</u></b></td>
+          <td></td>
+        </tr>
+        <tr><td colspan=2><br></td></tr>
+        <%= 
+          my ($last) = grep { $_->{tax_section} || !$_->{summarized} and !($finance_section && $_->{'description'} eq $finance_section)} reverse @sections;
+          
+          foreach my $section ( grep { $_->{tax_section} || !$_->{summarized} and !($finance_section && $_->{'description'} eq $finance_section)} @sections ) {
+            $OUT .= '<tr><td><b>'. ($section->{'description'} ? $section->{'description'} : 'Charges' ). '</b></td>';
+            my $celltype = ($last == $section) ? 'th' : 'td';
+            $OUT .= qq(<$celltype align="right"><b>). $section->{'subtotal'}. "</b></$celltype></tr>";
+          }
+        %>
+        <tr>
+          <td><b>New Charges Total</b></td>
+          <td align="right"><b><%= $dollar.$current_less_finance %></b></td>
+        </tr>
+        <tr><th colspan=2><br></th></tr>
+        <tr><td colspan=2><br></td></tr>
+        <tr>
+          <td><b><u>Invoice Summary</u></b></td>
+          <td></td>
+        </tr>
+        <tr><td colspan=2><br></td></tr>
+        <tr>
+          <td><b>Previous Past Due Charges</b></td>
+          <td align="right"><b><%= $dollar.sprintf('%.2f', $true_previous_balance - $balance_adjustments) %></b></td>
+        </tr>
+        <tr>
+          <td><b>Finance charges on overdue amount</b></td>
+          <td align="right"><b><%= $dollar.$finance_amount %></b></td>
+        </tr>
+        <tr>
+          <td><b>New Charges</b></td>
+          <th align="right"><b><%= $dollar.$current_less_finance %></b></th>
+        </tr>
+        <tr>
+          <td><b>Total Amount Due</b></td>
+          <td align="right"><b><%= $dollar.sprintf('%.2f', $true_previous_balance + $current_charges - $balance_adjustments) %></b></td>
+        </tr>
+        <tr><th colspan=2><br></th></tr>
+      </table>
+    </td>
+  </tr>
+</table>

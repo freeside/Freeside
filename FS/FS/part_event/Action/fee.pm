@@ -26,10 +26,13 @@ sub do_action {
 
   my $cust_main = $self->cust_main($cust_object);
 
+  my $conf = new FS::Conf;
+
   my %charge = (
     'amount'   => $self->option('charge'),
     'pkg'      => $self->option('reason'),
     'taxclass' => $self->option('taxclass'),
+    'classnum' => $conf->config('finance_pkgclass'),
     'setuptax' => $self->option('setuptax'),
   );
 

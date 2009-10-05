@@ -394,6 +394,8 @@ sub tables_hashref {
         'custnum',      'int',     '', '', '', '', 
         '_date',        @date_type,        '', '', 
         'charged',      @money_type,       '', '', 
+        'previous_balance',   @money_typen, '', '',  #eventually not nullable
+        'billing_balance',    @money_typen, '', '',  #eventually not nullable
         'printed',      'int',     '', '', '', '', 
         'closed',      'char', 'NULL',  1, '', '', 
         'statementnum', 'int', 'NULL', '', '', '',
@@ -2073,6 +2075,7 @@ sub tables_hashref {
       'columns' => [
         'categorynum',   'serial',  '', '', '', '', 
         'categoryname',  'varchar', '', $char_d, '', '', 
+        'weight',         'int', 'NULL',  '', '', '',
         'disabled',      'char', 'NULL',   1, '', '', 
       ],
       'primary_key' => 'categorynum',

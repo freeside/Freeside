@@ -52,7 +52,12 @@ sub section {
   if ( defined($value) ) {
     $self->setfield('section', $value);
   } else {
-    $self->getfield('section') || $self->cust_bill_pkg->part_pkg->categoryname;
+    my $section = $self->getfield('section');
+    unless ($section) {
+      my $part_pkg = $self->cust_bill_pkg->part_pkg;
+      $section = $part_pkg->categoryname if $part_pkg;
+    }
+    $section;
   }
 }
 

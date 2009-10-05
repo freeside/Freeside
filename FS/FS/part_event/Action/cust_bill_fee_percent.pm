@@ -31,6 +31,8 @@ sub do_action {
   #my $cust_main = $self->cust_main($cust_bill);
   my $cust_main = $cust_bill->cust_main;
 
+  my $conf = new FS::Conf;
+
   my $amount =
     sprintf('%.2f', $cust_bill->owed * $self->option('percent') / 100 );
 
@@ -38,6 +40,7 @@ sub do_action {
     'amount'   => $amount,
     'pkg'      => $self->option('reason'),
     'taxclass' => $self->option('taxclass'),
+    'classnum'   => $conf->config('finance_pkgclass'),
     'setuptax' => $self->option('setuptax'),
   );
 
