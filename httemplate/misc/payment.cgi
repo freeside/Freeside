@@ -300,8 +300,12 @@ my $fee = '';
 my $fee_pkg = '';
 my $fee_display = '';
 my $fee_op = '';
+my $num_payments = scalar($cust_main->cust_pay);
+#handle old cust_main.pm (remove...)
+$num_payments = scalar( @{ [ $cust_main->cust_pay ] } )
+  unless defined $num_payments;
 if ( $conf->config('manual_process-pkgpart')
-     and ! $conf->exists('manual_process-skip_first') || $cust_main->cust_pay
+     and ! $conf->exists('manual_process-skip_first') || $num_payments
    )
 {
 
