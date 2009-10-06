@@ -45,6 +45,7 @@ my $callback = sub {
 
 my $html_table_bottom = sub {
   my $router = shift;
+  my $html = '';
   foreach my $field ($router->virtual_fields) {
     $html .= $router->pvf($field)->widget('HTML', 'edit', $router->get($field));
   }
