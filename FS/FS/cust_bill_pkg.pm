@@ -186,9 +186,7 @@ sub insert {
   if ( $tax_location ) {
     foreach my $cust_bill_pkg_tax_location ( @$tax_location ) {
       $cust_bill_pkg_tax_location->billpkgnum($self->billpkgnum);
-      warn $cust_bill_pkg_tax_location;
       $error = $cust_bill_pkg_tax_location->insert;
-      warn $error;
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
         return "error inserting cust_bill_pkg_tax_location: $error";
@@ -201,7 +199,6 @@ sub insert {
     foreach my $cust_bill_pkg_tax_rate_location ( @$tax_rate_location ) {
       $cust_bill_pkg_tax_rate_location->billpkgnum($self->billpkgnum);
       $error = $cust_bill_pkg_tax_rate_location->insert;
-      warn $error;
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
         return "error inserting cust_bill_pkg_tax_rate_location: $error";
@@ -213,7 +210,6 @@ sub insert {
   if ( $cust_tax_adjustment ) {
     $cust_tax_adjustment->billpkgnum($self->billpkgnum);
     $error = $cust_tax_adjustment->replace;
-    warn $error;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return "error replacing cust_tax_adjustment: $error";
@@ -346,7 +342,7 @@ Returns the package (see L<FS::cust_pkg>) for this invoice line item.
 
 sub cust_pkg {
   my $self = shift;
-  warn "$me $self -> cust_pkg";
+  #warn "$me $self -> cust_pkg"; #carp?
   qsearchs( 'cust_pkg', { 'pkgnum' => $self->pkgnum } );
 }
 
