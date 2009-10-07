@@ -4,16 +4,16 @@
 
 % if ( $FS::CurrentUser::CurrentUser->access_right('Resend invoices') ) {
 
-%#    <A HREF="<% $p %>misc/print-invoice.cgi?<% $link %>">Re-print this statement</A>
+%#    <A HREF="<% $p %>misc/send-statement.cgi?method=print;<% $link %>">Re-print this statement</A>
 
 %   if ( grep { $_ ne 'POST' } $cust_statement->cust_main->invoicing_list ) { 
 %#        |
-        <A HREF="<% $p %>misc/email-invoice.cgi?<% $link %>">Re-email this statement</A>
+        <A HREF="<% $p %>misc/send-statement.cgi?method=email;<% $link %>">Re-email this statement</A>
 %   } 
 
 %   if ( 0 ) {
 %   #if ( $conf->exists('hylafax') && length($cust_statement->cust_main->fax) ) { 
-        | <A HREF="<% $p %>misc/fax-invoice.cgi?<% $link %>">Re-fax this statement</A>
+        | <A HREF="<% $p %>misc/send-statement.cgi?method=fax;<% $link %>">Re-fax this statement</A>
 %   } 
 
     <BR><BR>
@@ -73,6 +73,7 @@ die "Statement #$statementnum not found!" unless $cust_statement;
 my $custnum = $cust_statement->custnum;
 my $display_custnum = $cust_statement->cust_main->display_custnum;
 
-my $link = $templatename ? "$templatename-$statementnum" : $statementnum;
+my $link = "statementnum=$statementnum";
+$link .= ';template='. uri_escape($templatename) if $templatename;
 
 </%init>

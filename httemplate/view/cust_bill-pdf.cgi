@@ -4,11 +4,23 @@
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('View invoices');
 
-#untaint invnum
+my( $invnum, $template, $notice_name );
 my($query) = $cgi->keywords;
-$query =~ /^((.+)-)?(\d+)(.pdf)?$/;
-my $templatename = $2;
-my $invnum = $3;
+if ( $query =~ /^((.+)-)?(\d+)(.pdf)?$/ ) {
+  $template = $2;
+  $invnum = $3;
+  $notice_name = 'Invoice';
+} else {
+  $invnum = $cgi->param('invnum');
+  $invnum =~ s/\.pdf//i;
+  $template = $cgi->param('template');
+  $notice_name = ( $cgi->param('notice_name') || 'Invoice' );
+}
+
+my %opt = (
+  'template'    => $template,
+  'notice_name' => $notice_name,
+);
 
 my $cust_bill = qsearchs({
   'select'    => 'cust_bill.*',
@@ -19,7 +31,7 @@ my $cust_bill = qsearchs({
 });
 die "Invoice #$invnum not found!" unless $cust_bill;
 
-my $pdf = $cust_bill->print_pdf( '', $templatename);
+my $pdf = $cust_bill->print_pdf(\%opt);
 
 http_header('Content-Type' => 'application/pdf' );
 http_header('Content-Length' => length($pdf) );

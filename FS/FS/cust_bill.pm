@@ -770,6 +770,10 @@ text attachment arrayref, optional
 
 email subject, optional
 
+=item notice_name
+
+notice name instead of "Invoice", optional
+
 =back
 
 Returns an argument list to be passed to L<FS::Misc::send_email>.
@@ -790,13 +794,19 @@ sub generate_email {
     'subject'   => (($args{'subject'}) ? $args{'subject'} : 'Invoice'),
   );
 
-  my %cdrs = ( 'unsquelch_cdr' => $conf->exists('voip-cdr_email') );
+  my %opt = (
+    'unsquelch_cdr' => $conf->exists('voip-cdr_email'),
+    'template'      => $args{'template'},
+    'notice_name'   => ( $args{'notice_name'} || 'Invoice' ),
+  );
+
+  my $cust_main = $self->cust_main;
 
   if (ref($args{'to'}) eq 'ARRAY') {
     $return{'to'} = $args{'to'};
   } else {
     $return{'to'} = [ grep { $_ !~ /^(POST|FAX)$/ }
-                           $self->cust_main->invoicing_list
+                           $cust_main->invoicing_list
                     ];
   }
 
@@ -830,7 +840,7 @@ sub generate_email {
       if ( ref($args{'print_text'}) eq 'ARRAY' ) {
         $data = $args{'print_text'};
       } else {
-        $data = [ $self->print_text('', $args{'template'}, %cdrs) ];
+        $data = [ $self->print_text(\%opt) ];
       }
 
     }
@@ -848,7 +858,7 @@ sub generate_email {
     my $content_id = join('.', rand()*(2**32), $$, time). "\@$from";
 
     my $logo;
-    my $agentnum = $self->cust_main->agentnum;
+    my $agentnum = $cust_main->agentnum;
     if ( defined($args{'template'}) && length($args{'template'})
          && $conf->exists( 'logo_'. $args{'template'}. '.png', $agentnum )
        )
@@ -877,11 +887,7 @@ sub generate_email {
                          '    </title>',
                          '  </head>',
                          '  <body bgcolor="#e8e8e8">',
-                         $self->print_html({ time          => '',
-                                             template      => $args{'template'},
-                                             cid           => $content_id,
-                                             %cdrs,
-                                          }),
+                         $self->print_html({ 'cid'=>$content_id, %opt }),
                          '  </body>',
                          '</html>',
                        ],
@@ -890,7 +896,7 @@ sub generate_email {
     );
 
     my @otherparts = ();
-    if ( $self->cust_main->email_csv_cdr ) {
+    if ( $cust_main->email_csv_cdr ) {
 
       push @otherparts, build MIME::Entity
         'Type'        => 'text/csv',
@@ -929,7 +935,7 @@ sub generate_email {
 
       $related->add_part($image);
 
-      my $pdf = build MIME::Entity $self->mimebuild_pdf('', $args{'template'}, %cdrs);
+      my $pdf = build MIME::Entity $self->mimebuild_pdf(\%opt);
 
       $return{'mimeparts'} = [ $related, $pdf, @otherparts ];
 
@@ -957,7 +963,7 @@ sub generate_email {
 
       #mime parts arguments a la MIME::Entity->build().
       $return{'mimeparts'} = [
-        { $self->mimebuild_pdf('', $args{'template'}, %cdrs) }
+        { $self->mimebuild_pdf(\%opt) }
       ];
     }
   
@@ -977,7 +983,7 @@ sub generate_email {
       if ( ref($args{'print_text'}) eq 'ARRAY' ) {
         $return{'body'} = $args{'print_text'};
       } else {
-        $return{'body'} = [ $self->print_text('', $args{'template'}, %cdrs) ];
+        $return{'body'} = [ $self->print_text(\%opt) ];
       }
 
     }
@@ -1006,21 +1012,26 @@ sub mimebuild_pdf {
   );
 }
 
-=item send [ TEMPLATENAME [ , AGENTNUM [ , INVOICE_FROM ] ] ]
+=item send HASHREF | [ TEMPLATE [ , AGENTNUM [ , INVOICE_FROM [ , AMOUNT ] ] ] ]
 
 Sends this invoice to the destinations configured for this customer: sends
 email, prints and/or faxes.  See L<FS::cust_main_invoice>.
 
-TEMPLATENAME, if specified, is the name of a suffix for alternate invoices.
+Options can be passed as a hashref (recommended) or as a list of up to 
+four values for templatename, agentnum, invoice_from and amount.
 
-AGENTNUM, if specified, means that this invoice will only be sent for customers
+I<template>, if specified, is the name of a suffix for alternate invoices.
+
+I<agentnum>, if specified, means that this invoice will only be sent for customers
 of the specified agent or agent(s).  AGENTNUM can be a scalar agentnum (for a
 single agent) or an arrayref of agentnums.
 
-INVOICE_FROM, if specified, overrides the default email invoice From: address.
+I<invoice_from>, if specified, overrides the default email invoice From: address.
 
-AMOUNT, if specified, only sends the invoice if the total amount owed on this
+I<amount>, if specified, only sends the invoice if the total amount owed on this
 invoice and all older invoices is greater than the specified amount.
+
+I<notice_name>, if specified, overrides "Invoice" as the name of the sent document (templates from 10/2009 or newer required)
 
 =cut
 
@@ -1041,48 +1052,73 @@ sub queueable_send {
 
 sub send {
   my $self = shift;
-  my $template = scalar(@_) ? shift : '';
-  if ( scalar(@_) && $_[0]  ) {
-    my $agentnums = ref($_[0]) ? shift : [ shift ];
-    return 'N/A' unless grep { $_ == $self->cust_main->agentnum } @$agentnums;
+
+  my( $template, $invoice_from, $notice_name );
+  my $agentnums = '';
+  my $balance_over = 0;
+
+  if ( ref($_[0]) ) {
+    my $opt = shift;
+    $template = $opt->{'template'} || '';
+    if ( $agentnums = $opt->{'agentnum'} ) {
+      $agentnums = [ $agentnums ] unless ref($agentnums);
+    }
+    $invoice_from = $opt->{'invoice_from'};
+    $balance_over = $opt->{'balance_over'} if $opt->{'balance_over'};
+    $notice_name = $opt=>{'notice_name'};
+  } else {
+    $template = scalar(@_) ? shift : '';
+    if ( scalar(@_) && $_[0]  ) {
+      $agentnums = ref($_[0]) ? shift : [ shift ];
+    }
+    $invoice_from = shift if scalar(@_);
+    $balance_over = shift if scalar(@_) && $_[0] !~ /^\s*$/;
   }
 
-  my $invoice_from =
-    scalar(@_)
-      ? shift
-      : ( $self->_agent_invoice_from ||    #XXX should go away
-          $conf->config('invoice_from', $self->cust_main->agentnum )
-        );
-
-  my $balance_over = ( scalar(@_) && $_[0] !~ /^\s*$/ ) ? shift : 0;
+  return 'N/A' unless ! $agentnums
+                   or grep { $_ == $self->cust_main->agentnum } @$agentnums;
 
   return ''
     unless $self->cust_main->total_owed_date($self->_date) > $balance_over;
 
+  $invoice_from ||= $self->_agent_invoice_from ||    #XXX should go away
+                    $conf->config('invoice_from', $self->cust_main->agentnum );
+
+  my %opt = (
+    'template'     => $template,
+    'invoice_from' => $invoice_from,
+    'notice_name'  => ( $notice_name || 'Invoice' ),
+  );
+
   my @invoicing_list = $self->cust_main->invoicing_list;
 
-  #$self->email_invoice($template, $invoice_from)
-  $self->email($template, $invoice_from)
+  #$self->email_invoice(\%opt)
+  $self->email(\%opt)
     if grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list or !@invoicing_list;
 
-  #$self->print_invoice($template)
-  $self->print($template)
+  #$self->print_invoice(\%opt)
+  $self->print(\%opt)
     if grep { $_ eq 'POST' } @invoicing_list; #postal
 
-  $self->fax_invoice($template)
+  $self->fax_invoice(\%opt)
     if grep { $_ eq 'FAX' } @invoicing_list; #fax
 
   '';
 
 }
 
-=item email [ TEMPLATENAME  [ , INVOICE_FROM ] ] 
+=item email HASHREF | [ TEMPLATE [ , INVOICE_FROM ] ] 
 
 Emails this invoice.
 
-TEMPLATENAME, if specified, is the name of a suffix for alternate invoices.
+Options can be passed as a hashref (recommended) or as a list of up to 
+two values for templatename and invoice_from.
 
-INVOICE_FROM, if specified, overrides the default email invoice From: address.
+I<template>, if specified, is the name of a suffix for alternate invoices.
+
+I<invoice_from>, if specified, overrides the default email invoice From: address.
+
+I<notice_name>, if specified, overrides "Invoice" as the name of the sent document (templates from 10/2009 or newer required)
 
 =cut
 
@@ -1104,14 +1140,21 @@ sub queueable_email {
 #sub email_invoice {
 sub email {
   my $self = shift;
-  my $template = scalar(@_) ? shift : '';
-  my $invoice_from =
-    scalar(@_)
-      ? shift
-      : ( $self->_agent_invoice_from ||    #XXX should go away
-          $conf->config('invoice_from', $self->cust_main->agentnum )
-        );
 
+  my( $template, $invoice_from, $notice_name );
+  if ( ref($_[0]) ) {
+    my $opt = shift;
+    $template = $opt->{'template'} || '';
+    $invoice_from = $opt->{'invoice_from'};
+    $notice_name = $opt->{'notice_name'} || 'Invoice';
+  } else {
+    $template = scalar(@_) ? shift : '';
+    $invoice_from = shift if scalar(@_);
+    $notice_name = 'Invoice';
+  }
+
+  $invoice_from ||= $self->_agent_invoice_from ||    #XXX should go away
+                    $conf->config('invoice_from', $self->cust_main->agentnum );
 
   my @invoicing_list = grep { $_ !~ /^(POST|FAX)$/ } 
                             $self->cust_main->invoicing_list;
@@ -1123,10 +1166,11 @@ sub email {
 
   my $error = send_email(
     $self->generate_email(
-      'from'       => $invoice_from,
-      'to'         => [ grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list ],
-      'subject'    => $subject,
-      'template'   => $template,
+      'from'        => $invoice_from,
+      'to'          => [ grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list ],
+      'subject'     => $subject,
+      'template'    => $template,
+      'notice_name' => $notice_name,
     )
   );
   die "can't email invoice: $error\n" if $error;
@@ -1152,48 +1196,98 @@ sub email_subject {
   eval qq("$subject");
 }
 
-=item lpr_data [ TEMPLATENAME ]
+=item lpr_data HASHREF | [ TEMPLATE ]
 
 Returns the postscript or plaintext for this invoice as an arrayref.
 
-TEMPLATENAME, if specified, is the name of a suffix for alternate invoices.
+Options can be passed as a hashref (recommended) or as a single optional value
+for template.
+
+I<template>, if specified, is the name of a suffix for alternate invoices.
+
+I<notice_name>, if specified, overrides "Invoice" as the name of the sent document (templates from 10/2009 or newer required)
 
 =cut
 
 sub lpr_data {
-  my( $self, $template) = @_;
-  $conf->exists('invoice_latex')
-    ? [ $self->print_ps('', $template) ]
-    : [ $self->print_text('', $template) ];
+  my $self = shift;
+  my( $template, $notice_name );
+  if ( ref($_[0]) ) {
+    my $opt = shift;
+    $template = $opt->{'template'} || '';
+    $notice_name = $opt->{'notice_name'} || 'Invoice';
+  } else {
+    $template = scalar(@_) ? shift : '';
+    $notice_name = 'Invoice';
+  }
+
+  my %opt = (
+    'template'    => $template,
+    'notice_name' => $notice_name,
+  );
+
+  my $method = $conf->exists('invoice_latex') ? 'print_ps' : 'print_text';
+  [ $self->$method( \%opt ) ];
 }
 
-=item print [ TEMPLATENAME ]
+=item print HASHREF | [ TEMPLATE ]
 
 Prints this invoice.
 
-TEMPLATENAME, if specified, is the name of a suffix for alternate invoices.
+Options can be passed as a hashref (recommended) or as a single optional
+value for template.
+
+I<template>, if specified, is the name of a suffix for alternate invoices.
+
+I<notice_name>, if specified, overrides "Invoice" as the name of the sent document (templates from 10/2009 or newer required)
 
 =cut
 
 #sub print_invoice {
 sub print {
   my $self = shift;
-  my $template = scalar(@_) ? shift : '';
+  my( $template, $notice_name );
+  if ( ref($_[0]) ) {
+    my $opt = shift;
+    $template = $opt->{'template'} || '';
+    $notice_name = $opt->{'notice_name'} || 'Invoice';
+  } else {
+    $template = scalar(@_) ? shift : '';
+    $notice_name = 'Invoice';
+  }
 
-  do_print $self->lpr_data($template);
+  my %opt = (
+    'template'    => $template,
+    'notice_name' => $notice_name,
+  );
+
+  do_print $self->lpr_data(\%opt);
 }
 
-=item fax_invoice [ TEMPLATENAME ] 
+=item fax_invoice HASHREF | [ TEMPLATE ] 
 
 Faxes this invoice.
 
-TEMPLATENAME, if specified, is the name of a suffix for alternate invoices.
+Options can be passed as a hashref (recommended) or as a single optional
+value for template.
+
+I<template>, if specified, is the name of a suffix for alternate invoices.
+
+I<notice_name>, if specified, overrides "Invoice" as the name of the sent document (templates from 10/2009 or newer required)
 
 =cut
 
 sub fax_invoice {
   my $self = shift;
-  my $template = scalar(@_) ? shift : '';
+  my( $template, $notice_name );
+  if ( ref($_[0]) ) {
+    my $opt = shift;
+    $template = $opt->{'template'} || '';
+    $notice_name = $opt->{'notice_name'} || 'Invoice';
+  } else {
+    $template = scalar(@_) ? shift : '';
+    $notice_name = 'Invoice';
+  }
 
   die 'FAX invoice destination not (yet?) supported with plain text invoices.'
     unless $conf->exists('invoice_latex');
@@ -1201,7 +1295,12 @@ sub fax_invoice {
   my $dialstring = $self->cust_main->getfield('fax');
   #Check $dialstring?
 
-  my $error = send_fax( 'docdata'    => $self->lpr_data($template),
+  my %opt = (
+    'template'    => $template,
+    'notice_name' => $notice_name,
+  );
+
+  my $error = send_fax( 'docdata'    => $self->lpr_data(\%opt),
                         'dialstring' => $dialstring,
                       );
   die $error if $error;
@@ -1805,29 +1904,45 @@ sub _agent_invoice_from {
   $self->cust_main->agent_invoice_from;
 }
 
-=item print_text [ TIME [ , TEMPLATE ] ]
+=item print_text HASHREF | [ TIME [ , TEMPLATE [ , OPTION => VALUE ... ] ] ]
 
 Returns an text invoice, as a list of lines.
 
-TIME an optional value used to control the printing of overdue messages.  The
+Options can be passed as a hashref (recommended) or as a list of time, template
+and then any key/value pairs for any other options.
+
+I<time>, if specified, is used to control the printing of overdue messages.  The
 default is now.  It isn't the date of the invoice; that's the `_date' field.
 It is specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
 L<Time::Local> and L<Date::Parse> for conversion functions.
 
+I<template>, if specified, is the name of a suffix for alternate invoices.
+
+I<notice_name>, if specified, overrides "Invoice" as the name of the sent document (templates from 10/2009 or newer required)
+
 =cut
 
 sub print_text {
-  my( $self, $today, $template, %opt ) = @_;
+  my $self = shift;
+  my( $today, $template, %opt );
+  if ( ref($_[0]) ) {
+    %opt = %{ shift() };
+    $today = delete($opt{'time'}) || '';
+    $template = delete($opt{template}) || '';
+  } else {
+    ( $today, $template, %opt ) = @_;
+  }
 
   my %params = ( 'format' => 'template' );
   $params{'time'} = $today if $today;
   $params{'template'} = $template if $template;
-  $params{'unsquelch_cdr'} = $opt{'unsquelch_cdr'} if $opt{'unsquelch_cdr'};
+  $params{$_} = $opt{$_} 
+    foreach grep $opt{$_}, qw( unsquealch_cdr notice_name );
 
   $self->print_generic( %params );
 }
 
-=item print_latex [ TIME [ , TEMPLATE ] ]
+=item print_latex HASHREF | [ TIME [ , TEMPLATE [ , OPTION => VALUE ... ] ] ]
 
 Internal method - returns a filename of a filled-in LaTeX template for this
 invoice (Note: add ".tex" to get the actual filename), and a filename of
@@ -1835,20 +1950,36 @@ an associated logo (with the .eps extension included).
 
 See print_ps and print_pdf for methods that return PostScript and PDF output.
 
-TIME an optional value used to control the printing of overdue messages.  The
+Options can be passed as a hashref (recommended) or as a list of time, template
+and then any key/value pairs for any other options.
+
+I<time>, if specified, is used to control the printing of overdue messages.  The
 default is now.  It isn't the date of the invoice; that's the `_date' field.
 It is specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
 L<Time::Local> and L<Date::Parse> for conversion functions.
 
+I<template>, if specified, is the name of a suffix for alternate invoices.
+
+I<notice_name>, if specified, overrides "Invoice" as the name of the sent document (templates from 10/2009 or newer required)
+
 =cut
 
 sub print_latex {
-  my( $self, $today, $template, %opt ) = @_;
+  my $self = shift;
+  my( $today, $template, %opt );
+  if ( ref($_[0]) ) {
+    %opt = %{ shift() };
+    $today = delete($opt{'time'}) || '';
+    $template = delete($opt{template}) || '';
+  } else {
+    ( $today, $template, %opt ) = @_;
+  }
 
   my %params = ( 'format' => 'latex' );
   $params{'time'} = $today if $today;
   $params{'template'} = $template if $template;
-  $params{'unsquelch_cdr'} = $opt{'unsquelch_cdr'} if $opt{'unsquelch_cdr'};
+  $params{$_} = $opt{$_} 
+    foreach grep $opt{$_}, qw( unsquealch_cdr notice_name );
 
   $template ||= $self->_agent_template;
 
@@ -1886,7 +2017,7 @@ sub print_latex {
 
 }
 
-=item print_generic OPTIONS_HASH
+=item print_generic OPTION => VALUE ...
 
 Internal method - returns a filled-in template for this invoice as a scalar.
 
@@ -1908,10 +2039,12 @@ cid -
 
 unsquelch_cdr - overrides any per customer cdr squelching when true
 
+notice_name - overrides "Invoice" as the name of the sent document (templates from 10/2009 or newer required)
+
 =cut
 
 #what's with all the sprintf('%10.2f')'s in here?  will it cause any
-# (alignment?) problems to change them all to '%.2f' ?
+# (alignment in text invoice?) problems to change them all to '%.2f' ?
 sub print_generic {
 
   my( $self, %params ) = @_;
@@ -2148,6 +2281,7 @@ sub print_generic {
     'duedate'         => $self->due_date2str('%m/%d/%Y'), #date_format?
     'ship_enable'     => $conf->exists('invoice-ship_address'),
     'unitprices'      => $conf->exists('invoice-unitprice'),
+    'notice_name'     => ($params{'notice_name'} || 'Invoice'),#escape_function?
   );
 
   $invoice_data{finance_section} = '';
@@ -2705,14 +2839,19 @@ sub print_generic {
   }
 }
 
-=item print_ps [ TIME [ , TEMPLATE ] ]
+=item print_ps HASHREF | [ TIME [ , TEMPLATE ] ]
 
 Returns an postscript invoice, as a scalar.
 
-TIME an optional value used to control the printing of overdue messages.  The
+Options can be passed as a hashref (recommended) or as a list of time, template
+and then any key/value pairs for any other options.
+
+I<time> an optional value used to control the printing of overdue messages.  The
 default is now.  It isn't the date of the invoice; that's the `_date' field.
 It is specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
 L<Time::Local> and L<Date::Parse> for conversion functions.
+
+I<notice_name>, if specified, overrides "Invoice" as the name of the sent document (templates from 10/2009 or newer required)
 
 =cut
 
@@ -2726,14 +2865,21 @@ sub print_ps {
   $ps;
 }
 
-=item print_pdf [ TIME [ , TEMPLATE ] ]
+=item print_pdf HASHREF | [ TIME [ , TEMPLATE ] ]
 
 Returns an PDF invoice, as a scalar.
 
-TIME an optional value used to control the printing of overdue messages.  The
+Options can be passed as a hashref (recommended) or as a list of time, template
+and then any key/value pairs for any other options.
+
+I<time> an optional value used to control the printing of overdue messages.  The
 default is now.  It isn't the date of the invoice; that's the `_date' field.
 It is specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
 L<Time::Local> and L<Date::Parse> for conversion functions.
+
+I<template>, if specified, is the name of a suffix for alternate invoices.
+
+I<notice_name>, if specified, overrides "Invoice" as the name of the sent document (templates from 10/2009 or newer required)
 
 =cut
 
@@ -2747,16 +2893,20 @@ sub print_pdf {
   $pdf;
 }
 
-=item print_html [ TIME [ , TEMPLATE [ , CID ] ] ]
+=item print_html HASHREF | [ TIME [ , TEMPLATE [ , CID ] ] ]
 
 Returns an HTML invoice, as a scalar.
 
-TIME an optional value used to control the printing of overdue messages.  The
+I<time> an optional value used to control the printing of overdue messages.  The
 default is now.  It isn't the date of the invoice; that's the `_date' field.
 It is specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
 L<Time::Local> and L<Date::Parse> for conversion functions.
 
-CID is a MIME Content-ID used to create a "cid:" URL for the logo image, used
+I<template>, if specified, is the name of a suffix for alternate invoices.
+
+I<notice_name>, if specified, overrides "Invoice" as the name of the sent document (templates from 10/2009 or newer required)
+
+I<cid> is a MIME Content-ID used to create a "cid:" URL for the logo image, used
 when emailing the invoice as part of a multipart/related MIME email.
 
 =cut
@@ -2764,7 +2914,7 @@ when emailing the invoice as part of a multipart/related MIME email.
 sub print_html {
   my $self = shift;
   my %params;
-  if ( ref $_[0]  ) {
+  if ( ref($_[0]) ) {
     %params = %{ shift() }; 
   }else{
     $params{'time'} = shift;

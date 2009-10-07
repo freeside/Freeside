@@ -60,14 +60,14 @@
 
 % if ( $curuser->access_right('Resend invoices') ) {
 
-    <A HREF="<% $p %>misc/print-invoice.cgi?<% $link %>">Re-print this invoice</A>
+    <A HREF="<% $p %>misc/send-invoice.cgi?method=print;<% $link %>">Re-print this invoice</A>
 
 %   if ( grep { $_ ne 'POST' } $cust_bill->cust_main->invoicing_list ) { 
-        | <A HREF="<% $p %>misc/email-invoice.cgi?<% $link %>">Re-email this invoice</A>
+        | <A HREF="<% $p %>misc/send-invoice.cgi?method=email;<% $link %>">Re-email this invoice</A>
 %   } 
 
 %   if ( $conf->exists('hylafax') && length($cust_bill->cust_main->fax) ) { 
-        | <A HREF="<% $p %>misc/fax-invoice.cgi?<% $link %>">Re-fax this invoice</A>
+        | <A HREF="<% $p %>misc/send-invoice.cgi?method=fax;<% $link %>">Re-fax this invoice</A>
 %   } 
 
     <BR><BR>
@@ -76,7 +76,7 @@
 
 % if ( $conf->exists('invoice_latex') ) { 
 
-  <A HREF="<% $p %>view/cust_bill-pdf.cgi?<% $link %>.pdf">View typeset invoice PDF</A>
+  <A HREF="<% $p %>view/cust_bill-pdf.cgi?<% $link %>">View typeset invoice PDF</A>
   <BR><BR>
 % } 
 
@@ -92,11 +92,9 @@
 <% $br ? '<BR><BR>' : '' %>
 
 % if ( $conf->exists('invoice_html') ) { 
-
-  <% join('', $cust_bill->print_html('', $templatename) ) %>
+  <% join('', $cust_bill->print_html(\%opt) ) %>
 % } else { 
-
-  <PRE><% join('', $cust_bill->print_text('', $templatename) ) %></PRE>
+  <PRE><% join('', $cust_bill->print_text(\%opt) ) %></PRE>
 % } 
 
 <% include('/elements/footer.html') %>
@@ -107,11 +105,22 @@ my $curuser = $FS::CurrentUser::CurrentUser;
 die "access denied"
   unless $curuser->access_right('View invoices');
 
-#untaint invnum
+my( $invnum, $template, $notice_name );
 my($query) = $cgi->keywords;
-$query =~ /^((.+)-)?(\d+)$/;
-my $templatename = $2;
-my $invnum = $3;
+if ( $query =~ /^((.+)-)?(\d+)$/ ) {
+  $template = $2;
+  $invnum = $3;
+  $notice_name = 'Invoice';
+} else {
+  $invnum = $cgi->param('invnum');
+  $template = $cgi->param('template');
+  $notice_name = $cgi->param('notice_name');
+}
+
+my %opt = (
+  'template'    => $template,
+  'notice_name' => $notice_name,
+);
 
 my $conf = new FS::Conf;
 
@@ -135,6 +144,8 @@ my $display_custnum = $cust_bill->cust_main->display_custnum;
 
 #my $printed = $cust_bill->printed;
 
-my $link = $templatename ? "$templatename-$invnum" : $invnum;
+my $link = "invnum=$invnum";
+$link .= ';template='. uri_escape($template) if $template;
+$link .= ';notice_name='. $notice_name if $notice_name;
 
 </%init>

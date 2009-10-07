@@ -127,7 +127,7 @@
     Invoice date & Invoice \#& Customer\#\\
     \vspace{0.2cm}
     \textbf{[@-- $date --@]} & \textbf{[@-- $invnum --@]} & \textbf{[@-- $custnum --@]} \\\hline
-    \rule{0pt}{5ex} &~~ \huge{\textsc{Invoice}} & \\
+    \rule{0pt}{5ex} &~~ \huge{\textsc{[@-- $notice_name || 'Invoice' --@]}} & \\
     \vspace{-0.2cm}
      & & \\\hline
     \end{tabular}

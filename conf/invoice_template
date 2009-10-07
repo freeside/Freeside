@@ -1,5 +1,5 @@
 
-                                 Invoice
+                                 { $notice_name || 'Invoice'; }
                                  { substr("Page $page of $total_pages          ", 0, 19); } { use Date::Format; time2str("%x", $date); }  Invoice #{ $invnum; }
 
 

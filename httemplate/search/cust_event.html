@@ -75,29 +75,34 @@ my $status_sub = sub {
 
   my $part_event = $cust_event->part_event;
 
-  if ( $part_event->eventtable eq 'cust_bill' && $part_event->templatename ) {
-    my $alt_templatename = $part_event->templatename;
-    my $alt_link = "$alt_templatename-". $cust_event->tablenum;
+  if ( $part_event->eventtable eq 'cust_bill'
+       && ( $part_event->templatename || $part_event->option('notice_name') )
+     )
+  {
+    my $link = 'invnum='. $cust_event->tablenum;
+    $link .= ';template='. uri_escape($part_event->templatename)
+      if $part_event->templatename;
+    $link .= ';notice_name='. uri_escape($part_event->option('notice_name'))
+      if $part_event->option('notice_name');
 
     my $conf = new FS::Conf;
     my $cust_bill = $cust_event->cust_X;
 
     $status .= qq{
-          ( <A HREF="${p}view/cust_bill.cgi?$alt_link">view</A>
-          | <A HREF="${p}view/cust_bill-pdf.cgi?$alt_link.pdf">view
-              typeset</A>
-          | <A HREF="${p}misc/print-invoice.cgi?$alt_link">re-print</A>
+          ( <A HREF="${p}view/cust_bill.cgi?$link">view</A>
+          | <A HREF="${p}view/cust_bill-pdf.cgi?$link">view&nbsp;typeset</A>
+          | <A HREF="${p}misc/send-invoice.cgi?method=print;$link">re-print</A>
     };
 
     if ( grep { $_ ne 'POST' } $cust_bill->cust_main->invoicing_list ) { 
       $status .= qq{
-            | <A HREF="${p}misc/email-invoice.cgi?$alt_link">re-email</A>
+            | <A HREF="${p}misc/send-invoice.cgi?method=email;$link">re-email</A>
       };
     } 
    
     if ( $conf->exists('hylafax') && length($cust_bill->cust_main->fax) ) { 
       $status .= qq{
-            | <A HREF="${p}misc/fax-invoice.cgi?$alt_link">re-fax</A>
+            | <A HREF="${p}misc/send-invoice.cgi?method=fax;$link">re-fax</A>
       }
     } 
 

@@ -1,14 +1,25 @@
-<% $cust_bill->print_ps( '', $templatename) %>
+<% $cust_bill->print_ps(\%opt) %>
 <%init>
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('View invoices');
 
-#untaint invnum
+my( $invnum, $template, $notice_name );
 my($query) = $cgi->keywords;
-$query =~ /^((.+)-)?(\d+)$/;
-my $templatename = $2;
-my $invnum = $3;
+if ( $query =~ /^((.+)-)?(\d+)(.pdf)?$/ ) {
+  $template = $2;
+  $invnum = $3;
+  $notice_name = 'Invoice';
+} else {
+  $invnum = $cgi->param('invnum');
+  $template = $cgi->param('template');
+  $notice_name = ( $cgi->param('notice_name') || 'Invoice' );
+}
+
+my %opt = (
+  'template'    => $template,
+  'notice_name' => $notice_name,
+);
 
 my $cust_bill = qsearchs({
   'select'    => 'cust_bill.*',
