@@ -484,7 +484,14 @@ httemplate/docs/config.html
   {
     'key'         => 'deletecustomers',
     'section'     => 'UI',
-    'description' => 'Enable customer deletions.  Be very careful!  Deleting a customer will remove all traces that this customer ever existed!  It should probably only be used when auditing a legacy database.  Normally, you cancel all of a customers\' packages if they cancel service.',
+    'description' => 'Enable customer deletions.  Be very careful!  Deleting a customer will remove all traces that the customer ever existed!  It should probably only be used when auditing a legacy database.  Normally, you cancel all of a customers\' packages if they cancel service.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'deleteinvoices',
+    'section'     => 'UI',
+    'description' => 'Enable invoices deletions.  Be very careful!  Deleting an invoice will remove all traces that the invoice ever existed!  Normally, you would apply a credit against the invoice instead.',  #invoice voiding?
     'type'        => 'checkbox',
   },
 
@@ -2463,6 +2470,27 @@ httemplate/docs/config.html
     'section'     => '',
     'description' => "Don't use this.",
     'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'sg-ping_username',
+    'section'     => '',
+    'description' => "Don't use this.",
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'sg-ping_password',
+    'section'     => '',
+    'description' => "Don't use this.",
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'sg-login_username',
+    'section'     => '',
+    'description' => "Don't use this.",
+    'type'        => 'text',
   },
 
   {
