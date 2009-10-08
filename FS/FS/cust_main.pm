@@ -2782,8 +2782,8 @@ sub bill {
   my @cust_bill = $self->cust_bill;
   my $balance = $self->balance;
   my $previous_balance = scalar(@cust_bill)
-                           ?  $cust_bill[$#cust_bill]->billing_balance
-                           :  0;
+                           ? ( $cust_bill[$#cust_bill]->billing_balance || 0 )
+                           : 0;
 
   $previous_balance += $cust_bill[$#cust_bill]->charged
     if scalar(@cust_bill);
@@ -7306,6 +7306,7 @@ Returns all the invoices (see L<FS::cust_bill>) for this customer.
 
 sub cust_bill {
   my $self = shift;
+  map { $_ } #return $self->num_cust_bill unless wantarray;
   sort { $a->_date <=> $b->_date }
     qsearch('cust_bill', { 'custnum' => $self->custnum, } )
 }
@@ -7337,6 +7338,7 @@ Returns all the statements (see L<FS::cust_statement>) for this customer.
 
 sub cust_statement {
   my $self = shift;
+  map { $_ } #return $self->num_cust_statement unless wantarray;
   sort { $a->_date <=> $b->_date }
     qsearch('cust_statement', { 'custnum' => $self->custnum, } )
 }
@@ -7349,6 +7351,7 @@ Returns all the credits (see L<FS::cust_credit>) for this customer.
 
 sub cust_credit {
   my $self = shift;
+  map { $_ } #return $self->num_cust_credit unless wantarray;
   sort { $a->_date <=> $b->_date }
     qsearch( 'cust_credit', { 'custnum' => $self->custnum } )
 }
@@ -7362,6 +7365,7 @@ package when using experimental package balances.
 
 sub cust_credit_pkgnum {
   my( $self, $pkgnum ) = @_;
+  map { $_ } #return $self->num_cust_credit_pkgnum($pkgnum) unless wantarray;
   sort { $a->_date <=> $b->_date }
     qsearch( 'cust_credit', { 'custnum' => $self->custnum,
                               'pkgnum'  => $pkgnum,
@@ -7406,6 +7410,7 @@ package when using experimental package balances.
 
 sub cust_pay_pkgnum {
   my( $self, $pkgnum ) = @_;
+  map { $_ } #return $self->num_cust_pay_pkgnum($pkgnum) unless wantarray;
   sort { $a->_date <=> $b->_date }
     qsearch( 'cust_pay', { 'custnum' => $self->custnum,
                            'pkgnum'  => $pkgnum,
@@ -7421,6 +7426,7 @@ Returns all voided payments (see L<FS::cust_pay_void>) for this customer.
 
 sub cust_pay_void {
   my $self = shift;
+  map { $_ } #return $self->num_cust_pay_void unless wantarray;
   sort { $a->_date <=> $b->_date }
     qsearch( 'cust_pay_void', { 'custnum' => $self->custnum } )
 }
@@ -7433,6 +7439,7 @@ Returns all batched payments (see L<FS::cust_pay_void>) for this customer.
 
 sub cust_pay_batch {
   my $self = shift;
+  map { $_ } #return $self->num_cust_pay_batch unless wantarray;
   sort { $a->paybatchnum <=> $b->paybatchnum }
     qsearch( 'cust_pay_batch', { 'custnum' => $self->custnum } )
 }
@@ -7480,6 +7487,7 @@ Returns all the refunds (see L<FS::cust_refund>) for this customer.
 
 sub cust_refund {
   my $self = shift;
+  map { $_ } #return $self->num_cust_refund unless wantarray;
   sort { $a->_date <=> $b->_date }
     qsearch( 'cust_refund', { 'custnum' => $self->custnum } )
 }

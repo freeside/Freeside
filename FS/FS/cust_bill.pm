@@ -2355,8 +2355,8 @@ sub print_generic {
 #  my( $cr_total, @cr_cust_credit ) = $self->cust_credit; #credits
   #my $balance_due = $self->owed + $pr_total - $cr_total;
   my $balance_due = $self->owed + $pr_total;
-  $invoice_data{'true_previous_balance'} = sprintf("%.2f", $self->previous_balance);
-  $invoice_data{'balance_adjustments'} = sprintf("%.2f", $self->previous_balance - $self->billing_balance);
+  $invoice_data{'true_previous_balance'} = sprintf("%.2f", ($self->previous_balance || 0) );
+  $invoice_data{'balance_adjustments'} = sprintf("%.2f", ($self->previous_balance || 0) - ($self->billing_balance || 0) );
   $invoice_data{'previous_balance'} = sprintf("%.2f", $pr_total);
   $invoice_data{'balance'} = sprintf("%.2f", $balance_due);
 
