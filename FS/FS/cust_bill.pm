@@ -521,6 +521,7 @@ Returns all payment applications (see L<FS::cust_bill_pay>) for this invoice.
 
 sub cust_bill_pay {
   my $self = shift;
+  map { $_ } #return $self->num_cust_bill_pay unless wantarray;
   sort { $a->_date <=> $b->_date }
     qsearch( 'cust_bill_pay', { 'invnum' => $self->invnum } );
 }
@@ -535,6 +536,7 @@ Returns all applied credits (see L<FS::cust_credit_bill>) for this invoice.
 
 sub cust_credited {
   my $self = shift;
+  map { $_ } #return $self->num_cust_credit_bill unless wantarray;
   sort { $a->_date <=> $b->_date }
     qsearch( 'cust_credit_bill', { 'invnum' => $self->invnum } )
   ;
@@ -553,6 +555,7 @@ with matching pkgnum.
 
 sub cust_bill_pay_pkgnum {
   my( $self, $pkgnum ) = @_;
+  map { $_ } #return $self->num_cust_bill_pay_pkgnum($pkgnum) unless wantarray;
   sort { $a->_date <=> $b->_date }
     qsearch( 'cust_bill_pay', { 'invnum' => $self->invnum,
                                 'pkgnum' => $pkgnum,
@@ -562,6 +565,8 @@ sub cust_bill_pay_pkgnum {
 
 =item cust_credited_pkgnum PKGNUM
 
+=item cust_credit_bill_pkgnum PKGNUM
+
 Returns all applied credits (see L<FS::cust_credit_bill>) for this invoice
 with matching pkgnum.
 
@@ -569,11 +574,16 @@ with matching pkgnum.
 
 sub cust_credited_pkgnum {
   my( $self, $pkgnum ) = @_;
+  map { $_ } #return $self->num_cust_credit_bill_pkgnum($pkgnum) unless wantarray;
   sort { $a->_date <=> $b->_date }
     qsearch( 'cust_credit_bill', { 'invnum' => $self->invnum,
                                    'pkgnum' => $pkgnum,
                                  }
            );
+}
+
+sub cust_credit_bill_pkgnum {
+  shift->cust_credited_pkgnum(@_);
 }
 
 =item tax
@@ -1065,7 +1075,7 @@ sub send {
     }
     $invoice_from = $opt->{'invoice_from'};
     $balance_over = $opt->{'balance_over'} if $opt->{'balance_over'};
-    $notice_name = $opt=>{'notice_name'};
+    $notice_name = $opt->{'notice_name'};
   } else {
     $template = scalar(@_) ? shift : '';
     if ( scalar(@_) && $_[0]  ) {
