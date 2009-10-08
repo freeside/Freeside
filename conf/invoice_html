@@ -221,9 +221,15 @@
   </table>
   <br><br>
 
-<%= length($summary) ? '' : $notes %>
+<%= length($summary)
+      ? ''
+      : ( $smallernotes
+            ? '<FONT SIZE="-1">'.$notes.'</FONT>'
+            : $notes
+        )
+%>
 
   <hr NOSHADE SIZE=2 COLOR="#000000">
-  <p align="center"><%= $footer %>
+  <p align="center" <%= $smallerfooter ? 'STYLE="font-size:75%;"' : '' %>><%= $footer %>
 
 </td></tr></table>

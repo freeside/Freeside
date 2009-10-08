@@ -2326,14 +2326,28 @@ worry that config_items is freeside-specific and icky.
   {
     'key'         => 'invoice-ship_address',
     'section'     => 'billing',
-    'description' => 'Enable this switch to include the ship address on the invoice.',
+    'description' => 'Include the shipping address on invoices.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'invoice-unitprice',
     'section'     => 'billing',
-    'description' => 'This switch enables unit pricing on the invoice.',
+    'description' => 'Enable unit pricing on invoices.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'invoice-smallernotes',
+    'section'     => 'billing',
+    'description' => 'Display the notes section in a smaller font on invoices.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'invoice-smallerfooter',
+    'section'     => 'billing',
+    'description' => 'Display footers in a smaller font on invoices.',
     'type'        => 'checkbox',
   },
 

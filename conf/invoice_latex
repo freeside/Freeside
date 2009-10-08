@@ -82,12 +82,12 @@
     $OUT .= $coupon;
   }
   '';
---@] \small{
+--@] [@-- $smallerfooter ? '\scriptsize{' : '\small{' --@]
 [@-- $footer --@]
     }[@-- $coupon ? '\vspace{\extracouponspace}' : '' --@]
   }
   { % ... pages
-    \small{
+    [@-- $smallerfooter ? '\scriptsize{' : '\small{' --@]
 [@-- $smallfooter --@]
     }
   }
@@ -322,7 +322,13 @@ Terms: [@-- $terms --@]\\
 --@]
 \vfill
 \begin{minipage}[t]{\textwidth}
-  [@-- length($summary) ? '' : $notes --@]
+  [@-- length($summary)
+         ? ''
+        : ( $smallernotes
+              ? '\scriptsize{ '.$notes.' }'
+              : $notes
+          )
+  --@]
   [@-- $coupon ? '\ifthenelse{\equal{\thepage}{1}}{\rule{0pt}{\extracouponspace}}{}' : '' --@]
 \end{minipage}
 \end{document}

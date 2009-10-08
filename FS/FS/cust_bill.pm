@@ -2252,36 +2252,43 @@ sub print_generic {
   }
 
   my %invoice_data = (
+
+    #invoice from info
     'company_name'    => scalar( $conf->config('company_name', $self->cust_main->agentnum) ),
     'company_address' => join("\n", $conf->config('company_address', $self->cust_main->agentnum) ). "\n",
-    'custnum'         => $cust_main->display_custnum,
+    'returnaddress'   => $returnaddress,
+    'agent'           => &$escape_function($cust_main->agent->agent),
+
+    #invoice info
     'invnum'          => $self->invnum,
     'date'            => time2str($date_format, $self->_date),
     'today'           => time2str('%b %o, %Y', $today),
-    'agent'           => &$escape_function($cust_main->agent->agent),
-    'agent_custid'    => &$escape_function($cust_main->agent_custid),
-    'payname'         => &$escape_function($cust_main->payname),
-    'company'         => &$escape_function($cust_main->company),
-    'address1'        => &$escape_function($cust_main->address1),
-    'address2'        => &$escape_function($cust_main->address2),
-    'city'            => &$escape_function($cust_main->city),
-    'state'           => &$escape_function($cust_main->state),
-    'zip'             => &$escape_function($cust_main->zip),
-    'fax'             => &$escape_function($cust_main->fax),
-    'returnaddress'   => $returnaddress,
-    #'quantity'        => 1,
     'terms'           => $self->terms,
     'template'        => $template, #params{'template'},
-    #'notes'           => join("\n", $conf->config('invoice_latexnotes') ),
-    # better hang on to conf_dir for a while
-    'conf_dir'        => "$FS::UID::conf_dir/conf.$FS::UID::datasrc",
-    'page'            => 1,
-    'total_pages'     => 1,
+    'notice_name'     => ($params{'notice_name'} || 'Invoice'),#escape_function?
     'current_charges' => sprintf("%.2f", $self->charged),
     'duedate'         => $self->due_date2str('%m/%d/%Y'), #date_format?
+
+    #customer info
+    'custnum'         => $cust_main->display_custnum,
+    'agent_custid'    => &$escape_function($cust_main->agent_custid),
+    ( map { $_ => &$escape_function($cust_main->$_()) } qw(
+      payname company address1 address2 city state zip fax
+    )),
+
+    #global config
     'ship_enable'     => $conf->exists('invoice-ship_address'),
     'unitprices'      => $conf->exists('invoice-unitprice'),
-    'notice_name'     => ($params{'notice_name'} || 'Invoice'),#escape_function?
+    'smallernotes'    => $conf->exists('invoice-smallernotes'),
+    'smallerfooter'   => $conf->exists('invoice-smallerfooter'),
+   
+    # better hang on to conf_dir for a while (for old templates)
+    'conf_dir'        => "$FS::UID::conf_dir/conf.$FS::UID::datasrc",
+
+    #these are only used when doing paged plaintext
+    'page'            => 1,
+    'total_pages'     => 1,
+
   );
 
   $invoice_data{finance_section} = '';
