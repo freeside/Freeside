@@ -2462,7 +2462,7 @@ An array ref of specific packages (objects) to attempt billing, instead trying a
 
 =item not_pkgpart
 
-A hashref of pkgparts to exclude from this billing run.
+A hashref of pkgparts to exclude from this billing run (can also be specified as a comma-separated scalar).
 
 =item invoice_time
 
@@ -2489,6 +2489,10 @@ sub bill {
   my $invoice_time = $options{'invoice_time'} || $time;
 
   $options{'not_pkgpart'} ||= {};
+  $options{'not_pkgpart'} = { map { $_ => 1 }
+                                  split(/\s*,\s*/, $options{'not_pkgpart'})
+                            }
+    unless ref($options{'not_pkgpart'});
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';

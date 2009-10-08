@@ -40,8 +40,9 @@ sub bill {
 
   $opt{'invoice_time'} = $opt{'n'} ? $^T : $opt{'time'};
 
-  my $not_pkgpart = $opt{g} ? { map { $_=>1 } split(/,\s*/, $opt{g}) }
-                            : {};
+  #hashref here doesn't work with -m
+  #my $not_pkgpart = $opt{g} ? { map { $_=>1 } split(/,\s*/, $opt{g}) }
+  #                          : {};
 
   ###
   # get a list of custnums
@@ -78,7 +79,7 @@ sub bill {
                                  #(not, when using -m, freeside-queued)
           'check_freq'   => $check_freq,
           'resetup'      => ( $opt{'s'} ? $opt{'s'} : 0 ),
-          'not_pkgpart'  => $not_pkgpart,
+          'not_pkgpart'  => $opt{'g'}, #$not_pkgpart,
       );
 
       if ( $opt{'m'} ) {
