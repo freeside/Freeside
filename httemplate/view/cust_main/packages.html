@@ -39,15 +39,14 @@ Current packages
 %             )
 %        )
 %     {
+%       my $prev = $cgi->param('showcancelledpackages');
 %       $cgi->param('showcancelledpackages', 1);
-%
-
   ( <a href="<% $cgi->self_url %>">show
+%       $cgi->param('showcancelledpackages', $prev);
 %   } else {
 %       $cgi->param('showcancelledpackages', 0);
-%
-
   ( <a href="<% $cgi->self_url %>">hide
+%       $cgi->param('showcancelledpackages', 1);
 %   } 
 
  cancelled packages</a> )
