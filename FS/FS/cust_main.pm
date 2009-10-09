@@ -7169,6 +7169,9 @@ New-style, with a hashref of options:
                                     #vendor taxation
                                     'taxproduct' => 2,  #part_pkg_taxproduct
                                     'override'   => {}, #XXX describe
+
+                                    #will be filled in with the new object
+                                    'cust_pkg_ref' => \$cust_pkg,
                                   }
                                 );
 
@@ -7184,6 +7187,7 @@ sub charge {
   my ( $pkg, $comment, $additional );
   my ( $setuptax, $taxclass );   #internal taxes
   my ( $taxproduct, $override ); #vendor (CCH) taxes
+  my $cust_pkg_ref = '';
   if ( ref( $_[0] ) ) {
     $amount     = $_[0]->{amount};
     $quantity   = exists($_[0]->{quantity}) ? $_[0]->{quantity} : 1;
@@ -7197,6 +7201,7 @@ sub charge {
     $additional = $_[0]->{additional} || [];
     $taxproduct = $_[0]->{taxproductnum};
     $override   = { '' => $_[0]->{tax_override} };
+    $cust_pkg_ref = exists($_[0]->{cust_pkg_ref}) ? $_[0]->{cust_pkg_ref} : '';
   } else {
     $amount     = shift;
     $quantity   = 1;
@@ -7268,6 +7273,8 @@ sub charge {
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
+  } elsif ( $cust_pkg_ref ) {
+    ${$cust_pkg_ref} = $cust_pkg;
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
