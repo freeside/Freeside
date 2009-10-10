@@ -55,6 +55,8 @@ unless ( $error ) {
   $error ||= $cust_main->charge( {
     'amount'        => $amount,
     'quantity'      => $quantity,
+    'bill_now'      => scalar($cgi->param('bill_now')),
+    'invoice_terms' => scalar($cgi->param('invoice_terms')),
     'start_date'    => ( scalar($cgi->param('start_date'))
                            ? str2time($cgi->param('start_date'))
                            : ''

@@ -411,14 +411,10 @@
     <TR>
       <TD ALIGN="right" WIDTH="200">Invoice terms </TD>
       <TD WIDTH="408">
-        <SELECT NAME="invoice_terms">
-          <OPTION VALUE="">Default (<% $conf->config('invoice_default_terms') || 'Payable upon receipt' %>)
-%         foreach my $term ( 'Payable upon receipt',
-%                            ( map "Net $_", 0, 10, 15, 20, 30, 45, 60 ),
-%                          ) {
-            <OPTION VALUE="<% $term %>" <% $cust_main->invoice_terms eq $term ? ' SELECTED' : '' %>><% $term %>
-%         }
-        </SELECT>
+        <% include('/elements/select-terms.html',
+                     'curr_value' => $cust_main->invoice_terms,
+                  )
+        %>
       </TD>
     </TR>
 

@@ -2475,6 +2475,11 @@ typically might mean not charging the normal recurring fee but only usage
 fees since the last billing. Setup charges may be charged.  Not all package
 plans support this feature (they tend to charge 0).
 
+=item invoice_terms
+
+Options terms to be printed on this invocice.  Otherwise, customer-specific
+terms or the default terms are used.
+
 =back
 
 =cut
@@ -2801,6 +2806,7 @@ sub bill {
     'charged'             => $charged,
     'billing_balance'     => $balance,
     'previous_balance'    => $previous_balance,
+    'invoice_terms'       => $options{'invoice_terms'},
   } );
   $error = $cust_bill->insert;
   if ( $error ) {
@@ -7172,6 +7178,10 @@ New-style, with a hashref of options:
 
                                     #will be filled in with the new object
                                     'cust_pkg_ref' => \$cust_pkg,
+
+                                    #generate an invoice immediately
+                                    'bill_now' => 0,
+                                    'invoice_terms' => '', #with these terms
                                   }
                                 );
 
@@ -7188,6 +7198,7 @@ sub charge {
   my ( $setuptax, $taxclass );   #internal taxes
   my ( $taxproduct, $override ); #vendor (CCH) taxes
   my $cust_pkg_ref = '';
+  my ( $bill_now, $invoice_terms ) = ( 0, '' );
   if ( ref( $_[0] ) ) {
     $amount     = $_[0]->{amount};
     $quantity   = exists($_[0]->{quantity}) ? $_[0]->{quantity} : 1;
@@ -7202,6 +7213,8 @@ sub charge {
     $taxproduct = $_[0]->{taxproductnum};
     $override   = { '' => $_[0]->{tax_override} };
     $cust_pkg_ref = exists($_[0]->{cust_pkg_ref}) ? $_[0]->{cust_pkg_ref} : '';
+    $bill_now = exists($_[0]->{bill_now}) ? $_[0]->{bill_now} : '';
+    $invoice_terms = exists($_[0]->{invoice_terms}) ? $_[0]->{invoice_terms} : '';
   } else {
     $amount     = shift;
     $quantity   = 1;
@@ -7277,8 +7290,18 @@ sub charge {
     ${$cust_pkg_ref} = $cust_pkg;
   }
 
+  if ( $bill_now ) {
+    my $error = $self->bill( 'invoice_terms' => $invoice_terms,
+                             'pkg_list'      => [ $cust_pkg ],
+                           );
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }   
+  }
+
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-  '';
+  return '';
 
 }
 

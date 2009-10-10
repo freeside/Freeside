@@ -1,0 +1,26 @@
+<SELECT NAME = "invoice_terms"
+        ID   = "invoice_terms"
+        <% $opt{'disabled'} ? 'DISABLED' : ''%>
+>
+  <OPTION VALUE=""><% $empty_label %>
+% foreach my $term ( @terms ) {
+    <OPTION VALUE="<% $term %>" <% $curr_value eq $term ? ' SELECTED' : '' %>><% $term %>
+% }
+</SELECT>
+<%init>
+
+my %opt = @_;
+my $curr_value = $opt{'curr_value'};
+my $conf = new FS::Conf;
+
+my $empty_label =
+  $opt{'empty_label'}
+  || 'Default ('.
+       ($conf->config('invoice_default_terms') || 'Payable upon receipt').
+     ')';
+
+my @terms = ( 'Payable upon receipt',
+              ( map "Net $_", 0, 10, 15, 20, 30, 45, 60 ),
+            );
+
+</%init>

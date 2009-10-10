@@ -390,15 +390,23 @@ sub tables_hashref {
 
     'cust_bill' => {
       'columns' => [
+        #regular fields
         'invnum',    'serial',     '', '', '', '', 
         'custnum',      'int',     '', '', '', '', 
         '_date',        @date_type,        '', '', 
         'charged',      @money_type,       '', '', 
+        'invoice_terms', 'varchar', 'NULL', $char_d, '', '',
+
+        #customer balance info at invoice generation time
         'previous_balance',   @money_typen, '', '',  #eventually not nullable
         'billing_balance',    @money_typen, '', '',  #eventually not nullable
+
+        #deprecated (unused by now, right?)
         'printed',      'int',     '', '', '', '', 
+
+        #specific use cases
         'closed',      'char', 'NULL',  1, '', '', 
-        'statementnum', 'int', 'NULL', '', '', '',
+        'statementnum', 'int', 'NULL', '', '', '', #invoice aggregate statements
       ],
       'primary_key' => 'invnum',
       'unique' => [],

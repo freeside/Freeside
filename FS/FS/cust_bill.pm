@@ -96,6 +96,18 @@ L<Time::Local> and L<Date::Parse> for conversion functions.
 
 =item charged - amount of this invoice
 
+=item invoice_terms - optional terms override for this specific invoice
+
+=back
+
+Customer info at invoice generation time
+
+=over 4
+
+=item previous_balance
+
+=item billing_balance
+
 =back
 
 Deprecated
@@ -2989,10 +3001,10 @@ sub _translate_old_latex_format {
         $line_item_line =~ s/\$(\w+)/'. \$_tr_line->{$1}. '/g;
         push @template, "    \$OUT .= '$line_item_line';";
       }
-  
+
       push @template, '}',
                       '--@]';
-
+      #' doh, gvim
     } elsif ( $line =~ /^%%TotalDetails\s*$/ ) {
 
       push @template, '[@--',
@@ -3026,11 +3038,12 @@ sub _translate_old_latex_format {
 sub terms {
   my $self = shift;
 
-  #check for an invoice- specific override (eventually)
+  #check for an invoice-specific override
+  return $self->invoice_terms if $self->invoice_terms;
   
   #check for a customer- specific override
-  return $self->cust_main->invoice_terms
-    if $self->cust_main->invoice_terms;
+  my $cust_main = $self->cust_main;
+  return $cust_main->invoice_terms if $cust_main->invoice_terms;
 
   #use configured default
   $conf->config('invoice_default_terms') || '';

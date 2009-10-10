@@ -3,10 +3,10 @@
           )
 %>
 
-<LINK REL="stylesheet" TYPE="text/css" HREF="../elements/calendar-win2k-2.css" TITLE="win2k-2">
-<SCRIPT TYPE="text/javascript" SRC="../elements/calendar_stripped.js"></SCRIPT>
-<SCRIPT TYPE="text/javascript" SRC="../elements/calendar-en.js"></SCRIPT>
-<SCRIPT TYPE="text/javascript" SRC="../elements/calendar-setup.js"></SCRIPT>
+<LINK REL="stylesheet" TYPE="text/css" HREF="<%$fsurl%>elements/calendar-win2k-2.css" TITLE="win2k-2">
+<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/calendar_stripped.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/calendar-en.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/calendar-setup.js"></SCRIPT>
 
 <% include('/elements/error.html') %>
 
@@ -58,6 +58,23 @@ function validate_quick_charge () {
   return false;
 }
 
+function bill_now_changed (what) {
+  var form = what.form;
+  if ( what.checked ) {
+    form.start_date_text.disabled = true;
+    form.start_date.style.backgroundColor = '#dddddd';
+    form.start_date_button.style.display = 'none';
+    form.start_date_button_disabled.style.display = '';
+    form.invoice_terms.disabled = false;
+  } else {
+    form.start_date_text.disabled = false;
+    form.start_date.style.backgroundColor = '#ffffff';
+    form.start_date_button.style.display = '';
+    form.start_date_button_disabled.style.display = 'none';
+    form.invoice_terms.disabled = true;
+  }
+}
+
 </SCRIPT>
 
 <FORM ACTION="process/quick-charge.cgi" NAME="QuickChargeForm" ID="QuickChargeForm" METHOD="POST" onsubmit="document.QuickChargeForm.submit.disabled=true;return validate_quick_charge();">
@@ -84,6 +101,25 @@ function validate_quick_charge () {
 
 <% include('/elements/tr-select-pkg_class.html', 'curr_value' => $cgi->param('classnum') ) %>
 
+<TR>
+  <TD ALIGN="right">Invoice now</TD>
+  <TD>
+    <INPUT TYPE  = "checkbox"
+           NAME  = "bill_now"
+           VALUE = "1"
+           <% $cgi->param('bill_now') ? 'CHECKED' : '' %>
+           onChange = "bill_now_changed(this);"
+    >
+    with terms 
+    <% include('/elements/select-terms.html',
+                 'curr_value'  => scalar($cgi->param('invoice_terms')),
+                 'empty_value' => $default_terms,
+                 'disabled'    => ( $cgi->param('bill_now') ? 0 : 1 ),
+              )
+    %>
+  </TD>
+</TR>
+
 %# false laziness w/misc/order_pkg.html
 <TR>
   <TD ALIGN="right">Charge date </TD>
@@ -93,11 +129,16 @@ function validate_quick_charge () {
            SIZE  = 32
            ID    = "start_date_text"
            VALUE = "<% $start_date %>"
+           <% $cgi->param('bill_now') ? 'STYLE = "background-color:#dddddd" DISABLED' : '' %>
     >
-    <IMG SRC   = "../images/calendar.png"
+    <IMG SRC   = "<%$fsurl%>images/calendar.png"
          ID    = "start_date_button"
-         STYLE = "cursor: pointer"
          TITLE = "Select date"
+         STYLE = "cursor:pointer<% $cgi->param('bill_now') ? ';display:none' : '' %>"
+    >
+    <IMG SRC   = "<%$fsurl%>images/calendar-disabled.png"
+         ID    = "start_date_button_disabled"
+         <% $cgi->param('bill_now') ? '' : 'STYLE="display:none"' %>
     >
     <FONT SIZE=-1>(leave blank to charge immediately)</FONT>
   </TD>
@@ -231,5 +272,15 @@ if ( $cgi->param('quantity') =~ /^\s*(\d+)\s*$/ ) {
 $cgi->param('pkg') =~ /^([\w \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\=\[\]]*)$/ 
   or die 'illegal description';
 my $pkg = $1;
+
+my $default_terms;
+if ( $cust_main->invoice_terms ) {
+  $default_terms = 'Customer default ('. $cust_main->invoice_terms. ')';
+} else {
+  $default_terms =
+    'Default ('.
+       ($conf->config('invoice_default_terms') || 'Payable upon receipt').
+    ')';
+}
 
 </%init>
