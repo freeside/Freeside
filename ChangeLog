@@ -1,3 +1,712 @@
+2009-10-09 16:59  ivan
+
+	* FS/FS/Schema.pm, FS/FS/cust_main.pm,
+	  httemplate/edit/cust_main/billing.html,
+	  httemplate/elements/select-terms.html, FS/FS/cust_bill.pm,
+	  httemplate/edit/quick-charge.html,
+	  httemplate/edit/process/quick-charge.cgi: change invoice terms
+	  for one-time charges (& bill them immediately), RT#5891
+
+2009-10-09 14:37  ivan
+
+	* FS/FS/cust_main.pm: add cust_pkg_ref option to charge
+
+2009-10-08 01:28  ivan
+
+	* httemplate/view/cust_main/packages.html: fix "show old packages"
+	  accidentally hiding cancelled packages, RT#5276
+
+2009-10-07 23:00  ivan
+
+	* FS/FS/: cust_main.pm, Cron/bill.pm: freeside-daily -g and -m
+	  cooperation (and no HASH() queue noise with -m)
+
+2009-10-07 22:44  ivan
+
+	* FS/FS/: cust_bill.pm, cust_main.pm: avoid some (look to be
+	  harmless) warnings:
+
+	  Argument "" isn't numeric in sprintf at
+	  /usr/local/share/perl/5.10.0/FS/cust_bill.pm line 2358.
+
+	  Argument "" isn't numeric in subtraction (-) at
+	  /usr/local/share/perl/5.10.0/FS/cust_bill.pm line 2359.
+
+	  Argument "" isn't numeric in addition (+) at
+	  /usr/local/share/perl/5.10.0/FS/cust_main.pm line 2788.
+
+2009-10-07 22:09  ivan
+
+	* FS/FS/cust_bill.pm: tyop
+
+2009-10-07 18:15  ivan
+
+	* FS/FS/Conf.pm, FS/FS/cust_bill.pm, conf/invoice_html,
+	  conf/invoice_latex: conf switches to turn on smaller notes and
+	  footer sections with stock templates, RT#5218
+
+2009-10-07 16:51  ivan
+
+	* httemplate/view/cust_statement.html: naming follow-up notices
+	  from the event rather than creting a slew of separate templates,
+	  RT#5217
+
+2009-10-07 16:44  ivan
+
+	* FS/FS/cust_bill.pm, httemplate/misc/email-statement.cgi,
+	  httemplate/misc/send-invoice.cgi,
+	  httemplate/misc/send-statement.cgi,
+	  httemplate/search/cust_event.html,
+	  FS/FS/part_event/Action/cust_bill_send_reminder.pm,
+	  conf/invoice_html, conf/invoice_latex, conf/invoice_template,
+	  httemplate/view/cust_bill-pdf.cgi,
+	  httemplate/view/cust_bill-ps.cgi, httemplate/view/cust_bill.cgi,
+	  httemplate/view/cust_statement.html: naming follow-up notices
+	  from the event rather than creting a slew of separate templates,
+	  RT#5217
+
+2009-10-06 17:43  ivan
+
+	* FS/FS/Conf_compat17.pm: bring up-to-date wrt 1.7 Conf.pm
+	  1.180.2.52 (2009-10-03), RT#2873
+
+2009-10-06 16:51  ivan
+
+	* FS/FS/cust_bill_pkg.pm: remove inadvertant debugging warnings
+
+2009-10-06 08:49  jeff
+
+	* httemplate/edit/router.cgi: replace disappearing line
+
+2009-10-05 16:36  ivan
+
+	* FS/FS/svc_acct.pm: remove annoying warning: Use of uninitialized
+	  value $FS::svc_acct::passwordmin in pattern match (m//) at
+	  /usr/local/share/perl/5.10.0/FS/svc_acct.pm line 60.
+
+2009-10-05 11:17  ivan
+
+	* httemplate/misc/payment.cgi: oops, handle old cust_main.pm
+	  properly (should we be bothering?) :/ RT#5889
+
+2009-10-05 09:57  ivan
+
+	* httemplate/view/cust_main/payment_history/voided_payment.html:
+	  doh, fix error viewing voided payments, RT#6382
+
+2009-10-05 08:07  jeff
+
+	* httemplate/elements/tr-select-pkg_class.html: remove unused
+	  option that DTWT
+
+2009-10-05 07:04  jeff
+
+	* httemplate/edit/cust_main/: bottomfixup.js,
+	  choose_tax_location.html, contact.html: low hanging fruit:
+	  improvement in tax location selection RT#6000
+
+2009-10-05 07:01  jeff
+
+	* httemplate/edit/router.cgi: low hanging fruit: restore router
+	  virtual fields (and svcnum) in 1.9 RT#5960
+
+2009-10-04 19:40  ivan
+
+	* httemplate/misc/payment.cgi: add manual_process-skip_first
+	  option, RT#5889
+
+2009-10-04 19:35  ivan
+
+	* FS/FS/Conf.pm, FS/FS/cust_main.pm, httemplate/misc/payment.cgi:
+	  add manual_process-skip_first option, RT#5889
+
+2009-10-04 19:16  ivan
+
+	* FS/FS/Conf.pm, httemplate/misc/payment.cgi,
+	  httemplate/misc/process/payment.cgi: add manual_process-display
+	  config to subtract fee from amount instead of adding, RT#5889
+
+2009-10-04 18:40  jeff
+
+	* conf/invoice_html: can't revert because windows is ghei
+
+2009-10-04 18:07  jeff
+
+	* FS/FS/cust_main.pm: don't consider setup or recurring taxes when
+	  billing usage on cancel
+
+2009-10-04 18:00  jeff
+
+	* FS/FS/: cust_bill.pm, cust_main.pm, part_pkg/voip_cdr.pm:
+	  invoices with details in separate section but usage not separated
+
+2009-10-04 17:49  jeff
+
+	* FS/FS/Conf.pm, FS/FS/Schema.pm, FS/FS/Upgrade.pm,
+	  FS/FS/cust_bill.pm, conf/invoice_html, conf/invoice_htmlsummary,
+	  conf/invoice_latex, conf/invoice_latexsummary,
+	  FS/FS/cust_bill_pkg.pm, FS/FS/cust_bill_pkg_display.pm,
+	  FS/FS/cust_main.pm, FS/FS/pkg_category.pm,
+	  FS/FS/part_event/Action/cust_bill_fee_percent.pm,
+	  FS/FS/part_event/Action/fee.pm,
+	  httemplate/browse/pkg_category.html,
+	  httemplate/edit/pkg_category.html: leading summary page invoices
+	  #RT5086
+
+2009-10-04 16:36  ivan
+
+	* fs_selfservice/FS-SelfService/cgi/selfservice.cgi: fix the same
+	  problem with processing payments & masked ACH amounts, RT#6374
+
+2009-10-04 16:31  ivan
+
+	* FS/FS/ClientAPI/MyAccount.pm: fix problems "re-saving" a masked
+	  card.  hopefully the last of it!
+
+2009-10-03 19:09  ivan
+
+	* httemplate/misc/delete-cust_bill.html: delete invoices, RT#4048
+
+2009-10-03 19:04  ivan
+
+	* FS/FS/AccessRight.pm, FS/FS/Conf.pm, FS/FS/Setup.pm,
+	  FS/FS/cust_bill.pm, FS/FS/cust_bill_pkg.pm,
+	  FS/bin/freeside-addgroup, bin/mapsecrets2access_user,
+	  httemplate/view/cust_bill.cgi,
+	  httemplate/view/cust_main/payment_history.html,
+	  httemplate/view/cust_main/payment_history/invoice.html: delete
+	  invoices, RT#4048
+
+2009-10-03 17:08  ivan
+
+	* httemplate/view/cust_main.cgi: more room for cancellation reason
+
+2009-10-03 17:07  ivan
+
+	* httemplate/elements/popup_link-cust_main.html: doc
+
+2009-10-03 15:09  ivan
+
+	* httemplate/edit/part_bill_event.cgi: cancel to 80, comp @ 90,
+	  RT#5674
+
+2009-10-03 15:06  ivan
+
+	* httemplate/edit/part_bill_event.cgi: in old invoice events,
+	  chance default weight of cancel event to 90 so you can place it
+	  at the same time as a realtime event, RT#5674
+
+2009-10-03 13:22  mark
+
+	* FS/FS/: pay_batch.pm, pay_batch/paymentech.pm: Load XML::Simple
+	  at runtime to avoid breakage
+
+2009-10-01 16:48  ivan
+
+	* FS/FS/cust_main.pm: hopefully fully fix bulk email errors when
+	  selecting a single payby
+
+2009-10-01 16:01  ivan
+
+	* FS/FS/Schema.pm: allow svc_acct._password to be NULL in the
+	  schema
+
+2009-10-01 15:02  ivan
+
+	* httemplate/view/cust_main/payment_history/voided_payment.html:
+	  consistency with un-voided payments wrt display
+
+2009-09-30 17:52  ivan
+
+	* fs_selfservice/FS-SelfService/cgi/selfservice.cgi: hopefully the
+	  really final fix for the problems using remembered cards in
+	  self-service. *sigh*
+
+2009-09-30 17:29  ivan
+
+	* FS/: FS/Conf.pm, FS/Cron/check.pm, bin/freeside-check: add login
+	  check to FS::ClientAPI::SG/SGNG checks. RT#4610
+
+2009-09-30 12:33  ivan
+
+	* fs_selfservice/FS-SelfService/cgi/selfservice.cgi: hopefully the
+	  final fix for the problems using remembered cards in self-service
+
+2009-09-29 15:08  ivan
+
+	* httemplate/misc/email-customers.html: should fix newsletter
+	  sending error when you select a single payby only
+
+2009-09-28 23:17  ivan
+
+	* FS/t/cust_attachment.t: forgot
+
+2009-09-28 15:45  ivan
+
+	* FS/FS/Cron/check.pm: more accurate SG check, RT#4610
+
+2009-09-28 15:35  ivan
+
+	* FS/: FS/Cron/check.pm, bin/freeside-check: correct place for use
+	  Email::Send, RT#4610
+
+2009-09-28 15:23  ivan
+
+	* FS/FS/Cron/check.pm: oops, hopefully fix sg cron check, RT#4610
+
+2009-09-28 08:55  jeff
+
+	* FS/FS/cust_pkg.pm: use object copy when billing on cancel to
+	  avoid very weird side effects ( including 'impossible' history )
+	  RT#5723
+
+2009-09-25 05:29  ivan
+
+	* FS/FS/Conf.pm, httemplate/config/config-view.cgi,
+	  httemplate/config/config.cgi,
+	  httemplate/config/config-process.cgi,
+	  httemplate/misc/payment.cgi, httemplate/misc/process/payment.cgi:
+	  processing fee on credit card recharges, RT#5889
+
+2009-09-25 03:29  ivan
+
+	* FS/FS/Conf.pm: this one too
+
+2009-09-25 03:14  ivan
+
+	* FS/FS/Conf.pm, FS/FS/svc_acct.pm, FS/FS/ClientAPI/Signup.pm,
+	  fs_selfservice/FS-SelfService/cgi/signup.cgi,
+	  fs_selfservice/FS-SelfService/cgi/signup.html,
+	  httemplate/config/config-process.cgi,
+	  httemplate/config/config-view.cgi, httemplate/config/config.cgi,
+	  httemplate/elements/select-part_svc.html,
+	  httemplate/elements/select-table.html,
+	  httemplate/elements/tr-select-part_svc.html: nomadix, RT#5876
+
+2009-09-24 19:30  mark
+
+	* FS/FS/pay_batch.pm, FS/FS/Conf.pm, FS/FS/pay_batch/BoM.pm,
+	  FS/FS/pay_batch/PAP.pm, FS/FS/pay_batch/ach_spiritone.pm,
+	  FS/FS/pay_batch/chase_canada.pm, FS/FS/pay_batch/paymentech.pm,
+	  FS/FS/pay_batch/td_canada_trust.pm,
+	  httemplate/misc/download-batch.cgi,
+	  httemplate/search/cust_pay_batch.cgi: Batch payment refactoring
+
+2009-09-24 18:04  mark
+
+	* FS/MANIFEST: Add cust_attachment
+
+2009-09-24 12:59  ivan
+
+	* FS/FS/: Cron/check.pm, Conf.pm: get the ping username/pass from a
+	  config, good enough, RT#4610
+
+2009-09-23 20:14  ivan
+
+	* FS/FS/Cron/check.pm, FS/bin/freeside-check,
+	  FS/FS/ClientAPI/SGNG.pm,
+	  fs_selfservice/FS-SelfService/SelfService.pm: add SG and SGNG
+	  ping, RT#4610
+
+2009-09-23 16:47  ivan
+
+	* FS/FS/TicketSystem/RT_External.pm: this should fix the occasional
+	  extra ticket showing up on wrong customer record
+
+2009-09-21 20:08  ivan
+
+	* FS/FS/Mason.pm: add addl_comp_root.pl and addl_handler_use.pl
+	  config files, RT#4743
+
+2009-09-21 13:48  ivan
+
+	* FS/FS/cust_bill.pm: i think it is new Pg (or... new Record.pm???)
+	  that causes this problem... before it just returned nothing for
+	  the search instead of erroring out?
+
+2009-09-20 23:05  ivan
+
+	* FS/FS/Conf.pm: doc clarification
+
+2009-09-20 22:35  ivan
+
+	* FS/FS/TicketSystem/RT_Internal.pm: left debugging on
+
+2009-09-20 19:41  ivan
+
+	* FS/FS/Conf.pm, FS/FS/cust_bill.pm,
+	  FS/FS/cust_bill_ApplicationCommon.pm, FS/FS/cust_bill_pay.pm,
+	  FS/FS/cust_bill_pay_pkg.pm, FS/FS/cust_main.pm,
+	  FS/FS/cust_pay.pm, httemplate/edit/process/cust_pay.cgi,
+	  httemplate/edit/process/elements/ApplicationCommon.html: add
+	  ability to trigger receipts when payment is used against a
+	  specific package instead of when it was made, RT#5199
+
+2009-09-18 15:41  ivan
+
+	* FS/FS/: cust_main.pm,
+	  part_event/Condition/has_referral_custnum.pm: add active option
+	  to has_referral_custnum condition, RT#6150
+
+2009-09-18 15:35  ivan
+
+	* httemplate/elements/: select-cust_main-status.html,
+	  select-cust_pkg-status.html: fix customer and package status
+	  conditions not sticky on edit, noticed on RT#6150
+
+2009-09-18 12:28  ivan
+
+	* httemplate/edit/elements/edit.html: better error message when the
+	  clone object isn't found, RT#6128
+
+2009-09-17 18:03  ivan
+
+	* httemplate/view/cust_main/one_time_charge_link.html: fix one-time
+	  charge inadvertantly checking the "tax exempt" checkbox when the
+	  tax product popup is swapped in and out, RT#6095
+
+2009-09-17 16:45  ivan
+
+	* FS/FS/cust_bill.pm: eliminate mystery "min ( N.NN, M.MM )"
+	  warning
+
+2009-09-16 18:37  ivan
+
+	* httemplate/search/cust_bill_pkg.cgi: fix sales tax report
+	  w/part_pkg overrides, RT#6197
+
+2009-09-15 17:52  ivan
+
+	* FS/FS/Mason.pm: quiet warning: Subroutine
+	  Net::Ping::External::_ping_linux redefined
+
+2009-09-15 16:13  ivan
+
+	* FS/FS/: cdr.pm, part_pkg/voip_cdr.pm: set svcnum when rating CDR,
+	  RT#5495
+
+2009-09-15 15:58  ivan
+
+	* FS/FS/ClientAPI/Signup.pm: hopefully really finish fixing for
+	  good "Real timeprocessing not enabled!" error when using signup
+	  without any real-time processor, RT#6043
+
+2009-09-15 13:45  ivan
+
+	* httemplate/search/svc_phone.cgi: fix phone# usage search, RT#
+
+2009-09-15 13:44  ivan
+
+	* httemplate/search/svc_external.cgi: modernize external search
+
+2009-09-15 13:44  ivan
+
+	* FS/FS/: cust_main_Mixin.pm, UI/Web.pm: fix display_custnum on
+	  reports, RT#
+
+2009-09-15 12:45  ivan
+
+	* htetc/handler.pl: eliminate "Use of uninitialized value in undef
+	  operator at /etc/freeside/handler.pl line 79/80" errors
+
+2009-09-14 16:52  ivan
+
+	* FS/FS/Mason.pm, httemplate/elements/popup_link-ping.html,
+	  httemplate/misc/ping.html, httemplate/misc/xmlhttp-ping.html,
+	  httemplate/view/svc_broadband.cgi,
+	  httemplate/view/cust_main/packages/services.html: ping tool,
+	  RT#5845
+
+2009-09-11 10:40  ivan
+
+	* FS/FS/cust_bill_pkg_detail.pm: preserve allowing empty values,
+	  doh, RT#6101
+
+2009-09-11 08:51  ivan
+
+	* FS/FS/: Schema.pm, cust_bill_pkg.pm, cust_bill_pkg_detail.pm: fix
+	  (hopefully the rest of the) fallout from rating CDRs to sub-penny
+	  amounts
+
+2009-09-10 10:55  ivan
+
+	* fs_selfservice/FS-SelfService/cgi/success.html: remove random >
+	  char from signup success.html, RT#6110
+
+2009-08-31 15:17  mark
+
+	* FS/FS/cdr/vitelity.pm: Add Vitelity CDR format
+
+2009-08-29 15:47  mark
+
+	* FS/FS/: cdr.pm, cdr/broadsoft.pm: Add Broadsoft CDR record format
+
+2009-08-29 15:45  mark
+
+	* FS/bin/freeside-cdr-sftp_and_import: Add FTP support
+
+2009-08-29 12:05  ivan
+
+	* FS/FS/ClientAPI/MyAccount.pm: hopefully really fix self-service
+	  when not using real-time gateway
+
+2009-08-29 11:51  ivan
+
+	* FS/FS/ClientAPI/MyAccount.pm: hopefully fix self-service when not
+	  using real-time gateway
+
+2009-08-27 14:41  ivan
+
+	* httemplate/elements/menu.html: oops, tax class menu item got lost
+
+2009-08-27 03:26  ivan
+
+	* bin/move-customers: try, try again
+
+2009-08-27 03:23  ivan
+
+	* bin/move-customers: doh
+
+2009-08-27 03:04  ivan
+
+	* bin/move-customers: ok
+
+2009-08-26 23:52  ivan
+
+	* FS/FS/part_export/amazon_ec2.pm: amazon ec2 provisioning
+
+2009-08-26 13:52  jeff
+
+	* fs_selfservice/FS-SelfService/cgi/selfservice.cgi: improve
+	  testing need for invoicing list
+
+2009-08-26 09:19  rsiddall
+
+	* FS/FS/part_export/domreg_net_dri.pm: OpenSRS support for domain
+	  registration first appears in Net::DRI 0.95.
+
+2009-08-26 04:22  ivan
+
+	* httemplate/search/: report_svc_phone.html, svc_phone.cgi: first
+	  pass at balance reporting, RT#5496
+
+2009-08-26 03:18  ivan
+
+	* FS/FS/part_pkg/voip_cdr.pm: add granularity to single_price CDR
+	  rating, RT#5495
+
+2009-08-25 12:08  jeff
+
+	* httemplate/search/: 477.html, report_477.html,
+	  elements/search.html: improved 477 report #6004
+
+2009-08-25 10:03  jeff
+
+	* FS/FS/Record.pm: support listref to qsearch as UNION
+
+2009-08-24 04:09  ivan
+
+	* bin/move-customers: customer move script, RT#5351
+
+2009-08-24 01:50  ivan
+
+	* FS/FS/cust_main.pm, bin/move-customers: (start of) customer move
+	  script, RT#5351
+
+2009-08-24 00:08  ivan
+
+	* bin/move-customers: (start of) customer move script, RT#5351
+
+2009-08-23 23:50  ivan
+
+	* bin/move-customers: (start of) customer move script, RT#5351
+
+2009-08-23 23:39  ivan
+
+	* FS/FS/cust_bill_ApplicationCommon.pm, FS/FS/part_pkg.pm,
+	  bin/move-customers: (start of) customer move script, RT#5351
+
+2009-08-23 23:13  jeff
+
+	* httemplate/edit/process/part_pkg.cgi: fix select multiple report
+	  option
+
+2009-08-23 22:09  jeff
+
+	* httemplate/graph/cust_bill_pkg.cgi,
+	  httemplate/graph/cust_bill_pkg_detail.cgi,
+	  httemplate/graph/report_cust_bill_pkg.html,
+	  httemplate/graph/report_cust_bill_pkg_detail.html,
+	  FS/FS/Report/Table/Monthly.pm, httemplate/elements/menu.html,
+	  httemplate/search/cust_bill_pkg.cgi: add rated call sales report
+	  and option to sales report to count usage separately from
+	  recurring #5588
+
+2009-08-21 17:31  ivan
+
+	* httemplate/view/cust_main/packages/status.html: better label
+
+2009-08-21 17:31  ivan
+
+	* httemplate/misc/states.cgi: mason style
+
+2009-08-21 17:30  ivan
+
+	* httemplate/elements/header.html: doc
+
+2009-08-21 17:29  ivan
+
+	* httemplate/edit/elements/edit.html: use name_singular if
+	  available too
+
+2009-08-21 17:29  ivan
+
+	* httemplate/edit/cust_main/bottomfixup.js: comment
+
+2009-08-21 17:29  ivan
+
+	* httemplate/edit/quick-charge.html: comments
+
+2009-08-21 17:29  ivan
+
+	* fs_selfservice/FS-SelfService/cgi/passwd.cgi: not necessary
+
+2009-08-21 17:27  ivan
+
+	* FS/FS/Cron/check.pm: fewer false positives
+
+2009-08-21 17:27  ivan
+
+	* FS/FS/cust_bill.pm: doc
+
+2009-08-21 17:26  ivan
+
+	* FS/FS/Record.pm: cleaner??
+
+2009-08-21 17:22  ivan
+
+	* fs_selfservice/FS-SelfService/cgi/order_pkg.html,
+	  fs_selfservice/FS-SelfService/cgi/selfservice.cgi, FS/FS/Conf.pm,
+	  FS/FS/ClientAPI/MasonComponent.pm, FS/FS/ClientAPI/MyAccount.pm,
+	  fs_selfservice/FS-SelfService/cgi/misc/part_svc-columns.cgi,
+	  fs_selfservice/FS-SelfService/cgi/misc/svc_acct-domains.cgi,
+	  httemplate/edit/cust_main/first_pkg/select-part_pkg.html,
+	  httemplate/edit/cust_main/first_pkg/svc_acct.html: order
+	  svc_phone services from self-service too, RT#5085
+
+2009-08-20 13:44  ivan
+
+	* fs_selfservice/FS-SelfService/SelfService.pm: mitigate harmless
+	  warnings spamming logs
+
+2009-08-20 02:55  ivan
+
+	* FS/FS/part_event/Condition.pm: allow generic conditions for
+	  cust_statement, RT#4860
+
+2009-08-20 02:47  ivan
+
+	* FS/FS/Mason.pm, FS/FS/cust_statement.pm, FS/FS/Cron/bill.pm,
+	  FS/FS/part_event/Action/cust_statement.pm,
+	  FS/FS/part_event/Action/cust_statement_send.pm,
+	  FS/FS/part_event/Condition/has_pkg_class.pm,
+	  FS/FS/part_event/Condition/has_pkgpart.pm,
+	  FS/FS/part_event/Condition/hasnt_pkgpart.pm,
+	  httemplate/misc/email-statement.cgi,
+	  httemplate/view/cust_statement-pdf.cgi,
+	  httemplate/view/cust_statement.html: email statements, RT#4860
+
+2009-08-20 02:26  ivan
+
+	* bin/generate-table-module: tired of asking
+
+2009-08-19 21:03  ivan
+
+	* FS/FS.pm, FS/MANIFEST, FS/FS/Schema.pm, FS/FS/cust_main.pm,
+	  FS/FS/cust_statement.pm, FS/FS/part_event.pm,
+	  FS/t/cust_statement.t, FS/FS/Cron/bill.pm,
+	  FS/FS/part_event/Action/cust_statement.pm,
+	  FS/FS/part_event/Action/cust_statement_send.pm,
+	  httemplate/view/cust_statement.html,
+	  httemplate/view/cust_main/payment_history.html,
+	  httemplate/view/cust_main/payment_history/statement.html:
+	  Emailing statements of accounts, RT#4860
+
+2009-08-19 19:40  ivan
+
+	* FS/FS/part_event/Action/cust_bill_send.pm: eliminate unnecessary
+	  lookup
+
+2009-08-19 14:27  ivan
+
+	* FS/FS/part_event/Action/: cust_bill_fee_percent.pm, fee.pm,
+	  pkg_referral_credit_pkg.pm: add option to disable late fee taxes
+
+2009-08-19 00:05  mark
+
+	* FS/FS/part_export/shellcommands_withdomain.pm: Turn off
+	  userdel_no_queue for MagicMail export
+
+2009-08-18 23:15  jeff
+
+	* FS/FS/Report/Table/Monthly.pm,
+	  httemplate/graph/cust_bill_pkg.cgi,
+	  httemplate/graph/report_cust_bill_pkg.html,
+	  httemplate/search/cust_bill_pkg.cgi: option to count subpackages
+	  outside packages in sales report #5588
+
+2009-08-18 05:21  jeff
+
+	* FS/FS/Conf.pm, httemplate/edit/cust_main/bottomfixup.js: support
+	  2009 - a better way?
+
+2009-08-17 16:08  mark
+
+	* FS/FS/part_export/: shellcommands.pm,
+	  shellcommands_withdomain.pm: Add more fine-grained queue options
+
+2009-08-17 13:48  jeff
+
+	* FS/FS/: Record.pm, Schema.pm, cust_bill.pm, cust_bill_pkg.pm,
+	  cust_bill_pkg_detail.pm, cust_svc.pm, part_pkg/voip_cdr.pm:
+	  improve emailed cdr csv file (#5727 again)
+
+2009-08-16 15:45  jeff
+
+	* httemplate/edit/cust_main/bottomfixup.js: include a census
+	  zipcode link and other minor improvements
+
+2009-08-14 15:13  jeff
+
+	* FS/FS/svc_acct.pm: add svcnum lookup for svc_acct
+
+2009-08-14 14:51  jeff
+
+	* FS/FS/part_export/shellcommands.pm: add pkgnum and custnum to use
+	  as external ids
+
+2009-08-14 10:26  mark
+
+	* httemplate/edit/cust_main_attach.cgi: Fix incorrect access right
+
+2009-08-14 10:24  mark
+
+	* FS/FS/AccessRight.pm: Move note/attachment rights to new section
+
+2009-08-13 15:53  mark
+
+	* FS/bin/freeside-void-payments: Add option to
+	  freeside-void-payments to cancel customers
+
+2009-08-13 08:13  jeff
+
+	* FS/FS/cust_pkg.pm: fix fix multiple pkgpart search (need sanity
+	  check): don't let empty set limit search
+
+2009-08-13 02:35  ivan
+
+	* ChangeLog: adding autogen changelog on 1.9
+
 2009-08-13 02:25  ivan
 
 	* httemplate/view/cust_main.cgi: fix reverted changes.	grr.
