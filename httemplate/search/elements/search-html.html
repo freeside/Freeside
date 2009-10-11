@@ -1,5 +1,6 @@
 %
-%   if ( exists($opt{'redirect'}) && scalar(@$rows) == 1 && $total == 1
+%   if ( exists($opt{'redirect'}) && $opt{'redirect'}
+%        && scalar(@$rows) == 1 && $total == 1
 %        && $type ne 'html-print'
 %      ) {
 %     my $redirect = $opt{'redirect'};
