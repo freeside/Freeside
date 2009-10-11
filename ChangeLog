@@ -1,3 +1,64 @@
+2009-10-10 18:50  ivan
+
+	* Makefile, bin/cvs2cl: helps to have the tool
+
+2009-10-10 18:48  ivan
+
+	* Makefile: do it
+
+2009-10-10 18:48  ivan
+
+	* rt/lib/RT.pm: huh #2
+
+2009-10-10 18:46  ivan
+
+	* rt/Makefile: huh
+
+2009-10-10 18:45  ivan
+
+	* httemplate/search/elements/search-html.html: don't try to follow
+	  a blank redirect
+
+2009-10-10 18:45  ivan
+
+	* httemplate/search/report_cdr.html: end form
+
+2009-10-10 18:45  ivan
+
+	* httemplate/elements/tr-textarea.html: new rows and cols options
+
+2009-10-10 18:44  ivan
+
+	* httemplate/elements/tr-select-pkg_class.html: respect
+	  element_name
+
+2009-10-10 18:43  ivan
+
+	* httemplate/browse/agent.cgi: cleanup
+
+2009-10-10 18:42  ivan
+
+	* eg/cdr_template.pm, httemplate/elements/selectlayers.html: doc
+
+2009-10-10 18:41  ivan
+
+	* FS/FS/part_export/globalpops_voip.pm: correct variable
+	  initialization
+
+2009-10-10 18:40  ivan
+
+	* FS/FS/: access_right.pm, access_usergroup.pm,
+	  clientapi_session_field.pm, cust_svc_option.pm: remembered to
+	  customize this manpage
+
+2009-10-10 18:39  ivan
+
+	* FS/FS/Record.pm: ::1 becomes 127.0.0.1 in IP checks
+
+2009-10-09 20:22  ivan
+
+	* ChangeLog: commit message for a file about commitmessages
+
 2009-10-09 16:59  ivan
 
 	* FS/FS/Schema.pm, FS/FS/cust_main.pm,
@@ -23658,6 +23719,11 @@
 
 	* FS/FS/cust_pkg.pm: add last_bill field to manpage
 
+2003-05-30 02:40  ivan
+
+	* httemplate/docs/man/FS/part_export/.cvs_is_on_crack: force
+	  inclusion of httemplate/docs/man hierarchy
+
 2003-05-30 02:22  ivan
 
 	* FS/FS/part_export/sqlradius.pm: sqlradius exports include "op"
@@ -28215,6 +28281,10 @@
 
 	* httemplate/docs/install.html: doc update
 
+2002-02-04 09:12  ivan
+
+	* httemplate/docs/man/FS/: Bill.html, Invoice.html: ancient files
+
 2002-02-04 09:06  ivan
 
 	* Makefile, README.1.4.0pre4567-8, README.1.4.0pre8: 1.4.0pre8!
@@ -28303,11 +28373,60 @@
 	  new CGI;   &cgisuidsetup(); from all templates.  should work
 	  better under Mason.
 
+2002-01-29 09:46  ivan
+
+	* httemplate/docs/man/: FS.html, FS/CGI.html, FS/CGIwrapper.html,
+	  FS/Conf.html, FS/Record.html, FS/SessionClient.html,
+	  FS/SignupClient.html, FS/UID.html, FS/agent.html,
+	  FS/agent_type.html, FS/cust_bill.html, FS/cust_bill_pkg.html,
+	  FS/cust_credit.html, FS/cust_main.html, FS/cust_main_county.html,
+	  FS/cust_main_invoice.html, FS/cust_pay.html,
+	  FS/cust_pay_batch.html, FS/cust_pkg.html, FS/cust_refund.html,
+	  FS/cust_svc.html, FS/domain_record.html, FS/nas.html,
+	  FS/part_pkg.html, FS/part_referral.html, FS/part_svc.html,
+	  FS/pkg_svc.html, FS/port.html, FS/prepay_credit.html,
+	  FS/session.html, FS/svc_Common.html, FS/svc_acct.html,
+	  FS/svc_acct_pop.html, FS/svc_acct_sm.html, FS/svc_domain.html,
+	  FS/svc_www.html, FS/type_pkgs.html: these are all auto-generated
+	  by the installation; don't check them into CVS (probably should
+	  generate them for a release tarball though)
+
 2002-01-29 09:42  ivan
 
 	* README.1.4.0pre4567-8, FS/FS/part_bill_event.pm, bin/fs-setup,
-	  httemplate/docs/schema.html, httemplate/docs/upgrade8.html:
-	  weight, plan and plandata fields in part_bill_event
+	  httemplate/docs/schema.html, httemplate/docs/upgrade8.html,
+	  httemplate/docs/man/FS/SessionClient.html,
+	  httemplate/docs/man/FS/UID.html,
+	  httemplate/docs/man/FS/agent.html,
+	  httemplate/docs/man/FS/agent_type.html,
+	  httemplate/docs/man/FS/cust_bill.html,
+	  httemplate/docs/man/FS/cust_bill_pkg.html,
+	  httemplate/docs/man/FS/cust_credit.html,
+	  httemplate/docs/man/FS/cust_main.html,
+	  httemplate/docs/man/FS/cust_main_county.html,
+	  httemplate/docs/man/FS/cust_main_invoice.html,
+	  httemplate/docs/man/FS/cust_pay.html,
+	  httemplate/docs/man/FS/cust_pay_batch.html,
+	  httemplate/docs/man/FS/cust_pkg.html,
+	  httemplate/docs/man/FS/cust_refund.html,
+	  httemplate/docs/man/FS/cust_svc.html,
+	  httemplate/docs/man/FS/domain_record.html,
+	  httemplate/docs/man/FS/nas.html,
+	  httemplate/docs/man/FS/part_pkg.html,
+	  httemplate/docs/man/FS/part_referral.html,
+	  httemplate/docs/man/FS/part_svc.html,
+	  httemplate/docs/man/FS/pkg_svc.html,
+	  httemplate/docs/man/FS/port.html,
+	  httemplate/docs/man/FS/prepay_credit.html,
+	  httemplate/docs/man/FS/session.html,
+	  httemplate/docs/man/FS/svc_Common.html,
+	  httemplate/docs/man/FS/svc_acct.html,
+	  httemplate/docs/man/FS/svc_acct_pop.html,
+	  httemplate/docs/man/FS/svc_acct_sm.html,
+	  httemplate/docs/man/FS/svc_domain.html,
+	  httemplate/docs/man/FS/svc_www.html,
+	  httemplate/docs/man/FS/type_pkgs.html: weight, plan and plandata
+	  fields in part_bill_event
 
 2002-01-29 08:33  ivan
 
@@ -28315,7 +28434,42 @@
 	  FS/FS/cust_pay.pm, FS/FS/cust_pkg.pm, FS/FS/cust_svc.pm,
 	  FS/FS/svc_acct.pm, bin/pod2x, htetc/global.asa, htetc/handler.pl,
 	  httemplate/index.html, httemplate/browse/part_bill_event.cgi,
-	  httemplate/docs/install.html,
+	  httemplate/docs/install.html, httemplate/docs/man/FS.html,
+	  httemplate/docs/man/FS/CGI.html,
+	  httemplate/docs/man/FS/Conf.html,
+	  httemplate/docs/man/FS/Record.html,
+	  httemplate/docs/man/FS/SessionClient.html,
+	  httemplate/docs/man/FS/SignupClient.html,
+	  httemplate/docs/man/FS/UID.html,
+	  httemplate/docs/man/FS/agent.html,
+	  httemplate/docs/man/FS/agent_type.html,
+	  httemplate/docs/man/FS/cust_bill.html,
+	  httemplate/docs/man/FS/cust_bill_pkg.html,
+	  httemplate/docs/man/FS/cust_credit.html,
+	  httemplate/docs/man/FS/cust_main.html,
+	  httemplate/docs/man/FS/cust_main_county.html,
+	  httemplate/docs/man/FS/cust_main_invoice.html,
+	  httemplate/docs/man/FS/cust_pay.html,
+	  httemplate/docs/man/FS/cust_pay_batch.html,
+	  httemplate/docs/man/FS/cust_pkg.html,
+	  httemplate/docs/man/FS/cust_refund.html,
+	  httemplate/docs/man/FS/cust_svc.html,
+	  httemplate/docs/man/FS/domain_record.html,
+	  httemplate/docs/man/FS/nas.html,
+	  httemplate/docs/man/FS/part_pkg.html,
+	  httemplate/docs/man/FS/part_referral.html,
+	  httemplate/docs/man/FS/part_svc.html,
+	  httemplate/docs/man/FS/pkg_svc.html,
+	  httemplate/docs/man/FS/port.html,
+	  httemplate/docs/man/FS/prepay_credit.html,
+	  httemplate/docs/man/FS/session.html,
+	  httemplate/docs/man/FS/svc_Common.html,
+	  httemplate/docs/man/FS/svc_acct.html,
+	  httemplate/docs/man/FS/svc_acct_pop.html,
+	  httemplate/docs/man/FS/svc_acct_sm.html,
+	  httemplate/docs/man/FS/svc_domain.html,
+	  httemplate/docs/man/FS/svc_www.html,
+	  httemplate/docs/man/FS/type_pkgs.html,
 	  httemplate/edit/part_bill_event.cgi,
 	  httemplate/edit/part_pkg.cgi,
 	  httemplate/edit/process/part_bill_event.cgi: - web interface for
@@ -30234,7 +30388,45 @@
 	  httemplate/docs/upgrade3.html, httemplate/docs/upgrade4.html,
 	  httemplate/docs/upgrade5.html, httemplate/docs/upgrade6.html,
 	  httemplate/docs/upgrade7.html, httemplate/docs/upgrade8.html,
-	  bin/fs-setup, bin/masonize, bin/pod2x, httemplate/edit/agent.cgi,
+	  httemplate/docs/man/FS.html, httemplate/docs/man/FS/Bill.html,
+	  httemplate/docs/man/FS/CGI.html,
+	  httemplate/docs/man/FS/CGIwrapper.html,
+	  httemplate/docs/man/FS/Conf.html,
+	  httemplate/docs/man/FS/Invoice.html,
+	  httemplate/docs/man/FS/Record.html,
+	  httemplate/docs/man/FS/SessionClient.html,
+	  httemplate/docs/man/FS/SignupClient.html,
+	  httemplate/docs/man/FS/UID.html,
+	  httemplate/docs/man/FS/agent.html,
+	  httemplate/docs/man/FS/agent_type.html,
+	  httemplate/docs/man/FS/cust_bill.html,
+	  httemplate/docs/man/FS/cust_bill_pkg.html,
+	  httemplate/docs/man/FS/cust_credit.html,
+	  httemplate/docs/man/FS/cust_main.html,
+	  httemplate/docs/man/FS/cust_main_county.html,
+	  httemplate/docs/man/FS/cust_main_invoice.html,
+	  httemplate/docs/man/FS/cust_pay.html,
+	  httemplate/docs/man/FS/cust_pay_batch.html,
+	  httemplate/docs/man/FS/cust_pkg.html,
+	  httemplate/docs/man/FS/cust_refund.html,
+	  httemplate/docs/man/FS/cust_svc.html,
+	  httemplate/docs/man/FS/domain_record.html,
+	  httemplate/docs/man/FS/nas.html,
+	  httemplate/docs/man/FS/part_pkg.html,
+	  httemplate/docs/man/FS/part_referral.html,
+	  httemplate/docs/man/FS/part_svc.html,
+	  httemplate/docs/man/FS/pkg_svc.html,
+	  httemplate/docs/man/FS/port.html,
+	  httemplate/docs/man/FS/prepay_credit.html,
+	  httemplate/docs/man/FS/session.html,
+	  httemplate/docs/man/FS/svc_Common.html,
+	  httemplate/docs/man/FS/svc_acct.html,
+	  httemplate/docs/man/FS/svc_acct_pop.html,
+	  httemplate/docs/man/FS/svc_acct_sm.html,
+	  httemplate/docs/man/FS/svc_domain.html,
+	  httemplate/docs/man/FS/svc_www.html,
+	  httemplate/docs/man/FS/type_pkgs.html, bin/fs-setup,
+	  bin/masonize, bin/pod2x, httemplate/edit/agent.cgi,
 	  httemplate/edit/agent_type.cgi, httemplate/edit/cust_credit.cgi,
 	  httemplate/edit/cust_main.cgi,
 	  httemplate/edit/cust_main_county-expand.cgi,
