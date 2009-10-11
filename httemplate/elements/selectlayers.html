@@ -14,7 +14,7 @@ Example:
 
     #XXX put this handling it its own selectlayers-fields.html element?
     'layer_prefix' => 'prefix_', #optional prefix for fieldnames
-    'layer_fields' => [ 'layer'  => [ 'fieldname',
+    'layer_fields' => { 'layer'  => [ 'fieldname',
                                       { label => 'fieldname2',
                                         type  => 'text', #implemented:
                                                          # text, money, fixed,
@@ -23,6 +23,7 @@ Example:
                                                          # select, select-agent,
                                                          # select-pkg_class,
                                                          # select-part_referral,
+                                                         # select-taxclass,
                                                          # select-table,
                                                          #XXX tbd:
                                                          # more?
@@ -32,6 +33,7 @@ Example:
                         'layer2' => [ 'l2fieldname',
                                       ...
                                     ],
+                      },
 
     #current values for layer fields above
     'layer_values' => { 'layer'  => { 'fieldname'  => 'current_value',

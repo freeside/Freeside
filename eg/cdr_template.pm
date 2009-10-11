@@ -86,7 +86,7 @@ list of freeside CDR fields, useful ones marked with *
        description - Description (cdr_type 7&8 only) (used for
        cust_bill_pkg.itemdesc)
        quantity - Number of items (cdr_type 7&8 only)
-       carrierid - Upstream Carrier ID (see FS::cdr_carrier)
+*[7]   carrierid - Upstream Carrier ID (see FS::cdr_carrier)
        upstream_rateid - Upstream Rate ID
        svcnum - Link to customer service (see FS::cust_svc)
        freesidestatus - NULL, done (or something)
@@ -98,3 +98,4 @@ list of freeside CDR fields, useful ones marked with *
 [5] When using 'upstream_simple' rating method.
 [6] Set to usage class classnum when using pre-rated CDRs and usage class-based
     taxation (local/intrastate/interstate/international)
+[7] If doing settlement charging
