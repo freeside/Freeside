@@ -2204,12 +2204,14 @@ sub ut_hexn {
 }
 =item ut_ip COLUMN
 
-Check/untaint ip addresses.  IPv4 only for now.
+Check/untaint ip addresses.  IPv4 only for now, though ::1 is auto-translated
+to 127.0.0.1.
 
 =cut
 
 sub ut_ip {
   my( $self, $field ) = @_;
+  $self->setfield($field, '127.0.0.1') if $self->getfield($field) eq '::1';
   $self->getfield($field) =~ /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/
     or return "Illegal (IP address) $field: ". $self->getfield($field);
   for ( $1, $2, $3, $4 ) { return "Illegal (IP address) $field" if $_ > 255; }
@@ -2219,7 +2221,8 @@ sub ut_ip {
 
 =item ut_ipn COLUMN
 
-Check/untaint ip addresses.  IPv4 only for now.  May be null.
+Check/untaint ip addresses.  IPv4 only for now, though ::1 is auto-translated
+to 127.0.0.1.  May be null.
 
 =cut
 
