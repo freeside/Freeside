@@ -32,7 +32,7 @@ sub get_dids {
   my $self = shift;
   my %opt = ref($_[0]) ? %{$_[0]} : @_;
 
-  my %search = ();
+  my %getdids = ();
   #  'orderby' => 'npa', #but it doesn't seem to work :/
 
   if ( $opt{'areacode'} && $opt{'exchange'} ) { #return numbers
