@@ -20,8 +20,6 @@ full offerings (via their type).<BR><BR>
 % my $bgcolor1 = '#eeeeee';
 %   my $bgcolor2 = '#ffffff';
 %   my $bgcolor = '';
-%
-
 
 <TR>
   <TH CLASS="grid" BGCOLOR="#cccccc" COLSPAN=<% ( $cgi->param('showdisabled') || !dbdef->table('agent')->column('disabled') ) ? 2 : 3 %>>Agent</TH>
@@ -34,18 +32,17 @@ full offerings (via their type).<BR><BR>
   <TH CLASS="grid" BGCOLOR="#cccccc">Reports</TH>
   <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>Registration<BR>codes</FONT></TH>
   <TH CLASS="grid" BGCOLOR="#cccccc">Prepaid cards</TH>
-% if ( $conf->config('ticket_system') ) { 
 
+% if ( $conf->config('ticket_system') ) { 
     <TH CLASS="grid" BGCOLOR="#cccccc">Ticketing</TH>
 % } 
 
   <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>Payment Gateway Overrides</FONT></TH>
   <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>Configuration Overrides</FONT></TH>
 </TR>
-% 
+
 %#        <TH><FONT SIZE=-1>Agent #</FONT></TH>
 %#        <TH>Agent</TH>
-%
 %foreach my $agent ( sort { 
 %  #$a->getfield('agentnum') <=> $b->getfield('agentnum')
 %  $a->getfield('agent') cmp $b->getfield('agent')
@@ -61,9 +58,6 @@ full offerings (via their type).<BR><BR>
 %  } else {
 %    $bgcolor = $bgcolor1;
 %  }
-%
-%
-
 
       <TR>
 
