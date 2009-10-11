@@ -68,7 +68,7 @@ use vars qw($VERSION $System $SystemUser $Nobody $Handle $Logger
         $MasonSessionDir
 );
 
-$VERSION = '3.6.4';
+$VERSION = '3.6.6';
 $CORE_CONFIG_FILE = "/opt/rt3/etc/RT_Config.pm";
 $SITE_CONFIG_FILE = "/opt/rt3/etc/RT_SiteConfig.pm";
 
@@ -161,12 +161,12 @@ EOF
     }
     eval { require $CORE_CONFIG_FILE };
     if ($@) {
-        my ($fileuid,$filegid) = (stat($SITE_CONFIG_FILE))[4,5];
+        my ($fileuid,$filegid) = (stat($CORE_CONFIG_FILE))[4,5];
         my $fileusername = getpwuid($fileuid);
         my $filegroup = getgrgid($filegid);
-        my $errormessage = sprintf($message, $SITE_CONFIG_FILE,
+        my $errormessage = sprintf($message, $CORE_CONFIG_FILE,
                                    $fileusername, $filegroup, $filegroup);
-        die ("$errormessage '$CORE_CONFIG_FILE'\n$@") 
+        die ("$errormessage\n$@") 
     }
 
     # RT::Essentials mistakenly recommends that WebPath be set to '/'.
@@ -459,6 +459,8 @@ ok ($RT::SystemUser->Name() ne 'noname', "The system user isn't noname");
 
 =cut
 
+eval "require RT_Vendor";
+die $@ if ($@ && $@ !~ qr{^Can't locate RT_Vendor.pm});
 eval "require RT_Local";
 die $@ if ($@ && $@ !~ qr{^Can't locate RT_Local.pm});
 
