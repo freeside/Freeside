@@ -2,6 +2,12 @@ freeside (1.9.1-1) unstable; urgency=low
 
   * New upstream release
 
+ -- Ivan Kohler <ivan-debian@420.am>  Sat, 10 Oct 2009 19:41:01 -0700
+
+freeside (1.9.1-1) unstable; urgency=low
+
+  * New upstream release
+
  -- Ivan Kohler <ivan-debian@420.am>  Sat, 10 Oct 2009 18:57:01 -0700
 
 freeside (1.9.0~cvs0-1) unstable; urgency=low
