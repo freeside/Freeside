@@ -389,7 +389,7 @@ clean:
 .PHONY: release
 release:
 	# Update the changelog
-	./CVS2CL
+	./bin/cvs2cl
 	cvs commit -m "Updated for ${VERSION}" ChangeLog
 
 	# Update the RPM specfile
