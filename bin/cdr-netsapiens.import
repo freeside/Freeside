@@ -4,8 +4,9 @@
 
 use strict;
 use vars qw( $DEBUG );
+use Date::Format;
 use REST::Client;
-use FS::UID qw(adminsuidsetup);
+use FS::UID qw(adminsuidsetup dbh);
 use FS::Record qw(qsearchs);
 use FS::part_export;
 use FS::cdr;
@@ -19,56 +20,69 @@ my $exportnum = shift or die &usage;
 my $part_export = qsearchs('part_export', { 'exportnum' => $exportnum } )
   or die "unknown exportnum $exportnum\n";
 
-#find max time_release
-#SELECT MAX(
-#2009-02-19 20:17:37
-my $time_release = '2009-01-01 00:00:00';
+my $cdrs = 0;
 
-#retreive CDRs >= this time
-#XXX (in pages, this tops out at 20) _start=>0, _limit=>20
+do {
 
-my $ns = $part_export->ns_command( 'GET', '/cdr/',
-                                     'time_release' => '$time_release,',
-                                     '_sort'        => '+time_release',
-                                 );
+  #find max time_release
+  my $sth = dbh->prepare('SELECT MAX(enddate) FROM cdr') #XXX and imported from this netsapens switch
+    or die dbh->errstr;
 
-#loop over them, double check duplicates, insert the rest
+  $sth->execute or die $sth->errstr;
+  my $time_relase = time2str('%Y-%m-%d %x', $sth->fetchrow_arrayref->[0]);
+  #2009-02-19 20:17:37
+  #my $time_release = '2009-01-01 00:00:00';
 
-my $content = $ns->responseContent;
+  #retreive CDRs >= this time
 
-#<a href="/tac2/cdr/20090219201719000016%40SkyNet360.Com">20090219201719000016@SkyNet360.Com</a>
-#    <form method="post" action="/tac2/cdr/20090219201719000016%40SkyNet360.Com">
-while ( $content =~
-          s/^.*?<form method="post" action="\/tac2\/cdr\/(\d+)\%40[^"]*">//is )
-{
+  my $ns = $part_export->ns_command( 'GET', '/cdr/',
+                                       'time_release' => '$time_release,',
+                                       '_sort'        => '+time_release',
+                                   );
 
-  my $accountcode = $1;
-  warn "$accountcode\n" if $DEBUG;
+  #loop over them, double check duplicates, insert the rest
 
-  $content =~ s/(.*?)<\/form>//is;
-  my $cdr_content = $1;
+  my $content = $ns->responseContent;
 
-  while ( $cdr_content =~
-            s/.*?<input name="(\w+)" type="\w+" value="([^"]+)" \/>//is )
+  $cdrs = 0;
+
+  #<a href="/tac2/cdr/20090219201719000016%40SkyNet360.Com">20090219201719000016@SkyNet360.Com</a>
+  #    <form method="post" action="/tac2/cdr/20090219201719000016%40SkyNet360.Com">
+  while ( $content =~
+            s/^.*?<form method="post" action="\/tac2\/cdr\/(\d+)\%40[^"]*">//is )
   {
-    warn "  $1 => $2\n" if $DEBUG > 1;
+
+    my $accountcode = $1;
+    warn "$accountcode\n" if $DEBUG;
+
+    $content =~ s/(.*?)<\/form>//is;
+    my $cdr_content = $1;
+
+    my %cdr = ();
+    while ( $cdr_content =~
+              s/.*?<input name="(\w+)" type="\w+" value="([^"]+)" \/>//is )
+    {
+      warn "  $1 => $2\n" if $DEBUG > 1;
+      $cdr{$1} = $2;
+    }
+
+    $cdrs++;
 
     my $cdr = new FS::cdr {
-      #'src' =>
-      #'dst' =>
-#      'startdate'   => 'time_start', #XXX needs parsing
-#      'enddate'     => 'time_release', #XXX needs parsing
-      'duration'    => 'duration',
-      'billsec'     => 'time_talking',
+      'src'       => $cdr{'orig_sub'}, #orig_from_user?
+      'dst'       => $cdr{'term_sub'},
+      'startdate' => FS::cdr::_cdr_date_parse($cdr{'time_start'}),
+      'enddate'   => FS::cdr::_cdr_date_parse($cdr{'time_release'}),
+      'duration'  => $cdr{'duration'},
+      'billsec'   => $cdr{'time_talking'},
       #'disposition' => 
       'accountcode' => $accountcode,
       #'charged_party'
     };
-     
 
   }
 
-}
+} while $cdrs;
 
 sub usage {
   "Usage: \n  cdr-netsapiens.import user exportnum\n";
