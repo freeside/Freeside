@@ -1,4 +1,4 @@
-ackage FS::part_export::shellcommands;
+package FS::part_export::shellcommands;
 
 use vars qw(@ISA %info);
 use Tie::IxHash;
