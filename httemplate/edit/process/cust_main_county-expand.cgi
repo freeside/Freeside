@@ -48,17 +48,21 @@ foreach ( @expansion) {
     $new->setfield('taxclass', $_);
   } elsif ( ! $cust_main_county->state ) {
     $new->setfield('state',$_);
-  } else {
+  } elsif ( ! $cust_main_county->county ) {
     $new->setfield('county',$_);
+  } else {
+    #uppercase cities in the US to try and agree with USPS validation
+    $new->setfield('city', $new->country eq 'US' ? uc($_) : $_ );
   }
   my $error = $new->insert;
   die $error if $error;
 }
 
 unless ( qsearch( 'cust_main', {
-                                 'state'  => $cust_main_county->state,
-                                 'county' => $cust_main_county->county,
-                                 'country' =>  $cust_main_county->country,
+                                 'city'    => $cust_main_county->city,
+                                 'county'  => $cust_main_county->county,
+                                 'state'   => $cust_main_county->state,
+                                 'country' => $cust_main_county->country,
                                } )
          || ! @expansion
 ) {
@@ -68,8 +72,9 @@ unless ( qsearch( 'cust_main', {
 
 if ( $cgi->param('taxclass') ) {
   print $cgi->redirect(popurl(3). "browse/cust_main_county.cgi?".
-                         'state='.   uri_escape($cust_main_county->state  ).';'.
+                         'city='.    uri_escape($cust_main_county->city   ).';'.
                          'county='.  uri_escape($cust_main_county->county ).';'.
+                         'state='.   uri_escape($cust_main_county->state  ).';'.
                          'country='. uri_escape($cust_main_county->country)
                       );
   myexit;

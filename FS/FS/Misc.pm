@@ -14,7 +14,7 @@ use File::Temp;
 
 @ISA = qw( Exporter );
 @EXPORT_OK = qw( generate_email send_email send_fax
-                 states_hash counties state_label
+                 states_hash counties cities state_label
                  card_types
                  generate_ps generate_pdf do_print
                  csv_from_fixed
@@ -556,12 +556,35 @@ Returns a list of counties for this state and country.
 sub counties {
   my( $state, $country ) = @_;
 
+  map { $_ } #return num_counties($state, $country) unless wantarray;
   sort map { s/[\n\r]//g; $_; }
        map { $_->county }
            qsearch({
              'select'  => 'DISTINCT county',
              'table'   => 'cust_main_county',
              'hashref' => { 'state'   => $state,
+                            'country' => $country,
+                          },
+           });
+}
+
+=item cities COUNTY STATE COUNTRY
+
+Returns a list of cities for this county, state and country.
+
+=cut
+
+sub cities {
+  my( $county, $state, $country ) = @_;
+
+  map { $_ } #return num_cities($county, $state, $country) unless wantarray;
+  sort map { s/[\n\r]//g; $_; }
+       map { $_->city }
+           qsearch({
+             'select'  => 'DISTINCT city',
+             'table'   => 'cust_main_county',
+             'hashref' => { 'county'  => $county,
+                            'state'   => $state,
                             'country' => $country,
                           },
            });

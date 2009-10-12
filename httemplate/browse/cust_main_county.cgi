@@ -45,22 +45,22 @@ my $exempt_sub = sub {
   [ map [ {'data'=>$_} ], @exempt ];
 };
 
-my $oldrow;
+my $cs_oldrow;
 my $cell_style;
 my $cell_style_sub = sub {
   my $row = shift;
-  if ( $oldrow ne $row ) {
-    if ( $oldrow ) {
-      if ( $oldrow->country ne $row->country ) {
+  if ( $cs_oldrow ne $row ) {
+    if ( $cs_oldrow ) {
+      if ( $cs_oldrow->country ne $row->country ) {
         $cell_style = 'border-top:1px solid #000000';
-      } elsif ( $oldrow->state ne $row->state ) {
+      } elsif ( $cs_oldrow->state ne $row->state ) {
         $cell_style = 'border-top:1px solid #cccccc'; #default?
-      } elsif ( $oldrow->state eq $row->state ) {
+      } elsif ( $cs_oldrow->state eq $row->state ) {
         #$cell_style = 'border-top:dashed 1px dark gray';
         $cell_style = 'border-top:1px dashed #cccccc';
       }
     }
-    $oldrow = $row;
+    $cs_oldrow = $row;
   }
   return $cell_style;
 };
@@ -80,8 +80,15 @@ my $edit_onclick = sub {
          );
 };
 
+my $ex_oldrow;
 sub expand_link {
   my %param = @_;
+
+  if ( $ex_oldrow eq $param{'row'} ) {
+    return '';
+  } else {
+    $ex_oldrow = $param{'row'};
+  }
 
   my $taxnum = $param{'row'}->taxnum;
   my $url = "${p}edit/cust_main_county-expand.cgi?$taxnum";
@@ -101,9 +108,30 @@ sub expand_link {
 sub collapse_link {
   my %param = @_;
 
+  my $row = $param{'row'};
+  my $col = $param{'col'};
+  return ''
+    if $col eq 'county' and $row->city
+                            || qsearch({
+                                 'table'   => 'cust_main_county',
+                                 'hashref' => {
+                                   'country' => $row->country,
+                                   'state'   => $row->state,
+                                   'city'    => { op=>'!=', value=>'' },
+                                 },
+                                 'order_by' => 'LIMIT 1',
+                               });
+
+  my %above = ( 'city'   => 'county',
+                'county' => 'state',
+              );
+
+  #XXX can still show the link when you have some counties broken down into
+  #cities and others not :/
+
   my $taxnum = $param{'row'}->taxnum;
   my $url = "${p}edit/process/cust_main_county-collapse.cgi?$taxnum";
-  $url = "javascript:collapse_areyousure('$url')";
+  $url = "javascript:collapse_areyousure('$url', '$col', '$above{$col}')";
 
   qq(<FONT SIZE="-1"><A HREF="$url">$param{'label'}</A></FONT>);
 }
@@ -133,14 +161,15 @@ my @menubar;
 
 my $html_init = <<END;
   <SCRIPT>
-    function collapse_areyousure(href) {
-     if (confirm("Are you sure you want to remove all county tax rates for this state?") == true)
+    function collapse_areyousure(href,col,above) {
+     if (confirm('Are you sure you want to remove all ' + col + ' tax rates for this ' + above + '?') == true)
        window.location.href = href;
     }
   </SCRIPT>
 
   Click on <u>add states</u> to specify a country's tax rates by state or province.
   <BR>Click on <u>add counties</u> to specify a state's tax rates by county, or <u>remove counties</u> to remove per-county tax rates.
+  <BR>Click on <u>add cities</u> to specify a county's tax rates by city, or <u>remove cities</u> to remove per-city tax rates.
 END
 
 $html_init .= "<BR>Click on <u>separate taxclasses</u> to specify taxes per taxclass."
@@ -359,11 +388,11 @@ if ( $taxclass ) {
 
 $cell_style = '';
 
-my @header        = ( 'Country', 'State/Province', 'County',);
-my @header2       = ( '', '', '', );
-my @links         = ( '', '', '', );
-my @link_onclicks = ( '', '', '', );
-my $align = 'lll';
+my @header        = ( 'Country', 'State/Province', 'County', 'City' );
+my @header2       = ( '', '', '', '', );
+my @links         = ( '', '', '', '', );
+my @link_onclicks = ( '', '', '', '', );
+my $align = 'llll';
 
 my @fields = (
   sub { my $country = shift->country;
@@ -380,7 +409,8 @@ my @fields = (
       },
   sub { $_[0]->county
           ? $_[0]->county. '&nbsp'.
-              collapse_link( label=> 'remove&nbsp;counties',
+              collapse_link( col  => 'county',
+                             label=> 'remove&nbsp;counties',
                              row  => $_[0],
                            )
           : '(all)&nbsp'.
@@ -389,12 +419,25 @@ my @fields = (
                              label => 'add&nbsp;counties',
                          );
       },
+  sub { $_[0]->city
+          ? $_[0]->city. '&nbsp'.
+              collapse_link( col  => 'city',
+                             label=> 'remove&nbsp;cities',
+                             row  => $_[0],
+                           )
+          : '(all)&nbsp'.
+              expand_link(   desc  => 'Add Cities',
+                             row   => $_[0],
+                             label => 'add&nbsp;cities',
+                         );
+      },
 );
 
 my @color = (
   '000000',
   sub { shift->state  ? '000000' : '999999' },
   sub { shift->county ? '000000' : '999999' },
+  sub { shift->city   ? '000000' : '999999' },
 );
 
 if ( $conf->exists('enable_taxclasses') ) {
@@ -430,9 +473,10 @@ my $cb_sub = sub {
   my $cust_main_county = shift;
 
   if ( $cb_oldrow ) {
-    if (    $cb_oldrow->country  ne $cust_main_county->country 
-         || $cb_oldrow->state    ne $cust_main_county->state  
+    if (    $cb_oldrow->city     ne $cust_main_county->city 
          || $cb_oldrow->county   ne $cust_main_county->county  
+         || $cb_oldrow->state    ne $cust_main_county->state  
+         || $cb_oldrow->country  ne $cust_main_county->country 
          || $cb_oldrow->taxclass ne $cust_main_county->taxclass )
     {
       $newregion = 1;

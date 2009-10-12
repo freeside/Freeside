@@ -37,9 +37,11 @@ my $cust_main_county = qsearchs('cust_main_county',{'taxnum'=>$taxnum})
 
 my $title;
 
-die "Can't expand entry!" if $cust_main_county->county;
+die "Can't expand entry!" if $cust_main_county->city;
 
-if ( $cust_main_county->state ) {
+if ( $cust_main_county->county ) {
+  $title = 'Cities';
+} elsif ( $cust_main_county->state ) {
   $title = 'Counties';
 } else {
   $title = 'States/Provinces';

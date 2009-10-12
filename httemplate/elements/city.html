@@ -1,0 +1,142 @@
+<%doc>
+
+Example:
+
+  include( '/elements/city.html',
+    #recommended
+    country    => $current_country,
+    state      => $current_state,
+    county     => $current_county,
+    city       => $current_city,
+
+    #optional
+    prefix        => $optional_unique_prefix,
+    onchange      => $javascript,
+    disabled      => 0, #bool
+#    disable_empty => 1, #defaults to 1, disable the empty option
+#    empty_label   => 'all', #label for empty option
+    style         => [ 'attribute:value', 'another:value' ],
+  );
+
+</%doc>
+
+<% include('/elements/xmlhttp.html',
+              'url'  => $p.'misc/cities.cgi',
+              'subs' => [ $pre. 'get_cities' ],
+           )
+%>
+
+<SCRIPT TYPE="text/javascript">
+
+  function opt(what,value,text) {
+    var optionName = new Option(text, value, false, false);
+    var length = what.length;
+    what.options[length] = optionName;
+  }
+
+  var saved_<%$pre%>city= '';
+
+  function <% $pre %>county_changed(what, callback) {
+
+    county  = what.options[what.selectedIndex].value;
+    state   = what.form.<% $pre %>state.options[what.form.<% $pre %>state.selectedIndex].value;
+    country = what.form.<% $pre %>country.options[what.form.<% $pre %>country.selectedIndex].value;
+
+    function <% $pre %>update_cities(cities) {
+     
+      // blank the current city list
+      for ( var i = what.form.<% $pre %>city_select.length; i >= 0; i-- )
+          what.form.<% $pre %>city_select.options[i] = null;
+
+      // add the new cities
+      var citiesArray = eval('(' + cities + ')' );
+
+      for ( var s = 0; s < citiesArray.length; s++ ) {
+          var cityLabel = citiesArray[s];
+          if ( cityLabel == "" )
+              cityLabel = '(n/a)';
+          opt(what.form.<% $pre %>city_select, citiesArray[s], cityLabel);
+      }
+
+     if ( citiesArray.length > 1 || citiesArray[0].length ) { 
+        // turn off the text city, turn on the select
+        saved_<%$pre%>city = what.form.<%$ pre %>city.value;
+        what.form.<% $pre %>city.style.display = 'none';
+        what.form.<% $pre %>city_select.style.display = '';
+      } else {
+        // turn on the text city, turn off the select
+        what.form.<%$ pre %>city.value = saved_<%$pre%>city;
+        what.form.<% $pre %>city.style.display = '';
+        what.form.<% $pre %>city_select.style.display = 'none';
+      }
+
+      //run the callback
+      if ( callback != null )
+        callback();
+    }
+
+    // go get the new cities
+    <% $pre %>get_cities( county, state, country, <% $pre %>update_cities );
+
+  }
+
+  function <%$pre%>city_select_changed(what) {
+    what.form.<%$pre%>city.value = what.options[what.selectedIndex].value;
+  }
+
+</SCRIPT>
+
+<INPUT TYPE     = "text"
+       NAME     = "<%$pre%>city"
+       ID       = "<%$pre%>city"
+       VALUE    = "<% $opt{'city'} |h %>"
+       onChange = "<% $opt{'onchange'} %>"
+       <% $opt{'disabled'} %>
+       <% $text_style %>
+>
+
+<SELECT NAME     = "<%$pre%>city_select"
+        ID       = "<%$pre%>city_select"
+        onChange = "<%$pre%>city_select_changed(this); <% $opt{'onchange'} %>"
+        <% $opt{'disabled'} %>
+        <% $select_style %>
+>
+
+% foreach my $city ( @cities ) {
+
+    <OPTION VALUE="<% $city |h %>"
+            <% $city eq $opt{'city'} ? 'SELECTED' : '' %>
+    ><% $city eq $opt{'empty_data_value'} ? $opt{'empty_data_label'} : $city %>
+
+% }
+
+</SELECT>
+
+%#           VALUE    = "<% $curr_value |h %>"
+<%init>
+
+my %opt = @_;
+
+my $pre = $opt{'prefix'};
+
+my $text_style   = $opt{'style'} ? [ @{ $opt{'style'} } ] : [];
+my $select_style = $opt{'style'} ? [ @{ $opt{'style'} } ] : [];
+
+my @cities = cities( $opt{'county'}, $opt{'state'}, $opt{'country'} );
+if ( scalar(@cities) > 1 || $cities[0] ) {
+  push @$text_style, 'display:none';
+} else {
+  push @$select_style, 'display:none';
+}
+
+$text_style =
+  scalar(@$text_style)
+    ? 'STYLE="'. join(';', @$text_style). '"'
+    : '';
+
+$select_style =
+  scalar(@$select_style)
+    ? 'STYLE="'. join(';', @$select_style). '"'
+    : '';
+
+</%init>

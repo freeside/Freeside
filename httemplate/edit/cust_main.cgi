@@ -45,9 +45,11 @@
 
 %  my $same_checked = '';
 %  my $ship_disabled = '';
+%  my @ship_style = ();
 %  unless ( $cust_main->ship_last && $same ne 'Y' ) {
 %    $same_checked = 'CHECKED';
-%    $ship_disabled = 'DISABLED STYLE="background-color: #dddddd"';
+%    $ship_disabled = 'DISABLED';
+%    push @ship_style, 'background-color:#dddddd';
 %    foreach (
 %      qw( last first company address1 address2 city county state zip country
 %          daytime night fax )
@@ -74,14 +76,20 @@
 function bill_changed(what) {
   if ( what.form.same.checked ) {
 % for (qw( last first company address1 address2 city zip daytime night fax )) { 
-
     what.form.ship_<%$_%>.value = what.form.<%$_%>.value;
 % } 
 
     what.form.ship_country.selectedIndex = what.form.country.selectedIndex;
 
+    function fix_ship_city() {
+      what.form.ship_city_select.selectedIndex = what.form.city_select.selectedIndex;
+      what.form.ship_city.style.display = what.form.city.style.display;
+      what.form.ship_city_select.style.display = what.form.city_select.style.display;
+    }
+
     function fix_ship_county() {
       what.form.ship_county.selectedIndex = what.form.county.selectedIndex;
+      ship_county_changed(what.form.ship_county, fix_ship_city );
     }
 
     function fix_ship_state() {
@@ -97,7 +105,8 @@ function samechanged(what) {
   if ( what.checked ) {
     bill_changed(what);
 
-%   for (qw( last first company address1 address2 city county state zip country daytime night fax )) { 
+%   my @fields = qw( last first company address1 address2 city city_select county state zip country daytime night fax );
+%   for (@fields) { 
       what.form.ship_<%$_%>.disabled = true;
       what.form.ship_<%$_%>.style.backgroundColor = '#dddddd';
 %   } 
@@ -111,7 +120,7 @@ function samechanged(what) {
 
   } else {
 
-%   for (qw( last first company address1 address2 city county state zip country daytime night fax )) { 
+%   for (@fields) { 
       what.form.ship_<%$_%>.disabled = false;
       what.form.ship_<%$_%>.style.backgroundColor = '#ffffff';
 %   } 
@@ -136,6 +145,7 @@ function samechanged(what) {
              'pre'       => 'ship_',
              'onchange'  => '',
              'disabled'  => $ship_disabled,
+             'style'     => \@ship_style
           )
 %>
 

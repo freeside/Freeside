@@ -405,12 +405,13 @@ sub tables_hashref {
         'printed',      'int',     '', '', '', '', 
 
         #specific use cases
-        'closed',      'char', 'NULL',  1, '', '', 
+        'closed',      'char', 'NULL',  1, '', '', #not yet used much
         'statementnum', 'int', 'NULL', '', '', '', #invoice aggregate statements
+        'agent_invid',  'int', 'NULL', '', '', '', #(varchar?) importing legacy
       ],
       'primary_key' => 'invnum',
-      'unique' => [],
-      'index' => [ ['custnum'], ['_date'], ['statementnum'], ],
+      'unique' => [ [ 'custnum', 'agent_invid' ] ], #agentnum?  huh
+      'index' => [ ['custnum'], ['_date'], ['statementnum'], ['agent_invid'] ],
     },
 
     'cust_statement' => {
@@ -866,8 +867,9 @@ sub tables_hashref {
                             # a tax rate.
       'columns' => [
         'taxnum',   'serial',   '',    '', '', '', 
-        'state',    'varchar',  'NULL',    $char_d, '', '', 
+        'city',     'varchar',  'NULL',    $char_d, '', '',
         'county',   'varchar',  'NULL',    $char_d, '', '', 
+        'state',    'varchar',  'NULL',    $char_d, '', '', 
         'country',  'char',  '', 2, '', '', 
         'taxclass',   'varchar', 'NULL', $char_d, '', '', 
         'exempt_amount', @money_type, '', '', 
@@ -879,7 +881,7 @@ sub tables_hashref {
       'primary_key' => 'taxnum',
       'unique' => [],
   #    'unique' => [ ['taxnum'], ['state', 'county'] ],
-      'index' => [ [ 'county' ], [ 'state' ], [ 'country' ],
+      'index' => [ [ 'city' ], [ 'county' ], [ 'state' ], [ 'country' ],
                    [ 'taxclass' ],
                  ],
     },

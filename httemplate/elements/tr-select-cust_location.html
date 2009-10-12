@@ -21,7 +21,7 @@ Example:
     var locationnum = what.options[what.selectedIndex].value;
     if ( locationnum == -1 ) {
 
-%     for (@location_fields) { 
+%     for (@location_fields, 'city_select') { 
         what.form.<%$_%>.disabled = false;
         what.form.<%$_%>.style.backgroundColor = '#ffffff';
 %     } 
@@ -60,7 +60,7 @@ Example:
       } 
 
 %#sleep/wait until dropdowns are updated?
-%     for (@location_fields) { 
+%     for (@location_fields, 'city_select') { 
         what.form.<%$_%>.disabled = true;
         what.form.<%$_%>.style.backgroundColor = '#dddddd';
 %     } 
@@ -85,6 +85,7 @@ Example:
       } else {
         county_el.selectedIndex = 0;
       }
+      county_changed(county_el);
     }
     return fix_county;
   }

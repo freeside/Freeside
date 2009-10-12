@@ -49,16 +49,7 @@ Example:
 
 <TR>
   <TH ALIGN="right"><%$r%>City</TH>
-  <TD WIDTH="1">
-    <INPUT TYPE     = "text"
-           NAME     = "<%$pre%>city"
-           ID       = "<%$pre%>city"
-           VALUE    = "<% $object->get($pre.'city') |h %>"
-           onChange = "<% $onchange %>"
-           <% $disabled %>
-           <% $style %>
-    >
-  </TD>
+  <TD WIDTH="1"><% include('/elements/city.html', %select_hash) %></TD>
   <TH ALIGN="right" ID="<%$pre%>countylabel" <%$county_style%>><%$r%>County</TH>
   <TD><% include('/elements/select-county.html', %select_hash ) %></TD>
   <TH ALIGN="right" WIDTH="1"><%$r%>State</TH>
@@ -123,7 +114,7 @@ $object->set($pre.'state', $statedefault )
          || $object->get($pre.'country') ne $countrydefault;
 
 my @style = ();
-push @style, 'background-color: #dddddd"' if $disabled;
+push @style, 'background-color: #dddddd' if $disabled;
 
 my @address2_label_style = ();
 push @address2_label_style, 'visibility:hidden'
@@ -152,6 +143,7 @@ my $county_style =
     : '';
 
 my %select_hash = (
+  'city'     => $object->get($pre.'city'),
   'county'   => $object->get($pre.'county'),
   'state'    => $object->get($pre.'state'),
   'country'  => $object->get($pre.'country'),

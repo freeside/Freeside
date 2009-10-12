@@ -118,7 +118,9 @@ if ( -e $addl_handler_use_file ) {
   use FS::UI::Web::small_custview qw(small_custview);
   use FS::UI::bytecount;
   use FS::Msgcat qw(gettext geterror);
-  use FS::Misc qw( send_email send_fax states_hash counties state_label );
+  use FS::Misc qw( send_email send_fax
+                   states_hash counties cities state_label
+                 );
   use FS::Misc::eps2png qw( eps2png );
   use FS::Report::Table::Monthly;
   use FS::TicketSystem;

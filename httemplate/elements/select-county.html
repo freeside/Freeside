@@ -67,8 +67,11 @@ Example:
         }
 
         //run the callback
-        if ( callback != null ) 
+        if ( callback != null )  {
           callback();
+        } else {
+          <% $pre %>county_changed(what.form.<% $pre %>county);
+        }
       }
   
       // go get the new counties
@@ -80,7 +83,7 @@ Example:
 
   <SELECT NAME    = "<% $pre %>county"
           ID      = "<% $pre %>county"
-          onChange= "<% $opt{'onchange'} %>"
+          onChange= "<% $onchange %>"
           <% $opt{'disabled'} %>
           <% $style %>
   >
@@ -127,11 +130,13 @@ $opt{'disable_empty'} = 1 unless exists($opt{'disable_empty'});
 
 my $pre = $opt{'prefix'};
 
+
+# disable_cityupdate?
+my $onchange =
+  ( $opt{'disable_cityupdate'} ? '' : $pre.'county_changed(this); ' ).
+  $opt{'onchange'};
+
 $opt{'style'} ||= [];
-my $style =
-  scalar(@{$opt{style}})
-    ? 'STYLE="'. join(';', @{$opt{style}}). '"'
-    : '';
 
 my @counties = ();
 if ( $countyflag ) {
@@ -139,16 +144,15 @@ if ( $countyflag ) {
   @counties = map { length($_) ? $_ : $opt{'empty_data_value'} }
                   counties( $opt{'state'}, $opt{'country'} );
 
-  # this is very hacky
-  unless ( scalar(@counties) > 1 ) {
-    if ( $opt{'disabled'} =~ /STYLE=/i ) {
-      $opt{'disabled'} =~ s/STYLE="([^"]+)"/STYLE="$1; display:none"/i;
-    } else {
-      $opt{'disabled'} .= ' STYLE="display:none"';
-    }
-  }
+  push @{ $opt{'style'} }, 'display:none'
+    unless scalar(@counties) > 1;
 
 }
+
+my $style =
+  scalar(@{$opt{style}})
+    ? 'STYLE="'. join(';', @{$opt{style}}). '"'
+    : '';
 
 </%init>
 <%once>

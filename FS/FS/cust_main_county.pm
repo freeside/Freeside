@@ -2,7 +2,7 @@ package FS::cust_main_county;
 
 use strict;
 use vars qw( @ISA @EXPORT_OK $conf
-             @cust_main_county %cust_main_county $countyflag );
+             @cust_main_county %cust_main_county $countyflag ); # $cityflag );
 use Exporter;
 use FS::Record qw( qsearch dbh );
 use FS::cust_bill_pkg;
@@ -17,6 +17,7 @@ use FS::cust_tax_exempt_pkg;
 
 @cust_main_county = ();
 $countyflag = '';
+#$cityflag = '';
 
 #ask FS::UID to run this stuff for us later
 $FS::UID::callback{'FS::cust_main_county'} = sub { 
@@ -55,9 +56,11 @@ currently supported:
 
 =item taxnum - primary key (assigned automatically for new tax rates)
 
-=item state
+=item city
 
 =item county
+
+=item state
 
 =item country
 
@@ -116,8 +119,9 @@ sub check {
   $self->exempt_amount(0) unless $self->exempt_amount;
 
   $self->ut_numbern('taxnum')
-    || $self->ut_anything('state')
+    || $self->ut_textn('city')
     || $self->ut_textn('county')
+    || $self->ut_anything('state')
     || $self->ut_text('country')
     || $self->ut_float('tax')
     || $self->ut_textn('taxclass') # ...
