@@ -222,10 +222,9 @@ sub access_info {
   ];
 
   return { %$info,
-           'custnum'    => $custnum,
-           'pkgnum'     => $session->{'pkgnum'},
-           'svcnum'     => $session->{'svcnum'},
-           'nonprimary' => $session->{'nonprimary'},
+           'custnum'       => $custnum,
+           'access_pkgnum' => $session->{'pkgnum'},
+           'svcnum'        => $session->{'svcnum'},
          };
 }
 

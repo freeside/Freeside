@@ -13,7 +13,7 @@ my @menu = (
   { title=>'Purchase', size=>'+1', },
 );
 
-unless ( $pkgnum ) {
+unless ( $access_pkgnum ) {
   push @menu,
     { title=>'Purchase additional package',
       url=>'customer_order_pkg', 'indent'=>2 };
@@ -57,7 +57,7 @@ push @menu,
   { title=>'View my usage', url=>'view_usage', size=>'+1', },
 ;
 
-unless ( $pkgnum ) {
+unless ( $access_pkgnum ) {
   push @menu,
     { title=>'Setup my services', url=>'provision', size=>'+1', },
   ;
@@ -69,7 +69,7 @@ push @menu,
 push @menu,
   { title=>'Change my information', size=>'+1', };
 
-unless ( $pkgnum ) {
+unless ( $access_pkgnum ) {
   push @menu,
     { title=>'Change billing address',      url=>'change_bill',     indent=>2 },
     { title=>'Change service address',      url=>'change_ship',     indent=>2 },
