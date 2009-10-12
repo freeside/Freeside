@@ -17,9 +17,11 @@ use subs qw( print_form print_okay print_decline
            );
 use CGI;
 #use CGI::Carp qw(fatalsToBrowser);
+use Tie::IxHash;
 use Text::Template;
 use Business::CreditCard;
 use HTTP::BrowserDetect;
+use HTML::Widgets::SelectLayers;
 use FS::SelfService qw( signup_info new_customer );
 
 #acceptable payment methods
