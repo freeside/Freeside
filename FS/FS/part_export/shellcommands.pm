@@ -1,4 +1,4 @@
-package FS::part_export::shellcommands;
+ackage FS::part_export::shellcommands;
 
 use vars qw(@ISA %info);
 use Tie::IxHash;
@@ -192,7 +192,8 @@ old_ for replace operations):
   <LI><code>$reasontypetext (when suspending)</code>
   <LI><code>$pkgnum</code>
   <LI><code>$custnum</code>
-  <LI>All other fields in <a href="../docs/schema.html#svc_acct">svc_acct</a> are also available.
+  <LI>All other fields in <b>svc_acct</b> are also available.
+  <LI>The following fields from <b>cust_main</b> are also available (except during replace): company, address1, address2, city, state, zip, county, daytime, night, fax, otaker.  When used on the command line (rather than STDIN), they will be quoted for the shell already (do not add additional quotes).
 </UL>
 END
 );
@@ -258,6 +259,16 @@ sub _export_command {
 
   my $cust_pkg = $svc_acct->cust_svc->cust_pkg;
   if ( $cust_pkg ) {
+    no strict 'vars';
+    {
+      no strict 'refs';
+      foreach my $custf (qw( company address1 address2 city state zip country
+                             daytime night fax otaker
+                        ))
+      {
+        ${$custf} = $cust_pkg->cust_main->$custf();
+      }
+    }
     $email = ( grep { $_ !~ /^(POST|FAX)$/ } $cust_pkg->cust_main->invoicing_list )[0];
   } else {
     $email = '';
@@ -309,6 +320,9 @@ sub _export_command {
     $reasonnum = $reasontext = $reasontypenum = $reasontypetext = '';
   }
 
+  $pkgnum = $cust_pkg ? $cust_pkg->pkgnum : '';
+  $custnum = $cust_pkg ? $cust_pkg->custnum : '';
+
   my $stdin_string = eval(qq("$stdin"));
 
   $first = shell_quote $first;
@@ -316,8 +330,18 @@ sub _export_command {
   $finger = shell_quote $finger;
   $crypt_password = shell_quote $crypt_password;
   $ldap_password  = shell_quote $ldap_password;
-  $pkgnum = $cust_pkg ? $cust_pkg->pkgnum : '';
-  $custnum = $cust_pkg ? $cust_pkg->custnum : '';
+
+  $company = shell_quote $company;
+  $address1 = shell_quote $address1;
+  $address2 = shell_quote $address2;
+  $city = shell_quote $city;
+  $state = shell_quote $state;
+  $zip = shell_quote $zip;
+  $country = shell_quote $country;
+  $daytime = shell_quote $daytime;
+  $night = shell_quote $night;
+  $fax = shell_quote $fax;
+  $otaker = shell_quote $otaker; 
 
   my $command_string = eval(qq("$command"));
   my @ssh_cmd_args = (
