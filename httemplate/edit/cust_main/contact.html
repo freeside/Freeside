@@ -3,8 +3,8 @@
 <TR>
   <TH ALIGN="right"><%$r%>Contact&nbsp;name<BR>(last,&nbsp;first)</TH>
   <TD COLSPAN=5>
-    <INPUT TYPE="text" NAME="<%$pre%>last" VALUE="<% $cust_main->get($pre.'last') %>" onChange="<% $onchange %>" <%$disabled%>> , 
-    <INPUT TYPE="text" NAME="<%$pre%>first" VALUE="<% $cust_main->get($pre.'first') %>" onChange="<% $onchange %>" <%$disabled%>>
+    <INPUT TYPE="text" NAME="<%$pre%>last" VALUE="<% $cust_main->get($pre.'last') %>" onChange="<% $onchange %>" <%$disabled%> <%$style%>> , 
+    <INPUT TYPE="text" NAME="<%$pre%>first" VALUE="<% $cust_main->get($pre.'first') %>" onChange="<% $onchange %>" <%$disabled%> <%$style%>>
   </TD>
 % if ( $conf->exists('show_ss') && !$pre ) { 
 
@@ -21,7 +21,7 @@
 <TR>
   <TD ALIGN="right">Company</TD>
   <TD COLSPAN=7>
-    <INPUT TYPE="text" NAME="<%$pre%>company" VALUE="<% $cust_main->get($pre.'company') %>" SIZE=70 onChange="<% $onchange %>" <%$disabled%>>
+    <INPUT TYPE="text" NAME="<%$pre%>company" VALUE="<% $cust_main->get($pre.'company') %>" SIZE=70 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
   </TD>
 </TR>
 
@@ -30,6 +30,7 @@
              'object'       => $cust_main,
              'onchange'     => $onchange,
              'disabled'     => $disabled,
+             'style'        => \@style,
              'same_checked' => $opt{'same_checked'},
              'geocode'      => $opt{'geocode'},
              'censustract'  => $opt{'censustract'},
@@ -39,21 +40,21 @@
 <TR>
   <TD ALIGN="right"><% $daytime_label %></TD>
   <TD COLSPAN=5>
-    <INPUT TYPE="text" NAME="<%$pre%>daytime" VALUE="<% $cust_main->get($pre.'daytime') %>" SIZE=18 onChange="<% $onchange %>" <%$disabled%>>
+    <INPUT TYPE="text" NAME="<%$pre%>daytime" VALUE="<% $cust_main->get($pre.'daytime') %>" SIZE=18 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
   </TD>
 </TR>
 
 <TR>
   <TD ALIGN="right"><% $night_label %></TD>
   <TD COLSPAN=5>
-    <INPUT TYPE="text" NAME="<%$pre%>night" VALUE="<% $cust_main->get($pre.'night') %>" SIZE=18 onChange="<% $onchange %>" <%$disabled%>>
+    <INPUT TYPE="text" NAME="<%$pre%>night" VALUE="<% $cust_main->get($pre.'night') %>" SIZE=18 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
   </TD>
 </TR>
 
 <TR>
   <TD ALIGN="right">Fax</TD>
   <TD COLSPAN=5>
-    <INPUT TYPE="text" NAME="<%$pre%>fax" VALUE="<% $cust_main->get($pre.'fax') %>" SIZE=12 onChange="<% $onchange %>" <%$disabled%>>
+    <INPUT TYPE="text" NAME="<%$pre%>fax" VALUE="<% $cust_main->get($pre.'fax') %>" SIZE=12 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
   </TD>
 </TR>
 
@@ -61,7 +62,7 @@
 
 <TR>
   <TD ALIGN="right"><% $stateid_label %></TD>
-  <TD><INPUT TYPE="text" NAME="stateid" VALUE="<% $opt{stateid} %>" SIZE=12 onChange="<% $onchange %>" <%$disabled%>></TD>
+  <TD><INPUT TYPE="text" NAME="stateid" VALUE="<% $opt{stateid} %>" SIZE=12 onChange="<% $onchange %>" <%$disabled%> <%$style%>></TD>
   <TD ALIGN="right"><% $stateid_state_label %></TD>
   <TD><% include('/elements/select-state.html',
                    'state'    => $cust_main->stateid_state,
@@ -69,6 +70,7 @@
                    'prefix'   => 'stateid_',
                    'onchange' => $onchange,
                    'disabled' => $disabled,
+                   'style'    => \@style,
                 )
       %>
   </TD>
@@ -90,6 +92,10 @@ my $cust_main = $opt{'cust_main'};
 my $pre       = $opt{'pre'};
 my $onchange  = $opt{'onchange'};
 my $disabled  = $opt{'disabled'};
+my @style     = ( $opt{'style'} ? @{ $opt{'style'} } : () );
+
+#push @style, 'background-color: #dddddd' if $disabled;
+my $style = scalar(@style) ? 'STYLE="'. join(';', @style). '"' : '';
 
 my $conf = new FS::Conf;
 

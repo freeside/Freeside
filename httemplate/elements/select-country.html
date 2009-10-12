@@ -53,8 +53,11 @@ Example:
         }
   
         //run the callback
-        if ( callback != null ) 
+        if ( callback != null ) {
           callback();
+        } else {
+          <% $pre %>state_changed(what.form.<% $pre %>state);
+        }
       }
   
       // go get the new states
