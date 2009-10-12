@@ -40,7 +40,7 @@ sub do_action {
     'amount'   => $amount,
     'pkg'      => $self->option('reason'),
     'taxclass' => $self->option('taxclass'),
-    'classnum'   => $conf->config('finance_pkgclass'),
+    'classnum' => scalar($conf->config('finance_pkgclass')),
     'setuptax' => $self->option('setuptax'),
   );
 
