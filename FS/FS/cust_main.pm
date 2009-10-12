@@ -3105,7 +3105,7 @@ sub _handle_taxes {
 
     } else {
 
-      my @loc_keys = qw( state county country );
+      my @loc_keys = qw( city county state country );
       my %taxhash;
       if ( $conf->exists('tax-pkg_address') && $cust_pkg->locationnum ) {
         my $cust_location = $cust_pkg->cust_location;
@@ -3124,7 +3124,7 @@ sub _handle_taxes {
 
       my %taxhash_elim = %taxhash;
 
-      my @elim = qw( taxclass county state );
+      my @elim = qw( taxclass city county state );
       while ( !scalar(@taxes) && scalar(@elim) ) {
         $taxhash_elim{ shift(@elim) } = '';
         @taxes = qsearch( 'cust_main_county', \%taxhash_elim );
@@ -7243,7 +7243,7 @@ sub charge {
     'plan'          => 'flat',
     'freq'          => 0,
     'disabled'      => 'Y',
-    'classnum'      => $classnum ? $classnum : '',
+    'classnum'      => ( $classnum ? $classnum : '' ),
     'setuptax'      => $setuptax,
     'taxclass'      => $taxclass,
     'taxproductnum' => $taxproduct,
