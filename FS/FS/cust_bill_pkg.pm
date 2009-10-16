@@ -2,6 +2,7 @@ package FS::cust_bill_pkg;
 
 use strict;
 use vars qw( @ISA $DEBUG $me );
+use Carp;
 use FS::Record qw( qsearch qsearchs dbdef dbh );
 use FS::cust_main_Mixin;
 use FS::cust_pkg;
@@ -18,7 +19,7 @@ use FS::cust_tax_adjustment;
 
 @ISA = qw( FS::cust_main_Mixin FS::Record );
 
-$DEBUG = 2;
+$DEBUG = 1;
 $me = '[FS::cust_bill_pkg]';
 
 =head1 NAME
@@ -342,7 +343,7 @@ Returns the package (see L<FS::cust_pkg>) for this invoice line item.
 
 sub cust_pkg {
   my $self = shift;
-  #warn "$me $self -> cust_pkg"; #carp?
+  carp "$me $self -> cust_pkg" if $DEBUG;
   qsearchs( 'cust_pkg', { 'pkgnum' => $self->pkgnum } );
 }
 
@@ -627,7 +628,7 @@ sub disintegrate {
 
   #split usage from recur
   my $usage = sprintf( "%.2f", $cust_bill_pkg{recur}->usage );
-  warn "usage is $usage\n" if $DEBUG;
+  warn "usage is $usage\n" if $DEBUG > 1;
   if ($usage) {
     my $cust_bill_pkg_usage =
         new FS::cust_bill_pkg { $cust_bill_pkg{recur}->hash };
