@@ -61,8 +61,7 @@ sub _ns_command {
     $args[0] .= $ns->buildQuery( { @_ } );
   }
 
-  warn "$me $method ". $self->option($prefix.'url').
-       " $command ". join(', ', @_). "\n"
+  warn "$me $method ". $self->option($prefix.'url'). join(', ', @args). "\n"
     if $self->option('debug');
 
   my $auth = encode_base64( $self->option($prefix.'login'). ':'.
