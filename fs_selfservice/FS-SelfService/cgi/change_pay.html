@@ -46,6 +46,17 @@
   $options{$payby} = $payby_index{$payby}
     unless exists($options{$payby});
 
+  #don't want to show multiple "Credit card" or "Check" options
+  my %paybyremove = (
+    'CARD' => 'DCRD',
+    'DCRD' => 'CARD',
+    'CHEK' => 'DCHK',
+    'DCHK' => 'CHEK',
+  );
+  delete( $options{ $paybyremove{$payby} } );
+  delete $options{'DCRD'} unless $payby eq 'DCRD' || ! exists $options{'CARD'};
+  delete $options{'DCHK'} unless $payby eq 'DCHK' || ! exists $options{'CHEK'};
+
   HTML::Widgets::SelectLayers->new(
     options => \%options,
     selected_layer => $payby,
