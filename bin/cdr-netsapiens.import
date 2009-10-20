@@ -20,6 +20,8 @@ my $exportnum = shift or die &usage;
 my $part_export = qsearchs('part_export', { 'exportnum' => $exportnum } )
   or die "unknown exportnum $exportnum\n";
 
+my $cdrbatch = 'NetSapiens import '. time2str('%Y-%m-%d %x', $^T);
+
 my $cdrs = 0;
 
 do {
@@ -29,14 +31,12 @@ do {
     or die dbh->errstr;
 
   $sth->execute or die $sth->errstr;
-  my $time_relase = time2str('%Y-%m-%d %x', $sth->fetchrow_arrayref->[0]);
-  #2009-02-19 20:17:37
-  #my $time_release = '2009-01-01 00:00:00';
+  my $time_release = time2str('%Y-%m-%d %x', $sth->fetchrow_arrayref->[0]);
 
   #retreive CDRs >= this time
 
   my $ns = $part_export->ns_command( 'GET', '/cdr/',
-                                       'time_release' => '$time_release,',
+                                       'time_release' => "$time_release,",
                                        '_sort'        => '+time_release',
                                    );
 
@@ -49,7 +49,7 @@ do {
   #<a href="/tac2/cdr/20090219201719000016%40SkyNet360.Com">20090219201719000016@SkyNet360.Com</a>
   #    <form method="post" action="/tac2/cdr/20090219201719000016%40SkyNet360.Com">
   while ( $content =~
-            s/^.*?<form method="post" action="\/tac2\/cdr\/(\d+)\%40[^"]*">//is )
+            s/^.*?<form class="" method="post" action="\/tac2\/cdr\/(\d+)\%40[^"]*">//is )
   {
 
     my $accountcode = $1;
@@ -78,7 +78,11 @@ do {
       #'disposition' => 
       'accountcode' => $accountcode,
       #'charged_party'
+      'cdrbatch'  => $cdrbatch,
     };
+
+    my $error = $cdr->insert;
+    die $error if $error;
 
   }
 
