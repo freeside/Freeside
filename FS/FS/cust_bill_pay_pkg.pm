@@ -194,7 +194,7 @@ sub send_receipt {
   my $self = shift;
   my $opt = ref($_[0]) ? shift : { @_ };
   $self->cust_bill_pay->send_receipt(
-    'cust_pkg' => $self->cust_bill_pkg->cust_pkg,
+    'cust_pkg' => scalar($self->cust_bill_pkg->cust_pkg),
     %$opt,
   );
 }
