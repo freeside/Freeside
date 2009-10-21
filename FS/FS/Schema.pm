@@ -1643,7 +1643,7 @@ sub tables_hashref {
     'queue' => {
       'columns' => [
         'jobnum',      'serial',     '',      '', '', '', 
-        'job',           'text',     '',      '', '', '', 
+        'job',        'varchar',     '',     512, '', '', 
         '_date',          'int',     '',      '', '', '', 
         'status',     'varchar',     '', $char_d, '', '', 
         'statustext',    'text', 'NULL',      '', '', '', 
