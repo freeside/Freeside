@@ -61,6 +61,7 @@ Example:
      if ( citiesArray.length > 1 || citiesArray[0].length ) { 
         // turn off the text city, turn on the select
         saved_<%$pre%>city = what.form.<%$ pre %>city.value;
+        <%$pre%>city_select_changed(what.form.<% $pre %>city_select);
         what.form.<% $pre %>city.style.display = 'none';
         what.form.<% $pre %>city_select.style.display = '';
       } else {
