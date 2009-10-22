@@ -177,6 +177,12 @@ unless ( 0 ) { #already showing only one class or something?
   $align .= 'l';
 }
 
+if ( $conf->exists('pkg-addon_classnum') ) {
+  push @header, "Add'l order class";
+  push @fields, sub { shift->addon_classname || '(none)'; };
+  $align .= 'l';
+}
+
 tie my %plans, 'Tie::IxHash', %{ FS::part_pkg::plan_info() };
 
 tie my %plan_labels, 'Tie::IxHash',

@@ -59,6 +59,21 @@ my %session_callbacks = (
            }
       qsearch( 'part_pkg', { 'disabled' => '' }, '', 'ORDER BY pkg' ); # case?
 
+    my $conf = new FS::Conf;
+    if ( $conf->exists('pkg-addon_classnum') ) {
+
+      my %classnum = map  { ( $_->addon_classnum => 1 ) }
+                     grep { $_->freq !~ /^0/ }
+                     map  { $_->part_pkg }
+                          $cust_main->ncancelled_pkgs;
+
+      warn "classnums: ". join(',', keys %classnum). "\n";
+
+      unless ( $classnum{''} ) {
+        @part_pkg = grep $classnum{ $_->classnum }, @part_pkg;
+      }
+    }
+
     my %args = @$argsref;
     $args{part_pkg} = \@part_pkg;
     @$argsref = ( %args );

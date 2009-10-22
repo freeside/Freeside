@@ -29,6 +29,7 @@
                             'pkg'              => 'Package (customer-visible)',
                             'comment'          => 'Comment (customer-hidden)',
                             'classnum'         => 'Package class',
+                            'addon_classnum'   => 'Restrict additional orders to package class',
                             'promo_code'       => 'Promotional code',
                             'freq'             => 'Recurring fee frequency',
                             'setuptax'         => 'Setup fee tax exempt',
@@ -76,6 +77,13 @@
                                 onchange      => 'agent_changed',
                               },
                               {field=>'classnum', type=>'select-pkg_class' },
+                              ( $conf->exists('pkg-addon_classnum')
+                                  ? ( { field=>'addon_classnum',
+                                        type =>'select-pkg_class',
+                                      }
+                                    )
+                                   : ()
+                              ),
                               {field=>'disabled', type=>$disabled_type, value=>'Y'},
 
                               { type  => 'tablebreak-tr-title',

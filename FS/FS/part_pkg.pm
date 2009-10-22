@@ -465,6 +465,8 @@ sub check {
     || $self->ut_floatn('pay_weight')
     || $self->ut_floatn('credit_weight')
     || $self->ut_numbern('taxproductnum')
+    || $self->ut_foreign_keyn('classnum',       'pkg_class', 'classnum')
+    || $self->ut_foreign_keyn('addon_classnum', 'pkg_class', 'classnum')
     || $self->ut_foreign_keyn('taxproductnum',
                               'part_pkg_taxproduct',
                               'taxproductnum'
@@ -476,13 +478,6 @@ sub check {
     || $self->SUPER::check
   ;
   return $error if $error;
-
-  if ( $self->classnum !~ /^$/ ) {
-    my $error = $self->ut_foreign_key('classnum', 'pkg_class', 'classnum');
-    return $error if $error;
-  } else {
-    $self->classnum('');
-  }
 
   return 'Unknown plan '. $self->plan
     unless exists($plans{$self->plan});
@@ -536,6 +531,22 @@ sub pkg_class {
   }
 }
 
+=item addon_pkg_class
+
+Returns the add-on package class, as an FS::pkg_class object, or the empty
+string if there is no add-on package class.
+
+=cut
+
+sub addon_pkg_class {
+  my $self = shift;
+  if ( $self->addon_classnum ) {
+    qsearchs('pkg_class', { 'classnum' => $self->addon_classnum } );
+  } else {
+    return '';
+  }
+}
+
 =item categoryname 
 
 Returns the package category name, or the empty string if there is no package
@@ -561,6 +572,21 @@ class.
 sub classname {
   my $self = shift;
   my $pkg_class = $self->pkg_class;
+  $pkg_class
+    ? $pkg_class->classname
+    : '';
+}
+
+=item addon_classname 
+
+Returns the add-on package class name, or the empty string if there is no
+add-on package class.
+
+=cut
+
+sub addon_classname {
+  my $self = shift;
+  my $pkg_class = $self->addon_pkg_class;
   $pkg_class
     ? $pkg_class->classname
     : '';

@@ -1274,6 +1274,7 @@ sub tables_hashref {
         'custom',        'char', 'NULL', 1, '', '', 
         'taxclass',      'varchar', 'NULL', $char_d, '', '', 
         'classnum',      'int',     'NULL', '', '', '', 
+        'addon_classnum','int',     'NULL', '', '', '', 
         'taxproductnum', 'int',     'NULL', '', '', '', 
         'setup_cost',    @money_typen,          '', '',
         'recur_cost',    @money_typen,          '', '',
@@ -1284,7 +1285,9 @@ sub tables_hashref {
       ],
       'primary_key' => 'pkgpart',
       'unique' => [],
-      'index' => [ [ 'promo_code' ], [ 'disabled' ], [ 'agentnum' ], ],
+      'index' => [ [ 'promo_code' ], [ 'disabled' ], [ 'classnum' ],
+                   [ 'agentnum' ],
+                 ],
     },
 
     'part_pkg_link' => {

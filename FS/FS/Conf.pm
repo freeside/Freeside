@@ -230,6 +230,7 @@ sub invoice_templatenames {
     }
   }
   
+  map { $_ } #handle scalar context
   sort keys %templatenames;
 
 }
@@ -576,7 +577,7 @@ worry that config_items is freeside-specific and icky.
   {
     'key'         => 'alert_expiration',
     'section'     => 'billing',
-    'description' => 'Enable alerts about billing method expiration.',
+    'description' => 'Enable alerts about billing method expiration (i.e. expiring credit cards).',
     'type'        => 'checkbox',
     'per_agent'   => 1,
   },
@@ -584,7 +585,7 @@ worry that config_items is freeside-specific and icky.
   {
     'key'         => 'alerter_template',
     'section'     => 'billing',
-    'description' => 'Template file for billing method expiration alerts.  See the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:1.7:Documentation:Administration#Credit_cards_and_Electronic_checks">billing documentation</a> for details.',
+    'description' => 'Template file for billing method expiration alerts (i.e. expiring credit cards).  See the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:1.7:Documentation:Administration#Credit_cards_and_Electronic_checks">billing documentation</a> for details.',
     'type'        => 'textarea',
     'per_agent'   => 1,
   },
@@ -1583,14 +1584,14 @@ worry that config_items is freeside-specific and icky.
   {
     'key'         => 'declinetemplate',
     'section'     => 'billing',
-    'description' => 'Template file for credit card decline emails.',
+    'description' => 'Template file for credit card and electronic check decline emails.',
     'type'        => 'textarea',
   },
 
   {
     'key'         => 'emaildecline',
     'section'     => 'billing',
-    'description' => 'Enable emailing of credit card decline notices.',
+    'description' => 'Enable emailing of credit card and electronic check decline notices.',
     'type'        => 'checkbox',
   },
 
@@ -3186,6 +3187,13 @@ worry that config_items is freeside-specific and icky.
     'key'         => 'pkg-balances',
     'section'     => 'billing',
     'description' => 'Enable experimental package balances.  Not recommended for general use.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'pkg-addon_classnum',
+    'section'     => 'billing',
+    'description' => 'Enable the ability to restrict additional package orders based on package class.',
     'type'        => 'checkbox',
   },
 
