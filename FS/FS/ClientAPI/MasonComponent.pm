@@ -67,8 +67,6 @@ my %session_callbacks = (
                      map  { $_->part_pkg }
                           $cust_main->ncancelled_pkgs;
 
-      warn "classnums: ". join(',', keys %classnum). "\n";
-
       unless ( $classnum{''} ) {
         @part_pkg = grep $classnum{ $_->classnum }, @part_pkg;
       }
