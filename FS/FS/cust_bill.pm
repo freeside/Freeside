@@ -3108,70 +3108,72 @@ sub _date_pretty {
   time2str('%x', $self->_date);
 }
 
+use vars qw(%pkg_category_cache);
 sub _items_sections {
   my $self = shift;
   my $late = shift;
   my $summarypage = shift;
   my $escape = shift;
 
-  my %s = ();
-  my %l = ();
+  my %subtotal = ();
+  my %late_subtotal = ();
   my %not_tax = ();
 
   foreach my $cust_bill_pkg ( $self->cust_bill_pkg )
   {
-
 
       my $usage = $cust_bill_pkg->usage;
 
       foreach my $display ($cust_bill_pkg->cust_bill_pkg_display) {
         next if ( $display->summary && $summarypage );
 
-        my $desc = $display->section;
-        my $type = $display->type;
+        my $section = $display->section;
+        my $type    = $display->type;
 
-        if ( $cust_bill_pkg->pkgnum > 0 ) {
-          $not_tax{$desc} = 1;
-        }
+        $not_tax{$section} = 1
+          unless $cust_bill_pkg->pkgnum == 0;
 
         if ( $display->post_total && !$summarypage ) {
           if (! $type || $type eq 'S') {
-            $l{$desc} += $cust_bill_pkg->setup
-              if ( $cust_bill_pkg->setup != 0 );
+            $late_subtotal{$section} += $cust_bill_pkg->setup
+              if $cust_bill_pkg->setup != 0;
           }
 
           if (! $type) {
-            $l{$desc} += $cust_bill_pkg->recur
-              if ( $cust_bill_pkg->recur != 0 );
+            $late_subtotal{$section} += $cust_bill_pkg->recur
+              if $cust_bill_pkg->recur != 0;
           }
 
           if ($type && $type eq 'R') {
-            $l{$desc} += $cust_bill_pkg->recur - $usage
-              if ( $cust_bill_pkg->recur != 0 );
+            $late_subtotal{$section} += $cust_bill_pkg->recur - $usage
+              if $cust_bill_pkg->recur != 0;
           }
           
           if ($type && $type eq 'U') {
-            $l{$desc} += $usage;
+            $late_subtotal{$section} += $usage;
           }
 
         } else {
+
+          next if $cust_bill_pkg->pkgnum == 0 && ! $section;
+
           if (! $type || $type eq 'S') {
-            $s{$desc} += $cust_bill_pkg->setup
-              if ( $cust_bill_pkg->setup != 0 );
+            $subtotal{$section} += $cust_bill_pkg->setup
+              if $cust_bill_pkg->setup != 0;
           }
 
           if (! $type) {
-            $s{$desc} += $cust_bill_pkg->recur
-              if ( $cust_bill_pkg->recur != 0 );
+            $subtotal{$section} += $cust_bill_pkg->recur
+              if $cust_bill_pkg->recur != 0;
           }
 
           if ($type && $type eq 'R') {
-            $s{$desc} += $cust_bill_pkg->recur - $usage
-              if ( $cust_bill_pkg->recur != 0 );
+            $subtotal{$section} += $cust_bill_pkg->recur - $usage
+              if $cust_bill_pkg->recur != 0;
           }
           
           if ($type && $type eq 'U') {
-            $s{$desc} += $usage;
+            $subtotal{$section} += $usage;
           }
 
         }
@@ -3180,28 +3182,42 @@ sub _items_sections {
 
   }
 
-  my %cache = map { $_->categoryname => $_ }
-              qsearch( 'pkg_category', {disabled => 'Y'} );
-  $cache{$_->categoryname} = $_
-    foreach qsearch( 'pkg_category', {disabled => ''} );
+  %pkg_category_cache = ();
 
   push @$late, map { { 'description' => &{$escape}($_),
-                       'subtotal'    => $l{$_},
+                       'subtotal'    => $late_subtotal{$_},
                        'post_total'  => 1,
                    } }
-                 sort { $cache{$a}->weight <=> $cache{$b}->weight } keys %l;
+                 sort _categorysort keys %late_subtotal;
+
+  my @sections;
+  if ( $summarypage ) {
+    @sections = grep { exists($subtotal{$_}) || ! _pkg_category{$_}->disabled }
+                keys %pkg_category_cache;
+  } else {
+    @sections = keys %subtotal;
+  }
 
   map { { 'description' => &{$escape}($_),
-          'subtotal'    => $s{$_},
+          'subtotal'    => $subtotal{$_},
           'summarized'  => $not_tax{$_} ? '' : 'Y',
           'tax_section' => $not_tax{$_} ? '' : 'Y',
-      } }
-    sort { $cache{$a}->weight <=> $cache{$b}->weight }
-    ( $summarypage
-        ? ( grep { exists($s{$_}) || !$cache{$_}->disabled } keys %cache )
-        : ( keys %s )
-    );
+        }
+      }
+    sort _categorysort @sections;
 
+}
+
+#helper subs for above
+
+sub _categorysort {
+  _pkg_category($a)->weight <=> _pkg_category($b)->weight;
+}
+
+sub _pkg_category {
+  my $categoryname = shift;
+  $pkg_category_cache{$categoryname} ||=
+    qsearchs( 'pkg_category', { 'categoryname' => $categoryname } );
 }
 
 sub _items {
