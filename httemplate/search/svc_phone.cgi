@@ -102,7 +102,7 @@ if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
 
       my $f_w =
         " FROM cdr_termination LEFT JOIN cdr USING ( acctid ) ".
-        " WHERE cdr.acctid = svc_phone.phonenum ". # XXX connectone-specific
+        " WHERE cdr.carrierid = CAST(svc_phone.phonenum AS BIGINT) ". # XXX connectone-specific, has to match svc_external.id :/
         $and_date;
 
       push @select,
