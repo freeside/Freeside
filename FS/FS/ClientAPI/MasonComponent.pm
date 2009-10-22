@@ -67,7 +67,7 @@ my %session_callbacks = (
                      map  { $_->part_pkg }
                           $cust_main->ncancelled_pkgs;
 
-      unless ( $classnum{''} ) {
+      unless ( $classnum{''} || ! keys %classnum ) {
         @part_pkg = grep $classnum{ $_->classnum }, @part_pkg;
       }
     }
