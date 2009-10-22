@@ -136,7 +136,7 @@ my $onchange =
   ( $opt{'disable_cityupdate'} ? '' : $pre.'county_changed(this); ' ).
   $opt{'onchange'};
 
-$opt{'style'} ||= [];
+my $county_style = $opt{'style'} ? [ @{ $opt{'style'} } ] : [];
 
 my @counties = ();
 if ( $countyflag ) {
@@ -144,14 +144,14 @@ if ( $countyflag ) {
   @counties = map { length($_) ? $_ : $opt{'empty_data_value'} }
                   counties( $opt{'state'}, $opt{'country'} );
 
-  push @{ $opt{'style'} }, 'display:none'
+  push @$county_style, 'display:none'
     unless scalar(@counties) > 1;
 
 }
 
 my $style =
-  scalar(@{$opt{style}})
-    ? 'STYLE="'. join(';', @{$opt{style}}). '"'
+  scalar(@$county_style)
+    ? 'STYLE="'. join(';', @$county_style). '"'
     : '';
 
 </%init>
