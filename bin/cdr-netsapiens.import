@@ -11,7 +11,7 @@ use FS::Record qw(qsearchs);
 use FS::part_export;
 use FS::cdr;
 
-$DEBUG = 2;
+$DEBUG = 1;
 
 my $user = shift or die &usage;
 adminsuidsetup $user;
@@ -31,8 +31,7 @@ do {
     or die dbh->errstr;
 
   $sth->execute or die $sth->errstr;
-  my $time_release = time2str('%Y-%m-%d %x', $sth->fetchrow_arrayref->[0]);
-
+  my $time_release = time2str('%Y-%m-%d %X', $sth->fetchrow_arrayref->[0]);
   #retreive CDRs >= this time
 
   my $ns = $part_export->ns_command( 'GET', '/cdr/',
@@ -49,11 +48,23 @@ do {
   #<a href="/tac2/cdr/20090219201719000016%40SkyNet360.Com">20090219201719000016@SkyNet360.Com</a>
   #    <form method="post" action="/tac2/cdr/20090219201719000016%40SkyNet360.Com">
   while ( $content =~
-            s/^.*?<form class="" method="post" action="\/tac2\/cdr\/(\d+)\%40[^"]*">//is )
+            s/^.*?<form class="" method="post" action="\/tac2\/cdr\/(\d{4})(\d+)\%40[^"]*">//is )
   {
 
-    my $accountcode = $1;
-    warn "$accountcode\n" if $DEBUG;
+    my $cdrid = ($1-1900). $2; #2009 -> 109 so we fit in a bigint
+
+    unless ( $cdrs ) { #inefficient
+      my $dsth = dbh->prepare(
+        'SELECT cdrid FROM cdr WHERE cdrid IS NOT NULL AND cdrid = ?'
+      ) or die dbh->errstr;
+      $dsth->execute($cdrid) or die $dsth->errstr;
+      my $row = $dsth->fetchrow_arrayref;
+      if ( $row && $row->[0] eq $cdrid ) { # == w/ 8 byte int?
+        warn "$cdrid (dup)\n" if $DEBUG > 1;
+        next;
+      }
+    }
+    warn "$cdrid\n" if $DEBUG > 1;
 
     $content =~ s/(.*?)<\/form>//is;
     my $cdr_content = $1;
@@ -62,22 +73,23 @@ do {
     while ( $cdr_content =~
               s/.*?<input name="(\w+)" type="\w+" value="([^"]+)" \/>//is )
     {
-      warn "  $1 => $2\n" if $DEBUG > 1;
+      warn "  $1 => $2\n" if $DEBUG > 2;
       $cdr{$1} = $2;
     }
 
     $cdrs++;
 
     my $cdr = new FS::cdr {
-      'src'       => $cdr{'orig_sub'}, #orig_from_user?
-      'dst'       => $cdr{'term_sub'},
+      'src'       => $cdr{'orig_from_user'}, #orig_sub
+      'dst'       => $cdr{'orig_to_user'}, #term_sub?
       'startdate' => FS::cdr::_cdr_date_parse($cdr{'time_start'}),
       'enddate'   => FS::cdr::_cdr_date_parse($cdr{'time_release'}),
       'duration'  => $cdr{'duration'},
       'billsec'   => $cdr{'time_talking'},
       #'disposition' => 
-      'accountcode' => $accountcode,
+      #'accountcode' =>
       #'charged_party'
+      'cdrid'     => $cdrid,
       'cdrbatch'  => $cdrbatch,
     };
 

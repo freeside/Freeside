@@ -2149,6 +2149,8 @@ sub tables_hashref {
         ###
         # fields for unitel/RSLCOM/convergent that don't map well to asterisk
         # defaults
+        # though these are now used elsewhere:
+        # charged_party, upstream_price, rated_price, carrierid
         ###
 
         #cdr_type: Usage = 1, S&E = 7, OC&C = 8
@@ -2191,18 +2193,34 @@ sub tables_hashref {
         #NULL, done (or something)
         'freesiderewritestatus', 'varchar',   'NULL',     32,   '', '', 
 
+        #an indexed place to put big numbers
+        'cdrid',         'bigint',     'NULL',     '',  '', '', 
+
+        #i should become a table
         'cdrbatch', 'varchar', 'NULL', 255, '', '',
+        #'cdrbatchnum', 'int', 'NULL', '', '', '',
 
       ],
       'primary_key' => 'acctid',
       'unique' => [],
       'index' => [ [ 'calldate' ],
                    [ 'src' ], [ 'dst' ], [ 'dcontext' ], [ 'charged_party' ],
-                   [ 'accountcode' ], [ 'carrierid' ],
+                   [ 'accountcode' ], [ 'carrierid' ], [ 'cdrid' ],
                    [ 'freesidestatus' ], [ 'freesiderewritestatus' ],
                    [ 'cdrbatch' ],
                  ],
     },
+
+    #'cdr_batch' => {
+    #  'columns' => [
+    #    'cdrbatchnum',   'serial',    '',   '', '', '', 
+    #    'cdrbatch', 'varchar', 'NULL', 255, '', '',
+    #    '_date',     @date_type, '', '', 
+    #  ],
+    #  'primary_key' => 'cdrbatchnum',
+    #  'unique' => [ [ 'cdrbatch' ] ],
+    #  'index' => [],
+    #},
 
     'cdr_termination' => {
       'columns' => [
