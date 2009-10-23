@@ -1,0 +1,99 @@
+#!/usr/bin/perl -w
+
+#script to move unlinked accounts from one installation to another
+# source is remote, destination is local
+
+use strict;
+use vars qw( $sdbh );
+use DBI;
+use FS::UID qw( adminsuidsetup dbh );
+use FS::Schema qw( dbdef );
+use DBI;
+use FS::Record qw( qsearchs );
+use FS::svc_acct;
+
+#my $DANGEROUS = 0;
+#my $DRY = 0;
+
+#ssh -p 2222 -L 1080:66.209.32.4:7219 -L 5454:localhost:5432 66.209.32.4
+
+#my $source_datasrc = 'DBI:Pg:host=66.209.32.4;dbname=freeside;sslmode=require';
+my $source_datasrc = 'DBI:Pg:host=localhost;port=5454;dbname=freeside';
+my $source_user = 'readonly';
+my $source_pw = '';
+
+
+my %domsvc_map = (
+  1    => 108, #nothinbut.net
+  3653 => 109, #ewol.com
+  #7634 => 20451,
+);
+#my %domsvc_map = (
+#  1    => 20450,
+#  3653 => 20162,
+##  7634 => 20451,
+#);
+
+my %svcpart_map = (
+  2 => 23, # NBN-DIALUP
+  3 => 29, # NBN-EMAIL
+  8 => 30, # EWOL-EMAIL
+);
+#my %svcpart_map = (
+#  2 => , # NBN-DIALUP
+#  3 => , # NBN-EMAIL
+#  8 => , # EWOL-EMAIL
+#);
+
+
+#--
+
+# target(local) setup
+
+my $user = shift
+  or die "Usage:\n  (edit variables at top of script and then)\n".
+         "  move-customers user\n";
+adminsuidsetup $user;
+
+$FS::svc_Common::noexport_hack = 1;
+$FS::svc_Common::noexport_hack = 1;
+
+# -- 
+
+# source(remote) setup
+
+$sdbh = DBI->connect($source_datasrc, $source_user, $source_pw)
+  or die $DBI::errstr;
+
+$sdbh->{ChopBlanks} = 1;
+
+# --
+
+my $sth = $sdbh->prepare(
+ 'select * from svc_acct left join cust_svc using ( svcnum ) where pkgnum is null'
+) or die $sdbh->errstr;
+
+$sth->execute or die $sth->errstr;
+
+while ( my $hashref = $sth->fetchrow_hashref ) {
+
+  my %hash = %$hashref;
+
+  $hash{'svcnum'} = '';
+
+  $hash{'domsvc'}  = $domsvc_map{ $hash{'domsvc'}};
+  $hash{'svcpart'} = $svcpart_map{$hash{'svcpart'}};
+
+  my $svc_acct = new FS::svc_acct \%hash;
+
+  #my $error = $svc_acct->check;
+  my $error = $svc_acct->insert;
+
+  if ( $error ) {
+    use Data::Dumper;
+    warn Dumper($svc_acct);
+    die $error;
+  }
+}
+
+1;
