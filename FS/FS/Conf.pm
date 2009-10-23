@@ -2902,6 +2902,13 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'cust_bill-consolidate_services',
+    'section'     => 'billing',
+    'description' => 'Consolidate service display into fewer lines on invoices rather than one per service.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'suspend_email_admin',
     'section'     => '',
     'description' => 'Destination admin email address to enable suspension notices',

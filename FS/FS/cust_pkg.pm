@@ -1881,7 +1881,18 @@ sub _labels_short {
     if ( $num > $max_same_services ) {
       push @labels, "$label ($num)";
     } else {
-      push @labels, map { "$label: $_" } @values;
+      if ( $conf->exists('cust_bill-consolidate_services') ) {
+        # push @labels, "$label: ". join(', ', @values);
+        while ( @values ) {
+          my $detail = "$label: ";
+          $detail .= shift(@values). ', '
+            while @values && length($detail.$values[0]) < 78;
+          $detail =~ s/, $//;
+          push @labels, $detail;
+        }
+      } else {
+        push @labels, map { "$label: $_" } @values;
+      }
     }
   }
 
