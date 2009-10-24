@@ -2680,7 +2680,7 @@ sub loadRSA {
     #Initialize the Module
     $rsa_module = 'Crypt::OpenSSL::RSA'; # The Default
 
-    if ($conf->exists('encryptionmodule') && $conf->config_binary('encryptionmodule') ne '') {
+    if ($conf->exists('encryptionmodule') && $conf->config('encryptionmodule') ne '') {
       $rsa_module = $conf->config('encryptionmodule');
     }
 
@@ -2689,13 +2689,13 @@ sub loadRSA {
 	$rsa_loaded++;
     }
     # Initialize Encryption
-    if ($conf->exists('encryptionpublickey') && $conf->config_binary('encryptionpublickey') ne '') {
+    if ($conf->exists('encryptionpublickey') && $conf->config('encryptionpublickey') ne '') {
       my $public_key = join("\n",$conf->config('encryptionpublickey'));
       $rsa_encrypt = $rsa_module->new_public_key($public_key);
     }
     
     # Intitalize Decryption
-    if ($conf->exists('encryptionprivatekey') && $conf->config_binary('encryptionprivatekey') ne '') {
+    if ($conf->exists('encryptionprivatekey') && $conf->config('encryptionprivatekey') ne '') {
       my $private_key = join("\n",$conf->config('encryptionprivatekey'));
       $rsa_decrypt = $rsa_module->new_private_key($private_key);
     }
