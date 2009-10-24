@@ -1,5 +1,14 @@
-<HTML><HEAD><TITLE>Processing error</TITLE></HEAD>
-<BODY BGCOLOR="#e8e8e8"><FONT SIZE=7>Processing error</FONT><BR><BR>
+<HTML>
+  <HEAD>
+    <TITLE>Processing error</TITLE>
+    <%= $head %>
+  </HEAD>
+  <BODY BGCOLOR="<%= $body_bgcolor || '#eeeeee' %>">
+  <%= $body_header %>
+
+
+<FONT SIZE=7>Processing error</FONT><BR><BR>
 There has been an error processing your account.  Please contact customer
 support.
-</BODY></HTML>
+
+<%= $body_footer %>

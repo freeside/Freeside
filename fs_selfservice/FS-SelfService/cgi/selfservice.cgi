@@ -29,7 +29,7 @@ $form_max = 255;
 $cgi = new CGI;
 
 unless ( defined $cgi->param('session') ) {
-  my $login_info = login_info();
+  my $login_info = login_info( 'agentnum' => scalar($cgi->param('agentnum')) );
 
   do_template('login', $login_info );
   exit;
@@ -55,7 +55,7 @@ if ( $cgi->param('session') eq 'login' ) {
     'password' => $password,
   );
   if ( $rv->{error} ) {
-    my $login_info = login_info();
+    my $login_info = login_info( 'agentnum' => $cgi->param('agentnum') );
     do_template('login', {
       'error'    => $rv->{error},
       'username' => $username,

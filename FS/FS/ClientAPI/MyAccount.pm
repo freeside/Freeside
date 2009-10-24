@@ -74,8 +74,10 @@ sub skin_info {
     $agentnum = $sth->fetchrow_arrayref->[0]
       or die "no agentnum for custnum $custnum";
 
+  #} elsif ( $context eq 'agent' ) {
+  } elsif ( $p->{'agentnum'} =~ /^(\d+)$/ ) {
+    $agentnum = $1;
   }
-  # elsif ( $context eq 'agent' ) {
 
   my $conf = new FS::Conf;
 
@@ -94,6 +96,7 @@ sub skin_info {
       if $DEBUG > 1;
 
     $skin_info_cache_agent = {
+      'agentnum' => $agentnum,
       ( map { $_ => scalar( $conf->config($_, $agentnum) ) }
         qw( company_name ) ),
       ( map { $_ => scalar( $conf->config("selfservice-$_", $agentnum ) ) }
@@ -105,9 +108,6 @@ sub skin_info {
     _cache->set("skin_info_cache_agent$agentnum", $skin_info_cache_agent);
 
   }
-
-  use Data::Dumper;
-  warn Dumper($skin_info_cache_agent);
 
   #{ %$skin_info_cache_agent };
   $skin_info_cache_agent;

@@ -30,6 +30,7 @@
 <FORM NAME="OneTrueForm" ACTION="<%= $self_url %>" METHOD=POST onSubmit="document.OneTrueForm.signup.disabled=true">
 <INPUT TYPE="hidden" NAME="session" VALUE="<%= $session_id %>">
 <INPUT TYPE="hidden" NAME="action" VALUE="process_signup">
+<INPUT TYPE="hidden" NAME="agentnum" VALUE="<%= $agentnum %>">
 <INPUT TYPE="hidden" NAME="referral_custnum" VALUE="<%= $referral_custnum %>">
 <INPUT TYPE="hidden" NAME="ss" VALUE="">
 <input type="hidden" name="payby">

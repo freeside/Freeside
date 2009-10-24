@@ -141,7 +141,7 @@ if ( -e $decline_html ) {
 
 $cgi = new CGI;
 
-$init_data = signup_info( 'agentnum'   => $agentnum,
+$init_data = signup_info( 'agentnum'   => $agentnum || scalar($cgi->param('agentnum')),
                           'promo_code' => scalar($cgi->param('promo_code')),
                           'reg_code'   => uc(scalar($cgi->param('reg_code'))),
                         );
@@ -320,8 +320,14 @@ sub print_collect {
 }
 
 sub print_decline {
+  my $r = {
+    %{$init_data},
+  };
+
   print $cgi->header( '-expires' => 'now' ),
-        $decline_template->fill_in();
+        $decline_template->fill_in( PACKAGE => 'FS::SelfService::_signupcgi',
+                                    HASH    => $r
+                                  );
 }
 
 sub print_okay {
@@ -388,6 +394,8 @@ sub print_okay {
 
     print $cgi->header( '-expires' => 'now' ),
           $success_template->fill_in( HASH => {
+
+            %{$init_data},
 
             email_name     => $email_name,
             pkg            => $pkg,

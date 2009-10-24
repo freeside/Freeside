@@ -1,10 +1,10 @@
 <HTML>
-
-<HEAD>
-  <TITLE>Signup successful</TITLE>
-</HEAD>
-
-<BODY BGCOLOR="#e8e8e8">
+  <HEAD>
+    <TITLE>Signup successful</TITLE>
+    <%= $head %>
+  </HEAD>
+  <BODY BGCOLOR="<%= $body_bgcolor || '#eeeeee' %>">
+  <%= $body_header %>
 
 <FONT SIZE=7>Signup successful</FONT><BR><BR>
 
@@ -37,5 +37,4 @@ END
 
   Package: <%= $pkg %><BR>
 
-</BODY>
-</HTML>
+<%= $body_footer %>
