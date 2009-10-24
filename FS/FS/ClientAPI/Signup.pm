@@ -1,7 +1,7 @@
 package FS::ClientAPI::Signup;
 
 use strict;
-use vars qw($DEBUG $me);
+use vars qw( $DEBUG $me );
 use Data::Dumper;
 use Tie::RefHash;
 use FS::Conf;
@@ -337,6 +337,36 @@ sub signup_info {
       $signup_info->{"ship_$_"} = $cust_main->get("$prefix$_")
         foreach qw( address1 city county state zip country );
     }
+
+    #some of the above could probably be cached, too
+
+    my $signup_info_cache_agent = $cache->get("signup_info_cache_agent$agentnum");
+
+    if ( $signup_info_cache_agent ) {
+
+      warn "$me loading cached signup info for agentnum $agentnum\n"
+        if $DEBUG > 1;
+
+    } else {
+
+      warn "$me populating signup info cache for agentnum $agentnum\n"
+        if $DEBUG > 1;
+
+      $signup_info_cache_agent = {
+        #( map { $_ => scalar( $conf->config($_, $agentnum) ) }
+        #  qw( company_name ) ),
+        ( map { $_ => scalar( $conf->config("selfservice-$_", $agentnum ) ) }
+          qw( body_bgcolor box_bgcolor) ),
+        ( map { $_ => join("\n", $conf->config("selfservice-$_", $agentnum ) ) }
+          qw( head body_header body_footer ) ),
+      };
+
+      $cache->set("signup_info_cache_agent$agentnum", $signup_info_cache_agent);
+
+    }
+
+    $signup_info->{$_} = $signup_info_cache_agent->{$_}
+      foreach keys %$signup_info_cache_agent;
 
   }
   # else {

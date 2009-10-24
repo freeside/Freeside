@@ -146,7 +146,7 @@ sub config_binary {
   return $self->_usecompat('config_binary', @_) if use_confcompat;
 
   my $cv = $self->_config(@_) or return;
-  decode_base64($cv->value);
+  length($cv->value) ? decode_base64($cv->value) : '';
 }
 
 =item exists KEY [ AGENTNUM [ NODEFAULT ] ]
@@ -2927,6 +2927,7 @@ worry that config_items is freeside-specific and icky.
     'section'     => '',
     'description' => 'HTML for the HEAD section of the self-service interface, typically used for LINK stylesheet tags',
     'type'        => 'textarea', #htmlarea?
+    'per_agent'   => 1,
   },
 
 
@@ -2935,6 +2936,7 @@ worry that config_items is freeside-specific and icky.
     'section'     => '',
     'description' => 'HTML header for the self-service interface',
     'type'        => 'textarea', #htmlarea?
+    'per_agent'   => 1,
   },
 
   {
@@ -2942,6 +2944,7 @@ worry that config_items is freeside-specific and icky.
     'section'     => '',
     'description' => 'HTML header for the self-service interface',
     'type'        => 'textarea', #htmlarea?
+    'per_agent'   => 1,
   },
 
 
@@ -2950,6 +2953,7 @@ worry that config_items is freeside-specific and icky.
     'section'     => '',
     'description' => 'HTML background color for the self-service interface, for example, #FFFFFF',
     'type'        => 'text',
+    'per_agent'   => 1,
   },
 
   {
@@ -2957,6 +2961,7 @@ worry that config_items is freeside-specific and icky.
     'section'     => '',
     'description' => 'HTML color for self-service interface input boxes, for example, #C0C0C0"',
     'type'        => 'text',
+    'per_agent'   => 1,
   },
 
   {

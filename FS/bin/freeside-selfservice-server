@@ -72,6 +72,13 @@ my $cache = new FS::ClientAPI_SessionCache( {
 } );
 $cache->remove('signup_info_cache');
 
+#and also clear the selfservice skin info cache, for the same reason
+my $ss_cache = new FS::ClientAPI_SessionCache( {
+  'namespace' => 'FS::ClientAPI::MyAccount',
+} );
+$ss_cache->remove($_)
+  foreach grep /^skin_info_cache_agent/, $ss_cache->get_keys();
+
 my $clientd = "/usr/local/sbin/freeside-selfservice-clientd"; #better name?
 
 my $warnkids=0;

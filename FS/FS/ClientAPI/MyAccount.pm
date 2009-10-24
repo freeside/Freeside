@@ -1,7 +1,7 @@
 package FS::ClientAPI::MyAccount;
 
 use strict;
-use vars qw( $cache $DEBUG );
+use vars qw( $cache $DEBUG $me );
 use subs qw( _cache _provision );
 use Data::Dumper;
 use Digest::MD5 qw(md5_hex);
@@ -12,7 +12,8 @@ use FS::UI::Web::small_custview qw(small_custview); #less doh
 use FS::UI::Web;
 use FS::UI::bytecount qw( display_bytecount );
 use FS::Conf;
-use FS::Record qw(qsearch qsearchs);
+#use FS::UID qw(dbh);
+use FS::Record qw(qsearch qsearchs dbh);
 use FS::Msgcat qw(gettext);
 use FS::Misc qw(card_types);
 use FS::ClientAPI_SessionCache;
@@ -29,7 +30,8 @@ use FS::payby;
 use FS::acct_rt_transaction;
 use HTML::Entities;
 
-$DEBUG = 0;
+$DEBUG = 2;
+$me = '[FS::ClientAPI::MyAccount]';
 
 #false laziness with FS::cust_main
 BEGIN {
@@ -56,24 +58,59 @@ sub _cache {
 }
 
 sub skin_info {
-  #my $p = shift;
+  my $p = shift;
+
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  #return { 'error' => $session } if $context eq 'error';
+
+  my $agentnum = '';
+  if ( $context eq 'customer' ) {
+
+    my $sth = dbh->prepare('SELECT agentnum FROM cust_main WHERE custnum = ?')
+      or die dbh->errstr;
+
+    $sth->execute($custnum) or die $sth->errstr;
+
+    $agentnum = $sth->fetchrow_arrayref->[0]
+      or die "no agentnum for custnum $custnum";
+
+  }
+  # elsif ( $context eq 'agent' ) {
 
   my $conf = new FS::Conf;
 
-  use vars qw($skin_info); #cache for performance.
-  #agentnum eventually...?  but if they're not logged in yet.. ?
+  #false laziness w/Signup.pm
 
-  $skin_info ||= {
-    'head'           => join("\n", $conf->config('selfservice-head') ),
-    'body_header'    => join("\n", $conf->config('selfservice-body_header') ),
-    'body_footer'    => join("\n", $conf->config('selfservice-body_footer') ),
-    'body_bgcolor'   => scalar( $conf->config('selfservice-body_bgcolor') ),
-    'box_bgcolor'    => scalar( $conf->config('selfservice-box_bgcolor')  ),
+  my $skin_info_cache_agent = _cache->get("skin_info_cache_agent$agentnum");
 
-    'company_name'   => scalar($conf->config('company_name')),
-  };
+  if ( $skin_info_cache_agent ) {
 
-  $skin_info;
+    warn "$me loading cached skin info for agentnum $agentnum\n"
+      if $DEBUG > 1;
+
+  } else {
+
+    warn "$me populating skin info cache for agentnum $agentnum\n"
+      if $DEBUG > 1;
+
+    $skin_info_cache_agent = {
+      ( map { $_ => scalar( $conf->config($_, $agentnum) ) }
+        qw( company_name ) ),
+      ( map { $_ => scalar( $conf->config("selfservice-$_", $agentnum ) ) }
+        qw( body_bgcolor box_bgcolor) ),
+      ( map { $_ => join("\n", $conf->config("selfservice-$_", $agentnum ) ) }
+        qw( head body_header body_footer company_address ) ),
+    };
+
+    _cache->set("skin_info_cache_agent$agentnum", $skin_info_cache_agent);
+
+  }
+
+  use Data::Dumper;
+  warn Dumper($skin_info_cache_agent);
+
+  #{ %$skin_info_cache_agent };
+  $skin_info_cache_agent;
 
 }
 
@@ -83,7 +120,7 @@ sub login_info {
   my $conf = new FS::Conf;
 
   my %info = (
-    %{ skin_info() },
+    %{ skin_info($p) },
     'phone_login'  => $conf->exists('selfservice_server-phone_login'),
     'single_domain'=> scalar($conf->config('selfservice_server-single_domain')),
   );
@@ -176,9 +213,9 @@ sub logout {
   my $p = shift;
   if ( $p->{'session_id'} ) {
     _cache->remove($p->{'session_id'});
-    return { %{ skin_info() }, 'error' => '' };
+    return { %{ skin_info($p) }, 'error' => '' };
   } else {
-    return { %{ skin_info() }, 'error' => "Can't resume session" }; #better error message
+    return { %{ skin_info($p) }, 'error' => "Can't resume session" }; #better error message
   }
 }
 
@@ -274,8 +311,6 @@ sub customer_info {
                       scalar($conf->config('countrydefault')),
                       ( $session->{'pkgnum'} ? 1 : 0 ), #nobalance
                     );
-
-    warn $return{small_custview};
 
     $return{name} = $cust_main->first. ' '. $cust_main->get('last');
 
