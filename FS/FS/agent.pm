@@ -247,7 +247,7 @@ sub payment_gateway {
 
   #look for an agent gateway override first
   my $cardtype;
-  if ( $options{method} && $options{method} eq 'CC' ) {
+  if ( $options{method} && $options{method} eq 'CC' && $options{payinfo} ) {
     $cardtype = cardtype($options{payinfo});
   } elsif ( $options{method} && $options{method} eq 'ECHECK' ) {
     $cardtype = 'ACH';
