@@ -66,7 +66,7 @@ my %paytype = (
         batchFileID  => {
           userID        => $username,
           fileDateTime  => time2str('%Y%m%d%H%M%s',time),
-          fileID        => 'batch'.time2str('%Y%m%d',time),
+          fileID        => 'FILEID',
         },
         newOrder => [ map { {
           # $_ here refers to a cust_pay_batch record.

@@ -1,0 +1,109 @@
+#!/usr/bin/perl
+
+use strict;
+use Getopt::Std;
+use Net::SFTP::Foreign;
+use FS::UID qw(adminsuidsetup datasrc);
+use FS::Record qw(qsearch qsearchs);
+use FS::pay_batch;
+use FS::cust_pay_batch;
+use FS::Conf;
+
+use Date::Format 'time2str';
+use File::Temp;
+
+use vars qw( $opt_t $opt_v );
+getopts('vt');
+
+#$Net::SFTP::Foreign::debug = -1;
+sub usage { '
+  Usage:
+      paymentech-download [ -v ] [ -t ] user
+
+'
+}
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+my $tmpdir = File::Temp->newdir();
+
+my $conf = new FS::Conf;
+my @batchconf = $conf->config('batchconfig-paymentech');
+# BIN, terminalID, merchantID, username, password
+my $username = $batchconf[3] or die "no Paymentech batch username configured\n";
+my $password = $batchconf[4] or die "no Paymentech batch password configured\n";
+
+my $host = ($opt_t ? 'orbitalbatchvar.paymentech.net' : 'orbitalbatch.paymentech.net');
+print STDERR "Connecting to $username\@$host...\n" if $opt_v;
+
+my $sftp = Net::SFTP::Foreign->new( host => $host,
+                                    user => $username,
+                                    password => $password,
+                                    timeout => 30,
+                                    );
+die "failed to connect to '$username\@$host'\n(".$sftp->error.")\n" if $sftp->error;
+
+my @files = map { $_->{filename} } @{ $sftp->ls('.', wanted => qr/_resp\.zip$/) };
+die "no response files found\n" if !@files;
+
+BATCH: foreach my $filename (@files) {
+  $filename =~ s/\_resp\.zip$//;
+  print STDERR "Retrieving $filename\n" if $opt_v;
+  $sftp->get("$filename\_resp.zip", "$tmpdir/$filename\_resp.zip");
+  if($sftp->error) {
+    warn "failed to download $filename\n";
+    next BATCH;
+  }
+  system("unzip -P $password -q $tmpdir/$filename\_resp.zip -d $tmpdir");
+  if(! -f "$tmpdir/$filename\_resp.xml") {
+    warn "failed to extract $filename\_resp.xml\n";
+    next BATCH;
+  }
+  open my $fh, "<$tmpdir/$filename\_resp.xml";
+  my ($batchnum) = split ('-', $filename); 
+  $batchnum = sprintf("%d", $batchnum); # remove leading zeroes
+  my $batch = qsearchs('pay_batch', { batchnum => $batchnum });
+  if(! $batch) {
+    warn "batch '$batchnum' not found\n";
+    next BATCH;
+  }
+  print STDERR "Importing batch #$batchnum\n" if $opt_v;
+  my $error = $batch->import_results( filehandle => $fh,
+                                      format     => 'paymentech' );
+  warn "error: $error\n" if $error;
+};
+print STDERR "Finished!\n" if $opt_v;
+
+=head1 NAME
+
+paymentech-download
+
+paymentech-download - Retrieve payment batch responses from Chase Paymentech.
+
+=head1 SYNOPSIS
+
+  paymentech-download [ -v ] [ -t ] user
+
+=head1 DESCRIPTION
+
+Command line tool to download payment batch responses from the Chase Paymentech
+gateway.  These are XML files packaged in ZIP files.  This script downloads them 
+by SFTP, extracts the contents, and passes them to L<FS::pay_batch::import_result>.
+
+-v: Be verbose.
+
+-t: Use the test server.
+
+user: freeside username
+
+=head1 BUGS
+
+=head1 SEE ALSO
+
+L<FS::pay_batch>
+
+=cut
+
+1;
+

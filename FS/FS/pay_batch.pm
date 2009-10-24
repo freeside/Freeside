@@ -196,7 +196,7 @@ sub import_results {
     or die "unknown format $format";
 
   my $filetype            = $info->{'filetype'};      # CSV or fixed
-  my @fields              = @{ $info->{'fields'} };
+  my @fields              = @{ $info->{'fields'}};
   my $formatre            = $info->{'formatre'};      # for fixed
   my @all_values;
   my $begin_condition     = $info->{'begin_condition'};
@@ -256,7 +256,7 @@ sub import_results {
     }
     $rows = [ $rows ] if ref($rows) ne 'ARRAY';
     foreach my $row (@$rows) {
-      push @all_values, [ @{$row}{@xmlkeys} ];
+      push @all_values, [ @{$row}{@xmlkeys}, $row ];
     }
   }
   else {
@@ -269,9 +269,9 @@ sub import_results {
           $dbh->rollback if $oldAutoCommit;
           return "can't parse: ". $csv->error_input();
         };
-        push @all_values, [ $csv->fields() ];
+        push @all_values, [ $csv->fields(), $line ];
       }elsif ($filetype eq 'fixed'){
-        my @values = $line =~ /$formatre/;
+        my @values = ( $line =~ /$formatre/, $line );
         unless (@values) {
           $dbh->rollback if $oldAutoCommit;
           return "can't parse: ". $line;
@@ -288,15 +288,20 @@ sub import_results {
     my @values = @$_;
 
     my %hash;
+    my $line = pop @values;
     foreach my $field ( @fields ) {
       my $value = shift @values;
       next unless $field;
       $hash{$field} = $value;
     }
 
-    if ( defined($end_condition) and &{$end_condition}(\%hash) ) {
+    if ( defined($begin_condition) and &{$begin_condition}(\%hash, $line)) {
+      undef $begin_condition;
+    }
+
+    if ( defined($end_condition) and &{$end_condition}(\%hash, $line) ) {
       my $error;
-      $error = &{$end_hook}(\%hash, $total) if defined($end_hook);
+      $error = &{$end_hook}(\%hash, $total, $line) if defined($end_hook);
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
         return $error;

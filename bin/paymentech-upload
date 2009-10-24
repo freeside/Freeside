@@ -1,0 +1,108 @@
+#!/usr/bin/perl
+
+use strict;
+use Getopt::Std;
+use Net::SFTP::Foreign;
+use FS::UID qw(adminsuidsetup datasrc);
+use FS::Record qw(qsearch qsearchs);
+use FS::pay_batch;
+use FS::cust_pay_batch;
+use FS::Conf;
+
+use Date::Format 'time2str';
+use File::Temp;
+
+use vars qw( $opt_t $opt_v );
+getopts('vt');
+
+#$Net::SFTP::Foreign::debug = -1;
+
+sub usage { '
+  Usage:
+    paymentech-upload [ -v ] [ -t ] user batchnum
+
+'
+}
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+my $batchnum = shift or die &usage;
+my $pay_batch = qsearchs('pay_batch', { batchnum => $batchnum })
+  or die "can't find payment batch '$batchnum'\n";
+
+my $filename = sprintf('%06d',$batchnum) . '-' .time2str('%Y%m%d%H%M%S', time);
+print STDERR "Exporting batch $batchnum to $filename...\n" if $opt_v;
+my $tmpdir = File::Temp->newdir();
+my $text = $pay_batch->export_batch('paymentech');
+$text =~ s!<fileID>FILEID</fileID>!<fileID>$filename</fileID>! 
+  or die "couldn't find FILEID tag\n";
+open OUT, ">$tmpdir/$filename.xml";
+print OUT $text;
+close OUT;
+
+my $conf = new FS::Conf;
+my @batchconf = $conf->config('batchconfig-paymentech');
+# BIN, terminalID, merchantID, username, password
+my $username = $batchconf[3] or die "no Paymentech batch username configured\n";
+my $password = $batchconf[4] or die "no Paymentech batch password configured\n";
+
+# This is less than ideal.
+system("zip -P $password -q -j $tmpdir/$filename.zip $tmpdir/$filename.xml");
+
+die "failed to create zip file\n" if (! -f "$tmpdir/$filename.zip" );
+
+
+#my $host = ($opt_t ? 'orbitalbatchvar.paymentech.net' : 'orbitalbatch.paymentech.net');
+my $host = ($opt_t ? 'orbitalbatchvar.paymentech.net' : '127.0.0.1');
+print STDERR "Connecting to $username\@$host...\n" if $opt_v;
+
+my $sftp = Net::SFTP::Foreign->new( host => $host,
+                                    user => $username,
+                                    password => $password,
+                                    timeout => 30,
+                                    );
+die "failed to connect to '$username\@$host'\n(".$sftp->error.")\n" if $sftp->error;
+
+$sftp->put("$tmpdir/$filename.zip", "$filename.zip")
+  or die "failed to upload file (".$sftp->error.")\n";
+
+print STDERR "Finished!\n" if $opt_v;
+
+=head1 NAME
+
+paymentech-upload
+
+paymentech-upload - Transmit a payment batch to Chase Paymentech via SFTP.
+
+=head1 SYNOPSIS
+
+  paymentech-upload [ -v ] [ -t ] user batchnum
+
+=head1 DESCRIPTION
+
+Command line tool to upload a payment batch to the Chase Paymentech gateway.
+The batch will be exported to the Paymentech XML format, packaged in a ZIP 
+file, and transmitted via SFTP.  Use L<paymentech-download> to retrieve the 
+response file.
+
+-v: Be verbose.
+
+-t: Send the transaction to the test server.
+
+user: freeside username
+
+batchnum: pay_batch primary key
+
+=head1 BUGS
+
+Passing the zip password on the command line is slightly risky.
+
+=head1 SEE ALSO
+
+L<FS::pay_batch>
+
+=cut
+
+1;
+
