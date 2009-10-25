@@ -3854,7 +3854,9 @@ I<description> is a free-text field passed to the gateway.  It defaults to
 
 If an I<invnum> is specified, this payment (if successful) is applied to the
 specified invoice.  If you don't specify an I<invnum> you might want to
-call the B<apply_payments> method.
+call the B<apply_payments> method or set the I<apply> option.
+
+I<apply> can be set to true to apply a resulting payment.
 
 I<quiet> can be set true to surpress email decline notices.
 
@@ -3873,7 +3875,16 @@ sub realtime_bop {
   return $self->_new_realtime_bop(@_)
     if $self->_new_bop_required();
 
-  my( $method, $amount, %options ) = @_;
+  my($method, $amount);
+  my %options = ();
+  if (ref($_[0]) eq 'HASH') {
+    %options = %{$_[0]};
+    $method = $options{method};
+    $amount = $options{amount};
+  } else {
+    ( $method, $amount ) = ( shift, shift );
+    %options = @_;
+  }
   if ( $DEBUG ) {
     warn "$me realtime_bop: $method $amount\n";
     warn "  $_ => $options{$_}\n" foreach keys %options;
@@ -4347,6 +4358,16 @@ sub realtime_bop {
     } else {
 
       $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+      if ( $options{'apply'} ) {
+        my $apply_error = $self->apply_payments_and_credits;
+        if ( $apply_error ) {
+          warn "WARNING: error applying payment: $apply_error\n";
+          #but we still should return no error cause the payment otherwise went
+          #through...
+        }
+      }
+
       return ''; #no error
 
     }
@@ -4802,7 +4823,6 @@ sub _new_bop_required {
   '';
 }
   
-
 =item realtime_collect [ OPTION => VALUE ... ]
 
 Runs a realtime credit card, ACH (electronic check) or phone bill transaction
@@ -4830,7 +4850,9 @@ I<description> is a free-text field passed to the gateway.  It defaults to
 
 If an I<invnum> is specified, this payment (if successful) is applied to the
 specified invoice.  If you don't specify an I<invnum> you might want to
-call the B<apply_payments> method.
+call the B<apply_payments> method or set the I<apply> option.
+
+I<apply> can be set to true to apply a resulting payment.
 
 I<quiet> can be set true to surpress email decline notices.
 
@@ -5513,6 +5535,16 @@ sub _realtime_bop_result {
     } else {
 
       $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+      if ( $options{'apply'} ) {
+        my $apply_error = $self->apply_payments_and_credits;
+        if ( $apply_error ) {
+          warn "WARNING: error applying payment: $apply_error\n";
+          #but we still should return no error cause the payment otherwise went
+          #through...
+        }
+      }
+
       return ''; #no error
 
     }
@@ -6373,7 +6405,6 @@ to outstanding invoice balances in chronological order.
 A hash of optional arguments may be passed.  Currently "manual" is supported.
 If true, a payment receipt is sent instead of a statement when
 'payment_receipt_email' configuration option is set.
-
 
 Dies if there is an error.
 

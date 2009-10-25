@@ -680,7 +680,6 @@ sub process_payment {
 }
 
 sub realtime_collect {
-
   my $p = shift;
 
   my $session = _cache->get($p->{'session_id'})
@@ -695,6 +694,7 @@ sub realtime_collect {
     'method'     => $p->{'method'},
     'pkgnum'     => $session->{'pkgnum'},
     'session_id' => $p->{'session_id'},
+    'apply'      => 1,
   );
   return { 'error' => $error } unless ref( $error );
 
