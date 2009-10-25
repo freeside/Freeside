@@ -15,7 +15,7 @@
                                     FS::UI::Web::cust_header(),
                                   ],
                  'fields'      => [
-                   'invnum',
+                   'display_invnum',
                    sub { sprintf($money_char.'%.2f', shift->get('owed') ) },
                    sub { sprintf($money_char.'%.2f', shift->get('net') ) },
                    sub { sprintf($money_char.'%.2f', shift->charged     ) },
@@ -69,15 +69,17 @@ my %search;
 
 if ( $cgi->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/ ) {
 
-  $count_query =
-    "SELECT COUNT(*) FROM cust_bill $join_cust_main".
-    "  WHERE invnum = $2 AND $agentnums_sql"; #agent virtualization
+  my $invnum_or_invid = "( invnum = $2 OR agent_invid = $2 )";
+  my $where = "WHERE $invnum_or_invid AND $agentnums_sql";
+  
+  $count_query = "SELECT COUNT(*) FROM cust_bill $join_cust_main $where";
+
   $sql_query = {
+    #'select'    => '*',
     'table'     => 'cust_bill',
     'addl_from' => $join_cust_main,
-    'hashref'   => { 'invnum' => $2 },
-    #'select'    => '*',
-    'extra_sql' => " AND $agentnums_sql", #agent virtualization
+    'hashref'   => {},
+    'extra_sql' => $where,
   };
 
 } else {
