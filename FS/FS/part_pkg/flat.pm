@@ -223,7 +223,7 @@ sub usage_valuehash {
 
 sub reset_usage {
   my($self, $cust_pkg, %opt) = @_;
-  warn "    resetting usage counters" if $opt{debug} > 1;
+  warn "   resetting usage counters" if defined($opt{debug}) && $opt{debug} > 1;
   my %values = $self->usage_valuehash;
   if ($self->option('usage_rollover', 1)) {
     $cust_pkg->recharge(\%values);
