@@ -149,6 +149,13 @@ sub check {
     $self->ut_numbern('billpaypkgnum')
     || $self->ut_foreign_key('billpaynum', 'cust_bill_pay', 'billpaynum' )
     || $self->ut_foreign_key('billpkgnum', 'cust_bill_pkg', 'billpkgnum' )
+    || $self->ut_foreign_keyn('pkgnum', 'cust_pkg', 'pkgnum')
+    || $self->ut_foreign_keyn('billpkgtaxlocationnum',
+                              'cust_bill_pkg_tax_location',
+                              'billpkgtaxlocationnum')
+    || $self->ut_foreign_keyn('billpkgtaxratelocationnum',
+                              'cust_bill_pkg_tax_rate_location',
+                              'billpkgtaxratelocationnum')
     || $self->ut_money('amount')
     || $self->ut_enum('setuprecur', [ 'setup', 'recur' ] )
     || $self->ut_numbern('sdate')

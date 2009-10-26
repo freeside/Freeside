@@ -90,16 +90,71 @@ function changed(what) {
 
     if ( dst == <% $dst->$dst_pkey %> ) {
       what.form.amount.value = "<% min($dst->$dst_unapplied, $unapplied) %>";
+%     if ($use_sub_dst_thing) {
+        what.form.display_amount.value = "<% min($dst->$dst_unapplied, $unapplied) %>";
+
+        var rownum=0
+        var table = document.getElementById('ApplicationTable');
+        while(table.rows[2]) {
+          table.deleteRow(2);
+        }
+%       my $app_class = "FS::$link_table";
+%       my $temp_app = $app_class->new(
+%         { $src_pkey => $src_pkeyvalue,
+%           $dst_pkey => $dst->$dst_pkey,
+%           'amount'  => min($dst->$dst_unapplied, $unapplied),
+%         }
+%       );
+%       my %apphash = ();
+%       my $listref_or_error = $temp_app->calculate_applications;
+%       %apphash = map { &{$key_generator}($_), $_ } @$listref_or_error
+%         if ref($listref_or_error);
+%       foreach my $cbp ( $dst->open_cust_bill_pkg ) {
+%         my $desc = $cbp->desc;
+%         my $total_owed = $cbp->owed_setup + $cbp->owed_recur;
+%         my $key = &{$key_generator}([ $cbp, 0, {} ]);
+%         my $amount = exists($apphash{ $key }) ? $apphash{ $key }->[1] : 0;
+%         unless ( $cbp->pkgnum ) {
+%           foreach my $taxX ( $cbp->cust_bill_pkg_tax_Xlocation ) {
+%             my $pkey = $taxX->primary_key;
+%             my $owed = $taxX->owed;
+%             my $key = &{$key_generator}([ $cbp, 0, { $pkey => $taxX->$pkey } ]);
+%             my $toapp = exists($apphash{ $key }) ? $apphash{ $key }->[1] : 0;
+              <% &{$row_generator}( $cbp, $taxX->desc, $owed, $toapp, $taxX->$pkey ) %>
+%             $total_owed -= $owed;
+%             $amount -= $toapp;
+%           }
+%           $desc .= ' (default)';
+%         }
+%         if ( $total_owed > 0 ) {
+            <% &{$row_generator}($cbp, $desc, $total_owed, $amount, '') %>
+%         }
+%       }
+%     }
     }
 
 % } 
+
+}
+
+function sub_changed(what) {
+
+  var amount = 0;
+  var table = document.getElementById('ApplicationTable');
+  var i = table.rows.length;
+  while(i-- > 2) {
+    var amount_input = table.rows[i].getElementsByTagName('input').item(0);
+    amount += parseFloat( amount_input.value ) || 0; 
+  }
+  what.form.amount.value = parseFloat(amount).toFixed(2);
+  what.form.display_amount.value = parseFloat(amount).toFixed(2);
 
 }
 </SCRIPT>
 
 Apply to:
 
-<TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>
+<TABLE ID="ApplicationTable" BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>
 
 <TR>
   <TD ALIGN="right"><% $dst_thing %>: </TD>
@@ -116,7 +171,10 @@ Apply to:
 
 <TR>
   <TD ALIGN="right">Amount: </TD>
-  <TD><% $money_char %><INPUT TYPE="text" NAME="amount" VALUE="<% $amount %>" SIZE=8 MAXLENGTH=8></TD>
+  <TD><% $money_char %><INPUT TYPE="text" NAME="<% $use_sub_dst_thing ? 'display_' : '' %>amount" VALUE="<% $amount %>" SIZE=8 MAXLENGTH=8 <% $use_sub_dst_thing ? 'DISABLED' : '' %> STYLE="text-align:right;"></TD>
+% if ($use_sub_dst_thing) {
+  <INPUT TYPE="hidden" NAME="amount" VALUE="<% $amount %>" >
+% }
 </TR>
 
 </TABLE>
@@ -143,6 +201,13 @@ my $dst_thing = ucfirst($opt{'dst_thing'});
 my $dst_table = $opt{'dst_table'};
 my $dst_pkey = dbdef->table($dst_table)->primary_key;
 my $dst_unapplied = $dst_table eq 'cust_bill' ? 'owed' : 'unapplied';
+
+$opt{form_action} =~ /^process\/(.*)\./ or die "bad form action";
+my $link_table = $1;
+
+my $use_sub_dst_thing = 0;
+$use_sub_dst_thing = 1
+  if ( $dst_table eq 'cust_bill' && $conf->exists("${link_table}_pkg-manual") );
 
 my $to = $dst_table eq 'cust_refund' ? ' to Refund' : '';
 
@@ -173,5 +238,60 @@ my @dst = sort {    $a->_date     <=> $b->_date
                }
           grep { $_->$dst_unapplied != 0 }
           qsearch($dst_table, { 'custnum' => $src->custnum } );
+
+my $row_generator = sub {
+  my ($cust_bill_pkg, $desc, $owed, $amount, $taxXnum) = @_;
+  my $id = $cust_bill_pkg->pkgnum || 'Tax';
+  my $billpkgnum = $cust_bill_pkg->billpkgnum;
+
+  $amount = sprintf("%.2f", $amount);
+  qq!
+      var tablebody = document.getElementsByTagName('tbody').item(0);
+      var row = table.insertRow(rownum+2);
+      var pkg_cell = document.createElement('TD');
+      pkg_cell.style.textAlign = 'right';
+      pkg_cell.innerHTML = "$id - $desc - $owed:";
+      var amount_cell = document.createElement('TD');
+      amount_cell.innerHTML = "$money_char";
+      var amount_input = document.createElement('INPUT');
+      amount_input.setAttribute('name', 'subamount'+rownum);
+      amount_input.setAttribute('id',   'subamount'+rownum);
+      amount_input.style.textAlign = 'right';
+      amount_input.setAttribute('size', 8);
+      amount_input.setAttribute('maxlength', 8);
+      amount_input.setAttribute('rownum', rownum);
+      amount_input.setAttribute('value', "$amount");
+      amount_input.setAttribute('onChange', "sub_changed(this);");
+      amount_cell.appendChild(amount_input);
+      var subnum_input = document.createElement('INPUT');
+      subnum_input.setAttribute('name', 'subnum'+rownum);
+      subnum_input.setAttribute('id',   'subnum'+rownum);
+      subnum_input.setAttribute('type', 'hidden');
+      subnum_input.setAttribute('rownum', rownum);
+      subnum_input.setAttribute('value', "$billpkgnum");
+      amount_cell.appendChild(subnum_input);
+      var taxnum_input = document.createElement('INPUT');
+      taxnum_input.setAttribute('name', 'taxXlocationnum'+rownum);
+      taxnum_input.setAttribute('id',   'taxXlocationnum'+rownum);
+      taxnum_input.setAttribute('type', 'hidden');
+      taxnum_input.setAttribute('rownum', rownum);
+      taxnum_input.setAttribute('value', "$taxXnum");
+      amount_cell.appendChild(taxnum_input);
+      row.appendChild(pkg_cell);
+      row.appendChild(amount_cell);
+      rownum++;
+    !;
+};
+
+my $key_generator = sub {
+  my $listref = shift;
+  my ($cust_bill_pkg, $amount, $hashref) = @$listref;
+  my $setup_or_recur = $cust_bill_pkg->setup > 0 ? 'setup' : 'recur';
+  my $taxlinenum = $hashref->{billpkgtaxlocationnum} ||
+                   $hashref->{billpkgtaxratelocationnum} ||
+                   '';
+                   
+  join(':', $cust_bill_pkg->billpkgnum, $setup_or_recur, $taxlinenum);
+};
 
 </%init>

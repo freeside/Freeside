@@ -51,6 +51,14 @@ my $cust_main = qsearchs('cust_main', { 'custnum' => $src->custnum } )
 
 my $custnum = $cust_main->custnum;
 
+my @subnames = grep { /.+/ } map { /^subnum(\d+)$/ ? $1 : '' } $cgi->param;
+my @subitems = map { [ $cgi->param("subnum$_"), $cgi->param("subamount$_"), $cgi->param("taxXlocationnum$_") ] }
+               @subnames;
+{ local $^W = 0; @subitems = grep { $_->[1] + 0 } @subitems; }
+
+my %options = ();
+$options{subitems} = \@subitems if scalar(@subitems);
+ 
 my $new;
 #  $new = new FS::cust_refund ( {
 #    'reason'  => 'Refunding payment', #enter reason in UI
@@ -72,6 +80,8 @@ my $new;
 
 #}
 
-my $error = $new->insert( 'manual' => 1 );
+
+$options{manual} = 1;
+my $error = $new->insert( %options );
 
 </%init>

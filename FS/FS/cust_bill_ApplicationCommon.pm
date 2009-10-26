@@ -112,8 +112,7 @@ Auto-applies this invoice application to specific line items, if possible.
 
 =cut
 
-sub apply_to_lineitems {
-  #my $self = shift;
+sub calculate_applications {
   my( $self, %options ) = @_;
 
   return '' if $skip_apply_to_lineitems_hack;
@@ -122,29 +121,43 @@ sub apply_to_lineitems {
 
   my $conf = new FS::Conf;
 
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
-
-  my $oldAutoCommit = $FS::UID::AutoCommit;
-  local $FS::UID::AutoCommit = 0;
-  my $dbh = dbh;
-
   my @open = $self->cust_bill->open_cust_bill_pkg; #FOR UPDATE...?
+
+  if ( exists($options{subitems}) ) {
+    my $i = 0;
+    my %open = ();
+    $open{$_->billpkgnum} = $i++ foreach @open;
+
+    foreach my $listref ( @{$options{subitems}} ) {
+      my ($billpkgnum, $itemamount, $taxlocationnum) = @$listref;
+      return "Can't apply a ". $self->_app_source_name. ' of $'. $listref->[1].
+             " to line item $billpkgnum which is not open"
+        unless exists($open{$billpkgnum});
+      my $itemindex = $open{$billpkgnum};
+      my %taxhash = ();
+      if ($taxlocationnum) {
+        %taxhash = map { ($_->primary_key => $_->get($_->primary_key)) }
+                   grep { $_->get($_->primary_key) == $taxlocationnum }
+                   $open[$itemindex]->cust_bill_pkg_tax_Xlocation;
+
+        return "No tax line item with a key value of $taxlocationnum exists"
+          unless scalar(%taxhash);
+      }
+      push @apply, [ $open[$itemindex], $itemamount, { %taxhash } ];
+    }
+    return \@apply;
+  }
+
   @open = grep { $_->pkgnum == $self->pkgnum } @open
     if $conf->exists('pkg-balances') && $self->pkgnum;
   warn "$me ". scalar(@open). " open line items for invoice ".
        $self->cust_bill->invnum. ": ". join(', ', @open). "\n"
     if $DEBUG;
   my $total = 0;
-  $total += $_->setup + $_->recur foreach @open;
+  $total += $_->owed_setup + $_->owed_recur foreach @open;
   $total = sprintf('%.2f', $total);
 
   if ( $self->amount > $total ) {
-    $dbh->rollback if $oldAutoCommit;
     return "Can't apply a ". $self->_app_source_name. ' of $'. $self->amount.
            " greater than the remaining owed on line items (\$$total)";
   }
@@ -159,7 +172,7 @@ sub apply_to_lineitems {
       if $DEBUG;
 
     #@apply = map { [ $_, $_->amount ]; } @open;
-    @apply = map { [ $_, $_->setup || $_->recur ]; } @open;
+    @apply = map { [ $_, $_->owed_setup + 0 || $_->owed_recur + 0 ]; } @open;
 
   } else {
 
@@ -167,8 +180,8 @@ sub apply_to_lineitems {
     # - amount exactly and uniquely matches a single open lineitem
     #   (you must be trying to pay or credit that item, then)
 
-    my @same = grep {    $_->setup == $self->amount
-                      || $_->recur == $self->amount
+    my @same = grep {    $_->owed_setup == $self->amount
+                      || $_->owed_recur == $self->amount
                     }
                     @open;
     if ( scalar(@same) == 1 ) {
@@ -213,7 +226,7 @@ sub apply_to_lineitems {
       my @items = map { $_->[0] } grep { $weight == $_->[1] } @openweight;
 
       my $itemtotal = 0;
-      foreach my $item (@items) { $itemtotal += $item->setup || $item->recur; }
+      foreach my $item (@items) { $itemtotal += $item->owed_setup + 0 || $item->owed_recur + 0; }
       my $applytotal = min( $itemtotal, $remaining_amount );
       $remaining_amount -= $applytotal;
 
@@ -234,7 +247,7 @@ sub apply_to_lineitems {
 
 	my @newitems = ();
 	foreach my $item ( @items ) {
-	  my $itemamount = $item->setup || $item->recur;
+	  my $itemamount = $item->owed_setup + 0 || $item->owed_recur + 0;
           if ( $itemamount < $applyeach ) {
 	    warn "$me applying full $itemamount".
 	         " to small line item (cust_bill_pkg ". $item->billpkgnum. ")\n"
@@ -265,7 +278,6 @@ sub apply_to_lineitems {
       if ( abs($diff) > scalar(@items) ) {
         #we must have done something really wrong, the difference is more than
 	#a penny an item
-	$dbh->rollback if $oldAutoCommit;
 	return 'Error distributing pennies applying '. $self->_app_source_name.
 	       " - can't distribute difference of $diff pennies".
 	       ' among '. scalar(@items). ' line items';
@@ -288,7 +300,6 @@ sub apply_to_lineitems {
       }
 
       if ( sprintf('%.0f', $diff ) ) {
-        $dbh->rollback if $oldAutoCommit;
 	return "couldn't futz with pennies enough: still $diff left";
       }
 
@@ -308,12 +319,69 @@ sub apply_to_lineitems {
 
   }
 
+  # break down lineitem amounts for tax lines
+  # could expand @open above, instead, for a slightly different magic effect
+  my @result = ();
+  foreach my $apply ( @apply ) {
+    my @sub_lines = $apply->[0]->cust_bill_pkg_tax_Xlocation;
+    my $amount = $apply->[1];
+    warn "applying ". $apply->[1]. " to ". $apply->[0]->desc
+      if $DEBUG;
+    
+    foreach my $subline ( @sub_lines ) {
+      my $owed = $subline->owed;
+      push @result, [ $apply->[0],
+                      sprintf('%.2f', min($amount, $owed) ),
+                      { $subline->primary_key => $subline->get($subline->primary_key) },
+                    ];
+      $amount -= $owed;
+      $amount = 0 if $amount < 0;
+      last unless $amount;
+    }
+    if ( $amount > 0 ) {
+      push @result, [ $apply->[0], sprintf('%.2f', $amount), {} ];
+    }
+  }
+
+  \@result;
+
+}
+
+sub apply_to_lineitems {
+  #my $self = shift;
+  my( $self, %options ) = @_;
+
+  return '' if $skip_apply_to_lineitems_hack;
+
+
+
+  my $conf = new FS::Conf;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $listref_or_error = $self->calculate_applications(%options);
+  unless (ref($listref_or_error)) {
+    $dbh->rollback if $oldAutoCommit;
+    return $listref_or_error;
+  }
+
+  my @apply = @$listref_or_error;
+
   # do the applicaiton(s)
   my $table = $self->lineitem_breakdown_table;
   my $source_key = dbdef->table($self->table)->primary_key;
   my $applied = 0;
   foreach my $apply ( @apply ) {
-    my ( $cust_bill_pkg, $amount ) = @$apply;
+    my ( $cust_bill_pkg, $amount, $taxcreditref ) = @$apply;
     $applied += $amount;
     my $application = "FS::$table"->new( {
       $source_key  => $self->$source_key(),
@@ -322,6 +390,7 @@ sub apply_to_lineitems {
       'setuprecur' => ( $cust_bill_pkg->setup > 0 ? 'setup' : 'recur' ),
       'sdate'      => $cust_bill_pkg->sdate,
       'edate'      => $cust_bill_pkg->edate,
+      %$taxcreditref,
     });
     my $error = $application->insert(%options);
     if ( $error ) {

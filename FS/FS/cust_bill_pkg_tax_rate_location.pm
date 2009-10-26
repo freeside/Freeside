@@ -5,7 +5,9 @@ use base qw( FS::Record );
 use FS::Record qw( qsearch qsearchs );
 use FS::cust_bill_pkg;
 use FS::cust_pkg;
-use FS::cust_location;
+use FS::tax_rate_location;
+use FS::cust_bill_pay_pkg;
+use FS::cust_credit_bill_pkg;
 
 =head1 NAME
 
@@ -120,6 +122,85 @@ sub check {
   return $error if $error;
 
   $self->SUPER::check;
+}
+
+=item cust_bill_pkg
+
+Returns the associated cust_bill_pkg object
+
+=cut
+
+sub cust_bill_pkg {
+  my $self = shift;
+  qsearchs( 'cust_bill_pkg', { 'billpkgnum' => $self->billpkgnum }  );
+}
+
+=item tax_rate_location
+
+Returns the associated tax_rate_location object
+
+=cut
+
+sub tax_rate_location {
+  my $self = shift;
+  qsearchs( 'tax_rate_location',
+            { 'taxratelocationnum' => $self->taxratelocationnum }
+  );
+}
+
+=item desc
+
+Returns a description for this tax line item constituent.  Currently this
+is the desc of the associated line item followed by the
+state,county,city,locationtaxid for the location in parentheses.
+
+=cut
+
+sub desc {
+  my $self = shift;
+  my $tax_rate_location = $self->tax_rate_location;
+  my $location = join(', ', grep { $_ }
+                            map { $tax_rate_location->$_ }
+                            qw( state county city )
+  );
+  $location .= ( $location && $self->locationtaxid ) ? ', ' : '';
+  $location .= $self->locationtaxid;
+  $self->cust_bill_pkg->desc. " ($location)";
+}
+
+
+=item owed
+
+Returns the amount owed (still outstanding) on this tax line item which is 
+the amount of this record minus all payment applications and credit
+applications.
+
+=cut
+
+sub owed {
+  my $self = shift;
+  my $balance = $self->amount;
+  $balance -= $_->amount foreach ( $self->cust_bill_pay_pkg('setup') );
+  $balance -= $_->amount foreach ( $self->cust_credit_bill_pkg('setup') );
+  $balance = sprintf( '%.2f', $balance );
+  $balance =~ s/^\-0\.00$/0.00/; #yay ieee fp
+  $balance;
+}
+
+sub cust_bill_pay_pkg {
+  my $self = shift;
+  qsearch( 'cust_bill_pay_pkg', { map { $_ => $self->$_ }
+                                  qw( billpkgtaxratelocationnum billpkgnum )
+                                }
+         );
+}
+
+sub cust_credit_bill_pkg {
+  my $self = shift;
+  qsearch( 'cust_credit_bill_pkg', { map { $_ => $self->$_ }
+                                     qw( billpkgtaxratelocationnum billpkgnum )
+                                   }
+         );
 }
 
 =back

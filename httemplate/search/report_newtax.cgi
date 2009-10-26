@@ -17,6 +17,9 @@
     <TH CLASS="grid" BGCOLOR="#cccccc"></TH>
     <TH CLASS="grid" BGCOLOR="#cccccc"></TH>
     <TH CLASS="grid" BGCOLOR="#cccccc">Tax collected</TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc">&nbsp;&nbsp;&nbsp;&nbsp;</TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc"></TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc">Tax credited</TH>
   </TR>
 % my $bgcolor1 = '#eeeeee';
 % my $bgcolor2 = '#ffffff';
@@ -41,6 +44,12 @@
       <% $tax->{base} ? qq!<TD CLASS="grid" BGCOLOR="$bgcolor"></TD>! : '' %>
       <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ALIGN="right">
         <A HREF="<% $baselink. $link %>;istax=1"><% $money_char %><% sprintf('%.2f', $tax->{'tax'} ) %></A>
+      </TD>
+      <% !($tax->{base}) ? qq!<TD CLASS="grid" BGCOLOR="$bgcolor"></TD>! : '' %>
+      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"></TD>
+      <% $tax->{base} ? qq!<TD CLASS="grid" BGCOLOR="$bgcolor"></TD>! : '' %>
+      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ALIGN="right">
+        <A HREF="<% $baselink. $link %>;istax=1;iscredit=rate"><% $money_char %><% sprintf('%.2f', $tax->{'credit'} ) %></A>
       </TD>
       <% !($tax->{base}) ? qq!<TD CLASS="grid" BGCOLOR="$bgcolor"></TD>! : '' %>
     </TR>
@@ -90,6 +99,7 @@ my @taxparam = ( 'itemdesc', 'tax_rate_location.state', 'tax_rate_location.count
 my $select = 'DISTINCT itemdesc,locationtaxid,tax_rate_location.state,tax_rate_location.county,tax_rate_location.city';
 
 my $tax = 0;
+my $credit = 0;
 my %taxes = ();
 my %basetaxes = ();
 foreach my $t (qsearch({ table     => 'cust_bill_pkg',
@@ -120,6 +130,18 @@ foreach my $t (qsearch({ table     => 'cust_bill_pkg',
     $tax += $x;
     $taxes{$label}->{'tax'} += $x;
 
+    my $creditfrom = " JOIN cust_credit_bill_pkg USING (billpkgnum,billpkgtaxratelocationnum) ";
+    my $creditwhere = "FROM cust_bill_pkg $addl_from $creditfrom $where ".
+      "AND payby != 'COMP' ".
+      "AND ". join( ' AND ', map { "( $_ = ? OR ? = '' AND $_ IS NULL)" } @taxparam );
+
+    $sql = "SELECT SUM(cust_credit_bill_pkg.amount) ".
+           " $creditwhere AND cust_bill_pkg.pkgnum = 0";
+
+    my $y = scalar_sql($t, [ map { $_, $_ } @params ], $sql );
+    $credit += $y;
+    $taxes{$label}->{'credit'} += $y;
+
     unless ( exists( $taxes{$baselabel} ) ) {
 
       $basetaxes{$baselabel}->{'label'} = $baselabel;
@@ -129,6 +151,7 @@ foreach my $t (qsearch({ table     => 'cust_bill_pkg',
     }
 
     $basetaxes{$baselabel}->{'tax'} += $x;
+    $basetaxes{$baselabel}->{'credit'} += $y;
       
   }
 
@@ -160,6 +183,7 @@ push @taxes, {
   'label'          => 'Total',
   'url_param'      => '',
   'tax'            => $tax,
+  'credit'         => $credit,
   'base'           => 1,
 };
 

@@ -780,6 +780,24 @@ sub _cust_tax_exempt_pkg {
 
 }
 
+=item cust_bill_pkg_tax_Xlocation
+
+Returns the list of associated cust_bill_pkg_tax_location and/or
+cust_bill_pkg_tax_rate_location objects
+
+=cut
+
+sub cust_bill_pkg_tax_Xlocation {
+  my $self = shift;
+
+  my %hash = ( 'billpkgnum' => $self->billpkgnum );
+
+  (
+    qsearch ( 'cust_bill_pkg_tax_location', { %hash  } ),
+    qsearch ( 'cust_bill_pkg_tax_rate_location', { %hash } )
+  );
+
+}
 
 =back
 

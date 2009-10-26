@@ -22,6 +22,7 @@
     <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2>Tax owed</TH>
 % unless ( $cgi->param('show_taxclasses') ) { 
       <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2>Tax invoiced</TH>
+      <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2>Tax credited</TH>
 % } 
   </TR>
 
@@ -118,6 +119,10 @@
           <A HREF="<% $baselink. $invlink %>;istax=1"
           ><% &$money_sprintf( $region->{'tax'} ) %></A>
         </TD>
+        <<%$tdh%> ALIGN="right">
+          <A HREF="<% $baselink. $invlink %>;istax=1;iscredit=1"
+          ><% &$money_sprintf( $region->{'credit'} ) %></A>
+        </TD>
 % } 
 
     </TR>
@@ -132,6 +137,7 @@
     <TR>
       <TH CLASS="grid" BGCOLOR="#cccccc"></TH>
       <TH CLASS="grid" BGCOLOR="#cccccc">Tax invoiced</TH>
+      <TH CLASS="grid" BGCOLOR="#cccccc">Tax credited</TH>
     </TR>
 
 %   #some false laziness w/above
@@ -463,8 +469,17 @@ if ( $conf->exists('tax-pkg_address') ) {
   $taxwhere =~ s/cust_pkg\.locationnum/cust_bill_pkg_tax_location.locationnum/g;
 
 }
+my $creditfromwhere = $taxfromwhere. 
+   " JOIN cust_credit_bill_pkg USING (billpkgnum";
+$creditfromwhere .= " ,billpkgtaxlocationnum"
+   if $conf->exists('tax-pkg_address');
+$creditfromwhere .= ")";
+
 $taxfromwhere .= " $taxwhere "; #AND payby != 'COMP' ";
+$creditfromwhere .= " $taxwhere AND billpkgtaxratelocationnum IS NULL"; #AND payby != 'COMP' ";
+
 my @taxparam = @base_param;
+
 
 #should i be a cust_main_county method or something
 #need to pass in $taxfromwhere & @taxparam???
@@ -479,6 +494,21 @@ my $_taxamount_sub = sub {
 
   my $sql = "SELECT SUM(cust_bill_pkg.setup+cust_bill_pkg.recur) ".
             " $taxfromwhere AND cust_bill_pkg.pkgnum = 0 $named_tax";
+
+  scalar_sql($r, \@taxparam, $sql );
+};
+
+my $_creditamount_sub = sub {
+  my $r = shift;
+
+  #match itemdesc if necessary!
+  my $named_tax =
+    $r->taxname
+      ? 'AND itemdesc = '. dbh->quote($r->taxname)
+      : "AND ( itemdesc IS NULL OR itemdesc = '' OR itemdesc = 'Tax' )";
+
+  my $sql = "SELECT SUM(cust_credit_bill_pkg.amount) ".
+            " $creditfromwhere AND cust_bill_pkg.pkgnum = 0 $named_tax";
 
   scalar_sql($r, \@taxparam, $sql );
 };
@@ -503,6 +533,7 @@ my $group_test = sub {
 };
 
 my $tot_tax = 0;
+my $tot_credit = 0;
 #foreach my $label ( keys %regions ) {
 foreach my $r ( qsearch(\%qsearch) ) {
 
@@ -520,6 +551,13 @@ foreach my $r ( qsearch(\%qsearch) ) {
 
   $regions{$label}->{'tax'} += $x;
   $tot_tax += $x unless $cgi->param('show_taxclasses');
+
+  ## calculate credit for this region
+
+  $x = &{$_creditamount_sub}($r);
+
+  $regions{$label}->{'credit'} += $x;
+  $tot_credit += $x unless $cgi->param('show_taxclasses');
 
 }
 
@@ -541,6 +579,14 @@ if ( $cgi->param('show_taxclasses') ) {
 
     $base_regions{$base_label}->{'tax'} += $x;
     $tot_tax += $x;
+
+    ## calculate credit for this region
+
+    $x = &{$_creditamount_sub}($r);
+
+    $base_regions{$base_label}->{'credit'} += $x;
+    $tot_credit += $x;
+
   }
 
 }
@@ -553,7 +599,7 @@ my @regions = keys %regions;
 
 #calculate totals
 my( $total, $tot_taxable, $tot_owed ) = ( 0, 0, 0 );
-my( $exempt_cust, $exempt_pkg, $exempt_monthly ) = ( 0, 0, 0 );
+my( $exempt_cust, $exempt_pkg, $exempt_monthly, $tot_credit ) = ( 0, 0, 0, 0 );
 my %taxclasses = ();
 my %county = ();
 my %state = ();
@@ -565,6 +611,7 @@ foreach (@regions) {
   $exempt_cust    += $regions{$_}->{'exempt_cust'};
   $exempt_pkg     += $regions{$_}->{'exempt_pkg'};
   $exempt_monthly += $regions{$_}->{'exempt_monthly'};
+  $tot_credit     += $regions{$_}->{'credit'};
   $taxclasses{$regions{$_}->{'taxclass'}} = 1
     if $regions{$_}->{'taxclass'};
   $county{$regions{$_}->{'county'}} = 1;
@@ -620,6 +667,7 @@ push @regions, {
   'rate'           => '',
   'owed'           => $tot_owed,
   'tax'            => $tot_tax,
+  'credit'         => $tot_credit,
 };
 
 #-- 

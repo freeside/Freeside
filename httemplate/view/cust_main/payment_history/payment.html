@@ -4,6 +4,7 @@
 
 my( $cust_pay, %opt ) = @_;
 
+my $conf = new FS::Conf;
 my $curuser = $FS::CurrentUser::CurrentUser;
 
 my $payby = $cust_pay->payby;
@@ -38,6 +39,13 @@ if ( $opt{'pkg-balances'} && $cust_pay->pkgnum ) {
   $desc .= ' for '. $cust_pkg->pkg_label_long;
 }
 
+my %cust_bill_pay_width = ('width' => 392);
+my %cust_bill_pay_height = ();
+if ($conf->exists('cust_bill_pay_pkg-manual')) {
+  %cust_bill_pay_width = ('width' => 592);
+  %cust_bill_pay_height = ('height' => 436);
+}
+
 my( $pre, $post, $apply, $ext ) = ( '', '', '', '' );
 if (    scalar(@cust_bill_pay)   == 0
      && scalar(@cust_pay_refund) == 0 ) {
@@ -52,8 +60,8 @@ if (    scalar(@cust_bill_pay)   == 0
                           'action'      => "${p}edit/cust_bill_pay.cgi?".
                                            $cust_pay->paynum,
                           'actionlabel' => 'Apply payment',
-                          'width'       => 392,
-                          #default# 'height' => 336,
+                          %cust_bill_pay_width,
+                          %cust_bill_pay_height,
                       ).
                 ')';
     }
@@ -112,8 +120,8 @@ if (    scalar(@cust_bill_pay)   == 0
                             'action'     => "${p}edit/cust_bill_pay.cgi?".
                                             $cust_pay->paynum,
                             'actionlabel' => 'Apply payment',
-                            'width'      => 392,
-                            #default# 'height' => 336,
+                            %cust_bill_pay_width,
+                            %cust_bill_pay_height,
                         ).
                  ')';
       }

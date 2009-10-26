@@ -4,6 +4,7 @@ by <% $cust_credit->otaker %><% "$reason$desc$apply$delete$unapply" %>
 
 my( $cust_credit, %opt ) = @_;
 
+my $conf = new FS::Conf;
 my $curuser = $FS::CurrentUser::CurrentUser;
 
 my @cust_credit_bill = $cust_credit->cust_credit_bill;
@@ -13,6 +14,13 @@ my $desc = '';
 if ( $opt{'pkg-balances'} && $cust_credit->pkgnum ) {
   my $cust_pkg = qsearchs('cust_pkg', { 'pkgnum' => $cust_credit->pkgnum } );
   $desc .= ' for '. $cust_pkg->pkg_label_long;
+}
+
+my %cust_credit_bill_width = ('width' => 392);
+my %cust_credit_bill_height = ();
+if ($conf->exists('cust_credit_bill_pkg-manual')) {
+  %cust_credit_bill_width = ('width' => 592);
+  %cust_credit_bill_height = ('height' => 436);
 }
 
 my( $pre, $post, $apply, $ext ) = ( '', '', '', '' );
@@ -29,8 +37,8 @@ if (    scalar(@cust_credit_bill)   == 0
                           'action'   => "${p}edit/cust_credit_bill.cgi?".
                                         $cust_credit->crednum,
                           'actionlabel' => 'Apply credit',
-                          'width'    => 392,
-                          #default# 'height' => 336,
+                          %cust_credit_bill_width,
+                          %cust_credit_bill_height,
                       ).
                 ')';
     }
@@ -88,8 +96,8 @@ if (    scalar(@cust_credit_bill)   == 0
                             'action'      => "${p}edit/cust_credit_bill.cgi?".
                                              $cust_credit->crednum,
                             'actionlabel' => 'Apply credit',
-                            'width'       => 392,
-                            #default# 'height' => 336,
+                            %cust_credit_bill_width,
+                            %cust_credit_bill_height,
                         ).
                  ')';
       }

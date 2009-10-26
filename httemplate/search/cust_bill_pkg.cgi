@@ -404,8 +404,6 @@ if ( $cgi->param('pkg_tax') ) {
 
 }
 
-my $where = ' WHERE '. join(' AND ', @where);
-
 my $join_cust =  '      JOIN cust_bill USING ( invnum ) 
                    LEFT JOIN cust_main USING ( custnum ) ';
 
@@ -427,12 +425,26 @@ if ( $cgi->param('nottax') ) {
     $join_pkg .= ' LEFT JOIN cust_bill_pkg_tax_location USING ( billpkgnum )
                    LEFT JOIN cust_location              USING ( locationnum ) ';
 
-    #quelle kludge, false laziness w/report_tax.cgi
-    $where =~ s/cust_pkg\.locationnum/cust_bill_pkg_tax_location.locationnum/g; 
-  } elsif ( scalar( grep( /locationtaxid/, $cgi->param ) ) ) {
+    #quelle kludge, somewhat false laziness w/report_tax.cgi
+    s/cust_pkg\.locationnum/cust_bill_pkg_tax_location.locationnum/g for @where;
+  } elsif ( scalar( grep( /locationtaxid/, $cgi->param ) ) ||
+            $cgi->param('iscredit') eq 'rate') {
     $join_pkg .=
       ' LEFT JOIN cust_bill_pkg_tax_rate_location USING ( billpkgnum ) '.
       ' LEFT JOIN tax_rate_location USING ( taxratelocationnum ) ';
+  }
+
+  if ( $cgi->param('iscredit') ) {
+    $join_pkg .= ' JOIN cust_credit_bill_pkg USING ( billpkgnum';
+    if ( $conf->exists('tax-pkg_address') ) {
+      $join_pkg .= ', billpkgtaxlocationnum )';
+      push @where, "billpkgtaxratelocationnum IS NULL";
+    } elsif ( $cgi->param('iscredit') eq 'rate' ) {
+      $join_pkg .= ', billpkgtaxratelocationnum )';
+    } else {
+      $join_pkg .= ' )';
+      push @where, "billpkgtaxratelocationnum IS NULL";
+    }
   }
 
 } else { 
@@ -444,6 +456,8 @@ if ( $cgi->param('nottax') ) {
                  LEFT JOIN part_pkg USING ( pkgpart ) ';
 
 }
+
+my $where = ' WHERE '. join(' AND ', @where);
 
 if ($use_usage) {
   $count_query .=

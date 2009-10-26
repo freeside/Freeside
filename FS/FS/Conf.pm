@@ -3223,6 +3223,20 @@ worry that config_items is freeside-specific and icky.
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'cust_bill_pay_pkg-manual',
+    'section'     => 'UI',
+    'description' => 'Allow manual application of payments to line items.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'cust_credit_bill_pkg-manual',
+    'section'     => 'UI',
+    'description' => 'Allow manual application of credits to line items.',
+    'type'        => 'checkbox',
+  },
+
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachine", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
