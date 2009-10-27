@@ -2113,6 +2113,13 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'address1-search',
+    'section'     => 'UI',
+    'description' => 'Enable the ability to search the address1 field from customer search.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'address2-search',
     'section'     => 'UI',
     'description' => 'Enable a "Unit" search box which searches the second address field.  Useful for multi-tenant applications.  See also: cust_main-require_address2',

@@ -2,8 +2,12 @@ package FS::cust_main;
 
 require 5.006;
 use strict;
-use vars qw( @ISA @EXPORT_OK $DEBUG $me $conf @encrypted_fields
-             $import $skip_fuzzyfiles $ignore_expired_card @paytypes);
+use vars qw( @ISA @EXPORT_OK $DEBUG $me $conf
+             @encrypted_fields
+             $import $ignore_expired_card
+             $skip_fuzzyfiles @fuzzyfields
+             @paytypes
+           );
 use vars qw( $realtime_bop_decline_quiet ); #ugh
 use Safe;
 use Carp;
@@ -77,8 +81,10 @@ $DEBUG = 0;
 $me = '[FS::cust_main]';
 
 $import = 0;
-$skip_fuzzyfiles = 0;
 $ignore_expired_card = 0;
+
+$skip_fuzzyfiles = 0;
+@fuzzyfields = ( 'first', 'last', 'company', 'address1' );
 
 @encrypted_fields = ('payinfo', 'paycvv');
 sub nohistory_fields { ('paycvv'); }
@@ -1492,9 +1498,7 @@ sub queue_fuzzyfiles_update {
   my $dbh = dbh;
 
   my $queue = new FS::queue { 'job' => 'FS::cust_main::append_fuzzyfiles' };
-  my $error = $queue->insert( map $self->getfield($_),
-                                  qw(first last company)
-                            );
+  my $error = $queue->insert( map $self->getfield($_), @fuzzyfields );
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return "queueing job (transaction rolled back): $error";
@@ -1502,9 +1506,7 @@ sub queue_fuzzyfiles_update {
 
   if ( $self->ship_last ) {
     $queue = new FS::queue { 'job' => 'FS::cust_main::append_fuzzyfiles' };
-    $error = $queue->insert( map $self->getfield("ship_$_"),
-                                 qw(first last company)
-                           );
+    $error = $queue->insert( map $self->getfield("ship_$_"), @fuzzyfields );
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return "queueing job (transaction rolled back): $error";
@@ -4457,9 +4459,9 @@ sub realtime_bop {
 sub _bop_recurring_billing {
   my( $self, %opt ) = @_;
 
-  my $method = $conf->config('credit_card-recurring_billing_flag');
+  my $method = scalar($conf->config('credit_card-recurring_billing_flag'));
 
-  if ( $method eq 'transaction_is_recur' ) {
+  if ( defined($method) && $method eq 'transaction_is_recur' ) {
 
     return 1 if $opt{'trans_is_recur'};
 
@@ -8443,8 +8445,8 @@ sub process_email_search_sql {
 =item fuzzy_search FUZZY_HASHREF [ HASHREF, SELECT, EXTRA_SQL, CACHE_OBJ ]
 
 Performs a fuzzy (approximate) search and returns the matching FS::cust_main
-records.  Currently, I<first>, I<last> and/or I<company> may be specified (the
-appropriate ship_ field is also searched).
+records.  Currently, I<first>, I<last>, I<company> and/or I<address1> may be
+specified (the appropriate ship_ field is also searched).
 
 Additional options are the same as FS::Record::qsearch
 
@@ -8573,15 +8575,18 @@ sub smart_search {
   } 
 
   if ( $search =~ /^\s*(\d+)\s*$/
-            || ( $conf->config('cust_main-agent_custid-format') eq 'ww?d+'
-                 && $search =~ /^\s*(\w\w?\d+)\s*$/
-               )
-          )
+         || ( $conf->config('cust_main-agent_custid-format') eq 'ww?d+'
+              && $search =~ /^\s*(\w\w?\d+)\s*$/
+            )
+         || ( $conf->exists('address1-search' )
+              && $search =~ /^\s*(\d+\-?\w*)\s*$/ #i.e. 1234A or 9432-D
+            )
+     )
   {
 
     my $num = $1;
 
-    if ( $num <= 2147483647 ) { #need a bigint custnum?  wow.
+    if ( $num =~ /^(\d+)$/ && $num <= 2147483647 ) { #need a bigint custnum? wow
       push @cust_main, qsearch( {
         'table'     => 'cust_main',
         'hashref'   => { 'custnum' => $num, %options },
@@ -8595,13 +8600,28 @@ sub smart_search {
       'extra_sql' => " AND $agentnums_sql", #agent virtualization
     } );
 
+    if ( $conf->exists('address1-search') ) {
+      my $len = length($num);
+      $num = lc($num);
+      foreach my $prefix ( '', 'ship_' ) {
+        push @cust_main, qsearch( {
+          'table'     => 'cust_main',
+          'hashref'   => { %options, },
+          'extra_sql' => 
+            ( keys(%options) ? ' AND ' : ' WHERE ' ).
+            " LOWER(SUBSTRING(${prefix}address1 FROM 1 FOR $len)) = '$num' ".
+            " AND $agentnums_sql",
+        } );
+      }
+    }
+
   } elsif ( $search =~ /^\s*(\S.*\S)\s+\((.+), ([^,]+)\)\s*$/ ) {
 
     my($company, $last, $first) = ( $1, $2, $3 );
 
     # "Company (Last, First)"
     #this is probably something a browser remembered,
-    #so just do an exact search
+    #so just do an exact (but case-insensitive) search
 
     foreach my $prefix ( '', 'ship_' ) {
       push @cust_main, qsearch( {
@@ -8670,11 +8690,16 @@ sub smart_search {
 
     #exact
     my $sql = scalar(keys %options) ? ' AND ' : ' WHERE ';
-    $sql .= " (    LOWER(last)         = $q_value
-                OR LOWER(company)      = $q_value
-                OR LOWER(ship_last)    = $q_value
-                OR LOWER(ship_company) = $q_value
-              )";
+    $sql .= " (    LOWER(last)          = $q_value
+                OR LOWER(company)       = $q_value
+                OR LOWER(ship_last)     = $q_value
+                OR LOWER(ship_company)  = $q_value
+            ";
+    $sql .= "   OR LOWER(address1)      = $q_value
+                OR LOWER(ship_address1) = $q_value
+            "
+      if $conf->exists('address1-search');
+    $sql .= " )";
 
     push @cust_main, qsearch( {
       'table'     => 'cust_main',
@@ -8715,6 +8740,13 @@ sub smart_search {
         ;
       }
 
+      if ( $conf->exists('address1-search') ) {
+        push @hashrefs,
+          { 'address1'      => { op=>'ILIKE', value=>"%$value%" }, },
+          { 'ship_address1' => { op=>'ILIKE', value=>"%$value%" }, },
+        ;
+      }
+
       foreach my $hashref ( @hashrefs ) {
 
         push @cust_main, qsearch( {
@@ -8744,6 +8776,10 @@ sub smart_search {
       foreach my $field ( 'last', 'company' ) {
         push @cust_main,
           FS::cust_main->fuzzy_search( { $field => $value }, @fuzopts );
+      }
+      if ( $conf->exists('address1-search') ) {
+        push @cust_main,
+          FS::cust_main->fuzzy_search( { 'address1' => $value }, @fuzopts );
       }
 
     }
@@ -8828,9 +8864,6 @@ sub email_search {
 
 =cut
 
-use vars qw(@fuzzyfields);
-@fuzzyfields = ( 'last', 'first', 'company' );
-
 sub check_and_rebuild_fuzzyfiles {
   my $dir = $FS::UID::conf_dir. "/cache.". $FS::UID::datasrc;
   rebuild_fuzzyfiles() if grep { ! -e "$dir/cust_main.$_" } @fuzzyfields
@@ -8890,7 +8923,7 @@ sub all_X {
   \@array;
 }
 
-=item append_fuzzyfiles LASTNAME COMPANY
+=item append_fuzzyfiles FIRSTNAME LASTNAME COMPANY ADDRESS1
 
 =cut
 
@@ -8903,7 +8936,7 @@ sub append_fuzzyfiles {
 
   my $dir = $FS::UID::conf_dir. "/cache.". $FS::UID::datasrc;
 
-  foreach my $field (qw( first last company )) {
+  foreach my $field (@fuzzyfields) {
     my $value = shift;
 
     if ( $value ) {
