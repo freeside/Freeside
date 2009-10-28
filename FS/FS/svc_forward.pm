@@ -158,9 +158,6 @@ sub insert {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  $error = $self->check;
-  return $error if $error;
-
   $error = $self->SUPER::insert(@_);
   if ($error) {
     $dbh->rollback if $oldAutoCommit;

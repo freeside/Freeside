@@ -113,57 +113,31 @@ If I<depend_jobnum> is set (to a scalar jobnum or an array reference of
 jobnums), all provisioning jobs will have a dependancy on the supplied
 jobnum(s) (they will not run until the specific job(s) complete(s)).
 
-
 =cut
 
-sub insert {
+sub preinsert_hook {
   my $self = shift;
 
-  my $error = $self->check;
+  #return '' unless $self->recnum =~ /^([\w\-]+|\@)\.(([\w\.\-]+\.)+\w+)$/;
+  return '' unless $self->recnum =~ /^([\w\-]+|\@)\.(\d+)$/;
+
+  my( $reczone, $domain_svcnum ) = ( $1, $2 );
+  unless ( $apacheip ) {
+    return "Configuration option apacheip not set; can't autocreate A record";
+           #"for $reczone". $svc_domain->domain;
+  }
+  my $domain_record = new FS::domain_record {
+    'svcnum'  => $domain_svcnum,
+    'reczone' => $reczone,
+    'recaf'   => 'IN',
+    'rectype' => 'A',
+    'recdata' => $apacheip,
+  };
+  my $error = $domain_record->insert;
   return $error if $error;
 
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
-
-  my $oldAutoCommit = $FS::UID::AutoCommit;
-  local $FS::UID::AutoCommit = 0;
-  my $dbh = dbh;
-
-  #if ( $self->recnum =~ /^([\w\-]+|\@)\.(([\w\.\-]+\.)+\w+)$/ ) {
-  if ( $self->recnum =~ /^([\w\-]+|\@)\.(\d+)$/ ) {
-    my( $reczone, $domain_svcnum ) = ( $1, $2 );
-    unless ( $apacheip ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "Configuration option apacheip not set; can't autocreate A record";
-             #"for $reczone". $svc_domain->domain;
-    }
-    my $domain_record = new FS::domain_record {
-      'svcnum'  => $domain_svcnum,
-      'reczone' => $reczone,
-      'recaf'   => 'IN',
-      'rectype' => 'A',
-      'recdata' => $apacheip,
-    };
-    $error = $domain_record->insert;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
-    }
-    $self->recnum($domain_record->recnum);
-  }
-
-  $error = $self->SUPER::insert(@_);
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $error;
-  }
-
-  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-  '';
+  $self->recnum($domain_record->recnum);
+  return '';
 }
 
 =item delete

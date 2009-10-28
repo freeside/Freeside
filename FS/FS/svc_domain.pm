@@ -181,13 +181,6 @@ sub insert {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  $error = $self->check;
-  return $error if $error;
-
-  return "Domain in use (here)"
-    if qsearchs( 'svc_domain', { 'domain' => $self->domain } );
-
-
   $error = $self->SUPER::insert(@_);
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
@@ -390,6 +383,18 @@ sub check {
     or $self->ut_numbern('expiration_date')
     or $self->SUPER::check;
 
+}
+
+sub _check_duplicate {
+  my $self = shift;
+
+  $self->lock_table;
+
+  if ( qsearchs( 'svc_domain', { 'domain' => $self->domain } ) ) {
+    return "Domain in use (here)";
+  } else {
+    return '';
+  }
 }
 
 =item domain_record

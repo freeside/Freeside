@@ -528,42 +528,8 @@ sub insert {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $error = $self->check;
-  return $error if $error;
-
-  if ( $self->svcnum && qsearchs('cust_svc',{'svcnum'=>$self->svcnum}) ) {
-    my $cust_svc = qsearchs('cust_svc',{'svcnum'=>$self->svcnum});
-    unless ( $cust_svc ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "no cust_svc record found for svcnum ". $self->svcnum;
-    }
-    $self->pkgnum($cust_svc->pkgnum);
-    $self->svcpart($cust_svc->svcpart);
-  }
-
-  # set usage fields and thresholds if unset but set in a package def
-  if ( $self->pkgnum ) {
-    my $cust_pkg = qsearchs( 'cust_pkg', { 'pkgnum' => $self->pkgnum } );
-    my $part_pkg = $cust_pkg->part_pkg if $cust_pkg;
-    if ( $part_pkg && $part_pkg->can('usage_valuehash') ) {
-
-      my %values = $part_pkg->usage_valuehash;
-      my $multiplier = $conf->exists('svc_acct-usage_threshold') 
-                         ? 1 - $conf->config('svc_acct-usage_threshold')/100
-                         : 0.20; #doesn't matter
-
-      foreach ( keys %values ) {
-        next if $self->getfield($_);
-        $self->setfield( $_, $values{$_} );
-        $self->setfield( $_. '_threshold', int( $values{$_} * $multiplier ) )
-          if $conf->exists('svc_acct-usage_threshold');
-      }
-
-    }
-  }
-
   my @jobnums;
-  $error = $self->SUPER::insert(
+  my $error = $self->SUPER::insert(
     'jobnums'       => \@jobnums,
     'child_objects' => $self->child_objects,
     %options,
@@ -689,6 +655,31 @@ sub insert {
   } # if ( $cust_pkg )
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  ''; #no error
+}
+
+# set usage fields and thresholds if unset but set in a package def
+sub preinsert_hook_first {
+  my $self = shift;
+
+  return '' unless $self->pkgnum;
+
+  my $cust_pkg = qsearchs( 'cust_pkg', { 'pkgnum' => $self->pkgnum } );
+  my $part_pkg = $cust_pkg->part_pkg if $cust_pkg;
+  return '' unless $part_pkg && $part_pkg->can('usage_valuehash');
+
+  my %values = $part_pkg->usage_valuehash;
+  my $multiplier = $conf->exists('svc_acct-usage_threshold') 
+                     ? 1 - $conf->config('svc_acct-usage_threshold')/100
+                     : 0.20; #doesn't matter
+
+  foreach ( keys %values ) {
+    next if $self->getfield($_);
+    $self->setfield( $_, $values{$_} );
+    $self->setfield( $_. '_threshold', int( $values{$_} * $multiplier ) )
+      if $conf->exists('svc_acct-usage_threshold');
+  }
+
   ''; #no error
 }
 
