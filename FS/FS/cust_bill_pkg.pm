@@ -627,7 +627,8 @@ sub disintegrate {
   }
 
   #split usage from recur
-  my $usage = sprintf( "%.2f", $cust_bill_pkg{recur}->usage );
+  my $usage = sprintf( "%.2f", $cust_bill_pkg{recur}->usage )
+    if exists($cust_bill_pkg{recur});
   warn "usage is $usage\n" if $DEBUG > 1;
   if ($usage) {
     my $cust_bill_pkg_usage =

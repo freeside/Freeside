@@ -34,6 +34,8 @@ Examples:
 
 my %opt = @_;
 
+my $error = '';
+
 my $src_thing = ucfirst($opt{'src_thing'});
 my $src_table = $opt{'src_table'};
 my $src_pkey = dbdef->table($src_table)->primary_key;
@@ -58,6 +60,10 @@ my @subitems = map { [ $cgi->param("subnum$_"), $cgi->param("subamount$_"), $cgi
 
 my %options = ();
 $options{subitems} = \@subitems if scalar(@subitems);
+
+my $oldAutoCommit = $FS::UID::AutoCommit;
+local $FS::UID::AutoCommit = 0;
+my $dbh = dbh;
  
 my $new;
 #  $new = new FS::cust_refund ( {
@@ -69,6 +75,11 @@ my $new;
 #    'paynum' => $paynum,
 #  } );
 #} else {
+
+  if ($src->amount != $cgi->param('src_amount')) {
+    $src->amount($cgi->param('src_amount'));
+    $error = $src->replace;
+  }
 
   my $class = 'FS::'. $opt{link_table};
 
@@ -82,6 +93,11 @@ my $new;
 
 
 $options{manual} = 1;
-my $error = $new->insert( %options );
+$error ||= $new->insert( %options );
 
+if ($error) {
+  $dbh->rollback if $oldAutoCommit;
+} else {
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+}
 </%init>

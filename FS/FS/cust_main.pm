@@ -2623,140 +2623,17 @@ sub bill {
 
   }
 
-  warn "having a look at the taxes we found...\n" if $DEBUG > 2;
+  my $listref_or_error =
+    $self->calculate_taxes( \@cust_bill_pkg, \%taxlisthash, $invoice_time);
 
-  # keys are tax names (as printed on invoices / itemdesc )
-  # values are listrefs of taxlisthash keys (internal identifiers)
-  my %taxname = ();
-
-  # keys are taxlisthash keys (internal identifiers)
-  # values are (cumulative) amounts
-  my %tax = ();
-
-  # keys are taxlisthash keys (internal identifiers)
-  # values are listrefs of cust_bill_pkg_tax_location hashrefs
-  my %tax_location = ();
-
-  # keys are taxlisthash keys (internal identifiers)
-  # values are listrefs of cust_bill_pkg_tax_rate_location hashrefs
-  my %tax_rate_location = ();
-
-  foreach my $tax ( keys %taxlisthash ) {
-    my $tax_object = shift @{ $taxlisthash{$tax} };
-    warn "found ". $tax_object->taxname. " as $tax\n" if $DEBUG > 2;
-    warn " ". join('/', @{ $taxlisthash{$tax} } ). "\n" if $DEBUG > 2;
-    my $hashref_or_error =
-      $tax_object->taxline( $taxlisthash{$tax},
-                            'custnum'      => $self->custnum,
-                            'invoice_time' => $invoice_time
-                          );
-    unless ( ref($hashref_or_error) ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $hashref_or_error;
-    }
-    unshift @{ $taxlisthash{$tax} }, $tax_object;
-
-    my $name   = $hashref_or_error->{'name'};
-    my $amount = $hashref_or_error->{'amount'};
-
-    #warn "adding $amount as $name\n";
-    $taxname{ $name } ||= [];
-    push @{ $taxname{ $name } }, $tax;
-
-    $tax{ $tax } += $amount;
-
-    $tax_location{ $tax } ||= [];
-    if ( $tax_object->get('pkgnum') || $tax_object->get('locationnum') ) {
-      push @{ $tax_location{ $tax }  },
-        {
-          'taxnum'      => $tax_object->taxnum, 
-          'taxtype'     => ref($tax_object),
-          'pkgnum'      => $tax_object->get('pkgnum'),
-          'locationnum' => $tax_object->get('locationnum'),
-          'amount'      => sprintf('%.2f', $amount ),
-        };
-    }
-
-    $tax_rate_location{ $tax } ||= [];
-    if ( ref($tax_object) eq 'FS::tax_rate' ) {
-      my $taxratelocationnum =
-        $tax_object->tax_rate_location->taxratelocationnum;
-      push @{ $tax_rate_location{ $tax }  },
-        {
-          'taxnum'             => $tax_object->taxnum, 
-          'taxtype'            => ref($tax_object),
-          'amount'             => sprintf('%.2f', $amount ),
-          'locationtaxid'      => $tax_object->location,
-          'taxratelocationnum' => $taxratelocationnum,
-        };
-    }
-
+  unless ( ref( $listref_or_error ) ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $listref_or_error;
   }
 
-  #move the cust_tax_exempt_pkg records to the cust_bill_pkgs we will commit
-  my %packagemap = map { $_->pkgnum => $_ } @cust_bill_pkg;
-  foreach my $tax ( keys %taxlisthash ) {
-    foreach ( @{ $taxlisthash{$tax} }[1 ... scalar(@{ $taxlisthash{$tax} })] ) {
-      next unless ref($_) eq 'FS::cust_bill_pkg';
-
-      push @{ $packagemap{$_->pkgnum}->_cust_tax_exempt_pkg }, 
-        splice( @{ $_->_cust_tax_exempt_pkg } );
-    }
-  }
-
-  #consolidate and create tax line items
-  warn "consolidating and generating...\n" if $DEBUG > 2;
-  foreach my $taxname ( keys %taxname ) {
-    my $tax = 0;
-    my %seen = ();
-    my @cust_bill_pkg_tax_location = ();
-    my @cust_bill_pkg_tax_rate_location = ();
-    warn "adding $taxname\n" if $DEBUG > 1;
-    foreach my $taxitem ( @{ $taxname{$taxname} } ) {
-      next if $seen{$taxitem}++;
-      warn "adding $tax{$taxitem}\n" if $DEBUG > 1;
-      $tax += $tax{$taxitem};
-      push @cust_bill_pkg_tax_location,
-        map { new FS::cust_bill_pkg_tax_location $_ }
-            @{ $tax_location{ $taxitem } };
-      push @cust_bill_pkg_tax_rate_location,
-        map { new FS::cust_bill_pkg_tax_rate_location $_ }
-            @{ $tax_rate_location{ $taxitem } };
-    }
-    next unless $tax;
-
-    $tax = sprintf('%.2f', $tax );
-    $total_setup = sprintf('%.2f', $total_setup+$tax );
-  
-    my $pkg_category = qsearchs( 'pkg_category', { 'categoryname' => $taxname,
-                                                   'disabled'     => '',
-                                                 },
-                               );
-
-    my @display = ();
-    if ( $pkg_category and
-         $conf->config('invoice_latexsummary') ||
-         $conf->config('invoice_htmlsummary')
-       )
-    {
-
-      my %hash = (  'section' => $pkg_category->categoryname );
-      push @display, new FS::cust_bill_pkg_display { type => 'S', %hash };
-
-    }
-
-    push @cust_bill_pkg, new FS::cust_bill_pkg {
-      'pkgnum'   => 0,
-      'setup'    => $tax,
-      'recur'    => 0,
-      'sdate'    => '',
-      'edate'    => '',
-      'itemdesc' => $taxname,
-      'display'  => \@display,
-      'cust_bill_pkg_tax_location' => \@cust_bill_pkg_tax_location,
-      'cust_bill_pkg_tax_rate_location' => \@cust_bill_pkg_tax_rate_location,
-    };
-
+  foreach my $taxline ( @$listref_or_error ) {
+    $total_setup = sprintf('%.2f', $total_setup+$taxline->setup );
+    push @cust_bill_pkg, $taxline;
   }
 
   #add tax adjustments
@@ -2769,7 +2646,6 @@ sub bill {
   ) {
 
     my $tax = sprintf('%.2f', $cust_tax_adjustment->amount );
-    $total_setup = sprintf('%.2f', $total_setup+$tax );
 
     my $itemdesc = $cust_tax_adjustment->taxname;
     $itemdesc = '' if $itemdesc eq 'Tax';
@@ -2840,6 +2716,183 @@ sub bill {
   ''; #no error
 }
 
+=item calculate_taxes LINEITEMREF TAXHASHREF INVOICE_TIME
+
+This is a weird one.  Perhaps it should not even be exposed.
+
+Generates tax line items (see L<FS::cust_bill_pkg>) for this customer.
+Usually used internally by bill method B<bill>.
+
+If there is an error, returns the error, otherwise returns reference to a
+list of line items suitable for insertion.
+
+=over 4
+
+=item LINEITEMREF
+
+An array ref of the line items being billed.
+
+=item TAXHASHREF
+
+A strange beast.  The keys to this hash are internal identifiers consisting
+of the name of the tax object type, a space, and its unique identifier ( e.g.
+ 'cust_main_county 23' ).  The values of the hash are listrefs.  The first
+item in the list is the tax object.  The remaining items are either line
+items or floating point values (currency amounts).
+
+The taxes are calculated on this entity.  Calculated exemption records are
+transferred to the LINEITEMREF items on the assumption that they are related.
+
+Read the source.
+
+=item INVOICE_TIME
+
+This specifies the date appearing on the associated invoice.  Some
+jurisdictions (i.e. Texas) have tax exemptions which are date sensitive.
+
+=back
+
+=cut
+sub calculate_taxes {
+  my ($self, $cust_bill_pkg, $taxlisthash, $invoice_time) = @_;
+
+  my @tax_line_items = ();
+
+  warn "having a look at the taxes we found...\n" if $DEBUG > 2;
+
+  # keys are tax names (as printed on invoices / itemdesc )
+  # values are listrefs of taxlisthash keys (internal identifiers)
+  my %taxname = ();
+
+  # keys are taxlisthash keys (internal identifiers)
+  # values are (cumulative) amounts
+  my %tax = ();
+
+  # keys are taxlisthash keys (internal identifiers)
+  # values are listrefs of cust_bill_pkg_tax_location hashrefs
+  my %tax_location = ();
+
+  # keys are taxlisthash keys (internal identifiers)
+  # values are listrefs of cust_bill_pkg_tax_rate_location hashrefs
+  my %tax_rate_location = ();
+
+  foreach my $tax ( keys %$taxlisthash ) {
+    my $tax_object = shift @{ $taxlisthash->{$tax} };
+    warn "found ". $tax_object->taxname. " as $tax\n" if $DEBUG > 2;
+    warn " ". join('/', @{ $taxlisthash->{$tax} } ). "\n" if $DEBUG > 2;
+    my $hashref_or_error =
+      $tax_object->taxline( $taxlisthash->{$tax},
+                            'custnum'      => $self->custnum,
+                            'invoice_time' => $invoice_time
+                          );
+    return $hashref_or_error unless ref($hashref_or_error);
+
+    unshift @{ $taxlisthash->{$tax} }, $tax_object;
+
+    my $name   = $hashref_or_error->{'name'};
+    my $amount = $hashref_or_error->{'amount'};
+
+    #warn "adding $amount as $name\n";
+    $taxname{ $name } ||= [];
+    push @{ $taxname{ $name } }, $tax;
+
+    $tax{ $tax } += $amount;
+
+    $tax_location{ $tax } ||= [];
+    if ( $tax_object->get('pkgnum') || $tax_object->get('locationnum') ) {
+      push @{ $tax_location{ $tax }  },
+        {
+          'taxnum'      => $tax_object->taxnum, 
+          'taxtype'     => ref($tax_object),
+          'pkgnum'      => $tax_object->get('pkgnum'),
+          'locationnum' => $tax_object->get('locationnum'),
+          'amount'      => sprintf('%.2f', $amount ),
+        };
+    }
+
+    $tax_rate_location{ $tax } ||= [];
+    if ( ref($tax_object) eq 'FS::tax_rate' ) {
+      my $taxratelocationnum =
+        $tax_object->tax_rate_location->taxratelocationnum;
+      push @{ $tax_rate_location{ $tax }  },
+        {
+          'taxnum'             => $tax_object->taxnum, 
+          'taxtype'            => ref($tax_object),
+          'amount'             => sprintf('%.2f', $amount ),
+          'locationtaxid'      => $tax_object->location,
+          'taxratelocationnum' => $taxratelocationnum,
+        };
+    }
+
+  }
+
+  #move the cust_tax_exempt_pkg records to the cust_bill_pkgs we will commit
+  my %packagemap = map { $_->pkgnum => $_ } @$cust_bill_pkg;
+  foreach my $tax ( keys %$taxlisthash ) {
+    foreach ( @{ $taxlisthash->{$tax} }[1 ... scalar(@{ $taxlisthash->{$tax} })] ) {
+      next unless ref($_) eq 'FS::cust_bill_pkg';
+
+      push @{ $packagemap{$_->pkgnum}->_cust_tax_exempt_pkg }, 
+        splice( @{ $_->_cust_tax_exempt_pkg } );
+    }
+  }
+
+  #consolidate and create tax line items
+  warn "consolidating and generating...\n" if $DEBUG > 2;
+  foreach my $taxname ( keys %taxname ) {
+    my $tax = 0;
+    my %seen = ();
+    my @cust_bill_pkg_tax_location = ();
+    my @cust_bill_pkg_tax_rate_location = ();
+    warn "adding $taxname\n" if $DEBUG > 1;
+    foreach my $taxitem ( @{ $taxname{$taxname} } ) {
+      next if $seen{$taxitem}++;
+      warn "adding $tax{$taxitem}\n" if $DEBUG > 1;
+      $tax += $tax{$taxitem};
+      push @cust_bill_pkg_tax_location,
+        map { new FS::cust_bill_pkg_tax_location $_ }
+            @{ $tax_location{ $taxitem } };
+      push @cust_bill_pkg_tax_rate_location,
+        map { new FS::cust_bill_pkg_tax_rate_location $_ }
+            @{ $tax_rate_location{ $taxitem } };
+    }
+    next unless $tax;
+
+    $tax = sprintf('%.2f', $tax );
+  
+    my $pkg_category = qsearchs( 'pkg_category', { 'categoryname' => $taxname,
+                                                   'disabled'     => '',
+                                                 },
+                               );
+
+    my @display = ();
+    if ( $pkg_category and
+         $conf->config('invoice_latexsummary') ||
+         $conf->config('invoice_htmlsummary')
+       )
+    {
+
+      my %hash = (  'section' => $pkg_category->categoryname );
+      push @display, new FS::cust_bill_pkg_display { type => 'S', %hash };
+
+    }
+
+    push @tax_line_items, new FS::cust_bill_pkg {
+      'pkgnum'   => 0,
+      'setup'    => $tax,
+      'recur'    => 0,
+      'sdate'    => '',
+      'edate'    => '',
+      'itemdesc' => $taxname,
+      'display'  => \@display,
+      'cust_bill_pkg_tax_location' => \@cust_bill_pkg_tax_location,
+      'cust_bill_pkg_tax_rate_location' => \@cust_bill_pkg_tax_rate_location,
+    };
+
+  }
+
+  \@tax_line_items;
+}
 
 sub _make_lines {
   my ($self, %params) = @_;

@@ -306,6 +306,9 @@ sub check {
 
   return "amount must be > 0 " if $self->amount <= 0;
 
+  return "amount must be greater or equal to amount applied"
+    if $self->unapplied < 0;
+
   return "Unknown customer"
     unless qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
 

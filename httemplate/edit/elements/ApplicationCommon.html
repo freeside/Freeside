@@ -39,10 +39,12 @@ Examples:
   )
 
 </%doc>
-<% include('/elements/header-popup.html', "Apply $src_thing$to" ) %>
+
+<% include('/elements/header-popup.html', "Apply $src_thing$to", '', 'onLoad="myOnLoadFunction();"') %>
 
 <% include('/elements/error.html') %>
 
+<P ID="ErrorMessage"></P>
 <FORM ACTION="<% $p1. $opt{'form_action'} %>" NAME="ApplicationForm" ID="ApplicationForm" METHOD=POST>
 
 <% $src_thing %> #<B><% $src_pkeyvalue %></B><BR>
@@ -57,18 +59,26 @@ Examples:
 
 <TR>
   <TD ALIGN="right">Amount: </TD>
-  <TD><B><% $money_char %><% $src->amount %></B></TD>
+  <TD ID="original_amount"><B><% $money_char %><% $src_amount %></B>
+  </TD>
+  <TD>
+% if ($use_sub_dst_thing && $can_change_credit) {
+    <INPUT TYPE="hidden" NAME="src_amount" VALUE="<% $src_amount %>" >
+    <BUTTON TYPE="button" NAME="expand_button" ID="expand_button" onClick="do_change_amount(this);">Change</BUTTON>
+% }
+  </TD>
+
 </TR>
 
 <TR>
   <TD ALIGN="right">Unapplied amount: </TD>
-  <TD><B><% $money_char %><% $unapplied %></B></TD>
+  <TD ID="unapplied_amount"><B><% $money_char %><% $unapplied %></B></TD>
 </TR>
 
 % if ( $src_table eq 'cust_credit' ) {
     <TR>
       <TD ALIGN="right">Reason: </TD>
-      <TD><B><% $src->reason %></B></TD>
+      <TD COLSPAN=2><B><% $src->reason %></B></TD>
     </TR>
 % }
 
@@ -81,10 +91,16 @@ function changed(what) {
 
   if ( dst == '' ) {
     what.form.submit.disabled=true;
+%if ($src_pkey eq 'crednum') {
+    what.form.tax_button.disabled=true;
+%}
     return true;
   }
 
   what.form.submit.disabled=false;
+%if ($src_pkey eq 'crednum') {
+  what.form.tax_button.disabled=false;
+%}
 
 % foreach my $dst ( @dst ) {
 
@@ -120,14 +136,14 @@ function changed(what) {
 %             my $owed = $taxX->owed;
 %             my $key = &{$key_generator}([ $cbp, 0, { $pkey => $taxX->$pkey } ]);
 %             my $toapp = exists($apphash{ $key }) ? $apphash{ $key }->[1] : 0;
-              <% &{$row_generator}( $cbp, $taxX->desc, $owed, $toapp, $taxX->$pkey ) %>
+              <% &{$row_generator}( $key, $cbp, $taxX->desc, $owed, $toapp, $taxX->$pkey ) %>
 %             $total_owed -= $owed;
 %             $amount -= $toapp;
 %           }
 %           $desc .= ' (default)';
 %         }
 %         if ( $total_owed > 0 ) {
-            <% &{$row_generator}($cbp, $desc, $total_owed, $amount, '') %>
+            <% &{$row_generator}($key, $cbp, $desc, $total_owed, $amount, '') %>
 %         }
 %       }
 %     }
@@ -143,16 +159,155 @@ function sub_changed(what) {
   var table = document.getElementById('ApplicationTable');
   var i = table.rows.length;
   while(i-- > 2) {
-    var amount_input = table.rows[i].getElementsByTagName('input').item(0);
-    amount += parseFloat( amount_input.value ) || 0; 
+    var inputs = table.rows[i].getElementsByTagName('input');
+    if (! inputs.length) {
+      continue;
+    }
+    amount += parseFloat( inputs.item(0).value ) || 0; 
   }
   what.form.amount.value = parseFloat(amount).toFixed(2);
   what.form.display_amount.value = parseFloat(amount).toFixed(2);
+  set_amount_color(what);
 
 }
+
+function set_amount_color(what) {
+  if (what.form.src_amount.value < what.form.amount.value) {
+    what.form.display_amount.style.color = '#ff0000';
+  } else {
+    what.form.display_amount.style.color = '#00ff00';
+  }
+}
+
 </SCRIPT>
 
 Apply to:
+
+% if ($use_sub_dst_thing && $src_pkey eq 'crednum') {
+<CENTER><BUTTON TYPE="button" NAME="tax_button" ID="tax_button" onClick="do_calculate_tax(this);" DISABLED>Calculate Tax</BUTTON></CENTER>
+<% include( '/elements/xmlhttp.html',
+            'url' =>  $p.'misc/xmlhttp-calculate_taxes.html',
+            'subs' => [ 'calculate_taxes' ],
+          )
+ %>
+<SCRIPT TYPE="text/javascript">
+
+function show_taxes(arg) {
+  var argsHash = eval('(' + arg + ')');
+
+  var button = document.getElementById('tax_button');
+  button.disabled = false;
+  button.innerHTML = 'Calculate Tax';
+
+  var error = argsHash['error'];
+
+  var paragraph = document.getElementById('ErrorMessage');
+  if (error) {
+    paragraph.innerHTML = 'Error: ' + error;
+    paragraph.style.color = '#ff0000';
+  } else {
+    paragraph.innerHTML = '';
+  }
+  var taxlines = argsHash['taxlines'];
+
+  var table = document.getElementById('ApplicationTable');
+
+  var aFoundRow = 0;
+  for (i = 0; taxlines[i]; i++) {
+    var itemdesc = taxlines[i][0];
+    var locnum   = taxlines[i][2];
+    if (taxlines[i][3]) {
+      locnum  = taxlines[i][3];
+    }
+
+    var found = 0;
+    for (var row = 2; table.rows[row]; row++) {
+      var inputs = table.rows[row].getElementsByTagName('input');
+      if (! inputs.length) {
+        while ( table.rows[row] ) {
+           table.deleteRow(row);
+        }
+        break;
+      }
+      if ( inputs.item(4).value == itemdesc && inputs.item(2).value == locnum )
+      {
+        inputs.item(0).value = taxlines[i][1];
+        aFoundRow = found = row;
+        break;
+      }
+    }
+    if (! found) {
+      var row = table.insertRow(table.rows.length);
+      var warning_cell = document.createElement('TD');
+      warning_cell.style.color = '#ff0000';
+      warning_cell.colSpan = 2;
+      warning_cell.innerHTML = 'Calculated Tax - ' + itemdesc + ' - ' +
+                               taxlines[i][1] + ' will not be applied';
+      row.appendChild(warning_cell);
+    }
+  }
+
+  if (aFoundRow) {
+    sub_changed(table.rows[aFoundRow].getElementsByTagName('input').item(0));
+  }
+    
+}
+
+function do_calculate_tax (what) {
+  what.innerHTML = 'Calculating....';
+  what.disabled = true;
+  var taxed_items = new Array();
+  var table = document.getElementById('ApplicationTable');
+  for (var row = 2; table.rows[row]; row++)
+  {
+    var inputs = table.rows[row].getElementsByTagName('input');
+    if ( !inputs.length ) {
+      break;
+    }
+    var taxed_item = new Array(
+      inputs.item(1).value, // billpkgnum
+      inputs.item(3).value, // s_or_r
+      inputs.item(0).value  // amount
+    );
+    taxed_items.push(taxed_item);
+  }
+
+  var args = new Array(
+    'crednum', '<% $src_pkeyvalue %>',
+    'items', taxed_items
+  );
+  calculate_taxes ( args, show_taxes );
+}
+
+function do_change_amount (what) {
+  var amount_cell = document.getElementById('original_amount');
+  var inputs = amount_cell.getElementsByTagName('input');
+  if (inputs.length) {
+    amount_cell.innerHTML = '<B><% $money_char %></B>' + inputs.item(0).value;
+  } else {
+    amount_cell.innerHTML = '<% $money_char %>';
+    var amount_input = document.createElement('INPUT');
+    amount_input.setAttribute('name', 'entered_amount');
+    amount_input.setAttribute('id',   'entered_amount');
+    amount_input.style.textAlign = 'right';
+    amount_input.setAttribute('size', 8);
+    amount_input.setAttribute('maxlength', 8);
+    amount_input.setAttribute('value', what.form.src_amount.value);
+    amount_input.setAttribute('onChange', "src_amount_changed(this);");
+    amount_cell.appendChild(amount_input);
+  }
+}
+
+function src_amount_changed (what) {
+  what.form.src_amount.value = what.value;
+  var unapplied_cell = document.getElementById('unapplied_amount');
+  unapplied_cell.innerHTML = '<B><% $money_char %>' + what.value + '</B>';
+  set_amount_color(what);
+}
+
+</SCRIPT>
+
+%}
 
 <TABLE ID="ApplicationTable" BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>
 
@@ -173,7 +328,7 @@ Apply to:
   <TD ALIGN="right">Amount: </TD>
   <TD><% $money_char %><INPUT TYPE="text" NAME="<% $use_sub_dst_thing ? 'display_' : '' %>amount" VALUE="<% $amount %>" SIZE=8 MAXLENGTH=8 <% $use_sub_dst_thing ? 'DISABLED' : '' %> STYLE="text-align:right;"></TD>
 % if ($use_sub_dst_thing) {
-  <INPUT TYPE="hidden" NAME="amount" VALUE="<% $amount %>" >
+    <INPUT TYPE="hidden" NAME="amount" VALUE="<% $amount %>" >
 % }
 </TR>
 
@@ -183,6 +338,14 @@ Apply to:
 <CENTER><INPUT TYPE="submit" VALUE="Apply" NAME="submit" ID="submit" DISABLED></CENTER>
 
 </FORM>
+
+<SCRIPT TYPE="text/javascript">
+
+function myOnLoadFunction () {
+  <% $onload %>
+}
+
+</SCRIPT>
 
 <% include('/elements/footer.html') %>
 
@@ -209,13 +372,21 @@ my $use_sub_dst_thing = 0;
 $use_sub_dst_thing = 1
   if ( $dst_table eq 'cust_bill' && $conf->exists("${link_table}_pkg-manual") );
 
+my $can_change_credit = 0;
+$can_change_credit = 1
+  if ( $src_table eq 'cust_credit' && 
+       $FS::CurrentUser::CurrentUser->access_right('Post credit') &&
+       $FS::CurrentUser::CurrentUser->access_right('Delete credit')
+     );
+
 my $to = $dst_table eq 'cust_refund' ? ' to Refund' : '';
 
-my($src_pkeyvalue, $amount, $dst_pkeyvalue);
+my($src_pkeyvalue, $amount, $dst_pkeyvalue, $src_amount);
 if ( $cgi->param('error') ) {
   $src_pkeyvalue = $cgi->param($src_pkey);
   $amount    = $cgi->param('amount');
   $dst_pkeyvalue    = $cgi->param($dst_pkey);
+  $src_amount = $cgi->param('src_amount');
 } else {
   my($query) = $cgi->keywords;
   $query =~ /^(\d+)$/;
@@ -231,6 +402,8 @@ my $p1 = popurl(1);
 my $src = qsearchs($src_table, { $src_pkey => $src_pkeyvalue } );
 die "$src_thing $src_pkeyvalue not found!" unless $src;
 
+$src_amount = $src->amount unless $cgi->param('error');
+
 my $unapplied = $src->unapplied;
 
 my @dst = sort {    $a->_date     <=> $b->_date
@@ -240,9 +413,11 @@ my @dst = sort {    $a->_date     <=> $b->_date
           qsearch($dst_table, { 'custnum' => $src->custnum } );
 
 my $row_generator = sub {
-  my ($cust_bill_pkg, $desc, $owed, $amount, $taxXnum) = @_;
+  my ($key, $cust_bill_pkg, $desc, $owed, $amount, $taxXnum) = @_;
+  my ($num, $s_or_r, $taxlinenum) = split(':', $key);
   my $id = $cust_bill_pkg->pkgnum || 'Tax';
   my $billpkgnum = $cust_bill_pkg->billpkgnum;
+  my $s_or_r = $cust_bill_pkg->setup > 0 ? 'setup' : 'recur';
 
   $amount = sprintf("%.2f", $amount);
   qq!
@@ -277,6 +452,20 @@ my $row_generator = sub {
       taxnum_input.setAttribute('rownum', rownum);
       taxnum_input.setAttribute('value', "$taxXnum");
       amount_cell.appendChild(taxnum_input);
+      var s_or_r_input = document.createElement('INPUT');
+      s_or_r_input.setAttribute('name', 's_or_r'+rownum);
+      s_or_r_input.setAttribute('id',   's_or_r'+rownum);
+      s_or_r_input.setAttribute('type', 'hidden');
+      s_or_r_input.setAttribute('rownum', rownum);
+      s_or_r_input.setAttribute('value', "$s_or_r");
+      amount_cell.appendChild(s_or_r_input);
+      var itemdesc_input = document.createElement('INPUT');
+      itemdesc_input.setAttribute('name', 'itemdesc'+rownum);
+      itemdesc_input.setAttribute('id',   'itemdesc'+rownum);
+      itemdesc_input.setAttribute('type', 'hidden');
+      itemdesc_input.setAttribute('rownum', rownum);
+      itemdesc_input.setAttribute('value', "$desc");
+      amount_cell.appendChild(itemdesc_input);
       row.appendChild(pkg_cell);
       row.appendChild(amount_cell);
       rownum++;
@@ -293,5 +482,25 @@ my $key_generator = sub {
                    
   join(':', $cust_bill_pkg->billpkgnum, $setup_or_recur, $taxlinenum);
 };
+
+my $onload = 'return true;';
+
+if ($cgi->param('error')) {
+
+  my $set_sub_amounts =
+    join(';', map { "myform.subamount$_.value = ". $cgi->param("subamount$_") }
+               grep { /.+/ }
+               map { /^subnum(\d+)$/ ? $1 : '' }
+               $cgi->param
+  );
+  $set_sub_amounts &&= "$set_sub_amounts;sub_changed(myform.subamount0)";
+
+  $onload = qq!
+    var myform = document.getElementById('ApplicationForm');
+    changed(myform.elements['$dst_pkey']);
+    $set_sub_amounts;
+    return true;
+  !;
+}
 
 </%init>
