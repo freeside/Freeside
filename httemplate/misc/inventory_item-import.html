@@ -11,6 +11,7 @@ Import a file containing <% PL($inventory_class->classname) %>, one per line.
               'fields'    => [ 'format', 'classnum', ],
               'message'   => 'Inventory import successful',
               #XXX redirect via $itembatch?  or just back to class browse?
+              #'url'       => $p."search/phone_avail.html?availbatch=$availbatch",
               'url'       => $p."search/inventory_item.html?classnum=$classnum;avail=1",
           )
 %>
@@ -56,7 +57,7 @@ Upload file can be a text file or Excel spreadsheet.  If an Excel spreadsheet,
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Import');
 
-$cgi->param =~ /^(\d+)$/ or errorpage("illegal classnum");
+$cgi->param('classnum') =~ /^(\d+)$/ or errorpage("illegal classnum");
 my $classnum = $1;
 my $inventory_class = qsearchs('inventory_class', { 'classnum' => $classnum } );
 
