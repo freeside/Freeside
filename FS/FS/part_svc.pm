@@ -267,6 +267,7 @@ sub replace {
                   || $new->getfield($svcdb.'__'.$_.'_label') !~ /^\s*$/ )
            } (fields($svcdb),@fields)
     ) {
+
       my $part_svc_column = $new->part_svc_column($field);
       my $previous = qsearchs('part_svc_column', {
         'svcpart'    => $new->svcpart,
@@ -279,12 +280,15 @@ sub replace {
       if ( uc($flag) =~ /^([A-Z])$/ || $label !~ /^\s*$/ ) {
 
         if ( uc($flag) =~ /^([A-Z])$/ ) {
+          $part_svc_column->setfield('columnflag', $1);
           my $parser = FS::part_svc->svc_table_fields($svcdb)->{$field}->{parse}
                      || sub { shift };
-          $part_svc_column->setfield('columnflag', $1);
           $part_svc_column->setfield('columnvalue',
             &$parser($new->getfield($svcdb.'__'.$field))
           );
+        } else {
+          $part_svc_column->setfield('columnflag',  '');
+          $part_svc_column->setfield('columnvalue', '');
         }
 
         $part_svc_column->setfield('columnlabel', $label)
