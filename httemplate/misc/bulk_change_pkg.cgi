@@ -10,7 +10,7 @@
 %# some false laziness w/search/cust_pkg.cgi
 
 <INPUT TYPE="hidden" NAME="query" VALUE="<% $cgi->keywords |h %>">
-%  for my $param (qw(agentnum magic status classnum custom censustract)) {
+%  for my $param (qw(agentnum custnum magic status classnum custom censustract)) {
 <INPUT TYPE="hidden" NAME="<% $param %>" VALUE="<% $cgi->param($param) |h %>">
 %  }
 %

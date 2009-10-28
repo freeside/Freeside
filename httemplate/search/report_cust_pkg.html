@@ -1,7 +1,8 @@
-<% include('/elements/header.html', 'Package Report' ) %>
+<% include('/elements/header.html', $title ) %>
 
 <FORM ACTION="cust_pkg.cgi" METHOD="GET">
 <INPUT TYPE="hidden" NAME="magic" VALUE="bill">
+<INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
 
   <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
 
@@ -11,11 +12,13 @@
       </TH>
     </TR>
 
+% unless ( $custnum ) {
     <% include( '/elements/tr-select-agent.html',
                    'curr_value'    => scalar( $cgi->param('agentnum') ),
                    'disable_empty' => 0,
                )
     %>
+% }
 
     <% include( '/elements/tr-select-cust_pkg-status.html',
                   'onchange' => 'status_changed(this);',
@@ -154,6 +157,19 @@
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('List packages');
+
+my $title = 'Package Report';
+
+my $custnum = '';
+if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
+  $custnum = $1;
+  my $cust_main = qsearchs({
+    'table'     => 'cust_main', 
+    'hashref'   => { 'custnum' => $custnum },
+    'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+  }) or die "unknown custnum $custnum";
+  $title .= ': '. $cust_main->name;
+}
 
 </%init>
 <%once>

@@ -2367,6 +2367,15 @@ sub search_sql {
   }
 
   ##
+  # parse custnum
+  ##
+
+  if ( $params->{'custnum'} =~ /^(\d+)$/ and $1 ) {
+    push @where,
+      "cust_pkg.custnum = $1";
+  }
+
+  ##
   # parse status
   ##
 
