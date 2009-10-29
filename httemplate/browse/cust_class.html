@@ -1,10 +1,10 @@
 <% include( 'elements/browse.html',
-                 'title'       => 'Package classes',
+                 'title'       => 'Customer classes',
                  'html_init'   => $html_init,
-                 'name'        => 'package classes',
+                 'name'        => 'customer classes',
                  'disableable' => 1,
                  'disabled_statuspos' => 2,
-                 'query'       => { 'table'     => 'pkg_class',
+                 'query'       => { 'table'     => 'cust_class',
                                     'hashref'   => {},
                                     'extra_sql' => 'ORDER BY classnum',
                                   },
@@ -20,19 +20,18 @@ die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
 
 my $html_init = 
-  'Package classes define groups of packages, for taxation, ordering '.
-  'convenience and reporting.<BR><BR>'.
-  qq!<A HREF="${p}edit/pkg_class.html"><I>Add a package class</I></A><BR><BR>!;
+  'Customer classes define groups of customer for reporting.<BR><BR>'.
+  qq!<A HREF="${p}edit/cust_class.html"><I>Add a customer class</I></A><BR><BR>!;
 
-my $count_query = 'SELECT COUNT(*) FROM pkg_class';
+my $count_query = 'SELECT COUNT(*) FROM cust_class';
 
-my $link = [ $p.'edit/pkg_class.html?', 'classnum' ];
+my $link = [ $p.'edit/cust_class.html?', 'classnum' ];
 
 my $header = [ '#', 'Class' ];
 my $fields = [ 'classnum', 'classname' ];
 my $links  = [ $link, $link ];
 
-my $cat_query = 'SELECT COUNT(*) FROM pkg_class where categorynum IS NOT NULL';
+my $cat_query = 'SELECT COUNT(*) FROM cust_class where categorynum IS NOT NULL';
 my $sth = dbh->prepare($cat_query)
   or die "Error preparing $cat_query: ". dbh->errstr;
 $sth->execute

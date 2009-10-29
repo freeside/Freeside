@@ -20,7 +20,7 @@ die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
 
 my $html_init = 
-  'Package optional report classes define groups of packages, for reporting purposes.'.
+  'Package optional report classes define optional groups of packages for reporting only.'.
   qq!<BR><BR><A HREF="${p}edit/part_pkg_report_option.html"><I>Add a class</I></A><BR><BR>!;
 
 my $link = [ $p.'edit/part_pkg_report_option.html?', 'num' ];

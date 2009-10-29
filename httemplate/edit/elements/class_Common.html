@@ -1,0 +1,32 @@
+<% include( 'edit.html',
+              'fields' => [
+                            'classname',
+                            (scalar(@category)
+                              ? { field=>'categorynum', type=>'select-table', 'empty_label'=>'(none)', 'table'=>'pkg_category', 'name_col'=>'categoryname' }
+                              : { field=>'categorynum', type=>'hidden' }
+                            ),
+                            { field=>'disabled', type=>'checkbox', value=>'Y', },
+                          ],
+              'labels' => { 
+                            'classnum'    => 'Class number',
+                            'classname'   => 'Class name',
+                            'categorynum' => 'Category',
+                            'disabled'    => 'Disable class',
+                          },
+              'viewall_dir' => 'browse',
+              %opt,
+           )
+          
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my %opt = @_;
+
+my $table = $opt{'table'};
+( my $category_table = $table ) =~ s/class/category/ or die;
+
+my @category = qsearch($category_table, { 'disabled' => '' });
+</%init>

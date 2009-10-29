@@ -1,28 +1,5 @@
-<% include( 'elements/edit.html',
+<% include( 'elements/class_Common.html',
               'name'   => 'Package Class',
               'table'  => 'pkg_class',
-              'fields' => [
-                            'classname',
-                            (scalar(@category)
-                              ? { field=>'categorynum', type=>'select-table', 'empty_label'=>'(none)', 'table'=>'pkg_category', 'name_col'=>'categoryname' }
-                              : { field=>'categorynum', type=>'hidden' }
-                            ),
-                            { field=>'disabled', type=>'checkbox', value=>'Y', },
-                          ],
-              'labels' => { 
-                            'classnum'    => 'Class number',
-                            'classname'   => 'Class name',
-                            'categorynum' => 'Category',
-                            'disabled'    => 'Disable class',
-                          },
-              'viewall_dir' => 'browse',
-           )
-          
+          )
 %>
-<%init>
-
-die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
-
-my @category = qsearch('pkg_category', { 'disabled' => '' });
-</%init>

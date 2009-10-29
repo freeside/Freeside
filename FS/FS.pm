@@ -73,6 +73,10 @@ L<FS::m2name_Common> - Base class for tables with a related table listing names
 
 L<FS::option_Common> - Base class for option sub-classes
 
+L<FS::class_Common> - Base class for classification classes
+
+L<FS::category_Common> - Base class for category (grooups of classifications) classes
+
 L<FS::conf> - Configuration value class
 
 L<FS::payinfo_Mixin>  - Mixin class for records in tables that contain payinfo.
@@ -233,6 +237,10 @@ L<FS::cust_main_location> - Customer location class
 L<FS::cust_main_Mixin> - Mixin class for records that contain fields from cust_main
 
 L<FS::cust_main_invoice> - Invoice destination class
+
+L<FS::cust_class> - Customer classification class
+
+L<FS::cust_category> - Customer category class
 
 L<FS::cust_main_exemption> - Customer tax exemption class
 

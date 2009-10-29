@@ -342,14 +342,19 @@ $config_pkg{'Package definitions'} = [ $fsurl.'browse/part_pkg.cgi', 'One or mor
   if    $curuser->access_right('Edit package definitions')
      || $curuser->access_right('Edit global package definitions');
 if ( $curuser->access_right('Configuration') ) {
-  $config_pkg{'Package categories'} =  [ $fsurl.'browse/pkg_category.html', 'Package categories define groups of package classes, for reporting and convenience purposes.' ];
-  $config_pkg{'Package tax classes'} =  [ $fsurl.'browse/pkg_class.html', 'Package classes define groups of packages, for reporting and convenience purposes.' ];
-  $config_pkg{'Package report classes'} =  [ $fsurl.'browse/part_pkg_report_option.html', 'Package classes define optional groups of packages for reporting purposes.' ];
-  $config_pkg{'Cancel reason types'} = [ $fsurl.'browse/reason_type.html?class=C', 'Cancel reason types define groups of reasons, for reporting and convenience purposes.' ];
+  $config_pkg{'Package classes'} =  [ $fsurl.'browse/pkg_class.html', 'Package classes define groups of packages, for taxation, ordering convenience and reporting.' ];
+  $config_pkg{'Package categories'} =  [ $fsurl.'browse/pkg_category.html', 'Package categories define groups of package classes.' ];
+  $config_pkg{'Package report classes'} =  [ $fsurl.'browse/part_pkg_report_option.html', 'Package classes define optional groups of packages for reporting only.' ];
   $config_pkg{'Cancel reasons'} = [ $fsurl.'browse/reason.html?class=C', 'Cancel reasons explain why a service was cancelled.' ];
-  $config_pkg{'Suspend reason types'} = [ $fsurl.'browse/reason_type.html?class=S', 'Suspend reason types define groups of reasons, for reporting and convenience purposes.' ];
+  $config_pkg{'Cancel reason types'} = [ $fsurl.'browse/reason_type.html?class=C', 'Cancel reason types define groups of reasons.' ];
   $config_pkg{'Suspend reasons'} = [ $fsurl.'browse/reason.html?class=S', 'Suspend reasons explain why a service was suspended.' ];
+  $config_pkg{'Suspend reason types'} = [ $fsurl.'browse/reason_type.html?class=S', 'Suspend reason types define groups of reasons.' ];
 }
+
+tie my %config_cust, 'Tie::IxHash',
+  'Customer classes'    =>  [ $fsurl.'browse/cust_class.html', 'Customer classes define groups of customers for reporting.' ],
+  'Customer categories' =>  [ $fsurl.'browse/cust_category.html', 'Customer categories define groups of customer classes.' ],
+;
 
 tie my %config_agent, 'Tie::IxHash',
   'Agent types' => [ $fsurl.'browse/agent_type.cgi', 'Agent types define groups of package definitions that you can then assign to particular agents' ],
@@ -360,7 +365,7 @@ tie my %config_agent, 'Tie::IxHash',
 tie my %config_billing_rates, 'Tie::IxHash',
   'Rate plans' => [ $fsurl.'browse/rate.cgi', 'Manage rate plans' ],
   'Regions and prefixes' => [ $fsurl.'browse/rate_region.html', 'Manage regions and prefixes' ],
-  'Usage classes'  => [ $fsurl.'browse/usage_class.html', 'Usage classes define groups of usage for taxation purposes.' ],
+  'Usage classes'  => [ $fsurl.'browse/usage_class.html', 'Usage classes define groups of usage for taxation.' ],
   'Edit rates with Excel' => [ $fsurl.'misc/rate_edit_excel.html', 'Download and edit rates with Excel, then upload changes.' ], #"Edit with Excel" ?
 ;
 
@@ -385,8 +390,8 @@ if ( $curuser->access_right('Configuration') ) {
      if $conf->exists('enable_taxproducts');
   $config_billing{'Tax classes'} = [ $fsurl. 'browse/part_pkg_taxclass.html', 'Tax classes' ];
 
-  $config_billing{'Credit reason types'}  = [ $fsurl.'browse/reason_type.html?class=R', 'Credit reason types define groups of reasons, for reporting and convenience purposes.' ];
   $config_billing{'Credit reasons'}  = [ $fsurl.'browse/reason.html?class=R', 'Credit reasons explain why a credit was issued.' ];
+  $config_billing{'Credit reason types'}  = [ $fsurl.'browse/reason_type.html?class=R', 'Credit reason types define groups of reasons.' ];
 }
 
 tie my %config_ticketing, 'Tie::IxHash',
@@ -412,7 +417,7 @@ tie my %config_phone, 'Tie::IxHash',
 ;
 
 tie my %config_misc, 'Tie::IxHash';
-$config_misc{'Advertising sources'} = [ $fsurl.'browse/part_referral.html', 'Where a customer heard about your service.  Tracked for informational purposes' ]
+$config_misc{'Advertising sources'} = [ $fsurl.'browse/part_referral.html', 'Where a customer heard about your service.' ]
   if $curuser->access_right('Edit advertising sources')
   || $curuser->access_right('Edit global advertising sources');
 if ( $curuser->access_right('Configuration') ) {
@@ -435,9 +440,11 @@ $config_menu{'Packages'} = [ \%config_pkg, '' ]
   if    $curuser->access_right('Configuration' )
      || $curuser->access_right('Edit package definitions')
      || $curuser->access_right('Edit global package definitions');
-$config_menu{'Resellers'} = [ \%config_agent, ''    ]
+$config_menu{'Customers'} = [ \%config_cust, '' ]
   if $curuser->access_right('Configuration');
-$config_menu{'Billing'} = [ \%config_billing, ''    ]
+$config_menu{'Resellers'} = [ \%config_agent, '' ]
+  if $curuser->access_right('Configuration');
+$config_menu{'Billing'} = [ \%config_billing, '' ]
   if $curuser->access_right('Edit billing events')
   || $curuser->access_right('Edit global billing events');
 $config_menu{'Ticketing'} = [ \%config_ticketing, '' ]
@@ -445,7 +452,7 @@ $config_menu{'Ticketing'} = [ \%config_ticketing, '' ]
   && FS::TicketSystem->access_right(\%session, 'ShowConfigTab');
 $config_menu{'Dialup'}  = [ \%config_dialup, ''    ]
   if ( $curuser->access_right('Dialup configuration') );
-$config_menu{'Fixed (username-less) broadband'} = [ \%config_broadband, ''    ]
+$config_menu{'Broadband'} = [ \%config_broadband, ''    ]
   if ( $curuser->access_right('Broadband configuration') );
 $config_menu{'Phone'}  = [ \%config_phone, ''    ]
   if ( $curuser->access_right('Configuration') );

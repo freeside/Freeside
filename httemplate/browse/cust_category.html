@@ -1,0 +1,32 @@
+<% include( 'elements/browse.html',
+                 'title'       => 'Customer categories',
+                 'html_init'   => $html_init,
+                 'name'        => 'customer categories',
+                 'disableable' => 1,
+                 'disabled_statuspos' => 2,
+                 'query'       => { 'table'     => 'cust_category',
+                                    'hashref'   => {},
+                                    'extra_sql' => 'ORDER BY categorynum',
+                                  },
+                 'count_query' => $count_query,
+                 'header'      => [ '#', 'Category' ],
+                 'fields'      => [ 'categorynum', 'categoryname' ],
+                 'links'       => [ $link, $link ],
+             )
+%>
+
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $html_init = 
+  qq!<A HREF="${p}browse/cust_class.html">Customer classes</A><BR><BR>!.
+  'Customer categories define groups of customer classes.<BR><BR>'.
+  qq!<A HREF="${p}edit/cust_category.html"><I>Add a customer category</I></A><BR><BR>!;
+
+my $count_query = 'SELECT COUNT(*) FROM cust_category';
+
+my $link = [ $p.'edit/cust_category.html?', 'categorynum' ];
+
+</%init>

@@ -45,6 +45,7 @@ use FS::cust_refund;
 use FS::part_referral;
 use FS::cust_main_county;
 use FS::cust_location;
+use FS::cust_class;
 use FS::cust_main_exemption;
 use FS::cust_tax_adjustment;
 use FS::tax_rate;
@@ -1537,6 +1538,7 @@ sub check {
     || $self->ut_number('agentnum')
     || $self->ut_textn('agent_custid')
     || $self->ut_number('refnum')
+    || $self->ut_foreign_keyn('classnum', 'cust_class', 'classnum')
     || $self->ut_textn('custbatch')
     || $self->ut_name('last')
     || $self->ut_name('first')

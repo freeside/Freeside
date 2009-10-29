@@ -685,6 +685,7 @@ sub tables_hashref {
         'custnum',  'serial',  '',     '', '', '', 
         'agentnum', 'int',  '',     '', '', '', 
         'agent_custid', 'varchar', 'NULL', $char_d, '', '',
+        'classnum', 'int', 'NULL', '', '', '',
         'custbatch', 'varchar', 'NULL', $char_d, '', '',
 #        'titlenum', 'int',  'NULL',   '', '', '', 
         'last',     'varchar', '',     $char_d, '', '', 
@@ -752,7 +753,8 @@ sub tables_hashref {
       'unique' => [ [ 'agentnum', 'agent_custid' ] ],
       #'index' => [ ['last'], ['company'] ],
       'index' => [
-                   [ 'agentnum' ], [ 'refnum' ], [ 'custbatch' ],
+                   [ 'agentnum' ], [ 'refnum' ], [ 'classnum' ],
+                   [ 'custbatch' ],
                    [ 'referral_custnum' ],
                    [ 'payby' ], [ 'paydate' ],
                    [ 'archived' ],
@@ -839,6 +841,30 @@ sub tables_hashref {
       'primary_key' => 'notenum',
       'unique' => [],
       'index' => [ [ 'custnum' ], [ '_date' ], ],
+    },
+
+    'cust_category' => {
+      'columns' => [
+        'categorynum',   'serial',  '', '', '', '', 
+        'categoryname',  'varchar', '', $char_d, '', '', 
+        'weight',         'int', 'NULL',  '', '', '',
+        'disabled',      'char', 'NULL',   1, '', '', 
+      ],
+      'primary_key' => 'categorynum',
+      'unique' => [],
+      'index' => [ ['disabled'] ],
+    },
+
+    'cust_class' => {
+      'columns' => [
+        'classnum',    'serial',   '',      '', '', '', 
+        'classname',   'varchar',  '', $char_d, '', '', 
+        'categorynum', 'int',  'NULL',      '', '', '', 
+        'disabled',    'char', 'NULL',       1, '', '', 
+      ],
+      'primary_key' => 'classnum',
+      'unique' => [],
+      'index' => [ ['disabled'] ],
     },
 
     'cust_main_exemption' => {
