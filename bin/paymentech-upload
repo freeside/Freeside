@@ -12,14 +12,15 @@ use FS::Conf;
 use Date::Format 'time2str';
 use File::Temp;
 
-use vars qw( $opt_t $opt_v );
-getopts('vt');
+use vars qw( $opt_a $opt_t $opt_v );
+getopts('avt');
 
 #$Net::SFTP::Foreign::debug = -1;
 
 sub usage { '
   Usage:
     paymentech-upload [ -v ] [ -t ] user batchnum
+    paymentech-upload -a [ -v ] [ -t ] user
 
 '
 }
@@ -27,19 +28,18 @@ sub usage { '
 my $user = shift or die &usage;
 adminsuidsetup $user;
 
-my $batchnum = shift or die &usage;
-my $pay_batch = qsearchs('pay_batch', { batchnum => $batchnum })
-  or die "can't find payment batch '$batchnum'\n";
+my @batches; 
 
-my $filename = sprintf('%06d',$batchnum) . '-' .time2str('%Y%m%d%H%M%S', time);
-print STDERR "Exporting batch $batchnum to $filename...\n" if $opt_v;
-my $tmpdir = File::Temp->newdir();
-my $text = $pay_batch->export_batch('paymentech');
-$text =~ s!<fileID>FILEID</fileID>!<fileID>$filename</fileID>! 
-  or die "couldn't find FILEID tag\n";
-open OUT, ">$tmpdir/$filename.xml";
-print OUT $text;
-close OUT;
+if($opt_a) {
+  @batches = qsearch('pay_batch', { status => 'O' } );
+  die "No open batches found.\n" if !@batches;
+}
+else {
+  my $batchnum = shift;
+  die &usage if !$batchnum;
+  @batches = qsearchs('pay_batch', { batchnum => $batchnum } );
+  die "Can't find payment batch '$batchnum'\n" if !@batches;
+}
 
 my $conf = new FS::Conf;
 my @batchconf = $conf->config('batchconfig-paymentech');
@@ -47,14 +47,29 @@ my @batchconf = $conf->config('batchconfig-paymentech');
 my $username = $batchconf[3] or die "no Paymentech batch username configured\n";
 my $password = $batchconf[4] or die "no Paymentech batch password configured\n";
 
-# This is less than ideal.
-system("zip -P $password -q -j $tmpdir/$filename.zip $tmpdir/$filename.xml");
+my $tmpdir = File::Temp->newdir();
 
-die "failed to create zip file\n" if (! -f "$tmpdir/$filename.zip" );
+my @filenames;
 
+foreach my $pay_batch (@batches) {
+  my $batchnum = $pay_batch->batchnum;
+  my $filename = sprintf('%06d',$batchnum) . '-' .time2str('%Y%m%d%H%M%S', time);
+  print STDERR "Exporting batch $batchnum to $filename...\n" if $opt_v;
+  my $text = $pay_batch->export_batch('paymentech');
+  $text =~ s!<fileID>FILEID</fileID>!<fileID>$filename</fileID>! 
+    or die "couldn't find FILEID tag\n";
+  open OUT, ">$tmpdir/$filename.xml";
+  print OUT $text;
+  close OUT;
 
-#my $host = ($opt_t ? 'orbitalbatchvar.paymentech.net' : 'orbitalbatch.paymentech.net');
-my $host = ($opt_t ? 'orbitalbatchvar.paymentech.net' : '127.0.0.1');
+  system("zip -P $password -q -j $tmpdir/$filename.zip $tmpdir/$filename.xml");
+
+  die "failed to create zip file\n" if (! -f "$tmpdir/$filename.zip" );
+  push @filenames, $filename;
+}
+
+my $host = ($opt_t ? 'orbitalbatchvar.paymentech.net' : 
+                     'orbitalbatch.paymentech.net');
 print STDERR "Connecting to $username\@$host...\n" if $opt_v;
 
 my $sftp = Net::SFTP::Foreign->new( host => $host,
@@ -62,10 +77,13 @@ my $sftp = Net::SFTP::Foreign->new( host => $host,
                                     password => $password,
                                     timeout => 30,
                                     );
-die "failed to connect to '$username\@$host'\n(".$sftp->error.")\n" if $sftp->error;
+die "failed to connect to '$username\@$host'\n(".$sftp->error.")\n" 
+    if $sftp->error;
 
-$sftp->put("$tmpdir/$filename.zip", "$filename.zip")
-  or die "failed to upload file (".$sftp->error.")\n";
+foreach my $filename (@filenames) {
+  $sftp->put("$tmpdir/$filename.zip", "$filename.zip")
+    or die "failed to upload file (".$sftp->error.")\n";
+}
 
 print STDERR "Finished!\n" if $opt_v;
 
@@ -77,7 +95,7 @@ paymentech-upload - Transmit a payment batch to Chase Paymentech via SFTP.
 
 =head1 SYNOPSIS
 
-  paymentech-upload [ -v ] [ -t ] user batchnum
+  paymentech-upload [ -a ] [ -v ] [ -t ] user batchnum
 
 =head1 DESCRIPTION
 
@@ -85,6 +103,8 @@ Command line tool to upload a payment batch to the Chase Paymentech gateway.
 The batch will be exported to the Paymentech XML format, packaged in a ZIP 
 file, and transmitted via SFTP.  Use L<paymentech-download> to retrieve the 
 response file.
+
+-a: Send all open batches, instead of specifying a batchnum.
 
 -v: Be verbose.
 
