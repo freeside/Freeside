@@ -19,7 +19,7 @@ use FS::cust_tax_adjustment;
 
 @ISA = qw( FS::cust_main_Mixin FS::Record );
 
-$DEBUG = 1;
+$DEBUG = 0;
 $me = '[FS::cust_bill_pkg]';
 
 =head1 NAME
