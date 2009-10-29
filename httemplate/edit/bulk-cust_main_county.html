@@ -85,7 +85,7 @@ if ( $cgi->param('error') ) {
 } else {
   my($query) = $cgi->keywords;
   $query =~ /^([\d,]+)$/
-    or die 'Nothing selected'; #XXX better error when nothing selected
+    or $m->comp('/elements/errorpage-popup.html', 'Nothing selected');
   @taxnum = split(',', $1);
 }
 
