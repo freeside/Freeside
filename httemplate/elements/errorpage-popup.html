@@ -1,0 +1,15 @@
+<% include("/elements/header-popup.html", "Error") %>
+
+% while (@_) {
+
+<P><FONT SIZE="+1" COLOR="#ff0000"><% shift |h %></FONT>
+
+%}
+
+<BR><BR>
+<P ALIGN="center">
+<BUTTON TYPE="button" onClick="parent.cClick();">Close</BUTTON>
+
+% $m->flush_buffer();
+% $HTML::Mason::Commands::m->abort();
+% #die "shouldn't fall through to here (mason \$m->abort didn't)";
