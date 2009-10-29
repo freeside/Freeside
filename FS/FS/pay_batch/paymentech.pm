@@ -5,6 +5,7 @@ use vars qw(@ISA %import_info %export_info $name);
 use Time::Local;
 use Date::Format 'time2str';
 use Date::Parse 'str2time';
+use Tie::IxHash;
 use FS::Conf;
 
 my $conf;
@@ -49,7 +50,7 @@ my %paytype = (
 %export_info = (
   init  => sub {
 # Load this at run time
-    eval "use XML::Simple";
+    eval "use XML::Writer";
     die $@ if $@;
     my $conf = shift;
     ($bin, $terminalID, $merchantID, $username) =
@@ -59,53 +60,55 @@ my %paytype = (
   header => sub {
     my $pay_batch = shift;
     my @cust_pay_batch = @{(shift)};
-    my $count = 0;
-    XML::Simple::XMLout( {
-      transRequest => {
-        RequestCount => scalar(@cust_pay_batch),
-        batchFileID  => {
-          userID        => $username,
-          fileDateTime  => time2str('%Y%m%d%H%M%s',time),
-          fileID        => 'FILEID',
-        },
-        newOrder => [ map { {
-          # $_ here refers to a cust_pay_batch record.
-          BatchRequestNo => $count++,
-          industryType   => 'EC',
-          transType      => 'AC',
-          bin            => $bin,
-          merchantID     => $merchantID,
-          terminalID     => $terminalID,
-          ($_->payby eq 'CARD') ? (
-            # Credit card stuff
-            ccAccountNum   => $_->payinfo,
-            ccExp          => time2str('%y%m',str2time($_->exp)),
-          ) : (
-            # ECP (electronic check) stuff
-            ecpCheckRT     => ($_->payinfo =~ /@(\d+)/),
-            ecpCheckDDA    => ($_->payinfo =~ /(\d+)@/),
-            ecpBankAcctType => $paytype{lc($_->cust_main->paytype)},
-            ecpDelvMethod  => 'B'
-          ),
-          avsZip         => $_->zip,
-          avsAddress1    => $_->address1,
-          avsAddress2    => $_->address2,
-          avsCity        => $_->city,
-          avsState       => $_->state,
-          avsName        => $_->first . ' ' . $_->last,
-          avsCountryCode => $_->country,
-          orderID        => $_->paybatchnum,
-          amount         => $_->amount * 100,
-          } } @cust_pay_batch
-        ],
-        endOfDay => {
-          BatchRequestNo => $count++,
-          bin            => $bin,
-          merchantID     => $merchantID,
-          terminalID     => $terminalID
-        },
-      } 
-    }, KeepRoot => 1, NoAttr => 1);
+    my $count = 1;
+    my $output;
+    my $xml = new XML::Writer(OUTPUT => \$output, DATA_MODE => 1, DATA_INDENT => 2);
+    $xml->startTag('transRequest', RequestCount => scalar(@cust_pay_batch) + 1);
+    $xml->startTag('batchFileID');
+    $xml->dataElement(userID => $username);
+    $xml->dataElement(fileDateTime => time2str('%Y%m%d%H%M%s', time));
+    $xml->dataElement(fileID => 'FILEID');
+    $xml->endTag('batchFileID');
+
+    foreach (@cust_pay_batch) {
+      $xml->startTag('newOrder', BatchRequestNo => $count++);
+      tie my %order, 'Tie::IxHash', (
+        industryType => 'EC',
+        transType    => 'AC',
+        bin          => $bin,
+        merchantID   => $merchantID,
+        terminalID   => $terminalID,
+        ($_->payby eq 'CARD') ? (
+          ccAccountNum => $_->payinfo,
+          ccExp        => time2str('%m%y', str2time($_->exp))
+        ) : (
+          ecpCheckRT      => ($_->payinfo =~ /@(\d+)/),
+          ecpCheckDDA     => ($_->payinfo =~ /(\d+)@/),
+          ecpBankAcctType => $paytype{lc($_->cust_main->paytype)},
+          ecpDelvMethod   => 'A',
+        ),
+        avsZip          => $_->zip,
+        avsAddress1     => $_->address1,
+        avsAddress2     => $_->address2,
+        avsCity         => $_->city,
+        avsState        => $_->state,
+        avsName        => $_->first . ' ' . $_->last,
+        avsCountryCode => $_->country,
+        orderID        => $_->paybatchnum,
+        amount         => $_->amount * 100,
+        );
+      foreach my $key (keys %order) {
+        $xml->dataElement($key, $order{$key})
+      }
+      $xml->endTag('newOrder');
+    }
+    $xml->startTag('endOfDay', BatchRequestNo => $count);
+    $xml->dataElement(bin => $bin);
+    $xml->dataElement(merchantID => $merchantID);
+    $xml->dataElement(terminalID => $terminalID);
+    $xml->endTag('endOfDay');
+    $xml->endTag('transRequest');
+    return $output;
   },
   row => sub {},
 );
