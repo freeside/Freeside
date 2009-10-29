@@ -20,6 +20,13 @@
               )
     %>
 
+    <% include( '/elements/tr-select-cust_class.html',
+                  'label'        => 'Class',
+                  'multiple'     => 1,
+                  'pre_options'  => [ '' => '(none)' ],
+                  'all_selected' => 1,
+              )
+    %>
 
 %   foreach my $field (qw( signupdate )) {
 

@@ -54,9 +54,8 @@ for my $param ( @scalars ) {
 }
 
 #lists
-for my $param (qw( payby )) {
-  $search_hash{$param} = [ $cgi->param($param) ]
-    if $cgi->param($param);
+for my $param (qw( classnum payby )) {
+  $search_hash{$param} = [ $cgi->param($param) ];
 }
 
 ###

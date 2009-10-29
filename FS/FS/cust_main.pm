@@ -8328,6 +8328,21 @@ sub search_sql {
   }
 
   ###
+  # classnum
+  ###
+
+  my @classnum = grep /^(\d*)$/, @{ $params->{'classnum'} };
+  if ( @classnum ) {
+    push @where, '( '. join(' OR ', map {
+                                          $_ ? "cust_main.classnum = $_"
+                                             : "cust_main.classnum IS NULL"
+                                        }
+                                        @classnum
+                           ).
+                 ' )';
+  }
+
+  ###
   # payby
   ###
 

@@ -86,7 +86,7 @@ Example:
 % {
 %   my $recvalue = $record->$key();
     <OPTION VALUE="<% $recvalue %>"
-            <% ref($value) && $value->{$recvalue} || $value == $recvalue
+            <% $opt{'all_selected'} || ref($value) && $value->{$recvalue} || $value == $recvalue
                ? ' SELECTED' : ''
             %>
     ><% $opt{'label_showkey'} ? "$recvalue: " : '' %>
