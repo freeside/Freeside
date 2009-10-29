@@ -107,12 +107,20 @@ while (1) {
     $hashref->{'secure'} = '';
   }
 
-  my @jobs = qsearch({
-    'table'     => 'queue',
-    'hashref'   => $hashref,
-    'extra_sql' => $nodepend,
-    'order_by'  => $order_by,
-  });
+  #qsearch dies when the db goes away
+  my @jobs = eval {
+    qsearch({
+      'table'     => 'queue',
+      'hashref'   => $hashref,
+      'extra_sql' => $nodepend,
+      'order_by'  => $order_by,
+    });
+  };
+  if ( $@ ) {
+    warn "WARNING: error searching for jobs, closing connection: $@";
+    undef $FS::UID::dbh;
+    next;
+  }
 
   unless ( @jobs ) {
     dbh->commit or do {
@@ -145,7 +153,12 @@ while (1) {
 
     $FS::UID::AutoCommit = 1;
 
-    my @args = $ljob->args;
+    my @args = eval { $ljob->args; };
+    if ( $@ ) {
+      warn "WARNING: error retrieving job arguments, closing connection: $@";
+      undef $FS::UID::dbh;
+      next;
+    }
     splice @args, 0, 1, $ljob if $args[0] eq '_JOB';
 
     defined( my $pid = fork ) or do {
@@ -155,7 +168,7 @@ while (1) {
       $hash{'statustext'} = "[freeside-queued] can't fork: $!";
       my $ljob = new FS::queue ( \%hash );
       my $error = $ljob->replace($job);
-      die $error if $error;
+      die $error if $error; #XXX still dying if we can't fork AND we can't connect to the db
       next; #don't increment the kid counter
     };
 
