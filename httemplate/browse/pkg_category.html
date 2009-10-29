@@ -22,7 +22,7 @@ die "access denied"
 
 my $html_init = 
   qq!<A HREF="${p}browse/pkg_class.html">Package classes</A><BR><BR>!.
-  'Package categories define groups of package classes.<BR><BR>'.
+  'Package categories define groups of package classes, used for sectioned invoices.<BR><BR>'.
   qq!<A HREF="${p}edit/pkg_category.html"><I>Add a package category</I></A><BR><BR>!;
 
 my $count_query = 'SELECT COUNT(*) FROM pkg_category';

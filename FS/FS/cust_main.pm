@@ -2307,6 +2307,53 @@ sub agent {
   qsearchs( 'agent', { 'agentnum' => $self->agentnum } );
 }
 
+=item cust_class
+
+Returns the customer class, as an FS::cust_class object, or the empty string
+if there is no customer class.
+
+=cut
+
+sub cust_class {
+  my $self = shift;
+  if ( $self->classnum ) {
+    qsearchs('cust_class', { 'classnum' => $self->classnum } );
+  } else {
+    return '';
+  } 
+}
+
+=item categoryname 
+
+Returns the customer category name, or the empty string if there is no customer
+category.
+
+=cut
+
+sub categoryname {
+  my $self = shift;
+  my $cust_class = $self->cust_class;
+  $cust_class
+    ? $cust_class->categoryname
+    : '';
+}
+
+=item classname 
+
+Returns the customer class name, or the empty string if there is no customer
+class.
+
+=cut
+
+sub classname {
+  my $self = shift;
+  my $cust_class = $self->cust_class;
+  $cust_class
+    ? $cust_class->classname
+    : '';
+}
+
+
 =item bill_and_collect 
 
 Cancels and suspends any packages due, generates bills, applies payments and

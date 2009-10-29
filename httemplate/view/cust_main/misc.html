@@ -31,13 +31,18 @@
 </TR>
 %
 %  }
-%
+
+%  #if ( $cust_main->classnum ) {
+     <TR>
+       <TD ALIGN="right">Class</TD>
+       <TD BGCOLOR="#ffffff"><% $cust_main->classname || '(none)' %></TD>
+     </TR>
+%  #}
+
 %  unless ( FS::part_referral->num_part_referral == 1 ) {
 %    my $referral = qsearchs('part_referral', {
 %      'refnum' => $cust_main->refnum
 %    } );
-%
-
 
 <TR>
   <TD ALIGN="right">Advertising&nbsp;source</TD>

@@ -1,0 +1,18 @@
+<% include( '/elements/select-table.html',
+                 'table'       => 'cust_class',
+                 'name_col'    => 'classname',
+                 'value'       => $classnum,
+                 'empty_label' => '(none)',
+                 'hashref'     => { 'disabled' => '' },
+                 %opt,
+             )
+%>
+<%init>
+
+my %opt = @_;
+my $classnum = $opt{'curr_value'} || $opt{'value'};
+
+$opt{'records'} = delete $opt{'cust_class'}
+  if $opt{'cust_class'};
+
+</%init>

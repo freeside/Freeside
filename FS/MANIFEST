@@ -457,3 +457,7 @@ FS/cust_class.pm
 t/cust_class.t
 FS/cust_category.pm
 t/cust_category.t
+FS/class_Common.pm
+t/class_Common.t
+FS/category_Common.pm
+t/category_Common.t

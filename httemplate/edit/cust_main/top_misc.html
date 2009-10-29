@@ -23,6 +23,15 @@
 
 % }
 
+%# class
+<% include('/elements/tr-select-cust_class.html',
+             'curr_value'  => $cust_main->classnum,
+             'label'       => "Class",
+             #'empty_label' => '(none)',
+             #'disable_empty' => 
+          )
+%>
+
 %# referral (advertising source)
 %my $refnum = $cust_main->refnum || $conf->config('referraldefault') || 0;
 %if ( $custnum && ! $conf->exists('editreferrals') ) {
