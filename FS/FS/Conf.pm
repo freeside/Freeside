@@ -2404,7 +2404,7 @@ worry that config_items is freeside-specific and icky.
     'type'        => 'select',
     'select_enum' => [ 'csv-td_canada_trust-merchant_pc_batch',
                        'csv-chase_canada-E-xactBatch', 'BoM', 'PAP',
-                       'ach-spiritone',
+                       'paymentech', 'ach-spiritone',
                     ]
   },
 
