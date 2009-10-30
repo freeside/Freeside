@@ -291,7 +291,7 @@ $html_posttotal .= ' )';
 
 my $bulk_popup_link = 
   include( '/elements/popup_link_onclick.html',
-             'action'      => "${p}edit/bulk-cust_main_county.html?MAGIC_taxnum_MAGIC",
+             'action'      => "${p}edit/bulk-cust_main_county.html?taxnum=MAGIC_taxnum_MAGIC",
              'actionlabel' => 'Bulk add new tax',
              'nofalse'     => 1,
              'height'      => 420,
@@ -324,7 +324,7 @@ my $html_foot = <<END;
     }
   }
 
-  function bulkPopup() {
+  function bulkPopup(action) {
     var bulk_popup_link = "$bulk_popup_link";
     var bulkstring = '';
     theForm = document.taxesForm;
@@ -341,6 +341,7 @@ my $html_foot = <<END;
        
       }
     }
+    bulkstring = bulkstring + ';action=' + action;
     if ( bulk_popup_link.length > 1920 ) { // IE 2083 URL limit
       alert('Too many selections'); // should do some session thing...
       return false;
@@ -356,7 +357,9 @@ my $html_foot = <<END;
 <A HREF="javascript:setAll(false)">unselect all</A> |
 <A HREF="javascript:toggleAll()">toggle all</A>
 <BR><BR>
-<A HREF="javascript:void(0);" onClick="bulkPopup();">Add new tax to selected</A>
+<A HREF="javascript:void(0);" onClick="bulkPopup('add');">Add new tax to selected</A>
+|
+<A HREF="javascript:void(0);" onClick="bulkPopup('edit');">Bulk edit selected</A>
 
 END
 

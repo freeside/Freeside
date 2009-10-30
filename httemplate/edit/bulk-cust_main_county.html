@@ -1,7 +1,8 @@
-<% include('/elements/header-popup.html', 'Bulk Tax rate') %>
+<% include('/elements/header-popup.html', $title ) %>
 
 <FORM ACTION="<% popurl(1)."process/bulk-cust_main_county.html" %>" METHOD="POST">
 
+<INPUT TYPE="hidden" NAME="action" VALUE="<% $action %>">
 <INPUT TYPE="hidden" NAME="taxnum" VALUE="<% join(',', @taxnum) %>">
 
 <TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>
@@ -68,7 +69,7 @@
 
 <BR>
 
-<INPUT TYPE="submit" VALUE="Bulk add tax">
+<INPUT TYPE="submit" VALUE="Bulk <% $action %> tax">
 
 <%init>
 
@@ -78,16 +79,13 @@ die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
 
 my @taxnum;
-if ( $cgi->param('error') ) {
-  $cgi->param('taxnum') =~ /^([\d,]+)$/
-    or die "no taxnum, but error: ". $cgi->param('error');
-  @taxnum = split(',', $1);
-} else {
-  my($query) = $cgi->keywords;
-  $query =~ /^([\d,]+)$/
-    or $m->comp('/elements/errorpage-popup.html', 'Nothing selected');
-  @taxnum = split(',', $1);
-}
+$cgi->param('taxnum') =~ /^([\d,]+)$/
+   or $m->comp('/elements/errorpage-popup.html', $cgi->param('error') || 'Nothing selected');
+my @taxnum = split(',', $1);
+
+$cgi->param('action') =~ /^(add|edit)$/ or die "unknown action";
+my $action = $1;
+my $title = "Bulk $action tax rate";
 
 my @cust_main_county =
   map {
