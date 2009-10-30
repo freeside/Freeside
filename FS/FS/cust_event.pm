@@ -322,9 +322,23 @@ specified in HASHREF.  Valid parameters are
 
 =over 4
 
-=item
+=item agentnum
 
-=item
+=item custnum
+
+=item invnum
+
+=item pkgnum
+
+=item failed
+
+=item beginning
+
+=item ending
+
+=item payby
+
+=item 
 
 =back
 
@@ -340,12 +354,15 @@ sub search_sql {
          join("\n", map { "  $_: ". $param->{$_} } keys %$param ). "\n";
   }
 
-  my @search = ();
+  my @search = $class->cust_search_sql($param);
 
-  if ( $param->{'agentnum'} && $param->{'agentnum'} =~ /^(\d+)$/ ) {
-    push @search, "cust_main.agentnum = $1";
-    #my $agent = qsearchs('agent', { 'agentnum' => $1 } );
-    #die "unknown agentnum $1" unless $agent;
+  #eventpart
+  my @eventpart = ref($param->{'eventpart'})
+                    ? @{ $param->{'eventpart'} }
+                    : split(',', $param->{'eventpart'});
+  @eventpart = grep /^(\d+)$/, @eventpart;
+  if ( @eventpart ) {
+    push @search, 'eventpart IN ('. join(',', @eventpart). ')';
   }
 
   if ( $param->{'beginning'} =~ /^(\d+)$/ ) {
@@ -361,10 +378,6 @@ sub search_sql {
                   "statustext != 'N/A'";
   }
 
-  #if ( $param->{'part_event.payby'} =~ /^(\w+)$/ ) {
-  #  push @search, "part_event.payby = '$1'";
-  #}
-
   if ( $param->{'custnum'} =~ /^(\d+)$/ ) {
     push @search, "cust_main.custnum = '$1'";
   }
@@ -379,12 +392,7 @@ sub search_sql {
                   "tablenum = '$1'";
   }
 
-  #here is the agent virtualization
-  push @search,
-    $FS::CurrentUser::CurrentUser->agentnums_sql( 'table' => 'cust_main' );
-
   my $where = 'WHERE '. join(' AND ', @search );
-
 
   join(' AND ', @search );
 

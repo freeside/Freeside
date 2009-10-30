@@ -157,10 +157,16 @@ my $title = $cgi->param('failed') ? 'Failed billing events' : 'Billing events';
 
 my %search = ();
 
-my @scalars = qw ( agentnum custnum invnum pkgnum failed );
-for my $param ( @scalars ) {
+my @scalars = qw( agentnum status custnum invnum pkgnum failed );
+for my $param (@scalars) {
   $search{$param} = scalar( $cgi->param($param) )
     if $cgi->param($param);
+}
+
+#lists
+my @lists = qw( payby eventpart );
+foreach my $param (@lists) {
+  $search{$param} = [ $cgi->param($param) ];
 }
 
 my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
@@ -207,6 +213,11 @@ my $html_init = join("\n", map {
           qq(<INPUT TYPE="hidden" NAME="$_" VALUE="$value">);
         }
         @params #keys %search
+  ),
+  ( map { my $value = encode_entities( join(',', @{ $search{$_} } ) );
+          qq(<INPUT TYPE="hidden" NAME="$_" VALUE="$value">);
+        }
+        @lists
   ),
   qq!</FORM>!
 } qw( print_ email_ fax_ ) ).

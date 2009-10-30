@@ -8,7 +8,9 @@
 % }
 
 % foreach my $option ( keys %{ $opt{'paybys'} } ) { 
-%   my $sel = ( ref($value) && $value->{$option} ) || $option eq $value;
+%   my $sel = $opt{'all_selected'}
+%               || ( ref($value) && $value->{$option} )
+%               || $option eq $value;
 
     <OPTION VALUE="<% $option %>"
             <% $sel ? 'SELECTED' : '' %>

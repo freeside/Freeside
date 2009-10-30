@@ -6,52 +6,36 @@
 
     <FORM ACTION="cust_event.html" METHOD="GET">
     <INPUT TYPE="hidden" NAME="failed" VALUE="<% $cgi->param('failed') ? 1 : 0 %>">
-    <TABLE>
+    <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+      <TR>
+        <TH BGCOLOR="#e8e8e8" COLSPAN=2 ALIGN="left"><FONT SIZE="+1">Search options</FONT></TH>
+      </TR>
 
       <% include( '/elements/tr-select-agent.html', 'disable_empty'=>0 ) %>
 
-      <!--<TR>
-        <TD ALIGN="right">Customer type</TD>
-        <TD><SELECT MULTIPLE NAME="perhaps_payby">
-          <OPTION SELECTED VALUE="CARD">Credit card (automatic)
-          <OPTION SELECTED VALUE="CHEK">E-check (automatic)
-          <OPTION SELECTED VALUE="LECB">Phone bill billing
-          <OPTION SELECTED VALUE="BILL">Billing
-          <OPTION SELECTED VALUE="DCRD">Credit card (on-demand)
-          <OPTION SELECTED VALUE="DCHK">E-check (on-demand)
-        </TD>
-      </TR>
-      -->
-      <% include( '/elements/tr-input-beginning_ending.html' ) %>
-      <!--
-      <TR>
-        <TD ALIGN="right">Events: </TD>
-        <TD>
-          <SELECT NAME="eventpart">
-            <OPTION SELECTED VALUE=""><% $cgi->param('failed') ? '(all failed events)' : '(all events)' %>
-% #foreach my $part_bill_event ( qsearch( 'part_bill_event', {} ) ) { 
-% #} 
+      <% include( '/elements/tr-select-cust_main-status.html',
+                    'label' => 'Status'
+                )
+      %>
 
-          </SELECT>
-        </TD>
-      </TR>
-      -->
-<!--      <TR>
-        <TD ALIGN="right">Events for payment type: </TD>
-        <TD>
-          <SELECT NAME="part_bill_event.payby">
-            <OPTION SELECTED VALUE="">(all)
-            <OPTION VALUE="CARD">Credit card (automatic)
-            <OPTION VALUE="BILL">Billing
-            <OPTION VALUE="CHEK">Electronic check (automatic)
-            <OPTION VALUE="DCRD">Credit card (on-demand)
-            <OPTION VALUE="DCHK">Electronic check (on-demand)
-            <OPTION VALUE="LECB">Phone bill billing
-            <OPTION VALUE="COMP">Complimentary
-          </SELECT>
-        </TD>
-      </TR>
--->
+      <% include( '/elements/tr-select-payby.html',
+                    'label'        => 'Customer payment type',
+                    'payby_type'   => 'cust',
+                    'multiple'     => 1,
+                    'all_selected' => 1,
+                )
+      %>
+
+      <% include( '/elements/tr-select-part_event.html',
+                    'label'        => 'Events',
+                    'multiple'     => 1,
+                    'all_selected' => 1,
+                )
+      %>
+
+      <% include( '/elements/tr-input-beginning_ending.html' ) %>
+
     </TABLE>
     <BR><INPUT TYPE="submit" VALUE="Get Report">
     </FORM>

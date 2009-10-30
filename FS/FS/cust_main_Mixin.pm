@@ -1,11 +1,12 @@
 package FS::cust_main_Mixin;
 
 use strict;
-use vars qw( $DEBUG );
+use vars qw( $DEBUG $me );
 use FS::UID qw(dbh);
 use FS::cust_main;
 
 $DEBUG = 0;
+$me = '[FS::cust_main_Mixin]';
 
 =head1 NAME
 
@@ -271,6 +272,60 @@ foreach my $sub (qw( prospect active inactive suspended cancelled )) {
       }
   ";
   die $@ if $@;
+}
+
+=item cust_search_sql
+
+Returns a list of SQL WHERE fragments to search for parameters specified
+in HASHREF.  Valid parameters are:
+
+=over 4
+
+=item agentnum
+
+=item status
+
+=item payby
+
+=back
+
+=cut
+
+sub cust_search_sql {
+  my($class, $param) = @_;
+
+  if ( $DEBUG ) {
+    warn "$me cust_search_sql called with params: \n".
+         join("\n", map { "  $_: ". $param->{$_} } keys %$param ). "\n";
+  }
+
+  my @search = ();
+
+  if ( $param->{'agentnum'} && $param->{'agentnum'} =~ /^(\d+)$/ ) {
+    push @search, "cust_main.agentnum = $1";
+  }
+
+  #status (prospect active inactive suspended cancelled)
+  if ( grep { $param->{'status'} eq $_ } FS::cust_main->statuses() ) {
+    my $method = $param->{'status'}. '_sql';
+    push @search, $class->$method();
+  }
+
+  #payby
+  my @payby = ref($param->{'payby'})
+                ? @{ $param->{'payby'} }
+                : split(',', $param->{'payby'});
+  @payby = grep /^([A-Z]{4})$/, @payby;
+  if ( @payby ) {
+    push @search, 'cust_main.payby IN ('. join(',', map "'$_'", @payby). ')';
+  }
+
+  #here is the agent virtualization
+  push @search,
+    $FS::CurrentUser::CurrentUser->agentnums_sql( 'table' => 'cust_main' );
+  
+  return @search;
+
 }
 
 =back
