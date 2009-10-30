@@ -2408,13 +2408,14 @@ worry that config_items is freeside-specific and icky.
                     ]
   },
 
+  #lists could be auto-generated from pay_batch info
   {
     'key'         => 'batch-fixed_format-CARD',
     'section'     => 'billing',
     'description' => 'Fixed (unchangeable) format for credit card batches.',
     'type'        => 'select',
     'select_enum' => [ 'csv-td_canada_trust-merchant_pc_batch', 'BoM', 'PAP' ,
-                       'csv-chase_canada-E-xactBatch', 'BoM', 'PAP' ]
+                       'csv-chase_canada-E-xactBatch', 'paymentech' ]
   },
 
   {
@@ -2423,7 +2424,7 @@ worry that config_items is freeside-specific and icky.
     'description' => 'Fixed (unchangeable) format for electronic check batches.',
     'type'        => 'select',
     'select_enum' => [ 'csv-td_canada_trust-merchant_pc_batch', 'BoM', 'PAP',
-                       'ach-spiritone',
+                       'paymentech', 'ach-spiritone',
                      ]
   },
 
