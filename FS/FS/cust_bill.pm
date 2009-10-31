@@ -2067,6 +2067,7 @@ notice_name - overrides "Invoice" as the name of the sent document (templates fr
 
 #what's with all the sprintf('%10.2f')'s in here?  will it cause any
 # (alignment in text invoice?) problems to change them all to '%.2f' ?
+# yes: fixed width (dot matrix) text printing will be borked
 sub print_generic {
 
   my( $self, %params ) = @_;
@@ -3192,8 +3193,8 @@ sub _items_sections {
 
   my @sections;
   if ( $summarypage ) {
-    @sections = grep { exists($subtotal{$_}) || ! _pkg_category{$_}->disabled }
-                keys %pkg_category_cache;
+    @sections = grep { exists($subtotal{$_}) || ! _pkg_category($_)->disabled }
+                map { $_->categoryname } qsearch('pkg_category', {});
   } else {
     @sections = keys %subtotal;
   }
@@ -3318,7 +3319,7 @@ sub _items_cust_bill_pkg {
                                  ? $_->section eq $section
                                  : 1
                                }
-                          grep { $_->summary || !$summary_page }
+                          grep { !$_->summary || !$summary_page }
                           $cust_bill_pkg->cust_bill_pkg_display
                         )
     {
