@@ -1,21 +1,23 @@
 <% include( 'elements/search.html',
-                  'title'       => 'FCC Form 477 Results', 
-                  'html_init'   => $html_init,
-                  'name'        => 'regions',
-                  'query'       => [ @sql_query ],
-                  'count_query' =>  $count_query,
-                  'order_by'    => 'ORDER BY censustract',
-                  'header'      => [
-                                     'County code',
-                                     'Census tract code',
-                                     'Upload rate',
-                                     'Download rate',
-                                     'Technology code',
-                                     'Technology code other',
-                                     'Quantity',
-                                     'Percentage residential',
-                                   ],
-                  'fields'      => [
+                  'title'         => 'FCC Form 477 Results', 
+                  'html_init'     => $html_init,
+                  'name'          => 'regions',
+                  'query'         => [ @sql_query ],
+                  'count_query'   =>  $count_query,
+                  'order_by'      => 'ORDER BY censustract',
+                  'avoid_quote'   => 1,
+                  'no_csv_header' => 1,
+                  'header'        => [
+                                       'County code',
+                                       'Census tract code',
+                                       'Upload rate',
+                                       'Download rate',
+                                       'Technology code',
+                                       'Technology code other',
+                                       'Quantity',
+                                       'Percentage residential',
+                                     ],
+                  'fields'        => [
                     sub { my $row = shift; substr($row->censustract, 2, 3) },
                     sub { my $row = shift; substr($row->censustract, 5) },
                     'upload',
@@ -25,7 +27,7 @@
                     'quantity',
                     sub { my $row = shift; sprintf "%.2f", $row->residential },
                   ],
-                  'links'      => [
+                  'links'        => [
                     [ $link, $link_suffix ],
                     [ $link, $link_suffix ],
                     [ $link, $link_suffix ],
@@ -81,17 +83,19 @@ my %row_option_name = $where ?
 @column_option = map { $column_option_name{$_} } sort keys %column_option_name;
 
 #$search_hash{row_option} = join(',', @row_option) if @row_option;
-my $html_init = '<H2>Summary</H2>'. include('/elements/table.html');
-  $html_init .= '<TR><TH></TH>';
+my $summary .= '<H2>Summary</H2>'. include('/elements/table.html');
+$summary .= '<TR><TH></TH>';
 foreach my $column ( sort keys %column_option_name ) {
-  $html_init .= "<TH>$column</TH>";
+  $summary .= "<TH>$column</TH>";
 }
-  $html_init .= "</TR>";
+$summary .= "</TR>";
 
+my $total_count = 0;
+my $total_residential = 0;
 my $rowcount = 1;
 foreach my $row ( sort keys %row_option_name ) {
 
-  $html_init .= "<TR><TH>$row</TH>";
+  $summary .= "<TR><TH>$row</TH>";
 
   my $columncount = 2;
   foreach my $column ( sort keys %column_option_name ) {
@@ -108,13 +112,15 @@ foreach my $row ( sort keys %row_option_name ) {
       }
     );
     my $extracolumns = "$rowcount AS upload, $columncount AS download";
-    my $percent = "100-100*cast(count(cust_main.company) as numeric)/cast(count(*) as numeric) AS residential";
+    my $percent = "CASE WHEN count(*) > 0 THEN 100-100*cast(count(cust_main.company) as numeric)/cast(count(*) as numeric) ELSE cast(0 as numeric) END AS residential";
     $sql_query->{select} = "count(*) AS quantity, $extracolumns, censustract, $percent";
     $sql_query->{extra_sql} =~ /^(.*)(ORDER BY pkgnum)(.*)$/s
       or die "couldn't parse extra_sql";
     $sql_query->{extra_sql} = "$1 GROUP BY censustract $3"; 
 
     my $count_sql = delete($sql_query->{'count_query'});
+    $count_sql =~ s/ FROM/,count(cust_main.company) FROM/
+      or die "couldn't parse count_sql";
 
     my $count_sth = dbh->prepare($count_sql)
       or die "Error preparing $count_sql: ". dbh->errstr;
@@ -122,16 +128,37 @@ foreach my $row ( sort keys %row_option_name ) {
       or die "Error executing $count_sql: ". $count_sth->errstr;
     my $count_arrayref = $count_sth->fetchrow_arrayref;
     my $count = $count_arrayref->[0];
+    $total_count += $count;
+    my $residential = $count_arrayref->[1];
+    $total_residential += $residential;
+    my $percentage = sprintf('%.2f', $count ? 100-100*$residential/$count : 0);
 
-    $html_init .= "<TD>$count</TD>";
+    $summary .= "<TD>$count<BR>$percentage% residential</TD>";
     push @sql_query, $sql_query;
     $columncount++;
   }
 
-  $html_init .= "</TR>";
+  $summary .= "</TR>";
   $rowcount++;
 }
 
+my $total_percentage =
+  sprintf("%.2f", $total_count ? 100-100*$total_residential/$total_count : 0);
+
+my $html_init = '<H2>Totals</H2>'. include('/elements/table.html'). "<TR>";
+$html_init .= "<TH>Total Connections</TH>";
+$html_init .= "<TH>% owned loop</TH>";
+$html_init .= "<TH>% billed to end users</TH>";
+$html_init .= "<TH>% residential</TH>";
+$html_init .= "<TH>% residential &gt; 200kbps</TH>";
+$html_init .= "</TR><TR>";
+$html_init .= "<TD>$total_count</TD>";
+$html_init .= "<TD>100.00</TD>";
+$html_init .= "<TD>100.00</TD>";
+$html_init .= "<TD>$total_percentage</TD>";
+$html_init .= "<TD>$total_percentage</TD>";
+$html_init .= "</TR></TABLE><BR>";
+$html_init .= $summary;
 $html_init .= "</TABLE><BR><H2>Details</H2>";
 
 my $count_query = 'SELECT count(*) FROM ( ('.

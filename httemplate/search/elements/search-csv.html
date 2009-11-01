@@ -1,6 +1,6 @@
 % $csv->combine(@$header); #or die $csv->status;
 %    
-<% $csv->string %>\
+<% $opt{no_csv_header} ? '' : $csv->string %>\
 %
 % foreach my $row ( @$rows ) {
 %
@@ -41,7 +41,10 @@ my %opt    = %{ $args{'opt'} };
 #http_header('Content-Type' => 'text/comma-separated-values' ); #IE chokes
 http_header('Content-Type' => 'text/plain' );
 
-my $csv = new Text::CSV_XS { 'always_quote' => 1,
+my $quote_char = '"';
+$quote_char = $opt{csv_quote} if exists($opt{csv_quote});
+
+my $csv = new Text::CSV_XS { 'always_quote' => $opt{avoid_quote} ? 0 : 1,
                              'eol'          => "\n", #"\015\012", #"\012"
                            };
 
