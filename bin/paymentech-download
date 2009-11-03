@@ -29,7 +29,7 @@ adminsuidsetup $user;
 if ( $opt_a ) {
   die "no such directory: $opt_a\n"
     unless -d $opt_a;
-  die "archive directory $opt_a is not writeable by the freeside user\n"
+  die "archive directory $opt_a is not writable by the freeside user\n"
     unless -w $opt_a;
 }
 
