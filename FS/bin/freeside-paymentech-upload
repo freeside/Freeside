@@ -2,6 +2,8 @@
 
 use strict;
 use Getopt::Std;
+use Date::Format qw(time2str);
+use File::Temp qw(tempdir); #0.19 for ->newdir() interface, not in 5.10.0
 use Net::SFTP::Foreign;
 use FS::UID qw(adminsuidsetup datasrc);
 use FS::Record qw(qsearch qsearchs);
@@ -9,21 +11,16 @@ use FS::pay_batch;
 use FS::cust_pay_batch;
 use FS::Conf;
 
-use Date::Format 'time2str';
-use File::Temp;
-
 use vars qw( $opt_a $opt_t $opt_v );
 getopts('avt');
 
 #$Net::SFTP::Foreign::debug = -1;
 
-sub usage { '
+sub usage { "
   Usage:
     paymentech-upload [ -v ] [ -t ] user batchnum
-    paymentech-upload -a [ -v ] [ -t ] user
-
-'
-}
+    paymentech-upload -a [ -v ] [ -t ] user\n
+" }
 
 my $user = shift or die &usage;
 adminsuidsetup $user;
@@ -47,7 +44,8 @@ my @batchconf = $conf->config('batchconfig-paymentech');
 my $username = $batchconf[3] or die "no Paymentech batch username configured\n";
 my $password = $batchconf[4] or die "no Paymentech batch password configured\n";
 
-my $tmpdir = File::Temp->newdir();
+#my $tmpdir = File::Temp->newdir();
+my $tmpdir = tempdir( CLEANUP => 1 ); #DIR=>somewhere?
 
 my @filenames;
 
