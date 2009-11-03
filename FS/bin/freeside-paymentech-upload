@@ -25,6 +25,8 @@ sub usage { "
 my $user = shift or die &usage;
 adminsuidsetup $user;
 
+my $zip_check = `which zip` or die "can't find zip executable\n";
+
 my @batches; 
 
 if($opt_a) {
@@ -60,7 +62,8 @@ foreach my $pay_batch (@batches) {
   print OUT $text;
   close OUT;
 
-  system("zip -P $password -q -j $tmpdir/$filename.zip $tmpdir/$filename.xml");
+  system('zip', '-P', '$password', '-q', '-j',
+           "$tmpdir/$filename.zip", "$tmpdir/$filename.xml");
 
   die "failed to create zip file\n" if (! -f "$tmpdir/$filename.zip" );
   push @filenames, $filename;
