@@ -18,8 +18,8 @@ getopts('avt');
 
 sub usage { "
   Usage:
-    paymentech-upload [ -v ] [ -t ] user batchnum
-    paymentech-upload -a [ -v ] [ -t ] user\n
+    freeside-paymentech-upload [ -v ] [ -t ] user batchnum
+    freeside-paymentech-upload -a [ -v ] [ -t ] user\n
 " }
 
 my $user = shift or die &usage;
@@ -87,13 +87,11 @@ print STDERR "Finished!\n" if $opt_v;
 
 =head1 NAME
 
-paymentech-upload
-
-paymentech-upload - Transmit a payment batch to Chase Paymentech via SFTP.
+freeside-paymentech-upload - Transmit a payment batch to Chase Paymentech via SFTP.
 
 =head1 SYNOPSIS
 
-  paymentech-upload [ -a ] [ -v ] [ -t ] user batchnum
+  freeside-paymentech-upload [ -a ] [ -v ] [ -t ] user batchnum
 
 =head1 DESCRIPTION
 

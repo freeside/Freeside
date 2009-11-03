@@ -17,7 +17,7 @@ getopts('vta:');
 #$Net::SFTP::Foreign::debug = -1;
 sub usage { "
   Usage:
-      paymentech-download [ -v ] [ -t ] [ -a archivedir ] user\n
+      freeside-paymentech-download [ -v ] [ -t ] [ -a archivedir ] user\n
 " }
 
 my $user = shift or die &usage;
@@ -100,9 +100,7 @@ print STDERR "Finished!\n" if $opt_v;
 
 =head1 NAME
 
-paymentech-download
-
-paymentech-download - Retrieve payment batch responses from Chase Paymentech.
+freeside-paymentech-download - Retrieve payment batch responses from Chase Paymentech.
 
 =head1 SYNOPSIS
 
