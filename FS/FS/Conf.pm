@@ -1033,19 +1033,7 @@ worry that config_items is freeside-specific and icky.
     'key'         => 'finance_pkgclass',
     'section'     => 'billing',
     'description' => 'The package class for finance charges',
-    'type'        => 'select-sub',
-    'options_sub' => sub { require FS::Record;
-                           require FS::pkg_class;
-                           map { $_->classnum => $_->classname }
-                               FS::Record::qsearch('pkg_class', {} );
-		         },
-    'option_sub'  => sub { require FS::Record;
-                           require FS::pkg_class;
-                           my $pkg_class = FS::Record::qsearchs(
-			     'pkg_class', { 'classnum'=>shift }
-			   );
-                           $pkg_class ? $pkg_class->classname : '';
-			 },
+    'type'        => 'select-pkg_class',
   },
 
   { 
@@ -1540,38 +1528,14 @@ worry that config_items is freeside-specific and icky.
     'key'         => 'signup_server-classnum2',
     'section'     => '',
     'description' => 'Package Class for first optional purchase',
-    'type'        => 'select-sub',
-    'options_sub' => sub { require FS::Record;
-                           require FS::pkg_class;
-                           map { $_->classnum => $_->classname }
-                               FS::Record::qsearch('pkg_class', {} );
-		         },
-    'option_sub'  => sub { require FS::Record;
-                           require FS::pkg_class;
-                           my $pkg_class = FS::Record::qsearchs(
-			     'pkg_class', { 'classnum'=>shift }
-			   );
-                           $pkg_class ? $pkg_class->classname : '';
-			 },
+    'type'        => 'select-pkg_class',
   },
 
   {
     'key'         => 'signup_server-classnum3',
     'section'     => '',
     'description' => 'Package Class for second optional purchase',
-    'type'        => 'select-sub',
-    'options_sub' => sub { require FS::Record;
-                           require FS::pkg_class;
-                           map { $_->classnum => $_->classname }
-                               FS::Record::qsearch('pkg_class', {} );
-		         },
-    'option_sub'  => sub { require FS::Record;
-                           require FS::pkg_class;
-                           my $pkg_class = FS::Record::qsearchs(
-			     'pkg_class', { 'classnum'=>shift }
-			   );
-                           $pkg_class ? $pkg_class->classname : '';
-			 },
+    'type'        => 'select-pkg_class',
   },
 
   {
@@ -3244,6 +3208,22 @@ worry that config_items is freeside-specific and icky.
     'description' => 'Allow manual application of credits to line items.',
     'type'        => 'checkbox',
   },
+
+  {
+    'key'         => 'breakage-days',
+    'section'     => 'billing',
+    'description' => 'If set to a number of days, after an account goes that long without activity, recognizes any outstanding payments and credits as "breakage" by creating a breakage charge and invoice.',
+    'type'        => 'text',
+    'per_agent'   => 1,
+  },
+
+  {
+    'key'         => 'breakage-pkg_class',
+    'section'     => 'billing',
+    'description' => 'Package class to use for breakage reconciliation.',
+    'type'        => 'select-pkg_class',
+  },
+
 
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachine", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },

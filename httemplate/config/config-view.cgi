@@ -209,7 +209,7 @@ Click on a configuration value to change it.
               </td>
             </tr>
 
-%   } elsif ( $type =~ /^select-(part_svc|part_pkg)$/ ) {
+%   } elsif ( $type =~ /^select-(part_svc|part_pkg|pkg_class)$/ ) {
 %     my @keys = $conf->config($i->key, $agentnum);
 
             <tr>

@@ -16,6 +16,10 @@ use FS::Cron::bill qw(bill);
 bill(%opt);
 
 #you can skip this just by not having the config
+use FS::Cron::breakage qw(reconcile_breakage);
+reconcile_breakage(%opt);
+
+#you can skip this just by not having the config
 use FS::Cron::upload qw(upload);
 upload(%opt);
 

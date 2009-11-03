@@ -43,14 +43,15 @@ foreach my $type ( ref($i->type) ? @{$i->type} : $i->type ) {
     }
   } elsif (
     $type =~ /^(editlist|selectmultiple)$/
-    or ( $type =~ /^select(-(sub|part_svc|part_pkg))?$/ || $i->multiple )
+    or ( $type =~ /^select(-(sub|part_svc|part_pkg|pkg_class))?$/
+         || $i->multiple )
   ) {
     if ( scalar(@{[ $cgi->param($i->key.$n) ]}) ) {
       $conf->set($i->key, join("\n", @{[ $cgi->param($i->key.$n) ]} ), $agentnum);
     } else {
       $conf->delete($i->key, $agentnum);
     }
-  } elsif ( $type =~ /^(text|select(-(sub|part_svc|part_pkg))?)$/ ) {
+  } elsif ( $type =~ /^(text|select(-(sub|part_svc|part_pkg|pkg_class))?)$/ ) {
     if ( $cgi->param($i->key.$n) ne '' ) {
       $conf->set($i->key, $cgi->param($i->key.$n), $agentnum);
     } else {
@@ -104,7 +105,7 @@ $conf->delete($_, $agentnum) foreach @delete;
 
 %     } elsif ( $type eq 'text' || $type eq 'select' ) {
         configCell.innerHTML = <% $conf->exists($i->key, $agentnum) ? $conf->config($i->key, $agentnum) : '' |js_string %>;
-%     } elsif ( $type =~ /^select-(part_svc|part_pkg)$/ && ! $i->multiple ) {
+%     } elsif ( $type =~ /^select-(part_svc|part_pkg|pkg_class)$/ && ! $i->multiple ) {
         configCell.innerHTML =
           <% $conf->config($i->key, $agentnum) |js_string %>
 %# + ': ' +

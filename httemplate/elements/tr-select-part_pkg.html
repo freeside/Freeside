@@ -1,7 +1,7 @@
 % if ( $opt{'part_pkg'} && scalar(@{ $opt{'part_pkg'} }) == 0 ) { 
 %   unless ( $opt{'js_only'} ) {
 
-      <INPUT TYPE="hidden" NAME="<% $opt{'field'} || 'pkgpart' %>" VALUE="">
+      <INPUT TYPE="hidden" NAME="<% $opt{'element_name'} || $opt{'field'} || 'pkgpart' %>" VALUE="">
 
 %   }
 %
