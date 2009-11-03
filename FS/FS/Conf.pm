@@ -2459,7 +2459,7 @@ worry that config_items is freeside-specific and icky.
   {
     'key'         => 'batchconfig-paymentech',
     'section'     => 'billing',
-    'description' => 'Configuration for Chase Paymentech batching, four lines: 1. BIN, 2. Terminal ID, 3. Merchant ID, 4. Username, 5. Password',
+    'description' => 'Configuration for Chase Paymentech batching, five lines: 1. BIN, 2. Terminal ID, 3. Merchant ID, 4. Username, 5. Password (for batch uploads)',
     'type'        => 'textarea',
   },
 
