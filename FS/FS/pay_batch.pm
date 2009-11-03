@@ -393,8 +393,8 @@ sub import_results {
 
 }
 
-sub export_batch {
 # Formerly httemplate/misc/download-batch.cgi
+sub export_batch {
   my $self = shift;
   my $conf = new FS::Conf;
   my $format = shift || $conf->config('batch-default_format')
@@ -402,26 +402,23 @@ sub export_batch {
   my $info = $export_info{$format} or die "Format not found: '$format'\n";
   &{$info->{'init'}}($conf) if exists($info->{'init'});
 
+  my $curuser = $FS::CurrentUser::CurrentUser;
+
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;  
 
-  my $error;
-
   my $first_download;
-  if($self->status eq 'O') {
+  my $status = $self->status;
+  if ($status eq 'O') {
     $first_download = 1;
-  }
-  elsif($self->status eq 'I' and
-        $FS::CurrentUser::CurrentUser->access_right('Reprocess batches')) {
+    my $error = $self->set_status('I');
+    die "error updating pay_batch status: $error\n" if $error;
+  } elsif ($status eq 'I' && $curuser->access_right('Reprocess batches')) {
     $first_download = 0;
+  } else {
+    die "No pending batch.\n";
   }
-  else {
-    die "No pending batch.\n"
-  }
-
-  $error = $self->set_status('I');
-  die "error updating pay_batch status: $error\n" if $error;
 
   my $batch = '';
   my $batchtotal = 0;
@@ -440,7 +437,7 @@ sub export_batch {
   foreach my $cust_pay_batch (@cust_pay_batch) {
     if($first_download) {
       my $balance = $cust_pay_batch->cust_main->balance;
-      $error = '';
+      my $error = '';
       if($balance <= 0) { # then don't charge this customer
         $error = $cust_pay_batch->delete;
         undef $cust_pay_batch;
@@ -470,7 +467,7 @@ sub export_batch {
   }
 
   if ($info->{'autopost'}) {
-    $error = &{$info->{'autopost'}}($self, $batch);
+    my $error = &{$info->{'autopost'}}($self, $batch);
     if($error) {
       $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
       die $error;
