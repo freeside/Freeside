@@ -5,6 +5,7 @@ use Getopt::Std;
 use Date::Format qw(time2str);
 use File::Temp qw(tempdir); #0.19 for ->newdir() interface, not in 5.10.0
 use Net::SFTP::Foreign;
+use Expect;
 use FS::UID qw(adminsuidsetup datasrc);
 use FS::Record qw(qsearch qsearchs);
 use FS::pay_batch;
