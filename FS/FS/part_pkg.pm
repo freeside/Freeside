@@ -205,7 +205,11 @@ sub insert {
   warn "  inserting part_pkg_taxoverride records" if $DEBUG;
   my %overrides = %{ $options{'tax_overrides'} || {} };
   foreach my $usage_class ( keys %overrides ) {
-    my @overrides = (grep "$_", split (',', $overrides{$usage_class}) );
+    my $override =
+      ( exists($overrides{$usage_class}) && defined($overrides{$usage_class}) )
+        ? $overrides{$usage_class}
+        : '';
+    my @overrides = (grep "$_", split(',', $override) );
     my $error = $self->process_m2m (
                   'link_table'   => 'part_pkg_taxoverride',
                   'target_table' => 'tax_class',
