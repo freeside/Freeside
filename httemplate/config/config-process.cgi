@@ -1,3 +1,74 @@
+<% header('Configuration set') %>
+  <SCRIPT TYPE="text/javascript">
+%   my $n = 0;
+%   foreach my $type ( ref($i->type) ? @{$i->type} : $i->type ) {
+    var configCell = window.top.document.getElementById('<% $agentnum. $i->key. $n %>');
+    if ( ! configCell ) {
+      window.top.location.reload();
+    }
+    //alert('found cell ' + configCell);
+%     if (    $type eq 'textarea'
+%          || $type eq 'editlist'
+%          || $type eq 'selectmultiple' ) {
+        configCell.innerHTML =
+          '<font size="-2"><pre>' + "\n" +
+          <% encode_entities(join("\n",
+               map { length($_) > 88 ? substr($_,0,88).'...' : $_ }
+                   $conf->config($i->key, $agentnum)
+             ) )
+          |js_string %> +
+          '</pre></font>';
+
+%     } elsif ( $type eq 'checkbox' ) {
+%       if ( $conf->exists($i->key, $agentnum) ) {
+          configCell.style.backgroundColor = '#00ff00';
+          configCell.innerHTML = 'YES';
+%       } else {
+          configCell.style.backgroundColor = '#ff0000';
+          configCell.innerHTML = 'NO';
+%       }
+%     } elsif ( $type eq 'select' && $i->select_hash ) {
+%       my %hash;
+%       if ( ref($i->select_hash) eq 'ARRAY' ) {
+%         tie %hash, 'Tie::IxHash', '' => '', @{ $i->select_hash };
+%       } else {
+%         tie %hash, 'Tie::IxHash', '' => '', %{ $i->select_hash };
+%       }
+        configCell.innerHTML = <% $conf->exists($i->key, $agentnum) ? $hash{ $conf->config($i->key, $agentnum) } : '' |js_string %>;
+
+%     } elsif ( $type eq 'text' || $type eq 'select' ) {
+        configCell.innerHTML = <% $conf->exists($i->key, $agentnum) ? $conf->config($i->key, $agentnum) : '' |js_string %>;
+%     } elsif ( $type =~ /^select-(part_svc|part_pkg|pkg_class)$/ && ! $i->multiple ) {
+%       my $table = $1;
+%       my $namecol = $namecol{$table};
+%       my $pkey = dbdef->table($table)->primary_key;
+%       my $key = $conf->config($i->key, $agentnum);
+%       my $record = qsearchs($table, { $pkey => $key });
+%       my $value = $record ? "$key: ".$record->$namecol() : $key;
+        configCell.innerHTML = <% $value |js_string %>;
+%     } elsif ( $type eq 'select-sub' ) {
+        configCell.innerHTML =
+          <% $conf->config($i->key, $agentnum) |js_string %> + ': ' +
+          <% &{ $i->option_sub }( $conf->config($i->key, $agentnum) ) |js_string %>;
+%     } else {
+        //alert('unknown type <% $type %>');
+        window.top.location.reload();
+%     }
+
+%     $n++;
+%   }
+    parent.cClick();
+  </SCRIPT>
+</BODY>
+</HTML>
+<%once>
+#false laziness w/config-view.cgi
+my %namecol = (
+  'part_svc'  => 'svc',
+  'part_pkg'  => 'pkg',
+  'pkg_class' => 'classname',
+);
+</%once>
 <%init>
 die "access denied\n"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
@@ -65,62 +136,3 @@ $conf->touch($_, $agentnum) foreach @touch;
 $conf->delete($_, $agentnum) foreach @delete;
 
 </%init>
-<% header('Configuration set') %>
-  <SCRIPT TYPE="text/javascript">
-%   my $n = 0;
-%   foreach my $type ( ref($i->type) ? @{$i->type} : $i->type ) {
-    var configCell = window.top.document.getElementById('<% $agentnum. $i->key. $n %>');
-    if ( ! configCell ) {
-      window.top.location.reload();
-    }
-    //alert('found cell ' + configCell);
-%     if (    $type eq 'textarea'
-%          || $type eq 'editlist'
-%          || $type eq 'selectmultiple' ) {
-        configCell.innerHTML =
-          '<font size="-2"><pre>' + "\n" +
-          <% encode_entities(join("\n",
-               map { length($_) > 88 ? substr($_,0,88).'...' : $_ }
-                   $conf->config($i->key, $agentnum)
-             ) )
-          |js_string %> +
-          '</pre></font>';
-
-%     } elsif ( $type eq 'checkbox' ) {
-%       if ( $conf->exists($i->key, $agentnum) ) {
-          configCell.style.backgroundColor = '#00ff00';
-          configCell.innerHTML = 'YES';
-%       } else {
-          configCell.style.backgroundColor = '#ff0000';
-          configCell.innerHTML = 'NO';
-%       }
-%     } elsif ( $type eq 'select' && $i->select_hash ) {
-%       my %hash;
-%       if ( ref($i->select_hash) eq 'ARRAY' ) {
-%         tie %hash, 'Tie::IxHash', '' => '', @{ $i->select_hash };
-%       } else {
-%         tie %hash, 'Tie::IxHash', '' => '', %{ $i->select_hash };
-%       }
-        configCell.innerHTML = <% $conf->exists($i->key, $agentnum) ? $hash{ $conf->config($i->key, $agentnum) } : '' |js_string %>;
-
-%     } elsif ( $type eq 'text' || $type eq 'select' ) {
-        configCell.innerHTML = <% $conf->exists($i->key, $agentnum) ? $conf->config($i->key, $agentnum) : '' |js_string %>;
-%     } elsif ( $type =~ /^select-(part_svc|part_pkg|pkg_class)$/ && ! $i->multiple ) {
-        configCell.innerHTML =
-          <% $conf->config($i->key, $agentnum) |js_string %>
-%# + ': ' +
-%#          <% &{ $i->option_sub }( $conf->config($i->key, $agentnum) ) |js_string %>;
-%     } elsif ( $type eq 'select-sub' ) {
-        configCell.innerHTML =
-          <% $conf->config($i->key, $agentnum) |js_string %> + ': ' +
-          <% &{ $i->option_sub }( $conf->config($i->key, $agentnum) ) |js_string %>;
-%     } else {
-        //alert('unknown type <% $type %>');
-        window.top.location.reload();
-%     }
-
-%     $n++;
-%   }
-    parent.cClick();
-  </SCRIPT>
-  </BODY></HTML>

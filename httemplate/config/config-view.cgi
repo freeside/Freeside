@@ -210,13 +210,21 @@ Click on a configuration value to change it.
             </tr>
 
 %   } elsif ( $type =~ /^select-(part_svc|part_pkg|pkg_class)$/ ) {
+%
+%     my $table = $1;
+%     my $namecol = $namecol{$table};
+%     my $pkey = dbdef->table($table)->primary_key;
+%
 %     my @keys = $conf->config($i->key, $agentnum);
 
             <tr>
               <td id="<% $agentnum.$i->key.$n %>" bgcolor="#ffffff">
-                <% join('<BR>', map { $_ # ': '. $svc, $pkg, whatever
-                                    }
-                                    @keys
+                <% join( '<BR>',
+                         map {
+                           my $key = $_;
+                           my $record = qsearchs($table, { $pkey => $key });
+                           $record ? "$key: ".$record->$namecol() : $key;
+                         } @keys
                        )
                 %>
               </td>
@@ -301,6 +309,14 @@ Click on a configuration value to change it.
 </SCRIPT>
 
 </body></html>
+<%once>
+#false laziness w/config-process.cgi
+my %namecol = (
+  'part_svc'  => 'svc',
+  'part_pkg'  => 'pkg',
+  'pkg_class' => 'classname',
+);
+</%once>
 <%init>
 
 die "access denied"
@@ -343,6 +359,5 @@ my @all_agents = ();
 if ( $cgi->param('showagent') ) {
   @all_agents = qsearch('agent', { 'disabled' => '' } );
 }
-warn 'all agents: '. join('-', @all_agents);
 
 </%init>
