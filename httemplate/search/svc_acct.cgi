@@ -39,7 +39,8 @@ sub timelast {
 
   my $seconds = $sth->fetchrow_arrayref->[0];
 
-  my $return = (($seconds < 0) ? '-' : '') . concise(duration($seconds));
+  #my $return = (($seconds < 0) ? '-' : '') . concise(duration($seconds));
+  my $return = (($seconds < 0) ? '-' : '') . format_time($seconds);
 
   $return .= sprintf(' (%.2fx)', $seconds / $permonth ) if $permonth;
 
@@ -135,8 +136,10 @@ if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
           return format_time($seconds) unless $timepermonth && $recur;
 
           my $balance = $cust_pkg->cust_main->balance;
-          my $months_unpaid = $balance / $recur;
-          my $time_unpaid = $months_unpaid * $timepermonth;
+          my $periods_unpaid = $balance / $recur;
+          my $time_unpaid = $periods_unpaid * $timepermonth;
+          $time_unpaid *= $part_pkg->freq
+            if $part_pkg->freq =~ /^\d+$/ && $part_pkg->freq != 0;
           format_time($seconds-$time_unpaid).
             sprintf(' (%.2fx monthly)', ( $seconds-$time_unpaid ) / $timepermonth );
         },
