@@ -3224,15 +3224,24 @@ sub _handle_taxes {
 
       $taxhash{'taxclass'} = $part_pkg->taxclass;
 
-      my @taxes = qsearch( 'cust_main_county', \%taxhash );
-
+      my @taxes = ();
       my %taxhash_elim = %taxhash;
+      my @elim = qw( city county state );
+      do { 
 
-      my @elim = qw( taxclass city county state );
-      while ( !scalar(@taxes) && scalar(@elim) ) {
-        $taxhash_elim{ shift(@elim) } = '';
+        #first try a match with taxclass
         @taxes = qsearch( 'cust_main_county', \%taxhash_elim );
-      }
+
+        if ( !scalar(@taxes) && $taxhash_elim{'taxclass'} ) {
+          #then try a match without taxclass
+          my %no_taxclass = %taxhash_elim;
+          $no_taxclass{ 'taxclass' } = '';
+          @taxes = qsearch( 'cust_main_county', \%no_taxclass );
+        }
+
+        $taxhash_elim{ shift(@elim) } = '';
+
+      } while ( !scalar(@taxes) && scalar(@elim) );
 
       @taxes = grep { ! $_->taxname or ! $self->tax_exemption($_->taxname) }
                     @taxes
