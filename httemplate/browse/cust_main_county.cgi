@@ -278,7 +278,7 @@ if ( scalar(@counties) > 1 ) {
               'empty_data_label'     => '(none)',
               'empty_data_value'     => '__NONE__',
               'disable_empty'        => 0,
-              'disable_countyupdate' => 1,
+              'disable_cityupdate'   => 1,
            );
 } else {
   $html_posttotal .=
