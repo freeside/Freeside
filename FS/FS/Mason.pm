@@ -221,6 +221,8 @@ if ( -e $addl_handler_use_file ) {
   #use FS::h_phone_device;
   use FS::h_svc_www;
   use FS::cust_statement;
+  use FS::cust_class;
+  use FS::cust_category;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {
