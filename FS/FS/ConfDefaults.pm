@@ -58,13 +58,13 @@ sub cust_fields_avail { (
     'custnum | Status | Last, First | Company | (all address fields) | (all phones) | Invoicing email(s) | Payment Type | Current Balance',
 
   'Cust# | Cust. Status | (bill) Name | (bill) Company | (bill) Address 1 | (bill) Address 2 | (bill) City | (bill) State | (bill) Zip | (bill) Country | (bill) Day phone | (bill) Night phone | (service) Name | (service) Company | (service) Address 1 | (service) Address 2 | (service) City | (service) State | (service) Zip | (service) Country | (service) Day phone | (service) Night phone | Invoicing email(s)' => 
-    'custnum | Status | Last, First | Company | (all address fields) | Day phone | Night phone | (same for service address if present) | Invoicing email(s)',
+    'custnum | Status | Last, First | Company | (all address fields) | Day phone | Night phone | (service address) | Invoicing email(s)',
 
   'Cust# | Cust. Status | (bill) Name | (bill) Company | (bill) Address 1 | (bill) Address 2 | (bill) City | (bill) State | (bill) Zip | (bill) Country | (bill) Day phone | (bill) Night phone | (bill) Fax number | (service) Name | (service) Company | (service) Address 1 | (service) Address 2 | (service) City | (service) State | (service) Zip | (service) Country | (service) Day phone | (service) Night phone | (service) Fax number | Invoicing email(s) | Payment Type' => 
-    'custnum | Status | Last, First | Company | (all address fields) | (all phones) | (same for service address if present) | Invoicing email(s) | Payment Type',
+    'custnum | Status | Last, First | Company | (all address fields) | (all phones) | (service address) | Invoicing email(s) | Payment Type',
 
   'Cust# | Cust. Status | (bill) Name | (bill) Company | (bill) Address 1 | (bill) Address 2 | (bill) City | (bill) State | (bill) Zip | (bill) Country | (bill) Day phone | (bill) Night phone | (bill) Fax number | (service) Name | (service) Company | (service) Address 1 | (service) Address 2 | (service) City | (service) State | (service) Zip | (service) Country | (service) Day phone | (service) Night phone | (service) Fax number | Invoicing email(s) | Payment Type | Current Balance' => 
-    'custnum | Status | Last, First | Company | (all address fields) | (all phones) | (same for service address if present) | Invoicing email(s) | Payment Type | Current Balance',
+    'custnum | Status | Last, First | Company | (all address fields) | (all phones) | (service address) | Invoicing email(s) | Payment Type | Current Balance',
 
   'Invoicing email(s)' => 'Invoicing email(s)',
   'Cust# | Invoicing email(s)' => 'custnum | Invoicing email(s)',
