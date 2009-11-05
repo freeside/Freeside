@@ -90,11 +90,11 @@ Checks all fields to make sure this is a valid package category.  If there is an
 error, returns the error, otherwise returns false.  Called by the insert and
 replace methods.
 
+=cut
+
 # _ upgrade_data
 #
 # Used by FS::Upgrade to migrate to a new database.
-#
-#
 
 sub _upgrade_data {
   my ($class, %opts) = @_;
