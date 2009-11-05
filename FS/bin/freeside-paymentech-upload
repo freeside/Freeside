@@ -71,7 +71,7 @@ foreach my $pay_batch (@batches) {
 }
 
 my $host = ($opt_t ? 'orbitalbatchvar.paymentech.net'
-                   : 'orbital1.paymentech.net');
+                   : 'orbitalbatch.paymentech.net');
 print STDERR "Connecting to $username\@$host...\n" if $opt_v;
 
 my $sftp = Net::SFTP::Foreign->new( host => $host,

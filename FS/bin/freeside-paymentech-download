@@ -43,7 +43,7 @@ my $username = $batchconf[3] or die "no Paymentech batch username configured\n";
 my $password = $batchconf[4] or die "no Paymentech batch password configured\n";
 
 my $host = ($opt_t ? 'orbitalbatchvar.paymentech.net'
-                   : 'orbital1.paymentech.net');
+                   : 'orbitalbatch.paymentech.net');
 print STDERR "Connecting to $username\@$host...\n" if $opt_v;
 
 my $sftp = Net::SFTP::Foreign->new( host => $host,
