@@ -1,0 +1,105 @@
+<% objToJson($return) %>
+<%init>
+
+my $DEBUG = 0;
+
+my $conf = new FS::Conf;
+
+my $sub = $cgi->param('sub');
+
+my $return = {};
+
+if ( $sub eq 'calculate_taxes' ) {
+
+  {
+    my %arg = $cgi->param('arg');
+    $return = \%arg;
+    warn join('', map "$_: $arg{$_}\n", keys %arg )
+      if $DEBUG;
+
+    my $cust_credit = qsearchs( 'cust_credit', { 'crednum' => $arg{crednum} } );
+    unless ($cust_credit) {
+      $return->{error} = "No such credit: $arg{crednum}";
+      last;
+    }
+  
+    my %cust_bill_pkg = ();
+    my @items = split(',', $arg{items});
+    while ( @items ) {
+      my ($billpkgnum, $s_or_r, $amount ) = splice(@items, 0, 3);
+      unless ( defined($amount) ) {
+        $return->{error} = "Bad items argument list";
+        last;
+      }
+      unless ( $cust_bill_pkg{$billpkgnum} ) {
+        my $cust_bill_pkg =
+          qsearchs( 'cust_bill_pkg', { 'billpkgnum' => $billpkgnum } );
+        unless ($cust_bill_pkg) {
+          $return->{error} = "No such line item: $billpkgnum";
+          last;
+        }
+        next unless $cust_bill_pkg->pkgnum > 0; #hmmm @ one shot (-1)
+        unless ($cust_bill_pkg->cust_pkg->custnum == $cust_credit->custnum) {
+          $return->{error} = "Credit/line item customer mismatch";
+          last;
+        }
+        $cust_bill_pkg{$billpkgnum} = $cust_bill_pkg;
+        $cust_bill_pkg->setup(0);
+        $cust_bill_pkg->recur(0);
+      }
+
+      last if $return->{error};
+
+      my $cust_bill_pkg = $cust_bill_pkg{$billpkgnum};
+      $s_or_r = $s_or_r eq 'setup' ? 'setup' : 'recur';
+      my $value = sprintf('%.2f', $cust_bill_pkg->$s_or_r + $amount);
+      $cust_bill_pkg->$s_or_r($value);
+    }
+
+    last if $return->{error};
+
+    my $cust_main = $cust_credit->cust_main;
+
+    my $taxlisthash = {};
+    foreach my $cust_bill_pkg (values %cust_bill_pkg) {
+      my $part_pkg = $cust_bill_pkg->part_pkg;
+      $cust_main->_handle_taxes( $part_pkg,
+                                 $taxlisthash,
+                                 $cust_bill_pkg,
+                                 $cust_bill_pkg->cust_pkg,
+                                 $cust_bill_pkg->cust_bill->_date,
+                                 $cust_bill_pkg->cust_pkg->pkgpart,
+                               );
+    }
+    my $listref_or_error = 
+      $cust_main->calculate_taxes( [ values %cust_bill_pkg ], $taxlisthash, [ values %cust_bill_pkg ]->[0]->cust_bill->_date );
+
+    unless ( ref( $listref_or_error ) ) {
+      $return->{error} = "No such credit: $arg{crednum}";
+      last;
+    }
+
+    my @taxlines = ();
+    $return->{taxlines} = \@taxlines;
+    foreach my $taxline ( @$listref_or_error ) {
+      my $amount = $taxline->setup;
+      my $desc = $taxline->desc;
+      foreach my $location ( @{$taxline->cust_bill_pkg_tax_location}, @{$taxline->cust_bill_pkg_tax_rate_location} ) {
+        my $taxlocnum = $location->locationnum || '';
+        my $taxratelocnum = $location->taxratelocationnum || '';
+        push @taxlines,
+          [ $location->desc, $taxline->setup, $taxlocnum, $taxratelocnum ];
+        $amount -= $location->amount;
+      }
+      if ($amount > 0) {
+        push @taxlines,
+          [ $taxline->itemdesc. ' (default)', sprintf('%.2f', $amount), '', '' ];
+      }
+    }
+
+    $return->{taxlines} = \@taxlines;
+
+  }
+}
+
+</%init>
