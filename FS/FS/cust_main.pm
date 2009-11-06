@@ -3963,7 +3963,8 @@ I<zip>, I<payinfo> and I<paydate> are also available.  Any of these options,
 if set, will override the value from the customer record.
 
 I<description> is a free-text field passed to the gateway.  It defaults to
-"Internet services".
+the value defined by the business-onlinepayment-description configuration
+option, or "Internet services" if that is unset.
 
 If an I<invnum> is specified, this payment (if successful) is applied to the
 specified invoice.  If you don't specify an I<invnum> you might want to
@@ -4003,7 +4004,17 @@ sub realtime_bop {
     warn "  $_ => $options{$_}\n" foreach keys %options;
   }
 
-  $options{'description'} ||= 'Internet services';
+  unless ( $options{'description'} ) {
+    if ( $conf->exists('business-onlinepayment-description') ) {
+      my $dtempl = $conf->config('business-onlinepayment-description');
+
+      my $agent = $self->agent->agent;
+      #$pkgs... not here
+      $options{'description'} = eval qq("$dtempl");
+    } else {
+      $options{'description'} = 'Internet services';
+    }
+  }
 
   return $self->fake_bop($method, $amount, %options) if $options{'fake'};
 
@@ -4959,7 +4970,8 @@ I<zip>, I<payinfo> and I<paydate> are also available.  Any of these options,
 if set, will override the value from the customer record.
 
 I<description> is a free-text field passed to the gateway.  It defaults to
-"Internet services".
+the value defined by the business-onlinepayment-description configuration
+option, or "Internet services" if that is unset.
 
 If an I<invnum> is specified, this payment (if successful) is applied to the
 specified invoice.  If you don't specify an I<invnum> you might want to
@@ -5013,7 +5025,8 @@ I<zip>, I<payinfo> and I<paydate> are also available.  Any of these options,
 if set, will override the value from the customer record.
 
 I<description> is a free-text field passed to the gateway.  It defaults to
-"Internet services".
+the value defined by the business-onlinepayment-description configuration
+option, or "Internet services" if that is unset.
 
 If an I<invnum> is specified, this payment (if successful) is applied to the
 specified invoice.  If you don't specify an I<invnum> you might want to
@@ -5064,7 +5077,18 @@ sub _bop_options {
 sub _bop_defaults {
   my ($self, $options) = @_;
 
-  $options->{description} ||= 'Internet services';
+  unless ( $options->{'description'} ) {
+    if ( $conf->exists('business-onlinepayment-description') ) {
+      my $dtempl = $conf->config('business-onlinepayment-description');
+
+      my $agent = $self->agent->agent;
+      #$pkgs... not here
+      $options->{'description'} = eval qq("$dtempl");
+    } else {
+      $options->{'description'} = 'Internet services';
+    }
+  }
+
   $options->{payinfo} = $self->payinfo unless exists( $options->{payinfo} );
   $options->{invnum} ||= '';
   $options->{payname} = $self->payname unless exists( $options->{payname} );
