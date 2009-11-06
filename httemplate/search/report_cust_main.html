@@ -46,11 +46,42 @@
 %   }
 
     <% include( '/elements/tr-select-payby.html',
-                  'payby_type' => 'cust',
-                  'multiple'   => 1,
-                  'curr_value' => { map { $_ => 1 } FS::payby->cust_payby },
+                  'payby_type'   => 'cust',
+                  'multiple'     => 1,
+                  'all_selected' => 1,
               )
     %>
+
+    <TR>
+      <TD ALIGN="right">Payment expiration before</TD>
+      <TD>
+        <SELECT NAME="paydate_month" DISABLED>
+%         foreach my $month ( 1 .. 12 ) {
+            <OPTION VALUE="<% $month %>"><% $month %></OPTION>
+%         }
+        </SELECT>
+        /
+        <SELECT NAME="paydate_year" onChange="paydate_year_changed(this);">
+          <OPTION VALUE=""></OPTION>
+%         my $lastyear = (localtime(time))[5] + 1899;
+%         foreach my $year ( $lastyear .. $lastyear+12 ) {
+            <OPTION VALUE="<% $year %>"><% $year %></OPTION>
+%         }
+        </SELECT>
+      </TD>
+    </TR>
+
+    <SCRIPT TYPE="text/javascript">
+      function paydate_year_changed(what) {
+        var value = what.options[what.selectedIndex].value;
+        var month_select = what.form.paydate_month;
+        if ( value == '' ) {
+          month_select.disabled = true;
+        } else {
+          month_select.disabled = false;
+        }
+      }
+    </SCRIPT>
     
     <% include( '/elements/tr-input-lessthan_greaterthan.html',
                   label   => 'Current balance',

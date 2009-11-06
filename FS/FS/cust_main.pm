@@ -8259,6 +8259,10 @@ listref of start date, end date
 
 listref
 
+=item paydate_year
+
+=item paydate_month
+
 =item current_balance
 
 listref (list returned by FS::UI::Web::parse_lt_gt($cgi, 'current_balance'))
@@ -8358,6 +8362,23 @@ sub search_sql {
   my @payby = grep /^([A-Z]{4})$/, @{ $params->{'payby'} };
   if ( @payby ) {
     push @where, '( '. join(' OR ', map "cust_main.payby = '$_'", @payby). ' )';
+  }
+
+  ###
+  # paydate_year / paydate_month
+  ###
+
+  if ( $params->{'paydate_year'} =~ /^(\d{4})$/ ) {
+    my $year = $1;
+    $params->{'paydate_month'} =~ /^(\d\d?)$/
+      or die "paydate_year without paydate_month?";
+    my $month = $1;
+
+    push @where,
+      'paydate IS NOT NULL',
+      "paydate != ''",
+      "CAST(paydate AS timestamp) < CAST('$year-$month-01' AS timestamp )"
+;
   }
 
   ##
