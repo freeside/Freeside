@@ -1,7 +1,7 @@
 package FS::cust_main_invoice;
 
 use strict;
-use vars qw(@ISA $conf);
+use vars qw(@ISA);
 use Exporter;
 use FS::Record qw( qsearchs );
 use FS::Conf;
@@ -127,12 +127,16 @@ sub checkdest {
   my $error = $self->ut_text('dest');
   return $error if $error;
 
+  my $conf = new FS::Conf;
+
   if ( $self->dest =~ /^(POST|FAX)$/ ) {
     #contemplate our navel
   } elsif ( $self->dest =~ /^(\d+)$/ ) {
     return "Unknown local account (specified by svcnum: ". $self->dest. ")"
       unless qsearchs( 'svc_acct', { 'svcnum' => $self->dest } );
-  } elsif ( $self->dest =~ /^\s*([\w\.\-\&\+]+)\@(([\w\.\-]+\.)+\w+)\s*$/ ) {
+  } elsif ( $conf->exists('emailinvoice-apostrophe')
+              ? $self->dest =~ /^\s*([\w\.\-\&\+\']+)\@(([\w\.\-]+\.)+\w+)\s*$/
+              : $self->dest =~ /^\s*([\w\.\-\&\+]+)\@(([\w\.\-]+\.)+\w+)\s*$/ ){
     my($user, $domain) = ($1, $2);
     $self->dest("$1\@$2");
   } else {

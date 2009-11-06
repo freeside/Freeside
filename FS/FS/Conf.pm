@@ -810,35 +810,42 @@ worry that config_items is freeside-specific and icky.
     'key'         => 'editreferrals',
     'section'     => 'UI',
     'description' => 'Enable advertising source modification for existing customers',
-    'type'       => 'checkbox',
+    'type'        => 'checkbox',
   },
 
   {
     'key'         => 'emailinvoiceonly',
     'section'     => 'billing',
     'description' => 'Disables postal mail invoices',
-    'type'       => 'checkbox',
+    'type'        => 'checkbox',
   },
 
   {
     'key'         => 'disablepostalinvoicedefault',
     'section'     => 'billing',
     'description' => 'Disables postal mail invoices as the default option in the UI.  Be careful not to setup customers which are not sent invoices.  See <a href ="#emailinvoiceauto">emailinvoiceauto</a>.',
-    'type'       => 'checkbox',
+    'type'        => 'checkbox',
   },
 
   {
     'key'         => 'emailinvoiceauto',
     'section'     => 'billing',
     'description' => 'Automatically adds new accounts to the email invoice list',
-    'type'       => 'checkbox',
+    'type'        => 'checkbox',
   },
 
   {
     'key'         => 'emailinvoiceautoalways',
     'section'     => 'billing',
     'description' => 'Automatically adds new accounts to the email invoice list even when the list contains email addresses',
-    'type'       => 'checkbox',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'emailinvoice-apostrophe',
+    'section'     => 'billing',
+    'description' => 'Allows the apostrophe (single quote) character in the email addresses in the email invoice list.',
+    'type'        => 'checkbox',
   },
 
   {
@@ -1123,17 +1130,17 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
-    'key' => 'password-noampersand',
-    'section' => 'password',
+    'key'         => 'password-noampersand',
+    'section'     => 'password',
     'description' => 'Disallow ampersands in passwords',
-    'type' => 'checkbox',
+    'type'        => 'checkbox',
   },
 
   {
-    'key' => 'password-noexclamation',
-    'section' => 'password',
+    'key'         => 'password-noexclamation',
+    'section'     => 'password',
     'description' => 'Disallow exclamations in passwords (Not setting this could break old text Livingston or Cistron Radius servers)',
-    'type' => 'checkbox',
+    'type'        => 'checkbox',
   },
 
   {
@@ -2598,14 +2605,14 @@ worry that config_items is freeside-specific and icky.
     'key'         => 'disable_setup_suspended_pkgs',
     'section'     => 'billing',
     'description' => 'Disables charging of setup fees for suspended packages.',
-    'type'       => 'checkbox',
+    'type'        => 'checkbox',
   },
 
   {
-    'key' => 'password-generated-allcaps',
-    'section' => 'password',
+    'key'         => 'password-generated-allcaps',
+    'section'     => 'password',
     'description' => 'Causes passwords automatically generated to consist entirely of capital letters',
-    'type' => 'checkbox',
+    'type'        => 'checkbox',
   },
 
   {
@@ -3041,7 +3048,7 @@ worry that config_items is freeside-specific and icky.
     'key'         => 'cust_pkg-show_autosuspend',
     'section'     => 'UI',
     'description' => 'Show package auto-suspend dates.  Use with caution for now; can slow down customer view for large insallations.',
-    'type'       => 'checkbox',
+    'type'        => 'checkbox',
   },
 
   {
