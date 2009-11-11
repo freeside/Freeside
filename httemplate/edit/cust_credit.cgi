@@ -40,11 +40,6 @@ Credit
     <TD><SELECT NAME="apply"><OPTION VALUE="yes" SELECTED>yes<OPTION>no</SELECT></TD>
   </TR>
 
-  <TR>
-    <TD ALIGN="right">Tax</TD>
-    <TD><SELECT NAME="tax"><OPTION VALUE="included" SELECTED>is included<OPTION VALUE="calculate">is to be calculated</SELECT></TD>
-  </TR>
-
 % if ( $conf->exists('pkg-balances') ) {
   <% include('/elements/tr-select-cust_pkg-balances.html',
                'custnum' => $custnum,
