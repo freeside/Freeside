@@ -66,7 +66,7 @@ my %paytype = (
     $xml->startTag('transRequest', RequestCount => scalar(@cust_pay_batch) + 1);
     $xml->startTag('batchFileID');
     $xml->dataElement(userID => $username);
-    $xml->dataElement(fileDateTime => time2str('%Y%m%d%H%M%s', time));
+    $xml->dataElement(fileDateTime => time2str('%Y%m%d%H%M%S', time));
     $xml->dataElement(fileID => 'FILEID');
     $xml->endTag('batchFileID');
 
