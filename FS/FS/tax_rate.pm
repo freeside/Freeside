@@ -231,6 +231,8 @@ sub check {
     || $self->ut_enum('passflag', [ '', 'Y', 'N' ])
     || $self->ut_enum('setuptax', [ '', 'Y' ] )
     || $self->ut_enum('recurtax', [ '', 'Y' ] )
+    || $self->ut_enum('inoutcity', [ '', 'I', 'O' ] )
+    || $self->ut_enum('inoutlocal', [ '', 'I', 'O' ] )
     || $self->ut_enum('manual', [ '', 'Y' ] )
     || $self->ut_enum('disabled', [ '', 'Y' ] )
     || $self->SUPER::check
@@ -641,7 +643,7 @@ sub batch_import {
 
       $hash->{'taxclassnum'} = $tax_class->taxclassnum;
 
-      foreach (qw( inoutcity inoutlocal taxtype taxcat )) {
+      foreach (qw( taxtype taxcat )) {
         delete($hash->{$_});
       }
 
@@ -715,7 +717,10 @@ sub batch_import {
         my $error = $job->update_statustext(
           int( 100 * $imported / $count ). ",Importing tax rates"
         );
-        die $error if $error;
+        if ($error) {
+          $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+          die $error;
+        }
         $last = time;
       }
     }
@@ -759,7 +764,10 @@ sub batch_import {
         my $error = $job->update_statustext(
           int( 100 * $imported / $count ). ",Importing tax rates"
         );
-        die $error if $error;
+        if ($error) {
+          $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+          die $error;
+        }
         $last = time;
       }
     }
@@ -783,7 +791,10 @@ sub batch_import {
         my $error = $job->update_statustext(
           int( 100 * $imported / $count ). ",Importing tax rates"
         );
-        die $error if $error;
+        if ($error) {
+          $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+          die $error;
+        }
         $last = time;
       }
     }
@@ -817,7 +828,10 @@ sub batch_import {
         my $error = $job->update_statustext(
           int( 100 * $imported / $count ). ",Importing tax rates"
         );
-        die $error if $error;
+        if ($error) {
+          $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+          die $error;
+        }
         $last = time;
       }
     }
@@ -1080,15 +1094,26 @@ sub process_download_and_reload {
 
   #remember disabled taxes
   my %disabled_tax_rate = ();
-  foreach my $tax_rate ( qsearch( { table   => 'tax_rate',
-                                    hashref => { disabled => 'Y',
-                                                 data_vendor => $format,
-                                               },
-                                    select  => 'geocode, taxclassnum',
-                                  }
-                                 )
-                       )
-  {
+  my @items = qsearch( { table   => 'tax_rate',
+                         hashref => { disabled => 'Y',
+                                      data_vendor => $format,
+                                    },
+                         select  => 'geocode, taxclassnum',
+                       }
+                     );
+  $count = scalar(@items);
+  foreach my $tax_rate ( @items ) {
+    if ( time - $min_sec > $last ) {
+      my $error = $job->update_statustext(
+        int( 100 * $imported / $count ). ",Remembering disabled taxes"
+      );
+      if ($error) {
+        $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+        die $error;
+      }
+      $last = time;
+    }
+    $imported++;
     my $tax_class =
       qsearchs( 'tax_class', { taxclassnum => $tax_rate->taxclassnum } );
     unless ( $tax_class ) {
@@ -1106,14 +1131,26 @@ sub process_download_and_reload {
                   "       part_pkg_option.pkgpart = part_pkg.pkgpart AND ".
                   "       optionname LIKE 'usage_taxproductnum_%' AND ".
                   "       optionvalue != '' )";
-  foreach my $part_pkg ( qsearch( { table => 'part_pkg',
-                                    select  => 'DISTINCT pkgpart,taxproductnum',
-                                    hashref => {},
-                                    extra_sql => $extra_sql,
-                                  }
-                                )
-                       )
-  {
+  @items = qsearch( { table => 'part_pkg',
+                      select  => 'DISTINCT pkgpart,taxproductnum',
+                      hashref => {},
+                      extra_sql => $extra_sql,
+                    }
+                  );
+  $count = scalar(@items);
+  $imported = 0;
+  foreach my $part_pkg ( @items ) {
+    if ( time - $min_sec > $last ) {
+      my $error = $job->update_statustext(
+        int( 100 * $imported / $count ). ",Remembering tax products"
+      );
+      if ($error) {
+        $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+        die $error;
+      }
+      $last = time;
+    }
+    $imported++;
     warn "working with package part ". $part_pkg->pkgpart.
       "which has a taxproductnum of ". $part_pkg->taxproductnum. "\n" if $DEBUG;
     my $part_pkg_taxproduct = $part_pkg->taxproduct('');
@@ -1131,6 +1168,11 @@ sub process_download_and_reload {
   }
 
   #wipe out the old data
+  $error = $job->update_statustext( "0,Removing old tax data" );
+  if ($error) {
+    $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+    die $error;
+  }
   foreach my $tax_rate_location ( qsearch( 'tax_rate_location',
                                            { data_vendor => $format,
                                              disabled    => '',
@@ -1151,13 +1193,30 @@ sub process_download_and_reload {
     tax_rate part_pkg_taxrate part_pkg_taxproduct tax_class cust_tax_location
   );
   foreach my $table ( @table ) {
-    foreach my $row ( qsearch( $table, { data_vendor => $format } ) ) {
-      my $error = $row->delete;
-      if ( $error ) {
-        $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
-        die $error;
-      }
+    my $dbh = dbh;
+#    my $primary_key = dbdef->table($table)->primary_key;
+#    my $sql = "SELECT $primary_key FROM $table WHERE data_vendor = ".
+    my $sql = "DELETE FROM $table WHERE data_vendor = ".
+      $dbh->quote($format);
+    my $sth = $dbh->prepare($sql);
+    unless ($sth) {
+      $error = $dbh->errstr;
+      $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+      die $error;
     }
+    unless ($sth->execute) {
+      $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+      die "Failed to execute $sql: ". $sth->errstr;
+    }
+#    foreach my $row ( @{ $sth->fetchall_arrayref } ) {
+#      my $record = qsearchs( $table, { $primary_key => $row->[0] } )
+#        or die "Failed to find $table with $primary_key ". $row->[0];
+#      my $error = $record->delete;
+#      if ( $error ) {
+#        $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+#        die $error;
+#      }
+#    }
   }
 
   if ( $format eq 'cch' ) {
@@ -1175,11 +1234,29 @@ sub process_download_and_reload {
   }
 
   #import new data
-  process_download_and_update($job, @_);
+  my $statement = ' &process_download_and_update($job, @_); ';
+  eval $statement;
+  if ($@) {
+    $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+    die $@;
+  }
 
   #restore taxproducts
+  $count = scalar(keys %taxproduct);
+  $imported = 0;
   foreach my $pkgpart ( keys %taxproduct ) {
     warn "restoring taxproductnums on pkgpart $pkgpart\n" if $DEBUG;
+    if ( time - $min_sec > $last ) {
+      my $error = $job->update_statustext(
+        int( 100 * $imported / $count ). ",Restoring tax products"
+      );
+      if ( $error ) {
+        $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+        die $error;
+      }
+      $last = time;
+    }
+    $imported++;
 
     my $part_pkg = qsearchs('part_pkg', { pkgpart => $pkgpart } );
     unless ( $part_pkg ) {
@@ -1230,7 +1307,20 @@ sub process_download_and_reload {
   }
 
   #disable tax_rates
+  $count = scalar(keys %disabled_tax_rate);
+  $imported = 0;
   foreach my $key (keys %disabled_tax_rate) {
+    if ( time - $min_sec > $last ) {
+      my $error = $job->update_statustext(
+        int( 100 * $imported / $count ). ",Disabling tax rates"
+      );
+      if ( $error ) {
+        $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+        die $error;
+      }
+      $last = time;
+    }
+    $imported++;
     my ($geocode,$taxclass) = split /:/, $key, 2;
     my @tax_class = qsearch( 'tax_class', { data_vendor => $format,
                                             taxclass    => $taxclass,

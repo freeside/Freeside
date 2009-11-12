@@ -945,6 +945,8 @@ sub tables_hashref {
         'passflag',    'char', 'NULL', 1, '', '',  # Y = required to list as line item, N = Prohibited
         'setuptax',    'char', 'NULL', 1, '', '',  # Y = setup tax exempt
         'recurtax',    'char', 'NULL', 1, '', '',  # Y = recur tax exempt
+        'inoutcity',   'char', 'NULL', 1, '', '',  # '', 'I', or 'O'
+        'inoutlocal',  'char', 'NULL', 1, '', '',  # '', 'I', or 'O'
         'manual',      'char', 'NULL', 1, '', '',  # Y = manually edited
         'disabled',    'char', 'NULL', 1, '', '',  # Y = tax disabled
       ],
