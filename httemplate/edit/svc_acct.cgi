@@ -9,6 +9,18 @@
   <BR>
 % } 
 
+<SCRIPT TYPE="text/javascript">
+function randomPass() {
+  var i=0;
+  var pw_set='<% join('', 'a'..'z', 'A'..'Z', '0'..'9', '.', '/') %>';
+  var pass='';
+  while(i < 8) {
+    i++;
+    pass += pw_set.charAt(Math.floor(Math.random() * pw_set.length));
+  }
+  document.OneTrueForm.clear_password.value = pass;
+}
+</SCRIPT>
 
 <FORM NAME="OneTrueForm" ACTION="<% $p1 %>process/svc_acct.cgi" METHOD=POST>
 <INPUT TYPE="hidden" NAME="svcnum" VALUE="<% $svcnum %>">
@@ -35,13 +47,14 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
 <TR>
   <TD ALIGN="right">Password</TD>
   <TD>
-    <INPUT TYPE="text" NAME="_password" VALUE="<% $password %>" SIZE=<% $pmax2 %> MAXLENGTH=<% $pmax %>>
-    (blank to generate)
+    <INPUT TYPE="text" NAME="clear_password" VALUE="<% $password %>" SIZE=<% $pmax2 %> MAXLENGTH=<% $pmax %>>
+    <INPUT TYPE="button" VALUE="Randomize" onclick="randomPass();">
   </TD>
 </TR>
 %}else{
-    <INPUT TYPE="hidden" NAME="_password" VALUE="<% $password %>">
+    <INPUT TYPE="hidden" NAME="clear_password" VALUE="<% $password %>">
 %}
+<INPUT TYPE="hidden" NAME="_password_encoding" VALUE="<% $password_encoding %>">
 %
 %my $sec_phrase = $svc_acct->sec_phrase;
 %if ( $conf->exists('security_phrase') 
@@ -428,14 +441,21 @@ my $otaker = getotaker;
 
 my $username = $svc_acct->username;
 my $password;
-if ( $svc_acct->_password ) {
-  if ( $conf->exists('showpasswords') || ! $svcnum ) {
-    $password = $svc_acct->_password;
-  } else {
-    $password = "*HIDDEN*";
+my $password_encryption = $svc_acct->_password_encryption;
+my $password_encoding = $svc_acct->_password_encoding;
+
+if($svcnum) {
+  if($password = $svc_acct->get_cleartext_password) {
+    if (! $conf->exists('showpasswords')) {
+        $password = '*HIDDEN*';
+    }
   }
-} else {
-  $password = '';
+  elsif($svc_acct->_password and $password_encryption ne 'plain') {
+    $password = "(".uc($password_encryption)." encrypted)";
+  }
+  else {
+    $password = '';
+  }
 }
 
 my $ulen = 
@@ -444,9 +464,13 @@ my $ulen =
   : dbdef->table('svc_acct')->column('username')->length;
 my $ulen2 = $ulen+2;
 
-my $pmax = $conf->config('passwordmax') || 8;
+my $pmax = max($conf->config('passwordmax') || 13);
 my $pmax2 = $pmax+2;
 
 my $p1 = popurl(1);
+
+sub max {
+  (sort(@_))[-1]
+}
 
 </%init>

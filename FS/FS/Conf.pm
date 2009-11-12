@@ -1144,6 +1144,23 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'default-password-encoding',
+    'section'     => 'password',
+    'description' => 'Default storage format for passwords',
+    'type'        => 'select',
+    'select_hash' => [
+      'plain'       => 'Plain text',
+      'crypt-des'   => 'Unix password (DES encrypted)',
+      'crypt-md5'   => 'Unix password (MD5 digest)',
+      'ldap-plain'  => 'LDAP (plain text)',
+      'ldap-crypt'  => 'LDAP (DES encrypted)',
+      'ldap-md5'    => 'LDAP (MD5 digest)',
+      'ldap-sha1'   => 'LDAP (SHA1 digest)',
+      'legacy'      => 'Legacy mode',
+    ],
+  },
+
+  {
     'key'         => 'referraldefault',
     'section'     => 'UI',
     'description' => 'Default referral, specified by refnum',

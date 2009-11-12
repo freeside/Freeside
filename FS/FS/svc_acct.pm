@@ -20,6 +20,8 @@ use Carp;
 use Fcntl qw(:flock);
 use Date::Format;
 use Crypt::PasswdMD5 1.2;
+use Digest::SHA1 'sha1_base64';
+use Digest::MD5 'md5_base64';
 use Data::Dumper;
 use Text::Template;
 use Authen::Passphrase;
@@ -1179,6 +1181,17 @@ sub check {
     $self->ut_textn($_);
   }
 
+  # First, if _password is blank, generate one and set default encoding.
+  if ( ! $recref->{_password} ) {
+    $self->set_password('');
+  }
+  # But if there's a _password but no encoding, assume it's plaintext and 
+  # set it to default encoding.
+  elsif ( ! $recref->{_password_encoding} ) {
+    $self->set_password($recref->{_password});
+  }
+
+  # Next, check _password to ensure compliance with the encoding.
   if ( $recref->{_password_encoding} eq 'ldap' ) {
 
     if ( $recref->{_password} =~ /^(\{[\w\-]+\})(!?.{0,64})$/ ) {
@@ -1201,11 +1214,8 @@ sub check {
     }
 
   } elsif ( $recref->{_password_encoding} eq 'plain' ) { 
-
-    #generate a password if it is blank
-    $recref->{_password} = join('',map($pw_set[ int(rand $#pw_set) ], (0..7) ) )
-      unless length( $recref->{_password} );
-
+    # Password randomization is now in set_password.
+    # Strip whitespace characters, check length requirements, etc.
     if ( $recref->{_password} =~ /^([^\t\n]{$passwordmin,$passwordmax})$/ ) {
       $recref->{_password} = $1;
     } else {
@@ -1220,51 +1230,148 @@ sub check {
     if ( $password_noexclamation ) {
       $recref->{_password} =~ /\!/ and return gettext('illegal_password');
     }
-
-  } else {
-
-    #carp "warning: _password_encoding unspecified\n";
-
-    #generate a password if it is blank
-    unless ( length($recref->{_password}) || ! $passwordmin ) {
-
-      $recref->{_password} =
-        join('',map($pw_set[ int(rand $#pw_set) ], (0..7) ) );
-      $recref->{_password_encoding} = 'plain';
-
-    } else {
-  
-      #if ( $recref->{_password} =~ /^((\*SUSPENDED\* )?)([^\t\n]{4,16})$/ ) {
-      if ( $recref->{_password} =~ /^((\*SUSPENDED\* |!!?)?)([^\t\n]{$passwordmin,$passwordmax})$/ ) {
-        $recref->{_password} = $1.$3;
-        $recref->{_password_encoding} = 'plain';
-      } elsif ( $recref->{_password} =~
-                  /^((\*SUSPENDED\* |!!?)?)([\w\.\/\$\;\+]{13,64})$/
-              ) {
-        $recref->{_password} = $1.$3;
-        $recref->{_password_encoding} = 'crypt';
-      } elsif ( $recref->{_password} eq '*' ) {
-        $recref->{_password} = '*';
-        $recref->{_password_encoding} = 'crypt';
-      } elsif ( $recref->{_password} eq '!' ) {
-        $recref->{_password_encoding} = 'crypt';
-        $recref->{_password} = '!';
-      } elsif ( $recref->{_password} eq '!!' ) {
-        $recref->{_password} = '!!';
-        $recref->{_password_encoding} = 'crypt';
-      } else {
-        #return "Illegal password";
-        return gettext('illegal_password'). " $passwordmin-$passwordmax ".
-               FS::Msgcat::_gettext('illegal_password_characters').
-               ": ". $recref->{_password};
-      }
-
-    }
-
   }
-
+  elsif ( $recref->{_password_encoding} eq 'legacy' ) {
+    # this happens when set_password fails
+    return gettext('illegal_password'). " $passwordmin-$passwordmax ".
+           FS::Msgcat::_gettext('illegal_password_characters').
+           ": ". $recref->{_password};
+  }
   $self->SUPER::check;
 
+}
+
+
+sub _password_encryption {
+  my $self = shift;
+  my $encoding = lc($self->_password_encoding);
+  return if !$encoding;
+  return 'plain' if $encoding eq 'plain';
+  if($encoding eq 'crypt') {
+    my $pass = $self->_password;
+    $pass =~ s/^\*SUSPENDED\* //;
+    $pass =~ s/^!!?//;
+    return 'md5' if $pass =~ /^\$1\$/;
+    #return 'blowfish' if $self->_password =~ /^\$2\$/;
+    return 'des' if length($pass) == 13;
+    return;
+  }
+  if($encoding eq 'ldap') {
+    uc($self->_password) =~ /^\{([\w-]+)\}/;
+    return 'crypt' if $1 eq 'CRYPT' or $1 eq 'DES';
+    return 'plain' if $1 eq 'PLAIN' or $1 eq 'CLEARTEXT';
+    return 'md5' if $1 eq 'MD5';
+    return 'sha1' if $1 eq 'SHA' or $1 eq 'SHA-1';
+
+    return;
+  }
+  return;
+}
+
+sub get_cleartext_password {
+  my $self = shift;
+  if($self->_password_encryption eq 'plain') {
+    if($self->_password_encoding eq 'ldap') {
+      $self->_password =~ /\{\w+\}(.*)$/;
+      return $1;
+    }
+    else {
+      return $self->_password;
+    }
+  }
+  return;
+}
+
+ 
+=item set_password
+
+Set the cleartext password for the account.  If _password_encoding is set, the 
+new password will be encoded according to the existing method (including 
+encryption mode, if it can be determined).  Otherwise, 
+config('default-password-encoding') is used.
+
+If no password is supplied (or a zero-length password when minimum password length 
+is >0), one will be generated randomly.
+
+=cut
+
+sub set_password {
+  my $self = shift;
+  my $pass = shift;
+  my ($encoding, $encryption);
+
+
+  if($self->_password_encoding) {
+    $encoding = $self->_password_encoding;
+    # identify existing encryption method, try to use it.
+    $encryption = $self->_password_encryption;
+    if(!$encryption) {
+      # use the system default
+      undef $encoding;
+    }
+  }
+
+  if(!$encoding) {
+    # set encoding to system default
+    ($encoding, $encryption) = split(/-/, lc($conf->config('default-password-encoding')));
+    $encoding ||= 'legacy';
+    $self->_password_encoding($encoding);
+  }
+
+  if($encoding eq 'legacy') {
+    # The legacy behavior from check():
+    # If the password is blank, randomize it and set encoding to 'plain'.
+    if(!defined($pass) or (length($pass) == 0 and $passwordmin)) {
+      $pass = join('',map($pw_set[ int(rand $#pw_set) ], (0..7) ) );
+      $self->_password_encoding('plain');
+    }
+    else {
+      # Prefix + valid-length password
+      if ( $pass =~ /^((\*SUSPENDED\* |!!?)?)([^\t\n]{$passwordmin,$passwordmax})$/ ) {
+        $pass = $1.$3;
+        $self->_password_encoding('plain');
+      }
+      # Prefix + crypt string
+      elsif ( $pass =~ /^((\*SUSPENDED\* |!!?)?)([\w\.\/\$\;\+]{13,64})$/ ) {
+        $pass = $1.$3;
+        $self->_password_encoding('crypt');
+      }
+      # Various disabled crypt passwords
+      elsif ( $pass eq '*' or
+              $pass eq '!' or
+              $pass eq '!!' ) {
+        $self->_password_encoding('crypt');
+      }
+      else {
+        # do nothing; check() will recognize this as an error
+      }
+   }
+  }
+  elsif($encoding eq 'crypt') {
+    if($encryption eq 'md5') {
+      $pass = unix_md5_crypt($pass);
+    }
+    elsif($encryption eq 'des') {
+      $pass = crypt($pass, $saltset[int(rand(64))].$saltset[int(rand(64))]);
+    }
+  }
+  elsif($encoding eq 'ldap') {
+    if($encryption eq 'md5') {
+      $pass = md5_base64($pass);
+    }
+    elsif($encryption eq 'sha1') {
+      $pass = sha1_base64($pass);
+    }
+    elsif($encryption eq 'crypt') {
+      $pass = crypt($pass, $saltset[int(rand(64))].$saltset[int(rand(64))]);
+    }
+    # else $encryption eq 'plain', do nothing
+    $pass = '{'.uc($encryption).'}'.$pass;
+  }
+  # else encoding eq 'plain'
+
+  $self->_password($pass);
+  return;
 }
 
 =item _check_system

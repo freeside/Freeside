@@ -160,14 +160,19 @@ Service #<B><% $svcnum %></B>
 <TR>
   <TD ALIGN="right">Password</TD>
   <TD BGCOLOR="#ffffff">
-% my $password = $svc_acct->_password; 
+% my $password = $svc_acct->get_cleartext_password; 
 % if ( $password =~ /^\*\w+\* (.*)$/ ) {
 %         $password = $1;
 %    
 
       <I>(login disabled)</I>
 % } 
-% if ( $conf->exists('showpasswords') ) { 
+% if ( !$password and 
+%        $svc_acct->_password_encryption ne 'plain' and
+%        $svc_acct->_password ) {
+      <I>(<% uc($svc_acct->_password_encryption) %> encrypted)</I>
+% }
+% elsif ( $conf->exists('showpasswords') ) { 
 
       <PRE><% encode_entities($password) %></PRE>
 % } else { 
