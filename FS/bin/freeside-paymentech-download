@@ -68,7 +68,7 @@ BATCH: foreach my $filename (@files) {
   }
 
   #unzip file
-  system('unzip', '-P', '$password', '-q',
+  system('unzip', '-P', $password, '-q',
            "$tmpdir/${filename}_resp.zip", '-d', $tmpdir);
   if(! -f "$tmpdir/${filename}_resp.xml") {
     warn "failed to extract ${filename}_resp.xml from ${filename}_resp.zip\n";

@@ -63,7 +63,7 @@ foreach my $pay_batch (@batches) {
   print OUT $text;
   close OUT;
 
-  system('zip', '-P', '$password', '-q', '-j',
+  system('zip', '-P', $password, '-q', '-j',
            "$tmpdir/$filename.zip", "$tmpdir/$filename.xml");
 
   die "failed to create zip file\n" if (! -f "$tmpdir/$filename.zip" );
