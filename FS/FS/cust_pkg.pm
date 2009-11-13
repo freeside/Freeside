@@ -2593,7 +2593,7 @@ sub search_sql {
 
   my $addl_from = 'LEFT JOIN cust_main USING ( custnum  ) '.
                   'LEFT JOIN part_pkg  USING ( pkgpart  ) '.
-                  'LEFT JOIN pkg_class USING ( classnum ) ';
+                  'LEFT JOIN pkg_class ON ( part_pkg.classnum = pkg_class.classnum ) ';
 
   my $count_query = "SELECT COUNT(*) FROM cust_pkg $addl_from $extra_sql";
 
