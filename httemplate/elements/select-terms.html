@@ -2,7 +2,18 @@
         ID   = "invoice_terms"
         <% $opt{'disabled'} ? 'DISABLED' : ''%>
 >
-  <OPTION VALUE=""><% $empty_label %>
+# #false laziness w/select-table.html
+% while ( @pre_options ) { 
+%   my $pre_opt   = shift(@pre_options);
+%   my $pre_label = shift(@pre_options);
+%   my $selected = #   ( ref($value) && $value->{$pre_opt} ) ||
+%                   ( $curr_value eq $pre_opt );
+    <OPTION VALUE="<% $pre_opt %>"
+            <% $selected ? 'SELECTED' : '' %>
+    ><% $pre_label %>
+% } 
+
+  <OPTION VALUE="<% $empty_value %>"><% $empty_label %>
 % foreach my $term ( @terms ) {
     <OPTION VALUE="<% $term %>" <% $curr_value eq $term ? ' SELECTED' : '' %>><% $term %>
 % }
@@ -19,8 +30,12 @@ my $empty_label =
        ($conf->config('invoice_default_terms') || 'Payable upon receipt').
      ')';
 
+my $empty_value = $opt{'empty_value'} || '';
+
 my @terms = ( 'Payable upon receipt',
               ( map "Net $_", 0, 10, 15, 20, 30, 45, 60 ),
             );
+
+my @pre_options = $opt{pre_options} ? @{ $opt{pre_options} } : ();
 
 </%init>

@@ -8405,6 +8405,22 @@ sub search_sql {
 ;
   }
 
+  ###
+  # invoice terms
+  ###
+
+  if ( $params->{'invoice_terms'} =~ /^([\w ]+)$/ ) {
+    my $terms = $1;
+    if ( $1 eq 'NULL' ) {
+      push @where,
+        "( cust_main.invoice_terms IS NULL OR cust_main.invoice_terms = '' )";
+    } else {
+      push @where,
+        "cust_main.invoice_terms IS NOT NULL",
+        "cust_main.invoice_terms = '$1'";
+    }
+  }
+
   ##
   # amounts
   ##

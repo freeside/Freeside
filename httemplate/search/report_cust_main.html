@@ -82,6 +82,17 @@
         }
       }
     </SCRIPT>
+ 
+    <TR>
+      <TD ALIGN="right">Invoice terms</TD>
+      <TD>
+        <% include( '/elements/select-terms.html',
+                      'pre_options' => [ '' => 'all' ],
+                      'empty_value' => 'NULL',
+                  )
+        %>
+      </TD>
+    </TR>
     
     <% include( '/elements/tr-input-lessthan_greaterthan.html',
                   label   => 'Current balance',
