@@ -34,6 +34,12 @@ sub bill {
   $FS::cust_main::DEBUG = $debug;
   #$FS::cust_event::DEBUG = $opt{'l'} if $opt{'l'};
 
+  my $conf = new FS::Conf;
+  if ( $conf->exists('disable_cron_billing') ) {
+    warn "disable_cron_billing set, skipping billing\n" if $debug;
+    return;
+  }
+
   #we're at now now (and later).
   $opt{'time'} = $opt{'d'} ? str2time($opt{'d'}) : $^T;
   $opt{'time'} += $opt{'y'} * 86400 if $opt{'y'};

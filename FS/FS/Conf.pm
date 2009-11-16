@@ -3248,6 +3248,12 @@ worry that config_items is freeside-specific and icky.
     'type'        => 'select-pkg_class',
   },
 
+  {
+    'key'         => 'disable_cron_billing',
+    'section'     => 'billing',
+    'description' => 'Disable billing and collection from being run by freeside-daily and freeside-monthly, while still allowing other actions to run, such as notifications and backup.',
+    'type'        => 'checkbox',
+  },
 
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachine", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },

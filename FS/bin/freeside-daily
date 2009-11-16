@@ -12,6 +12,7 @@ getopts("p:a:d:vl:sy:nmrkg:", \%opt);
 my $user = shift or die &usage;
 adminsuidsetup $user;
 
+#you can skip this by setting the disable_cron_billing config
 use FS::Cron::bill qw(bill);
 bill(%opt);
 
