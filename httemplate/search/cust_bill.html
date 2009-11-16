@@ -85,24 +85,16 @@ if ( $cgi->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/ ) {
 } else {
 
   #some false laziness w/cust_bill::re_X
-  my @where;
   my $orderby = 'ORDER BY cust_bill._date';
 
-  if ( $cgi->param('beginning')
-       && $cgi->param('beginning') =~ /^([ 0-9\-\/]{0,10})$/ ) {
-    $search{'begin'} = str2time($1);
-  }
-  if ( $cgi->param('ending')
-        && $cgi->param('ending') =~ /^([ 0-9\-\/]{0,10})$/ ) {
-    $search{'end'} = str2time($1) + 86399;
+  if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
+    $search{'agentnum'} = $1;
   }
 
-  if ( $cgi->param('begin') =~ /^(\d+)$/ ) {
-    $search{'begin'} = $1;
-  }
-  if ( $cgi->param('end') =~ /^(\d+)$/ ) {
-    $search{'end'} = $1;
-  }
+  # begin/end/beginning/ending
+  my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi, '');
+  $search{'_date'} = [ $beginning, $ending ]
+    unless $beginning == 0 && $ending == 4294967295;
 
   if ( $cgi->param('invnum_min') =~ /^\s*(\d+)\s*$/ ) {
     $search{'invnum_min'} = $1;
@@ -111,9 +103,9 @@ if ( $cgi->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/ ) {
     $search{'invnum_max'} = $1;
   }
 
-  if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
-    $search{'agentnum'} = $1;
-  }
+  #amounts
+  $search{$_} = [ FS::UI::Web::parse_lt_gt($cgi, $_) ]
+    foreach qw( charged owed );
 
   $search{'open'} = 1 if $cgi->param('open');
   $search{'net'}  = 1 if $cgi->param('net' );
@@ -188,7 +180,12 @@ my $html_init = join("\n", map {
            $_, #key
         ),
  qq!<FORM NAME="${_}form">!,
- ( map qq!<INPUT TYPE="hidden" NAME="$_" VALUE="$search{$_}">!, keys %search ),
+ ( map { my $f = $_;
+         my @values = ref($search{$f}) ? @{ $search{$f} } : $search{$f};
+         map qq!<INPUT TYPE="hidden" NAME="$f" VALUE="$_">!, @values;
+       }
+       keys %search
+ ),
  qq!</FORM>!
 } qw( print_ email_ fax_ ftp_ spool_ ) ). 
 

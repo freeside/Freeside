@@ -35,7 +35,7 @@ use FS::payby;
 
 @ISA = qw( FS::cust_main_Mixin FS::Record );
 
-$DEBUG = 0;
+$DEBUG = 1;
 $me = '[FS::cust_bill]';
 
 #ask FS::UID to run this stuff for us later
@@ -3741,13 +3741,9 @@ specified in HASHREF.  Valid parameters are
 
 =over 4
 
-=item begin
+=item _date
 
-Epoch date (UNIX timestamp) setting a lower bound for _date values
-
-=item end
-
-Epoch date (UNIX timestamp) setting an upper bound for _date values
+List reference of start date, end date, as UNIX timestamps.
 
 =item invnum_min
 
@@ -3755,9 +3751,21 @@ Epoch date (UNIX timestamp) setting an upper bound for _date values
 
 =item agentnum
 
+=item charged
+
+List reference of charged limits (exclusive).
+
 =item owed
 
+List reference of charged limits (exclusive).
+
+=item open
+
+flag, return open invoices only
+
 =item net
+
+flag, return net invoices only
 
 =item days
 
@@ -3778,31 +3786,59 @@ sub search_sql {
 
   my @search = ();
 
-  if ( $param->{'begin'} =~ /^(\d+)$/ ) {
-    push @search, "cust_bill._date >= $1";
+  #agentnum
+  if ( $param->{'agentnum'} =~ /^(\d+)$/ ) {
+    push @search, "cust_main.agentnum = $1";
   }
-  if ( $param->{'end'} =~ /^(\d+)$/ ) {
-    push @search, "cust_bill._date < $1";
+
+  #_date
+  if ( $param->{_date} ) {
+    my($beginning, $ending) = @{$param->{_date}};
+
+    push @search, "cust_bill._date >= $beginning",
+                  "cust_bill._date <  $ending";
   }
+
+  #invnum
   if ( $param->{'invnum_min'} =~ /^(\d+)$/ ) {
     push @search, "cust_bill.invnum >= $1";
   }
   if ( $param->{'invnum_max'} =~ /^(\d+)$/ ) {
     push @search, "cust_bill.invnum <= $1";
   }
-  if ( $param->{'agentnum'} =~ /^(\d+)$/ ) {
-    push @search, "cust_main.agentnum = $1";
+
+  #charged
+  if ( $param->{charged} ) {
+    my @charged = ref($param->{charged})
+                    ? @{ $param->{charged} }
+                    : ($param->{charged});
+
+    push @search, map { s/^charged/cust_bill.charged/; $_; }
+                      @charged;
   }
 
-  push @search, '0 != '. FS::cust_bill->owed_sql
-    if $param->{'open'};
+  my $owed_sql = FS::cust_bill->owed_sql;
 
+  #owed
+  if ( $param->{owed} ) {
+    my @owed = ref($param->{owed})
+                 ? @{ $param->{owed} }
+                 : ($param->{owed});
+    push @search, map { s/^owed/$owed_sql/; $_; }
+                      @owed;
+  }
+
+  #open/net flags
+  push @search, "0 != $owed_sql"
+    if $param->{'open'};
   push @search, '0 != '. FS::cust_bill->net_sql
     if $param->{'net'};
 
+  #days
   push @search, "cust_bill._date < ". (time-86400*$param->{'days'})
     if $param->{'days'};
 
+  #newest_percust
   if ( $param->{'newest_percust'} ) {
 
     #$distinct = 'DISTINCT ON ( cust_bill.custnum )';
@@ -3826,6 +3862,7 @@ sub search_sql {
 
   }
 
+  #agent virtualization
   my $curuser = $FS::CurrentUser::CurrentUser;
   if ( $curuser->username eq 'fs_queue'
        && $param->{'CurrentUser'} =~ /^(\w+)$/ ) {
@@ -3840,7 +3877,6 @@ sub search_sql {
       warn "$me WARNING: (fs_queue) can't find CurrentUser $username\n";
     }
   }
-
   push @search, $curuser->agentnums_sql;
 
   join(' AND ', @search );

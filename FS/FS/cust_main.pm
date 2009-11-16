@@ -8428,8 +8428,10 @@ sub search_sql {
   #my $balance_sql = $class->balance_sql();
   my $balance_sql = FS::cust_main->balance_sql();
 
+  my @current_balance = @{ $params->{'current_balance'} };
+
   push @where, map { s/current_balance/$balance_sql/; $_ }
-                   @{ $params->{'current_balance'} };
+                   @current_balance;
 
   ##
   # custbatch

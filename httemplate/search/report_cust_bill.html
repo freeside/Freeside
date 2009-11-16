@@ -11,7 +11,21 @@
                  'disable_empty' => 0,
              )
   %>
+
   <% include( '/elements/tr-input-beginning_ending.html' ) %>
+
+  <% include( '/elements/tr-input-lessthan_greaterthan.html',
+                label   => 'Charged',
+                field   => 'charged',
+            )
+  %>
+
+  <% include( '/elements/tr-input-lessthan_greaterthan.html',
+                label   => 'Owed',
+                field   => 'owed',
+            )
+  %>
+
   <TR>
     <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="open" VALUE="1" CHECKED></TD>
     <TD>Show only open invoices</TD>
@@ -20,6 +34,7 @@
     <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="newest_percust" VALUE="1"></TD>
     <TD>Show only the single most recent invoice per-customer</TD>
   </TR>
+
 </TABLE>
 
 <BR>
