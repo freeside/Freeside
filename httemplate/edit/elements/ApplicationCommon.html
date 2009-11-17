@@ -283,6 +283,7 @@ function do_change_amount (what) {
   var amount_cell = document.getElementById('original_amount');
   var inputs = amount_cell.getElementsByTagName('input');
   if (inputs.length) {
+    src_amount_changed();
     amount_cell.innerHTML = '<B><% $money_char %></B>' + inputs.item(0).value;
   } else {
     amount_cell.innerHTML = '<% $money_char %>';
@@ -298,11 +299,16 @@ function do_change_amount (what) {
   }
 }
 
-function src_amount_changed (what) {
-  what.form.src_amount.value = what.value;
-  var unapplied_cell = document.getElementById('unapplied_amount');
-  unapplied_cell.innerHTML = '<B><% $money_char %>' + what.value + '</B>';
-  set_amount_color(what);
+function src_amount_changed () {
+  //alert('src_amount_changed called');
+  var entered_amount = document.getElementById('entered_amount');
+  if ( entered_amount ) {
+    entered_amount.form.src_amount.value = entered_amount.value;
+    var unapplied_cell = document.getElementById('unapplied_amount');
+    unapplied_cell.innerHTML = '<B><% $money_char %>' + entered_amount.value + '</B>';
+    set_amount_color(entered_amount);
+  }
+  return true;
 }
 
 </SCRIPT>
@@ -335,7 +341,15 @@ function src_amount_changed (what) {
 </TABLE>
 
 <BR>
-<CENTER><INPUT TYPE="submit" VALUE="Apply" NAME="submit" ID="submit" DISABLED></CENTER>
+<CENTER><INPUT TYPE="submit"
+               VALUE="Apply"
+               NAME="submit"
+               ID="submit"
+% if ($use_sub_dst_thing && $can_change_credit) {
+               onClick="src_amount_changed()"
+% }
+               DISABLED
+></CENTER>
 
 </FORM>
 
