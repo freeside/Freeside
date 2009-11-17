@@ -8810,17 +8810,21 @@ sub smart_search {
 
     # "Company (Last, First)"
     #this is probably something a browser remembered,
-    #so just do an exact (but case-insensitive) search
+    #so just do an exact search (but case-insensitive, so USPS standardization
+    #doesn't throw a wrench in the works)
 
     foreach my $prefix ( '', 'ship_' ) {
       push @cust_main, qsearch( {
         'table'     => 'cust_main',
-        'hashref'   => { $prefix.'first'   => $first,
-                         $prefix.'last'    => $last,
-                         $prefix.'company' => $company,
-                         %options,
-                       },
-        'extra_sql' => " AND $agentnums_sql",
+        'hashref'   => { %options },
+        'extra_sql' => 
+          ( keys(%options) ? ' AND ' : ' WHERE ' ).
+          join(' AND ',
+            " LOWER(${prefix}first)   = ". dbh->quote(lc($first)),
+            " LOWER(${prefix}last)    = ". dbh->quote(lc($last)),
+            " LOWER(${prefix}company) = ". dbh->quote(lc($company)),
+            $agentnums_sql,
+          ),
       } );
     }
 
