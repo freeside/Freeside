@@ -209,6 +209,10 @@ if ( $cgi->param('magic') ) {
       push @search, "cust_$thing.payinfo = '$1'";
     }
 
+    if ( $cgi->param('otaker') =~ /^(\w+)$/ ) {
+      push @search, "cust_$thing.otaker = '$1'";
+    }
+
     #for cust_pay_pending...  statusNOT=done
     if ( $cgi->param('statusNOT') =~ /^(\w+)$/ ) {
       push @search, "status != '$1'";
