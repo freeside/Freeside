@@ -148,8 +148,8 @@ Comments
               'action'      => $p.'edit/cust_main_attach.cgi',
               'actionlabel' => 'Upload file',
               'cust_main'   => $cust_main,
-              'width'       => 616,
-              'height'      => 408,
+              'width'       => 480,
+              'height'      => 296,
           )
 %>
 % }

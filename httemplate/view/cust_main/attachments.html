@@ -11,6 +11,7 @@
 %   }
     <TH CLASS="grid" BGCOLOR="#cccccc">Person</TH>
     <TH CLASS="grid" BGCOLOR="#cccccc">Filename</TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc">Description</TH>
     <TH CLASS="grid" BGCOLOR="#cccccc">Type</TH>
     <TH CLASS="grid" BGCOLOR="#cccccc">Size</TH>
     <TH CLASS="grid" BGCOLOR="#cccccc"></TH>
@@ -54,7 +55,8 @@
 %       my $clickjs = popup('edit/process/cust_main_attach.cgi?'.
 %                           "custnum=$custnum;attachnum=$attachnum;".
 %                           "purge=1",
-%                           'Purge attachment');
+%                           'Purge attachment',
+%                           'Permanently remove this file?');
 %       $edit .= qq!&nbsp; <A HREF="javascript:void(0);" $clickjs>(purge)</A>!;
 %     }
 %   }
@@ -67,9 +69,9 @@
 %     }
 %     if($curuser->access_right('Delete attachment') ) {
 %       my $clickjs = popup('edit/process/cust_main_attach.cgi?'.
-%                           "custnum=$custnum;attachnum=$attachnum;".
-%                           "delete=1",
-%                           'Delete attachment');
+%                           "custnum=$custnum;attachnum=$attachnum;delete=1",
+%                           'Delete attachment',
+%                           'Delete this file?');
 %       $edit .= qq!&nbsp; <A HREF="javascript:void(0);" $clickjs>(delete)</A>!;
 %     }
 %     if ($curuser->access_right('Download attachment') ) {
@@ -85,6 +87,8 @@
       <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
        &nbsp;<% $attach->filename %>
       </TD>
+      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+       &nbsp;<% $attach->title %>
       <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
        &nbsp;<% $attach->mime_type %>
       </TD>
@@ -135,15 +139,16 @@ sub size_units {
 }
 
 sub popup {
-  my ($url, $label) = @_;
+  my ($url, $label, $confirm) = @_;
   my $onclick = 
     include('/elements/popup_link_onclick.html',
       'action'     => popurl(2).$url,
       'actionlabel' => $label,
-      'width'       => 616,
-      'height'      => 408,
+      'width'       => 510,
+      'height'      => 315,
       'frame'       => 'top',
     );
+  $onclick = qq!if(confirm('$confirm')) { $onclick }! if $confirm;
   return qq!onclick="$onclick"!;
 }
 

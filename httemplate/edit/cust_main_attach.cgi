@@ -2,31 +2,39 @@
 
 <% include('/elements/error.html') %>
 
-<FORM ACTION="<% popurl(1) %>process/cust_main_attach.cgi" METHOD=POST ENCTYPE="multipart/form-data">
+<FORM NAME="attach_edit" ACTION="<% popurl(1) %>process/cust_main_attach.cgi" METHOD=POST ENCTYPE="multipart/form-data">
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
 <INPUT TYPE="hidden" NAME="attachnum" VALUE="<% $attachnum %>">
 
 <BR><BR>
 
+<% include('/elements/table.html') %>
 % if(defined $attach) {
-Filename <INPUT TYPE="text" NAME="filename" VALUE="<% $attach->filename %>"><BR>
-MIME type <INPUT TYPE="text" NAME="mime_type" VALUE="<% $attach->mime_type %>"<BR>
-Size: <% $attach->size %><BR>
-
+%   if($curuser->access_right("Download attachment")) {
+<A HREF="<% $p.'view/attachment.html?'.$attachnum %>">Download this file</A><BR>
+%   }
+<TR><TD> Filename </TD>
+<TD><INPUT TYPE="text" NAME="filename" SIZE=32 MAXLENGTH=32 VALUE="<% $attach->filename %>"<% $disabled %>></TD></TR>
+<TR><TD> Description </TD>
+<TD><INPUT TYPE="text" NAME="title" SIZE=32 MAXLENGTH=32 VALUE="<% $attach->title %>"<% $disabled %></TD></TR>
+<TR><TD> MIME type </TD>
+<TD><INPUT TYPE="text" NAME="mime_type" VALUE="<% $attach->mime_type %>"<% $disabled %></TD></TR>
+<TR><TD> Size </TD><TD><% $attach->size %></TD></TR>
 % }
 % else { # !defined $attach
-
-Filename <INPUT TYPE="file" NAME="file"><BR>
-
+<TR><TD> Filename </TD><TD><INPUT TYPE="file" SIZE=32 NAME="file"></TD></TR>
+<TR><TD> Description </TD><TD><INPUT TYPE="text" NAME="title" SIZE=32 MAXLENGTH=32></TD></TR>
 % }
-
+</TABLE>
 <BR>
+% if(! $disabled) {
 <INPUT TYPE="submit" NAME="submit" 
     VALUE="<% $attachnum ? "Apply Changes" : "Upload File" %>">
-
+% }
 % if(defined $attach and $curuser->access_right('Delete attachment')) {
 <BR>
-<INPUT TYPE="submit" NAME="delete" value="Delete File">
+<INPUT TYPE="submit" NAME="delete" value="Delete File" 
+onclick="return(confirm('Delete this file?'));">
 % }
 
 </FORM>
@@ -47,13 +55,15 @@ if ( $cgi->param('error') ) {
   die "no such attachment: ". $attachnum unless $attach;
 }
 
-$cgi->param('custnum') =~ /^(\d+)$/ or die "illegal custnum";
-my $custnum = $1;
-
 my $action = $attachnum ? 'Edit' : 'Add';
 
-die "access denied"
-  unless $curuser->access_right("$action attachment");
+my $disabled='';
+if(! $curuser->access_right("$action attachment")) {
+  $disabled = ' disabled="disabled"';
+}
+
+$cgi->param('custnum') =~ /^(\d+)$/ or die "illegal custnum";
+my $custnum = $1;
 
 </%init>
 

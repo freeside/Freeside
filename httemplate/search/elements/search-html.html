@@ -346,7 +346,9 @@
 %                             }
 %                             $a = qq(<A HREF="$a"$onclick>);
 %                           }
-%
+%                           elsif ( $onclick ) {
+%                             $a = qq(<A HREF="javascript:void(0);"$onclick>);
+%                           }
 %                         }
 %
 %                       }

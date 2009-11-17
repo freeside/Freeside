@@ -321,6 +321,8 @@ $tools_menu{'Ticketing'} = [ \%tools_ticketing, 'Ticketing tools' ]
   if $conf->config('ticket_system');
 $tools_menu{'Time Queue'} =  [ $fsurl.'search/timeworked.html', 'View pending support time' ]
   if $curuser->access_right('Time queue');
+$tools_menu{'Attachments'} = [ $fsurl.'browse/cust_attachment.html', 'View customer attachments' ]
+  if !$conf->config('disable_cust_attachment');
 $tools_menu{'Importing'} =  [ \%tools_importing, 'Import tools' ]
   if $curuser->access_right('Import');
 $tools_menu{'Exporting'} =  [ \%tools_exporting, 'Export tools' ]

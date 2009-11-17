@@ -53,6 +53,7 @@ if($attachnum) {
       ('_date', 'otaker', 'body', 'disabled');
     $new->filename($cgi->param('filename') || $old->filename);
     $new->mime_type($cgi->param('mime_type') || $old->mime_type);
+    $new->title($cgi->param('title'));
     if($delete and not $old->disabled) {
       $new->disabled(time);
     }
@@ -67,6 +68,7 @@ else { # This is a new attachment, so require a file.
   if($filename) {
     $new->filename($filename);
     $new->mime_type($cgi->uploadInfo($filename)->{'Content-Type'});
+    $new->title($cgi->param('title'));
     
     local $/;
     my $fh = $cgi->upload('file');
