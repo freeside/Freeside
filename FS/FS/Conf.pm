@@ -2392,7 +2392,7 @@ worry that config_items is freeside-specific and icky.
     'type'        => 'select',
     'select_enum' => [ 'csv-td_canada_trust-merchant_pc_batch',
                        'csv-chase_canada-E-xactBatch', 'BoM', 'PAP',
-                       'paymentech', 'ach-spiritone',
+                       'paymentech', 'ach-spiritone', 'RBC'
                     ]
   },
 
@@ -2412,7 +2412,7 @@ worry that config_items is freeside-specific and icky.
     'description' => 'Fixed (unchangeable) format for electronic check batches.',
     'type'        => 'select',
     'select_enum' => [ 'csv-td_canada_trust-merchant_pc_batch', 'BoM', 'PAP',
-                       'paymentech', 'ach-spiritone',
+                       'paymentech', 'ach-spiritone', 'RBC'
                      ]
   },
 
@@ -2448,6 +2448,13 @@ worry that config_items is freeside-specific and icky.
     'key'         => 'batchconfig-paymentech',
     'section'     => 'billing',
     'description' => 'Configuration for Chase Paymentech batching, five lines: 1. BIN, 2. Terminal ID, 3. Merchant ID, 4. Username, 5. Password (for batch uploads)',
+    'type'        => 'textarea',
+  },
+
+  {
+    'key'         => 'batchconfig-RBC',
+    'section'     => 'billing',
+    'description' => 'Configuration for Royal Bank of Canada PDS batching, four lines: 1. Client number, 2. Short name, 3. Long name, 4. Transaction code.',
     'type'        => 'textarea',
   },
 
