@@ -1,0 +1,183 @@
+<% include( 'elements/browse.html',
+                 'title'       => 'Attachments',
+                 'menubar'     => '',
+                 'name'        => ($disabled ? 'deleted' : '') .' attachments',
+                 'html_init'   => include('/elements/init_overlib.html') .
+                    ($curuser->access_right('View deleted attachments') ? (
+                    selflink('Show '.($disabled ? 'active' : 'deleted'),
+                             show_deleted => (1-$disabled))) : ''),
+		 'html_form'   => 
+                    qq!<FORM NAME="attachForm" ACTION="$p/misc/cust_attachment.cgi" METHOD="POST">
+                    <INPUT TYPE="hidden" NAME="orderby" VALUE="$orderby">
+                    <INPUT TYPE="hidden" NAME="show_deleted" VALUE="$disabled">!
+                    , 
+                 'query'       => { 'table'     => 'cust_attachment',
+                                    'hashref'   => $hashref,
+                                    'extra_sql' => 'ORDER BY '.$orderby,
+                                  },
+                 'count_query' => $count_query,
+                 'header' => [ selflink('#',orderby => 'attachnum'),
+                               selflink('Customer',orderby => 'custnum'),
+                               selflink('Date',orderby => '_date'),
+                               selflink('Filename',orderby => 'filename'),
+                               selflink('Size',orderby => 'length(body)'),
+                               selflink('Uploaded by',orderby => 'otaker'),
+                               selflink('Description',orderby => 'title'),
+                               '', # checkbox column
+                             ],
+                 'fields' => [
+                               'attachnum',
+                               $sub_cust,
+                               $sub_date,
+                               'filename',
+                               $sub_size,
+                               'otaker',
+                               'title',
+                               $sub_checkbox,
+                             ],
+                 'links' => [ '',
+                              [ $p.'view/cust_main.cgi?', 'custnum' ],
+                            ],
+                 'link_onclicks' => [
+                              '',
+                              '',
+                              '',
+                              $sub_edit_link,
+                              ],
+
+                 #'links' =>  [
+                 #              '',
+                 #              '',
+                 #              '',
+                 #              '',
+                 #              '',
+                 #              '', #$acct_link,
+                 #              '',
+                'html_foot' => $sub_foot,
+             )
+
+%>
+
+
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+my $conf = new FS::Conf;
+
+my $noactions = 1;
+my $areboxes = 0;
+
+my $disabled = 0;
+
+if($cgi->param('show_deleted')) {
+  if ($curuser->access_right('View deleted attachments')) {
+    $disabled = 1;
+    if ($curuser->access_right('Purge attachment') or
+        $curuser->access_right('Undelete attachment')) {
+      $noactions = 0;
+    }
+  }
+  else {
+    die "access denied";
+  }
+}
+else {
+  if ($curuser->access_right('Delete attachment')) {
+    $noactions = 0;
+  }
+}
+
+my $hashref = $disabled ? 
+  { disabled => { op => '>', value => 0 } } :
+  { disabled => '' };
+
+my $count_query = 'SELECT COUNT(*) FROM cust_attachment WHERE '. ($disabled ?
+  'disabled > 0' : 'disabled IS NULL');
+
+my $orderby = $cgi->param('orderby') || 'custnum';
+
+my $sub_cust = sub {
+  my $c = qsearchs('cust_main', { custnum => shift->custnum } );
+  return $c ? $c->name : '<FONT COLOR="red"><B>(not found)</B></FONT>';
+};
+
+my $sub_date = sub {
+  time2str("%b %o, %Y", shift->_date);
+};
+
+my $sub_size = sub {
+  my $size = shift->size;
+  return $size if $size < 1024;
+  return int($size/1024).'K' if $size < 1048576;
+  return int($size/1048576).'M';
+};
+
+my $sub_checkbox = sub {
+  return '' if $noactions;
+  my $attach = shift;
+  my $attachnum = $attach->attachnum;
+  $areboxes = 1;
+  return qq!<INPUT NAME="attachnum$attachnum" TYPE="checkbox" VALUE="1">!;
+};
+
+my $sub_edit_link = sub {
+  my $attach = shift;
+  my $attachnum = $attach->attachnum;
+  my $custnum = $attach->custnum;
+  return include('/elements/popup_link_onclick.html',
+           action => popurl(2).'edit/cust_main_attach.cgi?'.
+                     "custnum=$custnum;attachnum=$attachnum",
+           actionlabel => 'Edit attachment properties',
+           width  => 510,
+           height => 315,
+           frame  => 'top',
+           );
+};
+
+sub selflink {
+  my $label = shift;
+  my %new_param = @_;
+  my $param = $cgi->Vars;
+  my %old_param = %$param;
+  @{$param}{keys(%new_param)} = values(%new_param);
+  my $link = '<a href="'.$cgi->self_url.'">'.$label.'</a>';
+  %$param = %old_param;
+  return $link;
+}
+
+sub confirm {
+  my $action = shift;
+  my $onclick = "return(confirm('$action all selected files?'))";
+  return qq!onclick="$onclick"!;
+}
+
+my $sub_foot = sub {
+  return '' if ($noactions or !$areboxes);
+  my $foot = 
+'<BR><INPUT TYPE="button" VALUE="Select all" onClick="setAll(true)">
+<INPUT TYPE="button" VALUE="Unselect all" onClick="setAll(false)">';
+  if ($disabled) {
+    if ($curuser->access_right('Undelete attachment')) {
+      $foot .= '<BR><INPUT TYPE="submit" NAME="action" VALUE="Undelete selected">';
+    }
+    if ($curuser->access_right('Purge attachment')) {
+      $foot .= '<BR><INPUT TYPE="submit" NAME="action" VALUE="Purge selected" '.confirm('Purge').'>';
+    }
+  }
+  else {
+    $foot .= '<BR><INPUT TYPE="submit" NAME="action" VALUE="Delete selected" '.confirm('Delete').'>';
+  }
+  $foot .= 
+'<SCRIPT TYPE="text/javascript">
+  function setAll(setTo) { 
+    theForm = document.attachForm;
+    for (i=0,n=theForm.elements.length;i<n;i++)
+      if (theForm.elements[i].name.indexOf("attachnum") != -1)
+        theForm.elements[i].checked = setTo;
+  }
+</SCRIPT>';
+  return $foot;
+};
+
+</%init>
