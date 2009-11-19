@@ -1,7 +1,7 @@
 package FS::cdr;
 
 use strict;
-use vars qw( @ISA @EXPORT_OK $DEBUG );
+use vars qw( @ISA @EXPORT_OK $DEBUG $me );
 use Exporter;
 use Tie::IxHash;
 use Date::Parse;
@@ -13,11 +13,13 @@ use FS::Record qw( qsearch qsearchs );
 use FS::cdr_type;
 use FS::cdr_calltype;
 use FS::cdr_carrier;
+use FS::cdr_batch;
 
 @ISA = qw(FS::Record);
 @EXPORT_OK = qw( _cdr_date_parser_maker _cdr_min_parser_maker );
 
 $DEBUG = 0;
+$me = '[FS::cdr]';
 
 =head1 NAME
 
@@ -193,7 +195,8 @@ sub table_info {
         'svcnum'                => 'Freeside service',
         'freesidestatus'        => 'Freeside status',
         'freesiderewritestatus' => 'Freeside rewrite status',
-        'cdrbatch'              => 'Batch',
+        'cdrbatch'              => 'Legacy batch',
+        'cdrbatchnum'           => 'Batch',
     },
 
   };
@@ -505,7 +508,9 @@ my $duration_sub = sub {
   if ( $opt{minutes} ) {
     $opt{minutes}. ( $opt{granularity} ? 'm' : ' call' );
   } else {
-    sprintf('%.2fm', $cdr->billsec / 60 );
+    #config if anyone really wants decimal minutes back
+    #sprintf('%.2fm', $cdr->billsec / 60 );
+    int($cdr->billsec / 60).'m '. ($cdr->billsec % 60).'s';
   }
 };
 
@@ -813,6 +818,37 @@ sub process_batch_import {
 #  if ( $format eq 'simple' ) { #should be a callback or opt in FS::cdr::simple
 #    @columns = map { s/^ +//; $_; } @columns;
 #  }
+
+# _ upgrade_data
+#
+# Used by FS::Upgrade to migrate to a new database.
+
+sub _upgrade_data {
+  my ($class, %opts) = @_;
+
+  warn "$me upgrading $class\n" if $DEBUG;
+
+  my $sth = dbh->prepare(
+    'SELECT DISTINCT(cdrbatch) FROM cdr WHERE cdrbatch IS NOT NULL'
+  ) or die dbh->errstr;
+
+  $sth->execute or die $sth->errstr;
+
+  my %cdrbatchnum = ();
+  while (my $row = $sth->fetchrow_arrayref) {
+    my $cdr_batch = new FS::cdr_batch { 'cdrbatch' => $row->[0] };
+    my $error = $cdr_batch->insert;
+    die $error if $error;
+    $cdrbatchnum{$row->[0]} = $cdr_batch->cdrbatchnum;
+  }
+
+  $sth = dbh->prepare('UPDATE cdr SET cdrbatch = NULL, cdrbatchnum = ? WHERE cdrbatch IS NOT NULL AND cdrbatch = ?') or die dbh->errstr;
+
+  foreach my $cdrbatch (keys %cdrbatchnum) {
+    $sth->execute($cdrbatchnum{$cdrbatch}, $cdrbatch) or die $sth->errstr;
+  }
+
+}
 
 =back
 
