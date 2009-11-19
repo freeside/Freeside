@@ -30,19 +30,19 @@ sub reconcile_breakage {
       if $opt{'v'};
 
     #find customers w/negative balance older than $days (and no activity since)
-    # no invoices / payments (/credits/refunds?) newer than $since
-    #  (except antother breakage invoice???)
+    # and no activity (invoices/payments/credits/refunds) newer than $since
+    #  (XXX except antother breakage invoice???)
 
-    my $extra_sql = ' AND 0 > '. FS::cust_main->balance_sql;
-    $extra_sql .= " AND ". join(' AND ',
-      map {"
-            NOT EXISTS ( SELECT 1 FROM $_
-                           WHERE $_.custnum = cust_main.custnum
-                             AND _date >= $since
-                       )
-          ";}
-          qw( cust_bill cust_pay ) # cust_credit cust_refund );
-    );
+    my $extra_sql =
+      ' AND 0 > '. FS::cust_main->balance_sql.
+      ' AND '. join(' AND ', map {
+        " NOT EXISTS (
+            SELECT 1 FROM $_
+              WHERE $_.custnum = cust_main.custnum
+                AND _date >= $since
+          ) "
+        } qw( cust_bill cust_pay cust_credit cust_refund )
+      );
 
     my @customers = qsearch({
       'table'     => 'cust_main',
