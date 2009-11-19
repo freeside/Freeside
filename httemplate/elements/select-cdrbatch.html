@@ -1,38 +1,14 @@
-% if ( scalar(@{ $opt{'cdrbatches'} }) ) {
-
-    <SELECT NAME="<% $opt{'name'} || 'cdrbatch' %>">
-
-    <OPTION VALUE="__ALL__">All
-    <OPTION VALUE="">(blank)
-
-%   foreach my $cdrbatch ( @{ $opt{'cdrbatches'} } ) { 
-        <OPTION VALUE="<% $cdrbatch %>"<% $cdrbatch eq $selected_cdrbatch ? ' SELECTED' : '' %>><% $cdrbatch %>
-%   } 
-
-    </SELECT>
-
-% } else {
-
-  <INPUT TYPE="hidden" NAME="cdrbatch" VALUE="__ALL__">
-
-% }
-
+<% include( '/elements/select-table.html',
+              'table'       => 'cdr_batch',
+              'name_col'    => 'cdrbatch',
+              'curr_value'  => $cdrbatchnum,
+              'empty_label' => '(none)',
+              'pre_options' => [ '__ALL__' => 'All' ],
+          )
+%>
 <%init>
 
 my %opt = @_;
-my $selected_cdrbatch = $opt{'curr_value'}; # || $opt{'value'} necessary?
-
-my $conf = new FS::Conf;
-
-unless ( $opt{'cdrbatches'} ) {
-
-  my $sth = dbh->prepare('SELECT DISTINCT cdrbatch FROM cdr')
-     or die dbh->errstr;
-  $sth->execute or die $sth->errstr;
-  my %cdrbatches = map { $_->[0] => 1 } @{$sth->fetchall_arrayref};
-  @{ $opt{'cdrbatches'} } = grep $_, keys %cdrbatches;
-
-}
+my $cdrbatchnum = $opt{'curr_value'}; # || $opt{'value'} necessary?
 
 </%init>
-

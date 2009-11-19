@@ -85,10 +85,10 @@ foreach my $file ( @files ) {
   warn "Processing $filename\n" if $opt_v;
 
   my $error = FS::cdr::batch_import( {
-    'file'     => "$cachedir/$filename",
-    'format'   => $format,
-    'params'   => { 'cdrbatch' => $filename },
-    'empty_ok' => 1,
+    'file'            => "$cachedir/$filename",
+    'format'          => $format,
+    'batch_namevalue' => $filename,
+    'empty_ok'        => 1,
   } );
   die $error if $error;
 

@@ -1547,7 +1547,7 @@ sub process_batch_import {
   my($job, $opt) = ( shift, shift );
 
   my $table = $opt->{table};
-  my @pass_params = @{ $opt->{params} };
+  my @pass_params = $opt->{params} ? @{ $opt->{params} } : ();
   my %formats = %{ $opt->{formats} };
 
   my $param = thaw(decode_base64(shift));
@@ -1561,24 +1561,30 @@ sub process_batch_import {
   my $dir = '%%%FREESIDE_CACHE%%%/cache.'. $FS::UID::datasrc. '/';
   my $file = $dir. $files{'file'};
 
-  my $error =
-    FS::Record::batch_import( {
-      #class-static
-      table                      => $table,
-      formats                    => \%formats,
-      format_types               => $opt->{format_types},
-      format_headers             => $opt->{format_headers},
-      format_sep_chars           => $opt->{format_sep_chars},
-      format_fixedlength_formats => $opt->{format_fixedlength_formats},
-      #per-import
-      job                        => $job,
-      file                       => $file,
-      #type                       => $type,
-      format                     => $param->{format},
-      params                     => { map { $_ => $param->{$_} } @pass_params },
-      #?
-      default_csv                => $opt->{default_csv},
-    } );
+  my %iopt = (
+    #class-static
+    table                      => $table,
+    formats                    => \%formats,
+    format_types               => $opt->{format_types},
+    format_headers             => $opt->{format_headers},
+    format_sep_chars           => $opt->{format_sep_chars},
+    format_fixedlength_formats => $opt->{format_fixedlength_formats},
+    #per-import
+    job                        => $job,
+    file                       => $file,
+    #type                       => $type,
+    format                     => $param->{format},
+    params                     => { map { $_ => $param->{$_} } @pass_params },
+    #?
+    default_csv                => $opt->{default_csv},
+  );
+
+  if ( $opt->{'batch_namecol'} ) {
+    $iopt{'batch_namevalue'} = $param->{ $opt->{'batch_namecol'} };
+    $iopt{$_} = $opt->{$_} foreach qw( batch_keycol batch_table batch_namecol );
+  }
+
+  my $error = FS::Record::batch_import( \%iopt );
 
   unlink $file;
 
@@ -1731,6 +1737,24 @@ sub batch_import {
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
+
+  if ( $param->{'batch_namecol'} && $param->{'batch_namevalue'} ) {
+    my $batch_col   = $param->{'batch_keycol'};
+
+    my $batch_class = 'FS::'. $param->{'batch_table'};
+    my $batch = $batch_class->new({
+      $param->{'batch_namecol'} => $param->{'batch_namevalue'}
+    });
+    my $error = $batch->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "can't insert batch record: $error";
+    }
+    #primary key via dbdef? (so the column names don't have to match)
+    my $batch_value = $batch->get( $param->{'batch_keycol'} );
+
+    $params->{ $batch_col } = $batch_value;
+  }
   
   my $line;
   my $imported = 0;

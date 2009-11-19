@@ -150,6 +150,8 @@ L<FS::phone_avail> - Phone number availability cache
 
 L<FS::cdr> - Call Detail Record class
 
+L<FS::cdr_batch> - Call Detail Record batch class
+
 L<FS::cdr_calltype> - CDR calltype class
 
 L<FS::cdr_carrier> - CDR carrier class

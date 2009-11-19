@@ -179,18 +179,30 @@ if ( $cgi->param('charged_party') =~ /^\s*([\d\-\+\ ]+)\s*$/ ) {
 }
 
 ###
-# cdrbatch
+# cdrbatchnum (or legacy cdrbatch)
 ###
 
-if ( $cgi->param('cdrbatch') ne '__ALL__' ) {
-  if ( $cgi->param('cdrbatch') eq '' ) {
-    my $search = "( cdrbatch IS NULL OR cdrbatch = '' )";
+if ( $cgi->param('cdrbatch') ) {
+
+  my $cdr_batch =
+    qsearchs('cdr_batch', { 'cdrbatch' => scalar($cgi->param('cdrbatch')) } );
+  if ( $cdr_batch ) {
+    push @search, 'cdrbatchnum = '. $cdr_batch->cdrbatchnum;
+  } else {
+    die "unknown cdrbatch ". $cgi->param('cdrbatch');
+  }
+
+} elsif ( $cgi->param('cdrbatchnum') ne '__ALL__' ) {
+
+  if ( $cgi->param('cdrbatchnum') eq '' ) {
+    my $search = "( cdrbatchnum IS NULL )";
     push @qsearch, $search;
     push @search,  $search;
-  } else {
-    $hashref->{cdrbatch} = $cgi->param('cdrbatch');
-    push @search, 'cdrbatch = '. dbh->quote($cgi->param('cdrbatch'));
+  } elsif ( $cgi->param('cdrbatchnum') =~ /^(\d+)$/ ) {
+    $hashref->{cdrbatchnum} = $1;
+    push @search, "cdrbatchnum = $1";
   }
+
 }
 
 ###

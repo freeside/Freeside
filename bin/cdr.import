@@ -16,9 +16,9 @@ my $format = shift or die &usage;
 my $file = shift;
 
 my $error = FS::cdr::batch_import( {
-  'file'   => $file,
-  'format' => $format,
-  'params' => { 'cdrbatch' => $file },
+  'file'            => $file,
+  'format'          => $format,
+  'batch_namevalue' => $file,
 } );
 die $error if $error;
 

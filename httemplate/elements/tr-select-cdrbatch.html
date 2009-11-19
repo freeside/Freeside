@@ -1,6 +1,6 @@
-% if ( ! scalar(@{ $opt{'cdrbatches'} }) ) { 
+% if ( ! $show ) {
 
-  <INPUT TYPE="hidden" NAME="<% $opt{'element_name'} || $opt{'field'} || 'cdrbatch' %>" VALUE="<% $selected_cdrbatch %>">
+  <INPUT TYPE="hidden" NAME="<% $opt{'element_name'} || $opt{'field'} || 'cdrbatchnum' %>" VALUE="__ALL__">
 
 % } else { 
 
@@ -18,15 +18,13 @@ my( %opt ) = @_;
 my $conf = new FS::Conf;
 my $selected_cdrbatch = $opt{'curr_value'}; # || $opt{'value'} necessary?
 
-unless ( $opt{'cdrbatches'} ) {
+$opt{'records'} = delete $opt{'cdr_batch'}
+  if $opt{'cdr_batch'};
 
-  my $sth = dbh->prepare('SELECT cdrbatch FROM cdr')
-    or die dbh->errstr;
-  $sth->execute or die $sth->errstr;
-  my %cdrbatches = map { $_->[0] => 1 } @{$sth->fetchall_arrayref};
-  @{ $opt{'cdrbatches'} } = grep $_, keys %cdrbatches;
-
-}
+my $sth = dbh->prepare('SELECT COUNT(*) FROM cdr_batch LIMIT 1')
+  or die dbh->errstr;
+$sth->execute or die $sth->errstr;
+my $show = $sth->fetchrow_arrayref->[0];
 
 </%init>
 

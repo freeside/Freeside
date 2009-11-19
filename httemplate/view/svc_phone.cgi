@@ -107,11 +107,11 @@ my $html_foot = sub {
   #  "View $_ CDRs</A>";
   #} keys(%what);
   my @links = map {
-    qq(<A HREF="${p}search/cdr.html?cdrbatch=__ALL__;charged_party=$number;freesidestatus=$what{$_}">).
+    qq(<A HREF="${p}search/cdr.html?cdrbatchnum=__ALL__;charged_party=$number;freesidestatus=$what{$_}">).
     "View $_ CDRs</A>";
   } keys(%what);
 
-  my @ilinks = ( qq(<A HREF="${p}search/cdr.html?cdrbatch=__ALL__;dst=$number">).
+  my @ilinks = ( qq(<A HREF="${p}search/cdr.html?cdrbatchnum=__ALL__;dst=$number">).
                  'View incoming CDRs</A>' );
 
   ###

@@ -185,6 +185,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::XMLRPC;
   use FS::payby;
   use FS::cdr;
+  use FS::cdr_batch;
   use FS::inventory_class;
   use FS::inventory_item;
   use FS::pkg_category;

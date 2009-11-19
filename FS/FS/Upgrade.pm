@@ -138,6 +138,9 @@ sub upgrade_data {
     #add weights to pkg_category
     'pkg_category' => [],
 
+    #cdrbatch fixes
+    'cdr' => [],
+
   ;
 
   \%hash;

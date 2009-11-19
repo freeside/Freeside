@@ -2235,9 +2235,10 @@ sub tables_hashref {
         #an indexed place to put big numbers
         'cdrid',         'bigint',     'NULL',     '',  '', '', 
 
-        #i should become a table
+        #old
         'cdrbatch', 'varchar', 'NULL', 255, '', '',
-        #'cdrbatchnum', 'int', 'NULL', '', '', '',
+        #new
+        'cdrbatchnum', 'int', 'NULL', '', '', '',
 
       ],
       'primary_key' => 'acctid',
@@ -2250,16 +2251,16 @@ sub tables_hashref {
                  ],
     },
 
-    #'cdr_batch' => {
-    #  'columns' => [
-    #    'cdrbatchnum',   'serial',    '',   '', '', '', 
-    #    'cdrbatch', 'varchar', 'NULL', 255, '', '',
-    #    '_date',     @date_type, '', '', 
-    #  ],
-    #  'primary_key' => 'cdrbatchnum',
-    #  'unique' => [ [ 'cdrbatch' ] ],
-    #  'index' => [],
-    #},
+    'cdr_batch' => {
+      'columns' => [
+        'cdrbatchnum',   'serial',    '',   '', '', '', 
+        'cdrbatch', 'varchar', 'NULL', 255, '', '',
+        '_date',     @date_type, '', '', 
+      ],
+      'primary_key' => 'cdrbatchnum',
+      'unique' => [ [ 'cdrbatch' ] ],
+      'index' => [],
+    },
 
     'cdr_termination' => {
       'columns' => [

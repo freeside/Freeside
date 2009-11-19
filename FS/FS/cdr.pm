@@ -763,7 +763,11 @@ Set true to prevent throwing an error on empty imports
 =cut
 
 my %import_options = (
-  'table'   => 'cdr',
+  'table'         => 'cdr',
+
+  'batch_keycol'  => 'cdrbatchnum',
+  'batch_table'   => 'cdr_batch',
+  'batch_namecol' => 'cdrbatch',
 
   'formats' => { map { $_ => $cdr_info{$_}->{'import_fields'}; }
                      keys %cdr_info
@@ -810,7 +814,7 @@ sub process_batch_import {
   my $job = shift;
 
   my $opt = _import_options;
-  $opt->{'params'} = [ 'format', 'cdrbatch' ];
+#  $opt->{'params'} = [ 'format', 'cdrbatch' ];
 
   FS::Record::process_batch_import( $job, $opt, @_ );
 
