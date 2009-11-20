@@ -11,6 +11,7 @@ use File::Temp 0.14;
 use String::ShellQuote;
 use HTML::Entities;
 use Locale::Country;
+use Storable qw( freeze thaw );
 use FS::UID qw( datasrc );
 use FS::Misc qw( send_email send_fax generate_ps generate_pdf do_print );
 use FS::Record qw( qsearch qsearchs dbh );
@@ -19,6 +20,7 @@ use FS::cust_main;
 use FS::cust_statement;
 use FS::cust_bill_pkg;
 use FS::cust_bill_pkg_display;
+use FS::cust_bill_pkg_detail;
 use FS::cust_credit;
 use FS::cust_pay;
 use FS::cust_pkg;
@@ -2474,8 +2476,24 @@ sub print_generic {
   my $multisection = $conf->exists('invoice_sections', $cust_main->agentnum);
   my $late_sections = [];
   if ( $multisection ) {
+    my ($extra_sections, $extra_lines) =
+      $self->_items_extra_usage_sections($escape_function, $format)
+      if $conf->exists('usage_class_as_a_section', $cust_main->agentnum);
+
+    push @detail_items, @$extra_lines if $extra_lines;
     push @sections,
-      $self->_items_sections( $late_sections, $summarypage, $escape_function );
+      $self->_items_sections( $late_sections,      # this could stand a refactor
+                              $summarypage,
+                              $escape_function,
+                              $extra_sections,
+                              $format,             #bah
+                            );
+    if ($conf->exists('svc_phone_sections')) {
+      my ($phone_sections, $phone_lines) =
+        $self->_items_svc_phone_sections($escape_function, $format);
+      push @{$late_sections}, @$phone_sections;
+      push @detail_items, @$phone_lines;
+    }
   }else{
     push @sections, { 'description' => '', 'subtotal' => '' };
   }
@@ -2527,6 +2545,11 @@ sub print_generic {
     $section->{'subtotal'} = $other_money_char.
                              sprintf('%.2f', $section->{'subtotal'})
       if $multisection;
+
+    # begin some normalization
+    $section->{'amount'}   = $section->{'subtotal'}
+      if $multisection;
+
 
     if ( $section->{'description'} ) {
       push @buf, ( [ &$escape_function($section->{'description'}), '' ],
@@ -3115,6 +3138,8 @@ sub _items_sections {
   my $late = shift;
   my $summarypage = shift;
   my $escape = shift;
+  my $extra_sections = shift;
+  my $format = shift;
 
   my %subtotal = ();
   my %late_subtotal = ();
@@ -3188,8 +3213,13 @@ sub _items_sections {
   push @$late, map { { 'description' => &{$escape}($_),
                        'subtotal'    => $late_subtotal{$_},
                        'post_total'  => 1,
+                       'sort_weight' => _pkg_category($_)->weight,
+                       (_pkg_category($_)->condense
+                                           ? $self->_condense_section($format)
+                                           : ()
+                       ),
                    } }
-                 sort _categorysort keys %late_subtotal;
+                 sort _sectionsort keys %late_subtotal;
 
   my @sections;
   if ( $summarypage ) {
@@ -3199,19 +3229,26 @@ sub _items_sections {
     @sections = keys %subtotal;
   }
 
-  map { { 'description' => &{$escape}($_),
-          'subtotal'    => $subtotal{$_},
-          'summarized'  => $not_tax{$_} ? '' : 'Y',
-          'tax_section' => $not_tax{$_} ? '' : 'Y',
-        }
-      }
-    sort _categorysort @sections;
+  my @early = map { { 'description' => &{$escape}($_),
+                      'subtotal'    => $subtotal{$_},
+                      'summarized'  => $not_tax{$_} ? '' : 'Y',
+                      'tax_section' => $not_tax{$_} ? '' : 'Y',
+                      'sort_weight' => _pkg_category($_)->weight,
+                       (_pkg_category($_)->condense
+                                           ? $self->_condense_section($format)
+                                           : ()
+                       ),
+                    }
+                  } @sections;
+  push @early, @$extra_sections if $extra_sections;
+ 
+  sort { $a->{sort_weight} <=> $b->{sort_weight} } @early;
 
 }
 
 #helper subs for above
 
-sub _categorysort {
+sub _sectionsort {
   _pkg_category($a)->weight <=> _pkg_category($b)->weight;
 }
 
@@ -3219,6 +3256,478 @@ sub _pkg_category {
   my $categoryname = shift;
   $pkg_category_cache{$categoryname} ||=
     qsearchs( 'pkg_category', { 'categoryname' => $categoryname } );
+}
+
+my %condensed_format = (
+  'label' => [ qw( Description Qty Amount ) ],
+  'fields' => [
+                sub { shift->{description} },
+                sub { shift->{quantity} },
+                sub { shift->{amount} },
+              ],
+  'align'  => [ qw( l r r ) ],
+  'span'   => [ qw( 5 1 1 ) ],            # unitprices?
+  'width'  => [ qw( 10.7cm 1.4cm 1.6cm ) ],   # don't like this
+);
+
+sub _condense_section {
+  my ( $self, $format ) = ( shift, shift );
+  ( 'condensed' => 1,
+    map { my $method = "_condensed_$_"; $_ => $self->$method($format) }
+      qw( description_generator
+          header_generator
+          total_generator
+          total_line_generator
+        )
+  );
+}
+
+sub _condensed_generator_defaults {
+  my ( $self, $format ) = ( shift, shift );
+  return ( \%condensed_format, ' ', ' ', ' ', sub { shift } );
+}
+
+my %html_align = (
+  'c' => 'center',
+  'l' => 'left',
+  'r' => 'right',
+);
+
+sub _condensed_header_generator {
+  my ( $self, $format ) = ( shift, shift );
+
+  my ( $f, $prefix, $suffix, $separator, $column ) =
+    _condensed_generator_defaults($format);
+
+  if ($format eq 'latex') {
+    $prefix = "\\hline\n\\rule{0pt}{2.5ex}\n\\makebox[1.4cm]{}&\n";
+    $suffix = "\\\\\n\\hline";
+    $separator = "&\n";
+    $column =
+      sub { my ($d,$a,$s,$w) = @_;
+            return "\\multicolumn{$s}{$a}{\\makebox[$w][$a]{\\textbf{$d}}}";
+          };
+  } elsif ( $format eq 'html' ) {
+    $prefix = '<th></th>';
+    $suffix = '';
+    $separator = '';
+    $column =
+      sub { my ($d,$a,$s,$w) = @_;
+            return qq!<th align="$html_align{$a}">$d</th>!;
+      };
+  }
+
+  sub {
+    my @args = @_;
+    my @result = ();
+
+    foreach  (my $i = 0; $f->{label}->[$i]; $i++) {
+      push @result,
+        &{$column}( map { $f->{$_}->[$i] } qw(label align span width) );
+    }
+
+    $prefix. join($separator, @result). $suffix;
+  };
+
+}
+
+sub _condensed_description_generator {
+  my ( $self, $format ) = ( shift, shift );
+
+  my ( $f, $prefix, $suffix, $separator, $column ) =
+    _condensed_generator_defaults($format);
+
+  if ($format eq 'latex') {
+    $prefix = "\\hline\n\\multicolumn{1}{c}{\\rule{0pt}{2.5ex}~} &\n";
+    $suffix = '\\\\';
+    $separator = " & \n";
+    $column =
+      sub { my ($d,$a,$s,$w) = @_;
+            return "\\multicolumn{$s}{$a}{\\makebox[$w][$a]{\\textbf{$d}}}";
+          };
+  }elsif ( $format eq 'html' ) {
+    $prefix = '"><td align="center"></td>';
+    $suffix = '';
+    $separator = '';
+    $column =
+      sub { my ($d,$a,$s,$w) = @_;
+            return qq!<td align="$html_align{$a}">$d</td>!;
+      };
+  }
+
+  sub {
+    my @args = @_;
+    my @result = ();
+
+    foreach  (my $i = 0; $f->{label}->[$i]; $i++) {
+      push @result, &{$column}( &{$f->{fields}->[$i]}(@args),
+                                map { $f->{$_}->[$i] } qw(align span width)
+                              );
+    }
+
+    $prefix. join( $separator, @result ). $suffix;
+  };
+
+}
+
+sub _condensed_total_generator {
+  my ( $self, $format ) = ( shift, shift );
+
+  my ( $f, $prefix, $suffix, $separator, $column ) =
+    _condensed_generator_defaults($format);
+  my $style = '';
+
+  if ($format eq 'latex') {
+    $prefix = "& ";
+    $suffix = "\\\\\n";
+    $separator = " & \n";
+    $column =
+      sub { my ($d,$a,$s,$w) = @_;
+            return "\\multicolumn{$s}{$a}{\\makebox[$w][$a]{$d}}";
+          };
+  }elsif ( $format eq 'html' ) {
+    $prefix = '';
+    $suffix = '';
+    $separator = '';
+    $style = 'border-top: 3px solid #000000;border-bottom: 3px solid #000000;';
+    $column =
+      sub { my ($d,$a,$s,$w) = @_;
+            return qq!<td align="$html_align{$a}" style="$style">$d</td>!;
+      };
+  }
+
+
+  sub {
+    my @args = @_;
+    my @result = ();
+
+    #  my $r = &{$f->{fields}->[$i]}(@args);
+    #  $r .= ' Total' unless $i;
+
+    foreach  (my $i = 0; $f->{label}->[$i]; $i++) {
+      push @result,
+        &{$column}( &{$f->{fields}->[$i]}(@args). ($i ? '' : ' Total'),
+                    map { $f->{$_}->[$i] } qw(align span width)
+                  );
+    }
+
+    $prefix. join( $separator, @result ). $suffix;
+  };
+
+}
+
+=item total_line_generator FORMAT
+
+Returns a coderef used for generation of invoice total line items for this
+usage_class.  FORMAT is either html or latex
+
+=cut
+
+# should not be used: will have issues with hash element names (description vs
+# total_item and amount vs total_amount -- another array of functions?
+
+sub _condensed_total_line_generator {
+  my ( $self, $format ) = ( shift, shift );
+
+  my ( $f, $prefix, $suffix, $separator, $column ) =
+    _condensed_generator_defaults($format);
+  my $style = '';
+
+  if ($format eq 'latex') {
+    $prefix = "& ";
+    $suffix = "\\\\\n";
+    $separator = " & \n";
+    $column =
+      sub { my ($d,$a,$s,$w) = @_;
+            return "\\multicolumn{$s}{$a}{\\makebox[$w][$a]{$d}}";
+          };
+  }elsif ( $format eq 'html' ) {
+    $prefix = '';
+    $suffix = '';
+    $separator = '';
+    $style = 'border-top: 3px solid #000000;border-bottom: 3px solid #000000;';
+    $column =
+      sub { my ($d,$a,$s,$w) = @_;
+            return qq!<td align="$html_align{$a}" style="$style">$d</td>!;
+      };
+  }
+
+
+  sub {
+    my @args = @_;
+    my @result = ();
+
+    foreach  (my $i = 0; $f->{label}->[$i]; $i++) {
+      push @result,
+        &{$column}( &{$f->{fields}->[$i]}(@args),
+                    map { $f->{$_}->[$i] } qw(align span width)
+                  );
+    }
+
+    $prefix. join( $separator, @result ). $suffix;
+  };
+
+}
+
+#sub _items_extra_usage_sections {
+#  my $self = shift;
+#  my $escape = shift;
+#
+#  my %sections = ();
+#
+#  my %usage_class =  map{ $_->classname, $_ } qsearch('usage_class', {});
+#  foreach my $cust_bill_pkg ( $self->cust_bill_pkg )
+#  {
+#    next unless $cust_bill_pkg->pkgnum > 0;
+#
+#    foreach my $section ( keys %usage_class ) {
+#
+#      my $usage = $cust_bill_pkg->usage($section);
+#
+#      next unless $usage && $usage > 0;
+#
+#      $sections{$section} ||= 0;
+#      $sections{$section} += $usage;
+#
+#    }
+#
+#  }
+#
+#  map { { 'description' => &{$escape}($_),
+#          'subtotal'    => $sections{$_},
+#          'summarized'  => '',
+#          'tax_section' => '',
+#        }
+#      }
+#    sort {$usage_class{$a}->weight <=> $usage_class{$b}->weight} keys %sections;
+#
+#}
+
+sub _items_extra_usage_sections {
+  my $self = shift;
+  my $escape = shift;
+  my $format = shift;
+
+  my %sections = ();
+  my %classnums = ();
+  my %lines = ();
+
+  my %usage_class =  map { $_->classnum => $_ } qsearch( 'usage_class', {} );
+  foreach my $cust_bill_pkg ( $self->cust_bill_pkg ) {
+    next unless $cust_bill_pkg->pkgnum > 0;
+
+    foreach my $classnum ( keys %usage_class ) {
+      my $section = $usage_class{$classnum}->classname;
+      $classnums{$section} = $classnum;
+
+      foreach my $detail ( $cust_bill_pkg->cust_bill_pkg_detail($classnum) ) {
+        my $amount = $detail->amount;
+        next unless $amount && $amount > 0;
+ 
+        $sections{$section} ||= { 'subtotal'=>0, 'calls'=>0, 'duration'=>0 };
+        $sections{$section}{amount} += $amount;  #subtotal
+        $sections{$section}{calls}++;
+        $sections{$section}{duration} += $detail->duration;
+
+        my $desc = $detail->regionname; 
+        my $description = $desc;
+        $description = substr($desc, 0, 50). '...'
+          if $format eq 'latex' && length($desc) > 50;
+
+        $lines{$section}{$desc} ||= {
+          description     => &{$escape}($description),
+          #pkgpart         => $part_pkg->pkgpart,
+          pkgnum          => $cust_bill_pkg->pkgnum,
+          ref             => '',
+          amount          => 0,
+          calls           => 0,
+          duration        => 0,
+          #unit_amount     => $cust_bill_pkg->unitrecur,
+          quantity        => $cust_bill_pkg->quantity,
+          product_code    => 'N/A',
+          ext_description => [],
+        };
+
+        $lines{$section}{$desc}{amount} += $amount;
+        $lines{$section}{$desc}{calls}++;
+        $lines{$section}{$desc}{duration} += $detail->duration;
+
+      }
+    }
+  }
+
+  my %sectionmap = ();
+  foreach (keys %sections) {
+    my $usage_class = $usage_class{$classnums{$_}};
+    $sectionmap{$_} = { 'description' => &{$escape}($_),
+                        'amount'    => $sections{$_}{amount},    #subtotal
+                        'calls'       => $sections{$_}{calls},
+                        'duration'    => $sections{$_}{duration},
+                        'summarized'  => '',
+                        'tax_section' => '',
+                        'sort_weight' => $usage_class->weight,
+                        ( $usage_class->format
+                          ? ( map { $_ => $usage_class->$_($format) }
+                              qw( description_generator header_generator total_generator total_line_generator )
+                            )
+                          : ()
+                        ), 
+                      };
+  }
+
+  my @sections = sort { $a->{sort_weight} <=> $b->{sort_weight} }
+                 values %sectionmap;
+
+  my @lines = ();
+  foreach my $section ( keys %lines ) {
+    foreach my $line ( keys %{$lines{$section}} ) {
+      my $l = $lines{$section}{$line};
+      $l->{section}     = $sectionmap{$section};
+      $l->{amount}      = sprintf( "%.2f", $l->{amount} );
+      #$l->{unit_amount} = sprintf( "%.2f", $l->{unit_amount} );
+      push @lines, $l;
+    }
+  }
+
+  return(\@sections, \@lines);
+
+}
+
+sub _items_svc_phone_sections {
+  my $self = shift;
+  my $escape = shift;
+  my $format = shift;
+
+  my %sections = ();
+  my %classnums = ();
+  my %lines = ();
+
+  my %usage_class =  map { $_->classnum => $_ } qsearch( 'usage_class', {} );
+
+  foreach my $cust_bill_pkg ( $self->cust_bill_pkg ) {
+    next unless $cust_bill_pkg->pkgnum > 0;
+
+    foreach my $detail ( $cust_bill_pkg->cust_bill_pkg_detail ) {
+
+      my $phonenum = $detail->phonenum;
+      next unless $phonenum;
+
+      my $amount = $detail->amount;
+      next unless $amount && $amount > 0;
+
+      $sections{$phonenum} ||= { 'amount'      => 0,
+                                 'calls'       => 0,
+                                 'duration'    => 0,
+                                 'sort_weight' => -1,
+                                 'phonenum'    => $phonenum,
+                                };
+      $sections{$phonenum}{amount} += $amount;  #subtotal
+      $sections{$phonenum}{calls}++;
+      $sections{$phonenum}{duration} += $detail->duration;
+
+      my $desc = $detail->regionname; 
+      my $description = $desc;
+      $description = substr($desc, 0, 50). '...'
+        if $format eq 'latex' && length($desc) > 50;
+
+      $lines{$phonenum}{$desc} ||= {
+        description     => &{$escape}($description),
+        #pkgpart         => $part_pkg->pkgpart,
+        pkgnum          => '',
+        ref             => '',
+        amount          => 0,
+        calls           => 0,
+        duration        => 0,
+        #unit_amount     => '',
+        quantity        => '',
+        product_code    => 'N/A',
+        ext_description => [],
+      };
+
+      $lines{$phonenum}{$desc}{amount} += $amount;
+      $lines{$phonenum}{$desc}{calls}++;
+      $lines{$phonenum}{$desc}{duration} += $detail->duration;
+
+      my $line = $usage_class{$detail->classnum}->classname;
+      $sections{"$phonenum $line"} ||=
+        { 'amount' => 0,
+          'calls' => 0,
+          'duration' => 0,
+          'sort_weight' => $usage_class{$detail->classnum}->weight,
+          'phonenum' => $phonenum,
+        };
+      $sections{"$phonenum $line"}{amount} += $amount;  #subtotal
+      $sections{"$phonenum $line"}{calls}++;
+      $sections{"$phonenum $line"}{duration} += $detail->duration;
+
+      $lines{"$phonenum $line"}{$desc} ||= {
+        description     => &{$escape}($description),
+        #pkgpart         => $part_pkg->pkgpart,
+        pkgnum          => '',
+        ref             => '',
+        amount          => 0,
+        calls           => 0,
+        duration        => 0,
+        #unit_amount     => '',
+        quantity        => '',
+        product_code    => 'N/A',
+        ext_description => [],
+      };
+
+      $lines{"$phonenum $line"}{$desc}{amount} += $amount;
+      $lines{"$phonenum $line"}{$desc}{calls}++;
+      $lines{"$phonenum $line"}{$desc}{duration} += $detail->duration;
+      push @{$lines{"$phonenum $line"}{$desc}{ext_description}},
+           $detail->formatted('format' => $format);
+
+    }
+  }
+
+  my %sectionmap = ();
+  my $simple = new FS::usage_class { format => 'simple' }; #bleh
+  my $minimal = new FS::usage_class { format => 'minimal' }; #bleh
+  foreach ( keys %sections ) {
+    my $summary = $sections{$_}{sort_weight} < 0 ? 1 : 0;
+    my $usage_class = $summary ? $simple : $minimal;
+    my $ending = $summary ? ' usage charges' : '';
+    $sectionmap{$_} = { 'description' => &{$escape}($_. $ending),
+                        'amount'    => $sections{$_}{amount},    #subtotal
+                        'calls'       => $sections{$_}{calls},
+                        'duration'    => $sections{$_}{duration},
+                        'summarized'  => '',
+                        'tax_section' => '',
+                        'phonenum'    => $sections{$_}{phonenum},
+                        'sort_weight' => $sections{$_}{sort_weight},
+                        (
+                          ( map { $_ => $usage_class->$_($format) }
+                            qw( description_generator
+                                header_generator
+                                total_generator
+                                total_line_generator
+                              )
+                          )
+                        ), 
+                      };
+  }
+
+  my @sections = sort { $a->{phonenum} cmp $b->{phonenum} ||
+                        $a->{sort_weight} <=> $b->{sort_weight}
+                      }
+                 values %sectionmap;
+
+  my @lines = ();
+  foreach my $section ( keys %lines ) {
+    foreach my $line ( keys %{$lines{$section}} ) {
+      my $l = $lines{$section}{$line};
+      $l->{section}     = $sectionmap{$section};
+      $l->{amount}      = sprintf( "%.2f", $l->{amount} );
+      #$l->{unit_amount} = sprintf( "%.2f", $l->{unit_amount} );
+      push @lines, $l;
+    }
+  }
+
+  return(\@sections, \@lines);
+
 }
 
 sub _items {
@@ -3270,8 +3779,30 @@ sub _items_previous {
 
 sub _items_pkg {
   my $self = shift;
+  my %options = @_;
   my @cust_bill_pkg = grep { $_->pkgnum } $self->cust_bill_pkg;
-  $self->_items_cust_bill_pkg(\@cust_bill_pkg, @_);
+  my @items = $self->_items_cust_bill_pkg(\@cust_bill_pkg, @_);
+  if ($options{section} && $options{section}->{condensed}) {
+    my %itemshash = ();
+    local $Storable::canonical = 1;
+    foreach ( @items ) {
+      my $item = { %$_ };
+      delete $item->{ref};
+      delete $item->{ext_description};
+      my $key = freeze($item);
+      $itemshash{$key} ||= 0;
+      $itemshash{$key} ++; # += $item->{quantity};
+    }
+    @items = sort { $a->{description} cmp $b->{description} }
+             map { my $i = thaw($_);
+                   $i->{quantity} = $itemshash{$_};
+                   $i->{amount} =
+                     sprintf( "%.2f", $i->{quantity} * $i->{amount} );#unit_amount
+                   $i;
+                 }
+             keys %itemshash;
+  }
+  @items;
 }
 
 sub _taxsort {

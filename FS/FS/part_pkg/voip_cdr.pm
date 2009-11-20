@@ -15,7 +15,7 @@ use FS::part_pkg::recur_Common;
 
 @ISA = qw(FS::part_pkg::recur_Common);
 
-$DEBUG = 0;
+$DEBUG = 1;
 
 tie my %rating_method, 'Tie::IxHash',
   'prefix' => 'Rate calls by using destination prefix to look up a region and rate according to the internal prefix and rate tables',
@@ -324,6 +324,8 @@ sub calc_usage {
       my( $rate_region, $regionnum );
       my $pretty_destnum;
       my $charge = '';
+      my $seconds = '';
+      my $regionname = '';
       my $classnum = '';
       my @call_details = ();
       if ( $rating_method eq 'prefix' ) {
@@ -409,6 +411,7 @@ sub calc_usage {
 
             $rate_region = $rate_detail->dest_region;
             $regionnum = $rate_region->regionnum;
+            $regionname = $rate_region->regionname;
             warn "  found rate for regionnum $regionnum ".
                  "and rate detail $rate_detail\n"
               if $DEBUG;
@@ -481,7 +484,7 @@ sub calc_usage {
                             : 60;
 
                     # length($cdr->billsec) ? $cdr->billsec : $cdr->duration;
-        my $seconds = $use_duration ? $cdr->duration : $cdr->billsec;
+        $seconds = $use_duration ? $cdr->duration : $cdr->billsec;
 
         $seconds += $granularity - ( $seconds % $granularity )
           if $seconds      # don't granular-ize 0 billsec calls (bills them)
@@ -530,7 +533,7 @@ sub calc_usage {
           my $granularity = $rate_detail->sec_granularity;
 
                       # length($cdr->billsec) ? $cdr->billsec : $cdr->duration;
-          my $seconds = $use_duration ? $cdr->duration : $cdr->billsec;
+          $seconds = $use_duration ? $cdr->duration : $cdr->billsec;
 
           $seconds += $granularity - ( $seconds % $granularity )
             if $seconds      # don't granular-ize 0 billsec calls (bills them)
@@ -561,7 +564,7 @@ sub calc_usage {
                                  'minutes'        => $minutes,
                                  'charge'         => $charge,
                                  'pretty_dst'     => $pretty_destnum,
-                                 'dst_regionname' => $rate_region->regionname,
+                                 'dst_regionname' => $regionname,
                                )
           );
 
@@ -577,11 +580,25 @@ sub calc_usage {
           #if ( $self->option('rating_method') eq 'upstream_simple' ) {
           if ( scalar(@call_details) == 1 ) {
             $call_details =
-              [ 'C', $call_details[0], $charge, $classnum, $phonenum ];
+              [ 'C',
+                $call_details[0],
+                $charge,
+                $classnum,
+                $phonenum,
+                $seconds,
+                $regionname,
+              ];
           } else { #only used for $rating_method eq 'upstream' now
             $csv->combine(@call_details);
             $call_details =
-              [ 'C', $csv->string, $charge, $classnum, $phonenum ];
+              [ 'C',
+                $csv->string,
+                $charge,
+                $classnum,
+                $phonenum,
+                $seconds,
+                $regionname,
+              ];
           }
           warn "  adding details on charge to invoice: [ ".
               join(', ', @{$call_details} ). " ]"

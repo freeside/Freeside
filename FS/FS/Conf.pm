@@ -1036,6 +1036,20 @@ worry that config_items is freeside-specific and icky.
     'type'        => 'checkbox',
   },
 
+  { 
+    'key'         => 'usage_class_as_a_section',
+    'section'     => 'billing',
+    'description' => 'Split usage into sections and label according to usage class name when enabled.  Only valid when invoice_sections is enabled.',
+    'type'        => 'checkbox',
+  },
+
+  { 
+    'key'         => 'svc_phone_sections',
+    'section'     => 'billing',
+    'description' => 'Create a section for each svc_phone when enabled.  Only valid when invoice_sections is enabled.',
+    'type'        => 'checkbox',
+  },
+
   {
     'key'         => 'finance_pkgclass',
     'section'     => 'billing',

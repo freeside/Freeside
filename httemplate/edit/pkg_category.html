@@ -1,5 +1,28 @@
-<% include( 'elements/category_Common.html',
+<% include( 'elements/edit.html',
               'name'   => 'Package Category',
               'table'  => 'pkg_category',
-          )
+              'fields' => [
+                            'categoryname',
+                            'weight',
+                            { field=>'condense', type=>'checkbox', value=>'Y', },
+                            { field=>'disabled', type=>'checkbox', value=>'Y', },
+                          ],
+              'labels' => {
+                            'categorynum'  => 'Category number',
+                            'categoryname' => 'Category name',
+                            'weight'       => 'Weight',
+                            'condense'     => 'Collapse identical items to one',
+                            'disabled'     => 'Disable category',
+                          },
+              'viewall_dir' => 'browse',
+              %opt,
+           )
 %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my %opt = @_;
+
+</%init>

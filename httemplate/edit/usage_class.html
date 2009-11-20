@@ -3,14 +3,26 @@
               'table'         => 'usage_class',
               'fields'        => [
                                    'classname',
-                                   { field=>'disabled',
-                                     type=>'checkbox',
-                                     value=>'Y',
+                                   'weight',
+                                   { field => 'format',
+                                     type  => $useformat ? 'select' : 'hidden',
+                                     ( $useformat
+                                       ? ( 'options' => [ keys %labels ],
+                                           'labels'  => \%labels,
+                                         )
+                                       : ()
+                                     ),
+                                   },
+                                   { field => 'disabled',
+                                     type  => 'checkbox',
+                                     value => 'Y',
                                    },
                                  ],
               'labels'        => { 
                                    'classnum'  => 'Class number',
                                    'classname' => 'Class name',
+                                   'weight'    => 'Weight',
+                                   'format'    => 'Format',
                                    'disabled'  => 'Disable class',
                                  },
               'viewall_dir'   => 'browse',
@@ -21,5 +33,10 @@
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $conf = new FS::Conf;
+my $useformat = $conf->exists('usage_class_as_a_section');
+
+my %labels = &FS::usage_class::summary_formats_labelhash();
 
 </%init>

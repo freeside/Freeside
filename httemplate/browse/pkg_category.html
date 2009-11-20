@@ -3,15 +3,15 @@
                  'html_init'   => $html_init,
                  'name'        => 'package categories',
                  'disableable' => 1,
-                 'disabled_statuspos' => 2,
+                 'disabled_statuspos' => 3,
                  'query'       => { 'table'     => 'pkg_category',
                                     'hashref'   => {},
                                     'extra_sql' => 'ORDER BY categorynum',
                                   },
                  'count_query' => $count_query,
-                 'header'      => [ '#', 'Category', 'Weight' ],
-                 'fields'      => [ 'categorynum', 'categoryname', 'weight' ],
-                 'links'       => [ $link, $link, $link ],
+                 'header'      => [ '#', 'Category', 'Weight', 'Condense' ],
+                 'fields'      => [ 'categorynum', 'categoryname', 'weight', 'condense' ],
+                 'links'       => [ $link, $link, $link, $link ],
              )
 %>
 

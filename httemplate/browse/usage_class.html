@@ -9,15 +9,32 @@
                                     'extra_sql' => 'ORDER BY classnum',
                                   },
                  'count_query' => 'SELECT COUNT(*) FROM usage_class',
-                 'header'      => [ '#', 'Class' ],
-                 'fields'      => [ 'classnum', 'classname' ],
-                 'links'       => [ $link, $link ],
+                 'header'      => [ '#',
+                                    'Class',
+                                    'Weight',
+                                    ( $useformat ? ('Format') : () ),
+                                  ],
+                 'fields'      => [ 'classnum',
+                                    'classname',
+                                    'weight',
+                                    ( $useformat ? (sub { $labels->{shift->format} } ) : () ),
+                                  ],
+                 'links'       => [ $link,
+                                    $link,
+                                    $link,
+                                    ( $useformat ? ( $link ) : () ),
+                                  ],
              )
 %>
 <%init>
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $conf = new FS::Conf;
+my $useformat = $conf->exists('usage_class_as_a_section');
+my $labels = { &FS::usage_class::summary_formats_labelhash() };
+
 
 my $html_init = 
   'Usage classes define groups of usage for taxation purposes.<BR><BR>'.

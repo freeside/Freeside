@@ -573,7 +573,9 @@ sub tables_hashref {
         'amount',  'decimal', 'NULL', '10,4', '', '',
         'format',  'char', 'NULL', 1, '', '',
         'classnum', 'int', 'NULL', '', '', '',
+        'duration', 'int', 'NULL', '',  0, '',
         'phonenum', 'varchar', 'NULL', 15, '', '',
+        'regionname', 'varchar', 'NULL', $char_d, '', '',
         'detail',  'varchar', '', 255, '', '', 
       ],
       'primary_key' => 'detailnum',
@@ -2010,9 +2012,11 @@ sub tables_hashref {
 
     'usage_class' => {
       'columns' => [
-        'classnum',    'serial',   '',      '', '', '', 
-        'classname',   'varchar',  '', $char_d, '', '', 
-        'disabled',    'char', 'NULL',       1, '', '', 
+        'classnum',    'serial',      '',      '', '', '', 
+        'weight',      'int',     'NULL',      '', '', '',
+        'classname',   'varchar',     '', $char_d, '', '', 
+        'format',      'varchar', 'NULL', $char_d, '', '', 
+        'disabled',    'char',    'NULL',       1, '', '', 
       ],
       'primary_key' => 'classnum',
       'unique' => [],
@@ -2125,6 +2129,7 @@ sub tables_hashref {
         'categorynum',   'serial',  '', '', '', '', 
         'categoryname',  'varchar', '', $char_d, '', '', 
         'weight',         'int', 'NULL',  '', '', '',
+        'condense',      'char', 'NULL',   1, '', '', 
         'disabled',      'char', 'NULL',   1, '', '', 
       ],
       'primary_key' => 'categorynum',

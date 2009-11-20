@@ -2,6 +2,7 @@ package FS::cust_bill_pkg_detail;
 
 use strict;
 use vars qw( @ISA $me $DEBUG %GetInfoType );
+use HTML::Entities;
 use FS::Record qw( qsearch qsearchs dbdef dbh );
 use FS::cust_bill_pkg;
 use FS::Conf;
@@ -40,6 +41,18 @@ inherits from FS::Record.  The following fields are currently supported:
 =item detailnum - primary key
 
 =item billpkgnum - link to cust_bill_pkg
+
+=item amount - price of this line item detail
+
+=item format - '' for straight text and 'C' for CSV in detail
+
+=item classnum - link to usage_class
+
+=item duration - granularized number of seconds for this call
+
+=item regionname -
+
+=item phonenum -
 
 =item detail - detail description
 
@@ -121,6 +134,8 @@ sub check {
     #|| $self->ut_moneyn('amount')
     || $self->ut_floatn('amount')
     || $self->ut_enum('format', [ '', 'C' ] )
+    || $self->ut_numbern('duration')
+    || $self->ut_textn('regionname')
     || $self->ut_text('detail')
     || $self->ut_foreign_keyn('classnum', 'usage_class', 'classnum')
     || $self->$phonenum_check_method('phonenum')
@@ -128,6 +143,92 @@ sub check {
     ;
 
 }
+
+=item formatted [ OPTION => VALUE ... ]
+
+Returns detail information for the invoice line item detail formatted for
+display.
+
+Currently available options are: I<format> I<escape_function>
+
+If I<format> is set to html or latex then the format is improved
+for tabular appearance in those environments if possible.
+
+If I<escape_function> is set then the format is processed by this
+function before being returned.
+
+If I<format_function> is set then the detail is handed to this callback
+for processing.
+
+=cut
+
+sub formatted {
+  my ( $self, %opt ) = @_;
+  my $format = $opt{format} || '';
+  return () unless defined dbdef->table('cust_bill_pkg_detail');
+
+  eval "use Text::CSV_XS;";
+  die $@ if $@;
+  my $csv = new Text::CSV_XS;
+
+  my $escape_function = sub { shift };
+
+  $escape_function = \&encode_entities
+    if $format eq 'html';
+
+  $escape_function =
+    sub {
+      my $value = shift;
+      $value =~ s/([#\$%&~_\^{}])( )?/"\\$1". ( ( defined($2) && length($2) ) ? "\\$2" : '' )/ge;
+      $value =~ s/([<>])/\$$1\$/g;
+      $value;
+    }
+  if $format eq 'latex';
+
+  $escape_function = $opt{escape_function} if $opt{escape_function};
+
+  my $format_sub = sub { my $detail = shift;
+                         $csv->parse($detail) or return "can't parse $detail";
+                         join(' - ', map { &$escape_function($_) }
+                                     $csv->fields
+                             );
+                       };
+
+  $format_sub = sub { my $detail = shift;
+                      $csv->parse($detail) or return "can't parse $detail";
+                      join('</TD><TD>', map { &$escape_function($_) }
+                                        $csv->fields
+                          );
+                    }
+    if $format eq 'html';
+
+  $format_sub = sub { my $detail = shift;
+                      $csv->parse($detail) or return "can't parse $detail";
+                      #join(' & ', map { '\small{'. &$escape_function($_). '}' }                      #            $csv->fields );
+                      my $result = '';
+                      my $column = 1;
+                      foreach ($csv->fields) {
+                        $result .= ' & ' if $column > 1;
+                        if ($column > 6) {                     # KLUDGE ALERT!
+                          $result .= '\multicolumn{1}{l}{\scriptsize{'.
+                                     &$escape_function($_). '}}';
+                        }else{
+                          $result .= '\scriptsize{'.  &$escape_function($_). '}';
+                        }
+                        $column++;
+                      }
+                      $result;
+                    }
+    if $format eq 'latex';
+
+  $format_sub = $opt{format_function} if $opt{format_function};
+
+  $self->format eq 'C'
+    ? &{$format_sub}( $self->detail, $self )
+    : &{$escape_function}( $self->detail )
+  ;
+}
+
 
 # _upgrade_data
 #
