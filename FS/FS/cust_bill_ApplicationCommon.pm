@@ -208,7 +208,7 @@ sub calculate_applications {
                            my $weight =
                              $cust_pkg
                                ? ( $cust_pkg->part_pkg->$weight_col() || 0 )
-                               : 0; #default or per-tax weight?
+                               : -1; #default or per-tax weight?
                            [ $open, $weight ]
                          }
                          @open;
