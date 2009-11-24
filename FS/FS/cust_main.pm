@@ -4774,6 +4774,9 @@ sub realtime_refund_bop {
   ) {
     warn "  attempting void\n" if $DEBUG > 1;
     my $void = new Business::OnlinePayment( $processor, @bop_options );
+    $content{'card_number'} = $cust_pay->payinfo
+      if $cust_pay->payby eq 'CARD'
+      && $void->can('info') && $void->info('CC_void_requires_card');
     $void->content( 'action' => 'void', %content );
     $void->submit();
     if ( $void->is_success ) {
@@ -6112,6 +6115,9 @@ sub _new_realtime_refund_bop {
   ) {
     warn "  attempting void\n" if $DEBUG > 1;
     my $void = new Business::OnlinePayment( $processor, @bop_options );
+    $content{'card_number'} = $cust_pay->payinfo
+      if $cust_pay->payby eq 'CARD'
+      && $void->can('info') && $void->info('CC_void_requires_card');
     $void->content( 'action' => 'void', %content );
     $void->submit();
     if ( $void->is_success ) {
