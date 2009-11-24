@@ -96,6 +96,13 @@ my $where = "
 ";
     #AND $wheretimeleft
 
+my $str2time_sql = str2time_sql;
+my $closing      = str2time_sql_closing;
+
+my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
+$where .= " AND $str2time_sql Transactions.Created $closing >= $beginning ".
+          " AND $str2time_sql Transactions.Created $closing <= $ending";
+
 my $query = "
   SELECT Tickets.id, Tickets.Subject,
          TO_CHAR(Transactions.Created, 'Dy Mon DD HH24:MI:SS YYYY'),

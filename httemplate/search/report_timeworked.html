@@ -1,0 +1,28 @@
+<% include( '/elements/header.html', 'Time Worked' ) %>
+
+<FORM ACTION="timeworked.html" METHOD="GET">
+
+<TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+  <TR>
+    <TH BGCOLOR="#e8e8e8" COLSPAN=2 ALIGN="left">
+      <FONT SIZE="+1">Search options</FONT>
+    </TH>
+  </TR>
+
+  <% include ('/elements/tr-input-beginning_ending.html') %>
+
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="Get Report">
+
+</FORM>
+
+<% include('/elements/footer.html') %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Time queue');
+
+</%init>
