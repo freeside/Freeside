@@ -37,7 +37,7 @@ use FS::payby;
 
 @ISA = qw( FS::cust_main_Mixin FS::Record );
 
-$DEBUG = 1;
+$DEBUG = 0;
 $me = '[FS::cust_bill]';
 
 #ask FS::UID to run this stuff for us later
