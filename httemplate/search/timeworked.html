@@ -32,19 +32,7 @@
                    '',
                    '',
                  ],
-                 'html_foot' => sub {
-                                  '<BR><INPUT TYPE="button" VALUE="select all" onClick="setAll(true)">'.
-                                  '<INPUT TYPE="button" VALUE="unselect all" onClick="setAll(false)">'.
-                                  '<BR><INPUT TYPE="submit" NAME="action" VALUE="Assign to accounts"><BR>'.
-                                  '<SCRIPT TYPE="text/javascript">'.
-                                  '  function setAll(setTo) { '.
-                                  '    theForm = document.timeForm;'.
-                                  '    for (i=0,n=theForm.elements.length;i<n;i++)'.
-                                  '      if (theForm.elements[i].name.indexOf("transactionid") != -1)'.
-                                  '        theForm.elements[i].checked = setTo;'.
-                                  '  }'.
-                                  '</SCRIPT>';
-                                },
+                 'html_foot' => $html_foot,
              )
 
 %>
@@ -99,9 +87,9 @@ my $where = "
 my $str2time_sql = str2time_sql;
 my $closing      = str2time_sql_closing;
 
-my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
-$where .= " AND $str2time_sql Transactions.Created $closing >= $beginning ".
-          " AND $str2time_sql Transactions.Created $closing <= $ending";
+my($begin, $end) = FS::UI::Web::parse_beginning_ending($cgi);
+$where .= " AND $str2time_sql Transactions.Created $closing >= $begin ".
+          " AND $str2time_sql Transactions.Created $closing <= $end ";
 
 my $query = "
   SELECT Tickets.id, Tickets.Subject,
@@ -120,5 +108,23 @@ my $query = "
 my $count_query = "SELECT COUNT(*) FROM Transactions $where";
 
 my $link = [ "${p}rt/Ticket/Display.html?id=", sub { shift->[0]; } ];
+
+my $html_foot = qq'
+  <INPUT TYPE="hidden" NAME="begin" VALUE="$begin">
+  <INPUT TYPE="hidden" NAME="end"   VALUE="$end">
+  <BR>
+  <INPUT TYPE="button" VALUE="select all" onClick="setAll(true)">
+  <INPUT TYPE="button" VALUE="unselect all" onClick="setAll(false)">
+  <BR>
+  <INPUT TYPE="submit" NAME="action" VALUE="Assign to accounts"><BR>
+  <SCRIPT TYPE="text/javascript">
+    function setAll(setTo) {
+      theForm = document.timeForm;
+      for (i=0,n=theForm.elements.length;i<n;i++)
+        if (theForm.elements[i].name.indexOf("transactionid") != -1)
+          theForm.elements[i].checked = setTo;
+    }
+  </SCRIPT>
+';
 
 </%init>
