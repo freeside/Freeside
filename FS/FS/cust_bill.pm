@@ -3213,8 +3213,11 @@ sub _items_sections {
   push @$late, map { { 'description' => &{$escape}($_),
                        'subtotal'    => $late_subtotal{$_},
                        'post_total'  => 1,
-                       'sort_weight' => _pkg_category($_)->weight,
-                       (_pkg_category($_)->condense
+                       'sort_weight' => ( _pkg_category($_)
+                                            ? _pkg_category($_)->weight
+                                            : 0
+                                       ),
+                       ((_pkg_category($_) && _pkg_category($_)->condense)
                                            ? $self->_condense_section($format)
                                            : ()
                        ),
@@ -3233,8 +3236,11 @@ sub _items_sections {
                       'subtotal'    => $subtotal{$_},
                       'summarized'  => $not_tax{$_} ? '' : 'Y',
                       'tax_section' => $not_tax{$_} ? '' : 'Y',
-                      'sort_weight' => _pkg_category($_)->weight,
-                       (_pkg_category($_)->condense
+                      'sort_weight' => ( _pkg_category($_)
+                                           ? _pkg_category($_)->weight
+                                           : 0
+                                       ),
+                       ((_pkg_category($_) && _pkg_category($_)->condense)
                                            ? $self->_condense_section($format)
                                            : ()
                        ),
