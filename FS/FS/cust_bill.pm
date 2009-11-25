@@ -2465,20 +2465,35 @@ sub print_generic {
                       'subtotal'    => $taxtotal,   # adjusted below
                       'summarized'  => $summarypage ? 'Y' : '',
                     };
+  my $tax_weight = _pkg_category($tax_section->{description})
+                        ? _pkg_category($tax_section->{description})->weight
+                        : 0;
+  $tax_section->{'summarized'} = $summarypage && !$tax_weight ? 'Y' : '';
+  $tax_section->{'sort_weight'} = $tax_weight;
+
 
   my $adjusttotal = 0;
   my $adjust_section = { 'description' => 'Credits, Payments, and Adjustments',
                          'subtotal'    => 0,   # adjusted below
                          'summarized'  => $summarypage ? 'Y' : '',
                        };
+  my $adjust_weight = _pkg_category($adjust_section->{description})
+                        ? _pkg_category($adjust_section->{description})->weight
+                        : 0;
+  $adjust_section->{'summarized'} = $summarypage && !$adjust_weight ? 'Y' : '';
+  $adjust_section->{'sort_weight'} = $adjust_weight;
 
   my $unsquelched = $params{unsquelch_cdr} || $cust_main->squelch_cdr ne 'Y';
   my $multisection = $conf->exists('invoice_sections', $cust_main->agentnum);
   my $late_sections = [];
+  my $extra_sections = ();
+  my $extra_lines = ();
   if ( $multisection ) {
-    my ($extra_sections, $extra_lines) =
+    ($extra_sections, $extra_lines) =
       $self->_items_extra_usage_sections($escape_function, $format)
       if $conf->exists('usage_class_as_a_section', $cust_main->agentnum);
+
+    push @$extra_sections, $adjust_section if $adjust_section->{sort_weight};
 
     push @detail_items, @$extra_lines if $extra_lines;
     push @sections,
@@ -2564,6 +2579,8 @@ sub print_generic {
     $options{'format_function'} = sub { () } unless $unsquelched;
     $options{'unsquelched'} = $unsquelched;
     $options{'summary_page'} = $summarypage;
+    $options{'skip_usage'} =
+      scalar(@$extra_sections) && !grep{$section == $_} @$extra_sections;
 
     foreach my $line_item ( $self->_items_pkg(%options) ) {
       my $detail = {
@@ -2684,8 +2701,13 @@ sub print_generic {
                )
       );
     if ( $multisection ) {
-      $adjust_section->{'pretotal'} = 'New charges total '. $other_money_char.
-                                      sprintf('%.2f', $self->charged );
+      if ( $adjust_section->{'sort_weight'} ) {
+        $adjust_section->{'posttotal'} = 'Balance Forward '. $other_money_char.
+          sprintf("%.2f", ($self->billing_balance || 0) );
+      } else {
+        $adjust_section->{'pretotal'} = 'New charges total '. $other_money_char.
+                                        sprintf('%.2f', $self->charged );
+      } 
     }else{
       push @total_items, $total;
     }
@@ -2768,7 +2790,8 @@ sub print_generic {
     if ( $multisection ) {
       $adjust_section->{'subtotal'} = $other_money_char.
                                       sprintf('%.2f', $adjusttotal);
-      push @sections, $adjust_section;
+      push @sections, $adjust_section
+        unless $adjust_section->{sort_weight};
     }
 
     { 
@@ -2782,7 +2805,7 @@ sub print_generic {
                                                : $self->owed + $pr_total
                                     )
         );
-      if ( $multisection ) {
+      if ( $multisection && !$adjust_section->{sort_weight} ) {
         $adjust_section->{'posttotal'} = $total->{'total_item'}. ' '.
                                          $total->{'total_amount'};
       }else{
@@ -2795,6 +2818,18 @@ sub print_generic {
   }
 
   if ( $multisection ) {
+    if ($conf->exists('svc_phone_sections')) {
+      my $total;
+      $total->{'total_item'} = &$embolden_function($self->balance_due_msg);
+      $total->{'total_amount'} =
+        &$embolden_function(
+          $other_money_char. sprintf('%.2f', $self->owed + $pr_total)
+        );
+      my $last_section = pop @sections;
+      $last_section->{'posttotal'} = $total->{'total_item'}. ' '.
+                                     $total->{'total_amount'};
+      push @sections, $last_section;
+    }
     push @sections, @$late_sections
       if $unsquelched;
   }
@@ -2852,6 +2887,8 @@ sub print_generic {
   die "no invoice_lines() functions in template?"
     if ( $format eq 'template' && !$wasfunc );
 
+  use Data::Dumper;
+  warn Dumper(\@sections);
   if ($format eq 'template') {
 
     if ( $invoice_lines ) {
@@ -3176,7 +3213,8 @@ sub _items_sections {
           }
           
           if ($type && $type eq 'U') {
-            $late_subtotal{$section} += $usage;
+            $late_subtotal{$section} += $usage
+              unless scalar(@$extra_sections);
           }
 
         } else {
@@ -3199,7 +3237,8 @@ sub _items_sections {
           }
           
           if ($type && $type eq 'U') {
-            $subtotal{$section} += $usage;
+            $subtotal{$section} += $usage
+              unless scalar(@$extra_sections);
           }
 
         }
@@ -3704,6 +3743,7 @@ sub _items_svc_phone_sections {
                         'tax_section' => '',
                         'phonenum'    => $sections{$_}{phonenum},
                         'sort_weight' => $sections{$_}{sort_weight},
+                        'post_total'  => $summary, #inspire pagebreak
                         (
                           ( map { $_ => $usage_class->$_($format) }
                             qw( description_generator
@@ -3843,11 +3883,13 @@ sub _items_cust_bill_pkg {
   foreach my $cust_bill_pkg ( @$cust_bill_pkg )
   {
 
-    foreach ( $s, $r, $u ) {
+    foreach ( $s, $r, ($opt{skip_usage} ? $u : () ) ) {
       if ( $_ && !$cust_bill_pkg->hidden ) {
         $_->{amount}      = sprintf( "%.2f", $_->{amount} ),
+        $_->{amount}      =~ s/^\-0\.00$/0.00/;
         $_->{unit_amount} = sprintf( "%.2f", $_->{unit_amount} ),
-        push @b, { %$_ };
+        push @b, { %$_ }
+          unless $_->{amount} == 0;
         $_ = undef;
       }
     }
@@ -4013,11 +4055,13 @@ sub _items_cust_bill_pkg {
 
   }
 
-  foreach ( $s, $r, $u ) {
-    if ( $_ ) {
+  foreach ( $s, $r, ($opt{skip_usage} ? $u : () ) ) {
+    if ( $_  ) {
       $_->{amount}      = sprintf( "%.2f", $_->{amount} ),
+      $_->{amount}      =~ s/^\-0\.00$/0.00/;
       $_->{unit_amount} = sprintf( "%.2f", $_->{unit_amount} ),
-      push @b, { %$_ };
+      push @b, { %$_ }
+        unless $_->{amount} == 0;
     }
   }
 
