@@ -242,7 +242,7 @@ Terms: [@-- $terms --@]\\
       $OUT .= '\large\textsc{'. $section->{'pretotal'}. '}\\\\';
       $OUT .= '\\end{flushright}';
     }
-    $OUT .= '\pagebreak' if $section{'post_total'};
+    $OUT .= '\pagebreak' if $section->{'post_total'};
     unless ($section->{'summarized'} ) {
       $OUT .= '\captionsetup{singlelinecheck=false,justification=raggedright,font={Large,sc,bf}}';
       $OUT .= '\ifthenelse{\equal{\thepage}{1}}{\setlength{\LTextracouponspace}{\extracouponspace}}{\setlength{\LTextracouponspace}{0pt}}'
