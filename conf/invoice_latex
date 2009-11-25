@@ -251,24 +251,40 @@ Terms: [@-- $terms --@]\\
       $OUT .= '\caption*{ ';
       $OUT .= ($section->{'description'}) ? $section->{'description'}: 'Charges';
       $OUT .= '}\\\\';
-      $OUT .= '\FShead';
+      if ($section->{header_generator}) {
+        $OUT .= &{$section->{header_generator}}();
+      } else {
+        $OUT .= '\FShead';
+      }
       $OUT .= '\endfirsthead';
       $OUT .= '\multicolumn{7}{r}{\rule{0pt}{2.5ex}Continued from previous page}\\\\';
-      $OUT .= '\FShead';
+      if ($section->{header_generator}) {
+        $OUT .= &{$section->{header_generator}}();
+      } else {
+        $OUT .= '\FShead';
+      }
       $OUT .= '\endhead';
       $OUT .= '\multicolumn{7}{r}{\rule{0pt}{2.5ex}Continued on next page...}\\\\';
       $OUT .= '\endfoot';
       $OUT .= '\hline';
 
       if (scalar(@sections) > 1) {
-        $OUT .= '\FStotaldesc{' . $section->{'description'} . ' Total}' .
-                '{' . $section->{'subtotal'} . '}' . "\n";
+        if ($section->{total_generator}) {
+          $OUT .= &{$section->{total_generator}}($section);
+        } else {
+          $OUT .= '\FStotaldesc{' . $section->{'description'} . ' Total}' .
+                  '{' . $section->{'subtotal'} . '}' . "\n";
+        }
       }
 
       #if ($section == $sections[$#sections]) {
         foreach my $line (grep {$_->{section}->{description} eq $section->{description}} @total_items) {
-          $OUT .= '\FStotaldesc{' . $line->{'total_item'} . '}' .
-                  '{' . $line->{'total_amount'} . '}' . "\n";
+          if ($section->{total_line_generator}) {
+            $OUT .= &{$section->{total_line_generator}}($line);
+          } else {
+            $OUT .= '\FStotaldesc{' . $line->{'total_item'} . '}' .
+                    '{' . $line->{'total_amount'} . '}' . "\n";
+          }
         }
       #}
 
@@ -289,23 +305,31 @@ Terms: [@-- $terms --@]\\
         my $rowbreak = @$ext_description < 5 ? '*' : '';
   
         $OUT .= "\\hline\n" if ($line->{'ref'} && $line->{'ref'} ne $lastref);
-        $OUT .= '\FSdesc'.
-                '{' . ( $line->{'ref'} ne $lastref ? $line->{'ref'} : '' ) . '}'.
-                '{' . $line->{'description'} . '}' .
-                '{' . ( $unitprices ? $line->{'unit_amount'} : '' ) . '}'.
-                '{' . ( $unitprices ? $line->{'quantity'} : ''  ) . '}' .
-                '{' . $line->{'amount'} . "}${rowbreak}\n";
+        if ($section->{description_generator}) {
+          $OUT .= &{$section->{description_generator}}($line);
+        } else {
+          $OUT .= '\FSdesc'.
+                  '{' . ( $line->{'ref'} ne $lastref ? $line->{'ref'} : '' ) . '}'.
+                  '{' . $line->{'description'} . '}' .
+                  '{' . ( $unitprices ? $line->{'unit_amount'} : '' ) . '}'.
+                  '{' . ( $unitprices ? $line->{'quantity'} : ''  ) . '}' .
+                  '{' . $line->{'amount'} . "}${rowbreak}\n";
+        }
         $lastref = $line->{'ref'};
 
         foreach my $ext_desc (@$ext_description) {
-          if ( $ext_desc !~ /[^\\]&/ ) {
-            $ext_desc = substr($ext_desc, 0, 80) . '...'
-              if (length($ext_desc) > 80);
-            $ext_desc = '\multicolumn{6}{l}{\small{~~~'. $ext_desc. '}}';
-          }else{
-            $ext_desc = "~~~$ext_desc";
+          if ($section->{extended_description_generator}) {
+            $OUT .= &{$section->{extended_description_generator}}($ext_desc);
+          } else {
+            if ( $ext_desc !~ /[^\\]&/ ) {
+              $ext_desc = substr($ext_desc, 0, 80) . '...'
+                if (length($ext_desc) > 80);
+              $ext_desc = '\multicolumn{6}{l}{\small{~~~'. $ext_desc. '}}';
+            }else{
+              $ext_desc = "~~~$ext_desc";
+            }
+            $OUT .= '\FSextdesc{' . $ext_desc . '}' . "${rowbreak}\n";
           }
-          $OUT .= '\FSextdesc{' . $ext_desc . '}' . "${rowbreak}\n";
         }
 
       }
