@@ -2887,8 +2887,6 @@ sub print_generic {
   die "no invoice_lines() functions in template?"
     if ( $format eq 'template' && !$wasfunc );
 
-  use Data::Dumper;
-  warn Dumper(\@sections);
   if ($format eq 'template') {
 
     if ( $invoice_lines ) {
@@ -3730,10 +3728,10 @@ sub _items_svc_phone_sections {
 
   my %sectionmap = ();
   my $simple = new FS::usage_class { format => 'simple' }; #bleh
-  my $minimal = new FS::usage_class { format => 'minimal' }; #bleh
+  my $usage_simple = new FS::usage_class { format => 'usage_simple' }; #bleh
   foreach ( keys %sections ) {
     my $summary = $sections{$_}{sort_weight} < 0 ? 1 : 0;
-    my $usage_class = $summary ? $simple : $minimal;
+    my $usage_class = $summary ? $simple : $usage_simple;
     my $ending = $summary ? ' usage charges' : '';
     $sectionmap{$_} = { 'description' => &{$escape}($_. $ending),
                         'amount'    => $sections{$_}{amount},    #subtotal

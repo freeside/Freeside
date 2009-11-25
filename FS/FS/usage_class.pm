@@ -139,14 +139,19 @@ my %summary_formats = (
     'span'   => [ qw( 5 1 1 ) ],
     'width'  => [ qw( 10.7cm 1.4cm 1.6cm ) ],   # don't like this
   },
-  'minimal' => { 
-    'label' => [ qw( Amount ) ],
+  'usage_simple' => { 
+    'label' => [ qw( Date Time Number Destination Duration Amount ) ],
     'fields' => [
-                  sub { '' },
+                  sub { ' ' },
+                  sub { ' ' },
+                  sub { ' ' },
+                  sub { ' ' },
+                  sub { ' ' },
+                  sub { ' ' },
                 ],
-    'align'  => [ qw( r ) ],
-    'span'   => [ qw( 7 ) ],            # unitprices?
-    'width'  => [ qw( 13.8cm ) ],   # don't like this
+    'align'  => [ qw( l l l l r r ) ],
+    'span'   => [ qw( 2 1 1 1 1 1 ) ],            # unitprices?
+    'width'  => [ qw( 4.3cm 1.4cm 2.5cm 2.5cm 1.4cm 1.6cm ) ],# don't like this
   },
 );
 
