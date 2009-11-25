@@ -247,6 +247,11 @@ my $begin_callback = sub {
 
 my $disabled_type = $acl_edit_either ? 'checkbox' : 'hidden';
 
+#arg.  access rights for cloning are Hard.
+# on the one hand we don't really want cloning (customizing a package) to fail 
+#  for want of finding the source package in normal usage
+# on the other hand, we don't want people using the clone link to be able to
+#  see 
 my $agent_clone_extra_sql = 
   ' ( '. FS::part_pkg->curuser_pkgs_sql.
   "   OR ( part_pkg.custom = 'Y' ) ".
@@ -254,7 +259,12 @@ my $agent_clone_extra_sql =
 
 my $conf = new FS::Conf;
 my $taxproducts = $conf->exists('enable_taxproducts');
-my $census = scalar( qsearch( 'part_pkg_report_option', {} ) );
+
+my $sth = dbh->prepare("SELECT COUNT(*) FROM part_pkg_report_option".
+                       "  WHERE disabled IS NULL OR disabled = ''  ")
+  or die dbh->errstr;
+$sth->execute or die $sth->errstr;
+my $census = $sth->fetchrow_arrayref->[0];
 
 #XXX
 # - tr-part_pkg_freq: month_increments_only (from price plans)
