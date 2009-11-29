@@ -1207,11 +1207,21 @@ sub change {
   #Good to go, cancel old package.
   $error = $self->cancel( quiet=>1 );
   if ($error) {
-    $dbh->rollback;
+    $dbh->rollback if $oldAutoCommit;
     return $error;
   }
 
+  if ( $conf->exists('cust_pkg-change_pkgpart-bill_now') ) {
+    #$self->cust_main
+    my $error = $cust_pkg->cust_main->bill( 'pkg_list' => [ $cust_pkg ] );
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
   $cust_pkg;
 
 }

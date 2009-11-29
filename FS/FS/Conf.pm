@@ -1911,6 +1911,13 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'cust_pkg-change_pkgpart-bill_now',
+    'section'     => '',
+    'description' => "When changing packages, bill the new package immediately.  Useful for prepaid situations with RADIUS where an Expiration attribute base don the package must be present at all times.",
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'disable_autoreverse',
     'section'     => 'BIND',
     'description' => 'Disable automatic synchronization of reverse-ARPA entries.',
