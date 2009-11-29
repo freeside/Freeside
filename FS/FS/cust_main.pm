@@ -2528,7 +2528,7 @@ plans support this feature (they tend to charge 0).
 
 =item invoice_terms
 
-Options terms to be printed on this invocice.  Otherwise, customer-specific
+Options terms to be printed on this invoice.  Otherwise, customer-specific
 terms or the default terms are used.
 
 =back
