@@ -47,7 +47,7 @@
   </TR>
 
 % if ( $cust_pkg->setup && ! $cust_pkg->start_date ) {
-  <& .row_display, cust_pkg=>$cust_pkg, column=>'start',   label=>'Start' &>
+  <& .row_display, cust_pkg=>$cust_pkg, column=>'start_date',   label=>'Start' &>
 % } else {
   <& .row_edit, cust_pkg=>$cust_pkg, column=>'start_date', label=>'Start' &>
 % }
