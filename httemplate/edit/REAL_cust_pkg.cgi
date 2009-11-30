@@ -46,7 +46,12 @@
     <TD BGCOLOR="#ffffff"><% $cust_pkg->otaker %></TD>
   </TR>
 
+% if ( $cust_pkg->setup && ! $cust_pkg->start_date ) {
+  <& .row_display, cust_pkg=>$cust_pkg, column=>'start',   label=>'Start' &>
+% } else {
   <& .row_edit, cust_pkg=>$cust_pkg, column=>'start_date', label=>'Start' &>
+% }
+
   <& .row_edit, cust_pkg=>$cust_pkg, column=>'setup',     label=>'Setup' &>
   <& .row_edit, cust_pkg=>$cust_pkg, column=>'last_bill', label=>$last_bill_or_renewed &>
   <& .row_edit, cust_pkg=>$cust_pkg, column=>'bill',      label=>$next_bill_or_prepaid_until &>
@@ -144,15 +149,39 @@ my( $pkgnum, $cust_pkg );
 if ( $cgi->param('error') ) {
 
   $pkgnum = $cgi->param('pkgnum');
-  if ( $cgi->param('error') eq '_bill_areyousure' ) {
-    if ( $cgi->param('bill') =~ /^([\s\d\/\:\-\(\w\)]*)$/ ) {
-      my $bill = $1;
-      $cgi->param('error', '');
-      $error = "You are attempting to set the next bill date to $bill, which is
-                in the past.  This will charge the customer for the interval
-                from $bill until now.  Are you sure you want to do this? ".
-               '<INPUT TYPE="checkbox" NAME="bill_areyousure" VALUE="1">';
+
+  if ( $cgi->param('error') =~ /^_/ ) {
+
+    my @errors = ();
+    my %errors = map { $_=>1 } split(',', $cgi->param('error'));
+    $cgi->param('error', '');
+
+    if ( $errors{'_bill_areyousure'} ) {
+      if ( $cgi->param('bill') =~ /^([\s\d\/\:\-\(\w\)]*)$/ ) {
+        my $bill = $1;
+        push @errors,
+          "You are attempting to set the next bill date to $bill, which is
+           in the past.  This will charge the customer for the interval
+           from $bill until now.  Are you sure you want to do this? ".
+          '<INPUT TYPE="checkbox" NAME="bill_areyousure" VALUE="1">';
+      }
     }
+
+    if ( $errors{'_setup_areyousure'} ) {
+      push @errors,
+        "You are attempting to remove the setup date.  This will re-charge the
+         customer for the setup fee. Are you sure you want to do this? ".
+        '<INPUT TYPE="checkbox" NAME="setup_areyousure" VALUE="1">';
+    }
+
+    if ( $errors{'_start'} ) {
+      push @errors,
+        "You are attempting to add a start date to a package that has already
+         started billing.";
+    }
+
+    $error = join('<BR><BR>', @errors );
+
   }
 
   #get package record

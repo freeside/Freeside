@@ -27,14 +27,25 @@ $hash{'last_bill'} =
 $hash{'adjourn'} = $cgi->param('adjourn') ? str2time($cgi->param('adjourn')) : '';
 $hash{'expire'} = $cgi->param('expire') ? str2time($cgi->param('expire')) : '';
 
+my @errors = ();
+
+push @errors, '_bill_areyousure'
+  if $hash{'bill'} != $old->bill             # if the next bill date was changed
+  && $hash{'bill'} < time                    # to a date in the past
+  && ! $cgi->param('bill_areyousure');       # and it wasn't confirmed
+
+push @errors, '_setup_areyousure'
+  if ! $hash{'setup'} && $old->setup         # if the setup date was removed
+  && ! $cgi->param('setup_areyousure');      # and it wasn't confirmed 
+
+push @errors, '_start'
+  if $hash{'start_date'} && $old->start_date # if a start date was added
+  && $hash{'setup'};                         # but there's a setup date
+
 my $new;
 my $error;
-if ( $hash{'bill'} != $old->bill        # if the next bill date was changed
-     && $hash{'bill'} < time            # to a date in the past
-     && ! $cgi->param('bill_areyousure') # and it wasn't confirmed
-   )
-{
-  $error = '_bill_areyousure';
+if ( @errors ) {
+  $error = join(',', @errors);
 } else {
   $new = new FS::cust_pkg \%hash;
   $error = $new->replace($old);
