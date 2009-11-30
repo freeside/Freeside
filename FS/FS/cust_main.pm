@@ -2528,7 +2528,7 @@ plans support this feature (they tend to charge 0).
 
 =item invoice_terms
 
-Options terms to be printed on this invoice.  Otherwise, customer-specific
+Optional terms to be printed on this invoice.  Otherwise, customer-specific
 terms or the default terms are used.
 
 =back
@@ -8431,13 +8431,20 @@ sub search_sql {
   # amounts
   ##
 
-  #my $balance_sql = $class->balance_sql();
-  my $balance_sql = FS::cust_main->balance_sql();
+  if ( $params->{'current_balance'} ) {
 
-  my @current_balance = @{ $params->{'current_balance'} };
+    #my $balance_sql = $class->balance_sql();
+    my $balance_sql = FS::cust_main->balance_sql();
 
-  push @where, map { s/current_balance/$balance_sql/; $_ }
-                   @current_balance;
+    my @current_balance =
+      ref( $params->{'current_balance'} )
+      ? @{ $params->{'current_balance'} }
+      :  ( $params->{'current_balance'} );
+
+    push @where, map { s/current_balance/$balance_sql/; $_ }
+                     @current_balance;
+
+  }
 
   ##
   # custbatch

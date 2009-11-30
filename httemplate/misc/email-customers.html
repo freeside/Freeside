@@ -4,7 +4,7 @@
 % foreach my $key ( keys %search ) {
 %   my @values = ref($search{$key}) ? @{$search{$key}} : ( $search{$key} );
 %   foreach my $value ( @values ) {
-      <INPUT TYPE="hidden" NAME="<% $key |h %>" VALUE="<% $value |h %>">
+      <INPUT TYPE="hidden" NAME="<% $key %>" VALUE="<% $value %>">
 %   }
 % }
 
