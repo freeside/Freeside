@@ -2486,7 +2486,7 @@ sub print_generic {
   my $unsquelched = $params{unsquelch_cdr} || $cust_main->squelch_cdr ne 'Y';
   my $multisection = $conf->exists('invoice_sections', $cust_main->agentnum);
   my $late_sections = [];
-  my $extra_sections = ();
+  my $extra_sections = [];
   my $extra_lines = ();
   if ( $multisection ) {
     ($extra_sections, $extra_lines) =
