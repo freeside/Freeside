@@ -41,7 +41,9 @@ my $svc_external = qsearchs({
                  ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
                  ' LEFT JOIN cust_main USING ( custnum ) ',
   'hashref'   => { 'svcnum' => $svcnum },
-  'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+  'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql(
+                            'null_right' => 'View/link unlinked services'
+                          ),
 }) or die "svc_external: Unknown svcnum $svcnum";
 
 my $conf = new FS::Conf;

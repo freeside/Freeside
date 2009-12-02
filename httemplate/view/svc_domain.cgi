@@ -150,7 +150,9 @@ my $svc_domain = qsearchs({
                  ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
                  ' LEFT JOIN cust_main USING ( custnum ) ',
   'hashref'   => {'svcnum'=>$svcnum},
-  'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+  'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql(
+                            'null_right' => 'View/link unlinked services'
+                          ),
 });
 die "Unknown svcnum" unless $svc_domain;
 
