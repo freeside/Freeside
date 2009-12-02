@@ -2008,7 +2008,7 @@ sub tables_hashref {
       ],
       'primary_key' => 'prefixnum',
       'unique'      => [],
-      'index'       => [ [ 'countrycode' ], [ 'regionnum' ] ],
+      'index'       => [ [ 'countrycode' ], [ 'npa' ], [ 'regionnum' ] ],
     },
 
     'usage_class' => {
