@@ -331,11 +331,15 @@ sub cust_bill_pkg {
 
   $agentnum ||= $opt{'agentnum'};
 
-  my $usage = cust_bill_pkg_detail(@_);
+  my $total_sql =
+    " SELECT COALESCE( SUM(cust_bill_pkg.setup + cust_bill_pkg.recur), 0 ) ";
 
-  my $total = $self->scalar_sql("
-    SELECT SUM(cust_bill_pkg.setup + cust_bill_pkg.recur)
-      FROM cust_bill_pkg
+  $total_sql .=
+    " / CASE COUNT(cust_pkg.*) WHEN 0 THEN 1 ELSE COUNT(cust_pkg.*) END "
+      if $opt{average_per_cust_pkg};
+
+  $total_sql .=
+    " FROM cust_bill_pkg
         LEFT JOIN cust_bill USING ( invnum )
         LEFT JOIN cust_main USING ( custnum )
         LEFT JOIN cust_pkg USING ( pkgnum )
@@ -343,15 +347,16 @@ sub cust_bill_pkg {
         LEFT JOIN part_pkg AS override ON pkgpart_override = override.pkgpart
       WHERE pkgnum != 0
         AND $where
-        AND ". $self->in_time_period_and_agent($speriod, $eperiod, $agentnum)
-  );
+        AND ". $self->in_time_period_and_agent($speriod, $eperiod, $agentnum);
   
   if ($opt{use_usage} && $opt{use_usage} eq 'recurring') {
+    my $total = $self->scalar_sql($total_sql);
+    my $usage = cust_bill_pkg_detail(@_); #$speriod, $eperiod, $agentnum, %opt 
     return $total-$usage;
   } elsif ($opt{use_usage} && $opt{use_usage} eq 'usage') {
-    return $usage;
+    return cust_bill_pkg_detail(@_); #$speriod, $eperiod, $agentnum, %opt 
   } else {
-    return $total;
+    return $self->scalar_sql($total_sql);
   }
 }
 
@@ -391,9 +396,14 @@ sub cust_bill_pkg_detail {
 
   my $where = join( ' AND ', @where );
 
-  $self->scalar_sql("
-    SELECT SUM(amount)
-      FROM cust_bill_pkg_detail
+  my $total_sql = " SELECT SUM(amount) ";
+
+  $total_sql .=
+    " / CASE COUNT(cust_pkg.*) WHEN 0 THEN 1 ELSE COUNT(cust_pkg.*) END "
+      if $opt{average_per_cust_pkg};
+
+  $total_sql .=
+    " FROM cust_bill_pkg_detail
         LEFT JOIN cust_bill_pkg USING ( billpkgnum )
         LEFT JOIN cust_bill ON cust_bill_pkg.invnum = cust_bill.invnum
         LEFT JOIN cust_main USING ( custnum )
@@ -401,8 +411,9 @@ sub cust_bill_pkg_detail {
         LEFT JOIN part_pkg USING ( pkgpart )
         LEFT JOIN part_pkg AS override ON pkgpart_override = override.pkgpart
       WHERE $where
-        AND ". $self->in_time_period_and_agent($speriod, $eperiod, $agentnum)
-  );
+        AND ". $self->in_time_period_and_agent($speriod, $eperiod, $agentnum);
+
+  $self->scalar_sql($total_sql);
   
 }
 

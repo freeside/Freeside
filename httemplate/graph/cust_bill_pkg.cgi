@@ -68,11 +68,9 @@ if ( $cgi->param('classnum') =~ /^(\d*)$/ ) {
 }
 #eslaf
 
-my $use_override = 0;
-$use_override = 1 if ( $cgi->param('use_override') );
-
-my $use_usage = 0;
-$use_usage = 1 if ( $cgi->param('use_usage') );
+my $use_override         = $cgi->param('use_override')         ? 1 : 0;
+my $use_usage            = $cgi->param('use_usage')            ? 1 : 0;
+my $average_per_cust_pkg = $cgi->param('average_per_cust_pkg') ? 1 : 0;
 
 my $hue = 0;
 #my $hue_increment = 170;
@@ -113,10 +111,11 @@ foreach my $agent ( $sel_agent || qsearch('agent', { 'disabled' => '' } ) ) {
 
       my $row_classnum = ref($pkg_class) ? $pkg_class->classnum : 0;
       my $row_agentnum = $agent->agentnum;
-      push @params, [ 'classnum'     => $row_classnum,
-                      'agentnum'     => $row_agentnum,
-                      'use_override' => $use_override,
-                      'use_usage'    => $component,
+      push @params, [ 'classnum'             => $row_classnum,
+                      'agentnum'             => $row_agentnum,
+                      'use_override'         => $use_override,
+                      'use_usage'            => $component,
+                      'average_per_cust_pkg' => $average_per_cust_pkg,
                     ];
 
       push @links, "$link;agentnum=$row_agentnum;classnum=$row_classnum;".
