@@ -1767,6 +1767,8 @@ sub batch_import {
       last unless scalar(@buffer);
       $line = shift(@buffer);
 
+      next if $line =~ /^\s*$/; #skip empty lines
+
       $parser->parse($line) or do {
         $dbh->rollback if $oldAutoCommit;
         return "can't parse: ". $parser->error_input();

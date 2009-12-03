@@ -64,7 +64,7 @@ use FS::cdr qw( _cdr_date_parser_maker _cdr_min_parser_maker );
 
     #Start Time of Date  32 Indicates Time of Date when the call
     #                       entered the system
-    _cdr_date_parser_maker('startddate'), 
+    _cdr_date_parser_maker('startdate'), 
 
     #Answer Time of Date 32 Indicates TOD when the call was
     #                       answered
