@@ -1,5 +1,5 @@
 <% include('elements/monthly.html',
-                'title'        => $title. 'Sales Report (Gross)',
+                'title'        => $title,
                 'graph_type'   => 'Mountain',
                 'items'        => \@items,
                 'params'       => \@params,
@@ -21,6 +21,10 @@ die "access denied"
 my $link = "${p}search/cust_bill_pkg.cgi?nottax=1;include_comp_cust=1";
 my $bottom_link = "$link;";
 
+my $use_override         = $cgi->param('use_override')         ? 1 : 0;
+my $use_usage            = $cgi->param('use_usage')            ? 1 : 0;
+my $average_per_cust_pkg = $cgi->param('average_per_cust_pkg') ? 1 : 0;
+
 #XXX or virtual
 my( $agentnum, $sel_agent ) = ('', '');
 if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
@@ -30,6 +34,8 @@ if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
   die "agentnum $agentnum not found!" unless $sel_agent;
 }
 my $title = $sel_agent ? $sel_agent->agent.' ' : '';
+$title .= 'Sales Report (Gross)';
+$title .= ', average per customer package'  if $average_per_cust_pkg;
 
 #classnum (here)
 # 0: all classes
@@ -67,10 +73,6 @@ if ( $cgi->param('classnum') =~ /^(\d*)$/ ) {
   }
 }
 #eslaf
-
-my $use_override         = $cgi->param('use_override')         ? 1 : 0;
-my $use_usage            = $cgi->param('use_usage')            ? 1 : 0;
-my $average_per_cust_pkg = $cgi->param('average_per_cust_pkg') ? 1 : 0;
 
 my $hue = 0;
 #my $hue_increment = 170;
