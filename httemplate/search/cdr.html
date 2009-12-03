@@ -70,10 +70,11 @@ my @search = ();
 ###
 
 my $str2time_sql = str2time_sql;
+my $closing      = str2time_sql_closing;
 
 my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
-push @search, "$str2time_sql calldate) >= $beginning ",
-              "$str2time_sql calldate) <= $ending";
+push @search, "$str2time_sql calldate $closing >= $beginning ",
+              "$str2time_sql calldate $closing <= $ending";
 
 ###
 # duration / billsec
@@ -187,6 +188,7 @@ if ( $cgi->param('cdrbatch') ) {
   my $cdr_batch =
     qsearchs('cdr_batch', { 'cdrbatch' => scalar($cgi->param('cdrbatch')) } );
   if ( $cdr_batch ) {
+    $hashref->{cdrbatchnum} = $cdr_batch->cdrbatchnum;
     push @search, 'cdrbatchnum = '. $cdr_batch->cdrbatchnum;
   } else {
     die "unknown cdrbatch ". $cgi->param('cdrbatch');
