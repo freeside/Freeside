@@ -2253,7 +2253,7 @@ sub tables_hashref {
                    [ 'src' ], [ 'dst' ], [ 'dcontext' ], [ 'charged_party' ],
                    [ 'accountcode' ], [ 'carrierid' ], [ 'cdrid' ],
                    [ 'freesidestatus' ], [ 'freesiderewritestatus' ],
-                   [ 'cdrbatch' ],
+                   [ 'cdrbatch' ], [ 'cdrbatchnum' ],
                  ],
     },
 
