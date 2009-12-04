@@ -41,7 +41,7 @@ foreach my $field (qw( setup last_bill bill adjourn susp expire cancel )) {
 
 }
 
-my $sql_query = FS::cust_pkg->search_sql(\%search_hash);
+my $sql_query = FS::cust_pkg->search(\%search_hash);
 $sql_query->{'select'} = 'cust_pkg.pkgnum';
 
 my $error = FS::cust_pkg::bulk_change( [ $cgi->param('new_pkgpart') ],

@@ -106,7 +106,7 @@ foreach my $row ( sort keys %row_option_name ) {
       if $column_option_name{$column};
     my $report_option = join(',', @report_option) if @report_option;
 
-    my $sql_query = FS::cust_pkg->search_sql(
+    my $sql_query = FS::cust_pkg->search(
       { %search_hash,
         ($report_option ? ( 'report_option' => $report_option ) : () ),
       }

@@ -1,7 +1,8 @@
-<% include('/elements/header.html', 'Account Report' ) %>
+<% include('/elements/header.html', $title ) %>
 
 <FORM ACTION="svc_acct.cgi" METHOD="GET">
 <INPUT TYPE="hidden" NAME="magic" VALUE="advanced">
+<INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
 
   <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
 
@@ -9,19 +10,21 @@
       <TH BGCOLOR="#e8e8e8" COLSPAN=2 ALIGN="left"><FONT SIZE="+1">Search options</FONT></TH>
     </TR>
 
+% unless ( $custnum ) {
     <% include( '/elements/tr-select-agent.html',
                    'curr_value'    => scalar( $cgi->param('agentnum') ),
                    'disable_empty' => 0,
               )
     %>
 
+%   # just this customer's domains?
     <% include( '/elements/tr-select-domain.html',
                    'element_name'  => 'domsvc',
                    'curr_value'    => scalar( $cgi->param('domsvc') ),
                    'disable_empty' => 0,
               )
     %>
-
+% }
 
     <SCRIPT type="text/javascript">
       function toggle(what) {
@@ -92,7 +95,21 @@
 <%init>
 
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('List packages');
+  unless $FS::CurrentUser::CurrentUser->access_right('List packages'); #?
+
+my $title = 'Account Report';
+
+#false laziness w/report_cust_pkg.html
+my $custnum = '';
+if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
+  $custnum = $1;
+  my $cust_main = qsearchs({
+    'table'     => 'cust_main', 
+    'hashref'   => { 'custnum' => $custnum },
+    'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+  }) or die "unknown custnum $custnum";
+  $title .= ': '. $cust_main->name;
+}
 
 </%init>
 <%once>

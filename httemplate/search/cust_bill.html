@@ -123,7 +123,7 @@ if ( $cgi->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/ ) {
     $count_query = "SELECT COUNT(DISTINCT cust_bill.custnum), 'N/A', 'N/A'";
   }
 
-  my $extra_sql = ' WHERE '. FS::cust_bill->search_sql( \%search );
+  my $extra_sql = ' WHERE '. FS::cust_bill->search_sql_where( \%search );
 
   unless ( $count_query ) {
     $count_query = 'SELECT COUNT(*), '. join(', ',

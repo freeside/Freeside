@@ -201,7 +201,7 @@ sub retriable {
   $self->replace($old);
 }
 
-=item search_sql HASHREF
+=item search_sql_where HASHREF
 
 Class method which returns an SQL WHERE fragment to search for parameters
 specified in HASHREF.  Valid parameters are
@@ -236,7 +236,7 @@ Specifies the user for agent virtualization
 
 =cut
 
-sub search_sql {
+sub search_sql_where {
   my ($class, $params) = @_;
   my @search = ();
 
@@ -324,7 +324,7 @@ sub process_re_X {
 sub re_X {
   my($method, $param, $job) = @_;
 
-  my $where = FS::cust_bill_event->search_sql($param);
+  my $where = FS::cust_bill_event->search_sql_where($param);
   $where = " WHERE plan LIKE 'send%'". ( $where ? " AND $where" : "" );
 
   my $from = 'LEFT JOIN part_bill_event USING ( eventpart )'.

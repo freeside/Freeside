@@ -315,7 +315,7 @@ sub join_sql {
 
 }
 
-=item search_sql HASHREF
+=item search_sql_where HASHREF
 
 Class method which returns an SQL WHERE fragment to search for parameters
 specified in HASHREF.  Valid parameters are
@@ -347,10 +347,10 @@ specified in HASHREF.  Valid parameters are
 #Note: validates all passed-in data; i.e. safe to use with unchecked CGI params.
 #sub 
 
-sub search_sql {
+sub search_sql_where {
   my($class, $param) = @_;
   if ( $DEBUG ) {
-    warn "$me search_sql called with params: \n".
+    warn "$me search_sql_where called with params: \n".
          join("\n", map { "  $_: ". $param->{$_} } keys %$param ). "\n";
   }
 
@@ -448,7 +448,7 @@ sub process_re_X {
 sub re_X {
   my($method, $param, $job) = @_;
 
-  my $search_sql = FS::cust_event->search_sql($param);
+  my $search_sql = FS::cust_event->search_sql_where($param);
 
   #maybe not...?  we do want the "re-" action to match the search more closely
   #            # yuck!  hardcoded *AND* sequential scans!

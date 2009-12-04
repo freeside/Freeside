@@ -96,7 +96,7 @@ if ( $cgi->param('invnum') =~ /^(\d+)$/ ) {
   $search{invnum} = $1;
 }
 
-my $where = 'WHERE '. FS::cust_bill_event->search_sql( \%search );
+my $where = 'WHERE '. FS::cust_bill_event->search_sql_where( \%search );
 
 my $join = 'LEFT JOIN part_bill_event USING ( eventpart ) '.
            'LEFT JOIN cust_bill       USING ( invnum    ) '.

@@ -8264,7 +8264,7 @@ sub _money_table_where {
 
 }
 
-=item search_sql HASHREF
+=item search HASHREF
 
 (Class method)
 
@@ -8307,7 +8307,7 @@ bool
 
 =cut
 
-sub search_sql {
+sub search {
   my ($class, $params) = @_;
 
   my $dbh = dbh;
@@ -8522,13 +8522,13 @@ sub search_sql {
 
 }
 
-=item email_search_sql HASHREF
+=item email_search_result HASHREF
 
 (Class method)
 
 Emails a notice to the specified customers.
 
-Valid parameters are those of the L<search_sql> method, plus the following:
+Valid parameters are those of the L<search> method, plus the following:
 
 =over 4
 
@@ -8562,7 +8562,7 @@ retrying everything.
 
 =cut
 
-sub email_search_sql {
+sub email_search_result {
   my($class, $params) = @_;
 
   my $from = delete $params->{from};
@@ -8575,7 +8575,7 @@ sub email_search_sql {
   $params->{'payby'} = [ split(/\0/, $params->{'payby'}) ]
     unless ref($params->{'payby'});
 
-  my $sql_query = $class->search_sql($params);
+  my $sql_query = $class->search($params);
 
   my $count_query   = delete($sql_query->{'count_query'});
   my $count_sth = dbh->prepare($count_query)
@@ -8627,7 +8627,7 @@ sub email_search_sql {
 use Storable qw(thaw);
 use Data::Dumper;
 use MIME::Base64;
-sub process_email_search_sql {
+sub process_email_search_result {
   my $job = shift;
   #warn "$me process_re_X $method for job $job\n" if $DEBUG;
 
@@ -8639,7 +8639,7 @@ sub process_email_search_sql {
   $param->{'payby'} = [ split(/\0/, $param->{'payby'}) ]
     unless ref($param->{'payby'});
 
-  my $error = FS::cust_main->email_search_sql( $param );
+  my $error = FS::cust_main->email_search_result( $param );
   die $error if $error;
 
 }
@@ -8918,7 +8918,7 @@ sub smart_search {
     #getting complaints searches are not returning enough
     unless ( @cust_main  && $skip_fuzzy || $conf->exists('disable-fuzzy') ) {
 
-      #still some false laziness w/search_sql (was search/cust_main.cgi)
+      #still some false laziness w/search (was search/cust_main.cgi)
 
       #substring
 

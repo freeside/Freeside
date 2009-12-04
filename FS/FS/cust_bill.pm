@@ -4223,7 +4223,7 @@ sub re_X {
   my $distinct = '';
   my $orderby = 'ORDER BY cust_bill._date';
 
-  my $extra_sql = ' WHERE '. FS::cust_bill->search_sql(\%param);
+  my $extra_sql = ' WHERE '. FS::cust_bill->search_sql_where(\%param);
 
   my $addl_from = 'LEFT JOIN cust_main USING ( custnum )';
      
@@ -4313,7 +4313,7 @@ sub credited_sql {
        WHERE cust_bill.invnum = cust_credit_bill.invnum   )";
 }
 
-=item search_sql HASHREF
+=item search_sql_where HASHREF
 
 Class method which returns an SQL WHERE fragment to search for parameters
 specified in HASHREF.  Valid parameters are
@@ -4356,10 +4356,10 @@ Note: validates all passed-in data; i.e. safe to use with unchecked CGI params.
 
 =cut
 
-sub search_sql {
+sub search_sql_where {
   my($class, $param) = @_;
   if ( $DEBUG ) {
-    warn "$me search_sql called with params: \n".
+    warn "$me search_sql_where called with params: \n".
          join("\n", map { "  $_: ". $param->{$_} } keys %$param ). "\n";
   }
 

@@ -173,7 +173,7 @@ my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
 $search{'beginning'} = $beginning;
 $search{'ending'}    = $ending;
 
-my $where = ' WHERE '. FS::cust_event->search_sql( \%search );
+my $where = ' WHERE '. FS::cust_event->search_sql_where( \%search );
 
 my $join = FS::cust_event->join_sql();
 

@@ -204,7 +204,7 @@ foreach my $field (qw( setup last_bill bill adjourn susp expire cancel )) {
 
 }
 
-my $sql_query = FS::cust_pkg->search_sql(\%search_hash);
+my $sql_query = FS::cust_pkg->search(\%search_hash);
 my $count_query = delete($sql_query->{'count_query'});
 
 my $show = $curuser->default_customer_view =~ /^(jumbo|packages)$/

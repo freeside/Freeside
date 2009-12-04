@@ -2291,7 +2291,7 @@ sub cancel_sql {
   "cust_pkg.cancel IS NOT NULL AND cust_pkg.cancel != 0";
 }
 
-=item search_sql HASHREF
+=item search HASHREF
 
 (Class method)
 
@@ -2364,7 +2364,7 @@ specifies the user for agent virtualization
 
 =cut
 
-sub search_sql { 
+sub search {
   my ($class, $params) = @_;
   my @where = ();
 
@@ -2593,10 +2593,10 @@ sub search_sql {
 
     if ($access_user) {
       push @where, $access_user->agentnums_sql('table'=>'cust_main');
-    }else{
+    } else {
       push @where, "1=0";
     }
-  }else{
+  } else {
     push @where, $FS::CurrentUser::CurrentUser->agentnums_sql('table'=>'cust_main');
   }
 
