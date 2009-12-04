@@ -2231,6 +2231,7 @@ Returns an SQL expression identifying active packages.
 
 sub active_sql { "
   ". $_[0]->recurring_sql(). "
+  AND cust_pkg.setup IS NOT NULL AND cust_pkg.setup != 0
   AND ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
   AND ( cust_pkg.susp   IS NULL OR cust_pkg.susp   = 0 )
 "; }
@@ -2394,8 +2395,8 @@ sub search_sql {
 
     push @where, FS::cust_pkg->active_sql();
 
-  } elsif (    $params->{'magic'}  eq 'not yet billed'
-            || $params->{'status'} eq 'not yet billed' ) {
+  } elsif (    $params->{'magic'}  =~ /^not[ _]yet[ _]billed$/
+            || $params->{'status'} =~ /^not[ _]yet[ _]billed$/ ) {
 
     push @where, FS::cust_pkg->not_yet_billed_sql();
 
@@ -2429,7 +2430,7 @@ sub search_sql {
   {
     $classnum = $1;
     if ( $classnum ) { #a specific class
-      push @where, "classnum = $classnum";
+      push @where, "part_pkg.classnum = $classnum";
 
       #@pkg_class = ( qsearchs('pkg_class', { 'classnum' => $classnum } ) );
       #die "classnum $classnum not found!" unless $pkg_class[0];
@@ -2437,7 +2438,7 @@ sub search_sql {
 
     } elsif ( $classnum eq '' ) { #the empty class
 
-      push @where, "classnum IS NULL";
+      push @where, "part_pkg.classnum IS NULL";
       #$title .= 'Empty class ';
       #@pkg_class = ( '(empty class)' );
     } elsif ( $classnum eq '0' ) {
