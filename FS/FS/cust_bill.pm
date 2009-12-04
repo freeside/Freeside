@@ -3881,7 +3881,7 @@ sub _items_cust_bill_pkg {
   foreach my $cust_bill_pkg ( @$cust_bill_pkg )
   {
 
-    foreach ( $s, $r, ($opt{skip_usage} ? $u : () ) ) {
+    foreach ( $s, $r, ($opt{skip_usage} ? () : $u ) ) {
       if ( $_ && !$cust_bill_pkg->hidden ) {
         $_->{amount}      = sprintf( "%.2f", $_->{amount} ),
         $_->{amount}      =~ s/^\-0\.00$/0.00/;
@@ -4053,7 +4053,7 @@ sub _items_cust_bill_pkg {
 
   }
 
-  foreach ( $s, $r, ($opt{skip_usage} ? $u : () ) ) {
+  foreach ( $s, $r, ($opt{skip_usage} ? () : $u ) ) {
     if ( $_  ) {
       $_->{amount}      = sprintf( "%.2f", $_->{amount} ),
       $_->{amount}      =~ s/^\-0\.00$/0.00/;
