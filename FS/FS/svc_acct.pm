@@ -30,6 +30,7 @@ use FS::Conf;
 use FS::Record qw( qsearch qsearchs fields dbh dbdef );
 use FS::Msgcat qw(gettext);
 use FS::UI::bytecount;
+use FS::UI::Web;
 use FS::part_pkg;
 use FS::svc_Common;
 use FS::cust_svc;
@@ -2603,6 +2604,144 @@ Returns $domain/maildirs/$username/
 sub virtual_maildir {
   my $self = shift;
   $self->domain. '/maildirs/'. $self->username. '/';
+}
+
+=back
+
+=head1 CLASS METHODS
+
+=over 4
+
+=item search HASHREF
+
+Class method which returns a qsearch hash expression to search for parameters
+specified in HASHREF.  Valid parameters are
+
+=over 4
+
+=item domain
+
+=item domsvc
+
+=item unlinked
+
+=item agentnum
+
+=item pkgpart
+
+Arrayref of pkgparts
+
+=item pkgpart
+
+=item where
+
+Arrayref of additional WHERE clauses, will be ANDed together.
+
+=item order_by
+
+=item cust_fields
+
+=back
+
+=cut
+
+sub search {
+  my ($class, $params) = @_;
+
+  my @where = ();
+
+  # domain
+  if ( $params->{'domain'} ) { 
+    my $svc_domain = qsearchs('svc_domain', { 'domain'=>$params->{'domain'} } );
+    #preserve previous behavior & bubble up an error if $svc_domain not found?
+    push @where, 'domsvc = '. $svc_domain->svcnum if $svc_domain;
+  }
+
+  # domsvc
+  if ( $params->{'domsvc'} =~ /^(\d+)$/ ) { 
+    push @where, "domsvc = $1";
+  }
+
+  #unlinked
+  push @where, 'pkgnum IS NULL' if $params->{'unlinked'};
+
+  #agentnum
+  if ( $params->{'agentnum'} =~ /^(\d+)$/ and $1 ) {
+    push @where, "agentnum = $1";
+  }
+
+  #custnum
+  if ( $params->{'custnum'} =~ /^(\d+)$/ and $1 ) {
+    push @where, "custnum = $1";
+  }
+
+  #pkgpart
+  if ( $params->{'pkgpart'} && scalar(@{ $params->{'pkgpart'} }) ) {
+    #XXX untaint or sql quote
+    push @where,
+      'cust_pkg.pkgpart IN ('. join(',', @{ $params->{'pkgpart'} } ). ')';
+  }
+
+  # popnum
+  if ( $params->{'popnum'} =~ /^(\d+)$/ ) { 
+    push @where, "popnum = $1";
+  }
+
+  # svcpart
+  if ( $params->{'svcpart'} =~ /^(\d+)$/ ) { 
+    push @where, "svcpart = $1";
+  }
+
+
+  # here is the agent virtualization
+  #if ($params->{CurrentUser}) {
+  #  my $access_user =
+  #    qsearchs('access_user', { username => $params->{CurrentUser} });
+  #
+  #  if ($access_user) {
+  #    push @where, $access_user->agentnums_sql('table'=>'cust_main');
+  #  }else{
+  #    push @where, "1=0";
+  #  }
+  #} else {
+    push @where, $FS::CurrentUser::CurrentUser->agentnums_sql(
+                   'table'      => 'cust_main',
+                   'null_right' => 'View/link unlinked services',
+                 );
+  #}
+
+  push @where, @{ $params->{'where'} } if $params->{'where'};
+
+  my $extra_sql = scalar(@where) ? ' WHERE '. join(' AND ', @where) : '';
+
+  my $addl_from = ' LEFT JOIN cust_svc  USING ( svcnum  ) '.
+                  ' LEFT JOIN part_svc  USING ( svcpart ) '.
+                  ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
+                  ' LEFT JOIN cust_main USING ( custnum ) ';
+
+  my $count_query = "SELECT COUNT(*) FROM svc_acct $addl_from $extra_sql";
+  #if ( keys %svc_acct ) {
+  #  $count_query .= ' WHERE '.
+  #                    join(' AND ', map "$_ = ". dbh->quote($svc_acct{$_}),
+  #                                      keys %svc_acct
+  #                        );
+  #}
+
+  my $sql_query = {
+    'table'       => 'svc_acct',
+    'hashref'     => {}, # \%svc_acct,
+    'select'      => join(', ',
+                       'svc_acct.*',
+                       'part_svc.svc',
+                       'cust_main.custnum',
+                       FS::UI::Web::cust_sql_fields($params->{'cust_fields'}),
+                     ),
+    'addl_from'   => $addl_from,
+    'extra_sql'   => $extra_sql,
+    'order_by'    => $params->{'order_by'},
+    'count_query' => $count_query,
+  };
+
 }
 
 =back

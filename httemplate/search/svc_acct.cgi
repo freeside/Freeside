@@ -64,6 +64,7 @@ my $link_cust = sub {
   }
 };
 
+my %search_hash = ();
 my @extra_sql = ();
 
 my @header = ( '#', 'Service', 'Account', 'UID', 'Last Login' );
@@ -73,19 +74,8 @@ my $align = 'rlllr';
 my @color = ( '', '', '', '', '' );
 my @style = ( '', '', '', '', '' );
 
-if ( $cgi->param('domain') ) { 
-  my $svc_domain =
-    qsearchs('svc_domain', { 'domain' => $cgi->param('domain') } );
-  unless ( $svc_domain ) {
-    #it would be nice if this looked more like the other "not found"
-    #errors, but this will do for now.
-    errorpage("Domain ". $cgi->param('domain'). " not found at all");
-  } else {
-    push @extra_sql, 'domsvc = '. $svc_domain->svcnum;
-  }
-}
-if ( $cgi->param('domsvc') =~ /^(\d+)$/ ) { 
-  push @extra_sql, "domsvc = $1";
+for (qw( domain domsvc agentnum custnum popnum svcpart cust_fields )) {
+  $search_hash{$_} = $cgi->param($_) if length($cgi->param($_));
 }
 
 my $timepermonth = '';
@@ -93,7 +83,7 @@ my $timepermonth = '';
 my $orderby = 'ORDER BY svcnum';
 if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
 
-  push @extra_sql, 'pkgnum IS NULL'
+  $search_hash{'unlinked'} = 1
     if $cgi->param('magic') eq 'unlinked';
 
   my $sortby = '';
@@ -101,7 +91,7 @@ if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
     $sortby = $1;
     $sortby = "LOWER($sortby)"
       if $sortby eq 'username';
-    push @extra_sql, "$sortby IS NOT NULL"
+    push @extra_sql, "$sortby IS NOT NULL" #XXX search_hash
       if $sortby eq 'uid' || $sortby eq 'seconds' || $sortby eq 'last_login';
     $orderby = "ORDER BY $sortby";
   }
@@ -166,16 +156,11 @@ if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
   }
 
 } elsif ( $cgi->param('magic') =~ /^advanced$/ ) {
+
   $orderby = "";
 
-  if ( $cgi->param('agentnum') =~ /^(\d+)$/ and $1 ) {
-    push @extra_sql, "agentnum = $1";
-  }
+  $search_hash{'pkgpart'} = [ $cgi->param('pkgpart') ];
 
-  my $pkgpart = join (' OR cust_pkg.pkgpart=',
-                      grep {$_} map { /^(\d+)$/; } ($cgi->param('pkgpart')));
-  push @extra_sql,  '(cust_pkg.pkgpart=' . $pkgpart . ')' if $pkgpart;
-                      
   foreach my $field (qw( last_login last_logout )) {
 
     my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi, $field);
@@ -201,11 +186,9 @@ if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
 
   $orderby ||= "ORDER BY svcnum";
 
-} elsif ( $cgi->param('popnum') =~ /^(\d+)$/ ) {
-  push @extra_sql, "popnum = $1";
+} elsif ( $cgi->param('popnum') ) {
   $orderby = "ORDER BY LOWER(username)";
-} elsif ( $cgi->param('svcpart') =~ /^(\d+)$/ ) {
-  push @extra_sql, "svcpart = $1";
+} elsif ( $cgi->param('svcpart') ) {
   $orderby = "ORDER BY uid";
   #$orderby = "ORDER BY svcnum";
 } else {
@@ -260,40 +243,10 @@ $align .= FS::UI::Web::cust_aligns();
 push @color, FS::UI::Web::cust_colors();
 push @style, FS::UI::Web::cust_styles();
 
-my $addl_from = ' LEFT JOIN cust_svc  USING ( svcnum  ) '.
-                ' LEFT JOIN part_svc  USING ( svcpart ) '.
-                ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
-                ' LEFT JOIN cust_main USING ( custnum ) ';
+$search_hash{'order_by'} = $orderby;
+$search_hash{'where'} = \@extra_sql;
 
-#here is the agent virtualization
-push @extra_sql, $FS::CurrentUser::CurrentUser->agentnums_sql( 
-                   'null_right' => 'View/link unlinked services'
-                 );
-
-my $extra_sql = 
-  scalar(@extra_sql)
-    ? ' WHERE '. join(' AND ', @extra_sql )
-    : '';
-
-my $count_query = "SELECT COUNT(*) FROM svc_acct $addl_from $extra_sql";
-#if ( keys %svc_acct ) {
-#  $count_query .= ' WHERE '.
-#                    join(' AND ', map "$_ = ". dbh->quote($svc_acct{$_}),
-#                                      keys %svc_acct
-#                        );
-#}
-
-my $sql_query = {
-  'table' => 'svc_acct',
-  'hashref'   => {}, # \%svc_acct,
-  'select'    => join(', ',
-                    'svc_acct.*',
-                    'part_svc.svc',
-                    'cust_main.custnum',
-                    FS::UI::Web::cust_sql_fields(),
-                  ),
-  'extra_sql' => "$extra_sql $orderby",
-  'addl_from' => $addl_from,
-};
+my $sql_query = FS::svc_acct->search(\%search_hash);
+my $count_query = delete($sql_query->{'count_query'});
 
 </%init>
