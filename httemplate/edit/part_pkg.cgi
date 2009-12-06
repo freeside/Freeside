@@ -340,7 +340,8 @@ my $edit_callback = sub {
 
   $recur_disabled = $object->freq ? 0 : 1;
 
-  (@agent_type) = map {$_->typenum} qsearch('type_pkgs',{'pkgpart'=>$1});
+  (@agent_type) =
+    map {$_->typenum} qsearch('type_pkgs', { 'pkgpart' => $object->pkgpart } );
 
   my @report_option = ();
   foreach ($object->options) {
@@ -396,6 +397,11 @@ my $clone_callback = sub {
     $object->custom('Y');
 
     $object->disabled('Y');
+
+  } else { #not when cloning...
+
+    (@agent_type) =
+      map {$_->typenum} qsearch('type_pkgs',{ 'pkgpart' => $object->pkgpart } );
 
   }
 
