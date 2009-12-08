@@ -382,7 +382,7 @@ sub tables_hashref {
         'mime_type', 'varchar', '', $char_d, '', '',
         'title',     'varchar', 'NULL', $char_d, '', '',
         'body',      'blob', 'NULL', '', '', '',
-        'disabled',  'varchar', 'NULL', '10', '',
+        'disabled',  @date_type, '', '',
       ],
       'primary_key' => 'attachnum',
       'unique'      => [],
