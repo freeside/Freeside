@@ -8374,24 +8374,41 @@ sub search {
   # classnum
   ###
 
-  my @classnum = grep /^(\d*)$/, @{ $params->{'classnum'} };
-  if ( @classnum ) {
-    push @where, '( '. join(' OR ', map {
-                                          $_ ? "cust_main.classnum = $_"
-                                             : "cust_main.classnum IS NULL"
-                                        }
-                                        @classnum
-                           ).
-                 ' )';
+  if ( $params->{'classnum'} ) {
+
+    my @classnum = ref( $params->{'classnum'} )
+                     ? @{ $params->{'classnum'} }
+                     :  ( $params->{'classnum'} );
+
+    @classnum = grep /^(\d*)$/, @classnum;
+
+    if ( @classnum ) {
+      push @where, '( '. join(' OR ', map {
+                                            $_ ? "cust_main.classnum = $_"
+                                               : "cust_main.classnum IS NULL"
+                                          }
+                                          @classnum
+                             ).
+                   ' )';
+    }
+
   }
 
   ###
   # payby
   ###
 
-  my @payby = grep /^([A-Z]{4})$/, @{ $params->{'payby'} };
-  if ( @payby ) {
-    push @where, '( '. join(' OR ', map "cust_main.payby = '$_'", @payby). ' )';
+  if ( $params->{'payby'} ) {
+
+    my @payby = ref( $params->{'payby'} )
+                  ? @{ $params->{'payby'} }
+                  :  ( $params->{'payby'} );
+
+    @payby = grep /^([A-Z]{4})$/, @{ $params->{'payby'} };
+
+    push @where, '( '. join(' OR ', map "cust_main.payby = '$_'", @payby). ' )'
+      if @payby;
+
   }
 
   ###
