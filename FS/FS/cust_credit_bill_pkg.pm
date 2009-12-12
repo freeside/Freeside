@@ -34,7 +34,7 @@ The following fields are currently supported:
 
 =over 4
 
-=item creditbillpkg -  primary key
+=item creditbillpkgnum -  primary key
 
 =item creditbillnum - Credit application to the overall invoice (see L<FS::cust_credit::bill>)
 
