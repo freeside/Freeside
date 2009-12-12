@@ -8,40 +8,31 @@
                    #'#',
 
                    'Amount',
-                   # credit date, By, Reason,
-                   # line item, invoice
 
+                   #credit
+                   'Date',
+                   'By',
+                   'Reason',
+
+                   # line item
                    'Description',
-                   'Setup charge',
-                   ( $use_usage eq 'usage'
-                     ? 'Usage charge'
-                     : 'Recurring charge'
-                   ),
+
+                   #invoice
                    'Invoice',
                    'Date',
                    FS::UI::Web::cust_header(),
                  ],
                  'fields'      => [
                    #'creditbillpkgnum',
-                   'amount',
+                   sub { sprintf($money_char.'%.2f', shift->amount ) },
+
+                   sub { time2str('%b %d %Y', shift->get('cust_credit_date') ) },
+                   'otaker',
+                   sub { shift->cust_credit_bill->cust_credit->reason },
 
                    sub { $_[0]->pkgnum > 0
                            ? $_[0]->get('pkg')      # possibly use override.pkg
                            : $_[0]->get('itemdesc') # but i think this correct
-                       },
-                   #strikethrough or "N/A ($amount)" or something these when
-                   # they're not applicable to pkg_tax search
-                   sub { sprintf($money_char.'%.2f', shift->setup ) },
-                   sub { my $row = shift;
-                         my $value = 0;
-                         if ( $use_usage eq 'recurring' ) {
-                           $value = $row->recur - $row->usage;
-                         } elsif ( $use_usage eq 'usage' ) {
-                           $value = $row->usage;
-                         } else {
-                           $value = $row->recur;
-                         }
-                         sprintf($money_char.'%.2f', $value );
                        },
                    'invnum',
                    sub { time2str('%b %d %Y', shift->_date ) },
@@ -52,14 +43,16 @@
                    '',
                    '',
                    '',
+                   '',
                    $ilink,
                    $ilink,
                    ( map { $_ ne 'Cust. Status' ? $clink : '' }
                          FS::UI::Web::cust_header()
                    ),
                  ],
-                 'align' => 'rlrrrc'.FS::UI::Web::cust_aligns(),
+                 'align' => 'rrlllrr'.FS::UI::Web::cust_aligns(),
                  'color' => [ 
+                              '',
                               '',
                               '',
                               '',
@@ -69,6 +62,7 @@
                               FS::UI::Web::cust_colors(),
                             ],
                  'style' => [ 
+                              '',
                               '',
                               '',
                               '',
@@ -495,8 +489,10 @@ my $join_credit = ' LEFT JOIN cust_credit_bill USING ( creditbillnum )
                       $where";
 #}
 
-my @select = ( 'cust_credit_bill_pkg.amount',
+my @select = ( 'cust_credit_bill_pkg.*',
                'cust_bill_pkg.*',
+               'cust_credit.otaker',
+               'cust_credit._date AS cust_credit_date',
                'cust_bill._date',
              );
 push @select, 'part_pkg.pkg' unless $cgi->param('istax');

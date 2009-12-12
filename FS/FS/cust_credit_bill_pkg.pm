@@ -2,9 +2,14 @@ package FS::cust_credit_bill_pkg;
 
 use strict;
 use vars qw( @ISA );
-use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( qsearchs ); # qsearch );
+use FS::cust_main_Mixin;
+use FS::cust_credit_bill;
+use FS::cust_bill_pkg;
+use FS::cust_bill_pkg_tax_location;
+use FS::cust_bill_pkg_tax_rate_location;
 
-@ISA = qw(FS::Record);
+@ISA = qw( FS::cust_main_Mixin FS::Record );
 
 =head1 NAME
 
@@ -128,6 +133,11 @@ sub check {
   return $error if $error;
 
   $self->SUPER::check;
+}
+
+sub cust_credit_bill {
+  my $self = shift;
+  qsearchs('cust_credit_bill', { 'creditbillnum' => $self->creditbillnum } );
 }
 
 =back

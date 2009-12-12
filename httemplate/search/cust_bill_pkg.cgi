@@ -74,6 +74,8 @@
 %>
 <%init>
 
+#LOTS of false laziness below w/cust_credit_bill_pkg.cgi
+
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
 
