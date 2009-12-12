@@ -124,7 +124,7 @@
         </TD>
         <<%$tdh%>><FONT SIZE="+1"><B> - </B></FONT></TD>
         <<%$tdh%> ALIGN="right">
-          <A HREF="<% $baselink. $invlink %>;istax=1;iscredit=1"
+          <A HREF="<% $creditlink. $invlink %>;istax=1"
           ><% &$money_sprintf( $region->{'credit'} ) %></A>
         </TD>
         <<%$tdh%>><FONT SIZE="+1"><B> = </B></FONT></TD>
@@ -186,7 +186,7 @@
         </TD>
         <<%$td%>><FONT SIZE="+1"><B> - </B></FONT></TD>
         <<%$tdh%> ALIGN="right">
-          <A HREF="<% $baselink. $invlink %>;istax=1;iscredit=1"
+          <A HREF="<% $creditlink. $invlink %>;istax=1"
           ><% &$money_sprintf( $region->{'credit'} ) %></A>
         </TD>
         <<%$td%>><FONT SIZE="+1"><B> = </B></FONT></TD>
@@ -212,7 +212,7 @@
    </TD>
         <<%$td%>><FONT SIZE="+1"><B> - </B></FONT></TD>
    <<%$td%> ALIGN="right">
-     <A HREF="<% $baselink %>;istax=1;iscredit=1"
+     <A HREF="<% $creditlink %>;istax=1"
      ><% &$money_sprintf( $tot_credit ) %></A>
    </TD>
         <<%$td%>><FONT SIZE="+1"><B> = </B></FONT></TD>
@@ -781,5 +781,6 @@ $dateagentlink .= ';agentnum='. $cgi->param('agentnum')
   if length($agentname);
 my $baselink   = $p. "search/cust_bill_pkg.cgi?$dateagentlink";
 my $exemptlink = $p. "search/cust_tax_exempt_pkg.cgi?$dateagentlink";
+my $creditlink = $p. "search/cust_credit_bill_pkg.html?$dateagentlink";
 
 </%init>

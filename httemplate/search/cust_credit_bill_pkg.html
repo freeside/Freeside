@@ -1,11 +1,16 @@
 <% include( 'elements/search.html',
-                 'title'       => 'Line items',
-                 'name'        => 'line items',
-                 'query'       => $query,
-                 'count_query' => $count_query,
+              'title'       => 'Tax credits', #well, actually application of
+              'name'        => 'tax credits', # credit to line item
+              'query'       => $query,
+              'count_query' => $count_query,
                  'count_addl'  => [ $money_char. '%.2f total', ],
                  'header'      => [
                    #'#',
+
+                   'Amount',
+                   # credit date, By, Reason,
+                   # line item, invoice
+
                    'Description',
                    'Setup charge',
                    ( $use_usage eq 'usage'
@@ -17,7 +22,9 @@
                    FS::UI::Web::cust_header(),
                  ],
                  'fields'      => [
-                   #'billpkgnum',
+                   #'creditbillpkgnum',
+                   'amount',
+
                    sub { $_[0]->pkgnum > 0
                            ? $_[0]->get('pkg')      # possibly use override.pkg
                            : $_[0]->get('itemdesc') # but i think this correct
@@ -74,6 +81,8 @@
 %>
 <%init>
 
+#LOTS of false laziness below w/cust_bill_pkg.cgi
+
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
 
@@ -86,8 +95,8 @@ my $agentnums_sql =
 my @where = ( $agentnums_sql );
 
 my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
-push @where, "_date >= $beginning",
-             "_date <= $ending";
+push @where, "cust_bill._date >= $beginning",
+             "cust_bill._date <= $ending";
 
 push @where , " payby != 'COMP' "
   unless $cgi->param('include_comp_cust');
@@ -234,7 +243,10 @@ if ( $cgi->param('out') ) {
 
   }
    
+  my($title, $name);
   if ( $cgi->param('istax') ) {
+    $title = 'Tax credits';
+    $name  = 'tax credits';
     if ( $cgi->param('taxname') ) {
       push @where, 'itemdesc = '. dbh->quote( $cgi->param('taxname') );
     #} elsif ( $cgi->param('taxnameNULL') {
@@ -242,8 +254,12 @@ if ( $cgi->param('out') ) {
       push @where, "( itemdesc IS NULL OR itemdesc = '' OR itemdesc = 'Tax' )";
     }
   } elsif ( $cgi->param('nottax') ) {
+    $title = 'Credit applications to line items';
+    $name  = 'applications';
     #what can we usefully do with "taxname" ????  look up a class???
   } else {
+    $title = 'Credit applications to line items';
+    $name  = 'applications';
     #warn "neither nottax nor istax parameters specified";
   }
 
@@ -329,7 +345,7 @@ if ( $cgi->param('cust_tax') ) {
 my $use_usage = $cgi->param('use_usage');
 
 my $count_query;
-if ( $cgi->param('pkg_tax') ) {
+if ( $cgi->param('pkg_tax') ) { #does this mean anything here?
 
   $count_query =
     "SELECT COUNT(*),
@@ -352,7 +368,7 @@ if ( $cgi->param('pkg_tax') ) {
                   OR ( part_pkg.recurtax = 'Y' AND cust_bill_pkg.recur > 0 ) )",
                "( tax != 'Y' OR tax IS NULL )";
 
-} elsif ( $cgi->param('taxable') ) {
+} elsif ( $cgi->param('taxable') ) { #again, meaningful?
 
   my $setup_taxable = "(
     CASE WHEN part_pkg.setuptax = 'Y'
@@ -394,21 +410,25 @@ if ( $cgi->param('pkg_tax') ) {
 
   $count_query = "SELECT COUNT(*), ";
 
-  if ( $use_usage eq 'recurring' ) {
+  if ( $use_usage eq 'recurring' ) { #mean anything?
     $count_query .= "SUM(setup + recur - usage)";
-  } elsif ( $use_usage eq 'usage' ) {
+  } elsif ( $use_usage eq 'usage' ) { #mean anything?
     $count_query .= "SUM(usage)";
   } else {
-    $count_query .= "SUM(cust_bill_pkg.setup + cust_bill_pkg.recur)";
+    $count_query .= "SUM(cust_credit_bill_pkg.amount)";
   }
 
 }
 
-my $join_cust =  '      JOIN cust_bill USING ( invnum ) 
-                   LEFT JOIN cust_main USING ( custnum ) ';
+my $join_cust =
+  '      JOIN cust_bill ON ( cust_bill_pkg.invnum = cust_bill.invnum ) 
+    LEFT JOIN cust_main ON ( cust_bill.custnum = cust_main.custnum ) ';
 
 
 my $join_pkg;
+
+my $join_cust_bill_pkg = 'LEFT JOIN cust_bill_pkg USING ( billpkgnum ';
+
 if ( $cgi->param('nottax') ) {
 
   $join_pkg =  ' LEFT JOIN cust_pkg USING ( pkgnum )
@@ -434,18 +454,15 @@ if ( $cgi->param('nottax') ) {
       ' LEFT JOIN tax_rate_location USING ( taxratelocationnum ) ';
   }
 
-  if ( $cgi->param('iscredit') ) {
-    $join_pkg .= ' JOIN cust_credit_bill_pkg USING ( billpkgnum';
     if ( $conf->exists('tax-pkg_address') ) {
-      $join_pkg .= ', billpkgtaxlocationnum )';
+      $join_cust_bill_pkg .= ', billpkgtaxlocationnum )';
       push @where, "billpkgtaxratelocationnum IS NULL";
-    } elsif ( $cgi->param('iscredit') eq 'rate' ) {
-      $join_pkg .= ', billpkgtaxratelocationnum )';
+    #} elsif ( $cgi->param('iscredit') eq 'rate' ) {
+    #  $join_pkg .= ', billpkgtaxratelocationnum )';
     } else {
-      $join_pkg .= ' )';
+      $join_cust_bill_pkg .= ' )';
       push @where, "billpkgtaxratelocationnum IS NULL";
     }
-  }
 
 } else { 
 
@@ -459,18 +476,26 @@ if ( $cgi->param('nottax') ) {
 
 my $where = ' WHERE '. join(' AND ', @where);
 
-if ($use_usage) {
-  $count_query .=
-    " FROM (SELECT cust_bill_pkg.setup, cust_bill_pkg.recur, 
-             ( SELECT COALESCE( SUM(amount), 0 ) FROM cust_bill_pkg_detail
-               WHERE cust_bill_pkg.billpkgnum = cust_bill_pkg_detail.billpkgnum
-             ) AS usage FROM cust_bill_pkg  $join_cust $join_pkg $where
-           ) AS countquery";
-} else {
-  $count_query .= " FROM cust_bill_pkg $join_cust $join_pkg $where";
-}
+my $join_credit = ' LEFT JOIN cust_credit_bill USING ( creditbillnum )
+                    LEFT JOIN cust_credit      USING ( crednum ) ';
 
-my @select = (
+#if ($use_usage) {
+#  $count_query .=
+#    " FROM (SELECT cust_bill_pkg.setup, cust_bill_pkg.recur, 
+#             ( SELECT COALESCE( SUM(amount), 0 ) FROM cust_bill_pkg_detail
+#               WHERE cust_bill_pkg.billpkgnum = cust_bill_pkg_detail.billpkgnum
+#             ) AS usage FROM cust_bill_pkg  $join_cust $join_pkg $where
+#           ) AS countquery";
+#} else {
+  $count_query .= " FROM cust_credit_bill_pkg
+                        $join_pkg
+                        $join_cust_bill_pkg
+                        $join_credit
+                        $join_cust
+                      $where";
+#}
+
+my @select = ( 'cust_credit_bill_pkg.amount',
                'cust_bill_pkg.*',
                'cust_bill._date',
              );
@@ -479,12 +504,15 @@ push @select, 'cust_main.custnum',
               FS::UI::Web::cust_sql_fields();
 
 my $query = {
-  'table'     => 'cust_bill_pkg',
-  'addl_from' => "$join_cust $join_pkg",
+  'table'     => 'cust_credit_bill_pkg',
+  'addl_from' => "$join_pkg
+                  $join_cust_bill_pkg
+                  $join_credit
+                  $join_cust",
   'hashref'   => {},
   'select'    => join(', ', @select ),
   'extra_sql' => $where,
-  'order_by'  => 'ORDER BY _date, billpkgnum',
+  'order_by'  => 'ORDER BY creditbillpkgnum', #cust_bill. or cust_credit._date?
 };
 
 my $ilink = [ "${p}view/cust_bill.cgi?", 'invnum' ];
