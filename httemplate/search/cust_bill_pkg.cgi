@@ -157,6 +157,8 @@ if ( $cgi->param('taxclass')
 
 }
 
+my @loc_param = qw( city county state country );
+
 if ( $cgi->param('out') ) {
 
   my ( $loc_sql, @param ) = FS::cust_pkg->location_sql( 'ornull' => 1 );
@@ -176,10 +178,9 @@ if ( $cgi->param('out') ) {
   ";
 
   #not linked to by anything, but useful for debugging "out of taxable region"
-  if ( grep $cgi->param($_), qw( county state country ) ) {
+  if ( grep $cgi->param($_), @loc_param ) {
 
-    my %ph = map { $_ => dbh->quote( $cgi->param($_) ) }
-                 qw( county state country );
+    my %ph = map { $_ => dbh->quote( scalar($cgi->param($_)) ) } @loc_param;
 
     my ( $loc_sql, @param ) = FS::cust_pkg->location_sql;
     while ( $loc_sql =~ /\?/ ) { #easier to do our own substitution
@@ -204,7 +205,7 @@ if ( $cgi->param('out') ) {
 
           my %ph = ( 'county' => dbh->quote($_),
                      map { $_ => dbh->quote( $cgi->param($_) ) }
-                       qw( state country )
+                       qw( city state country )
                    );
 
           my ( $loc_sql, @param ) = FS::cust_pkg->location_sql;
@@ -222,8 +223,7 @@ if ( $cgi->param('out') ) {
 
   } else {
 
-    my %ph = map { $_ => dbh->quote( $cgi->param($_) ) }
-                 qw( county state country );
+    my %ph = map { $_ => dbh->quote( scalar($cgi->param($_)) ) } @loc_param;
 
     my ( $loc_sql, @param ) = FS::cust_pkg->location_sql;
     while ( $loc_sql =~ /\?/ ) { #easier to do our own substitution
@@ -274,7 +274,7 @@ if ( $cgi->param('out') ) {
   );
 
   my %ph = map { ( $pn{$_} => dbh->quote( $cgi->param($_) || '' ) ) }
-           qw( county state city locationtaxid );
+           qw( city county state locationtaxid );
 
   push @where,
     join( ' AND ', map { "( $_ = $ph{$_} OR $ph{$_} = '' AND $_ IS NULL)" }

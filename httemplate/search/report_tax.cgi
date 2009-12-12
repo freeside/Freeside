@@ -22,7 +22,10 @@
     <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2>Tax owed</TH>
 % unless ( $cgi->param('show_taxclasses') ) { 
       <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2>Tax invoiced</TH>
+      <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2></TH>
       <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2>Tax credited</TH>
+      <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2></TH>
+      <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2>Tax collected</TH>
 % } 
   </TR>
 
@@ -119,9 +122,14 @@
           <A HREF="<% $baselink. $invlink %>;istax=1"
           ><% &$money_sprintf( $region->{'tax'} ) %></A>
         </TD>
+        <<%$tdh%>><FONT SIZE="+1"><B> - </B></FONT></TD>
         <<%$tdh%> ALIGN="right">
           <A HREF="<% $baselink. $invlink %>;istax=1;iscredit=1"
           ><% &$money_sprintf( $region->{'credit'} ) %></A>
+        </TD>
+        <<%$tdh%>><FONT SIZE="+1"><B> = </B></FONT></TD>
+        <<%$tdh%> ALIGN="right">
+          <% &$money_sprintf( $region->{'tax'} - $region->{'credit'} ) %>
         </TD>
 % } 
 
@@ -137,7 +145,10 @@
     <TR>
       <TH CLASS="grid" BGCOLOR="#cccccc"></TH>
       <TH CLASS="grid" BGCOLOR="#cccccc">Tax invoiced</TH>
+      <TH CLASS="grid" BGCOLOR="#cccccc"></TH>
       <TH CLASS="grid" BGCOLOR="#cccccc">Tax credited</TH>
+      <TH CLASS="grid" BGCOLOR="#cccccc"></TH>
+      <TH CLASS="grid" BGCOLOR="#cccccc">Tax collected</TH>
     </TR>
 
 %   #some false laziness w/above
@@ -160,12 +171,27 @@
 %       $bgcolor = $bgcolor1;
 %     }
 %     my $td = qq(TD CLASS="grid" BGCOLOR="$bgcolor");
+%     my $tdh = qq(TD CLASS="grid" BGCOLOR="$bgcolor");
+%
+%     #?
+%     my $invlink = $region->{'url_param_inv'}
+%                     ? ';'. $region->{'url_param_inv'}
+%                     : $link;
 
       <TR>
         <<%$td%>><% $region->{'label'} %></TD>
         <<%$td%> ALIGN="right">
           <A HREF="<% $baselink. $link %>;istax=1"
           ><% &$money_sprintf( $region->{'tax'} ) %></A>
+        </TD>
+        <<%$td%>><FONT SIZE="+1"><B> - </B></FONT></TD>
+        <<%$tdh%> ALIGN="right">
+          <A HREF="<% $baselink. $invlink %>;istax=1;iscredit=1"
+          ><% &$money_sprintf( $region->{'credit'} ) %></A>
+        </TD>
+        <<%$td%>><FONT SIZE="+1"><B> = </B></FONT></TD>
+        <<%$tdh%> ALIGN="right">
+          <% &$money_sprintf( $region->{'tax'} - $region->{'credit'} ) %>
         </TD>
       </TR>
 
@@ -183,6 +209,15 @@
    <<%$td%> ALIGN="right">
      <A HREF="<% $baselink %>;istax=1"
      ><% &$money_sprintf( $tot_tax ) %></A>
+   </TD>
+        <<%$td%>><FONT SIZE="+1"><B> - </B></FONT></TD>
+   <<%$td%> ALIGN="right">
+     <A HREF="<% $baselink %>;istax=1;iscredit=1"
+     ><% &$money_sprintf( $tot_credit ) %></A>
+   </TD>
+        <<%$td%>><FONT SIZE="+1"><B> = </B></FONT></TD>
+   <<%$td%> ALIGN="right">
+     <% &$money_sprintf( $tot_tax - $tot_credit ) %>
    </TD>
   </TR>
 
@@ -230,7 +265,10 @@ sub gotcust {
   my $table = shift;
   my $prefix = @_ ? shift : '';
   "
-        ( $table.${prefix}county  = cust_main_county.county
+        ( $table.${prefix}city  = cust_main_county.city
+          OR cust_main_county.city = ''
+          OR cust_main_county.city IS NULL )
+    AND ( $table.${prefix}county  = cust_main_county.county
           OR cust_main_county.county = ''
           OR cust_main_county.county IS NULL )
     AND ( $table.${prefix}state   = cust_main_county.state
@@ -298,10 +336,11 @@ foreach my $r ( qsearch({ 'table'     => 'cust_main_county',
 
   $regions{$label}->{$_} = $r->$_() for (qw( county state country )); #taxname?
 
+  my @url_param = qw( county state country taxname );
+  push @url_param, 'city' if $cgi->param('show_cities') && $r->city();
+
   $regions{$label}->{'url_param'} =
-    join(';', map "$_=".uri_escape($r->$_()),
-                  qw( county state country taxname )
-        );
+    join(';', map "$_=".uri_escape($r->$_()), @url_param );
 
   my @param = @base_param;
   my $mywhere = $where;
@@ -439,7 +478,7 @@ foreach my $r ( qsearch({ 'table'     => 'cust_main_county',
 
 }
 
-my $distinct = "country, state, county,
+my $distinct = "country, state, county, city, 
                 CASE WHEN taxname IS NULL THEN '' ELSE taxname END AS taxname";
 my $taxclass_distinct = 
   #a little bit unsure of this part... test?
@@ -684,8 +723,9 @@ sub getlabel {
   my $label;
   if (
     $r->tax == 0 
-    && ! scalar( qsearch('cust_main_county', { 'state'   => $r->state,
+    && ! scalar( qsearch('cust_main_county', { 'city'    => $r->city,
                                                'county'  => $r->county,
+                                               'state'   => $r->state,
                                                'country' => $r->country,
                                                'tax' => { op=>'>', value=>0 },
                                              }
@@ -704,6 +744,7 @@ sub getlabel {
     $label = $r->country;
     $label = $r->state.", $label" if $r->state;
     $label = $r->county." county, $label" if $r->county;
+    $label = $r->city. ", $label" if $r->city && $cgi->param('show_cities');
     $label = "$label (". $r->taxclass. ")"
       if $r->taxclass
       && $cgi->param('show_taxclasses')

@@ -2643,13 +2643,8 @@ sub location_sql {
   my $conf = new FS::Conf;
 
   # '?' placeholders in _location_sql_where
-  my @bill_param;
-  if ( $ornull ) {
-    @bill_param = qw( county county state state state country );
-  } else {
-    @bill_param = qw( county state state country );
-  }
-  unshift @bill_param, 'county'; # unless $nec;
+  my $x = $ornull ? 3 : 2;
+  my @bill_param = ( ('city')x3, ('county')x$x, ('state')x$x, 'country' );
 
   my $main_where;
   my @main_param;
@@ -2708,11 +2703,14 @@ sub _location_sql_where {
 
   $ornull = $ornull ? ' OR ? IS NULL ' : '';
 
+  my $or_empty_city   = " OR ( ? = '' AND $table.${prefix}city   IS NULL ) ";
   my $or_empty_county = " OR ( ? = '' AND $table.${prefix}county IS NULL ) ";
   my $or_empty_state =  " OR ( ? = '' AND $table.${prefix}state  IS NULL ) ";
 
+#        ( $table.${prefix}city    = ? $or_empty_city   $ornull )
   "
-        ( $table.${prefix}county  = ? $or_empty_county $ornull )
+        ( $table.${prefix}city    = ? OR ? = '' OR CAST(? AS text) IS NULL )
+    AND ( $table.${prefix}county  = ? $or_empty_county $ornull )
     AND ( $table.${prefix}state   = ? $or_empty_state  $ornull )
     AND   $table.${prefix}country = ?
   ";

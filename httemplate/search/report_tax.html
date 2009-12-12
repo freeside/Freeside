@@ -32,6 +32,13 @@
 
  <% include( '/elements/tr-input-beginning_ending.html' ) %>
 
+%    if ( $city ) {
+   <TR>
+     <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="show_cities" VALUE="1"></TD>
+     <TD>Show cities</TD>
+   </TR>
+% } 
+
 %    if ( $conf->exists('enable_taxclasses') ) {
    <TR>
      <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="show_taxclasses" VALUE="1"></TD>
@@ -60,5 +67,13 @@ die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
 
 my $conf = new FS::Conf;
+
+my $city_sql = "SELECT COUNT(*) FROM cust_main_county
+                  WHERE city != '' AND city IS NOT NULL
+                  LIMIT 1";
+
+my $city_sth = dbh->prepare($city_sql) or die dbh->errstr;
+$city_sth->execute or die $city_sth->errstr;
+my $city = $city_sth->fetchrow_arrayref->[0];
 
 </%init>
