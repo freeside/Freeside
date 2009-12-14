@@ -2014,14 +2014,14 @@ sub _op_overlimit {
 
   my $cust_pkg = $self->cust_svc->cust_pkg;
 
-  my $agent_overlimit =
+  my $conf_overlimit =
     $cust_pkg
       ? $conf->config('overlimit_groups', $cust_pkg->cust_main->agentnum )
-      : '';
+      : $conf->config('overlimit_groups');
 
   foreach my $part_export ( $self->cust_svc->part_svc->part_export ) {
 
-    my $groups = $agent_overlimit || $part_export->option('overlimit_groups');
+    my $groups = $conf_overlimit || $part_export->option('overlimit_groups');
     next unless $groups;
 
     my $gref = &{ $self->_fieldhandlers->{'usergroup'} }( $self, $groups );
