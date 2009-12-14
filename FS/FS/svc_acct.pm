@@ -1947,26 +1947,13 @@ sub _op_usage {
         ( $action eq 'suspend'   && !$self->overlimit 
        || $action eq 'unsuspend' &&  $self->overlimit ) 
      ) {
-    foreach my $part_export ( $self->cust_svc->part_svc->part_export ) {
-      if ($part_export->option('overlimit_groups')) {
-        my ($new,$old);
-        my $other = new FS::svc_acct $self->hashref;
-        my $groups = &{ $self->_fieldhandlers->{'usergroup'} }
-                       ($self, $part_export->option('overlimit_groups'));
-        $other->usergroup( $groups );
-        if ($action eq 'suspend'){
-          $new = $other; $old = $self;
-        }else{
-          $new = $self; $old = $other;
-        }
-        my $error = $part_export->export_replace($new, $old);
-        $error ||= $self->overlimit($action);
-        if ( $error ) {
-          $dbh->rollback if $oldAutoCommit;
-          return "Error replacing radius groups in export, ${op}: $error";
-        }
-      }
+
+    my $error = $self->_op_overlimit($action);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
     }
+
   }
 
   if ( $conf->exists("svc_acct-usage_$action")
@@ -2006,6 +1993,61 @@ sub _op_usage {
 
   warn "$me update successful; committing\n"
     if $DEBUG;
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+
+}
+
+sub _op_overlimit {
+  my( $self, $action ) = @_;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $cust_pkg = $self->cust_svc->cust_pkg;
+
+  my $agent_overlimit =
+    $cust_pkg
+      ? $conf->config('overlimit_groups', $cust_pkg->cust_main->agentnum )
+      : '';
+
+  foreach my $part_export ( $self->cust_svc->part_svc->part_export ) {
+
+    my $groups = $agent_overlimit || $part_export->option('overlimit_groups');
+    next unless $groups;
+
+    my $gref = &{ $self->_fieldhandlers->{'usergroup'} }( $self, $groups );
+
+    my $other = new FS::svc_acct $self->hashref;
+    $other->usergroup( $gref );
+
+    my($new,$old);
+    if ($action eq 'suspend') {
+      $new = $other;
+      $old = $self;
+    } else { # $action eq 'unsuspend'
+      $new = $self;
+      $old = $other;
+    }
+
+    my $error = $part_export->export_replace($new, $old)
+                || $self->overlimit($action);
+
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Error replacing radius groups: $error";
+    }
+
+  }
+
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
 
@@ -2083,28 +2125,20 @@ sub set_usage {
   }
 
   if ( $reset ) {
-    my $error;
 
-    if ($self->overlimit) {
-      $error = $self->overlimit('unsuspend');
-      foreach my $part_export ( $self->cust_svc->part_svc->part_export ) {
-        if ($part_export->option('overlimit_groups')) {
-          my $old = new FS::svc_acct $self->hashref;
-          my $groups = &{ $self->_fieldhandlers->{'usergroup'} }
-                         ($self, $part_export->option('overlimit_groups'));
-          $old->usergroup( $groups );
-          $error ||= $part_export->export_replace($self, $old);
-        }
-      }
-    }
+    my $error = '';
 
-    if ( $conf->exists("svc_acct-usage_unsuspend")) {
-      $error ||= $self->cust_svc->cust_pkg->unsuspend;
-    }
+    $error = $self->_op_overlimit('unsuspend')
+      if $self->overlimit;;
+
+    $error ||= $self->cust_svc->cust_pkg->unsuspend
+      if $conf->exists("svc_acct-usage_unsuspend");
+
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return "Error unsuspending: $error";
     }
+
   }
 
   warn "$me update successful; committing\n"

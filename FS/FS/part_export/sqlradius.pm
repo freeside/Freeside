@@ -34,7 +34,7 @@ tie %options, 'Tie::IxHash',
     type  => 'checkbox',
     label => 'Show the Called-Station-ID on session reports',
   },
-  'overlimit_groups' => { label => 'Radius groups to assign to svc_acct which has exceeded its bandwidth or time limit', } ,
+  'overlimit_groups' => { label => 'Radius groups to assign to svc_acct which has exceeded its bandwidth or time limit (if not overridden by overlimit_groups global or per-agent config)', } ,
   'groups_susp_reason' => { label =>
                              'Radius group mapping to reason (via template user) (svcnum|username|username@domain  reasonnum|reason)',
                             type  => 'textarea',
