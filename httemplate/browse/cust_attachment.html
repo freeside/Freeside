@@ -62,6 +62,7 @@
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;
+die "access denied" if !$curuser->access-right('View attachments');
 
 my $conf = new FS::Conf;
 

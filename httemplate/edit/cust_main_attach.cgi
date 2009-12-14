@@ -44,6 +44,7 @@ onclick="return(confirm('Delete this file?'));">
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;
+die "access denied" if !$curuser->access_right('View attachments');
 my $attachnum = '';
 my $attach;
 if ( $cgi->param('error') ) {

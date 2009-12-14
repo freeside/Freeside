@@ -206,6 +206,7 @@ tie my %rights, 'Tie::IxHash',
   'Customer note and attachment rights' => [
     'Add customer note', #NEW
     'Edit customer note', #NEW
+    'View attachments',
     'Download attachment', #NEW
     'Add attachment', #NEW
     'Edit attachment', #NEW

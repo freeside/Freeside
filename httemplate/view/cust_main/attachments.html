@@ -109,7 +109,7 @@
 
 my $conf = new FS::Conf;
 my $curuser = $FS::CurrentUser::CurrentUser;
-
+die "access denied" if !$curuser->access_right('View attachments');
 my(%opt) = @_;
 
 my $custnum = $opt{'custnum'};

@@ -153,16 +153,18 @@ Comments
           )
 %>
 % }
+% if( $curuser->access_right('View attachments') ) {
 <% include('cust_main/attachments.html', 'custnum' => $cust_main->custnum ) %>
-% if($cgi->param('show_deleted')) {
+%   if ($cgi->param('show_deleted')) {
 <A HREF="<% $p.'view/cust_main.cgi?custnum=' . $cust_main->custnum .
            ($view ? ";show=$view" : '') . '#notes' 
            %>"><I>(Show active attachments)</I></A>
-% }
+%   }
 % elsif($curuser->access_right('View deleted attachments')) {
 <A HREF="<% $p.'view/cust_main.cgi?custnum=' . $cust_main->custnum .
            ($view ? ";show=$view" : '') . ';show_deleted=1#notes'
            %>"><I>(Show deleted attachments)</I></A>
+%   }
 % }
 <BR>
 
