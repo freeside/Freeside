@@ -13,7 +13,9 @@ my %opt    = %{ $args{'opt'} };
 
 #http://support.microsoft.com/kb/199841
 http_header('Content-Type' => 'application/vnd.ms-excel' );
-
+http_header('Content-Disposition' => 
+  'attachment;filename="'.($opt{'name'} || PL($opt{'name_singular'}) ).'.xls"');
+ 
 #http://support.microsoft.com/kb/812935
 #http://support.microsoft.com/kb/323308
 $HTML::Mason::Commands::r->headers_out->{'Cache-control'} = 'max-age=0';
@@ -79,5 +81,5 @@ foreach my $row ( @$rows ) {
 $workbook->close();# or die "Error creating .xls file: $!";
 
 http_header('Content-Length' => length($data) );
- 
+
 </%init>
