@@ -1,7 +1,7 @@
 package FS::cust_bill;
 
 use strict;
-use vars qw( @ISA $DEBUG $me $conf $money_char );
+use vars qw( @ISA $DEBUG $me $conf $money_char $date_format );
 use vars qw( $invoice_lines @buf ); #yuck
 use Fcntl qw(:flock); #for spool_csv
 use List::Util qw(min max);
@@ -44,6 +44,7 @@ $me = '[FS::cust_bill]';
 FS::UID->install_callback( sub { 
   $conf = new FS::Conf;
   $money_char = $conf->config('money_char') || '$';  
+  $date_format = $conf->config('date_format') || '%x';  
 } );
 
 =head1 NAME
@@ -2459,6 +2460,11 @@ sub print_generic {
                                             sprintf('%.2f', $pr_total),
                            'summarized'  => $summarypage ? 'Y' : '',
                          };
+  $previous_section->{posttotal} = '0 / 30 / 60/ 90 days overdue '. 
+    join(' / ', map { $cust_main->balance_date_range(@$_) }
+                $self->_prior_month30s
+        )
+    if $conf->exists('invoice_include_aging');
 
   my $taxtotal = 0;
   my $tax_section = { 'description' => 'Taxes, Surcharges, and Fees',
@@ -2572,6 +2578,7 @@ sub print_generic {
                  );
     }
 
+    my $multilocation = scalar($cust_main->cust_location); #too expensive?
     my %options = ();
     $options{'section'} = $section if $multisection;
     $options{'format'} = $format;
@@ -2581,6 +2588,7 @@ sub print_generic {
     $options{'summary_page'} = $summarypage;
     $options{'skip_usage'} =
       scalar(@$extra_sections) && !grep{$section == $_} @$extra_sections;
+    $options{'multilocation'} = $multilocation;
 
     foreach my $line_item ( $self->_items_pkg(%options) ) {
       my $detail = {
@@ -2925,6 +2933,22 @@ sub print_generic {
 
     $text_template->fill_in(HASH => \%invoice_data);
   }
+}
+
+# helper routine for generating date ranges
+sub _prior_month30s {
+  my $self = shift;
+  my @ranges = (
+   [ 1,       2592000 ], # 0-30 days ago
+   [ 2592000, 5184000 ], # 30-60 days ago
+   [ 5184000, 7776000 ], # 60-90 days ago
+   [ 7776000, 0       ], # 90+   days ago
+  );
+
+  map { [ $_->[0] ? $self->_date - $_->[0] - 1 : '',
+          $_->[1] ? $self->_date - $_->[1] - 1 : '',
+      ] }
+  @ranges;
 }
 
 =item print_ps HASHREF | [ TIME [ , TEMPLATE ] ]
@@ -3797,9 +3821,13 @@ sub _items_previous {
   my( $pr_total, @pr_cust_bill ) = $self->previous; #previous balance
   my @b = ();
   foreach ( @pr_cust_bill ) {
+    my $date = $conf->exists('invoice_show_prior_due_date')
+               ? 'due '. $_->due_date2str($date_format)
+               : time2str('%x', $_->_date); # date_format here, too,
+                                            # but fix _items_cust_bill_pkg,
+                                            # header, others?
     push @b, {
-      'description' => 'Previous Balance, Invoice #'. $_->invnum. 
-                       ' ('. time2str('%x',$_->_date). ')',
+      'description' => 'Previous Balance, Invoice #'. $_->invnum. " ($date)",
       #'pkgpart'     => 'N/A',
       'pkgnum'      => 'N/A',
       'amount'      => sprintf("%.2f", $_->owed),
@@ -3875,6 +3903,7 @@ sub _items_cust_bill_pkg {
   my $unsquelched = $opt{unsquelched} || '';
   my $section = $opt{section}->{description} if $opt{section};
   my $summary_page = $opt{summary_page} || '';
+  my $multilocation = $opt{multilocation} || '';
 
   my @b = ();
   my ($s, $r, $u) = ( undef, undef, undef );
@@ -3922,10 +3951,15 @@ sub _items_cust_bill_pkg {
           $description .= ' Setup' if $cust_bill_pkg->recur != 0;
 
           my @d = ();
-          push @d, map &{$escape_function}($_),
-                       $cust_pkg->h_labels_short($self->_date)
-            unless $cust_pkg->part_pkg->hide_svc_detail
-                || $cust_bill_pkg->hidden;
+          unless ( $cust_pkg->part_pkg->hide_svc_detail
+                || $cust_bill_pkg->hidden )
+          {
+            push @d, map &{$escape_function}($_),
+                         $cust_pkg->h_labels_short($self->_date);
+            push @d, map &{$escape_function}($_),
+                         $cust_pkg->location_label_short
+              if $multilocation;
+          }
           push @d, $cust_bill_pkg->details(%details_opt)
             if $cust_bill_pkg->recur == 0;
 
@@ -3969,14 +4003,20 @@ sub _items_cust_bill_pkg {
           my $prev = $cust_bill_pkg->previous_cust_bill_pkg;
           push @dates, $prev->sdate if $prev;
 
-          push @d, map &{$escape_function}($_),
-                       $cust_pkg->h_labels_short(@dates)
-                                                 #$cust_bill_pkg->edate,
-                                                 #$cust_bill_pkg->sdate)
-            unless $cust_pkg->part_pkg->hide_svc_detail
+          unless ( $cust_pkg->part_pkg->hide_svc_detail
                 || $cust_bill_pkg->itemdesc
                 || $cust_bill_pkg->hidden
-                || $is_summary && $type && $type eq 'U';
+                || $is_summary && $type && $type eq 'U' )
+          {
+            push @d, map &{$escape_function}($_),
+                         $cust_pkg->h_labels_short(@dates)
+                                                   #$cust_bill_pkg->edate,
+                                                   #$cust_bill_pkg->sdate)
+            ;
+            push @d, map &{$escape_function}($_),
+                         $cust_pkg->location_label_short
+              if $multilocation;
+          }
 
           push @d, $cust_bill_pkg->details(%details_opt)
             unless ($is_summary || $type && $type eq 'R');

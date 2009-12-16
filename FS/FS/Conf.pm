@@ -1030,6 +1030,20 @@ worry that config_items is freeside-specific and icky.
   },
 
   { 
+    'key'         => 'invoice_show_prior_due_date',
+    'section'     => 'billing',
+    'description' => 'Show previous invoice due dates when showing prior balances.  Default is to show invoice date.',
+    'type'        => 'checkbox',
+  },
+
+  { 
+    'key'         => 'invoice_include_aging',
+    'section'     => 'billing',
+    'description' => 'Show an aging line after the prior balance section.  Only valud when invoice_sections is enabled.',
+    'type'        => 'checkbox',
+  },
+
+  { 
     'key'         => 'invoice_sections',
     'section'     => 'billing',
     'description' => 'Split invoice into sections and label according to package category when enabled.',

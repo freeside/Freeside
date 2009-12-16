@@ -2764,6 +2764,25 @@ sub h_date {
   $h ? $h->history_date : '';
 }
 
+=item scalar_sql SQL
+
+A class method with a propensity for becoming an instance method.  This
+method executes the sql statement represented by SQL and returns a scalar
+representing the result.  Don't ask for rows -- you get the first column
+of the first row.  Don't give me bogus SQL or I'll die on you.
+
+Returns an empty string in the event of no rows.
+
+=cut
+
+sub scalar_sql {
+  my($self, $sql ) = ( shift, shift );
+  my $sth = dbh->prepare($sql) or die dbh->errstr;
+  $sth->execute
+    or die "Unexpected error executing statement $sql: ". $sth->errstr;
+  $sth->fetchrow_arrayref->[0] || '';
+}
+
 =back
 
 =head1 SUBROUTINES

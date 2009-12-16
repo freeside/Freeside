@@ -1945,6 +1945,18 @@ sub cust_location_or_main {
   $self->cust_location || $self->cust_main;
 }
 
+=item location_label_short
+
+Returns the short label of the location object (see L<FS::cust_location>).
+
+=cut
+
+sub location_label_short {
+  my $self = shift;
+  my $object = $self->cust_location_or_main;
+  $object->location_label_short;
+}
+
 =item seconds_since TIMESTAMP
 
 Returns the number of seconds all accounts (see L<FS::svc_acct>) in this

@@ -1955,6 +1955,28 @@ sub cust_location {
   qsearch('cust_location', { 'custnum' => $self->custnum } );
 }
 
+=item location_label_short
+
+Returns the short label of the service location (see analog in L<FS::cust_location>) for this customer.
+
+=cut
+
+# false laziness with FS::cust_location::line_short
+
+sub location_label_short {
+  my $self = shift;
+  my $cydefault = FS::conf->new->config('countrydefault') || 'US';
+
+  my $line =       $self->address1;
+  #$line   .= ', '. $self->address2              if $self->address2;
+  $line   .= ', '. $self->city;
+  $line   .= ', '. $self->state                 if $self->state;
+  $line   .= '  '. $self->zip                   if $self->zip;
+  $line   .= '  '. code2country($self->country) if $self->country ne $cydefault;
+
+  $line;
+}
+
 =item ncancelled_pkgs [ EXTRA_QSEARCH_PARAMS_HASHREF ]
 
 Returns all non-cancelled packages (see L<FS::cust_pkg>) for this customer.
@@ -2016,6 +2038,9 @@ sub _cust_pkg {
 # This should be generalized to use config options to determine order.
 sub sort_packages {
   
+  my $locationsort = $a->locationnum <=> $b->locationnum;
+  return $locationsort if $locationsort;
+
   if ( $a->get('cancel') xor $b->get('cancel') ) {
     return -1 if $b->get('cancel');
     return  1 if $a->get('cancel');
@@ -6851,6 +6876,36 @@ sub balance_date {
       - $self->total_unapplied_credits
       - $self->total_unapplied_payments
   );
+}
+
+=item balance_date_range START_TIME [ END_TIME [ OPTION => VALUE ... ] ]
+
+Returns the balance for this customer, only considering invoices with date
+earlier than START_TIME, and optionally not later than END_TIME
+(total_owed_date minus total_unapplied_credits minus total_unapplied_payments).
+
+Times are specified as SQL fragments or numeric
+UNIX timestamps; see L<perlfunc/"time">).  Also see L<Time::Local> and
+L<Date::Parse> for conversion functions.  The empty string can be passed
+to disable that time constraint completely.
+
+Available options are:
+
+=over 4
+
+=item unapplied_date
+
+set to true to disregard unapplied credits, payments and refunds outside the specified time period - by default the time period restriction only applies to invoices (useful for reporting, probably a bad idea for event triggering)
+
+=back
+
+=cut
+
+sub balance_date_range {
+  my $self = shift;
+  my $sql = 'SELECT SUM('. $self->balance_date_sql(@_).
+            ') FROM cust_main WHERE custnum='. $self->custnum;
+  sprintf( "%.2f", $self->scalar_sql($sql) );
 }
 
 =item balance_pkgnum PKGNUM

@@ -179,6 +179,39 @@ sub line {
   $line;
 }
 
+=item line_short
+
+Returns this location on one line in a shortened form
+
+=cut
+
+# configurable?
+
+sub line_short {
+  my $self = shift;
+  my $cydefault = FS::conf->new->config('countrydefault') || 'US';
+
+  my $line =       $self->address1;
+  #$line   .= ', '. $self->address2              if $self->address2;
+  $line   .= ', '. $self->city;
+  $line   .= ', '. $self->state                 if $self->state;
+  $line   .= '  '. $self->zip                   if $self->zip;
+  $line   .= '  '. code2country($self->country) if $self->country ne $cydefault;
+
+  $line;
+}
+
+=item location_label_short
+
+Synonym for line_short
+
+=cut
+
+sub location_label_short {
+  my $self = shift;
+  $self->line_short;
+}
+
 =back
 
 =head1 BUGS
