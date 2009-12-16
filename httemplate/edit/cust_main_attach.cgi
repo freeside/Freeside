@@ -8,22 +8,22 @@
 
 <BR><BR>
 
-<% include('/elements/table.html') %>
+<TABLE BGCOLOR="#cccccc" CELLSPACING=0>
 % if(defined $attach) {
 %   if($curuser->access_right("Download attachment")) {
 <A HREF="<% $p.'view/attachment.html?'.$attachnum %>">Download this file</A><BR>
 %   }
 <TR><TD> Filename </TD>
-<TD><INPUT TYPE="text" NAME="filename" SIZE=32 MAXLENGTH=32 VALUE="<% $attach->filename %>"<% $disabled %>></TD></TR>
+<TD><INPUT TYPE="text" NAME="filename" SIZE=40 MAXLENGTH=255 VALUE="<% $attach->filename %>"<% $disabled %>></TD></TR>
 <TR><TD> Description </TD>
-<TD><INPUT TYPE="text" NAME="title" SIZE=32 MAXLENGTH=32 VALUE="<% $attach->title %>"<% $disabled %></TD></TR>
+<TD><INPUT TYPE="text" NAME="title" SIZE=40 MAXLENGTH=80 VALUE="<% $attach->title %>"<% $disabled %></TD></TR>
 <TR><TD> MIME type </TD>
 <TD><INPUT TYPE="text" NAME="mime_type" VALUE="<% $attach->mime_type %>"<% $disabled %></TD></TR>
 <TR><TD> Size </TD><TD><% $attach->size %></TD></TR>
 % }
 % else { # !defined $attach
-<TR><TD> Filename </TD><TD><INPUT TYPE="file" SIZE=32 NAME="file"></TD></TR>
-<TR><TD> Description </TD><TD><INPUT TYPE="text" NAME="title" SIZE=32 MAXLENGTH=32></TD></TR>
+<TR><TD> Filename </TD><TD><INPUT TYPE="file" SIZE=24 NAME="file"></TD></TR>
+<TR><TD> Description </TD><TD><INPUT TYPE="text" NAME="title" SIZE=40 MAXLENGTH=80></TD></TR>
 % }
 </TABLE>
 <BR>
@@ -44,7 +44,7 @@ onclick="return(confirm('Delete this file?'));">
 <%init>
 
 my $curuser = $FS::CurrentUser::CurrentUser;
-die "access denied" if !$curuser->access_right('View attachments');
+
 my $attachnum = '';
 my $attach;
 if ( $cgi->param('error') ) {
