@@ -2,7 +2,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -24,7 +24,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301 or visit their web page on the internet at
-# http://www.gnu.org/copyleft/gpl.html.
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -56,7 +56,7 @@ BEGIN {
     use Exporter ();
     use vars qw($VERSION @ISA @EXPORT);
 
-    $VERSION = do { my @r = (q$Revision: 1.1.1.6 $ =~ /\d+/g); sprintf "%d."."%02d"x$#r, @r };
+    $VERSION = do { my @r = (q$Revision: 1.1.1.7 $ =~ /\d+/g); sprintf "%d."."%02d"x$#r, @r };
 
     @ISA = qw(Exporter);
     @EXPORT = qw(expand_list form_parse form_compose vpush vsplit);
@@ -125,7 +125,8 @@ sub form_parse {
             elsif ($state <= 1 && $line =~ /^($field):(?:\s+(.*))?$/i) {
                 # Read a field: value specification.
                 my $f  = $1;
-                my @v  = ($2 || ());
+                my @v  = ($2);
+                $v[0] = '' unless defined $v[0];
 
                 # Read continuation lines, if any.
                 while (@lines && ($lines[0] eq '' || $lines[0] =~ /^\s+/)) {
@@ -139,6 +140,8 @@ sub form_parse {
                     $ws = $ls if (!$ws || length($ls) < length($ws));
                 }
                 s/^$ws// foreach @v;
+
+                shift @v while (@v && $v[0] eq '');
 
                 push(@$o, $f) unless exists $k->{$f};
                 vpush($k, $f, join("\n", @v));

@@ -3,7 +3,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -25,7 +25,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301 or visit their web page on the internet at
-# http://www.gnu.org/copyleft/gpl.html.
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -100,7 +100,7 @@ sub extract_strings_from_code {
 
     local $/;
     return if ( -d $_ );
-    return if ( $File::Find::dir =~ 'lib/blib|lib/t/autogen|var|m4|local|\.svn' );
+    return if ( $File::Find::dir =~ 'lib/blib|lib/t/autogen|var|m4|local' );
     return if ( /\.po$|\.bak$|~|,D|,B$|extract-message-catalog$/ );
     return if ( /^[\.#]/ );
     return if ( -f "$_.in" );
@@ -136,7 +136,7 @@ sub extract_strings_from_code {
 
         my ( $vars, $str );
         if ( $match =~
-                /\(\s*($RE{delimited}{-delim=>q{'"}}{-keep})(.*?)\s*\)$/ ) {
+                /\(\s*($RE{delimited}{-delim=>q{'"}}{-keep})(.*?)\s*\)$/s ) {
 
             $str = substr( $1, 1, -1 );       # $str comes before $vars now
             $vars = $9;
@@ -198,7 +198,8 @@ sub update {
         my $msghdr = "";
         $msghdr .= shift @lines while ( $lines[0] && $lines[0] !~ /^msgid/ );
         
-        my $msgid  = shift @lines;
+        my $msgid  = "";
+        $msgid .= shift @lines while ( $lines[0] && $lines[0] =~ /^(msgid|")/ );
         my $msgstr = "";
         $msgstr .= shift @lines while ( $lines[0] && $lines[0] =~ /^(msgstr|")/ );
 

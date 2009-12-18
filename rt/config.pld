@@ -6,7 +6,7 @@ sysconfdir=${prefix}/etc
 mandir=${prefix}/man
 libdir=${prefix}/lib
 datadir=${prefix}/share
-(test "x$htmldir" = "xNONE" || test "x$htmldir" = "x") && htmldir=${datadir}/html
+htmldir=${datadir}/html
 (test "x$manualdir" = "xNONE" || test "x$manualdir" = "x") && manualdir=${datadir}/doc
 localstatedir=${prefix}/var
 (test "x$logfiledir" = "xNONE" || test "x$logfiledir" = "x") && logfiledir=${localstatedir}/log

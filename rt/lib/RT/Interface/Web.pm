@@ -2,7 +2,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -24,7 +24,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301 or visit their web page on the internet at
-# http://www.gnu.org/copyleft/gpl.html.
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -153,7 +153,12 @@ sub WebExternalAutoInfo {
 
     my %user_info;
 
-    $user_info{'Privileged'} = 1;
+    # default to making Privileged users, even if they specify
+    # some other default Attributes
+    if (!$RT::AutoCreate ||
+        ( ref($RT::AutoCreate) && not exists $RT::AutoCreate->{Privileged})) {
+        $user_info{'Privileged'} = 1;
+    }
 
     if ($^O !~ /^(?:riscos|MacOS|MSWin32|dos|os2)$/) {
         # Populate fields with information from Unix /etc/passwd

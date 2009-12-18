@@ -1,9 +1,15 @@
 #!/usr/bin/perl
-# BEGIN LICENSE BLOCK
+# BEGIN BPS TAGGED BLOCK {{{
 # 
-# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+# COPYRIGHT:
+#  
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+#                                          <jesse@bestpractical.com>
 # 
-# (Except where explictly superceded by other copyright notices)
+# (Except where explicitly superseded by other copyright notices)
+# 
+# 
+# LICENSE:
 # 
 # This work is made available to you under the terms of Version 2 of
 # the GNU General Public License. A copy of that license should have
@@ -15,108 +21,85 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # General Public License for more details.
 # 
-# Unless otherwise specified, all modifications, corrections or
-# extensions to this work which alter its source code become the
-# property of Best Practical Solutions, LLC when submitted for
-# inclusion in the work.
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
 # 
 # 
-# END LICENSE BLOCK
-
+# CONTRIBUTION SUBMISSION POLICY:
+# 
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+# 
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+# 
+# END BPS TAGGED BLOCK }}}
 use strict;
 
 BEGIN {
-    $ENV{'PATH'}   = '/bin:/usr/bin';                      # or whatever you need
+    $ENV{'PATH'}   = '/bin:/usr/bin';                     # or whatever you need
     $ENV{'CDPATH'} = '' if defined $ENV{'CDPATH'};
     $ENV{'SHELL'}  = '/bin/sh' if defined $ENV{'SHELL'};
     $ENV{'ENV'}    = '' if defined $ENV{'ENV'};
     $ENV{'IFS'}    = '' if defined $ENV{'IFS'};
-    
+
+    use CGI qw(-private_tempfiles);    #bring this in before mason, to make sure we
+                                   #set private_tempfiles
+
+    die "RT does not support mod_perl 1.99. Please upgrade to mod_perl 2.0"
+      if $ENV{'MOD_PERL'}
+      and $ENV{'MOD_PERL'} =~ m{mod_perl/(?:1\.9)};
+
 }
 
-use lib ("/opt/rt3/local/lib", "/opt/rt3/lib");
+use lib ( "/opt/rt3/local/lib", "/opt/rt3/lib" );
 use RT;
 
 package RT::Mason;
 
-use CGI qw(-private_tempfiles);    #bring this in before mason, to make sure we
-                                   #set private_tempfiles
-
-BEGIN {
-    if ($mod_perl::VERSION >= 1.9908) {
-	require Apache::RequestUtil;
-	no warnings 'redefine';
-	my $sub = *Apache::request{CODE};
-	*Apache::request = sub {
-	    my $r;
-	    eval { $r = $sub->('Apache'); };
-	    # warn $@ if $@;
-	    return $r;
-	};
-    }
-    if ($CGI::MOD_PERL) {
-	require HTML::Mason::ApacheHandler;
-    }
-    else {
-	require HTML::Mason::CGIHandler;
-    }
-}
-
-use HTML::Mason;                   # brings in subpackages: Parser, Interp, etc.
-
-use vars qw($Nobody $SystemUser $r);
+use vars qw($Nobody $SystemUser $Handler $r);
 
 #This drags in RT's config.pm
-RT::LoadConfig();
+BEGIN {
+    RT::LoadConfig();
+    if ($RT::DevelMode) { require Module::Refresh; }
+}
 
-use Carp;
 
 {
+
     package HTML::Mason::Commands;
     use vars qw(%session);
-
-    use RT::Tickets;
-    use RT::Transactions;
-    use RT::Users;
-    use RT::CurrentUser;
-    use RT::Templates;
-    use RT::Queues;
-    use RT::ScripActions;
-    use RT::ScripConditions;
-    use RT::Scrips;
-    use RT::Groups;
-    use RT::GroupMembers;
-    use RT::CustomFields;
-    use RT::CustomFieldValues;
-    use RT::TicketCustomFieldValues;
-
-    use RT::Interface::Web;
-    use MIME::Entity;
-    use Text::Wrapper;
-    use CGI::Cookie;
-    use Time::ParseDate;
-    use HTML::Entities;
 }
 
+use RT::Interface::Web;
+use RT::Interface::Web::Handler;
+$Handler = RT::Interface::Web::Handler->new(@RT::MasonParameters);
 
-# Activate the following if running httpd as root (the normal case).
-# Resets ownership of all files created by Mason at startup.
-# Note that mysql uses DB for sessions, so there's no need to do this.
-unless ($RT::DatabaseType =~ /(mysql|Pg)/) {
-    # Clean up our umask to protect session files
-    umask(0077);
-
-if ( $CGI::MOD_PERL)  {
-    chown( Apache->server->uid, Apache->server->gid, [$RT::MasonSessionDir] )
-	if Apache->server->can('uid');
-        }
-    # Die if WebSessionDir doesn't exist or we can't write to it
-    stat($RT::MasonSessionDir);
-    die "Can't read and write $RT::MasonSessionDir"
-	unless ( ( -d _ ) and ( -r _ ) and ( -w _ ) );
+if ($ENV{'MOD_PERL'} && !$RT::DevelMode) {
+    # Under static_source, we need to purge the component cache
+    # each time we restart, so newer components may be reloaded.
+    #
+    # We can't do this in FastCGI or we'll blow away the component root _every_ time a new server starts
+    # which happens every few hits.
+    
+    use File::Path qw( rmtree );
+    use File::Glob qw( bsd_glob );
+    my @files = bsd_glob("$RT::MasonDataDir/obj/*");
+    rmtree([ @files ], 0, 1) if @files;
 }
-
-my $ah = &RT::Interface::Web::NewApacheHandler(@RT::MasonParameters) if $CGI::MOD_PERL;
 
 sub handler {
     ($r) = @_;
@@ -124,24 +107,30 @@ sub handler {
     local $SIG{__WARN__};
     local $SIG{__DIE__};
 
-    RT::Init();
+    if ($r->content_type =~ m/^httpd\b.*\bdirectory/i) {
+        use File::Spec::Unix;
+        # Our DirectoryIndex is always index.html, regardless of httpd settings
+        $r->filename( File::Spec::Unix->catfile( $r->filename, 'index.html' ) );
+    }
+#    elsif (defined( $r->content_type )) {
+        #$r->content_type !~ m!(^text/|\bxml\b)!i or return -1;
+#    }
 
-    # We don't need to handle non-text items
-    return -1 if defined( $r->content_type ) && $r->content_type !~ m|^text/|io;
+    Module::Refresh->refresh if $RT::DevelMode;
+
+    RT::Init();
 
     my %session;
     my $status;
-    eval { $status = $ah->handle_request($r) };
+    eval { $status = $Handler->handle_request($r) };
     if ($@) {
-	$RT::Logger->crit($@);
+        $RT::Logger->crit($@);
     }
 
-    undef (%session);
+    undef(%session);
 
-    if ($RT::Handle->TransactionDepth) {
-	$RT::Handle->ForceRollback;
-    	$RT::Logger->crit("Transaction not committed. Usually indicates a software fault. Data loss may have occurred") ;
-    }
+    RT::Interface::Web::Handler->CleanupRequest();
+
     return $status;
 }
 

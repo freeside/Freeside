@@ -1,9 +1,15 @@
 #!/usr/bin/perl -w
-# BEGIN LICENSE BLOCK
+# BEGIN BPS TAGGED BLOCK {{{
 # 
-# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+# COPYRIGHT:
+#  
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+#                                          <jesse@bestpractical.com>
 # 
-# (Except where explictly superceded by other copyright notices)
+# (Except where explicitly superseded by other copyright notices)
+# 
+# 
+# LICENSE:
 # 
 # This work is made available to you under the terms of Version 2 of
 # the GNU General Public License. A copy of that license should have
@@ -15,19 +21,37 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # General Public License for more details.
 # 
-# Unless otherwise specified, all modifications, corrections or
-# extensions to this work which alter its source code become the
-# property of Best Practical Solutions, LLC when submitted for
-# inclusion in the work.
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 or visit their web page on the internet at
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
 # 
 # 
-# END LICENSE BLOCK
-
+# CONTRIBUTION SUBMISSION POLICY:
+# 
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+# 
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+# 
+# END BPS TAGGED BLOCK }}}
 use strict;
 use vars qw($PROMPT $VERSION $Handle $Nobody $SystemUser $item);
 use vars
-  qw(@Groups @Users @ACL @Queues @ScripActions @ScripConditions @Templates @CustomFields @Scrips);
+  qw(@Groups @Users @ACL @Queues @ScripActions @ScripConditions @Templates @CustomFields @Scrips @Attributes);
 
+use lib "/opt/rt3/local/lib";
 use lib "/opt/rt3/lib";
 
 #This drags in  RT's config.pm
@@ -60,6 +84,11 @@ GetOptions(
     'datadir=s'
 );
 
+unless ( $args{'action'} ) {
+    help();
+    exit(-1);
+}
+
 $| = 1;    #unbuffer that output.
 
 require RT::Handle;
@@ -72,29 +101,50 @@ if ( $args{'prompt-for-dba-password'} ) {
     chomp( $args{'dba-password'} );
 }
 
-unless ( $args{'action'} ) {
-    help();
-    die;
-}
 if ( $args{'action'} eq 'init' ) {
     $dbh = DBI->connect( get_system_dsn(), $args{'dba'}, $args{'dba-password'} )
       || die "Failed to connect to " . get_system_dsn() . " as $args{'dba'}: $DBI::errstr";
     print "Now creating a database for RT.\n";
-    if ($RT::DatabaseType ne 'Oracle' ||
-        $args{'dba'} ne $RT::DatabaseUser) {
-    create_db();
+    if ( $RT::DatabaseType ne 'Oracle' || $args{'dba'} ne $RT::DatabaseUser ) {
+        create_db();
     } else {
         print "...skipped as ".$args{'dba'} ." is not " . $RT::DatabaseUser . " or we're working with Oracle.\n";
     }
 
-    $dbh->disconnect;
-    $dbh = DBI->connect( $Handle->DSN, $args{'dba'}, $args{'dba-password'} )
-      || die $DBI::errstr;
+    if ( $RT::DatabaseType eq "mysql" ) {
+        # Check which version we're running
+        my ($version) = $dbh->selectrow_hashref("show variables like 'version'")->{Value} =~ /^(\d\.\d+)/;
+        print "*** Warning: RT is unsupported on MySQL versions before 4.0.x\n" if $version < 4;
 
+        # MySQL must have InnoDB support
+        my $innodb = $dbh->selectrow_hashref("show variables like 'have_innodb'")->{Value};
+        if ( $innodb eq "NO" ) {
+            die "RT requires that MySQL be compiled with InnoDB table support.\n".
+              "See http://dev.mysql.com/doc/mysql/en/InnoDB.html\n";
+        } elsif ( $innodb eq "DISABLED" ) {
+            die "RT requires that MySQL InnoDB table support be enabled.\n".
+              ($version < 4
+               ? "Add 'innodb_data_file_path=ibdata1:10M:autoextend' to the [mysqld] section of my.cnf\n"
+               : "Remove the 'skip-innodb' line from your my.cnf file, restart MySQL, and try again.\n");
+        }
+    }
+
+    # SQLite can't deal with the disconnect/reconnect
+    unless ( $RT::DatabaseType eq 'SQLite' ) {
+
+        $dbh->disconnect;
+
+        if ( $RT::DatabaseType eq "Oracle" ) {
+            $RT::DatabasePassword = $RT::DatabasePassword; #Warning avidance
+            $dbh = DBI->connect( $Handle->DSN, ${RT::DatabaseUser}, ${RT::DatabasePassword} ) || die $DBI::errstr;
+        } else {	
+            $dbh = DBI->connect( $Handle->DSN, $args{'dba'}, $args{'dba-password'} ) || die $DBI::errstr;
+        }
+    }
     print "Now populating database schema.\n";
     insert_schema();
     print "Now inserting database ACLs\n";
-    insert_acl() unless ($RT::DatabaseType eq 'Oracle');
+    insert_acl() unless $RT::DatabaseType eq 'Oracle';
     print "Now inserting RT core system objects\n";
     insert_initial_data();
     print "Now inserting RT data\n";
@@ -102,47 +152,52 @@ if ( $args{'action'} eq 'init' ) {
 }
 elsif ( $args{'action'} eq 'drop' ) {
     unless ( $dbh =
-         DBI->connect( get_system_dsn(), $args{'dba'}, $args{'dba-password'} ) )
+        DBI->connect( get_system_dsn(), $args{'dba'}, $args{'dba-password'} ) )
     {
         warn $DBI::errstr;
         warn "Database doesn't appear to exist. Aborting database drop.";
-        exit(0);
+        exit;
     }
     drop_db();
 }
 elsif ( $args{'action'} eq 'insert' ) {
-    insert_data( $args{'datafile'} );
+    insert_data( $args{'datafile'} || ($args{'datadir'}."/content") );
 }
-elsif ($args{'action'} eq 'acl') {
+elsif ( $args{'action'} eq 'acl' ) {
     $dbh = DBI->connect( $Handle->DSN, $args{'dba'}, $args{'dba-password'} )
       || die "Failed to connect to " . get_system_dsn() . " as $args{'dba'}: $DBI::errstr";
-     insert_acl($args{'datadir'});
+    insert_acl($args{'datadir'});
 }
-elsif ($args{'action'} eq 'schema') {
+elsif ( $args{'action'} eq 'schema' ) {
     $dbh = DBI->connect( $Handle->DSN, $args{'dba'}, $args{'dba-password'} )
       || die "Failed to connect to " . get_system_dsn() . " as $args{'dba'}: $DBI::errstr";
-        insert_schema($args{'datadir'});
+    insert_schema($args{'datadir'});
 }
-
 else {
-    print STDERR '$0 called with an invalid --action parameter';
+    print STDERR "$0 called with an invalid --action parameter\n";
     exit(-1);
 }
 
 # {{{ sub insert_schema
 sub insert_schema {
-        my $base_path = (shift || $RT::EtcPath);
+    my $base_path = (shift || $RT::EtcPath);
     my (@schema);
     print "Creating database schema.\n";
 
-    if ( -f $base_path . "/schema." . $RT::DatabaseType ) {
-	no warnings 'unopened';
+    my $schema_file = $base_path . "/schema." . $RT::DatabaseType;
+    if ( -f $schema_file ) {
+        open( SCHEMA, "<$schema_file"  ) or die "Can't open $schema_file: $!";
+	my @lines = <SCHEMA>;
 
-        open( SCHEMA, "<" . $base_path . "/schema." . $RT::DatabaseType );
-        open( SCHEMA_LOCAL, "<" . $RT::LocalEtcPath . "/schema." . $RT::DatabaseType );
+	my $local_schema_file = $RT::LocalEtcPath . "/schema." . $RT::DatabaseType;
+	if (-f $local_schema_file) {
+	    open( SCHEMA_LOCAL, "<$local_schema_file" )
+		or die "Can't open $local_schema_file: $!";
+	    push @lines, ';;', <SCHEMA_LOCAL>;
+	}
 
         my $statement = "";
-        foreach my $line (<SCHEMA>, ($_ = ';;'), <SCHEMA_LOCAL>) {
+        foreach my $line (@lines) {
             $line =~ s/\#.*//g;
             $line =~ s/--.*//g;
             $statement .= $line;
@@ -153,40 +208,40 @@ sub insert_schema {
             }
         }
 
-	local $SIG{__WARN__} = sub {};
-	my $is_local = 0; # local/etc/schema needs to be nonfatal. 
+        local $SIG{__WARN__} = sub {};
+        my $is_local = 0; # local/etc/schema needs to be nonfatal.
+        $dbh->begin_work or die $dbh->errstr;
         foreach my $statement (@schema) {
-	    if ($statement =~ /^\s*;$/) { $is_local = 1; next; }
+            if ( $statement =~ /^\s*;$/ ) { $is_local = 1; next; }
+
             print STDERR "SQL: $statement\n" if defined $args{'debug'};
             my $sth = $dbh->prepare($statement) or die $dbh->errstr;
             unless ( $sth->execute or $is_local ) {
                 die "Problem with statement:\n $statement\n" . $sth->errstr;
             }
         }
-
+        $dbh->commit or die $dbh->errstr;
     }
     else {
         die "Couldn't find schema file for " . $RT::DatabaseType . "\n";
     }
-    print "schema sucessfully inserted\n";
-
+    print "Done setting up database schema.\n";
 }
 
 # }}}
 
 # {{{ sub drop_db
 sub drop_db {
-    return if ( $RT::DatabaseType eq 'SQLite' );
     if ( $RT::DatabaseType eq 'Oracle' ) {
         print <<END;
 
-To delete the tables and sequences of the RT Oracle database by running 
-    \@etc/drop.Oracle 
+To delete the tables and sequences of the RT Oracle database by running
+    \@etc/drop.Oracle
 through SQLPlus.
 
 END
         return;
-    }	
+    }
     unless ( $args{'force'} ) {
         print <<END;
 
@@ -200,6 +255,10 @@ END
 
     print "Dropping $RT::DatabaseType database $RT::DatabaseName.\n";
 
+    if ( $RT::DatabaseType eq 'SQLite' ) {
+        unlink $RT::DatabaseName or warn $!;
+        return;
+    }
     $dbh->do("Drop DATABASE $RT::DatabaseName") or warn $DBI::errstr;
 }
 
@@ -213,15 +272,15 @@ sub create_db {
     }
     elsif ( $RT::DatabaseType eq 'Pg' ) {
         $dbh->do("CREATE DATABASE $RT::DatabaseName WITH ENCODING='UNICODE'");
-        if ($DBI::errstr) {
+        if ( $DBI::errstr ) {
             $dbh->do("CREATE DATABASE $RT::DatabaseName") || die $DBI::errstr;
         }
     }
-    elsif ($RT::DatabaseType eq 'Oracle') {
+    elsif ( $RT::DatabaseType eq 'Oracle' ) {
         insert_acl();
     }
     elsif ( $RT::DatabaseType eq 'Informix' ) {
-	$ENV{DB_LOCALE} = 'en_us.utf8';
+        $ENV{DB_LOCALE} = 'en_us.utf8';
         $dbh->do("CREATE DATABASE $RT::DatabaseName WITH BUFFERED LOG");
     }
     else {
@@ -232,20 +291,19 @@ sub create_db {
 # }}}
 
 sub get_dba_password {
-    print
-"In order to create a new database and grant RT access to that database,\n";
+    print "In order to create or update your RT database,";
     print "this script needs to connect to your "
       . $RT::DatabaseType
       . " instance on "
       . $RT::DatabaseHost . " as "
       . $args{'dba'} . ".\n";
-    print
-"Please specify that user's database password below. If the user has no database\n";
+    print "Please specify that user's database password below. If the user has no database\n";
     print "password, just press return.\n\n";
     print "Password: ";
     ReadMode('noecho');
     my $password = ReadLine(0);
     ReadMode('normal');
+    print "\n";
     return ($password);
 }
 
@@ -260,8 +318,7 @@ sub _yesno {
 
 # {{{ insert_acls
 sub insert_acl {
-
-        my $base_path = (shift || $RT::EtcPath);
+    my $base_path = (shift || $RT::EtcPath);
 
     if ( $RT::DatabaseType =~ /^oracle$/i ) {
         do $base_path . "/acl.Oracle"
@@ -272,11 +329,15 @@ sub insert_acl {
     }
     elsif ( $RT::DatabaseType =~ /^mysql$/i ) {
         do $base_path . "/acl.mysql"
-          || die "Couldn't find ACLS for mysql in " . $RT::EtcPath . "\n" . $@;
+          || die "Couldn't find ACLS for mysql in $base_path\n" . $@;
+    }
+    elsif ( $RT::DatabaseType =~ /^Sybase$/i ) {
+        do $base_path . "/acl.Sybase"
+          || die "Couldn't find ACLS for Sybase in $base_path\n" . $@;
     }
     elsif ( $RT::DatabaseType =~ /^informix$/i ) {
         do $base_path . "/acl.Informix"
-          || die "Couldn't find ACLS for Informix in " . $RT::EtcPath . "\n" . $@;
+          || die "Couldn't find ACLS for Informix in $base_path\n" . $@;
     }
     elsif ( $RT::DatabaseType =~ /^SQLite$/i ) {
         return;
@@ -293,6 +354,7 @@ sub insert_acl {
             die "Problem with statement:\n $statement\n" . $sth->errstr;
         }
     }
+    print "Done setting up database ACLs.\n";
 }
 
 # }}}
@@ -318,8 +380,8 @@ sub get_system_dsn {
         $dsn =~ s/dbname=$RT::DatabaseName/dbname=template1/;
     }
     elsif ( $RT::DatabaseType eq 'Informix' ) {
-	# with Informix, you want to connect sans database:
-	$dsn =~ s/Informix:$RT::DatabaseName/Informix:/;
+        # with Informix, you want to connect sans database:
+        $dsn =~ s/Informix:$RT::DatabaseName/Informix:/;
     }
     return $dsn;
 }
@@ -336,7 +398,7 @@ sub insert_initial_data {
     #Put together a current user object so we can create a User object
     my $CurrentUser = new RT::CurrentUser();
 
-    print "Checking for existing system user ($CurrentUser)...";
+    print "Checking for existing system user...";
     my $test_user = RT::User->new($CurrentUser);
     $test_user->Load('RT_System');
     if ( $test_user->id ) {
@@ -357,14 +419,16 @@ sub insert_initial_data {
         RealName => 'The RT System itself',
         Comments =>
 'Do not delete or modify this user. It is integral to RT\'s internal database structures',
-        Creator => '1' );
+        Creator => '1',
+        LastUpdatedBy => '1',
+    );
 
-    unless ($val) {
+    unless ( $val ) {
         print "$msg\n";
-        exit(1);
+        exit(-1);
     }
     print "done.\n";
-    $RT::Handle->Disconnect();
+    $RT::Handle->Disconnect() unless $RT::DatabaseType eq 'SQLite';
 
 }
 
@@ -391,6 +455,7 @@ sub insert_data {
                              ObjectType    => 'RT::System',
                              ObjectId      => '1' );
 
+        print "done.\n";
     }
 
     # Slurp in stuff to insert from the datafile. Possible things to go in here:-
@@ -399,75 +464,78 @@ sub insert_data {
     require $datafile
       || die "Couldn't find initial data for import\n" . $@;
 
-    if (@Groups) {
+    if ( @Groups ) {
         print "Creating groups...";
         foreach $item (@Groups) {
             my $new_entry = RT::Group->new($CurrentUser);
             my ( $return, $msg ) = $new_entry->_Create(%$item);
-            print "(Error: $msg)" unless ($return);
+            print "(Error: $msg)" unless $return;
             print $return. ".";
         }
         print "done.\n";
     }
-    if (@Users) {
+    if ( @Users ) {
         print "Creating users...";
         foreach $item (@Users) {
             my $new_entry = new RT::User($CurrentUser);
             my ( $return, $msg ) = $new_entry->Create(%$item);
-            print "(Error: $msg)" unless ($return);
+            print "(Error: $msg)" unless $return;
             print $return. ".";
         }
         print "done.\n";
     }
-    if (@Queues) {
+    if ( @Queues ) {
         print "Creating queues...";
         for $item (@Queues) {
             my $new_entry = new RT::Queue($CurrentUser);
             my ( $return, $msg ) = $new_entry->Create(%$item);
-            print "(Error: $msg)" unless ($return);
+            print "(Error: $msg)" unless $return;
             print $return. ".";
         }
         print "done.\n";
     }
-    if (@ACL) {
+    if ( @ACL ) {
         print "Creating ACL...";
         for my $item (@ACL) {
 
-	    my ($princ, $object);
+            my ($princ, $object);
 
-	    # Global rights or Queue rights?
-	    if ($item->{'Queue'}) {
+            # Global rights or Queue rights?
+            if ( $item->{'Queue'} ) {
                 $object = RT::Queue->new($CurrentUser);
                 $object->Load( $item->{'Queue'} );
-	    } else {
-		$object = $RT::System;
-	    }
+            } else {
+                $object = $RT::System;
+            }
 
-	    # Group rights or user rights?
-	    if ($item->{'GroupDomain'}) {
+            # Group rights or user rights?
+            if ( $item->{'GroupDomain'} ) {
                 $princ = RT::Group->new($CurrentUser);
-	        if ($item->{'GroupDomain'} eq 'UserDefined') {
+                if ( $item->{'GroupDomain'} eq 'UserDefined' ) {
                   $princ->LoadUserDefinedGroup( $item->{'GroupId'} );
-	        } elsif ($item->{'GroupDomain'} eq 'SystemInternal') {
+                } elsif ( $item->{'GroupDomain'} eq 'SystemInternal' ) {
                   $princ->LoadSystemInternalGroup( $item->{'GroupType'} );
-	        } elsif ($item->{'GroupDomain'} eq 'RT::Queue-Role' &&
-			 $item->{'Queue'}) {
+                } elsif ( $item->{'GroupDomain'} eq 'RT::System-Role' ) {
+                  $princ->LoadSystemRoleGroup( $item->{'GroupType'} );
+                } elsif ( $item->{'GroupDomain'} eq 'RT::Queue-Role' &&
+                          $item->{'Queue'} )
+                {
                   $princ->LoadQueueRoleGroup( Type => $item->{'GroupType'},
-					      Queue => $object->id);
-	        } else {
+                                              Queue => $object->id);
+                } else {
                   $princ->Load( $item->{'GroupId'} );
-	        }
-	    } else {
-		$princ = RT::User->new($CurrentUser);
-		$princ->Load( $item->{'UserId'} );
-	    }
+                }
+            } else {
+                $princ = RT::User->new($CurrentUser);
+                $princ->Load( $item->{'UserId'} );
+            }
 
-	    # Grant it
-	    my ( $return, $msg ) = $princ->PrincipalObj->GrantRight(
+            # Grant it
+            my ( $return, $msg ) = $princ->PrincipalObj->GrantRight(
                                                      Right => $item->{'Right'},
                                                      Object => $object );
 
-            if ($return) {
+            if ( $return ) {
                 print $return. ".";
             }
             else {
@@ -478,65 +546,68 @@ sub insert_data {
         }
         print "done.\n";
     }
-    if (@CustomFields) {
+    if ( @CustomFields ) {
         print "Creating custom fields...";
         for $item (@CustomFields) {
             my $new_entry = new RT::CustomField($CurrentUser);
             my $values    = $item->{'Values'};
             delete $item->{'Values'};
-            my $q     = $item->{'Queue'};
-            my $q_obj = RT::Queue->new($CurrentUser);
-            $q_obj->Load($q);
-            if ( $q_obj->Id ) {
-                $item->{'Queue'} = $q_obj->Id;
-            }
-            elsif ( $q == 0 ) {
-                $item->{'Queue'} = 0;
-            }
-            else {
-                print "(Error: Could not find queue " . $q . ")\n"
-                  unless ( $q_obj->Id );
+            my ( $return, $msg ) = $new_entry->Create(%$item);
+            unless( $return ) {
+                print "(Error: $msg)\n";
                 next;
             }
-            my ( $return, $msg ) = $new_entry->Create(%$item);
 
             foreach my $value ( @{$values} ) {
                 my ( $eval, $emsg ) = $new_entry->AddValue(%$value);
-                print "(Error: $emsg)\n" unless ($eval);
+                print "(Error: $emsg)\n" unless $eval;
             }
 
-            print "(Error: $msg)\n" unless ($return);
+            if ( $item->{LookupType} && !exists $item->{'Queue'} ) { # enable by default
+                my $ocf = RT::ObjectCustomField->new($CurrentUser);
+                $ocf->Create( CustomField => $new_entry->Id );
+            }
+
+            print "(Error: $msg)\n" unless $return;
             print $return. ".";
         }
 
         print "done.\n";
     }
 
-    if (@ScripActions) {
+    if ( @ScripActions ) {
         print "Creating ScripActions...";
 
         for $item (@ScripActions) {
             my $new_entry = RT::ScripAction->new($CurrentUser);
-            my $return    = $new_entry->Create(%$item);
+            my ($return,$msg) = $new_entry->Create(%$item);
+            unless ($return) {
+                print "(Error: $msg)\n";
+                next;
+            }
             print $return. ".";
         }
 
         print "done.\n";
     }
 
-    if (@ScripConditions) {
+    if ( @ScripConditions ) {
         print "Creating ScripConditions...";
 
         for $item (@ScripConditions) {
             my $new_entry = RT::ScripCondition->new($CurrentUser);
-            my $return    = $new_entry->Create(%$item);
+            my ($return,$msg) = $new_entry->Create(%$item);
+            unless ($return) {
+                print "(Error: $msg)\n";
+                next;
+            }
             print $return. ".";
         }
 
         print "done.\n";
     }
 
-    if (@Templates) {
+    if ( @Templates ) {
         print "Creating templates...";
 
         for $item (@Templates) {
@@ -546,13 +617,13 @@ sub insert_data {
         }
         print "done.\n";
     }
-    if (@Scrips) {
+    if ( @Scrips ) {
         print "Creating scrips...";
 
         for $item (@Scrips) {
             my $new_entry = new RT::Scrip($CurrentUser);
             my ( $return, $msg ) = $new_entry->Create(%$item);
-            if ($return) {
+            if ( $return ) {
                 print $return. ".";
             }
             else {
@@ -561,8 +632,25 @@ sub insert_data {
         }
         print "done.\n";
     }
-    $RT::Handle->Disconnect();
+    if ( @Attributes ) {
+        print "Creating predefined searches...";
+        my $sys = RT::System->new($CurrentUser);
 
+        for $item (@Attributes) {
+            my $obj = delete $item->{Object}; # XXX: make this something loadable
+            $obj ||= $sys;
+            my ( $return, $msg ) = $obj->AddAttribute (%$item);
+            if ( $return ) {
+                print $return. ".";
+            }
+            else {
+                print "(Error: $msg)\n";
+            }
+        }
+        print "done.\n";
+    }
+    $RT::Handle->Disconnect() unless $RT::DatabaseType eq 'SQLite';
+    print "Done setting up database content.\n";
 }
 
 =head2 ACLEquivGroupId
@@ -587,17 +675,17 @@ sub help {
 $0: Set up RT's database
 
 --action        init    Initialize the database
-                drop    Drop the database. 
+                drop    Drop the database.
                         This will ERASE ALL YOUR DATA
-                insert  Insert data into RT's database. 
+                insert  Insert data into RT's database.
                         By default, will use RT's installation data.
                         To use a local or supplementary datafile, specify it
                         using the '--datafile' option below.
-                        
+
                 acl     Initialize only the database ACLs
                         To use a local or supplementary datafile, specify it
                         using the '--datadir' option below.
-                        
+
                 schema  Initialize only the database schema
                         To use a local or supplementary datafile, specify it
                         using the '--datadir' option below.

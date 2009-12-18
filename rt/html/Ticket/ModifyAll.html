@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -24,7 +24,7 @@
 %# along with this program; if not, write to the Free Software
 %# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 %# 02110-1301 or visit their web page on the internet at
-%# http://www.gnu.org/copyleft/gpl.html.
+%# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -72,7 +72,7 @@
 
 
 <&| /Widgets/TitleBox, title => loc('People') &>
-<& Elements/EditPeople, Ticket => $Ticket, UserField => $UserField, UserString => $UserString, UserOp => $UserOp &>
+<& Elements/EditPeople, Ticket => $Ticket, UserField => $UserField, UserString => $UserString, UserOp => $UserOp, GroupString => $GroupString, GroupOp => $GroupOp, GroupField => $GroupField &>
 </&>
 
 <br />
@@ -150,7 +150,7 @@ $CanComment = 1 if ( $Ticket->CurrentUserHasRight('CommentOnTicket') or
 $m->comp('/Elements/Callback', TicketObj => $Ticket, ARGSRef => \%ARGS);
 my (@wresults, @results,  @dresults, @lresults, @cf_results);
 
-unless ($OnlySearchForPeople) {
+unless ($OnlySearchForPeople or $OnlySearchForGroup ) {
     # There might be two owners. 
     if ( ref ($ARGS{'Owner'} )) {
         my @owners =@{$ARGS{'Owner'}};
@@ -213,9 +213,13 @@ unless ($Ticket->CurrentUserHasRight('ShowTicket')) {
 
 <%ARGS>
 $OnlySearchForPeople => undef
+$OnlySearchForGroup => undef
 $UserField => undef
 $UserOp => undef
 $UserString => undef
+$GroupString => undef
+$GroupOp => undef
+$GroupField => undef
 $id => undef
 </%ARGS>
 

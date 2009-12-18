@@ -360,6 +360,13 @@ Set($LogoURL , $WebImagesURL . "bplogo.gif");
 Set($WebNoAuthRegex, qr!^(?:/+NoAuth/|
                             /+REST/\d+\.\d+/NoAuth/)!x );
 
+# SelfServiceRegex - What portion of RT's URLspace should
+# be accessible to Unprivileged users
+# This does not override the redirect from /Ticket/Display.html
+# to /SelfService/Display.html when Unprivileged
+# users attempt to access ticked displays
+Set($SelfServiceRegex, qr!^(?:/+SelfService/)!x );
+
 # For message boxes, set the entry box width and what type of wrapping
 # to use.
 #
@@ -413,6 +420,13 @@ Set($WebExternalGecos , undef);
 # upon login, if it's missing in the Users table.
 
 Set($WebExternalAuto , undef);
+
+# If $WebExternalAuto is true, this will be passed to User's
+# Create method.  Use it to set defaults, such as creating 
+# Unprivileged users with { Privileged => 0 }
+# Must be a hashref of arguments
+
+Set($AutoCreate, undef);
 
 # $WebSessionClass is the class you wish to use for managing Sessions.
 # It defaults to use your SQL database, but if you are using MySQL 3.x and
@@ -542,8 +556,11 @@ Set($EmailOutputEncoding , 'utf-8');
 
 Set($DateDayBeforeMonth , 1);
 
-# Should "Tuesday" default to meaning "Next Tuesday" or "Last Tuesday"?
-# Set to 0 for "Next" or 1 for "Last".
+# Should an unspecified day or year in a date refer to a future or a
+# past value? For example, should a date of "Tuesday" default to mean
+# the date for next Tuesday or last Tuesday? Should the date "March 1"
+# default to the date for next March or last March?
+# Set to 0 for the next date or 1 for the last date.
 
 Set($AmbiguousDayInPast , 1);
 

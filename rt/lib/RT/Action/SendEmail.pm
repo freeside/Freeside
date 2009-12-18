@@ -2,7 +2,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -24,7 +24,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301 or visit their web page on the internet at
-# http://www.gnu.org/copyleft/gpl.html.
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -352,6 +352,7 @@ sub OutputMIMEObject {
     }
     else {
         my @mailer_args = ($RT::MailCommand);
+        my $method = 'send';
 
         local $ENV{MAILADDRESS};
 
@@ -360,14 +361,15 @@ sub OutputMIMEObject {
         }
         elsif ( $RT::MailCommand eq 'smtp' ) {
             $ENV{MAILADDRESS} = $RT::SMTPFrom || $MIMEObj->head->get('From');
-            push @mailer_args, ( Server => $RT::SMTPServer );
-            push @mailer_args, ( Debug  => $RT::SMTPDebug );
+            push @mailer_args, ( Host  => $RT::SMTPServer );
+            push @mailer_args, ( Debug => $RT::SMTPDebug );
+            $method = 'smtpsend';
         }
         else {
             push @mailer_args, $RT::MailParams;
         }
 
-        unless ( $MIMEObj->send(@mailer_args) ) {
+        unless ( $MIMEObj->$method(@mailer_args) ) {
             $RT::Logger->crit( $msgid . "Could not send mail." );
             return (0);
         }
