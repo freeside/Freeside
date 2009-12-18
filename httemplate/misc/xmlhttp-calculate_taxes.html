@@ -87,6 +87,7 @@ if ( $sub eq 'calculate_taxes' ) {
       foreach my $location ( @{$taxline->cust_bill_pkg_tax_location}, @{$taxline->cust_bill_pkg_tax_rate_location} ) {
         my $taxlocnum = $location->locationnum || '';
         my $taxratelocnum = $location->taxratelocationnum || '';
+        $location->cust_bill_pkg_desc($taxline->desc); #ugh @ that kludge
         push @taxlines,
           [ $location->desc, $taxline->setup, $taxlocnum, $taxratelocnum ];
         $amount -= $location->amount;

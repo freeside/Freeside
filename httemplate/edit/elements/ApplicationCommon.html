@@ -86,6 +86,20 @@ Examples:
 <BR>
 
 <SCRIPT TYPE="text/javascript">
+function clear_amounts() {
+  var rownum=0
+  var table = document.getElementById('ApplicationTable');
+  for (var row = 2; table.rows[row]; row++)
+  {
+    var inputs = table.rows[row].getElementsByTagName('input');
+    if ( !inputs.length ) {
+      break;
+    }
+    inputs.item(0).value = ''; // amount
+  }
+
+}
+
 function changed(what) {
   dst = what.options[what.selectedIndex].value;
 
@@ -93,6 +107,7 @@ function changed(what) {
     what.form.submit.disabled=true;
 %if ($src_pkey eq 'crednum') {
     what.form.tax_button.disabled=true;
+    what.form.clear_button.disabled=true;
 %}
     return true;
   }
@@ -100,6 +115,7 @@ function changed(what) {
   what.form.submit.disabled=false;
 %if ($src_pkey eq 'crednum') {
   what.form.tax_button.disabled=false;
+  what.form.clear_button.disabled=false;
 %}
 
 % foreach my $dst ( @dst ) {
@@ -184,7 +200,18 @@ function set_amount_color(what) {
 Apply to:
 
 % if ($use_sub_dst_thing && $src_pkey eq 'crednum') {
-<CENTER><BUTTON TYPE="button" NAME="tax_button" ID="tax_button" onClick="do_calculate_tax(this);" DISABLED>Calculate Tax</BUTTON></CENTER>
+<CENTER>
+  <TABLE>
+    <TR>
+      <TD>
+        <BUTTON TYPE="button" NAME="tax_button" ID="tax_button" onClick="do_calculate_tax(this);" DISABLED>Calculate Tax</BUTTON>
+      </TD>
+      <TD>
+        <BUTTON TYPE="button" NAME="clear_button" ID="clear_button" onClick="clear_amounts(this);" DISABLED>Clear Amounts</BUTTON>
+      </TD>
+    </TR>
+  </TABLE>
+</CENTER>
 <% include( '/elements/xmlhttp.html',
             'url' =>  $p.'misc/xmlhttp-calculate_taxes.html',
             'subs' => [ 'calculate_taxes' ],
@@ -198,6 +225,8 @@ function show_taxes(arg) {
   var button = document.getElementById('tax_button');
   button.disabled = false;
   button.innerHTML = 'Calculate Tax';
+  button = document.getElementById('clear_button');
+  button.disabled = false;
 
   var error = argsHash['error'];
 
@@ -256,6 +285,8 @@ function show_taxes(arg) {
 function do_calculate_tax (what) {
   what.innerHTML = 'Calculating....';
   what.disabled = true;
+  var button = document.getElementById('clear_button');
+  button.disabled = true;
   var taxed_items = new Array();
   var table = document.getElementById('ApplicationTable');
   for (var row = 2; table.rows[row]; row++)
@@ -267,7 +298,7 @@ function do_calculate_tax (what) {
     var taxed_item = new Array(
       inputs.item(1).value, // billpkgnum
       inputs.item(3).value, // s_or_r
-      inputs.item(0).value  // amount
+      inputs.item(0).value || 0  // amount
     );
     taxed_items.push(taxed_item);
   }

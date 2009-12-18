@@ -165,7 +165,11 @@ sub desc {
   );
   $location .= ( $location && $self->locationtaxid ) ? ', ' : '';
   $location .= $self->locationtaxid;
-  $self->cust_bill_pkg->desc. " ($location)";
+  my $cust_bill_pkg_desc = $self->billpkgnum
+                         ? $self->cust_bill_pkg->desc
+                         : $self->cust_bill_pkg_desc;
+  "$cust_bill_pkg_desc ($location)";
+
 }
 
 
