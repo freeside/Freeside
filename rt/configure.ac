@@ -3,11 +3,11 @@ dnl
 dnl Process this file with autoconf to produce a configure script
 dnl
 dnl Embed in generated ./configure script the following CVS info:
-AC_REVISION($Revision: 1.1.1.9 $)dnl
+AC_REVISION($Revision: 1.1.1.10 $)dnl
 
 dnl Setup autoconf
 AC_PREREQ(2.53)
-AC_INIT(RT, [3.6.6], [rt-bugs@bestpractical.com])
+AC_INIT(RT, [3.6.10], [rt-bugs@bestpractical.com])
 AC_CONFIG_SRCDIR([lib/RT.pm.in])
 
 dnl Extract RT version number components
@@ -145,11 +145,16 @@ AC_ARG_WITH(db-rt-host,
 AC_SUBST(DB_RT_HOST)
 
 dnl DB_DATABASE_ADMIN
+if test "$DB_TYPE" = "Pg" ; then
+        DB_DBA="postgres"
+else
+        DB_DBA="root"
+fi
 AC_ARG_WITH(db-dba,
 	    AC_HELP_STRING([--with-db-dba=DBA],
-	    		   [name of database administrator (default: root)]),
+	    		   [name of database administrator (default: root or postgres)]),
             DB_DBA=$withval,
-            DB_DBA=root)
+            DB_DBA="$DB_DBA")
 AC_SUBST(DB_DBA)
 
 dnl DB_DATABASE

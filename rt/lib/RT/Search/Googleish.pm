@@ -3,7 +3,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -25,7 +25,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301 or visit their web page on the internet at
-# http://www.gnu.org/copyleft/gpl.html.
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -108,6 +108,13 @@ sub QueryToSQL {
             push @id_clauses, "id = '$key'";
         }
 
+        elsif ($key =~ /^fulltext:(.*?)$/i) {
+            $key = $1;
+            $key =~ s/['\\].*//g;
+            push @tql_clauses, "Content LIKE '$key'";
+
+        }
+
         elsif ( $key =~ /\w+\@\w+/ ) {
             push @user_clauses, "Requestor LIKE '$key'";
         }
@@ -135,13 +142,6 @@ sub QueryToSQL {
             and $User->Privileged )
         {
             push @owner_clauses, "Owner = '" . $User->Name . "'";
-        }
-
-        elsif ($key =~ /^fulltext:(.*?)$/i) {
-            $key = $1;
-            $key =~ s/['\\].*//g;
-            push @tql_clauses, "Content LIKE '$key'";
-
         }
 
         # Else, subject must contain $key

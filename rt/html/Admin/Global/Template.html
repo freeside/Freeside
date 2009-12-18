@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -24,7 +24,7 @@
 %# along with this program; if not, write to the Free Software
 %# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 %# 02110-1301 or visit their web page on the internet at
-%# http://www.gnu.org/copyleft/gpl.html.
+%# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -45,14 +45,13 @@
 %# those contributions and any derivatives thereof.
 %# 
 %# END BPS TAGGED BLOCK }}}
-<& /Admin/Elements/Header, Title => loc("Modify template [_1]", $TemplateObj->id)  &>
+<& /Admin/Elements/Header, Title => $title &>
 <& /Admin/Elements/SystemTabs, 
     current_tab => 'Admin/Global/Templates.html', 
     current_subtab => $current_subtab, 
     subtabs => $subtabs, 
-    Title => loc("Modify template [_1]", $TemplateObj->id) &>
+    Title => $title &>
 <& /Elements/ListActions, actions => \@results &>
-
 
 <form method="post" action="Template.html">
 %if ($Create ) {
@@ -63,12 +62,10 @@
 
 %# hang onto the queue id
 <input type="hidden" class="hidden" name="Queue" value="<%$Queue%>" />
-
-<& /Admin/Elements/ModifyTemplate, Name => $TemplateObj->Name, Description => $TemplateObj->Description, Content => $TemplateObj->Content &>
-
-<& /Elements/Submit, Label => loc('Save Changes'), Reset => 1 &>
+<& /Admin/Elements/ModifyTemplate, Name => $TemplateObj->Name, Description =>
+$TemplateObj->Description, Content => $TemplateObj->Content &> 
+<& /Elements/Submit, Label => loc('Create'), Reset => 1 &>
 </form>
-
 
 
 <%INIT>
@@ -86,10 +83,9 @@ my $subtabs = {
 			   }
 	      };
 
-
 if ($Create) {
-  $current_subtab = "Admin/Global/Template.html?Create=1&Queue=0";
   $title = loc("Create a template");
+  $current_subtab = "Admin/Global/Template.html?Create=1&Queue=0";
 }
 
 else {
@@ -101,7 +97,7 @@ else {
     else {
        $TemplateObj->Load($Template) || Abort(loc('No Template'));
     }
-      $title = loc('Modify template [_1]', loc($TemplateObj->Name())); 
+     $title = loc('Modify template [_1]', loc($TemplateObj->Name())); 
   
     
 }
@@ -116,6 +112,7 @@ if ($TemplateObj->Id()) {
 			};
   push @results, @aresults;
 }
+
 </%INIT>
 <%ARGS>
 $Queue => undef

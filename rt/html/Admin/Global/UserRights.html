@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -24,7 +24,7 @@
 %# along with this program; if not, write to the Free Software
 %# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 %# 02110-1301 or visit their web page on the internet at
-%# http://www.gnu.org/copyleft/gpl.html.
+%# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -57,10 +57,9 @@
       
 <table>
         
-%	while (my $Member = $Users->Next()) {
-% my $UserObj = $Member->MemberObj->Object();
+%	while (my $UserObj = $Users->Next()) {
 % my $group = RT::Group->new($session{'CurrentUser'});
-% $group->LoadACLEquivalenceGroup($Member->MemberObj);
+% $group->LoadACLEquivalenceGroup($UserObj);
   <tr align="right"> 
 	<td valign="top">
 	    <% $UserObj->Name %>
@@ -89,7 +88,8 @@
 # Find out which users we want to display ACL selects for
 my $Privileged = RT::Group->new($session{'CurrentUser'});
 $Privileged->LoadSystemInternalGroup('Privileged');
-my $Users = $Privileged->MembersObj();
+my $Users = $Privileged->UserMembersObj();
+$Users->OrderBy( FIELD => $UserOrderBy, ORDER => $UserOrder );
 
     
   
@@ -98,4 +98,6 @@ my $Users = $Privileged->MembersObj();
 </%INIT>
 
 <%ARGS>
+$UserOrderBy => 'Name'
+$UserOrder => 'ASC'
 </%ARGS>

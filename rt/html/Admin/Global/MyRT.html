@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -24,7 +24,7 @@
 %# along with this program; if not, write to the Free Software
 %# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 %# 02110-1301 or visit their web page on the internet at
-%# http://www.gnu.org/copyleft/gpl.html.
+%# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -83,6 +83,8 @@ for ( $m->comp( "/Search/Elements/SearchesForObject",
 
 my ($default_portlets) = $sys->Attributes->Named('HomepageSettings');
 
+my $has_right = $session{'CurrentUser'}->HasRight( Object=> $RT::System, Right => 'SuperUser');
+
 my @panes = $m->comp(
     '/Admin/Elements/ConfigureMyRT',
     panes  => ['body', 'summary'],
@@ -91,8 +93,13 @@ my @panes = $m->comp(
     current_portlets => $default_portlets->Content,
     OnSave => sub {
         my ( $conf, $pane ) = @_;
-	$default_portlets->SetContent( $conf );
-        push @actions, loc( 'Global portlet [_1] saved.', $pane );
+        if (!$has_right) {
+            push @actions, loc( 'Permission denied' );
+        }
+        else {
+            $default_portlets->SetContent( $conf );
+            push @actions, loc( 'Global portlet [_1] saved.', $pane );
+        }
     }
 );
 

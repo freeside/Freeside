@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -24,7 +24,7 @@
 %# along with this program; if not, write to the Free Software
 %# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 %# 02110-1301 or visit their web page on the internet at
-%# http://www.gnu.org/copyleft/gpl.html.
+%# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -72,13 +72,13 @@ if ( $m->request_comp->attr_exists('AutoFlush') ) {
     ( !$type )
         ? Encode::is_utf8($_)
         ? $_
-        : Encode::decode( utf8 => $_, Encode::FB_PERLQQ )
+        : Encode::decode( 'UTF-8' => $_, Encode::FB_PERLQQ )
         : ( $type eq 'ARRAY' )
         ? [
         map {
             ( ref($_) or Encode::is_utf8($_) )
                 ? $_
-                : Encode::decode( utf8 => $_, Encode::FB_PERLQQ )
+                : Encode::decode( 'UTF-8' => $_, Encode::FB_PERLQQ )
             } @$_
         ]
         : ( $type eq 'HASH' )
@@ -86,7 +86,7 @@ if ( $m->request_comp->attr_exists('AutoFlush') ) {
         map {
             ( ref($_) or Encode::is_utf8($_) )
                 ? $_
-                : Encode::decode( utf8 => $_, Encode::FB_PERLQQ )
+                : Encode::decode( 'UTF-8' => $_, Encode::FB_PERLQQ )
             } %$_
         }
         : $_
@@ -280,7 +280,7 @@ if (    ( defined $session{'CurrentUser'} )
         }
 
         # otherwise, drop the user at the SelfService default page
-        elsif ( $m->base_comp->path !~ '^(/+)SelfService/' ) {
+        elsif ( $m->base_comp->path !~ $RT::SelfServiceRegex ) {
             RT::Interface::Web::Redirect($RT::WebURL."SelfService/");
         }
         else {

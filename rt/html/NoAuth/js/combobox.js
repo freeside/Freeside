@@ -2,7 +2,7 @@
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -24,7 +24,7 @@
 %# along with this program; if not, write to the Free Software
 %# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 %# 02110-1301 or visit their web page on the internet at
-%# http://www.gnu.org/copyleft/gpl.html.
+%# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
 %# 
 %# 
 %# CONTRIBUTION SUBMISSION POLICY:
@@ -132,8 +132,8 @@ function ComboBox_GetListSize( theList ) {
 function ComboBox_EnsureListSize( theList ) {
     if ( typeof( theList.listSize ) == "undefined" ) {
         if( typeof( theList.getAttribute ) != "undefined" ) {
-            if( theList.getAttribute( "listSize" ) != null && theList.getAttribute( "listSize" ) != "" ) {
-                theList.listSize = theList.getAttribute( "listSize" );
+            if( theList.getAttribute( "size" ) != null && theList.getAttribute( "size" ) != "" ) {
+                theList.listSize = theList.getAttribute( "size" );
                 return;
             }
         }
