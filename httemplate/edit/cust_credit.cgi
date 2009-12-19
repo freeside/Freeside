@@ -10,7 +10,6 @@
 <INPUT TYPE="hidden" NAME="credited" VALUE="">
 <INPUT TYPE="hidden" NAME="otaker" VALUE="<% $otaker %>">
 
-Credit
 <% ntable("#cccccc", 2) %>
 
   <TR>
@@ -34,6 +33,12 @@ Credit
               'cgi'            => $cgi,
            )
 %>
+
+  <TR>
+    <TD ALIGN="right">Additional info</TD>
+    <TD>
+      <INPUT TYPE="text" NAME="addlinfo" VALUE="<% $cgi->param('addlinfo') |h %>">
+    </TD>
 
   <TR>
     <TD ALIGN="right">Auto-apply<BR>to invoices</TD>
