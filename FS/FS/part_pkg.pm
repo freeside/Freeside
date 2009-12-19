@@ -1378,15 +1378,16 @@ sub _pkgs_sql {
 
   "
     (
-      agentnum IS NOT NULL
-      OR
-      0 < ( SELECT COUNT(*)
-              FROM type_pkgs
-                LEFT JOIN agent_type USING ( typenum )
-                LEFT JOIN agent AS typeagent USING ( typenum )
-              WHERE type_pkgs.pkgpart = part_pkg.pkgpart
-                AND typeagent.agentnum IN ($agentnums)
-          )
+      ( agentnum IS NOT NULL AND agentnum IN ($agentnums) )
+      OR ( agentnum IS NULL
+           AND EXISTS ( SELECT 1
+                          FROM type_pkgs
+                            LEFT JOIN agent_type USING ( typenum )
+                            LEFT JOIN agent AS typeagent USING ( typenum )
+                          WHERE type_pkgs.pkgpart = part_pkg.pkgpart
+                            AND typeagent.agentnum IN ($agentnums)
+                      )
+         )
     )
   ";
 
