@@ -2,6 +2,7 @@ package FS::cust_main_Mixin;
 
 use strict;
 use vars qw( $DEBUG $me );
+use Carp qw( confess );
 use FS::UID qw(dbh);
 use FS::cust_main;
 
@@ -255,21 +256,22 @@ sub cust_statuscolor {
 
 =item cancelled_sql
 
-Given an object that contains fields from cust_main (say, from a JOINed
-search; see httemplate/search/ for examples), returns the equivalent of the
-corresponding FS::cust_main method, or "0" if this object is not linked to
-a customer.
+Class methods that return SQL framents, equivalent to the corresponding
+FS::cust_main method.
 
 =cut
+
+#      my \$self = shift;
+#      \$self->cust_linked
+#        ? FS::cust_main::${sub}_sql(\$self)
+#        : '0';
 
 foreach my $sub (qw( prospect active inactive suspended cancelled )) {
   eval "
     sub ${sub}_sql {
-      my \$self = shift;
-      \$self->cust_linked
-        ? FS::cust_main::${sub}_sql(\$self)
-        : '0';
-      }
+      confess 'cust_main_Mixin ${sub}_sql called with object' if ref(\$_[0]);
+      'cust_main.custnum IS NOT NULL AND '. FS::cust_main->${sub}_sql();
+    }
   ";
   die $@ if $@;
 }
