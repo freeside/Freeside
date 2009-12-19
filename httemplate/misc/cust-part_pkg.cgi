@@ -20,10 +20,11 @@ my @part_pkg = qsearch({
   'extra_sql' =>
     ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql( 'null'=>1 ).
     ' AND '. FS::part_pkg->agent_pkgs_sql( $cust_main->agent ),
+  'order_by'  => 'ORDER BY pkg',
 });
 
 my @return = map  { $_->pkgpart => $_->pkg_comment }
-             sort { $a->pkg_comment cmp $b->pkg_comment }
+             #sort { $a->pkg_comment cmp $b->pkg_comment }
              @part_pkg;
 
 </%init>
