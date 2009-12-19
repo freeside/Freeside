@@ -154,7 +154,10 @@ sub calculate_applications {
        $self->cust_bill->invnum. ": ". join(', ', @open). "\n"
     if $DEBUG;
   my $total = 0;
-  $total += $_->owed_setup + $_->owed_recur foreach @open;
+  foreach (@open) {
+    $total += $_->owed_setup if $_->setup;
+    $total += $_->owed_recur if $_->recur;
+  }
   $total = sprintf('%.2f', $total);
 
   if ( $self->amount > $total ) {
