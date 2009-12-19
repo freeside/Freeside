@@ -175,7 +175,8 @@ sub calculate_applications {
       if $DEBUG;
 
     #@apply = map { [ $_, $_->amount ]; } @open;
-    @apply = map { [ $_, $_->owed_setup + 0 || $_->owed_recur + 0 ]; } @open;
+    #@apply = map { [ $_, $_->owed_setup + 0 || $_->owed_recur + 0 ]; } @open;
+    @apply = map { [ $_, $_->setup ? $_->owed_setup : $_->owed_recur ]; } @open;
 
   } else {
 
@@ -183,8 +184,8 @@ sub calculate_applications {
     # - amount exactly and uniquely matches a single open lineitem
     #   (you must be trying to pay or credit that item, then)
 
-    my @same = grep {    $_->owed_setup == $self->amount
-                      || $_->owed_recur == $self->amount
+    my @same = grep {    ( $_->setup && $_->owed_setup == $self->amount )
+                      || ( $_->recur && $_->owed_recur == $self->amount )
                     }
                     @open;
     if ( scalar(@same) == 1 ) {
@@ -229,7 +230,10 @@ sub calculate_applications {
       my @items = map { $_->[0] } grep { $weight == $_->[1] } @openweight;
 
       my $itemtotal = 0;
-      foreach my $item (@items) { $itemtotal += $item->owed_setup + 0 || $item->owed_recur + 0; }
+      foreach my $item (@items) {
+        $itemtotal += $item->owed_setup if $item->setup;
+        $itemtotal += $item->owed_recur if $item->recur;
+      }
       my $applytotal = min( $itemtotal, $remaining_amount );
       $remaining_amount -= $applytotal;
 
@@ -250,7 +254,7 @@ sub calculate_applications {
 
 	my @newitems = ();
 	foreach my $item ( @items ) {
-	  my $itemamount = $item->owed_setup + 0 || $item->owed_recur + 0;
+	  my $itemamount = $item->setup ? $item->owed_setup : $item->owed_recur;
           if ( $itemamount < $applyeach ) {
 	    warn "$me applying full $itemamount".
 	         " to small line item (cust_bill_pkg ". $item->billpkgnum. ")\n"
@@ -355,8 +359,6 @@ sub apply_to_lineitems {
   my( $self, %options ) = @_;
 
   return '' if $skip_apply_to_lineitems_hack;
-
-
 
   my $conf = new FS::Conf;
 
