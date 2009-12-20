@@ -261,7 +261,7 @@ sub access_info {
   return { %$info,
            'custnum'       => $custnum,
            'access_pkgnum' => $session->{'pkgnum'},
-           'svcnum'        => $session->{'svcnum'},
+           'access_svcnum' => $session->{'svcnum'},
          };
 }
 
@@ -931,7 +931,7 @@ sub list_svcs {
   #              @svc_x;
 
   { 
-    #no#'svcnum'   => $session->{'svcnum'},
+    'svcnum'   => $session->{'svcnum'},
     'custnum'  => $custnum,
     'svcs'     => [
       map { 
