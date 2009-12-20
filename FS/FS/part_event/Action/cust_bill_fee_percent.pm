@@ -1,7 +1,8 @@
 package FS::part_event::Action::cust_bill_fee_percent;
 
 use strict;
-use base qw( FS::part_event::Action );
+use base qw( FS::part_event::Action::fee );
+use Tie::IxHash;
 
 sub description { 'Late fee (percentage of invoice)'; }
 
@@ -9,49 +10,19 @@ sub eventtable_hashref {
   { 'cust_bill' => 1 };
 }
 
-sub event_stage { 'pre-bill'; }
-
 sub option_fields {
-  ( 
-    'percent'  => { label=>'Percent', size=>2, },
-    'reason'   => 'Reason',
-    'taxclass' => { label=>'Tax class', type=>'select-taxclass', },
-    'nextbill' => { label=>'Hold late fee until next invoice',
-                    type=>'checkbox', value=>'Y' },
-    'setuptax' => { label=>'Late fee is tax exempt',
-                    type=>'checkbox', value=>'Y' },
-  );
+  my $class = shift;
+
+  my $t = tie my %option_fields, 'Tie::IxHash', $class->SUPER::option_fields();
+  $t->Shift; #assumes charge is first
+  $t->Unshift( 'percent'  => { label=>'Percent', size=>2, } );
+
+  %option_fields;
 }
 
-sub default_weight { 10; }
-
-sub do_action {
+sub _calc_fee {
   my( $self, $cust_bill ) = @_;
-
-  #my $cust_main = $self->cust_main($cust_bill);
-  my $cust_main = $cust_bill->cust_main;
-
-  my $conf = new FS::Conf;
-
-  my $amount =
-    sprintf('%.2f', $cust_bill->owed * $self->option('percent') / 100 );
-
-  my %charge = (
-    'amount'   => $amount,
-    'pkg'      => $self->option('reason'),
-    'taxclass' => $self->option('taxclass'),
-    'classnum' => scalar($conf->config('finance_pkgclass')),
-    'setuptax' => $self->option('setuptax'),
-  );
-
-  $charge{'start_date'} = $cust_main->next_bill_date #unless its more than N months away?
-    if $self->option('nextbill');
-
-  my $error = $cust_main->charge( \%charge );
-
-  die $error if $error;
-
-  '';
+  sprintf('%.2f', $cust_bill->owed * $self->option('percent') / 100 );
 }
 
 1;

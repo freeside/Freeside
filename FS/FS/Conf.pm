@@ -1067,7 +1067,7 @@ worry that config_items is freeside-specific and icky.
   {
     'key'         => 'finance_pkgclass',
     'section'     => 'billing',
-    'description' => 'The package class for finance charges',
+    'description' => 'The default package class for late fee charges, used if the fee event does not specify a package class itself.',
     'type'        => 'select-pkg_class',
   },
 
