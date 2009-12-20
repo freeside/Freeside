@@ -217,8 +217,7 @@ sub get_packages {
 
   unless ( $cgi->param('showoldpackages') ) {
     my $years = $conf->config('cust_main-packages-years') || 2;
-    my $seconds = 31556926; #60*60*24*365.2422 is close enough
-    my $then = time - $seconds;
+    my $then = time - $years * 31556926; #60*60*24*365.2422 is close enough
 
     my %hide = ( 'cancelled'       => 'cancel',
                  'one-time charge' => 'setup',

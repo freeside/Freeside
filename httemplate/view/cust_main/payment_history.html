@@ -226,7 +226,7 @@
 %my %target = ();
 %
 %my $years =  $conf->config('payment_history-years') || 2;
-%my $older_than = time - $years * 31556736; #60*60*24*365.24
+%my $older_than = time - $years * 31556926; #60*60*24*365.2422
 %my $hidden = 0;
 %my $seen = 0;
 %my $old_history = 0;
