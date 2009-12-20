@@ -1,7 +1,7 @@
 package FS::cust_pkg;
 
 use strict;
-use vars qw(@ISA $disable_agentcheck $DEBUG);
+use vars qw(@ISA $disable_agentcheck $DEBUG $me);
 use Carp qw(cluck);
 use Scalar::Util qw( blessed );
 use List::Util qw(max);
@@ -41,6 +41,7 @@ use FS::Conf;
 @ISA = qw( FS::m2m_Common FS::cust_main_Mixin FS::option_Common FS::Record );
 
 $DEBUG = 0;
+$me = '[FS::cust_pkg]';
 
 $disable_agentcheck = 0;
 
@@ -2778,6 +2779,9 @@ sub order {
 #  my $cust_main = qsearchs('cust_main', { custnum => $custnum });
 #  return "Customer not found: $custnum" unless $cust_main;
 
+  warn "$me order: pkgnums to remove: ". join(',', @$remove_pkgnum). "\n"
+    if $DEBUG;
+
   my @old_cust_pkg = map { qsearchs('cust_pkg', { pkgnum => $_ }) }
                          @$remove_pkgnum;
 
@@ -2785,6 +2789,10 @@ sub order {
 
   my %hash = (); 
   if ( scalar(@old_cust_pkg) == 1 && scalar(@$pkgparts) == 1 ) {
+
+    warn "$me order: changing pkgnum ". $old_cust_pkg[0]->pkgnum.
+         " to pkgpart ". $pkgparts->[0]. "\n"
+      if $DEBUG;
 
     my $err_or_cust_pkg =
       $old_cust_pkg[0]->change( 'pkgpart' => $pkgparts->[0],
@@ -2797,12 +2805,16 @@ sub order {
     }
 
     push @$return_cust_pkg, $err_or_cust_pkg;
+    $dbh->commit or die $dbh->errstr if $oldAutoCommit;
     return '';
 
   }
 
   # Create the new packages.
   foreach my $pkgpart (@$pkgparts) {
+
+    warn "$me order: inserting pkgpart $pkgpart\n" if $DEBUG;
+
     my $cust_pkg = new FS::cust_pkg { custnum => $custnum,
                                       pkgpart => $pkgpart,
                                       refnum  => $refnum,
@@ -2820,6 +2832,9 @@ sub order {
 
   # Transfer services and cancel old packages.
   foreach my $old_pkg (@old_cust_pkg) {
+
+    warn "$me order: transferring services from pkgnum ". $old_pkg->pkgnum. "\n"
+      if $DEBUG;
 
     foreach my $new_pkg (@$return_cust_pkg) {
       $error = $old_pkg->transfer($new_pkg);
