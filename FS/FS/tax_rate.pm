@@ -1398,11 +1398,14 @@ sub process_download_and_update {
     eval "use XBase;";
     die $@ if $@;
 
-    my $conffile = '%%%FREESIDE_CONF%%%/cchconf';
-    my $conffh = new IO::File "<$conffile" or die "can't open $conffile: $!\n";
-    my ( $urls, $secret, $states ) =
-      map { /^(.*)$/ or die "bad config line in $conffile: $_\n"; $1 }
-          <$conffh>;
+    my $conf = new FS::Conf;
+    die "direct download of tax data not enabled\n" 
+      unless $conf->exists('taxdatadirectdownload');
+    my ( $urls, $username, $secret, $states ) =
+      $conf->config('taxdatadirectdownload');
+    die "No tax download URL provided.  ".
+        "Did you set the taxdatadirectdownload configuration value?\n"
+      unless $urls;
 
     $dir .= '/cch';
 

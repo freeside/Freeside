@@ -1,0 +1,35 @@
+#!/usr/bin/perl -w
+
+use strict;
+use FS::UID qw(adminsuidsetup);
+use FS::Conf;
+
+my $user = shift or die &usage;
+my $dir = shift or die &usage;
+
+
+adminsuidsetup $user;
+
+my $conf = new FS::Conf;
+
+chdir $dir or die "can't change to $dir: $!\n";
+die "pmzclfull.zip already exists\n" if -f 'pmzclfull.zip';
+
+die "direct download of tax data not enabled\n"
+  unless $conf->exists('taxdatadirectdownload');
+my ( $urls, $username, $secret, $states ) =
+  $conf->config('taxdatadirectdownload');
+die "No tax download URL provided.  ".
+    "Did you set the taxdatadirectdownload configuration value?\n"
+  unless $urls;
+
+my @filelist = qw( code.dbf detail.dbf geocode.dbf npanxx.dbf plus4.dbf
+  txmatrix.dbf zip.dbf );
+
+system('zip', "-P", $secret, 'pmzclfull.zip', @filelist) == 0
+  or die "zip failed\n";
+
+sub usage {
+  die "Usage:\n\n  reassemble_taxes user dir\n";
+}
+

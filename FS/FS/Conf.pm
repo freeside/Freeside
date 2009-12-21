@@ -1677,8 +1677,8 @@ worry that config_items is freeside-specific and icky.
   {
     'key'         => 'taxdatadirectdownload',
     'section'     => 'billing',  #well
-    'description' => 'Enable downloading tax data directly from the vendor site',
-    'type'        => 'checkbox',
+    'description' => 'Enable downloading tax data directly from the vendor site. at least three lines: URL, username, and password.j',
+    'type'        => 'textarea',
   },
 
   {

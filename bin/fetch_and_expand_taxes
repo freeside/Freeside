@@ -1,0 +1,55 @@
+#!/usr/bin/perl -w
+
+use strict;
+use LWP::UserAgent;
+use HTTP::Request;
+use HTTP::Response;
+use FS::UID qw(adminsuidsetup);
+use FS::Conf;
+
+my $user = shift or die &usage;
+my $dir = shift or die &usage;
+
+
+adminsuidsetup $user;
+
+my $conf = new FS::Conf;
+
+chdir $dir or die "can't change to $dir: $!\n";
+
+die "direct download of tax data not enabled\n"
+  unless $conf->exists('taxdatadirectdownload');
+my ( $urls, $username, $secret, $states ) =
+  $conf->config('taxdatadirectdownload');
+die "No tax download URL provided.  ".
+    "Did you set the taxdatadirectdownload configuration value?\n"
+  unless $urls;
+
+my $ua = new LWP::UserAgent;
+  foreach my $url (split ',', $urls) {
+  my @name = split '/', $url;  #somewhat restrictive
+  my $name = pop @name;
+  $name =~ /(.*)/; # untaint that which we trust;
+  $name = $1;
+
+  open my $taxfh, ">$name" or die "Can't open $name: $!\n";
+
+  my $res = $ua->request(
+    new HTTP::Request( GET => $url),
+    sub { #my ($data, $response_object) = @_;
+          print $taxfh $_[0] or die "Can't write to $dir.new/$name: $!\n";
+    },
+  );
+  die "download of $url failed: ". $res->status_line
+    unless $res->is_success;
+  close $taxfh;
+  $secret =~ /(.*)/; # untaint that which we trust;
+  $secret = $1;
+  system('unzip', "-P", $secret, $name) == 0
+    or die "unzip -P $secret $name failed";
+}
+
+sub usage {
+  die "Usage:\n\n  fetch_and_expand_taxes user dir\n";
+}
+
