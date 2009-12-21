@@ -17,21 +17,16 @@ die "Can't find customer!\n" unless $cust_main;
 
 my $conf = new FS::Conf;
 
-my $error = $cust_main->bill(
-#                          'time'=>$time
-                         );
+my $error = $cust_main->bill_and_collect( 'fatal' => 'return',
+                                          'retry' => 'yes',
+                                        );
 
-unless ( $error ) {
-  $error = $cust_main->apply_payments_and_credits
-           || $cust_main->collect(
                                   #'invoice-time'=>$time,
                                   #'batch_card'=> 'yes',
                                   #'batch_card'=> 'no',
                                   #'report_badcard'=> 'yes',
                                   #'retry_card' => 'yes',
 
-                                  'retry' => 'yes',
-                                   
                                   #this is used only by cust_main::batch_card
                                   #need to pick & create an actual config
                                   #value if we're going to turn this on
@@ -39,7 +34,5 @@ unless ( $error ) {
                                   # "backend-realtime" is for something
                                   #  entirely different)
                                   #'realtime' => $conf->exists('realtime-backend'),
-                                 );
-}
 
 </%init>

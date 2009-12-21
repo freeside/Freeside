@@ -2382,9 +2382,11 @@ sub classname {
 =item bill_and_collect 
 
 Cancels and suspends any packages due, generates bills, applies payments and
-cred
+credits, and applies collection events to run cards, send bills and notices,
+etc.
 
-Warns on errors (Does not currently: If there is an error, returns the error, otherwise returns false.)
+By default, warns on errors and continues with the next operation (but see the
+"fatal" flag below).
 
 Options are passed as name-value pairs.  Currently available options are:
 
@@ -2410,6 +2412,12 @@ Used in conjunction with the I<time> option, this option specifies the date of f
 
 If set true, re-charges setup fees.
 
+=item fatal
+
+If set any errors prevent subsequent operations from continusing.  If set
+specifically to "return", returns the error (or false, if there is no error).
+Any other true value causes errors to die.
+
 =item debug
 
 Debugging level.  Default is 0 (no debugging), or can be set to 1 (passed-in options), 2 (traces progress), 3 (more information), or 4 (include full search queries)
@@ -2424,33 +2432,69 @@ options of those methods are also available.
 sub bill_and_collect {
   my( $self, %options ) = @_;
 
+  my $error;
+
   #$options{actual_time} not $options{time} because freeside-daily -d is for
   #pre-printing invoices
-  $self->cancel_expired_pkgs(    $options{actual_time} );
-  $self->suspend_adjourned_pkgs( $options{actual_time} );
 
-  my $error = $self->bill( %options );
-  warn "Error billing, custnum ". $self->custnum. ": $error" if $error;
+  $options{'actual_time'} ||= time;
 
-  $self->apply_payments_and_credits;
+  $error = $self->cancel_expired_pkgs( $options{actual_time} );
+  if ( $error ) {
+    $error = "Error expiring custnum ". $self->custnum. ": $error";
+    if    ( $options{'fatal'} eq 'return' ) { return $error; }
+    elsif ( $options{'fatal'}             ) { die    $error; }
+    else                                    { warn   $error; }
+  }
+
+  $error = $self->suspend_adjourned_pkgs( $options{actual_time} );
+  if ( $error ) {
+    $error = "Error adjourning custnum ". $self->custnum. ": $error";
+    if    ( $options{'fatal'} eq 'return' ) { return $error; }
+    elsif ( $options{'fatal'}             ) { die    $error; }
+    else                                    { warn   $error; }
+  }
+
+  $error = $self->bill( %options );
+  if ( $error ) {
+    $error = "Error billing custnum ". $self->custnum. ": $error";
+    if    ( $options{'fatal'} eq 'return' ) { return $error; }
+    elsif ( $options{'fatal'}             ) { die    $error; }
+    else                                    { warn   $error; }
+  }
+
+  $error = $self->apply_payments_and_credits;
+  if ( $error ) {
+    $error = "Error applying custnum ". $self->custnum. ": $error";
+    if    ( $options{'fatal'} eq 'return' ) { return $error; }
+    elsif ( $options{'fatal'}             ) { die    $error; }
+    else                                    { warn   $error; }
+  }
 
   unless ( $conf->exists('cancelled_cust-noevents')
            && ! $self->num_ncancelled_pkgs
   ) {
-
     $error = $self->collect( %options );
-    warn "Error collecting, custnum". $self->custnum. ": $error" if $error;
-
+    if ( $error ) {
+      $error = "Error collecting custnum ". $self->custnum. ": $error";
+      if    ( $options{'fatal'} eq 'return' ) { return $error; }
+      elsif ( $options{'fatal'}             ) { die    $error; }
+      else                                    { warn   $error; }
+    }
   }
+
+  '';
 
 }
 
 sub cancel_expired_pkgs {
-  my ( $self, $time ) = @_;
+  my ( $self, $time, %options ) = @_;
 
   my @cancel_pkgs = $self->ncancelled_pkgs( { 
     'extra_sql' => " AND expire IS NOT NULL AND expire > 0 AND expire <= $time "
   } );
+
+  my @errors = ();
 
   foreach my $cust_pkg ( @cancel_pkgs ) {
     my $cpr = $cust_pkg->last_cust_pkg_reason('expire');
@@ -2459,15 +2503,15 @@ sub cancel_expired_pkgs {
                                          )
                                        : ()
                                  );
-    warn "Error cancelling expired pkg ". $cust_pkg->pkgnum.
-         " for custnum ". $self->custnum. ": $error"
-      if $error;
+    push @errors, 'pkgnum '.$cust_pkg->pkgnum.": $error" if $error;
   }
+
+  scalar(@errors) ? join(' / ', @errors) : '';
 
 }
 
 sub suspend_adjourned_pkgs {
-  my ( $self, $time ) = @_;
+  my ( $self, $time, %options ) = @_;
 
   my @susp_pkgs = $self->ncancelled_pkgs( {
     'extra_sql' =>
@@ -2491,6 +2535,8 @@ sub suspend_adjourned_pkgs {
          }
          @susp_pkgs;
 
+  my @errors = ();
+
   foreach my $cust_pkg ( @susp_pkgs ) {
     my $cpr = $cust_pkg->last_cust_pkg_reason('adjourn')
       if ($cust_pkg->adjourn && $cust_pkg->adjourn < $^T);
@@ -2499,11 +2545,10 @@ sub suspend_adjourned_pkgs {
                                           )
                                         : ()
                                   );
-
-    warn "Error suspending package ". $cust_pkg->pkgnum.
-         " for custnum ". $self->custnum. ": $error"
-      if $error;
+    push @errors, 'pkgnum '.$cust_pkg->pkgnum.": $error" if $error;
   }
+
+  scalar(@errors) ? join(' / ', @errors) : '';
 
 }
 
