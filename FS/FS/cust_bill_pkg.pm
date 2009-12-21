@@ -529,6 +529,16 @@ sub owed {
   $balance;
 }
 
+#modeled after owed
+sub payable {
+  my( $self, $field ) = @_;
+  my $balance = $self->$field();
+  $balance -= $_->amount foreach ( $self->cust_credit_bill_pkg($field) );
+  $balance = sprintf( '%.2f', $balance );
+  $balance =~ s/^\-0\.00$/0.00/; #yay ieee fp
+  $balance;
+}
+
 sub cust_bill_pay_pkg {
   my( $self, $field ) = @_;
   qsearch( 'cust_bill_pay_pkg', { 'billpkgnum' => $self->billpkgnum,

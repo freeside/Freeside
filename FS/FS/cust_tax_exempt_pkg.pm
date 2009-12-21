@@ -6,6 +6,7 @@ use FS::Record qw( qsearch qsearchs );
 use FS::cust_main_Mixin;
 use FS::cust_bill_pkg;
 use FS::cust_main_county;
+use FS::cust_credit_bill_pkg;
 
 @ISA = qw( FS::cust_main_Mixin FS::Record );
 
@@ -112,11 +113,26 @@ sub check {
 #    || $self->ut_foreign_key('custnum', 'cust_main', 'custnum')
     || $self->ut_foreign_key('billpkgnum', 'cust_bill_pkg', 'billpkgnum')
     || $self->ut_foreign_key('taxnum', 'cust_main_county', 'taxnum')
+    || $self->ut_foreign_keyn('creditbillpkgnum',
+                              'cust_credit_bill_pkg',
+                              'creditbillpkgnum')
     || $self->ut_number('year') #check better
     || $self->ut_number('month') #check better
     || $self->ut_money('amount')
     || $self->SUPER::check
   ;
+}
+
+=item cust_main_county
+
+Returns the associated tax definition if it still exists in the database.
+Otherwise returns false.
+
+=cut
+
+sub cust_main_county {
+  my $self = shift;
+  qsearchs( 'cust_main_county', { 'taxnum', $self->taxnum } );
 }
 
 =back

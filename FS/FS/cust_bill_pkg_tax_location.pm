@@ -8,6 +8,7 @@ use FS::cust_pkg;
 use FS::cust_location;
 use FS::cust_bill_pay_pkg;
 use FS::cust_credit_bill_pkg;
+use FS::cust_main_county;
 
 =head1 NAME
 
@@ -199,9 +200,20 @@ sub cust_credit_bill_pkg {
          );
 }
 
+sub cust_main_county {
+  my $self = shift;
+  my $result;
+  if ( $self->taxtype eq 'FS::cust_main_county' ) {
+    $result = qsearchs( 'cust_main_county', { 'taxnum' => $self->taxnum } );
+  }
+}
+
 =back
 
 =head1 BUGS
+
+The presense of FS::cust_main_county::delete makes the cust_main_county method
+unreliable
 
 =head1 SEE ALSO
 

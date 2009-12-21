@@ -2,12 +2,13 @@ package FS::cust_credit_bill_pkg;
 
 use strict;
 use vars qw( @ISA );
-use FS::Record qw( qsearchs ); # qsearch );
+use FS::Record qw( qsearch qsearchs dbh );
 use FS::cust_main_Mixin;
 use FS::cust_credit_bill;
 use FS::cust_bill_pkg;
 use FS::cust_bill_pkg_tax_location;
 use FS::cust_bill_pkg_tax_rate_location;
+use FS::cust_tax_exempt_pkg;
 
 @ISA = qw( FS::cust_main_Mixin FS::Record );
 
@@ -82,7 +83,88 @@ otherwise returns false.
 
 =cut
 
-# the insert method can be inherited from FS::Record
+sub insert {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = $self->SUPER::insert;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  my $payable = $self->cust_bill_pkg->payable($self->setuprecur);
+  my $taxable = $self->_is_taxable ? $payable : 0;
+  my $part_pkg = $self->cust_bill_pkg->part_pkg;
+  my $freq = $part_pkg ? $part_pkg->freq || 1 : 1;# assume unchanged
+  my $taxable_per_month = sprintf("%.2f", $taxable / $freq );
+  my $credit_per_month = sprintf("%.2f", $self->amount / $freq ); #pennies?
+
+  if ($taxable_per_month >= 0) {  #panic if its subzero?
+    my $groupby = 'taxnum,year,month';
+    my $sum = 'SUM(amount)';
+    my @exemptions = qsearch(
+      {
+        'select'    => "$groupby, $sum AS amount",
+        'table'     => 'cust_tax_exempt_pkg',
+        'hashref'   => { billpkgnum => $self->billpkgnum },
+        'extra_sql' => "GROUP BY $groupby HAVING $sum > 0",
+      }
+    ); 
+    foreach my $exemption ( @exemptions ) {
+      next if $taxable_per_month >= $exemption->amount;
+      my $amount = $exemption->amount - $taxable_per_month;
+      if ($amount > $credit_per_month) {
+             "cust_bill_pkg ". $self->billpkgnum. "  Reducing.\n";
+        $amount = $credit_per_month;
+      }
+      my $cust_tax_exempt_pkg = new FS::cust_tax_exempt_pkg {
+        'billpkgnum'       => $self->billpkgnum,
+        'creditbillpkgnum' => $self->creditbillpkgnum,
+        'amount'           => 0-$amount,
+        map { $_ => $exemption->$_ } split(',', $groupby)
+      };
+      my $error = $cust_tax_exempt_pkg->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "error inserting cust_tax_exempt_pkg: $error";
+      }
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+ '';
+
+}
+
+#helper functions for above
+sub _is_taxable {
+  my $self = shift;
+  my $part_pkg = $self->cust_bill_pkg->part_pkg;
+
+  return 0 unless $part_pkg; #XXX fails for tax on tax
+
+  my $method = $self->setuprecur. 'tax';
+  return 0 if $part_pkg->$method =~ /^Y$/i;
+
+  if ($self->billpkgtaxlocationnum) {
+    my $location_object = $self->cust_bill_pkg_tax_Xlocation;
+    my $tax_object = $location_object->cust_main_county;
+    return 0 if $tax_object && $self->tax_object->$method =~ /^Y$/i;
+  } #elsif ($self->billpkgtaxratelocationnum) { ... }
+
+  1;
+}
 
 =item delete
 
@@ -90,7 +172,89 @@ Delete this record from the database.
 
 =cut
 
-# the delete method can be inherited from FS::Record
+sub delete {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $original_cust_bill_pkg = $self->cust_bill_pkg;
+  my $cust_bill = $original_cust_bill_pkg->cust_bill;
+
+  my %hash = $original_cust_bill_pkg->hash;
+  delete $hash{$_} for qw( billpkgnum setup recur );
+  $hash{$self->setuprecur} = $self->amount;
+  my $cust_bill_pkg = new FS::cust_bill_pkg { %hash };
+
+  use Data::Dumper;
+  my @exemptions = qsearch( 'cust_tax_exempt_pkg', 
+                            { creditbillpkgnum => $self->creditbillpkgnum }
+                          );
+  my %seen = ();
+  my @generated_exemptions = ();
+  my @unseen_exemptions = ();
+  foreach my $exemption ( @exemptions ) {
+    my $error = $exemption->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "error deleting cust_tax_exempt_pkg: $error";
+    }
+
+    next if $seen{$exemption->taxnum};
+    $seen{$exemption->taxnum} = 1;
+    push @unseen_exemptions, $exemption;
+  }
+
+  foreach my $exemption ( @unseen_exemptions ) {
+    my $tax_object = $exemption->cust_main_county;
+    unless ($tax_object) {
+      $dbh->rollback if $oldAutoCommit;
+      return "can't find exempted tax";
+    }
+    
+    my $hashref_or_error =
+      $tax_object->taxline( [ $cust_bill_pkg ], 
+                            'custnum'      => $cust_bill->custnum,
+                            'invoice_time' => $cust_bill->_date,
+                          );
+    unless (ref($hashref_or_error)) {
+      $dbh->rollback if $oldAutoCommit;
+      return "error calculating taxes: $hashref_or_error";
+    }
+
+    push @generated_exemptions, @{ $cust_bill_pkg->_cust_tax_exempt_pkg || [] };
+  }
+                          
+  foreach my $taxnum ( keys %seen ) {
+    my $sum = 0;
+    $sum += $_->amount for grep {$_->taxnum == $taxnum} @exemptions;
+    $sum -= $_->amount for grep {$_->taxnum == $taxnum} @generated_exemptions;
+    $sum = sprintf("%.2f", $sum);
+    unless ($sum eq '0.00' || $sum eq '-0.00') {
+      $dbh->rollback if $oldAutoCommit;
+      return "Can't unapply credit without charging tax";
+    }
+  }
+   
+  my $error = $self->SUPER::delete(@_);
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
+
+}
 
 =item replace OLD_RECORD
 
@@ -140,12 +304,43 @@ sub cust_credit_bill {
   qsearchs('cust_credit_bill', { 'creditbillnum' => $self->creditbillnum } );
 }
 
+sub cust_bill_pkg {
+  my $self = shift;
+  qsearchs('cust_bill_pkg', { 'billpkgnum' => $self->billpkgnum } );
+}
+
+sub cust_bill_pkg_tax_Xlocation {
+  my $self = shift;
+  if ($self->billpkg_tax_locationnum) {
+    return qsearchs(
+      'cust_bill_pkg_tax_location',
+      { 'billpkgtaxlocationnum' => $self->billpkgtaxlocationnum },
+    );
+ 
+  } elsif ($self->billpkg_tax_rate_locationnum) {
+    return qsearchs(
+      'cust_bill_pkg_tax_rate_location',
+      { 'billpkgtaxratelocationnum' => $self->billpkgtaxratelocationnum },
+    );
+  } else {
+    return undef;
+  }
+}
+
 =back
 
 =head1 BUGS
 
 B<setuprecur> field is a kludge to compensate for cust_bill_pkg having separate
 setup and recur fields.  It should be removed once that's fixed.
+
+B<insert> method assumes that the frequency of the package associated with the
+associated line item remains unchanged during the lifetime of the system.
+It may get the tax exemption adjustments wrong if package definitions change
+frequency.  The presense of delete methods in FS::cust_main_county and
+FS::tax_rate makes crediting of old "texas tax" unreliable in the presense of
+changing taxes.  Explicit tax credit requests?  Carry 'taxable' onto line
+items?
 
 =head1 SEE ALSO
 

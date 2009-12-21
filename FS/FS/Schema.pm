@@ -1804,13 +1804,15 @@ sub tables_hashref {
         'taxnum',       'int', '', '', '', '', 
         'year',         'int', '', '', '', '', 
         'month',        'int', '', '', '', '', 
+        'creditbillpkgnum', 'int', 'NULL', '', '', '',
         'amount',       @money_type, '', '', 
       ],
       'primary_key' => 'exemptpkgnum',
       'unique' => [],
       'index'  => [ [ 'taxnum', 'year', 'month' ],
                     [ 'billpkgnum' ],
-                    [ 'taxnum' ]
+                    [ 'taxnum' ],
+                    [ 'creditbillpkgnum' ],
                   ],
     },
 
