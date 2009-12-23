@@ -3956,9 +3956,12 @@ sub _items_cust_bill_pkg {
           {
             push @d, map &{$escape_function}($_),
                          $cust_pkg->h_labels_short($self->_date);
-            push @d, map &{$escape_function}($_),
-                         $cust_pkg->location_label_short
-              if $multilocation;
+            if ( $multilocation ) {
+              my $loc = $cust_pkg->location_label;
+              $loc = substr($desc, 0, 50). '...'
+                if $format eq 'latex' && length($loc) > 50;
+              push @d, &{$escape_function}($loc);
+            }
           }
           push @d, $cust_bill_pkg->details(%details_opt)
             if $cust_bill_pkg->recur == 0;
@@ -4013,9 +4016,12 @@ sub _items_cust_bill_pkg {
                                                    #$cust_bill_pkg->edate,
                                                    #$cust_bill_pkg->sdate)
             ;
-            push @d, map &{$escape_function}($_),
-                         $cust_pkg->location_label_short
-              if $multilocation;
+            if ( $multilocation ) {
+              my $loc = $cust_pkg->location_label;
+              $loc = substr($desc, 0, 50). '...'
+                if $format eq 'latex' && length($loc) > 50;
+              push @d, &{$escape_function}($loc);
+            }
           }
 
           push @d, $cust_bill_pkg->details(%details_opt)

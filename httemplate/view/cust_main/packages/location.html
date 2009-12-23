@@ -4,18 +4,10 @@
   <I><FONT SIZE=-1>(default service address)</FONT><BR>
 % }
 
-  <% $loc->get($prefix.'address1') |h %><BR>
-
-% if ( $loc->get($prefix.'address2') !~ /^\s*$/ ) {
-    <% $loc->get($prefix.'address2') |h %><BR>
-% }
-
-  <% $loc->get($prefix.'city') |h %><% $loc->get($prefix.'county') ? ' ('.$loc->get($prefix.'county').' county)' : '' |h %>,
-  <% $loc->get($prefix.'state') |h %> &nbsp; <% $loc->get($prefix.'zip') |h %><BR>
-
-% if ( $loc->get($prefix.'country') ne $countrydefault ) {
-  <% code2country( $loc->get($prefix.'country') ) %>
-% }
+  <% $loc->location_label( 'join_string' => '<BR>',
+                           'escape_function' => \&encode_entities,
+                         )
+  %>
 
   </I>
 
@@ -35,14 +27,11 @@ my %opt = @_;
 
 my $bgcolor        = $opt{'bgcolor'};
 my $cust_pkg       = $opt{'cust_pkg'};
-my $part_pkg       = $opt{'part_pkg'};
 my $countrydefault = $opt{'countrydefault'} || 'US';
 my $statedefault   = $opt{'statedefault'}
                      || ($countrydefault eq 'US' ? 'CA' : '');
 
 my $loc = $cust_pkg->cust_location_or_main;
-my $prefix =
-  ( $loc->table eq 'cust_main' && length($loc->ship_last) ) ? 'ship_' : ''; #doh
 
 sub pkg_change_location_link {
   my $cust_pkg = shift;

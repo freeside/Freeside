@@ -158,58 +158,71 @@ sub country_full {
   code2country($self->country);
 }
 
+=item location_label [ OPTION => VALUE ... ]
+
+Returns the label of the service location for this customer.
+
+Options are
+
+=over 4
+
+=item join_string
+
+used to separate the address elements (defaults to ', ')
+
+=item escape_function
+
+
+a callback used for escaping the text of the address elements
+
+=back
+
+=cut
+
+# false laziness with FS::cust_main::location_label
+
+sub location_label {
+  my $self = shift;
+  my %opt = @_;
+
+  my $separator = $opt{join_string} || ', ';
+  my $escape = $opt{escape_function} || sub{ shift };
+  my $line = '';
+  my $cydefault = FS::conf->new->config('countrydefault') || 'US';
+  my $prefix = '';
+
+  my $notfirst = 0;
+  foreach (qw ( address1 address2 ) ) {
+    my $method = "$prefix$_";
+    $line .= ($notfirst ? $separator : ''). &$escape($self->$method)
+      if $self->$method;
+    $notfirst++;
+  }
+  $notfirst = 0;
+  foreach (qw ( city county state zip ) ) {
+    my $method = "$prefix$_";
+    if ( $self->$method ) {
+      $line .= '(' if $method eq 'county';
+      $line .= ($notfirst ? ' ' : $separator). &$escape($self->$method);
+      $line .= ')' if $method eq 'county';
+      $notfirst++;
+    }
+  }
+  $line .= $separator. &$escape(code2country($self->country))
+    if $self->country ne $cydefault;
+
+  $line;
+}
+
 =item line
 
-Returns this location on one line
+Synonym for location_label
 
 =cut
 
 sub line {
   my $self = shift;
-  my $cydefault = FS::conf->new->config('countrydefault') || 'US';
-
-  my $line =       $self->address1;
-  $line   .= ', '. $self->address2              if $self->address2;
-  $line   .= ', '. $self->city;
-  $line   .= ' ('. $self->county. ' county)'    if $self->county;
-  $line   .= ', '. $self->state                 if $self->state;
-  $line   .= '  '. $self->zip                   if $self->zip;
-  $line   .= '  '. code2country($self->country) if $self->country ne $cydefault;
-
-  $line;
-}
-
-=item line_short
-
-Returns this location on one line in a shortened form
-
-=cut
-
-# configurable?
-
-sub line_short {
-  my $self = shift;
-  my $cydefault = FS::conf->new->config('countrydefault') || 'US';
-
-  my $line =       $self->address1;
-  #$line   .= ', '. $self->address2              if $self->address2;
-  $line   .= ', '. $self->city;
-  $line   .= ', '. $self->state                 if $self->state;
-  $line   .= '  '. $self->zip                   if $self->zip;
-  $line   .= '  '. code2country($self->country) if $self->country ne $cydefault;
-
-  $line;
-}
-
-=item location_label_short
-
-Synonym for line_short
-
-=cut
-
-sub location_label_short {
-  my $self = shift;
-  $self->line_short;
+  $self->location_label;
 }
 
 =back

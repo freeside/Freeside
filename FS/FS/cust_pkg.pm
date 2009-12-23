@@ -1946,16 +1946,16 @@ sub cust_location_or_main {
   $self->cust_location || $self->cust_main;
 }
 
-=item location_label_short
+=item location_label [ OPTION => VALUE ... ]
 
-Returns the short label of the location object (see L<FS::cust_location>).
+Returns the label of the location object (see L<FS::cust_location>).
 
 =cut
 
-sub location_label_short {
+sub location_label {
   my $self = shift;
   my $object = $self->cust_location_or_main;
-  $object->location_label_short;
+  $object->location_label(@_);
 }
 
 =item seconds_since TIMESTAMP
