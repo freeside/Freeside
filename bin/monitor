@@ -1,0 +1,124 @@
+#!/usr/bin/perl -w
+
+use strict;
+use vars qw( $DEBUG );
+use Getopt::Std;
+use FS::Daemon qw(daemonize1 daemonize2 logfile sigint sigterm);
+use FS::Yori qw(report);
+use Email::Send;
+
+$DEBUG = 0;
+
+&untaint_argv;  #what it sounds like  (eww)
+
+use vars qw(%opt);
+getopts('m:p:', \%opt );
+
+my ($machine, @emails) = @ARGV;
+die &usage unless @emails;
+
+warn "starting daemonization (forking)\n" if $DEBUG;
+daemonize1('freeside-monitor');
+#logfile( "%%%FREESIDE_LOG%%%/monitorlog.$machine" );
+logfile( "/usr/local/etc/freeside/monitorlog.$machine" );
+
+warn "completing daemonization (detaching))\n" if $DEBUG;
+daemonize2();
+
+my $wantfree = $opt{m} || 1048576;
+my $wantload = $opt{p} || 5;
+
+die 'bogus memory requirement: $wantfree'
+   unless $wantfree && $wantfree =~ /^\d+$/;
+
+die 'bogus load requirement: $wantload'
+   unless $wantload && $wantload =~ /^[\d.]+$/;
+
+my $alerts = 0;
+my $last = time();
+while (1) {
+
+  my(undef, $load, undef) = report('load');
+  my($free) = report('freememory');
+  
+  unless( defined($load) && $load < $wantload
+       && defined($free) && $free > $wantfree
+       || ( time() < $last + 1800 && $alerts > 2 ) )
+  {
+    warn localtime(). ": $machine has load of $load and $free kB free memory\n";
+    warn "last is $last and alerts is $alerts\n";
+    $alerts++;
+    $alerts = 0 if time() > $last + 1800;
+    $last = time();
+    foreach my $email ( @emails ) {
+
+      my $message = <<"__MESSAGE__";
+From: support\@freeside.biz
+To: $email
+Subject: ALERT - $machine
+
+ALERT: $machine has a load of $load and only $free kB free..
+
+__MESSAGE__
+
+    my $sender = Email::Send->new({mailer => 'SMTP'});
+    $sender->mailer_args([Host => 'mail.freeside.biz']);
+    $sender->send($message);
+
+    }
+
+  }
+
+
+
+  if ( sigterm() ) {
+    warn "received TERM signal; exiting\n";
+    exit;
+  }
+  if ( sigint() ) {
+    warn "received INT signal; exiting\n";
+    exit;
+  }
+
+  sleep 30; #too long?  too short?
+
+}
+
+sub untaint_argv {
+  foreach $_ ( $[ .. $#ARGV ) { #untaint @ARGV
+    $ARGV[$_] =~ /^([\w\-\/\@\.]*)$/ || die "Illegal arguement \"$ARGV[$_]\"";
+    $ARGV[$_]=$1;
+  }
+}
+
+sub usage {
+  die "Usage:\n\n  freeside-monitor [ -pm ] machine email\n";
+}
+
+=head1 NAME
+
+freeside-monitor - Perform some basic load monitoring
+
+=head1 SYNOPSIS
+
+  freeside-monitor [ -p MAXLOAD ] [ -m REQUIRED_FRERMEM ] machine email [ ... ]
+
+=head1 DESCRIPTION
+
+Load monitoring daemon.  Should be running at all times.
+
+-p: maximum permitted 5 minute load
+
+-m: minimum free vmem in kB
+
+machine: a unique name to be used in alert messages
+email: address(es) to which alerts should be sent
+
+=head1 VERSION
+
+=head1 BUGS
+
+=head1 SEE ALSO
+
+=cut
+
