@@ -1184,13 +1184,14 @@ sub check {
 
   # First, if _password is blank, generate one and set default encoding.
   if ( ! $recref->{_password} ) {
-    $self->set_password('');
+    $error = $self->set_password('');
   }
   # But if there's a _password but no encoding, assume it's plaintext and 
   # set it to default encoding.
   elsif ( ! $recref->{_password_encoding} ) {
-    $self->set_password($recref->{_password});
+    $error = $self->set_password($recref->{_password});
   }
+  return $error if $error;
 
   # Next, check _password to ensure compliance with the encoding.
   if ( $recref->{_password_encoding} eq 'ldap' ) {
@@ -1232,11 +1233,8 @@ sub check {
       $recref->{_password} =~ /\!/ and return gettext('illegal_password');
     }
   }
-  elsif ( $recref->{_password_encoding} eq 'legacy' ) {
-    # this happens when set_password fails
-    return gettext('illegal_password'). " $passwordmin-$passwordmax ".
-           FS::Msgcat::_gettext('illegal_password_characters').
-           ": ". $recref->{_password};
+  else {
+    return "invalid password encoding ('".$recref->{_password_encoding}."'";
   }
   $self->SUPER::check;
 
@@ -1300,7 +1298,14 @@ sub set_password {
   my $self = shift;
   my $pass = shift;
   my ($encoding, $encryption);
+  my $failure = gettext('illegal_password'). " $passwordmin-$passwordmax ".
+                FS::Msgcat::_gettext('illegal_password_characters').
+                ": ". $pass;
 
+  if(($passwordmin and length($pass) < $passwordmin) or 
+     ($passwordmax and length($pass) > $passwordmax)) {
+    return $failure;
+  }
 
   if($self->_password_encoding) {
     $encoding = $self->_password_encoding;
@@ -1344,7 +1349,7 @@ sub set_password {
         $self->_password_encoding('crypt');
       }
       else {
-        # do nothing; check() will recognize this as an error
+        return $failure;
       }
    }
   }

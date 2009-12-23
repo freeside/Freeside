@@ -12,7 +12,7 @@
 <SCRIPT TYPE="text/javascript">
 function randomPass() {
   var i=0;
-  var pw_set='<% join('', 'a'..'z', 'A'..'Z', '0'..'9', '.', '/') %>';
+  var pw_set='<% join('', 'a'..'z', 'A'..'Z', '0'..'9' ) %>';
   var pass='';
   while(i < 8) {
     i++;
@@ -48,7 +48,7 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
   <TD ALIGN="right">Password</TD>
   <TD>
     <INPUT TYPE="text" NAME="clear_password" VALUE="<% $password %>" SIZE=<% $pmax2 %> MAXLENGTH=<% $pmax %>>
-    <INPUT TYPE="button" VALUE="Randomize" onclick="randomPass();">
+    <INPUT TYPE="button" VALUE="Generate" onclick="randomPass();">
   </TD>
 </TR>
 %}else{

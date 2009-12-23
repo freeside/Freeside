@@ -11,6 +11,7 @@ die "access denied"
 
 $cgi->param('svcnum') =~ /^(\d*)$/ or die "Illegal svcnum!";
 my $svcnum = $1;
+my $error;
 
 my $old;
 if ( $svcnum ) {
@@ -45,10 +46,9 @@ if(  $cgi->param('clear_password') eq '*HIDDEN*'
   die "fatal: no previous account to recall hidden password from!" unless $old;
 } 
 else {
-  $new->set_password($cgi->param('clear_password'));
+  $error = $new->set_password($cgi->param('clear_password'));
 }
 
-my $error;
 if ( $svcnum ) {
   foreach (grep { $old->$_ != $new->$_ } qw( seconds upbytes downbytes totalbytes )) {
     my %hash = map { $_ => $new->$_ } 
