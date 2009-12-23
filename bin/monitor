@@ -46,7 +46,6 @@ while (1) {
        || ( time() < $last + 1800 && $alerts > 2 ) )
   {
     warn localtime(). ": $machine has load of $load and $free kB free memory\n";
-    warn "last is $last and alerts is $alerts\n";
     $alerts++;
     $alerts = 0 if time() > $last + 1800;
     $last = time();
