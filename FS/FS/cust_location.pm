@@ -202,9 +202,9 @@ sub location_label {
   foreach (qw ( city county state zip ) ) {
     my $method = "$prefix$_";
     if ( $self->$method ) {
-      $line .= '(' if $method eq 'county';
+      $line .= ' (' if $method eq 'county';
       $line .= ($notfirst ? ' ' : $separator). &$escape($self->$method);
-      $line .= ')' if $method eq 'county';
+      $line .= ' )' if $method eq 'county';
       $notfirst++;
     }
   }
