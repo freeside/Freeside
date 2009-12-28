@@ -2,6 +2,7 @@ package FS::part_pkg_taxclass;
 
 use strict;
 use vars qw( @ISA );
+use Scalar::Util qw( blessed );
 use FS::UID qw( dbh );
 use FS::Record; # qw( qsearch qsearchs );
 use FS::cust_main_county;

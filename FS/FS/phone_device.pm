@@ -2,6 +2,7 @@ package FS::phone_device;
 
 use strict;
 use base qw( FS::Record );
+use Scalar::Util qw( blessed );
 use FS::Record qw( dbh qsearchs ); # qsearch );
 use FS::part_device;
 use FS::svc_phone;
