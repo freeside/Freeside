@@ -224,6 +224,8 @@ if ( -e $addl_handler_use_file ) {
   use FS::cust_statement;
   use FS::cust_class;
   use FS::cust_category;
+  use FS::prospect_main;
+  use FS::contact;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

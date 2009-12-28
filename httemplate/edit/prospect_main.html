@@ -1,0 +1,83 @@
+<% include('elements/edit.html',
+     'name_singular'   => 'prospect',
+     'table'           => 'prospect_main',
+     'labels'          => { 'prospectnum' => 'Prospect',
+                            'agentnum'    => 'Agent',
+                            'company'     => 'Company',
+                            'contactnum'  => 'Contact',
+                          },
+     'fields'          => [
+       { 'field'       => 'agentnum',
+         'type'        => 'select-agent',
+         'empty_label' => 'Select agent',
+       },
+       { 'field'   => 'company',
+         'type'   => 'text',
+         'size'    => 50,
+       },
+       { 'field'             => 'contactnum',
+         'type'              => 'contact',
+         'colspan'           => 6,
+         #actually o2m, but this seems to be working for edit so far
+         'm2name_table'      => 'contact',
+         'm2name_namecol'    => 'contactnum',
+         'm2_label'          => 'Contact',
+         'm2_error_callback' => sub { my($cgi, $object) = @_; (); }, #XXX
+       },
+       { 'field'       => 'locationnum',
+         'type'        => 'select-cust_location',
+         'empty_label' => 'No address',
+       },
+     ],
+     'edit_callback'   => $edit_callback,
+     'error_callbacck' => $error_callback,
+     'agent_virt'      => 1,
+   )
+%>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+my $prospectnum;
+if ( $cgi->param('error') ) {
+  $prospectnum = scalar($cgi->param('prospectnum'));
+
+  die "access denied"
+    unless $curuser->access_right(($prospectnum ? 'Edit' : 'New'). ' prospect');
+
+} elsif ( $cgi->keywords ) { #editing
+
+  die "access denied"
+    unless $curuser->access_right('Edit prospect');
+
+} else { #new prospect 
+
+  die "access denied"
+    unless $curuser->access_right('New prospect');
+
+}
+
+my $edit_callback = sub {
+  #my( $cgi, $prospect_main, $fields_listref, $opt_hashref ) = @_;
+  my( $cgi, $prospect_main ) = @_;
+  my @cust_location =
+    qsearch('cust_location', { 'prospectnum' => $prospect_main->prospectnum } );
+  die 'multiple locations for prospect '. $prospect_main->prospectnum
+    if scalar(@cust_location) > 1;
+  $prospect_main->set('locationnum', $cust_location[0]->locationnum)
+    if scalar(@cust_location);
+  #warn 'prospect_main.locationnum '.$prospect_main->get('locationnum');
+};
+
+my $error_callback = sub {
+  #my( $cgi, $prospect_main, $fields_listref, $opt_hashref ) = @_;
+  my( $cgi, $prospect_main ) = @_;
+  $cgi->param('locationnum') =~ /^(\-?\d*)$/
+    or die 'illegal locationnum '. $cgi->param('locationnum');
+  my $locationnum = $1;
+  $prospect_main->set('locationnum', $locationnum);
+};
+
+my @agentnums = $FS::CurrentUser::CurrentUser->agentnums;
+
+</%init>

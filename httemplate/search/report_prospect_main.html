@@ -1,0 +1,32 @@
+<% include('/elements/header.html', 'Prospect Report' ) %>
+
+<FORM ACTION="prospect_main.html" METHOD="GET">
+
+  <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+    <TR>
+      <TH BGCOLOR="#e8e8e8" COLSPAN=2 ALIGN="left"><FONT SIZE="+1">Search options</FONT></TH>
+    </TR>
+
+    <% include( '/elements/tr-select-agent.html',
+                  'curr_value'    => scalar($cgi->param('agentnum')),
+                  'disable_empty' => 0,
+               )
+    %>
+
+  </TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="Get Report">
+
+</FORM>
+
+<% include('/elements/footer.html') %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('List prospects');
+
+my $conf = new FS::Conf;
+
+</%init>

@@ -39,6 +39,12 @@ Example:
     <% include('init_overlib.html') |n %>
 
     <SCRIPT TYPE="text/javascript">
+
+      function clearhint_search_prospect (what) {
+        if ( what.value == '<% $prospect_label |n %>' )
+          what.value = '';
+      }
+
       function clearhint_search_cust (what) {
         if ( what.value == '<% $cust_label |n %>' )
           what.value = '';
@@ -63,6 +69,7 @@ Example:
         if ( what.value == '<% $ticketing_label |n %>' )
           what.value = '';
       }
+
     </SCRIPT>
 
     <% $head |n %>
@@ -140,6 +147,7 @@ input.fstext {
          vertical-align:bottom;
          text-align:right;
          font-family: Arial,Verdana,Helvetica,sans-serif;
+         font-size: 13px;
          padding-left: 0px;
          padding-right: 0px;
          padding-top: 0px;
@@ -154,14 +162,14 @@ input.fstext {
 
     <TABLE WIDTH="100%" CELLSPACING=0 CELLPADDING=0>
       <TR>
-        <TD COLSPAN=6 WIDTH="100%" STYLE="padding:0"><IMG BORDER=0 ALT="" SRC="<%$fsurl%>images/black-gradient.png" HEIGHT="13" WIDTH="100%"></TD>
+        <TD COLSPAN="7" WIDTH="100%" STYLE="padding:0"><IMG BORDER=0 ALT="" SRC="<%$fsurl%>images/black-gradient.png" HEIGHT="13" WIDTH="100%"></TD>
       </TR>
 
 % if ( $menu_position eq 'top' ) {
 
       <TR>
 
-        <TD COLSPAN="4" WIDTH="100%" STYLE="padding:0" BGCOLOR="#000000">
+        <TD COLSPAN="5" WIDTH="100%" STYLE="padding:0" BGCOLOR="#000000">
           <SCRIPT TYPE="text/javascript">
             document.write(myBar);
           </SCRIPT>
@@ -180,12 +188,12 @@ input.fstext {
       </TR>
 
       <TR>
-        <TD COLSPAN="6" WIDTH="100%" HEIGHT="2px" STYLE="padding:0" BGCOLOR="#000000">
+        <TD COLSPAN="7" WIDTH="100%" HEIGHT="2px" STYLE="padding:0" BGCOLOR="#000000">
         </TD>
       </TR>
       
       <TR>
-        <TD COLSPAN="6" WIDTH="100%" HEIGHT="4px" STYLE="padding:0" BGCOLOR="#000000">
+        <TD COLSPAN="7" WIDTH="100%" HEIGHT="4px" STYLE="padding:0" BGCOLOR="#000000">
         </TD>
       </TR>
 
@@ -193,7 +201,17 @@ input.fstext {
 
       <TR>
 
-        <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right">
+        <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right" STYLE="padding-left:2px">
+% if ( $curuser->access_right('List prospects') ) {
+          <FORM ACTION="<%$fsurl%>search/prospect_main.html" METHOD="GET" STYLE="margin:0">
+            <INPUT NAME="search_prospect" TYPE="text" VALUE="<% $prospect_label |n %>" STYLE="width:155px" onFocus="clearhint_search_prospect(this);" onClick="clearhint_search_prospect(this);" CLASS="fstext"><BR>
+            <A HREF="<%$fsurl%>search/report_prospect_main.html" STYLE="color: #ffffff; font-size: 11px">Adv</A>
+            <INPUT TYPE="submit" VALUE="Search prospects" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:11px;padding-left:1px;padding-right:1px"">
+          </FORM>
+% }
+        </TD>
+
+        <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right" STYLE="padding-left:2px">
 % if ( $curuser->access_right('List customers') ) {
           <FORM ACTION="<%$fsurl%>search/cust_main.cgi" METHOD="GET" STYLE="margin:0">
             <INPUT NAME="search_cust" TYPE="text" VALUE="<% $cust_label |n %>" STYLE="width:<%$cust_width%>px" onFocus="clearhint_search_cust(this);" onClick="clearhint_search_cust(this);" CLASS="fstext"><BR>
@@ -209,7 +227,7 @@ input.fstext {
               <INPUT TYPE="hidden" NAME="address2_on" VALUE="1">
               <INPUT NAME="address2_text" TYPE="text" VALUE="<% $address2_label |n %>" STYLE="width:67px" onFocus="clearhint_search_address2(this);" onClick="clearhint_search_address2(this);" CLASS="fstext">
               <BR>
-              <INPUT TYPE="submit" VALUE="Search units" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:11px;padding-left:2px;padding-right:2px">
+              <INPUT TYPE="submit" VALUE="Search units" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:11px;padding-left:1px;padding-right:1px;margin-top:3px">
             </FORM>
 % } 
         </TD>
@@ -217,30 +235,29 @@ input.fstext {
         <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right">
 % if ( $curuser->access_right('View invoices') ) { 
             <FORM ACTION="<%$fsurl%>search/cust_bill.html" METHOD="GET" STYLE="margin:0;display:inline">
-              <INPUT NAME="invnum" TYPE="text" VALUE="<% $inv_label |n %>" STYLE="width:64px" onFocus="clearhint_search_invoice(this);" onClick="clearhint_search_invoice(this);" CLASS="fstext">
+              <INPUT NAME="invnum" TYPE="text" VALUE="<% $inv_label |n %>" STYLE="width:56px" onFocus="clearhint_search_invoice(this);" onClick="clearhint_search_invoice(this);" CLASS="fstext">
 %   if ( $curuser->access_right('List invoices') ) { 
               <A HREF="<%$fsurl%>search/report_cust_bill.html" STYLE="color: #ffffff; font-size: 11px">Adv</A>\
 %   } 
-<BR>
-              <INPUT TYPE="submit" VALUE="Search invoices" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:11px;padding-left:2px;padding-right:2px">
+<BR><INPUT TYPE="submit" VALUE="Search invoices" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:11px;padding-left:1px;padding-right:1px;margin-top:3px">
             </FORM>
 % } 
         </TD>
 
-        <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right">
+        <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right" STYLE="padding-left:2px">
 % if ( $curuser->access_right('View customer services') ) {
           <FORM ACTION="<%$fsurl%>search/cust_svc.html" METHOD="GET" STYLE="margin:0">
-            <INPUT NAME="search_svc" TYPE="text" VALUE="<% $svc_label |n %>" STYLE="width:324px" onFocus="clearhint_search_svc(this);" onClick="clearhint_search_svc(this);" CLASS="fstext"><BR>
+            <INPUT NAME="search_svc" TYPE="text" VALUE="<% $svc_label |n %>" STYLE="width:271px" onFocus="clearhint_search_svc(this);" onClick="clearhint_search_svc(this);" CLASS="fstext"><BR>
             <A NOTYET="<%$fsurl%>search/svc_Smarter.html" STYLE="color: #000000; font-size:11px">Advanced</A>
             <INPUT TYPE="submit" VALUE="Search services" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:11px">
           </FORM>
 % }
         </TD>
 
-        <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right" STYLE="padding-left:4px;padding-right:4px">
+        <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right" STYLE="padding-left:2px;padding-right:2px">
 % if ( $conf->config("ticket_system") ) { 
           <FORM ACTION="<% FS::TicketSystem->baseurl %>index.html" METHOD="GET" STYLE="margin:0">
-            <INPUT NAME="q" TYPE="text" VALUE="<% $ticketing_label |n %>" STYLE="width:256px" onFocus="clearhint_search_ticket(this);" onClick="clearhint_search_ticket(this);" CLASS="fstext"><BR>
+            <INPUT NAME="q" TYPE="text" VALUE="<% $ticketing_label |n %>" STYLE="width:223px" onFocus="clearhint_search_ticket(this);" onClick="clearhint_search_ticket(this);" CLASS="fstext"><BR>
             <A HREF="<% FS::TicketSystem->baseurl %>Search/Build.html" STYLE="color: #ffffff; font-size:11px">Advanced</A>
             <INPUT TYPE="submit" VALUE="Search tickets" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:11px">
           </FORM>
@@ -334,11 +351,13 @@ if ( scalar(@agentnums) == 1 ) {
   $company_name = $conf->config('company_name');
 }
 
-my $cust_width = 288; #251 #ok for IE, slightly bigger for windows firefox
+my $prospect_label = '(name, company or phone)';
+
+my $cust_width = 246;
 my $cust_label = '(cust #, name, company';
 if ( $conf->exists('address1-search') ) {
   $cust_label .= ', address';
-  $cust_width += 64;
+  $cust_width += 56;
 }
 $cust_label .= ' or contact phone)';
 

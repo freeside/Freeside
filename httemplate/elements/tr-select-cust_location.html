@@ -4,7 +4,13 @@ Example:
 
   include('/elements/tr-select-cust_location.html',
             'cgi'       => $cgi,
-            'cust_main' => $cust_main,
+
+            'cust_main'     => $cust_main,
+            #or
+            'prospect_main' => $prospect_main,
+
+            #optional
+            'empty_label'   => '(default service address)',
          )
 
 </%doc>
@@ -42,6 +48,7 @@ Example:
     } else {
 
       if ( locationnum == 0 ) {
+%       if ( $cust_main ) {
         what.form.address1.value = <% $cust_main->get($prefix.'address1') |js_string %>;
         what.form.address2.value = <% $cust_main->get($prefix.'address2') |js_string %>;
         what.form.city.value = <% $cust_main->get($prefix.'city') |js_string %>;
@@ -54,16 +61,33 @@ Example:
                                             <% $cust_main->get($prefix.'county') | js_string %>
                                           )
                        );
+%       }
 
       } else {
         get_location( locationnum, update_location );
       } 
 
+%     if ( $editable ) {
+        if ( locationnum == 0 ) {
+%     }
+
 %#sleep/wait until dropdowns are updated?
-%     for (@location_fields, 'city_select') { 
-        what.form.<%$_%>.disabled = true;
-        what.form.<%$_%>.style.backgroundColor = '#dddddd';
-%     } 
+%         for (@location_fields, 'city_select') { 
+            what.form.<%$_%>.disabled = true;
+            what.form.<%$_%>.style.backgroundColor = '#dddddd';
+%         } 
+
+%     if ( $editable ) {
+        } else {
+
+%#sleep/wait until dropdowns are updated?
+%         for (@location_fields, 'city_select') { 
+            what.form.<%$_%>.disabled = false;
+            what.form.<%$_%>.style.backgroundColor = '#ffffff';
+%         } 
+
+        }
+%     }
 
     }
   }
@@ -122,15 +146,20 @@ Example:
   <TH ALIGN="right">Service&nbsp;location</TH>
   <TD COLSPAN=7>
     <SELECT NAME="locationnum" onChange="locationnum_changed(this);">
-      <OPTION VALUE="">(default service address)
-%     foreach my $loc ( $cust_main->cust_location ) {
+      <OPTION VALUE=""><% $opt{'empty_label'} || '(default service address)' |h %>
+%     my @locations = $cust_main ? $cust_main->cust_location : ();
+%     push @locations, $cust_location
+%       if !$cust_main && $cust_location && $cust_location->locationnum>0;
+%     foreach my $loc ( @locations ) {
         <OPTION VALUE="<% $loc->locationnum %>"
                 <% $locationnum == $loc->locationnum ? 'SELECTED' : '' %>
         ><% $loc->line |h %>
 %     }
-      <OPTION VALUE="-1"
-              <% $locationnum == -1 ? 'SELECTED' : '' %>
-      >Add new location
+%     if ( $addnew ) {
+        <OPTION VALUE="-1"
+                <% $locationnum == -1 ? 'SELECTED' : '' %>
+        >Add new location
+%     }
     </SELECT>
   </TD>
 </TR>
@@ -138,7 +167,7 @@ Example:
 <% include('/elements/location.html',
              'object'       => $cust_location,
              #'onchange' ?  probably not
-             'disabled'     => ( $locationnum == -1 ? '' : 'DISABLED' ),
+             'disabled'     => $disabled,
              'no_asterisks' => 1,
           )
 %>
@@ -156,13 +185,25 @@ my $statedefault = $conf->config('statedefault')
                    || ($countrydefault eq 'US' ? 'CA' : '');
 
 my %opt = @_;
-my $cgi       = $opt{'cgi'};
-my $cust_main = $opt{'cust_main'};
+my $cgi           = $opt{'cgi'};
+my $cust_main     = $opt{'cust_main'};
+my $prospect_main = $opt{'prospect_main'};
 
-my $prefix = length($cust_main->ship_last) ? 'ship_' : '';
+my $prefix = ($cust_main && length($cust_main->ship_last)) ? 'ship_' : '';
 
-$cgi->param('locationnum') =~ /^(\-?\d*)$/ or die "illegal locationnum";
-my $locationnum = $1;
+my $locationnum;
+if ( length($opt{'curr_value'}) ) {
+  $locationnum = $opt{'curr_value'};
+} else {
+  $cgi->param('locationnum') =~ /^(\-?\d*)$/ or die "illegal locationnum";
+  $locationnum = $1;
+}
+
+#probably could use explicit controls
+# (cust_main locations not editable for tax reasons)
+my $editable = $cust_main ? 0 : 1; #could use explicit control
+my $addnew = $cust_main ? 1 : ( $locationnum>0 ? 0 : 1 );
+
 my $cust_location;
 if ( $locationnum && $locationnum != -1 ) {
   $cust_location = qsearchs('cust_location', { 'locationnum' => $locationnum } )
@@ -171,9 +212,13 @@ if ( $locationnum && $locationnum != -1 ) {
   $cust_location = new FS::cust_location;
   if ( $locationnum == -1 ) {
     $cust_location->$_( $cgi->param($_) ) foreach @location_fields;
-  } else {
+  } elsif ( $cust_main ) {
     $cust_location->$_( $cust_main->get($prefix.$_) ) foreach @location_fields;
   }
 }
+
+my $disabled = ( $locationnum == -1 || ($editable && $locationnum) )
+                 ? ''
+                 : 'DISABLED';
 
 </%init>

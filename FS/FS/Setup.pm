@@ -348,10 +348,11 @@ sub initial_data {
 
     #not yet....
 
-  #)
-
     #usage classes
     'usage_class' => [],
+
+    #phone types
+    'phone_type' => [],
 
   ;
 

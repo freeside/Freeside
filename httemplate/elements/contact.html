@@ -1,0 +1,72 @@
+% unless ( $opt{'js_only'} ) {
+
+  <INPUT TYPE="hidden" NAME="<%$name%>" ID="<%$id%>" VALUE="<% $curr_value %>">
+
+  <TABLE>
+    <TR>
+      <TD>
+        <INPUT TYPE = "text"
+               NAME = "<%$name%>_first"
+               ID   = "<%$id%>_id"
+               VALUE = "<% $contact->first |h %>"
+               <% $onchange %>
+        ><BR>
+        <FONT SIZE="-2">First name</FONT>
+      </TD>
+      <TD>
+        <INPUT TYPE = "text"
+               NAME = "<%$name%>_last"
+               ID   = "<%$id%>_id"
+               VALUE = "<% $contact->get('last') |h %>"
+               <% $onchange %>
+        ><BR>
+        <FONT SIZE="-2">Last name</FONT>
+      </TD>
+      <TD>
+        <INPUT TYPE = "text"
+               NAME = "<%$name%>_title"
+               ID   = "<%$id%>_id"
+               VALUE = "<% $contact->title |h %>"
+               <% $onchange %>
+        ><BR>
+        <FONT SIZE="-2">Title/Position</FONT>
+      </TD>
+      <TD>
+        <INPUT TYPE = "text"
+               NAME = "<%$name%>_comment"
+               ID   = "<%$id%>_id"
+               VALUE = "<% $contact->comment |h %>"
+               <% $onchange %>
+        ><BR>
+        <FONT SIZE="-2">Comment</FONT>
+      </TD>
+    </TR>
+  </TABLE>
+
+% }
+<%init>
+
+my( %opt ) = @_;
+
+my $name = $opt{'element_name'} || $opt{'field'} || 'contactnum';
+my $id = $opt{'id'} || 'contactnum';
+
+my $curr_value = $opt{'curr_value'} || $opt{'value'};
+
+my $onchange = '';
+if ( $opt{'onchange'} ) {
+  $onchange = $opt{'onchange'};
+  $onchange .= '(this)' unless $onchange =~ /\(\w*\);?$/;
+  $onchange =~ s/\(what\);/\(this\);/g; #ugh, terrible hack.  all onchange
+                                        #callbacks should act the same
+  $onchange = 'onChange="'. $onchange. '"';
+}
+
+my $contact;
+if ( $curr_value ) {
+  $contact = qsearchs('contact', { 'contactnum' => $curr_value } );
+} else {
+  $contact = new FS::contact {};
+}
+
+</%init>

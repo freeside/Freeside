@@ -1,0 +1,92 @@
+<% include('/elements/header.html',
+             'Prospect View: '. $prospect_main->company
+          )
+%>
+
+% if ( $curuser->access_right('Edit prospect') ) { 
+  <A HREF="<% $p %>edit/prospect_main.html?<% $prospectnum %>">Edit this prospect</A>
+% } 
+
+<% ntable("#cccccc",2) %>
+
+<TR>
+  <TD ALIGN="right">Prospect #</TD>
+  <TD BGCOLOR="#FFFFFF"><B><% $prospectnum %></B></TD>
+</TR>
+
+%unless ( scalar(@agentnums) == 1 ) {
+%  my $agent = qsearchs('agent',{ 'agentnum' => $prospect_main->agentnum } );
+   <TR>
+     <TD ALIGN="right">Agent</TD>
+     <TD BGCOLOR="#ffffff"><% $agent->agentnum %>: <% $agent->agent %></TD>
+   </TR>
+%}
+
+<TR>
+  <TD ALIGN="right">Company</TD>
+  <TD BGCOLOR="#FFFFFF"><B><% $prospect_main->company |h %></B></TD>
+</TR>
+
+% foreach my $contact ( $prospect_main->contact ) {
+    <TR>
+      <TD ALIGN="right">Contact</TD>
+      <TD BGCOLOR="#FFFFFF"><% $contact->line %></TD>
+    </TR>
+%}
+
+% my @cust_location =
+%   qsearch('cust_location', { 'prospectnum' => $prospectnum } );
+% #but only one, for now
+% foreach my $cust_location (@cust_location) {
+    <TR>
+      <TD ALIGN="right">Address</TD>
+      <TD BGCOLOR="#FFFFFF">
+        <% $cust_location->location_label(
+             'join_string'     => '<BR>',
+             'double_space'    => ' &nbsp; ',
+             'escape_function' => \&encode_entities,
+           )
+        %>
+      </TD>
+  </TR>
+% }
+
+</TABLE>
+
+<BR>
+
+<% ntable("#cccccc") %>
+
+<TR>
+  <TH BGCOLOR="#e8e8e8" COLSPAN=2 ALIGN="left"><FONT SIZE="+1">Tickets</FONT></TH>
+</TR>
+
+</TABLE>
+
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right('View prospect');
+
+my $prospectnum;
+if ( $cgi->param('prospectnum') =~ /^(\d+)$/ ) {
+  $prospectnum = $1;
+} else {
+  die "No prospect specified (bad URL)!" unless $cgi->keywords;
+  my($query) = $cgi->keywords; # needs parens with my, ->keywords returns array
+  $query =~ /^(\d+)$/;
+  $prospectnum = $1;
+}
+
+my $prospect_main = qsearchs( {
+  'table'     => 'prospect_main',
+  'hashref'   => { 'prospectnum' => $prospectnum },
+  'extra_sql' => ' AND '. $curuser->agentnums_sql,
+});
+die "Prospect not found!" unless $prospect_main;
+
+my @agentnums = $curuser->agentnums;
+
+</%init>

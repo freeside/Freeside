@@ -1,0 +1,34 @@
+<% include('elements/process.html',
+     'table'          => 'prospect_main',
+     'args_callback'  => $args_callback,
+     'agent_virt'     => 1,
+     'process_o2m' => {
+       'table'  => 'contact',
+       'fields' => [qw( first last title comment )],
+     },
+     'redirect' => popurl(3). 'view/prospect_main.html?',
+   )
+%>
+<%init>
+
+my $args_callback = sub {
+  my( $cgi, $object ) = @_;
+
+  $cgi->param('locationnum') =~ /^(\-?\d*)$/
+    or die 'illegal locationnum '. $cgi->param('locationnum');
+  my $locationnum = $1;
+
+  return ( 'cust_location' => '' ) unless $locationnum;
+
+  my $cust_location = new FS::cust_location {
+    map { $_ => scalar($cgi->param($_)) }
+        qw( address1 address2 city county state zip country )
+  };
+
+  $cust_location->locationnum($locationnum) unless $locationnum == -1;
+
+  ( 'cust_location' => $cust_location );
+
+};
+
+</%init>

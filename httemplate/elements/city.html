@@ -34,7 +34,7 @@ Example:
     what.options[length] = optionName;
   }
 
-  var saved_<%$pre%>city= '';
+  var saved_<%$pre%>city= '<% $saved_city |h %>';
 
   function <% $pre %>county_changed(what, callback) {
 
@@ -124,10 +124,12 @@ my $text_style   = $opt{'style'} ? [ @{ $opt{'style'} } ] : [];
 my $select_style = $opt{'style'} ? [ @{ $opt{'style'} } ] : [];
 
 my @cities = cities( $opt{'county'}, $opt{'state'}, $opt{'country'} );
+my $saved_city = '';
 if ( scalar(@cities) > 1 || $cities[0] ) {
   push @$text_style, 'display:none';
 } else {
   push @$select_style, 'display:none';
+  $saved_city = $opt{'city'};
 }
 
 $text_style =

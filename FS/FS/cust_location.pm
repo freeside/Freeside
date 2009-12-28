@@ -4,6 +4,7 @@ use strict;
 use base qw( FS::Record );
 use Locale::Country;
 use FS::Record qw( qsearch ); #qsearchs );
+use FS::prospect_main;
 use FS::cust_main;
 use FS::cust_main_county;
 
@@ -119,7 +120,8 @@ sub check {
 
   my $error = 
     $self->ut_numbern('locationnum')
-    || $self->ut_foreign_key('custnum', 'cust_main', 'custnum')
+    || $self->ut_foreign_keyn('prospectnum', 'prospect_main', 'prospectnum')
+    || $self->ut_foreign_keyn('custnum', 'cust_main', 'custnum')
     || $self->ut_text('address1')
     || $self->ut_textn('address2')
     || $self->ut_text('city')
@@ -130,6 +132,9 @@ sub check {
     || $self->ut_alphan('geocode')
   ;
   return $error if $error;
+
+  return "No prospect or customer!" unless $self->prospectnum || $self->custnum;
+  return "Prospect and customer!"       if $self->prospectnum && $self->custnum;
 
   unless ( qsearch('cust_main_county', {
     'country' => $self->country,
@@ -187,8 +192,10 @@ sub location_label {
 
   my $separator = $opt{join_string} || ', ';
   my $escape = $opt{escape_function} || sub{ shift };
+  my $ds = $opt{double_space} || '  ';
   my $line = '';
-  my $cydefault = FS::conf->new->config('countrydefault') || 'US';
+  my $cydefault =
+    $opt{'countrydefault'} || FS::Conf->new->config('countrydefault') || 'US';
   my $prefix = '';
 
   my $notfirst = 0;
@@ -202,11 +209,13 @@ sub location_label {
   foreach (qw ( city county state zip ) ) {
     my $method = "$prefix$_";
     if ( $self->$method ) {
-      $line .= ' (' if $method eq 'county';
-      $line .= ($notfirst ? ' ' : $separator). &$escape($self->$method);
-      $line .= ' )' if $method eq 'county';
+      $line .= ($notfirst ? ($method eq 'zip' ? $ds : ' ') : $separator);
+      $line .= '(' if $method eq 'county';
+      $line .= &$escape($self->$method);
+      $line .= ')' if $method eq 'county';
       $notfirst++;
     }
+    $line .= ',' if $method eq 'county';
   }
   $line .= $separator. &$escape(code2country($self->country))
     if $self->country ne $cydefault;

@@ -85,6 +85,20 @@ assigned to users and/or groups.
 
 #well, this is what we have for now.  getting better.
 tie my %rights, 'Tie::IxHash',
+
+  ###
+  # contact rights
+  ###
+  'Contact and Prospect rights' => [
+    'New prospect',
+    'View prospect',
+    'Edit prospect',
+    'List prospects',
+    'Edit contact', #!
+    #'New contact',
+    #'View customer contacts',
+    #'List contacts',
+  ],
   
   ###
   # basic customer rights

@@ -409,7 +409,7 @@ Example:
 %       $label[0] = '/elements/tr-td-label.html';
 
         <% include( @label ) %>
-        <TD>
+        <TD COLSPAN="<% $f->{'colspan'} || 1 %>">
         <% include( @existing ) %>
         </TD>
 
@@ -465,7 +465,7 @@ Example:
 %     $label[0] = '/elements/tr-td-label.html';
 
       <% include( @label ) %>
-      <TD>
+      <TD COLSPAN="<% $f->{'colspan'} || 1 %>">
       <% include( @include ) %>
       </TD>
 
@@ -503,7 +503,7 @@ Example:
 
           // only spawn if we're the last element... return if not
 
-          var field_regex = /(\d+)$/;
+          var field_regex = /(\d+)(_[a-z]+)?$/;
           var match = field_regex.exec(what.name);
           if ( !match ) {
             alert(what.name + " didn't match?!");
@@ -574,6 +574,7 @@ Example:
 
           widget_cell.style.borderTop = "1px solid black";
           widget_cell.style.paddingTop = "3px";
+          widget_cell.colSpan = "<% $f->{'colspan'} || 1 %>"
 
           widget_cell.innerHTML = newrow;
 

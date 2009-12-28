@@ -4,12 +4,16 @@
   <I><FONT SIZE=-1>(default service address)</FONT><BR>
 % }
 
-  <% $loc->location_label( 'join_string' => '<BR>',
+  <% $loc->location_label( 'join_string'     => '<BR>',
+                           'double_space'    => ' &nbsp; ',
                            'escape_function' => \&encode_entities,
+                           'countrydefault'  => $countrydefault,
                          )
   %>
 
+% unless ( $cust_pkg->locationnum ) {
   </I>
+% }
 
 % if ( ! $cust_pkg->get('cancel')
 %      && $FS::CurrentUser::CurrentUser->access_right('Change customer package')

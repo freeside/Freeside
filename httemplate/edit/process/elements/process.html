@@ -56,13 +56,17 @@ Example:
 
 
                        },
+   'process_o2m' => { 'table' => table_name',
+                      'num_col' => 'column', #if column name is different in
+                                             #link_table than source_table 
+                    },
 
    #checks CGI params and whatever else before much else runs
    #return an error string or empty for no error
    'precheck_callback' => sub { my( $cgi ) = @_; },
 
    #supplies arguments to insert() and replace()
-   # for use with tables that are FS::option_Common
+   # for use with tables that are FS::option_Common (among other things)
    'args_callback' => sub { my( $cgi, $object ) = @_; },
 
    'debug' => 1, #turns on debugging output
@@ -249,6 +253,28 @@ if ( !$error && $opt{'process_m2name'} ) {
     }
 
     $error = $new->process_m2name( %{ $process_m2name },
+                                   'params' => scalar($cgi->Vars),
+                                 );
+  }
+
+}
+
+if ( !$error && $opt{'process_o2m'} ) {
+
+  my @process_o2m = ref($opt{'process_o2m'}) eq 'ARRAY'
+                         ? @{ $opt{'process_o2m'} }
+                         :  ( $opt{'process_o2m'} );
+
+
+  foreach my $process_o2m (@process_o2m) {
+
+    if ( $opt{'debug'} ) {
+      warn "$me processing o2m:\n". Dumper( %{ $process_o2m },
+                                               'params' => scalar($cgi->Vars),
+                                             );
+    }
+
+    $error = $new->process_o2m( %{ $process_o2m },
                                    'params' => scalar($cgi->Vars),
                                  );
   }

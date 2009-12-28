@@ -476,6 +476,8 @@ if ( $conf->config('ticket_system') ) {
       'Ticketing start page',
     ],
 }
+$menu{'New prospect'} = [ $fsurl.'edit/prospect_main.html', 'Add a new prospect' ]
+  if $curuser->access_right('New prospect');
 $menu{'New customer'} = [ $fsurl.'edit/cust_main.cgi', 'Add a new customer' ]
   if $curuser->access_right('New customer');
 $menu{'Reports'} = [ \%report_menu, 'Lists, reporting and graphing' ]

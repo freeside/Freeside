@@ -126,6 +126,9 @@ sub upgrade_data {
     #usage_classes if we have none
     'usage_class' => [],
 
+    #phone_type if we have none
+    'phone_type' => [],
+
     #fixup access rights
     'access_right' => [],
 

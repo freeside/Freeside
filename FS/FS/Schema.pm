@@ -800,12 +800,84 @@ sub tables_hashref {
       'index' => [],
     },
 
+    #eventually for cust_main too
+    'contact' => {
+      'columns' => [
+        'contactnum', 'serial',     '',      '', '', '',
+        'prospectnum',   'int', 'NULL',      '', '', '',
+        'custnum',       'int', 'NULL',      '', '', '',
+        'locationnum',   'int', 'NULL',      '', '', '', #not yet
+#        'titlenum',      'int', 'NULL',      '', '', '', #eg Mr. Mrs. Dr. Rev.
+        'last',      'varchar',     '', $char_d, '', '', 
+#        'middle',    'varchar', 'NULL', $char_d, '', '', 
+        'first',     'varchar',     '', $char_d, '', '', 
+        'title',     'varchar',     '', $char_d, '', '', #eg Head Bottle Washer
+        'comment',   'varchar',     '', $char_d, '', '', 
+        'disabled',     'char', 'NULL',       1, '', '', 
+      ],
+      'primary_key' => 'contactnum',
+      'unique'      => [],
+      'index'       => [ [ 'prospectnum' ], [ 'custnum' ], [ 'locationnum' ],
+                         [ 'last' ], [ 'first' ],
+                       ],
+    },
+
+    'contact_phone' => {
+      'columns' => [
+        'contactphonenum', 'serial', '', '', '', '',
+        'contactnum',         'int', '', '', '', '',
+        'phonetypenum',       'int', '', '', '', '',
+        'countrycode',    'varchar', '',  3, '', '', 
+        'phonenum',       'varchar', '', 14, '', '', 
+        'extension',      'varchar', '',  7, '', '',
+        #?#'comment',   'varchar',     '', $char_d, '', '', 
+      ],
+      'primary_key' => 'contactphonenum',
+      'unique'      => [],
+      'index'       => [],
+    },
+
+    'phone_type' => {
+      'columns' => [
+        'phonetypenum',  'serial', '',      '', '', '',
+        'typename',     'varchar', '', $char_d, '', '',
+        'weight',           'int', '',      '', '', '', 
+      ],
+      'primary_key' => 'phonetypenum',
+      'unique'      => [ [ 'typename' ], ],
+      'index'       => [],
+    },
+
+    'contact_email' => {
+      'columns' => [
+        'contactemailnum', 'serial', '',      '', '', '',
+        'contactnum',         'int', '',      '', '', '',
+        'emailaddress',   'varchar', '', $char_d, '', '',
+      ],
+      'primary_key' => 'contactemailnum',
+      'unique'      => [ [ 'emailaddress' ], ],
+      'index'       => [],
+    },
+
+    'prospect_main' => {
+      'columns' => [
+        'prospectnum',  'serial',     '',      '', '', '',
+        'agentnum',        'int',     '',      '', '', '',
+        'company',     'varchar',     '', $char_d, '', '',
+        #'disabled',     'char', 'NULL',       1, '', '', 
+      ],
+      'primary_key' => 'prospectnum',
+      'unique'      => [],
+      'index'       => [ [ 'company' ], [ 'agentnum' ], ],
+    },
+
     #eventually use for billing & ship from cust_main too
     #for now, just cust_pkg locations
-    'cust_location' => {
+    'cust_location' => { #'location' now that its prospects too, but...
       'columns' => [
         'locationnum',  'serial',     '',      '', '', '',
-        'custnum',         'int',     '',      '', '', '',
+        'prospectnum',     'int', 'NULL',      '', '', '',
+        'custnum',         'int', 'NULL',      '', '', '',
         'address1',    'varchar',     '', $char_d, '', '', 
         'address2',    'varchar', 'NULL', $char_d, '', '', 
         'city',        'varchar',     '', $char_d, '', '', 
@@ -817,7 +889,7 @@ sub tables_hashref {
       ],
       'primary_key' => 'locationnum',
       'unique'      => [],
-      'index'       => [ [ 'custnum' ],
+      'index'       => [ [ 'prospectnum' ], [ 'custnum' ],
                          [ 'county' ], [ 'state' ], [ 'country' ], [ 'zip' ],
                        ],
     },

@@ -1,0 +1,74 @@
+<% include('elements/search.html',
+             'title'         => 'Prospect Search Results',
+             'name_singular' => 'prospect',
+             'query'         => $query,
+             'count_query'   => $count_query,
+             'header'        => [ '#',
+                                  'Prospect',
+                                  'Contact(s)',
+                                ],
+             'fields'        => [ 'prospectnum',
+                                  'company',
+                                  sub {
+                                    my $pm = shift;
+                                    [ map {
+                                            [ { 'data' => $_->line, }, ];
+                                          }
+                                          $pm->contact
+                                    ];
+                                  },
+                                ],
+             'links'         => [ '',
+                                  $link,
+                                  '', #link to contact edit???
+                                ],
+             'agent_virt'    => 1,
+          )
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('List prospects');
+
+my %search_hash = ();
+
+#$search_hash{'query'} = $cgi->keywords;
+
+#scalars
+my @scalars = qw (
+  agentnum 
+);
+
+for my $param ( @scalars ) {
+  $search_hash{$param} = scalar( $cgi->param($param) )
+    if $cgi->param($param);
+}
+
+#lists
+#for my $param () {
+#  $search_hash{$param} = [ $cgi->param($param) ];
+#}
+
+# parse dates
+#foreach my $field (qw( signupdate )) {
+#
+#  my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi, $field);
+#
+#  next if $beginning == 0 && $ending == 4294967295;
+#       #or $disable{$cgi->param('status')}->{$field};
+#
+#  $search_hash{$field} = [ $beginning, $ending ];
+#
+#}
+
+my $query = FS::prospect_main->search(\%search_hash);
+my $count_query   = delete($query->{'count_query'});
+#my @extra_headers = @{ delete($query->{'extra_headers'}) };
+#my @extra_fields  = @{ delete($query->{'extra_fields'})  };
+
+my $link = sub {
+  my $prospect_main = shift;
+  [ "${p}view/prospect_main.html?", 'prospectnum' ];
+};
+
+</%init>
