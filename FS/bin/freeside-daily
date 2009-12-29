@@ -7,7 +7,7 @@ use FS::Conf;
 
 &untaint_argv;	#what it sounds like  (eww)
 use vars qw(%opt);
-getopts("p:a:d:vl:sy:nmrkg:", \%opt);
+getopts("p:a:d:vl:sy:nmrkg:u", \%opt);
 
 my $user = shift or die &usage;
 adminsuidsetup $user;
@@ -36,14 +36,14 @@ use FS::Cron::expire_user_pref qw(expire_user_pref);
 expire_user_pref();
 
 unless ( $opt{k} ) {
-
   use FS::Cron::notify qw(notify_flat_delay);
   notify_flat_delay(%opt);
+}
 
-  #Pg 8.1+ auto-vaccums, 7.4 w/postgresql-contrib
-  #use FS::Cron::vacuum qw(vacuum);
-  #vacuum();
-
+#debian Pg 8.1+ auto-vaccums, 7.4 w/postgresql-contrib
+if ( $opt{u} ) {
+  use FS::Cron::vacuum qw(vacuum);
+  vacuum();
 }
 
 #you can skip this just by not having the config
@@ -116,7 +116,9 @@ the bill and collect methods of a cust_main object.  See L<FS::cust_main>.
 
   -r: Multi-process mode dry run option
 
-  -k: skip notify_flat_delay and vacuum
+  -k: skip notify_flat_delay
+
+  -u: Do a vacuum (starting with version 1.9, this is not run by default).
 
 user: From the mapsecrets file - see config.html from the base documentation
 
