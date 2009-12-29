@@ -1,0 +1,30 @@
+#!/usr/bin/perl -w
+
+use strict;
+use FS::UID qw(adminsuidsetup dbh);
+use FS::Record; #why is this necessary
+
+#WARNING: not all tables are safe to remove history!
+# these are, and seem to take the most space in a typical install with queued
+# exports
+my @tables = qw( h_queue h_queue_arg );
+
+my $years = 2;
+my $seconds = $years * 31556926; #60*60*24*365.2422 is close enough
+my $before = int( time - $seconds );
+
+adminsuidsetup shift or die "usage: del-old-history user\n";
+
+foreach my $table ( @tables ) {
+
+  unless ( $table =~ /^h_/ ) {
+    warn "$table is not a history table, skipping\n";
+    next;
+  }
+
+  my $sql = "DELETE FROM $table WHERE history_date < $before";
+  warn "$sql\n";
+  my $sth = dbh->prepare($sql) or die dbh->errstr;
+  $sth->execute or die $sth->errstr;
+
+}

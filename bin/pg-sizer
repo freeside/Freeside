@@ -1,0 +1,36 @@
+#!/usr/bin/perl -w
+
+use strict;
+use FS::UID qw(adminsuidsetup dbh);
+use FS::Schema qw(dbdef);
+use FS::Record; #why is this necessary
+
+adminsuidsetup shift or die "usage: pg-sizer user";
+
+my $verbose = 1;
+
+my %size = ();
+my %prettysize = ();
+
+foreach my $table ( dbdef->tables ) {
+  warn "sizing $table...\n" if $verbose;
+  my $sth = dbh->prepare("SELECT pg_total_relation_size('$table')")
+    or die dbh->errstr;
+  $sth->execute or die $sth->errstr;
+  my $size = $sth->fetchrow_arrayref->[0];
+  $size{$table} = $size;
+
+  my $psth = dbh->prepare("SELECT pg_size_pretty( $size )")
+    or die dbh->errstr;
+  $psth->execute or die $psth->errstr;
+  my $prettysize = $psth->fetchrow_arrayref->[0];
+  $prettysize{$table} = $prettysize;
+
+  warn "$table: $prettysize{$table}\n" if $verbose;
+}
+
+foreach my $table ( reverse sort { $size{$a} <=> $size{$b} } keys %size ) {
+  #print "$table: $size{$table}\n";
+  print "$table: $prettysize{$table}\n";
+}
+
