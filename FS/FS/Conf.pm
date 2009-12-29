@@ -690,7 +690,7 @@ worry that config_items is freeside-specific and icky.
   {
     'key'         => 'business-onlinepayment-description',
     'section'     => 'billing',
-    'description' => 'String passed as the description field to <a href="http://search.cpan.org/search?mode=module&query=Business%3A%3AOnlinePayment">Business::OnlinePayment</a>.  Evaluated as a double-quoted perl string, with the following variables available: <code>$agent</code> (the agent name), and <code>$pkgs</code> (a comma-separated list of packages for which these charges apply)',
+    'description' => 'String passed as the description field to <a href="http://search.cpan.org/search?mode=module&query=Business%3A%3AOnlinePayment">Business::OnlinePayment</a>.  Evaluated as a double-quoted perl string, with the following variables available: <code>$agent</code> (the agent name), and <code>$pkgs</code> (a comma-separated list of packages for which these charges apply - not available in all situations)',
     'type'        => 'text',
   },
 
@@ -3164,6 +3164,13 @@ worry that config_items is freeside-specific and icky.
     'key'         => 'queued-max_kids',
     'section'     => '',
     'description' => 'Maximum number of queued processes.  Defaults to 10.',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'queued-sleep_time',
+    'section'     => '',
+    'description' => 'Time to sleep between attempts to find new jobs to process in the queue.  Defaults to 10.  Installations doing real-time CDR processing for prepaid may want to set it lower.'
     'type'        => 'text',
   },
 

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
-use vars qw( $DEBUG $kids $max_kids %kids );
+use vars qw( $DEBUG $kids $max_kids $sleep_time %kids );
 use POSIX qw(:sys_wait_h);
 use IO::File;
 use Getopt::Std;
@@ -54,6 +54,7 @@ daemonize2();
 
 my $conf = new FS::Conf;
 $max_kids = $conf->config('queued-max_kids') || 10;
+$sleep_time = $conf->config('queued-sleep_time') || 10;
 
 my $warnkids=0;
 while (1) {
@@ -128,7 +129,7 @@ while (1) {
       undef $FS::UID::dbh;
       next;
     };
-    sleep 1;
+    sleep $sleep_time;
     next;
   }
 
