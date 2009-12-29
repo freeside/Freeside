@@ -3170,7 +3170,7 @@ worry that config_items is freeside-specific and icky.
   {
     'key'         => 'queued-sleep_time',
     'section'     => '',
-    'description' => 'Time to sleep between attempts to find new jobs to process in the queue.  Defaults to 10.  Installations doing real-time CDR processing for prepaid may want to set it lower.'
+    'description' => 'Time to sleep between attempts to find new jobs to process in the queue.  Defaults to 10.  Installations doing real-time CDR processing for prepaid may want to set it lower.',
     'type'        => 'text',
   },
 
