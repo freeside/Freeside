@@ -67,7 +67,7 @@ my @statements =
 unless ( driver_name =~ /^mysql/i ) {
   #not necessary under non-mysql, takes forever on big db
   @statements =
-    grep { $_ !~ /^ *ALTER +TABLE +h_queue +ALTER +COLUMN +job +TYPE +varchar\(512\) *$/ }
+    grep { $_ !~ /^ *ALTER +TABLE +h_queue +ALTER +COLUMN +job +TYPE +varchar\(512\) *$/i }
          @statements;
 }
 
