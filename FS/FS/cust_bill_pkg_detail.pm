@@ -5,6 +5,7 @@ use vars qw( @ISA $me $DEBUG %GetInfoType );
 use HTML::Entities;
 use FS::Record qw( qsearch qsearchs dbdef dbh );
 use FS::cust_bill_pkg;
+use FS::usage_class;
 use FS::Conf;
 
 @ISA = qw(FS::Record);
