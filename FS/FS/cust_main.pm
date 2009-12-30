@@ -2071,7 +2071,7 @@ sub _cust_pkg {
 # This should be generalized to use config options to determine order.
 sub sort_packages {
   
-  my $locationsort = $a->locationnum <=> $b->locationnum;
+  my $locationsort = ( $a->locationnum || 0 ) <=> ( $b->locationnum || 0 );
   return $locationsort if $locationsort;
 
   if ( $a->get('cancel') xor $b->get('cancel') ) {
