@@ -624,7 +624,14 @@ sub calc_usage {
 
   } # $cust_svc
 
-  unshift @$details, [ 'C', FS::cdr::invoice_header($output_format) ]
+  unshift @$details, [ 'C',
+                       FS::cdr::invoice_header($output_format),
+                       '',
+                       '',
+                       '',
+                       '',
+                       '',
+                     ]
     if @$details && $rating_method ne 'upstream';
 
 #  if ( $spool_cdr && length($downstream_cdr) ) {
