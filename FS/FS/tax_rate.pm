@@ -407,13 +407,14 @@ sub taxline {
     };
   }
 
-  if ($self->maxtype != 0 && $self->maxtype != 9) {
+  my $maxtype = $self->maxtype || 0;
+  if ($maxtype != 0 && $maxtype != 9) {
     return $self->_fatal_or_null( 'tax with "'.
                                     $self->maxtype_name. '" threshold'
                                 );
   }
 
-  if ($self->maxtype == 9) {
+  if ($maxtype == 9) {
     return
       $self->_fatal_or_null( 'tax with "'. $self->maxtype_name. '" threshold' );
                                                                 # "texas" tax
@@ -439,7 +440,7 @@ sub taxline {
 
   my $taxable_units = 0;
   unless ($self->recurtax =~ /^Y$/i) {
-    if ($self->unittype == 0) {
+    if (( $self->unittype || 0 ) == 0) {
       my %seen = ();
       foreach (@cust_bill_pkg) {
         $taxable_units += $_->units
