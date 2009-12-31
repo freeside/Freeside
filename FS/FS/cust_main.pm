@@ -7986,10 +7986,11 @@ sub geocode {
                ? 'ship_'
                : '';
 
-  my ($zip,$plus4) = ( '', '' );
-  ($zip,$plus4) = split /-/, $self->get("${prefix}zip")
+  my($zip,$plus4) = split /-/, $self->get("${prefix}zip")
     if $self->country eq 'US';
 
+  $zip ||= '';
+  $plus4 ||= '';
   #CCH specific location stuff
   my $extra_sql = "AND plus4lo <= '$plus4' AND plus4hi >= '$plus4'";
 
