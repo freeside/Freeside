@@ -2,8 +2,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -46,6 +46,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 # Released under the terms of version 2 of the GNU Public License
 
 =head1 NAME
@@ -64,85 +65,6 @@ An RT group object.
 =head1 METHODS
 
 
-=begin testing
-
-# {{{ Tests
-ok (require RT::Group);
-
-ok (my $group = RT::Group->new($RT::SystemUser), "instantiated a group object");
-ok (my ($id, $msg) = $group->CreateUserDefinedGroup( Name => 'TestGroup', Description => 'A test group',
-                    ), 'Created a new group');
-ok ($id != 0, "Group id is $id");
-ok ($group->Name eq 'TestGroup', "The group's name is 'TestGroup'");
-my $ng = RT::Group->new($RT::SystemUser);
-
-ok($ng->LoadUserDefinedGroup('TestGroup'), "Loaded testgroup");
-ok(($ng->id == $group->id), "Loaded the right group");
-
-
-ok (($id,$msg) = $ng->AddMember('1'), "Added a member to the group");
-ok($id, $msg);
-ok (($id,$msg) = $ng->AddMember('2' ), "Added a member to the group");
-ok($id, $msg);
-ok (($id,$msg) = $ng->AddMember('3' ), "Added a member to the group");
-ok($id, $msg);
-
-# Group 1 now has members 1, 2 ,3
-
-my $group_2 = RT::Group->new($RT::SystemUser);
-ok (my ($id_2, $msg_2) = $group_2->CreateUserDefinedGroup( Name => 'TestGroup2', Description => 'A second test group'), , 'Created a new group');
-ok ($id_2 != 0, "Created group 2 ok- $msg_2 ");
-ok (($id,$msg) = $group_2->AddMember($ng->PrincipalId), "Made TestGroup a member of testgroup2");
-ok($id, $msg);
-ok (($id,$msg) = $group_2->AddMember('1' ), "Added  member RT_System to the group TestGroup2");
-ok($id, $msg);
-
-# Group 2 how has 1, g1->{1, 2,3}
-
-my $group_3 = RT::Group->new($RT::SystemUser);
-ok (($id_3, $msg) = $group_3->CreateUserDefinedGroup( Name => 'TestGroup3', Description => 'A second test group'), 'Created a new group');
-ok ($id_3 != 0, "Created group 3 ok - $msg");
-ok (($id,$msg) =$group_3->AddMember($group_2->PrincipalId), "Made TestGroup a member of testgroup2");
-ok($id, $msg);
-
-# g3 now has g2->{1, g1->{1,2,3}}
-
-my $principal_1 = RT::Principal->new($RT::SystemUser);
-$principal_1->Load('1');
-
-my $principal_2 = RT::Principal->new($RT::SystemUser);
-$principal_2->Load('2');
-
-ok (($id,$msg) = $group_3->AddMember('1' ), "Added  member RT_System to the group TestGroup2");
-ok($id, $msg);
-
-# g3 now has 1, g2->{1, g1->{1,2,3}}
-
-ok($group_3->HasMember($principal_2) == undef, "group 3 doesn't have member 2");
-ok($group_3->HasMemberRecursively($principal_2), "group 3 has member 2 recursively");
-ok($ng->HasMember($principal_2) , "group ".$ng->Id." has member 2");
-my ($delid , $delmsg) =$ng->DeleteMember($principal_2->Id);
-ok ($delid !=0, "Sucessfully deleted it-".$delid."-".$delmsg);
-
-#Gotta reload the group objects, since we've been messing with various internals.
-# we shouldn't need to do this.
-#$ng->LoadUserDefinedGroup('TestGroup');
-#$group_2->LoadUserDefinedGroup('TestGroup2');
-#$group_3->LoadUserDefinedGroup('TestGroup');
-
-# G1 now has 1, 3
-# Group 2 how has 1, g1->{1, 3}
-# g3 now has  1, g2->{1, g1->{1, 3}}
-
-ok(!$ng->HasMember($principal_2)  , "group ".$ng->Id." no longer has member 2");
-ok($group_3->HasMemberRecursively($principal_2) == undef, "group 3 doesn't have member 2");
-ok($group_2->HasMemberRecursively($principal_2) == undef, "group 2 doesn't have member 2");
-ok($ng->HasMember($principal_2) == undef, "group 1 doesn't have member 2");;
-ok($group_3->HasMemberRecursively($principal_2) == undef, "group 3 has member 2 recursively");
-
-# }}}
-
-=end testing
 
 
 
@@ -165,10 +87,17 @@ $RIGHTS = {
     AdminGroup           => 'Modify group metadata or delete group',  # loc_pair
     AdminGroupMembership =>
       'Modify membership roster for this group',                      # loc_pair
+    DelegateRights =>
+        "Delegate specific rights which have been granted to you.",   # loc_pair
     ModifyOwnMembership => 'Join or leave this group',                 # loc_pair
     EditSavedSearches => 'Edit saved searches for this group',        # loc_pair
     ShowSavedSearches => 'Display saved searches for this group',        # loc_pair
     SeeGroup => 'Make this group visible to user',                    # loc_pair
+
+    SeeGroupDashboard       => 'View dashboards for this group', #loc_pair
+    CreateGroupDashboard    => 'Create dashboards for this group', #loc_pair
+    ModifyGroupDashboard    => 'Modify dashboards for this group', #loc_pair
+    DeleteGroupDashboard    => 'Delete dashboards for this group', #loc_pair
 };
 
 # Tell RT::ACE that this sort of object can get acls granted
@@ -184,6 +113,20 @@ foreach my $right ( keys %{$RIGHTS} ) {
     $RT::ACE::LOWERCASERIGHTNAMES{ lc $right } = $right;
 }
 
+=head2 AddRights C<RIGHT>, C<DESCRIPTION> [, ...]
+
+Adds the given rights to the list of possible rights.  This method
+should be called during server startup, not at runtime.
+
+=cut
+
+sub AddRights {
+    my $self = shift;
+    my %new = @_;
+    $RIGHTS = { %$RIGHTS, %new };
+    %RT::ACE::LOWERCASERIGHTNAMES = ( %RT::ACE::LOWERCASERIGHTNAMES,
+                                      map { lc($_) => $_ } keys %new);
+}
 
 =head2 AvailableRights
 
@@ -255,7 +198,6 @@ sub Load {
     my $self       = shift;
     my $identifier = shift || return undef;
 
-    #if it's an int, load by id. otherwise, load by name.
     if ( $identifier !~ /\D/ ) {
         $self->SUPER::LoadById($identifier);
     }
@@ -281,34 +223,44 @@ sub LoadUserDefinedGroup {
     my $self       = shift;
     my $identifier = shift;
 
-        $self->LoadByCols( "Domain" => 'UserDefined',
-                           "Name" => $identifier );
+    if ( $identifier =~ /^\d+$/ ) {
+        return $self->LoadByCols(
+            Domain => 'UserDefined',
+            id     => $identifier,
+        );
+    } else {
+        return $self->LoadByCols(
+            Domain => 'UserDefined',
+            Name   => $identifier,
+        );
+    }
 }
 
 # }}}
 
 # {{{ sub LoadACLEquivalenceGroup 
 
-=head2 LoadACLEquivalenceGroup  PRINCIPAL
+=head2 LoadACLEquivalenceGroup PRINCIPAL
 
-Loads a user's acl equivalence group. Takes a principal object.
+Loads a user's acl equivalence group. Takes a principal object or its ID.
 ACL equivalnce groups are used to simplify the acl system. Each user
 has one group that only he is a member of. Rights granted to the user
 are actually granted to that group. This greatly simplifies ACL checks.
 While this results in a somewhat more complex setup when creating users
 and granting ACLs, it _greatly_ simplifies acl checks.
 
-
-
 =cut
 
 sub LoadACLEquivalenceGroup {
-    my $self       = shift;
-    my $princ = shift;
+    my $self = shift;
+    my $principal = shift;
+    $principal = $principal->id if ref $principal;
 
-        $self->LoadByCols( "Domain" => 'ACLEquivalence',
-                            "Type" => 'UserEquiv',
-                           "Instance" => $princ->Id);
+    return $self->LoadByCols(
+        Domain   => 'ACLEquivalence',
+        Type     => 'UserEquiv',
+        Instance => $principal,
+    );
 }
 
 # }}}
@@ -349,8 +301,10 @@ sub LoadSystemInternalGroup {
     my $self       = shift;
     my $identifier = shift;
 
-        $self->LoadByCols( "Domain" => 'SystemInternal',
-                           "Type" => $identifier );
+    return $self->LoadByCols(
+        Domain => 'SystemInternal',
+        Type   => $identifier,
+    );
 }
 
 # }}}
@@ -493,6 +447,7 @@ sub _Create {
     );
     my $id = $self->Id;
     unless ($id) {
+        $RT::Handle->Rollback() unless ($args{'InsideTransaction'});
         return ( 0, $self->loc('Could not create group') );
     }
 
@@ -515,7 +470,7 @@ sub _Create {
 
 
     if ( $args{'_RecordTransaction'} ) {
-	$self->_NewTransaction( Type => "Create" );
+        $self->_NewTransaction( Type => "Create" );
     }
 
     $RT::Handle->Commit() unless ($args{'InsideTransaction'});
@@ -772,8 +727,14 @@ This routine finds all the cached group members that are members of this group  
         }
     }
 
+    $self->_NewTransaction( Type => ($val == 1) ? "Disabled" : "Enabled" );
+
     $RT::Handle->Commit();
-    return (1, $self->loc("Succeeded"));
+    if ( $val == 1 ) {
+        return (1, $self->loc("Group disabled"));
+    } else {
+        return (1, $self->loc("Group enabled"));
+    }
 
 }
 
@@ -810,37 +771,6 @@ sub DeepMembersObj {
 
 # }}}
 
-# {{{ UserMembersObj
-
-=head2 UserMembersObj
-
-Returns an RT::Users object of this group's members, including
-all members of subgroups
-
-=cut
-
-sub UserMembersObj {
-    my $self = shift;
-
-    my $users = RT::Users->new($self->CurrentUser);
-
-    #If we don't have rights, don't include any results
-    # TODO XXX  WHY IS THERE NO ACL CHECK HERE?
-
-    my $cached_members = $users->NewAlias('CachedGroupMembers');
-    $users->Join(ALIAS1 => $cached_members, FIELD1 => 'MemberId',
-                 ALIAS2 => $users->PrincipalsAlias, FIELD2 => 'id');
-    $users->Limit(ALIAS => $cached_members, 
-                  FIELD => 'GroupId',
-                  OPERATOR => '=',
-                  VALUE => $self->PrincipalId);
-
-    return ( $users);
-
-}
-
-# }}}
-
 # {{{ MembersObj
 
 =head2 MembersObj
@@ -859,6 +789,90 @@ sub MembersObj {
 
     return ( $members_obj );
 
+}
+
+# }}}
+
+# {{{ GroupMembersObj
+
+=head2 GroupMembersObj [Recursively => 1]
+
+Returns an L<RT::Groups> object of this group's members.
+By default returns groups including all subgroups, but
+could be changed with C<Recursively> named argument.
+
+B<Note> that groups are not filtered by type and result
+may contain as well system groups, personal and other.
+
+=cut
+
+sub GroupMembersObj {
+    my $self = shift;
+    my %args = ( Recursively => 1, @_ );
+
+    my $groups = RT::Groups->new( $self->CurrentUser );
+    my $members_table = $args{'Recursively'}?
+        'CachedGroupMembers': 'GroupMembers';
+
+    my $members_alias = $groups->NewAlias( $members_table );
+    $groups->Join(
+        ALIAS1 => $members_alias,           FIELD1 => 'MemberId',
+        ALIAS2 => $groups->PrincipalsAlias, FIELD2 => 'id',
+    );
+    $groups->Limit(
+        ALIAS    => $members_alias,
+        FIELD    => 'GroupId',
+        VALUE    => $self->PrincipalId,
+    );
+    $groups->Limit(
+        ALIAS => $members_alias,
+        FIELD => 'Disabled',
+        VALUE => 0,
+    ) if $args{'Recursively'};
+
+    return $groups;
+}
+
+# }}}
+
+# {{{ UserMembersObj
+
+=head2 UserMembersObj
+
+Returns an L<RT::Users> object of this group's members, by default
+returns users including all members of subgroups, but could be
+changed with C<Recursively> named argument.
+
+=cut
+
+sub UserMembersObj {
+    my $self = shift;
+    my %args = ( Recursively => 1, @_ );
+
+    #If we don't have rights, don't include any results
+    # TODO XXX  WHY IS THERE NO ACL CHECK HERE?
+
+    my $members_table = $args{'Recursively'}?
+        'CachedGroupMembers': 'GroupMembers';
+
+    my $users = RT::Users->new($self->CurrentUser);
+    my $members_alias = $users->NewAlias( $members_table );
+    $users->Join(
+        ALIAS1 => $members_alias,           FIELD1 => 'MemberId',
+        ALIAS2 => $users->PrincipalsAlias, FIELD2 => 'id',
+    );
+    $users->Limit(
+        ALIAS => $members_alias,
+        FIELD => 'GroupId',
+        VALUE => $self->PrincipalId,
+    );
+    $users->Limit(
+        ALIAS => $members_alias,
+        FIELD => 'Disabled',
+        VALUE => 0,
+    ) if $args{'Recursively'};
+
+    return ( $users);
 }
 
 # }}}
@@ -982,7 +996,7 @@ sub _AddMember {
     if ( $self->HasMember( $new_member_obj ) ) {
 
         #User is already a member of this group. no need to add it
-        return ( 0, $self->loc("Group already has member") );
+        return ( 0, $self->loc("Group already has member: [_1]", $new_member_obj->Object->Name) );
     }
     if ( $new_member_obj->IsGroup &&
          $new_member_obj->Object->HasMemberRecursively($self->PrincipalObj) ) {
@@ -999,7 +1013,7 @@ sub _AddMember {
         InsideTransaction => $args{'InsideTransaction'}
     );
     if ($id) {
-        return ( 1, $self->loc("Member added") );
+        return ( 1, $self->loc("Member added: [_1]", $new_member_obj->Object->Name) );
     }
     else {
         return(0, $self->loc("Couldn't add member to group"));
@@ -1009,9 +1023,9 @@ sub _AddMember {
 
 # {{{ HasMember
 
-=head2 HasMember RT::Principal
+=head2 HasMember RT::Principal|id
 
-Takes an RT::Principal object returns a GroupMember Id if that user is a 
+Takes an L<RT::Principal> object or its id returns a GroupMember Id if that user is a 
 member of this group.
 Returns undef if the user isn't a member of the group or if the current
 user doesn't have permission to find out. Arguably, it should differentiate
@@ -1023,29 +1037,28 @@ sub HasMember {
     my $self    = shift;
     my $principal = shift;
 
-
-    unless (UNIVERSAL::isa($principal,'RT::Principal')) {
-        $RT::Logger->crit("Group::HasMember was called with an argument that".
-                          "isn't an RT::Principal. It's $principal");
+    my $id;
+    if ( UNIVERSAL::isa($principal,'RT::Principal') ) {
+        $id = $principal->id;
+    } elsif ( $principal =~ /^\d+$/ ) {
+        $id = $principal;
+    } else {
+        $RT::Logger->error("Group::HasMember was called with an argument that".
+                          " isn't an RT::Principal or id. It's ".($principal||'(undefined)'));
         return(undef);
     }
-
-    unless ($principal->Id) {
-        return(undef);
-    }
+    return undef unless $id;
 
     my $member_obj = RT::GroupMember->new( $self->CurrentUser );
-    $member_obj->LoadByCols( MemberId => $principal->id, 
-                             GroupId => $self->PrincipalId );
+    $member_obj->LoadByCols(
+        MemberId => $id, 
+        GroupId  => $self->PrincipalId
+    );
 
-    #If we have a member object
-    if ( defined $member_obj->id ) {
-        return ( $member_obj->id );
+    if ( my $member_id = $member_obj->id ) {
+        return $member_id;
     }
-
-    #If Load returns no objects, we have an undef id. 
     else {
-        #$RT::Logger->debug($self." does not contain principal ".$principal->id);
         return (undef);
     }
 }
@@ -1054,9 +1067,9 @@ sub HasMember {
 
 # {{{ HasMemberRecursively
 
-=head2 HasMemberRecursively RT::Principal
+=head2 HasMemberRecursively RT::Principal|id
 
-Takes an RT::Principal object and returns true if that user is a member of 
+Takes an L<RT::Principal> object or its id and returns true if that user is a member of 
 this group.
 Returns undef if the user isn't a member of the group or if the current
 user doesn't have permission to find out. Arguably, it should differentiate
@@ -1068,23 +1081,27 @@ sub HasMemberRecursively {
     my $self    = shift;
     my $principal = shift;
 
-    unless (UNIVERSAL::isa($principal,'RT::Principal')) {
-        $RT::Logger->crit("Group::HasMemberRecursively was called with an argument that".
-                          "isn't an RT::Principal. It's $principal");
+    my $id;
+    if ( UNIVERSAL::isa($principal,'RT::Principal') ) {
+        $id = $principal->id;
+    } elsif ( $principal =~ /^\d+$/ ) {
+        $id = $principal;
+    } else {
+        $RT::Logger->error("Group::HasMemberRecursively was called with an argument that".
+                          " isn't an RT::Principal or id. It's $principal");
         return(undef);
     }
+    return undef unless $id;
+
     my $member_obj = RT::CachedGroupMember->new( $self->CurrentUser );
-    $member_obj->LoadByCols( MemberId => $principal->Id,
-                             GroupId => $self->PrincipalId ,
-                             Disabled => 0
-                             );
+    $member_obj->LoadByCols(
+        MemberId => $id, 
+        GroupId  => $self->PrincipalId
+    );
 
-    #If we have a member object
-    if ( defined $member_obj->id ) {
-        return ( 1);
+    if ( my $member_id = $member_obj->id ) {
+        return $member_id;
     }
-
-    #If Load returns no objects, we have an undef id. 
     else {
         return (undef);
     }
@@ -1325,23 +1342,17 @@ Returns the principal object for this user. returns an empty RT::Principal
 if there's no principal object matching this user. 
 The response is cached. PrincipalObj should never ever change.
 
-=begin testing
-
-ok(my $u = RT::Group->new($RT::SystemUser));
-ok($u->Load(4), "Loaded the first user");
-ok($u->PrincipalObj->ObjectId == 4, "user 4 is the fourth principal");
-ok($u->PrincipalObj->PrincipalType eq 'Group' , "Principal 4 is a group");
-
-=end testing
 
 =cut
 
 
 sub PrincipalObj {
     my $self = shift;
-    unless ($self->{'PrincipalObj'} &&
+    unless ( defined $self->{'PrincipalObj'} &&
+             defined $self->{'PrincipalObj'}->ObjectId &&
             ($self->{'PrincipalObj'}->ObjectId == $self->Id) &&
-            ($self->{'PrincipalObj'}->PrincipalType eq 'Group')) {
+            (defined $self->{'PrincipalObj'}->PrincipalType && 
+                $self->{'PrincipalObj'}->PrincipalType eq 'Group')) {
 
             $self->{'PrincipalObj'} = RT::Principal->new($self->CurrentUser);
             $self->{'PrincipalObj'}->LoadByCols('ObjectId' => $self->Id,

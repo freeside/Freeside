@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,6 +45,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 package RT::CachedGroupMember;
 
 use strict;
@@ -148,6 +149,8 @@ sub Create {
         }
     }
 
+    return $id if $args{'Member'}->id == $args{'Group'}->id;
+
     if ( $args{'Member'}->IsGroup() ) {
         my $GroupMembers = $args{'Member'}->Object->MembersObj();
         while ( my $member = $GroupMembers->Next() ) {
@@ -215,7 +218,7 @@ sub Delete {
 
     # Unless $self->GroupObj still has the member recursively $self->MemberObj
     # (Since we deleted the database row above, $self no longer counts)
-    unless ( $self->GroupObj->Object->HasMemberRecursively( $self->MemberObj ) ) {
+    unless ( $self->GroupObj->Object->HasMemberRecursively( $self->MemberId ) ) {
 
 
         #   Find all ACEs granted to $self->GroupId
@@ -260,7 +263,7 @@ sub SetDisabled {
     my $val = shift;
  
     # if it's already disabled, we're good.
-    return {1} if ($self->__Value('Disabled') == $val);
+    return (1) if ( $self->__Value('Disabled') == $val);
     my $err = $self->SUPER::SetDisabled($val);
     my ($retval, $msg) = $err->as_array();
     unless ($retval) {
@@ -286,7 +289,7 @@ sub SetDisabled {
 
     # Unless $self->GroupObj still has the member recursively $self->MemberObj
     # (Since we SetDisabledd the database row above, $self no longer counts)
-    unless ( $self->GroupObj->Object->HasMemberRecursively( $self->MemberObj ) ) {
+    unless ( $self->GroupObj->Object->HasMemberRecursively( $self->MemberId ) ) {
         #   Find all ACEs granted to $self->GroupId
         my $acl = RT::ACL->new($RT::SystemUser);
         $acl->LimitToPrincipal( Id => $self->GroupId );

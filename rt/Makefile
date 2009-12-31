@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -51,19 +51,22 @@
 #
 
 
-PERL			= 	/usr/bin/perl
+PERL			=	/usr/bin/perl
+INSTALL			=	install-sh
+
+RT_LAYOUT		=	relative
 
 CONFIG_FILE_PATH	=	/opt/rt3/etc
-CONFIG_FILE		= 	$(CONFIG_FILE_PATH)/RT_Config.pm
-SITE_CONFIG_FILE		= 	$(CONFIG_FILE_PATH)/RT_SiteConfig.pm
+CONFIG_FILE		=	$(CONFIG_FILE_PATH)/RT_Config.pm
+SITE_CONFIG_FILE	=	$(CONFIG_FILE_PATH)/RT_SiteConfig.pm
 
 
 RT_VERSION_MAJOR	=	3
-RT_VERSION_MINOR	=	6
-RT_VERSION_PATCH	=	10
+RT_VERSION_MINOR	=	8
+RT_VERSION_PATCH	=	7
 
-RT_VERSION =	$(RT_VERSION_MAJOR).$(RT_VERSION_MINOR).$(RT_VERSION_PATCH)
-TAG 	   =	rt-$(RT_VERSION_MAJOR)-$(RT_VERSION_MINOR)-$(RT_VERSION_PATCH)
+RT_VERSION		=	$(RT_VERSION_MAJOR).$(RT_VERSION_MINOR).$(RT_VERSION_PATCH)
+TAG 			=	rt-$(RT_VERSION_MAJOR)-$(RT_VERSION_MINOR)-$(RT_VERSION_PATCH)
 
 
 # This is the group that all of the installed files will be chgrp'ed to.
@@ -88,9 +91,11 @@ APACHECTL		=	/usr/sbin/apachectl
 # {{{ Files and directories 
 
 # DESTDIR allows you to specify that RT be installed somewhere other than
-# where it will eventually reside
+# where it will eventually reside. DESTDIR _must_ have a trailing slash
+# if it's defined.
 
 DESTDIR			=	
+
 
 
 RT_PATH			=	/opt/rt3
@@ -102,6 +107,7 @@ RT_MAN_PATH		=	/opt/rt3/man
 RT_VAR_PATH		=	/opt/rt3/var
 RT_DOC_PATH		=	/opt/rt3/share/doc
 RT_LOCAL_PATH		=	/opt/rt3/local
+LOCAL_PLUGIN_PATH	=	/opt/rt3/local/plugins
 LOCAL_ETC_PATH		=	/opt/rt3/local/etc
 LOCAL_LIB_PATH		=	/opt/rt3/local/lib
 LOCAL_LEXICON_PATH	=	/opt/rt3/local/po
@@ -109,7 +115,7 @@ MASON_HTML_PATH		=	/opt/rt3/share/html
 MASON_LOCAL_HTML_PATH	=	/opt/rt3/local/html
 MASON_DATA_PATH		=	/opt/rt3/var/mason_data
 MASON_SESSION_PATH	=	/opt/rt3/var/session_data
-RT_LOG_PATH	    =       /opt/rt3/var/log
+RT_LOG_PATH		=       /opt/rt3/var/log
 
 # RT_READABLE_DIR_MODE is the mode of directories that are generally meant
 # to be accessable
@@ -121,34 +127,69 @@ RT_READABLE_DIR_MODE	=	0755
 # {{{ all these define the places that RT's binaries should get installed
 
 # RT_MODPERL_HANDLER is the mason handler script for mod_perl
-RT_MODPERL_HANDLER	=	$(RT_BIN_PATH)/webmux.pl
+RT_MODPERL_HANDLER	=	webmux.pl
 # RT_STANDALONE_SERVER is a stand-alone HTTP server
-RT_STANDALONE_SERVER	=	$(RT_BIN_PATH)/standalone_httpd
+RT_STANDALONE_SERVER	=	standalone_httpd
 # RT_SPEEDYCGI_HANDLER is the mason handler script for SpeedyCGI
-RT_SPEEDYCGI_HANDLER	=	$(RT_BIN_PATH)/mason_handler.scgi
+RT_SPEEDYCGI_HANDLER	=	mason_handler.scgi
 # RT_FASTCGI_HANDLER is the mason handler script for FastCGI
-RT_FASTCGI_HANDLER	=	$(RT_BIN_PATH)/mason_handler.fcgi
+RT_FASTCGI_HANDLER	=	mason_handler.fcgi
 # RT_WIN32_FASTCGI_HANDLER is the mason handler script for FastCGI
-RT_WIN32_FASTCGI_HANDLER	=	$(RT_BIN_PATH)/mason_handler.svc
+RT_WIN32_FASTCGI_HANDLER	=	mason_handler.svc
 # RT's CLI
-RT_CLI_BIN		=	$(RT_BIN_PATH)/rt
+RT_CLI_BIN		=	rt
 # RT's mail gateway
-RT_MAILGATE_BIN		=	$(RT_BIN_PATH)/rt-mailgate
+RT_MAILGATE_BIN		=	rt-mailgate
 # RT's cron tool
-RT_CRON_BIN		=	$(RT_BIN_PATH)/rt-crontool
+RT_CRON_BIN		=	rt-crontool
 
 # }}}
 
 
-BINARIES		=	$(DESTDIR)/$(RT_MODPERL_HANDLER) \
-				$(DESTDIR)/$(RT_MAILGATE_BIN) \
-				$(DESTDIR)/$(RT_CLI_BIN) \
-				$(DESTDIR)/$(RT_CRON_BIN) \
-				$(DESTDIR)/$(RT_STANDALONE_SERVER) \
-				$(DESTDIR)/$(RT_SPEEDYCGI_HANDLER) \
-				$(DESTDIR)/$(RT_FASTCGI_HANDLER) \
-				$(DESTDIR)/$(RT_WIN32_FASTCGI_HANDLER)
-SYSTEM_BINARIES		=	$(DESTDIR)/$(RT_SBIN_PATH)/
+BINARIES		=	$(RT_MODPERL_HANDLER) \
+				$(RT_MAILGATE_BIN) \
+				$(RT_CLI_BIN) \
+				$(RT_CRON_BIN) \
+				$(RT_STANDALONE_SERVER) \
+				$(RT_SPEEDYCGI_HANDLER) \
+				$(RT_FASTCGI_HANDLER) \
+				$(RT_WIN32_FASTCGI_HANDLER)
+
+
+
+
+
+SYSTEM_BINARIES		=	rt-dump-database \
+				rt-setup-database \
+				rt-email-digest \
+				rt-email-dashboards \
+				rt-email-group-admin \
+				rt-server \
+				rt-test-dependencies \
+				rt-clean-sessions \
+				rt-shredder \
+				rt-validator
+
+
+ETC_FILES		=	acl.Informix \
+				acl.Pg \
+				acl.Oracle \
+				acl.mysql \
+				acl.Sybase \
+				schema.Informix \
+				schema.Pg \
+				schema.Oracle \
+				schema.mysql-4.0 \
+				schema.mysql-4.1 \
+				schema.Sybase \
+				schema.SQLite \
+				initialdata
+
+# }}}
+
+# {{{ Web frontend
+
+WEB_HANDLER		=	standalone
 
 # }}}
 
@@ -205,18 +246,21 @@ DB_RT_PASS		=	rt_pass
 # }}}
 
 
+TEST_FILES = t/*.t t/*/*.t
+TEST_VERBOSE = 0
+
+
 ####################################################################
 
 all: default
 
 default:
-	@echo "Please read RT's readme before installing. Not doing so could"
-	@echo "be dangerous."
+	@echo "Please read RT's README before beginning your installation."
 
 
 
 instruct:
-	@echo "Congratulations. RT has been installed. "
+	@echo "Congratulations. RT is now installed."
 	@echo ""
 	@echo ""
 	@echo "You must now configure RT by editing $(SITE_CONFIG_FILE)."
@@ -230,243 +274,213 @@ instruct:
 	@echo "After that, you need to initialize RT's database by running" 
 	@echo " 'make initialize-database'"
 
-#	@echo " or by executing "       
-#	@echo " '$(RT_SBIN_PATH)/rt-setup-database --action init \ "
-#	@echo "     --dba $(DB_DBA) --prompt-for-dba-password'"
-
-
 
 upgrade-instruct: 
-	@echo "Congratulations. RT has been upgraded. You should now check-over"
+	@echo "Congratulations. RT has been upgraded. You should now check over"
 	@echo "$(CONFIG_FILE) for any necessary site customization. Additionally,"
 	@echo "you should update RT's system database objects by running "
-	@echo "   ls etc/upgrade"
-	@echo ""
-	@echo "For each item in that directory whose name is greater than"
-	@echo "your previously installed RT version, run:"
-	@echo "    $(RT_SBIN_PATH)/rt-setup-database --dba $(DB_DBA) --prompt-for-dba-password --action schema --datadir etc/upgrade/<version>"
-	@echo "    $(RT_SBIN_PATH)/rt-setup-database --dba $(DB_DBA) --prompt-for-dba-password --action acl --datadir etc/upgrade/<version>"
-	@echo "    $(RT_SBIN_PATH)/rt-setup-database --dba $(DB_DBA) --prompt-for-dba-password --action insert --datadir etc/upgrade/<version>"
+	@echo "    $(RT_SBIN_PATH)/rt-setup-database --dba $(DB_DBA) --prompt-for-dba-password --action upgrade"
 
 
-upgrade: config-install dirs files-install fixperms upgrade-instruct
+upgrade: testdeps config-install dirs files-install fixperms upgrade-instruct
 
-upgrade-noclobber: config-install libs-install html-install bin-install local-install doc-install fixperms
+upgrade-noclobber: config-install dirs libs-install html-install bin-install local-install doc-install fixperms
 
 
 # {{{ dependencies
+
+my_with_web_handlers= $(shell $(PERL) -e 'print join " ", map "--with-$$_", grep defined && length, split /,/, "$(WEB_HANDLER)"')
 testdeps:
-	$(PERL) ./sbin/rt-test-dependencies --verbose --with-$(DB_TYPE)
+	$(PERL) ./sbin/rt-test-dependencies --verbose --with-$(DB_TYPE) $(my_with_web_handlers)
 
 depends: fixdeps
 
 fixdeps:
-	$(PERL) ./sbin/rt-test-dependencies --verbose --install --with-$(DB_TYPE)
+	$(PERL) ./sbin/rt-test-dependencies --verbose --install --with-$(DB_TYPE) $(my_with_web_handlers)
 
 #}}}
 
 # {{{ fixperms
 fixperms:
 	# Make the libraries readable
-	chmod $(RT_READABLE_DIR_MODE) $(DESTDIR)/$(RT_PATH)
-	chown -R $(LIBS_OWNER) $(DESTDIR)/$(RT_LIB_PATH)
-	chgrp -R $(LIBS_GROUP) $(DESTDIR)/$(RT_LIB_PATH)
-	chmod -R  u+rwX,go-w,go+rX $(DESTDIR)/$(RT_LIB_PATH)
+	chmod $(RT_READABLE_DIR_MODE) $(DESTDIR)$(RT_PATH)
+	chown -R $(LIBS_OWNER) $(DESTDIR)$(RT_LIB_PATH)
+	chgrp -R $(LIBS_GROUP) $(DESTDIR)$(RT_LIB_PATH)
+	chmod -R  u+rwX,go-w,go+rX $(DESTDIR)$(RT_LIB_PATH)
 
 
-	chmod $(RT_READABLE_DIR_MODE) $(DESTDIR)/$(RT_BIN_PATH)
-	chmod $(RT_READABLE_DIR_MODE) $(DESTDIR)/$(RT_BIN_PATH)	
+	chmod $(RT_READABLE_DIR_MODE) $(DESTDIR)$(RT_BIN_PATH)
 
-	chmod 0755 $(DESTDIR)/$(RT_ETC_PATH)
-	chmod 0500 $(DESTDIR)/$(RT_ETC_PATH)/*
+	chmod 0755 $(DESTDIR)$(RT_ETC_PATH)
+	cd $(DESTDIR)$(RT_ETC_PATH) && chmod 0400 $(ETC_FILES)
 
 	#TODO: the config file should probably be able to have its
 	# owner set separately from the binaries.
-	chown -R $(BIN_OWNER) $(DESTDIR)/$(RT_ETC_PATH)
-	chgrp -R $(RTGROUP) $(DESTDIR)/$(RT_ETC_PATH)
+	chown -R $(BIN_OWNER) $(DESTDIR)$(RT_ETC_PATH)
+	chgrp -R $(RTGROUP) $(DESTDIR)$(RT_ETC_PATH)
 
-	chmod 0550 $(DESTDIR)/$(CONFIG_FILE)
-	chmod 0550 $(DESTDIR)/$(SITE_CONFIG_FILE)
+	chmod 0440 $(DESTDIR)$(CONFIG_FILE)
+	chmod 0640 $(DESTDIR)$(SITE_CONFIG_FILE)
 
-	# Make the interfaces executable
-	chown $(BIN_OWNER) $(BINARIES)
-	chgrp $(RTGROUP) $(BINARIES)
-	chmod 0755  $(BINARIES)
+	# Make the system binaries
+	cd $(DESTDIR)$(RT_BIN_PATH) && ( chmod 0755 $(BINARIES) ; chown $(BIN_OWNER) $(BINARIES);  chgrp $(RTGROUP) $(BINARIES))
+
+	# Make the system binaries executable also
+	cd $(DESTDIR)$(RT_SBIN_PATH) && ( chmod 0755 $(SYSTEM_BINARIES) ; chown $(BIN_OWNER) $(SYSTEM_BINARIES);  chgrp $(RTGROUP) $(SYSTEM_BINARIES))
 
 	# Make the web ui readable by all. 
-	chmod -R  u+rwX,go-w,go+rX 	$(DESTDIR)/$(MASON_HTML_PATH) \
-					$(DESTDIR)/$(MASON_LOCAL_HTML_PATH) \
-					$(DESTDIR)/$(LOCAL_LEXICON_PATH)
-	chown -R $(LIBS_OWNER) 	$(DESTDIR)/$(MASON_HTML_PATH) \
-				$(DESTDIR)/$(MASON_LOCAL_HTML_PATH)
-	chgrp -R $(LIBS_GROUP) 	$(DESTDIR)/$(MASON_HTML_PATH) \
-				$(DESTDIR)/$(MASON_LOCAL_HTML_PATH)
+	chmod -R  u+rwX,go-w,go+rX 	$(DESTDIR)$(MASON_HTML_PATH) \
+					$(DESTDIR)$(MASON_LOCAL_HTML_PATH) \
+					$(DESTDIR)$(LOCAL_LEXICON_PATH)
+	chown -R $(LIBS_OWNER) 	$(DESTDIR)$(MASON_HTML_PATH) \
+				$(DESTDIR)$(MASON_LOCAL_HTML_PATH)
+	chgrp -R $(LIBS_GROUP) 	$(DESTDIR)$(MASON_HTML_PATH) \
+				$(DESTDIR)$(MASON_LOCAL_HTML_PATH)
 
 	# Make the web ui's data dir writable
-	chmod 0770  	$(DESTDIR)/$(MASON_DATA_PATH) \
-			$(DESTDIR)/$(MASON_SESSION_PATH)
-	chown -R $(WEB_USER) 	$(DESTDIR)/$(MASON_DATA_PATH) \
-				$(DESTDIR)/$(MASON_SESSION_PATH)
-	chgrp -R $(WEB_GROUP) 	$(DESTDIR)/$(MASON_DATA_PATH) \
-				$(DESTDIR)/$(MASON_SESSION_PATH)
+	chmod 0770  	$(DESTDIR)$(MASON_DATA_PATH) \
+			$(DESTDIR)$(MASON_SESSION_PATH)
+	chown -R $(WEB_USER) 	$(DESTDIR)$(MASON_DATA_PATH) \
+				$(DESTDIR)$(MASON_SESSION_PATH)
+	chgrp -R $(WEB_GROUP) 	$(DESTDIR)$(MASON_DATA_PATH) \
+				$(DESTDIR)$(MASON_SESSION_PATH)
 # }}}
 
 # {{{ dirs
 dirs:
-	mkdir -p $(DESTDIR)/$(RT_LOG_PATH)
-	mkdir -p $(DESTDIR)/$(MASON_DATA_PATH)
-	mkdir -p $(DESTDIR)/$(MASON_DATA_PATH)/cache
-	mkdir -p $(DESTDIR)/$(MASON_DATA_PATH)/etc
-	mkdir -p $(DESTDIR)/$(MASON_DATA_PATH)/obj
-	mkdir -p $(DESTDIR)/$(MASON_SESSION_PATH)
-	mkdir -p $(DESTDIR)/$(MASON_HTML_PATH)
-	mkdir -p $(DESTDIR)/$(MASON_LOCAL_HTML_PATH)
-	mkdir -p $(DESTDIR)/$(LOCAL_ETC_PATH)
-	mkdir -p $(DESTDIR)/$(LOCAL_LIB_PATH)
-	mkdir -p $(DESTDIR)/$(LOCAL_LEXICON_PATH)
+	$(INSTALL) -m 0755 -d $(DESTDIR)$(RT_LOG_PATH)
+	$(INSTALL) -m 0770 -d $(DESTDIR)$(MASON_DATA_PATH)
+	$(INSTALL) -m 0770 -d $(DESTDIR)$(MASON_DATA_PATH)/cache
+	$(INSTALL) -m 0770 -d $(DESTDIR)$(MASON_DATA_PATH)/etc
+	$(INSTALL) -m 0770 -d $(DESTDIR)$(MASON_DATA_PATH)/obj
+	$(INSTALL) -m 0770 -d $(DESTDIR)$(MASON_SESSION_PATH)
+	$(INSTALL) -m 0755 -d $(DESTDIR)$(MASON_HTML_PATH)
+	$(INSTALL) -m 0755 -d $(DESTDIR)$(MASON_LOCAL_HTML_PATH)
+	$(INSTALL) -m 0755 -d $(DESTDIR)$(LOCAL_ETC_PATH)
+	$(INSTALL) -m 0755 -d $(DESTDIR)$(LOCAL_LIB_PATH)
+	$(INSTALL) -m 0755 -d $(DESTDIR)$(LOCAL_PLUGIN_PATH)
+	$(INSTALL) -m 0755 -d $(DESTDIR)$(LOCAL_LEXICON_PATH)
 # }}}
 
-install: config-install dirs files-install fixperms instruct
+install: testdeps config-install dirs files-install fixperms instruct
 
-files-install: libs-install etc-install bin-install sbin-install html-install local-install doc-install
+files-install: libs-install etc-install config-install bin-install sbin-install html-install local-install doc-install
 
 config-install:
-	mkdir -p $(DESTDIR)/$(CONFIG_FILE_PATH)
-	-cp etc/RT_Config.pm $(DESTDIR)/$(CONFIG_FILE)
-	[ -f $(DESTDIR)/$(SITE_CONFIG_FILE) ] || cp etc/RT_SiteConfig.pm $(DESTDIR)/$(SITE_CONFIG_FILE) 
-
-	chgrp $(RTGROUP) $(DESTDIR)/$(CONFIG_FILE)
-	chown $(BIN_OWNER) $(DESTDIR)/$(CONFIG_FILE)
-
-	chgrp $(RTGROUP) $(DESTDIR)/$(SITE_CONFIG_FILE)
-	chown $(BIN_OWNER) $(DESTDIR)/$(SITE_CONFIG_FILE)
-
-	@echo "Installed configuration. about to install rt in  $(RT_PATH)"
+	$(INSTALL) -m 0755 -o $(BIN_OWNER) -g $(RTGROUP) -d $(DESTDIR)$(CONFIG_FILE_PATH)
+	-$(INSTALL) -m 0440 -o $(BIN_OWNER) -g $(RTGROUP)  etc/RT_Config.pm $(DESTDIR)$(CONFIG_FILE)
+	[ -f $(DESTDIR)$(SITE_CONFIG_FILE) ] || $(INSTALL) -m 0640 -o $(BIN_OWNER) -g $(RTGROUP) etc/RT_SiteConfig.pm $(DESTDIR)$(SITE_CONFIG_FILE) 
+	@echo "Installed configuration. About to install RT in  $(RT_PATH)"
 
 test: 
-	$(PERL) -Ilib lib/t/00smoke.t
+	$(PERL) "-MExtUtils::Command::MM" -e "test_harness($(TEST_VERBOSE), 'lib')" $(TEST_FILES)
+
+parallel-test: test-parallel
+
+test-parallel: 
+	RT_TEST_PARALLEL=1 HARNESS_OPTIONS="j4" $(PERL) "-MExtUtils::Command::MM" -e "test_harness($(TEST_VERBOSE), 'lib')" $(TEST_FILES)
 
 regression-install: config-install
-	$(PERL) -pi -e 's/Set\(\$$DatabaseName.*\);/Set\(\$$DatabaseName, "rt3regression"\);/' $(DESTDIR)/$(CONFIG_FILE)
-
-regression: regression-install dirs files-install libs-install sbin-install bin-install regression-instruct regression-reset-db  testify-pods fixperms apachectl run-regression
-
-run-regression:
-	prove -Ilib lib/t/setup_regression.t  lib/t/autogen/ lib/t/regression/
-
-
-regression-noapache: regression-install dirs files-install libs-install sbin-install bin-install regression-instruct regression-reset-db  testify-pods fixperms start-httpd  run-regression
-
-regression-quiet:
-	$(PERL) sbin/regression_harness
-
-regression-instruct:
-	@echo "About to wipe your database for a regression test. ABORT NOW with Control-C"
-
+	$(PERL) -pi -e 's/Set\(\$$DatabaseName.*\);/Set\(\$$DatabaseName, "rt3regression"\);/' $(DESTDIR)$(CONFIG_FILE)
 
 # {{{ database-installation
 
-regression-reset-db:
-	$(PERL) $(DESTDIR)/$(RT_SBIN_PATH)/rt-setup-database --action drop --dba $(DB_DBA) --dba-password '' --force
-	$(PERL) $(DESTDIR)/$(RT_SBIN_PATH)/rt-setup-database --action init --dba $(DB_DBA) --dba-password ''
+regression-reset-db: force-dropdb
+	$(PERL) -I$(LOCAL_LIB_PATH) -I$(RT_LIB_PATH) sbin/rt-setup-database --action init --dba $(DB_DBA) --dba-password ''
 
 initdb :: initialize-database
 
 initialize-database: 
-	$(PERL) $(DESTDIR)/$(RT_SBIN_PATH)/rt-setup-database --action init --dba $(DB_DBA) --prompt-for-dba-password
+	$(PERL) -I$(LOCAL_LIB_PATH) -I$(RT_LIB_PATH) sbin/rt-setup-database --action init --dba $(DB_DBA) --prompt-for-dba-password
 
 dropdb: 
-	$(PERL) $(DESTDIR)/$(RT_SBIN_PATH)/rt-setup-database --action drop --dba $(DB_DBA) --prompt-for-dba-password
+	$(PERL) -I$(LOCAL_LIB_PATH) -I$(RT_LIB_PATH) sbin/rt-setup-database --action drop --dba $(DB_DBA) --prompt-for-dba-password
 
-insert-approval-data: 
-	$(PERL) $(DESTDIR)/$(RT_SBIN_PATH)/insert_approval_scrips
+force-dropdb: 
+	$(PERL) -I$(LOCAL_LIB_PATH) -I$(RT_LIB_PATH) sbin/rt-setup-database --action drop --dba $(DB_DBA) --dba-password '' --force
+
 # }}}
 
 # {{{ libs-install
 libs-install: 
-	[ -d $(DESTDIR)/$(RT_LIB_PATH) ] || mkdir -p $(DESTDIR)/$(RT_LIB_PATH)
-	-cp -rp lib/* $(DESTDIR)/$(RT_LIB_PATH)
+	[ -d $(DESTDIR)$(RT_LIB_PATH) ] || $(INSTALL) -m 0755 -d $(DESTDIR)$(RT_LIB_PATH)
+	-( cd lib && find . -type d -print ) | while read dir ; do \
+	    $(INSTALL) -m 0755 -d "$(DESTDIR)$(RT_LIB_PATH)/$$dir" ; \
+	done
+	-( cd lib && find . -type f -print ) | while read file ; do \
+	     $(INSTALL) -m 0644 "lib/$$file" "$(DESTDIR)$(RT_LIB_PATH)/$$file" ; \
+	done
 # }}}
 
 # {{{ html-install
 html-install:
-	[ -d $(DESTDIR)/$(MASON_HTML_PATH) ] || mkdir -p $(DESTDIR)/$(MASON_HTML_PATH)
-	-cp -rp ./html/* $(DESTDIR)/$(MASON_HTML_PATH)
+	[ -d $(DESTDIR)$(MASON_HTML_PATH) ] || $(INSTALL) -m 0755 -d $(DESTDIR)$(MASON_HTML_PATH)
+	-( cd share/html && find . -type d -print ) | while read dir ; do \
+	    $(INSTALL) -m 0755 -d "$(DESTDIR)$(MASON_HTML_PATH)/$$dir" ; \
+	done
+	-( cd share/html && find . -type f -print ) | while read file ; do \
+	    $(INSTALL) -m 0644 "share/html/$$file" "$(DESTDIR)$(MASON_HTML_PATH)/$$file" ; \
+	done
 # }}}
 
 # {{{ doc-install
 doc-install:
 	# RT 3.0.0 - RT 3.0.2 would accidentally create a file instead of a dir
-	-[ -f $(DESTDIR)/$(RT_DOC_PATH) ] && rm $(DESTDIR)/$(RT_DOC_PATH) 
-	[ -d $(DESTDIR)/$(RT_DOC_PATH) ] || mkdir -p $(DESTDIR)/$(RT_DOC_PATH)
-	-cp -rp ./README $(DESTDIR)/$(RT_DOC_PATH)
+	-[ -f $(DESTDIR)$(RT_DOC_PATH) ] && rm $(DESTDIR)$(RT_DOC_PATH) 
+	[ -d $(DESTDIR)$(RT_DOC_PATH) ] || $(INSTALL) -m 0755 -d $(DESTDIR)$(RT_DOC_PATH)
+	-$(INSTALL) -m 0644 ./README $(DESTDIR)$(RT_DOC_PATH)/
 # }}}
 
 # {{{ etc-install
 
 etc-install:
-	mkdir -p $(DESTDIR)/$(RT_ETC_PATH)
-	-cp -rp \
-		etc/acl.* \
-		etc/initialdata \
-		etc/schema.* \
-		$(DESTDIR)/$(RT_ETC_PATH)
+	[ -d $(DESTDIR)$(RT_ETC_PATH) ] || $(INSTALL) -m 0755 -d $(DESTDIR)$(RT_ETC_PATH)
+	for file in $(ETC_FILES) ; do \
+	    $(INSTALL) -m 0644 "etc/$$file" "$(DESTDIR)$(RT_ETC_PATH)/" ; \
+	done
 # }}}
 
 # {{{ sbin-install
 
 sbin-install:
-	mkdir -p $(DESTDIR)/$(RT_SBIN_PATH)
-	chmod +x \
-		sbin/rt-dump-database \
-		sbin/rt-setup-database \
-		sbin/rt-test-dependencies
-	-cp -rp \
-		sbin/rt-dump-database \
-		sbin/rt-setup-database \
-		sbin/rt-test-dependencies \
-		$(DESTDIR)/$(RT_SBIN_PATH)
+	$(INSTALL) -m 0755 -d $(DESTDIR)$(RT_SBIN_PATH)
+	for file in $(SYSTEM_BINARIES) ; do \
+	    $(INSTALL) -o $(BIN_OWNER) -g $(RTGROUP) -m 0755 "sbin/$$file" "$(DESTDIR)$(RT_SBIN_PATH)/" ; \
+	done
 
 # }}}
 
 # {{{ bin-install
 
 bin-install:
-	mkdir -p $(DESTDIR)/$(RT_BIN_PATH)
-	chmod +x bin/rt-mailgate \
-		bin/rt-crontool
-	-cp -rp \
-		bin/rt-mailgate \
-		bin/mason_handler.fcgi \
-		bin/mason_handler.scgi \
-		bin/standalone_httpd \
-		bin/mason_handler.svc \
-		bin/rt \
-		bin/webmux.pl \
-		bin/rt-crontool \
-		$(DESTDIR)/$(RT_BIN_PATH)
-# }}}
+	$(INSTALL) -m 0755 -d $(DESTDIR)$(RT_BIN_PATH)
+	for file in $(BINARIES) ; do \
+	    $(INSTALL) -o $(BIN_OWNER) -g $(RTGROUP) -m 0755 "bin/$$file" "$(DESTDIR)$(RT_BIN_PATH)/" ; \
+	done
 
 # {{{ local-install
 local-install:
-	-cp -rp ./local/html/* $(DESTDIR)/$(MASON_LOCAL_HTML_PATH)
-	-cp -rp ./local/po/* $(DESTDIR)/$(LOCAL_LEXICON_PATH)
-	-cp -rp ./local/etc/* $(DESTDIR)/$(LOCAL_ETC_PATH)
+	-( cd local/html && find . -type d -print ) | while read dir ; do \
+	    $(INSTALL) -m 0755 -d "$(DESTDIR)$(MASON_LOCAL_HTML_PATH)/$$dir" ; \
+	done
+	-( cd local/html && find . -type f -print ) | while read file ; do \
+	    $(INSTALL) -m 0644 "local/html/$$file" "$(DESTDIR)$(MASON_LOCAL_HTML_PATH)/$$file" ; \
+	done
+	-( cd local/po && find . -type d -print ) | while read dir ; do \
+	    $(INSTALL) -m 0755 -d "$(DESTDIR)$(LOCAL_LEXICON_PATH)/$$dir" ; \
+	done
+	-( cd local/po && find . -type f -print ) | while read file ; do \
+	    $(INSTALL) -m 0644 "local/po/$$file" "$(DESTDIR)$(LOCAL_LEXICON_PATH)/$$file" ; \
+	done
+	-( cd local/etc && find . -type d -print ) | while read dir ; do \
+	    $(INSTALL) -m 0755 -d "$(DESTDIR)$(LOCAL_ETC_PATH)/$$dir" ; \
+	done
+	-( cd local/etc && find . -type f -print ) | while read file ; do \
+	    $(INSTALL) -m 0644 "etc/$$file" "$(DESTDIR)$(LOCAL_ETC_PATH)/$$file" ; \
+	done
 # }}}
 
 # {{{ Best Practical Build targets -- no user servicable parts inside
-
-
-POD2TEST_EXE = sbin/extract_pod_tests
-
-testify-pods:
-	[ -d lib/t/autogen ] || mkdir lib/t/autogen
-	find lib -name \*pm | grep -v \*.in |xargs -n 1 $(PERL) $(POD2TEST_EXE)
-	find bin -type f | grep -v \~ | grep -v "\.in" | xargs -n 1 $(PERL) $(POD2TEST_EXE)
-	find lib -name \*pm | grep -v \*.in |xargs -n 1 $(PERL) $(POD2TEST_EXE)
-	find bin -type f | grep -v \~ | grep -v "\.in" | xargs -n 1 $(PERL) $(POD2TEST_EXE)
-
-
 
 regenerate-catalogs:
 	$(PERL) sbin/extract-message-catalog
@@ -486,9 +500,20 @@ reconfigure:
 start-httpd:
 	$(PERL) bin/standalone_httpd &
 
+start-server:
+	$(PERL) sbin/rt-server &
+
 apachectl:
 	$(APACHECTL) stop
 	sleep 10
 	$(APACHECTL) start
 	sleep 5
+
+SNAPSHOT=$(shell git describe --tags)
+snapshot:
+	git archive --prefix "$(SNAPSHOT)/"  HEAD | tar -xf -
+	( cd $(SNAPSHOT) && autoconf && ./configure )
+	tar -czf "$(SNAPSHOT).tar.gz" "$(SNAPSHOT)/"
+	rm -fr "$(SNAPSHOT)/"
+
 # }}}

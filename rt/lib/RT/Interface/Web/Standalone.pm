@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,12 +45,15 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
-package RT::Interface::Web::Standalone;
 
 use strict;
+use warnings;
+package RT::Interface::Web::Standalone;
+
 use base 'HTTP::Server::Simple::Mason';
 use RT::Interface::Web::Handler;
 use RT::Interface::Web;
+use URI;
 
 sub handler_class { "RT::Interface::Web::Handler" }
 
@@ -64,7 +67,7 @@ sub setup_escapes {
 } 
 
 sub default_mason_config {
-    return @RT::MasonParameters;
+    return RT->Config->Get('MasonParameters');
 } 
 
 sub handle_request {
@@ -72,13 +75,43 @@ sub handle_request {
     my $self = shift;
     my $cgi = shift;
 
-    Module::Refresh->refresh if $RT::DevelMode;
-
+    Module::Refresh->refresh if RT->Config->Get('DevelMode');
+    RT::ConnectToDatabase() unless RT->InstallMode;
     $self->SUPER::handle_request($cgi);
-    $RT::Logger->crit($@) if ($@);
-
+    $RT::Logger->crit($@) if $@ && $RT::Logger;
+    warn $@ if $@ && !$RT::Logger;
     RT::Interface::Web::Handler->CleanupRequest();
+}
+
+sub net_server {
+    my $self = shift;
+    $self->{rt_net_server} = shift if @_;
+    return $self->{rt_net_server};
+}
+
+
+=head2  print_banner
+
+This routine prints a banner before the server request-handling loop
+starts.
+
+Methods below this point are probably not terribly useful to define
+yourself in subclasses.
+
+=cut
+
+sub print_banner {
+    my $self = shift;
+    
+    my $url = URI->new(           RT->Config->Get('WebBaseURL'));
+    $url->host('127.0.0.1') if ($url->host() eq 'localhost');
+    $url->port($self->port);
+    print(   
+            "You can connect to your server at "
+            . $url->canonical
+            . "\n" );
 
 }
+
 
 1;

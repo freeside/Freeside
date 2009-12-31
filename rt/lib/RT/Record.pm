@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,6 +45,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
   RT::Record - Base class for RT record objects
@@ -55,11 +56,6 @@
 =head1 DESCRIPTION
 
 
-=begin testing
-
-ok (require RT::Record);
-
-=end testing
 
 =head1 METHODS
 
@@ -70,24 +66,21 @@ package RT::Record;
 use strict;
 use warnings;
 
-our @ISA;
-use base qw(RT::Base);
-
 use RT::Date;
 use RT::User;
 use RT::Attributes;
-use DBIx::SearchBuilder::Record::Cachable;
 use Encode qw();
 
 our $_TABLE_ATTR = { };
 
-
-if ( $RT::DontCacheSearchBuilderRecords ) {
-    push (@ISA, 'DBIx::SearchBuilder::Record');
-} else {
-    push (@ISA, 'DBIx::SearchBuilder::Record::Cachable');
-
+use RT::Base;
+my $base = 'DBIx::SearchBuilder::Record::Cachable';
+if ( $RT::Config && $RT::Config->Get('DontCacheSearchBuilderRecords') ) {
+    $base = 'DBIx::SearchBuilder::Record';
 }
+eval "require $base" or die $@;
+our @ISA = 'RT::Base';
+push @ISA, $base;
 
 # {{{ sub _Init 
 
@@ -107,10 +100,7 @@ The primary keys for RT classes is 'id'
 
 =cut
 
-sub _PrimaryKeys {
-    my $self = shift;
-    return ( ['id'] );
-}
+sub _PrimaryKeys { return ['id'] }
 
 # }}}
 
@@ -136,14 +126,6 @@ sub Delete {
 Returns a string which is this object's type.  The type is the class,
 without the "RT::" prefix.
 
-=begin testing
-
-my $ticket = RT::Ticket->new($RT::SystemUser);
-my $group = RT::Group->new($RT::SystemUser);
-is($ticket->ObjectTypeStr, 'Ticket', "Ticket returns correct typestring");
-is($group->ObjectTypeStr, 'Group', "Group returns correct typestring");
-
-=end testing
 
 =cut
 
@@ -259,10 +241,7 @@ sub FirstAttribute {
 
 
 # {{{ sub _Handle 
-sub _Handle {
-    my $self = shift;
-    return ($RT::Handle);
-}
+sub _Handle { return $RT::Handle }
 
 # }}}
 
@@ -335,8 +314,6 @@ sub Create {
    }
 
     if  (UNIVERSAL::isa('errno',$id)) {
-        exit(0);
-       warn "It's here!";
         return(undef);
     }
 
@@ -366,40 +343,29 @@ DB is case sensitive
 
 sub LoadByCols {
     my $self = shift;
-    my %hash = (@_);
 
     # We don't want to hang onto this
     delete $self->{'attributes'};
 
+    return $self->SUPER::LoadByCols( @_ ) unless $self->_Handle->CaseSensitive;
+
     # If this database is case sensitive we need to uncase objects for
     # explicit loading
-    if ( $self->_Handle->CaseSensitive ) {
-        my %newhash;
-        foreach my $key ( keys %hash ) {
+    my %hash = (@_);
+    foreach my $key ( keys %hash ) {
 
-            # If we've been passed an empty value, we can't do the lookup. 
-            # We don't need to explicitly downcase integers or an id.
-            if ( $key =~ '^id$'
-                || !defined( $hash{$key} )
-                || $hash{$key} =~ /^\d+$/
-                 )
-            {
-                $newhash{$key} = $hash{$key};
-            }
-            else {
-                my ($op, $val, $func);
-                ($key, $op, $val, $func) = $self->_Handle->_MakeClauseCaseInsensitive($key, '=', $hash{$key});
-                $newhash{$key}->{operator} = $op;
-                $newhash{$key}->{value} = $val;
-                $newhash{$key}->{function} = $func;
-            }
+        # If we've been passed an empty value, we can't do the lookup. 
+        # We don't need to explicitly downcase integers or an id.
+        if ( $key ne 'id' && defined $hash{ $key } && $hash{ $key } !~ /^\d+$/ ) {
+            my ($op, $val, $func);
+            ($key, $op, $val, $func) =
+                $self->_Handle->_MakeClauseCaseInsensitive( $key, '=', delete $hash{ $key } );
+            $hash{$key}->{operator} = $op;
+            $hash{$key}->{value}    = $val;
+            $hash{$key}->{function} = $func;
         }
-
-        # We've clobbered everything we care about. bash the old hash
-        # and replace it with the new hash
-        %hash = %newhash;
     }
-    $self->SUPER::LoadByCols(%hash);
+    return $self->SUPER::LoadByCols( %hash );
 }
 
 # }}}
@@ -528,7 +494,7 @@ sub _Set {
         $msg =
           $self->loc(
             "[_1] changed from [_2] to [_3]",
-            $args{'Field'},
+            $self->loc( $args{'Field'} ),
             ( $old_val ? "'$old_val'" : $self->loc("(no value)") ),
             '"' . $self->__Value( $args{'Field'}) . '"' 
           );
@@ -661,27 +627,20 @@ sub SQLType {
 
 }
 
-
 sub __Value {
     my $self  = shift;
     my $field = shift;
-    my %args = ( decode_utf8 => 1,
-                 @_ );
+    my %args = ( decode_utf8 => 1, @_ );
 
-    unless (defined $field && $field) {
-        $RT::Logger->error("$self __Value called with undef field");
+    unless ( $field ) {
+        $RT::Logger->error("__Value called with undef field");
     }
-    my $value = $self->SUPER::__Value($field);
 
-    return('') if ( !defined($value) || $value eq '');
-
+    my $value = $self->SUPER::__Value( $field );
     if( $args{'decode_utf8'} ) {
-    	# XXX: is_utf8 check should be here unless Encode bug would be fixed
-        # see http://rt.cpan.org/NoAuth/Bug.html?id=14559 
-        return Encode::decode_utf8($value) unless Encode::is_utf8($value);
+        return Encode::decode_utf8( $value ) unless Encode::is_utf8( $value );
     } else {
-        # check is_utf8 here just to be shure
-        return Encode::encode_utf8($value) if Encode::is_utf8($value);
+        return Encode::encode_utf8( $value ) if Encode::is_utf8( $value );
     }
     return $value;
 }
@@ -699,6 +658,7 @@ sub _CacheConfig {
 
 sub _BuildTableAttributes {
     my $self = shift;
+    my $class = ref($self) || $self;
 
     my $attributes;
     if ( UNIVERSAL::can( $self, '_CoreAccessible' ) ) {
@@ -710,37 +670,19 @@ sub _BuildTableAttributes {
 
     foreach my $column (%$attributes) {
         foreach my $attr ( %{ $attributes->{$column} } ) {
-            $_TABLE_ATTR->{ref($self)}->{$column}->{$attr} = $attributes->{$column}->{$attr};
+            $_TABLE_ATTR->{$class}->{$column}->{$attr} = $attributes->{$column}->{$attr};
         }
     }
-    if ( UNIVERSAL::can( $self, '_OverlayAccessible' ) ) {
-        $attributes = $self->_OverlayAccessible();
+    foreach my $method ( qw(_OverlayAccessible _VendorAccessible _LocalAccessible) ) {
+        next unless UNIVERSAL::can( $self, $method );
+        $attributes = $self->$method();
 
         foreach my $column (%$attributes) {
             foreach my $attr ( %{ $attributes->{$column} } ) {
-                $_TABLE_ATTR->{ref($self)}->{$column}->{$attr} = $attributes->{$column}->{$attr};
+                $_TABLE_ATTR->{$class}->{$column}->{$attr} = $attributes->{$column}->{$attr};
             }
         }
     }
-    if ( UNIVERSAL::can( $self, '_VendorAccessible' ) ) {
-        $attributes = $self->_VendorAccessible();
-
-        foreach my $column (%$attributes) {
-            foreach my $attr ( %{ $attributes->{$column} } ) {
-                $_TABLE_ATTR->{ref($self)}->{$column}->{$attr} = $attributes->{$column}->{$attr};
-            }
-        }
-    }
-    if ( UNIVERSAL::can( $self, '_LocalAccessible' ) ) {
-        $attributes = $self->_LocalAccessible();
-
-        foreach my $column (%$attributes) {
-            foreach my $attr ( %{ $attributes->{$column} } ) {
-                $_TABLE_ATTR->{ref($self)}->{$column}->{$attr} = $attributes->{$column}->{$attr};
-            }
-        }
-    }
-
 }
 
 
@@ -753,7 +695,7 @@ DBIx::SearchBuilder::Record
 
 sub _ClassAccessible {
     my $self = shift;
-    return $_TABLE_ATTR->{ref($self)};
+    return $_TABLE_ATTR->{ref($self) || $self};
 }
 
 =head2 _Accessible COLUMN ATTRIBUTE
@@ -786,19 +728,19 @@ sub _EncodeLOB {
         my $ContentEncoding = 'none';
 
         #get the max attachment length from RT
-        my $MaxSize = $RT::MaxAttachmentSize;
+        my $MaxSize = RT->Config->Get('MaxAttachmentSize');
 
         #if the current attachment contains nulls and the
         #database doesn't support embedded nulls
 
-        if ( $RT::AlwaysUseBase64 or
+        if ( RT->Config->Get('AlwaysUseBase64') or
              ( !$RT::Handle->BinarySafeBLOBs ) && ( $Body =~ /\x00/ ) ) {
 
             # set a flag telling us to mimencode the attachment
             $ContentEncoding = 'base64';
 
             #cut the max attchment size by 25% (for mime-encoding overhead.
-            $RT::Logger->debug("Max size is $MaxSize\n");
+            $RT::Logger->debug("Max size is $MaxSize");
             $MaxSize = $MaxSize * 3 / 4;
         # Some databases (postgres) can't handle non-utf8 data
         } elsif (    !$RT::Handle->BinarySafeBLOBs
@@ -811,7 +753,7 @@ sub _EncodeLOB {
         if ( ($MaxSize) and ( $MaxSize < length($Body) ) ) {
 
             # if we're supposed to truncate large attachments
-            if ($RT::TruncateLongAttachments) {
+            if (RT->Config->Get('TruncateLongAttachments')) {
 
                 # truncate the attachment to that length.
                 $Body = substr( $Body, 0, $MaxSize );
@@ -819,13 +761,12 @@ sub _EncodeLOB {
             }
 
             # elsif we're supposed to drop large attachments on the floor,
-            elsif ($RT::DropLongAttachments) {
+            elsif (RT->Config->Get('DropLongAttachments')) {
 
                 # drop the attachment on the floor
                 $RT::Logger->info( "$self: Dropped an attachment of size "
-                                   . length($Body) . "\n"
-                                   . "It started: " . substr( $Body, 0, 60 ) . "\n"
-                                 );
+                                   . length($Body));
+                $RT::Logger->info( "It started: " . substr( $Body, 0, 60 ) );
                 return ("none", "Large attachment dropped" );
             }
         }
@@ -849,8 +790,8 @@ sub _EncodeLOB {
 
 sub _DecodeLOB {
     my $self            = shift;
-    my $ContentType     = shift;
-    my $ContentEncoding = shift;
+    my $ContentType     = shift || '';
+    my $ContentEncoding = shift || 'none';
     my $Content         = shift;
 
     if ( $ContentEncoding eq 'base64' ) {
@@ -868,7 +809,6 @@ sub _DecodeLOB {
         return ($Content);
 }
 
-# {{{ LINKDIRMAP
 # A helper table for links mapping to make it easier
 # to build and parse links between tickets
 
@@ -942,11 +882,18 @@ sub Update {
         # This is in an eval block because $object might not exist.
         # and might not have a Name method. But "can" won't find autoloaded
         # items. If it fails, we don't care
-        eval {
-            my $object = $attribute . "Obj";
-            next if ($self->$object->Name eq $value);
+        do {
+            no warnings "uninitialized";
+            local $@;
+            eval {
+                my $object = $attribute . "Obj";
+                my $name = $self->$object->Name;
+                next if $name eq $value || $name eq ($value || 0);
+            };
+            next if $value eq $self->$attribute();
+            next if ($value || 0) eq $self->$attribute();
         };
-        next if ( $value eq $self->$attribute() );
+
         my $method = "Set$attribute";
         my ( $code, $msg ) = $self->$method($value);
         my ($prefix) = ref($self) =~ /RT(?:.*)::(\w+)/;
@@ -954,7 +901,17 @@ sub Update {
         # Default to $id, but use name if we can get it.
         my $label = $self->id;
         $label = $self->Name if (UNIVERSAL::can($self,'Name'));
-        push @results, $self->loc( "$prefix [_1]", $label ) . ': '. $msg;
+        # this requires model names to be loc'ed.
+
+=for loc
+
+    "Ticket" # loc
+    "User" # loc
+    "Group" # loc
+    "Queue" # loc
+=cut
+
+        push @results, $self->loc( $prefix ) . " $label: ". $msg;
 
 =for loc
 
@@ -1063,54 +1020,10 @@ sub DependedOnBy {
 
 =head2 HasUnresolvedDependencies
 
-  Takes a paramhash of Type (default to '__any').  Returns true if
-$self->UnresolvedDependencies returns an object with one or more members
-of that type.  Returns false otherwise
-
-
-=begin testing
-
-my $t1 = RT::Ticket->new($RT::SystemUser);
-my ($id, $trans, $msg) = $t1->Create(Subject => 'DepTest1', Queue => 'general');
-ok($id, "Created dep test 1 - $msg");
-
-my $t2 = RT::Ticket->new($RT::SystemUser);
-my ($id2, $trans, $msg2) = $t2->Create(Subject => 'DepTest2', Queue => 'general');
-ok($id2, "Created dep test 2 - $msg2");
-my $t3 = RT::Ticket->new($RT::SystemUser);
-my ($id3, $trans, $msg3) = $t3->Create(Subject => 'DepTest3', Queue => 'general', Type => 'approval');
-ok($id3, "Created dep test 3 - $msg3");
-my ($addid, $addmsg);
-ok (($addid, $addmsg) =$t1->AddLink( Type => 'DependsOn', Target => $t2->id));
-ok ($addid, $addmsg);
-ok (($addid, $addmsg) =$t1->AddLink( Type => 'DependsOn', Target => $t3->id));
-
-ok ($addid, $addmsg);
-my $link = RT::Link->new($RT::SystemUser);
-my ($rv, $msg) = $link->Load($addid);
-ok ($rv, $msg);
-ok ($link->LocalTarget == $t3->id, "Link LocalTarget is correct");
-ok ($link->LocalBase   == $t1->id, "Link LocalBase   is correct");
-
-ok ($t1->HasUnresolvedDependencies, "Ticket ".$t1->Id." has unresolved deps");
-ok (!$t1->HasUnresolvedDependencies( Type => 'blah' ), "Ticket ".$t1->Id." has no unresolved blahs");
-ok ($t1->HasUnresolvedDependencies( Type => 'approval' ), "Ticket ".$t1->Id." has unresolved approvals");
-ok (!$t2->HasUnresolvedDependencies, "Ticket ".$t2->Id." has no unresolved deps");
-;
-
-my ($rid, $rmsg)= $t1->Resolve();
-ok(!$rid, $rmsg);
-my ($rid2, $rmsg2) = $t2->Resolve();
-ok ($rid2, $rmsg2);
-($rid, $rmsg)= $t1->Resolve();
-ok(!$rid, $rmsg);
-my ($rid3,$rmsg3) = $t3->Resolve;
-ok ($rid3,$rmsg3);
-($rid, $rmsg)= $t1->Resolve();
-ok($rid, $rmsg);
-
-
-=end testing
+Takes a paramhash of Type (default to '__any').  Returns the number of
+unresolved dependencies, if $self->UnresolvedDependencies returns an
+object with one or more members of that type.  Returns false
+otherwise.
 
 =cut
 
@@ -1133,7 +1046,7 @@ sub HasUnresolvedDependencies {
     }
 
     if ($deps->Count > 0) {
-        return 1;
+        return $deps->Count;
     }
     else {
         return (undef);
@@ -1182,27 +1095,54 @@ dependency search.
 
 sub AllDependedOnBy {
     my $self = shift;
-    my $dep = $self->DependedOnBy;
+    return $self->_AllLinkedTickets( LinkType => 'DependsOn',
+                                     Direction => 'Target', @_ );
+}
+
+=head2 AllDependsOn
+
+Returns an array of RT::Ticket objects which this ticket (directly or
+indirectly) depends on; takes an optional 'Type' argument in the param
+hash, which will limit returned tickets to that type, as well as cause
+tickets with that type to serve as 'leaf' nodes that stops the
+recursive dependency search.
+
+=cut
+
+sub AllDependsOn {
+    my $self = shift;
+    return $self->_AllLinkedTickets( LinkType => 'DependsOn',
+                                     Direction => 'Base', @_ );
+}
+
+sub _AllLinkedTickets {
+    my $self = shift;
+
     my %args = (
+        LinkType  => undef,
+        Direction => undef,
         Type   => undef,
 	_found => {},
 	_top   => 1,
         @_
     );
 
+    my $dep = $self->_Links( $args{Direction}, $args{LinkType});
     while (my $link = $dep->Next()) {
-	next unless ($link->BaseURI->IsLocal());
-	next if $args{_found}{$link->BaseObj->Id};
+        my $uri = $args{Direction} eq 'Target' ? $link->BaseURI : $link->TargetURI;
+	next unless ($uri->IsLocal());
+        my $obj = $args{Direction} eq 'Target' ? $link->BaseObj : $link->TargetObj;
+	next if $args{_found}{$obj->Id};
 
 	if (!$args{Type}) {
-	    $args{_found}{$link->BaseObj->Id} = $link->BaseObj;
-	    $link->BaseObj->AllDependedOnBy( %args, _top => 0 );
+	    $args{_found}{$obj->Id} = $obj;
+	    $obj->_AllLinkedTickets( %args, _top => 0 );
 	}
-	elsif ($link->BaseObj->Type eq $args{Type}) {
-	    $args{_found}{$link->BaseObj->Id} = $link->BaseObj;
+	elsif ($obj->Type eq $args{Type}) {
+	    $args{_found}{$obj->Id} = $obj;
 	}
 	else {
-	    $link->BaseObj->AllDependedOnBy( %args, _top => 0 );
+	    $obj->_AllLinkedTickets( %args, _top => 0 );
 	}
     }
 
@@ -1274,6 +1214,50 @@ sub _Links {
 
 # }}}
 
+# {{{ sub FormatType
+
+=head2 FormatType
+
+Takes a Type and returns a string that is more human readable.
+
+=cut
+
+sub FormatType{
+    my $self = shift;
+    my %args = ( Type => '',
+		 @_
+	       );
+    $args{Type} =~ s/([A-Z])/" " . lc $1/ge;
+    $args{Type} =~ s/^\s+//;
+    return $args{Type};
+}
+
+
+# }}}
+
+# {{{ sub FormatLink
+
+=head2 FormatLink
+
+Takes either a Target or a Base and returns a string of human friendly text.
+
+=cut
+
+sub FormatLink {
+    my $self = shift;
+    my %args = ( Object => undef,
+		 FallBack => '',
+		 @_
+	       );
+    my $text = "URI " . $args{FallBack};
+    if ($args{Object} && $args{Object}->isa("RT::Ticket")) {
+	$text = "Ticket " . $args{Object}->id;
+    }
+    return $text;
+}
+
+# }}}
+
 # {{{ sub _AddLink
 
 =head2 _AddLink
@@ -1284,7 +1268,6 @@ Returns C<link id>, C<message> and C<exist> flag.
 
 
 =cut
-
 
 sub _AddLink {
     my $self = shift;
@@ -1300,7 +1283,7 @@ sub _AddLink {
     my $direction;
 
     if ( $args{'Base'} and $args{'Target'} ) {
-        $RT::Logger->debug( "$self tried to create a link. both base and target were specified\n" );
+        $RT::Logger->debug( "$self tried to create a link. both base and target were specified" );
         return ( 0, $self->loc("Can't specifiy both base and target") );
     }
     elsif ( $args{'Base'} ) {
@@ -1342,10 +1325,14 @@ sub _AddLink {
         return ( 0, $self->loc("Link could not be created") );
     }
 
+    my $basetext = $self->FormatLink(Object => $link->BaseObj,
+				     FallBack => $args{Base});
+    my $targettext = $self->FormatLink(Object => $link->TargetObj,
+				       FallBack => $args{Target});
+    my $typetext = $self->FormatType(Type => $args{Type});
     my $TransString =
-      "Record $args{'Base'} $args{Type} record $args{'Target'}.";
-
-    return ( $linkid, $self->loc( "Link created ([_1])", $TransString ) );
+      "$basetext $typetext $targettext.";
+    return ( $linkid, $TransString ) ;
 }
 
 # }}}
@@ -1376,7 +1363,7 @@ sub _DeleteLink {
     my $remote_link;
 
     if ( $args{'Base'} and $args{'Target'} ) {
-        $RT::Logger->debug("$self ->_DeleteLink. got both Base and Target\n");
+        $RT::Logger->debug("$self ->_DeleteLink. got both Base and Target");
         return ( 0, $self->loc("Can't specifiy both base and target") );
     }
     elsif ( $args{'Base'} ) {
@@ -1390,28 +1377,32 @@ sub _DeleteLink {
         $direction='Base';
     }
     else {
-        $RT::Logger->error("Base or Target must be specified\n");
+        $RT::Logger->error("Base or Target must be specified");
         return ( 0, $self->loc('Either base or target must be specified') );
     }
 
     my $link = new RT::Link( $self->CurrentUser );
-    $RT::Logger->debug( "Trying to load link: " . $args{'Base'} . " " . $args{'Type'} . " " . $args{'Target'} . "\n" );
+    $RT::Logger->debug( "Trying to load link: " . $args{'Base'} . " " . $args{'Type'} . " " . $args{'Target'} );
 
 
     $link->LoadByParams( Base=> $args{'Base'}, Type=> $args{'Type'}, Target=>  $args{'Target'} );
     #it's a real link. 
-    if ( $link->id ) {
 
+    if ( $link->id ) {
+        my $basetext = $self->FormatLink(Object => $link->BaseObj,
+                                     FallBack => $args{Base});
+        my $targettext = $self->FormatLink(Object => $link->TargetObj,
+                                       FallBack => $args{Target});
+        my $typetext = $self->FormatType(Type => $args{Type});
         my $linkid = $link->id;
         $link->Delete();
-
-        my $TransString = "Record $args{'Base'} no longer $args{Type} record $args{'Target'}.";
-        return ( 1, $self->loc("Link deleted ([_1])", $TransString));
+        my $TransString = "$basetext no longer $typetext $targettext.";
+        return ( 1, $TransString);
     }
 
     #if it's not a link we can find
     else {
-        $RT::Logger->debug("Couldn't find that link\n");
+        $RT::Logger->debug("Couldn't find that link");
         return ( 0, $self->loc("Link not found") );
     }
 }
@@ -1490,7 +1481,7 @@ sub _NewTransaction {
     if ( defined $args{'TimeTaken'} and $self->can('_UpdateTimeTaken')) {
         $self->_UpdateTimeTaken( $args{'TimeTaken'} );
     }
-    if ( $RT::UseTransactionBatch and $transaction ) {
+    if ( RT->Config->Get('UseTransactionBatch') and $transaction ) {
 	    push @{$self->{_TransactionBatch}}, $trans if $args{'CommitScrips'};
     }
     return ( $transaction, $msg, $trans );
@@ -1533,11 +1524,13 @@ sub Transactions {
 sub CustomFields {
     my $self = shift;
     my $cfs  = RT::CustomFields->new( $self->CurrentUser );
-
+    
+    $cfs->SetContextObject( $self );
     # XXX handle multiple types properly
     $cfs->LimitToLookupType( $self->CustomFieldLookupType );
     $cfs->LimitToGlobalOrObjectId(
-        $self->_LookupId( $self->CustomFieldLookupType ) );
+        $self->_LookupId( $self->CustomFieldLookupType )
+    );
 
     return $cfs;
 }
@@ -1570,27 +1563,18 @@ sub CustomFieldLookupType {
     return ref($self);
 }
 
-#TODO Deprecated API. Destroy in 3.6
-sub _LookupTypes { 
-    my  $self = shift;
-    $RT::Logger->warning("_LookupTypes call is deprecated at (". join(":",caller)."). Replace with CustomFieldLookupType");
-
-    return($self->CustomFieldLookupType);
-
-}
-
 # {{{ AddCustomFieldValue
 
 =head2 AddCustomFieldValue { Field => FIELD, Value => VALUE }
 
-VALUE should be a string.
-FIELD can be a CustomField object OR a CustomField ID.
+VALUE should be a string. FIELD can be any identifier of a CustomField
+supported by L</LoadCustomFieldByIdentifier> method.
 
-
-Adds VALUE as a value of CustomField FIELD.  If this is a single-value custom field,
-deletes the old value. 
+Adds VALUE as a value of CustomField FIELD. If this is a single-value custom field,
+deletes the old value.
 If VALUE is not a valid value for the custom field, returns 
-(0, 'Error message' ) otherwise, returns (1, 'Success Message')
+(0, 'Error message' ) otherwise, returns ($id, 'Success Message') where
+$id is ID of created L<ObjectCustomFieldValue> object.
 
 =cut
 
@@ -1604,12 +1588,13 @@ sub _AddCustomFieldValue {
     my %args = (
         Field             => undef,
         Value             => undef,
+        LargeContent      => undef,
+        ContentType       => undef,
         RecordTransaction => 1,
         @_
     );
 
     my $cf = $self->LoadCustomFieldByIdentifier($args{'Field'});
-
     unless ( $cf->Id ) {
         return ( 0, $self->loc( "Custom field [_1] not found", $args{'Field'} ) );
     }
@@ -1625,8 +1610,11 @@ sub _AddCustomFieldValue {
             )
         );
     }
-    # Load up a ObjectCustomFieldValues object for this custom field and this ticket
-    my $values = $cf->ValuesForObject($self);
+
+    # empty string is not correct value of any CF, so undef it
+    foreach ( qw(Value LargeContent) ) {
+        $args{ $_ } = undef if defined $args{ $_ } && !length $args{ $_ };
+    }
 
     unless ( $cf->ValidateValue( $args{'Value'} ) ) {
         return ( 0, $self->loc("Invalid value for custom field") );
@@ -1634,11 +1622,14 @@ sub _AddCustomFieldValue {
 
     # If the custom field only accepts a certain # of values, delete the existing
     # value and record a "changed from foo to bar" transaction
-    unless ( $cf->UnlimitedValues) {
+    unless ( $cf->UnlimitedValues ) {
 
- # We need to whack any old values here.  In most cases, the custom field should
- # only have one value to delete.  In the pathalogical case, this custom field
- # used to be a multiple and we have many values to whack....
+        # Load up a ObjectCustomFieldValues object for this custom field and this ticket
+        my $values = $cf->ValuesForObject($self);
+
+        # We need to whack any old values here.  In most cases, the custom field should
+        # only have one value to delete.  In the pathalogical case, this custom field
+        # used to be a multiple and we have many values to whack....
         my $cf_values = $values->Count;
 
         if ( $cf_values > $cf->MaxValues ) {
@@ -1667,8 +1658,27 @@ sub _AddCustomFieldValue {
 
         my ( $old_value, $old_content );
         if ( $old_value = $values->First ) {
-            $old_content = $old_value->Content();
-            return (1) if( $old_content eq $args{'Value'} && $old_value->LargeContent eq $args{'LargeContent'});;
+            $old_content = $old_value->Content;
+            $old_content = undef if defined $old_content && !length $old_content;
+
+            my $is_the_same = 1;
+            if ( defined $args{'Value'} ) {
+                $is_the_same = 0 unless defined $old_content
+                    && lc $old_content eq lc $args{'Value'};
+            } else {
+                $is_the_same = 0 if defined $old_content;
+            }
+            if ( $is_the_same ) {
+                my $old_content = $old_value->LargeContent;
+                if ( defined $args{'LargeContent'} ) {
+                    $is_the_same = 0 unless defined $old_content
+                        && $old_content eq $args{'LargeContent'};
+                } else {
+                    $is_the_same = 0 if defined $old_content;
+                }
+            }
+
+            return $old_value->id if $is_the_same;
         }
 
         my ( $new_value_id, $value_msg ) = $cf->AddValueForObject(
@@ -1678,19 +1688,17 @@ sub _AddCustomFieldValue {
             ContentType  => $args{'ContentType'},
         );
 
-        unless ($new_value_id) {
-            return ( 0, $self->loc( "Could not add new custom field value: [_1]", $value_msg) );
+        unless ( $new_value_id ) {
+            return ( 0, $self->loc( "Could not add new custom field value: [_1]", $value_msg ) );
         }
 
         my $new_value = RT::ObjectCustomFieldValue->new( $self->CurrentUser );
-        $new_value->Load($new_value_id);
+        $new_value->Load( $new_value_id );
 
         # now that adding the new value was successful, delete the old one
-        if ($old_value) {
+        if ( $old_value ) {
             my ( $val, $msg ) = $old_value->Delete();
-            unless ($val) {
-                return ( 0, $msg );
-            }
+            return ( 0, $msg ) unless $val;
         }
 
         if ( $args{'RecordTransaction'} ) {
@@ -1703,47 +1711,45 @@ sub _AddCustomFieldValue {
               );
         }
 
-        if ( $old_value eq '' ) {
-            return ( 1, $self->loc( "[_1] [_2] added", $cf->Name, $new_value->Content ));
+        my $new_content = $new_value->Content;
+        unless ( defined $old_content && length $old_content ) {
+            return ( $new_value_id, $self->loc( "[_1] [_2] added", $cf->Name, $new_content ));
         }
-        elsif ( $new_value->Content eq '' ) {
-            return ( 1,
-                $self->loc( "[_1] [_2] deleted", $cf->Name, $old_value->Content ) );
+        elsif ( !defined $new_content || !length $new_content ) {
+            return ( $new_value_id,
+                $self->loc( "[_1] [_2] deleted", $cf->Name, $old_content ) );
         }
         else {
-            return ( 1, $self->loc( "[_1] [_2] changed to [_3]", $cf->Name, $old_content,                $new_value->Content));
+            return ( $new_value_id, $self->loc( "[_1] [_2] changed to [_3]", $cf->Name, $old_content, $new_content));
         }
 
     }
 
     # otherwise, just add a new value and record "new value added"
     else {
-        my ($new_value_id, $value_msg) = $cf->AddValueForObject(
+        my ($new_value_id, $msg) = $cf->AddValueForObject(
             Object       => $self,
             Content      => $args{'Value'},
             LargeContent => $args{'LargeContent'},
             ContentType  => $args{'ContentType'},
         );
 
-        unless ($new_value_id) {
-            return ( 0, $self->loc( "Could not add new custom field value: [_1]", $value_msg) );
+        unless ( $new_value_id ) {
+            return ( 0, $self->loc( "Could not add new custom field value: [_1]", $msg ) );
         }
         if ( $args{'RecordTransaction'} ) {
-            my ( $TransactionId, $Msg, $TransactionObj ) =
-              $self->_NewTransaction(
+            my ( $tid, $msg ) = $self->_NewTransaction(
                 Type          => 'CustomField',
                 Field         => $cf->Id,
                 NewReference  => $new_value_id,
                 ReferenceType => 'RT::ObjectCustomFieldValue',
-              );
-            unless ($TransactionId) {
-                return ( 0,
-                    $self->loc( "Couldn't create a transaction: [_1]", $Msg ) );
+            );
+            unless ( $tid ) {
+                return ( 0, $self->loc( "Couldn't create a transaction: [_1]", $msg ) );
             }
         }
-        return ( 1, $self->loc( "[_1] added as a value for [_2]", $args{'Value'}, $cf->Name));
+        return ( $new_value_id, $self->loc( "[_1] added as a value for [_2]", $args{'Value'}, $cf->Name ) );
     }
-
 }
 
 # }}}
@@ -1771,10 +1777,10 @@ sub DeleteCustomFieldValue {
     );
 
     my $cf = $self->LoadCustomFieldByIdentifier($args{'Field'});
-
     unless ( $cf->Id ) {
         return ( 0, $self->loc( "Custom field [_1] not found", $args{'Field'} ) );
     }
+
     my ( $val, $msg ) = $cf->DeleteValueForObject(
         Object  => $self,
         Id      => $args{'ValueId'},
@@ -1783,6 +1789,7 @@ sub DeleteCustomFieldValue {
     unless ($val) {
         return ( 0, $msg );
     }
+
     my ( $TransactionId, $Msg, $TransactionObj ) = $self->_NewTransaction(
         Type          => 'CustomField',
         Field         => $cf->Id,
@@ -1816,15 +1823,34 @@ Takes a field id or name
 sub FirstCustomFieldValue {
     my $self = shift;
     my $field = shift;
-    my $values = $self->CustomFieldValues($field);
-    if ($values->First) {
-        return $values->First->Content;
-    } else {
-        return undef;
-    }
 
+    my $values = $self->CustomFieldValues( $field );
+    return undef unless my $first = $values->First;
+    return $first->Content;
 }
 
+=head2 CustomFieldValuesAsString FIELD
+
+Return the content of the CustomField FIELD for this ticket.
+If this is a multi-value custom field, values will be joined with newlines.
+
+Takes a field id or name as the first argument
+
+Takes an optional Separator => "," second and third argument
+if you want to join the values using something other than a newline
+
+=cut
+
+sub CustomFieldValuesAsString {
+    my $self  = shift;
+    my $field = shift;
+    my %args  = @_;
+    my $separator = $args{Separator} || "\n";
+
+    my $values = $self->CustomFieldValues( $field );
+    return join ($separator, grep { defined $_ }
+                 map { $_->Content } @{$values->ItemsArrayRef});
+}
 
 
 # {{{ CustomFieldValues
@@ -1842,11 +1868,12 @@ sub CustomFieldValues {
     my $self  = shift;
     my $field = shift;
 
-    if ($field) {
-        my $cf = $self->LoadCustomFieldByIdentifier($field);
+    if ( $field ) {
+        my $cf = $self->LoadCustomFieldByIdentifier( $field );
 
-        # we were asked to search on a custom field we couldn't fine
+        # we were asked to search on a custom field we couldn't find
         unless ( $cf->id ) {
+            $RT::Logger->warning("Couldn't load custom field by '$field' identifier");
             return RT::ObjectCustomFieldValues->new( $self->CurrentUser );
         }
         return ( $cf->ValuesForObject($self) );
@@ -1854,12 +1881,11 @@ sub CustomFieldValues {
 
     # we're not limiting to a specific custom field;
     my $ocfs = RT::ObjectCustomFieldValues->new( $self->CurrentUser );
-    $ocfs->LimitToObject($self);
+    $ocfs->LimitToObject( $self );
     return $ocfs;
-
 }
 
-=head2 CustomField IDENTIFER
+=head2 LoadCustomFieldByIdentifier IDENTIFER
 
 Find the custom field has id or name IDENTIFIER for this object.
 
@@ -1871,35 +1897,32 @@ sub LoadCustomFieldByIdentifier {
     my $self = shift;
     my $field = shift;
     
-    my $cf = RT::CustomField->new($self->CurrentUser);
-
+    my $cf;
     if ( UNIVERSAL::isa( $field, "RT::CustomField" ) ) {
+        $cf = RT::CustomField->new($self->CurrentUser);
+        $cf->SetContextObject( $self );
         $cf->LoadById( $field->id );
     }
     elsif ($field =~ /^\d+$/) {
         $cf = RT::CustomField->new($self->CurrentUser);
-        $cf->Load($field); 
+        $cf->SetContextObject( $self );
+        $cf->LoadById($field);
     } else {
 
         my $cfs = $self->CustomFields($self->CurrentUser);
+        $cfs->SetContextObject( $self );
         $cfs->Limit(FIELD => 'Name', VALUE => $field, CASESENSITIVE => 0);
         $cf = $cfs->First || RT::CustomField->new($self->CurrentUser);
     }
     return $cf;
 }
 
+sub ACLEquivalenceObjects { } 
 
-# }}}
-
-# }}}
-
-# }}}
-
-sub BasicColumns {
-}
+sub BasicColumns { }
 
 sub WikiBase {
-  return $RT::WebPath. "/index.html?q=";
+    return RT->Config->Get('WebPath'). "/index.html?q=";
 }
 
 eval "require RT::Record_Vendor";

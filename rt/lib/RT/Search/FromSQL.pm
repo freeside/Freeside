@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,6 +45,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
   RT::Search::FromSQL
@@ -58,11 +59,6 @@ Find all tickets described by the SQL statement passed as an argument
 =head1 METHODS
 
 
-=begin testing
-
-ok (require RT::Search::Generic);
-
-=end testing
 
 
 =cut
@@ -70,7 +66,7 @@ ok (require RT::Search::Generic);
 package RT::Search::FromSQL;
 
 use strict;
-use base qw(RT::Search::Generic);
+use base qw(RT::Search);
 
 =head2 Describe
 

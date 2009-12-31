@@ -1,0 +1,91 @@
+@ScripConditions = (
+    {  Name                 => 'On Reject',                                # loc
+       Description          => 'Whenever a ticket is rejected',            # loc
+       ApplicableTransTypes => 'Status',
+       ExecModule           => 'StatusChange',
+       Argument             => 'rejected'
+
+    },
+);
+
+@Final = (
+    sub {
+        $RT::Logger->debug("Going to correct descriptions of notify actions in the DB");
+
+        my $actions = RT::ScripActions->new( $RT::SystemUser );
+        $actions->Limit(
+            FIELD => 'ExecModule',
+            VALUE => 'Notify',
+        );
+        $actions->Limit(
+            FIELD => 'Argument',
+            VALUE => 'All',
+        );
+        while ( my $action = $actions->Next ) {
+            my ($status, $msg) = $action->__Set( Field => 'Name', Value => 'Notify Owner, Requestors, Ccs and AdminCcs' );
+            $RT::Logger->warning( "Couldn't change action name: $msg" )
+                unless $status;
+
+            ($status, $msg) = $action->__Set( Field => 'Description', Value => 'Send mail to owner and all watchers' );
+            $RT::Logger->warning( "Couldn't change action description: $msg" )
+                unless $status;
+        }
+
+        $actions = RT::ScripActions->new( $RT::SystemUser );
+        $actions->Limit(
+            FIELD => 'ExecModule',
+            VALUE => 'NotifyAsComment',
+        );
+        $actions->Limit(
+            FIELD => 'Argument',
+            VALUE => 'All',
+        );
+        while ( my $action = $actions->Next ) {
+            my ($status, $msg) = $action->__Set( Field => 'Name', Value => 'Notify Owner, Requestors, Ccs and AdminCcs as Comment' );
+            $RT::Logger->warning( "Couldn't change action name: $msg" )
+                unless $status;
+
+            ($status, $msg) = $action->__Set( Field => 'Description', Value => 'Send mail to owner and all watchers as a "comment"' );
+            $RT::Logger->warning( "Couldn't change action description: $msg" )
+                unless $status;
+        }
+
+        $RT::Logger->debug("Corrected descriptions of notify actions in the DB.");
+        return 1;
+    },
+);
+
+
+{
+$RT::Logger->debug("Going to add in Extract Subject Tag actions if they were missed during a previous upgrade");
+
+$actions = RT::ScripActions->new( $RT::SystemUser );
+$actions->Limit(
+    FIELD => 'ExecModule',
+    VALUE => 'ExtractSubjectTag',
+);
+my $extract_action = $actions->First;
+
+if ( $extract_action && $extract_action->Id ) {
+    $RT::Logger->debug("You appear to already have an Extract Subject Tag action, skipping");
+    return 1;
+} else {
+    $RT::Logger->debug("Didn't find an existing Extract Subject Tag action, adding it");
+    push @ScripActions, (
+            { Name        => 'Extract Subject Tag',                               # loc
+              Description => 'Extract tags from a Transaction\'s subject and add them to the Ticket\'s subject.', # loc
+              ExecModule  => 'ExtractSubjectTag' 
+            },
+    );
+
+    $RT::Logger->debug("Adding Extract Subject Tag Scrip");
+    push @Scrips, (
+        {  Description    => "On transaction, add any tags in the transaction's subject to the ticket's subject",
+           ScripCondition => 'On Transaction',
+           ScripAction    => 'Extract Subject Tag',
+           Template       => 'Blank' 
+        },
+    );
+}
+}
+

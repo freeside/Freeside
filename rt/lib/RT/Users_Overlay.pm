@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,6 +45,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
   RT::Users - Collection of RT::User objects
@@ -59,11 +60,6 @@
 
 =head1 METHODS
 
-=begin testing
-
-ok(require RT::Users);
-
-=end testing
 
 =cut
 
@@ -232,68 +228,6 @@ sub LimitToPrivileged {
 
 =head2 WhoHaveRight { Right => 'name', Object => $rt_object , IncludeSuperusers => undef, IncludeSubgroupMembers => undef, IncludeSystemRights => undef, EquivObjects => [ ] }
 
-=begin testing
-
-ok(my $users = RT::Users->new($RT::SystemUser));
-$users->WhoHaveRight(Object =>$RT::System, Right =>'SuperUser');
-ok($users->Count == 1, "There is one privileged superuser - Found ". $users->Count );
-# TODO: this wants more testing
-
-my $RTxUser = RT::User->new($RT::SystemUser);
-($id, $msg) = $RTxUser->Create( Name => 'RTxUser', Comments => "RTx extension user", Privileged => 1);
-ok ($id,$msg);
-
-my $group = RT::Group->new($RT::SystemUser);
-$group->LoadACLEquivalenceGroup($RTxUser->PrincipalObj);
-
-my $RTxSysObj = {};
-bless $RTxSysObj, 'RTx::System';
-*RTx::System::Id = sub { 1; };
-*RTx::System::id = *RTx::System::Id;
-my $ace = RT::Record->new($RT::SystemUser);
-$ace->Table('ACL');
-$ace->_BuildTableAttributes unless ($_TABLE_ATTR->{ref($self)});
-($id, $msg) = $ace->Create( PrincipalId => $group->id, PrincipalType => 'Group', RightName => 'RTxUserRight', ObjectType => 'RTx::System', ObjectId  => 1 );
-ok ($id, "ACL for RTxSysObj created");
-
-my $RTxObj = {};
-bless $RTxObj, 'RTx::System::Record';
-*RTx::System::Record::Id = sub { 4; };
-*RTx::System::Record::id = *RTx::System::Record::Id;
-
-$users = RT::Users->new($RT::SystemUser);
-$users->WhoHaveRight(Right => 'RTxUserRight', Object => $RTxSysObj);
-is($users->Count, 1, "RTxUserRight found for RTxSysObj");
-
-$users = RT::Users->new($RT::SystemUser);
-$users->WhoHaveRight(Right => 'RTxUserRight', Object => $RTxObj);
-is($users->Count, 0, "RTxUserRight not found for RTxObj");
-
-$users = RT::Users->new($RT::SystemUser);
-$users->WhoHaveRight(Right => 'RTxUserRight', Object => $RTxObj, EquivObjects => [ $RTxSysObj ]);
-is($users->Count, 1, "RTxUserRight found for RTxObj using EquivObjects");
-
-$ace = RT::Record->new($RT::SystemUser);
-$ace->Table('ACL');
-$ace->_BuildTableAttributes unless ($_TABLE_ATTR->{ref($self)});
-($id, $msg) = $ace->Create( PrincipalId => $group->id, PrincipalType => 'Group', RightName => 'RTxUserRight', ObjectType => 'RTx::System::Record', ObjectId => 5 );
-ok ($id, "ACL for RTxObj created");
-
-my $RTxObj2 = {};
-bless $RTxObj2, 'RTx::System::Record';
-*RTx::System::Record::Id = sub { 5; };
-*RTx::System::Record::id = sub { 5; };
-
-$users = RT::Users->new($RT::SystemUser);
-$users->WhoHaveRight(Right => 'RTxUserRight', Object => $RTxObj2);
-is($users->Count, 1, "RTxUserRight found for RTxObj2");
-
-$users = RT::Users->new($RT::SystemUser);
-$users->WhoHaveRight(Right => 'RTxUserRight', Object => $RTxObj2, EquivObjects => [ $RTxSysObj ]);
-is($users->Count, 1, "RTxUserRight found for RTxObj2");
-
-
-=end testing
 
 find all users who the right Right for this group, either individually
 or as members of groups
@@ -363,6 +297,16 @@ sub _JoinACL
         @_,
     );
 
+    if ( $args{'Right'} ) {
+        my $canonic = RT::ACE->CanonicalizeRightName( $args{'Right'} );
+        unless ( $canonic ) {
+            $RT::Logger->error("Invalid right. Couldn't canonicalize right '$args{'Right'}'");
+        }
+        else {
+            $args{'Right'} = $canonic;
+        }
+    }
+
     my $acl = $self->NewAlias('ACL');
     $self->Limit(
         ALIAS    => $acl,
@@ -403,7 +347,7 @@ sub _GetEquivObjects
 
         # XXX: This should be abstracted into object itself
         if( $args{'Object'}->id ) {
-            push @objects, $args{'Object'}->QueueObj;
+            push @objects, $args{'Object'}->ACLEquivalenceObjects;
         } else {
             push @objects, 'RT::Queue';
         }

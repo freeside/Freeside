@@ -1,5 +1,5 @@
 # $File: //depot/RT/rt-devel/docs/design_docs/string-extraction-guide.txt $ $Author: ivan $
-# $Revision: 1.1 $ $Change: 1431 $ $DateTime: 2002/10/15 17:24:45 $
+# $Revision: 1.1.1.2 $ $Change: 1431 $ $DateTime: 2002/10/15 17:24:45 $
 
 Run 'p4 edit lib/RT/I18N/zh_tw.pm' and 'perl l10n.pl' to add new
 extractions to the zh_tw.pm.
@@ -63,11 +63,11 @@ that this will genereate code which will not work in RT 2.1.3. I need
 to add a bit of framework to make it work in 2.1.4
 
 
-The string	<& /Elements/TitleBoxStart, width=> "40%", titleright => "RT $RT::VERSION for   $RT::rtname", title => 'Login' &>
+The string	<& /Elements/TitleBoxStart, width=> "40%", titleright => "RT $RT::VERSION for ". RT->Config->Get('rtname'), title => 'Login' &>
 
 should become 	<& /Elements/TitleBoxStart, 
 			width=> "40%",
-			titleright => loc("RT [_1] for [_2]",$RT::VERSION, $RT::rtname),
+			titleright => loc("RT [_1] for [_2]",$RT::VERSION, RT->Config->Get('rtname')),
 			title => loc('Login'),
 	      	&>
 	

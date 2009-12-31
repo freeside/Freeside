@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,39 +45,55 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
   RT::CurrentUser - an RT object representing the current user
 
 =head1 SYNOPSIS
 
-  use RT::CurrentUser
+    use RT::CurrentUser;
+
+    # laod
+    my $current_user = new RT::CurrentUser;
+    $current_user->Load(...);
+    # or
+    my $current_user = RT::CurrentUser->new( $user_obj );
+    # or
+    my $current_user = RT::CurrentUser->new( $address || $name || $id );
+
+    # manipulation
+    $current_user->UserObj->SetName('new_name');
 
 
 =head1 DESCRIPTION
 
+B<Read-only> subclass of L<RT::User> class. Used to define the current
+user. You should pass an instance of this class to constructors of
+many RT classes, then the instance used to check ACLs and localize
+strings.
 
 =head1 METHODS
 
+See also L<RT::User> for a list of methods this class has.
 
-=begin testing
+=head2 new
 
-ok (require RT::CurrentUser);
-
-=end testing
+Returns new CurrentUser object. Unlike all other classes of RT it takes
+either subclass of C<RT::User> class object or scalar value that is
+passed to Load method.
 
 =cut
 
 
 package RT::CurrentUser;
 
-use RT::Record;
 use RT::I18N;
 
 use strict;
-use base qw/RT::Record/;
+use warnings;
 
-# {{{ sub _Init 
+use base qw/RT::User/;
 
 #The basic idea here is that $self->CurrentUser is always supposed
 # to be a CurrentUser object. but that's hard to do when we're trying to load
@@ -89,107 +105,69 @@ sub _Init {
 
     $self->{'table'} = "Users";
 
-    if ( defined($User) ) {
+    if ( defined $User ) {
 
-        if (   UNIVERSAL::isa( $User, 'RT::User' )
-            || UNIVERSAL::isa( $User, 'RT::CurrentUser' ) )
-        {
-            $self->Load( $User->id );
-
+        if ( UNIVERSAL::isa( $User, 'RT::User' ) ) {
+            $self->LoadById( $User->id );
         }
-        elsif ( ref($User) ) {
+        elsif ( ref $User ) {
             $RT::Logger->crit(
                 "RT::CurrentUser->new() called with a bogus argument: $User");
         }
         else {
-            $self->Load($User);
+            $self->Load( $User );
         }
     }
 
-    $self->_BuildTableAttributes();
+    $self->_BuildTableAttributes;
 
 }
-# }}}
 
-# {{{ sub Create
+=head2 Create, Delete and Set*
+
+As stated above it's a subclass of L<RT::User>, but this class is read-only
+and calls to these methods are illegal. Return 'permission denied' message
+and log an error.
+
+=cut
 
 sub Create {
     my $self = shift;
+    $RT::Logger->error('RT::CurrentUser is read-only, RT::User for manipulation');
     return (0, $self->loc('Permission Denied'));
 }
-
-# }}}
-
-# {{{ sub Delete
 
 sub Delete {
     my $self = shift;
+    $RT::Logger->error('RT::CurrentUser is read-only, RT::User for manipulation');
     return (0, $self->loc('Permission Denied'));
 }
 
-# }}}
-
-# {{{ sub UserObj
+sub _Set {
+    my $self = shift;
+    $RT::Logger->error('RT::CurrentUser is read-only, RT::User for manipulation');
+    return (0, $self->loc('Permission Denied'));
+}
 
 =head2 UserObj
 
-  Returns the RT::User object associated with this CurrentUser object.
+Returns the L<RT::User> object associated with this CurrentUser object.
 
 =cut
 
 sub UserObj {
     my $self = shift;
-    
-	use RT::User;
-	my $user = RT::User->new($self);
 
-	unless ($user->Load($self->Id)) {
-	    $RT::Logger->err($self->loc("Couldn't load [_1] from the users database.\n", $self->Id));
-	}
-    return ($user);
-}
-# }}}
-
-# {{{ sub PrincipalObj 
-
-=head2 PrincipalObj
-
-    Returns this user's principal object.  this is just a helper routine for
-    $self->UserObj->PrincipalObj
-
-=cut
-
-sub PrincipalObj {
-    my $self = shift;
-    return($self->UserObj->PrincipalObj);
+    my $user = RT::User->new( $self );
+    unless ( $user->LoadById( $self->Id ) ) {
+        $RT::Logger->error(
+            $self->loc("Couldn't load [_1] from the users database.\n", $self->Id)
+        );
+    }
+    return $user;
 }
 
-
-# }}}
-
-
-# {{{ sub PrincipalId 
-
-=head2 PrincipalId
-
-    Returns this user's principal Id.  this is just a helper routine for
-    $self->UserObj->PrincipalId
-
-=cut
-
-sub PrincipalId {
-    my $self = shift;
-    return($self->UserObj->PrincipalId);
-}
-
-
-# }}}
-
-
-# {{{ sub _Accessible 
-
-
- sub _CoreAccessible  {
+sub _CoreAccessible  {
      {
          Name           => { 'read' => 1 },
            Gecos        => { 'read' => 1 },
@@ -200,29 +178,6 @@ sub PrincipalId {
      };
   
 }
-# }}}
-
-# {{{ sub LoadByEmail
-
-=head2 LoadByEmail
-
-Loads a User into this CurrentUser object.
-Takes the email address of the user to load.
-
-=cut
-
-sub LoadByEmail  {
-    my $self = shift;
-    my $identifier = shift;
-
-    $identifier = RT::User::CanonicalizeEmailAddress(undef, $identifier);
-        
-    $self->LoadByCol("EmailAddress",$identifier);
-    
-}
-# }}}
-
-# {{{ sub LoadByGecos
 
 =head2 LoadByGecos
 
@@ -233,14 +188,8 @@ Takes a unix username as its only argument.
 
 sub LoadByGecos  {
     my $self = shift;
-    my $identifier = shift;
-        
-    $self->LoadByCol("Gecos",$identifier);
-    
+    return $self->LoadByCol( "Gecos", shift );
 }
-# }}}
-
-# {{{ sub LoadByName
 
 =head2 LoadByName
 
@@ -251,154 +200,50 @@ Takes a Name.
 
 sub LoadByName {
     my $self = shift;
-    my $identifier = shift;
-    $self->LoadByCol("Name",$identifier);
-    
+    return $self->LoadByCol( "Name", shift );
 }
-# }}}
-
-# {{{ sub Load 
-
-=head2 Load
-
-Loads a User into this CurrentUser object.
-Takes either an integer (users id column reference) or a Name
-The latter is deprecated. Instead, you should use LoadByName.
-Formerly, this routine also took email addresses. 
-
-=cut
-
-sub Load  {
-  my $self = shift;
-  my $identifier = shift;
-
-  #if it's an int, load by id. otherwise, load by name.
-  if ($identifier !~ /\D/) {
-    $self->SUPER::LoadById($identifier);
-  }
-
-  elsif (UNIVERSAL::isa($identifier,"RT::User")) {
-         # DWIM if they pass a user in
-         $self->SUPER::LoadById($identifier->Id);
-  } 
-  else {
-      # This is a bit dangerous, we might get false authen if somebody
-      # uses ambigous userids or real names:
-      $self->LoadByCol("Name",$identifier);
-  }
-}
-
-# }}}
-
-# {{{ sub IsPassword
-
-=head2 IsPassword
-
-Takes a password as a string.  Passes it off to IsPassword in this
-user's UserObj.  If it is the user's password and the user isn't
-disabled, returns 1.
-
-Otherwise, returns undef.
-
-=cut
-
-sub IsPassword { 
-  my $self = shift;
-  my $value = shift;
-  
-  return ($self->UserObj->IsPassword($value)); 
-}
-
-# }}}
-
-# {{{ sub Privileged
-
-=head2 Privileged
-
-Returns true if the current user can be granted rights and be
-a member of groups.
-
-=cut
-
-sub Privileged {
-    my $self = shift;
-    return ($self->UserObj->Privileged());
-}
-
-# }}}
-
-
-# {{{ sub HasRight
-
-=head2 HasRight
-
-calls $self->UserObj->HasRight with the arguments passed in
-
-=cut
-
-sub HasRight {
-  my $self = shift;
-  return ($self->UserObj->HasRight(@_));
-}
-
-# }}}
-
-# {{{ Localization
 
 =head2 LanguageHandle
 
 Returns this current user's langauge handle. Should take a language
 specification. but currently doesn't
 
-=begin testing
-
-ok (my $cu = RT::CurrentUser->new('root'));
-ok (my $lh = $cu->LanguageHandle('en-us'));
-ok (defined $lh);
-ok ($lh->isa('Locale::Maketext'));
-is ($cu->loc('TEST_STRING'), "Concrete Mixer", "Localized TEST_STRING into English");
-ok ($lh = $cu->LanguageHandle('fr'));
-SKIP: {
-    skip "fr locale is not loaded", 1 unless grep $_ eq 'fr', @RT::LexiconLanguages;
-    is ($cu->loc('Before'), "Avant", "Localized TEST_STRING into Frenc");
-}
-
-=end testing
-
 =cut 
 
 sub LanguageHandle {
     my $self = shift;
-    if (   ( !defined $self->{'LangHandle'} )
-        || ( !UNIVERSAL::can( $self->{'LangHandle'}, 'maketext' ) )
-        || (@_) ) {
-        if ( !$RT::SystemUser or ($self->id || 0) == $RT::SystemUser->id() ) {
-            @_ = qw(en-US);
+    if (   !defined $self->{'LangHandle'}
+        || !UNIVERSAL::can( $self->{'LangHandle'}, 'maketext' )
+        || @_ )
+    {
+        if ( my $lang = $self->Lang ) {
+            push @_, $lang;
+        }
+        elsif ( $self->id && ($self->id == ($RT::SystemUser->id||0) || $self->id == ($RT::Nobody->id||0)) ) {
+            # don't use ENV magic for system users
+            push @_, 'en';
         }
 
-        elsif ( $self->Lang ) {
-            push @_, $self->Lang;
-        }
         $self->{'LangHandle'} = RT::I18N->get_handle(@_);
     }
 
     # Fall back to english.
     unless ( $self->{'LangHandle'} ) {
-        die "We couldn't get a dictionary. Nye mogu naidti slovar. No puedo encontrar dictionario.";
+        die "We couldn't get a dictionary. Ne mogu naidti slovar. No puedo encontrar dictionario.";
     }
-    return ( $self->{'LangHandle'} );
+    return $self->{'LangHandle'};
 }
 
 sub loc {
     my $self = shift;
-    return '' if $_[0] eq '';
+    return '' if !defined $_[0] || $_[0] eq '';
 
     my $handle = $self->LanguageHandle;
 
     if (@_ == 1) {
-	# pre-scan the lexicon hashes to return _AUTO keys verbatim,
-	# to keep locstrings containing '[' and '~' from tripping over Maketext
-	return $_[0] unless grep { exists $_->{$_[0]} } @{ $handle->_lex_refs };
+        # pre-scan the lexicon hashes to return _AUTO keys verbatim,
+        # to keep locstrings containing '[' and '~' from tripping over Maketext
+        return $_[0] unless grep exists $_->{$_[0]}, @{ $handle->_lex_refs };
     }
 
     return $handle->maketext(@_);
@@ -406,20 +251,17 @@ sub loc {
 
 sub loc_fuzzy {
     my $self = shift;
-    return '' if (!$_[0] ||  $_[0] eq '');
+    return '' if !defined $_[0] || $_[0] eq '';
 
     # XXX: work around perl's deficiency when matching utf8 data
     return $_[0] if Encode::is_utf8($_[0]);
-    my $result = $self->LanguageHandle->maketext_fuzzy(@_);
 
-    return($result);
+    return $self->LanguageHandle->maketext_fuzzy( @_ );
 }
-# }}}
-
 
 =head2 CurrentUser
 
-Return  the current currentuser object
+Return the current currentuser object
 
 =cut
 
@@ -437,9 +279,9 @@ representing whether the authentication succeeded.
 If both $nonce and $created are specified, validate $password against:
 
     encode_base64(sha1(
-	$nonce .
-	$created .
-	sha1_hex( "$username:$realm:$server_pass" )
+        $nonce .
+        $created .
+        sha1_hex( "$username:$realm:$server_pass" )
     ))
 
 where $server_pass is the md5_hex(password) digest stored in the
@@ -458,9 +300,9 @@ sub Authenticate {
     my $username = $self->UserObj->Name or return;
     my $server_pass = $self->UserObj->__Value('Password') or return;
     my $auth_digest = MIME::Base64::encode_base64(Digest::SHA1::sha1(
-	$nonce .
-	$created .
-	Digest::MD5::md5_hex("$username:$realm:$server_pass")
+        $nonce .
+        $created .
+        Digest::MD5::md5_hex("$username:$realm:$server_pass")
     ));
 
     chomp($password);
@@ -469,13 +311,9 @@ sub Authenticate {
     return ($password eq $auth_digest);
 }
 
-# }}}
-
-
 eval "require RT::CurrentUser_Vendor";
 die $@ if ($@ && $@ !~ qr{^Can't locate RT/CurrentUser_Vendor.pm});
 eval "require RT::CurrentUser_Local";
 die $@ if ($@ && $@ !~ qr{^Can't locate RT/CurrentUser_Local.pm});
 
 1;
- 

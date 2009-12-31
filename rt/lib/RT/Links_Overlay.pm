@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,6 +45,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
   RT::Links - A collection of Link objects
@@ -60,11 +61,6 @@
 =head1 METHODS
 
 
-=begin testing
-
-ok (require RT::Links);
-
-=end testing
 
 =cut
 
@@ -157,6 +153,10 @@ sub Next {
     my $Link = $self->SUPER::Next();
     return $Link unless $Link && ref $Link;
 
+    # skip very invalid Link records
+    unless ($Link->Target && $Link->Base) {
+        return $self->Next;
+    }
     # Skip links to local objects thast are deleted
     if ( $Link->TargetURI->IsLocal and UNIVERSAL::isa($Link->TargetObj,"RT::Ticket")
              and $Link->TargetObj->__Value('status') eq "deleted") {

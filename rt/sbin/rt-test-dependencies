@@ -2,8 +2,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -64,14 +64,24 @@ GetOptions(
     'with-SPEEDYCGI',                     'with-MODPERL1',
     'with-MODPERL2',                      'with-DEV',
     'with-STANDALONE',
+
+    'with-GPG',
+    'with-ICAL',
+    'with-SMTP',
+    'with-GRAPHVIZ',
+    'with-GD',
+    'with-DASHBOARDS',
+
     'download=s',
-    'repository=s'
+    'repository=s',
+    'list-deps'
 );
 
 unless (keys %args) {
     help();
-    exit(0);
+    exit(1);
 }
+
 # Set up defaults
 my %default = (
     'with-MASON' => 1,
@@ -79,10 +89,15 @@ my %default = (
     'with-CLI' => 1,
     'with-MAILGATE' => 1, 
     'with-DEV' => 0, 
-    'with-STANDALONE' => 0,
+    'with-STANDALONE' => 1,
+    'with-GPG' => 1,
+    'with-ICAL' => 1,
+    'with-SMTP' => 1,
+    'with-GRAPHVIZ' => 0,
+    'with-GD' => 1,
+    'with-DASHBOARDS' => 1
 );
 $args{$_} = $default{$_} foreach grep !exists $args{$_}, keys %default;
-
 
 {
   my $section;
@@ -94,34 +109,52 @@ $args{$_} = $default{$_} foreach grep !exists $args{$_}, keys %default;
   sub section {
     my $s = shift;
     $section = $s;
-    print "$s:\n";
+    print "$s:\n" unless $args{'list-deps'};
   }
 
-  my $any_missing = 0;
-  sub found {
+  sub print_found {
     my $msg = shift;
     my $test = shift;
     my $extra = shift;
-  
-    $any_missing = 1 unless $test;
-    if ($args{'v'} or not $test or $always_show_sections{$section}) {
-      print "\t$msg...";
-      print $test ? "found" : "MISSING";
-      print "\n";
-    }
-    
-    print "\t\t$extra\n" if defined $extra;
-  }
 
-  sub conclude {
-    if ($any_missing) {
-      print "\nSOMETHING WAS MISSING!\n";
-      exit 1;
-    } else {
-      print "\nEverything was found.\n";
+    unless ( $args{'list-deps'} ) {
+        if ( $args{'v'} or not $test or $always_show_sections{$section} ) {
+            print "\t$msg ...";
+            print $test ? "found" : "MISSING";
+            print "\n";
+        }
+
+        print "\t\t$extra\n" if defined $extra;
     }
   }
 }
+
+sub conclude {
+    my %missing_by_type = @_;
+
+    unless ( $args{'list-deps'} ) {
+        unless ( keys %missing_by_type ) {
+            print "\nAll dependencies have been found.\n";
+            return;
+        }
+
+        print "\nSOME DEPENDENCIES WERE MISSING.\n";
+
+        for my $type ( keys %missing_by_type ) {
+            my $missing = $missing_by_type{$type};
+
+            print "$type missing dependencies:\n";
+            for my $name ( keys %$missing ) {
+                my $module  = $missing->{$name};
+                my $version = $module->{version};
+                print_found( $name . ( $version ? " >= $version" : "" ),
+                    0, $module->{error} );
+            }
+        }
+        exit 1;
+    }
+}
+
 
 sub help {
 
@@ -130,22 +163,22 @@ sub help {
 By default, testdeps determine whether you have 
 installed all the perl modules RT needs to run.
 
-	--install		Install missing modules
+    --install           Install missing modules
 
 The following switches will tell the tool to check for specific dependencies
 
-	--with-mysql		Database interface for MySQL
-	--with-postgresql	Database interface for PostgreSQL 
-	--with-sqlite		Database interface and driver for SQLite (unsupported)
-	--with-oracle		Database interface for oracle (unsupported)
+    --with-mysql        Database interface for MySQL
+    --with-postgresql   Database interface for PostgreSQL 
+    --with-oracle       Database interface for Oracle
+    --with-sqlite       Database interface and driver for SQLite (unsupported)
 
-	--with-standalone	Libraries needed to support the standalone simple pure perl server
-	--with-fastcgi		Libraries needed to support the fastcgi handler
-	--with-speedycgi	Libraries needed to support the speedycgi handler
-	--with-modperl1		Libraries needed to support the modperl 1 handler
-	--with-modperl2		Libraries needed to support the modperl 2 handler
+    --with-standalone   Libraries needed to support the standalone simple pure perl server
+    --with-fastcgi      Libraries needed to support the fastcgi handler
+    --with-speedycgi    Libraries needed to support the speedycgi handler
+    --with-modperl1     Libraries needed to support the modperl 1 handler
+    --with-modperl2     Libraries needed to support the modperl 2 handler
 
-	--with-dev		Tools needed for RT development
+    --with-dev          Tools needed for RT development
 
 You can also specify -v or --verbose to list the status of all dependencies,
 rather than just the missing ones.
@@ -175,54 +208,55 @@ Digest::base
 Digest::MD5 2.27
 DBI 1.37
 Class::ReturnValue 0.40
-Date::Format
-DBIx::SearchBuilder 1.53
-Text::Template
+DBIx::SearchBuilder 1.54
+Text::Template 1.44
+File::ShareDir
 File::Spec 0.8
 HTML::Entities 
 HTML::Scrubber 0.08
 Log::Dispatch 2.0
+Sys::Syslog 0.16
 Locale::Maketext 1.06
 Locale::Maketext::Lexicon 0.32
 Locale::Maketext::Fuzzy
-MIME::Entity 5.108
+MIME::Entity 5.425
 Mail::Mailer 1.57
-Net::SMTP
+Email::Address
 Text::Wrapper 
 Time::ParseDate
 Time::HiRes 
-File::Temp
-Text::Autoformat
+File::Temp 0.18
 Text::Quoted 2.02
 Tree::Simple 1.04
+UNIVERSAL::require
 Regexp::Common
 Scalar::Util
-Module::Versions::Report 1.03
+Module::Versions::Report 1.05
 Cache::Simple::TimedExpiry
-UNIVERSAL::require
 Calendar::Simple
+Encode 2.21
 CSS::Squish 0.06
+File::Glob
 Devel::StackTrace 1.19
 .
 
 $deps{'MASON'} = [ text_to_hash( << '.') ];
-HTML::Mason 1.23
+HTML::Mason 1.36
 Errno
 Digest::MD5 2.27
 CGI::Cookie 1.20
 Storable 2.08
 Apache::Session 1.53
 XML::RSS 1.05
-GD
-GD::Graph
-GD::Text
 Text::WikiFormat 0.76
 CSS::Squish 0.06
+Devel::StackTrace 1.19
 .
 
 $deps{'STANDALONE'} = [ text_to_hash( << '.') ];
-HTTP::Server::Simple 0.07
+HTTP::Server::Simple 0.34
 HTTP::Server::Simple::Mason 0.09
+Net::Server
 .
 
 $deps{'MAILGATE'} = [ text_to_hash( << '.') ];
@@ -243,54 +277,94 @@ Term::ReadKey
 .
 
 $deps{'DEV'} = [ text_to_hash( << '.') ];
-Test::Inline 
-Apache::Test
 HTML::Form
 HTML::TokeParser
 WWW::Mechanize
 Test::WWW::Mechanize 1.04
 Module::Refresh 0.03
-Test::Expect 0.30
+Test::Expect 0.31
 XML::Simple
 File::Find
+Test::Deep 0 # needed for shredder tests
+String::ShellQuote 0 # needed for gnupg-incoming.t
+Test::HTTP::Server::Simple 0.09
+Test::HTTP::Server::Simple::StashWarnings 0.02
+Log::Dispatch::Perl
+Test::Warn
+Test::Builder 0.77 # needed to fix TODO test
+IPC::Run3
+Test::MockTime
+HTTP::Server::Simple::Mason 0.13
 .
 
 $deps{'FASTCGI'} = [ text_to_hash( << '.') ];
-CGI 2.92
+CGI 3.38
 FCGI
 CGI::Fast 
 .
 
 $deps{'SPEEDYCGI'} = [ text_to_hash( << '.') ];
-CGI 2.92
+CGI 3.38
 CGI::SpeedyCGI
 .
 
 
 $deps{'MODPERL1'} = [ text_to_hash( << '.') ];
-CGI 2.92
+CGI 3.38
 Apache::Request
 Apache::DBI 0.92
 .
 
 $deps{'MODPERL2'} = [ text_to_hash( << '.') ];
-CGI 3.10
+CGI 3.38
 Apache::DBI
-HTML::Mason 1.31
+HTML::Mason 1.36
 .
 
 $deps{'MYSQL'} = [ text_to_hash( << '.') ];
 DBD::mysql 2.1018
 .
+
 $deps{'ORACLE'} = [ text_to_hash( << '.') ];
 DBD::Oracle
 .
+
 $deps{'POSTGRESQL'} = [ text_to_hash( << '.') ];
 DBD::Pg 1.43
 .
 
 $deps{'SQLITE'} = [ text_to_hash( << '.') ];
 DBD::SQLite 1.00
+.
+
+$deps{'GPG'} = [ text_to_hash( << '.') ];
+GnuPG::Interface
+PerlIO::eol
+.
+
+$deps{'ICAL'} = [ text_to_hash( << '.') ];
+Data::ICal
+.
+
+$deps{'SMTP'} = [ text_to_hash( << '.') ];
+Net::SMTP
+.
+
+$deps{'DASHBOARDS'} = [ text_to_hash( << '.') ];
+HTML::RewriteAttributes 0.02
+MIME::Types
+.
+
+$deps{'GRAPHVIZ'} = [ text_to_hash( << '.') ];
+GraphViz
+IPC::Run
+IPC::Run::SafeHandles
+.
+
+$deps{'GD'} = [ text_to_hash( << '.') ];
+GD
+GD::Graph
+GD::Text
 .
 
 if ($args{'download'}) {
@@ -303,7 +377,7 @@ check_perl_version();
 
 check_users();
 
-
+my %Missing_By_Type = ();
 foreach my $type (sort grep $args{$_}, keys %args) {
     next unless ($type =~ /^with-(.*?)$/);
 
@@ -312,39 +386,58 @@ foreach my $type (sort grep $args{$_}, keys %args) {
 
     my @missing;
     my @deps = @{ $deps{$type} };
-    while (@deps) {
-        my $module = shift @deps;
-        my $version = shift @deps;
-        my $ret = test_dep($module, $version);
 
-        push @missing, $module, $version unless $ret;
-    }
+    my %missing = test_deps(@deps);
+
     if ( $args{'install'} ) {
-        while( @missing ) {
-            resolve_dep(shift @missing, shift @missing);
+        for my $module (keys %missing) {
+            resolve_dep($module, $missing{$module}{version});
+            delete $missing{$module} if test_dep($module, $missing{$module}{version});
         }
     }
+
+    $Missing_By_Type{$type} = \%missing if keys %missing;
 }
 
-conclude();
+conclude(%Missing_By_Type);
+
+sub test_deps {
+    my @deps = @_;
+
+    my %missing;
+    while(@deps) {
+        my $module = shift @deps;
+        my $version = shift @deps;
+        my($test, $error) = test_dep($module, $version);
+        my $msg = $module . ($version ? " >= $version" : '');
+        print_found($msg, $test, $error);
+
+        $missing{$module} = { version => $version, error => $error } unless $test;
+    }
+
+    return %missing;
+}
 
 sub test_dep {
     my $module = shift;
     my $version = shift;
 
-    eval "use $module $version ()";
-    if ($@) {
-        my $error = $@;
-        $error =~ s/\n(.*)$//s;
-        undef $error unless $error =~ /this is only/;
-        found("$module $version", 0, $error);
+    if ( $args{'list-deps'} ) {
+        print $module, ': ', $version || 0, "\n"; 
+    }
+    else {
+        eval "use $module $version ()";
+        if ($@) {
+            my $error = $@;
+            $error =~ s/\n(.*)$//s;
+            $error =~ s/at \(eval \d+\) line \d+\.$//;
+            undef $error unless $error =~ /this is only/;
 
-        return undef;
-    } else {
-        my $msg = "$module";
-        $msg .= " >=$version" if $version;
-        found($msg, 1);
-        return 1;
+            return ( 0, $error );
+        }
+        else {
+            return 1;
+        }
     }
 }
 
@@ -366,8 +459,8 @@ sub resolve_dep {
         }
         unless ( $configured ) {
             print <<END;
-You didn't configure CPAN shell yet.
-Please run `/usr/bin/perl -MCPAN -e shell` tool and configure it.
+You haven't configured the CPAN shell yet.
+Please run `/usr/bin/perl -MCPAN -e shell` to configure it.
 END
             exit(1);
         }
@@ -459,21 +552,21 @@ sub check_perl_version {
   section("perl");
   eval {require 5.008003};
   if ($@) {
-    found("5.8.3", 0,"RT is known to be non-functional on versions of perl older than 5.8.3. Please upgrade to 5.8.3 or newer.");
+    print_found("5.8.3", 0,"RT is known to be non-functional on versions of perl older than 5.8.3. Please upgrade to 5.8.3 or newer.");
     exit(1);
   } else {
-    found( ">=5.8.3($])", 1);
+    print_found( sprintf(">=5.8.3(%vd)", $^V), 1 );
   }
 }
 
 sub check_users {
   section("users");
-  found("rt group (www)",      defined getgrnam("www"));
-  found("bin owner (root)",   defined getpwnam("root"));
-  found("libs owner (root)", defined getpwnam("root"));
-  found("libs group (bin)", defined getgrnam("bin"));
-  found("web owner (www)",    defined getpwnam("www"));
-  found("web group (www)",   defined getgrnam("www"));
+  print_found("rt group (www)",      defined getgrnam("www"));
+  print_found("bin owner (root)",   defined getpwnam("root"));
+  print_found("libs owner (root)", defined getpwnam("root"));
+  print_found("libs group (bin)", defined getgrnam("bin"));
+  print_found("web owner (www)",    defined getpwnam("www"));
+  print_found("web group (www)",   defined getgrnam("www"));
 }
 
 

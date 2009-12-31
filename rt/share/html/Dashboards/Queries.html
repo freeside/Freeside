@@ -1,0 +1,280 @@
+%# BEGIN BPS TAGGED BLOCK {{{
+%# 
+%# COPYRIGHT:
+%# 
+%# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
+%#                                          <jesse@bestpractical.com>
+%# 
+%# (Except where explicitly superseded by other copyright notices)
+%# 
+%# 
+%# LICENSE:
+%# 
+%# This work is made available to you under the terms of Version 2 of
+%# the GNU General Public License. A copy of that license should have
+%# been provided with this software, but in any event can be snarfed
+%# from www.gnu.org.
+%# 
+%# This work is distributed in the hope that it will be useful, but
+%# WITHOUT ANY WARRANTY; without even the implied warranty of
+%# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%# General Public License for more details.
+%# 
+%# You should have received a copy of the GNU General Public License
+%# along with this program; if not, write to the Free Software
+%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+%# 02110-1301 or visit their web page on the internet at
+%# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+%# 
+%# 
+%# CONTRIBUTION SUBMISSION POLICY:
+%# 
+%# (The following paragraph is not intended to limit the rights granted
+%# to you to modify and distribute this software under the terms of
+%# the GNU General Public License and is only of importance to you if
+%# you choose to contribute your changes and enhancements to the
+%# community by submitting them to Best Practical Solutions, LLC.)
+%# 
+%# By intentionally submitting any modifications, corrections or
+%# derivatives to this work, or any other work intended for use with
+%# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+%# you are the copyright holder for those contributions and you grant
+%# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+%# royalty-free, perpetual, license to use, copy, create derivative
+%# works based on those contributions, and sublicense and distribute
+%# those contributions and any derivatives thereof.
+%# 
+%# END BPS TAGGED BLOCK }}}
+<& /Elements/Header, Title => $title &>
+<& /Dashboards/Elements/Tabs,
+    current_subtab => $current_subtab,
+    Title => $title,
+    DashboardObj => $Dashboard &>
+
+<& /Widgets/SelectionBox:header, nojs => 1 &>
+
+<& /Elements/ListActions, actions => \@results &>
+
+<& Elements/Deleted, searches => \@deleted, Dashboard => $Dashboard &>
+
+<& Elements/HiddenSearches, searches => \@hidden_searches, Dashboard => $Dashboard &>
+
+<table width="100%" border="0">
+% for my $pane (@panes) {
+<tr><td valign="top" class="boxcontainer">
+<form action="Queries.html" name="Dashboard-<%$pane->{Name}%>" method="post" enctype="multipart/form-data">
+<input type="hidden" class="hidden" name="id" value="<%$Dashboard->Id%>" />
+<input type="hidden" class="hidden" name="Privacy" value="<%$Dashboard->Privacy%>" />
+
+<&| /Widgets/TitleBox, title => $pane->{DisplayName} &>
+% my ( $pane_name ) = $pane->{Name} =~ /Searches-(.+)/;
+    <& /Widgets/SelectionBox:show, self => $pane, nojs => 1, grep( {
+            $_->{pane} eq $pane_name} @deleted ) ? ( ShowUpdate => 1 ) : () &>
+</&>
+</form>
+</td></tr>
+% }
+</table>
+
+<%INIT>
+
+my $current_subtab = 'Dashboards/Queries.html?id=' . $id;
+my @results;
+
+use RT::Dashboard;
+my $Dashboard = new RT::Dashboard($session{'CurrentUser'});
+my ($ok, $msg) = $Dashboard->LoadById($id);
+$ok || Abort(loc("Couldn't load dashboard [_1]: [_2]", $id, $msg));
+my $title = loc("Modify the queries of dashboard [_1]", $Dashboard->Name);
+
+my %desc_of;
+my @items;
+my %selected;
+my %still_exists;
+
+# add portlets (homepage componenets)
+my @components = @{ RT->Config->Get('HomepageComponents') };
+
+for my $desc (@components) {
+    my $name = "component-$desc";
+    push @items, [$name, $desc];
+    $desc_of{$name} = $desc;
+    $still_exists{$name} = 1;
+}
+
+# add dashboards
+my $dashboards = $m->comp("/Dashboards/Elements/DashboardsForObjects", flatten => 1);
+for my $dashboard (@{ $dashboards || [] }) {
+    # Users *can* set up mutually recursive dashboards, but don't make it THIS
+    # easy for them to shoot themselves in the foot.
+    next if $dashboard->Id == $Dashboard->Id;
+
+    my $name = 'dashboard-' . $dashboard->Id . '-' . $dashboard->Privacy;
+    my $desc = "Dashboard: " . $dashboard->Name;
+    push @items, [$name, $desc];
+    $desc_of{$name} = $desc;
+    $still_exists{$name} = 1;
+}
+
+# add saved searches
+my @objs = RT::System->new($session{'CurrentUser'});
+
+push @objs, RT::SavedSearches->new( $session{CurrentUser} )->_PrivacyObjects
+    if $session{'CurrentUser'}->HasRight( Right  => 'LoadSavedSearch',
+                                          Object => $RT::System );
+
+for my $object (@objs) {
+    for ($m->comp("/Search/Elements/SearchesForObject", Object => $object)) {
+        my ($desc, $search) = @$_;
+        my $SearchType = $search->Content->{'SearchType'} || 'Ticket';
+        my $type = ($SearchType eq 'Ticket') ? 'Saved Search' : $SearchType; # loc
+        $desc = "$type: $desc";
+        my $privacy = $Dashboard->_build_privacy($object);
+        my $name = 'search-' . $search->Id . '-' . $privacy;
+        push @items, [$name, $desc];
+        $desc_of{$name} = $desc;
+        $still_exists{$name} = 1;
+    }
+}
+
+# Get the list of queries already in use
+my @deleted;
+do {
+    my $panes = $Dashboard->Panes;
+    for my $pane (keys %$panes) {
+        for my $portlet (@{ $panes->{$pane} }) {
+            my $name;
+            my $type = $portlet->{portlet_type};
+
+            if ($type eq 'search' || $type eq 'dashboard') {
+                $name = join '-', $type, $portlet->{id}, $portlet->{privacy};
+            }
+            elsif ($type eq 'component') {
+                $name = join '-', 'component', $portlet->{component};
+            }
+
+            if (!$still_exists{$name}) {
+                push @deleted, {
+                    pane => $pane,
+                    name => $name,
+                    description => $portlet->{description},
+                };
+                next;
+            }
+
+            push @{ $selected{$pane} }, $name;
+            $desc_of{$name} = $portlet->{description};
+        }
+    }
+};
+
+$m->callback(
+    CallbackName => 'PopulatePossibilities',
+    Dashboard    => $Dashboard,
+    items        => \@items,
+    desc_of      => \%desc_of,
+    still_exists => \%still_exists,
+    selected     => \%selected,
+);
+
+# Create selectionbox widgets for those queries
+
+my %pane_name = (
+    'body'    => loc('Body'),
+    'sidebar' => loc('Sidebar'),
+);
+
+$m->callback(
+    CallbackName => 'Panes',
+    Dashboard    => $Dashboard,
+    panes        => \%pane_name,
+);
+
+my @panes;
+for my $pane (keys %pane_name) {
+    my $sel = $m->comp(
+        '/Widgets/SelectionBox:new',
+        Action      => 'Queries.html',
+        Name        => "Searches-$pane",
+        DisplayName => $pane_name{$pane},
+        Available   => \@items,
+        Selected    => $selected{$pane},
+        AutoSave    => 1,
+        OnSubmit    => sub {
+            my $self = shift;
+
+            $m->callback(
+                CallbackName => 'Submit',
+                Dashboard    => $Dashboard,
+                Selected     => $self->{Current},
+                pane         => $pane,
+            );
+
+            my @portlets;
+            for (@{ $self->{Current} }) {
+                my $item = $_;
+                my $desc = $desc_of{$item};
+                my $portlet_type = $1 if $item =~ s/^(\w+)-//;
+
+                if ($portlet_type eq 'search' || $portlet_type eq 'dashboard') {
+                    my ($id, $privacy) = split '-', $item, 2;
+                    push @portlets, {
+                        portlet_type => $portlet_type,
+                        privacy      => $privacy,
+                        id           => $id,
+                        description  => $desc,
+                        pane         => $pane,
+                    };
+                }
+                elsif ($portlet_type eq 'component') {
+                    # Absolute paths stay absolute, relative paths go into
+                    # /Elements. This way, extensions that add portlets work.
+                    my $path = $item;
+                    $path = "/Elements/$path" if substr($path, 0, 1) ne '/';
+
+                    push @portlets, {
+                        portlet_type => $portlet_type,
+                        component    => $item,
+                        path         => $path,
+                        description  => $item,
+                        pane         => $pane,
+                    };
+                }
+            }
+
+            # we want to keep all the other panes the same
+            my $panes = $Dashboard->Panes;
+            $panes->{$pane} = \@portlets;
+
+            # remove "deleted" warnings about this pane
+            @deleted = grep { $_->{pane} ne $pane } @deleted;
+
+            $m->callback(
+                CallbackName => 'BeforeUpdate',
+                Dashboard    => $Dashboard,
+                panes        => $panes,
+            );
+
+            my ($ok, $msg) = $Dashboard->Update(Panes => $panes);
+
+            if ($ok) {
+                push @results, loc("Dashboard updated");
+            }
+            else {
+                push @results, loc("Dashboard could not be updated: [_1]", $msg);
+            }
+        },
+    );
+
+    push @panes, $sel;
+}
+
+$m->comp('/Widgets/SelectionBox:process', %ARGS, self => $_, nojs => 1)
+    for @panes;
+
+my @hidden_searches = $Dashboard->PossibleHiddenSearches;
+</%INIT>
+<%ARGS>
+$id => '' unless defined $id
+</%ARGS>
+

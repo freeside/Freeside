@@ -2,8 +2,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -51,12 +51,17 @@ package RT::Mason;
 use strict;
 use vars '$Handler';
 use File::Basename;
-require ('/opt/rt3/bin/webmux.pl');
+
+require (dirname(__FILE__) . '/webmux.pl');
 
 # Enter CGI::Fast mode, which should also work as a vanilla CGI script.
 require CGI::Fast;
 
 RT::Init();
+$Handler ||= RT::Interface::Web::Handler->new(
+    RT->Config->Get('MasonParameters')
+);
+
 
 while ( my $cgi = CGI::Fast->new ) {
     # the whole point of fastcgi requires the env to get reset here..
@@ -67,7 +72,7 @@ while ( my $cgi = CGI::Fast->new ) {
     $ENV{'ENV'}    = '' if defined $ENV{'ENV'};
     $ENV{'IFS'}    = '' if defined $ENV{'IFS'};
 
-    Module::Refresh->refresh if $RT::DevelMode;
+    Module::Refresh->refresh if RT->Config->Get('DevelMode');
     RT::ConnectToDatabase();
 
     if ( ( !$Handler->interp->comp_exists( $cgi->path_info ) )

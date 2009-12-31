@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,6 +45,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
   RT::CustomFields - a collection of RT CustomField objects
@@ -58,11 +59,6 @@
 =head1 METHODS
 
 
-=begin testing
-
-ok (require RT::CustomFields);
-
-=end testing
 
 =cut
 
@@ -186,25 +182,32 @@ Returns the next custom field that this user can see.
 sub Next {
     my $self = shift;
     
-    
     my $CF = $self->SUPER::Next();
-    if ((defined($CF)) and (ref($CF))) {
+    return $CF unless $CF;
 
-	if ($CF->CurrentUserHasRight('SeeCustomField')) {
-	    return($CF);
-	}
-	
-	#If the user doesn't have the right to show this queue
-	else {	
-	    return($self->Next());
-	}
-    }
-    #if there never was any queue
-    else {
-	return(undef);
-    }	
-    
+    $CF->SetContextOject( $self->ContextObject );
+
+    return $self->Next unless $CF->CurrentUserHasRight('SeeCustomField');
+    return $CF;
 }
+
+sub SetContextObject {
+    my $self = shift;
+    return $self->{'context_object'} = shift;
+}
+  
+sub ContextObject {
+    my $self = shift;
+    return $self->{'context_object'};
+}
+
+sub NewItem {
+    my $self = shift;
+    my $res = RT::CustomField->new($self->CurrentUser);
+    $res->SetContextObject($self->ContextObject);
+    return $res;
+}
+
 # }}}
 
 sub LimitToLookupType  {
@@ -251,7 +254,7 @@ sub LimitToGlobalOrObjectId {
                  ENTRYAGGREGATOR => 'OR' ) unless $global_only;
 
     $self->OrderByCols(
-	{ ALIAS => $self->_OCFAlias, FIELD => 'ObjectId' },
+	{ ALIAS => $self->_OCFAlias, FIELD => 'ObjectId', ORDER => 'DESC' },
 	{ ALIAS => $self->_OCFAlias, FIELD => 'SortOrder' },
     );
     
@@ -259,6 +262,6 @@ sub LimitToGlobalOrObjectId {
     #$self->OrderBy( ALIAS => $class_cfs , FIELD => "SortOrder", ORDER => 'ASC');
 
 }
-  
+
 1;
 

@@ -1,10 +1,4 @@
-sub acl {
-return (
-"CREATE USER ${RT::DatabaseUser} identified by ${RT::DatabasePassword} ".
-"default tablespace USERS " .
-"temporary tablespace TEMP " .
-"quota unlimited on USERS" ,
-"grant connect, resource to ${RT::DatabaseUser}"
-);
-}
+
+sub acl { return () }
+
 1;

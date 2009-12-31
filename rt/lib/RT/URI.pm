@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,11 +45,11 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
-package RT::URI;;
+
+package RT::URI;
 
 use strict;
-use vars qw/@ISA/;
-@ISA = qw(RT::Base);
+use base 'RT::Base';
 
 use RT::URI::base;
 use Carp;
@@ -136,8 +136,8 @@ sub FromURI {
 	$scheme = $1;
     }
     else {
-        $RT::Logger->warning("$self Could not determine a URI scheme for $uri");
-		return (undef);
+        $RT::Logger->warning("Could not determine a URI scheme for $uri");
+        return (undef);
     }
      
     # load up a resolver object for this scheme  
@@ -149,7 +149,7 @@ sub FromURI {
     	return (undef);
     }
 
-return(1);
+    return(1);
 
 }
 
@@ -157,7 +157,7 @@ return(1);
 
 # {{{ _GetResolver
 
-=private _GetResolver <scheme>
+=head2 _GetResolver <scheme>
 
 Gets an RT URI resolver for the scheme <scheme>. 
 Falls back to a null resolver. RT::URI::base.
@@ -172,16 +172,16 @@ sub _GetResolver {
     my $resolver;
 
     
-       eval " 
-            require RT::URI::$scheme;
-            \$resolver = RT::URI::$scheme->new(\$self->CurrentUser);
-       ";
+    eval " 
+        require RT::URI::$scheme;
+        \$resolver = RT::URI::$scheme->new(\$self->CurrentUser);
+    ";
      
-        if ($resolver) {
+    if ($resolver) {
         $self->{'resolver'} = $resolver;
-        } else {
+    } else {
         $self->{'resolver'} = RT::URI::base->new($self->CurrentUser); 
-        }
+    }
 
 }
 
@@ -191,8 +191,8 @@ sub _GetResolver {
 
 =head2 Scheme
 
-Returns a local object id for this content.  You are expected to know what sort of object this is the Id 
-of 
+Returns a local object id for this content.  You are expected to know
+what sort of object this is the Id of
 
 =cut
 
@@ -261,9 +261,9 @@ sub IsLocal {
 sub AsHREF {
     my $self = shift;
     return $self->Resolver->HREF;
-
 }
-=head Resolver
+
+=head2 Resolver
 
 Returns this URI's URI resolver object
 

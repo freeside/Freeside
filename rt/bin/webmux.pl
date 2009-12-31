@@ -2,8 +2,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -64,7 +64,30 @@ BEGIN {
 
 }
 
-use lib ( "/opt/rt3/local/lib", "/opt/rt3/lib" );
+# fix lib paths, some may be relative
+BEGIN {
+    require File::Spec;
+    my @libs = ("lib", "local/lib");
+    my $bin_path;
+
+    for my $lib (@libs) {
+        unless ( File::Spec->file_name_is_absolute($lib) ) {
+            unless ($bin_path) {
+                if ( File::Spec->file_name_is_absolute(__FILE__) ) {
+                    $bin_path = ( File::Spec->splitpath(__FILE__) )[1];
+                }
+                else {
+                    require FindBin;
+                    no warnings "once";
+                    $bin_path = $FindBin::Bin;
+                }
+            }
+            $lib = File::Spec->catfile( $bin_path, File::Spec->updir, $lib );
+        }
+        unshift @INC, $lib;
+    }
+
+}
 use RT;
 
 package RT::Mason;
@@ -74,21 +97,35 @@ use vars qw($Nobody $SystemUser $Handler $r);
 #This drags in RT's config.pm
 BEGIN {
     RT::LoadConfig();
-    if ($RT::DevelMode) { require Module::Refresh; }
+    if (RT->Config->Get('DevelMode')) { require Module::Refresh; }
+    RT->InitPluginPaths();
 }
 
+{
+    require RT::Handle;
+    my $dsn = RT::Handle->DSN;
+    my $user = RT->Config->Get('DatabaseUser');
+    my $pass = RT->Config->Get('DatabasePassword');
+
+    my $dbh = DBI->connect(
+        $dsn, $user, $pass,
+        { RaiseError => 0, PrintError => 0 },
+    );
+    if ( $dbh ) {
+        my ($status, $msg) = RT::Handle->CheckCompatibility( $dbh, 'post' );
+        die $msg unless $status;
+    }
+}
 
 {
-
     package HTML::Mason::Commands;
     use vars qw(%session);
 }
 
 use RT::Interface::Web;
 use RT::Interface::Web::Handler;
-$Handler = RT::Interface::Web::Handler->new(@RT::MasonParameters);
 
-if ($ENV{'MOD_PERL'} && !$RT::DevelMode) {
+if ($ENV{'MOD_PERL'} && !RT->Config->Get('DevelMode')) {
     # Under static_source, we need to purge the component cache
     # each time we restart, so newer components may be reloaded.
     #
@@ -116,9 +153,13 @@ sub handler {
         #$r->content_type !~ m!(^text/|\bxml\b)!i or return -1;
 #    }
 
-    Module::Refresh->refresh if $RT::DevelMode;
+    Module::Refresh->refresh if RT->Config->Get('DevelMode');
 
     RT::Init();
+
+    $Handler ||= RT::Interface::Web::Handler->new(
+        RT->Config->Get('MasonParameters')
+    );
 
     my %session;
     my $status;

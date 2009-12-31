@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,6 +45,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
   RT::Scrip - an RT Scrip object
@@ -58,45 +59,6 @@
 
 =head1 METHODS
 
-=begin testing
-
-ok (require RT::Scrip);
-
-
-my $q = RT::Queue->new($RT::SystemUser);
-$q->Create(Name => 'ScripTest');
-ok($q->Id, "Created a scriptest queue");
-
-my $s1 = RT::Scrip->new($RT::SystemUser);
-my ($val, $msg) =$s1->Create( Queue => $q->Id,
-             ScripAction => 'User Defined',
-             ScripCondition => 'User Defined',
-             CustomIsApplicableCode => 'if ($self->TicketObj->Subject =~ /fire/) { return (1);} else { return(0)}',
-             CustomPrepareCode => 'return 1',
-             CustomCommitCode => '$self->TicketObj->SetPriority("87");',
-             Template => 'Blank'
-    );
-ok($val,$msg);
-
-my $ticket = RT::Ticket->new($RT::SystemUser);
-my ($tv,$ttv,$tm) = $ticket->Create(Queue => $q->Id,
-                                    Subject => "hair on fire",
-                                    );
-ok($tv, $tm);
-
-ok ($ticket->Priority == '87', "Ticket priority is set right");
-
-
-my $ticket2 = RT::Ticket->new($RT::SystemUser);
-my ($t2v,$t2tv,$t2m) = $ticket2->Create(Queue => $q->Id,
-                                    Subject => "hair in water",
-                                    );
-ok($t2v, $t2m);
-
-ok ($ticket2->Priority != '87', "Ticket priority is set right");
-
-
-=end testing
 
 =cut
 
@@ -146,8 +108,8 @@ sub Create {
 
     unless ( $args{'Queue'} ) {
         unless ( $self->CurrentUser->HasRight( Object => $RT::System,
-                                               Right  => 'ModifyScrips' )
-          ) {
+                                               Right  => 'ModifyScrips' ) )
+        {
             return ( 0, $self->loc('Permission Denied') );
         }
         $args{'Queue'} = 0;    # avoid undef sneaking in
@@ -161,7 +123,7 @@ sub Create {
         unless ( $QueueObj->CurrentUserHasRight('ModifyScrips') ) {
             return ( 0, $self->loc('Permission Denied') );
         }
-        $args{'Queue'} = $QueueObj->id();
+        $args{'Queue'} = $QueueObj->id;
     }
 
     #TODO +++ validate input
@@ -171,7 +133,7 @@ sub Create {
         unless $args{'ScripAction'};
     my $action = RT::ScripAction->new( $self->CurrentUser );
     $action->Load( $args{'ScripAction'} );
-    return ( 0, $self->loc( "Action [_1] not found", $args{'ScripAction'} ) )
+    return ( 0, $self->loc( "Action '[_1]' not found", $args{'ScripAction'} ) ) 
         unless $action->Id;
 
     require RT::Template;
@@ -179,7 +141,7 @@ sub Create {
         unless $args{'Template'};
     my $template = RT::Template->new( $self->CurrentUser );
     $template->Load( $args{'Template'} );
-    return ( 0, $self->loc('Template not found') )
+    return ( 0, $self->loc( "Template '[_1]' not found", $args{'Template'} ) )
         unless $template->Id;
 
     require RT::ScripCondition;
@@ -187,7 +149,7 @@ sub Create {
         unless $args{'ScripCondition'};
     my $condition = RT::ScripCondition->new( $self->CurrentUser );
     $condition->Load( $args{'ScripCondition'} );
-    return ( 0, $self->loc('Condition not found') )
+    return ( 0, $self->loc( "Condition '[_1]' not found", $args{'ScripCondition'} ) )
         unless $condition->Id;
 
     my ( $id, $msg ) = $self->SUPER::Create(
@@ -281,22 +243,16 @@ sub ActionObj {
 
 =head2 ConditionObj
 
-Retuns an RT::ScripCondition object with this Scrip's IsApplicable
+Retuns an L<RT::ScripCondition> object with this Scrip's IsApplicable
 
 =cut
 
 sub ConditionObj {
     my $self = shift;
 
-    unless ( defined $self->{'ScripConditionObj'} ) {
-        require RT::ScripCondition;
-        $self->{'ScripConditionObj'} =
-          RT::ScripCondition->new( $self->CurrentUser );
-        if ( $self->ScripCondition ) {
-            $self->{'ScripConditionObj'}->Load( $self->ScripCondition );
-        }
-    }
-    return ( $self->{'ScripConditionObj'} );
+    my $res = RT::ScripCondition->new( $self->CurrentUser );
+    $res->Load( $self->ScripCondition );
+    return $res;
 }
 
 # }}}
@@ -443,6 +399,7 @@ sub IsApplicable {
             }
 	}
     };
+
     if ($@) {
         $RT::Logger->error( "Scrip IsApplicable " . $self->Id . " died. - " . $@ );
         return (undef);

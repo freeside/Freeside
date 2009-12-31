@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,6 +45,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
   RT::ACL - collection of RT ACE objects
@@ -59,11 +60,6 @@ my $ACL = new RT::ACL($CurrentUser);
 
 =head1 METHODS
 
-=begin testing
-
-ok(require RT::ACL);
-
-=end testing
 
 =cut
 
@@ -318,7 +314,7 @@ sub _DoSearch {
     my $self = shift;
    # $RT::Logger->debug("Now in ".$self."->_DoSearch");
     my $return = $self->SUPER::_DoSearch(@_);
-  #  $RT::Logger->debug("In $self ->_DoSearch. return from SUPER::_DoSearch was $return\n");
+  #  $RT::Logger->debug("In $self ->_DoSearch. return from SUPER::_DoSearch was $return");
     $self->_BuildHash();
     return ($return);
 }
@@ -329,7 +325,8 @@ sub _BuildHash {
     my $self = shift;
 
     while (my $entry = $self->Next) {
-       my $hashkey = $entry->ObjectType . "-" .  $entry->ObjectId . "-" .  $entry->RightName . "-" .  $entry->PrincipalId . "-" .  $entry->PrincipalType;
+        my $hashkey = join '-', map $entry->__Value( $_ ),
+            qw(ObjectType ObjectId RightName PrincipalId PrincipalType);
 
         $self->{'as_hash'}->{"$hashkey"} =1;
 

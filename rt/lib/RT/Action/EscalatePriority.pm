@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,6 +45,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
   RT::Action::EscalatePriority
@@ -71,11 +72,9 @@ as the ticket heads toward its due date.
 
 
 package RT::Action::EscalatePriority;
-require RT::Action::Generic;
+use base 'RT::Action';
 
 use strict;
-use vars qw/@ISA/;
-@ISA=qw(RT::Action::Generic);
 
 #Do what we need to do and send it out.
 
@@ -155,7 +154,7 @@ sub Commit {
    my ($val, $msg) = $self->TicketObj->SetPriority($self->{'prio'});
 
    unless ($val) {
-	$RT::Logger->debug($self . " $msg\n"); 
+	$RT::Logger->debug($self . " $msg"); 
    }
 }
 

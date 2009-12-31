@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,6 +45,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 package RT::Report::Tickets;
 
 use base qw/RT::Tickets/;
@@ -56,38 +57,31 @@ use warnings;
 sub Groupings {
     my $self = shift;
     my %args = (@_);
-    my @fields = qw(
-        Owner
+    my @fields = map {$_, $_} qw(
         Status
         Queue
-        DueDaily
-        DueMonthly
-        DueAnnually
-        ResolvedDaily
-        ResolvedMonthly
-        ResolvedAnnually
-        CreatedDaily
-        CreatedMonthly
-        CreatedAnnually
-        LastUpdatedDaily
-        LastUpdatedMonthly
-        LastUpdatedAnnually
-        StartedDaily
-        StartedMonthly
-        StartedAnnually
-        StartsDaily
-        StartsMonthly
-        StartsAnnually
     );
 
-    @fields = map {$_, $_} @fields;
+    foreach my $type ( qw(Owner Creator LastUpdatedBy Requestor Cc AdminCc Watcher) ) {
+        push @fields, $type.' '.$_, $type.'.'.$_ foreach qw(
+            Name EmailAddress RealName NickName Organization Lang City Country Timezone
+        );
+    }
+
+    push @fields, map {$_, $_} qw(
+        DueDaily DueMonthly DueAnnually
+        ResolvedDaily ResolvedMonthly ResolvedAnnually
+        CreatedDaily CreatedMonthly CreatedAnnually
+        LastUpdatedDaily LastUpdatedMonthly LastUpdatedAnnually
+        StartedDaily StartedMonthly StartedAnnually
+        StartsDaily StartsMonthly StartsAnnually
+    );
 
     my $queues = $args{'Queues'};
     if ( !$queues && $args{'Query'} ) {
-        my @actions;
-        my $tree;
-        # XXX TODO REFACTOR OUT
-        $self->_ParseQuery( $args{'Query'}, \$tree, \@actions );
+        require RT::Interface::Web::QueryBuilder::Tree;
+        my $tree = RT::Interface::Web::QueryBuilder::Tree->new('AND');
+        $tree->ParseSQL( Query => $args{'Query'}, CurrentUser => $self->CurrentUser );
         $queues = $tree->GetReferencedQueues;
     }
 
@@ -125,14 +119,31 @@ sub Label {
     return $self->CurrentUser->loc($field);
 }
 
+sub SetupGroupings {
+    my $self = shift;
+    my %args = (Query => undef, GroupBy => undef, @_);
+
+    $self->FromSQL( $args{'Query'} );
+    my @group_by = ref( $args{'GroupBy'} )? @{ $args{'GroupBy'} } : ($args{'GroupBy'});
+    $self->GroupBy( map { {FIELD => $_} } @group_by );
+
+    # UseSQLForACLChecks may add late joins
+    my $joined = ($self->_isJoined || RT->Config->Get('UseSQLForACLChecks')) ? 1 : 0;
+
+    my @res;
+    push @res, $self->Column( FUNCTION => ($joined? 'DISTINCT COUNT' : 'COUNT'), FIELD => 'id' );
+    push @res, map $self->Column( FIELD => $_ ), @group_by;
+    return @res;
+}
+
 sub GroupBy {
     my $self = shift;
-    my %args = ref $_[0]? %{ $_[0] }: (@_);
+    my @args = ref $_[0]? @_ : { @_ };
 
-    $self->{'_group_by_field'} = $args{'FIELD'};
-    %args = $self->_FieldToFunction( %args );
+    @{ $self->{'_group_by_field'} ||= [] } = map $_->{'FIELD'}, @args;
+    $_ = { $self->_FieldToFunction( %$_ ) } foreach @args;
 
-    $self->SUPER::GroupBy( \%args );
+    $self->SUPER::GroupBy( @args );
 }
 
 sub Column {
@@ -174,14 +185,17 @@ sub _FieldToFunction {
 
     if ($field =~ /^(.*)(Daily|Monthly|Annually)$/) {
         my ($field, $grouping) = ($1, $2);
+        my $alias = $args{'ALIAS'} || 'main';
+        # Pg 8.3 requires explicit casting
+        $field .= '::text' if RT->Config->Get('DatabaseType') eq 'Pg';
         if ( $grouping =~ /Daily/ ) {
-            $args{'FUNCTION'} = "SUBSTR($field,1,10)";
+            $args{'FUNCTION'} = "SUBSTR($alias.$field,1,10)";
         }
         elsif ( $grouping =~ /Monthly/ ) {
-            $args{'FUNCTION'} = "SUBSTR($field,1,7)";
+            $args{'FUNCTION'} = "SUBSTR($alias.$field,1,7)";
         }
         elsif ( $grouping =~ /Annually/ ) {
-            $args{'FUNCTION'} = "SUBSTR($field,1,4)";
+            $args{'FUNCTION'} = "SUBSTR($alias.$field,1,4)";
         }
     } elsif ( $field =~ /^(?:CF|CustomField)\.{(.*)}$/ ) { #XXX: use CFDecipher method
         my $cf_name = $1;
@@ -193,6 +207,28 @@ sub _FieldToFunction {
             my ($ticket_cf_alias, $cf_alias) = $self->_CustomFieldJoin($cf->id, $cf->id, $cf_name);
             @args{qw(ALIAS FIELD)} = ($ticket_cf_alias, 'Content');
         }
+    } elsif ( $field =~ /^(?:(Owner|Creator|LastUpdatedBy))(?:\.(.*))?$/ ) {
+        my $type = $1 || '';
+        my $column = $2 || 'Name';
+        my $u_alias = $self->{"_sql_report_${type}_users_${column}"}
+            ||= $self->Join(
+                TYPE   => 'LEFT',
+                ALIAS1 => 'main',
+                FIELD1 => $type,
+                TABLE2 => 'Users',
+                FIELD2 => 'id',
+            );
+        @args{qw(ALIAS FIELD)} = ($u_alias, $column);
+    } elsif ( $field =~ /^(?:Watcher|(Requestor|Cc|AdminCc))(?:\.(.*))?$/ ) {
+        my $type = $1 || '';
+        my $column = $2 || 'Name';
+        my $u_alias = $self->{"_sql_report_watcher_users_alias_$type"};
+        unless ( $u_alias ) {
+            my ($g_alias, $gm_alias);
+            ($g_alias, $gm_alias, $u_alias) = $self->_WatcherJoin( $type );
+            $self->{"_sql_report_watcher_users_alias_$type"} = $u_alias;
+        }
+        @args{qw(ALIAS FIELD)} = ($u_alias, $column);
     }
     return %args;
 }
@@ -234,7 +270,7 @@ for, do that.
 
 sub AddEmptyRows {
     my $self = shift;
-    if ( $self->{'_group_by_field'} eq 'Status' ) {
+    if ( @{ $self->{'_group_by_field'} || [] } == 1 && $self->{'_group_by_field'}[0] eq 'Status' ) {
         my %has = map { $_->__Value('Status') => 1 } @{ $self->ItemsArrayRef || [] };
 
         foreach my $status ( grep !$has{$_}, RT::Queue->new($self->CurrentUser)->StatusArray ) {
@@ -249,201 +285,14 @@ sub AddEmptyRows {
     }
 }
 
+eval "require RT::Report::Tickets_Vendor";
+if ($@ && $@ !~ qr{^Can't locate RT/Report/Tickets_Vendor.pm}) {
+    die $@;
+};
 
-# XXX TODO: this code cut and pasted from html/Search/Build.html
-# This has already been improved (But not backported) in 3.7
-#
-# This code is hacky, evil and wrong. But it's end of lifed from day one and is
-# less likely to destabilize the codebase than the full refactoring it should get.
-use Regexp::Common qw /delimited/;
-
-# States
-use constant VALUE   => 1;
-use constant AGGREG  => 2;
-use constant OP      => 4;
-use constant PAREN   => 8;
-use constant KEYWORD => 16;
-
-sub _match {
-
-    # Case insensitive equality
-    my ( $y, $x ) = @_;
-    return 1 if $x =~ /^$y$/i;
-
-    #  return 1 if ((lc $x) eq (lc $y)); # Why isnt this equiv?
-    return 0;
-}
-
-sub _ParseQuery {
-    my $self = shift;
-    my $string  = shift;
-    my $tree    = shift;
-    my @actions = shift;
-    my $want    = KEYWORD | PAREN;
-    my $last    = undef;
-
-    my $depth = 1;
-
-    # make a tree root
-    use RT::Interface::Web::QueryBuilder::Tree;
-    $$tree = RT::Interface::Web::QueryBuilder::Tree->new;
-    my $root       = RT::Interface::Web::QueryBuilder::Tree->new( 'AND', $$tree );
-    my $lastnode   = $root;
-    my $parentnode = $root;
-
-    # get the FIELDS from Tickets_Overlay
-    my $tickets = new RT::Tickets( $self->CurrentUser );
-    my %FIELDS  = %{ $tickets->FIELDS };
-
-    # Lower Case version of FIELDS, for case insensitivity
-    my %lcfields = map { ( lc($_) => $_ ) } ( keys %FIELDS );
-
-    my @tokens     = qw[VALUE AGGREG OP PAREN KEYWORD];
-    my $re_aggreg  = qr[(?i:AND|OR)];
-    my $re_value   = qr[$RE{delimited}{-delim=>qq{\'\"}}|\d+];
-    my $re_keyword = qr[$RE{delimited}{-delim=>qq{\'\"}}|(?:\{|\}|\w|\.)+];
-    my $re_op      =
-      qr[=|!=|>=|<=|>|<|(?i:IS NOT)|(?i:IS)|(?i:NOT LIKE)|(?i:LIKE)]
-      ;    # long to short
-    my $re_paren = qr'\(|\)';
-
-    # assume that $ea is AND if it is not set
-    my ( $ea, $key, $op, $value ) = ( "AND", "", "", "" );
-
-    # order of matches in the RE is important.. op should come early,
-    # because it has spaces in it.  otherwise "NOT LIKE" might be parsed
-    # as a keyword or value.
-
-    while (
-        $string =~ /(
-                      $re_aggreg
-                      |$re_op
-                      |$re_keyword
-                      |$re_value
-                      |$re_paren
-                     )/igx
-      )
-    {
-        my $val     = $1;
-        my $current = 0;
-
-        # Highest priority is last
-        $current = OP    if _match( $re_op,    $val );
-        $current = VALUE if _match( $re_value, $val );
-        $current = KEYWORD
-          if _match( $re_keyword, $val ) && ( $want & KEYWORD );
-        $current = AGGREG if _match( $re_aggreg, $val );
-        $current = PAREN  if _match( $re_paren,  $val );
-
-        unless ( $current && $want & $current ) {
-
-            # Error
-            # FIXME: I will only print out the highest $want value
-            my $token = $tokens[ ( ( log $want ) / ( log 2 ) ) ];
-            push @actions,
-              [
-                $self->CurrentUser->loc(
-"current: $current, want $want, Error near ->$val<- expecting a $token in '$string'\n"
-                ),
-                -1
-              ];
-        }
-
-        # State Machine:
-        my $parentdepth = $depth;
-
-        # Parens are highest priority
-        if ( $current & PAREN ) {
-            if ( $val eq "(" ) {
-                $depth++;
-
-                # make a new node that the clauses can be children of
-                $parentnode = RT::Interface::Web::QueryBuilder::Tree->new( $ea, $parentnode );
-            }
-            else {
-                $depth--;
-                $parentnode = $parentnode->getParent();
-                $lastnode   = $parentnode;
-            }
-
-            $want = KEYWORD | PAREN | AGGREG;
-        }
-        elsif ( $current & AGGREG ) {
-            $ea   = $val;
-            $want = KEYWORD | PAREN;
-        }
-        elsif ( $current & KEYWORD ) {
-            $key  = $val;
-            $want = OP;
-        }
-        elsif ( $current & OP ) {
-            $op   = $val;
-            $want = VALUE;
-        }
-        elsif ( $current & VALUE ) {
-            $value = $val;
-
-            # Remove surrounding quotes from $key, $val
-            # (in future, simplify as for($key,$val) { action on $_ })
-            if ( $key =~ /$RE{delimited}{-delim=>qq{\'\"}}/ ) {
-                substr( $key, 0,  1 ) = "";
-                substr( $key, -1, 1 ) = "";
-            }
-            if ( $val =~ /$RE{delimited}{-delim=>qq{\'\"}}/ ) {
-                substr( $val, 0,  1 ) = "";
-                substr( $val, -1, 1 ) = "";
-            }
-
-            # Unescape escaped characters
-            $key =~ s!\\(.)!$1!g;
-            $val =~ s!\\(.)!$1!g;
-
-            my $class;
-            if ( exists $lcfields{ lc $key } ) {
-                $key   = $lcfields{ lc $key };
-                $class = $FIELDS{$key}->[0];
-            }
-            if ( $class ne 'INT' ) {
-                $val = "'$val'";
-            }
-
-            push @actions, [ $self->CurrentUser->loc("Unknown field: [_1]", $key), -1 ] unless $class;
-
-            $want = PAREN | AGGREG;
-        }
-        else {
-            push @actions, [ $self->CurrentUser->loc("I'm lost"), -1 ];
-        }
-
-        if ( $current & VALUE ) {
-            if ( $key =~ /^CF./ ) {
-                $key = "'" . $key . "'";
-            }
-            my $clause = {
-                Key   => $key,
-                Op    => $op,
-                Value => $val
-            };
-
-            # explicity add a child to it
-            $lastnode = RT::Interface::Web::QueryBuilder::Tree->new( $clause, $parentnode );
-            $lastnode->getParent()->setNodeValue($ea);
-
-            ( $ea, $key, $op, $value ) = ( "", "", "", "" );
-        }
-
-        $last = $current;
-    }    # while
-
-    push @actions, [ $self->CurrentUser->loc("Incomplete query"), -1 ]
-      unless ( ( $want | PAREN ) || ( $want | KEYWORD ) );
-
-    push @actions, [ $self->CurrentUser->loc("Incomplete Query"), -1 ]
-      unless ( $last && ( $last | PAREN ) || ( $last || VALUE ) );
-
-    # This will never happen, because the parser will complain
-    push @actions, [ $self->CurrentUser->loc("Mismatched parentheses"), -1 ]
-      unless $depth == 1;
+eval "require RT::Report::Tickets_Local";
+if ($@ && $@ !~ qr{^Can't locate RT/Report/Tickets_Local.pm}) {
+    die $@;
 };
 
 1;

@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,14 +45,15 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
-  RT::Attributes - collection of RT::Attribute objects
+RT::Attributes - collection of RT::Attribute objects
 
 =head1 SYNOPSIS
 
-  use RT::Attributes;
-my $Attributes = new RT::Attributes($CurrentUser);
+    use RT::Attributes;
+    my $Attributes = new RT::Attributes($CurrentUser);
 
 =head1 DESCRIPTION
 
@@ -154,22 +155,28 @@ the matching name.
 
 sub DeleteEntry {
     my $self = shift;
-    my %args = ( Name => undef,
-                 Content => undef,
-                 id => undef,
-                 @_);
+    my %args = (
+        Name    => undef,
+        Content => undef,
+        id      => undef,
+        @_
+    );
     my $found = 0;
-    foreach my $attr ($self->Named($args{'Name'})){ 
-      if ((!defined $args{'id'} and !defined $args{'Content'})
-          or (defined $args{'id'} and $attr->id eq $args{'id'})
-          or (defined $args{'Content'} and $attr->Content eq $args{'Content'})) {
-        my ($id, $msg) = $attr->Delete;
-        return ($id, $msg) unless $id;
-        $found = 1;
-      }
+    foreach my $attr ( $self->Named( $args{'Name'} ) ) {
+        if ( ( !defined $args{'id'} and !defined $args{'Content'} )
+             or ( defined $args{'id'} and $attr->id eq $args{'id'} )
+             or ( defined $args{'Content'} and $attr->Content eq $args{'Content'} ) )
+        {
+            my ($id, $msg) = $attr->Delete;
+            return ($id, $msg) unless $id;
+            $found = 1;
+        }
     }
     return (0, "No entry found") unless $found;
-    $self->_DoSearch();
+    $self->RedoSearch;
+    # XXX: above string must work but because of bug in DBIx::SB it doesn't,
+    # to reproduce delete string below and run t/api/attribute-tests.t
+    $self->_DoSearch;
     return (1, $self->loc('Attribute Deleted'));
 }
 

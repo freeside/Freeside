@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,14 +45,16 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 #
 package RT::Action::Notify;
-require RT::Action::SendEmail;
-use Mail::Address;
-use strict;
-use vars qw/@ISA/;
-@ISA = qw(RT::Action::SendEmail);
 
+use strict;
+use warnings;
+
+use base qw(RT::Action::SendEmail);
+
+use Email::Address;
 
 =head2 Prepare
 
@@ -67,8 +69,6 @@ sub Prepare {
     $self->SUPER::Prepare();
 }
 
-# {{{ sub SetRecipients
-
 =head2 SetRecipients
 
 Sets the recipients of this meesage to Owner, Requestor, AdminCc, Cc or All. 
@@ -79,73 +79,63 @@ Explicitly B<does not> notify the creator of the transaction by default
 sub SetRecipients {
     my $self = shift;
 
-    my $arg = $self->Argument;
+    my $ticket = $self->TicketObj;
 
+    my $arg = $self->Argument;
     $arg =~ s/\bAll\b/Owner,Requestor,AdminCc,Cc/;
 
     my ( @To, @PseudoTo, @Cc, @Bcc );
 
 
     if ( $arg =~ /\bOtherRecipients\b/ ) {
-        if ( $self->TransactionObj->Attachments->First ) {
-            my @cc_addresses = Mail::Address->parse($self->TransactionObj->Attachments->First->GetHeader('RT-Send-Cc'));
-            foreach my $addr (@cc_addresses) {
-                  push @Cc, $addr->address;
-            }
-            my @bcc_addresses = Mail::Address->parse($self->TransactionObj->Attachments->First->GetHeader('RT-Send-Bcc'));
-
-            foreach my $addr (@bcc_addresses) {
-                  push @Bcc, $addr->address;
-            }
-
+        if ( my $attachment = $self->TransactionObj->Attachments->First ) {
+            push @Cc, map { $_->address } Email::Address->parse(
+                $attachment->GetHeader('RT-Send-Cc')
+            );
+            push @Bcc, map { $_->address } Email::Address->parse(
+                $attachment->GetHeader('RT-Send-Bcc')
+            );
         }
     }
 
     if ( $arg =~ /\bRequestor\b/ ) {
-        push ( @To, $self->TicketObj->Requestors->MemberEmailAddresses  );
+        push @To, $ticket->Requestors->MemberEmailAddresses;
     }
-
-    
 
     if ( $arg =~ /\bCc\b/ ) {
 
         #If we have a To, make the Ccs, Ccs, otherwise, promote them to To
         if (@To) {
-            push ( @Cc, $self->TicketObj->Cc->MemberEmailAddresses );
-            push ( @Cc, $self->TicketObj->QueueObj->Cc->MemberEmailAddresses  );
+            push ( @Cc, $ticket->Cc->MemberEmailAddresses );
+            push ( @Cc, $ticket->QueueObj->Cc->MemberEmailAddresses  );
         }
         else {
-            push ( @Cc, $self->TicketObj->Cc->MemberEmailAddresses  );
-            push ( @To, $self->TicketObj->QueueObj->Cc->MemberEmailAddresses  );
+            push ( @Cc, $ticket->Cc->MemberEmailAddresses  );
+            push ( @To, $ticket->QueueObj->Cc->MemberEmailAddresses  );
         }
     }
 
-    if ( ( $arg =~ /\bOwner\b/ )
-        && ( $self->TicketObj->OwnerObj->id != $RT::Nobody->id ) )
-    {
-
-        # If we're not sending to Ccs or requestors, 
+    if ( $arg =~ /\bOwner\b/ && $ticket->OwnerObj->id != $RT::Nobody->id ) {
+        # If we're not sending to Ccs or requestors,
         # then the Owner can be the To.
         if (@To) {
-            push ( @Bcc, $self->TicketObj->OwnerObj->EmailAddress );
+            push ( @Bcc, $ticket->OwnerObj->EmailAddress );
         }
         else {
-            push ( @To, $self->TicketObj->OwnerObj->EmailAddress );
+            push ( @To, $ticket->OwnerObj->EmailAddress );
         }
 
     }
 
     if ( $arg =~ /\bAdminCc\b/ ) {
-        push ( @Bcc, $self->TicketObj->AdminCc->MemberEmailAddresses  );
-        push ( @Bcc, $self->TicketObj->QueueObj->AdminCc->MemberEmailAddresses  );
+        push ( @Bcc, $ticket->AdminCc->MemberEmailAddresses  );
+        push ( @Bcc, $ticket->QueueObj->AdminCc->MemberEmailAddresses  );
     }
 
-    if ($RT::UseFriendlyToLine) {
+    if ( RT->Config->Get('UseFriendlyToLine') ) {
         unless (@To) {
-            push (
-		@PseudoTo,
-		sprintf($RT::FriendlyToLineFormat, $arg, $self->TicketObj->id),
-	    );
+            push @PseudoTo,
+                sprintf RT->Config->Get('FriendlyToLineFormat'), $arg, $ticket->id;
         }
     }
 
@@ -154,7 +144,7 @@ sub SetRecipients {
     #Strip the sender out of the To, Cc and AdminCc and set the 
     # recipients fields used to build the message by the superclass.
     # unless a flag is set 
-    if ($RT::NotifyActor) {
+    if (RT->Config->Get('NotifyActor')) {
         @{ $self->{'To'} }  = @To;
         @{ $self->{'Cc'} }  = @Cc;
         @{ $self->{'Bcc'} } = @Bcc;
@@ -168,8 +158,6 @@ sub SetRecipients {
 
 
 }
-
-# }}}
 
 eval "require RT::Action::Notify_Vendor";
 die $@ if ($@ && $@ !~ qr{^Can't locate RT/Action/Notify_Vendor.pm});

@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,6 +45,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 # lib/RT/Interface/REST.pm
 #
 
@@ -53,16 +54,39 @@ use strict;
 use RT;
 
 BEGIN {
-    use Exporter ();
-    use vars qw($VERSION @ISA @EXPORT);
+    use base 'Exporter';
+    use vars qw($VERSION @EXPORT);
 
-    $VERSION = do { my @r = (q$Revision: 1.1.1.7 $ =~ /\d+/g); sprintf "%d."."%02d"x$#r, @r };
+    $VERSION = do { my @r = (q$Revision: 1.1.1.8 $ =~ /\d+/g); sprintf "%d."."%02d"x$#r, @r };
 
-    @ISA = qw(Exporter);
     @EXPORT = qw(expand_list form_parse form_compose vpush vsplit);
 }
 
-my $field = '(?i:[a-z][a-z0-9_-]*|C(?:ustom)?F(?:ield)?-(?:[a-z0-9_ -]|\s)+)';
+sub custom_field_spec {
+    my $self    = shift;
+    my $capture = shift;
+
+    my $CF_char = '[\sa-z0-9_ :()/-]';
+    my $CF_name = $CF_char . '+';
+    $CF_name = '(' . $CF_name . ')' if $capture;
+
+    my $new_style = 'CF\.\{'.$CF_name.'\}';
+    my $old_style = 'C(?:ustom)?F(?:ield)?-'.$CF_name;
+
+    return '(?i:' . join('|', $new_style, $old_style) . ')';
+}
+
+sub field_spec {
+    my $self    = shift;
+    my $capture = shift;
+
+    my $field = '[a-z][a-z0-9_-]*';
+    $field = '(' . $field . ')' if $capture;
+
+    my $custom_field = __PACKAGE__->custom_field_spec($capture);
+
+    return '(?i:' . join('|', $field, $custom_field) . ')';
+}
 
 # WARN: this code is duplicated in bin/rt.in,
 # change both functions at once
@@ -95,6 +119,7 @@ sub form_parse {
     my @forms = ();
     my @lines = split /\n/, $_[0];
     my ($c, $o, $k, $e) = ("", [], {}, "");
+    my $field = __PACKAGE__->field_spec;
 
     LINE:
     while (@lines) {
@@ -148,7 +173,7 @@ sub form_parse {
 
                 $state = 1;
             }
-            elsif ($line !~ /^#/) {
+            elsif ($line =~ /^#/) {
                 # We've found a syntax error, so we'll reconstruct the
                 # form parsed thus far, and add an error marker. (>>)
                 $state = -1;
@@ -201,7 +226,8 @@ sub form_compose {
                 $sp = " "x4 if length($sp) > 16;
 
                 foreach $v (@values) {
-                    if ($v =~ /\n/) {
+                    $v = '' unless defined $v;
+                    if ( $v =~ /\n/) {
                         $v =~ s/^/$sp/gm;
                         $v =~ s/^$sp//;
 
@@ -269,9 +295,9 @@ sub vsplit {
     my ($val) = @_;
     my ($line, $word, @words);
 
-    foreach $line (map {split /\n/} (ref $val eq 'ARRAY') ? @$val : $val)
+    foreach $line (map {split /\n/} (ref $val eq 'ARRAY') ? @$val : ($val||''))
     {
-        # XXX: This should become a real parser, à la Text::ParseWords.
+        # XXX: This should become a real parser, ? la Text::ParseWords.
         $line =~ s/^\s+//;
         $line =~ s/\s+$//;
         push @words, split /\s*,\s*/, $line;
@@ -279,6 +305,16 @@ sub vsplit {
 
     return \@words;
 }
+
+eval "require RT::Interface::REST_Vendor";
+if ($@ && $@ !~ qr{^Can't locate RT/Interface/REST_Vendor.pm}) {
+    die $@;
+};
+
+eval "require RT::Interface::REST_Local";
+if ($@ && $@ !~ qr{^Can't locate RT/Interface/REST_Local.pm}) {
+    die $@;
+};
 
 1;
 

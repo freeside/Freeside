@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,14 +45,11 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
- 
 
 package RT::Condition::AnyTransaction;
-require RT::Condition::Generic;
+use base 'RT::Condition';
 
 use strict;
-use vars qw/@ISA/;
-@ISA = qw(RT::Condition::Generic);
 
 
 =head2 IsApplicable

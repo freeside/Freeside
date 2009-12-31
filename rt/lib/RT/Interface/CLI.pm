@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,6 +45,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 use strict;
 
 use RT;
@@ -53,14 +54,12 @@ package RT::Interface::CLI;
 
 
 BEGIN {
-    use Exporter ();
-    use vars qw ($VERSION  @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
+    use base 'Exporter';
+    use vars qw ($VERSION  @EXPORT @EXPORT_OK %EXPORT_TAGS);
     
     # set the version for version checking
-    $VERSION = do { my @r = (q$Revision: 1.1.1.7 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r }; # must be all one line, for MakeMaker
-    
-    @ISA         = qw(Exporter);
-    
+    $VERSION = do { my @r = (q$Revision: 1.1.1.8 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r }; # must be all one line, for MakeMaker
+
     # your exported package globals go here,
     # as well as any optionally exported functions
     @EXPORT_OK   = qw(&CleanEnv 
@@ -100,11 +99,6 @@ BEGIN {
 
 =head1 METHODS
 
-=begin testing
-
-ok(require RT::Interface::CLI);
-
-=end testing
 
 =cut
 
@@ -226,7 +220,7 @@ sub GetMessageContent {
     if ($edit) {	
 
 	unless ($ENV{'EDITOR'}) {
-	    $RT::Logger->crit('No $EDITOR variable defined'. "\n");
+	    $RT::Logger->crit('No $EDITOR variable defined');
 	    return undef;
 	}
 	system ($ENV{'EDITOR'}, $filename);
@@ -249,7 +243,7 @@ sub debug {
     my $val = shift;
     my ($debug);
     if ($val) {
-	$RT::Logger->debug($val."\n");
+	$RT::Logger->debug($val);
 	if ($debug) {
 	    print STDERR "$val\n";
 	}

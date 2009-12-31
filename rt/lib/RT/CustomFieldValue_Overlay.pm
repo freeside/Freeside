@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,6 +45,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 use warnings;
 use strict;
 
@@ -62,23 +63,49 @@ from being integers.
 
 sub Create {
     my $self = shift;
-    my %args = @_;
-    (defined $args{$_} or delete $args{$_}) for keys %args;
-    %args = ((CustomField => '0',
-              Name => '',
-              Description => '',
-              SortOrder => '0',
-              Category => ''), %args);
+    my %args = (
+        CustomField => 0,
+        Name        => '',
+        Description => '',
+        SortOrder   => 0,
+        Category    => '',
+        @_,
+    );
+
+    my $cf_id = ref $args{'CustomField'}? $args{'CustomField'}->id: $args{'CustomField'};
+
+    my $cf = RT::CustomField->new( $self->CurrentUser );
+    $cf->Load( $cf_id );
+    unless ( $cf->id ) {
+        return (0, $self->loc("Couldn't load Custom Field #[_1]", $cf_id));
+    }
+    unless ( $cf->CurrentUserHasRight('AdminCustomField') ) {
+        return (0, $self->loc('Permission Denied'));
+    }
 
     my ($id, $msg) = $self->SUPER::Create(
-        map {$_ => $args{$_}} qw(CustomField Name Description SortOrder)
+        CustomField => $cf_id,
+        map { $_ => $args{$_} } qw(Name Description SortOrder)
     );
-    if ($id and length $args{Category}) {
+    return ($id, $msg) unless $id;
+
+    if ( defined $args{'Category'} && length $args{'Category'} ) {
         # $self would be loaded at this stage
-        $self->SetCategory($args{Category});
+        my ($status, $msg) = $self->SetCategory( $args{'Category'} );
+        unless ( $status ) {
+            $RT::Logger->error("Couldn't set category: $msg");
+        }
     }
+
     return ($id, $msg);
 }
+
+=head2 Category
+
+Returns the Category assigned to this Value
+Returns udef if there is no Category
+
+=cut
 
 sub Category {
     my $self = shift;
@@ -86,12 +113,64 @@ sub Category {
     return $attr->Content;
 }
 
+=head2 SetCategory Category
+
+Takes a string Category and stores it as an attribute of this CustomFieldValue
+
+=cut
+
 sub SetCategory {
     my $self = shift;
     my $category = shift;
-    $self->SetAttribute(Name => 'Category', Content => $category);
+    if ( defined $category && length $category ) {
+        return $self->SetAttribute(
+            Name    => 'Category',
+            Content => $category,
+        );
+    }
+    else {
+        my ($status, $msg) = $self->DeleteAttribute( 'Category' );
+        unless ( $status ) {
+            $RT::Logger->warning("Couldn't delete atribute: $msg");
+        }
+        # return true even if there was no category
+        return (1, $self->loc('Category unset'));
+    }
 }
 
-sub ValidateName { 1 };
+sub ValidateName {
+    return defined $_[1] && length $_[1];
+};
+
+=head2 DeleteCategory
+
+Deletes the category associated with this value
+Returns -1 if there is no Category
+
+=cut
+
+sub DeleteCategory {
+    my $self = shift;
+    my $attr = $self->FirstAttribute('Category') or return (-1,'No Category Set');
+    return $attr->Delete;
+}
+
+=head2 Delete
+
+Make sure we delete our Category when we're deleted
+
+=cut
+
+sub Delete {
+    my $self = shift;
+
+    my ($result, $msg) = $self->DeleteCategory;
+
+    unless ($result) {
+        return ($result, $msg);
+    }
+
+    return $self->SUPER::Delete(@_);
+}
 
 1;

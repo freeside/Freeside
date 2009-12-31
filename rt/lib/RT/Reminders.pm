@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,6 +45,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 package RT::Reminders;
 
 use base qw/RT::Base/;
@@ -87,10 +88,11 @@ sub Collection {
     my $self = shift;
     my $col = RT::Tickets->new($self->CurrentUser);
 
-     my $query =     'Queue = "'. $self->TicketObj->QueueObj->Name .'" AND Type = "reminder"';
-    $query .= ' AND RefersTo = "'.$self->Ticket.'"';
+     my $query = 'Type = "reminder" AND RefersTo = "'.$self->Ticket.'"';
    
     $col->FromSQL($query);
+
+    $col->OrderBy( FIELD => 'Due' );
     
     return($col);
 }

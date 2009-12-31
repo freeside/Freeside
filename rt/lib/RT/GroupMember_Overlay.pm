@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,6 +45,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
   RT::GroupMember - a member of an RT Group
@@ -65,11 +66,6 @@ doing something wrong.
 =head1 METHODS
 
 
-=begin testing
-
-ok (require RT::GroupMember);
-
-=end testing
 
 
 =cut
@@ -138,10 +134,12 @@ sub Create {
         my $member_object = $args{'Member'}->Object;
         if ($member_object->HasMemberRecursively($args{'Group'})) {
             $RT::Logger->debug("Adding that group would create a loop");
+            $RT::Handle->Rollback() unless ($args{'InsideTransaction'});
             return(undef);
         }
         elsif ( $args{'Member'}->Id == $args{'Group'}->Id) {
             $RT::Logger->debug("Can't add a group to itself");
+            $RT::Handle->Rollback() unless ($args{'InsideTransaction'});
             return(undef);
         }
     }
@@ -174,6 +172,14 @@ sub Create {
     # find things which have the current group as a member. 
     # $group is an RT::Principal for the group.
     $cgm->LimitToGroupsWithMember( $args{'Group'}->Id );
+    $cgm->Limit(
+        SUBCLAUSE => 'filter', # dont't mess up with prev condition
+        FIELD => 'MemberId',
+        OPERATOR => '!=',
+        VALUE => 'main.GroupId',
+        QUOTEVALUE => 0,
+        ENTRYAGGREGATOR => 'AND',
+    );
 
     while ( my $parent_member = $cgm->Next ) {
         my $parent_id = $parent_member->MemberId;

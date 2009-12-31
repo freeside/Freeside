@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,6 +45,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
 RT::I18N - a base class for localization of RT
@@ -86,41 +87,43 @@ our %Lexicon = (
 
 Initializes the lexicons used for localization.
 
-=begin testing
-
-use_ok (RT::I18N);
-ok(RT::I18N->Init);
-
-=end testing
 
 =cut
 
 sub Init {
     require File::Glob;
 
-    # Load language-specific functions
-    foreach my $language ( File::Glob::bsd_glob(substr(__FILE__, 0, -3) . "/*.pm")) {
-        if ($language =~ /^([-\w\s.\/\\~:]+)$/) {
-            require $1;
-        }
-        else {
-	    warn("$language is tainted. not loading");
-        } 
-    }
-
-    my @lang = @RT::LexiconLanguages;
+    my @lang = RT->Config->Get('LexiconLanguages');
     @lang = ('*') unless @lang;
 
+    # load default functions
+    require substr(__FILE__, 0, -3) . '/i_default.pm';
+
+    # Load language-specific functions
+    foreach my $file ( File::Glob::bsd_glob(substr(__FILE__, 0, -3) . "/*.pm") ) {
+        unless ( $file =~ /^([-\w\s\.\/\\~:]+)$/ ) {
+            warn("$file is tainted. not loading");
+            next;
+        }
+        $file = $1;
+
+        my ($lang) = ($file =~ /([^\\\/]+?)\.pm$/);
+        next unless grep $_ eq '*' || $_ eq $lang, @lang;
+        require $file;
+    }
+
+    my %import;
+    foreach my $l ( @lang ) {
+        $import{$l} = [
+            Gettext => (substr(__FILE__, 0, -3) . "/$l.po"),
+            Gettext => "$RT::LocalLexiconPath/*/$l.po",
+            Gettext => "$RT::LocalLexiconPath/$l.po",
+        ];
+        push @{ $import{$l} }, map {(Gettext => "$_/$l.po")} RT->PluginDirs('po');
+    }
+
     # Acquire all .po files and iterate them into lexicons
-    Locale::Maketext::Lexicon->import({
-	_decode	=> 1, map {
-	    $_	=> [
-		Gettext => (substr(__FILE__, 0, -3) . "/$_.po"),
-		Gettext => "$RT::LocalLexiconPath/*/$_.po",
-		Gettext => "$RT::LocalLexiconPath/$_.po",
-	    ],
-	} @lang
-    });
+    Locale::Maketext::Lexicon->import({ _decode => 1, %import });
 
     return 1;
 }
@@ -130,18 +133,6 @@ sub Init {
 Returns the encoding of the current lexicon, as yanked out of __ContentType's "charset" field.
 If it can't find anything, it returns 'ISO-8859-1'
 
-=begin testing
-
-ok(my $chinese = RT::I18N->get_handle('zh_tw'));
-ok(UNIVERSAL::can($chinese, 'maketext'));
-ok($chinese->maketext('__Content-Type') =~ /utf-8/i, "Found the utf-8 charset for traditional chinese in the string ".$chinese->maketext('__Content-Type'));
-ok($chinese->encoding eq 'utf-8', "The encoding is 'utf-8' -".$chinese->encoding);
-
-ok(my $en = RT::I18N->get_handle('en'));
-ok(UNIVERSAL::can($en, 'maketext'));
-ok($en->encoding eq 'utf-8', "The encoding ".$en->encoding." is 'utf-8'");
-
-=end testing
 
 
 =cut
@@ -351,7 +342,11 @@ sub DecodeMIMEWordsToEncoding {
         # until this is fixed, we must escape any string containing a comma or semicolon
         # this is only a bandaid
 
-        $enc_str = qq{"$enc_str"} if ($enc_str =~ /[,;]/);                                     
+        # Some _other_ MUAs encode quotes _already_, and double quotes
+        # confuse us a lot, so only quote it if it isn't quoted
+        # already.
+        $enc_str = qq{"$enc_str"} if $enc_str =~ /[,;]/ and $enc_str !~ /^".*"$/;
+
 	$str .= $prefix . $enc_str . $trailing;
     }
 
@@ -405,10 +400,14 @@ use Encode::Guess to try to figure it out the string's encoding.
 
 sub _GuessCharset {
     my $fallback = 'iso-8859-1';
-    my $charset;
 
-    if ( @RT::EmailInputEncodings and eval { require Encode::Guess; 1 } ) {
-	Encode::Guess->set_suspects(@RT::EmailInputEncodings);
+    # if $_[0] is null/empty, we don't guess its encoding
+    return $fallback unless defined $_[0] && length $_[0];
+
+    my $charset;
+    my @encodings = RT->Config->Get('EmailInputEncodings');
+    if ( @encodings and eval { require Encode::Guess; 1 } ) {
+	Encode::Guess->set_suspects( @encodings );
 	my $decoder = Encode::Guess->guess( $_[0] );
 
       if ( defined($decoder) ) {
@@ -421,7 +420,7 @@ sub _GuessCharset {
 	    my %matched = map { $_ => 1 } split(/ or /, $1);
 	    return 'utf-8' if $matched{'utf8'}; # one and only normalization
 
-	    foreach my $suspect (@RT::EmailInputEncodings) {
+	    foreach my $suspect (RT->Config->Get('EmailInputEncodings')) {
 		next unless $matched{$suspect};
 		$RT::Logger->debug("Encode::Guess ambiguous ($decoder); using $suspect");
 		$charset = $suspect;
@@ -436,11 +435,13 @@ sub _GuessCharset {
 	  $RT::Logger->warning("Encode::Guess failed: decoder is undefined; fallback to $fallback");
       }
     }
-    else {
-	$RT::Logger->warning("Cannot Encode::Guess; fallback to $fallback");
+    elsif ( @encodings && $@ ) {
+        $RT::Logger->error("You have set EmailInputEncodings, but we couldn't load Encode::Guess: $@");
+    } else {
+        $RT::Logger->warning("No EmailInputEncodings set, fallback to $fallback");
     }
 
-    return($charset || $fallback);
+    return ($charset || $fallback);
 }
 
 # }}}

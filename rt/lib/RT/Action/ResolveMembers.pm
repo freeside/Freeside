@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,15 +45,14 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 # This Action will resolve all members of a resolved group ticket
 
 package RT::Action::ResolveMembers;
-require RT::Action::Generic;
+use base 'RT::Action';
 require RT::Links;
 
 use strict;
-use vars qw/@ISA/;
-@ISA=qw(RT::Action::Generic);
 
 #Do what we need to do and send it out.
 

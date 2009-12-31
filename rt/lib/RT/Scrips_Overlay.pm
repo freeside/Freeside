@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,6 +45,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
   RT::Scrips - a collection of RT Scrip objects
@@ -59,11 +60,6 @@
 =head1 METHODS
 
 
-=begin testing
-
-ok (require RT::Scrips);
-
-=end testing
 
 =cut
 
@@ -191,6 +187,11 @@ sub Commit {
 
     
     foreach my $scrip (@{$self->Prepared}) {
+        $RT::Logger->debug(
+            "Committing scrip #". $scrip->id
+            ." on txn #". $self->{'TransactionObj'}->id
+            ." of ticket #". $self->{'TicketObj'}->id
+        );
 
         $scrip->Commit( TicketObj      => $self->{'TicketObj'},
                         TransactionObj => $self->{'TransactionObj'} );
@@ -288,7 +289,7 @@ sub _SetupSourceObjects {
     else {
         $self->{'TicketObj'} = RT::Ticket->new( $self->CurrentUser );
         $self->{'TicketObj'}->Load( $args{'Ticket'} )
-          || $RT::Logger->err("$self couldn't load ticket $args{'Ticket'}\n");
+          || $RT::Logger->err("$self couldn't load ticket $args{'Ticket'}");
     }
 
     if ( ( $self->{'TransactionObj'} = $args{'TransactionObj'} ) ) {
@@ -297,7 +298,7 @@ sub _SetupSourceObjects {
     else {
         $self->{'TransactionObj'} = RT::Transaction->new( $self->CurrentUser );
         $self->{'TransactionObj'}->Load( $args{'Transaction'} )
-          || $RT::Logger->err( "$self couldn't load transaction $args{'Transaction'}\n");
+          || $RT::Logger->err( "$self couldn't load transaction $args{'Transaction'}");
     }
 } 
 
@@ -360,9 +361,16 @@ sub _FindScrips {
     );
 
     # Promise some kind of ordering
-    $self->OrderBy( FIELD => 'description' );
+    $self->OrderBy( FIELD => 'Description' );
 
-    $RT::Logger->debug("Found ".$self->Count. " scrips");
+    # we call Count below, but later we always do search
+    # so just do search and get count from results
+    $self->_DoSearch if $self->{'must_redo_search'};
+
+    $RT::Logger->debug(
+        "Found ". $self->Count ." scrips for $args{'Stage'} stage"
+        ." with applicable type(s) $args{'Type'}"
+    );
 }
 
 # }}}

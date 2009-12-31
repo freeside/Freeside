@@ -15,14 +15,13 @@ us at sales@bestpractical.com.
      March, 2005
 
 
-REQUIRED PACKAGES:
-------------------
+REQUIRED PACKAGES
+-----------------
 
-o   Perl 5.8.3 or later (http://www.perl.com).
+o   Perl 5.8.3 or later (http://www.perl.org).
 
-       Perl versions prior to 5.8.3 contain bugs that could result
-       in data corruption. We recommend strongly that you use 5.8.3
-       or newer.
+        Perl versions prior to 5.8.3 contain bugs that could result
+        in data corruption. RT won't start on older versions.
 
 o   A supported SQL database
 
@@ -31,25 +30,21 @@ o   A supported SQL database
                               Oracle 9iR2 or later.
                               SQLite 3.0. (Not recommended for production)
 
-o   Apache version 1.3.x or 2.x (http://httpd.apache.org) 
-        with mod_perl -- (http://perl.apache.org ) 
-        or a webserver with FastCGI support (www.fastcgi.com)
-
-        Compiling mod_perl on Apache 1.3.x as a DSO has been known 
-        to have massive stability problems and is not recommended.
-
-        mod_perl 1.x must be built with EVERYTHING=1
+o   Apache version 1.3.x or 2.x (http://httpd.apache.org)
+        with mod_perl -- (http://perl.apache.org )
+        or with FastCGI -- (www.fastcgi.com)
+        or other webserver with FastCGI support
 
         RT's FastCGI handler needs to access RT's configuration file.
 
-o    Various and sundry perl modules
-	A tool included with RT takes care of the installation of
-	most of these automatically during the install process.
+o   Various and sundry perl modules
+        A tool included with RT takes care of the installation of
+        most of these automatically during the install process.
 
-	The tool supplied with RT uses Perl's CPAN system
-	(http://www.cpan.org) to install modules. Some operating
-	systems package all or some of the modules required, and
-	you may be better off installing the modules that way.
+        The tool supplied with RT uses Perl's CPAN system
+        (http://www.cpan.org) to install modules. Some operating
+        systems package all or some of the modules required, and
+        you may be better off installing the modules that way.
 
 
 GENERAL INSTALLATION
@@ -66,20 +61,27 @@ want to read a more comprehensive installation guide at:
 
        tar xzvf rt.tar.gz -C /tmp
 
-2   Run the "configure" script. 
+2   Run the "configure" script.
 
        ./configure --help to see the list of options
        ./configure (with the flags you want)
 
     RT defaults to installing in /opt/rt3 with MySQL as its database. It
     tries to guess which of www-data, www, apache or nobody your webserver
-    will run as, but you can override that behavior.
+    will run as, but you can override that behavior.  Note that the
+    default install directory in /opt/rt3 does not work under SELinux's
+    default configuration.
+
+    If you're upgrading RT then it worth to read UPGRADING document at this
+    moment. Some extension you're using may have been integrated into
+    core. It's recommended to use new clean directory when you're
+    upgrading to new major release (for example from 3.6.x to 3.8.x).
 
 3   Make sure that RT has everything it needs to run.
 
     Check for missing dependencies by running:
 
-       make testdeps        
+       make testdeps
 
 4   If the script reports any missing dependencies, install them by hand
     or run the following command as a user who has permission to install perl
@@ -87,65 +89,66 @@ want to read a more comprehensive installation guide at:
 
      make fixdeps
 
+    Some modules require user input or environment variables to install correctly,
+    so it may be necessary to install them manually.
+
 5   Check to make sure everything was installed properly.
-     
+
        make testdeps
 
      It might sometimes be necessary to run "make fixdeps" several times
      to install all necessary perl modules.
 
 6   If this is a new installation:
-     
+
      As a user with permission to install RT in your chosen directory, type:
 
-       make install   
-                    
+       make install
+
      Set up etc/RT_SiteConfig.pm in your RT installation directory.
-     You'll need to add any values you need to change from the defaults 
+     You'll need to add any values you need to change from the defaults
      in etc/RT_Config.pm
 
      As a user with permission to read RT's configuration file, type:
-     
-       make initialize-database 
+
+       make initialize-database
 
      If the make fails, type:
-     
-       make dropdb 
+
+       make dropdb
 
      and start over from step 6
 
 7   If you're upgrading from RT 3.0 or newer:
 
-     Read through the UPGRADING document included in this distribution.
-     
+     Read through the UPGRADING document included in this distribution. If
+     you're using MySQL, read through UPGRADING.mysql as well.
+
      It includes special upgrade instructions that will help you get this
      new version of RT up and running smoothly.
 
      As a user with permission to install RT in your chosen installation
-     directory, type: 
+     directory, type:
 
-       make upgrade    
+       make upgrade
 
      This will install new binaries, config files and libraries without
-     overwriting your RT database. 
+     overwriting your RT database.
 
      Update etc/RT_SiteConfig.pm in your RT installation directory.
-     You'll need to add any new values you need to change from the defaults 
+     You'll need to add any new values you need to change from the defaults
      in etc/RT_Config.pm
 
-     You may also need to update RT's database.  To find out, type:
+     You may also need to update RT's database.  You can do this with
+     the rt-setup-database tool.  Replace root with the name of the dba
+     user on your database (root is the default for MySQL).
 
-       ls etc/upgrade
+     You will be prompted for your previous version of RT (such as 3.6.4)
+     so that we can calculate which database updates to apply
 
-     For each item in that directory whose name is greater than
-     your previously installed RT version, run:
+     You should back up your database before running this command.
 
-       /opt/rt3/sbin/rt-setup-database --action schema \
-           --datadir etc/upgrade/<version>
-       /opt/rt3/sbin/rt-setup-database --action acl \
-           --datadir etc/upgrade/<version>
-       /opt/rt3/sbin/rt-setup-database --action insert \
-            --datadir etc/upgrade/<version>
+       /opt/rt3/sbin/rt-setup-database --dba root --prompt-for-dba-password --action upgrade
 
      Clear mason cache dir:
 
@@ -156,57 +159,122 @@ want to read a more comprehensive installation guide at:
 
 8  If you're upgrading from RT 2.0:
 
-    Please upgrade from RT 2.0 to RT 3.2 and then follow the instructions
-    for section 7.
+    Use the RT::Extension::RT2toRT3 module to upgrade to the current RT
+    release.  You can download it from CPAN here:
+    http://search.cpan.org/dist/RT-Extension-RT2toRT3/
 
-9   Configure the email and web gateways, as described below. 
+9   Configure the email and web gateways, as described below.
 
-    NOTE: root's password for the web interface is "password" 
+    NOTE: root's password for the web interface is "password"
     (without the quotes).  Not changing this is a SECURITY risk!
-    
-10   Set up users, groups, queues, scrips and access control.
+
+10  Set up automated recurring tasks (cronjobs):
+
+    To generate email digest messages, you must arrange for the provided
+    utility to be run once daily, and once weekly. You may also want to
+    arrange for the rt-email-dashboards utility to be run hourly.
+    For example, if your task scheduler is cron, you can configure it as
+    follows:
+
+        crontab -e    # as the RT administrator (probably root)
+        # insert the following lines:
+        0 0 * * * /opt/rt3/sbin/rt-email-digest -m daily
+        0 0 * * 0 /opt/rt3/sbin/rt-email-digest -m weekly
+        0 * * * * /opt/rt3/sbin/rt-email-dashboards
+
+
+11   Set up users, groups, queues, scrips and access control.
 
     Until you do this, RT will not be able to send or receive email,
     nor will it be more than marginally functional.  This is not an
     optional step.
 
 
+
+
 SETTING UP THE WEB INTERFACE
 ----------------------------
 
 RT's web interface is based around HTML::Mason, which works well with
-the mod_perl perl interpreter within Apache httpd and FastCGI
+the mod_perl perl interpreter within Apache httpd and FastCGI.
 
-mod_perl
---------
+Once you've set up the web interface, consider setting up automatic
+logout for inactive sessions. For more information about how to do that,
+run
+    perldoc /path/to/rt/sbin/rt-clean-sessions
 
-To install RT with mod_perl, you'll need to install the
-apache database connection cache.  To make sure it's installed, run
+
+mod_perl 1.xx
+-------------
+
+WARNING: mod_perl 1.99_xx is not supported.
+
+See below configuration instructions for mod_perl 2.x
+
+To install RT with mod_perl 1.x, you'll need to install the
+apache database connection cache. To make sure it's installed, run
 the following command:
 
-    perl -MCPAN -e'install Apache::DBI'
+    perl -MCPAN -e'install "Apache::DBI"'
 
-Next, add a few lines to your Apache configuration file, so that
+Next, add a few lines to your Apache 1.3.xx configuration file, so that
 it knows where to find RT:
 
 <VirtualHost your.ip.address>
     ServerName your.rt.server.hostname
+
     DocumentRoot /opt/rt3/share/html
     AddDefaultCharset UTF-8
+
+    # optional apache logs for RT
+    # ErrorLog /opt/rt3/var/log/apache.error
+    # TransferLog /opt/rt3/var/log/apache.access
 
     PerlModule Apache::DBI
     PerlRequire /opt/rt3/bin/webmux.pl
 
+    <Location /NoAuth/images>
+        SetHandler default
+    </Location>
     <Location />
-     SetHandler perl-script
-     PerlHandler RT::Mason
+        SetHandler perl-script
+        PerlHandler RT::Mason
+    </Location>
+</VirtualHost>
+
+mod_perl 2.xx
+-------------
+
+WARNING: mod_perl 1.99_xx is not supported.
+
+Add a few lines to your Apache 2.xx configuration file, so that
+it knows where to find RT:
+
+<VirtualHost your.ip.address>
+    ServerName your.rt.server.hostname
+
+    DocumentRoot /opt/rt3/share/html
+    AddDefaultCharset UTF-8
+
+    # optional apache logs for RT
+    # ErrorLog /opt/rt3/var/log/apache2.error
+    # TransferLog /opt/rt3/var/log/apache2.access
+
+    PerlRequire "/opt/rt3/bin/webmux.pl"
+
+    <Location /NoAuth/images>
+        SetHandler default
+    </Location>
+    <Location />
+        SetHandler perl-script
+        PerlResponseHandler RT::Mason
     </Location>
 </VirtualHost>
 
 FastCGI
 -------
 
-Installation with FastCGI is a little bit more complex and is documented 
+Installation with FastCGI is a little bit more complex and is documented
 in detail at http://wiki.bestpractical.com/index.cgi?FastCGIConfiguration
 
 In the most basic configuration, you can set up your webserver to run
@@ -215,7 +283,7 @@ can read RT's configuration file.  It's important to understand the security
 implications of this configuration, which are discussed in the document
 mentioned above.
 
-To install RT with FastCGI, you'll need to add a few lines to your 
+To install RT with FastCGI, you'll need to add a few lines to your
 Apache configuration file telling it about RT:
 
 
@@ -225,18 +293,18 @@ FastCgiIpcDir /tmp
 FastCgiServer /opt/rt3/bin/mason_handler.fcgi -idle-timeout 120
 
 <VirtualHost rt.example.com>
+   ServerName your.rt.server.hostname
 
    # Pass through requests to display images
    Alias /NoAuth/images/ /opt/rt3/share/html/NoAuth/images/
 
    AddHandler fastcgi-script fcgi
    ScriptAlias / /opt/rt3/bin/mason_handler.fcgi/
-   
 </VirtualHost>
 
 
 
-SETTING UP THE MAIL GATEWAY 
+SETTING UP THE MAIL GATEWAY
 ---------------------------
 
 To let email flow to your RT server, you need to add a few lines of
@@ -265,7 +333,7 @@ are available at http://www.bestpractical.com or by writing to
 <sales@bestpractical.com>.
 
 If you're interested in having RT extended or customized or would like more
-information about commercial support options, please send email to 
+information about commercial support options, please send email to
 <sales@bestpractical.com> to discuss rates and availability.
 
 
@@ -273,21 +341,21 @@ information about commercial support options, please send email to
 RT WEBSITE
 ----------
 
-For current information about RT, check out the RT website at 
-     http://www.bestpractical.com/  
+For current information about RT, check out the RT website at
+     http://www.bestpractical.com/
 
-You'll find screenshots, a pointer to the current version of RT, contributed 
+You'll find screenshots, a pointer to the current version of RT, contributed
 patches, and lots of other great stuff.
 
 
 
 RT-USERS MAILING LIST
---------------------
+---------------------
 
 To keep up to date on the latest RT tips, techniques and extensions,
 you probably want to join the rt-users mailing list.  Send a message to:
 
-      rt-users-request@lists.bestpractical.com 
+      rt-users-request@lists.bestpractical.com
 
 with the body of the message consisting of only the word:
 
@@ -319,8 +387,8 @@ To report a bug, send email to rt-bugs@fsck.com.
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)

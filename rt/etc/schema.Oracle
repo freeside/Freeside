@@ -182,6 +182,7 @@ CREATE TABLE CachedGroupMembers (
 );
 CREATE INDEX DisGrouMem ON CachedGroupMembers (GroupId, MemberId, Disabled);
 CREATE INDEX GrouMem ON CachedGroupMembers (GroupId, MemberId);
+CREATE INDEX CachedGroupMembers3 on CachedGroupMembers (MemberId, ImmediateParentId);
 
 
 CREATE SEQUENCE USERS_seq;
@@ -341,7 +342,7 @@ CREATE TABLE CustomFields (
 	Name		VARCHAR2(200),
 	Type		VARCHAR2(200),
 	MaxValues	NUMBER(11,0) DEFAULT 0 NOT NULL,
-	Pattern		VARCHAR2(255),
+	Pattern		CLOB,
         Repeated        NUMBER(11,0) DEFAULT 0 NOT NULL,
 	Description	VARCHAR2(255),
 	SortOrder	NUMBER(11,0) DEFAULT 0 NOT NULL,
