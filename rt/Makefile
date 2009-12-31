@@ -52,9 +52,9 @@
 
 
 PERL			=	/usr/bin/perl
-INSTALL			=	install
+INSTALL			=	/usr/bin/install -c
 
-RT_LAYOUT		=	relative
+RT_LAYOUT		=	Freeside
 
 CONFIG_FILE_PATH	=	/opt/rt3/etc
 CONFIG_FILE		=	$(CONFIG_FILE_PATH)/RT_Config.pm
@@ -189,7 +189,7 @@ ETC_FILES		=	acl.Informix \
 
 # {{{ Web frontend
 
-WEB_HANDLER		=	standalone
+WEB_HANDLER		=	modperl2
 
 # }}}
 
