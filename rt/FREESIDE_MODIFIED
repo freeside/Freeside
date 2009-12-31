@@ -3,11 +3,16 @@ config.layout
 config.layout.in
  etc/RT_SiteConfig.pm
 lib/RT/Interface/Web_Vendor.pm
+ lib/RT/Record.pm
 lib/RT/SearchBuilder.pm #need DBIx::SearchBuilder >= 1.36 for Pg 8.1+
 lib/RT/Transaction_Overlay.pm
+ lib/RT/Ticket_Overlay.pm
+ lib/RT/Users_Overlay.pm
+ lib/RT/Groups_Overlay.pm
 lib/RT/URI/freeside.pm
 lib/RT/URI/freeside/Internal.pm
 lib/RT/URI/freeside/XMLRPC.pm
+ html/Admin/Users/Modify.html
  html/Elements/Header
  html/Elements/Menu
  html/Elements/PageLayout
@@ -36,6 +41,8 @@ html/Widgets/TitleBoxStart
 html/Elements/FreesideNewCust
 html/Elements/FreesideSearch
 html/Elements/FreesideSvcSearch
+html/Elements/AddCustomers
+html/Elements/EditCustomers
 
  html/User/Prefs.html
  html/Prefs/SearchOptions.html
