@@ -2,7 +2,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -24,7 +24,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301 or visit their web page on the internet at
-# http://www.gnu.org/copyleft/gpl.html.
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -68,7 +68,7 @@ use vars qw($VERSION $System $SystemUser $Nobody $Handle $Logger
         $MasonSessionDir
 );
 
-$VERSION = '3.6.6';
+$VERSION = '3.6.10';
 $CORE_CONFIG_FILE = "/opt/rt3/etc/RT_Config.pm";
 $SITE_CONFIG_FILE = "/opt/rt3/etc/RT_SiteConfig.pm";
 
@@ -410,7 +410,9 @@ Load all modules that define base classes
 sub InitClasses {
     require RT::Tickets;
     require RT::Transactions;
+    require RT::Attachments;
     require RT::Users;
+    require RT::Principals;
     require RT::CurrentUser;
     require RT::Templates;
     require RT::Queues;
@@ -423,6 +425,31 @@ sub InitClasses {
     require RT::CustomFieldValues;
     require RT::ObjectCustomFields;
     require RT::ObjectCustomFieldValues;
+    require RT::Attributes;
+
+    # on a cold server (just after restart) people could have an object
+    # in the session, as we deserialize it so we never call constructor
+    # of the class, so the list of accessible fields is empty and we die
+    # with "Method xxx is not implemented in RT::SomeClass"
+    $_->_BuildTableAttributes foreach qw(
+        RT::Ticket
+        RT::Transaction
+        RT::Attachment
+        RT::User
+        RT::Principal
+        RT::Template
+        RT::Queue
+        RT::ScripAction
+        RT::ScripCondition
+        RT::Scrip
+        RT::Group
+        RT::GroupMember
+        RT::CustomField
+        RT::CustomFieldValue
+        RT::ObjectCustomField
+        RT::ObjectCustomFieldValue
+        RT::Attribute
+    );
 }
 
 # }}}
