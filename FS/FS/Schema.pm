@@ -256,7 +256,7 @@ sub dbdef_dist {
             } );
     
             if ( $column->type =~ /^(\w*)SERIAL$/i ) {
-              $column->type('int');
+              $column->type(uc($1).'INT');
               $column->null('NULL');
             }
             #$column->default('')
