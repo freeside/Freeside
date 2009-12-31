@@ -52,7 +52,7 @@
 
 
 PERL			=	/usr/bin/perl
-INSTALL			=	install-sh
+INSTALL			=	install
 
 RT_LAYOUT		=	relative
 
