@@ -60,6 +60,11 @@ my $curuser = $FS::CurrentUser::CurrentUser;
 
 #XXX Active tickets not assigned to a customer
 
+tie my %report_prospects, 'Tie::IxHash',
+  'List prospects' => [ $fsurl. 'search/prospect_main.html', '' ],
+  'Advanced prospect reports' => [ $fsurl. 'search/report_prospect_main.html', '' ],
+;
+
 tie my %report_customers_lists, 'Tie::IxHash',
   'by customer number' => [ $fsurl. 'search/cust_main.cgi?browse=custnum', '' ],
   'by last name' => [ $fsurl. 'search/cust_main.cgi?browse=last', '' ],
@@ -251,6 +256,8 @@ if($curuser->access_right('Financial reports')) {
 } # else $report_financial contains nothing.
 
 tie my %report_menu, 'Tie::IxHash';
+$report_menu{'Prospects'}   = [ \%report_prospects, 'Prospect reports' ]
+  if $curuser->access_right('List prospects');
 $report_menu{'Customers'}   = [ \%report_customers, 'Customer reports'  ]
   if $curuser->access_right('List customers');
 $report_menu{'Invoices'}    =  [ \%report_invoices,  'Invoice reports'   ]

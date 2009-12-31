@@ -190,11 +190,26 @@ if ($old && exists($opt{'copy_on_empty'})) {
 }
 
 if ( $opt{'agent_virt'} ) {
-  die "illegal agentnum"
-    unless $curuser->agentnums_href->{$new->agentnum}
-        or $opt{'agent_null_right'}
-           && ! $new->agentnum
-           && $curuser->access_right($opt{'agent_null_right'});
+
+  if ( ! $new->agentnum
+       && (    ! $opt{'agent_null_right'}
+            || ! $curuser->access_right($opt{'agent_null_right'})
+          )
+     )
+  {
+
+    $error ||= 'Select an agent';
+
+  } else {
+
+    die "illegal agentnum"
+      unless $curuser->agentnums_href->{$new->agentnum}
+          or $opt{'agent_null_right'}
+             && ! $new->agentnum
+             && $curuser->access_right($opt{'agent_null_right'});
+
+  }
+
 }
 
 $error ||= $new->check;

@@ -4,42 +4,18 @@
 
   <TABLE>
     <TR>
-      <TD>
-        <INPUT TYPE = "text"
-               NAME = "<%$name%>_first"
-               ID   = "<%$id%>_id"
-               VALUE = "<% $contact->first |h %>"
-               <% $onchange %>
-        ><BR>
-        <FONT SIZE="-2">First name</FONT>
-      </TD>
-      <TD>
-        <INPUT TYPE = "text"
-               NAME = "<%$name%>_last"
-               ID   = "<%$id%>_id"
-               VALUE = "<% $contact->get('last') |h %>"
-               <% $onchange %>
-        ><BR>
-        <FONT SIZE="-2">Last name</FONT>
-      </TD>
-      <TD>
-        <INPUT TYPE = "text"
-               NAME = "<%$name%>_title"
-               ID   = "<%$id%>_id"
-               VALUE = "<% $contact->title |h %>"
-               <% $onchange %>
-        ><BR>
-        <FONT SIZE="-2">Title/Position</FONT>
-      </TD>
-      <TD>
-        <INPUT TYPE = "text"
-               NAME = "<%$name%>_comment"
-               ID   = "<%$id%>_id"
-               VALUE = "<% $contact->comment |h %>"
-               <% $onchange %>
-        ><BR>
-        <FONT SIZE="-2">Comment</FONT>
-      </TD>
+%     foreach my $field ( @fields ) {
+        <TD>
+          <INPUT TYPE = "text"
+                 NAME = "<%$name%>_<%$field%>"
+                 ID   = "<%$id%>_<%$field%>"
+                 VALUE = "<% scalar($cgi->param($name."_$field"))
+                             || $contact->get($field) |h %>"
+                 <% $onchange %>
+          ><BR>
+          <FONT SIZE="-2"><% $label{$field} %></FONT>
+        </TD>
+%     }
     </TR>
   </TABLE>
 
@@ -68,5 +44,13 @@ if ( $curr_value ) {
 } else {
   $contact = new FS::contact {};
 }
+
+tie my %label, 'Tie::IxHash',
+  'first'  => 'First name',
+  'last'    => 'Last name',
+  'title'   => 'Title/Position',
+  'comment' => 'Comment',
+;
+my @fields = keys %label;
 
 </%init>

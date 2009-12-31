@@ -18,11 +18,16 @@
        { 'field'             => 'contactnum',
          'type'              => 'contact',
          'colspan'           => 6,
-         #actually o2m, but this seems to be working for edit so far
-         'm2name_table'      => 'contact',
-         'm2name_namecol'    => 'contactnum',
-         'm2_label'          => 'Contact',
-         'm2_error_callback' => sub { my($cgi, $object) = @_; (); }, #XXX
+         ##actually o2m, but this seems to be working for edit so far
+         #'m2name_table'      => 'contact',
+         #'m2name_namecol'    => 'contactnum',
+         #'m2_label'          => 'Contact',
+         #'m2_error_callback' => $m2_error_callback,
+
+         'o2m_table'      => 'contact',
+         'm2_label'       => 'Contact',
+         'm2_error_callback' => $m2_error_callback,
+
        },
        { 'field'       => 'locationnum',
          'type'        => 'select-cust_location',
@@ -76,6 +81,33 @@ my $error_callback = sub {
     or die 'illegal locationnum '. $cgi->param('locationnum');
   my $locationnum = $1;
   $prospect_main->set('locationnum', $locationnum);
+};
+
+my $m2_error_callback = sub {
+  my($cgi, $object) = @_;
+
+  #process_o2m fields in process/prospect_main.html
+  my @fields = qw( first last title comment );
+  my @gfields = ( '', map "_$_", @fields );
+
+  map {
+        if ( /^contactnum(\d+)$/ ) {
+          my $num = $1;
+          if ( grep $cgi->param("contactnum$num$_"), @gfields ) {
+            my $x = new FS::contact {
+              'contactnum' => $cgi->param("contactnum$num"),
+              map { $_ => scalar($cgi->param("contactnum${num}_$_")) } @fields,
+            };
+            use Data::Dumper; warn Dumper $x;
+            $x;
+          } else {
+            ();
+          }
+        } else {
+          ();
+        }
+      }
+      $cgi->param;
 };
 
 my @agentnums = $FS::CurrentUser::CurrentUser->agentnums;
