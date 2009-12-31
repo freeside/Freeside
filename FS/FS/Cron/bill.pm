@@ -161,7 +161,7 @@ sub bill_where {
 
   push @search, "cust_main.payby    = '". $opt{'p'}. "'"
     if $opt{'p'};
-  push @search, "cust_main.agentnum =  ". $opt{'a'}
+  push @search, "cust_main.agentnum IN ( ". $opt{'a'}. " ) "
     if $opt{'a'};
 
   #it would be useful if i recognized $opt{g} / $not_pkgpart...

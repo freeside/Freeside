@@ -64,7 +64,7 @@ sub untaint_argv {
 }
 
 sub usage {
-  die "Usage:\n\n  freeside-daily [ -d 'date' ] [ -y days ] [ -p 'payby' ] [ -a agentnum ] [ -s ] [ -v ] [ -l level ] [ -m ] [ -k ] user [ custnum custnum ... ]\n";
+  die "Usage:\n\n  freeside-daily [ -d 'date' ] [ -y days ] [ -p 'payby' ] [ -a agentnum,agentnum,... ] [ -s ] [ -v ] [ -l level ] [ -m ] [ -k ] user [ custnum custnum ... ]\n";
 }
 
 ###
@@ -77,7 +77,7 @@ freeside-daily - Run daily billing and invoice collection events.
 
 =head1 SYNOPSIS
 
-  freeside-daily [ -d 'date' ] [ -y days ] [ -p 'payby' ] [ -a agentnum ] [ -s ] [ -v ] [ -l level ] [ -m ] [ -r ] [ -k ] user [ custnum custnum ... ]
+  freeside-daily [ -d 'date' ] [ -y days ] [ -p 'payby' ] [ -a agentnum,agentnum,... ] [ -s ] [ -v ] [ -l level ] [ -m ] [ -r ] [ -k ] user [ custnum custnum ... ]
 
 =head1 DESCRIPTION
 
@@ -101,7 +101,7 @@ the bill and collect methods of a cust_main object.  See L<FS::cust_main>.
 
   -p: Only process customers with the specified payby (I<CARD>, I<DCRD>, I<CHEK>, I<DCHK>, I<BILL>, I<COMP>, I<LECB>)
 
-  -a: Only process customers with the specified agentnum
+  -a: Only process customers with the specified agentnum.  Multiple agentnums can be specified, separated with commas.
 
   -g: Don't process the provided pkgpart (or pkgparts, specified as a comma-
       separated list).
