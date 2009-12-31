@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,6 +45,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
   RT::Transactions - a collection of RT Transaction objects
@@ -59,11 +60,6 @@
 
 =head1 METHODS
 
-=begin testing
-
-ok (require RT::Transactions);
-
-=end testing
 
 =cut
 
@@ -89,32 +85,6 @@ sub _Init   {
   return ( $self->SUPER::_Init(@_));
 }
 # }}}
-
-=head2 Limit
-
-A wrapper around SUPER::Limit to catch migration issues
-
-=cut
-
-sub Limit {
-	my $self = shift;
-	my %args = (@_);
-
-	if ($args{'FIELD'} eq 'Ticket') {
-		Carp::cluck("Historical code calling RT::Transactions::Limit with a 'Ticket' at (". join(":",caller).").  This deprecated API will be deleted in 3.6");
-		$self->SUPER::Limit(FIELD => 'ObjectType', OPERATOR => '=', VALUE =>'RT::Ticket');
-		$args{'FIELD'} = 'ObjectId';
-		$self->SUPER::Limit(%args);
-
-	} else {
-
-		$self->SUPER::Limit(%args);
-	}
-
-
-}
-
-
 
 =head2 LimitToTicket TICKETID 
 

@@ -1,0 +1,143 @@
+%# BEGIN BPS TAGGED BLOCK {{{
+%# 
+%# COPYRIGHT:
+%# 
+%# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
+%#                                          <jesse@bestpractical.com>
+%# 
+%# (Except where explicitly superseded by other copyright notices)
+%# 
+%# 
+%# LICENSE:
+%# 
+%# This work is made available to you under the terms of Version 2 of
+%# the GNU General Public License. A copy of that license should have
+%# been provided with this software, but in any event can be snarfed
+%# from www.gnu.org.
+%# 
+%# This work is distributed in the hope that it will be useful, but
+%# WITHOUT ANY WARRANTY; without even the implied warranty of
+%# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%# General Public License for more details.
+%# 
+%# You should have received a copy of the GNU General Public License
+%# along with this program; if not, write to the Free Software
+%# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+%# 02110-1301 or visit their web page on the internet at
+%# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
+%# 
+%# 
+%# CONTRIBUTION SUBMISSION POLICY:
+%# 
+%# (The following paragraph is not intended to limit the rights granted
+%# to you to modify and distribute this software under the terms of
+%# the GNU General Public License and is only of importance to you if
+%# you choose to contribute your changes and enhancements to the
+%# community by submitting them to Best Practical Solutions, LLC.)
+%# 
+%# By intentionally submitting any modifications, corrections or
+%# derivatives to this work, or any other work intended for use with
+%# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+%# you are the copyright holder for those contributions and you grant
+%# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+%# royalty-free, perpetual, license to use, copy, create derivative
+%# works based on those contributions, and sublicense and distribute
+%# those contributions and any derivatives thereof.
+%# 
+%# END BPS TAGGED BLOCK }}}
+<%ARGS>
+$i => undef
+@Format => undef
+$record => undef
+$maxitems => undef
+$Depth => undef
+$Warning => undef
+$ColumnMap => {}
+$Class     => 'RT__Ticket'
+</%ARGS>
+<%init>
+$m->out(  '<tr class="'
+        . ( $Warning ? 'warnline' : $i % 2 ? 'oddline' : 'evenline' ) . '" >'
+        . "\n" );
+use HTML::Entities;
+my $item;
+foreach my $column (@Format) {
+    if ( defined $column->{title} && $column->{title} eq 'NEWLINE' ) {
+        while ( $item < $maxitems ) {
+            $m->out(qq{<td class="collection-as-table">&nbsp;</td>\n});
+            $item++;
+        }
+        $item = 0;
+        $m->out( '</tr>' . "\n" );
+        $m->out(  '<tr class="'
+                . ( $Warning ? 'warnline' : $i % 2 ? 'oddline' : 'evenline' )
+                . '" >'
+                . "\n" );
+        next;
+    }
+
+    my $class = $column->{class} ? encode_entities( $column->{class}, q{'"&<>} ) : 'collection-as-table';
+    $m->out(qq{<td class="$class" });
+
+    my %attrs;
+    foreach my $attr (qw(style align)) {
+        if ( defined $column->{ $attr } ) {
+            $attrs{ $attr } = $column->{ $attr };
+            next;
+        }
+
+        # if it's not defined then use column map
+        my $col = $column->{'attribute'} || $column->{'last_attribute'};
+        unless ( exists $ColumnMap->{$col}{$attr} ) {
+            next unless $col;
+
+            $ColumnMap->{$col}{$attr} = $m->comp(
+                "/Elements/ColumnMap",
+                Class => $Class,
+                Name  => $col,
+                Attr  => $attr,
+            );
+        }
+        $attrs{ $attr } = ProcessColumnMapValue(
+            $ColumnMap->{$col}{$attr},
+            Arguments => [$record, $i],
+            Escape => 0,
+        );
+    }
+
+    $attrs{colspan} = $column->{span};
+    $item += ($attrs{'colspan'} || 1);
+
+    my @out;
+    foreach my $subcol ( @{ $column->{output} } ) {
+        my ($col) = ($subcol =~ /^__(.*?)__$/);
+        unless ( $col ) {
+            push @out, $subcol;
+            next;
+        }
+
+        unless ( exists $ColumnMap->{$col}{'value'} ) {
+            $ColumnMap->{$col}{'value'} = $m->comp(
+                "/Elements/ColumnMap",
+                Class => $Class,
+                Name  => $col,
+                Attr  => 'value'
+            );
+        }
+
+        push @out, ProcessColumnMapValue(
+            $ColumnMap->{$col}{'value'},
+            Arguments => [$record, $i],
+        );
+    }
+    s/\n/<br \/>/gs for @out;
+
+    $m->out( $_ .'="'. $m->interp->apply_escapes( $attrs{$_} => 'h' ) .'"' )
+        foreach grep $attrs{$_}, qw(align style colspan);
+
+    $m->out('>');
+    $m->out(@out) if @out;
+    $m->out( '</td>' . "\n" );
+}
+$m->out('</tr>');
+</%init>

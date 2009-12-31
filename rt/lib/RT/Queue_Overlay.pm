@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,6 +45,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
   RT::Queue - an RT Queue object
@@ -55,14 +56,9 @@
 
 =head1 DESCRIPTION
 
+An RT queue object.
 
 =head1 METHODS
-
-=begin testing 
-
-use RT::Queue;
-
-=end testing
 
 =cut
 
@@ -72,14 +68,12 @@ package RT::Queue;
 use strict;
 no warnings qw(redefine);
 
-use vars qw(@DEFAULT_ACTIVE_STATUS @DEFAULT_INACTIVE_STATUS $RIGHTS);
-
 use RT::Groups;
 use RT::ACL;
 use RT::Interface::Email;
 
-@DEFAULT_ACTIVE_STATUS = qw(new open stalled);
-@DEFAULT_INACTIVE_STATUS = qw(resolved rejected deleted);  
+our @DEFAULT_ACTIVE_STATUS = qw(new open stalled);
+our @DEFAULT_INACTIVE_STATUS = qw(resolved rejected deleted);  
 
 # $self->loc('new'); # For the string extractor to get a string to localize
 # $self->loc('open'); # For the string extractor to get a string to localize
@@ -89,12 +83,14 @@ use RT::Interface::Email;
 # $self->loc('deleted'); # For the string extractor to get a string to localize
 
 
-$RIGHTS = {
+our $RIGHTS = {
     SeeQueue            => 'Can this principal see this queue',       # loc_pair
     AdminQueue          => 'Create, delete and modify queues',        # loc_pair
     ShowACL             => 'Display Access Control List',             # loc_pair
     ModifyACL           => 'Modify Access Control List',              # loc_pair
     ModifyQueueWatchers => 'Modify the queue watchers',               # loc_pair
+    SeeCustomField     => 'See custom field values',                 # loc_pair
+    ModifyCustomField  => 'Modify custom field values',              # loc_pair
     AssignCustomFields  => 'Assign and remove custom fields',         # loc_pair
     ModifyTemplate      => 'Modify Scrip templates for this queue',   # loc_pair
     ShowTemplate        => 'Display Scrip templates for this queue',  # loc_pair
@@ -117,6 +113,8 @@ $RIGHTS = {
     TakeTicket      => 'Take tickets',                                # loc_pair
     StealTicket     => 'Steal tickets',                               # loc_pair
 
+    ForwardMessage  => 'Forward messages to third person(s)',         # loc_pair
+
 };
 
 # Tell RT::ACE that this sort of object can get acls granted
@@ -128,7 +126,21 @@ $RT::ACE::OBJECT_TYPES{'RT::Queue'} = 1;
 foreach my $right ( keys %{$RIGHTS} ) {
     $RT::ACE::LOWERCASERIGHTNAMES{ lc $right } = $right;
 }
-    
+
+=head2 AddRights C<RIGHT>, C<DESCRIPTION> [, ...]
+
+Adds the given rights to the list of possible rights.  This method
+should be called during server startup, not at runtime.
+
+=cut
+
+sub AddRights {
+    my $self = shift;
+    my %new = @_;
+    $RIGHTS = { %$RIGHTS, %new };
+    %RT::ACE::LOWERCASERIGHTNAMES = ( %RT::ACE::LOWERCASERIGHTNAMES,
+                                      map { lc($_) => $_ } keys %new);
+}
 
 sub AddLink {
     my $self = shift;
@@ -156,7 +168,7 @@ sub DeleteLink {
 
     #check acls
     unless ( $self->CurrentUserHasRight('ModifyQueue') ) {
-        $RT::Logger->debug("No permission to delete links\n");
+        $RT::Logger->debug("No permission to delete links");
         return ( 0, $self->loc('Permission Denied'))
     }
 
@@ -184,8 +196,8 @@ Returns an array of all ActiveStatuses for this queue
 
 sub ActiveStatusArray {
     my $self = shift;
-    if (@RT::ActiveStatus) {
-    	return (@RT::ActiveStatus)
+    if (RT->Config->Get('ActiveStatus')) {
+    	return (RT->Config->Get('ActiveStatus'))
     } else {
         $RT::Logger->warning("RT::ActiveStatus undefined, falling back to deprecated defaults");
         return (@DEFAULT_ACTIVE_STATUS);
@@ -204,8 +216,8 @@ Returns an array of all InactiveStatuses for this queue
 
 sub InactiveStatusArray {
     my $self = shift;
-    if (@RT::InactiveStatus) {
-    	return (@RT::InactiveStatus)
+    if (RT->Config->Get('InactiveStatus')) {
+    	return (RT->Config->Get('InactiveStatus'))
     } else {
         $RT::Logger->warning("RT::InactiveStatus undefined, falling back to deprecated defaults");
         return (@DEFAULT_INACTIVE_STATUS);
@@ -235,13 +247,6 @@ sub StatusArray {
 
 Returns true if VALUE is a valid status.  Otherwise, returns 0.
 
-=begin testing
-
-my $q = RT::Queue->new($RT::SystemUser);
-ok($q->IsValidStatus('new')== 1, 'New is a valid status');
-ok($q->IsValidStatus('f00')== 0, 'f00 is not a valid status');
-
-=end testing
 
 =cut
 
@@ -262,14 +267,6 @@ sub IsValidStatus {
 
 Returns true if VALUE is a Active status.  Otherwise, returns 0
 
-=begin testing
-
-my $q = RT::Queue->new($RT::SystemUser);
-ok($q->IsActiveStatus('new')== 1, 'New is a Active status');
-ok($q->IsActiveStatus('rejected')== 0, 'Rejected is an inactive status');
-ok($q->IsActiveStatus('f00')== 0, 'f00 is not a Active status');
-
-=end testing
 
 =cut
 
@@ -290,14 +287,6 @@ sub IsActiveStatus {
 
 Returns true if VALUE is a Inactive status.  Otherwise, returns 0
 
-=begin testing
-
-my $q = RT::Queue->new($RT::SystemUser);
-ok($q->IsInactiveStatus('new')== 0, 'New is a Active status');
-ok($q->IsInactiveStatus('rejected')== 1, 'rejeected is an Inactive status');
-ok($q->IsInactiveStatus('f00')== 0, 'f00 is not a Active status');
-
-=end testing
 
 =cut
 
@@ -332,16 +321,6 @@ Arguments: ARGS is a hash of named parameters.  Valid parameters are:
  
 If you pass the ACL check, it creates the queue and returns its queue id.
 
-=begin testing
-
-my $queue = RT::Queue->new($RT::SystemUser);
-my ($id, $val) = $queue->Create( Name => 'Test1');
-ok($id, $val);
-
-($id, $val) = $queue->Create( Name => '66');
-ok(!$id, $val);
-
-=end testing
 
 =cut
 
@@ -352,9 +331,13 @@ sub Create {
         CorrespondAddress => '',
         Description       => '',
         CommentAddress    => '',
-        InitialPriority   => "0",
-        FinalPriority     => "0",
-        DefaultDueIn      => "0",
+        SubjectTag        => '',
+        InitialPriority   => 0,
+        FinalPriority     => 0,
+        DefaultDueIn      => 0,
+        Sign              => undef,
+        Encrypt           => undef,
+        _RecordTransaction => 1,
         @_
     );
 
@@ -367,10 +350,11 @@ sub Create {
         return ( 0, $self->loc('Queue already exists') );
     }
 
+    my %attrs = map {$_ => 1} $self->ReadableAttributes;
+
     #TODO better input validation
     $RT::Handle->BeginTransaction();
-
-    my $id = $self->SUPER::Create(%args);
+    my $id = $self->SUPER::Create( map { $_ => $args{$_} } grep exists $args{$_}, keys %attrs );
     unless ($id) {
         $RT::Handle->Rollback();
         return ( 0, $self->loc('Queue could not be created') );
@@ -381,8 +365,22 @@ sub Create {
         $RT::Handle->Rollback();
         return ( 0, $self->loc('Queue could not be created') );
     }
+    if ( $args{'_RecordTransaction'} ) {
+        $self->_NewTransaction( Type => "Create" );
+    }
+    $RT::Handle->Commit;
 
-    $RT::Handle->Commit();
+    if ( defined $args{'Sign'} ) {
+        my ($status, $msg) = $self->SetSign( $args{'Sign'} );
+        $RT::Logger->error("Couldn't set attribute 'Sign': $msg")
+            unless $status;
+    }
+    if ( defined $args{'Encrypt'} ) {
+        my ($status, $msg) = $self->SetEncrypt( $args{'Encrypt'} );
+        $RT::Logger->error("Couldn't set attribute 'Encrypt': $msg")
+            unless $status;
+    }
+
     return ( $id, $self->loc("Queue created") );
 }
 
@@ -407,6 +405,29 @@ Takes a boolean.
 0 will re-enable this queue.
 
 =cut
+
+sub SetDisabled {
+    my $self = shift;
+    my $val = shift;
+
+    $RT::Handle->BeginTransaction();
+    my $set_err = $self->SUPER::SetDisabled($val);
+    unless ($set_err) {
+        $RT::Handle->Rollback();
+        $RT::Logger->warning("Couldn't ".($val == 1) ? "disable" : "enable"." queue ".$self->PrincipalObj->Id);
+        return (undef);
+    }
+    $self->_NewTransaction( Type => ($val == 1) ? "Disabled" : "Enabled" );
+
+    $RT::Handle->Commit();
+
+    if ( $val == 1 ) {
+        return (1, $self->loc("Queue disabled"));
+    } else {
+        return (1, $self->loc("Queue enabled"));
+    }
+
+}
 
 # }}}
 
@@ -469,6 +490,94 @@ sub ValidateName {
 
 # }}}
 
+=head2 SetSign
+
+=cut
+
+sub Sign {
+    my $self = shift;
+    my $value = shift;
+
+    return undef unless $self->CurrentUserHasRight('SeeQueue');
+    my $attr = $self->FirstAttribute('Sign') or return 0;
+    return $attr->Content;
+}
+
+sub SetSign {
+    my $self = shift;
+    my $value = shift;
+
+    return ( 0, $self->loc('Permission Denied') )
+        unless $self->CurrentUserHasRight('AdminQueue');
+
+    my ($status, $msg) = $self->SetAttribute(
+        Name        => 'Sign',
+        Description => 'Sign outgoing messages by default',
+        Content     => $value,
+    );
+    return ($status, $msg) unless $status;
+    return ($status, $self->loc('Signing enabled')) if $value;
+    return ($status, $self->loc('Signing disabled'));
+}
+
+sub Encrypt {
+    my $self = shift;
+    my $value = shift;
+
+    return undef unless $self->CurrentUserHasRight('SeeQueue');
+    my $attr = $self->FirstAttribute('Encrypt') or return 0;
+    return $attr->Content;
+}
+
+sub SetEncrypt {
+    my $self = shift;
+    my $value = shift;
+
+    return ( 0, $self->loc('Permission Denied') )
+        unless $self->CurrentUserHasRight('AdminQueue');
+
+    my ($status, $msg) = $self->SetAttribute(
+        Name        => 'Encrypt',
+        Description => 'Encrypt outgoing messages by default',
+        Content     => $value,
+    );
+    return ($status, $msg) unless $status;
+    return ($status, $self->loc('Encrypting enabled')) if $value;
+    return ($status, $self->loc('Encrypting disabled'));
+}
+
+sub SubjectTag {
+    my $self = shift;
+    return RT->System->SubjectTag( $self );
+}
+
+sub SetSubjectTag {
+    my $self = shift;
+    my $value = shift;
+
+    return ( 0, $self->loc('Permission Denied') )
+        unless $self->CurrentUserHasRight('AdminQueue');
+
+    my $attr = RT->System->FirstAttribute('BrandedSubjectTag');
+    my $map = $attr ? $attr->Content : {};
+    if ( defined $value && length $value ) {
+        $map->{ $self->id } = $value;
+    } else {
+        delete $map->{ $self->id };
+    }
+
+    my ($status, $msg) = RT->System->SetAttribute(
+        Name        => 'BrandedSubjectTag',
+        Description => 'Queue id => subject tag map',
+        Content     => $map,
+    );
+    return ($status, $msg) unless $status;
+    return ($status, $self->loc(
+        "SubjectTag changed to [_1]", 
+        (defined $value && length $value)? $value : $self->loc("(no value)")
+    ))
+}
+
 # {{{ sub Templates
 
 =head2 Templates
@@ -510,32 +619,37 @@ sub CustomField {
 }
 
 
-# {{{ CustomFields
+# {{{ TicketCustomFields
 
-=head2 CustomFields
+=head2 TicketCustomFields
 
-Returns an RT::CustomFields object containing all global custom fields, as well as those tied to this queue
+Returns an L<RT::CustomFields> object containing all global and
+queue-specific B<ticket> custom fields.
 
 =cut
-
-# XXX TODO - this should become TicketCustomFields
-
-sub CustomFields {
-    my $self = shift;
-    warn "Queue->CustomFields is deprecated, use Queue->TicketCustomFields instead at (". join(":",caller).")";
-    return $self->TicketCustomFields(@_);
-}
 
 sub TicketCustomFields {
     my $self = shift;
 
     my $cfs = RT::CustomFields->new( $self->CurrentUser );
     if ( $self->CurrentUserHasRight('SeeQueue') ) {
+        $cfs->SetContextObject( $self );
 	$cfs->LimitToGlobalOrObjectId( $self->Id );
 	$cfs->LimitToLookupType( 'RT::Queue-RT::Ticket' );
     }
     return ($cfs);
 }
+
+# }}}
+
+# {{{ TicketTransactionCustomFields
+
+=head2 TicketTransactionCustomFields
+
+Returns an L<RT::CustomFields> object containing all global and
+queue-specific B<transaction> custom fields.
+
+=cut
 
 sub TicketTransactionCustomFields {
     my $self = shift;
@@ -566,34 +680,6 @@ It will create four groups for this ticket: Requestor, Cc, AdminCc and Owner.
 
 It will return true on success and undef on failure.
 
-=begin testing
-
-my $Queue = RT::Queue->new($RT::SystemUser); my ($id, $msg) = $Queue->Create(Name => "Foo",
-                );
-ok ($id, "Foo $id was created");
-ok(my $group = RT::Group->new($RT::SystemUser));
-ok($group->LoadQueueRoleGroup(Queue => $id, Type=> 'Cc'));
-ok ($group->Id, "Found the requestors object for this Queue");
-
-
-ok ((my $add_id, $add_msg) = $Queue->AddWatcher(Type => 'Cc', Email => 'bob@fsck.com'), "Added bob at fsck.com as a requestor");
-ok ($add_id, "Add succeeded: ($add_msg)");
-ok(my $bob = RT::User->new($RT::SystemUser), "Creating a bob rt::user");
-$bob->LoadByEmail('bob@fsck.com');
-ok($bob->Id,  "Found the bob rt user");
-ok ($Queue->IsWatcher(Type => 'Cc', PrincipalId => $bob->PrincipalId), "The Queue actually has bob at fsck.com as a requestor");;
-ok ((my $add_id, $add_msg) = $Queue->DeleteWatcher(Type =>'Cc', Email => 'bob@fsck.com'), "Added bob at fsck.com as a requestor");
-ok (!$Queue->IsWatcher(Type => 'Cc', Principal => $bob->PrincipalId), "The Queue no longer has bob at fsck.com as a requestor");;
-
-
-$group = RT::Group->new($RT::SystemUser);
-ok($group->LoadQueueRoleGroup(Queue => $id, Type=> 'Cc'));
-ok ($group->Id, "Found the cc object for this Queue");
-$group = RT::Group->new($RT::SystemUser);
-ok($group->LoadQueueRoleGroup(Queue => $id, Type=> 'AdminCc'));
-ok ($group->Id, "Found the AdminCc object for this Queue");
-
-=end testing
 
 =cut
 
@@ -633,7 +719,7 @@ PrinicpalId The RT::Principal id of the user or group that's being added as a wa
 Email       The email address of the new watcher. If a user with this 
             email address can't be found, a new nonprivileged user will be created.
 
-If the watcher you\'re trying to set has an RT account, set the Owner paremeter to their User Id. Otherwise, set the Email parameter to their Email address.
+If the watcher you\'re trying to set has an RT account, set the Owner parameter to their User Id. Otherwise, set the Email parameter to their Email address.
 
 Returns a tuple of (status/id, message).
 
@@ -662,10 +748,10 @@ sub AddWatcher {
         if $self->CurrentUserHasRight('ModifyQueueWatchers');
 
     #If the watcher we're trying to add is for the current user
-    if ( $self->CurrentUser->PrincipalId == ($args{'PrincipalId'}||0) ) {
+    if ( defined $args{'PrincipalId'} && $self->CurrentUser->PrincipalId  eq $args{'PrincipalId'}) {
         #  If it's an AdminCc and they don't have 
         #   'WatchAsAdminCc' or 'ModifyTicket', bail
-        if ( $args{'Type'} eq 'AdminCc' ) {
+        if ( defined $args{'Type'} && ($args{'Type'} eq 'AdminCc') ) {
             return ( $self->_AddWatcher(%args) )
                 if $self->CurrentUserHasRight('WatchAsAdminCc');
         }
@@ -751,7 +837,7 @@ sub _AddWatcher {
 
     my ($m_id, $m_msg) = $group->_AddMember(PrincipalId => $principal->Id);
     unless ($m_id) {
-        $RT::Logger->error("Failed to add ".$principal->Id." as a member of group ".$group->Id."\n".$m_msg);
+        $RT::Logger->error("Failed to add ".$principal->Id." as a member of group ".$group->Id.": ".$m_msg);
 
         return ( 0, $self->loc('Could not make that principal a [_1] for this queue', $args{'Type'}) );
     }
@@ -787,21 +873,29 @@ sub DeleteWatcher {
                  Email => undef,
                  @_ );
 
-    return ( 0, "No principal specified" )
-        unless $args{Email} or $args{PrincipalId};
+    unless ( $args{'PrincipalId'} || $args{'Email'} ) {
+        return ( 0, $self->loc("No principal specified") );
+    }
 
     if ( !$args{PrincipalId} and $args{Email} ) {
         my $user = RT::User->new( $self->CurrentUser );
         my ($rv, $msg) = $user->LoadByEmail( $args{Email} );
         $args{PrincipalId} = $user->PrincipalId if $rv;
     }
-
-    my $principal = RT::Principal->new($self->CurrentUser);
-    $principal->Load($args{'PrincipalId'});
+    
+    my $principal = RT::Principal->new( $self->CurrentUser );
+    if ( $args{'PrincipalId'} ) {
+        $principal->Load( $args{'PrincipalId'} );
+    }
+    else {
+        my $user = RT::User->new( $self->CurrentUser );
+        $user->LoadByEmail( $args{'Email'} );
+        $principal->Load( $user->Id );
+    }
 
     # If we can't find this watcher, we need to bail.
-    unless ($principal->Id) {
-        return(0, $self->loc("Could not find that principal"));
+    unless ( $principal->Id ) {
+        return ( 0, $self->loc("Could not find that principal") );
     }
 
     my $group = RT::Group->new($self->CurrentUser);
@@ -814,7 +908,7 @@ sub DeleteWatcher {
 
     # {{{ Check ACLS
     #If the watcher we're trying to add is for the current user
-    if ( $self->CurrentUser->PrincipalId  eq $args{'PrincipalId'}) {
+    if ( defined $args{'PrincipalId'} and $self->CurrentUser->PrincipalId  eq $args{'PrincipalId'}) {
         #  If it's an AdminCc and they don't have 
         #   'WatchAsAdminCc' or 'ModifyQueue', bail
         if ( $args{'Type'} eq 'AdminCc' ) {
@@ -859,7 +953,7 @@ sub DeleteWatcher {
     my ($m_id, $m_msg) = $group->_DeleteMember($principal->Id);
     unless ($m_id) {
         $RT::Logger->error("Failed to delete ".$principal->Id.
-                           " as a member of group ".$group->Id."\n".$m_msg);
+                           " as a member of group ".$group->Id.": ".$m_msg);
 
         return ( 0,    $self->loc('Could not remove that principal as a [_1] for this queue', $args{'Type'}) );
     }
@@ -1120,15 +1214,15 @@ sub HasRight {
         Principal => $self->CurrentUser,
         @_
     );
-    unless ( defined $args{'Principal'} ) {
-        $RT::Logger->debug("Principal undefined in Queue::HasRight");
-
+    my $principal = delete $args{'Principal'};
+    unless ( $principal ) {
+        $RT::Logger->error("Principal undefined in Queue::HasRight");
+        return undef;
     }
-    return (
-        $args{'Principal'}->HasRight(
-            Object => $self->Id ? $self : $RT::System,
-            Right    => $args{'Right'}
-          )
+
+    return $principal->HasRight(
+        %args,
+        Object => ($self->Id ? $self : $RT::System),
     );
 }
 

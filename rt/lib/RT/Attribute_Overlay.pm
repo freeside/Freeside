@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,6 +45,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 package RT::Attribute;
 
 use strict;
@@ -271,55 +272,23 @@ sub _SerializeContent {
 sub SetContent {
     my $self = shift;
     my $content = shift;
-    
+
     # Call __Value to avoid ACL check.
-    if ($self->__Value('ContentType') eq 'storable') {
-    # We eval the serialization because it will lose on a coderef.
-    eval  {$content = $self->_SerializeContent($content); };
-    if ($@) {
-        $RT::Logger->error("For some reason, content couldn't be frozen");
-        return(0, $@);
+    if ( $self->__Value('ContentType') eq 'storable' ) {
+        # We eval the serialization because it will lose on a coderef.
+        $content = eval { $self->_SerializeContent($content) };
+        if ($@) {
+            $RT::Logger->error("Content couldn't be frozen: $@");
+            return(0, "Content couldn't be frozen");
+        }
     }
-    }
-    return ($self->SUPER::SetContent($content));
+    return $self->SUPER::SetContent( $content );
 }
 
 =head2 SubValue KEY
 
 Returns the subvalue for $key.
 
-=begin testing
-
-my $user = $RT::SystemUser;
-my ($id, $msg) =  $user->AddAttribute(Name => 'SavedSearch', Content => { Query => 'Foo'} );
-ok ($id, $msg);
-my $attr = RT::Attribute->new($RT::SystemUser);
-$attr->Load($id);
-ok($attr->Name eq 'SavedSearch');
-$attr->SetSubValues( Format => 'baz');
-
-my $format = $attr->SubValue('Format');
-is ($format , 'baz');
-
-$attr->SetSubValues( Format => 'bar');
-$format = $attr->SubValue('Format');
-is ($format , 'bar');
-
-$attr->DeleteAllSubValues();
-$format = $attr->SubValue('Format');
-is ($format, undef);
-
-$attr->SetSubValues(Format => 'This is a format');
-
-my $attr2 = RT::Attribute->new($RT::SystemUser);
-$attr2->Load($id);
-is ($attr2->SubValue('Format'), 'This is a format');
-$attr2->Delete;
-my $attr3 = RT::Attribute->new($RT::SystemUser);
-my ($id) = $attr3->Load($id);
-is ($id, 0);
-
-=end testing
 
 =cut
 

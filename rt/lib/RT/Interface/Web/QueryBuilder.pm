@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,6 +45,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 package RT::Interface::Web::QueryBuilder;
 
 use strict;

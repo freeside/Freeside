@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,15 +45,10 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
- 
 
 package RT::Condition::UserDefined;
-
-use RT::Condition::Generic;
-
+use base 'RT::Condition';
 use strict;
-use vars qw/@ISA/;
-@ISA = qw(RT::Condition::Generic);
 
 
 =head2 IsApplicable
@@ -64,6 +59,7 @@ This happens on every transaction. it's always applicable
 
 sub IsApplicable {
     my $self = shift;
+    local $@;
     my $retval = eval $self->ScripObj->CustomIsApplicableCode;
     if ($@) {
         $RT::Logger->error("Scrip ".$self->ScripObj->Id. " IsApplicable failed: ".$@);

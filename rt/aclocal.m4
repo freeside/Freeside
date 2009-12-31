@@ -26,11 +26,11 @@ dnl
 AC_DEFUN([RT_ENABLE_LAYOUT],[
 AC_ARG_ENABLE(layout,
 	      AC_HELP_STRING([--enable-layout=LAYOUT],
-	      		     [Use a specific directory layout (Default: RT3)]),
+	      		     [Use a specific directory layout (Default: relative)]),
 	      LAYOUT=$enableval)
 
 if test "x$LAYOUT" = "x"; then
-	LAYOUT="RT3"
+	LAYOUT="relative"
 fi
 RT_LAYOUT($srcdir/config.layout, $LAYOUT)
 AC_MSG_CHECKING(for chosen layout)
@@ -44,6 +44,11 @@ if test "x$rt_layout_name" = "xno"; then
 else
 	AC_SUBST(rt_layout_name)
 	AC_MSG_RESULT($rt_layout_name)
+fi
+if test "x$rt_layout_name" != "xinplace" ; then
+	AC_SUBST([COMMENT_INPLACE_LAYOUT], [""])
+else
+	AC_SUBST([COMMENT_INPLACE_LAYOUT], [# ])
 fi
 ])
 
@@ -111,6 +116,7 @@ AC_DEFUN([RT_LAYOUT],[
 	RT_SUBST_EXPANDED_ARG(datadir)
 	RT_SUBST_EXPANDED_ARG(htmldir)
 	RT_SUBST_EXPANDED_ARG(manualdir)
+	RT_SUBST_EXPANDED_ARG(plugindir)
 	RT_SUBST_EXPANDED_ARG(localstatedir)
 	RT_SUBST_EXPANDED_ARG(logfiledir)
 	RT_SUBST_EXPANDED_ARG(masonstatedir)

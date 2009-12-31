@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,6 +45,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 package RT::ObjectCustomFieldValues;
 
 use strict;
@@ -61,56 +62,42 @@ Limits the returned set to values for the custom field with Id FIELD
 sub LimitToCustomField {
     my $self = shift;
     my $cf = shift;
-    return ($self->Limit( FIELD => 'CustomField',
-			  VALUE => $cf,
-			  OPERATOR => '='));
-
+    return $self->Limit(
+        FIELD => 'CustomField',
+        VALUE => $cf,
+    );
 }
 
 # }}}
 
-# {{{ sub LimitToTicket
+# {{{ sub LimitToObject
 
-=head2 LimitToTicket TICKETID
+=head2 LimitToObject OBJECT
 
-Limits the returned set to values for the ticket with Id TICKETID
+Limits the returned set to values for the given OBJECT
 
 =cut
-  
-sub LimitToTicket {
-    my $self = shift;
-    my $ticket = shift;
-
-
-    $RT::Logger->warning(ref($self) . " -> LimitToTicket deprecated in favor of LimitToObject at (". join(":",caller).")");
-
-    $self->Limit( FIELD => 'ObjectType',
-		  VALUE => 'RT::Ticket',
-		  OPERATOR => '=');
-    return ($self->Limit( FIELD => 'ObjectId',
-			  VALUE => $ticket,
-			  OPERATOR => '='));
-
-}
-
-# }}}
-
 
 sub LimitToObject {
     my $self = shift;
     my $object = shift;
-    $self->Limit( FIELD => 'ObjectType',
-		  VALUE => ref($object),
-		  OPERATOR => '=');
-    return ($self->Limit( FIELD => 'ObjectId',
-			  VALUE => $object->Id,
-			  OPERATOR => '='));
+    $self->Limit(
+        FIELD => 'ObjectType',
+        VALUE => ref($object),
+    );
+    return $self->Limit(
+        FIELD => 'ObjectId',
+        VALUE => $object->Id,
+    );
 
 }
 
-=sub HasEntry VALUE
+# }}}
 
-Returns true if this CustomFieldValues collection has an entry with content that eq VALUE
+=head2 HasEntry VALUE
+
+If this collection has an entry with content that eq VALUE then
+returns the entry, otherwise returns undef.
 
 =cut
 
@@ -118,37 +105,37 @@ Returns true if this CustomFieldValues collection has an entry with content that
 sub HasEntry {
     my $self = shift;
     my $value = shift;
+    return undef unless defined $value && length $value;
 
     #TODO: this could cache and optimize a fair bit.
-    foreach my $item (@{$self->ItemsArrayRef}) {
-        return(1) if ($item->Content eq $value);  
+    foreach my $item ( @{$self->ItemsArrayRef} ) {
+        return $item if lc $item->Content eq lc $value;
     }
     return undef;
-
 }
 
 sub _DoSearch {
     my $self = shift;
     
-    #unless we really want to find disabled rows, make sure we\'re only finding enabled ones.
-    unless($self->{'find_expired_rows'}) {
+    # unless we really want to find disabled rows,
+    # make sure we\'re only finding enabled ones.
+    unless ( $self->{'find_expired_rows'} ) {
         $self->LimitToEnabled();
     }
     
-    return($self->SUPER::_DoSearch(@_));
-    
+    return $self->SUPER::_DoSearch(@_);
 }
 
 sub _DoCount {
     my $self = shift;
     
-    #unless we really want to find disabled rows, make sure we\'re only finding enabled ones.
-    unless($self->{'find_expired_rows'}) {
+    # unless we really want to find disabled rows,
+    # make sure we\'re only finding enabled ones.
+    unless ( $self->{'find_expired_rows'} ) {
         $self->LimitToEnabled();
     }
     
-    return($self->SUPER::_DoCount(@_));
-    
+    return $self->SUPER::_DoCount(@_);
 }
 
 1;

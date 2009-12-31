@@ -14,7 +14,149 @@ Before making any changes to your database, always ensure that you have a
 complete current backup. If you don't have a current backup, you could 
 accidentally damage your database and lose data or worse.
 
+If you are using MySQL, please read the instructions in UPGRADING.mysql as
+well.
+
 *******
+UPGRADING FROM 3.8.6 and earlier - Changes:
+
+For MySQL and Oracle users:
+If you upgraded from a version of RT earlier than 3.7.81 you should
+already have a CachedGroupMembers3 index on your CachedGroupMembers table.
+If you did a clean install of RT somewhere in the 3.8 release series, you 
+most likely don't have this index.  You can add it manually with
+
+  CREATE INDEX CachedGroupMembers3 on CachedGroupMembers (MemberId, ImmediateParentId);
+
+UPGRADING FROM 3.8.5 and earlier - Changes:
+
+You can now forward an entire Ticket history (in addition to specific transactions)
+but this requires a new Template called forward ticket.  This template will be added
+when you run.
+
+/opt/rt3/sbin/rt-setup-database --dba root --prompt-for-dba-password --action upgrade
+
+Custom fields with categories can optionally be split out into
+hierarchical custom fields.  If you wish to convert your old
+category-based custom fields, run:
+
+    perl etc/upgrade/split-out-cf-categories
+
+It will prompt you for each custom field with categories that it
+finds, and the name of the custom field to create to store the
+categories.
+
+If you were using the LocalizedDateTime RT::Date formatter from code
+and passing a DateFormat or TimeFormat argument, you need to switch from 
+the strftime methods to the cldr methods (ie full_date_format becomes date_format_full)
+You may have done this from your RT_SiteConfig.pm by using
+Set($DateTimeFormat, { Format => 'LocalizedDateTime', DateFormat => 'medium_date_format' );
+
+UPGRADING FROM 3.8.3 and earlier - Changes:
+
+Arguments to the NotifyGroup Scrip Action need
+to be corrected in the database using 
+
+/opt/rt3/sbin/rt-setup-database --dba root --prompt-for-dba-password --action upgrade
+
+
+UPGRADING FROM 3.8.2 and earlier - Changes:
+
+New scrip condition 'On Reject'.
+
+UPGRADING FROM 3.8.1 and earlier - Changes:
+
+= Oracle configuration =
+
+$DatabaseName is used as SID, so RT can connect without environment variables
+or tnsnames.ora file. Because of this change your RT instance may loose ability
+to connect to your DB, you have to update options and restart your web server.
+Example configuration:
+
+    Set($DatabaseType, 'Oracle');
+    Set($DatabaseHost, '192.168.0.1');
+    # undefined port => will try both 1526 and 1521
+    Set($DatabasePort, undef);
+    # ORACLE SID
+    Set($DatabaseName, 'XE');
+    # user for RT in Oracle, RT's tables in his schema
+    Set($DatabaseUser, 'test');
+    # above user's password
+    Set($DatabasePassword, 'test');
+
+= Rights changes =
+
+Now, if you want any user to be able to access the Approvals tools (a.k.a.  the
+Approvals tab), you must grant that user the "ShowApprovalsTab" right.
+
+UPGRADING FROM 3.8.0 and earlier - Changes:
+
+Searches for bookmarked tickets have been reimplemented and syntax has
+been changed a little. Database upgrade script handles global 'Bookmarked Tickets'
+search only. New Ticket SQL "id = '__Bookmarked__'" is more flexible than
+old "__Bookmarks__". Old version is not valid Ticket SQL query, so people
+can not use it in the query builder and as well admins couldn't not edit
+format and other properties of the global saved search. Old version's been
+left for backwards compatibility.
+
+
+UPGRADING FROM 3.7.85 and earlier - Changes:
+
+We've proved that it's possible to delete pretty big set of records
+from CachedGroupMembers table without losing functionality. To delete
+record run the following script:
+
+    perl -I /opt/rt3/local/lib -I /opt/rt3/lib etc/upgrade/shrink_cgm_table.pl
+
+UPGRADING FROM 3.7.81 and earlier - Changes:
+
+RT::Extension::BrandedQueues has been integrated into core, so you MUST read
+upgrading instructions docs/queue_subject_tag.pod EVEN IF you have not used
+that extension.
+
+RT::Action::LinearEscalate extension has been integrated into core,
+so you MUST uninstall it before upgrading.
+
+RT::Extension::iCal has been integrated into core, so you MUST uninstall
+it before upgrading. In addition, you must run etc/upgrade/3.8-ical-extension
+script to convert old data.
+
+UPGRADING FROM 3.7.80 and earlier - Changes:
+
+Added indexes to CachedGroupMembers for MySQL and Oracle.
+If you have previously installed RTx-Shredder, you may already
+have these indexes.  You can see the indexes by looking at
+etc/upgrade/3.7.81/schema.*
+
+These indexes may take a very long time to create.
+
+UPGRADING FROM 3.6.X and earlier - Changes:
+
+There are a lot of changes all over the code, so it's highly recommended to
+use fresh directory and then reinstalling your customizations.
+
+New schema for mysql 4.1 and greater, read more in UPGRADING.mysql.
+
+Config format has been made stricter. All options MUST be set using Set
+function, no more "@XXX = (...) unless @XXX;". Use "Set(@XXX, ...);" instead.
+
+RTx::Shredder extension has been integrated into core and features have been
+added, so you MUST uninstall it before upgrading or use a fresh directory for
+installation.
+
+New interface for making links in text clickable and doing other replacements
+has been integrated into RT.
+Read more in `perldoc docs/extending_clickable_links.pod`.
+
+New feature that allow users to forward messages. There is a new option in
+the config ($ForwardFromUser), new rights and a template.
+
+New global templates with "Error: " prefix in the name to make it possible
+to configure error messages sent to users.
+
+Read about GnuPG integration in `perldoc docs/gnupg_integration.pod`.
+
+New scrip conditions 'On Close' and 'On Reopen'.
 
 UPGRADING FROM 3.5.7 and earlier - Changes:
 
@@ -65,7 +207,7 @@ UPGRADING FROM 3.0.x - Changes:
 = Installation =
 
 We recommend you move your existing /opt/rt3 tree completely out
-of the way before installating the newversion of RT, to make sure
+of the way before installing the new version of RT, to make sure
 that you don't inadvertently leave old files hanging around.
 
 = Rights changes =
@@ -85,7 +227,7 @@ It's worth checking out that resource if these instructions don't
 work right for you
 
 
-RT 3.2 includes a signficant change to the FastCGI handler. It is
+RT 3.2 includes a significant change to the FastCGI handler. It is
 no longer "setgid" to the RT group.  Perl's setid support has been
 deprecated for the last several releases and a number of platforms
 don't bundle the "sperl" or "suidperl" executable by default.
@@ -219,4 +361,8 @@ Apache 1.3 on a Debian Linux server.
     ScriptAlias / /var/www/rt/mason_handler.fcgi/
     
  </VirtualHost>
+
+UPGRADING FROM 2.x:
+
+See http://search.cpan.org/dist/RT-Extension-RT2toRT3/
 

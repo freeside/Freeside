@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,6 +45,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 package RT::Interface::Email::Filter::SpamAssassin;
 
 use Mail::SpamAssassin;
@@ -77,7 +78,8 @@ RT::Interface::Email::Filter::SpamAssassin - Spam filter for RT
 
 =head1 SYNOPSIS
 
-    @RT::MailPlugins = ("Filter::SpamAssassin", ...);
+    # in RT config
+    Set(@MailPlugins, 'Filter::SpamAssassin', ...other filters...);
 
 =head1 DESCRIPTION
 

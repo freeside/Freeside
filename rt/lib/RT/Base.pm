@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,9 +45,10 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 package RT::Base;
-use Carp;
-use Scalar::Util;
+use Carp ();
+use Scalar::Util ();
 
 use strict;
 use vars qw(@EXPORT);
@@ -101,8 +102,8 @@ sub CurrentUser {
     unless ( ref $self->{'user'} && $self->{'user'}->isa('RT::CurrentUser') ) {
         my $msg = "$self was created without a CurrentUser."
             ." Any RT object which is subclass of RT::Base must be created"
-            ." with a RT::CurrentUser or a RT::User obejct as the first argument.";
-        $msg .= "\n". Carp::cluck() if @_;
+            ." with a RT::CurrentUser or a RT::User object as the first argument.";
+        $msg .= "\n". Carp::longmess() if @_;
 
         $RT::Logger->error( $msg );
         return $self->{'user'} = undef;
@@ -146,7 +147,6 @@ sub loc {
         return $user->loc(@_);
     }
     else {
-        use Carp;
         Carp::confess("No currentuser");
         return ("Critical error:$self has no CurrentUser", $self);
     }
@@ -158,7 +158,6 @@ sub loc_fuzzy {
         return $user->loc_fuzzy(@_);
     }
     else {
-        use Carp;
         Carp::confess("No currentuser");
         return ("Critical error:$self has no CurrentUser", $self);
     }

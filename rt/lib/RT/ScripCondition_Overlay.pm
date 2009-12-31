@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,6 +45,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
   RT::ScripCondition - RT scrip conditional
@@ -60,11 +61,6 @@ This module should never be called directly by client code. it's an internal mod
 should only be accessed through exported APIs in other modules.
 
 
-=begin testing
-
-ok (require RT::ScripCondition);
-
-=end testing
 
 =head1 METHODS
 

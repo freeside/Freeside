@@ -262,20 +262,14 @@ style perfectly; we are trying to fix it without breaking exsiting APIs.
 =head2 Tests
 
 Modules should provide test code, with documentation on how to use
-it. Test::Inline allows tests to be embedded in code. Test::More makes it 
-easy to create tests. Any code you write should have a testsuite.
-Any code you alter should have a test suite. If a patch comes in without
-tests, there is something wrong.
+it.  Test::More makes it easy to create tests. Any code you write
+should have a testsuite.  Any code you alter should have a test
+suite. If a patch comes in without tests, there is something wrong.
 
-When altering code, you must run the test harness before submitting a patch
-or committing code to the repository. 
+When altering code, you must run the test harness before submitting a
+patch or committing code to the repository.
 
-"make regression" will extract inline tests, blow away the system database
-and run the test suite.
-
-"make regression-quiet" will do all that and not print the "ok" lines.
-
-
+"make test" will run the test suite.
 
 =head2 STDIN/STDOUT
 
@@ -787,11 +781,11 @@ should become		<&|/l, $m->scomp('/Elements/SelectNewTicketQueue')&><input type="
 
 
 
-The string	<& /Elements/TitleBoxStart, width=> "40%", titleright => "RT $RT::VERSION for   $RT::rtname", title => 'Login' &>
+The string	<& /Elements/TitleBoxStart, width=> "40%", titleright => "RT $RT::VERSION for   RT->Config->Get('rtname')", title => 'Login' &>
 
 should become 	<& /Elements/TitleBoxStart, 
 			width=> "40%",
-			titleright => loc("RT [_1] for [_2]",$RT::VERSION, $RT::rtname),
+			titleright => loc("RT [_1] for [_2]",$RT::VERSION, RT->Config->Get('rtname')),
 			title => loc('Login'),
 	      	&>
 	
@@ -816,7 +810,7 @@ should become	 return $self->loc( "Subject changed to [_1]", $self->Data );
 It is important not to localize  the names of rights or statuses within RT's core, as there is logic that depends on them as string identifiers.  The proper place to localize these values is when they're presented for display in the web or commandline interfaces.
 
 
-=back 4
+=back
 
 =head1 CODING PRCEDURE
 

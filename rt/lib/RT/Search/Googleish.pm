@@ -2,8 +2,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -46,6 +46,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
   RT::Search::Googlish
@@ -59,11 +60,6 @@ Use the argument passed in as a "Google-style" set of keywords
 =head1 METHODS
 
 
-=begin testing
-
-ok (require RT::Search::Generic);
-
-=end testing
 
 
 =cut
@@ -71,8 +67,11 @@ ok (require RT::Search::Generic);
 package RT::Search::Googleish;
 
 use strict;
-use base qw(RT::Search::Generic);
+use warnings;
+use base qw(RT::Search);
 
+use Regexp::Common qw/delimited/;
+my $re_delim = qr[$RE{delimited}{-delim=>qq{\'\"}}];
 
 # sub _Init {{{
 sub _Init {
@@ -95,7 +94,10 @@ sub Describe  {
 sub QueryToSQL {
     my $self     = shift;
     my $query    = shift || $self->Argument;
-    my @keywords = split /\s+/, $query;
+
+    my @keywords = grep length, map { s/^\s+//; s/\s+$//; $_ }
+        split /((?:fulltext:)?$re_delim|\s+)/o, $query;
+
     my (
         @tql_clauses,  @owner_clauses, @queue_clauses,
         @user_clauses, @id_clauses,    @status_clauses
@@ -104,11 +106,21 @@ sub QueryToSQL {
     for my $key (@keywords) {
 
         # Is this a ticket number? If so, go to it.
+        # But look into subject as well
         if ( $key =~ m/^\d+$/ ) {
-            push @id_clauses, "id = '$key'";
+            push @id_clauses, "id = '$key'", "Subject LIKE '$key'";
         }
 
-        elsif ($key =~ /^fulltext:(.*?)$/i) {
+        # if it's quoted string then search it "as is" in subject or fulltext
+        elsif ( $key =~ /^(fulltext:)?($re_delim)$/io ) {
+            if ( $1 ) {
+                push @tql_clauses, "Content LIKE $2";
+            } else {
+                push @tql_clauses, "Subject LIKE $2";
+            }
+        }
+
+        elsif ( $key =~ /^fulltext:(.*?)$/i ) {
             $key = $1;
             $key =~ s/['\\].*//g;
             push @tql_clauses, "Content LIKE '$key'";
@@ -128,12 +140,13 @@ sub QueryToSQL {
             push @status_clauses, "Status = '" . $key . "'";
         }
 
-        # Is there a owner named $key?
         # Is there a queue named $key?
         elsif ( $Queue = RT::Queue->new( $self->TicketsObj->CurrentUser )
             and $Queue->Load($key) )
         {
-            push @queue_clauses, "Queue = '" . $Queue->Name . "'";
+            my $quoted_queue = $Queue->Name;
+            $quoted_queue =~ s/'/\\'/g;
+            push @queue_clauses, "Queue = '$quoted_queue'";
         }
 
         # Is there a owner named $key?
@@ -155,12 +168,18 @@ sub QueryToSQL {
     for my $queue (@{ $self->{'Queues'} }) {
         my $QueueObj = RT::Queue->new($self->TicketsObj->CurrentUser);
         $QueueObj->Load($queue) or next;
-        push @queue_clauses, "Queue = '" . $QueueObj->Name . "'";
+        my $quoted_queue = $QueueObj->Name;
+        $quoted_queue =~ s/'/\\'/g;
+        push @queue_clauses, "Queue = '$quoted_queue'";
     }
 
     push @tql_clauses, join( " OR ", sort @id_clauses );
     push @tql_clauses, join( " OR ", sort @owner_clauses );
-    push @tql_clauses, join( " OR ", sort @status_clauses );
+    if ( ! @status_clauses ) {
+        push @tql_clauses, join( " OR ", map "Status = '$_'", RT::Queue->ActiveStatusArray());
+    } else {
+        push @tql_clauses, join( " OR ", sort @status_clauses );
+    }
     push @tql_clauses, join( " OR ", sort @user_clauses );
     push @tql_clauses, join( " OR ", sort @queue_clauses );
     @tql_clauses = grep { $_ ? $_ = "( $_ )" : undef } @tql_clauses;
@@ -173,7 +192,7 @@ sub Prepare  {
   my $self = shift;
   my $tql = $self->QueryToSQL($self->Argument);
 
-  $RT::Logger->crit($tql);
+  $RT::Logger->debug($tql);
 
   $self->TicketsObj->FromSQL($tql);
   return(1);

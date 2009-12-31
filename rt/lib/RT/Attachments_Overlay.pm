@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,6 +45,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
   RT::Attachments - a collection of RT::Attachment objects
@@ -62,11 +63,6 @@ should only be accessed through exported APIs in Ticket, Queue and other similar
 =head1 METHODS
 
 
-=begin testing
-
-ok (require RT::Attachments);
-
-=end testing
 
 =cut
 
@@ -76,20 +72,48 @@ package RT::Attachments;
 use strict;
 no warnings qw(redefine);
 
-# {{{ sub _Init  
+use RT::Attachment;
+
 sub _Init   {
-  my $self = shift;
- 
-  $self->{'table'} = "Attachments";
-  $self->{'primary_key'} = "id";
-  $self->OrderBy ( FIELD => 'id',
-                   ORDER => 'ASC');
-  return ( $self->SUPER::_Init(@_));
+    my $self = shift;
+    $self->{'table'} = "Attachments";
+    $self->{'primary_key'} = "id";
+    $self->OrderBy(
+        FIELD => 'id',
+        ORDER => 'ASC',
+    );
+    return $self->SUPER::_Init( @_ );
 }
-# }}}
+
+sub CleanSlate {
+    my $self = shift;
+    delete $self->{_sql_transaction_alias};
+    return $self->SUPER::CleanSlate( @_ );
+}
 
 
-# {{{ sub ContentType
+=head2 TransactionAlias
+
+Returns alias for transactions table with applied join condition.
+Always return the same alias, so if you want to build some complex
+or recursive joining then you have to create new alias youself.
+
+=cut
+
+sub TransactionAlias {
+    my $self = shift;
+    return $self->{'_sql_transaction_alias'}
+        if $self->{'_sql_transaction_alias'};
+
+    my $res = $self->NewAlias('Transactions');
+    $self->Limit(
+        ENTRYAGGREGATOR => 'AND',
+        FIELD           => 'TransactionId',
+        VALUE           => $res . '.id',
+        QUOTEVALUE      => 0,
+    );
+    return $self->{'_sql_transaction_alias'} = $res;
+}
 
 =head2 ContentType (VALUE => 'text/plain', ENTRYAGGREGATOR => 'OR', OPERATOR => '=' ) 
 
@@ -99,20 +123,16 @@ Limit result set to attachments of ContentType 'TYPE'...
 
 
 sub ContentType  {
-  my $self = shift;
-  my %args = ( VALUE => 'text/plain',
-	       OPERATOR => '=',
-	       ENTRYAGGREGATOR => 'OR',
-	       @_);
+    my $self = shift;
+    my %args = (
+        VALUE           => 'text/plain',
+	    OPERATOR        => '=',
+	    ENTRYAGGREGATOR => 'OR',
+	    @_
+    );
 
-  $self->Limit ( FIELD => 'ContentType',
-		 VALUE => $args{'VALUE'},
-		 OPERATOR => $args{'OPERATOR'},
-		 ENTRYAGGREGATOR => $args{'ENTRYAGGREGATOR'});
+    return $self->Limit ( %args, FIELD => 'ContentType' );
 }
-# }}}
-
-# {{{ sub ChildrenOf 
 
 =head2 ChildrenOf ID
 
@@ -122,52 +142,101 @@ Limit result set to children of Attachment ID
 
 
 sub ChildrenOf  {
-  my $self = shift;
-  my $attachment = shift;
-  $self->Limit ( FIELD => 'Parent',
-		 VALUE => $attachment);
+    my $self = shift;
+    my $attachment = shift;
+    return $self->Limit(
+        FIELD => 'Parent',
+        VALUE => $attachment
+    );
 }
-# }}}
+
+=head2 LimitNotEmpty
+
+Limit result set to attachments with not empty content.
+
+=cut
+
+sub LimitNotEmpty {
+    my $self = shift;
+    $self->Limit(
+        ENTRYAGGREGATOR => 'AND',
+        FIELD           => 'Content',
+        OPERATOR        => 'IS NOT',
+        VALUE           => 'NULL',
+        QUOTEVALUE      => 0,
+    );
+
+    # http://rt3.fsck.com/Ticket/Display.html?id=12483
+    if ( RT->Config->Get('DatabaseType') ne 'Oracle' ) {
+        $self->Limit(
+            ENTRYAGGREGATOR => 'AND',
+            FIELD           => 'Content',
+            OPERATOR        => '!=',
+            VALUE           => '',
+        );
+    }
+    return;
+}
+
+=head2 LimitByTicket $ticket_id
+
+Limit result set to attachments of a ticket.
+
+=cut
+
+sub LimitByTicket {
+    my $self = shift;
+    my $tid = shift;
+
+    my $transactions = $self->TransactionAlias;
+    $self->Limit(
+        ENTRYAGGREGATOR => 'AND',
+        ALIAS           => $transactions,
+        FIELD           => 'ObjectType',
+        VALUE           => 'RT::Ticket',
+    );
+
+    my $tickets = $self->NewAlias('Tickets');
+    $self->Limit(
+        ENTRYAGGREGATOR => 'AND',
+        ALIAS           => $tickets,
+        FIELD           => 'id',
+        VALUE           => $transactions . '.ObjectId',
+        QUOTEVALUE      => 0,
+    );
+    $self->Limit(
+        ENTRYAGGREGATOR => 'AND',
+        ALIAS           => $tickets,
+        FIELD           => 'EffectiveId',
+        VALUE           => $tid,
+    );
+    return;
+}
 
 # {{{ sub NewItem 
 sub NewItem  {
   my $self = shift;
-
-  use RT::Attachment;
-  my $item = new RT::Attachment($self->CurrentUser);
-  return($item);
+  return RT::Attachment->new( $self->CurrentUser );
 }
 # }}}
 
 # {{{ sub Next
 sub Next {
     my $self = shift;
- 	
-    my $Attachment = $self->SUPER::Next();
-    if ((defined($Attachment)) and (ref($Attachment))) {
-	if ($Attachment->TransactionObj->__Value('Type') =~ /^Comment/ && 
-	    $Attachment->TransactionObj->TicketObj->CurrentUserHasRight('ShowTicketComments')) {
-	    return($Attachment);
-	} elsif ($Attachment->TransactionObj->__Value('Type') !~ /^Comment/ && 
-		 $Attachment->TransactionObj->TicketObj->CurrentUserHasRight('ShowTicket')) {
-	    return($Attachment);
-	}
 
-	#If the user doesn't have the right to show this ticket
-	else {	
-	    return($self->Next());
-	}
+    my $Attachment = $self->SUPER::Next;
+    return $Attachment unless $Attachment;
+
+    my $txn = $Attachment->TransactionObj;
+    if ( $txn->__Value('Type') eq 'Comment' ) {
+        return $Attachment if $txn->CurrentUserHasRight('ShowTicketComments');
+    } elsif ( $txn->CurrentUserHasRight('ShowTicket') ) {
+        return $Attachment;
     }
 
-    #if there never was any ticket
-    else {
-	return(undef);
-    }	
+    # If the user doesn't have the right to show this ticket
+    return $self->Next;
 }
 # }}}
 
-  1;
-
-
-
-
+1;

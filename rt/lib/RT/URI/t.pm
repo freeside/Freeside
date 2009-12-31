@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,6 +45,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 # BEGIN LICENSE BLOCK
 # 
 # Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
@@ -74,8 +75,7 @@ use RT::Ticket;
 use RT::URI::base;
 
 use strict;
-use vars qw(@ISA);
-@ISA = qw/RT::URI::fsck_com_rt/;
+use base 'RT::URI::fsck_com_rt';
 
 my $scheme = "t";
 
@@ -84,20 +84,6 @@ my $scheme = "t";
 When handed an t: URI, figures out if it is an RT ticket.  This is an
 alternate short form of specifying a full ticket URI.
 
-=begin testing
-
-use_ok("RT::URI::t");
-my $uri = RT::URI::t->new($RT::SystemUser);
-ok(ref($uri), "URI object exists");
-
-my $uristr = "t:1";
-$uri->ParseURI($uristr);
-is(ref($uri->Object), "RT::Ticket", "Object loaded is a ticket");
-is($uri->Object->Id, 1, "Object loaded has correct ID");
-is($uri->URI, 'fsck.com-rt://'.$RT::Organization.'/ticket/1',
-   "URI object has correct URI string");
-
-=end testing
 
 =cut
 

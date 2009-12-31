@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,6 +45,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
   RT::SavedSearches - a pseudo-collection for SavedSearch objects.
@@ -61,24 +62,15 @@
 
 =head1 METHODS
 
-=begin testing
-
-use_ok(RT::SavedSearches);
-
-# The real tests are in lib/t/20savedsearch.t
-
-=end testing
 
 =cut
 
 package RT::SavedSearches;
 
-use RT::Base;
 use RT::SavedSearch;
 
 use strict;
-use vars qw/@ISA/;
-@ISA = qw/RT::Base/;
+use base 'RT::Base';
 
 sub new  {
     my $proto = shift;

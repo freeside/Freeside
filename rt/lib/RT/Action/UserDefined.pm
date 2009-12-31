@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,14 +45,11 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
- 
 
 package RT::Action::UserDefined;
-use RT::Action::Generic;
+use base 'RT::Action';
 
 use strict;
-use vars qw/@ISA/;
-@ISA = qw(RT::Action::Generic);
 
 =head2 Prepare
 

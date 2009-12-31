@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,70 +45,204 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
-#
+
 package RT::Interface::Email::Auth::GnuPG;
-use Mail::GnuPG;
+
+use strict;
+use warnings;
 
 =head2 GetCurrentUser
 
 To use the gnupg-secured mail gateway, you need to do the following:
 
-Set up a gnupgp key directory with a pubring containing only the keys
+Set up a GnuPG key directory with a pubring containing only the keys
 you care about and specify the following in your SiteConfig.pm
 
-Set($RT::GPGKeyDir, "/path/to/keyring-directory");
-@RT::MailPlugins = qw(Auth::MailFrom Auth::GnuPG Filter::TakeAction);
-
-
+    Set(%GnuPGOptions, homedir => '/opt/rt3/var/data/GnuPG');
+    Set(@MailPlugins, 'Auth::MailFrom', 'Auth::GnuPG', ...other filter...);
 
 =cut
 
+sub ApplyBeforeDecode { return 1 }
 
+use RT::Crypt::GnuPG;
+use RT::EmailParser ();
 
 sub GetCurrentUser {
     my %args = (
-        Message     => undef,
-        RawMessageRef     => undef,
-        CurrentUser => undef,
-        AuthLevel   => undef,
-        Ticket      => undef,
-        Queue       => undef,
-        Action      => undef,
+        Message       => undef,
+        RawMessageRef => undef,
         @_
     );
 
-    my ( $val, $key, $address,$gpg );
+    $args{'Message'}->head->delete($_)
+        for qw(X-RT-GnuPG-Status X-RT-Incoming-Encrypton
+               X-RT-Incoming-Signature X-RT-Privacy);
 
-    eval {
+    my $msg = $args{'Message'}->dup;
 
-        my $parser = RT::EmailParser->new();
-        $parser->SmartParseMIMEEntityFromScalar(Message => ${$args{'RawMessageRef'}}, Decode => 0);
-        $gpg = Mail::GnuPG->new( keydir => $RT::GPGKeyDir );
-        my $entity = $parser->Entity;
-        ( $val, $key, $address ) = $gpg->verify( $parser->Entity);
-          $RT::Logger->crit("Got $val - $key - $address");
-      };
-    
-        if ($@) {
-            $RT::Logger->crit($@);
+    my ($status, @res) = VerifyDecrypt( Entity => $args{'Message'} );
+    if ( $status && !@res ) {
+        $args{'Message'}->head->add(
+            'X-RT-Incoming-Encryption' => 'Not encrypted'
+        );
+
+        return 1;
+    }
+
+    # FIXME: Check if the message is encrypted to the address of
+    # _this_ queue. send rejecting mail otherwise.
+
+    unless ( $status ) {
+        $RT::Logger->error("Had a problem during decrypting and verifying");
+        my $reject = HandleErrors( Message => $args{'Message'}, Result => \@res );
+        return (0, 'rejected because of problems during decrypting and verifying')
+            if $reject;
+    }
+
+    # attach the original encrypted message
+    $args{'Message'}->attach(
+        Type        => 'application/x-rt-original-message',
+        Disposition => 'inline',
+        Data        => ${ $args{'RawMessageRef'} },
+    );
+
+    $args{'Message'}->head->add( 'X-RT-Privacy' => 'PGP' );
+
+    foreach my $part ( $args{'Message'}->parts_DFS ) {
+        my $decrypted;
+
+        my $status = $part->head->get( 'X-RT-GnuPG-Status' );
+        if ( $status ) {
+            for ( RT::Crypt::GnuPG::ParseStatus( $status ) ) {
+                if ( $_->{Operation} eq 'Decrypt' && $_->{Status} eq 'DONE' ) {
+                    $decrypted = 1;
+                }
+                if ( $_->{Operation} eq 'Verify' && $_->{Status} eq 'DONE' ) {
+                    $part->head->add(
+                        'X-RT-Incoming-Signature' => $_->{UserString}
+                    );
+                }
+            }
         }
 
-      unless ($address) {
-        $RT::Logger->crit( "Couldn't find a valid signature" . join ( "\n", @{ $gpg->{'last_message'} } ) );
-        return ( $args{'CurrentUser'}, $args{'AuthLevel'} );
+        $part->head->add(
+            'X-RT-Incoming-Encryption' => 
+                $decrypted ? 'Success' : 'Not encrypted'
+        );
     }
 
-    my @addrs = Mail::Address->parse($address);
-    $address = $addrs[0]->address();
+    return 1;
+}
 
-    my $CurrentUser = RT::CurrentUser->new();
-    $CurrentUser->LoadByEmail($address);
+sub HandleErrors {
+    my %args = (
+        Message => undef,
+        Result => [],
+        @_
+    );
 
-    if ( $CurrentUser->Id ) {
-        $RT::Logger->crit($address . " authenticated via PGP signature");
-        return ( $CurrentUser, 2 );
+    my $reject = 0;
+
+    my %sent_once = ();
+    foreach my $run ( @{ $args{'Result'} } ) {
+        my @status = RT::Crypt::GnuPG::ParseStatus( $run->{'status'} );
+        unless ( $sent_once{'NoPrivateKey'} ) {
+            unless ( CheckNoPrivateKey( Message => $args{'Message'}, Status => \@status ) ) {
+                $sent_once{'NoPrivateKey'}++;
+                $reject = 1 if RT->Config->Get('GnuPG')->{'RejectOnMissingPrivateKey'};
+            }
+        }
+        unless ( $sent_once{'BadData'} ) {
+            unless ( CheckBadData( Message => $args{'Message'}, Status => \@status ) ) {
+                $sent_once{'BadData'}++;
+                $reject = 1 if RT->Config->Get('GnuPG')->{'RejectOnBadData'};
+            }
+        }
+    }
+    return $reject;
+}
+
+sub CheckNoPrivateKey {
+    my %args = (Message => undef, Status => [], @_ );
+    my @status = @{ $args{'Status'} };
+
+    my @decrypts = grep $_->{'Operation'} eq 'Decrypt', @status;
+    return 1 unless @decrypts;
+    foreach my $action ( @decrypts ) {
+        # if at least one secrete key exist then it's another error
+        return 1 if
+            grep !$_->{'User'}{'SecretKeyMissing'},
+                @{ $action->{'EncryptedTo'} };
     }
 
+    $RT::Logger->error("Couldn't decrypt a message: have no private key");
+
+    my $address = (RT::Interface::Email::ParseSenderAddressFromHead( $args{'Message'}->head ))[0];
+    my ($status) = RT::Interface::Email::SendEmailUsingTemplate(
+        To        => $address,
+        Template  => 'Error: no private key',
+        Arguments => {
+            Message   => $args{'Message'},
+            TicketObj => $args{'Ticket'},
+        },
+        InReplyTo => $args{'Message'},
+    );
+    unless ( $status ) {
+        $RT::Logger->error("Couldn't send 'Error: no private key'");
+    }
+    return 0;
+}
+
+sub CheckBadData {
+    my %args = (Message => undef, Status => [], @_ );
+    my @bad_data_messages = 
+        map $_->{'Message'},
+        grep $_->{'Status'} ne 'DONE' && $_->{'Operation'} eq 'Data',
+        @{ $args{'Status'} };
+    return 1 unless @bad_data_messages;
+
+    $RT::Logger->error("Couldn't process a message: ". join ', ', @bad_data_messages );
+
+    my $address = (RT::Interface::Email::ParseSenderAddressFromHead( $args{'Message'}->head ))[0];
+    my ($status) = RT::Interface::Email::SendEmailUsingTemplate(
+        To        => $address,
+        Template  => 'Error: bad GnuPG data',
+        Arguments => {
+            Messages  => [ @bad_data_messages ],
+            TicketObj => $args{'Ticket'},
+        },
+        InReplyTo => $args{'Message'},
+    );
+    unless ( $status ) {
+        $RT::Logger->error("Couldn't send 'Error: bad GnuPG data'");
+    }
+    return 0;
+}
+
+sub VerifyDecrypt {
+    my %args = (
+        Entity => undef,
+        @_
+    );
+
+    my @res = RT::Crypt::GnuPG::VerifyDecrypt( %args );
+    unless ( @res ) {
+        $RT::Logger->debug("No more encrypted/signed parts");
+        return 1;
+    }
+
+    $RT::Logger->debug('Found GnuPG protected parts');
+
+    # return on any error
+    if ( grep $_->{'exit_code'}, @res ) {
+        $RT::Logger->debug("Error during verify/decrypt operation");
+        return (0, @res);
+    }
+
+    # nesting
+    my ($status, @nested) = VerifyDecrypt( %args );
+    return $status, @res, @nested;
 }
 
 eval "require RT::Interface::Email::Auth::GnuPG_Vendor";
@@ -121,3 +255,4 @@ die $@
     && $@ !~ qr{^Can't locate RT/Interface/Email/Auth/GnuPG_Local.pm} );
 
 1;
+

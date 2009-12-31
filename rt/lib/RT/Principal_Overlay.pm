@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,6 +45,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 #
 
 package RT::Principal;
@@ -52,12 +53,10 @@ package RT::Principal;
 use strict;
 use warnings;
 
-no warnings qw(redefine);
-
 use Cache::Simple::TimedExpiry;
 
 
-
+use RT;
 use RT::Group;
 use RT::User;
 
@@ -76,12 +75,11 @@ Returns undef, otherwise
 
 sub IsGroup {
     my $self = shift;
-    if ($self->PrincipalType eq 'Group') {
-        return(1);
+    if ( defined $self->PrincipalType && 
+            $self->PrincipalType eq 'Group' ) {
+        return 1;
     }
-    else {
-        return undef;
-    }
+    return undef;
 }
 
 # }}}
@@ -118,18 +116,18 @@ Returns the user or group associated with this principal
 sub Object {
     my $self = shift;
 
-    unless ($self->{'object'}) {
-    if ($self->IsUser) {
-       $self->{'object'} = RT::User->new($self->CurrentUser);
-    }
-    elsif ($self->IsGroup) {
-        $self->{'object'}  = RT::Group->new($self->CurrentUser);
-    }
-    else { 
-        $RT::Logger->crit("Found a principal (".$self->Id.") that was neither a user nor a group");
-        return(undef);
-    }
-    $self->{'object'}->Load($self->ObjectId());
+    unless ( $self->{'object'} ) {
+        if ( $self->IsUser ) {
+           $self->{'object'} = RT::User->new($self->CurrentUser);
+        }
+        elsif ( $self->IsGroup ) {
+            $self->{'object'}  = RT::Group->new($self->CurrentUser);
+        }
+        else { 
+            $RT::Logger->crit("Found a principal (".$self->Id.") that was neither a user nor a group");
+            return(undef);
+        }
+        $self->{'object'}->Load( $self->ObjectId() );
     }
     return ($self->{'object'});
 
@@ -154,29 +152,25 @@ A helper function which calls RT::ACE->Create
 
 sub GrantRight {
     my $self = shift;
-    my %args = ( Right => undef,
-                Object => undef,
-                @_);
-
-
-    unless ($args{'Right'}) {
-        return(0, $self->loc("Invalid Right"));
-    }
-
+    my %args = (
+        Right => undef,
+        Object => undef,
+        @_
+    );
 
     #ACL check handled in ACE.pm
     my $ace = RT::ACE->new( $self->CurrentUser );
-
 
     my $type = $self->_GetPrincipalTypeForACL();
 
     # If it's a user, we really want to grant the right to their 
     # user equivalence group
-        return ( $ace->Create(RightName => $args{'Right'},
-                          Object => $args{'Object'},
-                          PrincipalType =>  $type,
-                          PrincipalId => $self->Id
-                          ) );
+    return $ace->Create(
+        RightName     => $args{'Right'},
+        Object        => $args{'Object'},
+        PrincipalType => $type,
+        PrincipalId   => $self->Id,
+    );
 }
 # }}}
 
@@ -197,7 +191,7 @@ sub RevokeRight {
 
     my $self = shift;
     my %args = (
-        Right      => undef,
+        Right  => undef,
         Object => undef,
         @_
     );
@@ -210,17 +204,14 @@ sub RevokeRight {
     my $type = $self->_GetPrincipalTypeForACL();
 
     my $ace = RT::ACE->new( $self->CurrentUser );
-    $ace->LoadByValues(
+    my ($status, $msg) = $ace->LoadByValues(
         RightName     => $args{'Right'},
-        Object    => $args{'Object'},
+        Object        => $args{'Object'},
         PrincipalType => $type,
         PrincipalId   => $self->Id
     );
-
-    unless ( $ace->Id ) {
-        return ( 0, $self->loc("ACE not found") );
-    }
-    return ( $ace->Delete );
+    return ($status, $msg) unless $status;
+    return $ace->Delete;
 }
 
 # }}}
@@ -303,11 +294,18 @@ sub HasRight {
         return (undef);
     }
 
+    my $canonic_name = RT::ACE->CanonicalizeRightName( $args{'Right'} );
+    unless ( $canonic_name ) {
+        $RT::Logger->error("Invalid right. Couldn't canonicalize right '$args{'Right'}'");
+        return undef;
+    }
+    $args{'Right'} = $canonic_name;
+
     $args{'EquivObjects'} = [ @{ $args{'EquivObjects'} } ]
         if $args{'EquivObjects'};
 
     if ( $self->Disabled ) {
-        $RT::Logger->error( "Disabled User #"
+        $RT::Logger->debug( "Disabled User #"
               . $self->id
               . " failed access check for "
               . $args{'Right'} );
@@ -325,20 +323,12 @@ sub HasRight {
         return (undef);
     }
 
-    # If this object is a ticket, we care about ticket roles and queue roles
-    if ( UNIVERSAL::isa( $args{'Object'} => 'RT::Ticket' ) ) {
 
-        # this is a little bit hacky, but basically, now that we've done
-        # the ticket roles magic, we load the queue object
-        # and ask all the rest of our questions about the queue.
-        unshift @{ $args{'EquivObjects'} }, $args{'Object'}->QueueObj;
-
-    }
+    unshift @{ $args{'EquivObjects'} }, $args{'Object'}->ACLEquivalenceObjects;
 
     unshift @{ $args{'EquivObjects'} }, $RT::System
         unless $self->can('_IsOverrideGlobalACL')
                && $self->_IsOverrideGlobalACL( $args{'Object'} );
-
 
     # {{{ If we've cached a win or loss for this lookup say so
 
@@ -535,8 +525,9 @@ Cleans out and reinitializes the user rights cache
 
 sub InvalidateACLCache {
     $_ACL_CACHE = Cache::Simple::TimedExpiry->new();
-    $_ACL_CACHE->expire_after($RT::ACLCacheLifetime||60);
-
+    my $lifetime;
+    $lifetime = $RT::Config->Get('ACLCacheLifetime') if $RT::Config;
+    $_ACL_CACHE->expire_after( $lifetime || 60 );
 }
 
 # }}}

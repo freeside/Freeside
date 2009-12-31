@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,13 +45,16 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 package RT::EmailParser;
 
 
 use base qw/RT::Base/;
 
 use strict;
-use Mail::Address;
+use warnings;
+
+use Email::Address;
 use MIME::Entity;
 use MIME::Head;
 use MIME::Parser;
@@ -68,11 +71,6 @@ use File::Temp qw/tempdir/;
 =head1 DESCRIPTION
 
 
-=begin testing
-
-ok(require RT::EmailParser);
-
-=end testing
 
 
 =head1 METHODS
@@ -92,21 +90,18 @@ sub new  {
 }
 
 
-# {{{ sub SmartParseMIMEEntityFromScalar
+=head2 SmartParseMIMEEntityFromScalar Message => SCALAR_REF [, Decode => BOOL, Exact => BOOL ] }
 
-=head2 SmartParseMIMEEntityFromScalar { Message => SCALAR_REF, Decode => BOOL }
-
-Parse a message stored in a scalar from scalar_ref
+Parse a message stored in a scalar from scalar_ref.
 
 =cut
 
 sub SmartParseMIMEEntityFromScalar {
     my $self = shift;
-    my %args = ( Message => undef, Decode => 1, @_ );
+    my %args = ( Message => undef, Decode => 1, Exact => 0, @_ );
 
-    my ( $fh, $temp_file );
     eval {
-
+        my ( $fh, $temp_file );
         for ( 1 .. 10 ) {
 
             # on NFS and NTFS, it is possible that tempfile() conflicts
@@ -128,8 +123,9 @@ sub SmartParseMIMEEntityFromScalar {
 
                 # We have to trust the temp file's name -- untaint it
                 $temp_file =~ /(.*)/;
-                $self->ParseMIMEEntityFromFile( $1, $args{'Decode'} );
+                my $entity = $self->ParseMIMEEntityFromFile( $1, $args{'Decode'}, $args{'Exact'} );
                 unlink($1);
+                return $entity;
             }
         }
     };
@@ -137,14 +133,11 @@ sub SmartParseMIMEEntityFromScalar {
     #If for some reason we weren't able to parse the message using a temp file
     # try it with a scalar
     if ( $@ || !$self->Entity ) {
-        $self->ParseMIMEEntityFromScalar( $args{'Message'}, $args{'Decode'} );
+        return $self->ParseMIMEEntityFromScalar( $args{'Message'}, $args{'Decode'}, $args{'Exact'} );
     }
 
 }
 
-# }}}
-
-# {{{ sub ParseMIMEEntityFromSTDIN
 
 =head2 ParseMIMEEntityFromSTDIN
 
@@ -154,17 +147,12 @@ Parse a message from standard input
 
 sub ParseMIMEEntityFromSTDIN {
     my $self = shift;
-    my $postprocess = (@_ ? shift : 1);
-    return $self->ParseMIMEEntityFromFileHandle(\*STDIN, $postprocess);
+    return $self->ParseMIMEEntityFromFileHandle(\*STDIN, @_);
 }
-
-# }}}
-
-# {{{ ParseMIMEEntityFromScalar
 
 =head2 ParseMIMEEntityFromScalar  $message
 
-Takes either a scalar or a reference to a scalr which contains a stringified MIME message.
+Takes either a scalar or a reference to a scalar which contains a stringified MIME message.
 Parses it.
 
 Returns true if it wins.
@@ -174,14 +162,8 @@ Returns false if it loses.
 
 sub ParseMIMEEntityFromScalar {
     my $self = shift;
-    my $message = shift;
-    my $postprocess = (@_ ? shift : 1);
-    $self->_ParseMIMEEntity($message,'parse_data', $postprocess);
+    return $self->_ParseMIMEEntity( shift, 'parse_data', @_ );
 }
-
-# }}}
-
-# {{{ ParseMIMEEntityFromFilehandle *FH
 
 =head2 ParseMIMEEntityFromFilehandle *FH
 
@@ -191,14 +173,8 @@ Parses a mime entity from a filehandle passed in as an argument
 
 sub ParseMIMEEntityFromFileHandle {
     my $self = shift;
-    my $filehandle = shift;
-    my $postprocess = (@_ ? shift : 1);
-    $self->_ParseMIMEEntity($filehandle,'parse', $postprocess);
+    return $self->_ParseMIMEEntity( shift, 'parse', @_ );
 }
-
-# }}}
-
-# {{{ ParseMIMEEntityFromFile
 
 =head2 ParseMIMEEntityFromFile 
 
@@ -208,24 +184,21 @@ Parses a mime entity from a filename passed in as an argument
 
 sub ParseMIMEEntityFromFile {
     my $self = shift;
-    my $file = shift;
-    my $postprocess = (@_ ? shift : 1);
-    $self->_ParseMIMEEntity($file,'parse_open',$postprocess);
+    return $self->_ParseMIMEEntity( shift, 'parse_open', @_ );
 }
 
-# }}}
 
-# {{{ _ParseMIMEEntity
 sub _ParseMIMEEntity {
     my $self = shift;
     my $message = shift;
     my $method = shift;
-    my $postprocess = shift;
-    # Create a new parser object:
+    my $postprocess = (@_ ? shift : 1);
+    my $exact = shift;
 
+    # Create a new parser object:
     my $parser = MIME::Parser->new();
     $self->_SetupMIMEParser($parser);
-
+    $parser->decode_bodies(0) if $exact;
 
     # TODO: XXX 3.0 we really need to wrap this in an eval { }
     unless ( $self->{'entity'} = $parser->$method($message) ) {
@@ -237,15 +210,54 @@ sub _ParseMIMEEntity {
             return ( undef);
         }
     }
-    if ($postprocess) {
-    $self->_PostProcessNewEntity() ;
-    }
 
+    $self->_PostProcessNewEntity if $postprocess;
+
+    return $self->{'entity'};
 }
 
-# }}}
+sub _DecodeBodies {
+    my $self = shift;
+    return unless $self->{'entity'};
+    
+    my @parts = $self->{'entity'}->parts_DFS;
+    $self->_DecodeBody($_) foreach @parts;
+}
 
-# {{{ _PostProcessNewEntity 
+sub _DecodeBody {
+    my $self = shift;
+    my $entity = shift;
+
+    my $old = $entity->bodyhandle or return;
+    return unless $old->is_encoded;
+
+    require MIME::Decoder;
+    my $encoding = $entity->head->mime_encoding;
+    my $decoder = new MIME::Decoder $encoding;
+    unless ( $decoder ) {
+        $RT::Logger->error("Couldn't find decoder for '$encoding', switching to binary");
+        $old->is_encoded(0);
+        return;
+    }
+
+    require MIME::Body;
+    # XXX: use InCore for now, but later must switch to files
+    my $new = new MIME::Body::InCore;
+    $new->binmode(1);
+    $new->is_encoded(0);
+
+    my $source = $old->open('r') or die "couldn't open body: $!";
+    my $destination = $new->open('w') or die "couldn't open body: $!";
+    { 
+        local $@;
+        eval { $decoder->decode($source, $destination) };
+        $RT::Logger->error($@) if $@;
+    }
+    $source->close or die "can't close: $!";
+    $destination->close or die "can't close: $!";
+
+    $entity->bodyhandle( $new );
+}
 
 =head2 _PostProcessNewEntity
 
@@ -261,42 +273,18 @@ sub _PostProcessNewEntity {
     # Unfold headers that are have embedded newlines
     #  Better do this before conversion or it will break
     #  with multiline encoded Subject (RFC2047) (fsck.com #5594)
-    
     $self->Head->unfold;
-
 
     # try to convert text parts into utf-8 charset
     RT::I18N::SetMIMEEntityToEncoding($self->{'entity'}, 'utf-8');
-
-
-
-
 }
-
-# }}}
-
-# {{{ sub ParseTicketId 
-
-sub ParseTicketId {
-    my $self = shift;
-    $RT::Logger->warnings("RT::EmailParser->ParseTicketId deprecated. You should be using RT::Interface::Email at (". join(":",caller).")");
-
-    require RT::Interface::Email;
-    RT::Interface::Email::ParseTicketId(@_);
-}
-
-# }}}
-
-
-
-# {{{ ParseCcAddressesFromHead 
 
 =head2 ParseCcAddressesFromHead HASHREF
 
 Takes a hashref object containing QueueObj, Head and CurrentUser objects.
 Returns a list of all email addresses in the To and Cc 
 headers b<except> the current Queue\'s email addresses, the CurrentUser\'s 
-email address  and anything that the $RTAddressRegexp matches.
+email address and anything that the RT->Config->Get('RTAddressRegexp') matches.
 
 =cut
 
@@ -312,8 +300,8 @@ sub ParseCcAddressesFromHead {
 
     my (@Addresses);
 
-    my @ToObjs = Mail::Address->parse( $self->Head->get('To') );
-    my @CcObjs = Mail::Address->parse( $self->Head->get('Cc') );
+    my @ToObjs = Email::Address->parse( $self->Head->get('To') );
+    my @CcObjs = Email::Address->parse( $self->Head->get('Cc') );
 
     foreach my $AddrObj ( @ToObjs, @CcObjs ) {
         my $Address = $AddrObj->address;
@@ -329,104 +317,15 @@ sub ParseCcAddressesFromHead {
     return (@Addresses);
 }
 
-# }}}
 
-# {{{ ParseSenderAdddressFromHead
 
-=head2 ParseSenderAddressFromHead
-
-Takes a MIME::Header object. Returns a tuple: (user@host, friendly name) 
-of the From (evaluated in order of Reply-To:, From:, Sender)
-
-=cut
-
-sub ParseSenderAddressFromHead {
-    my $self = shift;
-
-    #Figure out who's sending this message.
-    my $From = $self->Head->get('Reply-To')
-      || $self->Head->get('From')
-      || $self->Head->get('Sender');
-    return ( $self->ParseAddressFromHeader($From) );
-}
-
-# }}}
-
-# {{{ ParseErrorsToAdddressFromHead
-
-=head2 ParseErrorsToAddressFromHead
-
-Takes a MIME::Header object. Return a single value : user@host
-of the From (evaluated in order of Errors-To:,Reply-To:, From:, Sender)
-
-=cut
-
-sub ParseErrorsToAddressFromHead {
-    my $self = shift;
-
-    #Figure out who's sending this message.
-
-    foreach my $header ( 'Errors-To', 'Reply-To', 'From', 'Sender' ) {
-
-        # If there's a header of that name
-        my $headerobj = $self->Head->get($header);
-        if ($headerobj) {
-            my ( $addr, $name ) = $self->ParseAddressFromHeader($headerobj);
-
-            # If it's got actual useful content...
-            return ($addr) if ($addr);
-        }
-    }
-}
-
-# }}}
-
-# {{{ ParseAddressFromHeader
-
-=head2 ParseAddressFromHeader ADDRESS
-
-Takes an address from $self->Head->get('Line') and returns a tuple: user@host, friendly name
-
-=cut
-
-sub ParseAddressFromHeader {
-    my $self = shift;
-    my $Addr = shift;
-
-    # Perl 5.8.0 breaks when doing regex matches on utf8
-    Encode::_utf8_off($Addr) if $] == 5.008;
-    my @Addresses = Mail::Address->parse($Addr);
-
-    my $AddrObj = $Addresses[0];
-
-    unless ( ref($AddrObj) ) {
-        return ( undef, undef );
-    }
-
-    my $Name = ( $AddrObj->phrase || $AddrObj->comment || $AddrObj->address );
-
-    #Lets take the from and load a user object.
-    my $Address = $AddrObj->address;
-
-    return ( $Address, $Name );
-}
-
-# }}}
-
-# {{{ IsRTAddress
 
 =head2 IsRTaddress ADDRESS
 
 Takes a single parameter, an email address. 
-Returns true if that address matches the $RTAddressRegexp.  
+Returns true if that address matches the C<RTAddressRegexp> config option.
 Returns false, otherwise.
 
-=begin testing
-
-is(RT::EmailParser::IsRTAddress("","rt\@example.com"),1, "Regexp matched rt address" );
-is(RT::EmailParser::IsRTAddress("","frt\@example.com"),undef, "Regexp didn't match non-rt address" );
-
-=end testing
 
 =cut
 
@@ -436,31 +335,21 @@ sub IsRTAddress {
 
     # Example: the following rule would tell RT not to Cc 
     #   "tickets@noc.example.com"
-    if ( defined($RT::RTAddressRegexp) &&
-                       $address =~ /$RT::RTAddressRegexp/i ) {
-        return(1);
-    } else {
-        return (undef);
+    my $address_re = RT->Config->Get('RTAddressRegexp');
+    if ( defined $address_re && $address =~ /$address_re/i ) {
+        return 1;
     }
+    return undef;
 }
 
-# }}}
 
 
-# {{{ CullRTAddresses
 
 =head2 CullRTAddresses ARRAY
 
 Takes a single argument, an array of email addresses.
 Returns the same array with any IsRTAddress()es weeded out.
 
-=begin testing
-
-@before = ("rt\@example.com", "frt\@example.com");
-@after = ("frt\@example.com");
-ok(eq_array(RT::EmailParser::CullRTAddresses("",@before),@after), "CullRTAddresses only culls RT addresses");
-
-=end testing
 
 =cut
 
@@ -478,10 +367,8 @@ sub CullRTAddresses {
     return (@addrlist);
 }
 
-# }}}
 
 
-# {{{ LookupExternalUserInfo
 
 
 # LookupExternalUserInfo is a site-definable method for synchronizing
@@ -543,10 +430,6 @@ sub LookupExternalUserInfo {
   return ($FoundInExternalDatabase, %params);
 }
 
-# }}}
-
-# {{{ Accessor methods for parsed email messages
-
 =head2 Head
 
 Return the parsed head from this message
@@ -569,9 +452,7 @@ sub Entity {
     return $self->{'entity'};
 }
 
-# }}}
 
-# {{{ _SetupMIMEParser 
 
 =head2 _SetupMIMEParser $parser
 
@@ -591,39 +472,92 @@ sub _SetupMIMEParser {
     my $self   = shift;
     my $parser = shift;
     
-    # Set up output directory for files:
-
-    my $tmpdir = File::Temp::tempdir( TMPDIR => 1, CLEANUP => 1 );
-    push ( @{ $self->{'AttachmentDirs'} }, $tmpdir );
-    $parser->output_dir($tmpdir);
-    $parser->filer->ignore_filename(1);
+    # Set up output directory for files; we use $RT::VarPath instead
+    # of File::Spec->tmpdir (e.g., /tmp) beacuse it isn't always
+    # writable.
+    my $tmpdir;
+    if ( -w $RT::VarPath ) {
+        $tmpdir = File::Temp::tempdir( DIR => $RT::VarPath, CLEANUP => 1 );
+    } elsif (-w File::Spec->tmpdir) {
+        $tmpdir = File::Temp::tempdir( TMPDIR => 1, CLEANUP => 1 );
+    } else {
+        $RT::Logger->crit("Neither the RT var directory ($RT::VarPath) nor the system tmpdir (@{[File::Spec->tmpdir]}) are writable; falling back to in-memory parsing!");
+    }
 
     #If someone includes a message, extract it
     $parser->extract_nested_messages(1);
-
     $parser->extract_uuencode(1);    ### default is false
 
-    # Set up the prefix for files with auto-generated names:
-    $parser->output_prefix("part");
+    if ($tmpdir) {
+        # If we got a writable tmpdir, write to disk
+        push ( @{ $self->{'AttachmentDirs'} ||= [] }, $tmpdir );
+        $parser->output_dir($tmpdir);
+        $parser->filer->ignore_filename(1);
 
-    # do _not_ store each msg as in-core scalar;
+        # Set up the prefix for files with auto-generated names:
+        $parser->output_prefix("part");
 
-    $parser->output_to_core(0);
+        # From the MIME::Parser docs:
+        # "Normally, tmpfiles are created when needed during parsing, and destroyed automatically when they go out of scope"
+        # Turns out that the default is to recycle tempfiles
+        # Temp files should never be recycled, especially when running under perl taint checking
 
-    # From the MIME::Parser docs:
-    # "Normally, tmpfiles are created when needed during parsing, and destroyed automatically when they go out of scope"
-    # Turns out that the default is to recycle tempfiles
-    # Temp files should never be recycled, especially when running under perl taint checking
-    
-    $parser->tmp_recycling(0) if $parser->can('tmp_recycling');
+        $parser->tmp_recycling(0) if $parser->can('tmp_recycling');
+    } else {
+        # Otherwise, fall back to storing it in memory
+        $parser->output_to_core(1);
+        $parser->tmp_to_core(1);
+        $parser->use_inner_files(1);
+    }
 
 }
 
-# }}}
+=head2 ParseEmailAddress string
+
+Returns a list of Email::Address objects
+Works around the bug that Email::Address 1.889 and earlier
+doesn't handle local-only email addresses (when users pass
+in just usernames on the RT system in fields that expect
+Email Addresses)
+
+We don't handle the case of 
+bob, fred@bestpractical.com 
+because we don't want to fail parsing
+bob, "Falcone, Fred" <fred@bestpractical.com>
+The next release of Email::Address will have a new method
+we can use that removes the bandaid
+
+=cut
+
+sub ParseEmailAddress {
+    my $self = shift;
+    my $address_string = shift;
+
+    $address_string =~ s/^\s+|\s+$//g;
+
+    my @addresses;
+    # if it looks like a username / local only email
+    if ($address_string !~ /@/ && $address_string =~ /^\w+$/) {
+        my $user = RT::User->new( $RT::SystemUser );
+        my ($id, $msg) = $user->Load($address_string);
+        if ($id) {
+            push @addresses, Email::Address->new($user->Name,$user->EmailAddress);
+        } else {
+            $RT::Logger->error("Unable to parse an email address from $address_string: $msg");
+        }
+    } else {
+        @addresses = Email::Address->parse($address_string);
+    }
+
+    return @addresses;
+
+}
+
 
 sub DESTROY {
     my $self = shift;
-    File::Path::rmtree([@{$self->{'AttachmentDirs'}}],0,1);
+    File::Path::rmtree([@{$self->{'AttachmentDirs'}}],0,1)
+        if $self->{'AttachmentDirs'};
 }
 
 

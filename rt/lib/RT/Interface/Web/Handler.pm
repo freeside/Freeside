@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,6 +45,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 package RT::Interface::Web::Handler;
 
 use CGI qw/-private_tempfiles/;
@@ -56,6 +57,7 @@ use Time::HiRes;
 use HTML::Entities;
 use HTML::Scrubber;
 use RT::Interface::Web::Handler;
+use RT::Interface::Web::Request;
 use File::Path qw( rmtree );
 use File::Glob qw( bsd_glob );
 use File::Spec::Unix;
@@ -63,15 +65,19 @@ use File::Spec::Unix;
 sub DefaultHandlerArgs  { (
     comp_root => [
         [ local    => $RT::MasonLocalComponentRoot ],
+        (map {[ "plugin-".$_->Name =>  $_->ComponentRoot ]} @{RT->Plugins}),
         [ standard => $RT::MasonComponentRoot ]
     ],
     default_escape_flags => 'h',
     data_dir             => "$RT::MasonDataDir",
     allow_globals        => [qw(%session)],
     # Turn off static source if we're in developer mode.
-    static_source        => ($RT::DevelMode ? '0' : '1'), 
-    use_object_files     => ($RT::DevelMode ? '0' : '1'), 
-    autoflush            => 0
+    static_source        => (RT->Config->Get('DevelMode') ? '0' : '1'), 
+    use_object_files     => (RT->Config->Get('DevelMode') ? '0' : '1'), 
+    autoflush            => 0,
+    error_format         => (RT->Config->Get('DevelMode') ? 'html': 'brief'),
+    request_class        => 'RT::Interface::Web::Request',
+    named_component_subs => $INC{'Devel/Cover.pm'} ? 1 : 0,
 ) };
 
 # {{{ sub new 
@@ -87,10 +93,7 @@ sub new {
     my $class = shift;
     $class->InitSessionDir;
 
-    if ( $mod_perl::VERSION && $mod_perl::VERSION >= 1.9908 ) {
-        goto &NewApacheHandler;
-    }
-    elsif ($CGI::MOD_PERL) {
+    if ( ($mod_perl::VERSION && $mod_perl::VERSION >= 1.9908) || $CGI::MOD_PERL) {
         goto &NewApacheHandler;
     }
     else {
@@ -102,16 +105,17 @@ sub InitSessionDir {
     # Activate the following if running httpd as root (the normal case).
     # Resets ownership of all files created by Mason at startup.
     # Note that mysql uses DB for sessions, so there's no need to do this.
-    unless ( $RT::DatabaseType =~ /(?:mysql|Pg)/ ) {
+    unless ( RT->Config->Get('DatabaseType') =~ /(?:mysql|Pg)/ ) {
 
         # Clean up our umask to protect session files
         umask(0077);
 
-        if ($CGI::MOD_PERL) { local $@; eval {
+        if ($CGI::MOD_PERL and $CGI::MOD_PERL < 1.9908 ) {
 
             chown( Apache->server->uid, Apache->server->gid,
                 $RT::MasonSessionDir )
-        }} 
+            if Apache->server->can('uid');
+        }
 
         # Die if WebSessionDir doesn't exist or we can't write to it
         stat($RT::MasonSessionDir);
@@ -135,22 +139,6 @@ sub InitSessionDir {
 sub NewApacheHandler {
     require HTML::Mason::ApacheHandler;
     return NewHandler('HTML::Mason::ApacheHandler', args_method => "CGI", @_);
-}
-
-# }}}
-
-# {{{ sub NewApache2Handler 
-
-=head2 NewApache2Handler
-
-  Takes extra options to pass to MasonX::Apache2Handler->new
-  Returns a new MasonX::Apache2Handler object
-
-=cut
-
-sub NewApache2Handler {
-    require MasonX::Apache2Handler;
-    return NewHandler('MasonX::Apache2Handler', args_method => "CGI", @_);
 }
 
 # }}}
@@ -182,15 +170,30 @@ sub NewHandler {
 
 =head2 CleanupRequest
 
-Rollback any uncommitted transaction.
-Flush the ACL cache
-Flush the searchbuilder query cache
+Clean ups globals, caches and other things that could be still
+there from previous requests:
+
+=over 4
+
+=item Rollback any uncommitted transaction(s)
+
+=item Flush the ACL cache
+
+=item Flush records cache of the L<DBIx::SearchBuilder> if
+WebFlushDbCacheEveryRequest option is enabled, what is true by default
+and is not recommended to change.
+
+=item Clean up state of RT::Action::SendEmail using 'CleanSlate' method
+
+=item Flush tmp GnuPG key preferences
+
+=back
 
 =cut
 
 sub CleanupRequest {
 
-    if ( $RT::Handle->TransactionDepth ) {
+    if ( $RT::Handle && $RT::Handle->TransactionDepth ) {
         $RT::Handle->ForceRollback;
         $RT::Logger->crit(
             "Transaction not committed. Usually indicates a software fault."
@@ -201,10 +204,19 @@ sub CleanupRequest {
     # Consistency is imprived, too.
     RT::Principal->InvalidateACLCache();
     DBIx::SearchBuilder::Record::Cachable->FlushCache
-      if ( $RT::WebFlushDbCacheEveryRequest
+      if ( RT->Config->Get('WebFlushDbCacheEveryRequest')
         and UNIVERSAL::can(
             'DBIx::SearchBuilder::Record::Cachable' => 'FlushCache' ) );
 
+    # cleanup global squelching of the mails
+    require RT::Action::SendEmail;
+    RT::Action::SendEmail->CleanSlate;
+    
+    if (RT->Config->Get('GnuPG')->{'Enable'}) {
+        require RT::Crypt::GnuPG;
+        RT::Crypt::GnuPG::UseKeyForEncryption();
+        RT::Crypt::GnuPG::UseKeyForSigning( undef );
+    }
 }
 # }}}
 

@@ -3,11 +3,11 @@ dnl
 dnl Process this file with autoconf to produce a configure script
 dnl
 dnl Embed in generated ./configure script the following CVS info:
-AC_REVISION($Revision: 1.1.1.10 $)dnl
+AC_REVISION($Revision: 1.1.1.11 $)dnl
 
 dnl Setup autoconf
-AC_PREREQ(2.53)
-AC_INIT(RT, [3.6.10], [rt-bugs@bestpractical.com])
+AC_PREREQ([2.53])
+AC_INIT(RT, 3.8.7, [rt-bugs@bestpractical.com])
 AC_CONFIG_SRCDIR([lib/RT.pm.in])
 
 dnl Extract RT version number components
@@ -31,14 +31,31 @@ if test "$PERL" = 'not found'; then
 fi
 
 
+dnl WEB_HANDLER
+AC_ARG_WITH(web-handler,
+    AC_HELP_STRING([--with-web-handler=LIST],
+	[comma separated list of web-handlers RT will be able to use.
+         Default is fastcgi when modperl1, modperl2, fastcgi, standalone
+         and speedycgi are valid. To succefuly run RT you need only one.
+        ]),
+    WEB_HANDLER=$withval,
+    WEB_HANDLER=fastcgi)
+my_web_handler_test=$($PERL -e 'print "ok" unless grep $_ !~ /^(modperl[12]|fastcgi|speedycgi|standalone)$/i, grep defined && length, split /\s*,\s*/, "$WEB_HANDLER"')
+if test "$my_web_handler_test" != "ok"; then
+	AC_MSG_ERROR([Only modperl1, modperl2, fastcgi, speedycgi and standalone are valid web-handlers])
+fi
+AC_SUBST(WEB_HANDLER)
+
 dnl SPEED_BIN
 AC_ARG_WITH(speedycgi,
 	    AC_HELP_STRING([--with-speedycgi=/path/to/speedy],
 	    		   [path to your speedycgi binary, if it exists]),
             SPEEDY_BIN=$withval,
             SPEEDY_BIN=/usr/local/bin/speedy) 
+if test "$WEB_HANDLER" = 'speedycgi' -a ! -x "$SPEEDY_BIN"; then
+	AC_MSG_ERROR([cannot find speedycgi binary])
+fi
 AC_SUBST(SPEEDY_BIN)
-
 
 dnl Defaults paths for installation
 AC_PREFIX_DEFAULT([/opt/rt3])
@@ -99,11 +116,11 @@ AC_SUBST(LIBS_GROUP)
 dnl DB_TYPE
 AC_ARG_WITH(db-type,
 	    AC_HELP_STRING([--with-db-type=TYPE],
-	    		   [sort of database RT will use (default: mysql) (mysql, Pg, Oracle, Informix and SQLite are valid)]), 
+	    		   [sort of database RT will use (default: mysql) (mysql, Pg, Oracle and SQLite are valid)]), 
             DB_TYPE=$withval,
             DB_TYPE=mysql)
 if test "$DB_TYPE" != 'mysql' -a "$DB_TYPE" != 'Pg' -a "$DB_TYPE" != 'SQLite' -a "$DB_TYPE" != 'Oracle' -a "$DB_TYPE" != 'Informix' -a "$DB_TYPE" != 'Sybase' ; then
-	AC_MSG_ERROR([Only Oracle, Informix, Pg, mysql and SQLite are valid db types])
+	AC_MSG_ERROR([Only Oracle, Pg, mysql and SQLite are valid db types])
 fi
 AC_SUBST(DB_TYPE)
 
@@ -222,7 +239,7 @@ AC_ARG_WITH(my-user-group,
             WEB_GROUP=$my_group)
 
 # Test for valid database names
-AS_IF([ test "$DB_TYPE" == "mysql" ],
+AS_IF([ test "$DB_TYPE" = "mysql" ],
       [ AC_MSG_CHECKING([if database name is valid])
           AS_IF([ echo $DB_DATABASE | $AWK '/-/ { exit 1 }' ],
                 [ AC_MSG_RESULT([yes]) ],
@@ -236,28 +253,66 @@ dnl Set the value of apachectl
 AC_ARG_WITH(apachectl,
             AC_HELP_STRING([--with-apachectl],
                            [instruct RT where to find your apachectl]),
-
             APACHECTL=$withval, 
             APACHECTL=`which apachectl`)
 AC_SUBST(APACHECTL)
 
-dnl RT's standalone pure perl server
-AC_ARG_WITH(devel-mode,
-            AC_HELP_STRING([--with-standalone],
-                           [Install modules for pure perl standalone server]),
-
-            RT_STANDALONE="1",
-            RT_STANDALONE="0")
-AC_SUBST(RT_STANDALONE)
-
 dnl RT's "maintainer mode"
-AC_ARG_WITH(devel-mode,
-            AC_HELP_STRING([--with-devel-mode],
+AC_ARG_WITH(devel-mode,[],RT_DEVEL_MODE=$withval,RT_DEVEL_MODE="0")
+AC_ARG_ENABLE(devel-mode,
+            AC_HELP_STRING([--enable-devel-mode],
                            [Turn on development aids that might hurt you in production]),
-
-            RT_DEVEL_MODE="1", 
-            RT_DEVEL_MODE="0")
+            RT_DEVEL_MODE=$enableval,
+            RT_DEVEL_MODE=$RT_DEVEL_MODE)
+if test "$RT_DEVEL_MODE" = yes; then
+        RT_DEVEL_MODE="1"
+else
+        RT_DEVEL_MODE="0"
+fi
 AC_SUBST(RT_DEVEL_MODE)
+
+dnl RT's GraphViz dependency charts
+AC_CHECK_LIB([graph],[aginitlib],RT_GRAPHVIZ="1")
+AC_ARG_WITH(graphviz,[],RT_GRAPHVIZ=$withval)
+AC_ARG_ENABLE(graphviz,
+            AC_HELP_STRING([--enable-graphviz],
+                           [Turns on support for RT's GraphViz dependency charts]),
+            RT_GRAPHVIZ=$enableval)
+if test "$RT_GRAPHVIZ" = yes; then
+        RT_GRAPHVIZ="1"
+else
+        RT_GRAPHVIZ="0"
+fi
+AC_SUBST(RT_GRAPHVIZ)
+
+dnl RT's GD pie and bar charts
+AC_CHECK_PROG([RT_GD], [gdlib-config], "yes", "no")
+AC_ARG_WITH(gd,[],RT_GD=$withval)
+AC_ARG_ENABLE(gd,
+            AC_HELP_STRING([--enable-gd],
+                           [Turns on support for RT's GD pie and bar charts]),
+            RT_GD=$enableval)
+if test "$RT_GD" = yes; then
+        RT_GD="1"
+else
+        RT_GD="0"
+fi
+AC_SUBST(RT_GD)
+
+dnl RT's GPG support
+AC_CHECK_PROG([RT_GPG], [gpg], "yes", "no")
+AC_ARG_ENABLE(gpg,
+            AC_HELP_STRING([--enable-gpg],
+                           [Turns on GNU Privacy Guard (GPG) support]),
+            RT_GPG=$enableval)
+if test "$RT_GPG" = yes; then
+        RT_GPG="1"
+else
+        RT_GPG="0"
+fi
+AC_SUBST(RT_GPG)
+
+
 dnl This section maps the variable names this script 'natively' generates
 dnl to their existing names. They should be removed from here as the .in
 dnl files are changed to use the new names.
@@ -278,6 +333,7 @@ AC_SUBST([RT_BIN_PATH],			${exp_bindir})
 AC_SUBST([RT_SBIN_PATH],		${exp_sbindir})
 AC_SUBST([RT_VAR_PATH],			${exp_localstatedir})
 AC_SUBST([RT_MAN_PATH],			${exp_mandir})
+AC_SUBST([RT_PLUGIN_PATH],			${exp_plugindir})
 AC_SUBST([MASON_DATA_PATH],		${exp_masonstatedir})
 AC_SUBST([MASON_SESSION_PATH],		${exp_sessionstatedir})
 AC_SUBST([MASON_HTML_PATH],		${exp_htmldir})
@@ -285,31 +341,86 @@ AC_SUBST([LOCAL_ETC_PATH],		${exp_custometcdir})
 AC_SUBST([MASON_LOCAL_HTML_PATH],	${exp_customhtmldir})
 AC_SUBST([LOCAL_LEXICON_PATH],		${exp_customlexdir})
 AC_SUBST([LOCAL_LIB_PATH],		${exp_customlibdir})
-AC_SUBST([DESTDIR],			${exp_prefix})
 AC_SUBST([RT_LOG_PATH],			${exp_logfiledir})
+
+if test ${exp_sysconfdir} = "etc"; then
+AC_SUBST([RT_PATH_R],			${exp_prefix})
+AC_SUBST([RT_DOC_PATH_R],			${exp_prefix}/${exp_manualdir})
+AC_SUBST([RT_LOCAL_PATH_R],		${exp_prefix}/${exp_customdir})
+AC_SUBST([RT_LIB_PATH_R],			${exp_prefix}/${exp_libdir})
+AC_SUBST([RT_ETC_PATH_R],			${exp_prefix}/${exp_sysconfdir})
+AC_SUBST([CONFIG_FILE_PATH_R],		${exp_prefix}/${exp_sysconfdir})
+AC_SUBST([RT_BIN_PATH_R],			${exp_prefix}/${exp_bindir})
+AC_SUBST([RT_SBIN_PATH_R],		${exp_prefix}/${exp_sbindir})
+AC_SUBST([RT_VAR_PATH_R],			${exp_prefix}/${exp_localstatedir})
+AC_SUBST([RT_MAN_PATH_R],			${exp_prefix}/${exp_mandir})
+AC_SUBST([RT_PLUGIN_PATH_R],		${exp_prefix}/${exp_plugindir})
+AC_SUBST([MASON_DATA_PATH_R],		${exp_prefix}/${exp_masonstatedir})
+AC_SUBST([MASON_SESSION_PATH_R],		${exp_prefix}/${exp_sessionstatedir})
+AC_SUBST([MASON_HTML_PATH_R],		${exp_prefix}/${exp_htmldir})
+AC_SUBST([LOCAL_ETC_PATH_R],		${exp_prefix}/${exp_custometcdir})
+AC_SUBST([MASON_LOCAL_HTML_PATH_R],	${exp_prefix}/${exp_customhtmldir})
+AC_SUBST([LOCAL_LEXICON_PATH_R],		${exp_prefix}/${exp_customlexdir})
+AC_SUBST([LOCAL_LIB_PATH_R],		${exp_prefix}/${exp_customlibdir})
+AC_SUBST([RT_LOG_PATH_R],			${exp_prefix}/${exp_logfiledir})
+else
+AC_SUBST([RT_PATH_R],			${exp_prefix})
+AC_SUBST([RT_DOC_PATH_R],			${exp_manualdir})
+AC_SUBST([RT_LOCAL_PATH_R],		${exp_customdir})
+AC_SUBST([RT_LIB_PATH_R],			${exp_libdir})
+AC_SUBST([RT_ETC_PATH_R],			${exp_sysconfdir})
+AC_SUBST([RT_PLUGIN_PATH_R],		${exp_plugindir})
+AC_SUBST([CONFIG_FILE_PATH_R],		${exp_sysconfdir})
+AC_SUBST([RT_BIN_PATH_R],			${exp_bindir})
+AC_SUBST([RT_SBIN_PATH_R],		${exp_sbindir})
+AC_SUBST([RT_VAR_PATH_R],			${exp_localstatedir})
+AC_SUBST([RT_MAN_PATH_R],			${exp_mandir})
+AC_SUBST([MASON_DATA_PATH_R],		${exp_masonstatedir})
+AC_SUBST([MASON_SESSION_PATH_R],		${exp_sessionstatedir})
+AC_SUBST([MASON_HTML_PATH_R],		${exp_htmldir})
+AC_SUBST([LOCAL_ETC_PATH_R],		${exp_custometcdir})
+AC_SUBST([MASON_LOCAL_HTML_PATH_R],	${exp_customhtmldir})
+AC_SUBST([LOCAL_LEXICON_PATH_R],		${exp_customlexdir})
+AC_SUBST([LOCAL_LIB_PATH_R],		${exp_customlibdir})
+AC_SUBST([RT_LOG_PATH_R],			${exp_logfiledir})
+
+fi
 
 dnl Configure the output files, and generate them.
 
 dnl Binaries that should be +x
 AC_CONFIG_FILES([
-		 sbin/rt-dump-database
-		 sbin/rt-setup-database
-		 sbin/rt-test-dependencies
- 		 bin/mason_handler.fcgi
- 		 bin/mason_handler.scgi
- 		 bin/standalone_httpd
- 		 bin/rt-crontool
- 		 bin/rt-mailgate
-		 bin/rt],
-		[chmod ug+x $ac_file]
+                 etc/upgrade/3.8-branded-queues-extension
+                 etc/upgrade/3.8-ical-extension
+                 etc/upgrade/split-out-cf-categories
+                 sbin/rt-attributes-viewer
+                 sbin/rt-dump-database
+                 sbin/rt-setup-database
+                 sbin/rt-test-dependencies
+                 sbin/rt-email-digest
+                 sbin/rt-email-dashboards
+                 sbin/rt-clean-sessions
+                 sbin/rt-shredder
+                 sbin/rt-validator
+                 sbin/rt-email-group-admin
+                 sbin/rt-server
+                 bin/mason_handler.fcgi
+                 bin/mason_handler.scgi
+                 bin/standalone_httpd
+                 bin/rt-crontool
+                 bin/rt-mailgate
+                 bin/rt],
+                [chmod ug+x $ac_file]
                )
 
 dnl All other generated files
 AC_CONFIG_FILES([
-		 Makefile
-		 etc/RT_Config.pm
-		 lib/RT.pm
- 		 bin/mason_handler.svc
-		 bin/webmux.pl],
+                 Makefile
+                 etc/RT_Config.pm
+                 lib/RT.pm
+                 bin/mason_handler.svc
+                 bin/webmux.pl
+                 t/data/configs/apache2.2+mod_perl.conf
+                 t/data/configs/apache2.2+fastcgi.conf],
                )
 AC_OUTPUT

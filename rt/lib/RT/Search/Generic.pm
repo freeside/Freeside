@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,108 +45,36 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
-  RT::Search::Generic - ;
+  RT::Search::Generic - deprecated, see RT::Search
 
 =head1 SYNOPSIS
 
-    use RT::Search::Generic;
-    my $tickets = RT::Tickets->new($CurrentUser);
-    my $foo = RT::Search::Generic->new(Argument => $arg,
-                                       TicketsObj => $tickets);
-    $foo->Prepare();
-    while ( my $ticket = $foo->Next ) {
-        # Do something with each ticket we've found
-    }
-
+  use RT::Search::Generic;
 
 =head1 DESCRIPTION
 
+This module is provided only for backwards compatibility.
 
 =head1 METHODS
 
 
-=begin testing
-
-ok (require RT::Search::Generic);
-
-=end testing
-
-
 =cut
-
-package RT::Search::Generic;
 
 use strict;
-
-# {{{ sub new 
-sub new  {
-  my $proto = shift;
-  my $class = ref($proto) || $proto;
-  my $self  = {};
-  bless ($self, $class);
-  $self->_Init(@_);
-  return $self;
-}
-# }}}
-
-# {{{ sub _Init 
-sub _Init  {
-  my $self = shift;
-  my %args = ( 
-           TicketsObj => undef,
-	       Argument => undef,
-	       @_ );
-  
-  $self->{'TicketsObj'} = $args{'TicketsObj'}; 
-  $self->{'Argument'} = $args{'Argument'};
-}
-# }}}
-
-# {{{ sub Argument 
-
-=head2 Argument
-
-Return the optional argument associated with this Search
-
-=cut
-
-sub Argument  {
-  my $self = shift;
-  return($self->{'Argument'});
-}
-# }}}
-
-
-=head2 TicketsObj 
-
-Return the Tickets object passed into this search
-
-=cut
-
-sub TicketsObj {
-    my $self = shift;
-    return($self->{'TicketsObj'});
-}
-
-# {{{ sub Describe 
-sub Describe  {
-  my $self = shift;
-  return ($self->loc("No description for [_1]", ref $self));
-}
-# }}}
-
-# {{{ sub Prepare
-sub Prepare  {
-  my $self = shift;
-  return(1);
-}
-# }}}
+use warnings;
+package RT::Search::Generic;
+use base 'RT::Search';
 
 eval "require RT::Search::Generic_Vendor";
 die $@ if ($@ && $@ !~ qr{^Can't locate RT/Search/Generic_Vendor.pm});
+warn "RT::Search::Generic has become RT::Search. Please adjust your RT::Search::Generic_Vendor file at " . $INC{"RT/Search/Generic_Vendor.pm"} if !$@;
+
 eval "require RT::Search::Generic_Local";
 die $@ if ($@ && $@ !~ qr{^Can't locate RT/Search/Generic_Local.pm});
+warn "RT::Search::Generic has become RT::Search. Please adjust your RT::Search::Generic_Local file at " . $INC{"RT/Search/Generic_Local.pm"} if !$@;
 
 1;
+

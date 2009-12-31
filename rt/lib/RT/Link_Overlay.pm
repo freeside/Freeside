@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,6 +45,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
   RT::Link - an RT Link object
@@ -61,20 +62,6 @@ should only be accessed through exported APIs in Ticket other similar objects.
 =head1 METHODS
 
 
-=begin testing
-
-
-use RT::Link;
-my $link = RT::Link->new($RT::SystemUser);
-
-
-ok (ref $link);
-ok (UNIVERSAL::isa($link, 'RT::Link'));
-ok (UNIVERSAL::isa($link, 'RT::Base'));
-ok (UNIVERSAL::isa($link, 'RT::Record'));
-ok (UNIVERSAL::isa($link, 'DBIx::SearchBuilder::Record'));
-
-=end testing
 
 =cut
 
@@ -111,7 +98,7 @@ sub Create {
     unless ( $base->Resolver && $base->Scheme ) {
 	my $msg = $self->loc("Couldn't resolve base '[_1]' into a URI.", 
 			     $args{'Base'});
-        $RT::Logger->warning( "$self $msg\n" );
+        $RT::Logger->warning( "$self $msg" );
 
 	if (wantarray) {
 	    return(undef, $msg);
@@ -126,7 +113,7 @@ sub Create {
     unless ( $target->Resolver ) {
 	my $msg = $self->loc("Couldn't resolve target '[_1]' into a URI.", 
 			     $args{'Target'});
-        $RT::Logger->warning( "$self $msg\n" );
+        $RT::Logger->warning( "$self $msg" );
 
 	if (wantarray) {
 	    return(undef, $msg);
@@ -142,18 +129,20 @@ sub Create {
 
 
     if ( $base->IsLocal ) {
-        unless (UNIVERSAL::can($base->Object, 'Id')) {
+        my $object = $base->Object;
+        unless (UNIVERSAL::can($object, 'Id')) {
             return (undef, $self->loc("[_1] appears to be a local object, but can't be found in the database", $args{'Base'}));
         
         }
-        $base_id = $base->Object->Id;
+        $base_id = $object->Id if UNIVERSAL::isa($object, 'RT::Ticket');
     }
     if ( $target->IsLocal ) {
-        unless (UNIVERSAL::can($target->Object, 'Id')) {
+        my $object = $target->Object;
+        unless (UNIVERSAL::can($object, 'Id')) {
             return (undef, $self->loc("[_1] appears to be a local object, but can't be found in the database", $args{'Target'}));
         
         }
-        $target_id = $target->Object->Id;
+        $target_id = $object->Id if UNIVERSAL::isa($object, 'RT::Ticket');
     }
 
     # {{{ We don't want references to ourself
@@ -300,90 +289,6 @@ sub BaseObj {
   my $self = shift;
   return $self->BaseURI->Object;
 }
-# }}}
-
-
-
-# Static methods:
-
-# {{{ sub BaseIsLocal
-
-=head2 BaseIsLocal
-
-Returns true if the base of this link is a local ticket
-
-=cut
-
-sub BaseIsLocal {
-  my $self = shift;
-  $RT::Logger->crit("Link::BaseIsLocal is deprecated in favor of Link->BaseURI->IsLocal at (". join(":",caller).")");
-  return $self->BaseURI->IsLocal;
-}
-
-# }}}
-
-# {{{ sub TargetIsLocal
-
-=head2 TargetIsLocal
-
-Returns true if the target of this link is a local ticket
-
-=cut
-
-sub TargetIsLocal {
-  my $self = shift;
-  $RT::Logger->crit("Link::BaseIsLocal is deprecated in favor of Link->BaseURI->IsLocal at (". join(":",caller).")");
-  return $self->TargetURI->IsLocal;
-}
-
-# }}}
-
-
-# {{{ sub BaseAsHREF 
-
-=head2 BaseAsHREF
-
-Returns an HTTP url to access the base of this link
-
-=cut
-
-sub BaseAsHREF {
-  my $self = shift;
-  $RT::Logger->crit("Link::BaseAsHREF deprecated in favor of ->BaseURI->AsHREF at (". join(":",caller).")");
-  return $self->BaseURI->AsHREF;
-}
-# }}}
-
-# {{{ sub TargetAsHREF 
-
-=head2 TargetAsHREF
-
-return an HTTP url to access the target of this link
-
-=cut
-
-sub TargetAsHREF {
-  my $self = shift;
-  $RT::Logger->crit("Link::TargetAsHREF deprecated in favor of ->TargetURI->AsHREF at (". join(":",caller).")");
-  return $self->TargetURI->AsHREF;
-}
-# }}}
-
-# {{{ sub AsHREF - Converts Link URIs to HTTP URLs
-
-=head2 URI
-
-Takes a URI and returns an http: url to access that object.
-
-=cut
-
-
-sub AsHREF {
-    my $self=shift;
-   
-    $RT::Logger->crit("AsHREF is gone. look at URI::HREF to figure out what to do with \$URI");
-}
-
 # }}}
 
 1;

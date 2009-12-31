@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,11 +45,21 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 package RT::Report::Tickets::Entry;
 use base qw/RT::Record/;
 
 # XXX TODO: how the heck do we acl a report?
 sub CurrentUserHasRight {1}
 
+eval "require RT::Report::Tickets::Entry_Vendor";
+if ($@ && $@ !~ qr{^Can't locate RT/Report/Tickets/Entry_Vendor.pm}) {
+    die $@;
+};
+
+eval "require RT::Report::Tickets::Entry_Local";
+if ($@ && $@ !~ qr{^Can't locate RT/Report/Tickets/Entry_Local.pm}) {
+    die $@;
+};
 
 1;

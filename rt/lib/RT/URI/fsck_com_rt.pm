@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,15 +45,14 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 package RT::URI::fsck_com_rt;
 
 use RT::Ticket;
 
-use RT::URI::base;
+use base 'RT::URI::base';
 
 use strict;
-use vars qw(@ISA);
-@ISA = qw/RT::URI::base/;
 
 
 
@@ -62,24 +61,6 @@ use vars qw(@ISA);
 
 Returns the prefix for a local URI. 
 
-=begin testing
-
-use_ok("RT::URI::fsck_com_rt");
-my $uri = RT::URI::fsck_com_rt->new($RT::SystemUser);
-
-ok(ref($uri));
-
-use Data::Dumper;
-
-
-ok (UNIVERSAL::isa($uri,RT::URI::fsck_com_rt), "It's an RT::URI::fsck_com_rt");
-
-ok ($uri->isa('RT::URI::base'), "It's an RT::URI::base");
-ok ($uri->isa('RT::Base'), "It's an RT::Base");
-
-is ($uri->LocalURIPrefix , 'fsck.com-rt://'.$RT::Organization);
-
-=end testing
 
 
 
@@ -88,7 +69,7 @@ is ($uri->LocalURIPrefix , 'fsck.com-rt://'.$RT::Organization);
 sub LocalURIPrefix {
     my $self = shift;
     
-    my $prefix = $self->Scheme. "://$RT::Organization";
+    my $prefix = $self->Scheme. "://". RT->Config->Get('Organization');
 
     return ($prefix);
 }
@@ -116,14 +97,6 @@ sub ObjectType {
 
 Returns the RT URI for a local RT::Record object
 
-=begin testing
-
-my $ticket = RT::Ticket->new($RT::SystemUser);
-$ticket->Load(1);
-my $uri = RT::URI::fsck_com_rt->new($ticket->CurrentUser);
-is($uri->LocalURIPrefix. "/ticket/1" , $uri->URIForObject($ticket));
-
-=end testing
 
 =cut
 
@@ -239,7 +212,7 @@ Otherwise, return its URI
 sub HREF {
     my $self = shift;
     if ($self->IsLocal && $self->Object && ($self->ObjectType eq 'ticket')) {
-        return ( $RT::WebURL . "Ticket/Display.html?id=".$self->Object->Id);
+        return ( RT->Config->Get('WebURL') . "Ticket/Display.html?id=".$self->Object->Id);
     }   
     else {
         return ($self->URI);

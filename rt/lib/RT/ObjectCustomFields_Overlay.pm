@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,6 +45,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 package RT::ObjectCustomFields;
 
 use strict;
@@ -65,17 +66,19 @@ sub LimitToObjectId {
 sub LimitToLookupType {
     my $self = shift;
     my $lookup = shift;
-    unless ($self->{'_cfs_alias'}) {
-        $self->{'_cfs_alias'}  = $self->NewAlias('CustomFields');
-    }
-    $self->Join( ALIAS1 => 'main',
-                FIELD1 => 'CustomField',
-                ALIAS2 => $self->{'_cfs_alias'},
-                FIELD2 => 'id' );
-    $self->Limit( ALIAS           => $self->{'_cfs_alias'},
-                 FIELD           => 'LookupType',
-                 OPERATOR        => '=',
-                 VALUE           => $lookup );
+
+    $self->{'_cfs_alias'} ||= $self->Join(
+        ALIAS1 => 'main',
+        FIELD1 => 'CustomField',
+        TABLE2 => 'CustomFields',
+        FIELD2 => 'id',
+    );
+    $self->Limit(
+        ALIAS    => $self->{'_cfs_alias'},
+        FIELD    => 'LookupType',
+        OPERATOR => '=',
+        VALUE    => $lookup,
+    );
 }
 
 sub HasEntryForCustomField {

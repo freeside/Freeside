@@ -1,0 +1,1 @@
+ALTER TABLE customfields ALTER COLUMN pattern TYPE VARCHAR(65536);
