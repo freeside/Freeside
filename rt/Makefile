@@ -312,7 +312,7 @@ fixperms:
 	chmod $(RT_READABLE_DIR_MODE) $(DESTDIR)$(RT_BIN_PATH)
 
 	chmod 0755 $(DESTDIR)$(RT_ETC_PATH)
-	cd $(DESTDIR)$(RT_ETC_PATH) && chmod 0400 $(ETC_FILES)
+	cd $(DESTDIR)$(RT_ETC_PATH) && chmod 0400 $(ETC_FILES) || true
 
 	#TODO: the config file should probably be able to have its
 	# owner set separately from the binaries.
