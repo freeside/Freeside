@@ -65,6 +65,7 @@ $name = 'RBC';
   },
   header => sub { 
     my $pay_batch = shift;
+    '$$AAPASTD0152[PROD[NL$$'."\n".
     '000001'.
     'A'.
     'HDR'.
