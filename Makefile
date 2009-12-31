@@ -314,12 +314,6 @@ create-config: install-perl-modules
 	chmod 600 ${FREESIDE_CONF}/secrets
 	chown freeside ${FREESIDE_CONF}/secrets
 
-	mkdir "${FREESIDE_CONF}/conf.${DATASOURCE}"
-	rm -rf conf/registries #old dirs just won't go away
-	#cp conf/[a-z]* "${FREESIDE_CONF}/conf.${DATASOURCE}"
-	cp `ls -d conf/[a-z]* | grep -v CVS` "${FREESIDE_CONF}/conf.${DATASOURCE}"
-	chown -R freeside "${FREESIDE_CONF}/conf.${DATASOURCE}"
-
 	mkdir "${FREESIDE_CACHE}/counters.${DATASOURCE}"
 	chown freeside "${FREESIDE_CACHE}/counters.${DATASOURCE}"
 
@@ -333,7 +327,8 @@ create-config: install-perl-modules
 	install -d $(DIST_CONF)
 	#install conf/[a-z]* $(DEFAULT_CONF)
 	#CVS is not [a-z]
-	install `ls -d conf/[a-z]* | grep -v CVS` $(DIST_CONF)
+	install `ls -d conf/[a-z]* | grep -v CVS | grep -v '^conf/registries'` $(DIST_CONF)
+
 
 configure-rt:
 	cd rt; \
