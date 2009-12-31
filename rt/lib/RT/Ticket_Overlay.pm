@@ -2,7 +2,7 @@
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -24,7 +24,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301 or visit their web page on the internet at
-# http://www.gnu.org/copyleft/gpl.html.
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.html.
 # 
 # 
 # CONTRIBUTION SUBMISSION POLICY:
@@ -1403,52 +1403,43 @@ sub AddWatcher {
         @_
     );
 
-    # XXX, FIXME, BUG: if only email is provided then we only check
-    # for ModifyTicket right, but must try to get PrincipalId and
-    # check Watch* rights too if user exist
+    return ( 0, "No principal specified" )
+        unless $args{'Email'} or $args{'PrincipalId'};
+
+    if ( !$args{'PrincipalId'} and $args{'Email'} ) {
+        my $user = RT::User->new( $self->CurrentUser );
+        $user->LoadByEmail( $args{'Email'} );
+        if ( $user->id ) {
+            $args{'PrincipalId'} = $user->PrincipalId;
+            delete $args{'Email'};
+        }
+    }
 
     # {{{ Check ACLS
+    # ModifyTicket allow you to add any watcher
+    return $self->_AddWatcher(%args)
+        if $self->CurrentUserHasRight('ModifyTicket');
+
     #If the watcher we're trying to add is for the current user
-    if ( $self->CurrentUser->PrincipalId == ($args{'PrincipalId'} || 0)
-       or    lc( $self->CurrentUser->UserObj->EmailAddress )
-          eq lc( RT::User->CanonicalizeEmailAddress( $args{'Email'} ) || '' ) )
-    {
-        #  If it's an AdminCc and they don't have 
-        #   'WatchAsAdminCc' or 'ModifyTicket', bail
+    if ( $self->CurrentUser->PrincipalId == ($args{'PrincipalId'} || 0) ) {
+        #  If it's an AdminCc and they have 'WatchAsAdminCc'
         if ( $args{'Type'} eq 'AdminCc' ) {
-            unless ( $self->CurrentUserHasRight('ModifyTicket')
-                or $self->CurrentUserHasRight('WatchAsAdminCc') ) {
-                return ( 0, $self->loc('Permission Denied'))
-            }
+            return $self->_AddWatcher( %args )
+                if $self->CurrentUserHasRight('WatchAsAdminCc');
         }
 
-        #  If it's a Requestor or Cc and they don't have
-        #   'Watch' or 'ModifyTicket', bail
-        elsif ( ( $args{'Type'} eq 'Cc' ) or ( $args{'Type'} eq 'Requestor' ) ) {
-
-            unless ( $self->CurrentUserHasRight('ModifyTicket')
-                or $self->CurrentUserHasRight('Watch') ) {
-                return ( 0, $self->loc('Permission Denied'))
-            }
+        #  If it's a Requestor or Cc and they have 'Watch'
+        elsif ( $args{'Type'} eq 'Cc' || $args{'Type'} eq 'Requestor' ) {
+            return $self->_AddWatcher( %args )
+                if $self->CurrentUserHasRight('Watch');
         }
         else {
-            $RT::Logger->warning( "$self -> AddWatcher got passed a bogus type");
+            $RT::Logger->warning( "AddWatcher got passed a bogus type" );
             return ( 0, $self->loc('Error in parameters to Ticket->AddWatcher') );
         }
     }
 
-    # If the watcher isn't the current user 
-    # and the current user  doesn't have 'ModifyTicket'
-    # bail
-    else {
-        unless ( $self->CurrentUserHasRight('ModifyTicket') ) {
-            return ( 0, $self->loc("Permission Denied") );
-        }
-    }
-
-    # }}}
-
-    return ( $self->_AddWatcher(%args) );
+    return ( 0, $self->loc("Permission Denied") );
 }
 
 #This contains the meat of AddWatcher. but can be called from a routine like
@@ -2508,7 +2499,7 @@ sub _RecordNote {
     unless ( ($args{'MIMEObj'}->head->get('Message-ID') || '')
             =~ /<(rt-.*?-\d+-\d+)\.(\d+-0-0)\@\Q$RT::Organization>/ )
     {
-        $args{'MIMEObj'}->head->set( 'RT-Message-ID',
+        $args{'MIMEObj'}->head->replace( 'RT-Message-ID',
             "<rt-"
             . $RT::VERSION . "-"
             . $$ . "-"
@@ -3869,18 +3860,21 @@ See L<RT::Record>
 sub CustomFieldValues {
     my $self  = shift;
     my $field = shift;
-    if ( $field and $field !~ /^\d+$/ ) {
-        my $cf = RT::CustomField->new( $self->CurrentUser );
-        $cf->LoadByNameAndQueue( Name => $field, Queue => $self->Queue );
-        unless ( $cf->id ) {
-            $cf->LoadByNameAndQueue( Name => $field, Queue => 0 );
-        }
-        unless ( $cf->id ) {
-            # If we didn't find a valid cfid, give up.
-            return RT::CustomFieldValues->new($self->CurrentUser);
-        }
+
+    return $self->SUPER::CustomFieldValues( $field )
+        if !$field || $field =~ /^\d+$/;
+
+    my $cf = RT::CustomField->new( $self->CurrentUser );
+    $cf->LoadByNameAndQueue( Name => $field, Queue => $self->Queue );
+    unless ( $cf->id ) {
+        $cf->LoadByNameAndQueue( Name => $field, Queue => 0 );
     }
-    return $self->SUPER::CustomFieldValues($field);
+
+    # If we didn't find a valid cfid, give up.
+    return RT::ObjectCustomFieldValues->new( $self->CurrentUser )
+        unless $cf->id;
+
+    return $self->SUPER::CustomFieldValues( $cf->id );
 }
 
 # }}}
