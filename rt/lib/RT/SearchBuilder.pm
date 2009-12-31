@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,6 +45,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
   RT::SearchBuilder - a baseclass for RT collection objects
@@ -57,11 +58,6 @@
 =head1 METHODS
 
 
-=begin testing
-
-ok (require RT::SearchBuilder);
-
-=end testing
 
 
 =cut
@@ -72,10 +68,10 @@ use RT::Base;
 use DBIx::SearchBuilder "1.50";
 
 use strict;
-use vars qw(@ISA);
-@ISA = qw(DBIx::SearchBuilder RT::Base);
+use warnings;
 
-# {{{ sub _Init 
+use base qw(DBIx::SearchBuilder RT::Base);
+
 sub _Init  {
     my $self = shift;
     
@@ -88,13 +84,10 @@ sub _Init  {
     }
     $self->SUPER::_Init( 'Handle' => $RT::Handle);
 }
-# }}}
-
-# {{{ sub LimitToEnabled
 
 =head2 LimitToEnabled
 
-Only find items that haven\'t been disabled
+Only find items that haven't been disabled
 
 =cut
 
@@ -105,9 +98,6 @@ sub LimitToEnabled {
 		  VALUE => '0',
 		  OPERATOR => '=' );
 }
-# }}}
-
-# {{{ sub LimitToDisabled
 
 =head2 LimitToDeleted
 
@@ -124,9 +114,6 @@ sub LimitToDeleted {
 		  VALUE => '1'
 		);
 }
-# }}}
-
-# {{{ sub LimitAttribute
 
 =head2 LimitAttribute PARAMHASH
 
@@ -140,17 +127,17 @@ If NULL is set, also select rows without the named Attribute.
 
 =cut
 
-my %Negate = qw(
-    =		!=
-    !=		=
-    >		<=
-    <		>=
-    >=		<
-    <=		>
-    LIKE	NOT LIKE
-    NOT LIKE	LIKE
-    IS		IS NOT
-    IS NOT	IS
+my %Negate = (
+    '='        => '!=',
+    '!='       => '=',
+    '>'        => '<=',
+    '<'        => '>=',
+    '>='       => '<',
+    '<='       => '>',
+    'LIKE'     => 'NOT LIKE',
+    'NOT LIKE' => 'LIKE',
+    'IS'       => 'IS NOT',
+    'IS NOT'   => 'IS',
 );
 
 sub LimitAttribute {
@@ -217,9 +204,6 @@ sub LimitAttribute {
 	VALUE      => 'NULL',
     ) if $args{NULL};
 }
-# }}}
-
-# {{{ sub LimitCustomField
 
 =head2 LimitCustomField
 
@@ -278,8 +262,6 @@ sub LimitCustomField {
     );
 }
 
-# {{{ sub FindAllRows
-
 =head2 FindAllRows
 
 Find all matching rows, regardless of whether they are disabled or not
@@ -289,8 +271,6 @@ Find all matching rows, regardless of whether they are disabled or not
 sub FindAllRows {
     shift->{'find_disabled_rows'} = 1;
 }
-
-# {{{ sub Limit 
 
 =head2 Limit PARAMHASH
 
@@ -307,10 +287,6 @@ sub Limit {
 
     return $self->SUPER::Limit(%args);
 }
-
-# }}}
-
-# {{{ sub ItemsOrderBy
 
 =head2 ItemsOrderBy
 
@@ -335,49 +311,17 @@ sub ItemsOrderBy {
     return $items;
 }
 
-# }}}
-
-# {{{ sub ItemsArrayRef
-
 =head2 ItemsArrayRef
 
 Return this object's ItemsArray, in the order that ItemsOrderBy sorts
 it.
 
-=begin testing
-
-use_ok(RT::Queues);
-ok(my $queues = RT::Queues->new($RT::SystemUser), 'Created a queues object');
-ok( $queues->UnLimit(),'Unlimited the result set of the queues object');
-my $items = $queues->ItemsArrayRef();
-my @items = @{$items};
-
-ok($queues->NewItem->_Accessible('Name','read'));
-my @sorted = sort {lc($a->Name) cmp lc($b->Name)} @items;
-ok (@sorted, "We have an array of queues, sorted". join(',',map {$_->Name} @sorted));
-
-ok (@items, "We have an array of queues, raw". join(',',map {$_->Name} @items));
-my @sorted_ids = map {$_->id } @sorted;
-my @items_ids = map {$_->id } @items;
-
-is ($#sorted, $#items);
-is ($sorted[0]->Name, $items[0]->Name);
-is ($sorted[-1]->Name, $items[-1]->Name);
-is_deeply(\@items_ids, \@sorted_ids, "ItemsArrayRef sorts alphabetically by name");;
-
-
-=end testing
-
 =cut
 
 sub ItemsArrayRef {
     my $self = shift;
-    my @items;
-    
     return $self->ItemsOrderBy($self->SUPER::ItemsArrayRef());
 }
-
-# }}}
 
 eval "require RT::SearchBuilder_Vendor";
 die $@ if ($@ && $@ !~ qr{^Can't locate RT/SearchBuilder_Vendor.pm});
@@ -385,5 +329,3 @@ eval "require RT::SearchBuilder_Local";
 die $@ if ($@ && $@ !~ qr{^Can't locate RT/SearchBuilder_Local.pm});
 
 1;
-
-

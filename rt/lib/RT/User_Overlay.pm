@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,6 +45,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
   RT::User - RT User object
@@ -58,11 +59,6 @@
 
 =head1 METHODS
 
-=begin testing
-
-ok(require RT::User);
-
-=end testing
 
 
 =cut
@@ -73,18 +69,11 @@ package RT::User;
 use strict;
 no warnings qw(redefine);
 
-use vars qw(%_USERS_KEY_CACHE);
-
-%_USERS_KEY_CACHE = ();
-
 use Digest::MD5;
 use RT::Principals;
 use RT::ACE;
 use RT::Interface::Email;
 use Encode;
-
-# {{{ sub _Accessible 
-
 
 sub _OverlayAccessible {
     {
@@ -110,62 +99,9 @@ sub _OverlayAccessible {
 
 
 
-# }}}
-
-# {{{ sub Create 
-
 =head2 Create { PARAMHASH }
 
 
-=begin testing
-
-# Make sure we can create a user
-
-my $u1 = RT::User->new($RT::SystemUser);
-is(ref($u1), 'RT::User');
-my ($id, $msg) = $u1->Create(Name => 'CreateTest1'.$$, EmailAddress => $$.'create-test-1@example.com');
-ok ($id, "Creating user CreateTest1 - " . $msg );
-
-# Make sure we can't create a second user with the same name
-my $u2 = RT::User->new($RT::SystemUser);
-($id, $msg) = $u2->Create(Name => 'CreateTest1'.$$, EmailAddress => $$.'create-test-2@example.com');
-ok (!$id, $msg);
-
-
-# Make sure we can't create a second user with the same EmailAddress address
-my $u3 = RT::User->new($RT::SystemUser);
-($id, $msg) = $u3->Create(Name => 'CreateTest2'.$$, EmailAddress => $$.'create-test-1@example.com');
-ok (!$id, $msg);
-
-# Make sure we can create a user with no EmailAddress address
-my $u4 = RT::User->new($RT::SystemUser);
-($id, $msg) = $u4->Create(Name => 'CreateTest3'.$$);
-ok ($id, $msg);
-
-# make sure we can create a second user with no EmailAddress address
-my $u5 = RT::User->new($RT::SystemUser);
-($id, $msg) = $u5->Create(Name => 'CreateTest4'.$$);
-ok ($id, $msg);
-
-# make sure we can create a user with a blank EmailAddress address
-my $u6 = RT::User->new($RT::SystemUser);
-($id, $msg) = $u6->Create(Name => 'CreateTest6'.$$, EmailAddress => '');
-ok ($id, $msg);
-# make sure we can create a second user with a blankEmailAddress address
-my $u7 = RT::User->new($RT::SystemUser);
-($id, $msg) = $u7->Create(Name => 'CreateTest7'.$$, EmailAddress => '');
-ok ($id, $msg);
-
-# Can we change the email address away from from "";
-($id,$msg) = $u7->SetEmailAddress('foo@bar'.$$);
-ok ($id, $msg);
-# can we change the address back to "";  
-($id,$msg) = $u7->SetEmailAddress('');
-ok ($id, $msg);
-is ($u7->EmailAddress, '');
-
-
-=end testing
 
 =cut
 
@@ -185,7 +121,7 @@ sub Create {
 
     #Check the ACL
     unless ( $self->CurrentUser->HasRight(Right => 'AdminUsers', Object => $RT::System) ) {
-        return ( 0, $self->loc('No permission to create users') );
+        return ( 0, $self->loc('Permission Denied') );
     }
 
 
@@ -200,9 +136,7 @@ sub Create {
 
 
 
-    # Privileged is no longer a column in users
-    my $privileged = $args{'Privileged'};
-    delete $args{'Privileged'};
+    my $privileged = delete $args{'Privileged'};
 
 
     if ($args{'CryptedPassword'} ) {
@@ -212,8 +146,8 @@ sub Create {
     elsif ( !$args{'Password'} ) {
         $args{'Password'} = '*NO-PASSWORD*';
     }
-    elsif ( length( $args{'Password'} ) < $RT::MinimumPasswordLength ) {
-        return ( 0, $self->loc("Password needs to be at least [_1] characters long",$RT::MinimumPasswordLength) );
+    elsif ( length( $args{'Password'} ) < RT->Config->Get('MinimumPasswordLength') ) {
+        return ( 0, $self->loc("Password needs to be at least [_1] characters long",RT->Config->Get('MinimumPasswordLength')) );
     }
 
     else {
@@ -223,8 +157,6 @@ sub Create {
     #TODO Specify some sensible defaults.
 
     unless ( $args{'Name'} ) {
-	use Data::Dumper;
-	$RT::Logger->crit(Dumper \%args);
         return ( 0, $self->loc("Must specify 'Name' attribute") );
     }
 
@@ -234,8 +166,8 @@ sub Create {
         $TempUser->Load( $args{'Name'} );
         return ( 0, $self->loc('Name in use') ) if ( $TempUser->Id );
 
-        return ( 0, $self->loc('Email address in use') )
-          unless ( $self->ValidateEmailAddress( $args{'EmailAddress'} ) );
+        my ($val, $message) = $self->ValidateEmailAddress( $args{'EmailAddress'} );
+        return (0, $message) unless ( $val );
     }
     else {
         $RT::Logger->warning( "$self couldn't check for pre-existing users");
@@ -324,19 +256,13 @@ sub Create {
 
 
     if ( $record_transaction ) {
-	$self->_NewTransaction( Type => "Create" );
+    $self->_NewTransaction( Type => "Create" );
     }
 
     $RT::Handle->Commit;
 
     return ( $id, $self->loc('User created') );
 }
-
-# }}}
-
-
-
-# {{{ SetPrivileged
 
 =head2 SetPrivileged BOOL
 
@@ -345,20 +271,6 @@ Otherwise, makes this user a member of the "Unprivileged" pseudogroup.
 
 Returns a standard RT tuple of (val, msg);
 
-=begin testing
-
-
-ok(my $user = RT::User->new($RT::SystemUser));
-ok($user->Load('root'), "Loaded user 'root'");
-ok($user->Privileged, "User 'root' is privileged");
-ok(my ($v,$m) = $user->SetPrivileged(0));
-ok ($v ==1, "Set unprivileged suceeded ($m)");
-ok(!$user->Privileged, "User 'root' is no longer privileged");
-ok(my ($v2,$m2) = $user->SetPrivileged(1));
-ok ($v2 ==1, "Set privileged suceeded ($m2");
-ok($user->Privileged, "User 'root' is privileged again");
-
-=end testing
 
 =cut
 
@@ -370,9 +282,9 @@ sub SetPrivileged {
     unless ( $self->CurrentUser->HasRight(Right => 'AdminUsers', Object => $RT::System) ) {
         return ( 0, $self->loc('Permission Denied') );
     }
+
     my $priv = RT::Group->new($self->CurrentUser);
     $priv->LoadSystemInternalGroup('Privileged');
-   
     unless ($priv->Id) {
         $RT::Logger->crit("Could not find Privileged pseudogroup");
         return(0,$self->loc("Failed to find 'Privileged' users pseudogroup."));
@@ -385,13 +297,14 @@ sub SetPrivileged {
         return(0,$self->loc("Failed to find 'Unprivileged' users pseudogroup"));
     }
 
+    my $principal = $self->PrincipalId;
     if ($val) {
-        if ($priv->HasMember($self->PrincipalObj)) {
+        if ($priv->HasMember($principal)) {
             #$RT::Logger->debug("That user is already privileged");
             return (0,$self->loc("That user is already privileged"));
         }
-        if ($unpriv->HasMember($self->PrincipalObj)) {
-            $unpriv->_DeleteMember($self->PrincipalId);
+        if ($unpriv->HasMember($principal)) {
+            $unpriv->_DeleteMember($principal);
         } else {
         # if we had layered transactions, life would be good
         # sadly, we have to just go ahead, even if something
@@ -399,7 +312,7 @@ sub SetPrivileged {
             $RT::Logger->crit("User ".$self->Id." is neither privileged nor ".
                 "unprivileged. something is drastically wrong.");
         }
-        my ($status, $msg) = $priv->_AddMember( InsideTransaction => 1, PrincipalId => $self->PrincipalId);  
+        my ($status, $msg) = $priv->_AddMember( InsideTransaction => 1, PrincipalId => $principal);  
         if ($status) {
             return (1, $self->loc("That user is now privileged"));
         } else {
@@ -407,12 +320,12 @@ sub SetPrivileged {
         }
     }
     else {
-        if ($unpriv->HasMember($self->PrincipalObj)) {
+        if ($unpriv->HasMember($principal)) {
             #$RT::Logger->debug("That user is already unprivileged");
             return (0,$self->loc("That user is already unprivileged"));
         }
-        if ($priv->HasMember($self->PrincipalObj)) {
-            $priv->_DeleteMember( $self->PrincipalId);
+        if ($priv->HasMember($principal)) {
+            $priv->_DeleteMember( $principal );
         } else {
         # if we had layered transactions, life would be good
         # sadly, we have to just go ahead, even if something
@@ -420,7 +333,7 @@ sub SetPrivileged {
             $RT::Logger->crit("User ".$self->Id." is neither privileged nor ".
                 "unprivileged. something is drastically wrong.");
         }
-        my ($status, $msg) = $unpriv->_AddMember( InsideTransaction => 1, PrincipalId => $self->PrincipalId);  
+        my ($status, $msg) = $unpriv->_AddMember( InsideTransaction => 1, PrincipalId => $principal);  
         if ($status) {
             return (1, $self->loc("That user is now unprivileged"));
         } else {
@@ -428,10 +341,6 @@ sub SetPrivileged {
         }
     }
 }
-
-# }}}
-
-# {{{ Privileged
 
 =head2 Privileged
 
@@ -443,17 +352,13 @@ sub Privileged {
     my $self = shift;
     my $priv = RT::Group->new($self->CurrentUser);
     $priv->LoadSystemInternalGroup('Privileged');
-    if ($priv->HasMember($self->PrincipalObj)) {
+    if ( $priv->HasMember( $self->PrincipalId ) ) {
         return(1);
     }
     else {
         return(undef);
     }
 }
-
-# }}}
-
-# {{{ sub _BootstrapCreate 
 
 #create a user without validating _any_ data.
 
@@ -504,10 +409,6 @@ sub _BootstrapCreate {
     return ( $id, 'User created' );
 }
 
-# }}}
-
-# {{{ sub Delete 
-
 sub Delete {
     my $self = shift;
 
@@ -515,39 +416,34 @@ sub Delete {
 
 }
 
-# }}}
-
-# {{{ sub Load 
-
 =head2 Load
 
 Load a user object from the database. Takes a single argument.
-If the argument is numerical, load by the column 'id'. Otherwise, load by
-the "Name" column which is the user's textual username.
+If the argument is numerical, load by the column 'id'. If a user
+object or its subclass passed then loads the same user by id.
+Otherwise, load by the "Name" column which is the user's textual
+username.
 
 =cut
 
 sub Load {
-    my $self       = shift;
+    my $self = shift;
     my $identifier = shift || return undef;
 
-    #if it's an int, load by id. otherwise, load by name.
     if ( $identifier !~ /\D/ ) {
-        $self->SUPER::LoadById($identifier);
+        return $self->SUPER::LoadById( $identifier );
+    }
+    elsif ( UNIVERSAL::isa( $identifier, 'RT::User' ) ) {
+        return $self->SUPER::LoadById( $identifier->Id );
     }
     else {
-        $self->LoadByCol( "Name", $identifier );
+        return $self->LoadByCol( "Name", $identifier );
     }
 }
-
-# }}}
-
-# {{{ sub LoadByEmail
 
 =head2 LoadByEmail
 
 Tries to load this user object from the database by the user's email address.
-
 
 =cut
 
@@ -562,18 +458,15 @@ sub LoadByEmail {
 
     $address = $self->CanonicalizeEmailAddress($address);
 
-    #$RT::Logger->debug("Trying to load an email address: $address\n");
+    #$RT::Logger->debug("Trying to load an email address: $address");
     return $self->LoadByCol( "EmailAddress", $address );
 }
-
-# }}}
-
-# {{{ LoadOrCreateByEmail 
 
 =head2 LoadOrCreateByEmail ADDRESS
 
 Attempts to find a user who has the provided email address. If that fails, creates an unprivileged user with
-the provided email address. and loads them.
+the provided email address and loads them. Address can be provided either as L<Email::Address> object
+or string which is parsed using the module.
 
 Returns a tuple of the user's id and a status message.
 0 will be returned in place of the user's id in case of failure.
@@ -584,54 +477,45 @@ sub LoadOrCreateByEmail {
     my $self = shift;
     my $email = shift;
 
-        my ($val, $message);
-
-	my ( $Address, $Name ) =
-	RT::Interface::Email::ParseAddressFromHeader($email);
-	$email = $Address;
-
-        $self->LoadByEmail($email);
-        $message = $self->loc('User loaded');
-        unless ($self->Id) {
-		$self->Load($email);
-	}
-	unless($self->Id) {
-            ( $val, $message ) = $self->Create(
-                Name => $email,
-                EmailAddress => $email,
-                RealName     => $Name,
-                Privileged   => 0,
-                Comments     => 'Autocreated when added as a watcher');
-            unless ($val) {
-                # Deal with the race condition of two account creations at once
-                $self->LoadByEmail($email);
-                unless ($self->Id) {
-                    sleep 5;
-                    $self->LoadByEmail($email);
-                }
-                if ($self->Id) {
-                    $RT::Logger->error("Recovered from creation failure due to race condition");
-                    $message = $self->loc("User loaded");
-                }
-                else {
-                    $RT::Logger->crit("Failed to create user ".$email .": " .$message);
-                }
-            }
-        }
-
-        if ($self->Id) {
-            return($self->Id, $message);
-        }
-        else {
-            return(0, $message);
-        }
-
-
+    my ($message, $name);
+    if ( UNIVERSAL::isa( $email => 'Email::Address' ) ) {
+        ($email, $name) = ($email->address, $email->phrase);
+    } else {
+        ($email, $name) = RT::Interface::Email::ParseAddressFromHeader( $email );
     }
 
-# }}}
+    $self->LoadByEmail( $email );
+    $self->Load( $email ) unless $self->Id;
+    $message = $self->loc('User loaded');
 
-# {{{ sub ValidateEmailAddress
+    unless( $self->Id ) {
+        my $val;
+        ($val, $message) = $self->Create(
+            Name         => $email,
+            EmailAddress => $email,
+            RealName     => $name,
+            Privileged   => 0,
+            Comments     => 'Autocreated when added as a watcher',
+        );
+        unless ( $val ) {
+            # Deal with the race condition of two account creations at once
+            $self->LoadByEmail( $email );
+            unless ( $self->Id ) {
+                sleep 5;
+                $self->LoadByEmail( $email );
+            }
+            if ( $self->Id ) {
+                $RT::Logger->error("Recovered from creation failure due to race condition");
+                $message = $self->loc("User loaded");
+            }
+            else {
+                $RT::Logger->crit("Failed to create user ". $email .": " .$message);
+            }
+        }
+    }
+    return (0, $message) unless $self->id;
+    return ($self->Id, $message);
+}
 
 =head2 ValidateEmailAddress ADDRESS
 
@@ -647,24 +531,86 @@ sub ValidateEmailAddress {
     # if the email address is null, it's always valid
     return (1) if ( !$Value || $Value eq "" );
 
+    if ( RT->Config->Get('ValidateUserEmailAddresses') ) {
+        # We only allow one valid email address
+        my @addresses = Email::Address->parse($Value);
+        return ( 0, $self->loc('Invalid syntax for email address') ) unless ( ( scalar (@addresses) == 1 ) && ( $addresses[0]->address ) );
+    }
+
+
     my $TempUser = RT::User->new($RT::SystemUser);
     $TempUser->LoadByEmail($Value);
 
-    if ( $TempUser->id && ( $TempUser->id != $self->id ) )
+    if ( $TempUser->id && ( !$self->id || $TempUser->id != $self->id ) )
     {    # if we found a user with that address
             # it's invalid to set this user's address to it
-        return (undef);
+        return ( 0, $self->loc('Email address in use') );
     }
     else {    #it's a valid email address
         return (1);
     }
 }
 
-# }}}
+=head2 SetEmailAddress
 
-# {{{ sub CanonicalizeEmailAddress
+Check to make sure someone else isn't using this email address already
+so that a better email address can be returned
 
+=cut
 
+sub SetEmailAddress {
+    my $self = shift;
+    my $Value = shift;
+
+    my ($val, $message) = $self->ValidateEmailAddress( $Value );
+    if ( $val ) {
+        return $self->_Set( Field => 'EmailAddress', Value => $Value );
+    } else {
+        return ( 0, $message )
+    }
+
+}
+
+=head2 EmailFrequency
+
+Takes optional Ticket argument in paramhash. Returns 'no email',
+'squelched', 'daily', 'weekly' or empty string depending on
+user preferences.
+
+=over 4
+
+=item 'no email' - user has no email, so can not recieve notifications.
+
+=item 'squelched' - returned only when Ticket argument is provided and
+notifications to the user has been supressed for this ticket.
+
+=item 'daily' - retruned when user recieve daily messages digest instead
+of immediate delivery.
+
+=item 'weekly' - previous, but weekly.
+
+=item empty string returned otherwise.
+
+=back
+
+=cut
+
+sub EmailFrequency {
+    my $self = shift;
+    my %args = (
+        Ticket => undef,
+        @_
+    );
+    return '' unless $self->id && $self->id != $RT::Nobody->id
+        && $self->id != $RT::SystemUser->id;
+    return 'no email' unless my $email = $self->EmailAddress;
+    return 'squelched' if $args{'Ticket'} &&
+        grep lc $email eq lc $_->Content, $args{'Ticket'}->SquelchMailTo;
+    my $frequency = RT->Config->Get( 'EmailFrequency', $self ) || '';
+    return 'daily' if $frequency =~ /daily/i;
+    return 'weekly' if $frequency =~ /weekly/i;
+    return '';
+}
 
 =head2 CanonicalizeEmailAddress ADDRESS
 
@@ -682,18 +628,13 @@ sub CanonicalizeEmailAddress {
     # Example: the following rule would treat all email
     # coming from a subdomain as coming from second level domain
     # foo.com
-    if ($RT::CanonicalizeEmailAddressMatch && $RT::CanonicalizeEmailAddressReplace ) {
-        $email =~ s/$RT::CanonicalizeEmailAddressMatch/$RT::CanonicalizeEmailAddressReplace/gi;
+    if ( my $match   = RT->Config->Get('CanonicalizeEmailAddressMatch') and
+         my $replace = RT->Config->Get('CanonicalizeEmailAddressReplace') )
+    {
+        $email =~ s/$match/$replace/gi;
     }
     return ($email);
 }
-
-
-# }}}
-
-# {{{ sub CanonicalizeUserInfo
-
-
 
 =head2 CanonicalizeUserInfo HASH of ARGS
 
@@ -715,14 +656,9 @@ sub CanonicalizeUserInfo {
 }
 
 
-# }}}
+=head2 Password and authentication related functions
 
-
-# {{{ Password related functions
-
-# {{{ sub SetRandomPassword
-
-=head2 SetRandomPassword
+=head3 SetRandomPassword
 
 Takes no arguments. Returns a status code and a new password or an error message.
 If the status is 1, the second value returned is the new password.
@@ -738,8 +674,8 @@ sub SetRandomPassword {
     }
 
 
-    my $min = ( $RT::MinimumPasswordLength > 6 ?  $RT::MinimumPasswordLength : 6);
-    my $max = ( $RT::MinimumPasswordLength > 8 ?  $RT::MinimumPasswordLength : 8);
+    my $min = ( RT->Config->Get('MinimumPasswordLength') > 6 ?  RT->Config->Get('MinimumPasswordLength') : 6);
+    my $max = ( RT->Config->Get('MinimumPasswordLength') > 8 ?  RT->Config->Get('MinimumPasswordLength') : 8);
 
     my $pass = $self->GenerateRandomPassword( $min, $max) ;
 
@@ -755,11 +691,7 @@ sub SetRandomPassword {
 
 }
 
-# }}}
-
-# {{{ sub ResetPassword
-
-=head2 ResetPassword
+=head3 ResetPassword
 
 Returns status, [ERROR or new password].  Resets this user\'s password to
 a randomly generated pronouncable password and emails them, using a 
@@ -781,38 +713,13 @@ sub ResetPassword {
         return ( 0, "$pass" );
     }
 
-    my $template = RT::Template->new( $self->CurrentUser );
-
-    if ( $self->Privileged ) {
-        $template->LoadGlobalTemplate('RT_PasswordChange_Privileged');
-    }
-    else {
-        $template->LoadGlobalTemplate('RT_PasswordChange_NonPrivileged');
-    }
-
-    unless ( $template->Id ) {
-        $template->LoadGlobalTemplate('RT_PasswordChange');
-    }
-
-    unless ( $template->Id ) {
-        $RT::Logger->crit( "$self tried to send "
-              . $self->Name
-              . " a password reminder "
-              . "but couldn't find a password change template" );
-    }
-
-    my $notification = RT::Action::SendPasswordEmail->new(
-        TemplateObj => $template,
-        Argument    => $pass
-    );
-
-    $notification->SetHeader( 'To', $self->EmailAddress );
-
-    my ($ret);
-    $ret = $notification->Prepare();
-    if ($ret) {
-        $ret = $notification->Commit();
-    }
+    my $ret = RT::Interface::Email::SendEmailUsingTemplate(
+        To        => $self->EmailAddress,
+        Template  => 'PasswordChange',
+        Arguments => {
+            NewPassword => $pass,
+        },
+        );
 
     if ($ret) {
         return ( 1, $self->loc('New password notification sent') );
@@ -823,11 +730,7 @@ sub ResetPassword {
 
 }
 
-# }}}
-
-# {{{ sub GenerateRandomPassword
-
-=head2 GenerateRandomPassword MIN_LEN and MAX_LEN
+=head3 GenerateRandomPassword MIN_LEN and MAX_LEN
 
 Returns a random password between MIN_LEN and MAX_LEN characters long.
 
@@ -1013,11 +916,7 @@ sub _GenerateRandomNextChar {
     return ($i);
 }
 
-# }}}
-
-# {{{ sub SetPassword
-
-=head2 SetPassword
+=head3 SetPassword
 
 Takes a string. Checks the string's length and sets this user's password 
 to that string.
@@ -1035,8 +934,8 @@ sub SetPassword {
     if ( !$password ) {
         return ( 0, $self->loc("No password set") );
     }
-    elsif ( length($password) < $RT::MinimumPasswordLength ) {
-        return ( 0, $self->loc("Password needs to be at least [_1] characters long", $RT::MinimumPasswordLength) );
+    elsif ( length($password) < RT->Config->Get('MinimumPasswordLength') ) {
+        return ( 0, $self->loc("Password needs to be at least [_1] characters long", RT->Config->Get('MinimumPasswordLength')) );
     }
     else {
         my $new = !$self->HasPassword;
@@ -1053,7 +952,7 @@ sub SetPassword {
 
 }
 
-=head2 _GeneratePassword PASSWORD
+=head3 _GeneratePassword PASSWORD
 
 returns an MD5 hash of the password passed in, in hexadecimal encoding.
 
@@ -1069,7 +968,7 @@ sub _GeneratePassword {
 
 }
 
-=head2 _GeneratePasswordBase64 PASSWORD
+=head3 _GeneratePasswordBase64 PASSWORD
 
 returns an MD5 hash of the password passed in, in base64 encoding
 (obsoleted now).
@@ -1086,15 +985,11 @@ sub _GeneratePasswordBase64 {
 
 }
 
-# }}}
-
-                                                                                
-=head2 HasPassword
+=head3 HasPassword
                                                                                 
 Returns true if the user has a valid password, otherwise returns false.         
                                                                                
 =cut
-
 
 sub HasPassword {
     my $self = shift;
@@ -1105,10 +1000,7 @@ sub HasPassword {
     return 1;
 }
 
-
-# {{{ sub IsPassword 
-
-=head2 IsPassword
+=head3 IsPassword
 
 Returns true if the passed in value is this user's password.
 Returns undef otherwise.
@@ -1155,13 +1047,80 @@ sub IsPassword {
     return (undef);
 }
 
-# }}}
+=head3 AuthToken
 
-# }}}
+Returns an authentication string associated with the user. This
+string can be used to generate passwordless URLs to integrate
+RT with services and programms like callendar managers, rss
+readers and other.
 
-# {{{ sub SetDisabled
+=cut
 
-=head2 Sub SetDisabled
+sub AuthToken {
+    my $self = shift;
+    my $secret = $self->FirstAttribute("AuthToken");
+    return $secret->Content if $secret;
+
+    my $id = $self->id;
+    $self = RT::User->new( $RT::SystemUser );
+    $self->Load( $id );
+    $secret = substr(Digest::MD5::md5_hex(time . {} . rand()),0,16);
+    my ($status, $msg) = $self->SetAttribute( Name => "AuthToken", Content => $secret );
+    unless ( $status ) {
+        $RT::Logger->error( "Couldn't set auth token: $msg" );
+        return undef;
+    }
+    return $secret;
+}
+
+=head3 GenerateAuthToken
+
+Generate a random authentication string for the user.
+
+=cut
+
+sub GenerateAuthToken {
+    my $self = shift;
+    my $token = substr(Digest::MD5::md5_hex(time . {} . rand()),0,16);
+    return $self->SetAttribute( Name => "AuthToken", Content => $token );
+}
+
+=head3 GenerateAuthString
+
+Takes a string and returns back a hex hash string. Later you can use
+this pair to make sure it's generated by this user using L</ValidateAuthString>
+
+=cut
+
+sub GenerateAuthString {
+    my $self = shift;
+    my $protect = shift;
+
+    my $str = $self->AuthToken . $protect;
+    utf8::encode($str);
+
+    return substr(Digest::MD5::md5_hex($str),0,16);
+}
+
+=head3 ValidateAuthString
+
+Takes auth string and protected string. Returns true is protected string
+has been protected by user's L</AuthToken>. See also L</GenerateAuthString>.
+
+=cut
+
+sub ValidateAuthString {
+    my $self = shift;
+    my $auth_string = shift;
+    my $protected = shift;
+
+    my $str = $self->AuthToken . $protected;
+    utf8::encode( $str );
+
+    return $auth_string eq substr(Digest::MD5::md5_hex($str),0,16);
+}
+
+=head2 SetDisabled
 
 Toggles the user's disabled flag.
 If this flag is
@@ -1170,23 +1129,42 @@ user will fail. The user will appear in no user listings.
 
 =cut 
 
-# }}}
-
 sub SetDisabled {
     my $self = shift;
+    my $val = shift;
     unless ( $self->CurrentUser->HasRight(Right => 'AdminUsers', Object => $RT::System) ) {
         return (0, $self->loc('Permission Denied'));
     }
-    return $self->PrincipalObj->SetDisabled(@_);
+
+    $RT::Handle->BeginTransaction();
+    my $set_err = $self->PrincipalObj->SetDisabled($val);
+    unless ($set_err) {
+        $RT::Handle->Rollback();
+        $RT::Logger->warning(sprintf("Couldn't %s user %s", ($val == 1) ? "disable" : "enable", $self->PrincipalObj->Id));
+        return (undef);
+    }
+    $self->_NewTransaction( Type => ($val == 1) ? "Disabled" : "Enabled" );
+
+    $RT::Handle->Commit();
+
+    if ( $val == 1 ) {
+        return (1, $self->loc("User disabled"));
+    } else {
+        return (1, $self->loc("User enabled"));
+    }
+
 }
+
+=head2 Disabled
+
+Returns true if user is disabled or false otherwise
+
+=cut
 
 sub Disabled {
     my $self = shift;
     return $self->PrincipalObj->Disabled(@_);
 }
-
-
-# {{{ Principal related routines
 
 =head2 PrincipalObj 
 
@@ -1194,29 +1172,26 @@ Returns the principal object for this user. returns an empty RT::Principal
 if there's no principal object matching this user. 
 The response is cached. PrincipalObj should never ever change.
 
-=begin testing
-
-ok(my $u = RT::User->new($RT::SystemUser));
-ok($u->Load(1), "Loaded the first user");
-ok($u->PrincipalObj->ObjectId == 1, "user 1 is the first principal");
-is($u->PrincipalObj->PrincipalType, 'User' , "Principal 1 is a user, not a group");
-
-=end testing
-
 =cut
-
 
 sub PrincipalObj {
     my $self = shift;
-    unless ($self->{'PrincipalObj'} && 
-            ($self->{'PrincipalObj'}->ObjectId == $self->Id) &&
-            ($self->{'PrincipalObj'}->PrincipalType eq 'User')) {
 
-            $self->{'PrincipalObj'} = RT::Principal->new($self->CurrentUser);
-            $self->{'PrincipalObj'}->LoadByCols('ObjectId' => $self->Id,
-                                                'PrincipalType' => 'User') ;
-            }
-    return($self->{'PrincipalObj'});
+    unless ( $self->id ) {
+        $RT::Logger->error("Couldn't get principal for not loaded object");
+        return undef;
+    }
+
+    my $obj = RT::Principal->new( $self->CurrentUser );
+    $obj->LoadById( $self->id );
+    unless ( $obj->id ) {
+        $RT::Logger->crit( 'No principal for user #'. $self->id );
+        return undef;
+    } elsif ( $obj->PrincipalType ne 'User' ) {
+        $RT::Logger->crit( 'User #'. $self->id .' has principal of '. $obj->PrincipalType .' type' );
+        return undef;
+    }
+    return $obj;
 }
 
 
@@ -1230,12 +1205,6 @@ sub PrincipalId {
     my $self = shift;
     return $self->Id;
 }
-
-# }}}
-
-
-
-# {{{ sub HasGroupRight
 
 =head2 HasGroupRight
 
@@ -1267,13 +1236,10 @@ sub HasGroupRight {
         $args{'GroupObj'}->Load( $args{'Group'} );
     }
 
-    # {{{ Validate and load up the GroupId
+    # Validate and load up the GroupId
     unless ( ( defined $args{'GroupObj'} ) and ( $args{'GroupObj'}->Id ) ) {
         return undef;
     }
-
-    # }}}
-
 
     # Figure out whether a user has the right we're asking about.
     my $retval = $self->HasRight(
@@ -1282,13 +1248,7 @@ sub HasGroupRight {
     );
 
     return ($retval);
-
-
 }
-
-# }}}
-
-# {{{ sub OwnGroups 
 
 =head2 OwnGroups
 
@@ -1302,7 +1262,7 @@ sub OwnGroups {
     my $groups = RT::Groups->new($self->CurrentUser);
     $groups->LimitToUserDefinedGroups;
     $groups->WithMember(PrincipalId => $self->Id, 
-			Recursively => 1);
+            Recursively => 1);
     return $groups;
 }
 
@@ -1815,19 +1775,14 @@ ok($rqv, "Revoked the right successfully - $rqm");
 
 =head2 HasRight
 
-Shim around PrincipalObj->HasRight. See RT::Principal
+Shim around PrincipalObj->HasRight. See L<RT::Principal>.
 
 =cut
 
 sub HasRight {
-
     my $self = shift;
     return $self->PrincipalObj->HasRight(@_);
 }
-
-# }}}
-
-# {{{ sub CurrentUserCanModify
 
 =head2 CurrentUserCanModify RIGHT
 
@@ -1866,10 +1821,6 @@ sub CurrentUserCanModify {
 
 }
 
-# }}}
-
-# {{{ sub CurrentUserHasRight
-
 =head2 CurrentUserHasRight
   
 Takes a single argument. returns 1 if $Self->CurrentUser
@@ -1887,19 +1838,17 @@ sub CurrentUserHasRight {
 sub _PrefName {
     my $name = shift;
     if (ref $name) {
-	$name = ref ($name).'-'.$name->Id;
+        $name = ref($name).'-'.$name->Id;
     }
 
     return 'Pref-'.$name;
 }
 
-# {{{ sub Preferences
-
 =head2 Preferences NAME/OBJ DEFAULT
 
-  Obtain user preferences associated with given object or name.
-  Returns DEFAULT if no preferences found.  If DEFAULT is a hashref,
-  override the entries with user preferences.
+Obtain user preferences associated with given object or name.
+Returns DEFAULT if no preferences found.  If DEFAULT is a hashref,
+override the entries with user preferences.
 
 =cut
 
@@ -1908,52 +1857,48 @@ sub Preferences {
     my $name = _PrefName (shift);
     my $default = shift;
 
-    my $attr = RT::Attribute->new ($self->CurrentUser);
-    $attr->LoadByNameAndObject (Object => $self, Name => $name);
+    my $attr = RT::Attribute->new( $self->CurrentUser );
+    $attr->LoadByNameAndObject( Object => $self, Name => $name );
 
     my $content = $attr->Id ? $attr->Content : undef;
-    if (ref ($content) eq 'HASH') {
-	if (ref ($default) eq 'HASH') {
-	    for (keys %$default) {
-		exists $content->{$_} or $content->{$_} = $default->{$_};
-	    }
-	}
-	elsif (defined $default) {
-	    $RT::Logger->error("Preferences $name for user".$self->Id." is hash but default is not");
-	}
-	return $content;
+    unless ( ref $content eq 'HASH' ) {
+        return defined $content ? $content : $default;
     }
-    else {
-	return defined $content ? $content : $default;
+
+    if (ref $default eq 'HASH') {
+        for (keys %$default) {
+            exists $content->{$_} or $content->{$_} = $default->{$_};
+        }
     }
+    elsif (defined $default) {
+        $RT::Logger->error("Preferences $name for user".$self->Id." is hash but default is not");
+    }
+    return $content;
 }
-
-# }}}
-
-# {{{ sub SetPreferences
 
 =head2 SetPreferences NAME/OBJ VALUE
 
-  Set user preferences associated with given object or name.
+Set user preferences associated with given object or name.
 
 =cut
 
 sub SetPreferences {
-    my $self  = shift;
-    my $name = _PrefName (shift);
+    my $self = shift;
+    my $name = _PrefName( shift );
     my $value = shift;
-    my $attr = RT::Attribute->new ($self->CurrentUser);
-    $attr->LoadByNameAndObject (Object => $self, Name => $name);
-    if ($attr->Id) {
-	return $attr->SetContent ($value);
+
+    return (0, $self->loc("No permission to set preferences"))
+        unless $self->CurrentUserCanModify('Preferences');
+
+    my $attr = RT::Attribute->new( $self->CurrentUser );
+    $attr->LoadByNameAndObject( Object => $self, Name => $name );
+    if ( $attr->Id ) {
+        return $attr->SetContent( $value );
     }
     else {
-	return $self->AddAttribute ( Name => $name, Content => $value );
+        return $self->AddAttribute( Name => $name, Content => $value );
     }
 }
-
-# }}}
-
 
 =head2 WatchedQueues ROLE_LIST
 
@@ -2024,9 +1969,6 @@ sub WatchedQueues {
 
 }
 
-
-# {{{ sub _CleanupInvalidDelegations
-
 =head2 _CleanupInvalidDelegations { InsideTransaction => undef }
 
 Revokes all ACE entries delegated by this user which are inconsistent
@@ -2049,54 +1991,50 @@ and logs an internal error if the deletion fails (should not happen).
 sub _CleanupInvalidDelegations {
     my $self = shift;
     my %args = ( InsideTransaction => undef,
-		  @_ );
+          @_ );
 
     unless ( $self->Id ) {
-	$RT::Logger->warning("User not loaded.");
-	return (undef);
+    $RT::Logger->warning("User not loaded.");
+    return (undef);
     }
 
     my $in_trans = $args{InsideTransaction};
 
     return(1) if ($self->HasRight(Right => 'DelegateRights',
-				  Object => $RT::System));
+                  Object => $RT::System));
 
     # Look up all delegation rights currently posessed by this user.
     my $deleg_acl = RT::ACL->new($RT::SystemUser);
     $deleg_acl->LimitToPrincipal(Type => 'User',
-				 Id => $self->PrincipalId,
-				 IncludeGroupMembership => 1);
+                 Id => $self->PrincipalId,
+                 IncludeGroupMembership => 1);
     $deleg_acl->Limit( FIELD => 'RightName',
-		       OPERATOR => '=',
-		       VALUE => 'DelegateRights' );
+               OPERATOR => '=',
+               VALUE => 'DelegateRights' );
     my @allowed_deleg_objects = map {$_->Object()}
-	@{$deleg_acl->ItemsArrayRef()};
+    @{$deleg_acl->ItemsArrayRef()};
 
     # Look up all rights delegated by this principal which are
     # inconsistent with the allowed delegation objects.
     my $acl_to_del = RT::ACL->new($RT::SystemUser);
     $acl_to_del->DelegatedBy(Id => $self->Id);
     foreach (@allowed_deleg_objects) {
-	$acl_to_del->LimitNotObject($_);
+    $acl_to_del->LimitNotObject($_);
     }
 
     # Delete all disallowed delegations
     while ( my $ace = $acl_to_del->Next() ) {
-	my $ret = $ace->_Delete(InsideTransaction => 1);
-	unless ($ret) {
-	    $RT::Handle->Rollback() unless $in_trans;
-	    $RT::Logger->warning("Couldn't delete delegated ACL entry ".$ace->Id);
-	    return (undef);
-	}
+    my $ret = $ace->_Delete(InsideTransaction => 1);
+    unless ($ret) {
+        $RT::Handle->Rollback() unless $in_trans;
+        $RT::Logger->warning("Couldn't delete delegated ACL entry ".$ace->Id);
+        return (undef);
+    }
     }
 
     $RT::Handle->Commit() unless $in_trans;
     return (1);
 }
-
-# }}}
-
-# {{{ sub _Set
 
 sub _Set {
     my $self = shift;
@@ -2104,8 +2042,8 @@ sub _Set {
     my %args = (
         Field => undef,
         Value => undef,
-	TransactionType   => 'Set',
-	RecordTransaction => 1,
+    TransactionType   => 'Set',
+    RecordTransaction => 1,
         @_
     );
 
@@ -2122,7 +2060,7 @@ sub _Set {
     my $Old = $self->SUPER::_Value("$args{'Field'}");
     
     my ($ret, $msg) = $self->SUPER::_Set( Field => $args{'Field'},
-					  Value => $args{'Value'} );
+                      Value => $args{'Value'} );
     
     #If we can't actually set the field to the value, don't record
     # a transaction. instead, get out of here.
@@ -2143,10 +2081,6 @@ sub _Set {
         return ( $ret, $msg );
     }
 }
-
-# }}}
-
-# {{{ sub _Value 
 
 =head2 _Value
 
@@ -2175,7 +2109,7 @@ sub _Value {
 
     #If the user wants to see their own values, let them
     # TODO figure ouyt a better way to deal with this
-   elsif ( $self->CurrentUser->Id == $self->Id ) {
+   elsif ( defined($self->Id) && $self->CurrentUser->Id == $self->Id ) {
         return ( $self->SUPER::_Value($field) );
     }
 
@@ -2189,14 +2123,96 @@ sub _Value {
 
 }
 
-# }}}
+=head2 FriendlyName
+
+Return the friendly name
+
+=cut
+
+sub FriendlyName {
+    my $self = shift;
+    return $self->RealName if defined($self->RealName);
+    return $self->Name if defined($self->Name);
+    return "";
+}
+
+=head2 PreferredKey
+
+Returns the preferred key of the user. If none is set, then this will query
+GPG and set the preferred key to the maximally trusted key found (and then
+return it). Returns C<undef> if no preferred key can be found.
+
+=cut
+
+sub PreferredKey
+{
+    my $self = shift;
+    return undef unless RT->Config->Get('GnuPG')->{'Enable'};
+    my $prefkey = $self->FirstAttribute('PreferredKey');
+    return $prefkey->Content if $prefkey;
+
+    # we don't have a preferred key for this user, so now we must query GPG
+    require RT::Crypt::GnuPG;
+    my %res = RT::Crypt::GnuPG::GetKeysForEncryption($self->EmailAddress);
+    return undef unless defined $res{'info'};
+    my @keys = @{ $res{'info'} };
+    return undef if @keys == 0;
+
+    if (@keys == 1) {
+        $prefkey = $keys[0]->{'Fingerprint'};
+    }
+    else {
+        # prefer the maximally trusted key
+        @keys = sort { $b->{'TrustLevel'} <=> $a->{'TrustLevel'} } @keys;
+        $prefkey = $keys[0]->{'Fingerprint'};
+    }
+
+    $self->SetAttribute(Name => 'PreferredKey', Content => $prefkey);
+    return $prefkey;
+}
+
+sub PrivateKey {
+    my $self = shift;
+
+    my $key = $self->FirstAttribute('PrivateKey') or return undef;
+    return $key->Content;
+}
+
+sub SetPrivateKey {
+    my $self = shift;
+    my $key = shift;
+    # XXX: ACL
+    unless ( $key ) {
+        my ($status, $msg) = $self->DeleteAttribute('PrivateKey');
+        unless ( $status ) {
+            $RT::Logger->error( "Couldn't delete attribute: $msg" );
+            return ($status, $self->loc("Couldn't unset private key"));
+        }
+        return ($status, $self->loc("Unset private key"));
+    }
+
+    # check that it's really private key
+    {
+        my %tmp = RT::Crypt::GnuPG::GetKeysForSigning( $key );
+        return (0, $self->loc("No such key or it's not suitable for signing"))
+            if $tmp{'exit_code'} || !$tmp{'info'};
+    }
+
+    my ($status, $msg) = $self->SetAttribute(
+        Name => 'PrivateKey',
+        Content => $key,
+    );
+    return ($status, $self->loc("Couldn't set private key"))    
+        unless $status;
+    return ($status, $self->loc("Unset private key"));
+}
 
 sub BasicColumns {
     (
-	[ Name => 'User Id' ],
-	[ EmailAddress => 'Email' ],
-	[ RealName => 'Name' ],
-	[ Organization => 'Organization' ],
+    [ Name => 'User Id' ],
+    [ EmailAddress => 'Email' ],
+    [ RealName => 'Name' ],
+    [ Organization => 'Organization' ],
     );
 }
 

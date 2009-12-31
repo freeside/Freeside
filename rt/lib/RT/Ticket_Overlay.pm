@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,6 +45,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 # {{{ Front Material 
 
 =head1 SYNOPSIS
@@ -60,82 +61,6 @@ This module lets you manipulate RT\'s ticket object.
 
 =head1 METHODS
 
-=begin testing
-
-use_ok ( RT::Queue);
-ok(my $testqueue = RT::Queue->new($RT::SystemUser));
-ok($testqueue->Create( Name => 'ticket tests'));
-ok($testqueue->Id != 0);
-use_ok(RT::CustomField);
-ok(my $testcf = RT::CustomField->new($RT::SystemUser));
-my ($ret, $cmsg) = $testcf->Create( Name => 'selectmulti',
-                    Queue => $testqueue->id,
-                               Type => 'SelectMultiple');
-ok($ret,"Created the custom field - ".$cmsg);
-($ret,$cmsg) = $testcf->AddValue ( Name => 'Value1',
-                        SortOrder => '1',
-                        Description => 'A testing value');
-
-ok($ret, "Added a value - ".$cmsg);
-
-ok($testcf->AddValue ( Name => 'Value2',
-                        SortOrder => '2',
-                        Description => 'Another testing value'));
-ok($testcf->AddValue ( Name => 'Value3',
-                        SortOrder => '3',
-                        Description => 'Yet Another testing value'));
-                       
-ok($testcf->Values->Count == 3);
-
-use_ok(RT::Ticket);
-
-my $u = RT::User->new($RT::SystemUser);
-$u->Load("root");
-ok ($u->Id, "Found the root user");
-ok(my $t = RT::Ticket->new($RT::SystemUser));
-ok(my ($id, $msg) = $t->Create( Queue => $testqueue->Id,
-               Subject => 'Testing',
-               Owner => $u->Id
-              ));
-ok($id != 0);
-ok ($t->OwnerObj->Id == $u->Id, "Root is the ticket owner");
-ok(my ($cfv, $cfm) =$t->AddCustomFieldValue(Field => $testcf->Id,
-                           Value => 'Value1'));
-ok($cfv != 0, "Custom field creation didn't return an error: $cfm");
-ok($t->CustomFieldValues($testcf->Id)->Count == 1);
-ok($t->CustomFieldValues($testcf->Id)->First &&
-    $t->CustomFieldValues($testcf->Id)->First->Content eq 'Value1');;
-
-ok(my ($cfdv, $cfdm) = $t->DeleteCustomFieldValue(Field => $testcf->Id,
-                        Value => 'Value1'));
-ok ($cfdv != 0, "Deleted a custom field value: $cfdm");
-ok($t->CustomFieldValues($testcf->Id)->Count == 0);
-
-ok(my $t2 = RT::Ticket->new($RT::SystemUser));
-ok($t2->Load($id));
-is($t2->Subject, 'Testing');
-is($t2->QueueObj->Id, $testqueue->id);
-ok($t2->OwnerObj->Id == $u->Id);
-
-my $t3 = RT::Ticket->new($RT::SystemUser);
-my ($id3, $msg3) = $t3->Create( Queue => $testqueue->Id,
-                                Subject => 'Testing',
-                                Owner => $u->Id);
-my ($cfv1, $cfm1) = $t->AddCustomFieldValue(Field => $testcf->Id,
- Value => 'Value1');
-ok($cfv1 != 0, "Adding a custom field to ticket 1 is successful: $cfm");
-my ($cfv2, $cfm2) = $t3->AddCustomFieldValue(Field => $testcf->Id,
- Value => 'Value2');
-ok($cfv2 != 0, "Adding a custom field to ticket 2 is successful: $cfm");
-my ($cfv3, $cfm3) = $t->AddCustomFieldValue(Field => $testcf->Id,
- Value => 'Value3');
-ok($cfv3 != 0, "Adding a custom field to ticket 1 is successful: $cfm");
-ok($t->CustomFieldValues($testcf->Id)->Count == 2,
-   "This ticket has 2 custom field values");
-ok($t3->CustomFieldValues($testcf->Id)->Count == 1,
-   "This ticket has 1 custom field value");
-
-=end testing
 
 =cut
 
@@ -158,32 +83,20 @@ use RT::URI::fsck_com_rt;
 use RT::URI;
 use MIME::Entity;
 
-=begin testing
-
-
-ok(require RT::Ticket, "Loading the RT::Ticket library");
-
-=end testing
-
-=cut
-
-# }}}
 
 # {{{ LINKTYPEMAP
 # A helper table for links mapping to make it easier
 # to build and parse links between tickets
 
-use vars '%LINKTYPEMAP';
-
-%LINKTYPEMAP = (
+our %LINKTYPEMAP = (
     MemberOf => { Type => 'MemberOf',
                   Mode => 'Target', },
     Parents => { Type => 'MemberOf',
-		 Mode => 'Target', },
+         Mode => 'Target', },
     Members => { Type => 'MemberOf',
                  Mode => 'Base', },
     Children => { Type => 'MemberOf',
-		  Mode => 'Base', },
+          Mode => 'Base', },
     HasMember => { Type => 'MemberOf',
                    Mode => 'Base', },
     RefersTo => { Type => 'RefersTo',
@@ -205,9 +118,7 @@ use vars '%LINKTYPEMAP';
 # A helper table for links mapping to make it easier
 # to build and parse links between tickets
 
-use vars '%LINKDIRMAP';
-
-%LINKDIRMAP = (
+our %LINKDIRMAP = (
     MemberOf => { Base => 'MemberOf',
                   Target => 'HasMember', },
     RefersTo => { Base => 'RefersTo',
@@ -241,9 +152,10 @@ sub Load {
     #TODO modify this routine to look at EffectiveId and do the recursive load
     # thing. be careful to cache all the interim tickets we try so we don't loop forever.
 
-
+    # FIXME: there is no TicketBaseURI option in config
+    my $base_uri = RT->Config->Get('TicketBaseURI') || '';
     #If it's a local URI, turn it into a ticket id
-    if ( $RT::TicketBaseURI && $id =~ /^$RT::TicketBaseURI(\d+)$/ ) {
+    if ( $base_uri && defined $id && $id =~ /^$base_uri(\d+)$/ ) {
         $id = $1;
     }
 
@@ -253,18 +165,18 @@ sub Load {
     }
 
     #If we have an integer URI, load the ticket
-    if ( $id =~ /^\d+$/ ) {
+    if ( defined $id && $id =~ /^\d+$/ ) {
         my ($ticketid,$msg) = $self->LoadById($id);
 
         unless ($self->Id) {
-            $RT::Logger->crit("$self tried to load a bogus ticket: $id\n");
+            $RT::Logger->debug("$self tried to load a bogus ticket: $id");
             return (undef);
         }
     }
 
     #It's not a URI. It's not a numerical ticket ID. Punt!
     else {
-        $RT::Logger->warning("Tried to load a bogus ticket id: '$id'");
+        $RT::Logger->debug("Tried to load a bogus ticket id: '$id'");
         return (undef);
     }
 
@@ -281,29 +193,6 @@ sub Load {
 
 # }}}
 
-# {{{ sub LoadByURI
-
-=head2 LoadByURI
-
-Given a local ticket URI, loads the specified ticket.
-
-=cut
-
-sub LoadByURI {
-    my $self = shift;
-    my $uri  = shift;
-
-    if ( $uri =~ /^$RT::TicketBaseURI(\d+)$/ ) {
-        my $id = $1;
-        return ( $self->Load($id) );
-    }
-    else {
-        return (undef);
-    }
-}
-
-# }}}
-
 # {{{ sub Create
 
 =head2 Create (ARGS)
@@ -315,6 +204,8 @@ Arguments: ARGS is a hash of named parameters.  Valid parameters are:
   Requestor -  A reference to a list of  email addresses or RT user Names
   Cc  - A reference to a list of  email addresses or Names
   AdminCc  - A reference to a  list of  email addresses or Names
+  SquelchMailTo - A reference to a list of email addresses - 
+                  who should this ticket not mail
   Type -- The ticket\'s type. ignore this for now
   Owner -- This ticket\'s owner. either an RT::User object or this user\'s id
   Subject -- A string describing the subject of the ticket
@@ -344,18 +235,6 @@ C<Members> and C<Children> are aliases for C<HasMember>.
 
 Returns: TICKETID, Transaction Object, Error Message
 
-=begin testing
-
-my $t = RT::Ticket->new($RT::SystemUser);
-
-ok( $t->Create(Queue => 'General', Due => '2002-05-21 00:00:00', ReferredToBy => 'http://www.cpan.org', RefersTo => 'http://fsck.com', Subject => 'This is a subject'), "Ticket Created");
-
-ok ( my $id = $t->Id, "Got ticket id");
-ok ($t->RefersTo->First->Target =~ /fsck.com/, "Got refers to");
-ok ($t->ReferredToBy->First->Base =~ /cpan.org/, "Got referredtoby");
-ok ($t->ResolvedObj->Unix == -1, "It hasn't been resolved - ". $t->ResolvedObj->Unix);
-
-=end testing
 
 =cut
 
@@ -369,6 +248,7 @@ sub Create {
         Requestor          => undef,
         Cc                 => undef,
         AdminCc            => undef,
+        SquelchMailTo      => undef,
         Type               => 'ticket',
         Owner              => undef,
         Subject            => '',
@@ -385,29 +265,29 @@ sub Create {
         Resolved           => undef,
         MIMEObj            => undef,
         _RecordTransaction => 1,
+        DryRun             => 0,
         @_
     );
 
-    my ( $ErrStr, $Owner, $resolved );
-    my (@non_fatal_errors);
+    my ($ErrStr, @non_fatal_errors);
 
-    my $QueueObj = RT::Queue->new($RT::SystemUser);
-
-    if ( ( defined( $args{'Queue'} ) ) && ( !ref( $args{'Queue'} ) ) ) {
-        $QueueObj->Load( $args{'Queue'} );
-    }
-    elsif ( ref( $args{'Queue'} ) eq 'RT::Queue' ) {
+    my $QueueObj = RT::Queue->new( $RT::SystemUser );
+    if ( ref $args{'Queue'} eq 'RT::Queue' ) {
         $QueueObj->Load( $args{'Queue'}->Id );
     }
+    elsif ( $args{'Queue'} ) {
+        $QueueObj->Load( $args{'Queue'} );
+    }
     else {
-        $RT::Logger->debug( $args{'Queue'} . " not a recognised queue object." );
+        $RT::Logger->debug("'". ( $args{'Queue'} ||''). "' not a recognised queue object." );
     }
 
     #Can't create a ticket without a queue.
-    unless ( defined($QueueObj) && $QueueObj->Id ) {
+    unless ( $QueueObj->Id ) {
         $RT::Logger->debug("$self No queue given for ticket creation.");
         return ( 0, 0, $self->loc('Could not create ticket. Queue not set') );
     }
+
 
     #Now that we have a queue, Check the ACLS
     unless (
@@ -427,21 +307,21 @@ sub Create {
     }
 
     #Since we have a queue, we can set queue defaults
-    #Initial Priority
 
+    #Initial Priority
     # If there's no queue default initial priority and it's not set, set it to 0
-    $args{'InitialPriority'} = ( $QueueObj->InitialPriority || 0 )
-      unless ( $args{'InitialPriority'} );
+    $args{'InitialPriority'} = $QueueObj->InitialPriority || 0
+        unless defined $args{'InitialPriority'};
 
     #Final priority
-
     # If there's no queue default final priority and it's not set, set it to 0
-    $args{'FinalPriority'} = ( $QueueObj->FinalPriority || 0 )
-      unless ( $args{'FinalPriority'} );
+    $args{'FinalPriority'} = $QueueObj->FinalPriority || 0
+        unless defined $args{'FinalPriority'};
 
     # Priority may have changed from InitialPriority, for the case
     # where we're importing tickets (eg, from an older RT version.)
-    my $priority = $args{'Priority'} || $args{'InitialPriority'};
+    $args{'Priority'} = $args{'InitialPriority'}
+        unless defined $args{'Priority'};
 
     # {{{ Dates
     #TODO we should see what sort of due date we're getting, rather +
@@ -449,8 +329,7 @@ sub Create {
 
     #Set the due date. if we didn't get fed one, use the queue default due in
     my $Due = new RT::Date( $self->CurrentUser );
-
-    if ( $args{'Due'} ) {
+    if ( defined $args{'Due'} ) {
         $Due->Set( Format => 'ISO', Value => $args{'Due'} );
     }
     elsif ( my $due_in = $QueueObj->DefaultDueIn ) {
@@ -467,6 +346,9 @@ sub Create {
     if ( defined $args{'Started'} ) {
         $Started->Set( Format => 'ISO', Value => $args{'Started'} );
     }
+    elsif ( $args{'Status'} ne 'new' ) {
+        $Started->SetToNow;
+    }
 
     my $Resolved = new RT::Date( $self->CurrentUser );
     if ( defined $args{'Resolved'} ) {
@@ -474,10 +356,10 @@ sub Create {
     }
 
     #If the status is an inactive status, set the resolved date
-    if ( $QueueObj->IsInactiveStatus( $args{'Status'} ) && !$args{'Resolved'} )
+    elsif ( $QueueObj->IsInactiveStatus( $args{'Status'} ) )
     {
         $RT::Logger->debug( "Got a ". $args{'Status'}
-            ." ticket with undefined resolved date. Setting to now."
+            ."(inactive) ticket with undefined resolved date. Setting to now."
         );
         $Resolved->SetToNow;
     }
@@ -494,51 +376,42 @@ sub Create {
 
     # {{{ Deal with setting the owner
 
+    my $Owner;
     if ( ref( $args{'Owner'} ) eq 'RT::User' ) {
-        $Owner = $args{'Owner'};
+        if ( $args{'Owner'}->id ) {
+            $Owner = $args{'Owner'};
+        } else {
+            $RT::Logger->error('passed not loaded owner object');
+            push @non_fatal_errors, $self->loc("Invalid owner object");
+            $Owner = undef;
+        }
     }
 
     #If we've been handed something else, try to load the user.
     elsif ( $args{'Owner'} ) {
         $Owner = RT::User->new( $self->CurrentUser );
         $Owner->Load( $args{'Owner'} );
-
-        push( @non_fatal_errors,
+        $Owner->LoadByEmail( $args{'Owner'} )
+            unless $Owner->Id;
+        unless ( $Owner->Id ) {
+            push @non_fatal_errors,
                 $self->loc("Owner could not be set.") . " "
-              . $self->loc( "User '[_1]' could not be found.", $args{'Owner'} )
-          )
-          unless ( $Owner->Id );
+              . $self->loc( "User '[_1]' could not be found.", $args{'Owner'} );
+            $Owner = undef;
+        }
     }
 
     #If we have a proposed owner and they don't have the right
     #to own a ticket, scream about it and make them not the owner
-    if (
-            ( defined($Owner) )
-        and ( $Owner->Id )
-        and ( $Owner->Id != $RT::Nobody->Id )
-        and (
-            !$Owner->HasRight(
-                Object => $QueueObj,
-                Right  => 'OwnTicket'
-            )
-        )
-      )
+   
+    my $DeferOwner;  
+    if ( $Owner && $Owner->Id != $RT::Nobody->Id 
+        && !$Owner->HasRight( Object => $QueueObj, Right  => 'OwnTicket' ) )
     {
-
-        $RT::Logger->warning( "User "
-              . $Owner->Name . "("
-              . $Owner->id
-              . ") was proposed "
-              . "as a ticket owner but has no rights to own "
-              . "tickets in "
-              . $QueueObj->Name );
-
-        push @non_fatal_errors,
-          $self->loc( "Owner '[_1]' does not have rights to own this ticket.",
-            $Owner->Name
-          );
-
+        $DeferOwner = $Owner;
         $Owner = undef;
+        $RT::Logger->debug('going to deffer setting owner');
+
     }
 
     #If we haven't been handed a valid owner, make it nobody.
@@ -552,13 +425,24 @@ sub Create {
 # We attempt to load or create each of the people who might have a role for this ticket
 # _outside_ the transaction, so we don't get into ticket creation races
     foreach my $type ( "Cc", "AdminCc", "Requestor" ) {
-        next unless ( defined $args{$type} );
-        foreach my $watcher (
-            ref( $args{$type} ) ? @{ $args{$type} } : ( $args{$type} ) )
-        {
-            my $user = RT::User->new($RT::SystemUser);
-            $user->LoadOrCreateByEmail($watcher)
-              if ( $watcher && $watcher !~ /^\d+$/ );
+        $args{ $type } = [ $args{ $type } ] unless ref $args{ $type };
+        foreach my $watcher ( splice @{ $args{$type} } ) {
+            next unless $watcher;
+            if ( $watcher =~ /^\d+$/ ) {
+                push @{ $args{$type} }, $watcher;
+            } else {
+                my @addresses = RT::EmailParser->ParseEmailAddress( $watcher );
+                foreach my $address( @addresses ) {
+                    my $user = RT::User->new( $RT::SystemUser );
+                    my ($uid, $msg) = $user->LoadOrCreateByEmail( $address );
+                    unless ( $uid ) {
+                        push @non_fatal_errors,
+                            $self->loc("Couldn't load or create user: [_1]", $msg);
+                    } else {
+                        push @{ $args{$type} }, $user->id;
+                    }
+                }
+            }
         }
     }
 
@@ -570,7 +454,7 @@ sub Create {
         Subject         => $args{'Subject'},
         InitialPriority => $args{'InitialPriority'},
         FinalPriority   => $args{'FinalPriority'},
-        Priority        => $priority,
+        Priority        => $args{'Priority'},
         Status          => $args{'Status'},
         TimeWorked      => $args{'TimeWorked'},
         TimeEstimated   => $args{'TimeEstimated'},
@@ -584,20 +468,21 @@ sub Create {
 
 # Parameters passed in during an import that we probably don't want to touch, otherwise
     foreach my $attr qw(id Creator Created LastUpdated LastUpdatedBy) {
-        $params{$attr} = $args{$attr} if ( $args{$attr} );
+        $params{$attr} = $args{$attr} if $args{$attr};
     }
 
     # Delete null integer parameters
     foreach my $attr
-      qw(TimeWorked TimeLeft TimeEstimated InitialPriority FinalPriority) {
+        qw(TimeWorked TimeLeft TimeEstimated InitialPriority FinalPriority)
+    {
         delete $params{$attr}
           unless ( exists $params{$attr} && $params{$attr} );
     }
 
     # Delete the time worked if we're counting it in the transaction
-    delete $params{TimeWorked} if $args{'_RecordTransaction'};
-    
-    my ($id,$ticket_message) = $self->SUPER::Create( %params);
+    delete $params{'TimeWorked'} if $args{'_RecordTransaction'};
+
+    my ($id,$ticket_message) = $self->SUPER::Create( %params );
     unless ($id) {
         $RT::Logger->crit( "Couldn't create a ticket: " . $ticket_message );
         $RT::Handle->Rollback();
@@ -611,10 +496,9 @@ sub Create {
         Field => 'EffectiveId',
         Value => ( $args{'EffectiveId'} || $id )
     );
-
-    unless ($val) {
-        $RT::Logger->crit("$self ->Create couldn't set EffectiveId: $msg\n");
-        $RT::Handle->Rollback();
+    unless ( $val ) {
+        $RT::Logger->crit("Couldn't set EffectiveId: $msg");
+        $RT::Handle->Rollback;
         return ( 0, 0,
             $self->loc("Ticket could not be created due to an internal error")
         );
@@ -631,59 +515,85 @@ sub Create {
         );
     }
 
-# Set the owner in the Groups table
-# We denormalize it into the Ticket table too because doing otherwise would
-# kill performance, bigtime. It gets kept in lockstep thanks to the magic of transactionalization
-
+    # Set the owner in the Groups table
+    # We denormalize it into the Ticket table too because doing otherwise would
+    # kill performance, bigtime. It gets kept in lockstep thanks to the magic of transactionalization
     $self->OwnerGroup->_AddMember(
         PrincipalId       => $Owner->PrincipalId,
         InsideTransaction => 1
-    );
+    ) unless $DeferOwner;
+
+
 
     # {{{ Deal with setting up watchers
 
     foreach my $type ( "Cc", "AdminCc", "Requestor" ) {
-        next unless ( defined $args{$type} );
-        foreach my $watcher (
-            ref( $args{$type} ) ? @{ $args{$type} } : ( $args{$type} ) )
+        # we know it's an array ref
+        foreach my $watcher ( @{ $args{$type} } ) {
+
+            # Note that we're using AddWatcher, rather than _AddWatcher, as we
+            # actually _want_ that ACL check. Otherwise, random ticket creators
+            # could make themselves adminccs and maybe get ticket rights. that would
+            # be poor
+            my $method = $type eq 'AdminCc'? 'AddWatcher': '_AddWatcher';
+
+            my ($val, $msg) = $self->$method(
+                Type   => $type,
+                PrincipalId => $watcher,
+                Silent => 1,
+            );
+            push @non_fatal_errors, $self->loc("Couldn't set [_1] watcher: [_2]", $type, $msg)
+                unless $val;
+        }
+    } 
+
+    if ($args{'SquelchMailTo'}) {
+       my @squelch = ref( $args{'SquelchMailTo'} ) ? @{ $args{'SquelchMailTo'} }
+        : $args{'SquelchMailTo'};
+        $self->_SquelchMailTo( @squelch );
+    }
+
+
+    # }}}
+
+    # {{{ Add all the custom fields
+
+    foreach my $arg ( keys %args ) {
+        next unless $arg =~ /^CustomField-(\d+)$/i;
+        my $cfid = $1;
+
+        foreach my $value (
+            UNIVERSAL::isa( $args{$arg} => 'ARRAY' ) ? @{ $args{$arg} } : ( $args{$arg} ) )
         {
+            next unless defined $value && length $value;
 
-            # If there is an empty entry in the list, let's get out of here.
-            next unless $watcher;
-
-            # we reason that all-digits number must be a principal id, not email
-            # this is the only way to can add
-            my $field = 'Email';
-            $field = 'PrincipalId' if $watcher =~ /^\d+$/;
-
-            my ( $wval, $wmsg );
-
-            if ( $type eq 'AdminCc' ) {
-
-        # Note that we're using AddWatcher, rather than _AddWatcher, as we
-        # actually _want_ that ACL check. Otherwise, random ticket creators
-        # could make themselves adminccs and maybe get ticket rights. that would
-        # be poor
-                ( $wval, $wmsg ) = $self->AddWatcher(
-                    Type   => $type,
-                    $field => $watcher,
-                    Silent => 1
-                );
-            }
-            else {
-                ( $wval, $wmsg ) = $self->_AddWatcher(
-                    Type   => $type,
-                    $field => $watcher,
-                    Silent => 1
-                );
-            }
-
-            push @non_fatal_errors, $wmsg unless ($wval);
+            # Allow passing in uploaded LargeContent etc by hash reference
+            my ($status, $msg) = $self->_AddCustomFieldValue(
+                (UNIVERSAL::isa( $value => 'HASH' )
+                    ? %$value
+                    : (Value => $value)
+                ),
+                Field             => $cfid,
+                RecordTransaction => 0,
+            );
+            push @non_fatal_errors, $msg unless $status;
         }
     }
 
     # }}}
+
     # {{{ Deal with setting up links
+
+    # TODO: Adding link may fire scrips on other end and those scrips
+    # could create transactions on this ticket before 'Create' transaction.
+    #
+    # We should implement different schema: record 'Create' transaction,
+    # create links and only then fire create transaction's scrips.
+    #
+    # Ideal variant: add all links without firing scrips, record create
+    # transaction and only then fire scrips on the other ends of links.
+    #
+    # //RUZ
 
     foreach my $type ( keys %LINKTYPEMAP ) {
         next unless ( defined $args{$type} );
@@ -692,7 +602,7 @@ sub Create {
         {
             # Check rights on the other end of the link if we must
             # then run _AddLink that doesn't check for ACLs
-            if ( $RT::StrictLinkACL ) {
+            if ( RT->Config->Get( 'StrictLinkACL' ) ) {
                 my ($val, $msg, $obj) = $self->__GetTicketFromURI( URI => $link );
                 unless ( $val ) {
                     push @non_fatal_errors, $msg;
@@ -707,7 +617,9 @@ sub Create {
             my ( $wval, $wmsg ) = $self->_AddLink(
                 Type                          => $LINKTYPEMAP{$type}->{'Type'},
                 $LINKTYPEMAP{$type}->{'Mode'} => $link,
-                Silent                        => 1
+                Silent                        => !$args{'_RecordTransaction'},
+                'Silent'. ( $LINKTYPEMAP{$type}->{'Mode'} eq 'Base'? 'Target': 'Base' )
+                                              => 1,
             );
 
             push @non_fatal_errors, $wmsg unless ($wval);
@@ -715,6 +627,21 @@ sub Create {
     }
 
     # }}}
+    # Now that we've created the ticket and set up its metadata, we can actually go and check OwnTicket on the ticket itself. 
+    # This might be different than before in cases where extensions like RTIR are doing clever things with RT's ACL system
+    if (  $DeferOwner ) { 
+            if (!$DeferOwner->HasRight( Object => $self, Right  => 'OwnTicket')) {
+    
+            $RT::Logger->warning( "User " . $DeferOwner->Name . "(" . $DeferOwner->id 
+                . ") was proposed as a ticket owner but has no rights to own "
+                . "tickets in " . $QueueObj->Name );
+            push @non_fatal_errors, $self->loc(
+                "Owner '[_1]' does not have rights to own this ticket.",
+                $DeferOwner->Name
+            );
+        } else {
+            $Owner = $DeferOwner;
+            $self->__Set(Field => 'Owner', Value => $Owner->id);
 
     # {{{ Deal with auto-customer association
 
@@ -778,37 +705,21 @@ sub Create {
 
     # }}}
 
-    # {{{ Add all the custom fields
-
-    foreach my $arg ( keys %args ) {
-        next unless ( $arg =~ /^CustomField-(\d+)$/i );
-        my $cfid = $1;
-        foreach
-          my $value ( UNIVERSAL::isa( $args{$arg} => 'ARRAY' ) ? @{ $args{$arg} } : ( $args{$arg} ) )
-        {
-            next unless ( length($value) );
-
-            # Allow passing in uploaded LargeContent etc by hash reference
-            $self->_AddCustomFieldValue(
-                (UNIVERSAL::isa( $value => 'HASH' )
-                    ? %$value
-                    : (Value => $value)
-                ),
-                Field             => $cfid,
-                RecordTransaction => 0,
-            );
         }
+        $self->OwnerGroup->_AddMember(
+            PrincipalId       => $Owner->PrincipalId,
+            InsideTransaction => 1
+        );
     }
-
-    # }}}
 
     if ( $args{'_RecordTransaction'} ) {
 
         # {{{ Add a transaction for the create
         my ( $Trans, $Msg, $TransObj ) = $self->_NewTransaction(
-                                                     Type      => "Create",
-                                                     TimeTaken => $args{'TimeWorked'},
-                                                     MIMEObj => $args{'MIMEObj'}
+            Type         => "Create",
+            TimeTaken    => $args{'TimeWorked'},
+            MIMEObj      => $args{'MIMEObj'},
+            CommitScrips => !$args{'DryRun'},
         );
 
         if ( $self->Id && $Trans ) {
@@ -827,6 +738,10 @@ sub Create {
             return ( 0, 0, $self->loc( "Ticket could not be created due to an internal error"));
         }
 
+        if ( $args{'DryRun'} ) {
+            $RT::Handle->Rollback();
+            return ($self->id, $TransObj, $ErrStr);
+        }
         $RT::Handle->Commit();
         return ( $self->Id, $TransObj->Id, $ErrStr );
 
@@ -844,179 +759,6 @@ sub Create {
 }
 
 
-# }}}
-
-
-# {{{ UpdateFrom822 
-
-=head2 UpdateFrom822 $MESSAGE
-
-Takes an RFC822 format message as a string and uses it to make a bunch of changes to a ticket.
-Returns an um. ask me again when the code exists
-
-
-=begin testing
-
-my $simple_update = <<EOF;
-Subject: target
-AddRequestor: jesse\@example.com
-EOF
-
-my $ticket = RT::Ticket->new($RT::SystemUser);
-my ($id,$msg) =$ticket->Create(Subject => 'first', Queue => 'general');
-ok($ticket->Id, "Created the test ticket - ".$id ." - ".$msg);
-$ticket->UpdateFrom822($simple_update);
-is($ticket->Subject, 'target', "changed the subject");
-my $jesse = RT::User->new($RT::SystemUser);
-$jesse->LoadByEmail('jesse@example.com');
-ok ($jesse->Id, "There's a user for jesse");
-ok($ticket->Requestors->HasMember( $jesse->PrincipalObj), "It has the jesse principal object as a requestor ");
-
-=end testing
-
-
-=cut
-
-sub UpdateFrom822 {
-        my $self = shift;
-        my $content = shift;
-        my %args = $self->_Parse822HeadersForAttributes($content);
-
-        
-    my %ticketargs = (
-        Queue           => $args{'queue'},
-        Subject         => $args{'subject'},
-        Status          => $args{'status'},
-        Due             => $args{'due'},
-        Starts          => $args{'starts'},
-        Started         => $args{'started'},
-        Resolved        => $args{'resolved'},
-        Owner           => $args{'owner'},
-        Requestor       => $args{'requestor'},
-        Cc              => $args{'cc'},
-        AdminCc         => $args{'admincc'},
-        TimeWorked      => $args{'timeworked'},
-        TimeEstimated   => $args{'timeestimated'},
-        TimeLeft        => $args{'timeleft'},
-        InitialPriority => $args{'initialpriority'},
-        Priority => $args{'priority'},
-        FinalPriority   => $args{'finalpriority'},
-        Type            => $args{'type'},
-        DependsOn       => $args{'dependson'},
-        DependedOnBy    => $args{'dependedonby'},
-        RefersTo        => $args{'refersto'},
-        ReferredToBy    => $args{'referredtoby'},
-        Members         => $args{'members'},
-        MemberOf        => $args{'memberof'},
-        MIMEObj         => $args{'mimeobj'}
-    );
-
-    foreach my $type qw(Requestor Cc Admincc) {
-
-        foreach my $action ( 'Add', 'Del', '' ) {
-
-            my $lctag = lc($action) . lc($type);
-            foreach my $list ( $args{$lctag}, $args{ $lctag . 's' } ) {
-
-                foreach my $entry ( ref($list) ? @{$list} : ($list) ) {
-                    push @{$ticketargs{ $action . $type }} , split ( /\s*,\s*/, $entry );
-                }
-
-            }
-
-            # Todo: if we're given an explicit list, transmute it into a list of adds/deletes
-
-        }
-    }
-
-    # Add custom field entries to %ticketargs.
-    # TODO: allow named custom fields
-    map {
-        /^customfield-(\d+)$/
-          && ( $ticketargs{ "CustomField-" . $1 } = $args{$_} );
-    } keys(%args);
-
-# for each ticket we've been told to update, iterate through the set of
-# rfc822 headers and perform that update to the ticket.
-
-
-    # {{{ Set basic fields 
-    my @attribs = qw(
-      Subject
-      FinalPriority
-      Priority
-      TimeEstimated
-      TimeWorked
-      TimeLeft
-      Status
-      Queue
-      Type
-    );
-
-
-    # Resolve the queue from a name to a numeric id.
-    if ( $ticketargs{'Queue'} and ( $ticketargs{'Queue'} !~ /^(\d+)$/ ) ) {
-        my $tempqueue = RT::Queue->new($RT::SystemUser);
-        $tempqueue->Load( $ticketargs{'Queue'} );
-        $ticketargs{'Queue'} = $tempqueue->Id() if ( $tempqueue->id );
-    }
-
-    my @results;
-
-    foreach my $attribute (@attribs) {
-        my $value = $ticketargs{$attribute};
-
-        if ( $value ne $self->$attribute() ) {
-
-            my $method = "Set$attribute";
-            my ( $code, $msg ) = $self->$method($value);
-
-            push @results, $self->loc($attribute) . ': ' . $msg;
-
-        }
-    }
-
-    # We special case owner changing, so we can use ForceOwnerChange
-    if ( $ticketargs{'Owner'} && ( $self->Owner != $ticketargs{'Owner'} ) ) {
-        my $ChownType = "Give";
-        $ChownType = "Force" if ( $ticketargs{'ForceOwnerChange'} );
-
-        my ( $val, $msg ) = $self->SetOwner( $ticketargs{'Owner'}, $ChownType );
-        push ( @results, $msg );
-    }
-
-    # }}}
-# Deal with setting watchers
-
-
-# Acceptable arguments:
-#  Requestor
-#  Requestors
-#  AddRequestor
-#  AddRequestors
-#  DelRequestor
- 
- foreach my $type qw(Requestor Cc AdminCc) {
-
-        # If we've been given a number of delresses to del, do it.
-                foreach my $address (@{$ticketargs{'Del'.$type}}) {
-                my ($id, $msg) = $self->DeleteWatcher( Type => $type, Email => $address);
-                push (@results, $msg) ;
-                }
-
-        # If we've been given a number of addresses to add, do it.
-                foreach my $address (@{$ticketargs{'Add'.$type}}) {
-                $RT::Logger->debug("Adding $address as a $type");
-                my ($id, $msg) = $self->AddWatcher( Type => $type, Email => $address);
-                push (@results, $msg) ;
-
-        }
-
-
-}
-
-
-}
 # }}}
 
 # {{{ _Parse822HeadersForAttributes Content
@@ -1063,7 +805,7 @@ sub _Parse822HeadersForAttributes {
 
     foreach my $date qw(due starts started resolved) {
         my $dateobj = RT::Date->new($RT::SystemUser);
-        if ( $args{$date} =~ /^\d+$/ ) {
+        if ( defined ($args{$date}) and $args{$date} =~ /^\d+$/ ) {
             $dateobj->Set( Format => 'unix', Value => $args{$date} );
         }
         else {
@@ -1189,7 +931,7 @@ sub Import {
               . ") was proposed "
               . "as a ticket owner but has no rights to own "
               . "tickets in '"
-              . $QueueObj->Name . "'\n" );
+              . $QueueObj->Name . "'" );
 
         $Owner = undef;
     }
@@ -1223,18 +965,18 @@ sub Import {
         EffectiveId     => $EffectiveId,
         Queue           => $QueueObj->Id,
         Owner           => $Owner->Id,
-        Subject         => $args{'Subject'},		# loc
-        InitialPriority => $args{'InitialPriority'},	# loc
-        FinalPriority   => $args{'FinalPriority'},	# loc
-        Priority        => $args{'InitialPriority'},	# loc
-        Status          => $args{'Status'},		# loc
-        TimeWorked      => $args{'TimeWorked'},		# loc
-        Type            => $args{'Type'},		# loc
-        Created         => $args{'Created'},		# loc
-        Told            => $args{'Told'},		# loc
-        LastUpdated     => $args{'Updated'},		# loc
-        Resolved        => $args{'Resolved'},		# loc
-        Due             => $args{'Due'},		# loc
+        Subject         => $args{'Subject'},        # loc
+        InitialPriority => $args{'InitialPriority'},    # loc
+        FinalPriority   => $args{'FinalPriority'},    # loc
+        Priority        => $args{'InitialPriority'},    # loc
+        Status          => $args{'Status'},        # loc
+        TimeWorked      => $args{'TimeWorked'},        # loc
+        Type            => $args{'Type'},        # loc
+        Created         => $args{'Created'},        # loc
+        Told            => $args{'Told'},        # loc
+        LastUpdated     => $args{'Updated'},        # loc
+        Resolved        => $args{'Resolved'},        # loc
+        Due             => $args{'Due'},        # loc
     );
 
     # If the ticket didn't have an id
@@ -1248,7 +990,7 @@ sub Import {
 
         unless ($val) {
             $RT::Logger->err(
-                $self . "->Import couldn't set EffectiveId: $msg\n" );
+                $self . "->Import couldn't set EffectiveId: $msg" );
         }
     }
 
@@ -1291,48 +1033,6 @@ It will create four groups for this ticket: Requestor, Cc, AdminCc and Owner.
 
 It will return true on success and undef on failure.
 
-=begin testing
-
-my $ticket = RT::Ticket->new($RT::SystemUser);
-my ($id, $msg) = $ticket->Create(Subject => "Foo",
-                Owner => $RT::SystemUser->Id,
-                Status => 'open',
-                Requestor => ['jesse@example.com'],
-                Queue => '1'
-                );
-ok ($id, "Ticket $id was created");
-ok(my $group = RT::Group->new($RT::SystemUser));
-ok($group->LoadTicketRoleGroup(Ticket => $id, Type=> 'Requestor'));
-ok ($group->Id, "Found the requestors object for this ticket");
-
-ok(my $jesse = RT::User->new($RT::SystemUser), "Creating a jesse rt::user");
-$jesse->LoadByEmail('jesse@example.com');
-ok($jesse->Id,  "Found the jesse rt user");
-
-
-ok ($ticket->IsWatcher(Type => 'Requestor', PrincipalId => $jesse->PrincipalId), "The ticket actually has jesse at fsck.com as a requestor");
-ok ((my $add_id, $add_msg) = $ticket->AddWatcher(Type => 'Requestor', Email => 'bob@fsck.com'), "Added bob at fsck.com as a requestor");
-ok ($add_id, "Add succeeded: ($add_msg)");
-ok(my $bob = RT::User->new($RT::SystemUser), "Creating a bob rt::user");
-$bob->LoadByEmail('bob@fsck.com');
-ok($bob->Id,  "Found the bob rt user");
-ok ($ticket->IsWatcher(Type => 'Requestor', PrincipalId => $bob->PrincipalId), "The ticket actually has bob at fsck.com as a requestor");;
-ok ((my $add_id, $add_msg) = $ticket->DeleteWatcher(Type =>'Requestor', Email => 'bob@fsck.com'), "Added bob at fsck.com as a requestor");
-ok (!$ticket->IsWatcher(Type => 'Requestor', Principal => $bob->PrincipalId), "The ticket no longer has bob at fsck.com as a requestor");;
-
-
-$group = RT::Group->new($RT::SystemUser);
-ok($group->LoadTicketRoleGroup(Ticket => $id, Type=> 'Cc'));
-ok ($group->Id, "Found the cc object for this ticket");
-$group = RT::Group->new($RT::SystemUser);
-ok($group->LoadTicketRoleGroup(Ticket => $id, Type=> 'AdminCc'));
-ok ($group->Id, "Found the AdminCc object for this ticket");
-$group = RT::Group->new($RT::SystemUser);
-ok($group->LoadTicketRoleGroup(Ticket => $id, Type=> 'Owner'));
-ok ($group->Id, "Found the Owner object for this ticket");
-ok($group->HasMember($RT::SystemUser->UserObj->PrincipalObj), "the owner group has the member 'RT_System'");
-
-=end testing
 
 =cut
 
@@ -1385,12 +1085,12 @@ AddWatcher takes a parameter hash. The keys are as follows:
 
 Type        One of Requestor, Cc, AdminCc
 
-PrinicpalId The RT::Principal id of the user or group that's being added as a watcher
+PrincipalId The RT::Principal id of the user or group that's being added as a watcher
 
 Email       The email address of the new watcher. If a user with this 
             email address can't be found, a new nonprivileged user will be created.
 
-If the watcher you\'re trying to set has an RT account, set the Owner paremeter to their User Id. Otherwise, set the Email parameter to their Email address.
+If the watcher you\'re trying to set has an RT account, set the PrincipalId paremeter to their User Id. Otherwise, set the Email parameter to their Email address.
 
 =cut
 
@@ -1403,43 +1103,47 @@ sub AddWatcher {
         @_
     );
 
-    return ( 0, "No principal specified" )
-        unless $args{'Email'} or $args{'PrincipalId'};
+    # ModifyTicket works in any case
+    return $self->_AddWatcher( %args )
+        if $self->CurrentUserHasRight('ModifyTicket');
+    if ( $args{'Email'} ) {
+        my ($addr) = RT::EmailParser->ParseEmailAddress( $args{'Email'} );
+        return (0, $self->loc("Couldn't parse address from '[_1]' string", $args{'Email'} ))
+            unless $addr;
 
-    if ( !$args{'PrincipalId'} and $args{'Email'} ) {
-        my $user = RT::User->new( $self->CurrentUser );
-        $user->LoadByEmail( $args{'Email'} );
-        if ( $user->id ) {
-            $args{'PrincipalId'} = $user->PrincipalId;
+        if ( lc $self->CurrentUser->UserObj->EmailAddress
+            eq lc RT::User->CanonicalizeEmailAddress( $addr->address ) )
+        {
+            $args{'PrincipalId'} = $self->CurrentUser->id;
             delete $args{'Email'};
         }
     }
 
-    # {{{ Check ACLS
-    # ModifyTicket allow you to add any watcher
-    return $self->_AddWatcher(%args)
-        if $self->CurrentUserHasRight('ModifyTicket');
+    # If the watcher isn't the current user then the current user has no right
+    # bail
+    unless ( $args{'PrincipalId'} && $self->CurrentUser->id == $args{'PrincipalId'} ) {
+        return ( 0, $self->loc("Permission Denied") );
+    }
 
-    #If the watcher we're trying to add is for the current user
-    if ( $self->CurrentUser->PrincipalId == ($args{'PrincipalId'} || 0) ) {
-        #  If it's an AdminCc and they have 'WatchAsAdminCc'
-        if ( $args{'Type'} eq 'AdminCc' ) {
-            return $self->_AddWatcher( %args )
-                if $self->CurrentUserHasRight('WatchAsAdminCc');
-        }
-
-        #  If it's a Requestor or Cc and they have 'Watch'
-        elsif ( $args{'Type'} eq 'Cc' || $args{'Type'} eq 'Requestor' ) {
-            return $self->_AddWatcher( %args )
-                if $self->CurrentUserHasRight('Watch');
-        }
-        else {
-            $RT::Logger->warning( "AddWatcher got passed a bogus type" );
-            return ( 0, $self->loc('Error in parameters to Ticket->AddWatcher') );
+    #  If it's an AdminCc and they don't have 'WatchAsAdminCc', bail
+    if ( $args{'Type'} eq 'AdminCc' ) {
+        unless ( $self->CurrentUserHasRight('WatchAsAdminCc') ) {
+            return ( 0, $self->loc('Permission Denied') );
         }
     }
 
-    return ( 0, $self->loc("Permission Denied") );
+    #  If it's a Requestor or Cc and they don't have 'Watch', bail
+    elsif ( $args{'Type'} eq 'Cc' || $args{'Type'} eq 'Requestor' ) {
+        unless ( $self->CurrentUserHasRight('Watch') ) {
+            return ( 0, $self->loc('Permission Denied') );
+        }
+    }
+    else {
+        $RT::Logger->warning( "AddWatcher got passed a bogus type");
+        return ( 0, $self->loc('Error in parameters to Ticket->AddWatcher') );
+    }
+
+    return $self->_AddWatcher( %args );
 }
 
 #This contains the meat of AddWatcher. but can be called from a routine like
@@ -1458,14 +1162,8 @@ sub _AddWatcher {
     my $principal = RT::Principal->new($self->CurrentUser);
     if ($args{'Email'}) {
         my $user = RT::User->new($RT::SystemUser);
-        my ($pid, $msg) = $user->LoadOrCreateByEmail($args{'Email'});
-	# If we can't load the user by email address, let's try to load by username	
-	unless ($pid) { 
-		($pid,$msg) = $user->Load($args{'Email'})
-	}
-        if ($pid) {
-            $args{'PrincipalId'} = $pid; 
-        }
+        my ($pid, $msg) = $user->LoadOrCreateByEmail( $args{'Email'} );
+        $args{'PrincipalId'} = $pid if $pid; 
     }
     if ($args{'PrincipalId'}) {
         $principal->Load($args{'PrincipalId'});
@@ -1494,7 +1192,7 @@ sub _AddWatcher {
     my ( $m_id, $m_msg ) = $group->_AddMember( PrincipalId => $principal->Id,
                                                InsideTransaction => 1 );
     unless ($m_id) {
-        $RT::Logger->error("Failed to add ".$principal->Id." as a member of group ".$group->Id."\n".$m_msg);
+        $RT::Logger->error("Failed to add ".$principal->Id." as a member of group ".$group->Id.": ".$m_msg);
 
         return ( 0, $self->loc('Could not make that principal a [_1] for this ticket', $self->loc($args{'Type'})) );
     }
@@ -1617,7 +1315,7 @@ sub DeleteWatcher {
         $RT::Logger->error( "Failed to delete "
                             . $principal->Id
                             . " as a member of group "
-                            . $group->Id . "\n"
+                            . $group->Id . ": "
                             . $m_msg );
 
         return (0,
@@ -1650,35 +1348,6 @@ Takes an optional email address to never email about updates to this ticket.
 
 Returns an array of the RT::Attribute objects for this ticket's 'SquelchMailTo' attributes.
 
-=begin testing
-
-my $t = RT::Ticket->new($RT::SystemUser);
-ok($t->Create(Queue => 'general', Subject => 'SquelchTest'));
-
-is($#{$t->SquelchMailTo}, -1, "The ticket has no squelched recipients");
-
-my @returned = $t->SquelchMailTo('nobody@example.com');
-
-is($#returned, 0, "The ticket has one squelched recipients");
-
-my @names = $t->Attributes->Names;
-is(shift @names, 'SquelchMailTo', "The attribute we have is SquelchMailTo");
-@returned = $t->SquelchMailTo('nobody@example.com');
-
-
-is($#returned, 0, "The ticket has one squelched recipients");
-
-@names = $t->Attributes->Names;
-is(shift @names, 'SquelchMailTo', "The attribute we have is SquelchMailTo");
-
-
-my ($ret, $msg) = $t->UnsquelchMailTo('nobody@example.com');
-ok($ret, "Removed nobody as a squelched recipient - ".$msg);
-@returned = $t->SquelchMailTo();
-is($#returned, -1, "The ticket has no squelched recipients". join(',',@returned));
-
-
-=end testing
 
 =cut
 
@@ -1688,14 +1357,22 @@ sub SquelchMailTo {
         unless ( $self->CurrentUserHasRight('ModifyTicket') ) {
             return undef;
         }
-        my $attr = shift;
-        $self->AddAttribute( Name => 'SquelchMailTo', Content => $attr )
-          unless grep { $_->Content eq $attr }
-          $self->Attributes->Named('SquelchMailTo');
+    } else {
+        unless ( $self->CurrentUserHasRight('ShowTicket') ) {
+            return undef;
+        }
 
     }
-    unless ( $self->CurrentUserHasRight('ShowTicket') ) {
-        return undef;
+    return $self->_SquelchMailTo(@_);
+}
+
+sub _SquelchMailTo {
+    my $self = shift;
+    if (@_) {
+        my $attr = shift;
+        $self->AddAttribute( Name => 'SquelchMailTo', Content => $attr )
+            unless grep { $_->Content eq $attr }
+                $self->Attributes->Named('SquelchMailTo');
     }
     my @attributes = $self->Attributes->Named('SquelchMailTo');
     return (@attributes);
@@ -1771,7 +1448,6 @@ sub CcAddresses {
     unless ( $self->CurrentUserHasRight('ShowTicket') ) {
         return undef;
     }
-
     return ( $self->Cc->MemberEmailAddressesAsString);
 
 }
@@ -1903,7 +1579,6 @@ sub IsWatcher {
     $group->LoadTicketRoleGroup(Type => $args{'Type'}, Ticket => $self->id);
 
     # Find the relevant principal.
-    my $principal = RT::Principal->new($self->CurrentUser);
     if (!$args{PrincipalId} && $args{Email}) {
         # Look up the specified user.
         my $user = RT::User->new($self->CurrentUser);
@@ -1916,10 +1591,9 @@ sub IsWatcher {
             return 0;
         }
     }
-    $principal->Load($args{'PrincipalId'});
 
     # Ask if it has the member in question
-    return ($group->HasMember($principal));
+    return $group->HasMember( $args{'PrincipalId'} );
 }
 
 # }}}
@@ -1928,9 +1602,9 @@ sub IsWatcher {
 
 =head2 IsRequestor PRINCIPAL_ID
   
-  Takes an RT::Principal id
-  Returns true if the principal is a requestor of the current ticket.
+Takes an L<RT::Principal> id.
 
+Returns true if the principal is a requestor of the current ticket.
 
 =cut
 
@@ -1949,7 +1623,7 @@ sub IsRequestor {
 =head2 IsCc PRINCIPAL_ID
 
   Takes an RT::Principal id.
-  Returns true if the principal is a requestor of the current ticket.
+  Returns true if the principal is a Cc of the current ticket.
 
 
 =cut
@@ -1969,7 +1643,7 @@ sub IsCc {
 =head2 IsAdminCc PRINCIPAL_ID
 
   Takes an RT::Principal id.
-  Returns true if the principal is a requestor of the current ticket.
+  Returns true if the principal is an AdminCc of the current ticket.
 
 =cut
 
@@ -1998,8 +1672,8 @@ sub IsOwner {
 
     # no ACL check since this is used in acl decisions
     # unless ($self->CurrentUserHasRight('ShowTicket')) {
-    #	return(undef);
-    #   }	
+    #    return(undef);
+    #   }    
 
     #Tickets won't yet have owners when they're being created.
     unless ( $self->OwnerObj->id ) {
@@ -2019,6 +1693,46 @@ sub IsOwner {
 # }}}
 
 # }}}
+
+
+=head2 TransactionAddresses
+
+Returns a composite hashref of the results of L<RT::Transaction/Addresses> for all this ticket's Create, Comment or Correspond transactions.
+The keys are C<To>, C<Cc> and C<Bcc>. The values are lists of C<Email::Address> objects.
+
+NOTE: For performance reasons, this method might want to skip transactions and go straight for attachments. But to make that work right, we're going to need to go and walk around the access control in Attachment.pm's sub _Value.
+
+=cut
+
+
+sub TransactionAddresses {
+    my $self = shift;
+    my $txns = $self->Transactions;
+
+    my %addresses = ();
+    foreach my $type (qw(Create Comment Correspond)) {
+    $txns->Limit(FIELD => 'Type', OPERATOR => '=', VALUE => $type , ENTRYAGGREGATOR => 'OR', CASESENSITIVE => 1);
+        }
+
+    while (my $txn = $txns->Next) {
+        my $txnaddrs = $txn->Addresses; 
+        foreach my $addrlist ( values %$txnaddrs ) {
+                foreach my $addr (@$addrlist) {
+                    # Skip addresses without a phrase (things that are just raw addresses) if we have a phrase
+                    next if ($addresses{$addr->address} && $addresses{$addr->address}->phrase && not $addr->phrase);
+                    # skips "comment-only" addresses
+                    next unless ($addr->address);
+                    $addresses{$addr->address} = $addr;
+                }
+        }
+    }
+
+    return \%addresses;
+
+}
+
+
+
 
 # {{{ Routines dealing with queues 
 
@@ -2093,7 +1807,18 @@ sub SetQueue {
         $RT::Logger->error("Couldn't set owner on queue change: $msg") unless $status;
     }
 
-    return ( $self->_Set( Field => 'Queue', Value => $NewQueueObj->Id() ) );
+    my ($status, $msg) = $self->_Set( Field => 'Queue', Value => $NewQueueObj->Id() );
+
+    if ( $status ) {
+        # On queue change, change queue for reminders too
+        my $reminder_collection = $self->Reminders->Collection;
+        while ( my $reminder = $reminder_collection->Next ) {
+            my ($status, $msg) = $reminder->SetQueue($NewQueue);
+            $RT::Logger->error('Queue change failed for reminder #' . $reminder->Id . ': ' . $msg) unless $status;
+        }
+    }
+    
+    return ($status, $msg);
 }
 
 # }}}
@@ -2136,8 +1861,8 @@ sub DueObj {
     my $time = new RT::Date( $self->CurrentUser );
 
     # -1 is RT::Date slang for never
-    if ( $self->Due ) {
-        $time->Set( Format => 'sql', Value => $self->Due );
+    if ( my $due = $self->Due ) {
+        $time->Set( Format => 'sql', Value => $due );
     }
     else {
         $time->Set( Format => 'unix', Value => -1 );
@@ -2316,20 +2041,34 @@ Returns the amount of time worked on this ticket as a Text String
 
 sub TimeWorkedAsString {
     my $self = shift;
-    return "0" unless $self->TimeWorked;
+    my $value = $self->TimeWorked;
 
-    #This is not really a date object, but if we diff a number of seconds 
-    #vs the epoch, we'll get a nice description of time worked.
-
-    my $worked = new RT::Date( $self->CurrentUser );
-
-    #return the  #of minutes worked turned into seconds and written as
-    # a simple text string
-
-    return ( $worked->DurationAsString( $self->TimeWorked * 60 ) );
+    # return the # of minutes worked turned into seconds and written as
+    # a simple text string, this is not really a date object, but if we
+    # diff a number of seconds vs the epoch, we'll get a nice description
+    # of time worked.
+    return "" unless $value;
+    return RT::Date->new( $self->CurrentUser )
+        ->DurationAsString( $value * 60 );
 }
 
 # }}}
+
+# {{{ sub TimeLeftAsString
+
+=head2  TimeLeftAsString
+
+Returns the amount of time left on this ticket as a Text String
+
+=cut
+
+sub TimeLeftAsString {
+    my $self = shift;
+    my $value = $self->TimeLeft;
+    return "" unless $value;
+    return RT::Date->new( $self->CurrentUser )
+        ->DurationAsString( $value * 60 );
+}
 
 # }}}
 
@@ -2340,9 +2079,9 @@ sub TimeWorkedAsString {
 =head2 Comment
 
 Comment on this ticket.
-Takes a hashref with the following attributes:
+Takes a hash with the following attributes:
 If MIMEObj is undefined, Content will be used to build a MIME::Entity for this
-commentl
+comment.
 
 MIMEObj, TimeTaken, CcMessageTo, BccMessageTo, Content, DryRun
 
@@ -2453,34 +2192,37 @@ Performs no access control checks. hence, dangerous.
 =cut
 
 sub _RecordNote {
-
     my $self = shift;
-    my %args = ( CcMessageTo  => undef,
-                 BccMessageTo => undef,
-                 MIMEObj      => undef,
-                 Content      => undef,
-                 TimeTaken    => 0,
-                 CommitScrips => 1,
-                 @_ );
+    my %args = ( 
+        CcMessageTo  => undef,
+        BccMessageTo => undef,
+        Encrypt      => undef,
+        Sign         => undef,
+        MIMEObj      => undef,
+        Content      => undef,
+        NoteType     => 'Correspond',
+        TimeTaken    => 0,
+        CommitScrips => 1,
+        @_
+    );
 
     unless ( $args{'MIMEObj'} || $args{'Content'} ) {
-            return ( 0, $self->loc("No message attached"), undef );
+        return ( 0, $self->loc("No message attached"), undef );
     }
+
     unless ( $args{'MIMEObj'} ) {
-            $args{'MIMEObj'} = MIME::Entity->build( Data => (
-                                                          ref $args{'Content'}
-                                                          ? $args{'Content'}
-                                                          : [ $args{'Content'} ]
-                                                    ) );
-        }
+        $args{'MIMEObj'} = MIME::Entity->build(
+            Data => ( ref $args{'Content'}? $args{'Content'}: [ $args{'Content'} ] )
+        );
+    }
 
     # convert text parts into utf-8
     RT::I18N::SetMIMEEntityToUTF8( $args{'MIMEObj'} );
 
-# If we've been passed in CcMessageTo and BccMessageTo fields,
-# add them to the mime object for passing on to the transaction handler
-# The "NotifyOtherRecipients" scripAction will look for RT-Send-Cc: and RT-Send-Bcc:
-# headers
+    # If we've been passed in CcMessageTo and BccMessageTo fields,
+    # add them to the mime object for passing on to the transaction handler
+    # The "NotifyOtherRecipients" scripAction will look for RT-Send-Cc: and
+    # RT-Send-Bcc: headers
 
 
     foreach my $type (qw/Cc Bcc/) {
@@ -2488,28 +2230,26 @@ sub _RecordNote {
 
             my $addresses = join ', ', (
                 map { RT::User->CanonicalizeEmailAddress( $_->address ) }
-                    Mail::Address->parse( $args{ $type . 'MessageTo' } ) );
+                    Email::Address->parse( $args{ $type . 'MessageTo' } ) );
             $args{'MIMEObj'}->head->add( 'RT-Send-' . $type, $addresses );
         }
+    }
+
+    foreach my $argument (qw(Encrypt Sign)) {
+        $args{'MIMEObj'}->head->add(
+            "X-RT-$argument" => $args{ $argument }
+        ) if defined $args{ $argument };
     }
 
     # If this is from an external source, we need to come up with its
     # internal Message-ID now, so all emails sent because of this
     # message have a common Message-ID
-    unless ( ($args{'MIMEObj'}->head->get('Message-ID') || '')
-            =~ /<(rt-.*?-\d+-\d+)\.(\d+-0-0)\@\Q$RT::Organization>/ )
-    {
-        $args{'MIMEObj'}->head->replace( 'RT-Message-ID',
-            "<rt-"
-            . $RT::VERSION . "-"
-            . $$ . "-"
-            . CORE::time() . "-"
-            . int(rand(2000)) . '.'
-            . $self->id . "-"
-            . "0" . "-"  # Scrip
-            . "0" . "@"  # Email sent
-            . $RT::Organization
-            . ">" );
+    my $org = RT->Config->Get('Organization');
+    my $msgid = $args{'MIMEObj'}->head->get('Message-ID');
+    unless (defined $msgid && $msgid =~ /<(rt-.*?-\d+-\d+)\.(\d+-0-0)\@\Q$org\E>/) {
+        $args{'MIMEObj'}->head->set(
+            'RT-Message-ID' => RT::Interface::Email::GenMessageId( Ticket => $self )
+        );
     }
 
     #Record the correspondence (write the transaction)
@@ -2579,9 +2319,14 @@ sub _Links {
 
 =head2 DeleteLink
 
-Delete a link. takes a paramhash of Base, Target and Type.
-Either Base or Target must be null. The null value will 
-be replaced with this ticket\'s id
+Delete a link. takes a paramhash of Base, Target, Type, Silent,
+SilentBase and SilentTarget. Either Base or Target must be null.
+The null value will be replaced with this ticket\'s id.
+
+If Silent is true then no transaction would be recorded, in other
+case you can control creation of transactions on both base and
+target with SilentBase and SilentTarget respectively. By default
+both transactions are created.
 
 =cut 
 
@@ -2591,18 +2336,21 @@ sub DeleteLink {
         Base   => undef,
         Target => undef,
         Type   => undef,
+        Silent => undef,
+        SilentBase   => undef,
+        SilentTarget => undef,
         @_
     );
 
     unless ( $args{'Target'} || $args{'Base'} ) {
-        $RT::Logger->error("Base or Target must be specified\n");
+        $RT::Logger->error("Base or Target must be specified");
         return ( 0, $self->loc('Either base or target must be specified') );
     }
 
     #check acls
     my $right = 0;
     $right++ if $self->CurrentUserHasRight('ModifyTicket');
-    if ( !$right && $RT::StrictLinkACL ) {
+    if ( !$right && RT->Config->Get( 'StrictLinkACL' ) ) {
         return ( 0, $self->loc("Permission Denied") );
     }
 
@@ -2613,57 +2361,55 @@ sub DeleteLink {
     if ( !$other_ticket || $other_ticket->CurrentUserHasRight('ModifyTicket') ) {
         $right++;
     }
-    if ( ( !$RT::StrictLinkACL && $right == 0 ) ||
-         ( $RT::StrictLinkACL && $right < 2 ) )
+    if ( ( !RT->Config->Get( 'StrictLinkACL' ) && $right == 0 ) ||
+         ( RT->Config->Get( 'StrictLinkACL' ) && $right < 2 ) )
     {
         return ( 0, $self->loc("Permission Denied") );
     }
 
     my ($val, $Msg) = $self->SUPER::_DeleteLink(%args);
+    return ( 0, $Msg ) unless $val;
 
-    if ( !$val ) {
-        $RT::Logger->debug("Couldn't find that link\n");
-        return ( 0, $Msg );
-    }
+    return ( $val, $Msg ) if $args{'Silent'};
 
     my ($direction, $remote_link);
 
     if ( $args{'Base'} ) {
-	$remote_link = $args{'Base'};
-    	$direction = 'Target';
+        $remote_link = $args{'Base'};
+        $direction = 'Target';
     }
     elsif ( $args{'Target'} ) {
-	$remote_link = $args{'Target'};
-        $direction='Base';
-    }
+        $remote_link = $args{'Target'};
+        $direction = 'Base';
+    } 
 
-    if ( $args{'Silent'} ) {
-        return ( $val, $Msg );
-    }
-    else {
-	my $remote_uri = RT::URI->new( $self->CurrentUser );
-    	$remote_uri->FromURI( $remote_link );
+    my $remote_uri = RT::URI->new( $self->CurrentUser );
+    $remote_uri->FromURI( $remote_link );
 
+    unless ( $args{ 'Silent'. $direction } ) {
         my ( $Trans, $Msg, $TransObj ) = $self->_NewTransaction(
             Type      => 'DeleteLink',
-            Field => $LINKDIRMAP{$args{'Type'}}->{$direction},
-	    OldValue =>  $remote_uri->URI || $remote_link,
+            Field     => $LINKDIRMAP{$args{'Type'}}->{$direction},
+            OldValue  => $remote_uri->URI || $remote_link,
             TimeTaken => 0
         );
-
-        if ( $remote_uri->IsLocal ) {
-
-            my $OtherObj = $remote_uri->Object;
-            my ( $val, $Msg ) = $OtherObj->_NewTransaction(Type  => 'DeleteLink',
-                                                           Field => $direction eq 'Target' ? $LINKDIRMAP{$args{'Type'}}->{Base}
-                                                                                           : $LINKDIRMAP{$args{'Type'}}->{Target},
-                                                           OldValue => $self->URI,
-                                                           ActivateScrips => ! $RT::LinkTransactionsRun1Scrip,
-                                                           TimeTaken => 0 );
-        }
-
-        return ( $Trans, $Msg );
+        $RT::Logger->error("Couldn't create transaction: $Msg") unless $Trans;
     }
+
+    if ( !$args{ 'Silent'. ( $direction eq 'Target'? 'Base': 'Target' ) } && $remote_uri->IsLocal ) {
+        my $OtherObj = $remote_uri->Object;
+        my ( $val, $Msg ) = $OtherObj->_NewTransaction(
+            Type           => 'DeleteLink',
+            Field          => $direction eq 'Target' ? $LINKDIRMAP{$args{'Type'}}->{Base}
+                                            : $LINKDIRMAP{$args{'Type'}}->{Target},
+            OldValue       => $self->URI,
+            ActivateScrips => !RT->Config->Get('LinkTransactionsRun1Scrip'),
+            TimeTaken      => 0,
+        );
+        $RT::Logger->error("Couldn't create transaction: $Msg") unless $val;
+    }
+
+    return ( $val, $Msg );
 }
 
 # }}}
@@ -2674,24 +2420,31 @@ sub DeleteLink {
 
 Takes a paramhash of Type and one of Base or Target. Adds that link to this ticket.
 
+If Silent is true then no transaction would be recorded, in other
+case you can control creation of transactions on both base and
+target with SilentBase and SilentTarget respectively. By default
+both transactions are created.
+
 =cut
 
 sub AddLink {
     my $self = shift;
-    my %args = ( Target => '',
-                 Base   => '',
-                 Type   => '',
-                 Silent => undef,
+    my %args = ( Target       => '',
+                 Base         => '',
+                 Type         => '',
+                 Silent       => undef,
+                 SilentBase   => undef,
+                 SilentTarget => undef,
                  @_ );
 
     unless ( $args{'Target'} || $args{'Base'} ) {
-        $RT::Logger->error("Base or Target must be specified\n");
+        $RT::Logger->error("Base or Target must be specified");
         return ( 0, $self->loc('Either base or target must be specified') );
     }
 
     my $right = 0;
     $right++ if $self->CurrentUserHasRight('ModifyTicket');
-    if ( !$right && $RT::StrictLinkACL ) {
+    if ( !$right && RT->Config->Get( 'StrictLinkACL' ) ) {
         return ( 0, $self->loc("Permission Denied") );
     }
 
@@ -2702,8 +2455,8 @@ sub AddLink {
     if ( !$other_ticket || $other_ticket->CurrentUserHasRight('ModifyTicket') ) {
         $right++;
     }
-    if ( ( !$RT::StrictLinkACL && $right == 0 ) ||
-         ( $RT::StrictLinkACL && $right < 2 ) )
+    if ( ( !RT->Config->Get( 'StrictLinkACL' ) && $right == 0 ) ||
+         ( RT->Config->Get( 'StrictLinkACL' ) && $right < 2 ) )
     {
         return ( 0, $self->loc("Permission Denied") );
     }
@@ -2721,8 +2474,8 @@ sub __GetTicketFromURI {
     $uri_obj->FromURI( $args{'URI'} );
 
     unless ( $uri_obj->Resolver && $uri_obj->Scheme ) {
-	    my $msg = $self->loc( "Couldn't resolve '[_1]' into a URI.", $args{'URI'} );
-        $RT::Logger->warning( "$msg\n" );
+        my $msg = $self->loc( "Couldn't resolve '[_1]' into a URI.", $args{'URI'} );
+        $RT::Logger->warning( $msg );
         return( 0, $msg );
     }
     my $obj = $uri_obj->Resolver->Object;
@@ -2740,14 +2493,17 @@ Private non-acled variant of AddLink so that links can be added during create.
 
 sub _AddLink {
     my $self = shift;
-    my %args = ( Target => '',
-                 Base   => '',
-                 Type   => '',
-                 Silent => undef,
+    my %args = ( Target       => '',
+                 Base         => '',
+                 Type         => '',
+                 Silent       => undef,
+                 SilentBase   => undef,
+                 SilentTarget => undef,
                  @_ );
 
     my ($val, $msg, $exist) = $self->SUPER::_AddLink(%args);
     return ($val, $msg) if !$val || $exist;
+    return ($val, $msg) if $args{'Silent'};
 
     my ($direction, $remote_link);
     if ( $args{'Target'} ) {
@@ -2758,34 +2514,33 @@ sub _AddLink {
         $direction    = 'Target';
     }
 
-    # Don't write the transaction if we're doing this on create
-    if ( $args{'Silent'} ) {
-        return ( $val, $msg );
-    }
-    else {
-        my $remote_uri = RT::URI->new( $self->CurrentUser );
-    	$remote_uri->FromURI( $remote_link );
+    my $remote_uri = RT::URI->new( $self->CurrentUser );
+    $remote_uri->FromURI( $remote_link );
 
-        #Write the transaction
-        my ( $Trans, $Msg, $TransObj ) = 
-	    $self->_NewTransaction(Type  => 'AddLink',
-				   Field => $LINKDIRMAP{$args{'Type'}}->{$direction},
-				   NewValue =>  $remote_uri->URI || $remote_link,
-				   TimeTaken => 0 );
-
-        if ( $remote_uri->IsLocal ) {
-
-            my $OtherObj = $remote_uri->Object;
-            my ( $val, $Msg ) = $OtherObj->_NewTransaction(Type  => 'AddLink',
-                                                           Field => $direction eq 'Target' ? $LINKDIRMAP{$args{'Type'}}->{Base} 
-                                                                                           : $LINKDIRMAP{$args{'Type'}}->{Target},
-                                                           NewValue => $self->URI,
-                                                           ActivateScrips => ! $RT::LinkTransactionsRun1Scrip,
-                                                           TimeTaken => 0 );
-        }
-        return ( $val, $Msg );
+    unless ( $args{ 'Silent'. $direction } ) {
+        my ( $Trans, $Msg, $TransObj ) = $self->_NewTransaction(
+            Type      => 'AddLink',
+            Field     => $LINKDIRMAP{$args{'Type'}}->{$direction},
+            NewValue  =>  $remote_uri->URI || $remote_link,
+            TimeTaken => 0
+        );
+        $RT::Logger->error("Couldn't create transaction: $Msg") unless $Trans;
     }
 
+    if ( !$args{ 'Silent'. ( $direction eq 'Target'? 'Base': 'Target' ) } && $remote_uri->IsLocal ) {
+        my $OtherObj = $remote_uri->Object;
+        my ( $val, $msg ) = $OtherObj->_NewTransaction(
+            Type           => 'AddLink',
+            Field          => $direction eq 'Target' ? $LINKDIRMAP{$args{'Type'}}->{Base}
+                                            : $LINKDIRMAP{$args{'Type'}}->{Target},
+            NewValue       => $self->URI,
+            ActivateScrips => !RT->Config->Get('LinkTransactionsRun1Scrip'),
+            TimeTaken      => 0,
+        );
+        $RT::Logger->error("Couldn't create transaction: $msg") unless $val;
+    }
+
+    return ( $val, $msg );
 }
 
 # }}}
@@ -2798,26 +2553,6 @@ sub _AddLink {
 MergeInto take the id of the ticket to merge this ticket into.
 
 
-=begin testing
-
-my $t1 = RT::Ticket->new($RT::SystemUser);
-$t1->Create ( Subject => 'Merge test 1', Queue => 'general', Requestor => 'merge1@example.com');
-my $t1id = $t1->id;
-my $t2 = RT::Ticket->new($RT::SystemUser);
-$t2->Create ( Subject => 'Merge test 2', Queue => 'general', Requestor => 'merge2@example.com');
-my $t2id = $t2->id;
-my ($msg, $val) = $t1->MergeInto($t2->id);
-ok ($msg,$val);
-$t1 = RT::Ticket->new($RT::SystemUser);
-is ($t1->id, undef, "ok. we've got a blank ticket1");
-$t1->Load($t1id);
-
-is ($t1->id, $t2->id);
-
-is ($t1->Requestors->MembersObj->Count, 2);
-
-
-=end testing
 
 =cut
 
@@ -2983,6 +2718,29 @@ sub MergeInto {
     return ( 1, $self->loc("Merge Successful") );
 }
 
+=head2 Merged
+
+Returns list of tickets' ids that's been merged into this ticket.
+
+=cut
+
+sub Merged {
+    my $self = shift;
+
+    my $mergees = new RT::Tickets( $self->CurrentUser );
+    $mergees->Limit(
+        FIELD    => 'EffectiveId',
+        OPERATOR => '=',
+        VALUE    => $self->Id,
+    );
+    $mergees->Limit(
+        FIELD    => 'id',
+        OPERATOR => '!=',
+        VALUE    => $self->Id,
+    );
+    return map $_->id, @{ $mergees->ItemsArrayRef || [] };
+}
+
 # }}}
 
 # }}}
@@ -3039,28 +2797,6 @@ Takes two arguments:
 and  (optionally) the type of the SetOwner Transaction. It defaults
 to 'Give'.  'Steal' is also a valid option.
 
-=begin testing
-
-my $root = RT::User->new($RT::SystemUser);
-$root->Load('root');
-ok ($root->Id, "Loaded the root user");
-my $t = RT::Ticket->new($RT::SystemUser);
-$t->Load(1);
-$t->SetOwner('root');
-is ($t->OwnerObj->Name, 'root' , "Root owns the ticket");
-$t->Steal();
-is ($t->OwnerObj->id, $RT::SystemUser->id , "SystemUser owns the ticket");
-my $txns = RT::Transactions->new($RT::SystemUser);
-$txns->OrderBy(FIELD => 'id', ORDER => 'DESC');
-$txns->Limit(FIELD => 'ObjectId', VALUE => '1');
-$txns->Limit(FIELD => 'ObjectType', VALUE => 'RT::Ticket');
-$txns->Limit(FIELD => 'Type', OPERATOR => '!=',  VALUE => 'EmailRecord');
-
-my $steal  = $txns->First;
-ok($steal->OldValue == $root->Id , "Stolen from root");
-ok($steal->NewValue == $RT::SystemUser->Id , "Stolen by the systemuser");
-
-=end testing
 
 =cut
 
@@ -3143,10 +2879,15 @@ sub SetOwner {
     # Delete the owner in the owner group, then add a new one
     # TODO: is this safe? it's not how we really want the API to work
     # for most things, but it's fast.
-    my ( $del_id, $del_msg ) = $self->OwnerGroup->MembersObj->First->Delete();
+    my ( $del_id, $del_msg );
+    for my $owner (@{$self->OwnerGroup->MembersObj->ItemsArrayRef}) {
+        ($del_id, $del_msg) = $owner->Delete();
+        last unless ($del_id);
+    }
+
     unless ($del_id) {
         $RT::Handle->Rollback();
-        return ( 0, $self->loc("Could not change owner. ") . $del_msg );
+        return ( 0, $self->loc("Could not change owner: [_1]", $del_msg) );
     }
 
     my ( $add_id, $add_msg ) = $self->OwnerGroup->_AddMember(
@@ -3154,7 +2895,7 @@ sub SetOwner {
                                        InsideTransaction => 1 );
     unless ($add_id) {
         $RT::Handle->Rollback();
-        return ( 0, $self->loc("Could not change owner. ") . $add_msg );
+        return ( 0, $self->loc("Could not change owner: [_1]", $add_msg ) );
     }
 
     # We call set twice with slightly different arguments, so
@@ -3171,7 +2912,7 @@ sub SetOwner {
 
     unless ($val) {
         $RT::Handle->Rollback;
-        return ( 0, $self->loc("Could not change owner. ") . $msg );
+        return ( 0, $self->loc("Could not change owner: [_1]", $msg) );
     }
 
     ($val, $msg) = $self->_NewTransaction(
@@ -3288,25 +3029,6 @@ Set this ticket\'s status. STATUS can be one of: new, open, stalled, resolved, r
 
 Alternatively, you can pass in a list of named parameters (Status => STATUS, Force => FORCE).  If FORCE is true, ignore unresolved dependencies and force a status change.
 
-=begin testing
-
-my $tt = RT::Ticket->new($RT::SystemUser);
-my ($id, $tid, $msg)= $tt->Create(Queue => 'general',
-            Subject => 'test');
-ok($id, $msg);
-is($tt->Status, 'new', "New ticket is created as new");
-
-($id, $msg) = $tt->SetStatus('open');
-ok($id, $msg);
-like($msg, qr/open/i, "Status message is correct");
-($id, $msg) = $tt->SetStatus('resolved');
-ok($id, $msg);
-like($msg, qr/resolved/i, "Status message is correct");
-($id, $msg) = $tt->SetStatus('resolved');
-ok(!$id,$msg);
-
-
-=end testing
 
 
 =cut
@@ -3316,10 +3038,10 @@ sub SetStatus {
     my %args;
 
     if (@_ == 1) {
-	$args{Status} = shift;
+    $args{Status} = shift;
     }
     else {
-	%args = (@_);
+    %args = (@_);
     }
 
     #Check ACL
@@ -3341,7 +3063,7 @@ sub SetStatus {
     $now->SetToNow();
 
     #If we're changing the status from new, record that we've started
-    if ( ( $self->Status =~ /new/ ) && ( $args{Status} ne 'new' ) ) {
+    if ( $self->Status eq 'new' && $args{Status} ne 'new' ) {
 
         #Set the Started time to "now"
         $self->_Set( Field             => 'Started',
@@ -3369,19 +3091,13 @@ sub SetStatus {
 
 # }}}
 
-# {{{ sub Kill
+# {{{ sub Delete
 
-=head2 Kill
+=head2 Delete
 
 Takes no arguments. Marks this ticket for garbage collection
 
 =cut
-
-sub Kill {
-    my $self = shift;
-    $RT::Logger->crit("'Kill' is deprecated. use 'Delete' instead at (". join(":",caller).").");
-    return $self->Delete;
-}
 
 sub Delete {
     my $self = shift;
@@ -3454,7 +3170,7 @@ sub Resolve {
 
 # }}}
 
-	
+    
 # {{{ Actions + Routines dealing with transactions
 
 # {{{ sub SetTold and _SetTold
@@ -3507,20 +3223,88 @@ sub _SetTold {
                            Value => $now->ISO ) );
 }
 
+=head2 SeenUpTo
+
+
+=cut
+
+sub SeenUpTo {
+    my $self = shift;
+    my $uid = $self->CurrentUser->id;
+    my $attr = $self->FirstAttribute( "User-". $uid ."-SeenUpTo" );
+    return if $attr && $attr->Content gt $self->LastUpdated;
+
+    my $txns = $self->Transactions;
+    $txns->Limit( FIELD => 'Type', VALUE => 'Comment' );
+    $txns->Limit( FIELD => 'Type', VALUE => 'Correspond' );
+    $txns->Limit( FIELD => 'Creator', OPERATOR => '!=', VALUE => $uid );
+    $txns->Limit(
+        FIELD => 'Created',
+        OPERATOR => '>',
+        VALUE => $attr->Content
+    ) if $attr;
+    $txns->RowsPerPage(1);
+    return $txns->First;
+}
+
 # }}}
 
 =head2 TransactionBatch
 
-  Returns an array reference of all transactions created on this ticket during
-  this ticket object's lifetime, or undef if there were none.
+Returns an array reference of all transactions created on this ticket during
+this ticket object's lifetime or since last application of a batch, or undef
+if there were none.
 
-  Only works when the $RT::UseTransactionBatch config variable is set to true.
+Only works when the C<UseTransactionBatch> config option is set to true.
 
 =cut
 
 sub TransactionBatch {
     my $self = shift;
     return $self->{_TransactionBatch};
+}
+
+=head2 ApplyTransactionBatch
+
+Applies scrips on the current batch of transactions and shinks it. Usually
+batch is applied when object is destroyed, but in some cases it's too late.
+
+=cut
+
+sub ApplyTransactionBatch {
+    my $self = shift;
+
+    my $batch = $self->TransactionBatch;
+    return unless $batch && @$batch;
+
+    $self->_ApplyTransactionBatch;
+
+    $self->{_TransactionBatch} = [];
+}
+
+sub _ApplyTransactionBatch {
+    my $self = shift;
+    my $batch = $self->TransactionBatch;
+
+    my %seen;
+    my $types = join ',', grep !$seen{$_}++, grep defined, map $_->Type, grep defined, @{$batch};
+
+    require RT::Scrips;
+    RT::Scrips->new($RT::SystemUser)->Apply(
+        Stage          => 'TransactionBatch',
+        TicketObj      => $self,
+        TransactionObj => $batch->[0],
+        Type           => $types,
+    );
+
+    # Entry point of the rule system
+    my $rules = RT::Ruleset->FindAllRules(
+        Stage          => 'TransactionBatch',
+        TicketObj      => $self,
+        TransactionObj => $batch->[0],
+        Type           => $types,
+    );
+    RT::Ruleset->CommitRules($rules);
 }
 
 sub DESTROY {
@@ -3536,16 +3320,10 @@ sub DESTROY {
     # when an object's refcount is changed in its destructor.
     return if $self->{_Destroyed}++;
 
-    my $batch = $self->TransactionBatch or return;
-    return unless @$batch;
+    my $batch = $self->TransactionBatch;
+    return unless $batch && @$batch;
 
-    require RT::Scrips;
-    RT::Scrips->new($RT::SystemUser)->Apply(
-	Stage		=> 'TransactionBatch',
-	TicketObj	=> $self,
-	TransactionObj	=> $batch->[0],
-	Type		=> join(',', (map { $_->Type } @{$batch}) )
-    );
+    return $self->_ApplyTransactionBatch;
 }
 
 # }}}
@@ -3662,7 +3440,7 @@ sub _Value {
     #if the field is public, return it.
     if ( $self->_Accessible( $field, 'public' ) ) {
 
-        #$RT::Logger->debug("Skipping ACL check for $field\n");
+        #$RT::Logger->debug("Skipping ACL check for $field");
         return ( $self->SUPER::_Value($field) );
 
     }
@@ -3721,13 +3499,10 @@ sub CurrentUserHasRight {
     my $self  = shift;
     my $right = shift;
 
-    return (
-        $self->HasRight(
-            Principal => $self->CurrentUser->UserObj(),
-            Right     => "$right"
-          )
-    );
-
+    return $self->CurrentUser->PrincipalObj->HasRight(
+        Object => $self,
+        Right  => $right,
+    )
 }
 
 # }}}
@@ -3754,7 +3529,7 @@ sub HasRight {
 
     unless ( ( defined $args{'Principal'} ) and ( ref( $args{'Principal'} ) ) )
     {
-        Carp::cluck;
+        Carp::cluck("Principal attrib undefined for Ticket::HasRight");
         $RT::Logger->crit("Principal attrib undefined for Ticket::HasRight");
         return(undef);
     }
@@ -3811,11 +3586,13 @@ sub Transactions {
         # if the user may not see comments do not return them
         unless ( $self->CurrentUserHasRight('ShowTicketComments') ) {
             $transactions->Limit(
+                SUBCLAUSE => 'acl',
                 FIELD    => 'Type',
                 OPERATOR => '!=',
                 VALUE    => "Comment"
             );
             $transactions->Limit(
+                SUBCLAUSE => 'acl',
                 FIELD    => 'Type',
                 OPERATOR => '!=',
                 VALUE    => "CommentEmailRecord",
@@ -3823,6 +3600,13 @@ sub Transactions {
             );
 
         }
+    } else {
+        $transactions->Limit(
+            SUBCLAUSE => 'acl',
+            FIELD    => 'id',
+            VALUE    => 0,
+            ENTRYAGGREGATOR => 'AND'
+        );
     }
 
     return ($transactions);
@@ -3861,18 +3645,17 @@ sub CustomFieldValues {
     my $self  = shift;
     my $field = shift;
 
-    return $self->SUPER::CustomFieldValues( $field )
-        if !$field || $field =~ /^\d+$/;
+    return $self->SUPER::CustomFieldValues( $field ) if !$field || $field =~ /^\d+$/;
 
     my $cf = RT::CustomField->new( $self->CurrentUser );
+    $cf->SetContextObject( $self );
     $cf->LoadByNameAndQueue( Name => $field, Queue => $self->Queue );
     unless ( $cf->id ) {
         $cf->LoadByNameAndQueue( Name => $field, Queue => 0 );
     }
 
     # If we didn't find a valid cfid, give up.
-    return RT::ObjectCustomFieldValues->new( $self->CurrentUser )
-        unless $cf->id;
+    return RT::ObjectCustomFieldValues->new( $self->CurrentUser ) unless $cf->id;
 
     return $self->SUPER::CustomFieldValues( $cf->id );
 }
@@ -3893,6 +3676,23 @@ RT::CustomField->Create() via the 'LookupType' hash key.
 sub CustomFieldLookupType {
     "RT::Queue-RT::Ticket";
 }
+
+=head2 ACLEquivalenceObjects
+
+This method returns a list of objects for which a user's rights also apply
+to this ticket. Generally, this is only the ticket's queue, but some RT 
+extensions may make other objects available too.
+
+This method is called from L<RT::Principal/HasRight>.
+
+=cut
+
+sub ACLEquivalenceObjects {
+    my $self = shift;
+    return $self->QueueObj;
+
+}
+
 
 1;
 

@@ -2,8 +2,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2007 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -50,11 +50,17 @@ package RT::Mason;
 
 use strict;
 use vars '$Handler';
-require ('/opt/rt3/bin/webmux.pl');
+use File::Basename;
+
+require (dirname(__FILE__) . '/webmux.pl');
 
 require CGI;
 
 RT::Init();
+$Handler ||= RT::Interface::Web::Handler->new(
+    RT->Config->Get('MasonParameters')
+);
+
 
 my $cgi = CGI->new;
 if ( ( !$Handler->interp->comp_exists( $cgi->path_info ) )

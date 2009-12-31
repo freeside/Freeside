@@ -1,8 +1,8 @@
 # BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
-#  
-# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC 
+# 
+# This software is Copyright (c) 1996-2009 Best Practical Solutions, LLC
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -45,6 +45,7 @@
 # those contributions and any derivatives thereof.
 # 
 # END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
   RT::Groups - a collection of RT::Group objects
@@ -52,7 +53,7 @@
 =head1 SYNOPSIS
 
   use RT::Groups;
-  my $groups = $RT::Groups->new($CurrentUser);
+  my $groups = RT::Groups->new($CurrentUser);
   $groups->UnLimit();
   while (my $group = $groups->Next()) {
      print $group->Id ." is a group id\n";
@@ -64,11 +65,6 @@
 =head1 METHODS
 
 
-=begin testing
-
-ok (require RT::Groups);
-
-=end testing
 
 =cut
 
@@ -87,24 +83,6 @@ use RT::Users;
 
 
 # {{{ sub _Init
-
-=begin testing
-
-# next had bugs
-# Groups->Limit( FIELD => 'id', OPERATOR => '!=', VALUE => xx );
-my $g = RT::Group->new($RT::SystemUser);
-my ($id, $msg) = $g->CreateUserDefinedGroup(Name => 'GroupsNotEqualTest');
-ok ($id, "created group #". $g->id) or diag("error: $msg");
-
-my $groups = RT::Groups->new($RT::SystemUser);
-$groups->Limit( FIELD => 'id', OPERATOR => '!=', VALUE => $g->id );
-$groups->LimitToUserDefinedGroups();
-my $bug = grep $_->id == $g->id, @{$groups->ItemsArrayRef};
-ok (!$bug, "didn't find group");
-
-=end testing
-
-=cut
 
 sub _Init { 
   my $self = shift;
@@ -172,7 +150,7 @@ sub LimitToSystemInternalGroups {
 
 # {{{ LimiToUserDefinedGroups
 
-=head2 LimitToUserDefined Groups
+=head2 LimitToUserDefinedGroups
 
 Return only UserDefined Groups
 
@@ -189,7 +167,7 @@ sub LimitToUserDefinedGroups {
 
 # }}}
 
-# {{{ LimiToPersonalGroups
+# {{{ LimiToPersonalGroupsFor
 
 =head2 LimitToPersonalGroupsFor PRINCIPAL_ID
 
@@ -265,27 +243,6 @@ sub LimitToRolesForSystem {
 
 Limits the set of groups returned to groups which have
 Principal PRINCIPAL_ID as a member
-   
-=begin testing
-
-my $u = RT::User->new($RT::SystemUser);
-$u->Create(Name => 'Membertests');
-my $g = RT::Group->new($RT::SystemUser);
-my ($id, $msg) = $g->CreateUserDefinedGroup(Name => 'Membertests');
-ok ($id, $msg);
-
-my ($aid, $amsg) =$g->AddMember($u->id);
-ok ($aid, $amsg);
-ok($g->HasMember($u->PrincipalObj),"G has member u");
-
-my $groups = RT::Groups->new($RT::SystemUser);
-$groups->LimitToUserDefinedGroups();
-$groups->WithMember(PrincipalId => $u->id);
-ok ($groups->Count == 1,"found the 1 group - " . $groups->Count);
-ok ($groups->First->Id == $g->Id, "it's the right one");
-
-=end testing
-
 
 =cut
 
@@ -307,92 +264,42 @@ sub WithMember {
     $self->Limit(ALIAS => $members, FIELD => 'MemberId', OPERATOR => '=', VALUE => $args{'PrincipalId'});
 }
 
+sub WithoutMember {
+    my $self = shift;
+    my %args = (
+        PrincipalId => undef,
+        Recursively => undef,
+        @_
+    );
+
+    my $members = $args{'Recursively'} ? 'CachedGroupMembers' : 'GroupMembers';
+    my $members_alias = $self->Join(
+        TYPE   => 'LEFT',
+        FIELD1 => 'id',
+        TABLE2 => $members,
+        FIELD2 => 'GroupId',
+    );
+    $self->Limit(
+        LEFTJOIN => $members_alias,
+        ALIAS    => $members_alias,
+        FIELD    => 'MemberId',
+        OPERATOR => '=',
+        VALUE    => $args{'PrincipalId'},
+    );
+    $self->Limit(
+        ALIAS    => $members_alias,
+        FIELD    => 'MemberId',
+        OPERATOR => 'IS',
+        VALUE    => 'NULL',
+        QUOTEVALUE => 0,
+    );
+}
 
 =head2 WithRight { Right => RIGHTNAME, Object => RT::Record, IncludeSystemRights => 1, IncludeSuperusers => 0, EquivObjects => [ ] }
 
 
 Find all groups which have RIGHTNAME for RT::Record. Optionally include global rights and superusers. By default, include the global rights, but not the superusers.
 
-=begin testing
-
-my $q = RT::Queue->new($RT::SystemUser);
-my ($id, $msg) =$q->Create( Name => 'GlobalACLTest');
-ok ($id, $msg);
-
-my $testuser = RT::User->new($RT::SystemUser);
-($id,$msg) = $testuser->Create(Name => 'JustAnAdminCc');
-ok ($id,$msg);
-
-my $global_admin_cc = RT::Group->new($RT::SystemUser);
-$global_admin_cc->LoadSystemRoleGroup('AdminCc');
-ok($global_admin_cc->id, "Found the global admincc group");
-my $groups = RT::Groups->new($RT::SystemUser);
-$groups->WithRight(Right => 'OwnTicket', Object => $q);
-is($groups->Count, 1);
-($id, $msg) = $global_admin_cc->PrincipalObj->GrantRight(Right =>'OwnTicket', Object=> $RT::System);
-ok ($id,$msg);
-ok (!$testuser->HasRight(Object => $q, Right => 'OwnTicket') , "The test user does not have the right to own tickets in the test queue");
-($id, $msg) = $q->AddWatcher(Type => 'AdminCc', PrincipalId => $testuser->id);
-ok($id,$msg);
-ok ($testuser->HasRight(Object => $q, Right => 'OwnTicket') , "The test user does have the right to own tickets now. thank god.");
-
-$groups = RT::Groups->new($RT::SystemUser);
-$groups->WithRight(Right => 'OwnTicket', Object => $q);
-ok ($id,$msg);
-is($groups->Count, 3);
-
-my $RTxGroup = RT::Group->new($RT::SystemUser);
-($id, $msg) = $RTxGroup->CreateUserDefinedGroup( Name => 'RTxGroup', Description => "RTx extension group");
-ok ($id,$msg);
-
-my $RTxSysObj = {};
-bless $RTxSysObj, 'RTx::System';
-*RTx::System::Id = sub { 1; };
-*RTx::System::id = *RTx::System::Id;
-my $ace = RT::Record->new($RT::SystemUser);
-$ace->Table('ACL');
-$ace->_BuildTableAttributes unless ($_TABLE_ATTR->{ref($self)});
-($id, $msg) = $ace->Create( PrincipalId => $RTxGroup->id, PrincipalType => 'Group', RightName => 'RTxGroupRight', ObjectType => 'RTx::System', ObjectId  => 1);
-ok ($id, "ACL for RTxSysObj created");
-
-my $RTxObj = {};
-bless $RTxObj, 'RTx::System::Record';
-*RTx::System::Record::Id = sub { 4; };
-*RTx::System::Record::id = *RTx::System::Record::Id;
-
-$groups = RT::Groups->new($RT::SystemUser);
-$groups->WithRight(Right => 'RTxGroupRight', Object => $RTxSysObj);
-is($groups->Count, 1, "RTxGroupRight found for RTxSysObj");
-
-$groups = RT::Groups->new($RT::SystemUser);
-$groups->WithRight(Right => 'RTxGroupRight', Object => $RTxObj);
-is($groups->Count, 0, "RTxGroupRight not found for RTxObj");
-
-$groups = RT::Groups->new($RT::SystemUser);
-$groups->WithRight(Right => 'RTxGroupRight', Object => $RTxObj, EquivObjects => [ $RTxSysObj ]);
-is($groups->Count, 1, "RTxGroupRight found for RTxObj using EquivObjects");
-
-$ace = RT::Record->new($RT::SystemUser);
-$ace->Table('ACL');
-$ace->_BuildTableAttributes unless ($_TABLE_ATTR->{ref($self)});
-($id, $msg) = $ace->Create( PrincipalId => $RTxGroup->id, PrincipalType => 'Group', RightName => 'RTxGroupRight', ObjectType => 'RTx::System::Record', ObjectId  => 5 );
-ok ($id, "ACL for RTxObj created");
-
-my $RTxObj2 = {};
-bless $RTxObj2, 'RTx::System::Record';
-*RTx::System::Record::Id = sub { 5; };
-
-$groups = RT::Groups->new($RT::SystemUser);
-$groups->WithRight(Right => 'RTxGroupRight', Object => $RTxObj2);
-is($groups->Count, 1, "RTxGroupRight found for RTxObj2");
-
-$groups = RT::Groups->new($RT::SystemUser);
-$groups->WithRight(Right => 'RTxGroupRight', Object => $RTxObj2, EquivObjects => [ $RTxSysObj ]);
-is($groups->Count, 1, "RTxGroupRight found for RTxObj2");
-
-
-
-=end testing
 
 
 =cut

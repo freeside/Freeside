@@ -51,4 +51,5 @@ $RT::QuickCreateLong = 0; #set to true to cause quick ticket creation to
 
 Set($MessageBoxWidth , 80);
 
+#Set(@Plugins,(qw(Extension::QuickDelete RT::FM)));
 1;
