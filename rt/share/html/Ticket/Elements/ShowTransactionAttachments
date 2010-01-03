@@ -207,8 +207,14 @@ my $render_attachment = sub {
             # if it's a text/plain show the body
             elsif ( $message->ContentType =~ m{^(text|message)}i ) {
 
-                eval { require Text::Quoted;  $content = Text::Quoted::extract($content); };
-                if ($@) { $RT::Logger->warning( "Text::Quoted failed: $@" ) }
+                #don't want to use this even if it is installed, its
+                #segfaulting on weird characters and silently truncating the
+                #ticket history output
+                #see:
+                # r44838@pinglin: jesse | 2006-11-14 15:53:18 -0500
+                # * Move Text::Quoted back to being a run-time require. So that it's possible to turn off the feature if it causes your perl to segfault. (Text::Tabs is...not robust in the face of perl bugs)
+                #eval { require Text::Quoted;  $content = Text::Quoted::extract($content); };
+                #if ($@) { $RT::Logger->warning( "Text::Quoted failed: $@" ) }
 
                 $m->comp(
                     'ShowMessageStanza',

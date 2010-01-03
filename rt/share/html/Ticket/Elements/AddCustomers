@@ -1,0 +1,52 @@
+%# Copyright (c) 2004 Ivan Kohler <ivan-rt@420.am>
+%# Copyright (c) 2008 Freeside Internet Services, Inc.
+%# 
+%# This work is made available to you under the terms of Version 2 of
+%# the GNU General Public License. A copy of that license should have
+%# been provided with this software, but in any event can be snarfed
+%# from www.gnu.org.
+%# 
+%# This work is distributed in the hope that it will be useful, but
+%# WITHOUT ANY WARRANTY; without even the implied warranty of
+%# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%# General Public License for more details.
+<BR>
+<%$msg%><br>
+
+% if (@Customers) {
+
+<br><i>(Check box to link)<i>
+<table>
+% foreach my $customer (@Customers) {
+<tr>
+  <td>
+    <input type="checkbox" name="Ticket-AddCustomer-<% $customer->{'custnum'} %>" VALUE="1" <% scalar(@Customers) == 1 ? 'CHECKED' : '' %>>
+    <A HREF="<%$freeside_url%>/view/cust_main.cgi?<% $customer->{'custnum'} %>"><% &RT::URI::freeside::small_custview($customer->{'custnum'}, &RT::URI::freeside::FreesideGetConfig('countrydefault'), 1) |n %>
+  </td>
+</tr>
+% }
+</table>
+
+% }
+
+<%INIT>
+my ($msg);
+
+my $freeside_url = &RT::URI::freeside::FreesideURL();
+
+my @Customers = ();
+if ( $CustomerString ) {
+    @Customers = &RT::URI::freeside::smart_search( 'search' => $CustomerString );
+}
+
+my @Services = ();
+if ($ServiceString) {
+    @Services = (); #service_search();
+}
+
+</%INIT>
+
+<%ARGS>
+$CustomerString => undef
+$ServiceString => undef
+</%ARGS>

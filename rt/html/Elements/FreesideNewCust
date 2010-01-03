@@ -1,3 +1,0 @@
-<form action="<% $RT::URI::freeside::URL %>/edit/cust_main.cgi" STYLE="margin:0">
-<INPUT TYPE="submit" VALUE="<&|/l&>New customer</&>" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="vertical-align:bottom; font-size:100%">&nbsp;
-</FORM>

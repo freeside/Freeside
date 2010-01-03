@@ -138,6 +138,10 @@ if ($Ticket) {
             title => loc('Links'),
             path  => "Ticket/ModifyLinks.html?id=" . $id,
         },
+        _Eb=> {
+            title => loc('Customers'),
+            path  => "Ticket/ModifyCustomers.html?id=" . $id,
+        },
         _X => {
             title => loc('Jumbo'),
             path  => "Ticket/ModifyAll.html?id=" . $id,

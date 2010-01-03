@@ -1,0 +1,38 @@
+%# Copyright (c) 2004 Ivan Kohler <ivan-rt@420.am>
+%#
+%# This work is made available to you under the terms of Version 2 of
+%# the GNU General Public License. A copy of that license should have
+%# been provided with this software, but in any event can be snarfed
+%# from www.gnu.org.
+%# 
+%# This work is distributed in the hope that it will be useful, but
+%# WITHOUT ANY WARRANTY; without even the implied warranty of
+%# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%# General Public License for more details.
+<table>
+% my $cust = 0;
+% foreach my $custResolver ( map { $_->TargetURI->Resolver }
+%                                @{ $Ticket->Customers->ItemsArrayRef }
+%                          )
+% {
+%   $cust++;
+%   my $cust_main = '';
+  <tr>
+    <td class="value">
+      <A HREF="<% $custResolver->HREF %>"><% $custResolver->AsStringLong |n %></A>
+    </td>
+  </tr>
+% }
+% unless ( $cust ) {
+  <tr>
+    <td class="labeltop">
+      <i>(none)<i>
+    </td>
+  </tr>
+
+% }
+</table>
+<%ARGS>
+$Ticket => undef
+</%ARGS>
+

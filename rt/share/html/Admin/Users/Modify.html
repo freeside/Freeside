@@ -105,6 +105,12 @@
 </table>
 </&>
 <br />
+
+<&| /Widgets/TitleBox, title => loc('Customers') &>
+<& /Elements/EditCustomers, Object => $UserObj, CustomerString=> $CustomerString, ServiceString => $ServiceString &>
+</&>
+<br />
+
 <&| /Widgets/TitleBox, title => loc('Access control') &>
 <input type="hidden" class="hidden" name="SetEnabled" value="1" />
 <input type="checkbox" class="checkbox" name="Enabled" value="1" <%$EnabledChecked%> />
@@ -345,6 +351,8 @@ if ($UserObj->Id && $id ne 'new') {
     push (@results,@fieldresults);
     push @results, ProcessObjectCustomFieldUpdates( ARGSRef => \%ARGS, Object => $UserObj );
 
+    #deal with freeside customer links
+    push @results, ProcessObjectCustomers( ARGSRef => \%ARGS, Object => $UserObj );
 
     # {{{ Deal with special fields: Privileged, Enabled
     if  ( $SetPrivileged and $Privileged != $UserObj->Privileged ) {
@@ -434,4 +442,8 @@ $Country => undef
 $Pass1 => undef
 $Pass2=> undef
 $Create=> undef
+$OnlySearchForCustomers => undef
+$OnlySearchForServices => undef
+$CustomerString => undef
+$ServiceString => undef
 </%ARGS>

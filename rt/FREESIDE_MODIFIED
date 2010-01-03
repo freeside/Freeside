@@ -12,7 +12,7 @@ lib/RT/Transaction_Overlay.pm
 lib/RT/URI/freeside.pm
 lib/RT/URI/freeside/Internal.pm
 lib/RT/URI/freeside/XMLRPC.pm
- html/Admin/Users/Modify.html
+ share/html/Admin/Users/Modify.html
  html/Elements/Header
  html/Elements/Menu
  html/Elements/PageLayout
@@ -23,13 +23,14 @@ lib/RT/URI/freeside/XMLRPC.pm
  html/Elements/Footer
  html/Elements/CollectionAsTable/Row #backport from 3.3-TESTING
  html/Ticket/Create.html
- html/Ticket/Display.html
-html/Ticket/Elements/AddCustomers
-html/Ticket/Elements/EditCustomers
-html/Ticket/Elements/ShowCustomers
- html/Ticket/Elements/ShowSummary
- html/Ticket/Elements/Tabs
-html/Ticket/ModifyCustomers.html
+ share/html/Ticket/Display.html
+share/html/Ticket/Elements/AddCustomers
+share/html/Ticket/Elements/EditCustomers
+share/html/Ticket/Elements/ShowCustomers
+ share/html/Ticket/Elements/ShowSummary
+ share/html/Ticket/Elements/ShowTransactionAttachments
+ share/html/Ticket/Elements/Tabs
+share/html/Ticket/ModifyCustomers.html
 html/NoAuth/images/small-logo.png
  html/NoAuth/css/3.5-default/main.css
  html/NoAuth/css/3.5-default/misc.css
@@ -38,11 +39,8 @@ html/NoAuth/css/3.5-default/freeside.css
 
 html/Widgets/TitleBoxStart
 
-html/Elements/FreesideNewCust
-html/Elements/FreesideSearch
-html/Elements/FreesideSvcSearch
-html/Elements/AddCustomers
-html/Elements/EditCustomers
+share/html/Elements/AddCustomers
+share/html/Elements/EditCustomers
 
  html/User/Prefs.html
  html/Prefs/SearchOptions.html
