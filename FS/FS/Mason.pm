@@ -266,9 +266,11 @@ if ( -e $addl_handler_use_file ) {
       #to throw a real error instead of just a mysterious unstyled RT
       use CSS::Squish 0.06;
 
+      use RT::Interface::Web::Request;
+
       #slow, unreliable, segfaults and is optional
       #see rt/html/Ticket/Elements/ShowTransactionAttachments
-      use Text::Quoted;
+      #use Text::Quoted;
 
       #?#use File::Path qw( rmtree );
       #?#use File::Glob qw( bsd_glob );

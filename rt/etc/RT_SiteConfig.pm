@@ -20,21 +20,21 @@
 # Sometimes you may want to change domain, timezone, or freeside::URL later,
 # everything else should probably stay untouched.
 
-$RT::rtname = '%%%RT_DOMAIN%%%';
-$RT::Organization = '%%%RT_DOMAIN%%%';
+Set($rtname, '%%%RT_DOMAIN%%%');
+Set($Organization, '%%%RT_DOMAIN%%%');
 
-$RT::Timezone = '%%%RT_TIMEZONE%%%';
+Set($Timezone, '%%%RT_TIMEZONE%%%');
 
-$RT::WebExternalAuth = 1;
-$RT::WebFallbackToInternal = 1; #no
-$RT::WebExternalAuto = 1;
+Set($WebExternalAuth, 1);
+Set($WebFallbackToInternal, 1); #no
+Set($WebExternalAuto, 1);
 
 $RT::URI::freeside::IntegrationType = 'Internal';
 $RT::URI::freeside::URL = '%%%FREESIDE_URL%%%';
 
 $RT::URI::freeside::URL =~ m(^(https?://[^/]+)(/.*)$)i;
-$RT::WebBaseURL = $1;
-$RT::WebPath = "$2/rt";
+Set($WebBaseURL, $1);
+Set($WebPath, "$2/rt");
 
 Set($DatabaseHost   , '');
 
@@ -45,11 +45,12 @@ Set($DatabaseHost   , '');
 #NEW, RT 3.6 style (uncomment to use):
 #Set($DefaultSummaryRows, 10);
 
-$RT::QuickCreateLong = 0; #set to true to cause quick ticket creation to
+#does this do anything in RT 3.8??
+Set($QuickCreateLong, 0); #set to true to cause quick ticket creation to
                           #redirect to the "long" ticket creation screen
                           #instead of just creating a ticket with the subject.
 
-Set($MessageBoxWidth , 80);
+Set($MessageBoxWidth, 80);
 
 #Set(@Plugins,(qw(Extension::QuickDelete RT::FM)));
 1;

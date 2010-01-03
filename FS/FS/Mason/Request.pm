@@ -30,6 +30,9 @@ sub new {
 
 }
 
+#override alter_superclass ala RT::Interface::Web::Request ??
+# for Mason 1.39 vs. Perl 5.10.0
+
 sub freeside_setup {
 
     my( $filename, $mode ) = @_;
@@ -73,6 +76,14 @@ sub freeside_setup {
 
     }
 
+}
+
+sub callback {
+  RT::Interface::Web::Request::callback(@_);
+}
+
+sub request_path {
+  RT::Interface::Web::Request::request_path(@_);
 }
 
 1;
