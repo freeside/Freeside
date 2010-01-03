@@ -1,7 +1,8 @@
 package FS::TicketSystem::RT_Internal;
 
 use strict;
-use vars qw( @ISA $DEBUG );
+use vars qw( @ISA $DEBUG $me );
+use Data::Dumper;
 use FS::UID qw(dbh);
 use FS::CGI qw(popurl);
 use FS::TicketSystem::RT_Libs;
@@ -9,7 +10,8 @@ use RT::CurrentUser;
 
 @ISA = qw( FS::TicketSystem::RT_Libs );
 
-$DEBUG = 0;
+$DEBUG = 1;
+$me = '[FS::TicketSystem::RT_Internal]';
 
 sub sql_num_customer_tickets {
   "( select count(*) from tickets
@@ -36,15 +38,25 @@ sub access_right {
   #return '' unless $conf->config('ticket_system');
   return '' unless FS::Conf->new->config('ticket_system');
 
-  $self->_web_external_auth($session)
-    unless $session
-    && $session->{'CurrentUser'};
+  if ( $session && $session->{'Current_User'} ) {
+    warn "$me access_right: using existing session and CurrentUser: \n".
+         Dumper($session->{'CurrentUser'})
+      if $DEBUG;
+ } else {
+    warn "$me access_right: loading session and CurrentUser\n" if $DEBUG > 1;
+    $self->_web_external_auth($session);
+  }
+
+  #warn "$me access_right: CurrentUser ". $session->{'CurrentUser'}. ":\n".
+  #     ( $DEBUG>1 ? Dumper($session->{'CurrentUser'}) : '' )
+  #  if $DEBUG > 1;
 
   $session->{'CurrentUser'}->HasRight( Right  => $right,
                                        Object => $RT::System );
 }
 
-#shameless false laziness w/rt/html/autohandler to get logged into RT from afar
+#shameless false laziness w/RT::Interface::Web::AttemptExternalAuth
+# to get logged into RT from afar
 sub _web_external_auth {
   my( $self, $session ) = @_;
 
@@ -52,8 +64,8 @@ sub _web_external_auth {
 
   $session->{'CurrentUser'} = RT::CurrentUser->new();
 
-  warn "loading RT user for $user\n"
-    if $DEBUG;
+  warn "$me _web_external_auth loading RT user for $user\n"
+    if $DEBUG > 1;
 
   $session->{'CurrentUser'}->Load($user);
 
