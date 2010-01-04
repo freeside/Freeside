@@ -41,6 +41,10 @@ while (1) {
   my(undef, $load, undef) = report('load');
   my($free) = report('freememory');
   
+  warn "free is $free and wantfree is $wantfree\n" if $DEBUG > 1;
+  warn "load is $load and wantload is $wantload\n" if $DEBUG > 1;
+  warn "last is $last\n" if $DEBUG > 1;
+  
   unless( defined($load) && $load < $wantload
        && defined($free) && $free > $wantfree
        || ( time() < $last + 1800 && $alerts > 2 ) )
