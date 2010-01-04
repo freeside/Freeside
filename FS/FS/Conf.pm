@@ -1104,6 +1104,13 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'trigger_export_insert_on_payment',
+    'section'     => 'billing',
+    'description' => 'Enable exports on payment application.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'lpr',
     'section'     => 'required',
     'description' => 'Print command for paper invoices, for example `lpr -h\'',

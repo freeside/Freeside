@@ -1,0 +1,126 @@
+#!/usr/bin/perl -w
+
+use strict;
+use DateTime;
+use Date::Format;
+use Date::Parse;
+use Net::OpenSRS;
+use Net::Whois::Raw;
+use Data::Dumper;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearchs qsearch);
+use FS::Conf;
+use FS::svc_domain;
+use FS::part_pkg;
+use FS::part_export;
+
+my $exportnum = 1;
+my $pkgpart = 631;
+my $user = 'qis';
+
+adminsuidsetup $user;
+
+my $part_export = qsearchs('part_export' => { exportnum => $exportnum })
+  or die "can't find export $exportnum\n";
+
+my $srs = $part_export->get_srs;
+
+my $rv = $srs->make_request(
+  {
+    action     => 'get_domains_by_expiredate',
+    object     => 'domain',
+    attributes => {
+      exp_from => time2str('%Y-%m-%d', time() - 4*24*60*60),
+      exp_to   => time2str('%Y-%m-%d', time() + 10*366*24*60*60),
+      limit    => 10000,
+    }
+  }
+);
+
+die $rv->{response_text} unless $rv->{is_success};
+
+my %domains = map { $_->{name}, $_ } @{ $rv->{attributes}->{exp_domains} };
+
+# each is of form
+#             {
+#               'f_let_expire' => 'N',
+#               'name' => 'wolfecpa.com',
+#               'f_auto_renew' => 'N',
+#               'expiredate' => '2017-09-16 04:00:00'
+#             },
+
+foreach my $svc_domain ( $part_export->svc_x ) {
+  unless ( exists($domains{$svc_domain->domain}) ) {
+    warn $svc_domain->domain. " not at registrar.  No action taken.\n";
+    next;
+  }
+
+  $domains{$svc_domain->domain}{seen} = 1;
+
+  unless ( $domains{$svc_domain->domain}{expiredate} =~
+           /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/ )
+  {
+    warn "Can't parse expiration date for ". $svc_domain->domain. " skipping\n";
+    next;
+  }
+
+  my ($year,$month,$day,$hour,$minute,$second) = ($1,$2,$3,$4,$5,$6);
+  my $exp = DateTime->new( year   => $year,
+                           month  => $month,
+                           day    => $day,
+                           hour   => $hour,
+                           minute => $minute,
+                           second => $second,
+                           time_zone => 'America/New_York',#timezone of opensrs
+                         );
+  my $expiretime = $exp->epoch;
+
+  my $error = $part_export->is_supported_domain($svc_domain);
+  warn $error if $error;
+  $error = undef;
+
+  my $create = '';
+  my $whois = whois($svc_domain->domain);
+  $whois =~ /Record created on (\d{1,2}-\w{3}-\d{4})\./ && ($create = $1);
+  my $createtime = str2time($create);
+
+  unless ($createtime) {
+    $exp->subtract( 'years' => 1 );
+    $createtime = $exp->epoch;
+  }
+
+  my $new;
+  my $cust_svc = $svc_domain->cust_svc;
+  my $cust_pkg = $cust_svc->cust_pkg;
+  unless ($cust_pkg) {
+    warn $svc_domain->domain. " not linked to package.  No action taken.\n";
+    next;
+  }
+
+  foreach my $pkg ( grep { $_->pkgpart == $pkgpart } $cust_pkg->cust_main->ncancelled_pkgs ) {
+    next if $pkg->cust_svc;  # only handles simple 1 domain/package case
+    $cust_svc->pkgnum($pkg->pkgnum);
+    $error = $cust_svc->replace;
+    die "error linking to empty package: $error\n" if $error;
+    $cust_pkg = $pkg;
+    last;
+  }
+
+  unless ($cust_pkg->pkgpart == $pkgpart) {
+    $new = new FS::cust_pkg
+      { custnum => $cust_pkg->custnum, pkgpart => $pkgpart };
+    my $error = $new->insert;
+    die "error inserting package: $error\n" if $error;
+    $cust_svc->pkgnum($new->pkgnum);
+    $error = $cust_svc->replace;
+    die "error linking to new package: $error\n" if $error;
+    $cust_pkg = $new;
+  }
+
+  # set dates on package if it was empty?
+  $cust_pkg->bill($expiretime);
+  $cust_pkg->setup($createtime);
+  $error = $cust_pkg->replace;
+  die $error if $error;
+}
+

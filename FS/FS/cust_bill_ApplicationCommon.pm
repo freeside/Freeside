@@ -5,6 +5,11 @@ use vars qw( @ISA $DEBUG $me $skip_apply_to_lineitems_hack );
 use List::Util qw(min);
 use FS::Schema qw( dbdef );
 use FS::Record qw( qsearch qsearchs dbh );
+use FS::cust_pkg;
+use FS::cust_svc;
+use FS::cust_bill_pkg;
+use FS::part_svc;
+use FS::part_export;
 
 @ISA = qw( FS::Record );
 
@@ -402,6 +407,30 @@ sub apply_to_lineitems {
       $dbh->rollback if $oldAutoCommit;
       return $error;
     }
+
+    # trigger export_insert_on_payment
+    if ( $conf->exists('trigger_export_insert_on_payment')
+      && $cust_bill_pkg->pkgnum > 0 )
+    {
+      if ( my $cust_pkg = $cust_bill_pkg->cust_pkg ) {
+
+        foreach my $cust_svc ( $cust_pkg->cust_svc ) {
+          my $svc_x = $cust_svc->svc_x;
+          my @part_export = grep { $_->can('export_insert_on_payment') }
+                                 $cust_svc->part_svc->part_export;
+      
+          foreach my $part_export ( $cust_svc->part_svc->part_export ) {
+            $error = $part_export->export_insert_on_payment($svc_x);
+            if ( $error ) {
+              $dbh->rollback if $oldAutoCommit;
+              return $error;
+            }
+          }
+        }
+      }
+    }
+    # done trigger export_insert_on_payment
+
   }
 
   #everything should always be applied to line items in full now... sanity check
