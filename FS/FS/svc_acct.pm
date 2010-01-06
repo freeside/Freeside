@@ -2122,8 +2122,8 @@ sub set_usage {
   #$self->snapshot; #not necessary, we retain the old values
   #create an object with the updated usage values
   my $new = qsearchs('svc_acct', { 'svcnum' => $self->svcnum });
-  #call exports
-  my $error = $new->replace($self);
+  local($FS::Record::nowarn_identical) = 1;
+  my $error = $new->replace($self); #call exports
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return "Error replacing: $error";
