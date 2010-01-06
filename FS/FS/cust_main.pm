@@ -5043,10 +5043,12 @@ sub _new_bop_required {
   my $botpp = 'Business::OnlineThirdPartyPayment';
 
   return 1
-    if ( $conf->config('business-onlinepayment-namespace') eq $botpp ||
-         scalar( grep { $_->gateway_namespace eq $botpp } 
-                 qsearch( 'payment_gateway', { 'disabled' => '' } )
-               )
+    if (   (     $conf->exists('business-onlinepayment-namespace')
+             &&  $conf->config('business-onlinepayment-namespace') eq $botpp
+           )
+         or scalar( grep { $_->gateway_namespace eq $botpp } 
+                    qsearch( 'payment_gateway', { 'disabled' => '' } )
+                  )
        )
   ;
 
