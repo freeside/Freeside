@@ -8403,8 +8403,8 @@ sub _money_table_where {
 
 (Class method)
 
-Returns a qsearch hash expression to search for parameters specified in HREF.
-Valid parameters are
+Returns a qsearch hash expression to search for parameters specified in
+HASHREF.  Valid parameters are
 
 =over 4
 
