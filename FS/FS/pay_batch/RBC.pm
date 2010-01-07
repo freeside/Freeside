@@ -14,10 +14,11 @@ $name = 'RBC';
 %import_info = (
   'filetype'    => 'fixed',
   'formatre'    => 
-  '^(.).{18}(.{4}).{15}(.{19}).{6}(.{30}).{17}(.{9})(.{18}).{6}(.{14}).{23}(.).{9}$',
+  '^(.).{18}(.{4}).{3}(.).{11}(.{19}).{6}(.{30}).{17}(.{9})(.{18}).{6}(.{14}).{23}(.).{9}$',
   'fields' => [ qw(
     recordtype
     batchnum
+    subtype
     paybatchnum
     custname
     bank
@@ -27,8 +28,9 @@ $name = 'RBC';
     ) ],
   'hook' => sub {
       my $hash = shift;
-      $hash->{'paid'} = sprintf("%.df", $hash->{'paid'} / 100 );
+      $hash->{'paid'} = sprintf("%.2f", $hash->{'paid'} / 100 );
       $hash->{'_date'} = time;
+      $hash->{'payinfo'} =~ s/^(\S+).*/$1/; # these often have trailing spaces
       $hash->{'payinfo'} = $hash->{'payinfo'} . '@' . $hash->{'bank'};
   },
   'approved'    => sub { 
@@ -39,17 +41,27 @@ $name = 'RBC';
       my $hash = shift;
       grep { $hash->{'status'} eq $_ } ('E', 'R', 'U', 'T');
   },
+  'begin_condition' => sub {
+      my $hash = shift;
+      $hash->{recordtype} eq '1'; # Detail Record
+  },
   'end_hook'    => sub {
       my( $hash, $total, $line ) = @_;
       $total = sprintf("%.2f", $total);
-      my $batch_total = sprintf("%.2f", substr($line, 140, 18) / 100);
+      # We assume here that this is an 'All Records' or 'Input Records'
+      # report.
+      my $batch_total = sprintf("%.2f", substr($line, 59, 18) / 100);
       return "Our total $total does not match bank total $batch_total!"
         if $total != $batch_total;
       '';
   },
   'end_condition' => sub {
       my $hash = shift;
-      $hash->{recordtype} == '3'; # Account Trailer Record
+      $hash->{recordtype} eq '4'; # Client Trailer Record
+  },
+  'skip_condition' => sub {
+      my $hash = shift;
+      $hash->{'subtype'} ne '0';
   },
 );
 

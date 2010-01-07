@@ -202,6 +202,7 @@ sub import_results {
   my $begin_condition     = $info->{'begin_condition'};
   my $end_condition       = $info->{'end_condition'};
   my $end_hook            = $info->{'end_hook'};
+  my $skip_condition      = $info->{'skip_condition'};
   my $hook                = $info->{'hook'};
   my $approved_condition  = $info->{'approved'};
   my $declined_condition  = $info->{'declined'};
@@ -295,8 +296,13 @@ sub import_results {
       $hash{$field} = $value;
     }
 
-    if ( defined($begin_condition) and &{$begin_condition}(\%hash, $line)) {
-      undef $begin_condition;
+    if ( defined($begin_condition) ) {
+      if ( &{$begin_condition}(\%hash, $line) ) {
+        undef $begin_condition;
+      }
+      else {
+        next;
+      }
     }
 
     if ( defined($end_condition) and &{$end_condition}(\%hash, $line) ) {
@@ -307,6 +313,10 @@ sub import_results {
         return $error;
       }
       last;
+    }
+
+    if ( defined($skip_condition) and &{$skip_condition}(\%hash, $line) ) {
+      next;
     }
 
     my $cust_pay_batch =
@@ -455,7 +465,7 @@ sub export_batch {
     if($cust_pay_batch) { # that is, it wasn't deleted
       $batchcount++;
       $batchtotal += $cust_pay_batch->amount;
-      $batch .= &{$info->{'row'}}($cust_pay_batch, $self) . "\n";
+      $batch .= &{$info->{'row'}}($cust_pay_batch, $self, $batchcount, $batchtotal) . "\n";
     }
   }
   my $f = $info->{'footer'};
