@@ -1,0 +1,29 @@
+<%doc>
+
+Example:
+
+  include( '/elements/rs_init_object.html' );
+
+</%doc>
+<SCRIPT TYPE="text/javascript">
+
+  function rs_init_object() {
+    var A;
+    try {
+      A=new ActiveXObject("Msxml2.XMLHTTP");
+    } catch (e) {
+      try {
+        A=new ActiveXObject("Microsoft.XMLHTTP");
+      } catch (oc) {
+        A=null;
+      }
+    }
+    if(!A && typeof XMLHttpRequest != "undefined")
+      A = new XMLHttpRequest();
+    if (!A)
+      alert("Can't create XMLHttpRequest object");
+    return A;
+
+  }
+
+</SCRIPT>

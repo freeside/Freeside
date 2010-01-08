@@ -1,0 +1,44 @@
+<%doc>
+
+Example:
+
+  include( '/elements/logout.html');
+  This is the <a href="javascript:void()" onClick="logout();">logout</a> link.
+
+</%doc>
+<SCRIPT TYPE="text/javascript">
+
+  function logout() {
+    // count args; build URL
+    var url = "<% $fsurl. 'loginout/logout.html' %>";
+
+    var xmlhttp = rs_init_object();
+    xmlhttp.open("GET", url, false, "magic", "notyet");
+    xmlhttp.setRequestHeader("If-Modified-Since", "Sat, 1 Jan 2000 00:00:00 GMT");
+    xmlhttp.send(null);
+
+    if (xmlhttp.readyState != 4) {
+      alert("Logout failed: readyState is " + xmlhttp.readyState);
+      return;
+    }
+
+    if (xmlhttp.status != 200) {
+      alert("Logout failed: status is " + xmlhttp.status);
+    } else {
+      var data = xmlhttp.responseText;
+      // alert('received response: ' + data);
+      if ( data.indexOf("<b>System error</b>") > -1 ) {
+        var w;
+        if ( w = window.open("about:blank") ) {
+          w.document.write(data);
+        } else {
+          // popup blocking?  should use an overlib popup instead 
+          alert("Error popup disabled; try disabling popup blocking to see");
+        }
+      } else {
+        window.location = "<% $fsurl. 'loginout/logout.html' %>";
+      }
+    }
+  }
+
+</SCRIPT>

@@ -171,6 +171,7 @@ install-docs: docs
 	cp -r masondocs ${FREESIDE_DOCUMENT_ROOT}
 	chown -R freeside:freeside ${FREESIDE_DOCUMENT_ROOT}
 	cp htetc/handler.pl ${MASON_HANDLER}
+	cp htetc/htpasswd.logout ${FREESIDE_CONF}
 	[ ! -e ${MASONDATA} ] && mkdir ${MASONDATA} || true
 	chown -R freeside ${MASONDATA}
 

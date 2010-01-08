@@ -37,6 +37,8 @@ Example:
     %>
 
     <% include('init_overlib.html') |n %>
+    <% include('rs_init_object.html') |n %>
+    <% include('logout.html') |n %>
 
     <SCRIPT TYPE="text/javascript">
 
@@ -82,7 +84,7 @@ Example:
         <td align=left BGCOLOR="#ffffff"> <!-- valign="top" -->
           <font size=6><% $company_name || 'ExampleCo' %></font>
         </td>
-        <td align=right valign=top BGCOLOR="#ffffff"><FONT SIZE="-1">Logged in as <b><% getotaker %>&nbsp;</b><br></FONT><FONT SIZE="-2"><a href="<%$fsurl%>pref/pref.html" STYLE="color: #000000">Preferences</a>
+        <td align=right valign=top BGCOLOR="#ffffff"><FONT SIZE="-1">Logged in as <b><% getotaker %>&nbsp;</b> <FONT SIZE="-2">[ <a href="javascript:void(0);" onClick="logout();">logout</a> ]</FONT><br></FONT><FONT SIZE="-2"><a href="<%$fsurl%>pref/pref.html" STYLE="color: #000000">Preferences</a>
 %         if ( $conf->config("ticket_system")
 %              && FS::TicketSystem->access_right(\%session, 'ModifySelf') ) {
             | <a href="<%$fsurl%>rt/User/Prefs.html" STYLE="color: #000000">Ticketing preferences</a>
