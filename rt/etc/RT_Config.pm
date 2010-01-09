@@ -670,7 +670,7 @@ NOTE that options with '-' character MUST be quoted.
 =cut
 
 Set(%GnuPGOptions,
-    homedir => 'var/data/gpg',
+    homedir => '/opt/rt3/var/data/gpg',
 
 # URL of a keyserver
 #    keyserver => 'hkp://subkeys.pgp.net',
@@ -724,7 +724,7 @@ direct file logging.
 =cut
 
 Set($LogToFile      , undef);
-Set($LogDir, 'var/log');
+Set($LogDir, '/opt/rt3/var/log');
 Set($LogToFileNamed , "rt.log");    #log to rt.log
 
 =item C<$LogStackTraces>
@@ -778,6 +778,9 @@ RT ships with several themes by default:
   3.4-compat      A 3.4 compatibility stylesheet to make RT look
                   (mostly) like 3.4
 
+This bundled distibution of RT also includes (enabled by default):
+  freeside2.1     Integration with Freeside
+
 This value actually specifies a directory in F<share/html/NoAuth/css/>
 from which RT will try to load the file main.css (which should
 @import any other files the stylesheet needs).  This allows you to
@@ -786,7 +789,7 @@ option can be overridden by users in their preferences.
 
 =cut
 
-Set($WebDefaultStylesheet, 'web2');
+Set($WebDefaultStylesheet, 'freeside2.1');
 
 =item C<$UsernameFormat>
 

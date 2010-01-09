@@ -1,7 +1,10 @@
  sbin/rt-setup-database.in # just a small password bugfix now
 config.layout
 config.layout.in
+ etc/RT_Config.pm.in
+ etc/RT_Config.pm
  etc/RT_SiteConfig.pm
+ lib/RT/Config.pm
 lib/RT/Interface/Web_Vendor.pm
  lib/RT/Record.pm
 lib/RT/SearchBuilder.pm #need DBIx::SearchBuilder >= 1.36 for Pg 8.1+
@@ -31,11 +34,10 @@ share/html/Ticket/Elements/ShowCustomers
  share/html/Ticket/Elements/ShowTransactionAttachments
  share/html/Ticket/Elements/Tabs
 share/html/Ticket/ModifyCustomers.html
-html/NoAuth/images/small-logo.png
  html/NoAuth/css/3.5-default/main.css
  html/NoAuth/css/3.5-default/misc.css
  html/NoAuth/css/3.5-default/titlebox.css
-html/NoAuth/css/3.5-default/freeside.css
+share/html/NoAuth/css/freeside2.1/freeside.css
 
 html/Widgets/TitleBoxStart
 

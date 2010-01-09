@@ -173,7 +173,7 @@ our %META = (
         WidgetArguments => {
             Description => 'Theme',                  #loc
             # XXX: we need support for 'get values callback'
-            Values => [qw(3.5-default 3.4-compat web2)],
+            Values => [qw(3.5-default 3.4-compat web2 freeside2.1)],
         },
     },
     MessageBoxRichText => {

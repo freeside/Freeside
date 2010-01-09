@@ -40,9 +40,9 @@ Set($DatabaseHost   , '');
 
 # These settings are user-editable.
 
-#old, RT 3.4 style (deprecated, useless):
-#$RT::MyTicketsLength = 10;
-#NEW, RT 3.6 style (uncomment to use):
+Set($WebDefaultStylesheet, 'freeside2.1');
+
+#uncomment to use
 #Set($DefaultSummaryRows, 10);
 
 #does this do anything in RT 3.8??
