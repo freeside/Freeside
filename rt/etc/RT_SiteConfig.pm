@@ -45,11 +45,6 @@ Set($WebDefaultStylesheet, 'freeside2.1');
 #uncomment to use
 #Set($DefaultSummaryRows, 10);
 
-#does this do anything in RT 3.8??
-Set($QuickCreateLong, 0); #set to true to cause quick ticket creation to
-                          #redirect to the "long" ticket creation screen
-                          #instead of just creating a ticket with the subject.
-
 Set($MessageBoxWidth, 80);
 
 #Set(@Plugins,(qw(Extension::QuickDelete RT::FM)));
