@@ -64,5 +64,7 @@
 @import "admin.css";
 @import "misc.css";
 
+@import "freeside.css";
+
 % $m->callback(CallbackName => 'End');
 
