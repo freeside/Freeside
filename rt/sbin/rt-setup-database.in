@@ -150,7 +150,9 @@ if ( $db_type eq 'SQLite' && !File::Spec->file_name_is_absolute($db_name) ) {
 }
 
 my $dba_user = $args{'dba'} || $ENV{'RT_DBA_USER'} || $db_user || '';
-my $dba_pass = $args{'dba-password'} || $ENV{'RT_DBA_PASSWORD'};
+my $dba_pass = exists($args{'dba-password'})
+                 ? $args{'dba-password'}
+                 : $ENV{'RT_DBA_PASSWORD'};
 
 if ( !$args{force} && ( !defined $dba_pass || $args{'prompt-for-dba-password'} ) ) {
     $dba_pass = get_dba_password();

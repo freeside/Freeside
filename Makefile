@@ -355,11 +355,14 @@ create-rt: configure-rt
 	[ -d /opt/rt3/share ] || mkdir /opt/rt3/share #
 	cd rt; make install
 	rt/sbin/rt-setup-database --dba '${DB_USER}' \
-	                          -dba-password '${DB_PASSWORD}' \
-	                          -action schema \
+	                          --dba-password '${DB_PASSWORD}' \
+	                          --action schema \
 	 || true
-	rt/sbin/rt-setup-database --action insert_initial \
-	&& rt/sbin/rt-setup-database --action insert --datafile ${RT_PATH}/etc/initialdata \
+	rt/sbin/rt-setup-database --dba-password '${DB_PASSWORD}' \
+	                          --action coredata \
+	&& rt/sbin/rt-setup-database --dba-password '${DB_PASSWORD}' \
+	                             --action insert \
+	                             --datafile ${RT_PATH}/etc/initialdata \
 	|| true
 
 install-rt:
