@@ -213,7 +213,7 @@ sub _export_insert {
                                              0, $element_name_length),
                                       $location,
                                       $contact,
-                                      sprintf("%032X", $svc->authkey),
+                                      sprintf("%032X", $svc->authkey || 0),
                                       $performance_profile,
                                       $svc->vlan_profile,
                                       ($self->option('ems') ? 1 : 0 ),
