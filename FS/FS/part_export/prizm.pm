@@ -1,12 +1,13 @@
 package FS::part_export::prizm;
 
-use vars qw(@ISA %info %options $DEBUG);
+use vars qw(@ISA %info %options $DEBUG $me);
 use Tie::IxHash;
 use FS::Record qw(fields dbh);
 use FS::part_export;
 
 @ISA = qw(FS::part_export);
-$DEBUG = 1;
+$DEBUG = 0;
+$me = '[' . __PACKAGE__ . ']';
 
 tie %options, 'Tie::IxHash',
   'url'      => { label => 'Northbound url', default=>'https://localhost:8443/prizm/nbi' },
@@ -125,6 +126,9 @@ sub queued_prizm_command {  # subroutine
 
 sub _export_insert {
   my( $self, $svc ) = ( shift, shift );
+  warn "$me: _export_insert called for export ". $self->exportnum.
+    " on service ". $svc->svcnum. "\n"
+    if $DEBUG;
 
   my $cust_main = $svc->cust_svc->cust_pkg->cust_main;
 
@@ -151,6 +155,7 @@ sub _export_insert {
   my $pcustomer;
   if ($err_or_som->result->[0]) {
     $pcustomer = $err_or_som->result->[0]->customerId;
+    warn "$me: found customer $pcustomer in prizm\n" if $DEBUG;
   }else{
     my $chashref = $cust_main->hashref;
     my $customerinfo = {
@@ -177,6 +182,7 @@ sub _export_insert {
       unless ref($err_or_som);
 
     $pcustomer = $err_or_som->result;
+    warn "$me: added customer $pcustomer to prizm\n" if $DEBUG;
   }
   warn "multiple prizm customers found for $cust_main->custnum"
     if scalar(@$pcustomer) > 1;
@@ -220,6 +226,7 @@ sub _export_insert {
                                      );
   return $err_or_som
     unless ref($err_or_som);
+  warn "$me: added provisioned element to prizm\n" if $DEBUG;
 
   my (@names) = ('Management IP',
                  'GPS Latitude',
@@ -247,6 +254,7 @@ sub _export_insert {
                                     );
   return $err_or_som
     unless ref($err_or_som);
+  warn "$me: set element configuration\n" if $DEBUG;
 
   $err_or_som = $self->prizm_command('NetworkIfService', 'setElementConfigSet',
                                      [ $element ],
@@ -256,6 +264,7 @@ sub _export_insert {
                                     );
   return $err_or_som
     unless ref($err_or_som);
+  warn "$me: set element vlan profile\n" if $DEBUG;
 
   $err_or_som = $self->prizm_command('NetworkIfService', 'setElementConfigSet',
                                      [ $element ],
@@ -265,6 +274,7 @@ sub _export_insert {
                                     );
   return $err_or_som
     unless ref($err_or_som);
+  warn "$me: set element configset (performance profile)\n" if $DEBUG;
 
   $err_or_som = $self->prizm_command('NetworkIfService',
                                      'activateNetworkElements',
@@ -275,6 +285,7 @@ sub _export_insert {
 
   return $err_or_som
     unless ref($err_or_som);
+  warn "$me: activated element\n" if $DEBUG;
 
   $err_or_som = $self->prizm_command('CustomerIfService',
                                      'addElementToCustomer',
@@ -286,6 +297,7 @@ sub _export_insert {
 
   return $err_or_som
     unless ref($err_or_som);
+  warn "$me: added element to customer\n" if $DEBUG;
 
   '';
 }
