@@ -481,16 +481,16 @@ sub _fatal_or_null {
 
   my $conf = new FS::Conf;
 
-  $error = "fatal: can't yet handle ". $error;
+  $error = "can't yet handle $error";
   my $name = $self->taxname;
   $name = 'Other surcharges'
     if ($self->passtype == 2);
 
   if ($conf->exists('ignore_incalculable_taxes')) {
-    warn $error;
+    warn "WARNING: $error; billing anyway per ignore_incalculable_taxes conf\n";
     return { name => $name, amount => 0 };
   } else {
-    return $error;
+    return "fatal: $error";
   }
 }
 
