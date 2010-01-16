@@ -94,7 +94,9 @@ if ( length( $cgi->param('search_svc') ) ) {
 }
 
 #here is the agent virtualization
-push @extra_sql, $FS::CurrentUser::CurrentUser->agentnums_sql;
+push @extra_sql, $FS::CurrentUser::CurrentUser->agentnums_sql( 
+                   'null_right' => 'View/link unlinked services'
+                 );
 
 my $extra_sql = ' WHERE '. join(' AND ', @extra_sql );
 
