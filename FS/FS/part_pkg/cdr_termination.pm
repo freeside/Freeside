@@ -90,7 +90,7 @@ tie my %temporalities, 'Tie::IxHash',
   'fieldorder' => [qw(
                        setup_fee recur_fee
                        recur_temporality unused_credit recur_method cutoff_day
-                       output_format usage_section summarize_usage
+                       output_format usage_section summarize_usage usage_mandate
                      )
                   ],
 
