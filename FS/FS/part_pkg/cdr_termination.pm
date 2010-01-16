@@ -66,7 +66,7 @@ tie my %temporalities, 'Tie::IxHash',
                          'select_options' => \%FS::part_pkg::recur_Common::recur_method,
                        },
 
-    #false laziness w/cdr_termination.pm
+    #false laziness w/voip_cdr.pm
     'output_format' => { 'name' => 'CDR invoice display format',
                          'type' => 'select',
                          'select_options' => { FS::cdr::invoice_formats() },
@@ -79,6 +79,11 @@ tie my %temporalities, 'Tie::IxHash',
     'summarize_usage' => { 'name' => 'Include usage summary with recurring charges when usage is in separate section',
                           'type' => 'checkbox',
                         },
+
+    'usage_mandate' => { 'name' => 'Always put usage details in separate section',
+                          'type' => 'checkbox',
+                       },
+    #eofalse
 
   },
                        #cdr_column
