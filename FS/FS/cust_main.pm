@@ -4107,6 +4107,8 @@ sub realtime_bop {
     warn "  $_ => $options{$_}\n" foreach keys %options;
   }
 
+  return "Amount must be greater than 0" unless $amount > 0;
+
   unless ( $options{'description'} ) {
     if ( $conf->exists('business-onlinepayment-description') ) {
       my $dtempl = $conf->config('business-onlinepayment-description');
