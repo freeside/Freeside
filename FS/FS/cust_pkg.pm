@@ -1535,8 +1535,11 @@ sub h_cust_svc {
 sub _sort_cust_svc {
   my( $self, $arrayref ) = @_;
 
+  my $sort =
+    sub ($$) { my ($a, $b) = @_; $b->[1] cmp $a->[1]  or  $a->[2] <=> $b->[2] };
+
   map  { $_->[0] }
-  sort { $b->[1] cmp $a->[1]  or  $a->[2] <=> $b->[2] } 
+  sort $sort
   map {
         my $pkg_svc = qsearchs( 'pkg_svc', { 'pkgpart' => $self->pkgpart,
                                              'svcpart' => $_->svcpart     } );
