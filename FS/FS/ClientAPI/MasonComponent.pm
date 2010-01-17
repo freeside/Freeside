@@ -109,6 +109,7 @@ sub mason_comp {
 
   my $conf = new FS::Conf;
   $FS::Mason::Request::FSURL = $conf->config('selfservice_server-base_url');
+  $FS::Mason::Request::FSURL .= '/' unless $FS::Mason::Request::FSURL =~ /\/$/;
   $FS::Mason::Request::QUERY_STRING = $packet->{'query_string'} || '';
 
   $outbuf = '';
