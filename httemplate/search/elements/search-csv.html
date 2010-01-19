@@ -39,7 +39,10 @@ my $rows   = $args{'rows'};
 my %opt    = %{ $args{'opt'} };
 
 #http_header('Content-Type' => 'text/comma-separated-values' ); #IE chokes
-http_header('Content-Type' => 'text/plain' );
+#http_header('Content-Type' => 'text/plain' );
+http_header('Content-Type' => 'text/csv' ); # So saith RFC 4180
+http_header('Content-Disposition' => 
+  'attachment;filename="'.($opt{'name'} || PL($opt{'name_singular'}) ).'.csv"');
 
 my $quote_char = '"';
 $quote_char = $opt{csv_quote} if exists($opt{csv_quote});
