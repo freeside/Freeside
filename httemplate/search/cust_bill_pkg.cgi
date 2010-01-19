@@ -41,7 +41,7 @@
                    \&FS::UI::Web::cust_fields,
                  ],
                  'links'       => [
-                   '',
+                   #'',
                    '',
                    '',
                    '',
@@ -51,9 +51,10 @@
                          FS::UI::Web::cust_header()
                    ),
                  ],
-                 'align' => 'rlrrrc'.FS::UI::Web::cust_aligns(),
+                 #'align' => 'rlrrrc'.FS::UI::Web::cust_aligns(),
+                 'align' => 'lrrrc'.FS::UI::Web::cust_aligns(),
                  'color' => [ 
-                              '',
+                              #'',
                               '',
                               '',
                               '',
@@ -62,7 +63,7 @@
                               FS::UI::Web::cust_colors(),
                             ],
                  'style' => [ 
-                              '',
+                              #'',
                               '',
                               '',
                               '',
