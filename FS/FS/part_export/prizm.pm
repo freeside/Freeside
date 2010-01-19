@@ -493,7 +493,8 @@ sub _export_unsuspend {
 sub export_links {
   my( $self, $svc, $arrayref ) = ( shift, shift, shift );
 
-  push @$arrayref, '<A HREF="http://'. $svc->ip_addr. '">SM</A>';
+  push @$arrayref,
+    '<A HREF="http://'. $svc->ip_addr. '" target="_blank">SM</A>';
 
   '';
 }
