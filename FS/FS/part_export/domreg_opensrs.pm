@@ -40,7 +40,7 @@ gateway when setting up this export.
 
 @ISA = qw(FS::part_export::null);
 $me = '[' .  __PACKAGE__ . ']';
-$DEBUG = 1;
+$DEBUG = 0;
 
 my @tldlist = qw/com net org biz info name mobi at be ca cc ch cn de dk es eu fr it mx nl tv uk us/;
 
