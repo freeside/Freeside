@@ -2475,33 +2475,33 @@ sub bill_and_collect {
   $error = $self->cancel_expired_pkgs( $options{actual_time} );
   if ( $error ) {
     $error = "Error expiring custnum ". $self->custnum. ": $error";
-    if    ( $options{'fatal'} eq 'return' ) { return $error; }
-    elsif ( $options{'fatal'}             ) { die    $error; }
-    else                                    { warn   $error; }
+    if    ( $options{fatal} && $options{fatal} eq 'return' ) { return $error; }
+    elsif ( $options{fatal}                                ) { die    $error; }
+    else                                                     { warn   $error; }
   }
 
   $error = $self->suspend_adjourned_pkgs( $options{actual_time} );
   if ( $error ) {
     $error = "Error adjourning custnum ". $self->custnum. ": $error";
-    if    ( $options{'fatal'} eq 'return' ) { return $error; }
-    elsif ( $options{'fatal'}             ) { die    $error; }
-    else                                    { warn   $error; }
+    if    ( $options{fatal} && $options{fatal} eq 'return' ) { return $error; }
+    elsif ( $options{fatal}                                ) { die    $error; }
+    else                                                     { warn   $error; }
   }
 
   $error = $self->bill( %options );
   if ( $error ) {
     $error = "Error billing custnum ". $self->custnum. ": $error";
-    if    ( $options{'fatal'} eq 'return' ) { return $error; }
-    elsif ( $options{'fatal'}             ) { die    $error; }
-    else                                    { warn   $error; }
+    if    ( $options{fatal} && $options{fatal} eq 'return' ) { return $error; }
+    elsif ( $options{fatal}                                ) { die    $error; }
+    else                                                     { warn   $error; }
   }
 
   $error = $self->apply_payments_and_credits;
   if ( $error ) {
     $error = "Error applying custnum ". $self->custnum. ": $error";
-    if    ( $options{'fatal'} eq 'return' ) { return $error; }
-    elsif ( $options{'fatal'}             ) { die    $error; }
-    else                                    { warn   $error; }
+    if    ( $options{fatal} && $options{fatal} eq 'return' ) { return $error; }
+    elsif ( $options{fatal}                                ) { die    $error; }
+    else                                                     { warn   $error; }
   }
 
   unless ( $conf->exists('cancelled_cust-noevents')
@@ -2510,9 +2510,9 @@ sub bill_and_collect {
     $error = $self->collect( %options );
     if ( $error ) {
       $error = "Error collecting custnum ". $self->custnum. ": $error";
-      if    ( $options{'fatal'} eq 'return' ) { return $error; }
-      elsif ( $options{'fatal'}             ) { die    $error; }
-      else                                    { warn   $error; }
+      if    ($options{fatal} && $options{fatal} eq 'return') { return $error; }
+      elsif ($options{fatal}                               ) { die    $error; }
+      else                                                   { warn   $error; }
     }
   }
 
