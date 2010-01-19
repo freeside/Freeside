@@ -1,6 +1,6 @@
 package FS::part_export::domreg_opensrs;
 
-use vars qw(@ISA %info %options $conf);
+use vars qw(@ISA %info %options $conf $me $DEBUG);
 use Tie::IxHash;
 use DateTime;
 use FS::Record qw(qsearchs qsearch);
@@ -39,6 +39,8 @@ gateway when setting up this export.
 =cut
 
 @ISA = qw(FS::part_export::null);
+$me = '[' .  __PACKAGE__ . ']';
+$DEBUG = 1;
 
 my @tldlist = qw/com net org biz info name mobi at be ca cc ch cn de dk es eu fr it mx nl tv uk us/;
 
@@ -249,13 +251,14 @@ sub _export_insert {
 
 sub _export_insert_on_payment {
   my( $self, $svc_domain ) = ( shift, shift );
+  warn "$me:_export_insert_on_payment called\n" if $DEBUG;
   return '' unless $self->option('wait_for_pay');
 
   my $queue = new FS::queue {
     'svcnum' => $svc_domain->svcnum,
     'job'    => 'FS::part_export::domreg_opensrs::renew_through',
   };
-  $queue->insert( $self, $svc_domain->svcnum ); #_export_insert with 'R' action?
+  $queue->insert( $self, $svc_domain ); #_export_insert with 'R' action?
 
   return '';
 }
@@ -395,10 +398,11 @@ sub register {
 
   my $srs = $self->get_srs;
 
-  my $cookie = $srs->get_cookie( $self->option('masterdomain') );
-  if (!$cookie) {
-     return "Unable to get cookie at OpenSRS: " . $srs->last_response();
-  }
+#  cookie not required for registration
+#  my $cookie = $srs->get_cookie( $self->option('masterdomain') );
+#  if (!$cookie) {
+#     return "Unable to get cookie at OpenSRS: " . $srs->last_response();
+#  }
 
 #  return "Domain registration not enabled" if !$self->option('register');
   return $srs->last_response() if !$srs->register_domain( $svc_domain->domain, $c);
@@ -485,6 +489,7 @@ Like most export functions, returns an error message on failure or undef on succ
 sub renew_through {
   my ( $self, $svc_domain, $date ) = @_;
 
+  warn "$me: renew_through called\n" if $DEBUG;
   eval "use Net::OpenSRS;";
   return $@ if $@;
 
@@ -498,9 +503,8 @@ sub renew_through {
   my $err = $self->is_supported_domain( $svc_domain );
   return $err if $err;
 
-  my $srs = $self->get_srs;
-
-  $rv = $srs->check_transfer($svc_domain->domain);
+  warn "$me: checking status\n" if $DEBUG;
+  my $rv = $self->get_status($svc_domain);
   return "Domain ". $svc_domain->domain. " is not renewable"
     unless $rv->{expdate};
 
@@ -531,6 +535,8 @@ sub renew_through {
       if $years > 10; #no infinite loop
   }
 
+  warn "$me: renewing ". $svc_domain->domain. "for $years years\n" if $DEBUG;
+  my $srs = $self->get_srs;
   $rv = $srs->make_request(
     {
       action     => 'renew',

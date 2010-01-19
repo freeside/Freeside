@@ -420,7 +420,7 @@ sub apply_to_lineitems {
                                  $cust_svc->part_svc->part_export;
       
           foreach my $part_export ( $cust_svc->part_svc->part_export ) {
-            $error = $part_export->export_insert_on_payment($svc_x);
+            $error = $part_export->_export_insert_on_payment($svc_x);
             if ( $error ) {
               $dbh->rollback if $oldAutoCommit;
               return $error;
