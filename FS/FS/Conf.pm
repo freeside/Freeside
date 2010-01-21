@@ -3003,7 +3003,7 @@ worry that config_items is freeside-specific and icky.
   {
     'key'         => 'selfservice-body_footer',
     'section'     => 'self-service',
-    'description' => 'HTML header for the self-service interface',
+    'description' => 'HTML footer for the self-service interface',
     'type'        => 'textarea', #htmlarea?
     'per_agent'   => 1,
   },
