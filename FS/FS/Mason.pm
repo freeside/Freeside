@@ -388,12 +388,17 @@ if ( -e $addl_handler_use_file ) {
 
 =over 4
 
-=item mason_interps [ MODE ]
+=item mason_interps [ MODE [ OPTION => VALUE ... ] ]
 
 Returns a list consisting of two HTML::Mason::Interp objects, the first for
 Freeside pages, and the second for RT pages.
 
-#MODE can be 'apache' or 'standalone'.  If not specified, defaults to 'apache'.
+MODE can be 'apache' or 'standalone'.  If not specified, defaults to 'apache'.
+
+Options and values can be passed following mode.  Currently available options
+are:
+
+I<outbuf> should be set to a scalar reference in standalone mode.
 
 =cut
 
@@ -406,7 +411,7 @@ sub mason_interps {
   my $request_class = 'FS::Mason::Request';
 
   #not entirely sure it belongs here, but what the hey
-  if ( %%%RT_ENABLED%%% ) {
+  if ( %%%RT_ENABLED%%% && $mode ne 'standalone' ) {
     RT::LoadConfig();
   }
 

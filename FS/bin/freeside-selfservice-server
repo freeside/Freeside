@@ -13,7 +13,7 @@ use Storable 2.09 qw(nstore_fd fd_retrieve);
 use Net::SSH qw(sshopen2);
 use FS::Daemon qw(daemonize1 drop_root logfile daemonize2 sigint sigterm);
 use FS::UID qw(adminsuidsetup forksuidsetup);
-use FS::ClientAPI;
+use FS::ClientAPI qw( load_clientapi_modules );
 use FS::ClientAPI_SessionCache;
 use FS::Record qw( qsearch qsearchs );
 
@@ -51,6 +51,8 @@ chown $FS::UID::freeside_uid, $freeside_gid, $lock_file;
 drop_root();
 
 $ENV{HOME} = (getpwuid($>))[7]; #for ssh
+
+load_clientapi_modules;
 
 adminsuidsetup $user;
 
