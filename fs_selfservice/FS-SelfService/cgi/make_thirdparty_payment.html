@@ -1,5 +1,5 @@
 <%= $url = "$selfurl?session=$session_id;action="; ''; %>
-<%= include('header') %>
+<%= include('header', 'Pay now') %>
 
 <SCRIPT TYPE="text/javascript">
   function popcollect() {
@@ -12,8 +12,6 @@
 <SCRIPT TYPE="text/javascript" SRC="overlibmws_draggable.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript" SRC="overlibmws_crossframe.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript" SRC="iframecontentmws.js"></SCRIPT>
-
-<FONT SIZE=4>Pay now</FONT><BR><BR>
 
 <%= if ( $error ) {
   $OUT .= qq!<FONT SIZE="+1" COLOR="#ff0000">$error</FONT><BR><BR>!;

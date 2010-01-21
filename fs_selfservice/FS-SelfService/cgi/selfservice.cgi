@@ -721,8 +721,12 @@ use HTML::Entities;
 use FS::SelfService qw(regionselector popselector domainselector location_form);
 
 #false laziness w/agent.cgi
+use vars qw(@INCLUDE_ARGS);
 sub include {
   my $name = shift;
+
+  @INCLUDE_ARGS = @_;
+
   my $template = new Text::Template( TYPE   => 'FILE',
                                      SOURCE => "$main::template_dir/$name.html",
                                      DELIMITERS => [ '<%=', '%>' ],
@@ -736,3 +740,4 @@ sub include {
 
 }
 
+1;

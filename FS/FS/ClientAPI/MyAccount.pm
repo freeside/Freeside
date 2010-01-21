@@ -100,7 +100,20 @@ sub skin_info {
       ( map { $_ => scalar( $conf->config($_, $agentnum) ) }
         qw( company_name ) ),
       ( map { $_ => scalar( $conf->config("selfservice-$_", $agentnum ) ) }
-        qw( body_bgcolor box_bgcolor) ),
+        qw( body_bgcolor box_bgcolor
+            text_color link_color vlink_color hlink_color alink_color
+            font title_color title_align title_size menu_bgcolor menu_fontsize
+          )
+      ),
+      ( map { $_ => $conf->exists("selfservice-$_", $agentnum ) }
+        qw( menu_skipblanks menu_skipheadings menu_nounderline )
+      ),
+      ( map { $_ => scalar($conf->config_binary("selfservice-$_", $agentnum)) }
+        qw( title_left_image title_right_image
+            menu_top_image menu_body_image menu_bottom_image
+          )
+      ),
+      'logo' => scalar($conf->config_binary('logo.png', $agentnum )),
       ( map { $_ => join("\n", $conf->config("selfservice-$_", $agentnum ) ) }
         qw( head body_header body_footer company_address ) ),
     };
@@ -571,6 +584,11 @@ sub process_payment {
   my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
     or return { 'error' => "unknown custnum $custnum" };
 
+  $p->{'amount'} =~ /^\s*(\d+(\.\d{2})?)\s*$/
+    or return { 'error' => gettext('illegal_amount') };
+  my $amount = $1;
+  return { error => 'Amount must be greater than 0' } unless $amount > 0;
+
   $p->{'payname'} =~ /^([\w \,\.\-\']+)$/
     or return { 'error' => gettext('illegal_name'). " payname: ". $p->{'payname'} };
   my $payname = $1;
@@ -641,7 +659,7 @@ sub process_payment {
     'CHEK' => [ qw( ss paytype paystate stateid stateid_state payip ) ],
   );
 
-  my $error = $cust_main->realtime_bop( $FS::payby::payby2bop{$payby}, $p->{'amount'},
+  my $error = $cust_main->realtime_bop( $FS::payby::payby2bop{$payby}, $amount,
     'quiet'    => 1,
     'payinfo'  => $payinfo,
     'paydate'  => $p->{'year'}. '-'. $p->{'month'}. '-01',

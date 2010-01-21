@@ -1,10 +1,10 @@
 <%= $url = "$selfurl?session=$session_id;action="; ''; %>
-<%= include('header') %>
-
-<FONT SIZE=4>Call usage for
-<%= Date::Format::time2str('%b&nbsp;%o&nbsp;%Y', $beginning) %> -
-<%= Date::Format::time2str('%b&nbsp;%o&nbsp;%Y', $ending) %>
-</FONT><BR><BR>
+<%= include('header', 'Call usage for '.
+                       Date::Format::time2str('%b&nbsp;%o&nbsp;%Y', $beginning).
+                       ' - '.
+                       Date::Format::time2str('%b&nbsp;%o&nbsp;%Y', $ending)
+           )
+%>
 
 <%= if ( $error ) {
   $OUT .= qq!<FONT SIZE="+1" COLOR="#ff0000">$error</FONT><BR><BR>!;

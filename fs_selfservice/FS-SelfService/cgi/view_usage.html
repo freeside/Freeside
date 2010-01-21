@@ -3,15 +3,14 @@
     @svc_phone = grep { $_->{svcdb} eq 'svc_phone' } @svcs;
     '';
 %>
-<%= include('header') %>
+<%= include('header', 'Account usage') %>
 
 <%= if ( $error ) {
   $OUT .= qq!<FONT SIZE="+1" COLOR="#ff0000">$error</FONT><BR><BR>!;
 } ''; %>
 
 <%= if ( @svc_acct ) {
-      $OUT.= '<FONT SIZE="4">Account usage</FONT><BR><BR>
-              <TABLE BGCOLOR="#cccccc">
+      $OUT.= '<TABLE BGCOLOR="#cccccc">
                 <TR>
                   <TH ALIGN="left">Account</TH>
                   <TH ALIGN="right">Time remaining</TH>

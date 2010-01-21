@@ -565,6 +565,14 @@ worry that config_items is freeside-specific and icky.
                    logo.eps
                  );
 
+#Billing (81 items)
+#Invoicing (50 items)
+#UI (69 items)
+#Self-service (29 items)
+#...
+#Unclassified (77 items)
+
+
 @config_items = map { new FS::ConfItem $_ } (
 
   {
@@ -815,35 +823,35 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'emailinvoiceonly',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Disables postal mail invoices',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'disablepostalinvoicedefault',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Disables postal mail invoices as the default option in the UI.  Be careful not to setup customers which are not sent invoices.  See <a href ="#emailinvoiceauto">emailinvoiceauto</a>.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'emailinvoiceauto',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Automatically adds new accounts to the email invoice list',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'emailinvoiceautoalways',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Automatically adds new accounts to the email invoice list even when the list contains email addresses',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'emailinvoice-apostrophe',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Allows the apostrophe (single quote) character in the email addresses in the email invoice list.',
     'type'        => 'checkbox',
   },
@@ -893,7 +901,7 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'invoice_subject',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Subject: header on email invoices.  Defaults to "Invoice".  The following substitutions are available: $name, $name_short, $invoice_number, and $invoice_date.',
     'type'        => 'text',
     'per_agent'   => 1,
@@ -901,21 +909,21 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'invoice_usesummary',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Indicates that html and latex invoices should be in summary style and make use of invoice_latexsummary.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'invoice_template',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Text template file for invoices.  Used if no invoice_html template is defined, and also seen by users using non-HTML capable mail clients.  See the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:1.7:Documentation:Administration#Plaintext_invoice_templates">billing documentation</a> for details.',
     'type'        => 'textarea',
   },
 
   {
     'key'         => 'invoice_html',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Optional HTML template for invoices.  See the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:1.7:Documentation:Administration#HTML_invoice_templates">billing documentation</a> for details.',
 
     'type'        => 'textarea',
@@ -923,7 +931,7 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'invoice_htmlnotes',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Notes section for HTML invoices.  Defaults to the same data in invoice_latexnotes if not specified.',
     'type'        => 'textarea',
     'per_agent'   => 1,
@@ -931,7 +939,7 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'invoice_htmlfooter',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Footer for HTML invoices.  Defaults to the same data in invoice_latexfooter if not specified.',
     'type'        => 'textarea',
     'per_agent'   => 1,
@@ -939,7 +947,7 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'invoice_htmlsummary',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Summary initial page for HTML invoices.',
     'type'        => 'textarea',
     'per_agent'   => 1,
@@ -947,21 +955,21 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'invoice_htmlreturnaddress',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Return address for HTML invoices.  Defaults to the same data in invoice_latexreturnaddress if not specified.',
     'type'        => 'textarea',
   },
 
   {
     'key'         => 'invoice_latex',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Optional LaTeX template for typeset PostScript invoices.  See the <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:1.7:Documentation:Administration#Typeset_.28LaTeX.29_invoice_templates">billing documentation</a> for details.',
     'type'        => 'textarea',
   },
 
   {
     'key'         => 'invoice_latexnotes',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Notes section for LaTeX typeset PostScript invoices.',
     'type'        => 'textarea',
     'per_agent'   => 1,
@@ -969,7 +977,7 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'invoice_latexfooter',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Footer for LaTeX typeset PostScript invoices.',
     'type'        => 'textarea',
     'per_agent'   => 1,
@@ -977,7 +985,7 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'invoice_latexsummary',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Summary initial page for LaTeX typeset PostScript invoices.',
     'type'        => 'textarea',
     'per_agent'   => 1,
@@ -985,7 +993,7 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'invoice_latexcoupon',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Remittance coupon for LaTeX typeset PostScript invoices.',
     'type'        => 'textarea',
     'per_agent'   => 1,
@@ -993,14 +1001,14 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'invoice_latexreturnaddress',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Return address for LaTeX typeset PostScript invoices.',
     'type'        => 'textarea',
   },
 
   {
     'key'         => 'invoice_latexsmallfooter',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Optional small footer for multi-page LaTeX typeset PostScript invoices.',
     'type'        => 'textarea',
     'per_agent'   => 1,
@@ -1008,14 +1016,14 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'invoice_email_pdf',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Send PDF invoice as an attachment to emailed invoices.  By default, includes the plain text invoice as the email body, unless invoice_email_pdf_note is set.',
     'type'        => 'checkbox'
   },
 
   {
     'key'         => 'invoice_email_pdf_note',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'If defined, this text will replace the default plain text invoice as the body of emailed PDF invoices.',
     'type'        => 'textarea'
   },
@@ -1023,7 +1031,7 @@ worry that config_items is freeside-specific and icky.
 
   { 
     'key'         => 'invoice_default_terms',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Optional default invoice term, used to calculate a due date printed on invoices.',
     'type'        => 'select',
     'select_enum' => [ '', 'Payable upon receipt', 'Net 0', 'Net 10', 'Net 15', 'Net 20', 'Net 30', 'Net 45', 'Net 60' ],
@@ -1031,35 +1039,35 @@ worry that config_items is freeside-specific and icky.
 
   { 
     'key'         => 'invoice_show_prior_due_date',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Show previous invoice due dates when showing prior balances.  Default is to show invoice date.',
     'type'        => 'checkbox',
   },
 
   { 
     'key'         => 'invoice_include_aging',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Show an aging line after the prior balance section.  Only valud when invoice_sections is enabled.',
     'type'        => 'checkbox',
   },
 
   { 
     'key'         => 'invoice_sections',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Split invoice into sections and label according to package category when enabled.',
     'type'        => 'checkbox',
   },
 
   { 
     'key'         => 'usage_class_as_a_section',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Split usage into sections and label according to usage class name when enabled.  Only valid when invoice_sections is enabled.',
     'type'        => 'checkbox',
   },
 
   { 
     'key'         => 'svc_phone_sections',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Create a section for each svc_phone when enabled.  Only valid when invoice_sections is enabled.',
     'type'        => 'checkbox',
   },
@@ -1073,7 +1081,7 @@ worry that config_items is freeside-specific and icky.
 
   { 
     'key'         => 'separate_usage',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Split the rated call usage into a separate line from the recurring charges.',
     'type'        => 'checkbox',
   },
@@ -1478,7 +1486,7 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'signup_server-payby',
-    'section'     => '',
+    'section'     => 'self-service',
     'description' => 'Acceptable payment types for the signup server',
     'type'        => 'selectmultiple',
     'select_enum' => [ qw(CARD DCRD CHEK DCHK LECB PREPAY BILL COMP) ],
@@ -1486,7 +1494,7 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'signup_server-default_agentnum',
-    'section'     => '',
+    'section'     => 'self-service',
     'description' => 'Default agent for the signup server',
     'type'        => 'select-sub',
     'options_sub' => sub { require FS::Record;
@@ -1505,7 +1513,7 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'signup_server-default_refnum',
-    'section'     => '',
+    'section'     => 'self-service',
     'description' => 'Default advertising source for the signup server',
     'type'        => 'select-sub',
     'options_sub' => sub { require FS::Record;
@@ -1525,21 +1533,21 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'signup_server-default_pkgpart',
-    'section'     => '',
+    'section'     => 'self-service',
     'description' => 'Default package for the signup server',
     'type'        => 'select-part_pkg',
   },
 
   {
     'key'         => 'signup_server-default_svcpart',
-    'section'     => '',
+    'section'     => 'self-service',
     'description' => 'Default service definition for the signup server - only necessary for services that trigger special provisioning widgets (such as DID provisioning).',
     'type'        => 'select-part_svc',
   },
 
   {
     'key'         => 'signup_server-mac_addr_svcparts',
-    'section'     => '',
+    'section'     => 'self-service',
     'description' => 'Service definitions which can receive mac addresses (current mapped to username for svc_acct).',
     'type'        => 'select-part_svc',
     'multiple'    => 1,
@@ -1547,14 +1555,14 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'signup_server-nomadix',
-    'section'     => '',
+    'section'     => 'self-service',
     'description' => 'Signup page Nomadix integration',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'signup_server-service',
-    'section'     => '',
+    'section'     => 'self-service',
     'description' => 'Service for the signup server - "Account (svc_acct)" is the default setting, or "Phone number (svc_phone)" for ITSP signup',
     'type'        => 'select',
     'select_hash' => [
@@ -1565,7 +1573,7 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'selfservice_server-base_url',
-    'section'     => '',
+    'section'     => 'self-service',
     'description' => 'Base URL for the self-service web interface - necessary for some widgets to find their way, including retrieval of non-US state information and phone number provisioning.',
     'type'        => 'text',
   },
@@ -1579,27 +1587,27 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'signup_server-realtime',
-    'section'     => '',
+    'section'     => 'self-service',
     'description' => 'Run billing for signup server signups immediately, and do not provision accounts which subsequently have a balance.',
     'type'        => 'checkbox',
   },
   {
     'key'         => 'signup_server-classnum2',
-    'section'     => '',
+    'section'     => 'self-service',
     'description' => 'Package Class for first optional purchase',
     'type'        => 'select-pkg_class',
   },
 
   {
     'key'         => 'signup_server-classnum3',
-    'section'     => '',
+    'section'     => 'self-service',
     'description' => 'Package Class for second optional purchase',
     'type'        => 'select-pkg_class',
   },
 
   {
     'key'         => 'backend-realtime',
-    'section'     => '',
+    'section'     => 'billing',
     'description' => 'Run billing for backend signups immediately.',
     'type'        => 'checkbox',
   },
@@ -1962,21 +1970,21 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'selfservice_server-primary_only',
-    'section'     => '',
+    'section'     => 'self-service',
     'description' => 'Only allow primary accounts to access self-service functionality.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'selfservice_server-phone_login',
-    'section'     => '',
+    'section'     => 'self-service',
     'description' => 'Allow login to self-service with phone number and PIN.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'selfservice_server-single_domain',
-    'section'     => '',
+    'section'     => 'self-service',
     'description' => 'If specified, only use this one domain for self-service access.',
     'type'        => 'text',
   },
@@ -2177,7 +2185,7 @@ worry that config_items is freeside-specific and icky.
   },
 
   { 'key'         => 'selfservice_server-cache_module',
-    'section'     => '',
+    'section'     => 'self-service',
     'description' => 'Module used to store self-service session information.  All modules handle any number of self-service servers.  Cache::SharedMemoryCache is appropriate for a single database / single Freeside server.  Cache::FileCache is useful for multiple databases on a single server, or when IPC::ShareLite is not available (i.e. FreeBSD).', #  _Database stores session information in the database and is appropriate for multiple Freeside servers, but may be slower.',
     'type'        => 'select',
     'select_enum' => [ 'Cache::SharedMemoryCache', 'Cache::FileCache', ], # '_Database' ],
@@ -2192,7 +2200,7 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'cust_bill-ftpformat',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Enable FTP of raw invoice data - format.',
     'type'        => 'select',
     'select_enum' => [ '', 'default', 'billco', ],
@@ -2200,35 +2208,35 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'cust_bill-ftpserver',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Enable FTP of raw invoice data - server.',
     'type'        => 'text',
   },
 
   {
     'key'         => 'cust_bill-ftpusername',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Enable FTP of raw invoice data - server.',
     'type'        => 'text',
   },
 
   {
     'key'         => 'cust_bill-ftppassword',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Enable FTP of raw invoice data - server.',
     'type'        => 'text',
   },
 
   {
     'key'         => 'cust_bill-ftpdir',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Enable FTP of raw invoice data - server.',
     'type'        => 'text',
   },
 
   {
     'key'         => 'cust_bill-spoolformat',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Enable spooling of raw invoice data - format.',
     'type'        => 'select',
     'select_enum' => [ '', 'default', 'billco', ],
@@ -2236,7 +2244,7 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'cust_bill-spoolagent',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Enable per-agent spooling of raw invoice data.',
     'type'        => 'checkbox',
   },
@@ -2371,28 +2379,28 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'invoice-ship_address',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Include the shipping address on invoices.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'invoice-unitprice',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Enable unit pricing on invoices.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'invoice-smallernotes',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Display the notes section in a smaller font on invoices.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'invoice-smallerfooter',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Display footers in a smaller font on invoices.',
     'type'        => 'checkbox',
   },
@@ -2645,7 +2653,7 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'logo.png',
-    'section'     => 'billing',  #? 
+    'section'     => 'UI',  #'invoicing' ?
     'description' => 'Company logo for HTML invoices and the backoffice interface, in PNG format.  Suggested size somewhere near 92x62.',
     'type'        => 'image',
     'per_agent'   => 1, #XXX just view/logo.cgi, which is for the global
@@ -2654,7 +2662,7 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'logo.eps',
-    'section'     => 'billing',  #? 
+    'section'     => 'invoicing',
     'description' => 'Company logo for printed and PDF invoices, in EPS format.',
     'type'        => 'image',
     'per_agent'   => 1, #XXX as above, kinda
@@ -2662,14 +2670,14 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'selfservice-ignore_quantity',
-    'section'     => '',
+    'section'     => 'self-service',
     'description' => 'Ignores service quantity restrictions in self-service context.  Strongly not recommended - just set your quantities correctly in the first place.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'selfservice-session_timeout',
-    'section'     => '',
+    'section'     => 'self-service',
     'description' => 'Self-service session timeout.  Defaults to 1 hour.',
     'type'        => 'select',
     'select_enum' => [ '1 hour', '2 hours', '4 hours', '8 hours', '1 day', '1 week', ],
@@ -2786,7 +2794,7 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'signup_credit_type',
-    'section'     => 'billing',
+    'section'     => 'billing', #self-service?
     'description' => 'The group to use for new, automatically generated credit reasons resulting from signup and self-service declines.',
     'type'        => 'select-sub',
     'options_sub' => sub { require FS::Record;
@@ -2833,14 +2841,14 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'disable_previous_balance',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Disable inclusion of previous balancem payment, and credit lines on invoices',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'previous_balance-summary_only',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Only show a single line summarizing the total previous balance rather than one line per invoice.',
     'type'        => 'checkbox',
   },
@@ -2949,14 +2957,14 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'cust_bill-max_same_services',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Maximum number of the same service to list individually on invoices before condensing to a single line listing the number of services.  Defaults to 5.',
     'type'        => 'text',
   },
 
   {
     'key'         => 'cust_bill-consolidate_services',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Consolidate service display into fewer lines on invoices rather than one per service.',
     'type'        => 'checkbox',
   },
@@ -2977,7 +2985,7 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'selfservice-head',
-    'section'     => '',
+    'section'     => 'self-service',
     'description' => 'HTML for the HEAD section of the self-service interface, typically used for LINK stylesheet tags',
     'type'        => 'textarea', #htmlarea?
     'per_agent'   => 1,
@@ -2986,7 +2994,7 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'selfservice-body_header',
-    'section'     => '',
+    'section'     => 'self-service',
     'description' => 'HTML header for the self-service interface',
     'type'        => 'textarea', #htmlarea?
     'per_agent'   => 1,
@@ -2994,7 +3002,7 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'selfservice-body_footer',
-    'section'     => '',
+    'section'     => 'self-service',
     'description' => 'HTML header for the self-service interface',
     'type'        => 'textarea', #htmlarea?
     'per_agent'   => 1,
@@ -3003,7 +3011,7 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'selfservice-body_bgcolor',
-    'section'     => '',
+    'section'     => 'self-service',
     'description' => 'HTML background color for the self-service interface, for example, #FFFFFF',
     'type'        => 'text',
     'per_agent'   => 1,
@@ -3011,15 +3019,166 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'selfservice-box_bgcolor',
-    'section'     => '',
-    'description' => 'HTML color for self-service interface input boxes, for example, #C0C0C0"',
+    'section'     => 'self-service',
+    'description' => 'HTML color for self-service interface input boxes, for example, #C0C0C0',
     'type'        => 'text',
     'per_agent'   => 1,
   },
 
   {
+    'key'         => 'selfservice-text_color',
+    'section'     => 'self-service',
+    'description' => 'HTML text color for the self-service interface, for example, #000000',
+    'type'        => 'text',
+    'per_agent'   => 1,
+  },
+
+  {
+    'key'         => 'selfservice-link_color',
+    'section'     => 'self-service',
+    'description' => 'HTML link color for the self-service interface, for example, #0000FF',
+    'type'        => 'text',
+    'per_agent'   => 1,
+  },
+
+  {
+    'key'         => 'selfservice-vlink_color',
+    'section'     => 'self-service',
+    'description' => 'HTML visited link color for the self-service interface, for example, #FF00FF',
+    'type'        => 'text',
+    'per_agent'   => 1,
+  },
+
+  {
+    'key'         => 'selfservice-hlink_color',
+    'section'     => 'self-service',
+    'description' => 'HTML hover link color for the self-service interface, for example, #808080',
+    'type'        => 'text',
+    'per_agent'   => 1,
+  },
+
+  {
+    'key'         => 'selfservice-alink_color',
+    'section'     => 'self-service',
+    'description' => 'HTML active (clicked) link color for the self-service interface, for example, #808080',
+    'type'        => 'text',
+    'per_agent'   => 1,
+  },
+
+  {
+    'key'         => 'selfservice-font',
+    'section'     => 'self-service',
+    'description' => 'HTML font CSS for the self-service interface, for example, 0.9em/1.5em Arial, Helvetica, Geneva, sans-serif',
+    'type'        => 'text',
+    'per_agent'   => 1,
+  },
+
+  {
+    'key'         => 'selfservice-title_color',
+    'section'     => 'self-service',
+    'description' => 'HTML color for the self-service title, for example, #000000',
+    'type'        => 'text',
+    'per_agent'   => 1,
+  },
+
+  {
+    'key'         => 'selfservice-title_align',
+    'section'     => 'self-service',
+    'description' => 'HTML alignment for the self-service title, for example, center',
+    'type'        => 'text',
+    'per_agent'   => 1,
+  },
+  {
+    'key'         => 'selfservice-title_size',
+    'section'     => 'self-service',
+    'description' => 'HTML font size for the self-service title, for example, 3',
+    'type'        => 'text',
+    'per_agent'   => 1,
+  },
+
+  {
+    'key'         => 'selfservice-title_left_image',
+    'section'     => 'self-service',
+    'description' => 'Image used for the top of the menu in the self-service interface, in PNG format.',
+    'type'        => 'image',
+    'per_agent'   => 1,
+  },
+
+  {
+    'key'         => 'selfservice-title_right_image',
+    'section'     => 'self-service',
+    'description' => 'Image used for the top of the menu in the self-service interface, in PNG format.',
+    'type'        => 'image',
+    'per_agent'   => 1,
+  },
+
+  {
+    'key'         => 'selfservice-menu_skipblanks',
+    'section'     => 'self-service',
+    'description' => 'Skip blank (spacer) entries in the self-service menu',
+    'type'        => 'checkbox',
+    'per_agent'   => 1,
+  },
+
+  {
+    'key'         => 'selfservice-menu_skipheadings',
+    'section'     => 'self-service',
+    'description' => 'Skip the unclickable heading entries in the self-service menu',
+    'type'        => 'checkbox',
+    'per_agent'   => 1,
+  },
+
+  {
+    'key'         => 'selfservice-menu_bgcolor',
+    'section'     => 'self-service',
+    'description' => 'HTML color for the self-service menu, for example, #C0C0C0',
+    'type'        => 'text',
+    'per_agent'   => 1,
+  },
+
+  {
+    'key'         => 'selfservice-menu_fontsize',
+    'section'     => 'self-service',
+    'description' => 'HTML font size for the self-service menu, for example, -1',
+    'type'        => 'text',
+    'per_agent'   => 1,
+  },
+  {
+    'key'         => 'selfservice-menu_nounderline',
+    'section'     => 'self-service',
+    'description' => 'Styles menu links in the self-service without underlining.',
+    'type'        => 'checkbox',
+    'per_agent'   => 1,
+  },
+
+
+  {
+    'key'         => 'selfservice-menu_top_image',
+    'section'     => 'self-service',
+    'description' => 'Image used for the top of the menu in the self-service interface, in PNG format.',
+    'type'        => 'image',
+    'per_agent'   => 1,
+  },
+
+  {
+    'key'         => 'selfservice-menu_body_image',
+    'section'     => 'self-service',
+    'description' => 'Repeating image used for the body of the menu in the self-service interface, in PNG format.',
+    'type'        => 'image',
+    'per_agent'   => 1,
+  },
+
+  {
+    'key'         => 'selfservice-menu_bottom_image',
+    'section'     => 'self-service',
+    'description' => 'Image used for the bottom of the menu in the self-service interface, in PNG format.',
+    'type'        => 'image',
+    'per_agent'   => 1,
+  },
+
+  {
     'key'         => 'selfservice-bulk_format',
-    'section'     => '',
+    'section'     => 'deprecated',
     'description' => 'Parameter arrangement for selfservice bulk features',
     'type'        => 'select',
     'select_enum' => [ '', 'izoom-soap', 'izoom-ftp' ],
@@ -3028,7 +3187,7 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'selfservice-bulk_ftp_dir',
-    'section'     => '',
+    'section'     => 'deprecated',
     'description' => 'Enable bulk ftp provisioning in this folder',
     'type'        => 'text',
     'per_agent'   => 1,
@@ -3036,21 +3195,21 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'signup-no_company',
-    'section'     => '',
+    'section'     => 'self-service',
     'description' => "Don't display a field for company name on signup.",
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'signup-recommend_email',
-    'section'     => '',
+    'section'     => 'self-service',
     'description' => 'Encourage the entry of an invoicing email address on signup.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'signup-recommend_daytime',
-    'section'     => '',
+    'section'     => 'self-service',
     'description' => 'Encourage the entry of a daytime phone number  invoicing email address on signup.',
     'type'        => 'checkbox',
   },
@@ -3190,7 +3349,7 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'agent-invoice_template',
-    'section'     => 'billing',
+    'section'     => 'invoicing',
     'description' => 'Enable display/edit of old-style per-agent invoice template selection',
     'type'        => 'checkbox',
   },

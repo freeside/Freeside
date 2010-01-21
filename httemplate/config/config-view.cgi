@@ -43,7 +43,10 @@ Click on a configuration value to change it.
   <TABLE BGCOLOR="#cccccc" BORDER=1 CELLSPACING=0 CELLPADDING=0 BORDERCOLOR="#999999">
   <tr>
     <th colspan="2" bgcolor="#dcdcdc">
-      <% ucfirst($section || 'unclassified') %> configuration options
+      <% ucfirst($section || 'unclassified') %>
+%     if ( $curuser->option('show_confitem_counts') ) {
+        (<% scalar( @{ $section_items{$section} } ) %> items)
+%     }
     </th>
   </tr>
 % foreach my $i (@{ $section_items{$section} }) { 
@@ -319,8 +322,9 @@ my %namecol = (
 </%once>
 <%init>
 
-die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied" unless $curuser->access_right('Configuration');
 
 my $page_agent = '';
 my $title;
@@ -345,7 +349,7 @@ my @config_items = grep { $page_agent ? $_->per_agent : 1 }
 my @deleteable = qw( invoice_latexreturnaddress invoice_htmlreturnaddress );
 my %deleteable = map { $_ => 1 } @deleteable;
 
-my @sections = qw(required billing username password UI session shell BIND );
+my @sections = qw(required billing invoicing UI self-service username password session shell BIND );
 push @sections, '', 'deprecated';
 
 my %section_items = ();

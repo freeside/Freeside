@@ -1,7 +1,6 @@
 <%= $url = "$selfurl?session=$session_id;action="; ''; %>
-<%= include('header') %>
+<%= include('header', 'Recharge results') %>
 
-<FONT SIZE=4>Recharge results</FONT><BR><BR>
 <%= if ( $error ) {
   $OUT .= qq!<FONT SIZE="+1" COLOR="#ff0000">Error processing your prepaid card: $error</FONT>!;
 } else {

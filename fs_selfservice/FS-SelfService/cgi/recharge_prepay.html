@@ -1,7 +1,6 @@
 <%= $url = "$selfurl?session=$session_id;action="; ''; %>
-<%= include('header') %>
+<%= include('header', 'Recharge with prepaid card') %>
 
-<FONT SIZE=4>Recharge with prepaid card</FONT><BR><BR>
 <FORM NAME="OneTrueForm" METHOD="POST" ACTION="<%=$selfurl%>" onSubmit="document.OneTrueForm.process.disabled=true">
 <INPUT TYPE="hidden" NAME="session" VALUE="<%=$session_id%>">
 <INPUT TYPE="hidden" NAME="action" VALUE="recharge_results">

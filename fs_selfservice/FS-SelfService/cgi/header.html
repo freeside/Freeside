@@ -3,6 +3,28 @@
     <TITLE><%= $title || 'MyAccount' %></TITLE>
     <%= $head %>
   </HEAD>
+  <STYLE TYPE="text/css">
+    body {
+      color: <%= $text_color || '#000000' %>;
+      <%= $font ? "font: $font;" : '' %>
+    }
+    a { 
+      color: <%= $link_color || 'blue' %>;
+      <%= $menu_nounderline ? 'text-decoration: none' : '' %>
+    }
+    a:visited { 
+      color: <%= $vlink_color || 'purple' %>;
+      <%= $menu_nounderline ? 'text-decoration: none' : '' %>
+    }
+    a:active { 
+      color: <%= $alink_color || 'blue' %>;
+      <%= $menu_nounderline ? 'text-decoration: none' : '' %>
+    }
+    a:hover { 
+      color: <%= $hlink_color || '' %>;
+      <%= $menu_nounderline ? 'text-decoration: none' : '' %>
+    }
+  </STYLE>
   <BODY BGCOLOR="<%= $body_bgcolor || '#eeeeee' %>">
     <script language="JavaScript"><!--
       var mywindow = -1;
@@ -17,7 +39,24 @@
       }
     //--></script>
     <%= $body_header %>
-    <FONT SIZE=5><%= $title || 'MyAccount' %></FONT>
-    <BR><BR>
+
+    <TABLE BORDER=0 WIDTH="100%" CELLPADDING=0 CELLSPACING=0>
+      <TR STYLE="padding:0px">
+        <TD><IMG SRC="image.cgi?logo"></TD>
+        <TD WIDTH = "29%"
+            STYLE = "background: url(image.cgi?title_left_image) no-repeat left center; padding:0px">
+        </TD>
+        <TD WIDTH = "49%"
+            ALIGN="<%= $title_align || 'left' %>"
+            STYLE = "background: url(image.cgi?title_right_image) no-repeat right center; padding:0px">
+              <FONT SIZE  = "<%= $title_size || 5 %>"
+                    COLOR = "<%= $title_color %>"
+              ><%= $INCLUDE_ARGS[0] %>&nbsp;&nbsp;&nbsp;</FONT>
+          </DIV>
+        </TD>
+      </TR>
+    </TABLE>
+
     <%= include('myaccount_menu') %>
     <TD VALIGN="top">
+

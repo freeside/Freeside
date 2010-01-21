@@ -1,7 +1,6 @@
 <%= $url = "$selfurl?session=$session_id;action="; ''; %>
-<%= include('header') %>
+<%= include('header', 'Payment results') %>
 
-<FONT SIZE=4>Payment results</FONT><BR><BR>
 <%= if ( $error ) {
   $OUT .= qq!<FONT SIZE="+1" COLOR="#ff0000">Error processing your payment: $error</FONT>!;
 } else {

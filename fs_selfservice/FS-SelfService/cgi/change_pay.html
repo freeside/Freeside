@@ -1,7 +1,6 @@
 <%= $url = "$selfurl?session=$session_id;action="; ''; %>
-<%= include('header') %>
+<%= include('header', 'Change payment information') %>
 
-<FONT SIZE=4>Change payment information</FONT><BR><BR>
 <%= if ( $error ) { 
   $OUT .= qq!<FONT SIZE="+1" COLOR="#ff0000">Error: $error</FONT><BR><BR>!;
   }  ''; %>
