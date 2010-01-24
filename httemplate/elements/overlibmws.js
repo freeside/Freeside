@@ -1,7 +1,7 @@
 /*
  Do not remove or change this notice.
- overlibmws.js core module - Copyright Foteos Macrides 2002-2008. All rights reserved.
-   Initial: August 18, 2002 - Last Revised: March 22, 2008
+ overlibmws.js core module - Copyright Foteos Macrides 2002-2010. All rights reserved.
+   Initial: August 18, 2002 - Last Revised: January 5, 2010
  This module is subject to the same terms of usage as for Erik Bosrup's overLIB,
  though only a minority of the code and API now correspond with Erik's version.
  See the overlibmws Change History and Command Reference via:
@@ -132,11 +132,12 @@ OLkon=(OLua.indexOf('konqueror')>=0)?1:0,
 OLkht=(OLsaf||OLkon)?1:0,
 OLopr=(OLua.indexOf('opera')>=0)?1:0,
 OLop7=(OLopr&&document.createTextNode)?1:0;
+OLop95=(OLop7&&document.getElementsByClassName)?1:0;
 if(OLopr){OLns4=OLns6=OLgek=0;OLie4=(OLop7)?1:0;}
 var OLieM=((OLie4&&OLmac)&&!(OLkht||OLopr))?1:0,
-OLie5=0,OLie55=0;OLie7=0;if(OLie4&&!OLop7){
+OLie5=0,OLie55=0,OLie7=0;OLie8=0;if(OLie4&&!OLop7){
 if((OLv=OLua.match(/msie (\d\.\d+)\.*/i))&&(OLv=parseFloat(OLv[1]))>=5.0){
-OLie5=1;OLns6=0;if(OLv>=5.5)OLie55=1;if(OLv>=7.0)OLie7=1;}if(OLns6)OLie4=0;}
+OLie5=1;OLns6=0;if(OLv>=5.5)OLie55=1;if(OLv>=7.0)OLie7=1;if(OLv>=8.0)OLie8=1;}if(OLns6)OLie4=0;}
 if(OLns4)window.onresize=function(){location.reload();};var OLchkMh=1,OLdw;
 if(OLns4||OLie4||OLns6){OLmh();if(window.addEventListener)window.addEventListener("unload",
 OLulCl,false);}else{overlib=nd=cClick=OLpageDefaults=no_overlib;}
@@ -147,25 +148,25 @@ function OLulCl(){if(over)cClick();window.removeEventListener("unload",OLulCl,fa
 */
 // Loads defaults then args into runtime variables.
 function overlib(){
-if(!(OLloaded&&OLgateOK))return;if((OLexclusivePI)&&OLisExclusive(arguments))return true;if(OLchkMh)OLmh();
-if(OLndt&&!OLtimerid)OLndt=0;if(over)cClick();if(parent!=self){if(parent.OLo2Ref){parent.OLeval(parent.OLo2Ref);
-parent.OLo2Ref="";}if(parent.OLifRef){parent.OLeval(parent.OLifRef);parent.OLifRef="";}}if(OLo2Ref){eval(OLo2Ref);
-OLo2Ref="";}if(OLifRef){eval(OLifRef);OLifRef="";}OLload(OLp1or2);OLload(OLp1);OLfnRef="";OLifX=0;OLifY=0;OLhover=0;
-OLsetRunTimeVar();OLparseTokens('o3_',arguments);if(!(over=OLmkLyr()))return false;if(o3_decode)OLdecode();if(OLprintPI)
-OLchkPrint();if(OLbubblePI)OLchkForBubbleEffect();if(OLdebugPI)OLsetDebugCanShow();if(OLshadowPI)OLinitShadow();
-if(OLiframePI)OLinitIfs();if(OLfilterPI)OLinitFilterLyr();if(OLexclusivePI&&o3_exclusive&&o3_exclusivestatus!="")
-o3_status=o3_exclusivestatus;else if(o3_autostatus==2&&o3_cap!="")o3_status=o3_cap;else if(o3_autostatus==1&&o3_text!="")
-o3_status=o3_text;if(!o3_delay){return OLmain();}else{OLdelayid=setTimeout("OLmain()",o3_delay);if(o3_status!=""){
-self.status=o3_status;return true;}else if(!(OLop7&&event&&event.type=='mouseover'))return false;}
+if(!(OLloaded&&OLgateOK))return;if((OLexclusivePI)&&OLisExclusive(arguments))return true;if(OLchkMh)OLmh();if(OLndt&&
+!OLtimerid)OLndt=0;if(over){if(OLfilterPI)o3_filter=0;cClick();}if(parent!=self){if(parent.OLo2Ref){parent.OLeval(
+parent.OLo2Ref);parent.OLo2Ref="";}if(parent.OLifRef){parent.OLeval(parent.OLifRef);parent.OLifRef="";}}if(OLo2Ref){
+eval(OLo2Ref);OLo2Ref="";}if(OLifRef){eval(OLifRef);OLifRef="";}OLload(OLp1or2);OLload(OLp1);OLfnRef="";OLifX=0;OLifY=0;
+OLhover=0;if(OLcrossframePI&&parent!=self)OLchkFRAME(arguments);OLsetRunTimeVar();OLparseTokens('o3_',arguments);if(!(
+over=OLmkLyr()))return false;over.onmouseover=over.onmouseout=null;if(o3_decode)OLdecode();if(OLprintPI)OLchkPrint();
+if(OLbubblePI)OLchkForBubbleEffect();if(OLdebugPI)OLsetDebugCanShow();if(OLshadowPI)OLinitShadow();if(OLiframePI)OLinitIfs();
+if(OLfilterPI)OLinitFilterLyr();if(OLexclusivePI&&o3_exclusive&&o3_exclusivestatus!="")o3_status=o3_exclusivestatus;else
+if(o3_autostatus==2&&o3_cap!="")o3_status=o3_cap;else if(o3_autostatus==1&&o3_text!="")o3_status=o3_text;if(!o3_delay){
+return OLmain();}else{OLdelayid=setTimeout("OLmain()",o3_delay);if(o3_status!=""){self.status=o3_status;return true;}else
+if(!(OLop7&&event&&event.type=='mouseover'))return false;}
 }
 function OLeval(s){eval(s);}
 
 // Clears popups if appropriate
 function nd(time){
-if(OLloaded&&OLgateOK){if(!((OLexclusivePI)&&OLisExclusive())){if(time&&over&&!o3_delay){
-if(OLtimerid>0)clearTimeout(OLtimerid);OLtimerid=(OLhover&&o3_frame==self&&!OLcursorOff())?0:
-setTimeout("cClick()",(o3_timeout=OLndt=time));}else{if(!OLshowingsticky){OLallowmove=0;
-if(over)OLhideObject(over);}}}}return false;
+if(OLloaded&&OLgateOK){if(!((OLexclusivePI)&&OLisExclusive())){if(time&&over&&!o3_delay){if(OLtimerid>0)
+clearTimeout(OLtimerid);OLtimerid=(OLhover&&!OLcursorOff())?0:setTimeout("cClick()",(o3_timeout=OLndt=time));
+}else{if(!OLshowingsticky){OLallowmove=0;if(over)OLhideObject(over);}}}}return false;
 }
 
 // Close function for stickies
@@ -189,11 +190,12 @@ function no_overlib(){return false;}
  OVERLIB MAIN FUNCTION SET
 */
 function OLmain(){
-o3_delay=0;if(parent!=self&&o3_frame==parent&&parent.OLscrollPI&&parent.over)parent.OLclearScroll();if(o3_frame==self){
-if(o3_noclose)OLoptMOUSEOFF(0);else if(o3_mouseoff)OLoptMOUSEOFF(1);}if(o3_sticky){OLshowingsticky=1;if(OLfnRef&&
-parent!=self&&o3_frame==parent&&parent.overlib){parent.OLifRef=OLfnRef+'cClick()';}}OLdoLyr();OLallowmove=0;if(o3_timeout>0){
-if(OLtimerid>0)clearTimeout(OLtimerid);OLtimerid=setTimeout("cClick()",o3_timeout);}OLchkRef();OLdisp(o3_status);
-if(OLdraggablePI)OLcheckDrag();if(o3_status!="")return true;else if(!(OLop7&&event&&event.type=='mouseover'))return false;
+o3_delay=0;if(parent!=self&&o3_frame==parent&&parent.OLscrollPI&&parent.over)parent.OLclearScroll();if(o3_noclose)
+OLoptMOUSEOFF(0);else if(o3_mouseoff)OLoptMOUSEOFF(1);if(o3_sticky){OLshowingsticky=1;if(OLfnRef&&parent!=self&&
+o3_frame==parent&&parent.overlib)parent.OLifRef=(OLfilterPI?OLfnRef+'o3_filter=0;':'')+OLfnRef+'cClick();';}OLdoLyr();
+OLallowmove=0;if(o3_timeout>0){if(OLtimerid>0)clearTimeout(OLtimerid);OLtimerid=setTimeout("cClick()",o3_timeout);}
+OLchkRef();OLdisp(o3_status);if(OLdraggablePI)OLcheckDrag();if(o3_status!="")return true;else if(!(OLop7&&event&&
+event.type=='mouseover'))return false;
 }
 function OLchkRef(){
 if(o3_ref){OLrefXY=OLgetRefXY(o3_ref);if(OLrefXY[0]==null&&OLcrossframePI)OLchkIfRef();
@@ -211,11 +213,10 @@ OLcontentSimple(o3_text):(o3_sticky)?OLcontentCaption(o3_text,o3_cap,o3_close):O
 
 // Makes Layer
 function OLmkLyr(id,f,z){
-id=(id||'overDiv');f=(f||o3_frame);z=(z||1000);var fd=f.document,d=OLgetRefById(id,fd);
-if(!d){if(OLns4)d=fd.layers[id]=new Layer(1024,f);else if(OLie4&&!OLop7){
-fd.body.insertAdjacentHTML('AfterBegin','<div id="'+id+'"></div>');d=fd.all[id];}else{d=fd.createElement('div');
-if(d){d.id=id;fd.body.appendChild(d);}}if(!d)return null;if(OLns4)d.zIndex=z;else{var o=d.style;o.position='absolute';
-o.visibility='hidden';o.zIndex=z;}}return d;
+id=(id||'overDiv');f=(f||o3_frame);z=(z||1000);var fd=f.document,d=OLgetRefById(id,fd);if(!d){if(OLns4)d=fd.layers[id]=
+new Layer(1024,f);else if(OLie4&&!OLop7){fd.body.insertAdjacentHTML('AfterBegin','<div id="'+id+'"></div>');d=fd.all[id];}
+else{d=fd.createElement('div');if(d){d.id=id;fd.body.appendChild(d);}}if(!d)return null;if(OLns4)d.zIndex=z;else{var o=
+d.style;o.position='absolute';o.visibility='hidden';o.zIndex=z;}}return d;
 }
 
 // Creates and writes layer content
@@ -225,9 +226,9 @@ if(o3_fgbackground!='')o3_fgbackground=' background="'+o3_fgbackground+'"';
 if(o3_bgbackground!='')o3_bgbackground=' background="'+o3_bgbackground+'"';
 if(o3_cgbackground!='')o3_cgbackground=' background="'+o3_cgbackground+'"';
 if(o3_fgcolor!='')o3_fgcolor=' bgcolor="'+o3_fgcolor+'"';if(o3_bgcolor!='')o3_bgcolor=' bgcolor="'+o3_bgcolor+'"';
-if(o3_cgcolor!='')o3_cgcolor=' bgcolor="'+o3_cgcolor+'"';if(o3_height>0)o3_height=' height="'+o3_height+'"';
-else o3_height='';}if(!OLns4)OLrepositionTo(over,(OLns6?20:0),0);var lyrHtml=OLdoLGF();
-if(o3_wrap&&!o3_fullhtml){OLlayerWrite(lyrHtml);o3_width=(OLns4?over.clip.width:over.offsetWidth);if(OLie4){
+if(o3_cgcolor!='')o3_cgcolor=' bgcolor="'+o3_cgcolor+'"';if(o3_height>0)o3_height=(OLns4)?' height="'+o3_height+'"':
+' style="height:'+o3_height+'px;"';else o3_height='';}if(!OLns4)OLrepositionTo(over,(OLns6?20:0),0);var lyrHtml=OLdoLGF();
+if(o3_wrap&&!o3_fullhtml){OLlayerWrite(lyrHtml);o3_width=(OLns4?over.clip.width:over.offsetWidth);if(OLie4&&!OLop95){
 var w=OLfd().clientWidth;if(o3_width>=w){if(OLop7){if(OLovertwoPI&&over==over2){var z=over2.style.zIndex;
 o3_frame.document.body.removeChild(over);over2=OLmkLyr('overDiv2',o3_frame,z);over=over2;}else{
 o3_frame.document.body.removeChild(over);over=OLmkLyr();}}o3_width=w-20;}}
@@ -294,7 +295,7 @@ return ((o3_base>0&&!o3_wrap)?('<table width="100%" border="0" cellpadding="0" c
 +o3_bgclass+'"':'')+'><tr><td height="'+o3_base+'"></td></tr></table>'):'')+'</td></tr></table>';
 }
 function OLwd(a){return(o3_wrap?'':' width="'+(!a?'100%':(a==1?o3_width:(o3_width-o3_padxl-o3_padxr)))+'"');}
-function OLhL(s){return(s?' style="width:100%;"':'width:100%;');}
+function OLhL(s){if(!OLie5)return '';return(s?' style="overflow:auto;"':'overflow:auto;');}
 
 // Loads image into the div.
 function OLsetBackground(i){
@@ -308,18 +309,18 @@ else{if(OLns4)over.background.src=i;else{if(OLns6)over.style.width=o3_width+'px'
 // Displays layer
 function OLdisp(s){
 if(OLmodalPI&&!o3_modalscroll)OLchkModal();if(!OLallowmove){if(OLshadowPI)OLdispShadow();if(OLiframePI)OLdispIfs();
-OLplaceLayer();if(OLmodalPI&&o3_modalscroll)OLchkModal();if(OLndt)OLshowObject(over);
-else OLshowid=setTimeout("OLshowObject(over)",1);OLallowmove=(o3_sticky||o3_nofollow)?0:1;}OLndt=0;if(s!="")self.status=s;
+OLplaceLayer();if(OLmodalPI&&o3_modalscroll)OLchkModal();if(OLndt)OLshowObject(over);else OLshowid=
+setTimeout("OLshowObject(over)",1);OLallowmove=(o3_sticky||o3_nofollow)?0:1;}OLndt=0;if(s!="")self.status=s;
 }
 
 // Decides placement of layer.
 function OLplaceLayer(){
 var snp,X,Y,pgLeft,pgTop,pWd=o3_width,pHt,iWd=100,iHt=100,SB=0,LM=0,CX=0,TM=0,BM=0,CY=0,o=OLfd(),
 nsb=(OLgek>=20010505&&!o3_frame.scrollbars.visible)?1:0;
-if(!OLkht&&o&&o.clientWidth)iWd=o.clientWidth;
+if(!OLkht&&!OLop95&&o&&o.clientWidth)iWd=o.clientWidth;
 else if(o3_frame.innerWidth){SB=Math.ceil(1.4*(o3_frame.outerWidth-o3_frame.innerWidth));
 if(SB>20)SB=20;iWd=o3_frame.innerWidth;}
-pgLeft=(OLie4)?o.scrollLeft:o3_frame.pageXOffset;
+pgLeft=(OLie4&&!OLop95)?o.scrollLeft:o3_frame.pageXOffset;
 if(OLie55&&OLfilterPI&&o3_filter&&o3_filtershadow)SB=CX=5;else
 if((OLshadowPI)&&bkdrop&&o3_shadow&&o3_shadowx){SB+=((o3_shadowx>0)?o3_shadowx:0);
 LM=((o3_shadowx<0)?Math.abs(o3_shadowx):0);CX=Math.abs(o3_shadowx);}
@@ -345,8 +346,8 @@ snp=X % o3_snapx;
 if(o3_hpos==LEFT){X=X-(o3_snapx+snp);}else{X=X+(o3_snapx-snp);}}X+=OLifX;}
 if(!o3_nojustx&&X+pWd>pgLeft+iWd-SB)
 X=iWd+pgLeft-pWd-SB;if(!o3_nojustx&&X-LM<pgLeft)X=pgLeft+LM;
-pgTop=OLie4?o.scrollTop:o3_frame.pageYOffset;
-if(!OLkht&&!nsb&&o&&o.clientHeight)iHt=o.clientHeight;
+pgTop=OLie4&&!OLop95?o.scrollTop:o3_frame.pageYOffset;
+if(!OLkht&&!OLop95&&!nsb&&o&&o.clientHeight)iHt=o.clientHeight;
 else if(o3_frame.innerHeight)iHt=o3_frame.innerHeight;
 if(OLbubblePI&&o3_bubble)pHt=OLbubbleHt;else pHt=OLns4?over.clip.height:over.offsetHeight;
 if((OLshadowPI)&&bkdrop&&o3_shadow&&o3_shadowy){TM=(o3_shadowy<0)?Math.abs(o3_shadowy):0;
@@ -424,16 +425,15 @@ of=(p=='UR')?[W-pW,0]:(p=='LL')?[W,-pH]:(p=='LR')?[W-pW,-pH]:[W,0];}else if(c=='
 // Gets x or y location of object
 function OLpageLoc(o,t){
 var l=0,s=o;while(o.offsetParent&&o.offsetParent.tagName.toLowerCase()!='html'){l+=o['offset'+t];o=o.offsetParent;}
-l+=o['offset'+t];while(s=s.parentNode){if((s['scroll'+t]>0)&&s.tagName.toLowerCase()=='div')l-=s['scroll'+t];}return l;
+l+=o['offset'+t];if(!OLop7)while(s=s.parentNode){if((s['scroll'+t]>0)&&s.tagName.toLowerCase()=='div')l-=s['scroll'+t];}
+return l;
 }
 
 // Moves layer
 function OLmouseMove(e){
-var e=(e||event);OLcC=(OLovertwoPI&&over2&&over==over2?cClick2:cClick);OLx=(e.pageX||e.clientX+OLfd().scrollLeft);
-OLy=(e.pageY||e.clientY+OLfd().scrollTop);if((OLallowmove&&over)&&(o3_frame==self||over==OLgetRefById()||(OLovertwoPI&&
-over2==over&&over==OLgetRefById('overDiv2')))){OLplaceLayer();if(OLhidePI)OLhideUtil(0,1,1,0,0,0);}if(OLhover&&over&&
-o3_frame==self&&OLcursorOff())if(o3_offdelay<1)OLcC();else{if(OLtimerid>0)clearTimeout(OLtimerid);
-OLtimerid=setTimeout("OLcC()",o3_offdelay);}
+var e=(e||event);OLx=(e.pageX||e.clientX+OLfd().scrollLeft);OLy=(e.pageY||e.clientY+OLfd().scrollTop);if((OLallowmove&&
+over)&&(o3_frame==self||over==OLgetRefById()||(OLovertwoPI&&over2==over&&over==OLgetRefById('overDiv2')))){OLplaceLayer();
+if(OLhidePI)OLhideUtil(0,1,1,0,0,0);}
 }
 
 // Capture mouse and chain other scripts.
@@ -451,8 +451,8 @@ function OLparseTokens(pf,ar){
 var i,v,md= -1,par=(pf!='ol_'),p=OLpar,q=OLparQuo,t=OLtoggle;OLudf=(par&&!ar.length?1:0);
 for(i=0;i<ar.length;i++){if(md<0){if(typeof ar[i]=='number'){OLudf=(par?1:0);i--;}
 else{switch(pf){case 'ol_':ol_text=ar[i];break;default:o3_text=ar[i];}}md=0;}else{
-if(ar[i]==INARRAY){OLudf=0;eval(pf+'text=ol_texts['+ar[++i]+']');continue;}
-if(ar[i]==CAPARRAY){eval(pf+'cap=ol_caps['+ar[++i]+']');continue;}
+if(ar[i]==INARRAY){OLudf=0;eval(pf+'text=ol_texts['+ar[(++i)]+']');continue;}
+if(ar[i]==CAPARRAY){eval(pf+'cap=ol_caps['+ar[(++i)]+']');continue;}
 if(ar[i]==CAPTION){q(ar[++i],pf+'cap');continue;}
 if(Math.abs(ar[i])==STICKY){t(ar[i],pf+'sticky');continue;}
 if(Math.abs(ar[i])==NOFOLLOW){t(ar[i],pf+'nofollow');continue;}
@@ -577,8 +577,8 @@ if(OLshowid>0){clearTimeout(OLshowid);OLshowid=0;}if(OLtimerid>0)clearTimeout(OL
 if(OLdelayid>0)clearTimeout(OLdelayid);OLtimerid=0;OLdelayid=0;self.status="";o3_label=ol_label;
 if(o3_frame!=self)o=OLgetRefById();if(o){if(o.onmouseover)o.onmouseover=null;if(OLscrollPI&&o==over)OLclearScroll();
 if(OLdraggablePI)OLclearDrag();if(OLfilterPI)OLcleanupFilter(o);if(OLshadowPI)OLhideShadow();var os=(OLns4)?o:o.style;
-if(((OLfilterPI)&&!OLchkFadeOut(os))||!OLfilterPI){os.visibility="hidden";if(!OLie55||!OLfilterPI||!o3_filter||
-o3_fadeout<0)o.innerHTML='';}if(OLhidePI&&o==over)OLhideUtil(0,0,1);if(OLiframePI)OLhideIfs(o);}
+if(((OLfilterPI)&&!OLchkFadeOut(os))||!OLfilterPI){os.visibility="hidden";if(!OLie55||(typeof ggOnChange=='undefined'&&
+(!OLfilterPI||!o3_filter||o3_fadeout<0)))o.innerHTML='';}if(OLhidePI&&o==over)OLhideUtil(0,0,1);if(OLiframePI)OLhideIfs(o);}
 }
 
 // Moves layer
@@ -588,8 +588,9 @@ o=(OLns4)?o:o.style;o.left=(OLns4?xL:xL+'px');o.top=(OLns4?yL:yL+'px');
 
 // Handle NOCLOSE-MOUSEOFF
 function OLoptMOUSEOFF(c){
-if(!c)o3_close="";
-over.onmouseover=function(){OLhover=1;if(OLtimerid>0){clearTimeout(OLtimerid);OLtimerid=0;}}
+if(!c)o3_close="";over.onmouseover=function(){OLhover=1;if(OLtimerid>0){clearTimeout(OLtimerid);OLtimerid=0;}}
+over.onmouseout=function(){if(OLhover){OLcC=(OLovertwoPI&&over2&&over==over2?cClick2:cClick);if(OLtimerid>0)
+clearTimeout(OLtimerid);OLtimerid=setTimeout("OLcC()",(o3_offdelay<1)?1:o3_offdelay);}}
 }
 function OLcursorOff(){
 var o=(OLns4?over:over.style),pHt=OLns4?over.clip.height:over.offsetHeight,left=parseInt(o.left),top=parseInt(o.top),
@@ -608,7 +609,7 @@ if(OLcmdLine.length){for(var k=0;k<OLcmdLine.length;k++){var j=OLcmdLine[k](pf,i
 }
 function OLregCmds(c){
 if(typeof c!='string')return;var pM=c.split(',');pMtr=pMtr.concat(pM);
-for(var i=0;i<pM.length;i++)eval(pM[i].toUpperCase()+'='+pmCnt++);
+for(var i=0;i<pM.length;i++)eval(pM[i].toUpperCase()+'='+(pmCnt++));
 }
 function OLregRunTimeFunc(f){
 if(typeof f=='object')OLrunTime=OLrunTime.concat(f);else OLrunTime[OLrunTime.length++]=f;

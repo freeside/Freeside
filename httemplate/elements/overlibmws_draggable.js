@@ -1,5 +1,5 @@
 /*
- overlibmws_draggable.js plug-in module - Copyright Foteos Macrides 2002-2008. All rights reserved.
+ overlibmws_draggable.js plug-in module - Copyright Foteos Macrides 2002-2010. All rights reserved.
    For support of the DRAGGABLE feature.
    Initial: August 24, 2002 - Last Revised: January 26, 2008
  See the Change History and Command Reference for overlibmws via:

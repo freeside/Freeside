@@ -1,5 +1,5 @@
 /*
- overlibmws_iframe.js plug-in module - Copyright Foteos Macrides 2003-2008. All rights reserved.
+ overlibmws_iframe.js plug-in module - Copyright Foteos Macrides 2003-2010. All rights reserved.
    Masks system controls to prevent obscuring of popops for IE v5.5 or higher.
    Initial: October 19, 2003 - Last Revised: January 26, 2008
  See the Change History and Command Reference for overlibmws via:

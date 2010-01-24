@@ -1,7 +1,7 @@
 /*
- overlibmws_crossframe.js plug-in module - Copyright Foteos Macrides 2003-2008. All rights reserved.
+ overlibmws_crossframe.js plug-in module - Copyright Foteos Macrides 2003-2010. All rights reserved.
    For support of FRAME.
-   Initial: August 3, 2003 - Last Revised: January 16, 2008
+   Initial: August 3, 2003 - Last Revised: October 25, 2008
  See the Change History and Command Reference for overlibmws via:
 
 	http://www.macridesweb.com/oltest/
@@ -32,8 +32,8 @@ function OLoptFRAME(frm){
 o3_frame=OLmkLyr('overDiv',frm)?frm:self;if(o3_frame!=self){var l,tFrm=OLgetFrameRef(top.frames,o3_frame),
 sFrm=OLgetFrameRef(top.frames,ol_frame);if(sFrm.length==tFrm.length) {l=tFrm.lastIndexOf('[');if(l){
 while(sFrm.substring(0,l)!=tFrm.substring(0,l))l=tFrm.lastIndexOf('[',l-1);tFrm=tFrm.substr(l);sFrm=sFrm.substr(l);}}
-var i,k,cnt=0,p='',str=tFrm;while((k=str.lastIndexOf('['))!= -1){cnt++;str=str.substring(0,k);}
-for(i=0;i<cnt;i++)p=p+'parent.';OLfnRef=p+'frames'+sFrm+'.';var n=window.name,o;
+var i,k,cnt=0,p='',str=tFrm;while((k=str.lastIndexOf('['))!= -1){cnt++;str=str.substring(0,k);}if(!sFrm&&o3_frame==parent)
+sFrm=OLgetFrameRef(parent,self);else for(i=0;i<cnt;i++)p=p+'parent.';OLfnRef=p+'frames'+sFrm+'.';var n=window.name,o;
 if((n&&parent!=self&&o3_frame==parent)&&(o=OLgetRef(n,parent.document))){if(OLie4&&!OLop7){
 OLx=event.clientX+OLfd().scrollLeft;OLy=event.clientY+OLfd().scrollTop;}
 OLifX=OLpageLoc(o,'Left')-(OLie4&&!OLop7?OLfd().scrollLeft:self.pageXOffset);
@@ -45,6 +45,11 @@ var n=(parent!=self&&o3_frame==parent)?window.name:'',o=n?OLgetRef(n):null;
 if(o){var oR=OLgetRef(o3_ref,document);if(oR){OLrefXY=OLgetRefXY(o3_ref,document);
 OLrefXY[0]+=(OLpageLoc(o,'Left')-(OLie4&&!OLop7?OLfd(self).scrollLeft:self.pageXOffset));
 OLrefXY[1]+=(OLpageLoc(o,'Top')-(OLie4&&!OLop7?OLfd(self).scrollTop:self.pageYOffset));}}
+}
+
+function OLchkFRAME(args){
+var OLfrmVal=self;for(var i=0;i<args.length;i++){if(typeof args[i]=='number'&&args[i]==FRAME){OLfrmVal=args[i+1];break;}}
+if(OLfrmVal!=self&&OLfrmVal.over&&OLfrmVal.cClick)OLfrmVal.cClick();
 }
 
 OLregCmdLineFunc(OLparseCrossframe);
