@@ -270,6 +270,7 @@ sub cust_header {
   );
   my %header2align = (
     'Cust. Status' => 'c',
+    'Cust#'        => 'r',
   );
 
   my $cust_fields;
@@ -373,12 +374,10 @@ sub cust_fields {
   my $seen_unlinked = 0;
   map { 
     if ( $record->custnum ) {
-      warn "  $record -> $_"
-        if $DEBUG > 1;
+      warn "  $record -> $_" if $DEBUG > 1;
       $record->$_(@_);
     } else {
-      warn "  ($record unlinked)"
-        if $DEBUG > 1;
+      warn "  ($record unlinked)" if $DEBUG > 1;
       $seen_unlinked++ ? '' : '(unlinked)';
     }
   } @cust_fields;
