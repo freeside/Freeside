@@ -5,34 +5,34 @@
                 'count_query' => $count_query,
                 'count_addl'  => [ '$%.2f total paid (net)', ],
                 'header'      => [ 'Net applied',
-                                   'to Invoice',
+                                   'Invoice',
+                                   'Invoice amount',
+                                   'Invoice date',
                                    'Payment',
+                                   'Payment amount',
+                                   'Payment date',
                                    'By',
                                    FS::UI::Web::cust_header(),
                                  ],
                 'fields'      => [
-                   sub { $money_char. sprintf('%.2f', shift->amount ) },
-                   sub { my $cbp = shift;
-                         '#'.$cbp->invnum. ' '.
-                         time2str('%b %d %Y', $cbp->cust_bill_date ).
-                         " ($money_char".
-                           sprintf('%.2f', $cbp->cust_bill_amount).
-                         ")" 
-                       },
-                   sub { my $cbp = shift;
-                         $cbp->cust_pay->payby_payinfo_pretty. ' '.
-                         time2str('%b %d %Y', $cbp->_date ).
-                         " ($money_char".
-                         sprintf('%.2f', $cbp->cust_pay_paid ).
-                         ")"
-                       },
-                   sub { shift->cust_pay->otaker },
+                   sub { $money_char.sprintf('%.2f', shift->amount ) },
+                   'invnum',
+                   sub { $money_char.sprintf('%.2f', shift->cust_bill_charged)},
+                   sub { time2str('%b %d %Y', shift->cust_bill_date ) },
+                   sub { shift->cust_pay->payby_payinfo_pretty },
+                   sub { $money_char.sprintf('%.2f', shift->cust_pay_paid)},
+                   sub { time2str('%b %d %Y', shift->cust_pay_date ) },
+                   sub { shift->cust_pay_otaker },
                    \&FS::UI::Web::cust_fields,
                 ],
-                'align' => 'rrrl'.FS::UI::Web::cust_aligns(),
+                'align' => 'rrrrlrrl'.FS::UI::Web::cust_aligns(),
                 'links' => [
                              '',
                              $cust_bill_link,
+                             $cust_bill_link,
+                             $cust_bill_link,
+                             $cust_pay_link,
+                             $cust_pay_link,
                              $cust_pay_link,
                              '',
                              ( map { $_ ne 'Cust. Status' ? $cust_link : '' }
@@ -44,9 +44,17 @@
                              '',
                              '',
                              '',
+                             '',
+                             '',
+                             '',
+                             '',
                              FS::UI::Web::cust_colors(),
                            ],
                 'style' => [ 
+                             '',
+                             '',
+                             '',
+                             '',
                              '',
                              '',
                              '',
@@ -93,9 +101,11 @@ my $sql_query   = {
   'table'     => 'cust_bill_pay',
   'select'    => join(', ',
                    'cust_bill_pay.*',
-                   'cust_pay.paid       AS cust_pay_paid',
                    'cust_bill._date     AS cust_bill_date',
-                   #'cust_bill.charged   AS cust_bill_charged',
+                   'cust_bill.charged   AS cust_bill_charged',
+                   'cust_pay.paid       AS cust_pay_paid',
+                   'cust_pay._date      AS cust_pay_date',
+                   'cust_pay.otaker     AS cust_pay_otaker',
                    'cust_pay.custnum    AS custnum',
                    'cust_main.custnum   AS cust_main_custnum',
                    FS::UI::Web::cust_sql_fields(),
