@@ -1289,80 +1289,80 @@ is >0), one will be generated randomly.
 =cut
 
 sub set_password {
-  my $self = shift;
-  my $pass = shift;
-  my ($encoding, $encryption);
+  my( $self, $pass ) = ( shift, shift );
+
   my $failure = gettext('illegal_password'). " $passwordmin-$passwordmax ".
                 FS::Msgcat::_gettext('illegal_password_characters').
                 ": ". $pass;
 
-  if(($passwordmin and length($pass) < $passwordmin) or 
-     ($passwordmax and length($pass) > $passwordmax)) {
-    return $failure;
-  }
+  my ($encoding, $encryption);
 
-  if($self->_password_encoding) {
+  if ( $self->_password_encoding ) {
     $encoding = $self->_password_encoding;
     # identify existing encryption method, try to use it.
     $encryption = $self->_password_encryption;
-    if(!$encryption) {
+    if (!$encryption) {
       # use the system default
       undef $encoding;
     }
   }
 
-  if(!$encoding) {
+  if ( !$encoding ) {
     # set encoding to system default
-    ($encoding, $encryption) = split(/-/, lc($conf->config('default-password-encoding')));
+    ($encoding, $encryption) =
+      split(/-/, lc($conf->config('default-password-encoding')));
     $encoding ||= 'legacy';
     $self->_password_encoding($encoding);
   }
 
-  if($encoding eq 'legacy') {
+  if( $encoding eq 'legacy' ) {
+
     # The legacy behavior from check():
     # If the password is blank, randomize it and set encoding to 'plain'.
     if(!defined($pass) or (length($pass) == 0 and $passwordmin)) {
       $pass = join('',map($pw_set[ int(rand $#pw_set) ], (0..7) ) );
       $self->_password_encoding('plain');
-    }
-    else {
+    } else {
       # Prefix + valid-length password
       if ( $pass =~ /^((\*SUSPENDED\* |!!?)?)([^\t\n]{$passwordmin,$passwordmax})$/ ) {
         $pass = $1.$3;
         $self->_password_encoding('plain');
-      }
       # Prefix + crypt string
-      elsif ( $pass =~ /^((\*SUSPENDED\* |!!?)?)([\w\.\/\$\;\+]{13,64})$/ ) {
+      } elsif ( $pass =~ /^((\*SUSPENDED\* |!!?)?)([\w\.\/\$\;\+]{13,64})$/ ) {
         $pass = $1.$3;
         $self->_password_encoding('crypt');
-      }
       # Various disabled crypt passwords
-      elsif ( $pass eq '*' or
+      } elsif ( $pass eq '*' or
               $pass eq '!' or
               $pass eq '!!' ) {
         $self->_password_encoding('crypt');
-      }
-      else {
+      } else {
         return $failure;
       }
    }
+
+    $self->_password($pass);
+    return;
+
   }
-  elsif($encoding eq 'crypt') {
-    if($encryption eq 'md5') {
+
+  return $failure
+    if $passwordmin && length($pass) < $passwordmin
+    or $passwordmax && length($pass) > $passwordmax;
+
+  if ( $encoding eq 'crypt' ) {
+    if ($encryption eq 'md5') {
       $pass = unix_md5_crypt($pass);
-    }
-    elsif($encryption eq 'des') {
+    } elsif ($encryption eq 'des') {
       $pass = crypt($pass, $saltset[int(rand(64))].$saltset[int(rand(64))]);
     }
-  }
-  elsif($encoding eq 'ldap') {
-    if($encryption eq 'md5') {
+
+  } elsif ( $encoding eq 'ldap' ) {
+    if ($encryption eq 'md5') {
       $pass = md5_base64($pass);
-    }
-    elsif($encryption eq 'sha1') {
+    } elsif ($encryption eq 'sha1') {
       $pass = sha1_base64($pass);
-    }
-    elsif($encryption eq 'crypt') {
+    } elsif ($encryption eq 'crypt') {
       $pass = crypt($pass, $saltset[int(rand(64))].$saltset[int(rand(64))]);
     }
     # else $encryption eq 'plain', do nothing
