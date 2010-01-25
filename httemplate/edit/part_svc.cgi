@@ -19,6 +19,7 @@ Service definitions are the templates for items you offer to your customers.
     <LI>svc_www - Virtual domain website
     <LI>svc_broadband - Broadband/High-speed Internet service (always-on)
     <LI>svc_phone - Customer phone numbers
+    <LI>svc_pbx - Customer PBXs
     <LI>svc_external - Externally-tracked service
 <!--   <LI>svc_charge - One-time charges (Partially unimplemented)
        <LI>svc_wo - Work orders (Partially unimplemented)

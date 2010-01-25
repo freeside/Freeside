@@ -226,6 +226,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::cust_category;
   use FS::prospect_main;
   use FS::contact;
+  use FS::svc_pbx;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

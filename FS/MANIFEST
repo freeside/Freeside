@@ -474,3 +474,5 @@ t/contact_email.t
 FS/prospect_main.pm
 t/prospect_main.t
 FS/o2m_Common.pm
+FS/svc_pbx.pm
+t/svc_pbx.t
