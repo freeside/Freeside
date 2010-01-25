@@ -3,6 +3,7 @@
               'fields'    => [qw(
                                   countrycode
                                   phonenum
+                                  pbx_title
                                   sip_password
                                   pin
                                   phone_name
@@ -10,6 +11,7 @@
               'labels'    => {
                                'countrycode'  => 'Country code',
                                'phonenum'     => 'Phone number',
+                               'pbx_title'    => 'PBX',
                                'sip_password' => 'SIP password',
                                'pin'          => 'PIN',
                                'phone_name'   => 'Name',

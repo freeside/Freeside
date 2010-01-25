@@ -8,6 +8,7 @@ use FS::Msgcat qw(gettext);
 use FS::svc_Common;
 use FS::part_svc;
 use FS::phone_device;
+use FS::svc_pbx;
 
 @ISA = qw( FS::svc_Common );
 
@@ -67,6 +68,10 @@ Voicemail PIN
 
 =item phone_name
 
+=item pbxsvc
+
+Optional svcnum from svc_pbx
+
 =back
 
 =head1 METHODS
@@ -104,6 +109,11 @@ sub table_info {
                           },
         'sip_password' => 'SIP password',
         'phone_name'   => 'Name',
+        'pbxsvc'       => { label => 'PBX',
+                            type  => 'select-svc_pbx.html',
+                            disable_inventory => 1,
+                            disable_select => 1, #UI wonky, pry works otherwise
+                          },
     },
   };
 }
@@ -258,6 +268,7 @@ sub check {
     || $self->ut_anything('sip_password')
     || $self->ut_numbern('pin')
     || $self->ut_textn('phone_name')
+    || $self->ut_foreign_keyn('pbxsvc', 'svc_pbx', 'svcnum' )
   ;
   return $error if $error;
 

@@ -157,6 +157,13 @@ Service #<B><% $svcnum %></B>
   <TD BGCOLOR="#ffffff"><% $domain %></TD>
 </TR>
 
+% if ( $svc_acct->pbxsvc ) {
+    <TR>
+      <TD ALIGN="right">PBX</TD>
+      <TD BGCOLOR="#ffffff"><% $svc_acct->pbx_title %></TD>
+    </TR>
+%}
+
 <TR>
   <TD ALIGN="right">Password</TD>
   <TD BGCOLOR="#ffffff">

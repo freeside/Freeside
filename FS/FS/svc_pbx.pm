@@ -37,7 +37,21 @@ FS::svc_Common.  The following fields are currently supported:
 
 =over 4
 
-=item field - description
+=item svcnum
+
+Primary key (assigned automatcially for new accounts)
+
+=item id
+
+(Unique?) number of external record
+
+=item title
+
+PBX name
+
+=item max_extensions
+
+Maximum number of extensions
 
 =back
 

@@ -1,0 +1,60 @@
+%if ( $columnflag eq 'F' || !keys(%svc_pbx) ) {
+  <INPUT TYPE="hidden" NAME="<% $opt{'element_name'} || $opt{'field'} || 'pbxsvc' %>" VALUE="<% $pbxsvc %>">
+% } else { 
+
+  <TR>
+    <TD ALIGN="right"><% $opt{'label'} || 'PBX' %></TD>
+    <TD>
+      <% include('/elements/select-svc_pbx.html',
+                   'curr_value' => $pbxsvc,
+                   'part_svc'   => $part_svc,
+                   'cust_pkg'   => $cust_pkg,
+                )
+      %>
+    </TD>
+  </TR>
+% } 
+<%init>
+
+# false laziness w/tr-select-svc_acct-domain.html
+
+my %opt = @_;
+
+my $pbxsvc = $opt{'curr_value'};
+
+#required
+my $part_svc = $opt{'part_svc'}
+               || qsearchs('part_svc', { 'svcpart' => $opt{'svcpart'} });
+my $svcpart =
+  $part_svc ? $part_svc->svcpart : '';
+my $columnflag =
+  $part_svc ? $part_svc->part_svc_column('pbxsvc')->columnflag : '';
+
+#optional
+my $cust_pkg = $opt{'cust_pkg'};
+$cust_pkg ||= qsearchs('cust_pkg', { 'pkgnum' => $opt{'pkgnum'} })
+  if $opt{'pkgnum'};
+
+# false laziness w/select-svc_pbx.html
+
+my $pkgnum = $cust_pkg ? $cust_pkg->pkgnum : '';
+
+my %svc_pbx = ();
+
+if ( $pbxsvc ) {
+  my $svc_pbx = qsearchs('svc_pbx', { 'svcnum' => $pbxsvc } );
+  if ( $svc_pbx ) {
+    $svc_pbx{$svc_pbx->svcnum} = $svc_pbx;
+  } else {
+    warn "unknown svc_pbx.svcnum for svc_acct.pbxsvc: $pbxsvc";
+  }
+}
+
+%svc_pbx = (
+  %svc_pbx,
+  FS::svc_Common->pbx_select_hash( 'svcpart' => $svcpart,
+                                   'pkgnum'  => $pkgnum,
+                                 )
+);
+
+</%init>

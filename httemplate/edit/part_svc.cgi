@@ -289,6 +289,14 @@ that field.
 %          } #endif
 %          $html .= '</SELECT>';
 %
+%        } elsif ( $def->{type} eq 'select-svc_pbx.html' ) {
+%
+%          $html .= include('/elements/select-svc_pbx.html',
+%                             'element_name' => "${layer}__${field}",
+%                             'element_etc'  => $disabled,
+%                             'multiple'     => ($flag eq 'S'),
+%                          );
+%
 %        } elsif ( $def->{type} eq 'radius_usergroup_selector' ) {
 %
 %          #XXX disable the RADIUS usergroup selector?  ugh it sure does need
@@ -304,7 +312,7 @@ that field.
 %
 %        } else {
 %
-%          $html .= '<font color="#ff0000">unknown type'. $def->{type};
+%          $html .= '<font color="#ff0000">unknown type '. $def->{type};
 %
 %        }
 %

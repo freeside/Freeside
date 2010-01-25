@@ -38,6 +38,7 @@ use FS::part_svc;
 use FS::svc_acct_pop;
 use FS::cust_main_invoice;
 use FS::svc_domain;
+use FS::svc_pbx;
 use FS::raddb;
 use FS::queue;
 use FS::radius_usergroup;
@@ -161,45 +162,71 @@ FS::svc_Common.  The following fields are currently supported:
 
 =over 4
 
-=item svcnum - primary key (assigned automatcially for new accounts)
+=item svcnum
+
+Primary key (assigned automatcially for new accounts)
 
 =item username
 
-=item _password - generated if blank
+=item _password
 
-=item _password_encoding - plain, crypt, ldap (or empty for autodetection)
+generated if blank
 
-=item sec_phrase - security phrase
+=item _password_encoding
 
-=item popnum - Point of presence (see L<FS::svc_acct_pop>)
+plain, crypt, ldap (or empty for autodetection)
+
+=item sec_phrase
+
+security phrase
+
+=item popnum
+
+Point of presence (see L<FS::svc_acct_pop>)
 
 =item uid
 
 =item gid
 
-=item finger - GECOS
+=item finger
 
-=item dir - set automatically if blank (and uid is not)
+GECOS
+
+=item dir
+
+set automatically if blank (and uid is not)
 
 =item shell
 
-=item quota - (unimplementd)
+=item quota
 
-=item slipip - IP address
+=item slipip
 
-=item seconds - 
+IP address
 
-=item upbytes - 
+=item seconds
 
-=item downbytes - 
+=item upbytes
 
-=item totalbytes - 
+=item downbyte
 
-=item domsvc - svcnum from svc_domain
+=item totalbytes
 
-=item radius_I<Radius_Attribute> - I<Radius-Attribute> (reply)
+=item domsvc
 
-=item rc_I<Radius_Attribute> - I<Radius-Attribute> (check)
+svcnum from svc_domain
+
+=item pbxsvc
+
+Optional svcnum from svc_pbx
+
+=item radius_I<Radius_Attribute>
+
+I<Radius-Attribute> (reply)
+
+=item rc_I<Radius_Attribute>
+
+I<Radius-Attribute> (check)
 
 =back
 
@@ -274,6 +301,20 @@ sub table_info {
                          select_label => 'domain',
                          disable_inventory => 1,
 
+                       },
+        'domsvc'    => {
+                         label     => 'Domain',
+                         type      => 'select',
+                         select_table => 'svc_domain',
+                         select_key   => 'svcnum',
+                         select_label => 'domain',
+                         disable_inventory => 1,
+
+                       },
+        'pbxsvc'    => { label => 'PBX',
+                         type  => 'select-svc_pbx.html',
+                         disable_inventory => 1,
+                         disable_select => 1, #UI wonky, pry works otherwise
                        },
         'usergroup' => {
                          label => 'RADIUS groups',
@@ -1011,7 +1052,8 @@ sub check {
 
   my $error = $self->ut_numbern('svcnum')
               #|| $self->ut_number('domsvc')
-              || $self->ut_foreign_key('domsvc', 'svc_domain', 'svcnum' )
+              || $self->ut_foreign_key( 'domsvc', 'svc_domain', 'svcnum' )
+              || $self->ut_foreign_keyn('pbxsvc', 'svc_pbx',    'svcnum' )
               || $self->ut_textn('sec_phrase')
               || $self->ut_snumbern('seconds')
               || $self->ut_snumbern('upbytes')

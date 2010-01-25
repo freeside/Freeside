@@ -1586,14 +1586,15 @@ sub tables_hashref {
         'downbytes_threshold',   'bigint', 'NULL',   '', '', '',
         'totalbytes','bigint', 'NULL',   '', '', '',
         'totalbytes_threshold',   'bigint', 'NULL',   '', '', '',
-        'domsvc',    'int', '',   '', '', '', 
+        'domsvc',    'int',     '', '', '', '', 
+        'pbxsvc',    'int', 'NULL', '', '', '',
         'last_login',  @date_type, '', '', 
         'last_logout', @date_type, '', '', 
       ],
       'primary_key' => 'svcnum',
       #'unique' => [ [ 'username', 'domsvc' ] ],
       'unique' => [],
-      'index' => [ ['username'], ['domsvc'] ],
+      'index' => [ ['username'], ['domsvc'], ['pbxsvc'] ],
     },
 
     'acct_rt_transaction' => {
@@ -2514,10 +2515,11 @@ sub tables_hashref {
         'pin',          'varchar', 'NULL', $char_d, '', '',
         'sip_password', 'varchar', 'NULL', $char_d, '', '',
         'phone_name',   'varchar', 'NULL', $char_d, '', '',
+        'pbxsvc',           'int', 'NULL',      '', '', '',
       ],
       'primary_key' => 'svcnum',
       'unique' => [],
-      'index'  => [ [ 'countrycode', 'phonenum' ] ],
+      'index'  => [ [ 'countrycode', 'phonenum' ], ['pbxsvc'] ],
     },
 
     'phone_device' => {

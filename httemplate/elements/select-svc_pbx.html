@@ -1,0 +1,57 @@
+<SELECT <% $opt{'multiple'} ? 'MULTIPLE' : 'SIZE=1' %>
+        NAME = "<% $opt{'element_name'} || $opt{'field'} || 'pbxsvc' %>"
+        <% $opt{'element_etc'} %>
+>
+
+% unless ( $opt{'multiple'} || $opt{'disable_empty'} ) {
+    <OPTION VALUE=""><% $opt{'empty_label'} || '' %>
+% }
+
+% foreach my $svcnum (
+%                      sort { $svc_pbx{$a} cmp $svc_pbx{$b} }
+%                      keys %svc_pbx
+%                    ) {
+%   my $svc_pbx = $svc_pbx{$svcnum};
+%   my $selected = ($svcnum == $pbxsvc) ? ' SELECTED' : '';
+
+    <OPTION VALUE="<% $svcnum %>" <% $selected %>><% $svc_pbx{$svcnum} %>
+
+% } 
+
+</SELECT>
+<%init>
+
+# false laziness w/select-svc_acct-domain.html
+
+my %opt = @_;
+
+my $pbxsvc = $opt{'curr_value'};
+my $part_svc = $opt{'part_svc'}
+               || qsearchs('part_svc', { 'svcpart' => $opt{'svcpart'} });
+my $svcpart = $part_svc ? $part_svc->svcpart : '';
+
+#optional
+my $cust_pkg = $opt{'cust_pkg'};
+$cust_pkg ||= qsearchs('cust_pkg', { 'pkgnum' => $opt{'pkgnum'} })
+  if $opt{'pkgnum'};
+
+my $pkgnum = $cust_pkg ? $cust_pkg->pkgnum : '';
+
+my %svc_pbx = ();
+
+if ( $pbxsvc ) {
+  my $svc_pbx = qsearchs('svc_pbx', { 'svcnum' => $pbxsvc } );
+  if ( $svc_pbx ) {
+    $svc_pbx{$svc_pbx->svcnum} = $svc_pbx;
+  } else {
+    warn "unknown svc_pbx.svcnum for svc_acct.pbxsvc: $pbxsvc";
+  }
+}
+
+%svc_pbx = (
+  %svc_pbx,
+  FS::svc_Common->pbx_select_hash( 'svcpart' => $svcpart,
+                                   'pkgnum'  => $pkgnum,
+                                 )
+);
+</%init>

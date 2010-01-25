@@ -586,6 +586,105 @@ sub part_svc {
 
 }
 
+=item svc_pbx
+
+Returns the FS::svc_pbx record for this service, if any (see L<FS::svc_pbx>).
+
+Only makes sense if the service has a pbxsvc field (currently, svc_phone and
+svc_acct).
+
+=cut
+
+# XXX FS::h_svc_{acct,phone} could have a history-aware svc_pbx override
+
+sub svc_pbx {
+  my $self = shift;
+  return '' unless $self->pbxsvc;
+  qsearchs( 'svc_pbx', { 'svcnum' => $self->pbxsvc } );
+}
+
+=item pbx_title
+
+Returns the title of the FS::svc_pbx record associated with this service, if
+any.
+
+Only makes sense if the service has a pbxsvc field (currently, svc_phone and
+svc_acct).
+
+=cut
+
+sub pbx_title {
+  my $self = shift;
+  my $svc_pbx = $self->svc_pbx or return '';
+  $svc_pbx->title;
+}
+
+=item pbx_select_hash %OPTIONS
+
+Can be called as an object method or a class method.
+
+Returns a hash SVCNUM => TITLE ...  representing the PBXes this customer
+that may be associated with this service.
+
+Currently available options are: I<pkgnum> I<svcpart>
+
+Only makes sense if the service has a pbxsvc field (currently, svc_phone and
+svc_acct).
+
+=cut
+
+#false laziness w/svc_acct::domain_select_hash
+sub pbx_select_hash {
+  my ($self, %options) = @_;
+  my %pbxes = ();
+  my $part_svc;
+  my $cust_pkg;
+
+  if (ref($self)) {
+    $part_svc = $self->part_svc;
+    $cust_pkg = $self->cust_svc->cust_pkg
+      if $self->cust_svc;
+  }
+
+  $part_svc = qsearchs('part_svc', { 'svcpart' => $options{svcpart} })
+    if $options{'svcpart'};
+
+  $cust_pkg = qsearchs('cust_pkg', { 'pkgnum' => $options{pkgnum} })
+    if $options{'pkgnum'};
+
+  if ($part_svc && ( $part_svc->part_svc_column('pbxsvc')->columnflag eq 'S'
+                  || $part_svc->part_svc_column('pbxsvc')->columnflag eq 'F')) {
+    %pbxes = map { $_->svcnum => $_->title }
+             map { qsearchs('svc_pbx', { 'svcnum' => $_ }) }
+             split(',', $part_svc->part_svc_column('pbxsvc')->columnvalue);
+  } elsif ($cust_pkg) { # && !$conf->exists('svc_acct-alldomains') ) {
+    %pbxes = map { $_->svcnum => $_->title }
+             map { qsearchs('svc_pbx', { 'svcnum' => $_->svcnum }) }
+             map { qsearch('cust_svc', { 'pkgnum' => $_->pkgnum } ) }
+             qsearch('cust_pkg', { 'custnum' => $cust_pkg->custnum });
+  } else {
+    #XXX agent-virt
+    warn "hi";
+    %pbxes = map { $_->svcnum => $_->title } qsearch('svc_pbx', {} );
+    warn %pbxes;
+  }
+
+  if ($part_svc && $part_svc->part_svc_column('pbxsvc')->columnflag eq 'D') {
+    my $svc_pbx = qsearchs('svc_pbx',
+      { 'svcnum' => $part_svc->part_svc_column('pbxsvc')->columnvalue } );
+    if ( $svc_pbx ) {
+      $pbxes{$svc_pbx->svcnum}  = $svc_pbx->title;
+    } else {
+      warn "unknown svc_pbx.svcnum for part_svc_column pbxsvc: ".
+           $part_svc->part_svc_column('pbxsvc')->columnvalue;
+
+    }
+  }
+
+  (%pbxes);
+
+}
+
 =item set_auto_inventory
 
 Sets any fields which auto-populate from inventory (see L<FS::part_svc>).

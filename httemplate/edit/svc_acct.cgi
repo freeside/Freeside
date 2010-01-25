@@ -122,7 +122,14 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
     </TD>
   </TR>
 % } 
-%
+
+<% include('/elements/tr-select-svc_pbx.html',
+             'curr_value' => $svc_acct->pbxsvc,
+             'part_svc'   => $part_svc,
+             'cust_pkg'   => $cust_pkg,
+          )
+%>
+
 %#pop
 %my $popnum = $svc_acct->popnum || 0;
 %if ( $part_svc->part_svc_column('popnum')->columnflag eq 'F' ) {

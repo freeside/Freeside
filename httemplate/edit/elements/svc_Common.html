@@ -54,6 +54,7 @@
 
                  'field_callback' => sub {
                    my ($cgi, $object, $f) = @_;
+
                    my $columndef = $part_svc->part_svc_column($f->{'field'});
                    my $flag = $columndef->columnflag;
                    if ( $flag eq 'F' ) {
@@ -62,6 +63,15 @@
                                       : 'hidden';
                      $f->{'value'} = $columndef->columnvalue;
                    }
+
+                   if ( $f->{'type'} eq 'select-svc_pbx' ) {
+                     $f->{'include_opt_callback'} =
+                       sub { ( 'pkgnum'  => $pkgnum,
+                               'svcpart' => $svcpart,
+                             );
+                           };
+                   }
+
                  },
 
                  'html_init' => sub {

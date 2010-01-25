@@ -6,6 +6,10 @@
                                  type  => 'select-did',
                                  label => 'Phone number',
                                },
+                               { field => 'pbxsvc',
+                                 type  => 'select-svc_pbx',
+                                 label => 'PBX',
+                               },
                                'sip_password',
                                'pin',
                                'phone_name',
@@ -16,6 +20,7 @@
                                'sip_password' => 'SIP password',
                                'pin'          => 'Voicemail PIN',
                                'phone_name'   => 'Name',
+                               'pbxsvc'       => 'PBX',
                              },
            )
 %>
