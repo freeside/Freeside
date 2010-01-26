@@ -80,7 +80,7 @@ sub table_info {
     'display_weight' => 70,
     'cancel_weight'  => 90,
     'fields' => {
-      'id'    => 'Thirdlane ID',
+      'id'    => 'ID',
       'title' => 'Name',
       'max_extensions' => 'Maximum number of User Extensions',
 #      'field'         => 'Description',
