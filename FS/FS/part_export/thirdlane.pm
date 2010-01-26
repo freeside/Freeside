@@ -41,6 +41,12 @@ sub _export_insert {
 
   if ( $svc_x->isa('FS::svc_pbx') ) {
 
+    return 'Name must be 19 characters or less (thirdlane restriction?)'
+      if length($svc_x->title) > 19;
+
+    return 'Name must consist of alphanumerics and spaces only (thirdlane restriction?)'
+      unless $svc_x->title =~ /^[\w\s]+$/;
+
     my $tenant = {
       'tenant'   => $svc_x->title,
       'maxusers' => $svc_x->max_extensions,

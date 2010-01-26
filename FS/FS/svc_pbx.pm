@@ -2,7 +2,7 @@ package FS::svc_pbx;
 
 use strict;
 use base qw( FS::svc_External_Common );
-#use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( qsearchs ); # qsearch );
 use FS::cust_svc;
 
 =head1 NAME
@@ -212,6 +212,21 @@ sub check {
 
 
   $self->SUPER::check;
+}
+
+#XXX this is a way-too simplistic implementation
+# at the very least, title should be unique across exports that need that or
+# controlled by a conf setting or something
+sub _check_duplicate {
+  my $self = shift;
+
+  $self->lock_table;
+
+  if ( qsearchs( 'svc_pbx', { 'title' => $self->title } ) ) {
+    return "Name in use";
+  } else {
+    return '';
+  }
 }
 
 =back
