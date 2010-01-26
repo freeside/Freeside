@@ -81,7 +81,7 @@ sub table_info {
     'cancel_weight'  => 90,
     'fields' => {
       'id'    => 'Thirdlane ID',
-      'title' => 'Description',
+      'title' => 'Name',
       'max_extensions' => 'Maximum number of User Extensions',
 #      'field'         => 'Description',
 #      'another_field' => { 
@@ -120,13 +120,13 @@ Class method which returns an SQL fragment to search for the given string.
 
 =item label
 
-Returns a meaningful identifier for this PBX tenant.
+Returns the title field for this PBX tenant.
 
 =cut
 
 sub label {
   my $self = shift;
-  $self->label_field; #or something more complicated if necessary
+  $self->title;
 }
 
 =item insert
