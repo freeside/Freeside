@@ -1333,11 +1333,14 @@ is >0), one will be generated randomly.
 sub set_password {
   my( $self, $pass ) = ( shift, shift );
 
+  warn "[$me] set_password (to $pass) called on $self: ". Dumper($self)
+     if $DEBUG;
+
   my $failure = gettext('illegal_password'). " $passwordmin-$passwordmax ".
                 FS::Msgcat::_gettext('illegal_password_characters').
                 ": ". $pass;
 
-  my ($encoding, $encryption);
+  my( $encoding, $encryption ) = ('', '');
 
   if ( $self->_password_encoding ) {
     $encoding = $self->_password_encoding;
@@ -1357,7 +1360,7 @@ sub set_password {
     $self->_password_encoding($encoding);
   }
 
-  if( $encoding eq 'legacy' ) {
+  if ( $encoding eq 'legacy' ) {
 
     # The legacy behavior from check():
     # If the password is blank, randomize it and set encoding to 'plain'.
@@ -1374,14 +1377,12 @@ sub set_password {
         $pass = $1.$3;
         $self->_password_encoding('crypt');
       # Various disabled crypt passwords
-      } elsif ( $pass eq '*' or
-              $pass eq '!' or
-              $pass eq '!!' ) {
+      } elsif ( $pass eq '*' || $pass eq '!' || $pass eq '!!' ) {
         $self->_password_encoding('crypt');
       } else {
         return $failure;
       }
-   }
+    }
 
     $self->_password($pass);
     return;

@@ -11,7 +11,6 @@ die "access denied"
 
 $cgi->param('svcnum') =~ /^(\d*)$/ or die "Illegal svcnum!";
 my $svcnum = $1;
-my $error;
 
 my $old;
 if ( $svcnum ) {
@@ -40,27 +39,31 @@ map {
   } (fields('svc_acct'), qw ( pkgnum svcpart usergroup ));
 my $new = new FS::svc_acct ( \%hash );
 
+my $error = '';
+
 $new->_password($old->_password) if $old;
-if(  $cgi->param('clear_password') eq '*HIDDEN*'
-  or $cgi->param('clear_password') =~ /^\(.* encrypted\)$/ ) {
+if (     $cgi->param('clear_password') eq '*HIDDEN*'
+      || $cgi->param('clear_password') =~ /^\(.* encrypted\)$/ ) {
   die "fatal: no previous account to recall hidden password from!" unless $old;
-} 
-else {
+} else {
   $error = $new->set_password($cgi->param('clear_password'));
 }
 
 if ( $svcnum ) {
-  foreach (grep { $old->$_ != $new->$_ } qw( seconds upbytes downbytes totalbytes )) {
+  foreach ( grep { $old->$_ != $new->$_ }
+                 qw( seconds upbytes downbytes totalbytes )
+          )
+  {
     my %hash = map { $_ => $new->$_ } 
                grep { $new->$_ }
                qw( seconds upbytes downbytes totalbytes );
 
-    $error = $new->set_usage(\%hash);  #unoverlimit and trigger radius changes
-    last;                              #once is enough
+    $error ||= $new->set_usage(\%hash);  #unoverlimit and trigger radius changes
+    last;                                #once is enough
   }
   $error ||= $new->replace($old);
 } else {
-  $error = $new->insert;
+  $error ||= $new->insert;
   $svcnum = $new->svcnum;
 }
 
