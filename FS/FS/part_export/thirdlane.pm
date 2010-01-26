@@ -25,9 +25,9 @@ tie my %options, 'Tie::IxHash',
 ;
 
 %info = (
-  'svc'      => [qw( svc_pbx svc_phone )],
+  'svc'      => [qw( svc_pbx svc_phone svc_acct )],
   'desc'     =>
-    'Export tenants and DIDs to Thirdlane PBX manager',
+    'Export tenants, DIDs and admins to Thirdlane PBX manager',
   'options'  => \%options,
   'notes'    => <<'END'
 Exports tenants and DIDs to Thirdlane PBX manager using the XML-RPC API.
@@ -63,7 +63,7 @@ sub _export_insert {
 
     #use Data::Dumper;
     #warn Dumper(\$result);
-    $result eq '0' ? '' : 'Thirdlane API failure';
+    $result eq '0' ? '' : 'Thirdlane API failure (rpc_tenant_create)';
 
   } elsif ( $svc_x->isa('FS::svc_phone') ) {
 
@@ -88,8 +88,23 @@ sub _export_insert {
     #warn Dumper(\$result);
     $result eq '0' ? '' : 'Thirdlane API failure (rpc_did_assign)';
 
+  } elsif ( $svc_x->isa('FS::svc_acct') ) {
+
+    return 'Must select a PBX' unless $svc_x->pbxsvc;
+
+    my $result = $self->_thirdlane_command(
+      'asterisk::rpc_admin_create',
+      $svc_x->username,
+      $svc_x->_password,
+      $svc_x->pbx_title,
+    );
+
+    #use Data::Dumper;
+    #warn Dumper(\$result);
+    $result eq '0' ? '' : 'Thirdlane API failure (rpc_admin_create)';
+
   } else {
-    die "guru meditation #10: $svc_x is not FS::svc_pbx or FS::svc_phone";
+    die "guru meditation #10: $svc_x is not FS::svc_pbx, FS::svc_phone or FS::svc_acct";
   }
 
 }
@@ -122,7 +137,7 @@ sub _export_replace {
 
     #use Data::Dumper;
     #warn Dumper(\$result);
-    $result eq '0' ? '' : 'Thirdlane API failure';
+    $result eq '0' ? '' : 'Thirdlane API failure (rpc_tenant_update)';
 
   } elsif ( $new->isa('FS::svc_phone') ) {
 
@@ -155,8 +170,21 @@ sub _export_replace {
 
     '';
 
+  } elsif ( $new->isa('FS::svc_acct') ) {
+
+    return "can't change uesrname with thirdlane"
+      if $old->username ne $new->username;
+
+    return "can't change password with thirdlane"
+      if $old->_password ne $new->_password;
+
+    return "can't change PBX for user with thirdlane"
+      if $old->pbxsvc != $new->pbxsvc;
+
+    ''; #we don't care then
+
   } else {
-    die "guru meditation #11: $new is not FS::svc_pbx or FS::svc_phone";
+    die "guru meditation #11: $svc_x is not FS::svc_pbx, FS::svc_phone or FS::svc_acct";
   }
 
 }
@@ -176,7 +204,10 @@ sub _export_delete {
 
     #use Data::Dumper;
     #warn Dumper(\$result);
-    $result eq '0' ? '' : 'Thirdlane API failure';
+    #$result eq '0' ? '' : 'Thirdlane API failure (rpc_tenant_delete)';
+    warn "Thirdlane API failure (rpc_tenant_delete); deleting anyway\n"
+      if $result ne '0';
+    '';
 
   } elsif ( $svc_x->isa('FS::svc_phone') ) {
 
@@ -194,8 +225,25 @@ sub _export_delete {
     );
     $result eq '0' ? '' : 'Thirdlane API failure (rpc_did_delete)';
 
+  } elsif ( $svc_x->isa('FS::svc_acct') ) {
+
+    return '' unless $svc_x->pbxsvc; #error out?  nah
+
+    my $result = $self->_thirdlane_command(
+      'asterisk::rpc_admin_delete',
+      $svc_x->username,
+      $svc_x->pbx_title,
+    );
+
+    #use Data::Dumper;
+    #warn Dumper(\$result);
+    #$result eq '0' ? '' : 'Thirdlane API failure (rpc_admin_delete)';
+    warn "Thirdlane API failure (rpc_admin_delete); deleting anyway\n"
+      if $result ne '0';
+    '';
+
   } else {
-    die "guru meditation #11: $svc_x is not FS::svc_pbx or FS::svc_phone";
+    die "guru meditation #12: $svc_x is not FS::svc_pbx, FS::svc_phone or FS::svc_acct";
   }
 
 }
@@ -210,7 +258,8 @@ sub _thirdlane_command {
   warn "$me connecting to $url\n"
     if $self->option('debug');
   my $conn = Frontier::Client->new( 'url'   => $url,
-                                    'debug' => $self->option('debug'),
+                                    #no, spews output to browser
+                                    #'debug' => $self->option('debug'),
                                   );
 
   warn "$me sending command: ". join(' ', @param). "\n"
