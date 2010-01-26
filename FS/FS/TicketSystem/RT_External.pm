@@ -9,6 +9,7 @@ use URI::Escape;
 use FS::UID qw(dbh);
 use FS::Record qw(qsearchs);
 use FS::cust_main;
+use Carp qw(cluck);
 
 $me = '[FS::TicketSystem::RT_External]';
 $DEBUG = 0;
@@ -94,6 +95,31 @@ sub customer_tickets {
   #names that might not make sense now...
   $sth->fetchall_arrayref({});
 
+}
+
+sub comments_on_tickets {
+  my ($self, $custnum, $limit, $time ) = @_;
+  $limit ||= 0;
+
+  my( $from_sql, @param) = $self->_from_customer( $custnum );
+  my $sql = qq{
+    SELECT transactions.*, Attachments.content, Tickets.subject
+    FROM transactions
+      JOIN Attachments ON( Attachments.transactionid = transactions.id )
+      JOIN Tickets ON ( Tickets.id = transactions.objectid )
+      JOIN Links  ON ( Tickets.id    = Links.LocalBase
+                       AND Links.Base LIKE '%/ticket/' || Tickets.id )
+       
+
+    WHERE ( Status = 'new' OR Status = 'open' OR Status = 'stalled' )
+      AND Target = 'freeside://freeside/cust_main/$custnum'
+       AND transactions.type = 'Comment'
+       AND transactions.created >= (SELECT TIMESTAMP WITH TIME ZONE 'epoch' + $time * INTERVAL '1 second')
+     LIMIT $limit
+  };
+  cluck $sql if $DEBUG > 0;
+  #AND created > 
+  $dbh->selectall_arrayref( $sql, { Slice => {} } ) or die $dbh->errstr . " $sql";
 }
 
 sub _from_customer {
