@@ -664,9 +664,7 @@ sub pbx_select_hash {
              qsearch('cust_pkg', { 'custnum' => $cust_pkg->custnum });
   } else {
     #XXX agent-virt
-    warn "hi";
     %pbxes = map { $_->svcnum => $_->title } qsearch('svc_pbx', {} );
-    warn %pbxes;
   }
 
   if ($part_svc && $part_svc->part_svc_column('pbxsvc')->columnflag eq 'D') {
