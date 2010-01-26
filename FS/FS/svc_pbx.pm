@@ -2,8 +2,10 @@ package FS::svc_pbx;
 
 use strict;
 use base qw( FS::svc_External_Common );
-use FS::Record qw( qsearchs ); # qsearch );
+use FS::Record qw( qsearch qsearchs dbh );
 use FS::cust_svc;
+use FS::svc_phone;
+use FS::svc_acct;
 
 =head1 NAME
 
@@ -157,11 +159,42 @@ Delete this record from the database.
 
 sub delete {
   my $self = shift;
-  my $error;
 
-  $error = $self->SUPER::delete;
-  return $error if $error;
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
 
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  foreach my $svc_phone (qsearch('svc_phone', { 'pbxsvc' => $self->svcnum } )) {
+    $svc_phone->pbxsvc('');
+    my $error = $svc_phone->replace;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  foreach my $svc_acct  (qsearch('svc_acct',  { 'pbxsvc' => $self->svcnum } )) {
+    my $error = $svc_acct->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  my $error = $self->SUPER::delete;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
 }
 
