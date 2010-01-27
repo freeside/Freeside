@@ -4,6 +4,7 @@ use base qw( FS::part_export );
 
 use vars qw(%info $me);
 use Tie::IxHash;
+use URI::Escape;
 use Frontier::Client;
 
 $me = '['.__PACKAGE__.']';
@@ -252,9 +253,9 @@ sub _export_delete {
 sub _thirdlane_command {
   my($self, @param) = @_;
 
-  my $url =
-    'http://'. $self->option('username'). ':'. $self->option('password'). '@'.
-    $self->machine;
+  my $url = 'http://'. uri_escape($self->option('username')). ':'.
+                       uri_escape($self->option('password')). '@'.
+            $self->machine;
   $url.= ':'. $self->option('port') if $self->option('port');
   $url .= '/xmlrpc.cgi';
 
