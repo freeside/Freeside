@@ -1814,7 +1814,7 @@ worry that config_items is freeside-specific and icky.
     'section'     => '',
     'description' => 'RADIUS attribute for plain-text passwords.',
     'type'        => 'select',
-    'select_enum' => [ 'Password', 'User-Password' ],
+    'select_enum' => [ 'Password', 'User-Password', 'Cleartext-Password' ],
   },
 
   {
