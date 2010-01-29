@@ -13,7 +13,10 @@ tie my %options, 'Tie::IxHash',
   #'server'           => { label => 'Thirdlane server name or IP address', },
   'username'         => { label => 'Thirdlane username', },
   'password'         => { label => 'Thirdlane password', },
-  'port'             => { label => 'Port number if not 80', },
+  'ssl'              => { label => 'Enable HTTPS (SSL) connection',
+                          type  => 'checkbox',
+                        },
+  'port'             => { label => 'Port number if not 80 or 443', },
   'prototype_tenant' => { label => 'Prototype tenant name', },
   'debug'            => { label => 'Checkbox label', type => 'checkbox' },
 #  'select_option'   => { label   => 'Select option description',
@@ -253,10 +256,11 @@ sub _export_delete {
 sub _thirdlane_command {
   my($self, @param) = @_;
 
-  my $url = 'http://'. uri_escape($self->option('username')). ':'.
-                       uri_escape($self->option('password')). '@'.
-            $self->machine;
-  $url.= ':'. $self->option('port') if $self->option('port');
+  my $url = $self->option('ssl') ? 'https://' : 'http://';
+  $url .= uri_escape($self->option('username')). ':'.
+          uri_escape($self->option('password')). '@'.
+          $self->machine;
+  $url .= ':'. $self->option('port') if $self->option('port');
   $url .= '/xmlrpc.cgi';
 
   warn "$me connecting to $url\n"
