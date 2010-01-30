@@ -1,0 +1,20 @@
+<% include( '/elements/select-table.html',
+                 'table'       => 'discount',
+                 'name_col'    => 'description',
+                 'order_by'    => 'ORDER BY discountnum', #XXX weight
+                 'value'       => $discountnum,
+                 'empty_label' => '(none)',
+                 'hashref'     => { 'disabled' => '' },
+                 %opt,
+             )
+%>
+<%init>
+
+my %opt = @_;
+my $discountnum = $opt{'curr_value'} || $opt{'value'};
+
+$opt{'records'} = delete $opt{'discount'}
+  if $opt{'discount'};
+
+</%init>
+

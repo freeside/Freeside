@@ -1,0 +1,27 @@
+% if ( scalar(@{ $opt{'discount'} }) == 0 ) { 
+
+  <INPUT TYPE="hidden" NAME="<% $opt{'element_name'} || $opt{'field'} || 'discountnum' %>" VALUE="">
+
+% } else { 
+
+  <TR>
+    <TD ALIGN="right"><% $opt{'label'} || '<B>Discount</B>' %></TD>
+    <TD>
+      <% include( '/elements/select-discount.html',
+                    'curr_value' => $discountnum,
+                    %opt,
+                )
+      %>
+    </TD>
+  </TR>
+
+% } 
+<%init>
+
+my %opt = @_;
+my $discountnum = $opt{'curr_value'} || $opt{'value'};
+
+$opt{'discount'} ||= [ qsearch( 'discount', { disabled=>'' } ) ];
+
+</%init>
+

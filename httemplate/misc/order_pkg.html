@@ -60,6 +60,10 @@
   });
 </SCRIPT>
 
+% if ( $curuser->access_right('Discount customer package') ) {
+  <% include('/elements/tr-select-discount.html') %>
+% }
+
 % if ( $conf->exists('pkg_referral') ) {
   <% include('/elements/tr-select-part_referral.html',
                'curr_value'    => scalar( $cgi->param('refnum') ), #get rid of empty_label first# || $cust_main->refnum,
@@ -86,8 +90,10 @@
 </HTML>
 <%init>
 
+my $curuser = $FS::CurrentUser::CurrentUser;
+
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Order customer package');
+  unless $curuser->access_right('Order customer package');
 
 my $conf = new FS::Conf;
 

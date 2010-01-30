@@ -42,6 +42,8 @@
        )
     %>
 
+    <% pkg_status_row_discount( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
+
 %   unless ( $cust_pkg->get('setup') ) { 
       <% pkg_status_row_colspan( $cust_pkg, 'Never billed', '', 'colspan'=>$colspan, %opt ) %>
 %   } else { 
@@ -70,9 +72,11 @@
 %
 %     unless ( $cust_pkg->get('setup') ) { #not setup
 %
-%       unless ( $part_pkg->freq ) { 
+%       unless ( $part_pkg->freq ) {
 
           <% pkg_status_row_colspan( $cust_pkg, 'Not&nbsp;yet&nbsp;billed&nbsp;(one-time&nbsp;charge)', '', 'colspan'=>$colspan, %opt ) %>
+
+         <% pkg_status_row_discount( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
 
           <% pkg_status_row_if(
                $cust_pkg,
@@ -94,7 +98,9 @@
 
 %       } else { 
 
-         <% pkg_status_row_colspan($cust_pkg, "Not&nbsp;yet&nbsp;billed&nbsp;($billed_or_prepaid&nbsp;". myfreq($part_pkg). ')', '', 'colspan'=>$colspan, %opt ) %>
+          <% pkg_status_row_colspan($cust_pkg, "Not&nbsp;yet&nbsp;billed&nbsp;($billed_or_prepaid&nbsp;". myfreq($part_pkg). ')', '', 'colspan'=>$colspan, %opt ) %>
+
+          <% pkg_status_row_discount( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
 
           <% pkg_status_row_if($cust_pkg, 'Start billing', 'start_date', %opt) %>
 
@@ -107,6 +113,8 @@
           <% pkg_status_row_colspan($cust_pkg, 'One-time&nbsp;charge', '', 'colspan'=>$colspan, %opt ) %>
 
           <% pkg_status_row($cust_pkg, 'Billed', 'setup', %opt) %>
+
+          <% pkg_status_row_discount( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
 
 %       } else { 
 %
@@ -129,6 +137,8 @@
                )
             %>
 %         } 
+
+          <% pkg_status_row_discount( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
 
           <% pkg_status_row($cust_pkg, 'Setup', 'setup', %opt) %>
 
@@ -273,7 +283,32 @@ sub pkg_status_row_changed {
                                      'size'    => '-1',
                                      'align'   => 'right',
                                      'colspan' => $opt{'colspan'},
+                                     #%opt,
                                    );
+  }
+
+  $html;
+}
+
+sub pkg_status_row_discount {
+  my( $cust_pkg, %opt ) = @_;
+
+  my $html;
+
+  foreach my $cust_pkg_discount ( $cust_pkg->cust_pkg_discount_active ) {
+
+    my $discount = $cust_pkg_discount->discount;
+
+    my $label = '<B>Discount</B>: '. $discount->description;
+    $label .= ' ('. ( $discount->months - $cust_pkg_discount->months_used ).
+              ' months remaining)'
+      if $discount->months;
+
+    $html .= pkg_status_row_colspan( $cust_pkg, $label, '',
+                                     'colspan' => $opt{'colspan'},
+                                     #%opt,
+                                   );
+
   }
 
   $html;

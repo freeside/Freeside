@@ -53,6 +53,7 @@ my $cust_pkg = new FS::cust_pkg {
                        ? str2time($cgi->param('start_date'))
                        : ''
                    ),
+  'discountnum' => scalar($cgi->param('discountnum')),
   'refnum'      => $refnum,
   'locationnum' => $locationnum,
 };

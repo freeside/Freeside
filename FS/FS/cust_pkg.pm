@@ -25,6 +25,8 @@ use FS::reg_code;
 use FS::part_svc;
 use FS::cust_pkg_reason;
 use FS::reason;
+use FS::cust_pkg_discount;
+use FS::discount;
 use FS::UI::Web;
 
 # need to 'use' these instead of 'require' in sub { cancel, suspend, unsuspend,
@@ -273,6 +275,22 @@ sub insert {
                       'target_table' => 'part_referral',
                       'params'       => $self->refnum,
                     );
+
+  if ( $self->discountnum ) {
+    #XXX new/custom discount case
+    my $cust_pkg_discount = new FS::cust_pkg_discount {
+      'pkgnum'      => $self->pkgnum,
+      'discountnum' => $self->discountnum,
+      'months_used' => 0,
+      'end_date'    => '', #XXX
+      'otaker'      => $self->otaker,
+    };
+    my $error = $cust_pkg_discount->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
 
   #if ( $self->reg_code ) {
   #  my $reg_code = qsearchs('reg_code', { 'code' => $self->reg_code } );
@@ -2211,6 +2229,141 @@ sub reexport {
 
 }
 
+=item insert_reason
+
+Associates this package with a (suspension or cancellation) reason (see
+L<FS::cust_pkg_reason>, possibly inserting a new reason on the fly (see
+L<FS::reason>).
+
+Available options are:
+
+=over 4
+
+=item reason
+
+can be set to a cancellation reason (see L<FS:reason>), either a reasonnum of an existing reason, or passing a hashref will create a new reason.  The hashref should have the following keys: typenum - Reason type (see L<FS::reason_type>, reason - Text of the new reason.
+
+=item reason_otaker
+
+the access_user (see L<FS::access_user>) providing the reason
+
+=item date
+
+a unix timestamp 
+
+=item action
+
+the action (cancel, susp, adjourn, expire) associated with the reason
+
+=back
+
+If there is an error, returns the error, otherwise returns false.
+
+=cut
+
+sub insert_reason {
+  my ($self, %options) = @_;
+
+  my $otaker = $options{reason_otaker} ||
+               $FS::CurrentUser::CurrentUser->username;
+
+  my $reasonnum;
+  if ( $options{'reason'} =~ /^(\d+)$/ ) {
+
+    $reasonnum = $1;
+
+  } elsif ( ref($options{'reason'}) ) {
+  
+    return 'Enter a new reason (or select an existing one)'
+      unless $options{'reason'}->{'reason'} !~ /^\s*$/;
+
+    my $reason = new FS::reason({
+      'reason_type' => $options{'reason'}->{'typenum'},
+      'reason'      => $options{'reason'}->{'reason'},
+    });
+    my $error = $reason->insert;
+    return $error if $error;
+
+    $reasonnum = $reason->reasonnum;
+
+  } else {
+    return "Unparsable reason: ". $options{'reason'};
+  }
+
+  my $cust_pkg_reason =
+    new FS::cust_pkg_reason({ 'pkgnum'    => $self->pkgnum,
+                              'reasonnum' => $reasonnum, 
+		              'otaker'    => $otaker,
+		              'action'    => substr(uc($options{'action'}),0,1),
+		              'date'      => $options{'date'}
+			                       ? $options{'date'}
+					       : time,
+	                    });
+
+  $cust_pkg_reason->insert;
+}
+
+=item set_usage USAGE_VALUE_HASHREF 
+
+USAGE_VALUE_HASHREF is a hashref of svc_acct usage columns and the amounts
+to which they should be set (see L<FS::svc_acct>).  Currently seconds,
+upbytes, downbytes, and totalbytes are appropriate keys.
+
+All svc_accts which are part of this package have their values reset.
+
+=cut
+
+sub set_usage {
+  my ($self, $valueref, %opt) = @_;
+
+  foreach my $cust_svc ($self->cust_svc){
+    my $svc_x = $cust_svc->svc_x;
+    $svc_x->set_usage($valueref, %opt)
+      if $svc_x->can("set_usage");
+  }
+}
+
+=item recharge USAGE_VALUE_HASHREF 
+
+USAGE_VALUE_HASHREF is a hashref of svc_acct usage columns and the amounts
+to which they should be set (see L<FS::svc_acct>).  Currently seconds,
+upbytes, downbytes, and totalbytes are appropriate keys.
+
+All svc_accts which are part of this package have their values incremented.
+
+=cut
+
+sub recharge {
+  my ($self, $valueref) = @_;
+
+  foreach my $cust_svc ($self->cust_svc){
+    my $svc_x = $cust_svc->svc_x;
+    $svc_x->recharge($valueref)
+      if $svc_x->can("recharge");
+  }
+}
+
+=item cust_pkg_discount
+
+=cut
+
+sub cust_pkg_discount {
+  my $self = shift;
+  qsearch('cust_pkg_discount', { 'pkgnum' => $self->pkgnum } );
+}
+
+=item cust_pkg_discount_active
+
+=cut
+
+sub cust_pkg_discount_active {
+  my $self = shift;
+  grep { my $d = $_->discount;
+         ! $d->months || $_->months_used < $d->months; # XXX also end date
+       }
+       $self->cust_pkg_discount;
+}
+
 =back
 
 =head1 CLASS METHODS
@@ -2631,7 +2784,7 @@ sub search {
                                 'cust_pkg.*',
                                 ( map "part_pkg.$_", qw( pkg freq ) ),
                                 'pkg_class.classname',
-                                'cust_main.custnum as cust_main_custnum',
+                                'cust_main.custnum AS cust_main_custnum',
                                 FS::UI::Web::cust_sql_fields(
                                   $params->{'cust_fields'}
                                 ),
@@ -2935,120 +3088,6 @@ sub bulk_change {
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
-}
-
-=item insert_reason
-
-Associates this package with a (suspension or cancellation) reason (see
-L<FS::cust_pkg_reason>, possibly inserting a new reason on the fly (see
-L<FS::reason>).
-
-Available options are:
-
-=over 4
-
-=item reason
-
-can be set to a cancellation reason (see L<FS:reason>), either a reasonnum of an existing reason, or passing a hashref will create a new reason.  The hashref should have the following keys: typenum - Reason type (see L<FS::reason_type>, reason - Text of the new reason.
-
-=item reason_otaker
-
-the access_user (see L<FS::access_user>) providing the reason
-
-=item date
-
-a unix timestamp 
-
-=item action
-
-the action (cancel, susp, adjourn, expire) associated with the reason
-
-=back
-
-If there is an error, returns the error, otherwise returns false.
-
-=cut
-
-sub insert_reason {
-  my ($self, %options) = @_;
-
-  my $otaker = $options{reason_otaker} ||
-               $FS::CurrentUser::CurrentUser->username;
-
-  my $reasonnum;
-  if ( $options{'reason'} =~ /^(\d+)$/ ) {
-
-    $reasonnum = $1;
-
-  } elsif ( ref($options{'reason'}) ) {
-  
-    return 'Enter a new reason (or select an existing one)'
-      unless $options{'reason'}->{'reason'} !~ /^\s*$/;
-
-    my $reason = new FS::reason({
-      'reason_type' => $options{'reason'}->{'typenum'},
-      'reason'      => $options{'reason'}->{'reason'},
-    });
-    my $error = $reason->insert;
-    return $error if $error;
-
-    $reasonnum = $reason->reasonnum;
-
-  } else {
-    return "Unparsable reason: ". $options{'reason'};
-  }
-
-  my $cust_pkg_reason =
-    new FS::cust_pkg_reason({ 'pkgnum'    => $self->pkgnum,
-                              'reasonnum' => $reasonnum, 
-		              'otaker'    => $otaker,
-		              'action'    => substr(uc($options{'action'}),0,1),
-		              'date'      => $options{'date'}
-			                       ? $options{'date'}
-					       : time,
-	                    });
-
-  $cust_pkg_reason->insert;
-}
-
-=item set_usage USAGE_VALUE_HASHREF 
-
-USAGE_VALUE_HASHREF is a hashref of svc_acct usage columns and the amounts
-to which they should be set (see L<FS::svc_acct>).  Currently seconds,
-upbytes, downbytes, and totalbytes are appropriate keys.
-
-All svc_accts which are part of this package have their values reset.
-
-=cut
-
-sub set_usage {
-  my ($self, $valueref, %opt) = @_;
-
-  foreach my $cust_svc ($self->cust_svc){
-    my $svc_x = $cust_svc->svc_x;
-    $svc_x->set_usage($valueref, %opt)
-      if $svc_x->can("set_usage");
-  }
-}
-
-=item recharge USAGE_VALUE_HASHREF 
-
-USAGE_VALUE_HASHREF is a hashref of svc_acct usage columns and the amounts
-to which they should be set (see L<FS::svc_acct>).  Currently seconds,
-upbytes, downbytes, and totalbytes are appropriate keys.
-
-All svc_accts which are part of this package have their values incremented.
-
-=cut
-
-sub recharge {
-  my ($self, $valueref) = @_;
-
-  foreach my $cust_svc ($self->cust_svc){
-    my $svc_x = $cust_svc->svc_x;
-    $svc_x->recharge($valueref)
-      if $svc_x->can("recharge");
-  }
 }
 
 =back

@@ -2,7 +2,7 @@ package FS::cust_pkg_discount;
 
 use strict;
 use base qw( FS::Record );
-use FS::Record; # qw( qsearch qsearchs );
+use FS::Record qw( qsearchs ); # qsearch );
 use FS::cust_pkg;
 use FS::discount;
 
@@ -129,6 +129,24 @@ sub check {
   return $error if $error;
 
   $self->SUPER::check;
+}
+
+=item cust_pkg
+
+=cut
+
+sub cust_pkg {
+  my $self = shift;
+  qsearchs('cust_pkg', { 'pkgnum' => $self->pkgnum } );
+}
+
+=item discount
+
+=cut
+
+sub discount {
+  my $self = shift;
+  qsearchs('discount', { 'discountnum' => $self->discountnum } );
 }
 
 =back
