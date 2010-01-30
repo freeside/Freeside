@@ -1,0 +1,30 @@
+% if ( $error ) {
+%   errorpage($error);
+% } else {
+%   my $frag = "cust_pkg". $cust_pkg->pkgnum;
+%   my $show = $curuser->default_customer_view =~ /^(jumbo|packages)$/
+%                ? ''
+%                : ';show=packages';
+<% $cgi->redirect($p. "view/cust_main.cgi?custnum=$custnum$show;fragment=$frag#$frag" ) %>
+% }
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+#XXX ACL to remove discounts
+#die "access denied"
+#  unless $curuser->access_right('Delete invoices');
+
+#untaint pkgdiscountnum
+my($query) = $cgi->keywords;
+$query =~ /^(\d+)$/ || die "Illegal crednum";
+my $pkgdiscountnum = $1;
+
+my $cust_pkg_discount =
+  qsearchs('cust_pkg_discount', {'pkgdiscountnum'=>$pkgdiscountnum});
+my $cust_pkg = $cust_pkg_discount->cust_pkg;
+my $custnum = $cust_pkg->custnum;
+
+my $error = $cust_pkg_discount->delete;
+
+</%init>

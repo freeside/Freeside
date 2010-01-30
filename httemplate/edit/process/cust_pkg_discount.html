@@ -1,0 +1,51 @@
+% if ($error) {
+%   $cgi->param('error', $error);
+%   $cgi->redirect(popurl(3). 'edit/cust_pkg_discount.html?'. $cgi->query_string );
+% } else {
+
+    <% header("Discount applied") %>
+      <SCRIPT TYPE="text/javascript">
+        window.top.location.reload();
+      </SCRIPT>
+    </BODY>
+    </HTML>
+
+% }
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right('Discount customer package');
+
+#this search is really for security wrt agent virt...
+#maybe move it to the cust_pkg_discount->insert call?
+my $cust_pkg = qsearchs({
+  #'select'    => 'cust_pkg.*',
+  'table'     => 'cust_pkg',
+  'addl_from' => 'LEFT JOIN cust_main USING ( custnum )',
+  'hashref'   => { 'pkgnum' => scalar($cgi->param('pkgnum')), },
+  'extra_sql' => ' AND '. $curuser->agentnums_sql,
+});
+die 'unknown pkgnum' unless $cust_pkg;
+
+#XXX something not unlike this for custom discounts
+#if ( $cgi->param('locationnum') == -1 ) {
+#  my $cust_location = new FS::cust_location {
+#    'custnum' => $cust_pkg->custnum,
+#    map { $_ => scalar($cgi->param($_)) }
+#        qw( address1 address2 city county state zip country )
+#  };
+#  $change{'cust_location'} = $cust_location;
+#}
+
+my $cust_pkg_discount = new FS::cust_pkg_discount {
+  'pkgnum'      => $cust_pkg->pkgnum,
+  'discountnum' => scalar($cgi->param('discountnum')),
+  'months_used' => 0,
+  'end_date'    => '', #XXX
+  'otaker'      => $curuser->username,
+};
+my $error = $cust_pkg_discount->insert;
+
+</%init>

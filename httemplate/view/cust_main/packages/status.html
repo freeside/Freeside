@@ -304,6 +304,11 @@ sub pkg_status_row_discount {
               ' months remaining)'
       if $discount->months;
 
+    $label .= ' <FONT SIZE="-1">('.
+                '<A HREF="../misc/delete-cust_pkg_discount.html?'.
+                  $cust_pkg_discount->pkgdiscountnum.
+                '">remove&nbsp;discount</A>)</FONT>';
+
     $html .= pkg_status_row_colspan( $cust_pkg, $label, '',
                                      'colspan' => $opt{'colspan'},
                                      #%opt,

@@ -36,6 +36,15 @@
               (&nbsp;<%pkg_dates_link($cust_pkg)%>&nbsp;)
 %           } 
 %
+%           if ( $curuser->access_right('Discount customer package')
+%                && $part_pkg->can_discount
+%                && ! scalar($cust_pkg->cust_pkg_discount_active)
+%              )
+%           {
+%             $br=1;
+              (&nbsp;<%pkg_discount_link($cust_pkg)%>&nbsp;)
+%           }
+%
 %           if ( $curuser->access_right('Customize customer package') ) {
 %             $br=1;
               (&nbsp;<%pkg_customize_link($cust_pkg,$part_pkg)%>&nbsp;)
@@ -195,6 +204,19 @@ sub pkg_change_link {
 }
 
 sub pkg_dates_link { pkg_link('edit/REAL_cust_pkg', 'Edit&nbsp;dates', @_ ); }
+
+sub pkg_discount_link {
+  my $cust_pkg = shift or return '';
+  #my $part_pkg = shift;
+  #my $custnum = $cust_pkg->custnum;
+  include( '/elements/popup_link-cust_pkg.html',
+    'action'      => $p.'edit/cust_pkg_discount.html',
+    'label'       => 'Discount',
+    'actionlabel' => 'Discount',
+    'cust_pkg'    => $cust_pkg,
+    'width'       => 616,
+  );
+}
 
 sub pkg_customize_link {
   my $cust_pkg = shift or return '';
