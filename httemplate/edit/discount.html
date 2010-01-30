@@ -1,0 +1,137 @@
+<% include( 'elements/edit.html',
+                 'name'   => 'Discount',
+                 'table'  => 'discount',
+                 'fields' => [
+                               'name',
+                               { field => 'disabled', type => 'checkbox', value=>'Y', },
+                               { field => '_type',    type => 'select',
+                                 options => \@_type_options,
+                                 onchange => '_type_changed',
+                               },
+                               { field => 'amount',   type => 'money',
+                                 default => '0.00',
+                                 #cell_style => $amount_style,
+                               },
+                               { field => 'percent',  type => 'percentage',
+                                 default => 0,
+                                 #cell_style => $percent_style,
+                               },
+                               { field => 'months', type => 'text', size => 2,
+                                 postfix => '<BR><FONT SIZE="-1"><I>(blank for non-expiring discount)</I></FONT>',
+                               },
+                             ],
+                 'labels' => { 
+                               'discountnum' => 'Discount #',
+                               'name'        => 'Name&nbsp;',
+                               'disabled'    => 'Disabled&nbsp;',
+                               '_type'       => 'Type&nbsp;',
+                               'amount'      => 'Amount&nbsp;',
+                               'percent'     => 'Percentage&nbsp;',
+                               'months'      => '# of Months',
+                             },
+                 'viewall_dir' => 'browse',
+                 'new_callback' => $new_callback,
+                 'edit_callback' => $edit_callback,
+                 'error_callback' => $error_callback,
+                 'html_init' => $javascript,
+                 'body_etc' => 'onLoad="_type_changed(document.edit_topform._type)"',
+           )
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my @_type_options = ( 'Amount', 'Percentage' );
+
+#my $amount_style = '';
+#my $percent_style = '';
+
+#my $hide = 'display:none;visibility:hidden';
+my $select = 'Select discount type';
+
+my $new_callback = sub {
+  #my( $cgi, $object, $fields_listref, $opt_hashref ) = @_;
+
+  #$amount_style  = $hide;
+  #$percent_style = $hide;
+  unshift @_type_options, $select;
+};
+
+my $edit_callback = sub {
+  #my( $cgi, $object, $fields_listref, $opt_hashref ) = @_;
+  my( $cgi, $object ) = @_;
+
+  if ( $object->amount > 0 && $object->percent == 0 ) {
+    $object->set('_type', 'Amount');
+    #$percent_style = $hide;
+  } elsif ( $object->amount == 0 && $object->percent > 0 ) {
+    $object->set('_type', 'Percentage');
+    #$amount_style = $hide;
+  } elsif ( $object->amount == 0 && $object->percent == 0 ) {
+    #$amount_style  = $hide;
+    #$percent_style = $hide;
+    unshift @_type_options, $select;
+  } else {
+    die "discount.amount and discount.percent not yet handled by web UI";
+  }
+
+};
+
+my $error_callback = sub {
+  #my( $cgi, $object, $fields_listref, $opt_hashref ) = @_;
+  my( $cgi, $object ) = @_;
+
+  if ( $cgi->param('_type') eq 'Amount' ) {
+    $object->set('_type', 'Amount');
+    #A$percent_style = $hide;
+  } elsif ( $cgi->param('_type') eq 'Percentage' ) {
+    $object->set('_type', 'Percentage');
+    #$amount_style = $hide;
+  } else {
+    #$amount_style  = $hide;
+    #$percent_style = $hide;
+    unshift @_type_options, $select;
+  }
+
+};
+
+my $javascript = <<END;
+  <SCRIPT TYPE="text/javascript">
+    function _type_changed(what) {
+      var _type = what.options[what.selectedIndex].value;
+
+      if ( _type == '$select' ) {
+        document.getElementById('amount_label').style.display = 'none';
+        document.getElementById('amount_label').style.visibility = 'hidden';
+        document.getElementById('amount_input0').style.display = 'none';
+        document.getElementById('amount_input0').style.visibility = 'hidden';
+        document.getElementById('percent_label').style.display = 'none';
+        document.getElementById('percent_label').style.visibility = 'hidden';
+        document.getElementById('percent_input0').style.display = 'none';
+        document.getElementById('percent_input0').style.visibility = 'hidden';
+      } else if ( _type == 'Amount' ) {
+        document.getElementById('amount_label').style.display = '';
+        document.getElementById('amount_label').style.visibility = '';
+        document.getElementById('amount_input0').style.display = '';
+        document.getElementById('amount_input0').style.visibility = '';
+        document.getElementById('percent_label').style.display = 'none';
+        document.getElementById('percent_label').style.visibility = 'hidden';
+        document.getElementById('percent_input0').style.display = 'none';
+        document.getElementById('percent_input0').style.visibility = 'hidden';
+      } else if ( _type == 'Percentage' ) {
+        document.getElementById('amount_label').style.display = 'none';
+        document.getElementById('amount_label').style.visibility = 'hidden';
+        document.getElementById('amount_input0').style.display = 'none';
+        document.getElementById('amount_input0').style.visibility = 'hidden';
+        document.getElementById('percent_label').style.display = '';
+        document.getElementById('percent_label').style.visibility = '';
+        document.getElementById('percent_input0').style.display = '';
+        document.getElementById('percent_input0').style.visibility = '';
+     }
+
+    }
+  </SCRIPT>
+END
+
+</%init>

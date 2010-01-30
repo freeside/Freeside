@@ -1,6 +1,6 @@
 <% include('tr-td-label.html', @_ ) %>
 
-  <TD <% $cell_style %>><% include('input-text.html', @_ ) %></TD>
+  <TD <% $cell_style %> ID="<% $opt{input_id} || $opt{id}.'_input0' %>"><% include('input-text.html', @_ ) %></TD>
 
 </TR>
 

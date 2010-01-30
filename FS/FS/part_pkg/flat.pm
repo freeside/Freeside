@@ -210,9 +210,9 @@ sub is_free_options {
   qw( setup_fee recur_fee );
 }
 
-sub is_prepaid {
-  0; #no, we're postpaid
-}
+sub is_prepaid { 0; } #no, we're postpaid
+
+sub can_discount { 1; } #and anything that inherits from us
 
 sub usage_valuehash {
   my $self = shift;

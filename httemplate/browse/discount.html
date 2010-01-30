@@ -1,0 +1,28 @@
+<% include( 'elements/browse.html',
+                 'title'       => 'Discounts',
+                 'name'        => 'discounts',
+                 'menubar'     => [ 'Add a new discount' =>
+                                      $p.'edit/discount.html',
+                                  ],
+                 'query'       => { 'table' => 'discount', },
+                 'count_query' => 'SELECT COUNT(*) FROM discount',
+                 'disableable' => 1,
+                 'disabled_statuspos' => 2,
+                 'header'      => [ '#', 'Name', 'Discount', ],
+                 'fields'      => [ 'discountnum',
+                                    'name',
+                                    'description',
+                                  ],
+                 'links'       => [ $link,
+                                    $link,
+                                  ],
+             )
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $link = [ "${p}edit/discount.html?", 'discountnum' ];
+
+</%init>

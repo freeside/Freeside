@@ -250,6 +250,7 @@ Example:
 %     #text and derivitives
 %     'size'          => $f->{'size'},
 %     'maxlength'     => $f->{'maxlength'},
+%     'postfix'       => $f->{'postfix'},
 %
 %     #checkbox, title, fixed, hidden
 %     #& deprecated weird value hashref used only by reason.html
@@ -372,7 +373,7 @@ Example:
 %       $table = $f->{'m2name_table'};
 %       $col   = $f->{'m2name_namecol'};
 %     } elsif ( $f->{'o2m_table'} ) {
-%       $table = $f->{'o2m_table'};
+%       $table = $f->{'o2m_tbekable'};
 %       $col   = dbdef->table($f->{'o2m_table'})->primary_key;
 %     } elsif ( $f->{'m2m_method'} ) {
 %       $table = $f->{'m2m_method'};

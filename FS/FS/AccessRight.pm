@@ -126,6 +126,8 @@ tie my %rights, 'Tie::IxHash',
     'Change customer package',
     'Bulk change customer packages',
     'Edit customer package dates',
+    'Discount customer package', #NEW
+    'Custom discount customer package', #NEW
     'Customize customer package',
     'Suspend customer package',
     'Suspend customer package later',

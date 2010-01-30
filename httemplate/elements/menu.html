@@ -347,18 +347,27 @@ if ( $curuser->access_right('Configuration') ) {
   $config_export_svc{'Service definitions'} = [ $fsurl.'browse/part_svc.cgi', 'Services are items you offer to your customers' ];
 }
 
+tie my %config_pkg_reason, 'Tie::IxHash',
+  'Cancel reasons' => [ $fsurl.'browse/reason.html?class=C', 'Cancel reasons explain why a service was cancelled.' ],
+  'Cancel reason types' => [ $fsurl.'browse/reason_type.html?class=C', 'Cancel reason types define groups of reasons.' ],
+  'Suspend reasons' => [ $fsurl.'browse/reason.html?class=S', 'Suspend reasons explain why a service was suspended.' ],
+  'Suspend reason types' => [ $fsurl.'browse/reason_type.html?class=S', 'Suspend reason types define groups of reasons.' ],
+;
+
 tie my %config_pkg, 'Tie::IxHash', ();
 $config_pkg{'Package definitions'} = [ $fsurl.'browse/part_pkg.cgi', 'One or more services are grouped together into a package and given pricing information. Customers purchase packages, not services' ]
   if    $curuser->access_right('Edit package definitions')
      || $curuser->access_right('Edit global package definitions');
 if ( $curuser->access_right('Configuration') ) {
+
+  #package grouping sub-menu?
   $config_pkg{'Package classes'} =  [ $fsurl.'browse/pkg_class.html', 'Package classes define groups of packages, for taxation, ordering convenience and reporting.' ];
   $config_pkg{'Package categories'} =  [ $fsurl.'browse/pkg_category.html', 'Package categories define groups of package classes.' ];
   $config_pkg{'Package report classes'} =  [ $fsurl.'browse/part_pkg_report_option.html', 'Package classes define optional groups of packages for reporting only.' ];
-  $config_pkg{'Cancel reasons'} = [ $fsurl.'browse/reason.html?class=C', 'Cancel reasons explain why a service was cancelled.' ];
-  $config_pkg{'Cancel reason types'} = [ $fsurl.'browse/reason_type.html?class=C', 'Cancel reason types define groups of reasons.' ];
-  $config_pkg{'Suspend reasons'} = [ $fsurl.'browse/reason.html?class=S', 'Suspend reasons explain why a service was suspended.' ];
-  $config_pkg{'Suspend reason types'} = [ $fsurl.'browse/reason_type.html?class=S', 'Suspend reason types define groups of reasons.' ];
+  #eo package grouping sub-menu
+
+  $config_pkg{'Discounts'} = [ $fsurl.'browse/discount.html', '' ];
+  $config_pkg{'Cancel/Suspend Reasons'} = [ \%config_pkg_reason, '' ];
 }
 
 tie my %config_cust, 'Tie::IxHash',

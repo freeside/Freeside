@@ -1309,6 +1309,35 @@ sub tables_hashref {
       'index' => [ [ 'pkgnum' ], [ 'reasonnum' ], ['action'], ],
     },
 
+    'cust_pkg_discount' => {
+      'columns' => [
+        'pkgdiscountnum', 'serial', '',     '', '', '',
+        'pkgnum',            'int', '',     '', '', '', 
+        'discountnum',       'int', '',     '', '', '',
+        'months_used',   'decimal', 'NULL', '', '', '',
+        'end_date',     @date_type,             '', '',
+        'otaker',        'varchar', '',     32, '', '', 
+      ],
+      'primary_key' => 'pkgdiscountnum',
+      'unique' => [],
+      'index'  => [ [ 'pkgnum' ], [ 'discountnum' ] ],
+    },
+
+    'discount' => {
+      'columns' => [
+        'discountnum', 'serial',     '',      '', '', '',
+        #'agentnum',       'int', 'NULL',      '', '', '', 
+        'name',       'varchar', 'NULL', $char_d, '', '',
+        'amount',   @money_type,                  '', '', 
+        'percent',    'decimal',     '',      '', '', '',
+        'months',     'decimal', 'NULL',      '', '', '',
+        'disabled',      'char', 'NULL',       1, '', '', 
+      ],
+      'primary_key' => 'discountnum',
+      'unique' => [],
+      'index'  => [], # [ 'agentnum' ], ],
+    },
+
     'cust_refund' => {
       'columns' => [
         'refundnum',    'serial',    '',   '', '', '', 

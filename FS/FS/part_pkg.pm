@@ -767,6 +767,7 @@ sub is_free {
   }
 }
 
+sub can_discount { 0; }
 
 sub freqs_href {
   #method, class method or sub? #my $self = shift;
