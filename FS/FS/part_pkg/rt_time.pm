@@ -13,6 +13,7 @@ our $DEBUG = 0;
 our %info = (
   'name'      =>  'Bill from Time Worked on tickets in RT',
   'shortname' =>  'Project Billing (RT)',
+  'weight'    => 55,
   'fields'    =>  {
     'base_rate' =>  {   'name'    =>  'Rate (per minute)',
                         'default' => 0,
