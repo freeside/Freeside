@@ -23,7 +23,7 @@ my @part_pkg = qsearch({
   'order_by'  => 'ORDER BY pkg',
 });
 
-my @return = map  { $_->pkgpart => $_->pkg_comment }
+my @return = map  { ( $_->pkgpart, $_->pkg_comment, $_->can_discount ); }
              #sort { $a->pkg_comment cmp $b->pkg_comment }
              @part_pkg;
 

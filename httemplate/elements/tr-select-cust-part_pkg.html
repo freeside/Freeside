@@ -8,8 +8,9 @@
 
   <SCRIPT TYPE="text/javascript">
 
-    function opt(what,value,text) {
+    function part_pkg_opt(what,value,text,can_discount) {
       var optionName = new Option(text, value, false, false);
+      optionName.setAttribute('data-can_discount', can_discount);
       var length = what.length;
       what.options[length] = optionName;
     }
@@ -18,6 +19,10 @@
 
       what.form.pkgpart.disabled = 'disabled'; //disable part_pkg dropdown
       what.form.submit.disabled = true; //disable the submit button
+      var discountnum = what.form.discountnum;
+      if ( discountnum ) {
+        discountnum.disabled = true; //disable discount dropdown
+      }
 
       classnum = what.options[what.selectedIndex].value;
 
@@ -30,9 +35,12 @@
         // add the new packages
         opt(what.form.pkgpart, '', 'Select package');
         var packagesArray = eval('(' + part_pkg + ')' );
-        for ( var s = 0; s < packagesArray.length; s=s+2 ) {
+        for ( var s = 0; s < packagesArray.length; s=s+3 ) {
           var packagesLabel = packagesArray[s+1];
-          opt(what.form.pkgpart, packagesArray[s], packagesLabel);
+          var can_discount  = packagesArray[s+2];
+          part_pkg_opt(
+            what.form.pkgpart, packagesArray[s], packagesLabel, can_discount
+          );
         }
 
         what.form.pkgpart.disabled = ''; //re-enable part_pkg dropdown

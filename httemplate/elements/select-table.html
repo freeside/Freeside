@@ -45,6 +45,10 @@ Example:
                             #<SELECT> element
     'onchange'       => '', #javascript code
 
+    #params (well, a param) controlling the <OPTION>s
+    'extra_option_attributes' => [ 'field' ], #field or method in $table objects
+                                              #(are prefixed w/data- per HTML5)
+
     #special return options
     'js_only'      => 0, #set true to return only the JS portions (i.e. nothing)
     'html_only'    => 0, #set true to return only the HTML portions (no-op, i.e. return everything)
@@ -89,6 +93,9 @@ Example:
             <% $opt{'all_selected'} || ref($value) && $value->{$recvalue} || $value == $recvalue
                ? ' SELECTED' : ''
             %>
+%           foreach my $att ( @{ $opt{'extra_option_attributes'} } ) {
+              data-<% $att %>="<% $record->$att() |h %>"
+%           }
     ><% $opt{'label_showkey'} ? "$recvalue: " : '' %>
      <% $opt{'label_callback'}
           ? &{ $opt{'label_callback'} }( $record )
@@ -105,6 +112,8 @@ my( %opt ) = @_;
 
 warn "elements/select-table.html: \n". Dumper(%opt)
   if exists $opt{debug} && $opt{debug};
+
+$opt{'extra_option_attributes'} ||= [];
 
 my $onchange = '';
 if ( $opt{'onchange'} ) {

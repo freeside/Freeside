@@ -10,8 +10,14 @@
   function enable_order_pkg () {
     if ( document.OrderPkgForm.pkgpart.selectedIndex > 0 ) {
       document.OrderPkgForm.submit.disabled = false;
+      if ( document.OrderPkgForm.pkgpart.options[document.OrderPkgForm.pkgpart.selectedIndex].getAttribute('data-can_discount') == 1 ) {
+        document.OrderPkgForm.discountnum.disabled = false;
+      } else {
+        document.OrderPkgForm.discountnum.disabled = true;
+      }
     } else {
       document.OrderPkgForm.submit.disabled = true;
+      document.OrderPkgForm.discountnum.disabled = true;
     }
   }
 
@@ -61,7 +67,10 @@
 </SCRIPT>
 
 % if ( $curuser->access_right('Discount customer package') ) {
-  <% include('/elements/tr-select-discount.html') %>
+  <% include('/elements/tr-select-discount.html',
+               'element_etc' => 'DISABLED',
+            )
+  %>
 % }
 
 % if ( $conf->exists('pkg_referral') ) {

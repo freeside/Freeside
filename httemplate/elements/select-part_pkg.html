@@ -23,6 +23,7 @@ Example:
               'empty_label'    => 'Select package', #should this be the default?
               'label_callback' => sub { shift->pkg_comment },
               'hashref'        => \%hash,
+              'extra_option_attributes' => [ 'can_discount' ],
               %opt,
           )
 %>
