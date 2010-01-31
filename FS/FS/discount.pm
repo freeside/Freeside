@@ -126,13 +126,17 @@ sub check {
   $self->SUPER::check;
 }
 
+=item description_short
+
 =item description
 
 Returns a text description incorporating the amount, percent and months fields.
 
+description_short omits term information
+
 =cut
 
-sub description {
+sub description_short {
   my $self = shift;
 
   my $conf = new FS::Conf;
@@ -143,8 +147,14 @@ sub description {
     if $self->amount > 0;
   $desc .= $self->percent. '% '
     if $self->percent > 0;
-  $desc .= 'for '. $self->months. ' months' if $self->months;
 
+  $desc;
+}
+
+sub description {
+  my $self = shift;
+  my $desc = $self->description_short;
+  $desc .= ' for '. $self->months. ' months' if $self->months;
   $desc;
 }
 
