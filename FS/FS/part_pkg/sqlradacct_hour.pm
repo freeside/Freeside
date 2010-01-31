@@ -158,6 +158,8 @@ sub calc_recur {
   $self->option('recur_fee') + $charges;
 }
 
+sub can_discount { 0; }
+
 sub is_free_options {
   qw( setup_fee recur_fee recur_hourly_charge
       recur_input_charge recur_output_charge recur_total_charge );

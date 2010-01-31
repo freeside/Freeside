@@ -163,6 +163,8 @@ sub calc_recur {
 
 }
 
+sub can_discount { 0; }
+
 sub hide_svc_detail {
   1;
 }

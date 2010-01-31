@@ -65,9 +65,9 @@ sub calc_recur {
   $price;
 }
 
-sub is_free {
-  0;
-}
+sub can_discount { 0; }
+
+sub is_free { 0; }
 
 sub base_recur {
   my($self, $cust_pkg) = @_;

@@ -94,6 +94,8 @@ sub calc_recur {
   sprintf('%.2f', $self->base_recur($cust_pkg) + $total_svc_charge );
 }
 
+sub can_discount { 0; }
+
 sub hide_svc_detail {
   1;
 }

@@ -76,6 +76,8 @@ sub calc_recur {
   $self->option('recur_fee') + $units * $self->option('recur_unit_charge');
 }
 
+sub can_discount { 0; }
+
 sub is_free_options {
   qw( setup_fee recur_fee recur_unit_charge );
 }

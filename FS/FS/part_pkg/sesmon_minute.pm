@@ -44,6 +44,8 @@ sub calc_recur {
   $self->option('recur_fee') + $min * $self->option('recur_minly_charge');
 }
 
+sub can_discount { 0; }
+
 sub is_free_options {
   qw( setup_fee recur_fee recur_minly_charge );
 }

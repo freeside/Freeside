@@ -55,4 +55,6 @@ sub calc_recur {
   $self->option('recur_fee');
 }
 
+sub can_discount { 0; }
+
 1;

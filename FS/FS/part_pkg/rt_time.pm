@@ -39,6 +39,8 @@ sub calc_recur {
 
 }
 
+sub can_discount { 0; }
+
 sub calc_cancel {
   my $self = shift;
   my($cust_pkg, $sdate, $details, $param ) = @_;

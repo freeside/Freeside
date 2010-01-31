@@ -45,6 +45,8 @@ sub calc_recur {
 
 }
 
+sub can_discount { 0; }
+
 sub is_free_options {
   qw( setup_fee recur_fee recur_hourly_charge );
 }

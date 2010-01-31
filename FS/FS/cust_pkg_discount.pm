@@ -133,6 +133,8 @@ sub check {
 
 =item cust_pkg
 
+Returns the customer package (see L<FS::cust_pkg>).
+
 =cut
 
 sub cust_pkg {
@@ -142,11 +144,27 @@ sub cust_pkg {
 
 =item discount
 
+Returns the discount (see L<FS::discount>).
+
 =cut
 
 sub discount {
   my $self = shift;
   qsearchs('discount', { 'discountnum' => $self->discountnum } );
+}
+
+=item increment_months_used
+
+Increments months_used by the given parameter
+
+=cut
+
+sub increment_months_used {
+  my( $self, $used ) = @_;
+  #UPDATE cust_pkg_discount SET months_used = months_used + ?
+  #leaves no history, and billing is mutexed per-customer, so the dum way is ok
+  $self->months_used( $self->months_used + $used );
+  $self->replace();
 }
 
 =back

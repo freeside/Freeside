@@ -103,7 +103,11 @@ sub calc_recur {
 
   $$sdate = timelocal(0,0,0,$cutoff_day,$mon,$year);
 
-  $self->option('recur_fee');
+  my $br = $self->base_recur(@_);
+
+  my $discount = $self->calc_discount(@_);
+
+  sprintf('%.2f', $br - $discount);
 }
 
 1;

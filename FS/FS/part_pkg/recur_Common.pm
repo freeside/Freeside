@@ -48,6 +48,8 @@ sub calc_recur_Common {
 
       }#$recur_method eq 'subscription'
 
+      $charges -= $self->calc_discount( $cust_pkg, $sdate, $details, $param );
+
     }#$recur_method eq 'prorate'
 
   }#increment_next_bill

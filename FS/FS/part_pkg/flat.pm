@@ -6,8 +6,10 @@ use vars qw( @ISA %info
              @usage_fieldorder @usage_recharge_fieldorder
            );
 use Tie::IxHash;
+use List::Util qw(min); # max);
 #use FS::Record qw(qsearch);
 use FS::UI::bytecount;
+use FS::Conf;
 use FS::part_pkg;
 
 @ISA = qw(FS::part_pkg);
@@ -153,7 +155,55 @@ sub calc_recur {
   return 0
     if $self->option('recur_temporality', 1) eq 'preceding' && $last_bill == 0;
 
-  $self->base_recur(@_);
+  my $br = $self->base_recur(@_);
+
+  my $discount = $self->calc_discount(@_);
+
+  sprintf('%.2f', $br - $discount);
+}
+
+sub calc_discount {
+  my $self = shift;
+  my($cust_pkg, $sdate, $details, $param ) = @_;
+
+  my $br = $self->base_recur(@_);
+
+  my $tot_discount = 0;
+  #UI enforces just 1 for now, will need ordering when they can be stacked
+  foreach my $cust_pkg_discount ( $cust_pkg->cust_pkg_discount_active ) {
+     my $discount = $cust_pkg_discount->discount;
+     #UI enforces one or the other (for now?  probably for good)
+     my $amount = 0;
+     $amount += $discount->amount;
+     $amount += sprintf('%.2f', $discount->percent * $br / 100 );
+
+     my $chg_months = $param->{'months'} || $cust_pkg->part_pkg->freq;
+     
+     my $months = $discount->months
+                    ? min( $chg_months,
+                           $discount->months - $cust_pkg->months_used )
+                    : $chg_months;
+
+     my $error = $cust_pkg_discount->increment_months_used($months);
+     die "error discounting: $error" if $error;
+
+     $amount *= $months;
+
+     #add details on discount to invoice
+     my $conf = new FS::Conf;
+     my $money_char = $conf->config('money_char') || '$';  
+
+     my $d = 'Includes ';
+     $d .= $discount->name. ' ' if $discount->name;
+     $d .= 'discount of '. $discount->description_short;
+     $d .= " for $months month". ( $months>1 ? 's' : '' );
+     $d .= ": $money_char$amount" if $months != 1 || $discount->percent;
+     push @$details, $d;
+
+     $tot_discount += $amount;
+  }
+
+  sprintf('%.2f', $tot_discount);
 }
 
 sub base_recur {
@@ -212,7 +262,11 @@ sub is_free_options {
 
 sub is_prepaid { 0; } #no, we're postpaid
 
-sub can_discount { 1; } #and anything that inherits from us
+#XXX discounts only on recurring fees for now (no setup/one-time or usage)
+sub can_discount {
+  my $self = shift;
+  $self->freq =~ /^\d+$/ && $self->freq > 0;
+}
 
 sub usage_valuehash {
   my $self = shift;
