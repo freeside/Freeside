@@ -697,13 +697,16 @@ sub insert {
 }
 
 # set usage fields and thresholds if unset but set in a package def
+# AND the package already has a last bill date (otherwise they get double added)
 sub preinsert_hook_first {
   my $self = shift;
 
   return '' unless $self->pkgnum;
 
   my $cust_pkg = qsearchs( 'cust_pkg', { 'pkgnum' => $self->pkgnum } );
-  my $part_pkg = $cust_pkg->part_pkg if $cust_pkg;
+  return '' unless $cust_pkg && $cust_pkg->last_bill;
+
+  my $part_pkg = $cust_pkg->part_pkg;
   return '' unless $part_pkg && $part_pkg->can('usage_valuehash');
 
   my %values = $part_pkg->usage_valuehash;
@@ -1673,30 +1676,20 @@ for the password.
 sub radius_password {
   my $self = shift;
 
-  my($pw_attrib, $password);
+  my $pw_attrib;
   if ( $self->_password_encoding eq 'ldap' ) {
-
     $pw_attrib = 'Password-With-Header';
-    $password = $self->_password;
-
   } elsif ( $self->_password_encoding eq 'crypt' ) {
-
     $pw_attrib = 'Crypt-Password';
-    $password = $self->_password;
-
   } elsif ( $self->_password_encoding eq 'plain' ) {
-
-    $pw_attrib = $radius_password; #Cleartext-Password?  man rlm_pap
-    $password = $self->_password;
-
+    $pw_attrib = $radius_password;
   } else {
-
-    $pw_attrib = length($password) <= 12 ? $radius_password : 'Crypt-Password';
-    $password = $self->_password;
-
+    $pw_attrib = length($self->_password) <= 12
+                   ? $radius_password
+                   : 'Crypt-Password';
   }
 
-  ($pw_attrib, $password);
+  ($pw_attrib, $self->_password);
 
 }
 
