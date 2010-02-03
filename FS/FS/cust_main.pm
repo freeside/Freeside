@@ -3926,7 +3926,7 @@ sub due_cust_event {
 
   warn "    invalid conditions not eliminated with condition_sql:\n".
        join('', map "      $_: ".$unsat{$_}."\n", keys %unsat )
-    if $DEBUG; # > 1;
+    if keys %unsat && $DEBUG; # > 1;
 
   ##
   # insert
