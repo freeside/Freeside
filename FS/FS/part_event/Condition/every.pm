@@ -50,7 +50,7 @@ sub condition {
     or die "unparsable retry_delay: $retry_delay";
   my $date_after = $time - $1 * $after{$2};
 
-  my $sth = dbh->prepare("$sql AND date > ?") # AND status = 'failed' "
+  my $sth = dbh->prepare("$sql AND _date > ?") # AND status = 'failed' "
     or die  dbh->errstr. " preparing: $sql";
   $sth->execute($self->eventpart, $tablenum, $date_after)
     or die $sth->errstr. " executing: $sql";
