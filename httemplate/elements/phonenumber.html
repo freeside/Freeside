@@ -4,22 +4,64 @@
 
     <% $number %>
 
-%   if ( $opt{'callable'} && $curuser->option('vonage-username') ) { 
+%   if ( $opt{'callable'} ) {
+%
+%     if ( $curuser->option('vonage-username') ) { 
+%
+%       (my $vonage_number = $curuser->option('vonage-fromnumber')) =~ s/\D//g;
+%       $vonage_number =~ /^1/ or $vonage_number = "1$vonage_number";
 
-      <% include('/elements/popup_link.html',
-           'action'      =>
-             'https://secure.click2callu.com/tpcc/makecall'.
-             '?username='. uri_escape($curuser->option('vonage-username')).
-             '&password='. uri_escape($curuser->option('vonage-password')).
-             "&fromnumber=$vonage_number".
-             "&tonumber=$snumber",
-           'width'       => 240,
-           'height'      => 64,
-           'actionlabel' => 'Initiating call',
-           'label'       => qq!<IMG SRC="${fsurl}images/red_telephone_mimooh_01.png" BORDER=0 ALT="Call this number">!,
-         )
-      %>
+        <% include('/elements/popup_link.html',
+             'action'      =>
+               'https://secure.click2callu.com/tpcc/makecall'.
+               '?username='. uri_escape($curuser->option('vonage-username')).
+               '&password='. uri_escape($curuser->option('vonage-password')).
+               "&fromnumber=$vonage_number".
+               "&tonumber=$snumber",
+             'width'       => 240,
+             'height'      => 64,
+             'actionlabel' => 'Initiating call',
+             'label'       => "<$img>",
+           )
+        %>
 
+%     } elsif ( $curuser->option('snom-ip') ) {
+%
+%       my $host = $curuser->option('snom-ip');
+%       if ( $curuser->option('snom-username') ) {
+%         my $userpass = uri_escape($curuser->option('snom-username'));
+%         $userpass .= ':'. uri_escape($curuser->option('snom-password'))
+%           if $curuser->option('snom-password');
+%         $host = $userpass.'@'.$host;
+%       }
+%
+%       $snumber = "1$snumber" unless $snumber =~ /~1/; #NANPA-centric
+
+%#        <% include('/elements/popup_link.html',
+%#             'action'      => "http://$host/command.htm?number=$snumber",
+%#             %link_common,
+%#           )
+%#        %>
+
+        <A HREF="javascript:snom_call(<%$snumber%>)"><<% $img %>></A>
+
+        <SCRIPT TYPE="text/javascript">
+          function snom_call(number) {
+
+            var url = '<% "http://$host/command.htm?number=" %>';
+            url = url + number;
+
+            var xmlhttp = new XMLHttpRequest();
+            xmlhttp.open('GET', url, true);
+            xmlhttp.send(null);
+
+          }
+
+        </SCRIPT>
+
+
+%     }
+%
 %   } 
 %
 % } else { 
@@ -34,7 +76,6 @@ my( $number, %opt ) = @_;
 
 my $curuser = $FS::CurrentUser::CurrentUser;
 
-( my $vonage_number = $curuser->option('vonage-fromnumber') ) =~ s/\D//g;
-$vonage_number =~ /^1/ or $vonage_number = "1$vonage_number";
+my $img = qq(IMG SRC="${fsurl}images/red_telephone_mimooh_01.png" BORDER=0 ALT="Call this number");
 
 </%init>

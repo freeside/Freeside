@@ -80,6 +80,10 @@ Development
     <TD><INPUT TYPE="checkbox" NAME="show_pkgnum" VALUE="1" <% $curuser->option('show_pkgnum') ? 'CHECKED' : '' %>></TD>
   </TR>
   <TR>
+    <TH>Show config item counts: </TH>
+    <TD><INPUT TYPE="checkbox" NAME="show_confitem_counts" VALUE="1" <% $curuser->option('show_confitem_counts') ? 'CHECKED' : '' %>></TD>
+  </TR>
+  <TR>
     <TH>Show database profiling (when available): </TH>
     <TD><INPUT TYPE="checkbox" NAME="show_db_profile" VALUE="1" <% $curuser->option('show_db_profile') ? 'CHECKED' : '' %>></TD>
   </TR>
@@ -91,6 +95,28 @@ Development
 </TABLE>
 <BR>
 
+SNOM integration
+<% ntable("#cccccc",2) %>
+
+  <TR>
+    <TH ALIGN="right">SNOM IP address</TH>
+    <TD><INPUT TYPE="text" NAME="snom-ip" VALUE="<% $curuser->option('snom-ip') %>"></TD>
+  </TR>
+
+  <TR>
+    <TH ALIGN="right">SNOM HTTP username (if necessary)</TH>
+    <TD><INPUT TYPE="text" NAME="snom-username" VALUE="<% $curuser->option('snom-username') %>"></TD>
+  </TR>
+
+  <TR>
+    <TH ALIGN="right">SNOM HTTP password (if necessary)</TH>
+    <TD><INPUT TYPE="password" NAME="snom-password" VALUE="<% $curuser->option('snom-password') %>"></TD>
+  </TR>
+
+</TABLE>
+<BR>
+
+OR<BR><BR>
 
 Vonage integration (see <a href="https://secure.click2callu.com/">Click2Call</a>)
 <% ntable("#cccccc",2) %>
