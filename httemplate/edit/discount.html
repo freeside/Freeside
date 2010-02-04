@@ -4,6 +4,8 @@
                  'fields' => [
                                'name',
                                { field => 'disabled', type => 'checkbox', value=>'Y', },
+                               # a weird kind of false laziness
+                               # w/elements/tr-select-discount.html
                                { field => '_type',    type => 'select',
                                  options => \@_type_options,
                                  onchange => '_type_changed',

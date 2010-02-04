@@ -31,6 +31,7 @@ Example:
 
     #basic params controlling the resulting <SELECT>
     'pre_options'    => [ 'value' => 'option' ], #before normal options
+    'post_options'   => [ 'value' => 'option' ], #after normal options
     'empty_label'    => '', #better specify it though, the default might change
     'multiple'       => 0, # bool
     'disable_empty'  => 0, # bool (implied by multiple)
@@ -101,6 +102,16 @@ Example:
           ? &{ $opt{'label_callback'} }( $record )
           : $record->$name_col()
      %>
+% } 
+
+% while ( @post_options ) { 
+%   my $post_opt   = shift(@post_options);
+%   my $post_label = shift(@post_options);
+%   my $selected =    ( ref($value) && $value->{$post_opt} )
+%                  || ( $value eq $post_opt );
+    <OPTION VALUE="<% $post_opt %>"
+            <% $selected ? 'SELECTED' : '' %>
+    ><% $post_label %>
 % } 
 
 </SELECT>
@@ -180,6 +191,7 @@ if ( ref( $value ) eq 'ARRAY' ) {
   $value = { map { $_ => 1 } @$value };
 }
 
-my @pre_options = $opt{pre_options} ? @{ $opt{pre_options} } : ();
+my @pre_options  = $opt{pre_options}  ? @{ $opt{pre_options} } : ();
+my @post_options = $opt{post_options} ? @{ $opt{post_options} } : ();
 
 </%init>

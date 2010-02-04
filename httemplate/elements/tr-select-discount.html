@@ -1,19 +1,155 @@
-% if ( scalar(@{ $opt{'discount'} }) == 0 ) { 
+% if ( scalar(@{ $opt{'discount'} }) == 0
+%      && ! $curuser->access_right('Custom discount customer package') ) { 
 
-  <INPUT TYPE="hidden" NAME="<% $opt{'element_name'} || $opt{'field'} || 'discountnum' %>" VALUE="">
+  <INPUT TYPE="hidden" NAME="<% $name %>" VALUE="<% $discountnum %>">
 
 % } else { 
 
   <TR>
     <TD ALIGN="right"><% $opt{'label'} || '<B>Discount</B>' %></TD>
-    <TD>
+    <TD <% $colspan %>>
       <% include( '/elements/select-discount.html',
                     'curr_value' => $discountnum,
+                    'onchange'   => $name.'_changed',
                     %opt,
                 )
       %>
     </TD>
   </TR>
+
+% # a weird kind of false laziness w/edit/discount.html
+
+  <INPUT TYPE="hidden" NAME="<% $name %>_disabled" VALUE="Y">
+
+
+  <% include( '/elements/tr-select.html',
+                'label'      => '<B>Discount Type</B>',
+                'field'      => $name. '__type',
+                'id'         => $name. '__type',
+                'options'    => \@_type_options,
+                #XXX 'curr_value' => 
+                'onchange'   => '_type_changed',
+                'colspan'    => $opt{'colspan'},
+            )
+  %>
+
+  <% include( '/elements/tr-input-money.html',
+                'label'      => '<B>Discount Amount</B>',
+                'field'      => $name. '_amount',
+                'id'         => $name. '_amount',
+                'default'    => '0.00',
+                #XXX 'curr_value' =>
+                'colspan'    => $opt{'colspan'},
+            )
+  %>
+
+  <% include( '/elements/tr-input-percentage.html',
+                'label'      => '<B>Discount Percentage</B>',
+                'field'      => $name. '_percent',
+                'id'         => $name. '_percent',
+                'default'    => '0',
+                #XXX 'curr_value' =>
+                'colspan'    => $opt{'colspan'},
+            )
+  %>
+
+  <% include( '/elements/tr-input-text.html',
+                'label'   => '<B>Discount # of Months</B>',
+                'field'   => $name. '_months',
+                'id'      => $name. '_months',
+                'size'    => 2,
+                'postfix' => qq(<FONT SIZE="-1" ID="${name}_months_postfix"><I>(blank for non-expiring discount)</I></FONT>),
+                #XXX 'curr_value' =>
+                'colspan'    => $opt{'colspan'},
+           )
+  %>
+
+  <SCRIPT TYPE="text/javascript">
+
+%   my $ge = 'document.getElementById';
+
+    function <% $name %>_changed(what) {
+      var <% $name %> = what.options[what.selectedIndex].value;
+
+      if ( <% $name %> == '-1' ) {
+        <% $ge %>('<% $name %>__type_label0').style.display = '';
+        <% $ge %>('<% $name %>__type_label0').style.visibility = '';
+        <% $ge %>('<% $name %>__type').style.display = '';
+        <% $ge %>('<% $name %>__type').style.visibility = '';
+%       #XXX retrieve previous visibility for amount, percent :/
+        <% $ge %>('<% $name %>_months_label0').style.display = '';
+        <% $ge %>('<% $name %>_months_label0').style.visibility = '';
+        <% $ge %>('<% $name %>_months').style.display = '';
+        <% $ge %>('<% $name %>_months').style.visibility = '';
+        <% $ge %>('<% $name %>_months_postfix').style.display = '';
+        <% $ge %>('<% $name %>_months_postfix').style.visibility = '';
+      } else {
+
+        <% $ge %>('<% $name %>__type_label0').style.display = 'none';
+        <% $ge %>('<% $name %>__type_label0').style.visibility = 'hidden';
+        <% $ge %>('<% $name %>__type').style.display = 'none';
+        <% $ge %>('<% $name %>__type').style.visibility = 'hidden';
+
+%       #XXX save visibility settings for amount, percent :/
+        <% $ge %>('<% $name %>_amount_label0').style.display = 'none';
+        <% $ge %>('<% $name %>_amount_label0').style.visibility = 'hidden';
+        <% $ge %>('<% $name %>_amount').style.display = 'none';
+        <% $ge %>('<% $name %>_amount').style.visibility = 'hidden';
+        <% $ge %>('<% $name %>_amount_input0').style.display = 'none';
+        <% $ge %>('<% $name %>_amount_input0').style.visibility = 'hidden';
+        <% $ge %>('<% $name %>_percent_label0').style.display = 'none';
+        <% $ge %>('<% $name %>_percent_label0').style.visibility = 'hidden';
+        <% $ge %>('<% $name %>_percent').style.display = 'none';
+        <% $ge %>('<% $name %>_percent').style.visibility = 'hidden';
+        <% $ge %>('<% $name %>_percent_input0').style.display = 'none';
+        <% $ge %>('<% $name %>_percent_input0').style.visibility = 'hidden';
+
+        <% $ge %>('<% $name %>_months_label0').style.display = 'none';
+        <% $ge %>('<% $name %>_months_label0').style.visibility = 'hidden';
+        <% $ge %>('<% $name %>_months').style.display = 'none';
+        <% $ge %>('<% $name %>_months').style.visibility = 'hidden';
+        <% $ge %>('<% $name %>_months_postfix').style.display = 'none';
+        <% $ge %>('<% $name %>_months_postfix').style.visibility = 'hidden';
+
+      }
+
+    }
+
+    function <% $name %>__type_changed(what) {
+      var _type = what.options[what.selectedIndex].value;
+
+      if ( <% $name %>__type == '<% $select %>' ) {
+        <% $ge %>('<% $name %>_amount_label0').style.display = 'none';
+        <% $ge %>('<% $name %>_amount_label0').style.visibility = 'hidden';
+        <% $ge %>('<% $name %>_amount').style.display = 'none';
+        <% $ge %>('<% $name %>_amount').style.visibility = 'hidden';
+        <% $ge %>('<% $name %>_percent_label0').style.display = 'none';
+        <% $ge %>('<% $name %>_percent_label0').style.visibility = 'hidden';
+        <% $ge %>('<% $name %>_percent').style.display = 'none';
+        <% $ge %>('<% $name %>_percent').style.visibility = 'hidden';
+      } else if ( <% $name %>__type == 'Amount' ) {
+        <% $ge %>('<% $name %>_amount_label0').style.display = '';
+        <% $ge %>('<% $name %>_amount_label0').style.visibility = '';
+        <% $ge %>('<% $name %>_amount').style.display = '';
+        <% $ge %>('<% $name %>_amount').style.visibility = '';
+        <% $ge %>('<% $name %>_percent_label0').style.display = 'none';
+        <% $ge %>('<% $name %>_percent_label0').style.visibility = 'hidden';
+        <% $ge %>('<% $name %>_percent').style.display = 'none';
+        <% $ge %>('<% $name %>_percent').style.visibility = 'hidden';
+      } else if ( <% $name %>__type == 'Percentage' ) {
+        <% $ge %>('<% $name %>_amount_label0').style.display = 'none';
+        <% $ge %>('<% $name %>_amount_label0').style.visibility = 'hidden';
+        <% $ge %>('<% $name %>_amount').style.display = 'none';
+        <% $ge %>('<% $name %>_amount').style.visibility = 'hidden';
+        <% $ge %>('<% $name %>_percent_label0').style.display = '';
+        <% $ge %>('<% $name %>_percent_label0').style.visibility = '';
+        <% $ge %>('<% $name %>_percent').style.display = '';
+        <% $ge %>('<% $name %>_percent').style.visibility = '';
+     }
+
+    }
+
+  </SCRIPT>
 
 % } 
 <%init>
@@ -23,5 +159,15 @@ my $discountnum = $opt{'curr_value'} || $opt{'value'};
 
 $opt{'discount'} ||= [ qsearch( 'discount', { disabled=>'' } ) ];
 
-</%init>
+my $curuser = $FS::CurrentUser::CurrentUser;
 
+my $name = $opt{'element_name'} || $opt{'field'} || 'discountnum';
+
+my $select = 'Select discount type';
+
+my @_type_options = ( 'Amount', 'Percentage' );
+unshift @_type_options, $select;
+
+my $colspan = $opt{'colspan'} ? 'COLSPAN="'.$opt{'colspan'}.'"' : '';
+
+</%init>
