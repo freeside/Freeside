@@ -1,3 +1,15 @@
+<%doc>
+
+Example:
+
+  include( '/elements/search-cust_main.html,
+             'field_name'  => 'custnum',
+             'find_button' => 1, #add a "find" button to the field
+             'curr_value'  => 54, #current value
+             'value        => 32, #deprecated synonym for curr_value
+  );
+
+</%doc>
 <INPUT TYPE="hidden" NAME="<% $opt{'field_name'} %>" VALUE="<% $value %>">
 
 <!-- some false laziness w/ misc/batch-cust_pay.html, though not as bad as i'd thought at first... -->

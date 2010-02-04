@@ -52,6 +52,7 @@
 %if ( $cust_main->referral_custnum
 %     and $referring_cust_main =
 %           qsearchs('cust_main', { custnum => $cust_main->referral_custnum } )
+%     and ! $curuser->access_right('Edit referring customer')
 %) {
 
   <TR>
@@ -61,8 +62,8 @@
     </TD>
   </TR>
   <INPUT TYPE="hidden" NAME="referral_custnum" VALUE="<% $cust_main->referral_custnum %>">
-% } elsif ( ! $conf->exists('disable_customer_referrals') ) { 
 
+% } elsif ( ! $conf->exists('disable_customer_referrals') ) { 
 
   <TR>
     <TD ALIGN="right">Referring customer</TD>
@@ -70,13 +71,13 @@
       <!-- <INPUT TYPE="text" NAME="referral_custnum" VALUE=""> -->
       <% include('/elements/search-cust_main.html',
                     'field_name' => 'referral_custnum',
+                    'curr_value' => $cust_main->referral_custnum,
                  )
       %>
     </TD>
   </TR>
+
 % } else { 
-
-
   <INPUT TYPE="hidden" NAME="referral_custnum" VALUE="">
 % } 
 
@@ -100,6 +101,8 @@ my( $cust_main, %opt ) = @_;
 my $custnum = $opt{'custnum'};
 
 my $conf = new FS::Conf;
+
+my $curuser = $FS::CurrentUser::CurrentUser;
 
 my $r = qq!<font color="#ff0000">*</font>&nbsp;!;
 

@@ -108,6 +108,7 @@ tie my %rights, 'Tie::IxHash',
     'View customer',
     #'View Customer | View tickets',
     'Edit customer',
+    'Edit referring customer',
     'View customer history',
     'Cancel customer',
     'Complimentary customer', #aka users-allow_comp 
