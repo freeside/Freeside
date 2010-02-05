@@ -29,22 +29,18 @@ my $cust_pkg = qsearchs({
 });
 die 'unknown pkgnum' unless $cust_pkg;
 
-#XXX something not unlike this for custom discounts
-#if ( $cgi->param('locationnum') == -1 ) {
-#  my $cust_location = new FS::cust_location {
-#    'custnum' => $cust_pkg->custnum,
-#    map { $_ => scalar($cgi->param($_)) }
-#        qw( address1 address2 city county state zip country )
-#  };
-#  $change{'cust_location'} = $cust_location;
-#}
-
 my $cust_pkg_discount = new FS::cust_pkg_discount {
   'pkgnum'      => $cust_pkg->pkgnum,
   'discountnum' => scalar($cgi->param('discountnum')),
   'months_used' => 0,
   'end_date'    => '', #XXX
   'otaker'      => $curuser->username,
+  #for the create a new discount case
+  '_type'       => scalar($cgi->param('discountnum__type')),
+  'amount'      => scalar($cgi->param('discountnum_amount')),
+  'percent'     => scalar($cgi->param('discountnum_percent')),
+  'months'      => scalar($cgi->param('discountnum_months')),
+  #'disabled'    => $self->discountnum_disabled,
 };
 my $error = $cust_pkg_discount->insert;
 
