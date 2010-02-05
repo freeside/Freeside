@@ -277,15 +277,7 @@ sub insert {
                     );
 
   if ( $self->discountnum ) {
-    #XXX new/custom discount case
-    my $cust_pkg_discount = new FS::cust_pkg_discount {
-      'pkgnum'      => $self->pkgnum,
-      'discountnum' => $self->discountnum,
-      'months_used' => 0,
-      'end_date'    => '', #XXX
-      'otaker'      => $self->otaker,
-    };
-    my $error = $cust_pkg_discount->insert;
+    my $error = $self->insert_discount();
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error;
@@ -2301,6 +2293,44 @@ sub insert_reason {
 	                    });
 
   $cust_pkg_reason->insert;
+}
+
+=item insert_discount
+
+Associates this package with a discount (see L<FS::cust_pkg_discount>, possibly
+inserting a new discount on the fly (see L<FS::discount>).
+
+Available options are:
+
+=over 4
+
+=item discountnum
+
+=back
+
+If there is an error, returns the error, otherwise returns false.
+
+=cut
+
+sub insert_discount {
+  #my ($self, %options) = @_;
+  my $self = shift;
+
+  my $cust_pkg_discount = new FS::cust_pkg_discount {
+    'pkgnum'      => $self->pkgnum,
+    'discountnum' => $self->discountnum,
+    'months_used' => 0,
+    'end_date'    => '', #XXX
+    'otaker'      => $self->otaker,
+    #for the create a new discount case
+    '_type'       => $self->discountnum__type,
+    'amount'      => $self->discountnum_amount,
+    'percent'     => $self->discountnum_percent,
+    'months'      => $self->discountnum_months,
+    #'disabled'    => $self->discountnum_disabled,
+  };
+
+  $cust_pkg_discount->insert;
 }
 
 =item set_usage USAGE_VALUE_HASHREF 

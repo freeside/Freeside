@@ -188,15 +188,17 @@ sub calc_discount {
      die "error discounting: $error" if $error;
 
      $amount *= $months;
+     $amount = sprintf('%.2f', $amount);
 
      #add details on discount to invoice
      my $conf = new FS::Conf;
      my $money_char = $conf->config('money_char') || '$';  
+     $months = sprintf('%.2f', $months) if $months =~ /\./;
 
      my $d = 'Includes ';
      $d .= $discount->name. ' ' if $discount->name;
      $d .= 'discount of '. $discount->description_short;
-     $d .= " for $months month". ( $months>1 ? 's' : '' );
+     $d .= " for $months month". ( $months!=1 ? 's' : '' );
      $d .= ": $money_char$amount" if $months != 1 || $discount->percent;
      push @$details, $d;
 

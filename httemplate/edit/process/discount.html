@@ -1,28 +1,11 @@
 <% include( 'elements/process.html',
                'table'       => 'discount',
                'viewall_dir' => 'browse',
-               'precheck_callback' => $precheck_callback,
            )
 %>
 <%init>
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
-
-my $precheck_callback = sub {
-  my( $cgi ) = @_;
-
-  if ( $cgi->param('_type') eq 'Select discount type' ) {
-    return 'Please select a discount type';
-  } elsif ( $cgi->param('_type') eq 'Amount' ) {
-    $cgi->param('percent', '0');
-    return 'Amount must be greater than 0' unless $cgi->param('amount') > 0;
-  } elsif ( $cgi->param('_type') eq 'Percentage' ) {
-    $cgi->param('amount', '0.00');
-    return 'Percentage must be greater than 0' unless $cgi->param('percent') > 0;
-  }
-
-  '';
-};
 
 </%init>

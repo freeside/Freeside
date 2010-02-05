@@ -69,6 +69,8 @@
 % if ( $curuser->access_right('Discount customer package') ) {
   <% include('/elements/tr-select-discount.html',
                'element_etc' => 'DISABLED',
+               'colspan'     => 7,
+               'cgi'         => $cgi,
             )
   %>
 % }

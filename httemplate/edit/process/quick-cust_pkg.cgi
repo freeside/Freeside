@@ -45,17 +45,27 @@ my $refnum = $1;
 $cgi->param('locationnum') =~ /^(\-?\d*)$/
   or die 'illegal locationnum '. $cgi->param('locationnum');
 my $locationnum = $1;
+$cgi->param('discountnum') =~ /^(\-?\d*)$/
+  or die 'illegal discountnum '. $cgi->param('discountnum');
+my $discountnum = $1;
+
 
 my $cust_pkg = new FS::cust_pkg {
-  'custnum'     => $custnum,
-  'pkgpart'     => $pkgpart,
-  'start_date'  => ( scalar($cgi->param('start_date'))
-                       ? str2time($cgi->param('start_date'))
-                       : ''
-                   ),
-  'discountnum' => scalar($cgi->param('discountnum')),
-  'refnum'      => $refnum,
-  'locationnum' => $locationnum,
+  'custnum'              => $custnum,
+  'pkgpart'              => $pkgpart,
+  'start_date'           => ( scalar($cgi->param('start_date'))
+                                ? str2time($cgi->param('start_date'))
+                                : ''
+                            ),
+  'refnum'               => $refnum,
+  'locationnum'          => $locationnum,
+  'discountnum'          => $discountnum,
+  #for the create a new discount case
+  'discountnum__type'    => scalar($cgi->param('discountnum__type')),
+  'discountnum_amount'   => scalar($cgi->param('discountnum_amount')),
+  'discountnum_percent'  => scalar($cgi->param('discountnum_percent')),
+  'discountnum_months'   => scalar($cgi->param('discountnum_months')),
+  #'discountnum_disabled' => scalar($cgi->param('discountnum_disabled')),
 };
 
 my %opt = ( 'cust_pkg' => $cust_pkg );

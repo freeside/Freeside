@@ -300,9 +300,11 @@ sub pkg_status_row_discount {
     my $discount = $cust_pkg_discount->discount;
 
     my $label = '<B>Discount</B>: '. $discount->description;
-    $label .= ' ('. ( $discount->months - $cust_pkg_discount->months_used ).
-              ' months remaining)'
-      if $discount->months;
+    if ( $discount->months ) {
+      my $remaining = $discount->months - $cust_pkg_discount->months_used;
+      $remaining = sprintf('%.2f', $remaining) if $remaining =~ /\./;
+      $label .= " ($remaining months remaining)"
+    }
 
     $label .= ' <FONT SIZE="-1">('.
                 '<A HREF="../misc/delete-cust_pkg_discount.html?'.

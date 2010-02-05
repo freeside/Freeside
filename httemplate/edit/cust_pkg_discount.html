@@ -28,7 +28,8 @@
 
 <% include('/elements/tr-select-discount.html',
              'empty_label' => ( $pkgdiscountnum ? '' : 'Select discount' ),
-             'onchange'    => 'enable_discount_pkg',
+             'onchange'    => 'enable_discount_pkg()',
+             'cgi'         => $cgi,
           )
 %>
 

@@ -113,6 +113,16 @@ and replace methods.
 sub check {
   my $self = shift;
 
+  if ( $self->_type eq 'Select discount type' ) {
+    return 'Please select a discount type';
+  } elsif ( $self->_type eq 'Amount' ) {
+    $self->percent('0');
+    return 'Amount must be greater than 0' unless $self->amount > 0;
+  } elsif ( $self->_type eq 'Percentage' ) {
+    $self->amount('0.00');
+    return 'Percentage must be greater than 0' unless $self->percent > 0;
+  }
+
   my $error = 
     $self->ut_numbern('discountnum')
     || $self->ut_textn('name')

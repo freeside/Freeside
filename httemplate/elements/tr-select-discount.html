@@ -6,11 +6,11 @@
 % } else { 
 
   <TR>
-    <TD ALIGN="right"><% $opt{'label'} || '<B>Discount</B>' %></TD>
+    <TD ALIGN="right" WIDTH="176"><% $opt{'label'} || '<B>Discount</B>' %></TD>
     <TD <% $colspan %>>
       <% include( '/elements/select-discount.html',
                     'curr_value' => $discountnum,
-                    'onchange'   => $name.'_changed',
+                    'onchange'   => $onchange,
                     %opt,
                 )
       %>
@@ -19,7 +19,7 @@
 
 % # a weird kind of false laziness w/edit/discount.html
 
-  <INPUT TYPE="hidden" NAME="<% $name %>_disabled" VALUE="Y">
+% #  <INPUT TYPE="hidden" NAME="<% $name %>_disabled" VALUE="Y">
 
 
   <% include( '/elements/tr-select.html',
@@ -27,18 +27,18 @@
                 'field'      => $name. '__type',
                 'id'         => $name. '__type',
                 'options'    => \@_type_options,
-                #XXX 'curr_value' => 
-                'onchange'   => '_type_changed',
+                'curr_value' => scalar($cgi->param($name.'__type')),
+                'onchange'   => $name.'__type_changed',
                 'colspan'    => $opt{'colspan'},
             )
   %>
 
   <% include( '/elements/tr-input-money.html',
-                'label'      => '<B>Discount Amount</B>',
+                'label'      => '<B>Discount Amount&nbsp;</B>',
                 'field'      => $name. '_amount',
                 'id'         => $name. '_amount',
                 'default'    => '0.00',
-                #XXX 'curr_value' =>
+                'curr_value' => scalar($cgi->param($name.'_amount')),
                 'colspan'    => $opt{'colspan'},
             )
   %>
@@ -48,18 +48,18 @@
                 'field'      => $name. '_percent',
                 'id'         => $name. '_percent',
                 'default'    => '0',
-                #XXX 'curr_value' =>
+                'curr_value' => scalar($cgi->param($name.'_percent')),
                 'colspan'    => $opt{'colspan'},
             )
   %>
 
   <% include( '/elements/tr-input-text.html',
-                'label'   => '<B>Discount # of Months</B>',
+                'label'   => '<B>Discount duration (months)</B>',
                 'field'   => $name. '_months',
                 'id'      => $name. '_months',
                 'size'    => 2,
                 'postfix' => qq(<FONT SIZE="-1" ID="${name}_months_postfix"><I>(blank for non-expiring discount)</I></FONT>),
-                #XXX 'curr_value' =>
+                'curr_value' => scalar($cgi->param($name.'_months')),
                 'colspan'    => $opt{'colspan'},
            )
   %>
@@ -93,14 +93,14 @@
 %       #XXX save visibility settings for amount, percent :/
         <% $ge %>('<% $name %>_amount_label0').style.display = 'none';
         <% $ge %>('<% $name %>_amount_label0').style.visibility = 'hidden';
-        <% $ge %>('<% $name %>_amount').style.display = 'none';
-        <% $ge %>('<% $name %>_amount').style.visibility = 'hidden';
+        <% $ge %>('<% $name %>_amount_input0').style.display = 'none';
+        <% $ge %>('<% $name %>_amount_input0').style.visibility = 'hidden';
         <% $ge %>('<% $name %>_amount_input0').style.display = 'none';
         <% $ge %>('<% $name %>_amount_input0').style.visibility = 'hidden';
         <% $ge %>('<% $name %>_percent_label0').style.display = 'none';
         <% $ge %>('<% $name %>_percent_label0').style.visibility = 'hidden';
-        <% $ge %>('<% $name %>_percent').style.display = 'none';
-        <% $ge %>('<% $name %>_percent').style.visibility = 'hidden';
+        <% $ge %>('<% $name %>_percent_input0').style.display = 'none';
+        <% $ge %>('<% $name %>_percent_input0').style.visibility = 'hidden';
         <% $ge %>('<% $name %>_percent_input0').style.display = 'none';
         <% $ge %>('<% $name %>_percent_input0').style.visibility = 'hidden';
 
@@ -116,7 +116,7 @@
     }
 
     function <% $name %>__type_changed(what) {
-      var _type = what.options[what.selectedIndex].value;
+      var <% $name %>__type = what.options[what.selectedIndex].value;
 
       if ( <% $name %>__type == '<% $select %>' ) {
         <% $ge %>('<% $name %>_amount_label0').style.display = 'none';
@@ -130,24 +130,26 @@
       } else if ( <% $name %>__type == 'Amount' ) {
         <% $ge %>('<% $name %>_amount_label0').style.display = '';
         <% $ge %>('<% $name %>_amount_label0').style.visibility = '';
-        <% $ge %>('<% $name %>_amount').style.display = '';
-        <% $ge %>('<% $name %>_amount').style.visibility = '';
+        <% $ge %>('<% $name %>_amount_input0').style.display = '';
+        <% $ge %>('<% $name %>_amount_input0').style.visibility = '';
         <% $ge %>('<% $name %>_percent_label0').style.display = 'none';
         <% $ge %>('<% $name %>_percent_label0').style.visibility = 'hidden';
-        <% $ge %>('<% $name %>_percent').style.display = 'none';
-        <% $ge %>('<% $name %>_percent').style.visibility = 'hidden';
+        <% $ge %>('<% $name %>_percent_input0').style.display = 'none';
+        <% $ge %>('<% $name %>_percent_input0').style.visibility = 'hidden';
       } else if ( <% $name %>__type == 'Percentage' ) {
         <% $ge %>('<% $name %>_amount_label0').style.display = 'none';
         <% $ge %>('<% $name %>_amount_label0').style.visibility = 'hidden';
-        <% $ge %>('<% $name %>_amount').style.display = 'none';
-        <% $ge %>('<% $name %>_amount').style.visibility = 'hidden';
+        <% $ge %>('<% $name %>_amount_input0').style.display = 'none';
+        <% $ge %>('<% $name %>_amount_input0').style.visibility = 'hidden';
         <% $ge %>('<% $name %>_percent_label0').style.display = '';
         <% $ge %>('<% $name %>_percent_label0').style.visibility = '';
-        <% $ge %>('<% $name %>_percent').style.display = '';
-        <% $ge %>('<% $name %>_percent').style.visibility = '';
+        <% $ge %>('<% $name %>_percent_input0').style.display = '';
+        <% $ge %>('<% $name %>_percent_input0').style.visibility = '';
      }
 
     }
+
+    <% $name %>_changed(<% $ge %>('<% $name %>'));
 
   </SCRIPT>
 
@@ -155,6 +157,7 @@
 <%init>
 
 my %opt = @_;
+my $cgi = $opt{'cgi'};
 my $discountnum = $opt{'curr_value'} || $opt{'value'};
 
 $opt{'discount'} ||= [ qsearch( 'discount', { disabled=>'' } ) ];
@@ -169,5 +172,8 @@ my @_type_options = ( 'Amount', 'Percentage' );
 unshift @_type_options, $select;
 
 my $colspan = $opt{'colspan'} ? 'COLSPAN="'.$opt{'colspan'}.'"' : '';
+
+my $onchange = ( $opt{'onchange'} ? delete($opt{'onchange'}).';' : '' ).
+               $name.'_changed(this);';
 
 </%init>
