@@ -25,6 +25,8 @@ my $cust_pkg_discount =
 my $cust_pkg = $cust_pkg_discount->cust_pkg;
 my $custnum = $cust_pkg->custnum;
 
-my $error = $cust_pkg_discount->delete;
+$cust_pkg_discount->disabled('Y');
+
+my $error = $cust_pkg_discount->replace;
 
 </%init>

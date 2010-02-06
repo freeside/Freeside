@@ -1,7 +1,7 @@
 package FS::cust_pkg_discount;
 
 use strict;
-use base qw( FS::Record );
+use base qw( FS::cust_main_Mixin FS::Record );
 use FS::Record qw( dbh qsearchs ); # qsearch );
 use FS::cust_pkg;
 use FS::discount;
@@ -165,6 +165,7 @@ sub check {
     || $self->ut_float('months_used') #actually decimal, but this will do
     || $self->ut_numbern('end_date')
     || $self->ut_text('otaker')
+    || $self->ut_enum('disabled', [ '', 'Y' ] )
   ;
   return $error if $error;
 
@@ -205,6 +206,24 @@ sub increment_months_used {
   #leaves no history, and billing is mutexed per-customer, so the dum way is ok
   $self->months_used( $self->months_used + $used );
   $self->replace();
+}
+
+=item status
+
+=cut
+
+sub status {
+  my $self = shift;
+  my $discount = $self->discount;
+
+  if ( $self->disabled ne 'Y' 
+       and ( ! $discount->months || $self->months_used < $discount->months )
+             #XXX also end date
+     ) {
+    'active';
+  } else {
+    'expired';
+  }
 }
 
 =back

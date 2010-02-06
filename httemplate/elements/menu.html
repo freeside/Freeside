@@ -102,6 +102,13 @@ tie my %report_invoices, 'Tie::IxHash',
   'Advanced invoice reports' => [ $fsurl.'search/report_cust_bill.html', 'by agent, date range, etc.' ],
 ;
 
+tie my %report_discounts, 'Tie::IxHash',
+  'Discount graph'  => [ $fsurl. 'graph/report_cust_bill_pkg_discount.html', 'Discount overview per month' ],
+  'Discount detail' => [ $fsurl.'search/report_cust_bill_pkg_discount.html', 'Discount report (by employee and/or date range)' ],
+  #awful name
+  'Package discounts' => [ $fsurl.'search/report_cust_pkg_discount.html', 'Active/inactive discounts by package' ],
+;
+
 tie my %report_services, 'Tie::IxHash';
 if ( $curuser->access_right('Configuration') ) {
   $report_services{'Service definitions'} =  [ $fsurl.'browse/part_svc.cgi?orderby=active', 'Service definitions by number of active packages' ];
@@ -262,6 +269,8 @@ $report_menu{'Customers'}   = [ \%report_customers, 'Customer reports'  ]
   if $curuser->access_right('List customers');
 $report_menu{'Invoices'}    =  [ \%report_invoices,  'Invoice reports'   ]
   if $curuser->access_right('List invoices');
+$report_menu{'Discounts'}   =  [ \%report_discounts, 'Discount reports'  ]
+  if $curuser->access_right('Financial reports');
 $report_menu{'Payments'}    =  [ \%report_payments,  'Payment reports'   ]
   if $curuser->access_right('Financial reports');
 $report_menu{'Packages'}    =  [ \%report_packages,  'Package reports'   ]

@@ -3065,7 +3065,7 @@ sub _make_lines {
   my $old_cust_pkg = new FS::cust_pkg \%hash;
 
   my @details = ();
-
+  my @discounts = ();
   my $lineitems = 0;
 
   $cust_pkg->pkgpart($part_pkg->pkgpart);
@@ -3150,6 +3150,7 @@ sub _make_lines {
                               );
     my %param = ( 'precommit_hooks'     => $precommit_hooks,
                   'increment_next_bill' => $increment_next_bill,
+                  'discounts'           => \@discounts,
                 );
 
     my $method = $options{cancel} ? 'calc_cancel' : 'calc_recur';
@@ -3229,6 +3230,7 @@ sub _make_lines {
         'unitrecur' => $unitrecur,
         'quantity'  => $cust_pkg->quantity,
         'details'   => \@details,
+        'discounts' => \@discounts,
         'hidden'    => $part_pkg->hidden,
       };
 

@@ -174,6 +174,17 @@ sub insert {
     }
   }
 
+  if ( $self->get('discounts') ) {
+    foreach my $cust_bill_pkg_discount ( @{$self->get('discounts')} ) {
+      $cust_bill_pkg_discount->billpkgnum($self->billpkgnum);
+      $error = $cust_bill_pkg_discount->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "error inserting cust_bill_pkg_discount: $error";
+      }
+    }
+  }
+
   if ( $self->_cust_tax_exempt_pkg ) {
     foreach my $cust_tax_exempt_pkg ( @{$self->_cust_tax_exempt_pkg} ) {
       $cust_tax_exempt_pkg->billpkgnum($self->billpkgnum);
@@ -763,10 +774,10 @@ sub cust_bill_pkg_display {
   my $type = $opt{type} if exists $opt{type};
   my @result;
 
-  if ( scalar( $self->get('display') ) ) {
+  if ( $self->get('display') ) {
     @result = grep { defined($type) ? ($type eq $_->type) : 1 }
               @{ $self->get('display') };
-  }else{
+  } else {
     my $hashref = { 'billpkgnum' => $self->billpkgnum };
     $hashref->{type} = $type if defined($type);
     

@@ -2388,10 +2388,7 @@ sub cust_pkg_discount {
 
 sub cust_pkg_discount_active {
   my $self = shift;
-  grep { my $d = $_->discount;
-         ! $d->months || $_->months_used < $d->months; # XXX also end date
-       }
-       $self->cust_pkg_discount;
+  grep { $_->status eq 'active' } $self->cust_pkg_discount;
 }
 
 =back

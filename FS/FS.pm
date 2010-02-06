@@ -228,6 +228,8 @@ L<FS::cust_pkg_detail> - Customer package details class
 
 L<FS:;cust_pkg_discount> - Customer package discount class
 
+L<FS:;cust_bill_pkg_discount> - Customer package discount line item application class
+
 L<FS:;discount> - Discount class
 
 L<FS::reason_type> - Reason type class

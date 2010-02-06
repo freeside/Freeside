@@ -1,0 +1,122 @@
+<% include( 'elements/search.html',
+                  'title'       => 'Package discounts', 
+                  'name'        => 'discounts',
+                  'query'       => $query,
+                  'count_query' => $count_query,
+                  #'redirect'    => $link,
+                  'header'      => [ 'Status',
+                                     'Discount',
+                                     'Months used',
+                                     'Employee',
+                                     'Package',
+                                     FS::UI::Web::cust_header(
+                                     #  $cgi->param('cust_fields')
+                                     ),
+                                   ],
+                  'fields'      => [
+                                     sub { ucfirst( shift->status ) },
+                                     sub { shift->discount->description },
+                                     sub { my $m = shift->months_used;
+                                           $m =~ /\./ ? sprintf('%.2f',$m) : $m;
+                                         },
+                                     'otaker',
+                                     'pkg',
+                                     \&FS::UI::Web::cust_fields,
+                                   ],
+                  'links'       => [
+                                     '',
+                                     '',
+                                     '',
+                                     '',
+                                     '',
+                                     ( map { $_ ne 'Cust. Status' ? $clink : ''}
+                                           FS::UI::Web::cust_header()
+                                     ),
+                                   ],
+                  'align'       => 'clrll'. FS::UI::Web::cust_aligns(),
+                  'color'       => [ 
+                                     '',
+                                     '',
+                                     '',
+                                     '',
+                                     '',
+                                     FS::UI::Web::cust_colors(),
+                                   ],
+                 'style'        => [ 
+                                     '',
+                                     '',
+                                     '',
+                                     '',
+                                     '',
+                                     FS::UI::Web::cust_styles(),
+                                   ],
+           )
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+#my $conf = new FS::Conf;
+
+#here is the agent virtualization
+my $agentnums_sql =
+  $FS::CurrentUser::CurrentUser->agentnums_sql( 'table' => 'cust_main' );
+
+my @where = ( $agentnums_sql );
+
+#status
+if ( $cgi->param('status') eq 'active' ) {
+  push @where, "     (    cust_pkg_discount.disabled IS NULL
+                       OR cust_pkg_discount.disabled != 'Y'  )
+                 AND ( months IS NULL OR months_used < months ) ";
+                       #XXX also end date
+} elsif ( $cgi->param('status') eq 'expired' ) {
+  push @where, "    (      cust_pkg_discount.disabled IS NOT NULL
+                      AND  cust_pkg_discount.disabled = 'Y'       )
+                 OR ( months IS NOT NULL AND months_used >= months )
+               ";     #XXX also end date
+}
+
+#otaker
+if ( $cgi->param('otaker') && $cgi->param('otaker') =~ /^([\w\.\-]+)$/ ) {
+  push @where, "cust_pkg_discount.otaker = '$1'";
+}
+
+#agent
+if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
+  push @where, "cust_main.agentnum = $1";
+}
+
+my $count_query = "SELECT COUNT(*), SUM(amount)";
+
+my $join = ' LEFT JOIN discount  USING ( discountnum )
+             LEFT JOIN cust_pkg  USING ( pkgnum )
+             LEFT JOIN part_pkg  USING ( pkgpart )
+             LEFT JOIN cust_main USING ( custnum ) ';
+
+my $where = ' WHERE '. join(' AND ', @where);
+
+$count_query .= " FROM cust_pkg_discount $join $where";
+
+my @select = (
+               'cust_pkg_discount.*',
+               'part_pkg.pkg',
+             );
+push @select, 'cust_main.custnum',
+              FS::UI::Web::cust_sql_fields();
+
+my $query = {
+  'table'     => 'cust_pkg_discount',
+  'addl_from' => $join,
+  'hashref'   => {},
+  'select'    => join(', ', @select ),
+  'extra_sql' => $where,
+  'order_by'  => 'ORDER BY pkgdiscountnum',
+};
+
+my $clink = [ "${p}view/cust_main.cgi?", 'custnum' ];
+
+my $conf = new FS::Conf;
+
+</%init>

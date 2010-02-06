@@ -11,6 +11,7 @@ use List::Util qw(min); # max);
 use FS::UI::bytecount;
 use FS::Conf;
 use FS::part_pkg;
+use FS::cust_bill_pkg_discount;
 
 @ISA = qw(FS::part_pkg);
 
@@ -189,6 +190,16 @@ sub calc_discount {
 
      $amount *= $months;
      $amount = sprintf('%.2f', $amount);
+
+     next unless $amount > 0;
+
+     #record details in cust_bill_pkg_discount
+     my $cust_bill_pkg_discount = new FS::cust_bill_pkg_discount {
+       'pkgdiscountnum' => $cust_pkg_discount->pkgdiscountnum,
+       'amount'         => $amount,
+       'months'         => $months,
+     };
+     push @{ $param->{'discounts'} }, $cust_bill_pkg_discount;
 
      #add details on discount to invoice
      my $conf = new FS::Conf;

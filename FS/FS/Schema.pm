@@ -1317,10 +1317,24 @@ sub tables_hashref {
         'months_used',   'decimal', 'NULL', '', '', '',
         'end_date',     @date_type,             '', '',
         'otaker',        'varchar', '',     32, '', '', 
+        'disabled',         'char', 'NULL',  1, '', '', 
       ],
       'primary_key' => 'pkgdiscountnum',
       'unique' => [],
       'index'  => [ [ 'pkgnum' ], [ 'discountnum' ] ],
+    },
+
+    'cust_bill_pkg_discount' => {
+      'columns' => [
+        'billpkgdiscountnum', 'serial',     '', '', '', '',
+        'billpkgnum',            'int',     '', '', '', '', 
+        'pkgdiscountnum',        'int',     '', '', '', '', 
+        'amount',          @money_type,             '', '', 
+        'months',            'decimal', 'NULL', '', '', '',
+      ],
+      'primary_key' => 'billpkgdiscountnum',
+      'unique' => [],
+      'index' => [ [ 'billpkgnum' ], [ 'pkgdiscountnum' ] ],
     },
 
     'discount' => {

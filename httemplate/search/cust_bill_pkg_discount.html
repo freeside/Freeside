@@ -1,0 +1,151 @@
+<% include( 'elements/search.html',
+                 'title'       => 'Discounts',
+                 'name'        => 'discounts',
+                 'query'       => $query,
+                 'count_query' => $count_query,
+                 'count_addl'  => [ $money_char. '%.2f total', ],
+                 'header'      => [
+                   #'#',
+                   'Discount',
+                   'Amount',
+                   'Months',
+                   'Package',
+                   'Invoice',
+                   'Date',
+                   FS::UI::Web::cust_header(),
+                 ],
+                 'fields'      => [
+                   #'billpkgdiscountnum',
+                   sub { $_[0]->cust_pkg_discount->discount->description },
+                   sub { sprintf($money_char.'%.2f', shift->amount ) },
+                   sub { my $m = shift->months;
+                         $m =~ /\./ ? sprintf('%.2f', $m) : $m;
+                       },
+                   'pkg',#sub { $_[0]->cust_bill_pkg->cust_pkg->part_pkg->pkg },
+                   'invnum',
+                   sub { time2str('%b %d %Y', shift->_date ) },
+                   \&FS::UI::Web::cust_fields,
+                 ],
+                 'links'       => [
+                   #'',
+                   '', #link to customer discount???
+                   '',
+                   '',
+                   '',
+                   $ilink,
+                   $ilink,
+                   ( map { $_ ne 'Cust. Status' ? $clink : '' }
+                         FS::UI::Web::cust_header()
+                   ),
+                 ],
+                 #'align' => 'rlrrrc'.FS::UI::Web::cust_aligns(),
+                 'align' => 'lrrlrr'.FS::UI::Web::cust_aligns(),
+                 'color' => [ 
+                              #'',
+                              '',
+                              '',
+                              '',
+                              '',
+                              '',
+                              '',
+                              FS::UI::Web::cust_colors(),
+                            ],
+                 'style' => [ 
+                              #'',
+                              '',
+                              '',
+                              '',
+                              '',
+                              '',
+                              '',
+                              FS::UI::Web::cust_styles(),
+                            ],
+           )
+%>
+<%init>
+
+#a little false laziness below w/cust_bill_pkg.cgi
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+my $conf = new FS::Conf;
+
+#here is the agent virtualization
+my $agentnums_sql =
+  $FS::CurrentUser::CurrentUser->agentnums_sql( 'table' => 'cust_main' );
+
+my @where = ( $agentnums_sql );
+
+my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
+push @where, "_date >= $beginning",
+             "_date <= $ending";
+
+if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
+  push @where, "cust_main.agentnum = $1";
+}
+
+# #classnum
+# # not specified: all classes
+# # 0: empty class
+# # N: classnum
+# my $use_override = $cgi->param('use_override');
+# if ( $cgi->param('classnum') =~ /^(\d+)$/ ) {
+#   my $comparison = '';
+#   if ( $1 == 0 ) {
+#     $comparison = "IS NULL";
+#   } else {
+#     $comparison = "= $1";
+#   }
+# 
+#   if ( $use_override ) {
+#     push @where, "(
+#       part_pkg.classnum $comparison AND pkgpart_override IS NULL OR
+#       override.classnum $comparison AND pkgpart_override IS NOT NULL
+#     )";
+#   } else {
+#     push @where, "part_pkg.classnum $comparison";
+#   }
+# }
+
+my $count_query = "SELECT COUNT(*), SUM(amount)";
+
+my $join_cust =  '      JOIN cust_bill_pkg USING ( billpkgnum )
+                        JOIN cust_bill USING ( invnum ) 
+                   LEFT JOIN cust_main USING ( custnum ) ';
+
+my $join_pkg = ' LEFT JOIN cust_pkg USING ( pkgnum )
+                 LEFT JOIN part_pkg USING ( pkgpart ) ';
+                 #LEFT JOIN part_pkg AS override
+                 #  ON pkgpart_override = override.pkgpart ';
+
+my $where = ' WHERE '. join(' AND ', @where);
+
+$count_query .= " FROM cust_bill_pkg_discount $join_cust $join_pkg $where";
+
+my @select = (
+               'cust_bill_pkg_discount.*',
+               #'cust_bill_pkg.*',
+               'cust_bill.invnum',
+               'cust_bill._date',
+             );
+push @select, 'part_pkg.pkg';
+push @select, 'cust_main.custnum',
+              FS::UI::Web::cust_sql_fields();
+
+my $query = {
+  'table'     => 'cust_bill_pkg_discount',
+  'addl_from' => "$join_cust $join_pkg",
+  'hashref'   => {},
+  'select'    => join(', ', @select ),
+  'extra_sql' => $where,
+  'order_by'  => 'ORDER BY _date, billpkgdiscountnum',
+};
+
+my $ilink = [ "${p}view/cust_bill.cgi?", 'invnum' ];
+my $clink = [ "${p}view/cust_main.cgi?", 'custnum' ];
+
+my $conf = new FS::Conf;
+my $money_char = $conf->config('money_char') || '$';
+
+</%init>

@@ -417,6 +417,53 @@ sub cust_bill_pkg_detail {
   
 }
 
+sub cust_bill_pkg_discount {
+  my( $self, $speriod, $eperiod, $agentnum, %opt ) = @_;
+
+  #my $where = '';
+  #my $comparison = '';
+  #if ( $opt{'classnum'} =~ /^(\d+)$/ ) {
+  #  if ( $1 == 0 ) {
+  #    $comparison = "IS NULL";
+  #  } else {
+  #    $comparison = "= $1";
+  #  }
+  #
+  #  if ( $opt{'use_override'} ) {
+  #    $where = "(
+  #      part_pkg.classnum $comparison AND pkgpart_override IS NULL OR
+  #      override.classnum $comparison AND pkgpart_override IS NOT NULL
+  #    )";
+  #  } else {
+  #    $where = "part_pkg.classnum $comparison";
+  #  }
+  #}
+
+  $agentnum ||= $opt{'agentnum'};
+
+  my $total_sql =
+    " SELECT COALESCE( SUM( cust_bill_pkg_discount.amount ), 0 ) ";
+
+  #$total_sql .=
+  #  " / CASE COUNT(cust_pkg.*) WHEN 0 THEN 1 ELSE COUNT(cust_pkg.*) END "
+  #    if $opt{average_per_cust_pkg};
+
+  $total_sql .=
+    " FROM cust_bill_pkg_discount
+        LEFT JOIN cust_bill_pkg USING ( billpkgnum )
+        LEFT JOIN cust_bill USING ( invnum )
+        LEFT JOIN cust_main USING ( custnum )
+      WHERE ". $self->in_time_period_and_agent($speriod, $eperiod, $agentnum);
+  #      LEFT JOIN cust_pkg_discount USING ( pkgdiscountnum )
+  #      LEFT JOIN discount USING ( discountnum )
+  #      LEFT JOIN cust_pkg USING ( pkgnum )
+  #      LEFT JOIN part_pkg USING ( pkgpart )
+  #      LEFT JOIN part_pkg AS override ON pkgpart_override = override.pkgpart
+  
+  return $self->scalar_sql($total_sql);
+
+}
+
 sub setup_pkg  { shift->pkg_field( @_, 'setup' ); }
 sub susp_pkg   { shift->pkg_field( @_, 'susp'  ); }
 sub cancel_pkg { shift->pkg_field( @_, 'cancel'); }

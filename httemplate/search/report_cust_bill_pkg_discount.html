@@ -1,0 +1,47 @@
+<% include('/elements/header.html', 'Discount report' ) %>
+
+<FORM ACTION="cust_bill_pkg_discount.html" METHOD="GET">
+
+
+<TABLE>
+
+  <% include( '/elements/tr-select-otaker.html',
+                'label'   => 'Discounts by employee: ',
+                'otakers' => \@otakers,
+            )
+  %>
+
+  <% include( '/elements/tr-select-agent.html',
+                 'curr_value'    => scalar( $cgi->param('agentnum') ),
+                 'label'         => 'for agent: ',
+                 'disable_empty' => 0,
+             )
+  %>
+
+  <% include( '/elements/tr-input-beginning_ending.html' ) %>
+
+  <% include( '/elements/tr-input-lessthan_greaterthan.html',
+                'label' => 'Amount',
+		'field' => 'amount',
+            )
+  %>
+
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="Get Report">
+
+</FORM>
+
+<% include('/elements/footer.html') %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+my $sth = dbh->prepare("SELECT DISTINCT otaker FROM cust_pkg_discount")
+  or die dbh->errstr;
+$sth->execute or die $sth->errstr;
+my @otakers = map { $_->[0] } @{$sth->fetchall_arrayref};
+
+</%init>
