@@ -372,6 +372,8 @@ L<FS::h_svc_forward> - Historical mail forwarding alias objects
 
 L<FS::h_svc_phone> - Historical phone number objects
 
+L<FS::h_svc_pbx> - Historical PBX objects
+
 L<FS::h_svc_www> - Historical web virtual host objects
 
 =head2 Remote API modules

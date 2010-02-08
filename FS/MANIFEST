@@ -478,6 +478,8 @@ t/prospect_main.t
 FS/o2m_Common.pm
 FS/svc_pbx.pm
 t/svc_pbx.t
+FS/h_svc_www.pm
+t/h_svc_www.t
 FS/discount.pm
 t/discount.t
 FS/cust_pkg_discount.pm
