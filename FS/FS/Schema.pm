@@ -1851,6 +1851,17 @@ sub tables_hashref {
       'index'       => [ [ 'exportnum' ], [ 'svcpart' ] ],
     },
 
+    'export_device' => {
+      'columns' => [
+        'exportdevicenum' => 'serial', '', '', '', '', 
+        'exportnum'    => 'int', '', '', '', '', 
+        'devicepart'      => 'int', '', '', '', '', 
+      ],
+      'primary_key' => 'exportdevicenum',
+      'unique'      => [ [ 'exportnum', 'devicepart' ] ],
+      'index'       => [ [ 'exportnum' ], [ 'devicepart' ] ],
+    },
+
     'part_export' => {
       'columns' => [
         'exportnum', 'serial', '', '', '', '', 

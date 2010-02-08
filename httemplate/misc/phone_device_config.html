@@ -1,0 +1,57 @@
+%if ($config) {
+<% $config %>
+%}else{
+<% include("/elements/errorpage.html", "No configuration data produced.") %>
+%}
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('View customer services');
+
+my $exportnum;
+if ( $cgi->param('exportnum') ) {
+  $cgi->param('exportnum') =~ /^(\d+)$/ or die "unparsable exportnum";
+  $exportnum = $1;
+} 
+
+die "no export provided"
+  unless $exportnum;
+
+my $svcnum;
+if ( $cgi->param('svcnum') ) {
+  $cgi->param('svcnum') =~ /^(\d+)$/ or die "unparsable svcnum";
+  $svcnum = $1;
+} 
+
+my $devicenum;
+if ( $cgi->param('devicenum') ) {
+  $cgi->param('devicenum') =~ /^(\d+)$/ or die "unparsable devicenum";
+  $devicenum = $1;
+} 
+
+die "no device or service provided"
+  unless $svcnum || $devicenum;
+
+my $part_export = qsearchs('part_export', { 'exportnum' => $exportnum })
+  or die "Unknown exportnum $exportnum\n";
+
+my $phone_device;
+my $svc_phone;
+if ($devicenum) {
+  $phone_device = qsearchs('phone_device', { 'devicenum' => $devicenum })
+    or die "Unknown device $devicenum\n";
+  $svc_phone = $phone_device->svc_phone;
+} else {
+  $svc_phone = qsearchs('svc_phone', { 'svcnum' => $svcnum })
+    or die "Unknown svc_phone $svcnum\n";
+}
+
+my $config = $part_export->export_device_config($svc_phone, $phone_device);
+
+if ($config) {
+  http_header('Content-Type' => 'application/octet-stream');
+  http_header('Content-Disposition' => 'attachment;filename="config"');
+  http_header('Content-Length' => length($config));
+}
+
+</%init>

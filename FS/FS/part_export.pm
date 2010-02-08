@@ -226,6 +226,17 @@ sub export_svc {
   qsearch('export_svc', { 'exportnum' => $self->exportnum } );
 }
 
+=item export_device
+
+Returns a list of associated FS::export_device records.
+
+=cut
+
+sub export_device {
+  my $self = shift;
+  qsearch('export_device', { 'exportnum' => $self->exportnum } );
+}
+
 =item part_export_option
 
 Returns all options as FS::part_export_option objects (see

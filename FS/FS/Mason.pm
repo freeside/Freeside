@@ -174,6 +174,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::part_export;
   use FS::part_export_option;
   use FS::export_svc;
+  use FS::export_device;
   use FS::msgcat;
   use FS::rate;
   use FS::rate_region;

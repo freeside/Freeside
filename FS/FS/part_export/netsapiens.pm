@@ -21,7 +21,7 @@ tie my %options, 'Tie::IxHash',
 ;
 
 %info = (
-  'svc'      => 'svc_phone',
+  'svc'      => [ 'svc_phone', ], # 'part_device',
   'desc'     => 'Provision phone numbers to NetSapiens',
   'options'  => \%options,
   'notes'    => <<'END'

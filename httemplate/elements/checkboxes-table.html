@@ -46,7 +46,7 @@
 %
 %  my $hashref = $opt{'hashref'} || {};
 %
-%  my $extra_sql = '';
+%  my $extra_sql = $opt{'extra_sql'} || '';
 %
 %  if ( $opt{'agent_virt'} ) {
 %    $extra_sql .= ' AND' . $FS::CurrentUser::CurrentUser->agentnums_sql(

@@ -204,6 +204,7 @@ perl-modules:
 	  s|%%%FREESIDE_EXPORT%%%|${FREESIDE_EXPORT}|g;\
 	" blib/lib/FS/Cron/*.pm;\
 	perl -p -i -e "\
+	  s|%%%FREESIDE_CONF%%%|${FREESIDE_CONF}|g;\
 	  s|%%%FREESIDE_EXPORT%%%|${FREESIDE_EXPORT}|g;\
 	  s|%%%FREESIDE_LOG%%%|${FREESIDE_LOG}|g;\
 	" blib/lib/FS/part_export/*.pm;\

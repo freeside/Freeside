@@ -58,6 +58,7 @@ my $html_foot = sub {
             '<TH CLASS="grid" BGCOLOR="#cccccc">Type</TH>'.
             '<TH CLASS="grid" BGCOLOR="#cccccc">MAC Addr</TH>'.
             '<TH CLASS="grid" BGCOLOR="#cccccc"></TH>'.
+            '<TH CLASS="grid" BGCOLOR="#cccccc"></TH>'.
           '</TR>';
       my $bgcolor1 = '#eeeeee';
       my $bgcolor2 = '#ffffff';
@@ -73,10 +74,12 @@ my $html_foot = sub {
         my $td = qq(<TD CLASS="grid" BGCOLOR="$bgcolor">);
 
         my $devicenum = $phone_device->devicenum;
+        my $export_links = join( '<BR>', @{ $phone_device->export_links } );
 
         $devices .= '<TR>'.
                       $td. $phone_device->part_device->devicename. '</TD>'.
                       $td. $phone_device->mac_addr. '</TD>'.
+                      $td. $export_links. '</TD>'.
                       "$td( ".
                         qq(<A HREF="${p}edit/phone_device.html?$devicenum">edit</A> | ).
                         qq(<A HREF="javascript:areyousure('${p}misc/delete-phone_device.html?$devicenum')">delete</A>).

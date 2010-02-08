@@ -1,6 +1,10 @@
 <% include( 'elements/process.html',
                'table'       => 'part_device',
                'viewall_dir' => 'browse',
+               'process_m2m' => {
+                 'link_table'   => 'export_device',
+                 'target_table' => 'part_export',
+               },
            )
 %>
 <%init>

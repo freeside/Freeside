@@ -97,7 +97,7 @@ sub insert {
     return $error;
   }
 
-  $self->svc_phone->export('device_insert', $self); #call device export
+  $self->export('device_insert');
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
@@ -124,7 +124,7 @@ sub delete {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  $self->svc_phone->export('device_delete', $self); #call device export
+  $self->export('device_delete');
 
   my $error = $self->SUPER::delete;
   if ( $error ) {
@@ -167,7 +167,7 @@ sub replace {
     return $error;
   }
 
-  $new->svc_phone->export('device_replace', $new, $old); #call device export
+  $new->export('device_replace', $old);
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
@@ -225,6 +225,64 @@ device.
 sub svc_phone {
   my $self = shift;
   qsearchs( 'svc_phone', { 'svcnum' => $self->svcnum } );
+}
+
+=item export HOOK [ EXPORT_ARGS ]
+
+Runs the provided export hook (i.e. "device_insert") for this service.
+
+=cut
+
+sub export {
+  my( $self, $method ) = ( shift, shift );
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $svc_phone = $self->svc_phone;
+  my $error = $svc_phone->export($method, $self, @_); #call device export
+  if ( $error ) {                                     #netsapiens at least
+    $dbh->rollback if $oldAutoCommit;
+    return "error exporting $method event to svc_phone ". $svc_phone->svcnum.
+           " (transaction rolled back): $error";
+  }
+
+  $method = "export_$method" unless $method =~ /^export_/;
+
+  foreach my $part_export ( $self->part_device->part_export ) {
+    next unless $part_export->can($method);
+    my $error = $part_export->$method($svc_phone, $self, @_);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "error exporting $method event to ". $part_export->exporttype.
+             " (transaction rolled back): $error";
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+
+}
+
+=item export_links
+
+Returns a list of html elements associated with this device's exports.
+
+=cut
+
+sub export_links {
+  my $self = shift;
+  my $return = [];
+  $self->export('export_device_links', $return);
+  $return;
 }
 
 =back

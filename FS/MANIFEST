@@ -87,6 +87,7 @@ FS/h_svc_www.pm
 FS/part_bill_event.pm
 FS/payinfo_Mixin.pm
 FS/export_svc.pm
+FS/export_device.pm
 FS/part_export.pm
 FS/part_export_option.pm
 FS/part_export/acct_sql.pm
@@ -231,6 +232,7 @@ t/domain_record.t
 t/nas.t
 t/part_bill_event.t
 t/export_svc.t
+t/export_device.t
 t/part_export.t
 t/part_export_option.t
 t/part_export-acct_sql.t

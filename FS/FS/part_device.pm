@@ -1,8 +1,10 @@
 package FS::part_device;
 
 use strict;
-use base qw( FS::Record );
-use FS::Record; # qw( qsearch qsearchs );
+use base qw( FS::Record FS::m2m_Common );
+use FS::Record qw( qsearch qsearchs );
+use FS::part_export;
+use FS::export_device;
 
 =head1 NAME
 
@@ -105,6 +107,18 @@ sub check {
   return $error if $error;
 
   $self->SUPER::check;
+}
+
+=item part_export
+
+Returns a list of all exports (see L<FS::part_export>) for this device.
+
+=cut
+
+sub part_export {
+  my $self = shift;
+  map { qsearchs( 'part_export', { 'exportnum' => $_->exportnum } ) }
+    qsearch( 'export_device', { 'devicepart' => $self->devicepart } );
 }
 
 sub process_batch_import {
