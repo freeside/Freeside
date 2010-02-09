@@ -821,7 +821,7 @@ sub SetFromConfig {
             # XXX skip references to scalars or other references.
             # Otherwie 5.10 goes boom. may be we should skip any
             # reference
-            return if ref($entry) eq 'SCALAR' || ref($entry) eq 'REF';
+            next if ref($entry) eq 'SCALAR' || ref($entry) eq 'REF';
             my $entry_ref = *{$entry}{ ref($ref) };
             next unless $entry_ref;
 
