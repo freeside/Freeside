@@ -62,15 +62,15 @@ our $VERSION = '3.8.7';
 
 
 our $BasePath = '/opt/rt3';
-our $EtcPath = 'etc';
-our $BinPath = 'bin';
-our $SbinPath = 'sbin';
-our $VarPath = 'var';
-our $PluginPath = 'plugins';
-our $LocalPath = 'local';
-our $LocalEtcPath = 'local/etc';
-our $LocalLibPath        =    'local/lib';
-our $LocalLexiconPath = 'local/po';
+our $EtcPath = '/opt/rt3/etc';
+our $BinPath = '/opt/rt3/bin';
+our $SbinPath = '/opt/rt3/sbin';
+our $VarPath = '/opt/rt3/var';
+our $PluginPath = '';
+our $LocalPath = '/opt/rt3/local';
+our $LocalEtcPath = '/opt/rt3/local/etc';
+our $LocalLibPath        =    '/opt/rt3/local/lib';
+our $LocalLexiconPath = '/opt/rt3/local/po';
 our $LocalPluginPath = $LocalPath."/plugins";
 
 
@@ -81,7 +81,7 @@ our $MasonComponentRoot = '/var/www/freeside/rt';
 # $MasonLocalComponentRoot is where your rt instance keeps its site-local
 # mason html files.
 
-our $MasonLocalComponentRoot = 'local/html';
+our $MasonLocalComponentRoot = '/opt/rt3/local/html';
 
 # $MasonDataDir Where mason keeps its datafiles
 
@@ -89,7 +89,7 @@ our $MasonDataDir = '/usr/local/etc/freeside/masondata';
 
 # RT needs to put session data (for preserving state between connections
 # via the web interface)
-our $MasonSessionDir = 'var/session_data';
+our $MasonSessionDir = '/opt/rt3/var/session_data';
 
 unless (  File::Spec->file_name_is_absolute($EtcPath) ) {
 
@@ -180,6 +180,8 @@ L<preloads classes /InitClasses> and L<set up logging /InitLogging>.
 
 sub Init {
 
+    my @arg = @_;
+
     CheckPerlRequirements();
 
     InitPluginPaths();
@@ -188,7 +190,7 @@ sub Init {
     ConnectToDatabase();
     InitSystemObjects();
     InitClasses();
-    InitLogging(); 
+    InitLogging(@arg); 
     InitPlugins();
     RT->Config->PostLoadCheck;
 
@@ -214,6 +216,8 @@ Create the Logger object and set up signal handlers.
 =cut
 
 sub InitLogging {
+
+    my %arg = @_;
 
     # We have to set the record separator ($, man perlvar)
     # or Log::Dispatch starts getting
@@ -358,28 +362,32 @@ sub InitLogging {
 ## Mason).  It will log all problems through the standard logging
 ## mechanism (see above).
 
-    $SIG{__WARN__} = sub {
-        # The 'wide character' warnings has to be silenced for now, at least
-        # until HTML::Mason offers a sane way to process both raw output and
-        # unicode strings.
-        # use 'goto &foo' syntax to hide ANON sub from stack
-        if( index($_[0], 'Wide character in ') != 0 ) {
-            unshift @_, $RT::Logger, qw(level warning message);
-            goto &Log::Dispatch::log;
-        }
-    };
+    unless ( $arg{'NoSignalHandlers'} ) {
 
-#When we call die, trap it and log->crit with the value of the die.
+        $SIG{__WARN__} = sub {
+            # The 'wide character' warnings has to be silenced for now, at least
+            # until HTML::Mason offers a sane way to process both raw output and
+            # unicode strings.
+            # use 'goto &foo' syntax to hide ANON sub from stack
+            if( index($_[0], 'Wide character in ') != 0 ) {
+                unshift @_, $RT::Logger, qw(level warning message);
+                goto &Log::Dispatch::log;
+            }
+        };
 
-    $SIG{__DIE__}  = sub {
-        # if we are not in eval and perl is not parsing code
-        # then rollback transactions and log RT error
-        unless ($^S || !defined $^S ) {
-            $RT::Handle->Rollback(1) if $RT::Handle;
-            $RT::Logger->crit("$_[0]") if $RT::Logger;
-        }
-        die $_[0];
-    };
+        #When we call die, trap it and log->crit with the value of the die.
+
+        $SIG{__DIE__}  = sub {
+            # if we are not in eval and perl is not parsing code
+            # then rollback transactions and log RT error
+            unless ($^S || !defined $^S ) {
+                $RT::Handle->Rollback(1) if $RT::Handle;
+                $RT::Logger->crit("$_[0]") if $RT::Logger;
+            }
+            die $_[0];
+        };
+
+    }
 }
 
 
