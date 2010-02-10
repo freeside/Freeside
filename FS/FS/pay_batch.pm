@@ -272,11 +272,12 @@ sub import_results {
         };
         push @all_values, [ $csv->fields(), $line ];
       }elsif ($filetype eq 'fixed'){
-        my @values = ( $line =~ /$formatre/, $line );
+        my @values = ( $line =~ /$formatre/ );
         unless (@values) {
           $dbh->rollback if $oldAutoCommit;
           return "can't parse: ". $line;
         };
+        push @values, $line;
         push @all_values, \@values;
       }else{
         $dbh->rollback if $oldAutoCommit;
