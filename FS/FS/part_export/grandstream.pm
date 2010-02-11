@@ -121,7 +121,7 @@ sub gs_delete {
   ssh_cmd( user => $self->option('user'),
            host => $self->machine,
            command => 'rm',
-           args    => [ '-f', $self->option(tftproot). "/cfg$mac" ],
+           args    => [ '-f', $self->option('tftproot'). "/cfg$mac" ],
          );
   '';
 
