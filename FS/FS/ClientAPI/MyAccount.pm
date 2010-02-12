@@ -684,8 +684,21 @@ sub process_payment {
     $new->set( 'payinfo' => $payinfo );
     $new->set( 'paydate' => $p->{'year'}. '-'. $p->{'month'}. '-01' );
     my $error = $new->replace($cust_main);
-    return { 'error' => $error } if $error;
-    $cust_main = $new;
+    if ( $error ) {
+      #no, this causes customers to process their payments again
+      #return { 'error' => $error };
+      #XXX just warn verosely for now so i can figure out how these happen in
+      # the first place, eventually should redirect them to the "change
+      #address" page but indicate the payment did process??
+      delete($p->{'payinfo'}); #don't want to log this!
+      warn "WARNING: error changing customer info when processing payment (not returning to customer as a processing error): $error\n".
+           "NEW: ". Dumper($new)."\n".
+           "OLD: ". Dumper($cust_main)."\n".
+           "PACKET: ". Dumper($p)."\n";
+    #} else {
+      #not needed...
+      #$cust_main = $new;
+    }
   }
 
   return { 'error' => '' };
