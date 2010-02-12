@@ -1668,7 +1668,7 @@ sub create_ticket {
     'queue'   => $queue,
     'custnum' => $custnum,
     'svcnum'  => $session->{'svcnum'},
-    map { $_ => $p->{$_} } qw( requestor cc subject message )
+    map { $_ => $p->{$_} } qw( requestor cc subject message mime_type )
   );
 
   if ( ref($err_or_ticket) ) {

@@ -48,7 +48,9 @@ public class freeside_create_ticket_example {
       ticket_params.addElement( "subject" );
       ticket_params.addElement( "Houston, we have a problem." );
       ticket_params.addElement( "message" );
-      ticket_params.addElement( "The Oscillation Overthurster has gone out of alignment!\n\nIt needs to be fixed immediately!  http://linktest.freeside.biz/hi" );
+      ticket_params.addElement( "The Oscillation Overthurster has gone out of alignment!<br><br>It needs to be fixed immediately!  <A HREF=\"http://linktest.freeside.biz/hi\">link test</A>" );
+      ticket_params.addElement( "mime_type" );
+      ticket_params.addElement( "text/html" );
 
       HashMap ticket_result = client.execute( "create_ticket", ticket_params);
 

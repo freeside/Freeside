@@ -27,7 +27,8 @@ my $t_result = $server->call('FS.SelfService.XMLRPC.create_ticket',
   'requestor'  => 'harveylala@example.com',
   'cc'         => 'chiquitabanana@example.com',
   'subject'    => 'Chiquita keeps sitting on me',
-  'message'    => "Isn't there something you can do about this?\n\nShe keeps waking me up!  http://linktest.freeside.biz/hi",
+  'message'    => 'Is there something you can do about this?<BR><BR>She keeps waking me up!  <A HREF="http://linktest.freeside.biz/hi">link test</A>',
+  'mime_type'  => 'text/html',
 );
 
 die $t_result->{'error'} if $t_result->{'error'};

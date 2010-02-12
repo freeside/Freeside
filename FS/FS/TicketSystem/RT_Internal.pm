@@ -138,6 +138,11 @@ Cc: email address or arrayref of addresses
 
 Ticket message
 
+=item mime_type
+
+MIME type to use for message.  Defaults to text/plain.  Specifying text/html
+can be useful to use HTML markup in message.
+
 =item custnum
 
 Customer number (see L<FS::cust_main>) to associate with ticket.
@@ -169,7 +174,7 @@ sub create_ticket {
 
   my $mimeobj = MIME::Entity->build(
     'Data' => $param{'message'},
-    'Type' => 'text/plain',
+    'Type' => ( $param{'mime_type'} || 'text/plain' ),
   );
 
   my %ticket = (
