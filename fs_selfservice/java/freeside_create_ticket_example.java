@@ -38,7 +38,7 @@ public class freeside_create_ticket_example {
       ticket_params.addElement( "session_id" );
       ticket_params.addElement( sessionId );
       ticket_params.addElement( "queue" );
-      ticket_params.addElements( 3 ); // otherwise defaults to
+      ticket_params.addElement( 3 ); // otherwise defaults to
                                       // ticket_system-selfservice_queueid
                                       // or ticket_system-default_queueid
       ticket_params.addElement( "requestor" );         // these
