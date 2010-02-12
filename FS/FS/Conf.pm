@@ -2071,6 +2071,34 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'ticket_system-selfservice_queueid',
+    'section'     => '',
+    'description' => 'Queue used when creating new customer tickets from self-service.  Defautls to ticket_system-default_queueid if not specified.',
+    #false laziness w/above
+    'type'        => 'select-sub',
+    'options_sub' => sub {
+                           my $conf = new FS::Conf;
+                           if ( $conf->config('ticket_system') ) {
+                             eval "use FS::TicketSystem;";
+                             die $@ if $@;
+                             FS::TicketSystem->queues();
+                           } else {
+                             ();
+                           }
+                         },
+    'option_sub'  => sub { 
+                           my $conf = new FS::Conf;
+                           if ( $conf->config('ticket_system') ) {
+                             eval "use FS::TicketSystem;";
+                             die $@ if $@;
+                             FS::TicketSystem->queue(shift);
+                           } else {
+                             '';
+                           }
+                         },
+  },
+
+  {
     'key'         => 'ticket_system-priority_reverse',
     'section'     => '',
     'description' => 'Enable this to consider lower numbered priorities more important.  A bad habit we picked up somewhere.  You probably want to avoid it and use the default.',

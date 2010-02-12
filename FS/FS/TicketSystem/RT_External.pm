@@ -382,5 +382,9 @@ sub access_right {
   0;
 }
 
+sub create_ticket {
+  return 'create_ticket unimplemented w/external RT (write something w/RT::Client::REST?)';
+}
+
 1;
 

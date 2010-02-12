@@ -3,6 +3,7 @@ package FS::TicketSystem::RT_Internal;
 use strict;
 use vars qw( @ISA $DEBUG $me );
 use Data::Dumper;
+use MIME::Entity;
 use FS::UID qw(dbh);
 use FS::CGI qw(popurl);
 use FS::TicketSystem::RT_Libs;
@@ -10,7 +11,7 @@ use RT::CurrentUser;
 
 @ISA = qw( FS::TicketSystem::RT_Libs );
 
-$DEBUG = 1;
+$DEBUG = 0;
 $me = '[FS::TicketSystem::RT_Internal]';
 
 sub sql_num_customer_tickets {
@@ -38,14 +39,7 @@ sub access_right {
   #return '' unless $conf->config('ticket_system');
   return '' unless FS::Conf->new->config('ticket_system');
 
-  if ( $session && $session->{'Current_User'} ) {
-    warn "$me access_right: using existing session and CurrentUser: \n".
-         Dumper($session->{'CurrentUser'})
-      if $DEBUG;
- } else {
-    warn "$me access_right: loading session and CurrentUser\n" if $DEBUG > 1;
-    $self->_web_external_auth($session);
-  }
+  $session = $self->session($session);
 
   #warn "$me access_right: CurrentUser ". $session->{'CurrentUser'}. ":\n".
   #     ( $DEBUG>1 ? Dumper($session->{'CurrentUser'}) : '' )
@@ -55,6 +49,168 @@ sub access_right {
                                        Object => $RT::System );
 }
 
+sub session {
+  my( $self, $session ) = @_;
+
+  if ( $session && $session->{'Current_User'} ) {
+    warn "$me session: using existing session and CurrentUser: \n".
+         Dumper($session->{'CurrentUser'})
+      if $DEBUG;
+ } else {
+    warn "$me session: loading session and CurrentUser\n" if $DEBUG > 1;
+    $session = $self->_web_external_auth($session);
+  }
+
+  $session;
+}
+
+sub init {
+  my $self = shift;
+
+  warn "$me init: loading RT libraries\n" if $DEBUG;
+  eval '
+    use lib ( "/opt/rt3/local/lib", "/opt/rt3/lib" );
+    use RT;
+    #it looks like the rest are taken care of these days in RT::InitClasses
+    #use RT::Ticket;
+    #use RT::Transactions;
+    #use RT::Users;
+    #use RT::CurrentUser;
+    #use RT::Templates;
+    #use RT::Queues;
+    #use RT::ScripActions;
+    #use RT::ScripConditions;
+    #use RT::Scrips;
+    #use RT::Groups;
+    #use RT::GroupMembers;
+    #use RT::CustomFields;
+    #use RT::CustomFieldValues;
+    #use RT::ObjectCustomFieldValues;
+
+    #for web external auth...
+    use RT::Interface::Web;
+  ';
+  die $@ if $@;
+
+  warn "$me init: loading RT config\n" if $DEBUG;
+  {
+    local $SIG{__DIE__};
+    eval 'RT::LoadConfig();';
+  }
+  die $@ if $@;
+
+  warn "$me init: initializing RT\n" if $DEBUG;
+  {
+    local $SIG{__DIE__};
+    eval 'RT::Init("NoSignalHandlers"=>1);';
+  }
+  die $@ if $@;
+
+  warn "$me init: complete" if $DEBUG;
+}
+
+=item create_ticket SESSION_HASHREF, OPTION => VALUE ...
+
+Class method.  Creates a ticket.  If there is an error, returns the scalar
+error, otherwise returns the newly created RT::Ticket object.
+
+Accepts the following options:
+
+=over 4
+
+=item queue
+
+Queue name or Id
+
+=item subject
+
+Ticket subject
+
+=item requestor
+
+Requestor email address or arrayref of addresses
+
+=item cc
+
+Cc: email address or arrayref of addresses
+
+=item message
+
+Ticket message
+
+=item custnum
+
+Customer number (see L<FS::cust_main>) to associate with ticket.
+
+=item svcnum
+
+Service number (see L<FS::cust_svc>) to associate with ticket.  Will also
+associate the customer who has this service (unless the service is unlinked).
+
+=back
+
+=cut
+
+sub create_ticket {
+  my($self, $session, %param) = @_;
+
+  $session = $self->session($session);
+
+  my $Queue = RT::Queue->new($session->{'CurrentUser'});
+  $Queue->Load( $param{'queue'} );
+
+  my $req = ref($param{'requestor'})
+              ? $param{'requestor'}
+              : ( $param{'requestor'} ? [ $param{'requestor'} ] : [] );
+
+  my $cc = ref($param{'cc'})
+             ? $param{'cc'}
+             : ( $param{'cc'} ? [ $param{'cc'} ] : [] );
+
+  my $mimeobj = MIME::Entity->build(
+    'Data' => $param{'message'},
+    'Type' => 'text/plain',
+  );
+
+  my %ticket = (
+    'Queue'     => $Queue->Id,
+    'Subject'   => $param{'subject'},
+    'Requestor' => $req,
+    'Cc'        => $cc,
+    'MIMEObj'   => $mimeobj,
+  );
+  warn Dumper(\%ticket) if $DEBUG > 1;
+
+  my $Ticket = RT::Ticket->new($session->{'CurrentUser'});
+  my( $id, $Transaction, $ErrStr );
+  {
+    local $SIG{__DIE__};
+    ( $id, $Transaction, $ErrStr ) = $Ticket->Create( %ticket );
+  }
+  return $ErrStr if $id == 0;
+
+  warn "ticket got id $id\n" if $DEBUG;
+
+  #XXX check errors adding custnum/svcnum links (put it in a transaction)...
+  # but we do already know they're good
+
+  if ( $param{'custnum'} ) {
+    my( $val, $msg ) = $Ticket->_AddLink(
+     'Type'   => 'MemberOf',
+     'Target' => 'freeside://freeside/cust_main/'. $param{'custnum'},
+    );
+  }
+
+  if ( $param{'svcnum'} ) {
+    my( $val, $msg ) = $Ticket->_AddLink(
+     'Type'   => 'MemberOf',
+     'Target' => 'freeside://freeside/cust_svc/'. $param{'svcnum'},
+    );
+  }
+
+  $Ticket;
+}
+
 #shameless false laziness w/RT::Interface::Web::AttemptExternalAuth
 # to get logged into RT from afar
 sub _web_external_auth {
@@ -62,6 +218,7 @@ sub _web_external_auth {
 
   my $user = $FS::CurrentUser::CurrentUser->username;
 
+  $session ||= {};
   $session->{'CurrentUser'} = RT::CurrentUser->new();
 
   warn "$me _web_external_auth loading RT user for $user\n"
@@ -143,6 +300,8 @@ sub _web_external_auth {
       #    $m->abort();
       #}
   }
+
+  $session;
 
 }
 

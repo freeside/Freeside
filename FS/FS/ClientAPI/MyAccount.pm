@@ -1,5 +1,6 @@
 package FS::ClientAPI::MyAccount;
 
+use 5.008; #require 5.8+ for Time::Local 1.05+
 use strict;
 use vars qw( $cache $DEBUG $me );
 use subs qw( _cache _provision );
@@ -8,6 +9,7 @@ use Digest::MD5 qw(md5_hex);
 use Date::Format;
 use Business::CreditCard;
 use Time::Duration;
+use Time::Local qw(timelocal_nocheck);
 use FS::UI::Web::small_custview qw(small_custview); #less doh
 use FS::UI::Web;
 use FS::UI::bytecount qw( display_bytecount );
@@ -29,17 +31,10 @@ use FS::cust_pkg;
 use FS::payby;
 use FS::acct_rt_transaction;
 use HTML::Entities;
+use FS::TicketSystem;
 
-$DEBUG = 2;
+$DEBUG = 0;
 $me = '[FS::ClientAPI::MyAccount]';
-
-#false laziness with FS::cust_main
-BEGIN {
-  eval "use Time::Local;";
-  die "Time::Local minimum version 1.05 required with Perl versions before 5.6"
-    if $] < 5.006 && !defined($Time::Local::VERSION);
-  eval "use Time::Local qw(timelocal_nocheck);";
-}
 
 use vars qw( @cust_main_editable_fields );
 @cust_main_editable_fields = qw(
@@ -1651,6 +1646,42 @@ sub myaccount_passwd {
            'label' => $label,
            'value' => $value,
          };
+
+}
+
+sub create_ticket {
+  my $p = shift;
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  warn "$me create_ticket: initializing ticket system\n" if $DEBUG;
+  FS::TicketSystem->init();
+
+  my $conf = new FS::Conf;
+  my $queue =    $conf->config('ticket_system-selfservice_queueid')
+              || $conf->config('ticket_system-default_queueid');
+
+  warn "$me create_ticket: creating ticket\n" if $DEBUG;
+  my $err_or_ticket = FS::TicketSystem->create_ticket(
+    '', #create RT session based on FS CurrentUser (fs_selfservice)
+    'queue'   => $queue,
+    'custnum' => $custnum,
+    'svcnum'  => $session->{'svcnum'},
+    map { $_ => $p->{$_} } qw( requestor cc subject message )
+  );
+
+  if ( ref($err_or_ticket) ) {
+    warn "$me create_ticket: sucessful: ". $err_or_ticket->id. "\n"
+      if $DEBUG;
+    return { 'error'     => '',
+             'ticket_id' => $err_or_ticket->id,
+           };
+  } else {
+    warn "$me create_ticket: unsucessful: $err_or_ticket\n"
+      if $DEBUG;
+    return { 'error' => $err_or_ticket };
+  }
+
 
 }
 

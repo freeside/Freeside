@@ -132,7 +132,7 @@ sub _FreesideURILabel {
 
   my $self = shift;
 
-  $RT::Logger->debug("Called _FreesideURILabel()");
+  #$RT::Logger->debug("Called _FreesideURILabel()");
 
   return unless (exists($self->{'fstable'}) and
                  exists($self->{'fspkey'}));
@@ -140,17 +140,21 @@ sub _FreesideURILabel {
   my $label;
   my ($table, $pkey) = ($self->{'fstable'}, $self->{'fspkey'});
 
-  if ($table ne 'cust_main') {
-    warn "FS::${table} not currently supported";
-    return;
-  }
+  #if ($table ne 'cust_main') {
+  #  warn "FS::${table} not currently supported";
+  #  return;
+  #}
 
   my $rec = $self->_FreesideGetRecord();
 
-  if (ref($rec) eq 'HASH' and $table eq 'cust_main') {
+  if (ref($rec) eq 'HASH' && $table eq 'cust_main') {
     my $name = $rec->{'last'} . ', ' . $rec->{'first'};
     $name = $rec->{'company'} . " ($name)" if $rec->{'company'};
     $label = "$pkey: $name";
+  } elsif ( $table eq 'cust_svc' && ref($rec) && $rec->{'_object'} ) {
+    #Internal only
+    my($l,$v) = $rec->{'_object'}->label;
+    $label = "$l: $v";
   } else {
     $label = "$pkey: $table";
   }
