@@ -22,10 +22,12 @@ warn "logged in with session_id $session_id\n";
 
 my $t_result = $server->call('FS.SelfService.XMLRPC.create_ticket',
   'session_id' => $session_id,
+  'queue'      => 3, #otherwise defaults to ticket_system-selfservice_queueid
+                     #or ticket_system-default_queueid
   'requestor'  => 'harveylala@example.com',
   'cc'         => 'chiquitabanana@example.com',
   'subject'    => 'Chiquita keeps sitting on me',
-  'message'    => "Isn't there something you can do about this?\n\nShe keeps waking me up!",
+  'message'    => "Isn't there something you can do about this?\n\nShe keeps waking me up!  http://linktest.freeside.biz/hi",
 );
 
 die $t_result->{'error'} if $t_result->{'error'};

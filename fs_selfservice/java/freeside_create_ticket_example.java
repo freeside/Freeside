@@ -37,6 +37,10 @@ public class freeside_create_ticket_example {
       Vector ticket_params = new Vector();
       ticket_params.addElement( "session_id" );
       ticket_params.addElement( sessionId );
+      ticket_params.addElement( "queue" );
+      ticket_params.addElements( 3 ); // otherwise defaults to
+                                      // ticket_system-selfservice_queueid
+                                      // or ticket_system-default_queueid
       ticket_params.addElement( "requestor" );         // these
       ticket_params.addElement( "email@example.com" ); // are
       ticket_params.addElement( "cc" );                // optional
@@ -44,7 +48,7 @@ public class freeside_create_ticket_example {
       ticket_params.addElement( "subject" );
       ticket_params.addElement( "Houston, we have a problem." );
       ticket_params.addElement( "message" );
-      ticket_params.addElement( "The Oscillation Overthurster has gone out of alignment!\n\nIt needs to be fixed immediately!" );
+      ticket_params.addElement( "The Oscillation Overthurster has gone out of alignment!\n\nIt needs to be fixed immediately!  http://linktest.freeside.biz/hi" );
 
       HashMap ticket_result = client.execute( "create_ticket", ticket_params);
 

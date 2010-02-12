@@ -1658,7 +1658,8 @@ sub create_ticket {
   FS::TicketSystem->init();
 
   my $conf = new FS::Conf;
-  my $queue =    $conf->config('ticket_system-selfservice_queueid')
+  my $queue = $p->{'queue'}
+              || $conf->config('ticket_system-selfservice_queueid')
               || $conf->config('ticket_system-default_queueid');
 
   warn "$me create_ticket: creating ticket\n" if $DEBUG;
