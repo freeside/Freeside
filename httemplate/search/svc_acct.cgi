@@ -10,6 +10,7 @@
                  'align'       => $align,
                  'color'       => \@color,
                  'style'       => \@style,
+                 'footer'      => \@footer,
              )
 %>
 <%once>
@@ -73,6 +74,7 @@ my @links = ( $link, $link, $link, $link, $link );
 my $align = 'rlllr';
 my @color = ( '', '', '', '', '' );
 my @style = ( '', '', '', '', '' );
+my @footer = ();
 
 for (qw( domain domsvc agentnum custnum popnum svcpart cust_fields )) {
   $search_hash{$_} = $cgi->param($_) if length($cgi->param($_));
@@ -97,16 +99,26 @@ if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
   }
 
   if ( $sortby eq 'seconds' ) {
+    my $tot_time = 0;
     #push @header, 'Time remaining';
     push @header, 'Time';
-    push @fields, sub { my $svc_acct = shift; format_time($svc_acct->seconds) };
+    push @fields, sub { my $svc_acct = shift;
+                        $tot_time += $svc_acct->seconds;
+                        format_time($svc_acct->seconds);
+                      };
     push @links, '';
     $align .= 'r';
     push @color, '';
     push @style, '';
 
+    @footer = ( '', 'Total', '', '', '',
+                sub { format_time($tot_time) }, #time
+              );
+
     my $conf = new FS::Conf;
     if ( $conf->exists('svc_acct-display_paid_time_remaining') ) {
+      my $tot_paid_time = 0;
+      my %tot = ( '30'=>0, '60'=>0, '90'=>0 );
       push @header, 'Paid time', 'Last 30', 'Last 60', 'Last 90';
       push @fields,
         sub {
@@ -130,6 +142,7 @@ if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
           my $time_unpaid = $periods_unpaid * $timepermonth;
           $time_unpaid *= $part_pkg->freq
             if $part_pkg->freq =~ /^\d+$/ && $part_pkg->freq != 0;
+          $tot_paid_time += $seconds-$time_unpaid;
           format_time($seconds-$time_unpaid).
             sprintf(' (%.2fx monthly)', ( $seconds-$time_unpaid ) / $timepermonth );
         },
@@ -141,6 +154,12 @@ if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
       $align .= 'rrrr';
       push @color, '', '', '', '';
       push @style, '', '', '', '';
+      push @footer, 
+        sub { format_time($tot_paid_time) }, #paid time
+        '', #XXX sub { $tot{'30'} }, #30
+        '', #XXX sub { $tot{'60'} }, #60
+        '', #XXX sub { $tot{'90'} }, #90
+      ;
     }
 
   }

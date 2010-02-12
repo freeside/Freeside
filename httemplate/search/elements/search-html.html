@@ -394,11 +394,12 @@
 
 %               } 
 
-%               if ( $opt{'footer'} ) { 
+%               if ( $opt{'footer'} ) {
 
                   <TR>
 
 %                   foreach my $footer ( @{ $opt{'footer'} } ) { 
+%                     $footer = &{$footer}() if ref($footer) eq 'CODE';
                       <TD CLASS="grid" BGCOLOR="#dddddd" STYLE="border-top: dashed 1px black;"><i><% $footer %></i></TD>
 %                   } 
 
