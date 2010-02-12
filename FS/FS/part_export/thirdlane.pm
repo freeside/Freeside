@@ -18,6 +18,7 @@ tie my %options, 'Tie::IxHash',
                         },
   'port'             => { label => 'Port number if not 80 or 443', },
   'prototype_tenant' => { label => 'Prototype tenant name', },
+  'omit_countrycode' => { label => 'Omit country code', type => 'checkbox' },
   'debug'            => { label => 'Checkbox label', type => 'checkbox' },
 #  'select_option'   => { label   => 'Select option description',
 #                         type    => 'select', options=>[qw(chocolate vanilla)],
@@ -74,7 +75,7 @@ sub _export_insert {
 
     my $result = $self->_thirdlane_command(
       'asterisk::rpc_did_create',
-      $svc_x->countrycode. $svc_x->phonenum,
+      $self->_thirdlane_did($svc_x)
     );
 
     #use Data::Dumper;
@@ -85,7 +86,7 @@ sub _export_insert {
 
     $result = $self->_thirdlane_command(
       'asterisk::rpc_did_assign',
-      $svc_x->countrycode. $svc_x->phonenum,
+      $self->_thirdlane_did($svc_x),
       $svc_x->pbx_title,
     );
 
@@ -156,7 +157,7 @@ sub _export_replace {
       if ( $old->pbxsvc ) {
         my $result = $self->_thirdlane_command(
           'asterisk::rpc_did_unassign',
-          $new->countrycode. $new->phonenum,
+          $self->_thirdlane_did($svc_x),
         );
         $result eq '0' or return 'Thirdlane API failure (rpc_did_unassign)';
       }
@@ -164,7 +165,7 @@ sub _export_replace {
       if ( $new->pbxsvc ) {
         my $result = $self->_thirdlane_command(
           'asterisk::rpc_did_assign',
-          $new->countrycode. $new->phonenum,
+          $self->_thirdlane_did($svc_x),
           $new->pbx_title,
         );
         $result eq '0' or return 'Thirdlane API failure (rpc_did_assign)';
@@ -219,14 +220,14 @@ sub _export_delete {
     if ( $svc_x->pbxsvc ) {
       my $result = $self->_thirdlane_command(
         'asterisk::rpc_did_unassign',
-        $svc_x->countrycode. $svc_x->phonenum,
+        $self->_thirdlane_did($svc_x),
       );
       $result eq '0' or return 'Thirdlane API failure (rpc_did_unassign)';
     }
 
     my $result = $self->_thirdlane_command(
       'asterisk::rpc_did_delete',
-      $svc_x->countrycode. $svc_x->phonenum,
+      $self->_thirdlane_did($svc_x),
     );
     $result eq '0' ? '' : 'Thirdlane API failure (rpc_did_delete)';
 
@@ -274,6 +275,15 @@ sub _thirdlane_command {
     if $self->option('debug');
   $conn->call(@param);
   
+}
+
+sub _thirdlane_did {
+  my($self, $svc_x) = @_;
+  if ( $self->option('omit_countrycode') ) {
+    $svc_x->phonenum;
+  } else {
+    $svc_x->countrycode. $svc_x->phonenum;
+  }
 }
 
   #my( $self, $svc_something ) = (shift, shift);
