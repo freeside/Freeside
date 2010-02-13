@@ -79,7 +79,7 @@ die "access denied"
 my $classnum = $cgi->param('classnum');
 $classnum =~ /^(\d+)$/ or errorpage("illegal classnum $classnum");
 $classnum = $1;
-my $extra_sql = 'inventory_item.classnum = $classnum ';
+my $extra_sql = "WHERE inventory_item.classnum = $classnum ";
 
 my $inventory_class = qsearchs( {
   'table'     => 'inventory_class',
@@ -98,7 +98,7 @@ if ( $cgi->param('avail') ) {
 }
 
 my $count_query =
-  "SELECT COUNT(*) FROM inventory_item WHERE $extra_sql";
+  "SELECT COUNT(*) FROM inventory_item $extra_sql";
 
 my $link = sub {
   my $inventory_item = shift;
