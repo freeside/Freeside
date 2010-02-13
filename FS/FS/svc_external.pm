@@ -76,7 +76,7 @@ sub table_info {
                  },
       'title' => { label => 'Printed on invoice line items',
                    type  => 'text',
-                   disable_inventory => 1,
+                   #disable_inventory => 1,
                  },
     },
   };

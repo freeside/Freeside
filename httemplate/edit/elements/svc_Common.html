@@ -62,6 +62,8 @@
                                       ? 'fixed'
                                       : 'hidden';
                      $f->{'value'} = $columndef->columnvalue;
+                   } elsif ( $flag eq 'A' ) {
+                     $f->{'type'} = 'hidden';
                    }
 
                    if ( $f->{'type'} eq 'select-svc_pbx' ) {
@@ -121,10 +123,29 @@
 sub label_fixup {
   my( $part_svc, $opt ) = @_;
 
+  my $svcdb = $part_svc->svcdb;
+  require "FS/$svcdb.pm";
+
+  if ( UNIVERSAL::can("FS::$svcdb", 'table_info') ) {
+    $opt->{'name'} ||= "FS::$svcdb"->table_info->{'name'};
+
+    my $fields = "FS::$svcdb"->table_info->{'fields'};
+    $opt->{'fields'} ||= [ grep { $_ ne 'svcnum' } keys %$fields ];
+
+    $opt->{labels} ||= {
+                         map { $_ => ( ref($fields->{$_})
+                                         ? $fields->{$_}{'label'}
+                                         : $fields->{$_}
+                                     );
+                             }
+                         keys %$fields
+                       };
+  }
+
   #false laziness w/view/svc_Common.html
   #override default labels with service-definition labels if applicable
   my $labels = $opt->{labels}; # with -> here
-  foreach my $field ( keys %$labels ) {
+  foreach my $field ( keys %{ $opt->{labels} } ) {
     my $col = $part_svc->part_svc_column($field);
     $labels->{$field} = $col->columnlabel if $col->columnlabel !~ /^\S*$/;
   }
