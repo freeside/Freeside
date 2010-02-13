@@ -6,7 +6,7 @@
 
                  'query'       => {
                                     'table'   => 'inventory_item',
-                                    'hashref' => { 'classnum' => $classnum },
+                                    'hashref' => {},
                                     'select'  => join(', ',
                                         'inventory_item.*',
                                         'cust_main.custnum',
@@ -79,6 +79,7 @@ die "access denied"
 my $classnum = $cgi->param('classnum');
 $classnum =~ /^(\d+)$/ or errorpage("illegal classnum $classnum");
 $classnum = $1;
+my $extra_sql = 'inventory_item.classnum = $classnum ';
 
 my $inventory_class = qsearchs( {
   'table'     => 'inventory_class',
@@ -88,17 +89,16 @@ my $inventory_class = qsearchs( {
 my $title = $inventory_class->classname. ' Inventory';
 
 #little false laziness with SQL fragments in inventory_class.pm
-my $extra_sql = '';
 if ( $cgi->param('avail') ) {
-  $extra_sql = 'AND ( svcnum IS NULL OR svcnum = 0 )';
+  $extra_sql .= ' AND ( svcnum IS NULL OR svcnum = 0 )';
   $title .= ' - Available';
 } elsif ( $cgi->param('used') ) {
-  $extra_sql = 'AND svcnum IS NOT NULL AND svcnum > 0';
+  $extra_sql .= ' AND svcnum IS NOT NULL AND svcnum > 0';
   $title .= ' - In use';
 }
 
 my $count_query =
-  "SELECT COUNT(*) FROM inventory_item WHERE classnum = $classnum $extra_sql";
+  "SELECT COUNT(*) FROM inventory_item WHERE $extra_sql";
 
 my $link = sub {
   my $inventory_item = shift;
