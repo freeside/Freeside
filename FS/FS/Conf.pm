@@ -1273,6 +1273,32 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'smtp-username',
+    'section'     => '',
+    'description' => 'Optional SMTP username for Freeside\'s outgoing mail',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'smtp-password',
+    'section'     => '',
+    'description' => 'Optional SMTP password for Freeside\'s outgoing mail',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'smtp-encryption',
+    'section'     => '',
+    'description' => 'Optional SMTP encryption method.  The STARTTLS methods require smtp-username and smtp-password to be set.',
+    'type'        => 'select',
+    'select_hash' => [ '25'           => 'None (port 25)',
+                       '25-starttls'  => 'STARTTLS (port 25)',
+                       '587-starttls' => 'STARTTLS / submission (port 587)',
+                       '465-tls'      => 'SMTPS (SSL) (port 465)',
+                     ],
+  },
+
+  {
     'key'         => 'soadefaultttl',
     'section'     => 'BIND',
     'description' => 'SOA default TTL for new domains.',
@@ -1942,7 +1968,7 @@ worry that config_items is freeside-specific and icky.
   {
     'key'         => 'cust_pkg-change_pkgpart-bill_now',
     'section'     => '',
-    'description' => "When changing packages, bill the new package immediately.  Useful for prepaid situations with RADIUS where an Expiration attribute base don the package must be present at all times.",
+    'description' => "When changing packages, bill the new package immediately.  Useful for prepaid situations with RADIUS where an Expiration attribute based on the package must be present at all times.",
     'type'        => 'checkbox',
   },
 

@@ -216,9 +216,10 @@ encoding which, if specified, overrides the default "7bit".
 
 use vars qw( $conf );
 use Date::Format;
-use Mail::Header;
-use Mail::Internet 2.00;
 use MIME::Entity;
+use Email::Sender::Simple qw(sendmail);
+use Email::Sender::Transport::SMTP;
+use Email::Sender::Transport::SMTP::TLS;
 use FS::UID;
 
 FS::UID->install_callback( sub {
@@ -234,7 +235,6 @@ sub send_email {
 #         join("\n", map { "  $_: ". $options{$_} } keys %options ). "\n"
   }
 
-  $ENV{MAILADDRESS} = $options{'from'};
   my $to = ref($options{to}) ? join(', ', @{ $options{to} } ) : $options{to};
 
   my @mimeargs = ();
@@ -287,7 +287,7 @@ sub send_email {
     $domain = $1;
   } else {
     warn 'no domain found in invoice from address '. $options{'from'}.
-         '; constructing Message-ID @example.com'; 
+         '; constructing Message-ID (and saying HELO) @example.com'; 
     $domain = 'example.com';
   }
   my $message_id = join('.', rand()*(2**32), $$, time). "\@$domain";
@@ -333,101 +333,32 @@ sub send_email {
 
   }
 
-  my $smtpmachine = $conf->config('smtpmachine');
-  $!=0;
+  #send the email
 
-  $message->mysmtpsend( 'Host'     => $smtpmachine,
-                        'MailFrom' => $options{'from'},
-                      );
+  my %smtp_opt = ( 'host' => $conf->config('smtpmachine'),
+                   'helo' => $domain,
+                 );
+
+  my($port, $enc) = split('-', ($conf->config('smtp-encryption') || '25') );
+  $smtp_opt{'port'} = $port;
+
+  my $transport;
+  if ( $enc eq 'starttls' ) {
+    $smtp_opt{$_} = $conf->config("smtp-$_") for qw(username password);
+    $transport = Email::Sender::Transport::SMTP::TLS->new( %smtp_opt );
+  } else {
+    if ( $conf->exists('smtp-username') && $conf->exists('smtp-password') ) {
+      $smtp_opt{"sasl_$_"} = $conf->config("smtp-$_") for qw(username password);
+    }
+    $smtp_opt{'ssl'} = 1 if $enc eq 'tls';
+    $transport = Email::Sender::Transport::SMTP->new( %smtp_opt );
+  }
+
+  eval { sendmail($message, { transport => $transport }); };
+  ref($@) ? ( $@->code ? $@->code.' ' : '' ). $@->message
+          : $@;
 
 }
-
-#this kludges a "mysmtpsend" method into Mail::Internet for send_email above
-#now updated for MailTools v2!
-package Mail::Internet;
-
-use Mail::Address;
-use Net::SMTP;
-use Net::Domain;
-
-sub Mail::Internet::mysmtpsend($@) {
-    my ($self, %opt) = @_;
-
-    my $host     = $opt{Host};
-    my $envelope = $opt{MailFrom}; # || mailaddress();
-    my $quit     = 1;
-
-    my ($smtp, @hello);
-
-    push @hello, Hello => $opt{Hello}
-        if defined $opt{Hello};
-
-    push @hello, Port => $opt{Port}
-        if exists $opt{Port};
-
-    push @hello, Debug => $opt{Debug}
-        if exists $opt{Debug};
-
-#    if(!defined $host)
-#    {   local $SIG{__DIE__};
-#        my @hosts = qw(mailhost localhost);
-#        unshift @hosts, split /\:/, $ENV{SMTPHOSTS}
-#            if defined $ENV{SMTPHOSTS};
-#
-#        foreach $host (@hosts)
-#        {   $smtp = eval { Net::SMTP->new($host, @hello) };
-#            last if defined $smtp;
-#        }
-#    }
-#    elsif(ref($host) && UNIVERSAL::isa($host,'Net::SMTP'))
-    if(ref($host) && UNIVERSAL::isa($host,'Net::SMTP'))
-    {   $smtp = $host;
-        $quit = 0;
-    }
-    else
-    {   #local $SIG{__DIE__};
-        #$smtp = eval { Net::SMTP->new($host, @hello) };
-        $smtp = Net::SMTP->new($host, @hello);
-    }
-
-    unless ( defined($smtp) ) {
-      my $err = $!;
-      $err =~ s/Invalid argument/Unknown host/;
-      return "can't connect to $host: $err"
-    }
-
-    my $head = $self->cleaned_header_dup;
-
-    $head->delete('Bcc');
-
-    # Who is it to
-
-    my @rcpt = map { ref $_ ? @$_ : $_ } grep { defined } @opt{'To','Cc','Bcc'};
-    @rcpt    = map { $head->get($_) } qw(To Cc Bcc)
-        unless @rcpt;
-
-    my @addr = map {$_->address} Mail::Address->parse(@rcpt);
-    #@addr or return ();
-    return 'No valid destination addresses found!'
-	unless(@addr);
-
-    # Send it
-
-    my $ok = $smtp->mail($envelope)
-          && $smtp->to(@addr)
-          && $smtp->data(join("", @{$head->header}, "\n", @{$self->body}));
-
-    #$quit && $smtp->quit;
-    #$ok ? @addr : ();
-    if ( $ok ) {
-      $quit && $smtp->quit;
-      return '';
-    } else {
-      return $smtp->code. ' '. $smtp->message;
-    }
-}
-package FS::Misc;
-#eokludge
 
 =item send_fax OPTION => VALUE ...
 
