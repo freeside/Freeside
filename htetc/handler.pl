@@ -77,7 +77,7 @@ sub handler
 
       #we don't want the RT error handlers under FS
       {
-        local $^W = 0;
+        no warnings 'uninitialized';
         undef($SIG{__WARN__}) if defined($SIG{__WARN__});
         undef($SIG{__DIE__})  if defined($SIG{__DIE__} );
       }
