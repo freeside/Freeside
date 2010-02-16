@@ -34,8 +34,8 @@
 <%= include('card') %>
 <TR>
   <TD COLSPAN=8>
-    <INPUT TYPE="checkbox" CHECKED NAME="save" VALUE="1">
-    Remember this information
+    <INPUT TYPE="checkbox" <%= $save_unchecked ? '' : 'CHECKED' %> NAME="save" VALUE="1">
+    Remember this card and billing address
   </TD>
 </TR><TR>
   <TD COLSPAN=8>

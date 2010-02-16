@@ -497,6 +497,8 @@ sub payment_info {
       'show_ss'  => $conf->exists('show_ss'),
       'show_stateid' => $conf->exists('show_stateid'),
       'show_paystate' => $conf->exists('show_bankstate'),
+
+      'save_unchecked' => $conf->exists('selfservice-save_unchecked'),
     };
 
   }

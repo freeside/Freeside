@@ -24,7 +24,7 @@
 <%= include('check') %>
 <TR>
   <TD COLSPAN=2>
-    <INPUT TYPE="checkbox" CHECKED NAME="save" VALUE="1">
+    <INPUT TYPE="checkbox" <%= $save_unchecked ? '' : 'CHECKED' %> NAME="save" VALUE="1">
     Remember this information
   </TD>
 </TR><TR>

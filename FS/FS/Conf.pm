@@ -1519,6 +1519,13 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'selfservice-save_unchecked',
+    'section'     => 'self-service',
+    'description' => 'In self-service, uncheck "Remember information" checkboxes by default (normally, they are checked by default).',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'signup_server-default_agentnum',
     'section'     => 'self-service',
     'description' => 'Default agent for the signup server',
