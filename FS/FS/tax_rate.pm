@@ -3,11 +3,11 @@ package FS::tax_rate;
 use strict;
 use vars qw( @ISA $DEBUG $me
              %tax_unittypes %tax_maxtypes %tax_basetypes %tax_authorities
-             %tax_passtypes %GetInfoType );
+             %tax_passtypes %GetInfoType $keep_cch_files );
 use Date::Parse;
 use DateTime;
 use DateTime::Format::Strptime;
-use Storable qw( thaw );
+use Storable qw( thaw nfreeze );
 use IO::File;
 use File::Temp;
 use LWP::UserAgent;
@@ -31,6 +31,7 @@ use FS::Misc qw( csv_from_fixed );
 
 $DEBUG = 0;
 $me = '[FS::tax_rate]';
+$keep_cch_files = 0;
 
 =head1 NAME
 
@@ -481,7 +482,7 @@ sub _fatal_or_null {
 
   my $conf = new FS::Conf;
 
-  $error = "can't yet handle $error";
+  $error = "can't yet handle ". $error;
   my $name = $self->taxname;
   $name = 'Other surcharges'
     if ($self->passtype == 2);
@@ -575,6 +576,10 @@ sub tax_rate_location {
 
 =cut
 
+sub _progressbar_foo {
+  return (0, time, 5);
+}
+
 sub batch_import {
   my ($param, $job) = @_;
 
@@ -603,7 +608,7 @@ sub batch_import {
   }
   
   my $line;
-  my ( $count, $last, $min_sec ) = (0, time, 5); #progressbar
+  my ( $count, $last, $min_sec ) = _progressbar_foo();
   if ( $job || scalar(@column_callbacks) ) {
     my $error =
       csv_from_fixed(\$fh, \$count, \@column_lengths, \@column_callbacks);
@@ -629,6 +634,7 @@ sub batch_import {
       my $dt = $parser->parse_datetime( $hash->{'effective_date'} );
       $hash->{'effective_date'} = $dt ? $dt->epoch : '';
 
+      $hash->{$_} =~ s/\s//g foreach qw( inoutcity inoutlocal ) ; 
       $hash->{$_} = sprintf("%.2f", $hash->{$_}) foreach qw( taxbase taxmax );
 
       my $taxclassid =
@@ -874,6 +880,31 @@ Load a batch import as a queued JSRPC job
 sub process_batch_import {
   my $job = shift;
 
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $param = thaw(decode_base64(shift));
+  my $args = '$job, encode_base64( nfreeze( $param ) )';
+
+  my $method = '_perform_batch_import';
+  if ( $param->{reload} ) {
+    $method = 'process_batch_reload';
+  }
+
+  eval "$method($args);";
+  if ($@) {
+    $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+    die $@;
+  }
+
+  #success!
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+}
+
+sub _perform_batch_import {
+  my $job = shift;
+
   my $param = thaw(decode_base64(shift));
   my $format = $param->{'format'};        #well... this is all cch specific
 
@@ -882,13 +913,20 @@ sub process_batch_import {
 
   my (%files) = map { /^(\w+):([\.\w]+)$/ ? ($1,$2):() } split /,/, $files;
 
-  if ($format eq 'cch' || $format eq 'cch-fixed') {
+  if ( $format eq 'cch' || $format eq 'cch-fixed'
+    || $format eq 'cch-update' || $format eq 'cch-fixed-update' )
+  {
 
     my $oldAutoCommit = $FS::UID::AutoCommit;
     local $FS::UID::AutoCommit = 0;
     my $dbh = dbh;
     my $error = '';
-    my $have_location = 0;
+    my @insert_list = ();
+    my @delete_list = ();
+    my @predelete_list = ();
+    my $insertname = '';
+    my $deletename = '';
+    my $dir = '%%%FREESIDE_CACHE%%%/cache.'. $FS::UID::datasrc;
 
     my @list = ( 'GEOCODE',  'geofile',   \&FS::tax_rate_location::batch_import,
                  'CODE',     'codefile',  \&FS::tax_class::batch_import,
@@ -898,151 +936,57 @@ sub process_batch_import {
                  'DETAIL',   'detail',    \&FS::tax_rate::batch_import,
                );
     while( scalar(@list) ) {
-      my ($name, $file, $import_sub) = (shift @list, shift @list, shift @list);
+      my ( $name, $file, $import_sub ) = splice( @list, 0, 3 );
+
       unless ($files{$file}) {
-        next if $name eq 'PLUS4';
-        $error = "No $name supplied";
-        $error = "Neither PLUS4 nor ZIP supplied"
-          if ($name eq 'ZIP' && !$have_location);
-        next;
-      }
-      $have_location = 1 if $name eq 'PLUS4';
-      my $fmt = $format. ( $name eq 'ZIP' ? '-zip' : '' );
-      my $dir = '%%%FREESIDE_CACHE%%%/cache.'. $FS::UID::datasrc;
-      my $filename = "$dir/".  $files{$file};
-      open my $fh, "< $filename" or $error ||= "Can't open $name file: $!";
-
-      $error ||= &{$import_sub}({ 'filehandle' => $fh, 'format' => $fmt }, $job);
-      close $fh;
-      unlink $filename or warn "Can't delete $filename: $!";
-    }
-    
-    if ($error) {
-      $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
-      die $error;
-    }else{
-      $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-    }
-
-  }elsif ($format eq 'cch-update' || $format eq 'cch-fixed-update') {
-
-    my $oldAutoCommit = $FS::UID::AutoCommit;
-    local $FS::UID::AutoCommit = 0;
-    my $dbh = dbh;
-    my $error = '';
-    my @insert_list = ();
-    my @delete_list = ();
-    my @predelete_list = ();
-
-    my @list = ( 'GEOCODE',  'geofile',   \&FS::tax_rate_location::batch_import,
-                 'CODE',     'codefile',  \&FS::tax_class::batch_import,
-                 'PLUS4',    'plus4file', \&FS::cust_tax_location::batch_import,
-                 'ZIP',      'zipfile',   \&FS::cust_tax_location::batch_import,
-                 'TXMATRIX', 'txmatrix',  \&FS::part_pkg_taxrate::batch_import,
-               );
-    my $dir = '%%%FREESIDE_CACHE%%%/cache.'. $FS::UID::datasrc;
-    while( scalar(@list) ) {
-      my ($name, $file, $import_sub) = (shift @list, shift @list, shift @list);
-      unless ($files{$file}) {
-        my $vendor = $name eq 'ZIP' ? 'cch' : 'cch-zip';
-        next     # update expected only for previously installed location data
-          if (   ($name eq 'PLUS4' || $name eq 'ZIP')
-               && !scalar( qsearch( { table => 'cust_tax_location',
-                                      hashref => { data_vendor => $vendor },
-                                      select => 'DISTINCT data_vendor',
-                                  } )
-                         )
-             );
-
         $error = "No $name supplied";
         next;
       }
+      next if $name eq 'DETAIL' && $format =~ /update/;
+
       my $filename = "$dir/".  $files{$file};
-      open my $fh, "< $filename" or $error ||= "Can't open $name file $filename: $!";
-      unlink $filename or warn "Can't delete $filename: $!";
 
-      my $ifh = new File::Temp( TEMPLATE => "$name.insert.XXXXXXXX",
-                                DIR      => $dir,
-                                UNLINK   => 0,     #meh
-                              ) or die "can't open temp file: $!\n";
+      if ( $format =~ /update/ ) {
 
-      my $dfh = new File::Temp( TEMPLATE => "$name.delete.XXXXXXXX",
-                                DIR      => $dir,
-                                UNLINK   => 0,     #meh
-                              ) or die "can't open temp file: $!\n";
+        ( $error, $insertname, $deletename ) =
+          _perform_cch_insert_delete_split( $name, $filename, $dir, $format )
+          unless $error;
+        last if $error;
 
-      my $insert_pattern = ($format eq 'cch-update') ? qr/"I"\s*$/ : qr/I\s*$/;
-      my $delete_pattern = ($format eq 'cch-update') ? qr/"D"\s*$/ : qr/D\s*$/;
-      while(<$fh>) {
-        my $handle = '';
-        $handle = $ifh if $_ =~ /$insert_pattern/;
-        $handle = $dfh if $_ =~ /$delete_pattern/;
-        unless ($handle) {
-          $error = "bad input line: $_" unless $handle;
-          last;
+        unlink $filename or warn "Can't delete $filename: $!"
+          unless $keep_cch_files;
+        push @insert_list, $name, $insertname, $import_sub, $format;
+        if ( $name eq 'GEOCODE' ) { #handle this whole ordering issue better
+          unshift @predelete_list, $name, $deletename, $import_sub;
+        } else {
+          unshift @delete_list, $name, $deletename, $import_sub;
         }
-        print $handle $_;
-      }
-      close $fh;
-      close $ifh;
-      close $dfh;
 
-      push @insert_list, $name, $ifh->filename, $import_sub;
-      if ( $name eq 'GEOCODE' ) { #handle this whole ordering issue better
-        unshift @predelete_list, $name, $dfh->filename, $import_sub;
       } else {
-        unshift @delete_list, $name, $dfh->filename, $import_sub;
+
+        push @insert_list, $name, $filename, $import_sub, $format;
+
       }
 
     }
 
-    while( scalar(@predelete_list) ) {
-      my ($name, $file, $import_sub) =
-        (shift @predelete_list, shift @predelete_list, shift @predelete_list);
+    push @insert_list,
+      'DETAIL', "$dir/".$files{detail}, \&FS::tax_rate::batch_import, $format
+      if $format =~ /update/;
 
-      my $fmt = $format. ( $name eq 'ZIP' ? '-zip' : '' );
-      open my $fh, "< $file" or $error ||= "Can't open $name file $file: $!";
-      $error ||=
-        &{$import_sub}({ 'filehandle' => $fh, 'format' => $fmt }, $job);
-      close $fh;
+    $error ||= _perform_cch_tax_import( $job,
+                                        [ @predelete_list ],
+                                        [ @insert_list ],
+                                        [ @delete_list ],
+    );
+    
+    
+    @list = ( @predelete_list, @insert_list, @delete_list );
+    while( !$keep_cch_files && scalar(@list) ) {
+      my ( undef, $file, undef, undef ) = splice( @list, 0, 4 );
       unlink $file or warn "Can't delete $file: $!";
     }
-    
-    while( scalar(@insert_list) ) {
-      my ($name, $file, $import_sub) =
-        (shift @insert_list, shift @insert_list, shift @insert_list);
 
-      my $fmt = $format. ( $name eq 'ZIP' ? '-zip' : '' );
-      open my $fh, "< $file" or $error ||= "Can't open $name file $file: $!";
-      $error ||=
-        &{$import_sub}({ 'filehandle' => $fh, 'format' => $fmt }, $job);
-      close $fh;
-      unlink $file or warn "Can't delete $file: $!";
-    }
-    
-    $error ||= "No DETAIL supplied"
-      unless ($files{detail});
-    open my $fh, "< $dir/". $files{detail}
-      or $error ||= "Can't open DETAIL file: $!";
-    $error ||=
-      &FS::tax_rate::batch_import({ 'filehandle' => $fh, 'format' => $format },
-                                  $job);
-    close $fh;
-    unlink "$dir/". $files{detail} or warn "Can't delete $files{detail}: $!"
-      if $files{detail};
-
-    while( scalar(@delete_list) ) {
-      my ($name, $file, $import_sub) =
-        (shift @delete_list, shift @delete_list, shift @delete_list);
-
-      my $fmt = $format. ( $name eq 'ZIP' ? '-zip' : '' );
-      open my $fh, "< $file" or $error ||= "Can't open $name file $file: $!";
-      $error ||=
-        &{$import_sub}({ 'filehandle' => $fh, 'format' => $fmt }, $job);
-      close $fh;
-      unlink $file or warn "Can't delete $file: $!";
-    }
-    
     if ($error) {
       $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
       die $error;
@@ -1056,6 +1000,441 @@ sub process_batch_import {
 
 }
 
+
+sub _perform_cch_tax_import {
+  my ( $job, $predelete_list, $insert_list, $delete_list ) = @_;
+
+  my $error = '';
+  foreach my $list ($predelete_list, $insert_list, $delete_list) {
+    while( scalar(@$list) ) {
+      my ( $name, $file, $method, $format ) = splice( @$list, 0, 4 );
+      my $fmt = "$format-update";
+      $fmt = $format. ( lc($name) eq 'zip' ? '-zip' : '' );
+      open my $fh, "< $file" or $error ||= "Can't open $name file $file: $!";
+      $error ||= &{$method}({ 'filehandle' => $fh, 'format' => $fmt }, $job);
+      close $fh;
+    }
+  }
+
+  return $error;
+}
+
+sub _perform_cch_insert_delete_split {
+  my ($name, $filename, $dir, $format) = @_;
+
+  my $error = '';
+
+  open my $fh, "< $filename"
+    or $error ||= "Can't open $name file $filename: $!";
+
+  my $ifh = new File::Temp( TEMPLATE => "$name.insert.XXXXXXXX",
+                            DIR      => $dir,
+                            UNLINK   => 0,     #meh
+                          ) or die "can't open temp file: $!\n";
+  my $insertname = $ifh->filename;
+
+  my $dfh = new File::Temp( TEMPLATE => "$name.delete.XXXXXXXX",
+                            DIR      => $dir,
+                            UNLINK   => 0,     #meh
+                          ) or die "can't open temp file: $!\n";
+  my $deletename = $dfh->filename;
+
+  my $insert_pattern = ($format eq 'cch-update') ? qr/"I"\s*$/ : qr/I\s*$/;
+  my $delete_pattern = ($format eq 'cch-update') ? qr/"D"\s*$/ : qr/D\s*$/;
+  while(<$fh>) {
+    my $handle = '';
+    $handle = $ifh if $_ =~ /$insert_pattern/;
+    $handle = $dfh if $_ =~ /$delete_pattern/;
+    unless ($handle) {
+      $error = "bad input line: $_" unless $handle;
+      last;
+    }
+    print $handle $_;
+  }
+  close $fh;
+  close $ifh;
+  close $dfh;
+
+  return ($error, $insertname, $deletename);
+}
+
+sub _perform_cch_diff {
+  my ($name, $newdir, $olddir) = @_;
+
+  my %oldlines = ();
+
+  if ($olddir) {
+    open my $oldcsvfh, "$olddir/$name.txt"
+      or die "failed to open $olddir/$name.txt: $!\n";
+
+    while(<$oldcsvfh>) {
+      chomp;
+      $oldlines{$_} = 1;
+    }
+    close $oldcsvfh;
+  }
+
+  open my $newcsvfh, "$newdir/$name.txt"
+    or die "failed to open $newdir/$name.txt: $!\n";
+    
+  my $dfh = new File::Temp( TEMPLATE => "$name.diff.XXXXXXXX",
+                            DIR      => "$newdir",
+                            UNLINK   => 0,     #meh
+                          ) or die "can't open temp file: $!\n";
+  my $diffname = $dfh->filename;
+
+  while(<$newcsvfh>) {
+    chomp;
+    if (exists($oldlines{$_})) {
+      $oldlines{$_} = 0;
+    } else {
+      print $dfh $_, ',"I"', "\n";
+    }
+  }
+  close $newcsvfh;
+
+  for (keys %oldlines) {
+    print $dfh $_, ',"D"', "\n" if $oldlines{$_};
+  }
+
+  close $dfh;
+
+  return $diffname;
+}
+
+sub _cch_fetch_and_unzip {
+  my ( $job, $urls, $secret, $dir ) = @_;
+
+  my $ua = new LWP::UserAgent;
+  foreach my $url (split ',', $urls) {
+    my @name = split '/', $url;  #somewhat restrictive
+    my $name = pop @name;
+    $name =~ /([\w.]+)/; # untaint that which we don't trust so much any more
+    $name = $1;
+      
+    open my $taxfh, ">$dir/$name" or die "Can't open $dir/$name: $!\n";
+     
+    my ( $imported, $last, $min_sec ) = _progressbar_foo();
+    my $res = $ua->request(
+      new HTTP::Request( GET => $url ),
+      sub {
+            print $taxfh $_[0] or die "Can't write to $dir/$name: $!\n";
+            my $content_length = $_[1]->content_length;
+            $imported += length($_[0]);
+            if ( time - $min_sec > $last ) {
+              my $error = $job->update_statustext(
+                ($content_length ? int(100 * $imported/$content_length) : 0 ).
+                ",Downloading data from CCH"
+              );
+              die $error if $error;
+              $last = time;
+            }
+      },
+    );
+    die "download of $url failed: ". $res->status_line
+      unless $res->is_success;
+      
+    close $taxfh;
+    my $error = $job->update_statustext( "0,Unpacking data" );
+    die $error if $error;
+    $secret =~ /([\w.]+)/; # untaint that which we don't trust so much any more
+    $secret = $1;
+    system('unzip', "-P", $secret, "-d", "$dir",  "$dir/$name") == 0
+      or die "unzip -P $secret -d $dir $dir/$name failed";
+    #unlink "$dir/$name";
+  }
+}
+ 
+sub _cch_extract_csv_from_dbf {
+  my ( $job, $dir, $name ) = @_;
+
+  eval "use Text::CSV_XS;";
+  die $@ if $@;
+
+  eval "use XBase;";
+  die $@ if $@;
+
+  my ( $imported, $last, $min_sec ) = _progressbar_foo();
+  my $error = $job->update_statustext( "0,Unpacking $name" );
+  die $error if $error;
+  warn "opening $dir.new/$name.dbf\n" if $DEBUG;
+  my $table = new XBase 'name' => "$dir.new/$name.dbf";
+  die "failed to access $dir.new/$name.dbf: ". XBase->errstr
+    unless defined($table);
+  my $count = $table->last_record; # approximately;
+  open my $csvfh, ">$dir.new/$name.txt"
+    or die "failed to open $dir.new/$name.txt: $!\n";
+
+  my $csv = new Text::CSV_XS { 'always_quote' => 1 };
+  my @fields = $table->field_names;
+  my $cursor = $table->prepare_select;
+  my $format_date =
+    sub { my $date = shift;
+          $date =~ /^(\d{4})(\d{2})(\d{2})$/ && ($date = "$2/$3/$1");
+          $date;
+        };
+  while (my $row = $cursor->fetch_hashref) {
+    $csv->combine( map { ($table->field_type($_) eq 'D')
+                         ? &{$format_date}($row->{$_}) 
+                         : $row->{$_}
+                       }
+                   @fields
+    );
+    print $csvfh $csv->string, "\n";
+    $imported++;
+    if ( time - $min_sec > $last ) {
+      my $error = $job->update_statustext(
+        int(100 * $imported/$count).  ",Unpacking $name"
+      );
+      die $error if $error;
+      $last = time;
+    }
+  }
+  $table->close;
+  close $csvfh;
+}
+
+sub _remember_disabled_taxes {
+  my ( $job, $format, $disabled_tax_rate ) = @_;
+
+  # cch specific hash
+
+  my ( $imported, $last, $min_sec ) = _progressbar_foo();
+
+  my @items = qsearch( { table   => 'tax_rate',
+                         hashref => { disabled => 'Y',
+                                      data_vendor => $format,
+                                    },
+                         select  => 'geocode, taxclassnum',
+                       }
+                     );
+  my $count = scalar(@items);
+  foreach my $tax_rate ( @items ) {
+    if ( time - $min_sec > $last ) {
+      $job->update_statustext(
+        int( 100 * $imported / $count ). ",Remembering disabled taxes"
+      );
+      $last = time;
+    }
+    $imported++;
+    my $tax_class =
+      qsearchs( 'tax_class', { taxclassnum => $tax_rate->taxclassnum } );
+    unless ( $tax_class ) {
+      warn "failed to find tax_class ". $tax_rate->taxclassnum;
+      next;
+    }
+    $disabled_tax_rate->{$tax_rate->geocode. ':'. $tax_class->taxclass} = 1;
+  }
+}
+
+sub _remember_tax_products {
+  my ( $job, $format, $taxproduct ) = @_;
+
+  # XXX FIXME  this loop only works when cch is the only data provider
+
+  my ( $imported, $last, $min_sec ) = _progressbar_foo();
+
+  my $extra_sql = "WHERE taxproductnum IS NOT NULL OR ".
+                  "0 < ( SELECT count(*) from part_pkg_option WHERE ".
+                  "       part_pkg_option.pkgpart = part_pkg.pkgpart AND ".
+                  "       optionname LIKE 'usage_taxproductnum_%' AND ".
+                  "       optionvalue != '' )";
+  my @items = qsearch( { table => 'part_pkg',
+                         select  => 'DISTINCT pkgpart,taxproductnum',
+                         hashref => {},
+                         extra_sql => $extra_sql,
+                       }
+                     );
+  my $count = scalar(@items);
+  foreach my $part_pkg ( @items ) {
+    if ( time - $min_sec > $last ) {
+      $job->update_statustext(
+        int( 100 * $imported / $count ). ",Remembering tax products"
+      );
+      $last = time;
+    }
+    $imported++;
+    warn "working with package part ". $part_pkg->pkgpart.
+      "which has a taxproductnum of ". $part_pkg->taxproductnum. "\n" if $DEBUG;
+    my $part_pkg_taxproduct = $part_pkg->taxproduct('');
+    $taxproduct->{$part_pkg->pkgpart}->{''} = $part_pkg_taxproduct->taxproduct
+      if $part_pkg_taxproduct && $part_pkg_taxproduct->data_vendor eq $format;
+
+    foreach my $option ( $part_pkg->part_pkg_option ) {
+      next unless $option->optionname =~ /^usage_taxproductnum_(\w)$/;
+      my $class = $1;
+
+      $part_pkg_taxproduct = $part_pkg->taxproduct($class);
+      $taxproduct->{$part_pkg->pkgpart}->{$class} =
+          $part_pkg_taxproduct->taxproduct
+        if $part_pkg_taxproduct && $part_pkg_taxproduct->data_vendor eq $format;
+    }
+  }
+}
+
+sub _restore_remembered_tax_products {
+  my ( $job, $format, $taxproduct ) = @_;
+
+  # cch specific
+
+  my ( $imported, $last, $min_sec ) = _progressbar_foo();
+  my $count = scalar(keys %$taxproduct);
+  foreach my $pkgpart ( keys %$taxproduct ) {
+    warn "restoring taxproductnums on pkgpart $pkgpart\n" if $DEBUG;
+    if ( time - $min_sec > $last ) {
+      $job->update_statustext(
+        int( 100 * $imported / $count ). ",Restoring tax products"
+      );
+      $last = time;
+    }
+    $imported++;
+
+    my $part_pkg = qsearchs('part_pkg', { pkgpart => $pkgpart } );
+    unless ( $part_pkg ) {
+      return "somehow failed to find part_pkg with pkgpart $pkgpart!\n";
+    }
+
+    my %options = $part_pkg->options;
+    my %pkg_svc = map { $_->svcpart => $_->quantity } $part_pkg->pkg_svc;
+    my $primary_svc = $part_pkg->svcpart;
+    my $new = new FS::part_pkg { $part_pkg->hash };
+
+    foreach my $class ( keys %{ $taxproduct->{$pkgpart} } ) {
+      warn "working with class '$class'\n" if $DEBUG;
+      my $part_pkg_taxproduct =
+        qsearchs( 'part_pkg_taxproduct',
+                  { taxproduct  => $taxproduct->{$pkgpart}->{$class},
+                    data_vendor => $format,
+                  }
+                );
+
+      unless ( $part_pkg_taxproduct ) {
+        return "failed to find part_pkg_taxproduct (".
+          $taxproduct->{pkgpart}->{$class}. ") for pkgpart $pkgpart\n";
+      }
+
+      if ( $class eq '' ) {
+        $new->taxproductnum($part_pkg_taxproduct->taxproductnum);
+        next;
+      }
+
+      $options{"usage_taxproductnum_$class"} =
+        $part_pkg_taxproduct->taxproductnum;
+
+    }
+
+    my $error = $new->replace( $part_pkg,
+                               'pkg_svc' => \%pkg_svc,
+                               'primary_svc' => $primary_svc,
+                               'options' => \%options,
+    );
+      
+    return $error if $error;
+
+  }
+
+  '';
+}
+
+sub _restore_remembered_disabled_taxes {
+  my ( $job, $format, $disabled_tax_rate ) = @_;
+
+  my ( $imported, $last, $min_sec ) = _progressbar_foo();
+  my $count = scalar(keys %$disabled_tax_rate);
+  foreach my $key (keys %$disabled_tax_rate) {
+    if ( time - $min_sec > $last ) {
+      $job->update_statustext(
+        int( 100 * $imported / $count ). ",Disabling tax rates"
+      );
+      $last = time;
+    }
+    $imported++;
+    my ($geocode,$taxclass) = split /:/, $key, 2;
+    my @tax_class = qsearch( 'tax_class', { data_vendor => $format,
+                                            taxclass    => $taxclass,
+                                          } );
+    return "found multiple tax_class records for format $format class $taxclass"
+      if scalar(@tax_class) > 1;
+      
+    unless (scalar(@tax_class)) {
+      warn "no tax_class for format $format class $taxclass\n";
+      next;
+    }
+
+    my @tax_rate =
+      qsearch('tax_rate', { data_vendor  => $format,
+                            geocode      => $geocode,
+                            taxclassnum  => $tax_class[0]->taxclassnum,
+                          }
+    );
+
+    if (scalar(@tax_rate) > 1) {
+      return "found multiple tax_rate records for format $format geocode ".
+             "$geocode and taxclass $taxclass ( taxclassnum ".
+             $tax_class[0]->taxclassnum.  " )";
+    }
+      
+    if (scalar(@tax_rate)) {
+      $tax_rate[0]->disabled('Y');
+      my $error = $tax_rate[0]->replace;
+      return $error if $error;
+    }
+  }
+}
+
+sub _remove_old_tax_data {
+  my ( $job, $format ) = @_;
+
+  my $dbh = dbh;
+  my $error = $job->update_statustext( "0,Removing old tax data" );
+  dir $error if $error;
+  foreach my $tax_rate_location ( qsearch( 'tax_rate_location',
+                                           { data_vendor => $format,
+                                             disabled    => '',
+                                           }
+                                         )
+                                )
+  {
+    $tax_rate_location->disabled('Y');
+    my $error = $tax_rate_location->replace;
+    return $error if $error;
+  }
+
+  local $FS::part_pkg_taxproduct::delete_kludge = 1;
+  my @table = qw(
+    tax_rate part_pkg_taxrate part_pkg_taxproduct tax_class cust_tax_location
+  );
+  foreach my $table ( @table ) {
+    my $dbh = dbh;
+#    my $primary_key = dbdef->table($table)->primary_key;
+#    my $sql = "SELECT $primary_key FROM $table WHERE data_vendor = ".
+    my $sql = "DELETE FROM $table WHERE data_vendor = ".
+      $dbh->quote($format);
+    my $sth = $dbh->prepare($sql);
+    return $dbh->errstr unless ($sth);
+    $sth->execute or return "Failed to execute $sql: ". $sth->errstr;
+#    foreach my $row ( @{ $sth->fetchall_arrayref } ) {
+#      my $record = qsearchs( $table, { $primary_key => $row->[0] } )
+#        or return "Failed to find $table with $primary_key ". $row->[0];
+#      my $error = $record->delete;
+#      return $error if $error;
+#    }
+  }
+
+  if ( $format eq 'cch' ) {
+    foreach my $cust_tax_location ( qsearch( 'cust_tax_location',
+                                             { data_vendor => "$format-zip" }
+                                           )
+                                  )
+    {
+      my $error = $cust_tax_location->delete;
+      return $error if $error;
+    }
+  }
+
+  '';
+}
+
 =item process_download_and_reload
 
 Download and process a tax update as a queued JSRPC job after wiping the
@@ -1064,16 +1443,32 @@ existing wipable tax data.
 =cut
 
 sub process_download_and_reload {
-  my $job = shift;
+  _process_reload('process_download_and_update', @_);
+}
+
+  
+=item process_batch_reload
+
+Load and process a tax update from the provided files as a queued JSRPC job
+after wiping the existing wipable tax data.
+
+=cut
+
+sub process_batch_reload {
+  _process_reload('_perform_batch_import', @_);
+}
+
+  
+sub _process_reload {
+  my ( $method, $job ) = ( shift, shift );
 
   my $param = thaw(decode_base64($_[0]));
   my $format = $param->{'format'};        #well... this is all cch specific
 
-  my ( $count, $last, $min_sec, $imported ) = (0, time, 5, 0); #progressbar
-  $count = 100;
+  my ( $imported, $last, $min_sec ) = _progressbar_foo();
 
   if ( $job ) {  # progress bar
-    my $error = $job->update_statustext( int( 100 * $imported / $count ) );
+    my $error = $job->update_statustext( 0 );
     die $error if $error;
   }
 
@@ -1095,276 +1490,38 @@ sub process_download_and_reload {
 
   #remember disabled taxes
   my %disabled_tax_rate = ();
-  my @items = qsearch( { table   => 'tax_rate',
-                         hashref => { disabled => 'Y',
-                                      data_vendor => $format,
-                                    },
-                         select  => 'geocode, taxclassnum',
-                       }
-                     );
-  $count = scalar(@items);
-  foreach my $tax_rate ( @items ) {
-    if ( time - $min_sec > $last ) {
-      my $error = $job->update_statustext(
-        int( 100 * $imported / $count ). ",Remembering disabled taxes"
-      );
-      if ($error) {
-        $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
-        die $error;
-      }
-      $last = time;
-    }
-    $imported++;
-    my $tax_class =
-      qsearchs( 'tax_class', { taxclassnum => $tax_rate->taxclassnum } );
-    unless ( $tax_class ) {
-      warn "failed to find tax_class ". $tax_rate->taxclassnum;
-      next;
-    }
-    $disabled_tax_rate{$tax_rate->geocode. ':'. $tax_class->taxclass} = 1;
-  }
+  $error ||= _remember_disabled_taxes( $job, $format, \%disabled_tax_rate );
 
   #remember tax products
-  # XXX FIXME  this loop only works when cch is the only data provider
   my %taxproduct = ();
-  my $extra_sql = "WHERE taxproductnum IS NOT NULL OR ".
-                  "0 < ( SELECT count(*) from part_pkg_option WHERE ".
-                  "       part_pkg_option.pkgpart = part_pkg.pkgpart AND ".
-                  "       optionname LIKE 'usage_taxproductnum_%' AND ".
-                  "       optionvalue != '' )";
-  @items = qsearch( { table => 'part_pkg',
-                      select  => 'DISTINCT pkgpart,taxproductnum',
-                      hashref => {},
-                      extra_sql => $extra_sql,
-                    }
-                  );
-  $count = scalar(@items);
-  $imported = 0;
-  foreach my $part_pkg ( @items ) {
-    if ( time - $min_sec > $last ) {
-      my $error = $job->update_statustext(
-        int( 100 * $imported / $count ). ",Remembering tax products"
-      );
-      if ($error) {
-        $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
-        die $error;
-      }
-      $last = time;
-    }
-    $imported++;
-    warn "working with package part ". $part_pkg->pkgpart.
-      "which has a taxproductnum of ". $part_pkg->taxproductnum. "\n" if $DEBUG;
-    my $part_pkg_taxproduct = $part_pkg->taxproduct('');
-    $taxproduct{$part_pkg->pkgpart}{''} = $part_pkg_taxproduct->taxproduct
-      if $part_pkg_taxproduct;
-
-    foreach my $option ( $part_pkg->part_pkg_option ) {
-      next unless $option->optionname =~ /^usage_taxproductnum_(\w)$/;
-      my $class = $1;
-
-      $part_pkg_taxproduct = $part_pkg->taxproduct($class);
-      $taxproduct{$part_pkg->pkgpart}{$class} = $part_pkg_taxproduct->taxproduct
-        if $part_pkg_taxproduct;
-    }
-  }
+  $error ||= _remember_tax_products( $job, $format, \%taxproduct );
 
   #wipe out the old data
-  $error = $job->update_statustext( "0,Removing old tax data" );
+  $error ||= _remove_old_tax_data( $job, $format ); 
+
+  #import new data
+  unless ($error) {
+    my $args = '$job, @_';
+    eval "$method($args);";
+    $error = $@ if $@;
+  }
+
+  #restore taxproducts
+  $error ||= _restore_remembered_tax_products( $job, $format, \%taxproduct );
+
+  #disable tax_rates
+  $error ||=
+   _restore_remembered_disabled_taxes( $job, $format, \%disabled_tax_rate );
+
   if ($error) {
     $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
     die $error;
   }
-  foreach my $tax_rate_location ( qsearch( 'tax_rate_location',
-                                           { data_vendor => $format,
-                                             disabled    => '',
-                                           }
-                                         )
-                                )
-  {
-    $tax_rate_location->disabled('Y');
-    my $error = $tax_rate_location->replace;
-    if ( $error ) {
-      $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
-      die $error;
-    }
-  }
-
-  local $FS::part_pkg_taxproduct::delete_kludge = 1;
-  my @table = qw(
-    tax_rate part_pkg_taxrate part_pkg_taxproduct tax_class cust_tax_location
-  );
-  foreach my $table ( @table ) {
-    my $dbh = dbh;
-#    my $primary_key = dbdef->table($table)->primary_key;
-#    my $sql = "SELECT $primary_key FROM $table WHERE data_vendor = ".
-    my $sql = "DELETE FROM $table WHERE data_vendor = ".
-      $dbh->quote($format);
-    my $sth = $dbh->prepare($sql);
-    unless ($sth) {
-      $error = $dbh->errstr;
-      $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
-      die $error;
-    }
-    unless ($sth->execute) {
-      $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
-      die "Failed to execute $sql: ". $sth->errstr;
-    }
-#    foreach my $row ( @{ $sth->fetchall_arrayref } ) {
-#      my $record = qsearchs( $table, { $primary_key => $row->[0] } )
-#        or die "Failed to find $table with $primary_key ". $row->[0];
-#      my $error = $record->delete;
-#      if ( $error ) {
-#        $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
-#        die $error;
-#      }
-#    }
-  }
-
-  if ( $format eq 'cch' ) {
-    foreach my $cust_tax_location ( qsearch( 'cust_tax_location',
-                                             { data_vendor => "$format-zip" }
-                                           )
-                                  )
-    {
-      my $error = $cust_tax_location->delete;
-      if ( $error ) {
-        $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
-        die $error;
-      }
-    }
-  }
-
-  #import new data
-  my $statement = ' &process_download_and_update($job, @_); ';
-  eval $statement;
-  if ($@) {
-    $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
-    die $@;
-  }
-
-  #restore taxproducts
-  $count = scalar(keys %taxproduct);
-  $imported = 0;
-  foreach my $pkgpart ( keys %taxproduct ) {
-    warn "restoring taxproductnums on pkgpart $pkgpart\n" if $DEBUG;
-    if ( time - $min_sec > $last ) {
-      my $error = $job->update_statustext(
-        int( 100 * $imported / $count ). ",Restoring tax products"
-      );
-      if ( $error ) {
-        $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
-        die $error;
-      }
-      $last = time;
-    }
-    $imported++;
-
-    my $part_pkg = qsearchs('part_pkg', { pkgpart => $pkgpart } );
-    unless ( $part_pkg ) {
-      $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
-      die "somehow failed to find part_pkg with pkgpart $pkgpart!\n";
-    }
-
-    my %options = $part_pkg->options;
-    my %pkg_svc = map { $_->svcpart => $_->quantity } $part_pkg->pkg_svc;
-    my $primary_svc = $part_pkg->svcpart;
-    my $new = new FS::part_pkg { $part_pkg->hash };
-
-    foreach my $class ( keys %{ $taxproduct{$pkgpart} } ) {
-      warn "working with class '$class'\n" if $DEBUG;
-      my $part_pkg_taxproduct =
-        qsearchs( 'part_pkg_taxproduct',
-                  { taxproduct  => $taxproduct{$pkgpart}{$class},
-                    data_vendor => $format,
-                  }
-                );
-
-      unless ( $part_pkg_taxproduct ) {
-        $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
-        die "failed to find part_pkg_taxproduct ($taxproduct{pkgpart}{$class})".
-            " for pkgpart $pkgpart\n";
-      }
-
-      if ( $class eq '' ) {
-        $new->taxproductnum($part_pkg_taxproduct->taxproductnum);
-        next;
-      }
-
-      $options{"usage_taxproductnum_$class"} =
-        $part_pkg_taxproduct->taxproductnum;
-
-    }
-
-    my $error = $new->replace( $part_pkg,
-                               'pkg_svc' => \%pkg_svc,
-                               'primary_svc' => $primary_svc,
-                               'options' => \%options,
-    );
-      
-    if ( $error ) {
-      $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
-      die $error;
-    }
-  }
-
-  #disable tax_rates
-  $count = scalar(keys %disabled_tax_rate);
-  $imported = 0;
-  foreach my $key (keys %disabled_tax_rate) {
-    if ( time - $min_sec > $last ) {
-      my $error = $job->update_statustext(
-        int( 100 * $imported / $count ). ",Disabling tax rates"
-      );
-      if ( $error ) {
-        $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
-        die $error;
-      }
-      $last = time;
-    }
-    $imported++;
-    my ($geocode,$taxclass) = split /:/, $key, 2;
-    my @tax_class = qsearch( 'tax_class', { data_vendor => $format,
-                                            taxclass    => $taxclass,
-                                          } );
-    if (scalar(@tax_class) > 1) {
-      $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
-      die "found multiple tax_class records for format $format class $taxclass";
-    }
-      
-    unless (scalar(@tax_class)) {
-      warn "no tax_class for format $format class $taxclass\n";
-      next;
-    }
-
-    my @tax_rate =
-      qsearch('tax_rate', { data_vendor  => $format,
-                            geocode      => $geocode,
-                            taxclassnum  => $tax_class[0]->taxclassnum,
-                          }
-    );
-
-    if (scalar(@tax_rate) > 1) {
-      $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
-      die "found multiple tax_rate records for format $format geocode $geocode".
-          " and taxclass $taxclass ( taxclassnum ". $tax_class[0]->taxclassnum.
-          " )";
-    }
-      
-    if (scalar(@tax_rate)) {
-      $tax_rate[0]->disabled('Y');
-      my $error = $tax_rate[0]->replace;
-      if ( $error ) {
-        $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
-        die $error;
-      }
-    }
-  }
 
   #success!
-
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-  
 }
+
 
 =item process_download_and_update
 
@@ -1378,11 +1535,10 @@ sub process_download_and_update {
   my $param = thaw(decode_base64(shift));
   my $format = $param->{'format'};        #well... this is all cch specific
 
-  my ( $count, $last, $min_sec, $imported ) = (0, time, 5, 0); #progressbar
-  $count = 100;
+  my ( $imported, $last, $min_sec ) = _progressbar_foo();
 
   if ( $job ) {  # progress bar
-    my $error = $job->update_statustext( int( 100 * $imported / $count ) );
+    my $error = $job->update_statustext( 0);
     die $error if $error;
   }
 
@@ -1393,11 +1549,7 @@ sub process_download_and_update {
 
   if ($format eq 'cch') {
 
-    eval "use Text::CSV_XS;";
-    die $@ if $@;
-
-    eval "use XBase;";
-    die $@ if $@;
+    my @namelist = qw( code detail geocode plus4 txmatrix zip );
 
     my $conf = new FS::Conf;
     die "direct download of tax data not enabled\n" 
@@ -1410,18 +1562,18 @@ sub process_download_and_update {
 
     $dir .= '/cch';
 
-    my $oldAutoCommit = $FS::UID::AutoCommit;
-    local $FS::UID::AutoCommit = 0;
     my $dbh = dbh;
     my $error = '';
 
     # really should get a table EXCLUSIVE lock here
     # check if initial import or update
+    #
+    # relying on mkdir "$dir.new" as a mutex
     
     my $sql = "SELECT count(*) from tax_rate WHERE data_vendor='$format'";
     my $sth = $dbh->prepare($sql) or die $dbh->errstr;
     $sth->execute() or die $sth->errstr;
-    my $upgrade = $sth->fetchrow_arrayref->[0];
+    my $update = $sth->fetchrow_arrayref->[0];
 
     # create cache and/or rotate old tax data
 
@@ -1445,7 +1597,7 @@ sub process_download_and_update {
 
     } else {
 
-      die "can't find previous tax data\n" if $upgrade;
+      die "can't find previous tax data\n" if $update;
 
     }
 
@@ -1453,215 +1605,33 @@ sub process_download_and_update {
     
     # fetch and unpack the zip files
 
-    my $ua = new LWP::UserAgent;
-    foreach my $url (split ',', $urls) {
-      my @name = split '/', $url;  #somewhat restrictive
-      my $name = pop @name;
-      $name =~ /(.*)/; # untaint that which we trust;
-      $name = $1;
-      
-      open my $taxfh, ">$dir.new/$name" or die "Can't open $dir.new/$name: $!\n";
-     
-      my $res = $ua->request(
-        new HTTP::Request( GET => $url),
-        sub { #my ($data, $response_object) = @_;
-              print $taxfh $_[0] or die "Can't write to $dir.new/$name: $!\n";
-              my $content_length = $_[1]->content_length;
-              $imported += length($_[0]);
-              if ( time - $min_sec > $last ) {
-                my $error = $job->update_statustext(
-                  ($content_length ? int(100 * $imported/$content_length) : 0 ).
-                  ",Downloading data from CCH"
-                );
-                die $error if $error;
-                $last = time;
-              }
-        },
-      );
-      die "download of $url failed: ". $res->status_line
-        unless $res->is_success;
-      
-      close $taxfh;
-      my $error = $job->update_statustext( "0,Unpacking data" );
-      die $error if $error;
-      $secret =~ /(.*)/; # untaint that which we trust;
-      $secret = $1;
-      system('unzip', "-P", $secret, "-d", "$dir.new",  "$dir.new/$name") == 0
-        or die "unzip -P $secret -d $dir.new $dir.new/$name failed";
-      #unlink "$dir.new/$name";
-    }
+    _cch_fetch_and_unzip( $job, $urls, $secret, "$dir.new" );
  
     # extract csv files from the dbf files
 
-    foreach my $name ( qw( code detail geocode plus4 txmatrix zip ) ) {
-      my $error = $job->update_statustext( "0,Unpacking $name" );
-      die $error if $error;
-      warn "opening $dir.new/$name.dbf\n" if $DEBUG;
-      my $table = new XBase 'name' => "$dir.new/$name.dbf";
-      die "failed to access $dir.new/$name.dbf: ". XBase->errstr
-        unless defined($table);
-      $count = $table->last_record; # approximately;
-      $imported = 0;
-      open my $csvfh, ">$dir.new/$name.txt"
-        or die "failed to open $dir.new/$name.txt: $!\n";
-
-      my $csv = new Text::CSV_XS { 'always_quote' => 1 };
-      my @fields = $table->field_names;
-      my $cursor = $table->prepare_select;
-      my $format_date =
-        sub { my $date = shift;
-              $date =~ /^(\d{4})(\d{2})(\d{2})$/ && ($date = "$2/$3/$1");
-              $date;
-            };
-      while (my $row = $cursor->fetch_hashref) {
-        $csv->combine( map { ($table->field_type($_) eq 'D')
-                             ? &{$format_date}($row->{$_}) 
-                             : $row->{$_}
-                           }
-                       @fields
-        );
-        print $csvfh $csv->string, "\n";
-        $imported++;
-        if ( time - $min_sec > $last ) {
-          my $error = $job->update_statustext(
-            int(100 * $imported/$count).  ",Unpacking $name"
-          );
-          die $error if $error;
-          $last = time;
-        }
-      }
-      $table->close;
-      close $csvfh;
+    foreach my $name ( @namelist ) {
+      cch_extract_csv_from_dbf( $job, $dir, $name ); 
     }
 
     # generate the diff files
 
-    my @insert_list = ();
-    my @delete_list = ();
-    my @predelete_list = ();
-
-    my @list = (
-                 'geocode',  \&FS::tax_rate_location::batch_import, 
-                 'code',     \&FS::tax_class::batch_import,
-                 'plus4',    \&FS::cust_tax_location::batch_import,
-                 'zip',      \&FS::cust_tax_location::batch_import,
-                 'txmatrix', \&FS::part_pkg_taxrate::batch_import,
-                 'detail',   \&FS::tax_rate::batch_import,
-               );
-
-    while( scalar(@list) ) {
-      my ( $name, $method ) = ( shift @list, shift @list );
-      my %oldlines = ();
-
+    my @list = ();
+    foreach my $name ( @namelist ) {
       my $error = $job->update_statustext( "0,Comparing to previous $name" );
       die $error if $error;
-
       warn "processing $dir.new/$name.txt\n" if $DEBUG;
+      my $olddir = $update ? "$dir.1" : "";
+      my $difffile = _perform_cch_diff( $name, "$dir.new", $olddir );
+      push @list, "$name:$difffile";
+    }
 
-      if ($upgrade) {
-        open my $oldcsvfh, "$dir.1/$name.txt"
-          or die "failed to open $dir.1/$name.txt: $!\n";
-
-        while(<$oldcsvfh>) {
-          chomp;
-          $oldlines{$_} = 1;
-        }
-        close $oldcsvfh;
-      }
-
-      open my $newcsvfh, "$dir.new/$name.txt"
-        or die "failed to open $dir.new/$name.txt: $!\n";
+    # perform the import
+    local $keep_cch_files = 1;
+    $param->{uploaded_files} = join( ',', @list );
+    $param->{format} .= '-update' if $update;
+    $error ||=
+      _perform_batch_import( $job, encode_base64( nfreeze( $param ) ) );
     
-      my $ifh = new File::Temp( TEMPLATE => "$name.insert.XXXXXXXX",
-                                DIR      => "$dir.new",
-                                UNLINK   => 0,     #meh
-                              ) or die "can't open temp file: $!\n";
-
-      my $dfh = new File::Temp( TEMPLATE => "$name.delete.XXXXXXXX",
-                                DIR      => "$dir.new",
-                                UNLINK   => 0,     #meh
-                              ) or die "can't open temp file: $!\n";
-
-      while(<$newcsvfh>) {
-        chomp;
-        if (exists($oldlines{$_})) {
-          $oldlines{$_} = 0;
-        } else {
-          print $ifh $_, ',"I"', "\n";
-        }
-      }
-      close $newcsvfh;
-
-      if ($name eq 'detail') {
-        for (keys %oldlines) {  # one file for rate details
-          print $ifh $_, ',"D"', "\n" if $oldlines{$_};
-        }
-      } else {
-        for (keys %oldlines) {
-          print $dfh $_, ',"D"', "\n" if $oldlines{$_};
-        }
-      }
-      %oldlines = ();
-
-      push @insert_list, $name, $ifh->filename, $method;
-      if ( $name eq 'geocode' ) {
-        unshift @predelete_list, $name, $dfh->filename, $method
-          unless $name eq 'detail';
-      } else {
-        unshift @delete_list, $name, $dfh->filename, $method
-          unless $name eq 'detail';
-      }
-
-      close $dfh;
-      close $ifh;
-    }
-
-    while( scalar(@predelete_list) ) {
-      my ($name, $file, $method) =
-        (shift @predelete_list, shift @predelete_list, shift @predelete_list);
-
-      my $fmt = "$format-update";
-      $fmt = $fmt. ( $name eq 'zip' ? '-zip' : '' );
-      open my $fh, "< $file" or $error ||= "Can't open $name file $file: $!";
-      $error ||=
-        &{$method}({ 'filehandle' => $fh, 'format' => $fmt }, $job);
-      close $fh;
-      #unlink $file or warn "Can't delete $file: $!";
-    }
-
-    while( scalar(@insert_list) ) {
-      my ($name, $file, $method) =
-        (shift @insert_list, shift @insert_list, shift @insert_list);
-
-      my $fmt = "$format-update";
-      $fmt = $fmt. ( $name eq 'zip' ? '-zip' : '' );
-      open my $fh, "< $file" or $error ||= "Can't open $name file $file: $!";
-      $error ||=
-        &{$method}({ 'filehandle' => $fh, 'format' => $fmt }, $job);
-      close $fh;
-      #unlink $file or warn "Can't delete $file: $!";
-    }
-    
-    while( scalar(@delete_list) ) {
-      my ($name, $file, $method) =
-        (shift @delete_list, shift @delete_list, shift @delete_list);
-
-      my $fmt = "$format-update";
-      $fmt = $fmt. ( $name eq 'zip' ? '-zip' : '' );
-      open my $fh, "< $file" or $error ||= "Can't open $name file $file: $!";
-      $error ||=
-        &{$method}({ 'filehandle' => $fh, 'format' => $fmt }, $job);
-      close $fh;
-      #unlink $file or warn "Can't delete $file: $!";
-    }
-    
-    if ($error) {
-      $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
-      die $error;
-    }else{
-      $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-    }
-
     rename "$dir.new", "$dir"
       or die "cch tax update processed, but can't rename $dir.new: $!\n";
 
