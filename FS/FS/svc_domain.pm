@@ -89,6 +89,8 @@ FS::svc_Common.  The following fields are currently supported:
 
 =item expiration_date - UNIX timestamp
 
+=item max_accounts
+
 =back
 
 =head1 METHODS
@@ -109,6 +111,9 @@ sub table_info {
     'cancel_weight'  => 60,
     'fields' => {
       'domain' => 'Domain',
+      'max_accounts' => { label => 'Maximum number of accounts',
+                          'disable_inventory' => 1,
+                        },
     },
   };
 }
@@ -290,7 +295,8 @@ sub replace {
               : $new->replace_old;
 
   return "Can't change domain - reorder."
-    if $old->getfield('domain') ne $new->getfield('domain'); 
+    if $old->getfield('domain') ne $new->getfield('domain')
+    && ! $conf->exists('svc_domain-edit_domain'); 
 
   # Better to do it here than to force the caller to remember that svc_domain is weird.
   $new->setfield(action => 'I');
@@ -335,6 +341,7 @@ sub check {
 
   my $error = $self->ut_numbern('svcnum')
               || $self->ut_numbern('catchall')
+              || $self->ut_numbern('max_accounts')
   ;
   return $error if $error;
 
@@ -429,6 +436,7 @@ sub domain_record {
     'PTR'   => sub { $_[0]->reczone <=> $_[1]->reczone },
   );
 
+  map { $_ } #return $self->num_domain_record( PARAMS ) unless wantarray;
   sort {    $order{$a->rectype} <=> $order{$b->rectype}
          or &{ $sort{$a->rectype} || sub { 0; } }($a, $b)
        }

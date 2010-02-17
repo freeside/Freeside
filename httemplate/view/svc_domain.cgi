@@ -1,19 +1,48 @@
-<% include("/elements/header.html",'Domain View', menubar(
-  ( ( $pkgnum || $custnum )
-    ? ( "View this customer (#$display_custnum)" => "${p}view/cust_main.cgi?$custnum",
-      )
-    : ( "Delete this (unaudited) domain" =>
-          "javascript:areyousure('${p}misc/cancel-unaudited.cgi?$svcnum', 'Delete $domain and all records?' )" )
-  )
-)) %>
+% if ( $custnum ) {
+
+%#  <% include("/elements/header.html","View $svcdomain") %>
+  <% include("/elements/header.html","View domain") %>
+  <% include( '/elements/small_custview.html', $custnum, '', 1,
+     "${p}view/cust_main.cgi") %>
+  <BR>
+
+% } else {
+
+  <% include("/elements/header.html",'View domain', menubar(
+       "Cancel this (unaudited) domain" =>
+         "javascript:areyousure('${p}misc/cancel-unaudited.cgi?$svcnum', 'Delete $domain and all records?')",
+     ))
+  %>
+
+% }
 
 <% include('/elements/error.html') %>
 
-Service #<% $svcnum %>
-<BR>Service: <B><% $part_svc->svc %></B>
-<BR>Domain name: <B><% $domain %></B>
+Service #<B><% $svcnum %></B>
+% #if ( $conf->exists('svc_domain-edit_domain') ) {
+  | <A HREF="<%$p%>edit/svc_domain.cgi?<%$svcnum%>">Edit this domain</A>
+% #}
+
+<% &ntable("#cccccc") %><TR><TD><% &ntable("#cccccc",2) %>
+
+<TR>
+  <TD ALIGN="right">Service</TD>
+  <TD BGCOLOR="#ffffff"><% $part_svc->svc %></TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right">Domain</TD>
+  <TD BGCOLOR="#ffffff">
+    <B><% $domain %></B>
+    <A HREF="<% ${p} %>misc/whois.cgi?custnum=<%$custnum%>;svcnum=<%$svcnum%>;domain=<%$domain%>">(view whois information)</A>
+  </TD>
+</TR>
+
 % if ($export) {
-<BR>Status: <B><% $status %></B>
+  <TR>
+    <TD ALIGN="right">Registration status</TD>
+    <TD BGCOLOR="#ffffff"><B><% $status %></B>
+
 %   if ( $FS::CurrentUser::CurrentUser->access_right('Manage domain registration') ) {
 %     if ( defined($ops{'register'}) ) {
     <A HREF="<% ${p} %>edit/process/domreg.cgi?op=register&svcnum=<% $svcnum %>">Register at <% $registrar->{'name'} %></A>&nbsp;
@@ -28,17 +57,30 @@ Service #<% $svcnum %>
     <A HREF="<% ${p} %>edit/process/domreg.cgi?op=revoke&svcnum=<% $svcnum %>">Revoke</A>
 %     }
 %   }
+
+    </TD>
+  </TR>
 % }
 
+% if ( $svc_domain->max_accounts ) {
+  <TR>
+    <TD ALIGN="right">Maximum number of Accounts</TD>
+    <TD BGCOLOR="#ffffff"><% $svc_domain->max_accounts %></TD>
+  </TR>
+% }
+
+<TR>
+  <TD ALIGN="right">Catch all email</TD>
+  <TD BGCOLOR="#ffffff"><% $email ? "<B>$email</B>" : '<I>(none)</I>' %>
 % if ( $FS::CurrentUser::CurrentUser->access_right('Edit domain catchall') ) {
-    <BR>Catch all email <A HREF="<% ${p} %>misc/catchall.cgi?<% $svcnum %>">(change)</A>:
-% } else {
-    <BR>Catch all email:
+     <A HREF="<% ${p} %>misc/catchall.cgi?<% $svcnum %>">(change)</A>
 % }
+  </TD>
+</TR>
 
-<% $email ? "<B>$email</B>" : "<I>(none)<I>" %>
-<BR><BR><A HREF="<% ${p} %>misc/whois.cgi?custnum=<%$custnum%>;svcnum=<%$svcnum%>;domain=<%$domain%>">View whois information.</A>
-<BR><BR>
+</TABLE></TD></TR></TABLE>
+<BR>
+
 <SCRIPT>
   function areyousure(href, message) {
     if ( confirm(message) == true )
@@ -49,6 +91,7 @@ Service #<% $svcnum %>
   }
 </SCRIPT>
 
+DNS records
 % my @records; if ( @records = $svc_domain->domain_record ) { 
 
   <% include('/elements/table-grid.html') %>
@@ -96,7 +139,6 @@ Service #<% $svcnum %>
 % } 
 
 % if ( $FS::CurrentUser::CurrentUser->access_right('Edit domain nameservice') ) {
-    <BR>
     <FORM METHOD="POST" ACTION="<%$p%>edit/process/domain_record.cgi">
       <INPUT TYPE="hidden" NAME="svcnum" VALUE="<%$svcnum%>">
       <INPUT TYPE="text" NAME="reczone"> 
@@ -110,16 +152,12 @@ Service #<% $svcnum %>
       <INPUT TYPE="submit" VALUE="Add record">
     </FORM>
 
-    <BR><BR>
-    or
-    <BR><BR>
-
     <FORM NAME="SlaveForm" METHOD="POST" ACTION="<%$p%>edit/process/domain_record.cgi">
       <INPUT TYPE="hidden" NAME="svcnum" VALUE="<%$svcnum%>">
 %     if ( @records ) { 
          Delete all records and 
 %     } 
-      Slave from nameserver IP 
+      Or slave from nameserver IP 
       <INPUT TYPE="hidden" NAME="svcnum" VALUE="<%$svcnum%>">
       <INPUT TYPE="hidden" NAME="reczone" VALUE="@"> 
       <INPUT TYPE="hidden" NAME="recaf" VALUE="IN">
@@ -129,8 +167,30 @@ Service #<% $svcnum %>
     </FORM>
 
 % }
+<BR>
 
-<BR><BR>
+% my ( $settings, $defaults ) = $svc_domain->export_getsettings;
+% if ( keys %$settings ) {
+
+%# XXX a way to label this "Communigate pro settings".. just a config maybe
+  External settings
+  <% ntable('#cccccc',2) %>
+
+%   foreach my $key ( keys %$settings ) {
+      <TR>
+        <TD ALIGN="right"><% $key |h %></TD>
+        <TD BGCOLOR="<% $defaults->{$key} ? '#eeeeee' : '#ffffff' %>">
+          <% $defaults->{$key} ? '<I>' : '<B>' %>
+          <% $settings->{$key} |h %>
+          <% $defaults->{$key} ? '</I>' : '</B>' %>
+        </TD>
+      </TR>
+%   }
+
+  </TABLE>
+  <BR>
+
+% }
 
 <% joblisting({'svcnum'=>$svcnum}, 1) %>
 
@@ -139,6 +199,8 @@ Service #<% $svcnum %>
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('View customer services');
+
+my $conf = new FS::Conf;
 
 my($query) = $cgi->keywords;
 $query =~ /^(\d+)$/;

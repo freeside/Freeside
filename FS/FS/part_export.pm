@@ -376,6 +376,15 @@ Adds a list of web elements to ARRAYREF specific to this export and SVC_OBJECT.
 The elements are displayed in the UI to lead the the operator to external
 configuration, monitoring, and similar tools.
 
+=item export_getsettings SVC_OBJECT SETTINGS_HASHREF DEFAUTS_HASHREF
+
+Adds a hashref of settings to SETTINGSREF specific to this export and
+SVC_OBJECT.  The elements can be displayed in the UI on the service view.
+
+DEFAULTSREF is a hashref with the same keys where true values indicate the
+setting is a default (and thus can be displayed in the UI with less emphasis,
+or hidden by default).
+
 =cut
 
 =back

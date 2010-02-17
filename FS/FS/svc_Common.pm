@@ -854,6 +854,25 @@ sub export_links {
   $return;
 }
 
+=item export_getsettings
+
+Runs export_getsettings callbacks and returns the two hashrefs.
+
+=cut
+
+sub export_getsettings {
+  my $self = shift;
+  my %settings = ();
+  my %defaults = ();
+  my $error = $self->export('getsettings', \%settings, \%defaults);
+  if ( $error ) {
+    #XXX bubble this up better
+    warn "error running export_getsetings: $error";
+    return ( {}, {} );
+  }
+  ( \%settings, \%defaults );
+}
+
 =item export HOOK [ EXPORT_ARGS ]
 
 Runs the provided export hook (i.e. "suspend", "unsuspend") for this service.

@@ -24,10 +24,10 @@ my $new = new FS::svc_domain ( {
 
 my $error = '';
 if ($cgi->param('svcnum')) {
-  $error="Can't modify a domain!";
+  $error  = $new->replace();
 } else {
-  $error=$new->insert;
-  $svcnum=$new->svcnum;
+  $error  = $new->insert;
+  $svcnum = $new->svcnum;
 }
 
 </%init>

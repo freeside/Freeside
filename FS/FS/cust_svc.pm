@@ -251,6 +251,18 @@ sub replace {
     }
   }
 
+#  #trigger a re-export on pkgnum changes?
+#  # (of prepaid packages), for Expiration RADIUS attribute
+#  if ( $new->pkgnum != $old->pkgnum && $new->cust_pkg->part_pkg->is_prepaid ) {
+#    my $svc_x = $new->svc_x;
+#    local($FS::Record::nowarn_identical) = 1;
+#    my $error = $svc_x->export('replace');
+#    if ( $error ) {
+#      $dbh->rollback if $oldAutoCommit;
+#      return $error if $error;
+#    }
+#  }
+
   #my $error = $new->SUPER::replace($old, @_);
   my $error = $new->SUPER::replace($old);
   if ( $error ) {
@@ -411,7 +423,7 @@ sub _svc_label {
 
 =item export_links
 
-Returns a list of html elements associated with this services exports.
+Returns a listref of html elements associated with this service's exports.
 
 =cut
 
@@ -422,6 +434,21 @@ sub export_links {
 
   $svc_x->export_links;
 }
+
+=item export_getsettings
+
+Returns two hashrefs of settings associated with this service's exports.
+
+=cut
+
+sub export_getsettings {
+  my $self = shift;
+  my $svc_x = $self->svc_x
+    or return "can't find ". $self->part_svc->svcdb. '.svcnum '. $self->svcnum;
+
+  $svc_x->export_getsettings;
+}
+
 
 =item svc_x
 

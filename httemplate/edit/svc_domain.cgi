@@ -8,10 +8,18 @@
 <INPUT TYPE="hidden" NAME="svcpart" VALUE="<% $svcpart %>">
 
 <% ntable("#cccccc",2) %>
+
 <TR>
-<P>Domain <INPUT TYPE="text" NAME="domain" VALUE="<% $domain %>" SIZE=28 MAXLENGTH=63>
-<BR>
+  <TD ALIGN="right">Domain</TD>
+  <TD>
+%   if ( !$svcnum || $conf->exists('svc_domain-edit_domain') ) {
+      <INPUT TYPE="text" NAME="domain" VALUE="<% $domain %>" SIZE=28 MAXLENGTH=63>
+%   } else {
+      <B><% $domain %></B>
+%   }
+
 % if ($export) {
+<BR>
 Available top-level domains: <% $export->option('tlds') %>
 </TR>
 
@@ -27,11 +35,25 @@ Available top-level domains: <% $export->option('tlds') %>
 </TR>
 
 % }
-
-<TR>
-<P><INPUT TYPE="submit" VALUE="Submit">
+  </TD>
 </TR>
+
+% if ( $part_svc->part_svc_column('max_accounts')->columnflag =~ /^[FA]$/ ) {
+    <INPUT TYPE="hidden" NAME="max_accounts" VALUE="<% $svc_domain->max_accounts %>">
+% } else {
+    <TR>
+      <TD ALIGN="right">Maximum number of accounts</TD>
+      <TD>
+        <INPUT TYPE="text" NAME="max_accounts" SIZE=5 MAXLENGTH=6 VALUE="<% $svc_domain->max_accounts %>">
+      </TD>
+    </TR>
+% }
+
 </TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="Submit">
+
 </FORM>
 
 <% include('/elements/footer.html') %>
@@ -40,6 +62,8 @@ Available top-level domains: <% $export->option('tlds') %>
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Provision customer service'); #something else more specific?
+
+my $conf = new FS::Conf;
 
 my($svcnum, $pkgnum, $svcpart, $kludge_action, $part_svc,
    $svc_domain);
