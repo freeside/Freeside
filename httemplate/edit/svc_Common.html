@@ -1,6 +1,33 @@
 <% include('elements/svc_Common.html',
              'table'        => $table,
 	     'post_url'     => popurl(1). "process/svc_Common.html",
+             %opt,
 	  )
 %>
-%# i don't think this is actuallly used by anything??
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Provision customer service'); #something else more specific?
+
+# false laziness w/view/svc_Common.html
+
+$cgi->param('svcdb') =~ /^(svc_\w+)$/ or die "unparsable svcdb";
+my $table = $1;
+require "FS/$table.pm";
+
+my %opt;
+if ( UNIVERSAL::can("FS::$table", 'table_info') ) {
+  $opt{'name'}   = "FS::$table"->table_info->{'name'};
+
+  my $fields = "FS::$table"->table_info->{'fields'};
+  my %labels = map { $_ => ( ref($fields->{$_})
+                               ? $fields->{$_}{'label'}
+			       : $fields->{$_}
+			   );
+                   }
+               keys %$fields;
+  $opt{'labels'} = \%labels;
+
+}
+
+</%init>
