@@ -34,9 +34,8 @@ elsif($opt{'a'}) {
     or die "Agent has no payment gateway for method '$method'.";
 }
 
-if(defined($opt{'X'})) {
-  die "Cancellation reason not found: '".$opt{'X'}."'" 
-    if(! qsearchs('reason', { reasonnum => $opt{'X'} } ) );
+if(defined($opt{'X'}) and !qsearchs('reason', { reasonnum => opt{'X'} })) {
+  die "Cancellation reason not found: '".$opt{'X'}."'";
 }
 
 my ($processor, $login, $password, $action, @bop_options) =
@@ -133,7 +132,21 @@ if($opt{'v'}) {
 }
 
 sub usage {
-    die "Usage:\n\n  freeside-void-payments [ -f file | [ -s start-date ] [ -e end-date ] ] [ -r 'reason' ] [ -g gatewaynum | -a agentnum ] [ -c ] [ -v ] [ -n ] [-X reasonnum ] user\n";
+    die "Usage:\n\n  freeside-void-payments [ options ] user
+    
+    options:
+      -a agentnum    use agentnum's gateway information
+      -g gatewaynum  use gatewaynum
+      -f file        read transaction numbers from file
+      -c             use ECHECK gateway instead of CARD
+      -r reason      specify void reason (as a string)
+      -v             be verbose
+      -s start-date
+      -e end-date    limit by payment return date
+      -X reasonnum   cancel customers whose payments are voided
+                     (specify cancellation reason number)
+
+";
 }
 
 __END__
@@ -146,9 +159,16 @@ freeside-void-payments - Automatically void a list of returned payments.
 
 =head1 SYNOPSIS
 
-  freeside-void-payments [ -f file | [ -s start-date ] [ -e end-date ] ] [ -r 'reason' ] [ -g gatewaynum | -a agentnum ] [ -c ] [ -v ] [ -n ] user
+  freeside-void-payments [ -f file | [ -s start-date ] [ -e end-date ] ] 
+                         [ -r 'reason' ] 
+                         [ -g gatewaynum | -a agentnum ] 
+                         [ -c ] [ -v ] 
+                         [ -X reasonnum ] 
+                         user
 
 =head1 DESCRIPTION
+
+=pod
 
 Voids payments that were returned by the payment processor.  Can be 
 run periodically from crontab or manually after receiving a list of 
@@ -162,12 +182,12 @@ generally how the processor will identify them later.
   -f: Read the list of authorization numbers from the specified file.  
       If they are not from the default payment gateway, -g or -a 
       must be given to identify the gateway.
-      
+
   If -f is not given, the script will attempt to contact the gateway 
   and download a list of returned transactions.  To support this, 
   the Business::OnlinePayment module for the processor must implement 
-  the I<get_returns()> method.  For an example, see 
-  L<Business::OnlinePayment::WesternACH>.
+  the get_returns() method.  For an example, see 
+  Business::OnlinePayment::WesternACH.
 
   -s, -e: Specify the starting and ending dates for the void list.  
       This has no effect if -f is given.  The end date defaults to 
@@ -175,7 +195,7 @@ generally how the processor will identify them later.
 
   -r: The reason for voiding the payments, to be stored in the database.
 
-  -g: The L<FS::payment_gateway> number for the gateway that handled 
+  -g: The FS::payment_gateway number for the gateway that handled 
       these payments.  If -f is not given, this determines which 
       gateway will be contacted.  This overrides -a.
 
@@ -187,12 +207,9 @@ generally how the processor will identify them later.
 
   -v: Be verbose.
   
-  -X: Automatically cancel all packages belonging to customers whose payments 
-      were returned.  Requires a cancellation reasonnum (from L<FS::reason>).
-
-A warning will be emitted for each transaction that can't be found.  
-This may happen if it's already been voided, or if the gateway 
-doesn't match.
+  -X: Automatically cancel all packages belonging to customers whose 
+      payments were returned.  Requires a cancellation reasonnum 
+      (from FS::reason).
 
 =head1 EXAMPLE
 
@@ -213,7 +230,7 @@ day at 8:30 every morning:
 
 =head1 BUGS
 
-Most payment gateways don't support it, making the script largely useless.
+Most payment gateways don't support it.
 
 =head1 SEE ALSO
 
