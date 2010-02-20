@@ -1837,7 +1837,7 @@ worry that config_items is freeside-specific and icky.
 
   {
     'key'         => 'svc_acct-notes',
-    'section'     => 'UI',
+    'section'     => 'deprecated',
     'description' => 'Extra HTML to be displayed on the Account View screen.',
     'type'        => 'textarea',
   },

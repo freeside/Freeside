@@ -2140,7 +2140,7 @@ sub ut_alpha {
   '';
 }
 
-=item ut_alpha COLUMN
+=item ut_alphan COLUMN
 
 Check/untaint alphanumeric strings (no spaces).  May be null.  If there is an
 error, returns the error, otherwise returns false.
@@ -2154,6 +2154,22 @@ sub ut_alphan {
   $self->setfield($field,$1);
   '';
 }
+
+=item ut_alphasn COLUMN
+
+Check/untaint alphanumeric strings, spaces allowed.  May be null.  If there is
+an error, returns the error, otherwise returns false.
+
+=cut
+
+sub ut_alphasn {
+  my($self,$field)=@_;
+  $self->getfield($field) =~ /^([\w ]*)$/ 
+    or return "Illegal (alphanumeric) $field: ". $self->getfield($field);
+  $self->setfield($field,$1);
+  '';
+}
+
 
 =item ut_alpha_lower COLUMN
 

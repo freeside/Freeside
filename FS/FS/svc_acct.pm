@@ -277,6 +277,24 @@ sub table_info {
                          disable_inventory => 1,
                          disable_select => 1,
                        },
+        'file_quota'=> { 
+                         label => 'File storage limit',
+                         type => 'text',
+                         disable_inventory => 1,
+                         disable_select => 1,
+                       },
+        'file_maxnum'=> { 
+                         label => 'Number of files limit',
+                         type => 'text',
+                         disable_inventory => 1,
+                         disable_select => 1,
+                       },
+        'file_maxsize'=> { 
+                         label => 'File size limit',
+                         type => 'text',
+                         disable_inventory => 1,
+                         disable_select => 1,
+                       },
         '_password' => 'Password',
         'gid'       => {
                          label    => 'GID',
@@ -1065,6 +1083,10 @@ sub check {
               || $self->ut_enum( '_password_encoding',
                                  [ '', qw( plain crypt ldap ) ]
                                )
+              || $self->ut_enum( 'password_selfchange', [ '', 'Y' ] )
+              || $self->ut_enum( 'password_recover',    [ '', 'Y' ] )
+              || $self->ut_alphasn( 'cgp_accessmodes' )
+              || $self->ut_alphan( 'cgp_type' )
   ;
   return $error if $error;
 
@@ -1200,8 +1222,12 @@ sub check {
       or return "Illegal finger: ". $self->getfield('finger');
   $self->setfield('finger', $1);
 
-  $recref->{quota} =~ /^(\w*)$/ or return "Illegal quota";
-  $recref->{quota} = $1;
+  for (qw( quota file_quota file_maxsize )) {
+    $recref->{$_} =~ /^(\w*)$/ or return "Illegal $_";
+    $recref->{$_} = $1;
+  }
+  $recref->{file_maxnum} =~ /^\s*(\d*)\s*$/ or return "Illegal file_maxnum";
+  $recref->{file_maxnum} = $1;
 
   unless ( $part_svc->part_svc_column('slipip')->columnflag eq 'F' ) {
     if ( $recref->{slipip} eq '' ) {

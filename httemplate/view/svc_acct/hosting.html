@@ -1,0 +1,38 @@
+% if ( @svc_www || $opt{'showall'} ) {
+  Hosting
+  <% &ntable("#cccccc") %><TR><TD><% &ntable("#cccccc",2) %>
+%   foreach my $svc_www (@svc_www) {
+%     my($label, $value) = $svc_www->cust_svc->label;
+%     my $link = $p. 'view/svc_www.cgi?'. $svc_www->svcnum;
+      <TR>
+        <TD BGCOLOR="#ffffff">
+          <A HREF="<% $link %>"><% "$label: $value" %></A>
+        </TD>
+      </TR>
+%   }
+  </TABLE></TD></TR></TABLE>
+  <BR><BR>
+% }
+<%init>
+
+my %opt = @_;
+
+#false laziness w/view_svc_acct.cgi and a zillion other places
+my $addl_from = ' LEFT JOIN cust_svc  USING ( svcnum  ) '.
+                ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
+                ' LEFT JOIN cust_main USING ( custnum ) ';
+
+my @svc_www = qsearch({
+  'select'    => 'svc_www.*',
+  'table'     => 'svc_www',
+  'addl_from' => $addl_from,
+  'hashref'   => { 'usersvc' => $opt{'svcnum'} },
+  #XXX shit outta luck if you somehow got them linked across agents
+  # maybe we should show but not link to them?  kinda makes sense...
+  # (maybe a specific ACL for this situation???)
+  'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql(
+                            'null_right' => 'View/link unlinked services'
+                          ),
+});
+
+</%init>

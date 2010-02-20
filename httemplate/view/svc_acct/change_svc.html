@@ -1,0 +1,21 @@
+% if ( @part_svc || $opt{'showall'} ) {
+
+| <SELECT NAME="svcpart" onChange="enable_change()">
+    <OPTION VALUE="">Change service</OPTION>
+    <OPTION VALUE="">--------------</OPTION>
+% foreach my $opt_part_svc ( @part_svc ) { 
+
+      <OPTION VALUE="<% $opt_part_svc->svcpart %>"><% $opt_part_svc->svc %></OPTION>
+% } 
+
+  </SELECT>
+  <INPUT NAME="submit" TYPE="submit" VALUE="Change" disabled>
+
+% } 
+
+<%init>
+
+my %opt = @_;
+my @part_svc = @{ $opt{'part_svc'} };
+
+</%init>

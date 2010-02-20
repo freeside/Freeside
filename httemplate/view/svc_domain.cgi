@@ -169,28 +169,7 @@ DNS records
 % }
 <BR>
 
-% my ( $settings, $defaults ) = $svc_domain->export_getsettings;
-% if ( keys %$settings ) {
-
-%# XXX a way to label this "Communigate pro settings".. just a config maybe
-  External settings
-  <% ntable('#cccccc',2) %>
-
-%   foreach my $key ( keys %$settings ) {
-      <TR>
-        <TD ALIGN="right"><% $key |h %></TD>
-        <TD BGCOLOR="<% $defaults->{$key} ? '#eeeeee' : '#ffffff' %>">
-          <% $defaults->{$key} ? '<I>' : '<B>' %>
-          <% $settings->{$key} |h %>
-          <% $defaults->{$key} ? '</I>' : '</B>' %>
-        </TD>
-      </TR>
-%   }
-
-  </TABLE>
-  <BR>
-
-% }
+<% include('elements/svc_export_settings.html', $svc_domain) %>
 
 <% joblisting({'svcnum'=>$svcnum}, 1) %>
 

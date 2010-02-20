@@ -1,0 +1,23 @@
+% if ( @part_svc || $opt{'showall'} ) {
+    <SCRIPT TYPE="text/javascript">
+      function enable_change () {
+        if ( document.OneTrueForm.svcpart.selectedIndex > 1 ) {
+          document.OneTrueForm.submit.disabled = false;
+        } else {
+          document.OneTrueForm.submit.disabled = true;
+        }
+      }
+    </SCRIPT>
+
+    <FORM NAME="OneTrueForm" ACTION="<%$p%>edit/process/cust_svc.cgi">
+    <INPUT TYPE="hidden" NAME="svcnum" VALUE="<% $svcnum %>">
+    <INPUT TYPE="hidden" NAME="pkgnum" VALUE="<% $pkgnum %>">
+% }
+<%init>
+
+my %opt = @_;
+my @part_svc = @{ $opt{'part_svc'} };
+my $svcnum = $opt{'svcnum'};
+my $pkgnum = $opt{'pkgnum'};
+
+</%init>

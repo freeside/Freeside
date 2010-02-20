@@ -1633,6 +1633,14 @@ sub tables_hashref {
         'pbxsvc',    'int', 'NULL', '', '', '',
         'last_login',  @date_type, '', '', 
         'last_logout', @date_type, '', '', 
+        #communigate pro fields (quota = MaxAccountSize)
+        'file_quota',      'varchar', 'NULL', $char_d, '', '', #MaxWebSize
+        'file_maxnum',     'varchar', 'NULL', $char_d, '', '', #MaxWebFiles
+        'file_maxsize',    'varchar', 'NULL', $char_d, '', '', #MaxFileSize
+        'cgp_accessmodes', 'varchar', 'NULL',     255, '', '', #AccessModes
+        'password_selfchange','char', 'NULL',       1, '', '', 
+        'password_recover',   'char', 'NULL',       1, '', '', 
+        'cgp_type',        'varchar', 'NULL', $char_d, '', '', #AccountType
       ],
       'primary_key' => 'svcnum',
       #'unique' => [ [ 'username', 'domsvc' ] ],

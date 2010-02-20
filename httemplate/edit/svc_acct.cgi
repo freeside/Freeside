@@ -241,31 +241,77 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
     </TD>
   </TR>
 % } 
-% if ( $part_svc->part_svc_column('quota')->columnflag eq 'F' ) { 
 
 
-  <INPUT TYPE="hidden" NAME="quota" VALUE="<% $svc_acct->quota %>">
-% } else { 
-
+% if ( $communigate ) {
 
   <TR>
-    <TD ALIGN="right">Quota:</TD>
-    <TD><INPUT TYPE="text" NAME="quota" VALUE="<% $svc_acct->quota %>"></TD>
+    <TD ALIGN="right">Mailbox type</TD>
+    <TD>
+      <SELECT NAME="cgp_type">
+%       foreach my $option (qw( MultiMailbox TextMailbox MailDirMailbox )) {
+          <OPTION VALUE="<% $option %>"
+                  <% $option eq $svc_acct->cgp_type() ? 'SELECTED' : '' %>
+          ><% $option %>
+%       }
+      </SELECT>
+    </TD>
   </TR>
-% } 
+
+    <TR>
+  <TR>
+    <TD ALIGN="right">Mailbox type</TD>
+    <TD>XXX checkbox thingie!!
+    </TD>
+  </TR>
+   
+
+% } else {
+    <INPUT TYPE="hidden" NAME="cgp_type" VALUE="<% $svc_acct->cgp_type() %>">
+    <INPUT TYPE="hidden" NAME="cgp_accessmodes" VALUE="<% $svc_acct->cgp_accessmodes() %>">
+% }
+
+
+% if ( $part_svc->part_svc_column('quota')->columnflag eq 'F' ) { 
+  <INPUT TYPE="hidden" NAME="quota" VALUE="<% $svc_acct->quota %>">
+% } else {
+%   my $quota_label = $communigate ? 'Mail storage limit' : 'Quota';
+    <TR>
+      <TD ALIGN="right"><% $quota_label %></TD>
+      <TD><INPUT TYPE="text" NAME="quota" VALUE="<% $svc_acct->quota %>"></TD>
+    </TR>
+% }
+
+% tie my %cgp_label, 'Tie::IxHash',
+%   'file_quota'   => 'File storage limit',
+%   'file_maxnum'  => 'Number of files limit',
+%   'file_maxsize' => 'File size limit',
+% ;
+%
+% foreach my $key (keys %cgp_label) {
+%
+%   if ( !$communigate || $part_svc->part_svc_column($key)->columnflag eq 'F' ){
+      <INPUT TYPE="hidden" NAME="<%$key%>" VALUE="<% $svc_acct->$key() |h %>">
+%   } else {
+
+      <TR>
+        <TD ALIGN="right"><% $cgp_label{$key} %></TD>
+        <TD><INPUT TYPE="text" NAME="<% $key %>" VALUE="<% $svc_acct->$key() |h %>"></TD>
+      </TR>
+
+%   }
+% }
+
+
 % if ( $part_svc->part_svc_column('slipip')->columnflag =~ /^[FA]$/ ) { 
-
-
   <INPUT TYPE="hidden" NAME="slipip" VALUE="<% $svc_acct->slipip %>">
 % } else { 
-
-
   <TR>
     <TD ALIGN="right">IP</TD>
     <TD><INPUT TYPE="text" NAME="slipip" VALUE="<% $svc_acct->slipip %>"></TD>
   </TR>
 % } 
-%
+
 % my %label = ( seconds => 'Time',
 %               upbytes => 'Upload bytes',
 %               downbytes => 'Download bytes',
@@ -398,6 +444,9 @@ if ( $cgi->param('error') ) {
   @groups = $svc_acct->radius_groups;
 
 }
+
+my $communigate = scalar($part_svc->part_export('communigate_pro'));
+                # || scalar($part_svc->part_export('communigate_pro_singledomain'));
 
 my( $cust_pkg, $cust_main ) = ( '', '' );
 if ( $pkgnum ) {

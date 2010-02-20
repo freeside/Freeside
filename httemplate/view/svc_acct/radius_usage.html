@@ -1,0 +1,77 @@
+% if ( $part_svc->part_export_usage ) {
+%
+%  my $last_bill;
+%  my %plandata;
+%  if ( $cust_pkg ) {
+%    #false laziness w/httemplate/edit/part_pkg... this stuff doesn't really
+%    #belong in plan data
+%    %plandata = map { /^(\w+)=(.*)$/; ( $1 => $2 ); }
+%                    split("\n", $cust_pkg->part_pkg->plandata );
+%
+%    $last_bill = $cust_pkg->last_bill;
+%  } else {
+%    $last_bill = 0;
+%    %plandata = ();
+%  }
+%
+%  my $seconds = $svc_acct->seconds_since_sqlradacct( $last_bill, time );
+%  my $hour = int($seconds/3600);
+%  my $min = int( ($seconds%3600) / 60 );
+%  my $sec = $seconds%60;
+%
+%  my $input = $svc_acct->attribute_since_sqlradacct(
+%    $last_bill, time, 'AcctInputOctets'
+%  ) / 1048576;
+%  my $output = $svc_acct->attribute_since_sqlradacct(
+%    $last_bill, time, 'AcctOutputOctets'
+%  ) / 1048576;
+%
+%
+
+
+  RADIUS session information<BR>
+  <% ntable('#cccccc',2) %>
+  <TR><TD BGCOLOR="#ffffff">
+% if ( $seconds ) { 
+
+    Online <B><% $hour %></B>h <B><% $min %></B>m <B><% $sec %></B>s
+% } else { 
+
+    Has not logged on
+% } 
+% if ( $cust_pkg ) { 
+
+    since last bill (<% time2str('%a %b %o %Y', $last_bill) %>)
+% if ( length($plandata{recur_included_hours}) ) { 
+
+    - <% $plandata{recur_included_hours} %> total hours in plan
+% } 
+
+    <BR>
+% } else { 
+
+    (no billing cycle available for unaudited account)<BR>
+% } 
+
+
+  Upload: <B><% sprintf("%.3f", $input) %></B> megabytes<BR>
+  Download: <B><% sprintf("%.3f", $output) %></B> megabytes<BR>
+  Last Login: <B><% $svc_acct->last_login_text %></B><BR>
+% my $href = qq!<A HREF="${p}search/sqlradius.cgi?svcnum=!. $svc_acct->svcnum; 
+
+  View session detail:
+      <% $href %>;begin=<% $last_bill %>">this billing cycle</A>
+    | <% $href %>;begin=<% time-15552000 %>">past six months</A>
+    | <% $href %>">all sessions</A>
+
+  </TD></TR></TABLE><BR>
+% } 
+<%init>
+
+my %opt = @_;
+
+my $svc_acct = $opt{'svc_acct'};
+my $part_svc = $opt{'part_svc'};
+my $cust_pkg = $opt{'cust_pkg'};
+
+</%init>

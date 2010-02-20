@@ -1,0 +1,202 @@
+<% &ntable("#cccccc") %><TR><TD><% &ntable("#cccccc",2) %>
+
+<TR>
+  <TD ALIGN="right">Service</TD>
+  <TD BGCOLOR="#ffffff"><% $part_svc->svc %></TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right">Username</TD>
+  <TD BGCOLOR="#ffffff"><% $svc_acct->username %></TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right">Domain</TD>
+  <TD BGCOLOR="#ffffff"><% $domain %></TD>
+</TR>
+
+% if ( $svc_acct->pbxsvc ) {
+    <TR>
+      <TD ALIGN="right">PBX</TD>
+      <TD BGCOLOR="#ffffff"><% $svc_acct->pbx_title %></TD>
+    </TR>
+%}
+
+<TR>
+  <TD ALIGN="right">Password</TD>
+  <TD BGCOLOR="#ffffff">
+% my $password = $svc_acct->get_cleartext_password; 
+% if ( $password =~ /^\*\w+\* (.*)$/ ) {
+%         $password = $1;
+      <I>(login disabled)</I>
+% } 
+% if ( !$password and 
+%        $svc_acct->_password_encryption ne 'plain' and
+%        $svc_acct->_password ) {
+      <I>(<% uc($svc_acct->_password_encryption) %> encrypted)</I>
+% } elsif ( $conf->exists('showpasswords') ) { 
+      <PRE><% encode_entities($password) %></PRE>
+% } else { 
+      <I>(hidden)</I>
+% } 
+  </TD>
+</TR>
+% $password = ''; 
+
+% if ( $conf->exists('security_phrase') ) {
+%     my $sec_phrase = $svc_acct->sec_phrase;
+%
+  <TR>
+    <TD ALIGN="right">Security phrase</TD>
+    <TD BGCOLOR="#ffffff"><% $svc_acct->sec_phrase %></TD>
+  </TR>
+% } 
+
+% if ( $svc_acct->popnum ) {
+%    my $svc_acct_pop = qsearchs('svc_acct_pop',{'popnum'=>$svc_acct->popnum});
+  <TR>
+    <TD ALIGN="right">Access number</TD>
+    <TD BGCOLOR="#ffffff"><% $svc_acct_pop->text %></TD>
+  </TR>
+% } 
+
+% if ($svc_acct->uid ne '') { 
+  <TR>
+    <TD ALIGN="right">UID</TD>
+    <TD BGCOLOR="#ffffff"><% $svc_acct->uid %></TD>
+  </TR>
+% } 
+
+% if ($svc_acct->gid ne '') { 
+  <TR>
+    <TD ALIGN="right">GID</TD>
+    <TD BGCOLOR="#ffffff"><% $svc_acct->gid %></TD>
+  </TR>
+% } 
+
+% if ($svc_acct->finger ne '') { 
+  <TR>
+    <TD ALIGN="right">Real Name</TD>
+    <TD BGCOLOR="#ffffff"><% $svc_acct->finger %></TD>
+  </TR>
+% } 
+
+% if ($svc_acct->dir ne '') { 
+  <TR>
+    <TD ALIGN="right">Home directory</TD>
+    <TD BGCOLOR="#ffffff"><% $svc_acct->dir %></TD>
+  </TR>
+% } 
+
+% if ($svc_acct->shell ne '') { 
+  <TR>
+    <TD ALIGN="right">Shell</TD>
+    <TD BGCOLOR="#ffffff"><% $svc_acct->shell %></TD>
+  </TR>
+% } 
+
+% if ($svc_acct->quota ne '' && ! $opt{'communigate'} ) { 
+  <TR>
+    <TD ALIGN="right">Quota</TD>
+    <TD BGCOLOR="#ffffff"><% $svc_acct->quota %></TD>
+  </TR>
+% } elsif ( $opt{'communigate'} ) {
+
+  <TR>
+    <TD ALIGN="right">Mailbox type</TD>
+    <TD BGCOLOR="#ffffff"><% $svc_acct->cgp_type %></TD>
+  </TR>
+
+  <TR>
+    <TD ALIGN="right">Enabled services</TD>
+    <TD BGCOLOR="#ffffff"><% $svc_acct->cgp_accessmodes %></TD>
+  </TR>
+
+  <TR>
+    <TD ALIGN="right">Mail storage limit</TD>
+    <TD BGCOLOR="#ffffff"><% $svc_acct->quota %></TD>
+  </TR>
+
+  <TR>
+    <TD ALIGN="right">File storage limit</TD>
+    <TD BGCOLOR="#ffffff"><% $svc_acct->file_quota %></TD>
+  </TR>
+
+  <TR>
+    <TD ALIGN="right">Number of files limit</TD>
+    <TD BGCOLOR="#ffffff"><% $svc_acct->file_maxnum %></TD>
+  </TR>
+
+  <TR>
+    <TD ALIGN="right">File size limit</TD>
+    <TD BGCOLOR="#ffffff"><% $svc_acct->file_maxsize %></TD>
+  </TR>
+
+% }
+
+% if ($svc_acct->slipip) { 
+  <TR>
+    <TD ALIGN="right">IP address</TD>
+    <TD BGCOLOR="#ffffff">
+      <% ( $svc_acct->slipip eq "0.0.0.0" || $svc_acct->slipip eq '0e0' )
+            ? "<I>(Dynamic)</I>"
+            : $svc_acct->slipip
+      %>
+    </TD>
+  </TR>
+% } 
+
+<% include('usage.html',
+             'svc_acct' => $svc_acct,
+          )
+%>
+
+% foreach my $attribute ( grep /^radius_/, $svc_acct->fields ) {
+%  $attribute =~ /^radius_(.*)$/;
+%  my $pattribute = $FS::raddb::attrib{$1};
+  <TR>
+    <TD ALIGN="right">Radius (reply) <% $pattribute %></TD>
+    <TD BGCOLOR="#ffffff"><% $svc_acct->getfield($attribute) %></TD>
+  </TR>
+
+% } 
+% foreach my $attribute ( grep /^rc_/, $svc_acct->fields ) {
+%  $attribute =~ /^rc_(.*)$/;
+%  my $pattribute = $FS::raddb::attrib{$1};
+  <TR>
+    <TD ALIGN="right">Radius (check) <% $pattribute %></TD>
+    <TD BGCOLOR="#ffffff"><% $svc_acct->getfield($attribute) %></TD>
+  </TR>
+% } 
+
+<TR>
+  <TD ALIGN="right">RADIUS groups</TD>
+  <TD BGCOLOR="#ffffff"><% join('<BR>', $svc_acct->radius_groups) %></TD>
+</TR>
+
+%# Can this be abstracted further?  Maybe a library function like
+%# widget('HTML', 'view', $svc_acct) ?  It would definitely make UI 
+%# style management easier.
+% foreach (sort { $a cmp $b } $svc_acct->virtual_fields) { 
+  <% $svc_acct->pvf($_)->widget('HTML', 'view', $svc_acct->getfield($_)) %>
+% } 
+
+</TABLE></TD></TR></TABLE>
+<%init>
+
+my %opt = @_;
+
+my $conf = new FS::Conf;
+
+my $svc_acct = $opt{'svc_acct'};
+my $part_svc = $opt{'part_svc'};
+
+die 'Empty domsvc for svc_acct.svcnum '. $svc_acct->svcnum
+  unless $svc_acct->domsvc;
+my $svc_domain = qsearchs('svc_domain', { 'svcnum' => $svc_acct->domsvc } );
+die 'Unknown domain (domsvc '. $svc_acct->domsvc.
+    ' for svc_acct.svcnum '. $svc_acct->svcnum. ')'
+  unless $svc_domain;
+my $domain = $svc_domain->domain;
+
+</%init>
