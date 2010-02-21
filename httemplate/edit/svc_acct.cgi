@@ -328,6 +328,33 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
 %   }
 % }
 
+% if ( $communigate ) {
+
+  <TR>
+    <TD ALIGN="right">Message delete method</TD>
+    <TD>
+      <SELECT NAME="cgp_deletemode">
+%       for ( 'Move To Trash', 'Immediately', 'Mark' ) {
+          <OPTION VALUE="<% $_ %>"
+                  <% $_ eq $svc_acct->cgp_deletemode ? 'SELECTED' : '' %>
+          ><% $_ %>
+%       }
+      </SELECT>
+    </TD>
+  </TR>
+
+  <TR>
+    <TD ALIGN="right">On logout remove trash</TD>
+    <TD><INPUT TYPE="text" NAME="cgp_emptytrash" VALUE="<% $svc_acct->cgp_emptytrash %>"></TD>
+  </TR>
+
+% } else {
+
+  <INPUT TYPE="hidden" NAME="cgp_deletemode" VALUE="<% $svc_acct->cgp_deletemode %>">
+  <INPUT TYPE="hidden" NAME="cgp_emptytrash" VALUE="<% $svc_acct->cgp_emptytrash %>">
+
+% }
+
 
 % if ( $part_svc->part_svc_column('slipip')->columnflag =~ /^[FA]$/ ) { 
   <INPUT TYPE="hidden" NAME="slipip" VALUE="<% $svc_acct->slipip %>">

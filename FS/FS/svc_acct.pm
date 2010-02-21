@@ -274,7 +274,7 @@ sub table_info {
         'cgp_type'=> { 
                        label => 'Communigate account type',
                        type => 'select',
-                       select_list => [ ],
+                       select_list => [qw( MultiMailbox TextMailbox MailDirMailbox AGrade BGrade CGrade )],
                        disable_inventory => 1,
                        disable_select    => 1,
                      },
@@ -284,6 +284,19 @@ sub table_info {
                                disable_inventory => 1,
                                disable_select    => 1,
                              },
+        'cgp_deletemode' => { 
+                              label => 'Communigate message delete method',
+                              type  => 'select',
+                              select_list => [ 'Move To Trash', 'Immediately', 'Mark' ],
+                              disable_inventory => 1,
+                              disable_select    => 1,
+                            },
+        'cgp_emptytrash' => { 
+                              label => 'Communigate on logout remove trash',
+                              type  => 'text',
+                              disable_inventory => 1,
+                              disable_select    => 1,
+                            },
         'quota'     => { 
                          label => 'Quota', #Mail storage limit
                          type => 'text',
@@ -1101,6 +1114,8 @@ sub check {
               || $self->ut_textn( 'cgp_accessmodes' )
               || $self->ut_alphan( 'cgp_type' )
               || $self->ut_textn( 'cgp_aliases' ) #well
+              || $self->ut_alphasn( 'cgp_deletemode' )
+              || $self->ut_alphan( 'cgp_emptytrash' )
   ;
   return $error if $error;
 

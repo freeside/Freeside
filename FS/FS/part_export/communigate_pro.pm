@@ -78,10 +78,6 @@ sub _export_insert_svc_acct {
     map { $quotas{$_} => $svc_acct->$_() }
         grep $svc_acct->$_(), keys %quotas
   );
-
-  #XXX preferences phase 1: message delete method, on logout remove trash
-  #phase 2: language, time zone, layout, pronto style, send read receipts
-
   #phase 2: pwdallowed, passwordrecovery, allowed mail rules,
   # RPOP modifications, accepts mail to all, add trailer to sent mail
   #phase 3: archive messages, mailing lists
@@ -97,16 +93,36 @@ sub _export_insert_svc_acct {
     if $self->option('externalFlag');
 
   #let's do the create realtime too, for much the same reasons, and to avoid
-  #pain of trying to queue w/dep the aliases
+  #pain of trying to queue w/dep the prefs & aliases
   #my $r=
   eval { $self->communigate_pro_runcommand( @options ) };
   return $@ if $@;
 
-  my $err= $self->communigate_pro_queue( $svc_acct->svcnum, 'SetAccountAliases',
-    $self->export_username($svc_acct),
-    [ split(/\s*,\s*/, $svc_acct->cgp_aliases) ],
-  );
-  warn "WARNING: error queueing SetAccountAliases job: $err" if $err;
+  #preferences
+  my %prefs = ();
+  $prefs{'DeleteMode'} = $svc_acct->cgp_deletemode if $svc_acct->cgp_deletemode;
+  $prefs{'EmptyTrash'} = $svc_acct->cgp_emptytrash if $svc_acct->cgp_emptytrash;
+  #phase 2: language, time zone, layout, pronto style, send read receipts
+  if ( keys %prefs ) {
+    my $pref_err = $self->communigate_pro_queue( $svc_acct->svcnum,
+      'UpdateAccountPrefs',
+      $self->export_username($svc_acct),
+      %prefs,
+    );
+   warn "WARNING: error queueing UpdateAccountPrefs job: $pref_err"
+    if $pref_err;
+  }
+
+  #aliases
+  if ( $svc_acct->cgp_aliases ) {
+    my $alias_err = $self->communigate_pro_queue( $svc_acct->svcnum,
+      'SetAccountAliases',
+      $self->export_username($svc_acct),
+      [ split(/\s*,\s*/, $svc_acct->cgp_aliases) ],
+    );
+    warn "WARNING: error queueing SetAccountAliases job: $alias_err"
+      if $alias_err;
+  }
 
   '';
 
@@ -187,6 +203,23 @@ sub _export_replace_svc_acct {
     return $error if $error;
   }
 
+  #preferences
+  my %prefs = ();
+  $prefs{'DeleteMode'} = $new->cgp_deletemode
+    if $old->cgp_deletemode ne $new->cgp_deletemode;
+  $prefs{'EmptyTrash'} = $new->cgp_emptytrash
+    if $old->cgp_emptytrash ne $new->cgp_emptytrash;
+  #phase 2: language, time zone, layout, pronto style, send read receipts
+  if ( keys %prefs ) {
+    my $pref_err = $self->communigate_pro_queue( $new->svcnum,
+      'UpdateAccountPrefs',
+      $self->export_username($new),
+      %prefs,
+    );
+   warn "WARNING: error queueing UpdateAccountPrefs job: $pref_err"
+    if $pref_err;
+  }
+
   if ( $old->cgp_aliases ne $new->cgp_aliases ) {
     my $error = $self->communigate_pro_queue(
       $new->svcnum,
@@ -196,9 +229,6 @@ sub _export_replace_svc_acct {
     );
     return $error if $error;
   }
-
-  #XXX preferences phase 1: message delete method, on logout remove trash
-  #phase 2: language, time zone, layout, pronto style, send read receipts
 
   '';
 
@@ -467,6 +497,7 @@ sub communigate_pro_queue_dep {
   my %kludge_methods = (
     'CreateAccount'         => 'CreateAccount',
     'UpdateAccountSettings' => 'UpdateAccountSettings',
+    'UpdateAccountPrefs'    => 'cp_Scalar_Hash',
     'CreateDomain'          => 'cp_Scalar_Hash',
     'CreateSharedDomain'    => 'cp_Scalar_Hash',
     'UpdateDomainSettings'  => 'UpdateDomainSettings',

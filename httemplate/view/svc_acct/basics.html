@@ -85,6 +85,13 @@
   <% include('tr.html', label=>'File size limit',
                         value=>$svc_acct->file_maxsize ) %>
 
+  <% include('tr.html', label=>'Message delete method',
+                        value=>$svc_acct->cgp_deletemode ) %>
+
+  <% include('tr.html', label=>'On logout remove trash',
+                        value=>$svc_acct->cgp_emptytrash ) %>
+
+
 % }
 
 % if ($svc_acct->slipip) { 
