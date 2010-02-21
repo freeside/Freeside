@@ -32,24 +32,35 @@ function dstchanged(what) {
 </SCRIPT>
 
 <% ntable("#cccccc",2) %>
-<TR><TD ALIGN="right">Email to</TD>
-<TD><SELECT NAME="srcsvc" SIZE=1 onChange="srcchanged(this)">
-% foreach $_ (keys %email) { 
 
-  <OPTION<% $_ eq $srcsvc ? " SELECTED" : "" %> VALUE="<% $_ %>"><% $email{$_} %></OPTION>
-% } 
-% if ( $svc_forward->dbdef_table->column('src') ) { 
+<TR>
+  <TD ALIGN="right">Email to</TD>
+  <TD>
+%   if ( $conf->exists('svc_forward-no_srcsvc') ) {
+      <INPUT NAME="srcsrc" TYPE="hidden" VALUE="0">
+%   } else {
+      <SELECT NAME="srcsvc" SIZE=1 onChange="srcchanged(this)">
+%       foreach $_ (keys %email) { 
+          <OPTION VALUE="<% $_ %>"
+                  <% $_ eq $srcsvc ? 'SELECTED' : '' %>
+          ><% $email{$_} %></OPTION>
+%       } 
+        <OPTION VALUE="0" <% $src ? 'SELECTED' : '' %>
+        >(other email address)</OPTION>
+      </SELECT>
+%   }
 
-  <OPTION <% $src ? 'SELECTED' : '' %> VALUE="0">(other email address)</OPTION>
-% } 
+%   my $src_disabled =    $src
+%                      || $conf->exists('svc_forward-no_srcsvc')
+%                      || !scalar(%email);
+    <INPUT NAME  = "src"
+           TYPE  = "text"
+           VALUE = "<% $src %>"
+           <% $src_disabled ? '' : 'DISABLED STYLE="background-color: lightgrey"' %>
+    >
 
-</SELECT>
-% if ( $svc_forward->dbdef_table->column('src') ) { 
-
-<INPUT TYPE="text" NAME="src" VALUE="<% $src %>" <% ( $src || !scalar(%email) ) ? '' : 'DISABLED STYLE="background-color: lightgrey"' %>>
-% } 
-
-</TD></TR>
+  </TD>
+</TR>
 
 <TR><TD ALIGN="right">Forwards to</TD>
 <TD><SELECT NAME="dstsvc" SIZE=1 onChange="dstchanged(this)">

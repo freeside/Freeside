@@ -94,7 +94,6 @@ sub _export_insert_svc_acct {
 
   #let's do the create realtime too, for much the same reasons, and to avoid
   #pain of trying to queue w/dep the prefs & aliases
-  #my $r=
   eval { $self->communigate_pro_runcommand( @options ) };
   return $@ if $@;
 
@@ -142,8 +141,18 @@ sub _export_insert_svc_domain {
   $self->communigate_pro_queue( @options );
 }
 
-#sub _export_insert_svc_forward {
-#}
+sub _export_insert_svc_forward {
+  my( $self, $svc_forward ) = (shift, shift);
+
+  my $src = $svc_forward->src || $svc_forward->srcsvc_acct->email;
+  my $dst = $svc_forward->dst || $svc_forward->dstsvc_acct->email;
+
+  #real-time here, presuming CGP does some dup detection?
+  eval { $self->communigate_pro_runcommand( 'CreateForwarder', $src, $dst); };
+  return $@ if $@;
+
+  '';
+}
 
 sub _export_replace {
   my( $self, $new, $old ) = (shift, shift, shift);
@@ -160,7 +169,6 @@ sub _export_replace_svc_acct {
   #w/dependencies.  we don't want FS winding up out-of-sync with the wrong
   #username and a queued job anyway.  right??
   if ( $self->export_username($old) ne $self->export_username($new) ) {
-    #my $r =
     eval { $self->communigate_pro_runcommand(
       'RenameAccount',
       $self->export_username($old),
@@ -258,6 +266,35 @@ sub _export_replace_svc_domain {
   '';
 }
 
+sub _export_replace_svc_forward {
+  my( $self, $new, $old ) = (shift, shift, shift);
+
+  my $osrc = $old->src || $old->srcsvc_acct->email;
+  my $nsrc = $new->src || $new->srcsvc_acct->email;
+  my $odst = $old->dst || $old->dstsvc_acct->email;
+  my $ndst = $new->dst || $new->dstsvc_acct->email;
+
+  if ( $odst ne $ndst ) {
+
+    #no change command, so delete and create (real-time)
+    eval { $self->communigate_pro_runcommand('DeleteForwarder', $osrc) };
+    return $@ if $@;
+    eval { $self->communigate_pro_runcommand('CreateForwarder', $nsrc, $ndst)};
+    return $@ if $@;
+
+  } elsif ( $osrc ne $nsrc ) {
+
+    #real-time here, presuming CGP does some dup detection?
+    eval { $self->communigate_pro_runcommand( 'RenameForwarder', $osrc, $nsrc)};
+    return $@ if $@;
+
+  } else {
+    warn "communigate replace called for svc_forward with no changes\n";#confess
+  }
+
+  '';
+}
+
 sub _export_delete {
   my( $self, $svc_x ) = (shift, shift);
 
@@ -272,7 +309,6 @@ sub _export_delete_svc_acct {
   $self->communigate_pro_queue( $svc_acct->svcnum, 'DeleteAccount',
     $self->export_username($svc_acct),
   );
-
 }
 
 sub _export_delete_svc_domain {
@@ -282,7 +318,14 @@ sub _export_delete_svc_domain {
     $svc_domain->domain,
     #XXX turn on force option for domain deletion?
   );
+}
 
+sub _export_delete_svc_forward {
+  my( $self, $svc_forward ) = (shift, shift);
+
+  $self->communigate_pro_queue( $svc_forward->svcnum, 'DeleteForwarder',
+    ($svc_forward->src || $svc_forward->srcsvc_acct->email),
+  );
 }
 
 sub _export_suspend {
@@ -597,7 +640,7 @@ sub communigate_pro_command { #subroutine, not method
   #warn "$method ". Dumper(@args) if $DEBUG;
 
   my $return = $cli->$method(@args)
-    or die "Communigate Pro error: ". $cli->getErrMessage;
+    or die "Communigate Pro error: ". $cli->getErrMessage. "\n";
 
   $cli->Logout; # or die "Can't logout of CGPro: $CGP::ERR_STRING\n";
 

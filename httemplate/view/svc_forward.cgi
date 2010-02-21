@@ -1,12 +1,26 @@
-<% include('/elements/header.html', 'Mail Forward View', menubar(
-  ( ( $pkgnum || $custnum )
-    ? ( "View this customer (#$display_custnum)" => "${p}view/cust_main.cgi?$custnum",
-      )
-    : ( "Cancel this (unaudited) mail forward" =>
-          "${p}misc/cancel-unaudited.cgi?$svcnum" )
-  )
-))
-%>
+% if ( $custnum ) {
+
+  <% include("/elements/header.html","View mail forward") %>
+  <% include( '/elements/small_custview.html', $custnum, '', 1,
+     "${p}view/cust_main.cgi") %>
+  <BR>
+
+% } else {
+
+  <% include("/elements/header.html",'View mail forward', menubar(
+       "Cancel this (unaudited) mail forward" =>
+         "javascript:areyousure('${p}misc/cancel-unaudited.cgi?$svcnum')",
+     ))
+  %>
+
+  <SCRIPT>
+  function areyousure(href) {
+      if (confirm("Permanently delete this mail forward?") == true)
+          window.location.href = href;
+  }
+  </SCRIPT>
+
+% }
 
 <A HREF="<% $p %>edit/svc_forward.cgi?<% $svcnum %>">Edit this information</A>
 

@@ -2418,6 +2418,13 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'svc_forward-no_srcsvc',
+    'section'     => '',
+    'description' => "Don't allow forwards from existing accounts, only arbitrary addresses.  Useful when exporting to systems such as Communigate Pro which treat forwards in this fashion.",
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'svc_forward-arbitrary_dst',
     'section'     => '',
     'description' => "Allow forwards to point to arbitrary strings that don't necessarily look like email addresses.  Only used when using forwards for weird, non-email things.",
