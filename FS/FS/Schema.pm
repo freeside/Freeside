@@ -1641,6 +1641,7 @@ sub tables_hashref {
         'password_selfchange','char', 'NULL',       1, '', '', 
         'password_recover',   'char', 'NULL',       1, '', '', 
         'cgp_type',        'varchar', 'NULL', $char_d, '', '', #AccountType
+        'cgp_aliases',     'varchar', 'NULL',     255, '', '', #AccountType
       ],
       'primary_key' => 'svcnum',
       #'unique' => [ [ 'username', 'domsvc' ] ],

@@ -1100,6 +1100,7 @@ sub check {
               || $self->ut_enum( 'password_recover',    [ '', 'Y' ] )
               || $self->ut_textn( 'cgp_accessmodes' )
               || $self->ut_alphan( 'cgp_type' )
+              || $self->ut_textn( 'cgp_aliases' ) #well
   ;
   return $error if $error;
 

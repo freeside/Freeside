@@ -17,7 +17,7 @@ tie %options, 'Tie::IxHash',
   'password'      => { label   =>'The administrator account password.', },
   'accountType'   => { label   => 'Type for newly-created accounts (default when not specified in service)',
                        type    => 'select',
-                       options => [qw(MultiMailbox TextMailbox MailDirMailbox)],
+                       options => [qw(MultiMailbox TextMailbox MailDirMailbox AGrade BGrade CGrade)],
                        default => 'MultiMailbox',
                      },
   'externalFlag'  => { label   => 'Create accounts with an external (visible for legacy mailers) INBOX.',
@@ -70,30 +70,45 @@ sub _export_insert {
 sub _export_insert_svc_acct {
   my( $self, $svc_acct ) = (shift, shift);
 
-  my @options = ( $svc_acct->svcnum, 'CreateAccount',
-    'accountName'    => $self->export_username($svc_acct),
-    'accountType'    => ( $svc_acct->cgp_type
-                          || $self->option('accountType') ), 
+  my %settings = (
     'AccessModes'    => ( $svc_acct->cgp_accessmodes
                           || $self->option('AccessModes') ),
     'RealName'       => $svc_acct->finger,
     'Password'       => $svc_acct->_password,
+    map { $quotas{$_} => $svc_acct->$_() }
+        grep $svc_acct->$_(), keys %quotas
   );
 
-  push @options, $quotas{$_} => $svc_acct->$_()
-    foreach grep $svc_acct->$_(), keys %quotas;
+  #XXX preferences phase 1: message delete method, on logout remove trash
+  #phase 2: language, time zone, layout, pronto style, send read receipts
 
   #phase 2: pwdallowed, passwordrecovery, allowed mail rules,
   # RPOP modifications, accepts mail to all, add trailer to sent mail
   #phase 3: archive messages, mailing lists
 
+  my @options = ( 'CreateAccount',
+    'accountName'    => $self->export_username($svc_acct),
+    'accountType'    => ( $svc_acct->cgp_type
+                          || $self->option('accountType') ), 
+    'settings'       => \%settings
+  );
+
   push @options, 'externalFlag'   => $self->option('externalFlag')
     if $self->option('externalFlag');
 
-  #XXX preferences phase 1: message delete method, on logout remove trash
-  #phase 2: language, time zone, layout, pronto style, send read receipts
+  #let's do the create realtime too, for much the same reasons, and to avoid
+  #pain of trying to queue w/dep the aliases
+  #my $r=
+  eval { $self->communigate_pro_runcommand( @options ) };
+  return $@ if $@;
 
-  $self->communigate_pro_queue( @options );
+  my $err= $self->communigate_pro_queue( $svc_acct->svcnum, 'SetAccountAliases',
+    $self->export_username($svc_acct),
+    [ split(/\s*,\s*/, $svc_acct->cgp_aliases) ],
+  );
+  warn "WARNING: error queueing SetAccountAliases job: $err" if $err;
+
+  '';
 
 }
 
@@ -168,6 +183,16 @@ sub _export_replace_svc_acct {
       'UpdateAccountSettings',
       $self->export_username($new),
       %settings,
+    );
+    return $error if $error;
+  }
+
+  if ( $old->cgp_aliases ne $new->cgp_aliases ) {
+    my $error = $self->communigate_pro_queue(
+      $new->svcnum,
+      'SetAccountAliases',
+      $self->export_username($new),
+      [ split(/\s*,\s*/, $new->cgp_aliases) ],
     );
     return $error if $error;
   }
@@ -394,6 +419,17 @@ sub export_getsettings_svc_acct {
                  map { ("Pref $_" => $prefs->{$_}); }
                      keys(%$prefs)
                );
+
+  #aliases too
+
+  my $aliases = eval { $self->communigate_pro_runcommand(
+    'GetAccountAliases',
+    $svc_acct->email
+  ) };
+  return $@ if $@;
+
+  $effective_settings->{'Aliases'} = join(', ', @$aliases);
+  $settings->{'Aliases'}           = join(', ', @$aliases);
 
   #false laziness w/above
 

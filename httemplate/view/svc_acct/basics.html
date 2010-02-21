@@ -1,149 +1,100 @@
 <% &ntable("#cccccc") %><TR><TD><% &ntable("#cccccc",2) %>
 
-<TR>
-  <TD ALIGN="right">Service</TD>
-  <TD BGCOLOR="#ffffff"><% $part_svc->svc %></TD>
-</TR>
+<% include('tr.html', label=>'Service',  value=>$part_svc->svc) %>
+<% include('tr.html', label=>'Username', value=>$svc_acct->username) %>
+<% include('tr.html', label=>'Domain',   value=>$domain) %>
 
-<TR>
-  <TD ALIGN="right">Username</TD>
-  <TD BGCOLOR="#ffffff"><% $svc_acct->username %></TD>
-</TR>
-
-<TR>
-  <TD ALIGN="right">Domain</TD>
-  <TD BGCOLOR="#ffffff"><% $domain %></TD>
-</TR>
-
-% if ( $svc_acct->pbxsvc ) {
-    <TR>
-      <TD ALIGN="right">PBX</TD>
-      <TD BGCOLOR="#ffffff"><% $svc_acct->pbx_title %></TD>
-    </TR>
+% if ( $opt{'communigate'} ) {
+  <% include('tr.html', label=>'Aliases', value=>$svc_acct->cgp_aliases) %>
 %}
 
-<TR>
-  <TD ALIGN="right">Password</TD>
-  <TD BGCOLOR="#ffffff">
+% if ( $svc_acct->pbxsvc ) {
+  <% include('tr.html', label=>'PBX', value=>$svc_acct->pbx_title) %>
+%}
+
+% my $show_pw = '';
 % my $password = $svc_acct->get_cleartext_password; 
 % if ( $password =~ /^\*\w+\* (.*)$/ ) {
-%         $password = $1;
-      <I>(login disabled)</I>
+%   $password = $1;
+%   $show_pw .= '<I>(login disabled)</I> ';
 % } 
-% if ( !$password and 
-%        $svc_acct->_password_encryption ne 'plain' and
-%        $svc_acct->_password ) {
-      <I>(<% uc($svc_acct->_password_encryption) %> encrypted)</I>
+% if ( ! $password
+%      && $svc_acct->_password_encryption ne 'plain'
+%      && $svc_acct->_password
+%    )
+% {
+%   $show_pw .= '<I>('. uc($svc_acct->_password_encryption). ' encrypted)</I>';
 % } elsif ( $conf->exists('showpasswords') ) { 
-      <PRE><% encode_entities($password) %></PRE>
+%   $show_pw .= '<PRE>'. encode_entities($password). '</PRE>';
 % } else { 
-      <I>(hidden)</I>
+%   $show_pw .= '<I>(hidden)</I>';
 % } 
-  </TD>
-</TR>
 % $password = ''; 
+<% include('tr.html', label=>'Password', value=>$show_pw) %>
+
 
 % if ( $conf->exists('security_phrase') ) {
-%     my $sec_phrase = $svc_acct->sec_phrase;
-%
-  <TR>
-    <TD ALIGN="right">Security phrase</TD>
-    <TD BGCOLOR="#ffffff"><% $svc_acct->sec_phrase %></TD>
-  </TR>
+  <%include('tr.html', label=>'Security phrase', value=>$svc_acct->sec_phrase)%>
 % } 
 
 % if ( $svc_acct->popnum ) {
-%    my $svc_acct_pop = qsearchs('svc_acct_pop',{'popnum'=>$svc_acct->popnum});
-  <TR>
-    <TD ALIGN="right">Access number</TD>
-    <TD BGCOLOR="#ffffff"><% $svc_acct_pop->text %></TD>
-  </TR>
+%   my $svc_acct_pop = qsearchs('svc_acct_pop',{'popnum'=>$svc_acct->popnum});
+    <% include('tr.html', label=>'Access number', value=>$svc_acct_pop->text) %>
 % } 
 
 % if ($svc_acct->uid ne '') { 
-  <TR>
-    <TD ALIGN="right">UID</TD>
-    <TD BGCOLOR="#ffffff"><% $svc_acct->uid %></TD>
-  </TR>
+  <% include('tr.html', label=>'UID', value=>$svc_acct->uid) %>
 % } 
 
 % if ($svc_acct->gid ne '') { 
-  <TR>
-    <TD ALIGN="right">GID</TD>
-    <TD BGCOLOR="#ffffff"><% $svc_acct->gid %></TD>
-  </TR>
+  <% include('tr.html', label=>'GID', value=>$svc_acct->gid) %>
 % } 
 
 % if ($svc_acct->finger ne '') { 
-  <TR>
-    <TD ALIGN="right">Real Name</TD>
-    <TD BGCOLOR="#ffffff"><% $svc_acct->finger %></TD>
-  </TR>
+  <% include('tr.html', label=>'Real Name', value=>$svc_acct->finger) %>
 % } 
 
 % if ($svc_acct->dir ne '') { 
-  <TR>
-    <TD ALIGN="right">Home directory</TD>
-    <TD BGCOLOR="#ffffff"><% $svc_acct->dir %></TD>
-  </TR>
+  <% include('tr.html', label=>'Home directory', value=>$svc_acct->dir) %>
 % } 
 
 % if ($svc_acct->shell ne '') { 
-  <TR>
-    <TD ALIGN="right">Shell</TD>
-    <TD BGCOLOR="#ffffff"><% $svc_acct->shell %></TD>
-  </TR>
+  <% include('tr.html', label=>'Shell', value=>$svc_acct->shell) %>
 % } 
 
 % if ($svc_acct->quota ne '' && ! $opt{'communigate'} ) { 
-  <TR>
-    <TD ALIGN="right">Quota</TD>
-    <TD BGCOLOR="#ffffff"><% $svc_acct->quota %></TD>
-  </TR>
+
+  <% include('tr.html', label=>'Quota', value=>$svc_acct->quota) %>
+
 % } elsif ( $opt{'communigate'} ) {
 
-  <TR>
-    <TD ALIGN="right">Mailbox type</TD>
-    <TD BGCOLOR="#ffffff"><% $svc_acct->cgp_type %></TD>
-  </TR>
+  <% include('tr.html', label=>'Mailbox type', value=>$svc_acct->cgp_type) %>
 
-  <TR>
-    <TD ALIGN="right">Enabled services</TD>
-    <TD BGCOLOR="#ffffff"><% $svc_acct->cgp_accessmodes |h %></TD>
-  </TR>
+  <% include('tr.html', label=>'Enabled services',
+                        value=>$svc_acct->cgp_accessmodes ) %>
 
-  <TR>
-    <TD ALIGN="right">Mail storage limit</TD>
-    <TD BGCOLOR="#ffffff"><% $svc_acct->quota %></TD>
-  </TR>
+  <% include('tr.html', label=>'Mail storage limit',
+                        value=>$svc_acct->quota ) %>
 
-  <TR>
-    <TD ALIGN="right">File storage limit</TD>
-    <TD BGCOLOR="#ffffff"><% $svc_acct->file_quota %></TD>
-  </TR>
+  <% include('tr.html', label=>'File storage limit',
+                        value=>$svc_acct->file_quota ) %>
 
-  <TR>
-    <TD ALIGN="right">Number of files limit</TD>
-    <TD BGCOLOR="#ffffff"><% $svc_acct->file_maxnum %></TD>
-  </TR>
+  <% include('tr.html', label=>'Number of files limit',
+                        value=>$svc_acct->file_maxnum ) %>
 
-  <TR>
-    <TD ALIGN="right">File size limit</TD>
-    <TD BGCOLOR="#ffffff"><% $svc_acct->file_maxsize %></TD>
-  </TR>
+  <% include('tr.html', label=>'File size limit',
+                        value=>$svc_acct->file_maxsize ) %>
 
 % }
 
 % if ($svc_acct->slipip) { 
-  <TR>
-    <TD ALIGN="right">IP address</TD>
-    <TD BGCOLOR="#ffffff">
-      <% ( $svc_acct->slipip eq "0.0.0.0" || $svc_acct->slipip eq '0e0' )
-            ? "<I>(Dynamic)</I>"
-            : $svc_acct->slipip
-      %>
-    </TD>
-  </TR>
+  <% include('tr.html',
+       label=>'IP address',
+       value=> ( $svc_acct->slipip eq "0.0.0.0" || $svc_acct->slipip eq '0e0' )
+                 ? "<I>(Dynamic)</I>"
+                 : $svc_acct->slipip
+     )
+  %>
 % } 
 
 <% include('usage.html',
@@ -152,27 +103,25 @@
 %>
 
 % foreach my $attribute ( grep /^radius_/, $svc_acct->fields ) {
-%  $attribute =~ /^radius_(.*)$/;
-%  my $pattribute = $FS::raddb::attrib{$1};
-  <TR>
-    <TD ALIGN="right">Radius (reply) <% $pattribute %></TD>
-    <TD BGCOLOR="#ffffff"><% $svc_acct->getfield($attribute) %></TD>
-  </TR>
-
+%   $attribute =~ /^radius_(.*)$/;
+%   my $pattribute = $FS::raddb::attrib{$1};
+    <% include('tr.html', label=>"Radius (reply) $pattribute",
+                          value=>$svc_acct->getfield($attribute)
+              )
+    %>
 % } 
+
 % foreach my $attribute ( grep /^rc_/, $svc_acct->fields ) {
-%  $attribute =~ /^rc_(.*)$/;
-%  my $pattribute = $FS::raddb::attrib{$1};
-  <TR>
-    <TD ALIGN="right">Radius (check) <% $pattribute %></TD>
-    <TD BGCOLOR="#ffffff"><% $svc_acct->getfield($attribute) %></TD>
-  </TR>
+%   $attribute =~ /^rc_(.*)$/;
+%   my $pattribute = $FS::raddb::attrib{$1};
+    <% include('tr.html', label=>"Radius (check) $pattribute",
+                          value=>$svc_acct->getfield($attribute)
+              )
+    %>
 % } 
 
-<TR>
-  <TD ALIGN="right">RADIUS groups</TD>
-  <TD BGCOLOR="#ffffff"><% join('<BR>', $svc_acct->radius_groups) %></TD>
-</TR>
+<% include('tr.html', label=>'RADIUS groups',
+                      value=>join('<BR>', $svc_acct->radius_groups) ) %>
 
 %# Can this be abstracted further?  Maybe a library function like
 %# widget('HTML', 'view', $svc_acct) ?  It would definitely make UI 

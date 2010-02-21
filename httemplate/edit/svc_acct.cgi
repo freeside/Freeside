@@ -54,7 +54,7 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
 %}else{
     <INPUT TYPE="hidden" NAME="clear_password" VALUE="<% $password %>">
 %}
-<INPUT TYPE="hidden" NAME="_password_encoding" VALUE="<% $password_encoding %>">
+<INPUT TYPE="hidden" NAME="_password_encoding" VALUE="<% $svc_acct->_password_encoding %>">
 %
 %my $sec_phrase = $svc_acct->sec_phrase;
 %if ( $conf->exists('security_phrase') 
@@ -122,6 +122,19 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
     </TD>
   </TR>
 % } 
+
+
+% if ( $communigate ) {
+
+    <TR>
+      <TD ALIGN="right">Aliases</TD>
+      <TD><INPUT TYPE="text" NAME="cgp_aliases" VALUE="<% $svc_acct->cgp_aliases %>"></TD>
+    </TR>
+
+% } else {
+    <INPUT TYPE="text" NAME="cgp_aliases" VALUE="<% $svc_acct->cgp_aliases %>">
+% }
+
 
 <% include('/elements/tr-select-svc_pbx.html',
              'curr_value' => $svc_acct->pbxsvc,
@@ -251,7 +264,8 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
     <TD ALIGN="right">Mailbox type</TD>
     <TD>
       <SELECT NAME="cgp_type">
-%       foreach my $option (qw( MultiMailbox TextMailbox MailDirMailbox )) {
+%       foreach my $option (qw( MultiMailbox TextMailbox MailDirMailbox
+%                               AGrade BGrade CGrade                    )) {
           <OPTION VALUE="<% $option %>"
                   <% $option eq $svc_acct->cgp_type() ? 'SELECTED' : '' %>
           ><% $option %>
@@ -508,21 +522,16 @@ my $svc = $part_svc->getfield('svc');
 my $otaker = getotaker;
 
 my $username = $svc_acct->username;
-my $password;
-my $password_encryption = $svc_acct->_password_encryption;
-my $password_encoding = $svc_acct->_password_encoding;
 
-if($svcnum) {
-  if($password = $svc_acct->get_cleartext_password) {
-    if (! $conf->exists('showpasswords')) {
-        $password = '*HIDDEN*';
-    }
-  }
-  elsif($svc_acct->_password and $password_encryption ne 'plain') {
+my $password = '';
+if ( $cgi->param('error') ) {
+  $password = $cgi->param('clear_password');
+} elsif ( $svcnum ) {
+  my $password_encryption = $svc_acct->_password_encryption;
+  if ( $password = $svc_acct->get_cleartext_password ) {
+    $password = '*HIDDEN*' unless $conf->exists('showpasswords');
+  } elsif( $svc_acct->_password and $password_encryption ne 'plain' ) {
     $password = "(".uc($password_encryption)." encrypted)";
-  }
-  else {
-    $password = '';
   }
 }
 
