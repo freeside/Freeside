@@ -1,0 +1,30 @@
+<% include( 'checkboxes.html',
+              'element_name_prefix' => 'cgp_accessmodes_',
+              'names_list'          => \@names,
+              'checked_callback'    => $callback,
+              %opt,
+          )
+%>
+<%once>
+
+my @names = (qw(
+  Mail Relay Signal Mobile TLS POP IMAP MAPI
+  AirSync SIP XMPP WebMail XIMSS FTP ACAP PWD
+  LDAP RADIUS S/MIME WebCAL WebSite PBX HTTP
+));
+
+</%once>
+<%init>
+
+my %opt = @_;
+my $curr_value = $opt{'curr_value'};
+
+$curr_value = { map { $_=>1 } split(/\s+/, $curr_value) }
+  unless ref($curr_value);
+
+my $callback = sub {
+  my( $cgi, $name ) = @_;
+  $curr_value->{$name};
+};
+
+</%init>

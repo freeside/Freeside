@@ -31,6 +31,18 @@ foreach (map { $_,$_."_threshold" } qw( upbytes downbytes totalbytes )) {
   $cgi->param($_, FS::UI::bytecount::parse_bytecount($cgi->param($_)) );
 }
 
+#unmunge cgp_accessmodes (falze laziness-ish w/part_svc.pm::process)
+unless ( $cgi->param('cgp_accessmodes') ) {
+  $cgi->param('cgp_accessmodes', 
+    join(' ',
+      sort map { /^cgp_accessmodes_([\w\/]+)$/ or die "no way"; $1; }
+               grep $cgi->param($_),
+                    grep /^cgp_accessmodes_([\w\/]+)$/,
+                         $cgi->param()
+        )
+  );
+}
+
 my %hash = $svcnum ? $old->hash : ();
 map {
     $hash{$_} = scalar($cgi->param($_));

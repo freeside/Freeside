@@ -271,8 +271,21 @@ sub table_info {
                          disable_fixed => 1,
                          disable_select => 1,
                        },
+        'cgp_type'=> { 
+                       label => 'Communigate account type',
+                       type => 'select',
+                       select_list => [ ],
+                       disable_inventory => 1,
+                       disable_select    => 1,
+                     },
+        'cgp_accessmodes' => { 
+                               label => 'Communigate enabled services',
+                               type  => 'communigate_pro-accessmodes',
+                               disable_inventory => 1,
+                               disable_select    => 1,
+                             },
         'quota'     => { 
-                         label => 'Quota',
+                         label => 'Quota', #Mail storage limit
                          type => 'text',
                          disable_inventory => 1,
                          disable_select => 1,
@@ -1085,7 +1098,7 @@ sub check {
                                )
               || $self->ut_enum( 'password_selfchange', [ '', 'Y' ] )
               || $self->ut_enum( 'password_recover',    [ '', 'Y' ] )
-              || $self->ut_alphasn( 'cgp_accessmodes' )
+              || $self->ut_textn( 'cgp_accessmodes' )
               || $self->ut_alphan( 'cgp_type' )
   ;
   return $error if $error;

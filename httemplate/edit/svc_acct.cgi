@@ -243,7 +243,9 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
 % } 
 
 
-% if ( $communigate ) {
+% if ( $communigate
+%      && $part_svc->part_svc_column('cgp_type')->columnflag ne 'F' )
+% {
 
   <TR>
     <TD ALIGN="right">Mailbox type</TD>
@@ -258,17 +260,27 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
     </TD>
   </TR>
 
-    <TR>
-  <TR>
-    <TD ALIGN="right">Mailbox type</TD>
-    <TD>XXX checkbox thingie!!
-    </TD>
-  </TR>
-   
-
 % } else {
     <INPUT TYPE="hidden" NAME="cgp_type" VALUE="<% $svc_acct->cgp_type() %>">
-    <INPUT TYPE="hidden" NAME="cgp_accessmodes" VALUE="<% $svc_acct->cgp_accessmodes() %>">
+% }
+
+
+% if ( $communigate
+%      && $part_svc->part_svc_column('cgp_accessmodes')->columnflag ne 'F' )
+% {
+
+  <TR>
+    <TD ALIGN="right">Enabled services</TD>
+    <TD>
+      <% include( '/elements/communigate_pro-accessmodes.html',
+                    'curr_value' => $svc_acct->cgp_accessmodes,
+                )
+      %>
+    </TD>
+  </TR>
+
+% } else {
+    <INPUT TYPE="hidden" NAME="cgp_accessmodes" VALUE="<% $svc_acct->cgp_accessmodes() |h %>">
 % }
 
 

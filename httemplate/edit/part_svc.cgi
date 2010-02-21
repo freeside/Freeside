@@ -292,6 +292,7 @@ that field.
 %        } elsif ( $def->{type} eq 'select-svc_pbx.html' ) {
 %
 %          $html .= include('/elements/select-svc_pbx.html',
+%                             'curr_value'   => $value,
 %                             'element_name' => "${layer}__${field}",
 %                             'element_etc'  => $disabled,
 %                             'multiple'     => ($flag eq 'S'),
@@ -304,6 +305,14 @@ that field.
 %
 %          $html .= FS::svc_acct::radius_usergroup_selector(
 %            [ split(',', $value) ], "${layer}__${field}" );
+%
+%        } elsif ( $def->{type} eq 'communigate_pro-accessmodes' ) {
+%
+%          $html .= include('/elements/communigate_pro-accessmodes.html',
+%                             'element_name_prefix' => "${layer}__${field}_",
+%                             'curr_value'          => $value,
+%                             #doesn't work#'element_etc'  => $disabled,
+%                          );
 %
 %        } elsif ( $def->{type} eq 'disabled' ) {
 %

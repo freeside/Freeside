@@ -724,7 +724,18 @@ sub process {
     ref($param->{'svc_acct__usergroup'})
       ? join(',', @{$param->{'svc_acct__usergroup'}} )
       : $param->{'svc_acct__usergroup'};
+
+  #unmunge cgp_accessmodes (falze laziness-ish w/edit/process/svc_acct.cgi)
+  $param->{'svc_acct__cgp_accessmodes'} ||=
+    join(' ', sort
+      grep { $_ !~ /^(flag|label)$/ }
+           map { /^svc_acct__cgp_accessmodes_([\w\/]+)$/ or die "no way"; $1; }
+               grep $param->{$_},
+                    grep /^svc_acct__cgp_accessmodes_([\w\/]+)$/,
+                         keys %$param
+        );
   
+
   my $new = new FS::part_svc ( {
     map {
       $_ => $param->{$_};

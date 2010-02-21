@@ -152,10 +152,11 @@ sub _export_replace_svc_acct {
     if $old->finger ne $new->finger;
   $settings{$quotas{$_}} = $new->$_()
     foreach grep $old->$_() ne $new->$_(), keys %quotas;
-  $settings{'AccessModes'} = $new->cgp_accessmodes
-    if $old->cgp_accessmodes ne $new->cgp_accessmodes;
   $settings{'accountType'} = $new->cgp_type
     if $old->cgp_type ne $new->cgp_type;
+  $settings{'AccessModes'} = $new->cgp_accessmodes
+    if $old->cgp_accessmodes ne $new->cgp_accessmodes
+    || $old->cgp_type ne $new->cgp_type;
 
   #phase 2: pwdallowed, passwordrecovery, allowed mail rules,
   # RPOP modifications, accepts mail to all, add trailer to sent mail
@@ -276,7 +277,8 @@ sub _export_unsuspend_svc_acct {
     $svc_acct->svcnum,
     'UpdateAccountSettings',
     $self->export_username($svc_acct),
-    'AccessModes' => $self->option('AccessModes'),
+    'AccessModes' => ( $svc_acct->cgp_accessmodes
+                         || $self->option('AccessModes') ),
   );
 
 }
@@ -338,7 +340,7 @@ sub export_getsettings_svc_domain {
   {
     my $value = $effective_settings->{$key};
     if ( ref($value) eq 'ARRAY' ) {
-      $effective_settings->{$key} = join(', ', @$value);
+      $effective_settings->{$key} = join(' ', @$value);
     } else {
       #XXX
       warn "serializing ". ref($value). " for table display not yet handled";
@@ -370,7 +372,28 @@ sub export_getsettings_svc_acct {
 
   delete($effective_settings->{'Password'});
 
-  #XXX prefs/effectiveprefs too
+  #prefs/effectiveprefs too
+
+  my $prefs = eval { $self->communigate_pro_runcommand(
+    'GetAccountPrefs',
+    $svc_acct->email
+  ) };
+  return $@ if $@;
+
+  my $effective_prefs = eval { $self->communigate_pro_runcommand(
+    'GetAccountEffectivePrefs',
+    $svc_acct->email
+  ) };
+  return $@ if $@;
+
+  %$effective_settings = ( %$effective_settings,
+                           map { ("Pref $_" => $effective_prefs->{$_}); }
+                               keys(%$effective_prefs)
+                         );
+  %$settings = ( %$settings,
+                 map { ("Pref $_" => $prefs->{$_}); }
+                     keys(%$prefs)
+               );
 
   #false laziness w/above
 
@@ -382,7 +405,7 @@ sub export_getsettings_svc_acct {
   {
     my $value = $effective_settings->{$key};
     if ( ref($value) eq 'ARRAY' ) {
-      $effective_settings->{$key} = join(', ', @$value);
+      $effective_settings->{$key} = join(' ', @$value);
     } else {
       #XXX
       warn "serializing ". ref($value). " for table display not yet handled";
