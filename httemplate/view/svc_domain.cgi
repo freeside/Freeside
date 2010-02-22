@@ -62,7 +62,14 @@ Service #<B><% $svcnum %></B>
   </TR>
 % }
 
-% if ( $svc_domain->max_accounts ) {
+% if ( $communigate ) {
+  <TR>
+    <TD ALIGN="right">Aliases</TD>
+    <TD BGCOLOR="#ffffff"><% $svc_domain->cgp_aliases %></TD>
+  </TR>
+% }
+
+% if ( $communigate && $svc_domain->max_accounts ) {
   <TR>
     <TD ALIGN="right">Maximum number of Accounts</TD>
     <TD BGCOLOR="#ffffff"><% $svc_domain->max_accounts %></TD>
@@ -76,6 +83,11 @@ Service #<B><% $svcnum %></B>
      <A HREF="<% ${p} %>misc/catchall.cgi?<% $svcnum %>">(change)</A>
 % }
   </TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right">Enabled services</TD>
+  <TD BGCOLOR="#ffffff"><% $svc_domain->cgp_accessmodes %></TD>
 </TR>
 
 </TABLE></TD></TR></TABLE>
@@ -122,7 +134,7 @@ DNS records
 %        ) { 
 %   ( my $recdata = $domain_record->recdata ) =~ s/"/\\'\\'/g;
       (<A HREF="javascript:areyousure('<%$p%>misc/delete-domain_record.cgi?<%$domain_record->recnum%>', 'Delete \'<% $domain_record->reczone %> <% $type %> <% $recdata %>\' ?' )">delete</A>)
-% } 
+% }
       </td>
     </tr>
 
@@ -221,19 +233,16 @@ if ($svc_domain->catchall) {
 
 my $domain = $svc_domain->domain;
 
-my $status = 'Unknown';
-my %ops = ();
-
-my @exports = $part_svc->part_export();
-
-my $registrar;
-my $export;
+my $communigate = scalar($part_svc->part_export('communigate_pro'));
+                # || scalar($part_svc->part_export('communigate_pro_singledomain'));
 
 # Find the first export that does domain registration
-foreach (@exports) {
-	$export = $_ if $_->can('registrar');
-}
+my @exports = grep $_->can('registrar'), $part_svc->part_export;
+my $export = $exports[0];
 # If we have a domain registration export, get the registrar object
+my $registrar;
+my $status = 'Unknown';
+my %ops = ();
 if ($export) {
 	$registrar = $export->registrar;
 	my $domstat = $export->get_status( $svc_domain );

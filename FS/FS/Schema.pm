@@ -1687,7 +1687,10 @@ sub tables_hashref {
 	'setup_date',      @date_type, '', '',
 	'renewal_interval', 'int', 'NULL',       '', '', '',
 	'expiration_date', @date_type, '', '',
+        #communigate pro fields (quota = MaxAccountSize)
         'max_accounts',     'int', 'NULL',       '', '', '',
+        'cgp_aliases',  'varchar', 'NULL',      255, '', '',
+        'cgp_accessmodes','varchar','NULL',     255, '', '', #DomainAccessModes
       ],
       'primary_key' => 'svcnum',
       'unique' => [ ],

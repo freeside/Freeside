@@ -284,6 +284,12 @@ sub table_info {
                                disable_inventory => 1,
                                disable_select    => 1,
                              },
+        'cgp_aliases' => { 
+                           label => 'Communigate aliases',
+                           type  => 'text',
+                           disable_inventory => 1,
+                           disable_select    => 1,
+                         },
         'cgp_deletemode' => { 
                               label => 'Communigate message delete method',
                               type  => 'select',
@@ -1106,16 +1112,14 @@ sub check {
               || $self->ut_snumbern('upbytes')
               || $self->ut_snumbern('downbytes')
               || $self->ut_snumbern('totalbytes')
-              || $self->ut_enum( '_password_encoding',
-                                 [ '', qw( plain crypt ldap ) ]
-                               )
-              || $self->ut_enum( 'password_selfchange', [ '', 'Y' ] )
-              || $self->ut_enum( 'password_recover',    [ '', 'Y' ] )
-              || $self->ut_textn( 'cgp_accessmodes' )
-              || $self->ut_alphan( 'cgp_type' )
-              || $self->ut_textn( 'cgp_aliases' ) #well
-              || $self->ut_alphasn( 'cgp_deletemode' )
-              || $self->ut_alphan( 'cgp_emptytrash' )
+              || $self->ut_enum('_password_encoding', ['',qw(plain crypt ldap)])
+              || $self->ut_enum('password_selfchange', [ '', 'Y' ])
+              || $self->ut_enum('password_recover',    [ '', 'Y' ])
+              || $self->ut_textn('cgp_accessmodes')
+              || $self->ut_alphan('cgp_type')
+              || $self->ut_textn('cgp_aliases' ) #well
+              || $self->ut_alphasn('cgp_deletemode')
+              || $self->ut_alphan('cgp_emptytrash')
   ;
   return $error if $error;
 

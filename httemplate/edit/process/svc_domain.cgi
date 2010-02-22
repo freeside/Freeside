@@ -15,6 +15,18 @@ $FS::svc_domain::whois_hack = 1;
 $cgi->param('svcnum') =~ /^(\d*)$/ or die "Illegal svcnum!";
 my $svcnum = $1;
 
+#unmunge cgp_accessmodes (falze laziness-ish w/part_svc.pm::process & svc_acct)
+unless ( $cgi->param('cgp_accessmodes') ) {
+  $cgi->param('cgp_accessmodes', 
+    join(' ',
+      sort map { /^cgp_accessmodes_([\w\/]+)$/ or die "no way"; $1; }
+               grep $cgi->param($_),
+                    grep /^cgp_accessmodes_([\w\/]+)$/,
+                         $cgi->param()
+        )
+  );
+}
+
 my $new = new FS::svc_domain ( {
   map {
     $_, scalar($cgi->param($_));

@@ -71,8 +71,10 @@ sub _export_insert_svc_acct {
   my( $self, $svc_acct ) = (shift, shift);
 
   my %settings = (
-    'AccessModes'    => ( $svc_acct->cgp_accessmodes
-                          || $self->option('AccessModes') ),
+    'AccessModes'    => [ split(' ', ( $svc_acct->cgp_accessmodes
+                                       || $self->option('AccessModes') )
+                               )
+                        ],
     'RealName'       => $svc_acct->finger,
     'Password'       => $svc_acct->_password,
     map { $quotas{$_} => $svc_acct->$_() }
@@ -117,7 +119,7 @@ sub _export_insert_svc_acct {
     my $alias_err = $self->communigate_pro_queue( $svc_acct->svcnum,
       'SetAccountAliases',
       $self->export_username($svc_acct),
-      [ split(/\s*,\s*/, $svc_acct->cgp_aliases) ],
+      [ split(/\s*[,\s]\s*/, $svc_acct->cgp_aliases) ],
     );
     warn "WARNING: error queueing SetAccountAliases job: $alias_err"
       if $alias_err;
@@ -132,13 +134,34 @@ sub _export_insert_svc_domain {
 
   my $create = $self->option('create_domain') || 'CreateDomain';
 
-  my @options = ( $svc_domain->svcnum, $create, $svc_domain->domain,
-    #other domain creation options?
+  my %settings = (
+    'DomainAccessModes'    => [ split(' ', $svc_domain->cgp_accessmodes ) ],
   );
-  push @options, 'AccountsLimit' => $svc_domain->max_accounts
+  $settings{'AccountsLimit'} = $svc_domain->max_accounts
     if $svc_domain->max_accounts;
 
-  $self->communigate_pro_queue( @options );
+  my @options = ( $create, $svc_domain->domain, \%settings );
+
+  eval { $self->communigate_pro_runcommand( @options ) };
+  return $@ if $@;
+
+  #aliases
+  if ( $svc_domain->cgp_aliases ) {
+    my $alias_err = $self->communigate_pro_queue( $svc_domain->svcnum,
+      'SetDomainAliases',
+      $svc_domain->domain,
+      split(/\s*[,\s]\s*/, $svc_domain->cgp_aliases),
+    );
+    warn "WARNING: error queueing SetDomainAliases job: $alias_err"
+      if $alias_err;
+  }
+
+  #account defaults
+
+  #account defaults prefs
+
+  '';
+
 }
 
 sub _export_insert_svc_forward {
@@ -233,7 +256,7 @@ sub _export_replace_svc_acct {
       $new->svcnum,
       'SetAccountAliases',
       $self->export_username($new),
-      [ split(/\s*,\s*/, $new->cgp_aliases) ],
+      [ split(/\s*[,\s]\s*/, $new->cgp_aliases) ],
     );
     return $error if $error;
   }
@@ -251,12 +274,26 @@ sub _export_replace_svc_domain {
     );
     return $error if $error;
   }
+  my %settings = ();
+  $settings{'AccountsLimit'} = $new->max_accounts
+    if $old->max_accounts ne $new->max_accounts;
+  $settings{'DomainAccessModes'} = $new->cgp_accessmodes
+    if $old->cgp_accessmodes ne $new->cgp_accessmodes;
 
-  if ( $old->max_accounts ne $new->max_accounts ) {
+  if ( keys %settings ) {
     my $error = $self->communigate_pro_queue( $new->svcnum,
       'UpdateDomainSettings',
       $new->domain,
-      'AccountsLimit' => ($new->max_accounts || 'default'),
+      %settings,
+    );
+    return $error if $error;
+  }
+
+  if ( $old->cgp_aliases ne $new->cgp_aliases ) {
+    my $error = $self->communigate_pro_queue( $new->svcnum,
+      'SetDomainAliases',
+      $new->domain,
+      split(/\s*[,\s]\s*/, $new->cgp_aliases),
     );
     return $error if $error;
   }
@@ -428,6 +465,17 @@ sub export_getsettings_svc_domain {
                                keys(%$acct_defaults)
                          );
 
+  #aliases too
+  my $aliases = eval { $self->communigate_pro_runcommand(
+    'GetDomainAliases',
+    $svc_domain->domain
+  ) };
+  return $@ if $@;
+
+  $effective_settings->{'Aliases'} = join(', ', @$aliases);
+  $settings->{'Aliases'}           = join(', ', @$aliases);
+
+
   #false laziness w/below
   
   my %defaults = map { $_ => 1 }
@@ -538,12 +586,13 @@ sub communigate_pro_queue_dep {
   my( $self, $jobnumref, $svcnum, $method ) = splice(@_,0,4);
 
   my %kludge_methods = (
-    'CreateAccount'         => 'CreateAccount',
+    #'CreateAccount'         => 'CreateAccount',
     'UpdateAccountSettings' => 'UpdateAccountSettings',
     'UpdateAccountPrefs'    => 'cp_Scalar_Hash',
-    'CreateDomain'          => 'cp_Scalar_Hash',
-    'CreateSharedDomain'    => 'cp_Scalar_Hash',
+    #'CreateDomain'          => 'cp_Scalar_Hash',
+    #'CreateSharedDomain'    => 'cp_Scalar_Hash',
     'UpdateDomainSettings'  => 'UpdateDomainSettings',
+    'SetDomainAliases'      => 'cp_Scalar_Array',
   );
   my $sub = exists($kludge_methods{$method})
               ? $kludge_methods{$method}
@@ -589,6 +638,12 @@ sub cp_Scalar_Hash {
   communigate_pro_command( $machine, $port, $login, $password, $method, @args );
 }
 
+sub cp_Scalar_Array {
+  my( $machine, $port, $login, $password, $method, $scalar, @array ) = @_;
+  my @args = ( $scalar, \@array );
+  communigate_pro_command( $machine, $port, $login, $password, $method, @args );
+}
+
 #sub cp_Hash {
 #  my( $machine, $port, $login, $password, $method, %hash ) = @_;
 #  my @args = ( \%hash );
@@ -597,26 +652,27 @@ sub cp_Scalar_Hash {
 
 sub UpdateDomainSettings {
   my( $machine, $port, $login, $password, $method, $domain, %settings ) = @_;
+  $settings{'DomainAccessModes'} = [split(' ',$settings{'DomainAccessModes'})];
   my @args = ( 'domain' => $domain, 'settings' => \%settings );
   communigate_pro_command( $machine, $port, $login, $password, $method, @args );
 }
 
-sub CreateAccount {
-  my( $machine, $port, $login, $password, $method, %args ) = @_;
-  my $accountName  = delete $args{'accountName'};
-  my $accountType  = delete $args{'accountType'};
-  my $externalFlag = delete $args{'externalFlag'};
-  $args{'AccessModes'} = [ split(' ', $args{'AccessModes'}) ];
-  my @args = ( accountName  => $accountName,
-               accountType  => $accountType,
-               settings     => \%args,
-             );
-               #externalFlag => $externalFlag,
-  push @args, externalFlag => $externalFlag if $externalFlag;
-
-  communigate_pro_command( $machine, $port, $login, $password, $method, @args );
-
-}
+#sub CreateAccount {
+#  my( $machine, $port, $login, $password, $method, %args ) = @_;
+#  my $accountName  = delete $args{'accountName'};
+#  my $accountType  = delete $args{'accountType'};
+#  my $externalFlag = delete $args{'externalFlag'};
+#  $args{'AccessModes'} = [ split(' ', $args{'AccessModes'}) ];
+#  my @args = ( accountName  => $accountName,
+#               accountType  => $accountType,
+#               settings     => \%args,
+#             );
+#               #externalFlag => $externalFlag,
+#  push @args, externalFlag => $externalFlag if $externalFlag;
+#
+#  communigate_pro_command( $machine, $port, $login, $password, $method, @args );
+#
+#}
 
 sub UpdateAccountSettings {
   my( $machine, $port, $login, $password, $method, $accountName, %args ) = @_;

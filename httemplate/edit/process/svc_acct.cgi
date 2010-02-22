@@ -31,7 +31,7 @@ foreach (map { $_,$_."_threshold" } qw( upbytes downbytes totalbytes )) {
   $cgi->param($_, FS::UI::bytecount::parse_bytecount($cgi->param($_)) );
 }
 
-#unmunge cgp_accessmodes (falze laziness-ish w/part_svc.pm::process)
+#unmunge cgp_accessmodes (falze laziness-ish w/part_svc.pm::process &svc_domain)
 unless ( $cgi->param('cgp_accessmodes') ) {
   $cgi->param('cgp_accessmodes', 
     join(' ',

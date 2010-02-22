@@ -114,6 +114,18 @@ sub table_info {
       'max_accounts' => { label => 'Maximum number of accounts',
                           'disable_inventory' => 1,
                         },
+      'cgp_aliases' => { 
+                         label => 'Communigate aliases',
+                         type  => 'text',
+                         disable_inventory => 1,
+                         disable_select    => 1,
+                       },
+      'cgp_accessmodes' => { 
+                             label => 'Communigate enabled services',
+                             type  => 'communigate_pro-accessmodes',
+                             disable_inventory => 1,
+                             disable_select    => 1,
+                           },
     },
   };
 }
@@ -342,6 +354,7 @@ sub check {
   my $error = $self->ut_numbern('svcnum')
               || $self->ut_numbern('catchall')
               || $self->ut_numbern('max_accounts')
+              || $self->ut_textn('cgp_aliases') #well
   ;
   return $error if $error;
 

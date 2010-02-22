@@ -38,6 +38,18 @@ Available top-level domains: <% $export->option('tlds') %>
   </TD>
 </TR>
 
+% if ( $communigate
+%      && $part_svc->part_svc_column('max_accounts')->columnflag !~ /^[FA]$/ ) {
+
+    <TR>
+      <TD ALIGN="right">Aliases</TD>
+      <TD><INPUT TYPE="text" NAME="cgp_aliases" VALUE="<% $svc_domain->cgp_aliases %>"></TD>
+    </TR>
+
+% } else {
+    <INPUT TYPE="text" NAME="cgp_aliases" VALUE="<% $svc_domain->cgp_aliases %>">
+% }
+
 % if ( $part_svc->part_svc_column('max_accounts')->columnflag =~ /^[FA]$/ ) {
     <INPUT TYPE="hidden" NAME="max_accounts" VALUE="<% $svc_domain->max_accounts %>">
 % } else {
@@ -47,6 +59,24 @@ Available top-level domains: <% $export->option('tlds') %>
         <INPUT TYPE="text" NAME="max_accounts" SIZE=5 MAXLENGTH=6 VALUE="<% $svc_domain->max_accounts %>">
       </TD>
     </TR>
+% }
+
+% if ( $communigate
+%      && $part_svc->part_svc_column('cgp_accessmodes')->columnflag ne 'F' )
+% {
+
+  <TR>
+    <TD ALIGN="right">Enabled services</TD>
+    <TD>
+      <% include( '/elements/communigate_pro-accessmodes.html',
+                    'curr_value' => $svc_domain->cgp_accessmodes,
+                )
+      %>
+    </TD>
+  </TR>
+
+% } else {
+    <INPUT TYPE="hidden" NAME="cgp_accessmodes" VALUE="<% $svc_domain->cgp_accessmodes() |h %>">
 % }
 
 </TABLE>
@@ -118,19 +148,14 @@ my $action = $svcnum ? 'Edit' : 'Add';
 
 my $svc = $part_svc->getfield('svc');
 
-my @exports = $part_svc->part_export();
-
-my $registrar;
-my $export;
+my $communigate = scalar($part_svc->part_export('communigate_pro'));
+                # || scalar($part_svc->part_export('communigate_pro_singledomain'));
 
 # Find the first export that does domain registration
-foreach (@exports) {
-	$export = $_ if $_->can('registrar');
-}
+my @exports = grep $_->can('registrar'), $part_svc->part_export;
+my $export = $exports[0];
 # If we have a domain registration export, get the registrar object
-if ($export) {
-	$registrar = $export->registrar;
-}
+my $registrar = $export ? $export->registrar : '';
 
 my $otaker = getotaker;
 
