@@ -290,6 +290,12 @@ sub table_info {
                            disable_inventory => 1,
                            disable_select    => 1,
                          },
+        'password_selfchange' => { label => 'Password modification',
+                                   type  => 'checkbox',
+                                 },
+        'password_recover'    => { label => 'Password recovery',
+                                   type  => 'checkbox',
+                                 },
         'cgp_deletemode' => { 
                               label => 'Communigate message delete method',
                               type  => 'select',

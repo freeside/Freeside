@@ -1638,8 +1638,8 @@ sub tables_hashref {
         'file_maxnum',     'varchar', 'NULL', $char_d, '', '', #MaxWebFiles
         'file_maxsize',    'varchar', 'NULL', $char_d, '', '', #MaxFileSize
         'cgp_accessmodes', 'varchar', 'NULL',     255, '', '', #AccessModes
-        'password_selfchange','char', 'NULL',       1, '', '', 
-        'password_recover',   'char', 'NULL',       1, '', '', 
+        'password_selfchange','char', 'NULL',       1, '', '', #PWDAllowed
+        'password_recover',   'char', 'NULL',       1, '', '', #PasswordRecovery
         'cgp_type',        'varchar', 'NULL', $char_d, '', '', #AccountType
         'cgp_aliases',     'varchar', 'NULL',     255, '', '',
         'cgp_deletemode',  'varchar', 'NULL', $char_d, '', '', #DeleteMode
@@ -1691,6 +1691,15 @@ sub tables_hashref {
         'max_accounts',     'int', 'NULL',       '', '', '',
         'cgp_aliases',  'varchar', 'NULL',      255, '', '',
         'cgp_accessmodes','varchar','NULL',     255, '', '', #DomainAccessModes
+        'acct_def_password_selfchange','char', 'NULL',       1, '', '', 
+        'acct_def_password_recover',   'char', 'NULL',       1, '', '', 
+        'acct_def_cgp_accessmodes', 'varchar', 'NULL',     255, '', '',
+        'acct_def_quota',           'varchar', 'NULL', $char_d, '', '',
+        'acct_def_file_quota',      'varchar', 'NULL', $char_d, '', '',
+        'acct_def_file_maxnum',     'varchar', 'NULL', $char_d, '', '',
+        'acct_def_file_maxsize',    'varchar', 'NULL', $char_d, '', '',
+        'acct_def_cgp_deletemode',  'varchar', 'NULL', $char_d, '', '',
+        'acct_def_cgp_emptytrash',  'varchar', 'NULL', $char_d, '', '',
       ],
       'primary_key' => 'svcnum',
       'unique' => [ ],

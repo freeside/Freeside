@@ -135,6 +135,58 @@ sub table_info {
                              disable_inventory => 1,
                              disable_select    => 1,
                            },
+
+      'acct_def_cgp_accessmodes' => { 
+                             label => 'Acct. default Communigate enabled services',
+                             type  => 'communigate_pro-accessmodes',
+                             disable_inventory => 1,
+                             disable_select    => 1,
+                           },
+      'acct_def_password_selfchange' => { label => 'Acct. default Password modification',
+                                 type  => 'checkbox',
+                               },
+      'acct_def_password_recover'    => { label => 'Acct. default Password recovery',
+                                 type  => 'checkbox',
+                               },
+      'acct_def_cgp_deletemode' => { 
+                            label => 'Acct. default Communigate message delete method',
+                            type  => 'select',
+                            select_list => [ 'Move To Trash', 'Immediately', 'Mark' ],
+                            disable_inventory => 1,
+                            disable_select    => 1,
+                          },
+      'acct_def_cgp_emptytrash' => { 
+                            label => 'Acct. default Communigate on logout remove trash',
+                            type  => 'text',
+                            disable_inventory => 1,
+                            disable_select    => 1,
+                          },
+      'acct_def_quota'     => { 
+                       label => 'Acct. default Quota', #Mail storage limit
+                       type => 'text',
+                       disable_inventory => 1,
+                       disable_select => 1,
+                     },
+      'acct_def_file_quota'=> { 
+                       label => 'Acct. default File storage limit',
+                       type => 'text',
+                       disable_inventory => 1,
+                       disable_select => 1,
+                     },
+      'acct_def_file_maxnum'=> { 
+                       label => 'Acct. default Number of files limit',
+                       type => 'text',
+                       disable_inventory => 1,
+                       disable_select => 1,
+                     },
+      'acct_def_file_maxsize'=> { 
+                       label => 'Acct. default File size limit',
+                       type => 'text',
+                       disable_inventory => 1,
+                       disable_select => 1,
+                     },
+
+
     },
   };
 }
@@ -364,6 +416,15 @@ sub check {
               || $self->ut_numbern('catchall')
               || $self->ut_numbern('max_accounts')
               || $self->ut_textn('cgp_aliases') #well
+              || $self->ut_enum('acct_def_password_selfchange', [ '', 'Y' ])
+              || $self->ut_enum('acct_def_password_recover',    [ '', 'Y' ])
+              || $self->ut_textn('acct_def_cgp_accessmodes')
+              || $self->ut_alphan('acct_def_quota')
+              || $self->ut_alphan('acct_def_file_quota')
+              || $self->ut_alphan('acct_def_maxnum')
+              || $self->ut_alphan('acct_def_maxsize')
+              || $self->ut_alphasn('acct_def_cgp_deletemode')
+              || $self->ut_alphan('acct_def_cgp_emptytrash')
   ;
   return $error if $error;
 
