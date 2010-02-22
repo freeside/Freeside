@@ -139,6 +139,8 @@ sub _export_insert_svc_domain {
   );
   $settings{'AccountsLimit'} = $svc_domain->max_accounts
     if $svc_domain->max_accounts;
+  $settings{'AdminDomainName'} = $svc_domain->parent_svc_x->domain
+    if $svc_domain->parent_svcnum;
 
   my @options = ( $create, $svc_domain->domain, \%settings );
 
@@ -279,6 +281,9 @@ sub _export_replace_svc_domain {
     if $old->max_accounts ne $new->max_accounts;
   $settings{'DomainAccessModes'} = $new->cgp_accessmodes
     if $old->cgp_accessmodes ne $new->cgp_accessmodes;
+  $settings{'AdminDomainName'} =
+    $new->parent_svcnum ? $new->parent_svc_x->domain : ''
+      if $old->parent_svcnum != $new->parent_svcnum;
 
   if ( keys %settings ) {
     my $error = $self->communigate_pro_queue( $new->svcnum,

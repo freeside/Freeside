@@ -38,6 +38,22 @@ Available top-level domains: <% $export->option('tlds') %>
   </TD>
 </TR>
 
+% if ( $communigate ) {
+  <TR>
+    <TD ALIGN="right">Administrator domain</TD>
+    <TD>
+      <% include('/elements/select-domain.html',
+                   'element_name' => 'parent_svcnum',
+                   'curr_value'   => $svc_domain->parent_svcnum,
+                   'empty_label'  => '(none)',
+                )
+      %>
+    </TD>
+  </TR>
+% } else {
+  <INPUT TYPE="hidden" NAME="parent_svcnum" VALUE="<% $svc_domain->parent_svcnum %>">
+% }
+
 % if ( $communigate
 %      && $part_svc->part_svc_column('max_accounts')->columnflag !~ /^[FA]$/ ) {
 

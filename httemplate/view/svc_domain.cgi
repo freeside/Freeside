@@ -63,10 +63,24 @@ Service #<B><% $svcnum %></B>
 % }
 
 % if ( $communigate ) {
+
+  <TR>
+    <TD ALIGN="right">Administrator domain</TD>
+    <TD BGCOLOR="#ffffff">
+%     if ( $svc_domain->parent_svcnum ) {
+% #XXX agent-virt aware the link
+        <A HREF="svc_domain.cgi?<% $svc_domain->parent_svcnum %>"><% $svc_domain->parent_svc_x->domain %></A>
+%     } else {
+        <I>(none)</I>
+%     }
+    </TD>
+  </TR>
+
   <TR>
     <TD ALIGN="right">Aliases</TD>
     <TD BGCOLOR="#ffffff"><% $svc_domain->cgp_aliases %></TD>
   </TR>
+
 % }
 
 % if ( $communigate && $svc_domain->max_accounts ) {

@@ -111,6 +111,15 @@ sub table_info {
     'cancel_weight'  => 60,
     'fields' => {
       'domain' => 'Domain',
+      'parent_svcnum' => { 
+                         label => 'Parent domain / Communigate administrator domain',
+                         type  => 'select',
+                         select_table => 'svc_domain',
+                         select_key => 'svcnum',
+                         select_label => 'domain',
+                         disable_inventory => 1,
+                         disable_select    => 1,
+                       },
       'max_accounts' => { label => 'Maximum number of accounts',
                           'disable_inventory' => 1,
                         },
