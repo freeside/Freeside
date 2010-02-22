@@ -96,8 +96,98 @@ Available top-level domains: <% $export->option('tlds') %>
 % }
 
 </TABLE>
-
 <BR>
+
+% if ( $communigate ) {
+
+Account defaults
+<% ntable("#cccccc",2) %>
+
+  <% include('/elements/tr-checkbox.html',
+               'label'      =>'Password modification',
+               'field'      => 'acct_def_password_selfchange',
+               'curr_value' => $svc_domain->acct_def_password_selfchange,
+               'value'      => 'Y',
+            )
+  %>
+  <% include('/elements/tr-checkbox.html',
+               'label'      =>'Password recovery',
+               'field'      => 'acct_def_password_recover',
+               'curr_value' => $svc_domain->acct_def_password_recover,
+               'value'      => 'Y',
+            )
+  %>
+
+  <TR>
+    <TD ALIGN="right">Enabled services
+    </TD>
+    <TD><% include('/elements/communigate_pro-accessmodes.html',
+                     'element_name_prefix' => 'acct_def_cgp_accessmodes_',
+                     'curr_value' => $svc_domain->acct_def_cgp_accessmodes,
+                  )
+        %>
+    </TD>
+  </TR>
+
+  <% include('/elements/tr-input-text.html',
+               'label'      => 'Mail storage limit',
+               'field'      => 'acct_def_quota',
+               'curr_value' => $svc_domain->acct_def_quota,
+            )
+  %>
+  <% include('/elements/tr-input-text.html',
+               'label'      => 'File storage limit',
+               'field'      => 'acct_def_file_quota',
+               'curr_value' => $svc_domain->acct_def_file_quota,
+            )
+  %>
+  <% include('/elements/tr-input-text.html',
+               'label'      => 'Files limit',
+               'field'      => 'acct_def_file_maxnum',
+               'curr_value' => $svc_domain->acct_def_file_maxnum,
+            )
+  %>
+  <% include('/elements/tr-input-text.html',
+               'label'      => 'File size limit',
+               'field'      => 'acct_def_file_maxsize',
+               'curr_value' => $svc_domain->acct_def_file_maxsize,
+            )
+  %>
+
+%# false laziness w/svc_acct acct_def
+  <TR>
+    <TD ALIGN="right">Message delete method</TD>
+    <TD>
+      <SELECT NAME="acct_def_cgp_deletemode">
+%       for ( 'Move To Trash', 'Immediately', 'Mark' ) {
+          <OPTION VALUE="<% $_ %>"
+                  <% $_ eq $svc_domain->acct_def_cgp_deletemode ? 'SELECTED' : '' %>
+          ><% $_ %>
+%       }
+      </SELECT>
+    </TD>
+  </TR>
+
+  <% include('/elements/tr-input-text.html',
+               'label'      => 'On logout remove trash',
+               'curr_value' => $svc_domain->acct_def_cgp_emptytrash,
+            )
+  %>
+
+</TABLE>
+<BR>
+
+% } else {
+
+%   foreach my $f (qw( password_selfchange password_recover cgp_accessmodes
+%                      quota file_quota file_maxnum file_maxsize
+%                      cgp_deletemode cgp_emptytrash
+%                 )) {
+      <INPUT TYPE="hidden" NAME="acct_def_<%$f%>" VALUE="<% $svc_domain->get("acct_def_$f") %>">
+%   }
+
+% }
+
 <INPUT TYPE="submit" VALUE="Submit">
 
 </FORM>

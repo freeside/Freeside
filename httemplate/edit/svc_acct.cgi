@@ -279,6 +279,7 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
 % }
 
 
+% #false laziness w/svc_domain
 % if ( $communigate
 %      && $part_svc->part_svc_column('cgp_accessmodes')->columnflag ne 'F' )
 % {
@@ -330,6 +331,7 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
 
 % if ( $communigate ) {
 
+%# false laziness w/svc_domain acct_def
   <TR>
     <TD ALIGN="right">Message delete method</TD>
     <TD>

@@ -144,9 +144,13 @@ sub table_info {
                            },
       'acct_def_password_selfchange' => { label => 'Acct. default Password modification',
                                  type  => 'checkbox',
+                            disable_inventory => 1,
+                            disable_select    => 1,
                                },
       'acct_def_password_recover'    => { label => 'Acct. default Password recovery',
                                  type  => 'checkbox',
+                            disable_inventory => 1,
+                            disable_select    => 1,
                                },
       'acct_def_cgp_deletemode' => { 
                             label => 'Acct. default Communigate message delete method',

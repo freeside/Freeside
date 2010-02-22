@@ -266,6 +266,14 @@ that field.
 %                             'empty_label'  => 'Select inventory class',
 %                          );
 %
+%        } elsif ( $def->{type} eq 'checkbox' ) {
+%
+%          $html .= include('/elements/checkbox.html',
+%                             'field'      => $layer.'__'.$field,
+%                             'curr_value' => $value,
+%                             'value'      => 'Y',
+%                          );
+%
 %        } elsif ( $def->{type} eq 'select' ) {
 %
 %          $html .= qq!<SELECT NAME="${layer}__${field}" $disabled!;

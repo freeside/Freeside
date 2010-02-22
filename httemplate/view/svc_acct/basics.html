@@ -1,15 +1,15 @@
 <% &ntable("#cccccc") %><TR><TD><% &ntable("#cccccc",2) %>
 
-<% include('tr.html', label=>'Service',  value=>$part_svc->svc) %>
-<% include('tr.html', label=>'Username', value=>$svc_acct->username) %>
-<% include('tr.html', label=>'Domain',   value=>$domain) %>
+<% include('/view/elements/tr.html', label=>'Service',  value=>$part_svc->svc) %>
+<% include('/view/elements/tr.html', label=>'Username', value=>$svc_acct->username) %>
+<% include('/view/elements/tr.html', label=>'Domain',   value=>$domain) %>
 
 % if ( $opt{'communigate'} ) {
-  <% include('tr.html', label=>'Aliases', value=>$svc_acct->cgp_aliases) %>
+  <% include('/view/elements/tr.html', label=>'Aliases', value=>$svc_acct->cgp_aliases) %>
 %}
 
 % if ( $svc_acct->pbxsvc ) {
-  <% include('tr.html', label=>'PBX', value=>$svc_acct->pbx_title) %>
+  <% include('/view/elements/tr.html', label=>'PBX', value=>$svc_acct->pbx_title) %>
 %}
 
 % my $show_pw = '';
@@ -30,72 +30,72 @@
 %   $show_pw .= '<I>(hidden)</I>';
 % } 
 % $password = ''; 
-<% include('tr.html', label=>'Password', value=>$show_pw) %>
+<% include('/view/elements/tr.html', label=>'Password', value=>$show_pw) %>
 
 
 % if ( $conf->exists('security_phrase') ) {
-  <%include('tr.html', label=>'Security phrase', value=>$svc_acct->sec_phrase)%>
+  <%include('/view/elements/tr.html', label=>'Security phrase', value=>$svc_acct->sec_phrase)%>
 % } 
 
 % if ( $svc_acct->popnum ) {
 %   my $svc_acct_pop = qsearchs('svc_acct_pop',{'popnum'=>$svc_acct->popnum});
-    <% include('tr.html', label=>'Access number', value=>$svc_acct_pop->text) %>
+    <% include('/view/elements/tr.html', label=>'Access number', value=>$svc_acct_pop->text) %>
 % } 
 
 % if ($svc_acct->uid ne '') { 
-  <% include('tr.html', label=>'UID', value=>$svc_acct->uid) %>
+  <% include('/view/elements/tr.html', label=>'UID', value=>$svc_acct->uid) %>
 % } 
 
 % if ($svc_acct->gid ne '') { 
-  <% include('tr.html', label=>'GID', value=>$svc_acct->gid) %>
+  <% include('/view/elements/tr.html', label=>'GID', value=>$svc_acct->gid) %>
 % } 
 
 % if ($svc_acct->finger ne '') { 
-  <% include('tr.html', label=>'Real Name', value=>$svc_acct->finger) %>
+  <% include('/view/elements/tr.html', label=>'Real Name', value=>$svc_acct->finger) %>
 % } 
 
 % if ($svc_acct->dir ne '') { 
-  <% include('tr.html', label=>'Home directory', value=>$svc_acct->dir) %>
+  <% include('/view/elements/tr.html', label=>'Home directory', value=>$svc_acct->dir) %>
 % } 
 
 % if ($svc_acct->shell ne '') { 
-  <% include('tr.html', label=>'Shell', value=>$svc_acct->shell) %>
+  <% include('/view/elements/tr.html', label=>'Shell', value=>$svc_acct->shell) %>
 % } 
 
 % if ($svc_acct->quota ne '' && ! $opt{'communigate'} ) { 
 
-  <% include('tr.html', label=>'Quota', value=>$svc_acct->quota) %>
+  <% include('/view/elements/tr.html', label=>'Quota', value=>$svc_acct->quota) %>
 
 % } elsif ( $opt{'communigate'} ) {
 
-  <% include('tr.html', label=>'Mailbox type', value=>$svc_acct->cgp_type) %>
+  <% include('/view/elements/tr.html', label=>'Mailbox type', value=>$svc_acct->cgp_type) %>
 
-  <% include('tr.html', label=>'Enabled services',
+  <% include('/view/elements/tr.html', label=>'Enabled services',
                         value=>$svc_acct->cgp_accessmodes ) %>
 
-  <% include('tr.html', label=>'Mail storage limit',
+  <% include('/view/elements/tr.html', label=>'Mail storage limit',
                         value=>$svc_acct->quota ) %>
 
-  <% include('tr.html', label=>'File storage limit',
+  <% include('/view/elements/tr.html', label=>'File storage limit',
                         value=>$svc_acct->file_quota ) %>
 
-  <% include('tr.html', label=>'Number of files limit',
+  <% include('/view/elements/tr.html', label=>'Number of files limit',
                         value=>$svc_acct->file_maxnum ) %>
 
-  <% include('tr.html', label=>'File size limit',
+  <% include('/view/elements/tr.html', label=>'File size limit',
                         value=>$svc_acct->file_maxsize ) %>
 
-  <% include('tr.html', label=>'Message delete method',
+  <% include('/view/elements/tr.html', label=>'Message delete method',
                         value=>$svc_acct->cgp_deletemode ) %>
 
-  <% include('tr.html', label=>'On logout remove trash',
+  <% include('/view/elements/tr.html', label=>'On logout remove trash',
                         value=>$svc_acct->cgp_emptytrash ) %>
 
 
 % }
 
 % if ($svc_acct->slipip) { 
-  <% include('tr.html',
+  <% include('/view/elements/tr.html',
        label=>'IP address',
        value=> ( $svc_acct->slipip eq "0.0.0.0" || $svc_acct->slipip eq '0e0' )
                  ? "<I>(Dynamic)</I>"
@@ -112,7 +112,7 @@
 % foreach my $attribute ( grep /^radius_/, $svc_acct->fields ) {
 %   $attribute =~ /^radius_(.*)$/;
 %   my $pattribute = $FS::raddb::attrib{$1};
-    <% include('tr.html', label=>"Radius (reply) $pattribute",
+    <% include('/view/elements/tr.html', label=>"Radius (reply) $pattribute",
                           value=>$svc_acct->getfield($attribute)
               )
     %>
@@ -121,13 +121,13 @@
 % foreach my $attribute ( grep /^rc_/, $svc_acct->fields ) {
 %   $attribute =~ /^rc_(.*)$/;
 %   my $pattribute = $FS::raddb::attrib{$1};
-    <% include('tr.html', label=>"Radius (check) $pattribute",
+    <% include('/view/elements/tr.html', label=>"Radius (check) $pattribute",
                           value=>$svc_acct->getfield($attribute)
               )
     %>
 % } 
 
-<% include('tr.html', label=>'RADIUS groups',
+<% include('/view/elements/tr.html', label=>'RADIUS groups',
                       value=>join('<BR>', $svc_acct->radius_groups) ) %>
 
 %# Can this be abstracted further?  Maybe a library function like

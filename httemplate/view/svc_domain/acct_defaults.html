@@ -1,0 +1,71 @@
+% if ( $communigate ) {
+
+  Account defaults
+  <% &ntable("#cccccc") %><TR><TD><% &ntable("#cccccc",2) %>
+
+  <% include('/view/elements/tr.html',
+               label=>'Password modification',
+               value=>$svc_domain->acct_def_password_selfchange ? 'YES' : 'NO',
+            )
+  %>
+   <% include('/view/elements/tr.html',
+               label=>'Password recovery',
+               value=>$svc_domain->acct_def_password_recover ? 'YES' : 'NO',
+            )
+  %>
+    
+  <% include('/view/elements/tr.html',
+               label=>'Enabled services',
+               value=>$svc_domain->acct_def_cgp_accessmodes,
+            )
+  %>
+    
+  <% include('/view/elements/tr.html',
+               label=>'Mail storage limit',
+               value=>$svc_domain->acct_def_quota,
+            )
+  %>
+    
+  <% include('/view/elements/tr.html',
+               label=>'File storage limit',
+               value=>$svc_domain->acct_def_file_quota,
+            )
+  %>
+    
+  <% include('/view/elements/tr.html',
+               label=>'Files limt',
+               value=>$svc_domain->acct_def_file_maxnum,
+            )
+  %>
+    
+  <% include('/view/elements/tr.html',
+               label=>'File size limit',
+               value=>$svc_domain->acct_def_file_maxsize,
+            )
+  %>
+    
+  <% include('/view/elements/tr.html',
+               label=>'Message delete method',
+               value=>$svc_domain->acct_def_cgp_deletemode,
+            )
+  %>
+    
+  <% include('/view/elements/tr.html',
+               label=>'On logout remove trash',
+               value=>$svc_domain->acct_def_cgp_emptytrash,
+            )
+  %>
+
+  </TABLE></TD></TR></TABLE>
+
+% }
+<%init>
+
+my($svc_domain, %opt) = @_;
+
+my $part_svc = $opt{'part_svc'};
+
+my $communigate = scalar($part_svc->part_export('communigate_pro'));
+                # || scalar($part_svc->part_export('communigate_pro_singledomain'));
+
+</%init>

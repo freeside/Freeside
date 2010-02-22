@@ -27,6 +27,18 @@ unless ( $cgi->param('cgp_accessmodes') ) {
   );
 }
 
+#unmunge acct_def_cgp_accessmodes (falze laziness-ahoy)
+unless ( $cgi->param('acct_def_cgp_accessmodes') ) {
+  $cgi->param('acct_def_cgp_accessmodes', 
+    join(' ',
+      sort map { /^acct_def_cgp_accessmodes_([\w\/]+)$/ or die "no way"; $1; }
+               grep $cgi->param($_),
+                    grep /^acct_def_cgp_accessmodes_([\w\/]+)$/,
+                         $cgi->param()
+        )
+  );
+}
+
 my $new = new FS::svc_domain ( {
   map {
     $_, scalar($cgi->param($_));

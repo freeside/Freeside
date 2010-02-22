@@ -1,0 +1,134 @@
+Service #<B><% $svcnum %></B>
+% #if ( $conf->exists('svc_domain-edit_domain') ) {
+  | <A HREF="<%$p%>edit/svc_domain.cgi?<%$svcnum%>">Edit this domain</A>
+% #}
+
+<% &ntable("#cccccc") %><TR><TD><% &ntable("#cccccc",2) %>
+
+<TR>
+  <TD ALIGN="right">Service</TD>
+  <TD BGCOLOR="#ffffff"><% $part_svc->svc %></TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right">Domain</TD>
+  <TD BGCOLOR="#ffffff">
+    <B><% $domain %></B>
+    <A HREF="<% ${p} %>misc/whois.cgi?custnum=<%$custnum%>;svcnum=<%$svcnum%>;domain=<%$domain%>">(view whois information)</A>
+  </TD>
+</TR>
+
+% if ($export) {
+  <TR>
+    <TD ALIGN="right">Registration status</TD>
+    <TD BGCOLOR="#ffffff"><B><% $status %></B>
+
+%   if ( $FS::CurrentUser::CurrentUser->access_right('Manage domain registration') ) {
+%     if ( defined($ops{'register'}) ) {
+    <A HREF="<% ${p} %>edit/process/domreg.cgi?op=register&svcnum=<% $svcnum %>">Register at <% $registrar->{'name'} %></A>&nbsp;
+%     }
+%     if ( defined($ops{'transfer'}) ) {
+    <A HREF="<% ${p} %>edit/process/domreg.cgi?op=transfer&svcnum=<% $svcnum %>">Transfer to <% $registrar->{'name'} %></A>&nbsp;
+%     }
+%     if ( defined($ops{'renew'}) ) {
+    <A HREF="<% ${p} %>edit/process/domreg.cgi?op=renew&svcnum=<% $svcnum %>&period=1">Renew at <% $registrar->{'name'} %></A>&nbsp;
+%     }
+%     if ( defined($ops{'revoke'}) ) {
+    <A HREF="<% ${p} %>edit/process/domreg.cgi?op=revoke&svcnum=<% $svcnum %>">Revoke</A>
+%     }
+%   }
+
+    </TD>
+  </TR>
+% }
+
+% if ( $communigate ) {
+
+  <TR>
+    <TD ALIGN="right">Administrator domain</TD>
+    <TD BGCOLOR="#ffffff">
+%     if ( $svc_domain->parent_svcnum ) {
+% #XXX agent-virt aware the link
+        <A HREF="svc_domain.cgi?<% $svc_domain->parent_svcnum %>"><% $svc_domain->parent_svc_x->domain %></A>
+%     } else {
+        <I>(none)</I>
+%     }
+    </TD>
+  </TR>
+
+  <TR>
+    <TD ALIGN="right">Aliases</TD>
+    <TD BGCOLOR="#ffffff"><% $svc_domain->cgp_aliases %></TD>
+  </TR>
+
+% }
+
+% if ( $communigate && $svc_domain->max_accounts ) {
+  <TR>
+    <TD ALIGN="right">Maximum number of Accounts</TD>
+    <TD BGCOLOR="#ffffff"><% $svc_domain->max_accounts %></TD>
+  </TR>
+% }
+
+<TR>
+  <TD ALIGN="right">Catch all email</TD>
+  <TD BGCOLOR="#ffffff"><% $email ? "<B>$email</B>" : '<I>(none)</I>' %>
+% if ( $FS::CurrentUser::CurrentUser->access_right('Edit domain catchall') ) {
+     <A HREF="<% ${p} %>misc/catchall.cgi?<% $svcnum %>">(change)</A>
+% }
+  </TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right">Enabled services</TD>
+  <TD BGCOLOR="#ffffff"><% $svc_domain->cgp_accessmodes %></TD>
+</TR>
+
+</TABLE></TD></TR></TABLE>
+
+<%init>
+
+my($svc_domain, %opt) = @_;
+my $svcnum = $svc_domain->svcnum;
+my $domain = $svc_domain->domain;
+my $custnum = $opt{'custnum'};
+my $part_svc = $opt{'part_svc'};
+
+my $communigate = scalar($part_svc->part_export('communigate_pro'));
+                # || scalar($part_svc->part_export('communigate_pro_singledomain'));
+
+my $email = '';
+if ($svc_domain->catchall) {
+  my $svc_acct = qsearchs('svc_acct',{'svcnum'=> $svc_domain->catchall } );
+  die "Unknown svcpart" unless $svc_acct;
+  $email = $svc_acct->email;
+}
+
+# Find the first export that does domain registration
+my @exports = grep $_->can('registrar'), $part_svc->part_export;
+my $export = $exports[0];
+# If we have a domain registration export, get the registrar object
+my $registrar;
+my $status = 'Unknown';
+my %ops = ();
+if ($export) {
+	$registrar = $export->registrar;
+	my $domstat = $export->get_status( $svc_domain );
+	if (defined($domstat->{'message'})) {
+		$status = $domstat->{'message'};
+	} elsif (defined($domstat->{'unregistered'})) {
+		$status = 'Not registered';
+		$ops{'register'} = "Register";
+	} elsif (defined($domstat->{'status'})) {
+		$status = $domstat->{'status'} . ' ' . $domstat->{'contact_email'} . ' ' . $domstat->{'last_update_time'};
+	} elsif (defined($domstat->{'expdate'})) {
+		$status = "Expires " . $domstat->{'expdate'};
+		$ops{'renew'} = "Renew";
+		$ops{'revoke'} = "Revoke";
+	} else {
+		$status = $domstat->{'reason'};
+		$ops{'transfer'} = "Transfer";
+	}
+}
+
+</%init>
