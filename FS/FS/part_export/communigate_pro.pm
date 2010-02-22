@@ -159,8 +159,29 @@ sub _export_insert_svc_domain {
   }
 
   #account defaults
+  my $def_err = $self->communigate_pro_queue( $svc_domain->svcnum,
+    'SetAccountDefaults',
+    $svc_domain->domain,
+    'PWDAllowed'     =>($svc_domain->acct_def_password_selfchange ? 'YES':'NO'),
+    'PasswordRecovery' => ($svc_domain->acct_def_password_recover ? 'YES':'NO'),
+    'AccessModes'      => $svc_domain->acct_def_cgp_accessmodes,
+    'MaxAccountSize'   => $svc_domain->acct_def_quota,
+    'MaxWebSize'       => $svc_domain->acct_def_file_quota,
+    'MaxWebFile'       => $svc_domain->acct_def_file_maxnum,
+    'MaxFileSize'      => $svc_domain->acct_def_file_maxsize,
+  );
+  warn "WARNING: error queueing SetAccountDefaults job: $def_err"
+    if $def_err;
 
   #account defaults prefs
+  my $pref_err = $self->communigate_pro_queue( $svc_domain->svcnum,
+    'SetAccountDefaultPrefs',
+    $svc_domain->domain,
+    'DeleteMode' => $svc_domain->acct_def_cgp_deletemode,
+    'EmptyTrash' => $svc_domain->acct_def_cgp_emptytrash,
+  );
+  warn "WARNING: error queueing SetAccountDefaultPrefs job: $pref_err"
+    if $pref_err;
 
   '';
 
@@ -303,7 +324,34 @@ sub _export_replace_svc_domain {
     return $error if $error;
   }
 
-  #other kinds of changes?
+  #below this identical to insert... any value to doing an Update here?
+  #not seeing any big one... i guess it would be nice to avoid the update
+  #when things haven't changed
+
+  #account defaults
+  my $def_err = $self->communigate_pro_queue( $new->svcnum,
+    'SetAccountDefaults',
+    $new->domain,
+    'PWDAllowed'       => ( $new->acct_def_password_selfchange ? 'YES' : 'NO' ),
+    'PasswordRecovery' => ( $new->acct_def_password_recover    ? 'YES' : 'NO' ),
+    'AccessModes'      => $new->acct_def_cgp_accessmodes,
+    'MaxAccountSize'   => $new->acct_def_quota,
+    'MaxWebSize'       => $new->acct_def_file_quota,
+    'MaxWebFile'       => $new->acct_def_file_maxnum,
+    'MaxFileSize'      => $new->acct_def_file_maxsize,
+  );
+  warn "WARNING: error queueing SetAccountDefaults job: $def_err"
+    if $def_err;
+
+  #account defaults prefs
+  my $pref_err = $self->communigate_pro_queue( $new->svcnum,
+    'SetAccountDefaultPrefs',
+    $new->domain,
+    'DeleteMode' => $new->acct_def_cgp_deletemode,
+    'EmptyTrash' => $new->acct_def_cgp_emptytrash,
+  );
+  warn "WARNING: error queueing SetAccountDefaultPrefs job: $pref_err"
+    if $pref_err;
 
   '';
 }
@@ -463,12 +511,30 @@ sub export_getsettings_svc_domain {
   ) };
   return $@ if $@;
 
-  #warn Dumper($acct_defaults);
+  my $acct_defaultprefs = eval { $self->communigate_pro_runcommand(
+    'GetAccountDefaultPrefs',
+    $svc_domain->domain
+  ) };
+  return $@ if $@;
 
-  %$effective_settings = ( %$effective_settings,
-                           map { ("Acct. Default $_" => $acct_defaults->{$_}); }
-                               keys(%$acct_defaults)
-                         );
+  %$effective_settings = (
+    %$effective_settings,
+    ( map { ("Acct. Default $_" => $acct_defaults->{$_}); }
+          keys(%$acct_defaults)
+    ),
+    ( map { ("Acct. Default $_" => $acct_defaultprefs->{$_}); } #diff label??
+          keys(%$acct_defaultprefs)
+    ),
+  );
+  %$settings = (
+    %$settings,
+    ( map { ("Acct. Default $_" => $acct_defaults->{$_}); }
+          keys(%$acct_defaults)
+    ),
+    ( map { ("Acct. Default $_" => $acct_defaultprefs->{$_}); } #diff label??
+          keys(%$acct_defaultprefs)
+    ),
+  );
 
   #aliases too
   my $aliases = eval { $self->communigate_pro_runcommand(
@@ -591,13 +657,17 @@ sub communigate_pro_queue_dep {
   my( $self, $jobnumref, $svcnum, $method ) = splice(@_,0,4);
 
   my %kludge_methods = (
-    #'CreateAccount'         => 'CreateAccount',
-    'UpdateAccountSettings' => 'UpdateAccountSettings',
-    'UpdateAccountPrefs'    => 'cp_Scalar_Hash',
-    #'CreateDomain'          => 'cp_Scalar_Hash',
-    #'CreateSharedDomain'    => 'cp_Scalar_Hash',
-    'UpdateDomainSettings'  => 'UpdateDomainSettings',
-    'SetDomainAliases'      => 'cp_Scalar_Array',
+    #'CreateAccount'             => 'CreateAccount',
+    'UpdateAccountSettings'     => 'UpdateAccountSettings',
+    'UpdateAccountPrefs'        => 'cp_Scalar_Hash',
+    #'CreateDomain'              => 'cp_Scalar_Hash',
+    #'CreateSharedDomain'        => 'cp_Scalar_Hash',
+    'UpdateDomainSettings'      => 'cp_Scalar_settingsHash',
+    'SetDomainAliases'          => 'cp_Scalar_Array',
+    'SetAccountDefaults'        => 'cp_Scalar_settingsHash',
+    'UpdateAccountDefaults'     => 'cp_Scalar_settingsHash',
+    'SetAccountDefaultPrefs'    => 'cp_Scalar_settingsHash',
+    'UpdateAccountDefaultPrefs' => 'cp_Scalar_settingsHash',
   );
   my $sub = exists($kludge_methods{$method})
               ? $kludge_methods{$method}
@@ -655,9 +725,11 @@ sub cp_Scalar_Array {
 #  communigate_pro_command( $machine, $port, $login, $password, $method, @args );
 #}
 
-sub UpdateDomainSettings {
+sub cp_Scalar_settingsHash {
   my( $machine, $port, $login, $password, $method, $domain, %settings ) = @_;
-  $settings{'DomainAccessModes'} = [split(' ',$settings{'DomainAccessModes'})];
+  for (qw( AccessModes DomainAccessModes )) {
+    $settings{$_} = [split(' ',$settings{$_})] if $settings{$_};
+  }
   my @args = ( 'domain' => $domain, 'settings' => \%settings );
   communigate_pro_command( $machine, $port, $login, $password, $method, @args );
 }
