@@ -257,18 +257,29 @@ my $html_init = include('/elements/init_overlib.html');
 
 my $extra_choices = sub {
   my $query = shift;
+  my $text = '';
 
-  return '' unless
-   $FS::CurrentUser::CurrentUser->access_right('Bulk change customer packages');
-    
-  '<BR><BR>'.
-  include( '/elements/popup_link.html',
-             'label'       => 'Change these packages',
-             'action'      => "${p}misc/bulk_change_pkg.cgi?$query",
-             'actionlabel' => 'Change Packages',
-             'width'       => 763,
-             'height'      => 336,
-         );
+  if( $FS::CurrentUser::CurrentUser->access_right('Bulk change customer packages') ) {
+    $text .= '<BR><BR>'.
+            include( '/elements/popup_link.html',
+              'label'       => 'Change these packages',
+              'action'      => "${p}misc/bulk_change_pkg.cgi?$query",
+              'actionlabel' => 'Change Packages',
+              'width'       => 569,
+              'height'      => 210,
+            );
+    if( $FS::CurrentUser::CurrentUser->access_right('Edit customer package dates') ) {
+      $text .= '<BR>'.
+              include( '/elements/popup_link.html',
+                'label'       => 'Increment next bill date',
+                'action'      => "${p}misc/bulk_pkg_increment_bill.cgi?$query",
+                'actionlabel' => 'Increment Bill Date',
+                'width'       => 569,
+                'height'      => 210,
+                );
+    }
+  }
+  return $text;
 };
 
 </%init>
