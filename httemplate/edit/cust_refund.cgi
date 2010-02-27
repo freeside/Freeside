@@ -48,7 +48,7 @@
     <TD ALIGN="right">Method</TD><TD BGCOLOR="#ffffff"><% $payby %> # <% $paymask %></TD>
   </TR>
 
-% unless ( $paydate ) {  # possibly other reasons: i.e. card has since expired
+% unless ( $paydate || $cust_pay->payby ne 'CARD' ) {  # possibly other reasons: i.e. card has since expired
   <TR>
     <TD ALIGN="right">Expiration</TD><TD BGCOLOR="#ffffff">
       <% include( '/elements/select-month_year.html',
