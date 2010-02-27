@@ -225,7 +225,7 @@ sub calculate_applications {
     my %saw = ();
     my @weights = sort { $b <=> $a }     # highest weight first
                   grep { ! $saw{$_}++ }  # want a list of unique weights
-		  map  { $_->[1] }
+        	  map  { $_->[1] }
                        @openweight;
   
     my $remaining_amount = $self->amount;
@@ -249,80 +249,82 @@ sub calculate_applications {
       #if some items are less than applytotal/num_items, then apply then in full
       my $lessflag;
       do {
-	$lessflag = 0;
+        $lessflag = 0;
 
-	#no, not sprintf("%.2f",
-	# we want this rounded DOWN for purposes of checking for line items
-	# less than it, we don't want .66666 becoming .67 and causing this
-	# to trigger when it shouldn't
+        #no, not sprintf("%.2f",
+        # we want this rounded DOWN for purposes of checking for line items
+        # less than it, we don't want .66666 becoming .67 and causing this
+        # to trigger when it shouldn't
         my $applyeach = int( 100 * $applytotal / scalar(@items) ) / 100;
 
-	my @newitems = ();
-	foreach my $item ( @items ) {
-	  my $itemamount = $item->setup ? $item->owed_setup : $item->owed_recur;
+        my @newitems = ();
+        foreach my $item ( @items ) {
+          my $itemamount = $item->setup ? $item->owed_setup : $item->owed_recur;
           if ( $itemamount < $applyeach ) {
-	    warn "$me applying full $itemamount".
-	         " to small line item (cust_bill_pkg ". $item->billpkgnum. ")\n"
-	      if $DEBUG;
-	    push @apply, [ $item, $itemamount ];
-	    $applytotal -= $itemamount;
+            warn "$me applying full $itemamount".
+                 " to small line item (cust_bill_pkg ". $item->billpkgnum. ")\n"
+              if $DEBUG;
+            push @apply, [ $item, $itemamount ];
+            $applytotal -= $itemamount;
             $lessflag=1;
-	  } else {
-	    push @newitems, $item;
-	  }
-	}
-	@items = @newitems;
+          } else {
+            push @newitems, $item;
+          }
+        }
+        @items = @newitems;
 
-      } while ( $lessflag );
+      } while ( $lessflag && @items );
 
-      #and now that we've fallen out of the loop, distribute the rest equally...
+      if ( @items ) {
 
-      # should cust_bill_pay_pkg and cust_credit_bill_pkg amount columns
-      # become real instead of numeric(10,2) ???  no..
-      my $applyeach = sprintf("%.2f", $applytotal / scalar(@items) );
+        #and now that we've fallen out of the loop, distribute the rest equally
 
-      my @equi_apply = map { [ $_, $applyeach ] } @items;
+        # should cust_bill_pay_pkg and cust_credit_bill_pkg amount columns
+        # become real instead of numeric(10,2) ???  no..
+        my $applyeach = sprintf("%.2f", $applytotal / scalar(@items) );
 
-      # or should we futz with pennies instead?  yes, bah!
-      my $diff =
-        sprintf('%.0f', 100 * ( $applytotal - $applyeach * scalar(@items) ) );
-      $diff = 0 if $diff eq '-0'; #yay ieee fp
-      if ( abs($diff) > scalar(@items) ) {
-        #we must have done something really wrong, the difference is more than
-	#a penny an item
-	return 'Error distributing pennies applying '. $self->_app_source_name.
-	       " - can't distribute difference of $diff pennies".
-	       ' among '. scalar(@items). ' line items';
+        my @equi_apply = map { [ $_, $applyeach ] } @items;
+
+        # or should we futz with pennies instead?  yes, bah!
+        my $diff =
+          sprintf('%.0f', 100 * ( $applytotal - $applyeach * scalar(@items) ) );
+        $diff = 0 if $diff eq '-0'; #yay ieee fp
+        if ( abs($diff) > scalar(@items) ) {
+          #we must have done something really wrong, the difference is more than
+          #a penny an item
+          return 'Error distributing pennies applying '.$self->_app_source_name.
+                 " - can't distribute difference of $diff pennies".
+                 ' among '. scalar(@items). ' line items';
+        }
+
+        warn "$me futzing with $diff pennies difference\n"
+          if $DEBUG && $diff;
+
+        my $futz = 0;
+        while ( $diff != 0 && $futz < scalar(@equi_apply) ) {
+          if ( $diff > 0 ) { 
+            $equi_apply[$futz++]->[1] += .01;
+            $diff -= 1;
+          } elsif ( $diff < 0 ) {
+            $equi_apply[$futz++]->[1] -= .01;
+            $diff += 1;
+          } else {
+            die "guru exception #5 (in fortran tongue the answer)";
+          }
+        }
+
+        if ( sprintf('%.0f', $diff ) ) {
+          return "couldn't futz with pennies enough: still $diff left";
+        }
+
+        if ( $DEBUG ) {
+          warn "$me applying ". $_->[1].
+               " to line item (cust_bill_pkg ". $_->[0]->billpkgnum. ")\n"
+            foreach @equi_apply;
+        }
+        push @apply, @equi_apply;
+
       }
-
-      warn "$me futzing with $diff pennies difference\n"
-        if $DEBUG && $diff;
-
-      my $futz = 0;
-      while ( $diff != 0 && $futz < scalar(@equi_apply) ) {
-        if ( $diff > 0 ) { 
-	  $equi_apply[$futz++]->[1] += .01;
-	  $diff -= 1;
-	} elsif ( $diff < 0 ) {
-	  $equi_apply[$futz++]->[1] -= .01;
-	  $diff += 1;
-	} else {
-	  die "guru exception #5 (in fortran tongue the answer)";
-	}
-      }
-
-      if ( sprintf('%.0f', $diff ) ) {
-	return "couldn't futz with pennies enough: still $diff left";
-      }
-
-      if ( $DEBUG ) {
-        warn "$me applying ". $_->[1].
-	     " to line item (cust_bill_pkg ". $_->[0]->billpkgnum. ")\n"
-	  foreach @equi_apply;
-      }
-
-
-      push @apply, @equi_apply;
 
       #$remaining_amount -= $applytotal;
       last unless $remaining_amount;
