@@ -94,7 +94,7 @@ Example:
 % {
 %   my $recvalue = $record->$key();
     <OPTION VALUE="<% $recvalue %>"
-            <% $opt{'all_selected'} || ref($value) && $value->{$recvalue} || $value == $recvalue
+            <% $opt{'all_selected'} || ref($value) && $value->{$recvalue} || $value && $value eq $recvalue # not == because of value_col
                ? ' SELECTED' : ''
             %>
 %           foreach my $att ( @{ $opt{'extra_option_attributes'} } ) {

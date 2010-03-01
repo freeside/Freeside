@@ -401,7 +401,7 @@ sub replace {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $error = $new->set_auto_inventory;
+  my $error = $new->set_auto_inventory($old);
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
@@ -694,6 +694,7 @@ If there is an error, returns the error, otherwise returns false.
 
 sub set_auto_inventory {
   my $self = shift;
+  my $old = @_ ? shift : '';
 
   my $error =
     $self->ut_numbern('svcnum')
@@ -760,6 +761,24 @@ sub set_auto_inventory {
     if ( $ierror ) {
       $dbh->rollback if $oldAutoCommit;
       return "Error provisioning inventory: $ierror";
+    }
+
+    if ( $old && $old->$field() && $old->$field() ne $self->$field() ) {
+      my $old_inv = qsearchs({
+        'table'   => 'inventory_item',
+        'hashref' => { 'classnum' => $classnum,
+                       'svcnum'   => $old->svcnum,
+                       'item'     => $old->$field(),
+                     },
+      });
+      if ( $old_inv ) {
+        $old_inv->svcnum('');
+        my $oerror = $old_inv->replace;
+        if ( $oerror ) {
+          $dbh->rollback if $oldAutoCommit;
+          return "Error unprovisioning inventory: $oerror";
+        }
+      }
     }
 
   }
