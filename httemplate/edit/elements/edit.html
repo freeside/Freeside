@@ -282,9 +282,13 @@ Example:
 %   $include_common{$_} = $f->{$_}
 %     foreach grep exists($f->{$_}), qw( empty_label );
 %
+%   #select-table
+%   $include_common{$_} = $f->{$_}
+%     foreach grep exists($f->{$_}), qw( value_col extra_sql );
+%
 %   #select-table, checkboxes-table
 %   $include_common{$_} = $f->{$_}
-%     foreach grep exists($f->{$_}), qw( table name_col value_col );
+%     foreach grep exists($f->{$_}), qw( table name_col  );
 %
 %   #checkboxes-table
 %   $include_common{$_} = $f->{$_}
