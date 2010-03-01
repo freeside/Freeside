@@ -64,6 +64,16 @@
                      $f->{'value'} = $columndef->columnvalue;
                    } elsif ( $flag eq 'A' ) {
                      $f->{'type'} = 'hidden';
+                   } elsif ( $flag eq 'M' ) {
+                     $f->{'type'}      = 'select-table';
+                     $f->{'table'}     = 'inventory_item';
+                     $f->{'name_col'}  = 'item'; 
+                     $f->{'value_col'} = 'item'; 
+                     $f->{'hashref'}   = {
+                                          'classnum' => $columndef->columnvalue,
+                                          'svcnum'   => '',
+                                         };
+                     $f->{'empty_label'} = 'Select inventory item';
                    }
 
                    if ( $f->{'type'} eq 'select-svc_pbx' ) {

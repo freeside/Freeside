@@ -65,10 +65,9 @@ that field.
 %             'condition' =>
 %               sub { !ref($_[0]) || $_[0]->{disable_select} }, 
 %           },
-%# need to template-ize httemplate/edit/svc_* first
-%#    'M' => { 'desc' => 'Manual selection from inventory',
-%#             'condition' => $inv_sub,
-%#           },
+%    'M' => { 'desc' => 'Manual selection from inventory',
+%             'condition' => $inv_sub,
+%           },
 %    'A' => { 'desc' => 'Automatically fill in from inventory',
 %             'condition' => $inv_sub,
 %           },
@@ -184,6 +183,9 @@ that field.
 %                      qq! onChange="${layer}__${field}_flag_changed(this)">!;
 %
 %          foreach my $f ( keys %flag ) {
+%
+%            # need to template-ize more httemplate/edit/svc_* first
+%            next if $f eq 'M' and $layer !~ /^svc_(broadband|external|phone)$/;
 %
 %            #here is where the SUB from above is called, to skip some choices
 %            next if $flag{$f}->{condition}

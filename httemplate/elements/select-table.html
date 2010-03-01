@@ -29,6 +29,9 @@ Example:
     #or
     'records'        => \@records, #instead of search params
 
+    #instead of the primary key... only for special cases
+    'value_col'      => 'columnname',
+
     #basic params controlling the resulting <SELECT>
     'pre_options'    => [ 'value' => 'option' ], #before normal options
     'post_options'   => [ 'value' => 'option' ], #after normal options
@@ -138,7 +141,7 @@ if ( $opt{'onchange'} ) {
 my $dbdef_table = dbdef->table($opt{'table'})
   or die "can't find dbdef for ". $opt{'table'}. " table\n";
 
-my $key = $dbdef_table->primary_key; #? $opt{'primary_key'} ||
+my $key = $opt{'value_col'} || $dbdef_table->primary_key;
 
 my $name_col = $opt{'name_col'};
 
