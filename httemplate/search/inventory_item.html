@@ -9,6 +9,7 @@
                                     'hashref' => {},
                                     'select'  => join(', ',
                                         'inventory_item.*',
+                                        'part_svc.svcdb',
                                         'cust_main.custnum',
                                         FS::UI::Web::cust_sql_fields(),
                                       ),
@@ -103,7 +104,16 @@ my $count_query =
 my $link = sub {
   my $inventory_item = shift;
   if ( $inventory_item->svcnum ) {
-    [ "${p}view/svc_acct.cgi?", 'svcnum' ];
+
+    #[ "${p}view/svc_acct.cgi?", 'svcnum' ];
+    my $url = svc_url(
+      'm'      => $m,
+      'action' => 'view',
+      #'svcdb'  => $inventory_item->cust_svc->part_svc->svcdb,
+      'svcdb'  => $inventory_item->svcdb, #we have it from the joined search
+      'query'  => '',
+    );
+    [ $url, 'svcnum' ];
   } else {
     '';
   }
