@@ -685,7 +685,9 @@ sub pbx_select_hash {
 
 =item set_auto_inventory
 
-Sets any fields which auto-populate from inventory (see L<FS::part_svc>).
+Sets any fields which auto-populate from inventory (see L<FS::part_svc>), and
+also check any manually populated inventory fields.
+
 If there is an error, returns the error, otherwise returns false.
 
 =cut
@@ -715,39 +717,51 @@ sub set_auto_inventory {
   #set default/fixed/whatever fields from part_svc
   my $table = $self->table;
   foreach my $field ( grep { $_ ne 'svcnum' } $self->fields ) {
+
     my $part_svc_column = $part_svc->part_svc_column($field);
-    if ( $part_svc_column->columnflag eq 'A' && $self->$field() eq '' ) {
+    my $columnflag = $part_svc_column->columnflag;
+    next unless $columnflag =~ /^[AM]$/;
 
-      my $classnum = $part_svc_column->columnvalue;
-      my $inventory_item = qsearchs({
-        'table'     => 'inventory_item',
-        'hashref'   => { 'classnum' => $classnum, 
-                         'svcnum'   => '',
-                       },
-        'extra_sql' => 'LIMIT 1 FOR UPDATE',
-      });
+    next if $columnflag eq 'A' && $self->$field() ne '';
 
-      unless ( $inventory_item ) {
-        $dbh->rollback if $oldAutoCommit;
-        my $inventory_class =
-          qsearchs('inventory_class', { 'classnum' => $classnum } );
-        return "Can't find inventory_class.classnum $classnum"
-          unless $inventory_class;
-        return "Out of ". $inventory_class->classname. "s\n"; #Lingua:: BS
-                                                              #for pluralizing
-      }
+    my $classnum = $part_svc_column->columnvalue;
+    my %hash = ( 'classnum' => $classnum );
 
-      $inventory_item->svcnum( $self->svcnum );
-      my $ierror = $inventory_item->replace();
-      if ( $ierror ) {
-        $dbh->rollback if $oldAutoCommit;
-        return "Error provisioning inventory: $ierror";
-        
-      }
-
-      $self->setfield( $field, $inventory_item->item );
-
+    if ( $columnflag eq 'A' && $self->$field() eq '' ) {
+      $hash{'svcnum'} = '';
+    } elsif ( $columnflag eq 'M' ) {
+      return "Select inventory item for $field" unless $self->getfield($field);
+      $hash{'item'} = $self->getfield($field);
     }
+
+    my $inventory_item = qsearchs({
+      'table'     => 'inventory_item',
+      'hashref'   => \%hash,
+      'extra_sql' => 'LIMIT 1 FOR UPDATE',
+    });
+
+    unless ( $inventory_item ) {
+      $dbh->rollback if $oldAutoCommit;
+      my $inventory_class =
+        qsearchs('inventory_class', { 'classnum' => $classnum } );
+      return "Can't find inventory_class.classnum $classnum"
+        unless $inventory_class;
+      return "Out of ". $inventory_class->classname. "s\n"; #Lingua:: BS
+                                                            #for pluralizing
+    }
+
+    next if $columnflag eq 'M' && $inventory_item->svcnum == $self->svcnum;
+
+    $self->setfield( $field, $inventory_item->item );
+      #if $columnflag eq 'A' && $self->$field() eq '';
+
+    $inventory_item->svcnum( $self->svcnum );
+    my $ierror = $inventory_item->replace();
+    if ( $ierror ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Error provisioning inventory: $ierror";
+    }
+
   }
 
  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
