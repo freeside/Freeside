@@ -65,15 +65,20 @@
                    } elsif ( $flag eq 'A' ) {
                      $f->{'type'} = 'hidden';
                    } elsif ( $flag eq 'M' ) {
-                     $f->{'type'}      = 'select-table';
-                     $f->{'table'}     = 'inventory_item';
-                     $f->{'name_col'}  = 'item'; 
-                     $f->{'value_col'} = 'item'; 
-                     $f->{'hashref'}   = {
-                                          'classnum' => $columndef->columnvalue,
-                                          'svcnum'   => '',
-                                         };
                      $f->{'empty_label'} = 'Select inventory item';
+                     $f->{'type'}        = 'select-table';
+                     $f->{'table'}       = 'inventory_item';
+                     $f->{'name_col'}    = 'item'; 
+                     $f->{'value_col'}   = 'item'; 
+                     $f->{'hashref'}     = {
+                                            'classnum'=>$columndef->columnvalue,
+                                            #'svcnum'  => '',
+                                           };
+                     $f->{'extra_sql'}   = 'AND ( svcnum IS NULL ';
+                     $f->{'extra_sql'}  .= ' OR svcnum = '. $object->svcnum
+                       if $object->svcnum;
+                     $f->{'extra_sql'}  .= ' ) ';
+                     $f->{'disable_empty'} = $object->svcnum ? 1 : 0,
                    }
 
                    if ( $f->{'type'} eq 'select-svc_pbx' ) {
