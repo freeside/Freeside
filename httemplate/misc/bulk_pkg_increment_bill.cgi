@@ -1,4 +1,4 @@
-<% include('/elements/header-popup.html', "Increment Bill Date") %>
+<% include('/elements/header-popup.html', "Increment Next Bill Date") %>
 
 % if ( $cgi->param('error') ) {
   <FONT SIZE="+1" COLOR="#ff0000">Error: <% $cgi->param('error') %></FONT>
@@ -36,7 +36,7 @@
 </TABLE>
 
 <BR>
-<INPUT TYPE="submit" VALUE="Increment bill date">
+<INPUT TYPE="submit" VALUE="Increment next bill date">
 
 </FORM>
 </BODY>

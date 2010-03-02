@@ -143,7 +143,6 @@
                     ),
                     '',
                   ],
-                  'extra_choices_callback'=> $extra_choices, 
               )
 %>
 <%init>
@@ -253,30 +252,29 @@ sub time_or_blank {
    };
 }
 
-my $html_init = include('/elements/init_overlib.html');
-
-my $extra_choices = sub {
+my $html_init = sub {
   my $query = shift;
   my $text = '';
+  my $curuser = $FS::CurrentUser::CurrentUser;
 
-  if( $FS::CurrentUser::CurrentUser->access_right('Bulk change customer packages') ) {
-    $text .= '<BR><BR>'.
-            include( '/elements/popup_link.html',
-              'label'       => 'Change these packages',
-              'action'      => "${p}misc/bulk_change_pkg.cgi?$query",
-              'actionlabel' => 'Change Packages',
-              'width'       => 569,
-              'height'      => 210,
-            );
-    if( $FS::CurrentUser::CurrentUser->access_right('Edit customer package dates') ) {
-      $text .= '<BR>'.
-              include( '/elements/popup_link.html',
-                'label'       => 'Increment next bill date',
-                'action'      => "${p}misc/bulk_pkg_increment_bill.cgi?$query",
-                'actionlabel' => 'Increment Bill Date',
-                'width'       => 569,
-                'height'      => 210,
-                );
+  if ( $curuser->access_right('Bulk change customer packages') ) {
+    $text .= include('/elements/init_overlib.html').
+             include( '/elements/popup_link.html',
+               'label'       => 'Change these packages',
+               'action'      => "${p}misc/bulk_change_pkg.cgi?$query",
+               'actionlabel' => 'Change Packages',
+               'width'       => 569,
+               'height'      => 210,
+             ). '<BR>';
+
+    if ( $curuser->access_right('Edit customer package dates') ) {
+      $text .= include( '/elements/popup_link.html',
+                 'label'       => 'Increment next bill date',
+                 'action'      => "${p}misc/bulk_pkg_increment_bill.cgi?$query",
+                 'actionlabel' => 'Increment Bill Date',
+                 'width'       => 569,
+                 'height'      => 210,
+              ). '<BR>';
     }
   }
   return $text;

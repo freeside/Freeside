@@ -144,11 +144,6 @@
 %               $cgi->param('_type', 'html-print'); 
                 as <A HREF="<% $cgi->self_url %>">printable copy</A>
 
-              <% $opt{'extra_choices_callback'}
-                 ? &{$opt{'extra_choices_callback'}}($cgi->query_string)
-                 : ''
-              %>
-
               </TD>
 %             $cgi->param('_type', "html" ); 
 %           } 
