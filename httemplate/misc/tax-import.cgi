@@ -34,12 +34,12 @@ Import a CSV file set containing tax rate records.
   </TR>
 
   <% include( '/elements/file-upload.html',
-                'field'    => [ 'geofile',
+                'field'    => [ 'geocodefile',
                                 'codefile',
                                 'plus4file',
                                 'zipfile',
-                                'txmatrix',
-                                'detail',
+                                'txmatrixfile',
+                                'detailfile',
                               ],
                 'label'    => [ 'geocode filename',
                                 'code filename',

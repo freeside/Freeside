@@ -911,7 +911,8 @@ sub _perform_batch_import {
   my $files = $param->{'uploaded_files'}
     or die "No files provided.";
 
-  my (%files) = map { /^(\w+):([\.\w]+)$/ ? ($1,$2):() } split /,/, $files;
+  my (%files) = map { /^(\w+):((taxdata\/\w+\.\w+\/)?[\.\w]+)$/ ? ($1,$2):() }
+                split /,/, $files;
 
   if ( $format eq 'cch' || $format eq 'cch-fixed'
     || $format eq 'cch-update' || $format eq 'cch-fixed-update' )
@@ -928,15 +929,16 @@ sub _perform_batch_import {
     my $deletename = '';
     my $dir = '%%%FREESIDE_CACHE%%%/cache.'. $FS::UID::datasrc;
 
-    my @list = ( 'GEOCODE',  'geofile',   \&FS::tax_rate_location::batch_import,
-                 'CODE',     'codefile',  \&FS::tax_class::batch_import,
-                 'PLUS4',    'plus4file', \&FS::cust_tax_location::batch_import,
-                 'ZIP',      'zipfile',   \&FS::cust_tax_location::batch_import,
-                 'TXMATRIX', 'txmatrix',  \&FS::part_pkg_taxrate::batch_import,
-                 'DETAIL',   'detail',    \&FS::tax_rate::batch_import,
+    my @list = ( 'GEOCODE',  \&FS::tax_rate_location::batch_import,
+                 'CODE',     \&FS::tax_class::batch_import,
+                 'PLUS4',    \&FS::cust_tax_location::batch_import,
+                 'ZIP',      \&FS::cust_tax_location::batch_import,
+                 'TXMATRIX', \&FS::part_pkg_taxrate::batch_import,
+                 'DETAIL',   \&FS::tax_rate::batch_import,
                );
     while( scalar(@list) ) {
-      my ( $name, $file, $import_sub ) = splice( @list, 0, 3 );
+      my ( $name, $import_sub ) = splice( @list, 0, 2 );
+      my $file = lc($name). 'file';
 
       unless ($files{$file}) {
         $error = "No $name supplied";
@@ -1387,49 +1389,71 @@ sub _remove_old_tax_data {
 
   my $dbh = dbh;
   my $error = $job->update_statustext( "0,Removing old tax data" );
-  dir $error if $error;
-  foreach my $tax_rate_location ( qsearch( 'tax_rate_location',
-                                           { data_vendor => $format,
-                                             disabled    => '',
-                                           }
-                                         )
-                                )
-  {
-    $tax_rate_location->disabled('Y');
-    my $error = $tax_rate_location->replace;
-    return $error if $error;
-  }
+  die $error if $error;
 
-  local $FS::part_pkg_taxproduct::delete_kludge = 1;
+  my $sql = "UPDATE public.tax_rate_location SET disabled='Y' ".
+    "WHERE data_vendor = ".  $dbh->quote($format);
+  $dbh->do($sql) or return "Failed to execute $sql: ". $dbh->errstr;
+
   my @table = qw(
     tax_rate part_pkg_taxrate part_pkg_taxproduct tax_class cust_tax_location
   );
   foreach my $table ( @table ) {
-    my $dbh = dbh;
-#    my $primary_key = dbdef->table($table)->primary_key;
-#    my $sql = "SELECT $primary_key FROM $table WHERE data_vendor = ".
-    my $sql = "DELETE FROM $table WHERE data_vendor = ".
+    $sql = "DELETE FROM public.$table WHERE data_vendor = ".
       $dbh->quote($format);
-    my $sth = $dbh->prepare($sql);
-    return $dbh->errstr unless ($sth);
-    $sth->execute or return "Failed to execute $sql: ". $sth->errstr;
-#    foreach my $row ( @{ $sth->fetchall_arrayref } ) {
-#      my $record = qsearchs( $table, { $primary_key => $row->[0] } )
-#        or return "Failed to find $table with $primary_key ". $row->[0];
-#      my $error = $record->delete;
-#      return $error if $error;
-#    }
+    $dbh->do($sql) or return "Failed to execute $sql: ". $dbh->errstr;
   }
 
   if ( $format eq 'cch' ) {
-    foreach my $cust_tax_location ( qsearch( 'cust_tax_location',
-                                             { data_vendor => "$format-zip" }
-                                           )
-                                  )
-    {
-      my $error = $cust_tax_location->delete;
-      return $error if $error;
-    }
+    $sql = "DELETE FROM public.cust_tax_location WHERE data_vendor = ".
+      $dbh->quote("$format-zip");
+    $dbh->do($sql) or return "Failed to execute $sql: ". $dbh->errstr;
+  }
+
+  '';
+}
+
+sub _create_temporary_tables {
+  my ( $job, $format ) = @_;
+
+  my $dbh = dbh;
+  my $error = $job->update_statustext( "0,Creating temporary tables" );
+  die $error if $error;
+
+  my @table = qw( tax_rate
+                  tax_rate_location
+                  part_pkg_taxrate
+                  part_pkg_taxproduct
+                  tax_class
+                  cust_tax_location
+  );
+  foreach my $table ( @table ) {
+    my $sql =
+      "CREATE TEMPORARY TABLE $table ( LIKE $table INCLUDING DEFAULTS )";
+    $dbh->do($sql) or return "Failed to execute $sql: ". $dbh->errstr;
+  }
+
+  '';
+}
+
+sub _copy_from_temp {
+  my ( $job, $format ) = @_;
+
+  my $dbh = dbh;
+  my $error = $job->update_statustext( "0,Making permanent" );
+  die $error if $error;
+
+  my @table = qw( tax_rate
+                  tax_rate_location
+                  part_pkg_taxrate
+                  part_pkg_taxproduct
+                  tax_class
+                  cust_tax_location
+  );
+  foreach my $table ( @table ) {
+    my $sql =
+      "INSERT INTO public.$table SELECT * from $table";
+    $dbh->do($sql) or return "Failed to execute $sql: ". $dbh->errstr;
   }
 
   '';
@@ -1496,8 +1520,8 @@ sub _process_reload {
   my %taxproduct = ();
   $error ||= _remember_tax_products( $job, $format, \%taxproduct );
 
-  #wipe out the old data
-  $error ||= _remove_old_tax_data( $job, $format ); 
+  #create temp tables
+  $error ||= _create_temporary_tables( $job, $format );
 
   #import new data
   unless ($error) {
@@ -1512,6 +1536,12 @@ sub _process_reload {
   #disable tax_rates
   $error ||=
    _restore_remembered_disabled_taxes( $job, $format, \%disabled_tax_rate );
+
+  #wipe out the old data
+  $error ||= _remove_old_tax_data( $job, $format ); 
+
+  #untemporize
+  $error ||= _copy_from_temp( $job, $format );
 
   if ($error) {
     $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
@@ -1542,7 +1572,8 @@ sub process_download_and_update {
     die $error if $error;
   }
 
-  my $dir = '%%%FREESIDE_CACHE%%%/cache.'. $FS::UID::datasrc. '/taxdata';
+  my $cache_dir = '%%%FREESIDE_CACHE%%%/cache.'. $FS::UID::datasrc. '/';
+  my $dir = $cache_dir. 'taxdata';
   unless (-d $dir) {
     mkdir $dir or die "can't create $dir: $!\n";
   }
@@ -1610,19 +1641,24 @@ sub process_download_and_update {
     # extract csv files from the dbf files
 
     foreach my $name ( @namelist ) {
-      cch_extract_csv_from_dbf( $job, $dir, $name ); 
+      _cch_extract_csv_from_dbf( $job, $dir, $name ); 
     }
 
     # generate the diff files
 
     my @list = ();
     foreach my $name ( @namelist ) {
-      my $error = $job->update_statustext( "0,Comparing to previous $name" );
-      die $error if $error;
-      warn "processing $dir.new/$name.txt\n" if $DEBUG;
-      my $olddir = $update ? "$dir.1" : "";
-      my $difffile = _perform_cch_diff( $name, "$dir.new", $olddir );
-      push @list, "$name:$difffile";
+      my $difffile = "$dir.new/$name.txt";
+      if ($update) {
+        my $error = $job->update_statustext( "0,Comparing to previous $name" );
+        die $error if $error;
+        warn "processing $dir.new/$name.txt\n" if $DEBUG;
+        my $olddir = $update ? "$dir.1" : "";
+        $difffile = _perform_cch_diff( $name, "$dir.new", $olddir );
+      } else {
+        $difffile =~ s/^$cache_dir//;
+        push @list, "${name}file:$difffile";
+      }
     }
 
     # perform the import
