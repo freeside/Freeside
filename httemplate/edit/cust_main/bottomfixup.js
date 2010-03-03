@@ -225,6 +225,7 @@ function post_standardization() {
 
   } else {
 
+    cf.elements['geocode'].value = '';
     post_geocode();
 
   }
