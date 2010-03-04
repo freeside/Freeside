@@ -2630,7 +2630,9 @@ sub print_generic {
   $invoice_data{current_less_finance} =
     sprintf('%.2f', $self->charged - $invoice_data{finance_amount} );
 
-  if ( $multisection && !$conf->exists('disable_previous_balance') ) {
+  if ( $multisection && !$conf->exists('disable_previous_balance')
+    || $conf->exists('previous_balance-summary_only') )
+  {
     unshift @sections, $previous_section if $pr_total;
   }
 
