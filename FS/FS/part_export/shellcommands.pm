@@ -95,7 +95,7 @@ tie my %options, 'Tie::IxHash',
 Run remote commands via SSH.  Usernames are considered unique (also see
 shellcommands_withdomain).  You probably want this if the commands you are
 running will not accept a domain as a parameter.  You will need to
-<a href="../docs/ssh.html">setup SSH for unattended operation</a>.
+<a href="http://www.freeside.biz/mediawiki/index.php/Freeside:1.9:Documentation:Administration:SSH_Keys">setup SSH for unattended operation</a>.
 
 <BR><BR>Use these buttons for some useful presets:
 <UL>

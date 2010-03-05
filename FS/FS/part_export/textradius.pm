@@ -25,7 +25,7 @@ Requires installation of
 from CPAN.  If using RADIUS::UserFile 1.01, make sure to apply
 <a href="http://rt.cpan.org/NoAuth/Bug.html?id=1210">this patch</a>.  Also
 make sure <a href="http://rsync.samba.org/">rsync</a> is installed on the
-remote machine, and <a href="../docs/ssh.html">SSH is setup for unattended
+remote machine, and <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:1.9:Documentation:Administration:SSH_Keys">SSH is setup for unattended
 operation</a>.
 END
 );

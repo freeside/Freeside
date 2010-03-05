@@ -30,7 +30,7 @@ export that uses vpopmail CLI commands instead.<BR>
 Real time export to <a href="http://inter7.com/vpopmail/">vpopmail</a> text
 files.  <a href="http://search.cpan.org/dist/File-Rsync">File::Rsync</a>
 must be installed, and you will need to
-<a href="../docs/ssh.html">setup SSH for unattended operation</a>
+<a href="http://www.freeside.biz/mediawiki/index.php/Freeside:1.9:Documentation:Administration:SSH_Keys">setup SSH for unattended operation</a>
 to <b>vpopmail</b>@<i>export.host</i>. 
 END
 );

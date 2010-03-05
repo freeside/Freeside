@@ -77,7 +77,7 @@ Run remote commands via SSH.  username@domain (rather than just usernames) are
 considered unique (also see shellcommands).  You probably want this if the
 commands you are running will accept a domain as a parameter, and will allow
 the same username with different domains.  You will need to
-<a href="../docs/ssh.html">setup SSH for unattended operation</a>.
+<a href="http://www.freeside.biz/mediawiki/index.php/Freeside:1.9:Documentation:Administration:SSH_Keys">setup SSH for unattended operation</a>.
 
 <BR><BR>Use these buttons for some useful presets:
 <UL>

@@ -26,7 +26,7 @@ tie my %options, 'Tie::IxHash',
   'options' => \%options,
   'notes'   => <<'END'
 Run remote commands via SSH, for forwards.  You will need to
-<a href="../docs/ssh.html">setup SSH for unattended operation</a>.
+<a href="http://www.freeside.biz/mediawiki/index.php/Freeside:1.9:Documentation:Administration:SSH_Keys">setup SSH for unattended operation</a>.
 <BR><BR>Use these buttons for some useful presets:
 <UL>
   <LI>
