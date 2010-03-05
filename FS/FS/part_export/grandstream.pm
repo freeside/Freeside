@@ -8,7 +8,7 @@ use Tie::IxHash;
 use IPC::Run qw(run);
 use FS::CGI qw(rooturl);
 
-$DEBUG = 1;
+$DEBUG = 0;
 
 $me = '[' . __PACKAGE__ . ']';
 $GAPSLITE_HOME = '/usr/local/src/GS_CFG_GEN/';

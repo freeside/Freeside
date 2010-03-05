@@ -20,8 +20,6 @@ my $extra_sql =
       );
 $extra_sql = $extra_sql ? " WHERE ( $extra_sql ) " : " WHERE 0 = 1 ";
 
-warn $extra_sql;
-
 my $html_bottom_sub = sub {
   my $part_device = shift;
 
