@@ -89,8 +89,7 @@ sub gs_create_config {
               'com.grandstream.cmd.TextEncoder',
               $mac, $filename, "$dir/cfg$mac",
             );
-  run \@cmd, '>&', \$out_and_err,
-      },
+  run \@cmd, '>&', \$out_and_err
     or die "grandstream encode failed: $out_and_err";
 
   unlink $filename;
