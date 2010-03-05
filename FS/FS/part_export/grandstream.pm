@@ -1,23 +1,30 @@
 package FS::part_export::grandstream;
 
-use vars qw(@ISA $me %info $GAPSLITE_HOME $JAVA_HOME);
+use base 'FS::part_export';
+use vars qw($DEBUG $me %info $GAPSLITE_HOME $JAVA_HOME);
 use URI;
 use MIME::Base64;
 use Tie::IxHash;
-use FS::part_export;
+use IPC::Run qw(run);
 use FS::CGI qw(rooturl);
 
-@ISA = qw(FS::part_export);
+$DEBUG = 1;
+
 $me = '[' . __PACKAGE__ . ']';
-$GAPSLITE_HOME = '/usr/local/src/GS/GS_CFG_GEN/';
-$JAVA_HOME = '/usr/lib/jvm/java-6-sun/';
-$JAVA_HOME = '/usr/lib/jvm/java-1.4.2-gcj-4.1-1.4.2.0/';
+$GAPSLITE_HOME = '/usr/local/src/GS_CFG_GEN/';
+
+my @java = qw( /usr/lib/jvm/default-java/ /usr/java/default/
+               /usr/lib/jvm/java-6-sun/
+               /usr/lib/jvm/java-1.4.2-gcj-4.1-1.4.2.0/
+             ); #add more common places distros and people put their JREs
+
+$JAVA_HOME = (grep { -e $_ } @java)[0];
 
 tie my %options, 'Tie::IxHash',
-  'upload'          => { label=>'Enable upload to tftpserver',
+  'upload'          => { label=>'Enable upload to TFTP server via SSH',
                          type=>'checkbox',
                        },
-  'user'            => { label=>'User name for ssh to tftp server' },
+  'user'            => { label=>'User name for SSH to TFTP server' },
   'tftproot'        => { label=>'Directory in which to upload configuration' },
   'java_home'       => { label=>'Path to java to be used',
                          default=>$JAVA_HOME,
@@ -33,9 +40,9 @@ tie my %options, 'Tie::IxHash',
 
 %info = (
   'svc'      => [ qw( part_device ) ], # svc_phone
-  'desc'     => 'Provision phone numbers to Grandstream Networks phones',
+  'desc'     => 'Provision phone numbers to Grandstream Networks phones/ATAs',
   'options'  => \%options,
-  'notes'    => '',
+  'notes'    => 'Provision phone numbers to Grandstream Networks phones/ATAs.  Requires a Java runtime environment and the Grandstream configuration tool to be installed.',
 );
 
 sub rebless { shift; }
@@ -46,7 +53,7 @@ sub gs_create_config {
   eval "use Net::SCP;";
   die $@ if $@;
 
-  warn "gs_create_config called with mac of $mac\n";
+  warn "gs_create_config called with mac of $mac\n" if $DEBUG;
   $mac = sprintf('%012s', lc($mac));
   my $dir = '%%%FREESIDE_CONF%%%/cache.'. $FS::UID::datasrc;
 
@@ -71,11 +78,20 @@ sub gs_create_config {
 
   print $fh $self->option('template') or die "print failed: $!";
   close $fh;
-  
-  system( "export GAPSLITE_HOME=$GAPSLITE_HOME; export JAVA_HOME=$JAVA_HOME; ".
-          "cd $dir; $GAPSLITE_HOME/bin/encode.sh $mac $filename $dir/cfg$mac"
-        ) == 0
-    or die "grandstream encode failed: $!";
+
+  #system( "export GAPSLITE_HOME=$GAPSLITE_HOME; export JAVA_HOME=$JAVA_HOME; ".
+  #        "cd $dir; $GAPSLITE_HOME/bin/encode.sh $mac $filename $dir/cfg$mac"
+  #      ) == 0
+  #  or die "grandstream encode failed: $!";
+  my $out_and_err = '';
+  my @cmd = ( "$JAVA_HOME/bin/java",
+              '-classpath', "$GAPSLITE_HOME/lib/gapslite.jar:$GAPSLITE_HOME/lib/bcprov-jdk14-124.jar:$GAPSLITE_HOME/config",
+              'com.grandstream.cmd.TextEncoder',
+              $mac, $filename, "$dir/cfg$mac",
+            );
+  run \@cmd, '>&', \$out_and_err,
+      },
+    or die "grandstream encode failed: $out_and_err";
 
   unlink $filename;
 
@@ -228,7 +244,7 @@ sub export_links {
 
 sub export_device_links {
   my($self, $svc_phone, $device, $arrayref) = (shift, shift, shift, shift);
-
+  warn "export_device_links $self $svc_phone $device $arrayref\n" if $DEBUG;
   return unless $device && $device->mac_addr;
   my $export = $self->exportnum;
   my $fsurl = rooturl();
