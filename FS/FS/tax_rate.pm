@@ -959,9 +959,9 @@ sub _perform_batch_import {
           unless $keep_cch_files;
         push @insert_list, $name, $insertname, $import_sub, $format;
         if ( $name eq 'GEOCODE' ) { #handle this whole ordering issue better
-          unshift @predelete_list, $name, $deletename, $import_sub;
+          unshift @predelete_list, $name, $deletename, $import_sub, $format;
         } else {
-          unshift @delete_list, $name, $deletename, $import_sub;
+          unshift @delete_list, $name, $deletename, $import_sub, $format;
         }
 
       } else {
@@ -1655,10 +1655,9 @@ sub process_download_and_update {
         warn "processing $dir.new/$name.txt\n" if $DEBUG;
         my $olddir = $update ? "$dir.1" : "";
         $difffile = _perform_cch_diff( $name, "$dir.new", $olddir );
-      } else {
-        $difffile =~ s/^$cache_dir//;
-        push @list, "${name}file:$difffile";
       }
+      $difffile =~ s/^$cache_dir//;
+      push @list, "${name}file:$difffile";
     }
 
     # perform the import
