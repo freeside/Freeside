@@ -4881,9 +4881,20 @@ sub realtime_refund_bop {
   ) {
     warn "  attempting void\n" if $DEBUG > 1;
     my $void = new Business::OnlinePayment( $processor, @bop_options );
-    $content{'card_number'} = $cust_pay->payinfo
-      if $cust_pay->payby eq 'CARD'
-      && $void->can('info') && $void->info('CC_void_requires_card');
+    if ( $void->can('info') ) {
+      if ( $cust_pay->payby eq 'CARD'
+           && $void->info('CC_void_requires_card') )
+      {
+        $content{'card_number'} = $cust_pay->payinfo
+      } elsif ( $cust_pay->payby eq 'CHEK'
+                && $void->info('ECHECK_void_requires_account') )
+      {
+        $cust_pay->payinfo 
+        ( $content{'account_number'}, $content{'routing_code'} ) =
+          split('@', $cust_pay->payinfo);
+        $content{'name'} = $self->get('first'). ' '. $self->get('last');
+      }
+    }
     $void->content( 'action' => 'void', %content );
     $void->submit();
     if ( $void->is_success ) {
@@ -6224,9 +6235,20 @@ sub _new_realtime_refund_bop {
   ) {
     warn "  attempting void\n" if $DEBUG > 1;
     my $void = new Business::OnlinePayment( $processor, @bop_options );
-    $content{'card_number'} = $cust_pay->payinfo
-      if $cust_pay->payby eq 'CARD'
-      && $void->can('info') && $void->info('CC_void_requires_card');
+    if ( $void->can('info') ) {
+      if ( $cust_pay->payby eq 'CARD'
+           && $void->info('CC_void_requires_card') )
+      {
+        $content{'card_number'} = $cust_pay->payinfo;
+      } elsif ( $cust_pay->payby eq 'CHEK'
+                && $void->info('ECHECK_void_requires_account') )
+      {
+        $cust_pay->payinfo 
+        ( $content{'account_number'}, $content{'routing_code'} ) =
+          split('@', $cust_pay->payinfo);
+        $content{'name'} = $self->get('first'). ' '. $self->get('last');
+      }
+    }
     $void->content( 'action' => 'void', %content );
     $void->submit();
     if ( $void->is_success ) {
