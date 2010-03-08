@@ -366,6 +366,8 @@ FS/cust_credit_bill_pkg.pm
 t/cust_credit_bill_pkg.t
 FS/registrar.pm
 t/registrar.t
+FS/svc_Domain_Mixin.pm
+t/svc_Domain_Mixin.t
 FS/svc_External_Common.pm
 t/svc_External_Common.t
 FS/svc_Parent_Mixin.pm

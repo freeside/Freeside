@@ -1,0 +1,50 @@
+<SELECT NAME="domsvc" SIZE=1>
+% foreach my $svcnum (
+%                      sort { $svc_domain{$a} cmp $svc_domain{$b} }
+%                      keys %svc_domain
+%                    ) {
+
+    <OPTION VALUE="<% $svcnum %>"
+            <% ($svcnum == $domsvc) ? ' SELECTED' : '' %>
+    ><% $svc_domain{$svcnum} %>
+
+% } 
+
+</SELECT>
+<%init>
+
+my %opt = @_;
+
+my %svc_domain = ();
+my $domsvc;
+
+my $domsvc = $opt{'curr_value'};
+my $part_svc = $opt{'part_svc'}
+               || qsearchs('part_svc', { 'svcpart' => $opt{'svcpart'} });
+
+#optional
+my $cust_pkg = $opt{'cust_pkg'};
+$cust_pkg ||= qsearchs('cust_pkg', { 'pkgnum' => $opt{'pkgnum'} })
+  if $opt{'pkgnum'};
+
+my $pkgnum = $cust_pkg ? $cust_pkg->pkgnum : '';
+
+my %svc_domain = ();
+
+if ( $domsvc ) {
+  my $svc_domain = qsearchs('svc_domain', { 'svcnum' => $domsvc } );
+  if ( $svc_domain ) {
+    $svc_domain{$svc_domain->svcnum} = $svc_domain;
+  } else {
+    warn "unknown svc_domain.svcnum for svc_acct.domsvc: $domsvc";
+  }
+}
+
+%svc_domain = (
+  %svc_domain,
+  FS::svc_Domain_Mixin->domain_select_hash( 'svcpart' => $part_svc->svcpart,
+                                            'pkgnum'  => $pkgnum,
+                                          )
+);
+
+</%init>

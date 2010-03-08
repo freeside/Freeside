@@ -2594,10 +2594,11 @@ sub tables_hashref {
         'sip_password', 'varchar', 'NULL', $char_d, '', '',
         'phone_name',   'varchar', 'NULL', $char_d, '', '',
         'pbxsvc',           'int', 'NULL',      '', '', '',
+        'domsvc',           'int', 'NULL',      '', '', '', 
       ],
       'primary_key' => 'svcnum',
       'unique' => [],
-      'index'  => [ [ 'countrycode', 'phonenum' ], ['pbxsvc'] ],
+      'index'  => [ [ 'countrycode', 'phonenum' ], ['pbxsvc'], ['domsvc'] ],
     },
 
     'phone_device' => {

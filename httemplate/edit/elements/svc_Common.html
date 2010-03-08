@@ -81,7 +81,10 @@
                      $f->{'disable_empty'} = $object->svcnum ? 1 : 0,
                    }
 
-                   if ( $f->{'type'} eq 'select-svc_pbx' ) {
+                   if (    $f->{'type'} eq 'select-svc_pbx'
+                        || $f->{'type'} eq 'select-svc-domain' 
+                      )
+                   {
                      $f->{'include_opt_callback'} =
                        sub { ( 'pkgnum'  => $pkgnum,
                                'svcpart' => $svcpart,

@@ -1,7 +1,8 @@
 package FS::svc_acct;
 
 use strict;
-use vars qw( @ISA $DEBUG $me $conf $skip_fuzzyfiles
+use base qw( FS::svc_Domain_Mixin FS::svc_Common );
+use vars qw( $DEBUG $me $conf $skip_fuzzyfiles
              $dir_prefix @shells $usernamemin
              $usernamemax $passwordmin $passwordmax
              $username_ampersand $username_letter $username_letterfirst
@@ -32,8 +33,6 @@ use FS::Msgcat qw(gettext);
 use FS::UI::bytecount;
 use FS::UI::Web;
 use FS::part_pkg;
-use FS::svc_Common;
-use FS::cust_svc;
 use FS::part_svc;
 use FS::svc_acct_pop;
 use FS::cust_main_invoice;
@@ -47,8 +46,6 @@ use FS::part_export;
 use FS::svc_forward;
 use FS::svc_www;
 use FS::cdr;
-
-@ISA = qw( FS::svc_Common );
 
 $DEBUG = 0;
 $me = '[FS::svc_acct]';
@@ -356,16 +353,6 @@ sub table_info {
                          select_key   => 'svcnum',
                          select_label => 'domain',
                          disable_inventory => 1,
-
-                       },
-        'domsvc'    => {
-                         label     => 'Domain',
-                         type      => 'select',
-                         select_table => 'svc_domain',
-                         select_key   => 'svcnum',
-                         select_label => 'domain',
-                         disable_inventory => 1,
-
                        },
         'pbxsvc'    => { label => 'PBX',
                          type  => 'select-svc_pbx.html',
@@ -1810,22 +1797,6 @@ sub domain {
   $svc_domain->domain;
 }
 
-=item svc_domain
-
-Returns the FS::svc_domain record for this account's domain (see
-L<FS::svc_domain>).
-
-=cut
-
-# FS::h_svc_acct has a history-aware svc_domain override
-
-sub svc_domain {
-  my $self = shift;
-  $self->{'_domsvc'}
-    ? $self->{'_domsvc'}
-    : qsearchs( 'svc_domain', { 'svcnum' => $self->domsvc } );
-}
-
 =item cust_svc
 
 Returns the FS::cust_svc record for this account (see L<FS::cust_svc>).
@@ -3147,61 +3118,4 @@ schema.html from the base documentation.
 
 =cut
 
-=item domain_select_hash %OPTIONS
-
-Returns a hash SVCNUM => DOMAIN ...  representing the domains this customer
-may at present purchase.
-
-Currently available options are: I<pkgnum> I<svcpart>
-
-=cut
-
-sub domain_select_hash {
-  my ($self, %options) = @_;
-  my %domains = ();
-  my $part_svc;
-  my $cust_pkg;
-
-  if (ref($self)) {
-    $part_svc = $self->part_svc;
-    $cust_pkg = $self->cust_svc->cust_pkg
-      if $self->cust_svc;
-  }
-
-  $part_svc = qsearchs('part_svc', { 'svcpart' => $options{svcpart} })
-    if $options{'svcpart'};
-
-  $cust_pkg = qsearchs('cust_pkg', { 'pkgnum' => $options{pkgnum} })
-    if $options{'pkgnum'};
-
-  if ($part_svc && ( $part_svc->part_svc_column('domsvc')->columnflag eq 'S'
-                  || $part_svc->part_svc_column('domsvc')->columnflag eq 'F')) {
-    %domains = map { $_->svcnum => $_->domain }
-               map { qsearchs('svc_domain', { 'svcnum' => $_ }) }
-               split(',', $part_svc->part_svc_column('domsvc')->columnvalue);
-  }elsif ($cust_pkg && !$conf->exists('svc_acct-alldomains') ) {
-    %domains = map { $_->svcnum => $_->domain }
-               map { qsearchs('svc_domain', { 'svcnum' => $_->svcnum }) }
-               map { qsearch('cust_svc', { 'pkgnum' => $_->pkgnum } ) }
-               qsearch('cust_pkg', { 'custnum' => $cust_pkg->custnum });
-  }else{
-    %domains = map { $_->svcnum => $_->domain } qsearch('svc_domain', {} );
-  }
-
-  if ($part_svc && $part_svc->part_svc_column('domsvc')->columnflag eq 'D') {
-    my $svc_domain = qsearchs('svc_domain',
-      { 'svcnum' => $part_svc->part_svc_column('domsvc')->columnvalue } );
-    if ( $svc_domain ) {
-      $domains{$svc_domain->svcnum}  = $svc_domain->domain;
-    }else{
-      warn "unknown svc_domain.svcnum for part_svc_column domsvc: ".
-           $part_svc->part_svc_column('domsvc')->columnvalue;
-
-    }
-  }
-
-  (%domains);
-}
-
 1;
-

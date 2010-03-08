@@ -1,0 +1,34 @@
+%if ( $columnflag eq 'F' ) {
+  <INPUT TYPE="hidden" NAME="domsvc" VALUE="<% $domsvc %>">
+% } else { 
+
+  <TR>
+    <TD ALIGN="right"><% $opt{'label'} || 'Domain' %></TD>
+    <TD>
+      <% include('/elements/select-svc-domain.html',
+                   'curr_value' => $domsvc,
+                   'part_svc'   => $part_svc,
+                   'cust_pkg'   => $cust_pkg,
+                )
+      %>
+    </TD>
+  </TR>
+% } 
+<%init>
+
+my %opt = @_;
+
+my $domsvc = $opt{'curr_value'};
+
+#required
+my $part_svc = $opt{'part_svc'}
+               || qsearchs('part_svc', { 'svcpart' => $opt{'svcpart'} });
+
+my $columnflag = $part_svc->part_svc_column('domsvc')->columnflag;
+
+#optional
+my $cust_pkg = $opt{'cust_pkg'};
+$cust_pkg ||= qsearchs('cust_pkg', { 'pkgnum' => $opt{'pkgnum'} })
+  if $opt{'pkgnum'};
+
+</%init>

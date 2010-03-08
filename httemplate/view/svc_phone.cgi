@@ -1,16 +1,10 @@
 <% include('elements/svc_Common.html',
               'table'     => 'svc_phone',
-              'fields'    => [qw(
-                                  countrycode
-                                  phonenum
-                                  pbx_title
-                                  sip_password
-                                  pin
-                                  phone_name
-                             )],
+              'fields'    => \@fields,
               'labels'    => {
                                'countrycode'  => 'Country code',
                                'phonenum'     => 'Phone number',
+                               'domain'       => 'Domain',
                                'pbx_title'    => 'PBX',
                                'sip_password' => 'SIP password',
                                'pin'          => 'PIN',
@@ -20,6 +14,12 @@
           )
 %>
 <%init>
+
+my $conf = new FS::Conf;
+
+my @fields = qw( countrycode phonenum );
+push @fields, 'domain' if $conf->exists('svc_phone-domain');
+push @fields, qw( pbx_title sip_password pin phone_name );
 
 my $html_foot = sub {
   my $svc_phone = shift;

@@ -72,10 +72,15 @@ sub _ns_command {
   $ns;
 }
 
+sub ns_domain {
+  my($self, $svc_phone) = (shift, shift);
+  $svc_phone->domain || $self->option('domain');
+}
+
 sub ns_subscriber {
   my($self, $svc_phone) = (shift, shift);
 
-  my $domain = $self->option('domain');
+  my $domain = $self->ns_domain($svc_phone);
   my $phonenum = $svc_phone->phonenum;
 
   "/domains_config/$domain/subscriber_config/$phonenum";
@@ -91,7 +96,7 @@ sub ns_registrar {
 sub ns_devicename {
   my( $self, $svc_phone ) = (shift, shift);
 
-  my $domain = $self->option('domain');
+  my $domain = $self->ns_domain($svc_phone);
   #my $countrycode = $svc_phone->countrycode;
   my $phonenum    = $svc_phone->phonenum;
 
@@ -121,7 +126,7 @@ sub ns_device {
 sub ns_create_or_update {
   my($self, $svc_phone, $dial_policy) = (shift, shift, shift);
 
-  my $domain = $self->option('domain');
+  my $domain = $self->ns_domain($svc_phone);
   #my $countrycode = $svc_phone->countrycode;
   my $phonenum    = $svc_phone->phonenum;
 
@@ -238,7 +243,7 @@ sub _export_unsuspend {
 sub export_device_insert {
   my( $self, $svc_phone, $phone_device ) = (shift, shift, shift);
 
-  #my $domain = $self->option('domain');
+  my $domain = $self->ns_domain($svc_phone);
   my $countrycode = $svc_phone->countrycode;
   my $phonenum    = $svc_phone->phonenum;
 
@@ -256,7 +261,7 @@ sub export_device_insert {
 
       #'notes' => 
       'server'       => 'SiPbx',
-      'domain'       => $self->option('domain'),
+      'domain'       => $domain,
 
       'brand'        => $phone_device->part_device->devicename,
       

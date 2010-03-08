@@ -1,16 +1,15 @@
 package FS::svc_phone;
 
 use strict;
-use vars qw( @ISA @pw_set $conf );
+use base qw( FS::svc_Domain_Mixin FS::svc_Common );
+use vars qw( @pw_set $conf );
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::Msgcat qw(gettext);
-use FS::svc_Common;
 use FS::part_svc;
 use FS::phone_device;
 use FS::svc_pbx;
-
-@ISA = qw( FS::svc_Common );
+use FS::svc_domain;
 
 #avoid l 1 and o O 0
 @pw_set = ( 'a'..'k', 'm','n', 'p-z', 'A'..'N', 'P'..'Z' , '2'..'9' );
@@ -114,6 +113,14 @@ sub table_info {
                             disable_inventory => 1,
                             disable_select => 1, #UI wonky, pry works otherwise
                           },
+        'domsvc'    => {
+                         label     => 'Domain',
+                         type      => 'select',
+                         select_table => 'svc_domain',
+                         select_key   => 'svcnum',
+                         select_label => 'domain',
+                         disable_inventory => 1,
+                       },
     },
   };
 }
@@ -159,6 +166,7 @@ sub label {
   my $self = shift;
   my $phonenum = $self->phonenum; #XXX format it better
   my $label = $phonenum;
+  $label .= '@'.$self->domain if $self->domsvc;
   $label .= ' ('.$self->phone_name.')' if $self->phone_name;
   $label;
 }
@@ -268,7 +276,8 @@ sub check {
     || $self->ut_anything('sip_password')
     || $self->ut_numbern('pin')
     || $self->ut_textn('phone_name')
-    || $self->ut_foreign_keyn('pbxsvc', 'svc_pbx', 'svcnum' )
+    || $self->ut_foreign_keyn('pbxsvc', 'svc_pbx',    'svcnum' )
+    || $self->ut_foreign_keyn('domsvc', 'svc_domain', 'svcnum' )
   ;
   return $error if $error;
 
