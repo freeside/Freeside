@@ -60,7 +60,7 @@
 <SCRIPT TYPE="text/javascript">
   Calendar.setup({
     inputField: "start_date_text",
-    ifFormat:   "%m/%d/%Y",
+    ifFormat:   "<% $date_format %>",
     button:     "start_date_button",
     align:      "BR"
   });
@@ -107,6 +107,7 @@ die "access denied"
   unless $curuser->access_right('Order customer package');
 
 my $conf = new FS::Conf;
+my $date_format = $conf->config('date_format') || '%m/%d/%Y';
 
 $cgi->param('custnum') =~ /^(\d+)$/ or die "no custnum";
 my $custnum = $1;

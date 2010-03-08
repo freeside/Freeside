@@ -1,9 +1,11 @@
 <DEL>Payment <% $info %></DEL>
-<I>voided <% time2str("%D", $cust_pay_void->void_date) %>
+<I>voided <% time2str($date_format, $cust_pay_void->void_date) %>
 by <% $cust_pay_void->otaker %></I><% $unvoid %>
 <%init>
 
 my( $cust_pay_void, %opt ) = @_;
+
+my $date_format = $opt{'date_format'} || '%m/%d/%Y';
 
 my $curuser = $FS::CurrentUser::CurrentUser;
 

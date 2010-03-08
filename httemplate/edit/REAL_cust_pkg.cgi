@@ -94,7 +94,7 @@
   <SCRIPT TYPE="text/javascript">
     Calendar.setup({
       inputField: "<% $column %>_text",
-      ifFormat:   "%m/%d/%Y",
+      ifFormat:   "<% $date_format %>",
       button:     "<% $column %>_button",
       align:      "BR"
     });
@@ -129,19 +129,15 @@
 
 <% include('/elements/footer.html') %>
 
-<%once>
-
-#my $format = "%c %z (%Z)";
-my $format = "%m/%d/%Y %T %z (%Z)";
-
-#false laziness w/view/cust_main/packages.html
-#my( $billed_or_prepaid,
-
-</%once>
 <%init>
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Edit customer package dates');
+
+my $conf = new FS::Conf;
+my $date_format = $conf->config('date_format') || '%m/%d/%Y';
+
+my $format = $date_format. ' %T %z (%Z)';
 
 my $error = '';
 my( $pkgnum, $cust_pkg );

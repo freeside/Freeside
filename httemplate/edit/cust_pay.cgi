@@ -26,7 +26,7 @@ Payment
 <TR>
   <TD ALIGN="right">Date</TD>
   <TD COLSPAN=2>
-    <INPUT TYPE="text" NAME="_date" ID="_date_text" VALUE="<% time2str("%m/%d/%Y %r",$_date) %>">
+    <INPUT TYPE="text" NAME="_date" ID="_date_text" VALUE="<% time2str($date_format.' %r',$_date) %>">
     <IMG SRC="../images/calendar.png" ID="_date_button" STYLE="cursor: pointer" TITLE="Select date">
   </TD>
 </TR>
@@ -34,7 +34,7 @@ Payment
 <SCRIPT TYPE="text/javascript">
   Calendar.setup({
     inputField: "_date_text",
-    ifFormat:   "%m/%d/%Y",
+    ifFormat:   "<% $date_format %>",
     button:     "_date_button",
     align:      "BR"
   });
@@ -100,7 +100,8 @@ Payment
 
 my $conf = new FS::Conf;
 
-my $money_char = $conf->config('money_char') || '$';
+my $money_char  = $conf->config('money_char')  || '$';
+my $date_format = $conf->config('date_format') || '%m/%d/%Y';
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Post payment');

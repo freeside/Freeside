@@ -54,7 +54,7 @@ Examples:
 
 <TR>
   <TD ALIGN="right">Date: </TD>
-  <TD><B><% time2str("%D", $src->_date) %></B></TD>
+  <TD><B><% time2str($date_format, $src->_date) %></B></TD>
 </TR>
 
 <TR>
@@ -354,7 +354,7 @@ function src_amount_changed () {
 <OPTION VALUE="">Select <% $dst_thing %>
 
 % foreach my $dst ( @dst ) { 
-  <OPTION<% $dst->$dst_pkey eq $dst_pkeyvalue ? ' SELECTED' : '' %> VALUE="<% $dst->$dst_pkey %>">#<% $dst->$dst_pkey %> - <% time2str("%D", $dst->_date) %> - $<% $dst->$dst_unapplied %>
+  <OPTION<% $dst->$dst_pkey eq $dst_pkeyvalue ? ' SELECTED' : '' %> VALUE="<% $dst->$dst_pkey %>">#<% $dst->$dst_pkey %> - <% time2str($date_format, $dst->_date) %> - $<% $dst->$dst_unapplied %>
 % } 
 
 </SELECT>
@@ -399,7 +399,8 @@ function myOnLoadFunction () {
 my %opt = @_;
 
 my $conf = new FS::Conf;
-my $money_char = $conf->config('money_char') || '$';
+my $money_char  = $conf->config('money_char')  || '$';
+my $date_format = $conf->config('date_format') || '%m/%d/%Y';
 
 my $src_thing = ucfirst($opt{'src_thing'});
 my $src_table = $opt{'src_table'};

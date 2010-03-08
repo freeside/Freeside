@@ -4,6 +4,8 @@ by <% $cust_credit->otaker %><% "$reason$desc$apply$delete$unapply" %>
 
 my( $cust_credit, %opt ) = @_;
 
+my $date_format = $opt{'date_format'} || '%m/%d/%Y';
+
 my $conf = new FS::Conf;
 my $curuser = $FS::CurrentUser::CurrentUser;
 
@@ -64,7 +66,7 @@ if (    scalar(@cust_credit_bill)   == 0
           && scalar(@cust_credit_refund) == 1
           && $cust_credit->credited == 0      ) {
   #applied to one refund
-  $desc .= ' refunded on '.  time2str("%D", $cust_credit_refund[0]->_date);
+  $desc .= ' refunded on '.  time2str($date_format, $cust_credit_refund[0]->_date);
 } else {
   #complicated
   $desc .= '<BR>';
@@ -75,11 +77,11 @@ if (    scalar(@cust_credit_bill)   == 0
                '$'. $app->amount.
                ' '. $app->applied_to_invoice.
                '<BR>';
-               #' on '. time2str("%D", $app->_date).
+               #' on '. time2str($date_format, $app->_date).
     } elsif ( $app->isa('FS::cust_credit_refund') ) {
       $desc .= '&nbsp;&nbsp;'.
                '$'. $app->amount.
-               ' refunded on '. time2str("%D", $app->_date).
+               ' refunded on '. time2str($date_format, $app->_date).
                '<BR>';
     } else {
       die "$app is not a FS::cust_credit_bill or a FS::cust_credit_refund";

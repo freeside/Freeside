@@ -730,6 +730,7 @@ worry that config_items is freeside-specific and icky.
     'type'        => 'select',
     'select_hash' => [
                        '%m/%d/%Y' => 'MM/DD/YYYY',
+                       '%d/%m/%Y' => 'DD/MM/YYYY',
 		       '%Y/%m/%d' => 'YYYY/MM/DD',
                      ],
   },

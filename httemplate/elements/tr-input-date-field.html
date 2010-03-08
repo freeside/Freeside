@@ -21,8 +21,8 @@
   });
 </SCRIPT>
 
-
 <%init>
+
 my($name, $value, $label, $format, $usedatetime);
 if ( ref($_[0]) ) {
   my $opt = shift;
@@ -35,7 +35,10 @@ if ( ref($_[0]) ) {
   ($name, $value, $label, $format, $usedatetime) = @_;
 }
 
-$format = "%m/%d/%Y" unless $format;
+my $conf = new FS::Conf;
+
+$format ||= $conf->config('date_format') || '%m/%d/%Y';
+
 $label = $name unless $label;
 
 if ( $value =~ /\S/ ) {

@@ -31,7 +31,7 @@
 <SCRIPT TYPE="text/javascript">
   Calendar.setup({
     inputField: "expire_date",
-    ifFormat:   "%m/%d/%Y",
+    ifFormat:   "<% $date_format %>",
     button:     "expire_button",
     align:      "BR"
   });
@@ -58,7 +58,10 @@
 
 <%init>
 
-my $date = time2str("%m/%d/%Y", time);
+my %conf = new FS::Conf;
+my $date_format = $conf->config('date_format') || '%m/%d/%Y';
+
+my $date = time2str($date_format, time);
 
 my($pkgnum, $reasonnum);
 if ( $cgi->param('error') ) {

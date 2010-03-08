@@ -11,7 +11,7 @@
 <SCRIPT TYPE="text/javascript">
   Calendar.setup({
     inputField: "<% $opt{prefix} %>beginning_text",
-    ifFormat:   "%m/%d/%Y<% $time_format %>",
+    ifFormat:   "<% $date_format. $time_format %>",
     button:     "<% $opt{prefix} %>beginning_button",
     align:      "BR"
     <% $input_time %>
@@ -30,7 +30,7 @@
 <SCRIPT TYPE="text/javascript">
   Calendar.setup({
     inputField: "<% $opt{prefix} %>ending_text",
-    ifFormat:   "%m/%d/%Y<% $time_format %>",
+    ifFormat:   "<% $date_format. $time_format %>",
     button:     "<% $opt{prefix} %>ending_button",
     align:      "BR"
     <% $input_time %>
@@ -53,6 +53,10 @@ my $previous_request_count = '';
 <%init>
 
 my %opt = @_;
+
+my $conf = new FS::Conf;
+
+my $date_format = $conf->config('date_format') || '%m/%d/%Y';
 
 $opt{prefix} = '' unless defined $opt{prefix};
 $opt{prefix} .= '_' if $opt{prefix};

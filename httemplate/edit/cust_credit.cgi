@@ -14,7 +14,7 @@
 
   <TR>
     <TD ALIGN="right">Date</TD>
-    <TD BGCOLOR="#ffffff"><% time2str("%D",$_date) %></TD>
+    <TD BGCOLOR="#ffffff"><% time2str($date_format, $_date) %></TD>
   </TR>
 
   <TR>
@@ -64,12 +64,10 @@
 </FORM>
 </BODY>
 </HTML>
-<%once>
+<%init>
 
 my $conf = new FS::Conf;
-
-</%once>
-<%init>
+my $date_format = $conf->config('date_format') || '%m/%d/%Y';
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Post credit');

@@ -1,7 +1,7 @@
 package FS::cust_bill;
 
 use strict;
-use vars qw( @ISA $DEBUG $me $conf $money_char $date_format );
+use vars qw( @ISA $DEBUG $me $conf $money_char $date_format $rdate_format );
 use vars qw( $invoice_lines @buf ); #yuck
 use Fcntl qw(:flock); #for spool_csv
 use List::Util qw(min max);
@@ -43,8 +43,9 @@ $me = '[FS::cust_bill]';
 #ask FS::UID to run this stuff for us later
 FS::UID->install_callback( sub { 
   $conf = new FS::Conf;
-  $money_char = $conf->config('money_char') || '$';  
-  $date_format = $conf->config('date_format') || '%x';  
+  $money_char   = $conf->config('money_char')  || '$';  
+  $date_format  = $conf->config('date_format') || '%x';  
+  $rdate_format = $conf->config('date_format') || '%m/%d/%Y';  
 } );
 
 =head1 NAME
@@ -2293,7 +2294,7 @@ sub print_generic {
     'template'        => $template, #params{'template'},
     'notice_name'     => ($params{'notice_name'} || 'Invoice'),#escape_function?
     'current_charges' => sprintf("%.2f", $self->charged),
-    'duedate'         => $self->due_date2str('%m/%d/%Y'), #date_format?
+    'duedate'         => $self->due_date2str($rdate_format), #date_format?
 
     #customer info
     'custnum'         => $cust_main->display_custnum,
@@ -3153,7 +3154,7 @@ sub balance_due_msg {
   my $msg = 'Balance Due';
   return $msg unless $self->terms;
   if ( $self->due_date ) {
-    $msg .= ' - Please pay by '. $self->due_date2str('%x');
+    $msg .= ' - Please pay by '. $self->due_date2str($date_format);
   } elsif ( $self->terms ) {
     $msg .= ' - '. $self->terms;
   }
@@ -3165,7 +3166,7 @@ sub balance_due_date {
   my $duedate = '';
   if (    $conf->exists('invoice_default_terms') 
        && $conf->config('invoice_default_terms')=~ /^\s*Net\s*(\d+)\s*$/ ) {
-    $duedate = time2str("%m/%d/%Y", $self->_date + ($1*86400) );
+    $duedate = time2str($rdate_format, $self->_date + ($1*86400) );
   }
   $duedate;
 }
@@ -3190,7 +3191,7 @@ Returns a string with the date, for example: "3/20/2008"
 
 sub _date_pretty {
   my $self = shift;
-  time2str('%x', $self->_date);
+  time2str($date_format, $self->_date);
 }
 
 use vars qw(%pkg_category_cache);
@@ -3825,9 +3826,7 @@ sub _items_previous {
   foreach ( @pr_cust_bill ) {
     my $date = $conf->exists('invoice_show_prior_due_date')
                ? 'due '. $_->due_date2str($date_format)
-               : time2str('%x', $_->_date); # date_format here, too,
-                                            # but fix _items_cust_bill_pkg,
-                                            # header, others?
+               : time2str($date_format, $_->_date);
     push @b, {
       'description' => 'Previous Balance, Invoice #'. $_->invnum. " ($date)",
       #'pkgpart'     => 'N/A',
@@ -3996,8 +3995,8 @@ sub _items_cust_bill_pkg {
                             ? "Usage charges" : $desc;
 
           unless ( $conf->exists('disable_line_item_date_ranges') ) {
-            $description .= " (" . time2str("%x", $cust_bill_pkg->sdate).
-                            " - ". time2str("%x", $cust_bill_pkg->edate). ")";
+            $description .= " (" . time2str($date_format, $cust_bill_pkg->sdate).
+                            " - ". time2str($date_format, $cust_bill_pkg->edate). ")";
           }
 
           my @d = ();
@@ -4089,8 +4088,8 @@ sub _items_cust_bill_pkg {
         if ( $cust_bill_pkg->recur != 0 ) {
           push @b, {
             'description' => "$desc (".
-                             time2str("%x", $cust_bill_pkg->sdate). ' - '.
-                             time2str("%x", $cust_bill_pkg->edate). ')',
+                             time2str($date_format, $cust_bill_pkg->sdate). ' - '.
+                             time2str($date_format, $cust_bill_pkg->edate). ')',
             'amount'      => sprintf("%.2f", $cust_bill_pkg->recur),
           };
         }
@@ -4134,7 +4133,7 @@ sub _items_credits {
       #                 " (". time2str("%x",$_->cust_credit->_date) .")".
       #                 $reason,
       'description' => 'Credit applied '.
-                       time2str("%x",$_->cust_credit->_date). $reason,
+                       time2str($date_format,$_->cust_credit->_date). $reason,
       'amount'      => sprintf("%.2f",$_->amount),
     };
   }
@@ -4154,7 +4153,7 @@ sub _items_payments {
 
     push @b, {
       'description' => "Payment received ".
-                       time2str("%x",$_->cust_pay->_date ),
+                       time2str($date_format,$_->cust_pay->_date ),
       'amount'      => sprintf("%.2f", $_->amount )
     };
   }

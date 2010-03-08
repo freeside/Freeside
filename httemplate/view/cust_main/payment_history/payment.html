@@ -4,6 +4,8 @@
 
 my( $cust_pay, %opt ) = @_;
 
+my $date_format = $opt{'date_format'} || '%m/%d/%Y';
+
 my $conf = new FS::Conf;
 my $curuser = $FS::CurrentUser::CurrentUser;
 
@@ -87,7 +89,7 @@ if (    scalar(@cust_bill_pay)   == 0
           && scalar(@cust_pay_refund) == 1
           && $cust_pay->unapplied == 0     ) {
   #applied to one refund
-  $desc .= ' refunded on '. time2str("%D", $cust_pay_refund[0]->_date);
+  $desc .= ' refunded on '. time2str($date_format, $cust_pay_refund[0]->_date);
 } else {
   #complicated
   $desc .= '<BR>';
@@ -98,11 +100,11 @@ if (    scalar(@cust_bill_pay)   == 0
                '$'. $app->amount.
                ' '. $app->applied_to_invoice.
                '<BR>';
-               #' on '. time2str("%D", $cust_bill_pay->_date).
+               #' on '. time2str($date_format, $cust_bill_pay->_date).
     } elsif ( $app->isa('FS::cust_pay_refund') ) {
       $desc .= '&nbsp;&nbsp;'.
                '$'. $app->amount.
-               ' refunded on '. time2str("%D", $app->_date).
+               ' refunded on '. time2str($date_format, $app->_date).
                '<BR>';
     } else {
       die "$app is not a FS::cust_bill_pay or FS::cust_pay_refund";
