@@ -206,6 +206,29 @@ sub _export_insert {
 #    }
 #  }
 
+# here we cope with a problem of prizm failing to insert for reason
+# of duplicate mac addr, but doing so inconsistently... a race in prizm?
+
+  $self->prizm_command( 'CustomerIfService', 'removeElementFromCustomer',
+                        0,
+                        $cust_main->custnum,
+                        0,
+                        $svc->mac_addr,
+                      );
+
+  $err_or_som = $self->prizm_command( 'NetworkIfService', 'getPrizmElements',
+                                      [ 'MAC Address' ],
+                                      [ $svc->mac_addr ],
+                                      [ '=' ],
+                                    );
+  if ( ref($err_or_som) && $err_or_som->result->[0] ) { # ignore errors
+    $self->prizm_command( 'NetworkIfService', 'deleteElement',
+                          $err_or_som->result->[0],
+                          1,
+                        );
+  }
+# end of coping
+
   my $performance_profile = $svc->performance_profile;
   $performance_profile ||= $svc->cust_svc->cust_pkg->part_pkg->pkg;
 
