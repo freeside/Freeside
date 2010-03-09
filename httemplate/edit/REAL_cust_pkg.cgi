@@ -128,16 +128,19 @@
 </FORM>
 
 <% include('/elements/footer.html') %>
-
-<%init>
-
-die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Edit customer package dates');
+<%shared>
 
 my $conf = new FS::Conf;
 my $date_format = $conf->config('date_format') || '%m/%d/%Y';
 
 my $format = $date_format. ' %T %z (%Z)';
+
+</%shared>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Edit customer package dates');
+
 
 my $error = '';
 my( $pkgnum, $cust_pkg );
