@@ -1,12 +1,10 @@
 package FS::part_pkg::sql_external;
 
 use strict;
-use vars qw(@ISA %info);
+use base qw( FS::part_pkg::recur_Common );
+use vars qw( %info );
 use DBI;
 #use FS::Record qw(qsearch qsearchs);
-use FS::part_pkg::flat;
-
-@ISA = qw(FS::part_pkg::flat);
 
 %info = (
   'name' => 'Base charge plus additional fees for external services from a configurable SQL query',
@@ -22,6 +20,17 @@ use FS::part_pkg::flat;
                                    ' of service at cancellation',
                          'type' => 'checkbox',
                        },
+    'cutoff_day'    => { 'name' => 'Billing Day (1 - 28) for prorating or '.
+                                   'subscription',
+                         'default' => '1',
+                       },
+
+    'recur_method'  => { 'name' => 'Recurring fee method',
+                         #'type' => 'radio',
+                         #'options' => \%recur_method,
+                         'type' => 'select',
+                         'select_options' => \%FS::part_pkg::recur_Common::recur_method,
+                       },
     'datasrc' => { 'name' => 'DBI data source',
                    'default' => '',
                  },
@@ -35,14 +44,17 @@ use FS::part_pkg::flat;
                  'default' => '',
                },
   },
-  'fieldorder' => [qw( setup_fee recur_fee unused_credit datasrc db_username db_password query )],
-  #'setup' => 'what.setup_fee.value',
-  #'recur' => q!'my $dbh = DBI->connect("' + what.datasrc.value + '", "' + what.db_username.value + '", "' + what.db_password.value + '" ) or die $DBI::errstr; my $sth = $dbh->prepare("' + what.query.value + '") or die $dbh->errstr; my $price = ' + what.recur_fee.value + '; foreach my $cust_svc ( grep { $_->part_svc->svcdb eq "svc_external" } $cust_pkg->cust_svc ){ my $id = $cust_svc->svc_x->id; $sth->execute($id) or die $sth->errstr; $price += $sth->fetchrow_arrayref->[0]; } $price;'!,
+  'fieldorder' => [qw( setup_fee recur_fee unused_credit recur_method cutoff_day
+                       datasrc db_username db_password query 
+                  )],
   'weight' => '58',
 );
 
 sub calc_recur {
-  my($self, $cust_pkg ) = @_;
+  my $self = shift;
+  my($cust_pkg) = @_; #, $sdate, $details, $param ) = @_;
+
+  my $price = $self->calc_recur_Common(@_);
 
   my $dbh = DBI->connect( map { $self->option($_) }
                               qw( datasrc db_username db_password )
@@ -51,8 +63,6 @@ sub calc_recur {
 
   my $sth = $dbh->prepare( $self->option('query') )
     or die $dbh->errstr;
-
-  my $price = $self->option('recur_fee');
 
   foreach my $cust_svc (
     grep { $_->part_svc->svcdb eq "svc_external" } $cust_pkg->cust_svc
@@ -68,10 +78,5 @@ sub calc_recur {
 sub can_discount { 0; }
 
 sub is_free { 0; }
-
-sub base_recur {
-  my($self, $cust_pkg) = @_;
-  $self->option('recur_fee');
-}
 
 1;
