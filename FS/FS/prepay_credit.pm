@@ -136,7 +136,7 @@ sub agent {
 
 =over 4
 
-=item generate NUM TYPE HASHREF
+=item generate NUM TYPE LENGTH HASHREF
 
 Generates the specified number of prepaid cards.  Returns an array reference of
 the newly generated card identifiers, or a scalar error message.
@@ -145,11 +145,12 @@ the newly generated card identifiers, or a scalar error message.
 
 #false laziness w/agent::generate_reg_codes
 sub generate {
-  my( $num, $type, $hashref ) = @_;
+  my( $num, $type, $length, $hashref ) = @_;
 
   my @codeset = ();
   push @codeset, ( 'A'..'Z' ) if $type =~ /alpha/;
   push @codeset, ( '1'..'9' ) if $type =~ /numeric/;
+  $length ||= 8;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -163,11 +164,11 @@ sub generate {
   my $dbh = dbh;
 
   my $condup = 0; #don't retry forever
-
+  
   my @cards = ();
   for ( 1 ... $num ) {
 
-    my $identifier = join('', map($codeset[int(rand $#codeset)], (0..7) ) );
+    my $identifier = join('', map($codeset[int(rand $#codeset)], (1..$length) ) );
 
     redo if qsearchs('prepay_credit',{identifier=>$identifier}) && $condup++<23;
     $condup = 0;

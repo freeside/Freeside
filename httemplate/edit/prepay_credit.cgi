@@ -7,13 +7,16 @@
 Generate
 <INPUT TYPE="text" NAME="num" VALUE="<% $cgi->param('num') || '(quantity)' |h %>" SIZE=10 MAXLENGTH=10 onFocus="if ( this.value == '(quantity)' ) { this.value = ''; }">
 
+prepaid cards of
+
+<INPUT TYPE="text" NAME="length" SIZE=3 MAXLENGTH=2 VALUE=8>&nbsp;
 <SELECT NAME="type">
 % foreach (qw(alpha alphanumeric numeric)) { 
   <OPTION<% $cgi->param('type') eq $_ ? ' SELECTED' : '' %>><% $_ %>
 % } 
 </SELECT>
 
-prepaid cards
+characters each
 
 <BR>for <SELECT NAME="agentnum"><OPTION>(any agent)
 % foreach my $opt_agent ( qsearch('agent', { 'disabled' => '' } ) ) { 
