@@ -153,7 +153,7 @@ sub populate_initial_data {
     die $@ if $@;
 
     $class->_populate_initial_data(%opt)
-      if $class->can('_populate_inital_data');
+      if $class->can('_populate_initial_data');
 
     my @records = @{ $data->{$table} };
 
