@@ -4889,7 +4889,6 @@ sub realtime_refund_bop {
       } elsif ( $cust_pay->payby eq 'CHEK'
                 && $void->info('ECHECK_void_requires_account') )
       {
-        $cust_pay->payinfo 
         ( $content{'account_number'}, $content{'routing_code'} ) =
           split('@', $cust_pay->payinfo);
         $content{'name'} = $self->get('first'). ' '. $self->get('last');
@@ -6243,7 +6242,6 @@ sub _new_realtime_refund_bop {
       } elsif ( $cust_pay->payby eq 'CHEK'
                 && $void->info('ECHECK_void_requires_account') )
       {
-        $cust_pay->payinfo 
         ( $content{'account_number'}, $content{'routing_code'} ) =
           split('@', $cust_pay->payinfo);
         $content{'name'} = $self->get('first'). ' '. $self->get('last');
