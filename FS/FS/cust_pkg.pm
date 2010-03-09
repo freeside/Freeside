@@ -296,14 +296,18 @@ sub insert {
   my $conf = new FS::Conf;
 
   if ( $conf->config('ticket_system') && $options{ticket_subject} ) {
-    eval '
-      use lib ( "/opt/rt3/local/lib", "/opt/rt3/lib" );
-      use RT;
-    ';
-    die $@ if $@;
 
-    RT::LoadConfig();
-    RT::Init();
+    #eval '
+    #  use lib ( "/opt/rt3/local/lib", "/opt/rt3/lib" );
+    #  use RT;
+    #';
+    #die $@ if $@;
+    #
+    #RT::LoadConfig();
+    #RT::Init();
+    use FS::TicketSystem;
+    FS::TicketSystem->init();
+
     my $q = new RT::Queue($RT::SystemUser);
     $q->Load($options{ticket_queue}) if $options{ticket_queue};
     my $t = new RT::Ticket($RT::SystemUser);
