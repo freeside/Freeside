@@ -107,19 +107,30 @@ tie my %temporalities, 'Tie::IxHash',
                              'type' => 'select',
                              'select_options' => \%temporalities,
                            },
-
-    %usage_fields,
-    %usage_recharge_fields,
-
     'unused_credit' => { 'name' => 'Credit the customer for the unused portion'.
                                    ' of service at cancellation',
                          'type' => 'checkbox',
                        },
+
+    #used in cust_pkg.pm so could add to any price plan
+    'expire_months' => { 'name' => 'Auto-add an expiration date this number of months out',
+                       },
+    #used in cust_pkg.pm so could add to any price plan where it made sense
+    'start_1st'     => { 'name' => 'Auto-add a start date to the 1st, ignoring the current month.',
+                         'type' => 'checkbox',
+                       },
+
+    %usage_fields,
+    %usage_recharge_fields,
+
     'externalid' => { 'name'   => 'Optional External ID',
                       'default' => '',
                     },
   },
-  'fieldorder' => [ qw( setup_fee recur_fee recur_temporality unused_credit ),
+  'fieldorder' => [ qw( setup_fee recur_fee
+                        recur_temporality unused_credit
+                        expire_months start_1st
+                      ),
                     @usage_fieldorder, @usage_recharge_fieldorder,
                     qw( externalid ),
                   ],
