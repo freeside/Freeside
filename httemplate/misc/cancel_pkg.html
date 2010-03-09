@@ -58,7 +58,7 @@
 
 <%init>
 
-my %conf = new FS::Conf;
+my $conf = new FS::Conf;
 my $date_format = $conf->config('date_format') || '%m/%d/%Y';
 
 my $date = time2str($date_format, time);
