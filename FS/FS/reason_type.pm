@@ -162,9 +162,7 @@ sub _populate_initial_data {  # class method
 #   my $error   = $object->insert();
 #   die "error inserting $self into database: $error\n"
 #     if $error;
-#                                      # or clause for 1.7.x
-    $conf->set($_, $object->typenum)
-      or die "failed setting config";
+    $conf->set($_, $object->typenum);
   }
 
   '';
