@@ -63,7 +63,7 @@ Available top-level domains: <% $export->option('tlds') %>
     </TR>
 
 % } else {
-    <INPUT TYPE="text" NAME="cgp_aliases" VALUE="<% $svc_domain->cgp_aliases %>">
+    <INPUT TYPE="hidden" NAME="cgp_aliases" VALUE="<% $svc_domain->cgp_aliases %>">
 % }
 
 % if ( $part_svc->part_svc_column('max_accounts')->columnflag =~ /^[FA]$/ ) {
