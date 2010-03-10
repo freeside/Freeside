@@ -253,6 +253,26 @@ an optional queue name for ticket additions
 sub insert {
   my( $self, %options ) = @_;
 
+  if ( $self->part_pkg->option('start_1st') && !$self->start_date ) {
+    my ($sec,$min,$hour,$mday,$mon,$year) = (localtime(time) )[0,1,2,3,4,5];
+    $mon += 1 unless $mday == 1;
+    until ( $mon < 12 ) { $mon -= 12; $year++; }
+    $self->start_date( timelocal_nocheck(0,0,0,1,$mon,$year) );
+  }
+
+  my $expire_months = $self->part_pkg->option('expire_months');
+  if ( $expire_months && !$self->expire ) {
+    my $start = $self->start_date || $self->setup || time;
+
+    #false laziness w/part_pkg::add_freq
+    my ($sec,$min,$hour,$mday,$mon,$year) = (localtime($start) )[0,1,2,3,4,5];
+    $mon += $expire_months;
+    until ( $mon < 12 ) { $mon -= 12; $year++; }
+
+    #$self->expire( timelocal_nocheck($sec,$min,$hour,$mday,$mon,$year) );
+    $self->expire( timelocal_nocheck(0,0,0,$mday,$mon,$year) );
+  }
+
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
   local $SIG{QUIT} = 'IGNORE';
@@ -542,26 +562,6 @@ sub check {
     $error = $self->ut_foreign_key('pkgpart', 'part_pkg', 'pkgpart' );
     return $error if $error;
 
-  }
-
-  if ( $self->part_pkg->option('start_1st') && !$self->start_date ) {
-    my ($sec,$min,$hour,$mday,$mon,$year) = (localtime(time) )[0,1,2,3,4,5];
-    $mon += 1 unless $mday == 1;
-    until ( $mon < 12 ) { $mon -= 12; $year++; }
-    $self->start_date( timelocal_nocheck(0,0,0,1,$mon,$year) );
-  }
-
-  my $expire_months = $self->part_pkg->option('expire_months');
-  if ( $expire_months && !$self->expire ) {
-    my $start = $self->start_date || $self->setup || time;
-
-    #false laziness w/part_pkg::add_freq
-    my ($sec,$min,$hour,$mday,$mon,$year) = (localtime($start) )[0,1,2,3,4,5];
-    $mon += $expire_months;
-    until ( $mon < 12 ) { $mon -= 12; $year++; }
-
-    #$self->expire( timelocal_nocheck($sec,$min,$hour,$mday,$mon,$year) );
-    $self->expire( timelocal_nocheck(0,0,0,$mday,$mon,$year) );
   }
 
   $self->otaker(getotaker) unless $self->otaker;
