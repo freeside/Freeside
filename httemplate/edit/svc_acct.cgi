@@ -132,7 +132,7 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
     </TR>
 
 % } else {
-    <INPUT TYPE="text" NAME="cgp_aliases" VALUE="<% $svc_acct->cgp_aliases %>">
+    <INPUT TYPE="hidden" NAME="cgp_aliases" VALUE="<% $svc_acct->cgp_aliases %>">
 % }
 
 
