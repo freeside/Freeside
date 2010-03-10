@@ -39,14 +39,15 @@ push @errors, '_setup_areyousure'
   && ! $cgi->param('setup_areyousure');      # and it wasn't confirmed 
 
 push @errors, '_start'
-  if $hash{'start_date'} && $old->start_date # if a start date was added
-  && $hash{'setup'};                         # but there's a setup date
+  if $hash{'start_date'} && !$old->start_date # if a start date was added
+  && $hash{'setup'};                          # but there's a setup date
 
 my $new;
 my $error;
 if ( @errors ) {
   $error = join(',', @errors);
 } else {
+  warn join(',',%hash);
   $new = new FS::cust_pkg \%hash;
   $error = $new->replace($old);
 }
