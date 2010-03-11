@@ -1,7 +1,24 @@
+<FORM METHOD="GET" ACTION="<% $new_base %>" NAME="CreateTicketForm">
+<INPUT TYPE="submit" VALUE="Create new ticket">
+in queue
+<SELECT NAME="Queue">
+% my %queues = FS::TicketSystem->queues();
+% foreach my $queueid ( keys %queues ) {
+%   #should consider whether the user has ACL to create ticket in each queue
+    <OPTION VALUE="<% $queueid %>"
+            <% $queueid == $new_param{'Queue'} ? 'SELECTED' : '' %>
+    ><% $queues{$queueid} |h %>
+% }
+</SELECT>
+% foreach my $param ( grep { $_ ne 'Queue' } keys %new_param ) {
+    <INPUT TYPE="hidden" NAME="<% $param %>" VALUE="<% $new_param{$param} |h %>">
+% }
+</FORM>
+<BR>
+
 (<A HREF="<% $open_link %>">View <% $openlabel %> tickets for this customer</A>)
 (<A HREF="<% $res_link  %>">View resolved tickets for this customer</A>)
-<BR>
-(<A HREF="<% $new_link  %>">Create new ticket for this customer</A>)
+<BR><BR>
 
 <% include("/elements/table-grid.html") %>
 % my $bgcolor1 = '#eeeeee';
@@ -72,6 +89,10 @@ my $res_link  = FS::TicketSystem->href_customer_tickets(
                   $cust_main->custnum,
                   { 'statuses' => [ 'resolved' ] }
                 );
+
+my( $new_base, %new_param ) = FS::TicketSystem->href_params_new_ticket(
+                 $cust_main,
+                 join(', ', $cust_main->invoicing_list_emailonly )               );
 
 my $new_link = FS::TicketSystem->href_new_ticket(
                  $cust_main,

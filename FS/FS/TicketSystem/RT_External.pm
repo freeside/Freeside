@@ -273,7 +273,7 @@ sub href_customer_tickets {
 
 }
 
-sub href_new_ticket {
+sub href_params_new_ticket {
   my( $self, $custnum_or_cust_main, $requestors ) = @_;
 
   my( $custnum, $cust_main );
@@ -284,14 +284,25 @@ sub href_new_ticket {
     $custnum = $custnum_or_cust_main;
     $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } );
   }
-  my $queueid = $cust_main->agent->ticketing_queueid || $default_queueid;
 
-  $self->baseurl.
-  'Ticket/Create.html?'.
-    "Queue=$queueid".
-    "&new-MemberOf=freeside://freeside/cust_main/$custnum".
-    ( $requestors ? '&Requestors='. uri_escape($requestors) : '' )
-    ;
+  my %param = (
+    'Queue'       => ($cust_main->agent->ticketing_queueid || $default_queueid),
+    'new-MemberOf'=> "freeside://freeside/cust_main/$custnum",
+    'Requestors'  => $requestors,
+  );
+
+  ( $self->baseurl.'Ticket/Create.html', %param );
+}
+
+sub href_new_ticket {
+  my $self = shift;
+
+  my( $base, %param ) = $self->href_params_new_ticket(@_);
+
+  my $uri = new URI $base;
+  $uri->query_form(%param);
+  $uri;
+
 }
 
 sub href_ticket {
