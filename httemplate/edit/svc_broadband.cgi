@@ -93,7 +93,8 @@ my $callback = sub {
                && $FS::CurrentUser::CurrentUser->agentnum($_->agentnum)
              }
         map { $_->addr_block } $object->allowed_routers;
-      my @options = map { $_->blocknum } @addr_block;
+      my @options = map { $_->blocknum } 
+                    sort { $a->label cmp $b->label } @addr_block;
       my %option_labels = map { ( $_->blocknum => $_->label ) } @addr_block;
       $fieldref->{type}    = 'select';
       $fieldref->{options} = \@options;
