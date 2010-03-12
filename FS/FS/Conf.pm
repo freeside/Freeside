@@ -3305,6 +3305,13 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'svc_phone-phone_name-max_length',
+    'section'     => '',
+    'description' => 'Maximum length of the phone service "Name" field (svc_phone.phone_name).  Sometimes useful to limit this (to 15?) when exporting as Caller ID data.',
+    'type'        => 'text',
+  },
+
+  {
     'key'         => 'default_phone_countrycode',
     'section'     => '',
     'description' => 'Default countrcode',

@@ -2,7 +2,7 @@ package FS::svc_phone;
 
 use strict;
 use base qw( FS::svc_Domain_Mixin FS::location_Mixin FS::svc_Common );
-use vars qw( $DEBUG $me @pw_set $conf );
+use vars qw( $DEBUG $me @pw_set $conf $phone_name_max );
 use Data::Dumper;
 use Scalar::Util qw( blessed );
 use FS::Conf;
@@ -23,6 +23,7 @@ $DEBUG = 0;
 #ask FS::UID to run this stuff for us later
 $FS::UID::callback{'FS::svc_acct'} = sub { 
   $conf = new FS::Conf;
+  $phone_name_max = $conf->config('svc_phone-phone_name-max_length');
 };
 
 =head1 NAME
@@ -382,6 +383,10 @@ sub check {
     || $self->ut_foreign_keyn('locationnum', 'cust_location', 'locationnum')
   ;
   return $error if $error;
+
+  return 'Name ('. $self->phone_name.
+         ") is longer than $phone_name_max characters"
+    if $phone_name_max && length($self->phone_name) > $phone_name_max;
 
   $self->countrycode(1) unless $self->countrycode;
 
