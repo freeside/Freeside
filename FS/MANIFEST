@@ -488,3 +488,5 @@ FS/cust_pkg_discount.pm
 t/cust_pkg_discount.t
 FS/cust_bill_pkg_discount.pm
 t/cust_bill_pkg_discount.t
+FS/location_Mixin.pm
+t/location_Mixin.t
