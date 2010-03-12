@@ -1,6 +1,9 @@
 package FS::cust_pkg;
 
 use strict;
+use base qw( FS::cust_main_Mixin FS::location_Mixin
+             FS::m2m_Common FS::option_Common FS::Record
+           );
 use vars qw(@ISA $disable_agentcheck $DEBUG $me);
 use Carp qw(cluck);
 use Scalar::Util qw( blessed );
@@ -11,8 +14,6 @@ use MIME::Entity;
 use FS::UID qw( getotaker dbh );
 use FS::Misc qw( send_email );
 use FS::Record qw( qsearch qsearchs );
-use FS::m2m_Common;
-use FS::cust_main_Mixin;
 use FS::cust_svc;
 use FS::part_pkg;
 use FS::cust_main;
@@ -40,8 +41,6 @@ use FS::svc_forward;
 
 # for sending cancel emails in sub cancel
 use FS::Conf;
-
-@ISA = qw( FS::m2m_Common FS::cust_main_Mixin FS::option_Common FS::Record );
 
 $DEBUG = 0;
 $me = '[FS::cust_pkg]';
@@ -1960,29 +1959,16 @@ sub cust_main {
   qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
 }
 
+#these subs are in location_Mixin.pm now... unfortunately the POD doesn't mixin
+
 =item cust_location
 
 Returns the location object, if any (see L<FS::cust_location>).
-
-=cut
-
-sub cust_location {
-  my $self = shift;
-  return '' unless $self->locationnum;
-  qsearchs( 'cust_location', { 'locationnum' => $self->locationnum } );
-}
 
 =item cust_location_or_main
 
 If this package is associated with a location, returns the locaiton (see
 L<FS::cust_location>), otherwise returns the customer (see L<FS::cust_main>).
-
-=cut
-
-sub cust_location_or_main {
-  my $self = shift;
-  $self->cust_location || $self->cust_main;
-}
 
 =item location_label [ OPTION => VALUE ... ]
 
@@ -1990,11 +1976,7 @@ Returns the label of the location object (see L<FS::cust_location>).
 
 =cut
 
-sub location_label {
-  my $self = shift;
-  my $object = $self->cust_location_or_main;
-  $object->location_label(@_);
-}
+#end of subs in location_Mixin.pm now... unfortunately the POD doesn't mixin
 
 =item seconds_since TIMESTAMP
 

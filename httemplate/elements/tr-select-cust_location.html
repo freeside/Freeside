@@ -143,7 +143,7 @@ Example:
 </SCRIPT>
 
 <TR>
-  <TH ALIGN="right">Service&nbsp;location</TH>
+  <<%$th%> ALIGN="right"><% $opt{'label'} || 'Service&nbsp;location' %></<%$th%>>
   <TD COLSPAN=7>
     <SELECT NAME="locationnum" onChange="locationnum_changed(this);">
       <OPTION VALUE=""><% $opt{'empty_label'} || '(default service address)' |h %>
@@ -169,6 +169,7 @@ Example:
              #'onchange' ?  probably not
              'disabled'     => $disabled,
              'no_asterisks' => 1,
+             'no_bold'      => $opt{'no_bold'},
           )
 %>
 
@@ -220,5 +221,7 @@ if ( $locationnum && $locationnum != -1 ) {
 my $disabled = ( $locationnum == -1 || ($editable && $locationnum) )
                  ? ''
                  : 'DISABLED';
+
+my $th = $opt{'no_bold'} ? 'TD' : 'TH';
 
 </%init>

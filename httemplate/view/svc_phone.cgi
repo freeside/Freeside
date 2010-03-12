@@ -16,6 +16,7 @@
 <%init>
 
 my $conf = new FS::Conf;
+my $countrydefault = $conf->config('countrydefault') || 'US';
 
 my @fields = qw( countrycode phonenum );
 push @fields, 'domain' if $conf->exists('svc_phone-domain');
@@ -23,6 +24,27 @@ push @fields, qw( pbx_title sip_password pin phone_name );
 
 my $html_foot = sub {
   my $svc_phone = shift;
+
+  ###
+  # E911 Info
+  ###
+
+  my $loc = $svc_phone->cust_location_or_main;
+
+  my $e911 = 
+    'E911 Information'.
+    &ntable("#cccccc"). '<TR><TD>'. ntable("#cccccc",2).
+      '<TR><TD>Location</TD>'.
+      '<TD BGCOLOR="#FFFFFF">'.
+        $loc->location_label( 'join_string'     => '<BR>',
+                              'double_space'    => ' &nbsp; ',
+                              'escape_function' => \&encode_entities,
+                              'countrydefault'  => $countrydefault,
+                            ).
+      '</TD></TR>'.
+    '</TABLE></TD></TR></TABLE>'.
+    '<BR>'
+  ;
 
   ###
   # Devices
@@ -123,6 +145,7 @@ my $html_foot = sub {
   # concatenate & return
   ###
 
+  $e911.
   $devices.
   join(' | ', @links ). '<BR>'.
   join(' | ', @ilinks). '<BR>';

@@ -40,7 +40,7 @@ Example:
                     'disabled' => 0,
                     'onchange' => 'javascript_function',
 
-                    'include_opt_callback' => sub { #my $ = @_;
+                    'include_opt_callback' => sub { my $object = @_;
                                                     ( 'option' => 'value', );
                                                   },
 
@@ -300,11 +300,15 @@ Example:
 %
 %   if ( $type eq 'tablebreak-tr-title' ) {
 %     $include_common{'table_id'} = 'TableNumber'. $tablenum++;
+%   }
+%   if ( $type eq 'tablebreak-tr-title' || $type eq 'title' ) {
 %     $include_common{'colspan'} = $f->{colspan} if $f->{colspan};
 %   }
 %
 %   if ( $f->{include_opt_callback} ) {
-%     %include_common = ( %include_common, &{ $f->{include_opt_callback} } );
+%     %include_common = ( %include_common,
+%                         &{ $f->{include_opt_callback} }( $object )
+%                       );
 %   }
 %
 %   my $layer_prefix_on = '';

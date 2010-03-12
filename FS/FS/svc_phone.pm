@@ -1,7 +1,7 @@
 package FS::svc_phone;
 
 use strict;
-use base qw( FS::svc_Domain_Mixin FS::svc_Common );
+use base qw( FS::svc_Domain_Mixin FS::location_Mixin FS::svc_Common );
 use vars qw( @pw_set $conf );
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs dbh );
@@ -10,6 +10,7 @@ use FS::part_svc;
 use FS::phone_device;
 use FS::svc_pbx;
 use FS::svc_domain;
+use FS::cust_location;
 
 #avoid l 1 and o O 0
 @pw_set = ( 'a'..'k', 'm','n', 'p-z', 'A'..'N', 'P'..'Z' , '2'..'9' );
@@ -121,6 +122,11 @@ sub table_info {
                          select_label => 'domain',
                          disable_inventory => 1,
                        },
+        'locationnum' => {
+                           label => 'E911 location',
+                           disable_inventory => 1,
+                           disable_select    => 1,
+                         },
     },
   };
 }
@@ -278,6 +284,7 @@ sub check {
     || $self->ut_textn('phone_name')
     || $self->ut_foreign_keyn('pbxsvc', 'svc_pbx',    'svcnum' )
     || $self->ut_foreign_keyn('domsvc', 'svc_domain', 'svcnum' )
+    || $self->ut_foreign_keyn('locationnum', 'cust_location', 'locationnum')
   ;
   return $error if $error;
 

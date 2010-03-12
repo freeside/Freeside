@@ -1,8 +1,8 @@
 <% include( 'elements/svc_Common.html',
-               'name'     => 'Phone number',
                'table'    => 'svc_phone',
                'fields'   => \@fields,
                'labels'   => {
+                               'svcnum'       => 'Service',
                                'countrycode'  => 'Country code',
                                'phonenum'     => 'Phone number',
                                'domsvc'       => 'Domain',
@@ -10,7 +10,12 @@
                                'pin'          => 'Voicemail PIN',
                                'phone_name'   => 'Name',
                                'pbxsvc'       => 'PBX',
+                               'locationnum'  => 'E911 location',
                              },
+               'svc_new_callback' => sub {
+                 my( $cgi, $svc_x, $part_svc, $cust_pkg, $fields, $opt ) = @_;
+                 $svc_x->locationnum($cust_pkg->locationnum) if $cust_pkg;
+               },
            )
 %>
 <%init>
@@ -40,6 +45,27 @@ push @fields, { field => 'pbxsvc',
               'sip_password',
               'pin',
               'phone_name',
+
+              { value   => 'E911 Information',
+                type    => 'tablebreak-tr-title',
+                colspan => 7,
+              },
+              { field => 'locationnum',
+                type  => 'select-cust_location',
+                label => 'E911 location',
+                include_opt_callback => sub {
+                  my $svc_phone = shift;
+                  my $pkgnum =  $svc_phone->get('pkgnum')
+                             || $cgi->param('pkgnum')
+                             || $svc_phone->cust_svc->pkgnum; #hua?
+                               #cross agent location exposure?  sheesh
+                  my $cust_pkg = qsearchs('cust_pkg', {'pkgnum' => $pkgnum});
+                  my $cust_main = $cust_pkg ? $cust_pkg->cust_main : '';
+                  ( 'no_bold'   => 1,
+                    'cust_main' => $cust_main,
+                  );
+                },
+              },
 ;
 
 </%init>

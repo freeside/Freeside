@@ -18,7 +18,7 @@ Example:
 </%doc>
 
 <TR>
-  <TH ALIGN="right"><%$r%><% $opt{'address1_label'} || 'Address' %></TH>
+  <<%$th%> ALIGN="right"><%$r%><% $opt{'address1_label'} || 'Address' %></<%$th%>>
   <TD COLSPAN=7>
     <INPUT TYPE     = "text"
            NAME     = "<%$pre%>address1"
@@ -48,15 +48,15 @@ Example:
 </TR>
 
 <TR>
-  <TH ALIGN="right"><%$r%>City</TH>
+  <<%$th%> ALIGN="right"><%$r%>City</<%$th%>>
   <TD WIDTH="1"><% include('/elements/city.html', %select_hash) %></TD>
-  <TH ALIGN="right" ID="<%$pre%>countylabel" <%$county_style%>><%$r%>County</TH>
+  <<%$th%> ALIGN="right" ID="<%$pre%>countylabel" <%$county_style%>><%$r%>County</<%$th%>>
   <TD><% include('/elements/select-county.html', %select_hash ) %></TD>
-  <TH ALIGN="right" WIDTH="1"><%$r%>State</TH>
+  <<%$th%> ALIGN="right" WIDTH="1"><%$r%>State</<%$th%>>
   <TD WIDTH="1">
     <% include('/elements/select-state.html', %select_hash ) %>
   </TD>
-  <TH><%$r%>Zip</TH>
+  <<%$th%>><%$r%>Zip</<%$th%>>
   <TD>
     <INPUT TYPE     = "text"
            NAME     = "<%$pre%>zip"
@@ -71,7 +71,7 @@ Example:
 </TR>
 
 <TR>
-  <TH ALIGN="right"><%$r%>Country</TH>
+  <<%$th%> ALIGN="right"><%$r%>Country</<%$th%>>
   <TD COLSPAN=6><% include('/elements/select-country.html', %select_hash ) %></TD>
 </TR>
 
@@ -79,7 +79,7 @@ Example:
   <INPUT TYPE="hidden" NAME="geocode" VALUE="<% $opt{geocode} %>">
 % } else {
 %   if ( $pre eq 'ship_' && $conf->exists('cust_main-require_censustract') ) {
-      <TR><TH ALIGN="right">Census tract<BR>(automatic)</TH>
+      <TR><<%$th%> ALIGN="right">Census tract<BR>(automatic)</<%$th%>>
         <TD>
           <INPUT TYPE="text" NAME="censustract" VALUE="<% $opt{censustract} %>">
         </TD>
@@ -152,5 +152,7 @@ my %select_hash = (
   'disabled' => $disabled,
   'style'    => \@style,
 );
+
+my $th = $opt{'no_bold'} ? 'TD' : 'TH';
 
 </%init>

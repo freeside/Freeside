@@ -34,12 +34,14 @@
                  'new_hashref_callback' => sub {
                    #my( $cgi, $svc_x ) = @_;
 
-                   { svcpart => $svcpart };
+                   { pkgnum  => $pkgnum,
+                     svcpart => $svcpart,
+                   };
 
                  },
 
                  'new_callback' => sub {
-                    my( $cgi, $svc_x, $fields, $opt ) = @_;;
+                    my( $cgi, $svc_x, $fields, $opt ) = @_;
 
                     $part_svc = qsearchs( 'part_svc', { svcpart=>$svcpart });
                     die "No part_svc entry!" unless $part_svc;
@@ -47,6 +49,13 @@
                     label_fixup($part_svc, $opt);
 
                     #$svcnum='';
+
+                    if ( my $cb = $opt{'svc_new_callback'} ) {
+                     my $cust_pkg = $pkgnum
+                                      ? qsearchs('cust_pkg', {pkgnum=>$pkgnum})
+                                      : ''; #?
+                      &{ $cb }( $cgi,$svc_x, $part_svc,$cust_pkg, $fields,$opt);
+                    }
 
                     $svc_x->set_default_and_fixed;
 
@@ -141,11 +150,13 @@
 sub label_fixup {
   my( $part_svc, $opt ) = @_;
 
+  $opt->{'name'} ||= $part_svc->svc;
+
   my $svcdb = $part_svc->svcdb;
   require "FS/$svcdb.pm";
 
   if ( UNIVERSAL::can("FS::$svcdb", 'table_info') ) {
-    $opt->{'name'} ||= "FS::$svcdb"->table_info->{'name'};
+    #$opt->{'name'} ||= "FS::$svcdb"->table_info->{'name'};
 
     my $fields = "FS::$svcdb"->table_info->{'fields'};
     $opt->{'fields'} ||= [ grep { $_ ne 'svcnum' } keys %$fields ];
@@ -165,7 +176,7 @@ sub label_fixup {
   my $labels = $opt->{labels}; # with -> here
   foreach my $field ( keys %{ $opt->{labels} } ) {
     my $col = $part_svc->part_svc_column($field);
-    $labels->{$field} = $col->columnlabel if $col->columnlabel !~ /^\S*$/;
+    $labels->{$field} = $col->columnlabel if $col->columnlabel !~ /^\s*$/;
   }
 
 }
