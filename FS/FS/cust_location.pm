@@ -234,6 +234,20 @@ sub line {
   $self->location_label;
 }
 
+=item location_hash
+
+Returns a list of key/value pairs, with the following keys: address1, adddress2,
+city, county, state, zip, country.
+
+=cut
+
+#geocode?  not yet set
+
+sub location_hash {
+  my $self = shift;
+  map { $_ => $self->$_ } qw( address1 address2 city county state zip country );
+}
+
 =back
 
 =head1 BUGS

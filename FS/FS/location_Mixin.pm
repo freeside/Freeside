@@ -40,4 +40,18 @@ sub location_label {
   $object->location_label(@_);
 }
 
+=item location_hash
+
+Returns a hash of values for the location, either from the location object,
+the cust_main shipping address, or the cust_main address, whichever is present
+first.
+
+=cut
+
+sub location_hash {
+  my $self = shift;
+  my $object = $self->cust_location_or_main;
+  $object->location_hash(@_);
+}
+
 1;

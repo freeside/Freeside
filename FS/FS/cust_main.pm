@@ -1912,6 +1912,25 @@ sub has_ship_address {
   scalar( grep { $self->getfield("ship_$_") ne '' } $self->addr_fields );
 }
 
+=item location_hash
+
+Returns a list of key/value pairs, with the following keys: address1, adddress2,
+city, county, state, zip, country.  The shipping address is used if present.
+
+=cut
+
+#geocode?  dependent on tax-ship_address config, not available in cust_location
+#mostly.  not yet then.
+
+sub location_hash {
+  my $self = shift;
+  my $prefix = $self->has_ship_address ? 'ship_' : '';
+
+  map { $_ => $self->get($prefix.$_) }
+      qw( address1 address2 city county state zip country geocode );
+      #fields that cust_location has
+}
+
 =item all_pkgs [ EXTRA_QSEARCH_PARAMS_HASHREF ]
 
 Returns all packages (see L<FS::cust_pkg>) for this customer.

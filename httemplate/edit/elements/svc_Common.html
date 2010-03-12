@@ -101,6 +101,11 @@
                            };
                    }
 
+                   if ( $f->{'field'} eq 'custnum' && $pkgnum ) {
+                     my $cust_pkg = qsearchs('cust_pkg', {'pkgnum' => $pkgnum});
+                     $object->set('custnum', $cust_pkg->custnum);
+                   }
+
                  },
 
                  'html_init' => sub {

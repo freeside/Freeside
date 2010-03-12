@@ -29,18 +29,16 @@ my $html_foot = sub {
   # E911 Info
   ###
 
-  my $loc = $svc_phone->cust_location_or_main;
-
   my $e911 = 
     'E911 Information'.
     &ntable("#cccccc"). '<TR><TD>'. ntable("#cccccc",2).
       '<TR><TD>Location</TD>'.
       '<TD BGCOLOR="#FFFFFF">'.
-        $loc->location_label( 'join_string'     => '<BR>',
-                              'double_space'    => ' &nbsp; ',
-                              'escape_function' => \&encode_entities,
-                              'countrydefault'  => $countrydefault,
-                            ).
+        $svc_phone->location_label( 'join_string'     => '<BR>',
+                                    'double_space'    => ' &nbsp; ',
+                                    'escape_function' => \&encode_entities,
+                                    'countrydefault'  => $countrydefault,
+                                  ).
       '</TD></TR>'.
     '</TABLE></TD></TR></TABLE>'.
     '<BR>'

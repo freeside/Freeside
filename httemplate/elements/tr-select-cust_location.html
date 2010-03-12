@@ -187,6 +187,7 @@ my $statedefault = $conf->config('statedefault')
 
 my %opt = @_;
 my $cgi           = $opt{'cgi'};
+my $cust_pkg     = $opt{'cust_pkg'};
 my $cust_main     = $opt{'cust_main'};
 my $prospect_main = $opt{'prospect_main'};
 
@@ -213,6 +214,10 @@ if ( $locationnum && $locationnum != -1 ) {
   $cust_location = new FS::cust_location;
   if ( $locationnum == -1 ) {
     $cust_location->$_( $cgi->param($_) ) foreach @location_fields;
+  } elsif ( $cust_pkg && $cust_pkg->locationnum ) {
+    my $pkg_location = $cust_pkg->cust_location;
+    $cust_location->$_( $pkg_location->$_ ) foreach @location_fields;
+    $opt{'empty_label'} ||= 'package address: '.$pkg_location->line;
   } elsif ( $cust_main ) {
     $cust_location->$_( $cust_main->get($prefix.$_) ) foreach @location_fields;
   }

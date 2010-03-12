@@ -2,7 +2,9 @@ package FS::svc_phone;
 
 use strict;
 use base qw( FS::svc_Domain_Mixin FS::location_Mixin FS::svc_Common );
-use vars qw( @pw_set $conf );
+use vars qw( $DEBUG $me @pw_set $conf );
+use Data::Dumper;
+use Scalar::Util qw( blessed );
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::Msgcat qw(gettext);
@@ -11,6 +13,9 @@ use FS::phone_device;
 use FS::svc_pbx;
 use FS::svc_domain;
 use FS::cust_location;
+
+$me = '[' . __PACKAGE__ . ']';
+$DEBUG = 0;
 
 #avoid l 1 and o O 0
 @pw_set = ( 'a'..'k', 'm','n', 'p-z', 'A'..'N', 'P'..'Z' , '2'..'9' );
@@ -179,12 +184,54 @@ sub label {
 
 =item insert
 
-Adds this record to the database.  If there is an error, returns the error,
-otherwise returns false.
+Adds this phone number to the database.  If there is an error, returns the
+error, otherwise returns false.
 
 =cut
 
-# the insert method can be inherited from FS::Record
+sub insert {
+  my $self = shift;
+  my %options = @_;
+
+  if ( $DEBUG ) {
+    warn "[$me] insert called on $self: ". Dumper($self).
+         "\nwith options: ". Dumper(%options);
+  }
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  #false laziness w/cust_pkg.pm... move this to location_Mixin?  that would
+  #make it more of a base class than a mixin... :)
+  if ( $options{'cust_location'}
+         && ( ! $self->locationnum || $self->locationnum == -1 ) ) {
+    my $error = $options{'cust_location'}->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "inserting cust_location (transaction rolled back): $error";
+    }
+    $self->locationnum( $options{'cust_location'}->locationnum );
+  }
+  #what about on-the-fly edits?  if the ui supports it?
+
+  my $error = $self->SUPER::insert(%options);
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+
+}
 
 =item delete
 
@@ -234,7 +281,53 @@ returns the error, otherwise returns false.
 
 =cut
 
-# the replace method can be inherited from FS::Record
+sub replace {
+  my $new = shift;
+
+  my $old = ( blessed($_[0]) && $_[0]->isa('FS::Record') )
+              ? shift
+              : $new->replace_old;
+
+  my %options = @_;
+
+  if ( $DEBUG ) {
+    warn "[$me] replacing $old with $new\n".
+         "\nwith options: ". Dumper(%options);
+  }
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  #false laziness w/cust_pkg.pm... move this to location_Mixin?  that would
+  #make it more of a base class than a mixin... :)
+  if ( $options{'cust_location'}
+         && ( ! $new->locationnum || $new->locationnum == -1 ) ) {
+    my $error = $options{'cust_location'}->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "inserting cust_location (transaction rolled back): $error";
+    }
+    $new->locationnum( $options{'cust_location'}->locationnum );
+  }
+  #what about on-the-fly edits?  if the ui supports it?
+
+  my $error = $new->SUPER::replace($old, %options);
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error if $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  ''; #no error
+}
 
 =item suspend
 
@@ -274,6 +367,8 @@ sub check {
     $phonenum_check_method = 'ut_number';
   }
   $self->phonenum($phonenum);
+
+  $self->locationnum('') if !$self->locationnum || $self->locationnum == -1;
 
   my $error = 
     $self->ut_numbern('svcnum')
@@ -412,6 +507,17 @@ Returns any FS::phone_device records associated with this service.
 sub phone_device {
   my $self = shift;
   qsearch('phone_device', { 'svcnum' => $self->svcnum } );
+}
+
+#override location_Mixin version cause we want to try the cust_pkg location
+#in between us and cust_main
+# XXX what to do in the unlinked case???  return a pseudo-object that returns
+# empty fields?
+sub cust_location_or_main {
+  my $self = shift;
+  return $self->cust_location if $self->locationnum;
+  my $cust_pkg = $self->cust_svc->cust_pkg;
+  $cust_pkg ? $cust_pkg->cust_location_or_main : '';
 }
 
 =back

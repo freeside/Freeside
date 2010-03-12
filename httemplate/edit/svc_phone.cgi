@@ -62,10 +62,13 @@ push @fields, { field => 'pbxsvc',
                   my $cust_pkg = qsearchs('cust_pkg', {'pkgnum' => $pkgnum});
                   my $cust_main = $cust_pkg ? $cust_pkg->cust_main : '';
                   ( 'no_bold'   => 1,
+                    'cust_pkg'  => $cust_pkg,
                     'cust_main' => $cust_main,
                   );
                 },
               },
+              { field => 'custnum', type=> 'hidden' }, #for new cust_locations
 ;
+
 
 </%init>
