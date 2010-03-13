@@ -252,14 +252,14 @@ an optional queue name for ticket additions
 sub insert {
   my( $self, %options ) = @_;
 
-  if ( $self->part_pkg->option('start_1st') && !$self->start_date ) {
+  if ( $self->part_pkg->option('start_1st', 1) && !$self->start_date ) {
     my ($sec,$min,$hour,$mday,$mon,$year) = (localtime(time) )[0,1,2,3,4,5];
     $mon += 1 unless $mday == 1;
     until ( $mon < 12 ) { $mon -= 12; $year++; }
     $self->start_date( timelocal_nocheck(0,0,0,1,$mon,$year) );
   }
 
-  my $expire_months = $self->part_pkg->option('expire_months');
+  my $expire_months = $self->part_pkg->option('expire_months', 1);
   if ( $expire_months && !$self->expire ) {
     my $start = $self->start_date || $self->setup || time;
 
