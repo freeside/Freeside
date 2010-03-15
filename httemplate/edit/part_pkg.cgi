@@ -170,15 +170,17 @@
 
                             { type => 'columnend' },
 
-                            { 'type'  => $census ? 'tablebreak-tr-title'
-                                                 : 'hidden',
+                            { 'type'  => $report_option ? 'tablebreak-tr-title'
+                                                        : 'hidden',
                               'value' => 'Optional report classes',
                               'field' => 'census_title',
                             },
                             { 'field'    => 'report_option',
-                              'type'     => $census ? 'select-table' : 'hidden',
+                              'type'     => $report_option ? 'select-table'
+                                                           : 'hidden',
                               'table'    => 'part_pkg_report_option',
                               'name_col' => 'name',
+                              'hashref'  => { 'disabled' => '' },
                               'multiple' => 1,
                             },
 
@@ -264,7 +266,7 @@ my $sth = dbh->prepare("SELECT COUNT(*) FROM part_pkg_report_option".
                        "  WHERE disabled IS NULL OR disabled = ''  ")
   or die dbh->errstr;
 $sth->execute or die $sth->errstr;
-my $census = $sth->fetchrow_arrayref->[0];
+my $report_option = $sth->fetchrow_arrayref->[0];
 
 #XXX
 # - tr-part_pkg_freq: month_increments_only (from price plans)
@@ -417,7 +419,6 @@ my $m2_error_callback_maker = sub {
   my $link_type = shift; #yay closures
   return sub {
     my( $cgi, $object ) = @_;
-    my $num;
     map {
 
           if ( /^${link_type}_dst_pkgpart(\d+)$/ &&
