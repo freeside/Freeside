@@ -289,6 +289,14 @@ if ( $cgi->param('magic') ) {
                     join(',', map "'$_'", @history_action ). ')';
   }
 
+  if (    $cgi->param('history_date_beginning')
+       || $cgi->param('history_date_ending')    ) {
+      my($h_beginning, $h_ending) =
+        FS::UI::Web::parse_beginning_ending($cgi, 'history_date');
+      push @search, "history_date >= $h_beginning ",
+                    "history_date <= $h_ending";
+  }
+
   #here is the agent virtualization
   push @search, $curuser->agentnums_sql;
 
