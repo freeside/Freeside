@@ -63,12 +63,12 @@ my $callback = sub {
       if $fieldref->{field} eq 'blocknum';
       
     $fieldref->{value} = $object->addr_block->label
-      if $fieldref->{field} eq 'block_label';
+      if $fieldref->{field} eq 'block_label' && $object->addr_block;
 
   } else { 
 
     if ($fieldref->{field} eq 'block_label') {
-      if ($fixedblock) {
+      if ($fixedblock && $object->addr_block) {
         $object->blocknum($fixedblock);
         $fieldref->{value} = $object->addr_block->label;
       }else{
