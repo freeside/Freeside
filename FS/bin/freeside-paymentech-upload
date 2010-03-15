@@ -12,15 +12,15 @@ use FS::pay_batch;
 use FS::cust_pay_batch;
 use FS::Conf;
 
-use vars qw( $opt_a $opt_t $opt_v );
-getopts('avt');
+use vars qw( $opt_a $opt_t $opt_v $opt_p );
+getopts('avtp:');
 
 #$Net::SFTP::Foreign::debug = -1;
 
 sub usage { "
   Usage:
     freeside-paymentech-upload [ -v ] [ -t ] user batchnum
-    freeside-paymentech-upload -a [ -v ] [ -t ] user\n
+    freeside-paymentech-upload -a [ -p payby ] [ -v ] [ -t ] user\n
 " }
 
 my $user = shift or die &usage;
@@ -31,8 +31,11 @@ my $zip_check = `which zip` or die "can't find zip executable\n";
 my @batches; 
 
 if($opt_a) {
-  @batches = qsearch('pay_batch', { status => 'O' } );
-  die "No open batches found.\n" if !@batches;
+  my %criteria = (status => 'O');
+  $criteria{'payby'} = uc($opt_p) if $opt_p;
+  @batches = qsearch('pay_batch', \%criteria);
+  die "No open batches found".($opt_p ? " of type '$opt_p'" : '').".\n" 
+    if !@batches;
 }
 else {
   my $batchnum = shift;
@@ -95,7 +98,7 @@ freeside-paymentech-upload - Transmit a payment batch to Chase Paymentech via SF
 
 =head1 SYNOPSIS
 
-  freeside-paymentech-upload [ -a ] [ -v ] [ -t ] user batchnum
+  freeside-paymentech-upload [ -a [ -p PAYBY ] ] [ -v ] [ -t ] user batchnum
 
 =head1 DESCRIPTION
 
@@ -105,6 +108,8 @@ file, and transmitted via SFTP.  Use L<paymentech-download> to retrieve the
 response file.
 
 -a: Send all open batches, instead of specifying a batchnum.
+
+-p PAYBY: With -a, limit to batches of that payment type, e.g. -p CARD.
 
 -v: Be verbose.
 
