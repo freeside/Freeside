@@ -29,6 +29,15 @@ Examples:
                'redirect_empty' => $redirect_empty,
           )
 
+  include( 'elements/cust_pay_or_refund.html',
+               'table'          => 'h_cust_pay',
+               'amount_field'   => 'paid',
+               'name_singular'  => 'payment',
+               'name_verb'      => 'paid',
+               'pre_header'     => [ 'Transaction',    'By' ],
+               'pre_fields'     => [ 'history_action', 'history_user' ],
+         )
+
 </%doc>
 <% include( 'search.html',
                 'title'          => $title,
@@ -37,46 +46,12 @@ Examples:
                 'count_query'    => $count_query,
                 'count_addl'     => [ '$%.2f total '.$opt{name_verb}, ],
                 'redirect_empty' => $opt{'redirect_empty'},
-                'header'         => [ "\u$name_singular",
-                                      'Amount',
-                                      'Date',
-                                      @header,
-                                      FS::UI::Web::cust_header(),
-                                    ],
-                'fields'       => [
-                  'payby_payinfo_pretty',
-                  sub { sprintf('$%.2f', shift->$amount_field() ) },
-                  sub { time2str('%b %d %Y', shift->_date ) },
-                  @fields,
-                  \&FS::UI::Web::cust_fields,
-                ],
-                #'align' => 'lrrrll',
-                'align' => 'rrr'.
-                           join('', map 'c', @fields ).
-                           FS::UI::Web::cust_aligns(),
-                'links' => [
-                  $link,
-                  $link,
-                  $link,
-                  ( map '', @fields ),
-                  ( map { $_ ne 'Cust. Status' ? $cust_link : '' }
-                        FS::UI::Web::cust_header()
-                  ),
-                ],
-                'color' => [ 
-                             '',
-                             '',
-                             '',
-                             ( map '', @fields ),
-                             FS::UI::Web::cust_colors(),
-                           ],
-                'style' => [ 
-                             '',
-                             '',
-                             '',
-                             ( map '', @fields ),
-                             FS::UI::Web::cust_styles(),
-                           ],
+                'header'         => \@header,
+                'fields'         => \@fields,
+                'align'          => $align,
+                'links'          => \@links,
+                'color'          => \@color,
+                'style'          => \@style,
           )
 %>
 <%init>
@@ -88,22 +63,83 @@ my $curuser = $FS::CurrentUser::CurrentUser;
 die "access denied"
   unless $curuser->access_right('Financial reports');
 
-my $thing = $opt{'thing'};
+my $table = $opt{'table'} || 'cust_'.$opt{'thing'};
+
 my $amount_field = $opt{'amount_field'};
 my $name_singular = $opt{'name_singular'};
 
 my $title = "\u$name_singular Search Results";
 
+my $link = '';
+if (    ( $curuser->access_right('View invoices') #XXX for now
+          || $curuser->access_right('View customer payments')
+        )
+     && ! $opt{'disable_link'}
+   )
+{
+
+  my $key;
+  my $q = '';
+  if ( $table eq 'cust_pay_void' ) {
+    $key = 'paynum';
+    $q .= 'void=1;';
+  } elsif ( $table eq /^cust_(\w+)$/ ) {
+    $key = $1.'num';
+  }
+  
+  if ( $key ) {
+    $q .= "$key=";
+    $link = [ "${p}view/$table.html?$q", $key ]
+  }
+}
+
+my $cust_link = sub {
+  my $cust_thing = shift;
+  $cust_thing->cust_main_custnum
+    ? [ "${p}view/cust_main.cgi?", 'custnum' ] 
+    : '';
+};
+
 my @header = ();
 my @fields = ();
+my $align = '';
+my @links = ();
+if ( $opt{'pre_header'} ) {
+  push @header, @{ $opt{'pre_header'} };
+  $align .= 'c' x scalar(@{ $opt{'pre_header'} });
+  push @links, map '', @{ $opt{'pre_header'} };
+  push @fields, @{ $opt{'pre_fields'} };
+}
+
+push @header, "\u$name_singular",
+              'Amount',
+              'Date',
+;
+$align .= 'rrr';
+push @links, '', '', '';
+push @fields, 'payby_payinfo_pretty',
+              sub { sprintf('$%.2f', shift->$amount_field() ) },
+              sub { time2str('%b %d %Y', shift->_date ) },
+;
+
 unless ( $opt{'disable_by'} ) {
   push @header, 'By';
+  $align .= 'c';
+  push @links, '';
   push @fields, sub { my $o = shift->otaker;
                       $o = 'auto billing'          if $o eq 'fs_daily';
                       $o = 'customer self-service' if $o eq 'fs_selfservice';
                       $o;
                     };
 }
+
+push @header, FS::UI::Web::cust_header();
+$align .=  FS::UI::Web::cust_aligns();
+push @links, map { $_ ne 'Cust. Status' ? $cust_link : '' }
+                 FS::UI::Web::cust_header();
+my @color = ( ( map '', @fields ), FS::UI::Web::cust_colors() );
+my @style = ( ( map '', @fields ), FS::UI::Web::cust_styles() );
+push @fields, \&FS::UI::Web::cust_fields;
 
 push @header, @{ $opt{'addl_header'} }
   if $opt{'addl_header'};
@@ -132,7 +168,7 @@ if ( $cgi->param('magic') ) {
       $cgi->param('payby') =~
         /^(CARD|CHEK|BILL|PREP|CASH|WEST|MCRD)(-(VisaMC|Amex|Discover|Maestro))?$/
           or die "illegal payby ". $cgi->param('payby');
-      push @search, "cust_$thing.payby = '$1'";
+      push @search, "$table.payby = '$1'";
       if ( $3 ) {
 
         my $cardtype = $3;
@@ -141,53 +177,53 @@ if ( $cgi->param('magic') ) {
         if ( $cardtype eq 'VisaMC' ) {
           #avoid posix regexes for portability
           $search =
-            " ( (     substring(cust_$thing.payinfo from 1 for 1) = '4'     ".
-            "     AND substring(cust_$thing.payinfo from 1 for 4) != '4936' ".
-            "     AND substring(cust_$thing.payinfo from 1 for 6)           ".
+            " ( (     substring($table.payinfo from 1 for 1) = '4'     ".
+            "     AND substring($table.payinfo from 1 for 4) != '4936' ".
+            "     AND substring($table.payinfo from 1 for 6)           ".
             "         NOT SIMILAR TO '49030[2-9]'                        ".
-            "     AND substring(cust_$thing.payinfo from 1 for 6)           ".
+            "     AND substring($table.payinfo from 1 for 6)           ".
             "         NOT SIMILAR TO '49033[5-9]'                        ".
-            "     AND substring(cust_$thing.payinfo from 1 for 6)           ".
+            "     AND substring($table.payinfo from 1 for 6)           ".
             "         NOT SIMILAR TO '49110[1-2]'                        ".
-            "     AND substring(cust_$thing.payinfo from 1 for 6)           ".
+            "     AND substring($table.payinfo from 1 for 6)           ".
             "         NOT SIMILAR TO '49117[4-9]'                        ".
-            "     AND substring(cust_$thing.payinfo from 1 for 6)           ".
+            "     AND substring($table.payinfo from 1 for 6)           ".
             "         NOT SIMILAR TO '49118[1-2]'                        ".
             "   )".
-            "   OR substring(cust_$thing.payinfo from 1 for 2) = '51' ".
-            "   OR substring(cust_$thing.payinfo from 1 for 2) = '52' ".
-            "   OR substring(cust_$thing.payinfo from 1 for 2) = '53' ".
-            "   OR substring(cust_$thing.payinfo from 1 for 2) = '54' ".
-            "   OR substring(cust_$thing.payinfo from 1 for 2) = '54' ".
-            "   OR substring(cust_$thing.payinfo from 1 for 2) = '55' ".
-            "   OR substring(cust_$thing.payinfo from 1 for 2) = '36' ". #Diner's int'l processed as Visa/MC inside US
+            "   OR substring($table.payinfo from 1 for 2) = '51' ".
+            "   OR substring($table.payinfo from 1 for 2) = '52' ".
+            "   OR substring($table.payinfo from 1 for 2) = '53' ".
+            "   OR substring($table.payinfo from 1 for 2) = '54' ".
+            "   OR substring($table.payinfo from 1 for 2) = '54' ".
+            "   OR substring($table.payinfo from 1 for 2) = '55' ".
+            "   OR substring($table.payinfo from 1 for 2) = '36' ". #Diner's int'l processed as Visa/MC inside US
             " ) ";
         } elsif ( $cardtype eq 'Amex' ) {
           $search =
-            " (    substring(cust_$thing.payinfo from 1 for 2 ) = '34' ".
-            "   OR substring(cust_$thing.payinfo from 1 for 2 ) = '37' ".
+            " (    substring($table.payinfo from 1 for 2 ) = '34' ".
+            "   OR substring($table.payinfo from 1 for 2 ) = '37' ".
             " ) ";
         } elsif ( $cardtype eq 'Discover' ) {
           $search =
-            " (    substring(cust_$thing.payinfo from 1 for 4 ) = '6011'  ".
-            "   OR substring(cust_$thing.payinfo from 1 for 2 ) = '65'    ".
-            "   OR substring(cust_$thing.payinfo from 1 for 3 ) = '622'   ". #China Union Pay processed as Discover outside CN
+            " (    substring($table.payinfo from 1 for 4 ) = '6011'  ".
+            "   OR substring($table.payinfo from 1 for 2 ) = '65'    ".
+            "   OR substring($table.payinfo from 1 for 3 ) = '622'   ". #China Union Pay processed as Discover outside CN
             " ) ";
         } elsif ( $cardtype eq 'Maestro' ) { 
           $search =
-            " (    substring(cust_$thing.payinfo from 1 for 2 ) = '63'     ".
-            "   OR substring(cust_$thing.payinfo from 1 for 2 ) = '67'     ".
-            "   OR substring(cust_$thing.payinfo from 1 for 6 ) = '564182' ".
-            "   OR substring(cust_$thing.payinfo from 1 for 4 ) = '4936'   ".
-            "   OR substring(cust_$thing.payinfo from 1 for 6 )            ".
+            " (    substring($table.payinfo from 1 for 2 ) = '63'     ".
+            "   OR substring($table.payinfo from 1 for 2 ) = '67'     ".
+            "   OR substring($table.payinfo from 1 for 6 ) = '564182' ".
+            "   OR substring($table.payinfo from 1 for 4 ) = '4936'   ".
+            "   OR substring($table.payinfo from 1 for 6 )            ".
             "      SIMILAR TO '49030[2-9]'                             ".
-            "   OR substring(cust_$thing.payinfo from 1 for 6 )            ".
+            "   OR substring($table.payinfo from 1 for 6 )            ".
             "      SIMILAR TO '49033[5-9]'                             ".
-            "   OR substring(cust_$thing.payinfo from 1 for 6 )            ".
+            "   OR substring($table.payinfo from 1 for 6 )            ".
             "      SIMILAR TO '49110[1-2]'                             ".
-            "   OR substring(cust_$thing.payinfo from 1 for 6 )            ".
+            "   OR substring($table.payinfo from 1 for 6 )            ".
             "      SIMILAR TO '49117[4-9]'                             ".
-            "   OR substring(cust_$thing.payinfo from 1 for 6 )            ".
+            "   OR substring($table.payinfo from 1 for 6 )            ".
             "      SIMILAR TO '49118[1-2]'                             ".
             " ) ";
         } else {
@@ -195,10 +231,10 @@ if ( $cgi->param('magic') ) {
         }
 
         my $masksearch = $search;
-        $masksearch =~ s/cust_$thing\.payinfo/cust_$thing.paymask/gi;
+        $masksearch =~ s/$table\.payinfo/$table.paymask/gi;
 
         push @search,
-          "( $search OR ( cust_$thing.paymask IS NOT NULL AND $masksearch ) )";
+          "( $search OR ( $table.paymask IS NOT NULL AND $masksearch ) )";
 
       }
     }
@@ -206,11 +242,11 @@ if ( $cgi->param('magic') ) {
     if ( $cgi->param('payinfo') ) {
       $cgi->param('payinfo') =~ /^\s*(\d+)\s*$/
         or die "illegal payinfo ". $cgi->param('payinfo');
-      push @search, "cust_$thing.payinfo = '$1'";
+      push @search, "$table.payinfo = '$1'";
     }
 
     if ( $cgi->param('otaker') =~ /^(\w+)$/ ) {
-      push @search, "cust_$thing.otaker = '$1'";
+      push @search, "$table.otaker = '$1'";
     }
 
     #for cust_pay_pending...  statusNOT=done
@@ -222,7 +258,7 @@ if ( $cgi->param('magic') ) {
     push @search, "_date >= $beginning ",
                   "_date <= $ending";
 
-    if ( $thing eq 'pay_void' ) {
+    if ( $table eq 'cust_pay_void' ) {
       my($v_beginning, $v_ending) =
         FS::UI::Web::parse_beginning_ending($cgi, 'void');
       push @search, "void_date >= $v_beginning ",
@@ -246,19 +282,26 @@ if ( $cgi->param('magic') ) {
     die "unknown search magic: ". $cgi->param('magic');
   }
 
+  #for the history search
+  if ( $cgi->param('history_action') =~ /^([\w,]+)$/ ) {
+    my @history_action = split(/,/, $1);
+    push @search, 'history_action IN ('.
+                    join(',', map "'$_'", @history_action ). ')';
+  }
+
   #here is the agent virtualization
   push @search, $curuser->agentnums_sql;
 
   my $search = ' WHERE '. join(' AND ', @search);
 
   $count_query = "SELECT COUNT(*), SUM($amount_field) ".
-                 "FROM cust_$thing LEFT JOIN cust_main USING ( custnum )".
+                 "FROM $table LEFT JOIN cust_main USING ( custnum )".
                  $search;
 
   $sql_query = {
-    'table'     => "cust_$thing",
+    'table'     => $table,
     'select'    => join(', ',
-                     "cust_$thing.*",
+                     "$table.*",
                      'cust_main.custnum as cust_main_custnum',
                      FS::UI::Web::cust_sql_fields(),
                    ),
@@ -277,12 +320,12 @@ if ( $cgi->param('magic') ) {
   $cgi->param('payby') =~ /^(\w+)$/ or die "illegal payby";
   my $payby = $1;
 
-  $count_query = "SELECT COUNT(*), SUM($amount_field) FROM cust_$thing".
+  $count_query = "SELECT COUNT(*), SUM($amount_field) FROM $table".
                  "  WHERE payinfo = '$payinfo' AND payby = '$payby'".
                  "  AND ". $curuser->agentnums_sql;
 
   $sql_query = {
-    'table'     => "cust_$thing",
+    'table'     => $table,
     'hashref'   => { 'payinfo' => $payinfo,
                      'payby'   => $payby    },
     'extra_sql' => $curuser->agentnums_sql.
@@ -290,24 +333,5 @@ if ( $cgi->param('magic') ) {
   };
 
 }
-
-my $link = '';
-if (    ( $curuser->access_right('View invoices') #XXX for now
-          || $curuser->access_right('View customer payments')
-        )
-     && ! $opt{'disable_link'}
-   )
-{
-  my $key = $thing eq 'pay_void' ? 'paynum' : $thing.'num';
-  my $q = ( $thing eq 'pay_void' ? 'void=1;' : '' ). "$key=";
-  $link = [ "${p}view/cust_$thing.html?$q", $key ]
-}
-
-my $cust_link = sub {
-  my $cust_thing = shift;
-  $cust_thing->cust_main_custnum
-    ? [ "${p}view/cust_main.cgi?", 'custnum' ] 
-    : '';
-};
 
 </%init>

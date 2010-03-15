@@ -1,0 +1,9 @@
+<% include( 'elements/cust_pay_or_refund.html',
+                'table'         => 'h_cust_pay',
+                'amount_field'  => 'paid',
+                'name_singular' => 'payment',
+                'name_verb'     => 'paid',
+                'pre_header'    => [ 'Transaction',    'By' ],
+                'pre_fields'    => [ 'history_action', 'history_user' ],
+          )
+%>
