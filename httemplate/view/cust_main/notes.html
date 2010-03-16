@@ -11,6 +11,9 @@
 %   }
     <TH CLASS="grid" BGCOLOR="#cccccc">Person</TH>
     <TH CLASS="grid" BGCOLOR="#cccccc">Note</TH>
+%   if ($curuser->access_right('Edit customer note') ) {
+    <TH CLASS="grid" BGCOLOR="#cccccc">&nbsp;</TH>
+%   }
   </TR>
 
 % my $bgcolor1 = '#eeeeee';
@@ -34,7 +37,7 @@
 %                                             ";notenum=$notenum",
 %                            'actionlabel' => 'Edit customer note',
 %                            'width'       => 616,
-%                            'height'      => 408,
+%                            'height'      => 580,
 %                            'frame'       => 'top',
 %                        );
 %   my $clickjs = qq!onclick="$onclick"!;
@@ -50,8 +53,11 @@
         &nbsp;<% $note->otaker%>
       </TD>
       <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
-        &nbsp;<%$note->comments%><% $edit %>
+        &nbsp;<%$note->comments%>
       </TD>
+% if($edit) {
+      <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $edit %></TD>
+% }
     </TR>
 
 % } #end display notes

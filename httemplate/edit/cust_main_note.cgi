@@ -8,9 +8,11 @@
 
 
 <BR><BR>
-<TEXTAREA NAME="comment" ROWS="12" COLS="60">
-<% $comment %>
-</TEXTAREA>
+<% include('/elements/htmlarea.html', 'field' => 'comment',
+                                      'curr_value' => $comment) %>
+% #<TEXTAREA NAME="comment" ROWS="12" COLS="60">
+% # <% $comment %>
+% #</TEXTAREA>
 
 <BR><BR>
 <INPUT TYPE="submit" VALUE="<% $notenum ? "Apply Changes" : "Add Note" %>">
