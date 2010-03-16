@@ -35,6 +35,8 @@ if ( $cgi->param('error') ) {
   $comment = $note->comments;
 }
 
+$comment =~ s/\r//g; # remove weird line breaks to protect FCKeditor
+
 $cgi->param('custnum') =~ /^(\d+)$/ or die "illeagl custnum";
 my $custnum = $1;
 
