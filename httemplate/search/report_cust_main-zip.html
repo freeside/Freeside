@@ -20,7 +20,7 @@
       </TR>
 
       <TR>
-        <TD ALIGN="right">Show customers with status:</TD>
+        <TD ALIGN="right">Show customers with status</TD>
         <TD>
           <SELECT NAME="status">
             <OPTION VALUE="">all
@@ -29,6 +29,23 @@
             <OPTION VALUE="active">active recurring packages
             <OPTION VALUE="susp">suspended
             <OPTION VALUE="cancel">cancelled
+          </SELECT>
+        </TD>
+      </TR>
+
+      <TR>
+        <TD ALIGN="right">Limit to customers with provisioned service</TD>
+        <TD>
+          <SELECT NAME="svcdb">
+            <OPTION VALUE="">(no)
+            <OPTION VALUE="svc_acct">Account (svc_acct)
+            <OPTION VALUE="svc_broadband">Broadband service (svc_broadband)
+            <OPTION VALUE="svc_domain">Domain (svc_domain)
+            <OPTION VALUE="svc_external">External service (svc_external)
+            <OPTION VALUE="svc_forward">Mail forward (svc_foward)
+            <OPTION VALUE="svc_pbx">PBX (svc_pbx)
+            <OPTION VALUE="svc_phone">Phone number (svc_phone)
+            <OPTION VALUE="svc_www">Hosting (svc_www)
           </SELECT>
         </TD>
       </TR>

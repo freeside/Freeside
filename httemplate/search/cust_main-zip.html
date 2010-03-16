@@ -32,6 +32,17 @@ if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
   $agentnum = $1;
   push @where, "cust_main.agentnum = $agentnum";
 }
+
+# select svcdb
+
+if ( $cgi->param('svcdb') =~ /^(\w+)$/ ) {
+  my $svcdb = $1;
+  push @where, "EXISTS( SELECT 1 FROM $svcdb LEFT JOIN cust_svc USING ( svcnum )
+                                             LEFT JOIN cust_pkg USING ( pkgnum )
+                          WHERE cust_pkg.custnum = cust_main.custnum
+                      )";
+}
+
 my $where = scalar(@where) ? 'WHERE '. join(' AND ', @where) : '';
 
 # bill zip vs ship zip
