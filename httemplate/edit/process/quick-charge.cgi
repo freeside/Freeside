@@ -61,6 +61,7 @@ unless ( $error ) {
                            ? str2time($cgi->param('start_date'))
                            : ''
                        ),
+    'no_auto'       => scalar($cgi->param('no_auto')),
     'pkg'           => scalar($cgi->param('pkg')),
     'setuptax'      => scalar($cgi->param('setuptax')),
     'taxclass'      => scalar($cgi->param('taxclass')),

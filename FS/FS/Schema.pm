@@ -1259,6 +1259,7 @@ sub tables_hashref {
         'change_pkgpart',      'int', 'NULL', '', '', '',
         'change_locationnum',  'int', 'NULL', '', '', '',
         'manual_flag',        'char', 'NULL',  1, '', '', 
+        'no_auto',            'char', 'NULL',  1, '', '', 
         'quantity',            'int', 'NULL', '', '', '',
       ],
       'primary_key' => 'pkgnum',
@@ -1435,7 +1436,7 @@ sub tables_hashref {
         'pay_weight',    'real',    'NULL', '', '', '',
         'credit_weight', 'real',    'NULL', '', '', '',
         'agentnum',      'int',     'NULL', '', '', '', 
-
+        'no_auto',      'char',     'NULL',  1, '', '', 
       ],
       'primary_key' => 'pkgpart',
       'unique' => [],

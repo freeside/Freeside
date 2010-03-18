@@ -356,9 +356,22 @@ this invoice.
 
 sub cust_pkg {
   my $self = shift;
-  my @cust_pkg = map { $_->cust_pkg } $self->cust_bill_pkg;
+  my @cust_pkg = map { $_->pkgnum > 0 ? $_->cust_pkg : () }
+                     $self->cust_bill_pkg;
   my %saw = ();
   grep { ! $saw{$_->pkgnum}++ } @cust_pkg;
+}
+
+=item no_auto
+
+Returns true if any of the packages (or their definitions) corresponding to the
+line items for this invoice have the no_auto flag set.
+
+=cut
+
+sub no_auto {
+  my $self = shift;
+  grep { $_->no_auto || $_->part_pkg->no_auto } $self->cust_pkg;
 }
 
 =item open_cust_bill_pkg
@@ -1899,6 +1912,14 @@ sub realtime_bop {
   $cust_main->realtime_bop($method, $amount,
     'description' => $description,
     'invnum'      => $self->invnum,
+#this didn't do what we want, it just calls apply_payments_and_credits
+#    'apply'       => 1,
+    'apply_to_invoice' => 1,
+ #what we want:
+ #this changes application behavior: auto payments
+                        #triggered against a specific invoice are now applied
+                        #to that invoice instead of oldest open.
+                        #seem okay to me...
   );
 
 }

@@ -2696,15 +2696,21 @@ sub bill {
     return $error;
   }
 
-  my @cust_bill_pkg = ();
+  #keep auto-charge and non-auto-charge line items separate
+  my @passes = ( '', 'no_auto' );
+
+  my %cust_bill_pkg = map { $_ => [] } @passes;
 
   ###
   # find the packages which are due for billing, find out how much they are
   # & generate invoice database.
   ###
 
-  my( $total_setup, $total_recur, $postal_charge ) = ( 0, 0, 0 );
-  my %taxlisthash;
+  my %total_setup   = map { my $z = 0; $_ => \$z; } @passes;
+  my %total_recur   = map { my $z = 0; $_ => \$z; } @passes;
+
+  my %taxlisthash = map { $_ => {} } @passes;
+
   my @precommit_hooks = ();
 
   $options{'pkg_list'} ||= [ $self->ncancelled_pkgs ];  #param checks?
@@ -2727,14 +2733,16 @@ sub bill {
 
       $cust_pkg->set($_, $hash{$_}) foreach qw ( setup last_bill bill );
 
+      my $pass = ($cust_pkg->no_auto || $part_pkg->no_auto) ? 'no_auto' : '';
+
       my $error =
         $self->_make_lines( 'part_pkg'            => $part_pkg,
                             'cust_pkg'            => $cust_pkg,
                             'precommit_hooks'     => \@precommit_hooks,
-                            'line_items'          => \@cust_bill_pkg,
-                            'setup'               => \$total_setup,
-                            'recur'               => \$total_recur,
-                            'tax_matrix'          => \%taxlisthash,
+                            'line_items'          => $cust_bill_pkg{$pass},
+                            'setup'               => $total_setup{$pass},
+                            'recur'               => $total_recur{$pass},
+                            'tax_matrix'          => $taxlisthash{$pass},
                             'time'                => $time,
                             'real_pkgpart'        => $real_pkgpart,
                             'options'             => \%options,
@@ -2748,130 +2756,138 @@ sub bill {
 
   } #foreach my $cust_pkg
 
-  unless ( @cust_bill_pkg ) { #don't create an invoice w/o line items
-    #but do commit any package date cycling that happened
-    $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-    return '';
-  }
+  #if the customer isn't on an automatic payby, everything can go on a single
+  #invoice anyway?
+  #if ( $cust_main->payby !~ /^(CARD|CHEK)$/ ) {
+    #merge everything into one list
+  #}
 
-  if ( scalar( grep { $_->recur && $_->recur > 0 } @cust_bill_pkg) ||
-         !$conf->exists('postal_invoice-recurring_only')
-     )
-  {
+  foreach my $pass (@passes) { # keys %cust_bill_pkg ) {
 
-    my $postal_pkg = $self->charge_postal_fee();
-    if ( $postal_pkg && !ref( $postal_pkg ) ) {
+    my @cust_bill_pkg = @{ $cust_bill_pkg{$pass} };
 
-      $dbh->rollback if $oldAutoCommit;
-      return "can't charge postal invoice fee for customer ".
-        $self->custnum. ": $postal_pkg";
+    next unless @cust_bill_pkg; #don't create an invoice w/o line items
 
-    } elsif ( $postal_pkg ) {
+    if ( scalar( grep { $_->recur && $_->recur > 0 } @cust_bill_pkg) ||
+           !$conf->exists('postal_invoice-recurring_only')
+       )
+    {
 
-      my $real_pkgpart = $postal_pkg->pkgpart;
-      foreach my $part_pkg ( $postal_pkg->part_pkg->self_and_bill_linked ) {
-        my %postal_options = %options;
-        delete $postal_options{cancel};
-        my $error =
-          $self->_make_lines( 'part_pkg'            => $part_pkg,
-                              'cust_pkg'            => $postal_pkg,
-                              'precommit_hooks'     => \@precommit_hooks,
-                              'line_items'          => \@cust_bill_pkg,
-                              'setup'               => \$total_setup,
-                              'recur'               => \$total_recur,
-                              'tax_matrix'          => \%taxlisthash,
-                              'time'                => $time,
-                              'real_pkgpart'        => $real_pkgpart,
-                              'options'             => \%postal_options,
-                            );
-        if ($error) {
-          $dbh->rollback if $oldAutoCommit;
-          return $error;
+      my $postal_pkg = $self->charge_postal_fee();
+      if ( $postal_pkg && !ref( $postal_pkg ) ) {
+
+        $dbh->rollback if $oldAutoCommit;
+        return "can't charge postal invoice fee for customer ".
+          $self->custnum. ": $postal_pkg";
+
+      } elsif ( $postal_pkg ) {
+
+        my $real_pkgpart = $postal_pkg->pkgpart;
+        foreach my $part_pkg ( $postal_pkg->part_pkg->self_and_bill_linked ) {
+          my %postal_options = %options;
+          delete $postal_options{cancel};
+          my $error =
+            $self->_make_lines( 'part_pkg'            => $part_pkg,
+                                'cust_pkg'            => $postal_pkg,
+                                'precommit_hooks'     => \@precommit_hooks,
+                                'line_items'          => \@cust_bill_pkg,
+                                'setup'               => $total_setup{$pass},
+                                'recur'               => $total_recur{$pass},
+                                'tax_matrix'          => $taxlisthash{$pass},
+                                'time'                => $time,
+                                'real_pkgpart'        => $real_pkgpart,
+                                'options'             => \%postal_options,
+                              );
+          if ($error) {
+            $dbh->rollback if $oldAutoCommit;
+            return $error;
+          }
         }
+
       }
 
     }
 
-  }
+    my $listref_or_error =
+      $self->calculate_taxes( \@cust_bill_pkg, $taxlisthash{$pass}, $invoice_time);
 
-  my $listref_or_error =
-    $self->calculate_taxes( \@cust_bill_pkg, \%taxlisthash, $invoice_time);
+    unless ( ref( $listref_or_error ) ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $listref_or_error;
+    }
 
-  unless ( ref( $listref_or_error ) ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $listref_or_error;
-  }
+    foreach my $taxline ( @$listref_or_error ) {
+      ${ $total_setup{$pass} } =
+        sprintf('%.2f', ${ $total_setup{$pass} } + $taxline->setup );
+      push @cust_bill_pkg, $taxline;
+    }
 
-  foreach my $taxline ( @$listref_or_error ) {
-    $total_setup = sprintf('%.2f', $total_setup+$taxline->setup );
-    push @cust_bill_pkg, $taxline;
-  }
+    #add tax adjustments
+    warn "adding tax adjustments...\n" if $DEBUG > 2;
+    foreach my $cust_tax_adjustment (
+      qsearch('cust_tax_adjustment', { 'custnum'    => $self->custnum,
+                                       'billpkgnum' => '',
+                                     }
+             )
+    ) {
 
-  #add tax adjustments
-  warn "adding tax adjustments...\n" if $DEBUG > 2;
-  foreach my $cust_tax_adjustment (
-    qsearch('cust_tax_adjustment', { 'custnum'    => $self->custnum,
-                                     'billpkgnum' => '',
-                                   }
-           )
-  ) {
+      my $tax = sprintf('%.2f', $cust_tax_adjustment->amount );
 
-    my $tax = sprintf('%.2f', $cust_tax_adjustment->amount );
+      my $itemdesc = $cust_tax_adjustment->taxname;
+      $itemdesc = '' if $itemdesc eq 'Tax';
 
-    my $itemdesc = $cust_tax_adjustment->taxname;
-    $itemdesc = '' if $itemdesc eq 'Tax';
+      push @cust_bill_pkg, new FS::cust_bill_pkg {
+        'pkgnum'      => 0,
+        'setup'       => $tax,
+        'recur'       => 0,
+        'sdate'       => '',
+        'edate'       => '',
+        'itemdesc'    => $itemdesc,
+        'itemcomment' => $cust_tax_adjustment->comment,
+        'cust_tax_adjustment' => $cust_tax_adjustment,
+        #'cust_bill_pkg_tax_location' => \@cust_bill_pkg_tax_location,
+      };
 
-    push @cust_bill_pkg, new FS::cust_bill_pkg {
-      'pkgnum'      => 0,
-      'setup'       => $tax,
-      'recur'       => 0,
-      'sdate'       => '',
-      'edate'       => '',
-      'itemdesc'    => $itemdesc,
-      'itemcomment' => $cust_tax_adjustment->comment,
-      'cust_tax_adjustment' => $cust_tax_adjustment,
-      #'cust_bill_pkg_tax_location' => \@cust_bill_pkg_tax_location,
-    };
+    }
 
-  }
+    my $charged = sprintf('%.2f', ${ $total_setup{$pass} } + ${ $total_recur{$pass} } );
 
-  my $charged = sprintf('%.2f', $total_setup + $total_recur );
+    my @cust_bill = $self->cust_bill;
+    my $balance = $self->balance;
+    my $previous_balance = scalar(@cust_bill)
+                             ? ( $cust_bill[$#cust_bill]->billing_balance || 0 )
+                             : 0;
 
-  my @cust_bill = $self->cust_bill;
-  my $balance = $self->balance;
-  my $previous_balance = scalar(@cust_bill)
-                           ? ( $cust_bill[$#cust_bill]->billing_balance || 0 )
-                           : 0;
+    $previous_balance += $cust_bill[$#cust_bill]->charged
+      if scalar(@cust_bill);
+    #my $balance_adjustments =
+    #  sprintf('%.2f', $balance - $prior_prior_balance - $prior_charged);
 
-  $previous_balance += $cust_bill[$#cust_bill]->charged
-    if scalar(@cust_bill);
-  #my $balance_adjustments =
-  #  sprintf('%.2f', $balance - $prior_prior_balance - $prior_charged);
-
-  #create the new invoice
-  my $cust_bill = new FS::cust_bill ( {
-    'custnum'             => $self->custnum,
-    '_date'               => ( $invoice_time ),
-    'charged'             => $charged,
-    'billing_balance'     => $balance,
-    'previous_balance'    => $previous_balance,
-    'invoice_terms'       => $options{'invoice_terms'},
-  } );
-  $error = $cust_bill->insert;
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return "can't create invoice for customer #". $self->custnum. ": $error";
-  }
-
-  foreach my $cust_bill_pkg ( @cust_bill_pkg ) {
-    $cust_bill_pkg->invnum($cust_bill->invnum); 
-    my $error = $cust_bill_pkg->insert;
+    #create the new invoice
+    my $cust_bill = new FS::cust_bill ( {
+      'custnum'             => $self->custnum,
+      '_date'               => ( $invoice_time ),
+      'charged'             => $charged,
+      'billing_balance'     => $balance,
+      'previous_balance'    => $previous_balance,
+      'invoice_terms'       => $options{'invoice_terms'},
+    } );
+    $error = $cust_bill->insert;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
-      return "can't create invoice line item: $error";
+      return "can't create invoice for customer #". $self->custnum. ": $error";
     }
-  }
-    
+
+    foreach my $cust_bill_pkg ( @cust_bill_pkg ) {
+      $cust_bill_pkg->invnum($cust_bill->invnum); 
+      my $error = $cust_bill_pkg->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "can't create invoice line item: $error";
+      }
+    }
+
+  } #foreach my $pass ( keys %cust_bill_pkg )
 
   foreach my $hook ( @precommit_hooks ) { 
     eval {
@@ -7549,12 +7565,14 @@ sub charge {
   my ( $pkg, $comment, $additional );
   my ( $setuptax, $taxclass );   #internal taxes
   my ( $taxproduct, $override ); #vendor (CCH) taxes
+  my $no_auto = '';
   my $cust_pkg_ref = '';
   my ( $bill_now, $invoice_terms ) = ( 0, '' );
   if ( ref( $_[0] ) ) {
     $amount     = $_[0]->{amount};
     $quantity   = exists($_[0]->{quantity}) ? $_[0]->{quantity} : 1;
     $start_date = exists($_[0]->{start_date}) ? $_[0]->{start_date} : '';
+    $no_auto    = exists($_[0]->{no_auto}) ? $_[0]->{no_auto} : '';
     $pkg        = exists($_[0]->{pkg}) ? $_[0]->{pkg} : 'One-time charge';
     $comment    = exists($_[0]->{comment}) ? $_[0]->{comment}
                                            : '$'. sprintf("%.2f",$amount);
@@ -7632,6 +7650,7 @@ sub charge {
     'pkgpart'    => $pkgpart,
     'quantity'   => $quantity,
     'start_date' => $start_date,
+    'no_auto'    => $no_auto,
   } );
 
   $error = $cust_pkg->insert;

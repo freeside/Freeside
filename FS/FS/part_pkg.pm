@@ -462,6 +462,7 @@ sub check {
     || $self->ut_textn('taxclass')
     || $self->ut_enum('disabled', [ '', 'Y' ] )
     || $self->ut_enum('custom', [ '', 'Y' ] )
+    || $self->ut_enum('no_auto', [ '', 'Y' ])
     #|| $self->ut_moneyn('setup_cost')
     #|| $self->ut_moneyn('recur_cost')
     || $self->ut_floatn('setup_cost')
@@ -908,9 +909,11 @@ sub options {
   map { $_->optionname => $_->optionvalue } $self->part_pkg_option;
 }
 
-=item option OPTIONNAME
+=item option OPTIONNAME [ QUIET ]
 
-Returns the option value for the given name, or the empty string.
+Returns the option value for the given name, or the empty string.  If a true
+value is passed as the second argument, warnings about missing the option
+will be suppressed.
 
 =cut
 

@@ -525,6 +525,7 @@ sub check {
     || $self->ut_numbern('cancel')
     || $self->ut_numbern('adjourn')
     || $self->ut_numbern('expire')
+    || $self->ut_enum('no_auto', [ '', 'Y' ])
   ;
   return $error if $error;
 

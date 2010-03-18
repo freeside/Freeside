@@ -66,6 +66,14 @@
   });
 </SCRIPT>
 
+% if ( $cust_main->payby =~ /^(CARD|CHEK)$/ ) {
+%   my $what = lc(FS::payby->shortname($cust_main->payby));
+    <TR>
+      <TH ALIGN="right">Disable automatic <% $what %> charge </TH>
+      <TD COLSPAN=6><INPUT TYPE="checkbox" NAME="no_auto" VALUE="Y"></TD>
+    </TR>
+% }
+
 % if ( $curuser->access_right('Discount customer package') ) {
   <% include('/elements/tr-select-discount.html',
                'element_etc' => 'DISABLED',
@@ -119,7 +127,7 @@ my $cust_main = qsearchs({
 
 my $pkgpart = scalar($cgi->param('pkgpart'));
 
-my $format = "%m/%d/%Y %T %z (%Z)"; #false laziness w/REAL_cust_pkg.cgi?
+my $format = $date_format. ' %T %z (%Z)'; #false laziness w/REAL_cust_pkg.cgi?
 my $start_date = $cust_main->next_bill_date;
 $start_date = $start_date ? time2str($format, $start_date) : '';
 

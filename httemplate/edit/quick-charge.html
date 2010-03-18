@@ -153,6 +153,13 @@ function bill_now_changed (what) {
   });
 </SCRIPT>
 
+% if ( $cust_main->payby =~ /^(CARD|CHEK)$/ ) {
+%   my $what = lc(FS::payby->shortname($cust_main->payby));
+    <TR>
+      <TD ALIGN="right">Disable automatic <% $what %> charge </TD>
+      <TD COLSPAN=6><INPUT TYPE="checkbox" NAME="no_auto" VALUE="Y"></TD>
+    </TR>
+% }
 
 <TR>
   <TD ALIGN="right">Tax exempt </TD>

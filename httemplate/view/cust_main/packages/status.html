@@ -42,6 +42,8 @@
        )
     %>
 
+    <% pkg_status_row_noauto( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
+
     <% pkg_status_row_discount( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
 
 %   unless ( $cust_pkg->get('setup') ) { 
@@ -76,7 +78,9 @@
 
           <% pkg_status_row_colspan( $cust_pkg, 'Not&nbsp;yet&nbsp;billed&nbsp;(one-time&nbsp;charge)', '', 'colspan'=>$colspan, %opt ) %>
 
-         <% pkg_status_row_discount( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
+          <% pkg_status_row_noauto( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
+
+          <% pkg_status_row_discount( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
 
           <% pkg_status_row_if(
                $cust_pkg,
@@ -100,6 +104,8 @@
 
           <% pkg_status_row_colspan($cust_pkg, "Not&nbsp;yet&nbsp;billed&nbsp;($billed_or_prepaid&nbsp;". myfreq($part_pkg). ')', '', 'colspan'=>$colspan, %opt ) %>
 
+          <% pkg_status_row_noauto( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
+
           <% pkg_status_row_discount( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
 
           <% pkg_status_row_if($cust_pkg, 'Start billing', 'start_date', %opt) %>
@@ -113,6 +119,8 @@
           <% pkg_status_row_colspan($cust_pkg, 'One-time&nbsp;charge', '', 'colspan'=>$colspan, %opt ) %>
 
           <% pkg_status_row($cust_pkg, 'Billed', 'setup', %opt) %>
+
+          <% pkg_status_row_noauto( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
 
           <% pkg_status_row_discount( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
 
@@ -137,6 +145,8 @@
                )
             %>
 %         } 
+
+          <% pkg_status_row_noauto( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
 
           <% pkg_status_row_discount( $cust_pkg, %opt, 'colspan'=>$colspan ) %>
 
@@ -288,6 +298,23 @@ sub pkg_status_row_changed {
   }
 
   $html;
+}
+
+sub pkg_status_row_noauto {
+  my( $cust_pkg, %opt ) = @_;
+  my $part_pkg = $opt{'part_pkg'};
+  return '' unless $cust_pkg->no_auto || $part_pkg->no_auto;
+
+  #inefficient, should be passed in
+  my $cust_main = $cust_pkg->cust_main;
+
+  return '' unless $cust_main->payby =~ /^(CARD|CHEK)$/;
+  my $what = lc(FS::payby->shortname($cust_main->payby));
+
+  pkg_status_row_colspan( $cust_pkg, "No automatic $what charge", '',
+                          'colspan' => $opt{'colspan'},
+                          #%opt,
+                        );
 }
 
 sub pkg_status_row_discount {
