@@ -87,7 +87,7 @@
                   'name'        => 'signupdate',
                   'value'       => $cust_main->signupdate,
                   'label'       => 'Signup date',
-                  'format'      => $conf->config('date_format') || "%m/%d/%Y",
+                  'format'      => ( $conf->config('date_format') || "%m/%d/%Y" ),
               })
     %>
 % }
