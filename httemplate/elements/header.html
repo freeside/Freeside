@@ -77,7 +77,7 @@ Example:
     <% $head |n %>
 
   </HEAD>
-  <BODY <% $menu_position eq 'left' ? qq( BACKGROUND="${fsurl}images/background-cheat.png" ) : ' BGCOLOR="#e8e8e8" ' %> <% $etc |n %> STYLE="margin-top:0; margin-bottom:0; margin-left:0; margin-right:0">
+  <BODY <% $menu_position eq 'left' ? qq( BACKGROUND="${fsurl}images/background-cheat.png" ) : ' BGCOLOR="#f8f8f8" ' %> <% $etc |n %> STYLE="margin-top:0; margin-bottom:0; margin-left:0; margin-right:0">
     <table width="100%" CELLPADDING=0 CELLSPACING=0 STYLE="padding-left:0; padding-right:4">
       <tr>
         <td BGCOLOR="#ffffff"><IMG BORDER=0 ALT="freeside" HEIGHT="36" SRC="<%$fsurl%>view/REAL_logo.cgi"></td>
@@ -87,99 +87,30 @@ Example:
         <td align=right valign=top BGCOLOR="#ffffff"><FONT SIZE="-1">Logged in as <b><% getotaker %>&nbsp;</b> <FONT SIZE="-2">[ <a href="javascript:void(0);" onClick="logout();">logout</a> ]</FONT><br></FONT><FONT SIZE="-2"><a href="<%$fsurl%>pref/pref.html" STYLE="color: #000000">Preferences</a>
 %         if ( $conf->config("ticket_system")
 %              && FS::TicketSystem->access_right(\%session, 'ModifySelf') ) {
-            | <a href="<%$fsurl%>rt/User/Prefs.html" STYLE="color: #000000">Ticketing preferences</a>
+            | <a href="<%$fsurl%>rt/Prefs/Other.html" STYLE="color: #000000">Ticketing preferences</a>
 %         }
           <BR></FONT>
         </td>
       </tr>
     </table>
 
-<style type="text/css">
-input.fsblackbutton {
-	 background-color:#333333;
-	 color: #ffffff;
-	 border:1px solid;
-	 border-top-color:#cccccc;
-	 border-left-color:#cccccc;
-	 border-right-color:#aaaaaa;
-	 border-bottom-color:#aaaaaa;
-         font-family: Arial, Verdana, Helvetica, sans-serif;
-	 font-weight:bold;
-	 padding-left:12px;
-	 padding-right:12px;
-         padding-top:0px;
-         padding-bottom:0px;
-         margin-left:0px;
-         margin-right:0px;
-         margin-top:2px;
-         margin-bottom:0px;
-	 overflow:visible;
-	 filter:progid:DXImageTransform.Microsoft.Gradient(GradientType=0,StartColorStr='#ff333333',EndColorStr='#ff666666')
-}
-
-input.fsblackbuttonselected {
-	 background-color:#7e0079;
-	 color: #ffffff;
-	 border:1px solid;
-	 border-top-color:#cccccc;
-	 border-left-color:#cccccc;
-	 border-right-color:#aaaaaa;
-	 border-bottom-color:#aaaaaa;
-         font-family: Arial, Verdana, Helvetica, sans-serif;
-	 font-weight:bold;
-	 padding-left:12px;
-	 padding-right:12px;
-         padding-top:0px;
-         padding-bottom:0px;
-         margin-left:0px;
-         margin-right:0px;
-         margin-top:2px;
-         margin-bottom:0px;
-	 overflow:visible;
-	 filter:progid:DXImageTransform.Microsoft.Gradient(GradientType=0,StartColorStr='#ff330033',EndColorStr='#ff7e0079')
-}
-
-input.fstext {
-         border: 2px inset #eee;
-	 /*border-top-color:#aaaaaa;
-	 border-left-color:#aaaaaa;
-	 border-right-color:#cccccc;
-	 border-bottom-color:#cccccc;
-         */
-         vertical-align:bottom;
-         text-align:right;
-         font-family: Arial,Verdana,Helvetica,sans-serif;
-         font-size: 13px;
-         padding-left: 0px;
-         padding-right: 0px;
-         padding-top: 0px;
-         padding-bottom: 0px;
-         margin-left:0px;
-         margin-right:0px;
-         margin-top:0px;
-         margin-bottom:1px;
-}
-
-</style>
-
     <TABLE WIDTH="100%" CELLSPACING=0 CELLPADDING=0>
-      <TR>
-        <TD COLSPAN="7" WIDTH="100%" STYLE="padding:0"><IMG BORDER=0 ALT="" SRC="<%$fsurl%>images/black-gradient.png" HEIGHT="13" WIDTH="100%"></TD>
-      </TR>
+
+<link href="<%$fsurl%>elements/freeside-menu.css" type="text/css" rel="stylesheet">
 
 % if ( $menu_position eq 'top' ) {
 
       <TR>
 
-        <TD COLSPAN="5" WIDTH="100%" STYLE="padding:0" BGCOLOR="#000000">
+        <TD COLSPAN="5" WIDTH="100%" STYLE="padding:1px 0px 0px 0px;border-top: 1px solid #7e0079" BGCOLOR="#cccccc">
           <SCRIPT TYPE="text/javascript">
             document.write(myBar);
           </SCRIPT>
         </TD>
 
 
-        <TD COLSPAN="2" ALIGN="right" STYLE="padding:0px 8px 0px 0px" BGCOLOR="#000000">
-          <TABLE CELLSPACING=0 CELLPADDING=0 BGCOLOR="#000000" BORDER=0>
+        <TD COLSPAN="2" ALIGN="right" STYLE="padding:1px 8px 0px 0px;border-top: 1px solid #7e0079" BGCOLOR="#cccccc">
+          <TABLE CELLSPACING=0 CELLPADDING=0 BGCOLOR="#cccccc" BORDER=0>
             <TR>
               <TD ALIGN="right" STYLE="padding-right:3px;padding-bottom:1px;border-right:1px solid #999999"><% include('/elements/about_freeside.html') |n %></TD>
               <TD ALIGN="left" STYLE="padding-left:3px;padding-bottom:1px"><% include('/elements/about_rt.html') |n %></TD>
@@ -190,12 +121,12 @@ input.fstext {
       </TR>
 
       <TR>
-        <TD COLSPAN="7" WIDTH="100%" HEIGHT="2px" STYLE="padding:0" BGCOLOR="#000000">
+        <TD COLSPAN="7" WIDTH="100%" HEIGHT="2px" STYLE="padding:0" BGCOLOR="#cccccc">
         </TD>
       </TR>
       
       <TR>
-        <TD COLSPAN="7" WIDTH="100%" HEIGHT="4px" STYLE="padding:0" BGCOLOR="#000000">
+        <TD COLSPAN="7" WIDTH="100%" HEIGHT="4px" STYLE="padding:0" BGCOLOR="#cccccc">
         </TD>
       </TR>
 
@@ -203,7 +134,7 @@ input.fstext {
 
       <TR>
 
-        <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right" STYLE="padding-left:2px">
+        <TD COLSPAN=1 BGCOLOR="#cccccc" ALIGN="right" STYLE="padding-left:2px">
 % if ( $curuser->access_right('List prospects') ) {
           <FORM ACTION="<%$fsurl%>search/prospect_main.html" METHOD="GET" STYLE="margin:0">
             <INPUT NAME="search_prospect" TYPE="text" VALUE="<% $prospect_label |n %>" STYLE="width:155px" onFocus="clearhint_search_prospect(this);" onClick="clearhint_search_prospect(this);" CLASS="fstext"><BR>
@@ -213,7 +144,7 @@ input.fstext {
 % }
         </TD>
 
-        <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right" STYLE="padding-left:2px">
+        <TD COLSPAN=1 BGCOLOR="#cccccc" ALIGN="right" STYLE="padding-left:2px">
 % if ( $curuser->access_right('List customers') ) {
           <FORM ACTION="<%$fsurl%>search/cust_main.cgi" METHOD="GET" STYLE="margin:0">
             <INPUT NAME="search_cust" TYPE="text" VALUE="<% $cust_label |n %>" STYLE="width:<%$cust_width%>px" onFocus="clearhint_search_cust(this);" onClick="clearhint_search_cust(this);" CLASS="fstext"><BR>
@@ -223,7 +154,7 @@ input.fstext {
 % }
         </TD>
 
-        <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="center">
+        <TD COLSPAN=1 BGCOLOR="#cccccc" ALIGN="center">
 % if ( $conf->exists('address2-search') ) { 
             <FORM ACTION="<%$fsurl%>search/cust_main.cgi" METHOD="GET" STYLE="margin:0;display:inline">
               <INPUT TYPE="hidden" NAME="address2_on" VALUE="1">
@@ -234,7 +165,7 @@ input.fstext {
 % } 
         </TD>
 
-        <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right">
+        <TD COLSPAN=1 BGCOLOR="#cccccc" ALIGN="right">
 % if ( $curuser->access_right('View invoices') ) { 
             <FORM ACTION="<%$fsurl%>search/cust_bill.html" METHOD="GET" STYLE="margin:0;display:inline">
               <INPUT NAME="invnum" TYPE="text" VALUE="<% $inv_label |n %>" STYLE="width:56px" onFocus="clearhint_search_invoice(this);" onClick="clearhint_search_invoice(this);" CLASS="fstext">
@@ -246,17 +177,17 @@ input.fstext {
 % } 
         </TD>
 
-        <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right" STYLE="padding-left:2px">
+        <TD COLSPAN=1 BGCOLOR="#cccccc" ALIGN="right" STYLE="padding-left:2px">
 % if ( $curuser->access_right('View customer services') ) {
           <FORM ACTION="<%$fsurl%>search/cust_svc.html" METHOD="GET" STYLE="margin:0">
             <INPUT NAME="search_svc" TYPE="text" VALUE="<% $svc_label |n %>" STYLE="width:271px" onFocus="clearhint_search_svc(this);" onClick="clearhint_search_svc(this);" CLASS="fstext"><BR>
-            <A NOTYET="<%$fsurl%>search/svc_Smarter.html" STYLE="color: #000000; font-size:11px">Advanced</A>
+            <A NOTYET="<%$fsurl%>search/svc_Smarter.html" STYLE="color: #cccccc; font-size:11px">Advanced</A>
             <INPUT TYPE="submit" VALUE="Search services" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:11px">
           </FORM>
 % }
         </TD>
 
-        <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right" STYLE="padding-left:2px;padding-right:2px">
+        <TD COLSPAN=1 BGCOLOR="#cccccc" ALIGN="right" STYLE="padding-left:2px;padding-right:2px">
 % if ( $conf->config("ticket_system") ) { 
           <FORM ACTION="<% FS::TicketSystem->baseurl %>index.html" METHOD="GET" STYLE="margin:0">
             <INPUT NAME="q" TYPE="text" VALUE="<% $ticketing_label |n %>" STYLE="width:223px" onFocus="clearhint_search_ticket(this);" onClick="clearhint_search_ticket(this);" CLASS="fstext"><BR>
@@ -271,31 +202,18 @@ input.fstext {
 
     <TABLE WIDTH="100%" HEIGHT="100%" CELLSPACING=0 CELLPADDING=4>
 
-      <TR>
-
-% if ( $menu_position eq 'left' ) {
-
-        <TD BGCOLOR="#000000" STYLE="padding:0" WIDTH="154"></TD>
-        <TD STYLE="padding:0" WIDTH="13"><IMG BORDER=0 ALT="" SRC="<%$fsurl%>images/black-gray-corner.png"></TD>
-
-% }
-
-        <TD STYLE="padding:0" WIDTH="100%"><IMG BORDER=0 ALT="" SRC="<%$fsurl%>images/black-gray-top.png" HEIGHT="13" WIDTH="100%"></TD>
-
-      </TR>
-
       <TR HEIGHT="100%">
 
 % if ( $menu_position eq 'left' ) {
 
-        <TD BGCOLOR="#000000" ALIGN="left" HEIGHT="100%" WIDTH="154" VALIGN="top" ALIGN="right">
+        <TD BGCOLOR="#cccccc" ALIGN="left" HEIGHT="100%" WIDTH="154" VALIGN="top" ALIGN="right">
           <SCRIPT TYPE="text/javascript">
             document.write(myBar);
           </SCRIPT>
           <BR>
           <IMG SRC="<%$fsurl%>images/32clear.gif" HEIGHT="1" WIDTH="154">
 
-          <TABLE CELLSPACING=0 CELLPADDING=0 BGCOLOR="#000000" WIDTH="100%">
+          <TABLE CELLSPACING=0 CELLPADDING=0 BGCOLOR="#cccccc" WIDTH="100%">
             <TR>
               <TD ALIGN="left" STYLE="padding-bottom:1px;border-bottom:1px solid #999999"><% include('/elements/about_freeside.html') |n %></TD>
             </TR>
@@ -309,7 +227,7 @@ input.fstext {
 
 % }
 
-        <TD BGCOLOR="#e8e8e8" HEIGHT="100%" VALIGN="top"> <!-- WIDTH="100%"> -->
+        <TD BGCOLOR="#f8f8f8" HEIGHT="100%" VALIGN="top"> <!-- WIDTH="100%"> -->
 
           <FONT SIZE=6>
             <% $title %>

@@ -1,0 +1,145 @@
+input.fsblackbutton {
+	 background-color:#333333;
+	 color: #ffffff;
+	 border:1px solid;
+	 border-top-color:#cccccc;
+	 border-left-color:#cccccc;
+	 border-right-color:#aaaaaa;
+	 border-bottom-color:#aaaaaa;
+         font-family: Arial, Verdana, Helvetica, sans-serif;
+	 font-weight:bold;
+	 padding-left:12px;
+	 padding-right:12px;
+         padding-top:0px;
+         padding-bottom:0px;
+         margin-left:0px;
+         margin-right:0px;
+         margin-top:2px;
+         margin-bottom:0px;
+	 overflow:visible;
+	 filter:progid:DXImageTransform.Microsoft.Gradient(GradientType=0,StartColorStr='#ff333333',EndColorStr='#ff666666')
+}
+
+input.fsblackbuttonselected {
+	 background-color:#7e0079;
+	 color: #ffffff;
+	 border:1px solid;
+	 border-top-color:#cccccc;
+	 border-left-color:#cccccc;
+	 border-right-color:#aaaaaa;
+	 border-bottom-color:#aaaaaa;
+         font-family: Arial, Verdana, Helvetica, sans-serif;
+	 font-weight:bold;
+	 padding-left:12px;
+	 padding-right:12px;
+         padding-top:0px;
+         padding-bottom:0px;
+         margin-left:0px;
+         margin-right:0px;
+         margin-top:2px;
+         margin-bottom:0px;
+	 overflow:visible;
+	 filter:progid:DXImageTransform.Microsoft.Gradient(GradientType=0,StartColorStr='#ff330033',EndColorStr='#ff7e0079')
+}
+
+input.fstext {
+         border: 2px inset #eee;
+	 /*border-top-color:#aaaaaa;
+	 border-left-color:#aaaaaa;
+	 border-right-color:#cccccc;
+	 border-bottom-color:#cccccc;
+         */
+         vertical-align:bottom;
+         text-align:right;
+         font-family: Arial,Verdana,Helvetica,sans-serif;
+         font-size: 13px;
+         padding-left: 0px;
+         padding-right: 0px;
+         padding-top: 0px;
+         padding-bottom: 0px;
+         margin-left:0px;
+         margin-right:0px;
+         margin-top:0px;
+         margin-bottom:1px;
+}
+
+a.fsblackbutton {
+         background-color:#333333;
+         color: #ffffff;
+         border:1px solid;
+         border-top-color:#cccccc;
+         border-left-color:#cccccc;
+         border-right-color:#aaaaaa;
+         border-bottom-color:#aaaaaa;
+         /*font-weight:bold;*/
+         /*padding-left:12px;
+         padding-right:12px;*/
+         padding-left:4px;
+         padding-right:4px;
+         font-size:16px;
+         text-decoration:none;
+         overflow:visible;
+         filter:progid:DXImageTransform.Microsoft.Gradient(GradientType=0,StartColorStr='#ff333333',EndColorStr='#ff666666')
+}
+
+a.fsblackbuttonselected,
+a:link:hover.fsblackbutton,
+a:visited:hover.fsblackbutton {
+         background-color:#7e0079;
+         color: #ffffff;
+         border:1px solid;
+         border-top-color:#cccccc;
+         border-left-color:#cccccc;
+         border-right-color:#aaaaaa;
+         border-bottom-color:#aaaaaa;
+         /*font-weight:bold;*/
+         /*padding-left:12px;
+         padding-right:12px;*/
+         padding-left:4px;
+         padding-right:4px;
+         font-size:16px;
+         text-decoration:none;
+         overflow:visible;
+         filter:progid:DXImageTransform.Microsoft.Gradient(GradientType=0,StartColorStr='#ff330033',EndColorStr='#ff7e0079')
+}
+
+a.fsdarkbutton {
+         background-color:#555555;
+         color: #ffffff;
+         border:1px solid;
+         border-top-color:#cccccc;
+         border-left-color:#cccccc;
+         border-right-color:#aaaaaa;
+         border-bottom-color:#aaaaaa;
+         /*font-weight:bold;*/
+         /*padding-left:12px;
+         padding-right:12px;*/
+         padding-left:4px;
+         padding-right:4px;
+         font-size:16px;
+         text-decoration:none;
+         overflow:visible;
+         filter:progid:DXImageTransform.Microsoft.Gradient(GradientType=0,StartColorStr='#ff555555',EndColorStr='#ff666666')
+}
+
+a.fsdarkbuttonselected,
+a:link:hover.fsdarkbutton,
+a:visited:hover.fsdarkbutton {
+         background-color:#7e0079;
+         color: #ffffff;
+         border:1px solid;
+         border-top-color:#cccccc;
+         border-left-color:#cccccc;
+         border-right-color:#aaaaaa;
+         border-bottom-color:#aaaaaa;
+         /*font-weight:bold;*/
+         /*padding-left:12px;
+         padding-right:12px;*/
+         padding-left:4px;
+         padding-right:4px;
+         font-size:16px;
+         text-decoration:none;
+         overflow:visible;
+         filter:progid:DXImageTransform.Microsoft.Gradient(GradientType=0,StartColorStr='#ff330033',EndColorStr='#ff7e0079')
+}
+

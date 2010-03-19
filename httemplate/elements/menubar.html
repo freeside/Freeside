@@ -20,46 +20,6 @@ Example:
 </%doc>
 %if ( $opt->{'newstyle'} ) {
 
-%  #false laziness w/header.html... shouldn't these just go in freeside.css?
-
-   <style type="text/css">
-   a.fsblackbutton {
-            background-color:#333333;
-            color: #ffffff;
-            border:1px solid;
-            border-top-color:#cccccc;
-            border-left-color:#cccccc;
-            border-right-color:#aaaaaa;
-            border-bottom-color:#aaaaaa;
-            /*font-weight:bold;*/
-            /*padding-left:12px;
-            padding-right:12px;*/
-            padding-left:4px;
-            padding-right:4px;
-            text-decoration:none;
-            overflow:visible;
-            filter:progid:DXImageTransform.Microsoft.Gradient(GradientType=0,StartColorStr='#ff333333',EndColorStr='#ff666666')
-   }
-   
-   a.fsblackbuttonselected {
-            background-color:#7e0079;
-            color: #ffffff;
-            border:1px solid;
-            border-top-color:#cccccc;
-            border-left-color:#cccccc;
-            border-right-color:#aaaaaa;
-            border-bottom-color:#aaaaaa;
-            /*font-weight:bold;*/
-            /*padding-left:12px;
-            padding-right:12px;*/
-            padding-left:4px;
-            padding-right:4px;
-            text-decoration:none;
-            overflow:visible;
-            filter:progid:DXImageTransform.Microsoft.Gradient(GradientType=0,StartColorStr='#ff330033',EndColorStr='#ff7e0079')
-   }
-   </style>
-
    <TABLE BGCOLOR="#000000" BORDER=0 CELLSPACING=0 CELLPADDING=0>
      <TR>
        <TD><IMG SRC="<%$fsurl%>images/gray-black-side.png" WIDTH=13 HEIGHT=25></TD>
