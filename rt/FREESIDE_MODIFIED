@@ -16,9 +16,8 @@ lib/RT/URI/freeside.pm
 lib/RT/URI/freeside/Internal.pm
 lib/RT/URI/freeside/XMLRPC.pm
  share/html/Admin/Users/Modify.html
- html/Elements/Header
- html/Elements/Menu
- html/Elements/PageLayout
+ share/html/Elements/Header
+ share/html/Elements/PageLayout
  html/Elements/QuickCreate
  html/Elements/SelectDate
  html/Elements/SimpleSearch
@@ -38,6 +37,9 @@ share/html/Ticket/ModifyCustomers.html
  html/NoAuth/css/3.5-default/misc.css
  html/NoAuth/css/3.5-default/titlebox.css
 share/html/NoAuth/css/freeside2.1/freeside.css
+share/html/NoAuth/css/freeside2.1/nav.css
+share/html/NoAuth/css/freeside2.1/base.css
+share/html/NoAuth/css/freeside2.1/layout.css
 
 html/Widgets/TitleBoxStart
 

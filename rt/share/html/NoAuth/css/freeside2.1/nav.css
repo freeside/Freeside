@@ -135,7 +135,7 @@ div#nav a.selected:after {
 div#page-navigation {
  background: white;
  position: relative;
- width:100%;
+ /* width:100%; */
  z-index: 10;
 
 }
@@ -147,7 +147,8 @@ div#page-navigation ul {
 
 div#page-navigation ul#page-menu {
  display: block;
- position: absolute;
+ /* position: absolute; */
+ float: left;
  left: 8em;
  font-size: 0.9em;
  top: 2.3em;
@@ -156,6 +157,7 @@ div#page-navigation ul#page-menu {
  right: 0em;
  padding-top:0.3em;
  padding-bottom:0.5em;
+ padding-right: 4em;
  border-top: 1px solid #aaa;
 
 }
@@ -169,7 +171,8 @@ div#page-navigation ul#page-menu {
 
 
 div#page-navigation ul#actions-menu {
- position: absolute;
+ /* position: absolute; */
+ float: right;
  right: 1em;
  top: 5.2em;
  margin-top: 0em;

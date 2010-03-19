@@ -45,50 +45,14 @@
 %# those contributions and any derivatives thereof.
 %# 
 %# END BPS TAGGED BLOCK }}}
-<!DOCTYPE html 
-     PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"><head>
-<title><%$Title%></title>
-
-
-% if ($Refresh && $Refresh =~ /^(\d+)/ && $1 > 0) {
-    <meta http-equiv="refresh" content="<% $Refresh %>" />
-% }
-
-<link rel="shortcut icon" href="<%RT->Config->Get('WebImagesURL')%>/favicon.png" type="image/png" />
-<link rel="stylesheet" href="<%RT->Config->Get('WebPath')%>/NoAuth/css/<% RT->Config->Get( 'WebDefaultStylesheet', $session{'CurrentUser'} ) %>/main<% RT->Config->Get('DevelMode')? '' : '-squished' %>.css" type="text/css" media="all" />
-<link rel="stylesheet" href="<%RT->Config->Get('WebPath')%>/NoAuth/css/print.css" type="text/css" media="print" />
-
-% for (keys %{$LinkRel || {}}) {
-    <link rel="<% $_ %>" href="<% RT->Config->Get('WebPath') . $LinkRel->{$_} %>" />
-% }
-
-% if ( $RSSAutoDiscovery ) {
-    <link rel="alternate" href="<%$RSSAutoDiscovery%>" type="application/rss+xml" title="RSS RT Search" />
-% }
-
-% if ($JavaScript) {
-<& HeaderJavascript, focus => $Focus, onload => $onload &>
-% }
-
-% my $stylesheet_plugin = "/NoAuth/css/". RT->Config->Get( 'WebDefaultStylesheet', $session{'CurrentUser'} )."/InHeader";
-% if ($m->comp_exists($stylesheet_plugin) ) {
-<& $stylesheet_plugin &>
-% }
-% $m->callback( %ARGS, CallbackName => 'Head' );
-
-</head>
-  <body<% $id && qq[ id="comp-$id"] |n %>>
-
-% if ($ShowBar) {
-<& /Elements/Logo, %ARGS &>
-
-<div id="quickbar">
-  <& /Elements/PersonalQuickbar, %ARGS &>
-% }
-
+<% include( '/elements/header.html', {
+              'title' => $Title,
+              'head'  => $head,
+              'etc'   => $etc,
+              'nobr'  => 1,
+              'nocss' => 1,
+          }) |n
+%>
 <%INIT>
 $r->headers_out->{'Pragma'} = 'no-cache';
 $r->headers_out->{'Cache-control'} = 'no-cache';
@@ -100,6 +64,48 @@ $id =~ s|\.html$||g;
 $id =~ s|index$||g
     if $id ne 'index';
 $id =~ s|-$||g;
+
+my $head = '';
+
+if ($Refresh && $Refresh =~ /^(\d+)/ && $1 > 0) {
+  $head .= '<meta http-equiv="refresh" content="$Refresh" />';
+}
+
+my $WebPath = RT->Config->Get('WebPath');
+my $WebImagesURL = RT->Config->Get('WebImagesURL');
+my $WebDefaultStylesheet =
+  RT->Config->Get('WebDefaultStylesheet', $session{'CurrentUser'});
+my $squished = RT->Config->Get('DevelMode') ? '' : '-squished';
+
+$head .= <<END;
+<link rel="shortcut icon" href="$WebImagesURL/favicon.png" type="image/png" />
+<link rel="stylesheet" href="$WebPath/NoAuth/css/$WebDefaultStylesheet/main$squished.css" type="text/css" media="all" />
+<link rel="stylesheet" href="$WebPath/NoAuth/css/print.css" type="text/css" media="print" />
+END
+
+for (keys %{$LinkRel || {}}) {
+  $head .= qq(<link rel="$_" href="$WebPath) . $LinkRel->{$_} . '" />';
+}
+
+if ( $RSSAutoDiscovery ) {
+    $head .= qq(<link rel="alternate" href="$RSSAutoDiscovery" type="application/rss+xml" title="RSS RT Search" />);
+}
+
+if ($JavaScript) {
+    $head .= $m->scomp('HeaderJavascript', focus => $Focus, onload => $onload);
+}
+
+my $stylesheet_plugin = "/NoAuth/css/$WebDefaultStylesheet/InHeader";
+if ($m->comp_exists($stylesheet_plugin) ) {
+    $head .= $m->scomp($stylesheet_plugin);
+}
+
+# $m->callback( %ARGS, CallbackName => 'Head' );
+$head .= $m->scomp( '/Elements/Callback', _CallbackName => 'Head', %ARGS );
+
+my $etc = '';
+$etc .= qq[ id="comp-$id"] if $id;
+
 </%INIT>
 
 <%ARGS>
