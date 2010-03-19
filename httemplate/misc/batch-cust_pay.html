@@ -2,7 +2,20 @@
 
 <% include('/elements/error.html') %>
 
-<FORM ACTION="process/batch-cust_pay.cgi" NAME="OneTrueForm" METHOD="POST" onsubmit="document.OneTrueForm.submit.disabled=true;">
+<SCRIPT TYPE="text/javascript">
+function warnUnload() {
+  if(document.getElementById("OneTrueTable").rows.length > 3 &&
+     !document.OneTrueForm.submit.disabled) {
+    return "The current batch will be lost.";
+  }
+  else {
+    return null;
+  }
+}
+window.onbeforeunload = warnUnload;
+</SCRIPT>
+
+<FORM ACTION="process/batch-cust_pay.cgi" NAME="OneTrueForm" METHOD="POST" onsubmit="document.OneTrueForm.submit.disabled=true;window.onbeforeunload = null;">
 
 <!-- <B>Batch</B> <INPUT TYPE="text" NAME="paybatch"><BR><BR> -->
 
