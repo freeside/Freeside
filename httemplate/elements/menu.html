@@ -19,6 +19,21 @@
 
 <SCRIPT TYPE="text/javascript">
 
+% my $fs_popup = include( '/elements/popup_link_onclick.html',
+%                           'action'      => $fsurl.'docs/about.html',
+%                           'label'       => 'Freeside',
+%                           'style'       => 'color:#999999',
+%                           'actionlabel' => 'About',
+%                           'width'       => 300,
+%                           'height'      => 360,
+%                           'color'       => '#7e0079',
+%                           'scrolling'   => 'no',
+%                       );
+% $fs_popup =~ s/return false;//;
+  function about_freeside() {
+    <% $fs_popup |n %>
+  }
+
   webfxMenuImagePath      = "<%$fsurl%>images/";
   webfxMenuUseHover       = 1;
   webfxMenuShowTime       = 300;
@@ -504,7 +519,7 @@ tie my %help_menu, 'Tie::IxHash', 'Billing documentation' => [ $doc_link, 'Frees
 $help_menu{'Ticketing documentation'} = [ 'http://wiki.bestpractical.com/', 'Request Tracker Wiki' ]
   if $conf->config('ticket_system') eq 'RT_Internal';
 $help_menu{'separator'} = '';
-$help_menu{"About Freeside v$FS::VERSION"} = [ 'XXXfinishme', 'doh!' ];
+$help_menu{"About Freeside v$FS::VERSION"} = [ "javascript:about_freeside()", '' ];
 $help_menu{"About RT v$RT::VERSION"} = [ 'http://www.bestpractical.com/rt', 'Request Tracker Homepage' ]
   if $conf->config('ticket_system') eq 'RT_Internal';
 
