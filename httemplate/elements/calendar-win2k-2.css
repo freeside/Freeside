@@ -12,6 +12,7 @@
   cursor: default;
   background: #d4c8d0;
   font-family: tahoma,verdana,sans-serif;
+  z-index:2;
 }
 
 .calendar table {

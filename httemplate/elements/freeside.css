@@ -10,7 +10,21 @@ a:link, a:visited {
   /* text-decoration: none; */
   color: #000000;
 } 
-/* a:hover {  text-decoration: underline } */
+
+a:hover {
+  text-decoration: underline;
+  color: #7e0079;
+}
+
+textarea, input {
+  border: 1px solid #666666;
+  padding: 1px;
+}
+
+textarea:focus, input:focus {
+  background-color: #ffffdd;
+  border: 1px solid #7e0079;
+}
 
 /* a:focus { background-color: #ccccee } */
 

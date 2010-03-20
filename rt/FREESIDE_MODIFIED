@@ -18,13 +18,10 @@ lib/RT/URI/freeside/XMLRPC.pm
  share/html/Admin/Users/Modify.html
  share/html/Elements/Header
  share/html/Elements/PageLayout
- html/Elements/QuickCreate
- html/Elements/SelectDate
- html/Elements/SimpleSearch
- html/Elements/Tabs
- html/Elements/Footer
- html/Elements/CollectionAsTable/Row #backport from 3.3-TESTING
- html/Ticket/Create.html
+ #html/Elements/QuickCreate
+ share/html/Elements/SelectDate
+ share/html/Elements/Footer
+ html/Ticket/Create.html #XXX TODO
  share/html/Ticket/Display.html
 share/html/Ticket/Elements/AddCustomers
 share/html/Ticket/Elements/EditCustomers
@@ -41,10 +38,8 @@ share/html/NoAuth/css/freeside2.1/nav.css
 share/html/NoAuth/css/freeside2.1/base.css
 share/html/NoAuth/css/freeside2.1/layout.css
 
-html/Widgets/TitleBoxStart
-
 share/html/Elements/AddCustomers
 share/html/Elements/EditCustomers
 
- html/User/Prefs.html
- html/Prefs/SearchOptions.html
+ share/html/User/Prefs.html
+ share/html/Prefs/SearchOptions.html

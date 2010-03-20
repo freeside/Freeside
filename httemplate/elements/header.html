@@ -84,7 +84,7 @@ Example:
         <td align=left BGCOLOR="#ffffff"> <!-- valign="top" -->
           <font size=6><% $company_name || 'ExampleCo' %></font>
         </td>
-        <td align=right valign=top BGCOLOR="#ffffff"><FONT SIZE="-1">Logged in as <b><% getotaker %>&nbsp;</b> <FONT SIZE="-2">[ <a href="javascript:void(0);" onClick="logout();">logout</a> ]</FONT><br></FONT><FONT SIZE="-2"><a href="<%$fsurl%>pref/pref.html" STYLE="color: #000000">Preferences</a>
+        <td align=right valign=top BGCOLOR="#ffffff"><FONT SIZE="-1">Logged in as <b><% getotaker %>&nbsp;</b> <FONT SIZE="-2"><a href="javascript:void(0);" onClick="logout();">logout</a></FONT><br></FONT><FONT SIZE="-2"><a href="<%$fsurl%>pref/pref.html" STYLE="color: #000000">Preferences</a>
 %         if ( $conf->config("ticket_system")
 %              && FS::TicketSystem->access_right(\%session, 'ModifySelf') ) {
             | <a href="<%$fsurl%>rt/Prefs/Other.html" STYLE="color: #000000">Ticketing preferences</a>
@@ -102,32 +102,12 @@ Example:
 
       <TR>
 
-        <TD COLSPAN="5" WIDTH="100%" STYLE="padding:1px 0px 0px 0px;border-top: 1px solid #7e0079" BGCOLOR="#cccccc">
+        <TD COLSPAN="7" WIDTH="100%" STYLE="padding:1px 0px 0px 0px;border-top: 1px solid #7e0079" BGCOLOR="#cccccc">
           <SCRIPT TYPE="text/javascript">
             document.write(myBar);
           </SCRIPT>
         </TD>
 
-
-        <TD COLSPAN="2" ALIGN="right" STYLE="padding:1px 8px 0px 0px;border-top: 1px solid #7e0079" BGCOLOR="#cccccc">
-          <TABLE CELLSPACING=0 CELLPADDING=0 BGCOLOR="#cccccc" BORDER=0>
-            <TR>
-              <TD ALIGN="right" STYLE="padding-right:3px;padding-bottom:1px;border-right:1px solid #999999"><% include('/elements/about_freeside.html') |n %></TD>
-              <TD ALIGN="left" STYLE="padding-left:3px;padding-bottom:1px"><% include('/elements/about_rt.html') |n %></TD>
-            </TR>
-          </TABLE>
-        </TD>
-
-      </TR>
-
-      <TR>
-        <TD COLSPAN="7" WIDTH="100%" HEIGHT="2px" STYLE="padding:0" BGCOLOR="#cccccc">
-        </TD>
-      </TR>
-      
-      <TR>
-        <TD COLSPAN="7" WIDTH="100%" HEIGHT="4px" STYLE="padding:0" BGCOLOR="#cccccc">
-        </TD>
       </TR>
 
 % }
@@ -138,7 +118,7 @@ Example:
 % if ( $curuser->access_right('List prospects') ) {
           <FORM ACTION="<%$fsurl%>search/prospect_main.html" METHOD="GET" STYLE="margin:0">
             <INPUT NAME="search_prospect" TYPE="text" VALUE="<% $prospect_label |n %>" STYLE="width:155px" onFocus="clearhint_search_prospect(this);" onClick="clearhint_search_prospect(this);" CLASS="fstext"><BR>
-            <A HREF="<%$fsurl%>search/report_prospect_main.html" STYLE="color: #ffffff; font-size: 11px">Adv</A>
+            <A HREF="<%$fsurl%>search/report_prospect_main.html" CLASS="fslink" STYLE="font-size: 11px">Adv</A>
             <INPUT TYPE="submit" VALUE="Search prospects" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:11px;padding-left:1px;padding-right:1px"">
           </FORM>
 % }
@@ -148,7 +128,7 @@ Example:
 % if ( $curuser->access_right('List customers') ) {
           <FORM ACTION="<%$fsurl%>search/cust_main.cgi" METHOD="GET" STYLE="margin:0">
             <INPUT NAME="search_cust" TYPE="text" VALUE="<% $cust_label |n %>" STYLE="width:<%$cust_width%>px" onFocus="clearhint_search_cust(this);" onClick="clearhint_search_cust(this);" CLASS="fstext"><BR>
-            <A HREF="<%$fsurl%>search/report_cust_main.html" STYLE="color: #ffffff; font-size: 11px">Advanced</A>
+            <A HREF="<%$fsurl%>search/report_cust_main.html" CLASS="fslink" STYLE="font-size: 11px">Advanced</A>
             <INPUT TYPE="submit" VALUE="Search customers" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:11px">
           </FORM>
 % }
@@ -170,7 +150,7 @@ Example:
             <FORM ACTION="<%$fsurl%>search/cust_bill.html" METHOD="GET" STYLE="margin:0;display:inline">
               <INPUT NAME="invnum" TYPE="text" VALUE="<% $inv_label |n %>" STYLE="width:56px" onFocus="clearhint_search_invoice(this);" onClick="clearhint_search_invoice(this);" CLASS="fstext">
 %   if ( $curuser->access_right('List invoices') ) { 
-              <A HREF="<%$fsurl%>search/report_cust_bill.html" STYLE="color: #ffffff; font-size: 11px">Adv</A>\
+              <A HREF="<%$fsurl%>search/report_cust_bill.html" CLASS="fslink" STYLE="font-size: 11px">Adv</A>\
 %   } 
 <BR><INPUT TYPE="submit" VALUE="Search invoices" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:11px;padding-left:1px;padding-right:1px;margin-top:3px">
             </FORM>
@@ -191,7 +171,7 @@ Example:
 % if ( $conf->config("ticket_system") ) { 
           <FORM ACTION="<% FS::TicketSystem->baseurl %>index.html" METHOD="GET" STYLE="margin:0">
             <INPUT NAME="q" TYPE="text" VALUE="<% $ticketing_label |n %>" STYLE="width:223px" onFocus="clearhint_search_ticket(this);" onClick="clearhint_search_ticket(this);" CLASS="fstext"><BR>
-            <A HREF="<% FS::TicketSystem->baseurl %>Search/Build.html" STYLE="color: #ffffff; font-size:11px">Advanced</A>
+            <A HREF="<% FS::TicketSystem->baseurl %>Search/Build.html" CLASS="fslink" STYLE="font-size:11px">Advanced</A>
             <INPUT TYPE="submit" VALUE="Search tickets" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:11px">
           </FORM>
 % }

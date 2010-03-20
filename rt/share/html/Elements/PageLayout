@@ -46,6 +46,8 @@
 %# 
 %# END BPS TAGGED BLOCK }}}
 
+<% include('/elements/init_calendar.html') |n %>
+
 % if (0) { ## new ticket via customer, and we already have a ticket search box
 <div id="topactions">
 % foreach my $action (reverse sort keys %{$topactions}) {

@@ -126,45 +126,70 @@
 	padding:			1px 5px 1px 5px;
 
 	font-size:		16px;
+        /* font-weight: bold; */
 
-	/* color:				black; */
-	color:				white;
+	color:				black;
+	/* color:				white; */
 	text-decoration:	none;
+	/* text-decoration:	underline; */
 
 	/* IE5.0 Does not paint borders and padding on inline elements without a height/width */
 	height:		expression(constExpression(ie50 ? "17px" : "auto"));
 
-         background-color:#333333;
+/*         background-color:#333333;
 	 border:1px solid;
 	 border-top-color:#cccccc;
 	 border-left-color:#cccccc;
 	 border-right-color:#aaaaaa;
 	 border-bottom-color:#aaaaaa;
+*/
+/*        -moz-border-radius: 15px;
+        -webkit-border-radius: 15px;
+        border-radius: 15px;
+        behavior: url(border-radius.htc);
+*/
+
+        border: 1px solid #cccccc;
 
          margin-right: 4px
 
 }
 
 .webfx-menu-bar a:link {
-	color: white;
+	/* color: white; */
+        color: black;
 }
 
 .webfx-menu-bar a:hover {
-	/* color:			black; */
-	color:			white;
+	 color:			black;
+	/*  color:			white; */
 	/* background:		rgb(120,172,255);	 */
 	/* background:		#BC79B8; */
-        background:		#7e0079;
+        /* background:		#7e0079; */
+        text-decoration: underline;
+        /* font-weight: bold; */
 	/* border-left:	1px solid rgb(234,242,255);
 	border-right:	1px solid rgb(0,66,174);
 	border-top:		1px solid rgb(234,242,255);
 	border-bottom:	1px solid rgb(0,66,174); */
 
-	 border:1px solid;
+/*	 border:1px solid;
 	 border-top-color:#cccccc;
 	 border-left-color:#cccccc;
 	 border-right-color:#aaaaaa;
 	 border-bottom-color:#aaaaaa;
+*/
+/*         -moz-border-radius: 8px;
+        -webkit-border-radius: 8px;
+        border-radius: 8px;
+        behavior: url(border-radius.htc);
+*/
+
+        /* border: 1px solid #7e0079; */
+/*        border: 1px solid #d8d8d8;
+        background: #bbbbbb;
+*/
+        color: #7e0079;
 
 }
 

@@ -370,7 +370,7 @@ WebFXMenuButton.prototype.toString = function () {
 				)) +
 			">" +
 			this.text + 
-			(this.subMenu ? "<img class='arrow' src='" + webfxMenuImagePath + "arrow.down.png'>" : "") +				
+			(this.subMenu ? "<img class='arrow' src='" + webfxMenuImagePath + "arrow.down.black.png'>" : "") +				
 			"</a>";
 };
 

@@ -489,6 +489,26 @@ $config_menu{'Miscellaneous'} = [ \%config_misc, ''    ]
   if $curuser->access_right('Edit advertising sources')
   || $curuser->access_right('Edit global advertising sources');
 
+
+my $wiki = 'http://www.freeside.biz/mediawiki/index.php';
+my $doc_link = $conf->config('support-key')
+                 ? "$wiki/Supported:Documentation"
+                 : $curuser->access_right('Configuration')
+                   ? "$wiki/Freeside:1.9:Documentation"
+                   : "$wiki/Freeside:1.9:Documentation:User";
+
+eval "use RT;"
+  if $conf->config('ticket_system') eq 'RT_Internal';
+
+tie my %help_menu, 'Tie::IxHash', 'Billing documentation' => [ $doc_link, 'Freeside documentation' ];
+$help_menu{'Ticketing documentation'} = [ 'http://wiki.bestpractical.com/', 'Request Tracker Wiki' ]
+  if $conf->config('ticket_system') eq 'RT_Internal';
+$help_menu{'separator'} = '';
+$help_menu{"About Freeside v$FS::VERSION"} = [ 'XXXfinishme', 'doh!' ];
+$help_menu{"About RT v$RT::VERSION"} = [ 'http://www.bestpractical.com/rt', 'Request Tracker Homepage' ]
+  if $conf->config('ticket_system') eq 'RT_Internal';
+
+
 tie my %menu, 'Tie::IxHash',
   'Billing Main'   => [ $fsurl, 'Billing start page', ],
 ;
@@ -521,6 +541,8 @@ $menu{'Configuration'} = [ \%config_menu, 'Configuraiton and setup' ]
   || $curuser->access_right('Phone configuration')
   || $curuser->access_right('Edit advertising sources')
   || $curuser->access_right('Edit global advertising sources');
+$menu{'Help'} = [ \%help_menu, '' ];
+
 
 use vars qw($gmenunum);
 $gmenunum = 0;
