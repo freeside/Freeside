@@ -16,14 +16,24 @@ a:hover {
   color: #7e0079;
 }
 
-textarea, input {
+textarea, input[type="text"] {
   border: 1px solid #666666;
   padding: 1px;
 }
 
-textarea:focus, input:focus {
+textarea:hover, input[type="text"]:hover {
+  border: 1px solid #7e0079;
+  padding: 1px;
+}
+
+textarea:focus, input[type="text"]:focus {
   background-color: #ffffdd;
   border: 1px solid #7e0079;
+}
+
+input[type="reset"]:hover, input[type="submit"]:hover, input[class="button"]:hover {
+  /* border: 1px solid #7e0079; */
+  color: #7e0079;
 }
 
 /* a:focus { background-color: #ccccee } */
