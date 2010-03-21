@@ -6,6 +6,8 @@
                    'dest_regionname'     => 'Region',
                    'dest_prefixes_short' => 'Prefix(es)',
                    'min_included'        => 'Included minutes/calls',
+                   'conn_charge'         => 'Connection charge',
+                   'conn_sec'            => 'For',
                    'min_charge'          => 'Charge per minute/call',
                    'sec_granularity'     => 'Granularity',
                    'classnum'            => 'Usage class',
@@ -17,6 +19,13 @@
                    { field=>'dest_regionname',     type=>'fixed',  },
                    { field=>'dest_prefixes_short', type=>'fixed',  },
                    { field=>'min_included',        type=>'text',  size=>5 },
+                   { field=>'conn_charge',         type=>'money', size=>4 },
+                   { field          =>'conn_sec',
+                      type          =>'select',
+                      options       => [ keys %conn_secs ],
+                      labels        => \%conn_secs,
+                      disable_empty => 1,
+                   },
                    { field=>'min_charge',          type=>'money', size=>4 },
                    { field         =>'sec_granularity',
                      type          =>'select',
@@ -38,9 +47,9 @@
 <%once>
 
 tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
+tie my %conn_secs,   'Tie::IxHash', FS::rate_detail::conn_secs();
 
 </%once>
-
 <%init>
 
 my $conf = new FS::Conf;

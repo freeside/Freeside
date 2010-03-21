@@ -232,6 +232,31 @@ sub granularities {
   %granularities;
 }
 
+=item conn_secs
+
+  Returns an (ordered) hash of conn_sec => name pairs
+
+=cut
+
+tie my %conn_secs, 'Tie::IxHash',
+    '0' => 'connection',
+    '1' => 'first second',
+    '6' => 'first 6 seconds',
+   '30' => 'first 30 seconds', # '1/2 minute',
+   '60' => 'first minute',
+  '120' => 'first 2 minutes',
+  '180' => 'first 3 minutes',
+  '300' => 'first 5 minutes',
+;
+
+sub conn_secs {
+  %conn_secs;
+}
+
+=item process_edit_import
+
+=cut
+
 use Storable qw(thaw);
 use Data::Dumper;
 use MIME::Base64;
@@ -310,6 +335,10 @@ sub process_edit_import {
   die "$error\n" if $error;
 
 }
+
+=item edit_import
+
+=cut
 
 #false laziness w/ #FS::Record::batch_import, grep "edit_import" for differences
 #could be turned into callbacks or something
@@ -568,8 +597,6 @@ sub edit_import {
   ''; #no error
 
 }
-
-
 
 =back
 

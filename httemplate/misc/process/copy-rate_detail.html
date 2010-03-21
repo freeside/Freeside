@@ -47,7 +47,7 @@ foreach my $countrycode ( @countrycodes ) {
                           || new FS::rate_detail   \%hash;
 
     $dst_rate_detail->$_( $src_rate_detail->get($_) )
-      foreach qw( min_included min_charge sec_granularity classnum );
+      foreach qw( min_included conn_charge conn_sec min_charge sec_granularity classnum );
 
     my $method = $dst_rate_detail->ratedetailnum ? 'replace' : 'insert';
 

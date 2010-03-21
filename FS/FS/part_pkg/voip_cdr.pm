@@ -535,6 +535,9 @@ sub calc_usage {
                       # length($cdr->billsec) ? $cdr->billsec : $cdr->duration;
           $seconds = $use_duration ? $cdr->duration : $cdr->billsec;
 
+          $seconds -= $rate_detail->conn_sec;
+          $seconds = 0 if $seconds < 0;
+
           $seconds += $granularity - ( $seconds % $granularity )
             if $seconds      # don't granular-ize 0 billsec calls (bills them)
             && $granularity; # 0 is per call
@@ -546,12 +549,15 @@ sub calc_usage {
 
           $included_min{$regionnum} -= $minutes;
 
+          $charge = sprintf('%.2f', $rate_detail->conn_charge);
+
           if ( $included_min{$regionnum} < 0 ) {
             my $charge_min = 0 - $included_min{$regionnum}; #XXX should preserve
                                                             #(display?) this
             $included_min{$regionnum} = 0;
-            $charge = sprintf('%.2f', ( $rate_detail->min_charge * $charge_min )
-                                      + 0.00000001 ); #so 1.005 rounds to 1.01
+            $charge += sprintf('%.2f', ($rate_detail->min_charge * $charge_min)
+                                       + 0.00000001 ); #so 1.005 rounds to 1.01
+            $charge = sprintf('%.2f', $charge);
             $charges += $charge;
           }
 

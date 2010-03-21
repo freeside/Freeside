@@ -2126,16 +2126,17 @@ sub tables_hashref {
 
     'rate_detail' => {
       'columns' => [
-        'ratedetailnum',   'serial', '', '', '', '', 
-        'ratenum',         'int',     '', '', '', '', 
-        'orig_regionnum',  'int', 'NULL', '', '', '', 
-        'dest_regionnum',  'int',     '', '', '', '', 
-        'min_included',    'int',     '', '', '', '', 
-        #'min_charge',      @money_type, '', '', 
-        'min_charge',      'decimal', '', '10,5', '', '', 
-        'sec_granularity', 'int',     '', '', '', '', 
+        'ratedetailnum',   'serial',  '',     '', '', '', 
+        'ratenum',         'int',     '',     '', '', '', 
+        'orig_regionnum',  'int', 'NULL',     '', '', '', 
+        'dest_regionnum',  'int',     '',     '', '', '', 
+        'min_included',    'int',     '',     '', '', '', 
+        'conn_charge',     @money_type, '0', '', #'decimal','','10,5','0','',
+        'conn_sec',        'int',     '',     '', '0', '',
+        'min_charge',      'decimal', '', '10,5', '', '', #@money_type, '', '', 
+        'sec_granularity', 'int',     '',     '', '', '', 
         #time period (link to table of periods)?
-        'classnum',        'int',     'NULL', '', '', '', 
+        'classnum',        'int', 'NULL',     '', '', '', 
       ],
       'primary_key' => 'ratedetailnum',
       'unique'      => [ [ 'ratenum', 'orig_regionnum', 'dest_regionnum' ] ],

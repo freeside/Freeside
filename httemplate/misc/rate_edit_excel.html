@@ -1,5 +1,9 @@
 <% include('/elements/header.html', 'Edit rates with Excel' ) %>
 
+% if ( $have_conn ) { 
+  <FONT COLOR="#FF0000">WARNING: This functionality does not yet preserve connection charges.</FONT><BR><BR>
+% }
+
 <% include( '/elements/form-file_upload.html',
               'name'      => 'RateImportForm',
               'action'    => 'process/rate_edit_excel.html',
@@ -57,5 +61,10 @@
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $sth = dbh->prepare('SELECT COUNT(*) FROM rate_detail WHERE conn_charge > 0 OR conn_sec > 0 LIMIT 1')
+  or die dbh->errstr;
+$sth->execute or die $sth->errstr;
+my $have_conn = $sth->fetchrow_arrayref->[0];
 
 </%init>

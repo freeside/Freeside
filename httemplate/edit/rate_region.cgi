@@ -52,6 +52,12 @@
       <FONT SIZE=-1>Included<BR>minutes/calls</FONT>
     </TH>
     <TH CLASS="grid" BGCOLOR="#cccccc">
+      <FONT SIZE=-1>Connection<BR>charge</FONT>
+    </TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc">
+      <FONT SIZE=-1>Connection<BR>charge for</FONT>
+    </TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc">
       <FONT SIZE=-1>Charge per<BR>minute/call</FONT>
     </TH>
     <TH CLASS="grid" BGCOLOR="#cccccc">
@@ -88,7 +94,20 @@
     </TD>
 
     <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
-      $<INPUT TYPE="text" SIZE=6 NAME="min_charge<%$n%>" VALUE="<% $cgi->param("min_charge$n") || $rate_detail->min_charge |h %>">
+      <%$money_char%><INPUT TYPE="text" SIZE=9 NAME="conn_charge<%$n%>" VALUE="<% $cgi->param("conn_charge$n") || $rate_detail->conn_charge |h %>">
+    </TD>
+
+    <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+      <SELECT NAME="conn_sec<%$n%>">
+%       foreach my $conn_sec ( keys %conn_secs ) {
+%         my $curr_value = $cgi->param("conn_sec$n") || $rate_detail->conn_sec;
+%         my $selected = ($conn_sec==$curr_value) ? ' SELECTED' : '';
+          <OPTION VALUE="<% $conn_sec %>" <%$selected%>><% $conn_secs{$conn_sec} %></OPTION>
+%       }
+    </TD>
+
+    <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+      <%$money_char%><INPUT TYPE="text" SIZE=6 NAME="min_charge<%$n%>" VALUE="<% $cgi->param("min_charge$n") || $rate_detail->min_charge |h %>">
     </TD>
 
     <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
@@ -125,11 +144,18 @@
 </FORM>
 
 <% include('/elements/footer.html') %>
+<%once>
 
+tie my %conn_secs,   'Tie::IxHash', FS::rate_detail::conn_secs();
+
+</%once>
 <%init>
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $conf = new FS::Conf;
+my $money_char = $conf->config('money_char') || '$';
 
 my $rate_region;
 if ( $cgi->param('error') ) {
