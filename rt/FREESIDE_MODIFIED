@@ -43,3 +43,5 @@ share/html/Elements/EditCustomers
 
  share/html/User/Prefs.html
  share/html/Prefs/SearchOptions.html
+
+ share/html/Widgets/TitleBoxEnd

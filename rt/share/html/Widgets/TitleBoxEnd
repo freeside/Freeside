@@ -50,7 +50,7 @@
 </div>
 
 % #Manually flush the content buffer after each titlebox is displayed
-% $m->flush_buffer();
+% #wtf?  this causes us to lose content #$m->flush_buffer();
 
 <%ARGS>
 $title => undef
