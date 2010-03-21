@@ -46,6 +46,7 @@ Set($WebDefaultStylesheet, 'freeside2.1');
 #Set($DefaultSummaryRows, 10);
 
 Set($MessageBoxWidth, 80);
+Set($MessageBoxRichTextHeight, 368);
 
 #Set(@Plugins,(qw(Extension::QuickDelete RT::FM)));
 1;
