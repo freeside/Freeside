@@ -75,7 +75,7 @@ my $WebPath = RT->Config->Get('WebPath');
 my $WebImagesURL = RT->Config->Get('WebImagesURL');
 my $WebDefaultStylesheet =
   RT->Config->Get('WebDefaultStylesheet', $session{'CurrentUser'});
-my $squished = RT->Config->Get('DevelMode') ? '' : '-squished';
+my $squished = ''; #dunno why squish dhandler is bork# RT->Config->Get('DevelMode') ? '' : '-squished';
 
 $head .= <<END;
 <link rel="shortcut icon" href="$WebImagesURL/favicon.png" type="image/png" />
