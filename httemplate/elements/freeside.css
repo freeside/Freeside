@@ -38,3 +38,61 @@ input[type="reset"]:hover, input[type="submit"]:hover, input[class="button"]:hov
 
 /* a:focus { background-color: #ccccee } */
 
+a.fstab {
+         background-color:#cccccc;
+         color: #000000;
+         border:1px solid;
+         border-top-color:#666666;
+         border-left-color:#666666;
+         border-right-color:#666666;
+         border-bottom-color:#7e0079;
+         -moz-border-radius-topleft:8px;
+         -moz-border-radius-topright:8px;
+         -webkit-border-radius-topleft:8px;
+         -webkit-border-radius-topright:8px;
+         border-radius-topleft:8px;
+         border-radius-topright:8px;
+         /*font-weight:bold;*/
+         /*padding-left:12px;
+         padding-right:12px;*/
+         padding-left:4px;
+         padding-right:4px;
+         font-size:16px;
+         text-decoration:none;
+         overflow:visible;
+}
+a.fstab:hover {
+  text-decoration:none;
+}
+
+/* a:link:hover.fsblackbutton,
+a:visited:hover.fsblackbutton
+*/
+a.fstabselected {
+         background-color:#f8f8f8;
+         color: #000000;
+         border:1px solid;
+         border-top-color:#7e0079;
+         border-left-color:#7e0079;
+         border-right-color:#7e0079;
+         border-bottom-color:#ffffff;
+         -moz-border-radius-topleft:8px;
+         -moz-border-radius-topright:8px;
+         -webkit-border-radius-topleft:8px;
+         -webkit-border-radius-topright:8px;
+         border-radius-topleft:8px;
+         border-radius-topright:8px;
+         /*font-weight:bold;*/
+         /*padding-left:12px;
+         padding-right:12px;*/
+         padding-left:4px;
+         padding-right:4px;
+         font-size:16px;
+         text-decoration:none;
+         overflow:visible;
+}
+a.fstabselected:hover {
+  text-decoration:none;
+  color: #000000;
+}
+

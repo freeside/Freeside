@@ -19,17 +19,11 @@ Example:
 
 </%doc>
 %if ( $opt->{'newstyle'} ) {
+%  my $s = '<FONT STYLE="border-bottom:1px solid #7e0079">';
 
-   <TABLE BGCOLOR="#000000" BORDER=0 CELLSPACING=0 CELLPADDING=0>
-     <TR>
-       <TD><IMG SRC="<%$fsurl%>images/gray-black-side.png" WIDTH=13 HEIGHT=25></TD>
-       <TD>
-         <% join(' ', @html ) %>
-       </TD>
-       <TD><IMG SRC="<%$fsurl%>images/black-gray-side.png" WIDTH=13 HEIGHT=25></TD>
-       </TD>
-     </TR>
-   </TABLE>
+   <BR>
+   <% join("$s &nbsp; </FONT>", ( '', @html, '' ) ) %>
+   <BR>
 
 %} else {
 
@@ -52,13 +46,11 @@ while (@_) {
   if ( $opt->{'newstyle'} ) {
 
     my $dclass = $item eq $opt->{'selected'}
-                   ? 'fsblackbuttonselected'
-                   : 'fsblackbutton';
+                   ? 'fstabselected'
+                   : 'fstab';
 
-    $style =
-      qq( CLASS="$dclass" ).
-      qq( onMouseOver="this.className='fsblackbuttonselected'; return true;" ).
-      qq( onMouseOut="this.className='$dclass'; return true;" );
+    $style = qq( CLASS="$dclass" );
+
   }
 
   push @html, qq!<A HREF="$url_base$url" $style>$item</A>!;
