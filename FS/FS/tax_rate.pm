@@ -1263,7 +1263,7 @@ sub _remember_tax_products {
       if $part_pkg_taxproduct && $part_pkg_taxproduct->data_vendor eq $format;
 
     foreach my $option ( $part_pkg->part_pkg_option ) {
-      next unless $option->optionname =~ /^usage_taxproductnum_(\w)$/;
+      next unless $option->optionname =~ /^usage_taxproductnum_(\w+)$/;
       my $class = $1;
 
       $part_pkg_taxproduct = $part_pkg->taxproduct($class);
