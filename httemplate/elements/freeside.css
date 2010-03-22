@@ -11,7 +11,7 @@ a:link, a:visited {
   color: #000000;
 } 
 
-a:hover {
+a[href]:hover {
   text-decoration: underline;
   color: #7e0079;
 }
