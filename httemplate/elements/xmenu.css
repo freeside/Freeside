@@ -33,7 +33,6 @@
 
 .webfx-menu-empty {
 	display:		block;
-	border:		        1px solid white;
 	padding:		2px 5px 2px 5px;
 	font-size:		11px;
 	/* font-family:		Tahoma, Verdan, Helvetica, Sans-Serif; */
@@ -53,26 +52,18 @@
 	text-decoration:	none;
 	vertical-align:		center;
 	color:			black;
-	border:		        1px solid white;
 }	
 
 .webfx-menu a:visited {
 	color:			black;
-	border:		        1px solid white;
 }
 
 .webfx-menu a:hover {
 	color:			black;
-	border:			1px solid #7e0079;
 }
 
 .webfx-menu a:hover {
 	color:			black;
-	/* background:		#faf7fa; #f5ebf4; #efdfef; white; #BC79B8; */
-	/* background:		#ffe6fe; */
-	/* background:		#ffc2fe; */
-	background:		#fff2fe;
-	border:			1px solid #7e0079; /*rgb(120,172,255);#ff8800;*/
 }	
 
 .webfx-menu a .arrow {
