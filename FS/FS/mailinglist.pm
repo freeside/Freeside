@@ -2,8 +2,9 @@ package FS::mailinglist;
 
 use strict;
 use base qw( FS::Record );
-use FS::Record qw( qsearch dbh ); # qsearchs );
+use FS::Record qw( qsearch qsearchs dbh );
 use FS::mailinglistmember;
+use FS::svc_mailinglist;
 
 =head1 NAME
 
@@ -146,6 +147,15 @@ sub check {
 sub mailinglistmember {
   my $self = shift;
   qsearch('mailinglistmember', { 'listnum' => $self->listnum } );
+}
+
+=item svc_mailinglist
+
+=cut
+
+sub svc_mailinglist {
+  my $self = shift;
+  qsearchs('svc_mailinglist', { 'listnum' => $self->listnum } );
 }
 
 =back

@@ -20,6 +20,8 @@ my $mailinglist = qsearchs('mailinglist', { 'listnum' => $listnum })
   or die "unknown listnum $listnum";
 my $title = $mailinglist->listname. ' mailing list';
 
+my $svc_mailinglist = $mailinglist->svc_mailinglist;
+
 my $query = {
   'table' => 'mailinglistmember',
   'hashref' => { 'listnum' => $listnum },
@@ -35,7 +37,14 @@ my $email_sub = sub {
   $r;
 };
 
-my $html_init = <<"END";
+my $html_init = '';
+if ( $svc_mailinglist ) {
+  my $svcnum = $svc_mailinglist->svcnum;
+  my $label = encode_entities($svc_mailinglist->label);
+  $html_init .= qq[<A HREF="${p}/view/svc_mailinglist.cgi?$svcnum">View customer mailing list: $label</A><BR><BR>];
+}
+
+$html_init .= <<"END";
 <SCRIPT TYPE="text/javascript">
   function areyousure(email,membernum) {
     if ( confirm('Are you sure you want to remove ' + email + ' from this mailing list?') )

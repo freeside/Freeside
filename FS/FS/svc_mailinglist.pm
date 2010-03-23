@@ -2,6 +2,7 @@ package FS::svc_mailinglist;
 
 use strict;
 use base qw( FS::svc_Domain_Mixin FS::svc_Common );
+use Scalar::Util qw( blessed );
 use FS::Record qw( qsearchs dbh ); # qsearch );
 use FS::svc_domain;
 use FS::mailinglist;
@@ -160,7 +161,6 @@ sub insert {
       $dbh->rollback if $oldAutoCommit;
       return $error;
     }
-    warn $mailinglist->listnum;
     $self->listnum($mailinglist->listnum);
   #}
 

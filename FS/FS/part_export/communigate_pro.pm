@@ -33,11 +33,11 @@ tie %options, 'Tie::IxHash',
 ;
 
 %info = (
-  'svc'     => [qw( svc_acct svc_domain svc_forward )],
-  'desc'    => 'Real-time export of accounts and domains to a CommuniGate Pro mail server',
+  'svc'     => [qw( svc_acct svc_domain svc_forward svc_mailinglist )],
+  'desc'    => 'Real-time export of accounts, domains, mail forwards and mailing lists to a CommuniGate Pro mail server',
   'options' => \%options,
   'notes'   => <<'END'
-Real time export of accounts and domains to a
+Real time export of accounts, domains, mail forwards and mailing lists to a
 <a href="http://www.stalker.com/CommuniGatePro/">CommuniGate Pro</a>
 mail server.  The
 <a href="http://www.stalker.com/CGPerl/">CommuniGate Pro Perl Interface</a>
@@ -198,6 +198,31 @@ sub _export_insert_svc_forward {
   return $@ if $@;
 
   '';
+}
+
+sub _export_insert_svc_mailinglist {
+  my( $self, $svc_mlist ) = (shift, shift);
+
+  my @members = map $_->email_address,
+                    $svc_mlist->mailinglist->mailinglistmember;
+
+  #real-time here, presuming CGP does some dup detection
+  eval { $self->communigate_pro_runcommand(
+           'CreateGroup',
+           $svc_mlist->username.'@'.$svc_mlist->domain,
+           { 'RealName'      => $svc_mlist->listname,
+             'SetReplyTo'    => ( $svc_mlist->reply_to         ? 'YES' : 'NO' ),
+             'RemoveAuthor'  => ( $svc_mlist->remove_from      ? 'YES' : 'NO' ),
+             'RejectAuto'    => ( $svc_mlist->reject_auto      ? 'YES' : 'NO' ),
+             'RemoveToAndCc' => ( $svc_mlist->remove_to_and_cc ? 'YES' : 'NO' ),
+             'Members'       => \@members,
+           }
+         );
+       };
+  return $@ if $@;
+
+  '';
+
 }
 
 sub _export_replace {
@@ -385,6 +410,39 @@ sub _export_replace_svc_forward {
   '';
 }
 
+sub _export_replace_svc_mailinglist {
+  my( $self, $new, $old ) = (shift, shift, shift);
+
+  my $oldGroupName = $old->username.'@'.$old->domain;
+  my $newGroupName = $new->username.'@'.$new->domain;
+
+  if ( $oldGroupName ne $newGroupName ) {
+    eval { $self->communigate_pro_runcommand(
+             'RenameGroup', $oldGroupName, $newGroupName ); };
+    return $@ if $@;
+  }
+
+  my @members = map $_->email_address,
+                $new->mailinglist->mailinglistmember;
+
+  #real-time here, presuming CGP does some dup detection
+  eval { $self->communigate_pro_runcommand(
+           'SetGroup', $newGroupName,
+           { 'RealName'      => $new->listname,
+             'SetReplyTo'    => ( $new->reply_to         ? 'YES' : 'NO' ),
+             'RemoveAuthor'  => ( $new->remove_from      ? 'YES' : 'NO' ),
+             'RejectAuto'    => ( $new->reject_auto      ? 'YES' : 'NO' ),
+             'RemoveToAndCc' => ( $new->remove_to_and_cc ? 'YES' : 'NO' ),
+             'Members'       => \@members,
+           }
+         );
+       };
+  return $@ if $@;
+
+  '';
+
+}
+
 sub _export_delete {
   my( $self, $svc_x ) = (shift, shift);
 
@@ -416,6 +474,21 @@ sub _export_delete_svc_forward {
   $self->communigate_pro_queue( $svc_forward->svcnum, 'DeleteForwarder',
     ($svc_forward->src || $svc_forward->srcsvc_acct->email),
   );
+}
+
+sub _export_delete_svc_mailinglist {
+  my( $self, $svc_mailinglist ) = (shift, shift);
+
+  #real-time here, presuming CGP does some dup detection
+  eval { $self->communigate_pro_runcommand(
+           'DeleteGroup',
+           $svc_mailinglist->username.'@'.$svc_mailinglist->domain,
+         );
+       };
+  return $@ if $@;
+
+  '';
+
 }
 
 sub _export_suspend {
@@ -479,6 +552,20 @@ sub _export_unsuspend_svc_domain {
 
 }
 
+sub export_mailinglistmember_insert {
+  my( $self, $svc_mailinglist, $mailinglistmember ) = (shift, shift, shift);
+  $svc_mailinglist->replace();
+}
+
+sub export_mailinglistmember_replace {
+  my( $self, $svc_mailinglist, $new, $old ) = (shift, shift, shift, shift);
+  die "no way to do this from the UI right now";
+}
+
+sub export_mailinglistmember_delete {
+  my( $self, $svc_mailinglist, $mailinglistmember ) = (shift, shift, shift);
+  $svc_mailinglist->replace();
+}
 
 sub export_getsettings {
   my($self, $svc_x) = (shift, shift);
@@ -645,6 +732,22 @@ sub export_getsettings_svc_acct {
 
   '';
 
+}
+
+sub export_getsettings_svc_mailinglist {
+  my($self, $svc_mailinglist, $settingsref, $defaultref ) = @_;
+
+  my $settings = eval { $self->communigate_pro_runcommand(
+    'GetGroup',
+    $svc_mailinglist->username.'@'.$svc_mailinglist->domain,
+  ) };
+  return $@ if $@;
+
+  $settings->{'Members'} = join(', ', @{ $settings->{'Members'} } );
+
+  %{$settingsref} = %$settings;
+
+  '';
 }
 
 sub communigate_pro_queue {

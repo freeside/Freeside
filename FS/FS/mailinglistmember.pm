@@ -2,7 +2,8 @@ package FS::mailinglistmember;
 
 use strict;
 use base qw( FS::Record );
-use FS::Record qw( qsearchs ); # qsearch );
+use Scalar::Util qw( blessed );
+use FS::Record qw( dbh qsearchs ); # qsearch );
 use FS::mailinglist;
 use FS::svc_acct;
 use FS::contact_email;
@@ -82,7 +83,30 @@ otherwise returns false.
 
 =cut
 
-# the insert method can be inherited from FS::Record
+sub insert {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error =    $self->SUPER::insert
+              || $self->export('mailinglistmember_insert');
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+}
 
 =item delete
 
@@ -90,7 +114,30 @@ Delete this record from the database.
 
 =cut
 
-# the delete method can be inherited from FS::Record
+sub delete {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error =    $self->SUPER::delete
+              || $self->export('mailinglistmember_delete');
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+}
 
 =item replace OLD_RECORD
 
@@ -99,7 +146,34 @@ returns the error, otherwise returns false.
 
 =cut
 
-# the replace method can be inherited from FS::Record
+sub replace {
+  my $new = shift;
+
+  my $old = ( blessed($_[0]) && $_[0]->isa('FS::Record') )
+              ? shift
+              : $new->replace_old;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error =    $new->SUPER::replace($old)
+              || $new->export('mailinglistmember_replace', $old);
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+}
 
 =item check
 
@@ -134,6 +208,27 @@ sub check {
 sub mailinglist {
   my $self = shift;
   qsearchs('mailinglist', { 'listnum' => $self->listnum } );
+}
+
+=item email_address
+
+=cut
+
+sub email_address {
+  my $self = shift;
+  #XXX svcnum, contactemailnum
+  $self->email;
+}
+
+=item export
+
+=cut
+
+sub export {
+  my( $self, $method ) = ( shift, shift );
+  my $svc_mailinglist = $self->mailinglist->svc_mailinglist
+    or return '';
+  $svc_mailinglist->export($method, $self, @_);
 }
 
 =back
