@@ -130,6 +130,12 @@ L<FS::registrar> - Domain registrar class
 
 L<FS::svc_forward> - Mail forwarding class
 
+L<FS::svc_mailinglist> - (Customer) Mailing list class
+
+L<FS::mailinglist> - Mailing list class
+
+L<FS::mailinglistmember> - Mailing list member class
+
 L<FS::svc_www> - Web virtual host class.
 
 L<FS::svc_broadband> - DSL, wireless and other broadband class.
@@ -369,6 +375,8 @@ L<FS::h_svc_domain> - Historical domain objects
 L<FS::h_svc_external> - Historical externally tracked service objects
 
 L<FS::h_svc_forward> - Historical mail forwarding alias objects
+
+L<FS::h_svc_mailinglist> - Historical mailing list objects
 
 L<FS::h_svc_phone> - Historical phone number objects
 
