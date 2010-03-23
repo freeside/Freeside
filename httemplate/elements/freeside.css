@@ -40,7 +40,7 @@ input[type="reset"]:hover, input[type="submit"]:hover, input[class="button"]:hov
 
 a.fstab {
          background-color:#cccccc;
-         color: #000000;
+         color: #666666;
          border:1px solid;
          border-top-color:#666666;
          border-left-color:#666666;
@@ -58,6 +58,7 @@ a.fstab {
          padding-left:4px;
          padding-right:4px;
          font-size:16px;
+         font-weight:bold;
          text-decoration:none;
          overflow:visible;
 }
@@ -89,6 +90,7 @@ a.fstabselected {
          padding-left:4px;
          padding-right:4px;
          font-size:16px;
+         font-weight:bold;
          text-decoration:none;
          overflow:visible;
 }
