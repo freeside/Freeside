@@ -490,3 +490,9 @@ FS/cust_bill_pkg_discount.pm
 t/cust_bill_pkg_discount.t
 FS/location_Mixin.pm
 t/location_Mixin.t
+FS/svc_mailinglist.pm
+t/svc_mailinglist.t
+FS/mailinglist.pm
+t/mailinglist.t
+FS/mailinglistmember.pm
+t/mailinglistmember.t

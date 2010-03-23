@@ -2711,6 +2711,45 @@ sub tables_hashref {
       'index'  => [ [ 'id' ] ],
     },
 
+    'svc_mailinglist' => { #svc_group?
+      'columns' => [
+        'svcnum',            'int',     '',            '', '', '', 
+        'username',      'varchar',     '', $username_len, '', '',
+        'domsvc',            'int',     '',            '', '', '', 
+        'listnum',           'int',     '',            '', '', '',
+        'reply_to',         'char', 'NULL',             1, '', '',#SetReplyTo
+        'remove_from',      'char', 'NULL',             1, '', '',#RemoveAuthor
+        'reject_auto',      'char', 'NULL',             1, '', '',#RejectAuto
+        'remove_to_and_cc', 'char', 'NULL',             1, '', '',#RemoveToAndCc
+      ],
+      'primary_key' => 'svcnum',
+      'unique' => [],
+      'index'  => [ ['username'], ['domsvc'], ['listnum'] ],
+    },
+
+    'mailinglist' => {
+      'columns' => [
+        'listnum',   'serial', '',      '', '', '',
+        'listname', 'varchar', '', $char_d, '', '',
+      ],
+      'primary_key' => 'listnum',
+      'unique' => [],
+      'index'  => [],
+    },
+
+    'mailinglistmember' => {
+      'columns' => [
+        'membernum',        'serial',     '',   '', '', '',
+        'listnum',             'int',     '',   '', '', '',
+        'svcnum',              'int', 'NULL',   '', '', '', 
+        'contactemailnum',     'int', 'NULL',   '', '', '', 
+        'email',           'varchar', 'NULL',  255, '', '', 
+      ],
+      'primary_key' => 'membernum',
+      'unique'      => [],
+      'index'       => [['listnum'],['svcnum'],['contactemailnum'],['email']],
+    },
+
 
     # name type nullability length default local
 

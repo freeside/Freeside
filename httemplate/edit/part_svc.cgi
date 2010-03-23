@@ -15,7 +15,8 @@ Disable new orders <INPUT TYPE="checkbox" NAME="disabled" VALUE="Y"<% $hashref->
 Service definitions are the templates for items you offer to your customers.
 <UL><LI>svc_acct - Accounts - anything with a username (Mailboxes, PPP accounts, shell accounts, RADIUS entries for broadband, etc.)
     <LI>svc_domain - Domains
-    <LI>svc_forward - mail forwarding
+    <LI>svc_forward - Mail forwarding
+    <LI>svc_mailinglist - Mailing list
     <LI>svc_www - Virtual domain website
     <LI>svc_broadband - Broadband/High-speed Internet service (always-on)
     <LI>svc_phone - Customer phone numbers

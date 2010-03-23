@@ -1,0 +1,11 @@
+<% include( 'elements/svc_Common.html',
+               'table'  => 'svc_mailinglist',
+               'fields' => [ fields('svc_mailinglist'), 'listname' ],
+           )
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Provision customer service'); #something else more specific?
+
+</%init>

@@ -1,0 +1,20 @@
+% if ( $error ) {
+%   errorpage($error);
+% } else {
+<% $cgi->redirect($p."search/mailinglistmember.html?listnum=$listnum") %>
+% }
+<%init>
+
+my($query) = $cgi->keywords;
+$query =~ /^(\d+)$/ || die "Illegal devicenum";
+my $membernum = $1;
+
+my $mailinglistmember =
+  qsearchs('mailinglistmember', { 'membernum' => $membernum } )
+    or die "unknown membernum $membernum";
+
+my $listnum = $mailinglistmember->listnum;
+
+my $error = $mailinglistmember->delete;
+
+</%init>

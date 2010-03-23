@@ -1,0 +1,25 @@
+<% include( 'elements/edit.html',
+              'name_singular' => 'member',
+              'table'         => 'mailinglistmember',
+              'popup'         => 1,
+              'fields'        => [
+                { field=>'listnum', type=>'hidden', },
+                { field=>'svcnum', type=>'hidden', }, #not yet
+                { field=>'contactemailnum', type=>'hidden', }, #not yet
+                { field=>'email', type=>'text', },
+              ],
+              'labels' => { 'membernum' => 'Member',
+                            'email'     => 'Email address',
+                          },
+              'new_callback' => $new_callback,
+          )
+%>
+<%init>
+
+my $new_callback = sub {
+  #my( $cgi, $object, $fields_listref, $opt_hashref ) = @_;
+  my( $cgi, $object ) = @_;
+  $object->listnum( $cgi->param('listnum') );
+};
+
+</%init>
