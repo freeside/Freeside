@@ -63,6 +63,7 @@ a.fstab {
 }
 a.fstab:hover {
   text-decoration:none;
+  border-color:#7e0079;
 }
 
 /* a:link:hover.fsblackbutton,
