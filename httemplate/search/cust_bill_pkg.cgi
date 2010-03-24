@@ -3,14 +3,23 @@
                  'name'        => 'line items',
                  'query'       => $query,
                  'count_query' => $count_query,
-                 'count_addl'  => [ $money_char. '%.2f total', ],
+                 'count_addl'  => [ $money_char. '%.2f total',
+                                    $unearned ? ( $money_char. '%.2f unearned revenue' ) : (),
+                                  ],
                  'header'      => [
                    #'#',
                    'Description',
-                   'Setup charge',
+                   ( $unearned
+                     ? 'Unearned'
+                     : 'Setup charge'
+                   ),
                    ( $use_usage eq 'usage'
                      ? 'Usage charge'
                      : 'Recurring charge'
+                   ),
+                   ( $unearned
+                     ? ( 'Charge start', 'Charge end' )
+                     : ()
                    ),
                    'Invoice',
                    'Date',
@@ -24,7 +33,22 @@
                        },
                    #strikethrough or "N/A ($amount)" or something these when
                    # they're not applicable to pkg_tax search
-                   sub { sprintf($money_char.'%.2f', shift->setup ) },
+                   sub { my $cust_bill_pkg = shift;
+                         if ( $unearned ) {
+                           my $period =
+                             $cust_bill_pkg->edate - $cust_bill_pkg->sdate;
+                           my $elapsed = $unearned - $cust_bill_pkg->sdate;
+                           $elapsed = 0 if $elapsed < 0;
+
+                           my $remaining = 1 - $elapsed/$period;
+
+                           sprintf($money_char. '%.2f',
+                             $remaining * $cust_bill_pkg->recur );
+
+                         } else {
+                           sprintf($money_char.'%.2f', $cust_bill_pkg->setup );
+                         }
+                       },
                    sub { my $row = shift;
                          my $value = 0;
                          if ( $use_usage eq 'recurring' ) {
@@ -36,6 +60,12 @@
                          }
                          sprintf($money_char.'%.2f', $value );
                        },
+                   ( $unearned
+                     ? ( sub { time2str('%b %d %Y', shift->sdate ) },
+                         sub { time2str('%b %d %Y', shift->edate ) },
+                       )
+                     : ()
+                   ),
                    'invnum',
                    sub { time2str('%b %d %Y', shift->_date ) },
                    \&FS::UI::Web::cust_fields,
@@ -45,6 +75,7 @@
                    '',
                    '',
                    '',
+                   ( $unearned ? ( '', '' ) : () ),
                    $ilink,
                    $ilink,
                    ( map { $_ ne 'Cust. Status' ? $clink : '' }
@@ -52,12 +83,16 @@
                    ),
                  ],
                  #'align' => 'rlrrrc'.FS::UI::Web::cust_aligns(),
-                 'align' => 'lrrrc'.FS::UI::Web::cust_aligns(),
+                 'align' => 'lrr'.
+                            ( $unearned ? 'cc' : '' ).
+                            'rc'.
+                            FS::UI::Web::cust_aligns(),
                  'color' => [ 
                               #'',
                               '',
                               '',
                               '',
+                              ( $unearned ? ( '', '' ) : () ),
                               '',
                               '',
                               FS::UI::Web::cust_colors(),
@@ -67,6 +102,7 @@
                               '',
                               '',
                               '',
+                              ( $unearned ? ( '', '' ) : () ),
                               '',
                               '',
                               FS::UI::Web::cust_styles(),
@@ -81,6 +117,8 @@ die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
 
 my $conf = new FS::Conf;
+
+my $unearned = '';
 
 #here is the agent virtualization
 my $agentnums_sql =
@@ -284,6 +322,19 @@ if ( $cgi->param('out') ) {
                    keys %ph
     );
 
+} elsif ( $cgi->param('unearned_now') =~ /^(\d+)$/ ) {
+
+  $unearned = $1;
+
+  push @where, "cust_bill_pkg.sdate < $unearned",
+               "cust_bill_pkg.edate > $unearned",
+               "cust_bill_pkg.recur != 0",
+               "part_pkg.freq != '0'",
+               "part_pkg.freq != '1'",
+               "part_pkg.freq NOT LIKE '%h'",
+               "part_pkg.freq NOT LIKE '%d'",
+               "part_pkg.freq NOT LIKE '%w'";
+
 }
 
 if ( $cgi->param('itemdesc') ) {
@@ -401,8 +452,29 @@ if ( $cgi->param('pkg_tax') ) {
     $count_query .= "SUM(setup + recur - usage)";
   } elsif ( $use_usage eq 'usage' ) {
     $count_query .= "SUM(usage)";
+  } elsif ( $unearned ) {
+    $count_query .= "SUM(cust_bill_pkg.recur)";
   } else {
     $count_query .= "SUM(cust_bill_pkg.setup + cust_bill_pkg.recur)";
+  }
+
+  if ( $unearned ) {
+
+    #false laziness w/report_prepaid_income.cgi
+
+    my $float = 'REAL'; #'DOUBLE PRECISION';
+
+    my $period = "CAST(cust_bill_pkg.edate - cust_bill_pkg.sdate AS $float)";
+    my $elapsed = "(CASE WHEN cust_bill_pkg.sdate > $unearned
+                     THEN 0
+                     ELSE ($unearned - cust_bill_pkg.sdate)
+                   END)";
+    #my $elapsed = "CAST($unearned - cust_bill_pkg.sdate AS $float)";
+
+    my $remaining = "(1 - $elapsed/$period)";
+
+    $count_query .= ", SUM($remaining * cust_bill_pkg.recur)";
+
   }
 
 }
@@ -473,11 +545,13 @@ if ($use_usage) {
   $count_query .= " FROM cust_bill_pkg $join_cust $join_pkg $where";
 }
 
-my @select = (
-               'cust_bill_pkg.*',
-               'cust_bill._date',
-             );
-push @select, 'part_pkg.pkg' unless $cgi->param('istax');
+my @select = ( 'cust_bill_pkg.*',
+               'cust_bill._date', );
+
+push @select, 'part_pkg.pkg',
+              'part_pkg.freq',
+  unless $cgi->param('istax');
+
 push @select, 'cust_main.custnum',
               FS::UI::Web::cust_sql_fields();
 

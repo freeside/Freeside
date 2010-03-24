@@ -3568,6 +3568,13 @@ worry that config_items is freeside-specific and icky.
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'enable_legacy_prepaid_income',
+    'section'     => '',
+    'description' => "Enable legacy prepaid income reporting.  Only useful when you have imported pre-Freeside packages with longer-than-monthly duration, and need to do prepaid income reporting on them before they've been invoiced the first time.",
+    'type'        => 'checkbox',
+  },
+
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachine", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
