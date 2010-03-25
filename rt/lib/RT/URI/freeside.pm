@@ -26,10 +26,10 @@
 # END LICENSE BLOCK
 package RT::URI::freeside;
 
-use RT::URI::base;
+use base qw( RT::URI::base );
 use strict;
-use vars qw(@ISA $IntegrationType $URL);
-@ISA = qw/RT::URI::base/;
+use vars qw( $IntegrationType $URL );
+use Carp qw( cluck );
 
 
 =head1 NAME
@@ -196,10 +196,18 @@ sub ParseURI {
     my ($table, $pkey);
 
     my $uriprefix = $self->_FreesideURIPrefix;
-    if ($uri =~ /^$uriprefix\/(\w+)\/(\d+)$/) {
+    if ($uri =~ /^$uriprefix\/(\w+)\/(\d*)$/) {
+
       $table = $1;
       $pkey = $2;
+
+      unless ( $pkey ) {
+        cluck "bad URL $uri";
+        return(undef);
+      }
+
       $self->{'scheme'} = $self->Scheme;
+
     } else {
       return(undef);
     }
