@@ -1,0 +1,35 @@
+% if ( $conf->config("ticket_system") ) { 
+
+  <FORM ACTION="<% FS::TicketSystem->baseurl %>index.html" METHOD="GET" STYLE="margin:0">
+    <INPUT NAME="q" TYPE="text" VALUE="<% $ticketing_label |n %>" STYLE="width:<% $width %>" onFocus="clearhint_search_ticket(this);" onClick="clearhint_search_ticket(this);" CLASS="fstext"><BR>
+    <A HREF="<% FS::TicketSystem->baseurl %>Search/Build.html" CLASS="fslink" STYLE="font-size:11px">Advanced</A>
+    <INPUT TYPE="submit" VALUE="Search tickets" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:11px">
+  </FORM>
+  <% $menu_position eq 'left' ? '<BR>' : '' %>
+
+% }
+
+<SCRIPT TYPE="text/javascript">
+
+  function clearhint_search_ticket (what) {
+    if ( what.value == '<% $ticketing_label |n %>' )
+      what.value = '';
+  }
+
+</SCRIPT>
+<%once>
+
+my $ticketing_label = '(ticket #, subject, email or fulltext:text)';
+
+</%once>
+<%init>
+
+my $conf = new FS::Conf;
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+my $menu_position = $curuser->option('menu_position') || 'top';
+
+my $width = $menu_position eq 'left' ? '190px' : '223px';
+
+</%init>

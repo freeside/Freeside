@@ -1,0 +1,33 @@
+% if ( $curuser->access_right('View customer services') ) {
+
+  <FORM ACTION="<%$fsurl%>search/cust_svc.html" METHOD="GET" STYLE="margin:0">
+    <INPUT NAME="search_svc" TYPE="text" VALUE="<% $svc_label |n %>" STYLE="width:<% $width %>" onFocus="clearhint_search_svc(this);" onClick="clearhint_search_svc(this);" CLASS="fstext"><BR>
+    <A NOTYET="<%$fsurl%>search/svc_Smarter.html" STYLE="color: #cccccc; font-size:11px">Advanced</A>
+    <INPUT TYPE="submit" VALUE="Search services" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:11px">
+  </FORM>
+  <% $menu_position eq 'left' ? '<BR>' : '' %>
+
+% }
+
+<SCRIPT TYPE="text/javascript">
+
+  function clearhint_search_svc (what) {
+    if ( what.value == '<% $svc_label |n %>' )
+      what.value = '';
+  }
+
+</SCRIPT>
+<%once>
+
+my $svc_label = '(user, email, ip, mac, domain or service phone)';
+
+</%once>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+my $menu_position = $curuser->option('menu_position') || 'top';
+
+my $width = $menu_position eq 'left' ? '190px' : '271px';
+
+</%init>

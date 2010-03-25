@@ -1,0 +1,38 @@
+% if ( $curuser->access_right('List customers') ) {
+
+  <FORM ACTION="<%$fsurl%>search/cust_main.cgi" METHOD="GET" STYLE="margin:0">
+    <INPUT NAME="search_cust" TYPE="text" VALUE="<% $cust_label |n %>" STYLE="width:<%$width%>" onFocus="clearhint_search_cust(this);" onClick="clearhint_search_cust(this);" CLASS="fstext"><BR>
+    <A HREF="<%$fsurl%>search/report_cust_main.html" CLASS="fslink" STYLE="font-size: 11px">Advanced</A>
+    <INPUT TYPE="submit" VALUE="Search customers" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:11px">
+  </FORM>
+  <% $menu_position eq 'left' ? '<BR>' : '' %>
+
+% }
+
+<SCRIPT TYPE="text/javascript">
+
+  function clearhint_search_cust (what) {
+    if ( what.value == '<% $cust_label |n %>' )
+      what.value = '';
+  }
+
+</SCRIPT>
+<%init> 
+
+my $conf = new FS::Conf;
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+my $menu_position = $curuser->option('menu_position') || 'top';
+
+my $cust_width = 246;
+my $cust_label = '(cust #, name, company';
+if ( $conf->exists('address1-search') ) {
+  $cust_label .= ', address';
+  $cust_width += 56;
+}
+$cust_label .= ' or contact phone)';
+
+my $width = $menu_position eq 'left' ? '190px' : $cust_width.'px';
+
+</%init>

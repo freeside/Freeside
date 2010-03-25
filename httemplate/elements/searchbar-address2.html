@@ -1,0 +1,34 @@
+% if ( $conf->exists('address2-search') ) { 
+
+  <FORM ACTION="<%$fsurl%>search/cust_main.cgi" METHOD="GET" STYLE="margin:0;display:inline">
+    <INPUT TYPE="hidden" NAME="address2_on" VALUE="1">
+    <INPUT NAME="address2_text" TYPE="text" VALUE="<% $address2_label |n %>" STYLE="width:67px" onFocus="clearhint_search_address2(this);" onClick="clearhint_search_address2(this);" CLASS="fstext">
+    <BR>
+    <INPUT TYPE="submit" VALUE="Search units" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:11px;padding-left:1px;padding-right:1px;margin-top:3px">
+  </FORM>
+  <% $menu_position eq 'left' ? '<BR>' : '' %>
+
+% } 
+
+<SCRIPT TYPE="text/javascript">
+
+  function clearhint_search_address2 (what) {
+    if ( what.value == '<% $address2_label |n %>' )
+      what.value = '';
+  }
+
+</SCRIPT>
+<%once>
+
+my $address2_label = '(Unit #)';
+
+</%once>
+<%init> 
+
+my $conf = new FS::Conf;
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+my $menu_position = $curuser->option('menu_position') || 'top';
+
+</%init>

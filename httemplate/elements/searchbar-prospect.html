@@ -1,0 +1,33 @@
+% if ( $curuser->access_right('List prospects') ) {
+
+  <FORM ACTION="<%$fsurl%>search/prospect_main.html" METHOD="GET" STYLE="margin:0">
+    <INPUT NAME="search_prospect" TYPE="text" VALUE="<% $prospect_label |n %>" STYLE="width:<%$width%>" onFocus="clearhint_search_prospect(this);" onClick="clearhint_search_prospect(this);" CLASS="fstext"><BR>
+    <A HREF="<%$fsurl%>search/report_prospect_main.html" CLASS="fslink" STYLE="font-size: 11px">Adv</A>
+    <INPUT TYPE="submit" VALUE="Search prospects" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:11px;padding-left:1px;padding-right:1px">
+  </FORM>
+  <% $menu_position eq 'left' ? '<BR>' : '' %>
+
+% }
+
+<SCRIPT TYPE="text/javascript">
+
+  function clearhint_search_prospect (what) {
+    if ( what.value == '<% $prospect_label |n %>' )
+      what.value = '';
+  }
+
+</SCRIPT>
+<%once>
+
+my $prospect_label = '(name, company or phone)';
+
+</%once>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+my $menu_position = $curuser->option('menu_position') || 'top';
+
+my $width = $menu_position eq 'left' ? '190px' : '155px';
+
+</%init>
