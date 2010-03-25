@@ -53,7 +53,7 @@
         &nbsp;<% $note->otaker%>
       </TD>
       <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
-        &nbsp;<%$note->comments%>
+        &nbsp;<% $note->comments | defang %>
       </TD>
 % if($edit) {
       <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $edit %></TD>
@@ -66,6 +66,8 @@
 
 % }
 <%init>
+
+use HTML::Defang;
 
 my $conf = new FS::Conf;
 my $curuser = $FS::CurrentUser::CurrentUser;

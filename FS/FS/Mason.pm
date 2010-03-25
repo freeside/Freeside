@@ -70,6 +70,7 @@ if ( -e $addl_handler_use_file ) {
   use HTML::Entities;
   use HTML::TreeBuilder;
   use HTML::FormatText;
+  use HTML::Defang;
   use JSON;
   use MIME::Base64;
   use IO::Handle;
@@ -408,6 +409,8 @@ I<outbuf> should be set to a scalar reference in standalone mode.
 
 =cut
 
+my %defang_opts = ( attribs_to_callback => ['src'], attribs_callback => sub { 1 });
+
 sub mason_interps {
   my $mode = shift || 'apache';
   my %opt = @_;
@@ -451,6 +454,8 @@ sub mason_interps {
 
   $interp{out_method} = $opt{outbuf} if $mode eq 'standalone' && $opt{outbuf};
 
+  my $html_defang = new HTML::Defang (%defang_opts);
+
   my $fs_interp = new HTML::Mason::Interp (
     %interp,
     escape_flags => { 'js_string' => sub {
@@ -458,7 +463,10 @@ sub mason_interps {
                         ${$_[0]} =~ s/(['\\])/\\$1/g;
                         ${$_[0]} =~ s/\n/\\n/g;
                         ${$_[0]} = "'". ${$_[0]}. "'";
-                      }
+                      },
+                      'defang'    => sub {
+                        ${$_[0]} = $html_defang->defang(${$_[0]});
+                      },
                     },
     compiler     => HTML::Mason::Compiler::ToObject->new(
                       allow_globals        => [qw(%session)],
