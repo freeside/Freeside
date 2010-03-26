@@ -590,11 +590,6 @@ sub Create {
   
       my %cust_target = ();
 
-      use Data::Dumper;
-      $RT::Logger->info( Dumper( $self->_Requestors ) );
-      $RT::Logger->info( Dumper( $self->_Requestors->UserMembersObj ) );
-      $RT::Logger->info( Dumper( $self->_Requestors->UserMembersObj->ItemsArrayRef ) );
-
       my @Requestors =
         grep { $_->Customers->Count }
              @{ $self->_Requestors->UserMembersObj->ItemsArrayRef };
@@ -618,9 +613,6 @@ sub Create {
         push @non_fatal_errors, $msg;
   
       }
-
-    } else {
-      $RT::Logger->info( "ticket already has customer links; not auto-associating" );
 
     }
 
