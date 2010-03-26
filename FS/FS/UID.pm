@@ -128,7 +128,7 @@ sub forksuidsetup {
     }
 
   } else {
-    warn "NO CONFIGURATION TABLE FOUND";
+    warn "NO CONFIGURATION TABLE FOUND" unless $FS::Schema::setup_hack;
   }
 
   unless ( $callback_hack ) {
