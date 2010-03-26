@@ -19,22 +19,70 @@ a[href]:hover {
 textarea, input[type="text"] {
   border: 1px solid #666666;
   padding: 1px;
+	 -moz-border-radius: 2px;
+	 -webkit-border-radius: 2px;
+	 border-radius: 2px;
 }
 
 textarea:hover, input[type="text"]:hover {
   border: 1px solid #7e0079;
   padding: 1px;
+	 -moz-border-radius: 2px;
+	 -webkit-border-radius: 2px;
+	 border-radius: 2px;
 }
 
 textarea:focus, input[type="text"]:focus {
   background-color: #ffffdd;
   border: 1px solid #7e0079;
+	 -moz-border-radius: 2px;
+	 -webkit-border-radius: 2px;
+	 border-radius: 2px;
 }
 
-input[type="reset"]:hover, input[type="submit"]:hover, input[class="button"]:hover {
-  /* border: 1px solid #7e0079; */
-  color: #7e0079;
+input[type="reset"], input[type="submit"], input[type="button"] {
+  background-color: #dddddd;
+  border: 1px solid #666666;
+	 -moz-border-radius: 4px;
+	 -webkit-border-radius: 4px;
+	 border-radius: 4px;
+  -moz-box-shadow: #666666 1px 1px 2px;
+  -webkit-box-shadow: #666666 1px 1px 2px;
+  box-shadow: #666666 0px 0px 2px;
+  filter: progid:DXImageTransform.Microsoft.Shadow(color='#666666', Direction=135, Strength=2);
 }
+
+input[type="reset"]:hover, input[type="submit"]:hover, input[type="button"]:hover {
+  background-color: #e4e4e4;
+  border: 1px solid #7e0079;
+  color: #7e0079;
+	 -moz-border-radius: 4px;
+	 -webkit-border-radius: 4px;
+	 border-radius: 4px;
+  -moz-box-shadow: #7e0079 1px 1px 2px;
+  -webkit-box-shadow: #7e0079 1px 1px 2px;
+  box-shadow: #7e0079 1px 1px 2px;
+  filter: progid:DXImageTransform.Microsoft.Shadow(color='#7e0079', Direction=135, Strength=2);
+}
+
+/*input[type="select"] {
+  background-color: #eeeeee;
+  border: 1px solid #666666;
+	 -moz-border-radius: 4px;
+	 -webkit-border-radius: 4px;
+	 border-radius: 4px;
+}
+
+input[type="select"]:hover {
+  background-color: #eeeeee;
+  border: 1px solid #7e0079;
+  color: #7e0079;
+	 -moz-border-radius: 4px;
+	 -webkit-border-radius: 4px;
+	 border-radius: 4px;
+}
+*/
+
 
 /* a:focus { background-color: #ccccee } */
 
