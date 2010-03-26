@@ -102,6 +102,10 @@ sub dbdef_dist {
       my %hash = map { $_ => shift @coldef }
                      qw( name type null length default local );
 
+      #can be removed once we depend on DBIx::DBSchema 0.39;
+      $hash{'type'} = 'LONGTEXT'
+        if $hash{'type'} =~ /^TEXT$/i && $datasrc =~ /^dbi:mysql/i;
+
       unless ( defined $hash{'default'} ) {
         warn "$tablename:\n".
              join('', map "$_ => $hash{$_}\n", keys %hash) ;# $stop = <STDIN>;
@@ -113,7 +117,17 @@ sub dbdef_dist {
     #false laziness w/sub indices in DBIx::DBSchema::DBD (well, sorta)
     #and sub sql_create_table in DBIx::DBSchema::Table (slighty more?)
     my $unique = $tables_hashref->{$tablename}{'unique'};
-    my $index  = $tables_hashref->{$tablename}{'index'};
+    my @index  = @{ $tables_hashref->{$tablename}{'index'} };
+
+    # kludge to avoid avoid "BLOB/TEXT column 'statustext' used in key
+    #  specification without a key length".
+    # better solution: teach DBIx::DBSchema to specify a default length for
+    #  MySQL indices on text columns, or just to support an index length at all
+    #  so we can pass something in.
+    # best solution: eliminate need for this index in cust_main::retry_realtime
+    @index = grep { @{$_}[0] ne 'statustext' } @index
+      if $datasrc =~ /^dbi:mysql/i;
+
     my @indices = ();
     push @indices, map {
                          DBIx::DBSchema::Index->new({
@@ -130,7 +144,7 @@ sub dbdef_dist {
                            'columns' => $_,
                          });
                        }
-                       @$index;
+                       @index;
 
     DBIx::DBSchema::Table->new({
       'name'          => $tablename,
@@ -1508,8 +1522,8 @@ sub tables_hashref {
     'part_pkg_taxoverride' => { 
       'columns' => [
         'taxoverridenum', 'serial', '', '', '', '',
-        'pkgpart',        'serial', '', '', '', '',
-        'taxclassnum',    'serial', '', '', '', '',
+        'pkgpart',           'int', '', '', '', '',
+        'taxclassnum',       'int', '', '', '', '',
         'usage_class',    'varchar', 'NULL', $char_d, '', '', 
       ],
       'primary_key' => 'taxoverridenum',
