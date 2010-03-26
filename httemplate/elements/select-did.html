@@ -3,7 +3,7 @@
 Example:
 
   include('/elements/select-did.html',
-            'field'   => 'phonenum',
+            #can't actuall change from phonenum yet# 'field'   => 'phonenum',
 
             'svcpart' => 5,
             #OR
@@ -18,6 +18,7 @@ Example:
       <TR>
         <TD>
           <% include('/elements/select-state.html',
+                       'prefix'        => 'phonenum_', #$field.'_',
                        'country'       => $country,
                        'disable_empty' => 0,
                        'empty_label'   => 'Select state',
@@ -26,8 +27,9 @@ Example:
         </TD>
         <TD>
           <% include('/elements/select-areacode.html',
-                       'svcpart' => $svcpart,
-                       'empty'   => 'Select area code',
+                       'state_prefix' => 'phonenum_', #$field.'_',
+                       'svcpart'      => $svcpart,
+                       'empty'        => 'Select area code',
                     )
           %>
         </TD>
@@ -83,5 +85,7 @@ if ( scalar(@exports) > 1 ) {
 }
 
 my $use_selector = scalar(@exports) ? 1 : 0;
+
+#my $field = $opt{'field'} || 'phonenum';
 
 </%init>

@@ -12,7 +12,7 @@
     what.options[length] = optionName;
   }
 
-  function <% $opt{'prefix'} %>state_changed(what, callback) {
+  function <% $opt{'state_prefix'} %>state_changed(what, callback) {
 
     what.form.<% $opt{'prefix'} %>areacode.disabled = 'disabled';
     what.form.<% $opt{'prefix'} %>areacode.style.display = 'none';
@@ -24,7 +24,7 @@
     what.form.<% $opt{'prefix'} %>exchange.disabled = 'disabled';
     what.form.<% $opt{'prefix'} %>phonenum.disabled = 'disabled';
 
-    state = what.options[what.selectedIndex].value;
+    var state = what.options[what.selectedIndex].value;
 
     function <% $opt{'prefix'} %>update_areacodes(areacodes) {
 
@@ -86,6 +86,7 @@
 
 my %opt = @_;
 
-$opt{disabled} = 'disabled' unless exists $opt{disabled};
+$opt{disabled}     = 'disabled'   unless exists $opt{disabled};
+$opt{state_prefix} = $opt{prefix} unless exists $opt{state_prefix};
 
 </%init>
