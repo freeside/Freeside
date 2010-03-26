@@ -556,6 +556,76 @@ sub Create {
 
     # }}}
 
+    # {{{ Deal with auto-customer association
+
+    #unless we already have (a) customer(s)...
+    unless ( $self->Customers->Count ) {
+
+      #first find any requestors with emails but *without* customer targets
+      my @NoCust_Requestors =
+        grep { $_->EmailAddress && ! $_->Customers->Count }
+             @{ $self->_Requestors->UserMembersObj->ItemsArrayRef };
+
+      for my $Requestor (@NoCust_Requestors) {
+
+         #perhaps the stuff in here should be in a User method??
+         my @Customers =
+           &RT::URI::freeside::email_search( email=>$Requestor->EmailAddress );
+
+         foreach my $custnum ( map $_->{'custnum'}, @Customers ) {
+
+           ## false laziness w/RT/Interface/Web_Vendor.pm
+           my @link = ( 'Type'   => 'MemberOf',
+                        'Target' => "freeside://freeside/cust_main/$custnum",
+                      );
+
+           my( $val, $msg ) = $Requestor->_AddLink(@link);
+           #XXX should do something with $msg# push @non_fatal_errors, $msg;
+
+         }
+
+      }
+
+      #find any requestors with customer targets
+  
+      my %cust_target = ();
+
+      use Data::Dumper;
+      $RT::Logger->info( Dumper( $self->_Requestors ) );
+      $RT::Logger->info( Dumper( $self->_Requestors->UserMembersObj ) );
+      $RT::Logger->info( Dumper( $self->_Requestors->UserMembersObj->ItemsArrayRef ) );
+
+      my @Requestors =
+        grep { $_->Customers->Count }
+             @{ $self->_Requestors->UserMembersObj->ItemsArrayRef };
+  
+      foreach my $Requestor ( @Requestors ) {
+        foreach my $cust_link ( @{ $Requestor->Customers->ItemsArrayRef } ) {
+          $cust_target{ $cust_link->Target } = 1;
+        }
+      }
+  
+      #and then auto-associate this ticket with those customers
+  
+      foreach my $cust_target ( keys %cust_target ) {
+  
+        my @link = ( 'Type'   => 'MemberOf',
+                     #'Target' => "freeside://freeside/cust_main/$custnum",
+                     'Target' => $cust_target,
+                   );
+  
+        my( $val, $msg ) = $self->_AddLink(@link);
+        push @non_fatal_errors, $msg;
+  
+      }
+
+    } else {
+      $RT::Logger->info( "ticket already has customer links; not auto-associating" );
+
+    }
+
+    # }}}
+
     # {{{ Add all the custom fields
 
     foreach my $arg ( keys %args ) {
@@ -642,69 +712,6 @@ sub Create {
         } else {
             $Owner = $DeferOwner;
             $self->__Set(Field => 'Owner', Value => $Owner->id);
-
-    # {{{ Deal with auto-customer association
-
-    #unless we already have (a) customer(s)...
-    unless ( $self->Customers->Count ) {
-
-      #first find any requestors with emails but *without* customer targets
-      my @NoCust_Requestors =
-        grep { $_->EmailAddress && ! $_->Customers->Count }
-             @{ $self->_Requestors->UserMembersObj->ItemsArrayRef };
-
-      for my $Requestor (@NoCust_Requestors) {
-
-         #perhaps the stuff in here should be in a User method??
-         my @Customers =
-           &RT::URI::freeside::email_search( email=>$Requestor->EmailAddress );
-
-         foreach my $custnum ( map $_->{'custnum'}, @Customers ) {
-
-           ## false laziness w/RT/Interface/Web_Vendor.pm
-           my @link = ( 'Type'   => 'MemberOf',
-                        'Target' => "freeside://freeside/cust_main/$custnum",
-                      );
-
-           my( $val, $msg ) = $Requestor->_AddLink(@link);
-           #XXX should do something with $msg# push @non_fatal_errors, $msg;
-
-         }
-
-      }
-
-      #find any requestors with customer targets
-  
-      my %cust_target = ();
-  
-      my @Requestors =
-        grep { $_->Customers->Count }
-             @{ $self->_Requestors->UserMembersObj->ItemsArrayRef };
-  
-      foreach my $Requestor ( @Requestors ) {
-        foreach my $cust_link ( @{ $Requestor->Customers->ItemsArrayRef } ) {
-          $cust_target{ $cust_link->Target } = 1;
-        }
-      }
-  
-      #and then auto-associate this ticket with those customers
-  
-      foreach my $cust_target ( keys %cust_target ) {
-  
-        my @link = ( 'Type'   => 'MemberOf',
-                     #'Target' => "freeside://freeside/cust_main/$custnum",
-                     'Target' => $cust_target,
-                   );
-  
-        my( $val, $msg ) = $self->_AddLink(@link);
-        push @non_fatal_errors, $msg;
-  
-      }
-
-    }
-
-    # }}}
-
         }
         $self->OwnerGroup->_AddMember(
             PrincipalId       => $Owner->PrincipalId,
