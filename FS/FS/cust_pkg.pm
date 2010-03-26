@@ -1718,7 +1718,9 @@ sub extra_part_svc {
 
 #seems to benchmark slightly faster...
   qsearch( {
-    'select'      => 'DISTINCT ON (svcpart) part_svc.*',
+    #'select'      => 'DISTINCT ON (svcpart) part_svc.*',
+    #MySQL doesn't grok DISINCT ON
+    'select'      => 'DISTINCT part_svc.*',
     'table'       => 'part_svc',
     'addl_from'   =>
       'LEFT JOIN pkg_svc  ON (     pkg_svc.svcpart   = part_svc.svcpart 
