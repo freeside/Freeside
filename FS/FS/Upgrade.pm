@@ -99,7 +99,6 @@ sub upgrade_data {
 
     #reason type and reasons
     'reason_type'     => [],
-    'reason'          => [],
     'cust_pkg_reason' => [],
 
     #need part_pkg before cust_credit...
@@ -131,9 +130,6 @@ sub upgrade_data {
 
     #fixup access rights
     'access_right' => [],
-
-    #change tax_rate column types
-    'tax_rate' => [],
 
     #change recur_flat and enable_prorate
     'part_pkg_option' => [],
