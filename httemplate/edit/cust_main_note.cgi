@@ -6,8 +6,6 @@
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
 <INPUT TYPE="hidden" NAME="notenum" VALUE="<% $notenum %>">
 
-
-<BR><BR>
 <% include('/elements/htmlarea.html', 'field' => 'comment',
                                       'curr_value' => $comment) %>
 % #<TEXTAREA NAME="comment" ROWS="12" COLS="60">

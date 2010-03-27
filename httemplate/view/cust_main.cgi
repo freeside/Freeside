@@ -1,5 +1,5 @@
 <% include('/elements/header.html', {
-             'title' => "Customer View: ". $cust_main->name,
+             'title' => "Customer: ". $cust_main->name,
              'nobr'  => 1,
           })
 %>
@@ -128,7 +128,7 @@ Comments
                 'actionlabel' => 'Enter customer note',
                 'cust_main'   => $cust_main,
                 'width'       => 616,
-                'height'      => 408,
+                'height'      => 538, #575
             )
   %>
 
