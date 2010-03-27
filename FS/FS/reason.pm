@@ -114,60 +114,6 @@ sub reasontype {
   qsearchs( 'reason_type', { 'typenum' => shift->reason_type } );
 }
 
-# _upgrade_data
-#
-# Used by FS::Upgrade to migrate to a new database.
-#
-#
-
-sub _upgrade_data {  # class method
-  my ($self, %opts) = @_;
-  my $dbh = dbh;
-
-  warn "$me upgrading $self\n" if $DEBUG;
-
-  my $column = dbdef->table($self->table)->column('reason');
-  unless ($column->type eq 'text') { # assume history matches main table
-
-    # ideally this would be supported in DBIx-DBSchema and friends
-    warn "$me Shifting reason column to type 'text'\n" if $DEBUG;
-    foreach my $table ( $self->table, 'h_'. $self->table ) {
-      my @sql = ();
-
-      $column = dbdef->table($self->table)->column('reason');
-      my $columndef = $column->line($dbh);
-      $columndef =~ s/varchar\(\d+\)/text/i;
-
-      if ( $dbh->{Driver}->{Name} eq 'Pg' ) {
-
-        my $notnull = $columndef =~ s/not null//i;
-        push @sql,"ALTER TABLE $table RENAME reason TO freeside_upgrade_reason";
-        push @sql,"ALTER TABLE $table ADD $columndef";
-        push @sql,"UPDATE $table SET reason = freeside_upgrade_reason";
-        push @sql,"ALTER TABLE $table ALTER reason SET NOT NULL"
-          if $notnull;
-        push @sql,"ALTER TABLE $table DROP freeside_upgrade_reason";
-
-      } elsif ( $dbh->{Driver}->{Name} =~ /^mysql/i ){
-
-        #crap, this isn't working
-        #push @sql,"ALTER TABLE $table MODIFY reason ". $column->line($dbh);
-        warn "WARNING: reason table upgrade not yet supported for mysql, sorry";
-
-      } else {
-        die "watchu talkin' 'bout, Willis? (unsupported database type)";
-      }
-
-      foreach (@sql) {
-        my $sth = $dbh->prepare($_) or die $dbh->errstr;
-        $sth->execute or die $sth->errstr;
-      }
-    }
-  }
-
- '';
-
-}
 =back
 
 =head1 BUGS

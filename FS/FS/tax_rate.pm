@@ -502,7 +502,9 @@ given customer (see L<FS::cust_main>)
 
 =cut
 
+    #hot
 sub tax_on_tax {
+       #akshun
   my $self = shift;
   my $cust_main = shift;
 
@@ -1753,111 +1755,6 @@ sub browse_queries {
   $query->{extra_sql} = $extra_sql;
 
   return ($query, "SELECT COUNT(*) FROM tax_rate $extra_sql");
-}
-
-# _upgrade_data
-#
-# Used by FS::Upgrade to migrate to a new database.
-#
-#
-
-sub _upgrade_data {  # class method
-  my ($self, %opts) = @_;
-  my $dbh = dbh;
-
-  warn "$me upgrading $self\n" if $DEBUG;
-
-  my @column = qw ( tax excessrate usetax useexcessrate fee excessfee
-                    feebase feemax );
-
-  if ( $dbh->{Driver}->{Name} eq 'Pg' ) {
-
-    eval "use DBI::Const::GetInfoType;";
-    die $@ if $@;
-
-    my $major_version = 0;
-    $dbh->get_info( $GetInfoType{SQL_DBMS_VER} ) =~ /^(\d{2})/
-      && ( $major_version = sprintf("%d", $1) );
-
-    if ( $major_version > 7 ) {
-
-      # ideally this would be supported in DBIx-DBSchema and friends
-
-      foreach my $column ( @column ) {
-        my $columndef = dbdef->table($self->table)->column($column);
-        unless ($columndef->type eq 'numeric') {
-
-          warn "updating tax_rate column $column to numeric\n" if $DEBUG;
-          my $sql = "ALTER TABLE tax_rate ALTER $column TYPE numeric(14,8)";
-          my $sth = $dbh->prepare($sql) or die $dbh->errstr;
-          $sth->execute or die $sth->errstr;
-
-          warn "updating h_tax_rate column $column to numeric\n" if $DEBUG;
-          $sql = "ALTER TABLE h_tax_rate ALTER $column TYPE numeric(14,8)";
-          $sth = $dbh->prepare($sql) or die $dbh->errstr;
-          $sth->execute or die $sth->errstr;
-
-        }
-      }
-
-    } elsif ( $dbh->{pg_server_version} =~ /^704/ ) {
-
-      # ideally this would be supported in DBIx-DBSchema and friends
-
-      foreach my $column ( @column ) {
-        my $columndef = dbdef->table($self->table)->column($column);
-        unless ($columndef->type eq 'numeric') {
-
-          warn "updating tax_rate column $column to numeric\n" if $DEBUG;
-
-          foreach my $table ( qw( tax_rate h_tax_rate ) ) {
-
-            my $sql = "ALTER TABLE $table RENAME $column TO old_$column";
-            my $sth = $dbh->prepare($sql) or die $dbh->errstr;
-            $sth->execute or die $sth->errstr;
-
-            my $def = dbdef->table($table)->column($column);
-            $def->type('numeric');
-            $def->length('14,8'); 
-            my $null = $def->null;
-            $def->null('NULL');
-
-            $sql = "ALTER TABLE $table ADD COLUMN ". $def->line($dbh);
-            $sth = $dbh->prepare($sql) or die $dbh->errstr;
-            $sth->execute or die $sth->errstr;
-
-            $sql = "UPDATE $table SET $column = CAST( old_$column AS numeric )";
-            $sth = $dbh->prepare($sql) or die $dbh->errstr;
-            $sth->execute or die $sth->errstr;
-
-            unless ( $null eq 'NULL' ) {
-              $sql = "ALTER TABLE $table ALTER $column SET NOT NULL";
-              $sth = $dbh->prepare($sql) or die $dbh->errstr;
-              $sth->execute or die $sth->errstr;
-            }
-
-            $sql = "ALTER TABLE $table DROP old_$column";
-            $sth = $dbh->prepare($sql) or die $dbh->errstr;
-            $sth->execute or die $sth->errstr;
-
-          }
-        }
-      }
-
-    } else {
-
-      warn "WARNING: tax_rate table upgrade unsupported for this Pg version\n";
-
-    }
-
-  } else {
-
-    warn "WARNING: tax_rate table upgrade only supported for Pg 8+\n";
-
-  }
-
-  '';
-
 }
 
 =back
