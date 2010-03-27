@@ -241,8 +241,8 @@ sub _upgrade_data { # class method
 
   warn "$me upgrading $class\n" if $DEBUG;
 
-  my $columndef = dbdef->table($class->table)->column('classnum');
-  unless ($columndef->type eq 'int4') {
+  my $type = dbdef->table($class->table)->column('classnum')->type;
+  unless ( $type =~ /^int/i || $type =~ /int$/i ) {
 
     my $dbh = dbh;
     if ( $dbh->{Driver}->{Name} eq 'Pg' ) {
