@@ -1,12 +1,12 @@
 package FS::cust_credit;
 
 use strict;
-use vars qw( @ISA $conf $unsuspendauto $me $DEBUG );
+use base qw( FS::otaker_Mixin FS::cust_main_Mixin FS::Record );
+use vars qw( $conf $unsuspendauto $me $DEBUG );
 use Date::Format;
 use FS::UID qw( dbh getotaker );
 use FS::Misc qw(send_email);
 use FS::Record qw( qsearch qsearchs dbdef );
-use FS::cust_main_Mixin;
 use FS::cust_main;
 use FS::cust_pkg;
 use FS::cust_refund;
@@ -15,7 +15,6 @@ use FS::part_pkg;
 use FS::reason_type;
 use FS::reason;
 
-@ISA = qw( FS::cust_main_Mixin FS::Record );
 $me = '[ FS::cust_credit ]';
 $DEBUG = 0;
 
@@ -76,9 +75,9 @@ Amount of the credit
 Specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
 L<Time::Local> and L<Date::Parse> for conversion functions.
 
-=item otaker
+=item usernum
 
-Order taker (assigned automatically, see L<FS::UID>)
+Order taker (see L<FS::access_user>)
 
 =item reason
 
@@ -152,7 +151,7 @@ sub insert {
                               );
     unless($result) {
       $dbh->rollback if $oldAutoCommit;
-      return "failed to set reason for $me: ". $dbh->errstr;
+      return "failed to set reason for $me"; #: ". $dbh->errstr;
     }
   }
 
@@ -295,7 +294,7 @@ sub check {
     || $self->ut_number('custnum')
     || $self->ut_numbern('_date')
     || $self->ut_money('amount')
-    || $self->ut_alpha('otaker')
+    || $self->ut_alphan('otaker')
     || $self->ut_textn('reason')
     || $self->ut_foreign_key('reasonnum', 'reason', 'reasonnum')
     || $self->ut_textn('addlinfo')
@@ -325,6 +324,7 @@ Returns all refund applications (see L<FS::cust_credit_refund>) for this credit.
 
 sub cust_credit_refund {
   my $self = shift;
+  map { $_ } #return $self->num_cust_credit_refund unless wantarray;
   sort { $a->_date <=> $b->_date }
     qsearch( 'cust_credit_refund', { 'crednum' => $self->crednum } )
   ;
@@ -339,6 +339,7 @@ credit.
 
 sub cust_credit_bill {
   my $self = shift;
+  map { $_ } #return $self->num_cust_credit_bill unless wantarray;
   sort { $a->_date <=> $b->_date }
     qsearch( 'cust_credit_bill', { 'crednum' => $self->crednum } )
   ;
@@ -416,7 +417,11 @@ sub reason {
                                   'reason' => $value,
                                   'disabled' => 'Y', 
                               } );
-      $reason->insert and $reason = undef;
+      my $error = $reason->insert;
+      if ( $error ) {
+        warn "error inserting reason: $error\n";
+        $reason = undef;
+      }
     }
 
     $self->reasonnum($reason ? $reason->reasonnum : '') ;
@@ -541,7 +546,7 @@ sub _upgrade_data {  # class method
     }
   }
 
-  '';
+  $class->_upgrade_otaker(%opts);
 
 }
 

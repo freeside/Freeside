@@ -2,7 +2,8 @@ package FS::cust_main;
 
 require 5.006;
 use strict;
-use vars qw( @ISA @EXPORT_OK $DEBUG $me $conf
+use base qw( FS::otaker_Mixin FS::payinfo_Mixin FS::Record );
+use vars qw( @EXPORT_OK $DEBUG $me $conf
              @encrypted_fields
              $import $ignore_expired_card
              $skip_fuzzyfiles @fuzzyfields
@@ -25,7 +26,7 @@ use String::Approx qw(amatch);
 use Business::CreditCard 0.28;
 use Locale::Country;
 use FS::UID qw( getotaker dbh driver_name );
-use FS::Record qw( qsearchs qsearch dbdef );
+use FS::Record qw( qsearchs qsearch dbdef regexp_sql );
 use FS::Misc qw( generate_email send_email generate_ps do_print );
 use FS::Msgcat qw(gettext);
 use FS::payby;
@@ -66,10 +67,7 @@ use FS::type_pkgs;
 use FS::payment_gateway;
 use FS::agent_payment_gateway;
 use FS::banned_pay;
-use FS::payinfo_Mixin;
 use FS::TicketSystem;
-
-@ISA = qw( FS::payinfo_Mixin FS::Record );
 
 @EXPORT_OK = qw( smart_search );
 
@@ -304,9 +302,9 @@ IP address from which payment information was received
 
 Tax exempt, empty or `Y'
 
-=item otaker
+=item usernum
 
-Order taker (assigned automatically, see L<FS::UID>)
+Order taker (see L<FS::access_user>)
 
 =item comments
 
@@ -9710,14 +9708,7 @@ sub _agent_plandata {
   
   my $agentnum = $self->agentnum;
 
-  my $regexp = '';
-  if ( driver_name =~ /^Pg/i ) {
-    $regexp = '~';
-  } elsif ( driver_name =~ /^mysql/i ) {
-    $regexp = 'REGEXP';
-  } else {
-    die "don't know how to use regular expressions in ". driver_name. " databases";
-  }
+  my $regexp = regexp_sql();
 
   my $part_event_option =
     qsearchs({
@@ -9782,6 +9773,8 @@ sub _upgrade_data { #class method
   my $sql = 'UPDATE h_cust_main SET paycvv = NULL WHERE paycvv IS NOT NULL';
   my $sth = dbh->prepare($sql) or die dbh->errstr;
   $sth->execute or die $sth->errstr;
+
+  $class->_upgrade_otaker(%opts);
 
 }
 

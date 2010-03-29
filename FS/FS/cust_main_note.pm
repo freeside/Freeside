@@ -1,10 +1,8 @@
 package FS::cust_main_note;
 
 use strict;
-use vars qw( @ISA );
+use base qw( FS::otaker_Mixin FS::Record );
 use FS::Record qw( qsearch qsearchs );
-
-@ISA = qw(FS::Record);
 
 =head1 NAME
 
@@ -33,16 +31,17 @@ currently supported:
 
 =over 4
 
-=item notenum - primary key
+=item notenum
 
-=item custnum - 
+primary key
 
-=item _date - 
+=item custnum
 
-=item otaker - 
+=item _date
 
-=item comments - 
+=item usernum
 
+=item comments
 
 =back
 
@@ -107,12 +106,18 @@ sub check {
     $self->ut_numbern('notenum')
     || $self->ut_number('custnum')
     || $self->ut_numbern('_date')
-    || $self->ut_text('otaker')
+    || $self->ut_alphan('otaker')
     || $self->ut_anything('comments')
   ;
   return $error if $error;
 
   $self->SUPER::check;
+}
+
+# Used by FS::Upgrade to migrate to a new database.
+sub _upgrade_data {  # class method
+  my ($class, %opts) = @_;
+  $class->_upgrade_otaker(%opts);
 }
 
 =back

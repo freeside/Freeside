@@ -1,7 +1,7 @@
 package FS::cust_attachment;
 
 use strict;
-use base qw( FS::Record );
+use base qw( FS::otaker_Mixin FS::Record );
 use FS::Record qw( qsearch qsearchs );
 use FS::Conf;
 
@@ -44,9 +44,9 @@ Customer number (see L<FS::cust_main>).
 
 The date the record was last updated.
 
-=item otaker
+=item usernum
 
-Order taker (assigned automatically; see L<FS::UID>).
+Order taker (see L<FS::access_user>)
 
 =item filename
 
@@ -128,7 +128,7 @@ sub check {
     $self->ut_numbern('attachnum')
     || $self->ut_number('custnum')
     || $self->ut_numbern('_date')
-    || $self->ut_text('otaker')
+    || $self->ut_alphan('otaker')
     || $self->ut_text('filename')
     || $self->ut_text('mime_type')
     || $self->ut_numbern('disabled')
@@ -152,6 +152,12 @@ Returns the size of the attachment in bytes.
 sub size {
   my $self = shift;
   return length($self->body);
+}
+
+# Used by FS::Upgrade to migrate to a new database.
+sub _upgrade_data {  # class method
+  my ($class, %opts) = @_;
+  $class->_upgrade_otaker(%opts);
 }
 
 =back

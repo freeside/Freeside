@@ -1,7 +1,7 @@
 package FS::cust_pkg_discount;
 
 use strict;
-use base qw( FS::cust_main_Mixin FS::Record );
+use base qw( FS::otaker_Mixin FS::cust_main_Mixin FS::Record );
 use FS::Record qw( dbh qsearchs ); # qsearch );
 use FS::cust_pkg;
 use FS::discount;
@@ -53,9 +53,9 @@ months_used
 
 end_date
 
-=item otaker
+=item usernum
 
-otaker
+order taker, see L<FS::access_user>
 
 
 =back
@@ -164,7 +164,7 @@ sub check {
     || $self->ut_foreign_key('discountnum', 'discount', 'discountnum' )
     || $self->ut_float('months_used') #actually decimal, but this will do
     || $self->ut_numbern('end_date')
-    || $self->ut_text('otaker')
+    || $self->ut_alphan('otaker')
     || $self->ut_enum('disabled', [ '', 'Y' ] )
   ;
   return $error if $error;
@@ -224,6 +224,12 @@ sub status {
   } else {
     'expired';
   }
+}
+
+# Used by FS::Upgrade to migrate to a new database.
+sub _upgrade_data {  # class method
+  my ($class, %opts) = @_;
+  $class->_upgrade_otaker(%opts);
 }
 
 =back

@@ -10,6 +10,7 @@ use FS::option_Common;
 use FS::access_user_pref;
 use FS::access_usergroup;
 use FS::agent;
+use FS::cust_main;
 
 @ISA = qw( FS::m2m_Common FS::option_Common FS::Record );
 #@ISA = qw( FS::m2m_Common FS::option_Common );
@@ -220,6 +221,9 @@ sub replace {
       $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
       return $error;
     }
+  } elsif ( $old->disabled && !$new->disabled
+              && $new->_password =~ /changeme/i ) {
+    return "Must change password when enabling this account";
   }
 
   my $error = $new->SUPER::replace($old, @_);
@@ -254,6 +258,7 @@ sub check {
     || $self->ut_text('_password')
     || $self->ut_text('last')
     || $self->ut_text('first')
+    || $self->ut_foreign_keyn('user_custnum', 'cust_main', 'custnum')
     || $self->ut_enum('disabled', [ '', 'Y' ] )
   ;
   return $error if $error;
@@ -270,6 +275,18 @@ Returns a name string for this user: "Last, First".
 sub name {
   my $self = shift;
   $self->get('last'). ', '. $self->first;
+}
+
+=item user_cust_main
+
+Returns the FS::cust_main object (see L<FS::cust_main>), if any, for this
+user.
+
+=cut
+
+sub user_cust_main {
+  my $self = shift;
+  qsearchs( 'cust_main', { 'custnum' => $self->user_custnum } );
 }
 
 =item access_usergroup

@@ -1,10 +1,9 @@
 package FS::cust_pkg;
 
 use strict;
-use base qw( FS::cust_main_Mixin FS::location_Mixin
-             FS::m2m_Common FS::option_Common FS::Record
-           );
-use vars qw(@ISA $disable_agentcheck $DEBUG $me);
+use base qw( FS::otaker_Mixin FS::cust_main_Mixin FS::location_Mixin
+             FS::m2m_Common FS::option_Common FS::Record );
+use vars qw($disable_agentcheck $DEBUG $me);
 use Carp qw(cluck);
 use Scalar::Util qw( blessed );
 use List::Util qw(max);
@@ -157,9 +156,9 @@ date
 
 date
 
-=item otaker
+=item usernum
 
-order taker (assigned automatically if null, see L<FS::UID>)
+order taker (see L<FS::access_user>)
 
 =item manual_flag
 
@@ -425,7 +424,7 @@ sub replace {
       : { @_ };
 
   #return "Can't (yet?) change pkgpart!" if $old->pkgpart != $new->pkgpart;
-  return "Can't change otaker!" if $old->otaker ne $new->otaker;
+  #return "Can't change otaker!" if $old->otaker ne $new->otaker;
 
   #allow this *sigh*
   #return "Can't change setup once it exists!"
@@ -565,8 +564,6 @@ sub check {
   }
 
   $self->otaker(getotaker) unless $self->otaker;
-  $self->otaker =~ /^(\w{1,32})$/ or return "Illegal otaker";
-  $self->otaker($1);
 
   if ( $self->dbdef_table->column('manual_flag') ) {
     $self->manual_flag('') if $self->manual_flag eq ' ';
@@ -3125,6 +3122,12 @@ sub bulk_change {
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
+}
+
+# Used by FS::Upgrade to migrate to a new database.
+sub _upgrade_data {  # class method
+  my ($class, %opts) = @_;
+  $class->_upgrade_otaker(%opts);
 }
 
 =back

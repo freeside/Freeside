@@ -391,7 +391,8 @@ sub tables_hashref {
         'attachnum', 'serial', '', '', '', '',
         'custnum',   'int', '', '', '', '',
         '_date',     @date_type, '', '',
-        'otaker',    'varchar', '', 32, '', '',
+        'otaker',    'varchar', 'NULL', 32, '', '',
+        'usernum',   'int', 'NULL', '', '', '',
         'filename',  'varchar', '', 255, '', '',
         'mime_type', 'varchar', '', $char_d, '', '',
         'title',     'varchar', 'NULL', $char_d, '', '',
@@ -400,7 +401,7 @@ sub tables_hashref {
       ],
       'primary_key' => 'attachnum',
       'unique'      => [],
-      'index'       => [ ['custnum'] ],
+      'index'       => [ ['custnum'], ['usernum'], ],
     },
 
     'cust_bill' => {
@@ -650,7 +651,8 @@ sub tables_hashref {
         'custnum',  'int', '', '', '', '', 
         '_date',    @date_type, '', '', 
         'amount',   @money_type, '', '', 
-        'otaker',   'varchar', '', 32, '', '', 
+        'otaker',   'varchar', 'NULL', 32, '', '', 
+        'usernum',   'int', 'NULL', '', '', '',
         'reason',   'text', 'NULL', '', '', '', 
         'reasonnum', 'int', 'NULL', '', '', '', 
         'addlinfo', 'text', 'NULL', '', '', '',
@@ -659,7 +661,7 @@ sub tables_hashref {
       ],
       'primary_key' => 'crednum',
       'unique' => [],
-      'index' => [ ['custnum'], ['_date'] ],
+      'index' => [ ['custnum'], ['_date'], ['usernum'] ],
     },
 
     'cust_credit_bill' => {
@@ -755,7 +757,8 @@ sub tables_hashref {
         'geocode',  'varchar', 'NULL', 20,  '', '',
         'censustract', 'varchar', 'NULL', 20,  '', '', # 7 to save space?
         'tax',      'char', 'NULL', 1, '', '', 
-        'otaker',   'varchar', '',    32, '', '', 
+        'otaker',   'varchar', 'NULL',    32, '', '', 
+        'usernum',   'int', 'NULL', '', '', '',
         'refnum',   'int',  '',     '', '', '', 
         'referral_custnum', 'int',  'NULL', '', '', '', 
         'comments', 'text', 'NULL', '', '', '', 
@@ -770,7 +773,7 @@ sub tables_hashref {
       'unique' => [ [ 'agentnum', 'agent_custid' ] ],
       #'index' => [ ['last'], ['company'] ],
       'index' => [
-                   [ 'agentnum' ], [ 'refnum' ], [ 'classnum' ],
+                   [ 'agentnum' ], [ 'refnum' ], [ 'classnum' ], [ 'usernum' ],
                    [ 'custbatch' ],
                    [ 'referral_custnum' ],
                    [ 'payby' ], [ 'paydate' ],
@@ -924,12 +927,13 @@ sub tables_hashref {
         'notenum',  'serial',  '',     '', '', '', 
         'custnum',  'int',  '',     '', '', '', 
         '_date',    @date_type, '', '', 
-        'otaker',   'varchar', '',    32, '', '', 
+        'otaker',   'varchar', 'NULL',    32, '', '', 
+        'usernum',   'int', 'NULL', '', '', '',
         'comments', 'text', 'NULL', '', '', '', 
       ],
       'primary_key' => 'notenum',
       'unique' => [],
-      'index' => [ [ 'custnum' ], [ '_date' ], ],
+      'index' => [ [ 'custnum' ], [ '_date' ], [ 'usernum' ], ],
     },
 
     'cust_category' => {
@@ -1127,7 +1131,8 @@ sub tables_hashref {
         'custnum',  'int',    '',   '', '', '', 
         '_date',    @date_type, '', '', 
         'paid',     @money_type, '', '', 
-        'otaker',   'varchar', 'NULL', 32, '', '',  #NULL for the upgrade so we can create & populate the field
+        'otaker',   'varchar', 'NULL', 32, '', '',
+        'usernum',   'int', 'NULL', '', '', '',
         'payby',    'char',   '',     4, '', '', # CARD/BILL/COMP, should be
                                                  # index into payby table
                                                  # eventually
@@ -1141,7 +1146,7 @@ sub tables_hashref {
       ],
       'primary_key' => 'paynum',
       #i guess not now, with cust_pay_pending, if we actually make it here, we _do_ want to record it# 'unique' => [ [ 'payunique' ] ],
-      'index' => [ [ 'custnum' ], [ 'paybatch' ], [ 'payby' ], [ '_date' ] ],
+      'index' => [ [ 'custnum' ], [ 'paybatch' ], [ 'payby' ], [ '_date' ], [ 'usernum' ] ],
     },
 
     'cust_pay_void' => {
@@ -1161,10 +1166,11 @@ sub tables_hashref {
         'void_date', @date_type, '', '', 
         'reason',    'varchar',   'NULL', $char_d, '', '', 
         'otaker',   'varchar', '', 32, '', '', 
+        'usernum',   'int', 'NULL', '', '', '',
       ],
       'primary_key' => 'paynum',
       'unique' => [],
-      'index' => [ [ 'custnum' ] ],
+      'index' => [ [ 'custnum' ], [ 'usernum' ], ],
     },
 
     'cust_bill_pay' => {
@@ -1259,7 +1265,8 @@ sub tables_hashref {
         'custnum',             'int',     '', '', '', '', 
         'pkgpart',             'int',     '', '', '', '', 
         'locationnum',         'int', 'NULL', '', '', '',
-        'otaker',          'varchar',     '', 32, '', '', 
+        'otaker',          'varchar', 'NULL', 32, '', '', 
+        'usernum',             'int', 'NULL', '', '', '',
         'start_date',     @date_type,             '', '', 
         'setup',          @date_type,             '', '', 
         'bill',           @date_type,             '', '', 
@@ -1278,7 +1285,7 @@ sub tables_hashref {
       ],
       'primary_key' => 'pkgnum',
       'unique' => [],
-      'index' => [ ['custnum'], ['pkgpart'], [ 'locationnum' ],
+      'index' => [ ['custnum'], ['pkgpart'], [ 'locationnum' ], [ 'usernum' ],
                    [ 'start_date' ], ['setup'], ['last_bill'], ['bill'],
                    ['susp'], ['adjourn'], ['expire'], ['cancel'],
                    ['change_date'],
@@ -1316,12 +1323,13 @@ sub tables_hashref {
         'pkgnum',   'int',    '',   '', '', '', 
         'reasonnum','int',    '',   '', '', '', 
         'action',   'char', 'NULL', 1, '', '',     #should not be nullable
-        'otaker',   'varchar', '', 32, '', '', 
+        'otaker',   'varchar', 'NULL', 32, '', '', 
+        'usernum',   'int', 'NULL', '', '', '',
         'date',     @date_type, '', '', 
       ],
       'primary_key' => 'num',
       'unique' => [],
-      'index' => [ [ 'pkgnum' ], [ 'reasonnum' ], ['action'], ],
+      'index' => [ [ 'pkgnum' ], [ 'reasonnum' ], ['action'], [ 'usernum' ], ],
     },
 
     'cust_pkg_discount' => {
@@ -1331,12 +1339,13 @@ sub tables_hashref {
         'discountnum',       'int', '',     '', '', '',
         'months_used',   'decimal', 'NULL', '', '', '',
         'end_date',     @date_type,             '', '',
-        'otaker',        'varchar', '',     32, '', '', 
+        'otaker',        'varchar', 'NULL', 32, '', '', 
+        'usernum',           'int', 'NULL', '', '', '',
         'disabled',         'char', 'NULL',  1, '', '', 
       ],
       'primary_key' => 'pkgdiscountnum',
       'unique' => [],
-      'index'  => [ [ 'pkgnum' ], [ 'discountnum' ] ],
+      'index'  => [ [ 'pkgnum' ], [ 'discountnum' ], [ 'usernum' ], ],
     },
 
     'cust_bill_pkg_discount' => {
@@ -1373,7 +1382,8 @@ sub tables_hashref {
         'custnum',  'int',    '',   '', '', '', 
         '_date',        @date_type, '', '', 
         'refund',       @money_type, '', '', 
-        'otaker',       'varchar',   '',   32, '', '', 
+        'otaker',       'varchar',   'NULL',   32, '', '', 
+        'usernum',   'int', 'NULL', '', '', '',
         'reason',       'varchar',   '',   $char_d, '', '', 
         'payby',        'char',   '',     4, '', '', # CARD/BILL/COMP, should
                                                      # be index into payby
@@ -1385,7 +1395,7 @@ sub tables_hashref {
       ],
       'primary_key' => 'refundnum',
       'unique' => [],
-      'index' => [ ['custnum'], ['_date'] ],
+      'index' => [ ['custnum'], ['_date'], [ 'usernum' ], ],
     },
 
     'cust_credit_refund' => {
@@ -2286,12 +2296,13 @@ sub tables_hashref {
         'payinfo', 'varchar',  '',     128, '', '', #say, a 512-big digest _hex encoded
 	#'paymask', 'varchar',  'NULL', $char_d, '', ''
         '_date',   @date_type, '', '', 
-        'otaker',  'varchar',  '',     32, '', '', 
+        'otaker',  'varchar',  'NULL',     32, '', '', 
+        'usernum',   'int', 'NULL', '', '', '',
         'reason',  'varchar',  'NULL', $char_d, '', '', 
       ],
       'primary_key' => 'bannum',
       'unique'      => [ [ 'payby', 'payinfo' ] ],
-      'index'       => [],
+      'index'       => [ [ 'usernum' ] ],
     },
 
     'pkg_category' => {
@@ -2537,11 +2548,12 @@ sub tables_hashref {
         '_password', 'varchar', '', $char_d, '', '',
         'last',      'varchar', '', $char_d, '', '', 
         'first',     'varchar', '', $char_d, '', '', 
+        'user_custnum',  'int', 'NULL',  '', '', '',
         'disabled',     'char', 'NULL',   1, '', '', 
       ],
       'primary_key' => 'usernum',
       'unique' => [ [ 'username' ] ],
-      'index'  => [],
+      'index'  => [ [ 'user_custnum' ] ],
     },
 
     'access_user_pref' => {

@@ -1,6 +1,8 @@
 package FS::cust_pay_void; 
+
 use strict;
-use vars qw( @ISA @encrypted_fields );
+use base qw( FS::otaker_Mixin FS::payinfo_Mixin FS::Record );
+use vars qw( @encrypted_fields );
 use Business::CreditCard;
 use FS::UID qw(getotaker);
 use FS::Record qw(qsearchs dbh fields); # qsearch );
@@ -10,8 +12,6 @@ use FS::cust_pay;
 #use FS::cust_pay_refund;
 #use FS::cust_main;
 use FS::cust_pkg;
-
-@ISA = qw( FS::Record FS::payinfo_Mixin );
 
 @encrypted_fields = ('payinfo');
 
@@ -57,6 +57,10 @@ Amount of this payment
 
 specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
 L<Time::Local> and L<Date::Parse> for conversion functions.
+
+=item otaker
+
+order taker (see L<FS::access_user>)
 
 =item payby
 
@@ -215,7 +219,7 @@ sub check {
     return $error if $error;
   }
 
-  $self->otaker(getotaker);
+  $self->otaker(getotaker) unless $self->otaker;
 
   $self->SUPER::check;
 }
@@ -229,6 +233,12 @@ Returns the parent customer object (see L<FS::cust_main>).
 sub cust_main {
   my $self = shift;
   qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
+}
+
+# Used by FS::Upgrade to migrate to a new database.
+sub _upgrade_data {  # class method
+  my ($class, %opts) = @_;
+  $class->_upgrade_otaker(%opts);
 }
 
 =back

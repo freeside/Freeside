@@ -1,10 +1,8 @@
 package FS::cust_pkg_reason;
 
 use strict;
-use vars qw( @ISA );
+use base qw( FS::otaker_Mixin FS::Record );
 use FS::Record qw( qsearch qsearchs );
-
-@ISA = qw(FS::Record);
 
 =head1 NAME
 
@@ -34,16 +32,17 @@ currently supported:
 
 =over 4
 
-=item num - primary key
+=item num
 
-=item pkgnum - 
+primary key
 
-=item reasonnum - 
+=item pkgnum
 
-=item otaker - 
+=item reasonnum
 
-=item date - 
+=item usernum
 
+=item date
 
 =back
 
@@ -99,7 +98,7 @@ sub check {
     || $self->ut_number('pkgnum')
     || $self->ut_number('reasonnum')
     || $self->ut_enum('action', [ 'A', 'C', 'E', 'S' ])
-    || $self->ut_text('otaker')
+    || $self->ut_alphan('otaker')
     || $self->ut_numbern('date')
   ;
   return $error if $error;
@@ -307,8 +306,7 @@ sub _upgrade_data { # class method
     }
   }
 
-  '';
-
+  $class->_upgrade_otaker(%opts);
 }
 
 =back

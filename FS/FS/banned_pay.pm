@@ -1,11 +1,9 @@
 package FS::banned_pay;
 
 use strict;
-use vars qw( @ISA );
+use base qw( FS::otaker_Mixin FS::Record );
 use FS::Record qw( qsearch qsearchs );
 use FS::UID qw( getotaker );
-
-@ISA = qw(FS::Record);
 
 =head1 NAME
 
@@ -117,9 +115,15 @@ sub check {
 
   $self->_date(time) unless $self->_date;
 
-  $self->otaker(getotaker);
+  $self->otaker(getotaker) unless $self->otaker;
 
   $self->SUPER::check;
+}
+
+# Used by FS::Upgrade to migrate to a new database.
+sub _upgrade_data {  # class method
+  my ($class, %opts) = @_;
+  $class->_upgrade_otaker(%opts);
 }
 
 =back

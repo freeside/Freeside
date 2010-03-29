@@ -1,18 +1,16 @@
 package FS::cust_refund;
 
 use strict;
-use vars qw( @ISA @encrypted_fields );
+use base qw( FS::otaker_Mixin FS::payinfo_transaction_Mixin FS::cust_main_Mixin
+             FS::Record );
+use vars qw( @encrypted_fields );
 use Business::CreditCard;
 use FS::UID qw(getotaker);
 use FS::Record qw( qsearch qsearchs dbh );
-use FS::cust_main_Mixin;
-use FS::payinfo_transaction_Mixin;
 use FS::cust_credit;
 use FS::cust_credit_refund;
 use FS::cust_pay_refund;
 use FS::cust_main;
-
-@ISA = qw( FS::payinfo_transaction_Mixin FS::cust_main_Mixin FS::Record );
 
 @encrypted_fields = ('payinfo');
 
@@ -43,28 +41,50 @@ inherits from FS::Record.  The following fields are currently supported:
 
 =over 4
 
-=item refundnum - primary key (assigned automatically for new refunds)
+=item refundnum
 
-=item custnum - customer (see L<FS::cust_main>)
+primary key (assigned automatically for new refunds)
 
-=item refund - Amount of the refund
+=item custnum
 
-=item reason - Reason for the refund
+customer (see L<FS::cust_main>)
 
-=item _date - specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
+=item refund
+
+Amount of the refund
+
+=item reason
+
+Reason for the refund
+
+=item _date
+
+specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
 L<Time::Local> and L<Date::Parse> for conversion functions.
 
-=item payby - Payment Type (See L<FS::payinfo_Mixin> for valid payby values)
+=item payby
 
-=item payinfo - Payment Information (See L<FS::payinfo_Mixin> for data format)
+Payment Type (See L<FS::payinfo_Mixin> for valid payby values)
 
-=item paymask - Masked payinfo (See L<FS::payinfo_Mixin> for how this works)
+=item payinfo
 
-=item paybatch - text field for tracking card processing
+Payment Information (See L<FS::payinfo_Mixin> for data format)
 
-=item otaker - order taker (assigned automatically, see L<FS::UID>)
+=item paymask
 
-=item closed - books closed flag, empty or `Y'
+Masked payinfo (See L<FS::payinfo_Mixin> for how this works)
+
+=item paybatch
+
+text field for tracking card processing
+
+=item usernum
+
+order taker (see L<FS::access_user>
+
+=item closed
+
+books closed flag, empty or `Y'
 
 =back
 
@@ -236,13 +256,13 @@ returns the error, otherwise returns false.  Called by the insert method.
 sub check {
   my $self = shift;
 
-  $self->otaker(getotaker) unless ($self->otaker);
+  $self->otaker(getotaker) unless $self->otaker;
 
   my $error =
     $self->ut_numbern('refundnum')
     || $self->ut_numbern('custnum')
     || $self->ut_money('refund')
-    || $self->ut_alpha('otaker')
+    || $self->ut_alphan('otaker')
     || $self->ut_text('reason')
     || $self->ut_numbern('_date')
     || $self->ut_textn('paybatch')
@@ -273,6 +293,7 @@ refund.
 
 sub cust_credit_refund {
   my $self = shift;
+  map { $_ } #return $self->num_cust_credit_refund unless wantarray;
   sort { $a->_date <=> $b->_date }
     qsearch( 'cust_credit_refund', { 'refundnum' => $self->refundnum } )
   ;
@@ -287,6 +308,7 @@ refund.
 
 sub cust_pay_refund {
   my $self = shift;
+  map { $_ } #return $self->num_cust_pay_refund unless wantarray;
   sort { $a->_date <=> $b->_date }
     qsearch( 'cust_pay_refund', { 'refundnum' => $self->refundnum } )
   ;
@@ -336,6 +358,12 @@ sub unapplied_sql {
               )
   ";
 
+}
+
+# Used by FS::Upgrade to migrate to a new database.
+sub _upgrade_data {  # class method
+  my ($class, %opts) = @_;
+  $class->_upgrade_otaker(%opts);
 }
 
 =back

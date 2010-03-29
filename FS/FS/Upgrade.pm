@@ -140,6 +140,19 @@ sub upgrade_data {
     #cdrbatch fixes
     'cdr' => [],
 
+    #otaker->usernum
+    'cust_attachment' => [],
+    #'cust_credit' => [],
+    #'cust_main' => [],
+    'cust_main_note' => [],
+    #'cust_pay' => [],
+    'cust_pay_void' => [],
+    'cust_pkg' => [],
+    #'cust_pkg_reason' => [],
+    'cust_pkg_discount' => [],
+    'cust_refund' => [],
+    'banned_pay' => [],
+
   ;
 
   \%hash;
