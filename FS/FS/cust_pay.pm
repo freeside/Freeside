@@ -1,7 +1,9 @@
 package FS::cust_pay;
 
 use strict;
-use vars qw( @ISA $DEBUG $me $conf @encrypted_fields
+use base qw( FS::otaker_Mixin FS::payinfo_transaction_Mixin FS::cust_main_Mixin
+             FS::Record );
+use vars qw( $DEBUG $me $conf @encrypted_fields
              $unsuspendauto $ignore_noapply 
            );
 use Date::Format;
@@ -20,9 +22,7 @@ use FS::cust_main;
 use FS::cust_pkg;
 use FS::cust_pay_void;
 
-@ISA = qw( FS::payinfo_transaction_Mixin FS::cust_main_Mixin FS::Record );
-
-$DEBUG = 1;
+$DEBUG = 0;
 
 $me = '[FS::cust_pay]';
 
@@ -80,9 +80,9 @@ L<Time::Local> and L<Date::Parse> for conversion functions.
 
 Amount of this payment
 
-=item otaker
+=item usernum
 
-order taker (assigned automatically, see L<FS::UID>)
+order taker (see L<FS::access_user>)
 
 =item payby
 
@@ -381,7 +381,7 @@ sub check {
     || $self->ut_numbern('custnum')
     || $self->ut_numbern('_date')
     || $self->ut_money('paid')
-    || $self->ut_alpha('otaker')
+    || $self->ut_alphan('otaker')
     || $self->ut_textn('paybatch')
     || $self->ut_textn('payunique')
     || $self->ut_enum('closed', [ '', 'Y' ])
@@ -527,6 +527,7 @@ payment.
 
 sub cust_bill_pay {
   my $self = shift;
+  map { $_ } #return $self->num_cust_bill_pay unless wantarray;
   sort {    $a->_date  <=> $b->_date
          || $a->invnum <=> $b->invnum }
     qsearch( 'cust_bill_pay', { 'paynum' => $self->paynum } )
@@ -542,6 +543,7 @@ payment.
 
 sub cust_pay_refund {
   my $self = shift;
+  map { $_ } #return $self->num_cust_pay_refund unless wantarray;
   sort { $a->_date <=> $b->_date }
     qsearch( 'cust_pay_refund', { 'paynum' => $self->paynum } )
   ;
@@ -688,6 +690,7 @@ sub _upgrade_data {  #class method
   #not the most efficient, but hey, it only has to run once
 
   my $where = "WHERE ( otaker IS NULL OR otaker = '' OR otaker = 'ivan' ) ".
+              "  AND usernum IS NULL ".
               "  AND 0 < ( SELECT COUNT(*) FROM cust_main                 ".
               "              WHERE cust_main.custnum = cust_pay.custnum ) ";
 
@@ -738,6 +741,8 @@ sub _upgrade_data {  #class method
     }
 
   }
+
+  $class->_upgrade_otaker(%opts);
 
 }
 
