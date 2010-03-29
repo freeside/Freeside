@@ -1,0 +1,296 @@
+<%doc>
+
+Example:
+
+  include('elements/report.html',
+    #required
+    'title'           => 'Page title',
+    'items'           => \@items,
+    'data'            => [ \@item1 \@item2 ... ],
+
+    #these run parallel to items, and can be given as hashes
+    'row_labels'      => \@row_labels,    #required
+    'colors'          => \@colors,        #required
+    'graph_labels'    => \@graph_labels,  #defaults to row_labels
+
+    'links'           => \@links,         #optional
+
+    #these run parallel to the elements of each @item
+    'col_labels'      => \@col_labels,    #required
+    'axis_labels'     => \@axis_labels,   #defaults to col_labels
+
+    #optional
+    'nototal'         => 1,
+    'graph_type'      => 'LinesPoints',
+    'bottom_total'    => 1,
+    'sprintf'         => '%u', #sprintf format, overrides default %.2f
+    'disable_money'   => 1,
+  );
+
+About @links: Each element must be an arrayref, corresponding to an element of
+@items.  Within the array, the first element is a URL prefix, and the rest 
+are suffixes corresponding to data elements.  These will be joined without 
+any delimiter and linked from the elements in @data.
+
+</%doc>
+% if ( $cgi->param('_type') =~ /^(csv)$/ ) {
+%
+%   #http_header('Content-Type' => 'text/comma-separated-values' ); #IE chokes
+%   #http_header('Content-Type' => 'text/plain' );
+%   http_header('Content-Type' => 'text/csv');
+%   http_header('Content-Disposition' => "attachment;filename=$filename.csv");
+%
+%   my $csv = new Text::CSV_XS { 'always_quote' => 1,
+%                                'eol'          => "\n", #"\015\012", #"\012"
+%                              };
+%
+%   $csv->combine('', @col_labels, $opt{'nototal'} ? () : 'Total');
+%   
+<% $csv->string %>
+%
+%   my @bottom_total = ();
+%   foreach ( @items ) {
+%
+%     my $col = 0;
+%     my $total = 0;
+%     $csv->combine(
+%       shift( @row_labels ),
+%       map { $total += $_; $bottom_total[$col++] += $_; sprintf($sprintf, $_); }
+%         ( @{ shift( @data ) } ),
+%       ( $opt{'nototal'} ? () : sprintf($sprintf, $total) ),
+%     );
+%     unless ( $opt{'nototal'} ) { 
+%       $bottom_total[$col++] += $total; 
+%     } 
+<% $csv->string %>
+%
+%   }
+% 
+%   if ( $opt{'bottom_total'} ) {
+%     $csv->combine(
+%       'Total',
+%       map { sprintf($sprintf, $_) } @bottom_total,
+%     );
+%
+<% $csv->string %>
+%
+%   } 
+%   
+% } elsif ( $cgi->param('_type') =~ /(xls)$/ ) {
+%
+%   #http_header('Content-Type' => 'application/excel' ); #eww
+%   http_header('Content-Type' => 'application/vnd.ms-excel' );
+%   #http_header('Content-Type' => 'application/msexcel' ); #alas
+%   http_header('Content-Disposition' => "attachment;filename=$filename.xls");
+%
+%   my $output = '';
+%   my $XLS = new IO::Scalar \$output;
+%   my $workbook = Spreadsheet::WriteExcel->new($XLS)
+%     or die "Error opening .xls file: $!";
+%
+%   my $worksheet = $workbook->add_worksheet(substr($opt{'title'},0,31));
+%
+%   my($r,$c) = (0,0);
+%
+%   foreach ('', @col_labels, ($opt{'nototal'} ? () : 'Total') ) {
+%     my $header = $_;
+%     $worksheet->write($r, $c++, $header)
+%   }
+%
+%   my @bottom_total = ();
+%   foreach ( @items ) {
+%     $r++;
+%     $c = 0;
+%     my $total = 0;
+%     $worksheet->write( $r, $c++, shift( @row_labels ) );
+%     foreach ( @{ shift( @data ) } ) {
+%       $total += $_;
+%       $bottom_total[$c] += $_;
+%       $worksheet->write($r, $c++,  sprintf($sprintf, $_) );
+%     }
+%     unless ( $opt{'nototal'} ) { 
+%       $bottom_total[$c] += $total; 
+%       $worksheet->write($r, $c++,  sprintf($sprintf, $total) );
+%     } 
+%   }
+% 
+%   $c = 0;
+%   if ( $opt{'bottom_total'} ) {
+%     $r++;
+%     $worksheet->write($r, $c++, 'Total');
+%     $worksheet->write($r, $c++, sprintf($sprintf, $_)) foreach @bottom_total;
+%   } 
+%   
+%   $workbook->close();# or die "Error creating .xls file: $!";
+%
+%   http_header('Content-Length' => length($output) );
+%   
+<% $output %>
+% } elsif ( $cgi->param('_type') eq 'png' ) {
+%
+%   my $graph_type = 'LinesPoints';
+%   if ( $opt{'graph_type'} =~ /^(LinesPoints|Mountain|Bars)$/ ) {
+%     $graph_type = $1;
+%   }
+%   my $class = "Chart::$graph_type";
+%
+%   my $chart = $class->new(976,384);
+%   
+%   my $d = 0;
+%   $chart->set(
+%     #'min_val' => 0,
+%     'legend' => 'bottom',
+%     'colors' => { ( 
+%                     map { my $color = $_;
+%                           'dataset'.$d++ =>
+%                             [ map hex($_), unpack 'a2a2a2', $color ]
+%                         }
+%                         @{ $opt{'colors'} }
+%                   ),
+%                   'grey_background' => 'white',
+%                   'background' => [ 0xe8, 0xe8, 0xe8 ], #grey
+%                 },
+%     'legend_labels' => $opt{'graph_labels'},
+%     'brush_size' => 4,
+%   );
+%
+%   http_header('Content-Type' => 'image/png' );
+%
+%   $chart->_set_colors();
+%   
+<% $chart->scalar_png([ $opt{'axis_labels'}, @data ]) %>
+%
+% } else {
+%
+<% include('/elements/header.html', $opt{'title'} ) %>
+% $cgi->param('_type', 'png'); 
+
+<IMG SRC="<% $cgi->self_url %>" WIDTH="976" HEIGHT="384">
+<P ALIGN="right">
+
+% unless ( $opt{'disable_download'} ) { 
+%   $cgi->param('_type', "xls" ); 
+            Download full results<BR>
+            as <A HREF="<% $cgi->self_url %>">Excel spreadsheet</A><BR>
+%   $cgi->param('_type', 'csv'); 
+            as <A HREF="<% $cgi->self_url %>">CSV file</A></P>
+%   $cgi->param('_type', "html" ); 
+% } 
+%
+</P>
+<% include('/elements/table.html', 'e8e8e8') %>
+
+<TR>
+
+  <TD></TD>
+
+% foreach my $column ( @col_labels ) {
+%       $column =~ s/ /\<BR\>/; # working on a smarter way to do this
+    <TH><% $column %></TH>
+% } 
+
+% unless ( $opt{'nototal'} ) { 
+    <TH>Total</TH>
+% } 
+
+</TR>
+
+% my @bottom_total = ();
+% foreach my $row ( @items ) {
+%
+%     my $color = shift( @{ $opt{'colors'} } );
+%     my @links = @{ shift( @{ $opt{'links'} } ) };
+% #   $opt{'links'} is an array parallel to items.
+% #   Each element of that is an array containing a prefix,
+% #   followed by suffixes matched to the cells of the table.
+%     my $link_prefix = shift @links;
+%     $link_prefix = $link_prefix ? qq(<A HREF="$link_prefix) : '';    #"
+%     my $label = shift( @row_labels );
+
+      <TR>
+
+        <TH>
+          <FONT COLOR="#<% $color %>"><% $label %></FONT>
+        </TH>
+
+%       my $total = 0;
+%       my $col = 0;
+%       foreach my $column ( @{ shift( @data ) } ) {
+
+          <TD ALIGN="right" BGCOLOR="#ffffff">
+            <% $link_prefix ? $link_prefix . shift(@links) . '">' : '' %><FONT COLOR="#<% $color %>"><% $money_char %><% sprintf($sprintf,, $column) %></FONT><% $link_prefix ? '</A>' : '' %>
+          </TD>
+%
+%         $total += $column;
+%         $bottom_total[$col++] += $column;
+%      
+%       } 
+
+%       unless ( $opt{'nototal'} ) { 
+            <TD ALIGN="right" BGCOLOR="#f5f6be">
+              <% $link_prefix ? $link_prefix. shift(@links) . '">' : '' %><FONT COLOR="#<% $color %>"><% $money_char %><% sprintf($sprintf, $total) %></FONT><% $link_prefix ? '</A>' : '' %>
+            </TD>
+%           $bottom_total[$col++] += $total; 
+%       } 
+
+      </TR>
+
+% } 
+
+% if ( $opt{'bottom_total'} ) {
+  <TR>
+    <TH>Total</TH>
+%   my @bottom_links = $opt{'bottom_link'} ? @{ $opt{'bottom_link'} } : ();
+%   my $prefix = shift(@bottom_links);
+%   pop @bottom_links if $opt{'nototal'};
+%   foreach my $total ( @bottom_total ) { 
+
+      <TD ALIGN="right" BGCOLOR="#f5f6be">
+        <% $prefix
+              ? '<A HREF="'. $prefix .shift(@bottom_links). '">'
+              : ''
+        %><% $money_char %><% sprintf($sprintf, $total) %><% $prefix ? '</A>' : '' %>
+
+      </TD>
+
+% } 
+
+  </TR>
+
+% } 
+
+</TABLE>
+
+<% include('/elements/footer.html') %>
+% } 
+<%once>
+
+</%once>
+<%init>
+
+my(%opt) = @_;
+
+my $sprintf = $opt{'sprintf'} || '%.2f';
+
+my $conf = new FS::Conf;
+my $money_char = $opt{'disable_money'} ? '' : $conf->config('money_char');
+
+my @items = @{ $opt{'items'} };
+
+foreach my $other (qw( col_labels row_labels graph_labels axis_labels colors links )) {
+  if ( ref($opt{$other}) eq 'HASH' ) {
+    $opt{$other} = [ map $opt{$other}{$_}, @items ];
+  }
+}
+
+my @col_labels = @{$opt{'col_labels'}};
+my @row_labels = @{$opt{'row_labels'}};
+my @data       = @{$opt{'data'}};
+
+$opt{'axis_labels'}  ||= $opt{'col_labels'};
+$opt{'graph_labels'} ||= $opt{'row_labels'};
+
+my $filename = $cgi->url(-relative => 1);
+$filename =~ s/\.(cgi|html)$//;
+
+</%init>

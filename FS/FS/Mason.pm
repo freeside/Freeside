@@ -102,6 +102,7 @@ if ( -e $addl_handler_use_file ) {
   use String::Approx qw(amatch);
   use Chart::LinesPoints;
   use Chart::Mountain;
+  use Chart::Bars;
   use Color::Scheme;
   use HTML::Widgets::SelectLayers 0.07; #should go away in favor of
                                         #selectlayers.html

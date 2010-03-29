@@ -44,7 +44,7 @@ my %search_hash = ();
 
 #scalars
 my @scalars = qw (
-  agentnum status cancelled_pkgs cust_fields flattened_pkgs custbatch
+  agentnum status cancelled_pkgs cust_fields flattened_pkgs custbatch usernum
   no_censustract paydate_year paydate_month invoice_terms
 );
 
@@ -66,10 +66,10 @@ foreach my $field (qw( signupdate )) {
 
   my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi, $field);
 
-  next if $beginning == 0 && $ending == 4294967295;
+  next if $beginning == 0 && $ending == 4294967295 && !defined($cgi->param('signuphour'));
        #or $disable{$cgi->param('status')}->{$field};
 
-  $search_hash{$field} = [ $beginning, $ending ];
+  $search_hash{$field} = [ $beginning, $ending, $cgi->param('signuphour') ];
 
 }
 

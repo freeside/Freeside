@@ -8522,6 +8522,15 @@ sub search {
   }
 
   ##
+  # do the same for user
+  ##
+
+  if ( $params->{'usernum'} =~ /^(\d+)$/ and $1 ) {
+    push @where,
+      "cust_main.usernum = $1";
+  }
+
+  ##
   # parse status
   ##
 
@@ -8556,12 +8565,22 @@ sub search {
 
     next unless exists($params->{$field});
 
-    my($beginning, $ending) = @{$params->{$field}};
+    my($beginning, $ending, $hour) = @{$params->{$field}};
 
     push @where,
       "cust_main.$field IS NOT NULL",
       "cust_main.$field >= $beginning",
       "cust_main.$field <= $ending";
+
+    # XXX: do this for mysql and/or pull it out of here
+    if(defined $hour) {
+      if ($dbh->{Driver}->{Name} eq 'Pg') {
+        push @where, "extract(hour from to_timestamp(cust_main.$field)) = $hour";
+      }
+      else {
+        warn "search by time of day not supported on ".$dbh->{Driver}->{Name}." databases";
+      }
+    }
 
     $orderby ||= "ORDER BY cust_main.$field";
 

@@ -1,0 +1,30 @@
+<% include('/elements/header.html', 'Customer Signups by Date/Time' ) %>
+
+<FORM ACTION="signupdate.cgi" METHOD="GET">
+
+<TABLE>
+
+<% include('/elements/tr-select-from_to.html' ) %>
+
+<% include('/elements/tr-select-agent.html',
+             'curr_value'    => scalar($cgi->param('agentnum')),
+             'label'         => 'For agent: ',
+             'disable_empty' => 0,
+          )
+%>
+
+<% include('/elements/tr-select-user.html') %>
+
+</TABLE>
+
+<BR><INPUT TYPE="submit" VALUE="Display">
+</FORM>
+
+<% include('/elements/footer.html') %>
+<%init>
+
+#XXX use a different ACL for package churn?
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+</%init>

@@ -1,0 +1,30 @@
+<SELECT NAME="usernum">
+
+% unless ( $opt{'multiple'} || $opt{'disable_empty'} ) {
+  <OPTION VALUE="">all</OPTION>
+% }
+
+% foreach my $otaker ( @{ $opt{'otakers'} } ) { 
+    <OPTION VALUE="<% shift(@{$opt{'usernums'}}) %>"><% $otaker %></OPTION>
+% } 
+
+</SELECT>
+
+<%init>
+
+my %opt = @_;
+
+unless ( $opt{'otakers'} ) {
+
+  my $sth = dbh->prepare("SELECT username,usernum FROM access_user".
+                       " WHERE disabled = '' or disabled IS NULL")
+    or die dbh->errstr;
+  $sth->execute or die $sth->errstr;
+  for($sth->fetchall_arrayref) {
+    $opt{'otakers'} = [ map { $_->[0] } @$_ ];
+    $opt{'usernums'} = [ map { $_->[1] } @$_ ];
+  }
+
+}
+
+</%init>

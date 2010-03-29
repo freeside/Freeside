@@ -37,280 +37,37 @@ Example:
   );
 
 </%doc>
-% if ( $cgi->param('_type') =~ /^(csv)$/ ) {
-%
-%   #http_header('Content-Type' => 'text/comma-separated-values' ); #IE chokes
-%   http_header('Content-Type' => 'text/plain' );
-%
-%   my $csv = new Text::CSV_XS { 'always_quote' => 1,
-%                                'eol'          => "\n", #"\015\012", #"\012"
-%                              };
-%
-%   $csv->combine(map { my $m=$_; $m =~ s/^(\d+)\//$mon[$1-1] /; $m; }
-%                     ('', @{$data->{label}}, $opt{'nototal'} ? () : 'Total')
-%                );
-%   
-<% $csv->string %>
-%
-%   my @bottom_total = ();
-%   foreach ( @{ $data->{'items'} } ) {
-%
-%     my $col = 0;
-%     my $total = 0;
-%     $csv->combine(
-%       shift( @{ $data->{'item_labels'} } ),
-%       map { $total += $_; $bottom_total[$col++] += $_; sprintf($sprintf, $_); }
-%         ( @{ shift( @{$data->{data}} ) } ),
-%       ( $opt{'nototal'} ? () : sprintf($sprintf, $total) ),
-%     );
-%     unless ( $opt{'nototal'} ) { 
-%       $bottom_total[$col++] += $total; 
-%     } 
-%
-<% $csv->string %>
-%
-%   }
-% 
-%   if ( $opt{'bottom_total'} ) {
-%     $csv->combine(
-%       'Total',
-%       map { sprintf($sprintf, $_) } @bottom_total,
-%     );
-%
-<% $csv->string %>
-%
-%   } 
-%   
-% } elsif ( $cgi->param('_type') =~ /(\.xls)$/ ) {
-%
-%   #http_header('Content-Type' => 'application/excel' ); #eww
-%   http_header('Content-Type' => 'application/vnd.ms-excel' );
-%   #http_header('Content-Type' => 'application/msexcel' ); #alas
-%
-%   my $output = '';
-%   my $XLS = new IO::Scalar \$output;
-%   my $workbook = Spreadsheet::WriteExcel->new($XLS)
-%     or die "Error opening .xls file: $!";
-%
-%   my $worksheet = $workbook->add_worksheet(substr($opt{'title'},0,31));
-%
-%   my($r,$c) = (0,0);
-%
-%   foreach ('', @{$data->{label}}, ($opt{'nototal'} ? () : 'Total') ) {
-%     my $header = $_;
-%     $header =~ s/^(\d+)\//$mon[$1-1] /;
-%     $worksheet->write($r, $c++, $header)
-%   }
-%
-%   my @bottom_total = ();
-%   foreach ( @{ $data->{'items'} } ) {
-%     $r++;
-%     $c = 0;
-%     my $total = 0;
-%     $worksheet->write( $r, $c++, shift( @{ $data->{'item_labels'} } ) );
-%     foreach ( @{ shift( @{$data->{data}} ) } ) {
-%       $total += $_;
-%       $bottom_total[$c] += $_;
-%       $worksheet->write($r, $c++,  sprintf($sprintf, $_) );
-%     }
-%     unless ( $opt{'nototal'} ) { 
-%       $bottom_total[$c] += $total; 
-%       $worksheet->write($r, $c++,  sprintf($sprintf, $total) );
-%     } 
-%   }
-% 
-%   $c = 0;
-%   if ( $opt{'bottom_total'} ) {
-%     $r++;
-%     $worksheet->write($r, $c++, 'Total');
-%     $worksheet->write($r, $c++, sprintf($sprintf, $_)) foreach @bottom_total;
-%   } 
-%   
-%   $workbook->close();# or die "Error creating .xls file: $!";
-%
-%   http_header('Content-Length' => length($output) );
-%   
-<% $output %>
-% } elsif ( $cgi->param('_type') =~ /^(png)$/ ) {
-%
-%   #my $chart = Chart::LinesPoints->new(1024,480);
-%   #my $chart = Chart::LinesPoints->new(768,480);
-%
-%   my $graph_type = 'LinesPoints';
-%   if ( $opt{'graph_type'} =~ /^(LinesPoints|Mountain)$/ ) {
-%     $graph_type = $1;
-%   }
-%   my $class = "Chart::$graph_type";
-%
-%   my $chart = $class->new(976,384);
-%   
-%   my $d = 0;
-%   $chart->set(
-%     #'min_val' => 0,
-%     'legend' => 'bottom',
-%     'colors' => { ( 
-%                     map { my $color = $_;
-%                           'dataset'.$d++ =>
-%                             [ map hex($_), unpack 'a2a2a2', $color ]
-%                         }
-%                         #@{ $opt{'colors'} }
-%                         @{ $data->{'colors'} }
-%                   ),
-%                   #'grey_background' => [ 211, 211, 211 ],
-%                   'grey_background' => 'white',
-%                   'background' => [ 0xe8, 0xe8, 0xe8 ], #grey
-%                 },
-%     #'grey_background' => 'false',
-%     'legend_labels' => $data->{'item_labels'},
-%     'brush_size' => 4,
-%     #'pt_size' => 12,
-%   );
-%
-%   #my @data = map { $data->{$_} } ( 'label', @items );
-%   my @data = @{ $data->{data} };
-%   unshift @data, $data->{'label'};
-%   
-%   http_header('Content-Type' => 'image/png' );
-%
-%   $chart->_set_colors();
-%   
-<% $chart->scalar_png(\@data) %>
-%
-% } else {
-%
-<% include('/elements/header.html', $opt{'title'} ) %>
-% $cgi->param('_type', 'png'); 
-
-<IMG SRC="<% $cgi->self_url %>" WIDTH="976" HEIGHT="384">
-<P ALIGN="right">
-
-% unless ( $opt{'disable_download'} ) { 
-%   $cgi->param('_type', "monthly.xls" ); 
-            Download full results<BR>
-            as <A HREF="<% $cgi->self_url %>">Excel spreadsheet</A><BR>
-%   $cgi->param('_type', 'csv'); 
-            as <A HREF="<% $cgi->self_url %>">CSV file</A></P>
-%   $cgi->param('_type', "html" ); 
-% } 
-%
-</P>
-<% include('/elements/table.html', 'e8e8e8') %>
-
-<TR>
-
-  <TD></TD>
-
-% foreach my $column ( @{$data->{label}} ) {
-%       #$column =~ s/^(\d+)\//$mon[$1-1]<BR>/e;
-%       $column =~ s/^(\d+)\//$mon[$1-1]<BR>/;
-    <TH><% $column %></TH>
-% } 
-
-% unless ( $opt{'nototal'} ) { 
-    <TH>Total</TH>
-% } 
-
-</TR>
-
-% my @bottom_total = ();
-% foreach my $row ( @{ $data->{'items'} } ) {
-%
-%     #my $color = shift( @{ $opt{'colors'} } );
-%     my $color = shift( @{ $data->{'colors'} } );
-%     my $link = shift( @{ $data->{'links'} } );
-%     my ( $begin, $end ) = ( $fromparam, $toparam );
-%     if ( ref($link) ) {
-%       my $ref = $link;
-%       $link =  $ref->{link};
-%       $begin = $ref->{fromparam};
-%       $end =   $ref->{toparam};
-%     }
-%     $link = $link ? qq(<A HREF="$link) : '';
-%     my $label = shift( @{ $data->{'item_labels'} } );
-
-      <TR>
-
-        <TH>
-          <FONT COLOR="#<% $color %>"><% $label %></FONT>
-        </TH>
-
-%       #my $link = exists($opt{'links'}{$row})
-%             #  ? qq(<A HREF="$opt{'links'}{$row})
-%             #  : '';
-%       my @speriod = @{$data->{speriod}};
-%       my @eperiod = @{$data->{eperiod}};
-%       my $total = 0;
-%    
-%       my $col = 0;
-%       foreach my $column ( @{ shift( @{$data->{data}} ) } ) {
-
-          <TD ALIGN="right" BGCOLOR="#ffffff">
-            <% $link ? $link. "$begin=". shift(@speriod). ";$end=". shift(@eperiod). '">' : '' %><FONT COLOR="#<% $color %>"><% $money_char %><% sprintf($sprintf,, $column) %></FONT><% $link ? '</A>' : '' %>
-          </TD>
-%
-%         $total += $column;
-%         $bottom_total[$col++] += $column;
-%      
-%       } 
-
-%       unless ( $opt{'nototal'} ) { 
-            <TD ALIGN="right" BGCOLOR="#f5f6be">
-              <% $link ? $link. "$begin=". ${$data->{speriod}}[0]. ";$end=". ${$data->{eperiod}}[-1]. '">' : '' %><FONT COLOR="#<% $color %>"><% $money_char %><% sprintf($sprintf, $total) %></FONT><% $link ? '</A>' : '' %>
-            </TD>
-%           $bottom_total[$col++] += $total; 
-%       } 
-
-      </TR>
-
-% } 
-
-% if ( $opt{'bottom_total'} ) {
-%     my @speriod = ( @{$data->{speriod}}, ${$data->{speriod}}[0] );
-%     my @eperiod = ( @{$data->{eperiod}}, ${$data->{eperiod}}[-1] );
-
-  <TR>
-    <TH>Total</TH>
-
-% foreach my $total ( @bottom_total ) { 
-
-      <TD ALIGN="right" BGCOLOR="#f5f6be">
-        <% $opt{'bottom_link'}
-              ? '<A HREF="'. $opt{'bottom_link'}.
-                "$fromparam=". shift(@speriod).
-                ";$toparam=". shift(@eperiod). '">'
-              : ''
-        %>$<% sprintf($sprintf, $total) %><% $opt{'bottom_link'} ? '</A>' : '' %>
-
-      </TD>
-
-% } 
-
-  </TR>
-
-% } 
-
-</TABLE>
-
-<% include('/elements/footer.html') %>
-% } 
-<%once>
-
-</%once>
+<% include('report.html',
+            'items'         => $data->{'items'},
+            'data'          => $data->{'data'},
+            'row_labels'    => $data->{'item_labels'},
+            'graph_labels'  => $opt{'graph_labels'} || $data->{'item_labels'},
+            'col_labels'    => [ map { my $m = $_; $m =~ s/^(\d+)\//$mon[$1-1] / ; $m }
+                                 @{$data->{label}} ],
+            'axis_labels'   => $data->{label},
+            'colors'        => $data->{colors},
+            'links'         => \@links,
+            'bottom_link'   => \@bottom_link,
+            map { $_, $opt{$_} } (qw(title 
+                                    nototal 
+                                    graph_type 
+                                    bottom_total 
+                                    sprintf 
+                                    disable_money)),
+          ) %>
 <%init>
 
 my(%opt) = @_;
 
-my $sprintf = $opt{'sprintf'} || '%.2f';
-my $fromparam = $opt{'link_fromparam'} || 'begin';
-my $toparam =   $opt{'link_toparam'}   || 'end';
-
 my $conf = new FS::Conf;
 my $money_char = $opt{'disable_money'} ? '' : $conf->config('money_char');
+
+my $fromparam = $opt{'link_fromparam'} || 'begin';
+my $toparam   = $opt{'link_toparam'} || 'end';
 
 my @items = @{ $opt{'items'} };
 
 foreach my $other (qw( labels graph_labels colors links )) {
-#foreach my $other (qw( labels graph_labels colors )) {
   if ( ref($opt{$other}) eq 'HASH' ) {
     $opt{$other} = [ map $opt{$other}{$_}, @items ];
   }
@@ -328,7 +85,6 @@ $opt{'end_year'}  ||= $cgi->param('end_year'); # || 1900+$curyear;
 
 my $report = new FS::Report::Table::Monthly (
 
-  #'items'       => $opt{'items'},
   'items'        => \@items,
   'params'       => $opt{'params'},
   'item_labels'  => ( $cgi->param('_type') =~ /^(png)$/
@@ -347,5 +103,37 @@ my $report = new FS::Report::Table::Monthly (
   'remove_empty' => $opt{'remove_empty'},
 );
 my $data = $report->data;
+
+my @links;
+foreach my $link (@{ $data->{'links'} }) {
+  my @speriod = @{$data->{'speriod'}};
+  my @eperiod = @{$data->{'eperiod'}};
+  my ($begin, $end) = ($fromparam, $toparam);
+
+  my @new = ( $link );
+  if(ref($link)) {
+    $begin = $link->{'fromparam'};
+    $end   = $link->{'toparam'};
+    @new = ( $link->{'link'} );
+  }
+  while(@speriod) {
+    push @new, "$begin=". shift(@speriod).";$end=".shift(@eperiod);
+  }
+  if(! $opt{'nototal'}) {
+    push @new, "$begin=". $data->{'speriod'}[0] . ";$end=". $data->{'eperiod'}[-1];
+  }
+  push @links, \@new;
+}
+
+my @bottom_link;
+if($opt{'bottom_link'}) {
+  my @speriod = (@{$data->{'speriod'}}, $data->{'speriod'}[0]);
+  my @eperiod = (@{$data->{'eperiod'}}, $data->{'eperiod'}[-1]);
+  
+  push @bottom_link, $opt{'bottom_link'};
+  while(@speriod) {
+    push @bottom_link, "$fromparam=". shift(@speriod). ";$toparam=". shift(@eperiod);
+  }
+}
 
 </%init>
