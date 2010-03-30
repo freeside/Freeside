@@ -31,7 +31,7 @@ use Tie::IxHash;
 
 #export dbdef for now... everything else expects to find it here
 @EXPORT_OK = qw(dbh fields hfields qsearch qsearchs dbdef jsearch
-                str2time_sql str2time_sql_closing );
+                str2time_sql str2time_sql_closing regexp_sql not_regexp_sql );
 
 $DEBUG = 0;
 $me = '[FS::Record]';
@@ -2940,6 +2940,48 @@ sub str2time_sql_closing {
 
   return ' )::INTEGER ' if $driver =~ /^Pg/i;
   return ' ) ';
+}
+
+=item regexp_sql [ DRIVER_NAME ]
+
+Returns the operator to do a regular expression comparison based on database
+type, such as '~' for Pg or 'REGEXP' for mysql.
+
+You can pass an optional driver name such as "Pg", "mysql" or
+$dbh->{Driver}->{Name} to return a function for that database instead of
+the current database.
+
+=cut
+
+sub regexp_sql {
+  my $driver = shift || driver_name;
+
+  return '~'      if $driver =~ /^Pg/i;
+  return 'REGEXP' if $driver =~ /^mysql/i;
+
+  die "don't know how to use regular expressions in ". driver_name." databases";
+
+}
+
+=item not_regexp_sql [ DRIVER_NAME ]
+
+Returns the operator to do a regular expression negation based on database
+type, such as '!~' for Pg or 'NOT REGEXP' for mysql.
+
+You can pass an optional driver name such as "Pg", "mysql" or
+$dbh->{Driver}->{Name} to return a function for that database instead of
+the current database.
+
+=cut
+
+sub not_regexp_sql {
+  my $driver = shift || driver_name;
+
+  return '!~'         if $driver =~ /^Pg/i;
+  return 'NOT REGEXP' if $driver =~ /^mysql/i;
+
+  die "don't know how to use regular expressions in ". driver_name." databases";
+
 }
 
 =back
