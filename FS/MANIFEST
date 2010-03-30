@@ -496,3 +496,9 @@ FS/mailinglist.pm
 t/mailinglist.t
 FS/mailinglistmember.pm
 t/mailinglistmember.t
+FS/otaker_Mixin.pm
+FS/part_event/Action/Mixin/credit_pkg.pm
+FS/part_event/Action/pkg_agent_credit.pm
+FS/part_event/Action/pkg_agent_credit_pkg.pm
+FS/part_event/Action/pkg_employee_credit.pm
+FS/part_event/Action/pkg_employee_credit_pkg.pm
