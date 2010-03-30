@@ -1,0 +1,211 @@
+<% include( 'elements/search.html',
+              'title'       => $title,
+              'name'        => $name,
+              'header'      => \@header,
+              'query'       => { 'select'    => $select,
+                                 'table'     => 'part_pkg',
+                                 'addl_from' => $addl_from,
+                                 'hashref'   => {},
+                                 'extra_sql' => $extra_sql,
+                                 'order_by'  => "ORDER BY $order_by",
+                               },
+              'count_query' => $count_query,
+              'fields'      => \@fields,
+              'links'       => \@links,
+              'align'       => $align,
+          )
+%>
+<%init>
+
+#this is about reports about packages definitions (starting w/commission ones)
+# while browse/part_pkg.cgi is config->package definitions
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+die "access denied"
+  unless $curuser->access_right('Financial reports');
+
+my $conf = new FS::Conf;
+my $money_char = $conf->config('money_char') || '$';
+
+my $title = 'Package definition report';
+my $name = 'package definition';
+
+my $select = '';
+my $addl_from = '';
+my @where = ();
+my @order_by = ();
+my @header = ();
+my @fields = ();
+my @links  = ();
+my $align  = '';
+
+if (1) { #commission reports
+
+  if (1) { #employee commission reports 
+
+    $select = 'DISTINCT usernum, username, part_pkg.*';
+
+    $addl_from .= ' CROSS JOIN access_user ';
+
+    if ( $cgi->param('usernum') =~ /^(\d+)$/ ) {
+
+      #XXX in this context, agent virt for employees, not package defs
+      my $access_user = qsearchs('access_user', { 'usernum' => $1, })
+        or die "unknown usernum";
+
+      $title = $access_user->name;
+
+    } else {
+
+      push @header, 'Employee';
+      push @fields, sub { shift->get('username'); }; #access_user->name
+      push @links, ''; #link to employee edit w/ACL?
+      $align .= 'c';
+
+      push @order_by, 'usernum'; #join to username?  we're mostly interested in grouping rather than order
+
+      $title = 'Employee';
+
+    }
+
+  } elsif (0) { #agent commission reports
+
+    if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
+
+      #agent virt
+      my $agent = qsearchs('agent', { 'agentnum' => $1 })
+        or die "unknown agentnum";
+
+      $title = $agent->agent;
+
+      push @header, 'Agent';
+      push @fields, sub { 'XXXagent' };
+      push @links, ''; #link to agent edit w/ACL?
+      $align .= 'c';
+
+      push @order_by, 'agentnum'; #join to agent?  we're mostly interested in grouping rather than order
+
+    } else {
+      $title = 'Agent';
+    }
+
+  }
+
+  $title .= ' commission report';
+  $name = "commissionable $name";
+
+
+}
+
+push @header, 'Package definition';
+push @fields, 'pkg_comment';
+push @links, ''; #link to pkg definition edit w/ACL?
+$align .= 'l';
+
+if (1) { #commission reports
+
+  my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
+
+  my $match = '';
+  if (1) { #employee commission reports 
+    $match = 'cust_pkg.usernum = access_user.usernum';
+  } elsif (0) { #agent commission reports
+    $match = 'cust_main.agentnum = agent.agentnum';
+  }
+
+  my $from_cust_bill_pkg_where = "FROM cust_bill_pkg
+                                      LEFT JOIN ( cust_bill ) USING ( invnum )
+                                      LEFT JOIN ( cust_pkg  ) USING ( pkgnum )
+                                    WHERE cust_bill_pkg.pkgnum > 0
+                                      AND cust_bill._date >= $beginning
+                                      AND cust_bill._date <= $ending         ";
+  my $and = "                         AND $match
+                                      AND cust_pkg.pkgpart = part_pkg.pkgpart";
+
+  push @where, "EXISTS( SELECT 1 $from_cust_bill_pkg_where $and )";
+
+  push @header, '#'; # of sales';
+  push @links, ''; #link to detail report
+  $align .= 'r';
+  push @fields, 'num_cust_pkg';
+  $select .= ", ( SELECT COUNT(DISTINCT pkgnum)
+                    $from_cust_bill_pkg_where $and )
+                AS num_cust_pkg";
+#  push @fields, sub {
+#    my $part_pkg = shift;
+#    my $sql =
+#      #"SELECT COUNT( SELECT DISTINCT pkgnum $from_cust_bill_pkg_where )";
+#      "SELECT COUNT(DISTINCT pkgnum) $from_cust_bill_pkg_where";
+#    my $sth = dbh->prepare($sql) or die dbh->errstr;
+#    $sth->execute or die $sth->errstr;
+#    $sth->fetchrow_arrayref->[0];
+#  };
+
+  push @header, 'Sales';
+  push @links, ''; #link to detail report
+  $align .= 'r';
+#  push @fields, sub { $money_char. sprintf('%.2f', shift->get('pkg_sales')); };
+#  $select .=
+#    ", SUM( SELECT setup+recur $from_cust_bill_pkg_where ) AS pkg_sales";
+  push @fields, sub {
+    my $part_pkg = shift;
+    my $sql = "SELECT SUM(cust_bill_pkg.setup+cust_bill_pkg.recur) $from_cust_bill_pkg_where AND pkgpart = ? AND ";
+    my @arg = ($part_pkg->pkgpart);
+    if (1) { #employee commission reports 
+      $sql .= 'usernum = ?';
+      push @arg, $part_pkg->get('usernum');
+    } elsif (0) { #agent commission reports
+      $match = 'cust_main.agentnum = agent.agentnum';
+    }
+    my $sth = dbh->prepare($sql) or die dbh->errstr;
+    $sth->execute(@arg) or die $sth->errstr;
+    $money_char. sprintf('%.2f', $sth->fetchrow_arrayref->[0] );
+  };
+
+  push @header, 'Commission';
+  push @links, ''; #link to detail report
+  $align .= 'r';
+  #push @fields, sub { $money_char. sprintf('%.2f', shift->get('pkg_commission')); };
+  push @fields, sub {
+    my $part_pkg = shift;
+    my $sql = "SELECT SUM(amount) FROM cust_credit
+                   INNER JOIN cust_event USING ( eventnum )
+                   LEFT  JOIN part_event USING ( eventpart )
+                   LEFT  JOIN cust_pkg ON ( cust_event.tablenum = cust_pkg.pkgnum )
+                 WHERE action IN ( 'pkg_employee_credit',
+                                   'pkg_employee_credit_pkg'
+                                 )
+                   AND cust_credit._date >= $beginning
+                   AND cust_credit._date <= $ending         
+                   AND pkgpart = ?
+                   AND cust_credit.custnum = ?
+              ";
+    my @arg = ($part_pkg->pkgpart);
+    if (1) { #employee commission reports 
+
+      #XXX in this context, agent virt for employees, not package defs
+      my $access_user = qsearchs('access_user', { 'usernum' => $part_pkg->get('usernum'), })
+        or die "unknown usernum";
+
+      push @arg, $access_user->user_custnum or return 0;
+
+    } elsif (0) { #agent commission reports
+      push @arg, 'XXXagent_custnum'; #$agent->agent_custnum
+    }
+    my $sth = dbh->prepare($sql) or die dbh->errstr;
+    $sth->execute(@arg) or die $sth->errstr;
+    $money_char. sprintf('%.2f', $sth->fetchrow_arrayref->[0] );
+     
+  };
+
+}
+
+push @order_by, 'pkgpart'; #pkg?
+
+$select ||= 'part_pkg.*';
+my $extra_sql = scalar(@where) ? 'WHERE ' . join(' AND ', @where) : ''; 
+my $order_by = join(', ', @order_by);
+
+my $count_query = "SELECT COUNT(*) FROM part_pkg $addl_from $extra_sql";
+
+</%init>

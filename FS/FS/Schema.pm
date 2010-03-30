@@ -658,10 +658,11 @@ sub tables_hashref {
         'addlinfo', 'text', 'NULL', '', '', '',
         'closed',    'char', 'NULL', 1, '', '', 
         'pkgnum', 'int', 'NULL', '', '', '', #desired pkgnum for pkg-balances
+        'eventnum', 'int', 'NULL', '', '', '', #triggering event for commission
       ],
       'primary_key' => 'crednum',
       'unique' => [],
-      'index' => [ ['custnum'], ['_date'], ['usernum'] ],
+      'index' => [ ['custnum'], ['_date'], ['usernum'], ['eventnum'] ],
     },
 
     'cust_credit_bill' => {
