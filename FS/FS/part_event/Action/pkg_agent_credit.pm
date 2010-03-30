@@ -7,7 +7,7 @@ sub description { 'Credit the agent a specific amount'; }
 
 #a little false laziness w/pkg_referral_credit
 sub do_action {
-  my( $self, $cust_pkg ) = @_;
+  my( $self, $cust_pkg, $cust_event ) = @_;
 
   my $cust_main = $self->cust_main($cust_pkg);
 
@@ -26,8 +26,9 @@ sub do_action {
   my $error = $agent_cust_main->credit(
     $amount, 
     \$reasonnum,
-    'addlinfo' =>
-      'for customer #'. $cust_main->display_custnum. ': '.$cust_main->name,
+    'eventnum' => $cust_event->eventnum,
+    'addlinfo' => 'for customer #'. $cust_main->display_custnum.
+                               ': '.$cust_main->name,
   );
   die "Error crediting customer ". $agent_cust_main->custnum.
       " for agent commission: $error"

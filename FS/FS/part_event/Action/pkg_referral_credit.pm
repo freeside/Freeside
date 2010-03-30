@@ -23,7 +23,7 @@ sub option_fields {
 }
 
 sub do_action {
-  my( $self, $cust_pkg ) = @_;
+  my( $self, $cust_pkg, $cust_event ) = @_;
 
   my $cust_main = $self->cust_main($cust_pkg);
 
@@ -43,8 +43,9 @@ sub do_action {
   my $error = $referring_cust_main->credit(
     $amount, 
     \$reasonnum,
-    'addlinfo' =>
-      'for customer #'. $cust_main->display_custnum. ': '.$cust_main->name,
+    'eventnum' => $cust_event->eventnum,
+    'addlinfo' => 'for customer #'. $cust_main->display_custnum.
+                               ': '.$cust_main->name,
   );
   die "Error crediting customer ". $cust_main->referral_custnum.
       " for referral: $error"

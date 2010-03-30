@@ -7447,7 +7447,7 @@ sub referral_cust_main_ncancelled {
 
 Like referral_cust_main, except returns a flat list of all unsuspended (and
 uncancelled) packages for each customer.  The number of items in this list may
-be useful for comission calculations (perhaps after a C<grep { my $pkgpart = $_->pkgpart; grep { $_ == $pkgpart } @commission_worthy_pkgparts> } $cust_main-> ).
+be useful for commission calculations (perhaps after a C<grep { my $pkgpart = $_->pkgpart; grep { $_ == $pkgpart } @commission_worthy_pkgparts> } $cust_main-> ).
 
 =cut
 
@@ -7509,8 +7509,10 @@ sub credit {
     $cust_credit->set('reason', $reason)
   }
 
-  $cust_credit->addlinfo( delete $options{'addlinfo'} )
-    if exists($options{'addlinfo'});
+  for (qw( addlinfo eventnum )) {
+    $cust_credit->$_( delete $options{$_} )
+      if exists($options{$_});
+  }
 
   $cust_credit->insert(%options);
 

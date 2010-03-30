@@ -1,0 +1,34 @@
+<% include('/elements/header.html', 'Employee commission report' ) %>
+
+<FORM ACTION="part_pkg.html">
+
+<TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+%# 
+%# <% include( '/elements/tr-select-agent.html',
+%#                'curr_value'    => scalar( $cgi->param('agentnum') ),
+%#                'disable_empty' => 0,
+%#            )
+%# %>
+%# 
+
+%#2.1
+<% include( '/elements/tr-select-user.html' ) %>
+
+%#1.9
+%# <%include( '/elements/tr-select-otaker.html' ) %>
+
+<% include( '/elements/tr-input-beginning_ending.html', ) %>
+
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="Get Report">
+
+<% include('/elements/footer.html') %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+</%init>

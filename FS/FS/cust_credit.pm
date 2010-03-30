@@ -14,6 +14,7 @@ use FS::cust_credit_bill;
 use FS::part_pkg;
 use FS::reason_type;
 use FS::reason;
+use FS::cust_event;
 
 $me = '[ FS::cust_credit ]';
 $DEBUG = 0;
@@ -300,6 +301,7 @@ sub check {
     || $self->ut_textn('addlinfo')
     || $self->ut_enum('closed', [ '', 'Y' ])
     || $self->ut_foreign_keyn('pkgnum', 'cust_pkg', 'pkgnum')
+    || $self->ut_foreign_keyn('eventnum', 'cust_event', 'eventnum')
   ;
   return $error if $error;
 

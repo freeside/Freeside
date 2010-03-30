@@ -1,17 +1,15 @@
 package FS::cust_event;
 
 use strict;
+use base qw( FS::cust_main_Mixin FS::Record );
 use vars qw( @ISA $DEBUG $me );
 use Carp qw( croak confess );
 use FS::Record qw( qsearch qsearchs dbdef );
-use FS::cust_main_Mixin;
 use FS::part_event;
 #for cust_X
 use FS::cust_main;
 use FS::cust_pkg;
 use FS::cust_bill;
-
-@ISA = qw(FS::cust_main_Mixin FS::Record);
 
 $DEBUG = 0;
 $me = '[FS::cust_event]';
@@ -230,7 +228,7 @@ sub do_event {
   my $error;
   {
     local $SIG{__DIE__}; # don't want Mason __DIE__ handler active
-    $error = eval { $part_event->do_action($object); };
+    $error = eval { $part_event->do_action($object, $self); };
   }
 
   my $status = '';
