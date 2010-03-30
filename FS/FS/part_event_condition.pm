@@ -2,7 +2,7 @@ package FS::part_event_condition;
 
 use strict;
 use vars qw( @ISA $DEBUG @SKIP_CONDITION_SQL );
-use FS::UID qw(dbh);
+use FS::UID qw( dbh driver_name );
 use FS::Record qw( qsearch qsearchs );
 use FS::option_Common;
 use FS::part_event; #for order_conditions_sql...
@@ -285,7 +285,9 @@ sub where_conditions_sql {
     map {
           my $conditionname = $_;
           my $coderef = $conditions{$conditionname}->{condition_sql};
-          my $sql = &$coderef( $eventtable, 'time'=>$time );
+          my $sql = &$coderef( $eventtable, 'time'        => $time,
+                                            'driver_name' => driver_name(),
+                             );
           die "$coderef is not a CODEREF" unless ref($coderef) eq 'CODE';
           "( cond_$conditionname.conditionname IS NULL OR $sql )";
         }

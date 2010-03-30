@@ -38,7 +38,7 @@ sub condition_sql {
 
   my $balance_sql = FS::cust_main->balance_date_sql( $age );
 
-  "$balance_sql > CAST( $over AS numeric )";
+  "$balance_sql > CAST( $over AS DECIMAL(10,2) )";
 }
 
 sub order_sql {

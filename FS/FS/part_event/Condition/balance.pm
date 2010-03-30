@@ -40,7 +40,7 @@ sub condition_sql {
 
   my $balance_sql = FS::cust_main->balance_sql;
 
-  "$balance_sql > CAST( $over AS numeric )";
+  "$balance_sql > CAST( $over AS DECIMAL(10,2) )";
 
 }
 
