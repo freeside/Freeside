@@ -49,13 +49,29 @@ my $groups_sub = sub {
 
 };
 
+my $cust_sub = sub {
+  my $access_user = shift;
+  $access_user->user_custnum ? $access_user->user_cust_main->name : '';
+};
+my $cust_link = [ $p.'view/cust_main.cgi?custnum=', 'user_custnum' ];
+
 my $count_query = 'SELECT COUNT(*) FROM access_user';
 
 my $link = [ $p.'edit/access_user.html?', 'usernum' ];
 
-my @header = ( '#',       'Username', 'Full name', 'Groups'    );
-my @fields = ( 'usernum', 'username', 'name',      $groups_sub );
-my $align = 'rlll';
-my @links = ( $link, $link, $link, '' );
+my @header = ( '#',       'Username', 'Full name', 'Groups',    'Customer' );
+my @fields = ( 'usernum', 'username', 'name',      $groups_sub, $cust_sub, );
+my $align = 'rllll';
+my @links = ( $link, $link, $link, '', $cust_link );
+
+#if ( FS::Conf->new->config('ticket_system') ) {
+#  push @header, 'Ticketing';
+#  push @fields, sub {
+#    my $access_user = shift;
+#
+#  };
+#  $align .= 'l';
+#  push @links, '';
+#}
 
 </%init>

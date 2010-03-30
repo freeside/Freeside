@@ -3,36 +3,37 @@
 Example:
 
   include( '/elements/search-cust_main.html,
-             'field_name'  => 'custnum',
+             'field'       => 'custnum',
+             #slightly deprecated old synonym for field#'field_name'=>'custnum',
              'find_button' => 1, #add a "find" button to the field
              'curr_value'  => 54, #current value
              'value        => 32, #deprecated synonym for curr_value
   );
 
 </%doc>
-<INPUT TYPE="hidden" NAME="<% $opt{'field_name'} %>" VALUE="<% $value %>">
+<INPUT TYPE="hidden" NAME="<% $field %>" VALUE="<% $value %>">
 
 <!-- some false laziness w/ misc/batch-cust_pay.html, though not as bad as i'd thought at first... -->
 
 <INPUT TYPE = "text"
-       NAME = "<% $opt{'field_name'} %>_search"
-       ID   = "<% $opt{'field_name'} %>_search"
+       NAME = "<% $field %>_search"
+       ID   = "<% $field %>_search"
        SIZE = "32"
        VALUE="<% $cust_main ? $cust_main->name : '(cust #, name or company)' %>"
-       onFocus="clearhint_<% $opt{'field_name'} %>_search(this);"
-       onClick="clearhint_<% $opt{'field_name'} %>_search(this);"
-       onChange="smart_<% $opt{'field_name'} %>_search(this);"
+       onFocus="clearhint_<% $field %>_search(this);"
+       onClick="clearhint_<% $field %>_search(this);"
+       onChange="smart_<% $field %>_search(this);"
 >
 
 % if ( $opt{'find_button'} ) {
     <INPUT TYPE    = "button"
            VALUE   = 'Find',
-           NAME    = "<% $opt{'field_name'} %>_findbutton"
-           onClick = "smart_<% $opt{'field_name'} %>_search(this.form.<% $opt{'field_name'} %>_search);"
+           NAME    = "<% $field %>_findbutton"
+           onClick = "smart_<% $field %>_search(this.form.<% $field %>_search);"
     >
 % }
 
-<SELECT NAME="<% $opt{'field_name'} %>_select" ID="<% $opt{'field_name'} %>_select" STYLE="color:#ff0000; display:none" onChange="select_<% $opt{'field_name'} %>(this);">
+<SELECT NAME="<% $field %>_select" ID="<% $field %>_select" STYLE="color:#ff0000; display:none" onChange="select_<% $field %>(this);">
 </SELECT>
 
 <% include('/elements/xmlhttp.html',
@@ -43,7 +44,7 @@ Example:
 
 <SCRIPT TYPE="text/javascript">
 
-  function clearhint_<% $opt{'field_name'} %>_search (what) {
+  function clearhint_<% $field %>_search (what) {
 
     what.style.color = '#000000';
 
@@ -55,7 +56,7 @@ Example:
 
   }
 
-  function smart_<% $opt{'field_name'} %>_search(what) {
+  function smart_<% $field %>_search(what) {
 
     var customer = what.value;
 
@@ -73,11 +74,11 @@ Example:
     what.style.color= '#000000';
     what.style.backgroundColor = '#dddddd';
 
-    var customer_select = document.getElementById('<% $opt{'field_name'} %>_select');
+    var customer_select = document.getElementById('<% $field %>_select');
 
     //alert("search for customer " + customer);
 
-    function <% $opt{'field_name'} %>_search_update(customers) {
+    function <% $field %>_search_update(customers) {
 
       //alert('customers returned: ' + customers);
 
@@ -88,7 +89,7 @@ Example:
 
       if ( customerArray.length == 0 ) {
 
-        what.form.<% $opt{'field_name'} %>.value = '';
+        what.form.<% $field %>.value = '';
 
         what.value = 'Customer not found: ' + what.value;
         what.style.color = '#ff0000';
@@ -100,7 +101,7 @@ Example:
 
         //alert('one customer found: ' + customerArray[0]);
 
-        what.form.<% $opt{'field_name'} %>.value = customerArray[0][0];
+        what.form.<% $field %>.value = customerArray[0][0];
         what.value = customerArray[0][1];
 
         what.style.display = '';
@@ -129,17 +130,17 @@ Example:
 
     }
 
-    smart_search( customer, <% $opt{'field_name'} %>_search_update );
+    smart_search( customer, <% $field %>_search_update );
 
 
   }
 
-  function select_<% $opt{'field_name'} %> (what) {
+  function select_<% $field %> (what) {
 
     var custnum = what.options[what.selectedIndex].value;
     var customer = what.options[what.selectedIndex].text;
 
-    var customer_obj = document.getElementById('<% $opt{'field_name'} %>_search');
+    var customer_obj = document.getElementById('<% $field %>_search');
 
     if ( custnum == '' ) {
       //what.style.color = '#ff0000';
@@ -154,7 +155,7 @@ Example:
 
     } else {
     
-      what.form.<% $opt{'field_name'} %>.value = custnum;
+      what.form.<% $field %>.value = custnum;
 
       customer_obj.value = customer;
       customer_obj.style.color = '#000000';
@@ -177,7 +178,8 @@ Example:
 <%init>
 
 my( %opt ) = @_;
-$opt{'field_name'} ||= 'custnum';
+
+my $field = $opt{'field'} || $opt{'field_name'} || 'custnum';
 
 my $value = $opt{'curr_value'} || $opt{'value'};
 

@@ -1,0 +1,15 @@
+<% include('tr-td-label.html', @_ ) %>
+
+  <TD <% $colspan %> <% $cell_style %> ID="<% $opt{input_id} || $opt{id}.'_input0' %>"><% include('search-cust_main.html', @_ ) %></TD>
+
+</TR>
+
+<%init>
+
+my %opt = @_;
+
+my $cell_style = $opt{'cell_style'} ? 'STYLE="'. $opt{'cell_style'}. '"' : '';
+
+my $colspan = $opt{'colspan'} ? 'COLSPAN="'.$opt{'colspan'}.'"' : '';
+
+</%init>

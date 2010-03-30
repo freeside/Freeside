@@ -22,7 +22,6 @@ sub option_fields {
 
 }
 
-#a little false laziness w/pkg_referral_credit_pkg
 sub do_action {
   my( $self, $cust_pkg ) = @_;
 
@@ -36,7 +35,9 @@ sub do_action {
   return 'Referring customer is cancelled'
     if $referring_cust_main->status eq 'cancelled';
 
-  my $amount    = $self->_calc_referral_credit($cust_pkg);
+  my $amount    = $self->_calc_credit($cust_pkg);
+  return '' unless $amount > 0;
+
   my $reasonnum = $self->option('reasonnum');
 
   my $error = $referring_cust_main->credit(
@@ -51,7 +52,7 @@ sub do_action {
 
 }
 
-sub _calc_referral_credit {
+sub _calc_credit {
   my( $self, $cust_pkg ) = @_;
 
   $self->option('amount');

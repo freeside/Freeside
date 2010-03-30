@@ -1209,6 +1209,18 @@ sub calc_units  { 0; }
 #fallback for everything except bulk.pm
 sub hide_svc_detail { 0; }
 
+=item recur_cost_permonth CUST_PKG
+
+recur_cost divided by freq (only supported for monthly and longer frequencies)
+
+=cut
+
+sub recur_cost_permonth {
+  my($self, $cust_pkg) = @_;
+  return 0 unless $self->freq =~ /^\d+$/ && $self->freq > 0;
+  sprintf('%.2f', $self->recur_cost / $self->freq );
+}
+
 =item format OPTION DATA
 
 Returns data formatted according to the function 'format' described
