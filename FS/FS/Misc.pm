@@ -343,14 +343,14 @@ sub send_email {
   $smtp_opt{'port'} = $port;
 
   my $transport;
-  if ( $enc eq 'starttls' ) {
+  if ( defined($enc) && $enc eq 'starttls' ) {
     $smtp_opt{$_} = $conf->config("smtp-$_") for qw(username password);
     $transport = Email::Sender::Transport::SMTP::TLS->new( %smtp_opt );
   } else {
     if ( $conf->exists('smtp-username') && $conf->exists('smtp-password') ) {
       $smtp_opt{"sasl_$_"} = $conf->config("smtp-$_") for qw(username password);
     }
-    $smtp_opt{'ssl'} = 1 if $enc eq 'tls';
+    $smtp_opt{'ssl'} = 1 if defined($enc) && $enc eq 'tls';
     $transport = Email::Sender::Transport::SMTP->new( %smtp_opt );
   }
 
