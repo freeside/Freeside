@@ -98,8 +98,14 @@ my $ranges = $opt{'ranges'} ? delete($opt{'ranges'}) : [
 
 my $range_sub = delete($opt{'range_sub'}); #or die
 
+my $offset = 0;
+if($cgi->param('as_of')) {
+  $offset = int((time - str2time($cgi->param('as_of'))) / 86400);
+  $opt{'title'} .= ' ('.$cgi->param('as_of').')' if $offset > 0;
+}
+
 #my $range_cols = join(',', map &{$range_sub}( @$_ ), @ranges );
-my $range_cols = join(',', map call_range_sub($range_sub, @$_ ), @$ranges );
+my $range_cols = join(',', map call_range_sub($range_sub, @$_, 'offset' => $offset ), @$ranges );
 
 my $select_count_pkgs = FS::cust_main->select_count_pkgs_sql;
 
@@ -119,14 +125,14 @@ END
 my @where = ();
 
 unless ( $cgi->param('all_customers') ) {
-
+# Exclude entire cust_main records where the balance is >0
   my $days = 0;
   if ( $cgi->param('days') =~ /^\s*(\d+)\s*$/ ) {
     $days = $1;
   }
 
   push @where,
-    call_range_sub($range_sub, $days, 0, 'no_as'=>1). ' > 0'; # != 0';
+    call_range_sub($range_sub, $days + $offset, 0, 'no_as'=>1). ' > 0'; # != 0';
 }
 
 if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
@@ -167,7 +173,7 @@ my $sql_query = {
 
 my $total_sql =
   "SELECT ".
-      join(',', map call_range_sub( $range_sub, @$_, 'sum'=>1 ), @$ranges).
+      join(',', map call_range_sub( $range_sub, @$_, 'offset' => $offset, 'sum'=>1 ), @$ranges).
     " FROM cust_main $where";
 
 my $total_sth = dbh->prepare($total_sql) or die dbh->errstr;
@@ -203,7 +209,7 @@ sub call_range_sub {
 
   my $as = $opt{'no_as'} ? '' : " AS rangecol_${start}_$end";
 
-  my $sql = &{$range_sub}( $start, $end ); #%opt?
+  my $sql = &{$range_sub}( $start, $end, $opt{'offset'} ); #%opt?
 
   $sql = "SUM($sql)" if $opt{'sum'};
 

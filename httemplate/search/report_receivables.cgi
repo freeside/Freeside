@@ -28,13 +28,18 @@ die "access denied"
 # )
 
 sub balance {
-  my($start, $end) = @_; #, %opt ?
-
+  my($start, $end, $offset) = @_; #, %opt ?
   #handle start and end ranges (86400 = 24h * 60m * 60s)
   my $str2time = str2time_sql;
   my $closing = str2time_sql_closing;
-  $start = $start ? "( $str2time now() $closing - ".($start * 86400). ' )' : '';
-  $end   = $end   ? "( $str2time now() $closing - ".($end   * 86400). ' )' : '';
+
+  # $end == 0 means "+infinity", while $start == 0 really means 0
+  # so we should always include a start condition
+  $start = "( $str2time now() $closing - ". ($start + $offset) * 86400 . ' )';
+  # but only include an end condition if $end != 0
+  $end = $end ? 
+           "( $str2time now() $closing - ". ($end + $offset) * 86400 . ' )' 
+           : '';
 
   #$opt{'unapplied_date'} = 1;
 

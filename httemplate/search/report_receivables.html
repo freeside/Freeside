@@ -24,6 +24,12 @@
       <INPUT TYPE="radio" NAME="all_customers" VALUE="0" CHECKED onClick="if ( ! this.checked ) { document.OneTrueForm.days.disabled=true; document.OneTrueForm.days.style.backgroundColor = '#dddddd'; } else { document.OneTrueForm.days.disabled=false; document.OneTrueForm.days.style.backgroundColor = '#ffffff'; }">Customers with a balance over <INPUT NAME="days" TYPE="text" SIZE=4 MAXLENGTH=3 VALUE="0"> days old
     </TD>
   </TR>
+  <% include( '/elements/tr-input-date-field.html', {
+                'name'      => 'as_of',
+                'value'     => time,
+                'label'     => 'As of date ',
+                'format'    => FS::Conf->new->config('date_format') || '%m/%d/%Y',
+  } ) %>
 
 </TABLE>
 
