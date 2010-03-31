@@ -82,7 +82,7 @@
     <TR>
       <% note_datestr($attach,$conf,$bgcolor) %>
       <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
-        &nbsp;<% $attach->otaker%>
+        &nbsp;<% $attach->usernum ? $attach->access_user->name : $attach->otaker %>
       </TD>
       <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
        &nbsp;<% $attach->filename %>

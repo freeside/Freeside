@@ -25,8 +25,6 @@ $cgi->param('attachnum') =~ /^(\d*)$/
 my $attachnum = $1;
 
 my $curuser = $FS::CurrentUser::CurrentUser;
-my $otaker = $curuser->name;
-$otaker = $curuser->username if ($otaker eq "User, Legacy");
 
 my $delete = $cgi->param('delete');
 my $undelete = $cgi->param('undelete');
@@ -36,7 +34,7 @@ my $new = new FS::cust_attachment ( {
   attachnum => $attachnum,
   custnum   => $custnum,
   _date     => time,
-  otaker    => $otaker,
+  usernum   => $curuser->usernum,
   disabled  => '',
 });
 my $old;

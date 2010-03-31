@@ -18,16 +18,12 @@ $cgi->param('notenum') =~ /^(\d*)$/
   or die "Illegal notenum: ". $cgi->param('notenum');
 my $notenum = $1;
 
-my $otaker = $FS::CurrentUser::CurrentUser->name;
-$otaker = $FS::CurrentUser::CurrentUser->username
-  if ($otaker eq "User, Legacy");
-
 my $new = new FS::cust_main_note ( {
   notenum  => $notenum,
   custnum  => $custnum,
   _date    => time,
-  otaker   => $otaker,
-  comments =>  $cgi->param('comment'),
+  usernum  => $FS::CurrentUser::CurrentUser->usernum,
+  comments => scalar($cgi->param('comment')),
 } );
 
 my $error;

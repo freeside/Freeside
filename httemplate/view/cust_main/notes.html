@@ -50,7 +50,7 @@
     <TR>
       <% note_datestr($note,$conf,$bgcolor) %>
       <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
-        &nbsp;<% $note->otaker%>
+        &nbsp;<% $note->usernum ? $note->access_user->name : $note->otaker %>
       </TD>
       <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
         &nbsp;<% $note->comments | defang %>
