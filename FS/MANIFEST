@@ -99,6 +99,7 @@ FS/part_export/communigate_pro.pm
 FS/part_export/communigate_pro_singledomain.pm
 FS/part_export/cp.pm
 FS/part_export/cyrus.pm
+FS/part_export/dashcs_e911.pm
 FS/part_export/domain_shellcommands.pm
 FS/part_export/forward_shellcommands.pm
 FS/part_export/http.pm
