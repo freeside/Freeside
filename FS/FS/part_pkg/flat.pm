@@ -182,7 +182,8 @@ sub calc_discount {
 
   my $tot_discount = 0;
   #UI enforces just 1 for now, will need ordering when they can be stacked
-  foreach my $cust_pkg_discount ( $cust_pkg->cust_pkg_discount_active ) {
+  my @cust_pkg_discount = $cust_pkg->cust_pkg_discount_active;
+  foreach my $cust_pkg_discount ( @cust_pkg_discount ) {
      my $discount = $cust_pkg_discount->discount;
      #UI enforces one or the other (for now?  probably for good)
      my $amount = 0;
