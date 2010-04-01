@@ -158,8 +158,7 @@ sub unit_setup {
 }
 
 sub calc_recur {
-  my $self = shift;
-  my($cust_pkg) = @_;
+  my($self, $cust_pkg, $sdate, $details, $param ) = @_;
 
   #my $last_bill = $cust_pkg->last_bill;
   my $last_bill = $cust_pkg->get('last_bill'); #->last_bill falls back to setup
@@ -167,18 +166,17 @@ sub calc_recur {
   return 0
     if $self->option('recur_temporality', 1) eq 'preceding' && $last_bill == 0;
 
-  my $br = $self->base_recur(@_);
+  my $br = $self->base_recur($cust_pkg);
 
-  my $discount = $self->calc_discount(@_);
+  my $discount = $self->calc_discount($cust_pkg, $sdate, $details, $param);
 
   sprintf('%.2f', $br - $discount);
 }
 
 sub calc_discount {
-  my $self = shift;
-  my($cust_pkg, $sdate, $details, $param ) = @_;
+  my($self, $cust_pkg, $sdate, $details, $param ) = @_;
 
-  my $br = $self->base_recur(@_);
+  my $br = $self->base_recur($cust_pkg);
 
   my $tot_discount = 0;
   #UI enforces just 1 for now, will need ordering when they can be stacked
