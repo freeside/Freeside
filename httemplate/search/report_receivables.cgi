@@ -1,6 +1,7 @@
 <% include( 'elements/cust_main_dayranges.html',
                  'title'       => 'Accounts Receivable Aging Summary',
                  'range_sub'   => \&balance,
+                 'payment_links' => 1,
           )
 %>
 <%init>

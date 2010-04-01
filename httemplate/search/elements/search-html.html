@@ -177,8 +177,13 @@
 
                 <TR>
 %                 my $h2 = 0;
+%                 my $colspan = 0;
 %                 foreach my $header ( @{ $opt{header} } ) { 
+%                   $colspan-- if $colspan > 0;
+%                   next if $colspan;
+%
 %                   my $label = ref($header) ? $header->{label} : $header;
+%                   $colspan = ref($header) ? $header->{colspan} : 0;
 %                   my $rowspan = 1;
 %                   my $style = '';
 %                   if ( $opt{header2} ) {
@@ -193,6 +198,7 @@
                     <TH CLASS   = "grid"
                         BGCOLOR = "#cccccc"
                         ROWSPAN = "<% $rowspan %>"
+                        <% $colspan ? 'COLSPAN = "'.$colspan.'"' : '' %>
                         <% $style %>
 
                     >

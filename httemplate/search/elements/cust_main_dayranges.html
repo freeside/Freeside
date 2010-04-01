@@ -18,8 +18,9 @@ Example:
                  'name'        => 'customers',
                  'query'       => $sql_query,
                  'count_query' => $count_sql,
-                 'header'      => [
+                 'header'      => [ 
                                     FS::UI::Web::cust_header(),
+                                    @pay_head,
                                     '0-30',
                                     '30-60',
                                     '60-90',
@@ -31,8 +32,9 @@ Example:
                                     ( map '',
                                           ( 1 .. 
                                             scalar(FS::UI::Web::cust_header()-1)
-                                          )
+                                          ), @pay_labels
                                     ),
+                                    
                                     sprintf( $money_char.'%.2f',
                                              $row->{'rangecol_0_30'} ),
                                     sprintf( $money_char.'%.2f',
@@ -45,7 +47,8 @@ Example:
                                              $row->{'rangecol_0_0'} ),
                                   ],
                  'fields'      => [
-                                    \&FS::UI::Web::cust_fields,
+                                    FS::UI::Web::cust_fields_subs(),
+                                    @pay_labels,
                                     format_rangecol('0_30'),
                                     format_rangecol('30_60'),
                                     format_rangecol('60_90'),
@@ -56,6 +59,7 @@ Example:
                                     ( map { $_ ne 'Cust. Status' ? $clink : '' }
                                           FS::UI::Web::cust_header()
                                     ),
+                                    @pay_links,
                                     '',
                                     '',
                                     '',
@@ -67,13 +71,17 @@ Example:
                  #'size'        => [ '', '', '-1', '-1', '', '', '', '',  '', ],
                  #'style'       => [ '', '',  'b',  'b', '', '', '', '', 'b', ],
                  'size'        => [ ( map '', FS::UI::Web::cust_header() ),
+                                    ( map '', @pay_labels ),
                                     #'-1', '', '', '', '',  '', ],
-                                    '', '', '', '',  '', ],
+                                    '', '', '', '', '',  '', ],
                  'style'       => [ FS::UI::Web::cust_styles(),
+                                    ( map '', @pay_labels ),
                                     #'b', '', '', '', '', 'b', ],
                                     '', '', '', '', 'b', ],
                  'color'       => [
                                     FS::UI::Web::cust_colors(),
+                                    ( map '', @pay_labels ),
+                                    '',
                                     '',
                                     '',
                                     '',
@@ -166,6 +174,7 @@ my $sql_query = {
                    $range_cols,
                    $packages_cols,
                    FS::UI::Web::cust_sql_fields(),
+                   'payby',
                  ),
   'extra_sql' => $where,
   'order_by'  => "order by coalesce(lower(company), ''), lower(last)",
@@ -182,10 +191,25 @@ my $row = $total_sth->fetchrow_hashref();
 
 my $clink = [ "${p}view/cust_main.cgi?", 'custnum' ];
 
+my (@pay_head, @pay_labels, @pay_links);
+
+if($opt{'payment_links'} && $curuser->access_right('Process payment')) {
+  @pay_head = ({ label => 'Process', nodownload => 1, colspan => 2 },
+                { nodownload => 1 });
+
+  @pay_labels = (map { my ($payby,$label) = @$_; 
+                        sub {($payby eq $_[0]->payby) ? "<b>$label</b>" : $label}
+                     } ([CARD => 'Card'], [CHEK => 'ACH']) );
+
+  @pay_links = (map { [ "${p}misc/payment.cgi?payby=$_;custnum=", 'custnum' ] }
+                         'CARD', 'CHEK' );
+}
+
 </%init>
 <%once>
 
 my $conf = new FS::Conf;
+my $curuser = $FS::CurrentUser::CurrentUser;
 
 my $money_char = $conf->config('money_char') || '$';
 

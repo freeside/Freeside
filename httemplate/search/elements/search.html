@@ -194,6 +194,9 @@ my(%opt) = @_;
 
 my $curuser = $FS::CurrentUser::CurrentUser;
 
+my $type = $cgi->param('_type') =~ /^(csv|\w*\.xls|select|html(-print)?)$/
+           ? $1 : 'html' ;
+
 my %align = (
   'l' => 'left',
   'r' => 'right',
@@ -203,6 +206,22 @@ my %align = (
 );
 $opt{align} = [ map $align{$_}, split(//, $opt{align}) ],
   unless !$opt{align} || ref($opt{align});
+
+if($type =~ /csv|xls/) {
+  my $h = $opt{'header'};
+  my @del;
+  my $i = 0;
+  do {
+    if( ref($h->[$i]) and exists($h->[$i]->{'nodownload'}) ) {
+      splice(@{$opt{$_}}, $i, 1) foreach
+        qw(header footer fields links link_onclicks
+           align color size style cell_style xls_format);
+    }
+    else {
+      $i++;
+    }
+  } while ( exists($h->[$i]) );
+}
 
 $opt{disable_download} = 0
   if $opt{disable_download} && $curuser->access_right('Configuration download');
@@ -291,25 +310,22 @@ if ( $opt{'disableable'} ) {
   if ( $cgi->param('showdisabled') ) {
     $cgi->param('showdisabled', 0);
     $opt{'html_posttotal'} .=
-      '( <a href="'. $cgi->self_url. qq!">hide disabled $items</a> )!;
+      '( <a href="'. $cgi->self_url. qq!">hide disabled $items</a> )!; #"
     $cgi->param('showdisabled', 1);
   } else {
     $cgi->param('showdisabled', 1);
     $opt{'html_posttotal'} .=
-      '( <a href="'. $cgi->self_url. qq!">show disabled $items</a> )!;
+      '( <a href="'. $cgi->self_url. qq!">show disabled $items</a> )!; #"
     $cgi->param('showdisabled', 0);
   }
 
 }
 
-my $type = $cgi->param('_type') =~ /^(csv|\w*\.xls|select|html(-print)?)$/
-           ? $1 : 'html';
-
 my $limit = '';
 my($confmax, $maxrecords, $offset );
 
-unless ( $type =~ /^(csv|\w*\.xls)$/ ) {
-
+if ( !$type =~ /^(csv|\w*.xls)$/) {
+# html mode
   unless (exists($opt{count_query}) && length($opt{count_query})) {
     ( $opt{count_query} = $opt{query} ) =~
       s/^\s*SELECT\s*(.*?)\s+FROM\s/SELECT COUNT(*) FROM /i; #silly vim:/

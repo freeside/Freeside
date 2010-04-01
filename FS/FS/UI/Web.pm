@@ -362,6 +362,7 @@ setting is supplied, the <B>cust-fields</B> configuration value.
 
 =cut
 
+
 sub cust_fields {
   my $record = shift;
   warn "FS::UI::Web::cust_fields called for $record ".
@@ -370,8 +371,9 @@ sub cust_fields {
 
   #cust_header(@_) unless @cust_fields; #now need to cache to keep cust_fields
   #                                     #override incase we were passed as a sub
-
+  
   my $seen_unlinked = 0;
+
   map { 
     if ( $record->custnum ) {
       warn "  $record -> $_" if $DEBUG > 1;
@@ -379,6 +381,38 @@ sub cust_fields {
     } else {
       warn "  ($record unlinked)" if $DEBUG > 1;
       $seen_unlinked++ ? '' : '(unlinked)';
+    }
+  } @cust_fields;
+}
+
+=item cust_fields_subs
+
+Returns an array of subroutine references for returning customer field values.
+This is similar to cust_fields, but returns each field's sub as a distinct 
+element.
+
+=cut
+
+sub cust_fields_subs {
+  my $unlinked_warn = 0;
+  return map { 
+    my $f = $_;
+    if( $unlinked_warn++ ) {
+      sub {
+        my $record = shift;
+        if( $record->custnum ) {
+          $record->$f(@_);
+        }
+        else {
+          '(unlinked)'
+        };
+      }
+    } 
+    else {
+      sub {
+        my $record = shift;
+        $record->$f(@_) if $record->custnum;
+      }
     }
   } @cust_fields;
 }
