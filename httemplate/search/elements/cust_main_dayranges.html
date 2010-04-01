@@ -67,7 +67,9 @@ Example:
                                     '',
                                   ],
                  #'align'       => 'rlccrrrrr',
-                 'align'       => FS::UI::Web::cust_aligns(). 'rrrrr',
+                 'align'       => FS::UI::Web::cust_aligns(). 
+                                  ('c' x @pay_labels).
+                                   'rrrrr',
                  #'size'        => [ '', '', '-1', '-1', '', '', '', '',  '', ],
                  #'style'       => [ '', '',  'b',  'b', '', '', '', '', 'b', ],
                  'size'        => [ ( map '', FS::UI::Web::cust_header() ),
