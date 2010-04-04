@@ -2,7 +2,7 @@ package FS::cust_pay_void;
 
 use strict;
 use base qw( FS::otaker_Mixin FS::payinfo_Mixin FS::Record );
-use vars qw( @encrypted_fields );
+use vars qw( @encrypted_fields $otaker_upgrade_kludge );
 use Business::CreditCard;
 use FS::UID qw(getotaker);
 use FS::Record qw(qsearchs dbh fields); # qsearch );
@@ -14,6 +14,7 @@ use FS::cust_pay;
 use FS::cust_pkg;
 
 @encrypted_fields = ('payinfo');
+$otaker_upgrade_kludge = 0;
 
 =head1 NAME
 
@@ -160,7 +161,8 @@ Currently unimplemented.
 =cut
 
 sub replace {
-   return "Can't modify voided payments!";
+   return "Can't modify voided payments!" unless $otaker_upgrade_kludge;
+   shift->SUPER::replace(@_);
 }
 
 =item check
@@ -238,6 +240,7 @@ sub cust_main {
 # Used by FS::Upgrade to migrate to a new database.
 sub _upgrade_data {  # class method
   my ($class, %opts) = @_;
+  local($otaker_upgrade_kludge) = 1;
   $class->_upgrade_otaker(%opts);
 }
 
