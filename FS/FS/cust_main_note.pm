@@ -106,7 +106,7 @@ sub check {
     $self->ut_numbern('notenum')
     || $self->ut_number('custnum')
     || $self->ut_numbern('_date')
-    || $self->ut_alphan('otaker')
+    || $self->ut_textn('otaker')
     || $self->ut_anything('comments')
   ;
   return $error if $error;
