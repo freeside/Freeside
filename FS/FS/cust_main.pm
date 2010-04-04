@@ -9795,6 +9795,7 @@ sub _upgrade_data { #class method
   my $sth = dbh->prepare($sql) or die dbh->errstr;
   $sth->execute or die $sth->errstr;
 
+  local($ignore_expired_card) = 1
   $class->_upgrade_otaker(%opts);
 
 }
