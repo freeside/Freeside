@@ -1166,7 +1166,7 @@ sub tables_hashref {
         'pkgnum', 'int', 'NULL', '', '', '', #desired pkgnum for pkg-balances
         'void_date', @date_type, '', '', 
         'reason',    'varchar',   'NULL', $char_d, '', '', 
-        'otaker',   'varchar', '', 32, '', '', 
+        'otaker',   'varchar', 'NULL', 32, '', '', 
         'usernum',   'int', 'NULL', '', '', '',
       ],
       'primary_key' => 'paynum',
