@@ -2,6 +2,7 @@ package FS::cust_main_note;
 
 use strict;
 use base qw( FS::otaker_Mixin FS::Record );
+use Carp;
 use FS::Record qw( qsearch qsearchs );
 
 =head1 NAME
