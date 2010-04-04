@@ -114,6 +114,28 @@ sub check {
   $self->SUPER::check;
 }
 
+#false laziness w/otaker_Mixin & cust_attachment
+sub otaker {
+  my $self = shift;
+  if ( scalar(@_) ) { #set
+    my $otaker = shift;
+    my($l,$f) = (split(', ', $otaker));
+    my $access_user =  qsearchs('access_user', { 'username'=>$otaker }     )
+                    || qsearchs('access_user', { 'first'=>$f, 'last'=>$l } )
+      or croak "can't set otaker: $otaker not found!"; #confess?
+    $self->usernum( $access_user->usernum );
+    $otaker; #not sure return is used anywhere, but just in case
+  } else { #get
+    if ( $self->usernum ) {
+      $self->access_user->username;
+    } elsif ( length($self->get('otaker')) ) {
+      $self->get('otaker');
+    } else {
+      '';
+    }
+  }
+}
+
 # Used by FS::Upgrade to migrate to a new database.
 sub _upgrade_data {  # class method
   my ($class, %opts) = @_;
