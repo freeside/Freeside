@@ -157,7 +157,7 @@ sub _export_replace {
       if ( $old->pbxsvc ) {
         my $result = $self->_thirdlane_command(
           'asterisk::rpc_did_unassign',
-          $self->_thirdlane_did($svc_x),
+          $self->_thirdlane_did($old),
         );
         $result eq '0' or return 'Thirdlane API failure (rpc_did_unassign)';
       }
@@ -165,7 +165,7 @@ sub _export_replace {
       if ( $new->pbxsvc ) {
         my $result = $self->_thirdlane_command(
           'asterisk::rpc_did_assign',
-          $self->_thirdlane_did($svc_x),
+          $self->_thirdlane_did($new),
           $new->pbx_title,
         );
         $result eq '0' or return 'Thirdlane API failure (rpc_did_assign)';
@@ -190,7 +190,7 @@ sub _export_replace {
     ''; #we don't care then
 
   } else {
-    die "guru meditation #11: $svc_x is not FS::svc_pbx, FS::svc_phone or FS::svc_acct";
+    die "guru meditation #11: $new is not FS::svc_pbx, FS::svc_phone or FS::svc_acct";
   }
 
 }
@@ -278,11 +278,11 @@ sub _thirdlane_command {
 }
 
 sub _thirdlane_did {
-  my($self, $svc_x) = @_;
+  my($self, $svc_phone) = @_;
   if ( $self->option('omit_countrycode') ) {
-    $svc_x->phonenum;
+    $svc_phone->phonenum;
   } else {
-    $svc_x->countrycode. $svc_x->phonenum;
+    $svc_phone->countrycode. $svc_phone->phonenum;
   }
 }
 
