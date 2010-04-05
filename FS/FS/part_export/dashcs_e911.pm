@@ -60,7 +60,7 @@ sub _export_insert {
     'location' => $location,
   };
 
-  my $error_or_ref = dash_command($opts, 'addLocation', $arg );
+  $error_or_ref = dash_command($opts, 'addLocation', $arg );
   return $error_or_ref unless ref($error_or_ref);
 
   my $id = $error_or_ref->get_Location->get_locationid;
