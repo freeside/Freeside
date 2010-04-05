@@ -169,10 +169,11 @@ if (1) { #commission reports
   push @fields, sub {
     my $part_pkg = shift;
     my $sql = "SELECT SUM(amount) FROM cust_credit
-                   INNER JOIN cust_event USING ( eventnum )
-                   LEFT  JOIN part_event USING ( eventpart )
-                   LEFT  JOIN cust_pkg ON ( cust_event.tablenum = cust_pkg.pkgnum )
-                 WHERE action IN ( 'pkg_employee_credit',
+                   LEFT JOIN cust_event USING ( eventnum )
+                   LEFT JOIN part_event USING ( eventpart )
+                   LEFT JOIN cust_pkg ON ( cust_event.tablenum = cust_pkg.pkgnum )
+                 WHERE eventnum IS NOT NULL
+                   AND action IN ( 'pkg_employee_credit',
                                    'pkg_employee_credit_pkg'
                                  )
                    AND cust_credit._date >= $beginning
@@ -187,7 +188,8 @@ if (1) { #commission reports
       my $access_user = qsearchs('access_user', { 'usernum' => $part_pkg->get('usernum'), })
         or die "unknown usernum";
 
-      push @arg, $access_user->user_custnum or return 0;
+      return 0 unless $access_user->user_custnum;
+      push @arg, $access_user->user_custnum;
 
     } elsif (0) { #agent commission reports
       push @arg, 'XXXagent_custnum'; #$agent->agent_custnum
