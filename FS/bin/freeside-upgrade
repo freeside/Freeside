@@ -4,7 +4,7 @@ use strict;
 use vars qw($opt_d $opt_s $opt_q $opt_v $opt_r);
 use vars qw($DEBUG $DRY_RUN);
 use Getopt::Std;
-use DBIx::DBSchema 0.31;
+use DBIx::DBSchema 0.31; #0.39
 use FS::UID qw(adminsuidsetup checkeuid datasrc driver_name);  #getsecrets);
 use FS::CurrentUser;
 use FS::Schema qw( dbdef dbdef_dist reload_dbdef );
@@ -29,6 +29,11 @@ $FS::CurrentUser::upgrade_hack = 1;
 $FS::UID::callback_hack = 1;
 my $dbh = adminsuidsetup($user);
 $FS::UID::callback_hack = 0;
+
+if ( driver_name =~ /^mysql/i ) { #until 0.39 is required above
+  eval "use DBIx::DBSchema 0.39;";
+  die $@ if $@;
+}
 
 #needs to match FS::Schema...
 my $dbdef_file = "%%%FREESIDE_CONF%%%/dbdef.". datasrc;
