@@ -42,11 +42,24 @@
                      '</TR></TD></TABLE>'
                      ;
                    },
+                 'onsubmit'  => 'check_user_custnum_search',
+                 'html_foot' => $check_user_custnum_search,
            )
 %>
 <%init>
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $check_user_custnum_search = <<END;
+  <SCRIPT TYPE="text/javascript">
+    function check_user_custnum_search(what) {
+      while ( user_custnum_search_active ) {
+        // javascript needs ambien
+      }
+      return true;
+    }
+  </SCRIPT>
+END
 
 </%init>

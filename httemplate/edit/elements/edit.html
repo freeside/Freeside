@@ -129,6 +129,9 @@ Example:
                            "html_string";
                          },
     
+    #javascript function name, will be called with form name as arg
+    'onsubmit'   => 'check_form_data',
+
     #at the very bottom (well, as low as you can go from here)
     'html_foot'  => '',
 
@@ -201,7 +204,11 @@ Example:
 
 % my $url = $opt{'post_url'} || popurl(1)."process/$table.html";
 
-<FORM ACTION="<% $url %>" METHOD=POST NAME="edit_topform">
+<FORM NAME   = "edit_topform"
+      METHOD = POST
+      ACTION = "<% $url %>"
+      <% $opt{onsubmit} ? 'onSubmit="return '.$opt{onsubmit}.'(this)"' : '' %>
+>
 
 <INPUT TYPE="hidden" NAME="svcdb" VALUE="<% $table %>">
 <INPUT TYPE="hidden" NAME="<% $pkey %>" VALUE="<% $clone ? '' : $object->$pkey() %>">
@@ -699,7 +706,13 @@ Example:
 
 <BR>
 
-<INPUT TYPE="submit" ID="submit" VALUE="<% ( !$clone && $object->$pkey() ) ? "Apply changes" : "Add ". ( $opt{'name'} || $opt{'name_singular'} ) %>">
+<INPUT TYPE     = "submit"
+       ID       = "submit"
+       VALUE    = "<% ( !$clone && $object->$pkey() )
+                        ? "Apply changes"
+                        : "Add ". ( $opt{'name'} || $opt{'name_singular'} )
+                   %>"
+>
 
 </FORM>
 
