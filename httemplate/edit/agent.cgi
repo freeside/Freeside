@@ -4,7 +4,20 @@
 
 <% include('/elements/error.html') %>
 
-<FORM ACTION="<%popurl(1)%>process/agent.cgi" METHOD=POST>
+<FORM METHOD   = POST
+      ACTION   = "<%popurl(1)%>process/agent.cgi"
+      onSubmit = "return check_agent_custnum_search(this)"
+>
+
+<SCRIPT TYPE="text/javascript">
+  function check_agent_custnum_search(what) {
+    while ( agent_custnum_search_active ) {
+      // javascript needs ambien
+    }
+    return true;
+  }
+</SCRIPT>
+
 <INPUT TYPE="hidden" NAME="agentnum" VALUE="<% $agent->agentnum %>">
 Agent #<% $agent->agentnum ? $agent->agentnum : "(NEW)" %>
 
