@@ -15,10 +15,10 @@ $DEBUG = 0;
 $me = '[FS::TicketSystem::RT_Internal]';
 
 sub sql_num_customer_tickets {
-  "( select count(*) from tickets
-                     join links on ( tickets.id = links.localbase )
-     where ( status = 'new' or status = 'open' or status = 'stalled' )
-       and target = 'freeside://freeside/cust_main/' || custnum
+  "( select count(*) from Tickets
+                     join Links on ( Tickets.id = Links.LocalBase )
+     where ( Status = 'new' or Status = 'open' or Status = 'stalled' )
+       and Target = 'freeside://freeside/cust_main/' || custnum
    )";
 }
 
