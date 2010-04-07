@@ -104,7 +104,7 @@ $name = 'RBC';
     sprintf("%09u", $aba).
     sprintf("%-18s", $account).
     ' '.
-    sprintf("%010u",$cust_pay_batch->amount*100).
+    sprintf("%010.0f",$cust_pay_batch->amount*100).
     '      '.
     time2str("%Y%j", $pay_batch->download).
     sprintf("%-30s", $cust_pay_batch->cust_main->first . ' ' .
@@ -131,7 +131,7 @@ $name = 'RBC';
     sprintf("%10s", $client_num).
     ' ' x 20 .
     sprintf("%06u", $batchcount).
-    sprintf("%014u", $batchtotal*100).
+    sprintf("%014.0f", $batchtotal*100).
     '00' .
     '000000' . # total number of customer information records
     ' ' x 84
