@@ -114,8 +114,8 @@ if (1) { #commission reports
   }
 
   my $from_cust_bill_pkg_where = "FROM cust_bill_pkg
-                                      LEFT JOIN ( cust_bill ) USING ( invnum )
-                                      LEFT JOIN ( cust_pkg  ) USING ( pkgnum )
+                                      LEFT JOIN cust_bill USING ( invnum )
+                                      LEFT JOIN cust_pkg  USING ( pkgnum )
                                     WHERE cust_bill_pkg.pkgnum > 0
                                       AND cust_bill._date >= $beginning
                                       AND cust_bill._date <= $ending         ";
