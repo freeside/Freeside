@@ -2733,21 +2733,32 @@ sub search {
     ''                => {},
   );
 
-  foreach my $field (qw( setup last_bill bill adjourn susp expire cancel )) {
-
-    next unless exists($params->{$field});
-
-    my($beginning, $ending) = @{$params->{$field}};
-
-    next if $beginning == 0 && $ending == 4294967295;
-
+  if( exists($params->{'active'} ) ) {
+    # This overrides all the other date-related fields
+    my($beginning, $ending) = @{$params->{'active'}};
     push @where,
-      "cust_pkg.$field IS NOT NULL",
-      "cust_pkg.$field >= $beginning",
-      "cust_pkg.$field <= $ending";
+      "cust_pkg.setup IS NOT NULL",
+      "cust_pkg.setup <= $ending",
+      "(cust_pkg.cancel IS NULL OR cust_pkg.cancel >= $beginning )",
+      "NOT (".FS::cust_pkg->onetime_sql . ")";
+  }
+  else {
+    foreach my $field (qw( setup last_bill bill adjourn susp expire cancel )) {
 
-    $orderby ||= "ORDER BY cust_pkg.$field";
+      next unless exists($params->{$field});
 
+      my($beginning, $ending) = @{$params->{$field}};
+
+      next if $beginning == 0 && $ending == 4294967295;
+
+      push @where,
+        "cust_pkg.$field IS NOT NULL",
+        "cust_pkg.$field >= $beginning",
+        "cust_pkg.$field <= $ending";
+
+      $orderby ||= "ORDER BY cust_pkg.$field";
+
+    }
   }
 
   $orderby ||= 'ORDER BY bill';

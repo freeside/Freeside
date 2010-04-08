@@ -307,6 +307,64 @@ sub _subtract_11mo {
   timelocal($sec,$min,$hour,$mday,$mon,$year);
 }
 
+sub cust_pkg_setup_cost {
+  my( $self, $speriod, $eperiod, $agentnum, %opt ) = @_;
+  my $where = '';
+  my $comparison = '';
+  if ( $opt{'classnum'} =~ /^(\d+)$/ ) {
+    if ( $1 == 0 ) {
+      $comparison = 'IS NULL';
+    }
+    else {
+      $comparison = "= $1";
+    }
+    $where = "AND part_pkg.classnum $comparison";
+  }
+  $agentnum ||= $opt{'agentnum'};
+
+  my $total_sql = " SELECT SUM(part_pkg.setup_cost) ";
+  $total_sql .= " FROM cust_pkg 
+             LEFT JOIN cust_main USING ( custnum )
+             LEFT JOIN part_pkg  USING ( pkgpart )
+                  WHERE pkgnum != 0
+                  $where
+                  AND ".$self->in_time_period_and_agent(
+                    $speriod, $eperiod, $agentnum, 'cust_pkg.setup');
+  return $self->scalar_sql($total_sql);
+}
+
+sub cust_pkg_recur_cost {
+  my( $self, $speriod, $eperiod, $agentnum, %opt ) = @_;
+  my $where = '';
+  my $comparison = '';
+  if ( $opt{'classnum'} =~ /^(\d+)$/ ) {
+    if ( $1 == 0 ) {
+      $comparison = 'IS NULL';
+    }
+    else {
+      $comparison = "= $1";
+    }
+    $where = " AND part_pkg.classnum $comparison";
+  }
+  $agentnum ||= $opt{'agentnum'};
+  # duplication of in_time_period_and_agent
+  # because we do it a little differently here
+  $where .= " AND cust_main.agentnum = $agentnum" if $agentnum;
+  $where .= " AND ".
+          $FS::CurrentUser::CurrentUser->agentnums_sql('table' => 'cust_main');
+
+  my $total_sql = " SELECT SUM(part_pkg.recur_cost) ";
+  $total_sql .= " FROM cust_pkg
+             LEFT JOIN cust_main USING ( custnum )
+             LEFT JOIN part_pkg  USING ( pkgpart )
+                  WHERE pkgnum != 0
+                  $where
+                  AND cust_pkg.setup < $eperiod
+                  AND (cust_pkg.cancel > $speriod OR cust_pkg.cancel IS NULL)
+                  ";
+  return $self->scalar_sql($total_sql);
+}
+ 
 sub cust_bill_pkg {
   my( $self, $speriod, $eperiod, $agentnum, %opt ) = @_;
 
