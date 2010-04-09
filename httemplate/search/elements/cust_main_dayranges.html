@@ -110,7 +110,7 @@ my $range_sub = delete($opt{'range_sub'}); #or die
 
 my $offset = 0;
 if($cgi->param('as_of')) {
-  $offset = int((time - str2time($cgi->param('as_of'))) / 86400);
+  $offset = int((time - parse_datetime($cgi->param('as_of'))) / 86400);
   $opt{'title'} .= ' ('.$cgi->param('as_of').')' if $offset > 0;
 }
 

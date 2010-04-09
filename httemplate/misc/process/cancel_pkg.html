@@ -44,7 +44,7 @@ my $date = time;
 if ($method eq 'expire' || $method eq 'adjourn'){
   #untaint date
   $date = $cgi->param('date');
-  str2time($cgi->param('date')) =~ /^(\d+)$/ or die "Illegal date";
+  parse_datetime($cgi->param('date')) =~ /^(\d+)$/ or die "Illegal date";
   $date = $1;
   $method = ($method eq 'expire') ? 'cancel' : 'suspend';
 }

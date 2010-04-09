@@ -100,11 +100,11 @@ die "access denied"
 my( $beginning, $ending ) = ( '', '' );
 if ( $cgi->param('stoptime_beginning')
      && $cgi->param('stoptime_beginning') =~ /^([ 0-9\-\/\:\w]{0,54})$/ ) {
-  $beginning = str2time($1);
+  $beginning = parse_datetime($1);
 }
 if ( $cgi->param('stoptime_ending')
      && $cgi->param('stoptime_ending') =~ /^([ 0-9\-\/\:\w]{0,54})$/ ) {
-  $ending = str2time($1); # + 86399;
+  $ending = parse_datetime($1); # + 86399;
 }
 if ( $cgi->param('begin') && $cgi->param('begin') =~ /^(\d+)$/ ) {
   $beginning = $1;
@@ -121,11 +121,11 @@ if ( $cgi->param('open_sessions') =~ /^(\d*)$/ ) {
 my( $starttime_beginning, $starttime_ending ) = ( '', '' );
 if ( $cgi->param('starttime_beginning')
      && $cgi->param('starttime_beginning') =~ /^([ 0-9\-\/\:\w]{0,54})$/ ) {
-  $starttime_beginning = str2time($1);
+  $starttime_beginning = parse_datetime($1);
 }
 if ( $cgi->param('starttime_ending')
      && $cgi->param('starttime_ending') =~ /^([ 0-9\-\/\:\w]{0,54})$/ ) {
-  $starttime_ending = str2time($1); # + 86399;
+  $starttime_ending = parse_datetime($1); # + 86399;
 }
 
 my $cgi_svc_acct = '';

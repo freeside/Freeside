@@ -4,6 +4,7 @@ use strict;
 use vars qw($DEBUG @ISA @EXPORT_OK $me);
 use Exporter;
 use FS::Conf;
+use FS::Misc::DateTime qw( parse_datetime );
 use FS::Record qw(dbdef);
 use FS::cust_main;  # are sql_balance and sql_date_balance in the right module?
 
@@ -30,7 +31,7 @@ sub parse_beginning_ending {
   if ( $cgi->param($prefix.'begin') =~ /^(\d+)$/ ) {
     $beginning = $1;
   } elsif ( $cgi->param($prefix.'beginning') =~ /^([ 0-9\-\/]{1,64})$/ ) {
-    $beginning = str2time($1) || 0;
+    $beginning = parse_datetime($1) || 0;
   }
 
   my $ending = 4294967295; #2^32-1
@@ -38,7 +39,7 @@ sub parse_beginning_ending {
     $ending = $1 - 1;
   } elsif ( $cgi->param($prefix.'ending') =~ /^([ 0-9\-\/]{1,64})$/ ) {
     #probably need an option to turn off the + 86399
-    $ending = str2time($1) + 86399;
+    $ending = parse_datetime($1) + 86399;
   }
 
   ( $beginning, $ending );

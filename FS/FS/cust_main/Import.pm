@@ -5,8 +5,8 @@ use vars qw( $DEBUG $conf );
 use Storable qw(thaw);
 use Data::Dumper;
 use MIME::Base64;
-use Date::Parse;
 use File::Slurp qw( slurp );
+use FS::Misc::DateTime qw( parse_datetime );
 use FS::UID qw( dbh );
 use FS::Record qw( qsearchs );
 use FS::cust_main;
@@ -264,13 +264,13 @@ sub batch_import {
 
       if ( $field =~ /^cust_pkg\.(pkgpart|setup|bill|susp|adjourn|expire|cancel)$/ ) {
 
-        #$cust_pkg{$1} = str2time( shift @$columns );
+        #$cust_pkg{$1} = parse_datetime( shift @$columns );
         if ( $1 eq 'pkgpart' ) {
           $cust_pkg{$1} = shift @columns;
         } elsif ( $1 eq 'setup' ) {
-          $billtime = str2time(shift @columns);
+          $billtime = parse_datetime(shift @columns);
         } else {
-          $cust_pkg{$1} = str2time( shift @columns );
+          $cust_pkg{$1} = parse_datetime( shift @columns );
         } 
 
       } elsif ( $field =~ /^svc_acct\.(username|_password)$/ ) {

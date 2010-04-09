@@ -19,13 +19,8 @@ die "access denied"
 my $pkgnum = $cgi->param('pkgnum') or die;
 my $old = qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
 my %hash = $old->hash;
-$hash{'start_date'} = $cgi->param('start_date') ? str2time($cgi->param('start_date')) : '';
-$hash{'setup'} = $cgi->param('setup') ? str2time($cgi->param('setup')) : '';
-$hash{'bill'} = $cgi->param('bill') ? str2time($cgi->param('bill')) : '';
-$hash{'last_bill'} =
-  $cgi->param('last_bill') ? str2time($cgi->param('last_bill')) : '';
-$hash{'adjourn'} = $cgi->param('adjourn') ? str2time($cgi->param('adjourn')) : '';
-$hash{'expire'} = $cgi->param('expire') ? str2time($cgi->param('expire')) : '';
+$hash{$_}= $cgi->param($_) ? parse_datetime($cgi->param($_)) : ''
+  foreach qw( start_date setup bill last_bill adjourn expire );
 
 my @errors = ();
 
@@ -47,7 +42,6 @@ my $error;
 if ( @errors ) {
   $error = join(',', @errors);
 } else {
-  warn join(',',%hash);
   $new = new FS::cust_pkg \%hash;
   $error = $new->replace($old);
 }

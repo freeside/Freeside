@@ -57,12 +57,12 @@ if ( -e $addl_handler_use_file ) {
   use List::Util qw( max min );
   use Data::Dumper;
   use Date::Format;
-  use Date::Parse;
   use Time::Local;
   use Time::HiRes;
   use Time::Duration;
   use DateTime;
   use DateTime::Format::Strptime;
+  use FS::Misc::DateTime qw( parse_datetime );
   use Lingua::EN::Inflect qw(PL);
   use Tie::IxHash;
   use URI;

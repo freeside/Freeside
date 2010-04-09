@@ -97,12 +97,12 @@ my($begin, $end) = ( '', '' );
 my @where;
 if ( $cgi->param('beginning')
      && $cgi->param('beginning') =~ /^([ 0-9\-\/]{0,10})$/ ) {
-  $begin = str2time($1);
+  $begin = parse_datetime($1);
   push @where, "download >= $begin";
 }
 if ( $cgi->param('ending')
       && $cgi->param('ending') =~ /^([ 0-9\-\/]{0,10})$/ ) {
-  $end = str2time($1) + 86399;
+  $end = parse_datetime($1) + 86399;
   push @where, "download < $end";
 }
 

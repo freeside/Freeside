@@ -113,7 +113,7 @@ if ( $cgi->param('error') ) {
   $paid     = $cgi->param('paid');
   $payby    = $cgi->param('payby');
   $payinfo  = $cgi->param('payinfo');
-  $_date    = $cgi->param('_date') ? str2time($cgi->param('_date')) : time;
+  $_date    = $cgi->param('_date') ? parse_datetime($cgi->param('_date')) : time;
 } elsif ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
   $link     = $cgi->param('popup') ? 'popup' : 'custnum';
   $linknum  = $1;

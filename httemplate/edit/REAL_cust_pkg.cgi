@@ -187,9 +187,9 @@ if ( $cgi->param('error') ) {
   $cust_pkg = qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
   die "No package!" unless $cust_pkg;
 
-  foreach my $col (qw( setup last_bill bill adjourn expire )) {
+  foreach my $col (qw( start_date setup last_bill bill adjourn expire )) {
     my $value = $cgi->param($col);
-    $cust_pkg->set( $col, $value ? str2time($value) : '' );
+    $cust_pkg->set( $col, $value ? parse_datetime($value) : '' );
   }
 
 } else {

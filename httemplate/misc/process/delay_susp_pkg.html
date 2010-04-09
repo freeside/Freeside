@@ -21,7 +21,7 @@ $cgi->param('pkgnum') =~ /^(\d+)$/ or die "Illegal pkgnum";
 $pkgnum = $1;
 
 #untaint date
-str2time($cgi->param('date')) =~ /^(\d+)$/ or die "Illegal date";
+parse_datetime($cgi->param('date')) =~ /^(\d+)$/ or die "Illegal date";
 my $date = $1;
 
 $cust_pkg = qsearchs( 'cust_pkg', {'pkgnum'=>$pkgnum} );

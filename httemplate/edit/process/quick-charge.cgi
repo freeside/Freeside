@@ -58,7 +58,7 @@ unless ( $error ) {
     'bill_now'      => scalar($cgi->param('bill_now')),
     'invoice_terms' => scalar($cgi->param('invoice_terms')),
     'start_date'    => ( scalar($cgi->param('start_date'))
-                           ? str2time($cgi->param('start_date'))
+                           ? parse_datetime($cgi->param('start_date'))
                            : ''
                        ),
     'no_auto'       => scalar($cgi->param('no_auto')),

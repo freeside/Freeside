@@ -98,7 +98,7 @@ foreach my $dfield (qw( birthdate signupdate )) {
 
     } else {
 
-      $parsed = str2time($value)
+      $parsed = parse_datetime($value)
         or $error ||= "Invalid $dfield: $value";
 
     }

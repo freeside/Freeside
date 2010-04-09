@@ -84,7 +84,7 @@ my $actual_label = $legacy ? 'Actual ' : '';
 
 my $time = time;
 
-my $now = $cgi->param('date') && str2time($cgi->param('date')) || $time;
+my $now = $cgi->param('date') && parse_datetime($cgi->param('date')) || $time;
 $now =~ /^(\d+)$/ or die "unparsable date?";
 $now = $1;
 

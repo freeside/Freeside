@@ -39,7 +39,7 @@ $cgi->param('link') =~ /^(custnum|invnum|popup)$/
 my $field = my $link = $1;
 $field = 'custnum' if $field eq 'popup';
 
-my $_date = str2time($cgi->param('_date'));
+my $_date = parse_datetime($cgi->param('_date'));
 
 my $new = new FS::cust_pay ( {
   $field => $linknum,
