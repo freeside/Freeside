@@ -86,8 +86,10 @@
   </table>
   <%= $summary %>
   <%=
+      my $notfirst = 0;
       foreach my $section ( grep { !$summary || $_->{description} ne $finance_section } @sections ) {
         if ($section->{'pretotal'} && !$summary) {
+          $OUT .= '</table>' if $notfirst;
           $OUT .=
             '<table width="100%"><tr><td>'.
             '<p align="right"><b><font size="+1">'.
@@ -95,9 +97,10 @@
             '</font><font size="+0">'. uc(substr($section->{'pretotal'},1)).
             '</font></b>'.
             '<p>'.
-            '</td></tr></table>';
+            '</td></tr>';
         }
         unless ($section->{'summarized'}) {
+          $OUT .= '</table>' if ( $notfirst || $section->{'pretotal'} && !$summary );
           $OUT .= '<table><tr><td>';
           if ($section->{'description'}) {
             $OUT .=
@@ -128,7 +131,7 @@
                         ). 
                       '<th align="right">Amount</th>';
           }
-            '</tr>';
+            $OUT .= '</tr>';
 
           my $lastref = 0;
           foreach my $line (
@@ -176,7 +179,7 @@
           }
 
 
-          if (scalar(@sections) > 1) {
+          if ($section->{'description'} || $multisection) {
             my $style = 'border-top: 3px solid #000000;'.
                         'border-bottom: 3px solid #000000;';
             $OUT .=
@@ -203,6 +206,8 @@
           $OUT .= '</td></tr>';
         }
 
+        $notfirst++;
+
       }
 
       my $style = 'border-top: 3px solid #000000;';
@@ -211,7 +216,7 @@
       foreach my $line ( @total_items ) {
 
         $style .= 'border-bottom: 3px solid #000000;'
-          if ++$linenum == scalar(@total_items);
+          if ++$linenum == scalar(@total_items) - ( $balance_due_below_line ? 1 : 0 );
 
         $OUT .=
           '<tr class="invoice_totaldesc">';

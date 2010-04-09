@@ -2911,14 +2911,28 @@ worry that config_items is freeside-specific and icky.
   {
     'key'         => 'disable_previous_balance',
     'section'     => 'invoicing',
-    'description' => 'Disable inclusion of previous balancem payment, and credit lines on invoices',
+    'description' => 'Disable inclusion of previous balance, payment, and credit lines on invoices',
     'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'previous_balance-exclude_from_total',
+    'section'     => 'invoicing',
+    'description' => 'Do not include previous balance in the \'Total\' line.  Only meaningful when invoice_sections is false.  Optionally provide text to override the Total New Charges description',
+    'type'        => [ qw(checkbox text) ],
   },
 
   {
     'key'         => 'previous_balance-summary_only',
     'section'     => 'invoicing',
     'description' => 'Only show a single line summarizing the total previous balance rather than one line per invoice.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'balance_due_below_line',
+    'section'     => 'invoicing',
+    'description' => 'Place the balance due message below a line.  Only meaningful when when invoice_sections is false.',
     'type'        => 'checkbox',
   },
 

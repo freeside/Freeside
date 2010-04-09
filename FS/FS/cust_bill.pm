@@ -2329,6 +2329,7 @@ sub print_generic {
     'unitprices'      => $conf->exists('invoice-unitprice'),
     'smallernotes'    => $conf->exists('invoice-smallernotes'),
     'smallerfooter'   => $conf->exists('invoice-smallerfooter'),
+    'balance_due_below_line' => $conf->exists('balance_due_below_line'),
    
     # better hang on to conf_dir for a while (for old templates)
     'conf_dir'        => "$FS::UID::conf_dir/conf.$FS::UID::datasrc",
@@ -2513,6 +2514,7 @@ sub print_generic {
 
   my $unsquelched = $params{unsquelch_cdr} || $cust_main->squelch_cdr ne 'Y';
   my $multisection = $conf->exists('invoice_sections', $cust_main->agentnum);
+  $invoice_data{'multisection'} = $multisection;
   my $late_sections = [];
   my $extra_sections = [];
   my $extra_lines = ();
@@ -2721,17 +2723,19 @@ sub print_generic {
 
   {
     my $total = {};
-    $total->{'total_item'} = &$embolden_function('Total');
+    my $item = 'Total';
+    $item = $conf->config('previous_balance-exclude_from_total')
+         || 'Total New Charges'
+      if $conf->exists('previous_balance-exclude_from_total');
+    my $amount = $self->charged +
+                   ( $conf->exists('disable_previous_balance') ||
+                     $conf->exists('previous_balance-exclude_from_total')
+                     ? 0
+                     : $pr_total
+                   );
+    $total->{'total_item'} = &$embolden_function($item);
     $total->{'total_amount'} =
-      &$embolden_function(
-        $other_money_char.
-        sprintf( '%.2f',
-                 $self->charged + ( $conf->exists('disable_previous_balance')
-                                    ? 0
-                                    : $pr_total
-                                  )
-               )
-      );
+      &$embolden_function( $other_money_char.  sprintf( '%.2f', $amount ) );
     if ( $multisection ) {
       if ( $adjust_section->{'sort_weight'} ) {
         $adjust_section->{'posttotal'} = 'Balance Forward '. $other_money_char.
@@ -2744,14 +2748,9 @@ sub print_generic {
       push @total_items, $total;
     }
     push @buf,['','-----------'];
-    push @buf,['Total Charges',
+    push @buf,[$item,
                $money_char.
-               sprintf( '%10.2f', $self->charged +
-                                    ( $conf->exists('disable_previous_balance')
-                                        ? 0
-                                        : $pr_total
-                                    )
-                      )
+               sprintf( '%10.2f', $amount )
               ];
     push @buf,['',''];
   }
