@@ -20,19 +20,19 @@ Example:
                  'count_query' => $count_sql,
                  'header'      => [ 
                                     FS::UI::Web::cust_header(),
-                                    @pay_head,
                                     '0-30',
                                     '30-60',
                                     '60-90',
                                     '90+',
                                     'Total',
+                                    @pay_head,
                                   ],
                  'footer'      => [
                                     'Total',
                                     ( map '',
                                           ( 1 .. 
                                             scalar(FS::UI::Web::cust_header()-1)
-                                          ), @pay_labels
+                                          ),
                                     ),
                                     
                                     sprintf( $money_char.'%.2f',
@@ -45,50 +45,53 @@ Example:
                                              $row->{'rangecol_90_0'} ),
                                     sprintf( '<b>'. $money_char.'%.2f'. '</b>',
                                              $row->{'rangecol_0_0'} ),
+                                    ('') x @pay_labels,
                                   ],
                  'fields'      => [
                                     FS::UI::Web::cust_fields_subs(),
-                                    @pay_labels,
                                     format_rangecol('0_30'),
                                     format_rangecol('30_60'),
                                     format_rangecol('60_90'),
                                     format_rangecol('90_0'),
                                     format_rangecol('0_0'),
+                                    @pay_labels,
                                   ],
                  'links'       => [
                                     ( map { $_ ne 'Cust. Status' ? $clink : '' }
                                           FS::UI::Web::cust_header()
                                     ),
+                                    '',
+                                    '',
+                                    '',
+                                    '',
+                                    '',
                                     @pay_links,
-                                    '',
-                                    '',
-                                    '',
-                                    '',
-                                    '',
                                   ],
                  #'align'       => 'rlccrrrrr',
                  'align'       => FS::UI::Web::cust_aligns(). 
-                                  ('c' x @pay_labels).
-                                   'rrrrr',
+                                   'rrrrr'.
+                                  ('c' x @pay_labels),
                  #'size'        => [ '', '', '-1', '-1', '', '', '', '',  '', ],
                  #'style'       => [ '', '',  'b',  'b', '', '', '', '', 'b', ],
                  'size'        => [ ( map '', FS::UI::Web::cust_header() ),
-                                    ( map '', @pay_labels ),
                                     #'-1', '', '', '', '',  '', ],
-                                    '', '', '', '', '',  '', ],
-                 'style'       => [ FS::UI::Web::cust_styles(),
+                                    '', '', '', '', '',  '', 
                                     ( map '', @pay_labels ),
+                                    ],
+                 'style'       => [ FS::UI::Web::cust_styles(),
                                     #'b', '', '', '', '', 'b', ],
-                                    '', '', '', '', 'b', ],
+                                    '', '', '', '', 'b', 
+                                    ( map '', @pay_labels ),
+                                    ],
                  'color'       => [
                                     FS::UI::Web::cust_colors(),
+                                    '',
+                                    '',
+                                    '',
+                                    '',
+                                    '',
+                                    '',
                                     ( map '', @pay_labels ),
-                                    '',
-                                    '',
-                                    '',
-                                    '',
-                                    '',
-                                    '',
                                   ],
                %opt,
              )
@@ -193,18 +196,32 @@ my $row = $total_sth->fetchrow_hashref();
 
 my $clink = [ "${p}view/cust_main.cgi?", 'custnum' ];
 
-my (@pay_head, @pay_labels, @pay_links);
+my (@payby, @pay_head, @pay_labels, @pay_links);
 
-if($opt{'payment_links'} && $curuser->access_right('Process payment')) {
-  @pay_head = ({ label => 'Process', nodownload => 1, colspan => 2 },
-                { nodownload => 1 });
+my %payby = map {$_ => 1} $conf->config('payby');
+if(%payby) {
+  push @payby, 'CARD' if ($payby{'CARD'} or $payby{'DCRD'});
+  push @payby, 'CHEK' if ($payby{'CHEK'} or $payby{'DCHK'});
+}
+else {
+  @payby = ('CARD','CHEK')
+}
 
-  @pay_labels = (map { my ($payby,$label) = @$_; 
-                        sub {($payby eq $_[0]->payby) ? "<b>$label</b>" : $label}
-                     } ([CARD => 'Card'], [CHEK => 'ACH']) );
+if($opt{'payment_links'} && $curuser->access_right('Process payment') && @payby) {
+  my %label = ( CARD => 'Card',
+                CHEK => 'E-Check' );
+  push @pay_head, ({nodownload => 1}) foreach @payby;
+  $pay_head[0] = { label => 'Process',
+                   nodownload => 1,
+                   colspan => scalar(@payby) };
+
+  @pay_labels = (map { my $payby = $_; 
+                       my $label = $label{$payby};
+                       sub {($payby eq $_[0]->payby) ? "<b>$label</b>" : $label}
+                     } @payby );
 
   @pay_links = (map { [ "${p}misc/payment.cgi?payby=$_;custnum=", 'custnum' ] }
-                         'CARD', 'CHEK' );
+                         @payby );
 }
 
 </%init>
