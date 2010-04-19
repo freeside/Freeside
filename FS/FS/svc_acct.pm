@@ -1111,12 +1111,14 @@ sub check {
               || $self->ut_textn('cgp_accessmodes')
               || $self->ut_alphan('cgp_type')
               || $self->ut_textn('cgp_aliases' ) #well
-              || $self->ut_alphasn('cgp_deletemode')
-              || $self->ut_alphan('cgp_emptytrash')
+              #settings
               || $self->ut_alphasn('cgp_rulesallowed')
               || $self->ut_enum('cgp_rpopallowed', [ '', 'Y' ])
               || $self->ut_enum('cgp_mailtoall', [ '', 'Y' ])
               || $self->ut_enum('cgp_addmailtrailer', [ '', 'Y' ])
+              #preferences
+              || $self->ut_alphasn('cgp_deletemode')
+              || $self->ut_alphan('cgp_emptytrash')
   ;
   return $error if $error;
 

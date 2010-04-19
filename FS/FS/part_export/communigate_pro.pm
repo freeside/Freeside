@@ -78,7 +78,8 @@ sub _export_insert_svc_acct {
     'RealName'       => $svc_acct->finger,
     'Password'       => $svc_acct->_password,
 
-    #phase 2: allowed mail rules, RPOP modifications, accepts mail to all, add trailer to sent mail
+    'PasswordRecovery' => ($svc_acct->password_recover ? 'YES':'NO'),
+
     'RulesAllowed'     => $svc_acct->cgp_rulesallowed,
     'RPOPAllowed'      =>($svc_acct->cgp_rpopallowed    ?'YES':'NO'),
     'MailToAll'        =>($svc_acct->cgp_mailtoall      ?'YES':'NO'),
@@ -87,7 +88,6 @@ sub _export_insert_svc_acct {
     map { $quotas{$_} => $svc_acct->$_() }
         grep $svc_acct->$_(), keys %quotas
   );
-  #XXX phase 2: pwdallowed, passwordrecovery
   #XXX phase 3: archive messages, mailing lists
 
   my @options = ( 'CreateAccount',
@@ -280,17 +280,18 @@ sub _export_replace_svc_acct {
     if $old->cgp_accessmodes ne $new->cgp_accessmodes
     || $old->cgp_type ne $new->cgp_type;
 
-  #phase 2: allowed mail rules, RPOP modifications, accepts mail to all, add trailer to sent mail
+  $settings{'PasswordRecovery'} = ( $new->password_recover ? 'YES':'NO' )
+    if $old->password_recover ne $new->password_recover;
+
   $settings{'RulesAllowed'} = $new->cgp_rulesallowed
     if $old->cgp_rulesallowed ne $new->cgp_rulesallowed;
-  $settings{'RPOPAllowed'} = $new->cgp_rpopallowed
+  $settings{'RPOPAllowed'} = ( $new->cgp_rpopallowed ? 'YES':'NO' )
     if $old->cgp_rpopallowed ne $new->cgp_rpopallowed;
-  $settings{'MailToAll'} = $new->cgp_mailtoall
+  $settings{'MailToAll'} = ( $new->cgp_mailtoall ? 'YES':'NO' )
     if $old->cgp_mailtoall ne $new->cgp_mailtoall;
-  $settings{'AddMailTrailer'} = $new->cgp_addmailtrailer
+  $settings{'AddMailTrailer'} = ( $new->cgp_addmailtrailer ? 'YES':'NO' )
     if $old->cgp_addmailtrailer ne $new->cgp_addmailtrailer;
 
-  #XXX phase 2: pwdallowed, passwordrecovery
   #XXX phase 3: archive messages, mailing lists
 
   if ( keys %settings ) {

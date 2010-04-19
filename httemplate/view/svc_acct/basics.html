@@ -87,7 +87,8 @@
   <% include('/view/elements/tr.html', label=>'File size limit',
                         value=>$svc_acct->file_maxsize ) %>
 
-%#XXX password recovery
+  <% include('/view/elements/tr.html', label=>'Password recovery',
+               value=>$svc_acct->password_recover ? 'YES' : 'NO' ) %>
 
   <% include('/view/elements/tr.html', label=>'Allowed mail rules',
                         value=>$svc_acct->cgp_rulesallowed || 'default (No)') %>

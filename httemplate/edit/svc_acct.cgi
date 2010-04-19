@@ -335,6 +335,14 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
 
 %  #preferences
 
+  <% include('/elements/tr-checkbox.html',
+               'label'      => 'Password recovery',
+               'field'      => 'password_recover',
+               'curr_value' => $svc_acct->password_recover,
+               'value'      => 'Y',
+            )
+  %>
+
   <% include('/elements/tr-select.html',
                'label'      => 'Allowed mail rules',
                'field'      => 'cgp_rulesallowed',
@@ -517,9 +525,11 @@ if ( $cgi->param('error') ) {
   $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
   die "No part_svc entry!" unless $part_svc;
 
-    $svc_acct = new FS::svc_acct({svcpart => $svcpart}); 
+  $svc_acct = new FS::svc_acct({svcpart => $svcpart}); 
 
-    $svcnum='';
+  $svcnum='';
+
+  $svc_acct->password_recover('Y'); #default. hmm.
 
 } else { #editing
 

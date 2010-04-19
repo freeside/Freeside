@@ -1665,7 +1665,7 @@ sub tables_hashref {
         'file_maxsize',    'varchar', 'NULL', $char_d, '', '', #MaxFileSize
         'cgp_accessmodes', 'varchar', 'NULL',     255, '', '', #AccessModes
         'password_selfchange','char', 'NULL',       1, '', '', #PWDAllowed
-        'password_recover',   'char', 'NULL',       1, '', '', #PasswordRecovery
+        'password_recover',   'char', 'NULL',       1, 'Y','', #PasswordRecovery
         'cgp_type',        'varchar', 'NULL', $char_d, '', '', #AccountType
         'cgp_aliases',     'varchar', 'NULL',     255, '', '',
         'cgp_deletemode',  'varchar', 'NULL', $char_d, '', '', #DeleteMode
@@ -1723,7 +1723,7 @@ sub tables_hashref {
         'cgp_aliases',  'varchar', 'NULL',      255, '', '',
         'cgp_accessmodes','varchar','NULL',     255, '', '', #DomainAccessModes
         'acct_def_password_selfchange','char', 'NULL',       1, '', '', 
-        'acct_def_password_recover',   'char', 'NULL',       1, '', '', 
+        'acct_def_password_recover',   'char', 'NULL',       1, 'Y', '', 
         'acct_def_cgp_accessmodes', 'varchar', 'NULL',     255, '', '',
         'acct_def_quota',           'varchar', 'NULL', $char_d, '', '',
         'acct_def_file_quota',      'varchar', 'NULL', $char_d, '', '',
