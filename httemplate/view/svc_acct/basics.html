@@ -68,6 +68,8 @@
 
 % } elsif ( $opt{'communigate'} ) {
 
+%# settings
+
   <% include('/view/elements/tr.html', label=>'Mailbox type', value=>$svc_acct->cgp_type) %>
 
   <% include('/view/elements/tr.html', label=>'Enabled services',
@@ -85,12 +87,30 @@
   <% include('/view/elements/tr.html', label=>'File size limit',
                         value=>$svc_acct->file_maxsize ) %>
 
+%#XXX password recovery
+
+  <% include('/view/elements/tr.html', label=>'Allowed mail rules',
+                        value=>$svc_acct->cgp_rulesallowed || 'default (No)') %>
+
+  <% include('/view/elements/tr.html', label=>'RPOP modifications',
+                        value=>$svc_acct->cgp_rpopallowed ? 'YES' : 'NO' ) %>
+
+  <% include('/view/elements/tr.html', label=>'Accepts mail to "all"',
+                        value=>$svc_acct->cgp_mailtoall ? 'YES' : 'NO' ) %>
+
+  <% include('/view/elements/tr.html', label=>'Add trailer to sent mail',
+                        value=>$svc_acct->cgp_addmailtrailer ? 'YES' : 'NO' ) %>
+
+%# preferences
+
   <% include('/view/elements/tr.html', label=>'Message delete method',
                         value=>$svc_acct->cgp_deletemode ) %>
 
   <% include('/view/elements/tr.html', label=>'On logout remove trash',
                         value=>$svc_acct->cgp_emptytrash ) %>
 
+%#XXX language, time zone, layout, printo style, send read receipts
+%#XXX vacation message, redirect all mail, mail rules
 
 % }
 

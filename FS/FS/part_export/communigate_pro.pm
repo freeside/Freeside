@@ -77,12 +77,18 @@ sub _export_insert_svc_acct {
                         ],
     'RealName'       => $svc_acct->finger,
     'Password'       => $svc_acct->_password,
+
+    #phase 2: allowed mail rules, RPOP modifications, accepts mail to all, add trailer to sent mail
+    'RulesAllowed'     => $svc_acct->cgp_rulesallowed,
+    'RPOPAllowed'      =>($svc_acct->cgp_rpopallowed    ?'YES':'NO'),
+    'MailToAll'        =>($svc_acct->cgp_mailtoall      ?'YES':'NO'),
+    'AddMailTrailer'   =>($svc_acct->cgp_addmailtrailer ?'YES':'NO'),
+
     map { $quotas{$_} => $svc_acct->$_() }
         grep $svc_acct->$_(), keys %quotas
   );
-  #phase 2: pwdallowed, passwordrecovery, allowed mail rules,
-  # RPOP modifications, accepts mail to all, add trailer to sent mail
-  #phase 3: archive messages, mailing lists
+  #XXX phase 2: pwdallowed, passwordrecovery
+  #XXX phase 3: archive messages, mailing lists
 
   my @options = ( 'CreateAccount',
     'accountName'    => $self->export_username($svc_acct),
@@ -274,9 +280,18 @@ sub _export_replace_svc_acct {
     if $old->cgp_accessmodes ne $new->cgp_accessmodes
     || $old->cgp_type ne $new->cgp_type;
 
-  #phase 2: pwdallowed, passwordrecovery, allowed mail rules,
-  # RPOP modifications, accepts mail to all, add trailer to sent mail
-  #phase 3: archive messages, mailing lists
+  #phase 2: allowed mail rules, RPOP modifications, accepts mail to all, add trailer to sent mail
+  $settings{'RulesAllowed'} = $new->cgp_rulesallowed
+    if $old->cgp_rulesallowed ne $new->cgp_rulesallowed;
+  $settings{'RPOPAllowed'} = $new->cgp_rpopallowed
+    if $old->cgp_rpopallowed ne $new->cgp_rpopallowed;
+  $settings{'MailToAll'} = $new->cgp_mailtoall
+    if $old->cgp_mailtoall ne $new->cgp_mailtoall;
+  $settings{'AddMailTrailer'} = $new->cgp_addmailtrailer
+    if $old->cgp_addmailtrailer ne $new->cgp_addmailtrailer;
+
+  #XXX phase 2: pwdallowed, passwordrecovery
+  #XXX phase 3: archive messages, mailing lists
 
   if ( keys %settings ) {
     my $error = $self->communigate_pro_queue(

@@ -1670,6 +1670,10 @@ sub tables_hashref {
         'cgp_aliases',     'varchar', 'NULL',     255, '', '',
         'cgp_deletemode',  'varchar', 'NULL', $char_d, '', '', #DeleteMode
         'cgp_emptytrash',  'varchar', 'NULL', $char_d, '', '', #EmptyTrash
+        'cgp_rulesallowed','varchar', 'NULL', $char_d, '', '', #RulesAllowed
+        'cgp_rpopallowed',    'char', 'NULL',       1, '', '', #RPOPAllowed
+        'cgp_mailtoall',      'char', 'NULL',       1, '', '', #MailToAll
+        'cgp_addmailtrailer', 'char', 'NULL',       1, '', '', #AddMailTrailer
       ],
       'primary_key' => 'svcnum',
       #'unique' => [ [ 'username', 'domsvc' ] ],

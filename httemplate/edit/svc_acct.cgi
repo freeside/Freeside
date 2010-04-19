@@ -260,6 +260,8 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
 %      && $part_svc->part_svc_column('cgp_type')->columnflag ne 'F' )
 % {
 
+% # settings
+
   <TR>
     <TD ALIGN="right">Mailbox type</TD>
     <TD>
@@ -331,6 +333,43 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
 
 % if ( $communigate ) {
 
+%  #preferences
+
+  <% include('/elements/tr-select.html',
+               'label'      => 'Allowed mail rules',
+               'field'      => 'cgp_rulesallowed',
+               'options'    => [ '', 'No', 'Filter Only', 'All But Exec', 'Any' ],
+               'labels'     => {
+                                 '' => 'default (No)', #No always the default?
+                               },
+               'curr_value' => $svc_acct->cgp_rulesallowed,
+            )
+  %>
+
+  <% include('/elements/tr-checkbox.html',
+               'label'      => 'RPOP modifications',
+               'field'      => 'cgp_rpopallowed',
+               'curr_value' => $svc_acct->cgp_rpopallowed,
+               'value'      => 'Y',
+            )
+  %>
+
+  <% include('/elements/tr-checkbox.html',
+               'label'      => 'Accepts mail to "all"',
+               'field'      => 'cgp_mailtoall',
+               'curr_value' => $svc_acct->cgp_mailtoall,
+               'value'      => 'Y',
+            )
+  %>
+
+  <% include('/elements/tr-checkbox.html',
+               'label'      => 'Add trailer to sent mail',
+               'field'      => 'cgp_addmailtrailer',
+               'curr_value' => $svc_acct->cgp_addmailtrailer,
+               'value'      => 'Y',
+            )
+  %>
+
 %# false laziness w/svc_domain acct_def
   <TR>
     <TD ALIGN="right">Message delete method</TD>
@@ -349,6 +388,9 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
     <TD ALIGN="right">On logout remove trash</TD>
     <TD><INPUT TYPE="text" NAME="cgp_emptytrash" VALUE="<% $svc_acct->cgp_emptytrash %>"></TD>
   </TR>
+
+%#XXX language, time zone, layout, printo style, send read receipts
+%#XXX vacation message, redirect all mail, mail rules
 
 % } else {
 

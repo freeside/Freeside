@@ -1113,6 +1113,10 @@ sub check {
               || $self->ut_textn('cgp_aliases' ) #well
               || $self->ut_alphasn('cgp_deletemode')
               || $self->ut_alphan('cgp_emptytrash')
+              || $self->ut_alphasn('cgp_rulesallowed')
+              || $self->ut_enum('cgp_rpopallowed', [ '', 'Y' ])
+              || $self->ut_enum('cgp_mailtoall', [ '', 'Y' ])
+              || $self->ut_enum('cgp_addmailtrailer', [ '', 'Y' ])
   ;
   return $error if $error;
 
