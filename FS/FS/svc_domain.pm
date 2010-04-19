@@ -430,6 +430,10 @@ sub check {
               || $self->ut_alphan('acct_def_maxsize')
               || $self->ut_alphasn('acct_def_cgp_deletemode')
               || $self->ut_alphan('acct_def_cgp_emptytrash')
+              || $self->ut_textn('acct_def_cgp_rulesallowed')
+              || $self->ut_enum('acct_def_cgp_rpopallowed', [ '', 'Y' ])
+              || $self->ut_enum('acct_def_cgp_mailtoall', [ '', 'Y' ])
+              || $self->ut_enum('acct_def_cgp_addmailtrailer', [ '', 'Y' ])
   ;
   return $error if $error;
 

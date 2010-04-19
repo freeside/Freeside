@@ -171,6 +171,10 @@ sub _export_insert_svc_domain {
     'MaxWebSize'       => $svc_domain->acct_def_file_quota,
     'MaxWebFile'       => $svc_domain->acct_def_file_maxnum,
     'MaxFileSize'      => $svc_domain->acct_def_file_maxsize,
+    'RulesAllowed'     => $svc_domain->acct_def_cgp_rulesallowed,
+    'RPOPAllowed'      =>($svc_domain->acct_def_cgp_rpopallowed    ?'YES':'NO'),
+    'MailToAll'        =>($svc_domain->acct_def_cgp_mailtoall      ?'YES':'NO'),
+    'AddMailTrailer'   =>($svc_domain->acct_def_cgp_addmailtrailer ?'YES':'NO'),
   );
   warn "WARNING: error queueing SetAccountDefaults job: $def_err"
     if $def_err;
@@ -368,6 +372,10 @@ sub _export_replace_svc_domain {
     'MaxWebSize'       => $new->acct_def_file_quota,
     'MaxWebFile'       => $new->acct_def_file_maxnum,
     'MaxFileSize'      => $new->acct_def_file_maxsize,
+    'RulesAllowed'     => $new->acct_def_cgp_rulesallowed,
+    'RPOPAllowed'      => ( $new->acct_def_cgp_rpopallowed    ? 'YES' : 'NO' ),
+    'MailToAll'        => ( $new->acct_def_cgp_mailtoall      ? 'YES' : 'NO' ),
+    'AddMailTrailer'   => ( $new->acct_def_cgp_addmailtrailer ? 'YES' : 'NO' ),
   );
   warn "WARNING: error queueing SetAccountDefaults job: $def_err"
     if $def_err;

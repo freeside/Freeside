@@ -120,14 +120,15 @@ Account defaults
 <% ntable("#cccccc",2) %>
 
   <% include('/elements/tr-checkbox.html',
-               'label'      =>'Password modification',
+               'label'      => 'Password modification',
                'field'      => 'acct_def_password_selfchange',
                'curr_value' => $svc_domain->acct_def_password_selfchange,
                'value'      => 'Y',
             )
   %>
+
   <% include('/elements/tr-checkbox.html',
-               'label'      =>'Password recovery',
+               'label'      => 'Password recovery',
                'field'      => 'acct_def_password_recover',
                'curr_value' => $svc_domain->acct_def_password_recover,
                'value'      => 'Y',
@@ -170,6 +171,41 @@ Account defaults
             )
   %>
 
+  <% include('/elements/tr-select.html',
+               'label'      => 'Allowed mail rules',
+               'field'      => 'acct_def_cgp_rulesallowed',
+               'options'    => [ '', 'No', 'Filter Only', 'All But Exec', 'Any' ],
+               'labels'     => {
+                                 '' => 'default (No)', #No always the default?
+                               },
+              'curr_value'  => $svc_domain->acct_def_cgp_rulesallowed,
+            )
+  %>
+
+  <% include('/elements/tr-checkbox.html',
+               'label'      => 'RPOP modifications',
+               'field'      => 'acct_def_cgp_rpopallowed',
+               'curr_value' => $svc_domain->acct_def_cgp_rpopallowed,
+               'value'      => 'Y',
+            )
+  %>
+
+  <% include('/elements/tr-checkbox.html',
+               'label'      => 'Accepts mail to "all"',
+               'field'      => 'acct_def_cgp_mailtoall',
+               'curr_value' => $svc_domain->acct_def_cgp_mailtoall,
+               'value'      => 'Y',
+            )
+  %>
+
+  <% include('/elements/tr-checkbox.html',
+               'label'      => 'Add trailer to sent mail',
+               'field'      => 'acct_def_cgp_addmailtrailer',
+               'curr_value' => $svc_domain->acct_def_cgp_addmailtrailer,
+               'value'      => 'Y',
+            )
+  %>
+
 %# false laziness w/svc_acct acct_def
   <TR>
     <TD ALIGN="right">Message delete method</TD>
@@ -187,6 +223,14 @@ Account defaults
   <% include('/elements/tr-input-text.html',
                'label'      => 'On logout remove trash',
                'curr_value' => $svc_domain->acct_def_cgp_emptytrash,
+            )
+  %>
+
+  <% include('/elements/tr-checkbox.html',
+               'label'      =>'Password recovery',
+               'field'      => 'acct_def_password_recover',
+               'curr_value' => $svc_domain->acct_def_password_recover,
+               'value'      => 'Y',
             )
   %>
 

@@ -3,12 +3,15 @@
   Account defaults
   <% &ntable("#cccccc") %><TR><TD><% &ntable("#cccccc",2) %>
 
+%# settings
+
   <% include('/view/elements/tr.html',
                label=>'Password modification',
                value=>$svc_domain->acct_def_password_selfchange ? 'YES' : 'NO',
             )
   %>
-   <% include('/view/elements/tr.html',
+
+  <% include('/view/elements/tr.html',
                label=>'Password recovery',
                value=>$svc_domain->acct_def_password_recover ? 'YES' : 'NO',
             )
@@ -43,7 +46,33 @@
                value=>$svc_domain->acct_def_file_maxsize,
             )
   %>
-    
+
+  <% include('/view/elements/tr.html',
+               label=>'Allowed mail rules',
+               value=>$svc_domain->acct_def_cgp_rulesallowed || 'default (No)',
+            )
+  %>
+
+  <% include('/view/elements/tr.html',
+               label=>'RPOP modifications',
+               value=>$svc_domain->acct_def_cgp_rpopallowed ? 'YES' : 'NO',
+            )
+  %>
+
+  <% include('/view/elements/tr.html',
+               label=>'Accepts mail to "all"',
+               value=>$svc_domain->acct_def_cgp_mailtoall ? 'YES' : 'NO',
+            )
+  %>
+
+  <% include('/view/elements/tr.html',
+               label=>'Add trailer to sent mail',
+               value=>$svc_domain->acct_def_cgp_addmailtrailer ? 'YES' : 'NO',
+            )
+  %>
+
+%# preferences
+
   <% include('/view/elements/tr.html',
                label=>'Message delete method',
                value=>$svc_domain->acct_def_cgp_deletemode,
@@ -67,5 +96,13 @@ my $part_svc = $opt{'part_svc'};
 
 my $communigate = scalar($part_svc->part_export('communigate_pro'));
                 # || scalar($part_svc->part_export('communigate_pro_singledomain'));
+
+my %rulesallowed = (
+  -1 => 'default (No)', #No always the default?
+   0 => 'No',
+   1 => 'Filter Only',
+   2 => 'All But Exec',
+   3 => 'Any',
+);
 
 </%init>
