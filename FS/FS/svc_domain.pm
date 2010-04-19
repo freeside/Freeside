@@ -419,6 +419,7 @@ sub check {
   my $error = $self->ut_numbern('svcnum')
               || $self->ut_numbern('catchall')
               || $self->ut_numbern('max_accounts')
+              || $self->ut_anything('trailer') #well
               || $self->ut_textn('cgp_aliases') #well
               || $self->ut_enum('acct_def_password_selfchange', [ '', 'Y' ])
               || $self->ut_enum('acct_def_password_recover',    [ '', 'Y' ])

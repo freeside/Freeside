@@ -1715,6 +1715,7 @@ sub tables_hashref {
 	'expiration_date', @date_type, '', '',
         #communigate pro fields (quota = MaxAccountSize)
         'max_accounts',     'int', 'NULL',       '', '', '',
+        'trailer',         'text', 'NULL',       '', '', '',
         'cgp_aliases',  'varchar', 'NULL',      255, '', '',
         'cgp_accessmodes','varchar','NULL',     255, '', '', #DomainAccessModes
         'acct_def_password_selfchange','char', 'NULL',       1, '', '', 

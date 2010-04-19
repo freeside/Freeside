@@ -141,6 +141,8 @@ sub _export_insert_svc_domain {
     if $svc_domain->max_accounts;
   $settings{'AdminDomainName'} = $svc_domain->parent_svc_x->domain
     if $svc_domain->parent_svcnum;
+  $settings{'TrailerText'} = $svc_domain->trailer
+    if $svc_domain->trailer;
 
   my @options = ( $create, $svc_domain->domain, \%settings );
 
@@ -325,6 +327,8 @@ sub _export_replace_svc_domain {
   my %settings = ();
   $settings{'AccountsLimit'} = $new->max_accounts
     if $old->max_accounts ne $new->max_accounts;
+  $settings{'TrailerText'} = $new->trailer
+    if $old->trailer ne $new->trailer;
   $settings{'DomainAccessModes'} = $new->cgp_accessmodes
     if $old->cgp_accessmodes ne $new->cgp_accessmodes;
   $settings{'AdminDomainName'} =
@@ -865,6 +869,7 @@ sub communigate_pro_command { #subroutine, not method
   my( $machine, $port, $login, $password, $method, @args ) = @_;
 
   eval "use CGP::CLI";
+  die $@ if $@;
 
   my $cli = new CGP::CLI( {
     'PeerAddr' => $machine,

@@ -84,6 +84,13 @@ Service #<B><% $svcnum %></B>
   <TD BGCOLOR="#ffffff"><% $svc_domain->cgp_accessmodes %></TD>
 </TR>
 
+% if ( $svc_domain->trailer ) {
+  <TR>
+    <TD ALIGN="right">Mail trailer</TD>
+    <TD BGCOLOR="#ffffff"><PRE><% $svc_domain->trailer |h %></PRE></TD>
+  </TR>
+% }
+
 </TABLE></TD></TR></TABLE>
 
 <%init>

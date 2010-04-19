@@ -55,7 +55,7 @@ Available top-level domains: <% $export->option('tlds') %>
 % }
 
 % if ( $communigate
-%      && $part_svc->part_svc_column('max_accounts')->columnflag !~ /^[FA]$/ ) {
+%      && $part_svc->part_svc_column('cgp_aliases')->columnflag !~ /^[FA]$/ ) {
 
     <TR>
       <TD ALIGN="right">Aliases</TD>
@@ -94,6 +94,22 @@ Available top-level domains: <% $export->option('tlds') %>
 % } else {
     <INPUT TYPE="hidden" NAME="cgp_accessmodes" VALUE="<% $svc_domain->cgp_accessmodes() |h %>">
 % }
+
+% if ( $communigate
+%      && $part_svc->part_svc_column('trailer')->columnflag ne 'F' )
+% {
+
+  <TR>
+    <TD ALIGN="right">Mail trailer</TD>
+    <TD>
+      <TEXTAREA NAME="trailer" ROWS=5 COLS=60><% $svc_domain->trailer() |h %></TEXTAREA>
+    </TD>
+  </TR>
+
+% } else {
+    <INPUT TYPE="hidden" NAME="trailer" VALUE="<% $svc_domain->trailer() |h %>">
+% }
+
 
 </TABLE>
 <BR>
