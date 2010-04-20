@@ -112,7 +112,7 @@ sub _export_insert_svc_acct {
   $prefs{'Language'} = $svc_acct->cgp_language if $svc_acct->cgp_language;
   $prefs{'TimeZone'} = $svc_acct->cgp_timezone if $svc_acct->cgp_timezone;
   $prefs{'SkinName'} = $svc_acct->cgp_skinname if $svc_acct->cgp_skinname;
-  #XXX pronto style
+  $prefs{'ProntoSkinName'} = $svc_acct->cgp_prontoskinname if $svc_acct->cgp_prontoskinname;
   $prefs{'SendMDNMode'} = $svc_acct->cgp_sendmdnmode if $svc_acct->cgp_sendmdnmode;
   if ( keys %prefs ) {
     my $pref_err = $self->communigate_pro_queue( $svc_acct->svcnum,
@@ -193,13 +193,13 @@ sub _export_insert_svc_domain {
   my $pref_err = $self->communigate_pro_queue( $svc_domain->svcnum,
     'SetAccountDefaultPrefs',
     $svc_domain->domain,
-    'DeleteMode'  => $svc_domain->acct_def_cgp_deletemode,
-    'EmptyTrash'  => $svc_domain->acct_def_cgp_emptytrash,
-    'Language'    => $svc_domain->acct_def_cgp_language,
-    'TimeZone'    => $svc_domain->acct_def_cgp_timezone,
-    'SkinName'    => $svc_domain->acct_def_cgp_skinname,
-    #XXX pronto style?
-    'SendMDNMode' => $svc_domain->acct_def_cgp_sendmdnmode,
+    'DeleteMode'     => $svc_domain->acct_def_cgp_deletemode,
+    'EmptyTrash'     => $svc_domain->acct_def_cgp_emptytrash,
+    'Language'       => $svc_domain->acct_def_cgp_language,
+    'TimeZone'       => $svc_domain->acct_def_cgp_timezone,
+    'SkinName'       => $svc_domain->acct_def_cgp_skinname,
+    'ProntoSkinName' => $svc_domain->acct_def_cgp_prontoskinname,
+    'SendMDNMode'    => $svc_domain->acct_def_cgp_sendmdnmode,
   );
   warn "WARNING: error queueing SetAccountDefaultPrefs job: $pref_err"
     if $pref_err;
@@ -325,7 +325,8 @@ sub _export_replace_svc_acct {
     if $old->cgp_timezone ne $new->cgp_timezone;
   $prefs{'SkinName'} = $new->cgp_skinname
     if $old->cgp_skinname ne $new->cgp_skinname;
-  #XXX pronto style
+  $prefs{'ProntoSkinName'} = $new->cgp_prontoskinname
+    if $old->cgp_prontoskinname ne $new->cgp_prontoskinname;
   $prefs{'SendMDNMode'} = $new->cgp_sendmdnmode
     if $old->cgp_sendmdnmode ne $new->cgp_sendmdnmode;
   if ( keys %prefs ) {
@@ -417,13 +418,13 @@ sub _export_replace_svc_domain {
   my $pref_err = $self->communigate_pro_queue( $new->svcnum,
     'SetAccountDefaultPrefs',
     $new->domain,
-    'DeleteMode' => $new->acct_def_cgp_deletemode,
-    'EmptyTrash' => $new->acct_def_cgp_emptytrash,
-    'Language' => $new->acct_def_cgp_language,
-    'TimeZone' => $new->acct_def_cgp_timezone,
-    'SkinName' => $new->acct_def_cgp_skinname,
-    #XXX Pronto style
-    'SendMDNMode' => $new->acct_def_cgp_sendmdnmode,
+    'DeleteMode'     => $new->acct_def_cgp_deletemode,
+    'EmptyTrash'     => $new->acct_def_cgp_emptytrash,
+    'Language'       => $new->acct_def_cgp_language,
+    'TimeZone'       => $new->acct_def_cgp_timezone,
+    'SkinName'       => $new->acct_def_cgp_skinname,
+    'ProntoSkinName' => $new->acct_def_cgp_prontoskinname,
+    'SendMDNMode'    => $new->acct_def_cgp_sendmdnmode,
   );
   warn "WARNING: error queueing SetAccountDefaultPrefs job: $pref_err"
     if $pref_err;

@@ -295,7 +295,13 @@ sub table_info {
                             disable_inventory => 1,
                             disable_select    => 1,
                         },
-      #XXX pronto style?
+      'acct_def_cgp_prontoskinname' => {
+                            label => 'Acct. default Pronto style',
+                            type  => 'select',
+                            select_list => [ '', 'Pronto', 'Pronto-darkflame', 'Pronto-steel', 'Pronto-twilight', ],
+                            disable_inventory => 1,
+                            disable_select    => 1,
+                        },
       'acct_def_cgp_sendmdnmode' => {
         label => 'Acct. default send read receipts',
         type  => 'select',
@@ -552,7 +558,7 @@ sub check {
               || $self->ut_alphan('acct_def_cgp_language')
               || $self->ut_textn('acct_def_cgp_timezone')
               || $self->ut_textn('acct_def_cgp_skinname')
-              #XXX pronto style?
+              || $self->ut_textn('acct_def_cgp_prontoskinname')
               || $self->ut_alphan('acct_def_cgp_sendmdnmode')
               #mail
               #XXX rules, archive rule, spam foldering rule(s)

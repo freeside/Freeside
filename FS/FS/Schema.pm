@@ -1675,13 +1675,13 @@ sub tables_hashref {
         'cgp_addmailtrailer', 'char', 'NULL',       1, '', '', #AddMailTrailer
         #XXX archive messages, mailing lists
         #preferences
-        'cgp_deletemode',  'varchar', 'NULL', $char_d, '', '', #DeleteMode
-        'cgp_emptytrash',  'varchar', 'NULL', $char_d, '', '', #EmptyTrash
-        'cgp_language',    'varchar', 'NULL', $char_d, '', '', #Language
-        'cgp_timezone',    'varchar', 'NULL', $char_d, '', '', #TimeZone
-        'cgp_skinname',    'varchar', 'NULL', $char_d, '', '', #SkinName
-        #XXX pronto style?
-        'cgp_sendmdnmode', 'varchar', 'NULL', $char_d, '', '', #SendMDNMode
+        'cgp_deletemode',     'varchar', 'NULL', $char_d, '', '',#DeleteMode
+        'cgp_emptytrash',     'varchar', 'NULL', $char_d, '', '',#EmptyTrash
+        'cgp_language',       'varchar', 'NULL', $char_d, '', '',#Language
+        'cgp_timezone',       'varchar', 'NULL', $char_d, '', '',#TimeZone
+        'cgp_skinname',       'varchar', 'NULL', $char_d, '', '',#SkinName
+        'cgp_prontoskinname', 'varchar', 'NULL', $char_d, '', '',#ProntoSkinName
+        'cgp_sendmdnmode',    'varchar', 'NULL', $char_d, '', '',#SendMDNMode
         #mail
 #vacation message, redirect all mail, mail rules
         #XXX RPOP settings
@@ -1734,26 +1734,26 @@ sub tables_hashref {
         'cgp_aliases',  'varchar', 'NULL',      255, '', '',
         'cgp_accessmodes','varchar','NULL',     255, '', '', #DomainAccessModes
         #settings
-        'acct_def_password_selfchange','char', 'NULL',       1, '', '', 
-        'acct_def_password_recover',   'char', 'NULL',       1, 'Y', '', 
-        'acct_def_cgp_accessmodes', 'varchar', 'NULL',     255, '', '',
-        'acct_def_quota',           'varchar', 'NULL', $char_d, '', '',
-        'acct_def_file_quota',      'varchar', 'NULL', $char_d, '', '',
-        'acct_def_file_maxnum',     'varchar', 'NULL', $char_d, '', '',
-        'acct_def_file_maxsize',    'varchar', 'NULL', $char_d, '', '',
-        'acct_def_cgp_rulesallowed','varchar', 'NULL', $char_d, '', '',
-        'acct_def_cgp_rpopallowed',    'char', 'NULL',       1, '', '', 
-        'acct_def_cgp_mailtoall',      'char', 'NULL',       1, '', '', 
-        'acct_def_cgp_addmailtrailer', 'char', 'NULL',       1, '', '', 
+        'acct_def_password_selfchange',   'char', 'NULL',       1,  '', '', 
+        'acct_def_password_recover',      'char', 'NULL',       1, 'Y', '', 
+        'acct_def_cgp_accessmodes',    'varchar', 'NULL',     255,  '', '',
+        'acct_def_quota',              'varchar', 'NULL', $char_d,  '', '',
+        'acct_def_file_quota',         'varchar', 'NULL', $char_d,  '', '',
+        'acct_def_file_maxnum',        'varchar', 'NULL', $char_d,  '', '',
+        'acct_def_file_maxsize',       'varchar', 'NULL', $char_d,  '', '',
+        'acct_def_cgp_rulesallowed',   'varchar', 'NULL', $char_d,  '', '',
+        'acct_def_cgp_rpopallowed',       'char', 'NULL',       1,  '', '', 
+        'acct_def_cgp_mailtoall',         'char', 'NULL',       1,  '', '', 
+        'acct_def_cgp_addmailtrailer',    'char', 'NULL',       1,  '', '', 
         #XXX archive messages
         #preferences
-        'acct_def_cgp_deletemode',  'varchar', 'NULL', $char_d, '', '',
-        'acct_def_cgp_emptytrash',  'varchar', 'NULL', $char_d, '', '',
-        'acct_def_cgp_language',    'varchar', 'NULL', $char_d, '', '',
-        'acct_def_cgp_timezone',    'varchar', 'NULL', $char_d, '', '',
-        'acct_def_cgp_skinname',    'varchar', 'NULL', $char_d, '', '',
-        #XXX pronto style?
-        'acct_def_cgp_sendmdnmode', 'varchar', 'NULL', $char_d, '', '',
+        'acct_def_cgp_deletemode',     'varchar', 'NULL', $char_d,  '', '',
+        'acct_def_cgp_emptytrash',     'varchar', 'NULL', $char_d,  '', '',
+        'acct_def_cgp_language',       'varchar', 'NULL', $char_d,  '', '',
+        'acct_def_cgp_timezone',       'varchar', 'NULL', $char_d,  '', '',
+        'acct_def_cgp_skinname',       'varchar', 'NULL', $char_d,  '', '',
+        'acct_def_cgp_prontoskinname', 'varchar', 'NULL', $char_d,  '', '',
+        'acct_def_cgp_sendmdnmode',    'varchar', 'NULL', $char_d,  '', '',
         #mail
         #XXX rules, archive rule, spam foldering rule(s)
       ],

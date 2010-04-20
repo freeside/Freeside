@@ -320,7 +320,13 @@ Account defaults
             )
   %>
 
-%#XXX pronto style
+  <% include('/elements/tr-select.html',
+               'label'      => 'Pronto style',
+               'field'      => 'acct_def_cgp_prontoskinname',
+               'options'    =>  [ '', 'Pronto', 'Pronto-darkflame', 'Pronto-steel', 'Pronto-twilight', ],
+               'curr_value' => $svc_domain->acct_def_cgp_prontoskinname,
+            )
+  %>
 
   <% include('/elements/tr-select.html',
                'label'      => 'Send read receipts',

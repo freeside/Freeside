@@ -116,7 +116,10 @@
                         value=>$svc_acct->cgp_timezone || 'default (HostOS)' ) %>
   <% include('/view/elements/tr.html', label=>'Layout',
                         value=>$svc_acct->cgp_skinname || 'default (***)' ) %>
-%#XXX pronto style
+
+  <% include('/view/elements/tr.html', label=>'Pronto style',
+                        value=>$svc_acct->cgp_prontoskinname ) %>
+
   <% include('/view/elements/tr.html', label=>'Send read receipts',
                         value=>$svc_acct->cgp_sendmdnmode ) %>
 

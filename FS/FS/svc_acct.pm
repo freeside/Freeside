@@ -538,7 +538,13 @@ sub table_info {
                             disable_inventory => 1,
                             disable_select    => 1,
                           },
-        #XXX pronto style?
+        'cgp_prontoskinname' => {
+                            label => 'Communigate Pronto style',
+                            type  => 'select',
+                            select_list => [ '', 'Pronto', 'Pronto-darkflame', 'Pronto-steel', 'Pronto-twilight', ],
+                            disable_inventory => 1,
+                            disable_select    => 1,
+                          },
         'cgp_sendmdnmode' => {
           label => 'Communigate send read receipts',
           type  => 'select',
@@ -1239,7 +1245,7 @@ sub check {
               || $self->ut_alphan('cgp_language')
               || $self->ut_textn('cgp_timezone')
               || $self->ut_textn('cgp_skinname')
-              #XXX pronto style?
+              || $self->ut_textn('cgp_prontoskinname')
               || $self->ut_alphan('cgp_sendmdnmode')
               #XXX vacation message, redirect all mail, mail rules
               #XXX RPOP settings

@@ -492,7 +492,14 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
             )
   %>
 
-%#XXX pronto style
+  <% include('/elements/tr-select.html',
+               'label'      => 'Pronto style',
+               'field'      => 'cgp_prontoskinname',
+               'options'    => [ '', 'Pronto', 'Pronto-darkflame', 'Pronto-steel', 'Pronto-twilight', ],
+
+               'curr_value' => $svc_acct->cgp_prontoskinname,
+            )
+  %>
 
   <% include('/elements/tr-select.html',
                'label'      => 'Send read receipts',

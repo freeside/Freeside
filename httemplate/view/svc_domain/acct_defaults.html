@@ -103,7 +103,11 @@
             )
   %>
 
-%#XXX pronto style
+  <% include('/view/elements/tr.html',
+               label=>'Pronto style',
+               value=>$svc_domain->acct_def_cgp_prontoskinname
+            )
+  %>
 
   <% include('/view/elements/tr.html',
                label=>'Send read receipts',
