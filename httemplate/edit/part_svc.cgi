@@ -300,6 +300,12 @@ that field.
 %          } #endif
 %          $html .= '</SELECT>';
 %
+%        } elsif ( $def->{type} eq 'textarea' ) {
+%
+%          $html .=
+%            qq!<TEXTAREA NAME="${layer}__${field}">!. encode_entities($value).
+%            '</TEXTAREA>';
+%
 %        } elsif ( $def->{type} eq 'select-svc_pbx.html' ) {
 %
 %          $html .= include('/elements/select-svc_pbx.html',

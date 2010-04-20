@@ -211,6 +211,8 @@ sub table_info {
       'trailer' => {
         label => 'Mail trailer',
         type  => 'textarea',
+        disable_inventory => 1,
+        disable_select    => 1,
       },
       'acct_def_cgp_language' => {
                             label => 'Acct. default language',
