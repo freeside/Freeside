@@ -85,6 +85,35 @@
             )
   %>
 
+  <% include('/view/elements/tr.html',
+               label=>'Language',
+               value=>$svc_domain->acct_def_cgp_language || 'default (English)'
+            )
+  %>
+
+  <% include('/view/elements/tr.html',
+               label=>'Time zone',
+               value=>$svc_domain->acct_def_cgp_timezone || 'default (HostOS)'
+            )
+  %>
+
+  <% include('/view/elements/tr.html',
+               label=>'Layout',
+               value=>$svc_domain->acct_def_cgp_skinname || 'default (***)'
+            )
+  %>
+
+%#XXX pronto style
+
+  <% include('/view/elements/tr.html',
+               label=>'Send read receipts',
+               value=>$svc_domain->acct_def_cgp_sendmdnmode
+            )
+  %>
+
+%# mail
+%#XXX rules, archive rule, spam foldering rule(s)
+
   </TABLE></TD></TR></TABLE>
 
 % }

@@ -189,8 +189,120 @@ sub table_info {
                        disable_inventory => 1,
                        disable_select => 1,
                      },
-
-
+      'acct_def_cgp_rulesallowed'   => {
+        label       => 'Acct. default Allowed mail rules',
+        type        => 'select',
+        select_list => [ '', 'No', 'Filter Only', 'All But Exec', 'Any' ],
+        disable_inventory => 1,
+        disable_select    => 1,
+      },
+      'acct_def_cgp_rpopallowed'    => {
+        label => 'Acct. default RPOP modifications',
+        type  => 'checkbox',
+      },
+      'acct_def_cgp_mailtoall'      => {
+        label => 'Acct. default Accepts mail to "all"',
+        type  => 'checkbox',
+      },
+      'acct_def_cgp_addmailtrailer' => {
+        label => 'Acct. default Add trailer to sent mail',
+        type  => 'checkbox',
+      },
+      'trailer' => {
+        label => 'Mail trailer',
+        type  => 'textarea',
+      },
+      'acct_def_cgp_language' => {
+                            label => 'Acct. default language',
+                            type  => 'select',
+                            select_list => [ '', qw( English Arabic Chinese Dutch French German Hebrew Italian Japanese Portuguese Russian Slovak Spanish Thai ) ],
+                            disable_inventory => 1,
+                            disable_select    => 1,
+                        },
+      'acct_def_cgp_timezone' => {
+                            label => 'Acct. default time zone',
+                            type  => 'select',
+                            select_list => [ '',
+                                             'HostOS',
+                                             '(+0100) Algeria/Congo',
+                                             '(+0200) Egypt/South Africa',
+                                             '(+0300) Saudi Arabia',
+                                             '(+0400) Oman',
+                                             '(+0500) Pakistan',
+                                             '(+0600) Bangladesh',
+                                             '(+0700) Thailand/Vietnam',
+                                             '(+0800) China/Malaysia',
+                                             '(+0900) Japan/Korea',
+                                             '(+1000) Queensland',
+                                             '(+1100) Micronesia',
+                                             '(+1200) Fiji',
+                                             '(+1300) Tonga/Kiribati',
+                                             '(+1400) Christmas Islands',
+                                             '(-0100) Azores/Cape Verde',
+                                             '(-0200) Fernando de Noronha',
+                                             '(-0300) Argentina/Uruguay',
+                                             '(-0400) Venezuela/Guyana',
+                                             '(-0500) Haiti/Peru',
+                                             '(-0600) Central America',
+                                             '(-0700) Arisona',
+                                             '(-0800) Adamstown',
+                                             '(-0900) Marquesas Islands',
+                                             '(-1000) Hawaii/Tahiti',
+                                             '(-1100) Samoa',
+                                             'Asia/Afghanistan',
+                                             'Asia/India',
+                                             'Asia/Iran',
+                                             'Asia/Iraq',
+                                             'Asia/Israel',
+                                             'Asia/Jordan',
+                                             'Asia/Lebanon',
+                                             'Asia/Syria',
+                                             'Australia/Adelaide',
+                                             'Australia/East',
+                                             'Australia/NorthernTerritory',
+                                             'Europe/Central',
+                                             'Europe/Eastern',
+                                             'Europe/Moscow',
+                                             'Europe/Western',
+                                             'GMT (+0000)',
+                                             'Newfoundland',
+                                             'NewZealand/Auckland',
+                                             'NorthAmerica/Alaska',
+                                             'NorthAmerica/Atlantic',
+                                             'NorthAmerica/Central',
+                                             'NorthAmerica/Eastern',
+                                             'NorthAmerica/Mountain',
+                                             'NorthAmerica/Pacific',
+                                             'Russia/Ekaterinburg',
+                                             'Russia/Irkutsk',
+                                             'Russia/Kamchatka',
+                                             'Russia/Krasnoyarsk',
+                                             'Russia/Magadan',
+                                             'Russia/Novosibirsk',
+                                             'Russia/Vladivostok',
+                                             'Russia/Yakutsk',
+                                             'SouthAmerica/Brasil',
+                                             'SouthAmerica/Chile',
+                                             'SouthAmerica/Paraguay',
+                                           ],
+                            disable_inventory => 1,
+                            disable_select    => 1,
+                        },
+      'acct_def_cgp_skinname' => {
+                            label => 'Acct. default layout',
+                            type  => 'select',
+                            select_list => [ '', '***', 'GoldFleece', 'Skin2' ],
+                            disable_inventory => 1,
+                            disable_select    => 1,
+                        },
+      #XXX pronto style?
+      'acct_def_cgp_sendmdnmode' => {
+        label => 'Acct. default send read receipts',
+        type  => 'select',
+        select_list => [ '', 'Never', 'Manually', 'Automatically' ],
+        disable_inventory => 1,
+        disable_select    => 1,
+      },
     },
   };
 }
@@ -428,12 +540,22 @@ sub check {
               || $self->ut_alphan('acct_def_file_quota')
               || $self->ut_alphan('acct_def_maxnum')
               || $self->ut_alphan('acct_def_maxsize')
-              || $self->ut_alphasn('acct_def_cgp_deletemode')
-              || $self->ut_alphan('acct_def_cgp_emptytrash')
+              #settings
               || $self->ut_alphasn('acct_def_cgp_rulesallowed')
               || $self->ut_enum('acct_def_cgp_rpopallowed', [ '', 'Y' ])
               || $self->ut_enum('acct_def_cgp_mailtoall', [ '', 'Y' ])
               || $self->ut_enum('acct_def_cgp_addmailtrailer', [ '', 'Y' ])
+              #XXX archive messages
+              #preferences
+              || $self->ut_alphasn('acct_def_cgp_deletemode')
+              || $self->ut_alphan('acct_def_cgp_emptytrash')
+              || $self->ut_alphan('acct_def_cgp_language')
+              || $self->ut_textn('acct_def_cgp_timezone')
+              || $self->ut_textn('acct_def_cgp_skinname')
+              #XXX pronto style?
+              || $self->ut_alphan('acct_def_cgp_sendmdnmode')
+              #mail
+              #XXX rules, archive rule, spam foldering rule(s)
   ;
   return $error if $error;
 

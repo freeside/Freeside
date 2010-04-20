@@ -268,44 +268,12 @@ sub table_info {
                          disable_fixed => 1,
                          disable_select => 1,
                        },
-        'cgp_type'=> { 
-                       label => 'Communigate account type',
-                       type => 'select',
-                       select_list => [qw( MultiMailbox TextMailbox MailDirMailbox AGrade BGrade CGrade )],
-                       disable_inventory => 1,
-                       disable_select    => 1,
-                     },
-        'cgp_accessmodes' => { 
-                               label => 'Communigate enabled services',
-                               type  => 'communigate_pro-accessmodes',
-                               disable_inventory => 1,
-                               disable_select    => 1,
-                             },
-        'cgp_aliases' => { 
-                           label => 'Communigate aliases',
-                           type  => 'text',
-                           disable_inventory => 1,
-                           disable_select    => 1,
-                         },
         'password_selfchange' => { label => 'Password modification',
                                    type  => 'checkbox',
                                  },
         'password_recover'    => { label => 'Password recovery',
                                    type  => 'checkbox',
                                  },
-        'cgp_deletemode' => { 
-                              label => 'Communigate message delete method',
-                              type  => 'select',
-                              select_list => [ 'Move To Trash', 'Immediately', 'Mark' ],
-                              disable_inventory => 1,
-                              disable_select    => 1,
-                            },
-        'cgp_emptytrash' => { 
-                              label => 'Communigate on logout remove trash',
-                              type  => 'text',
-                              disable_inventory => 1,
-                              disable_select    => 1,
-                            },
         'quota'     => { 
                          label => 'Quota', #Mail storage limit
                          type => 'text',
@@ -434,6 +402,155 @@ sub table_info {
                                    label     => 'Last logout',
                                    type      => 'disabled',
                                  },
+
+        'cgp_aliases' => { 
+                           label => 'Communigate aliases',
+                           type  => 'text',
+                           disable_inventory => 1,
+                           disable_select    => 1,
+                         },
+        #settings
+        'cgp_type'=> { 
+                       label => 'Communigate account type',
+                       type => 'select',
+                       select_list => [qw( MultiMailbox TextMailbox MailDirMailbox AGrade BGrade CGrade )],
+                       disable_inventory => 1,
+                       disable_select    => 1,
+                     },
+        'cgp_accessmodes' => { 
+                               label => 'Communigate enabled services',
+                               type  => 'communigate_pro-accessmodes',
+                               disable_inventory => 1,
+                               disable_select    => 1,
+                             },
+        'cgp_rulesallowed'   => {
+          label       => 'Allowed mail rules',
+          type        => 'select',
+          select_list => [ '', 'No', 'Filter Only', 'All But Exec', 'Any' ],
+          disable_inventory => 1,
+          disable_select    => 1,
+        },
+        'cgp_rpopallowed'    => { label => 'RPOP modifications',
+                                  type  => 'checkbox',
+                                },
+        'cgp_mailtoall'      => { label => 'Accepts mail to "all"',
+                                  type  => 'checkbox',
+                                },
+        'cgp_addmailtrailer' => { label => 'Add trailer to sent mail',
+                                  type  => 'checkbox',
+                                },
+        #XXX archive messages, mailing lists
+
+        #preferences
+        'cgp_deletemode' => { 
+                              label => 'Communigate message delete method',
+                              type  => 'select',
+                              select_list => [ 'Move To Trash', 'Immediately', 'Mark' ],
+                              disable_inventory => 1,
+                              disable_select    => 1,
+                            },
+        'cgp_emptytrash' => { 
+                              label => 'Communigate on logout remove trash',
+                              type  => 'text',
+                              disable_inventory => 1,
+                              disable_select    => 1,
+                            },
+        'cgp_language' => {
+                            label => 'Communigate language',
+                            type  => 'select',
+                            select_list => [ '', qw( English Arabic Chinese Dutch French German Hebrew Italian Japanese Portuguese Russian Slovak Spanish Thai ) ],
+                            disable_inventory => 1,
+                            disable_select    => 1,
+                          },
+        'cgp_timezone' => {
+                            label => 'Communigate time zone',
+                            type  => 'select',
+                            select_list => [ '',
+                                             'HostOS',
+                                             '(+0100) Algeria/Congo',
+                                             '(+0200) Egypt/South Africa',
+                                             '(+0300) Saudi Arabia',
+                                             '(+0400) Oman',
+                                             '(+0500) Pakistan',
+                                             '(+0600) Bangladesh',
+                                             '(+0700) Thailand/Vietnam',
+                                             '(+0800) China/Malaysia',
+                                             '(+0900) Japan/Korea',
+                                             '(+1000) Queensland',
+                                             '(+1100) Micronesia',
+                                             '(+1200) Fiji',
+                                             '(+1300) Tonga/Kiribati',
+                                             '(+1400) Christmas Islands',
+                                             '(-0100) Azores/Cape Verde',
+                                             '(-0200) Fernando de Noronha',
+                                             '(-0300) Argentina/Uruguay',
+                                             '(-0400) Venezuela/Guyana',
+                                             '(-0500) Haiti/Peru',
+                                             '(-0600) Central America',
+                                             '(-0700) Arisona',
+                                             '(-0800) Adamstown',
+                                             '(-0900) Marquesas Islands',
+                                             '(-1000) Hawaii/Tahiti',
+                                             '(-1100) Samoa',
+                                             'Asia/Afghanistan',
+                                             'Asia/India',
+                                             'Asia/Iran',
+                                             'Asia/Iraq',
+                                             'Asia/Israel',
+                                             'Asia/Jordan',
+                                             'Asia/Lebanon',
+                                             'Asia/Syria',
+                                             'Australia/Adelaide',
+                                             'Australia/East',
+                                             'Australia/NorthernTerritory',
+                                             'Europe/Central',
+                                             'Europe/Eastern',
+                                             'Europe/Moscow',
+                                             'Europe/Western',
+                                             'GMT (+0000)',
+                                             'Newfoundland',
+                                             'NewZealand/Auckland',
+                                             'NorthAmerica/Alaska',
+                                             'NorthAmerica/Atlantic',
+                                             'NorthAmerica/Central',
+                                             'NorthAmerica/Eastern',
+                                             'NorthAmerica/Mountain',
+                                             'NorthAmerica/Pacific',
+                                             'Russia/Ekaterinburg',
+                                             'Russia/Irkutsk',
+                                             'Russia/Kamchatka',
+                                             'Russia/Krasnoyarsk',
+                                             'Russia/Magadan',
+                                             'Russia/Novosibirsk',
+                                             'Russia/Vladivostok',
+                                             'Russia/Yakutsk',
+                                             'SouthAmerica/Brasil',
+                                             'SouthAmerica/Chile',
+                                             'SouthAmerica/Paraguay',
+                                           ],
+                            disable_inventory => 1,
+                            disable_select    => 1,
+                          },
+        'cgp_skinname' => {
+                            label => 'Communigate layout',
+                            type  => 'select',
+                            select_list => [ '', '***', 'GoldFleece', 'Skin2' ],
+                            disable_inventory => 1,
+                            disable_select    => 1,
+                          },
+        #XXX pronto style?
+        'cgp_sendmdnmode' => {
+          label => 'Communigate send read receipts',
+          type  => 'select',
+          select_list => [ '', 'Never', 'Manually', 'Automatically' ],
+          disable_inventory => 1,
+          disable_select    => 1,
+        },
+
+        #mail
+        #XXX vacation message, redirect all mail, mail rules
+        #XXX RPOP settings
+
     },
   };
 }
@@ -1119,6 +1236,13 @@ sub check {
               #preferences
               || $self->ut_alphasn('cgp_deletemode')
               || $self->ut_alphan('cgp_emptytrash')
+              || $self->ut_alphan('cgp_language')
+              || $self->ut_textn('cgp_timezone')
+              || $self->ut_textn('cgp_skinname')
+              #XXX pronto style?
+              || $self->ut_alphan('cgp_sendmdnmode')
+              #XXX vacation message, redirect all mail, mail rules
+              #XXX RPOP settings
   ;
   return $error if $error;
 

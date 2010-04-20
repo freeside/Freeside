@@ -178,7 +178,7 @@ Account defaults
                'labels'     => {
                                  '' => 'default (No)', #No always the default?
                                },
-              'curr_value'  => $svc_domain->acct_def_cgp_rulesallowed,
+               'curr_value' => $svc_domain->acct_def_cgp_rulesallowed,
             )
   %>
 
@@ -225,14 +225,115 @@ Account defaults
                'curr_value' => $svc_domain->acct_def_cgp_emptytrash,
             )
   %>
-
-  <% include('/elements/tr-checkbox.html',
-               'label'      =>'Password recovery',
-               'field'      => 'acct_def_password_recover',
-               'curr_value' => $svc_domain->acct_def_password_recover,
-               'value'      => 'Y',
+  <% include('/elements/tr-select.html',
+               'label'      => 'Language',
+               'field'      => 'acct_def_cgp_language',
+               'options'    => [ '', qw( English Arabic Chinese Dutch French German Hebrew Italian Japanese Portuguese Russian Slovak Spanish Thai ) ],
+               'labels'     => {
+                                 '' => 'default (English)',
+                               },
+               'curr_value' => $svc_domain->acct_def_cgp_language,
             )
   %>
+
+  <% include('/elements/tr-select.html',
+               'label'      => 'Time zone',
+               'field'      => 'acct_def_cgp_timezone',
+               'options'    => [
+                                 'HostOS',
+                                 '(+0100) Algeria/Congo',
+                                 '(+0200) Egypt/South Africa',
+                                 '(+0300) Saudi Arabia',
+                                 '(+0400) Oman',
+                                 '(+0500) Pakistan',
+                                 '(+0600) Bangladesh',
+                                 '(+0700) Thailand/Vietnam',
+                                 '(+0800) China/Malaysia',
+                                 '(+0900) Japan/Korea',
+                                 '(+1000) Queensland',
+                                 '(+1100) Micronesia',
+                                 '(+1200) Fiji',
+                                 '(+1300) Tonga/Kiribati',
+                                 '(+1400) Christmas Islands',
+                                 '(-0100) Azores/Cape Verde',
+                                 '(-0200) Fernando de Noronha',
+                                 '(-0300) Argentina/Uruguay',
+                                 '(-0400) Venezuela/Guyana',
+                                 '(-0500) Haiti/Peru',
+                                 '(-0600) Central America',
+                                 '(-0700) Arisona',
+                                 '(-0800) Adamstown',
+                                 '(-0900) Marquesas Islands',
+                                 '(-1000) Hawaii/Tahiti',
+                                 '(-1100) Samoa',
+                                 'Asia/Afghanistan',
+                                 'Asia/India',
+                                 'Asia/Iran',
+                                 'Asia/Iraq',
+                                 'Asia/Israel',
+                                 'Asia/Jordan',
+                                 'Asia/Lebanon',
+                                 'Asia/Syria',
+                                 'Australia/Adelaide',
+                                 'Australia/East',
+                                 'Australia/NorthernTerritory',
+                                 'Europe/Central',
+                                 'Europe/Eastern',
+                                 'Europe/Moscow',
+                                 'Europe/Western',
+                                 'GMT (+0000)',
+                                 'Newfoundland',
+                                 'NewZealand/Auckland',
+                                 'NorthAmerica/Alaska',
+                                 'NorthAmerica/Atlantic',
+                                 'NorthAmerica/Central',
+                                 'NorthAmerica/Eastern',
+                                 'NorthAmerica/Mountain',
+                                 'NorthAmerica/Pacific',
+                                 'Russia/Ekaterinburg',
+                                 'Russia/Irkutsk',
+                                 'Russia/Kamchatka',
+                                 'Russia/Krasnoyarsk',
+                                 'Russia/Magadan',
+                                 'Russia/Novosibirsk',
+                                 'Russia/Vladivostok',
+                                 'Russia/Yakutsk',
+                                 'SouthAmerica/Brasil',
+                                 'SouthAmerica/Chile',
+                                 'SouthAmerica/Paraguay',
+                               ],
+               'labels'     => {
+                                 '' => 'default (HostOS)',
+                               },
+               'curr_value' => $svc_domain->acct_def_cgp_timezone,
+            )
+  %>
+
+  <% include('/elements/tr-select.html',
+               'label'      => 'Layout',
+               'field'      => 'acct_def_cgp_skinname',
+               'options'    => [ '', '***', 'GoldFleece', 'Skin2' ],
+               'labels'     => {
+                                 '' => 'default (***)',
+                               },
+               'curr_value' => $svc_domain->acct_def_cgp_skinname,
+            )
+  %>
+
+%#XXX pronto style
+
+  <% include('/elements/tr-select.html',
+               'label'      => 'Send read receipts',
+               'field'      => 'acct_def_cgp_sendmdnmode',
+               'options'    => [ '', 'Never', 'Manually', 'Automatically' ],
+               'labels'     => {
+                                 '' => 'default (Automatically)',
+                               },
+               'curr_value' => $svc_domain->acct_def_cgp_language,
+            )
+  %>
+
+%              #XXX rules, archive rule, spam foldering rule(s)
 
 </TABLE>
 <BR>
@@ -241,7 +342,10 @@ Account defaults
 
 %   foreach my $f (qw( password_selfchange password_recover cgp_accessmodes
 %                      quota file_quota file_maxnum file_maxsize
-%                      cgp_deletemode cgp_emptytrash
+%                      cgp_rulesallowed cgp_rpopallowed cgp_mailtoall
+%                      cgp_addmailtrailer
+%                      cgp_deletemode cgp_emptytrash cgp_language
+%                      cgp_timezone cgp_skinname cgp_sendmdnmode
 %                 )) {
       <INPUT TYPE="hidden" NAME="acct_def_<%$f%>" VALUE="<% $svc_domain->get("acct_def_$f") %>">
 %   }

@@ -110,7 +110,16 @@
   <% include('/view/elements/tr.html', label=>'On logout remove trash',
                         value=>$svc_acct->cgp_emptytrash ) %>
 
-%#XXX language, time zone, layout, printo style, send read receipts
+  <% include('/view/elements/tr.html', label=>'Language',
+                        value=>$svc_acct->cgp_language || 'default (English)' ) %>
+  <% include('/view/elements/tr.html', label=>'Time zone',
+                        value=>$svc_acct->cgp_timezone || 'default (HostOS)' ) %>
+  <% include('/view/elements/tr.html', label=>'Layout',
+                        value=>$svc_acct->cgp_skinname || 'default (***)' ) %>
+%#XXX pronto style
+  <% include('/view/elements/tr.html', label=>'Send read receipts',
+                        value=>$svc_acct->cgp_sendmdnmode ) %>
+
 %#XXX vacation message, redirect all mail, mail rules
 
 % }
