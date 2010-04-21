@@ -34,7 +34,8 @@ my( %opt ) = @_;
 $opt{'records'} = delete $opt{'part_pkg'}
   if $opt{'part_pkg'};
 
-my %hash = ( 'disabled' => '' );
+my %hash = ();
+$hash{'disabled'} = '' unless $opt{'showdisabled'};
 
 if ( exists($opt{'classnum'}) && defined($opt{'classnum'}) ) {
   if ( $opt{'classnum'} > 0 ) {
