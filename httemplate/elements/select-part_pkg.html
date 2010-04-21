@@ -45,6 +45,7 @@ if ( exists($opt{'classnum'}) && defined($opt{'classnum'}) ) {
   } #else -1 or not specified, all classes, so don't set classnum
 }
 
-$opt{'extra_sql'} .= ' AND '. FS::part_pkg->curuser_pkgs_sql;
+$opt{'extra_sql'} .= ( keys(%hash) ? ' AND ' : ' WHERE ' ).
+                     FS::part_pkg->curuser_pkgs_sql;
 
 </%init>
