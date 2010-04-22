@@ -1786,6 +1786,44 @@ sub tables_hashref {
       'index'       => [],
     },
 
+    'cgp_rule' => {
+      'columns' => [
+        'rulenum',  'serial', '',      '', '', '',
+        'name',    'varchar', '', $char_d, '', '',
+        'comment', 'varchar', '', $char_d, '', '',
+        'svcnum',      'int', '',      '', '', '',
+        'priority',    'int', '',      '', '', '',
+      ],
+      'primary_key' => 'rulenum',
+      'unique'      => [],
+      'index '      => [ [ 'svcnum' ] ],
+    },
+
+    'cgp_rule_condition' => {
+      'columns' => [
+        'ruleconditionnum',  'serial', '',      '', '', '',
+        'condition',        'varchar', '', $char_d, '', '',
+        'op',               'varchar', '', $char_d, '', '',
+        'params',           'varchar', '',     255, '', '',
+        'rulenum',              'int', '',      '', '', '',
+      ],
+      'primary_key' => 'ruleconditionnum',
+      'unique'      => [],
+      'index '      => [ [ 'rulenum' ] ],
+    },
+
+    'cgp_rule_action' => {
+       'columns' => [
+        'ruleactionnum',  'serial', '',      '', '', '',
+        'action',        'varchar', '', $char_d, '', '',
+        'params',        'varchar', '',     255, '', '',
+        'rulenum',           'int', '',      '', '', '',
+      ],
+      'primary_key' => 'ruleactionnum',
+      'unique'      => [],
+      'index '      => [ [ 'rulenum' ] ],
+   },
+
     'svc_forward' => {
       'columns' => [
         'svcnum',   'int',            '',   '', '', '', 

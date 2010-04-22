@@ -128,6 +128,12 @@ L<FS::domain_record> - DNS zone entries
 
 L<FS::registrar> - Domain registrar class
 
+L<FS::cgp_rule> - Communigate pro rule class
+
+L<FS::cgp_rule_condition> - Communigate pro rule condition class
+
+L<FS::cgp_rule_action> - Communigate pro rule action class
+
 L<FS::svc_forward> - Mail forwarding class
 
 L<FS::svc_mailinglist> - (Customer) Mailing list class
