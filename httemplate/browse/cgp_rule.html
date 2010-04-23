@@ -1,0 +1,46 @@
+<% include('elements/browse.html',
+             'title'         => "Rules for $svc_label: $svc_value",
+             'name_singular' => 'rule',
+             'html_init'     => $html_init,
+             'query'         => { 'table'   => 'cgp_rule',
+                                  'hashref' => { 'svcnum' => $svcnum },
+                                  'order_by' => 'ORDER BY priority DESC',
+                                },
+             'count_query'   => $count_query,
+             'header'        => [ 'Priority', 'Name', '' ],
+             'fields'        => [ sub { shift->priority || 'Inactive'; },
+                                  'name',
+                                  sub { 'Delete'; },
+                                ],
+             #'align'
+             'links'         => [ $edit_sub, $edit_sub, $del_sub ],
+          )
+%>
+<%init>
+
+$cgi->param('svcnum') =~ /^(\d+)$/ or die 'no svcnum';
+my $svcnum = $1;
+
+#agent virt so you can't do cross-agent communigate rules
+my $cust_svc = qsearchs('cust_svc', { 'svcnum' => $svcnum })
+  or die 'unknown svcnum';
+
+my $count_query = "SELECT COUNT(*) FROM cgp_rule WHERE svcnum = $svcnum";
+
+my($svc_label, $svc_value, $svcdb) = $cust_svc->label;
+
+
+my $view = FS::UI::Web::svc_url( 'm'        => $m,
+                                 'action'   => 'view',
+                                 'part_svc' => $cust_svc->part_svc, 
+                                 'svc'      => $cust_svc,
+                               );
+
+my $html_init =
+  qq(<A HREF="$view">View this $svc_label</A><BR><BR>).
+  qq!<A HREF="${p}edit/cgp_rule.html?svcnum=$svcnum">Add new rule</A><BR><BR>!;
+
+my $edit_sub = [ $p.'edit/cgp_rule.html?', 'rulenum' ];
+my $del_sub = [ $p.'misc/delete-cgp_rule.html?', 'rulenum' ]; #XXX javascript areyousure or something
+
+</%init>

@@ -1,0 +1,23 @@
+% if ( $error ) {
+%   errorpage($error);
+% } else {
+<% $cgi->redirect($p. "browse/cgp_rule.html?svcnum=". $svcnum) %>
+% }
+<%init>
+
+# :/  needs agent-virt so you can't futz with arbitrary rules
+
+#die "access denied"
+#  unless $FS::CurrentUser::CurrentUser->access_right('Provision customer service');
+
+#untaint devicenum
+my($query) = $cgi->keywords;
+$query =~ /^(\d+)$/ || die "Illegal rulenum";
+my $rulenum = $1;
+
+my $cgp_rule = qsearchs('cgp_rule', { 'rulenum' => $rulenum } );
+my $svcnum = $cgp_rule->svcnum;
+
+my $error = $cgp_rule->delete;
+
+</%init>

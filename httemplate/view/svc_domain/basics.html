@@ -79,16 +79,26 @@ Service #<B><% $svcnum %></B>
   </TD>
 </TR>
 
-<TR>
-  <TD ALIGN="right">Enabled services</TD>
-  <TD BGCOLOR="#ffffff"><% $svc_domain->cgp_accessmodes %></TD>
-</TR>
+% if ( $svc_domain->cgp_accessmodes ) {
+  <TR>
+    <TD ALIGN="right">Enabled services</TD>
+    <TD BGCOLOR="#ffffff"><% $svc_domain->cgp_accessmodes %></TD>
+  </TR>
+% }
 
 % if ( $svc_domain->trailer ) {
   <TR>
     <TD ALIGN="right">Mail trailer</TD>
     <TD BGCOLOR="#ffffff"><PRE><% $svc_domain->trailer |h %></PRE></TD>
   </TR>
+% }
+
+% if ( $communigate ) {
+%   my $rule_url = $p. 'browse/cgp_rule.html?svcnum='. $svc_domain->svcnum;
+    <TR>
+      <TD ALIGN="right">Doimain mail rules</TD>
+      <TD BGCOLOR="#ffffff"><A HREF="<% $rule_url %>">View/Edit domain mail rules</A></TD>
+    </TR>
 % }
 
 </TABLE></TD></TR></TABLE>

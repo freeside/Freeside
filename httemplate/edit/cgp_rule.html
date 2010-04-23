@@ -1,0 +1,30 @@
+<% include('elements/edit.html',
+             'name_singular' => 'rule',
+             'table'         => 'cgp_rule',
+             'labels' => { 'rulenum'  => 'Rule',
+                           'name'     => 'Name',
+                           'comment'  => 'Comment',
+                           'priority' => 'Priority',
+                         },
+             'fields' => [ 'name',
+                           'comment',
+                           { 'field'   => 'priority',
+                             'type'    => 'select',
+                             'options' => [ 0 .. 10 ],
+                             'labels'  => { 0 => 'Inactive' },
+                           },
+                           { 'field' => 'svcnum', 'type' => 'hidden', },
+                         ],
+             'new_callback' => sub { my( $cgi, $cgp_rule ) = @_;
+                                     $cgp_rule->svcnum( $cgi->param('svcnum') );
+                                   },
+             #'viewall_url' => $viewall_url,
+             'menubar' => [],
+          )
+%>
+<%init>
+
+#my $svcnum #huh
+#my $viewall_url = $p. "browse/$table.html?svcnum=$svcnum";
+
+</%init>

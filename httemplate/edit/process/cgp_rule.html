@@ -1,0 +1,14 @@
+<% include( 'elements/process.html',
+              'table'    => 'cgp_rule',
+              'redirect' => $redirect,
+          )
+%>
+<%init>
+
+my $redirect = sub {
+  my($cgi, $new) = @_;
+  my $svcnum = $new->svcnum;
+  popurl(3)."browse/cgp_rule.html?svcnum=$svcnum;rulenum=";
+};
+
+</%init>
