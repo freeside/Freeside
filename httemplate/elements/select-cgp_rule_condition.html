@@ -1,0 +1,63 @@
+<% include( 'select.html',
+              %opt,
+              'options' => \@conditions, #reverse order if we ever need to spec
+              'labels'  => { '' => 'Select Condition' },
+          )
+%>
+<% include( 'select.html',
+              'name' => $opt{'field'}.'_op',
+              'id'   => ($opt{'field'}||$opt{'id'}).'_op',
+              'options' => \@myop,
+          )
+%>
+<% include( 'input-text.html',
+              'name' => $opt{'field'}.'_params',
+              #XXX curr value... anything else?
+          )
+%>
+<%init>
+
+my %opt = @_;
+
+my @conditions = (
+  '',
+  'From',
+  'Sender',
+  'To',
+  'Cc',
+  'Reply-To',
+  'Any To or Cc',
+  'Each To or Cc',
+  'Return-Path',
+  "'From' Name",
+  'Subject',
+  'Message-ID',
+  'Message Size',
+  'Human Generated',
+  'Header Field',
+  'Any Recipient',
+  'Each Recipient',
+  'Source',
+  'Security',
+  'Any Route',
+  'Each Route'
+);
+
+my %bool = (
+  'Human Generated' => 1,
+);
+
+my %number = (
+  'Message Size' => 1,
+);
+
+#XXX curr value -> hidden op / param / param selects depending
+
+my @op = ( 'is', 'is not', 'in', 'not in' );
+my @op_number = ( 'is', 'is_not', 'less than', 'greater than' );
+
+my @myop = @op; #XXX  $number{$curr_value} ? @op_number : @op;
+#XXX and a fancy onchange handler... yes.
+#XXX (and for total hiding of the %bool one)
+
+</%init>

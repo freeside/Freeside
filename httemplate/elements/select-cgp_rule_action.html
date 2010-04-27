@@ -1,0 +1,46 @@
+%# XXX CSS to verticially align the select vs. the textarea
+<% include( 'select.html',
+              %opt,
+              'options' => \@actions, #reverse order if we ever need to specify
+              'labels'  => { '' => 'Select Action' },
+          )
+%>
+    <TEXTAREA NAME          = "<% $opt{field} %>_params"
+%#              ID            = "<% $opt{id} %>"
+%#              <% $rows %>
+%#              <% $cols %>
+%#              <% $onchange %>
+%#    ><% $curr_value |h %></TEXTAREA>
+    >
+%# XXX curr value
+    </TEXTAREA>
+<%init>
+
+my %opt = @_;
+warn "SELECT-CGP_RULE-ACTION.HTML: ". join ' / ', %opt;
+
+my @actions = (
+  '',
+  'Stop Processing',
+  'Discard',
+  'Reject With',
+  'Mark',
+  'Add Header',
+  'Tag Subject',
+  'Store in',
+  'Redirect to',
+  'Forward to',
+  'Mirror to',
+  'Reply with',
+  'Reply to All with',
+  'React with',
+  'store Encrypted in',
+  'Copy attachments into',
+  'Execute',
+  'ExternalFilter',
+  'Accept Request',
+);
+
+#XXX hmm, hide textarea w/Stop Processing,Discard like _condition.html
+
+</%Init>

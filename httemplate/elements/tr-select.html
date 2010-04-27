@@ -1,62 +1,21 @@
-<% include('tr-td-label.html', @_ ) %>
+% unless ( $opt{'js_only'} ) {
 
-  <TD <% $colspan %> <% $style %>>
+    <% include('tr-td-label.html', %opt ) %>
 
-    <SELECT NAME          = "<% $opt{field} %>"
-            ID            = "<% $opt{id} %>"
-            previousValue = "<% $curr_value %>"
-            previousText  = "<% $labels->{$curr_value} || $curr_value %>"
-            <% $onchange %>
-    >
+      <TD <% $colspan %> <% $style %>>
+% }
 
-%   if ( $opt{options} ) {
-%
-%     foreach my $option ( @{ $opt{options} } ) { #just arrayref for now
+    <% include('select.html', %opt ) %>
 
-        <OPTION VALUE="<% $option %>"
-                <% $opt{curr_value} eq $option ? 'SELECTED' : '' %>
-        >
-          <% $labels->{$option} || $option %>
-        </OPTION>
-
-%     }
-%
-%   } else { #deprecated weird value hashref used only by reason.html
-%
-%     my $aref = $opt{'value'}->{'values'};
-%     my $vkey = $opt{'value'}->{'vcolumn'};
-%     my $ckey = $opt{'value'}->{'ccolumn'};
-%     foreach my $v (@$aref) {
-
-        <OPTION VALUE="<% $v->$vkey %>"
-                <% ($opt{curr_value} eq $v->$vkey) ? 'SELECTED' : '' %>
-        >
-          <% $v->$ckey %>
-        </OPTION>
-
-%     }
-%
-%   }
-
-    </SELECT>
-
-  </TD>
-
-</TR>
-
+% unless ( $opt{'js_only'} ) {
+      </TD>
+    </TR>
+% }
 <%init>
 
 my %opt = @_;
-
-my $onchange = $opt{'onchange'}
-                 ? 'onChange="'. $opt{'onchange'}. '(this)"'
-                 : '';
-
-my $labels = $opt{'option_labels'} || $opt{'labels'};
-
+warn join ' / ', %opt;
 my $style = $opt{'cell_style'} ? 'STYLE="'. $opt{'cell_style'}. '"' : '';
-
-my $curr_value = $opt{'curr_value'};
 
 my $colspan = $opt{'colspan'} ? 'COLSPAN="'.$opt{'colspan'}.'"' : '';
 

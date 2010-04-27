@@ -1,0 +1,64 @@
+% unless ( $opt{'js_only'} ) {
+
+<SELECT NAME          = "<% $opt{field} %>"
+        ID            = "<% $opt{id} %>"
+        previousValue = "<% $curr_value %>"
+        previousText  = "<% $labels->{$curr_value} || $curr_value %>"
+        <% $onchange %>
+>
+
+% if ( $opt{options} ) {
+%
+%   foreach my $option ( @{ $opt{options} } ) { #just arrayref for now
+
+      <OPTION VALUE="<% $option %>"
+              <% $opt{curr_value} eq $option ? 'SELECTED' : '' %>
+      >
+        <% $labels->{$option} || $option %>
+      </OPTION>
+
+%   }
+%
+% } else { #deprecated weird value hashref used only by reason.html
+%
+%   my $aref = $opt{'value'}->{'values'};
+%   my $vkey = $opt{'value'}->{'vcolumn'};
+%   my $ckey = $opt{'value'}->{'ccolumn'};
+%   foreach my $v (@$aref) {
+
+      <OPTION VALUE="<% $v->$vkey %>"
+              <% ($opt{curr_value} eq $v->$vkey) ? 'SELECTED' : '' %>
+      >
+        <% $v->$ckey %>
+      </OPTION>
+
+%   }
+%
+% }
+
+</SELECT>
+
+% }
+<%init>
+
+my %opt = @_;
+warn "SELECT.HTML: ". join ' / ', %opt;
+
+my $onchange = $opt{'onchange'}
+                 ? 'onChange="'. $opt{'onchange'}. '(this)"'
+                 : '';
+
+my $labels = $opt{'option_labels'} || $opt{'labels'};
+
+my $curr_value = $opt{'curr_value'};
+
+my $onchange = '';
+if ( $opt{'onchange'} ) {
+  $onchange = $opt{'onchange'};
+  $onchange .= '(this)' unless $onchange =~ /\(\w*\);?$/;
+  $onchange =~ s/\(what\);/\(this\);/g; #ugh, terrible hack.  all onchange
+                                        #callbacks should act the same
+  $onchange = 'onChange="'. $onchange. '"' unless $onchange =~ /^onChange=/i;
+}
+
+</%init>

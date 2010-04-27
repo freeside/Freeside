@@ -1,10 +1,12 @@
 <% include('elements/edit.html',
              'name_singular' => 'rule',
              'table'         => 'cgp_rule',
-             'labels' => { 'rulenum'  => 'Rule',
-                           'name'     => 'Name',
-                           'comment'  => 'Comment',
-                           'priority' => 'Priority',
+             'labels' => { 'rulenum'          => 'Rule',
+                           'name'             => 'Name',
+                           'comment'          => 'Comment',
+                           'priority'         => 'Priority',
+                           'ruleconditionnum' => 'Condition',
+                           'ruleactionnum'    => 'Action',
                          },
              'fields' => [ 'name',
                            'comment',
@@ -13,7 +15,25 @@
                              'options' => [ 0 .. 10 ],
                              'labels'  => { 0 => 'Inactive' },
                            },
-                           { 'field' => 'svcnum', 'type' => 'hidden', },
+                           { 'field'   => 'svcnum', 'type' => 'hidden', },
+                           { 'type'    => 'tablebreak-tr-title',
+                             'value'   => 'Conditions',
+                           },
+                           { 'field'   => 'ruleconditionnum',
+                             'type'    => 'select-cgp_rule_condition',
+                             'o2m_table' => 'cgp_rule_condition',
+                             'm2_label' => 'Condition',
+                             #XXX m2_error_callback
+                           },
+                           { 'type'    => 'tablebreak-tr-title',
+                             'value'   => 'Actions',
+                           },
+                           { 'field'   => 'ruleactionnum',
+                             'type'    => 'select-cgp_rule_action',
+                             'o2m_table' => 'cgp_rule_action',
+                             'm2_label' => 'Action',
+                             #XXX m2_error_callback
+                           },
                          ],
              'new_callback' => sub { my( $cgi, $cgp_rule ) = @_;
                                      $cgp_rule->svcnum( $cgi->param('svcnum') );
@@ -24,7 +44,9 @@
 %>
 <%init>
 
-#my $svcnum #huh
+my %opt = @_;
+
+#my $svcnum #huh XXX
 #my $viewall_url = $p. "browse/$table.html?svcnum=$svcnum";
 
 </%init>
