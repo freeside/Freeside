@@ -42,7 +42,6 @@
 <%init>
 
 my %opt = @_;
-warn "SELECT.HTML: ". join ' / ', %opt;
 
 my $onchange = $opt{'onchange'}
                  ? 'onChange="'. $opt{'onchange'}. '(this)"'

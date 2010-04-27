@@ -14,7 +14,7 @@
 <%init>
 
 my %opt = @_;
-warn join ' / ', %opt;
+
 my $style = $opt{'cell_style'} ? 'STYLE="'. $opt{'cell_style'}. '"' : '';
 
 my $colspan = $opt{'colspan'} ? 'COLSPAN="'.$opt{'colspan'}.'"' : '';
