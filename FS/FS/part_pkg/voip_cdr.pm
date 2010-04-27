@@ -309,10 +309,13 @@ sub calc_usage {
     grep { $_->part_svc->svcdb eq 'svc_phone' } $cust_pkg->cust_svc
   ) {
 
+    my $svc_phone = $cust_svc->svc_x;
     foreach my $cdr (
-      $cust_svc->get_cdrs_for_update(
+      $svc_phone->get_cdrs(
         'disable_src'    => $self->option('disable_src'),
         'default_prefix' => $self->option('default_prefix'),
+        'status'         => '',
+        'for_update'     => 1,
       )  # $last_bill, $$sdate )
     ) {
       if ( $DEBUG > 1 ) {

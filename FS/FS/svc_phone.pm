@@ -525,6 +525,99 @@ sub cust_location_or_main {
   $cust_pkg ? $cust_pkg->cust_location_or_main : '';
 }
 
+=item get_cdrs
+
+Returns a set of Call Detail Records (see L<FS::cdr>) associated with this 
+service.  By default, "associated with" means that either the "src" or the 
+"charged_party" field of the CDR matches the "phonenum" field of the service.
+
+=over 2
+
+Accepts the following options:
+
+=item for_update => 1: SELECT the CDRs "FOR UPDATE".
+
+=item status => "" (or "done"): Return only CDRs with that processing status.
+
+=item inbound => 1: Return CDRs for inbound calls.  With "status", will filter 
+on inbound processing status.
+
+=item default_prefix => "XXX": Also accept the phone number of the service prepended 
+with the chosen prefix.
+
+=item disable_src => 1: Only match on "charged_party", not "src".
+
+=back
+
+=cut
+
+sub get_cdrs {
+  my($self, %options) = @_;
+  my @fields;
+  my %hash;
+  my @where;
+
+  if ( $options{'inbound'} ) {
+    @fields = ( 'dst' );
+    if ( exists($options{'status'}) ) {
+      # must be 'done' or ''
+      my $sq = 'EXISTS ( SELECT 1 FROM cdr_termination '.
+        'WHERE cdr.acctid = cdr_termination.acctid '.
+        'AND cdr_termination.status = \'done\' '.
+        'AND cdr_termination.termpart = 1 )';
+      if ( $options{'status'} eq 'done' ) {
+        push @where, $sq;
+      }
+      elsif ($options{'status'} eq '' ) {
+        push @where, "NOT $sq";
+      }
+      else {
+        warn "invalid status: $options{'status'} (ignored)\n";
+      }
+    }
+  }
+  else {
+    @fields = ( 'charged_party' );
+    push @fields, 'src' if !$options{'disable_src'};
+    $hash{'freesidestatus'} = $options{'status'}
+      if exists($options{'status'});
+  }
+  
+  my $for_update = $options{'for_update'} ? 'FOR UPDATE' : '';
+
+  my $number = $self->phonenum;
+
+  my $prefix = $options{'default_prefix'};
+
+  my @orwhere =  map " $_ = '$number'        ", @fields;
+  push @orwhere, map " $_ = '$prefix$number' ", @fields
+    if length($prefix);
+  if ( $prefix =~ /^\+(\d+)$/ ) {
+    push @orwhere, map " $_ = '$1$number' ", @fields
+  }
+
+  push @where, ' ( '. join(' OR ', @orwhere ). ' ) ';
+
+  if ( $options{'begin'} ) {
+    push @where, 'startdate >= '. $options{'begin'};
+  }
+  if ( $options{'end'} ) {
+    push @where, 'startdate < '.  $options{'end'};
+  }
+
+  my $extra_sql = ( keys(%hash) ? ' AND ' : ' WHERE ' ). join(' AND ', @where );
+
+  my @cdrs =
+    qsearch( {
+      'table'      => 'cdr',
+      'hashref'    => \%hash,
+      'extra_sql'  => $extra_sql,
+      'order_by'   => "ORDER BY startdate $for_update",
+    } );
+
+  @cdrs;
+}
+
 =back
 
 =head1 BUGS

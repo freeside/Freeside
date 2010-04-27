@@ -1052,7 +1052,7 @@ sub list_support_usage {
 sub _list_cdr_usage {
   my($svc_phone, $begin, $end) = @_;
   map [ $_->downstream_csv('format' => 'default') ], #XXX config for format
-      $svc_phone->cust_svc->get_cdrs( 'begin'=>$begin, 'end'=>$end, );
+      $svc_phone->get_cdrs( 'begin'=>$begin, 'end'=>$end, );
 }
 
 sub list_cdr_usage {

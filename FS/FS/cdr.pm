@@ -14,6 +14,7 @@ use FS::cdr_type;
 use FS::cdr_calltype;
 use FS::cdr_carrier;
 use FS::cdr_batch;
+use FS::cdr_termination;
 
 @ISA = qw(FS::Record);
 @EXPORT_OK = qw( _cdr_date_parser_maker _cdr_min_parser_maker );
@@ -386,11 +387,33 @@ error, otherwise returns false.
 =cut
 
 sub set_status_and_rated_price {
-  my($self, $status, $rated_price, $svcnum) = @_;
-  $self->freesidestatus($status);
-  $self->rated_price($rated_price);
-  $self->svcnum($svcnum) if $svcnum;
-  $self->replace();
+  my($self, $status, $rated_price, $svcnum, %opt) = @_;
+  if($opt{'inbound'}) {
+    my $term = qsearchs('cdr_termination', {
+        acctid   => $self->acctid, 
+        termpart => 1 # inbound
+    });
+    my $error;
+    if($term) {
+      warn "replacing existing cdr status (".$self->acctid.")\n" if $term;
+      $error = $term->delete;
+      return $error if $error;
+    }
+    $term = FS::cdr_termination->new({
+        acctid      => $self->acctid,
+        termpart    => 1,
+        rated_price => $rated_price,
+        status      => $status,
+        svcnum      => $svcnum,
+    });
+    return $term->insert;
+  }
+  else {
+    $self->freesidestatus($status);
+    $self->rated_price($rated_price);
+    $self->svcnum($svcnum) if $svcnum;
+    return $self->replace();
+  }
 }
 
 =item calldate_unix 

@@ -51,6 +51,9 @@ rated_price
 
 status
 
+=item svcnum
+
+svc_phone record associated with this transaction, if there is one.
 
 =back
 

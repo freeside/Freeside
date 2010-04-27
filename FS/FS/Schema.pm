@@ -2524,6 +2524,7 @@ sub tables_hashref {
         'termpart',         'int',     '',      '', '', '',#future use see below
         'rated_price',  'decimal', 'NULL',  '10,4', '', '',
         'status',       'varchar', 'NULL',      32, '', '',
+        'svcnum',           'int', 'NULL',      '', '', '',
       ],
       'primary_key' => 'cdrtermnum',
       'unique'      => [ [ 'acctid', 'termpart' ] ],
