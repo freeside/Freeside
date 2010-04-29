@@ -1,26 +1,106 @@
-<% include( 'select.html',
-              %opt,
-              'options' => \@conditions, #reverse order if we ever need to spec
-              'labels'  => { '' => 'Select Condition' },
-          )
-%>
-<% include( 'select.html',
-              'name' => $opt{'field'}.'_op',
-              'id'   => ($opt{'field'}||$opt{'id'}).'_op',
-              'options' => \@myop,
-          )
-%>
-<% include( 'input-text.html',
-              'name' => $opt{'field'}.'_params',
-              #XXX curr value... anything else?
-          )
-%>
-<%init>
+% unless ( $opt{'js_only'} ) {
+  <% include( 'select.html',
+                %opt,
+                'options'  => \@conditions,
+                'labels'   => { '' => 'Select Condition' },
+                'onchange' => $key.'_changed',
+            )
+  %>
+  <% include( 'select.html',
+                'name' => $opt{'field'}.'_op',
+                'id'   => $key.'_op',
+                'options' => \@op,
+                #XXX curr op
+            )
+  %>
+  <% include( 'input-text.html',
+                'name' => $opt{'field'}.'_params',
+                'id'   => $key.'_params',
+                #XXX curr value... anything else?
+            )
+  %>
+% # could add more UI sugar for date/time ranges, string #lists, etc.
+% }
+% unless ( $opt{'html_only'} || $opt{'js_only'} ) {
+    <SCRIPT TYPE="text/javascript">
+% }
+% unless ( $opt{'html_only'} ) {
 
-my %opt = @_;
+      function opt(what,value,text) {
+        var optionName = new Option(text, value, false, false);
+        var length = what.length;
+        what.options[length] = optionName;
+      }
+
+      function <% $key %>_changed(what) {
+
+        <% $opt{'onchange'} %>
+
+        var <% $key %>_value = what.options[what.selectedIndex].value;
+        //alert ("condition changed to " + <% $key %>_value );
+
+        var op_Element = what.form.<% $key %>_op;
+        var params_Element = what.form.<% $key %>_params;
+
+        //cond2op in javascript... not as elegant cause my js << my perl
+
+        // if bool, hide/disable _op and _params entirely
+        if ( <%$key%>_value == '' || <%$key%>_value == 'Human Generated' ) {
+          op_Element.disabled = true;
+          op_Element.style.visibility = "hidden";
+          params_Element.disabled = true;
+          params_Element.style.visibility = "hidden";
+          return true;
+        }
+        
+        var OpArray = [ 'is', 'is not' ];
+
+        // if lt_ge, add em
+        if ( <%$key%>_value == 'Message Size' || <%$key%>_value == 'Time of Day' || <%$key%>_value == 'Current Date' ) {
+          OpArray.push('less than');
+          OpArray.push('greater than');
+        }
+
+        // unless no_in, add em
+        if ( <%$key%>_value != 'Message Size' && <%$key%>_value != 'Current Date' && <%$key%>_value != 'Existing Mailbox' ) {
+          OpArray.push('in');
+          OpArray.push('not in');
+        }
+
+        // blank the current op list
+        for ( var i = op_Element.length; i >= 0; i-- )
+          op_Element.options[i] = null;
+
+        // update the _op select with this new array
+        for ( var s = 0; s < OpArray.length; s++ )
+            opt(what.form.<% $key %>_op, OpArray[s], OpArray[s]);
+
+        // show _op and _params (in case we were a bool before)
+        op_Element.disabled = false;
+        op_Element.style.visibility = "visible";
+        params_Element.disabled = false;
+        params_Element.style.visibility = "visible";
+
+      }
+% }
+% unless ( $opt{'html_only'} || $opt{'js_only'} ) {
+    </SCRIPT>
+% }
+<%once>
 
 my @conditions = (
   '',
+
+  #generic http://www.communigate.com/CommunigatePro/Rules.html#Conditions
+  'Submit Address',
+  'Time of Day',
+  'Current Date',
+  'Current Day',
+  'Preference',
+  'FreeBusy',
+  'Existing Mailbox',
+
+  #email http://www.communigate.com/CommunigatePro/QueueRules.html#Conditions
   'From',
   'Sender',
   'To',
@@ -43,21 +123,41 @@ my @conditions = (
   'Each Route'
 );
 
-my %bool = (
+my %bool = ( #hide the op and valud dropdowns entirely
+  '' => 1, #XXX hide _op and _params on "Select Condition"
   'Human Generated' => 1,
 );
 
-my %number = (
+my %no_in = ( #hide in/not in
   'Message Size' => 1,
+  'Current Date' => 1,
+  'Existing Mailbox' => 1,
 );
 
+my %lt_gt = ( #add less than/greater than
+  'Message Size' => 1,
+  'Time of Day', => 1,
+  'Current Date', => 1,
+);
+
+my $cond2op = sub {
+  my $cond = shift;
+  return () if $bool{$cond}; 
+  my @op = ( 'is', 'is not' );
+  push @op, 'less than', 'greater than'  if $lt_gt{$cond};
+  push @op, 'in', 'not in' unless $no_in{$cond};
+  @op;
+};
+
+</%once>
+<%init>
+
+my %opt = @_;
+
+my $key = $opt{'field'} || $opt{'id'};
+
 #XXX curr value -> hidden op / param / param selects depending
-
-my @op = ( 'is', 'is not', 'in', 'not in' );
-my @op_number = ( 'is', 'is_not', 'less than', 'greater than' );
-
-my @myop = @op; #XXX  $number{$curr_value} ? @op_number : @op;
-#XXX and a fancy onchange handler... yes.
-#XXX (and for total hiding of the %bool one)
+#my @op = &$cond2op($curr_value);
+my @op = &$cond2op();
 
 </%init>

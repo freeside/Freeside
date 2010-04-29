@@ -559,8 +559,9 @@ Example:
 
           var newrow =  <% include(@layer_opt, html_only=>1) |js_string %>;
 
-%         if ( $type eq 'selectlayers' ) { #until the rest have html/js_only
-            var newfunc = <% include(@layer_opt, js_only  =>1) |js_string %>;
+%         #until the rest have html/js_only
+%         if ( $type eq 'selectlayers' || $type =~ /^select-cgp_rule_/ ) {
+            var newfunc = <% include(@layer_opt, js_only=>1) |js_string %>;
 %         } else {
             var newfunc = '';
 %         }
