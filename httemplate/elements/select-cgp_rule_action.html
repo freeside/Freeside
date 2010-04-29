@@ -1,22 +1,59 @@
-%# XXX CSS to verticially align the select vs. the textarea
-<% include( 'select.html',
-              %opt,
-              'options' => \@actions, #reverse order if we ever need to specify
-              'labels'  => { '' => 'Select Action' },
-          )
-%>
-    <TEXTAREA NAME          = "<% $opt{field} %>_params"
-%#              ID            = "<% $opt{id} %>"
-%#              <% $rows %>
-%#              <% $cols %>
-%#              <% $onchange %>
-%#    ><% $curr_value |h %></TEXTAREA>
-    >
-%# XXX curr value
-    </TEXTAREA>
-<%init>
+% unless ( $opt{'js_only'} ) {
 
-my %opt = @_;
+    <INPUT TYPE="hidden" NAME="<%$name%>" ID="<%$id%>" VALUE="<%$curr_value%>">
+
+    <% include( 'select.html',
+                  'field'      => $name.'_action',
+                  'id'         => $id.'_action',
+                  'options'    => \@actions,
+                  'curr_value' => scalar($cgi->param($name.'_action'))
+                                  || $cgp_rule_action->action,
+                  'labels'     => { '' => 'Select Action' },
+                  'onchange'   => $name.'_changed',
+                  'style'      => 'vertical-align:top',
+              )
+    %>
+
+    <TEXTAREA NAME          = "<% $name %>_params"
+                ID          = "<% $id %>_params"
+                <% $disabled %>
+                <% $style %>
+%#                <% $rows %>
+%#                <% $cols %>
+%#                <% $onchange %>
+      ><% scalar($cgi->param($name.'_params')) || $cgp_rule_action->params |h %></TEXTAREA>
+
+% }
+% unless ( $opt{'html_only'} || $opt{'js_only'} ) {
+    <SCRIPT TYPE="text/javascript">
+% }
+% unless ( $opt{'html_only'} ) {
+
+    function <% $name %>_changed(what) {
+
+        <% $opt{'onchange'} %>
+
+        var <% $name %>_value = what.options[what.selectedIndex].value;
+
+        var params_Element = what.form.<% $name %>_params;
+
+        // if bool, hide/disable _op and _params entirely
+        if ( <%$name%>_value == '' || <%$name%>_value == 'Stop Processing' || <%$name%>_value == 'Discard' ) {
+          params_Element.disabled = true;
+          params_Element.style.visibility = "hidden";
+        } else {
+          params_Element.disabled = false;
+          params_Element.style.visibility = "visible";
+
+        }
+        
+    }
+
+% }
+% unless ( $opt{'html_only'} || $opt{'js_only'} ) {
+    </SCRIPT>
+% }
+<%once>
 
 my @actions = (
   '',
@@ -50,6 +87,28 @@ my @actions = (
   'Accept Request',
 );
 
-#XXX hmm, hide textarea w/Stop Processing,Discard like _condition.html
+my %noparam = ( map { $_=>1 } '', 'Stop Processing', 'Discard' );
 
-</%Init>
+</%once>
+<%init>
+
+my %opt = @_;
+
+my $name = $opt{'element_name'} || $opt{'field'} || 'ruleactionnum';
+#my $id = $opt{'id'} || 'contactnum';
+my $id = $opt{'id'} || $opt{'field'} || 'ruleactionnum';
+
+my $curr_value = $opt{'curr_value'} || $opt{'value'};
+
+my $cgp_rule_action;
+if ( $curr_value ) {
+  $cgp_rule_action = qsearchs('cgp_rule_action',
+                                { 'ruleactionnum' => $curr_value } );
+} else {
+  $cgp_rule_action = new FS::cgp_rule_action {};
+}
+
+my $disabled = $noparam{$curr_value} ? 'DISABLED' : '';
+my $style = $disabled ? 'STYLE="visibility:hidden"' : '';
+
+</%init>

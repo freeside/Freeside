@@ -1,7 +1,7 @@
 package FS::cgp_rule;
 
 use strict;
-use base qw( FS::Record );
+use base qw( FS::o2m_Common FS::Record );
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::cust_svc;
 use FS::cgp_rule_condition;

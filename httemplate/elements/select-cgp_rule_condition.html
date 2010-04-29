@@ -1,25 +1,42 @@
 % unless ( $opt{'js_only'} ) {
+
+  <INPUT TYPE="hidden" NAME="<%$name%>" ID="<%$id%>" VALUE="<% $curr_value %>">
+
   <% include( 'select.html',
-                %opt,
-                'options'  => \@conditions,
-                'labels'   => { '' => 'Select Condition' },
-                'onchange' => $key.'_changed',
+                'field'      => $name.'_condition',
+                'id'         => $id.'_condition',
+                'options'    => \@conditions,
+                'curr_value' => scalar($cgi->param($name.'_condition'))
+                                  || $cgp_rule_condition->condition,
+                'labels'     => { '' => 'Select Condition' },
+                'onchange'   => $name.'_changed',
             )
   %>
+
   <% include( 'select.html',
-                'name' => $opt{'field'}.'_op',
-                'id'   => $key.'_op',
-                'options' => \@op,
-                #XXX curr op
+                'field'      => $name.'_op',
+                'id'         => $id.'_op',
+                'options'    => \@op,
+                'curr_value' => scalar($cgi->param($name.'_op'))
+                                  || $cgp_rule_condition->op,
+                'disabled'   => $disabled,
+                'style'      => $style,
             )
   %>
+
   <% include( 'input-text.html',
-                'name' => $opt{'field'}.'_params',
-                'id'   => $key.'_params',
-                #XXX curr value... anything else?
+                'field'      => $name.'_params',
+                'id'         => $id.'_params',
+                'curr_value' => scalar($cgi->param($name.'_params'))
+                                  || $cgp_rule_condition->params,
+                'disabled'   => $disabled,
+                'style'      => $style,
+                'nodarken_disabled' => 1,
             )
   %>
+
 % # could add more UI sugar for date/time ranges, string #lists, etc.
+
 % }
 % unless ( $opt{'html_only'} || $opt{'js_only'} ) {
     <SCRIPT TYPE="text/javascript">
@@ -32,20 +49,19 @@
         what.options[length] = optionName;
       }
 
-      function <% $key %>_changed(what) {
+      function <% $name %>_changed(what) {
 
-        <% $opt{'onchange'} %>
+        <% $onchange %>
 
-        var <% $key %>_value = what.options[what.selectedIndex].value;
-        //alert ("condition changed to " + <% $key %>_value );
+        var <% $name %>_value = what.options[what.selectedIndex].value;
 
-        var op_Element = what.form.<% $key %>_op;
-        var params_Element = what.form.<% $key %>_params;
+        var op_Element = what.form.<% $name %>_op;
+        var params_Element = what.form.<% $name %>_params;
 
         //cond2op in javascript... not as elegant cause my js << my perl
 
         // if bool, hide/disable _op and _params entirely
-        if ( <%$key%>_value == '' || <%$key%>_value == 'Human Generated' ) {
+        if ( <%$name%>_value == '' || <%$name%>_value == 'Human Generated' ) {
           op_Element.disabled = true;
           op_Element.style.visibility = "hidden";
           params_Element.disabled = true;
@@ -56,13 +72,13 @@
         var OpArray = [ 'is', 'is not' ];
 
         // if lt_ge, add em
-        if ( <%$key%>_value == 'Message Size' || <%$key%>_value == 'Time of Day' || <%$key%>_value == 'Current Date' ) {
+        if ( <%$name%>_value == 'Message Size' || <%$name%>_value == 'Time of Day' || <%$name%>_value == 'Current Date' ) {
           OpArray.push('less than');
           OpArray.push('greater than');
         }
 
         // unless no_in, add em
-        if ( <%$key%>_value != 'Message Size' && <%$key%>_value != 'Current Date' && <%$key%>_value != 'Existing Mailbox' ) {
+        if ( <%$name%>_value != 'Message Size' && <%$name%>_value != 'Current Date' && <%$name%>_value != 'Existing Mailbox' ) {
           OpArray.push('in');
           OpArray.push('not in');
         }
@@ -73,7 +89,7 @@
 
         // update the _op select with this new array
         for ( var s = 0; s < OpArray.length; s++ )
-            opt(what.form.<% $key %>_op, OpArray[s], OpArray[s]);
+            opt(what.form.<% $name %>_op, OpArray[s], OpArray[s]);
 
         // show _op and _params (in case we were a bool before)
         op_Element.disabled = false;
@@ -123,22 +139,22 @@ my @conditions = (
   'Each Route'
 );
 
-my %bool = ( #hide the op and valud dropdowns entirely
-  '' => 1, #XXX hide _op and _params on "Select Condition"
-  'Human Generated' => 1,
-);
+my %bool = ( map { $_=>1 } ( #hide the op and valud dropdowns entirely
+  '',
+  'Human Generated',
+));
 
-my %no_in = ( #hide in/not in
-  'Message Size' => 1,
-  'Current Date' => 1,
-  'Existing Mailbox' => 1,
-);
+my %no_in = ( map { $_=>1 } ( #hide in/not in
+  'Message Size',
+  'Current Date',
+  'Existing Mailbox',
+));
 
-my %lt_gt = ( #add less than/greater than
-  'Message Size' => 1,
-  'Time of Day', => 1,
-  'Current Date', => 1,
-);
+my %lt_gt = ( map { $_=>1 } ( #add less than/greater than
+  'Message Size',
+  'Time of Day',
+  'Current Date',
+));
 
 my $cond2op = sub {
   my $cond = shift;
@@ -154,10 +170,29 @@ my $cond2op = sub {
 
 my %opt = @_;
 
-my $key = $opt{'field'} || $opt{'id'};
+my $name = $opt{'element_name'} || $opt{'field'} || 'ruleconditionnum';
+#my $id = $opt{'id'} || 'contactnum';
+my $id = $opt{'id'} || $opt{'field'} || 'ruleconditionnum';
 
-#XXX curr value -> hidden op / param / param selects depending
-#my @op = &$cond2op($curr_value);
-my @op = &$cond2op();
+my $curr_value = $opt{'curr_value'} || $opt{'value'};
+
+my $onchange = '';
+if ( $opt{'onchange'} ) {
+  $onchange = $opt{'onchange'};
+  $onchange .= '(what)' unless $onchange =~ /\(\w*\);?$/;
+}
+
+my $cgp_rule_condition;
+if ( $curr_value ) {
+  $cgp_rule_condition = qsearchs('cgp_rule_condition',
+                                   { 'ruleconditionnum' => $curr_value } );
+} else {
+  $cgp_rule_condition = new FS::cgp_rule_condition {};
+}
+
+my @op = &$cond2op($curr_value);
+
+my $disabled = scalar(@op) ? '' : 1;
+my $style = $disabled ? 'visibility:hidden' : '';
 
 </%init>

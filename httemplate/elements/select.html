@@ -4,6 +4,8 @@
         ID            = "<% $opt{id} %>"
         previousValue = "<% $curr_value %>"
         previousText  = "<% $labels->{$curr_value} || $curr_value %>"
+        <% $style %>
+        <% $opt{disabled} %>
         <% $onchange %>
 >
 
@@ -59,5 +61,19 @@ if ( $opt{'onchange'} ) {
                                         #callbacks should act the same
   $onchange = 'onChange="'. $onchange. '"' unless $onchange =~ /^onChange=/i;
 }
+
+$opt{'disabled'} = &{ $opt{'disabled'} }( \%opt )
+  if ref($opt{'disabled'}) eq 'CODE';
+$opt{'disabled'} = 'DISABLED'
+  if $opt{'disabled'} && $opt{'disabled'} !~ /disabled/i; # uuh... yeah?
+
+my @style = ref($opt{'style'})
+              ? @{ $opt{'style'} }
+              : $opt{'style'}
+                ? ( $opt{'style'} )
+                : ();
+
+my $style = scalar(@style) ? 'STYLE="'. join(';', @style). '"' : '';
+
 
 </%init>

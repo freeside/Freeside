@@ -31,13 +31,17 @@ $opt{'disabled'} = &{ $opt{'disabled'} }( \%opt )
 $opt{'disabled'} = 'DISABLED'
   if $opt{'disabled'} && $opt{'disabled'} !~ /disabled/i; # uuh... yeah?
 
-my @style = ();
+my @style = ref($opt{'style'})
+              ? @{ $opt{'style'} }
+              : $opt{'style'}
+                ? ( $opt{'style'} )
+                : ();
 
 push @style, 'text-align: '. $opt{'text-align'}
   if $opt{'text-align'};
 
 push @style, 'background-color: #dddddd'
-  if $opt{'disabled'};
+  if $opt{'disabled'} && ! $opt{'nodarken_disabled'};
 
 my $style = scalar(@style) ? 'STYLE="'. join(';', @style). '"' : '';
 

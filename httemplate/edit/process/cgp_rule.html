@@ -1,6 +1,16 @@
 <% include( 'elements/process.html',
-              'table'    => 'cgp_rule',
-              'redirect' => $redirect,
+              'table'       => 'cgp_rule',
+              'redirect'    => $redirect,
+              'process_o2m' => [
+                {
+                  'table' => 'cgp_rule_condition',
+                  'fields' => [qw( condition op params )],
+                },
+                {
+                  'table' => 'cgp_rule_action',
+                  'fields' => [qw( action params )],
+                },
+              ],
           )
 %>
 <%init>
