@@ -23,8 +23,7 @@
                              'type'      => 'select-cgp_rule_condition',
                              'o2m_table' => 'cgp_rule_condition',
                              'm2_label'  => 'Condition',
-                             #XXX m2_error_callback
-                             'm2_error_callback' => sub {},
+                             'm2_error_callback' => $m2_error_callback_cond,
                            },
                            { 'type'      => 'tablebreak-tr-title',
                              'value'     => 'Actions',
@@ -33,8 +32,7 @@
                              'type'      => 'select-cgp_rule_action',
                              'o2m_table' => 'cgp_rule_action',
                              'm2_label'  => 'Action',
-                             #XXX m2_error_callback
-                             'm2_error_callback' => sub {},
+                             'm2_error_callback' => $m2_error_callback_action,
                            },
                          ],
              'new_callback' => sub { my( $cgi, $cgp_rule ) = @_;
@@ -48,7 +46,57 @@
 
 my %opt = @_;
 
-#my $svcnum #huh XXX
 #my $viewall_url = $p. "browse/$table.html?svcnum=$svcnum";
+
+my $m2_error_callback_cond = sub {
+  my($cgi, $object) = @_;
+
+  my @fields = qw( condition op params );
+  my @gfields = ( '', map "_$_", @fields );
+
+  map {
+        if ( /^ruleconditionnum(\d+)$/ ) {
+          my $num = $1;
+          if ( grep $cgi->param("ruleconditionnum$num$_"), @gfields ) {
+            my $x = new FS::cgp_rule_condition {
+              'ruleconditionnum' => $cgi->param("ruleconditionnum$num"),
+              map { $_ => scalar($cgi->param("ruleconditionnum${num}_$_")) } @fields,
+            };
+            $x;
+          } else {
+            ();
+          }
+        } else {
+          ();
+        }
+      }
+      $cgi->param;
+};
+
+my $m2_error_callback_action = sub {
+  my($cgi, $object) = @_;
+
+  my @fields = qw( action params );
+  my @gfields = ( '', map "_$_", @fields );
+
+  map {
+        if ( /^ruleactionnum(\d+)$/ ) {
+          my $num = $1;
+          if ( grep $cgi->param("ruleactionnum$num$_"), @gfields ) {
+            my $x = new FS::cgp_rule_condition {
+              'ruleactionnum' => $cgi->param("ruleactionnum$num"),
+              map { $_ => scalar($cgi->param("ruleactionnum${num}_$_")) } @fields,
+            };
+            $x;
+          } else {
+            ();
+          }
+        } else {
+          ();
+        }
+      }
+      $cgi->param;
+
+};
 
 </%init>

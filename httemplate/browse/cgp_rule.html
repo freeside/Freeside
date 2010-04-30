@@ -7,13 +7,15 @@
                                   'order_by' => 'ORDER BY priority DESC',
                                 },
              'count_query'   => $count_query,
-             'header'        => [ 'Priority', 'Name', '' ],
+             'header'        => [ 'Priority', 'Name', 'Conditions', 'Actions', '' ],
              'fields'        => [ sub { shift->priority || 'Inactive'; },
                                   'name',
+                                  $condition_sub,
+                                  $action_sub,
                                   sub { 'Delete'; },
                                 ],
              #'align'
-             'links'         => [ $edit_sub, $edit_sub, $del_sub ],
+             'links'         => [ $edit_sub, $edit_sub, '', '', $del_sub ],
           )
 %>
 <%init>
@@ -39,6 +41,40 @@ my $view = FS::UI::Web::svc_url( 'm'        => $m,
 my $html_init =
   qq(<A HREF="$view">View this $svc_label</A><BR><BR>).
   qq!<A HREF="${p}edit/cgp_rule.html?svcnum=$svcnum">Add new rule</A><BR><BR>!;
+
+my $condition_sub = sub {
+  my $cgp_rule = shift;
+
+  [ map {
+          [
+            { data  => $_->condition,
+              #align =>
+            },
+            { data  => $_->op,
+              align => 'center',
+            },
+            { data  => $_->params,
+              #align =>
+            },
+          ];
+        }
+        $cgp_rule->cgp_rule_condition
+  ];
+};
+
+my $action_sub = sub {
+  my $cgp_rule = shift;
+
+  [ map {
+          [
+            { data => $_->action },
+            #{ data => '<pre>'.$_->params.'</pre>' }, #gets very big.. limit to
+            { data => $_->params },                   # some actions?
+          ];
+        }
+        $cgp_rule->cgp_rule_action
+  ];
+};
 
 my $edit_sub = [ $p.'edit/cgp_rule.html?', 'rulenum' ];
 my $del_sub = [ $p.'misc/delete-cgp_rule.html?', 'rulenum' ]; #XXX javascript areyousure or something

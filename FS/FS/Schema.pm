@@ -1801,11 +1801,11 @@ sub tables_hashref {
 
     'cgp_rule_condition' => {
       'columns' => [
-        'ruleconditionnum',  'serial', '',      '', '', '',
-        'condition',        'varchar', '', $char_d, '', '',
-        'op',               'varchar', '', $char_d, '', '',
-        'params',           'varchar', '',     255, '', '',
-        'rulenum',              'int', '',      '', '', '',
+        'ruleconditionnum',  'serial',     '',      '', '', '',
+        'condition',        'varchar',     '', $char_d, '', '',
+        'op',               'varchar', 'NULL', $char_d, '', '',
+        'params',           'varchar', 'NULL',     255, '', '',
+        'rulenum',              'int',     '',      '', '', '',
       ],
       'primary_key' => 'ruleconditionnum',
       'unique'      => [],
@@ -1814,10 +1814,10 @@ sub tables_hashref {
 
     'cgp_rule_action' => {
        'columns' => [
-        'ruleactionnum',  'serial', '',      '', '', '',
-        'action',        'varchar', '', $char_d, '', '',
-        'params',        'varchar', '',     255, '', '',
-        'rulenum',           'int', '',      '', '', '',
+        'ruleactionnum',  'serial',     '',      '', '', '',
+        'action',        'varchar',     '', $char_d, '', '',
+        'params',        'varchar', 'NULL',     255, '', '',
+        'rulenum',           'int',     '',      '', '', '',
       ],
       'primary_key' => 'ruleactionnum',
       'unique'      => [],

@@ -115,8 +115,8 @@ sub check {
   my $error = 
     $self->ut_numbern('ruleconditionnum')
     || $self->ut_text('condition')
-    || $self->ut_text('op')
-    || $self->ut_text('params')
+    || $self->ut_textn('op')
+    || $self->ut_textn('params')
     || $self->ut_foreign_key('rulenum', 'cgp_rule', 'rulenum')
   ;
   return $error if $error;

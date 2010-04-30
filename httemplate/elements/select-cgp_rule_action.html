@@ -6,8 +6,7 @@
                   'field'      => $name.'_action',
                   'id'         => $id.'_action',
                   'options'    => \@actions,
-                  'curr_value' => scalar($cgi->param($name.'_action'))
-                                  || $cgp_rule_action->action,
+                  'curr_value' => $action,
                   'labels'     => { '' => 'Select Action' },
                   'onchange'   => $name.'_changed',
                   'style'      => 'vertical-align:top',
@@ -108,7 +107,10 @@ if ( $curr_value ) {
   $cgp_rule_action = new FS::cgp_rule_action {};
 }
 
-my $disabled = $noparam{$curr_value} ? 'DISABLED' : '';
+my $action = scalar($cgi->param($name.'_action'))
+             || $cgp_rule_action->action;
+
+my $disabled = $noparam{$action} ? 'DISABLED' : '';
 my $style = $disabled ? 'STYLE="visibility:hidden"' : '';
 
 </%init>

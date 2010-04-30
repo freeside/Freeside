@@ -6,8 +6,7 @@
                 'field'      => $name.'_condition',
                 'id'         => $id.'_condition',
                 'options'    => \@conditions,
-                'curr_value' => scalar($cgi->param($name.'_condition'))
-                                  || $cgp_rule_condition->condition,
+                'curr_value' => $condition,
                 'labels'     => { '' => 'Select Condition' },
                 'onchange'   => $name.'_changed',
             )
@@ -190,7 +189,10 @@ if ( $curr_value ) {
   $cgp_rule_condition = new FS::cgp_rule_condition {};
 }
 
-my @op = &$cond2op($curr_value);
+my $condition = scalar($cgi->param($name.'_condition'))
+                || $cgp_rule_condition->condition;
+
+my @op = &$cond2op($condition);
 
 my $disabled = scalar(@op) ? '' : 1;
 my $style = $disabled ? 'visibility:hidden' : '';

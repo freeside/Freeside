@@ -235,6 +235,8 @@ if ( -e $addl_handler_use_file ) {
   use FS::cust_bill_pkg_discount;
   use FS::svc_mailinglist;
   use FS::cgp_rule;
+  use FS::cgp_rule_condition;
+  use FS::cgp_rule_action;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {
