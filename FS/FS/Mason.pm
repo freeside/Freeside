@@ -64,6 +64,7 @@ if ( -e $addl_handler_use_file ) {
   use DateTime::Format::Strptime;
   use FS::Misc::DateTime qw( parse_datetime );
   use Lingua::EN::Inflect qw(PL);
+  Lingua::EN::Inflect::classical names=>0; #Categorys
   use Tie::IxHash;
   use URI;
   use URI::Escape;
