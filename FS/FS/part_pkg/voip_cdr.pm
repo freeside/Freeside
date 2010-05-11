@@ -402,6 +402,8 @@ sub calc_usage {
 
           warn "rating call $to_or_from +$countrycode $number\n" if $DEBUG;
           $pretty_destnum = "+$countrycode $number";
+          #asterisks here causes inserting the detail to barf, so:
+          $pretty_destnum =~ s/\*//g;
 
           my $rate = qsearchs('rate', { 'ratenum' => $ratenum })
             or die "ratenum $ratenum not found!";
