@@ -272,9 +272,12 @@ sub check {
 =item dest_detail REGIONNUM | RATE_REGION_OBJECTD | HASHREF
 
 Returns the rate detail (see L<FS::rate_detail>) for this rate to the
-specificed destination.  Destination can be specified as an FS::rate_detail
-object or regionnum (see L<FS::rate_detail>), or as a hashref with two keys:
-I<countrycode> and I<phonenum>.
+specificed destination, or the empty string if no rate can be found for
+the given destination.
+
+Destination can be specified as an FS::rate_detail object or regionnum
+(see L<FS::rate_detail>), or as a hashref with two keys: I<countrycode>
+and I<phonenum>.
 
 =cut
 
@@ -287,7 +290,7 @@ sub dest_detail {
     my $countrycode = $_[0]->{'countrycode'};
     my $phonenum    = $_[0]->{'phonenum'};
 
-    #find a rate prefix, first look at most specific (4 digits) then 3, etc.,
+    #find a rate prefix, first look at most specific, then fewer digits,
     # finally trying the country code only
     my $rate_prefix = '';
     for my $len ( reverse(1..10) ) {
@@ -302,10 +305,7 @@ sub dest_detail {
       'npa'         => '',
     });
 
-    #
-    #die "Can't find rate for call $to_or_from +$countrycode $number\n"
-    die "Can't find rate for +$countrycode $phonenum\n"
-      unless $rate_prefix;
+    return '' unless $rate_prefix;
 
     $regionnum = $rate_prefix->regionnum;
 
