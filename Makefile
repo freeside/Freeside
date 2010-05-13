@@ -312,7 +312,7 @@ create-config: install-perl-modules
 	chown freeside ${FREESIDE_CONF}/secrets
 	chmod 600 ${FREESIDE_CONF}/secrets
 
-	echo -e "${DATASOURCE}\n${DB_USER}\n${DB_PASSWORD}" >${FREESIDE_CONF}/secrets
+	/bin/echo -e "${DATASOURCE}\n${DB_USER}\n${DB_PASSWORD}" >${FREESIDE_CONF}/secrets
 	chmod 600 ${FREESIDE_CONF}/secrets
 	chown freeside ${FREESIDE_CONF}/secrets
 
