@@ -181,6 +181,16 @@ sub initial_data {
   #tie my %hash, 'Tie::DxHash', 
   tie my %hash, 'Tie::IxHash', 
 
+    #bootstrap user
+    'access_user' => [
+      { 'username'  => 'fs_bootstrap',
+        '_password' => 'changeme', #will trigger warning if you try to enable
+        'last'      => 'User',
+        'first'     => 'Bootstrap',
+        'disabled'  => 'Y',
+      },
+    ],
+
     #superuser group
     'access_group' => [
       { 'groupname' => 'Superuser' },
