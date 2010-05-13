@@ -10,8 +10,8 @@
                    #'#',
                    'Description',
                    ( $unearned
-                     ? 'Unearned'
-                     : 'Setup charge'
+                     ? ( 'Unearned', 'Owed', 'Payment date' )
+                     : ( 'Setup charge' )
                    ),
                    ( $use_usage eq 'usage'
                      ? 'Usage charge'
@@ -49,6 +49,10 @@
                            sprintf($money_char.'%.2f', $cust_bill_pkg->setup );
                          }
                        },
+                   ( $unearned
+                     ? ( $owed_sub, $payment_date_sub, )
+                     : ()
+                   ),
                    sub { my $row = shift;
                          my $value = 0;
                          if ( $use_usage eq 'recurring' ) {
@@ -74,6 +78,7 @@
                    #'',
                    '',
                    '',
+                   ( $unearned ? ( '', '' ) : () ),
                    '',
                    ( $unearned ? ( '', '' ) : () ),
                    $ilink,
@@ -83,7 +88,9 @@
                    ),
                  ],
                  #'align' => 'rlrrrc'.FS::UI::Web::cust_aligns(),
-                 'align' => 'lrr'.
+                 'align' => 'lr'.
+                            ( $unearned ? 'rc' : '' ).
+                            'r'.
                             ( $unearned ? 'cc' : '' ).
                             'rc'.
                             FS::UI::Web::cust_aligns(),
@@ -91,6 +98,7 @@
                               #'',
                               '',
                               '',
+                              ( $unearned ? ( '', '' ) : () ),
                               '',
                               ( $unearned ? ( '', '' ) : () ),
                               '',
@@ -101,6 +109,7 @@
                               #'',
                               '',
                               '',
+                              ( $unearned ? ( '', '' ) : () ),
                               '',
                               ( $unearned ? ( '', '' ) : () ),
                               '',
@@ -569,5 +578,18 @@ my $clink = [ "${p}view/cust_main.cgi?", 'custnum' ];
 
 my $conf = new FS::Conf;
 my $money_char = $conf->config('money_char') || '$';
+
+my $owed_sub = sub {
+  $money_char. shift->owed_recur; #_recur :/
+};
+
+my $payment_date_sub = sub {
+  #my $cust_bill_pkg = shift;
+  my @cust_pay = sort { $a->_date <=> $b->_date }
+                      map $_->cust_bill_pay->cust_pay,
+                          shift->cust_bill_pay_pkg('recur') #recur :/
+    or return '';
+  time2str('%b %d %Y', $cust_pay[-1]->_date );
+};
 
 </%init>
