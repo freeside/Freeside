@@ -121,7 +121,7 @@ RT_PATH = /opt/rt3
 
 #only used for dev kludge now, not a big deal
 FREESIDE_PATH = `pwd`
-PERL_INC_DEV_KLUDGE = /usr/local/share/perl/5.10.0/
+PERL_INC_DEV_KLUDGE = /usr/local/share/perl/5.10.1/
 
 VERSION=2.1.0cvs
 TAG=freeside_2_1_0
