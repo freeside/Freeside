@@ -1,0 +1,29 @@
+<% include($report_comp) %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
+
+my $report = '';
+$cgi->param('report') =~ /^([.\w]+)$/ && ($report = $1);
+die "no such report" unless $report;
+
+my $prefix = "$FS::UID::cache_dir/cache.$FS::UID::datasrc";
+open my $fh, "$prefix/report.$report"
+  or die "can't open report: $!\n";
+
+my $reportvalue = '';
+{
+  local $/;
+  $reportvalue = <$fh>;
+}
+close $fh;
+
+#my ($interp, $other) = FS::Mason::mason_interps('standalone');
+my $interp = $m->interp;
+my $report_comp =
+  eval { $interp->make_component ( comp_source => $reportvalue ) };
+die $@ if $@;
+errorpage($@) if $@;
+
+</%init>

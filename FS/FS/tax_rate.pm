@@ -27,6 +27,10 @@ use FS::part_pkg_taxproduct;
 use FS::cust_main;
 use FS::Misc qw( csv_from_fixed );
 
+#i'd like to dump these
+use FS::CGI qw(rooturl popurl);
+use URI::Escape;
+
 @ISA = qw( FS::Record );
 
 $DEBUG = 0;
@@ -1757,11 +1761,272 @@ sub browse_queries {
   return ($query, "SELECT COUNT(*) FROM tax_rate $extra_sql");
 }
 
+=item queue_liability_report PARAMS
+
+Launches a tax liability report.
+=cut
+
+sub queue_liability_report {
+  my $cgi = shift;
+  my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
+  my $agentnum = $cgi->param('agentnum');
+  $agentnum =~ /^(\d+)$/ ? $agentnum = $1 : $agentnum = '';
+  my $job = new FS::queue { job => 'FS::tax_rate::generate_liability_report' };
+  $job->insert(
+    'beginning' => $beginning,
+    'ending'    => $ending,
+    'agentnum'  => $agentnum,
+    'p'         => popurl(2),
+    'rooturl'   => rooturl,
+  );
+}
+
+=item generate_liability_report PARAMS
+
+Generates a tax liability report.  Provide a hash including desired
+agentnum, beginning, and ending
+
+=cut
+
+sub generate_liability_report {
+  my %args = @_;
+
+  #let us open the temp file early
+  my $dir = '%%%FREESIDE_CACHE%%%/cache.'. $FS::UID::datasrc;
+  my $report = new File::Temp( TEMPLATE => 'report.tax.liability.XXXXXXXX',
+                               DIR      => $dir,
+                               UNLINK   => 0, # not so temp
+                             ) or die "can't open report file: $!\n";
+
+  my $conf = new FS::Conf;
+  my $money_char = $conf->config('money_char') || '$';
+
+  my $join_cust = "
+      JOIN cust_bill USING ( invnum ) 
+      LEFT JOIN cust_main USING ( custnum )
+  ";
+
+  my $join_loc =
+    "LEFT JOIN cust_bill_pkg_tax_rate_location USING ( billpkgnum )";
+  my $join_tax_loc = "LEFT JOIN tax_rate_location USING ( taxratelocationnum )";
+
+  my $addl_from = " $join_cust $join_loc $join_tax_loc "; 
+
+  my $where = "WHERE _date >= $args{beginning} AND _date <= $args{ending} ";
+
+  my $agentname = '';
+  if ( $args{agentnum} =~ /^(\d+)$/ ) {
+    my $agent = qsearchs('agent', { 'agentnum' => $1 } );
+    die "agent not found" unless $agent;
+    $agentname = $agent->agent;
+    $where .= ' AND cust_main.agentnum = '. $agent->agentnum;
+  }
+
+  # my ( $location_sql, @location_param ) = FS::cust_pkg->location_sql;
+  # $where .= " AND $location_sql";
+  #my @taxparam = ( 'itemdesc', @location_param );
+  # now something along the lines of geocode matching ?
+  #$where .= FS::cust_pkg->_location_sql_where('cust_tax_location');;
+  my @taxparam = ( 'itemdesc', 'tax_rate_location.state', 'tax_rate_location.county', 'tax_rate_location.city', 'cust_bill_pkg_tax_rate_location.locationtaxid' );
+
+  my $select = 'DISTINCT itemdesc,locationtaxid,tax_rate_location.state,tax_rate_location.county,tax_rate_location.city';
+
+  #false laziness w/FS::Report::Table::Monthly (sub should probably be moved up
+  #to FS::Report or FS::Record or who the fuck knows where)
+  my $scalar_sql = sub {
+    my( $r, $param, $sql ) = @_;
+    my $sth = dbh->prepare($sql) or die dbh->errstr;
+    $sth->execute( map $r->$_(), @$param )
+      or die "Unexpected error executing statement $sql: ". $sth->errstr;
+    $sth->fetchrow_arrayref->[0] || 0;
+  };
+
+  my $tax = 0;
+  my $credit = 0;
+  my %taxes = ();
+  my %basetaxes = ();
+  foreach my $t (qsearch({ table     => 'cust_bill_pkg',
+                           select    => $select,
+                           hashref   => { pkgpart => 0 },
+                           addl_from => $addl_from,
+                           extra_sql => $where,
+                        })
+                )
+  {
+    my @params = map { my $f = $_; $f =~ s/.*\.//; $f } @taxparam;
+    my $label = join('~', map { $t->$_ } @params);
+    $label = 'Tax'. $label if $label =~ /^~/;
+    unless ( exists( $taxes{$label} ) ) {
+      my ($baselabel, @trash) = split /~/, $label;
+
+      $taxes{$label}->{'label'} = join(', ', split(/~/, $label) );
+      $taxes{$label}->{'url_param'} =
+        join(';', map { "$_=". uri_escape($t->$_) } @params);
+
+      my $taxwhere = "FROM cust_bill_pkg $addl_from $where AND payby != 'COMP' ".
+        "AND ". join( ' AND ', map { "( $_ = ? OR ? = '' AND $_ IS NULL)" } @taxparam );
+
+      my $sql = "SELECT SUM(cust_bill_pkg.setup+cust_bill_pkg.recur) ".
+                " $taxwhere AND cust_bill_pkg.pkgnum = 0";
+
+      my $x = &{$scalar_sql}($t, [ map { $_, $_ } @params ], $sql );
+      $tax += $x;
+      $taxes{$label}->{'tax'} += $x;
+
+      my $creditfrom = " JOIN cust_credit_bill_pkg USING (billpkgnum,billpkgtaxratelocationnum) ";
+      my $creditwhere = "FROM cust_bill_pkg $addl_from $creditfrom $where ".
+        "AND payby != 'COMP' ".
+        "AND ". join( ' AND ', map { "( $_ = ? OR ? = '' AND $_ IS NULL)" } @taxparam );
+
+      $sql = "SELECT SUM(cust_credit_bill_pkg.amount) ".
+             " $creditwhere AND cust_bill_pkg.pkgnum = 0";
+
+      my $y = &{$scalar_sql}($t, [ map { $_, $_ } @params ], $sql );
+      $credit += $y;
+      $taxes{$label}->{'credit'} += $y;
+
+      unless ( exists( $taxes{$baselabel} ) ) {
+
+        $basetaxes{$baselabel}->{'label'} = $baselabel;
+        $basetaxes{$baselabel}->{'url_param'} = "itemdesc=$baselabel";
+        $basetaxes{$baselabel}->{'base'} = 1;
+
+      }
+
+      $basetaxes{$baselabel}->{'tax'} += $x;
+      $basetaxes{$baselabel}->{'credit'} += $y;
+      
+    }
+
+    # calculate customer-exemption for this tax
+    # calculate package-exemption for this tax
+    # calculate monthly exemption (texas tax) for this tax
+    # count up all the cust_tax_exempt_pkg records associated with
+    # the actual line items.
+  }
+
+
+  #ordering
+  my @taxes = ();
+
+  foreach my $tax ( sort { $a cmp $b } keys %taxes ) {
+    my ($base, @trash) = split '~', $tax;
+    my $basetax = delete( $basetaxes{$base} );
+    if ($basetax) {
+      if ( $basetax->{tax} == $taxes{$tax}->{tax} ) {
+        $taxes{$tax}->{base} = 1;
+      } else {
+        push @taxes, $basetax;
+      }
+    }
+    push @taxes, $taxes{$tax};
+  }
+
+  push @taxes, {
+    'label'          => 'Total',
+    'url_param'      => '',
+    'tax'            => $tax,
+    'credit'         => $credit,
+    'base'           => 1,
+  };
+
+
+  my $dateagentlink = "begin=$args{beginning};end=$args{ending}";
+  $dateagentlink .= ';agentnum='. $args{agentnum}
+    if length($agentname);
+  my $baselink   = $args{p}. "search/cust_bill_pkg.cgi?$dateagentlink";
+
+
+  print $report <<EOF;
+  
+    <% include("/elements/header.html", "$agentname Tax Report - ".
+                  ( $args{beginning}
+                      ? time2str('%h %o %Y ', $args{beginning} )
+                      : ''
+                  ).
+                  'through '.
+                  ( $args{ending} == 4294967295
+                      ? 'now'
+                      : time2str('%h %o %Y', $args{ending} )
+                  )
+              )
+    %>
+
+    <% include('/elements/table-grid.html') %>
+
+    <TR>
+      <TH CLASS="grid" BGCOLOR="#cccccc"></TH>
+      <TH CLASS="grid" BGCOLOR="#cccccc"></TH>
+      <TH CLASS="grid" BGCOLOR="#cccccc">Tax collected</TH>
+      <TH CLASS="grid" BGCOLOR="#cccccc">&nbsp;&nbsp;&nbsp;&nbsp;</TH>
+      <TH CLASS="grid" BGCOLOR="#cccccc"></TH>
+      <TH CLASS="grid" BGCOLOR="#cccccc">Tax credited</TH>
+    </TR>
+EOF
+
+  my $bgcolor1 = '#eeeeee';
+  my $bgcolor2 = '#ffffff';
+  my $bgcolor = '';
+ 
+  foreach my $tax ( @taxes ) {
+ 
+    if ( $bgcolor eq $bgcolor1 ) {
+      $bgcolor = $bgcolor2;
+    } else {
+      $bgcolor = $bgcolor1;
+    }
+ 
+    my $link = '';
+    if ( $tax->{'label'} ne 'Total' ) {
+      $link = ';'. $tax->{'url_param'};
+    }
+ 
+    print $report <<EOF;
+      <TR>
+        <TD CLASS="grid" BGCOLOR="<% '$bgcolor' %>"><% '$tax->{label}' %></TD>
+        <% $tax->{base} ? qq!<TD CLASS="grid" BGCOLOR="$bgcolor"></TD>! : '' %>
+        <TD CLASS="grid" BGCOLOR="<% '$bgcolor' %>" ALIGN="right">
+          <A HREF="<% '$baselink$link' %>;istax=1"><% '$money_char' %><% sprintf('%.2f', $tax->{'tax'} ) %></A>
+        </TD>
+        <% !($tax->{base}) ? qq!<TD CLASS="grid" BGCOLOR="$bgcolor"></TD>! : '' %>
+        <TD CLASS="grid" BGCOLOR="<% '$bgcolor' %>"></TD>
+        <% $tax->{base} ? qq!<TD CLASS="grid" BGCOLOR="$bgcolor"></TD>! : '' %>
+        <TD CLASS="grid" BGCOLOR="<% '$bgcolor' %>" ALIGN="right">
+          <A HREF="<% '$baselink$link' %>;istax=1;iscredit=rate"><% '$money_char' %><% sprintf('%.2f', $tax->{'credit'} ) %></A>
+        </TD>
+        <% !($tax->{base}) ? qq!<TD CLASS="grid" BGCOLOR="$bgcolor"></TD>! : '' %>
+      </TR>
+EOF
+  } 
+
+  print $report <<EOF;
+    </TABLE>
+
+    </BODY>
+    </HTML>
+EOF
+
+  my $reportname = $report->filename;
+  close $report;
+
+  my $dropstring = '%%%FREESIDE_CACHE%%%/cache.'. $FS::UID::datasrc. '/report.';
+  $reportname =~ s/^$dropstring//;
+
+  my $reporturl = $args{rooturl}. "/misc/queued_report?report=$reportname";
+  die "<a href=$reporturl>view</a>\n";
+
+}
+
+
+
 =back
 
 =head1 BUGS
 
   Mixing automatic and manual editing works poorly at present.
+
+  Tax liability calculations take too long and arguably don't belong here.
+  Tax liability report generation not entirely safe (escaped).
 
 =head1 SEE ALSO
 

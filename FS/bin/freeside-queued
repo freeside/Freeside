@@ -208,10 +208,14 @@ while (1) {
       warn 'running "&'. $ljob->job. '('. join(', ', @args). ")\n" if $DEBUG;
       eval $eval; #throw away return value?  suppose so
       if ( $@ ) {
-        warn "job $eval failed";
         my %hash = $ljob->hash;
-        $hash{'status'} = 'failed';
         $hash{'statustext'} = $@;
+        if ( $hash{'statustext'} =~ /\/misc\/queued_report/ ) { #use return?
+          $hash{'status'} = 'done'; 
+        } else {
+          $hash{'status'} = 'failed';
+          warn "job $eval failed";
+        }
         my $fjob = new FS::queue( \%hash );
         my $error = $fjob->replace($ljob);
         die $error if $error;

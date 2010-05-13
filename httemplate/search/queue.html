@@ -50,10 +50,14 @@
                                                  || ( ! $noactions
                                                       && $status =~ /^failed/
                                                       || $status =~ /^locked/
+                                                      || $status =~ /^done/
                                                     );
                                  if ( $changable ) {
+                                   $status .= qq! (!;
                                    $status .=
-                                     qq! (&nbsp;<A HREF="$p/misc/queue.cgi?jobnum=$jobnum&action=new">retry</A>&nbsp;|!.
+                                     qq! &nbsp;<A HREF="$p/misc/queue.cgi?jobnum=$jobnum&action=new">retry</A>&nbsp;|!
+                                     unless $status =~ /^done/;
+                                   $status .=
                                      qq!&nbsp;<A HREF="$p/misc/queue.cgi?jobnum=$jobnum&action=del">remove</A>&nbsp;)!;
                                  }
                                  $status;

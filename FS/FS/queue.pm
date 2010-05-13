@@ -12,6 +12,7 @@ use FS::Record qw( qsearch qsearchs dbh );
 use FS::queue_arg;
 use FS::queue_depend;
 use FS::cust_svc;
+use FS::CGI qw (rooturl);
 
 @ISA = qw(FS::Record);
 @EXPORT_OK = qw( joblisting );
@@ -192,6 +193,14 @@ sub delete {
   my @del = qsearch( 'queue_arg', { 'jobnum' => $self->jobnum } );
   push @del, qsearch( 'queue_depend', { 'depend_jobnum' => $self->jobnum } );
 
+  my $reportname = '';
+  if ( $self->status =~/^done/ ) {
+    my $dropstring = rooturl(). '/misc/queued_report\?report=';
+    if ($self->statustext =~ /.*$dropstring([.\w]+)\>/) {
+      $reportname = "$FS::UID::cache_dir/cache.$FS::UID::datasrc/report.$1";
+    }
+  }
+
   my $error = $self->SUPER::delete;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
@@ -207,6 +216,8 @@ sub delete {
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  
+  unlink $reportname if $reportname;
 
   '';
 
@@ -235,7 +246,7 @@ sub check {
     $self->ut_numbern('jobnum')
     || $self->ut_anything('job')
     || $self->ut_numbern('_date')
-    || $self->ut_enum('status',['', qw( new locked failed )])
+    || $self->ut_enum('status',['', qw( new locked failed done )])
     || $self->ut_anything('statustext')
     || $self->ut_numbern('svcnum')
   ;
