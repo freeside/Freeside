@@ -5,7 +5,7 @@
 
 <% include('/elements/progress-init.html',
               'OneTrueForm',
-              [ 'rate', 'min_', 'sec_' ],
+              [ 'rate', 'preserve_rate_detail' ], # 'rate', 'min_', 'sec_' ],
               'process/rate.cgi',
               $p.'browse/rate.cgi',
            )
@@ -16,6 +16,8 @@
 Rate plan
 <INPUT TYPE="text" NAME="ratename" SIZE=32 VALUE="<% $rate->ratename %>">
 <BR><BR>
+
+<INPUT TYPE="hidden" NAME="preserve_rate_detail" VALUE="1">
 
 <INPUT NAME="submit" TYPE="button" VALUE="<% 
   $rate->ratenum ? "Apply changes" : "Add rate plan"

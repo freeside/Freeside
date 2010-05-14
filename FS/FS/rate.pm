@@ -364,6 +364,7 @@ sub process {
         'dest_regionnum'  => $regionnum,
         map { $_ => $param->{"$_$regionnum"} }
             qw( min_included min_charge sec_granularity )
+            #qw( min_included conn_charge conn_sec min_charge sec_granularity )
       };
 
     } else {
@@ -371,6 +372,9 @@ sub process {
       new FS::rate_detail {
         'dest_regionnum'  => $regionnum,
         'min_included'    => 0,
+        'conn_charge'     => 0,
+        'conn_sec'        => 0,
+        'conn_charge'     => 0,
         'min_charge'      => 0,
         'sec_granularity' => '60'
       };
@@ -387,10 +391,13 @@ sub process {
   my $error = '';
   if ( $param->{'ratenum'} ) {
     warn "$rate replacing $old (". $param->{'ratenum'}. ")\n" if $DEBUG;
-    $error = $rate->replace( $old,
-                             'rate_detail' => \@rate_detail,
-                             'job'         => $job,
-                           );
+
+    my @param = ( 'job'=>$job );
+    push @param, 'rate_detail'=>\@rate_detail
+      unless $param->{'preserve_rate_detail'};
+
+    $error = $rate->replace( $old, @param );
+
   } else {
     warn "inserting $rate\n" if $DEBUG;
     $error = $rate->insert( 'rate_detail' => \@rate_detail,
