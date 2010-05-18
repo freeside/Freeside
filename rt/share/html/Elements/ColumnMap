@@ -92,6 +92,26 @@ my $COLUMN_MAP = {
         value     => sub { return $_[0]->LastUpdatedByObj->Name }
     },
 
+    CustomField => {
+        attribute => sub { return shift @_ },
+        title     => sub { return pop @_ },
+        value     => sub {
+            # Display custom field contents, separated by newlines.
+            # For Image custom fields we also show a thumbnail here.
+
+            my $values = $_[0]->CustomFieldValues( $_[-1] );
+            my @values = map {
+                (
+                    ($_->CustomFieldObj->Type eq 'Image')
+                        ? \($m->scomp( '/Elements/ShowCustomFieldImage', Object => $_ ))
+                        : $_->Content
+                ),
+                \'<br />',
+            } @{ $values->ItemsArrayRef };
+            pop @values; # Remove that last <br />
+            return @values;
+        },
+    },
 
     CheckBox => {
         title => sub {
@@ -136,7 +156,11 @@ my $COLUMN_MAP = {
         $_ => { value => sub { return \$value } };
     
     } qw(WebPath WebBaseURL WebURL)),
+    WebRequestPath    => { value => sub { substr( $m->request_path, 1 ) } },
+    WebRequestPathDir => { value => sub { substr( $m->request_comp->dir_path, 1 ) } },
 };
+
+$COLUMN_MAP->{'CF'} = $COLUMN_MAP->{'CustomField'};
 
 </%ONCE>
 <%INIT>

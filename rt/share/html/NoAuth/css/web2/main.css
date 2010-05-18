@@ -62,6 +62,7 @@
 @import "ticket.css";
 @import "tools.css";
 @import "admin.css";
+@import "collection.css";
 @import "misc.css";
 
 % $m->callback(CallbackName => 'End');

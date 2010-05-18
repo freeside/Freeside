@@ -68,14 +68,13 @@ sub Groupings {
         );
     }
 
-    push @fields, map {$_, $_} qw(
-        DueDaily DueMonthly DueAnnually
-        ResolvedDaily ResolvedMonthly ResolvedAnnually
-        CreatedDaily CreatedMonthly CreatedAnnually
-        LastUpdatedDaily LastUpdatedMonthly LastUpdatedAnnually
-        StartedDaily StartedMonthly StartedAnnually
-        StartsDaily StartsMonthly StartsAnnually
-    );
+
+    for my $field (qw(Due Resolved Created LastUpdated Started Starts)) {
+        for my $frequency (qw(Hourly Daily Monthly Annually)) {
+            my $item = $field.$frequency;
+            push @fields,  $item,  $item;
+        }
+    }
 
     my $queues = $args{'Queues'};
     if ( !$queues && $args{'Query'} ) {
@@ -183,20 +182,53 @@ sub _FieldToFunction {
 
     my $field = $args{'FIELD'};
 
-    if ($field =~ /^(.*)(Daily|Monthly|Annually)$/) {
+    if ($field =~ /^(.*)(Hourly|Daily|Monthly|Annually)$/) {
         my ($field, $grouping) = ($1, $2);
         my $alias = $args{'ALIAS'} || 'main';
+
+        my $func = "$alias.$field";
+
+        my $db_type = RT->Config->Get('DatabaseType');
+        if ( RT->Config->Get('ChartsTimezonesInDB') ) {
+            my $tz = $self->CurrentUser->UserObj->Timezone
+                || RT->Config->Get('Timezone')
+                || 'UTC';
+            if ( lc $tz eq 'utc' ) {
+                # do nothing
+            }
+            elsif ( $db_type eq 'Pg' ) {
+                $func = "timezone('UTC', $func)";
+                $func = "timezone(". $self->_Handle->dbh->quote($tz) .", $func)";
+            }
+            elsif ( $db_type eq 'mysql' ) {
+                $func = "CONVERT_TZ($func, 'UTC', "
+                    . $self->_Handle->dbh->quote($tz)
+                    .")";
+            }
+            else {
+                $RT::Logger->warning(
+                    "ChartsTimezonesInDB config option"
+                    ." is not supported on $db_type."
+                );
+            }
+        }
+
         # Pg 8.3 requires explicit casting
-        $field .= '::text' if RT->Config->Get('DatabaseType') eq 'Pg';
-        if ( $grouping =~ /Daily/ ) {
-            $args{'FUNCTION'} = "SUBSTR($alias.$field,1,10)";
+        $func .= '::text' if $db_type eq 'Pg';
+
+        if ( $grouping eq 'Hourly' ) {
+            $func = "SUBSTR($func,1,13)";
         }
-        elsif ( $grouping =~ /Monthly/ ) {
-            $args{'FUNCTION'} = "SUBSTR($alias.$field,1,7)";
+        if ( $grouping eq 'Daily' ) {
+            $func = "SUBSTR($func,1,10)";
         }
-        elsif ( $grouping =~ /Annually/ ) {
-            $args{'FUNCTION'} = "SUBSTR($alias.$field,1,4)";
+        elsif ( $grouping eq 'Monthly' ) {
+            $func = "SUBSTR($func,1,7)";
         }
+        elsif ( $grouping eq 'Annually' ) {
+            $func = "SUBSTR($func,1,4)";
+        }
+        $args{'FUNCTION'} = $func;
     } elsif ( $field =~ /^(?:CF|CustomField)\.{(.*)}$/ ) { #XXX: use CFDecipher method
         my $cf_name = $1;
         my $cf = RT::CustomField->new( $self->CurrentUser );

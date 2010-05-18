@@ -1026,46 +1026,62 @@ sub FindProtectedParts {
 =cut
 
 sub VerifyDecrypt {
-    my %args = ( Entity => undef, Detach => 1, SetStatus => 1, @_ );
+    my %args = (
+        Entity    => undef,
+        Detach    => 1,
+        SetStatus => 1,
+        AddStatus => 0,
+        @_
+    );
     my @protected = FindProtectedParts( Entity => $args{'Entity'} );
     my @res;
     # XXX: detaching may brake nested signatures
     foreach my $item( grep $_->{'Type'} eq 'signed', @protected ) {
+        my $status_on;
         if ( $item->{'Format'} eq 'RFC3156' ) {
             push @res, { VerifyRFC3156( %$item, SetStatus => $args{'SetStatus'} ) };
             if ( $args{'Detach'} ) {
                 $item->{'Top'}->parts( [ $item->{'Data'} ] );
                 $item->{'Top'}->make_singlepart;
             }
-            $item->{'Top'}->head->set( 'X-RT-GnuPG-Status' => $res[-1]->{'status'} )
-                if $args{'SetStatus'};
+            $status_on = $item->{'Top'};
         } elsif ( $item->{'Format'} eq 'Inline' ) {
             push @res, { VerifyInline( %$item ) };
-            $item->{'Data'}->head->set( 'X-RT-GnuPG-Status' => $res[-1]->{'status'} )
-                if $args{'SetStatus'};
+            $status_on = $item->{'Data'};
         } elsif ( $item->{'Format'} eq 'Attachment' ) {
             push @res, { VerifyAttachment( %$item ) };
             if ( $args{'Detach'} ) {
-                $item->{'Top'}->parts( [ grep "$_" ne $item->{'Signature'}, $item->{'Top'}->parts ] );
+                $item->{'Top'}->parts( [
+                    grep "$_" ne $item->{'Signature'}, $item->{'Top'}->parts
+                ] );
                 $item->{'Top'}->make_singlepart;
             }
-            $item->{'Data'}->head->set( 'X-RT-GnuPG-Status' => $res[-1]->{'status'} )
-                if $args{'SetStatus'};
+            $status_on = $item->{'Data'};
+        }
+        if ( $args{'SetStatus'} || $args{'AddStatus'} ) {
+            my $method = $args{'AddStatus'} ? 'add' : 'set';
+            $status_on->head->$method(
+                'X-RT-GnuPG-Status' => $res[-1]->{'status'}
+            );
         }
     }
     foreach my $item( grep $_->{'Type'} eq 'encrypted', @protected ) {
+        my $status_on;
         if ( $item->{'Format'} eq 'RFC3156' ) {
             push @res, { DecryptRFC3156( %$item ) };
-            $item->{'Top'}->head->set( 'X-RT-GnuPG-Status' => $res[-1]->{'status'} )
-                if $args{'SetStatus'};
+            $status_on = $item->{'Top'};
         } elsif ( $item->{'Format'} eq 'Inline' ) {
             push @res, { DecryptInline( %$item ) };
-            $item->{'Data'}->head->set( 'X-RT-GnuPG-Status' => $res[-1]->{'status'} )
-                if $args{'SetStatus'};
+            $status_on = $item->{'Data'};
         } elsif ( $item->{'Format'} eq 'Attachment' ) {
             push @res, { DecryptAttachment( %$item ) };
-            $item->{'Data'}->head->set( 'X-RT-GnuPG-Status' => $res[-1]->{'status'} )
-                if $args{'SetStatus'};
+            $status_on = $item->{'Data'};
+        }
+        if ( $args{'SetStatus'} || $args{'AddStatus'} ) {
+            my $method = $args{'AddStatus'} ? 'add' : 'set';
+            $status_on->head->$method(
+                'X-RT-GnuPG-Status' => $res[-1]->{'status'}
+            );
         }
     }
     return @res;
@@ -1290,11 +1306,12 @@ sub DecryptInline {
         die "Entity has no body, never should happen";
     }
 
+    my %res;
+
     my ($had_literal, $in_block) = ('', 0);
     my ($block_fh, $block_fn) = File::Temp::tempfile( UNLINK => 1 );
     binmode $block_fh, ':raw';
 
-    my %res;
     while ( defined(my $str = $io->getline) ) {
         if ( $in_block && $str =~ /^-----END PGP (?:MESSAGE|SIGNATURE)-----/ ) {
             print $block_fh $str;
@@ -1334,6 +1351,26 @@ sub DecryptInline {
         }
     }
     $io->close;
+
+    if ( $in_block ) {
+        # we're still in a block, this not bad not good. let's try to
+        # decrypt what we have, it can be just missing -----END PGP...
+        seek $block_fh, 0, 0;
+
+        my ($res_fh, $res_fn);
+        ($res_fh, $res_fn, %res) = _DecryptInlineBlock(
+            %args,
+            GnuPG => $gnupg,
+            BlockHandle => $block_fh,
+        );
+        return %res unless $res_fh;
+
+        print $tmp_fh "-----BEGIN OF PGP PROTECTED PART-----\n" if $had_literal;
+        while (my $buf = <$res_fh> ) {
+            print $tmp_fh $buf;
+        }
+        print $tmp_fh "-----END OF PART-----\n" if $had_literal;
+    }
 
     seek $tmp_fh, 0, 0;
     $args{'Data'}->bodyhandle( new MIME::Body::File $tmp_fn );
@@ -2399,11 +2436,17 @@ sub Probe {
 # it's general error system error or incorrect command, command is correct,
 # but there is no way to get actuall error
     if ( $? && ($? >> 8) != 2 ) {
-        $RT::Logger->debug(
-            "Probe for GPG failed."
+        my $msg = "Probe for GPG failed."
             ." Process exitted with code ". ($? >> 8)
             . ($? & 127 ? (" as recieved signal ". ($? & 127)) : '')
-        );
+            . ".";
+        foreach ( qw(stderr logger status) ) {
+            my $tmp = do { local $/; readline $handle{$_} };
+            next unless $tmp && $tmp =~ /\S/s;
+            close $handle{$_};
+            $msg .= "\n$_:\n$tmp\n";
+        }
+        $RT::Logger->debug( $msg );
         return 0;
     }
     return 1;
@@ -2411,16 +2454,10 @@ sub Probe {
 
 
 sub _make_gpg_handles {
-    my %handle_map = (
-        stdin  => IO::Handle->new(),
-        stdout => IO::Handle->new(),
-        stderr => IO::Handle->new(),
-        logger => IO::Handle->new(),
-        status => IO::Handle->new(),
-        command => IO::Handle->new(),
-
-
-            @_);
+    my %handle_map = (@_);
+    $handle_map{$_} = IO::Handle->new
+        foreach grep !defined $handle_map{$_}, 
+        qw(stdin stdout stderr logger status command);
 
     my $handles = GnuPG::Handles->new(%handle_map);
     return ($handles, \%handle_map);

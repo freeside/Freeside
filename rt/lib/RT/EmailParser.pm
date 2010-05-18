@@ -289,9 +289,7 @@ email address and anything that the RT->Config->Get('RTAddressRegexp') matches.
 =cut
 
 sub ParseCcAddressesFromHead {
-
     my $self = shift;
-
     my %args = (
         QueueObj    => undef,
         CurrentUser => undef,
@@ -307,17 +305,13 @@ sub ParseCcAddressesFromHead {
         my $Address = $AddrObj->address;
         my $user = RT::User->new($RT::SystemUser);
         $Address = $user->CanonicalizeEmailAddress($Address);
-        next if ( lc $args{'CurrentUser'}->EmailAddress   eq lc $Address );
-        next if ( lc $args{'QueueObj'}->CorrespondAddress eq lc $Address );
-        next if ( lc $args{'QueueObj'}->CommentAddress    eq lc $Address );
-        next if ( $self->IsRTAddress($Address) );
+        next if lc $args{'CurrentUser'}->EmailAddress eq lc $Address;
+        next if $self->IsRTAddress($Address);
 
         push ( @Addresses, $Address );
     }
     return (@Addresses);
 }
-
-
 
 
 =head2 IsRTaddress ADDRESS
@@ -333,16 +327,27 @@ sub IsRTAddress {
     my $self = shift;
     my $address = shift;
 
-    # Example: the following rule would tell RT not to Cc 
-    #   "tickets@noc.example.com"
-    my $address_re = RT->Config->Get('RTAddressRegexp');
-    if ( defined $address_re && $address =~ /$address_re/i ) {
-        return 1;
+    if ( my $address_re = RT->Config->Get('RTAddressRegexp') ) {
+        return $address =~ /$address_re/i ? 1 : undef;
     }
+
+    # we don't warn here, but do in config check
+    if ( my $correspond_address = RT->Config->Get('CorrespondAddress') ) {
+        return 1 if lc $correspond_address eq lc $address;
+    }
+    if ( my $comment_address = RT->Config->Get('CommentAddress') ) {
+        return 1 if lc $comment_address eq lc $address;
+    }
+
+    my $queue = RT::Queue->new( $RT::SystemUser );
+    $queue->LoadByCols( CorrespondAddress => $address );
+    return 1 if $queue->id;
+
+    $queue->LoadByCols( CommentAddress => $address );
+    return 1 if $queue->id;
+
     return undef;
 }
-
-
 
 
 =head2 CullRTAddresses ARRAY
