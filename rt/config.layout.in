@@ -123,5 +123,6 @@
   customhtmldir:	${customdir}/html
   customlexdir:		${customdir}/po
   customlibdir:		${customdir}/lib
+  fontdir:              ${datadir}/fonts
 </Layout>
 
