@@ -72,26 +72,14 @@ my (@keys, @values);
 while ( my $entry = $tix->Next ) {
     if ($class) {
         my $q = $class->new( $session{'CurrentUser'} );
-        $q->Load( $entry->__Value( $value_name ) );
+        $q->Load( $entry->LabelValue( $value_name ) );
         push @keys, $q->Name;
     }
     else {
-        push @keys, $entry->__Value( $value_name );
+        push @keys, $entry->LabelValue( $value_name );
     }
     $keys[-1] ||= loc('(no value)');
     push @values, $entry->__Value( $count_name );
-}
-
-# XXX: Convert 1970-01-01 date to the 'Not Set'
-# this code should be generalized!!!
-if ( $PrimaryGroupBy =~ /(Daily|Monthly|Annually)$/ ) {
-    my $re;
-    $re = qr{1970-01-01} if $PrimaryGroupBy =~ /Daily$/;
-    $re = qr{1970-01} if $PrimaryGroupBy =~ /Monthly$/;
-    $re = qr{1970} if $PrimaryGroupBy =~ /Annually$/;
-    foreach (@keys) {
-        s/^$re/loc('Not Set')/e;
-    }
 }
 
 my %data;
@@ -126,7 +114,23 @@ my $query_string = $m->comp('/Elements/QueryString', %ARGS);
 % $total += $value;
 <tr class="<%$i%2 ? 'evenline' : 'oddline' %>">
 <td class="label collection-as-table">
-<%$key%>
+%# TODO sadly we don't have "creator.city is null" or alike support yet
+%# so no link if the key is undef for now
+% if ( $PrimaryGroupBy !~ /(Hourly|Daily|Monthly|Annually)$/
+%        && $key ne loc('(no value)') ) {
+% my $group = $PrimaryGroupBy; $group =~ s! !.!;
+% my %orig_keys = reverse %loc_keys;
+% my $QueryString = $m->comp('/Elements/QueryString',
+%           Query => "$Query and $group = '$orig_keys{$key}'",
+%                           Format  => $ARGS{Format},
+%                           Rows    => $ARGS{Rows},
+%                           OrderBy => $ARGS{OrderBy},
+%                           Order   => $ARGS{Order},
+%                          );
+<a href=<% RT->Config->Get('WebURL') %>Search/Results.html?<%$QueryString%>><%$key%></a>
+% } else {
+<% $key %>
+% }
 </td>
 <td class="value collection-as-table">
 <%$value%>

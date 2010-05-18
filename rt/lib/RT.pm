@@ -57,7 +57,7 @@ use Cwd ();
 
 use vars qw($Config $System $SystemUser $Nobody $Handle $Logger $_INSTALL_MODE);
 
-our $VERSION = '3.8.7';
+our $VERSION = '3.8.8';
 
 
 
@@ -350,7 +350,10 @@ sub InitLogging {
                          ));
         }
     }
+    InitSignalHandlers();
+}
 
+sub InitSignalHandlers {
 
 # Signal handlers
 ## This is the default handling of warnings and die'ings in the code
@@ -422,6 +425,8 @@ Load all modules that define base classes.
 =cut
 
 sub InitClasses {
+    shift if @_%2; # so we can call it as a function or method
+    my %args = (@_);
     require RT::Tickets;
     require RT::Transactions;
     require RT::Attachments;
@@ -466,6 +471,25 @@ sub InitClasses {
         RT::ObjectCustomFieldValue
         RT::Attribute
     );
+
+    if ( $args{'Heavy'} ) {
+        # load scrips' modules
+        my $scrips = RT::Scrips->new($RT::SystemUser);
+        $scrips->Limit( FIELD => 'Stage', OPERATOR => '!=', VALUE => 'Disabled' );
+        while ( my $scrip = $scrips->Next ) {
+            $scrip->LoadModules;
+        }
+
+	foreach my $class ( grep $_, RT->Config->Get('CustomFieldValuesSources') ) {
+            local $@;
+            eval "require $class; 1" or $RT::Logger->error(
+                "Class '$class' is listed in CustomFieldValuesSources option"
+                ." in the config, but we failed to load it:\n$@\n"
+            );
+        }
+
+        RT::I18N->LoadLexicons;
+    }
 }
 
 =head2 InitSystemObjects

@@ -143,6 +143,8 @@ our %FIELD_METADATA = (
     CCGroup          => [ 'MEMBERSHIPFIELD' => 'Cc', ], #loc_left_pair
     AdminCCGroup     => [ 'MEMBERSHIPFIELD' => 'AdminCc', ], #loc_left_pair
     WatcherGroup     => [ 'MEMBERSHIPFIELD', ], #loc_left_pair
+    HasAttribute     => [ 'HASATTRIBUTE', 1 ],
+    HasNoAttribute     => [ 'HASATTRIBUTE', 0 ],
 );
 
 # Mapping of Field Type to Function
@@ -158,6 +160,7 @@ our %dispatch = (
     WATCHERFIELD    => \&_WatcherLimit,
     MEMBERSHIPFIELD => \&_WatcherMembershipLimit,
     CUSTOMFIELD     => \&_CustomFieldLimit,
+    HASATTRIBUTE    => \&_HasAttributeLimit,
 );
 our %can_bundle = ();# WATCHERFIELD => "yes", );
 
@@ -193,6 +196,11 @@ my %DefaultEA = (
         '!='       => 'AND',
         'LIKE'     => 'OR',
         'NOT LIKE' => 'AND'
+    },
+
+    HASATTRIBUTE => {
+        '='        => 'AND',
+        '!='       => 'AND',
     },
 
     CUSTOMFIELD => 'OR',
@@ -715,7 +723,7 @@ sub _TransLimit {
     # them all into the same subclause when you have (A op B op C) - the
     # way they get parsed in the tree they're in different subclauses.
 
-    my ( $self, $field, $op, $value, @rest ) = @_;
+    my ( $self, $field, $op, $value, %rest ) = @_;
 
     unless ( $self->{_sql_transalias} ) {
         $self->{_sql_transalias} = $self->Join(
@@ -741,41 +749,36 @@ sub _TransLimit {
         );
     }
 
-    $self->_OpenParen;
-
     #Search for the right field
     if ( $field eq 'Content' and RT->Config->Get('DontSearchFileAttachments') ) {
-       $self->_SQLLimit(
-			ALIAS         => $self->{_sql_trattachalias},
-			FIELD         => 'Filename',
-			OPERATOR      => 'IS',
-			VALUE         => 'NULL',
-			SUBCLAUSE     => 'contentquery',
-			ENTRYAGGREGATOR => 'AND',
-		       );
-       $self->_SQLLimit(
+        $self->_OpenParen;
+        $self->_SQLLimit(
+			%rest,
 			ALIAS         => $self->{_sql_trattachalias},
 			FIELD         => $field,
 			OPERATOR      => $op,
 			VALUE         => $value,
 			CASESENSITIVE => 0,
-			@rest,
-			ENTRYAGGREGATOR => 'AND',
-			SUBCLAUSE     => 'contentquery',
 		       );
+        $self->_SQLLimit(
+			ENTRYAGGREGATOR => 'AND',
+			ALIAS           => $self->{_sql_trattachalias},
+			FIELD           => 'Filename',
+			OPERATOR        => 'IS',
+			VALUE           => 'NULL',
+		       );
+        $self->_CloseParen;
     } else {
         $self->_SQLLimit(
+			%rest,
 			ALIAS         => $self->{_sql_trattachalias},
 			FIELD         => $field,
 			OPERATOR      => $op,
 			VALUE         => $value,
 			CASESENSITIVE => 0,
-			ENTRYAGGREGATOR => 'AND',
-			@rest
         );
     }
 
-    $self->_CloseParen;
 
 }
 
@@ -1362,7 +1365,8 @@ sub _CustomFieldLimit {
 # we explicitly don't include the "IS NULL" case, since we would
 # otherwise end up with a redundant clause.
 
-    my ($negative_op, $null_op, $inv_op, $range_op) = $self->ClassifySQLOperation( $op );
+    my ($negative_op, $null_op, $inv_op, $range_op)
+        = $self->ClassifySQLOperation( $op );
 
     my $fix_op = sub {
         my $op = shift;
@@ -1418,6 +1422,41 @@ sub _CustomFieldLimit {
                 VALUE      => $value,
                 %rest
             );
+        }
+        elsif ( $op eq '=' || $op eq '!=' || $op eq '<>' ) {
+            unless ( length( Encode::encode_utf8($value) ) > 255 ) {
+                $self->_SQLLimit(
+                    ALIAS      => $TicketCFs,
+                    FIELD      => 'Content',
+                    OPERATOR   => $op,
+                    VALUE      => $value,
+                    %rest
+                );
+            } else {
+                $self->_OpenParen;
+                $self->_SQLLimit(
+                    ALIAS      => $TicketCFs,
+                    FIELD      => 'Content',
+                    OPERATOR   => '=',
+                    VALUE      => '',
+                    ENTRYAGGREGATOR => 'OR'
+                );
+                $self->_SQLLimit(
+                    ALIAS      => $TicketCFs,
+                    FIELD      => 'Content',
+                    OPERATOR   => 'IS',
+                    VALUE      => 'NULL',
+                    ENTRYAGGREGATOR => 'OR'
+                );
+                $self->_CloseParen;
+                $self->_SQLLimit(
+                    ALIAS => $TicketCFs,
+                    FIELD => 'LargeContent',
+                    OPERATOR => $fix_op->($op),
+                    VALUE => $value,
+                    ENTRYAGGREGATOR => 'AND',
+                );
+            }
         }
         else {
             $self->_SQLLimit(
@@ -1527,6 +1566,40 @@ sub _CustomFieldLimit {
         );
     }
 }
+
+sub _HasAttributeLimit {
+    my ( $self, $field, $op, $value, %rest ) = @_;
+
+    my $alias = $self->Join(
+        TYPE   => 'LEFT',
+        ALIAS1 => 'main',
+        FIELD1 => 'id',
+        TABLE2 => 'Attributes',
+        FIELD2 => 'ObjectId',
+    );
+    $self->SUPER::Limit(
+        LEFTJOIN        => $alias,
+        FIELD           => 'ObjectType',
+        VALUE           => 'RT::Ticket',
+        ENTRYAGGREGATOR => 'AND'
+    );
+    $self->SUPER::Limit(
+        LEFTJOIN        => $alias,
+        FIELD           => 'Name',
+        OPERATOR        => $op,
+        VALUE           => $value,
+        ENTRYAGGREGATOR => 'AND'
+    );
+    $self->_SQLLimit(
+        %rest,
+        ALIAS      => $alias,
+        FIELD      => 'id',
+        OPERATOR   => $FIELD_METADATA{$field}->[1]? 'IS NOT': 'IS',
+        VALUE      => 'NULL',
+        QUOTEVALUE => 0,
+    );
+}
+
 
 # End Helper Functions
 
@@ -2705,18 +2778,40 @@ Returns a reference to the set of all items found in this search
 sub ItemsArrayRef {
     my $self = shift;
 
-    unless ( $self->{'items_array'} ) {
+    return $self->{'items_array'} if $self->{'items_array'};
 
-        my $placeholder = $self->_ItemsCounter;
-        $self->GotoFirstItem();
-        while ( my $item = $self->Next ) {
-            push( @{ $self->{'items_array'} }, $item );
-        }
-        $self->GotoItem($placeholder);
-        $self->{'items_array'}
-            = $self->ItemsOrderBy( $self->{'items_array'} );
+    my $placeholder = $self->_ItemsCounter;
+    $self->GotoFirstItem();
+    while ( my $item = $self->Next ) {
+        push( @{ $self->{'items_array'} }, $item );
     }
-    return ( $self->{'items_array'} );
+    $self->GotoItem($placeholder);
+    $self->{'items_array'}
+        = $self->ItemsOrderBy( $self->{'items_array'} );
+
+    return $self->{'items_array'};
+}
+
+sub ItemsArrayRefWindow {
+    my $self = shift;
+    my $window = shift;
+
+    my @old = ($self->_ItemsCounter, $self->RowsPerPage, $self->FirstRow+1);
+
+    $self->RowsPerPage( $window );
+    $self->FirstRow(1);
+    $self->GotoFirstItem;
+
+    my @res;
+    while ( my $item = $self->Next ) {
+        push @res, $item;
+    }
+
+    $self->RowsPerPage( $old[1] );
+    $self->FirstRow( $old[2] );
+    $self->GotoItem( $old[0] );
+
+    return \@res;
 }
 
 # }}}
@@ -2913,6 +3008,17 @@ sub CurrentUserCanSee {
         }
     }
 
+    unless ( @direct_queues || keys %roles ) {
+        $self->SUPER::Limit(
+            SUBCLAUSE => 'ACL',
+            ALIAS => 'main',
+            FIELD => 'id',
+            VALUE => 0,
+            ENTRYAGGREGATOR => 'AND',
+        );
+        return $self->{'_sql_current_user_can_see_applied'} = 1;
+    }
+
     {
         my $join_roles = keys %roles;
         $join_roles = 0 if $join_roles == 1 && $roles{'Owner'};
@@ -2933,16 +3039,18 @@ sub CurrentUserCanSee {
 
             return unless @queues;
             if ( @queues == 1 ) {
-                $self->_SQLLimit(
+                $self->SUPER::Limit(
+                    SUBCLAUSE => 'ACL',
                     ALIAS => 'main',
                     FIELD => 'Queue',
                     VALUE => $_[0],
                     ENTRYAGGREGATOR => $ea,
                 );
             } else {
-                $self->_OpenParen;
+                $self->SUPER::_OpenParen('ACL');
                 foreach my $q ( @queues ) {
-                    $self->_SQLLimit(
+                    $self->SUPER::Limit(
+                        SUBCLAUSE => 'ACL',
                         ALIAS => 'main',
                         FIELD => 'Queue',
                         VALUE => $q,
@@ -2950,25 +3058,27 @@ sub CurrentUserCanSee {
                     );
                     $ea = 'OR';
                 }
-                $self->_CloseParen;
+                $self->SUPER::_CloseParen('ACL');
             }
             return 1;
         };
 
-        $self->_OpenParen;
+        $self->SUPER::_OpenParen('ACL');
         my $ea = 'AND';
         $ea = 'OR' if $limit_queues->( $ea, @direct_queues );
         while ( my ($role, $queues) = each %roles ) {
-            $self->_OpenParen;
+            $self->SUPER::_OpenParen('ACL');
             if ( $role eq 'Owner' ) {
-                $self->_SQLLimit(
+                $self->SUPER::Limit(
+                    SUBCLAUSE => 'ACL',
                     FIELD           => 'Owner',
                     VALUE           => $id,
                     ENTRYAGGREGATOR => $ea,
                 );
             }
             else {
-                $self->_SQLLimit(
+                $self->SUPER::Limit(
+                    SUBCLAUSE       => 'ACL',
                     ALIAS           => $cgm_alias,
                     FIELD           => 'MemberId',
                     OPERATOR        => 'IS NOT',
@@ -2976,7 +3086,8 @@ sub CurrentUserCanSee {
                     QUOTEVALUE      => 0,
                     ENTRYAGGREGATOR => $ea,
                 );
-                $self->_SQLLimit(
+                $self->SUPER::Limit(
+                    SUBCLAUSE       => 'ACL',
                     ALIAS           => $role_group_alias,
                     FIELD           => 'Type',
                     VALUE           => $role,
@@ -2985,9 +3096,9 @@ sub CurrentUserCanSee {
             }
             $limit_queues->( 'AND', @$queues ) if ref $queues;
             $ea = 'OR' if $ea eq 'AND';
-            $self->_CloseParen;
+            $self->SUPER::_CloseParen('ACL');
         }
-        $self->_CloseParen;
+        $self->SUPER::_CloseParen('ACL');
     }
     return $self->{'_sql_current_user_can_see_applied'} = 1;
 }
@@ -3230,47 +3341,61 @@ sub _ProcessRestrictions {
 
 =head2 _BuildItemMap
 
-    # Build up a map of first/last/next/prev items, so that we can display search nav quickly
+Build up a L</ItemMap> of first/last/next/prev items, so that we can
+display search nav quickly.
 
 =cut
 
 sub _BuildItemMap {
     my $self = shift;
 
-    my $items = $self->ItemsArrayRef;
-    my $prev  = 0;
+    my $window = RT->Config->Get('TicketsItemMapSize');
 
-    delete $self->{'item_map'};
-    if ( $items->[0] ) {
-        $self->{'item_map'}->{'first'} = $items->[0]->EffectiveId;
-        while ( my $item = shift @$items ) {
-            my $id = $item->EffectiveId;
-            $self->{'item_map'}->{$id}->{'defined'} = 1;
-            $self->{'item_map'}->{$id}->{prev}      = $prev;
-            $self->{'item_map'}->{$id}->{next}      = $items->[0]->EffectiveId
-                if ( $items->[0] );
-            $prev = $id;
-        }
-        $self->{'item_map'}->{'last'} = $prev;
+    $self->{'item_map'} = {};
+
+    my $items = $self->ItemsArrayRefWindow( $window );
+    return unless $items && @$items;
+
+    my $prev = 0;
+    $self->{'item_map'}{'first'} = $items->[0]->EffectiveId;
+    for ( my $i = 0; $i < @$items; $i++ ) {
+        my $item = $items->[$i];
+        my $id = $item->EffectiveId;
+        $self->{'item_map'}{$id}{'defined'} = 1;
+        $self->{'item_map'}{$id}{'prev'}    = $prev;
+        $self->{'item_map'}{$id}{'next'}    = $items->[$i+1]->EffectiveId
+            if $items->[$i+1];
+        $prev = $id;
     }
+    $self->{'item_map'}{'last'} = $prev
+        if !$window || @$items < $window;
 }
 
 =head2 ItemMap
 
-Returns an a map of all items found by this search. The map is of the form
+Returns an a map of all items found by this search. The map is a hash
+of the form:
 
-$ItemMap->{'first'} = first ticketid found
-$ItemMap->{'last'} = last ticketid found
-$ItemMap->{$id}->{prev} = the ticket id found before $id
-$ItemMap->{$id}->{next} = the ticket id found after $id
+    {
+        first => <first ticket id found>,
+        last => <last ticket id found or undef>,
+
+        <ticket id> => {
+            prev => <the ticket id found before>,
+            next => <the ticket id found after>,
+        },
+        <ticket id> => {
+            prev => ...,
+            next => ...,
+        },
+    }
 
 =cut
 
 sub ItemMap {
     my $self = shift;
-    $self->_BuildItemMap()
-        unless ( $self->{'items_array'} and $self->{'item_map'} );
-    return ( $self->{'item_map'} );
+    $self->_BuildItemMap unless $self->{'item_map'};
+    return $self->{'item_map'};
 }
 
 
@@ -3280,13 +3405,16 @@ sub ItemMap {
 
 =head2 PrepForSerialization
 
-You don't want to serialize a big tickets object, as the {items} hash will be instantly invalid _and_ eat lots of space
+You don't want to serialize a big tickets object, as
+the {items} hash will be instantly invalid _and_ eat
+lots of space
 
 =cut
 
 sub PrepForSerialization {
     my $self = shift;
     delete $self->{'items'};
+    delete $self->{'items_array'};
     $self->RedoSearch();
 }
 

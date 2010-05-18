@@ -225,6 +225,7 @@ Set( \$WebPort , $port);
 Set( \$WebBaseURL , "http://localhost:\$WebPort");
 Set( \$LogToSyslog , undef);
 Set( \$LogToScreen , "warning");
+Set( \$RTAddressRegexp , qr/^bad_re_that_doesnt_match\$/);
 Set( \$MailCommand, 'testfile');
 };
     if ( $ENV{'RT_TEST_DB_SID'} ) { # oracle case
@@ -282,10 +283,10 @@ sub set_config_wrapper {
             open my $fh, '>>', $tmp{'config'}{'RT'}
                 or die "Couldn't open config file: $!";
             require Data::Dumper;
+            my $dump = Data::Dumper::Dumper([@_[2 .. $#_]]);
+            $dump =~ s/;\s+$//;
             print $fh
-                "\nSet(${sigil}${name}, \@{"
-                    . Data::Dumper::Dumper([@_[2 .. $#_]])
-                ."}); 1;\n";
+                "\nSet(${sigil}${name}, \@{". $dump ."}); 1;\n";
             close $fh;
 
             if ( @SERVERS ) {
@@ -630,6 +631,13 @@ sub add_rights {
             if ( $principal =~ /^(everyone|(?:un)?privileged)$/i ) {
                 $principal = RT::Group->new( $RT::SystemUser );
                 $principal->LoadSystemInternalGroup($1);
+            } elsif ( $principal =~ /^(Owner|Requestor|(?:Admin)?Cc)$/i ) {
+                $principal = RT::Group->new( $RT::SystemUser );
+                $principal->LoadByCols(
+                    Domain => (ref($e->{'Object'})||'RT::System').'-Role',
+                    Type => $1,
+                    ref($e->{'Object'})? (Instance => $e->{'Object'}->id): (),
+                );
             } else {
                 die "principal is not an object, but also is not name of a system group";
             }
@@ -1034,26 +1042,24 @@ sub start_apache_server {
         <$fh>
     });
 
-    my $log_fn = File::Spec->catfile(
-        "$tmp{'directory'}", 'apache.log'
-    );
-    my $pid_fn = File::Spec->catfile(
-        "$tmp{'directory'}", "apache.pid"
-    );
     my $tmpl = File::Spec->rel2abs( File::Spec->catfile(
         't', 'data', 'configs',
         'apache'. $info{'version'} .'+'. $variant .'.conf'
     ) );
     my %opt = (
-        listen        => $port,
-        server_root   => $info{'HTTPD_ROOT'} || $ENV{'HTTPD_ROOT'}
+        listen         => $port,
+        server_root    => $info{'HTTPD_ROOT'} || $ENV{'HTTPD_ROOT'}
             || Test::More::BAIL_OUT("Couldn't figure out server root"),
-        pid_file      => $pid_fn,
-        document_root => $RT::MasonComponentRoot,
-        rt_bin_path   => $RT::BinPath,
-        log_file      => $log_fn,
+        document_root  => $RT::MasonComponentRoot,
+        tmp_dir        => "$tmp{'directory'}",
+        rt_bin_path    => $RT::BinPath,
         rt_site_config => $ENV{'RT_SITE_CONFIG'},
     );
+    foreach (qw(log pid lock)) {
+        $opt{$_ .'_file'} = File::Spec->catfile(
+            "$tmp{'directory'}", "apache.$_"
+        );
+    }
     {
         my $method = 'apache_'.$variant.'_server_options';
         $self->$method( \%info, \%opt );
@@ -1069,15 +1075,15 @@ sub start_apache_server {
 
     $self->fork_exec($info{'executable'}, '-f', $tmp{'config'}{'apache'});
     my $pid = do {
-        my $tries = 60;
-        while ( !-e $pid_fn ) {
+        my $tries = 10;
+        while ( !-e $opt{'pid_file'} ) {
             $tries--;
             last unless $tries;
             sleep 1;
         }
         Test::More::BAIL_OUT("Couldn't start apache server, no pid file")
-            unless -e $pid_fn;
-        open my $pid_fh, '<', $pid_fn
+            unless -e $opt{'pid_file'};
+        open my $pid_fh, '<', $opt{'pid_file'}
             or Test::More::BAIL_OUT("Couldn't open pid file: $!");
         my $pid = <$pid_fh>;
         chomp $pid;
@@ -1269,11 +1275,11 @@ END {
     RT::Test->stop_server;
 
     # not success
-    if ( grep !$_, $Test->summary ) {
+    if ( !$Test->summary || grep !$_, $Test->summary ) {
         $tmp{'directory'}->unlink_on_destroy(0);
 
         Test::More::diag(
-            "Some tests failed, tmp directory"
+            "Some tests failed or we bailed out, tmp directory"
             ." '$tmp{directory}' is not cleaned"
         );
     }

@@ -120,8 +120,9 @@ sub Create {
 
     # Get the subject
     my $Subject = $Attachment->head->get( 'subject', 0 );
-    defined($Subject) or $Subject = '';
-    chomp($Subject);
+    $Subject = '' unless defined $Subject;
+    chomp $Subject;
+    utf8::decode( $Subject ) unless utf8::is_utf8( $Subject );
 
     #Get the Message-ID
     my $MessageId = $Attachment->head->get( 'Message-ID', 0 );
@@ -135,7 +136,7 @@ sub Create {
     # MIME::Head doesn't support perl strings well and can return
     # octets which later will be double encoded in low-level code
     my $head = $Attachment->head->as_string;
-    utf8::decode( $head );
+    utf8::decode( $head ) unless utf8::is_utf8( $head );
 
     # If a message has no bodyhandle, that means that it has subparts (or appears to)
     # and we should act accordingly.  
@@ -446,24 +447,20 @@ sub Addresses {
 
     my %data = ();
     my $current_user_address = lc $self->CurrentUser->EmailAddress;
-    my $correspond = lc $self->TransactionObj->TicketObj->QueueObj->CorrespondAddress;
-    my $comment = lc $self->TransactionObj->TicketObj->QueueObj->CommentAddress;
     foreach my $hdr (qw(From To Cc Bcc RT-Send-Cc RT-Send-Bcc)) {
         my @Addresses;
-        my $line      = $self->GetHeader($hdr);
+        my $line = $self->GetHeader($hdr);
         
         foreach my $AddrObj ( Email::Address->parse( $line )) {
             my $address = $AddrObj->address;
             $address = lc RT::User->CanonicalizeEmailAddress($address);
-            next if ( $current_user_address eq $address );
-            next if ( $comment              eq $address );
-            next if ( $correspond           eq $address );
-            next if ( RT::EmailParser->IsRTAddress($address) );
+            next if $current_user_address eq $address;
+            next if RT::EmailParser->IsRTAddress($address);
             push @Addresses, $AddrObj ;
         }
-		$data{$hdr} = \@Addresses;
+        $data{$hdr} = \@Addresses;
     }
-	return \%data;
+    return \%data;
 }
 
 =head2 NiceHeaders

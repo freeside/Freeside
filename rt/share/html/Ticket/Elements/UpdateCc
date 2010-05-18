@@ -49,24 +49,32 @@
 <input type="hidden" id="UpdateIgnoreAddressCheckboxes" name="UpdateIgnoreAddressCheckboxes" value="0">
         <br />
 
-%foreach my $addr ( keys %txn_addresses) {
-%    next if ( grep {$addr eq $_} @req_addresses );
+%if (scalar @one_time_Ccs) {
+<i class="label">(<&|/l&>check to add</&>)</i>
+%}
+%foreach my $addr ( @one_time_Ccs ) {
 <input 
 id="UpdateCc-<%$addr%>" 
 name="UpdateCc-<%$addr%>" 
     type="checkbox" 
-    onClick="checkboxToInput('UpdateCc', 'UpdateCc-<%$addr%>','<%$txn_addresses{$addr}->format%>' ); $(UpdateIgnoreAddressCheckboxes).value=1"  
+% my $clean_addr = $txn_addresses{$addr}->format;
+% $clean_addr =~ s/'/\\'/g;
+    onClick="checkboxToInput('UpdateCc', 'UpdateCc-<%$addr%>','<%$clean_addr%>' ); $(UpdateIgnoreAddressCheckboxes).value=1"
     <% $ARGS{'UpdateCc-'.$addr} ? 'checked="checked"' : ''%> > <& /Elements/ShowUser, Address => $txn_addresses{$addr}&>
 %}
 </td></tr>
 <tr><td class="label"><&|/l&>One-time Bcc</&>:</td><td><& /Elements/EmailInput, Name => 'UpdateBcc', Size => '60', Default => $ARGS{UpdateBcc} &><br />
-%foreach my $addr ( keys %txn_addresses) {
-%    next if ( grep {$addr eq $_} @req_addresses );
+%if (scalar @one_time_Ccs) {
+<i class="label">(<&|/l&>check to add</&>)</i>
+%}
+%foreach my $addr ( @one_time_Ccs ) {
 <input
     id="UpdateBcc-<%$addr%>"
     name="UpdateBcc-<%$addr%>"
     type="checkbox" 
-    onClick="checkboxToInput('UpdateBcc', 'UpdateBcc-<%$addr%>','<%$txn_addresses{$addr}->format%>' ); $(UpdateIgnoreAddressCheckboxes).value=1" 
+% my $clean_addr = $txn_addresses{$addr}->format;
+% $clean_addr =~ s/'/\\'/g;
+    onClick="checkboxToInput('UpdateBcc', 'UpdateBcc-<%$addr%>','<%$clean_addr%>' ); $(UpdateIgnoreAddressCheckboxes).value=1"
         <% $ARGS{'UpdateBcc-'.$addr} ? 'checked="checked"' : ''%>> 
 <& /Elements/ShowUser, Address => $txn_addresses{$addr}&>
 %}
@@ -77,4 +85,10 @@ $TicketObj
 <%init>
 my %txn_addresses = %{$TicketObj->TransactionAddresses};
 my @req_addresses = split /,/, $TicketObj->RequestorAddresses;
+my @one_time_Ccs;
+
+foreach my $addr ( keys %txn_addresses) {
+  next if ( grep {$addr eq $_} @req_addresses );
+  push @one_time_Ccs,$addr;
+}
 </%init>

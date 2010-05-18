@@ -333,6 +333,22 @@ our %META = (
         },
     },
 
+    RTAddressRegexp => {
+        Type    => 'SCALAR',
+        PostLoadCheck => sub {
+            my $self = shift;
+            my $value = $self->Get('RTAddressRegexp');
+            return if $value;
+
+            $RT::Logger->error(
+                'The RTAddressRegexp option is not set in the config.'
+                .' Not setting this option results in additional SQL queries to'
+                .' check whether each address belongs to RT or not.'
+                .' It is especially important to set this option if RT recieves'
+                .' emails on addresses that are not in the database or config.'
+            );
+        },
+    },
     # User overridable mail options
     EmailFrequency => {
         Section         => 'Mail',                                     #loc
@@ -347,6 +363,16 @@ our %META = (
             'Weekly digest',          #loc
             'Suspended'               #loc
             ]
+        }
+    },
+    NotifyActor => {
+        Section         => 'Mail',                                     #loc
+        Overridable     => 1,
+        SortOrder       => 2,
+        Widget          => '/Widgets/Form/Boolean',
+        WidgetArguments => {
+            Description => 'Outgoing mail', #loc
+            Hints => 'Should RT send you mail for ticket updates you make?', #loc
         }
     },
 

@@ -45,7 +45,7 @@
 %# those contributions and any derivatives thereof.
 %# 
 %# END BPS TAGGED BLOCK }}}
-<& /Elements/Header, Title => loc('Logout'), Refresh => "1;URL=$URL" &>
+<& /Elements/Header, Title => loc('Logout'), Refresh => RT->Config->Get('LogoutRefresh').";URL=$URL" &>
 </div>
 
 <div id="body" class="login-body">
@@ -58,22 +58,22 @@
 <br />
 <a href="<%$URL%>"><&|/l&>You're welcome to login again</&></a>.
 </&>
+
+% $m->callback( %ARGS );
+
 </div></div>
 <& /Elements/Footer, Menu => 0 &>
 
 % $m->abort();
 
 <%INIT>
+my $URL = RT->Config->Get('WebPath')."/";
 $m->callback( %ARGS, CallbackName => 'BeforeSessionDelete' );
 
-if (defined %session) {
+if (keys %session) {
     tied(%session)->delete;
     $session{'CurrentUser'} = RT::CurrentUser->new;
 }
 
 $m->callback( %ARGS, CallbackName => 'AfterSessionDelete' );
 </%INIT>
-
-<%ARGS>
-$URL => RT->Config->Get('WebPath')."/"
-</%ARGS>

@@ -8,6 +8,7 @@ mandir=man
 libdir=lib
 datadir=share
 htmldir=${datadir}/html
+(test "x$fontdir" = "xNONE" || test "x$fontdir" = "x") && fontdir=${datadir}/fonts
 (test "x$manualdir" = "xNONE" || test "x$manualdir" = "x") && manualdir=${datadir}/doc
 localstatedir=var
 (test "x$logfiledir" = "xNONE" || test "x$logfiledir" = "x") && logfiledir=${localstatedir}/log

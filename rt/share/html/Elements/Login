@@ -64,6 +64,21 @@ my $form_action = defined $goto             ? $goto
                 : defined $req_uri          ? $req_uri
                 :                             RT->Config->Get('WebPath')
                 ;
+
+# sanitize $form_action
+my $uri = URI->new($form_action);
+
+# You get undef scheme with a relative uri like "/Search/Build.html"
+unless (!defined($uri->scheme) || $uri->scheme eq 'http' || $uri->scheme eq 'https') {
+    $form_action = RT->Config->Get('WebPath');
+}
+
+# Make sure we're logging in to the same domain
+# You can get an undef authority with a relative uri like "index.html"
+my $uri_base_url = URI->new(RT->Config->Get('WebBaseURL'));
+unless (!defined($uri->authority) || $uri->authority eq $uri_base_url->authority) {
+    $form_action = RT->Config->Get('WebPath');
+}
 </%INIT>
 
 % $m->callback( %ARGS, CallbackName => 'Header' );

@@ -3,14 +3,14 @@ msgid ""
 msgstr ""
 "Project-Id-Version: RT 3.8.x\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2009-05-07 20:49+0000\n"
-"PO-Revision-Date: 2009-09-21 16:02+0000\n"
-"Last-Translator: wolfee77 <hack.the.planet@freemail.hu>\n"
+"POT-Creation-Date: 2009-10-08 20:18+0000\n"
+"PO-Revision-Date: 2009-11-17 09:06+0000\n"
+"Last-Translator: Bert <Unknown>\n"
 "Language-Team: rt-devel <rt-devel@lists.bestpractical.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Launchpad-Export-Date: 2009-10-08 18:48+0000\n"
+"X-Launchpad-Export-Date: 2010-04-26 21:12+0000\n"
 "X-Generator: Launchpad (build Unknown)\n"
 
 #: share/html/Elements/RT__Ticket/ColumnMap:264
@@ -21,7 +21,7 @@ msgstr " (nincs publikus kulcs!)"
 msgid " (untrusted!)"
 msgstr " (nem megbizhato!)"
 
-#: share/html/Dashboards/Elements/ShowDashboards:77 share/html/Elements/RT__Group/ColumnMap:55 share/html/Elements/RT__Queue/ColumnMap:55 share/html/Elements/RT__Scrip/ColumnMap:55 share/html/Elements/RT__Template/ColumnMap:55 share/html/Elements/RT__User/ColumnMap:55
+#: share/html/Dashboards/Elements/ShowDashboards:77 share/html/Elements/RT__CustomField/ColumnMap:55 share/html/Elements/RT__Group/ColumnMap:55 share/html/Elements/RT__Queue/ColumnMap:55 share/html/Elements/RT__Scrip/ColumnMap:55 share/html/Elements/RT__Template/ColumnMap:55 share/html/Elements/RT__User/ColumnMap:55
 msgid "#"
 msgstr "#"
 
@@ -38,78 +38,78 @@ msgstr "#%1: %2"
 msgid "%1 #%2"
 msgstr "%1 #%2"
 
-#: lib/RT/Date.pm:368
+#: lib/RT/Date.pm:369
 #. ($s, $time_unit)
 msgid "%1 %2"
 msgstr "%1 %2"
 
-#: lib/RT/Tickets_Overlay.pm:1696
+#: lib/RT/Tickets_Overlay.pm:1769
 #. ($args{'FIELD'},        $args{'OPERATOR'}, $args{'VALUE'})
 msgid "%1 %2 %3"
 msgstr "%1 %2 %3"
 
-#: lib/RT/Date.pm:605
+#: lib/RT/Date.pm:609
 #. ($wday,$mon,$mday,$year)
 msgid "%1 %2 %3 %4"
-msgstr ""
+msgstr "%4 %2 %3 %1"
 
-#: lib/RT/Date.pm:620
+#: lib/RT/Date.pm:624
 #. ($wday,$mon,$mday,$hour,$min,$year)
 msgid "%1 %2 %3 %4:%5 %6"
-msgstr ""
+msgstr "%6 %2 %3 %1 %4:%5"
 
-#: lib/RT/Date.pm:617
+#: lib/RT/Date.pm:621
 #. ($wday,$mon,$mday,$hour,$min,$sec,$year)
 msgid "%1 %2 %3 %4:%5:%6 %7"
 msgstr "%1 %7. %2 %3 %4:%5:%6"
 
-#: lib/RT/Record.pm:1715 lib/RT/Transaction_Overlay.pm:704 lib/RT/Transaction_Overlay.pm:747
+#: lib/RT/Record.pm:1717 lib/RT/Transaction_Overlay.pm:704 lib/RT/Transaction_Overlay.pm:747
 #. ($cf->Name, $new_content)
 #. ($field, $self->NewValue)
 #. ($self->Field, $principal->Object->Name)
 msgid "%1 %2 added"
 msgstr "[%1] mezõbe '%2' érték felvétele"
 
-#: lib/RT/Date.pm:365
+#: lib/RT/Date.pm:366
 #. ($s, $time_unit)
 msgid "%1 %2 ago"
 msgstr "%1 %2"
 
-#: lib/RT/Record.pm:1722 lib/RT/Transaction_Overlay.pm:711
+#: lib/RT/Record.pm:1724 lib/RT/Transaction_Overlay.pm:711
 #. ($cf->Name, $old_content, $new_content)
 #. ($field, $self->OldValue, $self->NewValue)
 msgid "%1 %2 changed to %3"
 msgstr "%1 változtatása: '%2' --> '%3'"
 
-#: lib/RT/Record.pm:1719 lib/RT/Transaction_Overlay.pm:707 lib/RT/Transaction_Overlay.pm:753
+#: lib/RT/Record.pm:1721 lib/RT/Transaction_Overlay.pm:707 lib/RT/Transaction_Overlay.pm:753
 #. ($cf->Name, $old_content)
 #. ($field, $self->OldValue)
 #. ($self->Field, $principal->Object->Name)
 msgid "%1 %2 deleted"
 msgstr "%1 %2 törölve"
 
-#: share/html/Widgets/SavedSearch:117
+#: share/html/Widgets/SavedSearch:139
 #. (loc($self->{SearchType}), $self->{CurrentSearch}{Object}->Description)
 msgid "%1 %2 deleted."
 msgstr ""
 
-#: share/html/Widgets/SavedSearch:94
-#. (loc($self->{SearchType}), $self->{CurrentSearch}{Description}, $args->{SavedSearchDescription})
-msgid "%1 %2 renamed to %3."
-msgstr ""
-
-#: share/html/Widgets/SavedSearch:107
+#: share/html/Widgets/SavedSearch:129
 #. (loc($self->{SearchType}), $args->{SavedSearchDescription})
 msgid "%1 %2 saved."
 msgstr ""
 
-#: share/html/Elements/RT__Scrip/ColumnMap:85 share/html/Ticket/Elements/PreviewScrips:66
+#: share/html/Widgets/SavedSearch:113
+#. (loc($self->{SearchType}), $args->{SavedSearchDescription})
+msgid "%1 %2 updated."
+msgstr ""
+
+#: share/html/Elements/RT__Scrip/ColumnMap:89 share/html/Ticket/Elements/PreviewScrips:66
 #. (loc($scrip->ConditionObj->Name), loc($scrip->ActionObj->Name), loc($scrip->TemplateObj->Name))
 #. ($_[0]->loc($_[0]->ConditionObj->Name),            $_[0]->loc($_[0]->ActionObj->Name),            $_[0]->loc($_[0]->TemplateObj->Name),)
 msgid "%1 %2 with template %3"
 msgstr "%1 %2 a %3 sablonnal"
 
-#: share/html/Ticket/Elements/ShowAttachments:75
+#: share/html/Ticket/Elements/ShowAttachments:86
 #. ($rev->CreatedAsString, $size, $rev->CreatorObj->Name)
 msgid "%1 (%2) by %3"
 msgstr ""
@@ -174,7 +174,7 @@ msgstr "%1 - Adja meg a használandó kondiciómodult!"
 msgid "%1 - Specify the search module you want to use"
 msgstr "%1 - Adja meg a használandó keres?modult!"
 
-#: share/html/Dashboards/index.html:67
+#: share/html/Dashboards/index.html:70
 #. ($group)
 msgid "%1 DashBoards"
 msgstr ""
@@ -189,7 +189,7 @@ msgstr "%1 RT %2 Copyright 1996-%3 %4."
 msgid "%1 ScripAction loaded"
 msgstr "ScripAction %1 betöltve"
 
-#: lib/RT/Record.pm:1750
+#: lib/RT/Record.pm:1752
 #. ($args{'Value'}, $cf->Name)
 msgid "%1 added as a value for %2"
 msgstr "%1 értéke hozzáadva %2 höz"
@@ -231,17 +231,17 @@ msgid "%1 changed from %2 to %3"
 msgstr "%1 változtatása: '%2' --> '%3'"
 
 #: share/html/Search/Chart.html:2 share/html/Search/Elements/ResultViews:64
-#. ($m->scomp('Elements/SelectChartType', Name => 'ChartStyle', Default => $ChartStyle), $m->scomp('Elements/SelectGroupBy', Name => 'PrimaryGroupBy', Query => $Query, Default => $PrimaryGroupBy))
+#. ($m->scomp('Elements/SelectChartType', Name => 'ChartStyle', Default => $ChartStyle), $m->scomp('Elements/SelectGroupBy', Name => 'PrimaryGroupBy', Query => $ARGS{Query}, Default => $PrimaryGroupBy))
 #. ($m->scomp('SelectChartType', Name => 'ChartStyle'), $m->scomp('SelectGroupBy', Name => 'PrimaryGroupBy', Query => $Query))
 msgid "%1 chart by %2"
 msgstr ""
 
-#: share/html/Search/Elements/EditSearches:189
+#: share/html/Search/Elements/EditSearches:196
 #. ($SavedSearch->{'Object'}->Description)
 msgid "%1 copy"
 msgstr ""
 
-#: share/html/Admin/Tools/Configuration.html:85
+#: share/html/Admin/Tools/Configuration.html:80
 #. ($meta->{'Source'}{'Extension'})
 msgid "%1 core config"
 msgstr ""
@@ -250,7 +250,7 @@ msgstr ""
 msgid "%1 could not be set to %2."
 msgstr "%1 nem állítható %2 re."
 
-#: lib/RT/Ticket_Overlay.pm:2524
+#: lib/RT/Ticket_Overlay.pm:2547
 #. ($self)
 msgid "%1 couldn't set status to resolved. RT's Database may be inconsistent."
 msgstr "%1 nem tudta a státuszt lezártra állítani. Az RT adatbázisa talán inkonzisztens."
@@ -294,17 +294,25 @@ msgstr ""
 msgid "%1 is a utility, meant to be run from cron, that dispatches all deferred RT notifications as a per-user digest."
 msgstr ""
 
-#: lib/RT/Queue_Overlay.pm:965
+#: lib/RT/Queue_Overlay.pm:793 lib/RT/Queue_Overlay.pm:799 lib/RT/Ticket_Overlay.pm:1107 lib/RT/Ticket_Overlay.pm:1116 share/html/Ticket/Create.html:405 share/html/Ticket/Update.html:273
+#. ($email, $self->loc($args{'Type'}))
+#. ($args{'Email'}, $self->loc($args{'Type'}))
+#. ($email->format, loc($field =~ /^(.*?)s?$/))
+#. ($email->format, loc(substr($field, 6)))
+msgid "%1 is an address RT receives mail at. Adding it as a '%2' would create a mail loop"
+msgstr ""
+
+#: lib/RT/Queue_Overlay.pm:970
 #. ($principal->Object->Name, $args{'Type'})
 msgid "%1 is no longer a %2 for this queue."
 msgstr "Ennek a sornak %1 már nem %2-je."
 
-#: lib/RT/Ticket_Overlay.pm:1274
+#: lib/RT/Ticket_Overlay.pm:1286
 #. ($principal->Object->Name,                         $args{'Type'})
 msgid "%1 is no longer a %2 for this ticket."
 msgstr ""
 
-#: lib/RT/Record.pm:1807
+#: lib/RT/Record.pm:1809
 #. ($TransactionObj->OldValue, $cf->Name)
 msgid "%1 is no longer a value for custom field %2"
 msgstr ""
@@ -318,7 +326,7 @@ msgstr "%1 perc"
 msgid "%1 newest unowned tickets"
 msgstr "%1 legújabb gazdátlan probléma"
 
-#: lib/RT/CustomField_Overlay.pm:865
+#: lib/RT/CustomField_Overlay.pm:866
 msgid "%1 objects"
 msgstr ""
 
@@ -326,7 +334,7 @@ msgstr ""
 msgid "%1 rights"
 msgstr "%1 jogok"
 
-#: share/html/Admin/Tools/Configuration.html:82
+#: share/html/Admin/Tools/Configuration.html:77
 #. ($meta->{'Source'}{'Extension'})
 msgid "%1 site config"
 msgstr ""
@@ -350,11 +358,11 @@ msgstr ""
 msgid "%1 will resolve all members of a resolved group ticket."
 msgstr ""
 
-#: lib/RT/CustomField_Overlay.pm:866
+#: lib/RT/CustomField_Overlay.pm:867
 msgid "%1's %2 objects"
 msgstr ""
 
-#: lib/RT/CustomField_Overlay.pm:867
+#: lib/RT/CustomField_Overlay.pm:868
 msgid "%1's %2's %3 objects"
 msgstr ""
 
@@ -374,23 +382,23 @@ msgstr "%1 elmentett keresései"
 msgid "%1: no attachment specified"
 msgstr "%1: Nincs melléklet megadva!"
 
-#: lib/RT/Date.pm:612
+#: lib/RT/Date.pm:616
 #. ($hour,$min)
 msgid "%1:%2"
 msgstr ""
 
-#: lib/RT/Date.pm:609
+#: lib/RT/Date.pm:613
 #. ($hour,$min,$sec)
 msgid "%1:%2:%3"
 msgstr "%1:%2:%3"
 
-#: share/html/Ticket/Elements/ShowTransactionAttachments:129 share/html/Ticket/Elements/ShowTransactionAttachments:135
+#: share/html/Ticket/Elements/ShowTransactionAttachments:132 share/html/Ticket/Elements/ShowTransactionAttachments:138
 #. (int( $size / 1024 / 102.4 ) / 10)
 #. ($size)
 msgid "%1b"
 msgstr "%1b"
 
-#: share/html/Ticket/Elements/ShowTransactionAttachments:132
+#: share/html/Ticket/Elements/ShowTransactionAttachments:135
 #. (int( $size / 102.4 ) / 10)
 msgid "%1k"
 msgstr "%1k"
@@ -400,12 +408,12 @@ msgstr "%1k"
 msgid "%quant(%1,hour)"
 msgstr ""
 
-#: lib/RT/Ticket_Overlay.pm:886
+#: lib/RT/Ticket_Overlay.pm:890
 #. ($args{'Status'})
 msgid "'%1' is an invalid value for status"
 msgstr "'%1' nem lehet státusz érték"
 
-#: share/html/Admin/Elements/EditCustomFieldValues:91 share/html/Admin/Elements/EditQueueWatchers:66 share/html/Admin/Elements/EditScrips:67 share/html/Admin/Elements/EditTemplates:69 share/html/Admin/Groups/Members.html:109 share/html/Elements/EditLinks:112 share/html/Ticket/Elements/EditPeople:79 share/html/Ticket/Elements/Reminders:119 share/html/User/Groups/Members.html:78
+#: share/html/Admin/Elements/EditCustomFieldValues:91 share/html/Admin/Elements/EditQueueWatchers:66 share/html/Admin/Elements/EditScrips:67 share/html/Admin/Elements/EditTemplates:69 share/html/Admin/Groups/Members.html:109 share/html/Elements/EditLinks:112 share/html/Ticket/Elements/BulkLinks:117 share/html/Ticket/Elements/EditPeople:79 share/html/Ticket/Elements/Reminders:119 share/html/User/Groups/Members.html:78
 msgid "(Check box to delete)"
 msgstr "(Törléshez kiválasztandó!)"
 
@@ -413,11 +421,11 @@ msgstr "(Törléshez kiválasztandó!)"
 msgid "(Check boxes to disable notifications to the listed recipients)"
 msgstr ""
 
-#: share/html/Ticket/Elements/PreviewScrips:86
+#: share/html/Ticket/Elements/PreviewScrips:90
 msgid "(Check boxes to enable notifications to the listed recipients)"
 msgstr ""
 
-#: share/html/Ticket/Create.html:226
+#: share/html/Ticket/Create.html:228
 msgid "(Enter ticket ids or URLs, separated with spaces)"
 msgstr "(Szóközökkel elválasztva adható meg a problémák sorszáma vagy URL-je.)"
 
@@ -427,7 +435,7 @@ msgstr "(Szóközökkel elválasztva adható meg a problémák sorszáma vagy UR
 msgid "(If left blank, will default to %1)"
 msgstr "(Ha üresen marad: %1)"
 
-#: share/html/Admin/Elements/EditCustomFields:76 share/html/Admin/Elements/ListGlobalCustomFields:55
+#: share/html/Admin/Elements/EditCustomFields:98 share/html/Admin/Elements/ListGlobalCustomFields:55
 msgid "(No custom fields)"
 msgstr "(Nincs egyéni mezõ)"
 
@@ -455,7 +463,7 @@ msgstr ""
 msgid "(Sends a carbon-copy of this update to a comma-delimited list of email addresses. These people <strong>will</strong> receive future updates.)"
 msgstr ""
 
-#: share/html/Admin/Elements/EditScrip:98
+#: share/html/Admin/Elements/EditScrip:99
 msgid "(Use these fields when you choose 'User Defined' for a condition or action)"
 msgstr ""
 
@@ -463,7 +471,7 @@ msgstr ""
 msgid "(Will not be sent email)"
 msgstr ""
 
-#: share/html/Admin/CustomFields/index.html:79
+#: share/html/Admin/CustomFields/index.html:77
 msgid "(any)"
 msgstr ""
 
@@ -479,7 +487,7 @@ msgstr "(Nincs név a listában)"
 msgid "(no pubkey!)"
 msgstr ""
 
-#: lib/RT/Transaction_Overlay.pm:648 share/html/Admin/Elements/AddCustomFieldValue:72 share/html/Admin/Elements/EditCustomFieldValues:78 share/html/Admin/Elements/SelectRights:77 share/html/Admin/Tools/Shredder/Elements/Object/RT--Attachment:52 share/html/Admin/Tools/Shredder/Elements/SelectPlugin:55 share/html/Elements/EditCustomFieldSelect:70 share/html/Elements/EditCustomFieldSelect:89 share/html/Elements/SelectCustomFieldValue:53 share/html/Elements/ShowCustomFields:58 share/html/Search/Elements/Chart:79
+#: lib/RT/Transaction_Overlay.pm:648 share/html/Admin/Elements/AddCustomFieldValue:72 share/html/Admin/Elements/EditCustomFieldValues:78 share/html/Admin/Elements/SelectRights:77 share/html/Admin/Tools/Shredder/Elements/Object/RT--Attachment:52 share/html/Admin/Tools/Shredder/Elements/SelectPlugin:55 share/html/Elements/EditCustomFieldSelect:100 share/html/Elements/EditCustomFieldSelect:90 share/html/Elements/SelectCustomFieldValue:53 share/html/Elements/ShowCustomFields:59 share/html/Search/Elements/Chart:120 share/html/Search/Elements/Chart:81
 msgid "(no value)"
 msgstr "(nincs adat)"
 
@@ -487,7 +495,7 @@ msgstr "(nincs adat)"
 msgid "(no values)"
 msgstr "(nincs adat)"
 
-#: share/html/Elements/EditLinks:133 share/html/Ticket/Elements/BulkLinks:51
+#: share/html/Elements/EditLinks:133 share/html/Ticket/Elements/BulkLinks:128
 msgid "(only one ticket)"
 msgstr "<br>(Csak egy probléma adható meg!)"
 
@@ -509,7 +517,7 @@ msgstr "(szükséges)"
 msgid "(trust: %1)"
 msgstr ""
 
-#: share/html/Ticket/Elements/ShowTransactionAttachments:229 share/html/Ticket/Elements/ShowTransactionAttachments:66
+#: share/html/Ticket/Elements/ShowTransactionAttachments:233 share/html/Ticket/Elements/ShowTransactionAttachments:66
 msgid "(untitled)"
 msgstr "(névtelen)"
 
@@ -530,7 +538,7 @@ msgid "--transaction argument could be only 'first', 'last' or 'all'"
 msgstr ""
 
 #: share/html/Elements/CreateTicket:49
-#. ($m->scomp('/Elements/SelectNewTicketQueue', OnChange => 'document.CreateTicketInQueue.submit()'))
+#. ($m->scomp('/Elements/SelectNewTicketQueue', OnChange => 'document.CreateTicketInQueue.submit()', SendTo => $SendTo ))
 msgid "<input type=\"submit\" class=\"button\" value=\"New ticket in\" />&nbsp;%1"
 msgstr "<input type=\"submit\" class=\"button\" value=\"Új probléma:\" />&nbsp;%1"
 
@@ -539,7 +547,7 @@ msgstr "<input type=\"submit\" class=\"button\" value=\"Új probléma:\" />&nbsp
 msgid "<input type=\"submit\" value=\"New ticket in\">&nbsp;%1"
 msgstr "<input type=\"submit\" value=\"Új probléma\">&nbsp;%1"
 
-#: share/html/User/Prefs.html:196
+#: share/html/User/Prefs.html:182
 msgid "<p>All iCal feeds embed a secret token which authorizes you.  If the URL one of your iCal feeds got exposed to the outside world, you can get a new secret, <b>breaking all existing iCal feeds</b> below.</p>"
 msgstr ""
 
@@ -547,7 +555,7 @@ msgstr ""
 msgid "A blank template"
 msgstr "Üres sablon"
 
-#: share/html/Admin/Users/Modify.html:381
+#: share/html/Admin/Users/Modify.html:364
 msgid "A password was not set, so user won't be able to login."
 msgstr ""
 
@@ -571,7 +579,7 @@ msgstr "Magamról"
 msgid "Access control"
 msgstr "Hozzáférés ellenõrzése"
 
-#: share/html/Admin/Elements/EditScrip:68 share/html/Elements/RT__Scrip/ColumnMap:72
+#: share/html/Admin/Elements/EditScrip:69 share/html/Elements/RT__Scrip/ColumnMap:76
 msgid "Action"
 msgstr "Akció"
 
@@ -600,7 +608,7 @@ msgstr "Akció elõkészítve..."
 msgid "Add"
 msgstr "Hozzáad"
 
-#: share/html/Search/Bulk.html:99
+#: share/html/Search/Bulk.html:101
 msgid "Add AdminCc"
 msgstr "Adminisztratív tájékotatást kapó hozzáadása"
 
@@ -608,7 +616,7 @@ msgstr "Adminisztratív tájékotatást kapó hozzáadása"
 msgid "Add Bookmark"
 msgstr ""
 
-#: share/html/Search/Bulk.html:95
+#: share/html/Search/Bulk.html:97
 msgid "Add Cc"
 msgstr "Tájékotatást kapó hozzáadása"
 
@@ -620,11 +628,11 @@ msgstr "Mezõk hozzáadása"
 msgid "Add Criteria"
 msgstr "Bõvített keresési feltételek"
 
-#: share/html/Search/Bulk.html:161 share/html/Ticket/Create.html:142 share/html/Ticket/ModifyAll.html:131 share/html/Ticket/Update.html:118
+#: share/html/Search/Bulk.html:163 share/html/Ticket/Create.html:143 share/html/Ticket/ModifyAll.html:132 share/html/Ticket/Update.html:121
 msgid "Add More Files"
 msgstr "További fájlok csatolása"
 
-#: share/html/Search/Bulk.html:91
+#: share/html/Search/Bulk.html:93
 msgid "Add Requestor"
 msgstr "Beküldõ hozáadása"
 
@@ -640,7 +648,7 @@ msgstr "Minden sorra vonatkozó Scrip hozzáadása"
 msgid "Add additional criteria"
 msgstr "További feltételek hozzáadása"
 
-#: share/html/Search/Bulk.html:131
+#: share/html/Search/Bulk.html:133
 msgid "Add comments or replies to selected tickets"
 msgstr "A kiválasztott problémákhoz válasz vagy kiegészítés hozzáadása"
 
@@ -652,28 +660,28 @@ msgstr "Tagfelvétel"
 msgid "Add new watchers"
 msgstr "Új résztvevõk hozzáadása"
 
-#: share/html/Search/Build.html:87
+#: share/html/Search/Build.html:89
 msgid "Add these terms"
 msgstr ""
 
-#: share/html/Search/Build.html:88
+#: share/html/Search/Build.html:90
 msgid "Add these terms and Search"
 msgstr ""
 
-#: share/html/Search/Bulk.html:181
+#: share/html/Search/Bulk.html:185
 msgid "Add values"
 msgstr ""
 
-#: lib/RT/CustomField_Overlay.pm:114
+#: lib/RT/CustomField_Overlay.pm:115
 msgid "Add, delete and modify custom field values for objects"
 msgstr "Egyéni mezõk lehetséges értékeinek létrehozása, módosítása, törlése"
 
-#: lib/RT/Queue_Overlay.pm:848
+#: lib/RT/Queue_Overlay.pm:853
 #. ($args{'Type'})
 msgid "Added principal as a %1 for this queue"
 msgstr "Hozzendelt egy vezetõt mint %1 ehhez a sorhoz"
 
-#: lib/RT/Ticket_Overlay.pm:1146
+#: lib/RT/Ticket_Overlay.pm:1158
 #. ($self->loc($args{'Type'}))
 msgid "Added principal as a %1 for this ticket"
 msgstr "Hozzárendelt egy vezetõt mint %1 ehhez a problémához"
@@ -682,11 +690,11 @@ msgstr "Hozzárendelt egy vezetõt mint %1 ehhez a problémához"
 msgid "Address"
 msgstr ""
 
-#: share/html/Admin/Users/Modify.html:149 share/html/Elements/RT__User/ColumnMap:106 share/html/User/Prefs.html:139
+#: share/html/Admin/Users/Modify.html:134 share/html/Elements/RT__User/ColumnMap:106 share/html/User/Prefs.html:125
 msgid "Address1"
 msgstr "Utca, házszám"
 
-#: share/html/Admin/Users/Modify.html:154 share/html/Elements/RT__User/ColumnMap:111 share/html/User/Prefs.html:143
+#: share/html/Admin/Users/Modify.html:139 share/html/Elements/RT__User/ColumnMap:111 share/html/User/Prefs.html:129
 msgid "Address2"
 msgstr "Postafiók"
 
@@ -718,7 +726,7 @@ msgstr ""
 msgid "AdminCCGroup"
 msgstr ""
 
-#: lib/RT/ACE_Overlay.pm:102 lib/RT/Tickets_Overlay.pm:133 share/html/Elements/RT__Ticket/ColumnMap:183 share/html/Search/Elements/BuildFormatString:99 share/html/Ticket/Elements/ShowPeople:64
+#: lib/RT/ACE_Overlay.pm:102 lib/RT/Tickets_Overlay.pm:133 share/html/Elements/RT__Ticket/ColumnMap:183 share/html/Search/Elements/BuildFormatString:99 share/html/Ticket/Elements/ShowPeople:66
 msgid "AdminCc"
 msgstr "Adminisztratív tájékoztatást kap"
 
@@ -726,7 +734,7 @@ msgstr "Adminisztratív tájékoztatást kap"
 msgid "AdminCcs"
 msgstr ""
 
-#: lib/RT/CustomField_Overlay.pm:113
+#: lib/RT/CustomField_Overlay.pm:114
 msgid "AdminCustomField"
 msgstr ""
 
@@ -742,7 +750,7 @@ msgstr ""
 msgid "AdminOwnPersonalGroups"
 msgstr ""
 
-#: lib/RT/Queue_Overlay.pm:92
+#: lib/RT/Queue_Overlay.pm:88
 msgid "AdminQueue"
 msgstr ""
 
@@ -758,7 +766,7 @@ msgstr "Adminisztratív tájékoztatást kap"
 msgid "Administrative password"
 msgstr ""
 
-#: share/html/Ticket/Elements/Tabs:277
+#: share/html/Ticket/Elements/Tabs:282
 msgid "Advanced"
 msgstr "Kézi lekérdezés"
 
@@ -770,11 +778,15 @@ msgstr ""
 msgid "All Approvals Passed"
 msgstr ""
 
-#: share/html/Admin/Queues/index.html:82
+#: share/html/Admin/Queues/index.html:110
 msgid "All Queues"
 msgstr "Minden sor"
 
-#: lib/RT/Attachment_Overlay.pm:649
+#: share/html/Admin/Queues/index.html:100
+msgid "All queues matching search criteria"
+msgstr ""
+
+#: lib/RT/Attachment_Overlay.pm:646
 msgid "Already encrypted"
 msgstr "Már titkosítva"
 
@@ -782,15 +794,27 @@ msgstr "Már titkosítva"
 msgid "And/Or"
 msgstr "ÉS/VAGY"
 
+#: share/html/Elements/RT__CustomField/ColumnMap:90
+msgid "Applied"
+msgstr ""
+
 #: share/html/Admin/CustomFields/Modify.html:79 share/html/Admin/Elements/CustomFieldTabs:85
 msgid "Applies to"
 msgstr ""
 
-#: share/html/Search/Edit.html:70
+#: share/html/Admin/CustomFields/Objects.html:61
+msgid "Applies to all objects"
+msgstr ""
+
+#: share/html/Search/Edit.html:72
 msgid "Apply"
 msgstr "Mentés"
 
-#: share/html/Search/Edit.html:70
+#: share/html/Admin/CustomFields/Objects.html:65
+msgid "Apply globally"
+msgstr ""
+
+#: share/html/Search/Edit.html:72
 msgid "Apply your changes"
 msgstr "A változtatás mentése"
 
@@ -851,23 +875,23 @@ msgstr ""
 msgid "Ascending"
 msgstr "növekvõ"
 
-#: lib/RT/Queue_Overlay.pm:98
+#: lib/RT/Queue_Overlay.pm:94
 msgid "Assign and remove custom fields"
 msgstr "Egyéni mezõ hozzárendelése vagy törlése"
 
-#: lib/RT/Queue_Overlay.pm:98
+#: lib/RT/Queue_Overlay.pm:94
 msgid "AssignCustomFields"
 msgstr ""
 
-#: share/html/Search/Bulk.html:160 share/html/SelfService/Update.html:90 share/html/Ticket/ModifyAll.html:129 share/html/Ticket/Update.html:118
+#: share/html/Search/Bulk.html:162 share/html/SelfService/Update.html:90 share/html/Ticket/ModifyAll.html:130 share/html/Ticket/Update.html:121
 msgid "Attach"
 msgstr "Csatol"
 
-#: share/html/SelfService/Create.html:98 share/html/Ticket/Create.html:138
+#: share/html/SelfService/Create.html:98 share/html/Ticket/Create.html:139
 msgid "Attach file"
 msgstr "Fájl csatolása"
 
-#: share/html/Search/Bulk.html:150 share/html/SelfService/Update.html:78 share/html/Ticket/Create.html:126 share/html/Ticket/ModifyAll.html:118 share/html/Ticket/Update.html:108
+#: share/html/Search/Bulk.html:152 share/html/SelfService/Update.html:78 share/html/Ticket/Create.html:127 share/html/Ticket/ModifyAll.html:119 share/html/Ticket/Update.html:111
 msgid "Attached file"
 msgstr "Csatolt fájl"
 
@@ -884,7 +908,7 @@ msgstr "A csatolt '%1' nem betölthetõ"
 msgid "Attachment created"
 msgstr "Csatolt fájl létrehozva"
 
-#: lib/RT/Tickets_Overlay.pm:2146
+#: lib/RT/Tickets_Overlay.pm:2219
 msgid "Attachment filename"
 msgstr "Csatolt fájl neve"
 
@@ -892,7 +916,7 @@ msgstr "Csatolt fájl neve"
 msgid "Attachments"
 msgstr "Csatolt fájlok"
 
-#: lib/RT/Attachment_Overlay.pm:642
+#: lib/RT/Attachment_Overlay.pm:639
 msgid "Attachments encryption is disabled"
 msgstr ""
 
@@ -937,7 +961,7 @@ msgstr "Vissza"
 msgid "Bad privacy for attribute %1"
 msgstr ""
 
-#: share/html/Admin/Elements/CustomFieldTabs:67 share/html/Admin/Elements/GroupTabs:62 share/html/Admin/Elements/QueueTabs:62 share/html/Admin/Elements/UserTabs:60 share/html/Dashboards/Elements/Tabs:73 share/html/Ticket/Elements/Tabs:125 share/html/User/Elements/GroupTabs:61
+#: share/html/Admin/Elements/CustomFieldTabs:67 share/html/Admin/Elements/GroupTabs:62 share/html/Admin/Elements/QueueTabs:62 share/html/Admin/Elements/UserTabs:60 share/html/Dashboards/Elements/Tabs:73 share/html/Ticket/Elements/Tabs:129 share/html/User/Elements/GroupTabs:61
 msgid "Basics"
 msgstr "Alapadatok módosítása"
 
@@ -949,7 +973,7 @@ msgstr "BCC"
 msgid "Be sure to save your changes"
 msgstr "Ha valamit módosított ne felejtsen el ide kattintani, hogy megtörténjen a"
 
-#: share/html/Elements/Logo:51
+#: NOT FOUND IN SOURCE
 msgid "Best Practical Solutions, LLC corporate logo"
 msgstr "Best Practical Solutions, LLC vállalati logo"
 
@@ -957,7 +981,7 @@ msgstr "Best Practical Solutions, LLC vállalati logo"
 msgid "Blank"
 msgstr "Üres"
 
-#: share/html/Dashboards/Queries.html:181
+#: share/html/Dashboards/Queries.html:183
 msgid "Body"
 msgstr ""
 
@@ -977,7 +1001,7 @@ msgstr ""
 msgid "Brief headers"
 msgstr "Tömör fejléc"
 
-#: share/html/Ticket/Elements/Tabs:314
+#: share/html/Ticket/Elements/Tabs:319
 msgid "Bulk Update"
 msgstr "Tömeges frissítis"
 
@@ -1001,24 +1025,24 @@ msgstr ""
 msgid "CF"
 msgstr ""
 
-#: lib/RT/User_Overlay.pm:1547
+#: share/html/Search/Elements/EditSearches:174
+#. ($ARGS{'SavedSearchLoad'})
+msgid "Can not load saved search \"%1\""
+msgstr ""
+
+#: lib/RT/User_Overlay.pm:1612
 msgid "Can not modify system users"
 msgstr "Rendszerfelhasználó nem módosítható"
 
-#: lib/RT/Queue_Overlay.pm:91
+#: lib/RT/Queue_Overlay.pm:87
 msgid "Can this principal see this queue"
 msgstr "Ez a vezetõ nem láthatja ezt a sort"
 
-#: lib/RT/CustomField_Overlay.pm:408
+#: lib/RT/CustomField_Overlay.pm:409
 msgid "Can't add a custom field value without a name"
 msgstr "Egyéni mehzõ név nélkül nem hozzáadható"
 
-#: share/html/Admin/CustomFields/Objects.html:88
-#. ($Class)
-msgid "Can't find a collection class for '%1'"
-msgstr ""
-
-#: share/html/Search/Elements/EditSearches:279
+#: share/html/Search/Elements/EditSearches:286
 msgid "Can't find a saved search to work with"
 msgstr ""
 
@@ -1026,20 +1050,20 @@ msgstr ""
 msgid "Can't link a ticket to itself"
 msgstr "A problémát nem lehet önmagához kapcsolni!"
 
-#: share/html/Widgets/SavedSearch:110
+#: share/html/Widgets/SavedSearch:132
 #. (loc($self->{SearchType}))
 msgid "Can't save %1"
 msgstr ""
 
-#: share/html/Search/Elements/EditSearches:283
+#: share/html/Search/Elements/EditSearches:290
 msgid "Can't save this search"
 msgstr "Ezt a lekérdezést nem lehet lementeni"
 
-#: lib/RT/Record.pm:1286 lib/RT/Record.pm:1366
+#: lib/RT/Record.pm:1287 lib/RT/Record.pm:1367
 msgid "Can't specifiy both base and target"
 msgstr "Nem adhat meg egyszerre bázist és célt"
 
-#: share/html/Ticket/Create.html:330
+#: share/html/Ticket/Create.html:341
 msgid "Cannot create tickets in a disabled queue."
 msgstr ""
 
@@ -1060,7 +1084,7 @@ msgstr ""
 msgid "Category unset"
 msgstr ""
 
-#: lib/RT/ACE_Overlay.pm:101 lib/RT/Tickets_Overlay.pm:132 share/html/Admin/Queues/People.html:67 share/html/Elements/RT__Ticket/ColumnMap:178 share/html/Search/Elements/BuildFormatString:99 share/html/SelfService/Create.html:75 share/html/Ticket/Create.html:93 share/html/Ticket/Elements/EditPeople:73 share/html/Ticket/Elements/ShowPeople:60 share/html/Ticket/Forward.html:70
+#: lib/RT/ACE_Overlay.pm:101 lib/RT/Tickets_Overlay.pm:132 share/html/Admin/Queues/People.html:67 share/html/Elements/RT__Ticket/ColumnMap:178 share/html/Search/Elements/BuildFormatString:99 share/html/SelfService/Create.html:75 share/html/Ticket/Create.html:93 share/html/Ticket/Elements/EditPeople:73 share/html/Ticket/Elements/ShowPeople:62 share/html/Ticket/Forward.html:70
 msgid "Cc"
 msgstr "Tájékoztatást kap"
 
@@ -1068,11 +1092,15 @@ msgstr "Tájékoztatást kap"
 msgid "Ccs"
 msgstr ""
 
-#: share/html/Install/index.html:64 share/html/Search/Results.html:80
+#: share/html/Install/index.html:64 share/html/Search/Results.html:82
 msgid "Change"
 msgstr ""
 
-#: share/html/SelfService/Prefs.html:54
+#: lib/RT/Approval/Rule/Created.pm:56
+msgid "Change Approval ticket to open status"
+msgstr ""
+
+#: share/html/SelfService/Prefs.html:53
 msgid "Change password"
 msgstr "Jelszó-változtatás"
 
@@ -1088,7 +1116,7 @@ msgstr ""
 msgid "Check Database Credentials"
 msgstr ""
 
-#: share/html/Search/Bulk.html:152 share/html/SelfService/Update.html:81 share/html/Ticket/Create.html:129 share/html/Ticket/ModifyAll.html:120 share/html/Ticket/Update.html:110
+#: share/html/Search/Bulk.html:154 share/html/SelfService/Update.html:81 share/html/Ticket/Create.html:130 share/html/Ticket/ModifyAll.html:121 share/html/Ticket/Update.html:113
 msgid "Check box to delete"
 msgstr "Törléshez bejelölni"
 
@@ -1096,7 +1124,7 @@ msgstr "Törléshez bejelölni"
 msgid "Check box to revoke right"
 msgstr "Jog megvonásához megjelölni"
 
-#: share/html/Elements/EditLinks:149 share/html/Elements/EditLinks:82 share/html/Elements/ShowLinks:94 share/html/Search/Elements/BuildFormatString:99 share/html/Ticket/Create.html:231 share/html/Ticket/Elements/BulkLinks:66
+#: share/html/Elements/EditLinks:149 share/html/Elements/EditLinks:82 share/html/Elements/ShowLinks:94 share/html/Search/Elements/BuildFormatString:99 share/html/Ticket/Create.html:233 share/html/Ticket/Elements/BulkLinks:143 share/html/Ticket/Elements/BulkLinks:84
 msgid "Children"
 msgstr "Leszármazottak"
 
@@ -1104,7 +1132,7 @@ msgstr "Leszármazottak"
 msgid "Choose Database Engine"
 msgstr ""
 
-#: share/html/Admin/Users/Modify.html:159 share/html/Elements/RT__User/ColumnMap:116 share/html/User/Prefs.html:147
+#: share/html/Admin/Users/Modify.html:144 share/html/Elements/RT__User/ColumnMap:116 share/html/User/Prefs.html:133
 msgid "City"
 msgstr "Város"
 
@@ -1136,19 +1164,19 @@ msgstr "Lezárva"
 msgid "Closed tickets"
 msgstr "Lezárt problémák"
 
-#: lib/RT/CustomField_Overlay.pm:90
+#: lib/RT/CustomField_Overlay.pm:91
 msgid "Combobox: Select or enter multiple values"
 msgstr "Cobobox: válasszon ki vagy adjon meg akár több értéket"
 
-#: lib/RT/CustomField_Overlay.pm:91
+#: lib/RT/CustomField_Overlay.pm:92
 msgid "Combobox: Select or enter one value"
 msgstr "Cobobox: válasszon ki vagy adjon meg egy értéket"
 
-#: lib/RT/CustomField_Overlay.pm:92
+#: lib/RT/CustomField_Overlay.pm:93
 msgid "Combobox: Select or enter up to %1 values"
 msgstr "Cobobox: válasszon ki vagy adjon maximum %1 db értéket"
 
-#: share/html/Search/Elements/EditFormat:72 share/html/Ticket/Elements/ShowTransaction:195 share/html/Ticket/Elements/Tabs:223
+#: share/html/Search/Elements/EditFormat:72 share/html/Ticket/Elements/ShowTransaction:197 share/html/Ticket/Elements/Tabs:227
 msgid "Comment"
 msgstr "Kiegészít"
 
@@ -1160,15 +1188,11 @@ msgstr "Kiegészitõcím"
 msgid "Comment address"
 msgstr ""
 
-#: lib/RT/Queue_Overlay.pm:113
+#: lib/RT/Queue_Overlay.pm:109
 msgid "Comment on tickets"
 msgstr ""
 
-#: share/html/Elements/RT__Queue/ColumnMap:89
-msgid "CommentAddress"
-msgstr ""
-
-#: lib/RT/Queue_Overlay.pm:113
+#: lib/RT/Queue_Overlay.pm:109
 msgid "CommentOnTicket"
 msgstr ""
 
@@ -1180,11 +1204,11 @@ msgstr ""
 msgid "Comments (Not sent to requestors)"
 msgstr "Kiegészítés (a beküldõ nem kapja meg!))"
 
-#: share/html/Search/Bulk.html:135
+#: share/html/Search/Bulk.html:137
 msgid "Comments (not sent to requestors)"
 msgstr "Kiegészítés (a beküldõ nem kapja meg!)"
 
-#: share/html/Admin/Users/Modify.html:229 share/html/Ticket/Elements/ShowRequestor:82
+#: share/html/Admin/Users/Modify.html:214 share/html/Ticket/Elements/ShowRequestor:82
 msgid "Comments about this user"
 msgstr "Kiegészítés ehhez a felhasználóhoz"
 
@@ -1196,7 +1220,7 @@ msgstr "Kiegészítés hozzáfûzése"
 msgid "Commit Stubbed"
 msgstr ""
 
-#: share/html/Admin/Elements/EditScrip:62 share/html/Elements/RT__Scrip/ColumnMap:68
+#: share/html/Admin/Elements/EditScrip:63 share/html/Elements/RT__Scrip/ColumnMap:72
 msgid "Condition"
 msgstr "Feltétel"
 
@@ -1217,7 +1241,7 @@ msgstr ""
 msgid "Condition not found"
 msgstr "A feltétel nem található"
 
-#: share/html/Elements/RT__Scrip/ColumnMap:80
+#: share/html/Elements/RT__Scrip/ColumnMap:84
 msgid "Condition, Action and Template"
 msgstr ""
 
@@ -1230,7 +1254,7 @@ msgstr ""
 msgid "Configuration"
 msgstr "Konfiguráció"
 
-#: share/html/SelfService/Prefs.html:56
+#: NOT FOUND IN SOURCE
 msgid "Confirm"
 msgstr "Igazolás"
 
@@ -1238,7 +1262,7 @@ msgstr "Igazolás"
 msgid "Connection succeeded"
 msgstr ""
 
-#: lib/RT/Tickets_Overlay.pm:126 share/html/Admin/Elements/ModifyTemplate:67 share/html/Elements/QuickCreate:70 share/html/Elements/SelectAttachmentField:50 share/html/Ticket/ModifyAll.html:135
+#: lib/RT/Tickets_Overlay.pm:126 share/html/Admin/Elements/ModifyTemplate:67 share/html/Elements/QuickCreate:70 share/html/Elements/SelectAttachmentField:50 share/html/Ticket/ModifyAll.html:136
 msgid "Content"
 msgstr "Tartalom"
 
@@ -1258,10 +1282,6 @@ msgstr "Másol"
 msgid "Correspond address"
 msgstr ""
 
-#: share/html/Elements/RT__Queue/ColumnMap:84
-msgid "CorrespondAddress"
-msgstr ""
-
 #: etc/initialdata:261
 msgid "Correspondence"
 msgstr "Válasz"
@@ -1278,7 +1298,7 @@ msgstr "Az egyéni mezõt nem sikerült hozzáadni. "
 msgid "Could not add new custom field value. %1 "
 msgstr "Az egyéni mezõértéket nem sikerült hozzáadni a #%1 problémához "
 
-#: lib/RT/Record.pm:1691 lib/RT/Record.pm:1737
+#: lib/RT/Record.pm:1693 lib/RT/Record.pm:1739
 #. ($value_msg)
 #. ($msg)
 msgid "Could not add new custom field value: %1"
@@ -1288,7 +1308,7 @@ msgstr ""
 msgid "Could not change owner. "
 msgstr "Nem sikerült a tulajdonost megváltoztatni! "
 
-#: lib/RT/Ticket_Overlay.pm:2803 lib/RT/Ticket_Overlay.pm:2811 lib/RT/Ticket_Overlay.pm:2828
+#: lib/RT/Ticket_Overlay.pm:2830 lib/RT/Ticket_Overlay.pm:2838 lib/RT/Ticket_Overlay.pm:2855
 #. ($del_msg)
 #. ($add_msg)
 #. ($msg)
@@ -1314,7 +1334,7 @@ msgstr "Nem sikerült létrehozni a csoportot"
 msgid "Could not create template: %1"
 msgstr "A sablom nem jött létre: %1"
 
-#: lib/RT/Ticket_Overlay.pm:288 lib/RT/Ticket_Overlay.pm:819
+#: lib/RT/Ticket_Overlay.pm:292 lib/RT/Ticket_Overlay.pm:823
 msgid "Could not create ticket. Queue not set"
 msgstr "Nem jött létre a probléma. A sor nincs meghatározva"
 
@@ -1322,11 +1342,11 @@ msgstr "Nem jött létre a probléma. A sor nincs meghatározva"
 msgid "Could not create user"
 msgstr "A felhasználó nem jött létre"
 
-#: lib/RT/Queue_Overlay.pm:827 lib/RT/Ticket_Overlay.pm:1114
+#: lib/RT/Queue_Overlay.pm:832 lib/RT/Ticket_Overlay.pm:1126
 msgid "Could not find or create that user"
 msgstr "A felhasználót nem sikerült megtalálni vagy létrehozni"
 
-#: lib/RT/Queue_Overlay.pm:902 lib/RT/Ticket_Overlay.pm:1195
+#: lib/RT/Queue_Overlay.pm:907 lib/RT/Ticket_Overlay.pm:1207
 msgid "Could not find that principal"
 msgstr "A vezetõ nem található"
 
@@ -1335,7 +1355,7 @@ msgstr "A vezetõ nem található"
 msgid "Could not load %1 attribute"
 msgstr ""
 
-#: share/html/Admin/CustomFields/Objects.html:71
+#: share/html/Admin/CustomFields/Objects.html:110
 msgid "Could not load CustomField %1"
 msgstr "A(z) %1 egyéni mezõ nem betölthetõ"
 
@@ -1348,22 +1368,22 @@ msgstr "A csoport nem betölthetõ"
 msgid "Could not load object for %1"
 msgstr ""
 
-#: lib/RT/Queue_Overlay.pm:846
+#: lib/RT/Queue_Overlay.pm:851
 #. ($args{'Type'})
 msgid "Could not make that principal a %1 for this queue"
 msgstr "A vezetõ nem lehet  %1-e a sornak"
 
-#: lib/RT/Ticket_Overlay.pm:1135
+#: lib/RT/Ticket_Overlay.pm:1147
 #. ($self->loc($args{'Type'}))
 msgid "Could not make that principal a %1 for this ticket"
 msgstr "A vezetõ nem lehet %1-e a problémának"
 
-#: lib/RT/Queue_Overlay.pm:962
+#: lib/RT/Queue_Overlay.pm:967
 #. ($args{'Type'})
 msgid "Could not remove that principal as a %1 for this queue"
 msgstr "A vezetõt nem lehet mint a sor %1-ét eltávolítani"
 
-#: lib/RT/Ticket_Overlay.pm:1262
+#: lib/RT/Ticket_Overlay.pm:1274
 #. ($args{'Type'})
 msgid "Could not remove that principal as a %1 for this ticket"
 msgstr ""
@@ -1380,13 +1400,17 @@ msgstr ""
 msgid "Couldn't add member to group"
 msgstr "A tagot nem lehet a csoporthoz adni"
 
-#: lib/RT/Record.pm:1747 lib/RT/Record.pm:1799
+#: lib/RT/CustomField_Overlay.pm:1051
+msgid "Couldn't apply custom field to an object as it's global already"
+msgstr ""
+
+#: lib/RT/Record.pm:1749 lib/RT/Record.pm:1801
 #. ($msg)
 #. ($Msg)
 msgid "Couldn't create a transaction: %1"
 msgstr "A tanzakció nem létrehozható: %1"
 
-#: lib/RT/CustomField_Overlay.pm:1032
+#: lib/RT/CustomField_Overlay.pm:1175
 msgid "Couldn't create record"
 msgstr ""
 
@@ -1407,7 +1431,7 @@ msgstr ""
 msgid "Couldn't find that principal"
 msgstr "A csoport/felhasználó nem található"
 
-#: lib/RT/CustomField_Overlay.pm:438
+#: lib/RT/CustomField_Overlay.pm:439
 msgid "Couldn't find that value"
 msgstr "Az érték nem található"
 
@@ -1426,17 +1450,22 @@ msgstr ""
 msgid "Couldn't load Custom Field #%1"
 msgstr ""
 
+#: share/html/Admin/Elements/EditCustomFields:136 share/html/Admin/Elements/EditCustomFields:146
+#. ($cf_id)
+msgid "Couldn't load CustomField #%1"
+msgstr ""
+
 #: share/html/Admin/CustomFields/GroupRights.html:104
 #. ($id)
 msgid "Couldn't load CustomField %1"
 msgstr "A(z) %1 egyéni mezõ nem betölthetõ"
 
-#: lib/RT/Ticket_Overlay.pm:1723
+#: lib/RT/Ticket_Overlay.pm:1736
 #. ($self->Id)
 msgid "Couldn't load copy of ticket #%1."
 msgstr ""
 
-#: share/html/Dashboards/Queries.html:85 share/html/Dashboards/Render.html:100
+#: share/html/Dashboards/Queries.html:87 share/html/Dashboards/Render.html:100
 #. ($id, $msg)
 msgid "Couldn't load dashboard %1: %2"
 msgstr ""
@@ -1465,7 +1494,7 @@ msgstr ""
 msgid "Couldn't load object %1"
 msgstr "%1 objektum nem betölthetõ"
 
-#: lib/RT/Ticket_Overlay.pm:440
+#: lib/RT/Ticket_Overlay.pm:444
 #. ($msg)
 msgid "Couldn't load or create user: %1"
 msgstr ""
@@ -1490,17 +1519,17 @@ msgstr "%1 sor nem betölthetõ"
 msgid "Couldn't load queue '%1'"
 msgstr ""
 
-#: share/html/Admin/Elements/EditScrip:139 share/html/Admin/Elements/EditScrip:183
+#: share/html/Admin/Elements/EditScrip:140 share/html/Admin/Elements/EditScrip:184
 #. ($id)
 msgid "Couldn't load scrip #%1"
 msgstr ""
 
-#: share/html/Admin/Elements/EditTemplates:108
+#: share/html/Admin/Elements/EditTemplates:105
 #. ($id)
 msgid "Couldn't load template #%1"
 msgstr ""
 
-#: lib/RT/Action/CreateTickets.pm:454 share/html/SelfService/Display.html:157
+#: lib/RT/Action/CreateTickets.pm:452 share/html/SelfService/Display.html:157
 #. ($id)
 msgid "Couldn't load ticket '%1'"
 msgstr "A(z) '%1' nem betölthetõ"
@@ -1511,41 +1540,41 @@ msgstr "A(z) '%1' nem betölthetõ"
 msgid "Couldn't load transaction #%1"
 msgstr ""
 
-#: share/html/User/Prefs.html:222
+#: share/html/User/Prefs.html:208
 msgid "Couldn't load user"
 msgstr ""
 
-#: share/html/Admin/Users/GnuPG.html:92 share/html/User/Prefs.html:218
+#: share/html/Admin/Users/GnuPG.html:92 share/html/User/Prefs.html:204
 #. ($id)
 msgid "Couldn't load user #%1"
 msgstr ""
 
-#: share/html/User/Prefs.html:216
+#: share/html/User/Prefs.html:202
 #. ($id, $Name)
 msgid "Couldn't load user #%1 or user '%2'"
 msgstr ""
 
-#: share/html/User/Prefs.html:220
+#: share/html/User/Prefs.html:206
 #. ($Name)
 msgid "Couldn't load user '%1'"
 msgstr ""
 
-#: lib/RT/Ticket_Overlay.pm:1049
+#: lib/RT/Ticket_Overlay.pm:1053
 #. ($args{'Email'})
 msgid "Couldn't parse address from '%1' string"
 msgstr ""
 
-#: lib/RT/Attachment_Overlay.pm:725
+#: lib/RT/Attachment_Overlay.pm:722
 #. ($msg)
 msgid "Couldn't replace content with decrypted data: %1"
 msgstr ""
 
-#: lib/RT/Attachment_Overlay.pm:690
+#: lib/RT/Attachment_Overlay.pm:687
 #. ($msg)
 msgid "Couldn't replace content with encrypted data: %1"
 msgstr ""
 
-#: lib/RT/Ticket_Overlay.pm:2390
+#: lib/RT/Ticket_Overlay.pm:2410
 #. ($args{'URI'})
 msgid "Couldn't resolve '%1' into a URI."
 msgstr ""
@@ -1560,28 +1589,28 @@ msgstr ""
 msgid "Couldn't resolve target '%1' into a URI."
 msgstr ""
 
-#: lib/RT/Interface/Email.pm:614 lib/RT/Interface/Email.pm:676
+#: lib/RT/Interface/Email.pm:656 lib/RT/Interface/Email.pm:718
 msgid "Couldn't send email"
 msgstr ""
 
-#: lib/RT/Ticket_Overlay.pm:545
+#: lib/RT/Ticket_Overlay.pm:549
 #. ($type, $msg)
 msgid "Couldn't set %1 watcher: %2"
 msgstr ""
 
-#: lib/RT/User_Overlay.pm:1698
+#: lib/RT/User_Overlay.pm:1763
 msgid "Couldn't set private key"
 msgstr ""
 
-#: lib/RT/User_Overlay.pm:1682
+#: lib/RT/User_Overlay.pm:1747
 msgid "Couldn't unset private key"
 msgstr "Privát kulcs feloldása sikertelen."
 
-#: share/html/Admin/Users/Modify.html:176 share/html/Elements/RT__User/ColumnMap:131 share/html/User/Prefs.html:159
+#: share/html/Admin/Users/Modify.html:161 share/html/Elements/RT__User/ColumnMap:131 share/html/User/Prefs.html:145
 msgid "Country"
 msgstr "Ország"
 
-#: share/html/Admin/CustomFields/Modify.html:137 share/html/Admin/Elements/CreateUserCalled:49 share/html/Admin/Elements/CustomFieldTabs:95 share/html/Admin/Elements/EditCustomField:86 share/html/Admin/Elements/EditScrip:146 share/html/Admin/Elements/GroupTabs:79 share/html/Admin/Elements/QueueTabs:100 share/html/Admin/Elements/UserTabs:86 share/html/Admin/Global/Template.html:89 share/html/Admin/Groups/Modify.html:95 share/html/Admin/Queues/Modify.html:134 share/html/Admin/Queues/Template.html:90 share/html/Admin/Users/Modify.html:244 share/html/Dashboards/Modify.html:76 share/html/Elements/QuickCreate:73 share/html/Elements/ShowLinks:108 share/html/Elements/ShowLinks:50 share/html/Elements/ShowLinks:80 share/html/Elements/ShowLinks:90 share/html/Elements/ShowLinks:94 share/html/Elements/ShowLinks:98 share/html/Ticket/Create.html:167 share/html/Ticket/Create.html:244
+#: share/html/Admin/CustomFields/Modify.html:137 share/html/Admin/Elements/CreateUserCalled:49 share/html/Admin/Elements/CustomFieldTabs:95 share/html/Admin/Elements/EditCustomField:86 share/html/Admin/Elements/EditScrip:147 share/html/Admin/Elements/GroupTabs:79 share/html/Admin/Elements/QueueTabs:100 share/html/Admin/Elements/UserTabs:86 share/html/Admin/Global/Template.html:89 share/html/Admin/Groups/Modify.html:95 share/html/Admin/Queues/Modify.html:134 share/html/Admin/Queues/Template.html:90 share/html/Admin/Users/Modify.html:229 share/html/Dashboards/Modify.html:76 share/html/Elements/QuickCreate:73 share/html/Elements/ShowLinks:108 share/html/Elements/ShowLinks:50 share/html/Elements/ShowLinks:80 share/html/Elements/ShowLinks:90 share/html/Elements/ShowLinks:94 share/html/Elements/ShowLinks:98 share/html/Ticket/Create.html:169 share/html/Ticket/Create.html:246
 msgid "Create"
 msgstr "Felvesz"
 
@@ -1610,11 +1639,11 @@ msgstr "Új csoport létrehozása"
 msgid "Create a new personal group"
 msgstr "Hozzon létre egy új saját csoportot!"
 
-#: share/html/Ticket/Create.html:49 share/html/Ticket/Create.html:53 share/html/Ticket/Create.html:64
+#: share/html/Ticket/Create.html:334
 msgid "Create a new ticket"
 msgstr "Új probléma felvétele"
 
-#: share/html/Admin/Users/Modify.html:260 share/html/Admin/Users/Modify.html:324
+#: share/html/Admin/Users/Modify.html:245 share/html/Admin/Users/Modify.html:309
 msgid "Create a new user"
 msgstr "Hozzon létre egy új felhasználót!"
 
@@ -1655,7 +1684,7 @@ msgstr "Rendszer dashboard létrehozása"
 msgid "Create ticket"
 msgstr "Létrehozás"
 
-#: lib/RT/Queue_Overlay.pm:111
+#: lib/RT/Queue_Overlay.pm:107
 msgid "Create tickets in this queue"
 msgstr "Hozzon létre problémákat ebben a sorban!"
 
@@ -1663,11 +1692,11 @@ msgstr "Hozzon létre problémákat ebben a sorban!"
 msgid "Create tickets offline"
 msgstr ""
 
-#: lib/RT/CustomField_Overlay.pm:113
+#: lib/RT/CustomField_Overlay.pm:114
 msgid "Create, delete and modify custom fields"
 msgstr "Egyéni mezõk létrehozása, módosítása, törlése"
 
-#: lib/RT/Queue_Overlay.pm:92
+#: lib/RT/Queue_Overlay.pm:88
 msgid "Create, delete and modify queues"
 msgstr "Sor létrehozása, módosítása, törlése"
 
@@ -1699,11 +1728,11 @@ msgstr ""
 msgid "CreateSavedSearch"
 msgstr ""
 
-#: lib/RT/Queue_Overlay.pm:111
+#: lib/RT/Queue_Overlay.pm:107
 msgid "CreateTicket"
 msgstr ""
 
-#: lib/RT/Graph/Tickets.pm:159 lib/RT/Ticket_Overlay.pm:913 lib/RT/Tickets_Overlay.pm:124 share/html/Admin/Elements/ShowKeyInfo:58 share/html/Elements/ColumnMap:66 share/html/Elements/ColumnMap:71 share/html/Elements/SelectDateType:49 share/html/Search/Elements/BuildFormatString:99 share/html/Ticket/Elements/ShowDates:50
+#: lib/RT/Graph/Tickets.pm:159 lib/RT/Ticket_Overlay.pm:917 lib/RT/Tickets_Overlay.pm:124 share/html/Admin/Elements/ShowKeyInfo:58 share/html/Elements/ColumnMap:66 share/html/Elements/ColumnMap:71 share/html/Elements/SelectDateType:49 share/html/Search/Elements/BuildFormatString:99 share/html/Ticket/Elements/ShowDates:50
 msgid "Created"
 msgstr "Felvéve"
 
@@ -1741,7 +1770,7 @@ msgstr "Létrehozó"
 msgid "Cryptography"
 msgstr ""
 
-#: share/html/Elements/EditLinks:51
+#: share/html/Elements/EditLinks:51 share/html/Ticket/Elements/BulkLinks:51
 msgid "Current Links"
 msgstr "Jelenlegi kapcsolatok"
 
@@ -1765,76 +1794,86 @@ msgstr ""
 msgid "Current watchers"
 msgstr "Jelenlegi résztvevõk"
 
-#: share/html/Admin/Elements/SystemTabs:63 share/html/Admin/Elements/Tabs:64 share/html/Admin/Global/index.html:65 share/html/Admin/Users/Modify.html:209 share/html/Admin/index.html:73 share/html/Ticket/Elements/ShowSummary:58 share/html/User/Prefs.html:165
+#: share/html/Admin/Elements/SystemTabs:63 share/html/Admin/Elements/Tabs:64 share/html/Admin/Global/index.html:65 share/html/Admin/Users/Modify.html:194 share/html/Admin/index.html:73 share/html/Ticket/Elements/ShowSummary:61 share/html/User/Prefs.html:151
 msgid "Custom Fields"
 msgstr "Egyéni mezõk"
 
-#: share/html/Admin/CustomFields/index.html:62
-#. ($lookup)
+#: share/html/Admin/CustomFields/index.html:56
+#. ($tmp->FriendlyLookupType( $Type ))
 msgid "Custom Fields for %1"
 msgstr "%1 egyéni mezõi"
 
-#: share/html/Admin/Elements/EditScrip:115
+#: share/html/Admin/Elements/EditScrip:116
 msgid "Custom action cleanup code"
 msgstr "Az akcióhoz rendelt egyéni lezáró kód"
 
-#: share/html/Admin/Elements/EditScrip:108
+#: share/html/Admin/Elements/EditScrip:109
 msgid "Custom action preparation code"
 msgstr "Az akcióhoz rendelt egyéni elõkészítõ kód"
 
-#: share/html/Admin/Elements/EditScrip:101
+#: share/html/Admin/Elements/EditScrip:102
 msgid "Custom condition"
 msgstr "Egyéni feltétel"
 
-#: lib/RT/Tickets_Overlay.pm:2610
+#: share/html/Admin/Elements/EditCustomFields:112 share/html/Admin/Elements/EditCustomFields:123
+#. ($MoveCustomFieldUp)
+#. ($MoveCustomFieldDown)
+msgid "Custom field #%1 is not applied to this object"
+msgstr ""
+
+#: lib/RT/Tickets_Overlay.pm:2683
 #. ($CF->Name, $args{OPERATOR}, $args{VALUE})
 msgid "Custom field %1 %2 %3"
 msgstr "Egyéni mezõ %1 %2 %3"
 
-#: lib/RT/Record.pm:1609
+#: lib/RT/Record.pm:1611
 #. ($args{'Field'})
 msgid "Custom field %1 does not apply to this object"
 msgstr ""
 
-#: lib/RT/Tickets_Overlay.pm:2604
+#: lib/RT/Tickets_Overlay.pm:2677
 #. ($CF->Name)
 msgid "Custom field %1 has a value."
 msgstr "[%1] egyéni mezõnek van értéke."
 
-#: lib/RT/Tickets_Overlay.pm:2600
+#: lib/RT/Tickets_Overlay.pm:2673
 #. ($CF->Name)
 msgid "Custom field %1 has no value."
 msgstr "[%1] egyéni mezõnek nincs értéke."
 
-#: lib/RT/Record.pm:1598 lib/RT/Record.pm:1780
+#: lib/RT/Record.pm:1600 lib/RT/Record.pm:1782
 #. ($args{'Field'})
 msgid "Custom field %1 not found"
 msgstr "[%1] egyéni mezõ nem található"
 
-#: lib/RT/Report/Tickets.pm:114 lib/RT/Report/Tickets.pm:117
+#: lib/RT/Report/Tickets.pm:113 lib/RT/Report/Tickets.pm:116
 #. ($cf)
 #. ($obj->Name)
 msgid "Custom field '%1'"
+msgstr ""
+
+#: lib/RT/CustomField_Overlay.pm:1046
+msgid "Custom field is already applied to the object"
 msgstr ""
 
 #: NOT FOUND IN SOURCE
 msgid "Custom field not found"
 msgstr "Egyéni mezõ nem található"
 
-#: lib/RT/CustomField_Overlay.pm:1124
+#: lib/RT/CustomField_Overlay.pm:1267
 #. ($args{'Content'}, $self->Name)
 msgid "Custom field value %1 could not be found for custom field %2"
 msgstr "A(z) %2 egyéni mezõ %1értéke nem található"
 
-#: lib/RT/CustomField_Overlay.pm:446
+#: lib/RT/CustomField_Overlay.pm:447
 msgid "Custom field value could not be deleted"
 msgstr "Az egyéni mezõ értéke nem található"
 
-#: lib/RT/CustomField_Overlay.pm:1136
+#: lib/RT/CustomField_Overlay.pm:1279
 msgid "Custom field value could not be found"
 msgstr "Az egyéni mezõ értéke nem található"
 
-#: lib/RT/CustomField_Overlay.pm:1138 lib/RT/CustomField_Overlay.pm:448
+#: lib/RT/CustomField_Overlay.pm:1281 lib/RT/CustomField_Overlay.pm:449
 msgid "Custom field value deleted"
 msgstr "Az egyéni mezõ értéke törölve"
 
@@ -1870,7 +1909,7 @@ msgstr ""
 msgid "DBA username"
 msgstr ""
 
-#: lib/RT/Config.pm:346
+#: lib/RT/Config.pm:362
 msgid "Daily digest"
 msgstr ""
 
@@ -1883,16 +1922,16 @@ msgstr ""
 msgid "Dashboard could not be created: %1"
 msgstr ""
 
-#: share/html/Dashboards/Modify.html:145 share/html/Dashboards/Queries.html:262
+#: share/html/Dashboards/Modify.html:145 share/html/Dashboards/Queries.html:264
 #. ($msg)
 msgid "Dashboard could not be updated: %1"
 msgstr ""
 
-#: share/html/Dashboards/Modify.html:142 share/html/Dashboards/Queries.html:259
+#: share/html/Dashboards/Modify.html:142 share/html/Dashboards/Queries.html:261
 msgid "Dashboard updated"
 msgstr ""
 
-#: share/html/Dashboards/index.html:73 share/html/Elements/Dashboards:50 share/html/Tools/Elements/Tabs:58 share/html/Tools/index.html:58
+#: share/html/Dashboards/index.html:76 share/html/Elements/Dashboards:50 share/html/Tools/Elements/Tabs:58 share/html/Tools/index.html:58
 msgid "Dashboards"
 msgstr ""
 
@@ -1924,15 +1963,23 @@ msgstr ""
 msgid "Date format"
 msgstr ""
 
-#: lib/RT/Date.pm:651
+#: lib/RT/Date.pm:657
+msgid "DateTime doesn't support format_cldr, you must upgrade to use this feature"
+msgstr ""
+
+#: lib/RT/Date.pm:655
 msgid "DateTime module missing"
 msgstr ""
 
-#: lib/RT/Date.pm:652
+#: lib/RT/Date.pm:672
+msgid "DateTime::Locale doesn't support date_format_full, you must upgrade to use this feature"
+msgstr ""
+
+#: lib/RT/Date.pm:656
 msgid "DateTime::Locale module missing"
 msgstr ""
 
-#: share/html/SelfService/Display.html:65 share/html/Ticket/Create.html:208 share/html/Ticket/Elements/ShowSummary:93 share/html/Ticket/Elements/Tabs:130 share/html/Ticket/ModifyAll.html:68
+#: share/html/SelfService/Display.html:65 share/html/Ticket/Create.html:210 share/html/Ticket/Elements/ShowSummary:101 share/html/Ticket/Elements/Tabs:134 share/html/Ticket/ModifyAll.html:68
 msgid "Dates"
 msgstr "Idõpontok"
 
@@ -1990,10 +2037,6 @@ msgstr ""
 msgid "Default: %1/%2 changed from %3 to %4"
 msgstr ""
 
-#: share/html/Elements/RT__Queue/ColumnMap:104
-msgid "DefaultDueIn"
-msgstr ""
-
 #: lib/RT/Date.pm:113
 msgid "DefaultFormat"
 msgstr ""
@@ -2010,7 +2053,7 @@ msgstr ""
 msgid "DelegateRights"
 msgstr ""
 
-#: share/html/User/Elements/Tabs:67
+#: share/html/User/Elements/Tabs:69
 msgid "Delegation"
 msgstr "Jogok továbbadása"
 
@@ -2043,11 +2086,11 @@ msgstr "Kiválasztott Scrip törlése"
 msgid "Delete system dashboards"
 msgstr ""
 
-#: lib/RT/Queue_Overlay.pm:116
+#: lib/RT/Queue_Overlay.pm:112
 msgid "Delete tickets"
 msgstr "Problémák törlése"
 
-#: share/html/Search/Bulk.html:182
+#: share/html/Search/Bulk.html:186
 msgid "Delete values"
 msgstr ""
 
@@ -2063,7 +2106,7 @@ msgstr ""
 msgid "DeleteOwnDashboard"
 msgstr ""
 
-#: lib/RT/Queue_Overlay.pm:116
+#: lib/RT/Queue_Overlay.pm:112
 msgid "DeleteTicket"
 msgstr ""
 
@@ -2072,7 +2115,7 @@ msgstr ""
 msgid "Deleted %1"
 msgstr ""
 
-#: share/html/Dashboards/index.html:80
+#: share/html/Dashboards/index.html:83
 #. ($Deleted)
 msgid "Deleted dashboard %1"
 msgstr ""
@@ -2081,11 +2124,11 @@ msgstr ""
 msgid "Deleted queries"
 msgstr ""
 
-#: share/html/Search/Elements/EditSearches:181
+#: share/html/Search/Elements/EditSearches:188
 msgid "Deleted saved search"
 msgstr ""
 
-#: lib/RT/Queue_Overlay.pm:398
+#: lib/RT/Queue_Overlay.pm:394
 msgid "Deleting this object would break referential integrity"
 msgstr ""
 
@@ -2097,7 +2140,7 @@ msgstr ""
 msgid "Deny"
 msgstr "Elutasítva"
 
-#: share/html/Elements/EditLinks:141 share/html/Elements/EditLinks:64 share/html/Elements/ShowLinks:80 share/html/Ticket/Create.html:229 share/html/Ticket/Elements/BulkLinks:58 share/html/Ticket/Elements/ShowDependencies:55
+#: share/html/Elements/EditLinks:141 share/html/Elements/EditLinks:64 share/html/Elements/ShowLinks:80 share/html/Ticket/Create.html:231 share/html/Ticket/Elements/BulkLinks:135 share/html/Ticket/Elements/BulkLinks:64 share/html/Ticket/Elements/ShowDependencies:55
 msgid "Depended on by"
 msgstr "Ettõl függnek"
 
@@ -2129,7 +2172,7 @@ msgstr ""
 msgid "DependentOn"
 msgstr ""
 
-#: share/html/Elements/EditLinks:137 share/html/Elements/EditLinks:55 share/html/Elements/SelectLinkType:50 share/html/Elements/ShowLinks:50 share/html/Ticket/Create.html:228 share/html/Ticket/Elements/BulkLinks:54 share/html/Ticket/Elements/ShowDependencies:48
+#: share/html/Elements/EditLinks:137 share/html/Elements/EditLinks:55 share/html/Elements/SelectLinkType:50 share/html/Elements/ShowLinks:50 share/html/Ticket/Create.html:230 share/html/Ticket/Elements/BulkLinks:131 share/html/Ticket/Elements/BulkLinks:54 share/html/Ticket/Elements/ShowDependencies:48
 msgid "Depends on"
 msgstr "A következõktõl függ"
 
@@ -2145,11 +2188,11 @@ msgstr ""
 msgid "Descending"
 msgstr "csökkenõ"
 
-#: share/html/SelfService/Create.html:108 share/html/Ticket/Create.html:154
+#: share/html/SelfService/Create.html:108 share/html/Ticket/Create.html:155
 msgid "Describe the issue below"
 msgstr "A probléma szabatos leírása"
 
-#: share/html/Admin/CustomFields/Modify.html:64 share/html/Admin/Elements/AddCustomFieldValue:55 share/html/Admin/Elements/EditCustomField:62 share/html/Admin/Elements/EditCustomFieldValues:59 share/html/Admin/Elements/EditScrip:57 share/html/Admin/Elements/ModifyTemplate:59 share/html/Admin/Groups/Modify.html:73 share/html/Admin/Queues/Modify.html:66 share/html/Elements/RT__Group/ColumnMap:82 share/html/Elements/RT__Queue/ColumnMap:79 share/html/Elements/RT__Scrip/ColumnMap:88 share/html/Elements/RT__Template/ColumnMap:66 share/html/Search/Elements/EditSearches:55 share/html/User/Groups/Modify.html:72
+#: share/html/Admin/CustomFields/Modify.html:64 share/html/Admin/Elements/AddCustomFieldValue:55 share/html/Admin/Elements/EditCustomField:62 share/html/Admin/Elements/EditCustomFieldValues:59 share/html/Admin/Elements/EditScrip:57 share/html/Admin/Elements/ModifyTemplate:59 share/html/Admin/Groups/Modify.html:73 share/html/Admin/Queues/Modify.html:66 share/html/Elements/RT__Group/ColumnMap:82 share/html/Elements/RT__Scrip/ColumnMap:92 share/html/Elements/RT__Template/ColumnMap:66 share/html/Search/Elements/EditSearches:55 share/html/User/Groups/Modify.html:72
 msgid "Description"
 msgstr "Leírás"
 
@@ -2157,15 +2200,15 @@ msgstr "Leírás"
 msgid "Direction"
 msgstr ""
 
-#: share/html/Elements/RT__Queue/ColumnMap:63
+#: share/html/Elements/RT__CustomField/ColumnMap:63 share/html/Elements/RT__Queue/ColumnMap:63
 msgid "Disabled"
 msgstr ""
 
-#: share/html/Search/Elements/EditFormat:69 share/html/Ticket/Elements/Tabs:116
+#: share/html/Search/Elements/EditFormat:69 share/html/Ticket/Elements/Tabs:120
 msgid "Display"
 msgstr "Mutat"
 
-#: lib/RT/Queue_Overlay.pm:93
+#: lib/RT/Queue_Overlay.pm:89
 msgid "Display Access Control List"
 msgstr ""
 
@@ -2173,11 +2216,11 @@ msgstr ""
 msgid "Display Columns"
 msgstr "Mezõk kiválasztása"
 
-#: lib/RT/Queue_Overlay.pm:100
+#: lib/RT/Queue_Overlay.pm:96
 msgid "Display Scrip templates for this queue"
 msgstr "Láthatóak legyenek az ehhez a sorhoz tartozó scrip sablonok"
 
-#: lib/RT/Queue_Overlay.pm:103
+#: lib/RT/Queue_Overlay.pm:99
 msgid "Display Scrips for this queue"
 msgstr "Láthatóak legyen a sorhoz tartozó scripek"
 
@@ -2221,7 +2264,7 @@ msgstr ""
 msgid "Don't refresh this page."
 msgstr "Ne frissítse ezt az oldalt."
 
-#: lib/RT/Crypt/GnuPG.pm:2175
+#: lib/RT/Crypt/GnuPG.pm:2212
 msgid "Don't trust this key at all"
 msgstr ""
 
@@ -2237,7 +2280,7 @@ msgstr ""
 msgid "Download dumpfile"
 msgstr ""
 
-#: lib/RT/Graph/Tickets.pm:159 lib/RT/Ticket_Overlay.pm:917 lib/RT/Tickets_Overlay.pm:121 share/html/Elements/RT__Ticket/ColumnMap:203 share/html/Elements/RT__Ticket/ColumnMap:236 share/html/Elements/SelectDateType:55 share/html/Search/Elements/BuildFormatString:99 share/html/Ticket/Create.html:214 share/html/Ticket/Elements/EditDates:68 share/html/Ticket/Elements/Reminders:143 share/html/Ticket/Elements/ShowDates:66
+#: lib/RT/Graph/Tickets.pm:159 lib/RT/Ticket_Overlay.pm:921 lib/RT/Tickets_Overlay.pm:121 share/html/Elements/RT__Ticket/ColumnMap:203 share/html/Elements/RT__Ticket/ColumnMap:236 share/html/Elements/SelectDateType:55 share/html/Search/Elements/BuildFormatString:99 share/html/Ticket/Create.html:216 share/html/Ticket/Elements/EditDates:68 share/html/Ticket/Elements/Reminders:143 share/html/Ticket/Elements/ShowDates:66
 msgid "Due"
 msgstr "Határidõ"
 
@@ -2254,11 +2297,11 @@ msgstr "ERROR: %1"
 msgid "Easy updating of your open tickets"
 msgstr ""
 
-#: share/html/Elements/Dashboards:53 share/html/Elements/Quicksearch:50 share/html/Elements/ShowSearch:51 share/html/index.html:132
+#: share/html/Elements/Dashboards:53 share/html/Elements/Quicksearch:50 share/html/Elements/ShowSearch:51 share/html/index.html:134
 msgid "Edit"
 msgstr "Szerkesztés"
 
-#: share/html/Search/Bulk.html:177
+#: share/html/Search/Bulk.html:181
 msgid "Edit Custom Fields"
 msgstr ""
 
@@ -2283,15 +2326,15 @@ msgstr ""
 msgid "Edit Custom Fields for tickets in all queues"
 msgstr ""
 
-#: share/html/Search/Bulk.html:212 share/html/Ticket/ModifyLinks.html:62
+#: share/html/Search/Bulk.html:216 share/html/Ticket/ModifyLinks.html:62
 msgid "Edit Links"
 msgstr "Kapcsolatok módosítása"
 
-#: share/html/Search/Edit.html:74
+#: share/html/Search/Edit.html:76
 msgid "Edit Query"
 msgstr "Lekérdezés szerkesztése kézzel"
 
-#: share/html/Ticket/Elements/Tabs:273
+#: share/html/Ticket/Elements/Tabs:278
 msgid "Edit Search"
 msgstr "Keresés szerkesztése"
 
@@ -2341,7 +2384,7 @@ msgstr ""
 msgid "EffectiveId"
 msgstr ""
 
-#: lib/RT/Record.pm:1299 lib/RT/Record.pm:1380 lib/RT/Ticket_Overlay.pm:2260 lib/RT/Ticket_Overlay.pm:2355
+#: lib/RT/Record.pm:1300 lib/RT/Record.pm:1381 lib/RT/Ticket_Overlay.pm:2280 lib/RT/Ticket_Overlay.pm:2375
 msgid "Either base or target must be specified"
 msgstr "Meg kell adni a bázist vagy a célt"
 
@@ -2366,7 +2409,7 @@ msgstr ""
 msgid "Email address in use"
 msgstr "E-Mail-cím már foglalt"
 
-#: lib/RT/Config.pm:343
+#: lib/RT/Config.pm:359
 msgid "Email delivery"
 msgstr ""
 
@@ -2378,7 +2421,7 @@ msgstr ""
 msgid "EmailAddress"
 msgstr ""
 
-#: share/html/Elements/RT__Queue/ColumnMap:63
+#: share/html/Elements/RT__CustomField/ColumnMap:63 share/html/Elements/RT__Queue/ColumnMap:63
 msgid "Enabled"
 msgstr "Engedélyezve"
 
@@ -2395,16 +2438,20 @@ msgstr "Aktivált (Kiválasztása letiltja ezt a csoportot)"
 msgid "Enabled (Unchecking this box disables this queue)"
 msgstr "Aktivált (Kiválasztása letiltja ezt a sort)"
 
-#: share/html/Admin/Queues/index.html:85
+#: share/html/Admin/Queues/index.html:111
 msgid "Enabled Queues"
 msgstr "Aktív sorok"
+
+#: share/html/Admin/Queues/index.html:101
+msgid "Enabled queues matching search criteria"
+msgstr ""
 
 #: share/html/Admin/Elements/EditCustomField:138 share/html/User/Groups/Modify.html:140
 #. (loc_fuzzy($msg))
 msgid "Enabled status %1"
 msgstr "Status %1 aktiviert"
 
-#: share/html/Elements/GnuPG/SignEncryptWidget:53 share/html/Ticket/GnuPG.html:62
+#: share/html/Elements/GnuPG/SignEncryptWidget:53 share/html/Elements/RT__Queue/ColumnMap:84 share/html/Ticket/GnuPG.html:62
 msgid "Encrypt"
 msgstr "Titkosítás"
 
@@ -2412,7 +2459,7 @@ msgstr "Titkosítás"
 msgid "Encrypt by default"
 msgstr ""
 
-#: share/html/Ticket/Elements/ShowTransaction:212
+#: share/html/Ticket/Elements/ShowTransaction:214
 msgid "Encrypt/Decrypt"
 msgstr ""
 
@@ -2421,19 +2468,19 @@ msgstr ""
 msgid "Encrypt/Decrypt transaction #%1 of ticket #%2"
 msgstr ""
 
-#: lib/RT/Queue_Overlay.pm:550
+#: lib/RT/Queue_Overlay.pm:546
 msgid "Encrypting disabled"
 msgstr "Titkosítás kikapcsolva"
 
-#: lib/RT/Queue_Overlay.pm:549
+#: lib/RT/Queue_Overlay.pm:545
 msgid "Encrypting enabled"
 msgstr "Titkosítás bekapcsolva"
 
-#: lib/RT/CustomField_Overlay.pm:65
+#: lib/RT/CustomField_Overlay.pm:66
 msgid "Enter multiple values"
 msgstr "Adjon meg több értéket!"
 
-#: lib/RT/CustomField_Overlay.pm:95
+#: lib/RT/CustomField_Overlay.pm:96
 msgid "Enter multiple values with autocompletion"
 msgstr ""
 
@@ -2441,11 +2488,11 @@ msgstr ""
 msgid "Enter objects or URIs to link objects to. Separate multiple entries with spaces."
 msgstr "Objektum vagy URI. Szóközzel elválasztva több is megadható"
 
-#: lib/RT/CustomField_Overlay.pm:66
+#: lib/RT/CustomField_Overlay.pm:67
 msgid "Enter one value"
 msgstr "Adjon meg egy értéket!"
 
-#: lib/RT/CustomField_Overlay.pm:96
+#: lib/RT/CustomField_Overlay.pm:97
 msgid "Enter one value with autocompletion"
 msgstr ""
 
@@ -2453,35 +2500,35 @@ msgstr ""
 msgid "Enter queues or URIs to link queues to. Separate multiple entries with spaces."
 msgstr "Sor vagy URI. Szóközzel elválasztva több is megadható"
 
-#: share/html/Elements/EditLinks:120 share/html/Search/Bulk.html:213
+#: share/html/Elements/EditLinks:120 share/html/Search/Bulk.html:217 share/html/Ticket/Elements/BulkLinks:123
 msgid "Enter tickets or URIs to link tickets to. Separate multiple entries with spaces."
 msgstr "Probléma szám vagy URI. Szóközzel elválasztva több is megadható"
 
-#: lib/RT/CustomField_Overlay.pm:67
+#: lib/RT/CustomField_Overlay.pm:68
 msgid "Enter up to %1 values"
 msgstr "Adjon meg egy értéket!"
 
-#: lib/RT/CustomField_Overlay.pm:97
+#: lib/RT/CustomField_Overlay.pm:98
 msgid "Enter up to %1 values with autocompletion"
 msgstr ""
 
-#: sbin/rt-email-digest:103 share/html/Elements/Login:78 share/html/Install/Elements/Errors:49 share/html/SelfService/Error.html:48 share/html/SelfService/Error.html:49
+#: sbin/rt-email-digest:103 share/html/Elements/Login:93 share/html/Install/Elements/Errors:49 share/html/SelfService/Error.html:48 share/html/SelfService/Error.html:49
 msgid "Error"
 msgstr "Hiba"
 
-#: lib/RT/Queue_Overlay.pm:771
+#: lib/RT/Queue_Overlay.pm:769
 msgid "Error in parameters to Queue->AddWatcher"
 msgstr "Hiba a sor paraméterezésében ->AddWatcher"
 
-#: lib/RT/Queue_Overlay.pm:935
+#: lib/RT/Queue_Overlay.pm:940
 msgid "Error in parameters to Queue->DeleteWatcher"
 msgstr "Hiba a sor paraméterezésében->DelWatcher"
 
-#: lib/RT/Ticket_Overlay.pm:1081
+#: lib/RT/Ticket_Overlay.pm:1085
 msgid "Error in parameters to Ticket->AddWatcher"
 msgstr "Hiba a probléma paraméterezésében -> AddWatcher"
 
-#: lib/RT/Ticket_Overlay.pm:1229
+#: lib/RT/Ticket_Overlay.pm:1241
 msgid "Error in parameters to Ticket->DeleteWatcher"
 msgstr "Hiba a probléma paraméterezésében->DelWatcher"
 
@@ -2539,6 +2586,10 @@ msgstr "Lejárt"
 
 #: share/html/Search/Elements/BuildFormatString:99
 msgid "ExtendedStatus"
+msgstr ""
+
+#: lib/RT/User_Overlay.pm:1099
+msgid "External authentication enabled."
 msgstr ""
 
 #: share/html/Admin/Users/Modify.html:101
@@ -2631,19 +2682,19 @@ msgstr ""
 msgid "Fill boxes with color using"
 msgstr ""
 
-#: lib/RT/CustomField_Overlay.pm:70
+#: lib/RT/CustomField_Overlay.pm:71
 msgid "Fill in multiple text areas"
 msgstr ""
 
-#: lib/RT/CustomField_Overlay.pm:75
+#: lib/RT/CustomField_Overlay.pm:76
 msgid "Fill in multiple wikitext areas"
 msgstr ""
 
-#: lib/RT/CustomField_Overlay.pm:71
+#: lib/RT/CustomField_Overlay.pm:72
 msgid "Fill in one text area"
 msgstr ""
 
-#: lib/RT/CustomField_Overlay.pm:76
+#: lib/RT/CustomField_Overlay.pm:77
 msgid "Fill in one wikitext area"
 msgstr ""
 
@@ -2651,19 +2702,19 @@ msgstr ""
 msgid "Fill in this field with a URL."
 msgstr ""
 
-#: lib/RT/CustomField_Overlay.pm:72
+#: lib/RT/CustomField_Overlay.pm:73
 msgid "Fill in up to %1 text areas"
 msgstr ""
 
-#: lib/RT/CustomField_Overlay.pm:77
+#: lib/RT/CustomField_Overlay.pm:78
 msgid "Fill in up to %1 wikitext areas"
 msgstr ""
 
-#: lib/RT/Tickets_Overlay.pm:2042 share/html/Search/Elements/PickBasics:188 share/html/Ticket/Create.html:185 share/html/Ticket/Elements/EditBasics:109
+#: lib/RT/Tickets_Overlay.pm:2115 share/html/Search/Elements/PickBasics:188 share/html/Ticket/Create.html:187 share/html/Ticket/Elements/EditBasics:109
 msgid "Final Priority"
 msgstr "Végsõ prioritás"
 
-#: lib/RT/Ticket_Overlay.pm:908 lib/RT/Tickets_Overlay.pm:102 share/html/Elements/RT__Queue/ColumnMap:99 share/html/Elements/RT__Ticket/ColumnMap:142 share/html/Search/Elements/BuildFormatString:99
+#: lib/RT/Ticket_Overlay.pm:912 lib/RT/Tickets_Overlay.pm:102 share/html/Elements/RT__Ticket/ColumnMap:142 share/html/Search/Elements/BuildFormatString:99
 msgid "FinalPriority"
 msgstr ""
 
@@ -2679,7 +2730,7 @@ msgstr "Találjon olyan csoportot, amelyiknél a"
 msgid "Find people whose"
 msgstr "Találj olyan embereket, akiknél a"
 
-#: share/html/Search/Results.html:150
+#: share/html/Search/Results.html:156
 msgid "Find tickets"
 msgstr "Problémák keresése"
 
@@ -2687,7 +2738,7 @@ msgstr "Problémák keresése"
 msgid "Finish"
 msgstr ""
 
-#: share/html/Ticket/Elements/Tabs:81
+#: share/html/Ticket/Elements/Tabs:82
 msgid "First"
 msgstr "Elsõ"
 
@@ -2699,15 +2750,15 @@ msgstr ""
 msgid "Foo!"
 msgstr ""
 
-#: share/html/Search/Bulk.html:90
+#: share/html/Search/Bulk.html:92
 msgid "Force change"
 msgstr "A változtatás kikényszerítése"
 
-#: share/html/Search/Edit.html:67 share/html/Search/Elements/EditFormat:52
+#: share/html/Search/Edit.html:69 share/html/Search/Elements/EditFormat:52
 msgid "Format"
 msgstr ""
 
-#: etc/initialdata:380 etc/upgrade/3.7.15/content:4 share/html/Ticket/Elements/ShowTransaction:202 share/html/Ticket/Elements/Tabs:179
+#: etc/initialdata:380 etc/upgrade/3.7.15/content:4 share/html/Ticket/Elements/ShowTransaction:204 share/html/Ticket/Elements/Tabs:183
 msgid "Forward"
 msgstr ""
 
@@ -2727,7 +2778,7 @@ msgstr ""
 msgid "Forward message"
 msgstr "Üzenet továbbküldése"
 
-#: lib/RT/Queue_Overlay.pm:120
+#: lib/RT/Queue_Overlay.pm:116
 msgid "Forward messages to third person(s)"
 msgstr "Üzenet továbbküldése harmadik személy(ek)nek"
 
@@ -2741,11 +2792,11 @@ msgstr ""
 msgid "Forward transaction #%1"
 msgstr ""
 
-#: lib/RT/Queue_Overlay.pm:120
+#: lib/RT/Queue_Overlay.pm:116
 msgid "ForwardMessage"
 msgstr ""
 
-#: share/html/Search/Results.html:148
+#: share/html/Search/Results.html:154
 #. ($ticketcount)
 msgid "Found %quant(%1,ticket)"
 msgstr "%quant(%1) problémát találtam"
@@ -2791,11 +2842,11 @@ msgstr ""
 msgid "Given to %1"
 msgstr "%1 felhasználónak adva"
 
-#: share/html/Admin/Elements/Tabs:67 share/html/Admin/index.html:78 share/html/Elements/RT__Scrip/ColumnMap:64
+#: share/html/Admin/Elements/Tabs:67 share/html/Admin/index.html:78 share/html/Elements/RT__CustomField/ColumnMap:93 share/html/Elements/RT__Scrip/ColumnMap:64 share/html/Elements/RT__Template/ColumnMap:74
 msgid "Global"
 msgstr "Általános"
 
-#: share/html/Admin/Elements/EditCustomFields:57
+#: NOT FOUND IN SOURCE
 msgid "Global Custom Fields"
 msgstr "Globális egyéni mezõ"
 
@@ -2817,11 +2868,11 @@ msgstr "Általános probléma: %1"
 msgid "GnuPG"
 msgstr "GnuPG"
 
-#: lib/RT/Attachment_Overlay.pm:685 lib/RT/Attachment_Overlay.pm:720
+#: lib/RT/Attachment_Overlay.pm:682 lib/RT/Attachment_Overlay.pm:717
 msgid "GnuPG error. Contact with administrator"
 msgstr "GnuPG hiba. Lépjen kapcsolatba az Adminisztrátorral."
 
-#: lib/RT/Attachment_Overlay.pm:640 lib/RT/Attachment_Overlay.pm:702
+#: lib/RT/Attachment_Overlay.pm:637 lib/RT/Attachment_Overlay.pm:699
 msgid "GnuPG integration is disabled"
 msgstr "GnuPG integráció letiltva."
 
@@ -2843,7 +2894,7 @@ msgstr "%1 GnuPG publikuskulcsa(i)"
 msgid "Go"
 msgstr "Hajrá!"
 
-#: share/html/Admin/CustomFields/index.html:89 share/html/Admin/Groups/index.html:83 share/html/Admin/Queues/People.html:82 share/html/Admin/Queues/People.html:86 share/html/Admin/Queues/index.html:73 share/html/Admin/Users/index.html:90 share/html/Approvals/index.html:54 share/html/Elements/RefreshHomepage:52 share/html/Ticket/Elements/EditPeople:55 share/html/Ticket/Elements/EditPeople:59 share/html/Tools/Offline.html:90
+#: share/html/Admin/CustomFields/index.html:87 share/html/Admin/Groups/index.html:83 share/html/Admin/Queues/People.html:82 share/html/Admin/Queues/People.html:86 share/html/Admin/Queues/index.html:90 share/html/Admin/Users/index.html:90 share/html/Approvals/index.html:54 share/html/Elements/RefreshHomepage:52 share/html/Ticket/Elements/EditPeople:55 share/html/Ticket/Elements/EditPeople:59 share/html/Tools/Offline.html:90
 msgid "Go!"
 msgstr "Hajrá!"
 
@@ -2851,19 +2902,19 @@ msgstr "Hajrá!"
 msgid "Goto ticket"
 msgstr "Mutassa a problémát"
 
-#: share/html/Ticket/Elements/ShowSummary:99 share/html/Ticket/Elements/Tabs:319 share/html/Ticket/ModifyLinks.html:61
+#: share/html/Ticket/Elements/ShowSummary:109 share/html/Ticket/Elements/Tabs:324 share/html/Ticket/ModifyLinks.html:61
 msgid "Graph"
 msgstr ""
 
-#: share/html/Search/Chart.html:88 share/html/Ticket/Graphs/Elements/EditGraphProperties:48
+#: share/html/Search/Chart.html:89 share/html/Ticket/Graphs/Elements/EditGraphProperties:48
 msgid "Graph Properties"
 msgstr ""
 
-#: share/html/Search/Elements/Chart:108
+#: share/html/Search/Elements/Chart:98
 msgid "Graphical charts are not available."
 msgstr ""
 
-#: lib/RT/Record.pm:910 share/html/Ticket/Elements/AddWatchers:69 share/html/Ticket/Elements/ShowGroupMembers:58
+#: lib/RT/Record.pm:910 share/html/Ticket/Elements/AddWatchers:69 share/html/Ticket/Elements/ShowGroupMembers:60
 msgid "Group"
 msgstr "Csoport"
 
@@ -2897,7 +2948,7 @@ msgstr "Csoport engedélyezve"
 msgid "Group has no such member"
 msgstr "A csoportnak már van ilyen tagja"
 
-#: lib/RT/Group_Overlay.pm:979 lib/RT/Queue_Overlay.pm:833 lib/RT/Queue_Overlay.pm:908 lib/RT/Ticket_Overlay.pm:1121 lib/RT/Ticket_Overlay.pm:1201
+#: lib/RT/Group_Overlay.pm:979 lib/RT/Queue_Overlay.pm:838 lib/RT/Queue_Overlay.pm:913 lib/RT/Ticket_Overlay.pm:1133 lib/RT/Ticket_Overlay.pm:1213
 msgid "Group not found"
 msgstr "Csoport nem található"
 
@@ -2905,7 +2956,7 @@ msgstr "Csoport nem található"
 msgid "Group rights"
 msgstr "Csoport jogosultsága(i)"
 
-#: lib/RT/CustomField_Overlay.pm:1176 share/html/Admin/Elements/GlobalCustomFieldTabs:63 share/html/Admin/Elements/SelectNewGroupMembers:67 share/html/Admin/Elements/Tabs:58 share/html/Admin/Global/CustomFields/index.html:71 share/html/Admin/Groups/Members.html:90 share/html/Admin/Queues/People.html:108 share/html/Admin/index.html:63 share/html/User/Groups/Members.html:90
+#: lib/RT/CustomField_Overlay.pm:1319 share/html/Admin/Elements/GlobalCustomFieldTabs:63 share/html/Admin/Elements/SelectNewGroupMembers:67 share/html/Admin/Elements/Tabs:58 share/html/Admin/Global/CustomFields/index.html:71 share/html/Admin/Groups/Members.html:90 share/html/Admin/Queues/People.html:108 share/html/Admin/index.html:63 share/html/User/Groups/Members.html:90
 msgid "Groups"
 msgstr "Csoportok"
 
@@ -2954,7 +3005,7 @@ msgstr "Hallo %1"
 msgid "Help us set up some useful defaults for RT."
 msgstr ""
 
-#: share/html/Admin/Elements/GroupTabs:72 share/html/Admin/Elements/QueueTabs:90 share/html/Admin/Elements/UserTabs:66 share/html/Ticket/Elements/ShowHistory:55 share/html/Ticket/Elements/Tabs:121
+#: share/html/Admin/Elements/GroupTabs:72 share/html/Admin/Elements/QueueTabs:90 share/html/Admin/Elements/UserTabs:66 share/html/Ticket/Elements/ShowHistory:55 share/html/Ticket/Elements/Tabs:125
 msgid "History"
 msgstr "Részletes történet"
 
@@ -2973,7 +3024,7 @@ msgstr ""
 msgid "History of the user %1"
 msgstr "%1 felhasználó története"
 
-#: share/html/Elements/DashboardTabs:34
+#: share/html/Elements/DashboardTabs:40
 msgid "Home"
 msgstr ""
 
@@ -3006,7 +3057,7 @@ msgstr ""
 msgid "ISO"
 msgstr "ISO"
 
-#: lib/RT/Tickets_Overlay.pm:1967 share/html/Ticket/Elements/ShowBasics:50
+#: lib/RT/Tickets_Overlay.pm:2040 share/html/Ticket/Elements/ShowBasics:50
 msgid "Id"
 msgstr "Sorszám"
 
@@ -3038,7 +3089,7 @@ msgstr ""
 msgid "If you've change the Port that RT runs on, you'll need to restart the server in order to log in."
 msgstr ""
 
-#: share/html/Admin/Queues/People.html:130 share/html/Ticket/Modify.html:65 share/html/Ticket/ModifyAll.html:145 share/html/Ticket/ModifyPeople.html:63
+#: share/html/Admin/Queues/People.html:130 share/html/Ticket/Modify.html:65 share/html/Ticket/ModifyAll.html:151 share/html/Ticket/ModifyPeople.html:63
 msgid "If you've updated anything above, be sure to"
 msgstr "Ha valamit módosított, ne felejtsen el ide kattintani, hogy megtörténjen a"
 
@@ -3059,7 +3110,7 @@ msgstr "Kép"
 msgid "Immutable field"
 msgstr "Nem változtatható mezõ"
 
-#: share/html/Admin/CustomFields/index.html:86
+#: share/html/Admin/CustomFields/index.html:84
 msgid "Include disabled custom fields in listing."
 msgstr ""
 
@@ -3067,7 +3118,7 @@ msgstr ""
 msgid "Include disabled groups in listing."
 msgstr "Láthatóak legyenek a letiltott sorok is."
 
-#: share/html/Admin/Queues/index.html:72
+#: share/html/Admin/Queues/index.html:89
 msgid "Include disabled queues in listing."
 msgstr "Láthatóak legyenek a letiltott sorok is."
 
@@ -3079,7 +3130,7 @@ msgstr "Keresés a letiltott felhasználók között is."
 msgid "Include page"
 msgstr ""
 
-#: lib/RT/Config.pm:345
+#: lib/RT/Config.pm:361
 msgid "Individual messages"
 msgstr ""
 
@@ -3107,11 +3158,11 @@ msgstr ""
 msgid "Inform user that we received an encrypted email and we have no private keys to decrypt"
 msgstr ""
 
-#: lib/RT/Tickets_Overlay.pm:2017 share/html/Search/Elements/PickBasics:187
+#: lib/RT/Tickets_Overlay.pm:2090 share/html/Search/Elements/PickBasics:187
 msgid "Initial Priority"
 msgstr "Kezdõ prioritás"
 
-#: lib/RT/Ticket_Overlay.pm:907 lib/RT/Ticket_Overlay.pm:909 lib/RT/Tickets_Overlay.pm:101 share/html/Elements/RT__Queue/ColumnMap:94 share/html/Elements/RT__Ticket/ColumnMap:136 share/html/Search/Elements/BuildFormatString:99
+#: lib/RT/Ticket_Overlay.pm:911 lib/RT/Ticket_Overlay.pm:913 lib/RT/Tickets_Overlay.pm:101 share/html/Elements/RT__Ticket/ColumnMap:136 share/html/Search/Elements/BuildFormatString:99
 msgid "InitialPriority"
 msgstr ""
 
@@ -3123,7 +3174,7 @@ msgstr ""
 msgid "Input error"
 msgstr "Input hiba"
 
-#: lib/RT/CustomField_Overlay.pm:1129 lib/RT/CustomField_Overlay.pm:993 share/html/Elements/ValidateCustomFields:87
+#: lib/RT/CustomField_Overlay.pm:1136 lib/RT/CustomField_Overlay.pm:1272 share/html/Elements/ValidateCustomFields:87
 #. ($self->FriendlyPattern)
 #. ($CF->FriendlyPattern)
 msgid "Input must match %1"
@@ -3133,7 +3184,7 @@ msgstr ""
 msgid "Install RT"
 msgstr ""
 
-#: lib/RT/Ticket_Overlay.pm:3300
+#: lib/RT/Ticket_Overlay.pm:3327
 msgid "Internal Error"
 msgstr "Belsõ hiba"
 
@@ -3165,15 +3216,15 @@ msgstr "Érvénytelen jog"
 msgid "Invalid data"
 msgstr "Érvénytelen dátum"
 
-#: lib/RT/CustomField_Overlay.pm:986
+#: lib/RT/CustomField_Overlay.pm:1129
 msgid "Invalid object"
 msgstr ""
 
-#: lib/RT/Ticket_Overlay.pm:385
+#: lib/RT/Ticket_Overlay.pm:389
 msgid "Invalid owner object"
 msgstr ""
 
-#: lib/RT/CustomField_Overlay.pm:223 lib/RT/CustomField_Overlay.pm:624
+#: lib/RT/CustomField_Overlay.pm:224 lib/RT/CustomField_Overlay.pm:625
 #. ($msg)
 msgid "Invalid pattern: %1"
 msgstr ""
@@ -3200,15 +3251,15 @@ msgstr ""
 msgid "Invalid value for %1"
 msgstr "Érvénytelen érték %1-nek"
 
-#: lib/RT/Record.pm:1619
+#: lib/RT/Record.pm:1621
 msgid "Invalid value for custom field"
 msgstr "Érvénytelen érték az egyéni mezõhöz"
 
-#: lib/RT/Ticket_Overlay.pm:306
+#: lib/RT/Ticket_Overlay.pm:310
 msgid "Invalid value for status"
 msgstr "Érvénytelen státuszérték"
 
-#: lib/RT/Attachment_Overlay.pm:712
+#: lib/RT/Attachment_Overlay.pm:709
 msgid "Is not encrypted"
 msgstr ""
 
@@ -3248,7 +3299,7 @@ msgstr ""
 msgid "Jul."
 msgstr "júl."
 
-#: share/html/Ticket/Elements/Tabs:142
+#: share/html/Ticket/Elements/Tabs:146
 msgid "Jumbo"
 msgstr "Minden módosítása"
 
@@ -3272,7 +3323,7 @@ msgstr "Nyelv"
 msgid "Large"
 msgstr "Nagy"
 
-#: share/html/Ticket/Elements/Tabs:102
+#: share/html/Ticket/Elements/Tabs:105
 msgid "Last"
 msgstr "Utolsó"
 
@@ -3349,11 +3400,11 @@ msgstr ""
 msgid "Link"
 msgstr ""
 
-#: lib/RT/Record.pm:1310
+#: lib/RT/Record.pm:1311
 msgid "Link already exists"
 msgstr "Kapcsolat már létezik"
 
-#: lib/RT/Record.pm:1324
+#: lib/RT/Record.pm:1325
 msgid "Link could not be created"
 msgstr "Kapcsolat nem hozható létre"
 
@@ -3365,7 +3416,7 @@ msgstr "Kapcsolat létrehozva (%1)"
 msgid "Link deleted (%1)"
 msgstr "Kapcsolat törölve (%1)"
 
-#: lib/RT/Record.pm:1405
+#: lib/RT/Record.pm:1406
 msgid "Link not found"
 msgstr "Kapcsolat nem található"
 
@@ -3390,11 +3441,11 @@ msgstr ""
 msgid "LinkedTo"
 msgstr ""
 
-#: lib/RT/Ticket_Overlay.pm:612
+#: lib/RT/Ticket_Overlay.pm:616
 msgid "Linking. Permission denied"
 msgstr ""
 
-#: share/html/Ticket/Create.html:224 share/html/Ticket/Elements/ShowSummary:100 share/html/Ticket/Elements/Tabs:138 share/html/Ticket/ModifyAll.html:81
+#: share/html/Ticket/Create.html:226 share/html/Ticket/Elements/ShowSummary:110 share/html/Ticket/Elements/Tabs:142 share/html/Ticket/ModifyAll.html:81
 msgid "Links"
 msgstr "Kapcsolatok módosítása"
 
@@ -3415,16 +3466,16 @@ msgstr ""
 msgid "Loaded %1 %2"
 msgstr ""
 
-#: share/html/Search/Elements/EditSearches:166
+#: share/html/Search/Elements/EditSearches:167
 #. ($SavedSearch->{'Description'})
 msgid "Loaded original \"%1\" saved search"
 msgstr ""
 
-#: share/html/Admin/Tools/Configuration.html:65
+#: share/html/Admin/Tools/Configuration.html:202
 msgid "Loaded perl modules"
 msgstr ""
 
-#: share/html/Search/Elements/EditSearches:168
+#: share/html/Search/Elements/EditSearches:169
 #. ($SavedSearch->{'Description'})
 msgid "Loaded saved search \"%1\""
 msgstr ""
@@ -3437,11 +3488,11 @@ msgstr "Cím"
 msgid "Locale"
 msgstr ""
 
-#: lib/RT/Date.pm:121
+#: lib/RT/Date.pm:122
 msgid "LocalizedDateTime"
 msgstr ""
 
-#: share/html/Admin/Users/Modify.html:141 share/html/User/Prefs.html:132
+#: share/html/Admin/Users/Modify.html:126 share/html/User/Prefs.html:118
 msgid "Location"
 msgstr "Cím"
 
@@ -3458,19 +3509,24 @@ msgstr "%1-ként van bejelentkezve"
 msgid "Logged out"
 msgstr ""
 
-#: lib/RT/StyleGuide.pod:789 share/html/Elements/Login:102 share/html/Elements/Login:70 share/html/Elements/Login:86
+#: lib/RT/StyleGuide.pod:789 share/html/Elements/Login:101 share/html/Elements/Login:117 share/html/Elements/Login:85
 msgid "Login"
 msgstr "Bejelentkezés"
 
-#: share/html/Elements/Logout:50 share/html/NoAuth/Logout.html:48
+#: share/html/Elements/Logo:51
+#. ())
+msgid "LogoAltText"
+msgstr ""
+
+#: share/html/Elements/Logout:48 share/html/NoAuth/Logout.html:48
 msgid "Logout"
 msgstr "Kijelentkezés"
 
-#: lib/RT/CustomField_Overlay.pm:906
+#: lib/RT/CustomField_Overlay.pm:1038
 msgid "Lookup type mismatch"
 msgstr ""
 
-#: lib/RT/Config.pm:338
+#: lib/RT/Config.pm:354 lib/RT/Config.pm:369
 msgid "Mail"
 msgstr ""
 
@@ -3478,43 +3534,43 @@ msgstr ""
 msgid "Main type of links"
 msgstr ""
 
-#: share/html/Search/Bulk.html:89
+#: share/html/Search/Bulk.html:91
 msgid "Make Owner"
 msgstr "Legyen a tulajdonos"
 
-#: share/html/Search/Bulk.html:113
+#: share/html/Search/Bulk.html:115
 msgid "Make Status"
 msgstr "Státusz változtatása"
 
-#: share/html/Search/Bulk.html:121
+#: share/html/Search/Bulk.html:123
 msgid "Make date Due"
 msgstr "Határidõ változtatása"
 
-#: share/html/Search/Bulk.html:123
+#: share/html/Search/Bulk.html:125
 msgid "Make date Resolved"
 msgstr "Megoldási dátum változtatása"
 
-#: share/html/Search/Bulk.html:117
+#: share/html/Search/Bulk.html:119
 msgid "Make date Started"
 msgstr "Hozzáfogás dátumának változtatása"
 
-#: share/html/Search/Bulk.html:115
+#: share/html/Search/Bulk.html:117
 msgid "Make date Starts"
 msgstr "Kiosztás dátumának változtatása"
 
-#: share/html/Search/Bulk.html:119
+#: share/html/Search/Bulk.html:121
 msgid "Make date Told"
 msgstr "Bejelentés dátumának változtatása"
 
-#: share/html/Search/Bulk.html:109
+#: share/html/Search/Bulk.html:111
 msgid "Make priority"
 msgstr "Prioritás állítása"
 
-#: share/html/Search/Bulk.html:111
+#: share/html/Search/Bulk.html:113
 msgid "Make queue"
 msgstr "Sor változtatása"
 
-#: share/html/Search/Bulk.html:107
+#: share/html/Search/Bulk.html:109
 msgid "Make subject"
 msgstr "Tárgy változtatása"
 
@@ -3556,6 +3612,14 @@ msgstr "már."
 
 #: share/html/Ticket/Display.html:170
 msgid "Marked all messages as seen"
+msgstr ""
+
+#: share/html/Admin/Tools/Configuration.html:183
+msgid "Mason template search order"
+msgstr ""
+
+#: share/html/Elements/RT__CustomField/ColumnMap:82
+msgid "MaxValues"
 msgstr ""
 
 #: lib/RT/Config.pm:272
@@ -3628,19 +3692,19 @@ msgstr "Tagságok"
 msgid "Memberships of the user %1"
 msgstr "%1 felhasználó tagságai"
 
-#: lib/RT/Ticket_Overlay.pm:2631
+#: lib/RT/Ticket_Overlay.pm:2654
 msgid "Merge Successful"
 msgstr "Beolvasztás sikeres"
 
-#: lib/RT/Ticket_Overlay.pm:2509
+#: lib/RT/Ticket_Overlay.pm:2532
 msgid "Merge failed. Couldn't set EffectiveId"
 msgstr "Beolvasztás sikertelen Konnte EffectiveId nicht setztn"
 
-#: lib/RT/Ticket_Overlay.pm:2526
+#: lib/RT/Ticket_Overlay.pm:2549
 msgid "Merge failed. Couldn't set Status"
 msgstr "Beolvasztás sikertelen Konnte EffectiveId nicht setztn"
 
-#: share/html/Elements/EditLinks:132 share/html/Ticket/Elements/BulkLinks:50
+#: share/html/Elements/EditLinks:132 share/html/Ticket/Elements/BulkLinks:127
 msgid "Merge into"
 msgstr "Beolvasztani ebbe"
 
@@ -3649,19 +3713,19 @@ msgstr "Beolvasztani ebbe"
 msgid "Merged into %1"
 msgstr "Beolvasztva %1-be"
 
-#: share/html/Search/Bulk.html:163 share/html/Ticket/Update.html:130
+#: share/html/Search/Bulk.html:165 share/html/Ticket/Update.html:134
 msgid "Message"
 msgstr "Üzenet szövege"
 
-#: share/html/Ticket/Elements/ShowTransactionAttachments:163 share/html/Ticket/Elements/ShowTransactionAttachments:225
+#: share/html/Ticket/Elements/ShowTransactionAttachments:166 share/html/Ticket/Elements/ShowTransactionAttachments:229
 msgid "Message body is not shown because sender requested not to inline it."
 msgstr ""
 
-#: share/html/Ticket/Elements/ShowTransactionAttachments:245
+#: share/html/Ticket/Elements/ShowTransactionAttachments:249
 msgid "Message body not shown because it is not plain text."
 msgstr ""
 
-#: share/html/Ticket/Elements/ShowTransactionAttachments:159
+#: share/html/Ticket/Elements/ShowTransactionAttachments:162
 msgid "Message body not shown because it is too large."
 msgstr ""
 
@@ -3673,7 +3737,7 @@ msgstr ""
 msgid "Message box width"
 msgstr ""
 
-#: lib/RT/Ticket_Overlay.pm:2185
+#: lib/RT/Ticket_Overlay.pm:2198
 msgid "Message could not be recorded"
 msgstr "A sor nem hozható létre"
 
@@ -3681,11 +3745,11 @@ msgstr "A sor nem hozható létre"
 msgid "Message for user"
 msgstr ""
 
-#: lib/RT/Ticket_Overlay.pm:2188
+#: lib/RT/Ticket_Overlay.pm:2201
 msgid "Message recorded"
 msgstr "Üzenet rögzítve"
 
-#: share/html/Ticket/Elements/PreviewScrips:85
+#: share/html/Ticket/Elements/PreviewScrips:89
 msgid "Messages about this ticket will not be sent to..."
 msgstr ""
 
@@ -3701,7 +3765,7 @@ msgstr ""
 msgid "Missing a primary key?: %1"
 msgstr ""
 
-#: share/html/Admin/Users/Modify.html:196 share/html/User/Prefs.html:98
+#: share/html/Admin/Users/Modify.html:181 share/html/User/Prefs.html:98
 msgid "Mobile"
 msgstr "Mobil"
 
@@ -3709,7 +3773,7 @@ msgstr "Mobil"
 msgid "MobilePhone"
 msgstr ""
 
-#: lib/RT/Queue_Overlay.pm:94
+#: lib/RT/Queue_Overlay.pm:90
 msgid "Modify Access Control List"
 msgstr ""
 
@@ -3735,11 +3799,11 @@ msgstr "Tagok módosítása"
 msgid "Modify Rights"
 msgstr "Jogok módosítása"
 
-#: lib/RT/Queue_Overlay.pm:99
+#: lib/RT/Queue_Overlay.pm:95
 msgid "Modify Scrip templates for this queue"
 msgstr ""
 
-#: lib/RT/Queue_Overlay.pm:102
+#: lib/RT/Queue_Overlay.pm:98
 msgid "Modify Scrips for this queue"
 msgstr ""
 
@@ -3761,12 +3825,12 @@ msgstr ""
 msgid "Modify a scrip that applies to all queues"
 msgstr ""
 
-#: share/html/Admin/CustomFields/Objects.html:92
+#: share/html/Admin/CustomFields/Objects.html:156
 #. ($CF->Name)
 msgid "Modify associated objects for %1"
 msgstr ""
 
-#: lib/RT/Queue_Overlay.pm:97
+#: lib/RT/Queue_Overlay.pm:93
 msgid "Modify custom field values"
 msgstr ""
 
@@ -3882,12 +3946,12 @@ msgstr ""
 msgid "Modify the group %1"
 msgstr "A %1 csoport módosítása"
 
-#: share/html/Dashboards/Queries.html:86
+#: share/html/Dashboards/Queries.html:88
 #. ($Dashboard->Name)
 msgid "Modify the queries of dashboard %1"
 msgstr ""
 
-#: lib/RT/Queue_Overlay.pm:95
+#: lib/RT/Queue_Overlay.pm:91
 msgid "Modify the queue watchers"
 msgstr ""
 
@@ -3896,7 +3960,7 @@ msgstr ""
 msgid "Modify the subscription to dashboard %1"
 msgstr ""
 
-#: share/html/Admin/Users/Modify.html:319
+#: share/html/Admin/Users/Modify.html:304
 #. ($UserObj->Name)
 msgid "Modify the user %1"
 msgstr "%1 felhasználó módosítása"
@@ -3911,7 +3975,7 @@ msgstr "%1. számú probléma adatainak módosítása"
 msgid "Modify ticket #%1"
 msgstr "%1. számú probléma alapadatainak módosítása"
 
-#: lib/RT/Queue_Overlay.pm:115
+#: lib/RT/Queue_Overlay.pm:111
 msgid "Modify tickets"
 msgstr ""
 
@@ -3930,11 +3994,11 @@ msgstr "Változtassa meg a(z) %1 csoport jogait!"
 msgid "Modify user rights for queue %1"
 msgstr "Változtassa meg a(z) %1 sor felhasználói jogait!"
 
-#: lib/RT/Queue_Overlay.pm:94
+#: lib/RT/Queue_Overlay.pm:90
 msgid "ModifyACL"
 msgstr ""
 
-#: lib/RT/CustomField_Overlay.pm:114 lib/RT/Queue_Overlay.pm:97
+#: lib/RT/CustomField_Overlay.pm:115 lib/RT/Queue_Overlay.pm:93
 msgid "ModifyCustomField"
 msgstr ""
 
@@ -3954,11 +4018,11 @@ msgstr ""
 msgid "ModifyOwnMembership"
 msgstr ""
 
-#: lib/RT/Queue_Overlay.pm:95
+#: lib/RT/Queue_Overlay.pm:91
 msgid "ModifyQueueWatchers"
 msgstr ""
 
-#: lib/RT/Queue_Overlay.pm:102
+#: lib/RT/Queue_Overlay.pm:98
 msgid "ModifyScrips"
 msgstr ""
 
@@ -3966,12 +4030,16 @@ msgstr ""
 msgid "ModifySelf"
 msgstr ""
 
-#: lib/RT/Queue_Overlay.pm:99
+#: lib/RT/Queue_Overlay.pm:95
 msgid "ModifyTemplate"
 msgstr ""
 
-#: lib/RT/Queue_Overlay.pm:115
+#: lib/RT/Queue_Overlay.pm:111
 msgid "ModifyTicket"
+msgstr ""
+
+#: share/html/Admin/Tools/Configuration.html:205
+msgid "Module"
 msgstr ""
 
 #: lib/RT/Date.pm:104
@@ -3990,7 +4058,7 @@ msgstr "Hétfő"
 msgid "Monday through Friday"
 msgstr ""
 
-#: share/html/Elements/DashboardTabs:40
+#: share/html/Elements/DashboardTabs:46
 msgid "More"
 msgstr ""
 
@@ -4015,7 +4083,7 @@ msgstr ""
 msgid "Must specify 'Name' attribute"
 msgstr ""
 
-#: share/html/SelfService/Elements/MyRequests:82
+#: share/html/SelfService/Elements/MyRequests:77
 #. ($friendly_status)
 msgid "My %1 tickets"
 msgstr "%1 problémáim"
@@ -4044,7 +4112,7 @@ msgstr "MySQL"
 msgid "NEWLINE"
 msgstr "ÚJSOR"
 
-#: share/html/Admin/CustomFields/Modify.html:61 share/html/Admin/Elements/AddCustomFieldValue:54 share/html/Admin/Elements/EditCustomField:57 share/html/Admin/Elements/EditCustomFieldValues:58 share/html/Admin/Elements/ModifyTemplate:51 share/html/Admin/Groups/Modify.html:67 share/html/Admin/Tools/Shredder/Elements/Object/RT--User:52 share/html/Dashboards/Elements/ShowDashboards:79 share/html/Dashboards/Modify.html:65 share/html/Elements/RT__Group/ColumnMap:77 share/html/Elements/RT__Queue/ColumnMap:74 share/html/Elements/RT__Template/ColumnMap:61 share/html/Elements/RT__User/ColumnMap:61 share/html/Search/Bulk.html:180 share/html/User/Groups/Modify.html:67
+#: share/html/Admin/CustomFields/Modify.html:61 share/html/Admin/Elements/AddCustomFieldValue:54 share/html/Admin/Elements/EditCustomField:57 share/html/Admin/Elements/EditCustomFieldValues:58 share/html/Admin/Elements/ModifyTemplate:51 share/html/Admin/Groups/Modify.html:67 share/html/Admin/Tools/Shredder/Elements/Object/RT--User:52 share/html/Dashboards/Elements/ShowDashboards:79 share/html/Dashboards/Modify.html:65 share/html/Elements/RT__Group/ColumnMap:77 share/html/Elements/RT__Template/ColumnMap:61 share/html/Elements/RT__User/ColumnMap:61 share/html/Search/Bulk.html:184 share/html/User/Groups/Modify.html:67
 msgid "Name"
 msgstr "Név"
 
@@ -4064,11 +4132,11 @@ msgstr "Soha"
 msgid "New"
 msgstr "Új"
 
-#: share/html/Elements/EditLinks:118
+#: share/html/Elements/EditLinks:118 share/html/Ticket/Elements/BulkLinks:122
 msgid "New Links"
 msgstr "Új kapcsolatok"
 
-#: share/html/Admin/Users/Modify.html:121 share/html/User/Prefs.html:115
+#: NOT FOUND IN SOURCE
 msgid "New Password"
 msgstr "Új jelszó"
 
@@ -4080,7 +4148,7 @@ msgstr ""
 msgid "New Query"
 msgstr "Új lekérdezés"
 
-#: share/html/Ticket/Elements/Tabs:269
+#: share/html/Ticket/Elements/Tabs:274
 msgid "New Search"
 msgstr "Új keresés"
 
@@ -4105,7 +4173,7 @@ msgstr "Új csoport"
 msgid "New messages"
 msgstr "Új üzenetek"
 
-#: share/html/SelfService/Prefs.html:55
+#: share/html/Elements/EditPassword:14
 msgid "New password"
 msgstr "Új jelszó"
 
@@ -4137,7 +4205,7 @@ msgstr "Új sablon"
 msgid "New ticket"
 msgstr "Új probléma"
 
-#: lib/RT/Ticket_Overlay.pm:2486
+#: lib/RT/Ticket_Overlay.pm:2504
 msgid "New ticket doesn't exist"
 msgstr "Az új probléma nem létezik"
 
@@ -4153,7 +4221,7 @@ msgstr ""
 msgid "New watchers"
 msgstr "Új résztvevõk"
 
-#: share/html/Elements/CollectionListPaging:104 share/html/Helpers/CalPopup.html:60 share/html/Install/Basics.html:62 share/html/Install/DatabaseDetails.html:72 share/html/Install/DatabaseType.html:70 share/html/Install/Global.html:65 share/html/Install/Global.html:65 share/html/Install/Sendmail.html:63 share/html/Ticket/Elements/Tabs:97
+#: share/html/Elements/CollectionListPaging:104 share/html/Helpers/CalPopup.html:60 share/html/Install/Basics.html:62 share/html/Install/DatabaseDetails.html:72 share/html/Install/DatabaseType.html:70 share/html/Install/Global.html:65 share/html/Install/Global.html:65 share/html/Install/Sendmail.html:63 share/html/Ticket/Elements/Tabs:99
 msgid "Next"
 msgstr "Következõ"
 
@@ -4206,7 +4274,7 @@ msgstr "Nincs sor meghatározva"
 msgid "No RT user found. Please consult your RT administrator.\\n"
 msgstr "RT-felhasználó nem található. Vegyew fel a kapcsolatot az RT-adminisztrátorral.\\n"
 
-#: share/html/Search/Results.rdf:88
+#: share/html/Search/Elements/ResultsRSSView:125
 msgid "No Subject"
 msgstr ""
 
@@ -4235,7 +4303,11 @@ msgstr ""
 msgid "No description for %1"
 msgstr "Nincs leírás a(z) %1-hez"
 
-#: lib/RT/Users_Overlay.pm:188
+#: share/html/SelfService/Error.html:69
+msgid "No details"
+msgstr ""
+
+#: lib/RT/Users_Overlay.pm:182
 msgid "No group specified"
 msgstr "Nincs <b>csoport</b> megadva!"
 
@@ -4243,7 +4315,7 @@ msgstr "Nincs <b>csoport</b> megadva!"
 msgid "No groups matching search criteria found."
 msgstr "Nincs a keresési feltételeknek megfeleõ csoport."
 
-#: lib/RT/Attachment_Overlay.pm:671
+#: lib/RT/Attachment_Overlay.pm:668
 msgid "No key suitable for encryption"
 msgstr ""
 
@@ -4251,27 +4323,27 @@ msgstr ""
 msgid "No keys for this address"
 msgstr ""
 
-#: lib/RT/Ticket_Overlay.pm:2129
+#: lib/RT/Ticket_Overlay.pm:2142
 msgid "No message attached"
 msgstr ""
 
-#: lib/RT/CustomField_Overlay.pm:321
+#: lib/RT/CustomField_Overlay.pm:322
 msgid "No name provided"
 msgstr ""
 
-#: lib/RT/Attachment_Overlay.pm:651
+#: lib/RT/Attachment_Overlay.pm:648
 msgid "No need to encrypt"
 msgstr ""
 
-#: lib/RT/User_Overlay.pm:935
+#: lib/RT/User_Overlay.pm:971
 msgid "No password set"
 msgstr "Nincs jelszó megadva"
 
-#: lib/RT/Queue_Overlay.pm:350
+#: lib/RT/Queue_Overlay.pm:346
 msgid "No permission to create queues"
 msgstr "Nincs joga sort létrehozni"
 
-#: lib/RT/Ticket_Overlay.pm:302 lib/RT/Ticket_Overlay.pm:832
+#: lib/RT/Ticket_Overlay.pm:306 lib/RT/Ticket_Overlay.pm:836
 #. ($QueueObj->Name)
 msgid "No permission to create tickets in the queue '%1'"
 msgstr "Nincs joga a(z) '%1' sorban problémát létrehozni"
@@ -4284,11 +4356,11 @@ msgstr "Nincs joga felhasználót létrehozni"
 msgid "No permission to display that ticket"
 msgstr "Nincs jogosultsága az adott probléma megtekintésére"
 
-#: share/html/Search/Elements/EditSearches:231
+#: share/html/Search/Elements/EditSearches:238
 msgid "No permission to save system-wide searches"
 msgstr ""
 
-#: lib/RT/User_Overlay.pm:1383
+#: lib/RT/User_Overlay.pm:1448
 msgid "No permission to set preferences"
 msgstr ""
 
@@ -4296,7 +4368,7 @@ msgstr ""
 msgid "No permission to view update ticket"
 msgstr "Nincs joga ezt a problémát aktualizálni"
 
-#: lib/RT/Queue_Overlay.pm:881 lib/RT/Ticket_Overlay.pm:1180
+#: lib/RT/Queue_Overlay.pm:886 lib/RT/Ticket_Overlay.pm:1192
 msgid "No principal specified"
 msgstr "Nincs <b>felelõs</b> megadva!"
 
@@ -4324,7 +4396,7 @@ msgstr "Nem találhatók jogok"
 msgid "No rights granted."
 msgstr "Nincsenek jogok engedélyezve."
 
-#: share/html/Search/Bulk.html:289
+#: share/html/Search/Bulk.html:293
 msgid "No search to operate on."
 msgstr "Nincs feldolgozható keresési lista."
 
@@ -4332,11 +4404,11 @@ msgstr "Nincs feldolgozható keresési lista."
 msgid "No subject"
 msgstr "(nincs tárgy)"
 
-#: lib/RT/User_Overlay.pm:1690
+#: lib/RT/User_Overlay.pm:1755
 msgid "No such key or it's not suitable for signing"
 msgstr ""
 
-#: share/html/Search/Chart:98
+#: share/html/Search/Chart:140
 msgid "No tickets found."
 msgstr ""
 
@@ -4368,11 +4440,7 @@ msgstr ""
 msgid "Nonexistant field?"
 msgstr "Nem létezõ mezõ?"
 
-#: share/html/Search/Chart:154 share/html/Search/Elements/Chart:91
-msgid "Not Set"
-msgstr ""
-
-#: lib/RT/CustomField_Overlay.pm:355
+#: lib/RT/CustomField_Overlay.pm:356
 msgid "Not found"
 msgstr ""
 
@@ -4380,7 +4448,7 @@ msgstr ""
 msgid "Not logged in."
 msgstr "Nincs bejelentkezve."
 
-#: lib/RT/Date.pm:398
+#: lib/RT/Date.pm:399
 msgid "Not set"
 msgstr "Nincs megadva"
 
@@ -4436,7 +4504,7 @@ msgstr ""
 msgid "Notify Owner of their ticket has been approved and is ready to be acted on"
 msgstr ""
 
-#: lib/RT/Approval/Rule/Created.pm:56 lib/RT/Approval/Rule/Passed.pm:54
+#: lib/RT/Approval/Rule/Passed.pm:54
 msgid "Notify Owner of their ticket has been approved by some or all approvers"
 msgstr ""
 
@@ -4500,6 +4568,10 @@ msgstr ""
 msgid "OR"
 msgstr "VAGY"
 
+#: share/html/Admin/Tools/Configuration.html:151
+msgid "Object"
+msgstr ""
+
 #: lib/RT/Record.pm:308
 msgid "Object could not be created"
 msgstr "Objekum nem hozható létre"
@@ -4516,13 +4588,12 @@ msgstr "Objektum létehozva"
 msgid "Object deleted"
 msgstr "Objektum törölve"
 
-#: share/html/Admin/CustomFields/Objects.html:74 share/html/Admin/Elements/ObjectCustomFields:65
+#: share/html/Admin/Elements/ObjectCustomFields:65
 #. ($ObjectType)
-#. ($LookupType)
 msgid "Object of type %1 cannot take custom fields"
 msgstr ""
 
-#: lib/RT/CustomField_Overlay.pm:940
+#: lib/RT/CustomField_Overlay.pm:1084
 msgid "Object type mismatch"
 msgstr ""
 
@@ -4603,7 +4674,7 @@ msgstr "Státusz megváltozásakor"
 msgid "On Transaction"
 msgstr "Tranzakciónál"
 
-#: share/html/Ticket/Elements/UpdateCc:62
+#: share/html/Ticket/Elements/UpdateCc:66
 msgid "One-time Bcc"
 msgstr ""
 
@@ -4621,7 +4692,7 @@ msgstr "Csak a(z) %1 után létrejött poblémák engedélyezései legyenek lát
 msgid "Only show approvals for requests created before %1"
 msgstr "Csak a(z) %1 elõtt létrejött problémák engedélyezései legyenek láthatóak"
 
-#: share/html/Admin/CustomFields/index.html:77
+#: share/html/Admin/CustomFields/index.html:75
 msgid "Only show custom fields for:"
 msgstr ""
 
@@ -4637,7 +4708,7 @@ msgstr ""
 msgid "Open URL"
 msgstr ""
 
-#: share/html/Ticket/Elements/Tabs:196
+#: share/html/Ticket/Elements/Tabs:200
 msgid "Open it"
 msgstr "Megnyit"
 
@@ -4647,6 +4718,10 @@ msgstr "Nyitott problémák"
 
 #: etc/initialdata:95
 msgid "Open tickets on correspondence"
+msgstr ""
+
+#: share/html/Admin/Tools/Configuration.html:64
+msgid "Option"
 msgstr ""
 
 #: share/html/Prefs/MyRT.html:74
@@ -4661,7 +4736,7 @@ msgstr ""
 msgid "Order by"
 msgstr "Rendezés"
 
-#: share/html/Admin/Users/Modify.html:144 share/html/Elements/RT__User/ColumnMap:81 share/html/User/Prefs.html:135
+#: share/html/Admin/Users/Modify.html:129 share/html/Elements/RT__User/ColumnMap:81 share/html/User/Prefs.html:121
 msgid "Organization"
 msgstr "Cég, szervezet"
 
@@ -4678,33 +4753,37 @@ msgstr ""
 msgid "Outgoing email recorded"
 msgstr ""
 
+#: lib/RT/Config.pm:374
+msgid "Outgoing mail"
+msgstr ""
+
 #: share/html/Admin/Queues/Modify.html:87
 msgid "Over time, priority moves toward"
 msgstr "Prioritás idõvel emelkedik"
 
-#: lib/RT/Queue_Overlay.pm:114
+#: lib/RT/Queue_Overlay.pm:110
 msgid "Own tickets"
 msgstr "Saját problémák"
 
-#: lib/RT/Queue_Overlay.pm:114
+#: lib/RT/Queue_Overlay.pm:110
 msgid "OwnTicket"
 msgstr ""
 
-#: lib/RT/ACE_Overlay.pm:99 lib/RT/Graph/Tickets.pm:158 lib/RT/Tickets_Overlay.pm:2207 lib/RT/Tickets_Overlay.pm:98 share/html/Elements/QuickCreate:58 share/html/Elements/RT__Ticket/ColumnMap:274 share/html/Elements/RT__Ticket/ColumnMap:89 share/html/Search/Elements/PickBasics:114 share/html/Ticket/Create.html:76 share/html/Ticket/Elements/EditBasics:63 share/html/Ticket/Elements/EditPeople:66 share/html/Ticket/Elements/EditPeople:67 share/html/Ticket/Elements/Reminders:138 share/html/Ticket/Elements/ShowPeople:50 share/html/Ticket/Update.html:71
+#: lib/RT/ACE_Overlay.pm:99 lib/RT/Graph/Tickets.pm:158 lib/RT/Tickets_Overlay.pm:2280 lib/RT/Tickets_Overlay.pm:98 share/html/Elements/QuickCreate:58 share/html/Elements/RT__Ticket/ColumnMap:274 share/html/Elements/RT__Ticket/ColumnMap:89 share/html/Search/Elements/PickBasics:114 share/html/Ticket/Create.html:76 share/html/Ticket/Elements/EditBasics:63 share/html/Ticket/Elements/EditPeople:66 share/html/Ticket/Elements/EditPeople:67 share/html/Ticket/Elements/Reminders:138 share/html/Ticket/Elements/ShowPeople:50 share/html/Ticket/Update.html:71
 msgid "Owner"
 msgstr "Tulajdonos"
 
-#: lib/RT/Ticket_Overlay.pm:641
+#: lib/RT/Ticket_Overlay.pm:645
 #. ($DeferOwner->Name)
 msgid "Owner '%1' does not have rights to own this ticket."
 msgstr ""
 
-#: lib/RT/Ticket_Overlay.pm:2841
+#: lib/RT/Ticket_Overlay.pm:2868
 #. ($OldOwnerObj->Name, $NewOwnerObj->Name)
 msgid "Owner changed from %1 to %2"
 msgstr ""
 
-#: lib/RT/Ticket_Overlay.pm:398
+#: lib/RT/Ticket_Overlay.pm:402
 msgid "Owner could not be set."
 msgstr ""
 
@@ -4733,7 +4812,7 @@ msgstr ""
 msgid "Page not found"
 msgstr ""
 
-#: share/html/Admin/Users/Modify.html:201 share/html/User/Prefs.html:102
+#: share/html/Admin/Users/Modify.html:186 share/html/User/Prefs.html:102
 msgid "Pager"
 msgstr ""
 
@@ -4741,11 +4820,11 @@ msgstr ""
 msgid "PagerPhone"
 msgstr ""
 
-#: share/html/Elements/EditLinks:145 share/html/Elements/EditLinks:73 share/html/Elements/ShowLinks:90 share/html/Search/Elements/BuildFormatString:99 share/html/Ticket/Create.html:230 share/html/Ticket/Elements/BulkLinks:62
+#: share/html/Elements/EditLinks:145 share/html/Elements/EditLinks:73 share/html/Elements/ShowLinks:90 share/html/Search/Elements/BuildFormatString:99 share/html/Ticket/Create.html:232 share/html/Ticket/Elements/BulkLinks:139 share/html/Ticket/Elements/BulkLinks:74
 msgid "Parents"
 msgstr "Felmenõk"
 
-#: share/html/Elements/Login:97 share/html/User/Prefs.html:111
+#: share/html/Elements/Login:112 share/html/User/Prefs.html:111
 msgid "Password"
 msgstr "Jelszó"
 
@@ -4753,16 +4832,20 @@ msgstr "Jelszó"
 msgid "Password Reminder"
 msgstr "Jelszó-emlékeztetõ"
 
-#: lib/RT/Transaction_Overlay.pm:853 lib/RT/User_Overlay.pm:946
+#: lib/RT/Transaction_Overlay.pm:853 lib/RT/User_Overlay.pm:982
 msgid "Password changed"
 msgstr "Jelszó megváltoztatva"
 
-#: lib/RT/User_Overlay.pm:150 lib/RT/User_Overlay.pm:938
+#: lib/RT/User_Overlay.pm:948
+msgid "Password has not been set."
+msgstr ""
+
+#: lib/RT/User_Overlay.pm:150 lib/RT/User_Overlay.pm:974
 #. (RT->Config->Get('MinimumPasswordLength'))
 msgid "Password needs to be at least %1 characters long"
 msgstr ""
 
-#: lib/RT/User_Overlay.pm:945
+#: lib/RT/User_Overlay.pm:981
 msgid "Password set"
 msgstr ""
 
@@ -4770,12 +4853,12 @@ msgstr ""
 msgid "Password too short"
 msgstr "A jelszó túl rövid!"
 
-#: share/html/User/Prefs.html:266
-#. (loc_fuzzy($msg))
+#: share/html/SelfService/Prefs.html:76 share/html/User/Prefs.html:256
+#. ($msg)
 msgid "Password: %1"
 msgstr "Jelszó: %1"
 
-#: lib/RT/User_Overlay.pm:931
+#: lib/RT/User_Overlay.pm:967
 msgid "Password: Permission Denied"
 msgstr ""
 
@@ -4783,19 +4866,15 @@ msgstr ""
 msgid "PasswordChange"
 msgstr ""
 
-#: share/html/Admin/Users/Modify.html:374
+#: lib/RT/User_Overlay.pm:944
 msgid "Passwords do not match."
 msgstr "A jelszavak nem egyeznek."
-
-#: share/html/User/Prefs.html:268
-msgid "Passwords do not match. Your password has not been changed"
-msgstr ""
 
 #: lib/RT/Installer.pm:184
 msgid "Path to sendmail"
 msgstr ""
 
-#: share/html/Ticket/Elements/ShowSummary:64 share/html/Ticket/Elements/Tabs:134 share/html/Ticket/ModifyAll.html:75
+#: share/html/Ticket/Elements/ShowSummary:69 share/html/Ticket/Elements/Tabs:138 share/html/Ticket/ModifyAll.html:75
 msgid "People"
 msgstr "Résztvevõk"
 
@@ -4803,15 +4882,15 @@ msgstr "Résztvevõk"
 msgid "Perform a user-defined action"
 msgstr ""
 
-#: share/html/Admin/Tools/Configuration.html:165
-msgid "Perl Include Paths (@INC)"
-msgstr ""
-
-#: share/html/Admin/Tools/Configuration.html:159
+#: share/html/Admin/Tools/Configuration.html:237
 msgid "Perl configuration"
 msgstr "Perl konfiguráció"
 
-#: lib/RT/ACE_Overlay.pm:255 lib/RT/ACE_Overlay.pm:261 lib/RT/ACE_Overlay.pm:360 lib/RT/ACE_Overlay.pm:370 lib/RT/ACE_Overlay.pm:380 lib/RT/ACE_Overlay.pm:445 lib/RT/Attachment_Overlay.pm:637 lib/RT/Attachment_Overlay.pm:638 lib/RT/Attachment_Overlay.pm:699 lib/RT/Attachment_Overlay.pm:700 lib/RT/Attribute_Overlay.pm:161 lib/RT/Attribute_Overlay.pm:167 lib/RT/Attribute_Overlay.pm:376 lib/RT/Attribute_Overlay.pm:385 lib/RT/Attribute_Overlay.pm:398 lib/RT/CurrentUser.pm:137 lib/RT/CurrentUser.pm:143 lib/RT/CurrentUser.pm:149 lib/RT/CustomFieldValue_Overlay.pm:83 lib/RT/CustomField_Overlay.pm:1105 lib/RT/CustomField_Overlay.pm:1246 lib/RT/CustomField_Overlay.pm:188 lib/RT/CustomField_Overlay.pm:205 lib/RT/CustomField_Overlay.pm:216 lib/RT/CustomField_Overlay.pm:403 lib/RT/CustomField_Overlay.pm:432 lib/RT/CustomField_Overlay.pm:738 lib/RT/CustomField_Overlay.pm:910 lib/RT/CustomField_Overlay.pm:944 lib/RT/CustomField_Overlay.pm:989 lib/RT/Group_Overlay.pm:1136 lib/RT/Group_Overlay.pm:1140 lib/RT/Group_Overlay.pm:1149 lib/RT/Group_Overlay.pm:1259 lib/RT/Group_Overlay.pm:1263 lib/RT/Group_Overlay.pm:1269 lib/RT/Group_Overlay.pm:401 lib/RT/Group_Overlay.pm:499 lib/RT/Group_Overlay.pm:577 lib/RT/Group_Overlay.pm:585 lib/RT/Group_Overlay.pm:683 lib/RT/Group_Overlay.pm:687 lib/RT/Group_Overlay.pm:693 lib/RT/Group_Overlay.pm:938 lib/RT/Group_Overlay.pm:942 lib/RT/Group_Overlay.pm:955 lib/RT/Queue_Overlay.pm:1156 lib/RT/Queue_Overlay.pm:158 lib/RT/Queue_Overlay.pm:176 lib/RT/Queue_Overlay.pm:514 lib/RT/Queue_Overlay.pm:540 lib/RT/Queue_Overlay.pm:562 lib/RT/Queue_Overlay.pm:775 lib/RT/Queue_Overlay.pm:921 lib/RT/Queue_Overlay.pm:930 lib/RT/Queue_Overlay.pm:943 lib/RT/Scrip_Overlay.pm:113 lib/RT/Scrip_Overlay.pm:124 lib/RT/Scrip_Overlay.pm:188 lib/RT/Scrip_Overlay.pm:497 lib/RT/Template_Overlay.pm:215 lib/RT/Template_Overlay.pm:224 lib/RT/Template_Overlay.pm:250 lib/RT/Template_Overlay.pm:379 lib/RT/Template_Overlay.pm:99 lib/RT/Ticket_Overlay.pm:1063 lib/RT/Ticket_Overlay.pm:1069 lib/RT/Ticket_Overlay.pm:1076 lib/RT/Ticket_Overlay.pm:1213 lib/RT/Ticket_Overlay.pm:1223 lib/RT/Ticket_Overlay.pm:1237 lib/RT/Ticket_Overlay.pm:1333 lib/RT/Ticket_Overlay.pm:1690 lib/RT/Ticket_Overlay.pm:1844 lib/RT/Ticket_Overlay.pm:2028 lib/RT/Ticket_Overlay.pm:2078 lib/RT/Ticket_Overlay.pm:2267 lib/RT/Ticket_Overlay.pm:2280 lib/RT/Ticket_Overlay.pm:2361 lib/RT/Ticket_Overlay.pm:2374 lib/RT/Ticket_Overlay.pm:2477 lib/RT/Ticket_Overlay.pm:2491 lib/RT/Ticket_Overlay.pm:2743 lib/RT/Ticket_Overlay.pm:2754 lib/RT/Ticket_Overlay.pm:2760 lib/RT/Ticket_Overlay.pm:2963 lib/RT/Ticket_Overlay.pm:2967 lib/RT/Ticket_Overlay.pm:3104 lib/RT/Ticket_Overlay.pm:3294 lib/RT/Transaction_Overlay.pm:586 lib/RT/Transaction_Overlay.pm:610 lib/RT/User_Overlay.pm:1136 lib/RT/User_Overlay.pm:124 lib/RT/User_Overlay.pm:1550 lib/RT/User_Overlay.pm:283 lib/RT/User_Overlay.pm:673 lib/RT/User_Overlay.pm:708 share/html/Ticket/Forward.html:85
+#: share/html/Admin/Tools/Configuration.html:191
+msgid "Perl library search order"
+msgstr ""
+
+#: lib/RT/ACE_Overlay.pm:255 lib/RT/ACE_Overlay.pm:261 lib/RT/ACE_Overlay.pm:360 lib/RT/ACE_Overlay.pm:370 lib/RT/ACE_Overlay.pm:380 lib/RT/ACE_Overlay.pm:445 lib/RT/Attachment_Overlay.pm:634 lib/RT/Attachment_Overlay.pm:635 lib/RT/Attachment_Overlay.pm:696 lib/RT/Attachment_Overlay.pm:697 lib/RT/Attribute_Overlay.pm:161 lib/RT/Attribute_Overlay.pm:167 lib/RT/Attribute_Overlay.pm:376 lib/RT/Attribute_Overlay.pm:385 lib/RT/Attribute_Overlay.pm:398 lib/RT/CurrentUser.pm:137 lib/RT/CurrentUser.pm:143 lib/RT/CurrentUser.pm:149 lib/RT/CustomFieldValue_Overlay.pm:83 lib/RT/CustomField_Overlay.pm:1042 lib/RT/CustomField_Overlay.pm:1088 lib/RT/CustomField_Overlay.pm:1132 lib/RT/CustomField_Overlay.pm:1248 lib/RT/CustomField_Overlay.pm:1389 lib/RT/CustomField_Overlay.pm:189 lib/RT/CustomField_Overlay.pm:206 lib/RT/CustomField_Overlay.pm:217 lib/RT/CustomField_Overlay.pm:404 lib/RT/CustomField_Overlay.pm:433 lib/RT/CustomField_Overlay.pm:739 lib/RT/Group_Overlay.pm:1136 lib/RT/Group_Overlay.pm:1140 lib/RT/Group_Overlay.pm:1149 lib/RT/Group_Overlay.pm:1259 lib/RT/Group_Overlay.pm:1263 lib/RT/Group_Overlay.pm:1269 lib/RT/Group_Overlay.pm:401 lib/RT/Group_Overlay.pm:499 lib/RT/Group_Overlay.pm:577 lib/RT/Group_Overlay.pm:585 lib/RT/Group_Overlay.pm:683 lib/RT/Group_Overlay.pm:687 lib/RT/Group_Overlay.pm:693 lib/RT/Group_Overlay.pm:938 lib/RT/Group_Overlay.pm:942 lib/RT/Group_Overlay.pm:955 lib/RT/Queue_Overlay.pm:1161 lib/RT/Queue_Overlay.pm:154 lib/RT/Queue_Overlay.pm:172 lib/RT/Queue_Overlay.pm:510 lib/RT/Queue_Overlay.pm:536 lib/RT/Queue_Overlay.pm:558 lib/RT/Queue_Overlay.pm:773 lib/RT/Queue_Overlay.pm:926 lib/RT/Queue_Overlay.pm:935 lib/RT/Queue_Overlay.pm:948 lib/RT/Scrip_Overlay.pm:113 lib/RT/Scrip_Overlay.pm:124 lib/RT/Scrip_Overlay.pm:188 lib/RT/Scrip_Overlay.pm:510 lib/RT/Template_Overlay.pm:215 lib/RT/Template_Overlay.pm:224 lib/RT/Template_Overlay.pm:250 lib/RT/Template_Overlay.pm:379 lib/RT/Template_Overlay.pm:99 lib/RT/Ticket_Overlay.pm:1067 lib/RT/Ticket_Overlay.pm:1073 lib/RT/Ticket_Overlay.pm:1080 lib/RT/Ticket_Overlay.pm:1225 lib/RT/Ticket_Overlay.pm:1235 lib/RT/Ticket_Overlay.pm:1249 lib/RT/Ticket_Overlay.pm:1345 lib/RT/Ticket_Overlay.pm:1703 lib/RT/Ticket_Overlay.pm:1857 lib/RT/Ticket_Overlay.pm:2041 lib/RT/Ticket_Overlay.pm:2091 lib/RT/Ticket_Overlay.pm:2287 lib/RT/Ticket_Overlay.pm:2300 lib/RT/Ticket_Overlay.pm:2381 lib/RT/Ticket_Overlay.pm:2394 lib/RT/Ticket_Overlay.pm:2495 lib/RT/Ticket_Overlay.pm:2509 lib/RT/Ticket_Overlay.pm:2770 lib/RT/Ticket_Overlay.pm:2781 lib/RT/Ticket_Overlay.pm:2787 lib/RT/Ticket_Overlay.pm:2990 lib/RT/Ticket_Overlay.pm:2994 lib/RT/Ticket_Overlay.pm:3131 lib/RT/Ticket_Overlay.pm:3321 lib/RT/Transaction_Overlay.pm:586 lib/RT/Transaction_Overlay.pm:610 lib/RT/User_Overlay.pm:1201 lib/RT/User_Overlay.pm:124 lib/RT/User_Overlay.pm:1615 lib/RT/User_Overlay.pm:283 lib/RT/User_Overlay.pm:673 lib/RT/User_Overlay.pm:708 share/html/Ticket/Forward.html:85
 msgid "Permission Denied"
 msgstr "Hozzáférés visszautasítva"
 
@@ -4823,7 +4902,7 @@ msgstr ""
 msgid "Personal Dashboards"
 msgstr ""
 
-#: share/html/User/Elements/DelegateRights:60 share/html/User/Elements/Tabs:64 share/html/User/Groups/index.html:63
+#: share/html/User/Elements/DelegateRights:60 share/html/User/Elements/Tabs:65 share/html/User/Groups/index.html:63
 msgid "Personal Groups"
 msgstr "Saját Csoportok"
 
@@ -4835,7 +4914,7 @@ msgstr "Saját csoportok"
 msgid "Personal groups:"
 msgstr "Saját csoportok:"
 
-#: share/html/Admin/Users/Modify.html:183 share/html/User/Prefs.html:87
+#: share/html/Admin/Users/Modify.html:168 share/html/User/Prefs.html:87
 msgid "Phone numbers"
 msgstr "Telefonszámok"
 
@@ -4843,7 +4922,15 @@ msgstr "Telefonszámok"
 msgid "Please check the URL and try again."
 msgstr ""
 
-#: share/html/Dashboards/Elements/HiddenSearches:70
+#: lib/RT/User_Overlay.pm:938
+msgid "Please enter your current password correctly."
+msgstr ""
+
+#: lib/RT/User_Overlay.pm:941
+msgid "Please enter your current password."
+msgstr ""
+
+#: share/html/Dashboards/Elements/HiddenSearches:73
 msgid "Possible hidden searches"
 msgstr ""
 
@@ -4888,7 +4975,7 @@ msgstr ""
 msgid "Prepare Stubbed"
 msgstr ""
 
-#: share/html/Helpers/CalPopup.html:58 share/html/Ticket/Elements/Tabs:87
+#: share/html/Helpers/CalPopup.html:58 share/html/Ticket/Elements/Tabs:89
 msgid "Prev"
 msgstr "Elõzõ"
 
@@ -4913,7 +5000,7 @@ msgstr ""
 msgid "Print this message"
 msgstr ""
 
-#: lib/RT/Tickets_Overlay.pm:103 lib/RT/Tickets_Overlay.pm:1991 share/html/Elements/RT__Queue/ColumnMap:66 share/html/Elements/RT__Ticket/ColumnMap:131 share/html/Search/Elements/BuildFormatString:99 share/html/Search/Elements/PickBasics:186 share/html/Ticket/Create.html:180 share/html/Ticket/Elements/EditBasics:102 share/html/Ticket/Elements/ShowBasics:76
+#: lib/RT/Tickets_Overlay.pm:103 lib/RT/Tickets_Overlay.pm:2064 share/html/Elements/RT__Queue/ColumnMap:66 share/html/Elements/RT__Ticket/ColumnMap:131 share/html/Search/Elements/BuildFormatString:99 share/html/Search/Elements/PickBasics:186 share/html/Ticket/Create.html:182 share/html/Ticket/Elements/EditBasics:102 share/html/Ticket/Elements/ShowBasics:76
 msgid "Priority"
 msgstr "Prioritás"
 
@@ -4937,7 +5024,7 @@ msgstr ""
 msgid "Privileged"
 msgstr "Kiemelt"
 
-#: share/html/Admin/Users/Modify.html:352 share/html/User/Prefs.html:259
+#: share/html/Admin/Users/Modify.html:337 share/html/User/Prefs.html:246
 #. (loc_fuzzy($msg))
 msgid "Privileged status: %1"
 msgstr ""
@@ -4963,19 +5050,19 @@ msgstr ""
 msgid "Queries"
 msgstr ""
 
-#: share/html/Search/Edit.html:64
+#: share/html/Search/Edit.html:66
 msgid "Query"
 msgstr "Lekérdezés"
 
-#: share/html/Search/Build.html:117
+#: share/html/Search/Build.html:121
 msgid "Query Builder"
 msgstr "Lekérdezésszerkesztõ"
 
-#: share/html/Search/Elements/Chart:105
+#: share/html/Search/Elements/Chart:95
 msgid "Query:"
 msgstr ""
 
-#: lib/RT/Graph/Tickets.pm:157 lib/RT/Record.pm:911 lib/RT/Tickets_Overlay.pm:1818 lib/RT/Tickets_Overlay.pm:94 share/html/Elements/QueueSummary:50 share/html/Elements/QuickCreate:56 share/html/Elements/RT__Scrip/ColumnMap:61 share/html/Elements/RT__Ticket/ColumnMap:85 share/html/Search/Elements/PickBasics:83 share/html/SelfService/Create.html:57 share/html/Ticket/Create.html:66 share/html/Ticket/Elements/EditBasics:59 share/html/Ticket/Elements/ShowBasics:80 share/html/Tools/Reports/CreatedByDates.html:87 share/html/Tools/Reports/ResolvedByDates.html:88 share/html/Tools/Reports/ResolvedByOwner.html:68
+#: lib/RT/Graph/Tickets.pm:157 lib/RT/Record.pm:911 lib/RT/Tickets_Overlay.pm:1891 lib/RT/Tickets_Overlay.pm:94 share/html/Elements/QueueSummary:50 share/html/Elements/QuickCreate:56 share/html/Elements/RT__Scrip/ColumnMap:61 share/html/Elements/RT__Scrip/ColumnMap:68 share/html/Elements/RT__Template/ColumnMap:71 share/html/Elements/RT__Template/ColumnMap:78 share/html/Elements/RT__Ticket/ColumnMap:85 share/html/Search/Elements/PickBasics:83 share/html/SelfService/Create.html:57 share/html/Ticket/Create.html:66 share/html/Ticket/Elements/EditBasics:59 share/html/Ticket/Elements/ShowBasics:80 share/html/Tools/Reports/CreatedByDates.html:87 share/html/Tools/Reports/ResolvedByDates.html:88 share/html/Tools/Reports/ResolvedByOwner.html:68
 msgid "Queue"
 msgstr "Sor"
 
@@ -4989,27 +5076,27 @@ msgstr "%2 sor nem található"
 msgid "Queue Name"
 msgstr "A sor neve"
 
-#: lib/RT/Queue_Overlay.pm:354
+#: lib/RT/Queue_Overlay.pm:350
 msgid "Queue already exists"
 msgstr "Sor már létezik"
 
-#: lib/RT/Queue_Overlay.pm:364 lib/RT/Queue_Overlay.pm:370
+#: lib/RT/Queue_Overlay.pm:360 lib/RT/Queue_Overlay.pm:366
 msgid "Queue could not be created"
 msgstr "A sor nem hozható létre"
 
-#: share/html/Ticket/Create.html:326 share/html/index.html:95
+#: share/html/Ticket/Create.html:337 share/html/index.html:97
 msgid "Queue could not be loaded."
 msgstr "a sor nem tölthetõ be."
 
-#: lib/RT/Queue_Overlay.pm:388 lib/RT/StyleGuide.pod:801
+#: lib/RT/Queue_Overlay.pm:384 lib/RT/StyleGuide.pod:801
 msgid "Queue created"
 msgstr "A sor létrehozva"
 
-#: lib/RT/Queue_Overlay.pm:429
+#: lib/RT/Queue_Overlay.pm:425
 msgid "Queue disabled"
 msgstr ""
 
-#: lib/RT/Queue_Overlay.pm:431
+#: lib/RT/Queue_Overlay.pm:427
 msgid "Queue enabled"
 msgstr ""
 
@@ -5017,7 +5104,7 @@ msgstr ""
 msgid "Queue id"
 msgstr ""
 
-#: lib/RT/CustomField_Overlay.pm:213 share/html/SelfService/Display.html:125
+#: lib/RT/CustomField_Overlay.pm:214 share/html/SelfService/Display.html:125
 msgid "Queue not found"
 msgstr "A sor nem található"
 
@@ -5094,8 +5181,8 @@ msgstr "Konfiguráció"
 msgid "RT Administrator Email"
 msgstr ""
 
-#: share/html/Admin/Tools/Configuration.html:72
-msgid "RT Config"
+#: share/html/Admin/Tools/Configuration.html:61
+msgid "RT Configuration"
 msgstr ""
 
 #: share/html/Elements/Error:69 share/html/SelfService/Error.html:64
@@ -5106,15 +5193,11 @@ msgstr "RT Hiba"
 msgid "RT Self Service"
 msgstr ""
 
-#: share/html/Admin/Tools/Configuration.html:131
+#: share/html/Admin/Tools/Configuration.html:148
 msgid "RT Size"
 msgstr ""
 
-#: share/html/Admin/Tools/Configuration.html:112
-msgid "RT Variables"
-msgstr ""
-
-#: lib/RT/Config.pm:237 lib/RT/Config.pm:246 share/html/Admin/Elements/SystemTabs:73 share/html/Admin/Elements/UserTabs:69 share/html/Admin/Global/MyRT.html:48 share/html/Admin/Global/MyRT.html:51 share/html/Admin/Global/MyRT.html:59 share/html/Admin/Global/index.html:78 share/html/Admin/Users/MyRT.html:68 share/html/Prefs/MyRT.html:67 share/html/Prefs/MyRT.html:84 share/html/User/Elements/Tabs:73 share/html/index.html:6 share/html/index.html:79
+#: lib/RT/Config.pm:237 lib/RT/Config.pm:246 share/html/Admin/Elements/SystemTabs:73 share/html/Admin/Elements/UserTabs:69 share/html/Admin/Global/MyRT.html:48 share/html/Admin/Global/MyRT.html:51 share/html/Admin/Global/MyRT.html:59 share/html/Admin/Global/index.html:78 share/html/Admin/Users/MyRT.html:68 share/html/Prefs/MyRT.html:67 share/html/Prefs/MyRT.html:84 share/html/User/Elements/Tabs:77 share/html/index.html:6 share/html/index.html:79
 msgid "RT at a glance"
 msgstr "Áttekintés"
 
@@ -5135,11 +5218,15 @@ msgstr ""
 msgid "RT can make this custom field's values into hyperlinks to another service."
 msgstr ""
 
+#: share/html/Admin/Tools/Configuration.html:119
+msgid "RT core variables"
+msgstr ""
+
 #: lib/RT/Interface/Web/Session.pm:275
 msgid "RT couldn't store your session."
 msgstr ""
 
-#: share/html/Elements/Logo:54
+#: share/html/Elements/Logo:55
 #. (RT->Config->Get('rtname'))
 msgid "RT for %1"
 msgstr "%1  --  Request Tracker"
@@ -5179,6 +5266,11 @@ msgstr ""
 #: share/html/Admin/Groups/Members.html:48
 #. ($Group->Name)
 msgid "RT/Admin/Edit the group %1"
+msgstr ""
+
+#: share/html/Admin/Queues/Modify.html:201
+#. ($address)
+msgid "RTAddressRegexp option in the config doesn't match %1"
 msgstr ""
 
 #: share/html/Admin/Users/Modify.html:81 share/html/User/Prefs.html:71
@@ -5221,7 +5313,7 @@ msgstr ""
 msgid "Reference to %1 deleted"
 msgstr "%1 hivatkozás törölve"
 
-#: share/html/Elements/EditLinks:100 share/html/Elements/EditLinks:157 share/html/Elements/ShowLinks:108 share/html/Ticket/Create.html:233 share/html/Ticket/Elements/BulkLinks:74
+#: share/html/Elements/EditLinks:100 share/html/Elements/EditLinks:157 share/html/Elements/ShowLinks:108 share/html/Ticket/Create.html:235 share/html/Ticket/Elements/BulkLinks:104 share/html/Ticket/Elements/BulkLinks:151
 msgid "Referred to by"
 msgstr "A következõk kapcsolódnak hozzá"
 
@@ -5229,7 +5321,7 @@ msgstr "A következõk kapcsolódnak hozzá"
 msgid "ReferredToBy"
 msgstr ""
 
-#: share/html/Elements/EditLinks:153 share/html/Elements/EditLinks:91 share/html/Elements/SelectLinkType:51 share/html/Elements/ShowLinks:98 share/html/Ticket/Create.html:232 share/html/Ticket/Elements/BulkLinks:70
+#: share/html/Elements/EditLinks:153 share/html/Elements/EditLinks:91 share/html/Elements/SelectLinkType:51 share/html/Elements/ShowLinks:98 share/html/Ticket/Create.html:234 share/html/Ticket/Elements/BulkLinks:147 share/html/Ticket/Elements/BulkLinks:94
 msgid "Refers to"
 msgstr "A következõkhöz kapcsolódik"
 
@@ -5314,7 +5406,7 @@ msgstr ""
 msgid "Reminder ticket #%1"
 msgstr ""
 
-#: share/html/Elements/MyReminders:50 share/html/Ticket/Elements/ShowSummary:78 share/html/Ticket/Elements/Tabs:150 share/html/Ticket/Reminders.html:57
+#: share/html/Elements/MyReminders:51 share/html/Ticket/Elements/ShowSummary:88 share/html/Ticket/Elements/Tabs:154 share/html/Ticket/Reminders.html:57
 msgid "Reminders"
 msgstr ""
 
@@ -5323,7 +5415,7 @@ msgstr ""
 msgid "Reminders for ticket #%1"
 msgstr ""
 
-#: share/html/Search/Bulk.html:101
+#: share/html/Search/Bulk.html:103
 msgid "Remove AdminCc"
 msgstr "Adminisztratív tájékoztatást kapó eltávolítása"
 
@@ -5331,15 +5423,15 @@ msgstr "Adminisztratív tájékoztatást kapó eltávolítása"
 msgid "Remove Bookmark"
 msgstr ""
 
-#: share/html/Search/Bulk.html:97
+#: share/html/Search/Bulk.html:99
 msgid "Remove Cc"
 msgstr "Tájékoztatást kapó eltávolítása"
 
-#: share/html/Search/Bulk.html:93
+#: share/html/Search/Bulk.html:95
 msgid "Remove Requestor"
 msgstr "Beküldõ eltávolítása"
 
-#: share/html/Ticket/Elements/ShowTransaction:185 share/html/Ticket/Elements/Tabs:171
+#: share/html/Ticket/Elements/ShowTransaction:187 share/html/Ticket/Elements/Tabs:175
 msgid "Reply"
 msgstr "Válaszol"
 
@@ -5347,15 +5439,15 @@ msgstr "Válaszol"
 msgid "Reply Address"
 msgstr "Válaszcím"
 
-#: share/html/Search/Bulk.html:136 share/html/Ticket/ModifyAll.html:97 share/html/Ticket/Update.html:97
+#: share/html/Search/Bulk.html:138 share/html/Ticket/ModifyAll.html:97 share/html/Ticket/Update.html:97
 msgid "Reply to requestors"
 msgstr "Válasz a beküldõknek"
 
-#: lib/RT/Queue_Overlay.pm:112
+#: lib/RT/Queue_Overlay.pm:108
 msgid "Reply to tickets"
 msgstr "Válasz a problémákra"
 
-#: lib/RT/Queue_Overlay.pm:112
+#: lib/RT/Queue_Overlay.pm:108
 msgid "ReplyToTicket"
 msgstr ""
 
@@ -5371,7 +5463,7 @@ msgstr "Beküldõ"
 msgid "RequestorGroup"
 msgstr ""
 
-#: lib/RT/Graph/Tickets.pm:158 lib/RT/Tickets_Overlay.pm:131 share/html/Elements/QuickCreate:66 share/html/Elements/RT__Ticket/ColumnMap:173 share/html/Elements/RT__Ticket/ColumnMap:255 share/html/Search/Elements/BuildFormatString:99 share/html/SelfService/Create.html:67 share/html/Ticket/Create.html:85 share/html/Ticket/Elements/EditPeople:70 share/html/Ticket/Elements/ShowPeople:56
+#: lib/RT/Graph/Tickets.pm:158 lib/RT/Tickets_Overlay.pm:131 share/html/Elements/QuickCreate:66 share/html/Elements/RT__Ticket/ColumnMap:173 share/html/Elements/RT__Ticket/ColumnMap:255 share/html/Search/Elements/BuildFormatString:99 share/html/SelfService/Create.html:67 share/html/Ticket/Create.html:85 share/html/Ticket/Elements/EditPeople:70 share/html/Ticket/Elements/ShowPeople:58
 msgid "Requestors"
 msgstr "Beküldõ"
 
@@ -5388,7 +5480,7 @@ msgstr ""
 msgid "Reset"
 msgstr "Visszaállít"
 
-#: share/html/User/Prefs.html:198
+#: share/html/User/Prefs.html:184
 msgid "Reset secret authentication token"
 msgstr ""
 
@@ -5396,20 +5488,20 @@ msgstr ""
 msgid "Reset to default"
 msgstr ""
 
-#: share/html/Admin/Users/Modify.html:186 share/html/User/Prefs.html:90
+#: share/html/Admin/Users/Modify.html:171 share/html/User/Prefs.html:90
 msgid "Residence"
 msgstr "Otthoni"
 
-#: share/html/Search/Elements/EditFormat:73 share/html/Ticket/Elements/Tabs:190
+#: share/html/Search/Elements/EditFormat:73 share/html/Ticket/Elements/Tabs:194
 msgid "Resolve"
 msgstr "Megold"
 
-#: share/html/Ticket/Update.html:176
+#: share/html/Ticket/Update.html:182
 #. ($TicketObj->id, $TicketObj->Subject)
 msgid "Resolve ticket #%1 (%2)"
 msgstr "%1. (%2) probléma lezárása"
 
-#: etc/initialdata:299 lib/RT/Graph/Tickets.pm:159 lib/RT/Ticket_Overlay.pm:916 lib/RT/Tickets_Overlay.pm:122 share/html/Elements/RT__Ticket/ColumnMap:216 share/html/Elements/RT__Ticket/ColumnMap:241 share/html/Elements/SelectDateType:51 share/html/Search/Elements/BuildFormatString:99
+#: etc/initialdata:299 lib/RT/Graph/Tickets.pm:159 lib/RT/Ticket_Overlay.pm:920 lib/RT/Tickets_Overlay.pm:122 share/html/Elements/RT__Ticket/ColumnMap:216 share/html/Elements/RT__Ticket/ColumnMap:241 share/html/Elements/SelectDateType:51 share/html/Search/Elements/BuildFormatString:99
 msgid "Resolved"
 msgstr "Megoldva"
 
@@ -5445,7 +5537,7 @@ msgstr "Változtatások eredménye"
 msgid "Return back to the ticket"
 msgstr ""
 
-#: share/html/Admin/Users/Modify.html:128 share/html/User/Prefs.html:122
+#: share/html/Elements/EditPassword:19
 msgid "Retype Password"
 msgstr "Jelszó megismételve"
 
@@ -5485,7 +5577,7 @@ msgstr "Jog visszavonva"
 msgid "Rights"
 msgstr "Jogok"
 
-#: lib/RT/Interface/Web.pm:1297
+#: lib/RT/Interface/Web.pm:1381
 #. ($object_type)
 msgid "Rights could not be granted for %1"
 msgstr ""
@@ -5530,15 +5622,15 @@ msgstr "Szo"
 msgid "Saturday"
 msgstr ""
 
-#: share/html/Prefs/MyRT.html:78 share/html/Prefs/Quicksearch.html:66 share/html/Prefs/Search.html:71 share/html/Search/Elements/EditSearches:72 share/html/Ticket/Elements/ShowSummary:86 share/html/Ticket/Reminders.html:63 share/html/Widgets/SelectionBox:230
+#: share/html/Prefs/MyRT.html:78 share/html/Prefs/Quicksearch.html:66 share/html/Prefs/Search.html:71 share/html/Search/Elements/EditSearches:72 share/html/Ticket/Elements/ShowSummary:95 share/html/Ticket/Reminders.html:63 share/html/Widgets/SelectionBox:233
 msgid "Save"
 msgstr "Mentés"
 
-#: share/html/Admin/CustomFields/Modify.html:137 share/html/Admin/Elements/EditScrip:141 share/html/Admin/Global/Template.html:102 share/html/Admin/Groups/Modify.html:97 share/html/Admin/Queues/Modify.html:136 share/html/Admin/Queues/People.html:130 share/html/Admin/Queues/Template.html:103 share/html/Admin/Users/GnuPG.html:75 share/html/Admin/Users/Modify.html:246 share/html/Dashboards/Modify.html:78 share/html/Dashboards/Subscription.html:178 share/html/Prefs/Other.html:78 share/html/Prefs/Quicksearch.html:66 share/html/Prefs/Search.html:71 share/html/Prefs/SearchOptions.html:65 share/html/SelfService/Prefs.html:60 share/html/Ticket/Elements/PreviewScrips:94 share/html/Ticket/Modify.html:65 share/html/Ticket/ModifyAll.html:144 share/html/Ticket/ModifyDates.html:63 share/html/Ticket/ModifyLinks.html:65 share/html/Ticket/ModifyPeople.html:63 share/html/User/Groups/Modify.html:79
+#: share/html/Admin/CustomFields/Modify.html:137 share/html/Admin/Elements/EditScrip:142 share/html/Admin/Global/Template.html:102 share/html/Admin/Groups/Modify.html:97 share/html/Admin/Queues/Modify.html:136 share/html/Admin/Queues/People.html:130 share/html/Admin/Queues/Template.html:103 share/html/Admin/Users/GnuPG.html:75 share/html/Admin/Users/Modify.html:231 share/html/Dashboards/Modify.html:78 share/html/Dashboards/Subscription.html:178 share/html/Prefs/Other.html:78 share/html/Prefs/Quicksearch.html:66 share/html/Prefs/Search.html:71 share/html/Prefs/SearchOptions.html:65 share/html/SelfService/Prefs.html:61 share/html/Ticket/Elements/PreviewScrips:98 share/html/Ticket/Modify.html:65 share/html/Ticket/ModifyAll.html:150 share/html/Ticket/ModifyDates.html:63 share/html/Ticket/ModifyLinks.html:65 share/html/Ticket/ModifyPeople.html:63 share/html/User/Groups/Modify.html:79
 msgid "Save Changes"
 msgstr "Változtatások mentése"
 
-#: share/html/User/Prefs.html:206
+#: share/html/User/Prefs.html:192
 msgid "Save Preferences"
 msgstr "Beállítások mentése"
 
@@ -5560,11 +5652,11 @@ msgstr ""
 msgid "Saved Search %1 not found"
 msgstr ""
 
-#: share/html/Search/Chart.html:96
+#: share/html/Search/Chart.html:98
 msgid "Saved charts"
 msgstr ""
 
-#: share/html/Search/Elements/EditSearches:135 share/html/Widgets/SavedSearch:159
+#: share/html/Search/Elements/EditSearches:135 share/html/Widgets/SavedSearch:185
 msgid "Saved searches"
 msgstr "Elmentett lekérdezés"
 
@@ -5590,7 +5682,7 @@ msgstr "Scrip törölve"
 msgid "Scrips"
 msgstr "Scrips"
 
-#: share/html/Ticket/Update.html:149
+#: share/html/Ticket/Update.html:155
 msgid "Scrips and Recipients"
 msgstr ""
 
@@ -5618,7 +5710,7 @@ msgstr ""
 msgid "Search for tickets. Enter <strong>id</strong> numbers, <strong>queues</strong> by name, Owners by <strong>username</strong> and Requestors by <strong>email address</strong>."
 msgstr ""
 
-#: share/html/User/Elements/Tabs:70
+#: share/html/User/Elements/Tabs:73
 msgid "Search options"
 msgstr ""
 
@@ -5635,7 +5727,7 @@ msgstr ""
 msgid "Searching the full text of every ticket can take a long time, but if you need to do it, you can search for any word in full ticket history for any word by typing <b>fulltext:<i>word</i></b>."
 msgstr ""
 
-#: share/html/User/Prefs.html:194
+#: share/html/User/Prefs.html:180
 msgid "Secret authentication token"
 msgstr ""
 
@@ -5643,31 +5735,31 @@ msgstr ""
 msgid "Security:"
 msgstr "Biztonság:"
 
-#: share/html/Elements/ShowCustomFields:108
+#: share/html/Elements/ShowCustomFields:111
 msgid "See also:"
 msgstr ""
 
-#: lib/RT/Queue_Overlay.pm:96
+#: lib/RT/Queue_Overlay.pm:92
 msgid "See custom field values"
 msgstr ""
 
-#: lib/RT/CustomField_Overlay.pm:112
+#: lib/RT/CustomField_Overlay.pm:113
 msgid "See custom fields"
 msgstr "Eyéni mezõk"
 
-#: lib/RT/Queue_Overlay.pm:107
+#: lib/RT/Queue_Overlay.pm:103
 msgid "See exact outgoing email messages and their recipeients"
 msgstr ""
 
-#: lib/RT/Queue_Overlay.pm:106
+#: lib/RT/Queue_Overlay.pm:102
 msgid "See ticket private commentary"
 msgstr ""
 
-#: lib/RT/Queue_Overlay.pm:105
+#: lib/RT/Queue_Overlay.pm:101
 msgid "See ticket summaries"
 msgstr ""
 
-#: lib/RT/CustomField_Overlay.pm:112 lib/RT/Queue_Overlay.pm:96
+#: lib/RT/CustomField_Overlay.pm:113 lib/RT/Queue_Overlay.pm:92
 msgid "SeeCustomField"
 msgstr ""
 
@@ -5687,7 +5779,7 @@ msgstr ""
 msgid "SeeOwnDashboard"
 msgstr ""
 
-#: lib/RT/Queue_Overlay.pm:91
+#: lib/RT/Queue_Overlay.pm:87
 msgid "SeeQueue"
 msgstr ""
 
@@ -5699,7 +5791,7 @@ msgstr ""
 msgid "Select Database Type"
 msgstr ""
 
-#: share/html/Admin/CustomFields/index.html:48 share/html/Admin/CustomFields/index.html:51
+#: share/html/Admin/CustomFields/index.html:97
 msgid "Select a Custom Field"
 msgstr "Válasszon egy egyéni mezõt!"
 
@@ -5755,11 +5847,11 @@ msgstr "Dashboard kiválasztása"
 msgid "Select group"
 msgstr "Válasszon csoportot!"
 
-#: lib/RT/CustomField_Overlay.pm:60
+#: lib/RT/CustomField_Overlay.pm:61
 msgid "Select multiple values"
 msgstr "Válasszon több értéket!"
 
-#: lib/RT/CustomField_Overlay.pm:61
+#: lib/RT/CustomField_Overlay.pm:62
 msgid "Select one value"
 msgstr "Válasszon értéket!"
 
@@ -5779,7 +5871,7 @@ msgstr "Válasszon Scripet!"
 msgid "Select template"
 msgstr "Válasszon sablont!"
 
-#: lib/RT/CustomField_Overlay.pm:62
+#: lib/RT/CustomField_Overlay.pm:63
 msgid "Select up to %1 values"
 msgstr "Válasszon (legfeljebb %1) értéket!"
 
@@ -5787,23 +5879,23 @@ msgstr "Válasszon (legfeljebb %1) értéket!"
 msgid "Select user"
 msgstr "Válasszon felhasználót"
 
-#: share/html/Admin/Elements/EditCustomFields:60
+#: share/html/Admin/Elements/EditCustomFields:55
 msgid "Selected Custom Fields"
 msgstr "Kiválasztott egy egyéni mezõk"
 
-#: lib/RT/Crypt/GnuPG.pm:1985
+#: lib/RT/Crypt/GnuPG.pm:2022
 msgid "Selected key either is not trusted or doesn't exist anymore."
 msgstr ""
 
-#: share/html/Admin/CustomFields/Objects.html:61
+#: share/html/Admin/CustomFields/Objects.html:70
 msgid "Selected objects"
 msgstr "Kiválasztott problémák"
 
-#: share/html/Widgets/SelectionBox:228
+#: share/html/Widgets/SelectionBox:231
 msgid "Selections modified. Please save your changes"
 msgstr ""
 
-#: lib/RT/Interface/Email.pm:677
+#: lib/RT/Interface/Email.pm:719
 msgid "Send email successfully"
 msgstr ""
 
@@ -5875,7 +5967,11 @@ msgstr "Szeptember"
 msgid "Settings"
 msgstr "Beállítások"
 
-#: share/html/Ticket/Elements/ShowTransaction:168
+#: lib/RT/Config.pm:375
+msgid "Should RT send you mail for ticket updates you make?"
+msgstr ""
+
+#: share/html/Ticket/Elements/ShowTransaction:170
 msgid "Show"
 msgstr ""
 
@@ -5887,7 +5983,7 @@ msgstr "Lezárások"
 msgid "Show Columns"
 msgstr "Látható mezõk"
 
-#: share/html/Ticket/Elements/Tabs:309
+#: share/html/Ticket/Elements/Tabs:314
 msgid "Show Results"
 msgstr "Lekérdezés eredménye"
 
@@ -5904,7 +6000,7 @@ msgstr "Láthatóak legyenek a felszabadított problémák"
 msgid "Show as well"
 msgstr ""
 
-#: share/html/Ticket/Create.html:407
+#: share/html/Ticket/Create.html:434
 msgid "Show basics"
 msgstr "Problémaleírás"
 
@@ -5912,7 +6008,7 @@ msgstr "Problémaleírás"
 msgid "Show denied requests"
 msgstr "láthatóak legyenek az elutasított problémák"
 
-#: share/html/Ticket/Create.html:410
+#: share/html/Ticket/Create.html:437
 msgid "Show details"
 msgstr "Attribútumok"
 
@@ -5932,7 +6028,7 @@ msgstr "Láthatóak legyenek a folyamatban levõ problémák"
 msgid "Show requests awaiting other approvals"
 msgstr "Láthatóak legyenek a mások engedélyezésére váró problémák"
 
-#: lib/RT/Queue_Overlay.pm:93
+#: lib/RT/Queue_Overlay.pm:89
 msgid "ShowACL"
 msgstr ""
 
@@ -5944,7 +6040,7 @@ msgstr ""
 msgid "ShowConfigTab"
 msgstr ""
 
-#: lib/RT/Queue_Overlay.pm:107
+#: lib/RT/Queue_Overlay.pm:103
 msgid "ShowOutgoingEmail"
 msgstr ""
 
@@ -5952,23 +6048,23 @@ msgstr ""
 msgid "ShowSavedSearches"
 msgstr ""
 
-#: lib/RT/Queue_Overlay.pm:103
+#: lib/RT/Queue_Overlay.pm:99
 msgid "ShowScrips"
 msgstr ""
 
-#: lib/RT/Queue_Overlay.pm:100
+#: lib/RT/Queue_Overlay.pm:96
 msgid "ShowTemplate"
 msgstr ""
 
-#: lib/RT/Queue_Overlay.pm:105
+#: lib/RT/Queue_Overlay.pm:101
 msgid "ShowTicket"
 msgstr ""
 
-#: lib/RT/Queue_Overlay.pm:106
+#: lib/RT/Queue_Overlay.pm:102
 msgid "ShowTicketComments"
 msgstr ""
 
-#: share/html/Admin/Elements/ToolTabs:60 share/html/Admin/Tools/Shredder/index.html:78 share/html/Ticket/Elements/Tabs:298
+#: share/html/Admin/Elements/ToolTabs:60 share/html/Admin/Tools/Shredder/index.html:78 share/html/Ticket/Elements/Tabs:303
 msgid "Shredder"
 msgstr ""
 
@@ -5977,11 +6073,11 @@ msgstr ""
 msgid "Shredder needs a directory to write dumps to. Please check that you have <span class=\"file-path\">%1</span> and it is writable by your web server."
 msgstr ""
 
-#: share/html/Dashboards/Queries.html:182
+#: share/html/Dashboards/Queries.html:184
 msgid "Sidebar"
 msgstr ""
 
-#: share/html/Elements/GnuPG/SignEncryptWidget:49
+#: share/html/Elements/GnuPG/SignEncryptWidget:49 share/html/Elements/RT__Queue/ColumnMap:80
 msgid "Sign"
 msgstr ""
 
@@ -5989,23 +6085,23 @@ msgstr ""
 msgid "Sign by default"
 msgstr ""
 
-#: lib/RT/Queue_Overlay.pm:109
+#: lib/RT/Queue_Overlay.pm:105
 msgid "Sign up as a ticket Requestor or ticket or queue Cc"
 msgstr ""
 
-#: lib/RT/Queue_Overlay.pm:110
+#: lib/RT/Queue_Overlay.pm:106
 msgid "Sign up as a ticket or queue AdminCc"
 msgstr ""
 
-#: share/html/Admin/Users/Modify.html:234 share/html/User/Prefs.html:186
+#: share/html/Admin/Users/Modify.html:219 share/html/User/Prefs.html:172
 msgid "Signature"
 msgstr "Aláírás (e-mail-hez)"
 
-#: lib/RT/Queue_Overlay.pm:524
+#: lib/RT/Queue_Overlay.pm:520
 msgid "Signing disabled"
 msgstr ""
 
-#: lib/RT/Queue_Overlay.pm:523
+#: lib/RT/Queue_Overlay.pm:519
 msgid "Signing enabled"
 msgstr ""
 
@@ -6021,7 +6117,7 @@ msgstr ""
 msgid "Site name"
 msgstr ""
 
-#: share/html/Search/Elements/EditFormat:76
+#: share/html/Admin/Tools/Configuration.html:152 share/html/Search/Elements/EditFormat:76
 msgid "Size"
 msgstr ""
 
@@ -6041,12 +6137,20 @@ msgstr "Kicsi"
 msgid "Some browsers may only load content from the same domain as your RT server."
 msgstr ""
 
+#: share/html/Admin/CustomFields/Objects.html:113
+msgid "Something wrong. Contact system administrator"
+msgstr ""
+
 #: share/html/Admin/Elements/AddCustomFieldValue:53 share/html/Admin/Elements/EditCustomFieldValues:57
 msgid "Sort"
 msgstr "Rendezés"
 
 #: share/html/Search/Elements/DisplayOptions:48
 msgid "Sorting"
+msgstr ""
+
+#: share/html/Admin/Tools/Configuration.html:207 share/html/Admin/Tools/Configuration.html:66
+msgid "Source"
 msgstr ""
 
 #: sbin/rt-email-digest:94
@@ -6057,7 +6161,7 @@ msgstr ""
 msgid "Spreadsheet"
 msgstr ""
 
-#: share/html/Admin/Elements/EditScrip:81 share/html/Elements/RT__Scrip/ColumnMap:93
+#: share/html/Admin/Elements/EditScrip:82 share/html/Elements/RT__Scrip/ColumnMap:97
 msgid "Stage"
 msgstr ""
 
@@ -6069,7 +6173,7 @@ msgstr "Elkezdve"
 msgid "StartedRelative"
 msgstr ""
 
-#: lib/RT/Graph/Tickets.pm:159 lib/RT/Tickets_Overlay.pm:119 share/html/Elements/RT__Ticket/ColumnMap:188 share/html/Elements/RT__Ticket/ColumnMap:221 share/html/Elements/SelectDateType:54 share/html/Search/Elements/BuildFormatString:99 share/html/Ticket/Create.html:213 share/html/Ticket/Elements/EditDates:50 share/html/Ticket/Elements/ShowDates:54
+#: lib/RT/Graph/Tickets.pm:159 lib/RT/Tickets_Overlay.pm:119 share/html/Elements/RT__Ticket/ColumnMap:188 share/html/Elements/RT__Ticket/ColumnMap:221 share/html/Elements/SelectDateType:54 share/html/Search/Elements/BuildFormatString:99 share/html/Ticket/Create.html:215 share/html/Ticket/Elements/EditDates:50 share/html/Ticket/Elements/ShowDates:54
 msgid "Starts"
 msgstr "Kiosztva"
 
@@ -6077,11 +6181,11 @@ msgstr "Kiosztva"
 msgid "StartsRelative"
 msgstr ""
 
-#: share/html/Admin/Users/Modify.html:165 share/html/Elements/RT__User/ColumnMap:121 share/html/User/Prefs.html:151
+#: share/html/Admin/Users/Modify.html:150 share/html/Elements/RT__User/ColumnMap:121 share/html/User/Prefs.html:137
 msgid "State"
 msgstr "Állam"
 
-#: lib/RT/Graph/Tickets.pm:157 lib/RT/Ticket_Overlay.pm:910 lib/RT/Tickets_Overlay.pm:1852 lib/RT/Tickets_Overlay.pm:93 share/html/Elements/RT__Ticket/ColumnMap:104 share/html/Elements/RT__Ticket/ColumnMap:94 share/html/Search/Elements/BuildFormatString:99 share/html/Search/Elements/PickBasics:97 share/html/SelfService/Update.html:60 share/html/Ticket/Create.html:70 share/html/Ticket/Elements/EditBasics:55 share/html/Ticket/Elements/ShowBasics:54 share/html/Ticket/Graphs/Elements/ShowLegends:51 share/html/Ticket/Update.html:68 share/html/Tools/MyDay.html:67
+#: lib/RT/Graph/Tickets.pm:157 lib/RT/Ticket_Overlay.pm:914 lib/RT/Tickets_Overlay.pm:1925 lib/RT/Tickets_Overlay.pm:93 share/html/Elements/RT__Ticket/ColumnMap:104 share/html/Elements/RT__Ticket/ColumnMap:94 share/html/Search/Elements/BuildFormatString:99 share/html/Search/Elements/PickBasics:97 share/html/SelfService/Update.html:60 share/html/Ticket/Create.html:70 share/html/Ticket/Elements/EditBasics:55 share/html/Ticket/Elements/ShowBasics:54 share/html/Ticket/Graphs/Elements/ShowLegends:51 share/html/Ticket/Update.html:68 share/html/Tools/MyDay.html:67
 msgid "Status"
 msgstr "Státusz"
 
@@ -6094,15 +6198,15 @@ msgstr ""
 msgid "Status changed from %1 to %2"
 msgstr "Státusz változtatása: '%1' --> '%2'"
 
-#: share/html/Ticket/Elements/Tabs:212
+#: share/html/Ticket/Elements/Tabs:216
 msgid "Steal"
 msgstr "Elcsen"
 
-#: lib/RT/Queue_Overlay.pm:118
+#: lib/RT/Queue_Overlay.pm:114
 msgid "Steal tickets"
 msgstr "Problémák elcsenése"
 
-#: lib/RT/Queue_Overlay.pm:118
+#: lib/RT/Queue_Overlay.pm:114
 msgid "StealTicket"
 msgstr ""
 
@@ -6130,7 +6234,7 @@ msgstr "Probléma elcsenése %1 tulajdonostól "
 msgid "Style"
 msgstr ""
 
-#: lib/RT/Graph/Tickets.pm:157 lib/RT/Ticket_Overlay.pm:906 lib/RT/Tickets_Overlay.pm:125 lib/RT/Tickets_Overlay.pm:1934 share/html/Admin/Tools/Shredder/Elements/Object/RT--Ticket:52 share/html/Elements/QuickCreate:53 share/html/Elements/RT__Ticket/ColumnMap:99 share/html/Elements/SelectAttachmentField:49 share/html/Search/Bulk.html:139 share/html/Search/Elements/BuildFormatString:99 share/html/SelfService/Create.html:83 share/html/SelfService/Update.html:68 share/html/Ticket/Create.html:111 share/html/Ticket/Elements/EditBasics:50 share/html/Ticket/Elements/Reminders:131 share/html/Ticket/Forward.html:64 share/html/Ticket/ModifyAll.html:103 share/html/Ticket/Update.html:101
+#: lib/RT/Graph/Tickets.pm:157 lib/RT/Ticket_Overlay.pm:910 lib/RT/Tickets_Overlay.pm:125 lib/RT/Tickets_Overlay.pm:2007 share/html/Admin/Tools/Shredder/Elements/Object/RT--Ticket:52 share/html/Elements/QuickCreate:53 share/html/Elements/RT__Ticket/ColumnMap:99 share/html/Elements/SelectAttachmentField:49 share/html/Search/Bulk.html:141 share/html/Search/Elements/BuildFormatString:99 share/html/SelfService/Create.html:83 share/html/SelfService/Update.html:68 share/html/Ticket/Create.html:111 share/html/Ticket/Elements/EditBasics:50 share/html/Ticket/Elements/Reminders:131 share/html/Ticket/Forward.html:64 share/html/Ticket/ModifyAll.html:104 share/html/Ticket/Update.html:102
 msgid "Subject"
 msgstr "Tárgy"
 
@@ -6143,7 +6247,11 @@ msgstr ""
 msgid "Subject changed to %1"
 msgstr ""
 
-#: lib/RT/Queue_Overlay.pm:582
+#: share/html/Elements/RT__Queue/ColumnMap:76
+msgid "SubjectTag"
+msgstr ""
+
+#: lib/RT/Queue_Overlay.pm:578
 #. ((defined $value && length $value)? $value : $self->loc("(no value)"))
 msgid "SubjectTag changed to %1"
 msgstr ""
@@ -6187,11 +6295,11 @@ msgstr ""
 msgid "Succeeded"
 msgstr "Sikerült"
 
-#: lib/RT/Attachment_Overlay.pm:727
+#: lib/RT/Attachment_Overlay.pm:724
 msgid "Successfuly decrypted data"
 msgstr ""
 
-#: lib/RT/Attachment_Overlay.pm:692
+#: lib/RT/Attachment_Overlay.pm:689
 msgid "Successfuly encrypted data"
 msgstr ""
 
@@ -6211,7 +6319,7 @@ msgstr ""
 msgid "SuperUser"
 msgstr ""
 
-#: lib/RT/Config.pm:348
+#: lib/RT/Config.pm:364
 msgid "Suspended"
 msgstr ""
 
@@ -6231,7 +6339,7 @@ msgstr ""
 msgid "System Default"
 msgstr ""
 
-#: lib/RT/ACE_Overlay.pm:364 lib/RT/Interface/Web.pm:1297 share/html/Admin/Elements/SelectRights:111
+#: lib/RT/ACE_Overlay.pm:364 lib/RT/Interface/Web.pm:1381 share/html/Admin/Elements/SelectRights:111
 msgid "System Error"
 msgstr "Rendszerhiba"
 
@@ -6264,15 +6372,15 @@ msgstr ""
 msgid "SystemRolegroup for internal use"
 msgstr ""
 
-#: etc/initialdata:566 share/html/Search/Elements/EditFormat:70 share/html/Ticket/Elements/Tabs:205
+#: etc/initialdata:566 share/html/Search/Elements/EditFormat:70 share/html/Ticket/Elements/Tabs:209
 msgid "Take"
 msgstr "Atvesz"
 
-#: lib/RT/Queue_Overlay.pm:117
+#: lib/RT/Queue_Overlay.pm:113
 msgid "Take tickets"
 msgstr "Problémák átvétele"
 
-#: lib/RT/Queue_Overlay.pm:117
+#: lib/RT/Queue_Overlay.pm:113
 msgid "TakeTicket"
 msgstr ""
 
@@ -6284,7 +6392,7 @@ msgstr "Átvéve"
 msgid "Tell us a little about how to find the database RT will be using"
 msgstr ""
 
-#: share/html/Admin/Elements/EditScrip:74 share/html/Elements/RT__Scrip/ColumnMap:76 share/html/Tools/Offline.html:79
+#: share/html/Admin/Elements/EditScrip:75 share/html/Elements/RT__Scrip/ColumnMap:80 share/html/Tools/Offline.html:79
 msgid "Template"
 msgstr "Sablon"
 
@@ -6293,7 +6401,7 @@ msgstr "Sablon"
 msgid "Template #%1"
 msgstr "Sablon #%1"
 
-#: share/html/Admin/Elements/EditTemplates:114
+#: share/html/Admin/Elements/EditTemplates:111
 #. ($id)
 msgid "Template #%1 deleted"
 msgstr ""
@@ -6335,19 +6443,19 @@ msgstr "Sablonok"
 msgid "Text"
 msgstr "Szöveg"
 
-#: share/html/Ticket/Elements/ShowTransactionAttachments:155
+#: share/html/Ticket/Elements/ShowTransactionAttachments:158
 msgid "Text file is not shown because it is disabled in preferences."
 msgstr ""
 
-#: lib/RT/CustomField_Overlay.pm:916 lib/RT/Record.pm:919
+#: lib/RT/Record.pm:919
 msgid "That is already the current value"
 msgstr "Már ez az aktuális érték"
 
-#: lib/RT/CustomField_Overlay.pm:441
+#: lib/RT/CustomField_Overlay.pm:442
 msgid "That is not a value for this custom field"
 msgstr "Egyéni mezõhöz érvénytelen értek"
 
-#: lib/RT/Ticket_Overlay.pm:1701
+#: lib/RT/Ticket_Overlay.pm:1714
 msgid "That is the same value"
 msgstr "Ez ugyanaz az érték"
 
@@ -6355,39 +6463,39 @@ msgstr "Ez ugyanaz az érték"
 msgid "That principal already has that right"
 msgstr "A felhasználónak/csoportnak mát van ilyen joga"
 
-#: lib/RT/Queue_Overlay.pm:838
+#: lib/RT/Queue_Overlay.pm:843
 #. ($args{'Type'})
 msgid "That principal is already a %1 for this queue"
 msgstr "A vezetõ már %1-a a sornak"
 
-#: lib/RT/Ticket_Overlay.pm:1126
+#: lib/RT/Ticket_Overlay.pm:1138
 #. ($self->loc($args{'Type'}))
 msgid "That principal is already a %1 for this ticket"
 msgstr "A vezetõ már %1-a a problémának"
 
-#: lib/RT/Queue_Overlay.pm:954
+#: lib/RT/Queue_Overlay.pm:959
 #. ($args{'Type'})
 msgid "That principal is not a %1 for this queue"
 msgstr "A vezetõ már nem %1-a a sornak"
 
-#: lib/RT/Ticket_Overlay.pm:1248
+#: lib/RT/Ticket_Overlay.pm:1260
 #. ($args{'Type'})
 msgid "That principal is not a %1 for this ticket"
 msgstr ""
 
-#: lib/RT/Ticket_Overlay.pm:1697
+#: lib/RT/Ticket_Overlay.pm:1710
 msgid "That queue does not exist"
 msgstr "Ez a sor nem létezik"
 
-#: lib/RT/Ticket_Overlay.pm:2972
+#: lib/RT/Ticket_Overlay.pm:2999
 msgid "That ticket has unresolved dependencies"
 msgstr ""
 
-#: lib/RT/Action/CreateTickets.pm:484 lib/RT/Ticket_Overlay.pm:2789
+#: lib/RT/Action/CreateTickets.pm:482 lib/RT/Ticket_Overlay.pm:2816
 msgid "That user already owns that ticket"
 msgstr "Már ez a felhasználó a tulajdonos!"
 
-#: lib/RT/Ticket_Overlay.pm:2732
+#: lib/RT/Ticket_Overlay.pm:2759
 msgid "That user does not exist"
 msgstr "Ilyen felhasználó nem létezik"
 
@@ -6407,7 +6515,7 @@ msgstr "A felhasználó mostantól kiemelt"
 msgid "That user is now unprivileged"
 msgstr "A felhasználó mostantól nem kiemelt"
 
-#: lib/RT/Ticket_Overlay.pm:2782
+#: lib/RT/Ticket_Overlay.pm:2809
 msgid "That user may not own tickets in that queue"
 msgstr "a felhasználóhoz nem tartozhatnak problémák ebbõl a sorból"
 
@@ -6415,7 +6523,7 @@ msgstr "a felhasználóhoz nem tartozhatnak problémák ebbõl a sorból"
 msgid "That's not a numerical id"
 msgstr ""
 
-#: share/html/SelfService/Display.html:57 share/html/Ticket/Create.html:176 share/html/Ticket/Elements/ShowSummary:51
+#: share/html/SelfService/Display.html:57 share/html/Ticket/Create.html:178 share/html/Ticket/Elements/ShowSummary:53
 msgid "The Basics"
 msgstr "Alapadatok"
 
@@ -6443,27 +6551,27 @@ msgstr ""
 msgid "The following queries have been deleted and each will be removed from the dashboard once its pane is updated."
 msgstr ""
 
-#: share/html/Dashboards/Elements/HiddenSearches:71
+#: share/html/Dashboards/Elements/HiddenSearches:74
 msgid "The following queries may not be visible to all users who can see this dashboard."
 msgstr ""
 
-#: lib/RT/Crypt/GnuPG.pm:2159
+#: lib/RT/Crypt/GnuPG.pm:2196
 msgid "The key has been disabled"
 msgstr ""
 
-#: lib/RT/Crypt/GnuPG.pm:2165
+#: lib/RT/Crypt/GnuPG.pm:2202
 msgid "The key has been revoked"
 msgstr ""
 
-#: lib/RT/Crypt/GnuPG.pm:2170
+#: lib/RT/Crypt/GnuPG.pm:2207
 msgid "The key has expired"
 msgstr ""
 
-#: lib/RT/Crypt/GnuPG.pm:2203
+#: lib/RT/Crypt/GnuPG.pm:2240
 msgid "The key is fully trusted"
 msgstr ""
 
-#: lib/RT/Crypt/GnuPG.pm:2208
+#: lib/RT/Crypt/GnuPG.pm:2245
 msgid "The key is ultimately trusted"
 msgstr ""
 
@@ -6496,7 +6604,7 @@ msgstr ""
 msgid "Theme"
 msgstr ""
 
-#: lib/RT/Crypt/GnuPG.pm:2012
+#: lib/RT/Crypt/GnuPG.pm:2049
 msgid "There are several keys suitable for encryption."
 msgstr ""
 
@@ -6505,15 +6613,15 @@ msgstr ""
 msgid "There are unread messages on this ticket."
 msgstr ""
 
-#: lib/RT/Crypt/GnuPG.pm:2198
+#: lib/RT/Crypt/GnuPG.pm:2235
 msgid "There is marginal trust in this key"
 msgstr ""
 
-#: lib/RT/Crypt/GnuPG.pm:2004
+#: lib/RT/Crypt/GnuPG.pm:2041
 msgid "There is no key suitable for encryption."
 msgstr ""
 
-#: lib/RT/Crypt/GnuPG.pm:2008
+#: lib/RT/Crypt/GnuPG.pm:2045
 msgid "There is one suitable key, but trust level is not set."
 msgstr ""
 
@@ -6525,7 +6633,7 @@ msgstr ""
 msgid "These configuration options cover some of the basics needed to get RT up and running.  We need to know the name of your RT installation and the domain name where RT will live.  You will also need to set a password for your default administrative user."
 msgstr ""
 
-#: lib/RT/CustomField_Overlay.pm:950
+#: lib/RT/CustomField_Overlay.pm:1093
 msgid "This custom field does not apply to that object"
 msgstr ""
 
@@ -6581,24 +6689,29 @@ msgstr "%1. számú (%2) probléma jellemzõinek módosítása"
 msgid "Ticket #%1 relationships graph"
 msgstr ""
 
+#: share/html/Ticket/Elements/ShowTransaction:147
+#. ($Transaction->Ticket)
+msgid "Ticket #%1:"
+msgstr ""
+
 #: share/html/Approvals/Elements/ShowDependency:69
 #. ($link->BaseObj->Id, $link->BaseObj->Subject)
 msgid "Ticket #%1: %2"
 msgstr "Probléma. %1: %2"
 
-#: lib/RT/Action/CreateTickets.pm:1125 lib/RT/Action/CreateTickets.pm:1134 lib/RT/Action/CreateTickets.pm:379 lib/RT/Action/CreateTickets.pm:503 lib/RT/Action/CreateTickets.pm:515
+#: lib/RT/Action/CreateTickets.pm:1123 lib/RT/Action/CreateTickets.pm:1132 lib/RT/Action/CreateTickets.pm:378 lib/RT/Action/CreateTickets.pm:501 lib/RT/Action/CreateTickets.pm:513
 #. ($T::Tickets{$template_id}->Id)
 #. ($T::Tickets{$template_id}->id)
 #. ($ticket->Id)
 msgid "Ticket %1"
 msgstr "%1. probléma"
 
-#: lib/RT/Ticket_Overlay.pm:668 lib/RT/Ticket_Overlay.pm:692
+#: lib/RT/Ticket_Overlay.pm:672 lib/RT/Ticket_Overlay.pm:696
 #. ($self->Id, $QueueObj->Name)
 msgid "Ticket %1 created in queue '%2'"
 msgstr "A %1 számú probléma létre lett hozva a következő soron: '%2'"
 
-#: share/html/Search/Bulk.html:420 share/html/Tools/MyDay.html:100 share/html/Tools/MyDay.html:91 share/html/Tools/MyDay.html:94
+#: share/html/Search/Bulk.html:424 share/html/Tools/MyDay.html:100 share/html/Tools/MyDay.html:91 share/html/Tools/MyDay.html:94
 #. ($id, $msg)
 #. ($Ticket->Id, $_)
 msgid "Ticket %1: %2"
@@ -6617,27 +6730,27 @@ msgstr ""
 msgid "Ticket Resolved"
 msgstr "Pobléma megoldva"
 
-#: share/html/Elements/CollectionList:166 share/html/Elements/TicketList:64
+#: share/html/Elements/CollectionList:180 share/html/Elements/TicketList:64
 msgid "Ticket Search"
 msgstr "Probléma keresése"
 
-#: lib/RT/CustomField_Overlay.pm:1174 share/html/Admin/Elements/GlobalCustomFieldTabs:81 share/html/Admin/Global/CustomFields/index.html:89
+#: lib/RT/CustomField_Overlay.pm:1317 share/html/Admin/Elements/GlobalCustomFieldTabs:81 share/html/Admin/Global/CustomFields/index.html:89
 msgid "Ticket Transactions"
 msgstr "Probléma tranzakciói"
 
-#: lib/RT/Tickets_Overlay.pm:2121
+#: lib/RT/Tickets_Overlay.pm:2194
 msgid "Ticket content"
 msgstr "A probléma tartalma"
 
-#: lib/RT/Tickets_Overlay.pm:2170
+#: lib/RT/Tickets_Overlay.pm:2243
 msgid "Ticket content type"
 msgstr ""
 
-#: lib/RT/Ticket_Overlay.pm:490 lib/RT/Ticket_Overlay.pm:503 lib/RT/Ticket_Overlay.pm:514 lib/RT/Ticket_Overlay.pm:676
+#: lib/RT/Ticket_Overlay.pm:494 lib/RT/Ticket_Overlay.pm:507 lib/RT/Ticket_Overlay.pm:518 lib/RT/Ticket_Overlay.pm:680
 msgid "Ticket could not be created due to an internal error"
 msgstr ""
 
-#: share/html/Ticket/Create.html:255
+#: share/html/Ticket/Create.html:258
 msgid "Ticket could not be loaded"
 msgstr ""
 
@@ -6658,16 +6771,16 @@ msgstr "A probléma állapota megváltozott"
 msgid "TicketSQL search module"
 msgstr ""
 
-#: lib/RT/CustomField_Overlay.pm:1173 share/html/Admin/Elements/GlobalCustomFieldTabs:75 share/html/Admin/Global/CustomFields/index.html:83 share/html/Elements/Tabs:74 share/html/Search/Chart:110 share/html/Search/Elements/Chart:117
+#: lib/RT/CustomField_Overlay.pm:1316 share/html/Admin/Elements/GlobalCustomFieldTabs:75 share/html/Admin/Global/CustomFields/index.html:83 share/html/Elements/Tabs:74 share/html/Search/Chart:151 share/html/Search/Elements/Chart:107
 msgid "Tickets"
 msgstr "Problémák"
 
-#: lib/RT/Tickets_Overlay.pm:2341
+#: lib/RT/Tickets_Overlay.pm:2414
 #. ($self->loc( $args{'TYPE'} ),            $args{'BASE'},)
 msgid "Tickets %1 %2"
 msgstr ""
 
-#: lib/RT/Tickets_Overlay.pm:2296
+#: lib/RT/Tickets_Overlay.pm:2369
 #. ($self->loc( $args{'TYPE'} ),            $args{'TARGET'})
 msgid "Tickets %1 by %2"
 msgstr ""
@@ -6692,15 +6805,15 @@ msgstr ""
 msgid "Tickets which depend on this approval:"
 msgstr "Erre a jóváhagyásra váró problémák:"
 
-#: share/html/Elements/RT__Ticket/ColumnMap:169 share/html/Search/Elements/PickBasics:165 share/html/Ticket/Create.html:190 share/html/Ticket/Elements/EditBasics:74
+#: share/html/Elements/RT__Ticket/ColumnMap:169 share/html/Search/Elements/PickBasics:165 share/html/Ticket/Create.html:192 share/html/Ticket/Elements/EditBasics:74
 msgid "Time Estimated"
 msgstr "Becsült idő"
 
-#: lib/RT/Tickets_Overlay.pm:2092 share/html/Elements/RT__Ticket/ColumnMap:164 share/html/Search/Elements/PickBasics:166 share/html/Ticket/Create.html:200 share/html/Ticket/Elements/EditBasics:92
+#: lib/RT/Tickets_Overlay.pm:2165 share/html/Elements/RT__Ticket/ColumnMap:164 share/html/Search/Elements/PickBasics:166 share/html/Ticket/Create.html:202 share/html/Ticket/Elements/EditBasics:92
 msgid "Time Left"
 msgstr "Maradék idõ"
 
-#: lib/RT/Tickets_Overlay.pm:2067 share/html/Elements/RT__Ticket/ColumnMap:159 share/html/Search/Elements/PickBasics:164 share/html/Ticket/Create.html:195 share/html/Ticket/Elements/EditBasics:83
+#: lib/RT/Tickets_Overlay.pm:2140 share/html/Elements/RT__Ticket/ColumnMap:159 share/html/Search/Elements/PickBasics:164 share/html/Ticket/Create.html:197 share/html/Ticket/Elements/EditBasics:83
 msgid "Time Worked"
 msgstr "Ráfordított munkaidõ"
 
@@ -6724,7 +6837,7 @@ msgstr ""
 msgid "TimeLeft"
 msgstr ""
 
-#: lib/RT/Graph/Tickets.pm:157 lib/RT/Ticket_Overlay.pm:911 lib/RT/Tickets_Overlay.pm:105 share/html/Search/Elements/BuildFormatString:99
+#: lib/RT/Graph/Tickets.pm:157 lib/RT/Ticket_Overlay.pm:915 lib/RT/Tickets_Overlay.pm:105 share/html/Search/Elements/BuildFormatString:99
 msgid "TimeWorked"
 msgstr "Ráfordított munkaidõ"
 
@@ -6745,7 +6858,7 @@ msgstr ""
 msgid "To inquire about support, training, custom development or licensing, please contact %1."
 msgstr ""
 
-#: lib/RT/Graph/Tickets.pm:159 lib/RT/Ticket_Overlay.pm:914 lib/RT/Tickets_Overlay.pm:118 share/html/Elements/RT__Ticket/ColumnMap:198 share/html/Elements/RT__Ticket/ColumnMap:231 share/html/Search/Elements/BuildFormatString:99
+#: lib/RT/Graph/Tickets.pm:159 lib/RT/Ticket_Overlay.pm:918 lib/RT/Tickets_Overlay.pm:118 share/html/Elements/RT__Ticket/ColumnMap:198 share/html/Elements/RT__Ticket/ColumnMap:231 share/html/Search/Elements/BuildFormatString:99
 msgid "Told"
 msgstr "Beérkezett"
 
@@ -6757,7 +6870,7 @@ msgstr ""
 msgid "Tools"
 msgstr "Eszközök"
 
-#: share/html/Search/Elements/Chart:138
+#: share/html/Search/Elements/Chart:144
 msgid "Total"
 msgstr ""
 
@@ -6806,16 +6919,16 @@ msgstr "K"
 msgid "Tuesday"
 msgstr ""
 
-#: lib/RT/Ticket_Overlay.pm:912 lib/RT/Tickets_Overlay.pm:1906 lib/RT/Tickets_Overlay.pm:95 share/html/Admin/CustomFields/Modify.html:67 share/html/Admin/Elements/EditCustomField:67 share/html/Elements/RT__Ticket/ColumnMap:153 share/html/Search/Elements/BuildFormatString:99 share/html/Ticket/Elements/AddWatchers:56 share/html/Ticket/Elements/AddWatchers:67 share/html/Ticket/Elements/AddWatchers:77
+#: lib/RT/Ticket_Overlay.pm:916 lib/RT/Tickets_Overlay.pm:1979 lib/RT/Tickets_Overlay.pm:95 share/html/Admin/CustomFields/Modify.html:67 share/html/Admin/Elements/EditCustomField:67 share/html/Elements/RT__Ticket/ColumnMap:153 share/html/Search/Elements/BuildFormatString:99 share/html/Ticket/Elements/AddWatchers:56 share/html/Ticket/Elements/AddWatchers:67 share/html/Ticket/Elements/AddWatchers:77
 msgid "Type"
 msgstr "Típus"
 
-#: lib/RT/CustomField_Overlay.pm:808
+#: lib/RT/CustomField_Overlay.pm:809
 #. ($self->FriendlyTypeComposite( $old ),        $self->FriendlyTypeComposite( $composite ),)
 msgid "Type changed from '%1' to '%2'"
 msgstr ""
 
-#: share/html/Search/Elements/EditSearches:255
+#: share/html/Search/Elements/EditSearches:262
 msgid "Unable to determine object type or id"
 msgstr ""
 
@@ -6832,15 +6945,15 @@ msgstr ""
 msgid "Unix login"
 msgstr ""
 
-#: lib/RT/Crypt/GnuPG.pm:2182 lib/RT/Crypt/GnuPG.pm:2187
+#: lib/RT/Crypt/GnuPG.pm:2219 lib/RT/Crypt/GnuPG.pm:2224
 msgid "Unknown (no trust value assigned)"
 msgstr ""
 
-#: lib/RT/Crypt/GnuPG.pm:2192
+#: lib/RT/Crypt/GnuPG.pm:2229
 msgid "Unknown (this value is new to the system)"
 msgstr ""
 
-#: lib/RT/Attachment_Overlay.pm:305 lib/RT/Record.pm:804
+#: lib/RT/Attachment_Overlay.pm:306 lib/RT/Record.pm:804
 #. ($self->ContentEncoding)
 #. ($ContentEncoding)
 msgid "Unknown ContentEncoding %1"
@@ -6867,15 +6980,15 @@ msgstr "Névtelen lekérdezés"
 msgid "Unprivileged"
 msgstr "Nem kiemelt"
 
-#: share/html/Admin/Elements/EditCustomFields:62
+#: share/html/Admin/Elements/EditCustomFields:74
 msgid "Unselected Custom Fields"
 msgstr "Inaktív egyéni mezõk"
 
-#: share/html/Admin/CustomFields/Objects.html:63
+#: share/html/Admin/CustomFields/Objects.html:87
 msgid "Unselected objects"
 msgstr "Inaktív objektumok"
 
-#: lib/RT/User_Overlay.pm:1684 lib/RT/User_Overlay.pm:1700
+#: lib/RT/User_Overlay.pm:1749 lib/RT/User_Overlay.pm:1765
 msgid "Unset private key"
 msgstr ""
 
@@ -6883,7 +6996,7 @@ msgstr ""
 msgid "Untaken"
 msgstr "Probléma visszaadása"
 
-#: share/html/Admin/Users/Memberships.html:88 share/html/Elements/RT__Ticket/ColumnMap:301 share/html/Search/Bulk.html:217 share/html/Search/Bulk.html:82 share/html/Search/Elements/EditSearches:70
+#: share/html/Admin/Users/Memberships.html:88 share/html/Elements/RT__Ticket/ColumnMap:301 share/html/Search/Bulk.html:221 share/html/Search/Bulk.html:84 share/html/Search/Elements/EditSearches:70 share/html/Widgets/SelectionBox:224
 msgid "Update"
 msgstr "Frissít"
 
@@ -6891,27 +7004,27 @@ msgstr "Frissít"
 msgid "Update All"
 msgstr "Mindet frissíti"
 
-#: share/html/Search/Chart.html:92 share/html/Ticket/Graphs/Elements/EditGraphProperties:121
+#: share/html/Search/Chart.html:94 share/html/Ticket/Graphs/Elements/EditGraphProperties:121
 msgid "Update Graph"
 msgstr ""
 
-#: share/html/Ticket/Update.html:147
+#: share/html/Ticket/Update.html:153
 msgid "Update Ticket"
 msgstr "Probléma frissítése"
 
-#: share/html/Search/Bulk.html:133 share/html/Ticket/ModifyAll.html:90 share/html/Ticket/Update.html:91
+#: share/html/Search/Bulk.html:135 share/html/Ticket/ModifyAll.html:90 share/html/Ticket/Update.html:91
 msgid "Update Type"
 msgstr "Frissítés típusa"
 
-#: share/html/Search/Build.html:109
+#: share/html/Search/Build.html:111
 msgid "Update format and Search"
 msgstr ""
 
-#: share/html/Search/Bulk.html:228
+#: share/html/Search/Bulk.html:232
 msgid "Update multiple tickets"
 msgstr "A kiválasztott problémák frissítése"
 
-#: lib/RT/Action/CreateTickets.pm:524 lib/RT/Interface/Web.pm:1144
+#: lib/RT/Action/CreateTickets.pm:522 lib/RT/Interface/Web.pm:1232
 msgid "Update not recorded."
 msgstr ""
 
@@ -6928,12 +7041,12 @@ msgstr ""
 msgid "Update ticket #%1"
 msgstr ""
 
-#: share/html/Ticket/Update.html:178
+#: share/html/Ticket/Update.html:184
 #. ($TicketObj->id, $TicketObj->Subject)
 msgid "Update ticket #%1 (%2)"
 msgstr "%1. számú (%2) probléma aktualizálása"
 
-#: lib/RT/Action/CreateTickets.pm:522 lib/RT/Interface/Web.pm:1144
+#: lib/RT/Action/CreateTickets.pm:520 lib/RT/Interface/Web.pm:1232
 msgid "Update type was neither correspondence nor comment."
 msgstr ""
 
@@ -6941,11 +7054,11 @@ msgstr ""
 msgid "UpdateStatus"
 msgstr ""
 
-#: lib/RT/CustomField_Overlay.pm:1249 lib/RT/Ticket_Overlay.pm:915 lib/RT/Tickets_Overlay.pm:141 share/html/Elements/SelectDateType:56 share/html/Ticket/Elements/ShowDates:79
+#: lib/RT/CustomField_Overlay.pm:1392 lib/RT/Ticket_Overlay.pm:919 lib/RT/Tickets_Overlay.pm:141 share/html/Elements/SelectDateType:56 share/html/Ticket/Elements/ShowDates:79
 msgid "Updated"
 msgstr "Frissítve"
 
-#: share/html/Search/Elements/EditSearches:257
+#: share/html/Search/Elements/EditSearches:264
 #. ($desc)
 msgid "Updated saved search \"%1\""
 msgstr ""
@@ -6954,27 +7067,27 @@ msgstr ""
 msgid "Upload"
 msgstr "Feltöltés"
 
-#: lib/RT/CustomField_Overlay.pm:85
+#: lib/RT/CustomField_Overlay.pm:86
 msgid "Upload multiple files"
 msgstr "Több fájl feltöltése egyszerre"
 
-#: lib/RT/CustomField_Overlay.pm:80
+#: lib/RT/CustomField_Overlay.pm:81
 msgid "Upload multiple images"
 msgstr "Több kép feltöltése egyszerre"
 
-#: lib/RT/CustomField_Overlay.pm:86
+#: lib/RT/CustomField_Overlay.pm:87
 msgid "Upload one file"
 msgstr "Egy fájl feltöltése"
 
-#: lib/RT/CustomField_Overlay.pm:81
+#: lib/RT/CustomField_Overlay.pm:82
 msgid "Upload one image"
 msgstr "Egy kép feltöltése"
 
-#: lib/RT/CustomField_Overlay.pm:87
+#: lib/RT/CustomField_Overlay.pm:88
 msgid "Upload up to %1 files"
 msgstr ""
 
-#: lib/RT/CustomField_Overlay.pm:82
+#: lib/RT/CustomField_Overlay.pm:83
 msgid "Upload up to %1 images"
 msgstr ""
 
@@ -7003,8 +7116,8 @@ msgstr ""
 msgid "Use other RT administrative tools"
 msgstr ""
 
-#: share/html/Widgets/Form/Select:120
-#. (join ', ', map{ loc($ValuesLabel{$_} || $_) } @DefaultValue)
+#: share/html/Widgets/Form/Select:123
+#. (join ', ', map loc($ValuesLabel{$_} || $_), grep defined,            @DefaultValue)
 msgid "Use system default (%1)"
 msgstr ""
 
@@ -7016,7 +7129,7 @@ msgstr ""
 msgid "User"
 msgstr ""
 
-#: lib/RT/Ticket_Overlay.pm:399
+#: lib/RT/Ticket_Overlay.pm:403
 #. ($args{'Owner'})
 msgid "User '%1' could not be found."
 msgstr "'%1' felhasználó nem található"
@@ -7029,7 +7142,7 @@ msgstr ""
 msgid "User Defined"
 msgstr "Felhasználó által meghatározott"
 
-#: share/html/Admin/Elements/EditScrip:95
+#: share/html/Admin/Elements/EditScrip:96
 msgid "User Defined conditions and actions"
 msgstr ""
 
@@ -7037,12 +7150,12 @@ msgstr ""
 msgid "User Rights"
 msgstr "Felhasználói jogok"
 
-#: lib/RT/Interface/Web.pm:1672
+#: lib/RT/Interface/Web.pm:1756
 #. ($cf->Name, ref $args{'Object'},                    $args{'Object'}->id)
 msgid "User asked for an unknown update type for custom field %1 for %2 object #%3"
 msgstr ""
 
-#: share/html/Admin/Users/Modify.html:310
+#: share/html/Admin/Users/Modify.html:295
 #. ($msg)
 msgid "User could not be created: %1"
 msgstr ""
@@ -7055,11 +7168,11 @@ msgstr "Felhasználó létrehozva"
 msgid "User defined groups"
 msgstr "Felhasználó által definiált csoport"
 
-#: lib/RT/User_Overlay.pm:1151
+#: lib/RT/User_Overlay.pm:1216
 msgid "User disabled"
 msgstr ""
 
-#: lib/RT/User_Overlay.pm:1153
+#: lib/RT/User_Overlay.pm:1218
 msgid "User enabled"
 msgstr ""
 
@@ -7079,7 +7192,7 @@ msgstr ""
 msgid "User-defined groups"
 msgstr "Felhasználó által definiált csoportok"
 
-#: share/html/Admin/Users/Modify.html:71 share/html/Elements/Login:92 share/html/Ticket/Elements/AddWatchers:58
+#: share/html/Admin/Users/Modify.html:71 share/html/Elements/Login:107 share/html/Ticket/Elements/AddWatchers:58
 msgid "Username"
 msgstr "Felhasználó"
 
@@ -7087,7 +7200,7 @@ msgstr "Felhasználó"
 msgid "Username format"
 msgstr ""
 
-#: lib/RT/CustomField_Overlay.pm:1175 share/html/Admin/Elements/GlobalCustomFieldTabs:57 share/html/Admin/Elements/SelectNewGroupMembers:49 share/html/Admin/Elements/Tabs:55 share/html/Admin/Global/CustomFields/index.html:66 share/html/Admin/Groups/Members.html:75 share/html/Admin/Queues/People.html:91 share/html/Admin/index.html:58 share/html/User/Groups/Members.html:81
+#: lib/RT/CustomField_Overlay.pm:1318 share/html/Admin/Elements/GlobalCustomFieldTabs:57 share/html/Admin/Elements/SelectNewGroupMembers:49 share/html/Admin/Elements/Tabs:55 share/html/Admin/Global/CustomFields/index.html:66 share/html/Admin/Groups/Members.html:75 share/html/Admin/Queues/People.html:91 share/html/Admin/index.html:58 share/html/User/Groups/Members.html:81
 msgid "Users"
 msgstr "Felhasználók"
 
@@ -7108,12 +7221,24 @@ msgstr ""
 msgid "Validation"
 msgstr ""
 
+#: share/html/Admin/Tools/Configuration.html:123 share/html/Admin/Tools/Configuration.html:65
+msgid "Value"
+msgstr ""
+
 #: share/html/Admin/CustomFields/Modify.html:130 share/html/Admin/Elements/EditCustomField:80
 msgid "Values"
 msgstr "Értékek"
 
+#: share/html/Admin/Tools/Configuration.html:122
+msgid "Variable"
+msgstr ""
+
 #: share/html/Tools/index.html:70
 msgid "Various RT reports"
+msgstr ""
+
+#: share/html/Admin/Tools/Configuration.html:206
+msgid "Version"
 msgstr ""
 
 #: lib/RT/Group_Overlay.pm:97
@@ -7148,11 +7273,11 @@ msgstr ""
 msgid "Warning: you have no email address set, so you will not receive this dashboard until you have it set"
 msgstr ""
 
-#: lib/RT/Queue_Overlay.pm:109
+#: lib/RT/Queue_Overlay.pm:105
 msgid "Watch"
 msgstr ""
 
-#: lib/RT/Queue_Overlay.pm:110
+#: lib/RT/Queue_Overlay.pm:106
 msgid "WatchAsAdminCc"
 msgstr ""
 
@@ -7192,7 +7317,7 @@ msgstr "Sze"
 msgid "Wednesday"
 msgstr ""
 
-#: lib/RT/Config.pm:347
+#: lib/RT/Config.pm:363
 msgid "Weekly digest"
 msgstr ""
 
@@ -7284,7 +7409,7 @@ msgstr ""
 msgid "Wipeout"
 msgstr ""
 
-#: share/html/Admin/Users/Modify.html:191 share/html/User/Prefs.html:94
+#: share/html/Admin/Users/Modify.html:176 share/html/User/Prefs.html:94
 msgid "Work"
 msgstr "Munkahelyi"
 
@@ -7300,7 +7425,7 @@ msgstr "Munkaidõ"
 msgid "Yes"
 msgstr ""
 
-#: lib/RT/Ticket_Overlay.pm:2898
+#: lib/RT/Ticket_Overlay.pm:2925
 msgid "You already own this ticket"
 msgstr "Már az öné ez a probléma"
 
@@ -7325,11 +7450,15 @@ msgstr ""
 msgid "You can also edit the predefined search itself"
 msgstr ""
 
-#: lib/RT/Ticket_Overlay.pm:2775
+#: lib/RT/User_Overlay.pm:932
+msgid "You can not set password."
+msgstr ""
+
+#: lib/RT/Ticket_Overlay.pm:2802
 msgid "You can only reassign tickets that you own or that are unowned"
 msgstr ""
 
-#: lib/RT/Ticket_Overlay.pm:2771
+#: lib/RT/Ticket_Overlay.pm:2798
 msgid "You can only take tickets that are unowned"
 msgstr ""
 
@@ -7350,7 +7479,7 @@ msgstr "Kilépett a Request Tracker programból."
 msgid "You have no permission to create tickets in that queue."
 msgstr "Nincs joga létrehozni problémákat ebben a sorban"
 
-#: lib/RT/Ticket_Overlay.pm:1710
+#: lib/RT/Ticket_Overlay.pm:1723
 msgid "You may not create requests in that queue."
 msgstr "Nem hozhat létre problémákat ebben a sorban"
 
@@ -7374,6 +7503,14 @@ msgstr ""
 msgid "You're welcome to login again"
 msgstr "Itt ismét bejelentkezhetsz!"
 
+#: share/html/Elements/EditPassword:8
+msgid "Your current password"
+msgstr ""
+
+#: lib/RT/User_Overlay.pm:1108
+msgid "Your password is not set."
+msgstr ""
+
 #: NOT FOUND IN SOURCE
 msgid "Your request has been approved."
 msgstr "A problémája engedélyezve."
@@ -7386,9 +7523,17 @@ msgstr "A problémája elutasítva."
 msgid "Your username or password is incorrect"
 msgstr "A begépelt felhasználói név vagy jelszó hibás!"
 
-#: share/html/Admin/Users/Modify.html:171 share/html/Elements/RT__User/ColumnMap:126 share/html/User/Prefs.html:155
+#: share/html/Admin/Users/Modify.html:156 share/html/Elements/RT__User/ColumnMap:126 share/html/User/Prefs.html:141
 msgid "Zip"
 msgstr "Irányítószám"
+
+#: share/html/Elements/RT__CustomField/ColumnMap:166
+msgid "[Down]"
+msgstr ""
+
+#: share/html/Elements/RT__CustomField/ColumnMap:163
+msgid "[Up]"
+msgstr ""
 
 #: share/html/Search/Elements/DisplayOptions:62
 msgid "[none]"
@@ -7428,6 +7573,18 @@ msgstr "elõtt"
 msgid "bottom to top"
 msgstr ""
 
+#: share/html/Admin/CustomFields/Objects.html:68
+msgid "check this box to apply this Custom Field to all objects."
+msgstr ""
+
+#: share/html/Admin/CustomFields/Objects.html:63
+msgid "check this box to remove this Custom Field from all objects and be able to choose specific objects."
+msgstr ""
+
+#: share/html/Ticket/Elements/UpdateCc:53 share/html/Ticket/Elements/UpdateCc:68
+msgid "check to add"
+msgstr ""
+
 #: share/html/Admin/Tools/Shredder/Elements/SelectObjects:57
 msgid "click to check/uncheck all objects at once"
 msgstr ""
@@ -7444,7 +7601,7 @@ msgstr ""
 msgid "contains"
 msgstr "tartalmazza"
 
-#: share/html/Admin/Tools/Configuration.html:91
+#: share/html/Admin/Tools/Configuration.html:86
 msgid "core config"
 msgstr ""
 
@@ -7463,11 +7620,11 @@ msgstr "napi"
 msgid "daily at %1"
 msgstr "naponta % órakor"
 
-#: lib/RT/Date.pm:349 share/html/Admin/Queues/Modify.html:95
+#: lib/RT/Date.pm:350 share/html/Admin/Queues/Modify.html:95
 msgid "days"
 msgstr "napja"
 
-#: lib/RT/Queue_Overlay.pm:87
+#: lib/RT/Queue_Overlay.pm:83
 msgid "deleted"
 msgstr "törölve"
 
@@ -7527,7 +7684,7 @@ msgstr ""
 msgid "executed plugin successfuly"
 msgstr ""
 
-#: lib/RT/Crypt/GnuPG.pm:2204
+#: lib/RT/Crypt/GnuPG.pm:2241
 msgid "full"
 msgstr ""
 
@@ -7540,7 +7697,7 @@ msgstr "nagyobb mint"
 msgid "group '%1'"
 msgstr "'%1' csopot"
 
-#: lib/RT/Date.pm:345
+#: lib/RT/Date.pm:346
 msgid "hours"
 msgstr "órája"
 
@@ -7560,15 +7717,15 @@ msgstr "=="
 msgid "isn't"
 msgstr "nem"
 
-#: lib/RT/Crypt/GnuPG.pm:2160
+#: lib/RT/Crypt/GnuPG.pm:2197
 msgid "key disabled"
 msgstr "kulcs letiltva"
 
-#: lib/RT/Crypt/GnuPG.pm:2171
+#: lib/RT/Crypt/GnuPG.pm:2208
 msgid "key expired"
 msgstr "kulcs lejárt"
 
-#: lib/RT/Crypt/GnuPG.pm:2166
+#: lib/RT/Crypt/GnuPG.pm:2203
 msgid "key revoked"
 msgstr "kulcs visszavonásra került"
 
@@ -7580,7 +7737,7 @@ msgstr "balról jobbra"
 msgid "less than"
 msgstr "kisebb mint"
 
-#: lib/RT/Crypt/GnuPG.pm:2199
+#: lib/RT/Crypt/GnuPG.pm:2236
 msgid "marginal"
 msgstr ""
 
@@ -7592,7 +7749,7 @@ msgstr "=="
 msgid "maximum depth"
 msgstr ""
 
-#: lib/RT/Date.pm:341
+#: lib/RT/Date.pm:342
 msgid "min"
 msgstr "perce"
 
@@ -7609,7 +7766,7 @@ msgstr "havi"
 msgid "monthly (day %1) at %2"
 msgstr "havonta (% napon) %2 órakor"
 
-#: lib/RT/Date.pm:357
+#: lib/RT/Date.pm:358
 msgid "months"
 msgstr "hónapja"
 
@@ -7617,11 +7774,11 @@ msgstr "hónapja"
 msgid "never"
 msgstr "soha"
 
-#: lib/RT/Queue_Overlay.pm:82
+#: lib/RT/Queue_Overlay.pm:78
 msgid "new"
 msgstr "új"
 
-#: share/html/Elements/RT__Group/ColumnMap:65 share/html/Elements/RT__Group/ColumnMap:73
+#: share/html/Elements/RT__Group/ColumnMap:65 share/html/Elements/RT__Group/ColumnMap:73 share/html/Elements/RT__Queue/ColumnMap:81 share/html/Elements/RT__Queue/ColumnMap:85
 msgid "no"
 msgstr ""
 
@@ -7633,7 +7790,7 @@ msgstr "(nincs név)"
 msgid "no value"
 msgstr "Nincs érték"
 
-#: lib/RT/Crypt/GnuPG.pm:2176 share/html/Admin/Elements/EditQueueWatchers:50 share/html/Dashboards/Subscription.html:76 share/html/Ticket/Elements/EditWatchers:51
+#: lib/RT/Crypt/GnuPG.pm:2213 share/html/Admin/Elements/EditQueueWatchers:50 share/html/Dashboards/Subscription.html:76 share/html/Ticket/Elements/EditWatchers:51
 msgid "none"
 msgstr "senki"
 
@@ -7657,7 +7814,11 @@ msgstr "e napon"
 msgid "on day"
 msgstr "napon"
 
-#: lib/RT/Queue_Overlay.pm:83 share/html/SelfService/Elements/MyRequests:81
+#: share/html/Elements/RT__CustomField/ColumnMap:86
+msgid "one"
+msgstr ""
+
+#: lib/RT/Queue_Overlay.pm:79 share/html/SelfService/Elements/MyRequests:76
 msgid "open"
 msgstr "Nyitott"
 
@@ -7687,11 +7848,11 @@ msgstr ""
 msgid "queue %1 %2"
 msgstr "Stapel %1 %2"
 
-#: lib/RT/Queue_Overlay.pm:86
+#: lib/RT/Queue_Overlay.pm:82
 msgid "rejected"
 msgstr "elutasítva"
 
-#: lib/RT/Queue_Overlay.pm:85
+#: lib/RT/Queue_Overlay.pm:81
 msgid "resolved"
 msgstr "megoldva"
 
@@ -7699,7 +7860,7 @@ msgstr "megoldva"
 msgid "right to left"
 msgstr "jobbról balra"
 
-#: lib/RT/Date.pm:337
+#: lib/RT/Date.pm:338
 msgid "sec"
 msgstr "sec"
 
@@ -7715,11 +7876,11 @@ msgstr ""
 msgid "show Configuration tab"
 msgstr ""
 
-#: share/html/Admin/Tools/Configuration.html:88
+#: share/html/Admin/Tools/Configuration.html:83
 msgid "site config"
 msgstr ""
 
-#: lib/RT/Queue_Overlay.pm:84
+#: lib/RT/Queue_Overlay.pm:80
 msgid "stalled"
 msgstr "várakozik"
 
@@ -7758,13 +7919,17 @@ msgstr "probléma #%1 %2"
 msgid "top to bottom"
 msgstr ""
 
-#: lib/RT/Crypt/GnuPG.pm:2209
+#: lib/RT/Crypt/GnuPG.pm:2246
 msgid "ultimate"
 msgstr ""
 
 #: lib/RT/Group_Overlay.pm:181
 #. ($self->Id)
 msgid "undescribed group %1"
+msgstr ""
+
+#: share/html/Elements/RT__CustomField/ColumnMap:86
+msgid "unlimited"
 msgstr ""
 
 #: lib/RT/Group_Overlay.pm:156
@@ -7785,7 +7950,7 @@ msgstr "heti"
 msgid "weekly (on %1) at %2"
 msgstr "hetente (%1 napon) %2-kor"
 
-#: lib/RT/Date.pm:353 share/html/Dashboards/Subscription.html:123
+#: lib/RT/Date.pm:354 share/html/Dashboards/Subscription.html:123
 msgid "weeks"
 msgstr "hete"
 
@@ -7797,11 +7962,11 @@ msgstr "az a port melyen a web szervere figyel (pl 8080)"
 msgid "with headers"
 msgstr "fejlécekkel"
 
-#: lib/RT/Date.pm:361
+#: lib/RT/Date.pm:362
 msgid "years"
 msgstr "éve"
 
-#: share/html/Elements/RT__Group/ColumnMap:65 share/html/Elements/RT__Group/ColumnMap:73
+#: share/html/Elements/RT__Group/ColumnMap:65 share/html/Elements/RT__Group/ColumnMap:73 share/html/Elements/RT__Queue/ColumnMap:81 share/html/Elements/RT__Queue/ColumnMap:85
 msgid "yes"
 msgstr "igen"
 

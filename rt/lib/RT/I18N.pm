@@ -128,6 +128,24 @@ sub Init {
     return 1;
 }
 
+sub LoadLexicons {
+
+    no strict 'refs';
+    foreach my $k (keys %{RT::I18N::} ) {
+        next if $k eq 'main::';
+        next unless index($k, '::', -2) >= 0;
+        next unless exists ${ 'RT::I18N::'. $k }{'Lexicon'};
+
+        my $lex = *{ ${'RT::I18N::'. $k }{'Lexicon'} }{HASH};
+        # run fetch to force load
+        my $tmp = $lex->{'foo'};
+        # XXX: untie may fail with "untie attempted
+        # while 1 inner references still exist"
+        # TODO: untie that has to lower fetch impact
+        # untie %$lex if tied %$lex;
+    }
+}
+
 =head2 encoding
 
 Returns the encoding of the current lexicon, as yanked out of __ContentType's "charset" field.
@@ -223,34 +241,33 @@ sub SetMIMEEntityToEncoding {
 
     my $body = $entity->bodyhandle;
 
-    if ( $enc ne $charset && $body) {
-	my @lines = $body->as_lines or return;
+    if ( $enc ne $charset && $body ) {
+        my $string = $body->as_string or return;
 
-	# {{{ Convert the body
-	eval {
-	    $RT::Logger->debug("Converting '$charset' to '$enc' for ". $head->mime_type . " - ". ($head->get('subject') || 'Subjectless message'));
+        # {{{ Convert the body
+        eval {
+            $RT::Logger->debug( "Converting '$charset' to '$enc' for " . $head->mime_type . " - " . ( $head->get('subject') || 'Subjectless message' ) );
 
-	    # NOTE:: see the comments at the end of the sub.
-	    Encode::_utf8_off( $lines[$_] ) foreach ( 0 .. $#lines );
-	    Encode::from_to( $lines[$_], $charset => $enc ) for ( 0 .. $#lines );
-	};
+            # NOTE:: see the comments at the end of the sub.
+            Encode::_utf8_off( $string);
+            Encode::from_to( $string, $charset => $enc );
+        };
 
-	if ($@) {
-	    $RT::Logger->error( "Encoding error: " . $@ . " defaulting to ISO-8859-1 -> UTF-8" );
-	    eval {
-		Encode::from_to( $lines[$_], 'iso-8859-1' => $enc ) foreach ( 0 .. $#lines );
-	    };
-	    if ($@) {
-		$RT::Logger->crit( "Totally failed to convert to utf-8: " . $@ . " I give up" );
-	    }
-	}
-	# }}}
+        if ($@) {
+            $RT::Logger->error( "Encoding error: " . $@ . " defaulting to ISO-8859-1 -> UTF-8" );
+            eval { Encode::from_to( $string, 'iso-8859-1' => $enc ) };
+            if ($@) {
+                $RT::Logger->crit( "Totally failed to convert to utf-8: " . $@ . " I give up" );
+            }
+        }
 
-        my $new_body = MIME::Body::InCore->new( \@lines );
+        # }}}
+
+        my $new_body = MIME::Body::InCore->new( $string);
 
         # set up the new entity
         $head->mime_attr( "content-type" => 'text/plain' )
-          unless ( $head->mime_attr("content-type") );
+            unless ( $head->mime_attr("content-type") );
         $head->mime_attr( "content-type.charset" => $enc );
         $entity->bodyhandle($new_body);
     }

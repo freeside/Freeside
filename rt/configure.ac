@@ -3,11 +3,11 @@ dnl
 dnl Process this file with autoconf to produce a configure script
 dnl
 dnl Embed in generated ./configure script the following CVS info:
-AC_REVISION($Revision: 1.1.1.11 $)dnl
+AC_REVISION($Revision: 1.1.1.12 $)dnl
 
 dnl Setup autoconf
 AC_PREREQ([2.53])
-AC_INIT(RT, 3.8.7, [rt-bugs@bestpractical.com])
+AC_INIT(RT, 3.8.8, [rt-bugs@bestpractical.com])
 AC_CONFIG_SRCDIR([lib/RT.pm.in])
 
 dnl Extract RT version number components
@@ -35,14 +35,15 @@ dnl WEB_HANDLER
 AC_ARG_WITH(web-handler,
     AC_HELP_STRING([--with-web-handler=LIST],
 	[comma separated list of web-handlers RT will be able to use.
-         Default is fastcgi when modperl1, modperl2, fastcgi, standalone
-         and speedycgi are valid. To succefuly run RT you need only one.
+         Default is fastcgi when modperl1, modperl2, fastcgi, fastcgi-server,
+         and speedycgi are valid. To successfuly run RT you need only one.
+         only one.
         ]),
     WEB_HANDLER=$withval,
     WEB_HANDLER=fastcgi)
-my_web_handler_test=$($PERL -e 'print "ok" unless grep $_ !~ /^(modperl[12]|fastcgi|speedycgi|standalone)$/i, grep defined && length, split /\s*,\s*/, "$WEB_HANDLER"')
+my_web_handler_test=$($PERL -e 'print "ok" unless grep $_ !~ /^(modperl1|modperl2|fastcgi(?:-server)?|speedycgi|standalone)$/i, grep defined && length, split /\s*,\s*/, $ARGV[0]' $WEB_HANDLER)
 if test "$my_web_handler_test" != "ok"; then
-	AC_MSG_ERROR([Only modperl1, modperl2, fastcgi, speedycgi and standalone are valid web-handlers])
+	AC_MSG_ERROR([Only modperl1, modperl2, fastcgi, fastcgi-server, speedycgi and standalone are valid web-handlers])
 fi
 AC_SUBST(WEB_HANDLER)
 
@@ -333,6 +334,7 @@ AC_SUBST([RT_BIN_PATH],			${exp_bindir})
 AC_SUBST([RT_SBIN_PATH],		${exp_sbindir})
 AC_SUBST([RT_VAR_PATH],			${exp_localstatedir})
 AC_SUBST([RT_MAN_PATH],			${exp_mandir})
+AC_SUBST([RT_FONT_PATH],			${exp_fontdir})
 AC_SUBST([RT_PLUGIN_PATH],			${exp_plugindir})
 AC_SUBST([MASON_DATA_PATH],		${exp_masonstatedir})
 AC_SUBST([MASON_SESSION_PATH],		${exp_sessionstatedir})
@@ -354,6 +356,7 @@ AC_SUBST([RT_BIN_PATH_R],			${exp_prefix}/${exp_bindir})
 AC_SUBST([RT_SBIN_PATH_R],		${exp_prefix}/${exp_sbindir})
 AC_SUBST([RT_VAR_PATH_R],			${exp_prefix}/${exp_localstatedir})
 AC_SUBST([RT_MAN_PATH_R],			${exp_prefix}/${exp_mandir})
+AC_SUBST([RT_FONT_PATH_R],			${exp_prefix}/${exp_fontdir})
 AC_SUBST([RT_PLUGIN_PATH_R],		${exp_prefix}/${exp_plugindir})
 AC_SUBST([MASON_DATA_PATH_R],		${exp_prefix}/${exp_masonstatedir})
 AC_SUBST([MASON_SESSION_PATH_R],		${exp_prefix}/${exp_sessionstatedir})
@@ -375,6 +378,7 @@ AC_SUBST([RT_BIN_PATH_R],			${exp_bindir})
 AC_SUBST([RT_SBIN_PATH_R],		${exp_sbindir})
 AC_SUBST([RT_VAR_PATH_R],			${exp_localstatedir})
 AC_SUBST([RT_MAN_PATH_R],			${exp_mandir})
+AC_SUBST([RT_FONT_PATH_R],			${exp_fontdir})
 AC_SUBST([MASON_DATA_PATH_R],		${exp_masonstatedir})
 AC_SUBST([MASON_SESSION_PATH_R],		${exp_sessionstatedir})
 AC_SUBST([MASON_HTML_PATH_R],		${exp_htmldir})
@@ -404,6 +408,7 @@ AC_CONFIG_FILES([
                  sbin/rt-validator
                  sbin/rt-email-group-admin
                  sbin/rt-server
+                 bin/fastcgi_server
                  bin/mason_handler.fcgi
                  bin/mason_handler.scgi
                  bin/standalone_httpd

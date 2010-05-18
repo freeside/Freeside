@@ -55,11 +55,13 @@
       <a name="txn-<% $Transaction->Id %>" href="<% $DisplayPath %>#txn-<% $Transaction->Id %>">#</a>
       <% $LastTransaction ? '<a id="lasttrans" name="lasttrans"></a>' : ''|n %>
     </span>
+% $m->callback( Transaction => $Transaction, %ARGS, CallbackName => 'AfterAnchor' );
     <span class="date"><% $transdate|n %></span>
 % my $desc = $Transaction->BriefDescription;
 % $m->callback( text => \$desc, Transaction => $Transaction, %ARGS, CallbackName => 'ModifyDisplay' );
     <span class="description">
       <& /Elements/ShowUser, User => $Transaction->CreatorObj &> - <% $TicketString %> <% $desc %>
+% $m->callback( Transaction => $Transaction, %ARGS, CallbackName => 'AfterDescription' );
     </span>
 % $m->callback( TimeTaken => \$TimeTaken, Transaction => $Transaction, %ARGS, CallbackName => 'ModifyTimeTaken' );
     <span class="time-taken"><% $TimeTaken %></span>

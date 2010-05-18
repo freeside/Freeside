@@ -55,7 +55,7 @@
 
 <form action="Update.html" name="TicketUpdate"
     method="post" enctype="multipart/form-data">
-% $m->callback( CallbackName => 'FormStart', ARGSRef => \%ARGS, Ticket => $TicketObj );
+% $m->callback( CallbackName => 'FormStart', ARGSRef => \%ARGS, Ticket => $TicketObj, CanRespond => $CanRespond, CanComment => $CanComment, ResponseDefault => $ResponseDefault, CommentDefault => $CommentDefault );
 <input type="hidden" class="hidden" name="QuoteTransaction" value="<% $ARGS{QuoteTransaction}||'' %>" />
 <input type="hidden" class="hidden" name="DefaultStatus" value="<% $DefaultStatus ||''%>" />
 <input type="hidden" class="hidden" name="Action" value="<% $ARGS{Action}||'' %>" />
@@ -97,8 +97,11 @@
 <option value="response" <% ($ARGS{'UpdateType'} && $ARGS{'UpdateType'} eq "response") ? qq[ selected="selected"] : !$ARGS{'UpdateType'}&&$ResponseDefault |n %>><&|/l&>Reply to requestors</&></option>
 % }
 </select> 
+% $m->callback( %ARGS, CallbackName => 'AfterUpdateType' );
 </td></tr>
-<tr><td class="label"><&|/l&>Subject</&>:</td><td> <input name="UpdateSubject" size="60" value="<% $ARGS{UpdateSubject} || $TicketObj->Subject()%>" /></td></tr>
+<tr><td class="label"><&|/l&>Subject</&>:</td><td> <input name="UpdateSubject" size="60" value="<% $ARGS{UpdateSubject} || $TicketObj->Subject()%>" />
+% $m->callback( %ARGS, CallbackName => 'AfterSubject' );
+</td></tr>
 
 <& /Ticket/Elements/UpdateCc, %ARGS, TicketObj => $TicketObj &>
 
@@ -126,6 +129,7 @@
 &>
 </td></tr>
 % }
+% $m->callback( %ARGS, CallbackName => 'AfterGnuPG' );
 
 <tr><td class="label" valign="top"><&|/l&>Message</&>:</td><td>
 % $m->callback( %ARGS, CallbackName => 'BeforeMessageBox' );
@@ -136,7 +140,9 @@
 <& /Elements/MessageBox, Name=>"UpdateContent", Default=>$ARGS{UpdateContent}, IncludeSignature => 0, %ARGS&>
 % $ARGS{'QuoteTransaction'} = $temp;
 % } else {
-<& /Elements/MessageBox, Name=>"UpdateContent", %ARGS &>
+% my $IncludeSignature = 1;
+% $IncludeSignature = 0 if $Action ne 'Respond' && !RT->Config->Get('MessageBoxIncludeSignatureOnComment');
+<& /Elements/MessageBox, Name=>"UpdateContent", IncludeSignature => $IncludeSignature, %ARGS &>
 % }
 </td></tr>
 </table>
@@ -254,6 +260,22 @@ if ( $ARGS{'SubmitTicket'} ) {
         TicketObj => $TicketObj,
     );
     $checks_failure = 1 unless $status;
+}
+
+# check email addresses for RT's
+{
+    foreach my $field ( qw(UpdateCc UpdateBcc) ) {
+        my $value = $ARGS{ $field };
+        next unless defined $value && length $value;
+
+        my @emails = Email::Address->parse( $value );
+        foreach my $email ( grep RT::EmailParser->IsRTAddress($_->address), @emails ) {
+            push @results, loc("[_1] is an address RT receives mail at. Adding it as a '[_2]' would create a mail loop", $email->format, loc(substr($field, 6)) );
+            $checks_failure = 1;
+            $email = undef;
+        }
+        $ARGS{ $field } = join ', ', map $_->format, grep defined, @emails;
+    }
 }
 
 if ( !$checks_failure && exists $ARGS{SubmitTicket} ) {

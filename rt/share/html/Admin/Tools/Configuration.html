@@ -50,9 +50,7 @@ require  Module::Versions::Report;
 my $title = loc('System Configuration');
 unless ($session{'CurrentUser'}->HasRight( Object=> $RT::System, Right => 'SuperUser')) {
  Abort(loc('This feature is only available to system administrators'));
-} 
-
-
+}
 </%init>
 <& /Admin/Elements/Header, Title => $title &>
 <& /Admin/Elements/ToolTabs, 
@@ -60,18 +58,15 @@ unless ($session{'CurrentUser'}->HasRight( Object=> $RT::System, Right => 'Super
     current_subtab => 'Admin/Tools/Configuration.html', 
     Title => $title &>
 
-
-
-<h2><&|/l&>Loaded perl modules</&></h2>
-% my $report = Module::Versions::Report::report();
-% my @report = grep /v\d/, split("\n",$report);
-<pre>
-<% join('<br />', @report) |n %>
-</pre>
-
-<h2><&|/l&>RT Config</&></h2>
-<table>
+<&|/Widgets/TitleBox, title => loc("RT Configuration") &>
+<table border="0" cellspacing="0" cellpadding="5" width="100%" class="collection">
+<tr class="collection-as-table">
+<th class="collection-as-table"><&|/l&>Option</&></th>
+<th class="collection-as-table"><&|/l&>Value</&></th>
+<th class="collection-as-table"><&|/l&>Source</&></th>
+</tr>
 <%PERL>
+my $index_conf;
 foreach my $key ( RT->Config->Options( Overridable => undef, Sorted => 0 ) ) {
     my $val = RT->Config->Get( $key );
     next unless defined $val;
@@ -90,9 +85,11 @@ foreach my $key ( RT->Config->Options( Overridable => undef, Sorted => 0 ) ) {
     else {
         $description = loc("core config");
     }
+    $index_conf++;
 </%PERL>
-<tr><th><% $key %></th>
-<td rowspan="2">\
+<tr class="<% $index_conf%2 ? 'oddline' : 'evenline'%>">
+<td class="collection-as-table"><% $key %></td>
+<td class="collection-as-table">
 % if ( $key =~ /Password(?!Length)/i ) { 
 <em>Password not printed</em>\
 % } elsif ( !ref $val ) {
@@ -104,19 +101,38 @@ foreach my $key ( RT->Config->Options( Overridable => undef, Sorted => 0 ) ) {
 % } else {
 <% ref $val %>\
 % }
-</td></tr>
-<tr><td><% $description %></td></tr>
+</td>
+<td class="collection-as-table" style="white-space: nowrap">
+% if ( $description =~ /^.*site config$/ ) {
+<span style="font-weight: bold"><% $description %></span>
+% } else {
+<% $description %>
+% }
+</td>
+</tr>
 % }
 </table>
-
-<h2><&|/l&>RT Variables</&></h2>
-<table>
-% { no strict qw/refs/;
-% my %config_opt = map { $_ => 1 } RT->Config->Options( Overridable => undef );
-% foreach my $key ( sort keys %{*RT::} ) {
-% next if !${'RT::'.$key} || ref ${'RT::'.$key} || $config_opt{ $key };
-<tr><th>RT::<% $key %></th>
-<td>
+</&>
+<table width="100%">
+    <tr>
+        <td valign="top" width="60%" class="boxcontainer">
+<&|/Widgets/TitleBox, title=> loc("RT core variables") &>
+<table border="0" cellspacing="0" cellpadding="5" width="100%" class="collection">
+<tr class="collection-as-table">
+<th class="collection-as-table"><&|/l&>Variable</&></th>
+<th class="collection-as-table"><&|/l&>Value</&></th>
+</tr>
+<%PERL>
+{ no strict qw/refs/;
+my %config_opt = map { $_ => 1 } RT->Config->Options( Overridable => undef );
+my $index_var;
+foreach my $key ( sort keys %{*RT::} ) {
+    next if !${'RT::'.$key} || ref ${'RT::'.$key} || $config_opt{ $key };
+    $index_var++;
+</%PERL>
+<tr class="collection-as-table <% $index_var%2 ? 'oddline' : 'evenline'%>">
+<td class="collection-as-table">RT::<% $key %></td>
+<td class="collection-as-table">
 % if ( $key =~ /Password(?!Length)/i ) { 
 <em>Password not printed</em>
 % } else {
@@ -127,44 +143,100 @@ foreach my $key ( RT->Config->Options( Overridable => undef, Sorted => 0 ) ) {
 % }
 % }
 </table>
+</&>
 
-<h2><&|/l&>RT Size</&></h2>
-<table>
+<&|/Widgets/TitleBox, title => loc("RT Size") &>
+<table border="0" cellspacing="0" cellpadding="5" width="100%" class="collection">
+<tr class="collection-as-table">
+<th class="collection-as-table"><&|/l&>Object</&></th>
+<th class="collection-as-table"><&|/l&>Size</&></th>
+</tr>
 <%PERL>
-for my $type (qw/Ticket Queue Transaction Group/) {
-    my $class = 'RT::' . $type . 's';
+my ($index_size, $user_count, $privileged_count);
+for my $type (qw/Tickets Queues Transactions Groups PrivilegedUsers UnprivilegedUsers/) {
+    my $count;
+    my $class = 'RT::' . $type;
+    $class =~ s/Privileged|Unprivileged//;
     my $collection = $class->new($RT::SystemUser);
     $collection->UnLimit;
-    my $count = $collection->CountAll;
+    if ($type =~ /PrivilegedUsers/) {
+        $user_count = $collection->CountAll;
+        $collection->LimitToPrivileged;
+        $count = $privileged_count = $collection->CountAll;
+    } elsif ($type =~ /UnprivilegedUsers/) {
+        $count = $user_count - $privileged_count;
+    } else {
+        $count = $collection->CountAll;
+    }
+    $index_size++;
 </%PERL>
-<tr><th><% $type %>s</th>
-<td><% $count %></td></tr>
+<tr class="<% $index_size%2 ? 'oddline' : 'evenline'%>">
+<td class="collection-as-table"><% $type %></td>
+<td class="collection-as-table"><% $count %></td>
+</tr>
 % }
+</table>
+</&>
+</td>
+<td valign="top" class="boxcontainer">
 
-<%PERL>
-my $users = RT::Users->new($RT::SystemUser);
-$users->UnLimit;
-my $user_count = $users->CountAll;
+<&|/Widgets/TitleBox, title => loc("Mason template search order") &>
+<ol>
+% foreach my $path ( map { $_->[1] } $m->interp->comp_root_array ) {
+<li><% $path %></li>
+% }
+</ol>
+</&>
 
-$users->LimitToPrivileged;
-my $privileged_count = $users->CountAll;
-my $unprivileged_count = $user_count - $privileged_count;
-</%PERL>
-<tr><th>Privileged Users</th>
-<td><% $privileged_count %></td></tr>
-<tr><th>Unprivileged Users</th>
-<td><% $unprivileged_count %></td></tr>
+<&|/Widgets/TitleBox, title => loc("Perl library search order") &>
+<ol>
+% foreach my $inc (@INC) {
+<li><% $inc %></li>
+% }
+</ol>
+</&>
+
+</td>
 </table>
 
-<h2><&|/l&>Perl configuration</&></h2>
+<&|/Widgets/TitleBox, title => loc("Loaded perl modules")&>
+<table border="0" cellspacing="0" cellpadding="5" width="100%" class="collection">
+<tr class="collection-as-table">
+<th class="collection-as-table"><&|/l&>Module</&></th>
+<th class="collection-as-table"><&|/l&>Version</&></th>
+<th class="collection-as-table"><&|/l&>Source</&></th>
+
+
+<%perl>
+my $i = 0;
+my $report = Module::Versions::Report::report();
+my @report = grep /v\d/, split("\n",$report);
+shift @report; # throw away the perl version
+my ($ver, $source, $distfile);
+foreach my $item (@report) {
+if ($item =~ /^\s*(.*?)\s*v(\S+);/) {
+    $item = $1;
+    $ver = $2;
+    $distfile = $item.".pm";
+    $distfile =~ s|::|/|g;
+}
+</%perl>
+<tr class="<% $i++ %2 ? 'oddline' : 'evenline'%>">
+<td class="collection-as-table"><% $item %></td>
+    <td class="collection-as-table">
+        <%$ver%>
+    </td>
+    <td class="collection-as-table">
+        <% $INC{$distfile} %>
+    </td>
+</tr>
+% }
+</table>
+</&>
+
+<&|/Widgets/TitleBox, title => loc("Perl configuration") &>
 % require Config;
 <pre>
 <% Config::myconfig() %>
 </pre>
-
-<h2><&|/l&>Perl Include Paths (@INC)</&></h2>
-<pre>
-% foreach my $inc (@INC) {
-<% $inc %>
-% }
-</pre>
+</&>

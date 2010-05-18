@@ -52,7 +52,7 @@
 
 
 PERL			=	/usr/bin/perl
-INSTALL			=	install-sh
+INSTALL			=	/opt/local/bin/ginstall -c
 
 RT_LAYOUT		=	relative
 
@@ -63,7 +63,7 @@ SITE_CONFIG_FILE	=	$(CONFIG_FILE_PATH)/RT_SiteConfig.pm
 
 RT_VERSION_MAJOR	=	3
 RT_VERSION_MINOR	=	8
-RT_VERSION_PATCH	=	7
+RT_VERSION_PATCH	=	8
 
 RT_VERSION		=	$(RT_VERSION_MAJOR).$(RT_VERSION_MINOR).$(RT_VERSION_PATCH)
 TAG 			=	rt-$(RT_VERSION_MAJOR)-$(RT_VERSION_MINOR)-$(RT_VERSION_PATCH)
@@ -106,6 +106,7 @@ RT_LIB_PATH		=	/opt/rt3/lib
 RT_MAN_PATH		=	/opt/rt3/man
 RT_VAR_PATH		=	/opt/rt3/var
 RT_DOC_PATH		=	/opt/rt3/share/doc
+RT_FONT_PATH		=	/opt/rt3/share/fonts
 RT_LOCAL_PATH		=	/opt/rt3/local
 LOCAL_PLUGIN_PATH	=	/opt/rt3/local/plugins
 LOCAL_ETC_PATH		=	/opt/rt3/local/etc
@@ -134,6 +135,8 @@ RT_STANDALONE_SERVER	=	standalone_httpd
 RT_SPEEDYCGI_HANDLER	=	mason_handler.scgi
 # RT_FASTCGI_HANDLER is the mason handler script for FastCGI
 RT_FASTCGI_HANDLER	=	mason_handler.fcgi
+# RT_FASTCGI_SERVER is the FastCGI server
+RT_FASTCGI_SERVER	=	fastcgi_server
 # RT_WIN32_FASTCGI_HANDLER is the mason handler script for FastCGI
 RT_WIN32_FASTCGI_HANDLER	=	mason_handler.svc
 # RT's CLI
@@ -153,6 +156,7 @@ BINARIES		=	$(RT_MODPERL_HANDLER) \
 				$(RT_STANDALONE_SERVER) \
 				$(RT_SPEEDYCGI_HANDLER) \
 				$(RT_FASTCGI_HANDLER) \
+				$(RT_FASTCGI_SERVER) \
 				$(RT_WIN32_FASTCGI_HANDLER)
 
 
@@ -189,7 +193,7 @@ ETC_FILES		=	acl.Informix \
 
 # {{{ Web frontend
 
-WEB_HANDLER		=	standalone
+WEB_HANDLER		=	fastcgi
 
 # }}}
 
@@ -201,7 +205,7 @@ WEB_HANDLER		=	standalone
 # "Pg" is known to work
 # "Informix" is known to work
 
-DB_TYPE			=	SQLite
+DB_TYPE			=	mysql
 
 # Set DBA to the name of a unix account with the proper permissions and 
 # environment to run your commandline SQL sbin
@@ -284,7 +288,7 @@ upgrade-instruct:
 
 upgrade: testdeps config-install dirs files-install fixperms upgrade-instruct
 
-upgrade-noclobber: config-install dirs libs-install html-install bin-install local-install doc-install fixperms
+upgrade-noclobber: config-install dirs libs-install html-install bin-install local-install doc-install font-install fixperms
 
 
 # {{{ dependencies
@@ -349,6 +353,7 @@ fixperms:
 # {{{ dirs
 dirs:
 	$(INSTALL) -m 0755 -d $(DESTDIR)$(RT_LOG_PATH)
+	$(INSTALL) -m 0755 -d $(DESTDIR)$(RT_FONT_PATH)
 	$(INSTALL) -m 0770 -d $(DESTDIR)$(MASON_DATA_PATH)
 	$(INSTALL) -m 0770 -d $(DESTDIR)$(MASON_DATA_PATH)/cache
 	$(INSTALL) -m 0770 -d $(DESTDIR)$(MASON_DATA_PATH)/etc
@@ -364,7 +369,7 @@ dirs:
 
 install: testdeps config-install dirs files-install fixperms instruct
 
-files-install: libs-install etc-install config-install bin-install sbin-install html-install local-install doc-install
+files-install: libs-install etc-install config-install bin-install sbin-install html-install local-install doc-install font-install
 
 config-install:
 	$(INSTALL) -m 0755 -o $(BIN_OWNER) -g $(RTGROUP) -d $(DESTDIR)$(CONFIG_FILE_PATH)
@@ -420,6 +425,14 @@ html-install:
 	done
 	-( cd share/html && find . -type f -print ) | while read file ; do \
 	    $(INSTALL) -m 0644 "share/html/$$file" "$(DESTDIR)$(MASON_HTML_PATH)/$$file" ; \
+	done
+# }}}
+
+# {{{ font-install
+font-install:
+	[ -d $(DESTDIR)$(RT_FONT_PATH) ] || $(INSTALL) -m 0755 -d $(DESTDIR)$(RT_FONT_PATH)
+	-( cd share/fonts && find . -type f -print ) | while read file ; do \
+	    $(INSTALL) -m 0644 "share/fonts/$$file" "$(DESTDIR)$(RT_FONT_PATH)/$$file" ; \
 	done
 # }}}
 

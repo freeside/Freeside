@@ -607,8 +607,11 @@ sub SetRTSpecialHeaders {
         }
     }
 
-    $self->SetHeader( 'Precedence', "bulk" )
-        unless ( $self->TemplateObj->MIMEObj->head->get("Precedence") );
+    if (my $precedence = RT->Config->Get('DefaultMailPrecedence')
+        and !$self->TemplateObj->MIMEObj->head->get("Precedence")
+    ) {
+        $self->SetHeader( 'Precedence', $precedence );
+    }
 
     $self->SetHeader( 'X-RT-Loop-Prevention', RT->Config->Get('rtname') );
     $self->SetHeader( 'RT-Ticket',
@@ -618,7 +621,9 @@ sub SetRTSpecialHeaders {
 
 # XXX, TODO: use /ShowUser/ShowUserEntry(or something like that) when it would be
 #            refactored into user's method.
-    if ( my $email = $self->TransactionObj->CreatorObj->EmailAddress ) {
+    if ( my $email = $self->TransactionObj->CreatorObj->EmailAddress
+         and RT->Config->Get('UseOriginatorHeader')
+    ) {
         $self->SetHeader( 'RT-Originator', $email );
     }
 
