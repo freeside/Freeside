@@ -135,6 +135,11 @@ our %LINKDIRMAP = (
 sub LINKTYPEMAP   { return \%LINKTYPEMAP   }
 sub LINKDIRMAP   { return \%LINKDIRMAP   }
 
+our %MERGE_CACHE = (
+    effective => {},
+    merged => {},
+);
+
 # {{{ sub Load
 
 =head2 Load
@@ -148,47 +153,46 @@ Otherwise, returns the ticket id.
 sub Load {
     my $self = shift;
     my $id   = shift;
+    $id = '' unless defined $id;
 
-    #TODO modify this routine to look at EffectiveId and do the recursive load
-    # thing. be careful to cache all the interim tickets we try so we don't loop forever.
+    # TODO: modify this routine to look at EffectiveId and
+    # do the recursive load thing. be careful to cache all
+    # the interim tickets we try so we don't loop forever.
 
     # FIXME: there is no TicketBaseURI option in config
     my $base_uri = RT->Config->Get('TicketBaseURI') || '';
     #If it's a local URI, turn it into a ticket id
-    if ( $base_uri && defined $id && $id =~ /^$base_uri(\d+)$/ ) {
+    if ( $base_uri && $id =~ /^$base_uri(\d+)$/ ) {
         $id = $1;
     }
 
-    #If it's a remote URI, we're going to punt for now
-    elsif ( $id =~ '://' ) {
-        return (undef);
-    }
-
-    #If we have an integer URI, load the ticket
-    if ( defined $id && $id =~ /^\d+$/ ) {
-        my ($ticketid,$msg) = $self->LoadById($id);
-
-        unless ($self->Id) {
-            $RT::Logger->debug("$self tried to load a bogus ticket: $id");
-            return (undef);
-        }
-    }
-
-    #It's not a URI. It's not a numerical ticket ID. Punt!
-    else {
+    unless ( $id =~ /^\d+$/ ) {
         $RT::Logger->debug("Tried to load a bogus ticket id: '$id'");
         return (undef);
     }
 
+    $id = $MERGE_CACHE{'effective'}{ $id }
+        if $MERGE_CACHE{'effective'}{ $id };
+
+    my ($ticketid, $msg) = $self->LoadById( $id );
+    unless ( $self->Id ) {
+        $RT::Logger->debug("$self tried to load a bogus ticket: $id");
+        return (undef);
+    }
+
     #If we're merged, resolve the merge.
-    if ( ( $self->EffectiveId ) and ( $self->EffectiveId != $self->Id ) ) {
-        $RT::Logger->debug ("We found a merged ticket.". $self->id ."/".$self->EffectiveId);
-        return ( $self->Load( $self->EffectiveId ) );
+    if ( $self->EffectiveId && $self->EffectiveId != $self->Id ) {
+        $RT::Logger->debug(
+            "We found a merged ticket. "
+            . $self->id ."/". $self->EffectiveId
+        );
+        my $real_id = $self->Load( $self->EffectiveId );
+        $MERGE_CACHE{'effective'}{ $id } = $real_id;
+        return $real_id;
     }
 
     #Ok. we're loaded. lets get outa here.
-    return ( $self->Id );
-
+    return $self->Id;
 }
 
 # }}}
@@ -1160,12 +1164,20 @@ sub _AddWatcher {
 
     my $principal = RT::Principal->new($self->CurrentUser);
     if ($args{'Email'}) {
+        if ( RT::EmailParser->IsRTAddress( $args{'Email'} ) ) {
+            return (0, $self->loc("[_1] is an address RT receives mail at. Adding it as a '[_2]' would create a mail loop", $args{'Email'}, $self->loc($args{'Type'})));
+        }
         my $user = RT::User->new($RT::SystemUser);
         my ($pid, $msg) = $user->LoadOrCreateByEmail( $args{'Email'} );
         $args{'PrincipalId'} = $pid if $pid; 
     }
     if ($args{'PrincipalId'}) {
         $principal->Load($args{'PrincipalId'});
+        if ( $principal->id and $principal->IsUser and my $email = $principal->Object->EmailAddress ) {
+            return (0, $self->loc("[_1] is an address RT receives mail at. Adding it as a '[_2]' would create a mail loop", $email, $self->loc($args{'Type'})))
+                if RT::EmailParser->IsRTAddress( $email );
+
+        }
     } 
 
  
@@ -1696,8 +1708,9 @@ sub IsOwner {
 
 =head2 TransactionAddresses
 
-Returns a composite hashref of the results of L<RT::Transaction/Addresses> for all this ticket's Create, Comment or Correspond transactions.
-The keys are C<To>, C<Cc> and C<Bcc>. The values are lists of C<Email::Address> objects.
+Returns a composite hashref of the results of L<RT::Transaction/Addresses> for
+all this ticket's Create, Comment or Correspond transactions. The keys are
+stringified email addresses. Each value is an L<Email::Address> object.
 
 NOTE: For performance reasons, this method might want to skip transactions and go straight for attachments. But to make that work right, we're going to need to go and walk around the access control in Attachment.pm's sub _Value.
 
@@ -2230,13 +2243,13 @@ sub _RecordNote {
             my $addresses = join ', ', (
                 map { RT::User->CanonicalizeEmailAddress( $_->address ) }
                     Email::Address->parse( $args{ $type . 'MessageTo' } ) );
-            $args{'MIMEObj'}->head->add( 'RT-Send-' . $type, $addresses );
+            $args{'MIMEObj'}->head->add( 'RT-Send-' . $type, Encode::encode_utf8( $addresses ) );
         }
     }
 
     foreach my $argument (qw(Encrypt Sign)) {
         $args{'MIMEObj'}->head->add(
-            "X-RT-$argument" => $args{ $argument }
+            "X-RT-$argument" => Encode::encode_utf8( $args{ $argument } )
         ) if defined $args{ $argument };
     }
 
@@ -2282,34 +2295,35 @@ sub _Links {
     my $field = shift;
     my $type  = shift || "";
 
-    unless ( $self->{"$field$type"} ) {
-        $self->{"$field$type"} = new RT::Links( $self->CurrentUser );
+    my $cache_key = "$field$type";
+    return $self->{ $cache_key } if $self->{ $cache_key };
 
-        #not sure what this ACL was supposed to do... but returning the
-        # bare (unlimited) RT::Links certainly seems wrong, it causes the
-        # $Ticket->Customers method during creation to return results for every
-        # ticket...
-        #if ( $self->CurrentUserHasRight('ShowTicket') ) {
-
-            # Maybe this ticket is a merged ticket
-            my $Tickets = new RT::Tickets( $self->CurrentUser );
-            # at least to myself
-            $self->{"$field$type"}->Limit( FIELD => $field,
-                                           VALUE => $self->URI,
-                                           ENTRYAGGREGATOR => 'OR' );
-            $Tickets->Limit( FIELD => 'EffectiveId',
-                             VALUE => $self->EffectiveId );
-            while (my $Ticket = $Tickets->Next) {
-                $self->{"$field$type"}->Limit( FIELD => $field,
-                                               VALUE => $Ticket->URI,
-                                               ENTRYAGGREGATOR => 'OR' );
-            }
-            $self->{"$field$type"}->Limit( FIELD => 'Type',
-                                           VALUE => $type )
-              if ($type);
-        #}
+    my $links = $self->{ $cache_key }
+              = RT::Links->new( $self->CurrentUser );
+    unless ( $self->CurrentUserHasRight('ShowTicket') ) {
+        $links->Limit( FIELD => 'id', VALUE => 0 );
+        return $links;
     }
-    return ( $self->{"$field$type"} );
+
+    # Maybe this ticket is a merge ticket
+    my $limit_on = 'Local'. $field;
+    # at least to myself
+    $links->Limit(
+        FIELD           => $limit_on,
+        VALUE           => $self->id,
+        ENTRYAGGREGATOR => 'OR',
+    );
+    $links->Limit(
+        FIELD           => $limit_on,
+        VALUE           => $_,
+        ENTRYAGGREGATOR => 'OR',
+    ) foreach $self->Merged;
+    $links->Limit(
+        FIELD => 'Type',
+        VALUE => $type,
+    ) if $type;
+
+    return $links;
 }
 
 # }}}
@@ -2551,8 +2565,6 @@ sub _AddLink {
 
 MergeInto take the id of the ticket to merge this ticket into.
 
-
-
 =cut
 
 sub MergeInto {
@@ -2564,7 +2576,7 @@ sub MergeInto {
     }
 
     # Load up the new ticket.
-    my $MergeInto = RT::Ticket->new($RT::SystemUser);
+    my $MergeInto = RT::Ticket->new($self->CurrentUser);
     $MergeInto->Load($ticket_id);
 
     # make sure it exists.
@@ -2576,6 +2588,11 @@ sub MergeInto {
     unless ( $MergeInto->CurrentUserHasRight('ModifyTicket') ) {
         return ( 0, $self->loc("Permission Denied") );
     }
+
+    delete $MERGE_CACHE{'effective'}{ $self->id };
+    delete @{ $MERGE_CACHE{'merged'} }{
+        $ticket_id, $MergeInto->id, $self->id
+    };
 
     $RT::Handle->BeginTransaction();
 
@@ -2726,18 +2743,22 @@ Returns list of tickets' ids that's been merged into this ticket.
 sub Merged {
     my $self = shift;
 
-    my $mergees = new RT::Tickets( $self->CurrentUser );
+    my $id = $self->id;
+    return @{ $MERGE_CACHE{'merged'}{ $id } }
+        if $MERGE_CACHE{'merged'}{ $id };
+
+    my $mergees = RT::Tickets->new( $self->CurrentUser );
     $mergees->Limit(
         FIELD    => 'EffectiveId',
-        OPERATOR => '=',
-        VALUE    => $self->Id,
+        VALUE    => $id,
     );
     $mergees->Limit(
         FIELD    => 'id',
         OPERATOR => '!=',
-        VALUE    => $self->Id,
+        VALUE    => $id,
     );
-    return map $_->id, @{ $mergees->ItemsArrayRef || [] };
+    return @{ $MERGE_CACHE{'merged'}{ $id } ||= [] }
+        = map $_->id, @{ $mergees->ItemsArrayRef || [] };
 }
 
 # }}}

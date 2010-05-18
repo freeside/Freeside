@@ -73,11 +73,10 @@ no warnings qw(redefine);
 sub _Init {
     my $self = shift;
     $self->{'table'} = 'Users';
-        $self->{'primary_key'} = 'id';
+    $self->{'primary_key'} = 'id';
+    $self->{'with_disabled_column'} = 1;
 
-
-
-    my @result =          $self->SUPER::_Init(@_);
+    my @result = $self->SUPER::_Init(@_);
     # By default, order by name
     $self->OrderBy( ALIAS => 'main',
                     FIELD => 'Name',
@@ -114,29 +113,6 @@ sub PrincipalsAlias {
 }
 
 
-# {{{ sub _DoSearch 
-
-=head2 _DoSearch
-
-  A subclass of DBIx::SearchBuilder::_DoSearch that makes sure that _Disabled rows never get seen unless
-we're explicitly trying to see them.
-
-=cut
-
-sub _DoSearch {
-    my $self = shift;
-
-    #unless we really want to find disabled rows, make sure we\'re only finding enabled ones.
-    unless ( $self->{'find_disabled_rows'} ) {
-        $self->LimitToEnabled();
-    }
-    return ( $self->SUPER::_DoSearch(@_) );
-
-}
-
-# }}}
-# {{{ sub LimitToEnabled
-
 =head2 LimitToEnabled
 
 Only find items that haven\'t been disabled
@@ -147,13 +123,31 @@ Only find items that haven\'t been disabled
 sub LimitToEnabled {
     my $self = shift;
 
-    $self->Limit( ALIAS    => $self->PrincipalsAlias,
-                  FIELD    => 'Disabled',
-                  VALUE    => '0',
-                  OPERATOR => '=' );
+    $self->{'handled_disabled_column'} = 1;
+    $self->Limit(
+        ALIAS    => $self->PrincipalsAlias,
+        FIELD    => 'Disabled',
+        VALUE    => '0',
+    );
 }
 
-# }}}
+=head2 LimitToDeleted
+
+Only find items that have been deleted.
+
+=cut
+
+sub LimitToDeleted {
+    my $self = shift;
+    
+    $self->{'handled_disabled_column'} = $self->{'find_disabled_rows'} = 1;
+    $self->Limit(
+        ALIAS => $self->PrincipalsAlias,
+        FIELD => 'Disabled',
+        VALUE => 1,
+    );
+}
+
 
 # {{{ LimitToEmail
 
@@ -378,7 +372,8 @@ sub WhoHaveRight {
         return (undef);
     }
 
-    my @from_role = $self->Clone->_WhoHaveRoleRightSplitted( %args );
+    my $from_role = $self->Clone;
+    $from_role->WhoHaveRoleRight( %args );
 
     my $from_group = $self->Clone;
     $from_group->WhoHaveGroupRight( %args );
@@ -387,8 +382,8 @@ sub WhoHaveRight {
     use DBIx::SearchBuilder 1.50; #no version on ::Union :(
     use DBIx::SearchBuilder::Union;
     my $union = new DBIx::SearchBuilder::Union;
-    $union->add( $_ ) foreach @from_role;
     $union->add( $from_group );
+    $union->add( $from_role );
     %$self = %$union;
     bless $self, ref($union);
 
@@ -410,57 +405,14 @@ sub WhoHaveRoleRight
         @_
     );
 
-    my $groups = $self->_JoinGroups( %args );
-    my $acl = $self->_JoinACL( %args );
-
-    $self->Limit( ALIAS => $acl,
-                  FIELD => 'PrincipalType',
-                  VALUE => "$groups.Type",
-                  QUOTEVALUE => 0,
-                );
-
-    # no system user
-    $self->Limit( ALIAS => $self->PrincipalsAlias,
-                  FIELD => 'id',
-                  OPERATOR => '!=',
-                  VALUE => $RT::SystemUser->id
-                );
-
     my @objects = $self->_GetEquivObjects( %args );
-    unless ( @objects ) {
-        unless ( $args{'IncludeSystemRights'} ) {
-            $self->_AddSubClause( WhichObjects => "($acl.ObjectType != 'RT::System')" );
-        }
+    my @roles = RT::Principal->RolesWithRight( %args );
+    unless ( @roles ) {
+        $self->_AddSubClause( "WhichRole", "(main.id = 0)" );
         return;
     }
 
-    my ($groups_clauses, $acl_clauses) = $self->_RoleClauses( $groups, $acl, @objects );
-    $self->_AddSubClause( "WhichObject", "(". join( ' OR ', @$groups_clauses ) .")" );
-    $self->_AddSubClause( "WhichRole", "(". join( ' OR ', @$acl_clauses ) .")" );
-
-    return;
-}
-
-sub _WhoHaveRoleRightSplitted {
-    my $self = shift;
-    my %args = (
-        Right                  => undef,
-        Object                 => undef,
-        IncludeSystemRights    => undef,
-        IncludeSuperusers      => undef,
-        IncludeSubgroupMembers => 1,
-        EquivObjects           => [ ],
-        @_
-    );
-
     my $groups = $self->_JoinGroups( %args );
-    my $acl = $self->_JoinACL( %args );
-
-    $self->Limit( ALIAS => $acl,
-                  FIELD => 'PrincipalType',
-                  VALUE => "$groups.Type",
-                  QUOTEVALUE => 0,
-                );
 
     # no system user
     $self->Limit( ALIAS => $self->PrincipalsAlias,
@@ -469,35 +421,21 @@ sub _WhoHaveRoleRightSplitted {
                   VALUE => $RT::SystemUser->id
                 );
 
-    my @objects = $self->_GetEquivObjects( %args );
-    unless ( @objects ) {
-        unless ( $args{'IncludeSystemRights'} ) {
-            $self->_AddSubClause( WhichObjects => "($acl.ObjectType != 'RT::System')" );
-        }
-        return $self;
-    }
+    $self->_AddSubClause( "WhichRole", "(". join( ' OR ', map "$groups.Type = '$_'", @roles ) .")" );
 
-    my ($groups_clauses, $acl_clauses) = $self->_RoleClauses( $groups, $acl, @objects );
-    $self->_AddSubClause( "WhichRole", "(". join( ' OR ', @$acl_clauses ) .")" );
-    
-    my @res;
-    foreach ( @$groups_clauses ) {
-        my $tmp = $self->Clone;
-        $tmp->_AddSubClause( WhichObject => $_ );
-        push @res, $tmp;
-    }
+    my @groups_clauses = $self->_RoleClauses( $groups, @objects );
+    $self->_AddSubClause( "WhichObject", "(". join( ' OR ', @groups_clauses ) .")" )
+        if @groups_clauses;
 
-    return @res;
+    return;
 }
 
 sub _RoleClauses {
     my $self = shift;
     my $groups = shift;
-    my $acl = shift;
     my @objects = @_;
 
     my @groups_clauses;
-    my @acl_clauses;
     foreach my $obj ( @objects ) {
         my $type = ref($obj)? ref($obj): $obj;
         my $id;
@@ -509,12 +447,8 @@ sub _RoleClauses {
         # field to integer and drop this quotes.
         $role_clause   .= " AND $groups.Instance = '$id'" if $id;
         push @groups_clauses, "($role_clause)";
-
-        my $object_clause = "$acl.ObjectType = '$type'";
-        $object_clause   .= " AND $acl.ObjectId = $id" if $id;
-        push @acl_clauses, "($object_clause)";
     }
-    return (\@groups_clauses, \@acl_clauses);
+    return @groups_clauses;
 }
 
 # XXX: should be generalized
