@@ -82,6 +82,18 @@
     <TR>
       <TH BGCOLOR="#e8e8e8" COLSPAN=2 ALIGN="left"><FONT SIZE="+1">Display options</FONT></TH>
     </TR>
+
+%   #move to /elements/tr-select-cust_pkg-fields if anything else needs it...
+    <TR>
+      <TD ALIGN="right">Package fields</TD>
+      <TD>
+        <SELECT NAME="cust_pkg_fields">
+          <OPTION VALUE="">(none)
+          <OPTION VALUE="setup,last_bill,bill,cancel">Setup date | Last bill date | Next bill date | Cancel date
+        </SELECT>
+      </TD>
+    </TR>
+
     <% include( '/elements/tr-select-cust-fields.html' ) %>
                        
   </TABLE>

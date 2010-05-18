@@ -243,6 +243,7 @@ tie my %rights, 'Tie::IxHash',
     'List invoices',
     'List packages',
     'List services',
+    'List service passwords',
   
     { rightname=> 'List rating data', desc=>'Usage reports', global=>1 },
     'Billing event reports',

@@ -1260,6 +1260,13 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'report-showpasswords',
+    'section'     => 'UI',
+    'description' => 'This is a terrible idea.  Do not enable it.  STRONGLY NOT RECOMMENDED.  Enables display of passwords on services reports.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'signupurl',
     'section'     => 'UI',
     'description' => 'if you are using customer-to-customer referrals, and you enter the URL of your <a href="http://www.freeside.biz/mediawiki/index.php/Freeside:1.7:Documentation:Self-Service_Installation">signup server CGI</a>, the customer view screen will display a customized link to the signup server with the appropriate customer as referral',

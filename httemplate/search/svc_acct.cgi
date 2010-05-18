@@ -52,8 +52,9 @@ sub timelast {
 </%once>
 <%init>
 
-die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('List services');
+my $curuser =  $FS::CurrentUser::CurrentUser;
+
+die "access denied" unless $curuser->access_right('List services');
 
 my $link      = [ "${p}view/svc_acct.cgi?",   'svcnum'  ];
 my $link_cust = sub {
@@ -68,13 +69,35 @@ my $link_cust = sub {
 my %search_hash = ();
 my @extra_sql = ();
 
-my @header = ( '#', 'Service', 'Account', 'UID', 'Last Login' );
-my @fields = ( 'svcnum', 'svc', 'email', 'uid', 'last_login_text' );
-my @links = ( $link, $link, $link, $link, $link );
-my $align = 'rlllr';
-my @color = ( '', '', '', '', '' );
-my @style = ( '', '', '', '', '' );
+my @header = ( '#', 'Service', 'Account' );
+my @fields = ( 'svcnum', 'svc', 'email' );
+my @links = ( $link, $link, $link );
+my $align = 'rll';
+my @color = ( '', '', '' );
+my @style = ( '', '', '' );
 my @footer = ();
+
+my $conf = new FS::Conf;
+
+if ( $conf->exists('report-showpasswords') #its a terrible idea
+     && $curuser->access_right('List service passwords') #but if you insist...
+   )
+{
+  push @header, 'Password';
+  push @fields, 'get_cleartext_password';
+  push @links, $link;
+  $align .= 'l';
+  push @color, '';
+  push @style, '';
+}
+
+#maybe hide the UID if a flag isn't passed... its much less useful these days
+push @header, 'Real Name', 'UID', 'Last Login';
+push @fields, 'finger', 'uid', 'last_login_text';
+push @links, $link, $link, $link;
+$align .= 'llr';
+push @color, '', '', '';
+push @style, '', '', '';
 
 for (qw( domain domsvc agentnum custnum popnum svcpart cust_fields )) {
   $search_hash{$_} = $cgi->param($_) if length($cgi->param($_));
@@ -115,7 +138,6 @@ if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
                 sub { format_time($tot_time) }, #time
               );
 
-    my $conf = new FS::Conf;
     if ( $conf->exists('svc_acct-display_paid_time_remaining') ) {
       my $tot_paid_time = 0;
       my %tot = ( '30'=>0, '60'=>0, '90'=>0 );
@@ -252,6 +274,28 @@ if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
 
   push @extra_sql, '( '. join( ' OR ', @username_sql). ' )';
 
+}
+
+my $date_format = $conf->config('date_format') || '%m/%d/%Y';
+
+$cgi->param('cust_pkg_fields') =~ /^([\w\,]*)$/ or die "bad cust_pkg_fields";
+my @pkg_fields = split(',', $1);
+foreach my $pkg_field ( @pkg_fields ) {
+  ( my $header = ucfirst($pkg_field) ) =~ s/_/ /; #:/
+  push @header, $header;
+
+  #not the most efficient to do it every field, but this is of niche use. so far
+  push @fields, sub { my $svc_acct = shift;
+                      my $cust_pkg = $svc_acct->cust_svc->cust_pkg or return '';
+                      my $value = $cust_pkg->get($pkg_field);#closures help alot
+                      $value ? time2str('%b %d %Y', $value ) : '';
+                    };
+
+  push @links, '';
+  $align .= 'c';
+  push @color, '';
+  push @style, '';
+  
 }
 
 push @header, FS::UI::Web::cust_header($cgi->param('cust_fields'));
