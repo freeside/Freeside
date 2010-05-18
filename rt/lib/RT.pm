@@ -354,10 +354,12 @@ sub InitLogging {
                          ));
         }
     }
-    InitSignalHandlers();
+    InitSignalHandlers(%arg);
 }
 
 sub InitSignalHandlers {
+
+    my %arg = @_;
 
 # Signal handlers
 ## This is the default handling of warnings and die'ings in the code
