@@ -1,33 +1,36 @@
 package RTx::Calendar;
 
 use strict;
+use base qw( Exporter );
 use DateTime;
 use DateTime::Set;
 
 our $VERSION = "0.07";
 
-sub FirstMonday {
-    my ($year, $month) = (shift, shift);
+our @EXPORT_OK = qw( FirstDay LastDay );
+
+sub FirstDay {
+    my ($year, $month, $matchday) = @_;
     my $set = DateTime::Set->from_recurrence(
 	next => sub { $_[0]->truncate( to => 'day' )->subtract( days => 1 ) }
     );
 
     my $day = DateTime->new( year => $year, month => $month );
 
-    $day = $set->next($day) while $day->day_of_week != 1;
+    $day = $set->next($day) while $day->day_of_week != $matchday;
     $day;
 
 }
 
-sub LastSunday {
-    my ($year, $month) = (shift, shift);
+sub LastDay {
+    my ($year, $month, $matchday) = @_;
     my $set = DateTime::Set->from_recurrence(
 	next => sub { $_[0]->truncate( to => 'day' )->add( days => 1 ) }
     );
 
     my $day = DateTime->last_day_of_month( year => $year, month => $month );
 
-    $day = $set->next($day) while $day->day_of_week != 7;
+    $day = $set->next($day) while $day->day_of_week != $matchday;
     $day;
 }
 

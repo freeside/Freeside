@@ -46,7 +46,7 @@ $NewQuery => 0
 <thead>
 <tr>
 <th></th>
-% for (1 .. 6, 0) {
+% for ( @{$week{$weekstart}} ) {
 <th width="14%"><%$rtdate->GetWeekday($_)%></th>
 % }
 </tr>
@@ -54,7 +54,7 @@ $NewQuery => 0
 <tbody>
 <tr>
 % while ($date <= $end) {
-%   if ( $date->day_of_week == 1) {
+%   if ( $date->day_of_week == $startday_of_week ) {
 <th><% $date->week_number %></th>
 %   }
 <td class="<% $date->month != ($Month + 1) ? 'oddline' : '' %>"
@@ -66,7 +66,7 @@ $NewQuery => 0
 % }
 </td>
 % $date = $set->next($date);
-% if ( $date->day_of_week == 1) {
+% if ( $date->day_of_week == $startday_of_week ) {
 </tr><tr>
 % }
 % }
@@ -125,7 +125,7 @@ $NewQuery => 0
 
 </html>
 <%INIT>
-use RTx::Calendar;
+use RTx::Calendar qw(FirstDay LastDay);
 
 my $title = loc("Calendar");
 
@@ -133,9 +133,18 @@ my @DateTypes = qw/Created Starts Started Due LastUpdated Resolved/;
 
 my $rtdate = RT::Date->new($session{'CurrentUser'});
 
+my $weekstart = 'Sunday'; #RT::SiteConfig?  user pref?
+my %week = (
+  'Saturday' => [6,0..5],
+  'Sunday'   => [0..6],
+  'Monday'   => [1..6,0],
+);
+my $startday_of_week = ${$week{$weekstart}}[0]  || 7;
+my $endday_of_week   = ${$week{$weekstart}}[-1] || 7;
+
 my $today = DateTime->today;
-my $date  = RTx::Calendar::FirstMonday($Year, $Month + 1);
-my $end   = RTx::Calendar::LastSunday($Year, $Month + 1);
+my $date = FirstDay($Year, $Month + 1, $startday_of_week );
+my $end  = LastDay ($Year, $Month + 1, $endday_of_week );
 
 # use this to loop over days until $end
 my $set = DateTime::Set->from_recurrence(
