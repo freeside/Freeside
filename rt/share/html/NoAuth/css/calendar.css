@@ -14,27 +14,62 @@ color:#505050;
 }
 
 .date {
-text-align: right;
+  text-align: right;
+  background-color: #f8f8ff;
+  width:100%;
+}
+
+.offmonthdate {
+  text-align: right;
+  background-color: #f8f8f8;
+  width:100%;
+}
+
+.todaysdate {
+  text-align: right;
+  background-color: #fc6; /*#fad163*/
+  width:100%;
 }
 
 table.rtxcalendar {
     width:100%;
     border-collapse: collapse;
-    border: 1px dotted #d0d0d0;
+    border: 1px solid #d0d0d0;
     margin-bottom: 6px;
 }
 
 table.rtxcalendar td {
     border: 1px solid #d7d7d7;
+    background: #fff;
     vertical-align: top;
+    width: 14%;
 }
 
 table.rtxcalendar th {
     border: 1px solid #d7d7d7;
-    background: #eee;
+    background: #eef;
 }
 table.rtxcalendar tbody th {
     border: 1px solid #d7d7d7;
     background: #eee;
     font-weight: normal;
 }
+
+table.rtxcalendar td.offmonth {
+    background: #f8f8f8;
+    color: #aaa;
+}
+
+table.rtxcalendar td.today {
+    background: #ffe; /*#fed;*/
+    border: 1px solid #fc6;
+}
+
+table.rtxcalendar td.yesterday {
+    border-right: none;
+}
+
+table.rtxcalendar td.aweekago {
+    border-bottom: none;
+}
+

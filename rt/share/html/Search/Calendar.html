@@ -28,9 +28,9 @@ $NewQuery => 0
 % }
 <a href="<%$RT::WebPath%>/Search/Calendar.html?Month=<%$PMonth%>&Year=<%$PYear%>&<%$QueryString%>">«<%$rtdate->GetMonth($PMonth)%></a>
 </td>
-<td align="center">
-<a href="<%$RT::WebPath%>/Prefs/Calendar.html">Calendar Preferences and Help</a>
-</td>
+<th align="center">
+  <font size="+1"><% $rtdate->GetMonth($Month). " $Year" %></font>
+</th>
 <td align="right">
 % my ($NMonth, $NYear) = ($Month + 1, $Year);
 % if ($NMonth > 11) {
@@ -43,32 +43,50 @@ $NewQuery => 0
 </table>
 
 <table class="rtxcalendar">
+
 <thead>
 <tr>
-<th></th>
 % for ( @{$week{$weekstart}} ) {
 <th width="14%"><%$rtdate->GetWeekday($_)%></th>
 % }
 </tr>
 </thead>
+
 <tbody>
 <tr>
 % while ($date <= $end) {
+%
+%   my $offmonth = $date->month != ($Month + 1);
+%   my $is_today     = (DateTime->compare($today,     $date) == 0);
+%   my $is_yesterday = (DateTime->compare($yesterday, $date) == 0);
+%   my $is_aweekago  = (DateTime->compare($aweekago,  $date) == 0);
+
+    <td class="<% $offmonth ? 'offmonth'
+                    : $is_today     ? 'today'
+                    : $is_yesterday ? 'yesterday'
+                    : $is_aweekago  ? 'aweekago'
+                    : ''
+               %>"
+    >
+      <div class="<% $is_today ? 'todays'
+                       : $offmonth ? 'offmonth'
+                       :'' %>date"
+      ><%$date->day%></div>
+
+%     my $sp = 3;
+%     for my $t ( @{ $Tickets{$date->strftime("%F")} } ) {
+%       $sp--;
+        <& /Elements/CalendarEvent, Object => $t, Date => $date, DateTypes => \%DateTypes &>
+%     }
+      <% ($sp>0) ? '<BR>'x$sp : '' |n %>
+
+    </td>
+
+%   $date = $set->next($date);
 %   if ( $date->day_of_week == $startday_of_week ) {
-<th><% $date->week_number %></th>
+      </tr><tr>
 %   }
-<td class="<% $date->month != ($Month + 1) ? 'oddline' : '' %>"
-    style="width:14%;<%  DateTime->compare($today, $date) == 0 ? 'background:#f6f7f8;' : '' %>"
->
-<p class="date"><%$date->day%></p>
-% for my $t ( @{ $Tickets{$date->strftime("%F")} } ) {
-<& /Elements/CalendarEvent, Object => $t, Date => $date, DateTypes => \%DateTypes &>
-% }
-</td>
-% $date = $set->next($date);
-% if ( $date->day_of_week == $startday_of_week ) {
-</tr><tr>
-% }
+
 % }
 </tr>
 </tbody>
@@ -79,16 +97,8 @@ $NewQuery => 0
 <td align="left">
 <a href="<%$RT::WebPath%>/Search/Calendar.html?Month=<%$PMonth%>&Year=<%$PYear%>&<%$QueryString%>">«<%$rtdate->GetMonth($PMonth)%></a>
 </td>
-<td align="right">
-<a href="<%$RT::WebPath%>/Search/Calendar.html?Month=<%$NMonth%>&Year=<%$NYear%>&<%$QueryString%>"><%$rtdate->GetMonth($NMonth)%>»</a>
-</td>
-</tr>
-</table>
 
-
-<table width="100%">
-<tr>
-<td valign="top" align="center" width="80%">
+<td valign="top" align="center">
 <form action="<%$RT::WebPath%>/Search/Calendar.html?<%$QueryString%>" method="post">
 
 <select name="Month">
@@ -103,27 +113,59 @@ $NewQuery => 0
 % }
 </select>
 
-<& /Elements/Submit&>
+%# <& /Elements/Submit&>
+<input type="submit" value="<% loc('Submit') %>" class="button" />
+
 </form>
 </td>
-<td valign="top" width="50%" align="right">
-<img src="<%$RT::WebImagesURL%>/created.png" /> : <&|/l&>Created</&><br />
-<img src="<%$RT::WebImagesURL%>/due.png" /> : <&|/l&>Due</&><br />
-<img src="<%$RT::WebImagesURL%>/resolved.png" /> : <&|/l&>Resolved</&><br />
-<img src="<%$RT::WebImagesURL%>/updated.png" /> : <&|/l&>Last Updated</&><br />
-<img src="<%$RT::WebImagesURL%>/created_due.png" /> : <&|/l&>Created</&>, <&|/l&>Due</&><br />
-<img src="<%$RT::WebImagesURL%>/reminder.png" /> : <&|/l&>Reminders</&><br />
-<img src="<%$RT::WebImagesURL%>/starts.png" /> : <&|/l&>Starts</&><br />
-<img src="<%$RT::WebImagesURL%>/started.png" /> : <&|/l&>Started</&><br />
-<img src="<%$RT::WebImagesURL%>/starts_due.png" /> : <&|/l&>Starts</&>, <&|/l&>Due</&><br />
 
-
+<td align="right">
+<a href="<%$RT::WebPath%>/Search/Calendar.html?Month=<%$NMonth%>&Year=<%$NYear%>&<%$QueryString%>"><%$rtdate->GetMonth($NMonth)%>»</a>
 </td>
+</tr>
+</table>
+
+<table width="100%">
+<tr>
+
+<td valign="top" rowspan=9>
+  <BR>
+  <a href="<%$RT::WebPath%>/Prefs/Calendar.html">Calendar Preferences and Help</a>
+</td>
+
+% foreach my $legend (keys %legend) {
+    <tr>
+      <td align="right">
+        <img src="<%$RT::WebImagesURL%>/<%$legend%>.png" />
+      </td>
+      <td align="left">
+%       my $more = 0;
+%       foreach ( @{$legend{$legend}} ) {
+          <% $more++ ? ', ' : '' %>
+          <&|/l&><% $_ %></&>
+%       }
+      </td>
+    </tr>
+% }
+
 </table>
 
 </&>
 
-</html>
+<%ONCE>
+
+my %legend = (
+  'created'     => ['Created'],
+  'due'         => ['Due'],
+  'resolved'    => ['Resolved'],
+  'updated'     => ['Last Updated'],
+  'created_due' => ['Created','Due'],
+  'reminder'    => ['Reminders'],
+  'started'     => ['Started'],
+  'starts_due'  => ['Starts','Due'],
+);
+
+</%ONCE>
 <%INIT>
 use RTx::Calendar qw(FirstDay LastDay);
 
@@ -143,6 +185,8 @@ my $startday_of_week = ${$week{$weekstart}}[0]  || 7;
 my $endday_of_week   = ${$week{$weekstart}}[-1] || 7;
 
 my $today = DateTime->today;
+my $yesterday = $today->clone->subtract( days=>1 );
+my $aweekago  = $today->clone->subtract( days=>7 );
 my $date = FirstDay($Year, $Month + 1, $startday_of_week );
 my $end  = LastDay ($Year, $Month + 1, $endday_of_week );
 
