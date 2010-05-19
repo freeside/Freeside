@@ -1,0 +1,159 @@
+<%init>
+
+use Data::ICal;
+use Data::ICal::Entry::Todo;
+use Data::ICal::Entry::Event;
+use Date::ICal;
+
+$RT::ICalTicketType   ||= "Data::ICal::Entry::Todo";
+$RT::ICalReminderType ||= "Data::ICal::Entry::Event";
+
+my ($UserId, $SearchId, $MagicNumber);
+my $arg = $m->dhandler_arg;
+
+if ($arg =~ m{^(\d+)@(\d+)/(.*)$}) {
+    $UserId = $1;
+    $SearchId = $2;
+    $MagicNumber = $3;
+} elsif ($arg =~ m{^(\d+)/(.*)}) {
+    $UserId = $1;
+    $MagicNumber = $2;
+} else {
+    Abort("Corrupted URL.");
+}
+
+my $CurrentUser = new RT::CurrentUser();
+$CurrentUser->LoadById($UserId);
+my $user = $CurrentUser->Name;
+
+# if no user, abort
+unless ($CurrentUser->Id) {
+    $RT::Logger->error("No such user id $UserId from $ENV{'REMOTE_ADDR'}");
+    $m->out("RT/".$RT::VERSION ." ".404 ."\n\nno such file\n");
+    $m->abort;
+}
+
+# verify user has LoadSavedSearch right
+if ($SearchId and not $CurrentUser->HasRight( Right => 'LoadSavedSearch',
+                                              Object=> $RT::System )) {
+    $RT::Logger->error("not enough rights for user $user from $ENV{'REMOTE_ADDR'}");
+    $m->out("RT/".$RT::VERSION ." ".404 ."\n\nno such file\n");
+    $m->abort;
+}
+
+
+# if MagicNumber doesn't match the one stored in database, abort
+my $Search;
+my $ICalAttribute;
+if ($SearchId) {
+    $Search = $CurrentUser->Attributes->WithId($SearchId);
+    $ICalAttribute = $Search->FirstAttribute('ICalURL');
+} else {
+    $ICalAttribute = $CurrentUser->UserObj->FirstAttribute('ICalURL');
+}
+
+unless ($ICalAttribute) {
+    $RT::Logger->error("No such ICal feed for $user from $ENV{'REMOTE_ADDR'}");
+    $m->out("RT/".$RT::VERSION ." ".404 ."\n\nno such file\n");
+    $m->abort;
+}
+
+
+if ($MagicNumber ne $ICalAttribute->Content) {
+    $RT::Logger->error("FAILED LOGIN for $user from $ENV{'REMOTE_ADDR'}");
+    $m->out("RT/".$RT::VERSION ." ".404 ."\n\nno such file\n");
+    $m->abort;
+}
+
+my $Tickets   = RT::Tickets->new($CurrentUser);
+
+my $Query = "( Status = 'new' OR Status = 'open' OR Status = 'stalled')
+ AND ( Owner = '" . $CurrentUser->Id ."' OR Owner = 'Nobody'  )
+ AND ( Type = 'reminder' OR 'Type' = 'ticket' )";
+
+$Query = $Search->SubValue('Query')
+    if $Search;
+
+$Query .= " AND ( Due > '1970-01-01' OR Starts > '1970-01-01' )";
+
+$Tickets->FromSQL($Query);
+
+$Tickets->OrderBy(FIELD => 'Due', ORDER => 'ASC');
+
+my $calendar = Data::ICal->new();
+
+my ($uid) = $RT::WebURL =~ m{https?://([^:]+)};
+
+while (my $Ticket = $Tickets->Next ) {
+
+    my $event;
+    if ($Ticket->Type eq 'ticket') {
+	$event = add_todo($Ticket, $uid);
+    } else {
+	$event = add_event($Ticket, $uid);
+    }
+    next unless $event;
+    $calendar->add_entry($event);
+}
+
+my $cal = $calendar->as_string;
+
+$r->content_type('text/calendar;charset=utf-8');
+$m->clear_buffer();
+$m->out($cal);
+$m->abort; 
+
+sub add_event {
+    my ($Reminder, $uid) = @_;
+
+    return unless defined $Reminder->RefersTo->First;
+    my $Ticket  = $Reminder->RefersTo->First->TargetObj;
+    
+    my %event = (
+	summary => $Reminder->Subject ? $Reminder->Subject : '',
+	url        => "${RT::WebURL}/Ticket/Display.html?id=" . $Ticket->id,
+	uid        => Date::ICal->new( epoch => time() )->ical() . "-" . $Reminder->Id . "@" . $uid,
+	categories => $Ticket->QueueObj->Name,
+	dtstart     => Date::ICal->new( epoch => $Reminder->DueObj->Unix )->ical,
+    );
+
+    my $event = $RT::ICalReminderType->new();
+    $event->add_properties(%event);
+
+    return $event;
+}
+
+sub add_todo {
+    my ($Ticket, $uid) = @_;
+
+    my %vtodo = (
+	summary    => $Ticket->Subject ? $Ticket->Subject : '',
+	dtstart    => Date::ICal->new( epoch => $Ticket->CreatedObj->Unix )->ical,
+	url        => "${RT::WebURL}/Ticket/Display.html?id=" . $Ticket->id,
+	uid        => Date::ICal->new( epoch => time() )->ical() . "-" . $Ticket->Id . "@" . $uid,
+	categories => $Ticket->QueueObj->Name,
+    );
+
+    $vtodo{due} = Date::ICal->new( epoch => $Ticket->DueObj->Unix )->ical,
+        if $Ticket->DueObj;
+
+    if ($Ticket->OwnerObj->Id != $RT::Nobody->Id and $Ticket->OwnerObj->EmailAddress) {
+	$vtodo{organizer} = "MAILTO:" . $Ticket->OwnerObj->EmailAddress;
+	$vtodo{attendee} = "MAILTO:" . $Ticket->OwnerObj->EmailAddress;
+    } elsif ($Ticket->QueueObj->CommentAddress) {
+	$vtodo{organizer} = "MAILTO:" . $Ticket->QueueObj->CommentAddress;
+	$vtodo{attendee} = "MAILTO:" . $Ticket->QueueObj->CommentAddress; 
+    }
+
+    $vtodo{priority} = $Ticket->Priority
+	if $Ticket->Priority;
+
+    my $vtodo = $RT::ICalTicketType->new();
+    $vtodo->add_properties(%vtodo);
+
+    return $vtodo;
+}
+
+
+
+</%init>

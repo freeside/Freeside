@@ -1,0 +1,78 @@
+<&|/Widgets/TitleBox,
+    title => loc("Calendar"),
+    title_href => "Search/Calendar.html" &>
+
+<table class="rtxcalendar">
+<thead>
+<tr>
+% my $date = $begin->clone;
+% while ( $date <= $end ) {
+<th width="14%"><%$rtdate->GetWeekday($date->day_of_week % 7)%></th>
+% $date = $set->next($date);
+% }
+</tr>
+</thead>
+<tbody>
+<tr>
+% $date = $begin->clone;
+% while ($date <= $end) {
+<td>
+<p class="date"><%$date->day%></p>
+% for my $t (@{ $Tickets{$date->strftime("%F")} }) {
+<& /Elements/CalendarEvent, Object => $t, Date => $date, DateTypes => \%DateTypes &>
+% }
+</td>
+% $date = $set->next($date);
+% }
+</tr>
+</tbody>
+</table>
+
+ </&>
+
+<%INIT>
+
+use RTx::Calendar;
+
+my $title = loc("Calendar");
+
+my $rtdate = RT::Date->new($session{'CurrentUser'});
+
+my @DateTypes = qw/Created Starts Started Due LastUpdated Resolved/;
+
+my $today = DateTime->today;
+
+# this line is used to debug MyCalendar
+# $today = DateTime->new(year => 2007, month => 4, day => 11);
+
+my $begin = $today->clone->subtract( days => 3);
+my $end   = $today->clone->add( days => 3);
+
+# use this to loop over days until $end
+my $set = DateTime::Set->from_recurrence(
+    next => sub { $_[0]->truncate( to => 'day' )->add( days => 1 ) }
+);
+
+my $Query = "( Status = 'new' OR Status = 'open' OR Status = 'stalled')
+ AND ( Owner = '" . $session{CurrentUser}->Id ."' OR Owner = 'Nobody'  )
+ AND ( Type = 'reminder' OR 'Type' = 'ticket' )";
+my $Format = "__Starts__ __Due__";
+
+if ( my $Search = RTx::Calendar::SearchDefaultCalendar($session{CurrentUser}) ) {
+  $Format = $Search->SubValue('Format');
+  $Query = $Search->SubValue('Query');
+}
+
+# we search all date types in Format string
+my @Dates = grep { $Format =~ m/__${_}(Relative)?__/ } @DateTypes;
+
+# used to display or not a date in Element/CalendarEvent
+my %DateTypes = map { $_ => 1 } @Dates;
+
+$Query .= RTx::Calendar::DatesClauses(\@Dates, $begin->strftime("%F"), $end->strftime("%F"));
+
+# print STDERR $Query, "\n";
+
+my %Tickets = RTx::Calendar::FindTickets($session{'CurrentUser'}, $Query, \@Dates);
+
+</%INIT>

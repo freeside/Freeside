@@ -1,0 +1,68 @@
+<%args>
+$Search => undef
+$Object => undef
+$HiddenField => undef
+</%args>
+
+<&| /Widgets/TitleBox, title => $title &>
+
+% if ($FeedText) {
+<p><%$FeedText%></p>
+% } else {
+This feed will show tickets with due date find with query:<br />
+"<%$Search->SubValue('Query')%>".
+% }
+
+% if ($ICalURL) {
+<p>Your can paste this url in your calendar  : <b><a href="<%$link%>"><%$link%></a></b><p>
+<table>
+<tr>
+<td>
+<form action="<%$RT::WebPath%>/Prefs/Calendar.html" method="post">
+<input type="hidden" name="HiddenField" value="<%$HiddenField%>" />
+<input type="submit" class="button" name="ResetURL" value="<%loc('Disable Feed')%>" />
+</form>
+</td>
+<td>
+<form action="<%$RT::WebPath%>/Prefs/Calendar.html" method="post">
+<input type="hidden" name="HiddenField" value="<%$HiddenField%>" />
+<input type="submit" class="button" name="ChangeURL" value="<%loc('Change Feed URL')%>" />
+</form>
+</td>
+</tr>
+</table>
+% } else {
+
+<form action="<%$RT::WebPath%>/Prefs/Calendar.html" method="post">
+<input type="hidden" name="HiddenField" value="<%$HiddenField%>" />
+<input type="submit" class="button" name="ChangeURL" value="<%loc('Enable Feed')%>" />
+</form>
+% }
+
+</&>
+
+<%init>
+my $title;
+my $ICalURL;
+my $Id;
+my $FeedText;
+my $link;
+
+if ($Object) {
+  $title = loc('Feed for "') . ($Search->Description || loc('Unnamed search')) . '" search';
+  $HiddenField = "SavedSearch-" . $Search->Id;
+  $ICalURL = $Search->FirstAttribute('ICalURL');
+  $Id = $session{CurrentUser}->Id . "@" . $Search->Id;
+  $title .= " (disabled)" unless $ICalURL;
+} else {
+  $title = loc('Feed for default calendar');
+  $HiddenField = "Private";
+  $ICalURL = $session{CurrentUser}->UserObj->FirstAttribute('ICalURL');
+  $Id = $session{CurrentUser}->Id;
+  $FeedText = "This feed will show yours and Nobody's tasks with due date.";
+}
+
+$link = $RT::WebURL . "NoAuth/Calendar/" . $Id . "/" . $ICalURL->Content
+  if $ICalURL;
+
+</%init>

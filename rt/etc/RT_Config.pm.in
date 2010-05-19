@@ -1346,7 +1346,7 @@ customized homepage ("RT at a glance").
 
 =cut
 
-Set($HomepageComponents, [qw(QuickCreate Quicksearch MyAdminQueues MySupportQueues MyReminders RefreshHomepage Dashboards)]);
+Set($HomepageComponents, [qw(QuickCreate Quicksearch MyCalendar MyAdminQueues MySupportQueues MyReminders RefreshHomepage Dashboards)]);
 
 =item C<@MasonParameters>
 
@@ -1778,7 +1778,7 @@ C<Set(@Plugins, (qw(Extension::QuickDelete RT::FM)));>
 
 =cut
 
-Set(@Plugins, ());
+Set(@Plugins, (qw(RTx::Calendar)));
 
 =back
 

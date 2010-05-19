@@ -1,0 +1,129 @@
+<%args>
+$Date => undef
+$Object => undef
+$DateTypes => undef
+</%args>
+<div class="tooltip">
+<small>
+
+% if ($IsReminder and RTx::Calendar::LocalDate($Object->DueObj->Unix) eq $today) {
+     <img src="<%$RT::WebImagesURL%>/reminder.png" />
+
+% } elsif ($DateTypes->{Resolved}
+%           and RTx::Calendar::LocalDate($Object->ResolvedObj->Unix) eq $today) {
+         <img src="<%$RT::WebImagesURL%>/resolved.png" />
+
+% } elsif ($DateTypes->{Starts} and $DateTypes->{Due} 
+%           and RTx::Calendar::LocalDate($Object->StartsObj->Unix) eq $today and RTx::Calendar::LocalDate($Object->DueObj->Unix) eq $today ) {
+    <img src="<%$RT::WebImagesURL%>/starts_due.png" />
+
+% } elsif ($DateTypes->{Due} and $DateTypes->{Created} 
+%           and RTx::Calendar::LocalDate($Object->DueObj->Unix) eq $today and RTx::Calendar::LocalDate($Object->CreatedObj->Unix) eq $today ) {
+    <img src="<%$RT::WebImagesURL%>/created_due.png" />
+
+% } elsif ($DateTypes->{Starts}
+%           and RTx::Calendar::LocalDate($Object->StartsObj->Unix) eq $today) {
+    <img src="<%$RT::WebImagesURL%>/starts.png" />
+
+% } elsif ($DateTypes->{Due} 
+%           and RTx::Calendar::LocalDate($Object->DueObj->Unix) eq $today) {
+    <img src="<%$RT::WebImagesURL%>/due.png" />
+
+% } elsif ($DateTypes->{Created}
+%           and RTx::Calendar::LocalDate($Object->CreatedObj->Unix) eq $today) {
+    <img src="<%$RT::WebImagesURL%>/created.png" />
+
+% } elsif ($DateTypes->{Started}
+%           and RTx::Calendar::LocalDate($Object->StartedObj->Unix) eq $today) {
+    <img src="<%$RT::WebImagesURL%>/started.png" />
+
+% } elsif ($DateTypes->{LastUpdated}
+%           and RTx::Calendar::LocalDate($Object->LastUpdatedObj->Unix) eq $today) {
+    <img src="<%$RT::WebImagesURL%>/updated.png" />
+
+% }
+
+	<a href="<%$RT::WebPath%>/Ticket/Display.html?id=<%$TicketId%>">
+           <% $Object->QueueObj->Name %> #<% $TicketId %>
+           <% $display_owner ? 'by ' . $Object->OwnerObj->Name : '' %>
+           <% length($Object->Subject) > 80 ? substr($Object->Subject, 0, 77) . "..." : $Object->Subject %></a></small><br />
+	<span class="tip">
+	<a href="<%$RT::WebPath%>/Ticket/Display.html?id=<%$TicketId%>">
+           <% $Object->QueueObj->Name %> #<% $TicketId %>
+        </a>
+	:</strong> <% $subject%><br />
+	<br />
+
+%# logic taken from Ticket/Search/Results.tsv
+% foreach my $attr (@display_fields) {
+%    my $value;
+%
+%    if ($attr =~ /(.*)->ISO$/ and $Object->$1->Unix <= 0) {
+%        $value = '-';
+%    } else {
+%        my $method = '$Object->'.$attr.'()';
+%        $method =~ s/->ISO\(\)$/->ISO( Timezone => 'user' )/;
+%        $value = eval $method;
+%        if ($@) {die "<b>Check your CalendarPopupFields config in etc/RT_SiteConfig.pm</b>.<br /><br />Failed to find \"$attr\" - ". $@}; 
+%    }
+	<strong><&|/l&><% $label_of{$attr} %></&>:</strong> <% $value %><br />
+% }
+
+<br />
+	</span>
+</div>
+
+<%init>
+use RTx::Calendar;
+
+my $today = $Date->strftime("%F");
+
+my $TicketId;
+
+my $ticket;
+my $subject;
+my $IsReminder;
+
+if ($Object->Type eq 'reminder') {
+    $IsReminder = 1;
+    if ($Object->RefersTo->First) {
+	$ticket   = $Object->RefersTo->First->TargetObj;
+	$TicketId = $ticket->Id;
+	$subject = $Object->Subject . " (" . $ticket->Subject . ")";
+    }
+} else {
+    $TicketId = $Object->Id;
+    $subject = $Object->Subject;
+}
+
+my $display_owner = $RT::CalendarDisplayOwner;
+$display_owner ||= RT->Config->Get('CalendarDisplayOwner')
+    if RT->can('Config');
+
+
+# 3.6 config
+my @display_fields = @RT::CalendarPopupFields;
+ 
+# 3.8 config
+# the if condition is weird but it doesn't work with 3.8.0 without the last part
+@display_fields = RT->Config->Get('CalendarPopupFields')
+    if 0 == @display_fields and RT->can('Config') and RT->Config->Get('CalendarPopupFields');
+
+# default
+if (0 == @display_fields) {
+    @display_fields = qw(OwnerObj->Name CreatedObj->ISO StartsObj->ISO
+			 StartedObj->ISO LastUpdatedObj->ISO DueObj->ISO
+			 ResolvedObj->ISO Status Priority
+			 Requestors->MemberEmailAddressesAsString);
+}
+
+
+my %label_of;
+for my $field (@display_fields) {
+    my $label = $field;
+    $label =~ s'Obj-.(?:AsString|Name|ISO)''g;
+    $label =~ s'-\>MemberEmailAddressesAsString''g;
+    $label_of{$field} = $label;
+}
+
+</%init>

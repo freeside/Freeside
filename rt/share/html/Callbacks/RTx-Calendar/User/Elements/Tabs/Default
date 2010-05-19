@@ -1,0 +1,9 @@
+<%init>
+    $tabs->{'z'} = { title =>loc("Calendar"),
+                          path  => "Prefs/Calendar.html" };
+</%init>
+<%args>
+$tabs
+$current_subtab => undef
+$Searches => undef
+</%args>

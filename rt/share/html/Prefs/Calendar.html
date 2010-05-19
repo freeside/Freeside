@@ -1,0 +1,123 @@
+<%args>
+$ChangeURL   => undef
+$ResetURL    => undef
+$SearchType  => 'Ticket'
+$HiddenField => undef
+</%args>
+
+<& /Elements/Header, Title => $title &>
+<& /User/Elements/Tabs,
+    current_tab => 'Prefs/Calendar.html',
+    Title => $title
+&>
+
+<&| /Widgets/TitleBox, title => loc('ICal Feeds (ics)') &>
+
+<&| /Widgets/TitleBox, title => 'Help' &>
+
+<h3>displaying reminders :</h3>
+<p>If you want to have reminders in a search you need to go in the <a
+href="<%$RT::WebPath%>/Search/Edit.html"><%loc("Edit Query")%></a> tab
+of the <%loc("query builder")%> and add something like that :
+
+ <pre>
+   AND ( Type = 'ticket' OR Type = 'reminder' )
+</pre>
+</p>
+
+<h3>displaying other kind of dates :</h3>
+<p>By default RTx::Calendar display Due and Starts dates. You can
+select other kind of events you want with the <%loc("Display
+Columns")%> section in the <a
+href="<%$RT::WebPath%>/Search/Build.html"><%loc("Query
+Builder")%></a>. The following one will display the two latter and
+LastUpdated dates :
+
+<pre>
+  '&lt;small&gt;__Due__&lt;/small&gt;',
+  '&lt;small&gt;__Starts__&lt;/small&gt;',
+  '&lt;small&gt;__LastUpdated__&lt;/small&gt;'
+</pre>
+</p>
+
+<h3>changing the default query :</h3>
+<p>You can change the default Query of Calendar.html and MyCalendar
+portlet by saving a query with the name <code>calendar</code> in the
+<a href="<%$RT::WebPath%>/Search/Build.html"><%loc("Query
+Builder")%></a>.</p>
+
+</&>
+
+<& /Prefs/Elements/CalendarFeed &>
+
+% # only allow this part if 
+% if ($AllowSearch) {
+
+% my $search_count;
+
+%   # I'm quite sure the loop isn't usefull but...
+%   my @Objects = $session{CurrentUser}->UserObj;
+%   for my $object (@Objects) {
+%     next unless ref($object) eq 'RT::User' && $object->id == $session{'CurrentUser'}->Id;
+%     my @searches = $object->Attributes->Named('SavedSearch');
+%     for my $search (@searches) {
+%       next if ($search->SubValue('SearchType')
+%              && $search->SubValue('SearchType') ne $SearchType);
+%       $search_count++;
+<& /Prefs/Elements/CalendarFeed, Object => $object, Search => $search &>
+
+%     }
+%   }
+%   unless ($search_count) {
+
+<&| /Widgets/TitleBox, title => loc('Private Search ICal feeds')
+                     , title_class=> 'inverse'
+                     , color => "#993333" &>
+
+You can add private ICal feeds by saving new queries in <a
+href="<%$RT::WebPath . '/Search/Build.html'%>">the Query Builder</a>
+
+</&>
+
+%   }
+% } else {
+%#<&| /Widgets/TitleBox, title => loc('Private Search ICal feeds')
+%#                     , title_class=> 'inverse'
+%#                     , color => "#993333" &>
+%#
+%#<%loc('Private search ICal feeds disabled. To enable them, ask your admin for "[_1]" and "[_2]" rights',
+%#       loc('CreateSavedSearch'),
+%#       loc('LoadSavedSearch') )%>
+%#
+%#</&>
+% }
+
+</&>
+
+<%INIT>
+use Digest::SHA1;
+use RT::SavedSearches;
+
+my $title = loc("Calendar Prefs");
+my $AllowSearch;
+
+$AllowSearch = 1
+ if $session{'CurrentUser'}->HasRight( Right => 'LoadSavedSearch',
+                                       Object=> $RT::System );
+
+my $object;
+
+if ($HiddenField eq 'Private') {
+   $object = $session{CurrentUser}->UserObj;
+} elsif ($AllowSearch and my ($SearchId) = $HiddenField =~ m/SavedSearch\-(\d+)/) {
+    $object = $session{CurrentUser}->Attributes->WithId($SearchId);
+}
+
+if (defined $ChangeURL) {
+  my @args = $object->SetAttribute(Name => 'ICalURL', Content => Digest::SHA1::sha1_base64(time));
+} elsif (defined $ResetURL) {
+  my @args = $object->DeleteAttribute('ICalURL');
+}
+
+
+</%INIT>
