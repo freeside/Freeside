@@ -677,7 +677,10 @@ sub disintegrate {
       $cust_bill_pkg{''}->recur( $classless );
       $cust_bill_pkg{$class} = $cust_bill_pkg_usage;
     }
-    delete $cust_bill_pkg{''} unless $cust_bill_pkg{''}->recur;
+    warn "Unexpected classless usage value: ". $cust_bill_pkg{''}->recur
+      if ($cust_bill_pkg{''}->recur && $cust_bill_pkg{''}->recur < 0);
+    delete $cust_bill_pkg{''}
+      unless ($cust_bill_pkg{''}->recur && $cust_bill_pkg{''}->recur > 0);
   }
 
 #  # sort setup,recur,'', and the rest numeric && return
