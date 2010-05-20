@@ -47,7 +47,7 @@
       <INPUT TYPE="hidden" NAME="html_body" VALUE="<% $cgi->param('html_body') |h %>">
       <TR>
         <TD ALIGN="right" VALIGN="top">Message (HTML display): </TD>
-        <TD BGCOLOR="#e8e8e8" ALIGN="left"><% $cgi->param('html_body') %></TD>
+        <TD CLASS="background" ALIGN="left"><% $cgi->param('html_body') %></TD>
       </TR>
 
 %     my $text_body = HTML::FormatText->new(leftmargin=>0)->format(
@@ -58,7 +58,7 @@
       <INPUT TYPE="hidden" NAME="text_body" VALUE="<% $text_body |h %>">
       <TR>
         <TD ALIGN="right" VALIGN="top">Message (Text display): </TD>
-        <TD BGCOLOR="#e8e8e8" ALIGN="left"><PRE><% $text_body %></PRE></TD>
+        <TD CLASS="background" ALIGN="left"><PRE><% $text_body %></PRE></TD>
       </TR>
 
     </TABLE>

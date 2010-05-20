@@ -217,7 +217,7 @@ if($opt{'payment_links'} && $curuser->access_right('Process payment') && @payby)
 
   @pay_labels = (map { my $payby = $_; 
                        my $label = $label{$payby};
-                       sub {($payby eq $_[0]->payby) ? "<b>$label</b>" : $label}
+                       sub {($payby eq $_[0]->payby) ? "<b>$label (on file)</b>" : $label}
                      } @payby );
 
   @pay_links = (map { [ "${p}misc/payment.cgi?payby=$_;custnum=", 'custnum' ] }

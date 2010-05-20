@@ -6,7 +6,7 @@
   <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
 
     <TR>
-      <TH BGCOLOR="#e8e8e8" COLSPAN=2 ALIGN="left"><FONT SIZE="+1">Search options</FONT></TH>
+      <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1">Search options</FONT></TH>
     </TR>
 
     <% include( '/elements/tr-select-agent.html',
@@ -115,11 +115,11 @@
 %   }
 
     <TR>
-      <TH BGCOLOR="#e8e8e8" COLSPAN=2>&nbsp;</TH>
+      <TH CLASS="background" COLSPAN=2>&nbsp;</TH>
     </TR>
 
     <TR>
-      <TH BGCOLOR="#e8e8e8" COLSPAN=2 ALIGN="left"><FONT SIZE="+1">Display options</FONT></TH>
+      <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1">Display options</FONT></TH>
     </TR>
     <% include( '/elements/tr-select-cust-fields.html' ) %>
 
@@ -140,7 +140,7 @@
 die "access denied"
   unless ( $FS::CurrentUser::CurrentUser->access_right('List customers') &&
            $FS::CurrentUser::CurrentUser->access_right('List packages')
-         );;
+         );
 
 my $conf = new FS::Conf;
 
