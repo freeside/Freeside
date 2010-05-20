@@ -13,19 +13,19 @@ font-size: 0.8em;
 color:#505050;
 }
 
-.date {
+.calendardate {
   text-align: right;
   background-color: #f8f8ff;
   width:100%;
 }
 
-.offmonthdate {
+.offmonthcalendardate {
   text-align: right;
   background-color: #f8f8f8;
   width:100%;
 }
 
-.todaysdate {
+.todayscalendardate {
   text-align: right;
   background-color: #fc6; /*#fad163*/
   width:100%;
