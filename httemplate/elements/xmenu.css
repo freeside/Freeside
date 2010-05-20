@@ -22,17 +22,20 @@
 	position:		absolute;
 	z-index:		100;
 	visibility:		hidden;
-	border:			1px solid black;
+	border:			1px solid #7e0079;
+	 -moz-border-radius: 4px;
+	 -webkit-border-radius: 4px;
+	 border-radius: 4px;
 	padding:		1px;
 	background:		white;
-	filter:			progid:DXImageTransform.Microsoft.Shadow(color="#777777", Direction=135, Strength=4)
-				alpha(Opacity=95);
-	-moz-opacity:		0.95;
-	/* a drop shadow would be nice in moz/others too... */
+        -moz-box-shadow: #000000 1px 1px 4px;
+        -webkit-box-shadow: #000000 1px 1px 4px;
+        box-shadow: #000000 1px 1px 4px;
 }
 
 .webfx-menu-empty {
 	display:		block;
+        border:                 1px solid white;
 	padding:		2px 5px 2px 5px;
 	font-size:		11px;
 	/* font-family:		Tahoma, Verdan, Helvetica, Sans-Serif; */
@@ -52,19 +55,26 @@
 	text-decoration:	none;
 	vertical-align:		center;
 	color:			black;
+        border:                 1px solid white;
 }	
 
 .webfx-menu a:visited {
 	color:			black;
+        border:                 1px solid white;
 }
 
 .webfx-menu a:hover {
-	color:			black;
+        border:                 1px solid #7e0079;
+	 -moz-border-radius: 4px;
+	 -webkit-border-radius: 4px;
+	 border-radius: 4px;
+         background:             #fff8fe;
 }
 
-.webfx-menu a:hover {
-	color:			black;
-}	
+.webfx-menu a[href]:hover {
+        color: black;
+        text-decoration: none;
+}
 
 .webfx-menu a .arrow {
 	float:			right;
@@ -151,19 +161,6 @@
 }
 
 .webfx-menu-title  {
-	color:			black;
-	/* background:		#faf7fa; #f5ebf4; #efdfef; white; #BC79B8; */
-	background:		#7e0079;
-/*	border:			1px solid #7e0079; /*rgb(120,172,255);#ff8800;*/
-	/* padding:		3px 1px 3px 6px; */
-	padding:		3px 1px 3px 5px;
 	display:		block;
-	font-size:		16px;
-/*        font-family:            Verdana, Arial, Helvetica, sans-serif; */
-        font-weight:            bold;
-	text-decoration:	none;
-	color:			white;
-        border-bottom:          1px solid white;
         width:			expression(constExpression(ie ? "98%": "auto"));	/* should be ignored by mz and op */
 }	
-

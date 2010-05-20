@@ -572,7 +572,8 @@ sub submenu {
 
   "var myMenu$menunum = new WebFXMenu;\n".
   #"myMenu$menunum.useAutoPosition = true;\n".
-  "myMenu$menunum.emptyText = '$title';\n".
+#  "myMenu$menunum.emptyText = '$title';\n".
+  "myMenu$menunum.emptyText = '';\n".
 
   (
     join("\n", map {
