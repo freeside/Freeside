@@ -45,13 +45,13 @@
 %# those contributions and any derivatives thereof.
 %# 
 %# END BPS TAGGED BLOCK }}}
-<%
-$m->scomp(
+<%INIT>
+$m->comp(
 	 '/Elements/CollectionList',
 	 %ARGS,
 	 Class => 'RT::Tickets'
 	);
-%>
+</%INIT%>
 <%ARGS>
 $Collection => undef
 $Query => undef
