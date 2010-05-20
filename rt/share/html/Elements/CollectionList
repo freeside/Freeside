@@ -123,7 +123,9 @@ if ( $ShowHeader ) {
 my ($i, $column_map) = (0, {});
 while ( my $record = $Collection->Next ) {
     # Every ten rows, flush the buffer and put something on the page.
-    $m->flush_buffer unless ++$i % 10;
+    #broken w/FS, causes rows to be output prematurely
+    #$m->flush_buffer unless ++$i % 10;
+    ++$i;
 
     my $warning = 0;
     my $Classes = '';
