@@ -51,7 +51,7 @@ $m->comp(
 	 %ARGS,
 	 Class => 'RT::Tickets'
 	);
-</%INIT%>
+</%INIT>
 <%ARGS>
 $Collection => undef
 $Query => undef
