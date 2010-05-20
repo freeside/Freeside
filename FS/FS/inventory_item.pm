@@ -106,6 +106,9 @@ sub check {
   my $error = 
     $self->ut_numbern('itemnum')
     || $self->ut_foreign_key('classnum', 'inventory_class', 'classnum' )
+    #|| $self->ut_foreign_keyn('agentnum', 'agent', 'agentnum' )
+    || $self->ut_agentnum_acl('agentnum', ['Configuration',
+                                           'Edit global inventory'] )
     || $self->ut_text('item')
     || $self->ut_foreign_keyn('svcnum', 'cust_svc', 'svcnum' )
   ;
@@ -127,6 +130,17 @@ sub cust_svc {
   qsearchs( 'cust_svc', { 'svcnum' => $self->svcnum } );
 }
 
+=item agent 
+
+Returns the associated agent for this event, if any, as an FS::agent object.
+
+=cut
+
+sub agent {
+  my $self = shift;
+  qsearchs('agent', { 'agentnum' => $self->agentnum } );
+}
+
 =back
 
 =head1 SUBROUTINES
@@ -142,7 +156,7 @@ sub process_batch_import {
 
   my $opt = { 'table'   => 'inventory_item',
               #'params'  => [ 'itembatch', 'classnum', ],
-              'params'  => [ 'classnum', ],
+              'params'  => [ 'classnum', 'agentnum', ],
               'formats' => { 'default' => [ 'item' ] },
               'default_csv' => 1,
             };

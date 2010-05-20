@@ -1,8 +1,11 @@
 <% include( 'elements/search.html',
                  'title'       => $title,
 
-                 #less lame to use Lingua:: something to pluralize
-                 'name'        => $inventory_class->classname. 's',
+                 'menubar'     => [ 'View inventory classes' =>
+                                      $p.'browse/inventory_class.html',
+                                  ],
+
+                 'name'        => PL($inventory_class->classname),
 
                  'query'       => {
                                     'table'   => 'inventory_item',
@@ -18,6 +21,10 @@
                                   },
 
                  'count_query' => $count_query,
+
+                 'agent_virt' => 1,
+                 'agent_null' => 1,
+                 'agent_pos'  => 2,
 
                  'header'      => [
                    '#',
@@ -74,8 +81,12 @@
 %>
 <%init>
 
+my $curuser = $FS::CurrentUser::CurrentUser;
+
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+  unless $curuser->access_right('Edit inventory')
+      || $curuser->access_right('Edit global inventory')
+      || $curuser->access_right('Configuration');
 
 my $classnum = $cgi->param('classnum');
 $classnum =~ /^(\d+)$/ or errorpage("illegal classnum $classnum");

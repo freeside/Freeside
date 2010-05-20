@@ -284,6 +284,9 @@ tie my %rights, 'Tie::IxHash',
   
     'Edit billing events',
     { rightname=>'Edit global billing events', global=>1 },
+
+    'Edit inventory',
+    { rightname=>'Edit global inventory', global=>1 },
   
     { rightname=>'Dialup configuration' },
     { rightname=>'Dialup global configuration', global=>1 },

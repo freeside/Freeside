@@ -7,8 +7,8 @@ Import a file containing <% PL($inventory_class->classname) %>, one per line.
               'name'      => 'InventoryItemImportForm',
               'action'    => 'process/inventory_item-import.html',
               'num_files' => 1,
-              #'fields'    => [ 'format', 'itembatch', 'classnum', ],
-              'fields'    => [ 'format', 'classnum', ],
+              #'fields'    => [ 'format', 'itembatch', 'classnum', 'agentnum' ],
+              'fields'    => [ 'format', 'classnum', 'agentnum', ],
               'message'   => 'Inventory import successful',
               #XXX redirect via $itembatch?  or just back to class browse?
               #'url'       => $p."search/phone_avail.html?availbatch=$availbatch",
@@ -23,6 +23,8 @@ Import a file containing <% PL($inventory_class->classname) %>, one per line.
   <INPUT TYPE="hidden" NAME="classnum" VALUE="<% $classnum %>">
 
 %#  <INPUT TYPE="hidden" NAME="itembatch" VALUE="<% $itembatch %>">
+
+  <% include('/elements/tr-select-agent.html') %>
 
   <% include( '/elements/file-upload.html',
                 'field' => 'file',

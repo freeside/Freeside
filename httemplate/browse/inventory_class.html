@@ -1,9 +1,7 @@
 <% include( 'elements/browse.html',
                  'title'       => 'Inventory Classes',
                  'name'        => 'inventory classes',
-                 'menubar'     => [ 'Add a new inventory class' =>
-                                      $p.'edit/inventory_class.html',
-                                  ],
+                 'menubar'     => $menubar,
                  'query'       => { 'table' => 'inventory_class', },
                  'count_query' => 'SELECT COUNT(*) FROM inventory_class',
                  'header'      => [ '#', 'Inventory class', 'Inventory' ],
@@ -66,8 +64,12 @@
 %>
 <%init>
 
+my $curuser = $FS::CurrentUser::CurrentUser;
+
 die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+  unless $curuser->access_right('Edit inventory')
+      || $curuser->access_right('Edit global inventory')
+      || $curuser->access_right('Configuration');
 
 tie my %labels, 'Tie::IxHash',
   'num_avail' => 'Available', #  <FONT SIZE="-1"><A HREF="eventually">(upload batch)</A></FONT>',
@@ -88,6 +90,14 @@ my %inv_action_link = (
                  ],
 );
 
-my $link = [ "${p}edit/inventory_class.html?", 'classnum' ];
+my $menubar = $curuser->access_right('Configuration')
+                ? [ 'Add a new inventory class' =>
+                      $p.'edit/inventory_class.html',
+                  ]
+                : [];
+
+my $link = $curuser->access_right('Configuration')
+             ? [ "${p}edit/inventory_class.html?", 'classnum' ]
+             : '';
 
 </%init>

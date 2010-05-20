@@ -121,6 +121,7 @@ Example:
     #handling agent virtualization
     'agent_virt'            => 1, # set true if this search should be
                                   # agent-virtualized
+    'agent_null'            => 1, # set true to view global records always
     'agent_null_right'      => 'Access Right', # optional right to view global
                                                # records
     'agent_null_right_link' => 'Access Right'  # optional right to link to
@@ -235,7 +236,9 @@ if ( $opt{'agent_virt'} ) {
                                        || $opt{'agent_null_right'}      );
 
   my $agentnums_sql = $curuser->agentnums_sql(
-                        'null_right' => $opt{'agent_null_right'}
+                        'null'       => $opt{'agent_null'},
+                        'null_right' => $opt{'agent_null_right'},
+                        'table'      => $opt{'query'}{'table'},
                       );
 
   $opt{'query'}{'extra_sql'} .=

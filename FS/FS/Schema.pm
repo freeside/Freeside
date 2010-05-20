@@ -2593,12 +2593,13 @@ sub tables_hashref {
       'columns' => [
         'itemnum',  'serial',      '',      '', '', '',
         'classnum', 'int',         '',      '', '', '',
+        'agentnum', 'int',     'NULL',      '', '', '',
         'item',     'varchar',     '', $char_d, '', '',
         'svcnum',   'int',     'NULL',      '', '', '',
       ],
       'primary_key' => 'itemnum',
       'unique' => [ [ 'classnum', 'item' ] ],
-      'index'  => [ [ 'classnum' ], [ 'svcnum' ] ],
+      'index'  => [ [ 'classnum' ], [ 'agentnum' ], [ 'svcnum' ] ],
     },
 
     'inventory_class' => {

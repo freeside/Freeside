@@ -469,8 +469,11 @@ $config_misc{'Advertising sources'} = [ $fsurl.'browse/part_referral.html', 'Whe
 if ( $curuser->access_right('Configuration') ) {
   $config_misc{'Virtual fields'} = [ $fsurl.'browse/part_virtual_field.cgi', 'Locally defined fields', ];
   $config_misc{'Message catalog'} = [ $fsurl.'browse/msgcat.cgi', 'Change error messages and other customizable labels' ];
-  $config_misc{'Inventory classes and inventory'} = [ $fsurl.'browse/inventory_class.html', 'Setup inventory classes and stock inventory' ];
 }
+$config_misc{'Inventory classes and inventory'} = [ $fsurl.'browse/inventory_class.html', 'Setup inventory classes and stock inventory' ]
+  if $curuser->access_right('Edit inventory')
+  || $curuser->access_right('Edit global inventory')
+  || $curuser->access_right('Configuration');
 
 tie my %config_menu, 'Tie::IxHash';
 if ( $curuser->access_right('Configuration' ) ) {
