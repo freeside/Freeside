@@ -16,6 +16,7 @@ lib/RT/URI/freeside.pm
 lib/RT/URI/freeside/Internal.pm
 lib/RT/URI/freeside/XMLRPC.pm
  share/html/Admin/Users/Modify.html
+ share/html/Elements/CollectionList
  share/html/Elements/Header
  share/html/Elements/PageLayout
  #html/Elements/QuickCreate
