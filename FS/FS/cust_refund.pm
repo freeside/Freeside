@@ -343,17 +343,23 @@ Returns an SQL fragment to retreive the unapplied amount.
 =cut 
 
 sub unapplied_sql {
-  #my $class = shift;
+  my ($class, $start, $end) = shift;
+  my $credit_start = $start ? "AND cust_credit_refund._date <= $start" : '';
+  my $credit_end   = $end   ? "AND cust_credit_refund._date > $end"   : '';
+  my $pay_start    = $start ? "AND cust_pay_refund._date <= $start"    : '';
+  my $pay_end      = $end   ? "AND cust_pay_refund._date > $end"      : '';
 
   "refund
     - COALESCE( 
                 ( SELECT SUM(amount) FROM cust_credit_refund
-                    WHERE cust_refund.refundnum = cust_credit_refund.refundnum )
+                    WHERE cust_refund.refundnum = cust_credit_refund.refundnum
+                    $credit_start $credit_end )
                 ,0
               )
     - COALESCE(
                 ( SELECT SUM(amount) FROM cust_pay_refund
-                    WHERE cust_refund.refundnum = cust_pay_refund.refundnum )
+                    WHERE cust_refund.refundnum = cust_pay_refund.refundnum
+                    $pay_start $pay_end )
                 ,0
               )
   ";

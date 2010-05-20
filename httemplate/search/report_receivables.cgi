@@ -16,7 +16,7 @@ die "access denied"
 #Example:
 #
 # my $balance = balance(
-#   $start, $end, 
+#   $start, $end, $offset,
 #   'no_as'  => 1, #set to true when using in a WHERE clause (supress AS clause)
 #                 #or 0 / omit when using in a SELECT clause as a column
 #                 #  ("AS balance_$start_$end")
@@ -44,7 +44,8 @@ sub balance {
 
   #$opt{'unapplied_date'} = 1;
 
-  FS::cust_main->balance_date_sql( $start, $end, 'unapplied_date'=>1,);
+  FS::cust_main->balance_date_sql( $start, $end, 'unapplied_date'=>1,
+           'cutoff' => "( $str2time now() $closing - ".$offset * 86400 . ')' );
 
 }
 

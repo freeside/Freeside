@@ -565,17 +565,24 @@ Returns an SQL fragment to retreive the unapplied amount.
 =cut
 
 sub unapplied_sql {
-  #my $class = shift;
+  my ($class, $start, $end) = @_;
+
+  my $bill_start   = $start ? "AND cust_credit_bill._date <= $start"   : '';
+  my $bill_end     = $end   ? "AND cust_credit_bill._date > $end"     : '';
+  my $refund_start = $start ? "AND cust_credit_refund._date <= $start" : '';
+  my $refund_end   = $end   ? "AND cust_credit_refund._date > $end"   : '';
 
   "amount
         - COALESCE(
                     ( SELECT SUM(amount) FROM cust_credit_refund
-                        WHERE cust_credit.crednum = cust_credit_refund.crednum )
+                        WHERE cust_credit.crednum = cust_credit_refund.crednum
+                        $refund_start $refund_end )
                     ,0
                   )
         - COALESCE(
                     ( SELECT SUM(amount) FROM cust_credit_bill
-                        WHERE cust_credit.crednum = cust_credit_bill.crednum )
+                        WHERE cust_credit.crednum = cust_credit_bill.crednum
+                        $bill_start $bill_end )
                     ,0
                   )
   ";

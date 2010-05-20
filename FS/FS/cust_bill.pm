@@ -4342,7 +4342,10 @@ Returns an SQL fragment to retreive the amount owed (charged minus credited and 
 
 sub owed_sql {
   my $class = shift;
-  'charged - '. $class->paid_sql. ' - '. $class->credited_sql;
+  my ($start, $end) = @_;
+  'charged - '. 
+    $class->paid_sql($start, $end). ' - '. 
+    $class->credited_sql($start, $end);
 }
 
 =item net_sql
@@ -4353,7 +4356,8 @@ Returns an SQL fragment to retreive the net amount (charged minus credited).
 
 sub net_sql {
   my $class = shift;
-  'charged - '. $class->credited_sql;
+  my ($start, $end) = @_;
+  'charged - '. $class->credited_sql($start, $end);
 }
 
 =item paid_sql
@@ -4363,9 +4367,11 @@ Returns an SQL fragment to retreive the amount paid against this invoice.
 =cut
 
 sub paid_sql {
-  #my $class = shift;
+  my ($class, $start, $end) = @_;
+  $start &&= "AND cust_bill_pay._date <= $start";
+  $end &&=   "AND cust_bill_pay._date > $end";
   "( SELECT COALESCE(SUM(amount),0) FROM cust_bill_pay
-       WHERE cust_bill.invnum = cust_bill_pay.invnum   )";
+       WHERE cust_bill.invnum = cust_bill_pay.invnum $start $end  )";
 }
 
 =item credited_sql
@@ -4375,9 +4381,11 @@ Returns an SQL fragment to retreive the amount credited against this invoice.
 =cut
 
 sub credited_sql {
-  #my $class = shift;
+  my ($class, $start, $end) = shift;
+  $start &&= "AND cust_credit_bill._date <= $start";
+  $end   &&= "AND cust_credit_bill._date > $end";
   "( SELECT COALESCE(SUM(amount),0) FROM cust_credit_bill
-       WHERE cust_bill.invnum = cust_credit_bill.invnum   )";
+       WHERE cust_bill.invnum = cust_credit_bill.invnum $start $end  )";
 }
 
 =item search_sql_where HASHREF

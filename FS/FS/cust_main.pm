@@ -7392,6 +7392,12 @@ WHERE clause hashref (elements "AND"ed together) (typically used with the total 
 (unused.  obsolete?)
 JOIN clause (typically used with the total option)
 
+=item cutoff
+
+An absolute cutoff time.  Payments, credits, and refunds I<applied> after this 
+time will be ignored.  Note that START_TIME and END_TIME only limit the date 
+range for invoices and I<unapplied> payments, credits, and refunds.
+
 =back
 
 =cut
@@ -7399,10 +7405,12 @@ JOIN clause (typically used with the total option)
 sub balance_date_sql {
   my( $class, $start, $end, %opt ) = @_;
 
-  my $owed         = FS::cust_bill->owed_sql;
-  my $unapp_refund = FS::cust_refund->unapplied_sql;
-  my $unapp_credit = FS::cust_credit->unapplied_sql;
-  my $unapp_pay    = FS::cust_pay->unapplied_sql;
+  my $cutoff = $opt{'cutoff'};
+
+  my $owed         = FS::cust_bill->owed_sql($cutoff);
+  my $unapp_refund = FS::cust_refund->unapplied_sql($cutoff);
+  my $unapp_credit = FS::cust_credit->unapplied_sql($cutoff);
+  my $unapp_pay    = FS::cust_pay->unapplied_sql($cutoff);
 
   my $j = $opt{'join'} || '';
 
