@@ -507,12 +507,7 @@ my $html_bottom = sub {
     #  $html .= ">$freq{$freq}";
     #}
 
-      if(!exists($href->{$field})) {
-        # shouldn't happen
-        warn "nonexistent part_pkg option: '$field'\n";
-        next;
-      }
-    #$html .= '</SELECT></TD></TR>';
+   #$html .= '</SELECT></TD></TR>';
   
     my $href = $plans{$layer}->{'fields'};
     my @fields = exists($plans{$layer}->{'fieldorder'})
@@ -521,6 +516,12 @@ my $html_bottom = sub {
   
     foreach my $field ( grep $_ !~ /^(setup|recur)_fee$/, @fields ) {
   
+       if(!exists($href->{$field})) {
+        # shouldn't happen
+        warn "nonexistent part_pkg option: '$field'\n";
+        next;
+      }
+
       $html .= '<TR><TD ALIGN="right">'. $href->{$field}{'name'}. '</TD><TD>';
   
       my $format = sub { shift };
