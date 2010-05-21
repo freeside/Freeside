@@ -163,7 +163,6 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                        use_duration
                        output_format usage_mandate summarize_usage usage_section
                        bill_every_call
-                       count_available_phones
                      )
                   ],
   'weight' => 40,
@@ -366,15 +365,8 @@ sub is_free {
 #  to indicate it represents a line
 sub calc_units {    
   my($self, $cust_pkg ) = @_;
-  my $count = 0;
-  if ( $self->option('count_available_phones', 1)) {
-    map { $count += ( $_->quantity || 0 ) }
-      grep { $_->part_svc->svcdb eq 'svc_phone' }
-      $cust_pkg->part_pkg->pkg_svc;
-  } else {
-    $count = 
+  my $count = 
       scalar(grep { $_->part_svc->svcdb eq 'svc_phone' } $cust_pkg->cust_svc);
-  }
   $count;
 }
 

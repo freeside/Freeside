@@ -86,7 +86,7 @@ use FS::part_pkg::flat;
                     },
   },
   'fieldorder' => [ 'setup_fee', 'recur_fee', 'unused_credit', 'cutoff_day',
-                    'seconds', 'upbyte', 'downbytes', 'totalbytes',
+                    'seconds', 'upbytes', 'downbytes', 'totalbytes',
                     'recharge_amount', 'recharge_seconds', 'recharge_upbytes',
                     'recharge_downbytes', 'recharge_totalbytes',
                     'usage_rollover', 'recharge_reset', 'externalid', ],

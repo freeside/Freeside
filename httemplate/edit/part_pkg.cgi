@@ -506,6 +506,12 @@ my $html_bottom = sub {
     #  $html .= ' SELECTED' if $freq eq $part_pkg->freq;
     #  $html .= ">$freq{$freq}";
     #}
+
+      if(!exists($href->{$field})) {
+        # shouldn't happen
+        warn "nonexistent part_pkg option: '$field'\n";
+        next;
+      }
     #$html .= '</SELECT></TD></TR>';
   
     my $href = $plans{$layer}->{'fields'};
