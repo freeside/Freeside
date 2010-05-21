@@ -96,6 +96,7 @@ Example:
 
     #agent virtualization
     'agent_virt'            => 1,
+    'agent_null'            => 1, #if true, always allow no-agentnum globals
     'agent_null_right'      => 'Access Right Name',
     'agent_clone_extra_sql' => '', #if provided, this overrides the extra_sql
                                    #implementing agent virt, for clone
@@ -303,7 +304,8 @@ Example:
 %
 %   #*-table
 %   $include_common{$_} = $f->{$_}
-%     foreach grep exists($f->{$_}), qw( hashref agent_virt agent_null_right );
+%     foreach grep exists($f->{$_}),
+%       qw( hashref agent_virt agent_null agent_null_right );
 %
 %   if ( $type eq 'tablebreak-tr-title' ) {
 %     $include_common{'table_id'} = 'TableNumber'. $tablenum++;
