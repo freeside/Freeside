@@ -79,6 +79,8 @@
                      $f->{'table'}       = 'inventory_item';
                      $f->{'name_col'}    = 'item'; 
                      $f->{'value_col'}   = 'item'; 
+                     $f->{'agent_virt'}  = 1;
+                     $f->{'agent_null'}  = 1;
                      $f->{'hashref'}     = {
                                             'classnum'=>$columndef->columnvalue,
                                             #'svcnum'  => '',

@@ -121,10 +121,16 @@ sub num_avail {
 sub num_sql {
   my( $self, $sql ) = @_;
   $sql = "AND $sql" if length($sql);
-  my $statement =
-    "SELECT COUNT(*) FROM inventory_item WHERE classnum = ? $sql";
-  my $sth = dbh->prepare($statement) or die dbh->errstr. " preparing $statement";
-  $sth->execute($self->classnum) or die $sth->errstr. " executing $statement";
+
+  my $agentnums_sql = $FS::CurrentUser::CurrentUser->agentnums_sql(
+    'null'  => 1,
+    'table' => 'inventory_item',
+  );
+
+  my $st = "SELECT COUNT(*) FROM inventory_item ".
+           " WHERE classnum = ? AND $agentnums_sql $sql";
+  my $sth = dbh->prepare($st)    or die  dbh->errstr. " preparing $st";
+  $sth->execute($self->classnum) or die $sth->errstr. " executing $st";
   $sth->fetchrow_arrayref->[0];
 }
 

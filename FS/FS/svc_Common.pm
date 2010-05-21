@@ -735,10 +735,17 @@ sub set_auto_inventory {
       $hash{'item'} = $self->getfield($field);
     }
 
+    my $agentnums_sql = $FS::CurrentUser::CurrentUser->agentnums_sql(
+      'null'  => 1,
+      'table' => 'inventory_item',
+    );
+
     my $inventory_item = qsearchs({
       'table'     => 'inventory_item',
       'hashref'   => \%hash,
-      'extra_sql' => 'LIMIT 1 FOR UPDATE',
+      'extra_sql' => "AND $agentnums_sql",
+      'order_by'  => 'ORDER BY ( agentnum IS NULL ) '. #agent inventory first
+                     ' LIMIT 1 FOR UPDATE',
     });
 
     unless ( $inventory_item ) {

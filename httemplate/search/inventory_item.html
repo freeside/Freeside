@@ -3,6 +3,9 @@
 
                  'menubar'     => [ 'View inventory classes' =>
                                       $p.'browse/inventory_class.html',
+                                    'Upload '. PL($inventory_class->classname)=>
+                                      $p.'misc/inventory_item-import.html?'.
+                                      "classnum=$classnum"
                                   ],
 
                  'name'        => PL($inventory_class->classname),
