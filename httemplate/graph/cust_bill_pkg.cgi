@@ -1,4 +1,5 @@
 <% include('elements/monthly.html',
+   #Dumper(
                 'title'        => $title,
                 'graph_type'   => 'Mountain',
                 'items'        => \@items,
@@ -26,8 +27,12 @@ my $use_usage            = $cgi->param('use_usage')            ? 1 : 0;
 my $average_per_cust_pkg = $cgi->param('average_per_cust_pkg') ? 1 : 0;
 
 #XXX or virtual
-my( $agentnum, $sel_agent ) = ('', '');
-if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
+my( $agentnum, $sel_agent, $all_agent ) = ('', '', '');
+if ( $cgi->param('agentnum') eq 'all' ) {
+  $agentnum = 0;
+  $all_agent = 'ALL';
+}
+elsif ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
   $agentnum = $1;
   $bottom_link .= "agentnum=$agentnum;";
   $sel_agent = qsearchs('agent', { 'agentnum' => $agentnum } );
@@ -49,14 +54,18 @@ $title .= ', average per customer package'  if $average_per_cust_pkg;
 #false lazinessish w/FS::cust_pkg::search_sql (previously search/cust_pkg.cgi)
 my $classnum = 0;
 my @pkg_class = ();
-if ( $cgi->param('classnum') =~ /^(\d*)$/ ) {
+my $all_class = '';
+if ( $cgi->param('classnum') eq 'all' ) {
+  $all_class = 'ALL';
+  @pkg_class = ('');
+}
+elsif ( $cgi->param('classnum') =~ /^(\d*)$/ ) {
   $classnum = $1;
-
   if ( $classnum ) { #a specific class
 
     @pkg_class = ( qsearchs('pkg_class', { 'classnum' => $classnum } ) );
     die "classnum $classnum not found!" unless $pkg_class[0];
-    $title .= $pkg_class[0]->classname.' ';
+    $title .= ' '.$pkg_class[0]->classname.' ';
     $bottom_link .= "classnum=$classnum;";
 
   } elsif ( $classnum eq '' ) { #the empty class
@@ -85,7 +94,7 @@ my @labels = ();
 my @colors = ();
 my @links  = ();
 
-foreach my $agent ( $sel_agent || qsearch('agent', { 'disabled' => '' } ) ) {
+foreach my $agent ( $all_agent || $sel_agent || qsearch('agent', { 'disabled' => '' } ) ) {
 
   my $col_scheme = Color::Scheme->new
                      ->from_hue($hue) #->from_hex($agent->color)
@@ -104,7 +113,7 @@ foreach my $agent ( $sel_agent || qsearch('agent', { 'disabled' => '' } ) ) {
       push @items, 'cust_bill_pkg';
 
       push @labels,
-        ( $sel_agent ? '' : $agent->agent.' ' ).
+        ( $all_agent || $sel_agent ? '' : $agent->agent.' ' ).
         ( $classnum eq '0'
             ? ( ref($pkg_class) ? $pkg_class->classname : $pkg_class ) 
             : ''
@@ -112,15 +121,16 @@ foreach my $agent ( $sel_agent || qsearch('agent', { 'disabled' => '' } ) ) {
         " $component";
 
       my $row_classnum = ref($pkg_class) ? $pkg_class->classnum : 0;
-      my $row_agentnum = $agent->agentnum;
-      push @params, [ 'classnum'             => $row_classnum,
-                      'agentnum'             => $row_agentnum,
+      my $row_agentnum = $all_agent || $agent->agentnum;
+      push @params, [ ($all_class ? () : ('classnum' => $row_classnum) ),
+                      ($all_agent ? () : ('agentnum' => $row_agentnum) ),
                       'use_override'         => $use_override,
                       'use_usage'            => $component,
                       'average_per_cust_pkg' => $average_per_cust_pkg,
                     ];
 
-      push @links, "$link;agentnum=$row_agentnum;classnum=$row_classnum;".
+      push @links, "$link;".($all_agent ? '' : "agentnum=$row_agentnum;").
+                   ($all_class ? '' : "classnum=$row_classnum;").
                    "use_override=$use_override;use_usage=$component;";
 
       @recur_colors = ($col_scheme->colors)[0,4,8,1,5,9]
@@ -137,6 +147,5 @@ foreach my $agent ( $sel_agent || qsearch('agent', { 'disabled' => '' } ) ) {
 }
 
 #use Data::Dumper;
-#warn Dumper(\@items);
 
 </%init>

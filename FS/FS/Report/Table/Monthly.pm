@@ -1,13 +1,14 @@
 package FS::Report::Table::Monthly;
 
 use strict;
-use vars qw( @ISA );
+use vars qw( @ISA $DEBUG );
 use Time::Local;
 use FS::UID qw( dbh );
 use FS::Report::Table;
 use FS::CurrentUser;
 
 @ISA = qw( FS::Report::Table );
+$DEBUG = 0; # turning this on will trace all SQL statements, VERY noisy
 
 =head1 NAME
 
@@ -378,12 +379,12 @@ sub cust_bill_pkg {
     }
 
     if ( $opt{'use_override'} ) {
-      $where = "(
+      $where = "AND (
         part_pkg.classnum $comparison AND pkgpart_override IS NULL OR
         override.classnum $comparison AND pkgpart_override IS NOT NULL
       )";
     } else {
-      $where = "part_pkg.classnum $comparison";
+      $where = "AND part_pkg.classnum $comparison";
     }
   }
 
@@ -404,7 +405,7 @@ sub cust_bill_pkg {
         LEFT JOIN part_pkg USING ( pkgpart )
         LEFT JOIN part_pkg AS override ON pkgpart_override = override.pkgpart
       WHERE pkgnum != 0
-        AND $where
+        $where
         AND ". $self->in_time_period_and_agent($speriod, $eperiod, $agentnum);
   
   if ($opt{use_usage} && $opt{use_usage} eq 'recurring') {
@@ -569,6 +570,7 @@ sub in_time_period_and_agent {
 sub scalar_sql {
   my( $self, $sql ) = ( shift, shift );
   my $sth = dbh->prepare($sql) or die dbh->errstr;
+  warn "FS::Report::Table::Monthly\n$sql\n" if $DEBUG;
   $sth->execute
     or die "Unexpected error executing statement $sql: ". $sth->errstr;
   $sth->fetchrow_arrayref->[0] || 0;

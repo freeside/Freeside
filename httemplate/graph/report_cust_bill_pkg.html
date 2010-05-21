@@ -9,11 +9,14 @@
 <% include('/elements/tr-select-agent.html',
              'label'         => 'For agent: ',
              'disable_empty' => 0,
+             'pre_options'   => [ 'all' => 'all (aggregate)' ],
+             'empty_label'   => 'all (breakdown)',
           )
 %>
 
 <% include('/elements/tr-select-pkg_class.html',
-              'pre_options' => [ '0' => 'all' ],
+              'pre_options' => [ 'all'  => 'all (aggregate)',
+                                 '0' => 'all (breakdown)' ],
               'empty_label' => '(empty class)',
            )
 %>
