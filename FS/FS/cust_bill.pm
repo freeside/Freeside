@@ -4381,7 +4381,7 @@ Returns an SQL fragment to retreive the amount credited against this invoice.
 =cut
 
 sub credited_sql {
-  my ($class, $start, $end) = shift;
+  my ($class, $start, $end) = @_;
   $start &&= "AND cust_credit_bill._date <= $start";
   $end   &&= "AND cust_credit_bill._date >  $end";
   $start = '' unless defined($start);
