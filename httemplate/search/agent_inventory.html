@@ -1,0 +1,40 @@
+<% include('elements/search.html',
+     'title'         => 'Inventory summary per agent',
+     'name_singular' => 'agent',
+     'query'         => { 'table'     => 'agent',
+                          'hashref'   => { 'disabled' => '' },
+                          'extra_sql' => "AND $agentnums_sql",
+                        },
+     'count_query'   => "SELECT COUNT(*) FROM agent".
+                        " WHERE disabled = '' OR disabled IS NULL".
+                        " AND $agentnums_sql",
+     'header'        => \@header,
+     'fields'        => \@fields,
+   )
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+#XXX List inventory
+
+my $agentnums_sql = $FS::CurrentUser::CurrentUser->agentnums_sql;
+
+my @header = ('Agent');
+my @fields = ('agent');
+
+                                                        #{ 'disabled' => '' }
+foreach my $inventory_class ( qsearch('inventory_class', {}) ) {
+  push @header, $inventory_class->classname;
+  push @fields, sub {
+    my $agent = shift;
+    my $sub = FS::inventory_class->countcell_factory(
+      'p' => $p, 'agentnum' => $agent->agentnum,
+    );
+    &{$sub}($inventory_class);
+  };
+}
+
+#XXX show global inventory too
+
+</%init>

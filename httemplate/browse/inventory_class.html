@@ -7,54 +7,9 @@
                  'header'      => [ '#', 'Inventory class', 'Inventory' ],
                  'fields'      => [ 'classnum',
                                     'classname',
-                                    sub {
-                                          #my $inventory_class = shift;
-                                          my $i_c = shift;
-
-                                          my $link =
-                                            $p. 'search/inventory_item.html?'.
-                                            'classnum='. $i_c->classnum;
-
-                                          my %actioncol = ();
-                                          foreach ( keys %inv_action_link ) {
-                                            my($label, $baseurl, $method) =
-                                              @{ $inv_action_link{$_} };
-                                            my $url = $baseurl. $i_c->$method();
-                                            $actioncol{$_} =
-                                              '<FONT SIZE="-1">'.
-                                              '('.
-                                              '<A HREF="'.$url.'">'.
-                                              $label.
-                                              '</A>'.
-                                              ')'.
-                                              '</FONT>';
-                                          }
-
-                                          my %num = map { 
-                                            $_ => $i_c->$_();
-                                          } keys %labels;
-
-                                          [ map {
-                                                  [
-                                                    {
-                                                      'data'  => '<B>'. $num{$_}. '</B>',
-                                                      'align' => 'right',
-                                                    },
-                                                    {
-                                                      'data'  => $labels{$_},
-                                                      'align' => 'left',
-                                                      'link'  => ( $num{$_}
-                                                                     ? $link.$link{$_}
-                                                                     : ''
-                                                                 ),
-                                                    },
-                                                    { 'data'  => $actioncol{$_},
-                                                      'align'  => 'left',
-                                                    },
-                                                  ]
-                                                } keys %labels
-                                          ];
-                                        },
+                                    FS::inventory_class->countcell_factory(
+                                      'p'=>$p,
+                                    ),
                                   ],
                  'links'       => [ $link,
                                     $link,
@@ -70,25 +25,6 @@ die "access denied"
   unless $curuser->access_right('Edit inventory')
       || $curuser->access_right('Edit global inventory')
       || $curuser->access_right('Configuration');
-
-tie my %labels, 'Tie::IxHash',
-  'num_avail' => 'Available', #  <FONT SIZE="-1"><A HREF="eventually">(upload batch)</A></FONT>',
-  'num_used'  => 'In use', #'Used', #'Allocated',
-  'num_total' => 'Total',
-;
-
-my %link = (
-  'num_avail' => ';avail=1',
-  'num_used'  => ';used=1',
-  'num_total' => '',
-);
-
-my %inv_action_link = (
-  'num_avail' => [ 'upload batch',
-                   $p.'misc/inventory_item-import.html?classnum=',
-                   'classnum'
-                 ],
-);
 
 my $menubar = $curuser->access_right('Configuration')
                 ? [ 'Add a new inventory class' =>

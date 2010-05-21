@@ -103,6 +103,12 @@ my $inventory_class = qsearchs( {
 
 my $title = $inventory_class->classname. ' Inventory';
 
+if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
+  $extra_sql .= " AND inventory_item.agentnum = $1 ";
+  my $agent = qsearchs('agent', { 'agentnum' => $1 }) or die "unknown agentnum";
+  $title = $agent->agent. " $title";
+}
+
 #little false laziness with SQL fragments in inventory_class.pm
 if ( $cgi->param('avail') ) {
   $extra_sql .= ' AND ( svcnum IS NULL OR svcnum = 0 )';

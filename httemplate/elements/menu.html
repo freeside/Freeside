@@ -213,6 +213,11 @@ $report_packages{'FCC Form 477 packages'} =  [ $fsurl.'search/report_477.html', 
   if $conf->exists('cust_main-require_censustract');
 $report_packages{'Advanced package reports'} =  [ $fsurl.'search/report_cust_pkg.html', 'by agent, date range, status, package definition' ];
 
+tie my %report_inventory, 'Tie::IxHash',
+  'Inventory by agent' => [ $fsurl.'search/report_agent_inventory.html', '' ],
+  #'Inventory activity' => [ $fsurl.'search/report_h_inventory_item.html', '' ],
+;
+
 tie my %report_rating, 'Tie::IxHash',
   'RADIUS sessions' => [ $fsurl.'search/sqlradius.html', '' ],
   'Call Detail Records (CDRs)' => [ $fsurl.'search/report_cdr.html', '' ],
@@ -295,6 +300,8 @@ $report_menu{'Packages'}    =  [ \%report_packages,  'Package reports'   ]
   if $curuser->access_right('List packages');
 $report_menu{'Services'}    =  [ \%report_services,  'Services reports'  ]
   if $curuser->access_right('List services');
+$report_menu{'Inventory'}    =  [ \%report_inventory,  'Inventory reports'  ]
+  if $curuser->access_right('Configuration'); #XXX List inventory?
 $report_menu{'Usage'} =  [ \%report_rating,    'Usage reports'  ]
   if $curuser->access_right('List rating data');
 $report_menu{'Tickets'}   = [ \%report_ticketing, 'Ticket reports' ]

@@ -1,0 +1,26 @@
+<% include('/elements/header.html', 'Inventory summary per agent' ) %>
+
+<FORM ACTION="agent_inventory.html" METHOD="GET">
+
+<TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+%# select agents
+
+%# select inventory classes
+
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="Search">
+
+</FORM>
+
+<% include('/elements/footer.html') %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+#XXX List inventory
+
+</%init>
+

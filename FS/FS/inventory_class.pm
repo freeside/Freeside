@@ -115,7 +115,10 @@ class (see L<FS::inventory_item>).
 =cut
 
 sub num_avail {
-  shift->num_sql('( svcnum IS NULL OR svcnum = 0 )');
+  my( $self, $sql ) = @_;
+  $sql .= ' AND ' if length($sql);
+  $sql .= '( svcnum IS NULL OR svcnum = 0 )';
+  $self->num_sql($sql);
 }
 
 sub num_sql {
@@ -142,7 +145,10 @@ L<FS::inventory_class>).
 =cut
 
 sub num_used {
-  shift->num_sql("svcnum IS NOT NULL AND svcnum > 0 ");
+  my( $self, $sql ) = @_;
+  $sql .= ' AND ' if length($sql);
+  $sql .= 'svcnum IS NOT NULL AND svcnum > 0 ';
+  $self->num_sql($sql);
 }
 
 =item num_total
@@ -153,7 +159,95 @@ L<FS::inventory_class>).
 =cut
 
 sub num_total {
-  shift->num_sql('');
+  my( $self, $sql ) = @_;
+  $self->num_sql($sql);
+}
+
+=back
+
+=head1 CLASS METHODS
+
+=over 4
+
+=item searchcell_factory
+
+=cut
+
+sub countcell_factory {
+  my($class, %opt) = @_;
+
+  my $p = $opt{p};
+
+  my $sql = $opt{'agentnum'} ? 'agentnum = '.$opt{'agentnum'} : '';
+
+  use Tie::IxHash;
+  tie my %labels, 'Tie::IxHash',
+    'num_avail' => 'Available', #  <FONT SIZE="-1"><A HREF="eventually">(upload batch)</A></FONT>',
+    'num_used'  => 'In use', #'Used', #'Allocated',
+    'num_total' => 'Total',
+  ;
+
+  my %link = (
+    'num_avail' => ';avail=1',
+    'num_used'  => ';used=1',
+    'num_total' => '',
+  );
+
+  my %inv_action_link = (
+    'num_avail' => [ 'upload batch',
+                     $p.'misc/inventory_item-import.html?classnum=',
+                     'classnum'
+                   ],
+  );
+
+  sub {
+    my $inventory_class = shift;
+
+    my $link =
+      $p. 'search/inventory_item.html?'.
+      'classnum='. $inventory_class->classnum;
+    $link .= ';agentnum='.$opt{'agentnum'} if $opt{'agentnum'};
+
+    my %actioncol = ();
+    foreach ( keys %inv_action_link ) {
+      my($label, $baseurl, $method) =
+        @{ $inv_action_link{$_} };
+      my $url = $baseurl. $inventory_class->$method();
+      $actioncol{$_} =
+        '<FONT SIZE="-1">'.
+        '('.
+        '<A HREF="'.$url.'">'.
+        $label.
+        '</A>'.
+        ')'.
+        '</FONT>';
+    }
+
+    my %num = map { 
+      $_ => $inventory_class->$_($sql);
+    } keys %labels;
+
+    [ map {
+            [
+              {
+                'data'  => '<B>'. $num{$_}. '</B>',
+                'align' => 'right',
+              },
+              {
+                'data'  => $labels{$_},
+                'align' => 'left',
+                'link'  => ( $num{$_}
+                               ? $link.$link{$_}
+                               : ''
+                           ),
+              },
+              { 'data'  => $actioncol{$_},
+                'align'  => 'left',
+              },
+            ]
+          } keys %labels
+    ];
+  };
 }
 
 =back
