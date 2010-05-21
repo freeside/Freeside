@@ -154,9 +154,7 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                        setup_fee recur_fee recur_temporality unused_credit
                        recur_method cutoff_day
                        min_charge sec_granularity
-                       ignore_unrateable
                        default_prefix
-                       disable_src
                        disable_tollfree
                        use_amaflags use_disposition
                        use_disposition_taqua use_carrierid use_cdrtypenum
