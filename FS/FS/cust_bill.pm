@@ -4341,8 +4341,7 @@ Returns an SQL fragment to retreive the amount owed (charged minus credited and 
 =cut
 
 sub owed_sql {
-  my $class = shift;
-  my ($start, $end) = @_;
+  my ($class, $start, $end) = @_;
   'charged - '. 
     $class->paid_sql($start, $end). ' - '. 
     $class->credited_sql($start, $end);
@@ -4355,8 +4354,7 @@ Returns an SQL fragment to retreive the net amount (charged minus credited).
 =cut
 
 sub net_sql {
-  my $class = shift;
-  my ($start, $end) = @_;
+  my ($class, $start, $end) = @_;
   'charged - '. $class->credited_sql($start, $end);
 }
 
@@ -4369,7 +4367,9 @@ Returns an SQL fragment to retreive the amount paid against this invoice.
 sub paid_sql {
   my ($class, $start, $end) = @_;
   $start &&= "AND cust_bill_pay._date <= $start";
-  $end &&=   "AND cust_bill_pay._date > $end";
+  $end   &&= "AND cust_bill_pay._date > $end";
+  $start = '' unless defined($start);
+  $end   = '' unless defined($end);
   "( SELECT COALESCE(SUM(amount),0) FROM cust_bill_pay
        WHERE cust_bill.invnum = cust_bill_pay.invnum $start $end  )";
 }
@@ -4383,7 +4383,9 @@ Returns an SQL fragment to retreive the amount credited against this invoice.
 sub credited_sql {
   my ($class, $start, $end) = shift;
   $start &&= "AND cust_credit_bill._date <= $start";
-  $end   &&= "AND cust_credit_bill._date > $end";
+  $end   &&= "AND cust_credit_bill._date >  $end";
+  $start = '' unless defined($start);
+  $end   = '' unless defined($end);
   "( SELECT COALESCE(SUM(amount),0) FROM cust_credit_bill
        WHERE cust_bill.invnum = cust_credit_bill.invnum $start $end  )";
 }
