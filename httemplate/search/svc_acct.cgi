@@ -99,7 +99,7 @@ push @color, '';
 push @style, '';
 
 #hide the UID, its much less useful these days
-unless ( $cgi->param('show_uid') ) { #XXX add a checkbox
+if ( $cgi->param('show_uid') ) { #XXX add a checkbox
   push @header, 'UID';
   push @fields, 'uid';
   push @links, $link;
