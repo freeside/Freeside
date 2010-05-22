@@ -91,13 +91,30 @@ if ( $conf->exists('report-showpasswords') #its a terrible idea
   push @style, '';
 }
 
-#maybe hide the UID if a flag isn't passed... its much less useful these days
-push @header, 'Real Name', 'UID', 'Last Login';
-push @fields, 'finger', 'uid', 'last_login_text';
-push @links, $link, $link, $link;
-$align .= 'llr';
-push @color, '', '', '';
-push @style, '', '', '';
+push @header, 'Real Name';
+push @fields, 'finger';
+push @links, $link;
+$align .= 'l';
+push @color, '';
+push @style, '';
+
+#hide the UID, its much less useful these days
+unless ( $cgi->param('show_uid') ) { #XXX add a checkbox
+  push @header, 'UID';
+  push @fields, 'uid';
+  push @links, $link;
+  $align .= 'l';
+  push @color, '';
+  push @style, '';
+}
+
+push @header, 'Last Login';
+push @fields, 'last_login_text';
+push @links, $link;
+$align .= 'r';
+push @color, '';
+push @style, '';
+
 
 for (qw( domain domsvc agentnum custnum popnum svcpart cust_fields )) {
   $search_hash{$_} = $cgi->param($_) if length($cgi->param($_));
