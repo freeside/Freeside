@@ -69,12 +69,12 @@ my $link_cust = sub {
 my %search_hash = ();
 my @extra_sql = ();
 
-my @header = ( '#', 'Service', 'Account' );
-my @fields = ( 'svcnum', 'svc', 'email' );
-my @links = ( $link, $link, $link );
-my $align = 'rll';
-my @color = ( '', '', '' );
-my @style = ( '', '', '' );
+my @header = ( 'Service', 'Account' );
+my @fields = ( 'svc', 'email' );
+my @links = ( $link, $link );
+my $align = 'll';
+my @color = ( '', '' );
+my @style = ( '', '' );
 my @footer = ();
 
 my $conf = new FS::Conf;
@@ -151,7 +151,7 @@ if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
     push @color, '';
     push @style, '';
 
-    @footer = ( '', 'Total', '', '', '',
+    @footer = ( 'Total', '', '', '',
                 sub { format_time($tot_time) }, #time
               );
 
@@ -200,6 +200,8 @@ if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
         '', #XXX sub { $tot{'90'} }, #90
       ;
     }
+
+    push @footer, '', '';
 
   }
 
