@@ -1,0 +1,102 @@
+<% include( 'elements/search.html',
+                  'html_init'        => $html_init,
+                  'name'             => 'lines',
+                  'query'            => $query,
+                  'count_query'      => 'SELECT 11',
+                  'really_disable_download' => 1,
+                  'disable_download' => 1,
+                  'nohtmlheader'     => 1,
+                  'disable_total'    => 1,
+                  'header'           => [ @headers ],
+                  'xml_elements'     => [ @xml_elements ],
+                  'fields'           => [ @fields ],
+              )
+%>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right('List packages');
+
+my $html_init = '<H2>Part IIB</H2>';
+my %search_hash = ();
+  
+for ( qw(agentnum magic classnum) ) {
+  $search_hash{$_} = $cgi->param($_) if $cgi->param($_);
+}
+
+my @row_option = grep { /^\d+$/ } $cgi->param('part2b_row_option')
+  if $cgi->param('part2b_row_option');
+
+# fudge in 2nd row
+unshift @row_option, $row_option[0];
+
+my $query = 'SELECT '. join(' UNION SELECT ', 1..8);
+
+my $total_count = 0;
+my $column_value = sub {
+  my $row = shift;
+
+  my @report_option = ( $row_option[$row - 1] || '' );
+
+  my $sql_query = FS::cust_pkg->search(
+    { %search_hash, 'report_option' => join(',', @report_option) }
+  );
+
+  my $count_sql = delete($sql_query->{'count_query'});
+  if ( $row == 2 ) {
+    $count_sql =~ s/COUNT\(\*\) FROM/COALESCE( sum(CASE WHEN cust_main.company IS NULL OR cust_main.company = '' THEN fcc_ds0s END), 0 ) FROM/
+      or die "couldn't parse count_sql";
+  } else {
+    $count_sql =~ s/COUNT\(\*\) FROM/COALESCE( sum(fcc_ds0s), 0 ) FROM/
+      or die "couldn't parse count_sql";
+  }
+
+  my $count_sth = dbh->prepare($count_sql)
+    or die "Error preparing $count_sql: ". dbh->errstr;
+  $count_sth->execute
+    or die "Error executing $count_sql: ". $count_sth->errstr;
+  my $count_arrayref = $count_sth->fetchrow_arrayref;
+  my $count = $count_arrayref->[0];
+
+  $total_count = $count if $row == 1;
+  $count = sprintf('%.2f', $total_count ? 100*$count/$total_count : 0)
+    if $row != 1;
+
+  return "$count";
+};
+
+my @headers = (
+  '',
+  'with broadband',
+  'without broadband',
+  'wholesale',
+);
+
+my @xml_elements = (
+  sub { my $row = shift; my $rownum = $row->[0] + 1; "PartII_${rownum}a" },
+  sub { my $row = shift; my $rownum = $row->[0] + 1; "PartII_${rownum}b" },
+  sub { my $row = shift; my $rownum = $row->[0] + 1; "PartII_${rownum}c" },
+);
+
+my @rows = (
+  'total number',
+  '% residential',
+  '% nomadic',
+  '% copper',
+  '% FTTP',
+  '% coax',
+  '% wireless',
+  '% other broadband',
+);
+
+my @fields = (
+  sub { my $row = shift; $rows[$row->[0] - 1]; },
+  sub { 0; },
+  sub { my $row = shift; &{$column_value}($row->[0]); },
+  sub { 0; },
+);
+
+shift @fields if $cgi->param('_type') eq 'xml';
+</%init>

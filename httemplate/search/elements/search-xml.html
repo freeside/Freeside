@@ -1,0 +1,88 @@
+% foreach my $row ( @$rows ) {
+%
+% if (&{$beginrow}($row)){
+<% &{$beginrow}($row) %>
+% }
+%
+%   foreach my $i ( 0 .. scalar( @{$opt{'fields'}} ) - 1 ) {
+%     my $field = $opt{'fields'}->[$i];
+%     my $value = '';
+%     if ( ref($field) eq 'CODE' ) {
+%       $value = &{$field}($row);
+%       $value = '(N/A)' #unimplemented
+%         if ref($value) eq 'ARRAY';
+%     } else {
+%       $value = $row->$field();
+%     }
+%
+<% &{$beginfield}($row, $i) %><% $value |h %><% &{$endfield}($row, $i) %>
+%
+%   }
+%
+% if (&{$endrow}($row)) {
+<% &{$endrow}($row) %>
+% }
+%
+% }
+<%init>
+
+my %args = @_;
+my $header = $args{'header'};
+my $rows   = $args{'rows'};
+my %opt    = %{ $args{'opt'} };
+
+http_header('Content-Type' => 'application/XML' ); # So saith RFC 4180
+http_header('Content-Disposition' => 
+  'attachment;filename="'.($opt{'name'} || PL($opt{'name_singular'}) ).'.xml"');
+
+unless ( $opt{'fields'} ) {
+  foreach my $i ( 0 .. ( $#{ @$rows[0] } ) ) {
+    $opt{'fields'}->[$i] = sub { my $row = shift; $row->[$i]; };
+  }
+}
+
+my $beginrow = sub { return ''; };
+my $endrow = sub { return ''; };
+if ($opt{xml_row_element}) {
+  $beginrow = sub { my ($row, $index) = @_;
+                    my $value;
+                    if ( ref($opt{xml_row_element}) eq 'CODE' ) {
+                      $value = &{$opt{xml_row_element}}($row);
+                    } else {
+                      $value = $opt{xml_row_element};
+                    }
+                    return "<$value>";
+                  };
+  $endrow = sub { my ($row, $index) = @_;
+                  my $value;
+                  if ( ref($opt{xml_row_element}) eq 'CODE' ) {
+                    $value = &{$opt{xml_row_element}}($row);
+                  } else {
+                    $value = $opt{xml_row_element};
+                  }
+                  return "</$value>";
+                };
+}
+my $beginfield = sub { my ($row, $index) = @_;
+                       my $value;
+                       if ( ref($opt{xml_elements}->[$index]) eq 'CODE' ) {
+                         $value = &{$opt{xml_elements}->[$index]}($row);
+                       } else {
+                         $value = $opt{xml_elements}->[$index];
+                       }
+                       return "<$value>";
+                     };
+my $endfield =   sub { my ($row, $index) = @_;
+                       my $value;
+                       if ( ref($opt{xml_elements}->[$index]) eq 'CODE' ) {
+                         $value = &{$opt{xml_elements}->[$index]}($row);
+                       } else {
+                         $value = $opt{xml_elements}->[$index];
+                       }
+                       return "</$value>";
+                     };
+
+$beginfield = sub { return ''; } if $opt{no_field_elements};  #hmm
+$endfield = sub { return ''; } if $opt{no_field_elements};  #hmm
+
+</%init>

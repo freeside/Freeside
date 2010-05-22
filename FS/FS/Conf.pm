@@ -2370,6 +2370,13 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'cust_pkg-show_fcc_voice_grade_equivalent',
+    'section'     => 'UI',
+    'description' => "Show a field on package definitions for assigning a DSO equivalency number suitable for use on FCC form 477.",
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'svc_acct-edit_uid',
     'section'     => 'shell',
     'description' => 'Allow UID editing.',

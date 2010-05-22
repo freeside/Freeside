@@ -39,6 +39,7 @@ FS/Daemon.pm
 FS/Misc.pm
 FS/Record.pm
 FS/Report.pm
+FS/Report/FCC_477.pm
 FS/Report/Table.pm
 FS/Report/Table/Monthly.pm
 FS/SearchCache.pm

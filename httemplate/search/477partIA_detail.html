@@ -1,0 +1,125 @@
+<% include( 'elements/search.html',
+                  'html_init'        => $html_init,
+                  'name'             => 'lines',
+                  'query'            => $query,
+                  'count_query'      => $count_query,
+                  'really_disable_download' => 1,
+                  'disable_download' => 1,
+                  'nohtmlheader'     => 1,
+                  'disable_total'    => 1,
+                  'header'           => [ '', @column_option_name ],
+                  'xml_elements'     => [ @xml_elements ],
+                  'fields'           => [  @fields ],
+              )
+%>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right('List packages');
+
+my %opt = @_;
+my %search_hash = ();
+  
+for ( qw(agentnum magic classnum) ) {
+  $search_hash{$_} = $cgi->param($_) if $cgi->param($_);
+}
+
+my @column_option = grep { /^\d+/ } $cgi->param('part1_column_option')
+  if $cgi->param('part1_column_option');
+
+my @row_option = grep { /^\d+/ } $cgi->param('part1_row_option')
+  if $cgi->param('part1_row_option');
+
+my @technology_option = &FS::Report::FCC_477::parse_technology_option($cgi);
+
+my @column_option_name = scalar(@column_option)
+  ? ( map { my $part_pkg_report_option = 
+              qsearchs({ 'table' => 'part_pkg_report_option',
+                         'hashref' => { num => $_ },
+                      });
+            $part_pkg_report_option ? $part_pkg_report_option->name
+                                    : 'no such report option';
+          } @column_option
+    )
+  : ( 'all packages' );
+
+my $where = join(' OR ', map { "num = $_" } @row_option );
+my %row_option_name = $where ?
+                        ( map { $_->num => $_->name }
+                          qsearch({ 'table' => 'part_pkg_report_option',
+                                    'hashref' => {},
+                                    'extra_sql' => "WHERE $where",
+                                 })
+                        ) :
+                        ();
+
+my $tech_code = $opt{tech_code};
+my $technology = $FS::Report::FCC_477::technology[$tech_code] || 'unknown';
+my $html_init = "<H2>Part IA $technology breakdown by speeds</H2>";
+my $xml_prefix = 'PartIA_'. chr(65 + $tech_code);
+
+my $query = 'SELECT '. join(' UNION ALL SELECT ',@row_option);
+my $count_query = 'SELECT '. scalar(@row_option);
+
+my $value = sub {
+  my ($rowref, $column) = (shift, shift);
+  my $row = $rowref->[0];
+
+  if ($column eq 'name') {
+    return $row_option_name{$row} || 'no such report option';
+  } elsif ( $column =~ /^(\d+)$/ ) {
+    my @report_option = ( $row || '',
+                          $column_option[$1 - 2] || '',
+                          $technology_option[$tech_code] || '',
+                        );
+
+    my ( $count, $residential ) = FS::cust_pkg->fcc_477_count(
+      { %search_hash, 'report_option' => join(',', @report_option) }
+    );
+
+    my $percentage = sprintf('%.2f', $count ? 100 * $residential / $count : 0);
+    my $return = $count;
+    $return .= "<BR>$percentage% residential"
+      unless $cgi->param('_type') eq 'xml';
+    return $return;
+  } else {
+    return '<FONT SIZE="+1" COLOR="#ff0000">Bad call to column_value</FONT>';
+  }
+};
+
+my @fields = (
+  sub { &{$value}(shift, 'name');},
+  sub { &{$value}(shift, 2);},
+  sub { &{$value}(shift, 3);},
+  sub { &{$value}(shift, 4);},
+  sub { &{$value}(shift, 5);},
+  sub { &{$value}(shift, 6);},
+  sub { &{$value}(shift, 7);},
+  sub { &{$value}(shift, 8);},
+  sub { &{$value}(shift, 9);},
+ );
+shift @fields if $cgi->param('_type') eq 'xml';
+
+my $xml_element = sub {
+  my ($rowref, $column) = (shift, shift);
+  my $row = $rowref->[0];
+
+  $row++;
+  $xml_prefix. $column. $row;
+
+};
+
+my @xml_elements = (
+  sub { &{$xml_element}(shift, 'f') },
+  sub { &{$xml_element}(shift, 'g') },
+  sub { &{$xml_element}(shift, 'h') },
+  sub { &{$xml_element}(shift, 'i') },
+  sub { &{$xml_element}(shift, 'j') },
+  sub { &{$xml_element}(shift, 'k') },
+  sub { &{$xml_element}(shift, 'l') },
+  sub { &{$xml_element}(shift, 'm') },
+);
+
+</%init>

@@ -98,6 +98,8 @@ inherits from FS::Record.  The following fields are currently supported:
 
 =item agentnum - Optional agentnum (see L<FS::agent>)
 
+=item fcc_ds0s - Optional DS0 equivalency number for FCC form 477
+
 =back
 
 =head1 METHODS
@@ -480,6 +482,7 @@ sub check {
            ? $self->ut_foreign_keyn('agentnum', 'agent', 'agentnum' )
            : $self->ut_agentnum_acl('agentnum', \@null_agentnum_right)
        )
+    || $self->ut_numbern('fcc_ds0s')
     || $self->SUPER::check
   ;
   return $error if $error;

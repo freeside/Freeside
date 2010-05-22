@@ -125,6 +125,7 @@ if ( -e $addl_handler_use_file ) {
                    states_hash counties cities state_label
                  );
   use FS::Misc::eps2png qw( eps2png );
+  use FS::Report::FCC_477;
   use FS::Report::Table::Monthly;
   use FS::TicketSystem;
   use FS::Tron qw( tron_lint );

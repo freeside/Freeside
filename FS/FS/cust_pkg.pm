@@ -2563,6 +2563,10 @@ a value suited to passing to FS::UI::Web::cust_header
 
 specifies the user for agent virtualization
 
+=item fcc_line
+
+ boolean selects packages containing fcc form 477 telco lines
+
 =back
 
 =cut
@@ -2682,6 +2686,12 @@ sub search {
   ###
 
   push @where,  "part_pkg.custom = 'Y'" if $params->{custom};
+
+  ###
+  # parse fcc_line
+  ###
+
+  push @where,  "part_pkg.fcc_ds0s > 0" if $params->{fcc_line};
 
   ###
   # parse censustract
@@ -2840,6 +2850,35 @@ sub search {
   };
 
 }
+
+=item fcc_477_count
+
+Returns a list of two package counts.  The first is a count of packages
+based on the supplied criteria and the second is the count of residential
+packages with those same criteria.  Criteria are specified as in the search
+method.
+
+=cut
+
+sub fcc_477_count {
+  my ($class, $params) = @_;
+
+  my $sql_query = $class->search( $params );
+
+  my $count_sql = delete($sql_query->{'count_query'});
+  $count_sql =~ s/ FROM/,count(CASE WHEN cust_main.company IS NULL OR cust_main.company = '' THEN 1 END) FROM/
+    or die "couldn't parse count_sql";
+
+  my $count_sth = dbh->prepare($count_sql)
+    or die "Error preparing $count_sql: ". dbh->errstr;
+  $count_sth->execute
+    or die "Error executing $count_sql: ". $count_sth->errstr;
+  my $count_arrayref = $count_sth->fetchrow_arrayref;
+
+  return ( @$count_arrayref );
+
+}
+
 
 =item location_sql
 

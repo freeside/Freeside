@@ -1,0 +1,130 @@
+<% include( 'elements/search.html',
+                  'html_init'     => $html_init,
+                  'name'          => 'regions',
+                  'query'         => [ @sql_query ],
+                  'count_query'   =>  $count_query,
+                  'order_by'      => 'ORDER BY censustract',
+                  'avoid_quote'   => 1,
+                  'no_csv_header' => 1,
+                  'nohtmlheader'  => 1,
+                  'header'        => [
+                                       'County code',
+                                       'Census tract code',
+                                       'Upload rate',
+                                       'Download rate',
+                                       'Technology code',
+                                       'Technology code other',
+                                       'Quantity',
+                                       'Percentage residential',
+                                     ],
+                  'xml_elements'  => [
+                                       'county_fips',
+                                       'census_tract',
+                                       'upload_rate_code',
+                                       'download_rate_code',
+                                       'technology_code',
+                                       'technology_code_other',
+                                       'value',
+                                       'percentage',
+                                     ],
+                  'fields'        => [
+                    sub { my $row = shift; substr($row->censustract, 2, 3) },
+                    sub { my $row = shift; substr($row->censustract, 5) },
+                    'upload',
+                    'download',
+                    'technology_code',
+                    sub { '' },  # doesn't really work
+                    'quantity',
+                    sub { my $row = shift; sprintf "%.2f", $row->residential },
+                  ],
+                  'links'        => [
+                    [ $link, $link_suffix ],
+                    [ $link, $link_suffix ],
+                    [ $link, $link_suffix ],
+                    [ $link, $link_suffix ],
+                    [ $link, $link_suffix ],
+                    [ $link, $link_suffix ],
+                    [ $link, $link_suffix ],
+                    [ $link, $link_suffix ],
+                  ],
+                  'url' => $opt{url} || $cgi->self_url,
+                  'xml_row_element' => 'Datarow',
+              )
+%>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right('List packages');
+
+my %opt = @_;
+
+my $html_init = '<H2>Part VI</H2>';
+
+my %search_hash = ();
+my @sql_query = ();
+  
+for ( qw(agentnum magic classnum) ) {
+  $search_hash{$_} = $cgi->param($_) if $cgi->param($_);
+}
+
+my @column_option = grep { /^\d+$/ } $cgi->param('part1_column_option')
+  if $cgi->param('part1_column_option');
+
+my @row_option = grep { /^\d+$/ } $cgi->param('part1_row_option')
+  if $cgi->param('part1_row_option');
+
+my @technology_option = &FS::Report::FCC_477::parse_technology_option($cgi);
+
+my $rowcount = 1;
+foreach my $row ( @row_option ) {
+  my $columncount = 2;
+  foreach my $column ( @column_option ) {
+    my $tech_code = 0;
+    foreach my $technology ( @technology_option ) {
+      $tech_code++;
+      next unless $technology;
+      my @report_option = ();
+      push @report_option, $row if $row;
+      push @report_option, $column if $column;
+      push @report_option, $technology;
+      my $report_option = join(',', @report_option) if @report_option;
+ 
+      my $sql_query = FS::cust_pkg->search(
+        { %search_hash,
+          ($report_option ? ( 'report_option' => $report_option ) : () ),
+        }
+      );
+      my $extracolumns = "$rowcount AS upload, $columncount AS download, $tech_code as technology_code";
+      my $percent = "CASE WHEN count(*) > 0 THEN 100-100*cast(count(cust_main.company) as numeric)/cast(count(*) as numeric) ELSE cast(0 as numeric) END AS residential";
+      $sql_query->{select} = "count(*) AS quantity, $extracolumns, censustract, $percent";
+      $sql_query->{extra_sql} =~ /^(.*)(ORDER BY pkgnum)(.*)$/s
+        or die "couldn't parse extra_sql";
+      $sql_query->{extra_sql} = "$1 GROUP BY censustract $3";
+      push @sql_query, $sql_query;
+    }
+    $columncount++;
+  }
+  $rowcount++;
+}
+
+my $count_query = 'SELECT count(*) FROM ( ('.
+   join( ') UNION ALL (',
+          map { my $extra = $_->{extra_sql};  my $addl = $_->{addl_from};
+                "SELECT censustract from cust_pkg $addl $extra";
+              }
+          @sql_query
+       ). ') ) AS foo';
+
+my $link = 'cust_pkg.cgi?'.
+           join(';', map{ "$_=". $search_hash{$_} } keys %search_hash). ';';
+my $link_suffix = sub { my $row = shift;
+                        my $result = 'censustract='. $row->censustract. ';';
+                        $result .= 'report_option='. @row_option[$row->upload - 1]
+                          if @row_option[$row->upload - 1];
+                        $result .= 'report_option='. @column_option[$row->download - 1]
+                          if @column_option[$row->download - 1];
+                        $result;
+                      };
+</%init>

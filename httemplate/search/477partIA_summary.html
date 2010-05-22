@@ -1,0 +1,80 @@
+<% include( 'elements/search.html',
+                  'html_init'        => $html_init,
+                  'name'             => 'lines',
+                  'query'            => 'SELECT 1',
+                  'count_query'      => 'SELECT 1',
+                  'really_disable_download' => 1,
+                  'disable_download' => 1,
+                  'nohtmlheader'     => 1,
+                  'disable_total'    => 1,
+                  'header'           => [
+                                          'Total Connections',
+                                          '% owned loop',
+                                          '% billed to end users',
+                                          '% residential',
+                                          '% residential &gt; 200kbps',
+                                        ],
+                  'xml_elements'     => [
+                                          $xml_prefix. 'a1',
+                                          $xml_prefix. 'b1',
+                                          $xml_prefix. 'c1',
+                                          $xml_prefix. 'd1',
+                                          $xml_prefix. 'e1',
+                                        ],
+                  'fields'           => [
+                                          sub { $total_count },
+                                          sub { '100.00' },
+                                          sub { '100.00' },
+                                          sub { $total_percentage },
+                                          sub { $total_percentage },
+                                        ],
+              )
+%>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right('List packages');
+
+my %opt = @_;
+my %search_hash = ();
+  
+for ( qw(agentnum magic classnum) ) {
+  $search_hash{$_} = $cgi->param($_) if $cgi->param($_);
+}
+
+my @column_option = grep { /^\d+$/ } $cgi->param('part1_column_option')
+  if $cgi->param('part1_column_option');
+
+my @row_option = grep { /^\d+$/ } $cgi->param('part1_row_option')
+  if $cgi->param('part1_row_option');
+
+my @technology_option = &FS::Report::FCC_477::parse_technology_option($cgi);
+
+my $total_count = 0;
+my $total_residential = 0;
+my $tech_code = $opt{tech_code};
+my $technology = $FS::Report::FCC_477::technology[$tech_code] || 'unknown';
+my $html_init = "<H2>Part IA $technology totals</H2>";
+my $xml_prefix = 'PartIA_'. chr(65 + $tech_code);
+
+foreach my $row ( @row_option ) {
+  foreach my $column ( @column_option ) {
+
+    my @report_option = ( $row || '-1', $column || '-1', $technology_option[$tech_code] );
+
+    my ( $count, $residential ) = FS::cust_pkg->fcc_477_count(
+      { %search_hash, 'report_option' => join(',', @report_option) }
+    );
+
+    $total_count += $count;
+    $total_residential += $residential;
+  }
+}
+
+my $total_percentage =
+  sprintf("%.2f", $total_count ? 100*$total_residential/$total_count : 0);
+
+
+</%init>

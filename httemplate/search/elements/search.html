@@ -172,6 +172,10 @@ Example:
 %
 <% include('search-xls.html',  header=>$header, rows=>$rows, opt=>\%opt ) %>
 %
+% } elsif ( $type eq 'xml' ) {
+%
+<% include('search-xml.html',  rows=>$rows, opt=>\%opt ) %>
+%
 % } else { # regular HTML
 %
 <% include('search-html.html',
@@ -195,7 +199,7 @@ my(%opt) = @_;
 
 my $curuser = $FS::CurrentUser::CurrentUser;
 
-my $type = $cgi->param('_type') =~ /^(csv|\w*\.xls|select|html(-print)?)$/
+my $type = $cgi->param('_type') =~ /^(csv|\w*\.xls|xml|select|html(-print)?)$/
            ? $1 : 'html' ;
 
 my %align = (
@@ -224,8 +228,12 @@ if($type =~ /csv|xls/) {
   } while ( exists($h->[$i]) );
 }
 
+# wtf?
 $opt{disable_download} = 0
   if $opt{disable_download} && $curuser->access_right('Configuration download');
+
+$opt{disable_download} = 1
+  if $opt{really_disable_download};
 
 my @link_agentnums = ();
 my $null_link = '';

@@ -1461,6 +1461,7 @@ sub tables_hashref {
         'pay_weight',    'real',    'NULL', '', '', '',
         'credit_weight', 'real',    'NULL', '', '', '',
         'agentnum',      'int',     'NULL', '', '', '', 
+        'fcc_ds0s',      'int',     'NULL', '', '', '', 
         'no_auto',      'char',     'NULL',  1, '', '', 
       ],
       'primary_key' => 'pkgpart',

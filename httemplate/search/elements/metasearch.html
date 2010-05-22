@@ -1,0 +1,71 @@
+<%doc>
+
+Example:
+
+  include( 'elements/metasearch.html',
+
+    ###
+    # required
+    ###
+
+    'title'         => 'Page title',
+    
+    #arrayref of hashrefs suited for passing to elements/search.html
+    #see that documentation
+    'search'      => [
+                       {
+                         query => { 'table'     => 'tablename',
+                                    #everything else is optional...
+                                    'hashref'   => { 'f1' => 'value',
+                                                     'f2' => { 'op'   => '<',
+                                                               'value' => '54',
+                                                             },
+                                                    },
+                                    'select'    => '*',
+                                    'order_by'  => 'ORDER BY something',
+   
+                                  },
+                         count_query => 'SELECT COUNT(*) FROM tablename',
+                       },
+                       {
+                         query => 'table'     => 'anothertablename',
+                         count_query => 'SELECT COUNT(*) FROM anothertablename',
+                       },
+                     ],
+   
+    ###
+    # optional
+    ###
+   
+    # some HTML callbacks...
+    'menubar'          => '', #menubar arrayref
+    'html_init'        => '', #after the header/menubar and before the pager
+    'html_form'        => '', #after the pager, right before the results
+                              # (only shown if there are results)
+                              # (use this for any form-opening tag rather than
+                              #  html_init, to avoid a nested form)
+    'html_foot'        => '', #at the bottom
+    'html_posttotal'   => '', #at the bottom
+                              # (these three can be strings or coderefs)
+   
+  );
+
+</%doc>
+% foreach my $search ( @{$opt{search}} ) {
+<% include('search.html',
+             %$search,
+             'type'           => $type,
+             'nohtmlheader'   => 1,
+          )
+%>
+%
+% } 
+<%init>
+
+my(%opt) = @_;
+#warn join(' / ', map { "$_ => $opt{$_}" } keys %opt ). "\n";
+
+my $type = $cgi->param('_type') =~ /^(csv|\w*\.xls|select|html(-print)?)$/
+           ? $1 : 'html' ;
+
+</%init>

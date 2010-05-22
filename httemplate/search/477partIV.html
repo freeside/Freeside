@@ -1,0 +1,17 @@
+%if ( $cgi->param('_type') eq 'html' || $cgi->param('_type') eq 'html-print' ) {
+<H2>Part IV</H2>
+%} elsif ( $cgi->param('_type') eq 'xml' ) {
+<notes>
+%}
+<% $cgi->param('notes') |h %>
+%if ( $cgi->param('_type') eq 'xml' ) {
+</notes>
+%}
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right('List packages');
+  
+</%init>

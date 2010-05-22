@@ -1,0 +1,53 @@
+<% include( 'elements/search.html',
+                  'html_init'         => $html_init,
+                  'name'              => 'zip code',
+                  'query'             => [ @sql_query ],
+                  'count_query'       => $count_query,
+                  'nohtmlheader'      => 1,
+                  'disable_total'     => 1,
+                  'header'            => [ 'zip code' ],
+                  'xml_elements'      => [ 'zip codes' ],
+                  'no_field_elements' => 1,
+                  'fields'            => [ 'zip' ],
+                  'url'               => $opt{url} || $cgi->self_url,
+
+              )
+%>
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied"
+  unless $curuser->access_right('List packages');
+
+my %opt = @_;
+my $html_init = '<H2>Part V</H2>';
+my %search_hash = ();
+my @sql_query = ();
+my @count_query = ();
+  
+for ( qw(agentnum magic classnum) ) {
+  $search_hash{$_} = $cgi->param($_) if $cgi->param($_);
+}
+
+my $sql_query = FS::cust_pkg->search( { %search_hash, 'fcc_line' > 1 });
+$sql_query->{select} = 'DISTINCT zip';
+$sql_query->{extra_sql} =~ s/ORDER BY [.\w]+//;
+push @sql_query, $sql_query;
+push @count_query, delete($sql_query->{'count_query'});
+$count_query[0] =~ s/count\(\*\)/count(DISTINCT zip)/;
+$count_query[0] =~ s/ORDER BY [.\w]+//;
+
+$search_hash{classnum} = $cgi->param('part2a_classnum')
+  if $cgi->param('part2a_classnum');
+
+$sql_query = FS::cust_pkg->search( { %search_hash } );
+$sql_query->{select} = 'DISTINCT zip';
+$sql_query->{extra_sql} =~ s/ORDER BY [.\w]+//;
+push @sql_query, $sql_query;
+push @count_query, delete($sql_query->{'count_query'});
+$count_query[1] =~ s/count\(\*\)/count(DISTINCT zip)/;
+$count_query[1] =~ s/ORDER BY [.\w]+//;
+my $count_query = join(' UNION ', @count_query);
+
+</%init>

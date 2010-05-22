@@ -23,30 +23,167 @@
                )
     %>
 
-%   if ( scalar( qsearch( 'part_pkg_report_option', { 'disabled' => '' } ) ) ) {
-%   # the m2 javascript magic in edit/elements/edit.html would be better here
+    <SCRIPT type="text/javascript">
+      function partchange(what) {
+        var id = 'part' + what.value;
+        var element = document.getElementById(id);
+        if (what.checked) {
+          element.style.display = '';
+        } else {
+          element.style.display = 'none';
+        }
+      }
+    </SCRIPT>
 
-    <% include( '/elements/tr-select-table.html',
-                   'label'        => 'Column report classes',
-                   'table'        => 'part_pkg_report_option',
-                   'name_col'     => 'name',
-                   'hashref'      => { 'disabled' => '' },
-                   'element_name' => 'column_option',
-                   'multiple'     => 'multiple',
+    <% include( '/elements/tr-checkbox.html',
+                   'label' => 'Enable part IA?',
+                   'field' => 'part',
+                   'value' => 'IA',
+                   'onchange' => 'partchange(this)',
                )
     %>
 
-    <% include( '/elements/tr-select-table.html',
-                   'label'        => 'Row report classes',
-                   'table'        => 'part_pkg_report_option',
-                   'name_col'     => 'name',
-                   'hashref'      => { 'disabled' => '' },
-                   'element_name' => 'row_option',
-                   'multiple'     => 'multiple',
+    <TR id='partIA' style="display:none"><TD>Part IA</TD><TD><TABLE>
+      <TR><TD>Download speeds</TD><TD>
+        <TABLE>
+%       foreach my $speed ( @FS::Report::FCC_477::download ) {
+          <TR>
+            <TH><% $speed %></TH>
+            <TD>
+            <% include( '/elements/select-table.html',
+                           'table'        => 'part_pkg_report_option',
+                           'name_col'     => 'name',
+                           'hashref'      => { 'disabled' => '' },
+                           'element_name' => 'part1_column_option',
+                           'disable_empty' => 1,
+                       )
+            %>
+            </TD>
+          </TR>
+%       }
+        </TABLE></TD>
+      <TD>Upload speeds</TD><TD>
+        <TABLE>
+%       foreach my $speed ( @FS::Report::FCC_477::upload ) {
+          <TR>
+            <TH><% $speed %></TH>
+            <TD>
+            <% include( '/elements/select-table.html',
+                           'table'        => 'part_pkg_report_option',
+                           'name_col'     => 'name',
+                           'hashref'      => { 'disabled' => '' },
+                           'element_name' => 'part1_row_option',
+                           'disable_empty' => 1,
+                       )
+            %>
+            </TD>
+          </TR>
+%       }
+        </TABLE></TD></TR>
+      <TR><TD>Technologies</TD><TD>
+        <TABLE>
+%       my $i = 0;
+%       foreach my $tech ( @FS::Report::FCC_477::technology ) {
+          <TR>
+            <TH><% $tech %></TH>
+            <TD>
+            <% include( '/elements/select-table.html',
+                           'table'        => 'part_pkg_report_option',
+                           'name_col'     => 'name',
+                           'hashref'      => { 'disabled' => '' },
+                           'element_name' => "part1_technology_option_$i",
+                           'empty_label'  => '(omit)',
+                       )
+            %>
+            </TD>
+          </TR>
+%       $i++
+%       }
+        </TABLE></TD></TR>
+    </TABLE></TD></TR>
+
+    <% include( '/elements/tr-checkbox.html',
+                   'label' => 'Enable part IIA?',
+                   'field' => 'part',
+                   'value' => 'IIA',
+                   'onchange' => 'partchange(this)',
                )
     %>
 
+    <TR id='partIIA' style="display:none"><TD>Part IIA</TD><TD><TABLE>
+%   foreach my $option ( @FS::Report::FCC_477::part2aoption ) {
+    <TR>
+      <TH><% $option %></TH>
+      <TD>
+      <% include( '/elements/select-table.html',
+                     'table'        => 'part_pkg_report_option',
+                     'name_col'     => 'name',
+                     'hashref'      => { 'disabled' => '' },
+                     'element_name' => 'part2a_row_option',
+                 )
+      %>
+      </TD>
+    </TR>
 %   }
+  </TABLE></TD></TR>
+
+    <% include( '/elements/tr-checkbox.html',
+                   'label' => 'Enable part IIB?',
+                   'field' => 'part',
+                   'value' => 'IIB',
+                   'onchange' => 'partchange(this)',
+               )
+    %>
+
+    <TR id='partIIB' style="display:none"><TD>Part IIB</TD><TD><TABLE>
+%   foreach my $option ( @FS::Report::FCC_477::part2boption ) {
+    <TR>
+      <TH><% $option %></TH>
+      <TD>
+      <% include( '/elements/select-table.html',
+                     'table'        => 'part_pkg_report_option',
+                     'name_col'     => 'name',
+                     'hashref'      => { 'disabled' => '' },
+                     'element_name' => 'part2b_row_option',
+                 )
+      %>
+      </TD>
+    </TR>
+%   }
+  </TABLE></TD></TR>
+
+    <% include( '/elements/tr-checkbox.html',
+                   'label' => 'Enable part IV?',
+                   'field' => 'part',
+                   'value' => 'IV',
+                   'onchange' => 'partchange(this)',
+               )
+    %>
+
+    <TR id='partIV' style="display:none"><TD>Part IV</TD><TD><TABLE>
+    <% include( '/elements/tr-textarea.html',
+                   'label'        => 'Explanatory notes',
+                   'id'           => 'partIV',
+                   'field'         => 'notes',
+                   'rows'         => 15,
+                   'cols'         => 80,
+               )
+    %>
+  </TABLE></TD></TR>
+
+    <% include( '/elements/tr-checkbox.html',
+                   'label' => 'Enable part V?',
+                   'field' => 'part',
+                   'value' => 'V',
+               )
+    %>
+
+    <% include( '/elements/tr-checkbox.html',
+                   'label' => 'Enable part VI?',
+                   'field' => 'part',
+                   'value' => 'VI',
+               )
+    %>
 
   </TABLE>
 
