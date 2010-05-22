@@ -142,7 +142,7 @@ sub netsales { #net sales
   my( $self, $speriod, $eperiod, $agentnum ) = @_;
 
     $self->invoiced($speriod,$eperiod,$agentnum)
-  - $self->credits( $speriod,$eperiod,$agentnum);
+  - $self->netcredits($speriod,$eperiod,$agentnum);
 }
 
 #deferred revenue
