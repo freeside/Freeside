@@ -52,7 +52,6 @@ params
 
 rulenum
 
-
 =back
 
 =head1 METHODS
@@ -122,6 +121,17 @@ sub check {
   return $error if $error;
 
   $self->SUPER::check;
+}
+
+=item arrayref
+
+Returns an array reference of the condition, op and params fields.
+
+=cut
+
+sub arrayref {
+  my $self = shift;
+  [ map $self->$_, qw( condition op params ) ];
 }
 
 =back

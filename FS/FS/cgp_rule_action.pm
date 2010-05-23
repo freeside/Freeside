@@ -48,7 +48,6 @@ params
 
 rulenum
 
-
 =back
 
 =head1 METHODS
@@ -117,6 +116,15 @@ sub check {
   return $error if $error;
 
   $self->SUPER::check;
+}
+
+=item arrayref
+
+=cut
+
+sub arrayref {
+  my $self = shift;
+  [ $self->action, $self->params ];
 }
 
 =back

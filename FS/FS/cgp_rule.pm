@@ -80,7 +80,35 @@ otherwise returns false.
 
 =cut
 
-# the insert method can be inherited from FS::Record
+sub insert {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = $self->SUPER::insert(@_);
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $error = $self->svc_export;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+}
 
 =item delete
 
@@ -119,8 +147,14 @@ sub delete {
     return $error;
   }
 
-  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  $error = $self->svc_export;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
 
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
 }
 
 =item replace OLD_RECORD
@@ -130,7 +164,61 @@ returns the error, otherwise returns false.
 
 =cut
 
-# the replace method can be inherited from FS::Record
+sub replace {
+  my $new = shift;
+
+  my $old = ( ref($_[0]) eq ref($new) )
+              ? shift
+              : $new->replace_old;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = $new->SUPER::replace($old, @_);
+  if ( $error ) {
+    $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+    return $error;
+  }
+
+  $error = $new->svc_export;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+
+}
+
+=item svc_export
+
+Calls the replace export for any communigate exports attached to this rule's
+service.
+
+=cut
+
+sub svc_export {
+  my $self = shift;
+
+  my $cust_svc = $self->cust_svc;
+  my $svc_x = $cust_svc->svc_x;
+  
+  #_singledomain too
+  my @exports = $cust_svc->part_svc->part_export('communigate_pro');
+  my @errors = map $_->export_replace($svc_x, $svc_x), @exports;
+
+  @errors ? join(' / ', @errors) : '';
+
+}
 
 =item check
 
@@ -189,6 +277,33 @@ objects.
 sub cgp_rule_action {
   my $self = shift;
   qsearch('cgp_rule_action', { 'rulenum' => $self->rulenum } );
+}
+
+=item arrayref
+
+Returns an arraref representing this rule, suitable for Communigate Pro API
+commands:
+
+The first element specifies the rule priority.
+
+The second element specifies the rule name.
+
+The third element specifies the rule conditions.
+
+The fourth element specifies the rule actions.
+
+The fifth element specifies the rule comment.
+
+=cut
+
+sub arrayref {
+  my $self = shift;
+  [ $self->priority,
+    $self->name,
+    [ map $_->arrayref, $self->cgp_rule_condition ],
+    [ map $_->arrayref, $self->cgp_rule_action ],
+    $self->comment,
+  ],
 }
 
 =back

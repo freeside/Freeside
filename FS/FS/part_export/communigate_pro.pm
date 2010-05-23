@@ -135,6 +135,15 @@ sub _export_insert_svc_acct {
       if $alias_err;
   }
 
+  my $rule_error = $self->communigate_pro_queue(
+    $svc_acct->svcnum,
+    'SetAccountMailRules',
+    $self->export_username($svc_acct),
+    $svc_acct->cgp_rule_arrayref,
+  );
+  warn "WARNING: error queueing SetAccountMailRules job: $rule_error"
+    if $rule_error;
+
   '';
 
 }
@@ -203,6 +212,15 @@ sub _export_insert_svc_domain {
   );
   warn "WARNING: error queueing SetAccountDefaultPrefs job: $pref_err"
     if $pref_err;
+
+  my $rule_error = $self->communigate_pro_queue(
+    $svc_domain->svcnum,
+    'SetDomainMailRules',
+    $svc_domain->domain,
+    $svc_domain->cgp_rule_arrayref,
+  );
+  warn "WARNING: error queueing SetDomainMailRules job: $rule_error"
+    if $rule_error;
 
   '';
 
@@ -349,6 +367,15 @@ sub _export_replace_svc_acct {
     return $error if $error;
   }
 
+  my $rule_error = $self->communigate_pro_queue(
+    $new->svcnum,
+    'SetAccountMailRules',
+    $self->export_username($new),
+    $new->cgp_rule_arrayref,
+  );
+  warn "WARNING: error queueing SetAccountMailRules job: $rule_error"
+    if $rule_error;
+
   '';
 
 }
@@ -428,6 +455,15 @@ sub _export_replace_svc_domain {
   );
   warn "WARNING: error queueing SetAccountDefaultPrefs job: $pref_err"
     if $pref_err;
+
+  my $rule_error = $self->communigate_pro_queue(
+    $new->svcnum,
+    'SetDomainMailRules',
+    $new->domain,
+    $new->cgp_rule_arrayref,
+  );
+  warn "WARNING: error queueing SetDomainMailRules job: $rule_error"
+    if $rule_error;
 
   '';
 }
@@ -655,24 +691,11 @@ sub export_getsettings_svc_domain {
   ) };
   return $@ if $@;
 
-  %$effective_settings = (
-    %$effective_settings,
-    ( map { ("Acct. Default $_" => $acct_defaults->{$_}); }
-          keys(%$acct_defaults)
-    ),
-    ( map { ("Acct. Default $_" => $acct_defaultprefs->{$_}); } #diff label??
-          keys(%$acct_defaultprefs)
-    ),
-  );
-  %$settings = (
-    %$settings,
-    ( map { ("Acct. Default $_" => $acct_defaults->{$_}); }
-          keys(%$acct_defaults)
-    ),
-    ( map { ("Acct. Default $_" => $acct_defaultprefs->{$_}); } #diff label??
-          keys(%$acct_defaultprefs)
-    ),
-  );
+  my $rules = eval { $self->communigate_pro_runcommand(
+    'GetDomainMailRules',
+    $svc_domain->domain
+  ) };
+  return $@ if $@;
 
   #aliases too
   my $aliases = eval { $self->communigate_pro_runcommand(
@@ -681,9 +704,19 @@ sub export_getsettings_svc_domain {
   ) };
   return $@ if $@;
 
-  $effective_settings->{'Aliases'} = join(', ', @$aliases);
-  $settings->{'Aliases'}           = join(', ', @$aliases);
+  my %more = (
+    ( map { ("Acct. Default $_" => $acct_defaults->{$_}); }
+          keys(%$acct_defaults)
+    ),
+    ( map { ("Acct. Default $_" => $acct_defaultprefs->{$_}); } #diff label??
+          keys(%$acct_defaultprefs)
+    ),
+    ( map _rule2string($_), @$rules ),
+    'Aliases' => join(', ', @$aliases),
+  );
 
+  %$effective_settings = ( %$effective_settings, %more );
+  %$settings = ( %$settings, %more );
 
   #false laziness w/below
   
@@ -750,8 +783,21 @@ sub export_getsettings_svc_acct {
                      keys(%$prefs)
                );
 
-  #aliases too
+  #mail rules
+  my $rules = eval { $self->communigate_pro_runcommand(
+    'GetAccountMailRules',
+    $svc_acct->email
+  ) };
+  return $@ if $@;
 
+  %$effective_settings = ( %$effective_settings,
+                           map _rule2string($_), @$rules
+                         );
+  %$settings = ( %$settings,
+                 map _rule2string($_), @$rules
+               );
+
+  #aliases too
   my $aliases = eval { $self->communigate_pro_runcommand(
     'GetAccountAliases',
     $svc_acct->email
@@ -783,6 +829,14 @@ sub export_getsettings_svc_acct {
 
   '';
 
+}
+
+sub _rule2string {
+  my $rule = shift;
+  my($priority, $name, $conditions, $actions, $comment) = @$rule;
+  $conditions = join(', ', map { my $a = $_; join(' ', @$a); } @$conditions);
+  $actions    = join(', ', map { my $a = $_; join(' ', @$a); } @$actions);
+  ("Mail rule $name" => "$priority IF $conditions THEN $actions ($comment)");
 }
 
 sub export_getsettings_svc_mailinglist {

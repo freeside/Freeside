@@ -1796,7 +1796,7 @@ sub tables_hashref {
         'priority',    'int',     '',      '', '', '',
       ],
       'primary_key' => 'rulenum',
-      'unique'      => [],
+      'unique'      => [ [ 'svcnum', 'name' ] ],
       'index'       => [ [ 'svcnum' ] ],
     },
 

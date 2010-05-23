@@ -40,7 +40,15 @@ my $view = FS::UI::Web::svc_url( 'm'        => $m,
 
 my $html_init =
   qq(<A HREF="$view">View this $svc_label</A><BR><BR>).
-  qq!<A HREF="${p}edit/cgp_rule.html?svcnum=$svcnum">Add new rule</A><BR><BR>!;
+  qq!<A HREF="${p}edit/cgp_rule.html?svcnum=$svcnum">Add new rule</A><BR><BR>!.
+  qq!
+  <SCRIPT>
+    function areyousure(href) {
+     if (confirm("Are you sure you want to delete this rule?") == true)
+       window.location.href = href;
+    }
+  </SCRIPT>
+!;
 
 my $condition_sub = sub {
   my $cgp_rule = shift;
@@ -77,6 +85,9 @@ my $action_sub = sub {
 };
 
 my $edit_sub = [ $p.'edit/cgp_rule.html?', 'rulenum' ];
-my $del_sub = [ $p.'misc/delete-cgp_rule.html?', 'rulenum' ]; #XXX javascript areyousure or something
+my $del_sub = sub {
+  my $rulenum = shift->rulenum;
+  [ "javascript:areyousure('${p}misc/delete-cgp_rule.html?$rulenum')", '' ];
+};
 
 </%init>

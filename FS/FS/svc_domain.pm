@@ -1,7 +1,8 @@
 package FS::svc_domain;
 
 use strict;
-use vars qw( @ISA $whois_hack $conf
+use base qw( FS::svc_Parent_Mixin FS::svc_CGPRule_Mixin FS::svc_Common );
+use vars qw( $whois_hack $conf
   @defaultrecords $soadefaultttl $soaemail $soaexpire $soamachine
   $soarefresh $soaretry
 );
@@ -12,16 +13,12 @@ use Date::Format;
 use Net::Domain::TLD qw(tld_exists);
 use FS::Record qw(fields qsearch qsearchs dbh);
 use FS::Conf;
-use FS::svc_Common;
-use FS::svc_Parent_Mixin;
 use FS::cust_svc;
 use FS::svc_acct;
 use FS::cust_pkg;
 use FS::cust_main;
 use FS::domain_record;
 use FS::queue;
-
-@ISA = qw( FS::svc_Parent_Mixin FS::svc_Common );
 
 #ask FS::UID to run this stuff for us later
 $FS::UID::callback{'FS::domain'} = sub { 

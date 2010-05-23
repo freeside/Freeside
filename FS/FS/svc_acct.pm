@@ -1,7 +1,7 @@
 package FS::svc_acct;
 
 use strict;
-use base qw( FS::svc_Domain_Mixin FS::svc_Common );
+use base qw( FS::svc_Domain_Mixin FS::svc_CGPRule_Mixin FS::svc_Common );
 use vars qw( $DEBUG $me $conf $skip_fuzzyfiles
              $dir_prefix @shells $usernamemin
              $usernamemax $passwordmin $passwordmax
