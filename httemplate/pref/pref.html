@@ -40,7 +40,7 @@ Interface
   </TR>
 
   <TR>
-    <TH ALIGN="right">Default customer view: </TD>
+    <TH ALIGN="right">Default customer view: </TH>
     <TD COLSPAN=2>
       <SELECT NAME="default_customer_view">
 %       foreach my $view ( keys %customer_views ) {
@@ -51,6 +51,13 @@ Interface
           <OPTION VALUE="<%$customer_views{$view}%>" <%$selected%>><%$view%></OPTION>
 %       }
       </SELECT>
+    </TD>
+  </TR>
+  
+  <TR>
+    <TH ALIGN="right" COLSPAN=1>Disable HTML editor for customer notes: </TH>
+    <TD ALIGN="left" COLSPAN=2>
+      <INPUT TYPE="checkbox" NAME="disable_html_editor" VALUE="1" <% $curuser->option('disable_html_editor') ? 'CHECKED' : '' %>>
     </TD>
   </TR>
 

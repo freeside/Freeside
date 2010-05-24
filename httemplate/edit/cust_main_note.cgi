@@ -6,11 +6,15 @@
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
 <INPUT TYPE="hidden" NAME="notenum" VALUE="<% $notenum %>">
 
-<% include('/elements/htmlarea.html', 'field' => 'comment',
+% if( $FS::CurrentUser::CurrentUser->option('disable_html_editor') ) {
+  <TEXTAREA NAME="comment_plain" ROWS="12" COLS="60"><% 
+  join '', split /<br \/>|&nbsp;/, $comment 
+  %></TEXTAREA>
+% }
+% else {
+<% include('/elements/htmlarea.html', 'field' => 'comment_html',
                                       'curr_value' => $comment) %>
-% #<TEXTAREA NAME="comment" ROWS="12" COLS="60">
-% # <% $comment %>
-% #</TEXTAREA>
+% }
 
 <BR><BR>
 <INPUT TYPE="submit" VALUE="<% $notenum ? "Apply Changes" : "Add Note" %>">

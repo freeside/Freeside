@@ -53,7 +53,7 @@
         &nbsp;<% $note->usernum ? $note->access_user->name : $note->otaker %>
       </TD>
       <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
-        &nbsp;<% $note->comments | defang %>
+        <% $note->comments | defang %>
       </TD>
 % if($edit) {
       <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $edit %></TD>

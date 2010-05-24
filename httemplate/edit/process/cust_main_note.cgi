@@ -18,12 +18,17 @@ $cgi->param('notenum') =~ /^(\d*)$/
   or die "Illegal notenum: ". $cgi->param('notenum');
 my $notenum = $1;
 
+my $comment = $cgi->param('comment_html') || 
+              join("<br />\n", 
+                split "(?:\r|\n)+", $cgi->param('comment_plain')
+              );
+
 my $new = new FS::cust_main_note ( {
   notenum  => $notenum,
   custnum  => $custnum,
   _date    => time,
   usernum  => $FS::CurrentUser::CurrentUser->usernum,
-  comments => scalar($cgi->param('comment')),
+  comments => $comment,
 } );
 
 my $error;
