@@ -50,7 +50,7 @@ my $transactiontime = "
   END
 ";
 
-push @groupby, qw( transactions.type newvalue oldvalue timetaken );
+push @groupby, qw( Transactions.Type NewValue OldValue TimeTaken );
 
 my $appliedtimeclause = "COALESCE (SUM(acct_rt_transaction.seconds), 0)";
 
