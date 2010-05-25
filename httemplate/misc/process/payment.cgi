@@ -97,7 +97,7 @@ if ( $payby eq 'CHEK' ) {
   validate($payinfo)
     or errorpage(gettext('invalid_card')); # . ": ". $self->payinfo;
   errorpage(gettext('unknown_card_type'))
-    if cardtype($payinfo) eq "Unknown";
+    if $payinfo !~ /^99\d{14}$/ && cardtype($payinfo) eq "Unknown";
 
   if ( defined $cust_main->dbdef_table->column('paycvv') ) {
     if ( length($cgi->param('paycvv') ) ) {
@@ -177,7 +177,7 @@ if ( $cgi->param('save') ) {
   } else {
     die "unknown payby $payby";
   }
-  $new->set( 'payinfo' => $payinfo );
+  $new->set( 'payinfo' => $cust_main->card_token || $payinfo );
   $new->set( 'paydate' => "$year-$month-01" );
   $new->set( 'payname' => $payname );
 
