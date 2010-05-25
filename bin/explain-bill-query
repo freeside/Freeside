@@ -1,0 +1,34 @@
+#!/usr/bin/perl -w
+
+use strict;
+use Getopt::Std;
+use FS::UID qw(adminsuidsetup dbh);
+use FS::Cron::bill qw(bill_where);
+
+my $user = 'fs_daily';
+
+#&untaint_argv;  #what it sounds like  (eww)
+use vars qw(%opt);
+getopts("p:a:d:vl:sy:nmrk", \%opt);
+
+adminsuidsetup $user;
+
+  #we're at now now (and later).
+  $opt{'time'} = $opt{'d'} ? str2time($opt{'d'}) : $^T;
+  $opt{'time'} += $opt{'y'} * 86400 if $opt{'y'};
+
+  $opt{'invoice_time'} = $opt{'n'} ? $^T : $opt{'time'};
+
+
+my $sql = 'EXPLAIN SELECT custnum FROM cust_main WHERE '. bill_where(%opt);
+
+my $sth = dbh->prepare($sql) or die dbh->errstr;
+
+$sth->execute or die $sth->errstr;
+
+while ( my $row = $sth->fetchrow_arrayref ) {
+
+  print join(' / ', @$row ). "\n";
+
+}
+
