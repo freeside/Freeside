@@ -1,3 +1,2131 @@
+2010-05-25 05:16  ivan
+
+	* Makefile: its time
+
+2010-05-25 05:14  ivan
+
+	* httemplate/misc/process/payment.cgi: cardfortress bit
+
+2010-05-25 05:14  ivan
+
+	* httemplate/elements/select-pkg_class.html: add showdisabled
+	  option
+
+2010-05-25 05:12  ivan
+
+	* httemplate/docs/about.html: 2.1.0
+
+2010-05-25 04:51  ivan
+
+	* rt/: FREESIDE_MODIFIED, share/html/Search/Build.html: wfm to show
+	  the add buttons on rt ticket search
+
+2010-05-25 04:41  ivan
+
+	* rt/share/html/NoAuth/css/freeside2.1/: base.css, boxes.css,
+	  collection.css, main.css, misc.css, msie.css, portlets.css: merge
+	  in web2 changes from 3.8.7 to 3.8.8
+
+2010-05-25 04:11  ivan
+
+	* rt/share/html/Elements/ColumnMap: fix rt/rt/ bad links, RT#7873
+
+2010-05-25 04:07  ivan
+
+	* rt/share/html/Elements/ColumnMap: fix rt/rt/ bad links, RT#7873
+
+2010-05-25 00:53  mark
+
+	* httemplate/: misc/inventory_item-move.cgi,
+	  search/inventory_item.html: RT#7010: inventory items can be moved
+	  between agents
+
+2010-05-24 23:04  ivan
+
+	* FS/FS/Misc.pm: prevent "Can't locate object method "code" via
+	  package "HTML::Mason::Exception" errors
+
+2010-05-24 16:54  mark
+
+	* httemplate/: edit/cust_main_note.cgi,
+	  edit/process/cust_main_note.cgi, view/cust_main/notes.html,
+	  pref/pref-process.html, pref/pref.html: RT#8224: allow user to
+	  disable HTML editor
+
+2010-05-24 09:56  ivan
+
+	* httemplate/search/timeworked.html: fix Pg-ism
+
+2010-05-22 18:59  ivan
+
+	* FS/FS/Schema.pm, FS/FS/cgp_rule.pm, FS/FS/cgp_rule_action.pm,
+	  FS/FS/cgp_rule_condition.pm, FS/FS/svc_CGPRule_Mixin.pm,
+	  FS/FS/svc_acct.pm, FS/FS/svc_domain.pm,
+	  FS/FS/part_export/communigate_pro.pm, FS/t/svc_CGPRule_Mixin.t,
+	  httemplate/browse/cgp_rule.html: communigate pro rules, RT#7515
+
+2010-05-22 13:00  ivan
+
+	* httemplate/search/svc_acct.cgi: consistent with other places,
+	  showing database primary keys other than custnum, invnum is
+	  stilly
+
+2010-05-22 12:57  jeff
+
+	* FS/FS/Report/FCC_477.pm, FS/t/Report-FCC_477.t,
+	  httemplate/search/477.html,
+	  httemplate/search/477partIA_detail.html,
+	  httemplate/search/477partIA_summary.html,
+	  httemplate/search/477partIIA.html,
+	  httemplate/search/477partIIB.html,
+	  httemplate/search/477partIV.html,
+	  httemplate/search/477partV.html,
+	  httemplate/search/477partVI.html,
+	  httemplate/search/report_477.html, FS/MANIFEST, FS/FS/Conf.pm,
+	  FS/FS/Mason.pm, FS/FS/Schema.pm, FS/FS/cust_pkg.pm,
+	  FS/FS/part_pkg.pm, httemplate/edit/part_pkg.cgi,
+	  httemplate/search/elements/metasearch.html,
+	  httemplate/search/elements/search-html.html,
+	  httemplate/search/elements/search-xml.html,
+	  httemplate/search/elements/search.html: improved fcc 477 report
+	  #7783
+
+2010-05-22 12:47  ivan
+
+	* httemplate/search/svc_acct.cgi: really hide uid on account search
+
+2010-05-22 12:13  ivan
+
+	* httemplate/search/svc_acct.cgi: hide uid on account search
+
+2010-05-22 11:52  ivan
+
+	* FS/FS/Report/Table/Monthly.pm: fix net sales amount (credits were
+	  being applied in wrong month), RT#7502
+
+2010-05-21 16:35  ivan
+
+	* httemplate/search/agent_inventory.html,
+	  httemplate/search/inventory_item.html,
+	  httemplate/search/report_agent_inventory.html,
+	  FS/FS/inventory_class.pm, httemplate/browse/inventory_class.html,
+	  httemplate/elements/menu.html: reporting on agent inventory,
+	  RT#7010
+
+2010-05-21 14:18  mark
+
+	* FS/FS/cust_bill.pm: typo
+
+2010-05-21 12:57  ivan
+
+	* FS/FS/cust_bill.pm: fix 'Use of uninitialized value' spew,
+	  fallout from RT#7266
+
+2010-05-21 12:09  mark
+
+	* FS/FS/Report/Table/Monthly.pm,
+	  httemplate/graph/cust_bill_pkg.cgi,
+	  httemplate/graph/report_cust_bill_pkg.html: RT#8504: option to
+	  aggregate agents on sales report
+
+2010-05-20 20:48  mark
+
+	* httemplate/edit/part_pkg.cgi: fix typo
+
+2010-05-20 20:42  mark
+
+	* FS/FS/part_pkg/prorate.pm, FS/FS/part_pkg/voip_inbound.pm,
+	  httemplate/edit/part_pkg.cgi: fix display bug, RT#8524
+
+2010-05-20 20:28  mark
+
+	* FS/FS/part_pkg/voip_inbound.pm: fix display bug, RT#8524
+
+2010-05-20 17:21  ivan
+
+	* httemplate/edit/elements/edit.html: pass through agent_null to
+	  select-table so manual selection from inventory still works,
+	  RT#7010
+
+2010-05-20 17:09  ivan
+
+	* FS/FS/inventory_class.pm, FS/FS/svc_Common.pm,
+	  httemplate/edit/elements/svc_Common.html,
+	  httemplate/search/inventory_item.html: agent virt inventory,
+	  RT#7010
+
+2010-05-20 15:48  ivan
+
+	* FS/FS/Schema.pm, FS/FS/AccessRight.pm, FS/FS/inventory_item.pm,
+	  httemplate/browse/inventory_class.html,
+	  httemplate/elements/menu.html,
+	  httemplate/misc/inventory_item-import.html,
+	  httemplate/search/inventory_item.html,
+	  httemplate/search/elements/search.html: agent virt inventory,
+	  RT#7010
+
+2010-05-20 03:13  ivan
+
+	* rt/share/html/Elements/TicketList: oops
+
+2010-05-20 02:59  ivan
+
+	* rt/FREESIDE_MODIFIED: update modified file list
+
+2010-05-20 02:53  ivan
+
+	* rt/share/html/Elements/CollectionList: THIS fixes ticketing main
+	  layout problems.  whew!  RT#6640
+
+2010-05-20 02:44  ivan
+
+	* rt/share/html/Elements/TicketList: no...
+
+2010-05-20 02:35  ivan
+
+	* rt/share/html/Elements/TicketList: should fix the ui drain
+	  bramage on ticketing main... right?
+
+2010-05-20 01:48  ivan
+
+	* httemplate/: elements/columnstart.html, elements/freeside.css,
+	  elements/header.html, elements/tr-justtitle.html,
+	  elements/tr-pkg_svc.html, elements/tr-title.html,
+	  graph/elements/report.html, misc/email-customers.html,
+	  search/cust_tax_exempt.html, search/report_477.html,
+	  search/report_cdr.html, search/report_cust_event.html,
+	  search/report_cust_main.html, search/report_cust_pay.html,
+	  search/report_cust_pkg.html, search/report_cust_refund.html,
+	  search/report_h_cust_pay.html, search/report_prepaid_income.html,
+	  search/report_prospect_main.html, search/report_receivables.html,
+	  search/report_svc_acct.html, search/report_svc_phone.html,
+	  search/report_timeworked.html,
+	  search/report_unapplied_cust_pay.html,
+	  search/elements/cust_main_dayranges.html,
+	  search/elements/search.html, view/prospect_main.html: fix table
+	  titles for new bg color
+
+2010-05-20 01:17  ivan
+
+	* httemplate/elements/: xmenu.css, xmenu.top.css, menu.html: nicer
+	  styling for the menus
+
+2010-05-20 01:10  ivan
+
+	* httemplate/elements/contact.html: uinit
+
+2010-05-19 18:33  mark
+
+	* FS/FS/cust_bill.pm, FS/FS/cust_credit.pm, FS/FS/cust_main.pm,
+	  FS/FS/cust_pay.pm, FS/FS/cust_refund.pm,
+	  httemplate/search/report_receivables.cgi: RT#7266: aging report
+	  "as of" date now limits applied payments
+
+2010-05-19 17:57  ivan
+
+	* rt/share/html/: NoAuth/css/calendar.css, Search/Calendar.html:
+	  fix leaking date css, RT#6467
+
+2010-05-19 16:37  ivan
+
+	* rt/share/html/: NoAuth/css/calendar.css, Search/Calendar.html:
+	  calenaring (RT#6467): a little UI cleanup goes a long way
+
+2010-05-19 12:04  ivan
+
+	* rt/: lib/RTx/Calendar.pm, share/html/Search/Calendar.html: week
+	  view on calendars from Sunday -> Saturday
+
+2010-05-18 21:05  jeff
+
+	* FS/FS/cust_bill_pkg.pm: avoid spurious bash default usage
+	  category charges
+
+2010-05-18 19:32  ivan
+
+	* rt/: lib/RTx/Calendar.pm, share/html/Elements/CalendarEvent,
+	  share/html/Elements/MyCalendar,
+	  share/html/NoAuth/css/calendar.css,
+	  share/html/Prefs/Calendar.html, etc/RT_Config.pm,
+	  etc/RT_Config.pm.in,
+	  share/html/Callbacks/RTx-Calendar/Elements/Header/Head,
+	  share/html/Callbacks/RTx-Calendar/Ticket/Elements/Tabs/Default,
+	  share/html/Callbacks/RTx-Calendar/User/Elements/Tabs/Default,
+	  share/html/NoAuth/Calendar/dhandler,
+	  share/html/NoAuth/images/created.png,
+	  share/html/NoAuth/images/created_due.png,
+	  share/html/NoAuth/images/due.png,
+	  share/html/NoAuth/images/reminder.png,
+	  share/html/NoAuth/images/resolved.png,
+	  share/html/NoAuth/images/started.png,
+	  share/html/NoAuth/images/starts.png,
+	  share/html/NoAuth/images/starts_due.png,
+	  share/html/NoAuth/images/updated.png,
+	  share/html/Prefs/Elements/CalendarFeed,
+	  share/html/Search/Calendar.html: add RTx::Calendar 0.07
+
+2010-05-18 12:58  ivan
+
+	* rt/lib/: RT.pm, RT.pm.in: fix InitSignalHandlers patch
+
+2010-05-18 12:54  ivan
+
+	* rt/config.layout.in: add fonitdir to freeside layout to avoid
+	  install errors
+
+2010-05-18 12:41  ivan
+
+	* httemplate/edit/access_user.html: fix "Re-enter password" label
+	  on employee edit
+
+2010-05-18 12:20  ivan
+
+	* rt/: Makefile, Makefile.in, config.status,
+	  bin/mason_handler.fcgi, bin/mason_handler.scgi, etc/RT_Config.pm,
+	  etc/RT_Config.pm.in, lib/RT.pm, lib/RT.pm.in, lib/RT/Config.pm,
+	  lib/RT/Groups_Overlay.pm, lib/RT/Record.pm,
+	  lib/RT/SearchBuilder.pm, lib/RT/Ticket_Overlay.pm,
+	  lib/RT/User_Overlay.pm, lib/RT/Users_Overlay.pm,
+	  share/html/Admin/Users/Modify.html,
+	  share/html/Ticket/Elements/ShowSummary,
+	  share/html/Ticket/Elements/ShowTransactionAttachments,
+	  share/html/Ticket/Elements/Tabs, share/html/User/Prefs.html:
+	  merging rt \3.8.8 to HEAD
+
+2010-05-18 11:47  ivan
+
+	* rt/: share/html/NoAuth/css/base/misc.css,
+	  share/html/NoAuth/css/web2/collection.css,
+	  share/html/NoAuth/rss/dhandler, share/fonts/Droid.README,
+	  share/fonts/DroidSansFallback.ttf, share/fonts/DroidSans.ttf,
+	  docs/timezones_in_charts.pod, etc/upgrade/3.8.8/content,
+	  t/api/rights_show_ticket.t, t/web/search_rss.t: Initial revision
+
+2010-05-18 11:43  ivan
+
+	* rt/: lib/RT/I18N/pt_PT.po, lib/RT/I18N/nn.po,
+	  bin/fastcgi_server.in, bin/fastcgi_server,
+	  share/html/Search/Elements/ResultsRSSView,
+	  share/html/Elements/EditPassword,
+	  share/html/Elements/ShowRelationLabel,
+	  share/html/Elements/RT__CustomField/ColumnMap: Initial revision
+
+2010-05-17 20:25  ivan
+
+	* FS/FS/AccessRight.pm, FS/FS/Conf.pm,
+	  httemplate/search/report_svc_acct.html,
+	  httemplate/search/svc_acct.cgi: add more info to
+	  (customer-specific) service report, RT#6180
+
+2010-05-13 19:16  ivan
+
+	* FS/FS/rate.pm, httemplate/edit/rate.cgi: fix losing rates when
+	  renaming a rate plan, RT#8173
+
+2010-05-12 22:43  jeff
+
+	* httemplate/misc/queued_report.html,
+	  httemplate/search/report_queued_newtax.cgi, FS/FS/queue.pm,
+	  FS/FS/tax_rate.pm, FS/bin/freeside-queued,
+	  httemplate/search/queue.html,
+	  httemplate/search/report_newtax.html: cope with poor tax
+	  liability report performance by allowing queuing of reports
+	  RT#8274
+
+2010-05-12 22:16  jeff
+
+	* FS/FS/cust_main.pm: merge new bop routines into old bop routines
+	  rt#4103
+
+2010-05-12 20:06  ivan
+
+	* httemplate/search/cust_bill_pkg.cgi: add "Owed" and "Payment
+	  date" columns to unearned revenue detail, RT#7776
+
+2010-05-12 19:51  ivan
+
+	* Makefile: make dev kludge: unstable has 5.10.1
+
+2010-05-12 18:47  ivan
+
+	* FS/FS/Setup.pm: fix bootstrapping for 2.1 installs, broken by
+	  fallout from otaker stuff, RT#8395
+
+2010-05-12 18:25  ivan
+
+	* Makefile: fix "-e DBI:Pg:dbname=freeside" datasrc winding up in
+	  secrets as a result of weird implementations of echo as a shell
+	  builtin that ignore -e
+
+2010-05-10 23:57  ivan
+
+	* FS/FS/part_pkg/voip_cdr.pm: should fix asterisks in destination
+	  numbers causing invoice generation to barf, RT#7840
+
+2010-05-10 23:38  ivan
+
+	* FS/FS/rate.pm: fix ignore_unrateable flag, RT#8149
+
+2010-05-07 19:38  ivan
+
+	* FS/FS/Mason.pm, httemplate/edit/pkg_category.html: fix package
+	  Categorys spelling, RT#8314
+
+2010-05-04 15:25  mark
+
+	* FS/FS/: cdr.pm, cdr/wip.pm: RT#8026: WIP CDR format
+
+2010-04-29 19:32  ivan
+
+	* FS/FS/Mason.pm, FS/FS/Schema.pm, FS/FS/cgp_rule_action.pm,
+	  FS/FS/cgp_rule_condition.pm, httemplate/browse/cgp_rule.html,
+	  httemplate/edit/cgp_rule.html,
+	  httemplate/elements/select-cgp_rule_action.html,
+	  httemplate/elements/select-cgp_rule_condition.html: communigate
+	  (phase 2): rules: show conditions/actions on rule browse, fix
+	  rule edit for conditions and actions without op/param, fix rule
+	  edit stickiness on errors.  RT#7514
+
+2010-04-29 00:40  ivan
+
+	* httemplate/elements/select-cgp_rule_condition.html,
+	  FS/FS/cgp_rule.pm, httemplate/edit/cgp_rule.html,
+	  httemplate/edit/process/cgp_rule.html,
+	  httemplate/elements/input-text.html,
+	  httemplate/elements/select-cgp_rule_action.html,
+	  httemplate/elements/select.html: communigate (phase 2): rules:
+	  adding conditions and actions to rule edit.  RT#7514
+
+2010-04-28 19:59  ivan
+
+	* httemplate/: elements/select-cgp_rule_action.html,
+	  edit/elements/edit.html, elements/select-cgp_rule_condition.html:
+	  communigate (phase 2): rules: adding conditions and actions to
+	  rule edit.  RT#7514
+
+2010-04-27 03:56  ivan
+
+	* httemplate/: edit/cgp_rule.html,
+	  elements/select-cgp_rule_action.html,
+	  elements/select-cgp_rule_condition.html, elements/select.html,
+	  elements/tr-select.html: communigate (phase 2): rules: start of
+	  adding conditions and actions to rule edit.  RT#7514
+
+2010-04-27 02:23  ivan
+
+	* httemplate/edit/elements/edit.html: tyop
+
+2010-04-26 22:38  mark
+
+	* FS/FS/: ClientAPI/MyAccount.pm, Schema.pm, cdr.pm,
+	  cdr_termination.pm, cust_svc.pm, svc_phone.pm,
+	  part_pkg/voip_cdr.pm, part_pkg/voip_inbound.pm: RT#7046: inbound
+	  rate for rate plan billing
+
+2010-04-22 23:47  ivan
+
+	* httemplate/view/svc_domain/basics.html: communigate (phase 2):
+	  rules.  RT#7514
+
+2010-04-22 23:43  ivan
+
+	* FS/FS/Mason.pm, FS/FS/cgp_rule.pm, FS/FS/cgp_rule_action.pm,
+	  FS/FS/cgp_rule_condition.pm, httemplate/browse/cgp_rule.html,
+	  httemplate/edit/cgp_rule.html,
+	  httemplate/edit/process/cgp_rule.html,
+	  httemplate/misc/delete-cgp_rule.html,
+	  httemplate/view/svc_acct/basics.html,
+	  httemplate/view/svc_acct/communigate.html, FS/FS/Schema.pm:
+	  communigate (phase 2): rules.  RT#7514
+
+2010-04-21 19:00  ivan
+
+	* FS/: FS/Schema.pm, FS/cgp_rule.pm, FS/cgp_rule_action.pm,
+	  FS/cgp_rule_condition.pm, FS.pm, MANIFEST, t/cgp_rule.t,
+	  t/cgp_rule_action.t, t/cgp_rule_condition.t: communigate (phase
+	  2): rules.  RT#7514
+
+2010-04-21 02:31  ivan
+
+	* httemplate/elements/select-part_pkg.html: "
+
+2010-04-21 02:09  ivan
+
+	* httemplate/config/config.cgi: prevent inadvertantly losing
+	  disabled package defs, service defs or package classes in a
+	  config value that uses them (i.e. support_packages)
+
+2010-04-21 01:57  ivan
+
+	* httemplate/elements/select-part_pkg.html: prevent inadvertantly
+	  losing disabled package defs, service defs or package classes in
+	  a config value that uses them (i.e. support_packages)
+
+2010-04-20 20:56  ivan
+
+	* Makefile: ensure that the trainwreck which was 1.9.2 does not
+	  happen again
+
+2010-04-19 21:29  ivan
+
+	* FS/FS/svc_domain.pm, httemplate/edit/part_svc.cgi: communigate
+	  (phase 2): add a textarea type to edit/part_svc so you can set it
+	  to a default or fixed trailer that's multi-line, RT#7514
+
+2010-04-19 21:13  ivan
+
+	* FS/FS/Schema.pm, FS/FS/svc_acct.pm, FS/FS/svc_domain.pm,
+	  httemplate/view/svc_acct/basics.html,
+	  FS/FS/part_export/communigate_pro.pm,
+	  httemplate/edit/svc_acct.cgi, httemplate/edit/svc_domain.cgi,
+	  httemplate/view/svc_domain/acct_defaults.html: communigate (phase
+	  2): Account Preferences (& Domain::Account Defaults:Preferences):
+	  ProntoSkinName  RT#7514
+
+2010-04-19 18:51  ivan
+
+	* FS/FS/svc_acct.pm, FS/FS/Schema.pm, FS/FS/svc_domain.pm,
+	  httemplate/edit/svc_acct.cgi, httemplate/edit/svc_domain.cgi,
+	  httemplate/view/svc_acct/basics.html,
+	  FS/FS/part_export/communigate_pro.pm,
+	  httemplate/view/svc_domain/acct_defaults.html: communigate (phase
+	  2): Account Preferences (& Domain::Account Defaults:Preferences):
+	  Language, Time zone, Layout, Send read receipts.  RT#7514
+
+2010-04-19 00:09  ivan
+
+	* FS/FS/Schema.pm, FS/FS/svc_acct.pm,
+	  FS/FS/part_export/communigate_pro.pm,
+	  httemplate/edit/svc_acct.cgi,
+	  httemplate/view/svc_acct/basics.html: communigate (phase 2),
+	  Account:Settings PasswordRecovery.  also fix modification of
+	  svc_acct booleans in export.	RT#7514
+
+2010-04-18 23:15  ivan
+
+	* FS/FS/Schema.pm, FS/FS/svc_acct.pm, FS/FS/svc_domain.pm,
+	  FS/FS/part_export/communigate_pro.pm,
+	  httemplate/edit/svc_acct.cgi,
+	  httemplate/view/svc_acct/basics.html: communigate provisioning
+	  phase 2: Account:Settings: RulesAllowed, RPOPAllowed, MailToAll,
+	  AddMailTrailer.  RT#7514
+
+2010-04-18 22:01  ivan
+
+	* FS/FS/Schema.pm, FS/FS/svc_domain.pm,
+	  FS/FS/part_export/communigate_pro.pm,
+	  httemplate/edit/svc_domain.cgi,
+	  httemplate/view/svc_domain/acct_defaults.html: communigate
+	  provisioning phase 2: Domain:Account Defaults:Settings:
+	  RulesAllowed, RPOPAllowed, MailToAll, AddMailTrailer.  RT#7514
+
+2010-04-18 18:25  ivan
+
+	* FS/FS/Schema.pm, FS/FS/svc_domain.pm,
+	  FS/FS/part_export/communigate_pro.pm,
+	  httemplate/edit/svc_domain.cgi,
+	  httemplate/view/svc_domain/basics.html: communigate provisioning
+	  phase 2: add svc_domain.trailer -> communigate TrailerText,
+	  RT#7514
+
+2010-04-09 21:21  mark
+
+	* httemplate/search/elements/cust_main_dayranges.html: RT#866: fix
+	  payment links
+
+2010-04-09 01:17  ivan
+
+	* httemplate/search/elements/cust_main_dayranges.html, FS/MANIFEST,
+	  FS/FS/Mason.pm, FS/FS/Misc/DateTime.pm, FS/FS/UI/Web.pm,
+	  FS/FS/cust_main/Import.pm, httemplate/edit/REAL_cust_pkg.cgi,
+	  httemplate/edit/cust_pay.cgi,
+	  httemplate/edit/process/REAL_cust_pkg.cgi,
+	  httemplate/edit/process/cust_main.cgi,
+	  httemplate/edit/process/cust_pay.cgi,
+	  httemplate/edit/process/quick-charge.cgi,
+	  httemplate/edit/process/quick-cust_pkg.cgi,
+	  httemplate/misc/process/cancel_pkg.html,
+	  httemplate/misc/process/delay_susp_pkg.html,
+	  httemplate/search/pay_batch.cgi,
+	  httemplate/search/report_prepaid_income.cgi,
+	  httemplate/search/sqlradius.cgi: fix date parsing when using
+	  international dates (package date edit), RT#8027
+
+2010-04-09 01:09  jeff
+
+	* FS/FS/Conf.pm, FS/FS/cust_bill.pm, conf/invoice_html: modify
+	  total items for balance below line and current charges above line
+	  with configurable description.  also bug fixes that might close
+	  7896
+
+2010-04-08 12:23  jeff
+
+	* httemplate/elements/about_rt.html: close tag rather than open a
+	  new one
+
+2010-04-07 18:15  mark
+
+	* FS/FS/cust_pkg.pm, FS/FS/Report/Table/Monthly.pm,
+	  httemplate/elements/menu.html,
+	  httemplate/graph/cust_pkg_cost.cgi,
+	  httemplate/graph/report_cust_pkg_cost.html,
+	  httemplate/search/cust_pkg.cgi: RT#1382: beginning of package
+	  cost report
+
+2010-04-07 01:24  ivan
+
+	* httemplate/edit/agent.cgi: also in agent edit, fix form getting
+	  submitted before customer search can complete.  throws "status
+	  connecting to" error and custnum does not get filled in, RT#8014
+
+2010-04-07 01:15  ivan
+
+	* httemplate/: edit/access_user.html, edit/elements/edit.html,
+	  elements/search-cust_main.html: in employee edit, fix form
+	  getting submitted before customer search can complete.  throws
+	  "status connecting to" error and custnum does not get filled in,
+	  RT#8014
+
+2010-04-06 23:20  ivan
+
+	* FS/FS/TicketSystem/RT_Internal.pm: fix capitalization of RT
+	  tables and columns - mysql fix
+
+2010-04-06 22:52  mark
+
+	* FS/FS/pay_batch/RBC.pm: fix floating point error
+
+2010-04-06 21:11  ivan
+
+	* httemplate/search/part_pkg.html: fix a mysql-ism in employee
+	  commission report, now compatible with Pg, that's a new one.
+	  RT#6991
+
+2010-04-06 14:43  ivan
+
+	* httemplate/search/report_employee_commission.html: fix 1.9-style
+	  employee comission report, RT#6991
+
+2010-04-05 05:24  jeff
+
+	* FS/FS/part_export/dashcs_e911.pm: fix noisy but harmless
+	  redeclaration
+
+2010-04-04 23:58  ivan
+
+	* conf/invoice_from: company email
+
+2010-04-04 23:57  ivan
+
+	* FS/bin/freeside-upgrade: require DBIx::DBSchema 0.39 for mysql
+
+2010-04-04 23:50  ivan
+
+	* FS/FS/part_export/thirdlane.pm: thirdlane deletion fix
+
+2010-04-04 22:20  ivan
+
+	* FS/FS/part_export/indosoft.pm: initial indosoft export, RT#4068
+
+2010-04-04 18:23  ivan
+
+	* httemplate/search/part_pkg.html: last fix for employee
+	  commisssion report, RT#6991
+
+2010-04-04 17:59  ivan
+
+	* httemplate/elements/menu.html: add employee commission report to
+	  menu, RT#6991
+
+2010-04-04 16:47  ivan
+
+	* FS/FS/Schema.pm: fix otaker upgrade
+
+2010-04-04 16:37  ivan
+
+	* FS/FS/cust_pay_void.pm: fix otaker upgrade
+
+2010-04-04 16:27  ivan
+
+	* FS/FS/: cust_attachment.pm, cust_main_note.pm: fix otaker upgrade
+	  for cust_attachment & cust_main_note, hopefully
+
+2010-04-04 16:18  ivan
+
+	* FS/FS/: cust_attachment.pm, cust_main_note.pm: fix otaker upgrade
+	  for cust_attachment & cust_main_note, hopefully
+
+2010-04-04 15:52  ivan
+
+	* FS/FS/: cust_main.pm: fix otaker upgrade for cust_main
+
+2010-04-04 15:44  ivan
+
+	* FS/FS/cust_main_note.pm: fix note editing of old notes until we
+	  can fix the cust_main_note.otaker disaster, RT#7991
+
+2010-04-01 14:30  mark
+
+	* httemplate/search/elements/cust_main_dayranges.html: fix column
+	  alignment
+
+2010-04-01 01:10  ivan
+
+	* FS/FS/part_pkg/: flat.pm, subscription.pm: fix nasty discount
+	  fallout (i hope)
+
+2010-04-01 00:39  ivan
+
+	* FS/FS/part_pkg/flat.pm: fix nasty discount fallout (i hope)
+
+2010-03-31 21:43  mark
+
+	* FS/FS/UI/Web.pm, httemplate/search/report_receivables.cgi,
+	  httemplate/search/elements/cust_main_dayranges.html,
+	  httemplate/search/elements/search-html.html,
+	  httemplate/search/elements/search.html: RT#866: links to process
+	  payments from aging report
+
+2010-03-31 08:48  jeff
+
+	* FS/: MANIFEST, FS/part_export/dashcs_e911.pm: add dash carrier
+	  services e911 support RT7103
+
+2010-03-31 00:41  mark
+
+	* httemplate/search/: report_receivables.cgi,
+	  report_receivables.html, report_unapplied_cust_pay.html,
+	  unapplied_cust_pay.html, elements/cust_main_dayranges.html:
+	  RT#7266: aging reports as of a past date
+
+2010-03-31 00:35  ivan
+
+	* httemplate/: edit/process/cust_main_attach.cgi,
+	  edit/process/cust_main_note.cgi, view/cust_main/attachments.html,
+	  view/cust_main/notes.html: fix customer notes and attachments wrt
+	  s/otaker/usernum/ changes; still need to look at the migration,
+	  RT#7935
+
+2010-03-30 23:30  ivan
+
+	* FS/FS/Misc.pm: eliminate harmless "Use of uninitialized value
+	  $enc in string eq" warnings
+
+2010-03-30 05:12  ivan
+
+	* httemplate/search/part_pkg.html, FS/FS/Schema.pm: employee
+	  commission reporting, RT#6991
+
+2010-03-30 05:07  ivan
+
+	* httemplate/search/report_employee_commission.html,
+	  FS/FS/cust_main.pm, FS/FS/cust_credit.pm, FS/FS/cust_event.pm,
+	  FS/FS/part_event/Action/pkg_agent_credit.pm,
+	  FS/FS/part_event/Action/pkg_employee_credit.pm,
+	  FS/FS/part_event/Action/pkg_referral_credit.pm: employee
+	  commission reporting, RT#6991
+
+2010-03-29 20:28  ivan
+
+	* FS/FS/Record.pm: regexp_sql
+
+2010-03-29 20:10  ivan
+
+	* FS/MANIFEST: employee (otaker / access_user) commissioning,
+	  RT#6991
+
+2010-03-29 19:53  ivan
+
+	* httemplate/browse/access_user.html,
+	  httemplate/edit/access_user.html, FS/FS/part_pkg.pm,
+	  FS/FS/part_event/Action/pkg_agent_credit.pm,
+	  FS/FS/part_event/Action/pkg_agent_credit_pkg.pm,
+	  FS/FS/part_event/Action/pkg_employee_credit_pkg.pm,
+	  FS/FS/part_event/Action/pkg_referral_credit.pm,
+	  FS/FS/part_event/Action/pkg_referral_credit_pkg.pm,
+	  FS/FS/part_event/Action/Mixin/credit_pkg.pm,
+	  httemplate/elements/search-cust_main.html,
+	  httemplate/elements/tr-search-cust_main.html: employee (otaker /
+	  access_user) commissioning, RT#6991
+
+2010-03-29 19:52  ivan
+
+	* FS/FS/part_event/Action/pkg_employee_credit.pm: employee
+	  commissions, RT#6991
+
+2010-03-29 19:04  ivan
+
+	* FS/FS/: part_event_condition.pm, part_event/Condition/balance.pm,
+	  part_event/Condition/balance_age.pm,
+	  part_event/Condition/balance_under.pm,
+	  part_event/Condition/cust_bill_has_service.pm,
+	  part_event/Condition/cust_bill_owed.pm,
+	  part_event/Condition/cust_bill_owed_under.pm: fixes for MySQL
+	  CAST drain bramage
+
+2010-03-29 02:18  mark
+
+	* FS/FS/Mason.pm, FS/FS/cust_main.pm,
+	  httemplate/elements/select-user.html,
+	  httemplate/elements/tr-select-user.html,
+	  httemplate/graph/report_signupdate.html,
+	  httemplate/graph/signupdate.cgi,
+	  httemplate/graph/elements/monthly.html,
+	  httemplate/graph/elements/report.html,
+	  httemplate/search/cust_main.html: RT#884: search customers by
+	  signup time of day
+
+2010-03-28 17:38  ivan
+
+	* FS/FS/cust_pay.pm: move from otaker to proper usernum FK
+
+2010-03-28 17:23  ivan
+
+	* FS/FS/: Schema.pm, Upgrade.pm, access_user.pm, banned_pay.pm,
+	  cust_attachment.pm, cust_credit.pm, cust_main.pm,
+	  cust_main_note.pm, cust_pay_void.pm, cust_pkg.pm,
+	  cust_pkg_discount.pm, cust_pkg_reason.pm, cust_refund.pm,
+	  otaker_Mixin.pm: move from otaker to proper usernum FK
+
+2010-03-26 23:21  ivan
+
+	* FS/FS/cust_bill_pkg_detail.pm: fix cust_bill_pkg_detail throwing
+	  a fatal error w/MySQL
+
+2010-03-26 23:09  ivan
+
+	* httemplate/: view/cust_main.cgi, view/cust_main/notes.html,
+	  edit/cust_main_note.cgi: resize customer not add popup, eliminate
+	  needless <BR> in popup
+
+2010-03-26 21:37  ivan
+
+	* FS/FS/Upgrade.pm: these are now supported in supported in
+	  DBIx-DBSchema and friends
+
+2010-03-26 20:43  ivan
+
+	* FS/FS/: reason.pm, tax_rate.pm: these are now supported in
+	  supported in DBIx-DBSchema and friends
+
+2010-03-26 15:25  ivan
+
+	* httemplate/elements/: select-areacode.html, select-did.html: fix
+	  E911 vs. DID selector on phone provision, RT#7819
+
+2010-03-26 14:43  ivan
+
+	* FS/FS/cust_pkg.pm: no DISTINCT ON in MySQL makes kittens cry
+
+2010-03-26 00:52  ivan
+
+	* httemplate/elements/: freeside-menu.css, freeside.css: that'll do
+	  for now
+
+2010-03-25 22:02  ivan
+
+	* FS/FS/Schema.pm: kludge a fix for the MySQL statustext index
+	  problem, fix s/serial/int/ for non-primary keys in
+	  part_pkg_taxoverride, and s/TEXT/LONGTEXT/ ourselves until
+	  DBIx::DBSchema 0.39
+
+2010-03-25 21:50  ivan
+
+	* FS/FS/UID.pm: don't warn about the configuration table during
+	  setup
+
+2010-03-25 19:19  ivan
+
+	* bin/build_exten.php: adding build_exten.php since FreePBX won't
+	  ship it
+
+2010-03-25 18:06  ivan
+
+	* rt/lib/RT/: Ticket_Overlay.pm: ticket auto-association in the
+	  correct spot.  how the hell did it get merged there?	RT#7882
+
+2010-03-25 15:30  ivan
+
+	* httemplate/elements/header.html: fix new header in RT
+
+2010-03-25 15:21  ivan
+
+	* rt/lib/RT/User_Overlay.pm: fix user modification?
+
+2010-03-25 14:22  ivan
+
+	* rt/lib/RT/URI/freeside.pm: generate a stack backtrace for mystery
+	  freeside link resolution problems
+
+2010-03-25 13:21  ivan
+
+	* httemplate/elements/: header.html, searchbar-address2.html,
+	  searchbar-cust_bill.html, searchbar-cust_main.html,
+	  searchbar-cust_svc.html, searchbar-prospect.html,
+	  searchbar-ticket.html: when using a side menubar, put search
+	  boxes on the side too
+
+2010-03-24 18:37  mark
+
+	* FS/FS/Mason.pm, httemplate/view/cust_main/notes.html: RT#6226:
+	  security fix for customer notes
+
+2010-03-24 01:37  ivan
+
+	* FS/FS/Conf.pm, httemplate/search/cust_bill_pkg.cgi,
+	  httemplate/search/report_prepaid_income.cgi: better prepaid
+	  income reporting, with line item detail, RT#7776
+
+2010-03-23 02:13  ivan
+
+	* FS/FS/mailinglist.pm, FS/FS/mailinglistmember.pm,
+	  FS/FS/svc_mailinglist.pm, FS/FS/part_export/communigate_pro.pm,
+	  httemplate/elements/header.html,
+	  httemplate/search/mailinglistmember.html: export svc_mailinglist
+	  to CGP groups, RT#7514
+
+2010-03-23 01:27  ivan
+
+	* httemplate/images/: black-gray-side.png, gray-black-side.png:
+	  goodbye and good riddance
+
+2010-03-22 20:53  ivan
+
+	* FS/: FS.pm, FS/h_svc_mailinglist.pm, t/h_svc_mailinglist.t,
+	  FS/Mason.pm: adding svc_mailinglist for communigate "groups"
+	  (mailing lists), RT#7514
+
+2010-03-22 20:47  ivan
+
+	* FS/MANIFEST, FS/FS/Schema.pm, FS/FS/mailinglist.pm,
+	  FS/FS/mailinglistmember.pm, FS/FS/svc_mailinglist.pm,
+	  FS/t/mailinglist.t, FS/t/mailinglistmember.t,
+	  FS/t/svc_mailinglist.t, httemplate/edit/mailinglistmember.html,
+	  httemplate/edit/part_svc.cgi,
+	  httemplate/edit/svc_mailinglist.cgi,
+	  httemplate/edit/process/mailinglistmember.html,
+	  httemplate/edit/process/svc_mailinglist.html,
+	  httemplate/misc/delete-mailinglistmember.html,
+	  httemplate/search/mailinglistmember.html,
+	  httemplate/view/svc_mailinglist.cgi: adding svc_mailinglist for
+	  communigate "groups" (mailing lists), RT#7514
+
+2010-03-22 20:34  ivan
+
+	* httemplate/elements/freeside.css: little bit further, just a
+	  little bit more
+
+2010-03-22 18:17  ivan
+
+	* httemplate/elements/menubar.html: don't like that <BR> after
+	  all... for now
+
+2010-03-22 18:07  ivan
+
+	* httemplate/elements/freeside.css: wfm
+
+2010-03-22 18:04  ivan
+
+	* httemplate/elements/: xmenu.css, xmenu.top.css: purple on pink is
+	  WAY too my little pony.  man, its not easy being purple
+
+2010-03-22 12:46  ivan
+
+	* httemplate/elements/: freeside.css, menubar.html: 1.9-style
+	  menubar was hurting my eyes
+
+2010-03-22 07:08  jeff
+
+	* FS/FS/tax_rate.pm: fix restore of setup and recur taxproducts on
+	  tax data replacement
+
+2010-03-21 23:34  ivan
+
+	* httemplate/elements/freeside.css: fix link hover effect so it
+	  doesn't underline A NAME tags
+
+2010-03-21 16:56  ivan
+
+	* httemplate/elements/freeside.css: fix inadvertant button styling
+
+2010-03-21 16:13  ivan
+
+	* FS/FS/Schema.pm, FS/FS/rate_detail.pm,
+	  FS/FS/part_pkg/voip_cdr.pm, httemplate/browse/rate_detail.html,
+	  httemplate/edit/rate_detail.html,
+	  httemplate/edit/rate_region.cgi,
+	  httemplate/edit/process/rate_region.cgi,
+	  httemplate/misc/rate_edit_excel.html,
+	  httemplate/misc/process/copy-rate_detail.html: connection fee for
+	  initial N seconds support, RT#7018
+
+2010-03-21 12:34  ivan
+
+	* rt/etc/RT_SiteConfig.pm: make the fckeditor taller, way too small
+
+2010-03-20 22:20  ivan
+
+	* rt/share/html/Elements/Header: there was nothing wrong with the
+	  dhandler
+
+2010-03-20 22:17  ivan
+
+	* rt/: share/html/Widgets/TitleBoxEnd, FREESIDE_MODIFIED: think
+	  this fixes the "results box color infects everything else"
+	  problem
+
+2010-03-20 21:47  ivan
+
+	* rt/share/html/Elements/Header: dunno why squish dhandler is
+	  borked
+
+2010-03-20 16:30  ivan
+
+	* httemplate/docs/credits.html: more RT integration / reskin / 2.1,
+	  RT#6640
+
+2010-03-20 16:22  ivan
+
+	* httemplate/: elements/menu.html,
+	  elements/popup_link_onclick.html, images/cvv2.png,
+	  images/cvv2_amex.png: more RT integration / reskin / 2.1, RT#6640
+
+2010-03-20 15:44  ivan
+
+	* httemplate/elements/: freeside-menu.css, header.html, xmenu.css,
+	  xmenu.js, xmenu.top.css: more RT integration / reskin / 2.1,
+	  RT#6640
+
+2010-03-20 15:11  ivan
+
+	* httemplate/elements/calendar-win2k-2.css,
+	  httemplate/elements/freeside-menu.css,
+	  httemplate/elements/header.html, httemplate/elements/menu.html,
+	  httemplate/elements/xmenu.top.css,
+	  httemplate/elements/xmenu.top.js, rt/share/html/Elements/Footer,
+	  rt/share/html/Elements/PageLayout,
+	  rt/share/html/Elements/SelectDate,
+	  rt/share/html/Prefs/SearchOptions.html,
+	  rt/share/html/User/Prefs.html,
+	  httemplate/images/arrow.down.black.png,
+	  httemplate/images/black-gradient.png,
+	  httemplate/images/black-gray-gradient.png, rt/FREESIDE_MODIFIED,
+	  httemplate/elements/freeside.css,
+	  rt/share/html/NoAuth/css/freeside2.1/layout.css: more RT
+	  integration / reskin / 2.1, RT#6640
+
+2010-03-19 01:27  ivan
+
+	* httemplate/: docs/cvv2.html, elements/header-minimal.html,
+	  elements/header-popup.html, elements/header.html,
+	  elements/tr-justtitle.html, elements/tr-title.html,
+	  elements/freeside-menu.css, elements/menu.html,
+	  elements/menubar.html, elements/xmenu.top.css: skin RT 3.8,
+	  slight new look for 2.1, RT#6640
+
+2010-03-19 01:26  ivan
+
+	* rt/: FREESIDE_MODIFIED, share/html/Elements/Header,
+	  share/html/Elements/PageLayout,
+	  share/html/NoAuth/css/freeside2.1/freeside.css,
+	  share/html/NoAuth/css/freeside2.1/layout.css,
+	  share/html/NoAuth/css/freeside2.1/nav.css: skin RT 3.8, RT#6640
+
+2010-03-19 01:20  mark
+
+	* httemplate/misc/batch-cust_pay.html: RT#7812: confirm before
+	  closing quick payment entry
+
+2010-03-18 01:02  ivan
+
+	* httemplate/edit/cust_main/top_misc.html: signup date fix?
+
+2010-03-18 00:59  ivan
+
+	* FS/FS/Schema.pm, FS/FS/cust_bill.pm, FS/FS/cust_main.pm,
+	  FS/FS/cust_pkg.pm, FS/FS/part_pkg.pm,
+	  httemplate/edit/quick-charge.html,
+	  FS/FS/part_event/Condition/cust_bill_has_noauto.pm,
+	  FS/FS/part_event/Condition/cust_bill_hasnt_noauto.pm,
+	  httemplate/edit/process/quick-charge.cgi,
+	  httemplate/edit/process/quick-cust_pkg.cgi,
+	  httemplate/misc/order_pkg.html,
+	  httemplate/view/cust_main/one_time_charge_link.html,
+	  httemplate/view/cust_main/order_pkg_link.html,
+	  httemplate/view/cust_main/packages/status.html: disable
+	  auto-billing of specific customer packages, RT#6378
+
+2010-03-16 01:05  mark
+
+	* httemplate/edit/cust_main_note.cgi: minor bugfix
+
+2010-03-16 00:49  mark
+
+	* httemplate/elements/fckeditor/: fckconfig.js, fckeditor.js,
+	  fckpackager.xml, fckstyles.xml, fcktemplates.xml,
+	  editor/fckdebug.html, editor/fckdialog.html,
+	  editor/fckeditor.html, editor/fckeditor.original.html,
+	  editor/css/fck_editorarea.css, editor/css/fck_internal.css,
+	  editor/css/fck_showtableborders_gecko.css,
+	  editor/css/images/block_address.png,
+	  editor/css/images/block_blockquote.png,
+	  editor/css/images/block_div.png, editor/css/images/block_h1.png,
+	  editor/css/images/block_h2.png, editor/css/images/block_h3.png,
+	  editor/css/images/block_h4.png, editor/css/images/block_h5.png,
+	  editor/css/images/block_h6.png, editor/css/images/block_p.png,
+	  editor/css/images/block_pre.png,
+	  editor/css/images/fck_plugin.gif, editor/dialog/fck_about.html,
+	  editor/dialog/fck_anchor.html, editor/dialog/fck_button.html,
+	  editor/dialog/fck_checkbox.html,
+	  editor/dialog/fck_colorselector.html, editor/dialog/fck_div.html,
+	  editor/dialog/fck_docprops.html, editor/dialog/fck_flash.html,
+	  editor/dialog/fck_form.html, editor/dialog/fck_hiddenfield.html,
+	  editor/dialog/fck_image.html, editor/dialog/fck_link.html,
+	  editor/dialog/fck_listprop.html, editor/dialog/fck_paste.html,
+	  editor/dialog/fck_radiobutton.html,
+	  editor/dialog/fck_replace.html, editor/dialog/fck_scayt.html,
+	  editor/dialog/fck_select.html, editor/dialog/fck_smiley.html,
+	  editor/dialog/fck_source.html,
+	  editor/dialog/fck_specialchar.html,
+	  editor/dialog/fck_spellerpages.html,
+	  editor/dialog/fck_table.html, editor/dialog/fck_tablecell.html,
+	  editor/dialog/fck_template.html, editor/dialog/fck_textarea.html,
+	  editor/dialog/fck_textfield.html,
+	  editor/dialog/common/fck_dialog_common.css,
+	  editor/dialog/common/fck_dialog_common.js,
+	  editor/dialog/fck_about/sponsors/spellchecker_net.gif,
+	  editor/dialog/fck_docprops/fck_document_preview.html,
+	  editor/dialog/fck_flash/fck_flash.js,
+	  editor/dialog/fck_flash/fck_flash_preview.html,
+	  editor/dialog/fck_image/fck_image.js,
+	  editor/dialog/fck_image/fck_image_preview.html,
+	  editor/dialog/fck_link/fck_link.js,
+	  editor/dialog/fck_scayt/scayt_dialog.css,
+	  editor/dialog/fck_select/fck_select.js,
+	  editor/dialog/fck_spellerpages/spellerpages/spellChecker.js,
+	  editor/dialog/fck_spellerpages/spellerpages/spellerStyle.css,
+	  editor/dialog/fck_spellerpages/spellerpages/server-scripts/spellchecker.pl,
+	  editor/dtd/fck_dtd_test.html, editor/dtd/fck_xhtml10strict.js,
+	  editor/dtd/fck_xhtml10transitional.js,
+	  editor/filemanager/browser/default/browser.css,
+	  editor/filemanager/browser/default/browser.html,
+	  editor/filemanager/browser/default/frmactualfolder.html,
+	  editor/filemanager/browser/default/frmcreatefolder.html,
+	  editor/filemanager/browser/default/frmfolders.html,
+	  editor/filemanager/browser/default/frmresourceslist.html,
+	  editor/filemanager/browser/default/frmresourcetype.html,
+	  editor/filemanager/browser/default/frmupload.html,
+	  editor/filemanager/browser/default/js/common.js,
+	  editor/filemanager/browser/default/js/fckxml.js,
+	  editor/filemanager/connectors/test.html,
+	  editor/filemanager/connectors/uploadtest.html,
+	  editor/filemanager/connectors/perl/basexml.pl,
+	  editor/filemanager/connectors/perl/commands.pl,
+	  editor/filemanager/connectors/perl/config.pl,
+	  editor/filemanager/connectors/perl/connector.cgi,
+	  editor/filemanager/connectors/perl/io.pl,
+	  editor/filemanager/connectors/perl/upload.cgi,
+	  editor/filemanager/connectors/perl/upload_fck.pl,
+	  editor/filemanager/connectors/perl/util.pl,
+	  editor/js/fckadobeair.js, editor/js/fckeditorcode_gecko.js,
+	  editor/js/fckeditorcode_ie.js,
+	  editor/lang/_translationstatus.txt, editor/lang/af.js,
+	  editor/lang/ar.js, editor/lang/bg.js, editor/lang/bn.js,
+	  editor/lang/bs.js, editor/lang/ca.js, editor/lang/cs.js,
+	  editor/lang/da.js, editor/lang/de.js, editor/lang/el.js,
+	  editor/lang/en-au.js, editor/lang/en-ca.js, editor/lang/en-uk.js,
+	  editor/lang/en.js, editor/lang/eo.js, editor/lang/es.js,
+	  editor/lang/et.js, editor/lang/eu.js, editor/lang/fa.js,
+	  editor/lang/fi.js, editor/lang/fo.js, editor/lang/fr-ca.js,
+	  editor/lang/fr.js, editor/lang/gl.js, editor/lang/gu.js,
+	  editor/lang/he.js, editor/lang/hi.js, editor/lang/hr.js,
+	  editor/lang/hu.js, editor/lang/is.js, editor/lang/it.js,
+	  editor/lang/ja.js, editor/lang/km.js, editor/lang/ko.js,
+	  editor/lang/lt.js, editor/lang/lv.js, editor/lang/mn.js,
+	  editor/lang/ms.js, editor/lang/nb.js, editor/lang/nl.js,
+	  editor/lang/no.js, editor/lang/pl.js, editor/lang/pt-br.js,
+	  editor/lang/pt.js, editor/lang/ro.js, editor/lang/ru.js,
+	  editor/lang/sk.js, editor/lang/sl.js, editor/lang/sr-latn.js,
+	  editor/lang/sr.js, editor/lang/sv.js, editor/lang/th.js,
+	  editor/lang/tr.js, editor/lang/uk.js, editor/lang/vi.js,
+	  editor/lang/zh-cn.js, editor/lang/zh.js,
+	  editor/plugins/autogrow/fckplugin.js,
+	  editor/plugins/bbcode/fckplugin.js,
+	  editor/plugins/dragresizetable/fckplugin.js,
+	  editor/plugins/placeholder/fck_placeholder.html,
+	  editor/plugins/placeholder/fckplugin.js,
+	  editor/plugins/placeholder/lang/de.js,
+	  editor/plugins/placeholder/lang/en.js,
+	  editor/plugins/placeholder/lang/es.js,
+	  editor/plugins/placeholder/lang/fr.js,
+	  editor/plugins/placeholder/lang/it.js,
+	  editor/plugins/placeholder/lang/pl.js,
+	  editor/plugins/simplecommands/fckplugin.js,
+	  editor/plugins/tablecommands/fckplugin.js,
+	  editor/skins/_fckviewstrips.html,
+	  editor/skins/default/fck_dialog.css,
+	  editor/skins/default/fck_dialog_ie6.js,
+	  editor/skins/default/fck_editor.css,
+	  editor/skins/default/fck_strip.gif,
+	  editor/skins/default/images/dialog.sides.gif,
+	  editor/skins/default/images/dialog.sides.png,
+	  editor/skins/default/images/dialog.sides.rtl.png,
+	  editor/skins/default/images/sprites.gif,
+	  editor/skins/default/images/sprites.png,
+	  editor/skins/office2003/fck_dialog.css,
+	  editor/skins/office2003/fck_dialog_ie6.js,
+	  editor/skins/office2003/fck_editor.css,
+	  editor/skins/office2003/fck_strip.gif,
+	  editor/skins/office2003/images/dialog.sides.gif,
+	  editor/skins/office2003/images/dialog.sides.png,
+	  editor/skins/office2003/images/dialog.sides.rtl.png,
+	  editor/skins/office2003/images/sprites.gif,
+	  editor/skins/office2003/images/sprites.png,
+	  editor/skins/silver/fck_dialog.css,
+	  editor/skins/silver/fck_dialog_ie6.js,
+	  editor/skins/silver/fck_editor.css,
+	  editor/skins/silver/fck_strip.gif,
+	  editor/skins/silver/images/dialog.sides.gif,
+	  editor/skins/silver/images/dialog.sides.png,
+	  editor/skins/silver/images/dialog.sides.rtl.png,
+	  editor/skins/silver/images/sprites.gif,
+	  editor/skins/silver/images/sprites.png, editor/wsc/ciframe.html,
+	  editor/wsc/tmpFrameset.html, editor/wsc/w.html: FCKeditor 2.6.6
+
+2010-03-15 19:51  mark
+
+	* httemplate/: edit/cust_main_note.cgi, view/cust_main/notes.html,
+	  elements/htmlarea.html: RT#6226: fckeditor for customer notes
+
+2010-03-15 19:14  ivan
+
+	* rt/etc/rt.spec: remove rt.spec, borking our build somehow
+
+2010-03-15 18:00  ivan
+
+	* httemplate/search/: cust_main-zip.html,
+	  report_cust_main-zip.html: w/svc_whatever option on zip code
+	  distribution report, RT#7784
+
+2010-03-15 15:31  mark
+
+	* FS/bin/freeside-paymentech-upload: RT#7473: add -p option
+
+2010-03-15 00:13  ivan
+
+	* httemplate/edit/svc_broadband.cgi: fix editing svc_broadband
+	  service w/no ip address, RT#7786
+
+2010-03-14 23:18  ivan
+
+	* httemplate/search/elements/cust_pay_or_refund.html: deleted
+	  payment report, RT#7694
+
+2010-03-14 23:10  ivan
+
+	* httemplate/search/: h_cust_pay.html, report_h_cust_pay.html,
+	  elements/cust_pay_or_refund.html: deleted payment report, RT#7694
+
+2010-03-14 19:06  ivan
+
+	* httemplate/edit/part_pkg.cgi: fix diabled package optional
+	  reporting classes still selectable on package def edit, RT#7658
+
+2010-03-13 15:50  ivan
+
+	* FS/FS/cust_pkg.pm: quiet extraneous warnings from
+	  expire_months/start_1st stuff, getting in the way of debugging
+	  for ncic, RT#7780
+
+2010-03-12 13:56  ivan
+
+	* FS/FS/Conf.pm, FS/FS/svc_phone.pm, httemplate/edit/svc_phone.cgi:
+	  add svc_phone-phone_name-max_length config, RT#7047
+
+2010-03-12 13:29  ivan
+
+	* FS/FS/cust_location.pm, FS/FS/cust_main.pm,
+	  FS/FS/location_Mixin.pm, FS/FS/svc_phone.pm,
+	  httemplate/edit/svc_phone.cgi,
+	  httemplate/edit/elements/svc_Common.html,
+	  httemplate/edit/process/svc_phone.html,
+	  httemplate/elements/tr-select-cust_location.html,
+	  httemplate/view/svc_phone.cgi: finishing e911/svc_phone location,
+	  RT#7047
+
+2010-03-12 03:48  mark
+
+	* httemplate/edit/svc_broadband.cgi: RT#7765: sort broadband router
+	  names
+
+2010-03-11 19:36  ivan
+
+	* FS/FS/Schema.pm, FS/FS/cust_pkg.pm, FS/FS/location_Mixin.pm,
+	  FS/FS/svc_phone.pm, FS/t/location_Mixin.t,
+	  httemplate/edit/svc_phone.cgi,
+	  httemplate/edit/elements/edit.html,
+	  httemplate/edit/elements/svc_Common.html,
+	  httemplate/elements/location.html,
+	  httemplate/elements/tr-select-cust_location.html,
+	  httemplate/view/svc_phone.cgi: add location to svc_phone, RT#7047
+
+2010-03-11 19:30  ivan
+
+	* FS/MANIFEST: add location to svc_phone, RT#7047
+
+2010-03-10 19:27  ivan
+
+	* FS/FS/TicketSystem/RT_External.pm,
+	  httemplate/view/cust_main/tickets.html: add queue selection to
+	  customer ticket creation, RT#7656
+
+2010-03-10 18:15  ivan
+
+	* httemplate/docs/credits.html: Mark Wells is now a member of the
+	  core team.  Kristian Hoffman has been moved to the core emeritus
+
+2010-03-10 00:20  mark
+
+	* httemplate/edit/svc_acct.cgi: fix probably misplaced text field
+
+2010-03-09 23:50  mark
+
+	* httemplate/edit/svc_domain.cgi: fix probably misplaced text field
+
+2010-03-09 22:52  ivan
+
+	* FS/FS/cust_pkg.pm: oops, move start_1st and expire_months
+	  handling from check to insert, so it doesn't get triggered on
+	  edit, RT#7347
+
+2010-03-09 22:47  ivan
+
+	* httemplate/edit/process/REAL_cust_pkg.cgi: fix warning about
+	  adding a start date to actually check its *added*, RT#7352
+
+2010-03-09 15:47  ivan
+
+	* httemplate/misc/delay_susp_pkg.html: tyop too
+
+2010-03-09 14:37  mark
+
+	* httemplate/misc/cancel_pkg.html: fix typo
+
+2010-03-09 13:57  mark
+
+	* FS/FS/prepay_credit.pm, httemplate/edit/prepay_credit.cgi,
+	  httemplate/edit/process/prepay_credit.cgi: RT#7407, variable
+	  length prepaid card codes
+
+2010-03-09 00:37  ivan
+
+	* FS/FS/part_pkg/sql_external.pm: move sql_external to use
+	  recur_Common, RT#7212
+
+2010-03-09 00:05  ivan
+
+	* httemplate/edit/REAL_cust_pkg.cgi: date editing fix, fallout from
+	  date_format
+
+2010-03-08 18:43  ivan
+
+	* FS/FS/: cust_pkg.pm, part_pkg/flat.pm: a package that starts on
+	  the 1st and expires after N months, RT#7738
+
+2010-03-08 18:39  ivan
+
+	* FS/FS/cust_main.pm: fix ACH refunds w/IPPay.	B:OP 3.01 and IPPay
+	  0.05_02 required.  RT#_7673
+
+2010-03-08 18:12  ivan
+
+	* FS/FS/cust_pkg.pm: init ticket system new-style
+
+2010-03-08 16:23  jeff
+
+	* FS/FS/Setup.pm: tyop broke populate_initial_data
+
+2010-03-08 16:18  jeff
+
+	* FS/FS/reason_type.pm: and this is not 1.7.x
+
+2010-03-08 15:07  jeff
+
+	* FS/FS/part_export/prizm.pm: try a delete before adding an element
+	  to prizm
+
+2010-03-08 14:13  ivan
+
+	* FS/FS/cust_main.pm: fix ACH refunds w/IPPay.	B:OP 3.01 and IPPay
+	  0.05_02 required.  RT#_7673
+
+2010-03-08 02:57  ivan
+
+	* FS/FS/Conf.pm, FS/FS/cust_bill.pm,
+	  httemplate/edit/REAL_cust_pkg.cgi,
+	  httemplate/edit/cust_credit.cgi, httemplate/edit/cust_pay.cgi,
+	  httemplate/edit/cust_refund.cgi,
+	  httemplate/edit/quick-charge.html,
+	  httemplate/edit/elements/ApplicationCommon.html,
+	  httemplate/elements/tr-input-beginning_ending.html,
+	  httemplate/elements/tr-input-date-field.html,
+	  httemplate/misc/cancel_pkg.html,
+	  httemplate/misc/delay_susp_pkg.html,
+	  httemplate/misc/order_pkg.html,
+	  httemplate/search/report_prepaid_income.html,
+	  httemplate/view/cust_main/payment_history.html,
+	  httemplate/view/cust_main/payment_history/credit.html,
+	  httemplate/view/cust_main/payment_history/payment.html,
+	  httemplate/view/cust_main/payment_history/voided_payment.html:
+	  proper use of date_format config for international date formats,
+	  RT#7009
+
+2010-03-07 23:02  ivan
+
+	* FS/FS/Conf.pm, FS/FS/Schema.pm, FS/FS/svc_Domain_Mixin.pm,
+	  FS/FS/svc_acct.pm, FS/FS/svc_phone.pm, FS/MANIFEST,
+	  FS/FS/part_export/netsapiens.pm, FS/t/svc_Domain_Mixin.t,
+	  httemplate/edit/svc_phone.cgi,
+	  httemplate/edit/elements/svc_Common.html,
+	  httemplate/elements/select-svc-domain.html,
+	  httemplate/elements/tr-select-svc-domain.html,
+	  httemplate/view/svc_phone.cgi: domain names in netsapiens export
+	  (domain name association w/svc_phone), RT#5864
+
+2010-03-07 10:07  jeff
+
+	* FS/FS/tax_rate.pm: pass format and correct filenames
+
+2010-03-05 11:09  ivan
+
+	* FS/FS/part_export/grandstream.pm: random nits for grandstream
+	  provisioning :UI, docs, java path, s/system/IPC::Run/ for better
+	  error handling.  RT#7132
+
+2010-03-05 11:02  ivan
+
+	* httemplate/edit/part_device.html,
+	  FS/FS/part_export/grandstream.pm: random nits for grandstream
+	  provisioning :UI, docs, java path, s/system/IPC::Run/ for better
+	  error handling.  RT#7132
+
+2010-03-05 10:25  ivan
+
+	* httemplate/docs/ssh.html: moved to wiki
+
+2010-03-05 10:24  ivan
+
+	* FS/FS/part_export/: domain_shellcommands.pm,
+	  forward_shellcommands.pm, phone_shellcommands.pm,
+	  shellcommands.pm, shellcommands_withdomain.pm, textradius.pm,
+	  vpopmail.pm, www_shellcommands.pm: point to wiki docs
+
+2010-03-05 10:10  ivan
+
+	* FS/FS/part_export/grandstream.pm,
+	  httemplate/edit/part_device.html: random nits for grandstream
+	  provisioning :UI, docs, java path, s/system/IPC::Run/ for better
+	  error handling.  RT#7132
+
+2010-03-03 21:31  jeff
+
+	* FS/FS/cust_bill.pm: always show the previous section when
+	  previous_balance-summary_only is enabled
+
+2010-03-02 17:39  jeff
+
+	* FS/FS/tax_rate.pm, httemplate/misc/tax-import.cgi: tweak,
+	  rearrange, and avoid the vacuum
+
+2010-03-02 17:00  jeff
+
+	* httemplate/edit/cust_main/bottomfixup.js: clear geocode when we
+	  DO have plus four
+
+2010-03-02 09:18  ivan
+
+	* httemplate/: search/elements/search-html.html,
+	  misc/bulk_pkg_increment_bill.cgi, search/cust_pkg.cgi: UI: get
+	  rid of undocumented extra_choices_callback in search.html: a
+	  terrible place to put action links from a UI perspective, move
+	  package links to html_init, now consitent with customer links,
+	  change label on popup from "increment bill date" to "increment
+	  next bill date", RT#7132
+
+2010-03-01 14:18  ivan
+
+	* httemplate/edit/elements/svc_Common.html: fixup editing w/manual
+	  inventory, RT#7010
+
+2010-03-01 14:00  ivan
+
+	* httemplate/elements/select-table.html: fix up editing services
+	  w/manual select from inventory, RT#7010
+
+2010-03-01 13:56  ivan
+
+	* FS/FS/svc_Common.pm: fix up editing services w/manual select from
+	  inventory, RT#7010
+
+2010-03-01 13:36  ivan
+
+	* httemplate/edit/elements/edit.html: fix up editing services
+	  w/manual select from inventory, RT#7010
+
+2010-03-01 13:05  ivan
+
+	* httemplate/search/inventory_item.html: fix inventory item links
+	  to non-svc_acct services, RT#7010
+
+2010-03-01 11:38  ivan
+
+	* FS/FS/svc_Common.pm: enable manual selection from inventory
+	  dropdowns for svc_broadband, svc_external & svc_phone, RT#7010
+
+2010-03-01 11:29  ivan
+
+	* httemplate/: edit/part_svc.cgi, edit/elements/edit.html,
+	  edit/elements/svc_Common.html, elements/select-table.html: enable
+	  manual selection from inventory dropdowns for svc_broadband,
+	  svc_external & svc_phone, RT#7010
+
+2010-03-01 11:10  jeff
+
+	* Makefile: get along better with RTless installs
+
+2010-02-26 19:15  ivan
+
+	* httemplate/edit/cust_refund.cgi: expiration date not meaningful
+	  for non-CARD, RT#7419
+
+2010-02-26 18:59  ivan
+
+	* FS/FS/cust_bill_ApplicationCommon.pm: fix rare "Illegal division
+	  by zero" error applying things when using weights, RT#7491
+
+2010-02-24 15:32  mark
+
+	* httemplate/: misc/bulk_pkg_increment_bill.cgi,
+	  misc/process/bulk_pkg_increment_bill.cgi, search/cust_pkg.cgi:
+	  RT#7132: bulk increment package bill dates
+
+2010-02-22 02:35  ivan
+
+	* FS/FS/part_export/communigate_pro.pm: communigate: domain account
+	  defaults, RT#7083
+
+2010-02-22 01:18  ivan
+
+	* httemplate/edit/svc_domain.cgi: communigate: domain account
+	  defaults, RT#7083
+
+2010-02-22 01:14  ivan
+
+	* FS/FS/Schema.pm, FS/FS/svc_acct.pm, FS/FS/svc_domain.pm,
+	  httemplate/edit/part_svc.cgi,
+	  httemplate/edit/process/svc_domain.cgi,
+	  httemplate/view/svc_domain.cgi, httemplate/view/elements/tr.html,
+	  httemplate/view/svc_acct/basics.html,
+	  httemplate/view/svc_domain/acct_defaults.html,
+	  httemplate/view/svc_domain/basics.html,
+	  httemplate/view/svc_domain/dns.html,
+	  httemplate/edit/svc_acct.cgi: communigate: domain account
+	  defaults, RT#7083
+
+2010-02-21 23:13  ivan
+
+	* FS/FS/svc_domain.pm, FS/FS/part_export/communigate_pro.pm,
+	  httemplate/edit/svc_domain.cgi, httemplate/view/svc_domain.cgi:
+	  communigate: domain aliases, enabled services & administrator
+	  domain, RT#7083
+
+2010-02-21 19:22  ivan
+
+	* FS/FS/Schema.pm, FS/FS/part_export/communigate_pro.pm,
+	  FS/FS/svc_acct.pm, FS/FS/svc_domain.pm,
+	  httemplate/edit/svc_domain.cgi,
+	  httemplate/edit/process/svc_domain.cgi,
+	  httemplate/view/svc_domain.cgi,
+	  httemplate/edit/process/svc_acct.cgi: communigate: domain
+	  aliases, enabled services, RT#7083
+
+2010-02-21 14:54  ivan
+
+	* FS/FS/part_export/communigate_pro.pm, FS/FS/Conf.pm,
+	  httemplate/edit/svc_forward.cgi, httemplate/view/svc_forward.cgi:
+	  communigate forwarders, RT#7083
+
+2010-02-21 01:19  ivan
+
+	* FS/FS/Schema.pm, FS/FS/svc_acct.pm,
+	  FS/FS/part_export/communigate_pro.pm,
+	  httemplate/edit/svc_acct.cgi,
+	  httemplate/view/svc_acct/basics.html: communigate, RT#7083
+
+2010-02-20 23:32  ivan
+
+	* httemplate/view/svc_acct/basics.html: communigate, RT#7083
+
+2010-02-20 23:28  ivan
+
+	* FS/FS/Schema.pm, FS/FS/svc_acct.pm,
+	  FS/FS/part_export/communigate_pro.pm,
+	  httemplate/edit/svc_acct.cgi,
+	  httemplate/view/elements/svc_export_settings.html,
+	  httemplate/view/svc_acct/tr.html: communigate, RT#7083
+
+2010-02-20 19:16  ivan
+
+	* FS/FS/part_svc.pm, FS/FS/svc_acct.pm,
+	  FS/FS/part_export/communigate_pro.pm,
+	  httemplate/edit/part_svc.cgi, httemplate/edit/svc_acct.cgi,
+	  httemplate/edit/process/svc_acct.cgi,
+	  httemplate/elements/communigate_pro-accessmodes.html,
+	  httemplate/pref/pref-process.html, httemplate/pref/pref.html,
+	  httemplate/view/elements/svc_export_settings.html,
+	  httemplate/view/svc_acct/basics.html: communigate, RT#7083
+
+2010-02-20 14:34  ivan
+
+	* FS/FS/Conf.pm: communigate pro provisioning, RT#7083
+
+2010-02-20 14:31  ivan
+
+	* httemplate/view/elements/svc_export_settings.html,
+	  httemplate/view/svc_acct/basics.html,
+	  httemplate/view/svc_acct/change_svc.html,
+	  httemplate/view/svc_acct/change_svc_form.html,
+	  httemplate/view/svc_acct/hosting.html,
+	  httemplate/view/svc_acct/radius_usage.html,
+	  httemplate/view/svc_acct/usage.html, FS/FS/Record.pm,
+	  FS/FS/Schema.pm, FS/FS/svc_acct.pm,
+	  FS/FS/part_export/communigate_pro.pm,
+	  httemplate/edit/svc_acct.cgi, httemplate/view/svc_acct.cgi,
+	  httemplate/view/svc_domain.cgi: communigate pro provisioning,
+	  RT#7083
+
+2010-02-17 19:48  mark
+
+	* FS/bin/freeside-void-payments: Documentation cleanup
+
+2010-02-17 01:00  ivan
+
+	* httemplate/edit/svc_Common.html: fix svc_pbx provisioniing
+
+2010-02-17 00:30  ivan
+
+	* FS/FS/part_export.pm, FS/FS/part_export/communigate_pro.pm,
+	  FS/FS/Conf.pm, FS/FS/Schema.pm, FS/FS/svc_Common.pm,
+	  FS/FS/svc_domain.pm, httemplate/edit/svc_domain.cgi,
+	  httemplate/edit/process/svc_domain.cgi,
+	  httemplate/view/svc_domain.cgi, FS/FS/cust_svc.pm: communigate
+	  pro provisioning, RT#7083
+
+2010-02-16 10:36  ivan
+
+	* FS/FS/Conf.pm,
+	  fs_selfservice/FS-SelfService/cgi/make_ach_payment.html,
+	  fs_selfservice/FS-SelfService/cgi/make_payment.html,
+	  FS/FS/ClientAPI/MyAccount.pm: option to uncheck the save checkbox
+	  in self-service by default, RT#6955
+
+2010-02-15 18:19  jeff
+
+	* FS/FS/tax_rate.pm, httemplate/misc/tax-import.cgi,
+	  httemplate/misc/process/tax-import.cgi: refactor cch tax import
+	  to remove tons of false laziness and improve flexibility; allow
+	  reload from local files
+
+2010-02-15 08:34  jeff
+
+	* htetc/handler.pl: lexical instead of dynamic warnings
+
+2010-02-15 06:39  jeff
+
+	* htetc/handler.pl: get rid of some very annoying and pointless
+	  noise
+
+2010-02-14 18:09  ivan
+
+	* FS/FS/Conf.pm, FS/FS/Misc.pm, debian/control: switch to
+	  Email::Sender and add options for every kind of mail encryption &
+	  authentication, RT#7285
+
+2010-02-12 18:53  ivan
+
+	* FS/FS/svc_external.pm, httemplate/edit/svc_Common.html,
+	  httemplate/edit/svc_external.cgi,
+	  httemplate/edit/elements/svc_Common.html,
+	  httemplate/edit/process/svc_external.html: svc_external.title
+	  from inventory, RT#7010
+
+2010-02-12 18:16  ivan
+
+	* httemplate/search/: inventory_item.html: fix inventory item
+	  search w/customer classes
+
+2010-02-12 15:44  ivan
+
+	* FS/FS/ClientAPI/MyAccount.pm: don't return an error about
+	  changing the cust_main record to the user as a payment processing
+	  error, log a bunch of verbose stuff in this case so we can track
+	  down wtf is going on, RT#6955
+
+2010-02-12 14:42  ivan
+
+	* httemplate/search/: svc_acct.cgi, elements/search-html.html:
+	  totals time used on svc_acct report
+
+2010-02-12 13:49  ivan
+
+	* fs_selfservice/java/freeside_create_ticket_example.java: tyop,
+	  RT#7007
+
+2010-02-12 11:28  ivan
+
+	* FS/FS/ClientAPI/MyAccount.pm, FS/FS/TicketSystem/RT_Internal.pm,
+	  fs_selfservice/java/freeside_create_ticket_example.java,
+	  fs_selfservice/perl/xmlrpc-create_ticket.pl: add mime_type option
+	  to self-service ticket create, RT#7007
+
+2010-02-12 11:14  ivan
+
+	* fs_selfservice/perl/xmlrpc-create_ticket.pl,
+	  FS/FS/ClientAPI/MyAccount.pm,
+	  fs_selfservice/java/freeside_create_ticket_example.java: add
+	  queue option to self-service ticket create, RT#7007
+
+2010-02-11 19:26  ivan
+
+	* FS/FS/part_export/thirdlane.pm: add omit_countrycode option,
+	  RT#7379
+
+2010-02-11 17:35  ivan
+
+	* FS/FS/ClientAPI/MyAccount.pm, FS/FS/TicketSystem/RT_External.pm,
+	  FS/FS/TicketSystem/RT_Internal.pm,
+	  fs_selfservice/FS-SelfService/SelfService.pm, FS/FS/Conf.pm,
+	  fs_selfservice/java/freeside_create_ticket_example.java,
+	  fs_selfservice/perl/xmlrpc-create_ticket.pl,
+	  httemplate/view/cust_svc.cgi, rt/lib/RT/URI/freeside.pm: add
+	  ticket creation to self-service API, RT#7007
+
+2010-02-11 15:14  jeff
+
+	* FS/FS/part_export/grandstream.pm: fix quoting
+
+2010-02-09 18:12  mark
+
+	* FS/FS/: pay_batch.pm, pay_batch/RBC.pm: RT#7274: accept CR/LF in
+	  RBC batch import
+
+2010-02-09 13:49  ivan
+
+	* rt/lib/: RT.pm, RT.pm.in: add NoSignalHandlers option to
+	  RT::Init() so we can pull things up the way we want under
+	  self-service, RT#7007
+
+2010-02-09 11:56  ivan
+
+	* httemplate/edit/process/discount.html: doh, fix for discounts
+	  winding up with both amount and percent, RT#6679
+
+2010-02-08 19:37  ivan
+
+	* rt/lib/RT/Config.pm: fix RT wackiness when loaded concurrently
+	  with Fcntl
+
+2010-02-08 11:01  ivan
+
+	* FS/: FS.pm, FS/h_svc_pbx.pm, t/h_svc_pbx.t, MANIFEST:
+	  h_svc_pbx.pm, RT#7322
+
+2010-02-08 07:37  jeff
+
+	* FS/FS/Mason.pm, FS/FS/Schema.pm, FS/FS/export_device.pm,
+	  FS/FS/part_device.pm, FS/FS/part_export.pm,
+	  FS/FS/phone_device.pm, FS/FS/part_export/grandstream.pm,
+	  FS/FS/part_export/netsapiens.pm, FS/t/export_device.t, Makefile,
+	  FS/MANIFEST, httemplate/edit/part_device.html,
+	  httemplate/edit/process/part_device.html,
+	  httemplate/elements/checkboxes-table.html,
+	  httemplate/misc/phone_device_config.html,
+	  httemplate/view/svc_phone.cgi: grandstream device configuration
+	  support #4220
+
+2010-02-05 18:57  ivan
+
+	* FS/FS/: cust_pkg_discount.pm, part_pkg/flat.pm: discount
+	  reporting, RT#6679
+
+2010-02-05 18:54  ivan
+
+	* FS/FS/Schema.pm, FS/FS/Mason.pm, FS/FS/cust_bill_pkg.pm,
+	  FS/FS/cust_bill_pkg_discount.pm, FS/FS/cust_main.pm,
+	  FS/FS/cust_pkg.pm, FS/FS.pm, FS/MANIFEST,
+	  FS/FS/Report/Table/Monthly.pm, FS/t/cust_bill_pkg_discount.t,
+	  httemplate/elements/menu.html,
+	  httemplate/misc/delete-cust_pkg_discount.html,
+	  httemplate/search/cust_bill_pkg_discount.html,
+	  httemplate/search/cust_pkg_discount.html,
+	  httemplate/search/report_cust_bill_pkg_discount.html,
+	  httemplate/search/report_cust_pkg_discount.html: discount
+	  reporting, RT#6679
+
+2010-02-04 19:02  ivan
+
+	* httemplate/edit/process/cust_pkg_discount.html: discounts,
+	  RT#6679
+
+2010-02-04 18:39  ivan
+
+	* httemplate/view/cust_main/order_pkg_link.html, FS/FS/cust_pkg.pm,
+	  FS/FS/cust_pkg_discount.pm, FS/FS/discount.pm,
+	  FS/FS/part_pkg/flat.pm, httemplate/edit/cust_pkg_discount.html,
+	  httemplate/edit/discount.html,
+	  httemplate/edit/process/discount.html,
+	  httemplate/edit/process/quick-cust_pkg.cgi,
+	  httemplate/elements/tr-select-discount.html,
+	  httemplate/misc/order_pkg.html,
+	  httemplate/view/cust_main/packages/status.html: discounts,
+	  RT#6679
+
+2010-02-04 12:39  ivan
+
+	* FS/FS/discount.pm, httemplate/edit/discount.html,
+	  httemplate/elements/select-discount.html,
+	  httemplate/elements/select-table.html,
+	  httemplate/elements/tr-input-text.html,
+	  httemplate/elements/tr-select-discount.html,
+	  httemplate/elements/tr-select.html: discounts, RT#6679
+
+2010-02-04 02:00  ivan
+
+	* httemplate/edit/cust_main/top_misc.html, FS/FS/AccessRight.pm,
+	  httemplate/elements/search-cust_main.html: add ability to edit
+	  referring customer, RT#7174
+
+2010-02-03 22:53  ivan
+
+	* httemplate/: elements/phonenumber.html, pref/pref-process.html,
+	  pref/pref.html: snom autodial integration
+
+2010-02-03 20:48  ivan
+
+	* FS/FS/part_event/Condition/every.pm: fix SQL error with date
+	  field when using this condition, RT#7218
+
+2010-02-03 11:27  ivan
+
+	* FS/FS/cust_main.pm: better error msg for profiling
+
+2010-02-02 18:16  ivan
+
+	* FS/FS/svc_acct.pm: fix time limits getting double added if the
+	  service is provisioned before first billing
+
+2010-01-30 23:04  ivan
+
+	* FS/FS/discount.pm: discounts, RT#6679
+
+2010-01-30 19:00  ivan
+
+	* httemplate/browse/part_pkg_taxclass.html: fix header on report
+
+2010-01-30 18:57  ivan
+
+	* FS/FS/: part_pkg/agent.pm, part_pkg/bulk.pm,
+	  cust_pkg_discount.pm, part_pkg/flat.pm,
+	  part_pkg/flat_comission.pm, part_pkg/flat_comission_cust.pm,
+	  part_pkg/flat_comission_pkg.pm, part_pkg/prorate.pm,
+	  part_pkg/recur_Common.pm, part_pkg/rt_time.pm,
+	  part_pkg/sesmon_hour.pm, part_pkg/sesmon_minute.pm,
+	  part_pkg/sql_external.pm, part_pkg/sql_generic.pm,
+	  part_pkg/sqlradacct_hour.pm, part_pkg/subscription.pm,
+	  part_pkg/voip_sqlradacct.pm: discounts, RT#6679
+
+2010-01-30 15:00  ivan
+
+	* httemplate/: view/cust_main/packages/package.html,
+	  edit/cust_pkg_discount.html, edit/process/cust_pkg_discount.html,
+	  misc/delete-cust_pkg_discount.html,
+	  view/cust_main/packages/status.html: discounts, RT#6679
+
+2010-01-30 12:05  ivan
+
+	* httemplate/: misc/cust-part_pkg.cgi, misc/order_pkg.html,
+	  view/cust_main/packages.html, elements/select-part_pkg.html,
+	  elements/select-table.html,
+	  elements/tr-select-cust-part_pkg.html,
+	  view/cust_main/order_pkg_link.html: discounts, RT#6679
+
+2010-01-30 00:55  ivan
+
+	* FS/FS/cust_pkg.pm, FS/FS/cust_pkg_discount.pm,
+	  httemplate/edit/process/quick-cust_pkg.cgi,
+	  httemplate/elements/select-discount.html,
+	  httemplate/elements/tr-select-discount.html,
+	  httemplate/misc/order_pkg.html,
+	  httemplate/view/cust_main/packages/status.html,
+	  httemplate/view/cust_main/packages/package.html: discounts,
+	  RT#6679
+
+2010-01-29 23:55  ivan
+
+	* FS/FS/part_pkg/rt_time.pm: giving it a weight avoids weight use
+	  of uninitialized value in sort messages in part_pkg.pm
+
+2010-01-29 23:38  ivan
+
+	* FS/FS.pm, FS/MANIFEST, FS/FS/AccessRight.pm, FS/FS/Mason.pm,
+	  FS/FS/Schema.pm, FS/FS/cust_pkg_discount.pm, FS/FS/discount.pm,
+	  FS/FS/part_pkg.pm, FS/FS/part_pkg/flat.pm,
+	  FS/t/cust_pkg_discount.t, FS/t/discount.t,
+	  httemplate/browse/discount.html, httemplate/edit/discount.html,
+	  httemplate/edit/elements/edit.html,
+	  httemplate/edit/process/discount.html,
+	  httemplate/elements/menu.html,
+	  httemplate/elements/tr-input-text.html: discounts, RT#6679
+
+2010-01-29 12:21  ivan
+
+	* FS/FS/Conf.pm: add Cleartext-Password to radius-password export
+	  options, RT#7150
+
+2010-01-29 11:52  ivan
+
+	* FS/FS/part_export/thirdlane.pm: ssl option
+
+2010-01-26 21:27  ivan
+
+	* FS/FS/part_export/thirdlane.pm: URI escape pw, RT#7051
+
+2010-01-26 21:21  ivan
+
+	* FS/FS/part_export/thirdlane.pm: add port option, RT#7051
+
+2010-01-26 02:40  ivan
+
+	* FS/FS/svc_pbx.pm: deleting an svc_pbx unlinks svc_phones and
+	  deletes svc_accts, RT#7051
+
+2010-01-26 02:34  ivan
+
+	* FS/FS/part_export/thirdlane.pm: admin operations from svc_acct
+	  records
+
+2010-01-26 02:05  ivan
+
+	* FS/FS/svc_acct.pm, httemplate/edit/process/svc_acct.cgi: more
+	  fallout from default pw encryption: fix error reporting when
+	  entering a bad password
+
+2010-01-26 00:35  ivan
+
+	* FS/FS/: svc_pbx.pm, part_export/thirdlane.pm: svc_pbx.title
+	  uniqueness (kludgy) and force to alphanumeric+space and 19 char
+	  max when using thirdlane (conservative guess for 1st pass
+	  implementation), RT#7051
+
+2010-01-26 00:18  ivan
+
+	* FS/FS/svc_pbx.pm: label isn't thirdlane-specific, RT#7051
+
+2010-01-25 23:15  ivan
+
+	* FS/FS/part_export/thirdlane.pm: figured out success/failure
+	  reporting, and wrote DID creation/deletion/assign/unassign,
+	  RT#7051
+
+2010-01-25 22:15  ivan
+
+	* FS/FS/part_export/thirdlane.pm: initial thirdlane export w/tenant
+	  insert/delete/replace, RT#7051
+
+2010-01-25 22:14  ivan
+
+	* FS/FS/svc_pbx.pm: fix label method and doc work
+
+2010-01-25 22:14  ivan
+
+	* FS/FS/svc_Common.pm: remove debugging
+
+2010-01-25 20:47  jayce
+
+	* FS/FS/: part_pkg/rt_time.pm, TicketSystem/RT_External.pm: First
+	  version of RT Billing pkg.  Basic concept is if a customer has
+	  this package, then any time added to ticket comments in RT will
+	  be added up and multiplied by the base rate, with each entry
+	  showing up as a lineitem on their next invoice.
+
+	  This has not been used in production yet by anybody, it was just
+	  a proposal done for a customer.   Modified Files:
+	  TicketSystem/RT_External.pm	Added Files:
+	  part_pkg/rt_time.pm
+
+2010-01-25 14:14  ivan
+
+	* httemplate/elements/select-svc_pbx.html,
+	  httemplate/elements/tr-select-svc_pbx.html, FS/FS/Schema.pm,
+	  FS/FS/svc_Common.pm, FS/FS/svc_acct.pm, FS/FS/svc_pbx.pm,
+	  FS/FS/svc_phone.pm, httemplate/edit/part_svc.cgi,
+	  httemplate/edit/svc_acct.cgi, httemplate/edit/svc_phone.cgi,
+	  httemplate/edit/elements/edit.html,
+	  httemplate/edit/elements/svc_Common.html,
+	  httemplate/view/svc_acct.cgi, httemplate/view/svc_phone.cgi:
+	  linking DIDs and users to PBXes, RT#7051
+
+2010-01-25 09:41  ivan
+
+	* httemplate/edit/part_svc.cgi, FS/MANIFEST, FS/FS/Mason.pm,
+	  FS/FS/Schema.pm: initial svc_pbx implementation, RT#7051
+
+2010-01-25 09:35  ivan
+
+	* FS/: FS/svc_pbx.pm, t/svc_pbx.t: initial svc_pbx implementation,
+	  RT#7051
+
+2010-01-24 16:31  ivan
+
+	* FS/FS/svc_acct.pm: fix password length checks from applyhing to
+	  already-crypted legacy passwords, RT#7139
+
+2010-01-24 14:38  ivan
+
+	* httemplate/elements/: overlibmws.js, overlibmws_crossframe.js,
+	  overlibmws_draggable.js, overlibmws_iframe.js: update overlib to
+	  upstream v281 (jan 20, 2010)
+
+2010-01-24 12:37  ivan
+
+	* FS/FS/UI/Web.pm: right-align customer # in reports
+
+2010-01-24 11:53  ivan
+
+	* httemplate/search/cust_bill.html: fix alignment of customer data
+
+2010-01-24 11:52  ivan
+
+	* httemplate/search/cust_bill_pay.html: separate out the invoice
+	  and payment info into multiple columns, and fix application date
+	  showing as payment date
+
+2010-01-21 00:54  ivan
+
+	* FS/FS/Conf.pm: correct description for selfservice-body_footer
+
+2010-01-21 00:38  ivan
+
+	* fs_selfservice/FS-SelfService/cgi/selfservice.cgi: more
+	  self-service skinning config options, and start taking a stab at
+	  reorganizing config sections, RT#6893
+
+2010-01-21 00:34  ivan
+
+	* fs_selfservice/FS-SelfService/cgi/ach_payment_results.html,
+	  fs_selfservice/FS-SelfService/cgi/change_bill.html,
+	  fs_selfservice/FS-SelfService/cgi/change_password.html,
+	  fs_selfservice/FS-SelfService/cgi/change_pay.html,
+	  fs_selfservice/FS-SelfService/cgi/change_ship.html,
+	  fs_selfservice/FS-SelfService/cgi/customer_change_pkg.html,
+	  fs_selfservice/FS-SelfService/cgi/customer_order_pkg.html,
+	  fs_selfservice/FS-SelfService/cgi/delete_svc.html,
+	  fs_selfservice/FS-SelfService/cgi/header.html,
+	  fs_selfservice/FS-SelfService/cgi/make_ach_payment.html,
+	  fs_selfservice/FS-SelfService/cgi/make_payment.html,
+	  fs_selfservice/FS-SelfService/cgi/make_thirdparty_payment.html,
+	  fs_selfservice/FS-SelfService/cgi/myaccount.html,
+	  fs_selfservice/FS-SelfService/cgi/myaccount_menu.html,
+	  fs_selfservice/FS-SelfService/cgi/order_pkg.html,
+	  fs_selfservice/FS-SelfService/cgi/payment_results.html,
+	  fs_selfservice/FS-SelfService/cgi/process_change_bill.html,
+	  fs_selfservice/FS-SelfService/cgi/process_change_password.html,
+	  fs_selfservice/FS-SelfService/cgi/process_change_pay.html,
+	  fs_selfservice/FS-SelfService/cgi/process_change_pkg.html,
+	  fs_selfservice/FS-SelfService/cgi/process_change_ship.html,
+	  fs_selfservice/FS-SelfService/cgi/process_order_pkg.html,
+	  fs_selfservice/FS-SelfService/cgi/process_order_recharge.html,
+	  fs_selfservice/FS-SelfService/cgi/process_svc_acct.html,
+	  fs_selfservice/FS-SelfService/cgi/process_svc_external.html,
+	  fs_selfservice/FS-SelfService/cgi/provision.html,
+	  fs_selfservice/FS-SelfService/cgi/provision_svc_acct.html,
+	  fs_selfservice/FS-SelfService/cgi/recharge_prepay.html,
+	  fs_selfservice/FS-SelfService/cgi/recharge_results.html,
+	  fs_selfservice/FS-SelfService/cgi/view_cdr_details.html,
+	  fs_selfservice/FS-SelfService/cgi/view_invoice.html,
+	  fs_selfservice/FS-SelfService/cgi/view_usage.html,
+	  fs_selfservice/FS-SelfService/cgi/view_usage_details.html,
+	  fs_selfservice/FS-SelfService/cgi/image.cgi,
+	  FS/FS/ClientAPI/MyAccount.pm, httemplate/config/config-view.cgi,
+	  FS/FS/Conf.pm: more self-service skinning config options, and
+	  start taking a stab at reorganizing config sections, RT#6893
+
+2010-01-20 17:25  ivan
+
+	* FS/: FS/ClientAPI.pm, FS/Mason.pm,
+	  bin/freeside-selfservice-server: fix self-service fallout from RT
+	  3.8, RT#6640
+
+2010-01-19 15:11  jeff
+
+	* FS/FS/part_export/prizm.pm: SM in new window
+
+2010-01-19 09:48  jeff
+
+	* FS/FS/cust_main.pm: eliminate harmless uninitialized value noise
+
+2010-01-18 20:54  ivan
+
+	* FS/FS/pay_batch/paymentech.pm: patch from Peter Loeppky to make
+	  sure some xml fields don't get larger than what paymentech wants
+
+2010-01-18 19:24  mark
+
+	* httemplate/search/elements/search-csv.html: Fix mime type for CSV
+	  files, RT#1526
+
+2010-01-18 18:09  jeff
+
+	* FS/FS/part_export/domreg_opensrs.pm: don't really need debugging
+	  on
+
+2010-01-18 18:03  jeff
+
+	* FS/FS/: cust_bill_ApplicationCommon.pm,
+	  part_export/domreg_opensrs.pm: debugged and tested opensrs export
+
+2010-01-18 16:13  ivan
+
+	* httemplate/search/cust_bill_pkg.cgi: fix color/style after
+	  removal of billpkgnum display
+
+2010-01-16 22:40  ivan
+
+	* FS/FS/ClientAPI/MasonComponent.pm: fix for
+	  selfservice_server-base_url without a trailing /
+
+2010-01-16 19:31  ivan
+
+	* FS/FS/cust_main.pm: return an error for 0 amount payments to
+	  avoid a $0 payment getting stuck in declined or captured status,
+	  RT#6993
+
+2010-01-16 18:34  ivan
+
+	* FS/FS/svc_phone.pm: strip non-digits and 1- when searching for
+	  phone numbers, RT#7000
+
+2010-01-16 18:22  ivan
+
+	* FS/FS/: svc_acct.pm: remove svcnum from searchable fields for
+	  svc_acct... custnum and invnum are user-visible, other database
+	  ids, not so much.  also, breaks phone number search w/current Pg,
+	  RT#7000
+
+2010-01-16 17:20  ivan
+
+	* ChangeLog: preparing for 2.1.0
+
 2010-01-16 16:22  jeff
 
 	* FS/FS/cust_pkg.pm: work around bug in pre-perl5.10 which is at
@@ -36,21 +2164,37 @@
 	* rt/etc/RT_SiteConfig.pm: QuickCreateLong obsolete with the better
 	  quick create in 3.8
 
+2010-01-09 15:38  ivan
+
+	* rt/share/html/NoAuth/css/freeside2.1/main.css: bring in
+	  freeside.css
+
 2010-01-09 15:36  ivan
 
 	* rt/: etc/RT_SiteConfig.pm, lib/RT/Config.pm, FREESIDE_MODIFIED,
-	  etc/RT_Config.pm, etc/RT_Config.pm.in: add a "freeside2.1"
-	  stylesheet to isolate our skinning changes
-
-2010-01-09 15:03  ivan
-
-	* rt/html/NoAuth/images/small-logo.png: removing HTML files in old
-	  location wrt RT 3.8
-
-2010-01-09 14:53  ivan
-
-	* rt/html/NoAuth/css/3.5-default/freeside.css: removing HTML files
-	  in old location wrt RT 3.8
+	  etc/RT_Config.pm, etc/RT_Config.pm.in,
+	  share/html/NoAuth/css/freeside2.1/InHeader,
+	  share/html/NoAuth/css/freeside2.1/admin.css,
+	  share/html/NoAuth/css/freeside2.1/base.css,
+	  share/html/NoAuth/css/freeside2.1/boxes.css,
+	  share/html/NoAuth/css/freeside2.1/forms.css,
+	  share/html/NoAuth/css/freeside2.1/freeside.css,
+	  share/html/NoAuth/css/freeside2.1/layout.css,
+	  share/html/NoAuth/css/freeside2.1/login.css,
+	  share/html/NoAuth/css/freeside2.1/main.css,
+	  share/html/NoAuth/css/freeside2.1/misc.css,
+	  share/html/NoAuth/css/freeside2.1/msie.css,
+	  share/html/NoAuth/css/freeside2.1/msie6.css,
+	  share/html/NoAuth/css/freeside2.1/nav.css,
+	  share/html/NoAuth/css/freeside2.1/portlets.css,
+	  share/html/NoAuth/css/freeside2.1/ticket-lists.css,
+	  share/html/NoAuth/css/freeside2.1/ticket-search.css,
+	  share/html/NoAuth/css/freeside2.1/ticket.css,
+	  share/html/NoAuth/css/freeside2.1/tools.css,
+	  share/html/NoAuth/css/freeside2.1/yui-fonts.css,
+	  share/html/NoAuth/css/freeside2.1/images/dhandler,
+	  share/html/NoAuth/css/freeside2.1/images/source/background-gradient.png:
+	  add a "freeside2.1" stylesheet to isolate our skinning changes
 
 2010-01-09 14:48  ivan
 
@@ -65,6 +2209,11 @@
 2010-01-09 00:21  ivan
 
 	* FS/bin/freeside-upgrade: undo damage from DBIx::DBSchema 0.37_03
+
+2010-01-08 10:55  jeff
+
+	* httemplate/loginout/logout.html: this is part of the logout link
+	  too! (RT 1330 & 5518)
 
 2010-01-08 08:05  jeff
 
@@ -118,11 +2267,7 @@
 	  share/html/Ticket/Elements/ShowCustomers,
 	  share/html/Ticket/Elements/ShowSummary,
 	  share/html/Ticket/Elements/ShowTransactionAttachments,
-	  share/html/Ticket/Elements/Tabs, html/Elements/AddCustomers,
-	  html/Elements/EditCustomers, html/Ticket/ModifyCustomers.html,
-	  html/Elements/FreesideInvoiceSearch,
-	  html/Elements/FreesideNewCust, html/Elements/FreesideSearch,
-	  html/Elements/FreesideSvcSearch, FREESIDE_MODIFIED: port
+	  share/html/Ticket/Elements/Tabs, FREESIDE_MODIFIED: port
 	  skinning, customer display/edit from RT 3.6 integration to RT 3.8
 	  integration
 
@@ -131,11 +2276,6 @@
 	* htetc/: freeside-base1.99.conf, freeside-base1.conf,
 	  freeside-base2.conf, handler.pl: port skinning, customer
 	  display/edit from RT 3.6 integration to RT 3.8 integration
-
-2010-01-02 22:42  ivan
-
-	* rt/html/Ticket/Elements/: AddCustomers, EditCustomers,
-	  ShowCustomers: moved to new location in RT 3.8
 
 2010-01-02 22:24  ivan
 
@@ -171,120 +2311,7 @@
 	  bin/mason_handler.scgi, bin/mason_handler.svc, bin/rt-crontool,
 	  bin/rt-mailgate, etc/RT_Config.pm, etc/RT_Config.pm.in,
 	  etc/RT_SiteConfig.pm, etc/schema.Pg, etc/schema.mysql,
-	  html/autohandler, html/index.html, html/l,
-	  html/Admin/autohandler, html/Admin/index.html,
-	  html/Admin/Users/CustomFields.html,
-	  html/Admin/Users/History.html, html/Admin/Users/Memberships.html,
-	  html/Admin/Users/Modify.html, html/Admin/Users/MyRT.html,
-	  html/Admin/Users/index.html, html/Elements/BevelBoxRaisedEnd,
-	  html/Elements/BevelBoxRaisedStart, html/Elements/Callback,
-	  html/Elements/Checkbox, html/Elements/CreateTicket,
-	  html/Elements/EditCustomField,
-	  html/Elements/EditCustomFieldBinary,
-	  html/Elements/EditCustomFieldCombobox,
-	  html/Elements/EditCustomFieldFreeform,
-	  html/Elements/EditCustomFieldImage,
-	  html/Elements/EditCustomFieldSelect,
-	  html/Elements/EditCustomFieldText,
-	  html/Elements/EditCustomFieldWikitext, html/Elements/EditLinks,
-	  html/Elements/EmailInput, html/Elements/Error,
-	  html/Elements/Footer, html/Elements/GotoTicket,
-	  html/Elements/Header, html/Elements/ListActions,
-	  html/Elements/Login, html/Elements/Logo, html/Elements/Menu,
-	  html/Elements/MessageBox, html/Elements/MyAdminQueues,
-	  html/Elements/MyRT, html/Elements/MyReminders,
-	  html/Elements/MyRequests, html/Elements/MySupportQueues,
-	  html/Elements/MyTickets, html/Elements/PageLayout,
-	  html/Elements/QueryString, html/Elements/QueueSummary,
-	  html/Elements/QuickCreate, html/Elements/Quicksearch,
-	  html/Elements/Refresh, html/Elements/RefreshHomepage,
-	  html/Elements/ScrubHTML, html/Elements/Section,
-	  html/Elements/SelectAttachmentField, html/Elements/SelectBoolean,
-	  html/Elements/SelectCustomFieldOperator,
-	  html/Elements/SelectCustomFieldValue, html/Elements/SelectDate,
-	  html/Elements/SelectDateRelation, html/Elements/SelectDateType,
-	  html/Elements/SelectEqualityOperator, html/Elements/SelectGroups,
-	  html/Elements/SelectLang, html/Elements/SelectLinkType,
-	  html/Elements/SelectMatch, html/Elements/SelectNewTicketQueue,
-	  html/Elements/SelectOwner, html/Elements/SelectQueue,
-	  html/Elements/SelectResultsPerPage,
-	  html/Elements/SelectSortOrder, html/Elements/SelectStatus,
-	  html/Elements/SelectTicketSortBy,
-	  html/Elements/SelectTicketTypes, html/Elements/SelectTimeUnits,
-	  html/Elements/SelectUsers, html/Elements/SelectWatcherType,
-	  html/Elements/SetupSessionCookie,
-	  html/Elements/ShowCustomFieldBinary,
-	  html/Elements/ShowCustomFieldImage,
-	  html/Elements/ShowCustomFieldWikitext,
-	  html/Elements/ShowCustomFields, html/Elements/ShowLink,
-	  html/Elements/ShowLinks, html/Elements/ShowMemberships,
-	  html/Elements/ShowSearch, html/Elements/SimpleSearch,
-	  html/Elements/Submit, html/Elements/Tabs,
-	  html/Elements/TicketList, html/Elements/TitleBox,
-	  html/Elements/TitleBoxEnd, html/Elements/TitleBoxStart,
-	  html/Elements/ValidateCustomFields,
-	  html/Elements/CollectionAsTable/Header,
-	  html/Elements/CollectionAsTable/ParseFormat,
-	  html/Elements/CollectionAsTable/Row, html/NoAuth/Logout.html,
-	  html/NoAuth/Reminder.html, html/NoAuth/css/autohandler,
-	  html/NoAuth/css/dhandler, html/NoAuth/css/print.css,
-	  html/NoAuth/css/3.5-default/approvals.css,
-	  html/NoAuth/css/3.5-default/body.css,
-	  html/NoAuth/css/3.5-default/footer.css,
-	  html/NoAuth/css/3.5-default/forms.css,
-	  html/NoAuth/css/3.5-default/header.css,
-	  html/NoAuth/css/3.5-default/login.css,
-	  html/NoAuth/css/3.5-default/logo.css,
-	  html/NoAuth/css/3.5-default/main.css,
-	  html/NoAuth/css/3.5-default/misc.css,
-	  html/NoAuth/css/3.5-default/nav.css,
-	  html/NoAuth/css/3.5-default/quickbar.css,
-	  html/NoAuth/css/3.5-default/ticket.css,
-	  html/NoAuth/css/3.5-default/titlebox.css,
-	  html/NoAuth/css/3.5-default/transactions.css,
-	  html/NoAuth/images/autohandler, html/NoAuth/images/bplogo.gif,
-	  html/NoAuth/images/favicon.png, html/Prefs/MyRT.html,
-	  html/Prefs/Quicksearch.html, html/Prefs/Search.html,
-	  html/Prefs/SearchOptions.html, html/Search/Build.html,
-	  html/Search/Bulk.html, html/Search/Chart, html/Search/Chart.html,
-	  html/Search/Edit.html, html/Search/Results.html,
-	  html/Search/Results.rdf, html/Search/Results.tsv,
-	  html/Search/Simple.html, html/Ticket/Create.html,
-	  html/Ticket/Display.html, html/Ticket/History.html,
-	  html/Ticket/Modify.html, html/Ticket/ModifyAll.html,
-	  html/Ticket/ModifyDates.html, html/Ticket/ModifyLinks.html,
-	  html/Ticket/ModifyPeople.html, html/Ticket/Reminders.html,
-	  html/Ticket/ShowEmailRecord.html, html/Ticket/Update.html,
-	  html/Ticket/Elements/AddWatchers, html/Ticket/Elements/BulkLinks,
-	  html/Ticket/Elements/EditBasics,
-	  html/Ticket/Elements/EditCustomField,
-	  html/Ticket/Elements/EditCustomFields,
-	  html/Ticket/Elements/EditDates, html/Ticket/Elements/EditPeople,
-	  html/Ticket/Elements/EditWatchers,
-	  html/Ticket/Elements/FindAttachments,
-	  html/Ticket/Elements/LoadTextAttachments,
-	  html/Ticket/Elements/PreviewScrips,
-	  html/Ticket/Elements/Reminders,
-	  html/Ticket/Elements/ShowAttachments,
-	  html/Ticket/Elements/ShowBasics,
-	  html/Ticket/Elements/ShowCustomFields,
-	  html/Ticket/Elements/ShowDates,
-	  html/Ticket/Elements/ShowDependencies,
-	  html/Ticket/Elements/ShowGroupMembers,
-	  html/Ticket/Elements/ShowHistory,
-	  html/Ticket/Elements/ShowMembers,
-	  html/Ticket/Elements/ShowMessageHeaders,
-	  html/Ticket/Elements/ShowMessageStanza,
-	  html/Ticket/Elements/ShowPeople, html/Ticket/Elements/ShowQueue,
-	  html/Ticket/Elements/ShowRequestor,
-	  html/Ticket/Elements/ShowSummary, html/Ticket/Elements/ShowTime,
-	  html/Ticket/Elements/ShowTransaction,
-	  html/Ticket/Elements/ShowTransactionAttachments,
-	  html/Ticket/Elements/ShowUserEntry, html/Ticket/Elements/Tabs,
-	  html/User/Delegation.html, html/User/Prefs.html,
-	  html/Widgets/ComboBox, html/Widgets/SavedSearch,
-	  html/Widgets/SelectionBox, html/Widgets/TitleBox,
-	  html/Widgets/TitleBoxEnd, html/Widgets/TitleBoxStart, lib/RT.pm,
+	  html/autohandler, html/index.html, html/l, lib/RT.pm,
 	  lib/RT/Groups_Overlay.pm, lib/RT/Record.pm,
 	  lib/RT/SearchBuilder.pm, lib/RT/Ticket_Overlay.pm,
 	  lib/RT/Transaction_Overlay.pm, lib/RT/User_Overlay.pm,
@@ -1329,22 +3356,7 @@
 
 2009-12-31 04:44  ivan
 
-	* rt/: etc/RT_Config.pm.in, html/Admin/Users/Modify.html,
-	  html/Elements/Footer, html/Elements/Header, html/Elements/Menu,
-	  html/Elements/PageLayout, html/Elements/QuickCreate,
-	  html/Elements/SelectDate, html/Elements/SimpleSearch,
-	  html/Elements/Tabs, html/Elements/TicketList,
-	  html/Elements/TitleBoxStart, html/Elements/CollectionAsTable/Row,
-	  html/NoAuth/css/3.5-default/main.css,
-	  html/NoAuth/css/3.5-default/misc.css,
-	  html/NoAuth/css/3.5-default/titlebox.css,
-	  html/NoAuth/css/3.5-default/transactions.css,
-	  html/Prefs/SearchOptions.html, html/Search/Bulk.html,
-	  html/Ticket/Create.html, html/Ticket/Display.html,
-	  html/Ticket/Elements/ShowSummary,
-	  html/Ticket/Elements/ShowTransactionAttachments,
-	  html/Ticket/Elements/Tabs, html/User/Prefs.html,
-	  html/Widgets/TitleBoxStart, lib/RT/Groups_Overlay.pm,
+	* rt/: etc/RT_Config.pm.in, lib/RT/Groups_Overlay.pm,
 	  lib/RT/Record.pm, lib/RT/SearchBuilder.pm,
 	  lib/RT/Ticket_Overlay.pm, lib/RT/Transaction_Overlay.pm,
 	  lib/RT/User_Overlay.pm, lib/RT/Users_Overlay.pm,
@@ -3646,10 +5658,9 @@
 
 2009-07-26 12:36  ivan
 
-	* rt/: FREESIDE_MODIFIED, html/Elements/PageLayout,
-	  html/Elements/SelectDate: fix the date picker in RT to use
-	  jscalendar instead of an HTML popup (that had acquired the page
-	  header, eek), RT#1682
+	* rt/FREESIDE_MODIFIED: fix the date picker in RT to use jscalendar
+	  instead of an HTML popup (that had acquired the page header,
+	  eek), RT#1682
 
 2009-07-26 11:40  ivan
 
@@ -3775,8 +5786,8 @@
 
 2009-07-19 21:14  ivan
 
-	* rt/: FREESIDE_MODIFIED, html/Ticket/Create.html: fix badly styled
-	  links on ticket create (fallout from RT borging/styling)
+	* rt/FREESIDE_MODIFIED: fix badly styled links on ticket create
+	  (fallout from RT borging/styling)
 
 2009-07-17 16:33  ivan
 
@@ -3915,19 +5926,6 @@
 
 	* httemplate/search/report_unapplied_cust_pay.html: clarify wording
 
-2009-07-12 20:24  ivan
-
-	* rt/html/Elements/PageLayout: think that should be it, fix bar
-	  when there's no primary $page_tabs
-
-2009-07-12 20:15  ivan
-
-	* rt/html/Elements/Footer: no need for Time to display either
-
-2009-07-12 19:33  ivan
-
-	* rt/html/Elements/PageLayout: style RT's menubars like ours
-
 2009-07-12 18:50  ivan
 
 	* httemplate/elements/: header.html, menubar.html: style nits
@@ -3941,11 +5939,6 @@
 	* FS/FS/CGI.pm: this should fix $fsurl under the unified RT?  sure
 	  hope so
 
-2009-07-12 16:27  ivan
-
-	* rt/html/NoAuth/css/3.5-default/titlebox.css: fix excessive RT
-	  margins
-
 2009-07-12 16:25  ivan
 
 	* httemplate/edit/cust_main.cgi: ACL on customer edit
@@ -3954,13 +5947,10 @@
 
 	* httemplate/elements/header.html, httemplate/elements/menu.html,
 	  httemplate/elements/xmenu.css, httemplate/elements/xmenu.top.css,
-	  rt/FREESIDE_MODIFIED, rt/etc/RT_SiteConfig.pm,
-	  rt/html/Elements/Header,
-	  rt/html/NoAuth/css/3.5-default/freeside.css,
-	  rt/html/NoAuth/css/3.5-default/misc.css,
-	  rt/html/Ticket/Display.html: resolve style weirdness (fallout
-	  from RT integration), especially non-fixed-width comment boxes,
-	  menu/searchbar differences, RT#1169
+	  rt/FREESIDE_MODIFIED, rt/etc/RT_SiteConfig.pm: resolve style
+	  weirdness (fallout from RT integration), especially
+	  non-fixed-width comment boxes, menu/searchbar differences,
+	  RT#1169
 
 2009-07-12 12:32  ivan
 
@@ -4011,12 +6001,6 @@
 
 	* httemplate/search/report_receivables.cgi: oops
 
-2009-07-08 19:34  ivan
-
-	* rt/html/Elements/Header: doh, fix RT onLoadHook; this fixes
-	  "Undefined subroutine &HTML::Mason::Commands::onLoadHook" error
-	  on ticket creation and otherwise, RT#1169
-
 2009-07-08 04:12  ivan
 
 	* FS/FS/TicketSystem/RT_External.pm,
@@ -4025,10 +6009,8 @@
 	  httemplate/elements/about_freeside.html,
 	  httemplate/elements/about_rt.html,
 	  httemplate/elements/header.html,
-	  httemplate/elements/popup_link.html, rt/FREESIDE_MODIFIED,
-	  rt/html/Elements/Header, rt/html/Elements/PageLayout,
-	  rt/html/Elements/Tabs, rt/html/Prefs/SearchOptions.html,
-	  rt/html/User/Prefs.html: borg RT menus, RT#1169
+	  httemplate/elements/popup_link.html, rt/FREESIDE_MODIFIED: borg
+	  RT menus, RT#1169
 
 2009-07-07 20:33  ivan
 
@@ -5258,9 +7240,8 @@
 
 2009-04-17 00:03  ivan
 
-	* httemplate/elements/header.html,
-	  rt/html/Elements/FreesideSvcSearch: hide service search unless
-	  user has "View customer services" ACL, RT#3478
+	* httemplate/elements/header.html: hide service search unless user
+	  has "View customer services" ACL, RT#3478
 
 2009-04-16 18:17  ivan
 
@@ -10400,29 +12381,19 @@
 
 2008-03-23 20:07  ivan
 
-	* rt/: html/Elements/EditCustomers,
-	  html/Ticket/Elements/EditCustomers,
-	  html/Ticket/Elements/ShowCustomers, lib/RT/Record.pm,
-	  lib/RT/Ticket_Overlay.pm: woo!  final part of #1160!	yup,
-	  auto-associating tickets with customers now.	whew!
+	* rt/lib/RT/: Record.pm, Ticket_Overlay.pm: woo!  final part of
+	  #1160!  yup, auto-associating tickets with customers now.  whew!
 
 2008-03-23 18:28  ivan
 
-	* rt/: html/Ticket/Elements/AddCustomers, lib/RT/Record.pm,
-	  lib/RT/Interface/Web_Vendor.pm: part two of #1160: linking a
-	  ticket to its first customer will auto-link any customerless
-	  requestors
+	* rt/lib/RT/: Record.pm, Interface/Web_Vendor.pm: part two of
+	  #1160: linking a ticket to its first customer will auto-link any
+	  customerless requestors
 
 2008-03-23 16:38  ivan
 
-	* rt/: html/Admin/Users/Modify.html, lib/RT/User_Overlay.pm,
-	  lib/RT/Interface/Web_Vendor.pm: part 1 of #1160: associate users
-	  w/customers, manual editing
-
-2008-03-23 16:32  ivan
-
-	* rt/html/Elements/: AddCustomers, EditCustomers: part 1 of #1160:
-	  associate users w/customers, manual editing
+	* rt/lib/RT/: User_Overlay.pm, Interface/Web_Vendor.pm: part 1 of
+	  #1160: associate users w/customers, manual editing
 
 2008-03-19 12:48  jeff
 
@@ -10561,9 +12532,9 @@
 
 2008-03-15 21:00  ivan
 
-	* httemplate/elements/header.html, httemplate/elements/menu.html,
-	  rt/html/Elements/FreesideSearch: hide customer search if user
-	  does not have "List customers" ACL, closes: RT#3105
+	* httemplate/elements/: header.html, menu.html: hide customer
+	  search if user does not have "List customers" ACL, closes:
+	  RT#3105
 
 2008-03-15 15:18  ivan
 
@@ -10688,22 +12659,12 @@
 
 2008-03-03 15:12  ivan
 
-	* rt/: etc/RT_Config.pm.in, html/Elements/Header,
-	  html/Elements/PageLayout, html/Elements/Tabs,
-	  html/Elements/CollectionAsTable/Row,
-	  html/Ticket/Elements/ShowTransactionAttachments,
-	  html/Widgets/TitleBoxStart, sbin/rt-setup-database.in: merge in
-	  rt 3.6.6.  *gulp*!
-
-2008-03-01 20:11  ivan
-
-	* rt/html/: Elements/EmailInput, NoAuth/css/dhandler,
-	  Ticket/Elements/ShowQueue: Initial revision
+	* rt/: etc/RT_Config.pm.in, sbin/rt-setup-database.in: merge in rt
+	  3.6.6.  *gulp*!
 
 2008-03-01 19:07  ivan
 
-	* httemplate/elements/header.html,
-	  rt/html/Elements/FreesideNewCust: fix annoying resize of "New
+	* httemplate/elements/header.html: fix annoying resize of "New
 	  customer" button; closes: RT#1642
 
 2008-03-01 18:50  ivan
@@ -12594,21 +14555,6 @@
 	  undefined value as an ARRAY reference at
 	  /usr/local/share/perl/5.8.8/FS/cust_main.pm line 4383.' error
 
-2007-09-13 20:31  ivan
-
-	* rt/html/Elements/TicketList: fix visual glitch on "RT at a
-	  glance" / Ticketing main
-
-2007-09-13 19:14  ivan
-
-	* rt/html/Ticket/Elements/ShowTransactionAttachments: turn off
-	  Text::Quoted usage, it segfaults and its optional
-
-2007-09-13 16:45  ivan
-
-	* rt/html/NoAuth/css/3.5-default/freeside.css: make boxes distinct
-	  from the background
-
 2007-09-13 15:35  ivan
 
 	* FS/MANIFEST, FS/FS/Schema.pm, FS/FS/acct_rt_transaction.pm,
@@ -12648,11 +14594,6 @@
 
 	* httemplate/misc/cust_main-import.cgi: add better inline docs
 	  explaining fields on customer CSV import
-
-2007-09-12 19:44  ivan
-
-	* rt/html/NoAuth/css/3.5-default/freeside.css: it would help to
-	  check this in.
 
 2007-09-12 13:40  ivan
 
@@ -12847,37 +14788,19 @@
 
 2007-08-03 18:57  ivan
 
-	* rt/html/Elements/Header, httemplate/elements/header.html: point
-	  1.9 to 1.9 documentation
+	* httemplate/elements/header.html: point 1.9 to 1.9 documentation
 
 2007-08-03 17:13  ivan
 
 	* rt/: FREESIDE_MODIFIED, Makefile, config.log, config.status,
 	  bin/mason_handler.fcgi, bin/mason_handler.scgi,
 	  bin/mason_handler.svc, bin/rt-crontool, bin/rt-mailgate,
-	  html/Elements/Footer, html/Elements/Header,
-	  html/Elements/PageLayout, html/NoAuth/css/3.5-default/main.css,
-	  html/NoAuth/css/3.5-default/misc.css,
-	  html/NoAuth/css/3.5-default/transactions.css, lib/RT.pm: clean up
-	  corners & colors
-
-2007-08-03 16:14  ivan
-
-	* rt/html/Elements/PageLayout: fix nit sorting out tops earchboxes
-
-2007-08-03 16:00  ivan
-
-	* rt/html/Elements/PageLayout: at least sort out the top
-	  searchboxes
+	  lib/RT.pm: clean up corners & colors
 
 2007-08-03 15:43  ivan
 
 	* rt/etc/: RT_Config.pm, RT_Config.pm.in: fix path so we can find
 	  .css files
-
-2007-08-03 15:10  ivan
-
-	* rt/html/Ticket/Elements/ShowSummary: fix merge nit
 
 2007-08-03 15:06  ivan
 
@@ -12886,17 +14809,8 @@
 2007-08-03 14:49  ivan
 
 	* rt/: FREESIDE_MODIFIED, etc/RT_SiteConfig.pm,
-	  html/Elements/Footer, html/Elements/Header, html/Elements/Menu,
-	  html/Elements/PageLayout, html/Elements/QuickCreate,
-	  html/Elements/SimpleSearch, html/Elements/Tabs,
-	  html/Elements/TicketList, html/Elements/TitleBoxStart,
-	  html/Elements/CollectionAsTable/Row, html/NoAuth/printrt.css,
-	  html/NoAuth/webrt.css, html/NoAuth/images/space.gif,
-	  html/Search/Bulk.html, html/Ticket/Elements/ShowMemberOf,
-	  html/Ticket/Elements/ShowReferences,
-	  html/Ticket/Elements/ShowSummary, html/Ticket/Elements/Tabs,
-	  html/Widgets/TitleBoxStart, lib/RT/SearchBuilder.pm,
-	  sbin/rt-setup-database.in: merging RT_3_6_4 to HEAD
+	  lib/RT/SearchBuilder.pm, sbin/rt-setup-database.in: merging
+	  RT_3_6_4 to HEAD
 
 2007-08-02 16:44  ivan
 
@@ -12928,37 +14842,8 @@
 
 	* rt/: lib/RT/I18N/tr.po, lib/RT/Report/Tickets.pm,
 	  lib/RT/Report/Tickets/Entry.pm,
-	  docs/design_docs/ruleset-workflow.txt,
-	  html/Elements/SelectTimeUnits, html/Elements/RefreshHomepage,
-	  html/Elements/MyAdminQueues, html/Elements/MyRT,
-	  html/Elements/MyReminders, html/Elements/MySupportQueues,
-	  html/Elements/QueueSummary, html/Elements/ShowSearch,
-	  html/Elements/ValidateCustomFields, html/Elements/Logo,
-	  html/Elements/EditCustomFieldCombobox, html/Prefs/MyRT.html,
-	  html/Prefs/Quicksearch.html, html/Prefs/Search.html,
-	  html/Prefs/SearchOptions.html, html/Search/Chart.html,
-	  html/Search/Simple.html, html/Search/Chart,
-	  html/NoAuth/css/autohandler, html/NoAuth/css/print.css,
-	  html/NoAuth/css/3.5-default/footer.css,
-	  html/NoAuth/css/3.5-default/login.css,
-	  html/NoAuth/css/3.5-default/nav.css,
-	  html/NoAuth/css/3.5-default/ticket.css,
-	  html/NoAuth/css/3.5-default/approvals.css,
-	  html/NoAuth/css/3.5-default/body.css,
-	  html/NoAuth/css/3.5-default/forms.css,
-	  html/NoAuth/css/3.5-default/header.css,
-	  html/NoAuth/css/3.5-default/logo.css,
-	  html/NoAuth/css/3.5-default/main.css,
-	  html/NoAuth/css/3.5-default/misc.css,
-	  html/NoAuth/css/3.5-default/quickbar.css,
-	  html/NoAuth/css/3.5-default/titlebox.css,
-	  html/NoAuth/css/3.5-default/transactions.css,
-	  html/Widgets/ComboBox, html/Widgets/SavedSearch,
-	  html/Widgets/SelectionBox, html/Widgets/TitleBox,
-	  html/Widgets/TitleBoxEnd, html/Widgets/TitleBoxStart,
-	  html/Admin/Users/MyRT.html, html/Ticket/Reminders.html,
-	  html/Ticket/Elements/ShowTime, html/Ticket/Elements/Reminders,
-	  etc/upgrade/3.5.1/content: Initial revision
+	  docs/design_docs/ruleset-workflow.txt, etc/upgrade/3.5.1/content:
+	  Initial revision
 
 2007-08-02 12:51  ivan
 
@@ -13661,19 +15546,13 @@
 
 2007-06-20 15:58  ivan
 
-	* rt/: etc/RT_SiteConfig.pm, html/Elements/QuickCreate: add
-	  QuickCreateLong option, part of merging spiritone RT changes
+	* rt/etc/RT_SiteConfig.pm: add QuickCreateLong option, part of
+	  merging spiritone RT changes
 
-2007-06-20 15:37  ivan
+2007-06-20 15:35  ivan
 
-	* rt/html/Elements/Tabs: s/Tickets/Search Tickets/ in menu for
-	  clarity, part of merging spiritone RT changes (#1661)
-
-2007-06-20 15:33  ivan
-
-	* rt/: html/Elements/TicketList, etc/RT_SiteConfig.pm: add
-	  $RT::MyTicketsLength patch from spiritone, part of merging RT
-	  changes (#1661)
+	* rt/etc/RT_SiteConfig.pm: add $RT::MyTicketsLength patch from
+	  spiritone, part of merging RT changes (#1661)
 
 2007-06-20 15:28  ivan
 
@@ -15357,8 +17236,6 @@
 	  httemplate/search/svc_forward.cgi,
 	  httemplate/search/svc_phone.cgi, httemplate/search/svc_www.cgi,
 	  httemplate/view/elements/svc_Common.html,
-	  rt/html/Elements/FreesideSearch,
-	  rt/html/Elements/FreesideSvcSearch,
 	  httemplate/view/cust_main/packages.html: service refactor!
 
 2006-12-29 00:41  ivan
@@ -15622,11 +17499,6 @@
 2006-12-08 07:11  jeff
 
 	* FS/FS/svc_acct.pm: stop unsuspending inappropriately
-
-2006-12-08 06:38  ivan
-
-	* rt/html/Elements/Header: have RT header link to supported
-	  documentation link as well
 
 2006-12-08 05:36  ivan
 
@@ -16095,13 +17967,7 @@
 
 2006-10-17 02:03  ivan
 
-	* rt/: html/Elements/Header, html/Elements/CollectionAsTable/Row,
-	  html/NoAuth/webrt.css, sbin/rt-setup-database.in: commiting rt
-	  3.4.5 to HEAD
-
-2006-10-17 01:49  ivan
-
-	* rt/html/NoAuth/printrt.css: Initial revision
+	* rt/sbin/rt-setup-database.in: commiting rt 3.4.5 to HEAD
 
 2006-10-16 22:49  ivan
 
@@ -16880,11 +18746,6 @@
 	* FS/FS/: cust_main.pm: search for existing advertising sources
 	  before adding a new one
 
-2006-08-21 05:38  ivan
-
-	* rt/html/Ticket/Elements/EditCustomers: better RT hint for smarter
-	  smart search
-
 2006-08-21 02:46  ivan
 
 	* httemplate/docs/: install-rt.html, install.html, index.html:
@@ -16979,15 +18840,10 @@
 
 	* FS/FS/cust_main.pm, httemplate/edit/cust_main.cgi,
 	  httemplate/elements/header.html,
-	  httemplate/elements/search-cust_main.html,
-	  rt/html/Elements/FreesideInvoiceSearch,
-	  rt/html/Elements/FreesideNewCust,
-	  rt/html/Elements/FreesideSearch,
-	  rt/html/Elements/FreesideSvcSearch, rt/html/Elements/PageLayout,
-	  rt/html/Elements/SimpleSearch, rt/html/Elements/Tabs,
-	  rt/html/NoAuth/webrt.css: sprinkle some magic ajax fairy dust on
-	  referring customer SELEKTAH.	rewind!  make smart search smarter,
-	  re-layout the top search bars and add an invoice one
+	  httemplate/elements/search-cust_main.html: sprinkle some magic
+	  ajax fairy dust on referring customer SELEKTAH.  rewind!  make
+	  smart search smarter, re-layout the top search bars and add an
+	  invoice one
 
 2006-08-14 01:38  ivan
 
@@ -17347,11 +19203,6 @@
 	  FS/FS/part_pkg/voip_cdr.pm: svc_phone service and CDR billing
 	  from imported CDRs
 
-2006-07-09 07:35  ivan
-
-	* rt/html/Elements/: Header, PageLayout: fix the image path in the
-	  kludged looknfeel integration
-
 2006-07-05 07:55  ivan
 
 	* FS/FS/cust_main.pm: patch to fix fuzzy searching from Ryan Gunn
@@ -17559,31 +19410,6 @@
 
 	* httemplate/elements/menu.html: fix link to prepaid card setup
 
-2006-06-06 04:16  ivan
-
-	* rt/html/NoAuth/webrt.css: whew, this can go back
-
-2006-06-06 04:08  ivan
-
-	* rt/html/NoAuth/webrt.css: yay this should finally fix the weird
-	  black navigation links; hide the Mason stuff from browsers when
-	  it doesn't get processed for some reason
-
-2006-06-06 03:57  ivan
-
-	* rt/html/NoAuth/webrt.css: yet another attempt to fix weird black
-	  RT navigation links
-
-2006-06-06 03:54  ivan
-
-	* rt/html/NoAuth/webrt.css: another attempt to fix weird black RT
-	  navigation links
-
-2006-06-06 03:46  ivan
-
-	* rt/html/NoAuth/webrt.css: attempt to fix weird black RT
-	  navigation links
-
 2006-06-06 03:30  ivan
 
 	* FS/FS/cdr.pm: fix unmatched =back somehow futzing things up with
@@ -17592,9 +19418,8 @@
 2006-06-02 06:20  ivan
 
 	* httemplate/elements/header.html,
-	  httemplate/search/svc_Smart.html, rt/FREESIDE_MODIFIED,
-	  rt/html/Elements/FreesideSvcSearch, rt/html/Elements/PageLayout,
-	  rt/html/Elements/Tabs: add a service search
+	  httemplate/search/svc_Smart.html, rt/FREESIDE_MODIFIED: add a
+	  service search
 
 2006-05-24 03:22  ivan
 
@@ -17604,10 +19429,6 @@
 
 	* README.1.7.0: adding batch upgrade instructions to 1.7.0
 	  instructions too
-
-2006-05-22 13:38  ivan
-
-	* rt/html/Elements/FreesideNewCust: missing > tag on INPUT
 
 2006-05-22 11:27  ivan
 
@@ -17654,15 +19475,10 @@
 
 2006-05-15 04:05  ivan
 
-	* rt/html/NoAuth/webrt.css, httemplate/elements/freeside.css,
+	* httemplate/elements/freeside.css,
 	  httemplate/elements/header.html, httemplate/elements/xmenu.css,
-	  httemplate/search/cust_main.cgi, rt/FREESIDE_MODIFIED,
-	  rt/html/Elements/FreesideNewCust,
-	  rt/html/Elements/FreesideSearch, rt/html/Elements/Header,
-	  rt/html/Elements/PageLayout, rt/html/Elements/SimpleSearch,
-	  rt/html/Elements/Tabs, rt/html/Elements/TitleBoxStart,
-	  rt/html/Search/Bulk.html: more ACL and re-skinning work, now with
-	  RT!
+	  httemplate/search/cust_main.cgi, rt/FREESIDE_MODIFIED: more ACL
+	  and re-skinning work, now with RT!
 
 2006-05-14 09:47  ivan
 
@@ -19002,21 +20818,11 @@
 
 2005-10-15 04:13  ivan
 
-	* README.1.5.8, rt/html/Elements/Header, rt/html/NoAuth/webrt.css:
-	  land RT 3.4.4 on HEAD
+	* README.1.5.8: land RT 3.4.4 on HEAD
 
 2005-10-15 02:33  ivan
 
-	* rt/: etc/RT_SiteConfig.pm, html/Elements/Footer,
-	  html/Elements/Header, html/Elements/Menu,
-	  html/Elements/PageLayout, html/Elements/SimpleSearch,
-	  html/Elements/Tabs, html/Elements/CollectionAsTable/Row,
-	  html/NoAuth/webrt.css, html/NoAuth/images/back_home.gif,
-	  html/NoAuth/images/head_requestracker.gif,
-	  html/NoAuth/images/rt.jpg, html/NoAuth/images/spacer.gif,
-	  html/NoAuth/images/squares_blue.gif,
-	  html/Ticket/Elements/ShowSummary, html/Ticket/Elements/Tabs,
-	  lib/RT/TicketCustomFieldValue.pm,
+	* rt/: etc/RT_SiteConfig.pm, lib/RT/TicketCustomFieldValue.pm,
 	  lib/RT/TicketCustomFieldValue_Overlay.pm,
 	  lib/RT/TicketCustomFieldValues.pm,
 	  lib/RT/TicketCustomFieldValues_Overlay.pm,
@@ -19030,23 +20836,9 @@
 	* rt/: docs/design_docs/realflow.txt,
 	  docs/design_docs/3.3-schema-redesign.txt,
 	  docs/design_docs/rt-mvc, sbin/rt-dump-database.in,
-	  html/Admin/autohandler, html/Admin/Users/CustomFields.html,
-	  html/Admin/Users/History.html, html/Admin/Users/Memberships.html,
-	  html/Elements/EditCustomField,
-	  html/Elements/EditCustomFieldImage,
-	  html/Elements/EditCustomFieldBinary,
-	  html/Elements/EditCustomFieldSelect,
-	  html/Elements/ShowCustomFieldBinary,
-	  html/Elements/ShowCustomFieldImage,
-	  html/Elements/ShowCustomFieldWikitext,
-	  html/Elements/ShowCustomFields,
-	  html/Elements/EditCustomFieldFreeform,
-	  html/Elements/EditCustomFieldText,
-	  html/Elements/EditCustomFieldWikitext,
-	  html/Elements/ShowMemberships, lib/t/setup_regression.t,
-	  lib/t/create_data.pl, lib/RT/SavedSearch.pm,
-	  lib/RT/ObjectCustomFields.pm, lib/RT/CustomFieldValue_Overlay.pm,
-	  lib/RT/ObjectCustomField.pm,
+	  lib/t/setup_regression.t, lib/t/create_data.pl,
+	  lib/RT/SavedSearch.pm, lib/RT/ObjectCustomFields.pm,
+	  lib/RT/CustomFieldValue_Overlay.pm, lib/RT/ObjectCustomField.pm,
 	  lib/RT/ObjectCustomFields_Overlay.pm, lib/RT/SavedSearches.pm,
 	  lib/RT/ObjectCustomFieldValues.pm,
 	  lib/RT/ObjectCustomFieldValue.pm,
@@ -19852,10 +21644,6 @@
 	  invoice events and then reprint or reemail (boy was that a bit
 	  more work than i expected), closes: Bug#946
 
-2005-06-01 17:02  ivan
-
-	* rt/html/Ticket/Elements/AddCustomers: remove warning
-
 2005-06-01 16:40  ivan
 
 	* httemplate/view/cust_bill.cgi: align terminology for consistancy.
@@ -20095,10 +21883,6 @@
 
 	* FS/FS/export_svc.pm: new progressbar display causes a silly error
 	  in edge case where no dup checking necessary, closes: Bug#1226
-
-2005-05-10 11:30  khoff
-
-	* rt/html/Ticket/Elements/EditCustomers: Missing '</A>' tag.
 
 2005-05-05 06:04  ivan
 
@@ -20690,10 +22474,7 @@
 
 2005-03-10 17:34  khoff
 
-	* rt/: etc/RT_SiteConfig.pm, html/Elements/Header,
-	  html/Elements/Menu, html/Elements/Tabs,
-	  html/Ticket/Elements/AddCustomers,
-	  html/Ticket/Elements/ShowCustomers, lib/RT/URI/freeside.pm,
+	* rt/: etc/RT_SiteConfig.pm, lib/RT/URI/freeside.pm,
 	  lib/RT/URI/freeside/Internal.pm, lib/RT/URI/freeside/XMLRPC.pm:
 	  Reorganized RT->Freeside integration to support Internal (single
 	  RT/Freeside database) and XMLRPC interfaces.	All the UI stuff is
@@ -21336,11 +23117,6 @@
 	* rt/FREESIDE_MODIFIED: backport from 3.3-TESTING to fix XSS on
 	  ticket lists
 
-2004-12-20 03:29  ivan
-
-	* rt/html/Elements/CollectionAsTable/Row: backport from 3.3-TESTING
-	  to fix XSS on ticket lists
-
 2004-12-20 02:13  ivan
 
 	* FS/FS/Misc.pm, FS/FS/cust_main.pm, httemplate/view/cust_bill.cgi:
@@ -21410,10 +23186,6 @@
 	* FS/FS/CGI.pm: ui tweak for small customer view - line up billing
 	  and service address boxes
 
-2004-12-10 13:35  ivan
-
-	* rt/html/Elements/Header: fix link to freeside docs in RT header
-
 2004-12-10 13:25  ivan
 
 	* httemplate/docs/: overview-new.dia, overview-new.png: move the
@@ -21422,10 +23194,6 @@
 2004-12-09 16:51  ivan
 
 	* FS/bin/freeside-setup: promo codes not unique...
-
-2004-12-09 16:04  ivan
-
-	* rt/html/Elements/Tabs: fix link back to billing main
 
 2004-12-09 15:14  ivan
 
@@ -21565,10 +23333,6 @@
 
 	* httemplate/search/cust_main.cgi: link customers back to tickets!
 
-2004-12-03 17:09  ivan
-
-	* rt/html/Elements/PageLayout: landing rt 3.2.2
-
 2004-12-03 15:41  ivan
 
 	* htetc/handler.pl: landing rt 3.2.2
@@ -21580,51 +23344,27 @@
 2004-12-03 12:51  ivan
 
 	* rt/: config, config.pld, bin/rt-commit-handler.in,
-	  etc/upgrade/2.1.71, html/Admin/Users/Prefs.html,
-	  html/Elements/Footer, html/Elements/Header,
-	  html/Elements/PageLayout, html/Elements/ShadedBox,
-	  html/Elements/ShadedInputRow, html/Elements/ShadedRow,
-	  html/Elements/SimpleSearch, html/Elements/Tabs,
-	  html/Elements/ViewUser, html/NoAuth/webrt.css,
-	  html/Search/Listing.html, html/Ticket/Elements/EditLinks,
-	  html/Ticket/Elements/ShowLink, html/Ticket/Elements/ShowLinks,
-	  html/Ticket/Elements/ShowSummary, html/Ticket/Elements/Tabs,
-	  sbin/rt-setup-database.in: landing rt 3.2.2
+	  etc/upgrade/2.1.71, sbin/rt-setup-database.in: landing rt 3.2.2
 
-2004-12-03 12:40  ivan
+2004-12-03 12:38  ivan
 
-	* rt/etc/upgrade/: 3.1.0/acl.Informix, 3.1.0/acl.Oracle,
-	  3.1.0/acl.Pg, 3.1.0/acl.SQLite, 3.1.0/acl.mysql, 3.1.0/content,
-	  3.1.0/schema.Informix, 3.1.0/schema.Oracle, 3.1.0/schema.Pg,
-	  3.1.0/schema.SQLite, 3.1.0/schema.mysql, 3.1.15/content,
-	  3.1.17/content: Initial revision
-
-2004-12-03 12:37  ivan
-
-	* rt/: html/Ticket/ShowEmailRecord.html,
-	  html/Ticket/Elements/ShowTransactionAttachments,
-	  html/Ticket/Elements/PreviewScrips,
-	  html/Ticket/Elements/ShowGroupMembers,
-	  html/Ticket/Elements/ShowUserEntry, html/Search/Build.html,
-	  html/Search/Edit.html, html/Search/Results.html,
-	  html/Search/Results.rdf, html/Search/Results.tsv,
-	  html/Elements/ShowLinks, html/Elements/EditLinks,
-	  html/Elements/QuickCreate, html/Elements/ScrubHTML,
-	  html/Elements/TicketList, html/Elements/ShowLink,
-	  html/Elements/TitleBox, html/Elements/CollectionAsTable/Header,
-	  html/Elements/CollectionAsTable/ParseFormat,
-	  html/Elements/CollectionAsTable/Row,
-	  html/NoAuth/images/autohandler, lib/t/05cronsupport.pl.in,
-	  lib/RT/Attributes.pm, lib/RT/Attribute_Overlay.pm,
-	  lib/RT/Attributes_Overlay.pm, lib/RT/Attribute.pm,
-	  lib/RT/I18N/en_malkovich.po,
+	* rt/: lib/t/05cronsupport.pl.in, lib/RT/Attributes.pm,
+	  lib/RT/Attribute_Overlay.pm, lib/RT/Attributes_Overlay.pm,
+	  lib/RT/Attribute.pm, lib/RT/I18N/en_malkovich.po,
 	  lib/RT/Action/RecordCorrespondence.pm,
 	  lib/RT/Action/RecordComment.pm,
 	  lib/RT/Interface/Email/Auth/GnuPG.pm,
 	  lib/RT/Condition/PriorityChange.pm,
 	  lib/RT/Interface/Web/Handler.pm, lib/RT/Search/FromSQL.pm,
-	  bin/standalone_httpd.in, etc/schema.Sybase, etc/acl.Sybase:
-	  Initial revision
+	  bin/standalone_httpd.in, etc/schema.Sybase, etc/acl.Sybase,
+	  etc/upgrade/3.1.0/acl.Informix, etc/upgrade/3.1.0/acl.Oracle,
+	  etc/upgrade/3.1.0/acl.Pg, etc/upgrade/3.1.0/acl.SQLite,
+	  etc/upgrade/3.1.0/acl.mysql, etc/upgrade/3.1.0/content,
+	  etc/upgrade/3.1.0/schema.Informix,
+	  etc/upgrade/3.1.0/schema.Oracle, etc/upgrade/3.1.0/schema.Pg,
+	  etc/upgrade/3.1.0/schema.SQLite, etc/upgrade/3.1.0/schema.mysql,
+	  etc/upgrade/3.1.15/content, etc/upgrade/3.1.17/content: Initial
+	  revision
 
 2004-12-03 12:27  ivan
 
@@ -21633,23 +23373,15 @@
 
 2004-12-02 02:18  ivan
 
-	* httemplate/search/cust_main.cgi,
-	  rt/html/Ticket/Elements/AddCustomers,
-	  rt/html/Ticket/Elements/EditCustomers: fix license boilerplate
-	  and search sorting
+	* httemplate/search/cust_main.cgi: fix license boilerplate and
+	  search sorting
 
 2004-12-02 01:59  ivan
 
 	* httemplate/images/small-logo.png, rt/FREESIDE_MODIFIED,
-	  rt/html/Elements/Header, rt/html/Elements/PageLayout,
 	  FS/FS/CGI.pm, FS/FS/Conf.pm, FS/FS/TicketSystem.pm,
 	  FS/FS/cust_main.pm, FS/FS/ClientAPI/Agent.pm,
-	  httemplate/index.html, rt/html/Ticket/ModifyCustomers.html,
-	  rt/html/Ticket/Elements/AddCustomers,
-	  rt/html/Ticket/Elements/EditCustomers,
-	  rt/html/Ticket/Elements/ShowCustomers,
-	  rt/html/Ticket/Elements/ShowSummary,
-	  rt/html/Ticket/Elements/Tabs, FS/FS/TicketSystem/RT_Internal.pm,
+	  httemplate/index.html, FS/FS/TicketSystem/RT_Internal.pm,
 	  FS/FS/TicketSystem/RT_Libs.pm, htetc/global.asa,
 	  htetc/handler.pl, httemplate/search/cust_main.cgi,
 	  rt/lib/RT/Interface/Web_Vendor.pm, rt/lib/RT/URI/freeside.pm:
@@ -21686,13 +23418,9 @@
 
 	* FS/FS/Conf.pm, FS/FS/TicketSystem/RT_External.pm,
 	  FS/FS/TicketSystem/RT_Internal.pm, FS/FS/TicketSystem/RT_Libs.pm,
-	  httemplate/index.html, rt/FREESIDE_MODIFIED,
-	  rt/html/Elements/Footer, rt/html/Elements/Header,
-	  rt/html/Elements/PageLayout, rt/html/Elements/SimpleSearch,
-	  rt/html/Elements/Tabs, ANNOUNCE.1.5.0, Makefile, FS/FS.pm,
-	  htetc/global.asa, htetc/handler.pl, rt/html/NoAuth/webrt.css,
-	  rt/html/NoAuth/images/small-logo.png: ticket system integration
-	  framework and skin RT
+	  httemplate/index.html, rt/FREESIDE_MODIFIED, ANNOUNCE.1.5.0,
+	  Makefile, FS/FS.pm, htetc/global.asa, htetc/handler.pl: ticket
+	  system integration framework and skin RT
 
 2004-11-26 01:39  ivan
 
@@ -21818,11 +23546,9 @@
 	* rt/sbin/rt-setup-database.in: merge in changes to
 	  rt-setup-database
 
-2004-11-11 04:11  ivan
+2004-11-11 04:12  ivan
 
-	* rt/: html/Ticket/Elements/LoadTextAttachments,
-	  html/Ticket/Elements/FindAttachments, html/Elements/QueryString,
-	  lib/RT/I18N/hu.po, lib/RT/I18N/da.po: Initial revision
+	* rt/lib/RT/I18N/: hu.po, da.po: Initial revision
 
 2004-11-09 03:42  ivan
 
@@ -23756,7 +25482,7 @@
 	* rt/: README.Oracle, UPGRADING, bin/rt.in,
 	  docs/rt3-schema-relationships.dot, etc/acl.Informix,
 	  etc/drop.Informix, etc/drop.Oracle, etc/schema.Informix,
-	  html/Elements/SelectLang, lib/RT/StyleGuide.pod: Initial revision
+	  lib/RT/StyleGuide.pod: Initial revision
 
 2004-03-10 17:05  ivan
 
@@ -25516,71 +27242,7 @@
 	  docs/design_docs/ticket_templates, etc/RT_Config.pm,
 	  etc/RT_Config.pm.in, etc/RT_SiteConfig.pm, etc/constraints.mysql,
 	  etc/initialdata, etc/schema.SQLite, etc/upgrade/2.1.71,
-	  html/autohandler, html/index.html, html/l, html/Admin/index.html,
-	  html/Admin/Users/Modify.html, html/Admin/Users/Prefs.html,
-	  html/Admin/Users/index.html, html/Elements/BevelBoxRaisedEnd,
-	  html/Elements/BevelBoxRaisedStart, html/Elements/Callback,
-	  html/Elements/Checkbox, html/Elements/CreateTicket,
-	  html/Elements/Error, html/Elements/Footer,
-	  html/Elements/GotoTicket, html/Elements/Header,
-	  html/Elements/ListActions, html/Elements/Login,
-	  html/Elements/Menu, html/Elements/MessageBox,
-	  html/Elements/MyRequests, html/Elements/MyTickets,
-	  html/Elements/PageLayout, html/Elements/Quicksearch,
-	  html/Elements/Refresh, html/Elements/Section,
-	  html/Elements/SelectAttachmentField, html/Elements/SelectBoolean,
-	  html/Elements/SelectCustomFieldOperator,
-	  html/Elements/SelectCustomFieldValue, html/Elements/SelectDate,
-	  html/Elements/SelectDateRelation, html/Elements/SelectDateType,
-	  html/Elements/SelectEqualityOperator, html/Elements/SelectGroups,
-	  html/Elements/SelectLinkType, html/Elements/SelectMatch,
-	  html/Elements/SelectNewTicketQueue, html/Elements/SelectOwner,
-	  html/Elements/SelectQueue, html/Elements/SelectResultsPerPage,
-	  html/Elements/SelectSortOrder, html/Elements/SelectStatus,
-	  html/Elements/SelectTicketSortBy,
-	  html/Elements/SelectTicketTypes, html/Elements/SelectUsers,
-	  html/Elements/SelectWatcherType,
-	  html/Elements/SetupSessionCookie, html/Elements/ShadedBox,
-	  html/Elements/ShadedInputRow, html/Elements/ShadedRow,
-	  html/Elements/SimpleSearch, html/Elements/Submit,
-	  html/Elements/Tabs, html/Elements/TitleBoxEnd,
-	  html/Elements/TitleBoxStart, html/Elements/ViewUser,
-	  html/NoAuth/Logout.html, html/NoAuth/Reminder.html,
-	  html/NoAuth/webrt.css, html/NoAuth/images/back_home.gif,
-	  html/NoAuth/images/bplogo.gif, html/NoAuth/images/favicon.png,
-	  html/NoAuth/images/head_requestracker.gif,
-	  html/NoAuth/images/rt.jpg, html/NoAuth/images/space.gif,
-	  html/NoAuth/images/spacer.gif,
-	  html/NoAuth/images/squares_blue.gif, html/Search/Bulk.html,
-	  html/Search/Listing.html, html/Ticket/Create.html,
-	  html/Ticket/Display.html, html/Ticket/History.html,
-	  html/Ticket/Modify.html, html/Ticket/ModifyAll.html,
-	  html/Ticket/ModifyDates.html, html/Ticket/ModifyLinks.html,
-	  html/Ticket/ModifyPeople.html, html/Ticket/Update.html,
-	  html/Ticket/Elements/AddWatchers, html/Ticket/Elements/BulkLinks,
-	  html/Ticket/Elements/EditBasics,
-	  html/Ticket/Elements/EditCustomField,
-	  html/Ticket/Elements/EditCustomFields,
-	  html/Ticket/Elements/EditDates, html/Ticket/Elements/EditLinks,
-	  html/Ticket/Elements/EditPeople,
-	  html/Ticket/Elements/EditWatchers,
-	  html/Ticket/Elements/ShowAttachments,
-	  html/Ticket/Elements/ShowBasics,
-	  html/Ticket/Elements/ShowCustomFields,
-	  html/Ticket/Elements/ShowDates,
-	  html/Ticket/Elements/ShowDependencies,
-	  html/Ticket/Elements/ShowHistory, html/Ticket/Elements/ShowLink,
-	  html/Ticket/Elements/ShowLinks,
-	  html/Ticket/Elements/ShowMemberOf,
-	  html/Ticket/Elements/ShowMembers,
-	  html/Ticket/Elements/ShowMessageHeaders,
-	  html/Ticket/Elements/ShowMessageStanza,
-	  html/Ticket/Elements/ShowPeople,
-	  html/Ticket/Elements/ShowReferences,
-	  html/Ticket/Elements/ShowRequestor,
-	  html/Ticket/Elements/ShowSummary,
-	  html/Ticket/Elements/ShowTransaction, html/Ticket/Elements/Tabs,
-	  html/User/Delegation.html, html/User/Prefs.html, lib/RT.pm.in,
+	  html/autohandler, html/index.html, html/l, lib/RT.pm.in,
 	  lib/RT/ACE_Overlay.pm, lib/RT/ACL_Overlay.pm,
 	  lib/RT/Attachment_Overlay.pm, lib/RT/Attachments_Overlay.pm,
 	  lib/RT/Base.pm, lib/RT/CachedGroupMember.pm,
@@ -26001,6 +27663,11 @@
 2003-06-02 05:22  ivan
 
 	* FS/FS/cust_pkg.pm: add last_bill field to manpage
+
+2003-05-30 02:40  ivan
+
+	* httemplate/docs/man/FS/part_export/.cvs_is_on_crack: force
+	  inclusion of httemplate/docs/man hierarchy
 
 2003-05-30 02:22  ivan
 
@@ -30559,6 +32226,10 @@
 
 	* httemplate/docs/install.html: doc update
 
+2002-02-04 09:12  ivan
+
+	* httemplate/docs/man/FS/: Bill.html, Invoice.html: ancient files
+
 2002-02-04 09:06  ivan
 
 	* Makefile, README.1.4.0pre4567-8, README.1.4.0pre8: 1.4.0pre8!
@@ -30647,11 +32318,60 @@
 	  new CGI;   &cgisuidsetup(); from all templates.  should work
 	  better under Mason.
 
+2002-01-29 09:46  ivan
+
+	* httemplate/docs/man/: FS.html, FS/CGI.html, FS/CGIwrapper.html,
+	  FS/Conf.html, FS/Record.html, FS/SessionClient.html,
+	  FS/SignupClient.html, FS/UID.html, FS/agent.html,
+	  FS/agent_type.html, FS/cust_bill.html, FS/cust_bill_pkg.html,
+	  FS/cust_credit.html, FS/cust_main.html, FS/cust_main_county.html,
+	  FS/cust_main_invoice.html, FS/cust_pay.html,
+	  FS/cust_pay_batch.html, FS/cust_pkg.html, FS/cust_refund.html,
+	  FS/cust_svc.html, FS/domain_record.html, FS/nas.html,
+	  FS/part_pkg.html, FS/part_referral.html, FS/part_svc.html,
+	  FS/pkg_svc.html, FS/port.html, FS/prepay_credit.html,
+	  FS/session.html, FS/svc_Common.html, FS/svc_acct.html,
+	  FS/svc_acct_pop.html, FS/svc_acct_sm.html, FS/svc_domain.html,
+	  FS/svc_www.html, FS/type_pkgs.html: these are all auto-generated
+	  by the installation; don't check them into CVS (probably should
+	  generate them for a release tarball though)
+
 2002-01-29 09:42  ivan
 
 	* README.1.4.0pre4567-8, FS/FS/part_bill_event.pm, bin/fs-setup,
-	  httemplate/docs/schema.html, httemplate/docs/upgrade8.html:
-	  weight, plan and plandata fields in part_bill_event
+	  httemplate/docs/schema.html, httemplate/docs/upgrade8.html,
+	  httemplate/docs/man/FS/SessionClient.html,
+	  httemplate/docs/man/FS/UID.html,
+	  httemplate/docs/man/FS/agent.html,
+	  httemplate/docs/man/FS/agent_type.html,
+	  httemplate/docs/man/FS/cust_bill.html,
+	  httemplate/docs/man/FS/cust_bill_pkg.html,
+	  httemplate/docs/man/FS/cust_credit.html,
+	  httemplate/docs/man/FS/cust_main.html,
+	  httemplate/docs/man/FS/cust_main_county.html,
+	  httemplate/docs/man/FS/cust_main_invoice.html,
+	  httemplate/docs/man/FS/cust_pay.html,
+	  httemplate/docs/man/FS/cust_pay_batch.html,
+	  httemplate/docs/man/FS/cust_pkg.html,
+	  httemplate/docs/man/FS/cust_refund.html,
+	  httemplate/docs/man/FS/cust_svc.html,
+	  httemplate/docs/man/FS/domain_record.html,
+	  httemplate/docs/man/FS/nas.html,
+	  httemplate/docs/man/FS/part_pkg.html,
+	  httemplate/docs/man/FS/part_referral.html,
+	  httemplate/docs/man/FS/part_svc.html,
+	  httemplate/docs/man/FS/pkg_svc.html,
+	  httemplate/docs/man/FS/port.html,
+	  httemplate/docs/man/FS/prepay_credit.html,
+	  httemplate/docs/man/FS/session.html,
+	  httemplate/docs/man/FS/svc_Common.html,
+	  httemplate/docs/man/FS/svc_acct.html,
+	  httemplate/docs/man/FS/svc_acct_pop.html,
+	  httemplate/docs/man/FS/svc_acct_sm.html,
+	  httemplate/docs/man/FS/svc_domain.html,
+	  httemplate/docs/man/FS/svc_www.html,
+	  httemplate/docs/man/FS/type_pkgs.html: weight, plan and plandata
+	  fields in part_bill_event
 
 2002-01-29 08:33  ivan
 
@@ -30659,7 +32379,42 @@
 	  FS/FS/cust_pay.pm, FS/FS/cust_pkg.pm, FS/FS/cust_svc.pm,
 	  FS/FS/svc_acct.pm, bin/pod2x, htetc/global.asa, htetc/handler.pl,
 	  httemplate/index.html, httemplate/browse/part_bill_event.cgi,
-	  httemplate/docs/install.html,
+	  httemplate/docs/install.html, httemplate/docs/man/FS.html,
+	  httemplate/docs/man/FS/CGI.html,
+	  httemplate/docs/man/FS/Conf.html,
+	  httemplate/docs/man/FS/Record.html,
+	  httemplate/docs/man/FS/SessionClient.html,
+	  httemplate/docs/man/FS/SignupClient.html,
+	  httemplate/docs/man/FS/UID.html,
+	  httemplate/docs/man/FS/agent.html,
+	  httemplate/docs/man/FS/agent_type.html,
+	  httemplate/docs/man/FS/cust_bill.html,
+	  httemplate/docs/man/FS/cust_bill_pkg.html,
+	  httemplate/docs/man/FS/cust_credit.html,
+	  httemplate/docs/man/FS/cust_main.html,
+	  httemplate/docs/man/FS/cust_main_county.html,
+	  httemplate/docs/man/FS/cust_main_invoice.html,
+	  httemplate/docs/man/FS/cust_pay.html,
+	  httemplate/docs/man/FS/cust_pay_batch.html,
+	  httemplate/docs/man/FS/cust_pkg.html,
+	  httemplate/docs/man/FS/cust_refund.html,
+	  httemplate/docs/man/FS/cust_svc.html,
+	  httemplate/docs/man/FS/domain_record.html,
+	  httemplate/docs/man/FS/nas.html,
+	  httemplate/docs/man/FS/part_pkg.html,
+	  httemplate/docs/man/FS/part_referral.html,
+	  httemplate/docs/man/FS/part_svc.html,
+	  httemplate/docs/man/FS/pkg_svc.html,
+	  httemplate/docs/man/FS/port.html,
+	  httemplate/docs/man/FS/prepay_credit.html,
+	  httemplate/docs/man/FS/session.html,
+	  httemplate/docs/man/FS/svc_Common.html,
+	  httemplate/docs/man/FS/svc_acct.html,
+	  httemplate/docs/man/FS/svc_acct_pop.html,
+	  httemplate/docs/man/FS/svc_acct_sm.html,
+	  httemplate/docs/man/FS/svc_domain.html,
+	  httemplate/docs/man/FS/svc_www.html,
+	  httemplate/docs/man/FS/type_pkgs.html,
 	  httemplate/edit/part_bill_event.cgi,
 	  httemplate/edit/part_pkg.cgi,
 	  httemplate/edit/process/part_bill_event.cgi: - web interface for
@@ -32578,7 +34333,45 @@
 	  httemplate/docs/upgrade3.html, httemplate/docs/upgrade4.html,
 	  httemplate/docs/upgrade5.html, httemplate/docs/upgrade6.html,
 	  httemplate/docs/upgrade7.html, httemplate/docs/upgrade8.html,
-	  bin/fs-setup, bin/masonize, bin/pod2x, httemplate/edit/agent.cgi,
+	  httemplate/docs/man/FS.html, httemplate/docs/man/FS/Bill.html,
+	  httemplate/docs/man/FS/CGI.html,
+	  httemplate/docs/man/FS/CGIwrapper.html,
+	  httemplate/docs/man/FS/Conf.html,
+	  httemplate/docs/man/FS/Invoice.html,
+	  httemplate/docs/man/FS/Record.html,
+	  httemplate/docs/man/FS/SessionClient.html,
+	  httemplate/docs/man/FS/SignupClient.html,
+	  httemplate/docs/man/FS/UID.html,
+	  httemplate/docs/man/FS/agent.html,
+	  httemplate/docs/man/FS/agent_type.html,
+	  httemplate/docs/man/FS/cust_bill.html,
+	  httemplate/docs/man/FS/cust_bill_pkg.html,
+	  httemplate/docs/man/FS/cust_credit.html,
+	  httemplate/docs/man/FS/cust_main.html,
+	  httemplate/docs/man/FS/cust_main_county.html,
+	  httemplate/docs/man/FS/cust_main_invoice.html,
+	  httemplate/docs/man/FS/cust_pay.html,
+	  httemplate/docs/man/FS/cust_pay_batch.html,
+	  httemplate/docs/man/FS/cust_pkg.html,
+	  httemplate/docs/man/FS/cust_refund.html,
+	  httemplate/docs/man/FS/cust_svc.html,
+	  httemplate/docs/man/FS/domain_record.html,
+	  httemplate/docs/man/FS/nas.html,
+	  httemplate/docs/man/FS/part_pkg.html,
+	  httemplate/docs/man/FS/part_referral.html,
+	  httemplate/docs/man/FS/part_svc.html,
+	  httemplate/docs/man/FS/pkg_svc.html,
+	  httemplate/docs/man/FS/port.html,
+	  httemplate/docs/man/FS/prepay_credit.html,
+	  httemplate/docs/man/FS/session.html,
+	  httemplate/docs/man/FS/svc_Common.html,
+	  httemplate/docs/man/FS/svc_acct.html,
+	  httemplate/docs/man/FS/svc_acct_pop.html,
+	  httemplate/docs/man/FS/svc_acct_sm.html,
+	  httemplate/docs/man/FS/svc_domain.html,
+	  httemplate/docs/man/FS/svc_www.html,
+	  httemplate/docs/man/FS/type_pkgs.html, bin/fs-setup,
+	  bin/masonize, bin/pod2x, httemplate/edit/agent.cgi,
 	  httemplate/edit/agent_type.cgi, httemplate/edit/cust_credit.cgi,
 	  httemplate/edit/cust_main.cgi,
 	  httemplate/edit/cust_main_county-expand.cgi,
