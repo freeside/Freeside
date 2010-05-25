@@ -34,6 +34,7 @@
                    $inventory_class->classname,
                    'Service',
                    FS::UI::Web::cust_header(),
+                   '', # checkbox column
                  ],
 
                  'fields'      => [
@@ -56,6 +57,7 @@
                    },
 
                    \&FS::UI::Web::cust_fields,
+                   $sub_checkbox,
 
                  ],
                  'align'       => 'rll'.FS::UI::Web::cust_aligns(),
@@ -79,7 +81,12 @@
                               '',
                               FS::UI::Web::cust_styles(),
                             ],
-
+                  'html_form' => 
+                    qq!
+<FORM NAME="itemForm" ACTION="$p/misc/inventory_item-move.cgi" METHOD="POST">
+<INPUT TYPE="hidden" NAME="classnum" VALUE="$classnum">
+<INPUT TYPE="hidden" NAME="avail"    VALUE="! .$cgi->param('avail') . '">', #'
+                  'html_foot' => $sub_foot,
              )
 %>
 <%init>
@@ -151,5 +158,41 @@ my $addl_from = ' LEFT JOIN cust_svc  USING ( svcnum  ) '.
                 ' LEFT JOIN part_svc  USING ( svcpart ) '.
                 ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
                 ' LEFT JOIN cust_main USING ( custnum ) ';
+my $areboxes = 0;
+
+my $sub_checkbox = sub {
+  my $item = $_[0];
+  my $itemnum = $item->itemnum;
+  #return '' if $item->svcnum;
+  $areboxes = 1;
+  return qq!<INPUT NAME="itemnum$itemnum" TYPE="checkbox" VALUE="1">!;
+};
+
+my $sub_foot = sub {
+  return if !$areboxes;
+  my $foot =
+'<BR><INPUT TYPE="button" VALUE="Select all" onClick="setAll(true)">
+<INPUT TYPE="button" VALUE="Unselect all" onClick="setAll(false)">
+<BR><INPUT TYPE="submit" NAME="action" VALUE="Move to agent">
+<SELECT NAME="move_agentnum">';
+  foreach my $agent ($curuser->agents) {
+    $foot .= '<OPTION VALUE="'.$agent->agentnum.'">'.
+             $agent->agent . '</OPTION>
+             ';
+  }
+  $foot .= '</SELECT>
+<SCRIPT TYPE="text/javascript">
+ function setAll(setTo) {
+   theForm = document.itemForm;
+   for (i=0,n=theForm.elements.length;i<n;i++)
+     if (theForm.elements[i].name.indexOf("itemnum") != -1)
+       theForm.elements[i].checked = setTo;
+ }
+</SCRIPT>';
+  $foot;
+};
+    
+
+  
 
 </%init>
