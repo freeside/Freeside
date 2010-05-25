@@ -160,10 +160,6 @@
 
 }
 
-.hidden {
- display: none;
-}
-
 .titlebox .titlebox-title .widget a {
   display: block;
   margin: 0;
@@ -189,4 +185,8 @@
 
 .titlebox.rolled-up .titlebox-title .widget a {
     background-image: url(<%RT->Config->Get('WebPath')%>/NoAuth/images/css/rolldown-arrow.gif);
+}
+
+.titlebox hr.clear {
+    display: none;
 }
