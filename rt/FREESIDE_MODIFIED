@@ -16,6 +16,7 @@ lib/RT/URI/freeside.pm
 lib/RT/URI/freeside/Internal.pm
 lib/RT/URI/freeside/XMLRPC.pm
  share/html/Admin/Users/Modify.html
+ share/html/Elements/ColumnMap
  share/html/Elements/CollectionList
  share/html/Elements/Header
  share/html/Elements/PageLayout
@@ -23,6 +24,7 @@ lib/RT/URI/freeside/XMLRPC.pm
  share/html/Elements/SelectDate
  share/html/Elements/Footer
  html/Ticket/Create.html #XXX TODO
+ share/html/Search/Build.html
  share/html/Ticket/Display.html
 share/html/Ticket/Elements/AddCustomers
 share/html/Ticket/Elements/EditCustomers
