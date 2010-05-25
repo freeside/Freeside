@@ -1,3 +1,11 @@
+2010-05-25 05:33  ivan
+
+	* Makefile: fix the rel target
+
+2010-05-25 05:30  ivan
+
+	* ChangeLog, rpm/freeside.spec, debian/changelog: Updated for 2.1.0
+
 2010-05-25 05:16  ivan
 
 	* Makefile: its time
