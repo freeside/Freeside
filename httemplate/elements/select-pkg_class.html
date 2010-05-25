@@ -3,7 +3,7 @@
                  'name_col'    => 'classname',
                  'value'       => $classnum,
                  'empty_label' => '(none)',
-                 'hashref'     => { 'disabled' => '' },
+                 'hashref'     => \%hash,
                  %opt,
              )
 %>
@@ -11,6 +11,10 @@
 
 my %opt = @_;
 my $classnum = $opt{'curr_value'} || $opt{'value'};
+
+my %hash = ();
+$hash{'disabled'} = '' unless $opt{'showdisabled'};
+
 
 $opt{'records'} = delete $opt{'pkg_class'}
   if $opt{'pkg_class'};
