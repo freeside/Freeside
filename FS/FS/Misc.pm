@@ -355,8 +355,9 @@ sub send_email {
   }
 
   eval { sendmail($message, { transport => $transport }); };
-  ref($@) ? ( $@->code ? $@->code.' ' : '' ). $@->message
-          : $@;
+  ref($@) eq 'Email::Sender::Failure'
+    ? ( $@->code ? $@->code.' ' : '' ). $@->message
+    : $@;
 
 }
 
