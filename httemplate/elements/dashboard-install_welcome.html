@@ -1,0 +1,10 @@
+% if ( $which ) {
+<% include("dashboard-install_welcome-$which.html") %>
+% }
+<%init>
+
+my $conf = new FS::Conf;
+
+my $which = $conf->config('dashboard-install_welcome');
+
+</%init>
