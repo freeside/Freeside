@@ -160,7 +160,7 @@ my $COLUMN_MAP = {
     #WebRequestPathDir => { value => sub { substr( $m->request_comp->dir_path, 1 ) } },
     WebRequestPathDir => { value => sub {
       my $wrpd = substr( $m->request_comp->dir_path, 1 );
-      $wrpd =~ s(rt/)(); #this is hacky, dunno why this happens
+      $wrpd =~ s(^rt/)(); #hacky, dunno why this happens
       $wrpd;
     } },
 };
