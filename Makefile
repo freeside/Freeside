@@ -405,7 +405,7 @@ release:
 	cvs commit -m "Updated for ${VERSION}" debian/changelog
 
 	# Make sure other people's changes are pulled in!
-	cvs update -d -P
+	cvs update -d -P || true #it exits 1...
 
 	# Tag the release
 	#cvs tag ${TAG}
