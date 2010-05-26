@@ -217,6 +217,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::part_pkg_report_option;
   use FS::cust_attachment;
   use FS::h_cust_pkg;
+  use FS::h_inventory_item;
   use FS::h_svc_acct;
   use FS::h_svc_broadband;
   use FS::h_svc_domain;
