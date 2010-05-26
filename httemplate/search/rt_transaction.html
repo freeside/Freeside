@@ -91,6 +91,6 @@ my $query = {
 my $count_query =
   "SELECT COUNT(*), SUM($transactiontime) FROM Transactions $join $where";
 
-my $link = [ "${p}rt/Ticket/Display.html?id=", sub { shift->get('id'); } ];
+my $link = [ "${p}rt/Ticket/Display.html?id=", sub { shift->get('ticketid'); } ];
 
 </%init>
