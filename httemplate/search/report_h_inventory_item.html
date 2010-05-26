@@ -1,0 +1,25 @@
+<% include('/elements/header.html', 'Inventory activity report') %>
+
+<FORM ACTION="h_inventory_item.html" METHOD="GET">
+<TABLE BGCOLOR="#cccccc" CELLSPACING="0">
+  <TR>
+    <TD ALIGN="right">Inventory class: </TD>
+    <TD><% include('/elements/select-table.html',
+                      'element_name' => 'classnum',
+                      'table'        => 'inventory_class',
+                      'name_col'     => 'classname',
+                      'value'        => '',
+                      'empty_label'  => '(all)') %></TD>
+  </TR>
+  <TR>
+    <TD ALIGN="right">Time period: </TD>
+    <TD><% include('/elements/select-month_year.html') %></TD>
+  </TR>
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="Get Report">
+</FORM>
+
+<%init>
+</%init>
