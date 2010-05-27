@@ -1,4 +1,3 @@
-%
 %   if ( exists($opt{'redirect'}) && $opt{'redirect'}
 %        && scalar(@$rows) == 1 && $total == 1
 %        && $type ne 'html-print'
@@ -144,18 +143,18 @@
                 Download full results<BR>
 
 %               $cgi->param('_type', "$xlsname.xls" ); 
-                as <A HREF="<% $self_url %>">Excel spreadsheet</A><BR>
+                as <A HREF="<% $cgi->self_url %>">Excel spreadsheet</A><BR>
 
 %               $cgi->param('_type', 'csv'); 
-                as <A HREF="<% $self_url %>">CSV file</A><BR>
+                as <A HREF="<% $cgi->self_url %>">CSV file</A><BR>
 
 %             if ( defined($opt{xml_elements}) ) {
 %               $cgi->param('_type', 'xml'); 
-                as <A HREF="<% $self_url %>">XML file</A><BR>
+                as <A HREF="<% $cgi->self_url %>">XML file</A><BR>
 %             }
 
 %               $cgi->param('_type', 'html-print'); 
-                as <A HREF="<% $self_url %>">printable copy</A>
+                as <A HREF="<% $cgi->self_url %>">printable copy</A>
 
               </TD>
 %             $cgi->param('_type', "html" ); 
