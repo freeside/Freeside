@@ -80,6 +80,18 @@
                     #      '</table>';
                     #    },
                     sub {
+                      my $cust_pkg = shift;
+                      my $type = $cgi->param('_type') || '';
+                      if ($type =~ /xls|csv/) {
+                        my $cust_svc = $cust_pkg->primary_cust_svc;
+                        if($cust_svc) {
+                          return join ": ",($cust_svc->label)[0,1];
+                        }
+                        else {
+                          return '';
+                        }
+                      }
+                      else {
                           [ map {
                                   [ 
                                     { 'data' => $_->[0]. ':',
@@ -91,9 +103,10 @@
                                                 $_->[2]. '.cgi?'. $_->[3],
                                     },
                                   ];
-                                } shift->labels
+                                } $cust_pkg->labels
                           ];
-                        },
+                      }
+                    }
                   ],
                   'color' => [
                     '',
