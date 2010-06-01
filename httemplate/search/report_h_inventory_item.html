@@ -1,4 +1,4 @@
-<% include('/elements/header.html', 'Inventory activity report') %>
+<% include('/elements/header.html', 'Inventory Activity Report') %>
 
 <FORM ACTION="h_inventory_item.html" METHOD="GET">
 <TABLE BGCOLOR="#cccccc" CELLSPACING="0">
@@ -15,6 +15,7 @@
     <TD ALIGN="right">Time period: </TD>
     <TD><% include('/elements/select-month_year.html') %></TD>
   </TR>
+  <% include('/elements/tr-select-agent.html') %>
 </TABLE>
 
 <BR>

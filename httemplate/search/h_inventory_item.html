@@ -21,10 +21,11 @@
 <%init>
 use Date::Parse 'str2time';
 use Date::Format 'time2str';
-#use Data::Dumper::HTML 'dumper_html';
+use Data::Dumper 'Dumper';
 
-my ($classnum, $month, $year, $sdate, $edate);
+my ($agentnum, $classnum, $month, $year, $sdate, $edate);
 $classnum = $cgi->param('classnum'); # may be empty
+$agentnum = $cgi->param('agentnum'); # may also be empty
 my $classname = '';
 if($classnum) {
   my $class = qsearchs('inventory_class', { classnum => $classnum });
@@ -48,28 +49,37 @@ my @labels = (
   'Quantity Received',
   'Quantity Sold',
   'Quantity Returned',
-  'Closing Balance',
 );
+
+if($agentnum) {
+  push @labels, 'Transfer In', 'Transfer Out';
+}
+push @labels, 'Closing Balance';
+
+my %agent = ('agentnum' => $agentnum) if $agentnum;
+my %class = ('classnum' => $classnum) if $classnum;
+
 my @rows = ( map {[ (0) x $numdays ]} @labels);
 my $opening_balance = scalar(
   qsearch('h_inventory_item', 
           { 'svcnum' => '',
-            ($classnum ? ('classnum' => $classnum) : () ) },
+            %agent,
+            %class },
           FS::h_inventory_item->sql_h_search($sdate) )
   ) || 0;
 
 foreach my $day (0..$numdays-1) {
   $rows[0][$day] = ($day == 0) ? 
                     $opening_balance : 
-                    $rows[4][$day-1];
+                    $rows[-1][$day-1];
 
   my %history;
   foreach my $action (qw(insert replace_new replace_old)) {
     $history{$action} = [
                         qsearch({
                           'table'     => 'h_inventory_item',
-                          'hashref'   => { $classnum ? ('classnum' => $classnum) : (),
-                                           'history_action' => $action },
+                          'hashref'   => { 'history_action' => $action,
+                                           %class },
                           'order_by'  => 'ORDER BY itemnum, history_date',
                           'extra_sql' => 
                             ' AND history_date >= '.($sdate + 86400*$day).
@@ -78,7 +88,8 @@ foreach my $day (0..$numdays-1) {
                         ];
   }
   # Incoming items: simple, just count the inserts
-  $rows[1][$day] = scalar(@{ $history{'insert'} });
+  $rows[1][$day] = scalar(grep {!$agentnum or $_->agentnum == $agentnum}
+                              @{ $history{'insert'} });
 
   # Other item changes: trickier.
   # Notice the order_by parameter above.
@@ -90,21 +101,34 @@ foreach my $day (0..$numdays-1) {
     my $h_old = shift @{ $history{'replace_old'} };
     die "history error" if !defined($h_old) 
                            or $h_old->itemnum != $h_new->itemnum;
-    if(!$h_old->svcnum and $h_new->svcnum) {
-      # item was put into service.
-      $rows[2][$day]++;
+    if(!$agentnum or $h_new->agentnum == $agentnum) {
+      if(!$h_old->svcnum and $h_new->svcnum) {
+        # item was put into service.
+        $rows[2][$day]++;
+      }
+      elsif($h_old->svcnum and !$h_new->svcnum) {
+        # item was taken out of service.
+        $rows[3][$day]++;
+      }
     }
-    elsif($h_old->svcnum and !$h_new->svcnum) {
-      # item was taken out of service.
-      $rows[3][$day]++;
+    if($agentnum and $h_old->agentnum != $agentnum and $h_new->agentnum == $agentnum) {
+      # item was transferred from another agent
+      $rows[4][$day]++;
+    }
+    elsif($agentnum and $h_old->agentnum == $agentnum and $h_new->agentnum != $agentnum) {
+      # item was transferred to another agent
+      $rows[5][$day]++;
     }
     # Add other cases here.
   }
   # Closing balance
-  $rows[4][$day] = $rows[0][$day]
-                 + $rows[1][$day]
-                 - $rows[2][$day]
-                 + $rows[3][$day];
+  $rows[-1][$day] = $rows[0][$day]
+                  + $rows[1][$day]
+                  - $rows[2][$day]
+                  + $rows[3][$day];
+  if($agentnum) {
+    $rows[-1][$day] += $rows[4][$day] - $rows[5][$day];
+  }
 }
 
 </%init>
