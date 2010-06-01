@@ -51,9 +51,17 @@ my @labels = (
   'Closing Balance',
 );
 my @rows = ( map {[ (0) x $numdays ]} @labels);
+my $opening_balance = scalar(
+  qsearch('h_inventory_item', 
+          { 'svcnum' => '',
+            ($classnum ? ('classnum' => $classnum) : () ) },
+          FS::h_inventory_item->sql_h_search($sdate) )
+  ) || 0;
 
 foreach my $day (0..$numdays-1) {
-  $rows[0][$day] = $rows[4][$day-1] if($day > 0);
+  $rows[0][$day] = ($day == 0) ? 
+                    $opening_balance : 
+                    $rows[4][$day-1];
 
   my %history;
   foreach my $action (qw(insert replace_new replace_old)) {
