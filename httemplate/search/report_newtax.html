@@ -1,6 +1,6 @@
 <% include('/elements/header.html', 'Tax Report' ) %>
 
-<FORM ACTION="report_queued_newtax.cgi" METHOD="GET">
+<FORM NAME="newtax">
 
 <TABLE>
 
@@ -10,9 +10,16 @@
 
 </TABLE>
 
-<BR><INPUT TYPE="submit" VALUE="Get Report">
+<BR><INPUT TYPE="button" VALUE="Get Report" onClick="document.newtax.submit.disabled=true; process();">
 
 </FORM>
+
+<% include( '/elements/progress-init.html',
+            'newtax',
+            [ qw( agentnum beginning ending ) ],
+            'report_queued_newtax.cgi',
+          )
+%>
 
 <% include('/elements/footer.html') %>
 <%init>

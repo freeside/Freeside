@@ -69,6 +69,14 @@ function updateStatus( status_statustext ) {
     alert('job done but no url or message specified');
 % } 
 
+  } else if ( status.indexOf('done') > -1 ) {
+
+    document.getElementById("progress_message").innerHTML = "Loading report";
+    document.getElementById("progress_bar").innerHTML = '';
+    document.getElementById("progress_percent").innerHTML = '';
+    document.getElementById("progress_jobnum").innerHTML = '';
+    window.top.location.href = statustext.substr(8, statustext.length-18);
+
   } else if ( status.indexOf('error') > -1 ) {
     document.getElementById("progress_message").innerHTML = '<FONT SIZE="+1" COLOR="#FF0000">Error: ' + statustext + '</FONT>';
     document.getElementById("progress_bar").innerHTML = '';

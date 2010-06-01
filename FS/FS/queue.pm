@@ -12,7 +12,7 @@ use FS::Record qw( qsearch qsearchs dbh );
 use FS::queue_arg;
 use FS::queue_depend;
 use FS::cust_svc;
-use FS::CGI qw (rooturl);
+use FS::CGI qw(rooturl);
 
 @ISA = qw(FS::Record);
 @EXPORT_OK = qw( joblisting );
@@ -66,6 +66,20 @@ Job status (new, locked, or failed)
 =item statustext
 
 Freeform text status message
+
+=cut
+
+sub statustext {
+  my $self = shift;
+  if ( defined ( $_[0] ) ) {
+    $self->SUPER::statustext(@_);
+  } else {
+    my $value = $self->SUPER::statustext();
+    my $rooturl = rooturl();
+    $value =~ s/%%%ROOTURL%%%/$rooturl/g; 
+    $value;
+  }
+}
 
 =item _date
 
@@ -363,7 +377,7 @@ If there is an error, returns the error, otherwise returns false.
 use vars qw($_update_statustext_dbh);
 sub update_statustext {
   my( $self, $statustext ) = @_;
-  return '' if $statustext eq $self->statustext;
+  return '' if $statustext eq $self->get('statustext'); #avoid rooturl expansion
   warn "updating statustext for $self to $statustext" if $DEBUG;
 
   $_update_statustext_dbh ||= myconnect;
@@ -374,7 +388,7 @@ sub update_statustext {
 
   $sth->execute($statustext, $self->jobnum) or return $sth->errstr;
   $_update_statustext_dbh->commit or die $_update_statustext_dbh->errstr;
-  $self->statustext($statustext);
+  $self->set('statustext', $statustext); #avoid rooturl expansion
   '';
 
   #my $new = new FS::queue { $self->hash };

@@ -227,9 +227,15 @@ sub popurl {
 =cut
 
 sub rooturl {
-  # better to start with the client-provided URL
-  my $cgi = &FS::UID::cgi;
-  my $url_string = $cgi->isa('Apache') ? $cgi->uri : $cgi->url;
+  my $url_string;
+  if ( scalar(@_) ) {
+    $url_string = shift;
+  } else {
+    # better to start with the client-provided URL
+    my $cgi = &FS::UID::cgi;
+    $url_string = $cgi->isa('Apache') ? $cgi->uri : $cgi->url;
+  }
+
   $url_string =~ s/\?.*//;
 
   #even though this is kludgy

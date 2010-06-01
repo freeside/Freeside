@@ -27,8 +27,6 @@ use FS::part_pkg_taxproduct;
 use FS::cust_main;
 use FS::Misc qw( csv_from_fixed );
 
-#i'd like to dump these
-use FS::CGI qw(rooturl popurl);
 use URI::Escape;
 
 @ISA = qw( FS::Record );
@@ -1767,17 +1765,21 @@ Launches a tax liability report.
 =cut
 
 sub queue_liability_report {
-  my $cgi = shift;
+  my $job = shift;
+  my $param = thaw(decode_base64(shift));
+
+  my $cgi = new CGI;
+  $cgi->param('beginning', $param->{beginning});
+  $cgi->param('ending', $param->{ending});
   my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
-  my $agentnum = $cgi->param('agentnum');
+  my $agentnum = $param->{agentnum};
   $agentnum =~ /^(\d+)$/ ? $agentnum = $1 : $agentnum = '';
-  my $job = new FS::queue { job => 'FS::tax_rate::generate_liability_report' };
-  $job->insert(
+  generate_liability_report(
     'beginning' => $beginning,
     'ending'    => $ending,
     'agentnum'  => $agentnum,
-    'p'         => popurl(2),
-    'rooturl'   => rooturl,
+    'p'         => $param->{RootURL},
+    'job'       => $job,
   );
 }
 
@@ -1790,6 +1792,8 @@ agentnum, beginning, and ending
 
 sub generate_liability_report {
   my %args = @_;
+
+  my ( $count, $last, $min_sec ) = _progressbar_foo();
 
   #let us open the temp file early
   my $dir = '%%%FREESIDE_CACHE%%%/cache.'. $FS::UID::datasrc;
@@ -1845,14 +1849,25 @@ sub generate_liability_report {
   my $credit = 0;
   my %taxes = ();
   my %basetaxes = ();
-  foreach my $t (qsearch({ table     => 'cust_bill_pkg',
-                           select    => $select,
-                           hashref   => { pkgpart => 0 },
-                           addl_from => $addl_from,
-                           extra_sql => $where,
-                        })
-                )
-  {
+  my $calculated = 0;
+  my @tax_and_location = qsearch({ table     => 'cust_bill_pkg',
+                                   select    => $select,
+                                   hashref   => { pkgpart => 0 },
+                                   addl_from => $addl_from,
+                                   extra_sql => $where,
+                                });
+  $count = scalar(@tax_and_location);
+  foreach my $t ( @tax_and_location ) {
+
+    if ( $args{job} ) {
+      if ( time - $min_sec > $last ) {
+        $args{job}->update_statustext( int( 100 * $calculated / $count ).
+                                       ",Calculated"
+                                     );
+        $last = time;
+      }
+    }
+
     my @params = map { my $f = $_; $f =~ s/.*\.//; $f } @taxparam;
     my $label = join('~', map { $t->$_ } @params);
     $label = 'Tax'. $label if $label =~ /^~/;
@@ -1907,6 +1922,12 @@ sub generate_liability_report {
 
 
   #ordering
+
+  if ( $args{job} ) {
+    $args{job}->update_statustext( "0,Sorted" );
+    $last = time;
+  }
+
   my @taxes = ();
 
   foreach my $tax ( sort { $a cmp $b } keys %taxes ) {
@@ -1968,8 +1989,19 @@ EOF
   my $bgcolor2 = '#ffffff';
   my $bgcolor = '';
  
+  $count = scalar(@taxes);
+  $calculated = 0;
   foreach my $tax ( @taxes ) {
  
+    if ( $args{job} ) {
+      if ( time - $min_sec > $last ) {
+        $args{job}->update_statustext( int( 100 * $calculated / $count ).
+                                       ",Generated"
+                                     );
+        $last = time;
+      }
+    }
+
     if ( $bgcolor eq $bgcolor1 ) {
       $bgcolor = $bgcolor2;
     } else {
@@ -2012,7 +2044,7 @@ EOF
   my $dropstring = '%%%FREESIDE_CACHE%%%/cache.'. $FS::UID::datasrc. '/report.';
   $reportname =~ s/^$dropstring//;
 
-  my $reporturl = $args{rooturl}. "/misc/queued_report?report=$reportname";
+  my $reporturl = "%%%ROOTURL%%%/misc/queued_report?report=$reportname";
   die "<a href=$reporturl>view</a>\n";
 
 }
