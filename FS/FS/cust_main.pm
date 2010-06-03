@@ -4265,14 +4265,6 @@ sub _bop_content {
   my ($self, $options) = @_;
   my %content = ();
 
-  $content{address} = exists($options->{'address1'})
-                        ? $options->{'address1'}
-                        : $self->address1;
-  my $address2 = exists($options->{'address2'})
-                   ? $options->{'address2'}
-                   : $self->address2;
-  $content{address} .= ", ". $address2 if length($address2);
-
   my $payip = exists($options->{'payip'}) ? $options->{'payip'} : $self->payip;
   $content{customer_ip} = $payip if length($payip);
 
@@ -4283,14 +4275,30 @@ sub _bop_content {
     (    $conf->exists('business-onlinepayment-email_customer')
       || $conf->exists('business-onlinepayment-email-override') );
       
-  $content{payfirst} = $self->getfield('first');
-  $content{paylast} = $self->getfield('last');
+  my ($payname, $payfirst, $paylast);
+  if ( $options->{payname} && $options->{method} ne 'ECHECK' ) {
+    ($payname = $options->{payname}) =~
+      /^\s*([\w \,\.\-\']*)?\s+([\w\,\.\-\']+)\s*$/
+      or return "Illegal payname $payname";
+    ($payfirst, $paylast) = ($1, $2);
+  } else {
+    $payfirst = $self->getfield('first');
+    $paylast = $self->getfield('last');
+    $payname = "$payfirst $paylast";
+  }
 
-  $content{account_name} = "$content{payfirst} $content{paylast}"
-    if $options->{method} eq 'ECHECK';
+  $content{last_name} = $paylast;
+  $content{first_name} = $payfirst;
 
-  $content{name} = $options->{payname};
-  $content{name} = $content{account_name} if exists($content{account_name});
+  $content{name} = $payname;
+
+  $content{address} = exists($options->{'address1'})
+                        ? $options->{'address1'}
+                        : $self->address1;
+  my $address2 = exists($options->{'address2'})
+                   ? $options->{'address2'}
+                   : $self->address2;
+  $content{address} .= ", ". $address2 if length($address2);
 
   $content{city} = exists($options->{city})
                      ? $options->{city}
@@ -4304,10 +4312,11 @@ sub _bop_content {
   $content{country} = exists($options->{country})
                         ? $options->{country}
                         : $self->country;
+
   $content{referer} = 'http://cleanwhisker.420.am/'; #XXX fix referer :/
   $content{phone} = $self->daytime || $self->night;
 
-  (%content);
+  \%content;
 }
 
 my %bop_method2payby = (
@@ -4383,13 +4392,8 @@ sub realtime_bop {
   # massage data
   ###
 
-  my (%bop_content) = $self->_bop_content(\%options);
-
-  if ( $options{method} ne 'ECHECK' ) {
-    $options{payname} =~ /^\s*([\w \,\.\-\']*)?\s+([\w\,\.\-\']+)\s*$/
-      or return "Illegal payname $options{payname}";
-    ($bop_content{payfirst}, $bop_content{paylast}) = ($1, $2);
-  }
+  my $bop_content = $self->_bop_content(\%options);
+  return $bop_content unless ref($bop_content);
 
   my @invoicing_list = $self->invoicing_list_emailonly;
   if ( $conf->exists('emailinvoiceautoalways')
@@ -4455,6 +4459,9 @@ sub realtime_bop {
     $content{account_type} = exists($options{'paytype'})
                                ? uc($options{'paytype'}) || 'CHECKING'
                                : uc($self->getfield('paytype')) || 'CHECKING';
+    $content{account_name} = $self->getfield('first'). ' '.
+                             $self->getfield('last');
+
     $content{customer_org} = $self->company ? 'B' : 'I';
     $content{state_id}       = exists($options{'stateid'})
                                  ? $options{'stateid'}
@@ -4539,7 +4546,7 @@ sub realtime_bop {
     'amount'         => $options{amount},
     #'invoice_number' => $options{'invnum'},
     'customer_id'    => $self->custnum,
-    %bop_content,
+    %$bop_content,
     'reference'      => $cust_pay_pending->paypendingnum, #for now
     'email'          => $email,
     %content, #after
