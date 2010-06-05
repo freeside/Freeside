@@ -55,7 +55,7 @@ sub upgrade {
 
       my $oldAutoCommit = $FS::UID::AutoCommit;
       local $FS::UID::AutoCommit = 0;
-      $FS::UID::AutoCommit = 0;
+      local $FS::UID::AutoCommit = 0;
 
       $class->_upgrade_data(%opt);
 
