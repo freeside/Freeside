@@ -296,7 +296,7 @@ sub batch_import {
  
       $hash->{'country'} = 'US'; # CA is available
 
-      delete($hash->{'taxable'}) if ($hash->{'taxable'} eq 'N');
+      $hash->{'taxable'} = '' if ($hash->{'taxable'} eq 'N');
 
       if (exists($hash->{actionflag}) && $hash->{actionflag} eq 'D') {
         delete($hash->{actionflag});
