@@ -43,7 +43,7 @@
 %     if ( $part eq 'IA' ) {
 %       for ( my $tech = 0; $tech < scalar(@technology_option); $tech++ ) {
 %         next unless $technology_option[$tech];
-%         my $url = &{$url_mangler}($cgi->self_url, $part);
+%         my $url = &{$url_mangler}($part);
 %         if ( $type eq 'xml' ) {
 <<% 'Part_IA_'. chr(65 + $tech) %>>
 %         }
@@ -57,7 +57,7 @@
 %       if ( $type eq 'xml' ) {
 <<% 'Part_'. uc($part) %>>
 %       }
-%       my $url = &{$url_mangler}($cgi->self_url, $part);
+%       my $url = &{$url_mangler}($part);
 <% include( "477part${part}.html", 'url' => $url ) %>
 %       if ( $type eq 'xml' ) {
 </<% 'Part_'. uc($part) %>>
@@ -83,7 +83,8 @@ my $type = $cgi->param('_type') || 'html';
 my $xlsname = '477report';
 my @technology_option = &FS::Report::FCC_477::parse_technology_option($cgi);
 my $url_mangler = sub {
-  my ($url, $part) = (shift, shift);
+  my $part = shift;
+  my $url = $cgi->url('-path_info' => 1, '-full' => 1);
   $url =~ s/477\./477part$part./;
   $url;
 };

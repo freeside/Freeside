@@ -102,7 +102,7 @@
 %                 $cgi->delete('maxrecords');
 %                 $cgi->param('_dummy', 1);
 
-                  ( show <SELECT NAME="maxrecords" onChange="window.location = '<% $self_url %>;maxrecords=' + this.options[this.selectedIndex].value;">
+                  ( show <SELECT NAME="maxrecords" onChange="window.location = '<% "$self_url?". $cgi->query_string %>;maxrecords=' + this.options[this.selectedIndex].value;">
 
 %                   foreach my $max ( map { $_ * $confmax } qw( 1 5 10 25 ) ) {
                   <OPTION VALUE="<% $max %>" <% ( $maxrecords == $max ) ? 'SELECTED' : '' %>><% $max %></OPTION>
@@ -143,18 +143,18 @@
                 Download full results<BR>
 
 %               $cgi->param('_type', "$xlsname.xls" ); 
-                as <A HREF="<% $cgi->self_url %>">Excel spreadsheet</A><BR>
+                as <A HREF="<% "$self_url?". $cgi->query_string %>">Excel spreadsheet</A><BR>
 
 %               $cgi->param('_type', 'csv'); 
-                as <A HREF="<% $cgi->self_url %>">CSV file</A><BR>
+                as <A HREF="<% "$self_url?". $cgi->query_string %>">CSV file</A><BR>
 
 %             if ( defined($opt{xml_elements}) ) {
 %               $cgi->param('_type', 'xml'); 
-                as <A HREF="<% $cgi->self_url %>">XML file</A><BR>
+                as <A HREF="<% "$self_url?". $cgi->query_string %>">XML file</A><BR>
 %             }
 
 %               $cgi->param('_type', 'html-print'); 
-                as <A HREF="<% $cgi->self_url %>">printable copy</A>
+                as <A HREF="<% "$self_url?". $cgi->query_string %>">printable copy</A>
 
               </TD>
 %             $cgi->param('_type', "html" ); 
@@ -464,7 +464,7 @@ my $confmax        = $args{'confmax'};
 my $maxrecords     = $args{'maxrecords'};
 my $offset         = $args{'offset'};
 my %opt            = %{ $args{'opt'} };
-my $self_url       = $opt{'url'} || $cgi->self_url;
+my $self_url       = $opt{'url'} || $cgi->url('-path_info' => 1, '-full' =>1);
 
 my $count_sth = dbh->prepare($opt{'count_query'})
   or die "Error preparing $opt{'count_query'}: ". dbh->errstr;
