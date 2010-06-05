@@ -60,7 +60,7 @@ sub upgrade {
       $class->_upgrade_data(%opt);
 
       if ( $oldAutoCommit ) {
-        warn "  committing";
+        warn "  committing\n";
         dbh->commit or die dbh->errstr;
       }
       

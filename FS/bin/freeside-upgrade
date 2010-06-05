@@ -163,6 +163,8 @@ unless ( $DRY_RUN || $opt_s ) {
 $dbh->commit or die $dbh->errstr;
 $dbh->disconnect or die $dbh->errstr;
 
+$FS::UID::AutoCommit = 1;
+
 $dbh = adminsuidsetup($user);
 
 warn "Re-initialization with updated schema completed in ". (time-$start). " seconds\n"; # if $DEBUG;
