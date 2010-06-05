@@ -42,6 +42,10 @@ sub upgrade {
 
   my $data = upgrade_data(%opt);
 
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  local $FS::UID::AutoCommit = 0;
+
   foreach my $table ( keys %$data ) {
 
     my $class = "FS::$table";
@@ -53,13 +57,10 @@ sub upgrade {
 
       my $start = time;
 
-      my $oldAutoCommit = $FS::UID::AutoCommit;
-      local $FS::UID::AutoCommit = 0;
-      local $FS::UID::AutoCommit = 0;
-
       $class->_upgrade_data(%opt);
 
       if ( $oldAutoCommit ) {
+        warn "  committing";
         dbh->commit or die dbh->errstr;
       }
       
