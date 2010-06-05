@@ -2,7 +2,7 @@ package FS::cust_credit;
 
 use strict;
 use base qw( FS::otaker_Mixin FS::cust_main_Mixin FS::Record );
-use vars qw( $conf $unsuspendauto $me $DEBUG );
+use vars qw( $conf $unsuspendauto $me $DEBUG $otaker_upgrade_kludge );
 use Date::Format;
 use FS::UID qw( dbh getotaker );
 use FS::Misc qw(send_email);
@@ -18,6 +18,8 @@ use FS::cust_event;
 
 $me = '[ FS::cust_credit ]';
 $DEBUG = 0;
+
+$otaker_upgrade_kludge = 0;
 
 #ask FS::UID to run this stuff for us later
 $FS::UID::callback{'FS::cust_credit'} = sub { 
@@ -308,7 +310,7 @@ sub check {
   return "amount must be > 0 " if $self->amount <= 0;
 
   return "amount must be greater or equal to amount applied"
-    if $self->unapplied < 0;
+    if $self->unapplied < 0 && ! $otaker_upgrade_kludge;
 
   return "Unknown customer"
     unless qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
@@ -548,6 +550,7 @@ sub _upgrade_data {  # class method
     }
   }
 
+  local($otaker_upgrade_kludge) = 1;
   $class->_upgrade_otaker(%opts);
 
 }
