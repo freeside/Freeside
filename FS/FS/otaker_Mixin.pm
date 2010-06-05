@@ -44,8 +44,12 @@ sub _upgrade_otaker {
     foreach my $record (@records) {
       eval { $record->otaker($record->otaker) };
       if ( $@ ) {
+        my $username = $record->otaker;
+        if ( $username =~ /^(.+), (.+)$/ ) {
+          $username = lc($2.$1);
+        }
         my $access_user = new FS::access_user {
-          'username'  => $record->otaker,
+          'username'  => $username,
           '_password' => 'CHANGEME',
           'first'     => 'Legacy',
           'last'      => 'User',
