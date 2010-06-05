@@ -52,14 +52,16 @@ sub _upgrade_otaker {
       eval { $record->otaker($record->otaker) };
       if ( $@ ) {
         my $username = $record->otaker;
+        my($lastname, $firstname) = ( 'User', 'Legacy' );
         if ( $username =~ /^(.+), (.+)$/ ) {
-          $username = lc($2.$1);
+          ($lastname, $firstname) = ($1, $2);
+          $username = lc($firstname.$lastname);
         }
         my $access_user = new FS::access_user {
           'username'  => $username,
           '_password' => 'CHANGEME',
-          'first'     => 'Legacy',
-          'last'      => 'User',
+          'first'     => $firstname,
+          'last'      => $lastname,
           'disabled'  => 'Y',
         };
         my $error = $access_user->insert;
