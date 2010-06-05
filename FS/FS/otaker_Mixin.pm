@@ -11,8 +11,11 @@ sub otaker {
     my $otaker = shift;
     my $access_user = qsearchs('access_user', { 'username' => $otaker } );
     if ( !$access_user && $otaker =~ /^(.+), (.+)$/ ) { #same as below..
-      $otaker = lc($2.$1);
-      $access_user = qsearchs('access_user', { 'username' => $otaker } );
+      my($lastname, $firstname) = ($1, $2);
+      $otaker = lc($firstname.$lastname);
+      $access_user =  qsearchs('access_user', { 'first' => $firstname, 
+                                                'last'  => $lastname  } )
+                   || qsearchs('access_user', { 'username' => $otaker } );
     }
     croak "can't set otaker: $otaker not found!" unless $access_user; #confess?
     $self->usernum( $access_user->usernum );
