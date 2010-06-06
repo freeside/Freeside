@@ -8841,14 +8841,23 @@ sub _agent_plandata {
 
 }
 
+=item queued_bill 'custnum' => CUSTNUM [ , OPTION => VALUE ... ]
+
+Subroutine (not a method), designed to be called from the queue.
+
+Takes a list of options and values.
+
+Pulls up the customer record via the custnum option and calls bill_and_collect.
+
+=cut
+
 sub queued_bill {
-  ## actual sub, not a method, designed to be called from the queue.
-  ## sets up the customer, and calls the bill_and_collect
   my (%args) = @_; #, ($time, $invoice_time, $check_freq, $resetup) = @_;
+
   my $cust_main = qsearchs( 'cust_main', { custnum => $args{'custnum'} } );
-      $cust_main->bill_and_collect(
-        %args,
-      );
+  warn 'bill_and_collect custnum#'. $cust_main->custnum. "\n";#log custnum w/pid
+
+  $cust_main->bill_and_collect( %args );
 }
 
 sub _upgrade_data { #class method
