@@ -717,6 +717,13 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'business-onlinepayment-test_transaction',
+    'section'     => 'billing',
+    'description' => 'Turns on the Business::OnlinePayment test_transaction flag.  Note that not all gateway modules support this flag; if yours does not, transactions will still be sent live.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'countrydefault',
     'section'     => 'UI',
     'description' => 'Default two-letter country code (if not supplied, the default is `US\')',
@@ -3005,6 +3012,13 @@ worry that config_items is freeside-specific and icky.
     'section'     => '',
     'description' => 'Disable all ACL changes, for demos.',
     'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'disable_settings_changes',
+    'section'     => '',
+    'description' => 'Disable all settings changes, for demos, except for the usernames given in the comma-separated list.',
+    'type'        => [qw( checkbox text )],
   },
 
   {

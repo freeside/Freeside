@@ -70,10 +70,21 @@ my %namecol = (
 );
 </%once>
 <%init>
-die "access denied\n"
-  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+die "access denied\n" unless $curuser->access_right('Configuration');
 
 my $conf = new FS::Conf;
+
+if ( $conf->exists('disable_settings_changes') ) {
+  my @changers = split(/\s*,\s*/, $conf->config('disable_settings_changes'));
+  my %changers = map { $_=>1 } @changers;
+  unless ( $changers{$curuser->username} ) {
+    errorpage("Disabled in web demo");
+    die "shouldn't be reached";
+  }
+}
+
 $FS::Conf::DEBUG = 1;
 my @config_items = grep { $_->key != ~/^invoice_(html|latex|template)/ }
                         $conf->config_items;
