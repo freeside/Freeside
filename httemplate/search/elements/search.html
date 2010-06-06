@@ -335,7 +335,7 @@ if ( $opt{'disableable'} ) {
 my $limit = '';
 my($confmax, $maxrecords, $offset );
 
-if ( !$type =~ /^(csv|\w*.xls)$/) {
+unless ( $type =~ /^(csv|\w*.xls)$/) {
 # html mode
   unless (exists($opt{count_query}) && length($opt{count_query})) {
     ( $opt{count_query} = $opt{query} ) =~

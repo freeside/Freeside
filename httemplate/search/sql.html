@@ -1,13 +1,15 @@
 <% include( 'elements/search.html',
                'title' => 'Query Results',
                'name'  => 'rows',
-               'query' => 'SELECT '. ( $cgi->param('sql')
-                             || errorpage('Empty query') ),
-    )
+               'query' => "SELECT $sql",
+          )
 %>
 <%init>
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Raw SQL');
+
+my $sql = $cgi->param('sql') or errorpage('Empty query');
+$sql =~ s/;+\s*$//; #remove trailing ;
 
 </%init>
