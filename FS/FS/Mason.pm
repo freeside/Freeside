@@ -355,6 +355,11 @@ if ( -e $addl_handler_use_file ) {
     $m->comp('/elements/errorpage.html', @_);
   }
 
+  sub errorpage_popup {
+    use vars qw($m);
+    $m->comp('/elements/errorpage-popup.html', @_);
+  }
+
   sub redirect {
     my( $location ) = @_;
     use vars qw($m);
