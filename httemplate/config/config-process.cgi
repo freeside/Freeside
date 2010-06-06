@@ -80,7 +80,7 @@ if ( $conf->exists('disable_settings_changes') ) {
   my @changers = split(/\s*,\s*/, $conf->config('disable_settings_changes'));
   my %changers = map { $_=>1 } @changers;
   unless ( $changers{$curuser->username} ) {
-    include('/elements/errorpage-popup.html', "Disabled in web demo");
+    errorpage_popup("Disabled in web demo");
     die "shouldn't be reached";
   }
 }
