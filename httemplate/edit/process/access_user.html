@@ -1,3 +1,6 @@
+% if ( $conf->exists('disable_acl_changes') ) {
+  ACL changes disabled in public demo.
+% } else {
 %  if ( $cgi->param('_password') ne $cgi->param('_password2') ) {
 %    $cgi->param('error', "The passwords do not match");
 %    print $cgi->redirect(popurl(2) . "access_user.html?" . $cgi->query_string);
@@ -13,6 +16,7 @@
              )
 %>
 %   }
+% }
 <%init>
 
 die "access denied"

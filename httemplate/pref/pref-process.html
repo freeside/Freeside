@@ -7,6 +7,11 @@
 % }
 <%init>
 
+if ( FS::Conf->new->exists('disable_acl_changes') ) {
+  errorpage("Preference changes disabled in public demo");
+  die "shouldn't be reached";
+}
+
 my $error = '';
 my $access_user = '';
 
