@@ -86,7 +86,7 @@ $skip_fuzzyfiles = 0;
 @fuzzyfields = ( 'first', 'last', 'company', 'address1' );
 
 @encrypted_fields = ('payinfo', 'paycvv');
-sub nohistory_fields { ('paycvv'); }
+sub nohistory_fields { ('payinfo', 'paycvv'); }
 
 @paytypes = ('', 'Personal checking', 'Personal savings', 'Business checking', 'Business savings');
 
@@ -1453,8 +1453,15 @@ sub replace {
 
   }
 
-  if ( $self->payby =~ /^(CARD|CHEK|LECB)$/ &&
-       grep { $self->get($_) ne $old->get($_) } qw(payinfo paydate payname) ) {
+  if ( $self->payby =~ /^(CARD|CHEK|LECB)$/
+       && ( ( $self->get('payinfo') ne $old->get('payinfo')
+              && $self->get('payinfo') !~ /^99\d{14}$/ 
+            )
+            || grep { $self->get($_) ne $old->get($_) } qw(paydate payname)
+          )
+     )
+  {
+
     # card/check/lec info has changed, want to retry realtime_ invoice events
     my $error = $self->retry_realtime;
     if ( $error ) {
@@ -1727,7 +1734,8 @@ sub check {
       or return gettext('invalid_card'); # . ": ". $self->payinfo;
 
     return gettext('unknown_card_type')
-      if cardtype($self->payinfo) eq "Unknown";
+      if $self->payinfo !~ /^99\d{14}$/ #token
+      && cardtype($self->payinfo) eq "Unknown";
 
     my $ban = qsearchs('banned_pay', $self->_banned_pay_hashref);
     if ( $ban ) {
@@ -4239,6 +4247,7 @@ sub _bop_options {
   $options->{payment_gateway}->gatewaynum
     ? $options->{payment_gateway}->options
     : @{ $options->{payment_gateway}->get('options') };
+
 }
 
 sub _bop_defaults {
@@ -4561,6 +4570,8 @@ sub realtime_bop {
   my $BOP_TESTING_SUCCESS = 1;
 
   unless ( $BOP_TESTING ) {
+    $transaction->test_transaction(1)
+      if $conf->exists('business-onlinepayment-test_transaction');
     $transaction->submit();
   } else {
     if ( $BOP_TESTING_SUCCESS ) {
@@ -4613,6 +4624,8 @@ sub realtime_bop {
 
     $capture->content( %capture );
 
+    $capture->test_transaction(1)
+      if $conf->exists('business-onlinepayment-test_transaction');
     $capture->submit();
 
     unless ( $capture->is_success ) {
@@ -4639,6 +4652,25 @@ sub realtime_bop {
     if ( $error ) {
       warn "WARNING: error removing cvv: $error\n";
     }
+  }
+
+  ###
+  # Tokenize
+  ###
+
+
+  if ( $transaction->can('card_token') && $transaction->card_token ) {
+
+    $self->card_token($transaction->card_token);
+
+    if ( $options{'payinfo'} eq $self->payinfo ) {
+      $self->payinfo($transaction->card_token);
+      my $error = $self->replace;
+      if ( $error ) {
+        warn "WARNING: error storing token: $error, but proceeding anyway\n";
+      }
+    }
+
   }
 
   ###
@@ -5300,6 +5332,8 @@ sub realtime_refund_bop {
       }
     }
     $void->content( 'action' => 'void', %content );
+    $void->test_transaction(1)
+      if $conf->exists('business-onlinepayment-test_transaction');
     $void->submit();
     if ( $void->is_success ) {
       my $error = $cust_pay->void($options{'reason'});
@@ -5402,6 +5436,8 @@ sub realtime_refund_bop {
   );
   warn join('', map { "  $_ => $sub_content{$_}\n" } keys %sub_content )
     if $DEBUG > 1;
+  $refund->test_transaction(1)
+    if $conf->exists('business-onlinepayment-test_transaction');
   $refund->submit();
 
   return "$processor error: ". $refund->error_message
