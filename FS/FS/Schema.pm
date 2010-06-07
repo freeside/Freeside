@@ -1803,7 +1803,7 @@ sub tables_hashref {
     'cgp_rule_condition' => {
       'columns' => [
         'ruleconditionnum',  'serial',     '',      '', '', '',
-        'condition',        'varchar',     '', $char_d, '', '',
+        'conditionname',    'varchar',     '', $char_d, '', '',
         'op',               'varchar', 'NULL', $char_d, '', '',
         'params',           'varchar', 'NULL',     255, '', '',
         'rulenum',              'int',     '',      '', '', '',

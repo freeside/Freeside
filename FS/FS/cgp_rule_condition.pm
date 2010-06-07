@@ -36,7 +36,7 @@ currently supported:
 
 primary key
 
-=item condition
+=item conditionname
 
 condition
 
@@ -113,7 +113,7 @@ sub check {
 
   my $error = 
     $self->ut_numbern('ruleconditionnum')
-    || $self->ut_text('condition')
+    || $self->ut_text('conditionname')
     || $self->ut_textn('op')
     || $self->ut_textn('params')
     || $self->ut_foreign_key('rulenum', 'cgp_rule', 'rulenum')
@@ -125,13 +125,13 @@ sub check {
 
 =item arrayref
 
-Returns an array reference of the condition, op and params fields.
+Returns an array reference of the conditionname, op and params fields.
 
 =cut
 
 sub arrayref {
   my $self = shift;
-  [ map $self->$_, qw( condition op params ) ];
+  [ map $self->$_, qw( conditionname op params ) ];
 }
 
 =back

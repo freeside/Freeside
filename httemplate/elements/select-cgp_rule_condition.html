@@ -3,10 +3,10 @@
   <INPUT TYPE="hidden" NAME="<%$name%>" ID="<%$id%>" VALUE="<% $curr_value %>">
 
   <% include( 'select.html',
-                'field'      => $name.'_condition',
-                'id'         => $id.'_condition',
+                'field'      => $name.'_conditionname',
+                'id'         => $id.'_conditionname',
                 'options'    => \@conditions,
-                'curr_value' => $condition,
+                'curr_value' => $conditionname,
                 'labels'     => { '' => 'Select Condition' },
                 'onchange'   => $name.'_changed',
             )
@@ -189,10 +189,10 @@ if ( $curr_value ) {
   $cgp_rule_condition = new FS::cgp_rule_condition {};
 }
 
-my $condition = scalar($cgi->param($name.'_condition'))
-                || $cgp_rule_condition->condition;
+my $conditionname = scalar($cgi->param($name.'_conditionname'))
+                    || $cgp_rule_condition->conditionname;
 
-my @op = &$cond2op($condition);
+my @op = &$cond2op($conditionname);
 
 my $disabled = scalar(@op) ? '' : 1;
 my $style = $disabled ? 'visibility:hidden' : '';

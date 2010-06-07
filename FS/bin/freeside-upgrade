@@ -61,6 +61,33 @@ if (dbdef->table('cust_main')->column('agent_custid') && ! $opt_s) {
       if (dbdef->table('h_cust_main')); 
 }
 
+if ( dbdef->table('cgp_rule_condition') &&
+     dbdef->table('cgp_rule_condition')->column('condition') 
+   )
+{
+  push @bugfix,
+   "ALTER TABLE ${_}cgp_rule_condition RENAME COLUMN condition TO conditionname"
+      for '', 'h_';
+
+}
+
+if ( $DRY_RUN ) {
+  print
+    join(";\n", @bugfix ). ";\n";
+} elsif ( @bugfix ) {
+
+  foreach my $statement ( @bugfix ) {
+    warn "$statement\n";
+    $dbh->do( $statement )
+      or die "Error: ". $dbh->errstr. "\n executing: $statement";
+  }
+
+  dbdef_create($dbh, $dbdef_file);
+  delete $FS::Schema::dbdef_cache{$dbdef_file}; #force an actual reload
+  reload_dbdef($dbdef_file);
+
+}
+
 #you should have run fs-migrate-part_svc ages ago, when you upgraded
 #from 1.3 to 1.4... if not, it needs to be hooked into -upgrade here or
 #you'll lose all the part_svc settings it migrates to part_svc_column
@@ -83,10 +110,10 @@ unless ( driver_name =~ /^mysql/i ) {
 
 if ( $DRY_RUN ) {
   print
-    join(";\n", @bugfix, @statements ). ";\n";
+    join(";\n", @statements ). ";\n";
   exit;
 } else {
-  foreach my $statement ( @bugfix, @statements ) {
+  foreach my $statement ( @statements ) {
     warn "$statement\n";
     $dbh->do( $statement )
       or die "Error: ". $dbh->errstr. "\n executing: $statement";

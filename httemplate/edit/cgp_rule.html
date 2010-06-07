@@ -51,7 +51,7 @@ my %opt = @_;
 my $m2_error_callback_cond = sub {
   my($cgi, $object) = @_;
 
-  my @fields = qw( condition op params );
+  my @fields = qw( conditionname op params );
   my @gfields = ( '', map "_$_", @fields );
 
   map {
@@ -83,7 +83,7 @@ my $m2_error_callback_action = sub {
         if ( /^ruleactionnum(\d+)$/ ) {
           my $num = $1;
           if ( grep $cgi->param("ruleactionnum$num$_"), @gfields ) {
-            my $x = new FS::cgp_rule_condition {
+            my $x = new FS::cgp_rule_action {
               'ruleactionnum' => $cgi->param("ruleactionnum$num"),
               map { $_ => scalar($cgi->param("ruleactionnum${num}_$_")) } @fields,
             };
