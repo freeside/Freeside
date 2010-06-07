@@ -13,7 +13,7 @@
              %views,
           )
 %>
-<BR>
+<DIV CLASS="fstabcontainer">
 
 <% include('/elements/init_overlib.html') %>
 
@@ -214,6 +214,7 @@ Comments
 <% include('cust_main/change_history.html', $cust_main ) %> 	 
 % }
 
+</DIV>
 <% include('/elements/footer.html') %>
 <%init>
 

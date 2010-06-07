@@ -19,10 +19,10 @@ Example:
 
 </%doc>
 %if ( $opt->{'newstyle'} ) {
-%  my $s = '<FONT STYLE="border-bottom:1px solid #7e0079">';
 
-   <% join("$s &nbsp; </FONT>", ( '', @html, '' ) ) %>
-   <BR>
+   <DIV CLASS="fstabs">
+   <% join('', @html ) %>
+   </DIV>
 
 %} else {
 

@@ -109,6 +109,8 @@ a.fstab {
          font-weight:bold;
          text-decoration:none;
          overflow:visible;
+    margin-left:6px;
+    margin-right:6px;
 }
 a.fstab:hover {
   text-decoration:none;
@@ -119,13 +121,12 @@ a.fstab:hover {
 a:visited:hover.fsblackbutton
 */
 a.fstabselected {
-         background-color:#f8f8f8;
+         background-color:#ffffff;
          color: #000000;
-         border:1px solid;
-         border-top-color:#7e0079;
-         border-left-color:#7e0079;
-         border-right-color:#7e0079;
-         border-bottom-color:#ffffff;
+         border-top:1px solid #7e0079;
+         border-left:1px solid #7e0079;
+         border-right:1px solid #7e0079;
+         border-bottom:1px solid #ffffff;
          -moz-border-radius-topleft:8px;
          -moz-border-radius-topright:8px;
          -webkit-border-radius-topleft:8px;
@@ -141,10 +142,35 @@ a.fstabselected {
          font-weight:bold;
          text-decoration:none;
          overflow:visible;
+    margin-left:6px;
+    margin-right:6px;
 }
 a.fstabselected:hover {
   text-decoration:none;
   color: #000000;
+}
+
+div.fstabs {
+  padding-left:8px;
+  border-bottom:1px solid #7e0079;
+}
+
+div.fstabcontainer {
+  background-color:#ffffff;
+  padding:8px;
+  border-left:1px solid #7e0079;
+  border-right:1px solid #7e0079;
+  border-bottom:1px solid #7e0079;
+         -moz-border-radius-bottomleft:8px;
+         -moz-border-radius-bottomright:8px;
+         -webkit-border-radius-bottomleft:8px;
+         -webkit-border-radius-bottomright:8px;
+         border-radius-bottomleft:8px;
+         border-radius-bottomright:8px;
+  -moz-box-shadow: #666666 1px 1px 2px;
+  -webkit-box-shadow: #666666 1px 1px 2px;
+  box-shadow: #666666 1px 1px 2px;
+  filter: progid:DXImageTransform.Microsoft.Shadow(color='#666666', Direction=135, Strength=2);
 }
 
 .background {
