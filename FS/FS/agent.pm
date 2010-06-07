@@ -269,16 +269,20 @@ sub payment_gateway {
                                            cardtype => '',
                                            taxclass => '',              } );
 
-  my $payment_gateway = new FS::payment_gateway;
+  my $payment_gateway;
+  my $conf = new FS::Conf;
   if ( $override ) { #use a payment gateway override
 
     $payment_gateway = $override->payment_gateway;
 
+    $payment_gateway->gateway_namespace('Business::OnlinePayment')
+      unless $payment_gateway->gateway_name;
+
   } else { #use the standard settings from the config
+
     # the standard settings from the config could be moved to a null agent
     # agent_payment_gateway referenced payment_gateway
 
-    my $conf = new FS::Conf;
     unless ( $conf->exists('business-onlinepayment') ) {
       if ( $options{'nofatal'} ) {
         return '';
@@ -302,6 +306,8 @@ sub payment_gateway {
         "did you set the business-onlinepayment configuration value?\n"
       unless $processor;
 
+    $payment_gateway = new FS::payment_gateway;
+
     $payment_gateway->gateway_namespace( $conf->config('business-onlinepayment-namespace') ||
                                  'Business::OnlinePayment');
     $payment_gateway->gateway_module($processor);
@@ -310,6 +316,13 @@ sub payment_gateway {
     $payment_gateway->gateway_action($action);
     $payment_gateway->set('options', [ @bop_options ]);
 
+  }
+
+  unless ( $payment_gateway->gateway_namespace ) {
+    $payment_gateway->gateway_namespace(
+      scalar($conf->config('business-onlinepayment-namespace'))
+      || 'Business::OnlinePayment'
+    );
   }
 
   $payment_gateway;
