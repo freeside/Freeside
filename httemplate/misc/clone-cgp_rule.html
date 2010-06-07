@@ -1,0 +1,27 @@
+% if ( $error ) {
+%   errorpage($error);
+% } else {
+<% $cgi->redirect($p. "browse/cgp_rule.html?svcnum=". $svcnum) %>
+% }
+<%init>
+
+# :/  needs agent-virt so you can't futz with arbitrary rules
+
+#die "access denied"
+#  unless $FS::CurrentUser::CurrentUser->access_right('Provision customer service');
+
+#untaint svcnum and clone
+$cgi->param('svcnum') =~ /^(\d+)$/ || die "Illegal svcnum";
+my $svcnum = $1;
+$cgi->param('clone') =~ /^(\d+)$/ || die "Illegal clone";
+my $clone = $1;
+
+my @cgp_rule = qsearch('cgp_rule', { 'svcnum' => $clone } );
+
+my $error = '';
+foreach my $cgp_rule ( @cgp_rule ) {
+  $error = $cgp_rule->clone( $svcnum );
+  last if $error;
+}
+
+</%init>

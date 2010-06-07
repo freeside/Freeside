@@ -2440,6 +2440,13 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'cgp_rule-domain_templates',
+    'section'     => '',
+    'description' => 'Communigate Pro rule templates for domains, one per line, "svcnum Name"',
+    'type'        => 'textarea',
+  },
+
+  {
     'key'         => 'svc_forward-no_srcsvc',
     'section'     => '',
     'description' => "Don't allow forwards from existing accounts, only arbitrary addresses.  Useful when exporting to systems such as Communigate Pro which treat forwards in this fashion.",

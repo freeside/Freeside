@@ -100,11 +100,12 @@ sub insert {
     return $error;
   }
 
-  $error = $self->svc_export;
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $error;
-  }
+  #conditions and actions not in yet
+  #$error = $self->svc_export;
+  #if ( $error ) {
+  #  $dbh->rollback if $oldAutoCommit;
+  #  return $error;
+  #}
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
@@ -188,11 +189,12 @@ sub replace {
     return $error;
   }
 
-  $error = $new->svc_export;
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $error;
-  }
+  #conditions and actions not in yet
+  #$error = $new->svc_export;
+  #if ( $error ) {
+  #  $dbh->rollback if $oldAutoCommit;
+  #  return $error;
+  #}
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
@@ -244,6 +246,47 @@ sub check {
   return $error if $error;
 
   $self->SUPER::check;
+}
+
+=item clone NEW_SVCNUM
+
+Clones this rule into an identical rule for the specified new service.
+
+If there is an error, returns the error, otherwise returns false.
+
+=cut
+
+#should return the newly inserted rule instead? used in misc/clone-cgp_rule.html
+
+#i should probably be transactionalized so i'm all-or-nothing
+sub clone {
+  my( $self, $svcnum ) = @_;
+
+  my $new = $self->new( { $self->hash } );
+  $new->rulenum('');
+  $new->svcnum( $svcnum );
+  my $error = $new->insert;
+  return $error if $error;
+
+  my @dup = $self->cgp_rule_condition;
+  push @dup, $self->cgp_rule_action;
+
+  foreach my $dup (@dup) {
+    my $new_dup = $dup->new( { $dup->hash } );
+    my $pk = $new_dup->primary_key;
+    $new_dup->$pk('');
+    $new_dup->rulenum( $new->rulenum );
+
+    $error = $new_dup->insert;
+    return $error if $error;
+
+  }
+
+  $error = $new->svc_export;
+  return $error if $error;
+
+  '';
+
 }
 
 =item cust_svc

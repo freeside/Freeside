@@ -11,6 +11,12 @@
                   'fields' => [qw( action params )],
                 },
               ],
+              'noerror_callback' => sub {
+                my( $cgi, $object ) = @_;
+                my $error = $object->svc_export;
+                #shit, not a good place for error handling :/
+                die $error if $error;
+              },
           )
 %>
 <%init>
