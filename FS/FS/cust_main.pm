@@ -4384,7 +4384,6 @@ sub realtime_bop {
   my $payment_gateway =  $self->_payment_gateway( \%options );
   my $namespace = $payment_gateway->gateway_namespace;
 
-  warn "use $namespace"; #if $DEBUG #erroring out??
   eval "use $namespace";  
   die $@ if $@;
 
