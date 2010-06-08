@@ -1,0 +1,11 @@
+<% include("/elements/header.html",'Call Detail Record - POST Import') %>
+
+<FORM METHOD="POST" ACTION="cdr-post.cgi" enctype="multipart/form-data">
+
+  cdr_file: <INPUT TYPE="file" NAME="cdr_file"><BR><BR>
+
+  <INPUT TYPE="submit" VALUE="upload">
+
+</FORM>
+
+<% include("/elements/footer.html") %>
