@@ -67,9 +67,6 @@
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('View invoices');
 
-use Data::Dumper;
-warn Dumper($cgi->Vars);
-
 my $conf = new FS::Conf;
 my $batch;
 my $batchnum = $cgi->param('batchnum');
