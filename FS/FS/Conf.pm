@@ -1036,6 +1036,12 @@ worry that config_items is freeside-specific and icky.
     'type'        => 'textarea'
   },
 
+  {
+    'key'         => 'invoice_print_pdf',
+    'section'     => 'invoicing',
+    'description' => 'Store postal invoices for download in PDF format rather than printing them directly.',
+    'type'        => 'checkbox',
+  },
 
   { 
     'key'         => 'invoice_default_terms',

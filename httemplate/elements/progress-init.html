@@ -1,3 +1,47 @@
+<%doc>
+Example:
+In misc/something.html:
+
+  <FORM NAME="MyForm">
+  <INPUT TYPE="hidden" NAME="recordnum" VALUE="42">
+  <INPUT TYPE="hidden" NAME="what_to_do" VALUE="delete">
+  <% include( '/elements/progress-init.html',
+             'MyForm', 
+             [ 'recordnum', 'what_to_do' ],
+             $p.'misc/process_something.html',
+             { url => $p.'where_to_go_next.html' },
+         #or { message => 'Finished!' },
+         );
+  </FORM>
+  <SCRIPT TYPE="text/javascript>process();</SCRIPT>
+
+In misc/process_something.html:
+
+<%init>
+my $server = FS::UI::Web::JSRPC->new('FS::something::process_whatever', $cgi);
+</%init>
+<% $server->process %>
+
+In FS/something.pm:
+
+sub process_whatever { #class method
+  my $job = shift;
+  my $param = thaw(base64_decode(shift));
+  # param = { 'recordnum' => 42, 'what_to_do' => delete }
+  # make use of this as you like
+  do_phase1;
+  $job->update_statustext(20);
+  do_phase2;
+  $job->update_statustext(40);
+  do_phase3;
+  $job->update_statustext(60);
+  # etc.
+  return 'BLAH BLAH NOBODY WILL EVER SEE THIS RETURN VALUE';
+}
+
+I am not responsible for errors in the above documentation.
+
+</%doc>
 <% include('/elements/xmlhttp.html',
               'method' => 'POST',
               'url'    => $action,

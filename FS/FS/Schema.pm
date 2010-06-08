@@ -2848,6 +2848,41 @@ sub tables_hashref {
       'index'       => [['listnum'],['svcnum'],['contactemailnum'],['email']],
     },
 
+    'bill_batch' => {
+      'columns' => [
+        'batchnum',         'serial',     '', '', '', '',
+        'status',             'char', 'NULL','1', '', '',
+        'pdf',                'blob', 'NULL', '', '', '',
+      ],
+      'primary_key' => 'batchnum',
+      'unique'      => [],
+      'index'       => [],
+    },
+
+    'cust_bill_batch' => {
+      'columns' => [
+        'billbatchnum',     'serial',     '', '', '', '',
+        'batchnum',            'int',     '', '', '', '',
+        'invnum',              'int',     '', '', '', '',
+      ],
+      'primary_key' => 'billbatchnum',
+      'unique'      => [],
+      'index'       => [ [ 'batchnum' ], [ 'invnum' ] ],
+    },
+
+    'cust_bill_batch_option' => {
+      'columns' => [
+        'optionnum', 'serial', '', '', '', '', 
+        'billbatchnum', 'int', '', '', '', '', 
+        'optionname', 'varchar', '', $char_d, '', '', 
+        'optionvalue', 'text', 'NULL', '', '', '', 
+      ],
+      'primary_key' => 'optionnum',
+      'unique'      => [],
+      'index'       => [ [ 'billbatchnum' ], [ 'optionname' ] ],
+    },
+
+
 
     # name type nullability length default local
 

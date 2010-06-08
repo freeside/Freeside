@@ -1,0 +1,5 @@
+% die "access denied"
+%   unless $FS::CurrentUser::CurrentUser->access_right('View invoices');
+% my $server = FS::UI::Web::JSRPC->new('FS::bill_batch::process_print_pdf', $cgi);
+<% $server->process %>
+<%init></%init>

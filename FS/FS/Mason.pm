@@ -240,6 +240,8 @@ if ( -e $addl_handler_use_file ) {
   use FS::cgp_rule;
   use FS::cgp_rule_condition;
   use FS::cgp_rule_action;
+  use FS::bill_batch;
+  use FS::cust_bill_batch;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

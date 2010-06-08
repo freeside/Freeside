@@ -34,6 +34,8 @@ use FS::cust_bill_pay;
 use FS::cust_bill_pay_batch;
 use FS::part_bill_event;
 use FS::payby;
+use FS::bill_batch;
+use FS::cust_bill_batch;
 
 @ISA = qw( FS::cust_main_Mixin FS::Record );
 
@@ -1300,7 +1302,13 @@ sub print {
     'notice_name' => $notice_name,
   );
 
-  do_print $self->lpr_data(\%opt);
+  if($conf->exists('invoice_print_pdf')) {
+    # Add the invoice to the current batch.
+    $self->batch_invoice(\%opt);
+  }
+  else {
+    do_print $self->lpr_data(\%opt);
+  }
 }
 
 =item fax_invoice HASHREF | [ TEMPLATE ] 
@@ -1344,6 +1352,23 @@ sub fax_invoice {
                       );
   die $error if $error;
 
+}
+
+=item batch_invoice [ HASHREF ]
+
+Place this invoice into the open batch (see C<FS::bill_batch>).  If there 
+isn't an open batch, one will be created.
+
+=cut
+
+sub batch_invoice {
+  my ($self, $opt) = @_;
+  my $batch = FS::bill_batch->get_open_batch;
+  my $cust_bill_batch = FS::cust_bill_batch->new({
+      batchnum => $batch->batchnum,
+      invnum   => $self->invnum,
+  });
+  return $cust_bill_batch->insert($opt);
 }
 
 =item ftp_invoice [ TEMPLATENAME ] 
