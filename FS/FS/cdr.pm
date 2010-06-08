@@ -526,73 +526,86 @@ my %export_names = (
   },
 );
 
-my $duration_sub = sub {
-  my($cdr, %opt) = @_;
-  if ( $opt{minutes} ) {
-    $opt{minutes}. ( $opt{granularity} ? 'm' : ' call' );
-  } else {
-    #config if anyone really wants decimal minutes back
-    #sprintf('%.2fm', $cdr->billsec / 60 );
-    int($cdr->billsec / 60).'m '. ($cdr->billsec % 60).'s';
-  }
-};
+my %export_formats = ();
+sub export_formats {
+  #my $self = shift;
 
-my %export_formats = (
-  'simple' => [
-    sub { time2str('%D', shift->calldate_unix ) },   #DATE
-    sub { time2str('%r', shift->calldate_unix ) },   #TIME
-    'userfield',                                     #USER
-    'dst',                                           #NUMBER_DIALED
-    $duration_sub,                                   #DURATION
-    #sub { sprintf('%.3f', shift->upstream_price ) }, #PRICE
-    sub { my($cdr, %opt) = @_; $opt{money_char}. $opt{charge}; }, #PRICE
-  ],
-  'simple2' => [
-    sub { time2str('%D', shift->calldate_unix ) },   #DATE
-    sub { time2str('%r', shift->calldate_unix ) },   #TIME
-    #'userfield',                                     #USER
-    'src',                                           #called from
-    'dst',                                           #NUMBER_DIALED
-    $duration_sub,                                   #DURATION
-    #sub { sprintf('%.3f', shift->upstream_price ) }, #PRICE
-    sub { my($cdr, %opt) = @_; $opt{money_char}. $opt{charge}; }, #PRICE
-  ],
-  'default' => [
+  return %export_formats if keys %export_formats;
 
-    #DATE
-    sub { time2str('%D', shift->calldate_unix ) },
-          # #time2str("%Y %b %d - %r", $cdr->calldate_unix ),
+  my $conf = new FS::Conf;
+  my $date_format = $conf->config('date_format') || '%m/%d/%Y';
 
-    #TIME
-    sub { time2str('%r', shift->calldate_unix ) },
-          # time2str("%c", $cdr->calldate_unix),  #XXX this should probably be a config option dropdown so they can select US vs- rest of world dates or whatnot
+  my $duration_sub = sub {
+    my($cdr, %opt) = @_;
+    if ( $opt{minutes} ) {
+      $opt{minutes}. ( $opt{granularity} ? 'm' : ' call' );
+    } else {
+      #config if anyone really wants decimal minutes back
+      #sprintf('%.2fm', $cdr->billsec / 60 );
+      int($cdr->billsec / 60).'m '. ($cdr->billsec % 60).'s';
+    }
+  };
 
-    #DEST ("Number")
-    sub { my($cdr, %opt) = @_; $opt{pretty_dst} || $cdr->dst; },
+  %export_formats = (
+    'simple' => [
+      sub { time2str($date_format, shift->calldate_unix ) },   #DATE
+      sub { time2str('%r', shift->calldate_unix ) },   #TIME
+      'userfield',                                     #USER
+      'dst',                                           #NUMBER_DIALED
+      $duration_sub,                                   #DURATION
+      #sub { sprintf('%.3f', shift->upstream_price ) }, #PRICE
+      sub { my($cdr, %opt) = @_; $opt{money_char}. $opt{charge}; }, #PRICE
+    ],
+    'simple2' => [
+      sub { time2str($date_format, shift->calldate_unix ) },   #DATE
+      sub { time2str('%r', shift->calldate_unix ) },   #TIME
+      #'userfield',                                     #USER
+      'src',                                           #called from
+      'dst',                                           #NUMBER_DIALED
+      $duration_sub,                                   #DURATION
+      #sub { sprintf('%.3f', shift->upstream_price ) }, #PRICE
+      sub { my($cdr, %opt) = @_; $opt{money_char}. $opt{charge}; }, #PRICE
+    ],
+    'default' => [
 
-    #REGIONNAME ("Destination")
-    sub { my($cdr, %opt) = @_; $opt{dst_regionname}; },
+      #DATE
+      sub { time2str($date_format, shift->calldate_unix ) },
+            # #time2str("%Y %b %d - %r", $cdr->calldate_unix ),
 
-    #DURATION
-    $duration_sub,
+      #TIME
+      sub { time2str('%r', shift->calldate_unix ) },
+            # time2str("%c", $cdr->calldate_unix),  #XXX this should probably be a config option dropdown so they can select US vs- rest of world dates or whatnot
 
-    #PRICE
-    sub { my($cdr, %opt) = @_; $opt{money_char}. $opt{charge}; },
+      #DEST ("Number")
+      sub { my($cdr, %opt) = @_; $opt{pretty_dst} || $cdr->dst; },
 
-  ],
-);
-$export_formats{'source_default'} = [ 'src', @{ $export_formats{'default'} }, ];
-$export_formats{'accountcode_default'} =
-  [ @{ $export_formats{'default'} }[0,1],
-    'accountcode',
-    @{ $export_formats{'default'} }[2..5],
-  ];
+      #REGIONNAME ("Destination")
+      sub { my($cdr, %opt) = @_; $opt{dst_regionname}; },
+
+      #DURATION
+      $duration_sub,
+
+      #PRICE
+      sub { my($cdr, %opt) = @_; $opt{money_char}. $opt{charge}; },
+
+    ],
+  );
+  $export_formats{'source_default'} = [ 'src', @{ $export_formats{'default'} }, ];
+  $export_formats{'accountcode_default'} =
+    [ @{ $export_formats{'default'} }[0,1],
+      'accountcode',
+      @{ $export_formats{'default'} }[2..5],
+    ];
+
+  %export_formats
+}
 
 sub downstream_csv {
   my( $self, %opt ) = @_;
 
   my $format = $opt{'format'};
-  return "Unknown format $format" unless exists $export_formats{$format};
+  my %formats = $self->export_formats;
+  return "Unknown format $format" unless exists $formats{$format};
 
   #my $conf = new FS::Conf;
   #$opt{'money_char'} ||= $conf->config('money_char') || '$';
@@ -606,7 +619,7 @@ sub downstream_csv {
     map {
           ref($_) ? &{$_}($self, %opt) : $self->$_();
         }
-    @{ $export_formats{$format} };
+    @{ $formats{$format} };
 
   my $status = $csv->combine(@columns);
   die "FS::CDR: error combining ". $csv->error_input(). "into downstream CSV"
