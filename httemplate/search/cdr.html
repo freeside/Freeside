@@ -126,7 +126,7 @@ foreach my $param ( grep /^termpart\d+status$/, $cgi->param ) {
     $search =
       "NOT EXISTS ( SELECT 1 FROM cdr_termination WHERE $where_term )";
 
-  } elsif ( $cgi->param('freesidestatus') =~ /^([\w ]+)$/ ) {
+  } elsif ( $status =~ /^([\w ]+)$/ ) {
 
     #false lazienss w/cdr_termination.pm (i should be a part_termination method)
     my $where_term =
