@@ -10,7 +10,7 @@ $FS::UID::AutoCommit = 0;
 
 my ($user, $from_usernum, $to_usernum, $go) = @ARGV;
 die usage() if not ($user and $from_usernum and $to_usernum);
-$DRY_RUN = 0 if $go eq 'go';
+$DRY_RUN = 0 if defined($go) and $go eq 'go';
 
 my $dbh = adminsuidsetup($user);
 
@@ -23,12 +23,19 @@ my $to_user = FS::access_user->by_key($to_usernum) or
 
 my $tables = FS::Schema::tables_hashref;
 foreach my $table (keys %$tables) {
-  next if $table =~ /^access/; # Don't try to merge these.
   if( grep /^usernum$/, FS::Record::real_fields($table) ) {
+    next if $table eq 'access_user';
     foreach ($table, "h_$table") {
       print "$_: ";
-      my $sql = 
-        "UPDATE $_ SET usernum = $to_usernum WHERE usernum = $from_usernum";
+      my $sql;
+      if( $table =~ /^access_(.*)$/ ) {
+        print "deleting ";
+        $sql = "DELETE FROM $_ WHERE usernum = $from_usernum";
+      }
+      else {
+        print "updating ";
+        $sql = "UPDATE $_ SET usernum = $to_usernum WHERE usernum = $from_usernum";
+      }
       #print $sql;
       my $sth = $dbh->prepare($sql);
       $sth->execute;
