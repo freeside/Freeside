@@ -145,7 +145,7 @@ unless ( $cgi->param('all_customers') ) {
   }
 
   push @where,
-    call_range_sub($range_sub, $days + $offset, 0, 'no_as'=>1). ' > 0'; # != 0';
+    call_range_sub($range_sub, $days, 0, 'offset' => $offset, 'no_as'=>1). ' > 0'; # != 0';
 }
 
 if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {

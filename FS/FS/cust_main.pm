@@ -7486,9 +7486,11 @@ Available options are:
 =cut
 
 sub unapplied_payments_date_sql {
-  my( $class, $start, $end, ) = @_;
+  my( $class, $start, $end, %opt ) = @_;
 
-  my $unapp_pay    = FS::cust_pay->unapplied_sql;
+  my $cutoff = $opt{'cutoff'};
+
+  my $unapp_pay    = FS::cust_pay->unapplied_sql($cutoff);
 
   my $pay_where = $class->_money_table_where( 'cust_pay', $start, $end,
                                                           'unapplied_date'=>1 );

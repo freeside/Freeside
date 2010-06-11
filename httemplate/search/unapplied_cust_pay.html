@@ -23,7 +23,8 @@ sub unapplied_payments {
            "( $str2time now() $closing - ".($end   + $offset) * 86400 . ' )'
            : '';
 
-  FS::cust_main->unapplied_payments_date_sql( $start, $end );
+  FS::cust_main->unapplied_payments_date_sql( $start, $end, 
+          'cutoff' => "( $str2time now() $closing - ".$offset * 86400 . ')'  );
 
 }
 

@@ -343,7 +343,7 @@ Returns an SQL fragment to retreive the unapplied amount.
 =cut 
 
 sub unapplied_sql {
-  my ($class, $start, $end) = shift;
+  my ($class, $start, $end) = @_;
   my $credit_start = $start ? "AND cust_credit_refund._date <= $start" : '';
   my $credit_end   = $end   ? "AND cust_credit_refund._date > $end"   : '';
   my $pay_start    = $start ? "AND cust_pay_refund._date <= $start"    : '';
