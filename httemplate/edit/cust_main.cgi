@@ -190,7 +190,7 @@ function samechanged(what) {
 
 % }
 
-<INPUT TYPE="hidden" NAME="otaker" VALUE="<% $cust_main->otaker %>">
+<INPUT TYPE="hidden" NAME="usernum" VALUE="<% $cust_main->usernum %>">
 
 %# cust_main/bottomfixup.js
 % foreach my $hidden (
