@@ -1,0 +1,64 @@
+#!/usr/bin/perl -w
+
+use strict;
+use FS::UID qw(adminsuidsetup dbh);
+use FS::Schema;
+use FS::Record qw(qsearch qsearchs);
+
+my $DRY_RUN = 1;
+$FS::UID::AutoCommit = 0;
+
+my ($user, $from_usernum, $to_usernum, $go) = @ARGV;
+die usage() if not ($user and $from_usernum and $to_usernum);
+$DRY_RUN = 0 if $go eq 'go';
+
+my $dbh = adminsuidsetup($user);
+
+# Sanity checks.
+die "Can't merge a user to itself." if $from_usernum == $to_usernum;
+my $from_user = FS::access_user->by_key($from_usernum) or 
+    die "Usernum '$from_usernum' not found.\n";
+my $to_user = FS::access_user->by_key($to_usernum) or 
+    die "Usernum '$to_usernum' not found.\n";
+
+my $tables = FS::Schema::tables_hashref;
+foreach my $table (keys %$tables) {
+  next if $table =~ /^access/; # Don't try to merge these.
+  if( grep /^usernum$/, FS::Record::real_fields($table) ) {
+    foreach ($table, "h_$table") {
+      print "$_: ";
+      my $sql = 
+        "UPDATE $_ SET usernum = $to_usernum WHERE usernum = $from_usernum";
+      #print $sql;
+      my $sth = $dbh->prepare($sql);
+      $sth->execute;
+      if($dbh->err) {
+        print $dbh->errstr."\n";
+        $dbh->rollback;
+        exit(1);
+      }
+      print $sth->rows, "\n";
+    }
+  }
+}
+
+if($DRY_RUN) {
+  warn "Dry run complete.  Reverting all changes.\n";
+  $dbh->rollback;
+}
+else {
+# Warning: access_user->delete does not transactionize because of 
+# htpasswd issues.
+  print "Deleting merged user.\n";
+  my $error = $from_user->delete;
+  die $error if $error;
+
+  warn "Committing changes.\n";
+  $dbh->commit;
+}
+exit(0);
+
+sub usage {
+  "Usage:\n    merge-user admin_user from_usernum to_usernum [ 'go' ]\n
+  (Specify 'go' to actually apply changes.)\n\n";
+}

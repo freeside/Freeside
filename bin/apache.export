@@ -47,6 +47,14 @@ foreach my $export ( @exports ) {
     use vars qw($zone $username $dir $email $config);
     $zone = $svc_www->domain_record->zone;
     $config = $svc_www->config;
+    my $template;
+    my $cust_pkg = $svc_www->cust_svc->cust_pkg;
+    if ( $cust_pkg->getfield('susp') or $cust_pkg->getfield('cancel') ) {
+      $template = $export->option('template_inactive');
+    }
+    # Use the regular template if the pkg is live
+    # or if template_inactive doesn't exist.
+    $template ||= $export->option('template');
     if ( $svc_www->svc_acct ) {
       $username = $svc_www->svc_acct->username;
       $dir = $svc_www->svc_acct->dir;
