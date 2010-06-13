@@ -649,14 +649,10 @@ sub new_customer {
     #     " new customer: $bill_error"
     #  if $bill_error;
 
-    if ($cust_main->_new_bop_required()) {
-      $bill_error = $cust_main->realtime_collect(
-         method        => FS::payby->payby2bop( $packet->{payby} ),
-         depend_jobnum => $placeholder->jobnum,
-      );
-    } else {
-      $bill_error = $cust_main->collect('realtime' => 1);
-    }
+    $bill_error = $cust_main->realtime_collect(
+       method        => FS::payby->payby2bop( $packet->{payby} ),
+       depend_jobnum => $placeholder->jobnum,
+    );
     #warn "[fs_signup_server] error collecting from new customer: $bill_error"
     #  if $bill_error;
 

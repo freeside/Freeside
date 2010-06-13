@@ -1344,7 +1344,7 @@ sub _do_bop_realtime {
 
     my $bill_error =    $cust_main->bill
                      || $cust_main->apply_payments_and_credits
-                     || $cust_main->collect('realtime' => 1);
+                     || $cust_main->realtime_collect;
 
     if (    $cust_main->balance > $old_balance
          && $cust_main->balance > 0
