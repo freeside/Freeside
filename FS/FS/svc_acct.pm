@@ -1228,6 +1228,10 @@ sub check {
               || $self->ut_snumbern('upbytes')
               || $self->ut_snumbern('downbytes')
               || $self->ut_snumbern('totalbytes')
+              || $self->ut_snumbern('seconds_threshold')
+              || $self->ut_snumbern('upbytes_threshold')
+              || $self->ut_snumbern('downbytes_threshold')
+              || $self->ut_snumbern('totalbytes_threshold')
               || $self->ut_enum('_password_encoding', ['',qw(plain crypt ldap)])
               || $self->ut_enum('password_selfchange', [ '', 'Y' ])
               || $self->ut_enum('password_recover',    [ '', 'Y' ])
@@ -2305,7 +2309,7 @@ sub set_usage {
   #die $error if $error;         #services not explicity changed via the UI
 
   my $sql = "UPDATE svc_acct SET " .
-    join (',', map { "$_ =  $handyhash{$_}" } (keys %handyhash) ).
+    join (',', map { "$_ =  ?" } (keys %handyhash) ).
     " WHERE svcnum = ". $self->svcnum;
 
   warn "$me $sql\n"
@@ -2314,7 +2318,7 @@ sub set_usage {
   if (scalar(keys %handyhash)) {
     my $sth = $dbh->prepare( $sql )
       or die "Error preparing $sql: ". $dbh->errstr;
-    my $rv = $sth->execute();
+    my $rv = $sth->execute(values %handyhash);
     die "Error executing $sql: ". $sth->errstr
       unless defined($rv);
     die "Can't update usage for svcnum ". $self->svcnum
