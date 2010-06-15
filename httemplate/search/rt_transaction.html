@@ -77,6 +77,10 @@ if ( $cgi->param('otaker') && $cgi->param('otaker') =~ /^([\w\.\-]+)$/ ) {
   $where .= " AND Users.name = '$1' ";
 }
 
+if ( $cgi->param('ticketid') =~ /^\s*(\d+)\s*$/ ) {
+  $where .= " AND Tickets.ID = $1";
+}
+
 my $query = {
   'select'    => "Transactions.*, Tickets.Id AS ticketid, Tickets.Subject, Users.name as otaker, $transactiontime AS transaction_time",
   #'table'     => 'Transactions',

@@ -8,6 +8,24 @@
 
   <% include ( '/elements/tr-select-otaker.html' ) %>
 
+  <% include ( '/elements/tr-input-text.html',
+                 'label' => 'Ticket #',
+                 'field' => 'ticketid',
+             )
+  %>
+
+  <TR>
+    <TD>Account</TD>
+    <TD>
+      <SELECT NAME="svcnum">
+        <OPTION VALUE="">(all)
+%       foreach my $svc_acct (@svc_acct) {
+          <OPTION VALUE="<% $svc_acct->svcnum %>"><% $svc_acct->username %></OPTION>
+%       }
+      </SELECT>
+    </TD>
+  </TR>
+
 </TABLE>
 
 <BR>
@@ -20,5 +38,19 @@
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('List rating data');
+
+my $conf = new FS::Conf;
+
+my @pkgparts = $conf->config('support_packages');
+
+my @svc_acct = ();
+if ( @pkgparts ) {
+  @svc_acct = qsearch({
+    'table'     => 'svc_acct',
+    'addl_from' => ' LEFT JOIN cust_svc USING ( svcnum ) '.
+                   ' LEFT JOIN cust_pkg USING ( pkgnum ) ',
+    'extra_sql' => 'WHERE pkgpart IN ('. join(',', @pkgparts). ')',
+  });
+}
 
 </%init>
