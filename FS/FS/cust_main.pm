@@ -5200,7 +5200,7 @@ sub realtime_refund_bop {
   my $self = shift;
 
   my %options = ();
-  if (ref($_[0]) ne 'HASH') {
+  if (ref($_[0]) eq 'HASH') {
     %options = %{$_[0]};
   } else {
     my $method = shift;
