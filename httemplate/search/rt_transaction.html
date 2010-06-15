@@ -3,11 +3,12 @@
              'name_singular' => 'transaction',
              'query'         => $query,
              'count_query'   => $count_query,
-             'count_addl'    => [ $format_seconds_sub, ],
+             'count_addl'    => [ $format_seconds_sub, $format_seconds_sub, ],
              'header'        => [ 'Ticket #',
                                   'Ticket',
                                   'Date',
                                   'Time',
+                                  'Applied',
                                 ],
              'fields'        => [ 'ticketid',
                                   sub { encode_entities(shift->get('subject')) },
@@ -15,10 +16,14 @@
                                   sub { my $seconds = shift->get('transaction_time');
                                         &{ $format_seconds_sub }( $seconds );
                                       },
+                                  sub { my $seconds = shift->get('support');
+                                        &{ $format_seconds_sub }( $seconds );
+                                      },
                                 ],
              'links'         => [
                                   $link,
                                   $link,
+                                  '',
                                   '',
                                   '',
                                 ],
@@ -28,7 +33,9 @@
 
 my $format_seconds_sub = sub {
   my $seconds = shift;
-  (($seconds < 0) ? '-' : '') . concise(duration($seconds));
+  #(($seconds < 0) ? '-' : '') . concise(duration($seconds));
+  (($seconds < 0) ? '-' : '' ). int(abs($seconds)/3600)."h".sprintf("%02d",(abs(
+$seconds)%3600)/60)."m";
 };
 
 </%once>
@@ -81,8 +88,12 @@ if ( $cgi->param('ticketid') =~ /^\s*(\d+)\s*$/ ) {
   $where .= " AND Tickets.ID = $1";
 }
 
+if ( $cgi->param('svcnum') =~ /^\s*(\d+)\s*$/ ) {
+  $where .= " AND acct_rt_transaction.svcnum = $1";
+}
+
 my $query = {
-  'select'    => "Transactions.*, Tickets.Id AS ticketid, Tickets.Subject, Users.name as otaker, $transactiontime AS transaction_time",
+  'select'    => "Transactions.*, Tickets.Id AS ticketid, Tickets.Subject, Users.name as otaker, $transactiontime AS transaction_time, acct_rt_transaction.support",
   #'table'     => 'Transactions',
   'table'     => 'transactions',
   'addl_from' => $join.
@@ -93,7 +104,7 @@ my $query = {
 };
 
 my $count_query =
-  "SELECT COUNT(*), SUM($transactiontime) FROM Transactions $join $where";
+  "SELECT COUNT(*), SUM($transactiontime), SUM(support) FROM Transactions $join $where";
 
 my $link = [ "${p}rt/Ticket/Display.html?id=", sub { shift->get('ticketid'); } ];
 
