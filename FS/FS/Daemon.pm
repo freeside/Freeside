@@ -83,6 +83,7 @@ sub myexit {
 }
 
 sub _die {
+  die @_ if $^S; # $^S = 1 during an eval(), don't break exception handling
   my $msg = shift;
   unlink $pid_file if -e $pid_file;
   _logmsg($msg);

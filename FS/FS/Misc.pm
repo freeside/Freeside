@@ -353,12 +353,16 @@ sub send_email {
     $smtp_opt{'ssl'} = 1 if defined($enc) && $enc eq 'tls';
     $transport = Email::Sender::Transport::SMTP->new( %smtp_opt );
   }
-
-  eval { sendmail($message, { transport => $transport }); };
-  ref($@) eq 'Email::Sender::Failure'
-    ? ( $@->code ? $@->code.' ' : '' ). $@->message
-    : $@;
-
+  
+  local $@; # just in case
+  eval { sendmail($message, { transport => $transport }) };
+ 
+  if(ref($@) and $@->isa('Email::Sender::Failure')) {
+    return ($@->code ? $@->code.' ' : '').$@->message
+  }
+  else {
+    return $@;
+  }
 }
 
 =item send_fax OPTION => VALUE ...
