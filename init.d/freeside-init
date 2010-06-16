@@ -48,6 +48,10 @@ case "$1" in
           echo "done."
         done
 
+        echo -n "Starting freeside-selfservice-xmlrpcd: "
+        freeside-selfservice-xmlrpcd $SELFSERVICE_USER
+        echo "done."
+
         #ip=`/sbin/ifconfig $IF | grep 'inet addr:' | cut -d: -f2- | cut -d' ' -f1`
         #cp /opt/rt3/etc/RT_SiteConfig.pm.ORIG /opt/rt3/etc/RT_SiteConfig.pm
         #perl -pi -e "s/localhost/$ip/" /opt/rt3/etc/RT_SiteConfig.pm
@@ -103,6 +107,12 @@ case "$1" in
             echo "done."
           fi
         done
+
+        if [ -e /var/run/freeside/selfservice-xmlrpcd.pid ]; then
+          echo -n "Stopping freeside-selfservice-xmlrpcd: "
+          kill `cat /var/run/freeside/selfservice-xmlrpcd.pid`
+          echo "done."
+        fi
 
         ;;
 

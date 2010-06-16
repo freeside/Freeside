@@ -1645,6 +1645,7 @@ worry that config_items is freeside-specific and icky.
     'description' => 'Run billing for signup server signups immediately, and do not provision accounts which subsequently have a balance.',
     'type'        => 'checkbox',
   },
+
   {
     'key'         => 'signup_server-classnum2',
     'section'     => 'self-service',
@@ -1657,6 +1658,13 @@ worry that config_items is freeside-specific and icky.
     'section'     => 'self-service',
     'description' => 'Package Class for second optional purchase',
     'type'        => 'select-pkg_class',
+  },
+
+  {
+    'key'         => 'selfservice-xmlrpc',
+    'section'     => 'self-service',
+    'description' => 'Run a standalone self-service XML-RPC server on the backend (on port 8080).',
+    'type'        => 'checkbox',
   },
 
   {

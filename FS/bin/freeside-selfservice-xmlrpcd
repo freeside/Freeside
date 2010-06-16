@@ -25,6 +25,7 @@ use XMLRPC::Lite; # for XMLRPC::Serializer
 
 use FS::Daemon qw(daemonize1 drop_root logfile daemonize2 );
 use FS::UID qw(adminsuidsetup);
+use FS::Conf;
 use FS::ClientAPI qw( load_clientapi_modules );
 use FS::ClientAPI_XMLRPC; #FS::SelfService::XMLRPC;
 
@@ -47,17 +48,25 @@ my %typelookup = (
 my $user = shift or die &usage;
 
 $FS::Daemon::NOSIG = 1;
-daemonize1('freeside-selfservice-xmlrpcd');
+$FS::Daemon::PID_NEWSTYLE = 1;
+daemonize1('selfservice-xmlrpcd');
 
 POE::Kernel->has_forked(); #daemonize forks...
 
 drop_root();
+
+adminsuidsetup($user);
 
 load_clientapi_modules;
 
 logfile("$FREESIDE_LOG/selfservice-xmlrpcd.log");
 
 daemonize2();
+
+my $conf = new FS::Conf;
+
+die "not running; selfservice-xmlrpc conf option is off\n"
+  unless $conf->exists('selfservice-xmlrpc');
 
 ###
 # the main loop
