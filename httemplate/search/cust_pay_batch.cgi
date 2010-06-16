@@ -124,7 +124,7 @@ $sql_query = "SELECT paybatchnum,invnum,custnum,cpb.last,cpb.first," .
              'LEFT JOIN pay_batch USING ( batchnum ) ' .
              "$search ORDER BY $orderby";
 
-my $html_init = '';
+my $html_init = '<TABLE>';
 if ( $pay_batch ) {
   my $fixed = $conf->config('batch-fixed_format-'. $pay_batch->payby);
   if (
@@ -136,11 +136,12 @@ if ( $pay_batch ) {
             && $FS::CurrentUser::CurrentUser->access_right('Redownload resolved batches')
           ) 
   ) {
-    $html_init .= qq!<FORM ACTION="$p/misc/download-batch.cgi" METHOD="POST">!;
+    $html_init .= qq!<TR><FORM ACTION="$p/misc/download-batch.cgi" METHOD="POST">!;
     if ( $fixed ) {
       $html_init .= qq!<INPUT TYPE="hidden" NAME="format" VALUE="$fixed">!;
     } else {
-      $html_init .= qq!Download batch in format <SELECT NAME="format">!.
+      $html_init .= qq!Download batch in format !.
+                    qq!<SELECT NAME="format">!.
                     qq!<OPTION VALUE="">Default batch mode</OPTION>!.
                     qq!<OPTION VALUE="csv-td_canada_trust-merchant_pc_batch">CSV file for TD Canada Trust Merchant PC Batch</OPTION>!.
                     qq!<OPTION VALUE="csv-chase_canada-E-xactBatch">CSV file for Chase Canada E-xactBatch</OPTION>!.
@@ -151,7 +152,7 @@ if ( $pay_batch ) {
                     qq!<OPTION VALUE="RBC">Royal Bank of Canada PDS</OPTION>!.
                     qq!</SELECT>!;
     }
-    $html_init .= qq!<INPUT TYPE="hidden" NAME="batchnum" VALUE="$batchnum"><INPUT TYPE="submit" VALUE="Download"></FORM><BR>!;
+    $html_init .= qq!<INPUT TYPE="hidden" NAME="batchnum" VALUE="$batchnum"><INPUT TYPE="submit" VALUE="Download"></FORM><BR><BR></TR>!;
   }
 
   if (
@@ -160,13 +161,28 @@ if ( $pay_batch ) {
             && $FS::CurrentUser::CurrentUser->access_right('Reprocess batches')
           ) 
   ) {
-    $html_init .= qq!<FORM ACTION="$p/misc/upload-batch.cgi" METHOD="POST" ENCTYPE="multipart/form-data">!.
-                  qq!Upload results<BR>!.
-                  qq!Filename <INPUT TYPE="file" NAME="batch_results"><BR>!;
+    $html_init .= '<TR>'.
+                  include('/elements/form-file_upload.html',
+                            'name'      => 'FileUpload',
+                            'action'    => "$p/misc/upload-batch.cgi",
+                            'num_files' => 1,
+                            'fields'    => [ 'batchnum', 'format' ],
+                            'message'   => 'Batch results uploaded.',
+                            ) .
+                  'Upload results<BR></TR><TR>'.
+                  include('/elements/file-upload.html',
+                            'field'   => 'file',
+                            'label'   => 'Filename',
+                            'no_table'=> 1
+                         ).
+                  '<BR></TR>'
+                  ;
     if ( $fixed ) {
       $html_init .= qq!<INPUT TYPE="hidden" NAME="format" VALUE="$fixed">!;
     } else {
-      $html_init .= qq!Format <SELECT NAME="format">!.
+      # should pull this from %import_info
+      $html_init .= qq!<TR>Format !.
+                    qq!<SELECT NAME="format">!.
                     qq!<OPTION VALUE="">Default batch mode</OPTION>!.
                     qq!<OPTION VALUE="csv-td_canada_trust-merchant_pc_batch">CSV results from TD Canada Trust Merchant PC Batch</OPTION>!.
                     qq!<OPTION VALUE="csv-chase_canada-E-xactBatch">CSV file for Chase Canada E-xactBatch</OPTION>!.
@@ -175,12 +191,12 @@ if ( $pay_batch ) {
                     qq!<OPTION VALUE="ach-spiritone">Spiritone ACH batch</OPTION>!.
                     qq!<OPTION VALUE="paymentech">Chase Paymentech XML</OPTION>!.
                     qq!<OPTION VALUE="RBC">Royal Bank of Canada PDS</OPTION>!.
-                    qq!</SELECT><BR>!;
+                    qq!</SELECT><BR></TR>!;
     }
     $html_init .= qq!<INPUT TYPE="hidden" NAME="batchnum" VALUE="$batchnum">!;
-    $html_init .= '<INPUT TYPE="submit" VALUE="Upload"></FORM><BR>';
+    $html_init .= '<TR> <INPUT TYPE="submit" VALUE="Upload"></FORM><BR> </TR>';
   }
-
+  $html_init .= '</TABLE>'
 }
 
 if ($pay_batch) {

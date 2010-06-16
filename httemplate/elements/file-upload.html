@@ -54,10 +54,15 @@
 <INPUT TYPE="hidden" NAME="upload_fields" VALUE="<% join(',', @field) %>" />
 
 % foreach (@field) {
+%   if($param{'no_table'}) {
+  <% shift @label %> <INPUT TYPE="file" NAME="<% $_ %>" />
+%   }
+%   else {
     <TR>
       <TH ALIGN="<% $param{'label_align'} || 'right' %>"><% shift @label %></TH>
       <TD><INPUT TYPE="file" NAME="<% $_ %>" /></TD>
     </TR>
+%   }
 % }
 
 <DIV STYLE="display:<% $param{debug} ? 'visible' : 'none' %>">

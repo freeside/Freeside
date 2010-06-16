@@ -195,6 +195,9 @@ sub import_results {
   my $info = $import_info{$format}
     or die "unknown format $format";
 
+  my $job = $param->{'job'};
+  $job->update_statustext(0) if $job;
+
   my $filetype            = $info->{'filetype'};      # CSV or fixed
   my @fields              = @{ $info->{'fields'}};
   my $formatre            = $info->{'formatre'};      # for fixed
@@ -286,7 +289,12 @@ sub import_results {
     }
   }
 
+  my $num = 0;
   foreach (@all_values) {
+    if($job) {
+      $num++;
+      $job->update_statustext(int(100 * $num/scalar(@all_values)));
+    }
     my @values = @$_;
 
     my %hash;
@@ -402,6 +410,29 @@ sub import_results {
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
 
+}
+
+use MIME::Base64;
+use Storable 'thaw';
+use Data::Dumper;
+sub process_import_results {
+  my $job = shift;
+  my $param = thaw(decode_base64(shift));
+  $param->{'job'} = $job;
+  warn Dumper($param) if $DEBUG;
+  my $batchnum = delete $param->{'batchnum'} or die "no batchnum specified\n";
+  my $batch = FS::pay_batch->by_key($batchnum) or die "batchnum '$batchnum' not found\n";
+
+  my $file = $param->{'uploaded_files'} or die "no files provided\n";
+  $file =~ s/^(\w+):([\.\w]+)$/$2/;
+  my $dir = '%%%FREESIDE_CACHE%%%/cache.' . $FS::UID::datasrc;
+  open( $param->{'filehandle'}, 
+        '<',
+        "$dir/$file" )
+      or die "unable to open '$file'.\n";
+  my $error = $batch->import_results($param);
+  unlink $file;
+  die $error if $error;
 }
 
 # Formerly httemplate/misc/download-batch.cgi
