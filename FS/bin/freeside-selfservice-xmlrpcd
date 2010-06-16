@@ -20,58 +20,52 @@ use POE::Filter::HTTPD;          # For serving HTTP content.
 use POE::Wheel::ReadWrite;       # For socket I/O.
 use POE::Wheel::SocketFactory;   # For serving socket connections.
 
-#use SOAP::Transport::HTTP;
-use XMLRPC::Transport::HTTP;
+use XMLRPC::Transport::HTTP; #SOAP::Transport::HTTP;
 use XMLRPC::Lite; # for XMLRPC::Serializer
 
+use FS::Daemon qw(daemonize1 drop_root logfile daemonize2 );
 use FS::UID qw(adminsuidsetup);
-#use FS::SelfService::XMLRPC;
 use FS::ClientAPI qw( load_clientapi_modules );
-use FS::ClientAPI_XMLRPC;
+use FS::ClientAPI_XMLRPC; #FS::SelfService::XMLRPC;
 
-#xmlrpc.cgi
+#freeside
+my $FREESIDE_LOG = "%%%FREESIDE_LOG%%%";
+my $FREESIDE_LOCK = "%%%FREESIDE_LOCK%%%";
+my $lock_file = "$FREESIDE_LOCK/selfservice-xmlrpcd.writelock";
+
+#freeside xmlrpc.cgi
 my %typelookup = (
   base64 => [10, sub {$_[0] =~ /[^\x09\x0a\x0d\x20-\x7f]/}, 'as_base64'],
   dateTime => [35, sub {$_[0] =~ /^\d{8}T\d\d:\d\d:\d\d$/}, 'as_dateTime'],
   string => [40, sub {1}, 'as_string'],
 );
 
-# These are HTTP::Request headers that have methods.
-my @method_headers =
-  qw( authorization authorization_basic
-  content content_encoding content_language content_length content_type
-  date expires from if_modified_since if_unmodified_since last_modified
-  method protocol proxy_authorization proxy_authorization_basic referer
-  server title url user_agent www_authenticate
-);
-
-# These are HTTP::Request headers that do not have methods.
-my @header_headers =
-  qw( username opaque stale algorithm realm uri qop auth nonce cnonce
-  nc response
-);
-
 ###
-# init
+# freeside init
 ###
 
 my $user = shift or die &usage;
 
-#FS::ClientAPI
+$FS::Daemon::NOSIG = 1;
+daemonize1('freeside-selfservice-xmlrpcd');
+
+POE::Kernel->has_forked(); #daemonize forks...
+
+drop_root();
+
 load_clientapi_modules;
+
+logfile("$FREESIDE_LOG/selfservice-xmlrpcd.log");
+
+daemonize2();
 
 ###
 # the main loop
 ###
 
-# Spawn up to MAX_PROCESSES server processes, and then run them.  Exit
-# when they are done.
-
 server_spawn(MAX_PROCESSES);
 POE::Kernel->run();
-
-#XXX we probably want to sleep a bit and then try all over again...
-exit 0;
+exit;
 
 ###
 # the subroutines
@@ -110,8 +104,8 @@ sub server_start {
         Reuse        => "yes",
       );
 
-    #XXX?#$kernel->sig( CHLD => "got_sig_child" );
     $kernel->sig( INT  => "got_sig_int" );
+    $kernel->sig( TERM => "got_sig_int" ); #huh
 
     $heap->{children}   = {};
     $heap->{is_a_child} = 0;
@@ -128,11 +122,10 @@ sub server_stop {
     my $heap = $_[HEAP];
     DEBUG and warn "Server $$ stopped.\n";
 
-    #XXX?
-    #if ( my @children = keys %{ $heap->{children} } ) {
-    #    DEBUG and warn "Server $$ is signaling children to stop.\n";
-    #    kill INT => @children;
-    #}
+    if ( my @children = keys %{ $heap->{children} } ) {
+        DEBUG and warn "Server $$ is signaling children to stop.\n";
+        kill INT => @children;
+    }
 }
 
 ### The server session has encountered an error.  Shut it down.
@@ -192,9 +185,16 @@ sub server_do_fork {
 ### which in turn will trigger the process to exit gracefully.
 
 sub server_got_sig_int {
-    DEBUG and warn "Server $$ received SIGINT.\n";
-    delete $_[HEAP]->{server};
-    $_[KERNEL]->sig_handled();
+    my ( $kernel, $heap ) = @_[ KERNEL, HEAP ];
+    DEBUG and warn "Server $$ received SIGINT/TERM.\n";
+
+    if ( my @children = keys %{ $heap->{children} } ) {
+        DEBUG and warn "Server $$ is signaling children to stop.\n";
+        kill INT => @children;
+    }
+
+    delete $heap->{server};
+    $kernel->sig_handled();
 }
 
 ### The server session received a SIGCHLD, indicating that some child

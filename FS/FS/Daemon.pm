@@ -1,7 +1,7 @@
 package FS::Daemon;
 
 use vars qw( @ISA @EXPORT_OK );
-use vars qw( $pid_dir $me $pid_file $sigint $sigterm $logfile );
+use vars qw( $pid_dir $me $pid_file $sigint $sigterm $NOSIG $logfile );
 use Exporter;
 use Fcntl qw(:flock);
 use POSIX qw(setsid);
@@ -18,6 +18,8 @@ use Date::Format;
 %EXPORT_TAGS = ( 'all' => [ @EXPORT_OK ] );
 
 $pid_dir = '/var/run';
+
+$NOSIG = 0;
 
 sub daemonize1 {
   $me = shift;
@@ -41,8 +43,10 @@ sub daemonize1 {
   #$SIG{CHLD} =  \&REAPER;
   $sigterm = 0;
   $sigint = 0;
-  $SIG{INT}  = sub { warn "SIGINT received; shutting down\n"; $sigint++;  };
-  $SIG{TERM} = sub { warn "SIGTERM received; shutting down\n"; $sigterm++; };
+  unless ( $NOSIG ) {
+    $SIG{INT}  = sub { warn "SIGINT received; shutting down\n"; $sigint++;  };
+    $SIG{TERM} = sub { warn "SIGTERM received; shutting down\n"; $sigterm++; };
+  }
 }
 
 sub drop_root {
@@ -99,3 +103,4 @@ sub _logmsg {
   close $log;
 }
 
+1;
