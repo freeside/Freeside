@@ -1,0 +1,348 @@
+#!/usr/bin/perl
+#
+# based on http://www.perlmonks.org/?node_id=582781 by Justin Hawkins
+
+###
+# modules and variables, oh my
+###
+
+use warnings;
+use strict;
+
+#use SOAP::Transport::HTTP;
+use XMLRPC::Transport::HTTP;
+use XMLRPC::Lite; # for XMLRPC::Serializer
+
+use POE;                         # Base features.
+use POE::Filter::HTTPD;          # For serving HTTP content.
+use POE::Wheel::ReadWrite;       # For socket I/O.
+use POE::Wheel::SocketFactory;   # For serving socket connections.
+
+use FS::UID qw(adminsuidsetup);
+#use FS::SelfService::XMLRPC;
+use FS::ClientAPI qw( load_clientapi_modules );
+use FS::ClientAPI_XMLRPC;
+
+
+#sub DEBUG ()         { 0 }       # Enable a lot of runtime information.
+#sub MAX_PROCESSES () { 10 }      # Total number of server processes.
+#sub SERVER_PORT ()   { 8092 }    # Server port to listen on.
+sub DEBUG ()         { 0 }       # Enable a lot of runtime information.
+sub MAX_PROCESSES () { 32 }      # Total number of server processes.
+sub SERVER_PORT ()   { 8080 }    # Server port to listen on.
+
+sub TESTING_CHURN () { 0 }       # Randomly shutdown children to test respawn.
+
+#xmlrpc.cgi
+my %typelookup = (
+  base64 => [10, sub {$_[0] =~ /[^\x09\x0a\x0d\x20-\x7f]/}, 'as_base64'],
+  dateTime => [35, sub {$_[0] =~ /^\d{8}T\d\d:\d\d:\d\d$/}, 'as_dateTime'],
+  string => [40, sub {1}, 'as_string'],
+);
+
+# These are HTTP::Request headers that have methods.
+my @method_headers =
+  qw( authorization authorization_basic
+  content content_encoding content_language content_length content_type
+  date expires from if_modified_since if_unmodified_since last_modified
+  method protocol proxy_authorization proxy_authorization_basic referer
+  server title url user_agent www_authenticate
+);
+
+# These are HTTP::Request headers that do not have methods.
+my @header_headers =
+  qw( username opaque stale algorithm realm uri qop auth nonce cnonce
+  nc response
+);
+
+###
+# init
+###
+
+my $user = shift or die &usage;
+
+#FS::ClientAPI
+load_clientapi_modules;
+
+###
+# the main loop
+###
+
+# Spawn up to MAX_PROCESSES server processes, and then run them.  Exit
+# when they are done.
+
+server_spawn(MAX_PROCESSES);
+$poe_kernel->run();
+
+#XXX we probably want to sleep a bit and then try all over again...
+exit 0;
+
+###
+# the subroutines
+###
+
+### Spawn the main server.  This will run as the parent process.
+
+sub server_spawn {
+    my ($max_processes) = @_;
+
+    POE::Session->create
+      ( inline_states =>
+          { _start => \&server_start,
+            _stop          => \&server_stop,
+            do_fork        => \&server_do_fork,
+            got_error      => \&server_got_error,
+            got_sig_int    => \&server_got_sig_int,
+            got_sig_chld   => \&server_got_sig_chld,
+            got_connection => \&server_got_connection,
+
+            _child => sub { 0 },
+          },
+        heap =>
+          { max_processes => $max_processes,
+          },
+      );
+}
+
+### The main server session has started.  Set up the server socket and
+### bookkeeping information, then fork the initial child processes.
+
+sub server_start {
+    my ( $kernel, $heap ) = @_[ KERNEL, HEAP ];
+
+    $heap->{server} = POE::Wheel::SocketFactory->new
+      ( BindPort => SERVER_PORT,
+        SuccessEvent => "got_connection",
+        FailureEvent => "got_error",
+        Reuse        => "yes",
+      );
+
+    $kernel->sig( CHLD => "got_sig_chld" );
+    $kernel->sig( INT  => "got_sig_int" );
+
+    $heap->{children}   = {};
+    $heap->{is_a_child} = 0;
+
+    warn "Server $$ has begun listening on port ", SERVER_PORT, "\n";
+
+    $kernel->yield("do_fork");
+}
+
+### The server session has shut down.  If this process has any
+### children, signal them to shutdown too.
+
+sub server_stop {
+    my $heap = $_[HEAP];
+    DEBUG and warn "Server $$ stopped.\n";
+    if ( my @children = keys %{ $heap->{children} } ) {
+        DEBUG and warn "Server $$ is signaling children to stop.\n";
+        kill INT => @children;
+    }
+}
+
+### The server session has encountered an error.  Shut it down.
+
+sub server_got_error {
+    my ( $heap, $syscall, $errno, $error ) = @_[ HEAP, ARG0 .. ARG2 ];
+      warn( "Server $$ got $syscall error $errno: $error\n",
+        "Server $$ is shutting down.\n",
+      );
+    delete $heap->{server};
+}
+
+### The server has a need to fork off more children.  Only honor that
+### request form the parent, otherwise we would surely "forkbomb".
+### Fork off as many child processes as we need.
+
+sub server_do_fork {
+    my ( $kernel, $heap ) = @_[ KERNEL, HEAP ];
+
+    return if $heap->{is_a_child};
+
+    my $current_children = keys %{ $heap->{children} };
+    for ( $current_children + 2 .. $heap->{max_processes} ) {
+
+        DEBUG and warn "Server $$ is attempting to fork.\n";
+
+        my $pid = fork();
+
+        unless ( defined($pid) ) {
+            DEBUG and
+              warn( "Server $$ fork failed: $!\n",
+                "Server $$ will retry fork shortly.\n",
+              );
+            $kernel->delay( do_fork => 1 );
+            return;
+        }
+
+        # Parent.  Add the child process to its list.
+        if ($pid) {
+            $heap->{children}->{$pid} = 1;
+            next;
+        }
+
+        # Child.  Clear the child process list.
+        DEBUG and warn "Server $$ forked successfully.\n";
+        $heap->{is_a_child} = 1;
+        $heap->{children}   = {};
+
+        return;
+    }
+}
+
+### The server session received SIGINT.  Don't handle the signal,
+### which in turn will trigger the process to exit gracefully.
+
+sub server_got_sig_int {
+    DEBUG and warn "Server $$ received SIGINT.\n";
+    return 0;
+}
+
+### The server session received a SIGCHLD, indicating that some child
+### server has gone away.  Remove the child's process ID from our
+### list, and trigger more fork() calls to spawn new children.
+
+sub server_got_sig_chld {
+    my ( $kernel, $heap, $child_pid ) = @_[ KERNEL, HEAP, ARG1 ];
+
+    if ( delete $heap->{children}->{$child_pid} ) {
+        DEBUG and warn "Server $$ received SIGCHLD.\n";
+        $kernel->yield("do_fork");
+    }
+    return 0;
+}
+
+### The server session received a connection request.  Spawn off a
+### client handler session to parse the request and respond to it.
+
+sub server_got_connection {
+    my ( $heap, $socket, $peer_addr, $peer_port ) = @_[ HEAP, ARG0, ARG1, ARG2 ];
+
+    DEBUG and warn "Server $$ received a connection.\n";
+
+    POE::Session->create
+      ( inline_states =>
+          { _start => \&client_start,
+            _stop       => \&client_stop,
+            got_request => \&client_got_request,
+            got_flush   => \&client_flushed_request,
+            got_error   => \&client_got_error,
+            _parent     => sub { 0 },
+          },
+        heap =>
+          { socket => $socket,
+            peer_addr => $peer_addr,
+            peer_port => $peer_port,
+          },
+      );
+
+    delete $heap->{server}
+      if TESTING_CHURN and $heap->{is_a_child} and ( rand() < 0.1 );
+}
+
+### The client handler has started.  Wrap its socket in a ReadWrite
+### wheel to begin interacting with it.
+
+sub client_start {
+    my $heap = $_[HEAP];
+
+    $heap->{client} = POE::Wheel::ReadWrite->new
+      ( Handle => $heap->{socket},
+        Filter       => POE::Filter::HTTPD->new(),
+        InputEvent   => "got_request",
+        ErrorEvent   => "got_error",
+        FlushedEvent => "got_flush",
+      );
+
+    DEBUG and warn "Client handler $$/", $_[SESSION]->ID, " started.\n";
+}
+
+### The client handler has stopped.  Log that fact.
+
+sub client_stop {
+    DEBUG and warn "Client handler $$/", $_[SESSION]->ID, " stopped.\n";
+}
+
+### The client handler has received a request.  If it's an
+### HTTP::Response object, it means some error has occurred while
+### parsing the request.  Send that back and return immediately.
+### Otherwise parse and process the request, generating and sending an
+### HTTP::Response object in response.
+
+sub client_got_request {
+    my ( $heap, $request ) = @_[ HEAP, ARG0 ];
+
+    freeside_kid_time();
+
+    my $serializer = new XMLRPC::Serializer(typelookup => \%typelookup);
+
+    #my $soap = SOAP::Transport::HTTP::Server
+    my $soap = XMLRPC::Transport::HTTP::Server
+               -> new
+               -> dispatch_to('FS::ClientAPI_XMLRPC')
+               -> serializer($serializer);
+
+    DEBUG and
+      warn "Client handler $$/", $_[SESSION]->ID, " is handling a request.\n";
+
+    if ( $request->isa("HTTP::Response") ) {
+        $heap->{client}->put($request);
+        return;
+    }
+
+    $soap->request($request);
+    $soap->handle;
+    my $response = $soap->response;
+
+    $heap->{client}->put($response);
+}
+
+#setup the database connection and other things FS::SelfService::XMLRPC
+#expects to be in place.  aka "kid time" in freeside-selfservice-server
+sub freeside_kid_time {
+
+  #if we need a db connection in the parent
+  ##get new db handle
+  #$FS::UID::dbh->{InactiveDestroy} = 1;
+  #forksuidsetup($user);
+
+  adminsuidsetup($user);
+
+  #i guess that was it
+}
+
+### The client handler received an error.  Stop the ReadWrite wheel,
+### which also closes the socket.
+
+sub client_got_error {
+    my ( $heap, $operation, $errnum, $errstr ) = @_[ HEAP, ARG0, ARG1, ARG2 ];
+    DEBUG and
+      warn( "Client handler $$/", $_[SESSION]->ID,
+        " got $operation error $errnum: $errstr\n",
+        "Client handler $$/", $_[SESSION]->ID, " is shutting down.\n"
+      );
+    delete $heap->{client};
+}
+
+### The client handler has flushed its response to the socket.  We're
+### done with the client connection, so stop the ReadWrite wheel.
+
+sub client_flushed_request {
+    my $heap = $_[HEAP];
+    DEBUG and
+      warn( "Client handler $$/", $_[SESSION]->ID,
+        " flushed its response.\n",
+        "Client handler $$/", $_[SESSION]->ID, " is shutting down.\n"
+      );
+    delete $heap->{client};
+}
+
+sub usage {
+  die "Usage:\n\n  freeside-selfservice-xmlrpcd user\n";
+}
+
+###
+# the end
+###
+
+1;

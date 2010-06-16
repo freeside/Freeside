@@ -17,6 +17,7 @@ bin/freeside-queued
 bin/freeside-radgroup
 bin/freeside-reexport
 bin/freeside-selfservice-server
+bin/freeside-selfservice-xmlrpcd
 bin/freeside-setinvoice
 bin/freeside-setup
 bin/freeside-sqlradius-radacctd
@@ -28,8 +29,15 @@ FS/CGI.pm
 FS/InitHandler.pm
 FS/ClientAPI.pm
 FS/ClientAPI_SessionCache.pm
+FS/ClientAPI_XMLRPC.pm
 FS/ClientAPI/passwd.pm
+FS/ClientAPI/Agent.pm
+FS/ClientAPI/Bulk.pm
+FS/ClientAPI/MasonComponent.pm
 FS/ClientAPI/MyAccount.pm
+FS/ClientAPI/PrepaidPhone.pm
+FS/ClientAPI/SGNG.pm
+FS/ClientAPI/Signup.pm
 FS/Conf.pm
 FS/ConfItem.pm
 FS/Cron/backup.pm
