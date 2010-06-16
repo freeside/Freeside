@@ -1,37 +1,33 @@
 #!/usr/bin/perl
 #
 # based on http://www.perlmonks.org/?node_id=582781 by Justin Hawkins
+# and http://poe.perl.org/?POE_Cookbook/Web_Server_With_Forking
 
 ###
-# modules and variables, oh my
+# modules and constants and variables, oh my
 ###
 
 use warnings;
 use strict;
 
-#use SOAP::Transport::HTTP;
-use XMLRPC::Transport::HTTP;
-use XMLRPC::Lite; # for XMLRPC::Serializer
+use constant DEBUG         => 1;       # Enable much runtime information.
+use constant MAX_PROCESSES => 10;      # Total server process count.
+use constant SERVER_PORT   => 8080;    # Server port.
+use constant TESTING_CHURN => 0;       # Randomly test process respawning.
 
 use POE;                         # Base features.
 use POE::Filter::HTTPD;          # For serving HTTP content.
 use POE::Wheel::ReadWrite;       # For socket I/O.
 use POE::Wheel::SocketFactory;   # For serving socket connections.
 
+#use SOAP::Transport::HTTP;
+use XMLRPC::Transport::HTTP;
+use XMLRPC::Lite; # for XMLRPC::Serializer
+
 use FS::UID qw(adminsuidsetup);
 #use FS::SelfService::XMLRPC;
 use FS::ClientAPI qw( load_clientapi_modules );
 use FS::ClientAPI_XMLRPC;
-
-
-#sub DEBUG ()         { 0 }       # Enable a lot of runtime information.
-#sub MAX_PROCESSES () { 10 }      # Total number of server processes.
-#sub SERVER_PORT ()   { 8092 }    # Server port to listen on.
-sub DEBUG ()         { 0 }       # Enable a lot of runtime information.
-sub MAX_PROCESSES () { 32 }      # Total number of server processes.
-sub SERVER_PORT ()   { 8080 }    # Server port to listen on.
-
-sub TESTING_CHURN () { 0 }       # Randomly shutdown children to test respawn.
 
 #xmlrpc.cgi
 my %typelookup = (
@@ -72,7 +68,7 @@ load_clientapi_modules;
 # when they are done.
 
 server_spawn(MAX_PROCESSES);
-$poe_kernel->run();
+POE::Kernel->run();
 
 #XXX we probably want to sleep a bit and then try all over again...
 exit 0;
@@ -86,22 +82,19 @@ exit 0;
 sub server_spawn {
     my ($max_processes) = @_;
 
-    POE::Session->create
-      ( inline_states =>
-          { _start => \&server_start,
-            _stop          => \&server_stop,
-            do_fork        => \&server_do_fork,
-            got_error      => \&server_got_error,
-            got_sig_int    => \&server_got_sig_int,
-            got_sig_chld   => \&server_got_sig_chld,
-            got_connection => \&server_got_connection,
-
-            _child => sub { 0 },
-          },
-        heap =>
-          { max_processes => $max_processes,
-          },
-      );
+    POE::Session->create(
+      inline_states => {
+        _start         => \&server_start,
+        _stop          => \&server_stop,
+        do_fork        => \&server_do_fork,
+        got_error      => \&server_got_error,
+        got_sig_int    => \&server_got_sig_int,
+        got_sig_child  => \&server_got_sig_child,
+        got_connection => \&server_got_connection,
+        _child         => sub { undef },
+      },
+      heap => { max_processes => MAX_PROCESSES },
+    );
 }
 
 ### The main server session has started.  Set up the server socket and
@@ -117,7 +110,7 @@ sub server_start {
         Reuse        => "yes",
       );
 
-    $kernel->sig( CHLD => "got_sig_chld" );
+    #XXX?#$kernel->sig( CHLD => "got_sig_child" );
     $kernel->sig( INT  => "got_sig_int" );
 
     $heap->{children}   = {};
@@ -134,10 +127,12 @@ sub server_start {
 sub server_stop {
     my $heap = $_[HEAP];
     DEBUG and warn "Server $$ stopped.\n";
-    if ( my @children = keys %{ $heap->{children} } ) {
-        DEBUG and warn "Server $$ is signaling children to stop.\n";
-        kill INT => @children;
-    }
+
+    #XXX?
+    #if ( my @children = keys %{ $heap->{children} } ) {
+    #    DEBUG and warn "Server $$ is signaling children to stop.\n";
+    #    kill INT => @children;
+    #}
 }
 
 ### The server session has encountered an error.  Shut it down.
@@ -159,8 +154,9 @@ sub server_do_fork {
 
     return if $heap->{is_a_child};
 
-    my $current_children = keys %{ $heap->{children} };
-    for ( $current_children + 2 .. $heap->{max_processes} ) {
+    #my $current_children = keys %{ $heap->{children} };
+    #for ( $current_children + 2 .. $heap->{max_processes} ) {
+    while (scalar(keys %{$heap->{children}}) < $heap->{max_processes}) {
 
         DEBUG and warn "Server $$ is attempting to fork.\n";
 
@@ -178,10 +174,12 @@ sub server_do_fork {
         # Parent.  Add the child process to its list.
         if ($pid) {
             $heap->{children}->{$pid} = 1;
+            $kernel->sig_child($pid, "got_sig_child");
             next;
         }
 
         # Child.  Clear the child process list.
+        $kernel->has_forked();
         DEBUG and warn "Server $$ forked successfully.\n";
         $heap->{is_a_child} = 1;
         $heap->{children}   = {};
@@ -195,21 +193,21 @@ sub server_do_fork {
 
 sub server_got_sig_int {
     DEBUG and warn "Server $$ received SIGINT.\n";
-    return 0;
+    delete $_[HEAP]->{server};
+    $_[KERNEL]->sig_handled();
 }
 
 ### The server session received a SIGCHLD, indicating that some child
 ### server has gone away.  Remove the child's process ID from our
 ### list, and trigger more fork() calls to spawn new children.
 
-sub server_got_sig_chld {
+sub server_got_sig_child {
     my ( $kernel, $heap, $child_pid ) = @_[ KERNEL, HEAP, ARG1 ];
 
-    if ( delete $heap->{children}->{$child_pid} ) {
-        DEBUG and warn "Server $$ received SIGCHLD.\n";
-        $kernel->yield("do_fork");
-    }
-    return 0;
+    return unless delete $heap->{children}->{$child_pid};
+
+   DEBUG and warn "Server $$ reaped child $child_pid.\n";
+   $kernel->yield("do_fork") if exists $_[HEAP]->{server};
 }
 
 ### The server session received a connection request.  Spawn off a
@@ -220,22 +218,23 @@ sub server_got_connection {
 
     DEBUG and warn "Server $$ received a connection.\n";
 
-    POE::Session->create
-      ( inline_states =>
-          { _start => \&client_start,
-            _stop       => \&client_stop,
-            got_request => \&client_got_request,
-            got_flush   => \&client_flushed_request,
-            got_error   => \&client_got_error,
-            _parent     => sub { 0 },
-          },
-        heap =>
-          { socket => $socket,
-            peer_addr => $peer_addr,
-            peer_port => $peer_port,
-          },
-      );
+    POE::Session->create(
+      inline_states => {
+        _start      => \&client_start,
+        _stop       => \&client_stop,
+        got_request => \&client_got_request,
+        got_flush   => \&client_flushed_request,
+        got_error   => \&client_got_error,
+        _parent     => sub { 0 },
+      },
+      heap => {
+        socket    => $socket,
+        peer_addr => $peer_addr,
+        peer_port => $peer_port,
+      },
+    );
 
+    # Gracefully exit if testing process churn.
     delete $heap->{server}
       if TESTING_CHURN and $heap->{is_a_child} and ( rand() < 0.1 );
 }
