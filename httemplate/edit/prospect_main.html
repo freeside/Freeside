@@ -98,7 +98,6 @@ my $m2_error_callback = sub {
               'contactnum' => $cgi->param("contactnum$num"),
               map { $_ => scalar($cgi->param("contactnum${num}_$_")) } @fields,
             };
-            use Data::Dumper; warn Dumper $x;
             $x;
           } else {
             ();
