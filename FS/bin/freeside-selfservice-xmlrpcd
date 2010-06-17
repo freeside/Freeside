@@ -15,7 +15,7 @@ use constant MAX_PROCESSES => 10;      # Total server process count.
 use constant SERVER_PORT   => 8080;    # Server port.
 use constant TESTING_CHURN => 0;       # Randomly test process respawning.
 
-use POE;                         # Base features.
+use POE 1.2;                     # Base features.
 use POE::Filter::HTTPD;          # For serving HTTP content.
 use POE::Wheel::ReadWrite;       # For socket I/O.
 use POE::Wheel::SocketFactory;   # For serving socket connections.
@@ -51,7 +51,7 @@ $FS::Daemon::NOSIG = 1;
 $FS::Daemon::PID_NEWSTYLE = 1;
 daemonize1('selfservice-xmlrpcd');
 
-POE::Kernel->has_forked() if POE::Kernel->can('has_forked'); #daemonize forks...
+POE::Kernel->has_forked(); #daemonize forks...
 
 drop_root();
 
