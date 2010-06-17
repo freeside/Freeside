@@ -1,5 +1,5 @@
 <% include('/elements/header.html',
-      "Customer $action",
+      $title,
       '',
       ' onUnload="myclose()"' #hmm, in billing.html
 ) %>
@@ -313,8 +313,8 @@ my $error = $cgi->param('error');
 $cgi->delete_all();
 $cgi->param('error', $error);
 
-my $action = $custnum ? 'Edit' : 'Add';
-$action .= ": ". $cust_main->name if $custnum;
+my $title = $custnum ? 'Edit Customer' : 'Add Customer';
+$title .= ": ". $cust_main->name if $custnum;
 
 my $r = qq!<font color="#ff0000">*</font>&nbsp;!;
 
