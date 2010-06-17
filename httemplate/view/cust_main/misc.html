@@ -10,12 +10,8 @@
   <TD BGCOLOR="#ffffff"><FONT COLOR="#<% $cust_main->statuscolor %>"><B><% ucfirst($cust_main->status) %></B></FONT></TD>
 </TR>
 
-%my $agent;
-%if ( $num_agents == 1 ) {
-%  my @agents = qsearchs( 'agent', {} );
-%  $agent = $agents[0];
-%} else {
-%  $agent = qsearchs('agent',{ 'agentnum' => $cust_main->agentnum } );
+%unless ( scalar(@agentnums) == 1 ) {
+%  my $agent = qsearchs('agent',{ 'agentnum' => $cust_main->agentnum } );
    <TR>
      <TD ALIGN="right">Agent</TD>
      <TD BGCOLOR="#ffffff"><% $agent->agentnum %>: <% $agent->agent %></TD>
@@ -119,8 +115,6 @@ my( $cust_main ) = @_;
 my $conf = new FS::Conf;
 my $date_format = ($conf->config('date_format') || "%m/%d/%Y");
 
-my $sth = dbh->prepare('SELECT COUNT(*) FROM agent') or die dbh->errstr;
-$sth->execute or die $sth->errstr;
-my $num_agents = $sth->fetchrow_arrayref->[0];
+my @agentnums = $FS::CurrentUser::CurrentUser->agentnums;
 
 </%init>
