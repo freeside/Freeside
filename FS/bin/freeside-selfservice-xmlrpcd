@@ -57,7 +57,7 @@ drop_root();
 
 adminsuidsetup($user);
 
-load_clientapi_modules();
+load_clientapi_modules;
 
 logfile("$FREESIDE_LOG/selfservice-xmlrpcd.log");
 
