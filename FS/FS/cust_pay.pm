@@ -693,6 +693,10 @@ sub _upgrade_data {  #class method
 
   warn "$me upgrading $class\n" if $DEBUG;
 
+  ##
+  # otaker/ivan upgrade
+  ##
+
   #not the most efficient, but hey, it only has to run once
 
   my $where = "WHERE ( otaker IS NULL OR otaker = '' OR otaker = 'ivan' ) ".
@@ -747,6 +751,33 @@ sub _upgrade_data {  #class method
     }
 
   }
+
+  ###
+  # payinfo N/A upgrade
+  ###
+
+  my @na_cust_pay = qsearch( {
+    'table'     => 'cust_pay',
+    'hashref'   => { 'payinfo' => 'N/A' },
+    'extra_sql' => "AND payby IN ( 'CARD', 'CHEK' )",
+  } );
+
+  foreach my $na ( @na_cust_pay ) {
+    my $cust_pay_pending =
+      qsearchs('cust_pay_pending', { 'paynum' => $na->paynum } );
+    $na->$_($cust_pay_pending->$_) for qw( payinfo paymask );
+    my $error = $na->replace;
+    if ( $error ) {
+      warn " *** WARNING: Error updating payinfo for payment paynum ".
+           $na->paynun. ": $error\n";
+      next;
+    }
+
+  }
+
+  ###
+  # otaker->usernum upgrade
+  ###
 
   $class->_upgrade_otaker(%opts);
 
