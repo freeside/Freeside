@@ -1,15 +1,14 @@
-%
-%
-%  my %opt = @_;
-%  my $table = $opt{'table'};
-%  $opt{'fields'} ||= [ fields($table) ];
-%  push @{ $opt{'fields'} }, qw( pkgnum svcpart );
-%
-%
 <% include( 'process.html',
                  'edit_ext' => 'cgi',
                  'redirect' => popurl(3)."view/$table.cgi?",
                  %opt,
            )
 %>
+<%init>
 
+my %opt = @_;
+my $table = $opt{'table'};
+$opt{'fields'} ||= [ fields($table) ];
+push @{ $opt{'fields'} }, qw( pkgnum svcpart );
+
+</%init>
