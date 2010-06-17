@@ -116,6 +116,8 @@ my( $cust_main ) = @_;
 my $conf = new FS::Conf;
 my $date_format = ($conf->config('date_format') || "%m/%d/%Y");
 
-my @agentnums = $FS::CurrentUser::CurrentUser->agentnums;
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+my @agentnums = $curuser->agentnums;
 
 </%init>
