@@ -1715,12 +1715,7 @@ sub check {
 
   # If it is encrypted and the private key is not availaible then we can't
   # check the credit card.
-
-  my $check_payinfo = 1;
-
-  if ($self->is_encrypted($self->payinfo)) {
-    $check_payinfo = 0;
-  }
+  my $check_payinfo = ! $self->is_encrypted($self->payinfo);
 
   if ( $check_payinfo && $self->payby =~ /^(CARD|DCRD)$/ ) {
 
@@ -4796,7 +4791,7 @@ sub _realtime_bop_result {
        'paid'     => $cust_pay_pending->paid,
        '_date'    => '',
        'payby'    => $cust_pay_pending->payby,
-       #'payinfo'  => $payinfo,
+       'payinfo'  => $options{'payinfo'},
        'paybatch' => $paybatch,
        'paydate'  => $cust_pay_pending->paydate,
        'pkgnum'   => $cust_pay_pending->pkgnum,
