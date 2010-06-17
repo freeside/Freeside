@@ -51,13 +51,13 @@ $FS::Daemon::NOSIG = 1;
 $FS::Daemon::PID_NEWSTYLE = 1;
 daemonize1('selfservice-xmlrpcd');
 
-POE::Kernel->has_forked(); #daemonize forks...
+POE::Kernel->has_forked() if POE::Kernel->can('has_forked'); #daemonize forks...
 
 drop_root();
 
 adminsuidsetup($user);
 
-load_clientapi_modules;
+load_clientapi_modules();
 
 logfile("$FREESIDE_LOG/selfservice-xmlrpcd.log");
 
