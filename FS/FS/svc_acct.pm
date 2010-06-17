@@ -2287,7 +2287,7 @@ sub set_usage {
   my $reset = 0;
   my %handyhash = ();
   if ( $options{null} ) { 
-    %handyhash = ( map { ( $_ => 'NULL', $_."_threshold" => 'NULL' ) }
+    %handyhash = ( map { ( $_ => undef, $_."_threshold" => undef ) }
                    qw( seconds upbytes downbytes totalbytes )
                  );
   }
