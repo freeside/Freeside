@@ -18,12 +18,6 @@ use vars qw(@ISA);
 
 This is a mixin class for records that contain payinfo. 
 
-This class handles the following functions for payinfo...
-
-Payment Mask (Generation and Storage)
-Data Validation (parent checks need to be sure to call this)
-Pretty printing
-
 =head1 FIELDS
 
 =over 4
@@ -72,12 +66,12 @@ Card Number, P.O., comp issuer (4-8 lowercase alphanumerics; think username) or 
 
 sub payinfo {
   my($self,$payinfo) = @_;
+
   if ( defined($payinfo) ) {
-    $self->setfield('payinfo', $payinfo); # This is okay since we are the 'setter'
-    $self->paymask($self->mask_payinfo());
+    $self->setfield('payinfo', $payinfo);
+    $self->paymask($self->mask_payinfo) unless $payinfo =~ /^99\d{14}$/; #token
   } else {
-    $payinfo = $self->getfield('payinfo'); # This is okay since we are the 'getter'
-    return $payinfo;
+    $self->getfield('payinfo');
   }
 }
 
@@ -110,25 +104,11 @@ sub paycvv {
 sub paymask {
   my($self, $paymask) = @_;
 
-  if ( defined($paymask) && $paymask ne '' ) {
-    # I hate this little bit of magic...  I don't expect it to cause a problem,
-    # but who knows...  If the payinfo is passed in masked then ignore it and
-    # set it based on the payinfo.  The only guy that should call this in this
-    # way is... $self->payinfo
-    $self->setfield('paymask', $self->mask_payinfo());
-
+  if ( defined($paymask) ) {
+    $self->setfield('paymask', $paymask);
   } else {
-
-    $paymask=$self->getfield('paymask');
-    if (!defined($paymask) || $paymask eq '') {
-      # Generate it if it's blank - Note that we're not going to set it - just
-      # generate
-      $paymask = $self->mask_payinfo();
-    }
-
+    $self->getfield('paymask') || $self->mask_payinfo;
   }
-
-  return $paymask;
 }
 
 =back
@@ -155,6 +135,8 @@ sub mask_payinfo {
   my $paymask;
   if ( $self->is_encrypted($payinfo) ) {
     $paymask = 'N/A';
+  } elsif ( $payinfo =~ /^99\d{14}$/ || $payinfo eq 'N/A' ) { #token
+    $paymask = 'N/A (tokenized)'; #?
   } else {
     # if not, mask it...
     if ($payby eq 'CARD' || $payby eq 'DCRD' || $payby eq 'MCRD') {
@@ -177,7 +159,7 @@ sub mask_payinfo {
       $paymask = $payinfo;
     }
   }
-  return $paymask;
+  $paymask;
 }
 
 =item payinfo_check
@@ -218,7 +200,8 @@ sub payinfo_check {
         or return "Illegal (mistyped?) credit card number (payinfo)";
       $self->payinfo($1);
       validate($self->payinfo) or return "Illegal credit card number";
-      return "Unknown card type" if cardtype($self->payinfo) eq "Unknown";
+      return "Unknown card type" if $self->payinfo !~ /^99\d{14}$/ #token
+                                 && cardtype($self->payinfo) eq "Unknown";
     } else {
       $self->payinfo('N/A'); #???
     }
@@ -274,11 +257,6 @@ sub payby_payinfo_pretty {
 =back
 
 =head1 BUGS
-
-Future items?
-  Encryption - In the Future (Pull from Record.pm)
-  Bad Card Stuff - In the Future (Integrate Banned Pay)
-  Currency - In the Future
 
 =head1 SEE ALSO
 
