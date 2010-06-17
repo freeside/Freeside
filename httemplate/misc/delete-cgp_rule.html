@@ -10,7 +10,7 @@
 #die "access denied"
 #  unless $FS::CurrentUser::CurrentUser->access_right('Provision customer service');
 
-#untaint devicenum
+#untaint rulenum
 my($query) = $cgi->keywords;
 $query =~ /^(\d+)$/ || die "Illegal rulenum";
 my $rulenum = $1;
