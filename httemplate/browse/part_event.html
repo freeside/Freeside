@@ -158,7 +158,8 @@ $html_init .= '</SELECT><INPUT TYPE="submit" VALUE="Clone existing event">'.
      
 my $count_query = 'SELECT COUNT(*) FROM part_event WHERE '.
                   $FS::CurrentUser::CurrentUser->agentnums_sql(
-                    'null_right' => 'Edit global billing events',
+                    'null_right'    => 'Edit global billing events',
+                    'viewall_right' => 'None',
                   );
 
 my $join_conditions  = FS::part_event_condition->join_conditions_sql;

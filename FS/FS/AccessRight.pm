@@ -115,6 +115,7 @@ tie my %rights, 'Tie::IxHash',
     { rightname=>'Delete customer', desc=>"Enable customer deletions. Be very careful! Deleting a customer will remove all traces that this customer ever existed! It should probably only be used when auditing a legacy database. Normally, you cancel all of a customer's packages if they cancel service." }, #aka. deletecustomers
     'Bill customer now', #NEW
     'Bulk send customer notices', #NEW
+    { rightname=>'View customers of all agents', global=>1 },
   ],
   
   ###
@@ -249,6 +250,8 @@ tie my %rights, 'Tie::IxHash',
     'Billing event reports',
     'Receivables report',
     'Financial reports',
+
+    #{ rightname => 'List customers of all agents', global=>1 },
   ],
   
   ###
@@ -293,6 +296,9 @@ tie my %rights, 'Tie::IxHash',
 
     { rightname=>'Broadband configuration' },
     { rightname=>'Broadband global configuration', global=>1 },
+
+    #{ rightname=>'Edit employees', global=>1, },
+    #{ rightname=>'Edit employee groupss', global=>1, },
 
     { rightname=>'Configuration', global=>1 }, #most of the rest of the configuraiton is not agent-virtualized
 

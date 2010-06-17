@@ -84,11 +84,11 @@ my $extra_sql = scalar(@where)
                   join( 'AND ', @where)
                 : '';
 
-my $agentnums = join(',', $curuser->agentnums);
+my $agentnums_sql = $curuser->agentnums_sql( 'table'=>'cust_main' );
 my $count_cust_pkg = "
   SELECT COUNT(*) FROM cust_pkg LEFT JOIN cust_main USING ( custnum )
     WHERE cust_pkg.pkgpart = part_pkg.pkgpart
-      AND cust_main.agentnum IN ($agentnums)
+      AND $agentnums_sql
 ";
 
 $select = "

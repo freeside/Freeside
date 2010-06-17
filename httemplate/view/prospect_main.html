@@ -14,7 +14,8 @@
   <TD BGCOLOR="#FFFFFF"><B><% $prospectnum %></B></TD>
 </TR>
 
-%unless ( scalar(@agentnums) == 1 ) {
+%unless ( scalar(@agentnums) == 1
+%         && !$curuser->access_right('View customers of all agents') ) {
 %  my $agent = qsearchs('agent',{ 'agentnum' => $prospect_main->agentnum } );
    <TR>
      <TD ALIGN="right">Agent</TD>

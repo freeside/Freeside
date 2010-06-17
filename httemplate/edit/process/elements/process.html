@@ -207,6 +207,7 @@ if ( $opt{'agent_virt'} ) {
 
     die "illegal agentnum"
       unless $curuser->agentnums_href->{$new->agentnum}
+          or $curuser->access_right('View customers of all agents')
           or $opt{'agent_null_right'}
              && ! $new->agentnum
              && $curuser->access_right($opt{'agent_null_right'});

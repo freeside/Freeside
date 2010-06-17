@@ -10,7 +10,8 @@
   <TD BGCOLOR="#ffffff"><FONT COLOR="#<% $cust_main->statuscolor %>"><B><% ucfirst($cust_main->status) %></B></FONT></TD>
 </TR>
 
-%unless ( scalar(@agentnums) == 1 ) {
+%unless ( scalar(@agentnums) == 1
+%         && !$curuser->access_right('View customers of all agents')  ) {
 %  my $agent = qsearchs('agent',{ 'agentnum' => $cust_main->agentnum } );
    <TR>
      <TD ALIGN="right">Agent</TD>
