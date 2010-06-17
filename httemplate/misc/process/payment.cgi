@@ -96,8 +96,10 @@ if ( $payby eq 'CHEK' ) {
   $payinfo = $1;
   validate($payinfo)
     or errorpage(gettext('invalid_card')); # . ": ". $self->payinfo;
+
   errorpage(gettext('unknown_card_type'))
-    if $payinfo !~ /^99\d{14}$/ && cardtype($payinfo) eq "Unknown";
+    if $payinfo !~ /^99\d{14}$/ #token
+    && cardtype($payinfo) eq "Unknown";
 
   if ( defined $cust_main->dbdef_table->column('paycvv') ) {
     if ( length($cgi->param('paycvv') ) ) {
