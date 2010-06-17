@@ -536,7 +536,7 @@ Example:
           var field_regex = /(\d+)(_[a-z]+)?$/;
           var match = field_regex.exec(what.name);
           if ( !match ) {
-            alert(what.name + " didn't match?!");
+            alert(what.name + " didn't match for " + what);
             return;
           }
           if ( match[1] != <%$field%>_fieldnum ) {
