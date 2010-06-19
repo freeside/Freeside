@@ -5871,29 +5871,17 @@ sub total_owed_date {
   my $self = shift;
   my $time = shift;
 
-#  my $custnum = $self->custnum;
-#
-#  my $owed_sql = FS::cust_bill->owed_sql;
-#
-#  my $sql = "
-#    SELECT SUM($owed_sql) FROM cust_bill
-#      WHERE custnum = $custnum
-#        AND _date <= $time
-#  ";
-#
-#  my $sth = dbh->prepare($sql) or die dbh->errstr;
-#  $sth->execute() or die $sth->errstr;
-#
-#  return sprintf( '%.2f', $sth->fetchrow_arrayref->[0] );
+  my $custnum = $self->custnum;
 
-  my $total_bill = 0;
-  foreach my $cust_bill (
-    grep { $_->_date <= $time }
-      qsearch('cust_bill', { 'custnum' => $self->custnum, } )
-  ) {
-    $total_bill += $cust_bill->owed;
-  }
-  sprintf( "%.2f", $total_bill );
+  my $owed_sql = FS::cust_bill->owed_sql;
+
+  my $sql = "
+    SELECT SUM($owed_sql) FROM cust_bill
+      WHERE custnum = $custnum
+        AND _date <= $time
+  ";
+
+  sprintf( "%.2f", $self->scalar_sql($sql) );
 
 }
 
@@ -5963,9 +5951,18 @@ sub total_credited {
 
 sub total_unapplied_credits {
   my $self = shift;
-  my $total_credit = 0;
-  $total_credit += $_->credited foreach $self->cust_credit;
-  sprintf( "%.2f", $total_credit );
+
+  my $custnum = $self->custnum;
+
+  my $unapplied_sql = FS::cust_credit->unapplied_sql;
+
+  my $sql = "
+    SELECT SUM($unapplied_sql) FROM cust_credit
+      WHERE custnum = $custnum
+  ";
+
+  sprintf( "%.2f", $self->scalar_sql($sql) );
+
 }
 
 =item total_unapplied_credits_pkgnum PKGNUM
@@ -5992,9 +5989,18 @@ See L<FS::cust_pay/unapplied>.
 
 sub total_unapplied_payments {
   my $self = shift;
-  my $total_unapplied = 0;
-  $total_unapplied += $_->unapplied foreach $self->cust_pay;
-  sprintf( "%.2f", $total_unapplied );
+
+  my $custnum = $self->custnum;
+
+  my $unapplied_sql = FS::cust_pay->unapplied_sql;
+
+  my $sql = "
+    SELECT SUM($unapplied_sql) FROM cust_pay
+      WHERE custnum = $custnum
+  ";
+
+  sprintf( "%.2f", $self->scalar_sql($sql) );
+
 }
 
 =item total_unapplied_payments_pkgnum PKGNUM
@@ -6022,9 +6028,17 @@ customer.  See L<FS::cust_refund/unapplied>.
 
 sub total_unapplied_refunds {
   my $self = shift;
-  my $total_unapplied = 0;
-  $total_unapplied += $_->unapplied foreach $self->cust_refund;
-  sprintf( "%.2f", $total_unapplied );
+  my $custnum = $self->custnum;
+
+  my $unapplied_sql = FS::cust_refund->unapplied_sql;
+
+  my $sql = "
+    SELECT SUM($unapplied_sql) FROM cust_refund
+      WHERE custnum = $custnum
+  ";
+
+  sprintf( "%.2f", $self->scalar_sql($sql) );
+
 }
 
 =item balance
@@ -6036,12 +6050,7 @@ total_unapplied_credits minus total_unapplied_payments).
 
 sub balance {
   my $self = shift;
-  sprintf( "%.2f",
-      $self->total_owed
-    + $self->total_unapplied_refunds
-    - $self->total_unapplied_credits
-    - $self->total_unapplied_payments
-  );
+  $self->balance_date_range;
 }
 
 =item balance_date TIME
@@ -6056,19 +6065,13 @@ functions.
 
 sub balance_date {
   my $self = shift;
-  my $time = shift;
-  sprintf( "%.2f",
-        $self->total_owed_date($time)
-      + $self->total_unapplied_refunds
-      - $self->total_unapplied_credits
-      - $self->total_unapplied_payments
-  );
+  $self->balance_date_range(shift);
 }
 
-=item balance_date_range START_TIME [ END_TIME [ OPTION => VALUE ... ] ]
+=item balance_date_range [ START_TIME [ END_TIME [ OPTION => VALUE ... ] ] ]
 
-Returns the balance for this customer, only considering invoices with date
-earlier than START_TIME, and optionally not later than END_TIME
+Returns the balance for this customer, optionally considering invoices with
+date earlier than START_TIME, and not later than END_TIME
 (total_owed_date minus total_unapplied_credits minus total_unapplied_payments).
 
 Times are specified as SQL fragments or numeric
@@ -7395,10 +7398,10 @@ sub balance_sql { "
         WHERE cust_refund.custnum = cust_main.custnum     )
 "; }
 
-=item balance_date_sql START_TIME [ END_TIME [ OPTION => VALUE ... ] ]
+=item balance_date_sql [ START_TIME [ END_TIME [ OPTION => VALUE ... ] ] ]
 
-Returns an SQL fragment to retreive the balance for this customer, only
-considering invoices with date earlier than START_TIME, and optionally not
+Returns an SQL fragment to retreive the balance for this customer, optionally
+considering invoices with date earlier than START_TIME, and not
 later than END_TIME (total_owed_date minus total_unapplied_credits minus
 total_unapplied_payments).
 
