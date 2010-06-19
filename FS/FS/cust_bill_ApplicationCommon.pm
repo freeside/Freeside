@@ -418,10 +418,10 @@ sub apply_to_lineitems {
 
         foreach my $cust_svc ( $cust_pkg->cust_svc ) {
           my $svc_x = $cust_svc->svc_x;
-          my @part_export = grep { $_->can('export_insert_on_payment') }
+          my @part_export = grep { $_->can('_export_insert_on_payment') }
                                  $cust_svc->part_svc->part_export;
       
-          foreach my $part_export ( $cust_svc->part_svc->part_export ) {
+          foreach my $part_export ( @part_export ) {
             $error = $part_export->_export_insert_on_payment($svc_x);
             if ( $error ) {
               $dbh->rollback if $oldAutoCommit;
