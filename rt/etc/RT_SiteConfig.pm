@@ -41,6 +41,7 @@ Set($DatabaseHost   , '');
 # These settings are user-editable.
 
 Set($WebDefaultStylesheet, 'freeside2.1');
+Set($UsernameFormat, 'verbose'); #back to concise to hide email addresses
 
 #uncomment to use
 #Set($DefaultSummaryRows, 10);

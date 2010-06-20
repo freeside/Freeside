@@ -868,7 +868,7 @@ EmailAddress.
 
 =cut
 
-Set($UsernameFormat, 'concise');
+Set($UsernameFormat, 'verbose');
 
 =item C<$WebDomain>
 
