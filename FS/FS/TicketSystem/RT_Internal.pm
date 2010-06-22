@@ -11,7 +11,7 @@ use RT::CurrentUser;
 
 @ISA = qw( FS::TicketSystem::RT_Libs );
 
-$DEBUG = 1;
+$DEBUG = 0;
 $me = '[FS::TicketSystem::RT_Internal]';
 
 sub sql_num_customer_tickets {

@@ -1669,10 +1669,6 @@ sub create_ticket {
   my($context, $session, $custnum) = _custoragent_session_custnum($p);
   return { 'error' => $session } if $context eq 'error';
 
-  local($DEBUG) = 1;
-  local($FS::TicketSystem::RT_Internal::DEBUG) = 1;
-  local($FS::TicketSystem::RT_Internal::DEBUG) = 1;
-
   warn "$me create_ticket: initializing ticket system\n" if $DEBUG;
   FS::TicketSystem->init();
 
