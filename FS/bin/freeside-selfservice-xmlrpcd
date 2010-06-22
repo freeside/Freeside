@@ -24,7 +24,7 @@ use XMLRPC::Transport::HTTP; #SOAP::Transport::HTTP;
 use XMLRPC::Lite; # for XMLRPC::Serializer
 
 use FS::Daemon qw(daemonize1 drop_root logfile daemonize2 );
-use FS::UID qw(adminsuidsetup);
+use FS::UID qw(adminsuidsetup forksuidsetup);
 use FS::Conf;
 use FS::ClientAPI qw( load_clientapi_modules );
 use FS::ClientAPI_XMLRPC; #FS::SelfService::XMLRPC;
@@ -309,12 +309,10 @@ sub client_got_request {
 #expects to be in place.  aka "kid time" in freeside-selfservice-server
 sub freeside_kid_time {
 
-  #if we need a db connection in the parent
+  #we did need a db connection in the parent, so
   ##get new db handle
-  #$FS::UID::dbh->{InactiveDestroy} = 1;
-  #forksuidsetup($user);
-
-  adminsuidsetup($user);
+  $FS::UID::dbh->{InactiveDestroy} = 1;
+  forksuidsetup($user);
 
   #i guess that was it
 }
