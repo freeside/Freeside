@@ -1,7 +1,7 @@
 % if ( $error ) {
 0,"<% $error %>",,
 % } else {
-1,"CDR import successful',<% $cdr_batch->cdrbatchnum %>,"<% $cdrbatch %>"
+1,"CDR import successful",<% $cdr_batch->cdrbatchnum %>,"<% $cdrbatch %>"
 % }
 <%init>
 
