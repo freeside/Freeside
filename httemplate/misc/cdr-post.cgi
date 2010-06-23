@@ -53,4 +53,6 @@ my $cdrbatch = '';
 
 }
 
+$error =~ s/"/""/g; #CSV
+
 </%init>
