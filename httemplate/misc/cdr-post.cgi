@@ -10,6 +10,7 @@ die "access denied"
 
 my $error = '';
 my $cdr_batch;
+my $cdrbatch = '';
 
 {
 
@@ -29,7 +30,7 @@ my $cdr_batch;
 
   my $csv = new Text::CSV_XS or die Text::CSV->error_diag;
 
-  my $cdrbatch = time2str('post-%Y/%m/%d-%T'. "-$$-". rand() * 2**32, time);
+  $cdrbatch = time2str('post-%Y/%m/%d-%T'. "-$$-". rand() * 2**32, time);
   $cdr_batch = new FS::cdr_batch { 'cdrbatch' => $cdrbatch };
   $error = $cdr_batch->insert and last;
 
