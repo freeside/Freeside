@@ -24,14 +24,14 @@
 
 \addtolength{\voffset}{-0.0cm}		% top margin to top of header
 \addtolength{\hoffset}{-0.6cm}		% left margin on page
-\addtolength{\topmargin}{-1.25cm}	% top margin to top of header
+\addtolength{\topmargin}{[@-- defined($topmargin) ? $topmargin : '-1.25cm' --@]}
 \setlength{\headheight}{2.0cm} 		% height of header
-\setlength{\headsep}{1.0cm}		% between header and text
+\setlength{\headsep}{[@-- defined($headsep) ? $headsep : '1.0cm' --@]}
 \setlength{\footskip}{1.0cm}		% bottom of footer from bottom of text
 
 %\addtolength{\textwidth}{2.1in}    	% width of text
 \setlength{\textwidth}{19.5cm}
-\setlength{\textheight}{19.5cm}
+\setlength{\textheight}{[@-- defined($textheight) ? $textheight : '19.5cm' --@]}
 \setlength{\oddsidemargin}{-0.9cm} 	% odd page left margin
 \setlength{\evensidemargin}{-0.9cm} 	% even page left margin
 
@@ -51,7 +51,7 @@
   }
 }
 
-\newcommand{\extracouponspace}{3.6cm}
+\newcommand{\extracouponspace}{[@-- defined($extracouponspace) ? $extracouponspace : '3.6cm' --@]}
 
 % Adjust the inset of the mailing address
 \newcommand{\addressinset}[1][]{\hspace{1.0cm}}
@@ -80,6 +80,7 @@
     $OUT .= '\vspace{-\extracouponspace}';
     $OUT .= '\rule[0.5em]{\textwidth}{\footrulewidth}\\\\';
     $OUT .= $coupon;
+    $OUT .= '\vspace{'. $couponfootsep. '}' if defined($couponfootsep);
   }
   '';
 --@] [@-- $smallerfooter ? '\scriptsize{' : '\small{' --@]
@@ -108,10 +109,10 @@
     \returninset
     \makebox{
       \begin{tabular}{ll}
-        \includegraphics{[@-- $logo_file --@]} &
+        \includegraphics{[@-- $logo_file --@]} & [@-- $verticalreturnaddress ? '\\\\' : '' --@]
         \begin{minipage}[b]{5.5cm}
 [@-- $returnaddress --@]
-        \end{minipage}
+        \end{minipage}\\
       \end{tabular}
     }
   }
@@ -201,7 +202,7 @@
 \addressinset \rule{0.5cm}{0cm} 
 \makebox{
 \begin{minipage}[t]{7.0cm}
-\vspace{0.25cm}
+\vspace{[@-- defined($addresssep) ? $addresssep : '0.25cm' --@]}
 \textbf{[@-- $payname --@]}\\
 \addressline{[@-- $company --@]}
 \addressline{[@-- $address1 --@]}

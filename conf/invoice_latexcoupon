@@ -3,13 +3,13 @@ Detach and return this remittance form with your your payment.\\
 \begin{tabular}{ll}
 \returninset
 \begin{tabular}{ll}
-  \makebox{ \includegraphics{[@-- $logo_file --@]}} &
+  \makebox{ \includegraphics{[@-- $logo_file --@]}} & [@-- $verticalreturnaddress ? '\\\\' : '' --@]
   \begin{minipage}[b]{5.5cm}
 [@-- $returnaddress --@]
-    \end{minipage}
+    \end{minipage}\\
 \end{tabular}&
 \begin{tabular}{r@{: }lr}
-Invoice date & \textbf{[@-- $date --@]} & \multirow{4}*{
+Invoice date & \textbf{[@-- $date --@]} & \multirow{4}*{[@-- $verticalreturnaddress ? '\\rule{1.5cm}{0cm}' : '' --@]
 \makebox{
 \begin{minipage}[t]{7.0cm}
 \textbf{[@-- $payname --@]}\\
@@ -21,15 +21,15 @@ Invoice date & \textbf{[@-- $date --@]} & \multirow{4}*{
 \end{minipage}}}\\
 Customer\#& \textbf{[@-- $custnum --@]} & \\
 Total Due & \textbf{[@-- $balance --@]} & \\
-\rule{0pt}{2.25em}Amount Enclosed & \rule{2cm}{1pt}& \\
+\rule{0pt}{[@-- defined($amountenclosedsep) ? $amountenclosedsep : '2.25em' --@]}Amount Enclosed & \rule{2cm}{1pt}& \\
 \end{tabular}\\
-\rule{0pt}{1cm} &\\
+\rule{0pt}{[@-- defined($coupontoaddresssep) ? $coupontoaddresssep : '1cm' --@]} &\\
 \end{tabular}\\
 \begin{tabular}{ll}
 \addressinset \rule{0.5cm}{0cm} &
 \makebox{
 \begin{minipage}[t]{7.0cm}
-[@-- $returnaddress --@]
+[@-- $addcompanytoaddress ? $company_name. '\\\\' : '' --@][@-- $returnaddress --@]
 \end{minipage}}
 \hfill
 \end{tabular}\\

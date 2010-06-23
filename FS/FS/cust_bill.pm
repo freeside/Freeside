@@ -2324,11 +2324,13 @@ sub print_generic {
 
   }
 
+  my $agentnum = $self->cust_main->agentnum;
+
   my %invoice_data = (
 
     #invoice from info
-    'company_name'    => scalar( $conf->config('company_name', $self->cust_main->agentnum) ),
-    'company_address' => join("\n", $conf->config('company_address', $self->cust_main->agentnum) ). "\n",
+    'company_name'    => scalar( $conf->config('company_name', $agentnum) ),
+    'company_address' => join("\n", $conf->config('company_address', $agentnum) ). "\n",
     'returnaddress'   => $returnaddress,
     'agent'           => &$escape_function($cust_main->agent->agent),
 
@@ -2356,6 +2358,19 @@ sub print_generic {
     'smallerfooter'   => $conf->exists('invoice-smallerfooter'),
     'balance_due_below_line' => $conf->exists('balance_due_below_line'),
    
+    #layout info -- would be fancy to calc some of this and bury the template
+    #               here in the code
+    'topmargin'             => scalar($conf->config('invoice_latextopmargin', $agentnum)),
+    'headsep'               => scalar($conf->config('invoice_latexheadsep', $agentnum)),
+    'textheight'            => scalar($conf->config('invoice_latextextheight', $agentnum)),
+    'extracouponspace'      => scalar($conf->config('invoice_latexextracouponspace', $agentnum)),
+    'couponfootsep'         => scalar($conf->config('invoice_latexcouponfootsep', $agentnum)),
+    'verticalreturnaddress' => $conf->exists('invoice_latexverticalreturnaddress', $agentnum),
+    'addresssep'            => scalar($conf->config('invoice_latexaddresssep', $agentnum)),
+    'amountenclosedsep'     => scalar($conf->config('invoice_latexcouponamountenclosedsep', $agentnum)),
+    'coupontoaddresssep'    => scalar($conf->config('invoice_latexcoupontoaddresssep', $agentnum)),
+    'addcompanytoaddress'   => $conf->exists('invoice_latexcouponaddcompanytoaddress', $agentnum),
+
     # better hang on to conf_dir for a while (for old templates)
     'conf_dir'        => "$FS::UID::conf_dir/conf.$FS::UID::datasrc",
 
@@ -2423,8 +2438,6 @@ sub print_generic {
   $invoice_data{'balance_adjustments'} = sprintf("%.2f", ($self->previous_balance || 0) - ($self->billing_balance || 0) );
   $invoice_data{'previous_balance'} = sprintf("%.2f", $pr_total);
   $invoice_data{'balance'} = sprintf("%.2f", $balance_due);
-
-  my $agentnum = $self->cust_main->agentnum;
 
   my $summarypage = '';
   if ( $conf->exists('invoice_usesummary', $agentnum) ) {

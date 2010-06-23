@@ -976,6 +976,55 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'invoice_latextopmargin',
+    'section'     => 'invoicing',
+    'description' => 'Optional LaTeX invoice topmargin setting. Include units.',
+    'type'        => 'text',
+    'per_agent'   => 1,
+    'validate'    => sub { shift =~
+                             /^-?\d*\.?\d+(in|mm|cm|pt|em|ex|pc|bp|dd|cc|sp)$/
+                             ? '' : 'Invalid LaTex length';
+                         },
+  },
+
+  {
+    'key'         => 'invoice_latexheadsep',
+    'section'     => 'invoicing',
+    'description' => 'Optional LaTeX invoice headsep setting. Include units.',
+    'type'        => 'text',
+    'per_agent'   => 1,
+    'validate'    => sub { shift =~
+                             /^-?\d*\.?\d+(in|mm|cm|pt|em|ex|pc|bp|dd|cc|sp)$/
+                             ? '' : 'Invalid LaTex length';
+                         },
+  },
+
+  {
+    'key'         => 'invoice_latexaddresssep',
+    'section'     => 'invoicing',
+    'description' => 'Optional LaTeX invoice separation between invoice header
+and customer address. Include units.',
+    'type'        => 'text',
+    'per_agent'   => 1,
+    'validate'    => sub { shift =~
+                             /^-?\d*\.?\d+(in|mm|cm|pt|em|ex|pc|bp|dd|cc|sp)$/
+                             ? '' : 'Invalid LaTex length';
+                         },
+  },
+
+  {
+    'key'         => 'invoice_latextextheight',
+    'section'     => 'invoicing',
+    'description' => 'Optional LaTeX invoice textheight setting. Include units.',
+    'type'        => 'text',
+    'per_agent'   => 1,
+    'validate'    => sub { shift =~
+                             /^-?\d*\.?\d+(in|mm|cm|pt|em|ex|pc|bp|dd|cc|sp)$/
+                             ? '' : 'Invalid LaTex length';
+                         },
+  },
+
+  {
     'key'         => 'invoice_latexnotes',
     'section'     => 'invoicing',
     'description' => 'Notes section for LaTeX typeset PostScript invoices.',
@@ -1008,10 +1057,73 @@ worry that config_items is freeside-specific and icky.
   },
 
   {
+    'key'         => 'invoice_latexextracouponspace',
+    'section'     => 'invoicing',
+    'description' => 'Optional LaTeX invoice textheight space to reserve for a tear off coupon. Include units.',
+    'type'        => 'text',
+    'per_agent'   => 1,
+    'validate'    => sub { shift =~
+                             /^-?\d*\.?\d+(in|mm|cm|pt|em|ex|pc|bp|dd|cc|sp)$/
+                             ? '' : 'Invalid LaTex length';
+                         },
+  },
+
+  {
+    'key'         => 'invoice_latexcouponfootsep',
+    'section'     => 'invoicing',
+    'description' => 'Optional LaTeX invoice separation between tear off coupon and footer. Include units.',
+    'type'        => 'text',
+    'per_agent'   => 1,
+    'validate'    => sub { shift =~
+                             /^-?\d*\.?\d+(in|mm|cm|pt|em|ex|pc|bp|dd|cc|sp)$/
+                             ? '' : 'Invalid LaTex length';
+                         },
+  },
+
+  {
+    'key'         => 'invoice_latexcouponamountenclosedsep',
+    'section'     => 'invoicing',
+    'description' => 'Optional LaTeX invoice separation between total due and amount enclosed line. Include units.',
+    'type'        => 'text',
+    'per_agent'   => 1,
+    'validate'    => sub { shift =~
+                             /^-?\d*\.?\d+(in|mm|cm|pt|em|ex|pc|bp|dd|cc|sp)$/
+                             ? '' : 'Invalid LaTex length';
+                         },
+  },
+  {
+    'key'         => 'invoice_latexcoupontoaddresssep',
+    'section'     => 'invoicing',
+    'description' => 'Optional LaTeX invoice separation between invoice data and the to address (usually invoice_latexreturnaddress).  Include units.',
+    'type'        => 'text',
+    'per_agent'   => 1,
+    'validate'    => sub { shift =~
+                             /^-?\d*\.?\d+(in|mm|cm|pt|em|ex|pc|bp|dd|cc|sp)$/
+                             ? '' : 'Invalid LaTex length';
+                         },
+  },
+
+  {
     'key'         => 'invoice_latexreturnaddress',
     'section'     => 'invoicing',
     'description' => 'Return address for LaTeX typeset PostScript invoices.',
     'type'        => 'textarea',
+  },
+
+  {
+    'key'         => 'invoice_latexverticalreturnaddress',
+    'section'     => 'invoicing',
+    'description' => 'Place the return address under the company logo rather than beside it.',
+    'type'        => 'checkbox',
+    'per_agent'   => 1,
+  },
+
+  {
+    'key'         => 'invoice_latexcouponaddcompanytoaddress',
+    'section'     => 'invoicing',
+    'description' => 'Add the company name to the To address on the remittance coupon because the return address does not contain it.',
+    'type'        => 'checkbox',
+    'per_agent'   => 1,
   },
 
   {
