@@ -383,12 +383,16 @@ sub _export_replace_svc_acct {
 sub _export_replace_svc_domain {
   my( $self, $new, $old ) = (shift, shift, shift);
 
+  #let's just do the rename part realtime rather than trying to queue
+  #w/dependencies.  we don't want FS winding up out-of-sync with the wrong
+  #username and a queued job anyway.  right??
   if ( $old->domain ne $new->domain ) {
-    my $error = $self->communigate_pro_queue( $new->svcnum, 'RenameDomain',
-      $old->domain, $new->domain,
-    );
-    return $error if $error;
+    eval { $self->communigate_pro_runcommand(
+             'RenameDomain', $old->domain, $new->domain,
+         ) };
+    return $@ if $@;
   }
+
   my %settings = ();
   $settings{'AccountsLimit'} = $new->max_accounts
     if $old->max_accounts ne $new->max_accounts;
