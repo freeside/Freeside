@@ -835,6 +835,23 @@ sub export_getsettings_svc_acct {
 
 }
 
+sub export_getsettings_svc_forward {
+  my($self, $svc_forward, $settingsref, $defaultref ) = @_;
+
+  my $dest = eval { $self->communigate_pro_runcommand(
+    'GetForwarder',
+    ($svc_forward->src || $svc_forward->srcsvc_acct->email),
+  ) };
+  return $@ if $@;
+
+  my $settings = { 'Destination' => $dest };
+
+  %{$settingsref} = %$settings;
+  %{$defaultref} = ();
+
+  '';
+}
+
 sub _rule2string {
   my $rule = shift;
   my($priority, $name, $conditions, $actions, $comment) = @$rule;
