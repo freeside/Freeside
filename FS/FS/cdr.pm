@@ -285,6 +285,10 @@ sub check {
 #  ;
 #  return $error if $error;
 
+  for my $f ( grep { $self->$_ =~ /[a-z ]/i } qw( startdate enddate ) ) {
+    $self->$f( str2time($self->$f) );
+  }
+
   $self->calldate( $self->startdate_sql )
     if !$self->calldate && $self->startdate;
 
