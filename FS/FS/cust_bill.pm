@@ -2621,6 +2621,12 @@ sub print_generic {
 
   foreach my $section (@sections, @$late_sections) {
 
+    # begin some normalization
+    $section->{'subtotal'} = $section->{'amount'}
+      if $multisection
+         && !exists($section->{subtotal})
+         && exists($section->{amount});
+
     $invoice_data{finance_amount} = sprintf('%.2f', $section->{'subtotal'} )
       if ( $invoice_data{finance_section} &&
            $section->{'description'} eq $invoice_data{finance_section} );
@@ -2629,7 +2635,7 @@ sub print_generic {
                              sprintf('%.2f', $section->{'subtotal'})
       if $multisection;
 
-    # begin some normalization
+    # continue some normalization
     $section->{'amount'}   = $section->{'subtotal'}
       if $multisection;
 
