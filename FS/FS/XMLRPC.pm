@@ -1,7 +1,7 @@
-package FS::XMLRPC;
+ package FS::XMLRPC;
 
 use strict;
-use vars qw( @ISA $DEBUG );
+use vars qw( $DEBUG );
 use Frontier::RPC2;
 
 # Instead of 'use'ing freeside modules on the fly below, just preload them now.
@@ -11,9 +11,9 @@ use FS::Conf;
 use FS::Record;
 use FS::cust_main;
 
-use Data::Dumper;
+use FS::Maestro;
 
-@ISA = qw( );
+use Data::Dumper;
 
 $DEBUG = 0;
 
@@ -131,9 +131,9 @@ sub _serve { #Subroutine, not method
 
     }
 
-    warn Dumper(@result) if $DEBUG;
-
-    if (grep { UNIVERSAL::can($_, 'hashref') ? 0 : 1 } @result) {
+    if ( scalar(@result) == 1 && ref($result[0]) eq 'HASH' ) {
+      return $result[0];
+    } elsif (grep { UNIVERSAL::can($_, 'hashref') ? 0 : 1 } @result) {
       #warn "FS::XMLRPC: One or more objects returned from '${fssub}' doesn't " .
       #     "support the 'hashref' method.";
       
@@ -147,8 +147,8 @@ sub _serve { #Subroutine, not method
     return [ $FS::VERSION ];
   } # else...
 
-  warn "Unhandle XMLRPC request '${method_name}'";
-  return [];
+  warn "Unhandled XMLRPC request '${method_name}'";
+  return {};
 
 }
 

@@ -2799,10 +2799,11 @@ sub tables_hashref {
 
     'svc_pbx' => {
       'columns' => [
-        'svcnum',         'int',     '',      '', '', '', 
-        'id',             'int', 'NULL',      '', '', '', 
-        'title',      'varchar', 'NULL', $char_d, '', '', 
-        'max_extensions', 'int', 'NULL',      '', '', '',
+        'svcnum',           'int',     '',      '', '', '', 
+        'id',               'int', 'NULL',      '', '', '', 
+        'title',        'varchar', 'NULL', $char_d, '', '', 
+        'max_extensions',   'int', 'NULL',      '', '', '',
+        'max_simultaneous', 'int', 'NULL',      '', '', '',
       ],
       'primary_key' => 'svcnum',
       'unique' => [],

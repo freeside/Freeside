@@ -3578,6 +3578,14 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'mc-outbound_packages',
+    'section'     => '',
+    'description' => "Don't use this.",
+    'type'        => 'select-part_pkg',
+    'multiple'    => 1,
+  },
+
+  {
     'key'         => 'disable-cust-pkg_class',
     'section'     => 'UI',
     'description' => 'Disable the two-step dropdown for selecting package class and package, and return to the classic single dropdown.',

@@ -44,6 +44,7 @@ FS/Cron/backup.pm
 FS/Cron/bill.pm
 FS/Cron/vacuum.pm
 FS/Daemon.pm
+FS/Maestro.pm
 FS/Misc.pm
 FS/Record.pm
 FS/Report.pm

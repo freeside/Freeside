@@ -55,6 +55,10 @@ PBX name
 
 Maximum number of extensions
 
+=item max_simultaneous
+
+Maximum number of simultaneous users
+
 =back
 
 =head1 METHODS
@@ -85,6 +89,7 @@ sub table_info {
       'id'    => 'ID',
       'title' => 'Name',
       'max_extensions' => 'Maximum number of User Extensions',
+      'max_simultaneous' => 'Maximum number of simultaneous users',
 #      'field'         => 'Description',
 #      'another_field' => { 
 #                           'label'     => 'Description',
@@ -206,15 +211,15 @@ returns the error, otherwise returns false.
 
 =cut
 
-sub replace {
-  my ( $new, $old ) = ( shift, shift );
-  my $error;
-
-  $error = $new->SUPER::replace($old);
-  return $error if $error;
-
-  '';
-}
+#sub replace {
+#  my ( $new, $old ) = ( shift, shift );
+#  my $error;
+#
+#  $error = $new->SUPER::replace($old);
+#  return $error if $error;
+#
+#  '';
+#}
 
 =item suspend
 
