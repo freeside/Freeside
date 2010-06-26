@@ -46,7 +46,11 @@ sub customer_status {
   my $conf = new FS::Conf;
   my %outbound_pkgs = map { $_=>1 } $conf->config('mc-outbound_packages');
   my $outbound_service =
-    scalar( grep $outbound_pkgs{ $_->pkgpart }, @cust_pkg )
+    scalar( grep { $outbound_pkgs{ $_->pkgpart }
+                     && !$_->get('cancel')
+                 }
+                 @cust_pkg
+          )
     ? 1 : 0;
 
   ###
