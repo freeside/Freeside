@@ -21,7 +21,7 @@ sub customer_status {
   ##
 
   my @cust_svc_pbx =
-    grep { my($n,$l,$t) = $_->label; $_->t eq 'svc_pbx' }
+    grep { my($n,$l,$t) = $_->label; $t eq 'svc_pbx' }
     @cust_svc;
 
   #i tried sofa king hard to explain to them why passing a custnum instead
