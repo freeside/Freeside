@@ -37,7 +37,7 @@ sub customer_status {
 
   my $cust_svc_pbx = $cust_svc_pbx[0];
 
-  my $svc_pbx = $cust_svc_pbx->svc_X;
+  my $svc_pbx = $cust_svc_pbx->svc_x;
 
   ###
   # find "outbound service" y/n
@@ -71,8 +71,8 @@ sub customer_status {
     'status' => substr($cust_main->ucfirst_status,0,1), #what they asked for..
     'name'   => $cust_main->name,
     'email'  => $cust_main->invoicing_list_emailonly_scalar,
-    'max_lines'        => $svc_pbx->max_extensions,
-    'max_simultaneous' => $svc_pbx->max_simultaneous,
+    'max_lines'        => $svc_pbx ? $svc_pbx->max_extensions : '',
+    'max_simultaneous' => $svc_pbx ? $svc_pbx->max_simultaneous : '',
     'outbound_service' => $outbound_service,
     'good_till' => $good_till,
     'products'  => [ map $_->pkgpart, grep !$_->get('cancel'), @cust_pkg ],
