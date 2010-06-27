@@ -127,6 +127,7 @@ my %summary_formats = (
     'align'  => [ qw( l r r r ) ],
     'span'   => [ qw( 4 1 1 1 ) ],            # unitprices?
     'width'  => [ qw( 8.2cm 2.5cm 1.4cm 1.6cm ) ],   # don't like this
+    'show'   => 1,
   },
   'simpler' => { 
     'label' =>  [ qw( Description Calls Amount ) ],
@@ -138,6 +139,7 @@ my %summary_formats = (
     'align'  => [ qw( l r r ) ],
     'span'   => [ qw( 5 1 1 ) ],
     'width'  => [ qw( 10.7cm 1.4cm 1.6cm ) ],   # don't like this
+    'show'   => 1,
   },
   'usage_simple' => { 
     'label' => [ qw( Date Time Number Destination Duration Amount ) ],
@@ -147,16 +149,56 @@ my %summary_formats = (
                   sub { ' ' },
                   sub { ' ' },
                   sub { ' ' },
-                  sub { ' ' },
+                  sub { my $href = shift;  #ugh! making bunk of 'normalization'
+                        $href->{subtotal} ? $href->{subtotal} : ' '
+                      },
                 ],
     'align'  => [ qw( l l l l r r ) ],
-    'span'   => [ qw( 2 1 1 1 1 1 ) ],            # unitprices?
+    'span'   => [ qw( 1 1 1 1 1 2 ) ],            # unitprices?
     'width'  => [ qw( 4.3cm 1.4cm 2.5cm 2.5cm 1.4cm 1.6cm ) ],# don't like this
+    'show'   => 0,
+  },
+  'usage_6col' => { 
+    'label' => [ qw( col1 col2 col3 col4 col5 col6 ) ],
+    'fields' => [
+                  sub { ' ' },
+                  sub { ' ' },
+                  sub { ' ' },
+                  sub { ' ' },
+                  sub { ' ' },
+                  sub { my $href = shift;  #ugh! making bunk of 'normalization'
+                        $href->{subtotal} ? $href->{subtotal} : ' '
+                      },
+                ],
+    'align'  => [ qw( l l l l r r ) ],
+    'span'   => [ qw( 1 1 1 1 1 2 ) ],            # unitprices?
+    'width'  => [ qw( 4.3cm 1.4cm 2.5cm 2.5cm 1.4cm 1.6cm ) ],# don't like this
+    'show'   => 0,
+  },
+  'usage_7col' => { 
+    'label' => [ qw( col1 col2 col3 col4 col5 col6 col7 ) ],
+    'fields' => [
+                  sub { ' ' },
+                  sub { ' ' },
+                  sub { ' ' },
+                  sub { ' ' },
+                  sub { ' ' },
+                  sub { ' ' },
+                  sub { my $href = shift;  #ugh! making bunk of 'normalization'
+                        $href->{subtotal} ? $href->{subtotal} : ' '
+                      },
+                ],
+    'align'  => [ qw( l l l l l r r ) ],
+    'span'   => [ qw( 1 1 1 1 1 1 1 ) ],            # unitprices?
+    'width'  => [ qw( 2.9cm 1.4cm 1.4cm 2.5cm 2.5cm 1.4cm 1.6cm ) ],# don't like this
+    'show'   => 0,
   },
 );
 
 sub summary_formats_labelhash {
-  map { $_ => join(',', @{$summary_formats{$_}{label}}) } keys %summary_formats;
+  map { $_ => join(',', @{$summary_formats{$_}{label}}) }
+    grep { $summary_formats{$_}{show} }
+    keys %summary_formats;
 }
 
 =item header_generator FORMAT
@@ -173,15 +215,16 @@ my %html_align = (
 );
 
 sub _generator_defaults {
-  my ( $self, $format ) = ( shift, shift );
-  return ( $summary_formats{$self->format}, ' ', ' ', ' ', sub { shift } );
+  my ( $self, $format, %opt ) = @_;
+  my %format = ( %{ $summary_formats{$self->format} }, %opt );
+  return ( \%format, ' ', ' ', ' ', sub { shift } );
 }
 
 sub header_generator {
-  my ( $self, $format ) = ( shift, shift );
+  my ( $self, $format, %opt ) = @_;
 
   my ( $f, $prefix, $suffix, $separator, $column ) =
-    $self->_generator_defaults($format);
+    $self->_generator_defaults($format, %opt);
 
   if ($format eq 'latex') {
     $prefix = "\\hline\n\\rule{0pt}{2.5ex}\n\\makebox[1.4cm]{}&\n";
@@ -205,7 +248,7 @@ sub header_generator {
     my @args = @_;
     my @result = ();
 
-    foreach  (my $i = 0; $f->{label}->[$i]; $i++) {
+    foreach  (my $i = 0; exists($f->{label}->[$i]); $i++) {
       push @result,
         &{$column}( map { $f->{$_}->[$i] } qw(label align span width) );
     }
@@ -223,10 +266,10 @@ usage_class.  FORMAT is either html or latex
 =cut
 
 sub description_generator {
-  my ( $self, $format ) = ( shift, shift );
+  my ( $self, $format, %opt ) = @_;
 
   my ( $f, $prefix, $suffix, $separator, $column ) =
-    $self->_generator_defaults($format);
+    $self->_generator_defaults($format, %opt);
 
   if ($format eq 'latex') {
     $prefix = "\\hline\n\\multicolumn{1}{c}{\\rule{0pt}{2.5ex}~} &\n";
@@ -269,13 +312,13 @@ usage_class.  FORMAT is either html or latex
 =cut
 
 sub total_generator {
-  my ( $self, $format ) = ( shift, shift );
+  my ( $self, $format, %opt ) = @_;
 
 #  $OUT .= '\FStotaldesc{' . $section->{'description'} . ' Total}' .
 #          '{' . $section->{'subtotal'} . '}' . "\n";
 
   my ( $f, $prefix, $suffix, $separator, $column ) =
-    $self->_generator_defaults($format);
+    $self->_generator_defaults($format, %opt);
   my $style = '';
 
   if ($format eq 'latex') {
@@ -328,13 +371,13 @@ usage_class.  FORMAT is either html or latex
 # total_item and amount vs total_amount -- another array of functions?
 
 sub total_line_generator {
-  my ( $self, $format ) = ( shift, shift );
+  my ( $self, $format, %opt ) = @_;
 
 #     $OUT .= '\FStotaldesc{' . $line->{'total_item'} . '}' .
 #             '{' . $line->{'total_amount'} . '}' . "\n";
 
   my ( $f, $prefix, $suffix, $separator, $column ) =
-    $self->_generator_defaults($format);
+    $self->_generator_defaults($format, %opt);
   my $style = '';
 
   if ($format eq 'latex') {

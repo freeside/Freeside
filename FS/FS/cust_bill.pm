@@ -3741,6 +3741,9 @@ sub _items_svc_phone_sections {
   foreach my $cust_bill_pkg ( $self->cust_bill_pkg ) {
     next unless $cust_bill_pkg->pkgnum > 0;
 
+    my @header = $cust_bill_pkg->details_header;
+    next unless scalar(@header);
+
     foreach my $detail ( $cust_bill_pkg->cust_bill_pkg_detail ) {
 
       my $phonenum = $detail->phonenum;
@@ -3789,6 +3792,7 @@ sub _items_svc_phone_sections {
           'duration' => 0,
           'sort_weight' => $usage_class{$detail->classnum}->weight,
           'phonenum' => $phonenum,
+          'header'  => [ @header ],
         };
       $sections{"$phonenum $line"}{amount} += $amount;  #subtotal
       $sections{"$phonenum $line"}{calls}++;
@@ -3819,11 +3823,17 @@ sub _items_svc_phone_sections {
 
   my %sectionmap = ();
   my $simple = new FS::usage_class { format => 'simple' }; #bleh
-  my $usage_simple = new FS::usage_class { format => 'usage_simple' }; #bleh
   foreach ( keys %sections ) {
+    my @header = @{ $sections{$_}{header} || [] };
+    my $usage_simple =
+      new FS::usage_class { format => 'usage_'. (scalar(@header) || 6). 'col' };
     my $summary = $sections{$_}{sort_weight} < 0 ? 1 : 0;
     my $usage_class = $summary ? $simple : $usage_simple;
     my $ending = $summary ? ' usage charges' : '';
+    my %gen_opt = ();
+    unless ($summary) {
+      $gen_opt{label} = [ map{ &{$escape}($_) } @header ];
+    }
     $sectionmap{$_} = { 'description' => &{$escape}($_. $ending),
                         'amount'    => $sections{$_}{amount},    #subtotal
                         'calls'       => $sections{$_}{calls},
@@ -3834,7 +3844,7 @@ sub _items_svc_phone_sections {
                         'sort_weight' => $sections{$_}{sort_weight},
                         'post_total'  => $summary, #inspire pagebreak
                         (
-                          ( map { $_ => $usage_class->$_($format) }
+                          ( map { $_ => $usage_class->$_($format, %gen_opt) }
                             qw( description_generator
                                 header_generator
                                 total_generator
@@ -3943,12 +3953,12 @@ sub _items_pkg {
 }
 
 sub _taxsort {
-  return 0 unless $a cmp $b;
-  return -1 if $b eq 'Tax';
-  return 1 if $a eq 'Tax';
-  return -1 if $b eq 'Other surcharges';
-  return 1 if $a eq 'Other surcharges';
-  $a cmp $b;
+  return 0 unless $a->itemdesc cmp $b->itemdesc;
+  return -1 if $b->itemdesc eq 'Tax';
+  return 1 if $a->itemdesc eq 'Tax';
+  return -1 if $b->itemdesc eq 'Other surcharges';
+  return 1 if $a->itemdesc eq 'Other surcharges';
+  $a->itemdesc cmp $b->itemdesc;
 }
 
 sub _items_tax {

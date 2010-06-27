@@ -480,6 +480,35 @@ sub details {
     #qsearch ( 'cust_bill_pkg_detail', { 'lineitemnum' => $self->lineitemnum });
 }
 
+=item details_header [ OPTION => VALUE ... ]
+
+Returns a list representing an invoice line item detail header, if any.
+This relies on the behavior of voip_cdr in that it expects the header
+to be the first CSV formatted detail (as is expected by invoice generation
+routines).  Returns the empty list otherwise.
+
+=cut
+
+sub details_header {
+  my $self = shift;
+  return '' unless defined dbdef->table('cust_bill_pkg_detail');
+
+  eval "use Text::CSV_XS;";
+  die $@ if $@;
+  my $csv = new Text::CSV_XS;
+
+  my @detail = 
+    qsearch ({ 'table'    => 'cust_bill_pkg_detail',
+               'hashref'  => { 'billpkgnum' => $self->billpkgnum,
+                               'format'     => 'C',
+                             },
+               'order_by' => 'ORDER BY detailnum LIMIT 1',
+            });
+  return() unless scalar(@detail);
+  $csv->parse($detail[0]->detail) or return ();
+  $csv->fields;
+}
+
 =item desc
 
 Returns a description for this line item.  For typical line items, this is the
