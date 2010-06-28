@@ -324,15 +324,19 @@ sub check {
   $self->SUPER::check;
 }
 
-=item is_tollfree
+=item is_tollfree [ COLUMN ]
 
-  Returns true when the cdr represents a toll free number and false otherwise.
+Returns true when the cdr represents a toll free number and false otherwise.
+
+By default, inspects the dst field, but an optional column name can be passed
+to inspect other field.
 
 =cut
 
 sub is_tollfree {
   my $self = shift;
-  ( $self->dst =~ /^(\+?1)?8(8|([02-7])\3)/ ) ? 1 : 0;
+  my $field = scalar(@_) ? shift : 'dst';
+  ( $self->$field() =~ /^(\+?1)?8(8|([02-7])\3)/ ) ? 1 : 0;
 }
 
 =item set_charged_party
@@ -360,6 +364,11 @@ sub set_charged_party {
       $charged_party =~ s/^0+//
         if $conf->exists('cdr-charged_party-accountcode-trim_leading_0s');
       $self->charged_party( $charged_party );
+
+    } elsif ( $conf->exists('cdr-charged_party-field') ) {
+
+      my $field = $conf->config('cdr-charged_party-field');
+      $self->charged_party( $self->$field() );
 
     } else {
 

@@ -3494,6 +3494,22 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'cdr-charged_party-field',
+    'section'     => '',
+    'description' => 'Set the charged_party field of CDRs to this field.',
+    'type'        => 'select-sub',
+    'options_sub' => sub { my $fields = FS::cdr->table_info->{'fields'};
+                           map { $_ => $fields->{$_}||$_ }
+                           grep { $_ !~ /^(acctid|charged_party)$/ }
+                           FS::Schema::dbdef->table('cdr')->columns;
+                         },
+    'option_sub'  => sub { my $f = shift;
+                           FS::cdr->table_info->{'fields'}{$f} || $f;
+                         },
+  },
+
+  #probably deprecate in favor of cdr-charged_party-field above
+  {
     'key'         => 'cdr-charged_party-accountcode',
     'section'     => '',
     'description' => 'Set the charged_party field of CDRs to the accountcode.',

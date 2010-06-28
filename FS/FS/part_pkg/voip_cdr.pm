@@ -17,6 +17,11 @@ use FS::part_pkg::recur_Common;
 
 $DEBUG = 0;
 
+tie my %cdr_svc_method, 'Tie::IxHash',
+  'svc_phone.phonenum' => 'Phone numbers (svc_phone.phonenum)',
+  'svc_pbx.title'      => 'PBX name (svc_pbx.title)',
+;
+
 tie my %rating_method, 'Tie::IxHash',
   'prefix' => 'Rate calls by using destination prefix to look up a region and rate according to the internal prefix and rate tables',
 #  'upstream' => 'Rate calls based on upstream data: If the call type is "1", map the upstream rate ID directly to an internal rate (rate_detail), otherwise, pass the upstream price through directly.',
@@ -70,6 +75,11 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                          'type' => 'select',
                          'select_options' => \%FS::part_pkg::recur_Common::recur_method,
                        },
+
+    'cdr_svc_method' => { 'name' => 'CDR service matching method',
+                          'type' => 'radio',
+                          'options' => \%cdr_svc_method,
+                        },
 
     'rating_method' => { 'name' => 'Rating method',
                          'type' => 'radio',
@@ -143,6 +153,13 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
     'skip_dstchannel_prefix' => { 'name' => 'Do not charge for CDRs where the dstchannel starts with:',
                                 },
 
+    'skip_src_length_more' => { 'name' => 'Do not charge for CDRs where the source is more than this many digits:',
+                              },
+
+    'noskip_src_length_accountcode_tollfree' => { 'name' => 'Do charge for CDRs where source is equal or greater than the specified digits and accountcode is toll free',
+                                                  'type' => 'checkbox',
+                                                },
+
     'skip_dst_length_less' => { 'name' => 'Do not charge for CDRs where the destination is less than this many digits:',
                               },
 
@@ -210,6 +227,7 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
   'fieldorder' => [qw(
                        setup_fee recur_fee recur_temporality unused_credit
                        recur_method cutoff_day
+                       cdr_svc_method
                        rating_method ratenum min_charge sec_granularity
                        ignore_unrateable
                        default_prefix
@@ -219,6 +237,7 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                        use_amaflags use_disposition
                        use_disposition_taqua use_carrierid use_cdrtypenum
                        skip_dcontext skip_dstchannel_prefix
+                       skip_src_length_more noskip_src_length_accountcode_tollfree
                        skip_dst_length_less skip_lastapp
                        use_duration
                        411_rewrite
@@ -278,6 +297,7 @@ sub calc_usage {
 
 #  my $downstream_cdr = '';
 
+  my $cdr_svc_method    = $self->option('cdr_svc_method')||'svc_phone.phonenum';
   my $rating_method     = $self->option('rating_method') || 'prefix';
   my $intl              = $self->option('international_prefix') || '011';
   my $domestic_prefix   = $self->option('domestic_prefix');
@@ -305,13 +325,15 @@ sub calc_usage {
   die $@ if $@;
   my $csv = new Text::CSV_XS;
 
+  my($svc_table, $svc_field) = split('.', $cdr_svc_method);
+
   foreach my $cust_svc (
-    grep { $_->part_svc->svcdb eq 'svc_phone' } $cust_pkg->cust_svc
+    grep { $_->part_svc->svcdb eq $svc_table } $cust_pkg->cust_svc
   ) {
 
-    my $svc_phone = $cust_svc->svc_x;
+    my $svc_x = $cust_svc->svc_x;
     foreach my $cdr (
-      $svc_phone->get_cdrs(
+      $svc_x->get_cdrs(
         'disable_src'    => $self->option('disable_src'),
         'default_prefix' => $self->option('default_prefix'),
         'status'         => '',
@@ -690,6 +712,7 @@ sub check_chargable {
     use_cdrtypenum
     skip_dcontext
     skip_dstchannel_prefix
+    skip_src_length_more noskip_src_length_accountcode_tollfree
     skip_dst_length_less
     skip_lastapp
   );
@@ -731,6 +754,26 @@ sub check_chargable {
 
   return "lastapp is $opt{'skip_lastapp'}"
     if length($opt{'skip_lastapp'}) && $cdr->lastapp eq $opt{'skip_lastapp'};
+
+  my $src_length = $opt{'skip_src_length_more'};
+  if ( $src_length ) {
+
+    if ( $opt{'noskip_src_length_accountcode_tollfree'} ) {
+
+      if ( $cdr->is_tollfree('accountcode') ) {
+        return "source less than or equal to $src_length digits"
+          if length($cdr->src) <= $src_length;
+      } else {
+        return "source more than $src_length digits"
+          if length($cdr->src) > $src_length;
+      }
+
+    } else {
+      return "source more than $src_length digits"
+        if length($cdr->src) > $src_length;
+    }
+
+  }
 
   #all right then, rate it
   '';

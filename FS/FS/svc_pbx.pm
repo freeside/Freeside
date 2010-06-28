@@ -267,6 +267,75 @@ sub _check_duplicate {
   }
 }
 
+=item get_cdrs
+
+Returns a set of Call Detail Records (see L<FS::cdr>) associated with this 
+service.  By default, "associated with" means that the "charged_party" field of
+the CDR matches the "title" field of the service.
+
+=over 2
+
+Accepts the following options:
+
+=item for_update => 1: SELECT the CDRs "FOR UPDATE".
+
+=item status => "" (or "done"): Return only CDRs with that processing status.
+
+=item inbound => 1: No-op for svc_pbx CDR processing.
+
+=item default_prefix => "XXX": Also accept the phone number of the service prepended 
+with the chosen prefix.
+
+=item disable_src => 1: No-op for svc_pbx CDR processing.
+
+=back
+
+=cut
+
+sub get_cdrs {
+  my($self, %options) = @_;
+  my %hash = ();
+  my @where = ();
+
+  my @fields = ( 'charged_party' );
+  $hash{'freesidestatus'} = $options{'status'}
+    if exists($options{'status'});
+  
+  my $for_update = $options{'for_update'} ? 'FOR UPDATE' : '';
+
+  my $title = $self->title;
+
+  my $prefix = $options{'default_prefix'};
+
+  my @orwhere =  map " $_ = '$title'        ", @fields;
+  push @orwhere, map " $_ = '$prefix$title' ", @fields
+    if length($prefix);
+  if ( $prefix =~ /^\+(\d+)$/ ) {
+    push @orwhere, map " $_ = '$1$title' ", @fields
+  }
+
+  push @where, ' ( '. join(' OR ', @orwhere ). ' ) ';
+
+  if ( $options{'begin'} ) {
+    push @where, 'startdate >= '. $options{'begin'};
+  }
+  if ( $options{'end'} ) {
+    push @where, 'startdate < '.  $options{'end'};
+  }
+
+  my $extra_sql = ( keys(%hash) ? ' AND ' : ' WHERE ' ). join(' AND ', @where );
+
+  my @cdrs =
+    qsearch( {
+      'table'      => 'cdr',
+      'hashref'    => \%hash,
+      'extra_sql'  => $extra_sql,
+      'order_by'   => "ORDER BY startdate $for_update",
+    } );
+
+  @cdrs;
+}
+
 =back
 
 =head1 BUGS
