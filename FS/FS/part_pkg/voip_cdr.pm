@@ -477,6 +477,7 @@ sub calc_usage {
 #        } else { #pass upstream price through
 #
 #          $charge = sprintf('%.2f', $cdr->upstream_price);
+#          warn "Incrementing \$charges by $charge.  Now $charges\n" if $DEBUG;
 #          $charges += $charge;
 # 
 #          @call_details = (
@@ -495,6 +496,7 @@ sub calc_usage {
         #XXX $charge = sprintf('%.2f', $cdr->upstream_price);
         $charge = sprintf('%.3f', $cdr->upstream_price);
         $charges += $charge;
+        warn "Incrementing \$charges by $charge.  Now $charges\n" if $DEBUG;
 
         @call_details = ($cdr->downstream_csv( 'format' => $output_format,
                                                'charge' => $charge,
@@ -525,6 +527,7 @@ sub calc_usage {
         $charge = sprintf('%.4f', ( $self->option('min_charge') * $minutes )
                                   + 0.0000000001 ); #so 1.00005 rounds to 1.0001
 
+        warn "Incrementing \$charges by $charge.  Now $charges\n" if $DEBUG;
         $charges += $charge;
 
         @call_details = ($cdr->downstream_csv( 'format' => $output_format,
@@ -578,13 +581,14 @@ sub calc_usage {
 
           $charge = sprintf('%.2f', $rate_detail->conn_charge);
 
-          if ( $included_min{$regionnum} < 0 ) {
+          if ( $included_min{$regionnum} <= 0 ) {
             my $charge_min = 0 - $included_min{$regionnum}; #XXX should preserve
                                                             #(display?) this
             $included_min{$regionnum} = 0;
             $charge += sprintf('%.2f', ($rate_detail->min_charge * $charge_min)
                                        + 0.00000001 ); #so 1.005 rounds to 1.01
             $charge = sprintf('%.2f', $charge);
+            warn "Incrementing \$charges by $charge.  Now $charges\n" if $DEBUG;
             $charges += $charge;
           }
 
