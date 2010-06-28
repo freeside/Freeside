@@ -325,7 +325,7 @@ sub calc_usage {
   die $@ if $@;
   my $csv = new Text::CSV_XS;
 
-  my($svc_table, $svc_field) = split('.', $cdr_svc_method);
+  my($svc_table, $svc_field) = split('\.', $cdr_svc_method);
 
   foreach my $cust_svc (
     grep { $_->part_svc->svcdb eq $svc_table } $cust_pkg->cust_svc
