@@ -3397,7 +3397,9 @@ my %condensed_format = (
   'fields' => [
                 sub { shift->{description} },
                 sub { shift->{quantity} },
-                sub { shift->{amount} },
+                sub { my($href, %opt) = @_;
+                      ($opt{dollar} || ''). $href->{amount};
+                    },
               ],
   'align'  => [ qw( l r r ) ],
   'span'   => [ qw( 5 1 1 ) ],            # unitprices?
@@ -3471,6 +3473,7 @@ sub _condensed_description_generator {
   my ( $f, $prefix, $suffix, $separator, $column ) =
     _condensed_generator_defaults($format);
 
+  my $money_char = '$';
   if ($format eq 'latex') {
     $prefix = "\\hline\n\\multicolumn{1}{c}{\\rule{0pt}{2.5ex}~} &\n";
     $suffix = '\\\\';
@@ -3479,6 +3482,7 @@ sub _condensed_description_generator {
       sub { my ($d,$a,$s,$w) = @_;
             return "\\multicolumn{$s}{$a}{\\makebox[$w][$a]{\\textbf{$d}}}";
           };
+    $money_char = '\\dollar';
   }elsif ( $format eq 'html' ) {
     $prefix = '"><td align="center"></td>';
     $suffix = '';
@@ -3487,16 +3491,22 @@ sub _condensed_description_generator {
       sub { my ($d,$a,$s,$w) = @_;
             return qq!<td align="$html_align{$a}">$d</td>!;
       };
+    #$money_char = $conf->config('money_char') || '$';
+    $money_char = '';  # this is madness
   }
 
   sub {
-    my @args = @_;
+    #my @args = @_;
+    my $href = shift;
     my @result = ();
 
     foreach  (my $i = 0; $f->{label}->[$i]; $i++) {
-      push @result, &{$column}( &{$f->{fields}->[$i]}(@args),
-                                map { $f->{$_}->[$i] } qw(align span width)
-                              );
+      my $dollar = '';
+      $dollar = $money_char if $i == scalar(@{$f->{label}})-1;
+      push @result,
+        &{$column}( &{$f->{fields}->[$i]}($href, 'dollar' => $dollar),
+                    map { $f->{$_}->[$i] } qw(align span width)
+                  );
     }
 
     $prefix. join( $separator, @result ). $suffix;

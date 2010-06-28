@@ -3,6 +3,9 @@ package FS::usage_class;
 use strict;
 use vars qw( @ISA );
 use FS::Record qw( qsearch qsearchs );
+use FS::Conf;
+
+my $conf = new FS::Conf;
 
 @ISA = qw(FS::Record);
 
@@ -122,7 +125,9 @@ my %summary_formats = (
                   sub { shift->{description} },
                   sub { shift->{calls} },
                   sub { sprintf( '%.1f', shift->{duration}/60 ) },
-                  sub { shift->{amount} },
+                  sub { my($href, %opt) = @_; 
+                        ($opt{dollar} || ''). $href->{amount};
+                      },
                 ],
     'align'  => [ qw( l r r r ) ],
     'span'   => [ qw( 4 1 1 1 ) ],            # unitprices?
@@ -134,7 +139,9 @@ my %summary_formats = (
     'fields' => [
                   sub { shift->{description} },
                   sub { shift->{calls} },
-                  sub { shift->{amount} },
+                  sub { my($href, %opt) = @_; 
+                        ($opt{dollar} || ''). $href->{amount};
+                      },
                 ],
     'align'  => [ qw( l r r ) ],
     'span'   => [ qw( 5 1 1 ) ],
@@ -271,6 +278,7 @@ sub description_generator {
   my ( $f, $prefix, $suffix, $separator, $column ) =
     $self->_generator_defaults($format, %opt);
 
+  my $money_char = '$';
   if ($format eq 'latex') {
     $prefix = "\\hline\n\\multicolumn{1}{c}{\\rule{0pt}{2.5ex}~} &\n";
     $suffix = '\\\\';
@@ -279,6 +287,7 @@ sub description_generator {
       sub { my ($d,$a,$s,$w) = @_;
             return "\\multicolumn{$s}{$a}{\\makebox[$w][$a]{\\textbf{$d}}}";
           };
+    $money_char = '\\dollar';
   }elsif ( $format eq 'html' ) {
     $prefix = '"><td align="center"></td>';
     $suffix = '';
@@ -287,16 +296,21 @@ sub description_generator {
       sub { my ($d,$a,$s,$w) = @_;
             return qq!<td align="$html_align{$a}">$d</td>!;
       };
+    $money_char = $conf->config('money_char') || '$';
   }
 
   sub {
-    my @args = @_;
+    #my @args = @_;
+    my ($href) = shift;
     my @result = ();
 
     foreach  (my $i = 0; $f->{label}->[$i]; $i++) {
-      push @result, &{$column}( &{$f->{fields}->[$i]}(@args),
-                                map { $f->{$_}->[$i] } qw(align span width)
-                              );
+      my $dollar = '';
+      $dollar = $money_char if $i == scalar(@{$f->{label}})-1;
+      push @result,
+        &{$column}( &{$f->{fields}->[$i]}($href, 'dollar' => $dollar),
+                    map { $f->{$_}->[$i] } qw(align span width)
+                  );
     }
 
     $prefix. join( $separator, @result ). $suffix;
