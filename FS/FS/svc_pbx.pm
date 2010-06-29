@@ -3,6 +3,7 @@ package FS::svc_pbx;
 use strict;
 use base qw( FS::svc_External_Common );
 use FS::Record qw( qsearch qsearchs dbh );
+use FS::Conf;
 use FS::cust_svc;
 use FS::svc_phone;
 use FS::svc_acct;
@@ -257,6 +258,9 @@ sub check {
 # controlled by a conf setting or something
 sub _check_duplicate {
   my $self = shift;
+
+  my $conf = new FS::Conf;
+  return '' if $conf->config('global_unique-pbx_title') eq 'disabled';
 
   $self->lock_table;
 

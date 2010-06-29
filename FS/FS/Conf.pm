@@ -2194,6 +2194,14 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'global_unique-pbx_title',
+    'section'     => '',
+    'description' => 'Global phone number uniqueness control: enabled (usual setting - title must e unique), or disabled turns off duplicate checking for this field.',
+    'type'        => 'select',
+    'select_enum' => [ 'enabled', 'disabled' ],
+  },
+
+  {
     'key'         => 'svc_external-skip_manual',
     'section'     => 'UI',
     'description' => 'When provisioning svc_external services, skip manual entry of id and title fields in the UI.  Usually used in conjunction with an export that populates these fields (i.e. artera_turbo).',
