@@ -7135,6 +7135,8 @@ Returns a status string for this customer, currently:
 
 =item prospect - No packages have ever been ordered
 
+=item ordered - Recurring packages all are new (not yet billed).
+
 =item active - One or more recurring packages is active
 
 =item inactive - No active recurring packages, but otherwise unsuspended/uncancelled (the inactive status is new - previously inactive customers were mis-identified as cancelled)
@@ -7186,8 +7188,8 @@ Returns a hex triplet color string for this customer's status.
 use vars qw(%statuscolor);
 tie %statuscolor, 'Tie::IxHash',
   'prospect'  => '7e0079', #'000000', #black?  naw, purple
-  'ordered'   => '009999', #teal? cyan?
   'active'    => '00CC00', #green
+  'ordered'   => '009999', #teal? cyan?
   'inactive'  => '0000CC', #blue
   'suspended' => 'FF9900', #yellow
   'cancelled' => 'FF0000', #red
