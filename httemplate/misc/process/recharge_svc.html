@@ -62,6 +62,7 @@ unless ($error) {
     $error = $cust_main->charge($amount, "Recharge " . $svc_acct->label,
                                 $description, $part_pkg->taxclass);
 
+    $error ||= "invalid $_" foreach grep { $rhash{$_} !~ /^\d*$/ } keys %rhash;
     if ($part_pkg->option('recharge_reset', 1)) {
       $error ||= $svc_acct->set_usage(\%rhash, 'null' => 1);
     }else{
