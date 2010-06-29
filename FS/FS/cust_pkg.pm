@@ -2,7 +2,7 @@ package FS::cust_pkg;
 
 use strict;
 use base qw( FS::otaker_Mixin FS::cust_main_Mixin FS::location_Mixin
-             FS::m2m_Common FS::option_Common FS::Record );
+             FS::m2m_Common FS::option_Common );
 use vars qw($disable_agentcheck $DEBUG $me);
 use Carp qw(cluck);
 use Scalar::Util qw( blessed );
@@ -2426,14 +2426,25 @@ sub onetime_sql { "
             where cust_pkg.pkgpart = part_pkg.pkgpart )
 "; }
 
+=item ordered_sql
+
+Returns an SQL expression identifying ordered packages (recurring packages not
+yet billed).
+
+=cut
+
+sub ordered_sql {
+   $_[0]->recurring_sql. " AND ". $_[0]->not_yet_billed_sql;
+}
+
 =item active_sql
 
 Returns an SQL expression identifying active packages.
 
 =cut
 
-sub active_sql { "
-  ". $_[0]->recurring_sql(). "
+sub active_sql {
+  $_[0]->recurring_sql. "
   AND cust_pkg.setup IS NOT NULL AND cust_pkg.setup != 0
   AND ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
   AND ( cust_pkg.susp   IS NULL OR cust_pkg.susp   = 0 )

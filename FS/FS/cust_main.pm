@@ -7151,7 +7151,8 @@ sub status { shift->cust_status(@_); }
 
 sub cust_status {
   my $self = shift;
-  for my $status (qw( prospect active inactive suspended cancelled )) {
+  # prospect ordered active inactive suspended cancelled
+  for my $status ( FS::cust_main->statuses() ) {
     my $method = $status.'_sql';
     my $numnum = ( my $sql = $self->$method() ) =~ s/cust_main\.custnum/?/g;
     my $sth = dbh->prepare("SELECT $sql") or die dbh->errstr;
@@ -7185,6 +7186,7 @@ Returns a hex triplet color string for this customer's status.
 use vars qw(%statuscolor);
 tie %statuscolor, 'Tie::IxHash',
   'prospect'  => '7e0079', #'000000', #black?  naw, purple
+  'ordered'   => '009999', #teal? cyan?
   'active'    => '00CC00', #green
   'inactive'  => '0000CC', #blue
   'suspended' => 'FF9900', #yellow
@@ -7295,9 +7297,20 @@ sub select_count_pkgs_sql {
   $select_count_pkgs;
 }
 
-sub prospect_sql { "
-  0 = ( $select_count_pkgs )
-"; }
+sub prospect_sql {
+  " 0 = ( $select_count_pkgs ) ";
+}
+
+=item ordered_sql
+
+Returns an SQL expression identifying ordered cust_main records (customers with
+recurring packages not yet setup).
+
+=cut
+
+sub ordered_sql {
+  " 0 < ( $select_count_pkgs AND ". FS::cust_pkg->ordered_sql. " ) ";
+}
 
 =item active_sql
 
@@ -7306,10 +7319,9 @@ active recurring packages).
 
 =cut
 
-sub active_sql { "
-  0 < ( $select_count_pkgs AND ". FS::cust_pkg->active_sql. "
-      )
-"; }
+sub active_sql {
+  " 0 < ( $select_count_pkgs AND ". FS::cust_pkg->active_sql. " ) ";
+}
 
 =item inactive_sql
 
@@ -7599,7 +7611,7 @@ sub search {
   # parse status
   ##
 
-  #prospect active inactive suspended cancelled
+  #prospect ordered active inactive suspended cancelled
   if ( grep { $params->{'status'} eq $_ } FS::cust_main->statuses() ) {
     my $method = $params->{'status'}. '_sql';
     #push @where, $class->$method();
