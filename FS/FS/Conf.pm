@@ -2196,7 +2196,7 @@ and customer address. Include units.',
   {
     'key'         => 'global_unique-pbx_title',
     'section'     => '',
-    'description' => 'Global phone number uniqueness control: enabled (usual setting - title must e unique), or disabled turns off duplicate checking for this field.',
+    'description' => 'Global phone number uniqueness control: enabled (usual setting - svc_pbx.title must be unique), or disabled turns off duplicate checking for this field.',
     'type'        => 'select',
     'select_enum' => [ 'enabled', 'disabled' ],
   },
