@@ -19,7 +19,7 @@
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
 
-my $link = "${p}search/cust_bill_pkg.cgi?nottax=1;include_comp_cust=1";
+my $link = "${p}search/cust_bill_pkg.cgi?nottax=1";
 my $bottom_link = "$link;";
 
 my $use_override         = $cgi->param('use_override')         ? 1 : 0;
