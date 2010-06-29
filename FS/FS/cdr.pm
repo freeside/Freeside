@@ -773,6 +773,9 @@ sub _cdr_date_parse {
   } elsif ( $date  =~ /^\s*(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d+\.\d+)(\D|$)/ ) {
     # broadsoft: 20081223201938.314
     ($year, $mon, $day, $hour, $min, $sec) = ( $1, $2, $3, $4, $5, $6 );
+  } elsif ( $date  =~ /^\s*(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})\d+(\D|$)/ ) {
+    # Taqua OM:  20050422203450943
+    ($year, $mon, $day, $hour, $min, $sec) = ( $1, $2, $3, $4, $5, $6 );
   } elsif ( $date  =~ /^\s*(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/ ) {
     # WIP: 20100329121420
     ($year, $mon, $day, $hour, $min, $sec) = ( $1, $2, $3, $4, $5, $6 );
@@ -842,6 +845,10 @@ my %import_options = (
     { map { $_ => $cdr_info{$_}->{'fixedlength_format'}; }
           keys %cdr_info
     },
+
+  'format_row_callbacks' => { map { $_ => $cdr_info{$_}->{'row_callback'}; }
+                                  keys %cdr_info
+                            },
 );
 
 sub _import_options {
