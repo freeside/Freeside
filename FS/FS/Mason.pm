@@ -256,6 +256,7 @@ if ( -e $addl_handler_use_file ) {
       use lib ( "/opt/rt3/local/lib", "/opt/rt3/lib" );
       use vars qw($Nobody $SystemUser);
       use RT;
+      use RT::Util;
       use RT::Tickets;
       use RT::Transactions;
       use RT::Users;
