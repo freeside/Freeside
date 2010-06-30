@@ -1,4 +1,4 @@
-#!/usr/bin/perl -Tw
+#!/usr/bin/perl -w
 
 #to delay loading dbdef until we're ready
 BEGIN { $FS::Schema::setup_hack = 1; }
@@ -9,7 +9,7 @@ $FS::part_pkg::setup_hack = 1;
 $FS::part_pkg::setup_hack = 1;
 
 use strict;
-use vars qw($opt_u $opt_d $opt_v);
+use vars qw($opt_u $opt_d $opt_v $opt_q);
 use Getopt::Std;
 use FS::UID qw(adminsuidsetup datasrc checkeuid getsecrets);
 use FS::CurrentUser;
@@ -24,7 +24,9 @@ die "Not running uid freeside!" unless checkeuid();
 #my %attrib2db =
 #  map { lc($FS::raddb::attrib{$_}) => $_ } keys %FS::raddb::attrib;
 
-getopts("u:vd:");
+getopts("u:vqd:");
+$opt_v = 1 unless $opt_q; #verbose by default now
+
 my $config_dir = shift || '%%%DIST_CONF%%%' ;
 $config_dir =~ /^([\w.:=\/]+)$/
   or die "unacceptable configuration directory name";
@@ -84,6 +86,8 @@ my $username_len = 32;
 # create a dbdef object from the old data structure
 ###
 
+warn "Loading schema objects\n" if $opt_v;
+
 my $dbdef = dbdef_dist(datasrc);
 
 #important
@@ -94,6 +98,8 @@ $dbdef->save($dbdef_file);
 # create 'em
 ###
 
+warn "Connecting to database\n" if $opt_v;
+
 $FS::CurrentUser::upgrade_hack = 1;
 $FS::UID::callback_hack = 1;
 my $dbh = adminsuidsetup $opt_u; #$user;
@@ -101,6 +107,8 @@ $FS::UID::callback_hack = 0;
 
 #create tables
 $|=1;
+
+warn "Creating tables and indices\n" if $opt_v;
 
 foreach my $statement ( $dbdef->sql($dbh) ) {
   $dbh->do( $statement )
@@ -113,14 +121,12 @@ dbdef_create($dbh, $dbdef_file);
 delete $FS::Schema::dbdef_cache{$dbdef_file}; #force an actual reload
 reload_dbdef($dbdef_file);
 
-warn "Freeside schema initialized - commiting transaction\n" if $opt_v;
-
+warn "Tables and indices created - commiting transaction\n" if $opt_v;
 $dbh->commit or die $dbh->errstr;
 $dbh->disconnect or die $dbh->errstr;
-
 warn "Database schema committed successfully\n" if $opt_v;
 
-warn "Initializing freeside configuration\n" if $opt_v;
+warn "Initializing configuration\n" if $opt_v;
 $FS::UID::callback_hack = 1;
 $dbh = adminsuidsetup $opt_u;
 $FS::UID::callback_hack = 0;
@@ -132,21 +138,17 @@ if (!scalar(qsearch('conf', {}))) {
   }
 }
 
-warn "Freeside configuration initialized - commiting transaction\n" if $opt_v;
-
+warn "Configuration initialized - commiting transaction\n" if $opt_v;
 $dbh->commit or die $dbh->errstr;
 $dbh->disconnect or die $dbh->errstr;
-
-warn "Freeside configuration committed successfully\n" if $opt_v;
+warn "Configuration committed successfully\n" if $opt_v;
 
 $dbh = adminsuidsetup $opt_u;
 create_initial_data('domain' => $opt_d);
 
-warn "Freeside database initialized - commiting transaction\n" if $opt_v;
-
+warn "Database initialized - commiting transaction\n" if $opt_v;
 $dbh->commit or die $dbh->errstr;
 $dbh->disconnect or die $dbh->errstr;
-
 warn "Database initialization committed successfully\n" if $opt_v;
 
 sub dbdef_create { # reverse engineer the schema from the DB and save to file
@@ -156,7 +158,7 @@ sub dbdef_create { # reverse engineer the schema from the DB and save to file
 }
 
 sub usage {
-  die "Usage:\n  freeside-setup -d domain.name [ -v ] [ config/dir ]\n"
+  die "Usage:\n  freeside-setup -d domain.name [ -q ] [ config/dir ]\n"
   # [ -u user ] for devel/multi-db installs
 }
 
