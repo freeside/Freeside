@@ -46,7 +46,11 @@
 %# 
 %# END BPS TAGGED BLOCK }}}
 %# Released under the terms of version 2 of the GNU Public License
-<%$Address->format%>\
+% if ( $Address->phrase || $Address->comment ) {
+<% sprintf q{%s <%s> %s}, map $Address->$_, qw( phrase address comment ) %>
+% } else {
+<% $Address->address %>
+% }
 <%INIT>
 my ($phrase, $address, $comment);
 
