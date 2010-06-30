@@ -73,6 +73,8 @@ if ( -e $addl_handler_use_file ) {
   use HTML::FormatText;
   use HTML::Defang;
   use JSON;
+#  use XMLRPC::Transport::HTTP;
+#  use XMLRPC::Lite; # for XMLRPC::Serializer
   use MIME::Base64;
   use IO::Handle;
   use IO::File;
@@ -283,6 +285,9 @@ if ( -e $addl_handler_use_file ) {
       use CSS::Squish 0.06;
 
       use RT::Interface::Web::Request;
+
+      #nother undeclared web UI dep (for ticket links graph)
+      use IPC::Run::SafeHandles;
 
       #slow, unreliable, segfaults and is optional
       #see rt/html/Ticket/Elements/ShowTransactionAttachments
