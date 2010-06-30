@@ -56,7 +56,9 @@
 
 <& Elements/ShowGraph, %ARGS, Ticket => $ticket &>
 
-<form action="<% RT->Config->Get('WebPath') . $m->request_comp->path %>">
+% my $path = $m->request_comp->path;
+% $path =~ s(^/rt)(); #hacky, dunno why this happens
+<form action="<% RT->Config->Get('WebPath') . $path %>">
 <input type="hidden" class="hidden" name="id" value="<% $id %>" />
 
 <& Elements/EditGraphProperties, %ARGS, Ticket => $ticket &>
