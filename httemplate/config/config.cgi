@@ -131,7 +131,11 @@ Setting <b><% $key %></b>
 
 %   } elsif ( $type eq 'select-sub' ) { 
 
-  <select name="<% "$key$n" %>"><option value="">
+  <select name="<% "$key$n" %>" <% $config_item->multiple ? 'MULTIPLE' : '' %>>
+
+%     unless ( $config_item->multiple ) {
+        <option value="">
+%     }
 
 %     my %options = &{$config_item->options_sub};
 %     my @options = sort { $a <=> $b } keys %options;
@@ -139,7 +143,17 @@ Setting <b><% $key %></b>
 %     foreach my $value ( @options ) {
 %       local($^W)=0; next if $saw{$value}++;
 
-    <option value="<% $value %>" <% $value eq $conf->config($key, $agentnum) ? 'SELECTED' : '' %>><% $value %>: <% $options{$value} %>
+        <option value="<% $value %>"
+
+%         if ( $value eq $conf->config($key, $agentnum)
+%              || ( $config_item->multiple
+%                   && grep { $_ eq $value } $conf->config($key, $agentnum) ) ){
+
+            SELECTED
+
+%         }
+
+        ><% $value %>: <% $options{$value} %>
 
 %     } 
 %     my $curvalue = $conf->config($key, $agentnum);

@@ -62,6 +62,7 @@ use FS::queue;
 use FS::part_pkg;
 use FS::part_event;
 use FS::part_event_condition;
+use FS::part_export;
 #use FS::cust_event;
 use FS::type_pkgs;
 use FS::payment_gateway;
@@ -545,6 +546,45 @@ sub insert {
       return "updating fuzzy search cache: $error";
     }
   }
+
+  # cust_main exports!
+  warn "  exporting\n" if $DEBUG > 1;
+
+  my $export_args = $options{'export_args'} || [];
+
+  my @part_export =
+    map qsearch( 'part_export', {exportnum=>$_} ),
+      $conf->config('cust_main-exports'); #, $agentnum
+
+  foreach my $part_export ( @part_export ) {
+    my $error = $part_export->export_insert($self, @$export_args);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "exporting to ". $part_export->exporttype.
+             " (transaction rolled back): $error";
+    }
+  }
+
+  #foreach my $depend_jobnum ( @$depend_jobnums ) {
+  #    warn "[$me] inserting dependancies on supplied job $depend_jobnum\n"
+  #      if $DEBUG;
+  #    foreach my $jobnum ( @jobnums ) {
+  #      my $queue = qsearchs('queue', { 'jobnum' => $jobnum } );
+  #      warn "[$me] inserting dependancy for job $jobnum on $depend_jobnum\n"
+  #        if $DEBUG;
+  #      my $error = $queue->depend_insert($depend_jobnum);
+  #      if ( $error ) {
+  #        $dbh->rollback if $oldAutoCommit;
+  #        return "error queuing job dependancy: $error";
+  #      }
+  #    }
+  #  }
+  #
+  #}
+  #
+  #if ( exists $options{'jobnums'} ) {
+  #  push @{ $options{'jobnums'} }, @jobnums;
+  #}
 
   warn "  insert complete; committing transaction\n"
     if $DEBUG > 1;
@@ -1340,6 +1380,23 @@ sub delete {
     return $error;
   }
 
+  # cust_main exports!
+
+  #my $export_args = $options{'export_args'} || [];
+
+  my @part_export =
+    map qsearch( 'part_export', {exportnum=>$_} ),
+      $conf->config('cust_main-exports'); #, $agentnum
+
+  foreach my $part_export ( @part_export ) {
+    my $error = $part_export->export_delete( $self ); #, @$export_args);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "exporting to ". $part_export->exporttype.
+             " (transaction rolled back): $error";
+    }
+  }
+
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
 
@@ -1475,6 +1532,23 @@ sub replace {
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return "updating fuzzy search cache: $error";
+    }
+  }
+
+  # cust_main exports!
+
+  my $export_args = $options{'export_args'} || [];
+
+  my @part_export =
+    map qsearch( 'part_export', {exportnum=>$_} ),
+      $conf->config('cust_main-exports'); #, $agentnum
+
+  foreach my $part_export ( @part_export ) {
+    my $error = $part_export->export_replace( $self, $old, @$export_args);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "exporting to ". $part_export->exporttype.
+             " (transaction rolled back): $error";
     }
   }
 

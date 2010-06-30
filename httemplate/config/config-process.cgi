@@ -73,7 +73,7 @@
 %       my $record = qsearchs($table, { $pkey => $key });
 %       my $value = $record ? "$key: ".$record->$namecol() : $key;
         configCell.innerHTML = <% $value |js_string %>;
-%     } elsif ( $type eq 'select-sub' ) {
+%     } elsif ( $type eq 'select-sub' && ! $i->multiple ) {
         configCell.innerHTML =
           <% $conf->config($i->key, $agentnum) |js_string %> + ': ' +
           <% &{ $i->option_sub }( $conf->config($i->key, $agentnum) ) |js_string %>;
