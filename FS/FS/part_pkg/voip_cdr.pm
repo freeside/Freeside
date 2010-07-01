@@ -13,6 +13,8 @@ use FS::rate_prefix;
 use FS::rate_detail;
 use FS::part_pkg::recur_Common;
 
+use List::Util qw(first min);
+
 @ISA = qw(FS::part_pkg::recur_Common);
 
 $DEBUG = 1;
@@ -318,6 +320,8 @@ sub calc_usage {
     @dirass = split(',', $dirass);
   }
 
+  my %interval_cache = (); # for timed rates
+
   #for check_chargable, so we don't keep looking up options inside the loop
   my %opt_cache = ();
 
@@ -347,11 +351,16 @@ sub calc_usage {
 
       my $rate_detail;
       my( $rate_region, $regionnum );
+      my $rate;
       my $pretty_destnum;
       my $charge = '';
       my $seconds = '';
+      my $weektime = '';
       my $regionname = '';
       my $classnum = '';
+      my $countrycode;
+      my $number;
+
       my @call_details = ();
       if ( $rating_method eq 'prefix' ) {
 
@@ -378,7 +387,7 @@ sub calc_usage {
           # (or calling station id for toll free calls)
           ###
 
-          my( $to_or_from, $number );
+          my( $to_or_from );
           if ( $cdr->is_tollfree && ! $disable_tollfree )
           { #tollfree call
             $to_or_from = 'from';
@@ -398,7 +407,7 @@ sub calc_usage {
 #          $dest =~ s/\@(.*)$// and $siphost = $1; # @10.54.32.1, @sip.example.com
 
           #determine the country code
-          my $countrycode;
+          $countrycode = '';
           if (    $number =~ /^$intl(((\d)(\d))(\d))(\d+)$/
                || $number =~ /^\+(((\d)(\d))(\d))(\d+)$/
              )
@@ -427,11 +436,20 @@ sub calc_usage {
           #asterisks here causes inserting the detail to barf, so:
           $pretty_destnum =~ s/\*//g;
 
-          my $rate = qsearchs('rate', { 'ratenum' => $ratenum })
+          $rate = qsearchs('rate', { 'ratenum' => $ratenum })
             or die "ratenum $ratenum not found!";
 
+          my @ltime = localtime($cdr->startdate);
+          $weektime = $ltime[0] + 
+                      $ltime[1]*60 +   #minutes
+                      $ltime[2]*3600 + #hours
+                      $ltime[6]*86400; #days since sunday
+          # if there's no timed rate_detail for this time/region combination,
+          # dest_detail returns the default.  There may still be a timed rate 
+          # that applies after the starttime of the call, so be careful...
           $rate_detail = $rate->dest_detail({ 'countrycode' => $countrycode,
                                               'phonenum'    => $number,
+                                              'weektime'    => $weektime,
                                             });
 
           if ( $rate_detail ) {
@@ -442,6 +460,17 @@ sub calc_usage {
             warn "  found rate for regionnum $regionnum ".
                  "and rate detail $rate_detail\n"
               if $DEBUG;
+
+            if ( !exists($interval_cache{$regionnum}) ) {
+              my @intervals = (
+                sort { $a->stime <=> $b->stime }
+                map { my $r = $_->rate_time; $r ? $r->intervals : () }
+                $rate->rate_detail
+              );
+              $interval_cache{$regionnum} = \@intervals;
+              warn "  cached ".scalar(@intervals)." interval(s)\n"
+                if $DEBUG;
+            }
 
           } elsif ( $ignore_unrateable ) {
 
@@ -557,60 +586,111 @@ sub calc_usage {
 
         unless ( @call_details || ( $charge ne '' && $charge == 0 ) ) {
 
-          $included_min{$regionnum} = $rate_detail->min_included
-            unless exists $included_min{$regionnum};
+          my $seconds_left = $use_duration ? $cdr->duration : $cdr->billsec;
+          # charge for the first (conn_sec) seconds
+          $seconds = min($seconds_left, $rate_detail->conn_sec);
+          $seconds_left -= $seconds; 
+          $weektime     += $seconds;
+          $charge = sprintf("%.02f", $rate_detail->conn_charge);
 
-          my $granularity = $rate_detail->sec_granularity;
+          my $total_minutes = 0;
+          my $etime;
+          while($seconds_left) {
+            my $ratetimenum = $rate_detail->ratetimenum; # may be empty
 
-                      # length($cdr->billsec) ? $cdr->billsec : $cdr->duration;
-          $seconds = $use_duration ? $cdr->duration : $cdr->billsec;
+            # find the end of the current rate interval
+            if(@{ $interval_cache{$regionnum} } == 0) {
+              # There are no timed rates in this group, so just stay 
+              # in the default rate_detail for the entire duration.
+              $etime = 0;
+            } 
+            elsif($ratetimenum) {
+              # This is a timed rate, so go to the etime of this interval.
+              # If it's followed by another timed rate, the stime of that 
+              # interval should match the etime of this one.
+              my $interval = $rate_detail->rate_time->contains($weektime);
+              $etime = $interval->etime;
+            }
+            else {
+              # This is a default rate, so use the stime of the next 
+              # interval in the sequence.
+              my $next_int = first { $_->stime > $weektime } 
+                              @{ $interval_cache{$regionnum} };
+              if ($next_int) {
+                $etime = $next_int->stime;
+              }
+              else {
+                # weektime is near the end of the week, so decrement 
+                # it by a full week and use the stime of the first 
+                # interval.
+                $weektime -= (3600*24*7);
+                $etime = $interval_cache{$regionnum}->[0]->stime;
+              }
+            }
 
-          $seconds -= $rate_detail->conn_sec;
-          $seconds = 0 if $seconds < 0;
+            my $charge_sec = min($seconds_left, $etime - $weektime);
 
-          $seconds += $granularity - ( $seconds % $granularity )
-            if $seconds      # don't granular-ize 0 billsec calls (bills them)
-            && $granularity; # 0 is per call
-          my $minutes = sprintf("%.1f", $seconds / 60);
-          $minutes =~ s/\.0$// if $granularity == 60;
+            $seconds_left -= $charge_sec;
+            $seconds += $charge_sec;
 
-          # per call rather than per minute
-          $minutes = 1 unless $granularity;
+            $included_min{$regionnum}{$ratetimenum} = $rate_detail->min_included
+              unless exists $included_min{$regionnum}{$ratetimenum};
 
-          $included_min{$regionnum} -= $minutes;
+            my $granularity = $rate_detail->sec_granularity;
 
-          $charge = sprintf('%.2f', $rate_detail->conn_charge);
+            # should this be done in every rate interval?
+            $charge_sec += $granularity - ( $charge_sec % $granularity )
+              if $charge_sec   # don't granular-ize 0 billsec calls (bills them)
+              && $granularity; # 0 is per call
+            my $minutes = sprintf("%.1f", $charge_sec / 60);
+            $minutes =~ s/\.0$// if $granularity == 60;
 
-          if ( $included_min{$regionnum} < 0 ) {
-            my $charge_min = 0 - $included_min{$regionnum}; #XXX should preserve
-                                                            #(display?) this
-            $included_min{$regionnum} = 0;
-            $charge += sprintf('%.2f', ($rate_detail->min_charge * $charge_min)
-                                       + 0.00000001 ); #so 1.005 rounds to 1.01
-            $charge = sprintf('%.2f', $charge);
-          }
-          warn "Incrementing \$charges by $charge.  Now $charges\n" if $DEBUG;
-          $charges += $charge;
+            # per call rather than per minute
+            $minutes = 1 unless $granularity;
+            $seconds_left = 0 unless $granularity;
 
+            $included_min{$regionnum}{$ratetimenum} -= $minutes;
+            
+            if ( $included_min{$regionnum}{$ratetimenum} <= 0 ) {
+              my $charge_min = 0 - $included_min{$regionnum}{$ratetimenum}; #XXX should preserve
+                                                              #(display?) this
+              $included_min{$regionnum}{$ratetimenum} = 0;
+              $charge += sprintf('%.2f', ($rate_detail->min_charge * $charge_min)
+                                         + 0.00000001 ); #so 1.005 rounds to 1.01
+              $total_minutes += $minutes;
+            }
+
+            # choose next rate_detail
+            $rate_detail = $rate->dest_detail({ 'countrycode' => $countrycode,
+                                                'phonenum'    => $number,
+                                                'weektime'    => $etime })
+                    if($seconds_left);
+            # we have now moved forward to $etime
+            $weektime = $etime;
+
+          } #while $seconds_left
           # this is why we need regionnum/rate_region....
           warn "  (rate region $rate_region)\n" if $DEBUG;
 
-          @call_details = (
-           $cdr->downstream_csv( 'format'         => $output_format,
-                                 'granularity'    => $granularity,
-                                 'minutes'        => $minutes,
-                                 'charge'         => $charge,
-                                 'pretty_dst'     => $pretty_destnum,
-                                 'dst_regionname' => $regionname,
-                               )
-          );
-
           $classnum = $rate_detail->classnum;
+          $charge = sprintf('%.2f', $charge);
 
-        }
+          @call_details = (
+            $cdr->downstream_csv( 'format'         => $output_format,
+                                  'granularity'    => $rate_detail->sec_granularity, 
+                                  'minutes'        => $total_minutes,
+                                  'charge'         => $charge,
+                                  'pretty_dst'     => $pretty_destnum,
+                                  'dst_regionname' => $regionname,
+                                )
+          );
+        } #if(there is a rate_detail)
+ 
 
         if ( $charge > 0 ) {
           #just use FS::cust_bill_pkg_detail objects?
+          warn "Incrementing \$charges by $charge.  Now $charges\n" if $DEBUG;
+          $charges += $charge;
           my $call_details;
           my $phonenum = $cust_svc->svc_x->phonenum;
 

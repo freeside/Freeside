@@ -5,6 +5,7 @@ use vars qw( @ISA $DEBUG $me );
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::rate;
 use FS::rate_region;
+use FS::rate_time;
 use Tie::IxHash;
 
 @ISA = qw(FS::Record);
@@ -53,6 +54,8 @@ inherits from FS::Record.  The following fields are currently supported:
 =item sec_granularity - granularity in seconds, i.e. 6 or 60; 0 for per-call
 
 =item classnum - usage class (see L<FS::usage_class>) if any for this rate
+
+=item ratetimenum - rating time period (see L<FS::rate_time) if any
 
 =back
 
@@ -192,6 +195,30 @@ Returns a short list of the prefixes for the destination region
 sub dest_prefixes_short {
   my $self = shift;
   $self->dest_region->prefixes_short;
+}
+
+=item rate_time
+
+Returns the L<FS::rate_time> object associated with this call 
+plan rate, if there is one.
+
+=cut
+
+sub rate_time {
+  my $self = shift;
+  $self->ratetimenum ? FS::rate_time->by_key($self->ratetimenum) : ();
+}
+
+=item rate_time_name
+
+Returns the I<ratetimename> field of the L<FS::rate_time> object
+associated with this rate plan.
+
+=cut
+
+sub rate_time_name {
+  my $self = shift;
+  $self->ratetimenum ? $self->rate_time->ratetimename : '(default)';
 }
 
 =item classname

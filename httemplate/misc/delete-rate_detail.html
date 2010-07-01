@@ -1,0 +1,20 @@
+% if ( $error ) {
+%   errorpage($error);
+% } else {
+<% header('Rate deleted') %>
+    <SCRIPT TYPE="text/javascript">
+      window.top.location.reload();
+    </SCRIPT>
+    </BODY></HTML>
+% }
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my ($query) = $cgi->keywords;
+$query =~ /^(\d+)$/ or die "Illegal ratedetailnum";
+my $rate_detail = FS::rate_detail->by_key($1);
+my $error = $rate_detail->delete;
+
+</%init>

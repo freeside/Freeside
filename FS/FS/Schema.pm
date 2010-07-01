@@ -2229,6 +2229,7 @@ sub tables_hashref {
         'conn_sec',        'int',     '',     '', '0', '',
         'min_charge',      'decimal', '', '10,5', '', '', #@money_type, '', '', 
         'sec_granularity', 'int',     '',     '', '', '', 
+        'ratetimenum',     'int', 'NULL',     '', '', '',
         #time period (link to table of periods)?
         'classnum',        'int', 'NULL',     '', '', '', 
       ],
@@ -2258,6 +2259,28 @@ sub tables_hashref {
       'primary_key' => 'prefixnum',
       'unique'      => [],
       'index'       => [ [ 'countrycode' ], [ 'npa' ], [ 'regionnum' ] ],
+    },
+
+    'rate_time' => {
+      'columns' => [
+        'ratetimenum', 'serial',      '',      '', '', '',
+        'ratetimename',   'varchar',      '', $char_d, '', '',
+      ],
+      'primary_key' => 'ratetimenum',
+      'unique'      => [],
+      'index'       => [],
+    },
+
+    'rate_time_interval' => {
+      'columns' => [
+        'intervalnum', 'serial', '', '', '', '',
+        'stime',          'int', '', '', '', '',
+        'etime',          'int', '', '', '', '',
+        'ratetimenum',    'int', '', '', '', '',
+      ],
+      'primary_key' => 'intervalnum',
+      'unique'      => [],
+      'index'       => [],
     },
 
     'usage_class' => {

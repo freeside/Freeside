@@ -5,6 +5,7 @@
      'labels' => { 'ratedetailnum'       => 'Rate', #should hide...
                    'dest_regionname'     => 'Region',
                    'dest_prefixes_short' => 'Prefix(es)',
+                   'rate_time_name'      => 'Time period',
                    'min_included'        => 'Included minutes/calls',
                    'conn_charge'         => 'Connection charge',
                    'conn_sec'            => 'For',
@@ -16,8 +17,10 @@
                    { field=>'ratenum',             type=>'hidden', },
                    { field=>'orig_regionnum',      type=>'hidden', },
                    { field=>'dest_regionnum',      type=>'hidden', },
+                   { field=>'ratetimenum',         type=>'hidden', },
                    { field=>'dest_regionname',     type=>'fixed',  },
                    { field=>'dest_prefixes_short', type=>'fixed',  },
+                   { field=>'rate_time_name',      type=>'fixed',  },
                    { field=>'min_included',        type=>'text',  size=>5 },
                    { field=>'conn_charge',         type=>'money', size=>4 },
                    { field          =>'conn_sec',
@@ -42,6 +45,12 @@
                    },
 
                  ],
+     'new_hashref_callback' => sub {
+        { ratenum        => $cgi->param('ratenum'),
+          dest_regionnum => $cgi->param('dest_regionnum'),
+          ratetimenum    => $cgi->param('ratetimenum'),
+        }
+      },
    )
 %>
 <%once>

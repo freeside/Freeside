@@ -1,0 +1,48 @@
+<% include( 'elements/browse.html',
+     'title'          => 'Rating Time Periods',
+     'name_singular'  => 'period',
+     'menubar'        => [ 'Rate plans' => $p.'browse/rate.cgi' ],
+     'html_init'      => $html_init,
+     'query'          => {
+                           'table'     => 'rate_time',
+                           'order_by'  => 'ratetimenum', # lacking anything else
+                           'hashref'   => {},
+                         },
+     'count_query'    => 'SELECT COUNT(*) FROM rate_time',
+     'header'         => \@header,
+     'fields'         => \@fields,
+     'links'          => \@links,
+     'align'          => \@align,
+   )
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $edit_url = $p.'edit/rate_time.cgi';
+
+my $link = [ "$edit_url?", 'ratetimenum' ];
+
+my $html_init =
+  'Time periods for VoIP and call billing.<BR><BR>'.
+  qq(<A HREF="$edit_url"><I>Add a new period</I></A><BR><BR>);
+
+sub interval {
+  my $i = shift;
+  '<TABLE>'
+  .join('', map { '<TR><TD>'.($_->description)[$i].'</TR></TD>' }
+      shift->intervals
+  ) . '</TABLE>';
+}
+
+# inefficient but readable
+my $stime_sub = sub { interval(0,shift) };
+my $etime_sub = sub { interval(1,shift) };
+
+my @header     = ( '#',           'Period',       'Start', 'End' );
+my @fields     = ( 'ratetimenum', 'ratetimename', $stime_sub, $etime_sub );
+my @links      = ( ($link) x 2 );
+my @align      = ( 'right', 'left', 'left' );
+
+</%init>

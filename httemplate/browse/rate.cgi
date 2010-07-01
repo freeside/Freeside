@@ -2,6 +2,8 @@
               'title'       => 'Rate plans',
               'menubar'     => [ 'Regions and Prefixes' =>
                                    $p.'browse/rate_region.html',
+                                 'Time Periods' =>
+                                   $p.'browse/rate_time.html',
                                ],
               'html_init'   => $html_init,
               'name'        => 'rate plans',

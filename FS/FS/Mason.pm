@@ -244,6 +244,8 @@ if ( -e $addl_handler_use_file ) {
   use FS::cgp_rule_action;
   use FS::bill_batch;
   use FS::cust_bill_batch;
+  use FS::rate_time;
+  use FS::rate_time_interval;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {

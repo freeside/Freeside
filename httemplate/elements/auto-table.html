@@ -1,0 +1,146 @@
+<%doc>
+
+Example:
+<% include('/elements/auto-table.html',
+
+              ###
+              # required
+              ###
+
+              'header'        => [ '#',  'Item', 'Amount' ],
+              'fields'        => [ 'id', 'name', 'amount' ],
+
+              ###
+              # highly recommended
+              ###
+
+              'size'          => [ 4, 12, 8 ],
+              'maxl'          => [ 4, 12, 8 ],
+              'align'         => [ 'right', 'left', 'right' ],
+
+              ###
+              # optional
+              ###
+
+              'data'          => [ [ 1,  'Widget',      25 ], 
+                                   [ 12, 'Super Widget, 7  ] ],
+              #or
+              'records'       => [ qsearch('item', { } ) ],
+              # or any other array of FS::Record objects
+
+              'prefix'        => 'mytable_',
+) %>
+
+Values will be passed through as "mytable_id1", etc.
+</%doc>
+
+<TABLE ID="<% $prefix %>AutoTable" BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>
+  <TR>
+% foreach (@header) {
+    <TH><% $_ %></TH>
+% }
+  </TR>
+% my $row = 0;
+% for ( $row = 0; $row < scalar @data; $row++ ) {
+  <TR>
+%   my $col = 0;
+%   for ( $col = 0; $col < scalar @fields; $col++ ) {
+%     my $id = $prefix . $fields[$col] . $row;
+    <TD>
+      <INPUT TYPE      = "text"
+             NAME      = "<% $id %>"
+             ID        = "<% $id %>"
+             SIZE      = <% $size[$col] %>
+             MAXLENGTH = <% $maxl[$col] %>
+             STYLE     = "text-align:<% $align[$col] %>"
+             VALUE     = "<% $data[$row][$col] %>"
+             onchange  = "possiblyAddRow();"
+      >
+    </TD>
+%   }
+    <TD>
+      <IMG SRC     = "<% "${p}images/cross.png" %>" 
+           ALT     = "X" 
+           onclick = "deleteThisRow(this);"
+           >
+    </TD>
+  </TR>
+% }
+</TABLE>
+
+<SCRIPT TYPE="text/javascript">
+  var <% $prefix %>rownum = <% $row %>;
+  var <% $prefix %>table = document.getElementById('<% $prefix %>AutoTable');
+
+  function rownum_of(obj) {
+    return (obj.parentNode.parentNode.sectionRowIndex);
+  }
+
+  function possiblyAddRow() {
+    if ( <% $prefix %>rownum == rownum_of(this) ) {
+      <% $prefix %>addRow();
+    }
+  }
+
+  function <% $prefix %>addRow() {
+    var row = <% $prefix %>table.insertRow(<% $prefix %>rownum + 1);
+%   my $col = 0;
+%   for( $col = 0; $col < scalar @fields; $col++ ) {
+%     my $field = $prefix.$fields[$col];
+    var <% $field %>_cell = document.createElement('TD');
+      var <% $field %>_input = document.createElement('INPUT');
+      <% $field %>_input.setAttribute('name', '<% $field %>'+<% $prefix %>rownum);
+      <% $field %>_input.setAttribute('id',   '<% $field %>'+<% $prefix %>rownum);
+      <% $field %>_input.setAttribute('type', 'text');
+      <% $field %>_input.setAttribute('size', <% $size[$col] %>);
+      <% $field %>_input.setAttribute('maxlength', <% $maxl[$col] %>);
+      <% $field %>_input.style.textAlign = '<% $align[$col] %>';
+      <% $field %>_input.onchange = possiblyAddRow;
+      <% $field %>_cell.appendChild(<% $field %>_input);
+    row.appendChild(<% $field %>_cell);
+%   }
+    var delcell = document.createElement('TD');
+      var delinput = document.createElement('IMG');
+      delinput.setAttribute('src', '<% "${p}images/cross.png" %>');
+      delinput.setAttribute('alt', 'X');
+      delinput.setAttribute('onclick', 'deleteThisRow(this);');
+      delcell.appendChild(delinput);
+    row.appendChild(delcell);
+
+    <% $prefix %>rownum++;
+  }
+
+  function deleteThisRow(obj) {
+    if(<% $prefix %>rownum == rownum_of(obj))  {
+      <% $prefix %>addRow();
+    }
+    <% $prefix %>table.deleteRow(rownum_of(obj));
+    <% $prefix %>rownum--;
+    return(false);
+  }
+
+  <% $prefix %>addRow();
+</SCRIPT>
+
+<%init>
+my %opt = @_;
+
+my @header = @{ $opt{'header'} };
+my @fields = @{ $opt{'fields'} };
+my @data = ();
+if($opt{'data'}) {
+  @data = @{ $opt{'data'} };
+}
+elsif($opt{'records'}) {
+  foreach my $rec (@{ $opt{'records'} }) {
+    push @data, [ map { $rec->getfield($_) } @fields ];
+  }
+}
+# else @data = ();
+
+my $prefix = $opt{'prefix'};
+my @size = $opt{'size'} ? @{ $opt{'size'} } : (map {16} @fields);
+my @maxl = $opt{'maxl'} ? @{ $opt{'maxl'} } : @size;
+my @align = $opt{'align'} ? @{ $opt{'align'} } : (map {'right'} @fields);
+
+</%init>

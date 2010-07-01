@@ -279,16 +279,22 @@ Destination can be specified as an FS::rate_detail object or regionnum
 (see L<FS::rate_detail>), or as a hashref with two keys: I<countrycode>
 and I<phonenum>.
 
+An optional third key, I<weektime>, will return a timed rate (one with 
+a non-null I<ratetimenum>) if one exists for a call at that time.  If 
+no matching timed rate exists, the non-timed rate will be returned.
+
 =cut
 
 sub dest_detail {
   my $self = shift;
 
   my $regionnum;
+  my $weektime;
   if ( ref($_[0]) eq 'HASH' ) {
 
     my $countrycode = $_[0]->{'countrycode'};
     my $phonenum    = $_[0]->{'phonenum'};
+    $weektime       = $_[0]->{'weektime'};
 
     #find a rate prefix, first look at most specific, then fewer digits,
     # finally trying the country code only
@@ -314,9 +320,31 @@ sub dest_detail {
   } else {
     $regionnum = ref($_[0]) ? shift->regionnum : shift;
   }
-
-  qsearchs( 'rate_detail', { 'ratenum'        => $self->ratenum,
-                             'dest_regionnum' => $regionnum,     } );
+  
+  if(!defined($weektime)) {
+    return qsearchs( 'rate_detail', 
+                            { 'ratenum'        => $self->ratenum,
+                              'dest_regionnum' => $regionnum,
+                              'ratetimenum'    => '',
+                            } );
+  }
+  else {
+    my @details = grep { my $rate_time = $_->rate_time;
+                            $rate_time && $rate_time->contains($weektime) }
+                       qsearch( 'rate_detail',
+                                    { 'ratenum'        => $self->ratenum,
+                                      'dest_regionnum' => $regionnum, } );
+    if(!@details) {
+      # this may change at some point
+      return $self->dest_detail($regionnum);
+    }
+    elsif(@details == 1) {
+      return $details[0];
+    }
+    else {
+      die "overlapping rate_detail times (region $regionnum, time $weektime)\n";
+    }
+  }
 }
 
 =item rate_detail
