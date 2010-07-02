@@ -602,7 +602,8 @@ sub calc_usage {
             if(@{ $interval_cache{$regionnum} } == 0) {
               # There are no timed rates in this group, so just stay 
               # in the default rate_detail for the entire duration.
-              $etime = 0;
+              # Set an "end" of 1 past the end of the current call.
+              $etime = $weektime + $seconds_left + 1;
             } 
             elsif($ratetimenum) {
               # This is a timed rate, so go to the etime of this interval.
