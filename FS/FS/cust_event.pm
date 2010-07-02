@@ -222,9 +222,6 @@ sub do_event {
        " (". $part_event->action. ") $for\n"
     if $DEBUG;
 
-  my $oldAutoCommit = $FS::UID::AutoCommit;
-  local $FS::UID::AutoCommit = 0;
-
   my $error;
   {
     local $SIG{__DIE__}; # don't want Mason __DIE__ handler active
