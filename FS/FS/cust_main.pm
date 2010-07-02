@@ -2758,7 +2758,13 @@ sub bill {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
+  warn "$me acquiring lock on customer ". $self->custnum. "\n"
+    if $DEBUG;
+
   $self->select_for_update; #mutex
+
+  warn "$me running pre-bill events for customer ". $self->custnum. "\n"
+    if $DEBUG;
 
   my $error = $self->do_cust_event(
     'debug'      => ( $options{'debug'} || 0 ),
@@ -2770,6 +2776,9 @@ sub bill {
     $dbh->rollback if $oldAutoCommit;
     return $error;
   }
+
+  warn "$me done running pre-bill events for customer ". $self->custnum. "\n"
+    if $DEBUG;
 
   #keep auto-charge and non-auto-charge line items separate
   my @passes = ( '', 'no_auto' );
