@@ -87,6 +87,7 @@
   <%= $summary %>
   <%=
       my $notfirst = 0;
+      my $columncount = $unitprices ? 5 : 3;
       foreach my $section ( grep { !$summary || $_->{description} ne $finance_section } @sections ) {
         if ($section->{'pretotal'} && !$summary) {
           $OUT .= '</table>' if $notfirst;
@@ -120,7 +121,9 @@
             '<tr>';
 
           if ($section->{header_generator}) {
-            $OUT .= &{$section->{header_generator}}();
+            my $header = &{$section->{header_generator}}();
+            $OUT .= $header;
+            $columncount = scalar(my @array = split /<\/th><th/i, $header);
           } else {
             $OUT .=  '<th align="center">Ref</th>'.
                      '<th align="left">Description</th>'.
@@ -162,19 +165,25 @@
             $OUT .= '</tr>';
             $lastref = $line->{'ref'};
             if ( @{$line->{'ext_description'} } ) {
-              $OUT .= '<tr class="invoice_extdesc"><td></td><td';
-              $OUT .= $unitprices ? ' colspan=3>' : '>';
-              $OUT .= '<table width="100%">';
+              unless ( $section->{description_generator} ) {
+                $OUT .= '<tr class="invoice_extdesc"><td></td><td';
+                $OUT .= $unitprices ? ' colspan=3' : '';
+                $OUT .= '><table width="100%">';
+              }
               foreach my $ext_desc ( @{$line->{'ext_description'} } ) {
                 $OUT .=
                   '<tr class="invoice_extdesc">'.
+                    ( $section->{'description_generator'} ? '<td></td>' : '' ).
                     '<td align="left" '.
                          ( $ext_desc =~ /<\/?TD>/i ? '' : 'colspan=99' ). '>'.
                       '&nbsp;&nbsp;'. $ext_desc.
                     '</td>'.
                   '</tr>'
               }
-              $OUT .= '</table></td><td></td></tr>';
+              unless ( $section->{description_generator} ) {
+                $OUT .= '</table></td><td></td>';
+              }
+              $OUT .= '</tr>';
             }
           }
 
@@ -198,7 +207,7 @@
           }
         } 
         if ($section->{'posttotal'}) {
-          $OUT .= '<tr><td align="right" colspan=5>';
+          $OUT .= '<tr><td align="right" colspan='. $columncount. '>';
           $OUT .=
             '<p><font size="+1">'. $section->{'posttotal'}.
             '</font>'.
@@ -224,8 +233,8 @@
           $OUT .= &{$section->{total_line_generator}}($line);
         } else {
           $OUT .= qq(<td style="$style">&nbsp;</td>).
-                  qq(<td align="left" style="$style").
-                  ( $unitprices ? ' colspan=3>' : '>' ).
+                  qq(<td align="left" style="$style" colspan=").
+                    ( $columncount - 2 ). '">'.
                     $line->{'total_item'}. '</td>'.
                   qq(<td align="right" style="$style">).
                     $line->{'total_amount'}. '</td>';
