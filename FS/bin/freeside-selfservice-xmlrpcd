@@ -23,8 +23,8 @@ use POE::Wheel::SocketFactory;   # For serving socket connections.
 use XMLRPC::Transport::HTTP; #SOAP::Transport::HTTP;
 use XMLRPC::Lite; # for XMLRPC::Serializer
 
-use FS::Daemon qw(daemonize1 drop_root logfile daemonize2 );
-use FS::UID qw(adminsuidsetup forksuidsetup);
+use FS::Daemon qw( daemonize1 drop_root logfile daemonize2 );
+use FS::UID qw( adminsuidsetup forksuidsetup dbh );
 use FS::Conf;
 use FS::ClientAPI qw( load_clientapi_modules );
 use FS::ClientAPI_XMLRPC; #FS::SelfService::XMLRPC;
@@ -67,6 +67,10 @@ my $conf = new FS::Conf;
 
 die "not running; selfservice-xmlrpc conf option is off\n"
   unless $conf->exists('selfservice-xmlrpc');
+
+#parent doesn't need to hold a DB connection open
+dbh->disconnect;
+undef $FS::UID::dbh;
 
 ###
 # the main loop
@@ -186,6 +190,9 @@ sub server_do_fork {
         $heap->{is_a_child} = 1;
         $heap->{children}   = {};
 
+        #freeside db connection, etc.
+        forksuidsetup($user);
+
         return;
     }
 }
@@ -280,7 +287,7 @@ sub client_stop {
 sub client_got_request {
     my ( $heap, $request ) = @_[ HEAP, ARG0 ];
 
-    freeside_kid_time();
+    forksuidsetup($user) unless dbh && dbh->ping;
 
     my $serializer = new XMLRPC::Serializer(typelookup => \%typelookup);
 
@@ -303,18 +310,6 @@ sub client_got_request {
     my $response = $soap->response;
 
     $heap->{client}->put($response);
-}
-
-#setup the database connection and other things FS::SelfService::XMLRPC
-#expects to be in place.  aka "kid time" in freeside-selfservice-server
-sub freeside_kid_time {
-
-  #we did need a db connection in the parent, so
-  ##get new db handle
-  $FS::UID::dbh->{InactiveDestroy} = 1;
-  forksuidsetup($user);
-
-  #i guess that was it
 }
 
 ### The client handler received an error.  Stop the ReadWrite wheel,
