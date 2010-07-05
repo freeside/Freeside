@@ -480,7 +480,8 @@ sub renew {
 Attempts to renew the domain through the specified date.  If no date is
 provided it is gleaned from the associated cust_pkg bill date
 
-Like most export functions, returns an error message on failure or undef on success.
+Like some export functions, dies on failure or returns undef on success.
+It is always called from the queue.
 
 =cut
 
@@ -489,24 +490,24 @@ sub renew_through {
 
   warn "$me: renew_through called\n" if $DEBUG;
   eval "use Net::OpenSRS;";
-  return $@ if $@;
+  die $@ if $@;
 
   unless ( $date ) {
     my $cust_pkg = $svc_domain->cust_svc->cust_pkg;
-    return "Can't renew: no date specified and domain is not in a package."
+    die "Can't renew: no date specified and domain is not in a package."
       unless $cust_pkg;
     $date = $cust_pkg->bill;
   }
 
   my $err = $self->is_supported_domain( $svc_domain );
-  return $err if $err;
+  die $err if $err;
 
   warn "$me: checking status\n" if $DEBUG;
   my $rv = $self->get_status($svc_domain);
-  return "Domain ". $svc_domain->domain. " is not renewable"
+  die "Domain ". $svc_domain->domain. " is not renewable"
     unless $rv->{expdate};
 
-  return "Can't parse expiration date for ". $svc_domain->domain
+  die "Can't parse expiration date for ". $svc_domain->domain
     unless $rv->{expdate} =~ /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/;
 
   my ($year,$month,$day,$hour,$minute,$second) = ($1,$2,$3,$4,$5,$6);
@@ -529,7 +530,7 @@ sub renew_through {
     $years++;
     $exp->add( 'years' => 1 );
 
-    return "Can't renew ". $svc_domain->domain. " for more than 10 years."
+    die "Can't renew ". $svc_domain->domain. " for more than 10 years."
       if $years > 10; #no infinite loop
   }
 
@@ -550,7 +551,7 @@ sub renew_through {
       }
     }
   );
-  return $rv->{response_text} unless $rv->{is_success};
+  die $rv->{response_text} unless $rv->{is_success};
 
   return ''; # Should only get here if renewal succeeded
 }
