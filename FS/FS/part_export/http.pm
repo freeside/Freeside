@@ -90,13 +90,15 @@ sub _export_replace {
   my $new_cust_main = $new->table eq 'cust_main'
                         ? $new
                         : $new->cust_svc->cust_pkg->cust_main;
+  my $cust_main = $new_cust_main; #so folks can use $new_cust_main or $cust_main
 
-  $self->http_queue( $svc_x->svcnum,
+  $self->http_queue( $new->svcnum,
     $self->option('method'),
     $self->option('url'),
     map {
       /^\s*(\S+)\s+(.*)$/ or /()()/;
       my( $field, $value_expression ) = ( $1, $2 );
+      my $value = eval $value_expression;
       die $@ if $@;
       ( $field, $value );
     } split(/\n/, $self->option('replace_data') )

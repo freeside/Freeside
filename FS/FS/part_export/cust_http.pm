@@ -6,6 +6,8 @@ use Tie::IxHash;
 
 @ISA = qw( FS::part_export::http );
 
+tie my %options, 'Tie::IxHash', %FS::part_export::http::options;
+
 $options{'insert_data'}->{'default'} = join("\n",
   "action  'insert'",
   "custnum \$cust_main->custnum",
