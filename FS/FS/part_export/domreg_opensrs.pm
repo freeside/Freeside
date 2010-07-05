@@ -533,7 +533,9 @@ sub renew_through {
       if $years > 10; #no infinite loop
   }
 
-  warn "$me: renewing ". $svc_domain->domain. "for $years years\n" if $DEBUG;
+  return '' unless $years;
+
+  warn "$me: renewing ". $svc_domain->domain. " for $years years\n" if $DEBUG;
   my $srs = $self->get_srs;
   $rv = $srs->make_request(
     {
