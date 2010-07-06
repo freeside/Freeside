@@ -5,8 +5,6 @@ use vars qw( $DEBUG $kids $max_kids $sleep_time %kids );
 use POSIX qw(:sys_wait_h);
 use IO::File;
 use Getopt::Std;
-use MIME::Base64 qw(decode_base64);
-use Storable qw(thaw);
 use FS::UID qw(adminsuidsetup forksuidsetup driver_name dbh myconnect);
 use FS::Daemon qw(daemonize1 drop_root logfile daemonize2 sigint sigterm);
 use FS::Conf;
