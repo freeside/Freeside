@@ -1,3 +1,4 @@
+<FORM name="billnow">
 Billing information
 %# If we can't see the unencrypted card, then bill now is an exercise in
 %# frustration (without some sort of job queue magic to send it to a secure
@@ -5,7 +6,13 @@ Billing information
 %if (  $FS::CurrentUser::CurrentUser->access_right('Bill customer now')
 %      && ! $cust_main->is_encrypted($cust_main->payinfo)
 %   ) { 
-  (<A HREF="<% $p %>misc/bill.cgi?<% $cust_main->custnum %>">Bill now</A>)
+%#  (<A HREF="<% $p %>misc/bill.cgi?<% $cust_main->custnum %>">Bill now</A>)
+  (<% include('/elements/bill.html',
+                custnum   => $cust_main->custnum,
+                label     => 'Bill now',
+                formname  => 'billnow',
+                url       => $p.'view/cust_main.cgi?'.$cust_main->custnum,
+  ) %>)
 % } 
 
 <% ntable("#cccccc") %><TR><TD><% ntable("#cccccc",2) %>

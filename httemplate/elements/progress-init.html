@@ -11,7 +11,7 @@ In misc/something.html:
              $p.'misc/process_something.html',
              { url => $p.'where_to_go_next.html' },
          #or { message => 'Finished!' },
-         );
+         ) %>
   </FORM>
   <SCRIPT TYPE="text/javascript>process();</SCRIPT>
 
@@ -36,10 +36,8 @@ sub process_whatever { #class method
   do_phase3;
   $job->update_statustext(60);
   # etc.
-  return 'BLAH BLAH NOBODY WILL EVER SEE THIS RETURN VALUE';
+  return 'this value will be ignored';
 }
-
-I am not responsible for errors in the above documentation.
 
 </%doc>
 <% include('/elements/xmlhttp.html',

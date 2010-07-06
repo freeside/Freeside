@@ -16,6 +16,8 @@ use Exporter;
 use Scalar::Util qw( blessed );
 use List::Util qw( min );
 use Time::Local qw(timelocal);
+use Storable qw(thaw);
+use MIME::Base64;
 use Data::Dumper;
 use Tie::IxHash;
 use Digest::MD5 qw(md5_base64);
@@ -2552,6 +2554,10 @@ Any other true value causes errors to die.
 
 Debugging level.  Default is 0 (no debugging), or can be set to 1 (passed-in options), 2 (traces progress), 3 (more information), or 4 (include full search queries)
 
+=item job
+
+Optional FS::queue entry to receive status updates.
+
 =back
 
 Options are passed to the B<bill> and B<collect> methods verbatim, so all
@@ -2568,7 +2574,9 @@ sub bill_and_collect {
   #pre-printing invoices
 
   $options{'actual_time'} ||= time;
+  my $job = $options{'job'};
 
+  $job->update_statustext('0,cleaning expired packages') if $job;
   $error = $self->cancel_expired_pkgs( $options{actual_time} );
   if ( $error ) {
     $error = "Error expiring custnum ". $self->custnum. ": $error";
@@ -2585,6 +2593,7 @@ sub bill_and_collect {
     else                                                     { warn   $error; }
   }
 
+  $job->update_statustext('20,billing packages') if $job;
   $error = $self->bill( %options );
   if ( $error ) {
     $error = "Error billing custnum ". $self->custnum. ": $error";
@@ -2593,6 +2602,7 @@ sub bill_and_collect {
     else                                                     { warn   $error; }
   }
 
+  $job->update_statustext('50,applying payments and credits') if $job;
   $error = $self->apply_payments_and_credits;
   if ( $error ) {
     $error = "Error applying custnum ". $self->custnum. ": $error";
@@ -2601,6 +2611,7 @@ sub bill_and_collect {
     else                                                     { warn   $error; }
   }
 
+  $job->update_statustext('70,running collection events') if $job;
   unless ( $conf->exists('cancelled_cust-noevents')
            && ! $self->num_ncancelled_pkgs
   ) {
@@ -2612,6 +2623,7 @@ sub bill_and_collect {
       else                                                   { warn   $error; }
     }
   }
+  $job->update_statustext('100,finished') if $job;
 
   '';
 
@@ -8017,9 +8029,6 @@ sub email_search_result {
   return '';
 }
 
-use Storable qw(thaw);
-use Data::Dumper;
-use MIME::Base64;
 sub process_email_search_result {
   my $job = shift;
   #warn "$me process_re_X $method for job $job\n" if $DEBUG;
@@ -8953,6 +8962,18 @@ sub queued_bill {
   warn 'bill_and_collect custnum#'. $cust_main->custnum. "\n";#log custnum w/pid
 
   $cust_main->bill_and_collect( %args );
+}
+
+sub process_bill_and_collect {
+  my $job = shift;
+  my $param = thaw(decode_base64(shift));
+  my $cust_main = qsearchs( 'cust_main', { custnum => $param->{'custnum'} } )
+      or die "custnum '$param->{custnum}' not found!\n";
+  $param->{'job'}   = $job;
+  $param->{'fatal'} = 1; # runs from job queue, will be caught
+  $param->{'retry'} = 1;
+
+  $cust_main->bill_and_collect( %$param );
 }
 
 sub _upgrade_data { #class method

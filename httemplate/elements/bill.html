@@ -1,0 +1,49 @@
+<%doc>
+Clickable link to bill a customer.
+
+Example:
+<FORM name="MyForm">
+<% include( '/elements/bill.html',
+            ###
+            # required
+            ###
+            custnum   => $custnum,
+            label     => 'Bill Now!',
+            formname  => 'MyForm',
+
+            ###
+            # recommended
+            ###
+            url       => $p.'view/cust_main.cgi?'.$custnum,
+
+            ###
+            # optional, can contain any FS::cust_main::bill_and_collect options
+            ###
+            bill_opts => { 'batch_card' => 'yes' },
+) %>
+</FORM>
+</%doc>
+<% include('/elements/progress-init.html',
+          $formname,
+          [ 'custnum', @opt_keys ],
+          $p.'misc/bill.cgi',
+          $url ? { url => $url } : { message => $message },
+          $key,
+) %>
+<A HREF="javascript:void(0);" onclick="javascript:<%$key%>process();"><%$label%></A>
+<INPUT TYPE="hidden" NAME="custnum" VALUE="<%$custnum%>">
+% foreach(@opt_keys) {
+<INPUT TYPE="hidden" NAME="<%$_%>" VALUE="<%$bill_opts->{$_}%>">
+% }
+<%init>
+my %opt = @_;
+my $custnum   = $opt{'custnum'};
+my $label     = $opt{'label'};
+my $formname  = $opt{'formname'};
+my $key       = $formname.'bill'.$custnum;
+my $url       = $opt{'url'} || '';
+my $message   = $opt{'message'} || 'Finished!';
+my $bill_opts = $opt{'bill_opts'} || {};
+my @opt_keys  = keys(%$bill_opts);
+my @opt_vals  = values(%$bill_opts);
+</%init>
