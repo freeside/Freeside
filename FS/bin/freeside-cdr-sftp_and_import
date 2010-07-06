@@ -11,8 +11,8 @@ use FS::cdr;
 # parse command line
 ###
 
-use vars qw( $opt_m $opt_p $opt_r $opt_e $opt_d $opt_v );
-getopts('m:p:r:e:d:v');
+use vars qw( $opt_m $opt_p $opt_r $opt_e $opt_d $opt_v $opt_P $opt_a );
+getopts('m:p:r:e:d:v:P:a');
 
 $opt_e ||= 'csv';
 #$opt_e = ".$opt_e" unless $opt_e =~ /^\./;
@@ -20,11 +20,13 @@ $opt_e =~ s/^\.//;
 
 $opt_p ||= '';
 
+my %options = ();
+
 my $user = shift or die &usage;
 adminsuidsetup $user;
 
 # %%%FREESIDE_CACHE%%%
-my $cachedir = '/usr/local/etc/freeside/cache.'. datasrc. '/cdrs';
+my $cachedir = '%%%FREESIDE_CACHE%%%/cache.'. datasrc. '/cdrs';
 mkdir $cachedir unless -d $cachedir;
 
 my $format = shift or die &usage;
@@ -44,11 +46,18 @@ $opt_m = lc($opt_m);
 my $ls;
 
 if($opt_m eq 'ftp') {
+  $options{'Port'}    = $opt_P if $opt_P;
+  $options{'Debug'}   = $opt_v if $opt_v;
+  $options{'Passive'} = $opt_a if $opt_a;
+
   my $ls_ftp = ftp();
 
   $ls = [ grep { /^$opt_p.*\.$opt_e$/i } $ls_ftp->ls ];
 }
 elsif($opt_m eq 'sftp') {
+  $options{'port'}    = $opt_P if $opt_P;
+  $options{'debug'}   = $opt_v if $opt_v;
+
   my $ls_sftp = sftp();
 
   $ls_sftp->setcwd($opt_r) or die "can't chdir to $opt_r\n"
@@ -124,7 +133,8 @@ sub ftp {
   my ($hostname, $user) = reverse split('@', $servername);
   my ($user, $pass) = split(':', $user);
 
-  my $ftp = Net::FTP->new($hostname) or die "FTP connection to '$hostname' failed.";
+  my $ftp = Net::FTP->new($hostname, %options) 
+    or die "FTP connection to '$hostname' failed.";
   $ftp->login($user, $pass) or die "FTP login failed: ".$ftp->message;
   $ftp->cwd($opt_r) or die "can't chdir to $opt_r\n" if $opt_r;
   return $ftp;
@@ -149,12 +159,14 @@ cdr.sftp_and_import - Download CDR files from a remote server via SFTP
 
 =head1 SYNOPSIS
 
-  cdr.sftp_and_import [ -m method ][ -p prefix ] [ -e extension ] [ -r remotefolder ] [ -d donefolder ] [ -v ] user format [sftpuser@]servername
+  cdr.sftp_and_import [ -m method ] [ -p prefix ] [ -e extension ] 
+    [ -r remotefolder ] [ -d donefolder ] [ -v level ] [ -P port ]
+    [ -a ] user format [sftpuser@]servername
 
 =head1 DESCRIPTION
 
-Command line tool to download CDR files from a remote server via SFTP or FTP and then
-import them into the database.
+Command line tool to download CDR files from a remote server via SFTP 
+or FTP and then import them into the database.
 
 -m: transfer method (sftp or ftp), defaults to sftp
 
@@ -166,7 +178,12 @@ import them into the database.
 
 -d: if specified, moves files to the specified folder when done
 
--v: verbose
+-P: if specified, sets the port to use
+
+-a: use ftp passive mode
+
+-v: set verbosity level; this script only has one level, but it will 
+    be passed as the 'debug' argument to the transport method
 
 user: freeside username
 
