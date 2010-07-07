@@ -9,10 +9,11 @@
 # (Of course, koji is supposed to do all this, including updating the repo.)
 
 VERSIONS='1.7 1.9'
+#VERSIONS='1.7 1.9 2.1'
 REPO=testing
 BRANCH=
 DISTROS='centos sles'
-CENTOSVERS='4 5'
+CENTOSVERS='5'
 SLESVERS=10
 WHICHVERS=
 ARCHS='i386 x86_64'
