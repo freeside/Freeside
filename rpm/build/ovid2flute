@@ -1,0 +1,139 @@
+#!/usr/bin/perl -w
+#
+# Convert the output from ovid --deps into a list of modules to run through cpanflute2 to get
+# better .spec files, and generate SRPMs from these.
+
+use strict;
+use Getopt::Long;
+
+# Need to fix up modules where Ovid parses the name incorrectly
+my %badparse=(
+	'Crypt-PasswdMD-5' => 'Crypt-PasswdMD5',
+	'IPC-Run-3' => 'IPC-Run3',
+	'Digest-SHA-1' => 'Digest-SHA1',
+	'Digest-MD-4' => 'Digest-MD4',
+);
+
+my %extra_buildreqs=(
+	'File-Rsync' => [ qw/rsync/ ],
+	'MIMETools' => [ qw/perl(Mail::Header) perl(Mail::Internet) perl(Mail::Field) perl(IO::Stringy) perl(File::Temp)/ ],
+	'HTML::Scrubber' => [ qw/perl(HTML::Parser) perl(HTML::Tagset)/ ],
+#	'Time::Duration' => [ qw/perl(Test::Pod) perl(Test::Pod::Coverage)/ ],
+);
+
+my %extra_reqs=(
+	'File-Rsync' => [ qw/rsync/ ],
+);
+
+my %opts;
+
+GetOptions(\%opts, 'packager=s', 'release=s');
+
+$opts{packager} = 'Richard Siddall <richard.siddall@elirion.net>' if !defined($opts{packager});
+
+# Need to process modules that cause Ovid to crash
+#my @extramods= qw/Text::CSV_XS Pod::Simple Crypt::SSLeay/;
+#my @extramods= qw/Crypt::SSLeay/;
+my @extramods= qw/IPC::ShareLite/;
+
+my $specfiledir="/home/rsiddall/work/redhat/SPECS";
+my $srpmdir="/home/rsiddall/work/redhat/SRPMS";
+
+foreach (reverse <STDIN>) {
+	next if !defined($_);
+	#print $_;
+	last if $_ !~ /^([-\w:]+) perl-([-\w\.]+)(-\d+[\w\.]+?)$/;
+	#print "$1 = $2\n"
+	my ($name, $rpm, $ver) = ($1, $2, $3);
+	print "# $name ($rpm - $ver)\n";
+	foreach my $cand (keys %badparse) {
+		if ($rpm =~ /^$cand/) {
+			$rpm =~ s/^$cand/$badparse{$cand}/;
+			print "# Fixed up $rpm\n";
+			last;
+		}
+	}
+	printcmds($name, "$rpm$ver");
+	#print "cpanspec -v --packager 'Unknown <nobody\@example.com>' $name\n";
+	#print "echo $rpm\n";
+	#print "repoquery perl-$rpm\n";
+	#touchsrpms($name, "$rpm$ver");
+}
+
+exit;
+
+foreach my $name (@extramods) {
+	my $rpm = $name;
+	$rpm =~ s/::/-/g;
+	my $tarball = `find ~/.cpan/sources -name '$rpm-*' -print | tail -1`;
+	#print "$name (Extra!)\n"
+	if ($tarball =~ /\/($rpm-.*?)(\.tar\.gz|\.tgz)\s*$/) {
+		$rpm = $1;
+		printcmds($name, $rpm);
+	} else {
+		die "Can't find full rpm name for $name in \"$tarball\"\n";
+	}
+}
+
+sub touchsrpms {
+	my ($name, $rpm) = @_;
+	my $repofolder ="/var/www/html/repo/sles/10/freeside-1.9/stable/x86_64";
+	my $srpmfolder ="/home/rsiddall/work/redhat/SRPMS";
+	my @files = glob "$repofolder/perl-$rpm-*.rpm";
+	if (! scalar(@files)) {
+		print "Can't find $rpm in $repofolder\n";
+		@files = glob "$srpmfolder/perl-$rpm-*.src.rpm\n";
+		if (scalar(@files)) {
+			my $file = pop @files;
+			print "touch $file\n";
+		} else {
+			print STDERR "No corresponding SRPM: $srpmfolder/perl-$rpm-*.src.rpm\n";
+			printcmds($name, $rpm);
+		}
+	}
+}
+
+sub printcmds {
+	my ($name, $rpm) = @_;
+
+	my $tarball = `find ~/.cpan -name '$rpm.tar.gz' -print`;
+	$tarball = `find ~/.cpan -name '$rpm.tgz' -print` if ! $tarball;
+	chomp($tarball);
+#	my $specfile = "$specfiledir/$name.spec";
+	my $rpmname = $rpm;
+	$rpmname = $1 if $rpm =~ /^(?:.*\/)?(.*)-(?:v\.?)?([^-]+)$/;
+	my $specfile = "$specfiledir/perl-$rpmname.spec";
+	$specfile =~ s/::/-/g;
+	# Work out which version of the SRPM we're going to generate.
+	my $rel;
+	if (!defined($opts{release})) {
+		for ($rel = 1; ; $rel++) {
+			my $srpm = "$srpmdir/perl-$rpm-$rel.src.rpm";
+			last if ! -e $srpm;
+			print "# File exists: $srpm\n";
+		}
+	} else {
+		$rel = $opts{release};
+	}
+	my $fluteopts = "";
+	foreach my $cand (keys %extra_buildreqs) {
+		if ($rpm =~ /^$cand/) {
+			$fluteopts .= join "", map { "--buildrequires $_ " } @{$extra_buildreqs{$cand}};
+			last;
+		}
+	}
+	foreach my $cand (keys %extra_reqs) {
+		if ($rpm =~ /^$cand/) {
+			$fluteopts .= join "", map { "--requires $_ " } @{$extra_reqs{$cand}};
+			last;
+		}
+	}
+	print "cpanflute2 --just-spec --noperlreqs --email='$opts{packager}' --release=$rel $fluteopts $tarball > $specfile;\n";
+	# Should fix up the .spec file
+	print "perl -pi -e 's/perl\\(perl\\)/perl/g' $specfile;\n";
+	my $tarballdir = `dirname $tarball` or die "Can't find tarball for $name: $tarball\n";
+	chomp($tarballdir);
+	print "rpmbuild -bs --nodeps --define '_sourcedir $tarballdir' --define '_srcrpmdir $srpmdir' $specfile\n";
+	print "# Generates: $srpmdir/perl-$rpm-$rel.src.rpm\n";
+}
+

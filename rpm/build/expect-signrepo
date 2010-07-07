@@ -1,0 +1,9 @@
+#!/usr/bin/expect
+set password "not our actual passphrase"
+set key [lindex $argv 0]
+set output [lindex $argv 1]
+set input [lindex $argv 2]
+spawn gpg -sab --yes -u "$key" -o $output $input
+expect "Enter passphrase:"
+send -- "$password\r"
+expect eof

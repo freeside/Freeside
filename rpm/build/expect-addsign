@@ -1,0 +1,7 @@
+#!/usr/bin/expect
+set p "not our actual passphrase"
+set f [lindex $argv 0]
+spawn /bin/rpm --resign $f
+expect "Enter pass phrase:"
+send -- "$p\r"
+expect eof

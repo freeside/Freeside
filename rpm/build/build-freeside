@@ -1,0 +1,169 @@
+#!/bin/sh
+#
+# Copyright 2008, Elirion, Inc.  All rights reserved.
+# This software is licensed under the same terms as Freeside itself.
+#
+# This script rebuilds SRPMs of Freeside builds or the required Perl modules on all the target
+# distributions and versions using mock.  After a successful build, it signs the resulting RPMs
+# and scp's them to the server where the yum repositories are hosted.
+# (Of course, koji is supposed to do all this, including updating the repo.)
+
+VERSIONS='1.7 1.9'
+REPO=testing
+BRANCH=
+DISTROS='centos sles'
+CENTOSVERS='4 5'
+SLESVERS=10
+WHICHVERS=
+ARCHS='i386 x86_64'
+MOCKARGS='--autocache'
+
+BUILDSYSDIR=`dirname $0`
+
+if [ -f $HOME/buildsysrc ]; then
+	. $HOME/buildsysrc
+fi
+
+usage() {
+	echo "build-freeside: build RPMs for all target distros and architectures using mock"
+	echo "where:"
+	echo " -a <archs>: change architectures (currently: $ARCHS)"
+	echo " -b <branch>: change branch (currently: $BRANCH)"
+	echo " -d <distros>: change distributions (currently: $DISTROS)"
+	echo " -m <arguments>: change arguments passed to 'mock' (currently: $MOCKARGS)"
+	echo " -r <repo>: change repositories (currently: $REPO)"
+	echo " -s <srpms>: build these SRPMs instead of new ones in staging area"
+	echo " -v <versions>: change versions (currently: $VERSIONS)"
+	echo " -w <distvers>: change distro version (currently: $WHICHVERS)"
+	exit 0
+}
+
+while getopts "a:b:d:hm:r:s:v:w:" flag
+do
+	case $flag in
+		a)
+			echo "Changing architectures from $ARCHS to $OPTARG"
+			ARCHS=$OPTARG;;
+		b)
+			echo "Changing branch from $BRANCH to $OPTARG"
+			BRANCH=$OPTARG;;
+		d)
+			echo "Changing distros from $DISTROS to $OPTARG"
+			DISTROS=$OPTARG;;
+		m)
+			echo "Changing mock arguments from $MOCKARGS to $OPTARG"
+			MOCKARGS=$OPTARG;;
+		r)
+			echo "Changing repository from $REPO to $OPTARG"
+			REPO=$OPTARG;;
+		s)
+			echo "Changing SRPMS from $SRPMS to $OPTARG"
+			SRPMS=$OPTARG;;
+		v)
+			echo "Changing versions from $VERSIONS to $OPTARG"
+			VERSIONS=$OPTARG;;
+		w)
+			echo "Changing which distro versions from $WHICHVERS to $OPTARG"
+			WHICHVERS=$OPTARG;;
+		*)
+			usage;;
+	esac
+done
+
+if [ "${SRCFOLDER}x" = "x" ]; then
+	echo "No source folder defined!"
+	exit
+fi
+
+if [ "${REFFOLDER}x" = "x" ]; then
+	echo "No reference folder defined!"
+	exit
+fi
+
+if [ "${SRPMS}x" = "x" ]; then
+	# Work out the new SRPMs on grosbeak
+	SRPMS=`/usr/bin/rsync -Cavz --dry-run $SRCFOLDER/ $REFFOLDER | grep .src.rpm | grep -v safecat | tr '\n' ' '`
+
+	# Go and get the SRPMs
+	/usr/bin/rsync -Cavz $SRCFOLDER/ $REFFOLDER
+fi
+
+# Make sure the SRPMs are there
+for srpm in ${SRPMS}
+do
+	if [ ! -f $REFFOLDER/${srpm} ]
+	then
+		echo "No such file: $REFFOLDER/${srpm}"
+		exit
+	fi
+done
+
+# Build all the SRPMs
+for srpm in ${SRPMS}
+do
+	for distro in $DISTROS
+	do
+		if [ "${WHICHVERS}x" = "x" ]; then
+			if [ "$distro" = "centos" ]; then
+				DISTVERS=$CENTOSVERS
+			fi
+			if [ "$distro" = "sles" ]; then
+				DISTVERS=$SLESVERS
+			fi
+		else
+			DISTVERS=$WHICHVERS
+		fi
+		for distver in $DISTVERS
+		do
+			os=${distro}-${distver}
+			for arch in $ARCHS
+			do
+				echo "$os - $arch: $srpm"
+				time mock $MOCKARGS -r ${os}-${arch} $REFFOLDER/${srpm}
+				if [ -f /var/lib/mock/${os}-${arch}/state/status ] && grep done /var/lib/mock/${os}-${arch}/state/status
+				then
+					for VERSION in $VERSIONS
+					do
+						DEST=$VERSION
+						if [ "${BRANCH}x" != "x" ]
+						then
+							DEST=$BRANCH
+						fi
+						# Copy freeside RPMs for this version only
+						FILES=`ls -1 /var/lib/mock/${os}-${arch}/result/freeside*-${VERSION}-*.rpm | grep -v .src.rpm | tr '\n' ' '`
+						echo $FILES
+						if [ "${FILES}x" != "x" ]
+						then
+							for FILE in $FILES
+							do
+								$BUILDSYSDIR/expect-addsign $FILE
+							done
+							if [ "${REPOMACHINE}x" != "x" ]
+							then
+								scp -p $FILES $REPOUSER@$REPOMACHINE:$REPOFOLDER/repo/${distro}/${distver}/freeside-${DEST}/${REPO}/${arch}
+							else
+								cp -p $FILES $REPOFOLDER/repo/${distro}/${distver}/freeside-${DEST}/${REPO}/${arch}
+							fi
+						fi
+						# Copy non-freeside RPMs to all versions
+						FILES=`ls -1 /var/lib/mock/${os}-${arch}/result/*.rpm | grep -v freeside | grep -v .src.rpm | tr '\n' ' '`
+						echo $FILES
+						if [ "${FILES}x" != "x" ]
+						then
+							for FILE in $FILES
+							do
+								$BUILDSYSDIR/expect-addsign $FILE
+							done
+							if [ "${REPOMACHINE}x" != "x" ]
+							then
+								scp -p $FILES $REPOUSER@$REPOMACHINE:$REPOFOLDER/repo/${distro}/${distver}/freeside-${DEST}/${REPO}/${arch}
+							else
+								cp -p $FILES $REPOFOLDER/repo/${distro}/${distver}/freeside-${DEST}/${REPO}/${arch}
+							fi
+						fi
+					done
+				fi
+			done
+		done
+	done
+done

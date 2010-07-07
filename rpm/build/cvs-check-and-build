@@ -1,0 +1,41 @@
+#!/bin/sh
+#
+# Copyright 2009, Elirion, Inc.  All rights reserved.
+# This software is licensed under the same terms as Freeside itself.
+#
+# This script wraps other scripts in the build system.  It does a CVS comparison on the vserver
+# to determine if the CVS contents have changed.  If so, an SRPM is built.  The script then invokes
+# the local build script which pulls down this SRPM and uses mock to build binary RPMs for the
+# default targets.  Finally, the repository is updated.
+#
+# There's currently no testing for failure.
+
+FORCE_FLAG=
+QUIET_FLAG=
+
+usage() {
+	echo "cvs-check-and-build: check Freeside CVS and build RPMs if changed"
+	echo "where:"
+	echo " -f: force SRPM rebuild even if CVS contents have not changed"
+	echo " -h: print this help message"
+	echo " -q: run yum-arch and createrepo in quiet mode"
+	exit 0
+}
+
+while getopts "fhq" flag
+do
+        case $flag in
+		f)
+			echo "Force mode"
+			FORCE_FLAG=-f;;
+		q)
+			echo "Quiet mode"
+			QUIET_FLAG=-q;;
+		*)
+			usage;;
+        esac
+done
+
+ssh 10.5.4.5 /home/rsiddall/build-from-cvs $FORCE_FLAG
+cd /home/rsiddall/buildsys; ./build-freeside; ./refresh-repo $QUIET_FLAG
+

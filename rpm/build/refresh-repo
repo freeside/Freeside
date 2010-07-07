@@ -1,0 +1,156 @@
+#!/bin/sh
+#
+# Copyright 2008, Elirion, Inc.  All rights reserved.
+# This software is licensed under the same terms as Freeside itself.
+#
+# This script iterates through all the specified Freeside repositories, running
+# both yum-arch and createrepo to update the yum repository meta-data.
+# The script should be run after the repository contents are changed.
+#
+# TBD: Run yum-arch, createrepo, or both, as appropriate for the distro and version
+# the repository is targetted for.
+#
+DISTROS='centos sles'
+CENTOSVERS='4 5'
+SLESVERS=10
+WHICHVERS=
+VERSIONS='1.7 1.9'
+ARCHS='i386 x86_64'
+REPOS='testing stable prerelease'
+RPMS=
+KEYID=rsiddall
+SAVEDIR=$HOME
+
+REPOBASEFOLDER=/var/www/html
+
+QUIET_FLAG=
+
+BUILDSYSDIR=`dirname $0`
+
+if [ -f $HOME/buildsysrc ]; then
+	. $HOME/buildsysrc
+fi
+
+usage() {
+	echo "refresh-repo: refresh yum metadata for all yum repositories"
+	echo "where:"
+	echo " -a <archs>: change architectures (currently: $ARCHS)"
+	echo " -d <distros>: change distributions (currently: $DISTROS)"
+	echo " -r <repos>: change repositories (currently: $REPOS)"
+	echo " -v <versions>: change versions (currently: $VERSIONS)"
+	echo " -w <distvers>: change distro version (currently: $WHICHVERS)"
+	exit 0
+}
+
+while getopts "a:d:hqr:v:w:" flag
+do
+        case $flag in
+                a)
+                        echo "Changing architectures from $ARCHS to $OPTARG"
+                        ARCHS=$OPTARG;;
+                d)
+                        echo "Changing distros from $DISTROS to $OPTARG"
+                        DISTROS=$OPTARG;;
+		q)
+			echo "Quiet mode"
+			QUIET_FLAG=-q;;
+                r)
+                        echo "Changing repository from $REPOS to $OPTARG"
+                        REPOS=$OPTARG;;
+                v)
+                        echo "Changing versions from $VERSIONS to $OPTARG"
+                        VERSIONS=$OPTARG;;
+                w)
+                        echo "Changing which distro versions from $WHICHVERS to $OPTARG"
+                        WHICHVERS=$OPTARG;;
+		*)
+			usage;;
+        esac
+done
+
+#for DISTRO in ${DISTROS}; do
+#	for VERSION in ${VERSIONS}; do
+#		for REPO in ${REPOS}; do
+#			for ARCH in ${ARCHS}; do
+#				# Determine which RPMs need to be signed
+#				NEWRPMS=`rpm --checksig $REPOBASEFOLDER/repo/$DISTROS/$DISTVERS/freeside-${VERSION}/${REPO}/${ARCH}/*.rpm | grep -v ' gpg ' | cut -d ':' -f 1 | tr '\n' ' '`
+#				RPMS=`echo "$RPMS $NEWRPMS"`
+#			done
+#		done
+#	done
+#done
+##rpm --addsign $RPMS
+#for RPM in $RPMS; do
+#	./expect-addsign $RPM
+#done
+for DISTRO in ${DISTROS}; do
+	for VERSION in ${VERSIONS}; do
+		for REPO in ${REPOS}; do
+			for ARCH in ${ARCHS}; do
+				if [ "${WHICHVERS}x" = "x" ]; then
+					if [ "$DISTRO" = "centos" ]; then
+						DISTVERS=$CENTOSVERS
+					fi
+					if [ "$DISTRO" = "sles" ]; then
+						DISTVERS=$SLESVERS
+					fi
+				else
+					DISTVERS=$WHICHVERS
+				fi
+				for distver in $DISTVERS
+				do
+					# Update the repo information
+					echo "${DISTRO}-${distver}: $VERSION - $REPO - $ARCH"
+					DIR=$REPOBASEFOLDER/repo/$DISTRO/$distver/freeside-${VERSION}/${REPO}/${ARCH}
+					if [ -d $DIR ]
+					then
+						# SLES requires signed repodata.  Save any existing files so we don't regenerate
+						for ext in asc key
+						do
+							if [ -e $DIR/repodata/repomd.xml.${ext} ]
+							then
+								mv $DIR/repodata/repomd.xml.${ext} $SAVEDIR
+							fi
+						done
+						if [ "$DISTRO" = "sles" ]
+						then
+							for file in $DIR/freeside-mysql-*.rpm
+							do
+								mv $file $file.old
+							done
+							for file in $DIR/freeside-selfservice-*.rpm
+							do
+								mv $file $DIR/../self-service/$ARCH
+							done
+						fi
+						if [ "$DISTRO-$distver" = "centos-4" ]
+						then
+							yum-arch $QUIET_FLAG $DIR/
+						fi
+#						createrepo $QUIET_FLAG --checkts $DIR/
+						createrepo $QUIET_FLAG $DIR/
+						if [ "$DISTRO" = "sles" ]
+						then
+							# SLES requires signed repodata...
+							if [ -e $SAVEDIR/repomd.xml.asc ]
+							then
+								mv $SAVEDIR/repomd.xml.asc $DIR/repodata
+							fi
+
+#							gpg -sab --yes -u "$KEYID" -o $DIR/repodata/repomd.xml.asc $DIR/repodata/repomd.xml
+							./expect-signrepo $KEYID $DIR/repodata/repomd.xml.asc $DIR/repodata/repomd.xml
+							if [ -e $SAVEDIR/repomd.xml.key ]
+							then
+								mv $SAVEDIR/repomd.xml.key $DIR/repodata
+							else
+								gpg -a --yes -u "$KEYID" --export -o $DIR/repodata/repomd.xml.key
+							fi
+						fi
+					else
+						echo "No such folder $DIR - skipping"
+					fi
+				done
+			done
+		done
+	done
+done

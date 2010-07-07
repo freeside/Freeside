@@ -1,0 +1,187 @@
+#!/usr/bin/perl -w
+#
+# Attempt to build RPMs for Freeside from a tarball or module
+#
+# Contains portions of "cpanspec" http://cpanspec.sourceforge.net/
+
+=head1 NAME
+
+enrpm - Attempt to build RPMs for Freeside from a tarball or a module
+
+=head1 SYNOPSIS
+
+enrpm [options] [tarball|module-name [...]]
+
+ Options:
+   --help       -h      Help message
+
+=head1 DESCRIPTION
+
+B<enrpm> will generate a spec file to build a rpm from a CPAN-style
+Perl module distribution, then try to build RPMs from that spec file
+under mock, and update the repositories if successful.
+
+B<enrpm> uses the file extension of the tarball or module-name specified
+on the command line to determine if the argument is a tarball or a module name.
+
+Modules are downloaded from the CPAN.  You must have initialized CPAN on the machine
+for B<enrpm> to be able to do this.
+
+For tarballs B<enrpm> attempts to build a usable .spec file using cpanflute2, and then builds
+an SRPM from the .spec file and the tarball.
+
+Once an SRPM has been built, B<enrpm> uses an external script to build binary RPMs under "mock".
+It then uses a second script to update the repositories.
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<--help>
+
+Print a brief help message and exit.
+
+=item B<--packager>
+
+Specify the name and e-mail address of the packager.  This winds up in auto-generated .spec files.
+
+=item B<--server>
+
+Specify the host name or IP address of the server on which the SRPM will be built.  This server must be
+set up for SRPM building, which means it must have both B<ovid> and B<cpanflute2> installed on it.
+
+=item B<--dry-run>
+
+Just print out commands, don't actually run them.
+
+=back
+
+=head1 BUGS
+
+Currently has little in the way of error detection and diagnostics.
+
+The back-end should be replaced with an existing build system such as koji.
+
+=head1 AUTHOR
+
+Richard Siddall <richard.siddall@elirion.net>
+
+=head1 SEE ALSO
+
+L<perl(1)>, L<cpan2rpm(1)>, L<cpanflute2(1)>
+
+=cut
+
+use strict;
+use Getopt::Long;
+use Cwd qw/getcwd abs_path/;
+use File::Basename;
+use Sys::Hostname; # False laziness to get around a real config file...
+
+my %opts;
+
+GetOptions(\%opts, 'packager=s', 'release=s', 'server=s', 'dryrun');
+
+$ENV{PATH} = "/bin:/usr/bin";
+
+sub usage {
+	print STDERR "usage: enrpm --packager <Your Name <you\@example.com>> [--release=<rpm-release-string>] --server <server-name> [--dryrun] tarball|module-name\n";
+	print STDERR "where:\n\t--packager is the name and e-mail address of the packager for the .spec file\n\t--release is the rpm release number for the .spec file\n\t--server is the server to build the SRPM on\n\t--dryrun means do not actually run the commands\n\n";
+	print STDERR "\ttarball is the name of a tarball containing the Perl module to be packaged\n";
+	print STDERR "\tmodule-name is the name of a CPAN Perl module to be packaged\n";
+	exit;
+}
+
+# Feeble excuse for not having a real configuration file
+my $user = 'rsiddall';
+my $buildsys = '/home/rsiddall/work';
+my $rembuild = '/home/rsiddall/work/cvs';
+my $remdeps = '/home/rsiddall';
+my $rpmtopdir = '/home/rsiddall/work/redhat';
+my $packager = 'Richard Siddall <richard.siddall@elirion.net>';
+my $server = 'grosbeak';
+
+if (hostname =~ /wavetail/i) {
+	$buildsys = '/home/rsiddall/buildsys';
+	$rembuild = '/home/rsiddall/buildsys/ref';
+	$remdeps = '/home/rsiddall';
+	$rpmtopdir = '/home/rsiddall/redhat';
+	$packager = 'Ivan Kohler <ivan@freeside.biz>';
+	$server = '10.5.4.5';
+}
+
+$server = $opts{server} if defined($opts{server});
+$user = $1 if $server =~ /(\w+)\@[\w\d\.]+/;
+
+$packager = $opts{packager} if defined($opts{packager});
+
+# Go ahead and build an SRPM...
+
+my $ovidignore = '--ignore ' . join ('--ignore ', qw/libwww/);
+
+
+for my $file (@ARGV) {
+	my ($name,$version,$type);
+
+	if ($file =~ /^(?:.*\/)?(.*)-(?:v\.?)?([^-]+)\.(tar)\.(?:gz|bz2)$/) {
+		$name = $1;
+		$version = $2;
+		$type = $3;
+	} elsif ($file =~ /^(?:.*\/)?(.*)-(?:v\.?)?([^-]+)\.tgz$/) {
+		$name = $1;
+		$version = $2;
+		$type = 'tar';
+	} elsif ($file =~ /^(?:.*\/)?(.*)-(?:v\.?)?([^-]+)\.(zip)$/) {
+		$name = $1;
+		$version = $2;
+		$type = $3;
+	} else {
+		# keep things happy if we get "Foo-Bar" instead of "Foo::Bar"
+		$file =~ s/-/::/g;
+		$name = $file;
+		$version = undef;
+		$type = 'module';
+	}
+
+	if ($type eq 'module') {
+		my $fluteopts = '';
+		$fluteopts .= "--packager='$packager' " if defined($packager);
+		$fluteopts .= "--release='$opts{release}' " if defined($opts{release});
+		do_cmd("ssh $user\@$server \"ovid --deps $ovidignore $name | tail -1 | $remdeps/ovid2flute $fluteopts | /bin/sh\"");
+	} else {
+		my $absfile = abs_path($file);
+		my $fname = basename($file);
+		die "Packager name and e-mail required" if !defined($packager);
+		die "RPM release string required" if !defined($opts{release});
+		do_cmd("scp $absfile $user\@$server:/home/$user/$fname");
+#		do_cmd("ssh $user\@$server 'cpanflute2 --just-spec --noperlreqs --email=\\\"$packager\\\" --release=$opts{release}  /home/$user/$fname > /home/$user/work/redhat/SPECS/$name.spec;'");
+#		do_cmd("ssh $user\@$server 'perl -pi -e \\\"s/perl\(perl\)/perl/g\\\" /home/$user/work/redhat/SPECS/$name.spec;'");
+#		do_cmd("ssh $user\@$server 'rpmbuild -bs --nodeps --define \\\"_sourcedir /home/$user/\\\" --define \\\"_srcrpmdir /home/$user/work/redhat/SRPMS\\\" /home/$user/work/redhat/SPECS/$name.spec'");
+		open SCRIPT, ">/home/$user/makesrpm" or die "Can't create SRPM construction script: ", $!;
+		print SCRIPT "#!/bin/sh\n\n";
+		print SCRIPT "cpanflute2 --just-spec --noperlreqs --email='$packager' --release=$opts{release}  /home/$user/$fname > $rpmtopdir/SPECS/$name.spec;\n";
+		print SCRIPT "perl -pi -e 's/perl(perl)/perl/g' $rpmtopdir/SPECS/$name.spec\n";
+		print SCRIPT "rpmbuild -bs --nodeps --define '_sourcedir /home/$user/' --define '_srcrpmdir $rpmtopdir/SRPMS' $rpmtopdir/SPECS/$name.spec\n";
+		close SCRIPT or die "Can't close SRPM construction script: ", $!;
+		chmod(0711, "/home/$user/makesrpm");
+		do_cmd("scp /home/$user/makesrpm $user\@$server:/home/$user/makesrpm");
+		do_cmd("ssh $user\@$server /home/$user/makesrpm");
+	}
+	my $olddir = getcwd();
+	do_cmd("$buildsys/build-freeside");
+	if (-x "$buildsys/refresh-repo") {
+		do_cmd("$buildsys/refresh-repo");
+	} else {
+		do_cmd("ssh $user\@$server $rembuild/refresh-repo");
+	}
+}
+
+sub do_cmd {
+	my $cmd = shift;
+
+	print "$cmd\n";
+	`$cmd` if !exists($opts{dryrun});
+}
+
+1;
+
