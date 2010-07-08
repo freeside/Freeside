@@ -106,8 +106,20 @@ cvs checkout -rFREESIDE_1_7_BRANCH -d freeside-1.7 freeside
 # yet more
 ###
 
+cp -i /var/lib/vservers/centos5/etc/yum.repos.d/CentOS-Base.repo /etc/yum/repos.d/
+#and s/$releasever/5/g;
+
 cp expect-* /usr/local/bin/
 #edit them and set your real passphrase for the gpg key you're using
+#(as per that dir above)
+
+###
+# and the repository
+###
+
+cd
+mkdir -p public_html/repo/centos/5/freeside-1.7/testing/x86_64/
+mkdir public_html/repo/centos/5/freeside-1.7/testing/i686
 
 ###
 # references
