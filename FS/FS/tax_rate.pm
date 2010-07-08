@@ -1773,7 +1773,7 @@ sub queue_liability_report {
   $cgi->param('ending', $param->{ending});
   my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
   my $agentnum = $param->{agentnum};
-  $agentnum =~ /^(\d+)$/ ? $agentnum = $1 : $agentnum = '';
+  if ($agentnum =~ /^(\d+)$/) { $agentnum = $1; } else { $agentnum = ''; };
   generate_liability_report(
     'beginning' => $beginning,
     'ending'    => $ending,
