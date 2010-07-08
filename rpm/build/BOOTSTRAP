@@ -58,8 +58,6 @@ mkdir redhat/SRPMS
 chown -R ivan:ivan redhat
 
 vi ~/.rpmmacros
-%_topdir /home/ivan/redhat
-%_signature gpg
 %_gpg_path /home/ivan/.gnupg
 %_gpg_name Freeside Internet Services, Inc. RPM Signing Key
 

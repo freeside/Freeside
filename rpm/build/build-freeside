@@ -149,7 +149,8 @@ do
 							DEST=$BRANCH
 						fi
 						# Copy freeside RPMs for this version only
-						FILES=`ls -1 $MOCKWORK/${os}-${arch}/result/freeside*-${VERSION}-*.rpm | grep -v .src.rpm | tr '\n' ' '`
+						#FILES=`ls -1 $MOCKWORK/${os}-${arch}/result/freeside*-${VERSION}-*.rpm | grep -v .src.rpm | tr '\n' ' '`
+						FILES=`ls -1 $MOCKWORK/freeside*-${VERSION}-*.rpm | grep -v .src.rpm | tr '\n' ' '`
 						echo $FILES
 						if [ "${FILES}x" != "x" ]
 						then
@@ -165,7 +166,8 @@ do
 							fi
 						fi
 						# Copy non-freeside RPMs to all versions
-						FILES=`ls -1 $MOCKWORK/${os}-${arch}/result/*.rpm | grep -v freeside | grep -v .src.rpm | tr '\n' ' '`
+						#FILES=`ls -1 $MOCKWORK/${os}-${arch}/result/*.rpm | grep -v freeside | grep -v .src.rpm | tr '\n' ' '`
+						FILES=`ls -1 $MOCKWORK/*.rpm | grep -v freeside | grep -v .src.rpm | tr '\n' ' '`
 						echo $FILES
 						if [ "${FILES}x" != "x" ]
 						then
