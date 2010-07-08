@@ -1,0 +1,116 @@
+# its more notes than a script, so no #!/bin/sh yet
+
+# s/ivan/username/ in buildsysrc and below
+
+
+###
+# host dirs
+###
+
+
+cd
+mkdir public_html
+mkdir mock
+mkdir redhat
+mkdir redhat/SRPMS
+mkdir buildsys
+mkdir buildsys/ref
+mkdir buildsys/ref/SRPMS
+
+cd buildsys
+for a in build-freeside buildsysrc cvs-check-and-build enrpm expect-addsign expect-signrepo ovid2flute refresh-repo; do
+ln -s ~/freeside/rpm/build/$a .
+done
+
+
+###
+# vserver setup
+###
+
+
+#ftp://ftp.pld-linux.org/people/hawk/vserver-templates/Centos
+#sudo vserver centos5 build -m template --context 5 --hostname centos5.freeside.biz --interface dummy0:10.5.4.5/24 -- -d centos5 -t centos5-i686.tar.bz2
+sudo vserver centos5 build -m template --context 5 --hostname centos5.freeside.biz --interface dummy0:10.5.4.5/24 -- -d centos5 -t centos5-x86_64.tar.bz2
+
+#something like this as /etc/init.d/vserver-nat:
+!/bin/sh
+iptables -t nat -F
+iptables -t nat -A POSTROUTING -s 10.5.4.0/24 -d ! 10.5.4.0/24 -j SNAT --to-source 192.168.1.143
+
+vserver centos5 start
+vserver centos5 enter
+#edit /etc/resolv.conf (easier from outside, no vi inside yet)
+
+yum update
+yum install openssh-server vim-minimal zsh screen sudo perl patch cvs diffutils rpm-build rsync
+
+adduser ivan #username
+cd ~ivan #username
+mkdir .ssh
+vi .ssh/authorized_keys
+
+mkdir redhat
+mkdir redhat/BUILD
+mkdir redhat/RPMS
+mkdir redhat/SOURCES
+mkdir redhat/SPECS
+mkdir redhat/SRPMS
+chown -R ivan:ivan redhat
+
+vi ~/.rpmmacros
+%_topdir /home/ivan/redhat
+%_signature gpg
+%_gpg_path /home/ivan/.gnupg
+%_gpg_name Freeside Internet Services, Inc. RPM Signing Key
+
+vi /etc/ssh/sshd_config #ListenAddress
+#also need to edit on the host so the vserver can claim its address
+
+vi /etc/pam.d/sshd
+#comment out:
+#session    required     pam_loginuid.so
+
+/etc/init.d/sshd restart
+
+vi /etc/sudoers
+
+exit #and test ssh'ing in
+
+###
+# more...
+###
+
+#copy the stuff from rpm/build/native into /home/ivan (#username) in the vserver
+cd rpm/build/native
+for a in build-from-cvs freeside-cvs makesrpm ovid2flute ovid-0.12-1.x86_64.rpm Ovid.diff; do
+  cp $a /var/lib/vservers/centos5/home/ivan/
+done
+
+for a in build-from-cvs freeside-cvs makesrpm ovid2flute; do
+  chmod a+rx /var/lib/vservers/centos5/home/ivan/$a
+done
+
+vserver centos5 enter #or ssh 10.5.4.5 and sudo
+
+rpm -i ovid-0.12-1.x86_64.rpm
+cd /usr/lib/perl5/site_perl/5.*/Ovid
+patch < ~ivan/Ovid.diff
+
+#also checkout the necessary freeside versions...
+export CVSROOT=":pserver:anonymous:anonymous@cvs.freeside.biz:/home/cvs/cvsroot"
+
+cvs checkout -rFREESIDE_1_7_BRANCH -d freeside-1.7 freeside
+#cvs checkout -rFREESIDE_1_9_BRANCH -d freeside-1.9 freeside
+
+###
+# yet more
+###
+
+cp expect-* /usr/local/bin/
+#edit them and set your real passphrase for the gpg key you're using
+
+###
+# references
+###
+
+http://www.freeside.biz/mediawiki/index.php/Freeside:Documentation:CreatingRPMRepo

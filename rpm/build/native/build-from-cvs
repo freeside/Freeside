@@ -1,0 +1,75 @@
+#!/bin/sh
+#
+# Copyright 2008, Elirion, Inc.  All rights reserved.
+# This software is licensed under the same terms as Freeside itself.
+#
+# This script builds SRPMs if the Freeside CVS contents have changed.
+# It must have reference copies of the Freeside versions it builds.
+# Each SRPM's "release" is set to the date & time the script is run.
+# The version number is forced to the CVS version.  The version and release
+# hard-coded in the last .spec file committed to CVS are NOT used.
+#
+source $HOME/freeside-cvs
+RELEASE=`date +%Y%m%d%H%M%S`
+QUIET_FLAG=
+#FORCE_FLAG=0
+FORCE_FLAG=1
+#VERSIONS='1.7 1.9'
+VERSIONS='1.7'
+
+while getopts "fhqv:" flag
+do
+        case $flag in
+		f)
+			echo "Force mode"
+			FORCE_FLAG=1;;
+		q)
+			echo "Quiet mode"
+			QUIET_FLAG=-q;;
+		v)
+			echo "Changing versions from $VERSIONS to $OPTARG"
+			VERSIONS=$OPTARG;;
+		*)
+			usage;;
+        esac
+done
+
+usage() {
+	echo "build-from-cvs: build SRPMs if the Freeside CVS contents have changed"
+	echo "where:"
+	echo " -f: force building SRPMs even if CVS is unchanged"
+	echo " -h: print this usage information"
+	echo " -q: run quietly"
+	echo " -v <versions>: change versions (currently: $VERSIONS)"
+	exit 0
+}
+
+for VERSION in $VERSIONS; do
+	echo ${VERSION}
+	/bin/rm -rf ref-${VERSION}
+	cp -pr freeside-${VERSION} ref-${VERSION}
+	cd freeside-${VERSION}
+	cvs update -d -P
+	cd ..
+	diff -qr --exclude=CVS freeside-${VERSION} ref-${VERSION}
+	RETVAL=$?
+	if [ $FORCE_FLAG = 1 -o $RETVAL -gt 0 ]; then
+		# Build the tarball with the modified .spec file in it, hard-coding the release into the .spec file
+		cd freeside-${VERSION}
+		for SPECFILE in install/rpm/freeside.spec rpm/freeside.spec; do
+		if [ -f $SPECFILE ]; then
+			cp -pf $SPECFILE ..
+			perl -p -i -e "s/\d+[^\}]+/${VERSION}/ if /%define\s+version\s+(\d+[^\}]+)\}/;" ${SPECFILE}
+			perl -pi -e "s/\$1/${RELEASE}/ if /%define\s+release\s+(\d+)/;" $SPECFILE
+			tar zcvf $HOME/redhat/SOURCES/freeside-${VERSION}.tar.gz --exclude CVS ../freeside-${VERSION}
+			mv -f ../`basename $SPECFILE` `dirname $SPECFILE`
+		fi
+		done
+		cd ..
+		rpmbuild -ts $HOME/redhat/SOURCES/freeside-${VERSION}.tar.gz
+		# Could do a koji-build here
+		# Or move the SRPM to a staging directory for the build machine to check
+		# Should make the Bundles and check the dependencies for changes
+	fi
+	/bin/rm -rf ref-${VERSION}
+done

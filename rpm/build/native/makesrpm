@@ -1,0 +1,5 @@
+#!/bin/sh
+
+cpanflute2 --just-spec --noperlreqs --email='Ivan Kohler <ivan@freeside.biz>' --release=1  /home/rsiddall/Business-OnlinePayment-Jety-0.06.tar.gz > /home/rsiddall/redhat/SPECS/Business-OnlinePayment-Jety.spec;
+perl -pi -e 's/perl(perl)/perl/g' /home/rsiddall/redhat/SPECS/Business-OnlinePayment-Jety.spec
+rpmbuild -bs --nodeps --define '_sourcedir /home/rsiddall/' --define '_srcrpmdir /home/rsiddall/redhat/SRPMS' /home/rsiddall/redhat/SPECS/Business-OnlinePayment-Jety.spec

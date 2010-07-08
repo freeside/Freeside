@@ -1,0 +1,14 @@
+# Define shell variables for the Freeside RPM build system
+#
+
+SRCFOLDER=ivan@10.5.4.5:/home/ivan/redhat/SRPMS
+REFFOLDER=$HOME/buildsys/ref/SRPMS
+#ARCHS='i386 x86_64'
+REPOFOLDER=/home/ivan/public_html
+REPOBASEFOLDER=/home/ivan/public_html
+KEYID=rpm
+
+VERSIONS='1.7'
+DISTROS='centos'
+CENTOSVERS='5'
+ARCHS='x86_64'

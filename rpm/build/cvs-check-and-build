@@ -36,6 +36,9 @@ do
         esac
 done
 
-ssh 10.5.4.5 /home/rsiddall/build-from-cvs $FORCE_FLAG
-cd /home/rsiddall/buildsys; ./build-freeside; ./refresh-repo $QUIET_FLAG
+#ssh 10.5.4.5 /home/rsiddall/build-from-cvs $FORCE_FLAG
+#cd /home/rsiddall/buildsys; ./build-freeside; ./refresh-repo $QUIET_FLAG
+
+ssh 10.5.4.5 ./build-from-cvs $FORCE_FLAG
+cd ~/buildsys; ./build-freeside; ./refresh-repo $QUIET_FLAG
 

@@ -1,0 +1,30 @@
+--- Package.pm.orig     2007-05-25 09:54:14.000000000 -0400
++++ Package.pm  2007-07-07 15:35:20.000000000 -0400
+@@ -165,6 +165,7 @@
+     push @out, $self->provreq($n);
+   }
+ 
++  return join("\n", map { "Provides: $_"; } @out) if scalar(@out) > 5;
+   return join('', 'Provides: ', join ' ', @out);
+ }
+ 
+@@ -376,10 +377,15 @@
+ 
+ %install
+ 
+-make PREFIX=%{_prefix} \
+-     DESTDIR=%{buildroot} \
+-     INSTALLDIRS=@installdirs@ \
+-     install
++if [ -f Build.PL -a -f Build ] ; then
++     ./Build destdir=%{buildroot} \
++          install
++else
++     make PREFIX=%{_prefix} \
++          DESTDIR=%{buildroot} \
++          INSTALLDIRS=@installdirs@ \
++          install
++fi
+ 
+ [ -x /usr/lib/rpm/brp-compress ] && /usr/lib/rpm/brp-compress
+
