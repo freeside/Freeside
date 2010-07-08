@@ -20,16 +20,16 @@ ARCHS='i386 x86_64'
 
 BUILDSYSDIR=`dirname $0`
 
-#MOCKARGS='--autocache'
-MOCKARGS="--configdir=$BUILDSYSDIR/mock"
+MOCKWORK="$BUILDSYSDIR/mockwork"
 
+#MOCKARGS='--autocache'
+MOCKARGS="--configdir=$BUILDSYSDIR/mock  --resultdir=$MOCKWORK"
 
 if [ -f $BUILDSYSDIR/buildsysrc ]; then
         #chmod a+x $BUILDSYSDIR/buildsysrc
 	#echo $BUILDSYSDIR/buildsysrc
 	. $BUILDSYSDIR/buildsysrc
 fi
-
 if [ -f $HOME/buildsysrc ]; then
         #chmod a+x $HOME/buildsysrc
 	#echo $HOME/buildsysrc
@@ -139,7 +139,7 @@ do
 				echo "$os - $arch: $srpm"
 				echo mock $MOCKARGS -r ${os}-${arch} $REFFOLDER/${srpm}
 				time mock $MOCKARGS -r ${os}-${arch} $REFFOLDER/${srpm}
-				if [ -f /var/lib/mock/${os}-${arch}/state/status ] && grep done /var/lib/mock/${os}-${arch}/state/status
+				if [ -f $MOCKWORK/${os}-${arch}/state/status ] && grep done $MOCKWORK/${os}-${arch}/state/status
 				then
 					for VERSION in $VERSIONS
 					do
@@ -149,7 +149,7 @@ do
 							DEST=$BRANCH
 						fi
 						# Copy freeside RPMs for this version only
-						FILES=`ls -1 /var/lib/mock/${os}-${arch}/result/freeside*-${VERSION}-*.rpm | grep -v .src.rpm | tr '\n' ' '`
+						FILES=`ls -1 $MOCKWORK/${os}-${arch}/result/freeside*-${VERSION}-*.rpm | grep -v .src.rpm | tr '\n' ' '`
 						echo $FILES
 						if [ "${FILES}x" != "x" ]
 						then
@@ -165,7 +165,7 @@ do
 							fi
 						fi
 						# Copy non-freeside RPMs to all versions
-						FILES=`ls -1 /var/lib/mock/${os}-${arch}/result/*.rpm | grep -v freeside | grep -v .src.rpm | tr '\n' ' '`
+						FILES=`ls -1 $MOCKWORK/${os}-${arch}/result/*.rpm | grep -v freeside | grep -v .src.rpm | tr '\n' ' '`
 						echo $FILES
 						if [ "${FILES}x" != "x" ]
 						then
@@ -186,3 +186,5 @@ do
 		done
 	done
 done
+
+echo "build-freeside done"

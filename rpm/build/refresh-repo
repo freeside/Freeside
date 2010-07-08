@@ -27,9 +27,17 @@ QUIET_FLAG=
 
 BUILDSYSDIR=`dirname $0`
 
+if [ -f $BUILDSYSDIR/buildsysrc ]; then
+        #chmod a+x $BUILDSYSDIR/buildsysrc
+	#echo $BUILDSYSDIR/buildsysrc
+	. $BUILDSYSDIR/buildsysrc
+fi
 if [ -f $HOME/buildsysrc ]; then
+        #chmod a+x $HOME/buildsysrc
+	#echo $HOME/buildsysrc
 	. $HOME/buildsysrc
 fi
+
 
 usage() {
 	echo "refresh-repo: refresh yum metadata for all yum repositories"
