@@ -120,6 +120,26 @@ mkdir -p public_html/repo/centos/5/freeside-1.7/testing/x86_64/
 mkdir public_html/repo/centos/5/freeside-1.7/testing/i686
 
 ###
+# and for enrpm!
+###
+
+vserver centos5 enter
+yum install perl-libwww-perl make
+cpan
+install RPM::Specfile
+#if it fails, might need to go to /root/.cpan/build/RPM-Specfile-* and do it manually
+install YAML
+
+#for user cpan-ability
+mkdir .cpan
+mkdir .cpan/CPAN
+cp /usr/lib/perl5/5.8.8/CPAN/Config.pm  .cpan/CPAN/MyConfig.pm
+vi .cpan/CPAN/MyConfig.pm #and just leave and change the /root ones
+chmod a+rx .cpan/CPAN/MyConfig.pm
+
+#edit ovid2flue and set user
+
+###
 # references
 ###
 

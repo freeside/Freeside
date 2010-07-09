@@ -93,22 +93,13 @@ sub usage {
 }
 
 # Feeble excuse for not having a real configuration file
-my $user = 'rsiddall';
-my $buildsys = '/home/rsiddall/work';
-my $rembuild = '/home/rsiddall/work/cvs';
-my $remdeps = '/home/rsiddall';
-my $rpmtopdir = '/home/rsiddall/work/redhat';
-my $packager = 'Richard Siddall <richard.siddall@elirion.net>';
-my $server = 'grosbeak';
-
-if (hostname =~ /wavetail/i) {
-	$buildsys = '/home/rsiddall/buildsys';
-	$rembuild = '/home/rsiddall/buildsys/ref';
-	$remdeps = '/home/rsiddall';
-	$rpmtopdir = '/home/rsiddall/redhat';
-	$packager = 'Ivan Kohler <ivan@freeside.biz>';
-	$server = '10.5.4.5';
-}
+my $user = 'ivan';
+my $buildsys = "/home/$user/buildsys";
+#my $rembuild = '/home/rsiddall/buildsys/ref';
+my $remdeps = '/home/ivan';
+my $rpmtopdir = "/home/$user/redhat";
+my $packager = 'Ivan Kohler <ivan@freeside.biz>';
+my $server = '10.5.4.5';
 
 $server = $opts{server} if defined($opts{server});
 $user = $1 if $server =~ /(\w+)\@[\w\d\.]+/;
@@ -169,11 +160,11 @@ for my $file (@ARGV) {
 	}
 	my $olddir = getcwd();
 	do_cmd("$buildsys/build-freeside");
-	if (-x "$buildsys/refresh-repo") {
+#	if (-x "$buildsys/refresh-repo") {
 		do_cmd("$buildsys/refresh-repo");
-	} else {
-		do_cmd("ssh $user\@$server $rembuild/refresh-repo");
-	}
+#	} else {
+#		do_cmd("ssh $user\@$server $rembuild/refresh-repo");
+#	}
 }
 
 sub do_cmd {

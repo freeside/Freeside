@@ -36,10 +36,10 @@ $opts{packager} = 'Richard Siddall <richard.siddall@elirion.net>' if !defined($o
 #my @extramods= qw/Crypt::SSLeay/;
 my @extramods= qw/IPC::ShareLite/;
 
-my $specfiledir="/home/rsiddall/work/redhat/SPECS";
-$specfiledir = "/home/rsiddall/redhat/SPECS" if ! -d $specfiledir;
-my $srpmdir="/home/rsiddall/work/redhat/SRPMS";
-$srpmdir = "/home/rsiddall/redhat/SRPMS" if ! -d $srpmdir;
+my $specfiledir="/home/ivan/work/redhat/SPECS";
+$specfiledir = "/home/ivan/redhat/SPECS" if ! -d $specfiledir;
+my $srpmdir="/home/ivan/work/redhat/SRPMS";
+$srpmdir = "/home/ivan/redhat/SRPMS" if ! -d $srpmdir;
 
 foreach (reverse <STDIN>) {
 	next if !defined($_);
@@ -80,7 +80,7 @@ foreach my $name (@extramods) {
 sub touchsrpms {
 	my ($name, $rpm) = @_;
 	my $repofolder ="/var/www/html/repo/sles/10/freeside-1.9/stable/x86_64";
-	my $srpmfolder ="/home/rsiddall/work/redhat/SRPMS";
+	my $srpmfolder ="/home/ivan/work/redhat/SRPMS";
 	my @files = glob "$repofolder/perl-$rpm-*.rpm";
 	if (! scalar(@files)) {
 		print "Can't find $rpm in $repofolder\n";
