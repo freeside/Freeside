@@ -899,9 +899,14 @@ sub _upgrade_data {
 
   my %cdrbatchnum = ();
   while (my $row = $sth->fetchrow_arrayref) {
-    my $cdr_batch = new FS::cdr_batch { 'cdrbatch' => $row->[0] };
-    my $error = $cdr_batch->insert;
-    die $error if $error;
+
+    my $cdr_batch = qsearchs( 'cdr_batch', { 'cdrbatch' => $row->[0] } );
+    unless ( $cdr_batch ) {
+      $cdr_batch = new FS::cdr_batch { 'cdrbatch' => $row->[0] };
+      my $error = $cdr_batch->insert;
+      die $error if $error;
+    }
+
     $cdrbatchnum{$row->[0]} = $cdr_batch->cdrbatchnum;
   }
 
