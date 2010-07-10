@@ -131,7 +131,7 @@ sub insert {
       my $cust_tax_exempt_pkg = new FS::cust_tax_exempt_pkg {
         'billpkgnum'       => $self->billpkgnum,
         'creditbillpkgnum' => $self->creditbillpkgnum,
-        'amount'           => 0-$amount,
+        'amount'           => sprintf('%.2f', 0-$amount),
         map { $_ => $exemption->$_ } split(',', $groupby)
       };
       my $error = $cust_tax_exempt_pkg->insert;
