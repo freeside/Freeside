@@ -11,6 +11,8 @@ tie my %options, 'Tie::IxHash',
   'dn'         => { label=>'Root DN' },
   'password'   => { label=>'Root DN password' },
   'userdn'     => { label=>'User DN' },
+  'key_attrib' => { label=>'Key attribute name',
+                    default=>'uid' },
   'attributes' => { label=>'Attributes',
                     type=>'textarea',
                     default=>join("\n",
@@ -49,30 +51,49 @@ END
 
 sub rebless { shift; }
 
-sub _export_insert {
-  my($self, $svc_acct) = (shift, shift);
-
-  #false laziness w/shellcommands.pm
-  {
-    no strict 'refs';
-    ${$_} = $svc_acct->getfield($_) foreach $svc_acct->fields;
-    ${$_} = $svc_acct->$_() foreach qw( domain );
-    my $cust_pkg = $svc_acct->cust_svc->cust_pkg;
-    if ( $cust_pkg ) {
-      my $cust_main = $cust_pkg->cust_main;
-      ${$_} = $cust_main->getfield($_) foreach qw(first last);
-    }
+sub svc_context_eval {
+  # This should possibly be in svc_Common?
+  # Except the only places we use it are here and in shellcommands,
+  # and it's not even the same version.
+  my $svc_acct = shift;
+  no strict 'refs';
+  ${$_} = $svc_acct->getfield($_) foreach $svc_acct->fields;
+  ${$_} = $svc_acct->$_() foreach qw( domain ldap_password );
+  my $cust_pkg = $svc_acct->cust_svc->cust_pkg;
+  if ( $cust_pkg ) {
+    my $cust_main = $cust_pkg->cust_main;
+    ${$_} = $cust_main->getfield($_) foreach qw(first last);
   }
+  # DEPRECATED, probably fails for non-plain password encoding
   $crypt_password = ''; #surpress "used only once" warnings
   $crypt_password = '{crypt}'. crypt( $svc_acct->_password,
                              $saltset[int(rand(64))].$saltset[int(rand(64))] );
 
-  my $username_attrib;
+  return map { eval(qq("$_")) } @_ ;
+}
+
+sub key_attrib {
+  my $self = shift;
+  return $self->option('key_attrib') if $self->option('key_attrib');
+  # otherwise, guess that it's the one that's set to $username
+  foreach ( split("\n",$self->option('attributes')) ) {
+    /^\s*(\w+)\s+\$username\s*$/ && return $1;
+  }
+  # can't recover from that, but we can fail in a more obvious way 
+  # than the old code did...
+  die "no key_attrib set in LDAP export\n";
+}
+
+sub ldap_attrib {
+  # Convert the svc_acct to its LDAP attribute set.
+  my($self, $svc_acct) = (shift, shift);
   my %attrib = map    { /^\s*(\w+)\s+(.*\S)\s*$/;
-                        $username_attrib = $1 if $2 eq '$username';
-                        ( $1 => eval(qq("$2")) );                   }
+                        ( $1 => $2 ); }
                  grep { /^\s*(\w+)\s+(.*\S)\s*$/ }
                    split("\n", $self->option('attributes'));
+
+  my @vals = svc_context_eval($svc_acct, values(%attrib));
+  @attrib{keys(%attrib)} = @vals;
 
   if ( $self->option('radius') ) {
     foreach my $table (qw(reply check)) {
@@ -84,21 +105,19 @@ sub _export_insert {
       }
     }
   }
+  return %attrib;
+}
 
-  my $err_or_queue = $self->ldap_queue( $svc_acct->svcnum, 'insert',
-    #$svc_acct->username,
-    $username_attrib,
-    %attrib );
+sub _export_insert {
+  my($self, $svc_acct) = (shift, shift);
+
+  my $err_or_queue = $self->ldap_queue( 
+    $svc_acct->svcnum, 
+    'insert',
+    $self->key_attrib,
+    $self->ldap_attrib($svc_acct),
+  );
   return $err_or_queue unless ref($err_or_queue);
-
-  #groups with LDAP?
-  #my @groups = $svc_acct->radius_groups;
-  #if ( @groups ) {
-  #  my $err_or_queue = $self->ldap_queue(
-  #    $svc_acct->svcnum, 'usergroup_insert',
-  #    $svc_acct->username, @groups );
-  #  return $err_or_queue unless ref($err_or_queue);
-  #}
 
   '';
 }
@@ -113,109 +132,42 @@ sub _export_replace {
   local $SIG{TSTP} = 'IGNORE';
   local $SIG{PIPE} = 'IGNORE';
 
-  return "can't (yet?) change username with ldap"
-    if $old->username ne $new->username;
-
-  return "ldap replace unimplemented";
-
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
   my $jobnum = '';
-  #if ( $old->username ne $new->username ) {
-  #  my $err_or_queue = $self->ldap_queue( $new->svcnum, 'rename',
-  #    $new->username, $old->username );
-  #  unless ( ref($err_or_queue) ) {
-  #    $dbh->rollback if $oldAutoCommit;
-  #    return $err_or_queue;
-  #  }
-  #  $jobnum = $err_or_queue->jobnum;
-  #}
 
-  foreach my $table (qw(reply check)) {
-    my $method = "radius_$table";
-    my %new = $new->$method();
-    my %old = $old->$method();
-    if ( grep { !exists $old{$_} #new attributes
-                || $new{$_} ne $old{$_} #changed
-              } keys %new
-    ) {
-      my $err_or_queue = $self->ldap_queue( $new->svcnum, 'insert',
-        $table, $new->username, %new );
-      unless ( ref($err_or_queue) ) {
-        $dbh->rollback if $oldAutoCommit;
-        return $err_or_queue;
-      }
-      if ( $jobnum ) {
-        my $error = $err_or_queue->depend_insert( $jobnum );
-        if ( $error ) {
-          $dbh->rollback if $oldAutoCommit;
-          return $error;
-        }
-      }
-    }
-
-    my @del = grep { !exists $new{$_} } keys %old;
-    if ( @del ) {
-      my $err_or_queue = $self->ldap_queue( $new->svcnum, 'attrib_delete',
-        $table, $new->username, @del );
-      unless ( ref($err_or_queue) ) {
-        $dbh->rollback if $oldAutoCommit;
-        return $err_or_queue;
-      }
-      if ( $jobnum ) {
-        my $error = $err_or_queue->depend_insert( $jobnum );
-        if ( $error ) {
-          $dbh->rollback if $oldAutoCommit;
-          return $error;
-        }
-      }
-    }
+  # the Lazy way: nuke the entry and recreate it.
+  # any reason this shouldn't work?  Freeside _has_ to have 
+  # write access to these entries and their parent DN.
+  my $key = $self->key_attrib;
+  my %attrib = $self->ldap_attrib($old);
+  my $err_or_queue = $self->ldap_queue( 
+    $old->svcnum,
+    'delete', 
+    $key,
+    $attrib{$key}
+  );
+  if( !ref($err_or_queue) ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $err_or_queue;
   }
-
-  # (sorta) false laziness with FS::svc_acct::replace
-  my @oldgroups = @{$old->usergroup}; #uuuh
-  my @newgroups = $new->radius_groups;
-  my @delgroups = ();
-  foreach my $oldgroup ( @oldgroups ) {
-    if ( grep { $oldgroup eq $_ } @newgroups ) {
-      @newgroups = grep { $oldgroup ne $_ } @newgroups;
-      next;
-    }
-    push @delgroups, $oldgroup;
+  $jobnum = $err_or_queue->jobnum;
+  $err_or_queue = $self->ldap_queue( 
+    $new->svcnum, 
+    'insert',
+    $key,
+    $self->ldap_attrib($new)
+  );
+  if( !ref($err_or_queue) ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $err_or_queue;
   }
-
-  if ( @delgroups ) {
-    my $err_or_queue = $self->ldap_queue( $new->svcnum, 'usergroup_delete',
-      $new->username, @delgroups );
-    unless ( ref($err_or_queue) ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $err_or_queue;
-    }
-    if ( $jobnum ) {
-      my $error = $err_or_queue->depend_insert( $jobnum );
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return $error;
-      }
-    }
-  }
-
-  if ( @newgroups ) {
-    my $err_or_queue = $self->ldap_queue( $new->svcnum, 'usergroup_insert',
-      $new->username, @newgroups );
-    unless ( ref($err_or_queue) ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $err_or_queue;
-    }
-    if ( $jobnum ) {
-      my $error = $err_or_queue->depend_insert( $jobnum );
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return $error;
-      }
-    }
+  $err_or_queue = $err_or_queue->depend_insert($jobnum);
+  if( $err_or_queue ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $err_or_queue;
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
@@ -225,9 +177,13 @@ sub _export_replace {
 
 sub _export_delete {
   my( $self, $svc_acct ) = (shift, shift);
-  return "ldap delete unimplemented";
+
+  my $key = $self->key_attrib;
+  my ( $val ) = map { /^\s*$key\s+(.*\S)\s*$/ ? $1 : () }
+                    split("\n", $self->option('attributes'));
+  ( $val ) = svc_context_eval($svc_acct, $val);
   my $err_or_queue = $self->ldap_queue( $svc_acct->svcnum, 'delete',
-    $svc_acct->username );
+    $key, $val );
   ref($err_or_queue) ? '' : $err_or_queue;
 }
 
@@ -248,10 +204,9 @@ sub ldap_queue {
 
 sub ldap_insert { #subroutine, not method
   my $ldap = ldap_connect(shift, shift, shift);
-  my( $userdn, $username_attrib, %attrib ) = @_;
+  my( $userdn, $key_attrib, %attrib ) = @_;
 
-  $userdn = "$username_attrib=$attrib{$username_attrib}, $userdn"
-    if $username_attrib;
+  $userdn = "$key_attrib=$attrib{$key_attrib}, $userdn";
   #icky hack, but should be unsurprising to the LDAPers
   foreach my $key ( grep { $attrib{$_} =~ /,/ } keys %attrib ) {
     $attrib{$key} = [ split(/,/, $attrib{$key}) ]; 
@@ -263,17 +218,32 @@ sub ldap_insert { #subroutine, not method
   $ldap->unbind;
 }
 
-#sub ldap_delete { #subroutine, not method
-#  my $dbh = ldap_connect(shift, shift, shift);
-#  my $username = shift;
-#
-#  foreach my $table (qw( radcheck radreply usergroup )) {
-#    my $sth = $dbh->prepare( "DELETE FROM $table WHERE UserName = ?" );
-#    $sth->execute($username)
-#      or die "can't delete from $table table: ". $sth->errstr;
-#  }
-#  $dbh->disconnect;
-#}
+sub ldap_delete {
+  my $ldap = ldap_connect(shift, shift, shift);
+
+  my $entry = ldap_fetch($ldap, @_);
+  if($entry) {
+    my $status = $ldap->delete($entry);
+    die 'LDAP error: '.$status->error."\n" if $status->is_error;
+  }
+  $ldap->unbind;
+  # should failing to find the entry be fatal?
+  # if it is, it will block unprovisioning the service, which is a pain.
+}
+
+sub ldap_fetch {
+  # avoid needless duplication in delete and modify
+  my( $ldap, $userdn, %key_data ) = @_;
+  my $filter = join('', map { "($_=$key_data{$_})" } keys(%key_data));
+
+  my $status = $ldap->search( base => $userdn,
+                              scope => 'one', 
+                              filter => $filter );
+  die 'LDAP error: '.$status->error."\n" if $status->is_error;
+  my ($entry) = $status->entries;
+  warn "Entry '$filter' not found in LDAP\n" if !$entry;
+  return $entry;
+}
 
 sub ldap_connect {
   my( $machine, $dn, $password ) = @_;
