@@ -179,7 +179,7 @@ sub insert {
   $error = $self->SUPER::insert;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
-    return "error inserting $self: $error";
+    return "error inserting cust_pay: $error";
   }
 
   if ( $self->invnum ) {
@@ -192,11 +192,11 @@ sub insert {
     $error = $cust_bill_pay->insert(%options);
     if ( $error ) {
       if ( $ignore_noapply ) {
-        warn "warning: error inserting $cust_bill_pay: $error ".
+        warn "warning: error inserting cust_bill_pay: $error ".
              "(ignore_noapply flag set; inserting cust_pay record anyway)\n";
       } else {
         $dbh->rollback if $oldAutoCommit;
-        return "error inserting $cust_bill_pay: $error";
+        return "error inserting cust_bill_pay: $error";
       }
     }
   }
@@ -756,13 +756,18 @@ sub _upgrade_data {  #class method
   # payinfo N/A upgrade
   ###
 
+  #XXX remove the 'N/A (tokenized)' part (or just this entire thing)
+
   my @na_cust_pay = qsearch( {
     'table'     => 'cust_pay',
-    'hashref'   => { 'payinfo' => 'N/A' },
-    'extra_sql' => "AND payby IN ( 'CARD', 'CHEK' )",
+    'hashref'   => {}, #could be encrypted# { 'payinfo' => 'N/A' },
+    'extra_sql' => "WHERE ( payinfo = 'N/A' OR paymask = 'N/AA' OR paymask = 'N/A (tokenized)' ) AND payby IN ( 'CARD', 'CHEK' )",
   } );
 
   foreach my $na ( @na_cust_pay ) {
+
+    next unless $na->payinfo eq 'N/A';
+
     my $cust_pay_pending =
       qsearchs('cust_pay_pending', { 'paynum' => $na->paynum } );
     $na->$_($cust_pay_pending->$_) for qw( payinfo paymask );
