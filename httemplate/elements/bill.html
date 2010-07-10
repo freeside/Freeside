@@ -1,8 +1,8 @@
 <%doc>
+
 Clickable link to bill a customer.
 
 Example:
-<FORM name="MyForm">
 <% include( '/elements/bill.html',
             ###
             # required
@@ -21,8 +21,9 @@ Example:
             ###
             bill_opts => { 'batch_card' => 'yes' },
 ) %>
-</FORM>
+
 </%doc>
+<FORM STYLE="display:inline">
 <% include('/elements/progress-init.html',
           $formname,
           [ 'custnum', @opt_keys ],
@@ -35,7 +36,9 @@ Example:
 % foreach(@opt_keys) {
 <INPUT TYPE="hidden" NAME="<%$_%>" VALUE="<%$bill_opts->{$_}%>">
 % }
+</FORM>
 <%init>
+
 my %opt = @_;
 my $custnum   = $opt{'custnum'};
 my $label     = $opt{'label'};
@@ -46,4 +49,5 @@ my $message   = $opt{'message'} || 'Finished!';
 my $bill_opts = $opt{'bill_opts'} || {};
 my @opt_keys  = keys(%$bill_opts);
 my @opt_vals  = values(%$bill_opts);
+
 </%init>
