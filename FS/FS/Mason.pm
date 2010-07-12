@@ -246,6 +246,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::cust_bill_batch;
   use FS::rate_time;
   use FS::rate_time_interval;
+  use FS::msg_template;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {
