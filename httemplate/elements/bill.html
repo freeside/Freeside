@@ -9,7 +9,6 @@ Example:
             ###
             custnum   => $custnum,
             label     => 'Bill Now!',
-            formname  => 'MyForm',
 
             ###
             # recommended
@@ -20,18 +19,19 @@ Example:
             # optional, can contain any FS::cust_main::bill_and_collect options
             ###
             bill_opts => { 'batch_card' => 'yes' },
+            formname  => 'MyBillNowLink', # if for some reason you want this
 ) %>
 
 </%doc>
-<FORM STYLE="display:inline">
+<FORM NAME="<%$formname%>" STYLE="display:inline">
 <% include('/elements/progress-init.html',
           $formname,
           [ 'custnum', @opt_keys ],
           $p.'misc/bill.cgi',
           $url ? { url => $url } : { message => $message },
-          $key,
+          $formname, # use it as 'key'
 ) %>
-<A HREF="javascript:void(0);" onclick="javascript:<%$key%>process();"><%$label%></A>
+<A HREF="javascript:void(0);" onclick="javascript:<%$formname%>process();"><%$label%></A>
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<%$custnum%>">
 % foreach(@opt_keys) {
 <INPUT TYPE="hidden" NAME="<%$_%>" VALUE="<%$bill_opts->{$_}%>">
@@ -42,8 +42,10 @@ Example:
 my %opt = @_;
 my $custnum   = $opt{'custnum'};
 my $label     = $opt{'label'};
-my $formname  = $opt{'formname'};
-my $key       = $formname.'bill'.$custnum;
+# formname no longer needs to be passed from outside, but we still 
+# need one and it needs to be unique
+my $formname  = $opt{'formname'} ||
+                'bill'.sprintf('%04d',int(rand(10000))).$custnum;
 my $url       = $opt{'url'} || '';
 my $message   = $opt{'message'} || 'Finished!';
 my $bill_opts = $opt{'bill_opts'} || {};

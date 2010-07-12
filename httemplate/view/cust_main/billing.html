@@ -9,7 +9,6 @@ Billing information
   (<% include('/elements/bill.html',
                 custnum   => $cust_main->custnum,
                 label     => 'Bill now',
-                formname  => 'billnow',
                 url       => $p.'view/cust_main.cgi?'.$cust_main->custnum,
   ) %>)
 % } 
