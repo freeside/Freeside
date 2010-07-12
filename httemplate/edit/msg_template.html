@@ -1,0 +1,16 @@
+<% include( 'elements/edit.html',  
+              'name_singular' => 'template',
+              'table'         => 'msg_template',
+              'viewall_dir'   => 'browse',
+              'fields' => [ 'msgname',
+                            { field=>'body', type=>'htmlarea' },
+                          ],
+          )
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Edit templates')
+  ||     $FS::CurrentUser::CurrentUser->access_right('Edit global templates');
+
+</%init>

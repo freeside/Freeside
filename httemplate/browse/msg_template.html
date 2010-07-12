@@ -1,0 +1,27 @@
+<% include( 'elements/browse.html',
+              'title'         => 'Message templates',
+              'name_singular' => 'template',
+              'menubar'     => [ 'Add a new template' =>
+                                   $p.'edit/msg_template.html',
+                               ],
+              'query'       => { 'table' => 'msg_template', },
+              'count_query' => 'SELECT COUNT(*) FROM msg_template',
+              'disableable' => 1,
+              'disabled_statuspos' => 2,
+              'agent_virt'         => 1,
+              'agent_null_right'   => 'Edit global templates',
+              'agent_pos'          => 3,
+              'header' => [ 'Name' ],
+              'fields' => [ 'msgname' ],
+              'links'  => [ $link ],
+          )
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Edit templates')
+  ||     $FS::CurrentUser::CurrentUser->access_right('Edit global templates');
+
+my $link = [ "${p}edit/msg_template.html?", 'msgnum' ];
+
+</%init>

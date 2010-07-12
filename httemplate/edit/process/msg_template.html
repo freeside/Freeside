@@ -1,0 +1,12 @@
+<% include( 'elements/process.html',  
+              'table'       => 'msg_template',
+              'viewall_dir' => 'browse',
+          )
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Edit templates')
+  ||     $FS::CurrentUser::CurrentUser->access_right('Edit global templates');
+
+</%init>

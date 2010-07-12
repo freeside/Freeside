@@ -520,3 +520,5 @@ FS/cgp_rule_condition.pm
 t/cgp_rule_condition.t
 FS/cgp_rule_action.pm
 t/cgp_rule_action.t
+FS/msg_template.pm
+t/msg_template.t

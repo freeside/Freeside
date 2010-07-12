@@ -472,12 +472,15 @@ tie my %config_phone, 'Tie::IxHash',
 ;
 
 tie my %config_misc, 'Tie::IxHash';
+$config_misc{'Message templates'} = [ $fsurl.'browse/msg_template.html', 'Templates for customer notices' ]
+  if $curuser->access_right('Edit templates')
+  || $curuser->access_right('Edit global templates');
 $config_misc{'Advertising sources'} = [ $fsurl.'browse/part_referral.html', 'Where a customer heard about your service.' ]
   if $curuser->access_right('Edit advertising sources')
   || $curuser->access_right('Edit global advertising sources');
 if ( $curuser->access_right('Configuration') ) {
   $config_misc{'Virtual fields'} = [ $fsurl.'browse/part_virtual_field.cgi', 'Locally defined fields', ];
-  $config_misc{'Message catalog'} = [ $fsurl.'browse/msgcat.cgi', 'Change error messages and other customizable labels' ];
+  $config_misc{'Error catalog'} = [ $fsurl.'browse/msgcat.cgi', 'Change error messages and other customizable labels' ];
 }
 $config_misc{'Inventory classes and inventory'} = [ $fsurl.'browse/inventory_class.html', 'Setup inventory classes and stock inventory' ]
   if $curuser->access_right('Edit inventory')

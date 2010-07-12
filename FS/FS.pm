@@ -350,7 +350,9 @@ L<FS::queue_arg> - Job arguments
 
 L<FS::queue_depend> - Job dependencies
 
-L<FS::msgcat> - Message catalogs
+L<FS::msg_template> - Message templates (customer notices)
+
+L<FS::msgcat> - Message catalogs (error messages)
 
 L<FS::clientapi_session>
 
