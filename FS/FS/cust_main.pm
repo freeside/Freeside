@@ -7985,8 +7985,10 @@ sub email_search_result {
   my $subject = delete $params->{subject};
   my $html_body = delete $params->{html_body};
   my $text_body = delete $params->{text_body};
+  my $error = '';
 
-  my $job = delete $params->{'job'};
+  my $job = delete $params->{'job'}
+    or die "email_search_result must run from the job queue.\n";
 
   $params->{'payby'} = [ split(/\0/, $params->{'payby'}) ]
     unless ref($params->{'payby'});
@@ -8006,35 +8008,68 @@ sub email_search_result {
 
 
   my( $num, $last, $min_sec ) = (0, time, 5); #progresbar foo
+  my @retry_jobs = ();
+  my $success = 0;
 
   #eventually order+limit magic to reduce memory use?
   foreach my $cust_main ( qsearch($sql_query) ) {
 
-    my $to = $cust_main->invoicing_list_emailonly_scalar;
-    next unless $to;
+    #progressbar first, so that the count is right
+    $num++;
+    if ( time - $min_sec > $last ) {
+      my $error = $job->update_statustext(
+        int( 100 * $num / $num_cust )
+      );
+      die $error if $error;
+      $last = time;
+    }
 
-    my $error = send_email(
-      generate_email(
+    my $to = $cust_main->invoicing_list_emailonly_scalar;
+
+    if( $to ) {
+      my @message = (
         'from'      => $from,
         'to'        => $to,
         'subject'   => $subject,
         'html_body' => $html_body,
         'text_body' => $text_body,
-      )
-    );
-    return $error if $error;
+      );
 
-    if ( $job ) { #progressbar foo
-      $num++;
-      if ( time - $min_sec > $last ) {
-        my $error = $job->update_statustext(
-          int( 100 * $num / $num_cust )
-        );
-        die $error if $error;
-        $last = time;
+      $error = send_email( generate_email( @message ) );
+
+      if($error) {
+        # queue the sending of this message so that the user can see what we 
+        # tried to do, and retry if desired
+        my $queue = new FS::queue {
+          'job'        => 'FS::Misc::process_send_email',
+          'custnum'    => $cust_main->custnum,
+          'status'     => 'failed',
+          'statustext' => $error,
+        };
+        $queue->insert(@message);
+        push @retry_jobs, $queue;
+      }
+      else {
+        $success++;
       }
     }
 
+    if($success == 0 and 
+        (scalar(@retry_jobs) > 10 or $num == $num_cust)
+      ) {
+      # 10 is arbitrary, but if we have enough failures, that's 
+      # probably a configuration or network problem, and we 
+      # abort the batch and run away screaming.
+      # We NEVER do this if anything was successfully sent.
+      $_->delete foreach (@retry_jobs);
+      return "multiple failures: '$error'\n";
+    }
+  }
+
+  if(@retry_jobs) {
+    # fail the job, but with a status message that makes it clear
+    # something was sent.
+    return "Sent $success, failed ".scalar(@retry_jobs).". Failed attempts placed in job queue.\n";
   }
 
   return '';

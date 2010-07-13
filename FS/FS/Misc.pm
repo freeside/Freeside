@@ -13,7 +13,7 @@ use File::Temp;
 #instead
 
 @ISA = qw( Exporter );
-@EXPORT_OK = qw( generate_email send_email send_fax
+@EXPORT_OK = qw( send_email generate_email send_fax
                  states_hash counties cities state_label
                  card_types
                  generate_ps generate_pdf do_print
@@ -36,135 +36,11 @@ FS::Misc - Miscellaneous subroutines
 
 Miscellaneous subroutines.  This module contains miscellaneous subroutines
 called from multiple other modules.  These are not OO or necessarily related,
-but are collected here to elimiate code duplication.
+but are collected here to eliminate code duplication.
 
 =head1 SUBROUTINES
 
 =over 4
-
-=item generate_email OPTION => VALUE ...
-
-Options:
-
-=over 4
-
-=item from
-
-Sender address, required
-
-=item to
-
-Recipient address, required
-
-=item subject
-
-email subject, required
-
-=item html_body
-
-Email body (HTML alternative).  Arrayref of lines, or scalar.
-
-Will be placed inside an HTML <BODY> tag.
-
-=item text_body
-
-Email body (Text alternative).  Arrayref of lines, or scalar.
-
-=back
-
-Returns an argument list to be passsed to L<send_email>.
-
-=cut
-
-#false laziness w/FS::cust_bill::generate_email
-
-use MIME::Entity;
-use HTML::Entities;
-
-sub generate_email {
-  my %args = @_;
-
-  my $me = '[FS::Misc::generate_email]';
-
-  my %return = (
-    'from'    => $args{'from'},
-    'to'      => $args{'to'},
-    'subject' => $args{'subject'},
-  );
-
-  #if (ref($args{'to'}) eq 'ARRAY') {
-  #  $return{'to'} = $args{'to'};
-  #} else {
-  #  $return{'to'} = [ grep { $_ !~ /^(POST|FAX)$/ }
-  #                         $self->cust_main->invoicing_list
-  #                  ];
-  #}
-
-  warn "$me creating HTML/text multipart message"
-    if $DEBUG;
-
-  $return{'nobody'} = 1;
-
-  my $alternative = build MIME::Entity
-    'Type'        => 'multipart/alternative',
-    'Encoding'    => '7bit',
-    'Disposition' => 'inline'
-  ;
-
-  my $data;
-  if ( ref($args{'text_body'}) eq 'ARRAY' ) {
-    $data = $args{'text_body'};
-  } else {
-    $data = [ split(/\n/, $args{'text_body'}) ];
-  }
-
-  $alternative->attach(
-    'Type'        => 'text/plain',
-    #'Encoding'    => 'quoted-printable',
-    'Encoding'    => '7bit',
-    'Data'        => $data,
-    'Disposition' => 'inline',
-  );
-
-  my @html_data;
-  if ( ref($args{'html_body'}) eq 'ARRAY' ) {
-    @html_data = @{ $args{'html_body'} };
-  } else {
-    @html_data = split(/\n/, $args{'html_body'});
-  }
-
-  $alternative->attach(
-    'Type'        => 'text/html',
-    'Encoding'    => 'quoted-printable',
-    'Data'        => [ '<html>',
-                       '  <head>',
-                       '    <title>',
-                       '      '. encode_entities($return{'subject'}), 
-                       '    </title>',
-                       '  </head>',
-                       '  <body bgcolor="#e8e8e8">',
-                       @html_data,
-                       '  </body>',
-                       '</html>',
-                     ],
-    'Disposition' => 'inline',
-    #'Filename'    => 'invoice.pdf',
-  );
-
-  #no other attachment:
-  # multipart/related
-  #   multipart/alternative
-  #     text/plain
-  #     text/html
-
-  $return{'content-type'} = 'multipart/related';
-  $return{'mimeparts'} = [ $alternative ];
-  $return{'type'} = 'multipart/alternative'; #Content-Type of first part...
-  #$return{'disposition'} = 'inline';
-
-  %return;
-
-}
 
 =item send_email OPTION => VALUE ...
 
@@ -363,6 +239,144 @@ sub send_email {
   else {
     return $@;
   }
+}
+
+=item generate_email OPTION => VALUE ...
+
+Options:
+
+=over 4
+
+=item from
+
+Sender address, required
+
+=item to
+
+Recipient address, required
+
+=item subject
+
+email subject, required
+
+=item html_body
+
+Email body (HTML alternative).  Arrayref of lines, or scalar.
+
+Will be placed inside an HTML <BODY> tag.
+
+=item text_body
+
+Email body (Text alternative).  Arrayref of lines, or scalar.
+
+=back
+
+Constructs a multipart message from text_body and html_body.
+
+=cut
+
+#false laziness w/FS::cust_bill::generate_email
+
+use MIME::Entity;
+use HTML::Entities;
+
+sub generate_email {
+  my %args = @_;
+
+  my $me = '[FS::Misc::generate_email]';
+
+  my %return = (
+    'from'    => $args{'from'},
+    'to'      => $args{'to'},
+    'subject' => $args{'subject'},
+  );
+
+  #if (ref($args{'to'}) eq 'ARRAY') {
+  #  $return{'to'} = $args{'to'};
+  #} else {
+  #  $return{'to'} = [ grep { $_ !~ /^(POST|FAX)$/ }
+  #                         $self->cust_main->invoicing_list
+  #                  ];
+  #}
+
+  warn "$me creating HTML/text multipart message"
+    if $DEBUG;
+
+  $return{'nobody'} = 1;
+
+  my $alternative = build MIME::Entity
+    'Type'        => 'multipart/alternative',
+    'Encoding'    => '7bit',
+    'Disposition' => 'inline'
+  ;
+
+  my $data;
+  if ( ref($args{'text_body'}) eq 'ARRAY' ) {
+    $data = $args{'text_body'};
+  } else {
+    $data = [ split(/\n/, $args{'text_body'}) ];
+  }
+
+  $alternative->attach(
+    'Type'        => 'text/plain',
+    #'Encoding'    => 'quoted-printable',
+    'Encoding'    => '7bit',
+    'Data'        => $data,
+    'Disposition' => 'inline',
+  );
+
+  my @html_data;
+  if ( ref($args{'html_body'}) eq 'ARRAY' ) {
+    @html_data = @{ $args{'html_body'} };
+  } else {
+    @html_data = split(/\n/, $args{'html_body'});
+  }
+
+  $alternative->attach(
+    'Type'        => 'text/html',
+    'Encoding'    => 'quoted-printable',
+    'Data'        => [ '<html>',
+                       '  <head>',
+                       '    <title>',
+                       '      '. encode_entities($return{'subject'}), 
+                       '    </title>',
+                       '  </head>',
+                       '  <body bgcolor="#e8e8e8">',
+                       @html_data,
+                       '  </body>',
+                       '</html>',
+                     ],
+    'Disposition' => 'inline',
+    #'Filename'    => 'invoice.pdf',
+  );
+
+  #no other attachment:
+  # multipart/related
+  #   multipart/alternative
+  #     text/plain
+  #     text/html
+
+  $return{'content-type'} = 'multipart/related';
+  $return{'mimeparts'} = [ $alternative ];
+  $return{'type'} = 'multipart/alternative'; #Content-Type of first part...
+  #$return{'disposition'} = 'inline';
+
+  %return;
+
+}
+
+=item process_send_email OPTION => VALUE ...
+
+Takes arguments as per generate_email() and sends the message.  This 
+will die on any error and can be used in the job queue.
+
+=cut
+
+sub process_send_email {
+  my %message = @_;
+  my $error = send_email(generate_email(%message));
+  die "$error\n" if $error;
+  '';
 }
 
 =item send_fax OPTION => VALUE ...
