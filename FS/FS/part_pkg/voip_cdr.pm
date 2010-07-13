@@ -162,6 +162,16 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                                                   'type' => 'checkbox',
                                                 },
 
+    'accountcode_tollfree_ratenum' => {
+      'name' => 'Optional alternate rate plan when accountcode is toll free',
+      'type' => 'select',
+      'select_table'  => 'rate',
+      'select_key'    => 'ratenum',
+      'select_label'  => 'ratename',
+      'disable_empty' => 0,
+      'empty_label'   => '',
+    },
+
     'skip_dst_length_less' => { 'name' => 'Do not charge for CDRs where the destination is less than this many digits:',
                               },
 
@@ -240,6 +250,7 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                        use_disposition_taqua use_carrierid use_cdrtypenum
                        skip_dcontext skip_dstchannel_prefix
                        skip_src_length_more noskip_src_length_accountcode_tollfree
+                       accountcode_tollfree_ratenum
                        skip_dst_length_less skip_lastapp
                        use_duration
                        411_rewrite
@@ -436,8 +447,12 @@ sub calc_usage {
           #asterisks here causes inserting the detail to barf, so:
           $pretty_destnum =~ s/\*//g;
 
-          $rate = qsearchs('rate', { 'ratenum' => $ratenum })
-            or die "ratenum $ratenum not found!";
+          my $eff_ratenum = $cdr->is_tollfree('accountcode')
+            ? $cust_pkg->part_pkg->option('accountcode_tollfree_ratenum')
+            : '';
+          $eff_ratenum ||= $ratenum;
+          $rate = qsearchs('rate', { 'ratenum' => $eff_ratenum })
+            or die "ratenum $eff_ratenum not found!";
 
           my @ltime = localtime($cdr->startdate);
           $weektime = $ltime[0] + 
