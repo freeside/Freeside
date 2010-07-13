@@ -2911,6 +2911,7 @@ sub tables_hashref {
         'msgnum',     'serial',     '',      '', '', '',
         'msgname',   'varchar',     '', $char_d, '', '',
         'agentnum',      'int', 'NULL',      '', '', '',
+        'subject',   'varchar', 'NULL',     512, '', '',
         'mime_type', 'varchar',     '', $char_d, '', '',
         'body',         'blob', 'NULL',      '', '', '',
         'disabled',     'char', 'NULL',       1, '', '', 
