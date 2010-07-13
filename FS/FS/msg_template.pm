@@ -166,15 +166,11 @@ sub send {
 
   my $subs = $self->substitutions;
   
-  use Data::Dumper;
-  warn Dumper($subs);
-
   #XXX html escape this stuff
   my %hash = map { $_ => $cust_main->$_() } @{ $subs->{'cust_main'} };
   unless ( ! $object || $object->table eq 'cust_main' ) {
     %hash = ( %hash, map { $_ => $object->$_() } @{ $subs->{$object->table} } );
   }
-  warn Dumper(\%hash);
 
   my $subject_tmpl = new Text::Template (
     TYPE   => 'STRING',

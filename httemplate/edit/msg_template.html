@@ -3,8 +3,14 @@
               'table'         => 'msg_template',
               'viewall_dir'   => 'browse',
               'fields' => [ 'msgname',
-                            { field=>'body', type=>'htmlarea' },
+                            'subject',
+                            { field=>'body', type=>'htmlarea', width=>763 },
                           ],
+              'labels' => { 'msgnum'  => 'Template',
+                            'msgname' => 'Template name',
+                            'subject' => 'Message subject',
+                            'body'    => 'Message template',
+                          },
           )
 %>
 <%init>

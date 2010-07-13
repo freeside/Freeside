@@ -2464,6 +2464,17 @@ sub agent {
   qsearchs( 'agent', { 'agentnum' => $self->agentnum } );
 }
 
+=item agent_name
+
+Returns the agent name (see L<FS::agent>) for this customer.
+
+=cut
+
+sub agent_name {
+  my $self = shift;
+  $self->agent->agent;
+}
+
 =item cust_class
 
 Returns the customer class, as an FS::cust_class object, or the empty string

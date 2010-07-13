@@ -307,6 +307,11 @@ Example:
 %     foreach grep exists($f->{$_}),
 %       qw( hashref agent_virt agent_null agent_null_right );
 %
+%   #htmlarea
+%   $include_common{$_} = $f->{$_}
+%     foreach grep exists($f->{$_}), qw( width height );
+%
+%
 %   if ( $type eq 'tablebreak-tr-title' ) {
 %     $include_common{'table_id'} = 'TableNumber'. $tablenum++;
 %   }
