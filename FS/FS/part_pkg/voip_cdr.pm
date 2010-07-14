@@ -609,6 +609,7 @@ sub calc_usage {
           $charge = sprintf("%.02f", $rate_detail->conn_charge);
 
           my $total_minutes = 0;
+          my $whole_minutes = 1;
           my $etime;
           while($seconds_left) {
             my $ratetimenum = $rate_detail->ratetimenum; # may be empty
@@ -647,12 +648,12 @@ sub calc_usage {
             my $charge_sec = min($seconds_left, $etime - $weektime);
 
             $seconds_left -= $charge_sec;
-            $seconds += $charge_sec;
 
             $included_min{$regionnum}{$ratetimenum} = $rate_detail->min_included
               unless exists $included_min{$regionnum}{$ratetimenum};
 
             my $granularity = $rate_detail->sec_granularity;
+            $whole_minutes = 0 if $granularity;
 
             # should this be done in every rate interval?
             $charge_sec += $granularity - ( $charge_sec % $granularity )
@@ -660,6 +661,8 @@ sub calc_usage {
               && $granularity; # 0 is per call
             my $minutes = sprintf("%.1f", $charge_sec / 60);
             $minutes =~ s/\.0$// if $granularity == 60;
+
+            $seconds += $charge_sec;
 
             # per call rather than per minute
             $minutes = 1 unless $granularity;
@@ -673,7 +676,6 @@ sub calc_usage {
               $included_min{$regionnum}{$ratetimenum} = 0;
               $charge += sprintf('%.2f', ($rate_detail->min_charge * $charge_min)
                                          + 0.00000001 ); #so 1.005 rounds to 1.01
-              $total_minutes += $minutes;
             }
 
             # choose next rate_detail
@@ -688,6 +690,9 @@ sub calc_usage {
           # this is why we need regionnum/rate_region....
           warn "  (rate region $rate_region)\n" if $DEBUG;
 
+          $total_minutes = sprintf("%.1f", $seconds / 60);
+          $total_minutes =~ s/\.0$// if $whole_minutes;
+
           $classnum = $rate_detail->classnum;
           $charge = sprintf('%.2f', $charge);
 
@@ -695,6 +700,10 @@ sub calc_usage {
             $cdr->downstream_csv( 'format'         => $output_format,
                                   'granularity'    => $rate_detail->sec_granularity, 
                                   'minutes'        => $total_minutes,
+                                  # why do we go through this hocus-pocus?
+                                  # the cdr *will* show duration here
+                                  # if we forego the 'minutes' key
+                                  # duration vs billsec?
                                   'charge'         => $charge,
                                   'pretty_dst'     => $pretty_destnum,
                                   'dst_regionname' => $regionname,
