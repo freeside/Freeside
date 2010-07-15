@@ -149,6 +149,9 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
     'use_cdrtypenum' => { 'name' => 'Do not charge for CDRs where the CDR Type is not set to: ',
                          },
 
+    'skip_dst_prefix' => { 'name' => 'Do not charge for CDRs where the destination number starts with any of these values:',
+    },
+
     'skip_dcontext' => { 'name' => 'Do not charge for CDRs where the dcontext is set to any of these (comma-separated) values:',
                        },
 
@@ -248,8 +251,9 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                        disable_tollfree
                        use_amaflags use_disposition
                        use_disposition_taqua use_carrierid use_cdrtypenum
-                       skip_dcontext skip_dstchannel_prefix
-                       skip_src_length_more noskip_src_length_accountcode_tollfree
+                       skip_dcontext skip_dst_prefix 
+                       skip_dstchannel_prefix skip_src_length_more 
+                       noskip_src_length_accountcode_tollfree
                        accountcode_tollfree_ratenum
                        skip_dst_length_less skip_lastapp
                        use_duration
@@ -819,6 +823,7 @@ sub check_chargable {
     use_disposition_taqua
     use_carrierid
     use_cdrtypenum
+    skip_dst_prefix
     skip_dcontext
     skip_dstchannel_prefix
     skip_src_length_more noskip_src_length_accountcode_tollfree
@@ -847,6 +852,11 @@ sub check_chargable {
   return "cdrtypenum != $opt{'use_cdrtypenum'}"
     if length($opt{'use_cdrtypenum'})
     && $cdr->cdrtypenum ne $opt{'use_cdrtypenum'}; #ne otherwise 0 matches ''
+
+  foreach(split(',',$opt{'skip_dst_prefix'})) {
+    return "dst starts with '$_'"
+    if length($_) && substr($cdr->dst,0,length($_)) eq $_;
+  }
 
   return "dcontext IN ( $opt{'skip_dcontext'} )"
     if $opt{'skip_dcontext'} =~ /\S/
