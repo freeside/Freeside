@@ -272,6 +272,10 @@ L<FS::cust_class> - Customer classification class
 
 L<FS::cust_category> - Customer category class
 
+L<FS::cust_tag> - Customer tag class
+
+L<FS::part_tag> - Tag definition class
+
 L<FS::cust_main_exemption> - Customer tax exemption class
 
 L<FS::cust_main_note> - Customer note class

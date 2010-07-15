@@ -522,3 +522,7 @@ FS/cgp_rule_action.pm
 t/cgp_rule_action.t
 FS/msg_template.pm
 t/msg_template.t
+FS/cust_tag.pm
+t/cust_tag.t
+FS/part_tag.pm
+t/part_tag.t

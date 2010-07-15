@@ -475,6 +475,8 @@ tie my %config_misc, 'Tie::IxHash';
 $config_misc{'Message templates'} = [ $fsurl.'browse/msg_template.html', 'Templates for customer notices' ]
   if $curuser->access_right('Edit templates')
   || $curuser->access_right('Edit global templates');
+$config_misc{'Tags'} = [ $fsurl.'browse/part_tag.html', '' ]
+  if $curuser->access_right('Configuration');
 $config_misc{'Advertising sources'} = [ $fsurl.'browse/part_referral.html', 'Where a customer heard about your service.' ]
   if $curuser->access_right('Edit advertising sources')
   || $curuser->access_right('Edit global advertising sources');
@@ -518,7 +520,8 @@ $config_menu{'Broadband'} = [ \%config_broadband, ''    ]
 $config_menu{'Phone'}  = [ \%config_phone, ''    ]
   if ( $curuser->access_right('Configuration') );
 $config_menu{'Miscellaneous'} = [ \%config_misc, ''    ]
-  if $curuser->access_right('Edit advertising sources')
+  if $curuser->access_right('Configuration' )
+  || $curuser->access_right('Edit advertising sources')
   || $curuser->access_right('Edit global advertising sources');
 
 

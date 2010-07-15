@@ -1,0 +1,23 @@
+<% include( 'elements/edit.html',
+              'table'         => 'part_tag',
+              'name_singular' => 'tag',
+              'fields'        => [ 'tagname',
+                                   { field=>'disabled', type=>'checkbox', value=>'Y' },
+                                   'tagdesc',
+                                   'tagcolor'
+                                 ],
+              'labels'        => { 'tagnum'   => 'Tag #',
+                                   'tagname'  => 'Tag',
+                                   'tagdesc'  => 'Description',
+                                   'tagcolor' => 'Highlight Color',
+                                   'disabled' => 'Disabled',
+                                 },
+              'viewall_dir' => 'browse',
+          )
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+</%init>
