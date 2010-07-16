@@ -2,7 +2,9 @@ package FS::cust_tag;
 
 use strict;
 use base qw( FS::Record );
-use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( qsearchs );
+use FS::cust_main;
+use FS::part_tag;
 
 =head1 NAME
 
@@ -111,6 +113,25 @@ sub check {
 
   $self->SUPER::check;
 }
+
+=item cust_main
+
+=cut
+
+sub cust_main {
+  my $self = shift;
+  qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
+}
+
+=item part_tag
+
+=cut
+
+sub part_tag {
+  my $self = shift;
+  qsearchs( 'part_tag', { 'tagnum' => $self->tagnum } );
+}
+
 
 =back
 

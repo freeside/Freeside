@@ -795,6 +795,17 @@ sub setfield {
   $self->set(@_);
 }
 
+=item exists COLUMN
+
+Returns true if the column/field/key COLUMN exists.
+
+=cut
+
+sub exists {
+  my($self,$field) = @_;
+  exists($self->{Hash}->{$field});
+}
+
 =item AUTLOADED METHODS
 
 $record->column is a synonym for $record->get('column');

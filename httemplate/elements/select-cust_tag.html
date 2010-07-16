@@ -1,0 +1,20 @@
+<% include( '/elements/select-table.html',
+                 'table'         => 'part_tag',
+                 'name_col'      => 'tagname', #tagname - tagdesc??
+                 'multiple'      => 1,
+                 #'value'         => $agentnum || '',
+                 #'agent_virt'    => 1,
+                 'hashref'       => { 'disabled' => '' },
+                 'order_by'      => ' ORDER BY tagname',
+                 %opt,
+             )
+%>
+<%init>
+
+my %opt = @_;
+#my $agentnum = $opt{'curr_value'} || $opt{'value'};
+
+$opt{'records'} = delete $opt{'part_tag'}
+  if $opt{'part_tag'};
+
+</%init>

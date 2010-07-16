@@ -57,6 +57,7 @@ use FS::cust_tax_location;
 use FS::part_pkg_taxrate;
 use FS::agent;
 use FS::cust_main_invoice;
+use FS::cust_tag;
 use FS::cust_credit_bill;
 use FS::cust_bill_pay;
 use FS::prepay_credit;
@@ -472,6 +473,30 @@ sub insert {
     }
     $self->invoicing_list( $invoicing_list );
   }
+
+  warn "  setting customer tags\n"
+    if $DEBUG > 1;
+
+  foreach my $tagnum ( @{ $self->tagnum || [] } ) {
+    my $cust_tag = new FS::cust_tag { 'tagnum'  => $tagnum,
+                                      'custnum' => $self->custnum };
+    my $error = $cust_tag->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  if ( $invoicing_list ) {
+    $error = $self->check_invoicing_list( $invoicing_list );
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      #return "checking invoicing_list (transaction rolled back): $error";
+      return $error;
+    }
+    $self->invoicing_list( $invoicing_list );
+  }
+
 
   warn "  setting cust_main_exemption\n"
     if $DEBUG > 1;
@@ -1356,23 +1381,13 @@ sub delete {
     }
   }
 
-  foreach my $cust_main_invoice ( #(email invoice destinations, not invoices)
-    qsearch( 'cust_main_invoice', { 'custnum' => $self->custnum } )
-  ) {
-    my $error = $cust_main_invoice->delete;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
-    }
-  }
-
-  foreach my $cust_main_exemption (
-    qsearch( 'cust_main_exemption', { 'custnum' => $self->custnum } )
-  ) {
-    my $error = $cust_main_exemption->delete;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
+  foreach my $table (qw( cust_main_invoice cust_main_exemption cust_tag )) {
+    foreach my $record ( qsearch( 'table', { 'custnum' => $self->custnum } ) ) {
+      my $error = $record->delete;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
     }
   }
 
@@ -1476,6 +1491,28 @@ sub replace {
       return $error;
     }
     $self->invoicing_list( $invoicing_list );
+  }
+
+  if ( $self->exists('tagnum') ) { #so we don't delete these on edit by accident
+
+    #this could be more efficient than deleting and re-inserting, if it matters
+    foreach my $cust_tag (qsearch('cust_tag', {'custnum'=>$self->custnum} )) {
+      my $error = $cust_tag->delete;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+    }
+    foreach my $tagnum ( @{ $self->tagnum || [] } ) {
+      my $cust_tag = new FS::cust_tag { 'tagnum'  => $tagnum,
+                                        'custnum' => $self->custnum };
+      my $error = $cust_tag->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+    }
+
   }
 
   my %options = @param;
@@ -2474,6 +2511,31 @@ sub agent_name {
   my $self = shift;
   $self->agent->agent;
 }
+
+=item cust_tag
+
+Returns any tags associated with this customer, as FS::cust_tag objects,
+or an empty list if there are no tags.
+
+=cut
+
+sub cust_tag {
+  my $self = shift;
+  qsearch('cust_tag', { 'custnum' => $self->custnum } );
+}
+
+=item part_tag
+
+Returns any tags associated with this customer, as FS::part_tag objects,
+or an empty list if there are no tags.
+
+=cut
+
+sub part_tag {
+  my $self = shift;
+  map $_->part_tag, $self->cust_tag; 
+}
+
 
 =item cust_class
 

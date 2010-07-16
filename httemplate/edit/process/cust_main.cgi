@@ -73,6 +73,8 @@ if ( defined($cgi->param('same')) && $cgi->param('same') eq "Y" ) {
   );
 }
 
+$new->tagnum( [ $cgi->param('tagnum') ] );
+
 my %usedatetime = ( 'birthdate' => 1 );
 
 foreach my $dfield (qw( birthdate signupdate )) {

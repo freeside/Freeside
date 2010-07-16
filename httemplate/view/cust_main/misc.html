@@ -10,6 +10,22 @@
   <TD BGCOLOR="#ffffff"><FONT COLOR="#<% $cust_main->statuscolor %>"><B><% ucfirst($cust_main->status) %></B></FONT></TD>
 </TR>
 
+% my @part_tag = $cust_main->part_tag;
+% if ( @part_tag ) {
+<TR>
+  <TD ALIGN="right">Tags</TD>
+  <TD BGCOLOR="#ffffff">
+%   foreach my $part_tag ( @part_tag ) {
+      <FONT <% length($part_tag->tagcolor)
+                 ? 'STYLE="background-color:#'.$part_tag->tagcolor.'"'
+                 : '' %>
+      ><% $part_tag->tagname.': '. $part_tag->tagdesc |h %></FONT>
+      <BR>
+%   }
+  </TD>
+</TR>
+% }
+
 %unless ( scalar(@agentnums) == 1
 %         && !$curuser->access_right('View customers of all agents')  ) {
 %  my $agent = qsearchs('agent',{ 'agentnum' => $cust_main->agentnum } );

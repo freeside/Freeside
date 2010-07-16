@@ -1,5 +1,12 @@
 <% &ntable("#cccccc") %>
 
+%# tags
+<% include('/elements/tr-select-cust_tag.html',
+             'custnum' => $custnum,
+             'cgi'     => $cgi,
+          )
+%>
+
 %# agent
 <% include('/elements/tr-select-agent.html', 
               'curr_value'    => $cust_main->agentnum,

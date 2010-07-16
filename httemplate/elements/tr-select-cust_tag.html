@@ -1,0 +1,46 @@
+% if ( $curuser->access_right('Edit customer tags') && @part_tag ) {
+
+  <TR>
+    <TD ALIGN="right"><% $opt{'label'} || 'Tags' %></TD>
+    <TD>
+      <% include( '/elements/select-cust_tag.html',
+                     'curr_value' => \@curr_tagnum,
+                     'part_tag'   => \@part_tag,
+                     %opt,
+                 )
+      %>
+    </TD>
+  </TR>
+
+% } else {
+
+%   foreach my $tagnum (@curr_tagnum) {
+      <INPUT TYPE="hidden" NAME="tagnum" VALUE="<% $tagnum %>">
+%   }
+
+% }
+<%init>
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+my %opt = @_;
+my $cgi = $opt{'cgi'};
+
+my @curr_tagnum = ();
+if ( $cgi->param('error') ) {
+  @curr_tagnum = $cgi->param('tagnum');
+} elsif ( $opt{'custnum'} ) {
+  @curr_tagnum = map $_->tagnum,
+                     qsearch('cust_tag', { 'custnum' => $opt{'custnum'} } );
+}
+
+my $extra_sql = "WHERE disabled IS NULL OR disabled = '' ";
+$extra_sql .= ' OR tagnum IN ('. join(',', @curr_tagnum). ')' if @curr_tagnum;
+
+my @part_tag = qsearch({
+  'table'     => 'part_tag',
+  'hashref'   => {},
+  'extra_sql' => $extra_sql,
+});
+
+</%init>
