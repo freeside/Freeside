@@ -1,0 +1,60 @@
+<INPUT TYPE="hidden" NAME="<% $opt{'field'} %>" ID="<%$id%>" VALUE="<%$value%>">
+<TABLE BGCOLOR="#FFFFFF" ID="showcolor<%$unum%>">
+<TR>
+  <TD STYLE="border:1px solid blue;background-color:#<%$value%>" WIDTH=16 HEIGHT=16 ID="currcolor<%$unum%>"></TD>
+  <TD> <A HREF="javascript:void(0);" onClick="change_clicked<%$unum%>()">change</A></TD>
+</TR>
+</TABLE>
+<TABLE BGCOLOR="#FFFFFF" ID="pickcolor<%$unum%>" STYLE="display:none">
+% for (1..$rows) {
+  <TR>
+%   for (1..$cols) {
+%     last unless @colors;
+%     my $color = shift(@colors);
+      <TD STYLE="border:1px solid blue;cursor:pointer;cursor:hand" BGCOLOR="#<% $color %>" WIDTH=16 HEIGHT=16 onClick="color_clicked<%$unum%>('<%$color%>')"></TD>
+%   }
+  </TR>
+% }
+</TABLE>
+<SCRIPT TYPE="text/javascript">
+
+  function change_clicked<%$unum%>() {
+    document.getElementById('showcolor<%$unum%>').style.display = 'none';
+    document.getElementById('pickcolor<%$unum%>').style.display = '';
+  }
+
+  function color_clicked<%$unum%>(color) {
+    document.getElementById('<%$id%>').value = color; //update hidden
+    if ( color == '' ) { color = 'ffffff'; }
+    document.getElementById('currcolor<%$unum%>').style.backgroundColor = '#' + color;
+    document.getElementById('showcolor<%$unum%>').style.display = '';
+    document.getElementById('pickcolor<%$unum%>').style.display = 'none';
+  }
+
+</SCRIPT>
+<%init>
+
+my %opt = @_;
+
+my $value = length($opt{curr_value}) ? $opt{curr_value} : $opt{value};
+
+my $unum = int(rand(100000));
+
+my $id = $opt{'id'} || $opt{'field'}.$unum;
+
+my @colors = (
+  '', #none/white
+  'FF6666', #red
+  'FF9966', #orange
+  'FFFF66', #yellow
+  '66FF66', #green
+  '66FFFF', #cyan?
+  '6666FF', #blue
+  'CC66FF', #purple?  FF66FF looks more like pink.
+);
+
+my $rows = 2;
+
+my $cols = int(.5+scalar(@colors)/$rows);
+
+</%init>

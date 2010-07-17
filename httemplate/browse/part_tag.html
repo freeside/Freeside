@@ -6,9 +6,10 @@
                                  ],
               'query'         => { 'table' => 'part_tag', },
               'count_query'   => 'SELECT COUNT(*) FROM part_tag',
-              'header'        => [ 'Tag', 'Description', 'Color' ],
-              'fields'        => [ 'tagname', 'tagdesc', 'tagcolor' ],
-              'links'         => [ $link, '', '' ],
+              'header'        => [ 'Tag', 'Message', ],
+              'fields'        => [ 'tagname', 'tagdesc', ],
+              'links'         => [ $link, '', ],
+              'cell_style'    => [ '', $tagdesc_style ],
               'disableable'   => 1,
               'disabled_statuspos' => 1,
           )
@@ -17,6 +18,8 @@
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my $tagdesc_style = sub { 'background-color:#'.shift->tagcolor };
 
 my $link = [ "${p}edit/part_tag.html?", 'tagnum' ];
 
