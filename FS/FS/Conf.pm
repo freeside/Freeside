@@ -3808,6 +3808,14 @@ and customer address. Include units.',
     },
   },
 
+  {
+    'key'         => 'cust_tag-location',
+    'section'     => 'UI',
+    'description' => 'Location where customer tags are displayed.',
+    'type'        => 'select',
+    'select_enum' => [ 'misc_info', 'top' ],
+  },
+
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachine", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },

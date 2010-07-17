@@ -11,7 +11,7 @@
 </TR>
 
 % my @part_tag = $cust_main->part_tag;
-% if ( @part_tag ) {
+% if ( $conf->config('cust_tag-location') =~ /^(cust_misc|)$/ && @part_tag ) {
 <TR>
   <TD ALIGN="right">Tags</TD>
   <TD BGCOLOR="#ffffff">

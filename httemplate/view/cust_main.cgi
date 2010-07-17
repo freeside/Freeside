@@ -15,7 +15,6 @@
                  ? 'STYLE="background-color:#'.$part_tag->tagcolor.'"'
                  : ''
       %>><% $part_tag->tagname.': '. $part_tag->tagdesc |h %></FONT>
-      <BR>
   </TD>
 </TR>
 %   }
