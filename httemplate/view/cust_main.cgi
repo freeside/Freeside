@@ -4,6 +4,23 @@
           })
 %>
 <BR>
+% my @part_tag = $cust_main->part_tag;
+% if ( $conf->config('cust_tag-location') eq 'top' && @part_tag ) {
+<TABLE STYLE="margin-bottom:8px" CELLSPACING=2>
+%   foreach my $part_tag ( @part_tag ) {
+<TR>
+  <TD>
+      <FONT SIZE="+1"
+            <% length($part_tag->tagcolor)
+                 ? 'STYLE="background-color:#'.$part_tag->tagcolor.'"'
+                 : ''
+      %>><% $part_tag->tagname.': '. $part_tag->tagdesc |h %></FONT>
+      <BR>
+  </TD>
+</TR>
+%   }
+</TABLE>
+% }
 
 <% include('/elements/menubar.html',
              { 'newstyle' => 1,

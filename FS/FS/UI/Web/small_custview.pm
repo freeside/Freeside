@@ -3,6 +3,7 @@ package FS::UI::Web::small_custview;
 use strict;
 use vars qw(@EXPORT_OK @ISA);
 use Exporter;
+use HTML::Entities;
 use FS::Msgcat;
 use FS::Record qw(qsearchs);
 use FS::cust_main;
@@ -35,7 +36,26 @@ sub small_custview {
 
   $html .= 'Customer #<B>'. $cust_main->display_custnum. '</B></A>'.
     ' - <B><FONT COLOR="#'. $cust_main->statuscolor. '">'.
-    ucfirst($cust_main->status). '</FONT></B>'.
+    ucfirst($cust_main->status). '</FONT></B>';
+
+  my @part_tag = $cust_main->part_tag;
+  if ( @part_tag ) {
+    $html .= '<TABLE>';
+    foreach my $part_tag ( @part_tag ) {
+      $html .= '<TR><TD>'.
+               '<FONT '. ( length($part_tag->tagcolor)
+                           ? 'STYLE="background-color:#'.$part_tag->tagcolor.'"'
+                           : ''
+                         ).
+               '>'.
+                 encode_entities($part_tag->tagname.': '. $part_tag->tagdesc).
+               '</FONT>'.
+               '</TD></TR>';
+    }
+    $html .= '</TABLE>';
+  }
+
+  $html .=
     ntable('#e8e8e8'). '<TR><TD VALIGN="top">'. ntable("#cccccc",2).
     '<TR><TD ALIGN="right" VALIGN="top">Billing<BR>Address</TD><TD BGCOLOR="#ffffff">'.
     $cust_main->getfield('last'). ', '. $cust_main->first. '<BR>';
