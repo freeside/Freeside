@@ -1780,7 +1780,7 @@ C<Set(@Plugins, (qw(Extension::QuickDelete RT::FM)));>
 
 =cut
 
-Set(@Plugins, qw( RTx::Calendar RTx::Checklist ));
+Set(@Plugins, qw( RTx::Calendar )); #RTx::Checklist ));
 
 =back
 
