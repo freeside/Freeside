@@ -29,7 +29,7 @@ share/html/Elements/EditCustomFieldDate #customfield date patch (NEW)
  share/html/Elements/SelectDate
  share/html/Elements/Footer
  html/Ticket/Create.html #XXX TODO
- share/html/Search/Build.html #and customfield date patch
+ share/html/Search/Build.html
  share/html/Search/Elements/PickCFs #customfield date patch
  share/html/Ticket/Display.html
 share/html/Ticket/Elements/AddCustomers
