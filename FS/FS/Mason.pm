@@ -480,15 +480,17 @@ sub mason_interps {
 
   my $html_defang = new HTML::Defang (%defang_opts);
 
+  my $js_string_sub = sub {
+    #${$_[0]} =~ s/(['\\\n])/'\\'.($1 eq "\n" ? 'n' : $1)/ge;
+    ${$_[0]} =~ s/(['\\])/\\$1/g;
+    ${$_[0]} =~ s/\r/\\r/g;
+    ${$_[0]} =~ s/\n/\\n/g;
+    ${$_[0]} = "'". ${$_[0]}. "'";
+  };
+
   my $fs_interp = new HTML::Mason::Interp (
     %interp,
-    escape_flags => { 'js_string' => sub {
-                        #${$_[0]} =~ s/(['\\\n])/'\\'.($1 eq "\n" ? 'n' : $1)/ge;
-                        ${$_[0]} =~ s/(['\\])/\\$1/g;
-                        ${$_[0]} =~ s/\r/\\r/g;
-                        ${$_[0]} =~ s/\n/\\n/g;
-                        ${$_[0]} = "'". ${$_[0]}. "'";
-                      },
+    escape_flags => { 'js_string' => $js_string_sub,
                       'defang'    => sub {
                         ${$_[0]} = $html_defang->defang(${$_[0]});
                       },
@@ -500,7 +502,9 @@ sub mason_interps {
 
   my $rt_interp = new HTML::Mason::Interp (
     %interp,
-    escape_flags => { 'h' => \&RT::Interface::Web::EscapeUTF8 },
+    escape_flags => { 'h'         => \&RT::Interface::Web::EscapeUTF8,
+                      'js_string' => $js_string_sub,
+                    },
     compiler     => HTML::Mason::Compiler::ToObject->new(
                       default_escape_flags => 'h',
                       allow_globals        => [qw(%session)],
