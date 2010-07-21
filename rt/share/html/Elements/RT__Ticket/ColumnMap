@@ -313,6 +313,25 @@ $COLUMN_MAP = {
             return \$bookmark;
         },
     },
+
+    Customer => {
+        title     => 'Customer', #loc
+        attribute => 'Customer', #title/attribute/name... what does it all mean?
+        value     => sub {
+          my $Ticket = shift;
+          my @Customers = @{ $Ticket->Customers->ItemsArrayRef };
+          my @CustResolvers = map $_->TargetURI->Resolver, @Customers;
+          my @return = ();
+          for ( 0 .. $#CustResolvers ) {
+            my $c = @CustResolvers[$_];
+            push @return, \'<A HREF="', $c->HREF, \'">', $c->AsString, \'</A>';
+            push @return, \'<BR>' if scalar(@CustResolvers) > 1
+                                  && $_ != $#CustResolvers;
+          }
+          @return;
+        },
+    },
+
 };
 
 # if no GPG support, then KeyOwnerName and KeyRequestors fall back to the regular

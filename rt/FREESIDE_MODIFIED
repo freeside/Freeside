@@ -25,11 +25,14 @@ share/html/Elements/EditCustomFieldDate #customfield date patch (NEW)
  share/html/Elements/Header
  share/html/Elements/PageLayout
  #html/Elements/QuickCreate
+ share/html/Elements/RT__Ticket/ColumnMap
  share/html/Elements/ShowCustomFieldDate #customfield date patch (NEW)
  share/html/Elements/SelectDate
+ share/html/Elements/ShowUserVerbose
  share/html/Elements/Footer
  html/Ticket/Create.html #XXX TODO
  share/html/Search/Build.html
+ share/html/Search/Elements/BuildFormatString
  share/html/Search/Elements/PickCFs #customfield date patch
  share/html/Ticket/Display.html
 share/html/Ticket/Elements/AddCustomers
@@ -38,6 +41,7 @@ share/html/Ticket/Elements/ShowCustomers
  share/html/Ticket/Elements/ShowSummary
  share/html/Ticket/Elements/ShowTransactionAttachments
  share/html/Ticket/Elements/Tabs
+ share/html/Ticket/Graph/index.html
 share/html/Ticket/ModifyCustomers.html
  html/NoAuth/css/3.5-default/main.css
  html/NoAuth/css/3.5-default/misc.css
@@ -54,3 +58,5 @@ share/html/Elements/EditCustomers
  share/html/Prefs/SearchOptions.html
 
  share/html/Widgets/TitleBoxEnd
+
+share/html/Callbacks/RTx-Checklist/*

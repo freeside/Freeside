@@ -71,6 +71,9 @@ $CurrentDisplayColumns => undef
 # All the things we can display in the format string by default
 my @fields = qw(
     id QueueName Subject
+
+    Customer
+
     Status ExtendedStatus UpdateStatus
     Type
 
@@ -96,6 +99,7 @@ my @fields = qw(
     Bookmark
 
     NEWLINE
+
 ); # loc_qw
 
 $m->callback( CallbackOnce => 1, CallbackName => 'SetFieldsOnce', Fields => \@fields );
