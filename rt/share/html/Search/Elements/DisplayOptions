@@ -115,6 +115,8 @@ $fields{$_}=1 for @cfs;
 # Add PAW sort
 $fields{'Custom.Ownership'} = 1;
 
+$fields{"Customer.$_"} = 1 foreach qw( Number Name ); #Freeside
+
 my @Order = split /\|/, $Order;
 my @OrderBy = split /\|/, $OrderBy;
 if ($Order =~ /\|/) {

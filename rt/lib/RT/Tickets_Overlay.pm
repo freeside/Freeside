@@ -1724,6 +1724,7 @@ sub OrderByCols {
             next;
         }
         if ( $row->{FIELD} !~ /\./ ) {
+
             my $meta = $self->FIELDS->{ $row->{FIELD} };
             unless ( $meta ) {
                 push @res, $row;
@@ -1830,7 +1831,60 @@ sub OrderByCols {
            }
 
            push @res, { %$row, FIELD => "Priority", ORDER => $order } ;
-       }
+
+       } elsif ( $field eq 'Customer' ) { #Freeside
+
+           my $linkalias = $self->Join(
+               TYPE   => 'LEFT',
+               ALIAS1 => 'main',
+               FIELD1 => 'id',
+               TABLE2 => 'Links',
+               FIELD2 => 'LocalBase'
+           );
+
+           $self->SUPER::Limit(
+               LEFTJOIN => $linkalias,
+               FIELD    => 'Type',
+               OPERATOR => '=',
+               VALUE    => 'MemberOf',
+           );
+           $self->SUPER::Limit(
+               LEFTJOIN => $linkalias,
+               FIELD    => 'Target',
+               OPERATOR => 'STARTSWITH',
+               VALUE    => 'freeside://freeside/cust_main/',
+           );
+
+           if ( $subkey eq 'Number' ) {
+
+               push @res, { %$row,
+                            ALIAS => $linkalias,
+                            FIELD => "CAST(SUBSTR(Target,31) AS INTEGER)",
+                            #ORDER => ($row->{ORDER} || 'ASC')
+                          };
+
+           } elsif ( $subkey eq 'Name' ) {
+
+              my $custalias = $self->Join(
+                  TYPE   => 'LEFT',
+                  #ALIAS1 => $linkalias,
+                  #FIELD1 => 'CAST(SUBSTR(Target,31) AS INTEGER)',
+                  EXPRESSION => "CAST(SUBSTR($linkalias.Target,31) AS INTEGER)",
+                  TABLE2 => 'cust_main',
+                  FIELD2 => 'custnum',
+                  
+              );
+
+              my $field = "COALESCE( $custalias.company,
+                                     $custalias.last || ', ' || $custalias.first
+                                   )";
+
+              push @res, { %$row, ALIAS => '', FIELD => $field };
+
+           }
+
+       } #Freeside
+
        else {
            push @res, $row;
        }
@@ -1839,6 +1893,53 @@ sub OrderByCols {
 }
 
 # }}}
+
+#this duplicates/ovverrides the DBIx::SearchBuilder version..
+# we need to fix the "handle FUNCTION(FIELD)" stuff and this is much easier
+# than patching SB
+# but does this have other terrible ramifications?  maybe a flag to trigger
+# this specific case?
+sub _OrderClause {
+    my $self = shift;
+
+    return '' unless $self->{'order_by'};
+
+    my $clause = '';
+    foreach my $row ( @{$self->{'order_by'}} ) {
+
+        my %rowhash = ( ALIAS => 'main',
+                        FIELD => undef,
+                        ORDER => 'ASC',
+                        %$row
+                      );
+        if ($rowhash{'ORDER'} && $rowhash{'ORDER'} =~ /^des/i) {
+            $rowhash{'ORDER'} = "DESC";
+        }
+        else {
+            $rowhash{'ORDER'} = "ASC";
+        }
+        $rowhash{'ALIAS'} = 'main' unless defined $rowhash{'ALIAS'};
+
+        if ( defined $rowhash{'ALIAS'} and
+             $rowhash{'FIELD'} and
+             $rowhash{'ORDER'} ) {
+
+            if ( length $rowhash{'ALIAS'} && $rowhash{'FIELD'} =~ /^((\w+\()+)(.*\)+)$/ ) {
+                # handle 'FUNCTION(FIELD)' formatted fields
+                $rowhash{'FIELD'} = $1. $rowhash{'ALIAS'}. '.'. $3;
+                $rowhash{'ALIAS'} = '';
+            }
+
+            $clause .= ($clause ? ", " : " ");
+            $clause .= $rowhash{'ALIAS'} . "." if length $rowhash{'ALIAS'};
+            $clause .= $rowhash{'FIELD'} . " ";
+            $clause .= $rowhash{'ORDER'};
+        }
+    }
+    $clause = " ORDER BY$clause " if $clause;
+
+    return $clause;
+}
 
 # {{{ Limit the result set based on content
 
