@@ -123,6 +123,7 @@ sub check {
     || $self->ut_text('msgname')
     || $self->ut_foreign_keyn('agentnum', 'agent', 'agentnum')
     || $self->ut_textn('mime_type')
+    || $self->ut_anything('subject')
     || $self->ut_anything('body')
     || $self->ut_enum('disabled', [ '', 'Y' ] )
   ;

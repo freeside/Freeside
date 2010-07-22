@@ -20,7 +20,8 @@
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Edit templates')
-  ||     $FS::CurrentUser::CurrentUser->access_right('Edit global templates');
+  ||     $FS::CurrentUser::CurrentUser->access_right('Edit global templates')
+  ||     $FS::CurrentUser::CurrentUser->access_right('Configuration');
 
 my $link = [ "${p}edit/msg_template.html?", 'msgnum' ];
 

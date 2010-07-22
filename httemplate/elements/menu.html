@@ -475,7 +475,8 @@ tie my %config_phone, 'Tie::IxHash',
 tie my %config_misc, 'Tie::IxHash';
 $config_misc{'Message templates'} = [ $fsurl.'browse/msg_template.html', 'Templates for customer notices' ]
   if $curuser->access_right('Edit templates')
-  || $curuser->access_right('Edit global templates');
+  || $curuser->access_right('Edit global templates')
+  || $curuser->access_right('Configuration');
 $config_misc{'Tags'} = [ $fsurl.'browse/part_tag.html', '' ]
   if $curuser->access_right('Configuration');
 $config_misc{'Advertising sources'} = [ $fsurl.'browse/part_referral.html', 'Where a customer heard about your service.' ]
