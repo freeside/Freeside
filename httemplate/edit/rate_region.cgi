@@ -35,113 +35,19 @@
 
 </TABLE>
 
-%# rate plan info
-
-<BR>
-
-<% include('/elements/table-grid.html') %>
-%   my $bgcolor1 = '#eeeeee';
-%   my $bgcolor2 = '#ffffff';
-%   my $bgcolor = '';
-
-  <TR>
-    <TH CLASS="grid" BGCOLOR="#cccccc">
-      Rate plan
-    </TH>
-    <TH CLASS="grid" BGCOLOR="#cccccc">
-      <FONT SIZE=-1>Included<BR>minutes/calls</FONT>
-    </TH>
-    <TH CLASS="grid" BGCOLOR="#cccccc">
-      <FONT SIZE=-1>Connection<BR>charge</FONT>
-    </TH>
-    <TH CLASS="grid" BGCOLOR="#cccccc">
-      <FONT SIZE=-1>Connection<BR>charge for</FONT>
-    </TH>
-    <TH CLASS="grid" BGCOLOR="#cccccc">
-      <FONT SIZE=-1>Charge per<BR>minute/call</FONT>
-    </TH>
-    <TH CLASS="grid" BGCOLOR="#cccccc">
-      <FONT SIZE=-1>Granularity</FONT>
-    </TH>
-    <TH CLASS="grid" BGCOLOR="#cccccc">
-      <FONT SIZE=-1>Usage class</FONT>
-    </TH>
-  </TR>
-
-% foreach my $rate ( qsearch('rate', {}) ) {
-%
-%  my $n = $rate->ratenum;
-%  my $rate_detail = $rate->dest_detail($rate_region)
-%                    || new FS::rate_region { 'min_included'    => 0,
-%                                             'min_charge'      => 0,
-%                                             'sec_granularity' => '60'
-%                                           };
-%
-% if ( $bgcolor eq $bgcolor1 ) {
-%   $bgcolor = $bgcolor2;
-% } else {
-%   $bgcolor = $bgcolor1;
-% }
-
-  <TR>
-
-    <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
-      <A HREF="<%$p%>edit/rate.cgi?<% $rate->ratenum %>"><% $rate->ratename %></A>
-    </TD>
-
-    <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
-      <INPUT TYPE="text" SIZE=9 NAME="min_included<%$n%>" VALUE="<% $cgi->param("min_included$n") || $rate_detail->min_included |h %>">
-    </TD>
-
-    <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
-      <%$money_char%><INPUT TYPE="text" SIZE=9 NAME="conn_charge<%$n%>" VALUE="<% $cgi->param("conn_charge$n") || $rate_detail->conn_charge |h %>">
-    </TD>
-
-    <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
-      <SELECT NAME="conn_sec<%$n%>">
-%       foreach my $conn_sec ( keys %conn_secs ) {
-%         my $curr_value = $cgi->param("conn_sec$n") || $rate_detail->conn_sec;
-%         my $selected = ($conn_sec==$curr_value) ? ' SELECTED' : '';
-          <OPTION VALUE="<% $conn_sec %>" <%$selected%>><% $conn_secs{$conn_sec} %></OPTION>
-%       }
-    </TD>
-
-    <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
-      <%$money_char%><INPUT TYPE="text" SIZE=6 NAME="min_charge<%$n%>" VALUE="<% $cgi->param("min_charge$n") || $rate_detail->min_charge |h %>">
-    </TD>
-
-    <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
-      <SELECT NAME="sec_granularity<%$n%>">
-%       foreach my $granularity ( keys %granularity ) { 
-          <OPTION VALUE="<%$granularity%>"<% $granularity == ( $cgi->param("sec_granularity$n") || $rate_detail->sec_granularity ) ? ' SELECTED' : '' %>><%$granularity{$granularity}%>
-%       } 
-      </SELECT>
-    </TD>
-
-    <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
-      <% include( '/elements/select-table.html',
-                  'element_name' => "classnum$n",
-                  'table'        => 'usage_class',
-                  'name_col'     => 'classname',
-                  'empty_label'  => '(default)',
-                  'hashref'      => { disabled => '' },
-                  'curr_value'   => ( $cgi->param("classnum$n") ||
-                                      $rate_detail->classnum ),
-                )
-      %>
-    </TD>
-
-  </TR>
-
-% } 
-
-</TABLE>
-
-
 <BR><BR>
 <INPUT TYPE="submit" VALUE="<% $rate_region->regionnum ? "Apply changes" : "Add region" %>">
-
 </FORM>
+%# rate plan info, if the region has been created yet
+
+% if($rate_region->regionnum) {
+<BR>
+<BR>
+<FONT SIZE="+2">Rates in this region</FONT>
+<% include('/edit/elements/rate_detail.html',
+            'regionnum' => $rate_region->regionnum,
+) %>
+% }
 
 <% include('/elements/footer.html') %>
 <%once>

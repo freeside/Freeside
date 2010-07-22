@@ -28,6 +28,12 @@ Example:
               'records'       => [ qsearch('item', { } ) ],
               # or any other array of FS::Record objects
 
+              'select'        => [ '',
+                                   [ 1 => 'option 1',
+                                     2 => 'option 2', ...
+                                   ], # options for second field
+                                   '' ],
+
               'prefix'        => 'mytable_',
 ) %>
 
@@ -47,6 +53,17 @@ Values will be passed through as "mytable_id1", etc.
 %   for ( $col = 0; $col < scalar @fields; $col++ ) {
 %     my $id = $prefix . $fields[$col] . $row;
     <TD>
+%     my @o = @{ $select[$col] };
+%     if( @o ) {
+      <SELECT NAME="<% $id %>" ID="<% $id %>">
+%       while(@o) {
+%         my $val = shift @o;
+        <OPTION VALUE=<% $val %><% 
+$val eq $data[$row][$col] ? ' SELECTED' : ''%>><% shift @o %></OPTION>
+%       }
+      </SELECT>
+%     }
+%     else {
       <INPUT TYPE      = "text"
              NAME      = "<% $id %>"
              ID        = "<% $id %>"
@@ -54,63 +71,58 @@ Values will be passed through as "mytable_id1", etc.
              MAXLENGTH = <% $maxl[$col] %>
              STYLE     = "text-align:<% $align[$col] %>"
              VALUE     = "<% $data[$row][$col] %>"
-             onchange  = "possiblyAddRow();"
+%       if( $opt{'autoadd'} ) {
+             onchange  = "possiblyAddRow(this);"
+%       }
       >
     </TD>
+%     }
 %   }
     <TD>
       <IMG SRC     = "<% "${p}images/cross.png" %>" 
            ALT     = "X" 
-           onclick = "deleteThisRow(this);"
+           onclick = "deleteRow(this);"
            >
     </TD>
   </TR>
 % }
 </TABLE>
+% if( !$opt{'autoadd'} ) {
+<INPUT TYPE="button" VALUE="Add" onclick="<% $prefix %>addRow();"><BR>
+% }
 
 <SCRIPT TYPE="text/javascript">
   var <% $prefix %>rownum = <% $row %>;
   var <% $prefix %>table = document.getElementById('<% $prefix %>AutoTable');
+  // last row is initially blank, clone it and remove it
+  var <% $prefix %>_blank = 
+    <% $prefix %>table.rows[<% $prefix %>table.rows.length-1].cloneNode(true);
+% if( !$opt{'autoadd'} ) {
+  <% $prefix %>table.deleteRow(<% $prefix %>table.rows.length-1);
+% }
+  
+    
 
   function rownum_of(obj) {
     return (obj.parentNode.parentNode.sectionRowIndex);
   }
 
-  function possiblyAddRow() {
-    if ( <% $prefix %>rownum == rownum_of(this) ) {
+  function <% $prefix %>possiblyAddRow(obj) {
+    if ( <% $prefix %>rownum == rownum_of(obj) ) {
       <% $prefix %>addRow();
     }
   }
 
   function <% $prefix %>addRow() {
-    var row = <% $prefix %>table.insertRow(<% $prefix %>rownum + 1);
-%   my $col = 0;
-%   for( $col = 0; $col < scalar @fields; $col++ ) {
-%     my $field = $prefix.$fields[$col];
-    var <% $field %>_cell = document.createElement('TD');
-      var <% $field %>_input = document.createElement('INPUT');
-      <% $field %>_input.setAttribute('name', '<% $field %>'+<% $prefix %>rownum);
-      <% $field %>_input.setAttribute('id',   '<% $field %>'+<% $prefix %>rownum);
-      <% $field %>_input.setAttribute('type', 'text');
-      <% $field %>_input.setAttribute('size', <% $size[$col] %>);
-      <% $field %>_input.setAttribute('maxlength', <% $maxl[$col] %>);
-      <% $field %>_input.style.textAlign = '<% $align[$col] %>';
-      <% $field %>_input.onchange = possiblyAddRow;
-      <% $field %>_cell.appendChild(<% $field %>_input);
-    row.appendChild(<% $field %>_cell);
-%   }
-    var delcell = document.createElement('TD');
-      var delinput = document.createElement('IMG');
-      delinput.setAttribute('src', '<% "${p}images/cross.png" %>');
-      delinput.setAttribute('alt', 'X');
-      delinput.setAttribute('onclick', 'deleteThisRow(this);');
-      delcell.appendChild(delinput);
-    row.appendChild(delcell);
-
+    var row = <% $prefix %>table.insertRow(-1);
+    var cells = <% $prefix %>_blank.cells;
+    for (i=0; i<cells.length; i++) {
+      row.appendChild(cells[i].cloneNode(true));
+    }
     <% $prefix %>rownum++;
   }
 
-  function deleteThisRow(obj) {
+  function deleteRow(obj) {
     if(<% $prefix %>rownum == rownum_of(obj))  {
       <% $prefix %>addRow();
     }
@@ -119,7 +131,6 @@ Values will be passed through as "mytable_id1", etc.
     return(false);
   }
 
-  <% $prefix %>addRow();
 </SCRIPT>
 
 <%init>
@@ -137,10 +148,14 @@ elsif($opt{'records'}) {
   }
 }
 # else @data = ();
+push @data, [ map {''} @fields ]; # make a blank row
 
 my $prefix = $opt{'prefix'};
 my @size = $opt{'size'} ? @{ $opt{'size'} } : (map {16} @fields);
 my @maxl = $opt{'maxl'} ? @{ $opt{'maxl'} } : @size;
 my @align = $opt{'align'} ? @{ $opt{'align'} } : (map {'right'} @fields);
-
+my @select = @{ $opt{'select'} || [] };
+foreach (0..scalar(@fields)-1) {
+  $select[$_] ||= [];
+}
 </%init>

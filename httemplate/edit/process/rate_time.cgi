@@ -44,12 +44,13 @@ else { #!$ratetimenum, adding new
   $ratetimenum = $rate_time->ratetimenum;
 }
 
+my @new_ints;
 if(!$delete and !$error) {
-  foreach my $i (map { /stime(\d+)/ } keys(%vars)) {
-    my $stime = str2wtime($vars{"stime$i"});
-    my $etime = str2wtime($vars{"etime$i"});
-    next if !defined($stime) or !defined($etime);
-    #warn "$i: $stime-$etime";
+  foreach my $i (map { /^sd(\d+)$/ } keys(%vars)) {
+    my $stime = l2wtime(@vars{"sd$i", "sh$i", "sm$i", "sa$i"});
+    my $etime = l2wtime(@vars{"ed$i", "eh$i", "em$i", "ea$i"});
+    #warn "$i: $stime - $etime";
+    next if !defined($stime) or !defined($etime) or $etime == $stime;
     # try to avoid needlessly wiping and replacing intervals every 
     # time this is edited.
     if( %old_ints ) {
@@ -63,12 +64,9 @@ if(!$delete and !$error) {
         next; #$i
       }
     }
-    my $new_int = FS::rate_time_interval->new({ ratetimenum => $ratetimenum,
-                                                stime       => $stime,
-                                                etime       => $etime, } );
-    $error = $new_int->insert;
-    #warn "inserting $stime-$etime\n";
-    last if $error;
+    push @new_ints, FS::rate_time_interval->new({ ratetimenum => $ratetimenum,
+                                                  stime       => $stime,
+                                                  etime       => $etime, } );
   }
 }
 if(!$error) {
@@ -78,17 +76,19 @@ if(!$error) {
     last if $error;
   }
 }
+if(!$error) {
+  # do this last to avoid overlap errors with deleted intervals
+  foreach (@new_ints) {
+    $error = $_->insert;
+    #warn "inserting $stime-$etime\n";
+    last if $error;
+  }
+}
 
-sub str2wtime {
-  my %days;
-  @days{qw(Sun Mon Tue Wed Thu Fri Sat)} = (0..6);
-  my $str = shift;
-  my ($d, $h, $m, $s, $ampm) = 
-    ($str =~ /^(\w{3}) (\d{2}):(\d{2}):(\d{2}) (\w{2})$/);
-  return () if !$d;
-  $h += 24*$days{$d} + ($ampm eq 'PM' ? 12 : 0);
+sub l2wtime {
+  my ($d, $h, $m, $a) = @_;
+  $h += 24*$d + 12*$a;
   $m += 60*$h;
-  $s += 60*$m;
-  return $s;
+  return 60*$m
 }
 </%init>

@@ -1,57 +1,13 @@
 <% include('/elements/init_overlib.html') %>
 <% include('/elements/header.html',$title) %>
 <% include('/elements/menubar.html',@menubar) %>
-<BR><BR>
-<% include('/elements/table-grid.html') %>
-<TR>
-% my $col = 0;
-% foreach (@header) {
-%   my $hlink = $hlinks[$col];
-  <TH CLASS   = "grid",
-      BGCOLOR = "#cccccc">
-  <% $hlink ? qq!<A HREF="$hlink">$_</A>! : $_ %>
-  </TH>
-%   $col++;
-% } #foreach @header
-</TR><TR>
-% my $row = 0;
-% foreach my $region (@rate_region) {
-%   $col = 0;
-%   foreach ($region->regionname, $region->prefixes_short) {
-  <TD>
-    <A HREF="<% $p.'edit/rate_region.cgi?'.$region->regionnum %>"><% $_ %></A>
-  </TD>
-%   }
-%   foreach my $rate_time (@rate_time, '') {
-  <TD>
-%     my $detail = $details[$row][$col];
-%     if($detail) {
-      <TABLE CLASS="inv" STYLE="border:none">
-      <TR><TD><% edit_link($detail) %><% $money_char.$detail->min_charge %>
-              <% $detail->sec_granularity ? ' / minute':' / call' %>
-      <% $edit_hint %></A>
-      </TD></TR>
-      <% granularity_detail($detail) %>
-      <% min_included_detail($detail) %>
-      <% conn_charge_detail($detail) %>
-      <TR><TD><% $rate_time ? delete_link($detail) : '' %></TD></TR>
-    </TABLE>
-%     }
-%     else { #!$detail
-    <% add_link($ratenum, $region, $rate_time) %>
-%     }
-%     $col++;
-  </TD>
-%   } # foreach @rate_time
-</TR>
-%   $row++;
-% }# foreach @rate_region
+<% include('/edit/elements/rate_detail.html',
+    'ratenum' => $ratenum,
+    'countrycode' => $countrycode,
+) %>
 <% include('/elements/footer.html') %>
 
 <%once>
-
-tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
-tie my %conn_secs,   'Tie::IxHash', FS::rate_detail::conn_secs();
 
 my $conf = new FS::Conf;
 my $money_char = $conf->config('money_char') || '$';
@@ -60,88 +16,6 @@ my @menubar = ( 'Rate plans' => $p.'browse/rate.cgi',
                 'Regions and Prefixes' => $p.'browse/rate_region.html',
                 'Time Periods' => $p.'browse/rate_time.html',
                 );
-
-sub small {
-  '<FONT SIZE="-1">'.shift.'</FONT>'
-}
-my $edit_hint = small('(edit)');
-
-sub edit_link {
-  my $rate_detail = shift;
-  my $ratedetailnum = $rate_detail->ratedetailnum;
-  '<A HREF="javascript:void(0);" onclick="'.
-  include( '/elements/popup_link_onclick.html',
-             'action'      => "${p}edit/rate_detail.html?$ratedetailnum",
-             'actionlabel' => 'Edit rate',
-             'height'      => 420,
-             #default# 'width'       => 540,
-             #default# 'color'       => '#333399',
-         ) . '">'
-}
-
-sub add_link {
-  my ($ratenum, $region, $rate_time) = @_;
-  '<A HREF="javascript:void(0);" onclick="'.
-  include( '/elements/popup_link_onclick.html',
-             'action'      => "${p}edit/rate_detail.html?ratenum=$ratenum".
-                               ';dest_regionnum='.$region->regionnum.
-                               ($rate_time ? 
-                                 ';ratetimenum='.$rate_time->ratetimenum :
-                                 ''),
-             'actionlabel' => 'Add rate',
-             'height'      => 420,
-             ).'">'.small('(add)').'</A>'
-}
-
-sub delete_link {
-  my $rate_detail = shift;
-  my $ratedetailnum = $rate_detail->ratedetailnum;
-  my $onclick = include( '/elements/popup_link_onclick.html',
-             'action'      => "${p}misc/delete-rate_detail.html?$ratedetailnum",
-             'actionlabel' => 'Delete rate',
-             'width'       => 510,
-             'height'      => 315,
-             'frame'       => 'top',
-             );
-  $onclick = "if(confirm('Delete this rate?')) { $onclick }";
-  qq!<A HREF="javascript:void(0);" onclick="$onclick">!.small('(delete)').'</A>'
-}
-
-sub granularity_detail {
-  my $rate_detail = shift;
-  if($rate_detail->sec_granularity != 60 && $rate_detail->sec_granularity > 0) {
-    '<TR><TD>'.
-    small('in '.$granularity{$rate_detail->sec_granularity}.' increments').
-    '</TD></TR>';
-  }
-  else { '' }
-}
-
-sub min_included_detail {
-  my $rate_detail = shift;
-  if($rate_detail->min_included) {
-    '<TR><TD>'.
-    small( $rate_detail->min_included . 
-            ($rate_detail->sec_granularity ? 
-             ' minutes included' : 
-             ' calls included') ).
-    '</TD></TR>'
-  }
-  else { '' }
-}
-
-sub conn_charge_detail {
-  my $rate_detail = shift;
-  if($rate_detail->conn_charge > 0) {
-  #return '' unless $rate_detail->conn_charge > 0 || $rate_detail->conn_sec;
-    '<TR><TD>'.
-    small( $money_char. $rate_detail->conn_charge.
-      ' for '.$conn_secs{$rate_detail->conn_sec}
-    ).
-    '</TD></TR>'
-  }
-  else { '' }
-}
 
 </%once>
 <%init>
@@ -157,35 +31,10 @@ my $ratename = $rate->ratename;
 my $title = "$ratename rates";
 
 my $where;
+my $countrycode = '';
 if ( $cgi->param('countrycode') =~ /^(\d+)$/ ) { 
-  my $countrycode = $1;
-  $where = "WHERE 0 < ( SELECT COUNT(*) FROM rate_prefix
-                        WHERE rate_prefix.regionnum = rate_region.regionnum
-                          AND countrycode = '$countrycode'
-                    )
-               ";
+  $countrycode = $1;
   $title .= " for +$countrycode";
-}
-
-my @rate_region = qsearch({ table     => 'rate_region',
-                            hashref   => {},
-                            extra_sql => $where,
-                          });
-
-my @rate_time = qsearch('rate_time', {});
-my @header = ('Region', 'Prefix(es)',
-  map( { $_->ratetimename } @rate_time ),
-  '(default)');
-my @hlinks = map {''} @header;
-
-my @rtns = ( map( { $_->ratetimenum } @rate_time ), '' );
-my @details;
-foreach my $region (@rate_region) {
-   push @details, [ map { qsearchs('rate_detail', 
-                                    { 'ratenum'        => $ratenum,
-                                      'dest_regionnum' => $region->regionnum,
-                                      'ratetimenum'    => $_ } ) or ''
-                        } @rtns ];
 }
 
 </%init>

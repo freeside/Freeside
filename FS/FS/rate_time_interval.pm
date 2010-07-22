@@ -3,6 +3,7 @@ package FS::rate_time_interval;
 use strict;
 use base qw( FS::Record );
 use FS::Record qw( qsearch qsearchs );
+use List::Util 'first';
 
 =head1 NAME
 
@@ -96,7 +97,7 @@ returns the error, otherwise returns false.
 
 =item check
 
-Checks all fields to make sure this is a valid example.  If there is
+Checks all fields to make sure this is a valid interval.  If there is
 an error, returns the error, otherwise returns false.  Called by the insert
 and replace methods.
 
@@ -112,6 +113,21 @@ sub check {
     || $self->ut_number('ratetimenum')
   ;
   return $error if $error;
+  # Disallow backward intervals. As a special case, an etime of 0 
+  # should roll to the last second of the week.
+  $self->etime(7*24*60*60) if $self->etime == 0;
+  return "end of interval is before start" if ($self->etime < $self->stime);
+
+  # Detect overlap between intervals within the same rate_time.
+  # Since intervals are added one at a time, we only need to look 
+  # for an existing interval that contains one of the endpoints of
+  # this one or that is completely inside this one.
+  my $overlap = $self->rate_time->contains($self->stime + 1) ||
+                $self->rate_time->contains($self->etime - 1) ||
+                first { $self->stime <= $_->stime && $self->etime >= $_->etime }
+                    ( $self->rate_time->intervals );
+  return "interval overlap: (".join('-',$self->description).') with ('.
+      join('-',$overlap->description).')' if $overlap;
 
   $self->SUPER::check;
 }
@@ -130,7 +146,8 @@ sub rate_time {
 =item description
 
 Returns two strings containing stime and etime, formatted 
-"Day HH:MM:SS AM/PM".  Example: "Mon 5:00 AM".
+"Day HH:MM AM/PM".  Example: "Mon 5:00 AM".  Seconds are 
+not displayed, so be careful.
 
 =cut
 
@@ -139,11 +156,10 @@ my @days = qw(Sun Mon Tue Wed Thu Fri Sat);
 sub description {
   my $self = shift;
   return map { 
-            sprintf('%s %02d:%02d:%02d %s',
+            sprintf('%s %02d:%02d %s',
             $days[int($_/86400) % 7],
             int($_/3600) % 12,
             int($_/60) % 60,
-            $_ % 60,
             (($_/3600) % 24 < 12) ? 'AM' : 'PM' )
        } ( $self->stime, $self->etime );
 }
