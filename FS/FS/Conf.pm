@@ -2251,7 +2251,12 @@ and customer address. Include units.',
                            }
                          },
   },
-
+  {
+    'key'         => 'ticket_system-force_default_queueid',
+    'section'     => '',
+    'description' => 'Disallow queue selection when creating new tickets from customer view.',
+    'type'        => 'checkbox',
+  },
   {
     'key'         => 'ticket_system-selfservice_queueid',
     'section'     => '',

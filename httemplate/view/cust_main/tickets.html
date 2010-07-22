@@ -9,10 +9,15 @@ function updateTicketLink() {
     keys %new_param),'Queue=') %>" + selector.options[selector.selectedIndex].value;
 }
 </SCRIPT>
-<A id="CreateTicketLink" HREF="">Create new ticket</A>
+<A id="CreateTicketLink" HREF="<% $new_link %>">Create new ticket</A>
  in queue
-<SELECT NAME="Queue" id="Queue" onchange="updateTicketLink()">
 % my %queues = FS::TicketSystem->queues();
+% if( $conf->exists('ticket_system-force_default_queueid') ) {
+<B><% $queues{$new_param{'Queue'}} %></B>
+<INPUT TYPE="hidden" NAME="Queue" VALUE="<% $new_param{'Queue'} %>">
+% }
+% else {
+<SELECT NAME="Queue" id="Queue" onchange="updateTicketLink()">
 % foreach my $queueid ( sort { $queues{$a} cmp $queues{$b} } keys %queues ) {
 %   #should consider whether the user has ACL to create ticket in each queue
     <OPTION VALUE="<% $queueid %>"
@@ -20,8 +25,9 @@ function updateTicketLink() {
     ><% $queues{$queueid} |h %>
 % }
 </SELECT>
-</FORM>
 <SCRIPT DEFER TYPE="text/javascript">updateTicketLink();</SCRIPT>
+% }
+</FORM>
 <BR>
 
 (<A HREF="<% $open_link %>">View <% $openlabel %> tickets for this customer</A>)
@@ -87,6 +93,7 @@ function updateTicketLink() {
 
 <%init>
 
+my( $conf ) = new FS::Conf;
 my( $cust_main ) = @_;
 my( @tickets )  = $cust_main->tickets;
 
