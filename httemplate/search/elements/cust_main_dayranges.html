@@ -11,6 +11,7 @@ Example:
     my( $start, $end ) = @_;
 
     "SQL EXPRESSION BASED ON $start AND $end";
+    # where $start and $end are unix timestamps
   };
 
 </%doc>
@@ -252,7 +253,16 @@ sub call_range_sub {
 
   my $as = $opt{'no_as'} ? '' : " AS rangecol_${start}_$end";
 
-  my $sql = &{$range_sub}( $start, $end, $opt{'offset'} ); #%opt?
+  my $offset = $opt{'offset'} || 0;
+  # Time::ParseDate for excruciating correctness
+  # Always use $offset - 1day + 1sec = the last second of that day
+  $start =  parsedate('00:00 '.($start + $offset - 1).' days ago') - 1;
+  $end = $end ?
+            parsedate('00:00 '.($end + $offset - 1).' days ago') - 1 : 
+            '';
+  my $cutoff = parsedate('00:00 '.($offset - 1).' days ago') - 1;
+
+  my $sql = &{$range_sub}( $start, $end, $cutoff ); #%opt?
 
   $sql = "SUM($sql)" if $opt{'sum'};
 

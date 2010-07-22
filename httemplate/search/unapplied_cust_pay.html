@@ -13,19 +13,11 @@ die "access denied"
 <%once>
 
 sub unapplied_payments {
-  my($start, $end, $offset) = @_;
-
-  #handle start and end ranges (86400 = 24h * 60m * 60s)
-  my $str2time = str2time_sql;
-  my $closing = str2time_sql_closing;
-  $start = "( $str2time now() $closing - ".($start + $offset) * 86400 . ' )';
-  $end = $end ? 
-           "( $str2time now() $closing - ".($end   + $offset) * 86400 . ' )'
-           : '';
+  my($start, $end, $cutoff) = @_;
 
   FS::cust_main->unapplied_payments_date_sql( $start, $end, 
-          'cutoff' => "( $str2time now() $closing - ".$offset * 86400 . ')'  );
-
+          'cutoff' => $cutoff,
+  );
 }
 
 </%once>
