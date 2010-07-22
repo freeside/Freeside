@@ -1,0 +1,239 @@
+<%doc>
+<% include('/edit/elements/rate_detail.html',
+    # required
+    'ratenum'     => '1',
+    
+    # optional
+    'regionnum'   => '25',
+    # or
+    'countrycode' => '237',
+) %>
+
+If regionnum is specified, this produces column headers plus 
+one row of rate details for that region (in all time periods).
+Otherwise, there's one row for each region in the specified 
+countrycode (or each region anywhere, if there is no countrycode),
+with row headers showing the region name and prefixes.
+
+</%doc>
+<% include('/elements/table-grid.html') %>
+<TR>
+% my $col = 0;
+% foreach (@header) {
+%   my $hlink = $hlinks[$col];
+  <TH CLASS   = "grid",
+      BGCOLOR = "#cccccc">
+  <% $hlink ? qq!<A HREF="$hlink">$_</A>! : $_ %>
+  </TH>
+%   $col++;
+% } #foreach @header
+</TR><TR>
+% my $row = 0;
+% foreach my $r (@rows) {
+%   $col = 0;
+%   if ( !$opt{'regionnum'} ) {
+%     $region = $r;
+%     foreach ($r->regionname, $r->prefixes_short) {
+  <TD>
+    <A HREF="<% $p.'edit/rate_region.cgi?'.$r->regionnum %>"><% $_ %></A>
+  </TD>
+%     }
+%   }
+%   elsif ( !$opt{'ratenum'} ) {
+%     $rate = $r;
+  <TD>
+    <A HREF="<% $p.'edit/rate.cgi?'.$r->ratenum %>"><% $r->ratename %></A>
+  </TD>
+%   }
+%   foreach my $rate_time (@rate_time, '') {
+  <TD>
+%     my $detail = $details[$row][$col];
+%     if($detail) {
+      <TABLE CLASS="inv" STYLE="border:none">
+      <TR><TD><% edit_link($detail) %><% $money_char.$detail->min_charge %>
+              <% $detail->sec_granularity ? ' / minute':' / call' %>
+      <% $edit_hint %></A>
+      </TD></TR>
+      <% granularity_detail($detail) %>
+      <% min_included_detail($detail) %>
+      <% conn_charge_detail($detail) %>
+      <TR><TD><% $rate_time ? delete_link($detail) : '' %></TD></TR>
+    </TABLE>
+%     }
+%     else { #!$detail
+    <% add_link($rate, $region, $rate_time) %>
+%     }
+%     $col++;
+  </TD>
+%   } # foreach @rate_time
+</TR>
+%   $row++;
+% }# foreach @rate_region
+</TABLE>
+
+<%once>
+
+tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
+tie my %conn_secs,   'Tie::IxHash', FS::rate_detail::conn_secs();
+
+my $conf = new FS::Conf;
+my $money_char = $conf->config('money_char') || '$';
+
+sub small {
+  '<FONT SIZE="-1">'.shift.'</FONT>'
+}
+my $edit_hint = small('(edit)');
+
+sub edit_link {
+  my $rate_detail = shift;
+  my $ratedetailnum = $rate_detail->ratedetailnum;
+  '<A HREF="javascript:void(0);" onclick="'.
+  include( '/elements/popup_link_onclick.html',
+             'action'      => "${p}edit/rate_detail.html?$ratedetailnum",
+             'actionlabel' => 'Edit rate',
+             'height'      => 420,
+             #default# 'width'       => 540,
+             #default# 'color'       => '#333399',
+         ) . '">'
+}
+
+sub add_link {
+  my ($rate, $region, $rate_time) = @_;
+  '<A HREF="javascript:void(0);" onclick="'.
+  include( '/elements/popup_link_onclick.html',
+             'action'      => "${p}edit/rate_detail.html?ratenum=".
+                                  $rate->ratenum.
+                               ';dest_regionnum='.
+                                  $region->regionnum.
+                               ($rate_time ? 
+                                 ';ratetimenum='.$rate_time->ratetimenum :
+                                 ''),
+             'actionlabel' => 'Add rate',
+             'height'      => 420,
+             ).'">'.small('(add)').'</A>'
+}
+
+sub delete_link {
+  my $rate_detail = shift;
+  my $ratedetailnum = $rate_detail->ratedetailnum;
+  my $onclick = include( '/elements/popup_link_onclick.html',
+             'action'      => "${p}misc/delete-rate_detail.html?$ratedetailnum",
+             'actionlabel' => 'Delete rate',
+             'width'       => 510,
+             'height'      => 315,
+             'frame'       => 'top',
+             );
+  $onclick = "if(confirm('Delete this rate?')) { $onclick }";
+  qq!<A HREF="javascript:void(0);" onclick="$onclick">!.small('(delete)').'</A>'
+}
+
+sub granularity_detail {
+  my $rate_detail = shift;
+  if($rate_detail->sec_granularity != 60 && $rate_detail->sec_granularity > 0) {
+    '<TR><TD>'.
+    small('in '.$granularity{$rate_detail->sec_granularity}.' increments').
+    '</TD></TR>';
+  }
+  else { '' }
+}
+
+sub min_included_detail {
+  my $rate_detail = shift;
+  if($rate_detail->min_included) {
+    '<TR><TD>'.
+    small( $rate_detail->min_included . 
+            ($rate_detail->sec_granularity ? 
+             ' minutes included' : 
+             ' calls included') ).
+    '</TD></TR>'
+  }
+  else { '' }
+}
+
+sub conn_charge_detail {
+  my $rate_detail = shift;
+  if($rate_detail->conn_charge > 0) {
+  #return '' unless $rate_detail->conn_charge > 0 || $rate_detail->conn_sec;
+    '<TR><TD>'.
+    small( $money_char. $rate_detail->conn_charge.
+      ' for '.$conn_secs{$rate_detail->conn_sec}
+    ).
+    '</TD></TR>'
+  }
+  else { '' }
+}
+
+</%once>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+my %opt = @_;
+my $ratenum = $opt{'ratenum'} || '';
+my $regionnum = $opt{'regionnum'} || '';
+
+# either of these, if the $opt isn't passed, will be set to the 
+# correct object when generating each row.
+my $rate = qsearchs('rate', { 'ratenum' => $ratenum } ) if $ratenum;
+my $region = qsearchs('rate_region', { 'regionnum' => $regionnum }) if $regionnum;
+
+my @rate_time = qsearch('rate_time', {});
+my @header = (
+  map( { $_->ratetimename } @rate_time ),
+  'Default rate');
+my @hlinks = map( {$p.'edit/rate_time.cgi?'.$_->ratetimenum} @rate_time ), '';
+my @rtns = ( map( { $_->ratetimenum } @rate_time ), '' );
+
+my @details;
+my @rows;
+if ( $ratenum ) {
+  if ( $regionnum ) {
+    @rows = qsearch('rate_region', 
+                      { ratenum => $ratenum, regionnum => $regionnum });
+  }
+  else {
+    my $where = '';
+    if ( $opt{'countrycode'} ) {
+      $where = "WHERE 0 < ( 
+                    SELECT COUNT(*) FROM rate_prefix
+                    WHERE rate_prefix.regionnum = rate_region.regionnum
+                    AND countrycode = '$opt{countrycode}' 
+                )";
+    }
+    @rows = qsearch({ table     => 'rate_region',
+                      hashref   => { },
+                      extra_sql => $where,
+                    });
+    die "no region found" if !@rows;
+
+    unshift @header, 'Region', 'Prefix(es)';
+    unshift @hlinks, '', '';
+  }
+  foreach my $region (@rows) {
+     push @details, [ map { qsearchs('rate_detail', 
+                                      { 'ratenum'        => $ratenum,
+                                        'dest_regionnum' => $region->regionnum,
+                                        'ratetimenum'    => $_ } ) or ''
+                          } @rtns
+                    ];
+  }
+}
+elsif ( $regionnum ) {
+  @rows = qsearch('rate', {}) or die "no rate plans found";
+  unshift @header, 'Rate plan';
+  unshift @hlinks, '';
+  foreach my $rate (@rows) {
+    push @details, [ map { qsearchs('rate_detail',
+                                     { 'ratenum'        => $rate->ratenum,
+                                       'dest_regionnum' => $regionnum,
+                                       'ratetimenum'    => $_ } ) or ''
+                         } @rtns
+                   ];
+  }
+}
+else {
+  die "no ratenum or regionnum specified";
+}
+
+</%init>
