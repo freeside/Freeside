@@ -362,7 +362,8 @@ sub import_results {
         'custnum'  => $custnum,
 	'payby'    => $payby,
         'paybatch' => $self->batchnum,
-        map { $_ => $hash{$_} } (qw( paid _date payinfo )),
+        'payinfo'  => ( $hash{'payinfo'} || $cust_pay_batch->payinfo ),
+        map { $_ => $hash{$_} } (qw( paid _date )),
       } );
       $error = $cust_pay->insert;
       if ( $error ) {
