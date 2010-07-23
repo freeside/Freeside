@@ -30,7 +30,7 @@ Returns an arrayref of Communigate time zones.
 #http://www.communigate.com/pub/client/TimeZones.data 
 #http://www.communigate.com/cgatepro/WebMail.html#Settings 
 
-sub cgp_timezone {
+sub cgp_timezone_values {
   #my $self = shift; #i'm used as a class and object method but just return data
 
   [ '',
@@ -96,7 +96,39 @@ sub cgp_timezone {
     'SouthAmerica/Chile',
     'SouthAmerica/Paraguay',
   ];
+}
 
+=item cgp_emptytrash_values
+
+Returns an arrayref of possible EmptyTrash values.
+
+=cut
+
+#http://www.communigate.com/cgatepro/WebMail.html#Trash
+
+sub cgp_emptytrash_values {
+  #my $self = shift; #i'm used as a class and object method but just return data
+
+  [ '', #<option value="-1">default(92 days)
+    '0 seconds',
+    '60 minutes',
+    '2 hours',
+    '3 hours',
+    '6 hours',
+    '12 hours',
+    '24 hours',
+    '2 days',
+    '3 days',
+    '7 days',
+    '10 days',
+    '2 weeks',
+    '3 weeks',
+    '30 days',
+    '60 days',
+    '90 days',
+    '180 days',
+    '360 days',
+  ];
 }
 
 =back

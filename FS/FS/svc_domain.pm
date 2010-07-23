@@ -159,7 +159,8 @@ sub table_info {
                           },
       'acct_def_cgp_emptytrash' => { 
                             label => 'Acct. default Communigate on logout remove trash',
-                            type  => 'text',
+                            type        => 'select',
+                            select_list => __PACKAGE__->cgp_emptytrash_values,
                             disable_inventory => 1,
                             disable_select    => 1,
                           },
@@ -220,9 +221,9 @@ sub table_info {
                             disable_select    => 1,
                         },
       'acct_def_cgp_timezone' => {
-                            label             => 'Acct. default time zone',
-                            type              => 'select',
-                            select_list       => __PACKAGE__->cgp_timezone,
+                            label       => 'Acct. default time zone',
+                            type        => 'select',
+                            select_list => __PACKAGE__->cgp_timezone_values,
                             disable_inventory => 1,
                             disable_select    => 1,
                         },
@@ -492,7 +493,8 @@ sub check {
               #XXX archive messages
               #preferences
               || $self->ut_alphasn('acct_def_cgp_deletemode')
-              || $self->ut_alphan('acct_def_cgp_emptytrash')
+              || $self->ut_enum('acct_def_cgp_emptytrash',
+                                   $self->cgp_emptytrash_values )
               || $self->ut_alphan('acct_def_cgp_language')
               || $self->ut_textn('acct_def_cgp_timezone')
               || $self->ut_textn('acct_def_cgp_skinname')

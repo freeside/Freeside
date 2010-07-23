@@ -392,10 +392,16 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
     </TD>
   </TR>
 
-  <TR>
-    <TD ALIGN="right">On logout remove trash</TD>
-    <TD><INPUT TYPE="text" NAME="cgp_emptytrash" VALUE="<% $svc_acct->cgp_emptytrash %>"></TD>
-  </TR>
+  <% include('/elements/tr-select.html',
+               'label'      => 'On logout remove trash',
+               'field'      => 'cgp_emptytrash',
+               'options'    => $svc_acct->cgp_emptytrash_values,
+               'labels'     => {
+                                 '' => 'default (92 days)', #right?
+                               },
+               'curr_value' => $svc_acct->cgp_emptytrash,
+            )
+  %>
 
   <% include('/elements/tr-select.html',
                'label'      => 'Language',
@@ -411,7 +417,7 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
   <% include('/elements/tr-select.html',
                'label'      => 'Time zone',
                'field'      => 'cgp_timezone',
-               'options'    => $svc_acct->cgp_timezone,
+               'options'    => $svc_acct->cgp_timezone_values,
                'labels'     => {
                                  '' => 'default (HostOS)',
                                },

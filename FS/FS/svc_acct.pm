@@ -451,8 +451,9 @@ sub table_info {
                               disable_select    => 1,
                             },
         'cgp_emptytrash' => { 
-                              label => 'Communigate on logout remove trash',
-                              type  => 'text',
+                              label     => 'Communigate on logout remove trash',
+                              type        => 'select',
+                              select_list => __PACKAGE__->cgp_emptytrash_values,
                               disable_inventory => 1,
                               disable_select    => 1,
                             },
@@ -464,9 +465,9 @@ sub table_info {
                             disable_select    => 1,
                           },
         'cgp_timezone' => {
-                            label             => 'Communigate time zone',
-                            type              => 'select',
-                            select_list       => __PACKAGE__->cgp_timezone,
+                            label       => 'Communigate time zone',
+                            type        => 'select',
+                            select_list => __PACKAGE__->cgp_timezone_values,
                             disable_inventory => 1,
                             disable_select    => 1,
                           },
@@ -1184,7 +1185,7 @@ sub check {
               || $self->ut_enum('cgp_addmailtrailer', [ '', 'Y' ])
               #preferences
               || $self->ut_alphasn('cgp_deletemode')
-              || $self->ut_alphan('cgp_emptytrash')
+              || $self->ut_enum('cgp_emptytrash', $self->cgp_emptytrash_values)
               || $self->ut_alphan('cgp_language')
               || $self->ut_textn('cgp_timezone')
               || $self->ut_textn('cgp_skinname')

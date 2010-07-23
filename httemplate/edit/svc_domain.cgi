@@ -220,11 +220,17 @@ Account defaults
     </TD>
   </TR>
 
-  <% include('/elements/tr-input-text.html',
+  <% include('/elements/tr-select.html',
                'label'      => 'On logout remove trash',
+               'field'      => 'acct_def_cgp_emptytrash',
+               'options'    => $svc_domain->cgp_emptytrash_values,
+               'labels'     => {
+                                 '' => 'default (92 days)', #right?
+                               },
                'curr_value' => $svc_domain->acct_def_cgp_emptytrash,
             )
   %>
+
   <% include('/elements/tr-select.html',
                'label'      => 'Language',
                'field'      => 'acct_def_cgp_language',
@@ -239,7 +245,7 @@ Account defaults
   <% include('/elements/tr-select.html',
                'label'      => 'Time zone',
                'field'      => 'acct_def_cgp_timezone',
-               'options'    => $svc_domain->cgp_timezone,
+               'options'    => $svc_domain->cgp_timezone_values,
                'labels'     => {
                                  '' => 'default (HostOS)',
                                },
