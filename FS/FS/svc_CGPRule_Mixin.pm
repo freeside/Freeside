@@ -22,7 +22,7 @@ This is a mixin class for svc_ classes that can have Communigate Pro rules
 
 =over 4
 
-=item
+=item cgp_rule
 
 Returns the rules associated with this service, as FS::cgp_rule objects.
 

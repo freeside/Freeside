@@ -526,3 +526,5 @@ FS/cust_tag.pm
 t/cust_tag.t
 FS/part_tag.pm
 t/part_tag.t
+FS/svc_CGP_Mixin.pm
+FS/svc_CGPRule_Mixin.pm
