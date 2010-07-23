@@ -24,7 +24,10 @@ Import a file containing <% PL($inventory_class->classname) %>, one per line.
 
 %#  <INPUT TYPE="hidden" NAME="itembatch" VALUE="<% $itembatch %>">
 
-  <% include('/elements/tr-select-agent.html') %>
+  <% include('/elements/tr-select-agent.html',
+               'viewall_right' => 'None',
+            )
+  %>
 
   <% include( '/elements/file-upload.html',
                 'field' => 'file',

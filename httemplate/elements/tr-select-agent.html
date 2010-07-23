@@ -1,3 +1,27 @@
+<%doc>
+
+Example:
+
+  include( '/elements/tr-select-agent.html',
+
+    #recommended to keep things "sticky" on errors
+    'curr_value'    => $curr_value,
+
+    ##
+    # optional
+    ##
+
+    'label'         => 'Agent for this thing',
+    'empty_label'   => 'Select agent', #override default 
+    'disable_empty' => 1,
+
+    #set to 'None' or something to override default of showing all agents
+    #for employees w/ 'View customers of all agents' right
+    viewall_right   => 'None',
+
+  );
+
+</%doc>
 % if ( scalar(@agents) == 1 ) { 
 
   <INPUT TYPE="hidden" NAME="<% $opt{'field'} || 'agentnum' %>" VALUE="<% $agents[0]->agentnum %>">
@@ -26,8 +50,11 @@
 my %opt = @_;
 my $agentnum = $opt{'curr_value'} || $opt{'value'};
 
-my @agents = $opt{'agents'}
-               ? @{ $opt{'agents'} }
-               : $FS::CurrentUser::CurrentUser->agents;
+my @agents =
+  $opt{'agents'}
+    ? @{ $opt{'agents'} }
+    : $FS::CurrentUser::CurrentUser->agents(
+        'viewall_right' => $opt{'viewall_right'},
+      );
 
 </%init>

@@ -413,10 +413,10 @@ sub agentnum {
   $sth->fetchrow_arrayref->[0];
 }
 
-=item agents
+=item agents [ HASHREF | OPTION => VALUE ... ]
 
 Returns the list of agents this user can view (via group membership), as
-FS::agent objects.
+FS::agent objects.  Accepts the same options as the agentnums_sql method.
 
 =cut
 
@@ -425,7 +425,7 @@ sub agents {
   qsearch({
     'table'     => 'agent',
     'hashref'   => { disabled=>'' },
-    'extra_sql' => ' AND '. $self->agentnums_sql,
+    'extra_sql' => ' AND '. $self->agentnums_sql(@_),
   });
 }
 
