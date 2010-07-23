@@ -25,6 +25,8 @@ share/html/Elements/EditCustomFieldDate #customfield date patch (NEW)
  share/html/Elements/Header
  share/html/Elements/PageLayout
  #html/Elements/QuickCreate
+ share/html/Elements/RefreshHomepage
+ share/html/Elements/RT__CustomField/ColumnMap
  share/html/Elements/RT__Ticket/ColumnMap
  share/html/Elements/ShowCustomFieldDate #customfield date patch (NEW)
  share/html/Elements/SelectDate

@@ -46,9 +46,13 @@
 %# 
 %# END BPS TAGGED BLOCK }}}
 <&|/Widgets/TitleBox, title => loc('Refresh')&>
-<form method="get" action="<% RT->Config->Get('WebPath') . $m->request_path %>">
+<form method="get" action="<% RT->Config->Get('WebPath') . $path %>">
 <& /Elements/Refresh, Name => 'HomeRefreshInterval', 
     Default => $session{'home_refresh_interval'}||RT->Config->Get('HomePageRefreshInterval', $session{'CurrentUser'}) &>
 <& /Elements/Submit,  Label => loc('Go!') &>
 </&>
 </form>
+<%init>
+my $path = $m->request_path;
+$path =~ s(^/rt)(); #hacky, dunno why this happens
+</%init>
