@@ -154,6 +154,9 @@ sub upgrade_data {
     'cust_refund' => [],
     'banned_pay' => [],
 
+    #default namespace
+    'payment_gateway' => [],
+
   ;
 
   \%hash;
