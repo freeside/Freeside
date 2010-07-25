@@ -770,6 +770,11 @@ sub _upgrade_data {  #class method
 
     my $cust_pay_pending =
       qsearchs('cust_pay_pending', { 'paynum' => $na->paynum } );
+    unless ( $cust_pay_pending ) {
+      warn " *** WARNING: not-yet recoverable N/A card for payment ".
+           $na->paynum. " (no cust_pay_pending)\n";
+      next;
+    }
     $na->$_($cust_pay_pending->$_) for qw( payinfo paymask );
     my $error = $na->replace;
     if ( $error ) {
