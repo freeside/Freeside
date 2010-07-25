@@ -9092,6 +9092,7 @@ sub _upgrade_data { #class method
   $sth->execute or die $sth->errstr;
 
   local($ignore_expired_card) = 1;
+  local($skip_fuzzyfiles) = 1;
   $class->_upgrade_otaker(%opts);
 
 }
