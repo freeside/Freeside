@@ -40,11 +40,13 @@ sub _upgrade_otaker {
   my $class = shift;
   my $table = $class->table;
 
+  my $limit = ( $table eq 'cust_attachment' ? 10 : 1000 );
+
   while ( 1 ) {
     my @records = qsearch({
                     'table'     => $table,
                     'hashref'   => {},
-                    'extra_sql' => 'WHERE otaker IS NOT NULL LIMIT 1000',
+                    'extra_sql' => "WHERE otaker IS NOT NULL LIMIT $limit",
                   });
     last unless @records;
 
