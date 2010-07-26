@@ -1,0 +1,57 @@
+<% include('/elements/header-popup.html', 'Redirect all mail') %>
+
+<FORM NAME="RedirectAllForm" ACTION="process/cgp_rule-redirect_all.html" METHOD=POST>
+
+%# XXX upstream Redirect 1
+
+<% ntable("#cccccc", 2) %>
+
+<TR>
+  <TD ALIGN="right">Redirect all mail to</TD>
+  <TD><textarea name="RedirectText" rows="5" cols="50"></textarea></TD>
+</TR>
+
+<% include('/elements/tr-checkbox.html',
+             'name'       => 'RedirKeep',
+             'label'      => 'Keep a copy',
+             'value'      => 1,
+             'curr_value' => '', #XXX
+          )
+%>
+
+<% include('/elements/tr-checkbox.html',
+             'name'       => 'RedirHuman',
+             'label'      => 'Do not redirect automatic messages',
+             'value'      => 1,
+             'curr_value' => '', #XXX
+          )
+%>
+
+<% include('/elements/tr-checkbox.html',
+             'name'       => 'KeepToAndCc',
+             'label'      => 'Preserve To/Cc fields',
+             'value'      => 1,
+             'curr_value' => '', #XXX
+          )
+%>
+
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="Redirect all mail">
+%#XXX Add/Edit
+
+</FORM>
+
+</BODY>
+</HTML>
+<%init>
+
+my %opt = @_;
+
+my $svc_acct = qsearchs('svc_acct', { 'svcnum' => $opt{'svcnum'} } )
+  or die "unknown svcnum";
+
+#XXX look for existing redirect all rule
+
+</%init>

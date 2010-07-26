@@ -53,7 +53,45 @@
   <% include('/view/elements/tr.html', label=>'Send read receipts',
                         value=>$svc_acct->cgp_sendmdnmode ) %>
 
-%#XXX vacation message, redirect all mail
+%# vacation message
+%#XXX finish me... do we need to search for specific rules
+%# (and hide them?)  need to see what CGP gives back after we've added a rule
+  <% include('/elements/init_overlib.html') %>
+
+  <TR>
+    <TD ALIGN="right">Vacation message</TD>
+    <TD BGCOLOR="#FFFFFF">
+      <% include('/elements/popup_link.html',
+                   'action' => $p.'edit/cgp_rule-vacation.html?'.
+                                 'svcnum='. $svc_acct->svcnum,
+                   'label'  => '(add)', #XXX (edit)
+                   'actionlabel' => 'Vacation message',
+                   'width'  => 600,
+                   'height' => 300,
+                   #'color'
+                )
+      %>
+    </TD>
+  </TR>
+
+%# redirect all mail
+%#XXX finish me...
+
+  <TR>
+    <TD ALIGN="right">Redirect all mail</TD>
+    <TD BGCOLOR="#FFFFFF">
+      <% include('/elements/popup_link.html',
+                   'action' => $p.'edit/cgp_rule-redirect_all.html?'.
+                                 'svcnum='. $svc_acct->svcnum,
+                   'label'  => '(add)', #XXX (edit)
+                   'actionlabel' => 'Redirect all mail',
+                   'width' => 763,
+                   #'height'
+                   #'color'
+                )
+      %>
+    </TD>
+  </TR>
 
 %# mail rules
 

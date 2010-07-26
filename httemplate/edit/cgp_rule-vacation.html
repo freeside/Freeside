@@ -1,0 +1,47 @@
+<% include('/elements/header-popup.html', 'Vacation rule') %>
+
+<FORM NAME="VacationForm" ACTION="process/cgp_rule-vacation.html" METHOD=POST>
+
+%# XXX upstream Vacation 1
+
+<% ntable("#cccccc", 2) %>
+
+<TR>
+  <TD ALIGN="right">Vacation message</TD>
+  <TD><textarea name="VacationText" rows="5" cols="50"></textarea></TD>
+</TR>
+
+<% include('/elements/tr-input-date-field.html', {
+             'label' => 'Ends',
+             'name'  => 'vacationTill',
+             'value' => '', #XXX
+          })
+%>
+%# XXX upstream:
+%#  VacationTill 1
+%#  vacationDay
+%#  vacationMonth
+%#  vacationYear
+
+%#XXX Clear 'Replied Addresses' List
+
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="Add vacation message">
+%#XXX Add/Edit
+
+</FORM>
+
+</BODY>
+</HTML>
+<%init>
+
+my %opt = @_;
+
+my $svc_acct = qsearchs('svc_acct', { 'svcnum' => $opt{'svcnum'} } )
+  or die "unknown svcnum";
+
+#XXX look for existing vacation rule
+
+</%init>
