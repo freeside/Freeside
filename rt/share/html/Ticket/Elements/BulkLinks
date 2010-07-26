@@ -163,7 +163,7 @@ $Tickets => undef
 <%INIT>
 my %hash;
 if ( $Tickets && $Tickets->Count ) {
-    my $first_ticket = $Tickets->Next;
+    my $first_ticket = $Tickets->Next or last; #avoid errors on bulk delete
     # we only show current links that eixst on all the tickets
     for my $type ( qw/DependsOn DependedOnBy Members MemberOf RefersTo
             ReferredToBy/ ) {

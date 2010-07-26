@@ -40,6 +40,7 @@ share/html/Elements/EditCustomFieldDate #customfield date patch (NEW)
 share/html/Ticket/Elements/AddCustomers
 share/html/Ticket/Elements/EditCustomers
 share/html/Ticket/Elements/ShowCustomers
+ share/html/Ticket/Elements/BulkLinks
  share/html/Ticket/Elements/ShowSummary
  share/html/Ticket/Elements/ShowTransactionAttachments
  share/html/Ticket/Elements/Tabs
