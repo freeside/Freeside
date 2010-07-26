@@ -1,3 +1,21 @@
+<%doc>
+
+Example:
+
+  include( '/elements/header-popup.html',
+           {
+             'title'   => 'Title',
+             'menubar' => \@menubar,
+             'etc'     => '', #included in <BODY> tag, for things like onLoad=
+             'head'    => '', #included before closing </HEAD> tag
+             'nobr'    => 0,  #1 for no <BR><BR> after the title
+           }
+         );
+
+  #old-style
+  include( '/elements/header.html', 'Title', $menubar, $etc, $head);
+
+</%doc>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <HTML>
   <HEAD>
