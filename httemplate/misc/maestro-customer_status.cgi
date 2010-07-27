@@ -3,14 +3,14 @@
 
 my $uri = new URI;
 
-my($query) = $cgi->keywords;
-if ( $query =~ /^(\d+)$/ ) {
+my($custnum, $svcnum) = $cgi->keywords;
+if ( $custnum =~ /^(\d+)$/ ) {
 
   use FS::Maestro;
-  $uri->query_form( FS::Maestro::customer_status($1) );
+  $return = FS::Maestro::customer_status($1, $svcnum);
 
 } else {
-  $uri->query_form( { 'error' => 'No custnum' } );
+  $return = { 'error' => 'No custnum' };
 }
 
 </%init>

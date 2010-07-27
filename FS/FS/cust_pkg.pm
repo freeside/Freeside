@@ -1765,6 +1765,16 @@ sub status {
   return 'active';
 }
 
+=item ucfirst_status
+
+Returns the status with the first character capitalized.
+
+=cut
+
+sub ucfirst_status {
+  ucfirst(shift->status);
+}
+
 =item statuses
 
 Class method that returns the list of possible status strings for packages
