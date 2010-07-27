@@ -159,7 +159,8 @@ my %conf_opt = (
   #for services.html
   'svc_external-skip_manual'  => $conf->exists('svc_external-skip_manual'),
   'legacy_link'               => $conf->exists('legacy_link'),
-  'svc_broadband-manage_link' => $conf->config('svc_broadband-manage_link'),
+  'svc_broadband-manage_link' => scalar($conf->config('svc_broadband-manage_link')),
+  'maestro-status_test'       => $conf->exists('maestro-status_test'),
 );
 
 #subroutines

@@ -58,6 +58,11 @@
 %           if ( $curuser->access_right('Unprovision customer service') ) { 
               <FONT SIZE="-2">(&nbsp;<%svc_unprovision_link($cust_svc)%>&nbsp;)</FONT>
 %           } 
+
+%           if ( $part_svc->svcdb eq 'svc_pbx' && $opt{'maestro-status_test'} ){
+              <FONT SIZE="-2">(&nbsp;<A HREF="<% $p %>misc/maestro-customer_status-test.html?<% $cust_pkg->custnum.'+'.$cust_svc->svcnum %>">Test maestro status</A>&nbsp;)</FONT>
+%           } 
+
           </TD>
         </TR>
 %   } 

@@ -7,10 +7,10 @@ my($custnum, $svcnum) = $cgi->keywords;
 if ( $custnum =~ /^(\d+)$/ ) {
 
   use FS::Maestro;
-  $return = FS::Maestro::customer_status($1, $svcnum);
+  $uri->query_form( FS::Maestro::customer_status($1) );
 
 } else {
-  $return = { 'error' => 'No custnum' };
+  $uri->query_form( { 'error' => 'No custnum' } );
 }
 
 </%init>
