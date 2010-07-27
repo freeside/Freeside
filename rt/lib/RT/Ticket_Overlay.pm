@@ -617,11 +617,16 @@ sub Create {
                     next;
                 }
             }
-            
+
+            #don't show transactions for reminders
+            my $silent = ( !$args{'_RecordTransaction'}
+                           || $self->Type eq 'reminder'
+                         );
+
             my ( $wval, $wmsg ) = $self->_AddLink(
                 Type                          => $LINKTYPEMAP{$type}->{'Type'},
                 $LINKTYPEMAP{$type}->{'Mode'} => $link,
-                Silent                        => !$args{'_RecordTransaction'},
+                Silent                        => $silent,
                 'Silent'. ( $LINKTYPEMAP{$type}->{'Mode'} eq 'Base'? 'Target': 'Base' )
                                               => 1,
             );
