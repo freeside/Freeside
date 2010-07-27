@@ -7,10 +7,12 @@
 
 <table style="border:1px solid #000000">
 % foreach my $key (keys %$return) {
-  <TR>
-    <TD ALIGN="right"><% $key %>:</TD>
-    <TD><B><% $return->{$key} %></B></TD>
-  </TR>
+%   my $value = $return->{$key};
+%   $value = join(', ', @$value) if ref($value) eq 'ARRAY';
+    <TR>
+      <TD ALIGN="right"><% $key %>:</TD>
+      <TD><B><% $return->{$key} %></B></TD>
+    </TR>
 % }
 </table>
 
