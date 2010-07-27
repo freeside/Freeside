@@ -106,7 +106,7 @@ sub customer_status {
 
     my $conf = new FS::Conf;
     my %outbound_pkgs = map { $_=>1 } $conf->config('mc-outbound_packages');
-    my $outbound_service =
+    $outbound_service =
       scalar( grep { $outbound_pkgs{ $_->pkgpart }
                        && !$_->get('cancel')
                    }
@@ -120,7 +120,7 @@ sub customer_status {
       sort { $a->bill <=> $b->bill }
       grep { !$_->get('cancel') && $_->part_pkg->freq ne '0' }
       @cust_pkg;
-    my $good_till = time2str('%c', $active_cust_pkg[0]->bill || time );
+    $good_till = time2str('%c', $active_cust_pkg[0]->bill || time );
 
   }
 
