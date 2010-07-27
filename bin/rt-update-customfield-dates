@@ -1,0 +1,73 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use Date::Parse;
+use Date::Format;
+use FS::UID qw(adminsuidsetup);
+use FS::Record;
+
+my @date_fields = (
+  'Circuit Ordered Date',
+  'Circuit Due Date (s)',
+  'Install Date',
+  'Site Audit Date',
+  'LOCAL PORT COMPLETE',
+  'TF PORTING COMPLETE',
+  '411 Submission',
+  'Billed in Freeside',
+  'Billed in Quickbooks',
+);
+#@date_fields = ( 'Custom thingie' );
+
+my $dbh = adminsuidsetup(shift) or die "Usage: rt-update-customfield-dates username\n";
+
+foreach my $date_field ( @date_fields ) {
+
+  my $cf_sql = 'SELECT id FROM CustomFields where name = '. $dbh->quote($date_field);
+  my $cf_sth = $dbh->prepare($cf_sql) or die $dbh->errstr;
+  $cf_sth->execute or die $cf_sth->errstr;
+  my $result = $cf_sth->fetchrow_arrayref
+    or do { warn "$date_field not found; skipping\n"; next };
+  my $customfield_id = $result->[0];
+
+  my $ocfv_sql = "SELECT id, content FROM ObjectCustomFieldValues WHERE customfield = $customfield_id and content !~ '^[0-9]+\$' ";
+  my $ocfv_sth = $dbh->prepare($ocfv_sql) or die $dbh->errstr;
+  $ocfv_sth->execute or die $ocfv_sth->errstr;
+
+  while (my $row = $ocfv_sth->fetchrow_arrayref) {
+
+    my($id, $content) = @$row;
+
+    my $origcontent = $content;
+
+    #April 21 KW / April 21 Mont
+    $content =~ s/^April (\d\d) [a-zA-Z]+$/April $1/;
+
+    #SAL April 29 / other May 3
+    $content =~ s/^[a-zA-Z]+ (April|May) (\d\d?)$/$1 $2/;
+
+    #things like "July 8/2010 and "JUNE 24/10" are not doing what we want
+    $content =~ s/^(June|July) (\d\d?)\/(20)?10$/$1 $2, 2010/i;
+
+    #28/04/2010
+    $content =~ s{^(2\d|1[3-9])/(0\d)/2010$}{$2/$1/2010};
+
+    my $unixdate = str2time($content); #current timezone is what we want here
+
+    #things like "DONE"/"ORDERED" are returning a 0 here.. should stay blank
+    my $prettynew = $unixdate ? time2str('%Y-%m-%d %T', $unixdate, 'GMT') : '';
+
+    print "$id: $origcontent -> $prettynew \n" unless $content =~ qr(^0\d/\d\d/2010$);
+
+    my $update_sql =
+      "UPDATE ObjectCustomFieldValues SET content = '$prettynew'".
+      " WHERE id = $id";
+
+    my $update_sth = $dbh->prepare($update_sql) or die $dbh->errstr;
+    $update_sth->execute or die $update_sth->errstr;
+    $dbh->commit or die $dbh->errstr;
+
+  }
+
+}
