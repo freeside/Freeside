@@ -1,0 +1,32 @@
+<% include('/elements/header.html', {
+             'title' => "Customer $query status",
+          }) %>
+
+<% include('/elements/small_custview.html', $query, '', 1) %>
+<BR>
+
+<table style="border:1px solid #000000">
+% foreach my $key (keys %$return) {
+  <TR>
+    <TD ALIGN="right"><% $key %>:</TD>
+    <TD><B><% $return->{$key} %></B></TD>
+  </TR>
+% }
+</table>
+
+<% include('/elements/footer.html') %>
+<%init>
+
+my $return;
+
+my($query) = $cgi->keywords;
+if ( $query =~ /^(\d+)$/ ) {
+
+  use FS::Maestro;
+  $return = FS::Maestro::customer_status($1);
+
+} else {
+  $return = { 'error' => 'No custnum' };
+}
+
+</%init>

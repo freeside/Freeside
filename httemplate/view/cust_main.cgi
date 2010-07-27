@@ -90,6 +90,9 @@ function areyousure(href, message) {
   This customer's signup URL: <A HREF="<% $signupurl %>?ref=<% $custnum %>"><% $signupurl %>?ref=<% $custnum %></A><BR><BR>
 % } 
 
+%if ( $conf->exists('maestro-status_test') ) {
+  <A HREF="<% $p %>misc/maestro-customer_status-test.html?<% $custnum %>">Test maestro status</A><BR><BR>
+% } 
 
 <A NAME="cust_main"></A>
 <TABLE BORDER=0>

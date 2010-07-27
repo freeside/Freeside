@@ -3821,6 +3821,14 @@ and customer address. Include units.',
     'select_enum' => [ 'misc_info', 'top' ],
   },
 
+  {
+    'key'         => 'maestro-status_test',
+    'section'     => 'UI',
+    'description' => 'Display a link to the maestro status test page on the customer view page',
+    'type'        => 'checkbox',
+  },
+
+
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachine", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
