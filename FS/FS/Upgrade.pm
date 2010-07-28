@@ -186,7 +186,8 @@ sub upgrade_sqlradius {
     my $str2time = str2time_sql( $dbh->{Driver}->{Name} );
     my $group = "UserName";
     $group .= ",Realm"
-      if ( ref($part_export) =~ /withdomain/ );
+      if ref($part_export) =~ /withdomain/
+      || $dbh->{Driver}->{Name} =~ /^Pg/; #hmm
 
     my $sth_alter = $dbh->prepare(
       "ALTER TABLE radacct ADD COLUMN FreesideStatus varchar(32) NULL"
