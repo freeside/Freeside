@@ -212,12 +212,18 @@ sub upgrade_sqlradius {
     if ( $sth_index ) {
       unless ( $sth_index->execute ) {
         my $error = $sth_index->errstr;
-        warn $errmsg.$error unless $error =~ /Duplicate key name/i;
+        warn $errmsg.$error
+          unless $error =~ /Duplicate key name/i                        #mysql
+              || $error =~ /relation "freesidestatus" already exists/i; #Pg
       }
     } else {
       my $error = $dbh->errstr;
-      warn $errmsg.$error; #unless $error =~ /exists/i;
+      warn $errmsg.$error. ' (preparing statement)';#unless $error =~ /exists/i;
     }
+
+    my $times = ($dbh->{Driver}->{Name} =~ /^mysql/)
+      ? ' AcctStartTime != 0 AND AcctStopTime != 0 '
+      : ' AcctStartTime IS NOT NULL AND AcctStopTime IS NOT NULL ';
 
     my $sth = $dbh->prepare("SELECT UserName,
                                     Realm,
@@ -225,8 +231,7 @@ sub upgrade_sqlradius {
                                     $str2time max(AcctStopTime))
                               FROM radacct
                               WHERE FreesideStatus = 'done'
-                                AND AcctStartTime != 0
-                                AND AcctStopTime  != 0
+                                AND $times
                               GROUP BY $group
                             ")
       or die $errmsg.$dbh->errstr;
