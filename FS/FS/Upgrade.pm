@@ -200,7 +200,10 @@ sub upgrade_sqlradius {
         $sth_update->execute or die $errmsg.$sth_update->errstr;
       } else {
         my $error = $sth_alter->errstr;
-        warn $errmsg.$error unless $error =~ /Duplicate column name/i;
+        warn $errmsg.$error
+          unless $error =~ /Duplicate column name/i  #mysql
+              || $error =~ /already exists/i;        #Pg
+;
       }
     } else {
       my $error = $dbh->errstr;
@@ -214,8 +217,8 @@ sub upgrade_sqlradius {
       unless ( $sth_index->execute ) {
         my $error = $sth_index->errstr;
         warn $errmsg.$error
-          unless $error =~ /Duplicate key name/i                        #mysql
-              || $error =~ /relation "freesidestatus" already exists/i; #Pg
+          unless $error =~ /Duplicate key name/i #mysql
+              || $error =~ /already exists/i;    #Pg
       }
     } else {
       my $error = $dbh->errstr;
