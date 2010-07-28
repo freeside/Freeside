@@ -157,6 +157,9 @@ sub upgrade_data {
     #default namespace
     'payment_gateway' => [],
 
+    #migrate to templates
+    'msg_template' => [],
+
   ;
 
   \%hash;

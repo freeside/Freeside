@@ -1,16 +1,24 @@
 <% include( 'elements/edit.html',  
+              'html_init'     => '<TABLE id="outerTable"><TR><TD>',
               'name_singular' => 'template',
               'table'         => 'msg_template',
               'viewall_dir'   => 'browse',
+              'agent_virt'    => 1,
+              'agent_null'    => 1,
+              'agent_null_right' => 'Edit global templates',
+
               'fields' => [ 'msgname',
                             'subject',
+                            'from_addr',
                             { field=>'body', type=>'htmlarea', width=>763 },
                           ],
-              'labels' => { 'msgnum'  => 'Template',
-                            'msgname' => 'Template name',
-                            'subject' => 'Message subject',
-                            'body'    => 'Message template',
+              'labels' => { 'msgnum'    => 'Template',
+                            'msgname'   => 'Template name',
+                            'from_addr' => 'Return address',
+                            'subject'   => 'Message subject',
+                            'body'      => 'Message template',
                           },
+              'html_foot' => "</TD>$sidebar</TR></TABLE>",
           )
 %>
 <%init>
@@ -19,5 +27,123 @@ die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Edit templates')
   ||     $FS::CurrentUser::CurrentUser->access_right('Edit global templates')
   ||     $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+# Create hints pane
+
+my %substitutions = (
+  'cust_main' => [
+    '$display_custnum'=> 'Customer#',
+    '$agentnum'       => 'Agent#',
+    '$agent_name'     => 'Agent name',
+    '$payby'          => 'Payment method',
+    '$paymask'        => 'Card/account# (masked)',
+    '$payname'        => 'Name on card/bank name',
+    '$paytype'        => 'Account type',
+    '$payip'          => 'IP address used to submit payment info',
+    '$num_ncancelled_pkgs'  => '# of active packages',
+    '$num_cancelled_pkgs'   => '# of cancelled packages',
+    '$num_pkgs'       => '# of packages',
+    '$classname'      => 'Customer class',
+    '$categoryname'   => 'Customer category',
+    '$balance'        => 'Current balance',
+    '$invoicing_list_emailonly' => 'Billing email address',
+    '$cust_status'    => 'Status',
+    '$ucfirst_cust_status'  => 'Status, capitalized',
+    '$cust_statuscolor'     => 'Status color code',
+  ],
+  'contact' => [ # duplicate this for shipping
+    '$name'           => 'Company and contact name',
+    '$name_short'     => 'Company or contact name',
+    '$company'        => 'Company name',
+    '$contact'        => 'Contact name (last, first)',
+    '$contact_firstlast'=> 'Contact name (first last)',
+    '$first'          => 'First name',
+    '$last'           => 'Last name',
+    '$address1'       => 'Address line 1',
+    '$address2'       => 'Address line 2',
+    '$city'           => 'City',
+    '$county'         => 'County',
+    '$state'          => 'State',
+    '$zip'            => 'Zip',
+    '$country'        => 'Country',
+    '$daytime'        => 'Day phone',
+    '$night'          => 'Night phone',
+    '$fax'            => 'Fax',
+  ],
+  'cust_bill' => [
+    '$invnum'         => 'Invoice#',
+  ],
+  'cust_pkg' => [
+    '$pkgnum'         => 'Package#',
+    '$pkg_label'      => 'Package label (short)',
+    '$pkg_label_long' => 'Package label (long)',
+    '$status'         => 'Status',
+    '$statuscolor'    => 'Status color code',
+    '$start_ymd'      => 'Start date',
+    '$setup_ymd'      => 'Setup date',
+    '$last_bill_ymd'  => 'Last bill date',
+    '$next_bill_ymd'  => 'Next bill date',
+    '$susp_ymd'       => 'Suspended on date',
+    '$cancel_ymd'     => 'Canceled on date',
+    '$adjourn_ymd'    => 'Adjournment date',
+    '$expire_ymd'     => 'Expiration date',
+    '$labels_short'   => 'Service labels',
+    '$location_label' => 'Service location',
+  ],
+  'svc_acct'  => [
+    '$username'       => 'Login name',
+    '$password'      => 'Password',
+  ],
+);
+my @c = @{ $substitutions{'contact'} };
+for (my $i=0; $i<scalar(@c); $i += 2) {
+  $c[$i] =~ s/\$(.*)/\$ship_$1/;
+}
+$substitutions{'shipping'} = \@c;
+
+tie my %sections, 'Tie::IxHash', (
+'contact'   => 'Name and contact info (billing)',
+'shipping'  => 'Name and contact info (shipping)',
+'cust_main' => 'Customer status and payment info',
+'cust_pkg'  => 'Package fields',
+'cust_bill' => 'Invoice fields',
+'svc_acct'  => 'Login service fields',
+);
+
+my $widget = new HTML::Widgets::SelectLayers(
+  'options'   => \%sections,
+  'form_name' => 'dummy',
+  'html_between'=>'</FORM><FONT SIZE=-1>',
+  'selected_layer'=>(keys(%sections))[0],
+  'layer_callback' => sub {
+    my $section = shift;
+    my $html = include('/elements/table-grid.html');
+    my @hints = @{ $substitutions{$section} };
+    while(@hints) {
+      my $key = shift @hints;
+      $html .= qq!\n<TR><TD><A href="javascript:insertHtml('{$key}')">$key</A></TD>!;
+      $html .= "\n<TD>".shift(@hints).'</TD></TR>';
+    }
+    $html .= "\n</TABLE>";
+    return $html;
+  },
+);
+
+my $sidebar = '
+<SCRIPT TYPE="text/javascript">
+function insertHtml(what) {
+  var oEditor = FCKeditorAPI.GetInstance("body");
+  oEditor.InsertHtml(what);
+};
+</SCRIPT>
+<TD valign="top"><FORM name="dummy">
+Substitutions: '
+. $widget->html .
+'<BR>Click links to insert.
+<BR>Enclose substitutions and other Perl expressions in braces:
+<BR>{ $name } = ExampleCo (Smith, John)
+<BR>{ time2str("%D", time) } = '.time2str("%D", time).'
+</FONT></TD>
+';
 
 </%init>

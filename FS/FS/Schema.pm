@@ -2939,6 +2939,7 @@ sub tables_hashref {
         'mime_type', 'varchar',     '', $char_d, '', '',
         'body',         'blob', 'NULL',      '', '', '',
         'disabled',     'char', 'NULL',       1, '', '', 
+        'from_addr', 'varchar', 'NULL',     255, '', '',
       ],
       'primary_key' => 'msgnum',
       'unique'      => [ ['msgname', 'mime_type'] ],

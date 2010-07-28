@@ -7,6 +7,12 @@ use FS::Misc qw( generate_email send_email );
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs );
 
+use Date::Format qw( time2str );
+use HTML::Entities qw( encode_entities) ;
+use vars '$DEBUG';
+
+$DEBUG=1;
+
 =head1 NAME
 
 FS::msg_template - Object methods for msg_template records
@@ -40,24 +46,31 @@ primary key
 
 =item msgname
 
-msgname
+Template name.
 
 =item agentnum
 
-agentnum
+Agent associated with this template.  Can be NULL for a global template.
 
 =item mime_type
 
-mime_type
+MIME type.  Defaults to text/html.
+
+=item from_addr
+
+Source email address.
+
+=item subject
+
+The message subject line, in L<Text::Template> format.
 
 =item body
 
-body
+The message body, as plain text or HTML, in L<Text::Template> format.
 
 =item disabled
 
 disabled
-
 
 =back
 
@@ -126,17 +139,23 @@ sub check {
     || $self->ut_anything('subject')
     || $self->ut_anything('body')
     || $self->ut_enum('disabled', [ '', 'Y' ] )
+    || $self->ut_textn('from_addr')
   ;
   return $error if $error;
+
+  my $body = $self->body;
+  $body =~ s/&nbsp;/ /g; # just in case these somehow get in
+  $self->body($body);
 
   $self->mime_type('text/html') unless $self->mime_type;
 
   $self->SUPER::check;
 }
 
-=item send OPTION => VALUE, ...
+=item prepare OPTION => VALUE
 
-Fills in the template and emails it to the customer.
+Fills in the template and returns a hash of the 'from' address, 'to' 
+addresses, subject line, and body.
 
 Options are passed as a list of name/value pairs:
 
@@ -155,23 +174,41 @@ object, or cust_bill object).
 
 =cut
 
-sub send {
+sub prepare {
   my( $self, %opt ) = @_;
 
   my $cust_main = $opt{'cust_main'};
   my $object = $opt{'object'};
+  warn "preparing template '".$self->msgname."' to cust#".$cust_main->custnum."\n"
+    if($DEBUG);
+
+  my $subs = $self->substitutions;
+
+  ###
+  # create substitution table
+  ###  
+  my %hash;
+  foreach my $obj ($cust_main, $object || ()) {
+    foreach my $name (@{ $subs->{$obj->table} }) {
+      if(!ref($name)) {
+        # simple case
+        $hash{$name} = $obj->$name();
+      }
+      elsif( ref($name) eq 'ARRAY' ) {
+        # [ foo => sub { ... } ]
+        $hash{$name->[0]} = $name->[1]->($obj);
+      }
+      else {
+        warn "bad msg_template substitution: '$name'\n";
+        #skip it?
+      } 
+    } 
+  } 
+  $_ = encode_entities($_) foreach values(%hash); # HTML escape
 
   ###
   # fill-in
   ###
-
-  my $subs = $self->substitutions;
-  
-  #XXX html escape this stuff
-  my %hash = map { $_ => $cust_main->$_() } @{ $subs->{'cust_main'} };
-  unless ( ! $object || $object->table eq 'cust_main' ) {
-    %hash = ( %hash, map { $_ => $object->$_() } @{ $subs->{$object->table} } );
-  }
 
   my $subject_tmpl = new Text::Template (
     TYPE   => 'STRING',
@@ -194,21 +231,36 @@ sub send {
 
   my $conf = new FS::Conf;
 
-  send_email(
-    generate_email(
-       #XXX override from in event?
-      'from' => scalar( $conf->config('invoice_from', $cust_main->agentnum) ),
-      'to'   => \@to,
-      'subject'   => $subject,
-      'html_body' => $body,
-      #XXX auto-make a text copy w/HTML::FormatText?
-      #  alas, us luddite mutt/pine users just aren't that big a deal
-    )
+  (
+    'from' => $self->from || 
+              scalar( $conf->config('invoice_from', $cust_main->agentnum) ),
+    'to'   => \@to,
+    'subject'   => $subject,
+    'html_body' => $body,
+    #XXX auto-make a text copy w/HTML::FormatText?
+    #  alas, us luddite mutt/pine users just aren't that big a deal
   );
 
 }
 
+=item send OPTION => VALUE
+
+Fills in the template and sends it to the customer.  Options are as for 
+'prepare'.
+
+=cut
+
+sub send {
+  my $self = shift;
+  send_email(generate_email($self->prepare(@_)));
+}
+
+# helper sub for package dates
+my $ymd = sub { $_[0] ? time2str('%Y-%m-%d', $_[0]) : '' };
+
 #return contexts and fill-in values
+# If you add anything, be sure to add a description in 
+# httemplate/edit/msg_template.html.
 sub substitutions {
   { 'cust_main' => [qw(
       display_custnum agentnum agent_name
@@ -232,20 +284,84 @@ sub substitutions {
       balance
       invoicing_list_emailonly
       cust_status ucfirst_cust_status cust_statuscolor
-    )],
-    #XXX make these pretty: signupdate dundate paydate_monthyear usernum
+
+      signupdate dundate
+      ),
+      [ signupdate_ymd    => sub { time2str('%Y-%m-%d', shift->signupdate) } ],
+      [ dundate_ymd       => sub { time2str('%Y-%m-%d', shift->dundate) } ],
+      [ paydate_my        => sub { sprintf('%02d/%04d', shift->paydate_monthyear) } ],
+      [ otaker_first      => sub { shift->access_user->first } ],
+      [ otaker_last       => sub { shift->access_user->last } ],
+    ],
     # next_bill_date
-
-    'cust_pkg'  => [qw(
-    )],
-    #XXX these are going to take more pretty-ing up
-
+    'cust_pkg'  => [qw( 
+      pkgnum pkg_label pkg_label_long
+      location_label
+      status statuscolor
+    
+      start_date setup bill last_bill 
+      adjourn susp expire 
+      labels_short
+      ),
+      [ cancel            => sub { shift->getfield('cancel') } ], # grrr...
+      [ start_ymd         => sub { $ymd->(shift->getfield('start_date')) } ],
+      [ setup_ymd         => sub { $ymd->(shift->getfield('setup')) } ],
+      [ next_bill_ymd     => sub { $ymd->(shift->getfield('bill')) } ],
+      [ last_bill_ymd     => sub { $ymd->(shift->getfield('last_bill')) } ],
+      [ adjourn_ymd       => sub { $ymd->(shift->getfield('adjourn')) } ],
+      [ susp_ymd          => sub { $ymd->(shift->getfield('susp')) } ],
+      [ expire_ymd        => sub { $ymd->(shift->getfield('expire')) } ],
+      [ cancel_ymd        => sub { $ymd->(shift->getfield('cancel')) } ],
+    ],
     'cust_bill' => [qw(
       invnum
     )],
     #XXX not really thinking about cust_bill substitutions quite yet
-
+    
+    'svc_acct' => [qw(
+      username
+      ),
+      [ password          => sub { shift->getfield('_password') } ],
+    ], # for welcome messages
   };
+}
+
+sub _upgrade_data {
+  my ($self, %opts) = @_;
+
+  my @fixes = (
+    [ 'alerter_msgnum',  'alerter_template',   '',               '' ],
+    [ 'cancel_msgnum',   'cancelmessage',      'cancelsubject',  '' ],
+    [ 'decline_msgnum',  'declinetemplate',    '',               '' ],
+    [ 'impending_recur_msgnum', 'impending_recur_template', '',  '' ],
+    [ 'welcome_msgnum',  'welcome_email',      'welcome_email-subject', 'welcome_email-from' ],
+    [ 'warning_msgnum',  'warning_email',      'warning_email-subject', 'warning_email-from' ],
+  );
+ 
+  my $conf = new FS::Conf;
+  my @agentnums = ('', map {$_->agentnum} qsearch('agent', {}));
+  foreach my $agentnum (@agentnums) {
+    foreach (@fixes) {
+      my ($newname, $oldname, $subject, $from) = @$_;
+      if ($conf->exists($oldname, $agentnum)) {
+        my $new = new FS::msg_template({
+           'msgname'   => $oldname,
+           'agentnum'  => $agentnum,
+           'from_addr' => ($from && $conf->config($from, $agentnum)) || 
+                          $conf->config('invoice_from', $agentnum),
+           'subject'   => ($subject && $conf->config($subject, $agentnum)) || '',
+           'mime_type' => 'text/html',
+           'body'      => join('<BR>',$conf->config($oldname, $agentnum)),
+        });
+        my $error = $new->insert;
+        die $error if $error;
+        $conf->set($newname, $new->msgnum, $agentnum);
+        $conf->delete($oldname, $agentnum);
+        $conf->delete($from, $agentnum) if $from;
+        $conf->delete($subject, $agentnum) if $subject;
+      }
+    }
+  }
 }
 
 =back
