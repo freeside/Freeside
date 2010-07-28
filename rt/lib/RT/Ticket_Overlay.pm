@@ -721,7 +721,8 @@ sub Create {
         );
     }
 
-    if ( $args{'_RecordTransaction'} ) {
+    #don't make a transaction or fire off any scrips for reminders either
+    if ( $args{'_RecordTransaction'} && $self->Type ne 'reminder' ) {
 
         # {{{ Add a transaction for the create
         my ( $Trans, $Msg, $TransObj ) = $self->_NewTransaction(
