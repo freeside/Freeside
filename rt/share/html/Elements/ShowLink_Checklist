@@ -1,0 +1,36 @@
+<a href="<%$URI->Resolver->HREF%>">
+% if ($URI->IsLocal) {
+% my $member = $URI->Object;
+% if (UNIVERSAL::isa($member, "RT::Ticket")) {
+% my $inactive = 0; #$member->QueueObj->IsInactiveStatus($member->Status);
+
+<span class="<% $inactive ? 'ticket-inactive' : '' %>">
+<IMG SRC="<%$fsurl%>images/<% $status2image{$member->Status} %>.png" BORDER=0>
+<%$member->Id%>: (<%$member->OwnerObj->Name%>) <%$member->Subject%>
+%# [<% loc($member->Status) %>]
+</span>
+
+% } elsif ( UNIVERSAL::can($member, 'Name')) {
+<%$URI->Resolver->AsString%>: <%$member->Name%>
+% } else {
+<%$URI->Resolver->AsString%>
+% }
+% } else {
+<%$URI->Resolver->AsString%>
+% }
+</a>
+<%ARGS>
+$URI => undef
+</%ARGS>
+<%once>
+
+my %status2image = (
+  'new'      => 'square_add', #'bullet_add',
+  'open'     => 'square', #'bullet_black',
+  'stalled'  => 'error',
+  'resolved' => 'tick',
+  'rejected' => 'cross',
+  #'deleted'  => 'delete',
+);
+
+</%once>

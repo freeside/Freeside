@@ -1,0 +1,30 @@
+<& /Elements/Header, Title => loc("Checklist for Ticket #[_1] [_2]", $Ticket->Id, $Ticket->Subject) &>
+<& /Ticket/Elements/Tabs, 
+    Ticket => $Ticket, current_tab => 'Ticket/Checklist.html?id='.$Ticket->id, 
+    Title => loc("Ticket Checklist # [_1] [_2]", $Ticket->Id, $Ticket->Subject) &>
+
+<& /Ticket/Elements/ShowMembers_Checklist, Ticket => $Ticket &>
+
+% if ( $show_hint ) {
+
+<A HREF="ModifyLinks.html?id=<%$Ticket->id%>">Link</A>
+or <A HREF="Create.html?Queue=<%$Ticket->QueueId%>&new-MemberOf=<%$Ticket->id%>">create</A>
+create child tickets to make a checklist.
+
+% }
+      
+<%ARGS>
+$id => undef
+</%ARGS>
+
+<%INIT>
+
+my $Ticket = LoadTicket ($id);
+
+unless ($Ticket->CurrentUserHasRight('ShowTicket')) {
+    Abort("No permission to view ticket");
+}
+
+my $show_hint = ! $Ticket->Members->Count;
+
+</%INIT>
