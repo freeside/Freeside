@@ -249,20 +249,25 @@ my $money_char = $conf->config('money_char') || '$';
 # )
 
 sub call_range_sub {
-  my($range_sub, $start, $end, %opt) = @_;
+  my($range_sub, $startdays, $enddays, %opt) = @_;
 
-  my $as = $opt{'no_as'} ? '' : " AS rangecol_${start}_$end";
+  my $as = $opt{'no_as'} ? '' : " AS rangecol_${startdays}_$enddays";
 
   my $offset = $opt{'offset'} || 0;
-  # Time::ParseDate for excruciating correctness
   # Always use $offset - 1day + 1sec = the last second of that day
-  $start =  parsedate('00:00 '.($start + $offset - 1).' days ago') - 1;
-  $end = $end ?
-            parsedate('00:00 '.($end + $offset - 1).' days ago') - 1 : 
-            '';
-  my $cutoff = parsedate('00:00 '.($offset - 1).' days ago') - 1;
+  my $cutoff = DateTime->now->set(hour => 23, minute => 59, second => 59);
+  $cutoff->subtract(days => $offset);
 
-  my $sql = &{$range_sub}( $start, $end, $cutoff ); #%opt?
+  my $start = $cutoff->clone;
+  $start->subtract(days => $startdays);
+ 
+  my $end = $cutoff->clone;
+  $end->subtract(days => $enddays);
+
+  #warn "offset $offset (".$cutoff->epoch."), range $startdays-$enddays (".$start->epoch . '-' . ($enddays ? $end->epoch : '').")\n";
+  my $sql = &{$range_sub}( $start->epoch, 
+                           $enddays ? $end->epoch : '', 
+                           $cutoff->epoch ); #%opt?
 
   $sql = "SUM($sql)" if $opt{'sum'};
 
