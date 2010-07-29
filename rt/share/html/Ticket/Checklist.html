@@ -8,7 +8,7 @@
 % if ( $show_hint ) {
 
 <A HREF="ModifyLinks.html?id=<%$Ticket->id%>">Link</A>
-or <A HREF="Create.html?Queue=<%$Ticket->QueueId%>&new-MemberOf=<%$Ticket->id%>">create</A>
+or <A HREF="Create.html?Queue=<%$Ticket->QueueObj->Id%>&new-MemberOf=<%$Ticket->id%>">create</A>
 create child tickets to make a checklist.
 
 % }

@@ -1,0 +1,29 @@
+
+<style type="text/css">
+ul.checklist {
+  list-style-type: none
+}
+</style>
+
+<ul class="checklist">
+% while (my $link = $members->Next) {
+<li><& /Elements/ShowLink_Checklist, URI => $link->BaseURI &><br />
+% if ($depth < 8) { #why only 8?
+<& /Ticket/Elements/ShowMembers_Checklist, Ticket => $link->BaseObj, depth => ($depth+1) &> 
+% }
+</li>
+% }
+</ul>
+
+<%INIT>
+
+return unless $Ticket;
+my $members = $Ticket->Members;
+return unless $members->Count;
+
+</%INIT>
+
+<%ARGS>
+$Ticket => undef
+$depth => 1
+</%ARGS>
