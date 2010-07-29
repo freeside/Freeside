@@ -774,34 +774,9 @@ sub is_free {
 sub can_discount { 0; }
 
 sub freqs_href {
-  #method, class method or sub? #my $self = shift;
-
-  tie my %freq, 'Tie::IxHash', 
-    '0'    => '(no recurring fee)',
-    '1h'   => 'hourly',
-    '1d'   => 'daily',
-    '2d'   => 'every two days',
-    '3d'   => 'every three days',
-    '1w'   => 'weekly',
-    '2w'   => 'biweekly (every 2 weeks)',
-    '1'    => 'monthly',
-    '45d'  => 'every 45 days',
-    '2'    => 'bimonthly (every 2 months)',
-    '3'    => 'quarterly (every 3 months)',
-    '4'    => 'every 4 months',
-    '137d' => 'every 4 1/2 months (137 days)',
-    '6'    => 'semiannually (every 6 months)',
-    '12'   => 'annually',
-    '13'   => 'every 13 months (annually +1 month)',
-    '24'   => 'biannually (every 2 years)',
-    '36'   => 'triannually (every 3 years)',
-    '48'   => '(every 4 years)',
-    '60'   => '(every 5 years)',
-    '120'  => '(every 10 years)',
-  ;
-
-  \%freq;
-
+  # moved to FS::Misc to make this accessible to other packages
+  # at initialization
+  FS::Misc::pkg_freqs();
 }
 
 =item freq_pretty
