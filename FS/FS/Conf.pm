@@ -1241,15 +1241,22 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'payment_receipt_msgnum',
+    'section'     => 'notification',
+    'description' => 'Template to use for payment receipts.',
+    %msg_template_options,
+  },
+
+  {
     'key'         => 'payment_receipt_email',
-    'section'     => 'billing',
-    'description' => 'Template file for payment receipts.  Payment receipts are sent to the customer email invoice destination(s) when a payment is received.  See the <a href="http://search.cpan.org/dist/Text-Template/lib/Text/Template.pm">Text::Template</a> documentation for details on the template substitution language.  The following variables are available: <ul><li><code>$date</code> <li><code>$name</code> <li><code>$paynum</code> - Freeside payment number <li><code>$paid</code> - Amount of payment <li><code>$payby</code> - Payment type (Card, Check, Electronic check, etc.) <li><code>$payinfo</code> - Masked credit card number or check number <li><code>$balance</code> - New balance<li><code>$pkg</code> - Package (requires payment_receipt-trigger set to "when payment is applied".)</ul>',
+    'section'     => 'deprecated',
+    'description' => 'Template file for payment receipts.  Payment receipts are sent to the customer email invoice destination(s) when a payment is received.',
     'type'        => [qw( checkbox textarea )],
   },
 
   {
     'key'         => 'payment_receipt-trigger',
-    'section'     => 'billing',
+    'section'     => 'notification',
     'description' => 'When payment receipts are triggered.  Defaults to when payment is made.',
     'type'        => 'select',
     'select_hash' => [

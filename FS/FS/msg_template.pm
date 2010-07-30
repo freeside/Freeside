@@ -8,10 +8,12 @@ use FS::Conf;
 use FS::Record qw( qsearch qsearchs );
 
 use Date::Format qw( time2str );
-use HTML::Entities qw( encode_entities) ;
+use HTML::Entities qw( decode_entities encode_entities ) ;
+use HTML::FormatText;
+use HTML::TreeBuilder;
 use vars '$DEBUG';
 
-$DEBUG=1;
+$DEBUG=0;
 
 =head1 NAME
 
@@ -143,10 +145,6 @@ sub check {
   ;
   return $error if $error;
 
-  my $body = $self->body;
-  $body =~ s/&nbsp;/ /g; # just in case these somehow get in
-  $self->body($body);
-
   $self->mime_type('text/html') unless $self->mime_type;
 
   $self->SUPER::check;
@@ -167,8 +165,8 @@ Customer object (required).
 
 =item object
 
-Additional context object (currently, can be a cust_main object, cust_pkg
-object, or cust_bill object).
+Additional context object (currently, can be a cust_main, cust_pkg, 
+cust_bill, svc_acct, or cust_pay object).
 
 =back
 
@@ -204,30 +202,55 @@ sub prepare {
       } 
     } 
   } 
-  $_ = encode_entities($_) foreach values(%hash); # HTML escape
+  $_ = encode_entities($_) foreach values(%hash);
+
 
   ###
-  # fill-in
+  # clean up template
   ###
-
   my $subject_tmpl = new Text::Template (
     TYPE   => 'STRING',
     SOURCE => $self->subject,
   );
   my $subject = $subject_tmpl->fill_in( HASH => \%hash );
 
+  my $body = $self->body;
+  my ($skin, $guts) = eviscerate($body);
+  @$guts = map { 
+    $_ = decode_entities($_); # turn all punctuation back into itself
+    s/\r//gs;           # remove \r's
+    s/<br[^>]*>/\n/gsi; # and <br /> tags
+    s/<p>/\n/gsi;       # and <p>
+    s/<\/p>//gsi;       # and </p>
+    s/\240/ /gs;        # and &nbsp;
+    $_
+  } @$guts;
+  
+  $body = '';
+  while(@$skin || @$guts) {
+    $body .= shift(@$skin) || '';
+    $body .= shift(@$guts) || '';
+  }
+
+  ###
+  # fill-in
+  ###
+
   my $body_tmpl = new Text::Template (
-    TYPE   => 'STRING',
-    SOURCE => $self->body,
+    TYPE          => 'STRING',
+    SOURCE        => $body,
   );
-  my $body = $body_tmpl->fill_in( HASH => \%hash );
+
+  $body = $body_tmpl->fill_in( HASH => \%hash );
 
   ###
   # and email
   ###
 
   my @to = $cust_main->invoicing_list_emailonly;
-  #unless (@to) { #XXX do something }
+  warn "prepared msg_template with no email destination (custnum ".
+    $cust_main->custnum.")\n"
+    if !@to;
 
   my $conf = new FS::Conf;
 
@@ -237,8 +260,8 @@ sub prepare {
     'to'   => \@to,
     'subject'   => $subject,
     'html_body' => $body,
-    #XXX auto-make a text copy w/HTML::FormatText?
-    #  alas, us luddite mutt/pine users just aren't that big a deal
+    'text_body' => HTML::FormatText->new(leftmargin => 0, rightmargin => 70
+                    )->format( HTML::TreeBuilder->new_from_content($body) ),
   );
 
 }
@@ -250,6 +273,8 @@ Fills in the template and sends it to the customer.  Options are as for
 
 =cut
 
+# broken out from prepare() in case we want to queue the sending,
+# preview it, etc.
 sub send {
   my $self = shift;
   send_email(generate_email($self->prepare(@_)));
@@ -257,6 +282,9 @@ sub send {
 
 # helper sub for package dates
 my $ymd = sub { $_[0] ? time2str('%Y-%m-%d', $_[0]) : '' };
+
+# needed for some things
+my $conf = new FS::Conf;
 
 #return contexts and fill-in values
 # If you add anything, be sure to add a description in 
@@ -278,7 +306,7 @@ sub substitutions {
       ship_country
       ship_daytime ship_night ship_fax
 
-      payby paymask payname paytype payip
+      paymask payname paytype payip
       num_cancelled_pkgs num_ncancelled_pkgs num_pkgs
       classname categoryname
       balance
@@ -292,6 +320,10 @@ sub substitutions {
       [ paydate_my        => sub { sprintf('%02d/%04d', shift->paydate_monthyear) } ],
       [ otaker_first      => sub { shift->access_user->first } ],
       [ otaker_last       => sub { shift->access_user->last } ],
+      [ payby             => sub { FS::payby->shortname(shift->payby) } ],
+      [ company_name      => sub { 
+          $conf->config('company_name', shift->agentnum) 
+        } ],
     ],
     # next_bill_date
     'cust_pkg'  => [qw( 
@@ -315,6 +347,7 @@ sub substitutions {
     ],
     'cust_bill' => [qw(
       invnum
+      _date
     )],
     #XXX not really thinking about cust_bill substitutions quite yet
     
@@ -323,6 +356,20 @@ sub substitutions {
       ),
       [ password          => sub { shift->getfield('_password') } ],
     ], # for welcome messages
+    'cust_pay' => [qw(
+      paynum
+      _date
+      ),
+      [ paid              => sub { sprintf("%.2f", shift->paid) } ],
+      # overrides the one in cust_main in cases where a cust_pay is passed
+      [ payby             => sub { FS::payby->shortname(shift->payby) } ],
+      [ date              => sub { time2str("%a %B %o, %Y", shift->_date) } ],
+      [ payinfo           => sub { 
+          my $cust_pay = shift;
+          ($cust_pay->payby eq 'CARD' || $cust_pay->payby eq 'CHEK') ?
+            $cust_pay->paymask : $cust_pay->decrypt($cust_pay->payinfo)
+        } ],
+    ],
   };
 }
 
@@ -334,6 +381,7 @@ sub _upgrade_data {
     [ 'cancel_msgnum',   'cancelmessage',      'cancelsubject',  '' ],
     [ 'decline_msgnum',  'declinetemplate',    '',               '' ],
     [ 'impending_recur_msgnum', 'impending_recur_template', '',  '' ],
+    [ 'payment_receipt_msgnum', 'payment_receipt_email', '',     '' ],
     [ 'welcome_msgnum',  'welcome_email',      'welcome_email-subject', 'welcome_email-from' ],
     [ 'warning_msgnum',  'warning_email',      'warning_email-subject', 'warning_email-from' ],
   );
@@ -362,6 +410,55 @@ sub _upgrade_data {
       }
     }
   }
+}
+
+sub eviscerate {
+  # Every bit as pleasant as it sounds.
+  #
+  # We do this because Text::Template::Preprocess doesn't
+  # actually work.  It runs the entire template through 
+  # the preprocessor, instead of the code segments.  Which 
+  # is a shame, because Text::Template already contains
+  # the code to do this operation.
+  my $body = shift;
+  my (@outside, @inside);
+  my $depth = 0;
+  my $chunk = '';
+  while($body || $chunk) {
+    # put all leading non-delimiters into $first
+    my ($first, $rest) =
+        ($body =~ /^((?:\\[{}]|[^{}])*)(.*)$/s);
+    $chunk .= $first;
+    # put a leading delimiter into $delim if there is one
+    my ($delim, $rest) =
+      ($rest =~ /^([{}]?)(.*)$/s);
+
+    if( $delim eq '{' ) {
+      $chunk .= '{';
+      if( $depth == 0 ) {
+        push @outside, $chunk;
+        $chunk = '';
+      }
+      $depth++;
+    }
+    elsif( $delim eq '}' ) {
+      $depth--;
+      if( $depth == 0 ) {
+        push @inside, $chunk;
+        $chunk = '';
+      }
+      $chunk .= '}';
+    }
+    else {
+      # no more delimiters
+      if( $depth == 0 ) {
+        push @outside, $chunk . $rest;
+      } # else ? something wrong
+      last;
+    }
+    $body = $rest;
+  }
+  (\@outside, \@inside);
 }
 
 =back

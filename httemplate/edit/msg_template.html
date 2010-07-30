@@ -50,6 +50,7 @@ my %substitutions = (
     '$cust_status'    => 'Status',
     '$ucfirst_cust_status'  => 'Status, capitalized',
     '$cust_statuscolor'     => 'Status color code',
+    '$company_name'   => 'Our company name',
   ],
   'contact' => [ # duplicate this for shipping
     '$name'           => 'Company and contact name',
@@ -92,7 +93,14 @@ my %substitutions = (
   ],
   'svc_acct'  => [
     '$username'       => 'Login name',
-    '$password'      => 'Password',
+    '$password'       => 'Password',
+  ],
+  'cust_pay'  => [
+    '$paynum'         => 'Payment#',
+    '$paid'           => 'Amount',
+    '$payby'          => 'Payment method',
+    '$date'           => 'Payment date',
+    '$payinfo'        => 'Card/account# (masked)',
   ],
 );
 my @c = @{ $substitutions{'contact'} };
@@ -107,6 +115,7 @@ tie my %sections, 'Tie::IxHash', (
 'cust_main' => 'Customer status and payment info',
 'cust_pkg'  => 'Package fields',
 'cust_bill' => 'Invoice fields',
+'cust_pay'  => 'Payment fields',
 'svc_acct'  => 'Login service fields',
 );
 

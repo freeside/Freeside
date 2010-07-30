@@ -446,76 +446,82 @@ sub send_receipt {
 
   my $conf = new FS::Conf;
 
-  return ''
-    unless $conf->exists('payment_receipt_email')
-        && grep { $_ !~ /^(POST|FAX)$/ } $cust_main->invoicing_list;
+  my @invoicing_list = $cust_main->invoicing_list_emailonly;
+  return '' unless @invoicing_list;
 
   $cust_bill ||= ($cust_main->cust_bill)[-1]; #rather inefficient though?
 
   if (    ( exists($opt->{'manual'}) && $opt->{'manual'} )
-       || ! $conf->exists('invoice_html_statement')
+       || ! $conf->exists('invoice_html_statement') # XXX msg_template
        || ! $cust_bill
      ) {
 
-    my $receipt_template = new Text::Template (
-      TYPE   => 'ARRAY',
-      SOURCE => [ map "$_\n", $conf->config('payment_receipt_email') ],
-    ) or do {
-      warn "can't create payment receipt template: $Text::Template::ERROR";
-      return '';
-    };
+    my $error = '';
 
-    my @invoicing_list = grep { $_ !~ /^(POST|FAX)$/ }
-                           $cust_main->invoicing_list;
-
-    my $payby = $self->payby;
-    my $payinfo = $self->payinfo;
-    $payby =~ s/^BILL$/Check/ if $payinfo;
-    if ( $payby eq 'CARD' || $payby eq 'CHEK' ) {
-      $payinfo = $self->paymask
-    } else {
-      $payinfo = $self->decrypt($payinfo);
+    if( $conf->exists('payment_receipt_msgnum') ) {
+      my $msg_template = 
+          FS::msg_template->by_key($conf->config('payment_receipt_msgnum'));
+      $error = $msg_template->send('cust_main'=> $cust_main, 'object'=> $self);
     }
-    $payby =~ s/^CHEK$/Electronic check/;
+    elsif ( $conf->exists('payment_receipt_email') ) {
+      my $receipt_template = new Text::Template (
+        TYPE   => 'ARRAY',
+        SOURCE => [ map "$_\n", $conf->config('payment_receipt_email') ],
+      ) or do {
+        warn "can't create payment receipt template: $Text::Template::ERROR";
+        return '';
+      };
 
-    my %fill_in = (
-      'date'         => time2str("%a %B %o, %Y", $self->_date),
-      'name'         => $cust_main->name,
-      'paynum'       => $self->paynum,
-      'paid'         => sprintf("%.2f", $self->paid),
-      'payby'        => ucfirst(lc($payby)),
-      'payinfo'      => $payinfo,
-      'balance'      => $cust_main->balance,
-      'company_name' => $conf->config('company_name', $cust_main->agentnum),
-    );
+      my $payby = $self->payby;
+      my $payinfo = $self->payinfo;
+      $payby =~ s/^BILL$/Check/ if $payinfo;
+      if ( $payby eq 'CARD' || $payby eq 'CHEK' ) {
+        $payinfo = $self->paymask
+      } else {
+        $payinfo = $self->decrypt($payinfo);
+      }
+      $payby =~ s/^CHEK$/Electronic check/;
 
-    if ( $opt->{'cust_pkg'} ) {
-      $fill_in{'pkg'} = $opt->{'cust_pkg'}->part_pkg->pkg;
-      #setup date, other things?
+      my %fill_in = (
+        'date'         => time2str("%a %B %o, %Y", $self->_date),
+        'name'         => $cust_main->name,
+        'paynum'       => $self->paynum,
+        'paid'         => sprintf("%.2f", $self->paid),
+        'payby'        => ucfirst(lc($payby)),
+        'payinfo'      => $payinfo,
+        'balance'      => $cust_main->balance,
+        'company_name' => $conf->config('company_name', $cust_main->agentnum),
+      );
+
+      if ( $opt->{'cust_pkg'} ) {
+        $fill_in{'pkg'} = $opt->{'cust_pkg'}->part_pkg->pkg;
+        #setup date, other things?
+      }
+
+      $error = send_email(
+        'from'    => $conf->config('invoice_from', $cust_main->agentnum),
+                                   #invoice_from??? well as good as any
+        'to'      => \@invoicing_list,
+        'subject' => 'Payment receipt',
+        'body'    => [ $receipt_template->fill_in( HASH => \%fill_in ) ],
+      );
+
+    } 
+    else { # no payment_receipt_msgnum or payment_receipt_email
+
+      my $queue = new FS::queue {
+         'paynum' => $self->paynum,
+         'job'    => 'FS::cust_bill::queueable_email',
+      };
+
+      $queue->insert(
+        'invnum'   => $cust_bill->invnum,
+        'template' => 'statement',
+      );
     }
-
-    send_email(
-      'from'    => $conf->config('invoice_from', $cust_main->agentnum),
-                                 #invoice_from??? well as good as any
-      'to'      => \@invoicing_list,
-      'subject' => 'Payment receipt',
-      'body'    => [ $receipt_template->fill_in( HASH => \%fill_in ) ],
-    );
-
-  } else {
-
-    my $queue = new FS::queue {
-       'paynum' => $self->paynum,
-       'job'    => 'FS::cust_bill::queueable_email',
-    };
-
-    $queue->insert(
-      'invnum'   => $cust_bill->invnum,
-      'template' => 'statement',
-    );
-
-  }
-
+  
+    warn "send_receipt: $error\n" if $error;
+  } #$opt{manual} || no invoice_html_statement || customer has no invoices
 }
 
 =item cust_bill_pay
