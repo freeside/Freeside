@@ -425,12 +425,13 @@ sub eviscerate {
   my $depth = 0;
   my $chunk = '';
   while($body || $chunk) {
+    my ($first, $delim, $rest);
     # put all leading non-delimiters into $first
-    my ($first, $rest) =
+    ($first, $rest) =
         ($body =~ /^((?:\\[{}]|[^{}])*)(.*)$/s);
     $chunk .= $first;
     # put a leading delimiter into $delim if there is one
-    my ($delim, $rest) =
+    ($delim, $rest) =
       ($rest =~ /^([{}]?)(.*)$/s);
 
     if( $delim eq '{' ) {
