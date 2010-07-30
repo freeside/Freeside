@@ -106,7 +106,7 @@ END
     my $msgnum = $conf->config('impending_recur_msgnum',$cust_main->agentnum);
     if ( $msgnum ) {
       my $msg_template = qsearchs('msg_template', { msgnum => $msgnum });
-      $error = $msg_template->send($cust_main);
+      $error = $msg_template->send('cust_main' => $cust_main);
     }
     else {
       $error = $cust_main->notify( 'impending_recur_template',
