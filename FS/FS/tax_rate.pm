@@ -1316,7 +1316,7 @@ sub _restore_remembered_tax_products {
 
       unless ( $part_pkg_taxproduct ) {
         return "failed to find part_pkg_taxproduct (".
-          $taxproduct->{pkgpart}->{$class}. ") for pkgpart $pkgpart\n";
+          $taxproduct->{$pkgpart}->{$class}. ") for pkgpart $pkgpart\n";
       }
 
       if ( $class eq '' ) {
