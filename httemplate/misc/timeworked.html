@@ -54,10 +54,11 @@
 
 %     foreach ( @customers ) {
 %       ($custnum, $name) = split(':', $_, 2);
+%       $clink = $p. 'view/cust_main.cgi?'. $custnum;
 
         <TR>
-          <TD ALIGN="right" COLSPAN="4" ><% $custnum %></TD>
-          <TD ALIGN="right"><% $name %></TD>
+          <TD ALIGN="right" COLSPAN="4" ><a href="<% $clink %>"><% $custnum %></a></TD>
+          <TD ALIGN="right"><a href="<% $clink %>"><% $name %></a></TD>
           <TD>
 
 %           $multiplier = $default_multiplier;
