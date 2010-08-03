@@ -44,11 +44,12 @@ my $html_init =
 
 if ( $part_svc->svcdb eq 'svc_domain' ) {
 
-  #areyousure for adding these?
+  #XXX add areyousure javscript confirmation for adding these
 
   foreach my $line ( FS::Conf->new->config('cgp_rule-domain_templates') ) {
     $line =~ /^\s*(\d+)\s+(.+)\s*$/ or next;
     my($t_svcnum, $t_name) = ( $1, $2 );
+    next if $t_svcnum == $svcnum;
     $html_init .=
       qq!<A HREF="${p}misc/clone-cgp_rule.html?clone=$t_svcnum;svcnum=$svcnum">!
        ."Add $t_name rule</A><BR>";
