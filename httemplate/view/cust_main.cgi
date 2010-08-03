@@ -233,6 +233,10 @@ Comments
 <% include('cust_main/change_history.html', $cust_main ) %> 	 
 % }
 
+% if ( $view eq 'custom' ) { 
+<% include('cust_main/custom.html', $cust_main ) %>
+% }
+
 </DIV>
 <% include('/elements/footer.html') %>
 <%init>
@@ -273,6 +277,8 @@ $views{'Payment History'} =  'payment_history'
                                unless $conf->config('payby-default' eq 'HIDE');
 $views{'Change History'}  =  'change_history'
   if $curuser->access_right('View customer history');
+$views{$conf->config('cust_main-custom_title') || 'Custom'} =  'custom'
+  if $conf->config('cust_main-custom_link');
 $views{'Jumbo'}           =  'jumbo';
 
 my %viewname = reverse %views;

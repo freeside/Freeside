@@ -1,0 +1,21 @@
+<IFRAME id="customframe" 
+        src="<% $proxyurl %>" 
+        onload="resizeFrame(this)"
+        frameborder=0
+        marginheight="0px"
+        marginwidth="0px"
+        width="100%"
+        scrolling="no"
+>
+</IFRAME>
+<SCRIPT TYPE="text/javascript">
+function resizeFrame(f) {
+  f.style.height = f.contentDocument.body.scrollHeight + 'px';
+}
+</SCRIPT>
+<%init>
+
+my( $cust_main ) = @_;
+
+my $proxyurl = $p.'/misc/custom_link_proxy.cgi?custnum='.$cust_main->custnum;
+</%init>

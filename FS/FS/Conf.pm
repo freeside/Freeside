@@ -3891,6 +3891,19 @@ and customer address. Include units.',
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'cust_main-custom_link',
+    'section'     => 'UI',
+    'description' => 'URL to use as source for the "Custom" tab in the View Customer page.  The custnum will be appended.',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'cust_main-custom_title',
+    'section'     => 'UI',
+    'description' => 'Title for the "Custom" tab in the View Customer page.',
+    'type'        => 'text',
+  },
 
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachine", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
