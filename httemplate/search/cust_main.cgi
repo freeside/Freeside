@@ -270,7 +270,7 @@
 %      $cgi->param('offset', 0);
 %      print qq!( <a href="!. $cgi->self_url. qq!">hide!;
 %    }
-%    print ' cancelled customers</a> )';
+%    print ' canceled customers</a> )';
 %  }
 %
 %  if ( $cgi->param('referral_custnum') ) {
