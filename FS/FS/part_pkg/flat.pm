@@ -192,7 +192,7 @@ sub calc_discount {
      
      my $months = $discount->months
                     ? min( $chg_months,
-                           $discount->months - $cust_pkg->months_used )
+                           $discount->months - $cust_pkg_discount->months_used )
                     : $chg_months;
 
      my $error = $cust_pkg_discount->increment_months_used($months);
