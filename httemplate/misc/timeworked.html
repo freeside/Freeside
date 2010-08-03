@@ -8,21 +8,10 @@
 
   <THEAD>
     <TR>
-      <TH>Trans</TH>
       <TH COLSPAN="2">Ticket</TH>
-      <TH>Time</TH>
+      <TH>Hours</TH>
       <TH COLSPAN="2">Customer</TH>
       <TH>Multiplier</TH>
-    </TR>
-
-    <TR>
-      <TH>#</TH>
-      <TH>#</TH>
-      <TH>Subject</TH>
-      <TH>hours</TH>
-      <TH>#</TH>
-      <TH>Name</TH>
-      <TH></TH>
     </TR>
   </THEAD>
 
@@ -35,9 +24,9 @@
 %     my ($custnum, $name) = split(':', pop @customers, 2);
 %     my $link = $p. 'rt/Ticket/Display.html?id='. $ticketmap{$tr_id}.
 %                    '#txn-'. $tr_id;
+%     my $clink = $p. 'view/cust_main.cgi?'. $custnum;
 
       <TR>
-        <TD><a href="<% $link %>"><% $tr_id %></a></TD>
         <TD><a href="<% $link %>"><% $ticketmap{$tr_id} %></a></TD>
         <TD><a href="<% $link %>"><% $ticket{$ticketmap{$tr_id}} |h %></a></TD>
 
@@ -47,8 +36,8 @@
 %       }
 
         <TD><% sprintf("%0.2f", $seconds/3600) %></TD>
-        <TD ALIGN="right"><% $custnum %></TD>
-        <TD ALIGN="right"><% $name %></TD>
+        <TD ALIGN="right"><a href="<% $clink %>"><% $custnum %></a></TD>
+        <TD ALIGN="right"><a href="<% $clink %>"><% $name %></a></TD>
         <TD>
           <INPUT TYPE="hidden" NAME="transactionid<%$tr_id%>" VALUE="1" >
           <INPUT TYPE="hidden" NAME="seconds<%$tr_id%>" VALUE="<% $seconds %>" >
@@ -67,7 +56,7 @@
 %       ($custnum, $name) = split(':', $_, 2);
 
         <TR>
-          <TD ALIGN="right" COLSPAN="5" ><% $custnum %></TD>
+          <TD ALIGN="right" COLSPAN="4" ><% $custnum %></TD>
           <TD ALIGN="right"><% $name %></TD>
           <TD>
 
