@@ -15,7 +15,6 @@ Example:
   #old-style
   include( '/elements/header.html', 'Title', $menubar, $etc, $head);
 
-
 </%doc>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 %#<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
@@ -43,8 +42,8 @@ Example:
     <% $head |n %>
 
   </HEAD>
-  <BODY BGCOLOR="#f8f8f8" <% $etc |n %> STYLE="margin-top:0; margin-bottom:0; margin-left:0; margin-right:0">
-    <table width="100%" CELLPADDING=0 CELLSPACING=0 STYLE="padding-left:0; padding-right:4">
+  <BODY BGCOLOR="#f8f8f8" <% $etc |n %> STYLE="margin-top:0; margin-bottom:0; margin-left:0px; margin-right:0px">
+    <table width="100%" CELLPADDING=0 CELLSPACING=0 STYLE="padding-left:0px; padding-right:4px">
       <tr>
         <td BGCOLOR="#ffffff"><IMG BORDER=0 ALT="freeside" HEIGHT="36" SRC="<%$fsurl%>view/REAL_logo.cgi"></td>
         <td align=left BGCOLOR="#ffffff"> <!-- valign="top" -->
