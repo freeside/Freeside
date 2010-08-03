@@ -7488,7 +7488,8 @@ recurring packages not yet setup).
 =cut
 
 sub ordered_sql {
-  " 0 < ( $select_count_pkgs AND ". FS::cust_pkg->ordered_sql. " ) ";
+  FS::cust_main->none_active_sql.
+  " AND 0 < ( $select_count_pkgs AND ". FS::cust_pkg->ordered_sql. " ) ";
 }
 
 =item active_sql
@@ -7502,6 +7503,18 @@ sub active_sql {
   " 0 < ( $select_count_pkgs AND ". FS::cust_pkg->active_sql. " ) ";
 }
 
+=item none_active_sql
+
+Returns an SQL expression identifying cust_main records with no active
+recurring packages.  This includes customers of status prospect, ordered,
+inactive, and suspended.
+
+=cut
+
+sub none_active_sql {
+  " 0 = ( $select_count_pkgs AND ". FS::cust_pkg->active_sql. " ) ";
+}
+
 =item inactive_sql
 
 Returns an SQL expression identifying inactive cust_main records (customers with
@@ -7509,11 +7522,10 @@ no active recurring packages, but otherwise unsuspended/uncancelled).
 
 =cut
 
-sub inactive_sql { "
-  0 = ( $select_count_pkgs AND ". FS::cust_pkg->active_sql. " )
-  AND
-  0 < ( $select_count_pkgs AND ". FS::cust_pkg->inactive_sql. " )
-"; }
+sub inactive_sql {
+  FS::cust_main->none_active_sql.
+  " AND 0 < ( $select_count_pkgs AND ". FS::cust_pkg->inactive_sql. " ) ";
+}
 
 =item susp_sql
 =item suspended_sql
@@ -7524,11 +7536,10 @@ Returns an SQL expression identifying suspended cust_main records.
 
 
 sub suspended_sql { susp_sql(@_); }
-sub susp_sql { "
-    0 < ( $select_count_pkgs AND ". FS::cust_pkg->suspended_sql. " )
-    AND
-    0 = ( $select_count_pkgs AND ". FS::cust_pkg->active_sql. " )
-"; }
+sub susp_sql {
+  FS::cust_main->none_active_sql.
+  " AND 0 < ( $select_count_pkgs AND ". FS::cust_pkg->suspended_sql. " ) ";
+}
 
 =item cancel_sql
 =item cancelled_sql
