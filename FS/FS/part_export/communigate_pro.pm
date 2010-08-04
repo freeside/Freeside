@@ -823,17 +823,7 @@ sub export_getsettings_svc_acct {
   foreach my $key ( grep ref($effective_settings->{$_}),
                     keys %$effective_settings )
   {
-    my $value = $effective_settings->{$key};
-    if ( ref($value) eq 'ARRAY' ) {
-      $effective_settings->{$key} =
-        join(' ', map { ref($_) ? '['.join(', ', @$_).']' : $_ } @$value );
-    } elsif ( ref($value) eq 'HASH' ) {
-      $effective_settings->{$key} =
-        join(', ', map { "$_:".$value->{$_} } keys %$value );
-    } else {
-      #XXX
-      warn "serializing ". ref($value). " for table display not yet handled";
-    }
+    $effective_settings->{$key} = _pretty( $effective_settings->{$key} );
   }
 
   %{$settingsref} = %$effective_settings;
@@ -841,6 +831,22 @@ sub export_getsettings_svc_acct {
 
   '';
 
+}
+
+sub _pretty {
+  my $value = shift;
+  if ( ref($value) eq 'ARRAY' ) {
+    '['. join(' ', map { ref($_) ? _pretty($_) : $_ } @$value ). ']';
+  } elsif ( ref($value) eq 'HASH' ) {
+    my $hv = $value->{$_};
+    join(', ', map { my $v = $value->{$_};
+                     "$_:". ref($v) ? _pretty($v) : $_ 
+                   }
+                   keys %$value
+        );
+  } else {
+    warn "serializing ". ref($value). " for table display not yet handled";
+  }
 }
 
 sub export_getsettings_svc_forward {
