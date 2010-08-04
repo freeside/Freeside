@@ -732,7 +732,11 @@ sub export_getsettings_svc_domain {
   {
     my $value = $effective_settings->{$key};
     if ( ref($value) eq 'ARRAY' ) {
-      $effective_settings->{$key} = join(' ', @$value);
+      $effective_settings->{$key} =
+        join(' ', map { ref($_) ? '['.join(', ', @$_).']' : $_ } @$value );
+    } elsif ( ref($value) eq 'HASH' ) {
+      $effective_settings->{$key} =
+        join(', ', map { "$_:".$value->{$_} } keys %$value );
     } else {
       #XXX
       warn "serializing ". ref($value). " for table display not yet handled";
@@ -821,7 +825,11 @@ sub export_getsettings_svc_acct {
   {
     my $value = $effective_settings->{$key};
     if ( ref($value) eq 'ARRAY' ) {
-      $effective_settings->{$key} = join(' ', @$value);
+      $effective_settings->{$key} =
+        join(' ', map { ref($_) ? '['.join(', ', @$_).']' : $_ } @$value );
+    } elsif ( ref($value) eq 'HASH' ) {
+      $effective_settings->{$key} =
+        join(', ', map { "$_:".$value->{$_} } keys %$value );
     } else {
       #XXX
       warn "serializing ". ref($value). " for table display not yet handled";
