@@ -828,11 +828,12 @@ sub _pretty {
   if ( ref($value) eq 'ARRAY' ) {
     '['. join(' ', map { ref($_) ? _pretty($_) : $_ } @$value ). ']';
   } elsif ( ref($value) eq 'HASH' ) {
-    join(', ', map { my $v = $value->{$_};
-                     "$_:". ( ref($v) ? _pretty($v) : $_ );
-                   }
-                   keys %$value
-        );
+    '{'. join(', ',
+        map { my $v = $value->{$_};
+              "$_:". ( ref($v) ? _pretty($v) : $_ );
+            }
+            keys %$value
+    ). '}';
   } else {
     warn "serializing ". ref($value). " for table display not yet handled";
   }
