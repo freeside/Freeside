@@ -830,7 +830,7 @@ sub _pretty {
   } elsif ( ref($value) eq 'HASH' ) {
     '{'. join(', ',
         map { my $v = $value->{$_};
-              "$_:". ( ref($v) ? _pretty($v) : $_ );
+              "$_:". ( ref($v) ? _pretty($v) : $v );
             }
             keys %$value
     ). '}';
