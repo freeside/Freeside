@@ -18,6 +18,7 @@ lib/RT/Tickets_Overlay.pm #customfield date patch
 lib/RT/URI/freeside.pm
 lib/RT/URI/freeside/Internal.pm
 lib/RT/URI/freeside/XMLRPC.pm
+ share/html/Admin/Elements/EditCustomFields
  share/html/Admin/Users/Modify.html
  share/html/Elements/ColumnMap
  share/html/Elements/CollectionList
