@@ -730,17 +730,7 @@ sub export_getsettings_svc_domain {
   foreach my $key ( grep ref($effective_settings->{$_}),
                     keys %$effective_settings )
   {
-    my $value = $effective_settings->{$key};
-    if ( ref($value) eq 'ARRAY' ) {
-      $effective_settings->{$key} =
-        join(' ', map { ref($_) ? '['.join(', ', @$_).']' : $_ } @$value );
-    } elsif ( ref($value) eq 'HASH' ) {
-      $effective_settings->{$key} =
-        join(', ', map { "$_:".$value->{$_} } keys %$value );
-    } else {
-      #XXX
-      warn "serializing ". ref($value). " for table display not yet handled";
-    }
+    $effective_settings->{$key} = _pretty( $effective_settings->{$key} );
   }
 
   %{$settingsref} = %$effective_settings;
