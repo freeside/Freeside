@@ -2801,21 +2801,22 @@ sub h_date {
   $h ? $h->history_date : '';
 }
 
-=item scalar_sql SQL
+=item scalar_sql SQL [ PLACEHOLDER, ... ]
 
-A class method with a propensity for becoming an instance method.  This
-method executes the sql statement represented by SQL and returns a scalar
-representing the result.  Don't ask for rows -- you get the first column
-of the first row.  Don't give me bogus SQL or I'll die on you.
+A class or object method.  Executes the sql statement represented by SQL and
+returns a scalar representing the result: the first column of the first row.
 
-Returns an empty string in the event of no rows.
+Dies on bogus SQL.  Returns an empty string if no row is returned.
+
+Typically used for statments which return a single value such as "SELECT
+COUNT(*) FROM table WHERE something" OR "SELECT column FROM table WHERE key = ?"
 
 =cut
 
 sub scalar_sql {
-  my($self, $sql ) = ( shift, shift );
+  my($self, $sql) = (shift, shift);
   my $sth = dbh->prepare($sql) or die dbh->errstr;
-  $sth->execute
+  $sth->execute(@_)
     or die "Unexpected error executing statement $sql: ". $sth->errstr;
   my $scalar = $sth->fetchrow_arrayref->[0];
   defined($scalar) ? $scalar : '';

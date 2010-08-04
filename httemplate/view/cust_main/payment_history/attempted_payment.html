@@ -1,0 +1,41 @@
+<I>Payment attempt <% $info |h %></I>
+<%init>
+
+my( $cust_pay_pending, %opt ) = @_;
+
+my $date_format = $opt{'date_format'} || '%m/%d/%Y';
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+my $payby = $cust_pay_pending->payby;
+
+my $payinfo;
+if ( $payby eq 'CARD' ) {
+  $payinfo = $cust_pay_pending->paymask;
+} elsif ( $payby eq 'CHEK' ) {
+  my( $account, $aba ) = split('@', $cust_pay_pending->paymask );
+  $payinfo = "ABA $aba, Acct #$account";
+} else {
+  $payinfo = $cust_pay_pending->payinfo;
+}
+
+$payby =~ s/^BILL$/Check #/ if $payinfo;
+$payby =~ s/^CHEK$/Electronic check /;
+$payby =~ s/^PREP$/Prepaid card /;
+$payby =~ s/^CARD$/Credit card #/; 
+$payby =~ s/^COMP$/Complimentary by /; 
+$payby =~ s/^CASH$/Cash/;
+$payby =~ s/^WEST$/Western Union/;
+$payby =~ s/^MCRD$/Manual credit card/;
+$payby =~ s/^BILL$//;
+my $info = $payby ? "($payby$payinfo)" : '';
+
+if ( $opt{'pkg-balances'} && $cust_pay_pending->pkgnum ) {
+  my $cust_pkg = qsearchs('cust_pkg', { 'pkgnum'=>$cust_pay_pending->pkgnum } );
+  $info .= ' for '. $cust_pkg->pkg_label_long;
+}
+
+$info .= ': '. $cust_pay_pending->statustext
+  if length($cust_pay_pending->statustext);
+
+</%init>

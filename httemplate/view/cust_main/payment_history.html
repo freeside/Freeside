@@ -422,6 +422,16 @@ foreach my $cust_pay_void ($cust_main->cust_pay_void) {
 
 }
 
+#declined payments
+foreach my $cust_pay_pending ($cust_main->cust_pay_pending_attempt) {
+  push @history, {
+    'date'    => $cust_pay_pending->_date,
+    'desc'    => include('payment_history/attempted_payment.html', $cust_pay_pending, %opt ),
+    'void_payment' => $cust_pay_pending->paid, #??
+    #'target'  => $target, #XXX
+  };
+}
+
 #credits (some false laziness w/payments)
 foreach my $cust_credit ($cust_main->cust_credit) {
   push @history, {

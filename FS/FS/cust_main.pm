@@ -7097,6 +7097,26 @@ sub cust_pay_pending {
            );
 }
 
+=item cust_pay_pending_attempt
+
+Returns all payment attempts / declined payments for this customer, as pending
+payments objects (see L<FS::cust_pay_pending>), with status "done" but without
+a corresponding payment (see L<FS::cust_pay>).
+
+=cut
+
+sub cust_pay_pending_attempt {
+  my $self = shift;
+  return $self->num_cust_pay_pending_attempt unless wantarray;
+  sort { $a->_date <=> $b->_date }
+    qsearch( 'cust_pay_pending', {
+                                   'custnum' => $self->custnum,
+                                   'status'  => 'done',
+                                   'paynum'  => '',
+                                 },
+           );
+}
+
 =item num_cust_pay_pending
 
 Returns the number of pending payments (see L<FS::cust_pay_pending>) for this
@@ -7107,11 +7127,28 @@ cust_pay_pending method is used in a scalar context.
 
 sub num_cust_pay_pending {
   my $self = shift;
-  my $sql = " SELECT COUNT(*) FROM cust_pay_pending ".
-            "   WHERE custnum = ? AND status != 'done' ";
-  my $sth = dbh->prepare($sql) or die dbh->errstr;
-  $sth->execute($self->custnum) or die $sth->errstr;
-  $sth->fetchrow_arrayref->[0];
+  $self->scalar_sql(
+    " SELECT COUNT(*) FROM cust_pay_pending ".
+      " WHERE custnum = ? AND status != 'done' ",
+    $self->custnum
+  );
+}
+
+=item num_cust_pay_pending_attempt
+
+Returns the number of pending payments (see L<FS::cust_pay_pending>) for this
+customer, with status "done" but without a corresp.  Also called automatically when the
+cust_pay_pending method is used in a scalar context.
+
+=cut
+
+sub num_cust_pay_pending_attempt {
+  my $self = shift;
+  $self->scalar_sql(
+    " SELECT COUNT(*) FROM cust_pay_pending ".
+      " WHERE custnum = ? AND status = 'done' AND paynum IS NULL",
+    $self->custnum
+  );
 }
 
 =item cust_refund
