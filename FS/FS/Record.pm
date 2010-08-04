@@ -2817,7 +2817,8 @@ sub scalar_sql {
   my $sth = dbh->prepare($sql) or die dbh->errstr;
   $sth->execute
     or die "Unexpected error executing statement $sql: ". $sth->errstr;
-  $sth->fetchrow_arrayref->[0] || '';
+  my $scalar = $sth->fetchrow_arrayref->[0];
+  defined($scalar) ? $scalar : '';
 }
 
 =back
