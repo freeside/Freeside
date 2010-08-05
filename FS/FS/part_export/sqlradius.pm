@@ -22,6 +22,15 @@ tie %options, 'Tie::IxHash',
     type  => 'checkbox',
     label => 'Ignore accounting records from this database'
   },
+  'process_single_realm' => {
+    type  => 'checkbox',
+    label => 'Only process one realm of accounting records',
+  },
+  'realm' => { label => 'The realm of of accounting records to be processed' },
+  'ignore_long_sessions' => {
+    type  => 'checkbox',
+    label => 'Ignore sessions which span billing periods',
+  },
   'hide_ip' => {
     type  => 'checkbox',
     label => 'Hide IP address information on session reports',
@@ -617,13 +626,18 @@ sub usage_sessions {
 
   if ( $svc_acct ) {
     my $username = $self->export_username($svc_acct);
-    if ( $svc_acct =~ /^([^@]+)\@([^@]+)$/ ) {
+    if ( $username =~ /^([^@]+)\@([^@]+)$/ ) {
       push @where, '( UserName = ? OR ( UserName = ? AND Realm = ? ) )';
       push @param, $username, $1, $2;
     } else {
       push @where, 'UserName = ?';
       push @param, $username;
     }
+  }
+
+  if ($self->option('process_single_realm')) {
+    push @where, 'Realm = ?';
+    push @param, $self->option('realm');
   }
 
   if ( length($ip) ) {
@@ -719,43 +733,53 @@ sub update_svc {
     my $oldAutoCommit = $FS::UID::AutoCommit; # can't undo side effects, but at
     local $FS::UID::AutoCommit = 0;           # least we can avoid over counting
 
-    my @svc_acct =
-      grep { qsearch( 'export_svc', { 'exportnum' => $self->exportnum,
-                                      'svcpart'   => $_->cust_svc->svcpart, } )
-           }
-      qsearch( 'svc_acct',
-                 { 'username' => $UserName },
-                 '',
-                 $extra_sql
-               );
-
+    my $status = 'skipped';
     my $errinfo = "for RADIUS detail RadAcctID $RadAcctId ".
                   "(UserName $UserName, Realm $Realm)";
-    my $status = 'skipped';
-    if ( !@svc_acct ) {
-      warn "WARNING: no svc_acct record found $errinfo - skipping\n";
-    } elsif ( scalar(@svc_acct) > 1 ) {
-      warn "WARNING: multiple svc_acct records found $errinfo - skipping\n";
+
+    if (    $self->option('process_single_realm')
+         && $self->option('realm') ne $Realm )
+    {
+      warn "WARNING: wrong realm $errinfo - skipping\n" if $DEBUG;
     } else {
+      my @svc_acct =
+        grep { qsearch( 'export_svc', { 'exportnum' => $self->exportnum,
+                                        'svcpart'   => $_->cust_svc->svcpart, } )
+             }
+        qsearch( 'svc_acct',
+                   { 'username' => $UserName },
+                   '',
+                   $extra_sql
+                 );
 
-      my $svc_acct = $svc_acct[0];
-      warn "found svc_acct ". $svc_acct->svcnum. " $errinfo\n" if $DEBUG;
-
-      $svc_acct->last_login($AcctStartTime);
-      $svc_acct->last_logout($AcctStopTime);
-
-      my $cust_pkg = $svc_acct->cust_svc->cust_pkg;
-      if ( $cust_pkg && $AcctStopTime < (    $cust_pkg->last_bill
-                                          || $cust_pkg->setup     )  ) {
-        $status = 'skipped (too old)';
+      if ( !@svc_acct ) {
+        warn "WARNING: no svc_acct record found $errinfo - skipping\n";
+      } elsif ( scalar(@svc_acct) > 1 ) {
+        warn "WARNING: multiple svc_acct records found $errinfo - skipping\n";
       } else {
-        my @st;
-        push @st, _try_decrement($svc_acct, 'seconds',    $AcctSessionTime   );
-        push @st, _try_decrement($svc_acct, 'upbytes',    $AcctInputOctets   );
-        push @st, _try_decrement($svc_acct, 'downbytes',  $AcctOutputOctets  );
-        push @st, _try_decrement($svc_acct, 'totalbytes', $AcctInputOctets
+
+        my $svc_acct = $svc_acct[0];
+        warn "found svc_acct ". $svc_acct->svcnum. " $errinfo\n" if $DEBUG;
+
+        $svc_acct->last_login($AcctStartTime);
+        $svc_acct->last_logout($AcctStopTime);
+
+        my $session_time = $AcctStopTime;
+        $session_time = $AcctStartTime if $self->option('ignore_long_sessions');
+
+        my $cust_pkg = $svc_acct->cust_svc->cust_pkg;
+        if ( $cust_pkg && $session_time < (    $cust_pkg->last_bill
+                                            || $cust_pkg->setup     )  ) {
+          $status = 'skipped (too old)';
+        } else {
+          my @st;
+          push @st, _try_decrement($svc_acct, 'seconds',    $AcctSessionTime);
+          push @st, _try_decrement($svc_acct, 'upbytes',    $AcctInputOctets);
+          push @st, _try_decrement($svc_acct, 'downbytes',  $AcctOutputOctets);
+          push @st, _try_decrement($svc_acct, 'totalbytes', $AcctInputOctets
                                                           + $AcctOutputOctets);
-        $status=join(' ', @st);
+          $status=join(' ', @st);
+        }
       }
     }
 

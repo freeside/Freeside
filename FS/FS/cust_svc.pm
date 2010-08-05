@@ -539,15 +539,24 @@ sub seconds_since_sqlradacct {
     warn "$mes finding closed sessions completely within the given range\n"
       if $DEBUG;
   
+    my $realm = '';
+    my $realmparam = '';
+    if ($part_export->option('process_single_realm')) {
+      $realm = 'AND Realm = ?';
+      $realmparam = $part_export->option('realm');
+    }
+
     my $sth = $dbh->prepare("SELECT SUM(acctsessiontime)
                                FROM radacct
                                WHERE UserName = ?
+                                 $realm
                                  AND $str2time AcctStartTime) >= ?
                                  AND $str2time AcctStopTime ) <  ?
                                  AND $str2time AcctStopTime ) > 0
                                  AND AcctStopTime IS NOT NULL"
     ) or die $dbh->errstr;
-    $sth->execute($username, $start, $end) or die $sth->errstr;
+    $sth->execute($username, ($realm ? $realmparam : ()), $start, $end)
+      or die $sth->errstr;
     my $regular = $sth->fetchrow_arrayref->[0];
   
     warn "$mes finding open sessions which start in the range\n"
@@ -557,13 +566,19 @@ sub seconds_since_sqlradacct {
     $query = "SELECT SUM( ? - $str2time AcctStartTime ) )
                 FROM radacct
                 WHERE UserName = ?
+                  $realm
                   AND $str2time AcctStartTime ) >= ?
                   AND $str2time AcctStartTime ) <  ?
                   AND ( ? - $str2time AcctStartTime ) ) < 86400
                   AND (    $str2time AcctStopTime ) = 0
                                     OR AcctStopTime IS NULL )";
     $sth = $dbh->prepare($query) or die $dbh->errstr;
-    $sth->execute($end, $username, $start, $end, $end)
+    $sth->execute( $end,
+                   $username,
+                   ($realm ? $realmparam : ()),
+                   $start,
+                   $end,
+                   $end )
       or die $sth->errstr. " executing query $query";
     my $start_during = $sth->fetchrow_arrayref->[0];
   
@@ -574,13 +589,20 @@ sub seconds_since_sqlradacct {
     $sth = $dbh->prepare("SELECT SUM( $str2time AcctStopTime ) - ? ) 
                             FROM radacct
                             WHERE UserName = ?
+                              $realm
                               AND $str2time AcctStartTime ) < ?
                               AND $str2time AcctStopTime  ) >= ?
                               AND $str2time AcctStopTime  ) <  ?
                               AND $str2time AcctStopTime ) > 0
                               AND AcctStopTime IS NOT NULL"
     ) or die $dbh->errstr;
-    $sth->execute($start, $username, $start, $start, $end ) or die $sth->errstr;
+    $sth->execute( $start,
+                   $username,
+                   ($realm ? $realmparam : ()),
+                   $start,
+                   $start,
+                   $end )
+      or die $sth->errstr;
     my $end_during = $sth->fetchrow_arrayref->[0];
   
     warn "$mes finding closed sessions which start before the range but stop after\n"
@@ -591,13 +613,15 @@ sub seconds_since_sqlradacct {
     $sth = $dbh->prepare("SELECT COUNT(*)
                             FROM radacct
                             WHERE UserName = ?
+                              $realm
                               AND $str2time AcctStartTime ) < ?
                               AND ( $str2time AcctStopTime ) >= ?
                                                                   )"
                               #      OR AcctStopTime =  0
                               #      OR AcctStopTime IS NULL       )"
     ) or die $dbh->errstr;
-    $sth->execute($username, $start, $end ) or die $sth->errstr;
+    $sth->execute($username, ($realm ? $realmparam : ()), $start, $end )
+      or die $sth->errstr;
     my $entire_range = ($end-$start) * $sth->fetchrow_arrayref->[0];
 
     $seconds += $regular + $end_during + $start_during + $entire_range;
@@ -658,14 +682,23 @@ sub attribute_since_sqlradacct {
     warn "$mes SUMing $attrib sessions\n"
       if $DEBUG;
 
+    my $realm = '';
+    my $realmparam = '';
+    if ($part_export->option('process_single_realm')) {
+      $realm = 'AND Realm = ?';
+      $realmparam = $part_export->option('realm');
+    }
+
     my $sth = $dbh->prepare("SELECT SUM($attrib)
                                FROM radacct
                                WHERE UserName = ?
+                                 $realm
                                  AND $str2time AcctStopTime ) >= ?
                                  AND $str2time AcctStopTime ) <  ?
                                  AND AcctStopTime IS NOT NULL"
     ) or die $dbh->errstr;
-    $sth->execute($username, $start, $end) or die $sth->errstr;
+    $sth->execute($username, ($realm ? $realmparam : ()), $start, $end)
+      or die $sth->errstr;
 
     my $row = $sth->fetchrow_arrayref;
     $sum += $row->[0] if defined($row->[0]);
