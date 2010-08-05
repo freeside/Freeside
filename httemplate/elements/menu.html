@@ -207,6 +207,7 @@ if ( $curuser->access_right('Financial reports') ) {
   $report_packages{'separator2'} =  '';
 }
 $report_packages{'All customer packages'} =  [ $fsurl.'search/cust_pkg.cgi?pkgnum', 'List all customer packages', ];
+$report_packages{'Package summary'} = [ $fsurl.'search/cust_pkg_summary.html', 'Show package sales summary', ];
 $report_packages{'Suspended customer packages'} =  [ $fsurl.'search/cust_pkg.cgi?magic=suspended', 'List suspended packages' ];
 $report_packages{'Customer packages with unconfigured services'} =  [ $fsurl.'search/cust_pkg.cgi?APKG_pkgnum', 'List packages which have provisionable services' ];
 $report_packages{'FCC Form 477 packages'} =  [ $fsurl.'search/report_477.html', 'Summarize packages by census tract for particular types' ]

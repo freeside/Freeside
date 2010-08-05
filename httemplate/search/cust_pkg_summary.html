@@ -1,0 +1,24 @@
+<% include( '/elements/header.html', 'Package Summary Report' ) %>
+
+<FORM ACTION="cust_pkg_summary.cgi" METHOD="GET">
+
+<TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+  <TR>
+    <TH CLASS="background" COLSPAN=2 ALIGN="left">
+      <FONT SIZE="+1">Search options</FONT>
+    </TH>
+  </TR>
+
+  <% include ('/elements/tr-input-beginning_ending.html') %>
+
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="Get Report">
+
+</FORM>
+
+<% include('/elements/footer.html') %>
+<%init>
+</%init>
