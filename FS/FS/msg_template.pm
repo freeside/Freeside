@@ -166,7 +166,7 @@ Customer object (required).
 =item object
 
 Additional context object (currently, can be a cust_main, cust_pkg, 
-cust_bill, svc_acct, or cust_pay object).
+cust_bill, svc_acct, cust_pay, or cust_pay_pending object).
 
 =back
 
@@ -324,6 +324,9 @@ sub substitutions {
       [ company_name      => sub { 
           $conf->config('company_name', shift->agentnum) 
         } ],
+      [ company_address   => sub {
+          $conf->config('company_address', shift->agentnum)
+        } ],
     ],
     # next_bill_date
     'cust_pkg'  => [qw( 
@@ -351,11 +354,13 @@ sub substitutions {
     )],
     #XXX not really thinking about cust_bill substitutions quite yet
     
+    # for welcome and limit warning messages
     'svc_acct' => [qw(
       username
       ),
       [ password          => sub { shift->getfield('_password') } ],
-    ], # for welcome messages
+    ],
+    # for payment receipts
     'cust_pay' => [qw(
       paynum
       _date
@@ -368,6 +373,22 @@ sub substitutions {
           my $cust_pay = shift;
           ($cust_pay->payby eq 'CARD' || $cust_pay->payby eq 'CHEK') ?
             $cust_pay->paymask : $cust_pay->decrypt($cust_pay->payinfo)
+        } ],
+    ],
+    # for payment decline messages
+    # try to support all cust_pay fields
+    # 'error' is a special case, it contains the raw error from the gateway
+    'cust_pay_pending' => [qw(
+      _date
+      error
+      ),
+      [ paid              => sub { sprintf("%.2f", shift->paid) } ],
+      [ payby             => sub { FS::payby->shortname(shift->payby) } ],
+      [ date              => sub { time2str("%a %B %o, %Y", shift->_date) } ],
+      [ payinfo           => sub {
+          my $pending = shift;
+          ($pending->payby eq 'CARD' || $pending->payby eq 'CHEK') ?
+            $pending->paymask : $pending->decrypt($pending->payinfo)
         } ],
     ],
   };
