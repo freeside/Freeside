@@ -440,7 +440,28 @@ sub table_info {
         'cgp_addmailtrailer' => { label => 'Add trailer to sent mail',
                                   type  => 'checkbox',
                                 },
-        #XXX archive messages, mailing lists
+        'cgp_archiveafter'   => {
+          label       => 'Archive messages after',
+          type        => 'select',
+          select_hash => [ 
+                           -2 => 'default(730 day(s))',
+                           0 => 'Never',
+                           86400 => '24 hour(s)',
+                           172800 => '2 day(s)',
+                           259200 => '3 day(s)',
+                           432000 => '5 day(s)',
+                           604800 => '7 day(s)',
+                           1209600 => '2 week(s)',
+                           2592000 => '30 day(s)',
+                           7776000 => '90 day(s)',
+                           15552000 => '180 day(s)',
+                           31536000 => '365 day(s)',
+                           63072000 => '730 day(s)',
+                         ],
+          disable_inventory => 1,
+          disable_select    => 1,
+        },
+        #XXX mailing lists
 
         #preferences
         'cgp_deletemode' => { 
@@ -494,7 +515,6 @@ sub table_info {
         },
 
         #mail
-        #XXX vacation message, redirect all mail, mail rules
         #XXX RPOP settings
 
     },
@@ -1190,6 +1210,7 @@ sub check {
               || $self->ut_enum('cgp_rpopallowed', [ '', 'Y' ])
               || $self->ut_enum('cgp_mailtoall', [ '', 'Y' ])
               || $self->ut_enum('cgp_addmailtrailer', [ '', 'Y' ])
+              || $self->ut_snumbern('cgp_archiveafter')
               #preferences
               || $self->ut_alphasn('cgp_deletemode')
               || $self->ut_enum('cgp_emptytrash', $self->cgp_emptytrash_values)
@@ -1198,7 +1219,6 @@ sub check {
               || $self->ut_textn('cgp_skinname')
               || $self->ut_textn('cgp_prontoskinname')
               || $self->ut_alphan('cgp_sendmdnmode')
-              #XXX vacation message, redirect all mail, mail rules
               #XXX RPOP settings
   ;
   return $error if $error;

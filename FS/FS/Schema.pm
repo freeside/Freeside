@@ -1698,7 +1698,8 @@ sub tables_hashref {
         'cgp_rpopallowed',    'char', 'NULL',       1, '', '', #RPOPAllowed
         'cgp_mailtoall',      'char', 'NULL',       1, '', '', #MailToAll
         'cgp_addmailtrailer', 'char', 'NULL',       1, '', '', #AddMailTrailer
-        #XXX archive messages, mailing lists
+        'cgp_archiveafter',    'int', 'NULL',      '', '', '', #ArchiveMessagesAfter
+        #XXX mailing lists
         #preferences
         'cgp_deletemode',     'varchar', 'NULL', $char_d, '', '',#DeleteMode
         'cgp_emptytrash',     'varchar', 'NULL', $char_d, '', '',#EmptyTrash
@@ -1708,7 +1709,6 @@ sub tables_hashref {
         'cgp_prontoskinname', 'varchar', 'NULL', $char_d, '', '',#ProntoSkinName
         'cgp_sendmdnmode',    'varchar', 'NULL', $char_d, '', '',#SendMDNMode
         #mail
-#vacation message, redirect all mail, mail rules
         #XXX RPOP settings
       ],
       'primary_key' => 'svcnum',
@@ -1770,7 +1770,7 @@ sub tables_hashref {
         'acct_def_cgp_rpopallowed',       'char', 'NULL',       1,  '', '', 
         'acct_def_cgp_mailtoall',         'char', 'NULL',       1,  '', '', 
         'acct_def_cgp_addmailtrailer',    'char', 'NULL',       1,  '', '', 
-        #XXX archive messages
+        'acct_def_cgp_archiveafter',       'int', 'NULL',      '',  '', '',
         #preferences
         'acct_def_cgp_deletemode',     'varchar', 'NULL', $char_d,  '', '',
         'acct_def_cgp_emptytrash',     'varchar', 'NULL', $char_d,  '', '',
@@ -1779,8 +1779,6 @@ sub tables_hashref {
         'acct_def_cgp_skinname',       'varchar', 'NULL', $char_d,  '', '',
         'acct_def_cgp_prontoskinname', 'varchar', 'NULL', $char_d,  '', '',
         'acct_def_cgp_sendmdnmode',    'varchar', 'NULL', $char_d,  '', '',
-        #mail
-        #XXX rules, archive rule, spam foldering rule(s)
       ],
       'primary_key' => 'svcnum',
       'unique' => [ ],

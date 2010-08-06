@@ -291,12 +291,22 @@ that field.
 %                  (grep(/^$rvalue$/, split(',',$value)) ? ' SELECTED>' : '>' ).
 %                  $record->$select_label(). '</OPTION>';
 %            } #next $record
-%          } else { # select_list
+%          } elsif ( $def->{select_list} ) {
 %            foreach my $item ( @{$def->{select_list}} ) {
 %              $html .= qq!<OPTION VALUE="$item"!.
 %                    (grep(/^$item$/, split(',',$value)) ? ' SELECTED>' : '>' ).
 %                    $item. '</OPTION>';
 %            } #next $item
+%          } elsif ( $def->{select_hash} ) {
+%            $def->{select_hash} = tie %{ $def->{select_hash} },
+%                                      'Tie::IxHash',
+%                                      @{ $def->{select_hash} }
+%                if ref($def->{select_hash}) eq 'ARRAY';
+%            foreach my $key ( keys %{$def->{select_hash}} ) {
+%              $html .= qq!<OPTION VALUE="$key"!.
+%                    (grep(/^$key$/, split(',',$value)) ? ' SELECTED>' : '>' ).
+%                    $def->{select_hash}{$key}. '</OPTION>';
+%            } #next $key
 %          } #endif
 %          $html .= '</SELECT>';
 %

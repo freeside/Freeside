@@ -207,6 +207,27 @@ sub table_info {
         label => 'Acct. default Add trailer to sent mail',
         type  => 'checkbox',
       },
+      'acct_def_cgp_archiveafter'   => {
+        label       => 'Archive messages after',
+        type        => 'select',
+        select_hash => [ 
+                         -2 => 'default(730 days)',
+                         0 => 'Never',
+                         86400 => '24 hours',
+                         172800 => '2 days',
+                         259200 => '3 days',
+                         432000 => '5 days',
+                         604800 => '7 days',
+                         1209600 => '2 weeks',
+                         2592000 => '30 days',
+                         7776000 => '90 days',
+                         15552000 => '180 days',
+                         31536000 => '365 days',
+                         63072000 => '730 days',
+                       ],
+        disable_inventory => 1,
+        disable_select    => 1,
+      },
       'trailer' => {
         label => 'Mail trailer',
         type  => 'textarea',
@@ -490,7 +511,7 @@ sub check {
               || $self->ut_enum('acct_def_cgp_rpopallowed', [ '', 'Y' ])
               || $self->ut_enum('acct_def_cgp_mailtoall', [ '', 'Y' ])
               || $self->ut_enum('acct_def_cgp_addmailtrailer', [ '', 'Y' ])
-              #XXX archive messages
+              || $self->ut_snumbern('acct_def_cgp_archiveafter')
               #preferences
               || $self->ut_alphasn('acct_def_cgp_deletemode')
               || $self->ut_enum('acct_def_cgp_emptytrash',
@@ -501,7 +522,6 @@ sub check {
               || $self->ut_textn('acct_def_cgp_prontoskinname')
               || $self->ut_alphan('acct_def_cgp_sendmdnmode')
               #mail
-              #XXX rules, archive rule, spam foldering rule(s)
   ;
   return $error if $error;
 
