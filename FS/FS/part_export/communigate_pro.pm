@@ -85,10 +85,12 @@ sub _export_insert_svc_acct {
     'MailToAll'        =>($svc_acct->cgp_mailtoall      ?'YES':'NO'),
     'AddMailTrailer'   =>($svc_acct->cgp_addmailtrailer ?'YES':'NO'),
 
+    'ArchiveMessagesAfter' => $svc_acct->cgp_archiveafter,
+
     map { $quotas{$_} => $svc_acct->$_() }
         grep $svc_acct->$_(), keys %quotas
   );
-  #XXX phase 3: archive messages, mailing lists
+  #XXX phase 3: mailing lists
 
   my @options = ( 'CreateAccount',
     'accountName'    => $self->export_username($svc_acct),
@@ -194,6 +196,7 @@ sub _export_insert_svc_domain {
     'RPOPAllowed'      =>($svc_domain->acct_def_cgp_rpopallowed    ?'YES':'NO'),
     'MailToAll'        =>($svc_domain->acct_def_cgp_mailtoall      ?'YES':'NO'),
     'AddMailTrailer'   =>($svc_domain->acct_def_cgp_addmailtrailer ?'YES':'NO'),
+    'ArchiveMessagesAfter' => $svc_domain->acct_def_cgp_archiveafter,
   );
   warn "WARNING: error queueing SetAccountDefaults job: $def_err"
     if $def_err;
@@ -318,8 +321,10 @@ sub _export_replace_svc_acct {
     if $old->cgp_mailtoall ne $new->cgp_mailtoall;
   $settings{'AddMailTrailer'} = ( $new->cgp_addmailtrailer ? 'YES':'NO' )
     if $old->cgp_addmailtrailer ne $new->cgp_addmailtrailer;
+  $settings{'ArchiveMessagesAfter'} = $new->cgp_archiveafter
+    if $old->cgp_archiveafter ne $new->cgp_archiveafter;
 
-  #XXX phase 3: archive messages, mailing lists
+  #XXX phase 3: mailing lists
 
   if ( keys %settings ) {
     my $error = $self->communigate_pro_queue(
@@ -441,6 +446,7 @@ sub _export_replace_svc_domain {
     'RPOPAllowed'      => ( $new->acct_def_cgp_rpopallowed    ? 'YES' : 'NO' ),
     'MailToAll'        => ( $new->acct_def_cgp_mailtoall      ? 'YES' : 'NO' ),
     'AddMailTrailer'   => ( $new->acct_def_cgp_addmailtrailer ? 'YES' : 'NO' ),
+    'ArchiveMessagesAfter' => $new->acct_def_cgp_archiveafter,
   );
   warn "WARNING: error queueing SetAccountDefaults job: $def_err"
     if $def_err;

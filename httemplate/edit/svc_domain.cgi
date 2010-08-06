@@ -16,6 +16,7 @@
       <INPUT TYPE="text" NAME="domain" VALUE="<% $domain %>" SIZE=28 MAXLENGTH=63>
 %   } else {
       <B><% $domain %></B>
+      <INPUT TYPE="hidden" NAME="domain" VALUE="<% $domain %>">
 %   }
 
 % if ($export) {
@@ -38,269 +39,22 @@ Available top-level domains: <% $export->option('tlds') %>
   </TD>
 </TR>
 
-% if ( $communigate ) {
-  <TR>
-    <TD ALIGN="right">Administrator domain</TD>
-    <TD>
-      <% include('/elements/select-domain.html',
-                   'element_name' => 'parent_svcnum',
-                   'curr_value'   => $svc_domain->parent_svcnum,
-                   'empty_label'  => '(none)',
-                )
-      %>
-    </TD>
-  </TR>
-% } else {
-  <INPUT TYPE="hidden" NAME="parent_svcnum" VALUE="<% $svc_domain->parent_svcnum %>">
-% }
-
-% if ( $communigate
-%      && $part_svc->part_svc_column('cgp_aliases')->columnflag !~ /^[FA]$/ ) {
-
-    <TR>
-      <TD ALIGN="right">Aliases</TD>
-      <TD><INPUT TYPE="text" NAME="cgp_aliases" VALUE="<% $svc_domain->cgp_aliases %>"></TD>
-    </TR>
-
-% } else {
-    <INPUT TYPE="hidden" NAME="cgp_aliases" VALUE="<% $svc_domain->cgp_aliases %>">
-% }
-
-% if ( $part_svc->part_svc_column('max_accounts')->columnflag =~ /^[FA]$/ ) {
-    <INPUT TYPE="hidden" NAME="max_accounts" VALUE="<% $svc_domain->max_accounts %>">
-% } else {
-    <TR>
-      <TD ALIGN="right">Maximum number of accounts</TD>
-      <TD>
-        <INPUT TYPE="text" NAME="max_accounts" SIZE=5 MAXLENGTH=6 VALUE="<% $svc_domain->max_accounts %>">
-      </TD>
-    </TR>
-% }
-
-% if ( $communigate
-%      && $part_svc->part_svc_column('cgp_accessmodes')->columnflag ne 'F' )
-% {
-
-  <TR>
-    <TD ALIGN="right">Enabled services</TD>
-    <TD>
-      <% include( '/elements/communigate_pro-accessmodes.html',
-                    'curr_value' => $svc_domain->cgp_accessmodes,
-                )
-      %>
-    </TD>
-  </TR>
-
-% } else {
-    <INPUT TYPE="hidden" NAME="cgp_accessmodes" VALUE="<% $svc_domain->cgp_accessmodes() |h %>">
-% }
-
-% if ( $communigate
-%      && $part_svc->part_svc_column('trailer')->columnflag ne 'F' )
-% {
-
-  <TR>
-    <TD ALIGN="right">Mail trailer</TD>
-    <TD>
-      <TEXTAREA NAME="trailer" ROWS=5 COLS=60><% $svc_domain->trailer() |h %></TEXTAREA>
-    </TD>
-  </TR>
-
-% } else {
-    <INPUT TYPE="hidden" NAME="trailer" VALUE="<% $svc_domain->trailer() |h %>">
-% }
-
+<% include('svc_domain/communigate-basics.html',
+             'svc_domain'  => $svc_domain,
+             'part_svc'    => $part_svc,
+             'communigate' => $communigate,
+          )
+%>
 
 </TABLE>
 <BR>
 
-% if ( $communigate ) {
-
-Account defaults
-<% ntable("#cccccc",2) %>
-
-  <% include('/elements/tr-checkbox.html',
-               'label'      => 'Password modification',
-               'field'      => 'acct_def_password_selfchange',
-               'curr_value' => $svc_domain->acct_def_password_selfchange,
-               'value'      => 'Y',
-            )
-  %>
-
-  <% include('/elements/tr-checkbox.html',
-               'label'      => 'Password recovery',
-               'field'      => 'acct_def_password_recover',
-               'curr_value' => $svc_domain->acct_def_password_recover,
-               'value'      => 'Y',
-            )
-  %>
-
-  <TR>
-    <TD ALIGN="right">Enabled services
-    </TD>
-    <TD><% include('/elements/communigate_pro-accessmodes.html',
-                     'element_name_prefix' => 'acct_def_cgp_accessmodes_',
-                     'curr_value' => $svc_domain->acct_def_cgp_accessmodes,
-                  )
-        %>
-    </TD>
-  </TR>
-
-  <% include('/elements/tr-input-text.html',
-               'label'      => 'Mail storage limit',
-               'field'      => 'acct_def_quota',
-               'curr_value' => $svc_domain->acct_def_quota,
-            )
-  %>
-  <% include('/elements/tr-input-text.html',
-               'label'      => 'File storage limit',
-               'field'      => 'acct_def_file_quota',
-               'curr_value' => $svc_domain->acct_def_file_quota,
-            )
-  %>
-  <% include('/elements/tr-input-text.html',
-               'label'      => 'Files limit',
-               'field'      => 'acct_def_file_maxnum',
-               'curr_value' => $svc_domain->acct_def_file_maxnum,
-            )
-  %>
-  <% include('/elements/tr-input-text.html',
-               'label'      => 'File size limit',
-               'field'      => 'acct_def_file_maxsize',
-               'curr_value' => $svc_domain->acct_def_file_maxsize,
-            )
-  %>
-
-  <% include('/elements/tr-select.html',
-               'label'      => 'Allowed mail rules',
-               'field'      => 'acct_def_cgp_rulesallowed',
-               'options'    => [ '', 'No', 'Filter Only', 'All But Exec', 'Any' ],
-               'labels'     => {
-                                 '' => 'default (No)', #No always the default?
-                               },
-               'curr_value' => $svc_domain->acct_def_cgp_rulesallowed,
-            )
-  %>
-
-  <% include('/elements/tr-checkbox.html',
-               'label'      => 'RPOP modifications',
-               'field'      => 'acct_def_cgp_rpopallowed',
-               'curr_value' => $svc_domain->acct_def_cgp_rpopallowed,
-               'value'      => 'Y',
-            )
-  %>
-
-  <% include('/elements/tr-checkbox.html',
-               'label'      => 'Accepts mail to "all"',
-               'field'      => 'acct_def_cgp_mailtoall',
-               'curr_value' => $svc_domain->acct_def_cgp_mailtoall,
-               'value'      => 'Y',
-            )
-  %>
-
-  <% include('/elements/tr-checkbox.html',
-               'label'      => 'Add trailer to sent mail',
-               'field'      => 'acct_def_cgp_addmailtrailer',
-               'curr_value' => $svc_domain->acct_def_cgp_addmailtrailer,
-               'value'      => 'Y',
-            )
-  %>
-
-%# false laziness w/svc_acct acct_def
-  <TR>
-    <TD ALIGN="right">Message delete method</TD>
-    <TD>
-      <SELECT NAME="acct_def_cgp_deletemode">
-%       for ( 'Move To Trash', 'Immediately', 'Mark' ) {
-          <OPTION VALUE="<% $_ %>"
-                  <% $_ eq $svc_domain->acct_def_cgp_deletemode ? 'SELECTED' : '' %>
-          ><% $_ %>
-%       }
-      </SELECT>
-    </TD>
-  </TR>
-
-  <% include('/elements/tr-select.html',
-               'label'      => 'On logout remove trash',
-               'field'      => 'acct_def_cgp_emptytrash',
-               'options'    => $svc_domain->cgp_emptytrash_values,
-               'labels'     => {
-                                 '' => 'default (92 days)', #right?
-                               },
-               'curr_value' => $svc_domain->acct_def_cgp_emptytrash,
-            )
-  %>
-
-  <% include('/elements/tr-select.html',
-               'label'      => 'Language',
-               'field'      => 'acct_def_cgp_language',
-               'options'    => [ '', qw( English Arabic Chinese Dutch French German Hebrew Italian Japanese Portuguese Russian Slovak Spanish Thai ) ],
-               'labels'     => {
-                                 '' => 'default (English)',
-                               },
-               'curr_value' => $svc_domain->acct_def_cgp_language,
-            )
-  %>
-
-  <% include('/elements/tr-select.html',
-               'label'      => 'Time zone',
-               'field'      => 'acct_def_cgp_timezone',
-               'options'    => $svc_domain->cgp_timezone_values,
-               'labels'     => {
-                                 '' => 'default (HostOS)',
-                               },
-               'curr_value' => $svc_domain->acct_def_cgp_timezone,
-            )
-  %>
-
-  <% include('/elements/tr-select.html',
-               'label'      => 'Layout',
-               'field'      => 'acct_def_cgp_skinname',
-               'options'    => [ '', '***', 'GoldFleece', 'Skin2' ],
-               'labels'     => {
-                                 '' => 'default (***)',
-                               },
-               'curr_value' => $svc_domain->acct_def_cgp_skinname,
-            )
-  %>
-
-  <% include('/elements/tr-select.html',
-               'label'      => 'Pronto style',
-               'field'      => 'acct_def_cgp_prontoskinname',
-               'options'    =>  [ '', 'Pronto', 'Pronto-darkflame', 'Pronto-steel', 'Pronto-twilight', ],
-               'curr_value' => $svc_domain->acct_def_cgp_prontoskinname,
-            )
-  %>
-
-  <% include('/elements/tr-select.html',
-               'label'      => 'Send read receipts',
-               'field'      => 'acct_def_cgp_sendmdnmode',
-               'options'    => [ '', 'Never', 'Manually', 'Automatically' ],
-               'labels'     => {
-                                 '' => 'default (Automatically)',
-                               },
-               'curr_value' => $svc_domain->acct_def_cgp_language,
-            )
-  %>
-
-%              #XXX rules, archive rule, spam foldering rule(s)
-
-</TABLE>
-<BR>
-
-% } else {
-
-%   foreach my $f (qw( password_selfchange password_recover cgp_accessmodes
-%                      quota file_quota file_maxnum file_maxsize
-%                      cgp_rulesallowed cgp_rpopallowed cgp_mailtoall
-%                      cgp_addmailtrailer
-%                      cgp_deletemode cgp_emptytrash cgp_language
-%                      cgp_timezone cgp_skinname cgp_sendmdnmode
-%                 )) {
-      <INPUT TYPE="hidden" NAME="acct_def_<%$f%>" VALUE="<% $svc_domain->get("acct_def_$f") %>">
-%   }
-
-% }
+<% include('svc_domain/communigate-acct_defaults.html',
+             'svc_domain'  => $svc_domain,
+             'part_svc'    => $part_svc,
+             'communigate' => $communigate,
+          )
+%>
 
 <INPUT TYPE="submit" VALUE="Submit">
 

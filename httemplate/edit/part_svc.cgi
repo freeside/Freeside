@@ -298,10 +298,10 @@ that field.
 %                    $item. '</OPTION>';
 %            } #next $item
 %          } elsif ( $def->{select_hash} ) {
-%            $def->{select_hash} = tie %{ $def->{select_hash} },
-%                                      'Tie::IxHash',
-%                                      @{ $def->{select_hash} }
-%                if ref($def->{select_hash}) eq 'ARRAY';
+%            if ( ref($def->{select_hash}) eq 'ARRAY' ) {
+%              tie my %hash, 'Tie::IxHash', @{ $def->{select_hash} };
+%              $def->{select_hash} = \%hash;
+%            }
 %            foreach my $key ( keys %{$def->{select_hash}} ) {
 %              $html .= qq!<OPTION VALUE="$key"!.
 %                    (grep(/^$key$/, split(',',$value)) ? ' SELECTED>' : '>' ).

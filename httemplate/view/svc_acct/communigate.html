@@ -32,6 +32,14 @@
   <% include('/view/elements/tr.html', label=>'Add trailer to sent mail',
                         value=>$svc_acct->cgp_addmailtrailer ? 'YES' : 'NO' ) %>
 
+% my $archive_after = $svc_acct->cgp_archiveafter;
+% $archive_after =
+%   $archive_after
+%     ? ( $archive_after / 86400 ). ' days'
+%     : ( $archive_after eq '0' ? 'Never' : 'default (730 days)' );
+  <% include('/view/elements/tr.html', label=>'Archive messages after',
+                        value=>$archive_after, ) %>
+
 %# preferences
 
   <% include('/view/elements/tr.html', label=>'Message delete method',

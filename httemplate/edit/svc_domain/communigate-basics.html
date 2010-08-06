@@ -1,0 +1,82 @@
+% if ( $communigate ) {
+  <TR>
+    <TD ALIGN="right">Administrator domain</TD>
+    <TD>
+      <% include('/elements/select-domain.html',
+                   'element_name' => 'parent_svcnum',
+                   'curr_value'   => $svc_domain->parent_svcnum,
+                   'empty_label'  => '(none)',
+                )
+      %>
+    </TD>
+  </TR>
+% } else {
+  <INPUT TYPE="hidden" NAME="parent_svcnum" VALUE="<% $svc_domain->parent_svcnum %>">
+% }
+
+% if ( $communigate
+%      && $part_svc->part_svc_column('cgp_aliases')->columnflag !~ /^[FA]$/ ) {
+
+    <TR>
+      <TD ALIGN="right">Aliases</TD>
+      <TD><INPUT TYPE="text" NAME="cgp_aliases" VALUE="<% $svc_domain->cgp_aliases %>"></TD>
+    </TR>
+
+% } else {
+    <INPUT TYPE="hidden" NAME="cgp_aliases" VALUE="<% $svc_domain->cgp_aliases %>">
+% }
+
+% if ( $part_svc->part_svc_column('max_accounts')->columnflag =~ /^[FA]$/ ) {
+    <INPUT TYPE="hidden" NAME="max_accounts" VALUE="<% $svc_domain->max_accounts %>">
+% } else {
+    <TR>
+      <TD ALIGN="right">Maximum number of accounts</TD>
+      <TD>
+        <INPUT TYPE="text" NAME="max_accounts" SIZE=5 MAXLENGTH=6 VALUE="<% $svc_domain->max_accounts %>">
+      </TD>
+    </TR>
+% }
+
+% if ( $communigate
+%      && $part_svc->part_svc_column('cgp_accessmodes')->columnflag ne 'F' )
+% {
+
+  <TR>
+    <TD ALIGN="right">Enabled services</TD>
+    <TD>
+      <% include( '/elements/communigate_pro-accessmodes.html',
+                    'curr_value' => $svc_domain->cgp_accessmodes,
+                )
+      %>
+    </TD>
+  </TR>
+
+% } else {
+    <INPUT TYPE="hidden" NAME="cgp_accessmodes" VALUE="<% $svc_domain->cgp_accessmodes() |h %>">
+% }
+
+% if ( $communigate
+%      && $part_svc->part_svc_column('trailer')->columnflag ne 'F' )
+% {
+
+  <TR>
+    <TD ALIGN="right">Mail trailer</TD>
+    <TD>
+      <TEXTAREA NAME="trailer" ROWS=5 COLS=60><% $svc_domain->trailer() |h %></TEXTAREA>
+    </TD>
+  </TR>
+
+% } else {
+    <INPUT TYPE="hidden" NAME="trailer" VALUE="<% $svc_domain->trailer() |h %>">
+% }
+
+<%init>
+
+my %opt = @_;
+
+my $svc_domain = $opt{'svc_domain'};
+my $part_svc = $opt{'part_svc'};
+
+my $communigate = $opt{'communigate'};
+
+</%init>
