@@ -1,37 +1,49 @@
 <% include('/elements/header-popup.html', 'Redirect all mail') %>
 
+<% include('/elements/error.html') %>
+
 <FORM NAME="RedirectAllForm" ACTION="process/cgp_rule-redirect_all.html" METHOD=POST>
 
-%# XXX upstream Redirect 1
+<INPUT TYPE="hidden" NAME="svcnum" VALUE="<% $opt{'svcnum'} %>">
 
 <% ntable("#cccccc", 2) %>
 
 <TR>
   <TD ALIGN="right">Redirect all mail to</TD>
-  <TD><textarea name="RedirectText" rows="5" cols="50"></textarea></TD>
+  <TD><textarea name="RedirectText" rows="5" cols="50"><% $mirror_or_redir ? $mirror_or_redir->params : '' %></textarea></TD>
 </TR>
 
 <% include('/elements/tr-checkbox.html',
-             'name'       => 'RedirKeep',
+             'field'      => 'RedirKeep',
              'label'      => 'Keep a copy',
              'value'      => 1,
-             'curr_value' => '', #XXX
+             'curr_value' => ( $cgi->param('error')
+                                 ? scalar($cgi->param('RedirKeep'))
+                                 : ( ($redir_keep || !$cgp_rule) ? '' : 1 )
+                             ),
           )
 %>
 
 <% include('/elements/tr-checkbox.html',
-             'name'       => 'RedirHuman',
+             'field'      => 'RedirHuman',
              'label'      => 'Do not redirect automatic messages',
              'value'      => 1,
-             'curr_value' => '', #XXX
+             'curr_value' => ( $cgi->param('error')
+                                 ? scalar($cgi->param('RedirHuman'))
+                                 : ( $redir_human ? 1 : '' )
+                             ),
           )
 %>
 
 <% include('/elements/tr-checkbox.html',
-             'name'       => 'KeepToAndCc',
+             'field'      => 'KeepToAndCc',
              'label'      => 'Preserve To/Cc fields',
              'value'      => 1,
-             'curr_value' => '', #XXX
+             'curr_value' => ( $cgi->param('error')
+                                 ? scalar($cgi->param('KeepToAndCc'))
+                                 : ( $mirror_or_redir &&
+                                     $mirror_or_redir->action eq 'Mirror To' )
+                             ),
           )
 %>
 
@@ -39,7 +51,6 @@
 
 <BR>
 <INPUT TYPE="submit" VALUE="Redirect all mail">
-%#XXX Add/Edit
 
 </FORM>
 
@@ -52,6 +63,27 @@ my %opt = @_;
 my $svc_acct = qsearchs('svc_acct', { 'svcnum' => $opt{'svcnum'} } )
   or die "unknown svcnum";
 
-#XXX look for existing redirect all rule
+#look for existing rule
+my $cgp_rule = qsearchs('cgp_rule', { 'svcnum' => $svc_acct->svcnum,
+                                      'name'   => '#Redirect'
+                                    }
+                       );
+
+my( $redir_human, $mirror_or_redir, $redir_keep ) = ( '', '', '' );
+if ( $cgp_rule ) {
+  $redir_human = qsearchs('cgp_rule_condition', {
+    'rulenum'       => $cgp_rule->rulenum,
+    'conditionname' => 'Human Generated',
+  });
+  $mirror_or_redir = qsearchs({
+    'table'     => 'cgp_rule_action',
+    'hashref'   => { 'rulenum' => $cgp_rule->rulenum, },
+    'extra_sql' => " AND action IN ('Mirror To', 'Redirect To') ",
+  });
+  $redir_keep = qsearchs('cgp_rule_action', {
+    'rulenum' => $cgp_rule->rulenum,
+    'action'  => 'Discard',
+  });
+}
 
 </%init>

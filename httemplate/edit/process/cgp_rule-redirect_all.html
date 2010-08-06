@@ -1,0 +1,24 @@
+<% include('cgp_rule-simplified.html',
+             'name'       => '#Redirect',
+             'priority'   => 1,
+             'redirect'   => 'cgp_rule-redirect_all.html',
+             'conditions' => [
+               ( $cgi->param('RedirHuman')
+                 ? { conditionname => 'Human Generated', }
+                 : ()
+               ),
+             ],
+             'actions'    => [
+               { action => ( $cgi->param('KeepToAndCc')
+                               ? 'Mirror To'
+                               : 'Redirect To'
+                           ),
+                 params => scalar($cgi->param('RedirectText')),
+               },
+               ( $cgi->param('RedirKeep')
+                 ? ()
+                 : ( { 'action' => 'Discard' } )
+               ),
+             ],
+          )
+%>

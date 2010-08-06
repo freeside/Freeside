@@ -1,0 +1,29 @@
+<% include('cgp_rule-simplified.html',
+             'name'       => '#Vacation',
+             'priority'   => 2,
+             'redirect'   => 'cgp_rule-vacation.html',
+             'conditions' => [
+               { conditionname => 'Human Generated', },
+               { conditionname => 'From',
+                 op            => 'not in',
+                 params        => '#RepliedAddresses',
+               },
+               ( $cgi->param('VacationTill')
+                   ? ( { conditionname => 'Current Date',
+                         op            => 'less than', #is less?
+                         params        => scalar($cgi->param('VacationTill')),
+                       }
+                     )
+                   : ()
+               ),
+             ],
+             'actions'    => [
+               { action => 'Reply with',
+                 params => scalar($cgi->param('VacationText')),
+               },
+               { action => "Remember 'From' in",
+                 params => 'RepliedAddresses',
+               },
+             ],
+          )
+%>

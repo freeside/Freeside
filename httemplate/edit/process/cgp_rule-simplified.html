@@ -1,0 +1,53 @@
+% if ( $error ) { #redirect back to edit...
+%   $cgi->param('error', $error);
+<% $cgi->redirect(popurl(3).'edit/'.$opt{'redirect'}.'?'. $cgi->query_string) %>
+% } else { #success XXX better msg talking about vacation vs. redirect all
+  <% include('/elements/header-popup.html', 'Rule updated') %>
+  <SCRIPT TYPE="text/javascript">
+    window.top.location.reload();
+  </SCRIPT>
+
+  </BODY>
+  </HTML>
+% }
+<%init>
+
+my %opt = @_;
+
+my %hash = (
+  'svcnum' => scalar($cgi->param('svcnum')),
+  'name'   => $opt{'name'},
+);
+
+my $cgp_rule = qsearchs('cgp_rule', \%hash);
+
+my $error = '';
+if ( $cgp_rule ) { #updating
+  $error = $cgp_rule->delete;
+}
+
+$cgp_rule = new FS::cgp_rule { %hash, 'priority' => $opt{'priority'} };
+$error ||= $cgp_rule->insert;
+
+foreach my $condition ( @{ $opt{'conditions'} } ) {
+  my $cgp_rule_condition = new FS::cgp_rule_condition {
+    %$condition,
+    'rulenum' => $cgp_rule->rulenum,
+  };
+  $error ||= $cgp_rule_condition->insert;
+}
+
+foreach my $action ( @{ $opt{'actions'} } ) {
+  my $cgp_rule_action = new FS::cgp_rule_action {
+    %$action,
+    'rulenum' => $cgp_rule->rulenum,
+  };
+  $error ||= $cgp_rule_action->insert;
+}
+
+unless ( $error ) {
+  my $export_error = $cgp_rule->svc_export;
+  die $export_error if $export_error; #error handling sucks wrt this... shouldn't happen though
+}
+
+</%init>

@@ -1,35 +1,35 @@
 <% include('/elements/header-popup.html', 'Vacation rule') %>
 
+<% include('/elements/error.html') %>
+
 <FORM NAME="VacationForm" ACTION="process/cgp_rule-vacation.html" METHOD=POST>
 
-%# XXX upstream Vacation 1
+<INPUT TYPE="hidden" NAME="svcnum" VALUE="<% $opt{'svcnum'} %>">
 
 <% ntable("#cccccc", 2) %>
 
 <TR>
   <TD ALIGN="right">Vacation message</TD>
-  <TD><textarea name="VacationText" rows="5" cols="50"></textarea></TD>
+  <TD><textarea name="VacationText" rows="5" cols="50"><% $reply_with ? $reply_with->params : '' %></textarea></TD>
 </TR>
 
 <% include('/elements/tr-input-date-field.html', {
-             'label' => 'Ends',
-             'name'  => 'vacationTill',
-             'value' => '', #XXX
+             'label'  => 'Ends',
+             'name'   => 'vacationTill',
+             'format' => '%d %b %Y',
+             'value'  => ( $cgi->param('error')
+                             ? scalar($cgi->param('vacationTill'))
+                             : ( $curr_date ? $curr_date->params : '' )
+                         ),
           })
 %>
-%# XXX upstream:
-%#  VacationTill 1
-%#  vacationDay
-%#  vacationMonth
-%#  vacationYear
 
-%#XXX Clear 'Replied Addresses' List
+%#Clear 'Replied Addresses' List ?
 
 </TABLE>
 
 <BR>
-<INPUT TYPE="submit" VALUE="Add vacation message">
-%#XXX Add/Edit
+<INPUT TYPE="submit" VALUE="<% $cgp_rule ? 'Edit' : 'Add' %> vacation message">
 
 </FORM>
 
@@ -42,6 +42,23 @@ my %opt = @_;
 my $svc_acct = qsearchs('svc_acct', { 'svcnum' => $opt{'svcnum'} } )
   or die "unknown svcnum";
 
-#XXX look for existing vacation rule
+#look for existing rule
+my $cgp_rule = qsearchs('cgp_rule', { 'svcnum' => $svc_acct->svcnum,
+                                      'name'   => '#Vacation'
+                                    }
+                       );
+
+my( $curr_date, $reply_with ) = ( '', '' );
+if ( $cgp_rule ) {
+  $curr_date = qsearchs('cgp_rule_condition', {
+    'rulenum'       => $cgp_rule->rulenum,
+    'conditionname' => 'Current Date',
+    'op'            => 'less than',
+  });
+  $reply_with = qsearchs('cgp_rule_action', {
+    'rulenum' => $cgp_rule->rulenum,
+    'action'  => 'Reply with',
+  });
+}
 
 </%init>
