@@ -16,7 +16,7 @@ a[href]:hover {
   color: #7e0079;
 }
 
-textarea, input[type="text"] {
+textarea, input[type="text"], input[type="password"] {
   border: 1px solid #666666;
   padding: 1px;
 	 -moz-border-radius: 2px;
@@ -24,7 +24,7 @@ textarea, input[type="text"] {
 	 border-radius: 2px;
 }
 
-textarea:hover, input[type="text"]:hover {
+textarea:hover, input[type="text"]:hover, input[type="password"]:hover {
   border: 1px solid #7e0079;
   padding: 1px;
 	 -moz-border-radius: 2px;
@@ -32,7 +32,7 @@ textarea:hover, input[type="text"]:hover {
 	 border-radius: 2px;
 }
 
-textarea:focus, input[type="text"]:focus {
+textarea:focus, input[type="text"]:focus, input[type="password"]:focus {
   background-color: #ffffdd;
   border: 1px solid #7e0079;
 	 -moz-border-radius: 2px;
