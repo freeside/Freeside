@@ -3,7 +3,8 @@ package FS::acct_snarf;
 use strict;
 use vars qw( @ISA );
 use Tie::IxHash;
-use FS::Record;
+use FS::Record qw( qsearchs );
+use FS::cust_svc;
 
 @ISA = qw( FS::Record );
 
@@ -91,6 +92,37 @@ returns the error, otherwise returns false.
 
 # the replace method can be inherited from FS::Record
 
+=item cust_svc
+
+=cut
+
+sub cust_svc {
+  my $self = shift;
+  qsearchs('cust_svc', { 'svcnum' => $self->svcnum } );
+}
+
+
+=item svc_export
+
+Calls the replace export for any communigate exports attached to this rule's
+service.
+
+=cut
+
+sub svc_export {
+  my $self = shift;
+
+  my $cust_svc = $self->cust_svc;
+  my $svc_x = $cust_svc->svc_x;
+  
+  #_singledomain too
+  my @exports = $cust_svc->part_svc->part_export('communigate_pro');
+  my @errors = map $_->export_replace($svc_x, $svc_x), @exports;
+
+  @errors ? join(' / ', @errors) : '';
+
+}
+
 =item check
 
 Checks all fields to make sure this is a valid external mail account.  If
@@ -147,6 +179,26 @@ sub check_freq_labels {
   ;
 
   \%hash;
+}
+
+=item cgp_hashref
+
+Returns a hashref representing this external mail account, suitable for
+Communigate Pro API commands:
+
+=cut
+
+sub cgp_hashref {
+  my $self = shift;
+  {
+    'authName' => $self->username,
+    'domain'   => $self->machine,
+    'password' => $self->_password,
+    'period'   => $self->check_freq.'s',
+    'APOP'     => ( $self->apop  eq 'Y' ? 'YES' : 'NO' ),
+    'TLS'      => ( $self->tls   eq 'Y' ? 'YES' : 'NO' ),
+    'Leave'    => ( $self->leave eq 'Y' ? 'YES' : 'NO' ), #XXX leave??
+  };
 }
 
 =back

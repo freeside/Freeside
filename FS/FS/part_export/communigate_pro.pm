@@ -146,6 +146,15 @@ sub _export_insert_svc_acct {
   warn "WARNING: error queueing SetAccountMailRules job: $rule_error"
     if $rule_error;
 
+  my $rpop_error = $self->communigate_pro_queue(
+    $svc_acct->svcnum,
+    'SetAccountRPOPs',
+    $self->export_username($svc_acct),
+    $svc_acct->cgp_rpop_hashref,
+  );
+  warn "WARNING: error queueing SetAccountMailRPOPs job: $rpop_error"
+    if $rpop_error;
+
   '';
 
 }
@@ -380,6 +389,15 @@ sub _export_replace_svc_acct {
   );
   warn "WARNING: error queueing SetAccountMailRules job: $rule_error"
     if $rule_error;
+
+  my $rpop_error = $self->communigate_pro_queue(
+    $new->svcnum,
+    'SetAccountRPOPs',
+    $self->export_username($new),
+    $new->cgp_rpop_hashref,
+  );
+  warn "WARNING: error queueing SetAccountMailRPOPs job: $rpop_error"
+    if $rpop_error;
 
   '';
 
@@ -801,6 +819,20 @@ sub export_getsettings_svc_acct {
                  map _rule2string($_), @$rules
                );
 
+#  #rpops too
+#  my $rpops = eval { $self->communigate_pro_runcommand(
+#    'GetAccountRPOPs',
+#    $svc_acct->email
+#  ) };
+#  return $@ if $@;
+#
+#  %$effective_settings = ( %$effective_settings,
+#                           map _rpop2string($_), %$rpops
+#                         );
+#  %$settings = ( %$settings,
+#                 map _rpop2string($_), %rpops
+#               );
+
   #aliases too
   my $aliases = eval { $self->communigate_pro_runcommand(
     'GetAccountAliases',
@@ -870,6 +902,14 @@ sub _rule2string {
   ("Mail rule $name" => "$priority IF $conditions THEN $actions ($comment)");
 }
 
+#sub _rpop2string {
+#  my $rpop = shift;
+#  my($priority, $name, $conditions, $actions, $comment) = @$rule;
+#  $conditions = join(', ', map { my $a = $_; join(' ', @$a); } @$conditions);
+#  $actions    = join(', ', map { my $a = $_; join(' ', @$a); } @$actions);
+#  ("Mail rule $name" => "$priority IF $conditions THEN $actions ($comment)");
+#}
+
 sub export_getsettings_svc_mailinglist {
   my($self, $svc_mailinglist, $settingsref, $defaultref ) = @_;
 
@@ -907,6 +947,7 @@ sub communigate_pro_queue_dep {
     'UpdateAccountDefaults'     => 'cp_Scalar_settingsHash',
     'SetAccountDefaultPrefs'    => 'cp_Scalar_settingsHash',
     'UpdateAccountDefaultPrefs' => 'cp_Scalar_settingsHash',
+    'SetAccountRPOPs'           => 'cp_Scalar_Hash',
   );
   my $sub = exists($kludge_methods{$method})
               ? $kludge_methods{$method}

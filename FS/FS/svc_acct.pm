@@ -47,6 +47,7 @@ use FS::part_export;
 use FS::svc_forward;
 use FS::svc_www;
 use FS::cdr;
+use FS::acct_snarf;
 
 $DEBUG = 0;
 $me = '[FS::svc_acct]';
@@ -1929,17 +1930,27 @@ sub email {
 =item acct_snarf
 
 Returns an array of FS::acct_snarf records associated with the account.
-If the acct_snarf table does not exist or there are no associated records,
-an empty list is returned
 
 =cut
 
 sub acct_snarf {
   my $self = shift;
-  return () unless dbdef->table('acct_snarf');
-  eval "use FS::acct_snarf;";
-  die $@ if $@;
-  qsearch('acct_snarf', { 'svcnum' => $self->svcnum } );
+  qsearch({
+    'table'    => 'acct_snarf',
+    'hashref'  => { 'svcnum' => $self->svcnum },
+    #'order_by' => 'ORDER BY priority ASC',
+  });
+}
+
+=item cgp_rpop_hashref
+
+Returns an arrayref of RPOP data suitable for Communigate Pro API commands.
+
+=cut
+
+sub cgp_rpop_hashref {
+  my $self = shift;
+  { map { $_->snarfname => $_->cgp_hashref } $self->acct_snarf };
 }
 
 =item decrement_upbytes OCTETS
