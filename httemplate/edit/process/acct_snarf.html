@@ -1,0 +1,20 @@
+<% include( 'elements/process.html',
+              'table'       => 'acct_snarf',
+              'redirect'    => $redirect,
+              'noerror_callback' => sub {
+                my( $cgi, $object ) = @_;
+                my $error = $object->svc_export;
+                #shit, not a good place for error handling :/
+                die $error if $error;
+              },
+          )
+%>
+<%init>
+
+my $redirect = sub {
+  my($cgi, $new) = @_;
+  my $svcnum = $new->svcnum;
+  popurl(3)."browse/acct_snarf.html?svcnum=$svcnum;snarfnum=";
+};
+
+</%init>

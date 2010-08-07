@@ -107,6 +107,13 @@
             )
   %>
 
+%# RPOP
+
+  <% include('/view/elements/tr.html', label=>'Remote POP accounts',
+               value=>$rpop_link,
+            )
+  %>
+
 <%init>
 
 my %opt = @_;
@@ -116,8 +123,11 @@ my %opt = @_;
 my $svc_acct = $opt{'svc_acct'};
 #my $part_svc = $opt{'part_svc'};
 
-my $rule_link = qq(<A HREF="${p}browse/cgp_rule.html?svcnum=).
-                      $svc_acct->svcnum. '">View/edit mail rules</A>'; #'dum vim
+my $rule_link = qq(<A HREF="${p}browse/cgp_rule.html?svcnum=). #"dum vim
+                      $svc_acct->svcnum. '">View/edit mail rules</A>';
+
+my $rpop_link = qq(<A HREF="${p}browse/acct_snarf.html?svcnum=). #"dee vim
+                      $svc_acct->svcnum. '">View/edit remote POP accounts</A>';
 
 my $vacation_rule = qsearchs('cgp_rule', { 'svcnum' => $svc_acct->svcnum,
                                            'name'   => '#Vacation'

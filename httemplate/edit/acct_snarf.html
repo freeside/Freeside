@@ -1,0 +1,50 @@
+<% include('elements/edit.html',
+             'name_singular' => 'remote email address',
+             'table'         => 'acct_snarf',
+             'labels' => { 'snarfnum'         => 'Remote email address',
+                           #'svcnum'           => 'Local account',
+                           'snarfname'        => 'Name',
+                           'machine'          => 'Mail server',
+                           'protocol'         => 'Protocol',
+                           'username'         => 'Username',
+                           '_password'        => 'Password',
+                           'check_freq'       => 'Poll every',
+                           'leave'            => 'Leave',
+                           'apop'             => 'Use APOP',
+                           'tls'              => 'TLS',
+                           'mailbox'          => 'Mailbox',
+                         },
+             'fields' => [ 
+                           { field=>'svcnum',   type=>'hidden', },
+                           { field=>'protocol', type=>'hidden', },
+                           'snarfname',
+                           'machine',
+                           'username',
+                           { 'field'=>'_password', type=>'password', },
+                           { 'field'     => 'check_freq',
+                             'type'      => 'select',
+                             'options'   => [ keys %$cf_labels ],
+                             'labels'    => $cf_labels,
+                           },
+                           { field=>'leave', type=>'checkbox', value=>'Y', },
+                           { field=>'apop',  type=>'checkbox', value=>'Y', },
+                           { field=>'tls',   type=>'checkbox', value=>'Y', },
+                           'mailbox',
+                         ],
+             'new_callback' => sub { my( $cgi, $acct_snarf ) = @_;
+                                     $acct_snarf->svcnum($cgi->param('svcnum'));
+                                     $acct_snarf->protocol('POP');
+                                   },
+             #'viewall_url' => $viewall_url,
+             'menubar' => [],
+          )
+%>
+<%init>
+
+my %opt = @_;
+
+#my $viewall_url = $p. "browse/$table.html?svcnum=$svcnum";
+
+my $cf_labels = FS::acct_snarf->check_freq_labels;
+
+</%init>

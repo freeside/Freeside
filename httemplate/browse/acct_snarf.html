@@ -1,0 +1,78 @@
+<% include('elements/browse.html',
+             'title'         => "Remote POP accounts for $svc_label: $svc_value",
+             'name_singular' => 'Remote POP account',
+             'html_init'     => $html_init,
+             'query'         => { 'table'   => 'acct_snarf',
+                                  'hashref' => { 'svcnum' => $svcnum },
+                                  #'order_by' => 'ORDER BY priority DESC',
+                                },
+             'count_query'   => $count_query,
+             'header'        => [ 'Name',
+                                  'Mail server',
+                                  'Username',
+                                  #'Password',
+                                  'Poll every',
+                                  #'Options',
+                                  'Leave',
+                                  'APOP',
+                                  'TLS',
+                                  'Mailbox',
+                                  '', #delete
+                                ],
+             'fields'        => [ 'snarfname',
+                                  'machine',
+                                  'username',
+                                  sub { FS::acct_snarf->check_freq_labels->{shift->check_freq} },
+                                  'leave',
+                                  'apop',
+                                  'tls',
+                                  'mailbox',
+                                ],
+             #'align'
+             'links'         => [ $edit_sub, $edit_sub, $edit_sub, '',
+                                  '', '', '', '', $del_sub ],
+          )
+%>
+<%init>
+
+$cgi->param('svcnum') =~ /^(\d+)$/ or die 'no svcnum';
+my $svcnum = $1;
+
+#agent virt so you can't do cross-agent snarfing
+my $cust_svc = qsearchs('cust_svc', { 'svcnum' => $svcnum })
+  or die 'unknown svcnum';
+my $part_svc = $cust_svc->part_svc;
+
+my $count_query = "SELECT COUNT(*) FROM acct_snarf WHERE svcnum = $svcnum";
+
+my($svc_label, $svc_value, $svcdb) = $cust_svc->label;
+
+my $view = FS::UI::Web::svc_url( 'm'        => $m,
+                                 'action'   => 'view',
+                                 'part_svc' => $part_svc, 
+                                 'svc'      => $cust_svc,
+                               );
+
+my $html_init =
+  qq(<A HREF="$view">View this $svc_label</A><BR><BR>).
+  qq!<A HREF="${p}edit/acct_snarf.html?svcnum=$svcnum">Add new remote POP account</A><BR>!.
+  '<BR>'.
+  qq!
+  <SCRIPT>
+    function areyousure_delete(href) {
+     areyousure(href,"Are you sure you want to delete this remote POP account?");
+    }
+    function areyousure(href,message) {
+     if (confirm(message) == true)
+       window.location.href = href;
+    }
+  </SCRIPT>
+!;
+
+my $edit_sub = [ $p.'edit/acct_snarf.html?', 'snarfnum' ];
+my $del_sub = sub {
+  my $snarfnum = shift->snarfnum;
+  [ "javascript:areyousure_delete('${p}misc/delete-acct_snarf.html?$snarfnum')", '' ];
+};
+
+</%init>

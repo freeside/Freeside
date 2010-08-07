@@ -2,6 +2,7 @@ package FS::acct_snarf;
 
 use strict;
 use vars qw( @ISA );
+use Tie::IxHash;
 use FS::Record;
 
 @ISA = qw( FS::Record );
@@ -34,6 +35,8 @@ fields are currently supported:
 =over 4
 
 =item snarfnum - primary key
+
+=item snarfname - Label
 
 =item svcnum - Account (see L<FS::svc_acct>)
 
@@ -100,11 +103,17 @@ sub check {
   my $self = shift;
   my $error =
        $self->ut_numbern('snarfnum')
+    || $self->ut_textn('snarfname') #alphasn?
     || $self->ut_number('svcnum')
     || $self->ut_foreign_key('svcnum', 'svc_acct', 'svcnum')
     || $self->ut_domain('machine')
     || $self->ut_alphan('protocol')
     || $self->ut_textn('username')
+    || $self->ut_numbern('check_freq')
+    || $self->ut_enum('leave', [ '', 'Y' ])
+    || $self->ut_enum('apop', [ '', 'Y' ])
+    || $self->ut_enum('tls', [ '', 'Y' ])
+    || $self->ut_alphan('mailbox')
   ;
   return $error if $error;
 
@@ -112,6 +121,32 @@ sub check {
   $self->_password($1);
 
   ''; #no error
+}
+
+sub check_freq_labels {
+
+  tie my %hash, 'Tie::IxHash',
+    0 => 'Never',
+    60 => 'minute',
+    120 => '2 minutes',
+    180 => '3 minutes',
+    300 => '5 minutes',
+    600 => '10 minutes',
+    900 => '15 minutes',
+    1800 => '30 minutes',
+    3600 => 'hour',
+    7200 => '2 hours',
+    10800 => '3 hours',
+    21600 => '6 hours',
+    43200 => '12 hours',
+    86400 => 'day',
+    172800 => '2 days',
+    259200 => '3 days',
+    604800 => 'week',
+    1000000000 => 'Disabled',
+  ;
+
+  \%hash;
 }
 
 =back

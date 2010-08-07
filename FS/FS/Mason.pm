@@ -249,6 +249,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::rate_time_interval;
   use FS::msg_template;
   use FS::part_tag;
+  use FS::acct_snarf;
   # Sammath Naur
 
   if ( $FS::Mason::addl_handler_use ) {
