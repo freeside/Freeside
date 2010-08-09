@@ -270,7 +270,9 @@ Returns a name string for this user: "Last, First".
 
 sub name {
   my $self = shift;
-  $self->get('last'). ', '. $self->first;
+  return $self->username
+    if $self->get('last') eq 'Lastname' && $self->first eq 'Firstname';
+  return $self->get('last'). ', '. $self->first;
 }
 
 =item user_cust_main
