@@ -102,7 +102,7 @@ sub process_batch_import {
 
 my %formatfields = (
   'default'      => [],
-  'svc_acct'     => [qw( username _password )],
+  'svc_acct'     => [qw( username _password domsvc )],
   'svc_phone'    => [qw( countrycode phonenum sip_password pin )],
   'svc_external' => [qw( id title )],
 );

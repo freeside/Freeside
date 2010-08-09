@@ -70,10 +70,10 @@ Uploaded files can be CSV (comma-separated value) files or Excel spreadsheets.  
 <b>Default with agent_custid</b> format has the following field order: <i>agent_custid<%$req%>, pkgpart<%$req%>, discountnum, start_date, setup, bill, last_bill, susp, adjourn, cancel, expire</i>
 <BR><BR>
 
-<b>Account service</b> format has the following field order: <i>custnum<%$req%>, pkgpart<%$req%>, discountnum, start_date, setup, bill, last_bill, susp, adjourn, cancel, expire, username, _password</i>
+<b>Account service</b> format has the following field order: <i>custnum<%$req%>, pkgpart<%$req%>, discountnum, start_date, setup, bill, last_bill, susp, adjourn, cancel, expire, username, _password, domsvc</i>
 <BR><BR>
 
-<b>Account service with agent_custid</b> format has the following field order: <i>agent_custid<%$req%>, pkgpart<%$req%>, discountnum, start_date, setup, bill, last_bill, susp, adjourn, cancel, expire, username, _password</i>
+<b>Account service with agent_custid</b> format has the following field order: <i>agent_custid<%$req%>, pkgpart<%$req%>, discountnum, start_date, setup, bill, last_bill, susp, adjourn, cancel, expire, username, _password, domsvc</i>
 <BR><BR>
 
 <b>Phone sevice</b> format has the following field order: <i>custnum<%$req%>, pkgpart<%$req%>, discountnum, start_date, setup, bill, last_bill, susp, adjourn, cancel, expire, countrycode, phonenum, sip_password, pin</i>
@@ -103,9 +103,27 @@ Field information:
 
   <li><i>discountnum</i>: Optional discount.  Configuration -&gt; Packages -&gt; Discounts
 
+  <li><i>start_date</i>: Indicates a future start date; do not fill in for active packages
+
+  <li><i>setup</i>: Indicates setup fee has been charged and package setup on this date
+
+  <li><i>bill</i>: Next bill date
+
+  <li><i>last_bill</i>: Last bill date
+
+  <li><i>susp</i>: Indicates the package is suspended (on the given date).
+
+  <li><i>adjourn</i>: Indicates a future suspension on this date.
+
+  <li><i>cancel</i>: Indicates the package is cancelled (on the given date).
+
+  <li><i>expire</i>: Indicates a future cancellation on this date.
+
 <!--
   <li><i>username</i> and <i>_password</i> are required if <i>pkgpart</i> is specified. (Extended and Extended plus company formats)
 -->
+
+  <li><i>domsvc</i>: Domain svcnum
 
   <li><i>id</i>: External service id, integer
 
