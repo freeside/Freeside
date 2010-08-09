@@ -1382,7 +1382,7 @@ sub delete {
   }
 
   foreach my $table (qw( cust_main_invoice cust_main_exemption cust_tag )) {
-    foreach my $record ( qsearch( 'table', { 'custnum' => $self->custnum } ) ) {
+    foreach my $record ( qsearch( $table, { 'custnum' => $self->custnum } ) ) {
       my $error = $record->delete;
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
@@ -6275,7 +6275,7 @@ sub balance_date_range {
   my $self = shift;
   my $sql = 'SELECT SUM('. $self->balance_date_sql(@_).
             ') FROM cust_main WHERE custnum='. $self->custnum;
-  sprintf( "%.2f", $self->scalar_sql($sql) );
+  sprintf( '%.2f', $self->scalar_sql($sql) );
 }
 
 =item balance_pkgnum PKGNUM
