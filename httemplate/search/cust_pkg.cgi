@@ -175,8 +175,9 @@ my %search_hash = ();
 #some false laziness w/misc/bulk_change_pkg.cgi
   
 $search_hash{'query'} = $cgi->keywords;
-  
-for (qw( agentnum custnum magic status classnum custom cust_fields )) {
+
+#scalars
+for (qw( agentnum custnum magic status classnum custom cust_fields pkgbatch )) {
   $search_hash{$_} = $cgi->param($_) if $cgi->param($_);
 }
 

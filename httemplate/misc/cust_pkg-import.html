@@ -1,0 +1,132 @@
+<% include("/elements/header.html",'Batch Package Import') %>
+
+Import a file containing package records.
+<BR><BR>
+
+<% include( '/elements/form-file_upload.html',
+              'name'      => 'PackageImportForm',
+              'action'    => 'process/cust_pkg-import.html',
+              'num_files' => 1,
+              'fields'    => [ 'agentnum', 'pkgbatch', 'format' ],
+              'message'   => 'Package import successful',
+              'url'       => $p."search/cust_pkg.cgi?pkgbatch=$pkgbatch",
+          )
+%>
+
+<% &ntable("#cccccc", 2) %>
+
+  <% include( '/elements/tr-select-agent.html',
+                 #'curr_value' => '', #$agentnum,
+                 'label'       => "<B>Agent</B>",
+                 'empty_label' => 'Select agent',
+             )
+  %>
+
+  <INPUT TYPE="hidden" NAME="pkgbatch" VALUE="<% $pkgbatch %>"%>
+
+  <TR>
+    <TH ALIGN="right">Format</TH>
+    <TD>
+      <SELECT NAME="format">
+        <OPTION VALUE="default" SELECTED>Default
+        <OPTION VALUE="default-agent_custid">Default with agent_custid
+        <OPTION VALUE="svc_acct">Account service
+        <OPTION VALUE="svc_acct-agent_custid">Account service with agent_custid
+        <OPTION VALUE="svc_phone">Phone service
+        <OPTION VALUE="svc_phone-agent_custid">Phone service with agent_custid
+        <OPTION VALUE="svc_external">External service
+        <OPTION VALUE="svc_external-agent_custid">External service with agent_custid
+      </SELECT>
+    </TD>
+  </TR>
+
+  <% include( '/elements/file-upload.html',
+                'field' => 'file',
+                'label' => 'Filename',
+            )
+  %>
+
+  <TR>
+    <TD COLSPAN=2 ALIGN="center" STYLE="padding-top:6px">
+      <INPUT TYPE    = "submit"
+             ID      = "submit"
+             VALUE   = "Import file"
+             onClick = "document.PackageImportForm.submit.disabled=true;"
+      >
+    </TD>
+  </TR>
+
+</TABLE>
+
+</FORM>
+
+<BR>
+Uploaded files can be CSV (comma-separated value) files or Excel spreadsheets.  The file should have a .CSV or .XLS extension.
+<BR><BR>
+
+<b>Default</b> format has the following field order: <i>custnum<%$req%>, pkgpart<%$req%>, discountnum, start_date, setup, bill, last_bill, susp, adjourn, cancel, expire</i>
+<BR><BR>
+
+<b>Default with agent_custid</b> format has the following field order: <i>agent_custid<%$req%>, pkgpart<%$req%>, discountnum, start_date, setup, bill, last_bill, susp, adjourn, cancel, expire</i>
+<BR><BR>
+
+<b>Account service</b> format has the following field order: <i>custnum<%$req%>, pkgpart<%$req%>, discountnum, start_date, setup, bill, last_bill, susp, adjourn, cancel, expire, username, _password</i>
+<BR><BR>
+
+<b>Account service with agent_custid</b> format has the following field order: <i>agent_custid<%$req%>, pkgpart<%$req%>, discountnum, start_date, setup, bill, last_bill, susp, adjourn, cancel, expire, username, _password</i>
+<BR><BR>
+
+<b>Phone sevice</b> format has the following field order: <i>custnum<%$req%>, pkgpart<%$req%>, discountnum, start_date, setup, bill, last_bill, susp, adjourn, cancel, expire, countrycode, phonenum, sip_password, pin</i>
+<BR><BR>
+
+<b>Phone service with agent_custid</b> format has the following field order: <i>agent_custid<%$req%>, pkgpart<%$req%>, discountnum, start_date, setup, bill, last_bill, susp, adjourn, cancel, expire, countrycode, phonenum, sip_password, pin</i>
+<BR><BR>
+
+<b>External sevice</b> format has the following field order: <i>custnum<%$req%>, pkgpart<%$req%>, discountnum, start_date, setup, bill, last_bill, susp, adjourn, cancel, expire, id, title</i>
+<BR><BR>
+
+<b>External service with agent_custid</b> format has the following field order: <i>agent_custid<%$req%>, pkgpart<%$req%>, discountnum, start_date, setup, bill, last_bill, susp, adjourn, cancel, expire, id, title</i>
+<BR><BR>
+
+<%$req%> Required fields
+<BR><BR>
+
+Field information:
+
+<ul>
+
+  <li><i>custnum</i>: This specifies an existing customer by custnum.
+
+  <li><i>agent_custid</i>: This specifies an existing customer record by agent_custid.
+
+  <li><i>pkgpart</i>: Package definition.  Configuration -&gt; Packages -&gt; Package definitions
+
+  <li><i>pkgpart</i>: Optional discount.  Configuration -&gt; Packages -&gt; Discounts
+
+<!--
+  <li><i>username</i> and <i>_password</i> are required if <i>pkgpart</i> is specified. (Extended and Extended plus company formats)
+-->
+
+  <li><i>id</i>: External service id, integer
+
+  <li><i>title</i>: External service identifier, text
+
+</ul>
+
+<BR>
+
+<% include('/elements/footer.html') %>
+
+<%once>
+
+my $req = qq!<font color="#ff0000">*</font>!;
+
+</%once>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Import');
+
+my $pkgbatch = time2str('webimport-%Y/%m/%d-%T'. "-$$-". rand() * 2**32, time);
+
+</%init>

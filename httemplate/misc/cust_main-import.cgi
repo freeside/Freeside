@@ -119,7 +119,7 @@ advertising source table.
 
   <li><i>invoicing_list</i>: Email address for invoices, or POST for postal invoices.
 
-  <li><i>pkgpart</i>: Package definition.  Configuration -&gt; Provisioning, services and packages -&gt; View/Edit package definitions
+  <li><i>pkgpart</i>: Package definition.  Configuration -&gt; Packages -&gt; Package definitions
 
   <li><i>username</i> and <i>_password</i> are required if <i>pkgpart</i> is specified. (Extended and Extended plus company formats)
 

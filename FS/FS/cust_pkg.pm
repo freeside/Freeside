@@ -2624,6 +2624,15 @@ sub search {
   }
 
   ##
+  # custbatch
+  ##
+
+  if ( $params->{'pkgbatch'} =~ /^([\w\/\-\:\.]+)$/ and $1 ) {
+    push @where,
+      "cust_pkg.pkgbatch = '$1'";
+  }
+
+  ##
   # parse status
   ##
 

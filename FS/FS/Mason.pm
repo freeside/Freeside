@@ -3,6 +3,7 @@ package FS::Mason;
 use strict;
 use vars qw( @ISA @EXPORT_OK $addl_handler_use );
 use Exporter;
+use Carp;
 use File::Slurp qw( slurp );
 use HTML::Mason 1.27; #http://www.masonhq.com/?ApacheModPerl2Redirect
 use HTML::Mason::Interp;
@@ -146,6 +147,7 @@ if ( -e $addl_handler_use_file ) {
   use FS::cust_location;
   use FS::cust_pay;
   use FS::cust_pkg;
+  use FS::cust_pkg::Import;
   use FS::part_pkg_taxclass;
   use FS::cust_pkg_reason;
   use FS::cust_refund;
@@ -361,6 +363,7 @@ if ( -e $addl_handler_use_file ) {
   
   sub include {
     use vars qw($m);
+    #carp #should just switch to <& &> syntax
     $m->scomp(@_);
   }
 

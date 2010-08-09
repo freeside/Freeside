@@ -210,7 +210,7 @@ perl-modules:
 	" blib/lib/FS/part_export/*.pm;\
 	perl -p -i -e "\
 	  s|%%%FREESIDE_CACHE%%%|${FREESIDE_CACHE}|g;\
-	" blib/lib/FS/cust_main/*.pm;\
+	" blib/lib/FS/cust_main/*.pm blib/lib/FS/cust_pkg/*.pm;\
 	perl -p -i -e "\
 	  s|%%%FREESIDE_CONF%%%|${FREESIDE_CONF}|g;\
 	  s|%%%FREESIDE_LOG%%%|${FREESIDE_LOG}|g;\

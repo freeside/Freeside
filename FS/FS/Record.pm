@@ -1611,6 +1611,8 @@ Class method for batch imports.  Available params:
 
 =item table
 
+=item format - usual way to specify import, with this format string selecting data from the formats and format_* info hashes
+
 =item formats
 
 =item format_types
@@ -1622,6 +1624,10 @@ Class method for batch imports.  Available params:
 =item format_fixedlength_formats
 
 =item format_row_callbacks
+
+=item fields - Alternate way to specify import, specifying import fields directly as a listref
+
+=item postinsert_callback
 
 =item params
 
@@ -1635,8 +1641,6 @@ FS::queue object, will be updated with progress
 
 csv, xls or fixedlength
 
-=item format
-
 =item empty_ok
 
 =back
@@ -1647,21 +1651,64 @@ sub batch_import {
   my $param = shift;
 
   warn "$me batch_import call with params: \n". Dumper($param)
-  ;#  if $DEBUG;
+    if $DEBUG;
 
   my $table   = $param->{table};
-  my $formats = $param->{formats};
 
   my $job     = $param->{job};
   my $file    = $param->{file};
-  my $format  = $param->{'format'};
   my $params  = $param->{params} || {};
 
-  die "unknown format $format" unless exists $formats->{ $format };
+  my( $type, $header, $sep_char, $fixedlength_format, $row_callback, @fields );
+  my $postinsert_callback = '';
+  if ( $param->{'format'} ) {
 
-  my $type = $param->{'format_types'}
-             ? $param->{'format_types'}{ $format }
-             : $param->{type} || 'csv';
+    my $format  = $param->{'format'};
+    my $formats = $param->{formats};
+    die "unknown format $format" unless exists $formats->{ $format };
+
+    $type = $param->{'format_types'}
+            ? $param->{'format_types'}{ $format }
+            : $param->{type} || 'csv';
+
+
+    $header = $param->{'format_headers'}
+               ? $param->{'format_headers'}{ $param->{'format'} }
+               : 0;
+
+    $sep_char = $param->{'format_sep_chars'}
+                  ? $param->{'format_sep_chars'}{ $param->{'format'} }
+                  : ',';
+
+    $fixedlength_format =
+      $param->{'format_fixedlength_formats'}
+        ? $param->{'format_fixedlength_formats'}{ $param->{'format'} }
+        : '';
+
+    $row_callback =
+      $param->{'format_row_callbacks'}
+        ? $param->{'format_row_callbacks'}{ $param->{'format'} }
+        : '';
+
+    @fields = @{ $formats->{ $format } };
+
+  } elsif ( $param->{'fields'} ) {
+
+    $type = ''; #infer from filename
+    $header = 0;
+    $sep_char = ',';
+    $fixedlength_format = '';
+    $row_callback = '';
+    @fields = @{ $param->{'fields'} };
+
+    $postinsert_callback = $param->{'postinsert_callback'}
+      if $param->{'postinsert_callback'}
+
+  } else {
+    die "neither format nor fields specified";
+  }
+
+  #my $file    = $param->{file};
 
   unless ( $type ) {
     if ( $file =~ /\.(\w+)$/i ) {
@@ -1675,25 +1722,6 @@ sub batch_import {
       if $param->{'default_csv'} && $type ne 'xls';
   }
 
-  my $header = $param->{'format_headers'}
-                 ? $param->{'format_headers'}{ $param->{'format'} }
-                 : 0;
-
-  my $sep_char = $param->{'format_sep_chars'}
-                   ? $param->{'format_sep_chars'}{ $param->{'format'} }
-                   : ',';
-
-  my $fixedlength_format =
-    $param->{'format_fixedlength_formats'}
-      ? $param->{'format_fixedlength_formats'}{ $param->{'format'} }
-      : '';
-
-  my $row_callback =
-    $param->{'format_row_callbacks'}
-      ? $param->{'format_row_callbacks'}{ $param->{'format'} }
-      : '';
-
-  my @fields = @{ $formats->{ $format } };
 
   my $row = 0;
   my $count;
@@ -1757,6 +1785,7 @@ sub batch_import {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
+  #my $params  = $param->{params} || {};
   if ( $param->{'batch_namecol'} && $param->{'batch_namevalue'} ) {
     my $batch_col   = $param->{'batch_keycol'};
 
@@ -1774,7 +1803,8 @@ sub batch_import {
 
     $params->{ $batch_col } = $batch_value;
   }
-  
+
+  #my $job     = $param->{job};
   my $line;
   my $imported = 0;
   my( $last, $min_sec ) = ( time, 5 ); #progressbar foo
@@ -1832,6 +1862,7 @@ sub batch_import {
 
     }
 
+    #my $table   = $param->{table};
     my $class = "FS::$table";
 
     my $record = $class->new( \%hash );
@@ -1854,6 +1885,15 @@ sub batch_import {
 
     $row++;
     $imported++;
+
+    if ( $postinsert_callback ) {
+      my $error = &{$postinsert_callback}($record, $param);
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "postinsert_callback error". ( $line ? " for $line" : '' ).
+               ": $error";
+      }
+    }
 
     if ( $job && time - $min_sec > $last ) { #progress bar
       $job->update_statustext( int(100 * $imported / $count) );

@@ -318,6 +318,7 @@ $report_menu{'SQL Query'}  = [ $fsurl.'search/report_sql.html', 'SQL Query' ]
 
 tie my %tools_importing, 'Tie::IxHash',
   'Customers' => [ $fsurl.'misc/cust_main-import.cgi', '' ],
+  'Customer packages' => [ $fsurl.'misc/cust_pkg-import.html', '' ],
   'Customer comments from CSV file' => [ $fsurl.'misc/cust_main_note-import.html', '' ],
   'One-time charges from CSV file' => [ $fsurl.'misc/cust_main-import_charges.cgi', '' ],
   'Payments from CSV file' => [ $fsurl.'misc/cust_pay-import.cgi', '' ],
@@ -399,7 +400,7 @@ if ( $curuser->access_right('Configuration') ) {
 
   #package grouping sub-menu?
   $config_pkg{'Package classes'} =  [ $fsurl.'browse/pkg_class.html', 'Package classes define groups of packages, for taxation, ordering convenience and reporting.' ];
-  $config_pkg{'Package categories'} =  [ $fsurl.'browse/pkg_category.html', 'Package categories define groups of package classes.' ];
+  $config_pkg{'Package categories'} =  [ $fsurl.'browse/pkg_category.html', 'Package categories define groups of package classes, for invoice sections.' ];
   $config_pkg{'Package report classes'} =  [ $fsurl.'browse/part_pkg_report_option.html', 'Package classes define optional groups of packages for reporting only.' ];
   #eo package grouping sub-menu
 

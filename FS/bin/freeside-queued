@@ -186,7 +186,7 @@ while (1) {
       dbh->{'private_profile'} = {} if UNIVERSAL::can(dbh, 'sprintProfile');
 
       #auto-use classes...
-      if (    $ljob->job =~ /(FS::(part_export|cust_main)::\w+)::/
+      if (    $ljob->job =~ /(FS::(part_export|cust_main|cust_pkg)::\w+)::/
            || $ljob->job =~ /(FS::\w+)::/
          )
       {
