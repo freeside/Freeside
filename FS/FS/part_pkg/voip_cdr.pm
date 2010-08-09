@@ -314,7 +314,7 @@ sub calc_usage {
 
 #  my $downstream_cdr = '';
 
-  my $cdr_svc_method    = $self->option('cdr_svc_method')||'svc_phone.phonenum';
+  my $cdr_svc_method    = $self->option('cdr_svc_method',1)||'svc_phone.phonenum';
   my $rating_method     = $self->option('rating_method') || 'prefix';
   my $intl              = $self->option('international_prefix') || '011';
   my $domestic_prefix   = $self->option('domestic_prefix');
