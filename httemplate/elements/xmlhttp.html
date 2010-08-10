@@ -58,7 +58,11 @@ Example:
         	return;
 
             if (xmlhttp.status != 200) {
-              alert(xmlhttp.status + " status connecting to " + url);
+              if ( xmlhttp.status != 0 ) {
+                //not warning on the 0 errors, they pop up when navagating away
+                // from the page
+                alert(xmlhttp.status + " status connecting to " + url);
+              }
             } else {
               var data = xmlhttp.responseText;
               //alert('received response: ' + data);
