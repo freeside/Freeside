@@ -8937,6 +8937,7 @@ I<$returnaddress> - the return address defaults to invoice_latexreturnaddress or
 
 =cut
 
+# a lot like cust_bill::print_latex
 sub generate_letter {
   my ($self, $template, %options) = @_;
 
@@ -9000,6 +9001,17 @@ sub generate_letter {
   $letter_data{company_name} = $conf->config('company_name', $self->agentnum);
 
   my $dir = $FS::UID::conf_dir."/cache.". $FS::UID::datasrc;
+
+  my $lh = new File::Temp( TEMPLATE => 'letter.'. $self->custnum. '.XXXXXXXX',
+                           DIR      => $dir,
+                           SUFFIX   => '.eps',
+                           UNLINK   => 0,
+                         ) or die "can't open temp file: $!\n";
+  print $lh $conf->config_binary('logo.eps', $self->agentnum)
+    or die "can't write temp file: $!\n";
+  close $lh;
+  $letter_data{'logo_file'} = $lh->filename;
+
   my $fh = new File::Temp( TEMPLATE => 'letter.'. $self->custnum. '.XXXXXXXX',
                            DIR      => $dir,
                            SUFFIX   => '.tex',
@@ -9009,7 +9021,8 @@ sub generate_letter {
   $letter_template->fill_in( OUTPUT => $fh, HASH => \%letter_data );
   close $fh;
   $fh->filename =~ /^(.*).tex$/ or die "unparsable filename: ". $fh->filename;
-  return $1;
+  return ($1, $letter_data{'logo_file'});
+
 }
 
 =item print_ps TEMPLATE 
@@ -9020,8 +9033,12 @@ Returns an postscript letter filled in from TEMPLATE, as a scalar.
 
 sub print_ps {
   my $self = shift;
-  my $file = $self->generate_letter(@_);
-  FS::Misc::generate_ps($file);
+  my($file, $lfile) = $self->generate_letter(@_);
+  my $ps = FS::Misc::generate_ps($file);
+  unlink($file.'.tex');
+  unlink($lfile);
+
+  $ps;
 }
 
 =item print TEMPLATE

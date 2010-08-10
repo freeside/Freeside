@@ -67,7 +67,7 @@
     \returninset
     \makebox{
       \begin{tabular}{ll}
-        \includegraphics{[@-- $conf_dir --@]/logo.eps} &
+        \includegraphics{[@-- $logo_file --@]} &
         \begin{minipage}[b]{5.5cm}
 [@-- $returnaddress --@]
         \end{minipage}
@@ -75,7 +75,7 @@
     }
   }
   { % ... pages
-    %\includegraphics{[@-- $conf_dir --@]/logo.eps}	% Uncomment if you want the logo on all pages.
+    %\includegraphics{[@-- $logo_file --@]}	% Uncomment if you want the logo on all pages.
   }
 }
 
