@@ -28,6 +28,6 @@ if ( $cgi->param('new_custnum') ) {
 my $cust_main = qsearchs( 'cust_main', { 'custnum' => $custnum } )
   or die "Customer not found: $custnum";
 
-my $error = $cust_main->delete($new_custnum);
+my $error = $cust_main->delete('new_custnum' => $new_custnum);
 
 </%init>

@@ -1,0 +1,30 @@
+#!/usr/bin/perl
+
+use strict;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch);
+use FS::cust_main;
+
+die "this removes all customers in your database except for customer 1 - remove this line to enable";
+
+my $user = shift or die "usage: wipe-customers username\n";
+adminsuidsetup $user;
+
+#this isn't terribly efficient, but the idea was clearing out a test database,
+#not actually destroying a large amount of data
+
+foreach my $cust_main (
+
+  qsearch('cust_main', { 'custnum' => { op=>'!=', value=>'1' } } )
+
+) {
+
+  my @cerrors = $cust_main->cancel( quiet=>1, nobill=>1 );
+  if ( @cerrors ) {
+    die join(' / ', @cerrors);
+  }
+
+  my $error = $cust_main->delete( 'delete_financials' => 1);
+  die $error if $error;
+
+}

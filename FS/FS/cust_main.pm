@@ -1301,7 +1301,7 @@ sub reexport {
 
 }
 
-=item delete NEW_CUSTNUM
+=item delete [ OPTION => VALUE ... ]
 
 This deletes the customer.  If there is an error, returns the error, otherwise
 returns false.
@@ -1311,18 +1311,20 @@ what you want when a customer cancels service; for that, cancel all of the
 customer's packages (see L</cancel>).
 
 If the customer has any uncancelled packages, you need to pass a new (valid)
-customer number for those packages to be transferred to.  Cancelled packages
-will be deleted.  Did I mention that this is NOT what you want when a customer
-cancels service and that you really should be looking see L<FS::cust_pkg/cancel>?
+customer number for those packages to be transferred to, as the "new_customer"
+option.  Cancelled packages will be deleted.  Did I mention that this is NOT
+what you want when a customer cancels service and that you really should be
+looking at L<FS::cust_pkg/cancel>?  
 
 You can't delete a customer with invoices (see L<FS::cust_bill>),
-or credits (see L<FS::cust_credit>), payments (see L<FS::cust_pay>) or
-refunds (see L<FS::cust_refund>).
+statements (see L<FS::cust_statement>), credits (see L<FS::cust_credit>),
+payments (see L<FS::cust_pay>) or refunds (see L<FS::cust_refund>), unless you
+set the "delete_financials" option to a true value.
 
 =cut
 
 sub delete {
-  my $self = shift;
+  my( $self, %opt ) = @_;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -1335,26 +1337,47 @@ sub delete {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  if ( $self->cust_bill ) {
-    $dbh->rollback if $oldAutoCommit;
-    return "Can't delete a customer with invoices";
+  if ( qsearch('agent', { 'agent_custnum' => $self->custnum } ) ) {
+     $dbh->rollback if $oldAutoCommit;
+     return "Can't delete a master agent customer";
   }
-  if ( $self->cust_credit ) {
-    $dbh->rollback if $oldAutoCommit;
-    return "Can't delete a customer with credits";
+
+  #use FS::access_user
+  if ( qsearch('access_user', { 'user_custnum' => $self->custnum } ) ) {
+     $dbh->rollback if $oldAutoCommit;
+     return "Can't delete a master employee customer";
   }
-  if ( $self->cust_pay ) {
-    $dbh->rollback if $oldAutoCommit;
-    return "Can't delete a customer with payments";
-  }
-  if ( $self->cust_refund ) {
-    $dbh->rollback if $oldAutoCommit;
-    return "Can't delete a customer with refunds";
+
+  tie my %financial_tables, 'Tie::IxHash',
+    'cust_bill'      => 'invoices',
+    'cust_statement' => 'statements',
+    'cust_credit'    => 'credits',
+    'cust_pay'       => 'payments',
+    'cust_refund'    => 'refunds',
+  ;
+   
+  foreach my $table ( keys %financial_tables ) {
+
+    my @records = $self->$table();
+
+    if ( @records && ! $opt{'delete_financials'} ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Can't delete a customer with ". $financial_tables{$table};
+    }
+
+    foreach my $record ( @records ) {
+      my $error = $record->delete;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "Error deleting ". $financial_tables{$table}. ": $error\n";
+      }
+    }
+
   }
 
   my @cust_pkg = $self->ncancelled_pkgs;
   if ( @cust_pkg ) {
-    my $new_custnum = shift;
+    my $new_custnum = $opt{'new_custnum'};
     unless ( qsearchs( 'cust_main', { 'custnum' => $new_custnum } ) ) {
       $dbh->rollback if $oldAutoCommit;
       return "Invalid new customer number: $new_custnum";
@@ -1381,7 +1404,14 @@ sub delete {
     }
   }
 
-  foreach my $table (qw( cust_main_invoice cust_main_exemption cust_tag )) {
+  #cust_tax_adjustment in financials?
+  #cust_pay_pending?  ouch
+  foreach my $table (qw(
+    cust_main_invoice cust_main_exemption cust_tag cust_attachment contact
+    cust_location cust_main_note cust_tax_adjustment
+    cust_pay_void cust_pay_batch queue cust_tax_exempt
+    cust_recon
+  )) {
     foreach my $record ( qsearch( $table, { 'custnum' => $self->custnum } ) ) {
       my $error = $record->delete;
       if ( $error ) {
@@ -1390,6 +1420,19 @@ sub delete {
       }
     }
   }
+
+  my $sth = $dbh->prepare(
+    'UPDATE cust_main SET referral_custnum = NULL WHERE referral_custnum = ?'
+  ) or do {
+    my $errstr = $dbh->errstr;
+    $dbh->rollback if $oldAutoCommit;
+    return $errstr;
+  };
+  $sth->execute($self->custnum) or do {
+    my $errstr = $sth->errstr;
+    $dbh->rollback if $oldAutoCommit;
+    return $errstr;
+  };
 
   my $error = $self->SUPER::delete;
   if ( $error ) {
