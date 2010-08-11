@@ -328,6 +328,12 @@ sub batch_import {
     tie my %hash, 'Tie::RefHash'; #this part is important
 
     if ( $cust_pkg{'pkgpart'} ) {
+
+      unless ( $cust_pkg{'pkgpart'} =~ /^\d+$/ ) {
+        $dbh->rollback if $oldAutoCommit;
+        return 'illegal pkgpart: '. $cust_pkg{'pkgpart'};
+      }
+
       my $cust_pkg = new FS::cust_pkg ( \%cust_pkg );
 
       my @svc_x = ();
