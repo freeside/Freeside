@@ -1,8 +1,7 @@
 <STYLE TYPE="text/css">
 
-.grid table { border: solid; empty-cells: show }
-.grid TH { padding-left: 3px; padding-right: 3px; border: 1px solid #dddddd; border-bottom: dashed 1px black; border-right: none }
-.grid TD { padding-left: 3px; padding-right: 3px; empty-cells: show; border: 1px solid #cccccc; border-bottom: none; border-right: none }
+.grid TH { padding-left: 3px; padding-right: 3px; padding-bottom: 2px; border: none; empty-cells: show }
+.grid TD { padding-left: 3px; padding-right: 3px; padding-bottom: 2px; border: none; empty-cells: show }
 
 .inv table { border: none }
 .inv TH { border: none }
@@ -10,7 +9,7 @@
 
 </STYLE>
 
-<TABLE CLASS="grid" CELLSPACING=<% $opt{cellspacing} %> CELLPADDING=<% $opt{cellpadding} %> BORDER=1 BORDERCOLOR="#000000" <% $opt{bgcolor} %> STYLE="border: solid 1px black; empty-cells: show">
+<TABLE CLASS="grid" CELLSPACING=<% $opt{cellspacing} %> CELLPADDING=<% $opt{cellpadding} %> <% $opt{bgcolor} %> STYLE="border: 1px solid #cccccc;">
 
 <%init>
 
