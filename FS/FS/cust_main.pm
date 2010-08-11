@@ -8988,8 +8988,13 @@ sub generate_letter {
       $letter_data{returnaddress} = $retadd;
     } elsif ( grep /\S/, $conf->config('company_address', $self->agentnum) ) {
       $letter_data{returnaddress} =
-        join( '\\*'."\n", map s/( {2,})/'~' x length($1)/eg,
-                          $conf->config('company_address', $self->agentnum)
+        join( "\n", map { s/( {2,})/'~' x length($1)/eg;
+                          s/$/\\\\\*/;
+                          $_;
+                        }
+                    ( $conf->config('company_name', $self->agentnum),
+                      $conf->config('company_address', $self->agentnum),
+                    )
         );
     } else {
       $letter_data{returnaddress} = '~';
