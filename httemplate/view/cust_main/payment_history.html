@@ -291,7 +291,7 @@
 
 
   <TR <% $display ? $display.' ID="old_history'.$old_history++.'"'  : ''%>>
-    <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+    <TD VALIGN="top" CLASS="grid" BGCOLOR="<% $bgcolor %>">
 % unless ( !$target || $target{$target}++ ) { 
 
         <A NAME="<% $target %>">
@@ -308,19 +308,19 @@
     <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
       <% $item->{'desc'} %>
     </TD>
-    <TD ALIGN="right" CLASS="grid" BGCOLOR="<% $bgcolor %>">
+    <TD VALIGN="top" ALIGN="right" CLASS="grid" BGCOLOR="<% $bgcolor %>">
       <% $charge  %>
     </TD>
-    <TD ALIGN="right" CLASS="grid" BGCOLOR="<% $bgcolor %>">
+    <TD VALIGN="top" ALIGN="right" CLASS="grid" BGCOLOR="<% $bgcolor %>">
       <% $payment %>
     </TD>
-    <TD ALIGN="right" CLASS="grid" BGCOLOR="<% $bgcolor %>">
+    <TD VALIGN="top" ALIGN="right" CLASS="grid" BGCOLOR="<% $bgcolor %>">
       <% $credit  %>
     </TD>
-    <TD ALIGN="right" CLASS="grid" BGCOLOR="<% $bgcolor %>">
+    <TD VALIGN="top" ALIGN="right" CLASS="grid" BGCOLOR="<% $bgcolor %>">
       <% $refund  %>
     </TD>
-    <TD ALIGN="right" CLASS="grid" BGCOLOR="<% $bgcolor %>">
+    <TD VALIGN="top" ALIGN="right" CLASS="grid" BGCOLOR="<% $bgcolor %>">
       <% $showbalance %>
     </TD>
   </TR>
