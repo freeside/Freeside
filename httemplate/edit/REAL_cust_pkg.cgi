@@ -133,7 +133,7 @@
 my $conf = new FS::Conf;
 my $date_format = $conf->config('date_format') || '%m/%d/%Y';
 
-my $format = $date_format. ' %T %z (%Z)';
+my $format = $date_format. ' %T'; # %z (%Z)';
 
 </%shared>
 <%init>
