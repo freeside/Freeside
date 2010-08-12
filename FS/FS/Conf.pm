@@ -1361,7 +1361,20 @@ and customer address. Include units.',
     'key'         => 'referraldefault',
     'section'     => 'UI',
     'description' => 'Default referral, specified by refnum',
-    'type'        => 'text',
+    'type'        => 'select-sub',
+    'options_sub' => sub { require FS::Record;
+                           require FS::part_referral;
+                           map { $_->refnum => $_->referral }
+                               FS::Record::qsearch( 'part_referral', 
+			                            { 'disabled' => '' }
+						  );
+			 },
+    'option_sub'  => sub { require FS::Record;
+                           require FS::part_referral;
+                           my $part_referral = FS::Record::qsearchs(
+			     'part_referral', { 'refnum'=>shift } );
+                           $part_referral ? $part_referral->referral : '';
+			 },
   },
 
 #  {
