@@ -1,0 +1,32 @@
+<?php
+// init freeside API
+require('freeside.class.php');
+
+// menu actions and node paths
+function freeside_menu() {
+  $items = array();
+  $items['freeside/signup'] = array(
+    'title' => t('New customer'),
+    'page callback' => 'freeside_signup',
+    'access arguments' => array('access content'),
+    'description' => t('New Customer Signup'),
+    'file' => 'signup.inc',
+  );
+  $items['admin/settings/freeside'] = array(
+    'title' => t('Configure Freeside'),
+    'page callback' => 'freeside_admin',
+    'access arguments' => array('administer freeside'),
+    'description' => t('Configure Freeside self-service'),
+    'file' => 'admin.inc',
+  );
+  return $items;
+}
+
+// access control
+function freeside_perm() {
+  return array(
+    'administer freeside'
+  );
+}
+
+?>

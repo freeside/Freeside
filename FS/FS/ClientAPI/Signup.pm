@@ -90,7 +90,7 @@ sub signup_info {
                             ],
 
       'agent' => [ map { my $agent = $_;
-                         map { $_ => $agent->get($_) } @agent_fields;
+                        +{ map { $_ => $agent->get($_) } @agent_fields }
                        }
                        qsearch('agent', { 'disabled' => '' } )
                  ],
@@ -110,6 +110,9 @@ sub signup_info {
       'nomadix' => $conf->exists('signup_server-nomadix'),
 
       'payby' => [ $conf->config('signup_server-payby') ],
+
+      'payby_longname' => [ map { FS::payby->longname($_) } 
+                            $conf->config('signup_server-payby') ],
 
       'card_types' => card_types(),
 

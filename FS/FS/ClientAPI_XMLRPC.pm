@@ -49,7 +49,7 @@ sub AUTOLOAD {
     #no strict 'refs';
     #&{$call}(@_);
     #FS::ClientAPI->dispatch($autoload->{$call}, @_);
-    FS::ClientAPI->dispatch($autoload->{$call}, { @_ } );
+    FS::ClientAPI->dispatch($autoload->{$call}, @_ );
   }else{
     die "No such procedure: $call";
   }
