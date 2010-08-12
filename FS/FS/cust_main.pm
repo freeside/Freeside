@@ -1406,11 +1406,11 @@ sub delete {
 
   #cust_tax_adjustment in financials?
   #cust_pay_pending?  ouch
+  #cust_recon?
   foreach my $table (qw(
     cust_main_invoice cust_main_exemption cust_tag cust_attachment contact
     cust_location cust_main_note cust_tax_adjustment
     cust_pay_void cust_pay_batch queue cust_tax_exempt
-    cust_recon
   )) {
     foreach my $record ( qsearch( $table, { 'custnum' => $self->custnum } ) ) {
       my $error = $record->delete;
