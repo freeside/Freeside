@@ -70,7 +70,7 @@ if ( $svcnum ) {
                grep { $new->$_ }
                qw( seconds upbytes downbytes totalbytes );
 
-    $error ||= "invalid $_" foreach grep { $hash{$_} !~ /^\d+$/ } keys %hash;
+    $error ||= "invalid $_" foreach grep { $hash{$_} !~ /^-?\d+$/ } keys %hash;
     $error ||= $new->set_usage(\%hash);  #unoverlimit and trigger radius changes
     last;                                #once is enough
   }
