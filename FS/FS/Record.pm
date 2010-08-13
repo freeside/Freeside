@@ -2178,11 +2178,8 @@ May be null.  If there is an error, returns the error, otherwise returns false.
 
 sub ut_textn {
   my($self,$field)=@_;
-  $self->getfield($field)
-    =~ /^([\w \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\=\[\]]*)$/
-      or return gettext('illegal_text'). " $field: ". $self->getfield($field);
-  $self->setfield($field,$1);
-  '';
+  return $self->setfield($field, '') if $self-getfield($field) =~ /^$/;
+  $self->ut_text($field);
 }
 
 =item ut_alpha COLUMN
