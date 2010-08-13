@@ -1,5 +1,5 @@
 <% include('/elements/header.html', {
-             'title' => "Customer: ". $cust_main->name,
+             'title' => $title,
              'nobr'  => 1,
           })
 %>
@@ -264,6 +264,11 @@ my $cust_main = qsearchs( {
   'extra_sql' => ' AND '. $curuser->agentnums_sql,
 });
 die "Customer not found!" unless $cust_main;
+
+my $title = $cust_main->name;
+$title = '('. $cust_main->display_custnum. ") $title"
+  if $conf->exists('cust_main-title-display_custnum');
+$title = "Customer: $title";
 
 #false laziness w/pref/pref.html and Conf.pm (cust_main-default_view)
 tie my %views, 'Tie::IxHash',

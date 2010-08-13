@@ -3258,6 +3258,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'cust_main-title-display_custnum',
+    'section'     => 'UI',
+    'description' => 'Add the display_custom (agent_custid or custnum) to the title on customer view pages.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'cust_bill-default_agent_invid',
     'section'     => 'UI',
     'description' => 'Display the agent_invid field when available instead of the invnum field.',
