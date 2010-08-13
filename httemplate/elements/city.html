@@ -65,6 +65,7 @@ Example:
         what.form.<% $pre %>city.style.display = 'none';
         what.form.<% $pre %>city_select.style.display = '';
       } else if ( what.form.<% $pre %>city.style.display == 'none' ) {
+        // turn on the text city, turn off the select
         what.form.<% $pre %>city.style.display = '';
         what.form.<% $pre %>city_select.style.display = 'none';
         what.form.<%$ pre %>city.value = saved_<%$pre%>city;
