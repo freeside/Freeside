@@ -1434,6 +1434,41 @@ sub delete {
     return $errstr;
   };
 
+  #tickets
+
+  my $ticket_dbh = '';
+  if ($conf->config('ticket_system') eq 'RT_Internal') {
+    $ticket_dbh = $dbh;
+  } elsif ($conf->config('ticket_system') eq 'RT_External') {
+    my ($datasrc, $user, $pass) = $conf->config('ticket_system-rt_external_datasrc');
+    $ticket_dbh = DBI->connect($datasrc, $user, $pass, { 'ChopBlanks' => 1 });
+      #or die "RT_External DBI->connect error: $DBI::errstr\n";
+  }
+
+  if ( $ticket_dbh ) {
+
+    my $ticket_sth = $ticket_dbh->prepare(
+      'DELETE FROM Links WHERE Target = ?'
+    ) or do {
+      my $errstr = $ticket_dbh->errstr;
+      $dbh->rollback if $oldAutoCommit;
+      return $errstr;
+    };
+    $ticket_sth->execute('freeside://freeside/cust_main/'.$self->custnum)
+      or do {
+        my $errstr = $ticket_sth->errstr;
+        $dbh->rollback if $oldAutoCommit;
+        return $errstr;
+      };
+
+    #check and see if the customer is the only link on the ticket, and
+    #if so, set the ticket to deleted status in RT?
+    #maybe someday, for now this will at least fix tickets not displaying
+
+  }
+
+  #delete the customer record
+
   my $error = $self->SUPER::delete;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
