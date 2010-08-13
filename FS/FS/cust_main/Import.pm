@@ -214,6 +214,10 @@ sub batch_import {
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
+
+  #implies ignore_expired_card
+  local($FS::cust_main::import) = 1;
+  local($FS::cust_main::import) = 1;
   
   my $line;
   my $row = 0;
