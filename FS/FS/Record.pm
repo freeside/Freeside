@@ -2178,7 +2178,7 @@ May be null.  If there is an error, returns the error, otherwise returns false.
 
 sub ut_textn {
   my($self,$field)=@_;
-  return $self->setfield($field, '') if $self-getfield($field) =~ /^$/;
+  return $self->setfield($field, '') if $self->getfield($field) =~ /^$/;
   $self->ut_text($field);
 }
 
