@@ -4,7 +4,10 @@
   <OPTION VALUE="">all</OPTION>
 % }
 
-% foreach my $usernum ( keys %{ $opt{'access_user'} } ) { 
+% foreach my $usernum (
+%   sort { $opt{'access_user'}->{$a} cmp $opt{'access_user'}->{$b} }
+%   keys %{ $opt{'access_user'} }
+% ) { 
     <OPTION VALUE="<%$usernum%>"><% $opt{'access_user'}->{$usernum} %></OPTION>
 % } 
 
@@ -16,12 +19,9 @@ my %opt = @_;
 
 unless ( $opt{'access_user'} ) {
 
-  tie %{ $opt{'access_user'} }, 'Tie::IxHash';
-
   my $sth = dbh->prepare("
     SELECT usernum, username FROM access_user
       WHERE disabled = '' or disabled IS NULL
-        ORDER BY username
   ") or die dbh->errstr;
   $sth->execute or die $sth->errstr;
   while ( my $row = $sth->fetchrow_arrayref ) {

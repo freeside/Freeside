@@ -78,9 +78,9 @@ if ( $cgi->param('status') eq 'active' ) {
                ";     #XXX also end date
 }
 
-#otaker
-if ( $cgi->param('otaker') && $cgi->param('otaker') =~ /^([\w\.\-]+)$/ ) {
-  push @where, "cust_pkg_discount.otaker = '$1'";
+#usernum
+if ( $cgi->param('usernum') =~ /^(\d+)$/ ) {
+  push @where, "cust_pkg_discount.usernum = $1";
 }
 
 #agent

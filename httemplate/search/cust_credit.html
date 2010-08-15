@@ -56,8 +56,8 @@ my $title = 'Credit Search Results';
 
 my @search = ();
 
-if ( $cgi->param('otaker') && $cgi->param('otaker') =~ /^([\w\.\-]+)$/ ) {
-  push @search, "cust_credit.otaker = '$1'";
+if ( $cgi->param('usernum') =~ /^(\d+)$/ ) {
+  push @search, "cust_credit.usernum = $1";
 }
 
 if ( $cgi->param('agentnum') && $cgi->param('agentnum') =~ /^(\d+)$/ ) {

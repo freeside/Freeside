@@ -16,9 +16,9 @@
     </TD>
   </TR>
 
-  <% include( '/elements/tr-select-otaker.html',
-                'label'   => 'Discounts by employee: ',
-                'otakers' => \@otakers,
+  <% include( '/elements/tr-select-user.html',
+                'label'       => 'Discounts by employee: ',
+                'access_user' => \%access_user,
             )
   %>
 
@@ -42,9 +42,12 @@
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
 
-my $sth = dbh->prepare("SELECT DISTINCT otaker FROM cust_pkg_discount")
+my $sth = dbh->prepare("SELECT DISTINCT usernum FROM cust_pkg_discount")
   or die dbh->errstr;
 $sth->execute or die $sth->errstr;
-my @otakers = map { $_->[0] } @{$sth->fetchall_arrayref};
+my @usernum = map $_->[0], @{$sth->fetchall_arrayref};
+my %access_user =
+  map { $_ => qsearchs('access_user',{'usernum'=>$_})->username }
+      @usernum;
 
 </%init>
