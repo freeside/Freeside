@@ -155,9 +155,7 @@ my $COLUMN_MAP = {
                 : ($args->{'PassArguments'});
             my %pass = map { $_ => $args->{$_} } grep exists $args->{$_}, @pass;
 
-            my $path = $m->request_path;
-            $path =~ s(^/rt)(); #hacky, dunno why this happens
-            my $uri = RT->Config->Get('WebPath') . $path;
+            my $uri = RT->Config->Get('WebPath') . $m->request_path;
 
             my @res = (
                 \'<a href="',

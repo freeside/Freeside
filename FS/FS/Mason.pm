@@ -453,7 +453,7 @@ sub mason_interps {
     RT::LoadConfig();
   }
 
-  # A hook supporting strange legacy ways people have added stuff on
+  # A hook supporting strange legacy ways people (well, SG) have added stuff on
 
   my @addl_comp_root = ();
   my $addl_comp_root_file = '%%%FREESIDE_CONF%%%/addl_comp_root.pl';
@@ -468,17 +468,20 @@ sub mason_interps {
     }
   }
 
+  my $fs_comp_root =
+    scalar(@addl_comp_root)
+      ? [
+          [ 'freeside'=>'%%%FREESIDE_DOCUMENT_ROOT%%%' ],
+          @addl_comp_root,
+        ]
+      : '%%%FREESIDE_DOCUMENT_ROOT%%%';
+
   my %interp = (
     request_class        => $request_class,
     data_dir             => '%%%MASONDATA%%%',
     error_mode           => 'output',
     error_format         => 'html',
     ignore_warnings_expr => '.',
-    comp_root            => [
-                              [ 'freeside'=>'%%%FREESIDE_DOCUMENT_ROOT%%%'    ],
-                              [ 'rt'      =>'%%%FREESIDE_DOCUMENT_ROOT%%%/rt' ],
-                              @addl_comp_root,
-                            ],
   );
 
   $interp{out_method} = $opt{outbuf} if $mode eq 'standalone' && $opt{outbuf};
@@ -495,6 +498,7 @@ sub mason_interps {
 
   my $fs_interp = new HTML::Mason::Interp (
     %interp,
+    comp_root    => $fs_comp_root,
     escape_flags => { 'js_string' => $js_string_sub,
                       'defang'    => sub {
                         ${$_[0]} = $html_defang->defang(${$_[0]});
@@ -507,6 +511,10 @@ sub mason_interps {
 
   my $rt_interp = new HTML::Mason::Interp (
     %interp,
+    comp_root    => [
+                      [ 'rt'       => '%%%FREESIDE_DOCUMENT_ROOT%%%/rt' ],
+                      [ 'freeside' => '%%%FREESIDE_DOCUMENT_ROOT%%%'    ],
+                    ],
     escape_flags => { 'h'         => \&RT::Interface::Web::EscapeUTF8,
                       'js_string' => $js_string_sub,
                     },

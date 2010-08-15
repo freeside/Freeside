@@ -37,9 +37,19 @@ sub freeside_setup {
 
     my( $filename, $mode ) = @_;
 
-    #warn "initializing for $filename\n";
+    if ( $filename =~ qr(/REST/\d+\.\d+/NoAuth/) ) {
 
-    if ( $filename !~ /\/rt\/.*NoAuth/ ) { #not RT images/JS
+      package HTML::Mason::Commands; #?
+      use FS::UID qw( adminsuidsetup );
+
+      #need to log somebody in for the mail gw
+
+      ##old installs w/fs_selfs or selfserv??
+      #&adminsuidsetup('fs_selfservice');
+
+      &adminsuidsetup('fs_queue');
+
+    } else {
 
       package HTML::Mason::Commands;
       use vars qw( $cgi $p $fsurl );
@@ -62,19 +72,7 @@ sub freeside_setup {
         die "unknown mode $mode";
       }
 
-    } elsif ( $filename =~ /\/rt\/REST\/.*NoAuth/ ) {
-
-      package HTML::Mason::Commands; #?
-      use FS::UID qw( adminsuidsetup );
-
-      #need to log somebody in for the mail gw
-
-      ##old installs w/fs_selfs or selfserv??
-      #&adminsuidsetup('fs_selfservice');
-
-      &adminsuidsetup('fs_queue');
-
-    }
+  }
 
 }
 

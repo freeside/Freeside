@@ -57,16 +57,17 @@ sub handler
 
     if ( $r->filename =~ /\/rt\// ) { #RT
 
-      $ah->interp($rt_interp);
+      # We don't need to handle non-text, non-xml items
+      return -1 if defined( $r->content_type )
+                && $r->content_type !~ m!(^text/|\bxml\b)!io;
+
 
       local $SIG{__WARN__};
       local $SIG{__DIE__};
 
       RT::Init();
 
-      # We don't need to handle non-text, non-xml items
-      return -1 if defined( $r->content_type )
-                && $r->content_type !~ m!(^text/|\bxml\b)!io;
+      $ah->interp($rt_interp);
 
     } else {
 

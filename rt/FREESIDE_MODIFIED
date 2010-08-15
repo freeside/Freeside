@@ -18,16 +18,12 @@ lib/RT/Tickets_Overlay.pm #customfield date patch
 lib/RT/URI/freeside.pm
 lib/RT/URI/freeside/Internal.pm
 lib/RT/URI/freeside/XMLRPC.pm
- share/html/Admin/Elements/EditCustomFields
  share/html/Admin/Users/Modify.html
- share/html/Elements/ColumnMap
  share/html/Elements/CollectionList
 share/html/Elements/EditCustomFieldDate #customfield date patch (NEW)
  share/html/Elements/Header
  share/html/Elements/PageLayout
  #html/Elements/QuickCreate
- share/html/Elements/RefreshHomepage
- share/html/Elements/RT__CustomField/ColumnMap
  share/html/Elements/RT__Ticket/ColumnMap
  share/html/Elements/ShowCustomFieldDate #customfield date patch (NEW)
  share/html/Elements/SelectDate
@@ -48,7 +44,6 @@ share/html/Ticket/Elements/ShowMembers_Checklist
  share/html/Ticket/Elements/ShowSummary
  share/html/Ticket/Elements/ShowTransactionAttachments
  share/html/Ticket/Elements/Tabs
- share/html/Ticket/Graph/index.html
 share/html/Ticket/ModifyCustomers.html
  html/NoAuth/css/3.5-default/main.css
  html/NoAuth/css/3.5-default/misc.css
