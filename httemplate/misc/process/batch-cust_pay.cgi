@@ -42,6 +42,6 @@
 % } else {
 %
 %    
-<% $cgi->redirect(popurl(3). "search/cust_pay.cgi?magic=paybatch;paybatch=$paybatch") %>
+<% $cgi->redirect(popurl(3). "search/cust_pay.html?magic=paybatch;paybatch=$paybatch") %>
 % } 
 

@@ -88,7 +88,7 @@ my %link = (
   'netsales'   => "${p}search/cust_bill.html?agentnum=$agentnum;net=1;",
   'credits'    => "${p}search/cust_credit.html?agentnum=$agentnum;",
   'netcredits' => "${p}search/cust_credit_bill.html?agentnum=$agentnum;",
-  'payments'   => "${p}search/cust_pay.cgi?magic=_date;agentnum=$agentnum;",
+  'payments'   => "${p}search/cust_pay.html?magic=_date;agentnum=$agentnum;",
   'receipts'   => "${p}search/cust_bill_pay.html?agentnum=$agentnum;",
   'refunds'    => "${p}search/cust_refund.html?magic=_date;agentnum=$agentnum;",
   'netrefunds' => "${p}search/cust_credit_refund.html?agentnum=$agentnum;",

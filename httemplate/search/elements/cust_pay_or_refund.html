@@ -245,8 +245,8 @@ if ( $cgi->param('magic') ) {
       push @search, "$table.payinfo = '$1'";
     }
 
-    if ( $cgi->param('otaker') =~ /^(\w+)$/ ) {
-      push @search, "$table.otaker = '$1'";
+    if ( $cgi->param('usernum') =~ /^(\d+)$/ ) {
+      push @search, "$table.usernum = $1";
     }
 
     #for cust_pay_pending...  statusNOT=done

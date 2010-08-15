@@ -4,8 +4,8 @@
   <OPTION VALUE="">all</OPTION>
 % }
 
-% foreach my $otaker ( @{ $opt{'otakers'} } ) { 
-    <OPTION VALUE="<% shift(@{$opt{'usernums'}}) %>"><% $otaker %></OPTION>
+% foreach my $usernum ( keys %{ $opt{'access_user'} } ) { 
+    <OPTION VALUE="<%$usernum%>"><% $opt{'access_user'}->{$usernum} %></OPTION>
 % } 
 
 </SELECT>
@@ -14,15 +14,18 @@
 
 my %opt = @_;
 
-unless ( $opt{'otakers'} ) {
+unless ( $opt{'access_user'} ) {
 
-  my $sth = dbh->prepare("SELECT username,usernum FROM access_user".
-                       " WHERE disabled = '' or disabled IS NULL")
-    or die dbh->errstr;
+  tie %{ $opt{'access_user'} }, 'Tie::IxHash';
+
+  my $sth = dbh->prepare("
+    SELECT usernum, username FROM access_user
+      WHERE disabled = '' or disabled IS NULL
+        ORDER BY username
+  ") or die dbh->errstr;
   $sth->execute or die $sth->errstr;
-  for($sth->fetchall_arrayref) {
-    $opt{'otakers'} = [ map { $_->[0] } @$_ ];
-    $opt{'usernums'} = [ map { $_->[1] } @$_ ];
+  while ( my $row = $sth->fetchrow_arrayref ) {
+    $opt{'access_user'}->{$row->[0]} = $row->[1];
   }
 
 }
