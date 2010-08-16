@@ -172,12 +172,25 @@ if ( $cgi->param('charged_party') =~ /^\s*([\d\-\+\ ]+)\s*$/ ) {
   #push @search, "charged_party = '$charged_party'";
   #XXX countrycode
 
-  my $search = " (    charged_party = '$charged_party'
-                   OR charged_party = '1$charged_party' ) ";
+  my $search = " (    charged_party IN ('$charged_party', '1$charged_party') )";
 
   push @search,  $search;
   push @qsearch, $search;
 }
+
+if ( $cgi->param('charged_party_or_src') =~ /^\s*([\d\-\+\ ]+)\s*$/ ) {
+  ( my $charged_party = $1 ) =~ s/\D//g;
+  #$hashref->{'charged_party'} = $charged_party;
+  #push @search, "charged_party = '$charged_party'";
+  #XXX countrycode
+
+  my $search = " (    charged_party IN ('$charged_party', '1$charged_party')
+                   OR src           IN ('$charged_party', '1$charged_party') )";
+
+  push @search,  $search;
+  push @qsearch, $search;
+}
+
 
 ###
 # cdrbatchnum (or legacy cdrbatch)

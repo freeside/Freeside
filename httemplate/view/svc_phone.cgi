@@ -120,19 +120,28 @@ my $html_foot = sub {
     'billed'  => 'done',
   ;
 
-  #XXX src & charged party (& default prefix) as per voip_cdr.pm
-  #XXX handle toll free too
-
   my $number = $svc_phone->phonenum;
   $number = $svc_phone->countrycode. $number
     unless $svc_phone->countrycode eq '1';
+
+  #src & charged party as per voip_cdr.pm
+  my $search;
+  my $cust_pkg = $svc_phone->cust_svc->cust_pkg;
+  if ( $cust_pkg && $cust_pkg->part_pkg->option('disable_src') ) {
+    $search = "charged_party_or_src=$number";
+  } else {
+    $search = "src=$number";
+  }
+
+  #XXX default prefix as per voip_cdr.pm
+  #XXX handle toll free too
 
   #my @links = map {
   #  qq(<A HREF="${p}search/cdr.html?src=$number;freesidestatus=$what{$_}">).
   #  "View $_ CDRs</A>";
   #} keys(%what);
   my @links = map {
-    qq(<A HREF="${p}search/cdr.html?cdrbatchnum=__ALL__;charged_party=$number;freesidestatus=$what{$_}">).
+    qq(<A HREF="${p}search/cdr.html?cdrbatchnum=__ALL__;$search;freesidestatus=$what{$_}">).
     "View $_ CDRs</A>";
   } keys(%what);
 
