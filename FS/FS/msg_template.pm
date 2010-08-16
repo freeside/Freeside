@@ -255,9 +255,10 @@ sub prepare {
   my $conf = new FS::Conf;
 
   (
-    'from' => $self->from || 
+    'from' => $self->from_addr || 
               scalar( $conf->config('invoice_from', $cust_main->agentnum) ),
     'to'   => \@to,
+    'bcc'  => $self->bcc_addr || undef,
     'subject'   => $subject,
     'html_body' => $body,
     'text_body' => HTML::FormatText->new(leftmargin => 0, rightmargin => 70
@@ -398,26 +399,27 @@ sub _upgrade_data {
   my ($self, %opts) = @_;
 
   my @fixes = (
-    [ 'alerter_msgnum',  'alerter_template',   '',               '' ],
-    [ 'cancel_msgnum',   'cancelmessage',      'cancelsubject',  '' ],
-    [ 'decline_msgnum',  'declinetemplate',    '',               '' ],
-    [ 'impending_recur_msgnum', 'impending_recur_template', '',  '' ],
-    [ 'payment_receipt_msgnum', 'payment_receipt_email', '',     '' ],
-    [ 'welcome_msgnum',  'welcome_email',      'welcome_email-subject', 'welcome_email-from' ],
-    [ 'warning_msgnum',  'warning_email',      'warning_email-subject', 'warning_email-from' ],
+    [ 'alerter_msgnum',  'alerter_template',   '',               '', '' ],
+    [ 'cancel_msgnum',   'cancelmessage',      'cancelsubject',  '', '' ],
+    [ 'decline_msgnum',  'declinetemplate',    '',               '', '' ],
+    [ 'impending_recur_msgnum', 'impending_recur_template', '',  '', 'impending_recur_bcc' ],
+    [ 'payment_receipt_msgnum', 'payment_receipt_email', '',     '', '' ],
+    [ 'welcome_msgnum',  'welcome_email',      'welcome_email-subject', 'welcome_email-from', '' ],
+    [ 'warning_msgnum',  'warning_email',      'warning_email-subject', 'warning_email-from', '' ],
   );
  
   my $conf = new FS::Conf;
   my @agentnums = ('', map {$_->agentnum} qsearch('agent', {}));
   foreach my $agentnum (@agentnums) {
     foreach (@fixes) {
-      my ($newname, $oldname, $subject, $from) = @$_;
+      my ($newname, $oldname, $subject, $from, $bcc) = @$_;
       if ($conf->exists($oldname, $agentnum)) {
         my $new = new FS::msg_template({
            'msgname'   => $oldname,
            'agentnum'  => $agentnum,
            'from_addr' => ($from && $conf->config($from, $agentnum)) || 
                           $conf->config('invoice_from', $agentnum),
+           'bcc_addr'  => ($bcc && $conf->config($from, $agentnum)) || '',
            'subject'   => ($subject && $conf->config($subject, $agentnum)) || '',
            'mime_type' => 'text/html',
            'body'      => join('<BR>',$conf->config($oldname, $agentnum)),
