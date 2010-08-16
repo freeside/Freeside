@@ -231,11 +231,8 @@ sub formatted {
 }
 
 
-# _upgrade_data
-#
-# Used by FS::Upgrade to migrate to a new database.
-
-sub _upgrade_data { # class method
+# Used by FS::Upgrade to migrate to a new database schema
+sub _upgrade_schema { # class method
 
   my ($class, %opts) = @_;
 
@@ -313,51 +310,50 @@ sub _upgrade_data { # class method
 
   }
 
+}
 
-  if ( defined( dbdef->table($class->table)->column('billpkgnum') ) &&
-       defined( dbdef->table($class->table)->column('invnum') ) &&
-       defined( dbdef->table($class->table)->column('pkgnum') ) 
-  ) {
+# Used by FS::Upgrade to migrate to a new database
+sub _upgrade_data { # class method
 
-    warn "$me Checking for unmigrated invoice line item details\n" if $DEBUG;
+  my ($class, %opts) = @_;
 
-    my @cbpd = qsearch({ 'table'   => $class->table,
-                         'hashref' => {},
-                         'extra_sql' => 'WHERE invnum IS NOT NULL AND '.
-                                        'pkgnum IS NOT NULL',
-                      });
+  warn "$me Checking for unmigrated invoice line item details\n" if $DEBUG;
 
-    if (scalar(@cbpd)) {
-      warn "$me Found unmigrated invoice line item details\n" if $DEBUG;
+  my @cbpd = qsearch({ 'table'   => $class->table,
+                       'hashref' => {},
+                       'extra_sql' => 'WHERE invnum IS NOT NULL AND '.
+                                      'pkgnum IS NOT NULL',
+                    });
 
-      foreach my $cbpd ( @cbpd ) {
-        my $detailnum = $cbpd->detailnum;
-        warn "$me Contemplating detail $detailnum\n" if $DEBUG > 1;
-        my $cust_bill_pkg =
-          qsearchs({ 'table' => 'cust_bill_pkg',
-                     'hashref' => { 'invnum' => $cbpd->invnum,
-                                    'pkgnum' => $cbpd->pkgnum,
-                                  },
-                     'order_by' => 'ORDER BY billpkgnum LIMIT 1',
-                  });
-        if ($cust_bill_pkg) {
-          $cbpd->billpkgnum($cust_bill_pkg->billpkgnum);
-          $cbpd->invnum('');
-          $cbpd->pkgnum('');
-          my $error = $cbpd->replace;
+  if (scalar(@cbpd)) {
+    warn "$me Found unmigrated invoice line item details\n" if $DEBUG;
 
-          warn "*** WARNING: error replacing line item detail ".
-               "(cust_bill_pkg_detail) $detailnum: $error ***\n"
-            if $error;
-        } else {
-          warn "Found orphaned line item detail $detailnum during upgrade.\n";
-        }
+    foreach my $cbpd ( @cbpd ) {
+      my $detailnum = $cbpd->detailnum;
+      warn "$me Contemplating detail $detailnum\n" if $DEBUG > 1;
+      my $cust_bill_pkg =
+        qsearchs({ 'table' => 'cust_bill_pkg',
+                   'hashref' => { 'invnum' => $cbpd->invnum,
+                                  'pkgnum' => $cbpd->pkgnum,
+                                },
+                   'order_by' => 'ORDER BY billpkgnum LIMIT 1',
+                });
+      if ($cust_bill_pkg) {
+        $cbpd->billpkgnum($cust_bill_pkg->billpkgnum);
+        $cbpd->invnum('');
+        $cbpd->pkgnum('');
+        my $error = $cbpd->replace;
 
-      } # foreach $cbpd
+        warn "*** WARNING: error replacing line item detail ".
+             "(cust_bill_pkg_detail) $detailnum: $error ***\n"
+          if $error;
+      } else {
+        warn "Found orphaned line item detail $detailnum during upgrade.\n";
+      }
 
-    } # if @cbpd
+    } # foreach $cbpd
 
-  } # if billpkgnum, invnum, and pkgnum columns defined
+  } # if @cbpd
 
   '';
 

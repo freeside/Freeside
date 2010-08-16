@@ -11,7 +11,7 @@ use FS::Schema qw( dbdef dbdef_dist reload_dbdef );
 use FS::Misc::prune qw(prune_applications);
 use FS::Conf;
 use FS::Record qw(qsearch);
-use FS::Upgrade qw(upgrade upgrade_sqlradius);
+use FS::Upgrade qw(upgrade_schema upgrade upgrade_sqlradius);
 
 my $start = time;
 
@@ -81,6 +81,8 @@ if ( $DRY_RUN ) {
     $dbh->do( $statement )
       or die "Error: ". $dbh->errstr. "\n executing: $statement";
   }
+
+  upgrade_schema();
 
   dbdef_create($dbh, $dbdef_file);
   delete $FS::Schema::dbdef_cache{$dbdef_file}; #force an actual reload
