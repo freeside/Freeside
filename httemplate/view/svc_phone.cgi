@@ -128,9 +128,9 @@ my $html_foot = sub {
   my $search;
   my $cust_pkg = $svc_phone->cust_svc->cust_pkg;
   if ( $cust_pkg && $cust_pkg->part_pkg->option('disable_src') ) {
-    $search = "charged_party_or_src=$number";
+    $search = "charged_party=$number";
   } else {
-    $search = "src=$number";
+    $search = "charged_party_or_src=$number";
   }
 
   #XXX default prefix as per voip_cdr.pm
