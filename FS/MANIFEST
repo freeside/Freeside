@@ -528,3 +528,5 @@ FS/part_tag.pm
 t/part_tag.t
 FS/svc_CGP_Mixin.pm
 FS/svc_CGPRule_Mixin.pm
+FS/svc_cert.pm
+t/svc_cert.t
