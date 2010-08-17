@@ -142,7 +142,7 @@ sub check {
     || $self->ut_alphan('protocol')
     || $self->ut_textn('username')
     || $self->ut_numbern('check_freq')
-    || $self->ut_enum('leave', [ '', 'Y' ])
+    || $self->ut_enum('leavemail', [ '', 'Y' ])
     || $self->ut_enum('apop', [ '', 'Y' ])
     || $self->ut_enum('tls', [ '', 'Y' ])
     || $self->ut_alphan('mailbox')
@@ -195,9 +195,9 @@ sub cgp_hashref {
     'domain'   => $self->machine,
     'password' => $self->_password,
     'period'   => $self->check_freq.'s',
-    'APOP'     => ( $self->apop  eq 'Y' ? 'YES' : 'NO' ),
-    'TLS'      => ( $self->tls   eq 'Y' ? 'YES' : 'NO' ),
-    'Leave'    => ( $self->leave eq 'Y' ? 'YES' : 'NO' ), #XXX leave??
+    'APOP'     => ( $self->apop      eq 'Y' ? 'YES' : 'NO' ),
+    'TLS'      => ( $self->tls       eq 'Y' ? 'YES' : 'NO' ),
+    'Leave'    => ( $self->leavemail eq 'Y' ? 'YES' : 'NO' ), #XXX leave??
   };
 }
 

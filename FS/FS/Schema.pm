@@ -2181,7 +2181,7 @@ sub tables_hashref {
         'username',   'varchar',     '', $char_d, '', '', 
         '_password',  'varchar',     '', $char_d, '', '', 
         'check_freq',     'int', 'NULL',      '', '', '', 
-        'leave',         'char', 'NULL',       1, '', '', 
+        'leavemail',     'char', 'NULL',       1, '', '', 
         'apop',          'char', 'NULL',       1, '', '', 
         'tls',           'char', 'NULL',       1, '', '', 
         'mailbox',    'varchar', 'NULL', $char_d, '', '', 
