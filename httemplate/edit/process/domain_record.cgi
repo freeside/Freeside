@@ -11,7 +11,7 @@ die "access denied"
 
 my $recnum = $cgi->param('recnum');
 
-my $old = qsearchs('agent',{'recnum'=>$recnum}) if $recnum;
+my $old = qsearchs('domain_record',{'recnum'=>$recnum}) if $recnum;
 
 my $new = new FS::domain_record ( {
   map {

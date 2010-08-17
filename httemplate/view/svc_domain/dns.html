@@ -8,7 +8,12 @@
   }
 </SCRIPT>
 
-DNS records
+<div class="fscontainer">
+<div class="fsbox">
+<div class="fsbox-title">
+  <span class="left">DNS Records</span>
+</div>
+
 % my @records; if ( @records = $svc_domain->domain_record ) { 
 
   <% include('/elements/table-grid.html') %>
@@ -38,6 +43,7 @@ DNS records
 %          || ! $FS::CurrentUser::CurrentUser->access_right('Edit domain nameservice')
 %        ) { 
 %   ( my $recdata = $domain_record->recdata ) =~ s/"/\\'\\'/g;
+      (<A HREF="<%$p%>edit/domain_record.html?<%$domain_record->recnum%>">edit</A>)
       (<A HREF="javascript:areyousure('<%$p%>misc/delete-domain_record.cgi?<%$domain_record->recnum%>', 'Delete \'<% $domain_record->reczone %> <% $type %> <% $recdata %>\' ?' )">delete</A>)
 % }
       </td>
@@ -53,15 +59,23 @@ DNS records
 % } 
 
   </table>
-% } 
+% } else {
+
+  <FORM METHOD="POST" NAME="DefaultForm" ACTION="<%$p%>edit/process/svc_domain-defaultrecords.cgi">
+      <INPUT TYPE="hidden" NAME="svcnum" VALUE="<%$svcnum%>">
+      <INPUT TYPE="submit" VALUE="Add default records">
+  </FORM>
+
+% }
 
 % if ( $FS::CurrentUser::CurrentUser->access_right('Edit domain nameservice') ) {
+    <BR>
     <FORM METHOD="POST" ACTION="<%$p%>edit/process/domain_record.cgi">
       <INPUT TYPE="hidden" NAME="svcnum" VALUE="<%$svcnum%>">
       <INPUT TYPE="text" NAME="reczone"> 
       <INPUT TYPE="hidden" NAME="recaf" VALUE="IN"> IN 
       <SELECT NAME="rectype">
-%       foreach (qw( A NS CNAME MX PTR TXT) ) { 
+%       foreach ( @{ FS::domain_record->rectypes } ) { 
           <OPTION VALUE="<%$_%>"><%$_%></OPTION>
 %       } 
       </SELECT>
@@ -69,6 +83,7 @@ DNS records
       <INPUT TYPE="submit" VALUE="Add record">
     </FORM>
 
+    <BR>
     <FORM NAME="SlaveForm" METHOD="POST" ACTION="<%$p%>edit/process/domain_record.cgi">
       <INPUT TYPE="hidden" NAME="svcnum" VALUE="<%$svcnum%>">
       Or
@@ -86,6 +101,8 @@ DNS records
 
 % }
 
+</div>
+</div>
 <%init>
 
 my($svc_domain, %opt) = @_;

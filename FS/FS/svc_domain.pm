@@ -341,11 +341,35 @@ sub insert {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  $error = $self->SUPER::insert(@_);
+  $error =  $self->SUPER::insert(@_)
+         || $self->insert_defaultrecords;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
   }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  ''; #no error
+}
+
+=item insert_defaultrecords
+
+=cut
+
+sub insert_defaultrecords {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
 
   if ( $soamachine ) {
     my $soa = new FS::domain_record {
@@ -356,10 +380,10 @@ sub insert {
       'recdata' => "$soamachine $soaemail ( ". time2str("%Y%m%d", time). "00 ".
                    "$soarefresh $soaretry $soaexpire $soadefaultttl )"
     };
-    $error = $soa->insert;
+    my $error = $soa->insert;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
-      return "couldn't insert SOA record for new domain: $error";
+      return "couldn't insert SOA record: $error";
     }
 
     foreach my $record ( @defaultrecords ) {
@@ -374,7 +398,7 @@ sub insert {
       my $error = $domain_record->insert;
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
-        return "couldn't insert record for new domain: $error";
+        return "couldn't insert record: $error";
       }
     }
 

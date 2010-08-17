@@ -173,6 +173,43 @@ div.fstabcontainer {
   filter: progid:DXImageTransform.Microsoft.Shadow(color='#666666', Direction=135, Strength=2);
 }
 
+.fscontainer {
+  overflow:hidden;
+  display:inline-block;
+}
+.fscontainer {
+  display:block;
+}
+
+.fsbox {
+
+  float:left;
+
+  background-color:#ffffff;
+
+  padding:8px;
+  border-top:1px solid #7e0079;
+  border-left:1px solid #7e0079;
+  border-right:1px solid #7e0079;
+  border-bottom:1px solid #7e0079;
+         -moz-border-radius-bottomleft:8px;
+         -moz-border-radius-bottomright:8px;
+         -webkit-border-radius-bottomleft:8px;
+         -webkit-border-radius-bottomright:8px;
+         border-radius-bottomleft:8px;
+         border-radius-bottomright:8px;
+  -moz-box-shadow: #666666 1px 1px 2px;
+  -webkit-box-shadow: #666666 1px 1px 2px;
+  box-shadow: #666666 1px 1px 2px;
+  filter: progid:DXImageTransform.Microsoft.Shadow(color='#666666', Direction=135, Strength=2);
+}
+
+.fsbox .fsbox-title {
+  /*float:left;*/
+  font-size:150%;
+  font-weight:bold;
+}
+
 .background {
   background-color:#f8f8f8;
 }

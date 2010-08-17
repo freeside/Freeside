@@ -419,6 +419,18 @@ sub reverse_record {
     or new FS::domain_record { %hash, 'recdata' => $self->zone.'.' };
 }
 
+=item rectypes
+
+=cut
+#http://en.wikipedia.org/wiki/List_of_DNS_record_types
+#DHCID?  other things?
+sub rectypes {
+  [ qw(A AAAA CNAME MX NS PTR SPF SRV TXT), #most common types
+    #qw(DNAME), #uncommon types
+    qw(DLV DNSKEY DS NSEC NSEC3 NSEC3PARAM RRSIG), #DNSSEC types
+  ];
+}
+
 =back
 
 =head1 BUGS
