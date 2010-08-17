@@ -1393,6 +1393,18 @@ END
   my $county_html = $script_html;
   if ( $countyflag ) {
     $county_html .= qq!<SELECT NAME="${prefix}county" onChange="$param->{'onchange'}">!;
+    foreach my $county ( 
+      sort keys %{ $cust_main_county{$param->{'selected_country'}}{$param->{'selected_state'}} }
+    ) {
+      my $text = $county || '(n/a)';
+      $county_html .= qq!<OPTION VALUE="$county"!.
+                      ($county eq $param->{'selected_county'} ? 
+                        ' SELECTED>' : 
+                        '>'
+                      ).
+                      $text.
+                      '</OPTION>';
+    }
     $county_html .= '</SELECT>';
   } else {
     $county_html .=

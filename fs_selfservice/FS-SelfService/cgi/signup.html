@@ -74,8 +74,6 @@ Contact Information
 <TR>
   <TH ALIGN="right"><font color="#ff0000">*</font>City</TH>
   <TD><INPUT TYPE="text" NAME="city" VALUE="<%= $city %>"></TD>
-  <TH ALIGN="right"><font color="#ff0000">*</font>State/Country</TH>
-  <TD>
     <%=
         ($county_html, $state_html, $country_html) =
           regionselector( {
@@ -87,8 +85,11 @@ Contact Information
             locales          => \@cust_main_county,
           } );
  
-        "$county_html $state_html";
     %>
+  <TH ALIGN="right"><font color="#ff0000">*</font>
+    <%= ($county_html =~ /SELECT/) ? 'County/State' : 'State' %></TH>
+  <TD>
+    <%= "$county_html $state_html"; %>
   </TD>
   <TH><font color="#ff0000">*</font>Zip</TH>
   <TD><INPUT TYPE="text" NAME="zip" SIZE=10 VALUE="<%= $zip %>"></TD>
