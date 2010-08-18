@@ -3,7 +3,7 @@
              'name_singular' => 'transaction',
              'query'         => $query,
              'count_query'   => $count_query,
-             'count_addl'    => [ $format_seconds_sub, $format_seconds_sub, ],
+             'count_addl'    => [ $format_seconds_sub ],#$format_seconds_sub, ],
              'header'        => [ 'Ticket #',
                                   'Ticket',
                                   'Date',
@@ -54,9 +54,9 @@ my $transactiontime = "
 ";
 
 my $join = 'JOIN Tickets ON Transactions.ObjectId = Tickets.Id '.
-           'JOIN Users   ON Transactions.Creator = Users.Id '.
-           'LEFT JOIN acct_rt_transaction '.
-                 '  ON Transactions.Id = acct_rt_transaction.transaction_id';
+           'JOIN Users   ON Transactions.Creator = Users.Id '; #.
+#           'LEFT JOIN acct_rt_transaction '.
+#                 '  ON Transactions.Id = acct_rt_transaction.transaction_id';
 my $where = "
   WHERE objecttype='RT::Ticket'
     AND (    ( Transactions.Type = 'Set'
@@ -94,16 +94,24 @@ if ( $cgi->param('svcnum') =~ /^\s*(\d+)\s*$/ ) {
 }
 
 my $query = {
-  'select'    => "Transactions.*, Tickets.Id AS ticketid, Tickets.Subject, Users.name as otaker, $transactiontime AS transaction_time, acct_rt_transaction.support",
+  'select'    => join(', ',
+                   'Transactions.*',
+                   'Tickets.Id AS ticketid',
+                   'Tickets.Subject',
+                   'Users.name AS otaker',
+                   "$transactiontime AS transaction_time",
+                   '( SELECT SUM(support) from acct_rt_transaction where Transaction_id = Transactions.id ) AS support',
+                 ),
+  'table'     => 'transactions', #Pg-ism
   #'table'     => 'Transactions',
-  'table'     => 'transactions',
   'addl_from' => $join,
   'extra_sql' => $where,
   'order by'  => 'ORDER BY Created',
 };
 
 my $count_query =
-  "SELECT COUNT(*), SUM($transactiontime), SUM(acct_rt_transaction.support) FROM Transactions $join $where";
+  #"SELECT COUNT(*), SUM($transactiontime), SUM(acct_rt_transaction.support) FROM Transactions $join $where";
+  "SELECT COUNT(*), SUM($transactiontime) FROM Transactions $join $where";
 
 my $link = [ "${p}rt/Ticket/Display.html?id=", sub { shift->get('ticketid'); } ];
 
