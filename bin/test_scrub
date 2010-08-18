@@ -12,8 +12,13 @@
 #-business-onlinepayment and business-onlinepayment-ach config
 
 use strict;
+use vars qw( $opt_h );
+use Getopt::Std;
 use FS::UID qw(adminsuidsetup dbh);
 use FS::Conf;
+use FS::Schema qw(dbdef);
+
+getopts('h');
 
 adminsuidsetup shift;
 
@@ -43,6 +48,13 @@ foreach my $item (qw(
   business-onlinepayment-ach
 )) {
   $conf->delete($item);
+}
+
+if ($opt_h) {  # not all history can be safely deleted
+  foreach my $table (grep { /^h_\w+$/ } dbdef->tables) {
+    my $sth = dbh->prepare("DELETE FROM $table") or die dbh->errstr;
+    $sth->execute or die $sth->errstr;
+  }
 }
 
 dbh->commit or die dbh->errstr;
