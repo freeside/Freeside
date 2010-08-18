@@ -3020,7 +3020,7 @@ sub bill {
 
   foreach my $pass (@passes) { # keys %cust_bill_pkg ) {
 
-    my @cust_bill_pkg = @{ $cust_bill_pkg{$pass} };
+    my @cust_bill_pkg = _omit_zero_value_bundles(@{ $cust_bill_pkg{$pass} });
 
     next unless @cust_bill_pkg; #don't create an invoice w/o line items
 
@@ -3065,6 +3065,9 @@ sub bill {
             return $error;
           }
         }
+
+        # it's silly to have a zero value postal_pkg, but....
+        @cust_bill_pkg = _omit_zero_value_bundles(@cust_bill_pkg);
 
       }
 
@@ -3140,24 +3143,12 @@ sub bill {
       return "can't create invoice for customer #". $self->custnum. ": $error";
     }
 
-    my @cust_bill_pkg_bundle = ();
     foreach my $cust_bill_pkg ( @cust_bill_pkg ) {
       $cust_bill_pkg->invnum($cust_bill->invnum); 
-      if (scalar(@cust_bill_pkg_bundle) && !$cust_bill_pkg->pkgpart_override) {
-        $error = $self->_insert_cust_bill_pkg_bundle( @cust_bill_pkg_bundle );
-        if ( $error ) {
-          $dbh->rollback if $oldAutoCommit;
-          return $error;
-        }
-        @cust_bill_pkg_bundle = ();
-      }
-      push @cust_bill_pkg_bundle, $cust_bill_pkg;
-    }
-    if (scalar(@cust_bill_pkg_bundle)) {
-      $error = $self->_insert_cust_bill_pkg_bundle( @cust_bill_pkg_bundle );
+      my $error = $cust_bill_pkg->insert;
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
-        return $error;
+        return "can't create invoice line item: $error";
       }
     }
 
@@ -3177,19 +3168,25 @@ sub bill {
   ''; #no error
 }
 
-#insert line items while discarding bundled packages of 0 value
-sub _insert_cust_bill_pkg_bundle {
-  my $self = shift;
-  my @cust_bill_pkg = @_;
+#discard bundled packages of 0 value
+sub _omit_zero_value_bundles {
 
+  my @cust_bill_pkg = ();
+  my @cust_bill_pkg_bundle = ();
   my $sum = 0;
-  $sum += $_->setup + $_->recur foreach @cust_bill_pkg;
-  return '' unless $sum > 0;
 
-  foreach my $cust_bill_pkg ( @cust_bill_pkg ) {
-    my $error = $cust_bill_pkg->insert;
-    return "can't create invoice line item: $error" if $error;
+  foreach my $cust_bill_pkg ( @_ ) {
+    if (scalar(@cust_bill_pkg_bundle) && !$cust_bill_pkg->pkgpart_override) {
+      push @cust_bill_pkg, @cust_bill_pkg_bundle if $sum > 0;
+      @cust_bill_pkg_bundle = ();
+      $sum = 0;
+    }
+    $sum += $cust_bill_pkg->setup + $cust_bill_pkg->recur;
+    push @cust_bill_pkg_bundle, $cust_bill_pkg;
   }
+  push @cust_bill_pkg, @cust_bill_pkg_bundle if $sum > 0;
+
+  (@cust_bill_pkg);
 
 }
 
