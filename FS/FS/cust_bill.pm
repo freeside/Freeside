@@ -3750,6 +3750,7 @@ sub _items_svc_phone_sections {
   my %lines = ();
 
   my %usage_class =  map { $_->classnum => $_ } qsearch( 'usage_class', {} );
+  $usage_class{''} ||= new FS::usage_class { 'classname' => '', 'weight' => 0 };
 
   foreach my $cust_bill_pkg ( $self->cust_bill_pkg ) {
     next unless $cust_bill_pkg->pkgnum > 0;
