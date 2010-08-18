@@ -2657,6 +2657,7 @@ sub print_generic {
     $options{'skip_usage'} =
       scalar(@$extra_sections) && !grep{$section == $_} @$extra_sections;
     $options{'multilocation'} = $multilocation;
+    $options{'multisection'} = $multisection;
 
     foreach my $line_item ( $self->_items_pkg(%options) ) {
       my $detail = {
@@ -3991,6 +3992,7 @@ sub _items_cust_bill_pkg {
   my $section = $opt{section}->{description} if $opt{section};
   my $summary_page = $opt{summary_page} || '';
   my $multilocation = $opt{multilocation} || '';
+  my $multisection = $opt{multisection} || '';
 
   my @b = ();
   my ($s, $r, $u) = ( undef, undef, undef );
@@ -4012,7 +4014,8 @@ sub _items_cust_bill_pkg {
                                  ? $_->section eq $section
                                  : 1
                                }
-                          grep { !$_->summary || !$summary_page }
+                          #grep { !$_->summary || !$summary_page } # bunk!
+                          grep { !$_->summary || $multisection }
                           $cust_bill_pkg->cust_bill_pkg_display
                         )
     {
@@ -4071,7 +4074,7 @@ sub _items_cust_bill_pkg {
 
         }
 
-        if ( $cust_bill_pkg->recur != 0 &&
+        if ( ( $cust_bill_pkg->recur != 0  || $cust_bill_pkg->setup == 0 ) &&
              ( !$type || $type eq 'R' || $type eq 'U' )
            )
         {
@@ -4141,7 +4144,7 @@ sub _items_cust_bill_pkg {
               };
             }
 
-          } elsif ( $amount ) {  # && $type eq 'U'
+          } else {  # $type eq 'U'
 
             if ( $cust_bill_pkg->hidden ) {
               $u->{amount}      += $amount;
