@@ -129,9 +129,8 @@ my $pkgpart = scalar($cgi->param('pkgpart'));
 
 my $format = $date_format. ' %T %z (%Z)'; #false laziness w/REAL_cust_pkg.cgi?
 my $start_date = '';
-if(! $conf->exists('order_pkg-no_start_date') ) {
-  warn "foo";
-  $cust_main->next_bill_date;
+if( ! $conf->exists('order_pkg-no_start_date') ) {
+  $start_date = $cust_main->next_bill_date;
   $start_date = $start_date ? time2str($format, $start_date) : '';
 }
 
