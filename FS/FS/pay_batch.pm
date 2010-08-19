@@ -478,29 +478,34 @@ sub export_batch {
     $batch .= $h . "\n";
   }
   foreach my $cust_pay_batch (@cust_pay_batch) {
-    if($first_download) {
+
+    if ($first_download) {
       my $balance = $cust_pay_batch->cust_main->balance;
-      my $error = '';
-      if($balance <= 0) { # then don't charge this customer
-        $error = $cust_pay_batch->delete;
-        undef $cust_pay_batch;
-      }
-      elsif($balance < $cust_pay_batch->amount) { # then reduce the charge to the remaining balance
+      if ($balance <= 0) { # then don't charge this customer
+        my $error = $cust_pay_batch->delete;
+        if ( $error ) {
+          $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+          die $error;
+        }
+        next;
+      } elsif ($balance < $cust_pay_batch->amount) {
+        # reduce the charge to the remaining balance
         $cust_pay_batch->amount($balance);
-        $error = $cust_pay_batch->replace;
+        my $error = $cust_pay_batch->replace;
+        if ( $error ) {
+          $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+          die $error;
+        }
       }
       # else $balance >= $cust_pay_batch->amount
-      if($error) {
-        $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
-        die $error;
-      }
     }
-    if($cust_pay_batch) { # that is, it wasn't deleted
-      $batchcount++;
-      $batchtotal += $cust_pay_batch->amount;
-      $batch .= &{$info->{'row'}}($cust_pay_batch, $self, $batchcount, $batchtotal) . "\n";
-    }
+
+    $batchcount++;
+    $batchtotal += $cust_pay_batch->amount;
+    $batch .= &{$info->{'row'}}($cust_pay_batch, $self, $batchcount, $batchtotal) . "\n";
+
   }
+
   my $f = $info->{'footer'};
   if(ref($f) eq 'CODE') {
     $batch .= &$f($self, $batchcount, $batchtotal) . "\n";
