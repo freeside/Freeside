@@ -154,7 +154,7 @@ sub calc_setup {
 sub unit_setup {
   my($self, $cust_pkg, $sdate, $details ) = @_;
 
-  $self->option('setup_fee');
+  $self->option('setup_fee') || 0;
 }
 
 sub calc_recur {
@@ -185,7 +185,8 @@ sub calc_discount {
      my $discount = $cust_pkg_discount->discount;
      #UI enforces one or the other (for now?  probably for good)
      my $amount = 0;
-     $amount += $discount->amount;
+     $amount += $discount->amount
+       if $cust_pkg->pkgpart == $param->{real_pkgpart};
      $amount += sprintf('%.2f', $discount->percent * $br / 100 );
 
      my $chg_months = $param->{'months'} || $cust_pkg->part_pkg->freq;

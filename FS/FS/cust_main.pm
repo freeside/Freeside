@@ -3473,6 +3473,7 @@ sub _make_lines {
     my %param = ( 'precommit_hooks'     => $precommit_hooks,
                   'increment_next_bill' => $increment_next_bill,
                   'discounts'           => \@discounts,
+                  'real_pkgpart'        => $real_pkgpart,
                 );
 
     my $method = $options{cancel} ? 'calc_cancel' : 'calc_recur';
