@@ -3294,6 +3294,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'order_pkg-no_start_date',
+    'section'     => 'UI',
+    'description' => 'Don\'t set a default start date for new packages.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'mcp_svcpart',
     'section'     => '',
     'description' => 'Master Control Program svcpart.  Leave this blank.',

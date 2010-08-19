@@ -13,7 +13,7 @@ use FS::Conf;
 use FS::part_pkg;
 use FS::cust_bill_pkg_discount;
 
-@ISA = qw(FS::part_pkg);
+@ISA = qw(FS::part_pkg FS::part_pkg::prorate_Mixin);
 
 tie my %temporalities, 'Tie::IxHash',
   'upcoming'  => "Upcoming (future)",
@@ -119,6 +119,10 @@ tie my %temporalities, 'Tie::IxHash',
     'start_1st'     => { 'name' => 'Auto-add a start date to the 1st, ignoring the current month.',
                          'type' => 'checkbox',
                        },
+    'sync_bill_date' => { 'name' => 'Prorate first month to synchronize '.
+                                    'with the customer\'s other packages',
+                          'type' => 'checkbox',
+                        },
 
     %usage_fields,
     %usage_recharge_fields,
@@ -129,7 +133,7 @@ tie my %temporalities, 'Tie::IxHash',
   },
   'fieldorder' => [ qw( setup_fee recur_fee
                         recur_temporality unused_credit
-                        expire_months start_1st
+                        expire_months start_1st sync_bill_date
                       ),
                     @usage_fieldorder, @usage_recharge_fieldorder,
                     qw( externalid ),
@@ -158,7 +162,8 @@ sub unit_setup {
 }
 
 sub calc_recur {
-  my($self, $cust_pkg, $sdate, $details, $param ) = @_;
+  my $self = shift;
+  my($cust_pkg, $sdate, $details, $param ) = @_;
 
   #my $last_bill = $cust_pkg->last_bill;
   my $last_bill = $cust_pkg->get('last_bill'); #->last_bill falls back to setup
@@ -166,11 +171,15 @@ sub calc_recur {
   return 0
     if $self->option('recur_temporality', 1) eq 'preceding' && $last_bill == 0;
 
-  my $br = $self->base_recur($cust_pkg);
+  if( $self->option('sync_bill_date') ) {
+    return $self->calc_prorate(@_);
+  }
+  else {
+    my $charge = $self->base_recur($cust_pkg);
+    my $discount = $self->calc_discount($cust_pkg, $sdate, $details, $param);
 
-  my $discount = $self->calc_discount($cust_pkg, $sdate, $details, $param);
-
-  sprintf('%.2f', $br - $discount);
+    return sprintf('%.2f', $charge - $discount);
+  }
 }
 
 sub calc_discount {

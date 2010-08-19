@@ -4,9 +4,9 @@ use strict;
 use vars qw( @ISA %info %recur_method );
 use Tie::IxHash;
 use Time::Local;
-use FS::part_pkg::prorate;
+use FS::part_pkg::prorate_Mixin;
 
-@ISA = qw(FS::part_pkg::prorate);
+@ISA = qw(FS::part_pkg::prorate_Mixin);
 
 %info = ( 'disabled' => 1 ); #recur_Common not a usable price plan directly
 
@@ -26,11 +26,12 @@ sub calc_recur_Common {
 
     my $recur_method = $self->option('recur_method', 1) || 'anniversary';
                   
-    if ( $recur_method eq 'prorate' ) {
-
-      $charges = $self->SUPER::calc_recur(@_);
-
-    } else {
+    if ( $recur_method eq 'prorate' 
+        or ($recur_method eq 'anniversary' and $self->option('sync_bill_date'))
+      ) {
+      $charges = $self->calc_prorate(@_);
+    } 
+    else {
 
       $charges = $self->option('recur_fee');
 
@@ -47,14 +48,12 @@ sub calc_recur_Common {
         $$sdate = timelocal(0, 0, 0, $cutoff_day, $mon, $year);
 
       }#$recur_method eq 'subscription'
+    $charges -= $self->calc_discount( $cust_pkg, $sdate, $details, $param );
 
-      $charges -= $self->calc_discount( $cust_pkg, $sdate, $details, $param );
-
-    }#$recur_method eq 'prorate'
-
+    }#$recur_method eq 'prorate' or ...
   }#increment_next_bill
 
-  $charges;
+  return $charges;
 
 }
 
