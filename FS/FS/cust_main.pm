@@ -8865,7 +8865,17 @@ sub batch_charge {
   my $param = shift;
   #warn join('-',keys %$param);
   my $fh = $param->{filehandle};
-  my @fields = @{$param->{fields}};
+  my $agentnum = $param->{agentnum};
+  my $format = $param->{format};
+
+  my $extra_sql = ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql;
+
+  my @fields;
+  if ( $format eq 'simple' ) {
+    @fields = qw( custnum agent_custid amount pkg );
+  } else {
+    die "unknown format $format";
+  }
 
   eval "use Text::CSV_XS;";
   die $@ if $@;
@@ -8905,10 +8915,32 @@ sub batch_charge {
       $row{$field} = shift @columns;
     }
 
-    my $cust_main = qsearchs('cust_main', { 'custnum' => $row{'custnum'} } );
+    if ( $row{custnum} && $row{agent_custid} ) {
+      dbh->rollback if $oldAutoCommit;
+      return "can't specify custnum with agent_custid $row{agent_custid}";
+    }
+
+    my %hash = ();
+    if ( $row{agent_custid} && $agentnum ) {
+      %hash = ( 'agent_custid' => $row{agent_custid},
+                'agentnum'     => $agentnum,
+              );
+    }
+
+    if ( $row{custnum} ) {
+      %hash = ( 'custnum' => $row{custnum} );
+    }
+
+    unless ( scalar(keys %hash) ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "can't find customer without custnum or agent_custid and agentnum";
+    }
+
+    my $cust_main = qsearchs('cust_main', { %hash } );
     unless ( $cust_main ) {
       $dbh->rollback if $oldAutoCommit;
-      return "unknown custnum $row{'custnum'}";
+      my $custnum = $row{custnum} || $row{agent_custid};
+      return "unknown custnum $custnum";
     }
 
     if ( $row{'amount'} > 0 ) {

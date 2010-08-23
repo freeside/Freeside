@@ -16,7 +16,8 @@ my $fh = $cgi->upload('csvfile');
 my $error = defined($fh)
   ? FS::cust_main::batch_charge( {
       filehandle => $fh,
-      'fields'    => [qw( custnum amount pkg )],
+      'agentnum' => scalar($cgi->param('agentnum')),
+      'format'   => scalar($cgi->param('format')),
     } )
   : 'No file';
 
