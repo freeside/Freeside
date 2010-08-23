@@ -1790,7 +1790,8 @@ sub check {
 
 
 # bad idea to disable, causes billing to fail because of no tax rates later
-#  unless ( $import ) {
+# except we don't fail any more
+  unless ( $import ) {
     unless ( qsearch('cust_main_county', {
       'country' => $self->country,
       'state'   => '',
@@ -1803,7 +1804,7 @@ sub check {
           'country' => $self->country,
         } );
     }
-#  }
+  }
 
   $error =
     $self->ut_phonen('daytime', $self->country)
