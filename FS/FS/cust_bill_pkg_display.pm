@@ -55,7 +55,7 @@ sub section {
     my $section = $self->getfield('section');
     unless ($section) {
       my $cust_bill_pkg = $self->cust_bill_pkg;
-      if ( $cust_bill_pkg->pkgnum > 0 ) {
+      if ( $cust_bill_pkg->pkgnum > 0 && !$cust_bill_pkg->hidden ) {
         my $part_pkg = $cust_bill_pkg->part_pkg;
         $section = $part_pkg->categoryname if $part_pkg;
       }
