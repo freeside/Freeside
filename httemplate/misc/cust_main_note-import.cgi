@@ -108,6 +108,7 @@
 %  my $fh = $cgi->upload('csvfile');
 %  my $csv = new Text::CSV_XS;
 %  my $skip_fuzzies = $cgi->param('fuzzies') ? 0 : 1;
+%  my $use_agent_custid = $cgi->param('use_agent_custid') ? 1 : 0;
 %
 %  if ( defined($fh) ) {
      <TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>
@@ -118,7 +119,7 @@
        <TH>First</TH>
        <TH>Note to be added</TH>
      </TR>
-%    my $agentnum   => scalar($cgi->param('agentnum')),
+%    my $agentnum = scalar($cgi->param('agentnum'));
 %    my $line;
 %    my $row = 0;
 %    while ( defined($line=<$fh>) ) {
@@ -138,7 +139,10 @@
 %      next unless ( $last || $first || $note );
 %      my @cust_main = ();
 %      warn "searching for: $last, $first" if ($first || $last);
-%      if ($custnum) {
+%      if ($agentnum && $custnum && $use_agent_custid) {
+%        @cust_main = qsearch('cust_main', { 'agent'        => $agentnum,
+%                                             'agent_custid' => $custnum   } );
+%      } elsif ($custnum) { # && !use_agent_custid
 %        @cust_main = qsearch('cust_main', { 'custnum' => $custnum });
 %      } else {
 %        @cust_main = FS::cust_main::smart_search(

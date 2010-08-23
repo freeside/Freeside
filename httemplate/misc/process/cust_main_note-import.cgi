@@ -26,6 +26,7 @@ The following items <% $op eq 'Preview' ? 'would be' : 'were' %> imported.  (See
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Import');
 
+$FS::cust_main::import=1;  # the customer records are already in the database
 my $date = time;
 my $otaker = $FS::CurrentUser::CurrentUser->username;
 my $csv = new Text::CSV_XS;

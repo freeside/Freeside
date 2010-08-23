@@ -13,6 +13,13 @@ Anything after the character sequence #! is ignored.
 
 <% &ntable("#cccccc") %>
 
+<% include('/elements/tr-select-agent.html',
+              #'curr_value' => '', #$agentnum,
+              'label'       => "<B>Agent</B>",
+              'empty_label' => 'Select agent',
+           )
+%>
+
 <TR>
   <TH ALIGN="right">CSV filename</TH>
   <TD><INPUT TYPE="file" NAME="csvfile"></TD>
@@ -20,6 +27,11 @@ Anything after the character sequence #! is ignored.
 <TR>
   <TH ALIGN="right">Include additional possibilites when exact match is found</TH>
   <TD><INPUT TYPE="checkbox" NAME="fuzzies"></TD>
+</TR>
+
+<TR>
+  <TH ALIGN="right">custnum is reseller's customer number</TH>
+  <TD><INPUT TYPE="checkbox" NAME="use_agent_custid"></TD>
 </TR>
 
 </TABLE>
