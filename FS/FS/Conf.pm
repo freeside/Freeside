@@ -3217,7 +3217,7 @@ and customer address. Include units.',
     'section'     => 'UI',
     'description' => 'The year to use in census tract lookups',
     'type'        => 'select',
-    'select_enum' => [ qw( 2009 2008 2007 2006 ) ],
+    'select_enum' => [ qw( 2010 2009 2008 ) ],
   },
 
   {
