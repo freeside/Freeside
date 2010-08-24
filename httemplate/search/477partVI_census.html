@@ -33,7 +33,7 @@
                     'upload',
                     'download',
                     'technology_code',
-                    sub { '' },  # doesn't really work
+                    sub { $cgi->param('_type') eq 'xml' ? '0' : '' },  # doesn't really work
                     'quantity',
                     sub { my $row = shift; sprintf "%.2f", $row->residential },
                   ],

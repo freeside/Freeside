@@ -35,7 +35,7 @@
 %       next unless ( $part{'IIA'} || $part{'IIB'} );
 %     }
 %
-%     if ( $part eq 'VI' ) {
+%     if ( $part eq 'VI_census' ) {
 %       next unless $part{'IA'};
 %     }
 %
@@ -55,12 +55,12 @@
 %       }
 %     } else {
 %       if ( $type eq 'xml' ) {
-<<% 'Part_'. uc($part) %>>
+<<% 'Part_'. $part %>>
 %       }
 %       my $url = &{$url_mangler}($part);
 <% include( "477part${part}.html", 'url' => $url ) %>
 %       if ( $type eq 'xml' ) {
-</<% 'Part_'. uc($part) %>>
+</<% 'Part_'. $part %>>
 %       }
 %     }
 %   }
@@ -88,6 +88,6 @@ my $url_mangler = sub {
   $url =~ s/477\./477part$part./;
   $url;
 };
-my @parts = qw( IA IIA IIB IV V VI );
+my @parts = qw( IA IIA IIB IV V VI_census );
 
 </%init>

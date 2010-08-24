@@ -60,6 +60,13 @@ my $technology = $FS::Report::FCC_477::technology[$tech_code] || 'unknown';
 my $html_init = "<H2>Part IA $technology breakdown by speeds</H2>";
 my $xml_prefix = 'PartIA_'. chr(65 + $tech_code);
 
+if ($cgi->param('_type') eq 'xml') {
+  #rotate data pi/2
+  my @temp = @column_option;
+  @column_option = @row_option;
+  @row_option = @temp;
+}
+
 my $query = 'SELECT '. join(' UNION ALL SELECT ',@row_option);
 my $count_query = 'SELECT '. scalar(@row_option);
 
@@ -102,24 +109,33 @@ my @fields = (
  );
 shift @fields if $cgi->param('_type') eq 'xml';
 
+my $rowchar = 102; # 'f' -- rows are columns! (pi/2)
+my $opentag = 0;
 my $xml_element = sub {
   my ($rowref, $column) = (shift, shift);
-  my $row = $rowref->[0];
+  my $row = chr($rowchar);
 
-  $row++;
-  $xml_prefix. $column. $row;
+  if ($column == 8) {
+    $opentag++;
+    if ($opentag > 1) { # a new row
+      $rowchar++;
+      $opentag = 0;
+    }
+  }
+
+  $xml_prefix. $row. $column;
 
 };
 
-my @xml_elements = (
-  sub { &{$xml_element}(shift, 'f') },
-  sub { &{$xml_element}(shift, 'g') },
-  sub { &{$xml_element}(shift, 'h') },
-  sub { &{$xml_element}(shift, 'i') },
-  sub { &{$xml_element}(shift, 'j') },
-  sub { &{$xml_element}(shift, 'k') },
-  sub { &{$xml_element}(shift, 'l') },
-  sub { &{$xml_element}(shift, 'm') },
+my @xml_elements = (  # -- columns are rows! (pi/2)
+  sub { &{$xml_element}(shift, 1) },
+  sub { &{$xml_element}(shift, 2) },
+  sub { &{$xml_element}(shift, 3) },
+  sub { &{$xml_element}(shift, 4) },
+  sub { &{$xml_element}(shift, 5) },
+  sub { &{$xml_element}(shift, 6) },
+  sub { &{$xml_element}(shift, 7) },
+  sub { &{$xml_element}(shift, 8) },
 );
 
 </%init>
