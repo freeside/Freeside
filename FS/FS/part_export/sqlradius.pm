@@ -408,6 +408,14 @@ sub sqlradius_usergroup_insert { #subroutine, not method
     $sth->execute( $username, $group )
       or die "can't insert into groupname table: ". $sth->errstr;
   }
+  if ( $s_sth->{Active} ) {
+    warn "sqlradius s_sth still active; calling ->finish()";
+    $s_sth->finish;
+  }
+  if ( $sth->{Active} ) {
+    warn "sqlradius sth still active; calling ->finish()";
+    $sth->finish;
+  }
   $dbh->disconnect;
 }
 
