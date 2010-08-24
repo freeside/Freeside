@@ -41,21 +41,30 @@ while (1) {
     my $work_cust_pkg = $cust_pkg;
 
     my $cust_main = $cust_pkg->cust_main;
+
+    #insurance: somehow winding up here without things properly applied...
+    my $a_error = $cust_main->apply_payments_and_credits;
+    if ( $a_error ) {
+      warn "Error applying payments&credits, customer #". $cust_main->custnum;
+      next;
+    }
+
     if (    $cust_main->total_unapplied_payments > 0
-         or $cust_main->total_credited > 0
+         || $cust_main->total_credited > 0
        )
     {
+
       #this needs a flag to say only do the prepaid packages... 
       # and only try em if the renewal price matches.. but this will do for now
       my $b_error = $cust_main->bill;
       if ( $b_error ) {
         warn "Error billing customer #". $cust_main->custnum;
-	next;
+        next;
       }
       $b_error = $cust_main->apply_payments_and_credits;
       if ( $b_error ) {
         warn "Error applying payments&credits, customer #". $cust_main->custnum;
-	next;
+        next;
       }
 
       $work_cust_pkg = qsearchs('cust_pkg', { 'pkgnum' => $work_cust_pkg->pkgnum } );
