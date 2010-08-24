@@ -641,14 +641,14 @@ sub new_customer {
 
   if ( $conf->exists('signup_server-realtime') ) {
 
-    #warn "[fs_signup_server] Billing customer...\n" if $Debug;
+    #warn "$me Billing customer...\n" if $Debug;
 
     my $bill_error = $cust_main->bill;
-    #warn "[fs_signup_server] error billing new customer: $bill_error"
+    #warn "$me error billing new customer: $bill_error"
     #  if $bill_error;
 
     $bill_error = $cust_main->apply_payments_and_credits;
-    #warn "[fs_signup_server] error applying payments and credits for".
+    #warn "$me error applying payments and credits for".
     #     " new customer: $bill_error"
     #  if $bill_error;
 
@@ -656,7 +656,7 @@ sub new_customer {
        method        => FS::payby->payby2bop( $packet->{payby} ),
        depend_jobnum => $placeholder->jobnum,
     );
-    #warn "[fs_signup_server] error collecting from new customer: $bill_error"
+    #warn "$me error collecting from new customer: $bill_error"
     #  if $bill_error;
 
     if ($bill_error && ref($bill_error) eq 'HASH') {
@@ -667,6 +667,11 @@ sub new_customer {
                amount => $cust_main->balance,
              };
     }
+
+    $bill_error = $cust_main->apply_payments_and_credits;
+    #warn "$me error applying payments and credits for".
+    #     " new customer: $bill_error"
+    #  if $bill_error;
 
     if ( $cust_main->balance > 0 ) {
 
