@@ -90,7 +90,7 @@ sub signup_info {
                             ],
 
       'agent' => [ map { my $agent = $_;
-                        +{ map { $_ => $agent->get($_) } @agent_fields }
+                         { map { $_ => $agent->get($_) } @agent_fields }
                        }
                        qsearch('agent', { 'disabled' => '' } )
                  ],
