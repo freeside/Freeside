@@ -4926,8 +4926,7 @@ sub realtime_bop {
 
   #false laziness w/misc/process/payment.cgi - check both to make sure working
   # correctly
-  if ( defined $self->dbdef_table->column('paycvv')
-       && length($self->paycvv)
+  if ( length($self->paycvv)
        && ! grep { $_ eq cardtype($options{payinfo}) } $conf->config('cvv-save')
   ) {
     my $error = $self->remove_cvv;
