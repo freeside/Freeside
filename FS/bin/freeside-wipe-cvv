@@ -38,7 +38,7 @@ foreach my $cust_main ( qsearch({
     print $cust_main->name, "\n";
   }
   if($opt{'n'}) {
-    $cust_main->payinfo('deleted');
+    $cust_main->payinfo('');
     $cust_main->paydate('');
     $cust_main->payby('BILL'); 
 # can't have a CARD or CHEK without a valid payinfo
