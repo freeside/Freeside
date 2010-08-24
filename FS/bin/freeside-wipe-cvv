@@ -1,0 +1,87 @@
+#!/usr/bin/perl -w
+
+use strict;
+use Getopt::Std;
+use FS::UID qw(adminsuidsetup dbh);
+use FS::Record qw(qsearch qsearchs);
+use Time::Local 'timelocal';
+use Date::Format 'time2str';
+
+my %opt;
+getopts('vnd:', \%opt);
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+$FS::UID::AutoCommit = 0;
+$FS::Record::nowarn_identical = 1;
+
+my $extra_sql = FS::cust_main->cancel_sql;
+$extra_sql = "WHERE $extra_sql 
+AND cust_main.payby IN('CARD','DCRD','CHEK','DCHK')
+";
+
+if($opt{'d'}) {
+  $opt{'d'} =~ /^(\d+)$/ or die &usage;
+  my $time = timelocal(0,0,0,(localtime(time-(86400*$1)))[3..5]);
+  print "Excluding customers canceled after ".time2str("%D",$time)."\n" 
+    if $opt{'v'};
+  $extra_sql .= ' AND 0 = (' . FS::cust_main->select_count_pkgs_sql . 
+                " AND cust_pkg.cancel > $time)";
+}
+
+foreach my $cust_main ( qsearch({
+    'table'     => 'cust_main',
+    'hashref'   => {},
+    'extra_sql' => $extra_sql
+  }) ) {
+  if($opt{'v'}) {
+    print $cust_main->name, "\n";
+  }
+  if($opt{'n'}) {
+    $cust_main->payinfo('deleted');
+    $cust_main->paydate('');
+    $cust_main->payby('BILL'); 
+# can't have a CARD or CHEK without a valid payinfo
+  }
+  $cust_main->paycvv('');
+  my $error = $cust_main->replace;
+  if($error) {
+    dbh->rollback;
+    die "$error (changes reverted)\n";
+  }
+}
+dbh->commit;
+
+sub usage {
+  "Usage:\n\n  freeside-wipe-cvv [ -v ] [ -n ] [ -d days ] user\n"
+}
+
+=head1 NAME
+
+freeside-wipe-cvv - Wipe sensitive payment information from customer records.
+
+=head1 SYNOPSIS
+
+  freeside-wipe-cvv [ -v ] [ -n ] [ -d days ] user
+
+=head1 DESCRIPTION
+
+freeside-wipe-cvv deletes the CVV numbers (and, optionally, credit
+card or bank account numbers) of customers who have no non-canceled 
+packages.  Normally CVV numbers are deleted as soon as a payment is 
+processed; if the customer is canceled before a payment is processed, 
+this may not happen and the CVV will remain indefinitely, violating 
+good security practice and (possibly) your merchant agreement.
+Running freeside-wipe-cvv will remove this data.
+
+-v: Be verbose.
+
+-n: Remove card and account numbers in addition to CVV numbers.  This 
+will also set the customer's payment method to 'BILL'.
+
+-d days: Only remove CVV/card numbers from customers who have been 
+inactive for at least that many days.  Optional; will default to 
+all canceled customers.
+
+=cut
+
