@@ -356,10 +356,6 @@ sub import_results {
       return "error updating status of paybatchnum $hash{'paybatchnum'}: $error\n";
     }
 
-    # purge CVV when the batch is processed
-    $new_cust_pay_batch->cust_main->remove_cvv
-      if ( $payby eq 'CARD' or $payby eq 'DCRD' );
-
     if ( $new_cust_pay_batch->status =~ /Approved/i ) {
 
       my $cust_pay = new FS::cust_pay ( {
@@ -406,11 +402,11 @@ sub import_results {
           return $error;
 	}
 
-      } # foreach $cust_event
+      }
 
-    } # if(status eq 'Approved')
+    }
 
-  } # foreach(@all_values)
+  }
   
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
