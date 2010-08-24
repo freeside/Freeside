@@ -50,7 +50,7 @@ while (1) {
     }
 
     if (    $cust_main->total_unapplied_payments > 0
-         || $cust_main->total_credited > 0
+         || $cust_main->total_unapplied_credits > 0
        )
     {
 
