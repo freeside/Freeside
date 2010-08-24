@@ -7,6 +7,7 @@ use Text::CSV_XS;
 use FS::Record qw( dbh qsearch qsearchs );
 use FS::cust_pay;
 use FS::Conf;
+use Business::CreditCard qw(cardtype);
 
 @ISA = qw(FS::Record);
 
@@ -198,6 +199,8 @@ sub import_results {
   my $job = $param->{'job'};
   $job->update_statustext(0) if $job;
 
+  my $conf = new FS::Conf;
+
   my $filetype            = $info->{'filetype'};      # CSV or fixed
   my @fields              = @{ $info->{'fields'}};
   my $formatre            = $info->{'formatre'};      # for fixed
@@ -354,6 +357,15 @@ sub import_results {
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return "error updating status of paybatchnum $hash{'paybatchnum'}: $error\n";
+    }
+
+    # purge CVV when the batch is processed
+    if ( $payby =~ /^(CARD|DCRD)$/ ) {
+      my $payinfo = $hash{'payinfo'} || $cust_pay_batch->payinfo;
+      if ( ! grep { $_ eq cardtype($payinfo) }
+          $conf->config('cvv-save') ) {
+        $new_cust_pay_batch->cust_main->remove_cvv;
+      }
     }
 
     if ( $new_cust_pay_batch->status =~ /Approved/i ) {
