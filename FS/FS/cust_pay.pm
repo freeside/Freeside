@@ -458,12 +458,15 @@ sub send_receipt {
 
     my $error = '';
 
-    if( $conf->exists('payment_receipt_msgnum') ) {
+    if ( $conf->exists('payment_receipt_msgnum')
+         && $conf->config('payment_receipt_msgnum')
+       )
+    {
       my $msg_template = 
           FS::msg_template->by_key($conf->config('payment_receipt_msgnum'));
       $error = $msg_template->send('cust_main'=> $cust_main, 'object'=> $self);
-    }
-    elsif ( $conf->exists('payment_receipt_email') ) {
+
+    } elsif ( $conf->exists('payment_receipt_email') ) {
       my $receipt_template = new Text::Template (
         TYPE   => 'ARRAY',
         SOURCE => [ map "$_\n", $conf->config('payment_receipt_email') ],
@@ -506,8 +509,7 @@ sub send_receipt {
         'body'    => [ $receipt_template->fill_in( HASH => \%fill_in ) ],
       );
 
-    } 
-    else { # no payment_receipt_msgnum or payment_receipt_email
+    } else { # no payment_receipt_msgnum or payment_receipt_email
 
       my $queue = new FS::queue {
          'paynum' => $self->paynum,
