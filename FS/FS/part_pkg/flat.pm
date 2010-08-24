@@ -171,7 +171,7 @@ sub calc_recur {
   return 0
     if $self->option('recur_temporality', 1) eq 'preceding' && $last_bill == 0;
 
-  if( $self->option('sync_bill_date') ) {
+  if( $self->option('sync_bill_date',1) ) {
     return $self->calc_prorate(@_);
   }
   else {

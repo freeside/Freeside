@@ -48,7 +48,7 @@ sub calc_prorate {
  
   my $charge = $self->option('recur_fee') || 0;
   my $cutoff_day;
-  if( $self->option('sync_bill_date') ) {
+  if( $self->option('sync_bill_date',1) ) {
     my $next_bill = $cust_pkg->cust_main->next_bill_date;
     if( defined($next_bill) and $next_bill != $$sdate ) {
       $cutoff_day = (localtime($next_bill))[3];
