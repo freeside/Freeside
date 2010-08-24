@@ -7,6 +7,7 @@ use Date::Format;
 use FS::UID qw( dbh getotaker );
 use FS::Misc qw(send_email);
 use FS::Record qw( qsearch qsearchs dbdef );
+use FS::CurrentUser;
 use FS::cust_main;
 use FS::cust_pkg;
 use FS::cust_refund;
@@ -290,7 +291,7 @@ methods.
 sub check {
   my $self = shift;
 
-  $self->otaker(getotaker) unless ($self->otaker);
+  $self->usernum($FS::CurrentUser::CurrentUser->usernum) unless $self->usernum;
 
   my $error =
     $self->ut_numbern('crednum')

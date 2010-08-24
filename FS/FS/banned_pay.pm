@@ -4,6 +4,7 @@ use strict;
 use base qw( FS::otaker_Mixin FS::Record );
 use FS::Record qw( qsearch qsearchs );
 use FS::UID qw( getotaker );
+use FS::CurrentUser;
 
 =head1 NAME
 
@@ -41,7 +42,7 @@ supported:
 =item _date - specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
 L<Time::Local> and L<Date::Parse> for conversion functions.
 
-=item otaker - order taker (assigned automatically, see L<FS::UID>)
+=item usernum - order taker (assigned automatically, see L<FS::access_user>)
 
 =item reason - reason (text)
 
@@ -115,7 +116,7 @@ sub check {
 
   $self->_date(time) unless $self->_date;
 
-  $self->otaker(getotaker) unless $self->otaker;
+  $self->usernum($FS::CurrentUser::CurrentUser->usernum) unless $self->usernum;
 
   $self->SUPER::check;
 }

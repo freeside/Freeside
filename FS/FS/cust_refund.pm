@@ -7,6 +7,7 @@ use vars qw( @encrypted_fields );
 use Business::CreditCard;
 use FS::UID qw(getotaker);
 use FS::Record qw( qsearch qsearchs dbh );
+use FS::CurrentUser;
 use FS::cust_credit;
 use FS::cust_credit_refund;
 use FS::cust_pay_refund;
@@ -256,7 +257,7 @@ returns the error, otherwise returns false.  Called by the insert method.
 sub check {
   my $self = shift;
 
-  $self->otaker(getotaker) unless $self->otaker;
+  $self->usernum($FS::CurrentUser::CurrentUser->usernum) unless $self->usernum;
 
   my $error =
     $self->ut_numbern('refundnum')

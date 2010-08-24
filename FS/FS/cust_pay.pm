@@ -12,6 +12,7 @@ use Text::Template;
 use FS::UID qw( getotaker );
 use FS::Misc qw( send_email );
 use FS::Record qw( dbh qsearch qsearchs );
+use FS::CurrentUser;
 use FS::payby;
 use FS::cust_main_Mixin;
 use FS::payinfo_transaction_Mixin;
@@ -374,7 +375,7 @@ returns the error, otherwise returns false.  Called by the insert method.
 sub check {
   my $self = shift;
 
-  $self->otaker(getotaker) unless ($self->otaker);
+  $self->usernum($FS::CurrentUser::CurrentUser->usernum) unless $self->usernum;
 
   my $error =
     $self->ut_numbern('paynum')

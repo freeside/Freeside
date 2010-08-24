@@ -13,6 +13,7 @@ use MIME::Entity;
 use FS::UID qw( getotaker dbh );
 use FS::Misc qw( send_email );
 use FS::Record qw( qsearch qsearchs );
+use FS::CurrentUser;
 use FS::cust_svc;
 use FS::part_pkg;
 use FS::cust_main;
@@ -563,7 +564,7 @@ sub check {
 
   }
 
-  $self->otaker(getotaker) unless $self->otaker;
+  $self->usernum($FS::CurrentUser::CurrentUser->usernum) unless $self->usernum;
 
   if ( $self->dbdef_table->column('manual_flag') ) {
     $self->manual_flag('') if $self->manual_flag eq ' ';

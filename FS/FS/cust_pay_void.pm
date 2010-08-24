@@ -6,6 +6,7 @@ use vars qw( @encrypted_fields $otaker_upgrade_kludge );
 use Business::CreditCard;
 use FS::UID qw(getotaker);
 use FS::Record qw(qsearchs dbh fields); # qsearch );
+use FS::CurrentUser;
 use FS::cust_pay;
 #use FS::cust_bill;
 #use FS::cust_bill_pay;
@@ -221,7 +222,7 @@ sub check {
     return $error if $error;
   }
 
-  $self->otaker(getotaker) unless $self->otaker;
+  $self->usernum($FS::CurrentUser::CurrentUser->usernum) unless $self->usernum;
 
   $self->SUPER::check;
 }

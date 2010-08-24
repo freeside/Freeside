@@ -31,6 +31,7 @@ use FS::UID qw( getotaker dbh driver_name );
 use FS::Record qw( qsearchs qsearch dbdef regexp_sql );
 use FS::Misc qw( generate_email send_email generate_ps do_print );
 use FS::Msgcat qw(gettext);
+use FS::CurrentUser;
 use FS::payby;
 use FS::cust_pkg;
 use FS::cust_svc;
@@ -2073,7 +2074,7 @@ sub check {
     $self->$flag($1);
   }
 
-  $self->otaker(getotaker) unless $self->otaker;
+  $self->usernum($FS::CurrentUser::CurrentUser->usernum) unless $self->usernum;
 
   warn "$me check AFTER: \n". $self->_dump
     if $DEBUG > 2;
