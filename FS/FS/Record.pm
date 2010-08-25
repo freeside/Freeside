@@ -1871,7 +1871,13 @@ sub batch_import {
     while ( scalar(@later) ) {
       my $sub = shift @later;
       my $data = shift @later;
-      &{$sub}($record, $data, $conf, $param); # $record->&{$sub}($data, $conf);
+      eval {
+        &{$sub}($record, $data, $conf, $param); # $record->&{$sub}($data, $conf)
+      };
+      if ( $@ ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "can't insert record". ( $line ? " for $line" : '' ). ": $@";
+      }
       last if exists( $param->{skiprow} );
     }
     next if exists( $param->{skiprow} );
@@ -1902,9 +1908,12 @@ sub batch_import {
 
   }
 
-  $dbh->commit or die $dbh->errstr if $oldAutoCommit;;
+  unless ( $imported || $param->{empty_ok} ) {
+    $dbh->rollback if $oldAutoCommit;
+    return "Empty file!";
+  }
 
-  return "Empty file!" unless $imported || $param->{empty_ok};
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;;
 
   ''; #no error
 
