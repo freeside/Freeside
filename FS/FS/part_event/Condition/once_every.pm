@@ -7,7 +7,7 @@ use FS::cust_event;
 
 use base qw( FS::part_event::Condition );
 
-sub description { "Don't run this event more than once in interval"; }
+sub description { "Don't run this event more than once in the specified interval"; }
 
 # Runs the event at most "once every X".
 

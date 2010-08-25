@@ -45,8 +45,6 @@ sub order_sql {
   shift->condition_sql_option_age('age');
 }
 
-use FS::UID qw( driver_name );
-
 sub order_sql_weight {
   10;
 }
