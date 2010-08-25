@@ -14,6 +14,7 @@
 %     } else {
 %       $value = $row->$field();
 %     }
+%     next unless ($value || !$opt{xml_omit_empty});
 %
 <% &{$beginfield}($row, $i) %><% $value |h %><% &{$endfield}($row, $i) %>
 %

@@ -9,6 +9,7 @@
                   'disable_total'    => 1,
                   'header'           => [ '', @column_option_name ],
                   'xml_elements'     => [ @xml_elements ],
+                  'xml_omit_empty'   => 1,
                   'fields'           => [  @fields ],
               )
 %>
@@ -70,6 +71,9 @@ if ($cgi->param('_type') eq 'xml') {
 my $query = 'SELECT '. join(' UNION ALL SELECT ',@row_option);
 my $count_query = 'SELECT '. scalar(@row_option);
 
+my $xml_element = 'OOPS, I was never set';
+my $rowchar = 101; # 'e' -- rows are columns! (pi/2)
+
 my $value = sub {
   my ($rowref, $column) = (shift, shift);
   my $row = $rowref->[0];
@@ -78,7 +82,7 @@ my $value = sub {
     return $row_option_name{$row} || 'no such report option';
   } elsif ( $column =~ /^(\d+)$/ ) {
     my @report_option = ( $row || '',
-                          $column_option[$1 - 2] || '',
+                          $column_option[$column] || '',
                           $technology_option[$tech_code] || '',
                         );
 
@@ -88,54 +92,35 @@ my $value = sub {
 
     my $percentage = sprintf('%.2f', $count ? 100 * $residential / $count : 0);
     my $return = $count;
-    $return .= "<BR>$percentage% residential"
-      unless $cgi->param('_type') eq 'xml';
+
+    if ($cgi->param('_type') eq 'xml') {
+      $rowchar++ if $column == 1;
+      $xml_element = $xml_prefix. chr($rowchar). ($column+1);
+      $return = '' if $count == 0 and $cgi->param('_type') eq 'xml';
+    } else {
+      $return .= "<BR>$percentage% residential";
+    }
+
     return $return;
   } else {
     return '<FONT SIZE="+1" COLOR="#ff0000">Bad call to column_value</FONT>';
   }
 };
 
-my @fields = (
-  sub { &{$value}(shift, 'name');},
-  sub { &{$value}(shift, 2);},
-  sub { &{$value}(shift, 3);},
-  sub { &{$value}(shift, 4);},
-  sub { &{$value}(shift, 5);},
-  sub { &{$value}(shift, 6);},
-  sub { &{$value}(shift, 7);},
-  sub { &{$value}(shift, 8);},
-  sub { &{$value}(shift, 9);},
- );
+my @fields = map { my $ci = $_; sub { &{$value}(shift, $ci); } }
+            ( 'name', (0 .. $#column_option) );
 shift @fields if $cgi->param('_type') eq 'xml';
 
-my $rowchar = 102; # 'f' -- rows are columns! (pi/2)
-my $opentag = 0;
-my $xml_element = sub {
-  my ($rowref, $column) = (shift, shift);
-  my $row = chr($rowchar);
-
-  if ($column == 8) {
-    $opentag++;
-    if ($opentag > 1) { # a new row
-      $rowchar++;
-      $opentag = 0;
-    }
-  }
-
-  $xml_prefix. $row. $column;
-
-};
-
 my @xml_elements = (  # -- columns are rows! (pi/2)
-  sub { &{$xml_element}(shift, 1) },
-  sub { &{$xml_element}(shift, 2) },
-  sub { &{$xml_element}(shift, 3) },
-  sub { &{$xml_element}(shift, 4) },
-  sub { &{$xml_element}(shift, 5) },
-  sub { &{$xml_element}(shift, 6) },
-  sub { &{$xml_element}(shift, 7) },
-  sub { &{$xml_element}(shift, 8) },
+  sub { return $xml_element; },
+  sub { return $xml_element; },
+  sub { return $xml_element; },
+  sub { return $xml_element; },
+  sub { return $xml_element; },
+  sub { return $xml_element; },
+  sub { return $xml_element; },
+  sub { return $xml_element; },
+  sub { return $xml_element; },
 );
 
 </%init>
