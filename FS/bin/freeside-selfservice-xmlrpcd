@@ -63,6 +63,8 @@ logfile("$FREESIDE_LOG/selfservice-xmlrpcd.log");
 
 daemonize2();
 
+FS::ClientAPI::Signup::clear_cache();
+
 my $conf = new FS::Conf;
 
 die "not running; selfservice-xmlrpc conf option is off\n"

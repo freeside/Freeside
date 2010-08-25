@@ -26,6 +26,15 @@ use FS::payby;
 $DEBUG = 0;
 $me = '[FS::ClientAPI::Signup]';
 
+sub clear_cache {
+  warn "$me clear_cache called\n" if $DEBUG;
+  my $cache = new FS::ClientAPI_SessionCache( {
+      'namespace' => 'FS::ClientAPI::Signup',
+  } );
+  $cache->clear();
+  return {};
+}
+
 sub signup_info {
   my $packet = shift;
 
@@ -90,7 +99,7 @@ sub signup_info {
                             ],
 
       'agent' => [ map { my $agent = $_;
-                         { map { $_ => $agent->get($_) } @agent_fields }
+                         +{ map { $_ => $agent->get($_) } @agent_fields }
                        }
                        qsearch('agent', { 'disabled' => '' } )
                  ],

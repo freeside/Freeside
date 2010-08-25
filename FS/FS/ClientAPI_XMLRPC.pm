@@ -104,6 +104,7 @@ sub ss2clientapi {
   'domain_select_hash'        => 'Signup/domain_select_hash',  # expose?
   'new_customer'              => 'Signup/new_customer',
   'capture_payment'           => 'Signup/capture_payment',
+  'clear_signup_cache'        => 'Signup/clear_cache',
   'agent_login'               => 'Agent/agent_login',
   'agent_logout'              => 'Agent/agent_logout',
   'agent_info'                => 'Agent/agent_info',
