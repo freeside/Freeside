@@ -5,7 +5,7 @@ use base qw( FS::part_event::Condition );
 use FS::Record qw( qsearch );
 
 sub description {
-  'Next bill date within interval';
+  'Next bill date within upcoming interval';
 }
 
 # Run the event when the next bill date is within X days.
