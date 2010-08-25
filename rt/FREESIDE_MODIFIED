@@ -18,6 +18,7 @@ lib/RT/Tickets_Overlay.pm #customfield date patch
 lib/RT/URI/freeside.pm
 lib/RT/URI/freeside/Internal.pm
 lib/RT/URI/freeside/XMLRPC.pm
+ share/html/autohandler #Footer getting appended where unwelcome
  share/html/Admin/Users/Modify.html
  share/html/Elements/CollectionList
 share/html/Elements/EditCustomFieldDate #customfield date patch (NEW)

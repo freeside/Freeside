@@ -52,7 +52,9 @@ $m->callback( ARGSRef => \%ARGS, CallbackName => 'Init', CallbackPage => '/autoh
 
 RT::Interface::Web::HandleRequest(\%ARGS);
 
-$m->comp( '/Elements/Footer', %ARGS );
+$m->comp( '/Elements/Footer', %ARGS )
+  unless $r->content_type =~ qr<^(text|application)/(x-)?(css|javascript)>;
+
 </%INIT>
 <%ARGS>
 $user => undef
