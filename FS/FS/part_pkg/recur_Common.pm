@@ -4,9 +4,9 @@ use strict;
 use vars qw( @ISA %info %recur_method );
 use Tie::IxHash;
 use Time::Local;
-use FS::part_pkg::prorate_Mixin;
+use FS::part_pkg::prorate;
 
-@ISA = qw(FS::part_pkg::prorate_Mixin);
+@ISA = qw(FS::part_pkg::prorate);
 
 %info = ( 'disabled' => 1 ); #recur_Common not a usable price plan directly
 
