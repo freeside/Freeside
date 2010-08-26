@@ -699,6 +699,8 @@ sub calc_usage {
 
           $classnum = $rate_detail->classnum;
           $charge = sprintf('%.2f', $charge);
+          warn "Incrementing \$charges by $charge.  Now $charges\n" if $DEBUG;
+          $charges += $charge;
 
           @call_details = (
             $cdr->downstream_csv( 'format'         => $output_format,
@@ -718,8 +720,6 @@ sub calc_usage {
 
         if ( $charge > 0 ) {
           #just use FS::cust_bill_pkg_detail objects?
-          warn "Incrementing \$charges by $charge.  Now $charges\n" if $DEBUG;
-          $charges += $charge;
           my $call_details;
           my $phonenum = $cust_svc->svc_x->phonenum;
 
