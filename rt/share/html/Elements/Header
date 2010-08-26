@@ -45,14 +45,14 @@
 %# those contributions and any derivatives thereof.
 %# 
 %# END BPS TAGGED BLOCK }}}
-<% include( '/elements/header.html', {
+<& /elements/header.html, {
               'title' => $Title,
               'head'  => $head,
               'etc'   => $etc,
               'nobr'  => 1,
               'nocss' => 1,
-          }) |n
-%>
+          }
+&>
 <%INIT>
 $r->headers_out->{'Pragma'} = 'no-cache';
 $r->headers_out->{'Cache-control'} = 'no-cache';
