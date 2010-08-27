@@ -1024,10 +1024,16 @@ sub unsuspend {
 
   my $conf = new FS::Conf;
 
-  $hash{'bill'} = ( $hash{'bill'} || $hash{'setup'} ) + $inactive
-    if ( $opt{'adjust_next_bill'}
-         || $conf->exists('unsuspend-always_adjust_next_bill_date') )
-    && $inactive > 0 && ( $hash{'bill'} || $hash{'setup'} );
+  if ( $inactive > 0 && 
+       ( $hash{'bill'} || $hash{'setup'} ) &&
+       ( $opt{'adjust_next_bill'} ||
+         $conf->exists('unsuspend-always_adjust_next_bill_date') ||
+         $self->part_pkg->option('unsuspend_adjust_bill', 1) )
+     ) {
+
+    $hash{'bill'} = ( $hash{'bill'} || $hash{'setup'} ) + $inactive;
+  
+  }
 
   $hash{'susp'} = '';
   $hash{'adjourn'} = '' if $hash{'adjourn'} < time;

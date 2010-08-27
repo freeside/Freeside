@@ -123,6 +123,11 @@ tie my %temporalities, 'Tie::IxHash',
                                     'with the customer\'s other packages',
                           'type' => 'checkbox',
                         },
+    'unsuspend_adjust_bill' => 
+                        { 'name' => 'Adjust next bill date forward when '.
+                                    'unsuspending',
+                          'type' => 'checkbox',
+                        },
 
     %usage_fields,
     %usage_recharge_fields,
@@ -134,6 +139,7 @@ tie my %temporalities, 'Tie::IxHash',
   'fieldorder' => [ qw( setup_fee recur_fee
                         recur_temporality unused_credit
                         expire_months start_1st sync_bill_date
+                        unsuspend_adjust_bill
                       ),
                     @usage_fieldorder, @usage_recharge_fieldorder,
                     qw( externalid ),
