@@ -25,6 +25,13 @@
                 field   => 'owed',
             )
   %>
+  <% include( '/elements/tr-select-payby.html',
+                label   => 'Payment method:',
+                payby_type   => 'cust',
+                multiple     => 1,
+                all_selected => 1,
+            )
+  %>
 
   <TR>
     <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="open" VALUE="1" CHECKED></TD>

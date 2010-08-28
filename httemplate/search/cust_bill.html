@@ -122,8 +122,16 @@ if ( $cgi->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/ ) {
     $search{'newest_percust'} = 1;
     $count_query = "SELECT COUNT(DISTINCT cust_bill.custnum), 'N/A', 'N/A'";
   }
+  
+  my $payby_sql = '';
+  $payby_sql = ' AND (' . 
+    join(' OR ', map { "cust_main.payby = '$_'" } $cgi->param('payby') ) . 
+    ')' 
+    if $cgi->param('payby');
 
-  my $extra_sql = ' WHERE '. FS::cust_bill->search_sql_where( \%search );
+  my $extra_sql = ' WHERE '.
+    FS::cust_bill->search_sql_where( \%search ).
+    $payby_sql;
 
   unless ( $count_query ) {
     $count_query = 'SELECT COUNT(*), '. join(', ',
