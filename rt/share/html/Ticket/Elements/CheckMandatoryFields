@@ -1,0 +1,9 @@
+<%init>
+
+my $TicketObj = $ARGS{'Ticket'} or return ();
+my $ARGSRef = $ARGS{'ARGSRef'};
+my @fields = grep { $_->Required } 
+             @{ $TicketObj->CustomFields->ItemsArrayRef };
+return grep { !defined($TicketObj->FirstCustomFieldValue($_->id)) } @fields;
+
+</%init>
