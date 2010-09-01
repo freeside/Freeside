@@ -1,5 +1,13 @@
 <% include( 'elements/search.html',
                   'html_init'     => $html_init,
+                  'html_foot'     => sub { if (scalar(keys %state_hash) > 1) {
+                                             '<BR><B>'.
+                                               'WARNING: multiple states found'.
+                                             '</B><BR>';
+                                           } else { 
+                                             '';
+                                           }
+                                         },
                   'name'          => 'regions',
                   'query'         => [ @sql_query ],
                   'count_query'   =>  $count_query,
@@ -28,7 +36,10 @@
                                        'percentage',
                                      ],
                   'fields'        => [
-                    sub { my $row = shift; substr($row->censustract, 2, 3) },
+                    sub { my $row = shift; 
+                          $state_hash{substr($row->censustract, 0, 2)} = 1;
+                          substr($row->censustract, 2, 3)
+                        },
                     sub { my $row = shift; substr($row->censustract, 5) },
                     'upload',
                     'download',
@@ -64,6 +75,7 @@ my $html_init = '<H2>Part VI</H2>';
 
 my %search_hash = ();
 my @sql_query = ();
+my %state_hash = ();
   
 for ( qw(agentnum magic classnum) ) {
   $search_hash{$_} = $cgi->param($_) if $cgi->param($_);
