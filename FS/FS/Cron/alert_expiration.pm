@@ -99,6 +99,7 @@ sub alert_expiration {
       my $msgnum = $conf->config('alerter_msgnum', $agentnum);
       if ( $msgnum ) { # new hotness
         my $msg_template = qsearchs('msg_template', { msgnum => $msgnum } );
+        $customer->setfield('expdate', $expire_time);
         $error = $msg_template->send('cust_main' => $customer);
       }
       else { #!$msgnum, the hard way

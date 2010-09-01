@@ -226,7 +226,7 @@ sub prepare {
     $_
   } @$guts;
   
-  $body = '';
+  $body = '{ use Date::Format qw(time2str); "" }';
   while(@$skin || @$guts) {
     $body .= shift(@$skin) || '';
     $body .= shift(@$guts) || '';
@@ -315,7 +315,9 @@ sub substitutions {
       cust_status ucfirst_cust_status cust_statuscolor
 
       signupdate dundate
+      expdate
       ),
+      # expdate is a special case
       [ signupdate_ymd    => sub { time2str('%Y-%m-%d', shift->signupdate) } ],
       [ dundate_ymd       => sub { time2str('%Y-%m-%d', shift->dundate) } ],
       [ paydate_my        => sub { sprintf('%02d/%04d', shift->paydate_monthyear) } ],
