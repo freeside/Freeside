@@ -316,6 +316,7 @@ sub substitutions {
 
       signupdate dundate
       expdate
+      packages recurdates
       ),
       # expdate is a special case
       [ signupdate_ymd    => sub { time2str('%Y-%m-%d', shift->signupdate) } ],
