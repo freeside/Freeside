@@ -26,7 +26,7 @@
                                           sub { '100.00' },
                                           sub { '100.00' },
                                           sub { $total_percentage },
-                                          sub { $total_percentage },
+                                          sub { $above_200_percentage },
                                         ],
               )
 %>
@@ -54,11 +54,13 @@ my @technology_option = &FS::Report::FCC_477::parse_technology_option($cgi);
 
 my $total_count = 0;
 my $total_residential = 0;
+my $above_200 = 0;
 my $tech_code = $opt{tech_code};
 my $technology = $FS::Report::FCC_477::technology[$tech_code] || 'unknown';
 my $html_init = "<H2>Part IA $technology totals</H2>";
 my $xml_prefix = 'PartIA_'. chr(65 + $tech_code);
 
+my $not_first_row = 0; # ugh;
 foreach my $row ( @row_option ) {
   foreach my $column ( @column_option ) {
 
@@ -70,11 +72,16 @@ foreach my $row ( @row_option ) {
 
     $total_count += $count;
     $total_residential += $residential;
+    $above_200 += $residential if $not_first_row;
   }
+  $not_first_row++;
 }
 
 my $total_percentage =
   sprintf("%.2f", $total_count ? 100*$total_residential/$total_count : 0);
+
+my $above_200_percentage =
+  sprintf("%.2f", $total_count ? 100*$above_200/$total_count : 0);
 
 
 </%init>

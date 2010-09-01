@@ -94,7 +94,7 @@ my $value = sub {
     my $return = $count;
 
     if ($cgi->param('_type') eq 'xml') {
-      $rowchar++ if $column == 1;
+      $rowchar++ if $column == 0;
       $xml_element = $xml_prefix. chr($rowchar). ($column+1);
       $return = '' if $count == 0 and $cgi->param('_type') eq 'xml';
     } else {
