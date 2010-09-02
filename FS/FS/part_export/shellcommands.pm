@@ -193,7 +193,7 @@ old_ for replace operations):
   <LI><code>$pkgnum</code>
   <LI><code>$custnum</code>
   <LI>All other fields in <b>svc_acct</b> are also available.
-  <LI>The following fields from <b>cust_main</b> are also available (except during replace): company, address1, address2, city, state, zip, county, daytime, night, fax, otaker.  When used on the command line (rather than STDIN), they will be quoted for the shell already (do not add additional quotes).
+  <LI>The following fields from <b>cust_main</b> are also available (except during replace): company, address1, address2, city, state, zip, county, daytime, night, fax, otaker, agent_custid.  When used on the command line (rather than STDIN), they will be quoted for the shell already (do not add additional quotes).
 </UL>
 END
 );
@@ -263,7 +263,7 @@ sub _export_command {
     {
       no strict 'refs';
       foreach my $custf (qw( company address1 address2 city state zip country
-                             daytime night fax otaker
+                             daytime night fax otaker agent_custid
                         ))
       {
         ${$custf} = $cust_pkg->cust_main->$custf();
