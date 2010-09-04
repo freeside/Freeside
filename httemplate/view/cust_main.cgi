@@ -57,6 +57,7 @@ function areyousure(href, message) {
                 'color'       => '#ff0000',
                 'cust_main'   => $cust_main,
                 'width'       => 616, #make room for reasons
+                'height'      => 366,
               }
             )
   %> | 

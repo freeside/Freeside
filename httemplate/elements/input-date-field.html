@@ -1,0 +1,48 @@
+
+<LINK REL="stylesheet" TYPE="text/css" HREF="<%$fsurl%>elements/calendar-win2k-2.css" TITLE="win2k-2">
+<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/calendar_stripped.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/calendar-en.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/calendar-setup.js"></SCRIPT>
+
+<INPUT TYPE="text" NAME="<% $name %>" ID="<% $name %>_text" VALUE="<% $value %>">
+<IMG SRC="<%$fsurl%>images/calendar.png" ID="<% $name  %>_button" STYLE="cursor: pointer" TITLE="Select date">
+
+<SCRIPT TYPE="text/javascript">
+  Calendar.setup({
+    inputField: "<% $name %>_text",
+    ifFormat:   "<% $format %>",
+    button:     "<% $name %>_button",
+    align:      "BR"
+  });
+</SCRIPT>
+
+<%init>
+
+my($name, $value, $format, $usedatetime);
+if ( ref($_[0]) ) {
+  my $opt = shift;
+  $name        = $opt->{'name'};
+  $value       = $opt->{'value'};
+  $format      = $opt->{'format'};
+  $usedatetime = $opt->{'usedatetime'};
+} else {
+  ($name, $value, $format, $usedatetime) = @_;
+}
+
+my $conf = new FS::Conf;
+
+$format ||= $conf->config('date_format') || '%m/%d/%Y';
+
+if ( $value =~ /\S/ ) {
+  if ( $usedatetime ) {
+    my $dt = DateTime->from_epoch(epoch => $value, time_zone => 'floating');
+    $value = $dt->strftime($format);
+  } elsif ( $value =~ /^\d+$/ ) {
+    $value = time2str($format, $value);
+  }
+} else {
+  $value = '';
+}
+
+</%init>
+

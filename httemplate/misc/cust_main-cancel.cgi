@@ -1,4 +1,4 @@
-<% header("Customer cancelled") %>
+<% include('/elements/header.html', "Customer cancelled") %>
   <SCRIPT TYPE="text/javascript">
     window.top.location.reload();
   </SCRIPT>
@@ -11,9 +11,11 @@ die "access denied"
 
 my $custnum;
 my $ban = '';
+my $expire = '';
 if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
   $custnum = $1;
   $ban = $cgi->param('ban');
+  $expire = $cgi->param('expire');
 } else {
   my($query) = $cgi->keywords;
   $query =~ /^(\d+)$/ || die "Illegal custnum";
@@ -42,11 +44,28 @@ my $cust_main = qsearchs( {
   'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
 } );
 
-warn "cancelling $cust_main";
-my @errors = $cust_main->cancel(
-  'ban'    => $ban,
-  'reason' => $reasonnum,
-);
+my @errors;
+if($cgi->param('now_or_later')) {
+  $expire = parse_datetime($expire);
+  if($expire) {
+    #warn "setting expire dates on custnum#$custnum\n";
+    my @pkgs = $cust_main->ncancelled_pkgs;
+    @errors = grep {$_} map { $_->cancel(
+      'reason'  => $reasonnum,
+      'date'    => $expire,
+    ) } @pkgs;
+  }
+  else {
+    @errors = ("error parsing expire date: ".$cgi->param('expire'));
+  }
+}
+else {
+  warn "cancelling $cust_main";
+  @errors = $cust_main->cancel(
+    'ban'    => $ban,
+    'reason' => $reasonnum,
+  );
+}
 my $error = join(' / ', @errors) if scalar(@errors);
 
 if ( $error ) {

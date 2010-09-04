@@ -2,18 +2,46 @@
 
 <% include('/elements/error.html') %>
 
+
 <FORM NAME="cust_cancel_popup" ACTION="<% popurl(1) %>cust_main-cancel.cgi" METHOD=POST>
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
 
 
  <P ALIGN="center"><B>Permanently delete all services and cancel this customer?</B>
 
- <% $ban %>
- 
-<BR><BR>
+<TABLE BORDER="0" CELLSPACING="2"
+STYLE="margin-left:auto; margin-right:auto">
+<TR>
+  <TD ALIGN="right">
+    <INPUT TYPE="radio" NAME="now_or_later" VALUE="0" onclick="toggle(false)" CHECKED />
+  </TD>
+  <TD ALIGN="left">Cancel now</TD>
+</TR>
+<TR>
+  <TD ALIGN="right">
+    <INPUT TYPE="radio" NAME="now_or_later" VALUE="1" onclick="toggle(true)" />
+  </TD>
+  <TD ALIGN="left">Cancel on date:&nbsp;
+  <% include('/elements/input-date-field.html', {
+              'name'    => 'expire',
+              'value'   => time,
+    } ) %>
+  </TD>
+</TR>
+</TABLE>
+<SCRIPT type="text/javascript">
+function toggle(val) {
+  document.getElementById("expire_text").disabled = !val;
+  document.getElementById("ban").disabled = val;
+  document.getElementById("expire_button").style.visibility = 
+    val ? 'visible' : 'hidden';
+}
+toggle(false);
+</SCRIPT> 
+<% $ban %>
 
-<% ntable("#cccccc", 2) %>
-
+<TABLE BGCOLOR="#cccccc", BORDER="0" CELLSPACING="2"
+STYLE="margin-left:auto; margin-right:auto">
 <% include('/elements/tr-select-reason.html',
              'field'          => 'reasonnum',
              'reason_class'   => 'C',
@@ -50,8 +78,8 @@ die "No customer # $custnum" unless $cust_main;
 
 my $ban = '';
 if ( $cust_main->payby =~ /^(CARD|DCRD|CHEK|DCHK)$/ ) {
-  $ban = '<BR><P ALIGN="center">'.
-         '<INPUT TYPE="checkbox" NAME="ban" VALUE="1"> Ban this customer\'s ';
+  $ban = '<P ALIGN="center">'.
+         '<INPUT TYPE="checkbox" NAME="ban" ID="ban" VALUE="1"> Ban this customer\'s ';
   if ( $cust_main->payby =~ /^(CARD|DCRD)$/ ) {
     $ban .= 'credit card';
   } elsif (  $cust_main->payby =~ /^(CHEK|DCHK)$/ ) {
