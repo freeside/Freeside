@@ -342,6 +342,7 @@ sub _export_command {
   $night = shell_quote $night;
   $fax = shell_quote $fax;
   $otaker = shell_quote $otaker; 
+  $acct_custid = shell_quote $acct_custid;
 
   my $command_string = eval(qq("$command"));
   my @ssh_cmd_args = (
@@ -375,6 +376,8 @@ sub _export_replace {
   }
   my $old_cust_pkg = $old->cust_svc->cust_pkg;
   my $new_cust_pkg = $new->cust_svc->cust_pkg;
+  my $new_cust_main = $new_cust_pkg ? $new_cust_pkg->cust_main : '';
+
   $new_finger =~ /^(.*)\s+(\S+)$/ or $new_finger =~ /^((.*))$/;
   ($new_first, $new_last ) = ( $1, $2 );
   $quoted_new__password = shell_quote $new__password; #old, wrong?
@@ -415,6 +418,12 @@ sub _export_replace {
   return $error. ' ('. $self->exporttype. ' to '. $self->machine. ')'
     if $error;
 
+  $new_agent_custid = $new_cust_main ? $new_cust_main->agent_custid : '';
+  $old_pkgnum = $old_cust_pkg ? $old_cust_pkg->pkgnum : '';
+  $old_custnum = $old_cust_pkg ? $old_cust_pkg->custnum : '';
+  $new_pkgnum = $new_cust_pkg ? $new_cust_pkg->pkgnum : '';
+  $new_custnum = $new_cust_pkg ? $new_cust_pkg->custnum : '';
+
   my $stdin_string = eval(qq("$stdin"));
 
   $new_first = shell_quote $new_first;
@@ -422,10 +431,7 @@ sub _export_replace {
   $new_finger = shell_quote $new_finger;
   $new_crypt_password = shell_quote $new_crypt_password;
   $new_ldap_password  = shell_quote $new_ldap_password;
-  $old_pkgnum = $old_cust_pkg ? $old_cust_pkg->pkgnum : '';
-  $old_custnum = $old_cust_pkg ? $old_cust_pkg->custnum : '';
-  $new_pkgnum = $new_cust_pkg ? $new_cust_pkg->pkgnum : '';
-  $new_custnum = $new_cust_pkg ? $new_cust_pkg->custnum : '';
+  $new_agent_custid = shell_quote $new_agent_custid;
 
   my $command_string = eval(qq("$command"));
 
