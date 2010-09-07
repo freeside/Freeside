@@ -20,8 +20,23 @@
   <TR>
     <TD ALIGN="right">Customers</TD>
     <TD>
-      <INPUT TYPE="radio" NAME="all_customers" VALUE="1" onClick="if (this.checked) { document.OneTrueForm.days.disabled=true; document.OneTrueForm.days.style.backgroundColor = '#dddddd'; } else { document.OneTrueForm.days.disabled=false; document.OneTrueForm.days.style.backgroundColor = '#ffffff'; }">All customers (even those without an outstanding balance)<BR>
-      <INPUT TYPE="radio" NAME="all_customers" VALUE="0" CHECKED onClick="if ( ! this.checked ) { document.OneTrueForm.days.disabled=true; document.OneTrueForm.days.style.backgroundColor = '#dddddd'; } else { document.OneTrueForm.days.disabled=false; document.OneTrueForm.days.style.backgroundColor = '#ffffff'; }">Customers with a balance over <INPUT NAME="days" TYPE="text" SIZE=4 MAXLENGTH=3 VALUE="0"> days old
+      <SCRIPT TYPE="text/javascript">
+function toggle(obj) {
+  var f = document.OneTrueForm;
+  var val = (obj.value == obj.checked);
+  f.days.disabled = val;
+  f.negative.disabled = val;
+  f.days.style.backgroundColor = val ? '#dddddd' : '#ffffff';
+}
+      </SCRIPT>
+      <TABLE STYLE="padding: 0px">
+        <TR><TD><INPUT TYPE="radio" NAME="all_customers" VALUE="1" onClick="toggle(this)"></TD>
+        <TD>All customers (even those without an outstanding balance)</TD></TR>
+        <TR><TD><INPUT TYPE="radio" NAME="all_customers" VALUE="0" CHECKED onClick="toggle(this)"></TD>
+        <TD>Customers with a balance over <INPUT NAME="days" TYPE="text" SIZE=4 MAXLENGTH=3 VALUE="0"> days old</TD></TR>
+        <TR><TD></TD>
+        <TD><INPUT TYPE="checkbox" NAME="negative" VALUE="1">&nbsp;Including customers with credit balances</TD></TR>
+      </TABLE>
     </TD>
   </TR>
   <% include( '/elements/tr-input-date-field.html', {

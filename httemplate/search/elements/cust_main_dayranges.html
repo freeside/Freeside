@@ -145,8 +145,12 @@ unless ( $cgi->param('all_customers') ) {
     $days = $1;
   }
 
+  # If this is set, allow cust_main records with nonzero balances
+  my $negative = $cgi->param('negative') || 0;
+
   push @where,
-    call_range_sub($range_sub, $days, 0, 'offset' => $offset, 'no_as'=>1). ' > 0'; # != 0';
+    call_range_sub($range_sub, $days, 0, 'offset' => $offset, 'no_as'=>1). 
+    ($negative ? ' != 0' : ' > 0');
 }
 
 if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
