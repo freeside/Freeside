@@ -1,7 +1,11 @@
 #!/usr/bin/perl
 
+use strict;
+use vars qw( $opt_n );
 use FS::Schema qw( dbdef_dist );
+use Getopt::Std;
 
+getopts('n');
 my $table = shift;
 
 ###
@@ -69,12 +73,9 @@ close DEST;
 # add to FS/FS/Mason.pm
 ###
 
-# it needs to be:
-# 1. disablable (have an option to turn it off)
-# 2. documented in the schema change docs
-#
-#my $magic = '# Sammath Naur';
-#system("perl -pi -e 's/$magic/use FS::$table;\n  $magic/' FS/FS/Mason.pm");
+my $magic = '# Sammath Naur';
+system("perl -pi -e 's/$magic/use FS::$table;\n  $magic/' FS/FS/Mason.pm")
+  unless $opt_n;
 
 ###
 # add FS/t/table.t
