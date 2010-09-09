@@ -115,6 +115,8 @@ tie my %temporalities, 'Tie::IxHash',
     #used in cust_pkg.pm so could add to any price plan
     'expire_months' => { 'name' => 'Auto-add an expiration date this number of months out',
                        },
+    'adjourn_months'=> { 'name' => 'Auto-add a suspension date this number of months out',
+                       },
     #used in cust_pkg.pm so could add to any price plan where it made sense
     'start_1st'     => { 'name' => 'Auto-add a start date to the 1st, ignoring the current month.',
                          'type' => 'checkbox',
@@ -138,7 +140,8 @@ tie my %temporalities, 'Tie::IxHash',
   },
   'fieldorder' => [ qw( setup_fee recur_fee
                         recur_temporality unused_credit
-                        expire_months start_1st sync_bill_date
+                        expire_months adjourn_months
+                        start_1st sync_bill_date
                         unsuspend_adjust_bill
                       ),
                     @usage_fieldorder, @usage_recharge_fieldorder,

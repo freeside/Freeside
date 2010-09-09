@@ -809,32 +809,34 @@ sub freq_pretty {
   }
 }
 
-=item add_freq TIMESTAMP
+=item add_freq TIMESTAMP [ FREQ ]
 
-Adds the frequency of this package to the provided timestamp and returns
-the resulting timestamp, or -1 if the frequency of this package could not be
-parsed (shouldn't happen).
+Adds a billing period of some frequency to the provided timestamp and 
+returns the resulting timestamp, or -1 if the frequency could not be 
+parsed (shouldn't happen).  By default, the frequency of this package 
+will be used; to override this, pass a different frequency as a second 
+argument.
 
 =cut
 
 sub add_freq {
-  my( $self, $date ) = @_;
-  my $freq = $self->freq;
+  my( $self, $date, $freq ) = @_;
+  $freq = $self->freq if !defined($freq);
 
   #change this bit to use Date::Manip? CAREFUL with timezones (see
   # mailing list archive)
   my ($sec,$min,$hour,$mday,$mon,$year) = (localtime($date) )[0,1,2,3,4,5];
 
-  if ( $self->freq =~ /^\d+$/ ) {
-    $mon += $self->freq;
+  if ( $freq =~ /^\d+$/ ) {
+    $mon += $freq;
     until ( $mon < 12 ) { $mon -= 12; $year++; }
-  } elsif ( $self->freq =~ /^(\d+)w$/ ) {
+  } elsif ( $freq =~ /^(\d+)w$/ ) {
     my $weeks = $1;
     $mday += $weeks * 7;
-  } elsif ( $self->freq =~ /^(\d+)d$/ ) {
+  } elsif ( $freq =~ /^(\d+)d$/ ) {
     my $days = $1;
     $mday += $days;
-  } elsif ( $self->freq =~ /^(\d+)h$/ ) {
+  } elsif ( $freq =~ /^(\d+)h$/ ) {
     my $hours = $1;
     $hour += $hours;
   } else {

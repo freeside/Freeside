@@ -259,17 +259,12 @@ sub insert {
     $self->start_date( timelocal_nocheck(0,0,0,1,$mon,$year) );
   }
 
-  my $expire_months = $self->part_pkg->option('expire_months', 1);
-  if ( $expire_months && !$self->expire ) {
-    my $start = $self->start_date || $self->setup || time;
-
-    #false laziness w/part_pkg::add_freq
-    my ($sec,$min,$hour,$mday,$mon,$year) = (localtime($start) )[0,1,2,3,4,5];
-    $mon += $expire_months;
-    until ( $mon < 12 ) { $mon -= 12; $year++; }
-
-    #$self->expire( timelocal_nocheck($sec,$min,$hour,$mday,$mon,$year) );
-    $self->expire( timelocal_nocheck(0,0,0,$mday,$mon,$year) );
+  foreach my $action ( qw(expire adjourn) ) {
+    my $months = $self->part_pkg->option("${action}_months",1);
+    if($months and !$self->$action) {
+      my $start = $self->start_date || $self->setup || time;
+      $self->$action( $self->part_pkg->add_freq($start, $months) );
+    }
   }
 
   local $SIG{HUP} = 'IGNORE';
