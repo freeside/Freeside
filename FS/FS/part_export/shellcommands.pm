@@ -342,7 +342,7 @@ sub _export_command {
   $night = shell_quote $night;
   $fax = shell_quote $fax;
   $otaker = shell_quote $otaker; 
-  $acct_custid = shell_quote $acct_custid;
+  $agent_custid = shell_quote $agent_custid;
 
   my $command_string = eval(qq("$command"));
   my @ssh_cmd_args = (
