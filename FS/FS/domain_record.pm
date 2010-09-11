@@ -1,7 +1,7 @@
 package FS::domain_record;
 
 use strict;
-use vars qw( @ISA $noserial_hack $DEBUG );
+use vars qw( @ISA $noserial_hack $DEBUG $me );
 use FS::Conf;
 #use FS::Record qw( qsearch qsearchs );
 use FS::Record qw( qsearchs dbh );
@@ -11,6 +11,7 @@ use FS::svc_www;
 @ISA = qw(FS::Record);
 
 $DEBUG = 0;
+$me = '[FS::domain_record]';
 
 =head1 NAME
 
@@ -50,6 +51,8 @@ supported:
 =item rectype - record type for this entry (A, MX, etc.)
 
 =item recdata - data for this entry
+
+=item ttl - time to live
 
 =back
 
@@ -265,10 +268,12 @@ sub check {
   $self->recaf =~ /^(IN)$/ or return "Illegal recaf: ". $self->recaf;
   $self->recaf($1);
 
-  $self->rectype =~ /^(SOA|NS|MX|A|PTR|CNAME|TXT|_mstr)$/
-    or return "Illegal rectype (only SOA NS MX A PTR CNAME TXT recognized): ".
-              $self->rectype;
-  $self->rectype($1);
+  $self->ttl =~ /^([0-9]{0,6})$/ or return "Illegal ttl: ". $self->ttl;        
+  $self->ttl($1); 
+
+  my %rectypes = map { $_=>1 } ( @{ $self->rectypes }, '_mstr' );
+  return 'Illegal rectype: '. $self->rectype
+    unless exists $rectypes{$self->rectype} && $rectypes{$self->rectype};
 
   return "Illegal reczone for ". $self->rectype. ": ". $self->reczone
     if $self->rectype !~ /^MX$/i && $self->reczone =~ /\*/;
@@ -291,6 +296,10 @@ sub check {
     $self->recdata =~ /^((\d{1,3}\.){3}\d{1,3})$/
       or return "Illegal data for A record: ". $self->recdata;
     $self->recdata($1);
+  } elsif ( $self->rectype eq 'AAAA' ) {
+    $self->recdata =~ /^([\da-z:]+)$/
+      or return "Illegal data for AAAA record: ". $self->recdata;
+    $self->recdata($1);
   } elsif ( $self->rectype eq 'PTR' ) {
     if ( $conf->exists('zone-underscore') ) {
       $self->recdata =~ /^([a-z0-9_\.\-]+)$/i
@@ -312,11 +321,17 @@ sub check {
       $self->recdata('"'. $self->recdata. '"'); #?
     }
     #  or return "Illegal data for TXT record: ". $self->recdata;
+  } elsif ( $self->rectype eq 'SRV' ) {                                        
+    $self->recdata =~ /^(\d+)\s+(\d+)\s+(\d+)\s+([a-z0-9\.\-]+)$/i             
+      or return "Illegal data for SRV record: ". $self->recdata;               
+    $self->recdata("$1 $2 $3 $4");                        
   } elsif ( $self->rectype eq '_mstr' ) {
     $self->recdata =~ /^((\d{1,3}\.){3}\d{1,3})$/
       or return "Illegal data for _master pseudo-record: ". $self->recdata;
   } else {
-    die "ack!";
+    warn "$me no specific check for ". $self->rectype. " records yet";
+    $error = $self->ut_text('recdata');
+    return $error if $error;
   }
 
   $self->SUPER::check;

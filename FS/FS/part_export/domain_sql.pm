@@ -99,6 +99,7 @@ sub _export_replace {
 
   my %schema = $self->_schema_map;
   my %static = $self->_static_map;
+  #my %map = (%schema, %static);
 
   my @primary_key = ();
   if ( $self->option('primary_key') =~ /,/ ) {
@@ -107,6 +108,7 @@ sub _export_replace {
       push @primary_key, $old->$keymap();
     }
   } else {
+    my %map = (%schema, %static);
     my $keymap = $map{$self->option('primary_key')};
     push @primary_key, $old->$keymap();
   }
@@ -135,6 +137,7 @@ sub _export_delete {
 
   my %schema = $self->_schema_map;
   my %static = $self->_static_map;
+  my %map = (%schema, %static);
 
   my %primary_key = ();
   if ( $self->option('primary_key') =~ /,/ ) {

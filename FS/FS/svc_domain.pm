@@ -303,9 +303,6 @@ defined.  An FS::cust_svc record will be created and inserted.
 The additional field I<action> should be set to I<N> for new domains, I<M>
 for transfers, or I<I> for no action (registered elsewhere).
 
-A registration or transfer email will be submitted unless
-$FS::svc_domain::whois_hack is true.
-
 The additional field I<email> can be used to manually set the admin contact
 email address on this email.  Otherwise, the svc_acct records for this package 
 (see L<FS::cust_pkg>) are searched.  If there is exactly one svc_acct record
@@ -565,7 +562,7 @@ sub check {
     $recref->{domain} = "$1.$2";
     $recref->{suffix} ||= $2;
   # hmmmmmmmm.
-  } elsif ( $whois_hack && $recref->{domain} =~ /^([\w\-\.]+)\.(\w+)$/ ) {
+  } elsif ( $whois_hack && $recref->{domain} =~ /^([\w\-\.\/]+)\.(\w+)$/ ) {
     $recref->{domain} = "$1.$2";
     # need to match a list of suffixes - no guarantee they're top-level..
     # http://wiki.mozilla.org/TLD_List
@@ -623,6 +620,7 @@ sub domain_record {
     'A'     => 5,
     'TXT'   => 6,
     'PTR'   => 7,
+    'SRV'   => 8,
   );
 
   my %sort = (

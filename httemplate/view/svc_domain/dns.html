@@ -26,6 +26,7 @@
     <th CLASS="grid" BGCOLOR="#cccccc">Zone</th>
     <th CLASS="grid" BGCOLOR="#cccccc">Type</th>
     <th CLASS="grid" BGCOLOR="#cccccc">Data</th>
+    <th CLASS="grid" BGCOLOR="#cccccc">TTL</th>
   </tr>
 
 % foreach my $domain_record ( @records ) {
@@ -37,7 +38,9 @@
     <tr>
       <td CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $domain_record->reczone %></td>
       <td CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $type %></td>
-      <td CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $domain_record->recdata %>
+      <td CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $domain_record->recdata %></td>
+      <td CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $domain_record->ttl %></td>
+      <td CLASS="grid" BGCOLOR="<% $bgcolor %>">
 
 % unless ( $domain_record->rectype eq 'SOA'
 %          || ! $FS::CurrentUser::CurrentUser->access_right('Edit domain nameservice')
@@ -80,6 +83,7 @@
 %       } 
       </SELECT>
       <INPUT TYPE="text" NAME="recdata">
+      <INPUT TYPE="text" NAME="ttl" size="6">
       <INPUT TYPE="submit" VALUE="Add record">
     </FORM>
 

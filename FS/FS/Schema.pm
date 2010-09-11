@@ -1795,6 +1795,7 @@ sub tables_hashref {
         'recaf',     'char',    '',  2, '', '', 
         'rectype',   'varchar',    '',  5, '', '', 
         'recdata',   'varchar', '',  255, '', '', 
+        'ttl',       'int',     'NULL', '', '', '',
       ],
       'primary_key' => 'recnum',
       'unique'      => [],
