@@ -75,16 +75,36 @@
     <BR>
     <FORM METHOD="POST" ACTION="<%$p%>edit/process/domain_record.cgi">
       <INPUT TYPE="hidden" NAME="svcnum" VALUE="<%$svcnum%>">
-      <INPUT TYPE="text" NAME="reczone"> 
-      <INPUT TYPE="hidden" NAME="recaf" VALUE="IN"> IN 
-      <SELECT NAME="rectype">
-%       foreach ( @{ FS::domain_record->rectypes } ) { 
-          <OPTION VALUE="<%$_%>"><%$_%></OPTION>
-%       } 
-      </SELECT>
-      <INPUT TYPE="text" NAME="recdata">
-      <INPUT TYPE="text" NAME="ttl" size="6">
-      <INPUT TYPE="submit" VALUE="Add record">
+      <TABLE>
+      <TR>
+        <TD ALIGN="right" VALIGN="top">
+          <INPUT TYPE="text" NAME="reczone"><BR>
+          <FONT SIZE="-1"><I>Zone</I></FONT>
+        </TD>
+        <TD ALIGN="right" VALIGN="top">
+          <INPUT TYPE="hidden" NAME="recaf" VALUE="IN"> IN 
+        </TD>
+        <TD ALIGN="right" VALIGN="top">
+          <SELECT NAME="rectype">
+%           foreach ( @{ FS::domain_record->rectypes } ) { 
+              <OPTION VALUE="<%$_%>"><%$_%></OPTION>
+%           } 
+          </SELECT><BR>
+          <FONT SIZE="-1"><I>Type</I></FONT>
+        </TD>
+        <TD ALIGN="right" VALIGN="top">
+          <INPUT TYPE="text" NAME="recdata"><BR>
+          <FONT SIZE="-1"><I>Data</I></FONT>
+        </TD>
+        <TD ALIGN="right" VALIGN="top">
+          <INPUT TYPE="text" NAME="ttl" size="6"><BR>
+          <FONT SIZE="-1"><I>TTL</I></FONT>
+        </TD>
+        <TD ALIGN="right" VALIGN="top">
+          <INPUT TYPE="submit" VALUE="Add record">
+        </TD>
+      </TR>
+    </TABLE>
     </FORM>
 
     <BR>
