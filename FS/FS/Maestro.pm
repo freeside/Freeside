@@ -127,6 +127,8 @@ sub customer_status {
   return { 
     'name'   => $cust_main->name,
     'email'  => $cust_main->invoicing_list_emailonly_scalar,
+    'agentnum' => $cust_main->agentnum,
+    'agent'    => $cust_main->agent->agent,
     'max_lines'        => $svc_pbx ? $svc_pbx->max_extensions : '',
     'max_simultaneous' => $svc_pbx ? $svc_pbx->max_simultaneous : '',
     'outbound_service' => $outbound_service,
