@@ -379,6 +379,8 @@ Like most export functions, returns an error message on failure or undef on succ
 sub register {
   my ( $self, $svc_domain, $years ) = @_;
 
+  $years = 1 unless $years; #default to 1 year since we don't seem to pass it
+
   return "Net::OpenSRS does not support period other than 1 year" if $years != 1;
 
   eval "use Net::OpenSRS;";
