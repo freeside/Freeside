@@ -149,10 +149,10 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
     'use_cdrtypenum' => { 'name' => 'Do not charge for CDRs where the CDR Type is not set to: ',
                          },
 
-    'skip_dst_prefix' => { 'name' => 'Do not charge for CDRs where the destination number starts with any of these values:',
+    'skip_dst_prefix' => { 'name' => 'Do not charge for CDRs where the destination number starts with any of these values: ',
     },
 
-    'skip_dcontext' => { 'name' => 'Do not charge for CDRs where the dcontext is set to any of these (comma-separated) values:',
+    'skip_dcontext' => { 'name' => 'Do not charge for CDRs where the dcontext is set to any of these (comma-separated) values: ',
                        },
 
     'skip_dstchannel_prefix' => { 'name' => 'Do not charge for CDRs where the dstchannel starts with:',
@@ -166,7 +166,7 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                                                 },
 
     'accountcode_tollfree_ratenum' => {
-      'name' => 'Optional alternate rate plan when accountcode is toll free',
+      'name' => 'Optional alternate rate plan when accountcode is toll free: ',
       'type' => 'select',
       'select_table'  => 'rate',
       'select_key'    => 'ratenum',
@@ -182,8 +182,11 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                                                   'type' => 'checkbox',
                                                 },
 
-    'skip_lastapp' => { 'name' => 'Do not charge for CDRs where the lastapp matches this value',
+    'skip_lastapp' => { 'name' => 'Do not charge for CDRs where the lastapp matches this value: ',
                       },
+
+    'skip_max_callers' => { 'name' => 'Do not charge for CDRs where max_callers is greater than this value: ',
+                          },
 
     'use_duration'   => { 'name' => 'Calculate usage based on the duration field instead of the billsec field',
                           'type' => 'checkbox',
@@ -199,7 +202,7 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                          'default'        => 'default', #XXX test
                        },
 
-    'usage_section' => { 'name' => 'Section in which to place usage charges (whether separated or not)',
+    'usage_section' => { 'name' => 'Section in which to place usage charges (whether separated or not): ',
                        },
 
     'summarize_usage' => { 'name' => 'Include usage summary with recurring charges when usage is in separate section',
@@ -262,6 +265,7 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                        skip_dst_length_less
                        noskip_dst_length_accountcode_tollfree
                        skip_lastapp
+                       skip_max_callers
                        use_duration
                        411_rewrite
                        output_format usage_mandate summarize_usage usage_section
@@ -835,6 +839,7 @@ sub check_chargable {
     skip_src_length_more noskip_src_length_accountcode_tollfree
     skip_dst_length_less noskip_dst_length_accountcode_tollfree
     skip_lastapp
+    skip_max_callers
   );
   foreach my $opt (grep !exists($flags{option_cache}->{$_}), @opt ) {
     $flags{option_cache}->{$opt} = $self->option($opt, 1);
@@ -902,6 +907,11 @@ sub check_chargable {
     }
 
   }
+
+  return "max_callers > $opt{skip_max_callers}"
+    if length($opt{'skip_max_callers'})
+      and length($cdr->max_callers)
+      and $cdr->max_callers > $opt{'skip_max_callers'};
 
   #all right then, rate it
   '';

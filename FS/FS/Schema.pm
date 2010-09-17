@@ -2495,6 +2495,8 @@ sub tables_hashref {
         'uniqueid',    'varchar',  '',      32, \"''", '',
         'userfield',   'varchar',  '',     255, \"''", '',
 
+        'max_callers', 'int',  'NULL',      '',    '', '',
+
         ###
         # fields for unitel/RSLCOM/convergent that don't map well to asterisk
         # defaults
