@@ -16,6 +16,7 @@ use FS::type_pkgs;
 use FS::part_pkg_option;
 use FS::pkg_class;
 use FS::agent;
+use FS::part_pkg_taxrate;
 use FS::part_pkg_taxoverride;
 use FS::part_pkg_taxproduct;
 use FS::part_pkg_link;

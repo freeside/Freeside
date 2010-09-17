@@ -1,0 +1,1549 @@
+package FS::cust_main::Billing;
+
+use strict;
+use vars qw( $conf $DEBUG $me );
+use Carp;
+use FS::UID qw( dbh );
+use FS::Record qw( qsearch qsearchs );
+use FS::cust_bill;
+use FS::cust_bill_pkg;
+use FS::cust_bill_pkg_display;
+use FS::cust_bill_pay;
+use FS::cust_credit_bill;
+use FS::cust_pkg;
+use FS::cust_tax_adjustment;
+use FS::tax_rate;
+use FS::tax_rate_location;
+use FS::cust_bill_pkg_tax_location;
+use FS::cust_bill_pkg_tax_rate_location;
+
+# 1 is mostly method/subroutine entry and options
+# 2 traces progress of some operations
+# 3 is even more information including possibly sensitive data
+$DEBUG = 0;
+$me = '[FS::cust_main::Billing]';
+
+install_callback FS::UID sub { 
+  $conf = new FS::Conf;
+  #yes, need it for stuff below (prolly should be cached)
+};
+
+=head1 NAME
+
+FS::cust_main::Billing - Billing mixin for cust_main
+
+=head1 SYNOPSIS
+
+=head1 DESCRIPTIONS
+
+These methods are available on FS::cust_main objects.
+
+=head1 METHODS
+
+=over 4
+
+=item bill_and_collect 
+
+Cancels and suspends any packages due, generates bills, applies payments and
+credits, and applies collection events to run cards, send bills and notices,
+etc.
+
+By default, warns on errors and continues with the next operation (but see the
+"fatal" flag below).
+
+Options are passed as name-value pairs.  Currently available options are:
+
+=over 4
+
+=item time
+
+Bills the customer as if it were that time.  Specified as a UNIX timestamp; see L<perlfunc/"time">).  Also see L<Time::Local> and L<Date::Parse> for conversion functions.  For example:
+
+ use Date::Parse;
+ ...
+ $cust_main->bill( 'time' => str2time('April 20th, 2001') );
+
+=item invoice_time
+
+Used in conjunction with the I<time> option, this option specifies the date of for the generated invoices.  Other calculations, such as whether or not to generate the invoice in the first place, are not affected.
+
+=item check_freq
+
+"1d" for the traditional, daily events (the default), or "1m" for the new monthly events (part_event.check_freq)
+
+=item resetup
+
+If set true, re-charges setup fees.
+
+=item fatal
+
+If set any errors prevent subsequent operations from continusing.  If set
+specifically to "return", returns the error (or false, if there is no error).
+Any other true value causes errors to die.
+
+=item debug
+
+Debugging level.  Default is 0 (no debugging), or can be set to 1 (passed-in options), 2 (traces progress), 3 (more information), or 4 (include full search queries)
+
+=item job
+
+Optional FS::queue entry to receive status updates.
+
+=back
+
+Options are passed to the B<bill> and B<collect> methods verbatim, so all
+options of those methods are also available.
+
+=cut
+
+sub bill_and_collect {
+  my( $self, %options ) = @_;
+
+  my $error;
+
+  #$options{actual_time} not $options{time} because freeside-daily -d is for
+  #pre-printing invoices
+
+  $options{'actual_time'} ||= time;
+  my $job = $options{'job'};
+
+  $job->update_statustext('0,cleaning expired packages') if $job;
+  $error = $self->cancel_expired_pkgs( $options{actual_time} );
+  if ( $error ) {
+    $error = "Error expiring custnum ". $self->custnum. ": $error";
+    if    ( $options{fatal} && $options{fatal} eq 'return' ) { return $error; }
+    elsif ( $options{fatal}                                ) { die    $error; }
+    else                                                     { warn   $error; }
+  }
+
+  $error = $self->suspend_adjourned_pkgs( $options{actual_time} );
+  if ( $error ) {
+    $error = "Error adjourning custnum ". $self->custnum. ": $error";
+    if    ( $options{fatal} && $options{fatal} eq 'return' ) { return $error; }
+    elsif ( $options{fatal}                                ) { die    $error; }
+    else                                                     { warn   $error; }
+  }
+
+  $job->update_statustext('20,billing packages') if $job;
+  $error = $self->bill( %options );
+  if ( $error ) {
+    $error = "Error billing custnum ". $self->custnum. ": $error";
+    if    ( $options{fatal} && $options{fatal} eq 'return' ) { return $error; }
+    elsif ( $options{fatal}                                ) { die    $error; }
+    else                                                     { warn   $error; }
+  }
+
+  $job->update_statustext('50,applying payments and credits') if $job;
+  $error = $self->apply_payments_and_credits;
+  if ( $error ) {
+    $error = "Error applying custnum ". $self->custnum. ": $error";
+    if    ( $options{fatal} && $options{fatal} eq 'return' ) { return $error; }
+    elsif ( $options{fatal}                                ) { die    $error; }
+    else                                                     { warn   $error; }
+  }
+
+  $job->update_statustext('70,running collection events') if $job;
+  unless ( $conf->exists('cancelled_cust-noevents')
+           && ! $self->num_ncancelled_pkgs
+  ) {
+    $error = $self->collect( %options );
+    if ( $error ) {
+      $error = "Error collecting custnum ". $self->custnum. ": $error";
+      if    ($options{fatal} && $options{fatal} eq 'return') { return $error; }
+      elsif ($options{fatal}                               ) { die    $error; }
+      else                                                   { warn   $error; }
+    }
+  }
+  $job->update_statustext('100,finished') if $job;
+
+  '';
+
+}
+
+sub cancel_expired_pkgs {
+  my ( $self, $time, %options ) = @_;
+
+  my @cancel_pkgs = $self->ncancelled_pkgs( { 
+    'extra_sql' => " AND expire IS NOT NULL AND expire > 0 AND expire <= $time "
+  } );
+
+  my @errors = ();
+
+  foreach my $cust_pkg ( @cancel_pkgs ) {
+    my $cpr = $cust_pkg->last_cust_pkg_reason('expire');
+    my $error = $cust_pkg->cancel($cpr ? ( 'reason'        => $cpr->reasonnum,
+                                           'reason_otaker' => $cpr->otaker
+                                         )
+                                       : ()
+                                 );
+    push @errors, 'pkgnum '.$cust_pkg->pkgnum.": $error" if $error;
+  }
+
+  scalar(@errors) ? join(' / ', @errors) : '';
+
+}
+
+sub suspend_adjourned_pkgs {
+  my ( $self, $time, %options ) = @_;
+
+  my @susp_pkgs = $self->ncancelled_pkgs( {
+    'extra_sql' =>
+      " AND ( susp IS NULL OR susp = 0 )
+        AND (    ( bill    IS NOT NULL AND bill    != 0 AND bill    <  $time )
+              OR ( adjourn IS NOT NULL AND adjourn != 0 AND adjourn <= $time )
+            )
+      ",
+  } );
+
+  #only because there's no SQL test for is_prepaid :/
+  @susp_pkgs = 
+    grep {     (    $_->part_pkg->is_prepaid
+                 && $_->bill
+                 && $_->bill < $time
+               )
+            || (    $_->adjourn
+                 && $_->adjourn <= $time
+               )
+           
+         }
+         @susp_pkgs;
+
+  my @errors = ();
+
+  foreach my $cust_pkg ( @susp_pkgs ) {
+    my $cpr = $cust_pkg->last_cust_pkg_reason('adjourn')
+      if ($cust_pkg->adjourn && $cust_pkg->adjourn < $^T);
+    my $error = $cust_pkg->suspend($cpr ? ( 'reason' => $cpr->reasonnum,
+                                            'reason_otaker' => $cpr->otaker
+                                          )
+                                        : ()
+                                  );
+    push @errors, 'pkgnum '.$cust_pkg->pkgnum.": $error" if $error;
+  }
+
+  scalar(@errors) ? join(' / ', @errors) : '';
+
+}
+
+=item bill OPTIONS
+
+Generates invoices (see L<FS::cust_bill>) for this customer.  Usually used in
+conjunction with the collect method by calling B<bill_and_collect>.
+
+If there is an error, returns the error, otherwise returns false.
+
+Options are passed as name-value pairs.  Currently available options are:
+
+=over 4
+
+=item resetup
+
+If set true, re-charges setup fees.
+
+=item time
+
+Bills the customer as if it were that time.  Specified as a UNIX timestamp; see L<perlfunc/"time">).  Also see L<Time::Local> and L<Date::Parse> for conversion functions.  For example:
+
+ use Date::Parse;
+ ...
+ $cust_main->bill( 'time' => str2time('April 20th, 2001') );
+
+=item pkg_list
+
+An array ref of specific packages (objects) to attempt billing, instead trying all of them.
+
+ $cust_main->bill( pkg_list => [$pkg1, $pkg2] );
+
+=item not_pkgpart
+
+A hashref of pkgparts to exclude from this billing run (can also be specified as a comma-separated scalar).
+
+=item invoice_time
+
+Used in conjunction with the I<time> option, this option specifies the date of for the generated invoices.  Other calculations, such as whether or not to generate the invoice in the first place, are not affected.
+
+=item cancel
+
+This boolean value informs the us that the package is being cancelled.  This
+typically might mean not charging the normal recurring fee but only usage
+fees since the last billing. Setup charges may be charged.  Not all package
+plans support this feature (they tend to charge 0).
+
+=item invoice_terms
+
+Optional terms to be printed on this invoice.  Otherwise, customer-specific
+terms or the default terms are used.
+
+=back
+
+=cut
+
+sub bill {
+  my( $self, %options ) = @_;
+  return '' if $self->payby eq 'COMP';
+  warn "$me bill customer ". $self->custnum. "\n"
+    if $DEBUG;
+
+  my $time = $options{'time'} || time;
+  my $invoice_time = $options{'invoice_time'} || $time;
+
+  $options{'not_pkgpart'} ||= {};
+  $options{'not_pkgpart'} = { map { $_ => 1 }
+                                  split(/\s*,\s*/, $options{'not_pkgpart'})
+                            }
+    unless ref($options{'not_pkgpart'});
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  warn "$me acquiring lock on customer ". $self->custnum. "\n"
+    if $DEBUG;
+
+  $self->select_for_update; #mutex
+
+  warn "$me running pre-bill events for customer ". $self->custnum. "\n"
+    if $DEBUG;
+
+  my $error = $self->do_cust_event(
+    'debug'      => ( $options{'debug'} || 0 ),
+    'time'       => $invoice_time,
+    'check_freq' => $options{'check_freq'},
+    'stage'      => 'pre-bill',
+  );
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  warn "$me done running pre-bill events for customer ". $self->custnum. "\n"
+    if $DEBUG;
+
+  #keep auto-charge and non-auto-charge line items separate
+  my @passes = ( '', 'no_auto' );
+
+  my %cust_bill_pkg = map { $_ => [] } @passes;
+
+  ###
+  # find the packages which are due for billing, find out how much they are
+  # & generate invoice database.
+  ###
+
+  my %total_setup   = map { my $z = 0; $_ => \$z; } @passes;
+  my %total_recur   = map { my $z = 0; $_ => \$z; } @passes;
+
+  my %taxlisthash = map { $_ => {} } @passes;
+
+  my @precommit_hooks = ();
+
+  $options{'pkg_list'} ||= [ $self->ncancelled_pkgs ];  #param checks?
+  foreach my $cust_pkg ( @{ $options{'pkg_list'} } ) {
+
+    next if $options{'not_pkgpart'}->{$cust_pkg->pkgpart};
+
+    warn "  bill package ". $cust_pkg->pkgnum. "\n" if $DEBUG > 1;
+
+    #? to avoid use of uninitialized value errors... ?
+    $cust_pkg->setfield('bill', '')
+      unless defined($cust_pkg->bill);
+ 
+    #my $part_pkg = $cust_pkg->part_pkg;
+
+    my $real_pkgpart = $cust_pkg->pkgpart;
+    my %hash = $cust_pkg->hash;
+
+    # we could implement this bit as FS::part_pkg::has_hidden, but we already
+    # suffer from performance issues
+    $options{has_hidden} = 0;
+    my @part_pkg = $cust_pkg->part_pkg->self_and_bill_linked;
+    $options{has_hidden} = 1 if ($part_pkg[1] && $part_pkg[1]->hidden);
+ 
+    foreach my $part_pkg ( @part_pkg ) {
+
+      $cust_pkg->set($_, $hash{$_}) foreach qw ( setup last_bill bill );
+
+      my $pass = ($cust_pkg->no_auto || $part_pkg->no_auto) ? 'no_auto' : '';
+
+      my $error =
+        $self->_make_lines( 'part_pkg'            => $part_pkg,
+                            'cust_pkg'            => $cust_pkg,
+                            'precommit_hooks'     => \@precommit_hooks,
+                            'line_items'          => $cust_bill_pkg{$pass},
+                            'setup'               => $total_setup{$pass},
+                            'recur'               => $total_recur{$pass},
+                            'tax_matrix'          => $taxlisthash{$pass},
+                            'time'                => $time,
+                            'real_pkgpart'        => $real_pkgpart,
+                            'options'             => \%options,
+                          );
+      if ($error) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+
+    } #foreach my $part_pkg
+
+  } #foreach my $cust_pkg
+
+  #if the customer isn't on an automatic payby, everything can go on a single
+  #invoice anyway?
+  #if ( $cust_main->payby !~ /^(CARD|CHEK)$/ ) {
+    #merge everything into one list
+  #}
+
+  foreach my $pass (@passes) { # keys %cust_bill_pkg ) {
+
+    my @cust_bill_pkg = _omit_zero_value_bundles(@{ $cust_bill_pkg{$pass} });
+
+    next unless @cust_bill_pkg; #don't create an invoice w/o line items
+
+    if ( scalar( grep { $_->recur && $_->recur > 0 } @cust_bill_pkg) ||
+           !$conf->exists('postal_invoice-recurring_only')
+       )
+    {
+
+      my $postal_pkg = $self->charge_postal_fee();
+      if ( $postal_pkg && !ref( $postal_pkg ) ) {
+
+        $dbh->rollback if $oldAutoCommit;
+        return "can't charge postal invoice fee for customer ".
+          $self->custnum. ": $postal_pkg";
+
+      } elsif ( $postal_pkg ) {
+
+        my $real_pkgpart = $postal_pkg->pkgpart;
+        # we could implement this bit as FS::part_pkg::has_hidden, but we already
+        # suffer from performance issues
+        $options{has_hidden} = 0;
+        my @part_pkg = $postal_pkg->part_pkg->self_and_bill_linked;
+        $options{has_hidden} = 1 if ($part_pkg[1] && $part_pkg[1]->hidden);
+
+        foreach my $part_pkg ( @part_pkg ) {
+          my %postal_options = %options;
+          delete $postal_options{cancel};
+          my $error =
+            $self->_make_lines( 'part_pkg'            => $part_pkg,
+                                'cust_pkg'            => $postal_pkg,
+                                'precommit_hooks'     => \@precommit_hooks,
+                                'line_items'          => \@cust_bill_pkg,
+                                'setup'               => $total_setup{$pass},
+                                'recur'               => $total_recur{$pass},
+                                'tax_matrix'          => $taxlisthash{$pass},
+                                'time'                => $time,
+                                'real_pkgpart'        => $real_pkgpart,
+                                'options'             => \%postal_options,
+                              );
+          if ($error) {
+            $dbh->rollback if $oldAutoCommit;
+            return $error;
+          }
+        }
+
+        # it's silly to have a zero value postal_pkg, but....
+        @cust_bill_pkg = _omit_zero_value_bundles(@cust_bill_pkg);
+
+      }
+
+    }
+
+    my $listref_or_error =
+      $self->calculate_taxes( \@cust_bill_pkg, $taxlisthash{$pass}, $invoice_time);
+
+    unless ( ref( $listref_or_error ) ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $listref_or_error;
+    }
+
+    foreach my $taxline ( @$listref_or_error ) {
+      ${ $total_setup{$pass} } =
+        sprintf('%.2f', ${ $total_setup{$pass} } + $taxline->setup );
+      push @cust_bill_pkg, $taxline;
+    }
+
+    #add tax adjustments
+    warn "adding tax adjustments...\n" if $DEBUG > 2;
+    foreach my $cust_tax_adjustment (
+      qsearch('cust_tax_adjustment', { 'custnum'    => $self->custnum,
+                                       'billpkgnum' => '',
+                                     }
+             )
+    ) {
+
+      my $tax = sprintf('%.2f', $cust_tax_adjustment->amount );
+
+      my $itemdesc = $cust_tax_adjustment->taxname;
+      $itemdesc = '' if $itemdesc eq 'Tax';
+
+      push @cust_bill_pkg, new FS::cust_bill_pkg {
+        'pkgnum'      => 0,
+        'setup'       => $tax,
+        'recur'       => 0,
+        'sdate'       => '',
+        'edate'       => '',
+        'itemdesc'    => $itemdesc,
+        'itemcomment' => $cust_tax_adjustment->comment,
+        'cust_tax_adjustment' => $cust_tax_adjustment,
+        #'cust_bill_pkg_tax_location' => \@cust_bill_pkg_tax_location,
+      };
+
+    }
+
+    my $charged = sprintf('%.2f', ${ $total_setup{$pass} } + ${ $total_recur{$pass} } );
+
+    my @cust_bill = $self->cust_bill;
+    my $balance = $self->balance;
+    my $previous_balance = scalar(@cust_bill)
+                             ? ( $cust_bill[$#cust_bill]->billing_balance || 0 )
+                             : 0;
+
+    $previous_balance += $cust_bill[$#cust_bill]->charged
+      if scalar(@cust_bill);
+    #my $balance_adjustments =
+    #  sprintf('%.2f', $balance - $prior_prior_balance - $prior_charged);
+
+    #create the new invoice
+    my $cust_bill = new FS::cust_bill ( {
+      'custnum'             => $self->custnum,
+      '_date'               => ( $invoice_time ),
+      'charged'             => $charged,
+      'billing_balance'     => $balance,
+      'previous_balance'    => $previous_balance,
+      'invoice_terms'       => $options{'invoice_terms'},
+    } );
+    $error = $cust_bill->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "can't create invoice for customer #". $self->custnum. ": $error";
+    }
+
+    foreach my $cust_bill_pkg ( @cust_bill_pkg ) {
+      $cust_bill_pkg->invnum($cust_bill->invnum); 
+      my $error = $cust_bill_pkg->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "can't create invoice line item: $error";
+      }
+    }
+
+  } #foreach my $pass ( keys %cust_bill_pkg )
+
+  foreach my $hook ( @precommit_hooks ) { 
+    eval {
+      &{$hook}; #($self) ?
+    };
+    if ( $@ ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "$@ running precommit hook $hook\n";
+    }
+  }
+  
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  ''; #no error
+}
+
+#discard bundled packages of 0 value
+sub _omit_zero_value_bundles {
+
+  my @cust_bill_pkg = ();
+  my @cust_bill_pkg_bundle = ();
+  my $sum = 0;
+
+  foreach my $cust_bill_pkg ( @_ ) {
+    if (scalar(@cust_bill_pkg_bundle) && !$cust_bill_pkg->pkgpart_override) {
+      push @cust_bill_pkg, @cust_bill_pkg_bundle if $sum > 0;
+      @cust_bill_pkg_bundle = ();
+      $sum = 0;
+    }
+    $sum += $cust_bill_pkg->setup + $cust_bill_pkg->recur;
+    push @cust_bill_pkg_bundle, $cust_bill_pkg;
+  }
+  push @cust_bill_pkg, @cust_bill_pkg_bundle if $sum > 0;
+
+  (@cust_bill_pkg);
+
+}
+
+=item calculate_taxes LINEITEMREF TAXHASHREF INVOICE_TIME
+
+This is a weird one.  Perhaps it should not even be exposed.
+
+Generates tax line items (see L<FS::cust_bill_pkg>) for this customer.
+Usually used internally by bill method B<bill>.
+
+If there is an error, returns the error, otherwise returns reference to a
+list of line items suitable for insertion.
+
+=over 4
+
+=item LINEITEMREF
+
+An array ref of the line items being billed.
+
+=item TAXHASHREF
+
+A strange beast.  The keys to this hash are internal identifiers consisting
+of the name of the tax object type, a space, and its unique identifier ( e.g.
+ 'cust_main_county 23' ).  The values of the hash are listrefs.  The first
+item in the list is the tax object.  The remaining items are either line
+items or floating point values (currency amounts).
+
+The taxes are calculated on this entity.  Calculated exemption records are
+transferred to the LINEITEMREF items on the assumption that they are related.
+
+Read the source.
+
+=item INVOICE_TIME
+
+This specifies the date appearing on the associated invoice.  Some
+jurisdictions (i.e. Texas) have tax exemptions which are date sensitive.
+
+=back
+
+=cut
+sub calculate_taxes {
+  my ($self, $cust_bill_pkg, $taxlisthash, $invoice_time) = @_;
+
+  my @tax_line_items = ();
+
+  warn "having a look at the taxes we found...\n" if $DEBUG > 2;
+
+  # keys are tax names (as printed on invoices / itemdesc )
+  # values are listrefs of taxlisthash keys (internal identifiers)
+  my %taxname = ();
+
+  # keys are taxlisthash keys (internal identifiers)
+  # values are (cumulative) amounts
+  my %tax = ();
+
+  # keys are taxlisthash keys (internal identifiers)
+  # values are listrefs of cust_bill_pkg_tax_location hashrefs
+  my %tax_location = ();
+
+  # keys are taxlisthash keys (internal identifiers)
+  # values are listrefs of cust_bill_pkg_tax_rate_location hashrefs
+  my %tax_rate_location = ();
+
+  foreach my $tax ( keys %$taxlisthash ) {
+    my $tax_object = shift @{ $taxlisthash->{$tax} };
+    warn "found ". $tax_object->taxname. " as $tax\n" if $DEBUG > 2;
+    warn " ". join('/', @{ $taxlisthash->{$tax} } ). "\n" if $DEBUG > 2;
+    my $hashref_or_error =
+      $tax_object->taxline( $taxlisthash->{$tax},
+                            'custnum'      => $self->custnum,
+                            'invoice_time' => $invoice_time
+                          );
+    return $hashref_or_error unless ref($hashref_or_error);
+
+    unshift @{ $taxlisthash->{$tax} }, $tax_object;
+
+    my $name   = $hashref_or_error->{'name'};
+    my $amount = $hashref_or_error->{'amount'};
+
+    #warn "adding $amount as $name\n";
+    $taxname{ $name } ||= [];
+    push @{ $taxname{ $name } }, $tax;
+
+    $tax{ $tax } += $amount;
+
+    $tax_location{ $tax } ||= [];
+    if ( $tax_object->get('pkgnum') || $tax_object->get('locationnum') ) {
+      push @{ $tax_location{ $tax }  },
+        {
+          'taxnum'      => $tax_object->taxnum, 
+          'taxtype'     => ref($tax_object),
+          'pkgnum'      => $tax_object->get('pkgnum'),
+          'locationnum' => $tax_object->get('locationnum'),
+          'amount'      => sprintf('%.2f', $amount ),
+        };
+    }
+
+    $tax_rate_location{ $tax } ||= [];
+    if ( ref($tax_object) eq 'FS::tax_rate' ) {
+      my $taxratelocationnum =
+        $tax_object->tax_rate_location->taxratelocationnum;
+      push @{ $tax_rate_location{ $tax }  },
+        {
+          'taxnum'             => $tax_object->taxnum, 
+          'taxtype'            => ref($tax_object),
+          'amount'             => sprintf('%.2f', $amount ),
+          'locationtaxid'      => $tax_object->location,
+          'taxratelocationnum' => $taxratelocationnum,
+        };
+    }
+
+  }
+
+  #move the cust_tax_exempt_pkg records to the cust_bill_pkgs we will commit
+  my %packagemap = map { $_->pkgnum => $_ } @$cust_bill_pkg;
+  foreach my $tax ( keys %$taxlisthash ) {
+    foreach ( @{ $taxlisthash->{$tax} }[1 ... scalar(@{ $taxlisthash->{$tax} })] ) {
+      next unless ref($_) eq 'FS::cust_bill_pkg';
+
+      push @{ $packagemap{$_->pkgnum}->_cust_tax_exempt_pkg }, 
+        splice( @{ $_->_cust_tax_exempt_pkg } );
+    }
+  }
+
+  #consolidate and create tax line items
+  warn "consolidating and generating...\n" if $DEBUG > 2;
+  foreach my $taxname ( keys %taxname ) {
+    my $tax = 0;
+    my %seen = ();
+    my @cust_bill_pkg_tax_location = ();
+    my @cust_bill_pkg_tax_rate_location = ();
+    warn "adding $taxname\n" if $DEBUG > 1;
+    foreach my $taxitem ( @{ $taxname{$taxname} } ) {
+      next if $seen{$taxitem}++;
+      warn "adding $tax{$taxitem}\n" if $DEBUG > 1;
+      $tax += $tax{$taxitem};
+      push @cust_bill_pkg_tax_location,
+        map { new FS::cust_bill_pkg_tax_location $_ }
+            @{ $tax_location{ $taxitem } };
+      push @cust_bill_pkg_tax_rate_location,
+        map { new FS::cust_bill_pkg_tax_rate_location $_ }
+            @{ $tax_rate_location{ $taxitem } };
+    }
+    next unless $tax;
+
+    $tax = sprintf('%.2f', $tax );
+  
+    my $pkg_category = qsearchs( 'pkg_category', { 'categoryname' => $taxname,
+                                                   'disabled'     => '',
+                                                 },
+                               );
+
+    my @display = ();
+    if ( $pkg_category and
+         $conf->config('invoice_latexsummary') ||
+         $conf->config('invoice_htmlsummary')
+       )
+    {
+
+      my %hash = (  'section' => $pkg_category->categoryname );
+      push @display, new FS::cust_bill_pkg_display { type => 'S', %hash };
+
+    }
+
+    push @tax_line_items, new FS::cust_bill_pkg {
+      'pkgnum'   => 0,
+      'setup'    => $tax,
+      'recur'    => 0,
+      'sdate'    => '',
+      'edate'    => '',
+      'itemdesc' => $taxname,
+      'display'  => \@display,
+      'cust_bill_pkg_tax_location' => \@cust_bill_pkg_tax_location,
+      'cust_bill_pkg_tax_rate_location' => \@cust_bill_pkg_tax_rate_location,
+    };
+
+  }
+
+  \@tax_line_items;
+}
+
+sub _make_lines {
+  my ($self, %params) = @_;
+
+  my $part_pkg = $params{part_pkg} or die "no part_pkg specified";
+  my $cust_pkg = $params{cust_pkg} or die "no cust_pkg specified";
+  my $precommit_hooks = $params{precommit_hooks} or die "no package specified";
+  my $cust_bill_pkgs = $params{line_items} or die "no line buffer specified";
+  my $total_setup = $params{setup} or die "no setup accumulator specified";
+  my $total_recur = $params{recur} or die "no recur accumulator specified";
+  my $taxlisthash = $params{tax_matrix} or die "no tax accumulator specified";
+  my $time = $params{'time'} or die "no time specified";
+  my (%options) = %{$params{options}};
+
+  my $dbh = dbh;
+  my $real_pkgpart = $params{real_pkgpart};
+  my %hash = $cust_pkg->hash;
+  my $old_cust_pkg = new FS::cust_pkg \%hash;
+
+  my @details = ();
+  my @discounts = ();
+  my $lineitems = 0;
+
+  $cust_pkg->pkgpart($part_pkg->pkgpart);
+
+  ###
+  # bill setup
+  ###
+
+  my $setup = 0;
+  my $unitsetup = 0;
+  if ( $options{'resetup'}
+       || ( ! $cust_pkg->setup
+            && ( ! $cust_pkg->start_date
+                 || $cust_pkg->start_date <= $time
+               )
+            && ( ! $conf->exists('disable_setup_suspended_pkgs')
+                 || ( $conf->exists('disable_setup_suspended_pkgs') &&
+                      ! $cust_pkg->getfield('susp')
+                    )
+               )
+          )
+    )
+  {
+    
+    warn "    bill setup\n" if $DEBUG > 1;
+    $lineitems++;
+
+    $setup = eval { $cust_pkg->calc_setup( $time, \@details ) };
+    return "$@ running calc_setup for $cust_pkg\n"
+      if $@;
+
+    $unitsetup = $cust_pkg->part_pkg->unit_setup || $setup; #XXX uuh
+
+    $cust_pkg->setfield('setup', $time)
+      unless $cust_pkg->setup;
+          #do need it, but it won't get written to the db
+          #|| $cust_pkg->pkgpart != $real_pkgpart;
+
+    $cust_pkg->setfield('start_date', '')
+      if $cust_pkg->start_date;
+
+  }
+
+  ###
+  # bill recurring fee
+  ### 
+
+  #XXX unit stuff here too
+  my $recur = 0;
+  my $unitrecur = 0;
+  my $sdate;
+  if (     ! $cust_pkg->get('susp')
+       and ! $cust_pkg->get('start_date')
+       and ( $part_pkg->getfield('freq') ne '0'
+             && ( $cust_pkg->getfield('bill') || 0 ) <= $time
+           )
+        || ( $part_pkg->plan eq 'voip_cdr'
+              && $part_pkg->option('bill_every_call')
+           )
+        || ( $options{cancel} )
+  ) {
+
+    # XXX should this be a package event?  probably.  events are called
+    # at collection time at the moment, though...
+    $part_pkg->reset_usage($cust_pkg, 'debug'=>$DEBUG)
+      if $part_pkg->can('reset_usage');
+      #don't want to reset usage just cause we want a line item??
+      #&& $part_pkg->pkgpart == $real_pkgpart;
+
+    warn "    bill recur\n" if $DEBUG > 1;
+    $lineitems++;
+
+    # XXX shared with $recur_prog
+    $sdate = ( $options{cancel} ? $cust_pkg->last_bill : $cust_pkg->bill )
+             || $cust_pkg->setup
+             || $time;
+
+    #over two params!  lets at least switch to a hashref for the rest...
+    my $increment_next_bill = ( $part_pkg->freq ne '0'
+                                && ( $cust_pkg->getfield('bill') || 0 ) <= $time
+                                && !$options{cancel}
+                              );
+    my %param = ( 'precommit_hooks'     => $precommit_hooks,
+                  'increment_next_bill' => $increment_next_bill,
+                  'discounts'           => \@discounts,
+                  'real_pkgpart'        => $real_pkgpart,
+                );
+
+    my $method = $options{cancel} ? 'calc_cancel' : 'calc_recur';
+    $recur = eval { $cust_pkg->$method( \$sdate, \@details, \%param ) };
+    return "$@ running $method for $cust_pkg\n"
+      if ( $@ );
+
+    if ( $increment_next_bill ) {
+
+      my $next_bill = $part_pkg->add_freq($sdate);
+      return "unparsable frequency: ". $part_pkg->freq
+        if $next_bill == -1;
+  
+      #pro-rating magic - if $recur_prog fiddled $sdate, want to use that
+      # only for figuring next bill date, nothing else, so, reset $sdate again
+      # here
+      $sdate = $cust_pkg->bill || $cust_pkg->setup || $time;
+      #no need, its in $hash{last_bill}# my $last_bill = $cust_pkg->last_bill;
+      $cust_pkg->last_bill($sdate);
+
+      $cust_pkg->setfield('bill', $next_bill );
+
+    }
+
+  }
+
+  warn "\$setup is undefined" unless defined($setup);
+  warn "\$recur is undefined" unless defined($recur);
+  warn "\$cust_pkg->bill is undefined" unless defined($cust_pkg->bill);
+  
+  ###
+  # If there's line items, create em cust_bill_pkg records
+  # If $cust_pkg has been modified, update it (if we're a real pkgpart)
+  ###
+
+  if ( $lineitems || $options{has_hidden} ) {
+
+    if ( $cust_pkg->modified && $cust_pkg->pkgpart == $real_pkgpart ) {
+      # hmm.. and if just the options are modified in some weird price plan?
+  
+      warn "  package ". $cust_pkg->pkgnum. " modified; updating\n"
+        if $DEBUG >1;
+  
+      my $error = $cust_pkg->replace( $old_cust_pkg,
+                                      'options' => { $cust_pkg->options },
+                                    );
+      return "Error modifying pkgnum ". $cust_pkg->pkgnum. ": $error"
+        if $error; #just in case
+    }
+  
+    $setup = sprintf( "%.2f", $setup );
+    $recur = sprintf( "%.2f", $recur );
+    if ( $setup < 0 && ! $conf->exists('allow_negative_charges') ) {
+      return "negative setup $setup for pkgnum ". $cust_pkg->pkgnum;
+    }
+    if ( $recur < 0 && ! $conf->exists('allow_negative_charges') ) {
+      return "negative recur $recur for pkgnum ". $cust_pkg->pkgnum;
+    }
+
+    if ( $setup != 0 ||
+         $recur != 0 ||
+         !$part_pkg->hidden && $options{has_hidden} ) #include some $0 lines
+    {
+
+      warn "    charges (setup=$setup, recur=$recur); adding line items\n"
+        if $DEBUG > 1;
+
+      my @cust_pkg_detail = map { $_->detail } $cust_pkg->cust_pkg_detail('I');
+      if ( $DEBUG > 1 ) {
+        warn "      adding customer package invoice detail: $_\n"
+          foreach @cust_pkg_detail;
+      }
+      push @details, @cust_pkg_detail;
+
+      my $cust_bill_pkg = new FS::cust_bill_pkg {
+        'pkgnum'    => $cust_pkg->pkgnum,
+        'setup'     => $setup,
+        'unitsetup' => $unitsetup,
+        'recur'     => $recur,
+        'unitrecur' => $unitrecur,
+        'quantity'  => $cust_pkg->quantity,
+        'details'   => \@details,
+        'discounts' => \@discounts,
+        'hidden'    => $part_pkg->hidden,
+      };
+
+      if ( $part_pkg->option('recur_temporality', 1) eq 'preceding' ) {
+        $cust_bill_pkg->sdate( $hash{last_bill} );
+        $cust_bill_pkg->edate( $sdate - 86399   ); #60s*60m*24h-1
+        $cust_bill_pkg->edate( $time ) if $options{cancel};
+      } else { #if ( $part_pkg->option('recur_temporality', 1) eq 'upcoming' ) {
+        $cust_bill_pkg->sdate( $sdate );
+        $cust_bill_pkg->edate( $cust_pkg->bill );
+        #$cust_bill_pkg->edate( $time ) if $options{cancel};
+      }
+
+      $cust_bill_pkg->pkgpart_override($part_pkg->pkgpart)
+        unless $part_pkg->pkgpart == $real_pkgpart;
+
+      $$total_setup += $setup;
+      $$total_recur += $recur;
+
+      ###
+      # handle taxes
+      ###
+
+      my $error = 
+        $self->_handle_taxes($part_pkg, $taxlisthash, $cust_bill_pkg, $cust_pkg, $options{invoice_time}, $real_pkgpart, \%options);
+      return $error if $error;
+
+      push @$cust_bill_pkgs, $cust_bill_pkg;
+
+    } #if $setup != 0 || $recur != 0
+      
+  } #if $line_items
+
+  '';
+
+}
+
+sub _handle_taxes {
+  my $self = shift;
+  my $part_pkg = shift;
+  my $taxlisthash = shift;
+  my $cust_bill_pkg = shift;
+  my $cust_pkg = shift;
+  my $invoice_time = shift;
+  my $real_pkgpart = shift;
+  my $options = shift;
+
+  my %cust_bill_pkg = ();
+  my %taxes = ();
+    
+  my @classes;
+  #push @classes, $cust_bill_pkg->usage_classes if $cust_bill_pkg->type eq 'U';
+  push @classes, $cust_bill_pkg->usage_classes if $cust_bill_pkg->usage;
+  push @classes, 'setup' if ($cust_bill_pkg->setup && !$options->{cancel});
+  push @classes, 'recur' if ($cust_bill_pkg->recur && !$options->{cancel});
+
+  if ( $self->tax !~ /Y/i && $self->payby ne 'COMP' ) {
+
+    if ( $conf->exists('enable_taxproducts')
+         && ( scalar($part_pkg->part_pkg_taxoverride)
+              || $part_pkg->has_taxproduct
+            )
+       )
+    {
+
+      if ( $conf->exists('tax-pkg_address') && $cust_pkg->locationnum ) {
+        return "fatal: Can't (yet) use tax-pkg_address with taxproducts";
+      }
+
+      foreach my $class (@classes) {
+        my $err_or_ref = $self->_gather_taxes( $part_pkg, $class );
+        return $err_or_ref unless ref($err_or_ref);
+        $taxes{$class} = $err_or_ref;
+      }
+
+      unless (exists $taxes{''}) {
+        my $err_or_ref = $self->_gather_taxes( $part_pkg, '' );
+        return $err_or_ref unless ref($err_or_ref);
+        $taxes{''} = $err_or_ref;
+      }
+
+    } else {
+
+      my @loc_keys = qw( city county state country );
+      my %taxhash;
+      if ( $conf->exists('tax-pkg_address') && $cust_pkg->locationnum ) {
+        my $cust_location = $cust_pkg->cust_location;
+        %taxhash = map { $_ => $cust_location->$_()    } @loc_keys;
+      } else {
+        my $prefix = 
+          ( $conf->exists('tax-ship_address') && length($self->ship_last) )
+          ? 'ship_'
+          : '';
+        %taxhash = map { $_ => $self->get("$prefix$_") } @loc_keys;
+      }
+
+      $taxhash{'taxclass'} = $part_pkg->taxclass;
+
+      my @taxes = ();
+      my %taxhash_elim = %taxhash;
+      my @elim = qw( city county state );
+      do { 
+
+        #first try a match with taxclass
+        @taxes = qsearch( 'cust_main_county', \%taxhash_elim );
+
+        if ( !scalar(@taxes) && $taxhash_elim{'taxclass'} ) {
+          #then try a match without taxclass
+          my %no_taxclass = %taxhash_elim;
+          $no_taxclass{ 'taxclass' } = '';
+          @taxes = qsearch( 'cust_main_county', \%no_taxclass );
+        }
+
+        $taxhash_elim{ shift(@elim) } = '';
+
+      } while ( !scalar(@taxes) && scalar(@elim) );
+
+      @taxes = grep { ! $_->taxname or ! $self->tax_exemption($_->taxname) }
+                    @taxes
+        if $self->cust_main_exemption; #just to be safe
+
+      if ( $conf->exists('tax-pkg_address') && $cust_pkg->locationnum ) {
+        foreach (@taxes) {
+          $_->set('pkgnum',      $cust_pkg->pkgnum );
+          $_->set('locationnum', $cust_pkg->locationnum );
+        }
+      }
+
+      $taxes{''} = [ @taxes ];
+      $taxes{'setup'} = [ @taxes ];
+      $taxes{'recur'} = [ @taxes ];
+      $taxes{$_} = [ @taxes ] foreach (@classes);
+
+      # # maybe eliminate this entirely, along with all the 0% records
+      # unless ( @taxes ) {
+      #   return
+      #     "fatal: can't find tax rate for state/county/country/taxclass ".
+      #     join('/', map $taxhash{$_}, qw(state county country taxclass) );
+      # }
+
+    } #if $conf->exists('enable_taxproducts') ...
+
+  }
+ 
+  my @display = ();
+  my $separate = $conf->exists('separate_usage');
+  my $temp_pkg = new FS::cust_pkg { pkgpart => $real_pkgpart };
+  my $usage_mandate = $temp_pkg->part_pkg->option('usage_mandate', 'Hush!');
+  my $section = $temp_pkg->part_pkg->categoryname;
+  if ( $separate || $section || $usage_mandate ) {
+
+    my %hash = ( 'section' => $section );
+
+    $section = $temp_pkg->part_pkg->option('usage_section', 'Hush!');
+    my $summary = $temp_pkg->part_pkg->option('summarize_usage', 'Hush!');
+    if ( $separate ) {
+      push @display, new FS::cust_bill_pkg_display { type => 'S', %hash };
+      push @display, new FS::cust_bill_pkg_display { type => 'R', %hash };
+    } else {
+      push @display, new FS::cust_bill_pkg_display
+                       { type => '',
+                         %hash,
+                         ( ( $usage_mandate ) ? ( 'summary' => 'Y' ) : () ),
+                       };
+    }
+
+    if ($separate && $section && $summary) {
+      push @display, new FS::cust_bill_pkg_display { type    => 'U',
+                                                     summary => 'Y',
+                                                     %hash,
+                                                   };
+    }
+    if ($usage_mandate || $section && $summary) {
+      $hash{post_total} = 'Y';
+    }
+
+    if ($separate || $usage_mandate) {
+      $hash{section} = $section if ($separate || $usage_mandate);
+      push @display, new FS::cust_bill_pkg_display { type => 'U', %hash };
+    }
+
+  }
+  $cust_bill_pkg->set('display', \@display);
+
+  my %tax_cust_bill_pkg = $cust_bill_pkg->disintegrate;
+  foreach my $key (keys %tax_cust_bill_pkg) {
+    my @taxes = @{ $taxes{$key} || [] };
+    my $tax_cust_bill_pkg = $tax_cust_bill_pkg{$key};
+
+    my %localtaxlisthash = ();
+    foreach my $tax ( @taxes ) {
+
+      my $taxname = ref( $tax ). ' '. $tax->taxnum;
+#      $taxname .= ' pkgnum'. $cust_pkg->pkgnum.
+#                  ' locationnum'. $cust_pkg->locationnum
+#        if $conf->exists('tax-pkg_address') && $cust_pkg->locationnum;
+
+      $taxlisthash->{ $taxname } ||= [ $tax ];
+      push @{ $taxlisthash->{ $taxname  } }, $tax_cust_bill_pkg;
+
+      $localtaxlisthash{ $taxname } ||= [ $tax ];
+      push @{ $localtaxlisthash{ $taxname  } }, $tax_cust_bill_pkg;
+
+    }
+
+    warn "finding taxed taxes...\n" if $DEBUG > 2;
+    foreach my $tax ( keys %localtaxlisthash ) {
+      my $tax_object = shift @{ $localtaxlisthash{$tax} };
+      warn "found possible taxed tax ". $tax_object->taxname. " we call $tax\n"
+        if $DEBUG > 2;
+      next unless $tax_object->can('tax_on_tax');
+
+      foreach my $tot ( $tax_object->tax_on_tax( $self ) ) {
+        my $totname = ref( $tot ). ' '. $tot->taxnum;
+
+        warn "checking $totname which we call ". $tot->taxname. " as applicable\n"
+          if $DEBUG > 2;
+        next unless exists( $localtaxlisthash{ $totname } ); # only increase
+                                                             # existing taxes
+        warn "adding $totname to taxed taxes\n" if $DEBUG > 2;
+        my $hashref_or_error = 
+          $tax_object->taxline( $localtaxlisthash{$tax},
+                                'custnum'      => $self->custnum,
+                                'invoice_time' => $invoice_time,
+                              );
+        return $hashref_or_error
+          unless ref($hashref_or_error);
+        
+        $taxlisthash->{ $totname } ||= [ $tot ];
+        push @{ $taxlisthash->{ $totname  } }, $hashref_or_error->{amount};
+
+      }
+    }
+
+  }
+
+  '';
+}
+
+sub _gather_taxes {
+  my $self = shift;
+  my $part_pkg = shift;
+  my $class = shift;
+
+  my @taxes = ();
+  my $geocode = $self->geocode('cch');
+
+  my @taxclassnums = map { $_->taxclassnum }
+                     $part_pkg->part_pkg_taxoverride($class);
+
+  unless (@taxclassnums) {
+    @taxclassnums = map { $_->taxclassnum }
+                    grep { $_->taxable eq 'Y' }
+                    $part_pkg->part_pkg_taxrate('cch', $geocode, $class);
+  }
+  warn "Found taxclassnum values of ". join(',', @taxclassnums)
+    if $DEBUG;
+
+  my $extra_sql =
+    "AND (".
+    join(' OR ', map { "taxclassnum = $_" } @taxclassnums ). ")";
+
+  @taxes = qsearch({ 'table' => 'tax_rate',
+                     'hashref' => { 'geocode' => $geocode, },
+                     'extra_sql' => $extra_sql,
+                  })
+    if scalar(@taxclassnums);
+
+  warn "Found taxes ".
+       join(',', map{ ref($_). " ". $_->get($_->primary_key) } @taxes). "\n" 
+   if $DEBUG;
+
+  [ @taxes ];
+
+}
+
+=item collect [ HASHREF | OPTION => VALUE ... ]
+
+(Attempt to) collect money for this customer's outstanding invoices (see
+L<FS::cust_bill>).  Usually used after the bill method.
+
+Actions are now triggered by billing events; see L<FS::part_event> and the
+billing events web interface.  Old-style invoice events (see
+L<FS::part_bill_event>) have been deprecated.
+
+If there is an error, returns the error, otherwise returns false.
+
+Options are passed as name-value pairs.
+
+Currently available options are:
+
+=over 4
+
+=item invoice_time
+
+Use this time when deciding when to print invoices and late notices on those invoices.  The default is now.  It is specified as a UNIX timestamp; see L<perlfunc/"time">).  Also see L<Time::Local> and L<Date::Parse> for conversion functions.
+
+=item retry
+
+Retry card/echeck/LEC transactions even when not scheduled by invoice events.
+
+=item check_freq
+
+"1d" for the traditional, daily events (the default), or "1m" for the new monthly events (part_event.check_freq)
+
+=item quiet
+
+set true to surpress email card/ACH decline notices.
+
+=item debug
+
+Debugging level.  Default is 0 (no debugging), or can be set to 1 (passed-in options), 2 (traces progress), 3 (more information), or 4 (include full search queries)
+
+=back
+
+# =item payby
+#
+# allows for one time override of normal customer billing method
+
+=cut
+
+sub collect {
+  my( $self, %options ) = @_;
+  my $invoice_time = $options{'invoice_time'} || time;
+
+  #put below somehow?
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  $self->select_for_update; #mutex
+
+  if ( $DEBUG ) {
+    my $balance = $self->balance;
+    warn "$me collect customer ". $self->custnum. ": balance $balance\n"
+  }
+
+  if ( exists($options{'retry_card'}) ) {
+    carp 'retry_card option passed to collect is deprecated; use retry';
+    $options{'retry'} ||= $options{'retry_card'};
+  }
+  if ( exists($options{'retry'}) && $options{'retry'} ) {
+    my $error = $self->retry_realtime;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  #never want to roll back an event just because it returned an error
+  local $FS::UID::AutoCommit = 1; #$oldAutoCommit;
+
+  $self->do_cust_event(
+    'debug'      => ( $options{'debug'} || 0 ),
+    'time'       => $invoice_time,
+    'check_freq' => $options{'check_freq'},
+    'stage'      => 'collect',
+  );
+
+}
+
+
+=item apply_payments_and_credits [ OPTION => VALUE ... ]
+
+Applies unapplied payments and credits.
+
+In most cases, this new method should be used in place of sequential
+apply_payments and apply_credits methods.
+
+A hash of optional arguments may be passed.  Currently "manual" is supported.
+If true, a payment receipt is sent instead of a statement when
+'payment_receipt_email' configuration option is set.
+
+If there is an error, returns the error, otherwise returns false.
+
+=cut
+
+sub apply_payments_and_credits {
+  my( $self, %options ) = @_;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  $self->select_for_update; #mutex
+
+  foreach my $cust_bill ( $self->open_cust_bill ) {
+    my $error = $cust_bill->apply_payments_and_credits(%options);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Error applying: $error";
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  ''; #no error
+
+}
+
+=item apply_credits OPTION => VALUE ...
+
+Applies (see L<FS::cust_credit_bill>) unapplied credits (see L<FS::cust_credit>)
+to outstanding invoice balances in chronological order (or reverse
+chronological order if the I<order> option is set to B<newest>) and returns the
+value of any remaining unapplied credits available for refund (see
+L<FS::cust_refund>).
+
+Dies if there is an error.
+
+=cut
+
+sub apply_credits {
+  my $self = shift;
+  my %opt = @_;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  $self->select_for_update; #mutex
+
+  unless ( $self->total_unapplied_credits ) {
+    $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+    return 0;
+  }
+
+  my @credits = sort { $b->_date <=> $a->_date} (grep { $_->credited > 0 }
+      qsearch('cust_credit', { 'custnum' => $self->custnum } ) );
+
+  my @invoices = $self->open_cust_bill;
+  @invoices = sort { $b->_date <=> $a->_date } @invoices
+    if defined($opt{'order'}) && $opt{'order'} eq 'newest';
+
+  if ( $conf->exists('pkg-balances') ) {
+    # limit @credits to those w/ a pkgnum grepped from $self
+    my %pkgnums = ();
+    foreach my $i (@invoices) {
+      foreach my $li ( $i->cust_bill_pkg ) {
+        $pkgnums{$li->pkgnum} = 1;
+      }
+    }
+    @credits = grep { ! $_->pkgnum || $pkgnums{$_->pkgnum} } @credits;
+  }
+
+  my $credit;
+
+  foreach my $cust_bill ( @invoices ) {
+
+    if ( !defined($credit) || $credit->credited == 0) {
+      $credit = pop @credits or last;
+    }
+
+    my $owed;
+    if ( $conf->exists('pkg-balances') && $credit->pkgnum ) {
+      $owed = $cust_bill->owed_pkgnum($credit->pkgnum);
+    } else {
+      $owed = $cust_bill->owed;
+    }
+    unless ( $owed > 0 ) {
+      push @credits, $credit;
+      next;
+    }
+
+    my $amount = min( $credit->credited, $owed );
+    
+    my $cust_credit_bill = new FS::cust_credit_bill ( {
+      'crednum' => $credit->crednum,
+      'invnum'  => $cust_bill->invnum,
+      'amount'  => $amount,
+    } );
+    $cust_credit_bill->pkgnum( $credit->pkgnum )
+      if $conf->exists('pkg-balances') && $credit->pkgnum;
+    my $error = $cust_credit_bill->insert;
+    if ( $error ) {
+      $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+      die $error;
+    }
+    
+    redo if ($cust_bill->owed > 0) && ! $conf->exists('pkg-balances');
+
+  }
+
+  my $total_unapplied_credits = $self->total_unapplied_credits;
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  return $total_unapplied_credits;
+}
+
+=item apply_payments  [ OPTION => VALUE ... ]
+
+Applies (see L<FS::cust_bill_pay>) unapplied payments (see L<FS::cust_pay>)
+to outstanding invoice balances in chronological order.
+
+ #and returns the value of any remaining unapplied payments.
+
+A hash of optional arguments may be passed.  Currently "manual" is supported.
+If true, a payment receipt is sent instead of a statement when
+'payment_receipt_email' configuration option is set.
+
+Dies if there is an error.
+
+=cut
+
+sub apply_payments {
+  my( $self, %options ) = @_;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  $self->select_for_update; #mutex
+
+  #return 0 unless
+
+  my @payments = sort { $b->_date <=> $a->_date }
+                 grep { $_->unapplied > 0 }
+                 $self->cust_pay;
+
+  my @invoices = sort { $a->_date <=> $b->_date}
+                 grep { $_->owed > 0 }
+                 $self->cust_bill;
+
+  if ( $conf->exists('pkg-balances') ) {
+    # limit @payments to those w/ a pkgnum grepped from $self
+    my %pkgnums = ();
+    foreach my $i (@invoices) {
+      foreach my $li ( $i->cust_bill_pkg ) {
+        $pkgnums{$li->pkgnum} = 1;
+      }
+    }
+    @payments = grep { ! $_->pkgnum || $pkgnums{$_->pkgnum} } @payments;
+  }
+
+  my $payment;
+
+  foreach my $cust_bill ( @invoices ) {
+
+    if ( !defined($payment) || $payment->unapplied == 0 ) {
+      $payment = pop @payments or last;
+    }
+
+    my $owed;
+    if ( $conf->exists('pkg-balances') && $payment->pkgnum ) {
+      $owed = $cust_bill->owed_pkgnum($payment->pkgnum);
+    } else {
+      $owed = $cust_bill->owed;
+    }
+    unless ( $owed > 0 ) {
+      push @payments, $payment;
+      next;
+    }
+
+    my $amount = min( $payment->unapplied, $owed );
+
+    my $cust_bill_pay = new FS::cust_bill_pay ( {
+      'paynum' => $payment->paynum,
+      'invnum' => $cust_bill->invnum,
+      'amount' => $amount,
+    } );
+    $cust_bill_pay->pkgnum( $payment->pkgnum )
+      if $conf->exists('pkg-balances') && $payment->pkgnum;
+    my $error = $cust_bill_pay->insert(%options);
+    if ( $error ) {
+      $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+      die $error;
+    }
+
+    redo if ( $cust_bill->owed > 0) && ! $conf->exists('pkg-balances');
+
+  }
+
+  my $total_unapplied_payments = $self->total_unapplied_payments;
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  return $total_unapplied_payments;
+}
+
+1;

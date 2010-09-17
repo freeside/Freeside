@@ -68,6 +68,8 @@ FS/cust_bill_pkg_detail.pm
 FS/cust_credit.pm
 FS/cust_credit_bill.pm
 FS/cust_main.pm
+FS/cust_main/Billing.pm
+FS/cust_main/Billing_Realtime.pm
 FS/cust_main/Import.pm
 FS/cust_main_Mixin.pm
 FS/cust_main_county.pm
