@@ -1,69 +1,77 @@
 <% include('/elements/header.html', $title) %>
 
 <FORM NAME="OneTrueForm" ACTION="email-customers.html" METHOD="POST">
-% foreach my $key ( keys %search ) {
-%   my @values = ref($search{$key}) ? @{$search{$key}} : ( $search{$key} );
-%   foreach my $value ( @values ) {
-      <INPUT TYPE="hidden" NAME="<% $key %>" VALUE="<% $value %>">
-%   }
-% }
+<INPUT TYPE="hidden" NAME="table" VALUE="<% $table %>">
+%# Mixing search params with from address, subject, etc. required special-case
+%# handling of those, risked name conflicts, and caused massive problems with 
+%# multi-valued search params.  We are no longer in search context, so we 
+%# pack the search into a Storable string for later use.
+<INPUT TYPE="hidden" NAME="search" VALUE="<% encode_base64(nfreeze(\%search)) %>">
 
-% if ( $cgi->param('magic') eq 'send' ) {
+% if ( $cgi->param('action') eq 'send' ) { 
 
     <FONT SIZE="+2">Sending notice</FONT>
 
     <% include('/elements/progress-init.html',
                  'OneTrueForm',
-                 [ keys(%search), qw( from subject html_body text_body ) ],
+                 [ qw( search table from subject html_body text_body msgnum ) ],
                  'process/email-customers.html',
                  { 'message' => "Notice sent" }, #would be nice to show #, but..
               )
     %>
 
-% } elsif ( $cgi->param('magic') eq 'preview' ) {
+% } elsif ( $cgi->param('action') eq 'preview' ) {
 
     <FONT SIZE="+2">Preview notice</FONT>
 
 % }
 
-% if ( $cgi->param('magic') ) {
+% if ( $cgi->param('action') ) {
 
     <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+%   if ( $msg_template ) {
+      <% include('/elements/tr-fixed.html',
+                   'label'      => 'Template:',
+                   'value'      => $msg_template->msgname,
+                )
+      %>
+% }
 
       <% include('/elements/tr-fixed.html',
                    'field'      => 'from',
                    'label'      => 'From:',
-                   'value' => scalar( $cgi->param('from') ),
+                   'value' => scalar( $from ),
                 )
       %>
 
       <% include('/elements/tr-fixed.html',
                    'field'      => 'subject',
                    'label'      => 'Subject:',
-                   'value' => scalar( $cgi->param('subject') ),
+                   'value' => scalar( $subject ),
                 )
       %>
 
-      <INPUT TYPE="hidden" NAME="html_body" VALUE="<% $cgi->param('html_body') |h %>">
+      <INPUT TYPE="hidden" NAME="html_body" VALUE="<% $html_body |h %>">
       <TR>
         <TD ALIGN="right" VALIGN="top">Message (HTML display): </TD>
-        <TD CLASS="background" ALIGN="left"><% $cgi->param('html_body') %></TD>
+        <TD CLASS="background" ALIGN="left"><% $html_body %></TD>
       </TR>
 
 %     my $text_body = HTML::FormatText->new(leftmargin=>0)->format(
 %                       HTML::TreeBuilder->new_from_content(
-%                         $cgi->param('html_body')
+%                         $html_body
 %                       )
 %                     );
       <INPUT TYPE="hidden" NAME="text_body" VALUE="<% $text_body |h %>">
       <TR>
         <TD ALIGN="right" VALIGN="top">Message (Text display): </TD>
-        <TD CLASS="background" ALIGN="left"><PRE><% $text_body %></PRE></TD>
+        <TD CLASS="background" STYLE="background-color:white" ALIGN="left"><PRE><% $text_body %></PRE></TD>
       </TR>
 
     </TABLE>
 
-% if ( $cgi->param('magic') eq 'preview' ) {
+% if ( $cgi->param('action') eq 'preview' ) {
 
       <SCRIPT>
         function areyousure(href) {
@@ -72,15 +80,29 @@
       </SCRIPT>
 
       <BR>
-      <INPUT TYPE="hidden" NAME="magic" VALUE="send">
+      <INPUT TYPE="hidden" NAME="action" VALUE="send">
       <INPUT TYPE="submit" VALUE="Send notice" onClick="return areyousure()">
     
 %   }
 
 % } else {
 
-  <TABLE BGCOLOR="#cccccc" CELLSPACING=0 WIDTH="100%">
+<SCRIPT TYPE="text/javascript">
+function toggle(obj) {
+  document.getElementById('table_no_template').style.display = (obj.value == 0) ? '' : 'none';
+}
 
+</SCRIPT>
+Template: 
+    <% include('/elements/select-table.html',
+                  'label'         => 'Template:',
+                  'table'         => 'msg_template',
+                  'name_col'      => 'msgname',
+                  'empty_label'   => '(none)',
+                  'onchange'      => 'toggle(this)',
+              )
+    %><BR>
+  <TABLE BGCOLOR="#cccccc" CELLSPACING=0 WIDTH="100%" id="table_no_template">
     <% include('/elements/tr-input-text.html',
                  'field' => 'from',
                  'label' => 'From:',
@@ -102,15 +124,14 @@
 
 %#Substitution vars:
 
-    <BR><BR>
-    <INPUT TYPE="hidden" NAME="magic" VALUE="preview">
+    <INPUT TYPE="hidden" NAME="action" VALUE="preview">
     <INPUT TYPE="submit" VALUE="Preview notice">
 
 % }
 
 </FORM>
 
-% if ( $cgi->param('magic') eq 'send' ) {
+% if ( $cgi->param('action') eq 'send' ) {
     <SCRIPT TYPE="text/javascript">
       process();
     </SCRIPT>
@@ -123,16 +144,32 @@
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Bulk send customer notices');
 
-my %search = $cgi->Vars;
-delete $search{$_} for qw( magic from subject html_body text_body );
-$search{$_} = [ split(/\0/, $search{$_}) ]
-  foreach grep { $_ eq 'payby' || $search{$_} =~ /\0/ } keys %search;
+my $table = $cgi->param('table') or die "'table' required";
+my %search;
+if ( $cgi->param('search') ) {
+  %search = %{ thaw(decode_base64($cgi->param('search'))) };
+}
+else {
+  %search = $cgi->Vars;
+  delete $search{$_} for qw( action table from subject html_body text_body );
+  # FS::$table->search is expected to know which parameters might be 
+  # multi-valued, and to accept scalar values for them also.  No good 
+  # solution to this since CGI can't tell whether a parameter _might_
+  # have had multiple values, only whether it does.
+  @search{keys %search} = map { /\0/ ? [ split /\0/, $_ ] : $_ } values %search;
+} 
 
-my $title = 'Bulk send customer notices';
+my $title = 'Send bulk customer notices';
 
 my $num_cust;
-if ( $cgi->param('magic') eq 'preview' ) {
-  my $sql_query = FS::cust_main->search(\%search);
+my $from = $cgi->param('from') || '';
+my $subject = $cgi->param('subject') || '';
+my $html_body = $cgi->param('html_body') || '';
+
+my $msg_template = '';
+
+if ( $cgi->param('action') eq 'preview' ) {
+  my $sql_query = "FS::$table"->search(\%search);
   my $count_query = delete($sql_query->{'count_query'});
   my $count_sth = dbh->prepare($count_query)
     or die "Error preparing $count_query: ". dbh->errstr;
@@ -140,6 +177,17 @@ if ( $cgi->param('magic') eq 'preview' ) {
     or die "Error executing $count_query: ". $count_sth->errstr;
   my $count_arrayref = $count_sth->fetchrow_arrayref;
   $num_cust = $count_arrayref->[0];
+
+  if ( $cgi->param('msgnum') ) {
+    $msg_template = qsearchs('msg_template', 
+                             { msgnum => $cgi->param('msgnum') } )
+        or die "template not found: ".$cgi->param('msgnum');
+    $sql_query->{'extra_sql'} .= ' LIMIT 1';
+    $sql_query->{'order_by'} = '';
+    my $cust = qsearchs($sql_query)->cust_main;
+    my %message = $msg_template->prepare( 'cust_main' => $cust );
+    ($from, $subject, $html_body) = @message{'from', 'subject', 'html_body'};
+  }
 }
 
 </%init>

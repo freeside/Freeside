@@ -113,6 +113,126 @@ sub table { 'svc_broadband'; }
 
 sub table_dupcheck_fields { ( 'mac_addr' ); }
 
+=item search HASHREF
+
+Class method which returns a qsearch hash expression to search for parameters
+specified in HASHREF.
+
+Parameters:
+
+=over 4
+
+=item unlinked - set to search for all unlinked services.  Overrides all other options.
+
+=item agentnum
+
+=item custnum
+
+=item svcpart
+
+=item ip_addr
+
+=item pkgpart - arrayref
+
+=item routernum - arrayref
+
+=item order_by
+
+=back
+
+=cut
+
+sub search {
+  my ($class, $params) = @_;
+  my @where = ();
+  my @from = (
+    'LEFT JOIN cust_svc  USING ( svcnum  )',
+    'LEFT JOIN part_svc  USING ( svcpart )',
+    'LEFT JOIN cust_pkg  USING ( pkgnum  )',
+    'LEFT JOIN cust_main USING ( custnum )',
+  );
+
+  # based on FS::svc_acct::search, probably the most mature of the bunch
+  #unlinked
+  push @where, 'pkgnum IS NULL' if $params->{'unlinked'};
+  
+  #agentnum
+  if ( $params->{'agentnum'} =~ /^(\d+)$/ and $1 ) {
+    push @where, "agentnum = $1";
+  }
+  push @where, $FS::CurrentUser::CurrentUser->agentnums_sql(
+    'null_right' => 'View/link unlinked services',
+    'table' => 'cust_main'
+  );
+
+  #custnum
+  if ( $params->{'custnum'} =~ /^(\d+)$/ and $1 ) {
+    push @where, "custnum = $1";
+  }
+
+  #pkgpart, now properly untainted, can be arrayref
+  for my $pkgpart ( $params->{'pkgpart'} ) {
+    if ( ref $pkgpart ) {
+      my $where = join(',', map { /^(\d+)$/ ? $1 : () } @$pkgpart );
+      push @where, "cust_pkg.pkgpart IN ($where)" if $where;
+    }
+    elsif ( $pkgpart =~ /^(\d+)$/ ) {
+      push @where, "cust_pkg.pkgpart = $1";
+    }
+  }
+
+  #routernum, can be arrayref
+  for my $routernum ( $params->{'routernum'} ) {
+    push @from, 'LEFT JOIN addr_block USING ( blocknum )';
+    if ( ref $routernum and grep { $_ } @$routernum ) {
+      my $where = join(',', map { /^(\d+)$/ ? $1 : () } @$routernum );
+      push @where, "addr_block.routernum IN ($where)" if $where;
+    }
+    elsif ( $routernum =~ /^(\d+)$/ ) {
+      push @where, "addr_block.routernum = $1";
+    }
+  }
+ 
+  #svcnum
+  if ( $params->{'svcnum'} =~ /^(\d+)$/ ) {
+    push @where, "svcnum = $1";
+  }
+
+  #svcpart
+  if ( $params->{'svcpart'} =~ /^(\d+)$/ ) {
+    push @where, "svcpart = $1";
+  }
+
+  #ip_addr
+  if ( $params->{'ip_addr'} =~ /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/ ) {
+    push @where, "ip_addr = '$1'";
+  }
+
+  #custnum
+  if ( $params->{'custnum'} =~ /^(\d+)$/ and $1) {
+    push @where, "custnum = $1";
+  }
+  
+  my $addl_from = join(' ', @from);
+  my $extra_sql = '';
+  $extra_sql = 'WHERE '.join(' AND ', @where) if @where;
+  my $count_query = "SELECT COUNT(*) FROM svc_broadband $addl_from $extra_sql";
+  return( {
+      'table'   => 'svc_broadband',
+      'hashref' => {},
+      'select'  => join(', ',
+        'svc_broadband.*',
+        'part_svc.svc',
+        'cust_main.custnum',
+        FS::UI::Web::cust_sql_fields($params->{'cust_fields'}),
+      ),
+      'extra_sql' => $extra_sql,
+      'addl_from' => $addl_from,
+      'order_by'  => "ORDER BY ".($params->{'order_by'} || 'svcnum'),
+      'count_query' => $count_query,
+    } );
+}
+
 =item search_sql STRING
 
 Class method which returns an SQL fragment to search for the given string.

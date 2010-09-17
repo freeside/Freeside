@@ -185,7 +185,7 @@ foreach my $svcdb ( FS::part_svc->svc_tables() ) {
       ];
   }
 
-  if ( $svcdb eq 'svc_acct' ) {
+  if ( $svcdb eq 'svc_acct' || $svcdb eq 'svc_broadband' ) {
     $report_svc{"Advanced $lcsname reports"} = 
       [ $fsurl."search/report_$svcdb.html", '' ];
   }

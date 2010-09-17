@@ -1,0 +1,100 @@
+<% include('/elements/header.html', $title ) %>
+
+<FORM ACTION="svc_broadband.cgi" METHOD="GET">
+<INPUT TYPE="hidden" NAME="magic" VALUE="advanced">
+<INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
+%# extensive false laziness with svc_acct
+  <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+
+    <TR>
+      <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1">Search options</FONT></TH>
+    </TR>
+
+% unless ( $custnum ) {
+    <% include( '/elements/tr-select-agent.html',
+                    'curr_value'    => scalar( $cgi->param('agentnum') ),
+                    'disable_empty' => 0,
+              )
+    %>
+
+    <% include( '/elements/tr-select-table.html',
+                    'label'         => 'Routers',
+                    'table'         => 'router',
+                    'name_col'      => 'routername',
+                    'curr_value'    => $routernum,
+                    'hashref'       => {},
+                    'multiple'      => 'multiple',
+              )
+    %>
+% }
+
+    <% include( '/elements/tr-selectmultiple-part_pkg.html',
+                %pkg_search,
+              )
+    %> 
+
+    <TR>
+      <TH CLASS="background" COLSPAN=2>&nbsp;</TH>
+    </TR>
+ 
+    <TR>
+      <TH CLASS="background" COLSPAN=2 ALIGN="left"><FONT SIZE="+1">Display options</FONT></TH>
+    </TR>
+
+%   #move to /elements/tr-select-cust_pkg-fields if anything else needs it...
+    <TR>
+      <TD ALIGN="right">Package fields</TD>
+      <TD>
+        <SELECT NAME="cust_pkg_fields">
+          <OPTION VALUE="">(none)
+          <OPTION VALUE="setup,last_bill,bill,cancel">Setup date | Last bill date | Next bill date | Cancel date
+        </SELECT>
+      </TD>
+    </TR>
+
+    <% include( '/elements/tr-select-cust-fields.html' ) %>
+                       
+  </TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="Get Report">
+
+</FORM>
+
+<% include('/elements/footer.html') %>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('List packages'); #?
+
+my $title = 'Broadband Service Report';
+my $routernum = [ $cgi->param('routernum') || '' ];
+$routernum = join(',', @$routernum);
+
+#false laziness w/report_cust_pkg.html
+my $custnum = '';
+if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
+  $custnum = $1;
+  my $cust_main = qsearchs({
+    'table'     => 'cust_main', 
+    'hashref'   => { 'custnum' => $custnum },
+    'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+  }) or die "unknown custnum $custnum";
+  $title .= ': '. $cust_main->name;
+}
+
+# exclude one-time charges, disabled packages, and packages with no 
+# broadband services
+my %pkg_search = (
+  'extra_sql'   => "
+WHERE freq != '0' AND disabled IS NULL AND 0 < (
+  SELECT COUNT(*) FROM part_svc JOIN pkg_svc USING ( svcpart ) 
+  WHERE pkg_svc.pkgpart = part_pkg.pkgpart AND part_svc.svcdb = 'svc_broadband'
+  AND pkg_svc.quantity > 0
+)",
+);
+
+</%init>
+<%once>
+
+</%once>

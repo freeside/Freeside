@@ -104,7 +104,7 @@ if ( $FS::CurrentUser::CurrentUser->access_right('Bulk send customer notices') )
   my $query = $uri->query;
 
   push @$menubar, 'Email a notice to these customers' =>
-                    "${p}misc/email-customers.html?$query",
+                    "${p}misc/email-customers.html?table=cust_main&$query",
 
 }
 

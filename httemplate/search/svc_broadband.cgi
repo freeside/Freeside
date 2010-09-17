@@ -1,8 +1,9 @@
 <% include( 'elements/search.html',
               'title'       => 'Broadband Search Results',
               'name'        => 'broadband services',
+              'html_init'   => $html_init,
               'query'       => $sql_query,
-              'count_query' => $count_query,
+              'count_query' => $sql_query->{'count_query'},
               'redirect'    => [ popurl(2). "view/svc_broadband.cgi?", 'svcnum' ],
               'header'      => [ '#',
                                  'Service',
@@ -43,66 +44,29 @@
 %>
 <%init>
 
-die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('List services');
+die "access denied" unless
+  $FS::CurrentUser::CurrentUser->access_right('List services');
 
 my $conf = new FS::Conf;
 
-my $orderby = 'ORDER BY svcnum';
-my %svc_broadband = ();
-my @extra_sql = ();
-if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
-
-  push @extra_sql, 'pkgnum IS NULL'
-    if $cgi->param('magic') eq 'unlinked';
-
-  if ( $cgi->param('sortby') =~ /^(\w+)$/ ) {
-    my $sortby = $1;
-    $orderby = "ORDER BY $sortby";
+my %search_hash;
+if ( $cgi->param('magic') eq 'unlinked' ) {
+  %search_hash = ( 'unlinked' => 1 );
+}
+else {
+  foreach (qw(custnum agentnum svcpart)) {
+    $search_hash{$_} = $cgi->param($_) if $cgi->param($_);
   }
-
-} elsif ( $cgi->param('svcpart') =~ /^(\d+)$/ ) {
-  push @extra_sql, "svcpart = $1";
-} elsif ( $cgi->param('ip_addr') =~ /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/ ) {
-  push @extra_sql, "ip_addr = '$1'";
+  foreach (qw(pkgpart routernum)) {
+    $search_hash{$_} = [ $cgi->param($_) ] if $cgi->param($_);
+  }
 }
 
-my $addl_from = ' LEFT JOIN cust_svc  USING ( svcnum  ) '.
-                ' LEFT JOIN part_svc  USING ( svcpart ) '.
-                ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
-                ' LEFT JOIN cust_main USING ( custnum ) ';
-
-push @extra_sql, $FS::CurrentUser::CurrentUser->agentnums_sql( 
-                   'null_right' => 'View/link unlinked services'
-                 );
-
-my $extra_sql = '';
-if ( @extra_sql ) {
-  $extra_sql = ( keys(%svc_broadband) ? ' AND ' : ' WHERE ' ).
-               join(' AND ', @extra_sql );
+if ( $cgi->param('sortby') =~ /^(\w+)$/ ) {
+  $search_hash{'order_by'} = $1;
 }
 
-my $count_query = "SELECT COUNT(*) FROM svc_broadband $addl_from ";
-#if ( keys %svc_broadband ) {
-#  $count_query .= ' WHERE '.
-#                    join(' AND ', map "$_ = ". dbh->quote($svc_broadband{$_}),
-#                                      keys %svc_broadband
-#                        );
-#}
-$count_query .= $extra_sql;
-
-my $sql_query = {
-  'table'     => 'svc_broadband',
-  'hashref'   => {}, #\%svc_broadband,
-  'select'    => join(', ',
-                   'svc_broadband.*',
-                   'part_svc.svc',
-                    'cust_main.custnum',
-                    FS::UI::Web::cust_sql_fields(),
-                 ),
-  'extra_sql' => $extra_sql,
-  'addl_from' => $addl_from,
-};
+my $sql_query = FS::svc_broadband->search(\%search_hash);
 
 my %routerbyblock = ();
 foreach my $router (qsearch('router', {})) {
@@ -119,5 +83,10 @@ my $link_router = sub { my $routernum = $routerbyblock{shift->blocknum}->routern
                       };
 
 my $link_cust = [ $p.'view/cust_main.cgi?', 'custnum' ];
+
+my $html_init = include('/elements/email-link.html',
+                  'search_hash' => \%search_hash,
+                  'table' => 'svc_broadband' 
+                );
 
 </%init>

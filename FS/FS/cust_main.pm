@@ -2,7 +2,11 @@ package FS::cust_main;
 
 require 5.006;
 use strict;
-use base qw( FS::otaker_Mixin FS::payinfo_Mixin FS::Record );
+use base qw( FS::otaker_Mixin
+             FS::payinfo_Mixin
+             FS::cust_main_Mixin
+             FS::Record
+            );
 use vars qw( @EXPORT_OK $DEBUG $me $conf
              @encrypted_fields
              $import $ignore_expired_card
@@ -8048,7 +8052,7 @@ sub search {
                   ? @{ $params->{'payby'} }
                   :  ( $params->{'payby'} );
 
-    @payby = grep /^([A-Z]{4})$/, @{ $params->{'payby'} };
+    @payby = grep /^([A-Z]{4})$/, @payby;
 
     push @where, '( '. join(' OR ', map "cust_main.payby = '$_'", @payby). ' )'
       if @payby;
@@ -8180,160 +8184,6 @@ sub search {
     'extra_headers' => \@extra_headers,
     'extra_fields'  => \@extra_fields,
   };
-
-}
-
-=item email_search_result HASHREF
-
-(Class method)
-
-Emails a notice to the specified customers.
-
-Valid parameters are those of the L<search> method, plus the following:
-
-=over 4
-
-=item from
-
-From: address
-
-=item subject
-
-Email Subject:
-
-=item html_body
-
-HTML body
-
-=item text_body
-
-Text body
-
-=item job
-
-Optional job queue job for status updates.
-
-=back
-
-Returns an error message, or false for success.
-
-If an error occurs during any email, stops the enture send and returns that
-error.  Presumably if you're getting SMTP errors aborting is better than 
-retrying everything.
-
-=cut
-
-sub email_search_result {
-  my($class, $params) = @_;
-
-  my $from = delete $params->{from};
-  my $subject = delete $params->{subject};
-  my $html_body = delete $params->{html_body};
-  my $text_body = delete $params->{text_body};
-  my $error = '';
-
-  my $job = delete $params->{'job'}
-    or die "email_search_result must run from the job queue.\n";
-
-  $params->{'payby'} = [ split(/\0/, $params->{'payby'}) ]
-    unless ref($params->{'payby'});
-
-  my $sql_query = $class->search($params);
-
-  my $count_query   = delete($sql_query->{'count_query'});
-  my $count_sth = dbh->prepare($count_query)
-    or die "Error preparing $count_query: ". dbh->errstr;
-  $count_sth->execute
-    or die "Error executing $count_query: ". $count_sth->errstr;
-  my $count_arrayref = $count_sth->fetchrow_arrayref;
-  my $num_cust = $count_arrayref->[0];
-
-  #my @extra_headers = @{ delete($sql_query->{'extra_headers'}) };
-  #my @extra_fields  = @{ delete($sql_query->{'extra_fields'})  };
-
-
-  my( $num, $last, $min_sec ) = (0, time, 5); #progresbar foo
-  my @retry_jobs = ();
-  my $success = 0;
-
-  #eventually order+limit magic to reduce memory use?
-  foreach my $cust_main ( qsearch($sql_query) ) {
-
-    #progressbar first, so that the count is right
-    $num++;
-    if ( time - $min_sec > $last ) {
-      my $error = $job->update_statustext(
-        int( 100 * $num / $num_cust )
-      );
-      die $error if $error;
-      $last = time;
-    }
-
-    my $to = $cust_main->invoicing_list_emailonly_scalar;
-
-    if( $to ) {
-      my @message = (
-        'from'      => $from,
-        'to'        => $to,
-        'subject'   => $subject,
-        'html_body' => $html_body,
-        'text_body' => $text_body,
-      );
-
-      $error = send_email( generate_email( @message ) );
-
-      if($error) {
-        # queue the sending of this message so that the user can see what we 
-        # tried to do, and retry if desired
-        my $queue = new FS::queue {
-          'job'        => 'FS::Misc::process_send_email',
-          'custnum'    => $cust_main->custnum,
-          'status'     => 'failed',
-          'statustext' => $error,
-        };
-        $queue->insert(@message);
-        push @retry_jobs, $queue;
-      }
-      else {
-        $success++;
-      }
-    }
-
-    if($success == 0 and 
-        (scalar(@retry_jobs) > 10 or $num == $num_cust)
-      ) {
-      # 10 is arbitrary, but if we have enough failures, that's 
-      # probably a configuration or network problem, and we 
-      # abort the batch and run away screaming.
-      # We NEVER do this if anything was successfully sent.
-      $_->delete foreach (@retry_jobs);
-      return "multiple failures: '$error'\n";
-    }
-  }
-
-  if(@retry_jobs) {
-    # fail the job, but with a status message that makes it clear
-    # something was sent.
-    return "Sent $success, failed ".scalar(@retry_jobs).". Failed attempts placed in job queue.\n";
-  }
-
-  return '';
-}
-
-sub process_email_search_result {
-  my $job = shift;
-  #warn "$me process_re_X $method for job $job\n" if $DEBUG;
-
-  my $param = thaw(decode_base64(shift));
-  warn Dumper($param) if $DEBUG;
-
-  $param->{'job'} = $job;
-
-  $param->{'payby'} = [ split(/\0/, $param->{'payby'}) ]
-    unless ref($param->{'payby'});
-
-  my $error = FS::cust_main->email_search_result( $param );
-  die $error if $error;
 
 }
 

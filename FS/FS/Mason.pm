@@ -113,6 +113,7 @@ if ( -e $addl_handler_use_file ) {
   use Locale::Country;
   use Business::US::USPS::WebTools::AddressStandardization;
   use LWP::UserAgent;
+  use Storable qw( nfreeze thaw );
   use FS;
   use FS::UID qw( getotaker dbh datasrc driver_name );
   use FS::Record qw( qsearch qsearchs fields dbdef

@@ -290,6 +290,10 @@ my $html_init = sub {
                  'height'      => 210,
               ). '<BR>';
     }
+    $text .= include( '/elements/email-link.html',
+                'search_hash' => \%search_hash,
+                'table'       => 'cust_pkg',
+                );
   }
   return $text;
 };
