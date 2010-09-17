@@ -161,7 +161,7 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
     'skip_src_length_more' => { 'name' => 'Do not charge for CDRs where the source is more than this many digits:',
                               },
 
-    'noskip_src_length_accountcode_tollfree' => { 'name' => 'Do charge for CDRs where source is equal or greater than the specified digits and accountcode is toll free',
+    'noskip_src_length_accountcode_tollfree' => { 'name' => 'Do charge for CDRs where source is equal or greater than the specified digits, when accountcode is toll free',
                                                   'type' => 'checkbox',
                                                 },
 
@@ -177,6 +177,10 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
 
     'skip_dst_length_less' => { 'name' => 'Do not charge for CDRs where the destination is less than this many digits:',
                               },
+
+    'noskip_dst_length_accountcode_tollfree' => { 'name' => 'Do charge for CDRs where dst is less than the specified digits, when accountcode is toll free',
+                                                  'type' => 'checkbox',
+                                                },
 
     'skip_lastapp' => { 'name' => 'Do not charge for CDRs where the lastapp matches this value',
                       },
@@ -255,7 +259,9 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                        skip_dstchannel_prefix skip_src_length_more 
                        noskip_src_length_accountcode_tollfree
                        accountcode_tollfree_ratenum
-                       skip_dst_length_less skip_lastapp
+                       skip_dst_length_less
+                       noskip_dst_length_accountcode_tollfree
+                       skip_lastapp
                        use_duration
                        411_rewrite
                        output_format usage_mandate summarize_usage usage_section
@@ -827,7 +833,7 @@ sub check_chargable {
     skip_dcontext
     skip_dstchannel_prefix
     skip_src_length_more noskip_src_length_accountcode_tollfree
-    skip_dst_length_less
+    skip_dst_length_less noskip_dst_length_accountcode_tollfree
     skip_lastapp
   );
   foreach my $opt (grep !exists($flags{option_cache}->{$_}), @opt ) {
@@ -869,7 +875,10 @@ sub check_chargable {
 
   my $dst_length = $opt{'skip_dst_length_less'};
   return "destination less than $dst_length digits"
-    if $dst_length && length($cdr->dst) < $dst_length;
+    if $dst_length && length($cdr->dst) < $dst_length
+    && ! ( $opt{'noskip_dst_length_accountcode_tollfree'}
+            && $cdr->is_tollfree
+         );
 
   return "lastapp is $opt{'skip_lastapp'}"
     if length($opt{'skip_lastapp'}) && $cdr->lastapp eq $opt{'skip_lastapp'};
