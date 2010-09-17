@@ -1181,6 +1181,7 @@ sub order_pkg {
       'svc_domain'   => [ qw( domain ) ],
       'svc_phone'    => [ qw( phonenum pin sip_password phone_name ) ],
       'svc_external' => [ qw( id title ) ],
+      'svc_pbx'      => [ qw( id name ) ],
     );
   
     my $svc_x = "FS::$svcdb"->new( {
@@ -1237,7 +1238,9 @@ sub order_pkg {
     $cust_pkg->reexport;
   }
 
-  return { error => '', pkgnum => $cust_pkg->pkgnum };
+  my $svcnum = $svc[0] ? $svc[0]->svcnum : '';
+
+  return { error=>'', pkgnum=>$cust_pkg->pkgnum, svcnum=>$svcnum };
 
 }
 
