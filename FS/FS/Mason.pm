@@ -142,7 +142,8 @@ if ( -e $addl_handler_use_file ) {
   use FS::cust_bill_pay;
   use FS::cust_credit;
   use FS::cust_credit_bill;
-  use FS::cust_main qw(smart_search);
+  use FS::cust_main;
+  use FS::cust_main::Search qw(smart_search);
   use FS::cust_main::Import;
   use FS::cust_main_county;
   use FS::cust_location;

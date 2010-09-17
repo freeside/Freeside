@@ -634,7 +634,7 @@
 %  }
 %
 %  if ( $last_type{'Fuzzy'} || $last_type{'All'} ) {
-%    push @cust_main, FS::cust_main->fuzzy_search( { 'last' => $last } );
+%    push @cust_main, FS::cust_main::Search->fuzzy_search( { 'last' => $last } );
 %  }
 %
 %  #if ($last_type{'Sound-alike'}) {
@@ -681,7 +681,7 @@
 %  }
 %
 %  if ( $company_type{'Fuzzy'} || $company_type{'All'} ) {
-%    push @cust_main, FS::cust_main->fuzzy_search( { 'company' => $company } );
+%    push @cust_main, FS::cust_main::Search->fuzzy_search( { 'company' => $company } );
 %  }
 %
 %  if ($company_type{'Sound-alike'}) {

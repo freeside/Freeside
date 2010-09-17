@@ -104,13 +104,13 @@ sub FreesideGetConfig {
 
 sub smart_search { #Subroutine
 
-  return map { { $_->hash } } &FS::cust_main::smart_search(@_);
+  return map { { $_->hash } } &FS::cust_main::Search::smart_search(@_);
 
 }
 
 sub email_search { #Subroutine
 
-  return map { { $_->hash } } &FS::cust_main::email_search(@_);
+  return map { { $_->hash } } &FS::cust_main::Search::email_search(@_);
 
 }
 

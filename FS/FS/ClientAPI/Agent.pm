@@ -9,12 +9,37 @@ use Digest::MD5 qw(md5_hex);
 use FS::Record qw(qsearchs); # qsearch dbdef dbh);
 use FS::ClientAPI_SessionCache;
 use FS::agent;
-use FS::cust_main qw(smart_search);
+use FS::cust_main::Search qw(smart_search);
 
 sub _cache {
   $cache ||= new FS::ClientAPI_SessionCache( {
                'namespace' => 'FS::ClientAPI::Agent',
              } );
+}
+
+sub new_agent {
+  my $p = shift;
+
+  my $conf = new FS::Conf;
+  return { error=>'Disabled' } unless $conf->exists('selfservice-agent_signup');
+
+  #add a customer record and set agent_custnum?
+
+  my $agent = new FS::agent {
+    'typenum'   => $conf->config('selfservice-agent_signup-agent_type'),
+    'agent'     => $p->{'agent'},
+    'username'  => $p->{'username'},
+    '_password' => $p->{'password'},
+    #
+  };
+
+  my $error = $agent->insert;
+  
+  return { 'error' => $error } if $error;
+
+  agent_login({ 'username' => $p->{'username'},
+                'password' => $p->{'password'},
+             });
 }
 
 sub agent_login {

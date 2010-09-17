@@ -84,7 +84,7 @@ $search_hash{'current_balance'} =
 # etc
 ###
 
-my $sql_query = FS::cust_main->search(\%search_hash);
+my $sql_query = FS::cust_main::Search->search(\%search_hash);
 my $count_query   = delete($sql_query->{'count_query'});
 my @extra_headers = @{ delete($sql_query->{'extra_headers'}) };
 my @extra_fields  = @{ delete($sql_query->{'extra_fields'})  };

@@ -4,6 +4,7 @@ use strict;
 use vars qw( $conf $DEBUG $me );
 use FS::UID qw( dbh );
 use FS::Record qw( qsearch qsearchs );
+use FS::Misc qw( send_email );
 use FS::payby;
 use FS::cust_pay;
 use FS::cust_pay_pending;
