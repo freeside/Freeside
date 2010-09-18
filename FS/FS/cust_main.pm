@@ -8,7 +8,8 @@ use base qw( FS::cust_main::Billing FS::cust_main::Billing_Realtime
            );
 use vars qw( $DEBUG $me $conf
              @encrypted_fields
-             $import $ignore_expired_card $ignore_illegal_zip
+             $import
+             $ignore_expired_card $ignore_illegal_zip $ignore_banned_card
              $skip_fuzzyfiles @fuzzyfields
              @paytypes
            );
@@ -76,6 +77,7 @@ $me = '[FS::cust_main]';
 $import = 0;
 $ignore_expired_card = 0;
 $ignore_illegal_zip = 0;
+$ignore_banned_card = 0;
 
 $skip_fuzzyfiles = 0;
 @fuzzyfields = ( 'first', 'last', 'company', 'address1' );
@@ -1922,12 +1924,14 @@ sub check {
       if $self->payinfo !~ /^99\d{14}$/ #token
       && cardtype($self->payinfo) eq "Unknown";
 
-    my $ban = qsearchs('banned_pay', $self->_banned_pay_hashref);
-    if ( $ban ) {
-      return 'Banned credit card: banned on '.
-             time2str('%a %h %o at %r', $ban->_date).
-             ' by '. $ban->otaker.
-             ' (ban# '. $ban->bannum. ')';
+    unless ( $ignore_banned_card ) {
+      my $ban = qsearchs('banned_pay', $self->_banned_pay_hashref);
+      if ( $ban ) {
+        return 'Banned credit card: banned on '.
+               time2str('%a %h %o at %r', $ban->_date).
+               ' by '. $ban->otaker.
+               ' (ban# '. $ban->bannum. ')';
+      }
     }
 
     if (length($self->paycvv) && !$self->is_encrypted($self->paycvv)) {
@@ -5546,7 +5550,8 @@ sub _upgrade_data { #class method
 
   local($ignore_expired_card) = 1;
   local($ignore_illegal_zip) = 1;
-  local($skip_fuzzyfiles) = 1;
+  local($ignore_illegal_zip) = 1;
+  local($ignore_banned_card) = 1;
   $class->_upgrade_otaker(%opts);
 
 }
