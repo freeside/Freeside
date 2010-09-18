@@ -4462,6 +4462,25 @@ sub credited_sql {
        WHERE cust_bill.invnum = cust_credit_bill.invnum $start $end  )";
 }
 
+=item due_date_sql
+
+Returns an SQL fragment to retrieve the due date of an invoice.
+Currently only supported on PostgreSQL.
+
+=cut
+
+sub due_date_sql {
+'COALESCE(
+  SUBSTRING(
+    COALESCE(
+      cust_bill.invoice_terms,
+      cust_main.invoice_terms,
+      \''.($conf->config('invoice_default_terms') || '').'\'
+    ), E\'Net (\\\\d+)\'
+  )::INTEGER, 0
+) * 86400 + cust_bill._date'
+}
+
 =item search_sql_where HASHREF
 
 Class method which returns an SQL WHERE fragment to search for parameters
