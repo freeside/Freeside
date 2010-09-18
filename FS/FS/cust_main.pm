@@ -5043,10 +5043,11 @@ sub search {
 
 =cut
 
+use FS::cust_main::Search;
 sub append_fuzzyfiles {
   #my( $first, $last, $company ) = @_;
 
-  &check_and_rebuild_fuzzyfiles;
+  FS::cust_main::Search::check_and_rebuild_fuzzyfiles();
 
   use Fcntl qw(:flock);
 
