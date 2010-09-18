@@ -13,6 +13,7 @@ sub otaker {
     if ( !$access_user && $otaker =~ /^(.+), (.+)$/ ) { #same as below..
       my($lastname, $firstname) = ($1, $2);
       $otaker = lc($firstname.$lastname);
+      $otaker =~ s/ //g;
       $access_user =  qsearchs('access_user', { 'first' => $firstname, 
                                                 'last'  => $lastname  } )
                    || qsearchs('access_user', { 'username' => $otaker } );
@@ -58,6 +59,7 @@ sub _upgrade_otaker {
         if ( $username =~ /^(.+), (.+)$/ ) {
           ($lastname, $firstname) = ($1, $2);
           $username = lc($firstname.$lastname);
+          $username =~ s/ //g;
         }
         my $access_user = new FS::access_user {
           'username'  => $username,
