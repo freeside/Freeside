@@ -8,7 +8,7 @@ use base qw( FS::cust_main::Billing FS::cust_main::Billing_Realtime
            );
 use vars qw( $DEBUG $me $conf
              @encrypted_fields
-             $import $ignore_expired_card
+             $import $ignore_expired_card $ignore_illegal_zip
              $skip_fuzzyfiles @fuzzyfields
              @paytypes
            );
@@ -75,6 +75,7 @@ $me = '[FS::cust_main]';
 
 $import = 0;
 $ignore_expired_card = 0;
+$ignore_illegal_zip = 0;
 
 $skip_fuzzyfiles = 0;
 @fuzzyfields = ( 'first', 'last', 'company', 'address1' );
@@ -1800,9 +1801,13 @@ sub check {
     $self->ut_phonen('daytime', $self->country)
     || $self->ut_phonen('night', $self->country)
     || $self->ut_phonen('fax', $self->country)
-    || $self->ut_zip('zip', $self->country)
   ;
   return $error if $error;
+
+  unless ( $ignore_illegal_zip ) {
+    $error = $self->ut_zip('zip', $self->country);
+    return $error if $error;
+  }
 
   if ( $conf->exists('cust_main-require_phone')
        && ! length($self->daytime) && ! length($self->night)
@@ -1856,10 +1861,13 @@ sub check {
       $self->ut_phonen('ship_daytime', $self->ship_country)
       || $self->ut_phonen('ship_night', $self->ship_country)
       || $self->ut_phonen('ship_fax', $self->ship_country)
-      || $self->ut_zip('ship_zip', $self->ship_country)
     ;
     return $error if $error;
 
+    unless ( $ignore_illegal_zip ) {
+      $error = $self->ut_zip('ship_zip', $self->ship_country);
+      return $error if $error;
+    }
     return "Unit # is required."
       if $self->ship_address2 =~ /^\s*$/
       && $conf->exists('cust_main-require_address2');
@@ -5537,6 +5545,7 @@ sub _upgrade_data { #class method
   $sth->execute or die $sth->errstr;
 
   local($ignore_expired_card) = 1;
+  local($ignore_illegal_zip) = 1;
   local($skip_fuzzyfiles) = 1;
   $class->_upgrade_otaker(%opts);
 
