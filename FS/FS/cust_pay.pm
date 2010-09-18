@@ -798,7 +798,9 @@ sub _upgrade_data {  #class method
   # otaker->usernum upgrade
   ###
 
+  delete $FS::payby::hash{'COMP'}->{cust_pay}; #quelle kludge
   $class->_upgrade_otaker(%opts);
+  $FS::payby::hash{'COMP'}->{cust_pay} = ''; #restore it
 
 }
 
