@@ -1,8 +1,11 @@
 package FS::cust_pkg_reason;
 
 use strict;
+use vars qw( $ignore_empty_action );
 use base qw( FS::otaker_Mixin FS::Record );
 use FS::Record qw( qsearch qsearchs );
+
+$ignore_empty_action = 0;
 
 =head1 NAME
 
@@ -93,11 +96,14 @@ and replace methods.
 sub check {
   my $self = shift;
 
+  my @actions = ( 'A', 'C', 'E', 'S' );
+  push @actions, '' if $ignore_empty_action;
+
   my $error = 
     $self->ut_numbern('num')
     || $self->ut_number('pkgnum')
     || $self->ut_number('reasonnum')
-    || $self->ut_enum('action', [ 'A', 'C', 'E', 'S' ])
+    || $self->ut_enum('action', \@actions)
     || $self->ut_alphan('otaker')
     || $self->ut_numbern('date')
   ;
@@ -135,12 +141,9 @@ sub reasontext {
 
 use FS::h_cust_pkg;
 use FS::h_cust_pkg_reason;
-use FS::Schema qw(dbdef);
 
 sub _upgrade_data { # class method
   my ($class, %opts) = @_;
-
-  return '' unless dbdef->table('cust_pkg_reason')->column('action');
 
   my $action_replace =
     " AND ( history_action = 'replace_old' OR history_action = 'replace_new' )";
@@ -305,6 +308,9 @@ sub _upgrade_data { # class method
       die $error if $error;
     }
   }
+
+  #still can't fill in an action?  don't abort the upgrade
+  local($ignore_empty_action) = 1;
 
   $class->_upgrade_otaker(%opts);
 }
