@@ -29,7 +29,7 @@ sub condition {
 }
 
 sub condition_sql {
-  return '' if $FS::UID::driver_name ne 'Pg';
+  return 'true' if $FS::UID::driver_name ne 'Pg';
   my( $class, $table, %opt ) = @_;
   my ($sec,$min,$hour,$mday,$mon,$year) = (localtime($opt{'time'}))[0..5];
   my $start_of_today = timelocal(0,0,0,$mday,$mon,$year)+1;
