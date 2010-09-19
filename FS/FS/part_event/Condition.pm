@@ -306,6 +306,28 @@ sub condition_sql_option {
    )";
 }
 
+#c.f. part_event_condition_option.pm / part_event_condition_option_option
+#used for part_event/Condition/payby.pm
+sub condition_sql_option_option {
+  my( $class, $option ) = @_;
+
+  ( my $condname = $class ) =~ s/^.*:://;
+
+  my $optionnum = 
+    "( SELECT optionnum FROM part_event_condition_option
+        WHERE part_event_condition_option.eventconditionnum =
+              cond_$condname.eventconditionnum
+          AND part_event_condition_option.optionname  = '$option'
+          AND part_event_condition_option.optionvalue = 'HASH'
+     )";
+
+  "( SELECT optionname FROM part_event_condition_option_option
+       WHERE optionnum = $optionnum
+   )";
+
+}
+
+
 =item condition_sql_option_age_from OPTION FROM_TIMESTAMP
 
 This is a class method that returns an SQL fragment that will retreive a

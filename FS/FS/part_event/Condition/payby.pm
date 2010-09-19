@@ -30,21 +30,15 @@ sub condition {
 
   my $cust_main = $self->cust_main($object);
 
-  #uuh.. all right?  test this.
   my $hashref = $self->option('payby') || {};
   $hashref->{ $cust_main->payby };
 
 }
 
-#sub condition_sql {
-#  my( $self, $table ) = @_;
-#
-#  #uuh... yeah... something like this.  test it for sure.
-#
-#  my @payby = keys %{ $self->option('payby') };
-#
-#  ' ( '. join(' OR ', map { "cust_main.payby = '$_'" } @payby ). ' ) ';
-#
-#}
+sub condition_sql {
+  my( $self, $table ) = @_;
+
+  'cust_main.payby IN '. $self->condition_sql_option_option('payby');
+}
 
 1;
