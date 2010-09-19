@@ -5133,8 +5133,8 @@ sub _upgrade_data { #class method
 
   local($ignore_expired_card) = 1;
   local($ignore_illegal_zip) = 1;
-  local($ignore_illegal_zip) = 1;
   local($ignore_banned_card) = 1;
+  local($skip_fuzzyfiles) = 1;
   $class->_upgrade_otaker(%opts);
 
 }
