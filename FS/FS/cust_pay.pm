@@ -447,17 +447,20 @@ sub send_receipt {
 
   my $conf = new FS::Conf;
 
+  return unless $conf->exists('payment_receipt');
+
   my @invoicing_list = $cust_main->invoicing_list_emailonly;
   return '' unless @invoicing_list;
 
   $cust_bill ||= ($cust_main->cust_bill)[-1]; #rather inefficient though?
 
-  if (    ( exists($opt->{'manual'}) && $opt->{'manual'} )
-       || ! $conf->exists('invoice_html_statement') # XXX msg_template
-       || ! $cust_bill
-     ) {
+  my $error = '';
 
-    my $error = '';
+  if (    ( exists($opt->{'manual'}) && $opt->{'manual'} )
+       || ! $conf->exists('invoice_html_statement')
+       || ! $cust_bill
+     )
+  {
 
     if ( $conf->exists('payment_receipt_msgnum')
          && $conf->config('payment_receipt_msgnum')
@@ -468,6 +471,7 @@ sub send_receipt {
       $error = $msg_template->send('cust_main'=> $cust_main, 'object'=> $self);
 
     } elsif ( $conf->exists('payment_receipt_email') ) {
+
       my $receipt_template = new Text::Template (
         TYPE   => 'ARRAY',
         SOURCE => [ map "$_\n", $conf->config('payment_receipt_email') ],
@@ -510,21 +514,27 @@ sub send_receipt {
         'body'    => [ $receipt_template->fill_in( HASH => \%fill_in ) ],
       );
 
-    } else { # no payment_receipt_msgnum or payment_receipt_email
+    } else {
 
-      my $queue = new FS::queue {
-         'paynum' => $self->paynum,
-         'job'    => 'FS::cust_bill::queueable_email',
-      };
+      warn "payment_receipt is on, but no payment_receipt_msgnum or invoice_html_statement is configured\n";
 
-      $queue->insert(
-        'invnum'   => $cust_bill->invnum,
-        'template' => 'statement',
-      );
     }
+
+  } else { #not manual
+
+    my $queue = new FS::queue {
+       'paynum' => $self->paynum,
+       'job'    => 'FS::cust_bill::queueable_email',
+    };
+
+    $error = $queue->insert(
+      'invnum'   => $cust_bill->invnum,
+      'template' => 'statement',
+    );
+
+  }
   
     warn "send_receipt: $error\n" if $error;
-  } #$opt{manual} || no invoice_html_statement || customer has no invoices
 }
 
 =item cust_bill_pay

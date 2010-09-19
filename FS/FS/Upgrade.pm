@@ -12,7 +12,7 @@ use FS::svc_domain;
 $FS::svc_domain::whois_hack = 1;
 
 @ISA = qw( Exporter );
-@EXPORT_OK = qw( upgrade_schema upgrade upgrade_sqlradius );
+@EXPORT_OK = qw( upgrade_schema upgrade_config upgrade upgrade_sqlradius );
 
 $DEBUG = 1;
 
@@ -32,6 +32,22 @@ database upgrades.
 =head1 SUBROUTINES
 
 =over 4
+
+=item upgrade_config
+
+=cut
+
+#config upgrades
+sub upgrade_config {
+  my %opt = @_;
+
+  my $conf = new FS::Conf;
+
+  $conf->touch('payment_receipt')
+    if $conf->exists('payment_receipt_email')
+    || $conf->config('payment_receipt_msgnum');
+
+}
 
 =item upgrade
 

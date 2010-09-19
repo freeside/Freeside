@@ -1241,6 +1241,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'payment_receipt',
+    'section'     => 'notification',
+    'description' => 'Send payment receipts.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'payment_receipt_msgnum',
     'section'     => 'notification',
     'description' => 'Template to use for payment receipts.',
@@ -2235,6 +2242,32 @@ and customer address. Include units.',
     'section'     => 'self-service',
     'description' => 'If specified, only use this one domain for self-service access.',
     'type'        => 'text',
+  },
+
+  {
+    'key'         => 'selfservice-agent_signup',
+    'section'     => 'self-service',
+    'description' => 'Allow agent signup via self-service.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'selfservice-agent_signup-agent_type',
+    'section'     => 'self-service',
+    'description' => 'Agent type when allowing agent signup via self-service.',
+    'type'        => 'select-sub',
+    'options_sub' => sub { require FS::Record;
+                           require FS::agent_type;
+			   map { $_->typenum => $_->atype }
+                               FS::Record::qsearch('agent_type', {} ); # disabled=>'' } );
+			 },
+    'option_sub'  => sub { require FS::Record;
+                           require FS::agent_type;
+			   my $agent = FS::Record::qsearchs(
+			     'agent_type', { 'typenum'=>shift }
+			   );
+                           $agent_type ? $agent_type->atype : '';
+			 },
   },
 
   {
