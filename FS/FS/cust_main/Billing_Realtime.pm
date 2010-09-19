@@ -2,6 +2,7 @@ package FS::cust_main::Billing_Realtime;
 
 use strict;
 use vars qw( $conf $DEBUG $me );
+use vars qw( $realtime_bop_decline_quiet ); #ugh
 use FS::UID qw( dbh );
 use FS::Record qw( qsearch qsearchs );
 use FS::Misc qw( send_email );
@@ -10,7 +11,7 @@ use FS::cust_pay;
 use FS::cust_pay_pending;
 use FS::cust_refund;
 
-#$realtime_bop_decline_quiet = 0;
+$realtime_bop_decline_quiet = 0;
 
 # 1 is mostly method/subroutine entry and options
 # 2 traces progress of some operations
@@ -887,7 +888,7 @@ sub _realtime_bop_result {
 
     }
 
-    if ( !$options{'quiet'} && !$FS::cust_main::realtime_bop_decline_quiet
+    if ( !$options{'quiet'} && !$realtime_bop_decline_quiet
          && $conf->exists('emaildecline')
          && grep { $_ ne 'POST' } $self->invoicing_list
          && ! grep { $transaction->error_message =~ /$_/ }

@@ -13,7 +13,6 @@ use vars qw( $DEBUG $me $conf
              $skip_fuzzyfiles @fuzzyfields
              @paytypes
            );
-use vars qw( $realtime_bop_decline_quiet ); #ugh
 use Carp;
 use Scalar::Util qw( blessed );
 use List::Util qw( min );
@@ -56,8 +55,6 @@ use FS::cust_tag;
 use FS::prepay_credit;
 use FS::queue;
 use FS::part_pkg;
-use FS::part_event;
-use FS::part_event_condition;
 use FS::part_export;
 #use FS::cust_event;
 use FS::type_pkgs;
@@ -65,8 +62,6 @@ use FS::payment_gateway;
 use FS::agent_payment_gateway;
 use FS::banned_pay;
 use FS::TicketSystem;
-
-$realtime_bop_decline_quiet = 0; #move to Billing_Realtime
 
 # 1 is mostly method/subroutine entry and options
 # 2 traces progress of some operations
@@ -2126,7 +2121,7 @@ sub location_hash {
       #fields that cust_location has
 }
 
-=item all_pkgs [ EXTRA_QSEARCH_PARAMS_HASHREF ]
+=item all_pkgs [ OPTION => VALUE... | EXTRA_QSEARCH_PARAMS_HASHREF ]
 
 Returns all packages (see L<FS::cust_pkg>) for this customer.
 
@@ -2134,18 +2129,18 @@ Returns all packages (see L<FS::cust_pkg>) for this customer.
 
 sub all_pkgs {
   my $self = shift;
-  my $extra_qsearch = ref($_[0]) ? shift : {};
+  my $extra_qsearch = ref($_[0]) ? shift : { @_ };
 
-  return $self->num_pkgs unless wantarray || keys(%$extra_qsearch);
+  return $self->num_pkgs unless wantarray || keys %$extra_qsearch;
 
   my @cust_pkg = ();
-  if ( $self->{'_pkgnum'} ) {
+  if ( $self->{'_pkgnum'} && ! keys %$extra_qsearch ) {
     @cust_pkg = values %{ $self->{'_pkgnum'}->cache };
   } else {
     @cust_pkg = $self->_cust_pkg($extra_qsearch);
   }
 
-  sort sort_packages @cust_pkg;
+  map { $_ } sort sort_packages @cust_pkg;
 }
 
 =item cust_pkg
@@ -2668,453 +2663,6 @@ sub classname {
 
 Documentation on billing methods has been moved to
 L<FS::cust_main::Billing>.
-
-=item do_cust_event [ HASHREF | OPTION => VALUE ... ]
-
-Runs billing events; see L<FS::part_event> and the billing events web
-interface.
-
-If there is an error, returns the error, otherwise returns false.
-
-Options are passed as name-value pairs.
-
-Currently available options are:
-
-=over 4
-
-=item time
-
-Use this time when deciding when to print invoices and late notices on those invoices.  The default is now.  It is specified as a UNIX timestamp; see L<perlfunc/"time">).  Also see L<Time::Local> and L<Date::Parse> for conversion functions.
-
-=item check_freq
-
-"1d" for the traditional, daily events (the default), or "1m" for the new monthly events (part_event.check_freq)
-
-=item stage
-
-"collect" (the default) or "pre-bill"
-
-=item quiet
- 
-set true to surpress email card/ACH decline notices.
-
-=item debug
-
-Debugging level.  Default is 0 (no debugging), or can be set to 1 (passed-in options), 2 (traces progress), 3 (more information), or 4 (include full search queries)
-
-=cut
-
-# =item payby
-#
-# allows for one time override of normal customer billing method
-
-# =item retry
-#
-# Retry card/echeck/LEC transactions even when not scheduled by invoice events.
-
-sub do_cust_event {
-  my( $self, %options ) = @_;
-  my $time = $options{'time'} || time;
-
-  #put below somehow?
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
-
-  my $oldAutoCommit = $FS::UID::AutoCommit;
-  local $FS::UID::AutoCommit = 0;
-  my $dbh = dbh;
-
-  $self->select_for_update; #mutex
-
-  if ( $DEBUG ) {
-    my $balance = $self->balance;
-    warn "$me do_cust_event customer ". $self->custnum. ": balance $balance\n"
-  }
-
-#  if ( exists($options{'retry_card'}) ) {
-#    carp 'retry_card option passed to collect is deprecated; use retry';
-#    $options{'retry'} ||= $options{'retry_card'};
-#  }
-#  if ( exists($options{'retry'}) && $options{'retry'} ) {
-#    my $error = $self->retry_realtime;
-#    if ( $error ) {
-#      $dbh->rollback if $oldAutoCommit;
-#      return $error;
-#    }
-#  }
-
-  # false laziness w/pay_batch::import_results
-
-  my $due_cust_event = $self->due_cust_event(
-    'debug'      => ( $options{'debug'} || 0 ),
-    'time'       => $time,
-    'check_freq' => $options{'check_freq'},
-    'stage'      => ( $options{'stage'} || 'collect' ),
-  );
-  unless( ref($due_cust_event) ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $due_cust_event;
-  }
-
-  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-  #never want to roll back an event just because it or a different one
-  # returned an error
-  local $FS::UID::AutoCommit = 1; #$oldAutoCommit;
-
-  foreach my $cust_event ( @$due_cust_event ) {
-
-    #XXX lock event
-    
-    #re-eval event conditions (a previous event could have changed things)
-    unless ( $cust_event->test_conditions( 'time' => $time ) ) {
-      #don't leave stray "new/locked" records around
-      my $error = $cust_event->delete;
-      return $error if $error;
-      next;
-    }
-
-    {
-      local $realtime_bop_decline_quiet = 1 if $options{'quiet'};
-      warn "  running cust_event ". $cust_event->eventnum. "\n"
-        if $DEBUG > 1;
-
-      #if ( my $error = $cust_event->do_event(%options) ) { #XXX %options?
-      if ( my $error = $cust_event->do_event() ) {
-        #XXX wtf is this?  figure out a proper dealio with return value
-        #from do_event
-        return $error;
-      }
-    }
-
-  }
-
-  '';
-
-}
-
-=item due_cust_event [ HASHREF | OPTION => VALUE ... ]
-
-Inserts database records for and returns an ordered listref of new events due
-for this customer, as FS::cust_event objects (see L<FS::cust_event>).  If no
-events are due, an empty listref is returned.  If there is an error, returns a
-scalar error message.
-
-To actually run the events, call each event's test_condition method, and if
-still true, call the event's do_event method.
-
-Options are passed as a hashref or as a list of name-value pairs.  Available
-options are:
-
-=over 4
-
-=item check_freq
-
-Search only for events of this check frequency (how often events of this type are checked); currently "1d" (daily, the default) and "1m" (monthly) are recognized.
-
-=item stage
-
-"collect" (the default) or "pre-bill"
-
-=item time
-
-"Current time" for the events.
-
-=item debug
-
-Debugging level.  Default is 0 (no debugging), or can be set to 1 (passed-in options), 2 (traces progress), 3 (more information), or 4 (include full search queries)
-
-=item eventtable
-
-Only return events for the specified eventtable (by default, events of all eventtables are returned)
-
-=item objects
-
-Explicitly pass the objects to be tested (typically used with eventtable).
-
-=item testonly
-
-Set to true to return the objects, but not actually insert them into the
-database.
-
-=back
-
-=cut
-
-sub due_cust_event {
-  my $self = shift;
-  my %opt = ref($_[0]) ? %{ $_[0] } : @_;
-
-  #???
-  #my $DEBUG = $opt{'debug'}
-  local($DEBUG) = $opt{'debug'}
-    if defined($opt{'debug'}) && $opt{'debug'} > $DEBUG;
-
-  warn "$me due_cust_event called with options ".
-       join(', ', map { "$_: $opt{$_}" } keys %opt). "\n"
-    if $DEBUG;
-
-  $opt{'time'} ||= time;
-
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
-
-  my $oldAutoCommit = $FS::UID::AutoCommit;
-  local $FS::UID::AutoCommit = 0;
-  my $dbh = dbh;
-
-  $self->select_for_update #mutex
-    unless $opt{testonly};
-
-  ###
-  # find possible events (initial search)
-  ###
-  
-  my @cust_event = ();
-
-  my @eventtable = $opt{'eventtable'}
-                     ? ( $opt{'eventtable'} )
-                     : FS::part_event->eventtables_runorder;
-
-  foreach my $eventtable ( @eventtable ) {
-
-    my @objects;
-    if ( $opt{'objects'} ) {
-
-      @objects = @{ $opt{'objects'} };
-
-    } else {
-
-      #my @objects = $self->eventtable(); # sub cust_main { @{ [ $self ] }; }
-      @objects = ( $eventtable eq 'cust_main' )
-                   ? ( $self )
-                   : ( $self->$eventtable() );
-
-    }
-
-    my @e_cust_event = ();
-
-    my $cross = "CROSS JOIN $eventtable";
-    $cross .= ' LEFT JOIN cust_main USING ( custnum )'
-      unless $eventtable eq 'cust_main';
-
-    foreach my $object ( @objects ) {
-
-      #this first search uses the condition_sql magic for optimization.
-      #the more possible events we can eliminate in this step the better
-
-      my $cross_where = '';
-      my $pkey = $object->primary_key;
-      $cross_where = "$eventtable.$pkey = ". $object->$pkey();
-
-      my $join = FS::part_event_condition->join_conditions_sql( $eventtable );
-      my $extra_sql =
-        FS::part_event_condition->where_conditions_sql( $eventtable,
-                                                        'time'=>$opt{'time'}
-                                                      );
-      my $order = FS::part_event_condition->order_conditions_sql( $eventtable );
-
-      $extra_sql = "AND $extra_sql" if $extra_sql;
-
-      #here is the agent virtualization
-      $extra_sql .= " AND (    part_event.agentnum IS NULL
-                            OR part_event.agentnum = ". $self->agentnum. ' )';
-
-      $extra_sql .= " $order";
-
-      warn "searching for events for $eventtable ". $object->$pkey. "\n"
-        if $opt{'debug'} > 2;
-      my @part_event = qsearch( {
-        'debug'     => ( $opt{'debug'} > 3 ? 1 : 0 ),
-        'select'    => 'part_event.*',
-        'table'     => 'part_event',
-        'addl_from' => "$cross $join",
-        'hashref'   => { 'check_freq' => ( $opt{'check_freq'} || '1d' ),
-                         'eventtable' => $eventtable,
-                         'disabled'   => '',
-                       },
-        'extra_sql' => "AND $cross_where $extra_sql",
-      } );
-
-      if ( $DEBUG > 2 ) {
-        my $pkey = $object->primary_key;
-        warn "      ". scalar(@part_event).
-             " possible events found for $eventtable ". $object->$pkey(). "\n";
-      }
-
-      push @e_cust_event, map { $_->new_cust_event($object) } @part_event;
-
-    }
-
-    warn "    ". scalar(@e_cust_event).
-         " subtotal possible cust events found for $eventtable\n"
-      if $DEBUG > 1;
-
-    push @cust_event, @e_cust_event;
-
-  }
-
-  warn "  ". scalar(@cust_event).
-       " total possible cust events found in initial search\n"
-    if $DEBUG; # > 1;
-
-
-  ##
-  # test stage
-  ##
-
-  $opt{stage} ||= 'collect';
-  @cust_event =
-    grep { my $stage = $_->part_event->event_stage;
-           $opt{stage} eq $stage or ( ! $stage && $opt{stage} eq 'collect' )
-         }
-         @cust_event;
-
-  ##
-  # test conditions
-  ##
-  
-  my %unsat = ();
-
-  @cust_event = grep $_->test_conditions( 'time'          => $opt{'time'},
-                                          'stats_hashref' => \%unsat ),
-                     @cust_event;
-
-  warn "  ". scalar(@cust_event). " cust events left satisfying conditions\n"
-    if $DEBUG; # > 1;
-
-  warn "    invalid conditions not eliminated with condition_sql:\n".
-       join('', map "      $_: ".$unsat{$_}."\n", keys %unsat )
-    if keys %unsat && $DEBUG; # > 1;
-
-  ##
-  # insert
-  ##
-
-  unless( $opt{testonly} ) {
-    foreach my $cust_event ( @cust_event ) {
-
-      my $error = $cust_event->insert();
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return $error;
-      }
-                                       
-    }
-  }
-
-  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-
-  ##
-  # return
-  ##
-
-  warn "  returning events: ". Dumper(@cust_event). "\n"
-    if $DEBUG > 2;
-
-  \@cust_event;
-
-}
-
-=item retry_realtime
-
-Schedules realtime / batch  credit card / electronic check / LEC billing
-events for for retry.  Useful if card information has changed or manual
-retry is desired.  The 'collect' method must be called to actually retry
-the transaction.
-
-Implementation details: For either this customer, or for each of this
-customer's open invoices, changes the status of the first "done" (with
-statustext error) realtime processing event to "failed".
-
-=cut
-
-sub retry_realtime {
-  my $self = shift;
-
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
-
-  my $oldAutoCommit = $FS::UID::AutoCommit;
-  local $FS::UID::AutoCommit = 0;
-  my $dbh = dbh;
-
-  #a little false laziness w/due_cust_event (not too bad, really)
-
-  my $join = FS::part_event_condition->join_conditions_sql;
-  my $order = FS::part_event_condition->order_conditions_sql;
-  my $mine = 
-  '( '
-   . join ( ' OR ' , map { 
-    "( part_event.eventtable = " . dbh->quote($_) 
-    . " AND tablenum IN( SELECT " . dbdef->table($_)->primary_key . " from $_ where custnum = " . dbh->quote( $self->custnum ) . "))" ;
-   } FS::part_event->eventtables)
-   . ') ';
-
-  #here is the agent virtualization
-  my $agent_virt = " (    part_event.agentnum IS NULL
-                       OR part_event.agentnum = ". $self->agentnum. ' )';
-
-  #XXX this shouldn't be hardcoded, actions should declare it...
-  my @realtime_events = qw(
-    cust_bill_realtime_card
-    cust_bill_realtime_check
-    cust_bill_realtime_lec
-    cust_bill_batch
-  );
-
-  my $is_realtime_event = ' ( '. join(' OR ', map "part_event.action = '$_'",
-                                                  @realtime_events
-                                     ).
-                          ' ) ';
-
-  my @cust_event = qsearchs({
-    'table'     => 'cust_event',
-    'select'    => 'cust_event.*',
-    'addl_from' => "LEFT JOIN part_event USING ( eventpart ) $join",
-    'hashref'   => { 'status' => 'done' },
-    'extra_sql' => " AND statustext IS NOT NULL AND statustext != '' ".
-                   " AND $mine AND $is_realtime_event AND $agent_virt $order" # LIMIT 1"
-  });
-
-  my %seen_invnum = ();
-  foreach my $cust_event (@cust_event) {
-
-    #max one for the customer, one for each open invoice
-    my $cust_X = $cust_event->cust_X;
-    next if $seen_invnum{ $cust_event->part_event->eventtable eq 'cust_bill'
-                          ? $cust_X->invnum
-                          : 0
-                        }++
-         or $cust_event->part_event->eventtable eq 'cust_bill'
-            && ! $cust_X->owed;
-
-    my $error = $cust_event->retry;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "error scheduling event for retry: $error";
-    }
-
-  }
-
-  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-  '';
-
-}
-
-
-=cut
 
 =item REALTIME BILLING METHODS
 
@@ -4178,17 +3726,29 @@ sub charge_postal_fee {
   $error ? $error : $cust_pkg;
 }
 
-=item cust_bill
+=item cust_bill [ OPTION => VALUE... | EXTRA_QSEARCH_PARAMS_HASHREF ]
 
 Returns all the invoices (see L<FS::cust_bill>) for this customer.
+
+Optionally, a list or hashref of additional arguments to the qsearch call can
+be passed.
 
 =cut
 
 sub cust_bill {
   my $self = shift;
-  map { $_ } #return $self->num_cust_bill unless wantarray;
-  sort { $a->_date <=> $b->_date }
-    qsearch('cust_bill', { 'custnum' => $self->custnum, } )
+  my $opt = ref($_[0]) ? shift : { @_ };
+
+  #return $self->num_cust_bill unless wantarray || keys %$opt;
+
+  $opt->{'table'} = 'cust_bill';
+  $opt->{'hashref'} ||= {}; #i guess it would autovivify anyway...
+  $opt->{'hashref'}{'custnum'} = $self->custnum;
+  $opt->{'order_by'} ||= 'ORDER BY _date ASC';
+
+  map { $_ } #behavior of sort undefined in scalar context
+    sort { $a->_date <=> $b->_date }
+      qsearch($opt);
 }
 
 =item open_cust_bill
@@ -4201,26 +3761,36 @@ customer.
 sub open_cust_bill {
   my $self = shift;
 
-  qsearch({
-    'table'     => 'cust_bill',
-    'hashref'   => { 'custnum' => $self->custnum, },
+  $self->cust_bill(
     'extra_sql' => ' AND '. FS::cust_bill->owed_sql. ' > 0',
-    'order_by'  => 'ORDER BY _date ASC',
-  });
+    #@_
+  );
 
 }
 
-=item cust_statements
+=item cust_statement [ OPTION => VALUE... | EXTRA_QSEARCH_PARAMS_HASHREF ]
 
 Returns all the statements (see L<FS::cust_statement>) for this customer.
+
+Optionally, a list or hashref of additional arguments to the qsearch call can
+be passed.
 
 =cut
 
 sub cust_statement {
   my $self = shift;
-  map { $_ } #return $self->num_cust_statement unless wantarray;
-  sort { $a->_date <=> $b->_date }
-    qsearch('cust_statement', { 'custnum' => $self->custnum, } )
+  my $opt = ref($_[0]) ? shift : { @_ };
+
+  #return $self->num_cust_statement unless wantarray || keys %$opt;
+
+  $opt->{'table'} = 'cust_statement';
+  $opt->{'hashref'} ||= {}; #i guess it would autovivify anyway...
+  $opt->{'hashref'}{'custnum'} = $self->custnum;
+  $opt->{'order_by'} ||= 'ORDER BY _date ASC';
+
+  map { $_ } #behavior of sort undefined in scalar context
+    sort { $a->_date <=> $b->_date }
+      qsearch($opt);
 }
 
 =item cust_credit
@@ -4311,17 +3881,29 @@ sub cust_pay_void {
     qsearch( 'cust_pay_void', { 'custnum' => $self->custnum } )
 }
 
-=item cust_pay_batch
+=item cust_pay_batch [ OPTION => VALUE... | EXTRA_QSEARCH_PARAMS_HASHREF ]
 
 Returns all batched payments (see L<FS::cust_pay_void>) for this customer.
+
+Optionally, a list or hashref of additional arguments to the qsearch call can
+be passed.
 
 =cut
 
 sub cust_pay_batch {
   my $self = shift;
-  map { $_ } #return $self->num_cust_pay_batch unless wantarray;
-  sort { $a->paybatchnum <=> $b->paybatchnum }
-    qsearch( 'cust_pay_batch', { 'custnum' => $self->custnum } )
+  my $opt = ref($_[0]) ? shift : { @_ };
+
+  #return $self->num_cust_statement unless wantarray || keys %$opt;
+
+  $opt->{'table'} = 'cust_pay_batch';
+  $opt->{'hashref'} ||= {}; #i guess it would autovivify anyway...
+  $opt->{'hashref'}{'custnum'} = $self->custnum;
+  $opt->{'order_by'} ||= 'ORDER BY paybatchnum ASC';
+
+  map { $_ } #behavior of sort undefined in scalar context
+    sort { $a->paybatchnum <=> $b->paybatchnum }
+      qsearch($opt);
 }
 
 =item cust_pay_pending

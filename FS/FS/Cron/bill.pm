@@ -194,6 +194,7 @@ sub bill_where {
     )
 END
 
+  #some false laziness w/cust_main::Billing due_cust_event
   my $where_event = join(' OR ', map {
     my $eventtable = $_;
 
