@@ -11,7 +11,7 @@ use FS::Schema qw( dbdef dbdef_dist reload_dbdef );
 use FS::Misc::prune qw(prune_applications);
 use FS::Conf;
 use FS::Record qw(qsearch);
-use FS::Upgrade qw(upgrade_schema upgrade upgrade_sqlradius);
+use FS::Upgrade qw(upgrade_schema upgrade_config upgrade upgrade_sqlradius);
 
 my $start = time;
 
@@ -197,6 +197,14 @@ $FS::UID::AutoCommit = 1;
 $dbh = adminsuidsetup($user);
 
 warn "Re-initialization with updated schema completed in ". (time-$start). " seconds\n"; # if $DEBUG;
+$start = time;
+
+upgrade_config()
+  unless $DRY_RUN || $opt_s;
+
+$dbh->commit or die $dbh->errstr;
+
+warn "Config updates completed in ". (time-$start). " seconds\n"; # if $DEBUG;
 $start = time;
 
 upgrade()

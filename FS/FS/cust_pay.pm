@@ -447,7 +447,7 @@ sub send_receipt {
 
   my $conf = new FS::Conf;
 
-  return unless $conf->exists('payment_receipt');
+  return '' unless $conf->exists('payment_receipt');
 
   my @invoicing_list = $cust_main->invoicing_list_emailonly;
   return '' unless @invoicing_list;
