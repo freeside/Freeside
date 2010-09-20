@@ -3,6 +3,7 @@ package FS::cust_main::Billing;
 use strict;
 use vars qw( $conf $DEBUG $me );
 use Carp;
+use List::Util qw( min );
 use FS::UID qw( dbh );
 use FS::Record qw( qsearch qsearchs dbdef );
 use FS::cust_bill;
