@@ -268,6 +268,8 @@ L<FS::cust_main::Billing> - Customer billing class
 
 L<FS::cust_main::Billing_Realtime> - Customer real-time billing class
 
+L<FS::cust_main::Packages> - Customer packages class
+
 L<FS::cust_location> - Customer location class
 
 L<FS::cust_main_Mixin> - Mixin class for records that contain fields from cust_main

@@ -3,6 +3,7 @@ package FS::cust_main::Billing_Realtime;
 use strict;
 use vars qw( $conf $DEBUG $me );
 use vars qw( $realtime_bop_decline_quiet ); #ugh
+use Digest::MD5 qw(md5_base64);
 use FS::UID qw( dbh );
 use FS::Record qw( qsearch qsearchs );
 use FS::Misc qw( send_email );
@@ -30,7 +31,7 @@ FS::cust_main::Billing_Realtime - Realtime billing mixin for cust_main
 
 =head1 SYNOPSIS
 
-=head1 DESCRIPTIONS
+=head1 DESCRIPTION
 
 These methods are available on FS::cust_main objects.
 

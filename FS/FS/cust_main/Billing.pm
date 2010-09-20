@@ -37,7 +37,7 @@ FS::cust_main::Billing - Billing mixin for cust_main
 
 =head1 SYNOPSIS
 
-=head1 DESCRIPTIONS
+=head1 DESCRIPTION
 
 These methods are available on FS::cust_main objects.
 
@@ -2021,5 +2021,13 @@ sub apply_payments {
 
   return $total_unapplied_payments;
 }
+
+=head1 BUGS
+
+=head1 SEE ALSO
+
+L<FS::cust_main>, L<FS::cust_main::Billing_Realtime>
+
+=cut
 
 1;
