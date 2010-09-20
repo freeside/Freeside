@@ -1,9 +1,12 @@
 package FS::Maestro;
 
+use strict;
 use Date::Format;
 use FS::Conf;
 use FS::Record qw( qsearchs );
 use FS::cust_main;
+use FS::cust_pkg;
+use FS::part_svc;
 
 sub customer_status {
   my( $custnum ) = shift; #@_;
@@ -135,6 +138,105 @@ sub customer_status {
     'good_till' => $good_till,
     %result,
   };
+
+}
+
+#some false laziness w/ MyAccount order_pkg
+sub order_pkg {
+  my $opt = ref($_[0]) ? shift : { @_ };
+
+  $opt->{'title'} = delete $opt->{'name'}
+    if !exists($opt->{'title'}) && exists($opt->{'name'});
+
+  my $custnum = $opt->{'custnum'};
+
+  my $curuser = $FS::CurrentUser::CurrentUser;
+
+  my $cust_main = qsearchs({
+    'table'     => 'cust_main',
+    'hashref'   => { 'custnum' => $custnum },
+    'extra_sql' => ' AND '. $curuser->agentnums_sql,
+  })
+    or return { 'error'  => "custnum $custnum not found" };
+
+  my $status = $cust_main->status;
+  #false laziness w/ClientAPI/Signup.pm
+
+  my $cust_pkg = new FS::cust_pkg ( {
+    'custnum' => $custnum,
+    'pkgpart' => $opt->{'pkgpart'},
+  } );
+  my $error = $cust_pkg->check;
+  return { 'error' => $error } if $error;
+
+  my @svc = ();
+  unless ( $opt->{'svcpart'} eq 'none' ) {
+
+    my $svcpart = '';
+    if ( $opt->{'svcpart'} =~ /^(\d+)$/ ) {
+      $svcpart = $1;
+    } else {
+      $svcpart = $cust_pkg->part_pkg->svcpart; #($svcdb);
+    }
+
+    my $part_svc = qsearchs('part_svc', { 'svcpart' => $svcpart } );
+    return { 'error' => "Unknown svcpart $svcpart" } unless $part_svc;
+
+    my $svcdb = $part_svc->svcdb;
+
+    my %fields = (
+      'svc_acct'     => [ qw( username domsvc _password sec_phrase popnum ) ],
+      'svc_domain'   => [ qw( domain ) ],
+      'svc_phone'    => [ qw( phonenum pin sip_password phone_name ) ],
+      'svc_external' => [ qw( id title ) ],
+      'svc_pbx'      => [ qw( id title ) ],
+    );
+  
+    my $svc_x = "FS::$svcdb"->new( {
+      'svcpart'   => $svcpart,
+      map { $_ => $opt->{$_} } @{$fields{$svcdb}}
+    } );
+    
+    #snarf processing not necessary here (or probably at all, anymore)
+    
+    my $y = $svc_x->setdefault; # arguably should be in new method
+    return { 'error' => $y } if $y && !ref($y);
+  
+    $error = $svc_x->check;
+    return { 'error' => $error } if $error;
+
+    push @svc, $svc_x;
+
+  }
+
+  use Tie::RefHash;
+  tie my %hash, 'Tie::RefHash';
+  %hash = ( $cust_pkg => \@svc );
+  #msgcat
+  $error = $cust_main->order_pkgs( \%hash, '', 'noexport' => 1 );
+  return { 'error' => $error } if $error;
+
+# currently they're using this in the reseller scenario, so don't
+# bill the package immediately
+#  my $conf = new FS::Conf;
+#  if ( $conf->exists('signup_server-realtime') ) {
+#
+#    my $bill_error = _do_bop_realtime( $cust_main, $status );
+#
+#    if ($bill_error) {
+#      $cust_pkg->cancel('quiet'=>1);
+#      return $bill_error;
+#    } else {
+#      $cust_pkg->reexport;
+#    }
+#
+#  } else {
+    $cust_pkg->reexport;
+#  }
+
+  my $svcnum = $svc[0] ? $svc[0]->svcnum : '';
+
+  return { error=>'', pkgnum=>$cust_pkg->pkgnum, svcnum=>$svcnum };
 
 }
 
