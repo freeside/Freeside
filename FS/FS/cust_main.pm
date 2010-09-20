@@ -2188,7 +2188,7 @@ sub batch_card {
   return '' unless $amount > 0;
   
   my $invnum = delete $options{invnum};
-  my $payby = $options{invnum} || $self->payby;  #dubious
+  my $payby = $options{payby} || $self->payby;  #still dubious
 
   if ($options{'realtime'}) {
     return $self->realtime_bop( FS::payby->payby2bop($self->payby),
