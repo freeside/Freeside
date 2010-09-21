@@ -95,6 +95,10 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                      'select_label' => 'ratename',
                    },
 
+    'min_included' => { 'name' => 'Minutes included when using "single price per minute" rating method',
+                    },
+
+
     'min_charge' => { 'name' => 'Charge per minute when using "single price per minute" rating method',
                     },
 
@@ -185,7 +189,7 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
     'skip_lastapp' => { 'name' => 'Do not charge for CDRs where the lastapp matches this value: ',
                       },
 
-    'skip_max_callers' => { 'name' => 'Do not charge for CDRs where max_callers is greater than this value: ',
+    'skip_max_callers' => { 'name' => 'Do not charge for CDRs where max_callers is less than or equal to this value: ',
                           },
 
     'use_duration'   => { 'name' => 'Calculate usage based on the duration field instead of the billsec field',
@@ -908,10 +912,10 @@ sub check_chargable {
 
   }
 
-  return "max_callers > $opt{skip_max_callers}"
+  return "max_callers <= $opt{skip_max_callers}"
     if length($opt{'skip_max_callers'})
       and length($cdr->max_callers)
-      and $cdr->max_callers > $opt{'skip_max_callers'};
+      and $cdr->max_callers <= $opt{'skip_max_callers'};
 
   #all right then, rate it
   '';
