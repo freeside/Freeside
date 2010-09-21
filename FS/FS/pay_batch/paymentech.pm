@@ -2,6 +2,7 @@ package FS::pay_batch::paymentech;
 
 use strict;
 use vars qw(@ISA %import_info %export_info $name);
+use FS::Record 'qsearchs';
 use Time::Local;
 use Date::Format 'time2str';
 use Date::Parse 'str2time';
@@ -12,6 +13,8 @@ my $conf;
 my ($bin, $merchantID, $terminalID, $username);
 $name = 'paymentech';
 
+my $gateway;
+
 %import_info = (
   filetype    => 'XML',
   xmlrow         => [ qw(transResponse newOrderResp) ],
@@ -19,18 +22,42 @@ $name = 'paymentech';
     'paybatchnum',
     '_date',
     'approvalStatus',
+    'order_number',
+    'authorization',
     ],
   xmlkeys     => [
     'orderID',
     'respDateTime',
     'approvalStatus',
+    'txRefNum',
+    'authorizationCode',
     ],
   'hook'        => sub {
+      if ( !$gateway ) {
+        # find a gateway configuration that has the same merchantID 
+        # as the batch config, if there is one.  If not, leave 
+        # gateway out entirely.
+        my $merchant = (FS::Conf->new->config('batchconfig-paymentech'))[2];
+        my $g = qsearchs({
+              'table'     => 'payment_gateway',
+              'addl_from' => ' JOIN payment_gateway_option USING (gatewaynum) ',
+              'hashref'   => {  disabled    => '',
+                                optionname  => 'merchant_id',
+                                optionvalue => $merchant,
+                              },
+              });
+        $gateway = ($g ? $g->gatewaynum . '-' : '') . 'PaymenTech';
+      }
       my ($hash, $oldhash) = @_;
       my ($mon, $day, $year, $hour, $min, $sec) = 
         $hash->{'_date'} =~ /^(..)(..)(....)(..)(..)(..)$/;
       $hash->{'_date'} = timelocal($sec, $min, $hour, $day, $mon-1, $year);
       $hash->{'paid'} = $oldhash->{'amount'};
+      $hash->{'paybatch'} = join(':', 
+        $gateway,
+        $hash->{'authorization'},
+        $hash->{'order_number'},
+      );
     },
   'approved'    => sub { my $hash = shift;
                             $hash->{'approvalStatus'} 

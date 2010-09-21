@@ -373,7 +373,7 @@ sub import_results {
       my $cust_pay = new FS::cust_pay ( {
         'custnum'  => $custnum,
 	'payby'    => $payby,
-        'paybatch' => $self->batchnum,
+        'paybatch' => $hash{'paybatch'} || $self->batchnum,
         'payinfo'  => ( $hash{'payinfo'} || $cust_pay_batch->payinfo ),
         map { $_ => $hash{$_} } (qw( paid _date )),
       } );
