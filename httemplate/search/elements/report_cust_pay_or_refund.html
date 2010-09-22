@@ -17,6 +17,7 @@ Examples:
 
 <FORM ACTION="<% $table %>.html" METHOD="GET">
 <INPUT TYPE="hidden" NAME="magic" VALUE="_date">
+<INPUT TYPE="hidden" NAME="unapplied" VALUE="<% $unapplied %>">
 
 <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
 
@@ -138,8 +139,11 @@ die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Financial reports');
 
 my $void = $cgi->param('void') ? 1 : 0;
+my $unapplied = $cgi->param('unapplied') ? 1 : 0;
 
-my $title = $void ? "Voided $name_singular report" : "\u$name_singular report";
+my $title = $void ? "Voided $name_singular report" :
+            $unapplied ? "Unapplied $name_singular report" :
+            "\u$name_singular report" ;
 $table .= '_void' if $void;
 
 </%init>

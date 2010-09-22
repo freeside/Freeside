@@ -1,7 +1,8 @@
-<% include('/elements/header.html', 'Credit report' ) %>
+<% include('/elements/header.html', $title ) %>
 
 <FORM ACTION="cust_credit.html" METHOD="GET">
 <INPUT TYPE="hidden" NAME="magic" VALUE="_date">
+<INPUT TYPE="hidden" NAME="unapplied" VALUE="<% $unapplied %>">
 
 <TABLE>
 
@@ -48,5 +49,9 @@ my %access_user =
   map { $_ => qsearchs('access_user',{'usernum'=>$_})->username }
       @usernum;
 
+my $unapplied = $cgi->param('unapplied') ? 1 : 0;
+
+my $title = $cgi->param('unapplied') ? 
+              'Unapplied credit report' : 'Credit report';
 
 </%init>

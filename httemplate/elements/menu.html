@@ -259,6 +259,7 @@ $report_payments{'Pending Payments'} = [ $fsurl.'search/cust_pay_pending.html?ma
   if $curuser->access_right('View customer pending payments');
 $report_payments{'Voided Payments'} = [ $fsurl.'search/report_cust_pay.html?void=1', 'Voided payment report (by type and/or date range)' ]
   if $curuser->access_right('View customer pending payments');
+$report_payments{'Unapplied Payments'} = [ $fsurl.'search/report_cust_pay.html?unapplied=1', 'Unapplied payment report (by type and/or date range)' ];
 $report_payments{'Payment Batches'} = [ $fsurl.'search/pay_batch.html', 'Payment batches (by status and/or date range)' ]
   if $conf->exists('batch-enable') || $conf->config('batch-enable_payby');
 $report_payments{'Unapplied Payment Aging'} = [ $fsurl.'search/report_unapplied_cust_pay.html', 'Unapplied payment aging report' ];
@@ -272,7 +273,9 @@ if($curuser->access_right('Financial reports')) {
     'Rated Call Sales Report' => [ $fsurl.'graph/report_cust_bill_pkg_detail.html', 'Sales report and graph (by agent, package class, usage class and/or date range)' ],
     'Employee Commission Report' => [ $fsurl.'search/report_employee_commission.html', '' ],
     'Credit Report' => [ $fsurl.'search/report_cust_credit.html', 'Credit report (by employee and/or date range)' ],
+    'Unapplied Credits' => [ $fsurl.'search/report_cust_credit.html?unapplied=1', 'Unapplied credit report (by type and/or date range)' ],
     'Refund Report' => [ $fsurl.'search/report_cust_refund.html', 'Refund report (by type and/or date range)' ],
+    'Unapplied Refunds' => [ $fsurl.'search/report_cust_refund.html?unapplied=1', 'Unapplied refund report (by type and/or date range)' ],
     'Package Costs Report' => [ $fsurl.'graph/report_cust_pkg_cost.html', 'Package setup and recurring costs graph' ],
   );
   $report_financial{'A/R Aging'} = [ $fsurl.'search/report_receivables.html', 'Accounts Receivable Aging report' ];

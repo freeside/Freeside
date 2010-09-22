@@ -44,7 +44,7 @@ Examples:
                 'name_singular'  => $name_singular,
                 'query'          => $sql_query,
                 'count_query'    => $count_query,
-                'count_addl'     => [ '$%.2f total '.$opt{name_verb}, ],
+                'count_addl'     => \@count_addl,
                 'redirect_empty' => $opt{'redirect_empty'},
                 'header'         => \@header,
                 'fields'         => \@fields,
@@ -68,7 +68,10 @@ my $table = $opt{'table'} || 'cust_'.$opt{'thing'};
 my $amount_field = $opt{'amount_field'};
 my $name_singular = $opt{'name_singular'};
 
-my $title = "\u$name_singular Search Results";
+my $unapplied = $cgi->param('unapplied');
+my $title = '';
+$title = 'Unapplied ' if $unapplied;
+$title .= "\u$name_singular Search Results";
 
 my $link = '';
 if (    ( $curuser->access_right('View invoices') #XXX for now
@@ -143,14 +146,24 @@ if ( $opt{'pre_header'} ) {
 
 push @header, "\u$name_singular",
               'Amount',
-              'Date',
 ;
-$align .= 'rrr';
-push @links, '', '', '';
+$align .= 'rr';
+push @links, '', '';
 push @fields, 'payby_payinfo_pretty',
               sub { sprintf('$%.2f', shift->$amount_field() ) },
-              sub { time2str('%b %d %Y', shift->_date ) },
 ;
+
+if ( $unapplied ) {
+  push @header, 'Unapplied';
+  $align .= 'r';
+  push @links, '';
+  push @fields, sub { sprintf('$%.2f', shift->unapplied_amount) };
+}
+
+push @header, 'Date';
+$align .= 'r';
+push @links, '';
+push @fields, sub { time2str('%b %d %Y', shift->_date ) };
 
 unless ( $opt{'disable_by'} ) {
   push @header, 'By';
@@ -192,10 +205,17 @@ push @header, @{ $opt{'addl_header'} }
 push @fields, @{ $opt{'addl_fields'} }
   if $opt{'addl_fields'};
 
-my( $count_query, $sql_query );
+my( $count_query, $sql_query, @count_addl );
 if ( $cgi->param('magic') ) {
 
   my @search = ();
+  my @select = (
+    "$table.*",
+    FS::UI::Web::cust_sql_fields(),
+    'cust_main.custnum AS cust_main_custnum',
+  );
+  push @select, $tax_names if $tax_names;
+
   my $orderby;
   if ( $cgi->param('magic') eq '_date' ) {
 
@@ -328,6 +348,13 @@ if ( $cgi->param('magic') ) {
     die "unknown search magic: ". $cgi->param('magic');
   }
 
+  #unapplied payment/refund
+  if ( $unapplied ) {
+    push @select, '(' . "FS::$table"->unapplied_sql . ') AS unapplied_amount';
+    push @search, "FS::$table"->unapplied_sql . ' > 0';
+
+  }
+
   #for the history search
   if ( $cgi->param('history_action') =~ /^([\w,]+)$/ ) {
     my @history_action = split(/,/, $1);
@@ -374,18 +401,18 @@ if ( $cgi->param('magic') ) {
 
   my $search = ' WHERE '. join(' AND ', @search);
 
-  $count_query = "SELECT COUNT(*), SUM($amount_field) ".
-                 "FROM $table $addl_from".
-                 "$search $group_by";
+  $count_query = "SELECT COUNT(*), SUM($amount_field) ";
+  $count_query .= ', SUM(' . "FS::$table"->unapplied_sql . ') ' 
+    if $unapplied;
+  $count_query .= "FROM $table $addl_from".
+                  "$search $group_by";
+
+  @count_addl = ( '$%.2f total '.$opt{name_verb} );
+  push @count_addl, '$%.2f unapplied' if $unapplied;
 
   $sql_query = {
     'table'     => $table,
-    'select'    => join(', ',
-                     "$table.*",
-                     ( $tax_names ? $tax_names : () ),
-                     'cust_main.custnum as cust_main_custnum',
-                     FS::UI::Web::cust_sql_fields(),
-                   ),
+    'select'    => join(', ', @select),
     'hashref'   => {},
     'extra_sql' => "$search $group_by ORDER BY $orderby",
     'addl_from' => $addl_from,
@@ -404,6 +431,7 @@ if ( $cgi->param('magic') ) {
   $count_query = "SELECT COUNT(*), SUM($amount_field) FROM $table".
                  "  WHERE payinfo = '$payinfo' AND payby = '$payby'".
                  "  AND ". $curuser->agentnums_sql;
+  @count_addl = ( '$%.2f total '.$opt{name_verb} );
 
   $sql_query = {
     'table'     => $table,
@@ -414,5 +442,8 @@ if ( $cgi->param('magic') ) {
   };
 
 }
+
+# for consistency
+$title = join('',map {ucfirst} split(/\b/,$title));
 
 </%init>
