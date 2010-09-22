@@ -4,6 +4,7 @@ use strict;
 use vars qw( $conf $DEBUG $me );
 use vars qw( $realtime_bop_decline_quiet ); #ugh
 use Digest::MD5 qw(md5_base64);
+use Business::CreditCard 0.28;
 use FS::UID qw( dbh );
 use FS::Record qw( qsearch qsearchs );
 use FS::Misc qw( send_email );
