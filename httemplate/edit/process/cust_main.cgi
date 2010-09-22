@@ -73,6 +73,10 @@ if ( defined($cgi->param('same')) && $cgi->param('same') eq "Y" ) {
   );
 }
 
+if ( $cgi->param('no_credit_limit') ) {
+  $new->setfield('credit_limit', '');
+}
+
 $new->tagnum( [ $cgi->param('tagnum') ] );
 
 my %usedatetime = ( 'birthdate' => 1 );

@@ -417,6 +417,18 @@
         %>
       </TD>
     </TR>
+    <TR>
+      <TD ALIGN="right" WIDTH="200">Credit limit </TD>
+      <TD WIDTH="408">
+        <SCRIPT TYPE="text/javascript">
+function toggle(obj) {
+  obj.form.credit_limit.disabled = obj.checked;
+}
+        </SCRIPT>
+        <INPUT TYPE="text" NAME="credit_limit" VALUE=<% sprintf('"%.2f"', $cust_main->credit_limit) %><% length($cust_main->credit_limit) ? '' : ' DISABLED' %>>
+        <INPUT TYPE="checkbox" NAME="no_credit_limit" VALUE=1 onclick="toggle(this)"<% length($cust_main->credit_limit) ? '' : ' CHECKED'%>> Unlimited
+      </TD>
+    </TR>
 
 % if ( $conf->exists('voip-cust_cdr_spools') ) { 
       <TR>

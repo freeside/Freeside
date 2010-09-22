@@ -206,6 +206,14 @@ Billing information
     <% $cust_main->invoice_terms || 'Default ('. ( $conf->config('invoice_default_terms') || 'Payable upon receipt' ). ')' %>
   </TD>
 </TR>
+<TR>
+  <TD ALIGN="right">Credit&nbsp;limit</TD>
+  <TD BGCOLOR="#ffffff">
+    <% length($cust_main->credit_limit) ? 
+        $money_char.sprintf("%.2f", $cust_main->credit_limit) :
+        'Unlimited' %>
+  </TD>
+</TR>
 
 % if ( $conf->exists('voip-cust_cdr_spools') ) { 
   <TR>

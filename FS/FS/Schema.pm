@@ -768,6 +768,7 @@ sub tables_hashref {
         'squelch_cdr','char', 'NULL', 1, '', '', 
         'cdr_termination_percentage', 'decimal', 'NULL', '', '', '',
         'invoice_terms', 'varchar', 'NULL', $char_d, '', '',
+        'credit_limit', @money_typen, '', '',
         'archived', 'char', 'NULL', 1, '', '',
         'email_csv_cdr', 'char', 'NULL', 1, '', '',
       ],
