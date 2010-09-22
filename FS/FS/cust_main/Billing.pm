@@ -3,6 +3,7 @@ package FS::cust_main::Billing;
 use strict;
 use vars qw( $conf $DEBUG $me );
 use Carp;
+use Data::Dumper;
 use List::Util qw( min );
 use FS::UID qw( dbh );
 use FS::Record qw( qsearch qsearchs dbdef );
@@ -628,6 +629,7 @@ jurisdictions (i.e. Texas) have tax exemptions which are date sensitive.
 =back
 
 =cut
+
 sub calculate_taxes {
   my ($self, $cust_bill_pkg, $taxlisthash, $invoice_time) = @_;
 

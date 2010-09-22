@@ -3,6 +3,7 @@ package FS::cust_main::Billing_Realtime;
 use strict;
 use vars qw( $conf $DEBUG $me );
 use vars qw( $realtime_bop_decline_quiet ); #ugh
+use Data::Dumper;
 use Digest::MD5 qw(md5_base64);
 use Business::CreditCard 0.28;
 use FS::UID qw( dbh );
