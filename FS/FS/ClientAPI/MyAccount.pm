@@ -357,6 +357,11 @@ sub customer_info {
       $return{support_services} = \@support_services;
     }
 
+    if ( $conf->config('prepayment_discounts-credit_type') ) {
+      #need to eval?
+      $return{discount_terms_hash} = { $cust_main->discount_terms_hash };
+    }
+
   } elsif ( $session->{'svcnum'} ) { #no customer record
 
     my $svc_acct = qsearchs('svc_acct', { 'svcnum' => $session->{'svcnum'} } )
@@ -459,10 +464,10 @@ sub payment_info {
   #generic
   ##
 
+  my $conf = new FS::Conf;
   use vars qw($payment_info); #cache for performance
   unless ( $payment_info ) {
 
-    my $conf = new FS::Conf;
     my %states = map { $_->state => 1 }
                    qsearch('cust_main_county', {
                      'country' => $conf->config('countrydefault') || 'US'
@@ -555,6 +560,11 @@ sub payment_info {
 
   }
 
+  if ( $conf->config('prepayment_discounts-credit_type') ) {
+    #need to eval?
+    $return{discount_terms_hash} = { $cust_main->discount_terms_hash };
+  }
+
   #doubleclick protection
   my $_date = time;
   $return{paybatch} = "webui-MyAccount-$_date-$$-". rand() * 2**32;
@@ -585,6 +595,10 @@ sub process_payment {
     or return { 'error' => gettext('illegal_amount') };
   my $amount = $1;
   return { error => 'Amount must be greater than 0' } unless $amount > 0;
+
+  $p->{'discount_term'} =~ /^\s*(\d+)\s*$/
+    or return { 'error' => gettext('illegal_discount_term'). ': '. $p->{'discount_term'} };
+  my $discount_term = $1;
 
   $p->{'payname'} =~ /^([\w \,\.\-\']+)$/
     or return { 'error' => gettext('illegal_name'). " payname: ". $p->{'payname'} };
@@ -664,6 +678,7 @@ sub process_payment {
     'paybatch' => $paybatch, #this doesn't actually do anything
     'paycvv'   => $paycvv,
     'pkgnum'   => $session->{'pkgnum'},
+    'discount_term' => $discount_term,
     map { $_ => $p->{$_} } @{ $payby2fields{$payby} }
   );
   return { 'error' => $error } if $error;
@@ -1728,6 +1743,7 @@ sub _custoragent_session_custnum {
     $custnum = $p->{'custnum'};
 
   } else {
+    $context = 'error';
     return ( 'error' => "Can't resume session" ); #better error message
   }
 

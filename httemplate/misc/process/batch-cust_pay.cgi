@@ -11,12 +11,13 @@
 %  #while ( exists($param->{"custnum$row"}) ) {
 %  for ( my $row = 0; exists($param->{"custnum$row"}); $row++ ) {
 %    push @cust_pay, new FS::cust_pay {
-%                                       'custnum'  => $param->{"custnum$row"},
-%                                       'paid'     => $param->{"paid$row"},
-%                                       'payby'    => 'BILL',
-%                                       'payinfo'  => $param->{"payinfo$row"},
-%                                       'paybatch' => $paybatch,
-%                                     }
+%                      'custnum'        => $param->{"custnum$row"},
+%                      'paid'           => $param->{"paid$row"},
+%                      'payby'          => 'BILL',
+%                      'payinfo'        => $param->{"payinfo$row"},
+%                      'discount_term'  => $param->{"discount_term$row"},
+%                      'paybatch'       => $paybatch,
+%                    }
 %      if    $param->{"custnum$row"}
 %         || $param->{"paid$row"}
 %         || $param->{"payinfo$row"};

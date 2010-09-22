@@ -162,6 +162,45 @@ sub cust_unlinked_msg {
 Adds this invoice to the database ("Posts" the invoice).  If there is an error,
 returns the error, otherwise returns false.
 
+=cut
+
+sub insert {
+  my $self = shift;
+  warn "$me insert called\n" if $DEBUG;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = $self->SUPER::insert;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  if ( $self->get('cust_bill_pkg') ) {
+    foreach my $cust_bill_pkg ( @{$self->get('cust_bill_pkg')} ) {
+      $cust_bill_pkg->invnum($self->invnum);
+      my $error = $cust_bill_pkg->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "can't create invoice line item: $error";
+      }
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+
+}
+
 =item delete
 
 This method now works but you probably shouldn't use it.  Instead, apply a

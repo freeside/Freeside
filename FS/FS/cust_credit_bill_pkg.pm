@@ -106,7 +106,10 @@ sub insert {
   my $payable = $self->cust_bill_pkg->payable($self->setuprecur);
   my $taxable = $self->_is_taxable ? $payable : 0;
   my $part_pkg = $self->cust_bill_pkg->part_pkg;
-  my $freq = $part_pkg ? $part_pkg->freq || 1 : 1;# assume unchanged
+  my $freq = $self->cust_bill_pkg->freq;
+  unless ($freq) {
+    $freq = $part_pkg ? ($part_pkg->freq || 1) : 1;#fallback.. assumes unchanged
+  }
   my $taxable_per_month = sprintf("%.2f", $taxable / $freq );
   my $credit_per_month = sprintf("%.2f", $self->amount / $freq ); #pennies?
 
@@ -334,13 +337,13 @@ sub cust_bill_pkg_tax_Xlocation {
 B<setuprecur> field is a kludge to compensate for cust_bill_pkg having separate
 setup and recur fields.  It should be removed once that's fixed.
 
-B<insert> method assumes that the frequency of the package associated with the
-associated line item remains unchanged during the lifetime of the system.
-It may get the tax exemption adjustments wrong if package definitions change
-frequency.  The presense of delete methods in FS::cust_main_county and
-FS::tax_rate makes crediting of old "texas tax" unreliable in the presense of
-changing taxes.  Explicit tax credit requests?  Carry 'taxable' onto line
-items?
+B<insert> method used to assume that the frequency of the package associated
+with the associated line item remained unchanged during the lifetime of the
+system.  That is still used as a fallback.  It may get the tax exemption
+adjustments wrong if package definitions change frequency.  The presense of
+delete methods in FS::cust_main_county and FS::tax_rate makes crediting of
+old "texas tax" unreliable in the presense of changing taxes.  Explicit tax
+credit requests?  Carry 'taxable' onto line items?
 
 =head1 SEE ALSO
 

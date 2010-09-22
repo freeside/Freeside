@@ -1,0 +1,32 @@
+% if ( scalar(@discount_term) ) {
+    <SELECT NAME="discount_term">
+      <OPTION VALUE="">1 month
+%   foreach my $discount_term (@discount_term) {
+%     my $sel = ( $cgi->param('discount_term') == $discount_term ) ? 'SELECTED' : '';
+      <OPTION <% $sel %> VALUE="<% $discount_term %>"><% $discount_term. " months" %>
+%   }
+    </SELECT>
+% }
+<%init>
+
+my %opt = @_;
+
+my $cgi = $opt{'cgi'};
+
+my @discount_term;
+if ( $opt{discount_term} ) {
+
+  @discount_term = @{ $opt{discount_term} };
+
+} else {
+
+  my $custnum = $opt{'custnum'};
+
+  my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
+    or die "unknown custnum $custnum\n";
+
+  @discount_term = $cust_main->discount_terms;
+
+}
+
+</%init>

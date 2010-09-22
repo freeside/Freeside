@@ -14,7 +14,15 @@ Hello <%= $name %>!<BR><BR>
   if (scalar(grep $_, @hide_payment_fields)) {
     $OUT .= qq! <B><A HREF="${url}make_thirdparty_payment&payby_method=CC">Make a payment</A></B><BR><BR>!;
   } else {
-    $OUT .= qq! <B><A HREF="${url}make_payment">Make a payment</A></B><BR><BR>!;
+    $OUT .= qq! <B><A HREF="${url}make_payment">Make a payment</A></B><BR>!;
+    foreach my $term ( sort { $b <=> $a } keys %discount_terms_hash ) {
+      my $saved = $discount_terms_hash{$term}->[1];
+      my $amount = $discount_terms_hash{$term}->[2];
+      my $savings = ( $amount + $saved > 0 )
+                    ? sprintf('%d', $saved / ( $amount + $saved ) * 100 ) : '0';
+      $OUT .= qq! <B><A HREF="${url}make_term_payment;discount_term=$term;amount=$amount">Save $savings\% by paying for $term months: $amount</A></B><BR>!;
+    }
+    $OUT .= qq! <BR>!;
   }
 } %>
 <%=

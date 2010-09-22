@@ -138,6 +138,8 @@ I<session_id> is a session identifier associated with this payment.
 
 I<depend_jobnum> allows payment capture to unlock export jobs
 
+I<discount_term> attempts to take a discount by prepaying for discount_term
+
 (moved from cust_bill) (probably should get realtime_{card,ach,lec} here too)
 
 =cut
@@ -746,6 +748,7 @@ sub _realtime_bop_result {
        'paybatch' => $paybatch,
        'paydate'  => $cust_pay_pending->paydate,
        'pkgnum'   => $cust_pay_pending->pkgnum,
+       'discount_term' => $options{'discount_term'},
     } );
     #doesn't hurt to know, even though the dup check is in cust_pay_pending now
     $cust_pay->payunique( $options{payunique} )

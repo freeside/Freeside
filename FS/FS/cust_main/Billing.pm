@@ -243,6 +243,16 @@ Options are passed as name-value pairs.  Currently available options are:
 
 If set true, re-charges setup fees.
 
+=item recurring_only
+
+If set true then only bill recurring charges, not setup, usage, one time
+charges, etc.
+
+=item freq_override
+
+If set, then override the normal frequency and look for a part_pkg_discount
+to take at that frequency.
+
 =item time
 
 Bills the customer as if it were that time.  Specified as a UNIX timestamp; see L<perlfunc/"time">).  Also see L<Time::Local> and L<Date::Parse> for conversion functions.  For example:
@@ -271,6 +281,18 @@ This boolean value informs the us that the package is being cancelled.  This
 typically might mean not charging the normal recurring fee but only usage
 fees since the last billing. Setup charges may be charged.  Not all package
 plans support this feature (they tend to charge 0).
+
+=item no_usage_reset
+
+Prevent the resetting of usage limits during this call.
+
+=item no_commit
+
+Do not save the generated bill in the database.  Useful with return_bill
+
+=item return_bill
+
+A list reference on which the generated bill(s) will be returned.
 
 =item invoice_terms
 
@@ -320,9 +342,10 @@ sub bill {
     'time'       => $invoice_time,
     'check_freq' => $options{'check_freq'},
     'stage'      => 'pre-bill',
-  );
+  )
+    unless $options{no_commit};
   if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
+    $dbh->rollback if $oldAutoCommit && !$options{no_commit};
     return $error;
   }
 
@@ -387,7 +410,7 @@ sub bill {
                             'options'             => \%options,
                           );
       if ($error) {
-        $dbh->rollback if $oldAutoCommit;
+        $dbh->rollback if $oldAutoCommit && !$options{no_commit};
         return $error;
       }
 
@@ -415,7 +438,7 @@ sub bill {
       my $postal_pkg = $self->charge_postal_fee();
       if ( $postal_pkg && !ref( $postal_pkg ) ) {
 
-        $dbh->rollback if $oldAutoCommit;
+        $dbh->rollback if $oldAutoCommit && !$options{no_commit};
         return "can't charge postal invoice fee for customer ".
           $self->custnum. ": $postal_pkg";
 
@@ -444,7 +467,7 @@ sub bill {
                                 'options'             => \%postal_options,
                               );
           if ($error) {
-            $dbh->rollback if $oldAutoCommit;
+            $dbh->rollback if $oldAutoCommit && !$options{no_commit};
             return $error;
           }
         }
@@ -460,7 +483,7 @@ sub bill {
       $self->calculate_taxes( \@cust_bill_pkg, $taxlisthash{$pass}, $invoice_time);
 
     unless ( ref( $listref_or_error ) ) {
-      $dbh->rollback if $oldAutoCommit;
+      $dbh->rollback if $oldAutoCommit && !$options{no_commit};
       return $listref_or_error;
     }
 
@@ -511,6 +534,7 @@ sub bill {
     #my $balance_adjustments =
     #  sprintf('%.2f', $balance - $prior_prior_balance - $prior_charged);
 
+    warn "creating the new invoice\n" if $DEBUG;
     #create the new invoice
     my $cust_bill = new FS::cust_bill ( {
       'custnum'             => $self->custnum,
@@ -519,35 +543,29 @@ sub bill {
       'billing_balance'     => $balance,
       'previous_balance'    => $previous_balance,
       'invoice_terms'       => $options{'invoice_terms'},
+      'cust_bill_pkg'       => \@cust_bill_pkg,
     } );
-    $error = $cust_bill->insert;
+    $error = $cust_bill->insert unless $options{no_commit};
     if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
+      $dbh->rollback if $oldAutoCommit && !$options{no_commit};
       return "can't create invoice for customer #". $self->custnum. ": $error";
     }
-
-    foreach my $cust_bill_pkg ( @cust_bill_pkg ) {
-      $cust_bill_pkg->invnum($cust_bill->invnum); 
-      my $error = $cust_bill_pkg->insert;
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return "can't create invoice line item: $error";
-      }
-    }
+    push @{$options{return_bill}}, $cust_bill if $options{return_bill};
 
   } #foreach my $pass ( keys %cust_bill_pkg )
 
   foreach my $hook ( @precommit_hooks ) { 
     eval {
       &{$hook}; #($self) ?
-    };
+    } unless $options{no_commit};
     if ( $@ ) {
-      $dbh->rollback if $oldAutoCommit;
+      $dbh->rollback if $oldAutoCommit && !$options{no_commit};
       return "$@ running precommit hook $hook\n";
     }
   }
   
-  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit && !$options{no_commit};
+
   ''; #no error
 }
 
@@ -792,6 +810,7 @@ sub _make_lines {
                     )
                )
           )
+        and !$options{recurring_only}
     )
   {
     
@@ -836,7 +855,7 @@ sub _make_lines {
     # XXX should this be a package event?  probably.  events are called
     # at collection time at the moment, though...
     $part_pkg->reset_usage($cust_pkg, 'debug'=>$DEBUG)
-      if $part_pkg->can('reset_usage');
+      if $part_pkg->can('reset_usage') && !$options{'no_usage_reset'};
       #don't want to reset usage just cause we want a line item??
       #&& $part_pkg->pkgpart == $real_pkgpart;
 
@@ -857,16 +876,21 @@ sub _make_lines {
                   'increment_next_bill' => $increment_next_bill,
                   'discounts'           => \@discounts,
                   'real_pkgpart'        => $real_pkgpart,
+                  'freq_override'	=> $options{freq_override} || '',
                 );
 
     my $method = $options{cancel} ? 'calc_cancel' : 'calc_recur';
+
+    # There may be some part_pkg for which this is wrong.  Only those
+    # which can_discount are supported.
+
     $recur = eval { $cust_pkg->$method( \$sdate, \@details, \%param ) };
     return "$@ running $method for $cust_pkg\n"
       if ( $@ );
 
     if ( $increment_next_bill ) {
 
-      my $next_bill = $part_pkg->add_freq($sdate);
+      my $next_bill = $part_pkg->add_freq($sdate, $options{freq_override} || 0);
       return "unparsable frequency: ". $part_pkg->freq
         if $next_bill == -1;
   
@@ -902,7 +926,8 @@ sub _make_lines {
   
       my $error = $cust_pkg->replace( $old_cust_pkg,
                                       'options' => { $cust_pkg->options },
-                                    );
+                                    )
+        unless $options{no_commit};
       return "Error modifying pkgnum ". $cust_pkg->pkgnum. ": $error"
         if $error; #just in case
     }
@@ -941,6 +966,7 @@ sub _make_lines {
         'details'   => \@details,
         'discounts' => \@discounts,
         'hidden'    => $part_pkg->hidden,
+        'freq'      => $part_pkg->freq,
       };
 
       if ( $part_pkg->option('recur_temporality', 1) eq 'preceding' ) {
@@ -1433,6 +1459,7 @@ set true to surpress email card/ACH decline notices.
 
 Debugging level.  Default is 0 (no debugging), or can be set to 1 (passed-in options), 2 (traces progress), 3 (more information), or 4 (include full search queries)
 
+=back
 =cut
 
 # =item payby
@@ -1571,6 +1598,171 @@ Explicitly pass the objects to be tested (typically used with eventtable).
 
 Set to true to return the objects, but not actually insert them into the
 database.
+
+=item discount_terms
+
+Returns a list of lengths for term discounts
+
+=cut
+
+sub _discount_pkgs_and_bill {
+my $self = shift;
+
+  my @cust_bill = $self->cust_bill;
+  my $cust_bill = pop @cust_bill;
+  return () unless $cust_bill && $cust_bill->owed;
+
+  my @where = ();
+  push @where, "cust_bill_pkg.invnum = ". $cust_bill->invnum;
+  push @where, "cust_bill_pkg.pkgpart_override IS NULL";
+  push @where, "part_pkg.freq = 1";
+  push @where, "(cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0)";
+  push @where, "(cust_pkg.susp   IS NULL OR cust_pkg.susp   = 0)";
+  push @where, "0<(SELECT count(*) FROM part_pkg_discount
+                  WHERE part_pkg.pkgpart = part_pkg_discount.pkgpart)";
+  push @where,
+    "0=(SELECT count(*) FROM cust_bill_pkg_discount
+         WHERE cust_bill_pkg.billpkgnum = cust_bill_pkg_discount.billpkgnum)";
+
+  my $extra_sql = 'WHERE '. join(' AND ', @where);
+
+  my @cust_pkg = 
+    qsearch({
+      'table' => 'cust_pkg',
+      'select' => "DISTINCT cust_pkg.*",
+      'addl_from' => 'JOIN cust_bill_pkg USING(pkgnum) '.
+                     'JOIN part_pkg USING(pkgpart)',
+      'hashref' => {},
+      'extra_sql' => $extra_sql,
+    }); 
+
+  ($cust_bill, @cust_pkg);
+}
+
+sub _discountable_pkgs_at_term {
+  my ($term, @pkgs) = @_;
+  my $part_pkg = new FS::part_pkg { freq => $term - 1 };
+  grep { ( !$_->adjourn || $_->adjourn > $part_pkg->add_freq($_->bill) ) && 
+         ( !$_->expire  || $_->expire  > $part_pkg->add_freq($_->bill) )
+       }
+    @pkgs;
+}
+
+=item discount_terms
+
+Returns a list of lengths for term discounts
+
+=cut
+
+sub discount_terms {
+my $self = shift;
+
+  my %terms = ();
+
+  my @discount_pkgs = $self->_discount_pkgs_and_bill;
+  shift @discount_pkgs; #discard bill;
+  
+  map { $terms{$_->months} = 1 }
+    grep { $_->months && $_->months > 1 }
+    map { $_->discount }
+    map { $_->part_pkg->part_pkg_discount }
+    @discount_pkgs;
+
+  return sort { $a <=> $b } keys %terms;
+
+}
+
+=back
+
+=item discount_term_values MONTHS
+
+Returns a list with credit, dollar amount saved, and total bill acheived
+by prepaying the most recent invoice for MONTHS.
+
+=cut
+
+sub discount_term_values {
+  my $self = shift;
+  my $term = shift;
+  warn "$me discount_term_values called with $term\n" if $DEBUG;
+
+  my %result = ();
+
+  my @packages = $self->_discount_pkgs_and_bill;
+  my $cust_bill = shift(@packages);
+  @packages = _discountable_pkgs_at_term( $term, @packages );
+  return () unless scalar(@packages);
+
+  $_->bill($_->last_bill) foreach @packages;
+  my @final = map { new FS::cust_pkg { $_->hash } } @packages;
+
+  my %options = (
+                  'recurring_only' => 1,
+                  'no_usage_reset' => 1,
+                  'no_commit'      => 1,
+                );
+
+  my %params =  (
+                  'return_bill'    => [],
+                  'pkg_list'       => \@packages,
+                  'time'           => $cust_bill->_date,
+                );
+
+  my $error = $self->bill(%options, %params);
+  die $error if $error; # XXX think about this a bit more
+
+  my $credit = 0;
+  $credit += $_->charged foreach @{$params{return_bill}};
+  $credit = sprintf('%.2f', $credit);
+  warn "$me discount_term_values $term credit: $credit\n" if $DEBUG;
+
+  %params =  (
+               'return_bill'    => [],
+               'pkg_list'       => \@packages,
+               'time'           => $packages[0]->part_pkg->add_freq($cust_bill->_date)
+             );
+
+  $error = $self->bill(%options, %params);
+  die $error if $error; # XXX think about this a bit more
+
+  my $next = 0;
+  $next += $_->charged foreach @{$params{return_bill}};
+  warn "$me discount_term_values $term next: $next\n" if $DEBUG;
+  
+  %params =  ( 
+               'return_bill'    => [],
+               'pkg_list'       => \@final,
+               'time'           => $cust_bill->_date,
+               'freq_override'  => $term,
+             );
+
+  $error = $self->bill(%options, %params);
+  die $error if $error; # XXX think about this a bit more
+
+  my $final = $self->balance - $credit;
+  $final += $_->charged foreach @{$params{return_bill}};
+  $final = sprintf('%.2f', $final);
+  warn "$me discount_term_values $term final: $final\n" if $DEBUG;
+
+  my $savings = sprintf('%.2f', $self->balance + ($term - 1) * $next - $final);
+
+  ( $credit, $savings, $final );
+
+}
+
+sub discount_terms_hash {
+  my $self = shift;
+
+  my %result = ();
+  my @terms = $self->discount_terms;
+  foreach my $term (@terms) {
+    my @result = $self->discount_term_values($term);
+    $result{$term} = [ @result ] if scalar(@result);
+  }
+
+  return %result;
+
+}
 
 =back
 

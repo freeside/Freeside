@@ -256,7 +256,10 @@ sub taxline {
       my ($mon,$year) =
         (localtime( $cust_bill_pkg->sdate || $invoice_date ) )[4,5];
       $mon++;
-      my $freq = $part_pkg->freq || 1;
+      my $freq = $cust_bill_pkg->freq;
+      unless ($freq) {
+        $freq = $part_pkg->freq || 1;  # less trustworthy fallback
+      }
       if ( $freq !~ /(\d+)$/ ) {
         $dbh->rollback if $oldAutoCommit;
         return "daily/weekly package definitions not (yet?)".

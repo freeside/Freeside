@@ -1,0 +1,17 @@
+<%=
+if ( scalar(keys %discount_terms_hash) ) {
+  $OUT .= '<TR>';
+    $OUT .= '<TD ALIGN="right">Prepayment for</TD>';
+    $OUT .= '<TD>';
+      $OUT .= '<SELECT NAME="discount_term">';
+        $OUT .= qq(<OPTION VALUE="">1 month\n);
+        foreach ( keys %discount_terms_hash ) {
+           $selected = $discount_term eq $_ ? ' SELECTED' : '';
+           $OUT .= qq(<OPTION$selected VALUE="$_">$_ months\n);
+        }
+      $OUT .= '</SELECT>';
+    $OUT .= '</TD>';
+  $OUT .= '</TR>';
+}
+$OUT .= '';
+%>

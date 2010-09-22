@@ -45,6 +45,7 @@
                             'agentnum'         => 'Agent',
                             'setup_fee'        => 'Setup fee',
                             'recur_fee'        => 'Recurring fee',
+                            'discountnum'      => 'Offer discounts for longer terms',
                             'bill_dst_pkgpart' => 'Include line item(s) from package',
                             'svc_dst_pkgpart'  => 'Include services of package',
                             'report_option'    => 'Report classes',
@@ -94,6 +95,7 @@
                                 type  => 'selectlayers-select',
                                 options => [ keys %plan_labels ],
                                 labels  => \%plan_labels,
+                                onchange => 'aux_planchanged(what);',
                               },
                               { field => 'setup_fee',
                                 type  => 'money',
@@ -195,6 +197,21 @@
                               'multiple' => 1,
                             },
 
+                            { 'type'    => 'tablebreak-tr-title',
+                              'value'   => 'Term discounts',
+                            },
+                            { 'field'      => 'discountnum',
+                              'type'       => 'select-table',
+                              'table'      => 'discount',
+                              'name_col'   => 'name',
+                              'hashref'    => { %$discountnum_hashref },
+                              #'extra_sql'  => 'AND (months IS NOT NULL OR months != 0)',
+                              'empty_label'=> 'Select discount',
+                              'm2_label'   => 'Offer discounts for longer terms',
+                              'm2m_method' => 'part_pkg_discount',
+                              'm2m_dstcol' => 'discountnum',
+                              'm2_error_callback' => $discount_error_callback,
+                            },
 
                             { 'type'    => 'tablebreak-tr-title',
                               'value'   => 'Pricing add-ons',
@@ -426,6 +443,23 @@ my $clone_callback = sub {
   $recur_disabled = $object->freq ? 0 : 1;
 };
 
+my $discount_error_callback = sub {
+  my( $cgi, $object ) = @_;
+  map {
+        if ( /^discountnum(\d+)$/ &&
+             ( my $discountnum = $cgi->param("discountnum$1") ) )
+        {
+          new FS::part_pkg_discount {
+            'pkgpart'     => $object->pkgpart,
+            'discountnum' => $discountnum,
+          };
+        } else {
+          ();
+        }
+      }
+  $cgi->param;
+};
+
 my $m2_error_callback_maker = sub {
   my $link_type = shift; #yay closures
   return sub {
@@ -480,6 +514,22 @@ my $javascript = <<'END';
         what.form.agent_type.disabled = true;
         //what.form.agent_type.style.backgroundColor = '#dddddd';
         what.form.agent_type.style.visibility = 'hidden';
+      }
+
+    }
+
+    function aux_planchanged(what) {
+
+      alert('called!');
+      var plan = what.options[what.selectedIndex].value;
+      var table = document.getElementById('TableNumber7') // XXX NOT ROBUST
+
+      if ( plan == 'flat' || plan == 'prorate' || plan == 'subscription' ) {
+        //table.disabled = false;
+        table.style.visibility = '';
+      } else {
+        //table.disabled = true;
+        table.style.visibility = 'hidden';
       }
 
     }
@@ -735,5 +785,10 @@ my $field_callback = sub {
     $fieldref->{layer_values_callback} = $taxproduct_values;
   }
 };
+
+my $discountnum_hashref = {
+                            'disabled' => '',
+                            'months' => { 'op' => '>', 'value' => 1 },
+                          };
 
 </%init>

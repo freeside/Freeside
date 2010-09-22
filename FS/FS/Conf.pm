@@ -3162,6 +3162,26 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'prepayment_discounts-credit_type',
+    'section'     => 'billing',
+    'description' => 'Enables the offering of prepayment discounts and establishes the credit reason type.',
+    'type'        => 'select-sub',
+    'options_sub' => sub { require FS::Record;
+                           require FS::reason_type;
+                           map { $_->typenum => $_->type }
+                               FS::Record::qsearch('reason_type', { class=>'R' } );
+                         },
+    'option_sub'  => sub { require FS::Record;
+                           require FS::reason_type;
+                           my $reason_type = FS::Record::qsearchs(
+                             'reason_type', { 'typenum' => shift }
+                           );
+                           $reason_type ? $reason_type->type : '';
+                         },
+
+  },
+
+  {
     'key'         => 'cust_main-agent_custid-format',
     'section'     => '',
     'description' => 'Enables searching of various formatted values in cust_main.agent_custid',

@@ -185,6 +185,7 @@ sub calc_recur {
   }
   else {
     my $charge = $self->base_recur($cust_pkg);
+    $charge *= $param->{freq_override} if $param->{freq_override};
     my $discount = $self->calc_discount($cust_pkg, $sdate, $details, $param);
 
     return sprintf('%.2f', $charge - $discount);
@@ -198,6 +199,32 @@ sub calc_discount {
 
   my $tot_discount = 0;
   #UI enforces just 1 for now, will need ordering when they can be stacked
+
+  if ( $param->{freq_override} ) {
+    my $real_part_pkg = new FS::part_pkg { $self->hash };
+    $real_part_pkg->pkgpart($param->{real_pkgpart} || $self->pkgpart);
+    my @discount = grep { $_->months == $param->{freq_override} }
+                   map { $_->discount }
+                   $real_part_pkg->part_pkg_discount;
+    my $discount = shift @discount;
+    $param->{months} = $param->{freq_override} unless $param->{months};
+    my $error;
+    if ($discount) {
+      if ($discount->months == $param->{months}) {
+        $cust_pkg->discountnum($discount->discountnum);
+        $error = $cust_pkg->insert_discount;
+      } else {
+        $cust_pkg->discountnum(-1);
+        foreach ( qw( amount percent months ) ) {
+          my $method = "discountnum_$_";
+          $cust_pkg->$method($discount->$_);
+        }
+        $error = $cust_pkg->insert_discount;
+      }
+      die "error discounting using part_pkg_discount: $error" if $error;
+    }
+  }
+
   my @cust_pkg_discount = $cust_pkg->cust_pkg_discount_active;
   foreach my $cust_pkg_discount ( @cust_pkg_discount ) {
      my $discount = $cust_pkg_discount->discount;
@@ -214,7 +241,8 @@ sub calc_discount {
                            $discount->months - $cust_pkg_discount->months_used )
                     : $chg_months;
 
-     my $error = $cust_pkg_discount->increment_months_used($months);
+     my $error = $cust_pkg_discount->increment_months_used($months)
+       if $cust_pkg->pkgpart == $param->{real_pkgpart};
      die "error discounting: $error" if $error;
 
      $amount *= $months;

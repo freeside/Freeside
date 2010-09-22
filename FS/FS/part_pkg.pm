@@ -20,6 +20,7 @@ use FS::part_pkg_taxrate;
 use FS::part_pkg_taxoverride;
 use FS::part_pkg_taxproduct;
 use FS::part_pkg_link;
+use FS::part_pkg_discount;
 
 @ISA = qw( FS::m2m_Common FS::option_Common );
 $DEBUG = 0;
@@ -1124,6 +1125,18 @@ sub part_pkg_taxrate {
              'extra_sql' => $extra_sql,
              'order_by'  => $order_by,
          } );
+}
+
+=item part_pkg_discount
+
+Returns the package to discount m2m records (see L<FS::part_pkg_discount>)
+for this package.
+
+=cut
+
+sub part_pkg_discount {
+  my $self = shift;
+  qsearch('part_pkg_discount', { 'pkgpart' => $self->pkgpart });
 }
 
 =item _rebless

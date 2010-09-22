@@ -195,6 +195,9 @@ push @fields, sub {
   my $part_pkg = shift;
   (my $plan = $plan_labels{$part_pkg->plan} ) =~ s/ /&nbsp;/g;
   my $is_recur = ( $part_pkg->freq ne '0' );
+  my @discounts = sort { $a->months <=> $b->months }
+                  map { $_->discount  }
+                  $part_pkg->part_pkg_discount;
 
   [
     [
@@ -237,6 +240,28 @@ push @fields, sub {
             ]
           }
       $part_pkg->bill_part_pkg_link
+    ),
+    ( scalar(@discounts)
+        ?  [ 
+              { data => '<b>Discounts</b>',
+                align=>'center', #?
+                colspan=>2,
+              }
+            ]
+        : ()  
+    ),
+    ( scalar(@discounts)
+        ? map { 
+            [ 
+              { data  => $_->months. ':',
+                align => 'right',
+              },
+              { data => $_->amount ? '$'. $_->amount : $_->percent. '%'
+              }
+            ]
+          }
+          @discounts
+        : ()
     ),
   ];
 

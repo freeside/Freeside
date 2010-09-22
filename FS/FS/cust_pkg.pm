@@ -1371,6 +1371,18 @@ sub calc_recur {
   $self->part_pkg->calc_recur($self, @_);
 }
 
+=item base_recur
+
+Calls the I<base_recur> of the FS::part_pkg object associated with this billing
+item.
+
+=cut
+
+sub base_recur {
+  my $self = shift;
+  $self->part_pkg->base_recur($self, @_);
+}
+
 =item calc_remain
 
 Calls the I<calc_remain> of the FS::part_pkg object associated with this

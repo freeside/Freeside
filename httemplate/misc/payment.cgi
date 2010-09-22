@@ -67,6 +67,11 @@
 
 % }
 
+<% include('/elements/tr-select-discount_term.html',
+             'custnum' => $custnum,
+             'cgi'     => $cgi
+          )
+%>
 
 % if ( $payby eq 'CARD' ) {
 %

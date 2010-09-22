@@ -46,6 +46,12 @@ Payment
   <TD><INPUT TYPE="text" NAME="paid" VALUE="<% $paid %>" SIZE=8 MAXLENGTH=8> by <B><% FS::payby->payname($payby) %></B></TD>
 </TR>
 
+  <% include('/elements/tr-select-discount_term.html',
+               'custnum' => $custnum,
+               'cgi'     => $cgi
+            )
+  %>
+
 % if ( $payby eq 'BILL' ) { 
   <TR>
     <TD ALIGN="right">Check #</TD>

@@ -22,6 +22,7 @@ Example:
              ###
 
              'name_singular' => 'customer', #label
+             'custnum_update_callback' => 'name_of_js_callback' #passed a rownum
 
              #listrefs
              'types'         => ['immutable', ''], # immutable or ''/text
@@ -98,6 +99,9 @@ Example:
       if ( name.length > 0 ) {
         customer.value = name;
         customer.setAttribute('magic', 'nosearch');
+% if ( $opt{custnum_update_callback} ) {
+        <% $opt{custnum_update_callback} %>(searchrow, '<% $opt{prefix} %>')
+% }
       } else {
         customer.value = 'Not found';
         customer.style.color = '#ff0000';
@@ -162,6 +166,9 @@ Example:
         customer_obj.style.display = '';
         customer_select.style.display = 'none';
 
+% if ( $opt{custnum_update_callback} ) {
+        <% $opt{custnum_update_callback} %>(searchrow, '<% $opt{prefix} %>')
+% }
 
       } else {
 
@@ -222,6 +229,10 @@ Example:
 
       this.style.display = 'none';
       customer_obj.style.display = '';
+
+% if ( $opt{custnum_update_callback} ) {
+      <% $opt{custnum_update_callback} %>(searchrow, '<% $opt{prefix} %>')
+% }
 
     }
 
@@ -314,7 +325,7 @@ Example:
         >
 %     } elsif ($types->[$col] eq 'immutable') {
         <% $font %><% $value %><% $font ? '</FONT>' : '' %>
-        <INPUT TYPE="hidden" NAME="<% $name %>" VALUE="<% $value %>" >
+        <INPUT TYPE="hidden" ID="<% $name %>" NAME="<% $name %>" VALUE="<% $value %>" >
 %     } else {
         Cannot represent unknown type: <% $types->[$col] %>
 %     }

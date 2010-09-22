@@ -20,7 +20,9 @@
       $<INPUT TYPE="text" NAME="amount" SIZE=8 VALUE="<%=sprintf("%.2f",$balance)%>">
     </TD></TR></TABLE>
   </TD>
-</TR><TR>
+</TR>
+<%= include('discount_term') %>
+<TR>
   <TH ALIGN="right">Card&nbsp;type</TH>
   <TD COLSPAN=7>
     <SELECT NAME="card_type"><OPTION></OPTION>

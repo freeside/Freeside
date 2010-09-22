@@ -1,0 +1,25 @@
+% if ( scalar(@discount_term) ) {
+  <TR>
+    <TD ALIGN="right">Prepayment for</TD>
+    <TD COLSPAN=2>
+      <% include('select-discount_term.html',
+                   'discount_term' => \@discount_term,
+                   'cgi'           => $opt{'cgi'},
+                )
+      %>
+    </TD>
+  </TR>
+
+% }
+
+<%init>
+my %opt = @_;
+
+my $custnum = $opt{'custnum'};
+
+my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
+  or die "unknown custnum $custnum\n";
+
+my @discount_term = $cust_main->discount_terms;
+
+</%init>

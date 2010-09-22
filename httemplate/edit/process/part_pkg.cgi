@@ -160,6 +160,12 @@ my @process_m2m = (
     'target_table' => 'tax_class',
     'params'       => \@tax_overrides,
   },
+  { 'link_table'   => 'part_pkg_discount',
+    'target_table' => 'discount',
+    'params'       => [ map $cgi->param($_),
+                        grep /^discountnum/, $cgi->param
+                      ],
+  },
   { 'link_table'   => 'part_pkg_link',
     'target_table' => 'part_pkg',
     'base_field'   => 'src_pkgpart',

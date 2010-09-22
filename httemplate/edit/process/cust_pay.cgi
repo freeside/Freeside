@@ -47,7 +47,7 @@ my $new = new FS::cust_pay ( {
   map {
     $_, scalar($cgi->param($_));
   } qw( paid payby payinfo paybatch
-        pkgnum
+        pkgnum discount_term
       )
   #} fields('cust_pay')
 } );

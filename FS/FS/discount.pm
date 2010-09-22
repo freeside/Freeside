@@ -133,6 +133,17 @@ sub check {
   ;
   return $error if $error;
 
+  #discourage non-integer months for package discounts
+  if ($self->discountnum) {
+    my $sql =
+      "SELECT count(*) FROM part_pkg_discount WHERE part_pkg_discount.discountnum = ".
+      $self->discountnum;
+
+    my $count = $self->scalar_sql($sql); 
+    return "months must be integers greater than 1"
+      if ( $count && ($self->ut_number('months') || $self->months < 2) );
+  }
+    
   $self->SUPER::check;
 }
 

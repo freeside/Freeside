@@ -13,7 +13,46 @@ function warnUnload() {
   }
 }
 window.onbeforeunload = warnUnload;
+
+function select_discount_term(row, prefix) {
+  var custnum_obj = document.getElementById('custnum'+prefix+row);
+  var select_obj = document.getElementById('discount_term'+prefix+row);
+
+  var value = '';
+  if (select_obj.type == 'hidden') {
+    value = select_obj.value;
+  }
+
+  var term_select = document.createElement('SELECT');
+  term_select.setAttribute('name', 'discount_term'+row);
+  term_select.setAttribute('id',   'discount_term'+row);
+  term_select.setAttribute('rownum', row);
+  term_select.style.display = '';
+  select_obj.parentNode.replaceChild(term_select, select_obj);
+  opt(term_select, '', '1 month');
+  
+  function select_discount_term_update(discount_terms) {
+
+    var termArray = eval('(' + discount_terms + ')');
+    for ( var t = 0; t < termArray.length; t++ ) {
+      opt(term_select, termArray[t][0], termArray[t][1]);
+      if (termArray[t][0] == value) {
+        term_select.selectedIndex = t+1;
+      }
+    }
+
+  }
+
+  discount_terms(custnum_obj.value, select_discount_term_update);
+
+}
 </SCRIPT>
+
+<% include('/elements/xmlhttp.html',
+              'url'  => $p. 'misc/xmlhttp-cust_main-discount_terms.cgi',
+              'subs' => [qw( discount_terms )],
+           )
+%>
 
 <FORM ACTION="process/batch-cust_pay.cgi" NAME="OneTrueForm" METHOD="POST" onsubmit="document.OneTrueForm.submit.disabled=true;window.onbeforeunload = null;">
 
@@ -21,15 +60,16 @@ window.onbeforeunload = warnUnload;
 
 <% include( "/elements/customer-table.html",
               name_singular => 'payment',
-              header  => [ '', 'Amount', 'Check #', '' ],
-              fields  => [ sub {'$'}, 'paid', 'payinfo', 'error', ],
-              types   => [ 'immutable', '', '', 'immutable', ],
-              align   => [ 'c', 'r', 'r', 'l' ],
-              sizes   => [ 0, 8, 10, 0, ],
-              colors  => [ '', '', '', '#ff0000' ],
-              param   => { () },
-              footer  => [ '$', '_TOTAL', '', '' ],
-              footer_align => [ 'c', 'r', 'r', '' ],
+              header  => \@header,
+              fields  => \@fields,
+              types   => \@types,
+              align   => \@align,
+              sizes   => \@sizes,
+              colors  => \@colors,
+              param   => \%param,
+              footer  => \@footer,
+              footer_align => \@footer_align,
+              custnum_update_callback => $custnum_update_callback,
           )
 %>
 
@@ -41,11 +81,51 @@ window.onbeforeunload = warnUnload;
 
 </FORM>
 
+%if ( $cgi->param('error') ) {
+<SCRIPT TYPE="text/javascript">
+%  for ( my $row = 0; defined($cgi->param("custnum$row")); $row++ ) {
+     select_discount_term(<% $row %>, '');
+%  }
+</SCRIPT>
+%}
+
 <% include('/elements/footer.html') %>
 
 <%init>
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right('Post payment batch');
+
+my @header  = ( '', 'Amount', 'Check #' );
+my @fields  = ( sub {'$'}, 'paid', 'payinfo' );
+my @types   = ( 'immutable', '', '' );
+my @align   = ( 'c', 'r', 'r' );
+my @sizes   = ( 0, 8, 10 );
+my @colors  = ( '', '', '' );
+my %param   = ();
+my @footer  = ( '$', '_TOTAL', '' );
+my @footer_align = ( 'c', 'r', 'r' );
+my $custnum_update_callback = '';
+
+if ( FS::Record->scalar_sql('SELECT count(*) FROM part_pkg_discount') ) {
+  push @header, '';
+  push @fields, 'discount_term';
+  push @types, 'immutable';
+  push @align, 'r';
+  push @sizes, '0';
+  push @colors, '';
+  push @footer, '';
+  push @footer_align, '';
+  $custnum_update_callback = 'select_discount_term';
+}
+
+push @header, '';
+push @fields, 'error';
+push @types, 'immutable';
+push @align, 'l';
+push @sizes, '0';
+push @colors, '#ff0000';
+push @footer, '';
+push @footer_align, '';
 
 </%init>

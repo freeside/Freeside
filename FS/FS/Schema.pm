@@ -570,6 +570,7 @@ sub tables_hashref {
         'itemdesc',         'varchar', 'NULL', $char_d, '', '', 
         'itemcomment',      'varchar', 'NULL', $char_d, '', '', 
         'section',          'varchar', 'NULL', $char_d, '', '', 
+        'freq',             'varchar', 'NULL', $char_d, '', '',
         'quantity',             'int', 'NULL',      '', '', '',
         'unitsetup',           @money_typen,            '', '', 
         'unitrecur',           @money_typen,            '', '', 
@@ -1511,6 +1512,17 @@ sub tables_hashref {
     },
     # XXX somewhat borked unique: we don't really want a hidden and unhidden
     # it turns out we'd prefer to use svc, bill, and invisibill (or something)
+
+    'part_pkg_discount' => {
+      'columns' => [
+        'pkgdiscountnum', 'serial',   '',      '', '', '',
+        'pkgpart',        'int',      '',      '', '', '',
+        'discountnum',    'int',      '',      '', '', '', 
+      ],
+      'primary_key' => 'pkgdiscountnum',
+      'unique' => [ [ 'pkgpart', 'discountnum' ] ],
+      'index'  => [],
+    },
 
     'part_pkg_taxclass' => {
       'columns' => [

@@ -535,3 +535,5 @@ FS/svc_CGP_Mixin.pm
 FS/svc_CGPRule_Mixin.pm
 FS/svc_cert.pm
 t/svc_cert.t
+FS/part_pkg_discount.pm
+t/part_pkg_discount.t

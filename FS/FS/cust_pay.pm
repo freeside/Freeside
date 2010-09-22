@@ -141,6 +141,10 @@ For backwards-compatibility and convenience, if the additional field invnum
 is defined, an FS::cust_bill_pay record for the full amount of the payment
 will be created.  In this case, custnum is optional.
 
+If the additional field discount_term is defined then a prepayment discount
+is taken for that length of time.  It is an error for the customer to owe
+after this payment is made.
+
 A hash of optional arguments may be passed.  Currently "manual" is supported.
 If true, a payment receipt is sent instead of a statement when
 'payment_receipt_email' configuration option is set.
@@ -181,6 +185,51 @@ sub insert {
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return "error inserting cust_pay: $error";
+  }
+
+  if ( my $credit_type = $conf->config('prepayment_discounts-credit_type') ) {
+    if ( my $months = $self->discount_term ) {
+      #hmmm... error handling
+      my ($credit, $savings, $total) = 
+        $cust_main->discount_term_values($months);
+      my $cust_credit = new FS::cust_credit {
+        'custnum' => $self->custnum,
+        'amount'  => $credit,
+        'reason'  => 'customer chose to prepay for discount',
+      };
+      $error = $cust_credit->insert('reason_type' => $credit_type);
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "error inserting cust_pay: $error";
+      }
+      my @pkgs = $cust_main->_discount_pkgs_and_bill;
+      my $cust_bill = shift(@pkgs);
+      @pkgs = &FS::cust_main::Billing::_discountable_pkgs_at_term($months, @pkgs);
+      $_->bill($_->last_bill) foreach @pkgs;
+      $error = $cust_main->bill( 
+        'recurring_only' => 1,
+        'time'           => $cust_bill->invoice_date,
+        'no_usage_reset' => 1,
+        'pkg_list'       => \@pkgs,
+        'freq_override'   => $months,
+      );
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "error inserting cust_pay: $error";
+      }
+      $error = $cust_main->apply_payments_and_credits;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "error inserting cust_pay: $error";
+      }
+      my $new_balance = $cust_main->balance;
+      if ($new_balance > 0) {
+        $dbh->rollback if $oldAutoCommit;
+        return "balance after prepay discount attempt: $new_balance";
+      }
+      
+    }
+
   }
 
   if ( $self->invnum ) {
@@ -388,6 +437,7 @@ sub check {
     || $self->ut_enum('closed', [ '', 'Y' ])
     || $self->ut_foreign_keyn('pkgnum', 'cust_pkg', 'pkgnum')
     || $self->payinfo_check()
+    || $self->ut_numbern('discount_term')
   ;
   return $error if $error;
 
@@ -398,6 +448,9 @@ sub check {
            || qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
 
   $self->_date(time) unless $self->_date;
+
+  return "invalid discount_term"
+   if ($self->discount_term && $self->discount_term < 2);
 
 #i guess not now, with cust_pay_pending, if we actually make it here, we _do_ want to record it
 #  # UNIQUE index should catch this too, without race conditions, but this

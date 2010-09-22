@@ -73,7 +73,7 @@ $session_id = $cgi->param('session');
 
 #order|pw_list XXX ???
 $cgi->param('action') =~
-    /^(myaccount|view_invoice|make_payment|make_ach_payment|make_thirdparty_payment|payment_results|ach_payment_results|recharge_prepay|recharge_results|logout|change_bill|change_ship|change_pay|process_change_bill|process_change_ship|process_change_pay|customer_order_pkg|process_order_pkg|customer_change_pkg|process_change_pkg|process_order_recharge|provision|provision_svc|process_svc_acct|process_svc_external|delete_svc|view_usage|view_usage_details|view_cdr_details|view_support_details|change_password|process_change_password)$/
+    /^(myaccount|view_invoice|make_payment|make_ach_payment|make_term_payment|make_thirdparty_payment|payment_results|ach_payment_results|recharge_prepay|recharge_results|logout|change_bill|change_ship|change_pay|process_change_bill|process_change_ship|process_change_pay|customer_order_pkg|process_order_pkg|customer_change_pkg|process_change_pkg|process_order_recharge|provision|provision_svc|process_svc_acct|process_svc_external|delete_svc|view_usage|view_usage_details|view_cdr_details|view_support_details|change_password|process_change_password)$/
   or die "unknown action ". $cgi->param('action');
 my $action = $1;
 
@@ -105,7 +105,8 @@ do_template($action, {
 
 #--
 
-sub myaccount { customer_info( 'session_id' => $session_id ); }
+use Data::Dumper;
+sub myaccount { my $result = customer_info( 'session_id' => $session_id ); warn Dumper($result); $result;}
 
 sub change_bill { my $payment_info =
                     payment_info( 'session_id' => $session_id );
@@ -427,6 +428,10 @@ sub payment_results {
   $cgi->param('paybatch') =~ /^([\w\-\.]+)$/ or die "illegal paybatch";
   my $paybatch = $1;
 
+  $cgi->param('discount_term') =~ /^(\d*)$/ or die "illegal discount_term";
+  my $discount_term = $1;
+
+
   process_payment(
     'session_id' => $session_id,
     'payby'      => 'CARD',
@@ -445,6 +450,7 @@ sub payment_results {
     'save'       => $save,
     'auto'       => $auto,
     'paybatch'   => $paybatch,
+    'discount_term' => $discount_term,
   );
 
 }
@@ -527,6 +533,20 @@ sub make_thirdparty_payment {
   $cgi->param('payby_method') =~ /^(CC|ECHECK)$/
     or die "illegal payby method";
   realtime_collect( 'session_id' => $session_id, 'method' => $1 );
+}
+
+sub make_term_payment {
+  $cgi->param('amount') =~ /^(\d+\.\d{2})$/
+    or die "illegal payment amount";
+  my $balance = $1;
+  $cgi->param('discount_term') =~ /^(\d+)$/
+    or die "illegal discount term";
+  my $discount_term = $1;
+  $action = 'make_payment';
+  ({ %{payment_info( 'session_id' => $session_id )},
+    'balance' => $balance,
+    'discount_term' => $discount_term,
+  })
 }
 
 sub recharge_prepay {

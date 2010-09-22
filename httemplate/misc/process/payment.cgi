@@ -119,19 +119,26 @@ if ( $payby eq 'CHEK' ) {
   die "unknown payby $payby";
 }
 
+$cgi->param('discount_term') =~ /^\d*$/
+  or errorpage("illegal discount_term");
+my $discount_term = $1;
+
 my $error = '';
 my $paynum = '';
 if ( $cgi->param('batch') ) {
 
-  $error = $cust_main->batch_card(
-                                   'payby'    => $payby,
-                                   'amount'   => $amount,
-                                   'payinfo'  => $payinfo,
-                                   'paydate'  => "$year-$month-01",
-                                   'payname'  => $payname,
-                                   map { $_ => $cgi->param($_) } 
-                                     @{$payby2fields{$payby}}
-                                 );
+  $error = 'Prepayment discounts not supported with batched payments' 
+    if $discount_term;
+
+  $error ||= $cust_main->batch_card(
+                                     'payby'    => $payby,
+                                     'amount'   => $amount,
+                                     'payinfo'  => $payinfo,
+                                     'paydate'  => "$year-$month-01",
+                                     'payname'  => $payname,
+                                     map { $_ => $cgi->param($_) } 
+                                       @{$payby2fields{$payby}}
+                                   );
   errorpage($error) if $error;
 
 } else {
@@ -146,6 +153,7 @@ if ( $cgi->param('batch') ) {
     'payunique'  => $payunique,
     'paycvv'     => $paycvv,
     'paynum_ref' => \$paynum,
+    'discount_term' => $discount_term,
     map { $_ => $cgi->param($_) } @{$payby2fields{$payby}}
   );
   errorpage($error) if $error;
