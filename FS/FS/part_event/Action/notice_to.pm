@@ -1,11 +1,11 @@
-package FS::part_event::Action::notice;
+package FS::part_event::Action::notice_to;
 
 use strict;
 use base qw( FS::part_event::Action );
 use FS::Record qw( qsearchs );
 use FS::msg_template;
 
-sub description { 'Email a notice to the customer\'s billing address'; }
+sub description { 'Email a notice to a specific address'; }
 
 #sub eventtable_hashref {
 #    { 'cust_main' => 1,
@@ -16,6 +16,10 @@ sub description { 'Email a notice to the customer\'s billing address'; }
 
 sub option_fields {
   (
+    'to'     => { 'label'    => 'Destination',
+                  'type'     => 'text',
+                  'size'     => 30,
+                },
     'msgnum' => { 'label'    => 'Template',
                   'type'     => 'select-table',
                   'table'    => 'msg_template',
@@ -25,7 +29,7 @@ sub option_fields {
   );
 }
 
-sub default_weight { 55; } #?
+sub default_weight { 56; } #?
 
 sub do_action {
   my( $self, $object ) = @_;
@@ -37,7 +41,11 @@ sub do_action {
   my $msg_template = qsearchs('msg_template', { 'msgnum' => $msgnum } )
       or die "Template $msgnum not found";
 
+  my $to = $self->option('to') 
+      or die "Can't send notice without a destination address";
+  
   $msg_template->send(
+    'to'        => $to,
     'cust_main' => $cust_main,
     'object'    => $object,
   );

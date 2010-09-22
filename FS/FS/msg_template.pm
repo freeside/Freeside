@@ -168,6 +168,11 @@ Customer object (required).
 Additional context object (currently, can be a cust_main, cust_pkg, 
 cust_bill, svc_acct, cust_pay, or cust_pay_pending object).
 
+=item to
+
+Destination address.  The default is to use the customer's 
+invoicing_list addresses.
+
 =back
 
 =cut
@@ -247,7 +252,7 @@ sub prepare {
   # and email
   ###
 
-  my @to = $cust_main->invoicing_list_emailonly;
+  my @to = ($opt{'to'}) || $cust_main->invoicing_list_emailonly;
   warn "prepared msg_template with no email destination (custnum ".
     $cust_main->custnum.")\n"
     if !@to;
@@ -311,6 +316,7 @@ sub substitutions {
       num_cancelled_pkgs num_ncancelled_pkgs num_pkgs
       classname categoryname
       balance
+      credit_limit
       invoicing_list_emailonly
       cust_status ucfirst_cust_status cust_statuscolor
 
