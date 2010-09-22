@@ -350,7 +350,8 @@ sub qsearch {
   my @bind_type = ();
   my $dbh = dbh;
   foreach my $stable ( @stable ) {
-    my $record      = shift @record;
+    #stop altering the caller's hashref
+    my $record      = { %{ shift(@record) || {} } };#and be liberal in receipt
     my $select      = shift @select;
     my $extra_sql   = shift @extra_sql;
     my $extra_param = shift @extra_param;
