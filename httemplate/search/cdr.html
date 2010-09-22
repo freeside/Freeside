@@ -55,6 +55,8 @@ die "access denied"
 
 my $edit_data = $FS::CurrentUser::CurrentUser->access_right('Edit rating data');
 
+my $conf = new FS::Conf;
+
 my $areboxes = 0;
 
 my $title = 'Call Detail Records';
@@ -148,14 +150,21 @@ foreach my $param ( grep /^termpart\d+status$/, $cgi->param ) {
 # src/dest/charged_party
 ###
 
-if ( $cgi->param('src') =~ /^\s*([\d\-\+\ ]+)\s*$/ ) {
-  ( my $src = $1 ) =~ s/\D//g;
+my $phonenum = qr/^\s*([\d\-\+\ ]+)\s*$/;
+my $x = qr/\D/;
+if ( $conf->exists('svc_phone-allow_alpha_phonenum') ) {
+  $phonenum = qr/^\s*([\d\-\+\ A-Za-z]+)\s*$/;
+  $x = qr/[^\dA-Za-z]/;
+}
+
+if ( $cgi->param('src') =~ $phonenum ) {
+  ( my $src = $1 ) =~ s/$x//g;
   $hashref->{'src'} = $src;
   push @search, "src = '$src'";
 }
 
-if ( $cgi->param('dst') =~ /^\s*([\d\-\+ ]+)\s*$/ ) {
-  ( my $dst = $1 ) =~ s/\D//g;
+if ( $cgi->param('dst') =~ $phonenum ) {
+  ( my $dst = $1 ) =~ s/$x//g;
   $hashref->{'dst'} = $dst;
   push @search, "dst = '$dst'";
 }
@@ -166,8 +175,8 @@ if ( $cgi->param('dcontext') =~ /^\s*(.+)\s*$/ ) {
   push @search, "dcontext = '$dcontext'";
 }
 
-if ( $cgi->param('charged_party') =~ /^\s*([\d\-\+\ ]+)\s*$/ ) {
-  ( my $charged_party = $1 ) =~ s/\D//g;
+if ( $cgi->param('charged_party') =~ $phonenum ) {
+  ( my $charged_party = $1 ) =~ s/$x//g;
   #$hashref->{'charged_party'} = $charged_party;
   #push @search, "charged_party = '$charged_party'";
   #XXX countrycode
@@ -178,8 +187,8 @@ if ( $cgi->param('charged_party') =~ /^\s*([\d\-\+\ ]+)\s*$/ ) {
   push @qsearch, $search;
 }
 
-if ( $cgi->param('charged_party_or_src') =~ /^\s*([\d\-\+\ ]+)\s*$/ ) {
-  ( my $charged_party = $1 ) =~ s/\D//g;
+if ( $cgi->param('charged_party_or_src') =~ $phonenum ) {
+  ( my $charged_party = $1 ) =~ s/$x//g;
   #$hashref->{'charged_party'} = $charged_party;
   #push @search, "charged_party = '$charged_party'";
   #XXX countrycode
@@ -190,7 +199,6 @@ if ( $cgi->param('charged_party_or_src') =~ /^\s*([\d\-\+\ ]+)\s*$/ ) {
   push @search,  $search;
   push @qsearch, $search;
 }
-
 
 ###
 # cdrbatchnum (or legacy cdrbatch)
