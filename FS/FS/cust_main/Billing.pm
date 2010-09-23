@@ -435,8 +435,8 @@ sub bill {
 
     next unless @cust_bill_pkg; #don't create an invoice w/o line items
 
-    warn "$me billing pass $pass\n".
-           Dumper(\@cust_bill_pkg)."\n"
+    warn "$me billing pass $pass\n"
+           #.Dumper(\@cust_bill_pkg)."\n"
       if $DEBUG > 2;
 
     if ( scalar( grep { $_->recur && $_->recur > 0 } @cust_bill_pkg) ||
@@ -643,8 +643,8 @@ sub calculate_taxes {
 
   local($DEBUG) = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
 
-  warn "$me calculate_taxes\n".
-       Dumper($self, $cust_bill_pkg, $taxlisthash, $invoice_time). "\n"
+  warn "$me calculate_taxes\n"
+       #.Dumper($self, $cust_bill_pkg, $taxlisthash, $invoice_time). "\n"
     if $DEBUG > 2;
 
   my @tax_line_items = ();
@@ -717,12 +717,16 @@ sub calculate_taxes {
 
   #move the cust_tax_exempt_pkg records to the cust_bill_pkgs we will commit
   my %packagemap = map { $_->pkgnum => $_ } @$cust_bill_pkg;
-  warn Dumper(\%packagemap) if $DEBUG > 2;
   foreach my $tax ( keys %$taxlisthash ) {
     foreach ( @{ $taxlisthash->{$tax} }[1 ... scalar(@{ $taxlisthash->{$tax} })] ) {
       next unless ref($_) eq 'FS::cust_bill_pkg';
 
-      warn $_->pkgnum."\n" if $DEBUG > 2;
+      unless ( $packagemap{$_->pkgnum} ) {
+        warn "WARNING: can't move cust_tax_exempt_pkg records for pkgnum".
+             $_->pkgnum. " - not in our line item list";
+        next;
+      }
+
       push @{ $packagemap{$_->pkgnum}->_cust_tax_exempt_pkg }, 
         splice( @{ $_->_cust_tax_exempt_pkg } );
     }
