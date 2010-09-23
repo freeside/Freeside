@@ -823,7 +823,7 @@ argument.
 
 sub add_freq {
   my( $self, $date, $freq ) = @_;
-  $freq = $self->freq if !defined($freq);
+  $freq = $self->freq unless $freq;
 
   #change this bit to use Date::Manip? CAREFUL with timezones (see
   # mailing list archive)
