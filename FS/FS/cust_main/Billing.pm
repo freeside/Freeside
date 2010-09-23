@@ -717,6 +717,7 @@ sub calculate_taxes {
 
   #move the cust_tax_exempt_pkg records to the cust_bill_pkgs we will commit
   my %packagemap = map { $_->pkgnum => $_ } @$cust_bill_pkg;
+  warn Dumper(\%packagemap) if $DEBUG > 2;
   foreach my $tax ( keys %$taxlisthash ) {
     foreach ( @{ $taxlisthash->{$tax} }[1 ... scalar(@{ $taxlisthash->{$tax} })] ) {
       next unless ref($_) eq 'FS::cust_bill_pkg';
