@@ -2,10 +2,10 @@
 % 
 %   my $custnum = $cgi->param('arg');
 %   my $cust_main = '';
-%   if ( $custnum <= 2147483647 ) {
+%   if ( $custnum =~ /^(\d+)$/ and $1 <= 2147483647 ) {
 %     $cust_main = qsearchs({
 %       'table'   => 'cust_main',
-%       'hashref' => { 'custnum' => $custnum },
+%       'hashref' => { 'custnum' => $1 },
 %       'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
 %     });
 %   }

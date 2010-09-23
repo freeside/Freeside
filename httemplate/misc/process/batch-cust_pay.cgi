@@ -10,8 +10,27 @@
 %  #my $row = 0;
 %  #while ( exists($param->{"custnum$row"}) ) {
 %  for ( my $row = 0; exists($param->{"custnum$row"}); $row++ ) {
+%    my $custnum = $param->{"custnum$row"};
+%    my $cust_main;
+%    if ( $custnum =~ /^(\d+)$/ and $1 <= 2147483647 ) {
+%      $cust_main = qsearchs({ 
+%        'table'     => 'cust_main',
+%        'hashref'   => { 'custnum' => $1 },
+%        'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+%      });
+%    }
+%    if ( !$cust_main ) { # not found, try agent_custid
+%      $cust_main = qsearchs({ 
+%        'table'     => 'cust_main',
+%        'hashref'   => { 'agent_custid' => $custnum },
+%        'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+%      });
+%    }
+%    $custnum = $cust_main->custnum if $cust_main;
+%    # if !$cust_main, then this will throw an error on batch_insert
+%
 %    push @cust_pay, new FS::cust_pay {
-%                      'custnum'        => $param->{"custnum$row"},
+%                      'custnum'        => $custnum,
 %                      'paid'           => $param->{"paid$row"},
 %                      'payby'          => 'BILL',
 %                      'payinfo'        => $param->{"payinfo$row"},
