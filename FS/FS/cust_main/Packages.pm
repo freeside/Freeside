@@ -69,7 +69,7 @@ sub order_pkg {
   my $self = shift;
   my $opt = ref($_[0]) ? shift : { @_ };
 
-  local($DEBUG) = $cust_main::DEBUG if $cust_main::DEBUG > $DEBUG;
+  local($DEBUG) = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
 
   warn "$me order_pkg called with options ".
        join(', ', map { "$_: $opt->{$_}" } keys %$opt ). "\n"
@@ -189,7 +189,7 @@ sub order_pkgs {
   my %options = @_;
   $seconds_ref ||= $options{'seconds_ref'};
 
-  local($DEBUG) = $cust_main::DEBUG if $cust_main::DEBUG > $DEBUG;
+  local($DEBUG) = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
 
   warn "$me order_pkgs called with options ".
        join(', ', map { "$_: $options{$_}" } keys %options ). "\n"
@@ -271,7 +271,7 @@ sub ncancelled_pkgs {
   my $self = shift;
   my $extra_qsearch = ref($_[0]) ? shift : {};
 
-  local($DEBUG) = $cust_main::DEBUG if $cust_main::DEBUG > $DEBUG;
+  local($DEBUG) = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
 
   return $self->num_ncancelled_pkgs unless wantarray;
 

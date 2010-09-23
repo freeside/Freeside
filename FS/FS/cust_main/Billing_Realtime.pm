@@ -89,7 +89,7 @@ I<depend_jobnum> allows payment capture to unlock export jobs
 sub realtime_collect {
   my( $self, %options ) = @_;
 
-  local($DEBUG) = $cust_main::DEBUG if $cust_main::DEBUG > $DEBUG;
+  local($DEBUG) = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
 
   if ( $DEBUG ) {
     warn "$me realtime_collect:\n";
@@ -289,7 +289,7 @@ my %bop_method2payby = (
 sub realtime_bop {
   my $self = shift;
 
-  local($DEBUG) = $cust_main::DEBUG if $cust_main::DEBUG > $DEBUG;
+  local($DEBUG) = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
  
   my %options = ();
   if (ref($_[0]) eq 'HASH') {
@@ -717,7 +717,7 @@ sub fake_bop {
 sub _realtime_bop_result {
   my( $self, $cust_pay_pending, $transaction, %options ) = @_;
 
-  local($DEBUG) = $cust_main::DEBUG if $cust_main::DEBUG > $DEBUG;
+  local($DEBUG) = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
 
   if ( $DEBUG ) {
     warn "$me _realtime_bop_result: pending transaction ".
@@ -1000,7 +1000,7 @@ upon success) and session_id of any associated session.
 sub realtime_botpp_capture {
   my( $self, $cust_pay_pending, %options ) = @_;
 
-  local($DEBUG) = $cust_main::DEBUG if $cust_main::DEBUG > $DEBUG;
+  local($DEBUG) = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
 
   if ( $DEBUG ) {
     warn "$me realtime_botpp_capture: pending transaction $cust_pay_pending\n";
@@ -1157,7 +1157,7 @@ gateway is attempted.
 sub realtime_refund_bop {
   my $self = shift;
 
-  local($DEBUG) = $cust_main::DEBUG if $cust_main::DEBUG > $DEBUG;
+  local($DEBUG) = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
 
   my %options = ();
   if (ref($_[0]) eq 'HASH') {

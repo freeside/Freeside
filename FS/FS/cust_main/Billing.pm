@@ -309,7 +309,7 @@ sub bill {
 
   return '' if $self->payby eq 'COMP';
 
-  local($DEBUG) = $cust_main::DEBUG if $cust_main::DEBUG > $DEBUG;
+  local($DEBUG) = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
 
   warn "$me bill customer ". $self->custnum. "\n"
     if $DEBUG;
@@ -641,7 +641,7 @@ jurisdictions (i.e. Texas) have tax exemptions which are date sensitive.
 sub calculate_taxes {
   my ($self, $cust_bill_pkg, $taxlisthash, $invoice_time) = @_;
 
-  local($DEBUG) = $cust_main::DEBUG if $cust_main::DEBUG > $DEBUG;
+  local($DEBUG) = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
 
   warn "$me calculate_taxes\n".
        Dumper($self, $cust_bill_pkg, $taxlisthash, $invoice_time). "\n"
@@ -786,7 +786,7 @@ sub calculate_taxes {
 sub _make_lines {
   my ($self, %params) = @_;
 
-  local($DEBUG) = $cust_main::DEBUG if $cust_main::DEBUG > $DEBUG;
+  local($DEBUG) = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
 
   my $part_pkg = $params{part_pkg} or die "no part_pkg specified";
   my $cust_pkg = $params{cust_pkg} or die "no cust_pkg specified";
@@ -1029,7 +1029,7 @@ sub _handle_taxes {
   my $real_pkgpart = shift;
   my $options = shift;
 
-  local($DEBUG) = $cust_main::DEBUG if $cust_main::DEBUG > $DEBUG;
+  local($DEBUG) = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
 
   my %cust_bill_pkg = ();
   my %taxes = ();
@@ -1228,7 +1228,7 @@ sub _gather_taxes {
   my $part_pkg = shift;
   my $class = shift;
 
-  local($DEBUG) = $cust_main::DEBUG if $cust_main::DEBUG > $DEBUG;
+  local($DEBUG) = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
 
   my @taxes = ();
   my $geocode = $self->geocode('cch');
@@ -1310,7 +1310,7 @@ Debugging level.  Default is 0 (no debugging), or can be set to 1 (passed-in opt
 sub collect {
   my( $self, %options ) = @_;
 
-  local($DEBUG) = $cust_main::DEBUG if $cust_main::DEBUG > $DEBUG;
+  local($DEBUG) = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
 
   my $invoice_time = $options{'invoice_time'} || time;
 
@@ -1496,7 +1496,7 @@ Debugging level.  Default is 0 (no debugging), or can be set to 1 (passed-in opt
 sub do_cust_event {
   my( $self, %options ) = @_;
 
-  local($DEBUG) = $cust_main::DEBUG if $cust_main::DEBUG > $DEBUG;
+  local($DEBUG) = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
 
   my $time = $options{'time'} || time;
 
@@ -1711,7 +1711,7 @@ sub discount_term_values {
   my $self = shift;
   my $term = shift;
 
-  local($DEBUG) = $cust_main::DEBUG if $cust_main::DEBUG > $DEBUG;
+  local($DEBUG) = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
 
   warn "$me discount_term_values called with $term\n" if $DEBUG;
 
@@ -1805,7 +1805,7 @@ sub due_cust_event {
   #my $DEBUG = $opt{'debug'}
   local($DEBUG) = $opt{'debug'}
     if defined($opt{'debug'}) && $opt{'debug'} > $DEBUG;
-  $DEBUG = $cust_main::DEBUG if $cust_main::DEBUG > $DEBUG;
+  $DEBUG = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
 
   warn "$me due_cust_event called with options ".
        join(', ', map { "$_: $opt{$_}" } keys %opt). "\n"
