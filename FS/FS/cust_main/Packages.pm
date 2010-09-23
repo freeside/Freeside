@@ -69,6 +69,8 @@ sub order_pkg {
   my $self = shift;
   my $opt = ref($_[0]) ? shift : { @_ };
 
+  local($DEBUG) = $cust_main::DEBUG if $cust_main::DEBUG > $DEBUG;
+
   warn "$me order_pkg called with options ".
        join(', ', map { "$_: $opt->{$_}" } keys %$opt ). "\n"
     if $DEBUG;
@@ -187,6 +189,8 @@ sub order_pkgs {
   my %options = @_;
   $seconds_ref ||= $options{'seconds_ref'};
 
+  local($DEBUG) = $cust_main::DEBUG if $cust_main::DEBUG > $DEBUG;
+
   warn "$me order_pkgs called with options ".
        join(', ', map { "$_: $options{$_}" } keys %options ). "\n"
     if $DEBUG;
@@ -266,6 +270,8 @@ Returns all non-cancelled packages (see L<FS::cust_pkg>) for this customer.
 sub ncancelled_pkgs {
   my $self = shift;
   my $extra_qsearch = ref($_[0]) ? shift : {};
+
+  local($DEBUG) = $cust_main::DEBUG if $cust_main::DEBUG > $DEBUG;
 
   return $self->num_ncancelled_pkgs unless wantarray;
 
