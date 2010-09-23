@@ -722,6 +722,7 @@ sub calculate_taxes {
     foreach ( @{ $taxlisthash->{$tax} }[1 ... scalar(@{ $taxlisthash->{$tax} })] ) {
       next unless ref($_) eq 'FS::cust_bill_pkg';
 
+      warn $_->pkgnum."\n" if $DEBUG > 2;
       push @{ $packagemap{$_->pkgnum}->_cust_tax_exempt_pkg }, 
         splice( @{ $_->_cust_tax_exempt_pkg } );
     }
