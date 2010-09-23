@@ -17,7 +17,7 @@ use List::Util qw(first min);
 
 @ISA = qw(FS::part_pkg::recur_Common);
 
-$DEBUG = 1;
+$DEBUG = 0;
 
 tie my %cdr_svc_method, 'Tie::IxHash',
   'svc_phone.phonenum' => 'Phone numbers (svc_phone.phonenum)',
