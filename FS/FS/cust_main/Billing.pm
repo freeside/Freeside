@@ -720,13 +720,6 @@ sub calculate_taxes {
   foreach my $tax ( keys %$taxlisthash ) {
     foreach ( @{ $taxlisthash->{$tax} }[1 ... scalar(@{ $taxlisthash->{$tax} })] ) {
       next unless ref($_) eq 'FS::cust_bill_pkg';
-
-      unless ( $packagemap{$_->pkgnum} ) {
-        warn "WARNING: can't move cust_tax_exempt_pkg records for pkgnum".
-             $_->pkgnum. " - not in our line item list";
-        next;
-      }
-
       push @{ $packagemap{$_->pkgnum}->_cust_tax_exempt_pkg }, 
         splice( @{ $_->_cust_tax_exempt_pkg } );
     }
@@ -938,7 +931,7 @@ sub _make_lines {
   # If $cust_pkg has been modified, update it (if we're a real pkgpart)
   ###
 
-  if ( $lineitems || $options{has_hidden} ) {
+  if ( $lineitems ) {
 
     if ( $cust_pkg->modified && $cust_pkg->pkgpart == $real_pkgpart ) {
       # hmm.. and if just the options are modified in some weird price plan?
