@@ -73,7 +73,23 @@ foreach my $svc_domain ( $part_export->svc_x ) {
                            second => $second,
                            time_zone => 'America/New_York',#timezone of opensrs
                          );
-  my $expiretime = $exp->epoch;
+  #my $expiretime = $exp->epoch;
+  
+  #set the bill date early enough to allow a couple chances to pay
+  $month--;
+  if ($month < 1) {
+    $year--;
+    $month=12;
+  }
+  my $bill = DateTime->new( year   => $year,
+                            month  => $month,
+                            day    => 1,
+                            hour   => 0,
+                            minute => 0,
+                            second => 0,
+                            time_zone => 'America/Chicago',#timezone of customer
+                          );
+  my $expiretime = $bill->epoch;
 
   my $error = $part_export->is_supported_domain($svc_domain);
   warn $error if $error;
