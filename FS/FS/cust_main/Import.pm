@@ -34,7 +34,8 @@ FS::cust_main::Import - Batch customer importing
     file      => $file,      #filename
     type      => $type,      #csv or xls
     format    => $format,    #extended, extended-plus_company, svc_external,
-                             # or svc_external_svc_phone
+                             #extended-plus_company_and_options
+                             #extended-plus_options, or svc_external_svc_phone
     agentnum  => $agentnum,
     refnum    => $refnum,
     pkgpart   => $pkgpart,
@@ -144,6 +145,19 @@ sub batch_import {
                   svc_acct.username svc_acct._password 
                 );
     $payby = 'BILL';
+ } elsif ( $format eq 'extended-plus_options' ) {
+    @fields = qw( agent_custid refnum
+                  last first address1 address2 city state zip country
+                  daytime night
+                  ship_last ship_first ship_company ship_address1 ship_address2
+                  ship_city ship_state ship_zip ship_country
+                  payinfo paycvv paydate
+                  invoicing_list
+                  cust_pkg.pkgpart
+                  svc_acct.username svc_acct._password 
+                  customer_options
+                );
+    $payby = 'BILL';
  } elsif ( $format eq 'extended-plus_company' ) {
     @fields = qw( agent_custid refnum
                   last first company address1 address2 city state zip country
@@ -154,6 +168,19 @@ sub batch_import {
                   invoicing_list
                   cust_pkg.pkgpart
                   svc_acct.username svc_acct._password 
+                );
+    $payby = 'BILL';
+ } elsif ( $format eq 'extended-plus_company_and_options' ) {
+    @fields = qw( agent_custid refnum
+                  last first company address1 address2 city state zip country
+                  daytime night
+                  ship_last ship_first ship_company ship_address1 ship_address2
+                  ship_city ship_state ship_zip ship_country
+                  payinfo paycvv paydate
+                  invoicing_list
+                  cust_pkg.pkgpart
+                  svc_acct.username svc_acct._password 
+                  customer_options
                 );
     $payby = 'BILL';
  } elsif ( $format =~ /^svc_external/ ) {
@@ -318,13 +345,21 @@ sub batch_import {
       }
     }
 
-    $cust_main{'payby'} = 'CARD'
-      if defined $cust_main{'payinfo'}
-      && length  $cust_main{'payinfo'};
+    if ( defined $cust_main{'payinfo'} && length $cust_main{'payinfo'} ) {
+      $cust_main{'payby'} = 'CARD';
+      if ($cust_main{'payinfo'} =~ /\s*([AD]?)(.*)\s*$/) {
+        $cust_main{'payby'} = 'DCRD' if $1 eq 'D';
+        $cust_main{'payinfo'} = $2;
+      }
+    }
 
     my $invoicing_list = $cust_main{'invoicing_list'}
                            ? [ delete $cust_main{'invoicing_list'} ]
                            : [];
+
+    my $customer_options = delete $cust_main{customer_options};
+    $cust_main{tax} = 'Y' if $customer_options =~ /taxexempt/i;
+    push @$invoicing_list, 'POST' if $customer_options =~ /postalinvoice/i;
 
     my $cust_main = new FS::cust_main ( \%cust_main );
 

@@ -30,7 +30,9 @@ Import a file containing customer records.
       <SELECT NAME="format">
         <!-- <OPTION VALUE="simple">Simple -->
         <OPTION VALUE="extended" SELECTED>Extended
+        <OPTION VALUE="extended-plus_options">Extended + options
         <OPTION VALUE="extended-plus_company">Extended plus company
+        <OPTION VALUE="extended-plus_company_and_options">Extended plus company and options
         <OPTION VALUE="svc_external">External service
         <OPTION VALUE="svc_external_svc_phone">External service and phone service
       </SELECT>
@@ -89,7 +91,11 @@ Uploaded files can be CSV (comma-separated value) files or Excel spreadsheets.  
 <b>Extended</b> format has the following field order: <i>agent_custid, refnum<%$req%>, last<%$req%>, first<%$req%>, address1<%$req%>, address2, city<%$req%>, state<%$req%>, zip<%$req%>, country, daytime, night, ship_last, ship_first, ship_address1, ship_address2, ship_city, ship_state, ship_zip, ship_country, payinfo, paycvv, paydate, invoicing_list, pkgpart, username, _password</i>
 <BR><BR>
 
+<b>Extended plus options</b> format has the following field order: <i>agent_custid, refnum<%$req%>, last<%$req%>, first<%$req%>, address1<%$req%>, address2, city<%$req%>, state<%$req%>, zip<%$req%>, country, daytime, night, ship_last, ship_first, ship_address1, ship_address2, ship_city, ship_state, ship_zip, ship_country, payinfo, paycvv, paydate, invoicing_list, pkgpart, username, _password, options</i>
+
 <b>Extended plus company</b> format has the following field order: <i>agent_custid, refnum<%$req%>, last<%$req%>, first<%$req%>, company, address1<%$req%>, address2, city<%$req%>, state<%$req%>, zip<%$req%>, country, daytime, night, ship_last, ship_first, ship_company, ship_address1, ship_address2, ship_city, ship_state, ship_zip, ship_country, payinfo, paycvv, paydate, invoicing_list, pkgpart, username, _password</i>
+
+<b>Extended plus company and options </b> format has the following field order: <i>agent_custid, refnum<%$req%>, last<%$req%>, first<%$req%>, company, address1<%$req%>, address2, city<%$req%>, state<%$req%>, zip<%$req%>, country, daytime, night, ship_last, ship_first, ship_company, ship_address1, ship_address2, ship_city, ship_state, ship_zip, ship_country, payinfo, paycvv, paydate, invoicing_list, pkgpart, username, _password, options</i>
 <BR><BR>
 
 <b>External service</b> format has the following field order: <i>agent_custid, refnum<%$req%>, last<%$req%>, first<%$req%>, company, address1<%$req%>, address2, city<%$req%>, state<%$req%>, zip<%$req%>, country, daytime, night, ship_last, ship_first, ship_company, ship_address1, ship_address2, ship_city, ship_state, ship_zip, ship_country, payinfo, paycvv, paydate, invoicing_list, pkgpart, next_bill_date, id, title</i>
@@ -111,7 +117,7 @@ Field information:
 of an integer, the string is searched for and if necessary auto-created in the
 advertising source table.
 
-  <li><i>payinfo</i>: Credit card number, or leave this, <i>paycvv</i> and <i>paydate</i> blank for email/paper invoicing.
+  <li><i>payinfo</i>: Credit card number, or leave this, <i>paycvv</i> and <i>paydate</i> blank for email/paper invoicing.  You may optionally prepend an 'A' or 'D' to the credit card number for automatic or on demand of customer billing respectively
 
   <li><i>paycvv</i>: CVV2 number (three digits on the back of the credit card)
 
@@ -126,6 +132,13 @@ advertising source table.
   <li><i>id</i>: External service id, integer
 
   <li><i>title</i>: External service identifier, text
+
+  <li><i>options</i>: text containing one or more of
+
+  <ul>
+    <li>taxexempt: this customer does not pay taxes
+    <li>postalinvoice: ensure this customer receives a postal invoice
+  </ul>
 
 </ul>
 
