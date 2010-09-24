@@ -158,7 +158,7 @@ sub description {
   return map { 
             sprintf('%s %02d:%02d %s',
             $days[int($_/86400) % 7],
-            int($_/3600) % 12,
+            (int($_/3600) % 12 || 12),
             int($_/60) % 60,
             (($_/3600) % 24 < 12) ? 'AM' : 'PM' )
        } ( $self->stime, $self->etime );

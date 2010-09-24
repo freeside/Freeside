@@ -4,7 +4,6 @@
 % } else {
 <% $cgi->redirect(popurl(3). "browse/rate_time.html" ) %>
 % }
-%# dumper_html(\%vars, \%old_ints, {$rate_time->intervals}) %>
 <%init>
 my $error = '';
 die "access denied" 
@@ -87,7 +86,7 @@ if(!$error) {
 
 sub l2wtime {
   my ($d, $h, $m, $a) = @_;
-  $h += 24*$d + 12*$a;
+  $h = ($h % 12) + 24*$d + 12*$a;
   $m += 60*$h;
   return 60*$m
 }

@@ -39,7 +39,7 @@ my $day = [ 0 => 'Sun',
             4 => 'Thu',
             5 => 'Fri',
             6 => 'Sat', ];
-my $hour = [ map( {$_, sprintf('%02d',$_) } 0..11 )];
+my $hour = [ map( {$_, sprintf('%02d',$_) } 12, 1..11 )];
 my $min  = [ map( {$_, sprintf('%02d',$_) } 0,30  )];
 my $ampm = [ 0 => 'AM', 1 => 'PM' ];
 
@@ -57,7 +57,7 @@ if($ratetimenum) {
   else {
     foreach my $interval ($rate_time->intervals) {
       push @data, [ map { int($_/86400) % 7,
-                          int($_/3600) % 12,
+                          (int($_/3600) % 12 || 12),
                           int($_/60) % 60,
                           int($_/43200) % 2, } 
                     ( $interval->stime, $interval->etime ) 
