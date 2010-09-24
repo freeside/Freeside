@@ -39,25 +39,27 @@ my @inserted = ();
 my @uninserted = ();
 for ( my $row = 0; exists($param->{"custnum$row"}); $row++ ) {
   if ( $param->{"custnum$row"} ) {
-#    my $cust_main_note = new FS::cust_main_note {
-#                                          'custnum'  => $param->{"custnum$row"},
-#                                          '_date'    => $date,
-#                                          'otaker'   => $otaker,
-#                                          'comments' => $param->{"note$row"},
-#                                                };
-#    my $error = '';
-#    $error = $cust_main_note->insert unless ($op eq "Preview");
-    my $cust_main = qsearchs('cust_main',
-                             { 'custnum' => $param->{"custnum$row"} }
-                            );
-    my $error;
-    if ($cust_main) {
-      $cust_main->comments
-        ? $cust_main->comments($cust_main->comments. " ". $param->{"note$row"})
-        : $cust_main->comments($param->{"note$row"});
-      $error = $cust_main->replace;
-    }else{
-      $error = "Can't find customer " . $param->{"custnum$row"};
+    my $error = '';
+    if ( $param->{use_comments} ) { # why? notes are sexier
+      my $cust_main = qsearchs('cust_main',
+                               { 'custnum' => $param->{"custnum$row"} }
+                              );
+      if ($cust_main) {
+        $cust_main->comments
+          ? $cust_main->comments($cust_main->comments. " ". $param->{"note$row"})
+          : $cust_main->comments($param->{"note$row"});
+        $error = $cust_main->replace;
+      }else{
+        $error = "Can't find customer " . $param->{"custnum$row"};
+      }
+    } else {
+      my $cust_main_note = new FS::cust_main_note {
+                                            'custnum'  => $param->{"custnum$row"},
+                                            '_date'    => $date,
+                                            'otaker'   => $otaker,
+                                            'comments' => $param->{"note$row"},
+                                                  };
+      $error = $cust_main_note->insert unless ($op eq "Preview");
     }
     my $result = { 'custnum' => $param->{"custnum$row"},
                    'last'    => $param->{"last$row"},
