@@ -521,38 +521,6 @@ sub calc_usage {
 
         }
 
-#      } elsif ( $rating_method eq 'upstream' ) { #XXX this was convergent, not currently used.  very much becoming the odd one out. remove?
-#
-#        if ( $cdr->cdrtypenum == 1 ) { #rate based on upstream rateid
-#
-#          $rate_detail = $cdr->cdr_upstream_rate->rate_detail;
-#
-#          $regionnum = $rate_detail->dest_regionnum;
-#          $rate_region = $rate_detail->dest_region;
-#
-#          $pretty_destnum = $cdr->dst;
-#
-#          warn "  found rate for regionnum $regionnum and ".
-#               "rate detail $rate_detail\n"
-#            if $DEBUG;
-#
-#        } else { #pass upstream price through
-#
-#          $charge = sprintf('%.2f', $cdr->upstream_price);
-#          warn "Incrementing \$charges by $charge.  Now $charges\n" if $DEBUG;
-#          $charges += $charge;
-# 
-#          @call_details = (
-#            #time2str("%Y %b %d - %r", $cdr->calldate_unix ),
-#            time2str("%c", $cdr->calldate_unix),  #XXX this should probably be a config option dropdown so they can select US vs- rest of world dates or whatnot
-#            'N/A', #minutes...
-#            '$'.$charge,
-#            #$pretty_destnum,
-#            $cdr->description, #$rate_region->regionname,
-#          );
-#
-#        }
-
       } elsif ( $rating_method eq 'upstream_simple' ) {
 
         #XXX $charge = sprintf('%.2f', $cdr->upstream_price);
@@ -569,20 +537,19 @@ sub calc_usage {
       } elsif ( $rating_method eq 'single_price' ) {
 
         # a little false laziness w/below
+        # $rate_detail = new FS::rate_detail({sec_granularity => ... }) ?
 
         my $granularity = length($self->option('sec_granularity'))
                             ? $self->option('sec_granularity')
                             : 60;
 
-                    # length($cdr->billsec) ? $cdr->billsec : $cdr->duration;
         $seconds = $use_duration ? $cdr->duration : $cdr->billsec;
 
         $seconds += $granularity - ( $seconds % $granularity )
           if $seconds      # don't granular-ize 0 billsec calls (bills them)
-          && $granularity; # 0 is per call
-        my $minutes = $seconds / 60; # sprintf("%.1f", 
-        #$minutes =~ s/\.0$// if $granularity == 60;
-
+          && $granularity  # 0 is per call
+          && $seconds % $granularity;
+        my $minutes = $seconds / 60;
         # XXX config?
         #$charge = sprintf('%.2f', ( $self->option('min_charge') * $minutes )
                                   #+ 0.00000001 ); #so 1.005 rounds to 1.01
@@ -592,8 +559,10 @@ sub calc_usage {
         warn "Incrementing \$charges by $charge.  Now $charges\n" if $DEBUG;
         $charges += $charge;
 
-        @call_details = ($cdr->downstream_csv( 'format' => $output_format,
-                                               'charge' => $charge,
+        @call_details = ($cdr->downstream_csv( 'format'  => $output_format,
+                                               'charge'  => $charge,
+                                               'seconds' => $seconds,
+                                               'granularity' => $granularity,
                                              )
                         );
 
@@ -616,6 +585,9 @@ sub calc_usage {
              "; skipping\n"
 
       } else { # there *is* a rate_detail (or call_details), proceed...
+        # About this section:
+        # We don't round _anything_ (except granularizing) 
+        # until the final $charge = sprintf("%.2f"...).
 
         unless ( @call_details || ( $charge ne '' && $charge == 0 ) ) {
 
@@ -624,10 +596,8 @@ sub calc_usage {
           $seconds = min($seconds_left, $rate_detail->conn_sec);
           $seconds_left -= $seconds; 
           $weektime     += $seconds;
-          $charge = sprintf("%.02f", $rate_detail->conn_charge);
+          $charge = $rate_detail->conn_charge; 
 
-          my $total_minutes = 0;
-          my $whole_minutes = 1;
           my $etime;
           while($seconds_left) {
             my $ratetimenum = $rate_detail->ratetimenum; # may be empty
@@ -671,29 +641,28 @@ sub calc_usage {
               unless exists $included_min{$regionnum}{$ratetimenum};
 
             my $granularity = $rate_detail->sec_granularity;
-            $whole_minutes = 0 if $granularity;
 
-            # should this be done in every rate interval?
-            $charge_sec += $granularity - ( $charge_sec % $granularity )
-              if $charge_sec   # don't granular-ize 0 billsec calls (bills them)
-              && $granularity; # 0 is per call
-            my $minutes = sprintf("%.1f", $charge_sec / 60);
-            $minutes =~ s/\.0$// if $granularity == 60;
+            my $minutes;
+            if ( $granularity ) { # charge per minute
+              # Round up to the nearest $granularity
+              if ( $charge_sec and $charge_sec % $granularity ) {
+                $charge_sec += $granularity - ($charge_sec % $granularity);
+              }
+              $minutes = $charge_sec / 60; #don't round this
+            }
+            else { # per call
+              $minutes = 1;
+              $seconds_left = 0;
+            }
 
             $seconds += $charge_sec;
 
-            # per call rather than per minute
-            $minutes = 1 unless $granularity;
-            $seconds_left = 0 unless $granularity;
-
             $included_min{$regionnum}{$ratetimenum} -= $minutes;
-            
             if ( $included_min{$regionnum}{$ratetimenum} <= 0 ) {
               my $charge_min = 0 - $included_min{$regionnum}{$ratetimenum}; #XXX should preserve
                                                               #(display?) this
               $included_min{$regionnum}{$ratetimenum} = 0;
-              $charge += sprintf('%.2f', ($rate_detail->min_charge * $charge_min)
-                                         + 0.00000001 ); #so 1.005 rounds to 1.01
+              $charge += ($rate_detail->min_charge * $charge_min); #still not rounded
             }
 
             # choose next rate_detail
@@ -708,22 +677,15 @@ sub calc_usage {
           # this is why we need regionnum/rate_region....
           warn "  (rate region $rate_region)\n" if $DEBUG;
 
-          $total_minutes = sprintf("%.1f", $seconds / 60);
-          $total_minutes =~ s/\.0$// if $whole_minutes;
-
           $classnum = $rate_detail->classnum;
-          $charge = sprintf('%.2f', $charge);
+          $charge = sprintf('%.2f', $charge + 0.000001); # NOW round it.
           warn "Incrementing \$charges by $charge.  Now $charges\n" if $DEBUG;
           $charges += $charge;
 
           @call_details = (
             $cdr->downstream_csv( 'format'         => $output_format,
                                   'granularity'    => $rate_detail->sec_granularity, 
-                                  'minutes'        => $total_minutes,
-                                  # why do we go through this hocus-pocus?
-                                  # the cdr *will* show duration here
-                                  # if we forego the 'minutes' key
-                                  # duration vs billsec?
+                                  'seconds'        => $seconds,
                                   'charge'         => $charge,
                                   'pretty_dst'     => $pretty_destnum,
                                   'dst_regionname' => $regionname,
@@ -737,7 +699,6 @@ sub calc_usage {
           my $call_details;
           my $phonenum = $cust_svc->svc_x->phonenum;
 
-          #if ( $self->option('rating_method') eq 'upstream_simple' ) {
           if ( scalar(@call_details) == 1 ) {
             $call_details =
               [ 'C',

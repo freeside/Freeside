@@ -2269,12 +2269,11 @@ sub tables_hashref {
         'orig_regionnum',  'int', 'NULL',     '', '', '', 
         'dest_regionnum',  'int',     '',     '', '', '', 
         'min_included',    'int',     '',     '', '', '', 
-        'conn_charge',     @money_type, '0', '', #'decimal','','10,5','0','',
+        'conn_charge',     'decimal', '', '10,4', '0', '',
         'conn_sec',        'int',     '',     '', '0', '',
         'min_charge',      'decimal', '', '10,5', '', '', #@money_type, '', '', 
         'sec_granularity', 'int',     '',     '', '', '', 
         'ratetimenum',     'int', 'NULL',     '', '', '',
-        #time period (link to table of periods)?
         'classnum',        'int', 'NULL',     '', '', '', 
       ],
       'primary_key' => 'ratedetailnum',
