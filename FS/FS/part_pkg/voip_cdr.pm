@@ -561,7 +561,9 @@ sub calc_usage {
 
         @call_details = ($cdr->downstream_csv( 'format'  => $output_format,
                                                'charge'  => $charge,
-                                               'seconds' => $seconds,
+                                               'seconds' => ($use_duration ? 
+                                                             $cdr->duration : 
+                                                             $cdr->billsec),
                                                'granularity' => $granularity,
                                              )
                         );
@@ -685,7 +687,9 @@ sub calc_usage {
           @call_details = (
             $cdr->downstream_csv( 'format'         => $output_format,
                                   'granularity'    => $rate_detail->sec_granularity, 
-                                  'seconds'        => $seconds,
+                                  'seconds'        => ($use_duration ?
+                                                       $cdr->duration :
+                                                       $cdr->billsec),
                                   'charge'         => $charge,
                                   'pretty_dst'     => $pretty_destnum,
                                   'dst_regionname' => $regionname,

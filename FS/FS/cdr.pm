@@ -560,11 +560,7 @@ sub export_formats {
     elsif ( $opt{granularity} == 60 ) {#full minutes
       return sprintf("%.0fm",$sec/60);
     }
-    elsif ( $opt{granularity} == 6 || 
-            $opt{granularity} == 30 ) {#tenths or halves
-      return sprintf("%.01fm",$sec/60);
-    }
-    else { #seconds, or unspecified
+    else { #anything else
       return sprintf("%dm %ds", $sec/60, $sec%60);
     }
   };
