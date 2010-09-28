@@ -7,30 +7,34 @@ function dkpr($var) {
   /* "debug kpr": Krumo-print $var if debugging is on */
   static $debug;
   if(empty($debug)) $debug = variable_get('freeside_debug','');
-  if($debug) kpr($var);
+  if($debug) {
+    kpr($var);
+  }
 }
 
-function signup_info($packet) {
+function signup_info($keys) {
   /* local cache, because transporting the entire signup_info
     through XML-RPC is incredibly slow.  If you change the config,
     you can flush the local cache with the "Clear cached data" 
     button on the Drupal "Performance" menu. */
-  if(1) { // change to 0 to disable local cache
-    $cid = 'FS_signup'.serialize($packet);
-    $info = cache_get($cid);
-    if($info) {
-      return($info->data);
-    }
-    else {
-      $freeside = new FreesideSelfService(); 
-      $info = $freeside->signup_info($packet);
-      cache_set($cid, $info, 'cache', CACHE_TEMPORARY);
-      return($info);
-    }
+  $cid = 'FS_signup_info';
+  $info = cache_get($cid);
+  if($info) {
+    return($info->data);
   }
   else {
-    $freeside = new FreesideSelfService();
-    return $freeside->signup_info($packet);
+    $packet = array(
+      'agentnum'    => variable_get('freeside_agentnum',''),
+      'promo_code'  => '',
+      'reg_code'    => '',
+      'keys'        => $keys,
+    );
+
+    $freeside = new FreesideSelfService(); 
+    $freeside->clear_signup_cache();
+    $info = $freeside->signup_info($packet);
+    cache_set($cid, $info, 'cache', CACHE_TEMPORARY);
+    return($info);
   }
 }
 
@@ -44,6 +48,7 @@ function subextract($array, $key) {
 }
 
 function freeside_signup_form($form_state) {
+  dkpr($form_state);
 
   $agentnum = variable_get('freeside_agentnum','');
   if( !$agentnum || !(variable_get('freeside_hostname','')) ) {
@@ -52,12 +57,17 @@ function freeside_signup_form($form_state) {
   }
 
   $freeside = new FreesideSelfService();
-  $packet = array(
-    'agentnum'    => $agentnum,
-    'promo_code'  => '',
-    'reg_code'    => '',
+  $keys = array(
+    // all the signup_info that we need
+    'part_referral',
+    'refnum',
+    'emailinvoiceonly',
+    'payby',
+    'payby_longname',
+    'part_pkg',
+    'default_pkgpart',
   );
-  $signup_info = signup_info($packet);
+  $signup_info = signup_info($keys);
   dkpr($signup_info);
 
   $form = array();
@@ -249,6 +259,7 @@ function freeside_signup_form($form_state) {
       '#type'   => 'password_confirm',
       '#size'   => 20,
       '#required'=>1,
+      '#process'=> array('freeside_expand_password_confirm'),
     ),
   );
   $form['package']['pkgpart']['#default_value'] = $signup_info['default_pkgpart'];
@@ -258,6 +269,14 @@ function freeside_signup_form($form_state) {
     '#value'  => 'Sign me up!',
   );
   return $form;
+}
+
+/* workaround for silly Drupal behavior */
+function freeside_expand_password_confirm($element) {
+  $element = expand_password_confirm($element);
+  $element['pass1']['#attributes']['value'] = $element['#value']['pass1'];
+  $element['pass2']['#attributes']['value'] = $element['#value']['pass2'];
+  return $element;
 }
 
 function freeside_signup_form_submit($form, &$form_state) {
@@ -278,6 +297,7 @@ function freeside_signup_form_submit($form, &$form_state) {
                  'night',
                  'fax',
                  'payby',
+                 'refnum',
                  'invoicing_list',
                  'pkgpart',
                  'username'
@@ -306,12 +326,14 @@ function freeside_signup_form_submit($form, &$form_state) {
   dkpr($response);
   error_log("[new_customer] received response from Freeside: $response");
   $error = $response['error'];
+
   if ( $error ) {
     drupal_set_message(t("Signup error: $error"), 'error');
     $form_state['redirect'] = FALSE;
   }
   else {
     drupal_set_message(t("Signup successful!"),'status');
+    $form_state['redirect'] = variable_get('freeside_redirect_after_signup','/');
   }
 }
 

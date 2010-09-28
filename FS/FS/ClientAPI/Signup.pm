@@ -395,9 +395,14 @@ sub signup_info {
     my $agent_signup_info = { %$signup_info };
     delete $agent_signup_info->{agentnum2part_pkg};
     $agent_signup_info->{'agent'} = $session->{'agent'};
-    $agent_signup_info;
-  } else {
-    $signup_info;
+    return $agent_signup_info;
+  } 
+  elsif ( exists $packet->{'keys'} ) {
+    my @keys = @{ $packet->{'keys'} };
+    return { map { $_ => $signup_info->{$_} } @keys };
+  }
+  else {
+    return $signup_info;
   }
 
 }

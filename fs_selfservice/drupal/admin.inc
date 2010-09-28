@@ -18,7 +18,11 @@ function freeside_admin_form() {
 
   if($hostname) {
     $freeside = new FreesideSelfService();
-    $signup_info = $freeside->signup_info(); // no agent in this request
+    $signup_info = $freeside->signup_info(
+      array(
+        'keys' => array('agent')
+      )
+    ); // no agent in this request
 
     $agents = array();
     foreach((array)$signup_info['agent'] as $a) {
@@ -37,6 +41,12 @@ function freeside_admin_form() {
       '#type'   => 'checkbox',
       '#title'  => t('Enable debugging'),
       '#default_value'=>variable_get('freeside_debug',0),
+    );
+
+    $form['freeside_redirect_after_signup'] = array(
+      '#type'   => 'textfield',
+      '#title'  => t('Success page (URL or Drupal path)'),
+      '#default_value'=>variable_get('freeside_redirect_after_signup','/'),
     );
   }
 

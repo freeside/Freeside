@@ -1787,6 +1787,7 @@ and customer address. Include units.',
     'select_hash' => [
                        'svc_acct'  => 'Account (svc_acct)',
                        'svc_phone' => 'Phone number (svc_phone)',
+                       'svc_pbx'   => 'PBX (svc_pbx)',
                      ],
   },
 
