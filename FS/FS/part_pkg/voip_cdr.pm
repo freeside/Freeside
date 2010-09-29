@@ -851,7 +851,7 @@ sub check_chargable {
   return "destination less than $dst_length digits"
     if $dst_length && length($cdr->dst) < $dst_length
     && ! ( $opt{'noskip_dst_length_accountcode_tollfree'}
-            && $cdr->is_tollfree
+            && $cdr->is_tollfree('accountcode')
          );
 
   return "lastapp is $opt{'skip_lastapp'}"
