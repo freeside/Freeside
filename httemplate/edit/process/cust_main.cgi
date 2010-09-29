@@ -251,6 +251,11 @@ if ( $new->custnum eq '' ) {
     $new->payinfo($new_account.'@'.$new_aba);
   }
 
+  if ( ! $conf->exists('cust_main-edit_signupdate') or
+       ! $new->signupdate ) {
+    $new->signupdate($old->signupdate);
+  }
+
   warn "$me calling $new -> replace( $old, \ @invoicing_list )" if $DEBUG;
   local($FS::cust_main::DEBUG) = $DEBUG if $DEBUG;
   local($FS::Record::DEBUG)    = $DEBUG if $DEBUG;
