@@ -451,6 +451,9 @@ sub new_customer {
       unless $packet->{'popnum'} || !scalar(qsearch('svc_acct_pop',{} ));
 
   }
+  elsif ( $svc_x eq 'svc_pbx' ) {
+    #possibly some validation will be needed
+  }
 
   my $agentnum;
   if ( exists $packet->{'session_id'} ) {
@@ -585,18 +588,23 @@ sub new_customer {
     }
     $svc->child_objects( \@acct_snarf );
 
-    push @svc, $svc;
 
   } elsif ( $svc_x eq 'svc_phone' ) {
 
-    my $svc = new FS::svc_phone ( {
+    push @svc, new FS::svc_phone ( {
       'svcpart' => $svcpart,
        map { $_ => $packet->{$_} }
          qw( countrycode phonenum sip_password pin ),
     } );
 
-    push @svc, $svc;
+  } elsif ( $svc_x eq 'svc_pbx' ) {
 
+    push @svc, new FS::svc_pbx ( {
+        'svcpart' => $svcpart,
+        map { $_ => $packet->{$_} } 
+          qw( id title ),
+        } );
+  
   } else {
     die "unknown signup service $svc_x";
   }
@@ -722,14 +730,20 @@ sub new_customer {
 
   my %return = ( 'error'          => '',
                  'signup_service' => $svc_x,
+                 'svcnum'         => $svc[0]->svcnum,
+                 'custnum'        => $cust_main->custnum,
                );
 
   if ( $svc_x eq 'svc_acct' ) {
     $return{$_} = $svc[0]->$_() for qw( username _password );
   } elsif ( $svc_x eq 'svc_phone' ) {
     $return{$_} = $svc[0]->$_() for qw( countrycode phonenum sip_password pin );
+  } elsif ( $svc_x eq 'svc_pbx' ) {
+    #$return{$_} = $svc[0]->$_() for qw( ) #nothing yet
   } else {
-    die "unknown signup service $svc_x";
+    return { 'error' => "configuration error: unknown signup service $svc_x" };
+    #die "unknown signup service $svc_x";
+    # return an error that's visible to someone somewhere
   }
 
   return \%return;

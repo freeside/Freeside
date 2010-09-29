@@ -66,6 +66,7 @@ function freeside_signup_form($form_state) {
     'payby_longname',
     'part_pkg',
     'default_pkgpart',
+    'signup_service',
   );
   $signup_info = signup_info($keys);
   dkpr($signup_info);
@@ -249,19 +250,28 @@ function freeside_signup_form($form_state) {
         '#value'  => $pkgs[0]['pkgpart'],
       )
     ),
-    'username'=> array(
-      '#type'   => 'textfield',
-      '#title'  => t('Username'),
-      '#size'   => 20,
-      '#required'=>1,
-    ),
-    'password'=> array(
-      '#type'   => 'password_confirm',
-      '#size'   => 20,
-      '#required'=>1,
-      '#process'=> array('freeside_expand_password_confirm'),
-    ),
   );
+
+  switch($signup_info['signup_service']) {
+  case 'svc_acct':
+    $form['package'] += array(
+      'username'=> array(
+        '#type'   => 'textfield',
+        '#title'  => t('Username'),
+        '#size'   => 20,
+        '#required'=>1,
+      ),
+      'password'=> array(
+        '#type'   => 'password_confirm',
+        '#size'   => 20,
+        '#required'=>1,
+        '#process'=> array('freeside_expand_password_confirm'),
+      )
+    );
+    break;
+  case 'svc_pbx':
+    break; // nothing yet implemented
+  }
   $form['package']['pkgpart']['#default_value'] = $signup_info['default_pkgpart'];
 
   $form['submit'] = array(
@@ -333,7 +343,11 @@ function freeside_signup_form_submit($form, &$form_state) {
   }
   else {
     drupal_set_message(t("Signup successful!"),'status');
-    $form_state['redirect'] = variable_get('freeside_redirect_after_signup','/');
+    $form_state['redirect'] = array(
+      variable_get('freeside_redirect_after_signup','/'),
+      //query string would go here
+      //'custnum='.$response['custnum'].'&svcnum='.$response['svcnum'],
+    );
   }
 }
 
