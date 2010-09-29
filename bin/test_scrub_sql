@@ -1,0 +1,58 @@
+#!/usr/bin/perl -w
+
+#This drops anything from the database that could cause live things to happen.
+#You'd want to do this on a test copy of your live database but NEVER on the
+#live database itself.
+
+#-all exports (all records in part_export, part_export_option export_svc)
+#-all non-POST invoice destinations (cust_main_invoice)
+#-all payment gateways and agent payment gw overrides (payment_gateway,
+# payment_gateway_option, agent_payment_gateway)
+#-everything in the job queue (queue and queue_arg)
+#-business-onlinepayment and business-onlinepayment-ach config
+#AND
+#-masks all payment info
+
+foreach my $table (qw(
+  part_export_option
+  payment_gateway
+  payment_gateway_option
+  agent_payment_gateway
+  queue
+  queue_arg
+  cust_pay_batch
+)) {
+  print "DELETE FROM $table;\n";
+  print "DELETE FROM h_$table;\n";
+}
+
+foreach my $table (qw(
+  part_export
+  export_svc
+)) {
+  print "DELETE FROM $table;\n";
+}
+
+print "DELETE FROM cust_main_invoice WHERE dest != 'POST';\n";
+
+foreach my $item (qw(
+  business-onlinepayment
+  business-onlinepayment-ach
+)) {
+  print "DELETE FROM conf WHERE name = '$item';\n";
+  print "DELETE FROM h_conf WHERE name = '$item';\n";
+}
+
+my @ptables = map { ($_, "h_$_") } qw(
+  cust_main
+  cust_pay
+  cust_pay_pending
+  cust_pay_void
+  cust_refund
+);
+foreach my $table (@ptables) {
+  print "UPDATE $table SET payinfo = paymask WHERE payby IN ( 'CARD','DCRD','CHEK','DCHK' );\n";
+}
+
+print "UPDATE cust_main set paycvv = NULL;\n";
+print "UPDATE h_cust_main set paycvv = NULL;\n";
