@@ -38,6 +38,10 @@ $me = '[FS::part_pkg::agent]';
     'cutoff_day'    => { 'name' => 'Billing Day (1 - 28)',
                          'default' => '1',
                        },
+    'add_full_period'=> { 'name' => 'When prorating first month, also bill '.
+                                    'for one full period after that',
+                          'type' => 'checkbox',
+                        },
 
     'no_pkg_prorate'   => { 'name' => 'Disable prorating bulk packages (charge full price for packages active only a portion of the month)',
                             'type' => 'checkbox',
@@ -46,7 +50,7 @@ $me = '[FS::part_pkg::agent]';
   },
 
   #'fieldorder' => [qw( setup_fee recur_fee recur_method cutoff_day ) ],
-  'fieldorder' => [qw( setup_fee recur_fee cutoff_day no_pkg_prorate ) ],
+  'fieldorder' => [qw( setup_fee recur_fee cutoff_day add_full_period no_pkg_prorate ) ],
 
   'weight' => 51,
 

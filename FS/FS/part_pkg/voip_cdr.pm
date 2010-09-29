@@ -70,7 +70,10 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                                    'subscription',
                          'default' => '1',
                        },
-
+    'add_full_period'=> { 'name' => 'When prorating first month, also bill '.
+                                    'for one full period after that',
+                          'type' => 'checkbox',
+                        },
     'recur_method'  => { 'name' => 'Recurring fee method',
                          #'type' => 'radio',
                          #'options' => \%recur_method,
@@ -253,6 +256,7 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
   'fieldorder' => [qw(
                        setup_fee recur_fee recur_temporality unused_credit
                        recur_method cutoff_day
+                       add_full_period
                        cdr_svc_method
                        rating_method ratenum min_charge sec_granularity
                        ignore_unrateable

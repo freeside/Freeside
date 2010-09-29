@@ -80,12 +80,19 @@ sub calc_prorate {
       $mstart = 
         timelocal(0,0,0,$cutoff_day,$mon == 0 ? 11 : $mon - 1,$year-($mon==11));
     }
-    
+   
+    # next bill date will be figured as $$sdate + one period
     $$sdate = $mstart;
 
     my $permonth = $self->option('recur_fee', 1) / $self->freq;
     my $months = ( ( $self->freq - 1 ) + ($mend-$mnow) / ($mend-$mstart) );
-    
+
+    if ( $self->option('add_full_period',1) ) {
+      # charge a full period in addition to the partial month
+      $months += $self->freq;
+      $$sdate = $self->add_freq($mstart);
+    }
+
     $param->{'months'} = $months;
     $charge = sprintf('%.2f', $permonth * $months);
   }

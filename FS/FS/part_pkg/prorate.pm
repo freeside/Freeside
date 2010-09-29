@@ -79,6 +79,11 @@ use FS::part_pkg::flat;
                                     'package recharge',
                           'type' => 'checkbox',
                         },
+    'add_full_period'=> { 'name' => 'When prorating first month, also bill '.
+                                    'for one full period after that',
+                          'type' => 'checkbox',
+                        },
+
 
     #it would be better if this had to be turned on, its confusing
     'externalid' => { 'name'   => 'Optional External ID',
@@ -89,7 +94,8 @@ use FS::part_pkg::flat;
                     'seconds', 'upbytes', 'downbytes', 'totalbytes',
                     'recharge_amount', 'recharge_seconds', 'recharge_upbytes',
                     'recharge_downbytes', 'recharge_totalbytes',
-                    'usage_rollover', 'recharge_reset', 'externalid', ],
+                    'usage_rollover', 'recharge_reset', 'add_full_period',
+                    'externalid', ],
   'freq' => 'm',
   'weight' => 20,
 );
