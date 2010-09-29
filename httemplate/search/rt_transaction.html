@@ -90,7 +90,7 @@ if ( $cgi->param('ticketid') =~ /^\s*(\d+)\s*$/ ) {
 }
 
 if ( $cgi->param('svcnum') =~ /^\s*(\d+)\s*$/ ) {
-  $where .= " AND acct_rt_transaction.svcnum = $1";
+  $where .= " AND EXISTS( SELECT 1 FROM acct_rt_transaction WHERE acct_rt_transaction.transaction_id = Transactions.id AND svcnum = $1 )";
 }
 
 my $query = {
@@ -100,7 +100,7 @@ my $query = {
                    'Tickets.Subject',
                    'Users.name AS otaker',
                    "$transactiontime AS transaction_time",
-                   '( SELECT SUM(support) from acct_rt_transaction where Transaction_id = Transactions.id ) AS support',
+                   '( SELECT SUM(support) from acct_rt_transaction where transaction_id = Transactions.id ) AS support',
                  ),
   'table'     => 'transactions', #Pg-ism
   #'table'     => 'Transactions',
