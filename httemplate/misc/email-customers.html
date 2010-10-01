@@ -29,6 +29,7 @@
 % if ( $cgi->param('action') ) {
 
     <TABLE BGCOLOR="#cccccc" CELLSPACING=0>
+    <INPUT TYPE="hidden" NAME="msgnum" VALUE="<% $cgi->param('msgnum') %>">
 
 %   if ( $msg_template ) {
       <% include('/elements/tr-fixed.html',
