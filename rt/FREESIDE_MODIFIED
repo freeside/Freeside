@@ -5,9 +5,10 @@ config.layout.in
  etc/RT_Config.pm
  etc/RT_SiteConfig.pm
  etc/schema.Pg
+ etc/schema.mysql-4.1
 
  lib/RT/Config.pm
-lib/RT?CustomField.pm #CheckMandatoryFields
+lib/RT/CustomField.pm #CheckMandatoryFields
 lib/RT/CustomField_Overlay.pm #customfield date patch
 lib/RT/Interface/Web.pm #customfield date patch
 lib/RT/Interface/Web_Vendor.pm
