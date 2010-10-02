@@ -423,7 +423,9 @@ sub email_search_result {
 
   my( $num, $last, $min_sec ) = (0, time, 5); #progresbar foo
   my @retry_jobs = ();
+  my $dups = 0;
   my $success = 0;
+  my %sent_to = ();
 
   #eventually order+limit magic to reduce memory use?
   foreach my $obj ( qsearch($sql_query) ) {
@@ -443,9 +445,21 @@ sub email_search_result {
     if ( !$cust_main ) { 
       next; # unlinked object; nothing else we can do
     }
+
+    if( $sent_to{$cust_main->custnum} ) {
+      # avoid duplicates
+      $dups++;
+      next;
+    }
+
+    $sent_to{$cust_main->custnum} = 1;
     
     if ( $msg_template ) {
       # XXX add support for other context objects?
+      # If we do that, handling of "duplicates" will 
+      # have to be smarter.  Currently we limit to 
+      # one message per custnum because they'd all
+      # be identical.
       @message = $msg_template->prepare( 'cust_main' => $cust_main );
     }
     else {
@@ -494,7 +508,7 @@ sub email_search_result {
   if(@retry_jobs) {
     # fail the job, but with a status message that makes it clear
     # something was sent.
-    return "Sent $success, failed ".scalar(@retry_jobs).". Failed attempts placed in job queue.\n";
+    return "Sent $success, skipped $dups duplicate(s), failed ".scalar(@retry_jobs).". Failed attempts placed in job queue.\n";
   }
 
   return '';
