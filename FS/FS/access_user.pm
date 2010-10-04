@@ -132,9 +132,8 @@ sub insert {
 
 sub htpasswd_kludge {
   my $self = shift;
-  
-  #awful kludge to skip setting htpasswd for fs_* users
-  return '' if $self->username =~ /^fs_/;
+
+  return '' if $self->is_system_user;
 
   unshift @_, '-c' unless -e $htpasswd_file;
   if ( 
@@ -510,6 +509,25 @@ sub default_customer_view {
     || $conf->config('cust_main-default_view')
     || 'jumbo'; #'basics' in 1.9.1?
 
+}
+
+=item is_system_user
+
+Returns true if this user has the name of a known system account.  These 
+users will not appear in the htpasswd file and can't have passwords set.
+
+=cut
+
+sub is_system_user {
+  my $self = shift;
+  return grep { $_ eq $self->username } ( qw(
+    fs_queue
+    fs_daily
+    fs_selfservice
+    fs_signup
+    fs_bootstrap
+    fs_selfserv
+) );
 }
 
 =back

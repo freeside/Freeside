@@ -10,6 +10,7 @@
                  'process_m2m' => { 'link_table'   => 'access_usergroup',
                                     'target_table' => 'access_group',
                                   },
+                 'precheck_callback'=> \&precheck_callback,
              )
 %>
 %   }
@@ -23,4 +24,13 @@ if ( FS::Conf->new->exists('disable_acl_changes') ) {
   die "shouldn't be reached";
 }
 
+sub precheck_callback {
+  my $cgi = shift;
+  my $o = FS::access_user->new({username => $cgi->param('username')});
+  if( $o->is_system_user and !$cgi->param('usernum') ) {
+    $cgi->param('username','');
+    return "username '".$o->username."' reserved for system account."
+  }
+  return '';
+}
 </%init>

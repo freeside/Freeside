@@ -20,9 +20,8 @@
                                'user_custnum' => 'Customer (optional)',
                                'disabled'     => 'Disable employee',
                              },
-                 'edit_callback' => sub { my( $c, $o ) = @_; 
-                                          $o->set('_password', '');
-                                        },
+                 'edit_callback' => \&edit_callback,
+                 'field_callback'=> \&field_callback,
                  'viewall_dir' => 'browse',
                  'html_bottom' =>
                    sub {
@@ -61,5 +60,18 @@ my $check_user_custnum_search = <<END;
     }
   </SCRIPT>
 END
+
+sub edit_callback {
+  my ($c, $o, $f, $opt) = @_;
+  $o->set('_password', '');
+}
+
+sub field_callback {
+  my ($c, $o, $f) = @_;
+  if($f->{'type'} eq 'password' and $o->is_system_user) {
+    $f->{'type'} = 'hidden';
+    $f->{'disabled'} = 1;
+  }
+}
 
 </%init>
