@@ -22,7 +22,7 @@ $DEBUG = 0;
 tie my %cdr_svc_method, 'Tie::IxHash',
   'svc_phone.phonenum' => 'Phone numbers (svc_phone.phonenum)',
   'svc_pbx.title'      => 'PBX name (svc_pbx.title)',
-  'svc_pbx.svcnum'     => 'Pre-matched to PBX (svc_pbx.svcnum)',
+  'svc_pbx.svcnum'     => 'Freeside service # (svc_pbx.svcnum)',
 ;
 
 tie my %rating_method, 'Tie::IxHash',
