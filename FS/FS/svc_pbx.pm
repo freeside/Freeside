@@ -292,6 +292,9 @@ with the chosen prefix.
 
 =item disable_src => 1: No-op for svc_pbx CDR processing.
 
+=item by_svcnum => 1: Select CDRs where the svcnum field matches, instead of 
+title/charged_party.  Normally this field is set after processing.
+
 =back
 
 =cut
@@ -307,18 +310,24 @@ sub get_cdrs {
   
   my $for_update = $options{'for_update'} ? 'FOR UPDATE' : '';
 
-  my $title = $self->title;
-
-  my $prefix = $options{'default_prefix'};
-
-  my @orwhere =  map " $_ = '$title'        ", @fields;
-  push @orwhere, map " $_ = '$prefix$title' ", @fields
-    if length($prefix);
-  if ( $prefix =~ /^\+(\d+)$/ ) {
-    push @orwhere, map " $_ = '$1$title' ", @fields
+  if ( $options{'by_svcnum'} ) {
+    $hash{'svcnum'} = $self->svcnum;
   }
+  else {
+    #matching by title
+    my $title = $self->title;
 
-  push @where, ' ( '. join(' OR ', @orwhere ). ' ) ';
+    my $prefix = $options{'default_prefix'};
+
+    my @orwhere =  map " $_ = '$title'        ", @fields;
+    push @orwhere, map " $_ = '$prefix$title' ", @fields
+      if length($prefix);
+    if ( $prefix =~ /^\+(\d+)$/ ) {
+      push @orwhere, map " $_ = '$1$title' ", @fields
+    }
+
+    push @where, ' ( '. join(' OR ', @orwhere ). ' ) ';
+  }
 
   if ( $options{'begin'} ) {
     push @where, 'startdate >= '. $options{'begin'};
@@ -327,7 +336,8 @@ sub get_cdrs {
     push @where, 'startdate < '.  $options{'end'};
   }
 
-  my $extra_sql = ( keys(%hash) ? ' AND ' : ' WHERE ' ). join(' AND ', @where );
+  my $extra_sql = ( keys(%hash) ? ' AND ' : ' WHERE ' ). join(' AND ', @where )
+    if @where;
 
   my @cdrs =
     qsearch( {

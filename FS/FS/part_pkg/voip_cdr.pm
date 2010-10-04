@@ -22,6 +22,7 @@ $DEBUG = 0;
 tie my %cdr_svc_method, 'Tie::IxHash',
   'svc_phone.phonenum' => 'Phone numbers (svc_phone.phonenum)',
   'svc_pbx.title'      => 'PBX name (svc_pbx.title)',
+  'svc_pbx.svcnum'     => 'Pre-matched to PBX (svc_pbx.svcnum)',
 ;
 
 tie my %rating_method, 'Tie::IxHash',
@@ -369,13 +370,16 @@ sub calc_usage {
   ) {
 
     my $svc_x = $cust_svc->svc_x;
-    foreach my $cdr (
-      $svc_x->get_cdrs(
+    my %options = (
         'disable_src'    => $self->option('disable_src'),
         'default_prefix' => $self->option('default_prefix'),
         'status'         => '',
         'for_update'     => 1,
-      )  # $last_bill, $$sdate )
+      );  # $last_bill, $$sdate )
+    $options{'by_svcnum'} = 1 if $svc_field eq 'svcnum';
+
+    foreach my $cdr (
+      $svc_x->get_cdrs( %options )
     ) {
       if ( $DEBUG > 1 ) {
         warn "rating CDR $cdr\n".
