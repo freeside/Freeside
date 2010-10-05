@@ -199,6 +199,15 @@ if ( $ARGS{'Update'} && $id ne 'new' ) {
         push (@results, $msg);
     }
 
+    # Clean up values
+    foreach my $param (grep /^$paramtag-/, keys(%ARGS)) {
+      for ($ARGS{$param}) {
+        s/\r+\n/\n/g;
+        s/^\s+//;
+        s/\s+$//;
+      }
+    }
+
     # Update any existing values
     my $values = $CustomFieldObj->ValuesObj;
     while ( my $value = $values->Next ) {
@@ -206,7 +215,6 @@ if ( $ARGS{'Update'} && $id ne 'new' ) {
             my $param = join("-", $paramtag, $value->Id, $attr);
             next unless exists $ARGS{$param};
             next if ($value->$attr()||'') eq ($ARGS{$param}||'');
-
             my $mutator = "Set$attr";
             my ($id, $msg) = $value->$mutator( $ARGS{$param} );
             push (@results, $msg);
