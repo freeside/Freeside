@@ -596,7 +596,7 @@ sub process_payment {
   my $amount = $1;
   return { error => 'Amount must be greater than 0' } unless $amount > 0;
 
-  $p->{'discount_term'} =~ /^\s*(\d+)\s*$/
+  $p->{'discount_term'} =~ /^\s*(\d*)\s*$/
     or return { 'error' => gettext('illegal_discount_term'). ': '. $p->{'discount_term'} };
   my $discount_term = $1;
 
