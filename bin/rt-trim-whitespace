@@ -1,0 +1,38 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use FS::Record;
+use FS::UID qw(adminsuidsetup dbh driver_name);
+
+# Remove trailing whitespace from custom field option lists and values.
+
+my $dbh = adminsuidsetup(shift) or die "Usage: rt-trim-whitespace username\n";
+die "rt-trim-whitespace only works on Pg databases" if driver_name ne 'Pg';
+
+my @updates = (
+  customfieldvalues       => 'name',
+  objectcustomfieldvalues => 'content',
+);
+
+while(@updates) {
+  my $table = shift @updates;
+  my $field = shift @updates;
+  my $select = 
+"SELECT $field FROM $table WHERE $field != substring($field from ".
+  q!E'^(.*\\\\S)\\\\s*$'! . ')';
+  
+  print "$select\n";
+  my $rows = $dbh->do($select);
+  print "$rows rows found.\n";
+  
+  if($rows) {
+    my $update =
+"UPDATE $table SET $field = substring($field from ".q!E'^(.*\\\\S)\\\\s*$'!.')'.
+" WHERE $field != substring($field from ".q!E'^(.*\\\\S)\\\\s*$'!.')';
+    print "$update\n";
+    my $rows = $dbh->do($update);
+    print "$rows updated.\n";
+  }
+}
+$dbh->commit or die $dbh->errstr;
