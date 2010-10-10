@@ -147,7 +147,9 @@ foreach my $part_pkg ( @part_pkg ) {
   $layermap{$pkgpart_svcpart} = $svcdb{$pkgpart};
 }
 
-my @options = ( '', map $pkgpart_svcpart{ $_->pkgpart }, @part_pkg );
+my @options = ();
+push @options, '' unless $opt{'disable_empty'};
+push @options, map $pkgpart_svcpart{ $_->pkgpart }, @part_pkg;
 my %labels = ( '' => ( $opt{'empty_label'} || '(none)' ),
                map { $pkgpart_svcpart{ $_->pkgpart } => $_->pkg_comment }
                    @part_pkg
