@@ -2291,7 +2291,7 @@ sub print_generic {
   my $nbsp = $nbsps{$format};
 
   my %escape_functions = ( 'latex'    => \&_latex_escape,
-                           'html'     => \&encode_entities,
+                           'html'     => \&_html_escape, #\&encode_entities,
                            'template' => sub { shift },
                          );
   my $escape_function = $escape_functions{$format};
@@ -3162,6 +3162,14 @@ sub _latex_escape {
   my $value = shift;
   $value =~ s/([#\$%&~_\^{}])( )?/"\\$1". ( ( defined($2) && length($2) ) ? "\\$2" : '' )/ge;
   $value =~ s/([<>])/\$$1\$/g;
+  $value;
+}
+
+
+sub _html_escape {
+  my $value = shift;
+  encode_entities($value);
+  $value =~ s/ +/&nbsp;/g;
   $value;
 }
 
