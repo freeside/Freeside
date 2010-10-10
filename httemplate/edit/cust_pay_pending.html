@@ -8,6 +8,10 @@
 
     <CENTER><FONT SIZE="+1"><B>No response was received from <% $cust_pay_pending->processor || 'the payment gateway' %> for this transaction.  Check <% $cust_pay_pending->processor || 'the payment gateway' %>'s reporting and determine if this transaction completed successfully.</B></FONT></CENTER>
 
+% } elsif ( $action eq 'capture' ) {
+
+    <CENTER><FONT SIZE="+1"><B>Captured payment not recorded in database - check logs for errors.</B></FONT></CENTER>
+
 % }
 
 <BR>
@@ -91,7 +95,9 @@
       </TD>
     </TR>
 
-% } elsif ( $action eq 'complete' ) {
+% } else {
+
+%#   if ( $action eq 'complete' ) {
 
     <INPUT TYPE="hidden" NAME="action" VALUE="">
 
@@ -99,15 +105,18 @@
       <TD ALIGN="center">
         <BUTTON TYPE="button" onClick="document.pendingform.action.value = 'insert_cust_pay'; document.pendingform.submit();"><!--IMG SRC="<%$p%>images/tick.png" ALT=""-->Yes, transaction completed sucessfully.</BUTTON>
       </TD>
-      <TD>&nbsp;&nbsp;&nbsp;</TD>
-      <TD ALIGN="center">
-        <BUTTON TYPE="button" onClick="document.pendingform.action.value = 'decline'; document.pendingform.submit();"><!--IMG SRC="<%$p%>images/cross.png" ALT=""-->No, transaction was declined</BUTTON>
-      </TD>
-      <TD>&nbsp;&nbsp;&nbsp;</TD>
-      <TD ALIGN="center">
-        <BUTTON TYPE="button" onClick="document.pendingform.action.value = 'delete'; document.pendingform.submit();"><!--IMG SRC="<%$p%>images/cross.png" ALT=""-->No, transaction was not received</BUTTON>
-      </TD>
-    </TR>
+
+%     if ( $action eq 'complete' ) {
+        <TD>&nbsp;&nbsp;&nbsp;</TD>
+        <TD ALIGN="center">
+          <BUTTON TYPE="button" onClick="document.pendingform.action.value = 'decline'; document.pendingform.submit();"><!--IMG SRC="<%$p%>images/cross.png" ALT=""-->No, transaction was declined</BUTTON>
+        </TD>
+        <TD>&nbsp;&nbsp;&nbsp;</TD>
+        <TD ALIGN="center">
+          <BUTTON TYPE="button" onClick="document.pendingform.action.value = 'delete'; document.pendingform.submit();"><!--IMG SRC="<%$p%>images/cross.png" ALT=""-->No, transaction was not received</BUTTON>
+        </TD>
+      </TR>
+%   }
 
     <TR><TD COLSPAN=5></TD></TR>
 
