@@ -1655,12 +1655,14 @@ sub check {
     $self->payinfo($payinfo);
     $self->paycvv('');
 
-    my $ban = qsearchs('banned_pay', $self->_banned_pay_hashref);
-    if ( $ban ) {
-      return 'Banned ACH account: banned on '.
-             time2str('%a %h %o at %r', $ban->_date).
-             ' by '. $ban->otaker.
-             ' (ban# '. $ban->bannum. ')';
+    unless ( $ignore_banned_card ) {
+      my $ban = qsearchs('banned_pay', $self->_banned_pay_hashref);
+      if ( $ban ) {
+        return 'Banned ACH account: banned on '.
+               time2str('%a %h %o at %r', $ban->_date).
+               ' by '. $ban->otaker.
+               ' (ban# '. $ban->bannum. ')';
+      }
     }
 
   } elsif ( $self->payby eq 'LECB' ) {
@@ -2413,6 +2415,7 @@ sub total_unapplied_credits {
       WHERE custnum = $custnum
   ";
 
+  #XXX fix harmless but loud: Argument "" isn't numeric in sprintf 
   sprintf( "%.2f", $self->scalar_sql($sql) );
 
 }
@@ -2451,6 +2454,7 @@ sub total_unapplied_payments {
       WHERE custnum = $custnum
   ";
 
+  #XXX fix harmless but loud: Argument "" isn't numeric in sprintf 
   sprintf( "%.2f", $self->scalar_sql($sql) );
 
 }
@@ -2489,6 +2493,7 @@ sub total_unapplied_refunds {
       WHERE custnum = $custnum
   ";
 
+  #XXX fix harmless but loud: Argument "" isn't numeric in sprintf 
   sprintf( "%.2f", $self->scalar_sql($sql) );
 
 }
