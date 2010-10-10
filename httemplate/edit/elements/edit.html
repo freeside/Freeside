@@ -292,7 +292,11 @@ Example:
 %
 %   #select-table
 %   $include_common{$_} = $f->{$_}
-%     foreach grep exists($f->{$_}), qw( value_col extra_sql );
+%     foreach grep exists($f->{$_}), qw( value_col );
+%   $include_common{$_} = ref( $f->{$_} ) eq 'CODE'
+%                           ? &{ $f->{$_} }( $cgi, $object ) #, $f )
+%                           : $f->{$_}
+%     foreach grep exists($f->{$_}), qw( extra_sql );
 %
 %   #select-table, checkboxes-table
 %   $include_common{$_} = $f->{$_}

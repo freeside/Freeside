@@ -941,6 +941,8 @@ sub _part_pkg_link {
   qsearch({ table    => 'part_pkg_link',
             hashref  => { 'src_pkgpart' => $self->pkgpart,
                           'link_type'   => $type,
+                          #protection against infinite recursive links
+                          'dst_pkgpart' => { op=>'!=', $self->pkgpart },
                         },
             order_by => "ORDER BY hidden",
          });
