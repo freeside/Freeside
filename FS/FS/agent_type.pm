@@ -2,7 +2,7 @@ package FS::agent_type;
 
 use strict;
 use vars qw( @ISA );
-use FS::Record qw( qsearch );
+use FS::Record qw( qsearch dbh );
 use FS::m2m_Common;
 use FS::agent;
 use FS::type_pkgs;
@@ -119,9 +119,7 @@ L<FS::part_pkg>.
 sub pkgpart_hashref {
   my $self = shift;
   my %pkgpart;
-  #$pkgpart{$_}++ foreach $self->pkgpart;
-  # not compatible w/5.004_04 (fixed in 5.004_05)
-  foreach ( $self->pkgpart ) { $pkgpart{$_}++; }
+  $pkgpart{$_}++ foreach $self->pkgpart;
   \%pkgpart;
 }
 
@@ -166,7 +164,13 @@ agent type.
 
 sub pkgpart {
   my $self = shift;
-  map $_->pkgpart, $self->type_pkgs;
+
+  #map $_->pkgpart, $self->type_pkgs;
+
+  my $sql = 'SELECT pkgpart FROM type_pkgs WHERE typenum = ?';
+  my $sth = dbh->prepare($sql)    or die  dbh->errstr;
+  $sth->execute( $self->typenum ) or die $sth->errstr;
+  map $_->[0], @{ $sth->fetchall_arrayref };
 }
 
 =back
