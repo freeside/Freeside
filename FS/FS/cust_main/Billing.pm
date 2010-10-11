@@ -1048,18 +1048,14 @@ sub _handle_taxes {
        )
     {
 
-      if ( $conf->exists('tax-pkg_address') && $cust_pkg->locationnum ) {
-        return "fatal: Can't (yet) use tax-pkg_address with taxproducts";
-      }
-
       foreach my $class (@classes) {
-        my $err_or_ref = $self->_gather_taxes( $part_pkg, $class );
+        my $err_or_ref = $self->_gather_taxes( $part_pkg, $class, $cust_pkg );
         return $err_or_ref unless ref($err_or_ref);
         $taxes{$class} = $err_or_ref;
       }
 
       unless (exists $taxes{''}) {
-        my $err_or_ref = $self->_gather_taxes( $part_pkg, '' );
+        my $err_or_ref = $self->_gather_taxes( $part_pkg, '', $cust_pkg );
         return $err_or_ref unless ref($err_or_ref);
         $taxes{''} = $err_or_ref;
       }
@@ -1226,11 +1222,14 @@ sub _gather_taxes {
   my $self = shift;
   my $part_pkg = shift;
   my $class = shift;
+  my $cust_pkg = shift;
 
   local($DEBUG) = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
 
-  my @taxes = ();
   my $geocode = $self->geocode('cch');
+  $geocode = $cust_pkg->geocode('cch')
+    if ( $conf->exists('tax-pkg_address') && $cust_pkg->locationnum );
+  my @taxes = ();
 
   my @taxclassnums = map { $_->taxclassnum }
                      $part_pkg->part_pkg_taxoverride($class);

@@ -6,6 +6,7 @@ use strict;
 use base qw( FS::cust_main::Packages
              FS::cust_main::Billing FS::cust_main::Billing_Realtime
              FS::otaker_Mixin FS::payinfo_Mixin FS::cust_main_Mixin
+             FS::geocode_Mixin
              FS::Record
            );
 use vars qw( $DEBUG $me $conf
@@ -1781,21 +1782,9 @@ sub has_ship_address {
 =item location_hash
 
 Returns a list of key/value pairs, with the following keys: address1, adddress2,
-city, county, state, zip, country.  The shipping address is used if present.
+city, county, state, zip, country, and geocode.  The shipping address is used if present.
 
 =cut
-
-#geocode?  dependent on tax-ship_address config, not available in cust_location
-#mostly.  not yet then.
-
-sub location_hash {
-  my $self = shift;
-  my $prefix = $self->has_ship_address ? 'ship_' : '';
-
-  map { $_ => $self->get($prefix.$_) }
-      qw( address1 address2 city county state zip country geocode );
-      #fields that cust_location has
-}
 
 =item cust_location
 
@@ -1806,61 +1795,6 @@ Returns all locations (see L<FS::cust_location>) for this customer.
 sub cust_location {
   my $self = shift;
   qsearch('cust_location', { 'custnum' => $self->custnum } );
-}
-
-=item location_label [ OPTION => VALUE ... ]
-
-Returns the label of the service location (see analog in L<FS::cust_location>) for this customer.
-
-Options are
-
-=over 4
-
-=item join_string
-
-used to separate the address elements (defaults to ', ')
-
-=item escape_function
-
-a callback used for escaping the text of the address elements
-
-=back
-
-=cut
-
-# false laziness with FS::cust_location::line
-
-sub location_label {
-  my $self = shift;
-  my %opt = @_;
-
-  my $separator = $opt{join_string} || ', ';
-  my $escape = $opt{escape_function} || sub{ shift };
-  my $line = '';
-  my $cydefault = FS::conf->new->config('countrydefault') || 'US';
-  my $prefix = length($self->ship_last) ? 'ship_' : '';
-
-  my $notfirst = 0;
-  foreach (qw ( address1 address2 ) ) {
-    my $method = "$prefix$_";
-    $line .= ($notfirst ? $separator : ''). &$escape($self->$method)
-      if $self->$method;
-    $notfirst++;
-  }
-  $notfirst = 0;
-  foreach (qw ( city county state zip ) ) {
-    my $method = "$prefix$_";
-    if ( $self->$method ) {
-      $line .= ' (' if $method eq 'county';
-      $line .= ($notfirst ? ' ' : $separator). &$escape($self->$method);
-      $line .= ' )' if $method eq 'county';
-      $notfirst++;
-    }
-  }
-  $line .= $separator. &$escape(code2country($self->country))
-    if $self->country ne $cydefault;
-
-  $line;
 }
 
 =item unsuspend
@@ -3620,38 +3554,6 @@ Returns a value for the customer location as encoded by DATA_VENDOR.
 Currently this only makes sense for "CCH" as DATA_VENDOR.
 
 =cut
-
-sub geocode {
-  my ($self, $data_vendor) = (shift, shift);  #always cch for now
-
-  my $geocode = $self->get('geocode');  #XXX only one data_vendor for geocode
-  return $geocode if $geocode;
-
-  my $prefix = ( $conf->exists('tax-ship_address') && length($self->ship_last) )
-               ? 'ship_'
-               : '';
-
-  my($zip,$plus4) = split /-/, $self->get("${prefix}zip")
-    if $self->country eq 'US';
-
-  $zip ||= '';
-  $plus4 ||= '';
-  #CCH specific location stuff
-  my $extra_sql = "AND plus4lo <= '$plus4' AND plus4hi >= '$plus4'";
-
-  my @cust_tax_location =
-    qsearch( {
-               'table'     => 'cust_tax_location', 
-               'hashref'   => { 'zip' => $zip, 'data_vendor' => $data_vendor },
-               'extra_sql' => $extra_sql,
-               'order_by'  => 'ORDER BY plus4hi',#overlapping with distinct ends
-             }
-           );
-  $geocode = $cust_tax_location[0]->geocode
-    if scalar(@cust_tax_location);
-
-  $geocode;
-}
 
 =item cust_status
 

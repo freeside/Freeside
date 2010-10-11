@@ -1,0 +1,18 @@
+<% include('/elements/init_overlib.html') %>
+
+<% include( '/elements/xmlhttp.html',
+              'url'  => $p.'misc/xmlhttp-cust_main-address_standardize.html',
+              'subs' => [ 'address_standardize' ],
+              #'method' => 'POST', #could get too long?
+          )
+%>
+
+<SCRIPT TYPE="text/javascript">
+  <% include('/elements/standardize_locations.js', %options) %>
+</SCRIPT>
+
+<%init>
+
+my (%options) = @_;
+
+</%init>

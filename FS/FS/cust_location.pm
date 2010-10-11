@@ -1,7 +1,7 @@
 package FS::cust_location;
 
 use strict;
-use base qw( FS::Record );
+use base qw( FS::geocode_Mixin FS::Record );
 use Locale::Country;
 use FS::Record qw( qsearch ); #qsearchs );
 use FS::prospect_main;
@@ -163,66 +163,6 @@ sub country_full {
   code2country($self->country);
 }
 
-=item location_label [ OPTION => VALUE ... ]
-
-Returns the label of the service location for this customer.
-
-Options are
-
-=over 4
-
-=item join_string
-
-used to separate the address elements (defaults to ', ')
-
-=item escape_function
-
-
-a callback used for escaping the text of the address elements
-
-=back
-
-=cut
-
-# false laziness with FS::cust_main::location_label
-
-sub location_label {
-  my $self = shift;
-  my %opt = @_;
-
-  my $separator = $opt{join_string} || ', ';
-  my $escape = $opt{escape_function} || sub{ shift };
-  my $ds = $opt{double_space} || '  ';
-  my $line = '';
-  my $cydefault =
-    $opt{'countrydefault'} || FS::Conf->new->config('countrydefault') || 'US';
-  my $prefix = '';
-
-  my $notfirst = 0;
-  foreach (qw ( address1 address2 ) ) {
-    my $method = "$prefix$_";
-    $line .= ($notfirst ? $separator : ''). &$escape($self->$method)
-      if $self->$method;
-    $notfirst++;
-  }
-  $notfirst = 0;
-  foreach (qw ( city county state zip ) ) {
-    my $method = "$prefix$_";
-    if ( $self->$method ) {
-      $line .= ($notfirst ? ($method eq 'zip' ? $ds : ' ') : $separator);
-      $line .= '(' if $method eq 'county';
-      $line .= &$escape($self->$method);
-      $line .= ')' if $method eq 'county';
-      $notfirst++;
-    }
-    $line .= ',' if $method eq 'county';
-  }
-  $line .= $separator. &$escape(code2country($self->country))
-    if $self->country ne $cydefault;
-
-  $line;
-}
-
 =item line
 
 Synonym for location_label
@@ -234,19 +174,23 @@ sub line {
   $self->location_label;
 }
 
-=item location_hash
+=item has_ship_address
 
-Returns a list of key/value pairs, with the following keys: address1, adddress2,
-city, county, state, zip, country.
+Returns false since cust_location objects do not have a separate shipping
+address.
 
 =cut
 
-#geocode?  not yet set
-
-sub location_hash {
-  my $self = shift;
-  map { $_ => $self->$_ } qw( address1 address2 city county state zip country );
+sub has_ship_address {
+  '';
 }
+
+=item location_hash
+
+Returns a list of key/value pairs, with the following keys: address1, address2,
+city, county, state, zip, country, geocode.
+
+=cut
 
 =back
 

@@ -28,6 +28,7 @@ if ( $sub eq 'address_standardize' ) {
     } );
 
     foreach my $pre ( '', 'ship_' ) {
+      next unless ($pre || !$arg{onlyship});
 
       my($zip5, $zip4) = split('-',$arg{$pre.'zip'});
 

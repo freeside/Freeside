@@ -1,0 +1,90 @@
+<FORM NAME="choosegeocodeform">
+<CENTER><BR><B>Choose tax location</B><BR><BR>
+<P>the geocode is:<% $header %></P>
+<P STYLE="<% $style %>"><% $header %></P>
+
+<SELECT NAME='geocodes' ID='geocodes' STYLE="<% $style %>">
+% foreach my $location (@cust_tax_location) {
+%   my %value = ( zip => $zip5,
+%                 map { $_ => $location->$_ }
+%                   qw ( city state geocode )
+%               );
+%   map { $value{$_} = $location{$_} } qw ( city state )
+%     if $location{country} eq 'CA';
+%
+%   my $value = encode_entities(objToJson({ %value })
+%                              );
+%   my $content = '';
+%   $content .= $location->$_. '&nbsp;' x ( $max{$_} - length($location->$_) )
+%     foreach qw( city county state );
+%   $content .=   $location->cityflag eq 'I' ? 'Y' : 'N' ;
+%   my $selected = '' ;
+%   if ($geocode && $location->geocode eq $geocode) {
+%     $selected = 'SELECTED';
+%   }
+  <OPTION VALUE="<% $value %>" STYLE="<% $style %>" <% $selected %>><% $content %>
+% }
+</SELECT><BR><BR>
+
+<TABLE><TR>
+  <TD> <BUTTON TYPE="button" onClick="set_geocode(document.getElementById('geocodes'));"><IMG SRC="<%$p%>images/tick.png" ALT=""> Set location </BUTTON></TD>
+  <TD><BUTTON TYPE="button" onClick="document.<% $formname %>.submitButton.disabled=false; parent.cClick();"><IMG SRC="<%$p%>images/cross.png" ALT=""> Cancel submission </BUTTON></TD>
+</TR>
+</TABLE>
+
+</CENTER>
+</FORM>
+<%init>
+
+my $conf = new FS::Conf;
+
+my %location = ();
+
+($location{data_vendor}) = $cgi->param('data_vendor') =~ /^([-\w]+)$/;
+($location{city})        = $cgi->param('city')        =~ /^([\w ]+)$/;
+($location{state})       = $cgi->param('state')       =~ /^(\w+)$/;
+($location{zip})         = $cgi->param('zip')         =~ /^([-\w ]+)$/;
+($location{country})     = $cgi->param('country')     =~ /^([\w ]+)$/;
+
+my($geocode)             = $cgi->param('geocode')     =~ /^([\w]+)$/;
+
+my($formname)            = $cgi->param('formname')    =~ /^([\w]*)$/;
+$formname ||= 'CustomerForm';
+
+my($zip5, $zip4) = split('-', $location{zip});
+
+#only support US & CA
+my $hashref = { 'data_vendor' => $location{data_vendor} };
+$hashref->{zip} = $location{country} eq 'CA' ? substr($zip5,0,1) : $zip5,
+
+my @keys = keys(%$hashref);
+my @cust_tax_location = ();
+until ( @cust_tax_location ) {
+  @cust_tax_location = qsearch({ table    => 'cust_tax_location',
+                                 hashref  =>  $hashref,
+                                 order_by =>  'LIMIT 50',
+                              });
+  last unless scalar(@keys);
+  delete $hashref->{ shift @keys };
+} 
+
+my %max = ( city => 4, county => 6, state => 5);
+foreach my $location (@cust_tax_location) {
+  foreach ( qw( city county state ) ) {
+    my $length = length($location->$_);
+    $max{$_} = ($length > $max{$_}) ? $length : $max{$_};
+  }
+}
+foreach ( qw( city county state ) ) {
+  $max{$_} = $location{$_} if $location{$_} > $max{$_};
+  $max{$_}++;
+}
+
+my $header = '&nbsp;&nbsp;';
+$header .= $_. '&nbsp;' x ( $max{lc($_)} - length($_) )
+  foreach qw( City County State );
+$header .=   "In city?";
+
+my $style = "font-family:monospace;";
+
+</%init>
