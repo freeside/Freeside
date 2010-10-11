@@ -12,7 +12,7 @@
 %  if ( $opt{'show_month_abbr'} ) {
 %    @mon = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
 %  } else {
-%    @mon = ( 1 .. 12 );
+%    @mon = ( ( map "0$_", 1 .. 9 ), 10 .. 12 ), 
 %  }
 %
 %  my $date = $opt{'selected_date'} || '';
