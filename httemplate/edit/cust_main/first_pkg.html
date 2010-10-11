@@ -1,3 +1,9 @@
+% if ( $cgi->param('lock_pkgpart') =~ /^([\d, ]+)$/ ) {
+
+    <INPUT TYPE="hidden" NAME="lock_pkgpart" VALUE="<% $1 %>">
+
+% }
+%
 % if ( @part_pkg ) {
 
     <BR><BR>
@@ -28,6 +34,11 @@ if ( scalar(@agents) == 1 ) {
   # $pkgpart->{PKGPART} is true iff $custnum may purchase PKGPART
   $pkgpart = $agents[0]->pkgpart_hashref;
   $agentnum = $agents[0]->agentnum;
+} elsif ( $cgi->param('lock_agentnum') =~ /^(\d+)$/
+            && $FS::CurrentUser::CurrentUser->agentnum($1) ) {
+  $agentnum = $1;
+  my $agent = (grep { $_->agentnum == $agentnum } @agents)[0];
+  $pkgpart = $agent->pkgpart_hashref;
 } else {
   #can't know (agent not chosen), so, allow all
   $agentnum = 'all';
@@ -39,9 +50,28 @@ if ( scalar(@agents) == 1 ) {
 }
 #eslaf
 
+my @part_pkg = ();
+if ( $cgi->param('lock_pkgpart') =~ /^([\d, ]+)$/ ) {
+
+  my $lock_pkgpart = $1;
+
+  @part_pkg = qsearch({
+                        'table'     => 'part_pkg',
+                        'hashref'   => { 'disabled' => '' },
+                        'extra_sql' => "AND pkgpart IN ($lock_pkgpart)",
+                        'order_by'  => 'ORDER BY pkg', # case?
+                     });
+
+} else {
+
+  @part_pkg =
+    qsearch( 'part_pkg', { 'disabled' => '' }, '', 'ORDER BY pkg' ); # case?
+
+}
+
 my @first_svc = ( 'svc_acct', 'svc_phone' );
 
-my @part_pkg =
+@part_pkg =
   grep { $_->svcpart(\@first_svc)
          && ( $pkgpart->{ $_->pkgpart } 
               || $agentnum eq 'all'
@@ -50,6 +80,6 @@ my @part_pkg =
                  )
             )
        }
-  qsearch( 'part_pkg', { 'disabled' => '' }, '', 'ORDER BY pkg' ); # case?
+  @part_pkg;
 
 </%init>
