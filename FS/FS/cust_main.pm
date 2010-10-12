@@ -2270,7 +2270,7 @@ sub total_owed_date {
         AND _date <= $time
   ";
 
-  sprintf( "%.2f", $self->scalar_sql($sql) );
+  sprintf( "%.2f", $self->scalar_sql($sql) || 0 );
 
 }
 
@@ -2350,8 +2350,7 @@ sub total_unapplied_credits {
       WHERE custnum = $custnum
   ";
 
-  #XXX fix harmless but loud: Argument "" isn't numeric in sprintf 
-  sprintf( "%.2f", $self->scalar_sql($sql) );
+  sprintf( "%.2f", $self->scalar_sql($sql) || 0 );
 
 }
 
@@ -2389,8 +2388,7 @@ sub total_unapplied_payments {
       WHERE custnum = $custnum
   ";
 
-  #XXX fix harmless but loud: Argument "" isn't numeric in sprintf 
-  sprintf( "%.2f", $self->scalar_sql($sql) );
+  sprintf( "%.2f", $self->scalar_sql($sql) || 0 );
 
 }
 
@@ -2428,8 +2426,7 @@ sub total_unapplied_refunds {
       WHERE custnum = $custnum
   ";
 
-  #XXX fix harmless but loud: Argument "" isn't numeric in sprintf 
-  sprintf( "%.2f", $self->scalar_sql($sql) );
+  sprintf( "%.2f", $self->scalar_sql($sql) || 0 );
 
 }
 
@@ -2487,7 +2484,7 @@ sub balance_date_range {
   my $self = shift;
   my $sql = 'SELECT SUM('. $self->balance_date_sql(@_).
             ') FROM cust_main WHERE custnum='. $self->custnum;
-  sprintf( '%.2f', $self->scalar_sql($sql) );
+  sprintf( '%.2f', $self->scalar_sql($sql) || 0 );
 }
 
 =item balance_pkgnum PKGNUM
