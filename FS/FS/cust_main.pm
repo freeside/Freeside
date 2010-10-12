@@ -4516,10 +4516,21 @@ sub process_bill_and_collect {
 sub _upgrade_data { #class method
   my ($class, %opts) = @_;
 
-  foreach my $sql (
+  my @statements = (
     'UPDATE h_cust_main SET paycvv = NULL WHERE paycvv IS NOT NULL',
     'UPDATE cust_main SET signupdate = (SELECT signupdate FROM h_cust_main WHERE signupdate IS NOT NULL AND h_cust_main.custnum = cust_main.custnum ORDER BY historynum DESC LIMIT 1) WHERE signupdate IS NULL',
-  ) {
+  );
+  # fix yyyy-m-dd formatted paydates
+  if ( driver_name =~ /^mysql$/i ) {
+    push @statements,
+    "UPDATE cust_main SET paydate = CONCAT( SUBSTRING(paydate FROM 1 FOR 5), '0', SUBSTRING(paydate FROM 6) ) WHERE SUBSTRING(paydate FROM 7 FOR 1) = '-'";
+  }
+  else { # the SQL standard
+    push @statements, 
+    "UPDATE cust_main SET paydate = SUBSTRING(paydate FROM 1 FOR 5) || '0' || SUBSTRING(paydate FROM 6) WHERE SUBSTRING(paydate FROM 7 FOR 1) = '-'";
+  }
+
+  foreach my $sql ( @statements ) {
     my $sth = dbh->prepare($sql) or die dbh->errstr;
     $sth->execute or die $sth->errstr;
   }
