@@ -55,11 +55,13 @@
   <& .row_edit, cust_pkg=>$cust_pkg, column=>'setup',     label=>'Setup' &>
   <& .row_edit, cust_pkg=>$cust_pkg, column=>'last_bill', label=>$last_bill_or_renewed &>
   <& .row_edit, cust_pkg=>$cust_pkg, column=>'bill',      label=>$next_bill_or_prepaid_until &>
-  <& .row_display, cust_pkg=>$cust_pkg, column=>'adjourn',   label=>'Adjournment', note=>'(will <b>suspend</b> this package when the date is reached)' &>
-  <& .row_display, cust_pkg=>$cust_pkg, column=>'susp',   label=>'Suspension' &>
+  <& .row_display, cust_pkg=>$cust_pkg, column=>'contract_end',label=>'Contract end' &>
+  <& .row_display, cust_pkg=>$cust_pkg, column=>'adjourn',  label=>'Adjournment', note=>'(will <b>suspend</b> this package when the date is reached)' &>
+  <& .row_display, cust_pkg=>$cust_pkg, column=>'susp',     label=>'Suspension' &>
 
   <& .row_display, cust_pkg=>$cust_pkg, column=>'expire',   label=>'Expiration', note=>'(will <b>cancel</b> this package when the date is reached)' &>
   <& .row_display, cust_pkg=>$cust_pkg, column=>'cancel',   label=>'Cancellation' &>
+
 
 <%def .row_edit>
 <%args>

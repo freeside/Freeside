@@ -1,8 +1,9 @@
-
+% if(!$noinit) {
 <LINK REL="stylesheet" TYPE="text/css" HREF="<%$fsurl%>elements/calendar-win2k-2.css" TITLE="win2k-2">
 <SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/calendar_stripped.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/calendar-en.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript" SRC="<%$fsurl%>elements/calendar-setup.js"></SCRIPT>
+% }
 
 <INPUT TYPE="text" NAME="<% $name %>" ID="<% $name %>_text" VALUE="<% $value %>">
 <IMG SRC="<%$fsurl%>images/calendar.png" ID="<% $name  %>_button" STYLE="cursor: pointer" TITLE="Select date">
@@ -18,13 +19,14 @@
 
 <%init>
 
-my($name, $value, $format, $usedatetime);
+my($name, $value, $format, $usedatetime, $noinit);
 if ( ref($_[0]) ) {
   my $opt = shift;
   $name        = $opt->{'name'};
   $value       = $opt->{'value'};
   $format      = $opt->{'format'};
   $usedatetime = $opt->{'usedatetime'};
+  $noinit      = $opt->{'noinit'};
 } else {
   ($name, $value, $format, $usedatetime) = @_;
 }

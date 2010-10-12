@@ -20,6 +20,11 @@ tie my %temporalities, 'Tie::IxHash',
   'preceding' => "Preceding (past)",
 ;
 
+tie my %contract_years, 'Tie::IxHash', (
+  '(none)'    => '',
+  map { $_*12 => $_ } (1..5),
+);
+
 %usage_fields = (
 
     'seconds'       => { 'name' => 'Time limit for this package',
@@ -117,6 +122,11 @@ tie my %temporalities, 'Tie::IxHash',
                        },
     'adjourn_months'=> { 'name' => 'Auto-add a suspension date this number of months out',
                        },
+    'contract_end_months'=> { 
+                        'name' => 'Auto-add a contract end date this number of years out',
+                        'type' => 'select',
+                        'select_options' => \%contract_years,
+                      },
     #used in cust_pkg.pm so could add to any price plan where it made sense
     'start_1st'     => { 'name' => 'Auto-add a start date to the 1st, ignoring the current month.',
                          'type' => 'checkbox',
@@ -141,6 +151,7 @@ tie my %temporalities, 'Tie::IxHash',
   'fieldorder' => [ qw( setup_fee recur_fee
                         recur_temporality unused_credit
                         expire_months adjourn_months
+                        contract_end_months
                         start_1st sync_bill_date
                         unsuspend_adjust_bill
                       ),

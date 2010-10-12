@@ -38,33 +38,18 @@
           )
 %>
 
-%# false laziness w/edit/quick-charge.html
 <TR>
   <TH ALIGN="right">Start date </TD>
   <TD COLSPAN=6>
-    <INPUT TYPE  = "text"
-           NAME  = "start_date"
-           SIZE  = 32
-           ID    = "start_date_text"
-           VALUE = "<% $start_date %>"
-    >
-    <IMG SRC   = "../images/calendar.png"
-         ID    = "start_date_button"
-         STYLE = "cursor: pointer"
-         TITLE = "Select date"
-    >
+    <% include('/elements/input-date-field.html',{
+                'name'      => 'start_date',
+                'format'    => $date_format,
+                'value'     => $start_date,
+                'noinit'    => 1,
+              }) %>
     <FONT SIZE=-1>(leave blank to start immediately)</FONT>
   </TD>
 </TR>
-
-<SCRIPT TYPE="text/javascript">
-  Calendar.setup({
-    inputField: "start_date_text",
-    ifFormat:   "<% $date_format %>",
-    button:     "start_date_button",
-    align:      "BR"
-  });
-</SCRIPT>
 
 % if ( $cust_main->payby =~ /^(CARD|CHEK)$/ ) {
 %   my $what = lc(FS::payby->shortname($cust_main->payby));
@@ -98,6 +83,18 @@
              'cust_main' => $cust_main,
           )
 %>
+
+<TR>
+  <TH ALIGN="right">Contract end date </TD>
+  <TD COLSPAN=6>
+    <% include('/elements/input-date-field.html',{
+                'name'      => 'contract_end',
+                'format'    => $date_format,
+                'value'     => '',
+                'noinit'    => 1,
+                }) %>
+  </TD>
+</TR>
 
 </TABLE>
 

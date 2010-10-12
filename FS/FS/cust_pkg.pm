@@ -153,6 +153,10 @@ date
 
 date
 
+=item contract_end
+
+date
+
 =item cancel
 
 date
@@ -259,7 +263,7 @@ sub insert {
     $self->start_date( timelocal_nocheck(0,0,0,1,$mon,$year) );
   }
 
-  foreach my $action ( qw(expire adjourn) ) {
+  foreach my $action ( qw(expire adjourn contract_end) ) {
     my $months = $self->part_pkg->option("${action}_months",1);
     if($months and !$self->$action) {
       my $start = $self->start_date || $self->setup || time;
@@ -2806,7 +2810,7 @@ sub search {
       "NOT (".FS::cust_pkg->onetime_sql . ")";
   }
   else {
-    foreach my $field (qw( setup last_bill bill adjourn susp expire cancel )) {
+    foreach my $field (qw( setup last_bill bill adjourn susp expire contract_end cancel )) {
 
       next unless exists($params->{$field});
 

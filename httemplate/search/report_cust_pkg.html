@@ -89,7 +89,7 @@
 
 %   }
 
-%   foreach my $field (qw( setup last_bill bill adjourn susp expire cancel )) {
+%   foreach my $field (qw( setup last_bill bill adjourn susp expire contract_end cancel )) {
 
       <TR>
         <TD ALIGN="right" VALIGN="center"><% $label{$field} %></TD>
@@ -181,6 +181,7 @@ my %label = (
   'adjourn'   => 'Adjourns',
   'susp'      => 'Suspended',
   'expire'    => 'Expires',
+  'contract_end' => 'Contract ends',
   'cancel'    => 'Cancelled',
 );
 

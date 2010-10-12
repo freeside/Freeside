@@ -19,6 +19,7 @@
                                      'Adjourn',
                                      'Susp.',
                                      'Expire',
+                                     'Contract end',
                                      'Cancel',
                                      'Reason',
                                      FS::UI::Web::cust_header(
@@ -59,7 +60,7 @@
                     #sub { time2str('%b %d %Y', shift->expire); },
                     #sub { time2str('%b %d %Y', shift->get('cancel')); },
                     ( map { time_or_blank($_) }
-                          qw( setup last_bill bill adjourn susp expire cancel ) ),
+          qw( setup last_bill bill adjourn susp expire contract_end cancel ) ),
 
                     sub { my $self = shift;
                           my $return = '';
@@ -206,7 +207,7 @@ my %disable = (
   ''                => {},
 );
 
-foreach my $field (qw( setup last_bill bill adjourn susp expire cancel active )) {
+foreach my $field (qw( setup last_bill bill adjourn susp expire contract_end cancel active )) {
 
   my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi, $field);
 
