@@ -1723,6 +1723,7 @@ sub check {
     } else {
       return "Illegal expiration date: ". $self->paydate;
     }
+    $m = sprintf('%02d',$m);
     $self->paydate("$y-$m-01");
     my($nowm,$nowy)=(localtime(time))[4,5]; $nowm++; $nowy+=1900;
     return gettext('expired_card')
