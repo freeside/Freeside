@@ -942,7 +942,7 @@ sub _part_pkg_link {
             hashref  => { 'src_pkgpart' => $self->pkgpart,
                           'link_type'   => $type,
                           #protection against infinite recursive links
-                          'dst_pkgpart' => { op=>'!=', $self->pkgpart },
+                          'dst_pkgpart' => { op=>'!=', value=> $self->pkgpart },
                         },
             order_by => "ORDER BY hidden",
          });
