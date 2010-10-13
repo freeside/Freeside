@@ -64,7 +64,7 @@ the bill and collect methods of a cust_main object.  See L<FS::cust_main>.
       "pretend date" 15 days from whatever was specified by the -d switch
       (or now, if no -d switch was given).
 
-  -p: Only process customers with the specified payby (I<CARD>, I<DCRD>, I<CHEK>, I<DCHK>, I<BILL>, I<COMP>, I<LECB>)
+  -p: Only process customers with the specified payby (CARD, DCRD, CHEK, DCHK, BILL, COMP, LECB)
 
   -a: Only process customers with the specified agentnum
 

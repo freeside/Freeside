@@ -52,13 +52,13 @@ freeside-radgroup - Command line utility to manipulate radius groups
 
 =head1 DESCRIPTION
 
-  B<user> is a freeside user as added with freeside-adduser.
+B<user> is a freeside user as added with freeside-adduser.
 
-  B<command> is the action to take.  Available actions are: I<add>
+B<command> is the action to take.  Available actions are: I<add>
 
-  B<groupname> is the group to add (or remove, etc.)
+B<groupname> is the group to add (or remove, etc.)
 
-  B<svcpart> specifies which accounts will be updated.
+B<svcpart> specifies which accounts will be updated.
 
 =head1 EXAMPLES
 
