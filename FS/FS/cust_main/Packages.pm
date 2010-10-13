@@ -385,6 +385,21 @@ sub unsuspended_pkgs {
   grep { ! $_->susp } $self->ncancelled_pkgs;
 }
 
+=item active_pkgs
+
+Returns all unsuspended (and uncancelled) packages (see L<FS::cust_pkg>) for
+this customer that are active (recurring).
+
+=cut
+
+sub active_pkgs {
+  my $self = shift; 
+  grep { my $part_pkg = $_->part_pkg;
+         $part_pkg->freq ne '' && $part_pkg->freq ne '0';
+       }
+       $self->unsuspended_pkgs;
+}
+
 =item next_bill_date
 
 Returns the next date this customer will be billed, as a UNIX timestamp, or
@@ -394,7 +409,7 @@ undef if no active package has a next bill date.
 
 sub next_bill_date {
   my $self = shift;
-  min( map $_->get('bill'), grep $_->get('bill'), $self->unsuspended_pkgs );
+  min( map $_->get('bill'), grep $_->get('bill'), $self->active_pkgs );
 }
 
 =item num_cancelled_pkgs
