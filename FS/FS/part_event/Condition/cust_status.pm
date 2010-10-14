@@ -29,4 +29,12 @@ sub condition {
   $hashref->{ $cust_main->status };
 }
 
+sub condition_sql {
+  my( $self, $table ) = @_;
+
+  '('.FS::cust_main->cust_status_sql . ') IN '.
+    $self->condition_sql_option_option('status');
+}
+
+
 1;

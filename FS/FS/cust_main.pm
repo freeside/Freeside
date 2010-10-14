@@ -3727,6 +3727,24 @@ sub statuses {
   keys %statuscolor;
 }
 
+=item cust_status_sql
+
+Returns an SQL fragment to determine the status of a cust_main record, as a 
+string.
+
+=cut
+
+sub cust_status_sql {
+  my $sql = 'CASE';
+  for my $status ( FS::cust_main->statuses() ) {
+    my $method = $status.'_sql';
+    $sql .= ' WHEN ('.FS::cust_main->$method.") THEN '$status'";
+  }
+  $sql .= ' END';
+  return $sql;
+}
+
+
 =item prospect_sql
 
 Returns an SQL expression identifying prospective cust_main records (customers

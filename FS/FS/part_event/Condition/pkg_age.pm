@@ -49,10 +49,18 @@ sub condition {
 
 }
 
-#XXX write me for efficiency
-#sub condition_sql {
-#
-#}
+sub condition_sql {
+  my( $class, $table, %opt ) = @_;
+  my $age   = $class->condition_sql_option_age_from('age', $opt{'time'});
+  my $field = $class->condition_sql_option('field');
+#amazingly, this is actually faster 
+  my $sql = '( CASE';
+  foreach( qw(setup last_bill bill adjourn susp expire cancel) ) {
+    $sql .= " WHEN $field = '$_' THEN (cust_pkg.$_ IS NOT NULL AND cust_pkg.$_ <= $age)";
+  }
+  $sql .= ' END )';
+  return $sql;
+}
 
 1;
 

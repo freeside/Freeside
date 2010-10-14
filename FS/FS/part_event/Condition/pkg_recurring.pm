@@ -20,12 +20,9 @@ sub condition {
 
 }
 
-
-#XXX  join part_pkg USING (pkgpart) 
-#  part_pkg.freq != '0'
-#sub condition_sql {
-#
-#}
+sub condition_sql {
+  FS::cust_pkg->recurring_sql()
+}
 
 1;
 

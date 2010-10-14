@@ -2542,6 +2542,22 @@ sub cancel_sql {
   "cust_pkg.cancel IS NOT NULL AND cust_pkg.cancel != 0";
 }
 
+=item status_sql
+
+Returns an SQL expression to give the package status as a string.
+
+=cut
+
+sub status_sql {
+"CASE
+  WHEN cust_pkg.cancel IS NOT NULL THEN 'cancelled'
+  WHEN cust_pkg.susp IS NOT NULL THEN 'suspended'
+  WHEN cust_pkg.setup IS NULL THEN 'not yet billed'
+  WHEN ".onetime_sql()." THEN 'one-time charge'
+  ELSE 'active'
+END"
+}
+
 =item search HASHREF
 
 (Class method)

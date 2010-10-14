@@ -34,4 +34,11 @@ sub condition {
   $hashref->{ $cust_pkg->status };
 }
 
+sub condition_sql {
+  my( $self, $table ) = @_;
+
+  '('.FS::cust_pkg->status_sql . ') IN '.
+  $self->condition_sql_option_option('status');
+}
+
 1;
