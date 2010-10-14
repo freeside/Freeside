@@ -4,7 +4,7 @@
      'agent_virt'     => 1,
      'process_o2m' => {
        'table'  => 'contact',
-       'fields' => [qw( first last title comment )],
+       'fields' => \@contact_fields,
      },
      'redirect' => popurl(3). 'view/prospect_main.html?',
    )
@@ -30,5 +30,10 @@ my $args_callback = sub {
   ( 'cust_location' => $cust_location );
 
 };
+
+my @contact_fields = qw( first last title comment emailaddress );
+foreach my $phone_type ( qsearch({table=>'phone_type', order_by=>'weight'}) ) {
+  push @contact_fields, 'phonetypenum'.$phone_type->phonetypenum;
+}
 
 </%init>

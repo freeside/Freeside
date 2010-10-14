@@ -831,8 +831,8 @@ sub tables_hashref {
         'last',      'varchar',     '', $char_d, '', '', 
 #        'middle',    'varchar', 'NULL', $char_d, '', '', 
         'first',     'varchar',     '', $char_d, '', '', 
-        'title',     'varchar',     '', $char_d, '', '', #eg Head Bottle Washer
-        'comment',   'varchar',     '', $char_d, '', '', 
+        'title',     'varchar', 'NULL', $char_d, '', '', #eg Head Bottle Washer
+        'comment',   'varchar', 'NULL', $char_d, '', '', 
         'disabled',     'char', 'NULL',       1, '', '', 
       ],
       'primary_key' => 'contactnum',
@@ -844,13 +844,13 @@ sub tables_hashref {
 
     'contact_phone' => {
       'columns' => [
-        'contactphonenum', 'serial', '', '', '', '',
-        'contactnum',         'int', '', '', '', '',
-        'phonetypenum',       'int', '', '', '', '',
-        'countrycode',    'varchar', '',  3, '', '', 
-        'phonenum',       'varchar', '', 14, '', '', 
-        'extension',      'varchar', '',  7, '', '',
-        #?#'comment',   'varchar',     '', $char_d, '', '', 
+        'contactphonenum', 'serial',     '', '', '', '',
+        'contactnum',         'int',     '', '', '', '',
+        'phonetypenum',       'int',     '', '', '', '',
+        'countrycode',    'varchar',     '',  3, '', '', 
+        'phonenum',       'varchar',     '', 14, '', '', 
+        'extension',      'varchar', 'NULL',  7, '', '',
+        #?#'comment',        'varchar',     '', $char_d, '', '', 
       ],
       'primary_key' => 'contactphonenum',
       'unique'      => [],

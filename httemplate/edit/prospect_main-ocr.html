@@ -1,0 +1,86 @@
+<%  include("/elements/header.html", 'Upload business card' ) %>
+
+% if ( $error ) { 
+  <FONT SIZE="+1" COLOR="#ff0000">Error: <% $error %></FONT>
+  <BR><BR>
+% } else {
+
+    <FORM ACTION="prospect_main.html" METHOD="POST">
+    <INPUT TYPE="hidden" NAME="session" VALUE="<% $session %>">
+
+    <TABLE>
+
+%   my $num = 0;
+%   foreach my $line ( @lines ) { 
+      <TR>
+        <TD>
+          <INPUT TYPE="hidden" NAME="val<%$num%>" VALUE="<% $line |h %>">
+          <SELECT NAME="sel<%$num%>">
+            <OPTION VALUE="">
+            <OPTION VALUE="name">Name
+            <OPTION VALUE="contactnum0_title">Title
+            <OPTION VALUE="company">Company
+            <OPTION VALUE="contactnum0_emailaddress">Email
+            <OPTION VALUE="address1">Address (1)
+            <OPTION VALUE="address2">Address (2)
+            <OPTION VALUE="city_state_zip">City, State, Zip
+%           my @phone_types = qsearch({table=>'phone_type',order_by=>'weight'});
+%           foreach my $phone_type ( @phone_types ) {
+%             next if $phone_type->typename eq 'Home';
+              <OPTION VALUE="contactnum0_phonetypenum<% $phone_type->phonetypenum %>"><% $phone_type->typename |h %> phone
+%           }
+            <OPTION VALUE="contactnum0_comment">Comment
+          </SELECT>
+        </TD>
+        <TD><% $line %></TD>
+
+%       unless ( $num++) {
+
+          <TD ROWSPAN="9999"><IMG SRC="<%$p%>view/image.cgi?type=png;prefname=bizcard<%$session%>" WIDTH=604 HEIGHT=328></IMG></TD>
+
+%       }
+
+      </TR>
+%   }
+
+    </TABLE>
+
+    <BR>
+    <INPUT TYPE="submit" VALUE="Create prospect">
+
+% }
+<% include('/elements/footer.html') %>
+<%init>
+
+my $fh = $cgi->upload('card');
+
+my $error = '';
+my @lines = ();
+my $session = '';
+if ( defined $fh ) {
+
+  local $/;
+  my $logo_data = <$fh>;
+
+  $session = int(rand(4294967296)); #XXX
+  my $pref = new FS::access_user_pref({
+    'usernum'    => $FS::CurrentUser::CurrentUser->usernum,
+    'prefname'   => "bizcard$session",
+    'prefvalue'  => encode_base64($logo_data),
+    'expiration' => time + 3600, #1h?  1m?
+  });
+  my $pref_error = $pref->insert;
+  if ( $pref_error ) {
+    die "FATAL: couldn't set preview cookie: $pref_error\n";
+  }
+
+  @lines = eval { ocr_image($logo_data); };
+  $error = $@ if $error;
+
+} else {
+
+  $error = 'No file uploaded';
+
+}
+
+</%init>

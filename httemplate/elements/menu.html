@@ -364,11 +364,13 @@ $tools_menu{'Process payment batches'} = [ $fsurl.'search/pay_batch.cgi?magic=_d
   if ( $conf->exists('batch-enable') || $conf->config('batch-enable_payby') )
      && $curuser->access_right('Process batches');
 $tools_menu{'Process invoice batches'} = [ $fsurl.'search/bill_batch.cgi' ] 
-  if ( $conf->exists('invoice_print_pdf') );
+  if $conf->exists('invoice_print_pdf');
 $tools_menu{'Job Queue'} =  [ $fsurl.'search/queue.html', 'View pending job queue' ]
   if $curuser->access_right('Job queue');
 $tools_menu{'Ticketing'} = [ \%tools_ticketing, 'Ticketing tools' ]
   if $conf->config('ticket_system');
+$tools_menu{'Business card scan'} = [ $fsurl.'edit/prospect_main-upload.html' ]
+  if $curuser->access_right('New prospect');
 $tools_menu{'Time Queue'} =  [ $fsurl.'search/report_timeworked.html', 'View pending support time' ]
   if $curuser->access_right('Time queue');
 $tools_menu{'Attachments'} = [ $fsurl.'browse/cust_attachment.html', 'View customer attachments' ]

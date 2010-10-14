@@ -120,7 +120,7 @@ sub check {
     || $self->ut_number('phonetypenum')
     || $self->ut_text('countrycode')
     || $self->ut_text('phonenum')
-    || $self->ut_text('extension')
+    || $self->ut_textn('extension')
   ;
   return $error if $error;
 

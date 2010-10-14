@@ -5,12 +5,38 @@
   <TABLE>
     <TR>
 %     foreach my $field ( @fields ) {
+%
+%       my $value = '';
+%       if ( $field =~ /^phonetypenum(\d+)$/ ) {
+%         my $contact_phone = qsearchs('contact_phone', {
+%           'contactnum'   => $curr_value,
+%           'phonetypenum' => $1,
+%         });
+%         if ( $contact_phone ) {
+%           $value = $contact_phone->phonenum;
+%           $value .= 'x'.$contact_phone->extension
+%             if $contact_phone->extension;
+%           $value = '+'. $contact_phone->countrycode. " $value"
+%             if $contact_phone->countrycode
+%             && $contact_phone->countrycode ne '1';
+%         }
+%       } elsif ( $field eq 'emailaddress' ) {
+%         #XXX multiple not yet supported
+%         my $contact_email = qsearchs('contact_email', {
+%           'contactnum' => $curr_value,
+%         });
+%         $value = $contact_email->emailaddress if $contact_email;
+%       } else {
+%         $value = $contact->get($field);
+%       }
+
         <TD>
-          <INPUT TYPE = "text"
-                 NAME = "<%$name%>_<%$field%>"
-                 ID   = "<%$id%>_<%$field%>"
+          <INPUT TYPE  = "text"
+                 NAME  = "<%$name%>_<%$field%>"
+                 ID    = "<%$id%>_<%$field%>"
+                 SIZE  = "<% $size{$field} || 15 %>"
                  VALUE = "<% scalar($cgi->param($name."_$field"))
-                             || $contact->get($field) |h %>"
+                             || $value |h %>"
                  <% $onchange %>
           ><BR>
           <FONT SIZE="-1"><% $label{$field} %></FONT>
@@ -45,12 +71,25 @@ if ( $curr_value ) {
   $contact = new FS::contact {};
 }
 
+my %size = ( 'title' => 12 );
+
 tie my %label, 'Tie::IxHash',
-  'first'  => 'First name',
-  'last'    => 'Last name',
-  'title'   => 'Title/Position',
-  'comment' => 'Comment',
+  'first'        => 'First name',
+  'last'         => 'Last name',
+  'title'        => 'Title/Position',
+  'emailaddress' => 'Email',
 ;
+
+my $first = 0;
+foreach my $phone_type ( qsearch({table=>'phone_type', order_by=>'weight'}) ) {
+  next if $phone_type->typename eq 'Home';
+  my $f = 'phonetypenum'.$phone_type->phonetypenum;
+  $label{$f} = $phone_type->typename. ' phone';
+  $size{$f} = $first++ ? 11 : 15;
+}
+
+$label{'comment'} = 'Comment';
+
 my @fields = keys %label;
 
 </%init>

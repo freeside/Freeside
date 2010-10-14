@@ -26,7 +26,7 @@ use Tie::IxHash;
 use Digest::MD5 qw(md5_base64);
 use Date::Format;
 #use Date::Manip;
-use File::Temp qw( tempfile );
+use File::Temp; #qw( tempfile );
 use Business::CreditCard 0.28;
 use Locale::Country;
 use FS::UID qw( getotaker dbh driver_name );

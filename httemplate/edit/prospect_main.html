@@ -5,6 +5,7 @@
                             'agentnum'    => 'Agent',
                             'company'     => 'Company',
                             'contactnum'  => 'Contact',
+                            'locationnum' => '&nbsp;',
                           },
      'fields'          => [
        { 'field'       => 'agentnum',
@@ -34,6 +35,7 @@
          'empty_label' => 'No address',
        },
      ],
+     'new_callback'    => $new_callback,
      'edit_callback'   => $edit_callback,
      'error_callbacck' => $error_callback,
      'agent_virt'      => 1,
@@ -61,6 +63,48 @@ if ( $cgi->param('error') ) {
     unless $curuser->access_right('New prospect');
 
 }
+
+my $new_callback = sub {
+  my( $cgi, $prospect_main, $fields_listref, $opt_hashref ) = @_;
+
+  if ( $cgi->param('session') =~ /^(\w+)$/ ) {
+    my $session = $1;
+
+    #add a link to the image.cgi for this card
+    $opt_hashref->{'html_bottom'} .=
+      qq(<BR><IMG SRC="${p}view/image.cgi?type=png;prefname=bizcard$session" ).
+      ' WIDTH=604 HEIGHT=328><BR>';
+
+    #fill in the incoming params: name, address1/address2, city_state_zip
+    foreach my $param ( grep /^sel\d+$/, $cgi->param ) {
+      $param =~ /^sel(\d+)$/ or die 'again, wtf (daily)';
+      my $num = $1;
+      my $field = $cgi->param($param);
+      my $value = $cgi->param("val$num");
+      $cgi->param($field => $value);
+    }
+
+    if ( $cgi->param('company') ) {
+      $prospect_main->company( $cgi->param('company') );
+    }
+
+    if ( $cgi->param('name') =~ /^(.*\S+)\s+(\w+)\s*$/ ) {
+      $cgi->param('contactnum0_first' => $1);
+      $cgi->param('contactnum0_last'  => $2);
+    }
+
+    if ( grep $cgi->param($_), qw( address1 address2 city_state_zip ) ) {
+      $cgi->param('locationnum', -1);
+      if ( $cgi->param('city_state_zip') =~ /^(\s*)([\w\s]+)[\., ]+(\w{2})[, ]+(\d{5}(-\d{4})?)/ ) {
+         $cgi->param('city'  => $2);
+         $cgi->param('state' => $3);
+         $cgi->param('zip'   => $4);
+      }
+    }
+
+  }
+
+};
 
 my $edit_callback = sub {
   #my( $cgi, $prospect_main, $fields_listref, $opt_hashref ) = @_;
