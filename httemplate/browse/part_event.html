@@ -150,7 +150,7 @@ my $html_init =
 
 foreach my $part_event ( qsearch('part_event', {'diabled'=>''}) ) {
   $html_init .=  '<OPTION VALUE="'. $part_event->eventpart. '">'.
-                 $part_event->event. '</OPTION>';
+                  $part_event->eventpart. ': '. $part_event->event. '</OPTION>';
 }
 
 $html_init .= '</SELECT><INPUT TYPE="submit" VALUE="Clone existing event">'.
