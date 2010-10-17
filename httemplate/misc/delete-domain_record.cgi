@@ -1,7 +1,7 @@
 % if ( $error ) {
 %   errorpage($error);
 % } else {
-<% $cgi->redirect($p. "view/svc_domain.cgi?". $domain_record->svcnum) %>
+<% $cgi->redirect($p. "view/svc_domain.cgi?". $domain_record->svcnum. '#dns') %>
 % }
 <%init>
 

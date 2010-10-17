@@ -1,0 +1,53 @@
+<% include('/elements/header-popup.html', 'Edit nameservice record') %>
+
+<% include('/elements/error.html') %>
+
+<FORM METHOD="POST" ACTION="process/domain_record.cgi">
+
+<INPUT TYPE="hidden" NAME="recnum" VALUE="<% $opt{'recnum'} %>">
+
+<% ntable("#cccccc", 2) %>
+
+    <tr>
+      <td>
+        <INPUT TYPE="text" NAME="reczone" VALUE="<% $domain_record->reczone %>">
+        <BR>
+        <FONT SIZE="-1"><I>Zone</I></FONT>
+      </TD>
+      <TD>
+        <INPUT TYPE="hidden" NAME="recaf" VALUE="IN">
+          <SELECT NAME="rectype">
+%           foreach ( @{ FS::domain_record->rectypes } ) { 
+              <OPTION VALUE="<%$_%>"
+                      <% $_ eq $domain_record->rectype ? 'SELECTED' : '' %>
+              >IN <%$_%></OPTION>
+%           } 
+          </SELECT><BR>
+          <FONT SIZE="-1"><I>Type</I></FONT>
+      </TD>
+      <TD>
+        <INPUT TYPE="text" NAME="recdata" VALUE="<% $domain_record->recdata |h %>">
+        <BR>
+        <FONT SIZE="-1"><I>Data</I></FONT>
+      </TD>
+      <TD>
+        <INPUT TYPE="text" NAME="ttl" size="6" VALUE="<% $domain_record->ttl %>">
+        <BR>
+        <FONT SIZE="-1"><I>TTL</I></FONT>
+      </TD>
+
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="Edit record">
+
+</FORM>
+
+<%init>
+
+my %opt = @_;
+
+my $domain_record = qsearchs('domain_record', { 'recnum' => $opt{'recnum'} } )
+  or die "unknown recnum";
+
+</%init>

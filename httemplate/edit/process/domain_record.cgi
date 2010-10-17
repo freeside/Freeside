@@ -1,8 +1,14 @@
 %if ( $error ) {
 %  errorpage($error);
-%} else { 
+%} elsif ( $recnum ) { #editing
+<% header('Nameservice record changed') %>
+  <SCRIPT TYPE="text/javascript">
+    window.top.location.reload();
+  </SCRIPT>
+  </BODY></HTML>
+%} else { #adding
 %  my $svcnum = $new->svcnum;
-<% $cgi->redirect(popurl(3). "view/svc_domain.cgi?$svcnum") %>
+<% $cgi->redirect(popurl(3). "view/svc_domain.cgi?$svcnum#dns") %>
 %}
 <%init>
 
@@ -21,10 +27,11 @@ my $new = new FS::domain_record ( {
 
 my $error;
 if ( $recnum ) {
-  $error=$new->replace($old);
+  $new->svcnum( $old->svcnum );
+  $error = $new->replace($old);
 } else {
-  $error=$new->insert;
-  $recnum=$new->getfield('recnum');
+  $error = $new->insert;
+  #$recnum = $new->getfield('recnum');
 }
 
 </%init>

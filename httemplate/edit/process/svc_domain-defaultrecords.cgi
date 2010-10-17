@@ -1,4 +1,8 @@
-<% $cgi->redirect(popurl(3). "view/svc_domain.cgi?$svcnum") %>
+% if ( $error ) {
+%   errorpage($error);
+% } else {
+<% $cgi->redirect(popurl(3). "view/svc_domain.cgi?$svcnum#dns") %>
+% }
 <%init>
 
 die "access denied"

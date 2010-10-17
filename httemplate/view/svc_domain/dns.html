@@ -7,28 +7,30 @@
     return confirm("Remove all records and slave from " + document.SlaveForm.recdata.value + "?");
   }
 </SCRIPT>
+<% include('/elements/init_overlib.html') %>
 
+<A NAME="dns"></A>
 <div class="fscontainer">
 <div class="fsbox">
 <div class="fsbox-title">
   <span class="left">DNS Records</span>
 </div>
 
-% my @records; if ( @records = $svc_domain->domain_record ) { 
-
-  <% include('/elements/table-grid.html') %>
+<% include('/elements/table-grid.html') %>
 
 % my $bgcolor1 = '#eeeeee';
-%     my $bgcolor2 = '#ffffff';
-%     my $bgcolor = $bgcolor2;
+% my $bgcolor2 = '#ffffff';
+% my $bgcolor = $bgcolor2;
 
   <tr>
     <th CLASS="grid" BGCOLOR="#cccccc">Zone</th>
     <th CLASS="grid" BGCOLOR="#cccccc">Type</th>
     <th CLASS="grid" BGCOLOR="#cccccc">Data</th>
     <th CLASS="grid" BGCOLOR="#cccccc">TTL</th>
+    <th CLASS="grid" BGCOLOR="#cccccc"></th>
   </tr>
 
+% my @records = $svc_domain->domain_record;
 % foreach my $domain_record ( @records ) {
 %       my $type = $domain_record->rectype eq '_mstr'
 %                    ? "(slave)"
@@ -45,9 +47,20 @@
 % unless ( $domain_record->rectype eq 'SOA'
 %          || ! $FS::CurrentUser::CurrentUser->access_right('Edit domain nameservice')
 %        ) { 
+%   my $edit_link = include('/elements/popup_link.html',
+%                             'label'  => 'edit',                      
+%                             'action' => $p.'edit/domain_record.html?recnum='.
+%                                         $domain_record->recnum,
+%                             'actionlabel' => 'Edit nameservice record',
+%                             'width'  => 655,
+%                             'height' => 176,
+%                             #'color'  => '#ff0000',
+%                   );
 %   ( my $recdata = $domain_record->recdata ) =~ s/"/\\'\\'/g;
-      (<A HREF="<%$p%>edit/domain_record.html?<%$domain_record->recnum%>">edit</A>)
-      (<A HREF="javascript:areyousure('<%$p%>misc/delete-domain_record.cgi?<%$domain_record->recnum%>', 'Delete \'<% $domain_record->reczone %> <% $type %> <% $recdata %>\' ?' )">delete</A>)
+%   my $delete_url= "javascript:areyousure('${p}misc/delete-domain_record.cgi?".
+%                   $domain_record->recnum. "', 'Delete ".
+%                   $domain_record->reczone. " $type $recdata ?' )";
+      <%$edit_link%>&nbsp;|&nbsp;<A HREF="<%$delete_url%>">delete</A>
 % }
       </td>
     </tr>
@@ -61,50 +74,48 @@
 
 % } 
 
-  </table>
-% } else {
+% if ( ! @records ) {
 
   <FORM METHOD="POST" NAME="DefaultForm" ACTION="<%$p%>edit/process/svc_domain-defaultrecords.cgi">
+  <tr>
+    <td class="grid" BGCOLOR="#ffffff" COLSPAN=5>
       <INPUT TYPE="hidden" NAME="svcnum" VALUE="<%$svcnum%>">
       <INPUT TYPE="submit" VALUE="Add default records">
+    </td>
+  </tr>
   </FORM>
 
 % }
 
 % if ( $FS::CurrentUser::CurrentUser->access_right('Edit domain nameservice') ) {
-    <BR>
     <FORM METHOD="POST" ACTION="<%$p%>edit/process/domain_record.cgi">
-      <INPUT TYPE="hidden" NAME="svcnum" VALUE="<%$svcnum%>">
-      <TABLE>
-      <TR>
-        <TD ALIGN="right" VALIGN="top">
-          <INPUT TYPE="text" NAME="reczone"><BR>
-          <FONT SIZE="-1"><I>Zone</I></FONT>
-        </TD>
-        <TD ALIGN="right" VALIGN="top">
-          <INPUT TYPE="hidden" NAME="recaf" VALUE="IN"> IN 
-        </TD>
-        <TD ALIGN="right" VALIGN="top">
+    <INPUT TYPE="hidden" NAME="svcnum" VALUE="<%$svcnum%>">
+    <tr>
+      <td class="grid" bgcolor="<%$bgcolor%>">
+        <INPUT TYPE="text" NAME="reczone"><BR>
+        <FONT SIZE="-1"><I>Zone</I></FONT>
+      </TD>
+      <TD class="grid" bgcolor="<%$bgcolor%>">
+        <INPUT TYPE="hidden" NAME="recaf" VALUE="IN">
           <SELECT NAME="rectype">
 %           foreach ( @{ FS::domain_record->rectypes } ) { 
-              <OPTION VALUE="<%$_%>"><%$_%></OPTION>
+              <OPTION VALUE="<%$_%>">IN <%$_%></OPTION>
 %           } 
           </SELECT><BR>
           <FONT SIZE="-1"><I>Type</I></FONT>
-        </TD>
-        <TD ALIGN="right" VALIGN="top">
-          <INPUT TYPE="text" NAME="recdata"><BR>
-          <FONT SIZE="-1"><I>Data</I></FONT>
-        </TD>
-        <TD ALIGN="right" VALIGN="top">
-          <INPUT TYPE="text" NAME="ttl" size="6"><BR>
-          <FONT SIZE="-1"><I>TTL</I></FONT>
-        </TD>
-        <TD ALIGN="right" VALIGN="top">
-          <INPUT TYPE="submit" VALUE="Add record">
-        </TD>
-      </TR>
-    </TABLE>
+      </TD>
+      <TD class="grid" bgcolor="<%$bgcolor%>">
+        <INPUT TYPE="text" NAME="recdata"><BR>
+        <FONT SIZE="-1"><I>Data</I></FONT>
+      </TD>
+      <TD class="grid" bgcolor="<%$bgcolor%>">
+        <INPUT TYPE="text" NAME="ttl" size="6"><BR>
+        <FONT SIZE="-1"><I>TTL</I></FONT>
+      </TD>
+      <TD class="grid" bgcolor="<%$bgcolor%>" VALIGN="top">
+        <INPUT TYPE="submit" VALUE="Add record">
+      </TD>
+    </TR>
     </FORM>
 
     <BR>
@@ -122,8 +133,11 @@
       <INPUT TYPE="text" NAME="recdata">
       <INPUT TYPE="submit" VALUE="Slave domain" onClick="return slave_areyousure()">
     </FORM>
+    <BR><BR>
 
 % }
+
+</table>
 
 </div>
 </div>
