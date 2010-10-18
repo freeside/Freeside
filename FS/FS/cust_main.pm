@@ -3581,7 +3581,6 @@ sub status { shift->cust_status(@_); }
 
 sub cust_status {
   my $self = shift;
-  # prospect ordered active inactive suspended cancelled
   for my $status ( FS::cust_main->statuses() ) {
     my $method = $status.'_sql';
     my $numnum = ( my $sql = $self->$method() ) =~ s/cust_main\.custnum/?/g;
@@ -3618,9 +3617,9 @@ tie %statuscolor, 'Tie::IxHash',
   'prospect'  => '7e0079', #'000000', #black?  naw, purple
   'active'    => '00CC00', #green
   'ordered'   => '009999', #teal? cyan?
-  'inactive'  => '0000CC', #blue
   'suspended' => 'FF9900', #yellow
   'cancelled' => 'FF0000', #red
+  'inactive'  => '0000CC', #blue
 ;
 
 sub statuscolor { shift->cust_statuscolor(@_); }
@@ -3845,8 +3844,8 @@ sub cancel_sql {
     AND 0 = ( $select_count_pkgs AND $recurring_sql
                   AND ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
             )
-    AND 0 = (  $select_count_pkgs AND ". FS::cust_pkg->inactive_sql. " )
   ";
+#    AND 0 = (  $select_count_pkgs AND ". FS::cust_pkg->inactive_sql. " )
 
 }
 
