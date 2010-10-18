@@ -135,6 +135,9 @@ tie my %contract_years, 'Tie::IxHash', (
                                     'with the customer\'s other packages',
                           'type' => 'checkbox',
                         },
+    'suspend_bill' => { 'name' => 'Continue recurring billing while suspended',
+                        'type' => 'checkbox',
+                      },
     'unsuspend_adjust_bill' => 
                         { 'name' => 'Adjust next bill date forward when '.
                                     'unsuspending',
@@ -153,7 +156,7 @@ tie my %contract_years, 'Tie::IxHash', (
                         expire_months adjourn_months
                         contract_end_months
                         start_1st sync_bill_date
-                        unsuspend_adjust_bill
+                        suspend_bill unsuspend_adjust_bill
                       ),
                     @usage_fieldorder, @usage_recharge_fieldorder,
                     qw( externalid ),

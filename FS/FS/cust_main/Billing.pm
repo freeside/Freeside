@@ -856,15 +856,14 @@ sub _make_lines {
   my $recur = 0;
   my $unitrecur = 0;
   my $sdate;
-  if (     ! $cust_pkg->get('susp')
-       and ! $cust_pkg->get('start_date')
-       and ( $part_pkg->getfield('freq') ne '0'
-             && ( $cust_pkg->getfield('bill') || 0 ) <= $time
-           )
-        || ( $part_pkg->plan eq 'voip_cdr'
-              && $part_pkg->option('bill_every_call')
-           )
-        || ( $options{cancel} )
+  if (     ! $cust_pkg->start_date
+       and ( ! $cust_pkg->susp || $part_pkg->option('suspend_bill') )
+       and
+            ( $part_pkg->freq ne '0' && ( $cust_pkg->bill || 0 ) <= $time )
+         || ( $part_pkg->plan eq 'voip_cdr'
+               && $part_pkg->option('bill_every_call')
+            )
+         || $options{cancel}
   ) {
 
     # XXX should this be a package event?  probably.  events are called

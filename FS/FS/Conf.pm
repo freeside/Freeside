@@ -3991,6 +3991,13 @@ and customer address. Include units.',
     'type'        => 'text',
   },
 
+  {
+    'key'         => 'part_pkg-default_suspend_bill',
+    'section'     => 'billing',
+    'description' => 'Default the "Continue recurring billing while suspended" flag to on for new package definitions.',
+    'type'        => 'checkbox',
+  },
+
   { key => "apacheroot", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachine", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
   { key => "apachemachines", section => "deprecated", description => "<b>DEPRECATED</b>", type => "text" },
