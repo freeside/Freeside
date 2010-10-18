@@ -191,15 +191,30 @@ sub prepare {
   # create substitution table
   ###  
   my %hash;
-  foreach my $obj ($cust_main, $object || ()) {
+  my @objects = ($cust_main);
+  my @prefixes = ('');
+  if( ref $object ) {
+    if( ref($object) eq 'ARRAY' ) {
+      # [new, old], for provisioning tickets
+      push @objects, $object->[0], $object->[1];
+      push @prefixes, 'new_', 'old_';
+    }
+    else {
+      push @objects, $object;
+      push @prefixes, '';
+    }
+  }
+
+  foreach my $obj (@objects) {
+    my $prefix = shift @prefixes;
     foreach my $name (@{ $subs->{$obj->table} }) {
       if(!ref($name)) {
         # simple case
-        $hash{$name} = $obj->$name();
+        $hash{$prefix.$name} = $obj->$name();
       }
       elsif( ref($name) eq 'ARRAY' ) {
         # [ foo => sub { ... } ]
-        $hash{$name->[0]} = $name->[1]->($obj);
+        $hash{$prefix.($name->[0])} = $name->[1]->($obj);
       }
       else {
         warn "bad msg_template substitution: '$name'\n";
@@ -366,7 +381,9 @@ sub substitutions {
     
     # for welcome and limit warning messages
     'svc_acct' => [qw(
+      svcnum
       username
+      domain
       ),
       [ password          => sub { shift->getfield('_password') } ],
     ],
