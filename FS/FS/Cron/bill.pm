@@ -5,7 +5,7 @@ use vars qw( @ISA @EXPORT_OK );
 use Exporter;
 use Date::Parse;
 use DBI 1.33; #The "clone" method was added in DBI 1.33. 
-use FS::UID qw(dbh);
+use FS::UID qw( dbh driver_name );
 use FS::Record qw( qsearch qsearchs );
 use FS::queue;
 use FS::cust_main;
@@ -56,14 +56,20 @@ sub bill {
 
   my $cursor_dbh = dbh->clone;
 
-  $cursor_dbh->do(
-    "DECLARE cron_bill_cursor CURSOR FOR ".
-    "  SELECT custnum FROM cust_main WHERE ". bill_where( %opt )
-  ) or die $cursor_dbh->errstr;
+  my $select = 'SELECT custnum FROM cust_main WHERE '. bill_where( %opt );
+
+  unless ( driver_name =~ /^mysql/ ) {
+    $cursor_dbh->do( "DECLARE cron_bill_cursor CURSOR FOR $select" )
+      or die $cursor_dbh->errstr;
+  }
 
   while ( 1 ) {
 
-    my $sth = $cursor_dbh->prepare('FETCH 100 FROM cron_bill_cursor'); #mysql?
+    my $sql = (driver_name =~ /^mysql/)
+      ? $select
+      : 'FETCH 100 FROM cron_bill_cursor';
+
+    my $sth = $cursor_dbh->prepare($sql);
 
     $sth->execute or die $sth->errstr;
 
@@ -119,6 +125,8 @@ sub bill {
       }
 
     }
+
+    last if driver_name =~ /^mysql/;
 
   }
 

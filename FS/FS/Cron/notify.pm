@@ -37,7 +37,7 @@ sub notify_flat_delay {
                 and 0 < ( select count(*) from part_pkg_option
                             where part_pkg.pkgpart = part_pkg_option.pkgpart
                               and part_pkg_option.optionname = 'recur_notify'
-                              and CAST( part_pkg_option.optionvalue AS INTEGER ) > 0
+                              and CAST( part_pkg_option.optionvalue AS $integer ) > 0
                               and 0 <= ( $time
                                          + CAST( part_pkg_option.optionvalue AS $integer )
                                            * 86400
@@ -64,7 +64,7 @@ END
       0 = ( select count(*) from cust_pkg_option
               where cust_pkg.pkgnum = cust_pkg_option.pkgnum
                 and cust_pkg_option.optionname = 'impending_recur_notification_sent'
-                and CAST( cust_pkg_option.optionvalue AS INTEGER ) = 1
+                and CAST( cust_pkg_option.optionvalue AS $integer ) = 1
           )
 END
   
