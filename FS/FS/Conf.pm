@@ -395,6 +395,7 @@ sub verify_config_item {
 
   } else {
 
+    no warnings 'uninitialized';
     $error .= "$key fails binary comparison; "
       unless scalar($self->config_binary($key)) eq scalar($compat->config_binary($key));
 
