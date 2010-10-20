@@ -64,38 +64,40 @@ list of freeside CDR fields, useful ones marked with *
        lastapp - Last application if appropriate
        lastdata - Last application data
 *      startdate - Start of call (UNIX-style integer timestamp)
-       answerdate - Answer time of call (UNIX-style integer timestamp)
+*      answerdate - Answer time of call (UNIX-style integer timestamp)
 *      enddate - End time of call (UNIX-style integer timestamp)
-*      duration - Total time in system, in seconds
-*      billsec - Total time call is up, in seconds
-*[2]   disposition - What happened to the call: ANSWERED, NO ANSWER, BUSY
+*[2]   duration - Total time in system, in seconds
+*[3]   billsec - Total time call is up, in seconds
+*[4]   disposition - What happened to the call: ANSWERED, NO ANSWER, BUSY
        amaflags - What flags to use: BILL, IGNORE etc, specified on a per
        channel basis like accountcode.
-*[3]   accountcode - CDR account number to use: account
+*[5]   accountcode - CDR account number to use: account
        uniqueid - Unique channel identifier
        userfield - CDR user-defined field
        cdr_type - CDR type - see FS::cdr_type (Usage = 1, S&E = 7, OC&C = 8)
-*[4]   charged_party - Service number to be billed
+*[6]   charged_party - Service number to be billed
        upstream_currency - Wholesale currency from upstream
-*[5]   upstream_price - Wholesale price from upstream
+*[7]   upstream_price - Wholesale price from upstream
        upstream_rateplanid - Upstream rate plan ID
        rated_price - Rated (or re-rated) price
        distance - km (need units field?)
        islocal - Local - 1, Non Local = 0
-*[6]   calltypenum - Type of call - see FS::cdr_calltype
+*[8]   calltypenum - Type of call - see FS::cdr_calltype
        description - Description (cdr_type 7&8 only) (used for
        cust_bill_pkg.itemdesc)
        quantity - Number of items (cdr_type 7&8 only)
-*[7]   carrierid - Upstream Carrier ID (see FS::cdr_carrier)
+*[9]   carrierid - Upstream Carrier ID (see FS::cdr_carrier)
        upstream_rateid - Upstream Rate ID
        svcnum - Link to customer service (see FS::cust_svc)
        freesidestatus - NULL, done (or something)
 
 [1] Auto-populated from startdate if not present
-[2] Package options available to ignore calls without a specific disposition
-[3] When using 'cdr-charged_party-accountcode' config
-[4] Auto-populated from src (normal calls) or dst (toll free calls) if not present
-[5] When using 'upstream_simple' rating method.
-[6] Set to usage class classnum when using pre-rated CDRs and usage class-based
+[2] Auto-populated to enddate - startdate on insert if not specified
+[3] Auto-populated to enddate - answerdate on insert if not specified
+[4] Package options available to ignore calls without a specific disposition
+[5] When using 'cdr-charged_party-accountcode' config
+[6] Auto-populated from src (normal calls) or dst (toll free calls) if not present
+[7] When using 'upstream_simple' rating method.
+[8] Set to usage class classnum when using pre-rated CDRs and usage class-based
     taxation (local/intrastate/interstate/international)
-[7] If doing settlement charging
+[9] If doing settlement charging
