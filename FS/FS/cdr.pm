@@ -285,7 +285,7 @@ sub check {
 #  ;
 #  return $error if $error;
 
-  for my $f ( grep { $self->$_ =~ /[a-z ]/i } qw( startdate enddate ) ) {
+  for my $f ( grep { $self->$_ =~ /\D/ } qw(startdate answerdate enddate)){
     $self->$f( str2time($self->$f) );
   }
 
