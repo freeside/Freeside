@@ -155,16 +155,13 @@ sub unvoid {
 Deletes this voided payment.  You probably don't want to use this directly; see
 the B<unvoid> method to add the original payment back.
 
-=item replace OLD_RECORD
+=item replace [ OLD_RECORD ]
 
-Currently unimplemented.
+You can, but probably shouldn't modify voided payments...
 
-=cut
-
-sub replace {
-   return "Can't modify voided payments!" unless $otaker_upgrade_kludge;
-   shift->SUPER::replace(@_);
-}
+Replaces the OLD_RECORD with this one in the database, or, if OLD_RECORD is not
+supplied, replaces this record.  If there is an error, returns the error,
+otherwise returns false.
 
 =item check
 

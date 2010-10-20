@@ -401,14 +401,17 @@ sub delete {
 
 }
 
-=item replace OLD_RECORD
+=item replace [ OLD_RECORD ]
 
 You can, but probably shouldn't modify payments...
+
+Replaces the OLD_RECORD with this one in the database, or, if OLD_RECORD is not
+supplied, replaces this record.  If there is an error, returns the error,
+otherwise returns false.
 
 =cut
 
 sub replace {
-  #return "Can't modify payment!"
   my $self = shift;
   return "Can't modify closed payment" if $self->closed =~ /^Y/i;
   $self->SUPER::replace(@_);

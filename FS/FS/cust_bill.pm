@@ -263,13 +263,13 @@ sub delete {
 
 }
 
-=item replace OLD_RECORD
+=item replace [ OLD_RECORD ]
 
-Replaces the OLD_RECORD with this one in the database.  If there is an error,
-returns the error, otherwise returns false.
+You can, but probably shouldn't modify invoices...
 
-Only printed may be changed.  printed is normally updated by calling the
-collect method of a customer object (see L<FS::cust_main>).
+Replaces the OLD_RECORD with this one in the database, or, if OLD_RECORD is not
+supplied, replaces this record.  If there is an error, returns the error,
+otherwise returns false.
 
 =cut
 
@@ -280,11 +280,11 @@ collect method of a customer object (see L<FS::cust_main>).
 
 sub replace_check {
   my( $new, $old ) = ( shift, shift );
-  return "Can't change custnum!" unless $old->custnum == $new->custnum;
+  return "Can't modify closed invoice" if $old->closed =~ /^Y/i;
   #return "Can't change _date!" unless $old->_date eq $new->_date;
-  return "Can't change _date!" unless $old->_date == $new->_date;
-  return "Can't change charged!" unless $old->charged == $new->charged
-                                     || $old->charged == 0;
+  return "Can't change _date" unless $old->_date == $new->_date;
+  return "Can't change charged" unless $old->charged == $new->charged
+                                    || $old->charged == 0;
 
   '';
 }

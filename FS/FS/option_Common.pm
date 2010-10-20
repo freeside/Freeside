@@ -173,10 +173,15 @@ sub replace {
               ? shift
               : $self->replace_old;
 
-  my $options = 
-    ( ref($_[0]) eq 'HASH' )
-      ? shift
-      : { @_ };
+  my $options;
+  my $options_supplied = 0;
+  if ( ref($_[0]) eq 'HASH' ) {
+    $options = shift;
+    $options_supplied = 1;
+  } else {
+    $options = { @_ };
+    $options_supplied = scalar(@_) ? 1 : 0;
+  }
 
   warn "FS::option_Common::replace called on $self with options ".
        join(', ', map "$_ => ". $options->{$_}, keys %$options)
@@ -252,13 +257,15 @@ sub replace {
   }
 
   #remove extraneous old options
-  foreach my $opt (
-    grep { !exists $options->{$_->$namecol()} } $old->option_objects
-  ) {
-    my $error = $opt->delete;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
+  if ( $options_supplied ) {
+    foreach my $opt (
+      grep { !exists $options->{$_->$namecol()} } $old->option_objects
+    ) {
+      my $error = $opt->delete;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
     }
   }
 

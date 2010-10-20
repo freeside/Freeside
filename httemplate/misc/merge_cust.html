@@ -1,0 +1,72 @@
+<% include('/elements/header-popup.html', 'Merge customer' ) %>
+
+<% include('/elements/error.html') %>
+
+<FORM NAME="cust_merge_popup" ID="cust_merge_popup" ACTION="<% popurl(1) %>cust_main-merge.html" METHOD=POST onSubmit="submit_merge(); return false;">
+
+<SCRIPT TYPE="text/javascript">
+
+var submit_interval_id;
+function submit_merge() {
+  document.getElementById('confirm_merge_cust_button').disabled = 'true';
+  smart_new_custnum_search(document.getElementById('new_custnum_search'));
+  submit_interval_id = setInterval( do_submit_merge, 100);
+}
+
+function do_submit_merge() {
+
+  if ( new_custnum_search_active )
+    return;
+
+  document.getElementById('confirm_merge_cust_button').disabled = '';
+
+  clearInterval(submit_interval_id);
+
+  if ( document.cust_merge_popup.new_custnum.value != '' ) {
+    document.cust_merge_popup.submit();
+  }
+
+}
+
+</SCRIPT>
+
+</SCRIPT>
+
+<INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
+
+<TABLE BORDER="0" CELLSPACING="2" STYLE="margin-left:auto; margin-right:auto">
+  <% include('/elements/tr-search-cust_main.html',
+               'label'       => 'Merge into: ',
+               'field'       => 'new_custnum',
+               'find_button' => 1,
+               'curr_value'  => scalar($cgi->param('new_custnum')),
+            )
+  %>
+</TABLE>
+
+<P ALIGN="CENTER">
+%#have merge button start out disabled and enable after you select a target cust
+<INPUT TYPE="submit" NAME="confirm_merge_cust_button" ID="confirm_merge_cust_button" VALUE="Merge customer">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<INPUT TYPE="BUTTON" VALUE="Don't merge" onClick="parent.cClick();"> 
+
+</FORM>
+</BODY>
+</HTML>
+
+<%init>
+
+$cgi->param('custnum') =~ /^(\d+)$/ or die 'illegal custnum';
+my $custnum = $1;
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+die "access denied" unless $curuser->access_right('Merge customer');
+
+my $cust_main = qsearchs( {
+  'table'     => 'cust_main',
+  'hashref'   => { 'custnum' => $custnum },
+  'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+} );
+die "No customer # $custnum" unless $cust_main;
+
+</%init>
+

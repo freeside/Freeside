@@ -1,0 +1,40 @@
+% if ( $error ) {
+% $cgi->param('error', $error);
+<% $cgi->redirect(popurl(1). "merge_cust.html?". $cgi->query_string ) %>
+% } else {
+<% include('/elements/header-popup.html', "Customer merged") %>
+  <SCRIPT TYPE="text/javascript">
+    window.top.location.href = '<% $p %>view/cust_main.cgi?<% $new_custnum %>';
+%# parent.nd(1) ?
+  </SCRIPT>
+  </BODY>
+</HTML>
+% }
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Merge customer');
+
+my $error = '';
+
+$cgi->param('custnum') =~ /^(\d+)$/ or die "illegal custnum";
+my $custnum = $1;
+
+my $new_custnum;
+if ( $cgi->param('new_custnum') =~ /^(\d+)$/ ) {
+  $new_custnum = $1;
+
+  my $cust_main = qsearchs( {
+    'table'     => 'cust_main',
+    'hashref'   => { 'custnum' => $custnum },
+    'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+  } );
+  die "No customer # $custnum" unless $cust_main;
+
+  $error = $cust_main->merge($new_custnum);
+
+} else {
+  $error = 'Select a customer to merge into';
+}
+
+</%init>

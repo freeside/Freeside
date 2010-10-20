@@ -64,6 +64,22 @@ function areyousure(href, message) {
 
 % }
 
+% if ( $curuser->access_right('Merge customer') ) {
+
+  <% include( '/elements/popup_link-cust_main.html',
+              { 'action'      => $p. 'misc/merge_cust.html',
+                'label'       => 'Merge&nbsp;this&nbsp;customer',
+                'actionlabel' => 'Merge customer',
+                #'color'       => '#ff0000',
+                'cust_main'   => $cust_main,
+                'width'       => 480,
+                'height'      => 192,
+              }
+            )
+  %> | 
+
+% } 
+
 % if ( $conf->exists('deletecustomers')
 %        && $curuser->access_right('Delete customer')
 %      ) {

@@ -1,0 +1,20 @@
+#!/usr/bin/perl
+
+use strict;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearchs);
+use FS::cust_main;
+
+my $user = shift or die "usage: merge-customers username custnum\n";
+adminsuidsetup $user;
+
+my $custnum = shift or die "usage: merge-customers username custnum\n";
+
+foreach my $cust_main (
+  qsearch('cust_main', { 'referral_custnum' => $custnum })
+) {
+  my $error = $cust_main->merge($custnum);
+  die $error if $error;
+}
+
+1;
