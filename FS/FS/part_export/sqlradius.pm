@@ -18,6 +18,10 @@ tie %options, 'Tie::IxHash',
   'datasrc'  => { label=>'DBI data source ' },
   'username' => { label=>'Database username' },
   'password' => { label=>'Database password' },
+  'usergroup' => { label   => 'Group table',
+                   type    => 'select',
+                   options => [qw( usergroup radusergroup ) ],
+                 },
   'ignore_accounting' => {
     type  => 'checkbox',
     label => 'Ignore accounting records from this database'
@@ -52,7 +56,7 @@ tie %options, 'Tie::IxHash',
 ;
 
 $notes1 = <<'END';
-Real-time export of <b>radcheck</b>, <b>radreply</b> and <b>usergroup</b>
+Real-time export of <b>radcheck</b>, <b>radreply</b> and <b>usergroup</b>/<b>radusergroup</b>
 tables to any SQL database for
 <a href="http://www.freeradius.org/">FreeRADIUS</a>
 or <a href="http://radius.innercite.com/">ICRADIUS</a>.
@@ -121,9 +125,10 @@ sub _export_insert {
     cluck localtime(). ": queuing usergroup_insert for ". $svc_x->svcnum.
           " (". $self->export_username($svc_x). " with ". join(", ", @groups)
       if $DEBUG;
+    my $usergroup = $self->option('usergroup') || 'usergroup';
     my $err_or_queue = $self->sqlradius_queue(
       $svc_x->svcnum, 'usergroup_insert',
-      $self->export_username($svc_x), @groups );
+      $self->export_username($svc_x), $usergroup, @groups );
     return $err_or_queue unless ref($err_or_queue);
   }
   '';
@@ -145,8 +150,9 @@ sub _export_replace {
 
   my $jobnum = '';
   if ( $self->export_username($old) ne $self->export_username($new) ) {
+    my $usergroup = $self->option('usergroup') || 'usergroup';
     my $err_or_queue = $self->sqlradius_queue( $new->svcnum, 'rename',
-      $self->export_username($new), $self->export_username($old) );
+      $self->export_username($new), $self->export_username($old), $usergroup );
     unless ( ref($err_or_queue) ) {
       $dbh->rollback if $oldAutoCommit;
       return $err_or_queue;
@@ -295,8 +301,9 @@ sub _export_unsuspend {
 
 sub _export_delete {
   my( $self, $svc_x ) = (shift, shift);
+  my $usergroup = $self->option('usergroup') || 'usergroup';
   my $err_or_queue = $self->sqlradius_queue( $svc_x->svcnum, 'delete',
-    $self->export_username($svc_x) );
+    $self->export_username($svc_x), $usergroup );
   ref($err_or_queue) ? '' : $err_or_queue;
 }
 
@@ -387,14 +394,16 @@ sub sqlradius_insert { #subroutine, not method
 
 sub sqlradius_usergroup_insert { #subroutine, not method
   my $dbh = sqlradius_connect(shift, shift, shift);
-  my( $username, @groups ) = @_;
+  my $username = shift;
+  my $usergroup = ( $_[0] =~ /^(rad)?usergroup/i ) ? shift : 'usergroup';
+  my @groups = @_;
 
   my $s_sth = $dbh->prepare(
-    "SELECT COUNT(*) FROM usergroup WHERE UserName = ? AND GroupName = ?"
+    "SELECT COUNT(*) FROM $usergroup WHERE UserName = ? AND GroupName = ?"
   ) or die $dbh->errstr;
 
   my $sth = $dbh->prepare( 
-    "INSERT INTO usergroup ( UserName, GroupName ) VALUES ( ?, ? )"
+    "INSERT INTO $usergroup ( UserName, GroupName ) VALUES ( ?, ? )"
   ) or die $dbh->errstr;
 
   foreach my $group ( @groups ) {
@@ -421,10 +430,12 @@ sub sqlradius_usergroup_insert { #subroutine, not method
 
 sub sqlradius_usergroup_delete { #subroutine, not method
   my $dbh = sqlradius_connect(shift, shift, shift);
-  my( $username, @groups ) = @_;
+  my $username = shift;
+  my $usergroup = ( $_[0] =~ /^(rad)?usergroup/i ) ? shift : 'usergroup';
+  my @groups = @_;
 
   my $sth = $dbh->prepare( 
-    "DELETE FROM usergroup WHERE UserName = ? AND GroupName = ?"
+    "DELETE FROM $usergroup WHERE UserName = ? AND GroupName = ?"
   ) or die $dbh->errstr;
   foreach my $group ( @groups ) {
     $sth->execute( $username, $group )
@@ -435,8 +446,9 @@ sub sqlradius_usergroup_delete { #subroutine, not method
 
 sub sqlradius_rename { #subroutine, not method
   my $dbh = sqlradius_connect(shift, shift, shift);
-  my($new_username, $old_username) = @_;
-  foreach my $table (qw(radreply radcheck usergroup )) {
+  my($new_username, $old_username) = (shift, shift);
+  my $usergroup = ( $_[0] =~ /^(rad)?usergroup/i ) ? shift : 'usergroup';
+  foreach my $table (qw(radreply radcheck), $usergroup ) {
     my $sth = $dbh->prepare("UPDATE $table SET Username = ? WHERE UserName = ?")
       or die $dbh->errstr;
     $sth->execute($new_username, $old_username)
@@ -462,8 +474,9 @@ sub sqlradius_attrib_delete { #subroutine, not method
 sub sqlradius_delete { #subroutine, not method
   my $dbh = sqlradius_connect(shift, shift, shift);
   my $username = shift;
+  my $usergroup = ( $_[0] =~ /^(rad)?usergroup/i ) ? shift : 'usergroup';
 
-  foreach my $table (qw( radcheck radreply usergroup )) {
+  foreach my $table (qw( radcheck radreply), $usergroup ) {
     my $sth = $dbh->prepare( "DELETE FROM $table WHERE UserName = ?" );
     $sth->execute($username)
       or die "can't delete from $table table: ". $sth->errstr;
@@ -492,9 +505,11 @@ sub sqlreplace_usergroups {
     push @delgroups, $oldgroup;
   }
 
+  my $usergroup = $self->option('usergroup') || 'usergroup';
+
   if ( @delgroups ) {
     my $err_or_queue = $self->sqlradius_queue( $svcnum, 'usergroup_delete',
-      $username, @delgroups );
+      $username, $usergroup, @delgroups );
     return $err_or_queue
       unless ref($err_or_queue);
     if ( $jobnum ) {
@@ -508,7 +523,7 @@ sub sqlreplace_usergroups {
           "with ".  join(", ", @newgroups)
       if $DEBUG;
     my $err_or_queue = $self->sqlradius_queue( $svcnum, 'usergroup_insert',
-      $username, @newgroups );
+      $username, $usergroup, @newgroups );
     return $err_or_queue
       unless ref($err_or_queue);
     if ( $jobnum ) {
