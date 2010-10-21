@@ -203,7 +203,7 @@ sub smart_search {
     } elsif ( ! $NameParse->parse($value) ) {
 
       my %name = $NameParse->components;
-      $first = $name{'given_name_1'};
+      $first = $name{'given_name_1'} || $name{'initials_1'}; #wtf NameParse, Ed?
       $last  = $name{'surname_1'};
 
     }
@@ -422,6 +422,8 @@ HASHREF.  Valid parameters are
 
 =item status
 
+=item address
+
 =item cancelled_pkgs
 
 bool
@@ -488,7 +490,19 @@ sub search {
     #push @where, $class->$method();
     push @where, FS::cust_main->$method();
   }
-  
+
+  ##
+  # address
+  ##
+  if ( $params->{'address'} =~ /\S/ ) {
+    my $address = dbh->quote('%'. lc($params->{'address'}). '%');
+    push @where, '('. join(' OR ',
+                             map "LOWER($_) LIKE $address",
+                               qw(address1 address2 ship_address1 ship_address2)
+                          ).
+                 ')';
+  }
+
   ##
   # parse cancelled package checkbox
   ##

@@ -44,8 +44,10 @@ my %search_hash = ();
 
 #scalars
 my @scalars = qw (
-  agentnum status cancelled_pkgs cust_fields flattened_pkgs custbatch usernum
-  no_censustract paydate_year paydate_month invoice_terms
+  agentnum status address paydate_year paydate_month invoice_terms
+  no_censustract custbatch usernum
+  cancelled_pkgs
+  cust_fields flattened_pkgs
 );
 
 for my $param ( @scalars ) {

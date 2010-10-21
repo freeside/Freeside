@@ -2477,7 +2477,7 @@ and customer address. Include units.',
   {
     'key'         => 'address1-search',
     'section'     => 'UI',
-    'description' => 'Enable the ability to search the address1 field from customer search.',
+    'description' => 'Enable the ability to search the address1 field from the quick customer search.  Not recommended in most cases as it tends to bring up too many search results - use explicit address searching from the advanced customer search instead.',
     'type'        => 'checkbox',
   },
 
