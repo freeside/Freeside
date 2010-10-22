@@ -96,6 +96,13 @@ $select = "
   *,
 
   ( $count_cust_pkg
+      AND ( setup IS NULL OR setup = 0 )
+      AND ( cancel IS NULL OR cancel = 0 )
+      AND ( susp IS NULL OR susp = 0 )
+  ) AS num_not_yet_billed,
+
+  ( $count_cust_pkg
+      AND setup IS NOT NULL AND setup != 0
       AND ( cancel IS NULL OR cancel = 0 )
       AND ( susp IS NULL OR susp = 0 )
   ) AS num_active,
@@ -309,6 +316,7 @@ if ( $acl_edit_global ) {
 #if ( $cgi->param('active') ) {
   push @header, 'Customer<BR>packages';
   my %col = (
+    'not yet billed'  => '009999', #teal? cyan?
     'active'          => '00CC00',
     'suspended'       => 'FF9900',
     'cancelled'       => 'FF0000',
@@ -326,6 +334,7 @@ if ( $acl_edit_global ) {
                                 #$label = 'one-time charge',
                                 $label = 'charge',
                               }
+                              $label= 'not yet billed' if $magic eq 'not_yet_billed';
                           
                               [
                                 {
@@ -350,7 +359,7 @@ if ( $acl_edit_global ) {
                                             ),
                                 },
                               ],
-                            } (qw( active suspended cancelled ))
+                            } (qw( not_yet_billed active suspended cancelled ))
                       ]; };
   $align .= 'r';
 #}
