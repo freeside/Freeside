@@ -1,0 +1,24 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use FS::Record;
+use FS::UID qw(adminsuidsetup dbh driver_name);
+
+# Fix bad values in some contract_end fields resulting from a short-lived bug
+
+my $dbh = adminsuidsetup(shift) or die "Usage: fix-contract_end username\n";
+local $FS::UID::AutoCommit = 0;
+
+my @updates = (
+  q!UPDATE cust_pkg SET contract_end = NULL WHERE contract_end = -1!,
+  q!UPDATE part_pkg_option SET optionvalue = NULL WHERE optionname = 'contract_end_months' AND optionvalue = '(none)'!,
+);
+
+foreach my $sql (@updates) {
+  print "$sql\n";
+  my $rows = $dbh->do($sql);
+  print "$rows rows.\n";
+  die $dbh->errstr if $dbh->errstr;
+}
+$dbh->commit or die $dbh->errstr;
