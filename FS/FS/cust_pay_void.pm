@@ -253,7 +253,7 @@ sub void_access_user {
 sub _upgrade_data {  # class method
   my ($class, %opts) = @_;
 
-  my $sql = "SELECT usernum FROM access_user WHERE username = ( SELECT history_user FROM h_cust_pay_void WHERE paynum = ? AND history_action = 'insert' ) ";
+  my $sql = "SELECT usernum FROM access_user WHERE username = ( SELECT history_user FROM h_cust_pay_void WHERE paynum = ? AND history_action = 'insert' ORDER BY history_date LIMIT 1 ) ";
   my $sth = dbh->prepare($sql) or die dbh->errstr;
 
   foreach my $cust_pay_void (qsearch('cust_pay_void', {'void_usernum' => ''})) {
