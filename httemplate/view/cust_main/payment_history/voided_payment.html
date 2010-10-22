@@ -1,6 +1,10 @@
-<DEL>Payment <% $info %></DEL>
+<DEL>Payment <% $info %> by <% $cust_pay_void->otaker %></DEL>
 <I>voided <% time2str($date_format, $cust_pay_void->void_date) %>
-by <% $cust_pay_void->otaker %></I><% $unvoid %>
+% my $void_user = $cust_pay_void->void_access_user;
+% if ($void_user) {
+    by <% $void_user->username %></I>
+% }
+<% $unvoid %>
 <%init>
 
 my( $cust_pay_void, %opt ) = @_;

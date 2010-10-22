@@ -1194,10 +1194,11 @@ sub tables_hashref {
         'reason',    'varchar',   'NULL', $char_d, '', '', 
         'otaker',   'varchar', 'NULL', 32, '', '', 
         'usernum',   'int', 'NULL', '', '', '',
+        'void_usernum',   'int', 'NULL', '', '', '',
       ],
       'primary_key' => 'paynum',
       'unique' => [],
-      'index' => [ [ 'custnum' ], [ 'usernum' ], ],
+      'index' => [ [ 'custnum' ], [ 'usernum' ], [ 'void_usernum' ] ],
     },
 
     'cust_bill_pay' => {
@@ -2969,7 +2970,18 @@ sub tables_hashref {
       'index'       => [ ['agentnum'], ]
     },
 
-
+    'svc_cert' => {
+      'columns' => [
+        'svcnum',            'int',     '',            '', '', '', 
+        'recnum',   'int',      '',  '', '', '', 
+        'something', 'text', '', '', '', '',
+        #XXX more fields
+      ],
+      'primary_key' => 'svcnum',
+      'unique' => [],
+      'index'  => [], #recnum
+    },
+   
 
     # name type nullability length default local
 
