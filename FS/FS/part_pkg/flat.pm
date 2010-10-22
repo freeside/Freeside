@@ -21,7 +21,7 @@ tie my %temporalities, 'Tie::IxHash',
 ;
 
 tie my %contract_years, 'Tie::IxHash', (
-  '(none)'    => '',
+  '' => '(none)',
   map { $_*12 => $_ } (1..5),
 );
 
