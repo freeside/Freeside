@@ -36,7 +36,10 @@ my $freeside_url = &RT::URI::freeside::FreesideURL();
 
 my @Customers = ();
 if ( $CustomerString ) {
-    @Customers = &RT::URI::freeside::smart_search( 'search' => $CustomerString );
+    @Customers = &RT::URI::freeside::smart_search(
+        'search'            => $CustomerString,
+        'no_fuzzy_on_exact' => 1, #pref?
+    );
 }
 
 my @Services = ();

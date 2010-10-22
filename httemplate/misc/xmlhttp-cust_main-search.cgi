@@ -22,7 +22,9 @@
 % } elsif ( $sub eq 'smart_search' ) {
 %
 %   my $string = $cgi->param('arg');
-%   my @cust_main = smart_search( 'search' => $string );
+%   my @cust_main = smart_search( 'search' => $string,
+%                                 'no_fuzzy_on_exact' => 1, #pref?
+%                               );
 %   my $return = [ map [ $_->custnum, $_->name ], @cust_main ];
 %     
 <% objToJson($return) %>
