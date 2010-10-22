@@ -117,12 +117,13 @@ if ( $query =~ /^((.+)-)?(\d+)$/ ) {
   $notice_name = $cgi->param('notice_name');
 }
 
-my %opt = (
-  'template'    => $template,
-  'notice_name' => $notice_name,
-);
-
 my $conf = new FS::Conf;
+
+my %opt = (
+  'unsquelch_cdr' => $conf->exists('voip-cdr_email'),
+  'template'      => $template,
+  'notice_name'   => $notice_name,
+);
 
 my @payby =  grep /\w/, $conf->config('payby');
 #@payby = (qw( CARD DCRD CHEK DCHK LECB BILL CASH WEST COMP ))
