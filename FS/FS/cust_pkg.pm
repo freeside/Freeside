@@ -1812,7 +1812,7 @@ Class method that returns the list of possible status strings for packages
 =cut
 
 tie my %statuscolor, 'Tie::IxHash', 
-  'not yet billed'  => '000000',
+  'not yet billed'  => '009999', #teal? cyan?
   'one-time charge' => '000000',
   'active'          => '00CC00',
   'suspended'       => 'FF9900',
