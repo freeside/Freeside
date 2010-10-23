@@ -11,6 +11,7 @@ use FS::UID qw(driver_name datasrc);
 sub backup_scp {
   my $conf = new FS::Conf;
   my $dest = $conf->config('dump-scpdest');
+  $dest .= time2str('/%Y%m%d%H%M%S',time);
   if ( $dest ) {
     datasrc =~ /dbname=([\w\.]+)$/ or die "unparsable datasrc ". datasrc;
     my $database = $1;
@@ -30,11 +31,11 @@ sub backup_scp {
                      recipient => $conf->config('dump-pgpid'),
                    );
       chmod 0600, '/var/tmp/$database.gpg';
-      scp("/var/tmp/$database.gpg", $dest);
+      scp("/var/tmp/$database.gpg", "$dest.gpg");
       unlink "/var/tmp/$database.gpg" or die $!;
     } else {
       chmod 0600, '/var/tmp/$database.sql';
-      scp("/var/tmp/$database.sql", $dest);
+      scp("/var/tmp/$database.sql", "$dest.sql");
     }
     unlink "/var/tmp/$database.sql" or die $!;
   }
