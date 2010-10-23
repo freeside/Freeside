@@ -137,6 +137,10 @@ sub _upgrade_data {  # class method
   $sth = dbh->prepare($sql) or die dbh->errstr;
   $sth->execute or die $sth->errstr;
 
+  $sql = "UPDATE part_pkg_option SET optionvalue = NULL WHERE ".
+            "optionname = 'contract_end_months' AND optionvalue = '(none)'";
+  $sth = dbh->prepare($sql) or die dbh->errstr;
+  $sth->execute or die $sth->errstr;
   '';
 
 }

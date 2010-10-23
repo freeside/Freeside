@@ -3251,6 +3251,9 @@ sub bulk_change {
 sub _upgrade_data {  # class method
   my ($class, %opts) = @_;
   $class->_upgrade_otaker(%opts);
+  my $sql =('UPDATE cust_pkg SET contract_end = NULL WHERE contract_end = -1');
+  my $sth = dbh->prepare($sql);
+  $sth->execute or die $sth->errstr;
 }
 
 =back
