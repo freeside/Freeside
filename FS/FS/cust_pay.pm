@@ -803,9 +803,10 @@ sub _upgrade_data {  #class method
     my $h_cust_pay = $cust_pay->h_search('insert');
     if ( $h_cust_pay ) {
       next if $cust_pay->otaker eq $h_cust_pay->history_user;
-      $cust_pay->otaker($h_cust_pay->history_user);
+      #$cust_pay->otaker($h_cust_pay->history_user);
+      $cust_pay->set('otaker', $h_cust_pay->history_user);
     } else {
-      $cust_pay->otaker('legacy');
+      $cust_pay->set('otaker', 'legacy');
     }
 
     delete $FS::payby::hash{'COMP'}->{cust_pay}; #quelle kludge
