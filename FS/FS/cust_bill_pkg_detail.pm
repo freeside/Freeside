@@ -238,7 +238,10 @@ sub _upgrade_schema { # class method
 
   warn "$me upgrading $class\n" if $DEBUG;
 
-  my $type = dbdef->table($class->table)->column('classnum')->type;
+  my $classnum = dbdef->table($class->table)->column('classnum')
+    or return;
+
+  my $type = $classnum->type;
   unless ( $type =~ /^int/i || $type =~ /int$/i ) {
 
     my $dbh = dbh;
