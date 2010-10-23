@@ -3,6 +3,7 @@ package FS::Cron::backup;
 use strict;
 use vars qw( @ISA @EXPORT_OK );
 use Exporter;
+use Date::Format;
 use FS::UID qw(driver_name datasrc);
 
 @ISA = qw( Exporter );

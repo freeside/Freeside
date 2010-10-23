@@ -1,0 +1,42 @@
+#!/usr/bin/perl -w
+
+use strict;
+use Getopt::Std;
+use FS::UID qw(adminsuidsetup);
+use FS::Conf;
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+#you can skip this just by not having the config
+use FS::Cron::backup qw(backup_scp);
+backup_scp();
+
+sub usage {
+  die "Usage:\n\n  freeside-backup user\n";
+}
+
+###
+# documentation
+###
+
+=head1 NAME
+
+freeside-backup - Runs a backup
+
+=head1 SYNOPSIS
+
+  freeside-backup user
+
+=head1 DESCRIPTION
+
+Runs a backup.  See the dump-scpdest configuration option.
+
+=head1 BUGS
+
+=head1 SEE ALSO
+
+=cut
+
+1;
+
