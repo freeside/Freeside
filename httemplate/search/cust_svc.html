@@ -93,10 +93,6 @@ if ( length( $cgi->param('search_svc') ) ) {
   errorpage("No search term specified");
 }
 
-if ( $cgi->param('pkgnum') =~ /^(\d+)$/ ) {
-  push @extra_sql, "cust_svc.pkgnum = $1";
-}
-
 #here is the agent virtualization
 push @extra_sql, $FS::CurrentUser::CurrentUser->agentnums_sql( 
                    'null_right' => 'View/link unlinked services'
@@ -116,8 +112,6 @@ my $sql_query = {
   'hashref'    => {},
   'extra_sql'  => "$extra_sql $orderby",
 };
-
-warn Dumper($sql_query)."\n";
 
 my $count_query = "SELECT COUNT(*) FROM cust_svc $addl_from $extra_sql";
 
