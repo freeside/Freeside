@@ -608,8 +608,6 @@ sub new_customer {
   } else {
     die "unknown signup service $svc_x";
   }
-  my $y = $svc[0]->setdefault; # arguably should be in new method
-  return { 'error' => $y } if $y && !ref($y);
 
   if ($packet->{'mac_addr'} && $conf->exists('signup_server-mac_addr_svcparts'))
   {
@@ -628,15 +626,16 @@ sub new_customer {
       '_password' => '', #blank as requested (set passwordmin to 0)
     };
 
-    my $y = $svc->setdefault; # arguably should be in new method
-    return { 'error' => $y } if $y && !ref($y);
-
     push @svc, $svc;
 
   }
 
-  #$error = $svc->check;
-  #return { 'error' => $error } if $error;
+  foreach my $svc ( @svc ) {
+    my $y = $svc->setdefault; # arguably should be in new method
+    return { 'error' => $y } if $y && !ref($y);
+    #$error = $svc->check;
+    #return { 'error' => $error } if $error;
+  }
 
   #setup a job dependancy to delay provisioning
   my $placeholder = new FS::queue ( {
