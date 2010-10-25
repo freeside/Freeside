@@ -147,7 +147,7 @@ foreach my $param ( grep /^termpart\d+status$/, $cgi->param ) {
 }
 
 ###
-# src/dest/charged_party
+# src/dest/charged_party/svcnum
 ###
 
 my $phonenum = qr/^\s*([\d\-\+\ ]+)\s*$/;
@@ -175,27 +175,32 @@ if ( $cgi->param('dcontext') =~ /^\s*(.+)\s*$/ ) {
   push @search, "dcontext = '$dcontext'";
 }
 
-if ( $cgi->param('charged_party') =~ $phonenum ) {
-  ( my $charged_party = $1 ) =~ s/$x//g;
-  #$hashref->{'charged_party'} = $charged_party;
-  #push @search, "charged_party = '$charged_party'";
-  #XXX countrycode
+if ( $cgi->param('charged_party') ) {
 
-  my $search = " (    charged_party IN ('$charged_party', '1$charged_party') )";
+  my @cp = map { $_, "1$_" }
+             split(/\s*,\s*/, $cgi->param('charged_party') );
+  
+  my $search = 'charged_party IN ('. join(',', map dbh->quote($_), @cp). ')';
 
   push @search,  $search;
   push @qsearch, $search;
 }
 
-if ( $cgi->param('charged_party_or_src') =~ $phonenum ) {
-  ( my $charged_party = $1 ) =~ s/$x//g;
-  #$hashref->{'charged_party'} = $charged_party;
-  #push @search, "charged_party = '$charged_party'";
-  #XXX countrycode
+if ( $cgi->param('charged_party_or_src') ) {
 
-  my $search = " (    charged_party IN ('$charged_party', '1$charged_party')
-                   OR src           IN ('$charged_party', '1$charged_party') )";
+  my @cp = map { $_, "1$_" }
+             split(/\s*,\s*/, $cgi->param('charged_party_or_src') );
+  my $in = join(',', map dbh->quote($_), @cp);
 
+  my $search = "( charged_party IN ($in) OR src IN ($in) )";
+
+  push @search,  $search;
+  push @qsearch, $search;
+}
+
+if ( $cgi->param('svcnum') =~ /^([\d, ]+)$/ ) {
+  my $svcnum = $1;
+  my $search = "svcnum IN ($svcnum)";
   push @search,  $search;
   push @qsearch, $search;
 }

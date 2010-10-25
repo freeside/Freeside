@@ -65,7 +65,21 @@
   <TR>
     <TD ALIGN="right">Charged Party #: </TD>
     <TD>
-      <INPUT TYPE="text" NAME="charged_party">
+      <INPUT TYPE="text" NAME="charged_party" VALUE="<% join(',', @charged_party) |h %>">
+    </TD>
+  </TR>
+
+  <TR>
+    <TD ALIGN="right">Charged Party or Source #: </TD>
+    <TD>
+      <INPUT TYPE="text" NAME="charged_party_or_src" VALUE="<% join(',', @charged_party_or_src ) |h %>" >
+    </TD>
+  </TR>
+
+  <TR>
+    <TD ALIGN="right">Freeside service #: </TD>
+    <TD>
+      <INPUT TYPE="text" NAME="svcnum" VALUE="<% join(',', @svcnum ) %>" >
     </TD>
   </TR>
 
@@ -144,5 +158,73 @@ my $names_list = [ map {
                        } 
                    @fields
                  ];
+
+my @charged_party = ();
+my @charged_party_or_src = ();
+my @svcnum = ();
+if ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
+  my $custnum = $1;
+
+  my $cust_main = qsearchs( {
+    'table'     => 'cust_main',
+    'hashref'   => { 'custnum' => $custnum },
+    'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+  });
+  die "Customer not found!" unless $cust_main;
+
+  #historical?
+  foreach my $cust_pkg ( $cust_main->ncancelled_pkgs ) {
+
+    my @voip_pkgs =
+      grep { $_->plan eq 'voip_cdr' } $cust_pkg->part_pkg->self_and_bill_linked;
+    if ( scalar(@voip_pkgs) > 1 ) { 
+      die "multiple voip_cdr packages bundled\n";
+    } elsif ( !@voip_pkgs ) {
+      next;
+    }
+    my $voip_pkg = @voip_pkgs[0];
+
+    my $cdr_svc_method = $voip_pkg->option('cdr_svc_method')
+                         || 'svc_phone.phonenum';
+
+    my @cust_svc = $cust_pkg->cust_svc; #historical?
+
+    if ( $cdr_svc_method eq 'svc_phone.phonenum' ) {
+
+      my @svc_phone = map $_->svc_x,
+                        grep { $_->part_svc->svcdb eq 'svc_phone' } @cust_svc;
+
+      my @numbers = map {
+                          my $number = $_->phonenum;
+                          $number = $_->countrycode. $number
+                            unless $_->countrycode eq '1';
+                          $number;
+                        }
+                      @svc_phone;
+
+      if ( $voip_pkg->option('disable_src') ) {
+        push @charged_party, @numbers;
+      } else {
+        push @charged_party_or_src, @numbers;
+      }
+
+    } elsif ( $cdr_svc_method eq 'svc_pbx.title' ) {
+      my @svc_pbx = map $_->svc_x,
+                      grep { $_->part_svc->svcdb eq 'svc_pbx' } @cust_svc;
+      push @charged_party, map $_->title, @svc_pbx;
+    } elsif ( $cdr_svc_method eq 'svc_pbx.svcnum' ) {
+      my @cust_svc_pbx = grep { $_->part_svc->svcdb eq 'svc_pbx' } @cust_svc;
+      push @svcnum, map $_->svcnum, @cust_svc_pbx;
+    }
+
+  }
+
+  die "No CDR packages for customer $custnum\n"
+    unless @charged_party || @charged_party_or_src || @svcnum;
+
+  #die "Multiple matching metods for customer $custnum\n"
+  #  if #there's more than one
+
+}
 
 </%init>
