@@ -2632,6 +2632,13 @@ and customer address. Include units.',
   },
 
   {
+    'key'         => 'cust_pkg-large_pkg_size',
+    'section'     => 'UI',
+    'description' => "In customer view, summarize packages with more than this many services.  Set to zero to never summarize packages.",
+    'type'        => 'text',
+  },
+
+  {
     'key'         => 'svc_acct-edit_uid',
     'section'     => 'shell',
     'description' => 'Allow UID editing.',

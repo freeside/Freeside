@@ -4,12 +4,40 @@
 
   <TD CLASS="inv" BGCOLOR="<% $bgcolor %>">
     <TABLE CLASS="inv" BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="100%">
+    <SCRIPT TYPE="text/javascript">
+function clearhint_search_cust_svc(obj, str) {
+  if (obj.value == str) obj.value = '';
+}
+    </SCRIPT>
 
 %  #foreach my $svcpart (sort {$a->{svcpart} <=> $b->{svcpart}} @{$pkg->{svcparts}}) {
 %  foreach my $part_svc ( $cust_pkg->part_svc ) {
 
-%    #foreach my $service (@{$svcpart->{services}}) {
-%    foreach my $cust_svc ( @{ $part_svc->cust_pkg_svc } ) {
+%    if ( $opt{'cust_pkg-large_pkg_size'} > 0 and
+%         $opt{'cust_pkg-large_pkg_size'} <= $cust_pkg->num_svcs ) {
+%      # summarize
+      <TR>
+        <TD ALIGN="center" VALIGN="top">
+%       my $href="${p}search/cust_pkg_svc.html?svcpart=".$part_svc->svcpart.
+%          ";pkgnum=".$cust_pkg->pkgnum;
+        <A HREF="<% $href %>"><% $part_svc->svc %></A>&nbsp;
+        <A HREF="<% $href %>"><B>(view all <% $cust_pkg->num_svcs %>)</B></A>
+%     my $hint = $hints{$part_svc->svcdb};
+%     if ( $hint ) {
+        <BR>
+        <FORM name="svcpart<%$part_svc->svcpart%>_search" STYLE="display:inline"
+        ACTION="<%$p%>search/cust_pkg_svc.html" METHOD="GET">
+        <INPUT TYPE="hidden" NAME="svcpart" VALUE="<%$part_svc->svcpart%>">
+        <INPUT TYPE="hidden" NAME="pkgnum" VALUE="<%$cust_pkg->pkgnum%>">
+        <INPUT TYPE="text" NAME="search_svc"
+        onfocus="clearhint_search_cust_svc(this, '<%$hint%>')" VALUE="<%$hint%>">
+        <INPUT TYPE="submit" VALUE="Search"></FORM>
+%     } #$hint
+        </TD>
+      </TR>
+%    }
+%    else {
+%      foreach my $cust_svc ( @{ $part_svc->cust_pkg_svc } ) {
 
       <TR>
         <TD ALIGN="right" VALIGN="top"><% FS::UI::Web::svc_link($m, $part_svc, $cust_svc) %></TD>
@@ -65,7 +93,8 @@
 
           </TD>
         </TR>
-%   } 
+%     } #foreach $cust_svc
+%   }
 
 %   if (    ! $cust_pkg->get('cancel')
 %        && $curuser->access_right('Provision customer service') 
@@ -136,5 +165,14 @@ sub svc_unprovision_link {
   qq!<A HREF="javascript:areyousure('${p}misc/unprovision.cgi?!. $cust_svc->svcnum.
   qq!', 'Permanently unprovision and delete this service?')">Unprovision</A>!;
 }
+
+my %hints = (
+svc_acct      => '(user or email)',
+svc_domain    => '(domain)',
+svc_broadband => '(ip or mac)',
+svc_forward   => '(email)',
+svc_phone     => '(phone)',
+svc_pbx       => '(phone)',
+);
 
 </%init>

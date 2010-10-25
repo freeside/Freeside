@@ -29,9 +29,13 @@ $me = '[FS::part_pkg::bulk]';
                                    ' of service at cancellation',
                          'type' => 'checkbox',
                        },
+    'summarize_svcs'=> { 'name' => 'Show a count of services on the invoice, '.
+                                   'instead of a detailed list',
+                         'type' => 'checkbox',
+                       },
   },
   'fieldorder' => [ 'setup_fee', 'recur_fee', 'svc_setup_fee', 'svc_recur_fee',
-                    'unused_credit', ],
+                    'unused_credit', 'summarize_svcs' ],
   'weight' => 50,
 );
 
@@ -50,6 +54,11 @@ sub calc_recur {
     unless $$sdate > $last_bill;
 
   my $total_svc_charge = 0;
+  my %n_setup = ();
+  my %n_recur = ();
+  my %part_svc_label = ();
+
+  my $summarize = $self->option('summarize_svcs',1);
 
   warn "$me billing for bulk services from ". time2str('%x', $last_bill).
                                       " to ". time2str('%x', $$sdate). "\n"
@@ -61,6 +70,7 @@ sub calc_recur {
     my @label = $h_cust_svc->label_long( $$sdate, $last_bill );
     die "fatal: no historical label found, wtf?" unless scalar(@label); #?
     my $svc_details = $label[0]. ': '. $label[1]. ': ';
+    $part_svc_label{$h_cust_svc->svcpart} ||= $label[0];
 
     my $svc_charge = 0;
 
@@ -70,6 +80,7 @@ sub calc_recur {
     } elsif ( $svc_setup_fee ) {
       $svc_charge += $svc_setup_fee;
       $svc_details .= $money_char. sprintf('%.2f setup, ', $svc_setup_fee);
+      $n_setup{$h_cust_svc->svcpart}++;
     }
 
     my $svc_end = $h_cust_svc->date_deleted;
@@ -85,10 +96,20 @@ sub calc_recur {
       if $recur_charge;
 
     $svc_charge += $recur_charge;
-
-    push @$details, $svc_details;
+    $n_recur{$h_cust_svc->svcpart}++;
+    push @$details, $svc_details if !$summarize;
     $total_svc_charge += $svc_charge;
 
+  }
+  if ( $summarize ) {
+    foreach my $svcpart (keys %part_svc_label) {
+      push @$details, sprintf('Setup fee: %d @ '.$money_char.'%.2f',
+        $n_setup{$svcpart}, $svc_setup_fee )
+        if $svc_setup_fee and $n_setup{$svcpart};
+      push @$details, sprintf('%d services @ '.$money_char.'%.2f',
+        $n_recur{$svcpart}, $self->option('svc_recur_fee') )
+        if $n_recur{$svcpart};
+    }
   }
 
   sprintf('%.2f', $self->base_recur($cust_pkg) + $total_svc_charge );

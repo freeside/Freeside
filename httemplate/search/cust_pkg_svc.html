@@ -1,0 +1,117 @@
+<% include( 'elements/search.html',
+              'title'       => $part_svc->svc.' services in package #'.$pkgnum,
+	      'name'        => 'services',
+              'html_form'   => $html_form,
+	      'query'       => $sql_query,
+	      'count_query' => $count_query,
+	      'redirect'    => $link,
+	      'header'      => [ '#',
+                                 'Service',
+                                 '', #checkboxes
+	                       ],
+	      'fields'      => [ 'svcnum',
+                                 sub {
+                                   ($_[0]->label)[1]
+                                 },
+                                 sub {
+                                   $areboxes = 1;
+                                   '<INPUT TYPE="checkbox" NAME="svcnum" VALUE='.$_[0]->svcnum.'>'
+                                 },
+	                       ],
+	      'links'       => [ $link,
+	                         $link,
+                                 '',
+			       ],
+              'align' => 'rrlc',
+              'color' => [ 
+                           ('')x4,
+                         ],
+              'style' => [ 
+                           ('')x4,
+                         ],
+              'html_foot' => sub { $areboxes ? $html_foot : '' }
+          )
+%>
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('List services');
+
+my $pkgnum = $cgi->param('pkgnum');
+$pkgnum =~ /^(\d+)$/ or die "invalid pkgnum: $pkgnum";
+my @extra_sql = ( "cust_svc.pkgnum = $pkgnum" );
+
+my $svcpart = $cgi->param('svcpart');
+$svcpart =~ /^(\d+)$/ or die "invalid svcpart: $svcpart";
+push @extra_sql, "cust_svc.svcpart = $svcpart";
+my $part_svc = qsearchs('part_svc', {svcpart => $svcpart});
+my $svcdb = $part_svc->svcdb;
+
+my $orderby = 'ORDER BY svcnum'; #others?
+
+my $addl_from = " LEFT JOIN part_svc USING (svcpart)
+LEFT JOIN cust_pkg USING (pkgnum)
+LEFT JOIN cust_main USING (custnum)
+INNER JOIN $svcdb USING (svcnum)";
+
+my $search_string;
+if ( length( $cgi->param('search_svc') ) ) {
+
+  $search_string = $cgi->param('search_svc');
+  $search_string =~ s/(^\s+|\s+$)//;
+  push @extra_sql, "FS::$svcdb"->search_sql($search_string);
+
+}
+
+#here is the agent virtualization
+push @extra_sql, $FS::CurrentUser::CurrentUser->agentnums_sql( 
+                   'null_right' => 'View/link unlinked services'
+                 );
+
+my $extra_sql = ' WHERE '. join(' AND ', @extra_sql );
+
+my $sql_query = {
+  'select'     => join(', ',
+                    'cust_svc.*',
+		    'part_svc.svc',
+                  ),
+  'table'      => 'cust_svc',
+  'addl_from'  => $addl_from,
+  'hashref'    => {},
+  'extra_sql'  => "$extra_sql $orderby",
+};
+
+#warn Dumper($sql_query)."\n";
+
+my $count_query = "SELECT COUNT(*) FROM cust_svc $addl_from $extra_sql";
+
+my $link = sub {
+  my $cust_svc = shift;
+  my $url = svc_url(
+    'm'        => $m,
+    'action'   => 'view',
+    'svcdb'    => $svcdb,
+    'query'     => '',
+  );
+  [ $url, 'svcnum' ];
+};
+
+my $html_form = qq!
+<SCRIPT TYPE="text/javascript">
+function areyousure(obj) {
+  return confirm('Permanently delete the selected services?');
+}
+</SCRIPT>
+<FORM METHOD="POST" ACTION="${p}misc/unprovision.cgi" onsubmit="return areyousure()">!; 
+
+my $areboxes = 0;
+
+my $html_foot = qq!
+<BR>
+<INPUT TYPE="submit" NAME="submit" VALUE="Unprovision selected">
+<INPUT TYPE="hidden" NAME="pkgnum" VALUE=$pkgnum>
+<INPUT TYPE="hidden" NAME="svcpart" VALUE=$svcpart>
+</FORM>!;
+
+
+</%init>

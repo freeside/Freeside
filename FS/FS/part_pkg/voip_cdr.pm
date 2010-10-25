@@ -226,6 +226,10 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                            'type' => 'checkbox',
                          },
 
+    'bill_inactive_svcs' => { 'name' => 'Bill for all phone numbers that were active during the billing period',
+                              'type' => 'checkbox',
+                            },
+
     'count_available_phones' => { 'name' => 'Consider for tax purposes the number of lines to be svc_phones that may be provisioned rather than those that actually are.',
                            'type' => 'checkbox',
                          },
@@ -278,7 +282,7 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                        use_duration
                        411_rewrite
                        output_format usage_mandate summarize_usage usage_section
-                       bill_every_call
+                       bill_every_call bill_inactive_svcs
                        count_available_phones
                      )
                   ],
@@ -365,11 +369,25 @@ sub calc_usage {
 
   my($svc_table, $svc_field) = split('\.', $cdr_svc_method);
 
-  foreach my $cust_svc (
-    grep { $_->part_svc->svcdb eq $svc_table } $cust_pkg->cust_svc
-  ) {
+  my @cust_svc;
+  if( $self->option('bill_inactive_svcs',1) ) {
+    #XXX in this mode do we need to restrict the set of CDRs by date also?
+    @cust_svc = $cust_pkg->h_cust_svc($$sdate, $last_bill);
+  }
+  else {
+    @cust_svc = $cust_pkg->cust_svc;
+  }
+  @cust_svc = grep { $_->part_svc->svcdb eq $svc_table } @cust_svc;
 
-    my $svc_x = $cust_svc->svc_x;
+  foreach my $cust_svc (@cust_svc) {
+
+    my $svc_x;
+    if( $self->option('bill_inactive_svcs',1) ) {
+      $svc_x = $cust_svc->h_svc_x($$sdate, $last_bill);
+    }
+    else {
+      $svc_x = $cust_svc->svc_x;
+    }
     my %options = (
         'disable_src'    => $self->option('disable_src'),
         'default_prefix' => $self->option('default_prefix'),
@@ -709,7 +727,7 @@ sub calc_usage {
         if ( $charge > 0 ) {
           #just use FS::cust_bill_pkg_detail objects?
           my $call_details;
-          my $phonenum = $cust_svc->svc_x->phonenum;
+          my $phonenum = $svc_x->phonenum;
 
           if ( scalar(@call_details) == 1 ) {
             $call_details =
