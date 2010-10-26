@@ -93,7 +93,31 @@ sub signup_info {
 
     my @agent_fields = qw( agentnum agent );
 
+    my @bools = qw( emailinvoiceonly security_phrase );
+
+    my @signup_bools = qw( no_company recommend_daytime recommend_email );
+
+    my @signup_server_scalars = qw( default_pkgpart default_svcpart );
+
+    my @selfservice_textareas = qw( head body_header body_footer );
+
+    my @selfservice_scalars = qw(
+      body_bgcolor box_bgcolor
+      text_color link_color vlink_color hlink_color alink_color
+      font title_color title_align title_size menu_bgcolor menu_fontsize
+    );
+
+    #XXX my @selfservice_bools = qw(
+    #  menu_skipblanks menu_skipheadings menu_nounderline
+    #);
+
+    #my $selfservice_binaries = qw(
+    #  title_left_image title_right_image
+    #  menu_top_image menu_body_image menu_bottom_image
+    #);
+
     $signup_info_cache = {
+
       'cust_main_county' => [ map $_->hashref,
                                   qsearch('cust_main_county', {} )
                             ],
@@ -125,46 +149,44 @@ sub signup_info {
 
       'card_types' => card_types(),
 
-      'paytypes' => [ @FS::cust_main::paytypes ],
+      ( map { $_ => $conf->exists("signup-$_") } @signup_bools ),
 
-      'cvv_enabled' => 1,
+      ( map { $_ => scalar($conf->config("signup_server-$_")) }
+            @signup_server_scalars
+      ),
 
-      'stateid_enabled' => $conf->exists('show_stateid'),
+      ( map { $_ => join("\n", $conf->config("selfservice-$_")) }
+            @selfservice_textareas
+      ),
+      ( map { $_ => scalar($conf->config("selfservice-$_")) }
+            @selfservice_scalars
+      ),
 
-      'paystate_enabled' => $conf->exists('show_bankstate'),
+      #( map { $_ => scalar($conf->config_binary("selfservice-$_")) }
+      #      @selfservice_binaries
+      #),
 
-      'ship_enabled' => 1,
-
-      'msgcat' => $msgcat,
-
-      'label' => $label,
-
-      'statedefault' => scalar($conf->config('statedefault')) || 'CA',
-
-      'countrydefault' => scalar($conf->config('countrydefault')) || 'US',
-
-      'refnum' => scalar($conf->config('signup_server-default_refnum')),
-
-      'default_pkgpart' => scalar($conf->config('signup_server-default_pkgpart')),
-
-      'signup_service' => $svc_x,
-      'default_svcpart' => scalar($conf->config('signup_server-default_svcpart')),
-
-      'head'         => join("\n", $conf->config('selfservice-head') ),
-      'body_header'  => join("\n", $conf->config('selfservice-body_header') ),
-      'body_footer'  => join("\n", $conf->config('selfservice-body_footer') ),
-      'body_bgcolor' => scalar( $conf->config('selfservice-body_bgcolor') ),
-      'box_bgcolor'  => scalar( $conf->config('selfservice-box_bgcolor')  ),
-
-      'company_name'   => scalar($conf->config('company_name')),
-
+      'agentnum2part_pkg'  => $agentnum2part_pkg,
+      'svc_acct_pop'       => [ map $_->hashref, qsearch('svc_acct_pop',{} ) ],
+      'nomadix'            => $conf->exists('signup_server-nomadix'),
+      'payby'              => [ $conf->config('signup_server-payby') ],
+      'card_types'         => card_types(),
+      'paytypes'           => [ @FS::cust_main::paytypes ],
+      'cvv_enabled'        => 1,
+      'stateid_enabled'    => $conf->exists('show_stateid'),
+      'paystate_enabled'   => $conf->exists('show_bankstate'),
+      'ship_enabled'       => 1,
+      'msgcat'             => $msgcat,
+      'label'              => $label,
+      'statedefault'       => scalar($conf->config('statedefault')) || 'CA',
+      'countrydefault'     => scalar($conf->config('countrydefault')) || 'US',
+      'refnum'             => scalar($conf->config('signup_server-default_refnum')),
+      'signup_service'     => $svc_x,
+      'company_name'       => scalar($conf->config('company_name')),
       #per-agent?
       'agent_ship_address' => scalar($conf->exists('agent-ship_address')),
-
-      'no_company'        => scalar($conf->exists('signup-no_company')),
-      'require_phone'     => scalar($conf->exists('cust_main-require_phone')),
-      'recommend_daytime' => scalar($conf->exists('signup-recommend_daytime')),
-      'recommend_email'   => scalar($conf->exists('signup-recommend_email')),
+      'require_phone'      => scalar($conf->exists('cust_main-require_phone')),
+      'logo'               => scalar($conf->config_binary('logo.png')),
 
     };
 
@@ -368,7 +390,7 @@ sub signup_info {
         #( map { $_ => scalar( $conf->config($_, $agentnum) ) }
         #  qw( company_name ) ),
         ( map { $_ => scalar( $conf->config("selfservice-$_", $agentnum ) ) }
-          qw( body_bgcolor box_bgcolor) ),
+          qw( body_bgcolor box_bgcolor menu_bgcolor ) ),
         ( map { $_ => join("\n", $conf->config("selfservice-$_", $agentnum ) ) }
           qw( head body_header body_footer ) ),
       };
@@ -729,20 +751,25 @@ sub new_customer {
 
   my %return = ( 'error'          => '',
                  'signup_service' => $svc_x,
-                 'svcnum'         => $svc[0]->svcnum,
                  'custnum'        => $cust_main->custnum,
                );
 
-  if ( $svc_x eq 'svc_acct' ) {
-    $return{$_} = $svc[0]->$_() for qw( username _password );
-  } elsif ( $svc_x eq 'svc_phone' ) {
-    $return{$_} = $svc[0]->$_() for qw( countrycode phonenum sip_password pin );
-  } elsif ( $svc_x eq 'svc_pbx' ) {
-    #$return{$_} = $svc[0]->$_() for qw( ) #nothing yet
-  } else {
-    return { 'error' => "configuration error: unknown signup service $svc_x" };
-    #die "unknown signup service $svc_x";
-    # return an error that's visible to someone somewhere
+  if ( $svc[0] ) {
+
+    $return{'svcnum'} = $svc[0]->svcnum;
+
+    if ( $svc_x eq 'svc_acct' ) {
+      $return{$_} = $svc[0]->$_() for qw( username _password );
+    } elsif ( $svc_x eq 'svc_phone' ) {
+      $return{$_} = $svc[0]->$_() for qw(countrycode phonenum sip_password pin);
+    } elsif ( $svc_x eq 'svc_pbx' ) {
+      #$return{$_} = $svc[0]->$_() for qw( ) #nothing yet
+     } else {
+      return {'error' => "configuration error: unknown signup service $svc_x"};
+      #die "unknown signup service $svc_x";
+      # return an error that's visible to someone somewhere
+    }
+
   }
 
   return \%return;
