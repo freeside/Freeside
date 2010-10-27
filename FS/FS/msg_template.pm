@@ -166,7 +166,13 @@ Customer object (required).
 =item object
 
 Additional context object (currently, can be a cust_main, cust_pkg, 
-cust_bill, svc_acct, cust_pay, or cust_pay_pending object).
+cust_bill, svc_acct, cust_pay, or cust_pay_pending).  If the object 
+is a svc_acct, its cust_pkg will be fetched and used for substitution.
+
+As a special case, this may be an arrayref of two objects.  Both 
+objects will be available for substitution, with their field names 
+prefixed with 'new_' and 'old_' respectively.  This is used in the 
+rt_ticket export when exporting "replace" events.
 
 =item to
 
@@ -193,16 +199,23 @@ sub prepare {
   my %hash;
   my @objects = ($cust_main);
   my @prefixes = ('');
+  my $svc;
   if( ref $object ) {
     if( ref($object) eq 'ARRAY' ) {
       # [new, old], for provisioning tickets
       push @objects, $object->[0], $object->[1];
       push @prefixes, 'new_', 'old_';
+      $svc = $object->[0] if $object->[0]->isa('FS::svc_Common');
     }
     else {
       push @objects, $object;
       push @prefixes, '';
+      $svc = $object if $object->isa('FS::svc_Common');
     }
+  }
+  if( $svc ) {
+    push @objects, $svc->cust_svc->cust_pkg;
+    push @prefixes, '';
   }
 
   foreach my $obj (@objects) {
@@ -355,7 +368,7 @@ sub substitutions {
     ],
     # next_bill_date
     'cust_pkg'  => [qw( 
-      pkgnum pkg_label pkg_label_long
+      pkgnum pkg pkg_label pkg_label_long
       location_label
       status statuscolor
     
