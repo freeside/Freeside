@@ -14,6 +14,7 @@ my %templates;
 my %queues;
 my %template_select = (
   type          => 'select',
+  freeform      => 1,
   option_label  => sub {
     $templates{$_[0]};
   },
@@ -29,39 +30,85 @@ my %template_select = (
   },
 );
 
+my %queue_select = (
+  type          => 'select',
+  freeform      => 1,
+  option_label  => sub {
+    $queues{$_[0]};
+  },
+  option_values => sub {
+    %queues = (0 => '', FS::TicketSystem->queues());
+    sort {$queues{$a} cmp $queues{$b}} keys %queues;
+  },
+);
+
 tie my %options, 'Tie::IxHash', (
-  'queue' => {
-    label     => 'Queue',
-    type      => 'select',
-    option_label  => sub {
-      $queues{$_[0]};
-    },
-    option_values => sub {
-      %queues = FS::TicketSystem->queues();
-      sort {$queues{$a} cmp $queues{$b}} keys %queues;
-    },
+  'insert_queue' => {
+    before  => '
+<TR><TD COLSPAN=2>
+<TABLE>
+  <TR><TH></TH><TH>Queue</TH><TH>Template</TH></TR>
+  <TR><TD>New service</TD><TD>',
+    %queue_select,
+    after   => '</TD>'
   },
   'insert_template' => {
-    label     => 'Insert',
-    %template_select
+    before  => '<TD>',
+    %template_select,
+    after   => '</TD></TR>
+',
   },
-  'replace_template' => {
-    label     => 'Replace',
-    %template_select
+  'delete_queue' => {
+    before  => '
+  <TR><TD>Delete</TD><TD>',
+    %queue_select,
+    after   => '</TD>',
   },
   'delete_template' => {
-    label     => 'Delete',
-    %template_select
+    before  => '<TD>',
+    %template_select,
+    after   => '</TD></TR>
+',
+  },
+  'replace_queue' => {
+    before  => '
+  <TR><TD>Modify</TD><TD>',
+    %queue_select,
+    after   => '</TD>',
+  },
+  'replace_template' => {
+    before  => '<TD>',
+    %template_select,
+    after   => '</TD></TR>
+',
+  },
+  'suspend_queue' => {
+    before  => '
+  <TR><TD>Suspend</TD><TD>',
+    %queue_select,
+    after   => '</TD>',
   },
   'suspend_template' => {
-    label     => 'Suspend',
-    %template_select
+    before  => '<TD>',
+    %template_select,
+    after   => '</TD></TR>
+',
+  },
+  'unsuspend_queue' => {
+    before  => '
+  <TR><TD>Unsuspend</TD><TD>',
+    %queue_select,
+    after   => '</TD>',
   },
   'unsuspend_template' => {
-    label     => 'Unsuspend',
-    %template_select
+    before  => '<TD>',
+    %template_select,
+    after   => '</TD></TR>
+  </TABLE>
+</TD></TR>',
   },
   'requestor' => {
+    freeform  => 0,
     label     => 'Requestor',
     'type'    => 'select',
     option_label => sub {
@@ -92,6 +139,9 @@ sub _export_ticket {
   my $msgnum = $self->option($action.'_template');
   return if !$msgnum;
 
+  my $queue = $self->option($action.'_queue');
+  return if !$queue;
+
   my $msg_template = FS::msg_template->by_key($msgnum);
   return "Template $msgnum not found\n" if !$msg_template;
 
@@ -121,7 +171,7 @@ sub _export_ticket {
 
   my $err_or_ticket = FS::TicketSystem->create_ticket(
     '', #session should already exist
-    'queue'     => $self->option('queue'),
+    'queue'     => $queue,
     'subject'   => $msg{'subject'},
     'requestor' => $requestor,
     'message'   => $msg{'html_body'},
