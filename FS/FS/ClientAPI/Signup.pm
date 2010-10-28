@@ -609,7 +609,7 @@ sub new_customer {
       push @acct_snarf, $acct_snarf;
     }
     $svc->child_objects( \@acct_snarf );
-
+    push @svc, $svc;
 
   } elsif ( $svc_x eq 'svc_phone' ) {
 
