@@ -12,8 +12,8 @@ use FS::UID qw(driver_name datasrc);
 sub backup_scp {
   my $conf = new FS::Conf;
   my $dest = $conf->config('dump-scpdest');
-  $dest .= time2str('/%Y%m%d%H%M%S',time);
   if ( $dest ) {
+    $dest .= time2str('/%Y%m%d%H%M%S',time);
     datasrc =~ /dbname=([\w\.]+)$/ or die "unparsable datasrc ". datasrc;
     my $database = $1;
     eval "use Net::SCP qw(scp);";
