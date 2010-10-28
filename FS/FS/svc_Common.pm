@@ -1013,6 +1013,42 @@ sub clone_kludge_unsuspend {
   shift;
 }
 
+=item find_duplicates MODE FIELDS...
+
+Method used by _check_duplicate routines to find services with duplicate 
+values in specified fields.  Set MODE to 'global' to search across all 
+services, or 'export' to limit to those that share one or more exports 
+with this service.  FIELDS is a list of field names; only services 
+matching in all fields will be returned.  Empty fields will be skipped.
+
+=cut
+
+sub find_duplicates {
+  my $self = shift;
+  my $mode = shift;
+  my @fields = @_;
+
+  my %search = map { $_ => $self->getfield($_) } 
+               grep { length($self->getfield($_)) } @fields;
+  return () if !%search;
+  my @dup = grep { ! $self->svcnum or $_->svcnum != $self->svcnum }
+            qsearch( $self->table, \%search );
+  return () if !@dup;
+  return @dup if $mode eq 'global';
+  die "incorrect find_duplicates mode '$mode'" if $mode ne 'export';
+
+  my $exports = FS::part_export::export_info($self->table);
+  my %conflict_svcparts;
+  my $part_svc = $self->part_svc;
+  foreach my $part_export ( $part_svc->part_export ) {
+    %conflict_svcparts = map { $_->svcpart => 1 } $part_export->export_svc;
+  }
+  return grep { $conflict_svcparts{$_->cust_svc->svcpart} } @dup;
+}
+
+
+
+
 =back
 
 =head1 BUGS

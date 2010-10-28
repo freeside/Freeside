@@ -2305,7 +2305,15 @@ and customer address. Include units.',
   {
     'key'         => 'global_unique-pbx_title',
     'section'     => '',
-    'description' => 'Global phone number uniqueness control: enabled (usual setting - svc_pbx.title must be unique), or disabled turns off duplicate checking for this field.',
+    'description' => 'Global phone number uniqueness control: none (check uniqueness per exports), enabled (check across all services), or disabled (no duplicate checking).',
+    'type'        => 'select',
+    'select_enum' => [ 'enabled', 'disabled' ],
+  },
+
+  {
+    'key'         => 'global_unique-pbx_id',
+    'section'     => '',
+    'description' => 'Global PBX id uniqueness control: none (check uniqueness per exports), enabled (check across all services), or disabled (no duplicate checking).',
     'type'        => 'select',
     'select_enum' => [ 'enabled', 'disabled' ],
   },
