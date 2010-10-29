@@ -66,6 +66,10 @@ sub calc_prorate {
     # only works for freq >= 1 month; probably can't be fixed
     my $mnow = $$sdate;
     my ($sec, $min, $hour, $mday, $mon, $year) = (localtime($mnow))[0..5];
+    if ( $self->option('prorate_round_day',1) ) {
+      $mday++ if $hour >= 12;
+      $mnow = timelocal(0,0,0,$mday,$mon,$year);
+    }
     my $mend;
     my $mstart;
     if ( $mday >= $cutoff_day ) {

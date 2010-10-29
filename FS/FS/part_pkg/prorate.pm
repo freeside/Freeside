@@ -83,7 +83,11 @@ use FS::part_pkg::flat;
                                     'for one full period after that',
                           'type' => 'checkbox',
                         },
-
+    'prorate_round_day'=> {
+                          'name' => 'When prorating first month, round to '.
+                                    'the nearest full day',
+                          'type' => 'checkbox',
+                        },
 
     #it would be better if this had to be turned on, its confusing
     'externalid' => { 'name'   => 'Optional External ID',
@@ -95,7 +99,7 @@ use FS::part_pkg::flat;
                     'recharge_amount', 'recharge_seconds', 'recharge_upbytes',
                     'recharge_downbytes', 'recharge_totalbytes',
                     'usage_rollover', 'recharge_reset', 'add_full_period',
-                    'externalid', ],
+                    'prorate_round_day', 'externalid', ],
   'freq' => 'm',
   'weight' => 20,
 );
