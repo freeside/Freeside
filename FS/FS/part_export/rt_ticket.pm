@@ -6,7 +6,6 @@ use FS::part_export;
 use FS::Record qw(qsearch qsearchs);
 use FS::Conf;
 use FS::TicketSystem;
-use Data::Dumper 'Dumper';
 
 @ISA = qw(FS::part_export);
 
