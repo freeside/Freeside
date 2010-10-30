@@ -18,7 +18,7 @@ use FS::part_pkg::flat;
     'recur_fee' => { 'name' => 'Recurring fee for this package',
                      'default' => 0,
 			   },
-    'cutoff_day' => { 'name' => 'billing day',
+    'cutoff_day' => { 'name' => 'Billing day',
                       'default' => 1,
                     },
     'seconds'       => { 'name' => 'Time limit for this package',

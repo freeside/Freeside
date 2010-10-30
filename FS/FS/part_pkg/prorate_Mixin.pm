@@ -5,7 +5,9 @@ use vars qw(@ISA %info);
 use Time::Local qw(timelocal);
 
 @ISA = qw(FS::part_pkg);
-%info = ( 'disabled' => 1 );
+%info = ( 
+  'disabled'  => 1,
+);
 
 =head1 NAME
 
@@ -28,45 +30,31 @@ sub calc_recur {
 
 =head METHODS
 
-=item calc_prorate
+=item calc_prorate CUST_PKG
 
-Takes all the arguments of calc_recur, and calculates a prorated charge 
-in one of two ways:
+Takes all the arguments of calc_recur, followed by a day of the month 
+to prorate to.  Calculates a prorated charge from the $sdate to that day, 
+and sets the $sdate and $param->{months} accordingly.
 
-- If 'sync_bill_date' is set: Charge for a number of days to synchronize 
-  this package to the customer's next bill date.  If this is their only 
-  package (or they're already synchronized), that will take them through 
-  one billing cycle.
-- If 'cutoff_day' is set: Prorate this package so that its next bill date 
-  falls on that day of the month.
+Options:
+- recur_fee: The charge to use for a complete billing period.
+- add_full_period: Bill for the time up to the prorate day plus one full
+billing period after that.
+- prorate_round_day: Round the current time to the nearest full day, 
+instead of using the exact time.
 
 =cut
 
 sub calc_prorate {
   my $self  = shift;
-  my ($cust_pkg, $sdate, $details, $param) = @_;
+  my ($cust_pkg, $sdate, $details, $param, $cutoff_day) = @_;
  
-  my $charge = $self->option('recur_fee') || 0;
-  my $cutoff_day;
-  if( $self->option('sync_bill_date',1) ) {
-    my $next_bill = $cust_pkg->cust_main->next_bill_date;
-    if( defined($next_bill) and $next_bill != $$sdate ) {
-      $cutoff_day = (localtime($next_bill))[3];
-    }
-    else {
-      # don't prorate, assume a full month
-      $param->{'months'} = $self->freq;
-    }
-  }
-  else { # no sync, use cutoff_day or day 1
-    $cutoff_day = $self->option('cutoff_day') || 1;
-  }
-
+  my $charge = $self->option('recur_fee',1) || 0;
   if($cutoff_day) {
     # only works for freq >= 1 month; probably can't be fixed
     my $mnow = $$sdate;
     my ($sec, $min, $hour, $mday, $mon, $year) = (localtime($mnow))[0..5];
-    if ( $self->option('prorate_round_day',1) ) {
+    if( $self->option('prorate_round_day',1) ) {
       $mday++ if $hour >= 12;
       $mnow = timelocal(0,0,0,$mday,$mon,$year);
     }
@@ -88,7 +76,7 @@ sub calc_prorate {
     # next bill date will be figured as $$sdate + one period
     $$sdate = $mstart;
 
-    my $permonth = $self->option('recur_fee', 1) / $self->freq;
+    my $permonth = $charge / $self->freq;
     my $months = ( ( $self->freq - 1 ) + ($mend-$mnow) / ($mend-$mstart) );
 
     if ( $self->option('add_full_period',1) ) {
@@ -100,8 +88,7 @@ sub calc_prorate {
     $param->{'months'} = $months;
     $charge = sprintf('%.2f', $permonth * $months);
   }
-  my $discount =  $self->calc_discount(@_);
-  return ($charge - $discount);
+  return $charge;
 }
 
 1;
