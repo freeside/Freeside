@@ -1,0 +1,36 @@
+#!/usr/bin/perl -w
+
+use strict;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw( qsearch );
+use FS::cust_main;
+
+my $user = shift or die "usage: cust_main-find_bogus_geocode username\n";
+adminsuidsetup $user;
+
+my @cust_main = qsearch({
+  'table' => 'cust_main',
+  'extra_sql' => 'WHERE geocode IS NOT NULL',
+});
+
+foreach my $cust_main ( @cust_main ) {
+
+  my $db_geocode = $cust_main->geocode;
+
+  $cust_main->set('geocode', '');
+
+  my $calc_geocode = $cust_main->geocode('cch');
+
+  next unless $calc_geocode;
+
+  my $cust = $cust_main->custnum.': '. $cust_main->name. "\n";
+
+  if ( $db_geocode eq $calc_geocode ) {
+    warn "unnecessary geocode override for $cust";
+  } else {
+    warn "bogus geocode override $db_geocode overrides $calc_geocode for $cust";
+  }
+
+}
+
+1;
