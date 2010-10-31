@@ -1118,7 +1118,7 @@ Options are:
 
 =over 4
 
-=item locaitonnum
+=item locationnum
 
 New locationnum, to change the location for this package.
 
@@ -1135,9 +1135,15 @@ New pkgpart (see L<FS::part_pkg>).
 
 New refnum (see L<FS::part_referral>).
 
+=item keep_dates
+
+Set to true to transfer billing dates (start_date, setup, last_bill, bill, 
+susp, adjourn, cancel, expire, and contract_end) to the new package.
+
 =back
 
-At least one option must be specified (otherwise, what's the point?)
+At least one of locationnum, cust_location, pkgpart, refnum must be specified 
+(otherwise, what's the point?)
 
 Returns either the new FS::cust_pkg object or a scalar error.
 
@@ -1195,6 +1201,13 @@ sub change {
     $opt->{'locationnum'} = $opt->{'cust_location'}->locationnum;
   }
 
+  if ( $opt->{'keep_dates'} ) {
+    foreach my $date ( qw(setup bill last_bill susp adjourn cancel expire 
+                          start_date contract_end ) ) {
+      $hash{$date} = $self->getfield($date);
+    }
+  }
+
   # Create the new package.
   my $cust_pkg = new FS::cust_pkg {
     custnum      => $self->custnum,
@@ -1244,7 +1257,7 @@ sub change {
                                                  ? ()
                                                  : ( 'null' => 1 )
                                    )
-      if $part_pkg->can('reset_usage') && ! $part_pkg->option('usage_rollover');
+      if $part_pkg->can('reset_usage') && ! $part_pkg->option('usage_rollover',1);
 
     if ($error) {
       $dbh->rollback if $oldAutoCommit;
