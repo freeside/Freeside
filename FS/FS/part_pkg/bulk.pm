@@ -33,8 +33,8 @@ $me = '[FS::part_pkg::bulk]';
                                    'instead of a detailed list',
                          'type' => 'checkbox',
                        },
-    'no_prorate'    => { 'name' => 'Don\'t prorate recurring fees on new '.
-                                   'services',
+    'no_prorate'    => { 'name' => 'Don\'t prorate recurring fees on services '.
+                                   'active for a partial month',
                          'type' => 'checkbox',
                        },
   },
