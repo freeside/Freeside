@@ -84,7 +84,7 @@ my @part_svc = qsearch('part_svc', {}, '', $where);
 
 #my $q_part_pkg = $clone_part_pkg || $part_pkg;
 #my %pkg_svc = map { $_->svcpart => $_ } $q_part_pkg->pkg_svc;
-my %pkg_svc = map { $_->svcpart => $_ } $part_pkg->pkg_svc;
+my %pkg_svc = map { $_->svcpart => $_ } $part_pkg->pkg_svc('disable_linked'=>1);
 
 my @fixups = ();
 my $count = 0;
