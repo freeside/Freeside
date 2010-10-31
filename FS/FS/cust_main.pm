@@ -1246,6 +1246,8 @@ sub merge {
 
   }
 
+  my $name = $self->ship_name;
+
   my $locationnum = '';
   foreach my $cust_pkg ( $self->all_pkgs ) {
     $cust_pkg->custnum($new_custnum);
@@ -1271,6 +1273,22 @@ sub merge {
       $dbh->rollback if $oldAutoCommit;
       return $error;
     }
+
+    # add customer (ship) name to svc_phone.phone_name if blank
+    my @cust_svc = $cust_pkg->cust_svc;
+    foreach my $cust_svc (@cust_svc) {
+      my($label, $value, $svcdb) = $cust_svc->label;
+      next unless $svcdb eq 'svc_phone';
+      my $svc_phone = $cust_svc->svc_x;
+      next if $svc_phone->phone_name;
+      $svc_phone->phone_name($name);
+      my $error = $svc_phone->replace;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+    }
+
   }
 
   #not considered:
