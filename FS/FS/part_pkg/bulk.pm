@@ -7,7 +7,7 @@ use FS::part_pkg::flat;
 
 @ISA = qw(FS::part_pkg::flat);
 
-$DEBUG = 1;
+$DEBUG = 0;
 $me = '[FS::part_pkg::bulk]';
 
 %info = (
@@ -33,9 +33,13 @@ $me = '[FS::part_pkg::bulk]';
                                    'instead of a detailed list',
                          'type' => 'checkbox',
                        },
+    'no_prorate'    => { 'name' => 'Don\'t prorate recurring fees on new '.
+                                   'services',
+                         'type' => 'checkbox',
+                       },
   },
   'fieldorder' => [ 'setup_fee', 'recur_fee', 'svc_setup_fee', 'svc_recur_fee',
-                    'unused_credit', 'summarize_svcs' ],
+                    'unused_credit', 'summarize_svcs', 'no_prorate' ],
   'weight' => 50,
 );
 
@@ -86,9 +90,15 @@ sub calc_recur {
     my $svc_end = $h_cust_svc->date_deleted;
     $svc_end = ( !$svc_end || $svc_end > $$sdate ) ? $$sdate : $svc_end;
 
-    my $recur_charge =
-      $self->option('svc_recur_fee') * ( $svc_end - $svc_start )
+    my $recur_charge;
+    if ( $self->option('no_prorate',1) ) {
+      $recur_charge = $self->option('svc_recur_fee');
+    }
+    else {
+      $recur_charge = $self->option('svc_recur_fee') 
+                                     * ( $svc_end - $svc_start )
                                      / ( $$sdate  - $last_bill );
+    }
 
     $svc_details .= $money_char. sprintf('%.2f', $recur_charge ).
                     ' ('.  time2str('%x', $svc_start).
