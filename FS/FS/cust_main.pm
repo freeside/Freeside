@@ -1403,6 +1403,17 @@ sub replace {
     return "You are not permitted to create complimentary accounts.";
   }
 
+  if ( $old->get('geocode') && $old->get('geocode') eq $self->get('geocode')
+       && $conf->exists('enable_taxproducts')
+     )
+  {
+    my $pre = ($conf->exists('tax-ship_address') && $self->ship_zip)
+                ? 'ship_' : '';
+    $self->set('geocode', '')
+      if $old->get($pre.'zip') ne $self->get($pre.'zip')
+      && length($self->get($pre.'zip')) >= 10;
+  }
+
   local($ignore_expired_card) = 1
     if $old->payby  =~ /^(CARD|DCRD)$/
     && $self->payby =~ /^(CARD|DCRD)$/
