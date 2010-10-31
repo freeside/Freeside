@@ -672,7 +672,7 @@ sub search {
 
   my $count_query = "SELECT COUNT(*) FROM cust_main $extra_sql";
 
-  my $select = join(', ', 
+  my @select = (
                  'cust_main.custnum',
                  FS::UI::Web::cust_sql_fields($params->{'cust_fields'}),
                );
@@ -684,10 +684,10 @@ sub search {
 
     if ($dbh->{Driver}->{Name} eq 'Pg') {
 
-      $select .= ", array_to_string(array(select pkg from cust_pkg left join part_pkg using ( pkgpart ) where cust_main.custnum = cust_pkg.custnum $pkgwhere),'|') as magic";
+      push @select, "array_to_string(array(select pkg from cust_pkg left join part_pkg using ( pkgpart ) where cust_main.custnum = cust_pkg.custnum $pkgwhere),'|') as magic";
 
     }elsif ($dbh->{Driver}->{Name} =~ /^mysql/i) {
-      $select .= ", GROUP_CONCAT(pkg SEPARATOR '|') as magic";
+      push @select, "GROUP_CONCAT(pkg SEPARATOR '|') as magic";
       $addl_from .= " LEFT JOIN part_pkg using ( pkgpart )";
     }else{
       warn "warning: unknown database type ". $dbh->{Driver}->{Name}. 
@@ -719,8 +719,12 @@ sub search {
                                  $c->set('geocode', '');
                                  $c->geocode('cch'); #XXX only cch right now
                                };
-
+    push @select, 'geocode';
+    push @select, 'zip' unless grep { $_ eq 'zip' } @select;
+    push @select, 'ship_zip' unless grep { $_ eq 'ship_zip' } @select;
   }
+
+  my $select = join(', ', @select);
 
   my $sql_query = {
     'table'         => 'cust_main',
