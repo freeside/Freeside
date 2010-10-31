@@ -4098,7 +4098,7 @@ sub _items_cust_bill_pkg {
                          $cust_pkg->h_labels_short($self->_date);
             if ( $multilocation ) {
               my $loc = $cust_pkg->location_label;
-              $loc = substr($desc, 0, 50). '...'
+              $loc = substr($loc, 0, 50). '...'
                 if $format eq 'latex' && length($loc) > 50;
               push @d, &{$escape_function}($loc);
             }
@@ -4158,7 +4158,7 @@ sub _items_cust_bill_pkg {
             ;
             if ( $multilocation ) {
               my $loc = $cust_pkg->location_label;
-              $loc = substr($desc, 0, 50). '...'
+              $loc = substr($loc, 0, 50). '...'
                 if $format eq 'latex' && length($loc) > 50;
               push @d, &{$escape_function}($loc);
             }
