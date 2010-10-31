@@ -5,6 +5,7 @@ use vars qw( $DEBUG $me );
 use Carp;
 use Locale::Country;
 use FS::Record qw( qsearchs qsearch );
+use FS::Conf;
 use FS::cust_pkg;
 use FS::cust_location;
 use FS::cust_tax_location;
@@ -82,7 +83,7 @@ sub location_label {
   my $ds = $opt{double_space} || '  ';
   my $line = '';
   my $cydefault = 
-    $opt{'countrydefault'} || FS::conf->new->config('countrydefault') || 'US';
+    $opt{'countrydefault'} || FS::Conf->new->config('countrydefault') || 'US';
   my $prefix = $self->has_ship_address ? 'ship_' : '';
 
   my $notfirst = 0;
@@ -122,7 +123,7 @@ sub geocode {
   return $geocode if $geocode;
 
   my $prefix =
-   ( FS::conf->new->exists('tax-ship_address') && $self->has_ship_address )
+   ( FS::Conf->new->exists('tax-ship_address') && $self->has_ship_address )
    ? 'ship_'
    : '';
 
