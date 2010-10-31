@@ -1226,7 +1226,7 @@ sub _gather_taxes {
   local($DEBUG) = $FS::cust_main::DEBUG if $FS::cust_main::DEBUG > $DEBUG;
 
   my $geocode;
-  if (  $cust_pkg->locationnum && $conf->exists('tax-pkg_address') ) {
+  if ( $cust_pkg->locationnum && $conf->exists('tax-pkg_address') ) {
     $geocode = $cust_pkg->cust_location->geocode('cch');
   } else {
     $geocode = $self->geocode('cch');
