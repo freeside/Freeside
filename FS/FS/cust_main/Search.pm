@@ -520,6 +520,13 @@ sub search {
     if $params->{'no_censustract'};
 
   ##
+  # parse with hardcoded tax location checkbox
+  ##
+
+  push @where, "geocode is not null"
+    if $params->{'with_geocode'};
+
+  ##
   # dates
   ##
 
@@ -701,6 +708,17 @@ sub search {
                                          $p;
                                         };!;
     }
+
+  }
+
+  if ( $params->{'with_geocode'} ) {
+
+    unshift @extra_headers, 'Tax location override', 'Calculated tax location';
+    unshift @extra_fields, sub { my $c = shift; $c->get('geocode'); },
+                           sub { my $c = shift;
+                                 $c->set('geocode', '');
+                                 $c->geocode('cch'); #XXX only cch right now
+                               };
 
   }
 

@@ -110,12 +110,17 @@
         <TD><INPUT TYPE="checkbox" NAME="cancelled_pkgs"></TD>
     </TR>
 
-%   if ( $conf->exists('cust_main-require_censustract') ) {
-
     <TR>
       <TD ALIGN="right" VALIGN="center">Without census tract</TD>
         <TD><INPUT TYPE="checkbox" NAME="no_censustract"></TD>
     </TR>
+
+%   if ( $conf->exists('enable_taxproducts') ) {
+
+      <TR>
+        <TD ALIGN="right" VALIGN="center">With hardcoded tax location</TD>
+          <TD><INPUT TYPE="checkbox" NAME="with_geocode"></TD>
+      </TR>
 
 %   }
 
