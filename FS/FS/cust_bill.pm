@@ -2291,10 +2291,12 @@ sub print_generic {
   my $nbsp = $nbsps{$format};
 
   my %escape_functions = ( 'latex'    => \&_latex_escape,
-                           'html'     => \&_html_escape, #\&encode_entities,
+                           'html'     => \&_html_escape_nbsp,#\&encode_entities,
                            'template' => sub { shift },
                          );
   my $escape_function = $escape_functions{$format};
+  my $escape_function_nonbsp = ($format eq 'html')
+                                 ? \&_html_escape : $escape_function;
 
   my %date_formats = ( 'latex'    => '%b %o, %Y',
                        'html'     => '%b&nbsp;%o,&nbsp;%Y',
@@ -2598,7 +2600,7 @@ sub print_generic {
   my $extra_lines = ();
   if ( $multisection ) {
     ($extra_sections, $extra_lines) =
-      $self->_items_extra_usage_sections($escape_function, $format)
+      $self->_items_extra_usage_sections($escape_function_nonbsp, $format)
       if $conf->exists('usage_class_as_a_section', $cust_main->agentnum);
 
     push @$extra_sections, $adjust_section if $adjust_section->{sort_weight};
@@ -2607,13 +2609,13 @@ sub print_generic {
     push @sections,
       $self->_items_sections( $late_sections,      # this could stand a refactor
                               $summarypage,
-                              $escape_function,
+                              $escape_function_nonbsp,
                               $extra_sections,
                               $format,             #bah
                             );
     if ($conf->exists('svc_phone_sections')) {
       my ($phone_sections, $phone_lines) =
-        $self->_items_svc_phone_sections($escape_function, $format);
+        $self->_items_svc_phone_sections($escape_function_nonbsp, $format);
       push @{$late_sections}, @$phone_sections;
       push @detail_items, @$phone_lines;
     }
@@ -3165,10 +3167,14 @@ sub _latex_escape {
   $value;
 }
 
-
 sub _html_escape {
   my $value = shift;
   encode_entities($value);
+  $value;
+}
+
+sub _html_escape_nbsp {
+  my $value = _html_escape(shift);
   $value =~ s/ +/&nbsp;/g;
   $value;
 }
