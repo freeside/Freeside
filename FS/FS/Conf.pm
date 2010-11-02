@@ -2691,7 +2691,7 @@ and customer address. Include units.',
   {
     'key'         => 'voip-cdr_email',
     'section'     => '',
-    'description' => 'Include the call details on emailed invoices even if the customer is configured for not printing them on the invoices.',
+    'description' => 'Include the call details on emailed invoices (and HTML invoices viewed in the backend), even if the customer is configured for not printing them on the invoices.',
     'type'        => 'checkbox',
   },
 
