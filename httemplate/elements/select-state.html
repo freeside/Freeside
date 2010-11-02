@@ -32,7 +32,7 @@ Example:
 
 % foreach my $state ( keys %states ) { 
 
-  <OPTION VALUE="<% $state |h %>"<% $state eq $opt{'state'} ? ' SELECTED' : '' %>><% $states{$state} || '(n/a)' %>
+  <OPTION VALUE="<% $state |h %>"<% $state eq $opt{'state'} ? ' SELECTED' : '' %>><% $states{$state} || '(n/a)' |h %>
 
 % } 
 
