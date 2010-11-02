@@ -2458,7 +2458,9 @@ May not be null.
 
 sub ut_name {
   my( $self, $field ) = @_;
-  $self->getfield($field) =~ /^([\w \,\.\-\']+)$/
+#  warn "ut_name allowed alphanumerics: +(sort grep /\w/, map { chr() } 0..255), "\n";
+  #$self->getfield($field) =~ /^([\w \,\.\-\']+)$/
+  $self->getfield($field) =~ /^([µ_0123456789aAáÁàÀâÂåÅäÄãÃªæÆbBcCçÇdDðÐeEéÉèÈêÊëËfFgGhHiIíÍìÌîÎïÏjJkKlLmMnNñÑoOóÓòÒôÔöÖõÕøØºpPqQrRsSßtTuUúÚùÙûÛüÜvVwWxXyYýÝÿzZþÞ \,\.\-\']+)$/
     or return gettext('illegal_name'). " $field: ". $self->getfield($field);
   $self->setfield($field,$1);
   '';

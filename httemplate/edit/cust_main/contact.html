@@ -3,8 +3,8 @@
 <TR>
   <TH ALIGN="right"><%$r%>Contact&nbsp;name<BR>(last,&nbsp;first)</TH>
   <TD COLSPAN=5>
-    <INPUT TYPE="text" NAME="<%$pre%>last" VALUE="<% $cust_main->get($pre.'last') %>" onChange="<% $onchange %>" <%$disabled%> <%$style%>> , 
-    <INPUT TYPE="text" NAME="<%$pre%>first" VALUE="<% $cust_main->get($pre.'first') %>" onChange="<% $onchange %>" <%$disabled%> <%$style%>>
+    <INPUT TYPE="text" NAME="<%$pre%>last" VALUE="<% $cust_main->get($pre.'last') |h %>" onChange="<% $onchange %>" <%$disabled%> <%$style%>> , 
+    <INPUT TYPE="text" NAME="<%$pre%>first" VALUE="<% $cust_main->get($pre.'first') |h %>" onChange="<% $onchange %>" <%$disabled%> <%$style%>>
   </TD>
 % if ( $conf->exists('show_ss') && !$pre ) { 
 
@@ -21,7 +21,7 @@
 <TR>
   <TD ALIGN="right">Company</TD>
   <TD COLSPAN=7>
-    <INPUT TYPE="text" NAME="<%$pre%>company" VALUE="<% $cust_main->get($pre.'company') %>" SIZE=70 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
+    <INPUT TYPE="text" NAME="<%$pre%>company" VALUE="<% $cust_main->get($pre.'company') |h %>" SIZE=70 onChange="<% $onchange %>" <%$disabled%> <%$style%>>
   </TD>
 </TR>
 

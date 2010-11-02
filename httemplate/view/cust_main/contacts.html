@@ -10,7 +10,7 @@
 <TR>
   <TD ALIGN="right">Contact name</TD>
   <TD COLSPAN=5 BGCOLOR="#ffffff">
-    <% $cust_main->get("${pre}last"). ', '. $cust_main->get("${pre}first") %>
+    <% $cust_main->get("${pre}last"). ', '. $cust_main->get("${pre}first") |h %>
   </TD>
 % if ( $which eq '' && $conf->exists('show_ss') ) { 
     <TD ALIGN="right">SS#</TD>
@@ -19,11 +19,11 @@
 </TR>
 <TR>
   <TD ALIGN="right">Company</TD>
-  <TD COLSPAN=7 BGCOLOR="#ffffff"><% $cust_main->get("${pre}company") %></TD>
+  <TD COLSPAN=7 BGCOLOR="#ffffff"><% $cust_main->get("${pre}company") |h %></TD>
 </TR>
 <TR>
   <TD ALIGN="right">Address</TD>
-  <TD COLSPAN=7 BGCOLOR="#ffffff"><% $cust_main->get("${pre}address1") %></TD>
+  <TD COLSPAN=7 BGCOLOR="#ffffff"><% $cust_main->get("${pre}address1") |h %></TD>
 </TR>
 
 % if ( $cust_main->get("${pre}address2") ) { 
@@ -36,20 +36,20 @@
 
   <TR>
     <TD ALIGN="right"><% $address2_label %></TD>
-    <TD COLSPAN=7 BGCOLOR="#ffffff"><% $cust_main->get("${pre}address2") %></TD>
+    <TD COLSPAN=7 BGCOLOR="#ffffff"><% $cust_main->get("${pre}address2") |h %></TD>
   </TR>
 
 % } 
 
 <TR>
   <TD ALIGN="right">City</TD>
-  <TD BGCOLOR="#ffffff"><% $cust_main->get("${pre}city") %></TD>
+  <TD BGCOLOR="#ffffff"><% $cust_main->get("${pre}city") |h %></TD>
 % if ( $cust_main->get("${pre}county") ) {
     <TD ALIGN="right">County</TD>
-    <TD BGCOLOR="#ffffff"><% $cust_main->get("${pre}county") %></TD>
+    <TD BGCOLOR="#ffffff"><% $cust_main->get("${pre}county") |h %></TD>
 % }
   <TD ALIGN="right">State</TD>
-  <TD BGCOLOR="#ffffff"><% state_label( $cust_main->get("${pre}state"), $cust_main->get("${pre}country") ) %></TD>
+  <TD BGCOLOR="#ffffff"><% state_label( $cust_main->get("${pre}state"), $cust_main->get("${pre}country") ) |h %></TD>
   <TD ALIGN="right">Zip</TD>
   <TD BGCOLOR="#ffffff"><% $cust_main->get("${pre}zip") %></TD>
 </TR>

@@ -132,7 +132,7 @@ Billing information
 
 <TR>
   <TD ALIGN="right">Attention</TD>
-  <TD BGCOLOR="#ffffff"><% $cust_main->payname %></TD>
+  <TD BGCOLOR="#ffffff"><% $cust_main->payname |h %></TD>
 </TR>
 % } elsif ( $cust_main->payby eq 'COMP' ) { 
 
