@@ -1291,7 +1291,6 @@ use Data::Dumper;
 use Storable 'thaw';
 use MIME::Base64;
 sub process_bulk_cust_pkg {
-  local $DEBUG = 1;
   my $job = shift;
   my $param = thaw(decode_base64(shift));
   warn Dumper($param) if $DEBUG;
