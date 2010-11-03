@@ -1626,6 +1626,20 @@ and customer address. Include units.',
     'type'        => 'checkbox',
   },
 
+  { 
+    'key'         => 'username-slash',
+    'section'     => 'username',
+    'description' => 'Allow the slash character (/) in usernames.',
+    'type'        => 'checkbox',
+  },
+
+  { 
+    'key'         => 'username-equals',
+    'section'     => 'username',
+    'description' => 'Allow the equal sign character (=) in usernames.',
+    'type'        => 'checkbox',
+  },
+
   {
     'key'         => 'safe-part_bill_event',
     'section'     => 'UI',
