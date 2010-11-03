@@ -1300,7 +1300,8 @@ sub process_bulk_cust_pkg {
   my $new_part_pkg = qsearchs('part_pkg',
                               { pkgpart => $param->{'new_pkgpart'} });
   die "Must select a new package type\n" unless $new_part_pkg;
-  my $keep_dates = $param->{'keep_dates'} || 0;
+  #my $keep_dates = $param->{'keep_dates'} || 0;
+  my $keep_dates = 1; # there is no good reason to turn this off
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
