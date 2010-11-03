@@ -190,6 +190,11 @@ foreach my $svcdb ( FS::part_svc->svc_tables() ) {
       [ $fsurl."search/report_$svcdb.html", '' ];
   }
 
+  if ( $svcdb eq 'svc_phone' ) {
+    $report_svc{"Avaialble phone numbers (DIDs)"} =
+      [ $fsurl."search/phone_avail.html", '' ];
+  }
+
   $report_services{$name} = [ \%report_svc, $longname ];
 
 }
