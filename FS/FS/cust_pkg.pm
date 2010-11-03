@@ -1287,6 +1287,60 @@ sub change {
 
 }
 
+use Data::Dumper;
+use Storable 'thaw';
+use MIME::Base64;
+sub process_bulk_cust_pkg {
+  local $DEBUG = 1;
+  my $job = shift;
+  my $param = thaw(decode_base64(shift));
+  warn Dumper($param) if $DEBUG;
+
+  my $old_part_pkg = qsearchs('part_pkg', 
+                              { pkgpart => $param->{'old_pkgpart'} });
+  my $new_part_pkg = qsearchs('part_pkg',
+                              { pkgpart => $param->{'new_pkgpart'} });
+  die "Must select a new package type\n" unless $new_part_pkg;
+  my $keep_dates = $param->{'keep_dates'} || 0;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my @cust_pkgs = qsearch('cust_pkg', { 'pkgpart' => $param->{'old_pkgpart'} } );
+
+  my $i = 0;
+  foreach my $old_cust_pkg ( @cust_pkgs ) {
+    $i++;
+    $job->update_statustext(int(100*$i/(scalar @cust_pkgs)));
+    if ( $old_cust_pkg->getfield('cancel') ) {
+      warn '[process_bulk_cust_pkg ] skipping canceled pkgnum '.
+        $old_cust_pkg->pkgnum."\n"
+        if $DEBUG;
+      next;
+    }
+    warn '[process_bulk_cust_pkg] changing pkgnum '.$old_cust_pkg->pkgnum."\n"
+      if $DEBUG;
+    my $error = $old_cust_pkg->change(
+      'pkgpart'     => $param->{'new_pkgpart'},
+      'keep_dates'  => $keep_dates
+    );
+    if ( !ref($error) ) { # change returns the cust_pkg on success
+      $dbh->rollback;
+      die "Error changing pkgnum ".$old_cust_pkg->pkgnum.": '$error'\n";
+    }
+  }
+  $dbh->commit if $oldAutoCommit;
+  return;
+}
+
 =item last_bill
 
 Returns the last bill date, or if there is no last bill date, the setup date.

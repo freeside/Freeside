@@ -1,0 +1,62 @@
+<% include('/elements/header-popup.html', 'Bulk package change') %>
+
+<% include('/elements/init_overlib.html') %>
+
+<% include('/elements/progress-init.html',
+              'OneTrueForm',
+              [qw( old_pkgpart new_pkgpart keep_dates)],
+              'process/bulk-cust_pkg.cgi',
+              $p.'browse/part_pkg.cgi',
+           )
+%>
+
+<SCRIPT TYPE="text/javascript">
+function areyousure() {
+  if(confirm('Change these packages?')) {
+    process();
+  }
+}
+</SCRIPT>
+<FORM NAME="OneTrueForm">
+% #false laziness with bulk-cust_svc.html
+%  $cgi->param('pkgpart') =~ /^(\d+)$/
+%    or die "illegal pkgpart: ". $cgi->param('pkgpart');
+%
+%  my $old_pkgpart = $1;
+%  my $src_part_pkg = qsearchs('part_pkg', { 'pkgpart' => $old_pkgpart } )
+%    or die "unknown pkgpart: $old_pkgpart";
+%
+
+
+<INPUT NAME="old_pkgpart" TYPE="hidden" VALUE="<% $old_pkgpart %>">
+Change <B><% $src_part_pkg->pkg_comment %></B><BR>
+
+to new package definition
+<SELECT NAME="new_pkgpart">
+% foreach my $dest_part_pkg ( qsearch('part_pkg', { 'disabled' => '' } ) ) {
+% # XXX probably no way to prevent packages from violating agent restrictions
+% # maybe something like what bulk-cust_svc does with changing services 
+% # under specific pkgparts?
+
+  <OPTION VALUE="<% $dest_part_pkg->pkgpart %>"><% $dest_part_pkg->pkgpart %>: <% $dest_part_pkg->pkg %>
+% } 
+
+</SELECT>
+<BR>
+<BR>
+<INPUT TYPE="checkbox" NAME="keep_dates" CHECKED> Preserve all billing dates
+<BR>
+<BR>
+
+<INPUT TYPE="button" VALUE="Bulk change packages" onclick="areyousure()">
+
+</FORM>
+
+<% include('/elements/footer.html') %>
+
+<%init>
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right('Configuration');
+
+</%init>
