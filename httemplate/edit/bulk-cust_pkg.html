@@ -4,7 +4,7 @@
 
 <% include('/elements/progress-init.html',
               'OneTrueForm',
-              [qw( old_pkgpart new_pkgpart keep_dates)],
+              [qw( old_pkgpart new_pkgpart )],
               'process/bulk-cust_pkg.cgi',
               $p.'browse/part_pkg.cgi',
            )
@@ -12,7 +12,8 @@
 
 <SCRIPT TYPE="text/javascript">
 function areyousure() {
-  if(confirm('Change these packages?')) {
+  var warning = 'Change these packages?';
+  if(confirm(warning)) {
     process();
   }
 }
@@ -34,9 +35,6 @@ Change <B><% $src_part_pkg->pkg_comment %></B><BR>
 to new package definition
 <SELECT NAME="new_pkgpart">
 % foreach my $dest_part_pkg ( qsearch('part_pkg', { 'disabled' => '' } ) ) {
-% # XXX probably no way to prevent packages from violating agent restrictions
-% # maybe something like what bulk-cust_svc does with changing services 
-% # under specific pkgparts?
 
   <OPTION VALUE="<% $dest_part_pkg->pkgpart %>"><% $dest_part_pkg->pkgpart %>: <% $dest_part_pkg->pkg %>
 % } 
@@ -44,9 +42,9 @@ to new package definition
 </SELECT>
 <BR>
 <BR>
-<INPUT TYPE="checkbox" NAME="keep_dates" CHECKED> Preserve all billing dates
-<BR>
-<BR>
+%#<INPUT TYPE="checkbox" NAME="keep_dates" CHECKED> Preserve all billing dates <I>(strongly recommended)</I>
+%#<BR>
+%#<BR>
 
 <INPUT TYPE="button" VALUE="Bulk change packages" onclick="areyousure()">
 
