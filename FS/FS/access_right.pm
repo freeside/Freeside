@@ -145,6 +145,41 @@ sub _upgrade_data { # class method
       if $error;
   }
 
+  my %migrate = (
+    'Post payment'    => [ 'Post check payment', 'Post cash payment' ],
+    'Process payment' => [ 'Process credit card payment', 'Process Echeck payment' ],
+    'Post refund'     => [ 'Post check refund', 'Post cash refund' ],
+    'Refund payment'  => [ 'Refund credit card payment', 'Refund Echeck payment' ],
+  );
+
+  foreach my $oldright (keys %migrate) {
+    my @old = qsearch('access_right', { 'righttype'=>'FS::access_group',
+                                        'rightname'=>$oldright,
+                                      }
+                     );
+
+    foreach my $old ( @old ) {
+
+      foreach my $newright ( @{ $migrate{$oldright} } ) {
+        my %hash = (
+          'righttype'   => 'FS::access_group',
+          'rightobjnum' => $old->rightobjnum,
+          'rightname'   => $newright,
+        );
+        next if qsearchs('access_right', \%hash);
+        my $access_right = new FS::access_right \%hash;
+        my $error = $access_right->insert;
+        die $error if $error;
+      }
+
+      #after the WEST stuff is sorted, etc.
+      #my $error = $old->delete;
+      #die $error if $error;
+
+    }
+
+  }
+
   '';
 
 }

@@ -155,11 +155,14 @@ my $view =
 
 my $refund = '';
 my $refund_days = $opt{'card_refund-days'} || 120;
+my @rights = ('Refund payment');
+push @rights, 'Refund credit card payment' if $payby eq 'CARD';
+push @rights, 'Refund Echeck payment' if $payby eq 'CHEK';
 if (    $cust_pay->closed !~ /^Y/i
      && $cust_pay->payby =~ /^(CARD|CHEK)$/
      && time-$cust_pay->_date < $refund_days*86400
      && $cust_pay->unrefunded > 0
-     && $curuser->access_right('Refund payment')
+     && $curuser->access_right(\@rights)
 ) {
   $refund = qq! (<A HREF="${p}edit/cust_refund.cgi?payby=$1;!.
             qq!paynum=!. $cust_pay->paynum. '"'.

@@ -130,9 +130,6 @@
 
 <%init>
 
-die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Refund payment');
-
 my $conf = new FS::Conf;
 my $date_format = $conf->config('date_format') || '%m/%d/%Y';
 
@@ -142,6 +139,17 @@ my $payby   = $cgi->param('payby');
 my $payinfo = $cgi->param('payinfo');
 my $reason  = $cgi->param('reason');
 my $link    = $cgi->param('popup') ? 'popup' : '';
+
+my @rights = ();
+push @rights, 'Post refund'                if $payby /^(BILL|CASH)$/;
+push @rights, 'Post check refund'          if $payby eq 'BILL';
+push @rights, 'Post cash refund '          if $payby eq 'CASH';
+push @rights, 'Refund payment'             if $payby /^(CARD|CHEK)$/;
+push @rights, 'Refund credit card payment' if $payby eq 'CARD';
+push @rights, 'Refund Echeck payment'      if $payby eq 'CHEK';
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right(\@rights);
 
 my( $paynum, $cust_pay ) = ( '', '' );
 if ( $cgi->param('paynum') =~ /^(\d+)$/ ) {

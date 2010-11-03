@@ -27,9 +27,6 @@
 %}
 <%init>
 
-die "access denied"
-  unless $FS::CurrentUser::CurrentUser->access_right('Post payment');
-
 $cgi->param('linknum') =~ /^(\d+)$/
   or die "Illegal linknum: ". $cgi->param('linknum');
 my $linknum = $1;
@@ -51,6 +48,13 @@ my $new = new FS::cust_pay ( {
       )
   #} fields('cust_pay')
 } );
+
+my @rights = ('Post payment');
+push @rights, 'Post check payment' if $cust_pay->payby eq 'BILL';
+push @rights, 'Post cash payment'  if $cust_pay->payby eq 'CASH';
+
+die "access denied"
+  unless $FS::CurrentUser::CurrentUser->access_right(\@rights);
 
 my $error = $new->insert( 'manual' => 1 );
 

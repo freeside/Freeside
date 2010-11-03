@@ -1,7 +1,7 @@
 %# payment links
 
 % my $s = 0;
-% if ( $payby{'BILL'} && $curuser->access_right('Post payment') ) { 
+% if ( $payby{'BILL'} && $curuser->access_right(['Post payment', 'Post check payment' ]) ) { 
   <% $s++ ? ' | ' : '' %>
   <% include('/elements/popup_link-cust_main.html',
                'label'       => 'Enter check payment',
@@ -14,7 +14,7 @@
   %>
 % } 
 
-% if ( $payby{'CASH'} && $curuser->access_right('Post payment') ) { 
+% if ( $payby{'CASH'} && $curuser->access_right(['Post payment', 'Post cash payment']) ) { 
   <% $s++ ? ' | ' : '' %>
   <% include('/elements/popup_link-cust_main.html',
                'label'       => 'Enter cash payment',
@@ -33,7 +33,7 @@
 % } 
 
 % if ( ( $payby{'CARD'} || $payby{'DCRD'} )
-%        && $curuser->access_right('Process payment')
+%        && $curuser->access_right(['Process payment', 'Process credit card payment'])
 %        && ! $cust_main->is_encrypted($cust_main->payinfo)
 %      ) {
   <% $s++ ? ' | ' : '' %>
@@ -41,7 +41,7 @@
 % } 
 
 % if ( ( $payby{'CHEK'} || $payby{'DCHK'} )
-%        && $curuser->access_right('Process payment')
+%        && $curuser->access_right(['Process payment', 'Process Echeck payment'])
 %        && ! $cust_main->is_encrypted($cust_main->payinfo)
 %      ) {
   <% $s++ ? ' | ' : '' %>
@@ -73,7 +73,7 @@
 %# refund links
 
 % $s = 0;
-% if ( $payby{'BILL'} && $curuser->access_right('Post refund') ) { 
+% if ( $payby{'BILL'} && $curuser->access_right(['Post refund', 'Post check refund']) ) { 
   <% $s++ ? ' | ' : '' %>
   <% include('/elements/popup_link-cust_main.html',
                'label'       => 'Enter check refund',
@@ -86,7 +86,7 @@
   %>
 % } 
 
-% if ( $payby{'CASH'} && $curuser->access_right('Post refund') ) { 
+% if ( $payby{'CASH'} && $curuser->access_right(['Post refund', 'Post cash refund']) ) { 
   <% $s++ ? ' | ' : '' %>
   <% include('/elements/popup_link-cust_main.html',
                'label'       => 'Enter cash refund',
