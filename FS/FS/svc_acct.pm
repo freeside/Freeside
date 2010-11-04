@@ -1243,16 +1243,14 @@ sub check {
   }
 
   my $ulen = $usernamemax || $self->dbdef_table->column('username')->length;
-  if ( $username_uppercase ) {
-    $recref->{username} =~ /^([a-z0-9_\-\.\&\%\:\/\=]{$usernamemin,$ulen})$/i
-      or return gettext('illegal_username'). " ($usernamemin-$ulen): ". $recref->{username};
-    $recref->{username} = $1;
-  } else {
-    $recref->{username} =~ /^([a-z0-9_\-\.\&\%\:]{$usernamemin,$ulen})$/
-      or return gettext('illegal_username'). " ($usernamemin-$ulen): ". $recref->{username};
-    $recref->{username} = $1;
-  }
 
+  $recref->{username} =~ /^([a-z0-9_\-\.\&\%\:\/\=]{$usernamemin,$ulen})$/i
+    or return gettext('illegal_username'). " ($usernamemin-$ulen): ". $recref->{username};
+  $recref->{username} = $1;
+
+  unless ( $username_uppercase ) {
+    $recref->{username} =~ /[A-Z]/ and return gettext('illegal_username');
+  }
   if ( $username_letterfirst ) {
     $recref->{username} =~ /^[a-z]/ or return gettext('illegal_username');
   } elsif ( $username_letter ) {

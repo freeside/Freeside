@@ -1629,7 +1629,7 @@ and customer address. Include units.',
   { 
     'key'         => 'username-slash',
     'section'     => 'username',
-    'description' => 'Allow the slash character (/) in usernames.',
+    'description' => 'Allow the slash character (/) in usernames.  When using, make sure to set "Home directory" to fixed and blank in all svc_acct service definitions.',
     'type'        => 'checkbox',
   },
 
