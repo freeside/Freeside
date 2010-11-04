@@ -50,8 +50,8 @@ my $new = new FS::cust_pay ( {
 } );
 
 my @rights = ('Post payment');
-push @rights, 'Post check payment' if $cust_pay->payby eq 'BILL';
-push @rights, 'Post cash payment'  if $cust_pay->payby eq 'CASH';
+push @rights, 'Post check payment' if $new->payby eq 'BILL';
+push @rights, 'Post cash payment'  if $new->payby eq 'CASH';
 
 die "access denied"
   unless $FS::CurrentUser::CurrentUser->access_right(\@rights);
