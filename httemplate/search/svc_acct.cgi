@@ -262,13 +262,13 @@ if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
   }
 
   $cgi->param('username') =~ /^([\w\-\.\&]+)$/; #untaint username_text
-  my $username = $1;
+  my $username = lc($1);
 
-  push @username_sql, "username ILIKE '$username'"
+  push @username_sql, "LOWER(username) LIKE '$username'"
     if $username_type{'Exact'}
     || $username_type{'Fuzzy'};
 
-  push @username_sql, "username ILIKE '\%$username\%'"
+  push @username_sql, "LOWER(username) LIKE '\%$username\%'"
     if $username_type{'Substring'}
     || $username_type{'All'};
 

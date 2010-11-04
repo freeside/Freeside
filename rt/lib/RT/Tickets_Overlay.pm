@@ -1855,7 +1855,13 @@ sub OrderByCols {
            );
 
            #if there was a Links.RemoteTarget int, this bs wouldn't be necessary
-           my $custnum_sql = "CAST(SUBSTR($linkalias.Target,31) AS INTEGER)";
+           my $custnum_sql = "CAST(SUBSTR($linkalias.Target,31) AS ";
+           if ( RT->Config->Get('DatabaseType') eq 'mysql' ) {
+             $custnum_sql .= 'SIGNED INTEGER)';
+           }
+           else {
+             $custnum_sql .= 'INTEGER)';
+           }
 
            if ( $subkey eq 'Number' ) {
 

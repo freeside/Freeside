@@ -541,10 +541,12 @@ sub search {
       "cust_main.$field >= $beginning",
       "cust_main.$field <= $ending";
 
-    # XXX: do this for mysql and/or pull it out of here
     if(defined $hour) {
-      if ($dbh->{Driver}->{Name} eq 'Pg') {
+      if ($dbh->{Driver}->{Name} =~ /Pg/i) {
         push @where, "extract(hour from to_timestamp(cust_main.$field)) = $hour";
+      }
+      elsif( $dbh->{Driver}->{Name} =~ /mysql/i) {
+        push @where, "hour(from_unixtime(cust_main.$field)) = $hour"
       }
       else {
         warn "search by time of day not supported on ".$dbh->{Driver}->{Name}." databases";
