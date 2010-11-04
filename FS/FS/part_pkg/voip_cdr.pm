@@ -222,7 +222,7 @@ tie my %granularity, 'Tie::IxHash', FS::rate_detail::granularities();
                        },
     #eofalse
 
-    'bill_every_call' => { 'name' => 'Generate an invoice immediately for every call.  Useful for prepaid.',
+    'bill_every_call' => { 'name' => 'Generate an invoice immediately for every call (as well any setup fee, upon first payment).  Useful for prepaid.',
                            'type' => 'checkbox',
                          },
 
