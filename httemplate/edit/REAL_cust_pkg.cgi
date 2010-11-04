@@ -55,7 +55,9 @@
   <& .row_edit, cust_pkg=>$cust_pkg, column=>'setup',     label=>'Setup' &>
   <& .row_edit, cust_pkg=>$cust_pkg, column=>'last_bill', label=>$last_bill_or_renewed &>
   <& .row_edit, cust_pkg=>$cust_pkg, column=>'bill',      label=>$next_bill_or_prepaid_until &>
-  <& .row_edit, cust_pkg=>$cust_pkg, column=>'contract_end',label=>'Contract end' &>
+% if ( $cust_pkg->contract_end or $part_pkg->option('contract_end_months',1) ) {
+    <& .row_edit, cust_pkg=>$cust_pkg, column=>'contract_end',label=>'Contract end' &>
+% }
   <& .row_display, cust_pkg=>$cust_pkg, column=>'adjourn',  label=>'Adjournment', note=>'(will <b>suspend</b> this package when the date is reached)' &>
   <& .row_display, cust_pkg=>$cust_pkg, column=>'susp',     label=>'Suspension' &>
 
