@@ -4100,15 +4100,20 @@ sub _items_cust_bill_pkg {
           unless ( $cust_pkg->part_pkg->hide_svc_detail
                 || $cust_bill_pkg->hidden )
           {
+
             push @d, map &{$escape_function}($_),
-                         $cust_pkg->h_labels_short($self->_date);
+                         $cust_pkg->h_labels_short($self->_date)
+              unless $cust_bill_pkg->pkgpart_override; #don't redisplay services
+
             if ( $multilocation ) {
               my $loc = $cust_pkg->location_label;
               $loc = substr($loc, 0, 50). '...'
                 if $format eq 'latex' && length($loc) > 50;
               push @d, &{$escape_function}($loc);
             }
+
           }
+
           push @d, $cust_bill_pkg->details(%details_opt)
             if $cust_bill_pkg->recur == 0;
 
@@ -4157,17 +4162,20 @@ sub _items_cust_bill_pkg {
                 || $cust_bill_pkg->hidden
                 || $is_summary && $type && $type eq 'U' )
           {
+
             push @d, map &{$escape_function}($_),
                          $cust_pkg->h_labels_short(@dates)
                                                    #$cust_bill_pkg->edate,
                                                    #$cust_bill_pkg->sdate)
-            ;
+              unless $cust_bill_pkg->pkgpart_override; #don't redisplay services
+
             if ( $multilocation ) {
               my $loc = $cust_pkg->location_label;
               $loc = substr($loc, 0, 50). '...'
                 if $format eq 'latex' && length($loc) > 50;
               push @d, &{$escape_function}($loc);
             }
+
           }
 
           push @d, $cust_bill_pkg->details(%details_opt)
