@@ -20,7 +20,7 @@ my $pkgnum = $cgi->param('pkgnum') or die;
 my $old = qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
 my %hash = $old->hash;
 $hash{$_}= $cgi->param($_) ? parse_datetime($cgi->param($_)) : ''
-  foreach qw( start_date setup bill last_bill adjourn expire );
+  foreach qw( start_date setup bill last_bill adjourn expire contract_end );
 
 my @errors = ();
 
