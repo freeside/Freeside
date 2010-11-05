@@ -1,0 +1,26 @@
+#!/usr/bin/perl
+
+# usage: 19commit 'log message' filename filename ...
+
+use Cwd;
+use String::ShellQuote;
+
+my $USER = $ENV{USER};
+
+my $dir = getcwd;
+( my $prefix = $dir ) =~ s(^/home/$USER/freeside/?)() or die $dir; #eventually from anywhere
+
+my $desc = shell_quote(shift @ARGV); # -m
+
+die "no files!" unless @ARGV;
+
+#warn "$prefix";
+
+#print <<END;
+system join('',
+  "( cd /home/$USER/freeside2.1/$prefix; cvs update @ARGV ) && ",
+  "cvs diff -u @ARGV | ( cd /home/$USER/freeside2.1/$prefix; patch -p0 ) ",
+  " && ( ( cvs commit  -m $desc @ARGV & ); ",
+  "( sleep 1;cd /home/$USER/freeside2.1/$prefix; cvs commit -m $desc @ARGV & ) )"
+);
+
