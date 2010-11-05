@@ -5,6 +5,7 @@ use strict;
              #FS::cust_main:_Marketgear when they're ready to move to 2.1
 use base qw( FS::cust_main::Packages
              FS::cust_main::Billing FS::cust_main::Billing_Realtime
+             FS::cust_main::Billing_Discount
              FS::otaker_Mixin FS::payinfo_Mixin FS::cust_main_Mixin
              FS::geocode_Mixin
              FS::Record

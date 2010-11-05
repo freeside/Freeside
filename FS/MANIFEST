@@ -69,6 +69,7 @@ FS/cust_credit.pm
 FS/cust_credit_bill.pm
 FS/cust_main.pm
 FS/cust_main/Billing.pm
+FS/cust_main/Billing_Discount.pm
 FS/cust_main/Billing_Realtime.pm
 FS/cust_main/Import.pm
 FS/cust_main/Packages.pm
