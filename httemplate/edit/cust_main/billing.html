@@ -240,7 +240,7 @@
 %        qq!<INPUT TYPE="hidden" NAME="BILL_exp_year" VALUE="2037">!.
 %
 %        qq!<TR><TD ALIGN="right" WIDTH="200">Attention </TD>!.
-%          qq!<TD WIDTH="408"><INPUT TYPE="text" NAME="BILL_payname" VALUE="!. ( $payby eq 'BILL' ? $cust_main->payname : '' ). qq!"></TD></TR>!.
+%          qq!<TD WIDTH="408"><INPUT TYPE="text" NAME="BILL_payname" VALUE="!. encode_entities( $payby eq 'BILL' ? $cust_main->payname : '' ). qq!"></TD></TR>!.
 %
 %        '<TR><TD>&nbsp;</TD></TR>'.
 %        '<TR><TD>&nbsp;</TD></TR>'.
