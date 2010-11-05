@@ -658,6 +658,21 @@ sub search {
     push @where,
       "cust_main.custbatch = '$1'";
   }
+  
+  if ( $params->{'tagnum'} ) {
+    my @tagnums = ref( $params->{'tagnum'} ) ? @{ $params->{'tagnum'} } : ( $params->{'tagnum'} );
+
+    @tagnums = grep /^(\d+)$/, @tagnums;
+
+    if ( @tagnums ) {
+	my $tags_where = "0 < (select count(1) from cust_tag where " 
+		. " cust_tag.custnum = cust_main.custnum and tagnum in ("
+		. join(',', @tagnums) . "))";
+
+	push @where, $tags_where;
+    }
+  }
+
 
   ##
   # setup queries, subs, etc. for the search

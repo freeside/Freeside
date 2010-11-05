@@ -50,6 +50,14 @@
 
 %   }
 
+    <% include( '/elements/tr-select-cust_tag.html',
+		  'cgi'		 => $cgi,
+		  'is_report'    => 1,
+                  'multiple'     => 1,
+                  'all_selected' => 1,
+              )
+    %>
+
     <% include( '/elements/tr-select-payby.html',
                   'payby_type'   => 'cust',
                   'multiple'     => 1,

@@ -1,4 +1,4 @@
-% if ( $curuser->access_right('Edit customer tags') && @part_tag ) {
+% if ( ($curuser->access_right('Edit customer tags') && @part_tag) || $is_report ) {
 
   <TR>
     <TD ALIGN="right"><% $opt{'label'} || 'Tags' %></TD>
@@ -25,6 +25,7 @@ my $curuser = $FS::CurrentUser::CurrentUser;
 
 my %opt = @_;
 my $cgi = $opt{'cgi'};
+my $is_report = $opt{'is_report'};
 
 my @curr_tagnum = ();
 if ( $cgi->param('error') ) {

@@ -56,7 +56,7 @@ for my $param ( @scalars ) {
 }
 
 #lists
-for my $param (qw( classnum payby )) {
+for my $param (qw( classnum payby tagnum )) {
   $search_hash{$param} = [ $cgi->param($param) ];
 }
 
